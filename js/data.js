@@ -417,7 +417,7 @@ window.LK_DATA = {
     /* Burgers and sandwiches */
     {
       id: 'smash', no: '22', kind: 'main', forLine: 'Plate', name: 'Smash Burger', art: 'smash', avc: 'Smash Burger S26',
-      menu: 'Smashed Beef Burger: two smashed patties, cheese, pickles, tomato, American mustard.',
+      menu: 'Smashed Beef Burger: two smashed patties, cheese, pickles, American mustard.',
       yield: 'Per plate. 180 g patty, two cheese slices, chips.',
       ingredients: [
         { q: '1', name: 'Milk bun', note: 'sliced', tags: ['Gluten', 'Milk', 'Egg?', 'Soy?'] },
