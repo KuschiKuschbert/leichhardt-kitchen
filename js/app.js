@@ -231,7 +231,7 @@
   function diagram(r) {
     var d = r.diagram && ART.diagrams[r.diagram];
     if (!d) return '';
-    return '<div class="sec"><h3 class="h3">' + esc(d.title || 'How to cut') + '</h3><svg class="diagram" viewBox="' + esc(d.viewBox) + '" role="img" aria-label="' + esc(d.label) + '">' + d.body + '</svg></div>';
+    return '<div class="sec"><h3 class="h3">' + esc(d.title || 'How to cut') + '</h3><svg class="diagram" viewBox="' + esc(d.viewBox) + '"' + (d.maxWidth ? ' style="max-width: ' + esc(d.maxWidth) + '"' : '') + ' role="img" aria-label="' + esc(d.label) + '">' + d.body + '</svg></div>';
   }
   function steps(r) {
     if (!r.sections.length) return '<div class="box beige"><span class="label">Method</span><div>Not written up yet. Ask the head chef or sous chef.</div></div>';

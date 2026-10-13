@@ -25,7 +25,7 @@
     labelNote  one line about labels to check
     tip        optional box, e.g. iCombi settings: { title, text }
     safety     optional orange warning: { title, text }
-    diagram    optional technique drawing id (see js/art.js), e.g. "corn-cut"
+    diagram    optional technique or build drawing id (see js/art.js), e.g. "corn-cut" or "smash-build"
 
   Write anything not confirmed yet in [square brackets] so it shows as a placeholder.
 
@@ -40,7 +40,7 @@ window.LK_DATA = {
   allergens: ['Gluten', 'Milk', 'Egg', 'Soy', 'Peanut', 'Fish', 'Crustacean', 'Sesame'],
   recipes: [
     {
-      id: 'burger', no: '02', kind: 'main', forLine: 'Plate', name: 'Chicken Burger', art: 'burger', avc: 'Ranch Chicken Burger Complete S26',
+      id: 'burger', no: '02', diagram: 'burger-build', kind: 'main', forLine: 'Plate', name: 'Chicken Burger', art: 'burger', avc: 'Ranch Chicken Burger Complete S26',
       yield: 'Per plate. Thigh and ranch bought in.',
       ingredients: [
         { q: '1', name: 'Burger bun', note: 'milk bun', tags: ['Gluten', 'Milk'] },
@@ -416,21 +416,24 @@ window.LK_DATA = {
 
     /* Burgers and sandwiches */
     {
-      id: 'smash', no: '22', kind: 'main', forLine: 'Plate', name: 'Smash Burger', art: 'smash', avc: 'Smash Burger S26',
+      id: 'smash', no: '22', kind: 'main', forLine: 'Plate', name: 'Smash Burger', art: 'smash', diagram: 'smash-build', avc: 'Smash Burger S26',
       menu: 'Smashed Beef Burger: two smashed patties, cheese, pickles, American mustard.',
-      yield: 'Per plate. 180 g patty, two cheese slices, chips.',
+      yield: 'Per plate. Two smashed patties (180 g), cheese on each, chips.',
       ingredients: [
         { q: '1', name: 'Milk bun', note: 'sliced', tags: ['Gluten', 'Milk', 'Egg?', 'Soy?'] },
-        { q: '180 g', name: 'Smash patty', link: 'smash-patty' },
-        { q: '2 slices', name: 'Burger cheese', tags: ['Milk'] },
+        { q: '180 g', name: 'Smash patty', note: '2 patties', link: 'smash-patty' },
+        { q: '2 slices', name: 'Burger cheese', note: 'one on each patty', tags: ['Milk'] },
         { q: '20 g', name: 'Bread and butter pickles' },
         { q: '20 ml', name: 'American mustard' },
-        { q: '40 ml', name: 'Tomato ketchup' },
+        { q: '40 ml', name: 'Tomato sauce', note: 'ketchup' },
         { q: '[Qty]', name: 'Oak leaf lettuce' },
         { q: '1 portion', name: 'Chips', note: '200 g raw' }
       ],
+      sections: [
+        { title: 'Plating, bottom to top', steps: ['Bun base.', 'Smashed patty, cheese on top.', 'Smashed patty, cheese on top.', 'Tomato sauce.', 'American mustard.', 'Pickles.', 'Bun top.', 'Chips on the side.'] }
+      ],
       pins: [
-        { label: 'Smash burger', x: 60.4, y: 35.8, side: 'right', tags: [], note: 'Milk bun, 180 g smash patty, 2 cheese slices, pickles, American mustard, ketchup, oak leaf. Card to come.' },
+        { label: 'Smash burger', x: 60.4, y: 35.8, side: 'right', tags: [], note: 'Milk bun, 2 smashed patties (180 g) with cheese on each, tomato sauce, American mustard, pickles. Card to come.' },
         { label: 'Chips', x: 29.2, y: 63.2, side: 'right', tags: [], note: '1 portion, 200 g raw.' }
       ],
       labelNote: 'Check the bun label.'
