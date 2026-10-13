@@ -439,7 +439,7 @@ window.LK_DATA = {
       labelNote: 'Check the bun label.'
     },
     {
-      id: 'oz-smash', no: '23', kind: 'main', forLine: 'Plate', name: 'The OZ Smash Burger', art: 'oz-smash', avc: 'The OZ Smash Burger S26',
+      id: 'oz-smash', diagram: 'oz-smash-build', no: '23', kind: 'main', forLine: 'Plate', name: 'The OZ Smash Burger', art: 'oz-smash', avc: 'The OZ Smash Burger S26',
       menu: 'The Aussie Burger: two smashed patties, lettuce, tomato, onion, pickles, beetroot, bacon, tomato sauce.',
       yield: 'Per plate. 180 g patty, bacon, beetroot, half a chips portion.',
       ingredients: [
@@ -455,6 +455,9 @@ window.LK_DATA = {
         { q: '[Qty]', name: 'Oak leaf lettuce' },
         { q: '½ portion', name: 'Chips', note: 'of the 200 g raw portion' }
       ],
+      sections: [
+        { title: 'Plating, bottom to top', steps: ['Bun base.', 'Tomato sauce.', 'Oak leaf.', 'Tomato.', 'Red onion.', 'Beetroot.', 'Smashed patty, cheese on top.', 'Bacon.', 'Pickles.', 'Bun top.', 'Half portion of chips on the side.'] }
+      ],
       pins: [
         { label: 'The OZ Smash Burger', x: 60.4, y: 35.8, side: 'left', tags: [], note: 'Milk bun, 180 g smash patty, cheese, bacon, beetroot, tomato, red onion, pickles, ketchup, oak leaf. Card to come.' },
         { label: 'Chips', x: 29.2, y: 63.2, side: 'right', tags: [], note: 'Half portion.' }
@@ -462,7 +465,7 @@ window.LK_DATA = {
       labelNote: 'Check the bun and bacon labels.'
     },
     {
-      id: 'fish-burger', no: '24', kind: 'main', forLine: 'Plate', name: 'Fish Burger', art: 'fish-burger', avc: 'Fish Burger S26',
+      id: 'fish-burger', diagram: 'fish-burger-build', no: '24', kind: 'main', forLine: 'Plate', name: 'Fish Burger', art: 'fish-burger', avc: 'Fish Burger S26',
       menu: 'Fish Burger: XXXX-battered fish, tartare, lettuce, tomato, onion.',
       yield: 'Per plate. 180 g beer-battered blue grenadier, chips.',
       ingredients: [
@@ -475,6 +478,9 @@ window.LK_DATA = {
         { q: '50 g', name: 'Red onion' },
         { q: '1 portion', name: 'Chips', note: '200 g raw' }
       ],
+      sections: [
+        { title: 'Plating, bottom to top', steps: ['Bun base.', 'Green oak.', 'Tomato.', 'Red onion.', 'Battered blue grenadier.', 'Tartare.', 'Bun top.', 'Chips on the side.'] }
+      ],
       pins: [
         { label: 'Fish burger', x: 60.4, y: 35.8, side: 'right', tags: ['Fish'], note: 'Milk bun, 180 g XXXX-battered blue grenadier, tartare, green oak, tomato, red onion.' },
         { label: 'Chips', x: 29.2, y: 63.2, side: 'right', tags: [], note: '1 portion, 200 g raw.' }
@@ -482,7 +488,7 @@ window.LK_DATA = {
       labelNote: 'Check the bun and tartare labels.'
     },
     {
-      id: 'chickpea-burger', no: '25', kind: 'main', forLine: 'Plate', name: 'Chickpea Mushroom Burger', art: 'chickpea-burger', avc: 'Chickpea Mushroom Burger S26',
+      id: 'chickpea-burger', diagram: 'chickpea-burger-build', no: '25', kind: 'main', forLine: 'Plate', name: 'Chickpea Mushroom Burger', art: 'chickpea-burger', avc: 'Chickpea Mushroom Burger S26',
       menu: 'Chickpea and Mushroom Burger: avocado, tomato, oak lettuce.',
       yield: 'Per plate. Three beetroot falafel, vegan aioli, chips.',
       ingredients: [
@@ -494,6 +500,9 @@ window.LK_DATA = {
         { q: '[Qty]', name: 'Green oak lettuce' },
         { q: '1 portion', name: 'Chips', note: '200 g raw' }
       ],
+      sections: [
+        { title: 'Plating, bottom to top', steps: ['Bun base.', 'Vegan aioli.', 'Green oak.', 'Tomato.', '3 beetroot falafel.', 'Chunky avocado.', 'Bun top.', 'Chips on the side.'] }
+      ],
       pins: [
         { label: 'Chickpea mushroom burger', x: 60.4, y: 35.8, side: 'left', tags: ['Sesame?', 'Soy?'], note: 'Milk bun, 3 beetroot falafel, vegan aioli, avocado, tomato, green oak.' },
         { label: 'Chips', x: 29.2, y: 63.2, side: 'right', tags: [], note: '1 portion, 200 g raw.' }
@@ -501,7 +510,7 @@ window.LK_DATA = {
       labelNote: 'Check the bun, falafel and aioli labels.'
     },
     {
-      id: 'steak-sandwich', art: 'steak-sandwich', no: '26', kind: 'main', forLine: 'Plate', name: 'Steak Sandwich', avc: 'Steak sandwich S26',
+      id: 'steak-sandwich', diagram: 'steak-sandwich-build', art: 'steak-sandwich', no: '26', kind: 'main', forLine: 'Plate', name: 'Steak Sandwich', avc: 'Steak sandwich S26',
       menu: 'Steak Sandwich: rump steak, caramelised onion, smoky BBQ sauce, cheddar, bacon, fried egg, Turkish bread.',
       yield: 'Per plate. 150 g topside, cheese, bacon, egg, chips.',
       ingredients: [
@@ -515,6 +524,9 @@ window.LK_DATA = {
         { q: '[Qty]', name: 'Baby cos' },
         { q: '50 g', name: 'Tomato' },
         { q: '1 portion', name: 'Chips', note: '200 g raw' }
+      ],
+      sections: [
+        { title: 'Plating, bottom to top', steps: ['Turkish roll base.', 'Smoky BBQ sauce.', 'Baby cos.', 'Tomato.', 'Topside steak, cheese on top.', 'Onion relish.', 'Bacon.', 'Egg.', 'Turkish roll top.', 'Chips on the side.'] }
       ],
       pins: [
         { label: 'Steak sandwich', x: 53.8, y: 34.9, side: 'right', tags: [], note: 'Turkish roll, 150 g topside, cheese, bacon, egg, onion relish, BBQ sauce, cos, tomato.' },
@@ -1121,27 +1133,10 @@ window.LK_DATA = {
         { label: 'Salad', x: 71.7, y: 66.0, side: 'left', tags: [], note: 'Chips and salad portion. Card to come.' }
       ]
     },
-    {
-      id: 'white-buffalo', art: 'white-buffalo', no: '61', kind: 'main', forLine: 'Plate', name: 'White Buffalo Burger',
-      menu: 'White Buffalo Burger: southern fried chicken dipped in Frank\'s hot sauce, lettuce, tomato, pickles, blue cheese sauce.',
-      yield: 'Per plate. Southern fried chicken in Frank\'s hot sauce, blue cheese sauce.',
-      ingredients: [
-        { q: '[Qty]', name: 'Burger bun', tags: ['Gluten', 'Milk?', 'Egg?', 'Soy?'] },
-        { q: '[Qty]', name: 'Southern fried chicken', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'] },
-        { q: '[Qty]', name: 'Frank\'s hot sauce' },
-        { q: '[Qty]', name: 'Lettuce' },
-        { q: '[Qty]', name: 'Tomato' },
-        { q: '[Qty]', name: 'Pickles' },
-        { q: '[Qty]', name: 'Blue cheese sauce', tags: ['Milk', 'Egg?'] }
-      ],
-      pins: [
-        { label: 'White Buffalo burger', x: 49.1, y: 45.3, side: 'right', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'], note: 'Southern fried chicken in Frank\'s hot sauce, lettuce, tomato, pickles, blue cheese sauce.' }
-      ]
-    },
 
     /* Salads */
     {
-      id: 'caesar', art: 'caesar', no: '62', kind: 'main', forLine: 'Salad', name: 'Pub Caesar',
+      id: 'caesar', art: 'caesar', no: '61', kind: 'main', forLine: 'Salad', name: 'Pub Caesar',
       menu: 'Pub Caesar: cos lettuce, crispy bacon, poached egg, toasted sourdough, parmesan, dressing.',
       yield: 'Per bowl. Cos, crispy bacon, poached egg, sourdough, parmesan, Caesar dressing.',
       ingredients: [
@@ -1162,7 +1157,7 @@ window.LK_DATA = {
       ]
     },
     {
-      id: 'green-bowl', art: 'green-bowl', no: '63', kind: 'main', forLine: 'Salad', name: 'Green Bowl',
+      id: 'green-bowl', art: 'green-bowl', no: '62', kind: 'main', forLine: 'Salad', name: 'Green Bowl',
       menu: 'Green Bowl: charred broccolini, baby spinach, gem lettuce, brown rice, heirloom cherry tomatoes, red onion, toasted cashews.',
       yield: 'Per bowl.',
       ingredients: [
@@ -1185,7 +1180,7 @@ window.LK_DATA = {
       ]
     },
     {
-      id: 'pumpkin-salad', art: 'pumpkin-salad', no: '64', kind: 'main', forLine: 'Salad', name: 'Honey and Maple Roasted Pumpkin',
+      id: 'pumpkin-salad', art: 'pumpkin-salad', no: '63', kind: 'main', forLine: 'Salad', name: 'Honey and Maple Roasted Pumpkin',
       menu: 'Honey and Maple Roasted Pumpkin: five-spice roasted pumpkin, maple, seed granola, basil pesto, feta, fried kale.',
       yield: 'Per plate.',
       ingredients: [
@@ -1208,7 +1203,7 @@ window.LK_DATA = {
 
     /* Seniors */
     {
-      id: 'senior-fish-chips', art: 'senior-fish-chips', no: '65', kind: 'main', forLine: 'Senior', name: 'Senior Fish and Chips',
+      id: 'senior-fish-chips', art: 'senior-fish-chips', no: '64', kind: 'main', forLine: 'Senior', name: 'Senior Fish and Chips',
       menu: 'Seniors Fish and Chips: XXXX-battered fish, tartare, chips and salad.',
       yield: 'Senior plate. Battered fish, tartare, chips and salad.',
       ingredients: [
@@ -1225,7 +1220,7 @@ window.LK_DATA = {
       ]
     },
     {
-      id: 'senior-calamari', art: 'senior-calamari', no: '66', kind: 'main', forLine: 'Senior', name: 'Senior Calamari',
+      id: 'senior-calamari', art: 'senior-calamari', no: '65', kind: 'main', forLine: 'Senior', name: 'Senior Calamari',
       menu: 'Seniors Calamari: chips and salad.',
       yield: 'Senior plate. Calamari, chips and salad.',
       ingredients: [
