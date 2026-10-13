@@ -346,7 +346,8 @@
     return n + ' of ' + D.recipes.length + ' match';
   }
   function pinHTML(p, k, stack) {
-    var h = p.link ? (byId[p.link] ? hitId(p.link) : (ui.lens ? 'may' : null)) : hit(p.tags || []), left = p.x > 65;
+    var h = p.link ? (byId[p.link] ? hitId(p.link) : (ui.lens ? 'may' : null)) : hit(p.tags || []);
+    var left = p.side ? p.side === 'left' : p.x > 65;
     var cls = 'pin' + (left ? ' left' : '') + (h ? ' lit' : '') + (ui.pick === k ? ' on' : '');
     var label = esc(p.label) + (h ? ' · ' + esc(lensWord(h)) : '');
     var pos = 'left: ' + p.x + '%; top: ' + p.y + '%';

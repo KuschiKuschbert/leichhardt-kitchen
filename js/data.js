@@ -15,7 +15,8 @@
     ingredients: list of { q: quantity, name, link: id of another recipe (makes it tappable),
                  note, tags: allergens in this ingredient, add "?" for "may contain" }
     pins       (plated dishes, The Pass view) where each part sits on the plate drawing:
-               { label, x, y (percent across and down), link or tags, note }
+               { label, x, y (percent across and down), side ('left' or 'right' for the label,
+               optional), link or tags, note }
     sections   list of { title, steps: [ ... ] }
     contains   allergens it definitely has: { allergen, from }
     check      allergens it may have, so check the label: { allergen, from }
@@ -241,7 +242,9 @@ window.LK_DATA = {
         { q: '[Amount]', name: 'Butterscotch sauce', link: 'butterscotch' }
       ],
       pins: [
-        { label: 'Butterscotch sauce', x: 50, y: 42, link: 'butterscotch' }
+        { label: 'Cookie', x: 34.0, y: 58.5, side: 'left', tags: [], note: '300 g dough, baked in the skillet. Card to come.' },
+        { label: 'Butterscotch sauce', x: 44.3, y: 41.5, side: 'right', link: 'butterscotch' },
+        { label: 'Vanilla ice cream', x: 50.9, y: 51.9, side: 'right', tags: ['Milk'], note: '80 g.' }
       ],
       sections: [
         { title: 'Cooking', steps: ['[Bake temperature and time]'] },
@@ -254,88 +257,136 @@ window.LK_DATA = {
 
     /* Steaks */
     {
-      id: 'eye-fillet', no: '13', kind: 'main', forLine: 'Plate', name: '180 g Eye Fillet', avc: '180g Eye Fillet S26',
+      id: 'eye-fillet', art: 'eye-fillet', no: '13', kind: 'main', forLine: 'Plate', name: '180 g Eye Fillet', avc: '180g Eye Fillet S26',
       yield: 'Per plate. Mushroom sauce, chips and salad.',
       ingredients: [
         { q: '180 g', name: 'Eye fillet', note: 'grass fed' },
         { q: '1 g', name: 'Sea salt flakes', note: 'Maldon' },
         { q: '70 ml', name: 'Mushroom sauce', link: 'mushroom-sauce' },
         { q: '1 portion', name: 'Chips and salad', link: 'chips-salad' }
+      ],
+      pins: [
+        { label: 'Eye fillet', x: 43.2, y: 30.0, side: 'left', tags: [], note: '180 g, grass fed, sea salt flakes.' },
+        { label: 'Mushroom sauce', x: 76.4, y: 39.7, side: 'left', tags: [], note: '70 ml. Card to come.' },
+        { label: 'Chips', x: 29.2, y: 64.2, side: 'left', tags: [], note: 'Chips and salad portion. Card to come.' },
+        { label: 'Salad', x: 69.8, y: 65.1, side: 'left', tags: [], note: 'Chips and salad portion. Card to come.' }
       ]
     },
     {
-      id: 'rump-250', no: '14', kind: 'main', forLine: 'Plate', name: '250 g Rump', avc: '250G Rump S26',
+      id: 'rump-250', art: 'rump-250', no: '14', kind: 'main', forLine: 'Plate', name: '250 g Rump', avc: '250G Rump S26',
       yield: 'Per plate. Mushroom sauce, chips and salad.',
       ingredients: [
         { q: '250 g', name: 'Rump', note: 'grain fed MB1' },
         { q: '1 g', name: 'Sea salt flakes', note: 'Maldon' },
         { q: '80 ml', name: 'Mushroom sauce', link: 'mushroom-sauce' },
         { q: '1.1 portions', name: 'Chips and salad', link: 'chips-salad' }
+      ],
+      pins: [
+        { label: 'Rump', x: 43.2, y: 30.0, side: 'left', tags: [], note: '250 g, grain fed, sea salt flakes.' },
+        { label: 'Mushroom sauce', x: 76.4, y: 39.7, side: 'left', tags: [], note: '80 ml. Card to come.' },
+        { label: 'Chips', x: 29.2, y: 64.2, side: 'left', tags: [], note: 'Chips and salad, 1.1 portions. Card to come.' },
+        { label: 'Salad', x: 69.8, y: 65.1, side: 'left', tags: [], note: 'Chips and salad, 1.1 portions. Card to come.' }
       ]
     },
     {
-      id: 'rib-fillet', no: '15', kind: 'main', forLine: 'Plate', name: '300 g Rib Fillet', avc: '300G Rib Fillet S26',
+      id: 'rib-fillet', art: 'rib-fillet', no: '15', kind: 'main', forLine: 'Plate', name: '300 g Rib Fillet', avc: '300G Rib Fillet S26',
       yield: 'Per plate. Mushroom sauce, chips and salad.',
       ingredients: [
         { q: '300 g', name: 'Rib fillet', note: 'grain fed MB1' },
         { q: '1 g', name: 'Sea salt flakes', note: 'Maldon' },
         { q: '70 ml', name: 'Mushroom sauce', link: 'mushroom-sauce' },
         { q: '1 portion', name: 'Chips and salad', link: 'chips-salad' }
+      ],
+      pins: [
+        { label: 'Rib fillet', x: 43.2, y: 30.0, side: 'left', tags: [], note: '300 g, grain fed, sea salt flakes.' },
+        { label: 'Mushroom sauce', x: 76.4, y: 39.7, side: 'left', tags: [], note: '70 ml. Card to come.' },
+        { label: 'Chips', x: 29.2, y: 64.2, side: 'left', tags: [], note: 'Chips and salad portion. Card to come.' },
+        { label: 'Salad', x: 69.8, y: 65.1, side: 'left', tags: [], note: 'Chips and salad portion. Card to come.' }
       ]
     },
     {
-      id: 'rump-500', no: '16', kind: 'main', forLine: 'Plate', name: '500 g Rump', avc: '500G Rump S26',
+      id: 'rump-500', art: 'rump-500', no: '16', kind: 'main', forLine: 'Plate', name: '500 g Rump', avc: '500G Rump S26',
       yield: 'Per plate. Mushroom sauce, chips and salad.',
       ingredients: [
         { q: '500 g', name: 'Rump', note: 'grain fed MB1' },
         { q: '1 g', name: 'Sea salt flakes', note: 'Maldon' },
         { q: '70 ml', name: 'Mushroom sauce', link: 'mushroom-sauce' },
         { q: '1 portion', name: 'Chips and salad', link: 'chips-salad' }
+      ],
+      pins: [
+        { label: 'Rump', x: 42.2, y: 39.8, side: 'left', tags: [], note: '500 g, grain fed, sea salt flakes.' },
+        { label: 'Mushroom sauce', x: 78.3, y: 30.9, side: 'left', tags: [], note: '70 ml. Card to come.' },
+        { label: 'Chips', x: 27.4, y: 67.9, side: 'left', tags: [], note: 'Chips and salad portion. Card to come.' },
+        { label: 'Salad', x: 72.6, y: 67.0, side: 'left', tags: [], note: 'Chips and salad portion. Card to come.' }
       ]
     },
     {
-      id: 'flank', no: '17', kind: 'main', forLine: 'Plate', name: '350 g Flank Steak', avc: '350g Flank, cowboy butter, chips and salad',
+      id: 'flank', art: 'flank', no: '17', kind: 'main', forLine: 'Plate', name: '350 g Flank Steak', avc: '350g Flank, cowboy butter, chips and salad',
       yield: 'Per plate. Cowboy butter, chips and salad.',
       ingredients: [
         { q: '350 g', name: 'Flank steak' },
         { q: '80 g', name: 'Cowboy butter', link: 'cowboy-butter', tags: ['Milk'] },
         { q: '1 portion', name: 'Chips and salad', link: 'chips-salad' }
+      ],
+      pins: [
+        { label: 'Flank steak', x: 42.5, y: 37.7, side: 'left', tags: [], note: '350 g, sliced.' },
+        { label: 'Cowboy butter', x: 52.8, y: 30.2, side: 'right', tags: ['Milk'], note: '80 g, on the steak. Card to come.' },
+        { label: 'Chips', x: 28.3, y: 65.1, side: 'right', tags: [], note: 'Chips and salad portion. Card to come.' },
+        { label: 'Salad', x: 69.8, y: 65.1, side: 'left', tags: [], note: 'Chips and salad portion. Card to come.' }
       ]
     },
 
     /* Schnitzels */
     {
-      id: 'schnitzel-french', no: '18', kind: 'main', forLine: 'Plate', name: 'Chicken Schnitzel French', avc: 'Chicken Schnitzel French S26',
+      id: 'schnitzel-french', art: 'schnitzel-french', no: '18', kind: 'main', forLine: 'Plate', name: 'Chicken Schnitzel French', avc: 'Chicken Schnitzel French S26',
       yield: 'Per plate. French topper, chips and salad.',
       ingredients: [
         { q: '1', name: 'Chicken schnitzel', note: 'hand cut, 340 to 380 g, bought in', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'] },
         { q: '1 portion', name: 'French parmi topper', link: 'french-topper' },
         { q: '1 portion', name: 'Chips and salad', link: 'chips-salad' }
       ],
+      pins: [
+        { label: 'Chicken schnitzel', x: 32.1, y: 39.8, side: 'right', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'], note: 'Hand cut, 340 to 380 g.' },
+        { label: 'French parmi topper', x: 50.0, y: 30.1, side: 'left', tags: [], note: '1 portion. Card to come.' },
+        { label: 'Chips', x: 28.3, y: 67.0, side: 'left', tags: [], note: 'Chips and salad portion. Card to come.' },
+        { label: 'Salad', x: 71.7, y: 66.0, side: 'left', tags: [], note: 'Chips and salad portion. Card to come.' }
+      ],
       labelNote: 'Check the schnitzel label.'
     },
     {
-      id: 'schnitzel-mexican', no: '19', kind: 'main', forLine: 'Plate', name: 'Chicken Schnitzel Mexican', avc: 'Chicken Schnitzle Mexican S26',
+      id: 'schnitzel-mexican', art: 'schnitzel-mexican', no: '19', kind: 'main', forLine: 'Plate', name: 'Chicken Schnitzel Mexican', avc: 'Chicken Schnitzle Mexican S26',
       yield: 'Per plate. Mexican topper, chips and salad.',
       ingredients: [
         { q: '1', name: 'Chicken schnitzel', note: 'double butterfly panko, 350 g, bought in', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'] },
         { q: '1 portion', name: 'Mexican topper', link: 'mexican-topper' },
         { q: '1 portion', name: 'Chips and salad', link: 'chips-salad' }
       ],
+      pins: [
+        { label: 'Chicken schnitzel', x: 32.1, y: 39.8, side: 'right', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'], note: 'Double butterfly, 350 g.' },
+        { label: 'Mexican topper', x: 50.0, y: 30.1, side: 'left', tags: [], note: '1 portion. Card to come.' },
+        { label: 'Chips', x: 28.3, y: 67.0, side: 'left', tags: [], note: 'Chips and salad portion. Card to come.' },
+        { label: 'Salad', x: 71.7, y: 66.0, side: 'left', tags: [], note: 'Chips and salad portion. Card to come.' }
+      ],
       labelNote: 'Check the schnitzel label.'
     },
     {
-      id: 'schnitzel-americana', no: '20', kind: 'main', forLine: 'Plate', name: 'Chicken Schnitzel Americana', avc: 'Chicken Schnitzel Americana S26',
+      id: 'schnitzel-americana', art: 'schnitzel-americana', no: '20', kind: 'main', forLine: 'Plate', name: 'Chicken Schnitzel Americana', avc: 'Chicken Schnitzel Americana S26',
       yield: 'Per plate. Americana topper, chips and salad.',
       ingredients: [
         { q: '1', name: 'Chicken schnitzel', note: 'double butterfly panko, 350 g, bought in', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'] },
         { q: '½ portion', name: 'Americana topper', link: 'americana-topper' },
         { q: '1 portion', name: 'Chips and salad', link: 'chips-salad' }
       ],
+      pins: [
+        { label: 'Chicken schnitzel', x: 32.1, y: 39.8, side: 'right', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'], note: 'Double butterfly, 350 g.' },
+        { label: 'Americana topper', x: 50.0, y: 30.1, side: 'left', tags: [], note: 'Half portion. Card to come.' },
+        { label: 'Chips', x: 28.3, y: 67.0, side: 'left', tags: [], note: 'Chips and salad portion. Card to come.' },
+        { label: 'Salad', x: 71.7, y: 66.0, side: 'left', tags: [], note: 'Chips and salad portion. Card to come.' }
+      ],
       labelNote: 'Check the schnitzel label.'
     },
     {
-      id: 'beef-schnitzel', no: '21', kind: 'main', forLine: 'Plate', name: 'Beef Schnitzel', avc: 'Beef Schnitzel S26',
+      id: 'beef-schnitzel', art: 'beef-schnitzel', no: '21', kind: 'main', forLine: 'Plate', name: 'Beef Schnitzel', avc: 'Beef Schnitzel S26',
       yield: 'Per plate. Gravy, lemon, chips and salad.',
       ingredients: [
         { q: '300 g', name: 'Beef schnitzel', note: '290 to 310 g, bought in', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'] },
@@ -343,12 +394,19 @@ window.LK_DATA = {
         { q: '60 ml', name: 'Gravy', link: 'gravy' },
         { q: '1 portion', name: 'Chips and salad', link: 'chips-salad' }
       ],
+      pins: [
+        { label: 'Beef schnitzel', x: 44.3, y: 34.0, side: 'left', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'], note: '300 g.' },
+        { label: 'Lemon', x: 73.6, y: 29.2, side: 'left', tags: [], note: '20 g wedge.' },
+        { label: 'Gravy', x: 69.8, y: 48.1, side: 'left', tags: [], note: '60 ml. Card to come.' },
+        { label: 'Chips', x: 28.3, y: 67.0, side: 'right', tags: [], note: 'Chips and salad portion. Card to come.' },
+        { label: 'Salad', x: 71.7, y: 66.0, side: 'left', tags: [], note: 'Chips and salad portion. Card to come.' }
+      ],
       labelNote: 'Check the schnitzel label.'
     },
 
     /* Burgers and sandwiches */
     {
-      id: 'smash', no: '22', kind: 'main', forLine: 'Plate', name: 'Smash Burger', art: 'burger', avc: 'Smash Burger S26',
+      id: 'smash', no: '22', kind: 'main', forLine: 'Plate', name: 'Smash Burger', art: 'smash', avc: 'Smash Burger S26',
       yield: 'Per plate. 180 g patty, two cheese slices, chips.',
       ingredients: [
         { q: '1', name: 'Milk bun', note: 'sliced', tags: ['Gluten', 'Milk', 'Egg?', 'Soy?'] },
@@ -360,10 +418,14 @@ window.LK_DATA = {
         { q: '[Qty]', name: 'Oak leaf lettuce' },
         { q: '1 portion', name: 'Chips', note: '200 g raw' }
       ],
+      pins: [
+        { label: 'Smash burger', x: 60.4, y: 35.8, side: 'right', tags: [], note: 'Milk bun, 180 g patty, 2 cheese slices, pickles, mustard, ketchup, oak leaf. Card to come.' },
+        { label: 'Chips', x: 29.2, y: 63.2, side: 'right', tags: [], note: '1 portion, 200 g raw.' }
+      ],
       labelNote: 'Check the bun label.'
     },
     {
-      id: 'oz-smash', no: '23', kind: 'main', forLine: 'Plate', name: 'The OZ Smash Burger', art: 'burger', avc: 'The OZ Smash Burger S26',
+      id: 'oz-smash', no: '23', kind: 'main', forLine: 'Plate', name: 'The OZ Smash Burger', art: 'oz-smash', avc: 'The OZ Smash Burger S26',
       yield: 'Per plate. 180 g patty, bacon, beetroot, half a chips portion.',
       ingredients: [
         { q: '1', name: 'Milk bun', note: 'sliced', tags: ['Gluten', 'Milk', 'Egg?', 'Soy?'] },
@@ -378,10 +440,14 @@ window.LK_DATA = {
         { q: '[Qty]', name: 'Oak leaf lettuce' },
         { q: '½ portion', name: 'Chips', note: 'of the 200 g raw portion' }
       ],
+      pins: [
+        { label: 'The OZ Smash Burger', x: 60.4, y: 35.8, side: 'left', tags: [], note: 'Milk bun, 180 g patty, cheese, bacon, beetroot, tomato, red onion, pickles, ketchup, oak leaf. Card to come.' },
+        { label: 'Chips', x: 29.2, y: 63.2, side: 'right', tags: [], note: 'Half portion.' }
+      ],
       labelNote: 'Check the bun and bacon labels.'
     },
     {
-      id: 'fish-burger', no: '24', kind: 'main', forLine: 'Plate', name: 'Fish Burger', art: 'burger', avc: 'Fish Burger S26',
+      id: 'fish-burger', no: '24', kind: 'main', forLine: 'Plate', name: 'Fish Burger', art: 'fish-burger', avc: 'Fish Burger S26',
       yield: 'Per plate. 180 g beer-battered blue grenadier, chips.',
       ingredients: [
         { q: '1', name: 'Milk bun', note: 'sliced', tags: ['Gluten', 'Milk', 'Egg?', 'Soy?'] },
@@ -393,10 +459,14 @@ window.LK_DATA = {
         { q: '50 g', name: 'Red onion' },
         { q: '1 portion', name: 'Chips', note: '200 g raw' }
       ],
+      pins: [
+        { label: 'Fish burger', x: 60.4, y: 35.8, side: 'right', tags: ['Fish'], note: 'Milk bun, 180 g beer-battered blue grenadier, tartare, green oak, tomato, red onion.' },
+        { label: 'Chips', x: 29.2, y: 63.2, side: 'right', tags: [], note: '1 portion, 200 g raw.' }
+      ],
       labelNote: 'Check the bun and tartare labels.'
     },
     {
-      id: 'chickpea-burger', no: '25', kind: 'main', forLine: 'Plate', name: 'Chickpea Mushroom Burger', art: 'burger', avc: 'Chickpea Mushroom Burger S26',
+      id: 'chickpea-burger', no: '25', kind: 'main', forLine: 'Plate', name: 'Chickpea Mushroom Burger', art: 'chickpea-burger', avc: 'Chickpea Mushroom Burger S26',
       yield: 'Per plate. Three beetroot falafel, vegan aioli, chips.',
       ingredients: [
         { q: '1', name: 'Milk bun', note: 'sliced', tags: ['Gluten', 'Milk', 'Egg?', 'Soy?'] },
@@ -407,10 +477,14 @@ window.LK_DATA = {
         { q: '[Qty]', name: 'Green oak lettuce' },
         { q: '1 portion', name: 'Chips', note: '200 g raw' }
       ],
+      pins: [
+        { label: 'Chickpea mushroom burger', x: 60.4, y: 35.8, side: 'left', tags: ['Sesame?', 'Soy?'], note: 'Milk bun, 3 beetroot falafel, vegan aioli, avocado, tomato, green oak.' },
+        { label: 'Chips', x: 29.2, y: 63.2, side: 'right', tags: [], note: '1 portion, 200 g raw.' }
+      ],
       labelNote: 'Check the bun, falafel and aioli labels.'
     },
     {
-      id: 'steak-sandwich', no: '26', kind: 'main', forLine: 'Plate', name: 'Steak Sandwich', avc: 'Steak sandwich S26',
+      id: 'steak-sandwich', art: 'steak-sandwich', no: '26', kind: 'main', forLine: 'Plate', name: 'Steak Sandwich', avc: 'Steak sandwich S26',
       yield: 'Per plate. 150 g topside, bacon, egg, chips.',
       ingredients: [
         { q: '1', name: 'Turkish roll', note: 'oval, 130 g', tags: ['Gluten', 'Sesame?', 'Soy?'] },
@@ -423,12 +497,16 @@ window.LK_DATA = {
         { q: '50 g', name: 'Tomato' },
         { q: '1 portion', name: 'Chips', note: '200 g raw' }
       ],
+      pins: [
+        { label: 'Steak sandwich', x: 53.8, y: 34.9, side: 'right', tags: [], note: 'Turkish roll, 150 g topside, bacon, egg, onion relish, BBQ sauce, cos, tomato.' },
+        { label: 'Chips', x: 34.0, y: 69.8, side: 'right', tags: [], note: '1 portion, 200 g raw.' }
+      ],
       labelNote: 'Check the roll, BBQ sauce, relish and bacon labels.'
     },
 
     /* Other mains */
     {
-      id: 'lamb-rissoles', no: '27', kind: 'main', forLine: 'Plate', name: 'Lamb Rissoles', avc: 'Lamb Rissoles FULL S26',
+      id: 'lamb-rissoles', art: 'lamb-rissoles', no: '27', kind: 'main', forLine: 'Plate', name: 'Lamb Rissoles', avc: 'Lamb Rissoles FULL S26',
       yield: 'Per plate. 3 rissoles, mash, veg, onion rings, gravy.',
       ingredients: [
         { q: '1 serve', name: 'Lamb rissoles', note: '240 g, 3 rissoles', link: 'rissole-mix' },
@@ -437,10 +515,17 @@ window.LK_DATA = {
         { q: '80 g', name: 'Tempura onion rings', note: 'bought in', tags: ['Gluten', 'Egg?', 'Soy?'] },
         { q: '50 ml', name: 'Gravy', link: 'gravy' }
       ],
+      pins: [
+        { label: 'Lamb rissoles', x: 34.9, y: 41.5, side: 'left', link: 'rissole-mix' },
+        { label: 'Mash', x: 41.3, y: 56.6, side: 'left', tags: ['Milk?'], note: '150 g, bought in.' },
+        { label: 'Gravy', x: 51.9, y: 47.2, side: 'right', tags: [], note: '50 ml. Card to come.' },
+        { label: 'Side veg', x: 69.8, y: 66.0, side: 'right', tags: [], note: '0.6 portion. Card to come.' },
+        { label: 'Onion rings', x: 30.2, y: 67.9, side: 'right', tags: ['Gluten', 'Egg?', 'Soy?'], note: '80 g, tempura.' }
+      ],
       labelNote: 'Check the mash and onion ring labels.'
     },
     {
-      id: 'vegan-rissoles', no: '28', kind: 'main', forLine: 'Plate', name: 'Vegan Rissoles', avc: 'Vegan Rissoles Full S26',
+      id: 'vegan-rissoles', art: 'vegan-rissoles', no: '28', kind: 'main', forLine: 'Plate', name: 'Vegan Rissoles', avc: 'Vegan Rissoles Full S26',
       yield: 'Per plate. 3 beetroot falafel, mash, veg.',
       ingredients: [
         { q: '3', name: 'Beetroot falafel', note: '40 g each, plant based, bought in', tags: ['Sesame?', 'Soy?'] },
@@ -448,10 +533,15 @@ window.LK_DATA = {
         { q: '1 portion', name: 'Side veg', link: 'side-veg' },
         { q: '1 g', name: 'Table salt' }
       ],
+      pins: [
+        { label: 'Beetroot falafel', x: 47.2, y: 35.8, side: 'right', tags: ['Sesame?', 'Soy?'], note: '3 x 40 g.' },
+        { label: 'Mash', x: 42.5, y: 55.7, side: 'right', tags: [], note: '200 g. Card to come.' },
+        { label: 'Side veg', x: 67.0, y: 67.0, side: 'left', tags: [], note: '1 portion. Card to come.' }
+      ],
       labelNote: 'Check the falafel label.'
     },
     {
-      id: 'pork-belly', no: '29', kind: 'main', forLine: 'Plate', name: 'Pork Belly', avc: 'Pork Belly Main S26',
+      id: 'pork-belly', art: 'pork-belly', no: '29', kind: 'main', forLine: 'Plate', name: 'Pork Belly', avc: 'Pork Belly Main S26',
       yield: 'Per plate. 200 g belly, mash, spinach purée, red wine jus.',
       ingredients: [
         { q: '200 g', name: 'Roasted pork belly', link: 'pork-belly-batch' },
@@ -459,10 +549,16 @@ window.LK_DATA = {
         { q: '200 g', name: 'Mash', link: 'mash' },
         { q: '50 ml', name: 'Spinach purée', link: 'spinach-puree' },
         { q: '50 ml', name: 'Red wine jus', link: 'red-wine-jus' }
+      ],
+      pins: [
+        { label: 'Pork belly', x: 59.4, y: 35.8, side: 'right', tags: [], note: '200 g, roasted. Card to come.' },
+        { label: 'Mash', x: 34.0, y: 41.5, side: 'right', tags: [], note: '200 g. Card to come.' },
+        { label: 'Spinach purée', x: 45.3, y: 64.2, side: 'right', tags: [], note: '50 ml. Card to come.' },
+        { label: 'Red wine jus', x: 69.8, y: 52.8, side: 'left', tags: [], note: '50 ml. Card to come.' }
       ]
     },
     {
-      id: 'carbonara', no: '30', kind: 'main', forLine: 'Plate', name: 'Carbonara', avc: 'Carbonara S26',
+      id: 'carbonara', art: 'carbonara', no: '30', kind: 'main', forLine: 'Plate', name: 'Carbonara', avc: 'Carbonara S26',
       yield: 'Per plate. 300 g fettuccine, 400 ml sauce, garlic bread.',
       ingredients: [
         { q: '300 g', name: 'Fettuccine', link: 'fettuccine', tags: ['Gluten'] },
@@ -472,12 +568,18 @@ window.LK_DATA = {
         { q: '0.05 bunch', name: 'Chives' },
         { q: '1 piece', name: 'Garlic bread', note: '7 inch, bought in', tags: ['Gluten', 'Milk?', 'Soy?'] }
       ],
+      pins: [
+        { label: 'Fettuccine', x: 42.5, y: 52.8, side: 'right', tags: ['Gluten'], note: '300 g with 400 ml carbonara sauce. Card to come.' },
+        { label: 'Parmesan', x: 55.9, y: 37.5, side: 'right', tags: ['Milk'], note: '20 g shaved.' },
+        { label: 'Chives', x: 44.3, y: 41.5, side: 'left', tags: [], note: '0.05 bunch.' },
+        { label: 'Garlic bread', x: 79.2, y: 71.7, side: 'left', tags: ['Gluten', 'Milk?', 'Soy?'], note: '1 piece.' }
+      ],
       labelNote: 'Check the garlic bread label.'
     },
 
     /* Share boards */
     {
-      id: 'grill-board', no: '31', kind: 'main', forLine: 'Share board', name: "Grill Maiden's Board", avc: "Grill Maiden's Board S26",
+      id: 'grill-board', art: 'grill-board', no: '31', kind: 'main', forLine: 'Share board', name: "Grill Maiden's Board", avc: "Grill Maiden's Board S26",
       yield: 'Per board. Rump, brisket, wings, sausage, chips, salad, two sauces.',
       ingredients: [
         { q: '250 g', name: 'Rump', note: 'grain fed MB1' },
@@ -490,10 +592,20 @@ window.LK_DATA = {
         { q: '1.1 portions', name: 'Chips', note: '200 g raw portion' },
         { q: '1', name: 'Side salad', link: 'side-salad' }
       ],
+      pins: [
+        { label: 'Rump', x: 21.5, y: 28.3, side: 'left', tags: [], note: '250 g.' },
+        { label: 'Brisket', x: 50.7, y: 23.4, side: 'left', tags: [], note: '500 g, sliced.' },
+        { label: 'Chicken wings', x: 29.2, y: 59.2, side: 'right', tags: [], note: '400 g, wing flour.' },
+        { label: 'Cumberland sausage', x: 65.8, y: 48.1, side: 'right', tags: ['Gluten?', 'Soy?'], note: '90 g.' },
+        { label: 'Chips', x: 50.7, y: 75.7, side: 'left', tags: [], note: '1.1 portions.' },
+        { label: 'Side salad', x: 17.9, y: 48.1, side: 'right', link: 'side-salad' },
+        { label: 'Diane sauce', x: 86.1, y: 27.4, side: 'left', tags: [], note: '1 portion. Card to come.' },
+        { label: 'Mushroom sauce', x: 87.0, y: 67.8, side: 'left', tags: [], note: '1.5 portions. Card to come.' }
+      ],
       labelNote: 'Check the sausage label.'
     },
     {
-      id: 'taco-board', no: '32', kind: 'main', forLine: 'Share board', name: 'Guacho Taco Share Board', avc: 'Guacho Taco Share Board S26',
+      id: 'taco-board', art: 'taco-board', no: '32', kind: 'main', forLine: 'Share board', name: 'Guacho Taco Share Board', avc: 'Guacho Taco Share Board S26',
       yield: 'Per board. Six tortillas, tenders, brisket, pulled pork, slaw, pico.',
       ingredients: [
         { q: '6', name: 'Flour tortillas', note: '5 inch', tags: ['Gluten', 'Soy?'] },
@@ -505,12 +617,22 @@ window.LK_DATA = {
         { q: '60 g', name: 'Chunky avocado' },
         { q: '60 ml', name: 'Light sour cream', tags: ['Milk'] }
       ],
+      pins: [
+        { label: 'Flour tortillas', x: 15.8, y: 33.2, side: 'right', tags: ['Gluten', 'Soy?'], note: '6, 5 inch.' },
+        { label: 'Chicken tenders', x: 48.0, y: 24.4, side: 'left', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'], note: '240 g, southern style.' },
+        { label: 'Brisket', x: 77.4, y: 28.3, side: 'left', tags: [], note: '200 g.' },
+        { label: 'Pulled pork', x: 26.6, y: 63.2, side: 'left', tags: [], note: '200 g. Card to come.' },
+        { label: 'Slaw', x: 49.1, y: 66.0, side: 'left', link: 'slaw' },
+        { label: 'Pico de gallo', x: 74.5, y: 57.5, side: 'left', tags: [], note: '100 g. Card to come.' },
+        { label: 'Avocado', x: 86.8, y: 67.7, side: 'left', tags: [], note: '60 g chunky.' },
+        { label: 'Sour cream', x: 70.8, y: 76.4, side: 'left', tags: ['Milk'], note: '60 ml.' }
+      ],
       labelNote: 'Check the tortilla and tender labels.'
     },
 
     /* Seniors */
     {
-      id: 'senior-schnitzel', no: '33', kind: 'main', forLine: 'Senior', name: 'Senior Chicken Schnitzel', avc: 'Senior Chicken Schnitzle S26',
+      id: 'senior-schnitzel', art: 'senior-schnitzel', no: '33', kind: 'main', forLine: 'Senior', name: 'Senior Chicken Schnitzel', avc: 'Senior Chicken Schnitzle S26',
       yield: 'Senior plate. Half a schnitzel, gravy, chips and salad.',
       ingredients: [
         { q: '½', name: 'Chicken schnitzel', note: 'half a 350 g double butterfly, bought in', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'] },
@@ -518,10 +640,17 @@ window.LK_DATA = {
         { q: '50 ml', name: 'Gravy', link: 'gravy' },
         { q: '1 portion', name: 'Chips and salad', link: 'chips-salad' }
       ],
+      pins: [
+        { label: 'Chicken schnitzel', x: 44.3, y: 34.0, side: 'left', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'], note: 'Half a 350 g double butterfly.' },
+        { label: 'Lemon', x: 72.6, y: 28.3, side: 'left', tags: [], note: '30 g wedge.' },
+        { label: 'Gravy', x: 70.8, y: 46.2, side: 'left', tags: [], note: '50 ml. Card to come.' },
+        { label: 'Chips', x: 28.3, y: 67.0, side: 'right', tags: [], note: 'Chips and salad portion. Card to come.' },
+        { label: 'Salad', x: 71.7, y: 66.0, side: 'left', tags: [], note: 'Chips and salad portion. Card to come.' }
+      ],
       labelNote: 'Check the schnitzel label.'
     },
     {
-      id: 'senior-parmy', no: '34', kind: 'main', forLine: 'Senior', name: 'Senior Parmy', avc: 'senior parmy S26',
+      id: 'senior-parmy', art: 'senior-parmy', no: '34', kind: 'main', forLine: 'Senior', name: 'Senior Parmy', avc: 'senior parmy S26',
       yield: 'Senior plate. Half a schnitzel, sauce, ham, mozzarella, chips and salad.',
       ingredients: [
         { q: '½', name: 'Chicken schnitzel', note: 'half a 350 g double butterfly, bought in', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'] },
@@ -530,20 +659,32 @@ window.LK_DATA = {
         { q: '30 g', name: 'Shredded mozzarella', tags: ['Milk'] },
         { q: '1 portion', name: 'Chips and salad', link: 'chips-salad' }
       ],
+      pins: [
+        { label: 'Chicken schnitzel', x: 32, y: 37.7, side: 'right', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'], note: 'Half a 350 g double butterfly schnitzel.' },
+        { label: 'Parmy topping', x: 46.2, y: 33, side: 'right', tags: ['Milk'], note: '30 g pizza sauce, 20 g Virginian ham, 30 g mozzarella melted on top.' },
+        { label: 'Chips', x: 28.3, y: 67, side: 'right', tags: [], note: 'Chips and salad portion. Card to come.' },
+        { label: 'Salad', x: 71.7, y: 66, side: 'left', tags: [], note: 'Chips and salad portion. Card to come.' }
+      ],
       labelNote: 'Check the schnitzel and ham labels.'
     },
     {
-      id: 'senior-rissoles', no: '35', kind: 'main', forLine: 'Senior', name: 'Senior Lamb Rissoles', avc: 'Lamb Rissoles Senior S26',
+      id: 'senior-rissoles', art: 'senior-rissoles', no: '35', kind: 'main', forLine: 'Senior', name: 'Senior Lamb Rissoles', avc: 'Lamb Rissoles Senior S26',
       yield: 'Senior plate. 2 rissoles, mash, veg, gravy.',
       ingredients: [
         { q: '2', name: 'Lamb rissoles', note: '0.66 of the 240 g, 3-rissole serve', link: 'rissole-mix' },
         { q: '150 g', name: 'Mash', link: 'mash' },
         { q: '½ portion', name: 'Side veg', link: 'side-veg' },
         { q: '60 ml', name: 'Gravy', link: 'gravy' }
+      ],
+      pins: [
+        { label: 'Lamb rissoles', x: 38.7, y: 39.6, side: 'left', link: 'rissole-mix' },
+        { label: 'Mash', x: 41.3, y: 56.6, side: 'left', tags: [], note: '150 g house mash. Card to come.' },
+        { label: 'Gravy', x: 51.9, y: 47.2, side: 'right', tags: [], note: '60 ml. Card to come.' },
+        { label: 'Side veg', x: 69.8, y: 66.0, side: 'left', tags: [], note: 'Half portion. Card to come.' }
       ]
     },
     {
-      id: 'senior-bolognese', no: '36', kind: 'main', forLine: 'Senior', name: 'Senior Spaghetti Bolognese', avc: 'Senior Spaghetti Bolognaise S26',
+      id: 'senior-bolognese', art: 'senior-bolognese', no: '36', kind: 'main', forLine: 'Senior', name: 'Senior Spaghetti Bolognese', avc: 'Senior Spaghetti Bolognaise S26',
       yield: 'Senior plate. Spaghetti, 200 g bolognese, garlic bread.',
       ingredients: [
         { q: '1.5 portions', name: 'Spaghetti', note: '180 g portion', link: 'spaghetti', tags: ['Gluten'] },
@@ -551,12 +692,18 @@ window.LK_DATA = {
         { q: '10 g', name: 'Shaved parmesan', tags: ['Milk'] },
         { q: '½ piece', name: 'Garlic bread', note: '7 inch, bought in', tags: ['Gluten', 'Milk?', 'Soy?'] }
       ],
+      pins: [
+        { label: 'Spaghetti', x: 37.7, y: 58.5, side: 'left', tags: ['Gluten'], note: '1.5 portions. Card to come.' },
+        { label: 'Kids bolognese', x: 54.9, y: 50.1, side: 'right', tags: [], note: '200 g. Card to come.' },
+        { label: 'Parmesan', x: 43.2, y: 42.5, side: 'left', tags: ['Milk'], note: '10 g shaved.' },
+        { label: 'Garlic bread', x: 78.3, y: 71.7, side: 'left', tags: ['Gluten', 'Milk?', 'Soy?'], note: 'Half piece.' }
+      ],
       labelNote: 'Check the garlic bread label.'
     },
 
     /* Sides */
     {
-      id: 'side-salad', no: '37', kind: 'side', forLine: 'Side', name: 'Side Salad', avc: 'Side Salad - Fitzys S26',
+      id: 'side-salad', art: 'side-salad', no: '37', kind: 'side', forLine: 'Side', name: 'Side Salad', avc: 'Side Salad - Fitzys S26',
       yield: 'Per side.',
       ingredients: [
         { q: '40 g', name: 'Mesclun mix' },
@@ -566,54 +713,82 @@ window.LK_DATA = {
         { q: '10 g', name: 'Julienne carrot' },
         { q: '10 ml', name: 'French dressing', note: 'gluten free, Masterfoods', tags: ['Egg?', 'Soy?'] }
       ],
+      pins: [
+        { label: 'Mesclun', x: 38.7, y: 41.5, side: 'left', tags: [], note: '40 g.' },
+        { label: 'Cucumber', x: 59.7, y: 60.6, side: 'right', tags: [], note: '100 g.' },
+        { label: 'Cherry tomatoes', x: 59.4, y: 39.5, side: 'right', tags: [], note: '25 g.' },
+        { label: 'Red onion', x: 44.3, y: 60.5, side: 'left', tags: [], note: '20 g.' },
+        { label: 'French dressing', x: 49.1, y: 49.1, side: 'right', tags: ['Egg?', 'Soy?'], note: '10 ml.' }
+      ],
       labelNote: 'Check the French dressing label.'
     },
     {
-      id: 'wedges', no: '38', kind: 'side', forLine: 'Side', name: 'Wedges', avc: 'Sides - Wedges S26',
+      id: 'wedges', art: 'wedges', no: '38', kind: 'side', forLine: 'Side', name: 'Wedges', avc: 'Sides - Wedges S26',
       yield: 'Per serve. 400 g wedges, sour cream, sweet chilli.',
       ingredients: [
         { q: '400 g', name: 'Seasoned potato wedges', note: 'McCain, bought in', tags: ['Gluten?', 'Soy?'] },
         { q: '80 ml', name: 'Light sour cream', tags: ['Milk'] },
         { q: '80 ml', name: 'Sweet chilli sauce' }
       ],
+      pins: [
+        { label: 'Wedges', x: 39.6, y: 49.1, side: 'right', tags: ['Gluten?', 'Soy?'], note: '400 g, seasoned.' },
+        { label: 'Sour cream', x: 73.6, y: 35.8, side: 'left', tags: ['Milk'], note: '80 ml.' },
+        { label: 'Sweet chilli', x: 73.6, y: 63.2, side: 'left', tags: [], note: '80 ml.' }
+      ],
       labelNote: 'Check the wedge and sweet chilli labels.'
     },
     {
-      id: 'mac-side', no: '39', kind: 'side', forLine: 'Side', name: 'Smoked Mac and Cheese', avc: 'Smoked Mac Side S26',
+      id: 'mac-side', art: 'mac-side', no: '39', kind: 'side', forLine: 'Side', name: 'Smoked Mac and Cheese', avc: 'Smoked Mac Side S26',
       yield: 'Per side. 250 g with panko.',
       ingredients: [
         { q: '250 g', name: 'Smoked mac and cheese', link: 'smoked-mac', tags: ['Gluten', 'Milk'] },
         { q: '5 g', name: 'Panko crumbs', tags: ['Gluten'] }
+      ],
+      pins: [
+        { label: 'Smoked mac and cheese', x: 42.5, y: 54.7, side: 'right', tags: ['Gluten', 'Milk'], note: '250 g. Card to come.' },
+        { label: 'Panko', x: 54.7, y: 41.5, side: 'right', tags: ['Gluten'], note: '5 g on top.' }
       ]
     },
     {
-      id: 'slaw-side', no: '40', kind: 'side', forLine: 'Side', name: 'Slaw Serve', avc: 'Sides - Slaw Serve S26',
+      id: 'slaw-side', art: 'slaw-side', no: '40', kind: 'side', forLine: 'Side', name: 'Slaw Serve', avc: 'Sides - Slaw Serve S26',
       yield: 'Per side. 200 g slaw.',
       ingredients: [
         { q: '200 g', name: 'Slaw', link: 'slaw' },
         { q: '0.05 bunch', name: 'Chives' }
+      ],
+      pins: [
+        { label: 'Slaw', x: 42.5, y: 54.7, side: 'right', link: 'slaw' },
+        { label: 'Chives', x: 53.8, y: 43.4, side: 'right', tags: [], note: '0.05 bunch.' }
       ]
     },
     {
-      id: 'mash-side', no: '41', kind: 'side', forLine: 'Side', name: 'Mash Serve', avc: 'Sides - Mash Serve S26',
+      id: 'mash-side', art: 'mash-side', no: '41', kind: 'side', forLine: 'Side', name: 'Mash Serve', avc: 'Sides - Mash Serve S26',
       yield: 'Per side. 250 g mash, 60 ml gravy.',
       ingredients: [
         { q: '250 g', name: 'Mash', link: 'mash' },
         { q: '60 ml', name: 'Gravy', link: 'gravy' },
         { q: '0.05 bunch', name: 'Chives' }
+      ],
+      pins: [
+        { label: 'Mash', x: 36.8, y: 58.5, side: 'left', tags: [], note: '250 g. Card to come.' },
+        { label: 'Gravy', x: 54.0, y: 53.1, side: 'right', tags: [], note: '60 ml. Card to come.' },
+        { label: 'Chives', x: 51.9, y: 41.4, side: 'left', tags: [], note: '0.05 bunch.' }
       ]
     },
     {
-      id: 'greens-side', no: '42', kind: 'side', forLine: 'Side', name: 'Steamed Greens', avc: 'Sides - Steamed Greens Serve S26',
+      id: 'greens-side', art: 'greens-side', no: '42', kind: 'side', forLine: 'Side', name: 'Steamed Greens', avc: 'Sides - Steamed Greens Serve S26',
       yield: 'Per side. One portion of side veg.',
       ingredients: [
         { q: '1 portion', name: 'Side veg', link: 'side-veg' }
+      ],
+      pins: [
+        { label: 'Side veg', x: 49.1, y: 49.1, side: 'right', tags: [], note: '1 portion, steamed. Card to come.' }
       ]
     },
 
     /* Desserts */
     {
-      id: 'sticky-toffee', no: '43', kind: 'dessert', forLine: 'Plate', name: 'Sticky Toffee Pudding', avc: 'Sticky Toffee Pudding Complete S26',
+      id: 'sticky-toffee', art: 'sticky-toffee', no: '43', kind: 'dessert', forLine: 'Plate', name: 'Sticky Toffee Pudding', avc: 'Sticky Toffee Pudding Complete S26',
       yield: 'Per plate. 150 g pudding, rum butterscotch, honeycomb, ice cream.',
       ingredients: [
         { q: '150 g', name: 'Sticky date pudding', note: 'Country Chef tray, bought in', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'] },
@@ -621,10 +796,16 @@ window.LK_DATA = {
         { q: '50 g', name: 'Honeycomb', link: 'honeycomb' },
         { q: '80 g', name: 'Vanilla ice cream', tags: ['Milk'] }
       ],
+      pins: [
+        { label: 'Sticky date pudding', x: 44.3, y: 49.3, side: 'left', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'], note: '150 g.' },
+        { label: 'Rum butterscotch', x: 61.1, y: 44.3, side: 'right', tags: ['Milk'], note: '100 ml. Card to come.' },
+        { label: 'Honeycomb', x: 29.2, y: 71.9, side: 'left', tags: [], note: '50 g. Card to come.' },
+        { label: 'Vanilla ice cream', x: 70.8, y: 63.2, side: 'left', tags: ['Milk'], note: '80 g.' }
+      ],
       labelNote: 'Check the pudding and ice cream labels.'
     },
     {
-      id: 'donut-fries', no: '44', kind: 'dessert', forLine: 'Plate', name: 'Donut Fries', avc: 'Donut Fries S26',
+      id: 'donut-fries', art: 'donut-fries', no: '44', kind: 'dessert', forLine: 'Plate', name: 'Donut Fries', avc: 'Donut Fries S26',
       yield: 'Per serve. 110 g donut fries.',
       ingredients: [
         { q: '110 g', name: 'Donut fries', note: 'funnel fries, bought in', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'] },
@@ -632,6 +813,11 @@ window.LK_DATA = {
         { q: '20 g', name: 'Whipped cream', note: 'aerosol', tags: ['Milk'] },
         { q: '3 g', name: 'Ground cinnamon' },
         { q: '5 g', name: 'Icing sugar mix' }
+      ],
+      pins: [
+        { label: 'Donut fries', x: 42.5, y: 45.3, side: 'right', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'], note: '110 g, cinnamon and icing sugar.' },
+        { label: 'Whipped cream', x: 69.8, y: 67.9, side: 'left', tags: ['Milk'], note: '20 g.' },
+        { label: 'Maple syrup', x: 74.5, y: 34.0, side: 'left', tags: [], note: '50 ml.' }
       ],
       labelNote: 'Check the donut fries and maple syrup labels.'
     },
