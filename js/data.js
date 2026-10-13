@@ -427,11 +427,10 @@ window.LK_DATA = {
         { q: '20 ml', name: 'American mustard' },
         { q: '40 ml', name: 'Tomato ketchup' },
         { q: '[Qty]', name: 'Oak leaf lettuce' },
-        { q: '1 portion', name: 'Chips', note: '200 g raw' },
-        { q: '[Qty]', name: 'Tomato', note: 'on the menu, not in the AVC costing' }
+        { q: '1 portion', name: 'Chips', note: '200 g raw' }
       ],
       pins: [
-        { label: 'Smash burger', x: 60.4, y: 35.8, side: 'right', tags: [], note: 'Milk bun, two smashed patties (180 g), 2 cheese slices, pickles, tomato, American mustard. Card to come.' },
+        { label: 'Smash burger', x: 60.4, y: 35.8, side: 'right', tags: [], note: 'Milk bun, 180 g smash patty, 2 cheese slices, pickles, American mustard, ketchup, oak leaf. Card to come.' },
         { label: 'Chips', x: 29.2, y: 63.2, side: 'right', tags: [], note: '1 portion, 200 g raw.' }
       ],
       labelNote: 'Check the bun label.'
@@ -454,7 +453,7 @@ window.LK_DATA = {
         { q: '½ portion', name: 'Chips', note: 'of the 200 g raw portion' }
       ],
       pins: [
-        { label: 'The OZ Smash Burger', x: 60.4, y: 35.8, side: 'left', tags: [], note: 'The Aussie Burger: two smashed patties (180 g), lettuce, tomato, onion, pickles, beetroot, bacon, tomato sauce. Card to come.' },
+        { label: 'The OZ Smash Burger', x: 60.4, y: 35.8, side: 'left', tags: [], note: 'Milk bun, 180 g smash patty, cheese, bacon, beetroot, tomato, red onion, pickles, ketchup, oak leaf. Card to come.' },
         { label: 'Chips', x: 29.2, y: 63.2, side: 'right', tags: [], note: 'Half portion.' }
       ],
       labelNote: 'Check the bun and bacon labels.'
@@ -474,7 +473,7 @@ window.LK_DATA = {
         { q: '1 portion', name: 'Chips', note: '200 g raw' }
       ],
       pins: [
-        { label: 'Fish burger', x: 60.4, y: 35.8, side: 'right', tags: ['Fish'], note: 'XXXX-battered blue grenadier (180 g), tartare, lettuce, tomato, onion.' },
+        { label: 'Fish burger', x: 60.4, y: 35.8, side: 'right', tags: ['Fish'], note: 'Milk bun, 180 g XXXX-battered blue grenadier, tartare, green oak, tomato, red onion.' },
         { label: 'Chips', x: 29.2, y: 63.2, side: 'right', tags: [], note: '1 portion, 200 g raw.' }
       ],
       labelNote: 'Check the bun and tartare labels.'
@@ -493,7 +492,7 @@ window.LK_DATA = {
         { q: '1 portion', name: 'Chips', note: '200 g raw' }
       ],
       pins: [
-        { label: 'Chickpea and mushroom burger', x: 60.4, y: 35.8, side: 'left', tags: ['Sesame?', 'Soy?'], note: 'Avocado, tomato, oak lettuce; AVC costs 3 beetroot falafel and vegan aioli.' },
+        { label: 'Chickpea mushroom burger', x: 60.4, y: 35.8, side: 'left', tags: ['Sesame?', 'Soy?'], note: 'Milk bun, 3 beetroot falafel, vegan aioli, avocado, tomato, green oak.' },
         { label: 'Chips', x: 29.2, y: 63.2, side: 'right', tags: [], note: '1 portion, 200 g raw.' }
       ],
       labelNote: 'Check the bun, falafel and aioli labels.'
@@ -504,18 +503,17 @@ window.LK_DATA = {
       yield: 'Per plate. 150 g topside, bacon, egg, chips.',
       ingredients: [
         { q: '1', name: 'Turkish roll', note: 'oval, 130 g', tags: ['Gluten', 'Sesame?', 'Soy?'] },
-        { q: '150 g', name: 'Topside steak', note: 'the menu says rump steak' },
+        { q: '150 g', name: 'Topside steak' },
         { q: '90 g', name: 'Shortcut bacon' },
         { q: '1', name: 'Egg', tags: ['Egg'] },
         { q: '30 g', name: 'Caramelised onion relish' },
         { q: '50 ml', name: 'Smokey BBQ sauce', tags: ['Gluten?', 'Soy?'] },
         { q: '[Qty]', name: 'Baby cos' },
         { q: '50 g', name: 'Tomato' },
-        { q: '1 portion', name: 'Chips', note: '200 g raw' },
-        { q: '[Qty]', name: 'Cheddar', note: 'on the menu, not in the AVC costing', tags: ['Milk'] }
+        { q: '1 portion', name: 'Chips', note: '200 g raw' }
       ],
       pins: [
-        { label: 'Steak sandwich', x: 53.8, y: 34.9, side: 'right', tags: [], note: 'Turkish bread, steak, caramelised onion, smoky BBQ sauce, cheddar, bacon, fried egg.' },
+        { label: 'Steak sandwich', x: 53.8, y: 34.9, side: 'right', tags: [], note: 'Turkish roll, 150 g topside, bacon, egg, onion relish, BBQ sauce, cos, tomato.' },
         { label: 'Chips', x: 34.0, y: 69.8, side: 'right', tags: [], note: '1 portion, 200 g raw.' }
       ],
       labelNote: 'Check the roll, BBQ sauce, relish and bacon labels.'
@@ -562,24 +560,19 @@ window.LK_DATA = {
     {
       id: 'pork-belly', art: 'pork-belly', no: '29', kind: 'main', forLine: 'Plate', name: 'Pork Belly', avc: 'Pork Belly Main S26',
       menu: 'Pork Belly: mashed potato, spinach purée, red wine jus, peas, bacon, shallot.',
-      yield: 'Per plate. 200 g belly, mash, spinach purée, red wine jus, peas, bacon, shallot.',
+      yield: 'Per plate. 200 g belly, mash, spinach purée, red wine jus.',
       ingredients: [
         { q: '200 g', name: 'Roasted pork belly', link: 'pork-belly-batch' },
         { q: '5 g', name: 'Table salt' },
         { q: '200 g', name: 'Mash', link: 'mash' },
         { q: '50 ml', name: 'Spinach purée', link: 'spinach-puree' },
-        { q: '50 ml', name: 'Red wine jus', link: 'red-wine-jus' },
-        { q: '[Qty]', name: 'Peas', note: 'on the menu, not in the AVC costing' },
-        { q: '[Qty]', name: 'Bacon', note: 'on the menu, not in the AVC costing' },
-        { q: '[Qty]', name: 'Shallot', note: 'on the menu, not in the AVC costing' }
+        { q: '50 ml', name: 'Red wine jus', link: 'red-wine-jus' }
       ],
       pins: [
-        { label: 'Pork belly', x: 57.4, y: 41.6, side: 'right', tags: [], note: '200 g, roasted. Card to come.' },
-        { label: 'Bacon and shallot', x: 60.4, y: 30.0, side: 'left', tags: [], note: 'On top, from the menu.' },
-        { label: 'Mash', x: 34.0, y: 41.5, side: 'left', tags: [], note: '200 g. Card to come.' },
-        { label: 'Peas', x: 69.8, y: 63.2, side: 'left', tags: [], note: 'From the menu.' },
-        { label: 'Spinach purée', x: 44.3, y: 64.2, side: 'left', tags: [], note: '50 ml. Card to come.' },
-        { label: 'Red wine jus', x: 67.7, y: 51.1, side: 'left', tags: [], note: '50 ml. Card to come.' }
+        { label: 'Pork belly', x: 59.4, y: 37.7, side: 'right', tags: [], note: '200 g, roasted. Card to come.' },
+        { label: 'Mash', x: 34.0, y: 41.5, side: 'right', tags: [], note: '200 g. Card to come.' },
+        { label: 'Spinach purée', x: 44.3, y: 64.2, side: 'right', tags: [], note: '50 ml. Card to come.' },
+        { label: 'Red wine jus', x: 71.7, y: 49.1, side: 'left', tags: [], note: '50 ml. Card to come.' }
       ]
     },
     {
@@ -610,7 +603,7 @@ window.LK_DATA = {
       yield: 'Per board. Rump, brisket, wings, sausage, chips, salad, two sauces of choice.',
       ingredients: [
         { q: '250 g', name: 'Rump', note: 'grain fed MB1' },
-        { q: '500 g', name: 'Brisket', note: 'slow roasted; the menu says 300 g' },
+        { q: '500 g', name: 'Brisket', note: 'slow roasted' },
         { q: '400 g', name: 'Chicken middle wings' },
         { q: '50 g', name: 'Wing flour', link: 'wing-flour', tags: ['Gluten?'] },
         { q: '90 g', name: 'Pork Cumberland sausage', note: 'thick', tags: ['Gluten?', 'Soy?'] },
@@ -621,7 +614,7 @@ window.LK_DATA = {
       ],
       pins: [
         { label: 'Rump', x: 23.5, y: 28.3, side: 'left', tags: [], note: '250 g.' },
-        { label: 'Brisket', x: 52.7, y: 23.4, side: 'left', tags: [], note: '500 g costed, 300 g on the menu.' },
+        { label: 'Brisket', x: 52.7, y: 23.4, side: 'left', tags: [], note: '500 g, slow roasted.' },
         { label: 'Chicken wings', x: 29.2, y: 61.2, side: 'right', tags: [], note: '400 g, wing flour.' },
         { label: 'Cumberland sausage', x: 65.8, y: 48.1, side: 'right', tags: ['Gluten?', 'Soy?'], note: '90 g.' },
         { label: 'Chips', x: 50.7, y: 75.7, side: 'left', tags: [], note: '1.1 portions.' },
@@ -634,7 +627,7 @@ window.LK_DATA = {
     {
       id: 'taco-board', art: 'taco-board', no: '32', kind: 'main', forLine: 'Share board', name: 'Guacho Taco Share Board', avc: 'Guacho Taco Share Board S26',
       menu: 'Guacho Taco Shareboard: pulled pork, beef brisket, southern-style chicken tenders, pico de gallo, sour cream, avocado, six tortillas, slaw, corn tostadas.',
-      yield: 'Per board. Six tortillas, corn tostadas, tenders, brisket, pulled pork, slaw, pico.',
+      yield: 'Per board. Six tortillas, tenders, brisket, pulled pork, slaw, pico.',
       ingredients: [
         { q: '6', name: 'Flour tortillas', note: '5 inch', tags: ['Gluten', 'Soy?'] },
         { q: '240 g', name: 'Southern-style chicken tenders', note: '60 to 80 g each, bought in', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'] },
@@ -643,12 +636,10 @@ window.LK_DATA = {
         { q: '200 g', name: 'Slaw', link: 'slaw' },
         { q: '100 g', name: 'Pico de gallo', link: 'pico' },
         { q: '60 g', name: 'Chunky avocado' },
-        { q: '60 ml', name: 'Light sour cream', tags: ['Milk'] },
-        { q: '[Qty]', name: 'Corn tostadas', note: 'on the menu, not in the AVC costing' }
+        { q: '60 ml', name: 'Light sour cream', tags: ['Milk'] }
       ],
       pins: [
         { label: 'Flour tortillas', x: 13.0, y: 22.4, side: 'right', tags: ['Gluten', 'Soy?'], note: '6, 5 inch.' },
-        { label: 'Corn tostadas', x: 32.1, y: 42.5, side: 'right', tags: [], note: 'From the menu.' },
         { label: 'Chicken tenders', x: 54.0, y: 30.4, side: 'left', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'], note: '240 g, southern style.' },
         { label: 'Brisket', x: 77.4, y: 28.3, side: 'right', tags: [], note: '200 g.' },
         { label: 'Pulled pork', x: 24.8, y: 65.1, side: 'left', tags: [], note: '200 g. Card to come.' },
