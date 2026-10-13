@@ -576,19 +576,23 @@ window.LK_DATA = {
     {
       id: 'pork-belly', art: 'pork-belly', no: '29', kind: 'main', forLine: 'Plate', name: 'Pork Belly', avc: 'Pork Belly Main S26',
       menu: 'Pork Belly: mashed potato, spinach purée, red wine jus, peas, bacon, shallot.',
-      yield: 'Per plate. 200 g belly, mash, spinach purée, red wine jus.',
+      yield: 'Per plate. 200 g belly, mash, spinach purée, red wine jus, peas, bacon.',
       ingredients: [
         { q: '200 g', name: 'Roasted pork belly', link: 'pork-belly-batch' },
         { q: '5 g', name: 'Table salt' },
         { q: '200 g', name: 'Mash', link: 'mash' },
-        { q: '50 ml', name: 'Spinach purée', link: 'spinach-puree' },
-        { q: '50 ml', name: 'Red wine jus', link: 'red-wine-jus' }
+        { q: '50 ml', name: 'Spinach purée', note: 'a wave squiggle on the bottom of the plate', link: 'spinach-puree' },
+        { q: '50 ml', name: 'Red wine jus', link: 'red-wine-jus' },
+        { q: '[Qty]', name: 'Peas' },
+        { q: '[Qty]', name: 'Bacon' }
       ],
       pins: [
-        { label: 'Pork belly', x: 59.4, y: 37.7, side: 'right', tags: [], note: '200 g, roasted. Card to come.' },
-        { label: 'Mash', x: 34.0, y: 41.5, side: 'right', tags: [], note: '200 g. Card to come.' },
-        { label: 'Spinach purée', x: 44.3, y: 64.2, side: 'right', tags: [], note: '50 ml. Card to come.' },
-        { label: 'Red wine jus', x: 71.7, y: 49.1, side: 'left', tags: [], note: '50 ml. Card to come.' }
+        { label: 'Pork belly', x: 59.4, y: 35.7, side: 'right', tags: [], note: '200 g, roasted. Card to come.' },
+        { label: 'Mash', x: 34.0, y: 41.5, side: 'left', tags: [], note: '200 g. Card to come.' },
+        { label: 'Spinach purée', x: 49.1, y: 67.9, side: 'left', tags: [], note: '50 ml, a wave squiggle on the bottom of the plate. Card to come.' },
+        { label: 'Red wine jus', x: 67.1, y: 46.1, side: 'right', tags: [], note: '50 ml. Card to come.' },
+        { label: 'Peas', x: 76.6, y: 57.8, side: 'right', tags: [], note: '' },
+        { label: 'Bacon', x: 53.8, y: 55.7, side: 'left', tags: [], note: '' }
       ]
     },
     {
