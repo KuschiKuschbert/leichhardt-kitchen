@@ -256,7 +256,8 @@
   function recipeCard(r, stack, withHome) {
     return '<article class="card">' + crumbs(stack, withHome) + cardHead(r) + allergenBox(r) +
       '<div class="cols"><div class="col"><h3 class="h3">Ingredients</h3>' + ingTable(r, stack, false) + tipBox(r) + usedBox(r, stack) +
-      (isDish(r) && r.art && ART.plates[r.art] ? '<div class="sec"><h3 class="h3">On the plate</h3>' + art(r, 'card-art') + '</div>' : '') + '</div>' +
+      (isDish(r) && r.art && ART.plates[r.art] ? '<div class="sec"><h3 class="h3">On the plate</h3>' + art(r, 'card-art') + '</div>' : '') +
+      (!isDish(r) && r.art && ART.pans[r.art] ? '<div class="sec"><h3 class="h3">In the pan</h3>' + art(r, 'card-art') + '</div>' : '') + '</div>' +
       '<div class="col wide">' + safetyBox(r) + diagram(r) + steps(r) + '</div></div></article>';
   }
 
