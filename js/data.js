@@ -47,17 +47,17 @@ window.LK_DATA = {
         { q: '1', name: 'Crumbed chicken thigh', note: 'bought in, 170 g', tags: ['Gluten'] },
         { q: '1 slice', name: 'Sliced cheese', tags: ['Milk'] },
         { q: '100 g', name: 'Ranch', note: 'bought in, across both layers', tags: ['Milk', 'Egg'] },
-        { q: '[Qty]', name: 'Oak leaf' },
-        { q: '30 g', name: 'Tomato' },
+        { q: '1 leaf', name: 'Oak leaf' },
+        { q: '2 slices', name: 'Tomato' },
         { q: '150 g', name: 'Chips' }
       ],
       pins: [
-        { label: 'Burger', x: 59.4, y: 35.8, tags: ['Gluten', 'Milk', 'Egg', 'Soy?'], note: 'Bottom to top: bun, ranch, oak leaf, tomato, crumbed thigh with sliced cheese, ranch, bun.' },
+        { label: 'Burger', x: 59.4, y: 35.8, tags: ['Gluten', 'Milk', 'Egg', 'Soy?'], note: 'Bottom to top: bun, ranch, 1 oak leaf, 2 slices of tomato, crumbed thigh with sliced cheese, ranch, bun.' },
         { label: 'Chips', x: 28.3, y: 73.6, tags: [], note: 'In the fryer, as current. On the side.' }
       ],
       sections: [
         { title: 'Cooking', steps: ['Deep-fry the bought-in crumbed thigh until golden brown.', 'Probe the thigh: core 75 °C before it goes to the pass.', 'Chips in the fryer, as current.'] },
-        { title: 'Plating, bottom to top', steps: ['Bun base.', 'Ranch.', 'Oak leaf.', 'Tomato.', 'Chicken thigh, sliced cheese on top.', 'Ranch.', 'Bun top.', 'Chips on the side.'] }
+        { title: 'Plating, bottom to top', steps: ['Bun base.', 'Ranch.', '1 oak leaf.', '2 slices of tomato.', 'Chicken thigh, sliced cheese on top.', 'Ranch.', 'Bun top.', 'Chips on the side.'] }
       ],
       contains: [{ allergen: 'Gluten', from: 'bun, crumb on the thigh' }, { allergen: 'Milk', from: 'milk bun, cheese, ranch' }, { allergen: 'Egg', from: 'ranch' }],
       check: [{ allergen: 'Soy', from: 'possibly' }]
@@ -68,20 +68,20 @@ window.LK_DATA = {
       ingredients: [
         { q: '250 g', name: 'Guinness beef pie mix', note: 'from the bag', tags: ['Gluten'] },
         { q: '1', name: 'Pie shell and lid', tags: ['Gluten', 'Milk?'] },
-        { q: '[Qty]', name: 'Mash', tags: ['Milk'] },
-        { q: '[Qty]', name: 'Peas' },
-        { q: '[Qty]', name: 'Gravy', tags: ['Gluten?'] },
+        { q: '200 g', name: 'Mash', tags: ['Milk'] },
+        { q: '80 g', name: 'Peas' },
+        { q: '80 ml', name: 'Gravy', tags: ['Gluten?'] },
         { q: '[Qty]', name: 'Garnish' }
       ],
       pins: [
-        { label: 'Gravy', x: 59.4, y: 43.4, tags: ['Gluten?'], note: 'Over the top.' },
+        { label: 'Gravy', x: 59.4, y: 43.4, tags: ['Gluten?'], note: '80 ml, over the top.' },
         { label: 'Pie', x: 69.8, y: 59.4, tags: ['Gluten', 'Milk?'], note: '250 g beef pie mix, lid on loose. Probe the centre: 75 °C.' },
-        { label: 'Peas', x: 83.0, y: 69.8, tags: [], note: 'On top and to the side.' },
-        { label: 'Mash', x: 22.6, y: 58.5, tags: ['Milk'], note: 'The pie sits half on it.' }
+        { label: 'Peas', x: 83.0, y: 69.8, tags: [], note: '80 g, on top and to the side.' },
+        { label: 'Mash', x: 22.6, y: 58.5, tags: ['Milk'], note: '200 g. The pie sits half on it.' }
       ],
       sections: [
         { title: 'Cooking', steps: ['Fill the pie shell with 250 g beef pie mix. Lid on, loose.', 'Bake.', 'Probe the centre before service: 75 °C.'] },
-        { title: 'Plating', steps: ['Mash on the plate.', 'Pie sits half on the mash, lid loose on top.', 'Peas on top and to the side.', 'Gravy over the top.', 'Garnish.'] }
+        { title: 'Plating', steps: ['200 g mash on the plate.', 'Pie sits half on the mash, lid loose on top.', '80 g peas on top and to the side.', '80 ml gravy over the top.', 'Garnish.'] }
       ],
       contains: [{ allergen: 'Gluten', from: 'pastry, Guinness (barley), possibly the gravy' }, { allergen: 'Milk', from: 'mash, likely the pastry' }],
       check: []
@@ -221,7 +221,7 @@ window.LK_DATA = {
     },
     {
       id: 'butterscotch', no: '11', kind: 'batch', forLine: 'For the skillet cookie', name: 'Butterscotch Sauce', short: 'Butterscotch', art: 'butterscotch',
-      yield: 'Batch: roughly 500 g.',
+      yield: 'Batch: roughly 500 g. About 75 ml per skillet cookie.',
       ingredients: [
         { q: '200 g', name: 'Dark brown sugar' },
         { q: '100 g', name: 'Salted butter', note: 'diced', tags: ['Milk'] },
@@ -240,7 +240,7 @@ window.LK_DATA = {
       ingredients: [
         { q: '300 g', name: 'Skillet cookie dough', link: 'cookie-dough' },
         { q: '80 g', name: 'Vanilla ice cream', tags: ['Milk'] },
-        { q: '[Amount]', name: 'Butterscotch sauce', link: 'butterscotch' }
+        { q: 'About 75 ml', name: 'Butterscotch sauce', link: 'butterscotch' }
       ],
       pins: [
         { label: 'Cookie', x: 34.0, y: 58.5, side: 'left', tags: [], note: '300 g dough, baked in the skillet. Card to come.' },
