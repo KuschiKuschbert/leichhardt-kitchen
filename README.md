@@ -11,7 +11,8 @@ The recipe book for the Leichhardt Hotel kitchen team. It works on any phone, ta
 - **Linked batch recipes.** Any ingredient that has its own recipe is underlined orange with a "Recipe 06" tag, so tapping it opens that recipe. Batch recipes show which dishes they go on.
 - **Allergens roll up.** A dish picks up the allergens of the batch recipes it uses, and names where each one comes from. A "?" means "may be in it, check the supplier label".
 - **Cards to come.** A batch recipe that isn't in the book yet shows as "Card to come". Every dish that uses one is marked "Allergens incomplete", is left out of the Free from filter, and counts as "may have" under the allergen lens, until that card is added.
-- **Sides** have their own group, filter and shelf.
+- **Snacks and sides** each have their own group, filter and shelf.
+- **From the side.** Plated dishes also show a labelled side view, so the team can see what sits on top. Burgers show their build, top to bottom, instead.
 - **Tick off steps** while cooking. The ticks clear when the page is closed.
 - **Settings:**
   - Which view it opens with
@@ -39,9 +40,9 @@ Dishes already link to these ids. Add a recipe with the same `id` and the links,
 
 | id | Used by cards |
 | --- | --- |
-| `chips-salad` | 13 14 15 16 17 18 19 20 21 33 34 |
+| `chips-salad` | 13 14 15 16 17 18 19 20 21 33 34 58 59 60 65 66 |
 | `mushroom-sauce` | 13 14 15 16 31 |
-| `gravy` | 21 27 33 35 41 |
+| `gravy` | 21 27 33 35 41 46 56 |
 | `side-veg` | 27 28 35 42 |
 | `mash` | 28 29 35 41 |
 | `smash-patty` | 22 23 |
@@ -50,16 +51,20 @@ Dishes already link to these ids. Add a recipe with the same `id` and the links,
 | `french-topper` | 18 |
 | `mexican-topper` | 19 |
 | `americana-topper` | 20 |
-| `beer-batter` | 24 |
-| `pork-belly-batch`, `spinach-puree`, `red-wine-jus` | 29 |
+| `beer-batter` | 24 58 65 |
+| `pork-belly-batch` | 29 51 |
+| `spinach-puree`, `red-wine-jus` | 29 |
 | `fettuccine`, `carbonara-sauce` | 30 |
-| `wing-flour`, `diane-sauce` | 31 |
+| `wing-flour` | 31 49 |
+| `diane-sauce` | 31 |
 | `pulled-pork`, `pico` | 32 |
 | `spaghetti`, `kids-bolognese` | 36 |
 | `smoked-mac` | 39 |
 | `rum-butterscotch`, `honeycomb` | 43 |
 
 Cards 13 to 45 came from the AVC Live costings (Spring 26). Only ingredients and quantities were taken over; prices and supplier codes stay in AVC.
+
+Cards 46 to 66 are dishes on the online menu that had no AVC costing. Their components come from the menu and their quantities show as "To come" until they are costed.
 
 On GitHub you can edit `js/data.js` straight in the browser: open the file, press the pencil, make the change and press **Commit changes**. The live page updates within a minute or two.
 

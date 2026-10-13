@@ -6,7 +6,7 @@
   Each recipe has:
     id         short unique name, no spaces (used in links), e.g. "laksa"
     no         card number, matching the printed cards, e.g. "06"
-    kind       "main", "side", "dessert", "batch" or "component"
+    kind       "main", "snack", "side", "dessert", "batch" or "component"
     forLine    where it belongs, e.g. "Plate" or "For the barramundi"
     name       the name staff see
     avc        optional: the recipe's name in AVC Live, so a search for it finds the card
@@ -37,7 +37,7 @@
 */
 window.LK_DATA = {
   updated: '14 October 2026',
-  allergens: ['Gluten', 'Milk', 'Egg', 'Soy', 'Peanut', 'Fish', 'Crustacean', 'Sesame'],
+  allergens: ['Gluten', 'Milk', 'Egg', 'Soy', 'Peanut', 'Tree nut', 'Fish', 'Crustacean', 'Mollusc', 'Sesame'],
   recipes: [
     {
       id: 'burger', no: '02', diagram: 'burger-build', kind: 'main', forLine: 'Plate', name: 'Chicken Burger', art: 'burger', avc: 'Ranch Chicken Burger Complete S26',
@@ -870,6 +870,371 @@ window.LK_DATA = {
         { q: '100 g', name: 'Pork fat' },
         { q: '20 g', name: 'Table salt' },
         { q: '10 g', name: 'Ground white pepper' }
+      ]
+    },
+    /* ---------- On the online menu, no AVC costing in the zip: components from the menu, quantities to come ---------- */
+
+    /* Snacks */
+    {
+      id: 'poutine', art: 'poutine', no: '46', kind: 'snack', forLine: 'Snack', name: 'Poutine Fries',
+      menu: 'Poutine Fries: fries, melted cheddar and mozzarella, gravy.',
+      yield: 'Per serve. Fries, melted cheddar and mozzarella, gravy.',
+      ingredients: [
+        { q: '[Qty]', name: 'Chips' },
+        { q: '[Qty]', name: 'Cheddar', tags: ['Milk'] },
+        { q: '[Qty]', name: 'Mozzarella', tags: ['Milk'] },
+        { q: '[Qty]', name: 'Gravy', link: 'gravy' }
+      ],
+      pins: [
+        { label: 'Chips', x: 30.9, y: 63.2, side: 'left', tags: [], note: 'Fries.' },
+        { label: 'Cheddar', x: 34.9, y: 39.6, side: 'left', tags: ['Milk'], note: 'Melted.' },
+        { label: 'Mozzarella', x: 65.1, y: 57.5, side: 'left', tags: ['Milk'], note: 'Melted.' },
+        { label: 'Gravy', x: 48.1, y: 47.2, side: 'right', tags: [], note: 'Over the top. Card to come.' }
+      ]
+    },
+    {
+      id: 'beetroot-bites', art: 'beetroot-bites', no: '47', kind: 'snack', forLine: 'Snack', name: 'Crispy Beetroot Bites',
+      menu: 'Crispy Beetroot Bites: fried beetroot, caramelised chilli jam, Korean-style cucumber.',
+      yield: 'Per serve. Fried beetroot, chilli jam, Korean-style cucumber.',
+      ingredients: [
+        { q: '[Qty]', name: 'Crispy beetroot bites', note: 'fried', tags: ['Gluten?'] },
+        { q: '[Qty]', name: 'Caramelised chilli jam' },
+        { q: '[Qty]', name: 'Korean-style cucumber', tags: ['Sesame?', 'Soy?'] }
+      ],
+      pins: [
+        { label: 'Crispy beetroot bites', x: 38.7, y: 45.5, side: 'right', tags: ['Gluten?'], note: 'Fried.' },
+        { label: 'Caramelised chilli jam', x: 72.6, y: 35.8, side: 'left', tags: [], note: '' },
+        { label: 'Korean-style cucumber', x: 63.2, y: 67.0, side: 'left', tags: ['Sesame?', 'Soy?'], note: '' }
+      ]
+    },
+    {
+      id: 'brisket-cob', art: 'brisket-cob', no: '48', kind: 'snack', forLine: 'Snack', name: 'Brisket Cob',
+      menu: 'Brisket Cob: slow-roasted house-rubbed brisket, cream cheese, corn, caramelised onion, in a cob.',
+      yield: 'Per serve. Brisket, cream cheese, corn and caramelised onion in a cob loaf.',
+      ingredients: [
+        { q: '[Qty]', name: 'Cob loaf', tags: ['Gluten'] },
+        { q: '[Qty]', name: 'Brisket', note: 'slow roasted, house rub' },
+        { q: '[Qty]', name: 'Cream cheese', tags: ['Milk'] },
+        { q: '[Qty]', name: 'Corn' },
+        { q: '[Qty]', name: 'Caramelised onion' }
+      ],
+      pins: [
+        { label: 'Cob loaf', x: 27.4, y: 41.5, side: 'left', tags: ['Gluten'], note: '' },
+        { label: 'Brisket', x: 46.2, y: 37.5, side: 'right', tags: [], note: 'Slow roasted, house rub.' },
+        { label: 'Cream cheese', x: 61.5, y: 60.6, side: 'right', tags: ['Milk'], note: '' },
+        { label: 'Corn', x: 51.9, y: 49.1, side: 'right', tags: [], note: '' },
+        { label: 'Caramelised onion', x: 41.5, y: 56.6, side: 'left', tags: [], note: '' }
+      ]
+    },
+    {
+      id: 'wings', art: 'wings', no: '49', kind: 'snack', forLine: 'Snack', name: 'Fried Chicken Wings',
+      menu: 'Fried Chicken Wings: double-smoked BBQ sauce.',
+      yield: 'Per serve. Fried wings in double-smoked BBQ sauce.',
+      ingredients: [
+        { q: '[Qty]', name: 'Chicken wings' },
+        { q: '[Qty]', name: 'Wing flour', link: 'wing-flour', tags: ['Gluten?'] },
+        { q: '[Qty]', name: 'Double-smoked BBQ sauce', tags: ['Gluten?', 'Soy?'] }
+      ],
+      pins: [
+        { label: 'Chicken wings', x: 39.6, y: 42.5, side: 'right', tags: [], note: 'Fried.' },
+        { label: 'Double-smoked BBQ sauce', x: 58.5, y: 64.2, side: 'left', tags: ['Gluten?', 'Soy?'], note: 'On the wings.' }
+      ]
+    },
+    {
+      id: 'haloumi-tacos', art: 'haloumi-tacos', no: '50', kind: 'snack', forLine: 'Snack', name: 'Haloumi Tacos',
+      menu: 'Haloumi Tacos: slaw, lime aioli, haloumi, charred corn, avocado, sour cream.',
+      yield: 'Per serve. Tortillas with haloumi, slaw, charred corn, avocado, lime aioli, sour cream.',
+      ingredients: [
+        { q: '[Qty]', name: 'Flour tortillas', tags: ['Gluten', 'Soy?'] },
+        { q: '[Qty]', name: 'Haloumi', tags: ['Milk'] },
+        { q: '[Qty]', name: 'Slaw', link: 'slaw' },
+        { q: '[Qty]', name: 'Charred corn' },
+        { q: '[Qty]', name: 'Avocado' },
+        { q: '[Qty]', name: 'Lime aioli', tags: ['Egg'] },
+        { q: '[Qty]', name: 'Sour cream', tags: ['Milk'] }
+      ],
+      pins: [
+        { label: 'Flour tortillas', x: 65.1, y: 16.8, side: 'left', tags: ['Gluten', 'Soy?'], note: '' },
+        { label: 'Haloumi', x: 44.5, y: 42.7, side: 'right', tags: ['Milk'], note: '' },
+        { label: 'Slaw', x: 33.0, y: 25.5, side: 'left', link: 'slaw' },
+        { label: 'Charred corn', x: 63.9, y: 67.7, side: 'right', tags: [], note: '' },
+        { label: 'Avocado', x: 34.0, y: 50.0, side: 'left', tags: [], note: '' },
+        { label: 'Lime aioli', x: 47.2, y: 26.4, side: 'right', tags: ['Egg'], note: '' },
+        { label: 'Sour cream', x: 53.7, y: 75.0, side: 'left', tags: ['Milk'], note: '' }
+      ]
+    },
+    {
+      id: 'pork-belly-bites', art: 'pork-belly-bites', no: '51', kind: 'snack', forLine: 'Snack', name: 'Crispy Pork Belly Bites',
+      menu: 'Crispy Pork Belly Bites: caramelised chilli jam, Korean-style cucumber.',
+      yield: 'Per serve. Crispy pork belly, chilli jam, Korean-style cucumber.',
+      ingredients: [
+        { q: '[Qty]', name: 'Roasted pork belly', note: 'cut into bites', link: 'pork-belly-batch' },
+        { q: '[Qty]', name: 'Caramelised chilli jam' },
+        { q: '[Qty]', name: 'Korean-style cucumber', tags: ['Sesame?', 'Soy?'] }
+      ],
+      pins: [
+        { label: 'Pork belly bites', x: 30.2, y: 48.1, side: 'right', tags: [], note: 'Crispy. Card to come.' },
+        { label: 'Caramelised chilli jam', x: 48.1, y: 37.7, side: 'right', tags: [], note: 'Over the bites.' },
+        { label: 'Korean-style cucumber', x: 65.1, y: 67.9, side: 'left', tags: ['Sesame?', 'Soy?'], note: '' }
+      ]
+    },
+    {
+      id: 'calamari', art: 'calamari', no: '52', kind: 'snack', forLine: 'Snack', name: 'Salt and Szechuan Pepper Calamari',
+      menu: 'Salt and Szechuan Pepper Calamari: lime aioli.',
+      yield: 'Per serve. Salt and Szechuan pepper calamari, lime aioli.',
+      ingredients: [
+        { q: '[Qty]', name: 'Calamari', note: 'salt and Szechuan pepper coating', tags: ['Mollusc', 'Gluten?'] },
+        { q: '[Qty]', name: 'Lime aioli', tags: ['Egg'] }
+      ],
+      pins: [
+        { label: 'Calamari', x: 42.5, y: 44.3, side: 'right', tags: ['Mollusc', 'Gluten?'], note: 'Salt and Szechuan pepper.' },
+        { label: 'Lime aioli', x: 72.6, y: 66.0, side: 'left', tags: ['Egg'], note: '' }
+      ]
+    },
+    {
+      id: 'riblets', art: 'riblets', no: '53', kind: 'snack', forLine: 'Snack', name: 'Smoked BBQ Pork Riblets',
+      menu: 'Smoked BBQ Pork Riblets: bourbon BBQ sauce, cowboy candy.',
+      yield: 'Per serve. Smoked riblets, bourbon BBQ sauce, cowboy candy.',
+      ingredients: [
+        { q: '[Qty]', name: 'Pork riblets', note: 'smoked' },
+        { q: '[Qty]', name: 'Bourbon BBQ sauce', tags: ['Gluten?', 'Soy?'] },
+        { q: '[Qty]', name: 'Cowboy candy', note: 'candied jalapeños' }
+      ],
+      pins: [
+        { label: 'Pork riblets', x: 36.8, y: 54.7, side: 'right', tags: [], note: 'Smoked.' },
+        { label: 'Bourbon BBQ sauce', x: 56.6, y: 33.7, side: 'left', tags: ['Gluten?', 'Soy?'], note: 'On the riblets.' },
+        { label: 'Cowboy candy', x: 48.1, y: 44.3, side: 'left', tags: [], note: 'Candied jalapeños.' }
+      ]
+    },
+    {
+      id: 'garlic-bread', art: 'garlic-bread', no: '54', kind: 'snack', forLine: 'Snack', name: 'Garlic Bread',
+      menu: 'Garlic Bread.',
+      yield: 'Per serve.',
+      ingredients: [
+        { q: '[Qty]', name: 'Garlic bread', note: '7 inch, bought in', tags: ['Gluten', 'Milk?', 'Soy?'] }
+      ],
+      pins: [
+        { label: 'Garlic bread', x: 49.1, y: 49.1, side: 'right', tags: ['Gluten', 'Milk?', 'Soy?'], note: '7 inch, bought in.' }
+      ]
+    },
+    {
+      id: 'bacon-cheese-bread', art: 'bacon-cheese-bread', no: '55', kind: 'snack', forLine: 'Snack', name: 'Bacon and Cheese Bread',
+      menu: 'Bacon and Cheese Bread.',
+      yield: 'Per serve.',
+      ingredients: [
+        { q: '[Qty]', name: 'Bread', tags: ['Gluten'] },
+        { q: '[Qty]', name: 'Bacon' },
+        { q: '[Qty]', name: 'Cheese', tags: ['Milk'] }
+      ],
+      pins: [
+        { label: 'Bread', x: 32.1, y: 58.5, side: 'right', tags: ['Gluten'], note: '' },
+        { label: 'Bacon', x: 50.9, y: 47.2, side: 'left', tags: [], note: '' },
+        { label: 'Cheese', x: 61.3, y: 41.5, side: 'right', tags: ['Milk'], note: 'Melted.' }
+      ]
+    },
+    {
+      id: 'chips-snack', art: 'chips-snack', no: '56', kind: 'snack', forLine: 'Snack', name: 'Chips',
+      menu: 'Chips with a choice of aioli or gravy.',
+      yield: 'Per serve. Aioli or gravy.',
+      ingredients: [
+        { q: '[Qty]', name: 'Chips' },
+        { q: '[Qty]', name: 'Aioli', note: 'or gravy, guest\'s choice', tags: ['Egg'] },
+        { q: '[Qty]', name: 'Gravy', note: 'or aioli', link: 'gravy' }
+      ],
+      pins: [
+        { label: 'Chips', x: 40.6, y: 52.8, side: 'right', tags: [], note: '' },
+        { label: 'Aioli or gravy', x: 74.5, y: 35.8, side: 'left', tags: ['Egg'], note: 'Guest\'s choice.' }
+      ]
+    },
+
+    /* Mains */
+    {
+      id: 'beef-cheek', art: 'beef-cheek', no: '57', kind: 'main', forLine: 'Plate', name: 'Beef Cheek',
+      menu: 'Beef Cheek: red wine-braised beef cheek, roasted honey pumpkin purée, fried onion, herb oil.',
+      yield: 'Per plate. Braised beef cheek, pumpkin purée, fried onion, herb oil.',
+      ingredients: [
+        { q: '[Qty]', name: 'Beef cheek', note: 'braised in red wine' },
+        { q: '[Qty]', name: 'Roasted honey pumpkin purée' },
+        { q: '[Qty]', name: 'Fried onion', tags: ['Gluten?'] },
+        { q: '[Qty]', name: 'Herb oil' }
+      ],
+      pins: [
+        { label: 'Beef cheek', x: 40.5, y: 47.2, side: 'left', tags: [], note: 'Red wine braised.' },
+        { label: 'Roasted honey pumpkin purée', x: 63.2, y: 59.4, side: 'left', tags: [], note: '' },
+        { label: 'Fried onion', x: 50.9, y: 37.7, side: 'right', tags: ['Gluten?'], note: 'On top.' },
+        { label: 'Herb oil', x: 69.8, y: 47.2, side: 'right', tags: [], note: 'Dots round the plate.' }
+      ]
+    },
+    {
+      id: 'fish-chips', art: 'fish-chips', no: '58', kind: 'main', forLine: 'Plate', name: 'Fish and Chips',
+      menu: 'Fish and Chips: XXXX-battered fish, tartare, lemon, chips and salad.',
+      yield: 'Per plate. Battered fish, tartare, lemon, chips and salad.',
+      ingredients: [
+        { q: '[Qty]', name: 'Fish fillet', tags: ['Fish'] },
+        { q: '[Qty]', name: 'Beer batter', note: 'XXXX', link: 'beer-batter', tags: ['Gluten'] },
+        { q: '[Qty]', name: 'Tartare sauce', tags: ['Egg', 'Soy?'] },
+        { q: '[Qty]', name: 'Lemon' },
+        { q: '1 portion', name: 'Chips and salad', link: 'chips-salad' }
+      ],
+      pins: [
+        { label: 'Battered fish', x: 42.5, y: 36.8, side: 'left', tags: ['Fish'], note: 'XXXX batter.' },
+        { label: 'Tartare', x: 74.5, y: 37.7, side: 'left', tags: ['Egg', 'Soy?'], note: '' },
+        { label: 'Lemon', x: 69.8, y: 23.6, side: 'left', tags: [], note: '' },
+        { label: 'Chips', x: 28.3, y: 66.0, side: 'right', tags: [], note: 'Chips and salad portion. Card to come.' },
+        { label: 'Salad', x: 71.7, y: 66.0, side: 'left', tags: [], note: 'Chips and salad portion. Card to come.' }
+      ]
+    },
+    {
+      id: 'chicken-schnitzel', art: 'chicken-schnitzel', no: '59', kind: 'main', forLine: 'Plate', name: 'Chicken Schnitzel',
+      menu: 'Chicken Schnitzel: chips, salad and a choice of sauce.',
+      yield: 'Per plate. Sauce of choice, chips and salad.',
+      ingredients: [
+        { q: '1', name: 'Chicken schnitzel', note: 'bought in', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'] },
+        { q: '[Qty]', name: 'Sauce of choice', note: 'gravy, mushroom, pepper, garlic, jus, Diane or béarnaise' },
+        { q: '1 portion', name: 'Chips and salad', link: 'chips-salad' }
+      ],
+      pins: [
+        { label: 'Chicken schnitzel', x: 41.5, y: 34.0, side: 'right', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'], note: 'Bought in.' },
+        { label: 'Sauce of choice', x: 72.6, y: 45.3, side: 'left', tags: [], note: 'Gravy, mushroom, pepper, garlic, jus, Diane or béarnaise.' },
+        { label: 'Chips', x: 28.3, y: 67.0, side: 'right', tags: [], note: 'Chips and salad portion. Card to come.' },
+        { label: 'Salad', x: 71.7, y: 66.0, side: 'left', tags: [], note: 'Chips and salad portion. Card to come.' }
+      ]
+    },
+    {
+      id: 'chicken-parmy', art: 'chicken-parmy', no: '60', kind: 'main', forLine: 'Plate', name: 'Chicken Parmy',
+      menu: 'Chicken Parmy: shaved leg ham, Napoli sauce, mozzarella, chips and salad.',
+      yield: 'Per plate. Napoli, shaved leg ham and mozzarella, chips and salad.',
+      ingredients: [
+        { q: '1', name: 'Chicken schnitzel', note: 'bought in', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'] },
+        { q: '[Qty]', name: 'Napoli sauce' },
+        { q: '[Qty]', name: 'Shaved leg ham' },
+        { q: '[Qty]', name: 'Mozzarella', tags: ['Milk'] },
+        { q: '1 portion', name: 'Chips and salad', link: 'chips-salad' }
+      ],
+      pins: [
+        { label: 'Chicken schnitzel', x: 30.4, y: 37.7, side: 'left', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'], note: 'Bought in.' },
+        { label: 'Napoli sauce', x: 63.2, y: 41.7, side: 'right', tags: [], note: '' },
+        { label: 'Shaved leg ham', x: 40.6, y: 28.2, side: 'left', tags: [], note: '' },
+        { label: 'Mozzarella', x: 50.9, y: 32.9, side: 'right', tags: ['Milk'], note: 'Melted on top.' },
+        { label: 'Chips', x: 28.3, y: 67.0, side: 'left', tags: [], note: 'Chips and salad portion. Card to come.' },
+        { label: 'Salad', x: 71.7, y: 66.0, side: 'left', tags: [], note: 'Chips and salad portion. Card to come.' }
+      ]
+    },
+    {
+      id: 'white-buffalo', art: 'white-buffalo', no: '61', kind: 'main', forLine: 'Plate', name: 'White Buffalo Burger',
+      menu: 'White Buffalo Burger: southern fried chicken dipped in Frank\'s hot sauce, lettuce, tomato, pickles, blue cheese sauce.',
+      yield: 'Per plate. Southern fried chicken in Frank\'s hot sauce, blue cheese sauce.',
+      ingredients: [
+        { q: '[Qty]', name: 'Burger bun', tags: ['Gluten', 'Milk?', 'Egg?', 'Soy?'] },
+        { q: '[Qty]', name: 'Southern fried chicken', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'] },
+        { q: '[Qty]', name: 'Frank\'s hot sauce' },
+        { q: '[Qty]', name: 'Lettuce' },
+        { q: '[Qty]', name: 'Tomato' },
+        { q: '[Qty]', name: 'Pickles' },
+        { q: '[Qty]', name: 'Blue cheese sauce', tags: ['Milk', 'Egg?'] }
+      ],
+      pins: [
+        { label: 'White Buffalo burger', x: 49.1, y: 45.3, side: 'right', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'], note: 'Southern fried chicken in Frank\'s hot sauce, lettuce, tomato, pickles, blue cheese sauce.' }
+      ]
+    },
+
+    /* Salads */
+    {
+      id: 'caesar', art: 'caesar', no: '62', kind: 'main', forLine: 'Salad', name: 'Pub Caesar',
+      menu: 'Pub Caesar: cos lettuce, crispy bacon, poached egg, toasted sourdough, parmesan, dressing.',
+      yield: 'Per bowl. Cos, crispy bacon, poached egg, sourdough, parmesan, Caesar dressing.',
+      ingredients: [
+        { q: '[Qty]', name: 'Cos lettuce' },
+        { q: '[Qty]', name: 'Crispy bacon' },
+        { q: '1', name: 'Poached egg', tags: ['Egg'] },
+        { q: '[Qty]', name: 'Toasted sourdough', tags: ['Gluten'] },
+        { q: '[Qty]', name: 'Parmesan', tags: ['Milk'] },
+        { q: '[Qty]', name: 'Caesar dressing', tags: ['Egg', 'Fish?', 'Milk?'] }
+      ],
+      pins: [
+        { label: 'Cos lettuce', x: 31.2, y: 63.2, side: 'left', tags: [], note: '' },
+        { label: 'Crispy bacon', x: 37.7, y: 45.3, side: 'left', tags: [], note: '' },
+        { label: 'Poached egg', x: 49.9, y: 36.7, side: 'left', tags: ['Egg'], note: '' },
+        { label: 'Toasted sourdough', x: 59.2, y: 53.7, side: 'right', tags: ['Gluten'], note: '' },
+        { label: 'Parmesan', x: 60.4, y: 43.3, side: 'right', tags: ['Milk'], note: 'Shaved.' },
+        { label: 'Caesar dressing', x: 42.5, y: 62.4, side: 'right', tags: ['Egg', 'Fish?', 'Milk?'], note: '' }
+      ]
+    },
+    {
+      id: 'green-bowl', art: 'green-bowl', no: '63', kind: 'main', forLine: 'Salad', name: 'Green Bowl',
+      menu: 'Green Bowl: charred broccolini, baby spinach, gem lettuce, brown rice, heirloom cherry tomatoes, red onion, toasted cashews.',
+      yield: 'Per bowl.',
+      ingredients: [
+        { q: '[Qty]', name: 'Broccolini', note: 'charred' },
+        { q: '[Qty]', name: 'Baby spinach' },
+        { q: '[Qty]', name: 'Gem lettuce' },
+        { q: '[Qty]', name: 'Brown rice' },
+        { q: '[Qty]', name: 'Heirloom cherry tomatoes' },
+        { q: '[Qty]', name: 'Red onion' },
+        { q: '[Qty]', name: 'Toasted cashews', tags: ['Tree nut'] }
+      ],
+      pins: [
+        { label: 'Brown rice', x: 34.7, y: 37.5, side: 'left', tags: [], note: '' },
+        { label: 'Baby spinach', x: 62.3, y: 33.7, side: 'right', tags: [], note: '' },
+        { label: 'Gem lettuce', x: 31.8, y: 63.2, side: 'left', tags: [], note: '' },
+        { label: 'Broccolini', x: 65.1, y: 65.2, side: 'left', tags: [], note: 'Charred.' },
+        { label: 'Cherry tomatoes', x: 45.1, y: 46.9, side: 'left', tags: [], note: 'Heirloom.' },
+        { label: 'Red onion', x: 49.3, y: 55.7, side: 'right', tags: [], note: '' },
+        { label: 'Toasted cashews', x: 55.7, y: 44.3, side: 'right', tags: ['Tree nut'], note: '' }
+      ]
+    },
+    {
+      id: 'pumpkin-salad', art: 'pumpkin-salad', no: '64', kind: 'main', forLine: 'Salad', name: 'Honey and Maple Roasted Pumpkin',
+      menu: 'Honey and Maple Roasted Pumpkin: five-spice roasted pumpkin, maple, seed granola, basil pesto, feta, fried kale.',
+      yield: 'Per plate.',
+      ingredients: [
+        { q: '[Qty]', name: 'Pumpkin', note: 'five-spice roasted' },
+        { q: '[Qty]', name: 'Maple' },
+        { q: '[Qty]', name: 'Seed granola', tags: ['Gluten?', 'Sesame?'] },
+        { q: '[Qty]', name: 'Basil pesto', tags: ['Tree nut?', 'Milk?'] },
+        { q: '[Qty]', name: 'Feta', tags: ['Milk'] },
+        { q: '[Qty]', name: 'Fried kale' }
+      ],
+      pins: [
+        { label: 'Pumpkin', x: 36.8, y: 37.7, side: 'left', tags: [], note: 'Five-spice roasted.' },
+        { label: 'Maple', x: 55.7, y: 37.5, side: 'right', tags: [], note: 'Drizzled.' },
+        { label: 'Seed granola', x: 44.1, y: 49.1, side: 'left', tags: ['Gluten?', 'Sesame?'], note: '' },
+        { label: 'Basil pesto', x: 69.1, y: 62.5, side: 'right', tags: ['Tree nut?', 'Milk?'], note: '' },
+        { label: 'Feta', x: 54.7, y: 52.7, side: 'right', tags: ['Milk'], note: '' },
+        { label: 'Fried kale', x: 33.0, y: 62.3, side: 'left', tags: [], note: '' }
+      ]
+    },
+
+    /* Seniors */
+    {
+      id: 'senior-fish-chips', art: 'senior-fish-chips', no: '65', kind: 'main', forLine: 'Senior', name: 'Senior Fish and Chips',
+      menu: 'Seniors Fish and Chips: XXXX-battered fish, tartare, chips and salad.',
+      yield: 'Senior plate. Battered fish, tartare, chips and salad.',
+      ingredients: [
+        { q: '[Qty]', name: 'Fish fillet', tags: ['Fish'] },
+        { q: '[Qty]', name: 'Beer batter', note: 'XXXX', link: 'beer-batter', tags: ['Gluten'] },
+        { q: '[Qty]', name: 'Tartare sauce', tags: ['Egg', 'Soy?'] },
+        { q: '1 portion', name: 'Chips and salad', link: 'chips-salad' }
+      ],
+      pins: [
+        { label: 'Battered fish', x: 42.5, y: 36.8, side: 'left', tags: ['Fish'], note: 'XXXX batter, senior size.' },
+        { label: 'Tartare', x: 74.5, y: 37.7, side: 'left', tags: ['Egg', 'Soy?'], note: '' },
+        { label: 'Chips', x: 28.3, y: 66.0, side: 'right', tags: [], note: 'Chips and salad portion. Card to come.' },
+        { label: 'Salad', x: 71.7, y: 66.0, side: 'left', tags: [], note: 'Chips and salad portion. Card to come.' }
+      ]
+    },
+    {
+      id: 'senior-calamari', art: 'senior-calamari', no: '66', kind: 'main', forLine: 'Senior', name: 'Senior Calamari',
+      menu: 'Seniors Calamari: chips and salad.',
+      yield: 'Senior plate. Calamari, chips and salad.',
+      ingredients: [
+        { q: '[Qty]', name: 'Calamari', tags: ['Mollusc', 'Gluten?'] },
+        { q: '1 portion', name: 'Chips and salad', link: 'chips-salad' }
+      ],
+      pins: [
+        { label: 'Calamari', x: 48.1, y: 35.8, side: 'right', tags: ['Mollusc', 'Gluten?'], note: '' },
+        { label: 'Chips', x: 28.3, y: 66.0, side: 'right', tags: [], note: 'Chips and salad portion. Card to come.' },
+        { label: 'Salad', x: 71.7, y: 66.0, side: 'left', tags: [], note: 'Chips and salad portion. Card to come.' }
       ]
     }
   ]

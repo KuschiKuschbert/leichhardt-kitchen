@@ -15,15 +15,15 @@
   var ART = window.LK_ART;
   var app = document.getElementById('app');
 
-  var KIND = { main: 'Main', side: 'Side', dessert: 'Dessert', batch: 'Batch recipe', component: 'Component' };
+  var KIND = { main: 'Main', snack: 'Snack', side: 'Side', dessert: 'Dessert', batch: 'Batch recipe', component: 'Component' };
   var VIEWS = [
     { id: 'tiles', name: 'Tiles', desc: 'Every recipe as a card, with search and filters on top.' },
     { id: 'list', name: 'List', desc: 'A short list on one side and the open recipe on the other.' },
     { id: 'pass', name: 'The Pass', desc: 'Dishes as plates, batch recipes as pans. Tap the food to go deeper.' }
   ];
-  var KINDS = [['all', 'All'], ['main', 'Mains'], ['side', 'Sides'], ['dessert', 'Desserts'], ['batch', 'Batch recipes'], ['component', 'Components']];
-  var GROUPS = [['Mains', ['main']], ['Sides', ['side']], ['Desserts', ['dessert']], ['Batch recipes', ['batch']], ['Components', ['component']]];
-  var SHELVES = [['On the pass: mains', ['main']], ['Sides', ['side']], ['Desserts', ['dessert']], ['Bains and prep', ['batch', 'component']]];
+  var KINDS = [['all', 'All'], ['main', 'Mains'], ['snack', 'Snacks'], ['side', 'Sides'], ['dessert', 'Desserts'], ['batch', 'Batch recipes'], ['component', 'Components']];
+  var GROUPS = [['Mains', ['main']], ['Snacks', ['snack']], ['Sides', ['side']], ['Desserts', ['dessert']], ['Batch recipes', ['batch']], ['Components', ['component']]];
+  var SHELVES = [['On the pass: mains', ['main']], ['Snacks', ['snack']], ['Sides', ['side']], ['Desserts', ['dessert']], ['Bains and prep', ['batch', 'component']]];
   var TEXT = [['normal', 'Normal'], ['large', 'Large'], ['xlarge', 'Extra large']];
 
   /* ---------- index: worked out once when the page loads ---------- */
@@ -103,7 +103,7 @@
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
   }
-  function isDish(r) { return r.kind === 'main' || r.kind === 'side' || r.kind === 'dessert'; }
+  function isDish(r) { return r.kind === 'main' || r.kind === 'snack' || r.kind === 'side' || r.kind === 'dessert'; }
   function q() { return ui.query.trim().toLowerCase(); }
   function matches(id) { var s = q(); return !s || hay[id].indexOf(s) >= 0; }
   function freeOk(id) {
@@ -209,7 +209,8 @@
       var name = linked
         ? '<a class="ilink" href="' + href(stackTo(stack, i.link)) + '"><span>' + esc(i.name) + '</span><span class="rtag">Recipe ' + esc(linked.no) + '</span></a>'
         : '<span>' + esc(i.name) + '</span>' + (soon ? '<span class="rtag soon">Card to come</span>' : '');
-      return '<div class="ing-row' + (h ? ' hit' : '') + '"><div class="q">' + esc(i.q) + '</div><div class="n">' + name +
+      var qty = i.q === '[Qty]' ? '<span class="soonq">To come</span>' : esc(i.q);
+      return '<div class="ing-row' + (h ? ' hit' : '') + '"><div class="q">' + qty + '</div><div class="n">' + name +
         (i.note ? '<span class="note">' + esc(i.note) + '</span>' : '') +
         (h ? '<span class="tag dark">' + esc(lensWord(h)) + '</span>' : '') + '</div></div>';
     }).join('') + '</div>' +
@@ -232,6 +233,11 @@
     var d = r.diagram && ART.diagrams[r.diagram];
     if (!d) return '';
     return '<div class="sec"><h3 class="h3">' + esc(d.title || 'How to cut') + '</h3><svg class="diagram" viewBox="' + esc(d.viewBox) + '"' + (d.maxWidth ? ' style="max-width: ' + esc(d.maxWidth) + '"' : '') + ' role="img" aria-label="' + esc(d.label) + '">' + d.body + '</svg></div>';
+  }
+  function sideView(r) {
+    var v = ART.sides && ART.sides[r.id];
+    if (!v) return '';
+    return '<div class="sec"><h3 class="h3">From the side</h3><div class="side-art"><svg viewBox="' + esc(v.viewBox) + '" role="img" aria-label="Side view of ' + esc(r.name) + ' with each part labelled">' + v.body + '</svg></div></div>';
   }
   function steps(r) {
     if (!r.sections.length) return '<div class="box beige"><span class="label">Method</span><div>Not written up yet. Ask the head chef or sous chef.</div></div>';
@@ -256,7 +262,7 @@
   function recipeCard(r, stack, withHome) {
     return '<article class="card">' + crumbs(stack, withHome) + cardHead(r) + allergenBox(r) +
       '<div class="cols"><div class="col"><h3 class="h3">Ingredients</h3>' + ingTable(r, stack, false) + tipBox(r) + usedBox(r, stack) +
-      (isDish(r) && r.art && ART.plates[r.art] ? '<div class="sec"><h3 class="h3">On the plate</h3>' + art(r, 'card-art') + '</div>' : '') +
+      (isDish(r) && r.art && ART.plates[r.art] ? '<div class="sec"><h3 class="h3">On the plate</h3>' + art(r, 'card-art') + '</div>' : '') + sideView(r) +
       (!isDish(r) && r.art && ART.pans[r.art] ? '<div class="sec"><h3 class="h3">In the pan</h3>' + art(r, 'card-art') + '</div>' : '') + '</div>' +
       '<div class="col wide">' + safetyBox(r) + diagram(r) + steps(r) + '</div></div></article>';
   }
@@ -372,9 +378,9 @@
     if (dish) {
       var pk = ui.pick !== null && r.pins[ui.pick] && !r.pins[ui.pick].link ? r.pins[ui.pick] : null;
       left = '<div class="stage' + (ui.lens ? ' lensed' : '') + '">' + art(r, 'art') + r.pins.map(function (p, k) { return pinHTML(p, k, stack); }).join('') + '</div>' +
-        (pk ? '<div class="box outline" style="background: #fff"><span class="h3">' + esc(pk.label) + '</span><div>' + esc(pk.note || '') + '</div><div class="chips">' +
+        (pk ? '<div class="box outline" style="background: #fff"><span class="h3">' + esc(pk.label) + '</span>' + (pk.note ? '<div>' + esc(pk.note) + '</div>' : '') + '<div class="chips">' +
           ((pk.tags && pk.tags.length) ? pk.tags.map(function (t) { return '<span class="tag' + (t.slice(-1) === '?' ? ' maybe' : '') + '">' + esc(t) + '</span>'; }).join('') : '<span class="hint">No listed allergens</span>') + '</div></div>'
-          : '<div class="hint" style="text-align: center">' + (r.pins.length ? 'Tap anything on the plate. A pin with an arrow opens its own recipe.' : 'No pins on this plate yet.') + '</div>');
+          : '<div class="hint" style="text-align: center">' + (r.pins.length ? 'Tap anything on the plate. A pin with an arrow opens its own recipe.' : 'No pins on this plate yet.') + '</div>') + sideView(r);
     } else {
       left = '<div class="pan-art">' + art(r, 'art') + '</div>' + usedBox(r, stack, 'Goes on') + tipBox(r);
     }
@@ -447,6 +453,7 @@
     else if (view === 'pass') html = viewPass(route);
     else html = viewTiles(route);
     app.innerHTML = html;
+    fitPins();
     var r = route.stack.length ? byId[route.stack[route.stack.length - 1]] : null;
     document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : '')) + 'Leichhardt Kitchen Recipe Book';
     if (changed) {
@@ -462,6 +469,17 @@
       }
     }
   }
+
+  // On narrow screens a pin label can run off the edge: flip it to the other side of its pin when it does.
+  function fitPins() {
+    var vw = document.documentElement.clientWidth;
+    Array.prototype.forEach.call(app.querySelectorAll('.stage .pin'), function (pin) {
+      var box = pin.getBoundingClientRect();
+      if (box.right > vw - 4 && !pin.classList.contains('left')) pin.classList.add('left');
+      else if (box.left < 4 && pin.classList.contains('left')) pin.classList.remove('left');
+    });
+  }
+  window.addEventListener('resize', function () { fitPins(); });
 
   // Search redraws only the results, so typing stays fast and the keyboard stays open.
   var timer = null;
