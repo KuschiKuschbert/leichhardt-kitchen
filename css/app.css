@@ -94,6 +94,9 @@ img, svg { display: block; }
 .ilink { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.5rem; min-height: 44px; font-weight: 600; text-decoration: none; }
 .ilink span:first-child { text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: 2px; text-underline-offset: 4px; }
 .rtag { font-family: var(--display); font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #fff; background: var(--tag); border-radius: 4px; padding: 0.1rem 0.45rem; }
+.rtag.soon { color: var(--muted); background: transparent; border: 1.5px dashed var(--faint); }
+.warn { display: flex; flex-direction: column; gap: 0.4rem; padding: 0.75rem 0.9rem; border-radius: 8px; background: var(--accent); color: #fff; font-size: 0.9375rem; }
+.warn .tag { border-color: #fff; color: #fff; font-size: 0.75rem; }
 .used { display: flex; flex-direction: column; gap: 0.1rem; }
 .sections { display: flex; flex-direction: column; gap: 1.1rem; }
 .sections.side { flex-direction: row; flex-wrap: wrap; gap: 1.25rem 2rem; }

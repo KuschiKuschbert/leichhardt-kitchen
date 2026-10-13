@@ -15,21 +15,35 @@
   var ART = window.LK_ART;
   var app = document.getElementById('app');
 
-  var KIND = { main: 'Main', dessert: 'Dessert', batch: 'Batch recipe', component: 'Component' };
+  var KIND = { main: 'Main', side: 'Side', dessert: 'Dessert', batch: 'Batch recipe', component: 'Component' };
   var VIEWS = [
     { id: 'tiles', name: 'Tiles', desc: 'Every recipe as a card, with search and filters on top.' },
     { id: 'list', name: 'List', desc: 'A short list on one side and the open recipe on the other.' },
     { id: 'pass', name: 'The Pass', desc: 'Dishes as plates, batch recipes as pans. Tap the food to go deeper.' }
   ];
-  var KINDS = [['all', 'All'], ['main', 'Mains'], ['dessert', 'Desserts'], ['batch', 'Batch recipes'], ['component', 'Components']];
-  var GROUPS = [['Mains', ['main']], ['Desserts', ['dessert']], ['Batch recipes', ['batch']], ['Components', ['component']]];
-  var SHELVES = [['On the pass: mains', ['main']], ['Desserts', ['dessert']], ['Bains and prep', ['batch', 'component']]];
+  var KINDS = [['all', 'All'], ['main', 'Mains'], ['side', 'Sides'], ['dessert', 'Desserts'], ['batch', 'Batch recipes'], ['component', 'Components']];
+  var GROUPS = [['Mains', ['main']], ['Sides', ['side']], ['Desserts', ['dessert']], ['Batch recipes', ['batch']], ['Components', ['component']]];
+  var SHELVES = [['On the pass: mains', ['main']], ['Sides', ['side']], ['Desserts', ['dessert']], ['Bains and prep', ['batch', 'component']]];
   var TEXT = [['normal', 'Normal'], ['large', 'Large'], ['xlarge', 'Extra large']];
 
   /* ---------- index: worked out once when the page loads ---------- */
-  var byId = {}, usedIn = {}, rolled = {}, rows = {}, tags = {}, hay = {};
+  var byId = {}, usedIn = {}, rolled = {}, rows = {}, tags = {}, hay = {}, missing = {};
+  // A recipe with no contains or check list gets them worked out from its ingredient tags.
+  function fromTags(r) {
+    r.contains = []; r.check = [];
+    r.ingredients.forEach(function (i) {
+      (i.tags || []).forEach(function (t) {
+        var maybe = t.slice(-1) === '?', a = maybe ? t.slice(0, -1) : t, list = maybe ? r.check : r.contains, from = i.name.toLowerCase();
+        var have = list.filter(function (x) { return x.allergen === a; })[0];
+        if (!have) list.push({ allergen: a, from: from });
+        else if (have.from.split(', ').indexOf(from) < 0) have.from += ', ' + from;
+      });
+    });
+  }
   D.recipes.forEach(function (r) {
-    r.ingredients = r.ingredients || []; r.contains = r.contains || []; r.check = r.check || []; r.sections = r.sections || []; r.pins = r.pins || [];
+    r.ingredients = r.ingredients || []; r.sections = r.sections || []; r.pins = r.pins || [];
+    if (!r.contains && !r.check) fromTags(r);
+    r.contains = r.contains || []; r.check = r.check || [];
     byId[r.id] = r;
   });
   D.recipes.forEach(function (r) {
@@ -38,16 +52,20 @@
   function addTo(bucket, a, src) { if (!bucket[a]) bucket[a] = []; if (bucket[a].indexOf(src) < 0) bucket[a].push(src); }
   function roll(id, seen) {
     if (rolled[id]) return rolled[id];
-    var r = byId[id], out = { contains: {}, check: {} };
+    var r = byId[id], out = { contains: {}, check: {}, missing: [] };
     if (!r || seen[id]) return out;
     seen[id] = true;
+    function miss(name) { if (out.missing.indexOf(name) < 0) out.missing.push(name); }
     r.contains.forEach(function (c) { addTo(out.contains, c.allergen, c.from); });
     r.check.forEach(function (c) { addTo(out.check, c.allergen, c.from); });
     r.ingredients.forEach(function (i) {
-      if (!i.link || !byId[i.link]) return;
+      if (!i.link) return;
+      // Linked to a recipe that is not in the book yet: its allergens are unknown.
+      if (!byId[i.link]) { miss(i.name); return; }
       var sub = roll(i.link, seen);
       Object.keys(sub.contains).forEach(function (a) { addTo(out.contains, a, byId[i.link].name); });
       Object.keys(sub.check).forEach(function (a) { addTo(out.check, a, byId[i.link].name); });
+      sub.missing.forEach(miss);
     });
     rolled[id] = out;
     return out;
@@ -62,7 +80,8 @@
     });
     rows[r.id] = list;
     tags[r.id] = t;
-    hay[r.id] = [r.name, r.yield, KIND[r.kind], r.forLine].concat(r.ingredients.map(function (i) { return i.name; }), t).join(' ').toLowerCase();
+    missing[r.id] = ro.missing;
+    hay[r.id] = [r.name, r.avc || '', r.yield, KIND[r.kind], r.forLine].concat(r.ingredients.map(function (i) { return i.name; }), t).join(' ').toLowerCase();
   });
 
   /* ---------- settings (saved on this device) and ticked steps (this visit) ---------- */
@@ -84,10 +103,12 @@
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
   }
-  function isDish(r) { return r.kind === 'main' || r.kind === 'dessert'; }
+  function isDish(r) { return r.kind === 'main' || r.kind === 'side' || r.kind === 'dessert'; }
   function q() { return ui.query.trim().toLowerCase(); }
   function matches(id) { var s = q(); return !s || hay[id].indexOf(s) >= 0; }
   function freeOk(id) {
+    if (!ui.free.length) return true;
+    if (missing[id].length) return false; // can't promise free-from until every part has a card
     var ro = rolled[id];
     for (var k = 0; k < ui.free.length; k++) { if (ro.contains[ui.free[k]] || ro.check[ui.free[k]]) return false; }
     return true;
@@ -98,6 +119,8 @@
     if (t.indexOf(ui.lens + '?') >= 0) return 'may';
     return null;
   }
+  // A recipe with parts still to come counts as "may have" for every allergen.
+  function hitId(id) { return hit(tags[id]) || (ui.lens && missing[id].length ? 'may' : null); }
   function lensWord(h) { return h === 'may' ? ui.lens + '?' : ui.lens; }
   function href(stack) { return stack.length ? '#/r/' + stack.join('/') : '#/'; }
   function stackTo(stack, id) { var i = stack.indexOf(id); return i >= 0 ? stack.slice(0, i + 1) : stack.concat([id]); }
@@ -160,7 +183,7 @@
       '<span class="num"><span class="visually-hidden">Card </span>' + esc(r.no) + '</span></div>';
   }
   function allergenBox(r) {
-    var list = rows[r.id];
+    var list = rows[r.id], miss = missing[r.id];
     var h = '<section class="box outline" aria-label="Allergens"><div class="row-label" style="justify-content: space-between"><span class="label">Allergens</span>' +
       (list.some(function (a) { return a.maybe; }) ? '<span class="hint">? = may be in it, check the supplier label</span>' : '') + '</div>';
     if (list.length) {
@@ -168,7 +191,11 @@
         return '<div class="allergen-row"><span class="tag' + (a.maybe ? ' maybe' : '') + '">' + esc(a.label) + '</span><span class="from">' + esc(a.from) + '</span></div>';
       }).join('') + '</div>';
     } else {
-      h += '<div>None in the ingredients.</div>';
+      h += '<div>' + (miss.length ? 'None in the listed ingredients so far.' : 'None in the ingredients.') + '</div>';
+    }
+    if (miss.length) {
+      h += '<div class="warn" role="note"><span class="label">Not complete yet</span><span>These parts have no recipe card in the book yet, so their allergens are not listed. Treat the dish as possibly containing any allergen and check with the head chef or sous chef before answering a guest.</span>' +
+        '<span class="chips">' + miss.map(function (m) { return '<span class="tag">' + esc(m) + '</span>'; }).join('') + '</span></div>';
     }
     if (r.labelNote) h += '<div style="font-size: 0.875rem">' + esc(r.labelNote) + '</div>';
     if (list.length > r.contains.length + r.check.length) h += '<div class="hint">Includes allergens from the recipes it uses.</div>';
@@ -176,16 +203,16 @@
   }
   function ingTable(r, stack, useLens) {
     return '<div class="ing">' + r.ingredients.map(function (i) {
-      var linked = i.link && byId[i.link];
-      var h = useLens ? hit(linked ? tags[i.link] : (i.tags || [])) : null;
+      var linked = i.link && byId[i.link], soon = i.link && !linked;
+      var h = useLens ? (linked ? hitId(i.link) : (hit(i.tags || []) || (soon && ui.lens ? 'may' : null))) : null;
       var name = linked
         ? '<a class="ilink" href="' + href(stackTo(stack, i.link)) + '"><span>' + esc(i.name) + '</span><span class="rtag">Recipe ' + esc(linked.no) + '</span></a>'
-        : '<span>' + esc(i.name) + '</span>';
+        : '<span>' + esc(i.name) + '</span>' + (soon ? '<span class="rtag soon">Card to come</span>' : '');
       return '<div class="ing-row' + (h ? ' hit' : '') + '"><div class="q">' + esc(i.q) + '</div><div class="n">' + name +
         (i.note ? '<span class="note">' + esc(i.note) + '</span>' : '') +
         (h ? '<span class="tag dark">' + esc(lensWord(h)) + '</span>' : '') + '</div></div>';
     }).join('') + '</div>' +
-      (r.ingredients.some(function (i) { return i.link; }) ? '<div class="hint">Tap an underlined ingredient to open its recipe.</div>' : '');
+      (r.ingredients.some(function (i) { return i.link && byId[i.link]; }) ? '<div class="hint">Tap an underlined ingredient to open its recipe.</div>' : '');
   }
   function usedBox(r, stack, title) {
     var u = usedIn[r.id] || [];
@@ -206,6 +233,7 @@
     return '<div class="sec"><h3 class="h3">' + esc(d.title || 'How to cut') + '</h3><svg class="diagram" viewBox="' + esc(d.viewBox) + '" role="img" aria-label="' + esc(d.label) + '">' + d.body + '</svg></div>';
   }
   function steps(r) {
+    if (!r.sections.length) return '<div class="box beige"><span class="label">Method</span><div>Not written up yet. Ask the head chef or sous chef.</div></div>';
     return '<div class="hint">Tap a step to tick it off.</div><div class="sections">' + r.sections.map(function (sec, si) {
       return '<div class="sec"><h3 class="h3">' + esc(sec.title) + '</h3><ol class="steps">' + sec.steps.map(function (t, n) {
         var key = r.id + ':' + si + ':' + n, done = !!ticks[key];
@@ -227,7 +255,7 @@
   function recipeCard(r, stack, withHome) {
     return '<article class="card">' + crumbs(stack, withHome) + cardHead(r) + allergenBox(r) +
       '<div class="cols"><div class="col"><h3 class="h3">Ingredients</h3>' + ingTable(r, stack, false) + tipBox(r) + usedBox(r, stack) +
-      (isDish(r) ? '<div class="sec"><h3 class="h3">On the plate</h3>' + art(r, 'card-art') + '</div>' : '') + '</div>' +
+      (isDish(r) && r.art && ART.plates[r.art] ? '<div class="sec"><h3 class="h3">On the plate</h3>' + art(r, 'card-art') + '</div>' : '') + '</div>' +
       '<div class="col wide">' + safetyBox(r) + diagram(r) + steps(r) + '</div></div></article>';
   }
 
@@ -238,7 +266,8 @@
     return '<div class="tiles">' + list.map(function (r) {
       return '<a class="tile" href="#/r/' + esc(r.id) + '"><span class="t-top"><span class="t-kind">' + esc(KIND[r.kind] + (r.forLine === 'Template' ? ' · Template' : '')) + '</span>' +
         '<span class="t-no">' + esc(r.no) + '</span></span><span class="t-name">' + esc(r.name) + '</span><span class="t-yield">' + esc(r.yield) + '</span>' +
-        '<span class="chips">' + rows[r.id].map(function (a) { return '<span class="tag' + (a.maybe ? ' maybe' : '') + '">' + esc(a.label) + '</span>'; }).join('') + '</span></a>';
+        '<span class="chips">' + rows[r.id].map(function (a) { return '<span class="tag' + (a.maybe ? ' maybe' : '') + '">' + esc(a.label) + '</span>'; }).join('') +
+        (missing[r.id].length ? '<span class="tag maybe">Allergens incomplete</span>' : '') + '</span></a>';
     }).join('') + '</div>';
   }
   function viewTiles(route) {
@@ -262,6 +291,7 @@
     var html = GROUPS.map(function (g) {
       var items = D.recipes.filter(function (r) { return g[1].indexOf(r.kind) >= 0 && freeOk(r.id) && matches(r.id); }).map(function (r) {
         var sub = rows[r.id].length ? rows[r.id].map(function (a) { return a.label; }).join(' · ') : (r.forLine === 'Template' ? 'Template' : 'No listed allergens');
+        if (missing[r.id].length) sub = 'Allergens incomplete' + (rows[r.id].length ? ' · ' + sub : '');
         if (s && r.name.toLowerCase().indexOf(s) < 0) {
           var hits = r.ingredients.filter(function (i) { return i.name.toLowerCase().indexOf(s) >= 0; }).map(function (i) { return i.name; });
           if (hits.length) sub = 'Uses ' + hits.join(', ');
@@ -294,7 +324,7 @@
     var s = q(), n = 0;
     var html = SHELVES.map(function (sh) {
       var items = D.recipes.filter(function (r) { return sh[1].indexOf(r.kind) >= 0; }).map(function (r) {
-        var h = hit(tags[r.id]), m = matches(r.id), dish = isDish(r);
+        var h = hitId(r.id), m = matches(r.id), dish = isDish(r);
         if (s && m) n++;
         var links = r.ingredients.filter(function (i) { return i.link && byId[i.link]; }).map(function (i) { return byId[i.link].short || byId[i.link].name; });
         var used = (usedIn[r.id] || []).map(function (id) { return byId[id].name; });
@@ -316,8 +346,7 @@
     return n + ' of ' + D.recipes.length + ' match';
   }
   function pinHTML(p, k, stack) {
-    var t = p.link ? tags[p.link] : (p.tags || []);
-    var h = hit(t), left = p.x > 65;
+    var h = p.link ? (byId[p.link] ? hitId(p.link) : (ui.lens ? 'may' : null)) : hit(p.tags || []), left = p.x > 65;
     var cls = 'pin' + (left ? ' left' : '') + (h ? ' lit' : '') + (ui.pick === k ? ' on' : '');
     var label = esc(p.label) + (h ? ' · ' + esc(lensWord(h)) : '');
     var pos = 'left: ' + p.x + '%; top: ' + p.y + '%';
