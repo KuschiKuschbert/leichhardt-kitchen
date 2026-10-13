@@ -81,7 +81,7 @@
     rows[r.id] = list;
     tags[r.id] = t;
     missing[r.id] = ro.missing;
-    hay[r.id] = [r.name, r.avc || '', r.yield, KIND[r.kind], r.forLine].concat(r.ingredients.map(function (i) { return i.name; }), t).join(' ').toLowerCase();
+    hay[r.id] = [r.name, r.avc || '', r.menu || '', r.yield, KIND[r.kind], r.forLine].concat(r.ingredients.map(function (i) { return i.name; }), t).join(' ').toLowerCase();
   });
 
   /* ---------- settings (saved on this device) and ticked steps (this visit) ---------- */
@@ -179,7 +179,8 @@
   /* ---------- recipe parts ---------- */
   function cardHead(r) {
     return '<div class="card-head"><div><span class="eyebrow">' + esc(KIND[r.kind] + ' · ' + r.forLine) + '</span>' +
-      '<h2 id="rtitle" tabindex="-1">' + esc(r.name) + '</h2><span class="yield">' + esc(r.yield) + '</span></div>' +
+      '<h2 id="rtitle" tabindex="-1">' + esc(r.name) + '</h2><span class="yield">' + esc(r.yield) + '</span>' +
+      (r.menu ? '<span class="menu-line"><b>On the menu:</b> ' + esc(r.menu) + '</span>' : '') + '</div>' +
       '<span class="num"><span class="visually-hidden">Card </span>' + esc(r.no) + '</span></div>';
   }
   function allergenBox(r) {
