@@ -40,7 +40,7 @@ Dishes already link to these ids. Add a recipe with the same `id` and the links,
 
 | id | Used by cards |
 | --- | --- |
-| `chips-salad` | 13 14 15 16 17 18 19 20 21 33 34 58 59 60 65 66 |
+| `chips-salad` | 13 14 15 16 17 18 19 20 21 33 34 58 59 60 64 65 |
 | `mushroom-sauce` | 13 14 15 16 31 |
 | `gravy` | 21 27 33 35 41 46 56 |
 | `side-veg` | 27 28 35 42 |
@@ -51,7 +51,7 @@ Dishes already link to these ids. Add a recipe with the same `id` and the links,
 | `french-topper` | 18 |
 | `mexican-topper` | 19 |
 | `americana-topper` | 20 |
-| `beer-batter` | 24 58 65 |
+| `beer-batter` | 24 58 64 |
 | `pork-belly-batch` | 29 51 |
 | `spinach-puree`, `red-wine-jus` | 29 |
 | `fettuccine`, `carbonara-sauce` | 30 |
@@ -64,7 +64,7 @@ Dishes already link to these ids. Add a recipe with the same `id` and the links,
 
 Cards 13 to 45 came from the AVC Live costings (Spring 26). Only ingredients and quantities were taken over; prices and supplier codes stay in AVC.
 
-Cards 46 to 66 are dishes on the online menu that had no AVC costing. Their components come from the menu and their quantities show as "To come" until they are costed.
+Cards 46 to 65 are dishes on the online menu that had no AVC costing. Their components come from the menu and their quantities show as "To come" until they are costed.
 
 On GitHub you can edit `js/data.js` straight in the browser: open the file, press the pencil, make the change and press **Commit changes**. The live page updates within a minute or two.
 
