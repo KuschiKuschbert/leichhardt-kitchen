@@ -113,6 +113,9 @@ img, svg { display: block; }
 .step[aria-pressed="true"] .dot { background: #fff; color: var(--ink); }
 .diagram { width: 100%; height: auto; }
 .card-art { width: 100%; max-width: 15rem; height: auto; margin: 0 auto; }
+.side-art { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); padding: 0.4rem 0.5rem 0.2rem; }
+.side-art svg { display: block; width: 100%; max-width: 30rem; height: auto; margin: 0 auto; }
+.soonq { color: var(--faint); font-size: 0.85em; }
 .art { width: 100%; height: auto; }
 .photo { display: flex; align-items: center; justify-content: center; height: 9.5rem; border: 1.5px dashed #A39A88; border-radius: var(--radius); font-size: 0.875rem; color: var(--muted); }
 
