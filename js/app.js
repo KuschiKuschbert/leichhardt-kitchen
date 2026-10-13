@@ -289,7 +289,7 @@
     }).join('');
     return '<div class="page">' + header(countText()) + '<main id="main" style="display: flex; flex-direction: column; gap: 1.1rem">' +
       searchField('Dish, ingredient or allergen') +
-      '<div class="chips" role="group" aria-label="Recipe type">' + kinds + '</div>' + freeChips(false) +
+      '<div class="chips scroll" role="group" aria-label="Recipe type">' + kinds + '</div>' + freeChips(true) +
       '<div id="results">' + tilesHTML() + '</div><div class="hint">Allergen tags with a ? may be in it: check the supplier label.</div></main>' + footer() + '</div>';
   }
 
@@ -452,7 +452,10 @@
     else if (view === 'list') html = viewList(route);
     else if (view === 'pass') html = viewPass(route);
     else html = viewTiles(route);
+    // Swipeable chip rows keep their place when the page redraws (for example after tapping a chip at the far end).
+    var rowsAt = Array.prototype.map.call(app.querySelectorAll('.chips.scroll'), function (el) { return el.scrollLeft; });
     app.innerHTML = html;
+    if (!changed) Array.prototype.forEach.call(app.querySelectorAll('.chips.scroll'), function (el, i) { if (rowsAt[i]) el.scrollLeft = rowsAt[i]; });
     fitPins();
     var r = route.stack.length ? byId[route.stack[route.stack.length - 1]] : null;
     document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : '')) + 'Leichhardt Kitchen Recipe Book';
