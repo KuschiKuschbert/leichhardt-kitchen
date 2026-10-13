@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Leichhardt Kitchen Recipe Book</title>
+<meta name="description" content="Recipe book for the Leichhardt Hotel kitchen team.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#1C1D1F">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&amp;family=Barlow+Condensed:wght@700&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
+<script>
+  // Apply the saved text size before the page draws, so nothing jumps.
+  try { var s = JSON.parse(localStorage.getItem('lk.settings.v1') || '{}'); if (s.text) document.documentElement.setAttribute('data-text', s.text); } catch (e) {}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div id="app"></div>
+<noscript><p style="padding: 24px; font-family: sans-serif">The recipe book needs JavaScript switched on.</p></noscript>
+<script src="js/data.js" defer></script>
+<script src="js/art.js" defer></script>
+<script src="js/app.js" defer></script>
+</body>
+</html>
