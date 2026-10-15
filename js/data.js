@@ -558,7 +558,7 @@ window.LK_DATA = {
         { label: 'Lamb rissoles', x: 36.8, y: 46.7, side: 'right', link: 'rissole-mix' },
         { label: 'Mash', x: 22.6, y: 63.2, side: 'left', link: 'mash', tags: ['Milk?'], note: 'On one half of the bowl.' },
         { label: 'Gravy', x: 44.3, y: 55.7, side: 'right', link: 'gravy', note: 'Over the rissoles.' },
-        { label: 'Seasonal vegetables', x: 69.8, y: 51.4, side: 'right', link: 'side-veg', note: 'About 120 g: 3 pieces each of carrot, cauliflower and broccolini, on the other half of the bowl.' },
+        { label: 'Seasonal vegetables', x: 69.8, y: 51.4, side: 'right', link: 'side-veg', note: 'About 120 g: 3 pieces each of carrot, cauliflower and broccoli, on the other half of the bowl.' },
         { label: 'Onion rings', x: 30.2, y: 40.6, side: 'left', tags: ['Gluten', 'Egg?', 'Soy?'], note: '4, tempura, on top.' }
       ],
       labelNote: 'Check the mash and onion ring labels.'
@@ -1288,12 +1288,12 @@ window.LK_DATA = {
       yield: 'Per plate: about 120 g, a bit of each vegetable.',
       ingredients: [
         { q: '3 pieces', name: 'Carrot' },
-        { q: '3 pieces', name: 'Broccolini' },
+        { q: '3 pieces', name: 'Broccoli' },
         { q: '3 pieces', name: 'Cauliflower' }
       ],
       sections: [
-        { title: 'Prep', steps: ['Cut the carrots in half, then on an angle.', 'Take the florets from the cauliflower and the broccolini.', 'Put each vegetable in its own steam tray.', 'Steam the carrots for 6 min.', 'Steam the cauliflower for 4 min.', 'Steam the broccolini for 3 min.', 'Straight into ice water.'] },
-        { title: 'Service, per plate', steps: ['Heat the vegetables in the poaching pot.', 'Finish in a pan with a bit of oil, salt and pepper.', 'Every plate must get a bit of each: carrot, cauliflower and broccolini, 3 pieces of each, about 120 g in total.'] }
+        { title: 'Prep', steps: ['Cut the carrots in half, then on an angle.', 'Take the florets from the cauliflower and the broccoli.', 'Put each vegetable in its own steam tray.', 'Steam the carrots for 6 min.', 'Steam the cauliflower for 4 min.', 'Steam the broccoli for 3 min.', 'Straight into ice water.'] },
+        { title: 'Service, per plate', steps: ['Heat the vegetables in the poaching pot.', 'Finish in a pan with a bit of oil, salt and pepper.', 'Every plate must get a bit of each: carrot, cauliflower and broccoli, 3 pieces of each, about 120 g in total.'] }
       ],
       contains: [],
       check: []
