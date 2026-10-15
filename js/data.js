@@ -606,8 +606,8 @@ window.LK_DATA = {
         { label: 'Pork belly', x: 36.8, y: 39.6, side: 'left', tags: [], note: '300 g, roasted. Jus on top.', link: 'pork-belly-batch' },
         { label: 'Mash', x: 44.3, y: 54.0, side: 'left', link: 'mash', note: '150 g, slightly off centre, on top of the spinach squiggle.' },
         { label: 'Spinach purée', x: 13.2, y: 50.0, side: 'left', link: 'spinach-puree', note: '50 ml, a wavy squiggle across the whole plate.' },
-        { label: 'Peas', x: 63.2, y: 61.3, side: 'right', tags: [], note: 'About 80 g, with jus.' },
-        { label: 'Bacon', x: 63.2, y: 45.3, side: 'right', tags: [], note: 'About 80 g, with jus.' },
+        { label: 'Peas', x: 63.2, y: 61.3, side: 'right', tags: [], note: 'About 80 g, with jus. Beside the mash and on top of the belly.' },
+        { label: 'Bacon', x: 63.2, y: 45.3, side: 'right', tags: [], note: 'About 80 g, with jus. Beside the mash and on top of the belly.' },
         { label: 'Red wine jus', x: 58.5, y: 52.8, side: 'right', link: 'red-wine-jus', note: 'On the peas and bacon, and on top of the belly.' },
         { label: 'Fried shallots', x: 49.0, y: 43.4, side: 'right', link: 'fried-onions', note: 'Fried onions on top.' },
         { label: 'Green garnish', x: 51.9, y: 46.2, side: 'left', tags: [], note: 'To finish.' }
@@ -624,6 +624,7 @@ window.LK_DATA = {
           'Mash on top of it, slightly off centre.',
           'Bacon and peas with jus next to the mash.',
           'Pork belly on top, with jus over it.',
+          'Peas and bacon on top of the belly as well.',
           'Finish with fried shallots and the green garnish.'
         ] }
       ]
