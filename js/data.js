@@ -147,12 +147,12 @@ window.LK_DATA = {
     },
     {
       id: 'ribs', no: '07', kind: 'main', forLine: 'Plate', name: 'New Pork Ribs', art: 'ribs', avc: 'Baby Back Ribs FULL S26, Baby Back Ribs HALF S26',
-      yield: 'Full serve 600 g ribs, half 300 g. Both get 150 g new slaw and 5 corn ribs.',
+      yield: 'Full serve 600 g ribs, half 300 g. Both get 150 g new slaw. Half serve gets 4 corn ribs, full serve 6.',
       ingredients: [
         { q: '600 g or 300 g', name: 'Pork ribs', note: 'full or half serve, Barkers Creek, bought in' },
         { q: '[Qty]', name: 'Bourbon BBQ sauce', note: 'drizzled on top of the ribs', tags: ['Gluten?', 'Soy?'] },
         { q: '150 g', name: 'New slaw', link: 'slaw' },
-        { q: '5', name: 'Corn ribs', link: 'corn' }
+        { q: '6 or 4', name: 'Corn ribs', note: 'full serve 6, half serve 4', link: 'corn' }
       ],
       pins: [
         { label: 'Pork ribs', x: 46.2, y: 35.8, tags: [], note: 'Full serve 600 g, half 300 g, cooked as current. Check the glaze and seasoning labels.' },
@@ -162,21 +162,21 @@ window.LK_DATA = {
       ],
       sections: [
         { title: 'Cooking', steps: ['Cook the pork ribs as current.', 'Corn ribs: steam, char and cut.', 'Slaw: dressed base from the prep fridge.'] },
-        { title: 'Plating', steps: ['Pork ribs: 600 g full serve or 300 g half serve.', 'Drizzle bourbon BBQ sauce on top of the ribs.', '150 g new slaw, same for both serves.', '5 corn ribs, criss-cross stacked, same for both serves.'] }
+        { title: 'Plating', steps: ['Pork ribs: 600 g full serve or 300 g half serve.', 'Drizzle bourbon BBQ sauce on top of the ribs.', '150 g new slaw, same for both serves.', 'Corn ribs, criss-cross stacked: 6 on a full serve, 4 on a half serve.'] }
       ],
       contains: [], check: [],
       labelNote: 'Check the rib glaze and seasoning labels as current.'
     },
     {
       id: 'corn', no: '08', kind: 'component', forLine: 'For the new pork ribs', name: 'Corn Ribs', short: 'Corn ribs', art: 'corn',
-      yield: 'One cob makes 8 corn ribs; 5 per serve.',
+      yield: 'One cob makes 8 corn ribs. Full pork rib serve 6 corn ribs, half serve 4.',
       ingredients: [
         { q: '1 cob', name: 'Corn', note: 'makes 8 corn ribs' },
-        { q: '5', name: 'Corn ribs per serve' }
+        { q: '6 or 4', name: 'Corn ribs per serve', note: 'full serve 6, half serve 4' }
       ],
       sections: [
         { title: 'Method', steps: ['Steam the whole cobs 12 min, then char on the grill until well charred.', 'Cut each cob in half across the middle.', 'Cut each half top to bottom through the middle, then again, to make quarters.', 'Trim the hard centre off each quarter. 4 ribs per half, 8 per cob.'] },
-        { title: 'Plating', steps: ['5 per plate, criss-cross stacked.'] }
+        { title: 'Plating', steps: ['Full serve 6 per plate, half serve 4 per plate, criss-cross stacked.'] }
       ],
       contains: [], check: [],
       labelNote: 'Recheck if butter or a seasoning goes on.',
