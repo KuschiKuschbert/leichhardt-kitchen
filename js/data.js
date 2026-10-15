@@ -546,15 +546,18 @@ window.LK_DATA = {
       ingredients: [
         { q: '1 serve', name: 'Lamb rissoles', note: '240 g, 3 rissoles', link: 'rissole-mix' },
         { q: '150 g', name: 'Potato mash', note: 'Farm Frites, bought in', tags: ['Milk?'] },
-        { q: '0.6 portion', name: 'Side veg', link: 'side-veg' },
+        { q: '1 portion', name: 'Seasonal vegetables', note: 'about 120 g', link: 'side-veg' },
         { q: '80 g', name: 'Tempura onion rings', note: 'bought in', tags: ['Gluten', 'Egg?', 'Soy?'] },
         { q: '50 ml', name: 'Gravy', link: 'gravy' }
+      ],
+      sections: [
+        { title: 'Cooking', steps: ['Cook the rissoles on steam bake, 50% steam, 140 °C, until the core reaches 75 °C (see the Lamb Rissole Mix card).'] }
       ],
       pins: [
         { label: 'Lamb rissoles', x: 34.9, y: 41.5, side: 'left', link: 'rissole-mix' },
         { label: 'Mash', x: 41.3, y: 56.6, side: 'left', tags: ['Milk?'], note: '150 g butter mash, bought in.' },
         { label: 'Gravy', x: 51.9, y: 47.2, side: 'right', tags: [], note: '50 ml. Card to come.' },
-        { label: 'Seasonal vegetables', x: 65.8, y: 66.0, side: 'right', tags: [], note: '0.6 portion. Card to come.' },
+        { label: 'Seasonal vegetables', x: 65.8, y: 66.0, side: 'right', link: 'side-veg', note: 'About 120 g: 3 pieces each of carrot, broccoli and cauliflower.' },
         { label: 'Onion rings', x: 30.2, y: 67.9, side: 'left', tags: ['Gluten', 'Egg?', 'Soy?'], note: '80 g, tempura.' }
       ],
       labelNote: 'Check the mash and onion ring labels.'
@@ -880,7 +883,7 @@ window.LK_DATA = {
 
     /* Batch recipes */
     {
-      id: 'rissole-mix', no: '45', kind: 'batch', forLine: 'For the lamb rissoles', name: 'Lamb Rissole Mix', short: 'Rissoles', avc: 'Rissoles Batch 5000g A25',
+      id: 'rissole-mix', no: '45', kind: 'batch', forLine: 'For the lamb rissoles', name: 'Lamb Rissole Mix', short: 'Rissoles', art: 'rissole-mix', avc: 'Rissoles Batch 5000g A25',
       yield: 'Batch: 5 kg lamb mince. A 240 g serve is 3 rissoles.',
       ingredients: [
         { q: '5 kg', name: 'Lamb mince' },
@@ -890,6 +893,9 @@ window.LK_DATA = {
         { q: '100 g', name: 'Pork fat' },
         { q: '20 g', name: 'Table salt' },
         { q: '10 g', name: 'Ground white pepper' }
+      ],
+      sections: [
+        { title: 'Method', steps: ['Mix everything together in a big bowl.', 'Portion into balls of 90 g each.', 'Tray up in a GN pan with baking paper on the bottom.', 'Cook on steam bake, 50% steam, 140 °C, until the core reaches 75 °C.'] }
       ]
     },
     /* ---------- On the online menu, no AVC costing in the zip: components from the menu, quantities to come ---------- */
@@ -1275,6 +1281,20 @@ window.LK_DATA = {
       contains: [],
       check: [],
       labelNote: 'Fresh pork only, so no label check needed.'
+    },
+    {
+      id: 'side-veg', no: '68', kind: 'batch', forLine: 'For the rissoles', name: 'Seasonal Vegetables', short: 'Side veg', art: 'side-veg',
+      yield: 'Per plate: about 120 g, a bit of each vegetable.',
+      ingredients: [
+        { q: '3 pieces', name: 'Carrot' },
+        { q: '3 pieces', name: 'Broccoli' },
+        { q: '3 pieces', name: 'Cauliflower' }
+      ],
+      sections: [
+        { title: 'Portioning', steps: ['Every plate must get a bit of each: carrot, broccoli and cauliflower, 3 pieces of each, about 120 g in total.'] }
+      ],
+      contains: [],
+      check: []
     }
   ]
 };
