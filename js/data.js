@@ -589,23 +589,43 @@ window.LK_DATA = {
     {
       id: 'pork-belly', art: 'pork-belly', no: '29', kind: 'main', forLine: 'Plate', name: 'Pork Belly', avc: 'Pork Belly Main S26',
       menu: 'Pork Belly: mashed potato, spinach purée, red wine jus, peas, bacon, shallot.',
-      yield: 'Per plate. 200 g belly, mash, spinach purée, red wine jus, peas, bacon.',
+      yield: 'Per plate. 300 g belly, mash, spinach purée, peas, bacon, red wine jus.',
       ingredients: [
-        { q: '200 g', name: 'Roasted pork belly', link: 'pork-belly-batch' },
+        { q: '300 g', name: 'Roasted pork belly', note: 'portioned to 300 g', link: 'pork-belly-batch' },
+        { q: '[Qty]', name: 'Oil', note: 'for frying the belly' },
         { q: '5 g', name: 'Table salt' },
         { q: '150 g', name: 'Mash', link: 'mash' },
-        { q: '50 ml', name: 'Spinach purée', note: 'a wave squiggle on the bottom of the plate', link: 'spinach-puree' },
+        { q: '50 ml', name: 'Spinach purée', note: 'a wavy squiggle across the whole plate', link: 'spinach-puree' },
+        { q: '80 g', name: 'Peas' },
+        { q: '80 g', name: 'Bacon' },
         { q: '50 ml', name: 'Red wine jus', link: 'red-wine-jus' },
-        { q: '[Qty]', name: 'Peas' },
-        { q: '[Qty]', name: 'Bacon' }
+        { q: '[Qty]', name: 'Fried shallots', note: 'fried onions, made in house with cornflour' },
+        { q: '[Qty]', name: 'Green garnish' }
       ],
       pins: [
-        { label: 'Pork belly', x: 59.4, y: 35.7, side: 'right', tags: [], note: '200 g, roasted. Card to come.' },
-        { label: 'Mash', x: 34.0, y: 41.5, side: 'left', link: 'mash', note: '150 g.' },
-        { label: 'Spinach purée', x: 49.1, y: 67.9, side: 'left', tags: [], note: '50 ml, a wave squiggle on the bottom of the plate. Card to come.' },
-        { label: 'Red wine jus', x: 67.1, y: 46.1, side: 'right', tags: [], note: '50 ml. Card to come.' },
-        { label: 'Peas', x: 76.6, y: 57.8, side: 'right', tags: [], note: '' },
-        { label: 'Bacon', x: 53.8, y: 55.7, side: 'left', tags: [], note: '' }
+        { label: 'Pork belly', x: 36.8, y: 39.6, side: 'left', tags: [], note: '300 g, roasted. Jus on top.', link: 'pork-belly-batch' },
+        { label: 'Mash', x: 44.3, y: 54.0, side: 'left', link: 'mash', note: '150 g, slightly off centre, on top of the spinach squiggle.' },
+        { label: 'Spinach purée', x: 13.2, y: 50.0, side: 'left', link: 'spinach-puree', note: '50 ml, a wavy squiggle across the whole plate.' },
+        { label: 'Peas', x: 63.2, y: 61.3, side: 'right', tags: [], note: 'About 80 g, with jus.' },
+        { label: 'Bacon', x: 63.2, y: 45.3, side: 'right', tags: [], note: 'About 80 g, with jus.' },
+        { label: 'Red wine jus', x: 58.5, y: 52.8, side: 'right', link: 'red-wine-jus', note: 'On the peas and bacon, and on top of the belly.' },
+        { label: 'Fried shallots', x: 49.0, y: 43.4, side: 'right', tags: [], note: 'Fried onions on top.' },
+        { label: 'Green garnish', x: 51.9, y: 46.2, side: 'left', tags: [], note: 'To finish.' }
+      ],
+      sections: [
+        { title: 'Cooking', steps: [
+          'Portion the roasted pork belly to 300 g.',
+          'Quickly fry the belly in a pan with a little oil, on all sides.',
+          'Finish it in the oven. [Oven setting to confirm]',
+          'Heat the peas and the bacon (about 80 g each) in a pan with a splash of water. Add the red wine jus once hot.'
+        ] },
+        { title: 'Plating', steps: [
+          'Wavy squiggle of spinach purée across the whole plate.',
+          'Mash on top of it, slightly off centre.',
+          'Bacon and peas with jus next to the mash.',
+          'Pork belly on top, with jus over it.',
+          'Finish with fried shallots and the green garnish.'
+        ] }
       ]
     },
     {
@@ -1337,18 +1357,33 @@ window.LK_DATA = {
     },
     {
       id: 'spinach-puree', no: '71', kind: 'batch', forLine: 'For the pork belly', name: 'Spinach Purée', short: 'Spinach purée', art: 'spinach-puree',
-      yield: 'Batch: 1.5 kg spinach. A serve is 50 ml, a wave squiggle on the bottom of the plate.',
+      yield: 'Batch: 1.5 kg spinach, about 1 L of purée. A serve is 50 ml, a wavy squiggle across the plate.',
       ingredients: [
         { q: '1.5 kg', name: 'Spinach' },
         { q: '300 ml', name: 'Cooking cream', tags: ['Milk'] },
+        { q: '80 g', name: 'Salted butter', tags: ['Milk'] },
         { q: '10 g', name: 'Table salt' }
       ],
       sections: [
-        { title: 'Method', steps: ['Quickly blanch the spinach in a pot of water for 2 min.', 'Put it straight into ice water to keep the green.', 'Squeeze out the excess liquid.', 'Blend with the cooking cream and salt until smooth.'] }
+        { title: 'Method', steps: ['Quickly blanch the spinach in a pot of water for 2 min.', 'Put it straight into ice water to keep the green.', 'Squeeze out the excess liquid.', 'Blend with the cooking cream, salted butter and salt until smooth.'] }
       ],
-      contains: [{ allergen: 'Milk', from: 'cooking cream' }],
+      contains: [{ allergen: 'Milk', from: 'cooking cream and butter' }],
       check: [],
-      labelNote: 'Check the cooking cream label.'
+      labelNote: 'Check the cooking cream and butter labels.'
+    },
+    {
+      id: 'red-wine-jus', no: '72', kind: 'batch', forLine: 'For the pork belly', name: 'Red Wine Jus', short: 'Red wine jus',
+      yield: 'Batch: 5 L.',
+      ingredients: [
+        { q: '750 g', name: 'Red wine jus powder' },
+        { q: '5 L', name: 'Water' }
+      ],
+      sections: [
+        { title: 'Method', steps: ['Bring the water to the boil.', 'Make a slurry with the jus powder.', 'Mix the slurry into the boiling water.'] }
+      ],
+      contains: [],
+      check: [],
+      labelNote: 'Check the jus powder label for allergens.'
     }
   ]
 };
