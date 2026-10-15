@@ -589,9 +589,9 @@ window.LK_DATA = {
     {
       id: 'pork-belly', art: 'pork-belly', no: '29', kind: 'main', forLine: 'Plate', name: 'Pork Belly', avc: 'Pork Belly Main S26',
       menu: 'Pork Belly: mashed potato, spinach purée, red wine jus, peas, bacon, shallot.',
-      yield: 'Per plate. 300 g belly, mash, spinach purée, peas, bacon, red wine jus.',
+      yield: 'Per plate. 240 g belly, mash, spinach purée, peas, bacon, red wine jus.',
       ingredients: [
-        { q: '300 g', name: 'Roasted pork belly', note: 'portioned to 300 g', link: 'pork-belly-batch' },
+        { q: '240 g', name: 'Roasted pork belly', note: 'portioned to 240 g', link: 'pork-belly-batch' },
         { q: '25 ml', name: 'Oil', note: 'for frying the belly' },
         { q: '5 g', name: 'Table salt', note: 'on the crackling' },
         { q: '150 g', name: 'Mash', link: 'mash' },
@@ -603,7 +603,7 @@ window.LK_DATA = {
         { q: '[Qty]', name: 'Green garnish', note: 'snow pea tendrils, sliced spring onion, parsley or finely sliced chives' }
       ],
       pins: [
-        { label: 'Pork belly', x: 36.8, y: 39.6, side: 'left', tags: [], note: '300 g, roasted. Jus on top.', link: 'pork-belly-batch' },
+        { label: 'Pork belly', x: 36.8, y: 39.6, side: 'left', tags: [], note: '240 g, roasted. Jus on top.', link: 'pork-belly-batch' },
         { label: 'Mash', x: 44.3, y: 54.0, side: 'left', link: 'mash', note: '150 g, slightly off centre, on top of the spinach squiggle.' },
         { label: 'Spinach purée', x: 13.2, y: 50.0, side: 'left', link: 'spinach-puree', note: '50 ml, a wavy squiggle across the whole plate.' },
         { label: 'Peas', x: 63.2, y: 61.3, side: 'right', tags: [], note: 'About 80 g, with jus. Beside the mash and on top of the belly.' },
@@ -614,7 +614,7 @@ window.LK_DATA = {
       ],
       sections: [
         { title: 'Cooking', steps: [
-          'Portion the roasted pork belly to 300 g.',
+          'Portion the roasted pork belly to 240 g.',
           'Season the crackling with the 5 g table salt.',
           'Quickly fry the belly in a pan with the oil, on all sides.',
           'Finish it in the kick oven at 250 °C for about 10 min.',
