@@ -1389,7 +1389,7 @@ window.LK_DATA = {
     },
     {
       id: 'fried-onions', no: '73', kind: 'batch', forLine: 'For the pork belly', name: 'Fried Onions', short: 'Fried onions', art: 'fried-onions',
-      yield: 'Batch: 8 white onions and 400 g cornflour.',
+      yield: 'Batch: 8 white onions and 400 g cornflour. Makes about 3 kg.',
       ingredients: [
         { q: '8', name: 'White onions', note: 'sliced' },
         { q: '400 g', name: 'Cornflour' }
