@@ -678,8 +678,8 @@ window.LK_DATA = {
         { q: '400 g', name: 'Chicken middle wings', note: 'presteamed, floured, portioned in a sandwich bag' },
         { q: '50 g', name: 'Wing flour', note: 'cornflour and szechuan spice seasoning', link: 'wing-flour' },
         { q: '90 g', name: 'Pork Cumberland sausage', note: 'thick, bought in', tags: ['Gluten?', 'Soy?'] },
-        { q: '1 portion', name: 'Diane sauce', note: 'first sauce of choice', link: 'diane-sauce' },
-        { q: '1.5 portions', name: 'Mushroom sauce', note: 'second sauce of choice', link: 'mushroom-sauce' },
+        { q: '1 portion', name: 'Diane sauce', note: '50 ml, first sauce of choice', link: 'diane-sauce' },
+        { q: '1.5 portions', name: 'Mushroom sauce', note: '75 ml, second sauce of choice, as costed', link: 'mushroom-sauce' },
         { q: '1.1 portions', name: 'Chips', note: '200 g raw portion' },
         { q: '1', name: 'Side salad', note: 'standard size', link: 'side-salad' }
       ],
@@ -690,8 +690,8 @@ window.LK_DATA = {
         { label: 'Cumberland sausage', x: 65.8, y: 48.1, side: 'right', tags: ['Gluten?', 'Soy?'], note: '90 g, bought in, on the grill first.' },
         { label: 'Chips', x: 50.7, y: 75.7, side: 'left', tags: [], note: '1.1 portions, standard.' },
         { label: 'Side salad', x: 17.9, y: 48.1, side: 'right', link: 'side-salad', note: 'Standard size.' },
-        { label: 'Sauce of choice', x: 82.1, y: 31.4, side: 'left', link: 'diane-sauce', note: 'Diane sauce.' },
-        { label: 'Second sauce', x: 87.0, y: 69.8, side: 'left', link: 'mushroom-sauce', note: 'Mushroom sauce.' }
+        { label: 'Sauce of choice', x: 82.1, y: 31.4, side: 'left', link: 'diane-sauce', note: 'Diane sauce, 1 portion of 50 ml.' },
+        { label: 'Second sauce', x: 87.0, y: 69.8, side: 'left', link: 'mushroom-sauce', note: 'Mushroom sauce, 1.5 portions of 50 ml (75 ml), as costed.' }
       ],
       sections: [
         { title: 'Prep ahead: brisket', steps: [
@@ -1469,7 +1469,7 @@ window.LK_DATA = {
     },
     {
       id: 'mushroom-sauce', no: '76', kind: 'batch', forLine: 'For the Grill Maiden\'s Board', name: 'Mushroom Sauce', short: 'Mushroom sauce', art: 'mushroom-sauce',
-      yield: 'Batch: 5 L.',
+      yield: 'Batch: 5 L. One portion of sauce is 50 ml.',
       ingredients: [
         { q: '960 g', name: 'Mushrooms' },
         { q: '600 g', name: 'Gravy powder' },
@@ -1496,7 +1496,7 @@ window.LK_DATA = {
     },
     {
       id: 'diane-sauce', no: '77', kind: 'batch', forLine: 'For the Grill Maiden\'s Board', name: 'Diane Sauce', short: 'Diane sauce', art: 'diane-sauce',
-      yield: 'Batch: 5 L.',
+      yield: 'Batch: 5 L. One portion of sauce is 50 ml.',
       ingredients: [
         { q: '1150 g', name: 'Gravy powder' },
         { q: '125 g', name: 'Crushed garlic' },
