@@ -512,12 +512,13 @@ window.LK_DATA = {
     {
       id: 'steak-sandwich', diagram: 'steak-sandwich-build', art: 'steak-sandwich', no: '26', kind: 'main', forLine: 'Plate', name: 'Steak Sandwich', avc: 'Steak sandwich S26',
       menu: 'Steak Sandwich: rump steak, caramelised onion, smoky BBQ sauce, cheddar, bacon, fried egg, Turkish bread.',
-      yield: 'Per plate. 150 g topside, cheese, bacon, beetroot relish, aioli, chips, side sauce.',
+      yield: 'Per plate. 150 g topside, cheese, bacon, egg, beetroot relish, aioli, chips, side sauce.',
       ingredients: [
         { q: '1', name: 'Turkish roll', note: 'oval, 130 g', tags: ['Gluten', 'Sesame?', 'Soy?'] },
         { q: '150 g', name: 'Topside steak' },
         { q: '1 slice', name: 'Cheese', tags: ['Milk'] },
         { q: '90 g', name: 'Shortcut bacon' },
+        { q: '1', name: 'Egg', tags: ['Egg'] },
         { q: '[Qty]', name: 'Beetroot relish' },
         { q: '[Qty]', name: 'Aioli', note: 'on the top half of the roll', tags: ['Egg'] },
         { q: '1 leaf', name: 'Oak leaf lettuce' },
@@ -527,10 +528,10 @@ window.LK_DATA = {
       ],
       sections: [
         { title: 'Cooking', steps: ['Grill the steak to the guest\'s wished doneness.'] },
-        { title: 'Plating, bottom to top', steps: ['Turkish roll base.', 'Beetroot relish.', 'Oak lettuce.', '3 slices of tomato.', 'Topside steak.', 'Cheese and bacon.', 'Aioli on the top half of the Turkish roll, then close.', 'Chips and a side sauce of choice on the side.'] }
+        { title: 'Plating, bottom to top', steps: ['Turkish roll base.', 'Beetroot relish.', 'Oak lettuce.', '3 slices of tomato.', 'Topside steak.', 'Cheese.', 'Bacon.', 'Egg.', 'Aioli on the top half of the Turkish roll, then close.', 'Chips and a side sauce of choice on the side.'] }
       ],
       pins: [
-        { label: 'Steak sandwich', x: 53.8, y: 34.9, side: 'right', tags: [], note: 'Turkish roll, topside, cheese, bacon, beetroot relish, aioli on the top half, oak lettuce, tomato.' },
+        { label: 'Steak sandwich', x: 53.8, y: 34.9, side: 'right', tags: [], note: 'Turkish roll, topside, cheese, bacon, egg, beetroot relish, aioli on the top half, oak lettuce, tomato.' },
         { label: 'Chips', x: 34.0, y: 69.8, side: 'right', tags: [], note: '1 portion, 200 g raw.' },
         { label: 'Side sauce', x: 72.0, y: 70.0, side: 'left', tags: [], note: 'Sauce of choice.' }
       ],
