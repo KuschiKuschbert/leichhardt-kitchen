@@ -1074,13 +1074,13 @@ window.LK_DATA = {
     {
       id: 'calamari', art: 'calamari', no: '52', kind: 'snack', forLine: 'Snack', name: 'Salt and Szechuan Pepper Calamari',
       menu: 'Salt and Szechuan Pepper Calamari: lime aioli.',
-      yield: 'Per serve. Salt and Szechuan pepper calamari, lime aioli.',
+      yield: 'Per serve. 12 pieces of salt and Szechuan pepper calamari, lime aioli.',
       ingredients: [
-        { q: '[Qty]', name: 'Calamari', note: 'salt and Szechuan pepper coating', tags: ['Mollusc', 'Gluten?'] },
+        { q: '12 pieces', name: 'Calamari', note: 'salt and Szechuan pepper coating', tags: ['Mollusc', 'Gluten?'] },
         { q: '[Qty]', name: 'Lime aioli', tags: ['Egg'] }
       ],
       pins: [
-        { label: 'Calamari', x: 42.5, y: 44.3, side: 'right', tags: ['Mollusc', 'Gluten?'], note: 'Salt and Szechuan pepper.' },
+        { label: 'Calamari', x: 42.5, y: 44.3, side: 'right', tags: ['Mollusc', 'Gluten?'], note: '12 pieces. Salt and Szechuan pepper.' },
         { label: 'Lime aioli', x: 72.6, y: 66.0, side: 'left', tags: ['Egg'], note: '' }
       ]
     },
@@ -1302,13 +1302,13 @@ window.LK_DATA = {
     {
       id: 'senior-calamari', art: 'senior-calamari', no: '65', kind: 'main', forLine: 'Senior', name: 'Senior Calamari',
       menu: 'Seniors Calamari: chips and salad.',
-      yield: 'Senior plate. Calamari, chips and salad.',
+      yield: 'Senior plate. 12 pieces of calamari, chips and salad.',
       ingredients: [
-        { q: '[Qty]', name: 'Calamari', tags: ['Mollusc', 'Gluten?'] },
+        { q: '12 pieces', name: 'Calamari', tags: ['Mollusc', 'Gluten?'] },
         { q: '1 portion', name: 'Chips and salad', link: 'chips-salad' }
       ],
       pins: [
-        { label: 'Calamari', x: 48.1, y: 35.8, side: 'right', tags: ['Mollusc', 'Gluten?'], note: '' },
+        { label: 'Calamari', x: 48.1, y: 35.8, side: 'right', tags: ['Mollusc', 'Gluten?'], note: '12 pieces.' },
         { label: 'Chips', x: 28.3, y: 66.0, side: 'right', tags: [], note: 'Chips and salad portion. Card to come.' },
         { label: 'Salad', x: 71.7, y: 66.0, side: 'left', tags: [], note: 'Chips and salad portion. Card to come.' }
       ]
