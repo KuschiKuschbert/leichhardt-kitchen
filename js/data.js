@@ -208,16 +208,18 @@ window.LK_DATA = {
         { q: '3', name: 'Small Snickers bars', tags: ['Peanut', 'Milk', 'Soy', 'Egg'] },
         { q: '3', name: 'Spring roll wrappers', tags: ['Gluten'] },
         { q: '[Qty]', name: 'Butterscotch sauce', note: 'drizzled on top of the rolls', link: 'butterscotch' },
+        { q: '[Qty]', name: 'Roasted peanuts', note: 'sprinkled over the rolls', tags: ['Peanut'] },
         { q: '1 scoop', name: 'Ice cream', tags: ['Milk'] }
       ],
       pins: [
-        { label: 'Snickers rolls', x: 44.3, y: 45.3, tags: ['Peanut', 'Milk', 'Soy', 'Egg', 'Gluten'], note: '3 small Snickers in spring roll wrappers, criss-cross stacked, butterscotch drizzled on top.' },
+        { label: 'Snickers rolls', x: 44.3, y: 45.3, tags: ['Peanut', 'Milk', 'Soy', 'Egg', 'Gluten'], note: '3 small Snickers in spring roll wrappers, criss-cross stacked, butterscotch drizzled on top, roasted peanuts over.' },
         { label: 'Ice cream', x: 74.5, y: 71.7, tags: ['Milk'], note: '1 scoop.' }
       ],
       sections: [
         { title: 'Prep', steps: ['Wrap each Snickers, ends tucked in. Seal the top edge with a little water.'] },
         { title: 'Cooking', steps: ['Deep-fry in the low temp fryer until golden.'] },
-        { title: 'Plating', steps: ['Criss-cross stack the 3 rolls.', 'Drizzle butterscotch sauce on top of the rolls.', 'Add 1 scoop of ice cream.'] }
+        { title: 'Plating', steps: ['Criss-cross stack the 3 rolls.', 'Drizzle butterscotch sauce on top of the rolls.',
+        'Sprinkle roasted peanuts over the rolls.', 'Add 1 scoop of ice cream.'] }
       ],
       contains: [{ allergen: 'Peanut', from: 'Snickers' }, { allergen: 'Milk', from: 'Snickers, ice cream' }, { allergen: 'Soy', from: 'Snickers' }, { allergen: 'Egg', from: 'Snickers' }, { allergen: 'Gluten', from: 'spring roll wrappers' }],
       check: []
