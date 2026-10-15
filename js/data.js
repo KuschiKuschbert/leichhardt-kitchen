@@ -69,7 +69,7 @@ window.LK_DATA = {
         { q: '250 g', name: 'Guinness beef pie mix', note: 'from the bag', tags: ['Gluten'] },
         { q: '1', name: 'Pie shell and lid', tags: ['Gluten', 'Milk?'] },
         { q: '200 g', name: 'Mash', link: 'mash', tags: ['Milk'] },
-        { q: '80 g', name: 'Peas' },
+        { q: '80 g', name: 'Green peas' },
         { q: '80 ml', name: 'Gravy', tags: ['Gluten?'] },
         { q: '[Qty]', name: 'Garnish' }
       ],
@@ -597,10 +597,10 @@ window.LK_DATA = {
         { q: '150 g', name: 'Mash', link: 'mash' },
         { q: '50 ml', name: 'Spinach purée', note: 'a wavy squiggle across the whole plate', link: 'spinach-puree' },
         { q: '80 g', name: 'Peas' },
-        { q: '80 g', name: 'Bacon' },
+        { q: '80 g', name: 'Diced bacon', note: 'bacon rasher, diced' },
         { q: '50 ml', name: 'Red wine jus', link: 'red-wine-jus' },
-        { q: '[Qty]', name: 'Fried shallots', note: 'fried onions, made in house', link: 'fried-onions' },
-        { q: '[Qty]', name: 'Green garnish' }
+        { q: '40 g', name: 'Fried shallots', note: 'fried onions, made in house', link: 'fried-onions' },
+        { q: '[Qty]', name: 'Green garnish', note: 'snow pea tendrils, sliced spring onion, parsley or finely sliced chives' }
       ],
       pins: [
         { label: 'Pork belly', x: 36.8, y: 39.6, side: 'left', tags: [], note: '300 g, roasted. Jus on top.', link: 'pork-belly-batch' },
@@ -609,15 +609,15 @@ window.LK_DATA = {
         { label: 'Peas', x: 63.2, y: 61.3, side: 'right', tags: [], note: 'About 80 g, with jus. Beside the mash and on top of the belly.' },
         { label: 'Bacon', x: 63.2, y: 45.3, side: 'right', tags: [], note: 'About 80 g, with jus. Beside the mash and on top of the belly.' },
         { label: 'Red wine jus', x: 58.5, y: 52.8, side: 'right', link: 'red-wine-jus', note: 'On the peas and bacon, and on top of the belly.' },
-        { label: 'Fried shallots', x: 49.0, y: 43.4, side: 'right', link: 'fried-onions', note: 'Fried onions on top.' },
-        { label: 'Green garnish', x: 51.9, y: 46.2, side: 'left', tags: [], note: 'To finish.' }
+        { label: 'Fried shallots', x: 49.0, y: 43.4, side: 'right', link: 'fried-onions', note: '40 g, fried onions on top.' },
+        { label: 'Green garnish', x: 51.9, y: 46.2, side: 'left', tags: [], note: 'Snow pea tendrils, sliced spring onion, parsley or finely sliced chives.' }
       ],
       sections: [
         { title: 'Cooking', steps: [
           'Portion the roasted pork belly to 300 g.',
           'Quickly fry the belly in a pan with a little oil, on all sides.',
-          'Finish it in the oven. [Oven setting to confirm]',
-          'Heat the peas and the bacon (about 80 g each) in a pan with a splash of water. Add the red wine jus once hot.'
+          'Finish it in the kick oven at 250 °C. [Time to confirm]',
+          'Heat the green peas and the diced bacon (about 80 g each) in a pan with a splash of water. Add the red wine jus once hot.'
         ] },
         { title: 'Plating', steps: [
           'Wavy squiggle of spinach purée across the whole plate.',
@@ -625,7 +625,7 @@ window.LK_DATA = {
           'Bacon and peas with jus next to the mash.',
           'Pork belly on top, with jus over it.',
           'Peas and bacon on top of the belly as well.',
-          'Finish with fried shallots and the green garnish.'
+          'Finish with 40 g fried shallots and the green garnish.'
         ] }
       ]
     },
