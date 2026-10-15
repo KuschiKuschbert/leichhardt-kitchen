@@ -600,7 +600,7 @@ window.LK_DATA = {
         { q: '80 g', name: 'Diced bacon', note: 'bacon rasher, diced' },
         { q: '50 ml', name: 'Red wine jus', link: 'red-wine-jus' },
         { q: '40 g', name: 'Fried shallots', note: 'fried onions, made in house', link: 'fried-onions' },
-        { q: '[Qty]', name: 'Green garnish', note: 'snow pea tendrils, sliced spring onion, parsley or finely sliced chives' }
+        { q: '50 g', name: 'Green garnish', note: 'snow pea tendrils, sliced spring onion, parsley or finely sliced chives' }
       ],
       pins: [
         { label: 'Pork belly', x: 36.8, y: 39.6, side: 'left', tags: [], note: '240 g, roasted. Jus on top.', link: 'pork-belly-batch' },
@@ -626,7 +626,7 @@ window.LK_DATA = {
           'Bacon and peas with jus next to the mash.',
           'Pork belly on top, with jus over it.',
           'Peas and bacon on top of the belly as well.',
-          'Finish with 40 g fried shallots and the green garnish.'
+          'Finish with 40 g fried shallots and 50 g green garnish.'
         ] }
       ]
     },
