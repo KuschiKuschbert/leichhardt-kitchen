@@ -46,7 +46,7 @@ window.LK_DATA = {
         { q: '1', name: 'Burger bun', note: 'milk bun', tags: ['Gluten', 'Milk'] },
         { q: '1', name: 'Crumbed chicken thigh', note: 'bought in, 170 g', tags: ['Gluten'] },
         { q: '1 slice', name: 'Sliced cheese', tags: ['Milk'] },
-        { q: '100 g', name: 'Ranch', note: 'bought in, across both layers', tags: ['Milk', 'Egg'] },
+        { q: '100 g', name: 'Ranch', link: 'ranch', note: 'bought in, across both layers', tags: ['Milk', 'Egg'] },
         { q: '1 leaf', name: 'Oak leaf' },
         { q: '2 slices', name: 'Tomato' },
         { q: '150 g', name: 'Chips' }
@@ -190,7 +190,7 @@ window.LK_DATA = {
         { q: '1', name: 'White cabbage' },
         { q: '12', name: 'Corn cobs' },
         { q: '1 tin', name: 'Roasted red peppers' },
-        { q: '[Qty]', name: 'Aioli', note: 'for service', tags: ['Egg'] },
+        { q: '[Qty]', name: 'Aioli', link: 'aioli', note: 'for service', tags: ['Egg'] },
         { q: '[Qty]', name: 'Lemon juice', note: 'for service' }
       ],
       sections: [
@@ -425,7 +425,7 @@ window.LK_DATA = {
         { q: '2 slices', name: 'Burger cheese', note: 'one on each patty', tags: ['Milk'] },
         { q: '20 g', name: 'Bread and butter pickles' },
         { q: '20 ml', name: 'American mustard' },
-        { q: '40 ml', name: 'Tomato sauce', note: 'ketchup' },
+        { q: '40 ml', name: 'Tomato sauce', link: 'tomato-sauce', note: 'ketchup' },
         { q: '[Qty]', name: 'Oak leaf lettuce' },
         { q: '1 portion', name: 'Chips', note: '200 g raw' }
       ],
@@ -472,7 +472,7 @@ window.LK_DATA = {
         { q: '1', name: 'Milk bun', note: 'sliced', tags: ['Gluten', 'Milk', 'Egg?', 'Soy?'] },
         { q: '180 g', name: 'Blue grenadier fillet', note: 'skinless, MSC', tags: ['Fish'] },
         { q: '50 ml', name: 'Beer batter', note: 'XXXX', link: 'beer-batter', tags: ['Gluten'] },
-        { q: '70 ml', name: 'Tartare sauce', note: 'bought in', tags: ['Egg', 'Soy?'] },
+        { q: '70 ml', name: 'Tartare sauce', link: 'tartare', note: 'bought in', tags: ['Egg', 'Soy?'] },
         { q: '[Qty]', name: 'Green oak lettuce' },
         { q: '50 g', name: 'Tomato' },
         { q: '50 g', name: 'Red onion' },
@@ -519,8 +519,8 @@ window.LK_DATA = {
         { q: '1 slice', name: 'Cheese', tags: ['Milk'] },
         { q: '90 g', name: 'Shortcut bacon' },
         { q: '1', name: 'Egg', tags: ['Egg'] },
-        { q: '[Qty]', name: 'Beetroot relish' },
-        { q: '[Qty]', name: 'Aioli', note: 'on the top half of the roll', tags: ['Egg'] },
+        { q: '[Qty]', name: 'Beetroot relish', link: 'beetroot-relish' },
+        { q: '[Qty]', name: 'Aioli', link: 'aioli', note: 'on the top half of the roll', tags: ['Egg'] },
         { q: '1 leaf', name: 'Oak leaf lettuce' },
         { q: '3 slices', name: 'Tomato' },
         { q: '1 portion', name: 'Chips', note: '200 g raw' },
@@ -764,7 +764,7 @@ window.LK_DATA = {
       yield: 'Senior plate. Half a schnitzel, sauce, ham, mozzarella, chips and salad.',
       ingredients: [
         { q: '½', name: 'Chicken schnitzel', note: 'half a 350 g double butterfly, bought in', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'] },
-        { q: '30 g', name: 'Pizza sauce', note: 'Mutti; Napoli on the menu' },
+        { q: '30 g', name: 'Pizza sauce', link: 'pizza-sauce', note: 'Mutti; Napoli on the menu' },
         { q: '20 g', name: 'Virginian ham', note: 'shaved leg ham on the menu' },
         { q: '30 g', name: 'Shredded mozzarella', tags: ['Milk'] },
         { q: '1 portion', name: 'Chips and salad', link: 'chips-salad' }
@@ -1128,7 +1128,7 @@ window.LK_DATA = {
       yield: 'Per serve. Aioli or gravy.',
       ingredients: [
         { q: '[Qty]', name: 'Chips' },
-        { q: '[Qty]', name: 'Aioli', note: 'or gravy, guest\'s choice', tags: ['Egg'] },
+        { q: '[Qty]', name: 'Aioli', link: 'aioli', note: 'or gravy, guest\'s choice', tags: ['Egg'] },
         { q: '[Qty]', name: 'Gravy', note: 'or aioli', link: 'gravy' }
       ],
       pins: [
@@ -1162,7 +1162,7 @@ window.LK_DATA = {
       ingredients: [
         { q: '[Qty]', name: 'Fish fillet', tags: ['Fish'] },
         { q: '[Qty]', name: 'Beer batter', note: 'XXXX', link: 'beer-batter', tags: ['Gluten'] },
-        { q: '[Qty]', name: 'Tartare sauce', tags: ['Egg', 'Soy?'] },
+        { q: '[Qty]', name: 'Tartare sauce', link: 'tartare', tags: ['Egg', 'Soy?'] },
         { q: '[Qty]', name: 'Lemon' },
         { q: '1 portion', name: 'Chips and salad', link: 'chips-salad' }
       ],
@@ -1286,7 +1286,7 @@ window.LK_DATA = {
       ingredients: [
         { q: '[Qty]', name: 'Fish fillet', tags: ['Fish'] },
         { q: '[Qty]', name: 'Beer batter', note: 'XXXX', link: 'beer-batter', tags: ['Gluten'] },
-        { q: '[Qty]', name: 'Tartare sauce', tags: ['Egg', 'Soy?'] },
+        { q: '[Qty]', name: 'Tartare sauce', link: 'tartare', tags: ['Egg', 'Soy?'] },
         { q: '1 portion', name: 'Chips and salad', link: 'chips-salad' }
       ],
       pins: [
@@ -1323,7 +1323,7 @@ window.LK_DATA = {
         { q: '5 g', name: 'Carrot, julienne' },
         { q: '10 g', name: 'Peeled red onion' },
         { q: '10 g', name: 'Lebanese cucumber' },
-        { q: '20 ml', name: 'Green goddess dressing', note: 'vegan', tags: ['Soy?', 'Sesame?'] },
+        { q: '20 ml', name: 'Green goddess dressing', link: 'green-goddess', note: 'vegan', tags: ['Soy?', 'Sesame?'] },
         { q: '2 g', name: 'Salt flakes', note: 'on the salad' }
       ],
       contains: [],
@@ -1499,7 +1499,7 @@ window.LK_DATA = {
         { q: '1000 ml', name: 'Red cooking wine' },
         { q: '1 L', name: 'Cooking cream', tags: ['Milk'] },
         { q: '250 ml', name: 'Worcestershire sauce', tags: ['Fish?', 'Gluten?', 'Soy?'] },
-        { q: '500 g', name: 'Tomato sauce' },
+        { q: '500 g', name: 'Tomato sauce', link: 'tomato-sauce' },
         { q: '200 ml', name: 'Water', note: 'for the slurry' }
       ],
       sections: [
@@ -1547,6 +1547,97 @@ window.LK_DATA = {
       contains: [],
       check: [],
       labelNote: 'Check the rub label for allergens.'
+    },
+    {
+      id: 'ranch', no: '80', kind: 'batch', forLine: 'For the chicken burger', name: 'Ranch', short: 'Ranch', art: 'ranch',
+      yield: 'Bought in. No prep. Serve size is on each dish card.',
+      ingredients: [
+        { q: '1', name: 'Ranch', note: 'Bought in, product to confirm.', tags: ['Milk?', 'Egg?'] }
+      ],
+      sections: [
+        { title: 'Method', steps: ['Bought in. No prep.'] }
+      ],
+      contains: [],
+      check: [{ allergen: 'Milk', from: 'ranch' }, { allergen: 'Egg', from: 'ranch' }],
+      labelNote: 'Check the supplier label for allergens.'
+    },
+    {
+      id: 'aioli', no: '81', kind: 'batch', forLine: 'For several dishes', name: 'Garlic Aioli', short: 'Aioli', art: 'aioli',
+      yield: 'Bought in. No prep. Serve size is on each dish card.',
+      ingredients: [
+        { q: '1', name: 'Aioli', note: 'Oli & Vine garlic aioli, bought in (AVC product).', tags: ['Egg?'] }
+      ],
+      sections: [
+        { title: 'Method', steps: ['Bought in. No prep.'] }
+      ],
+      contains: [],
+      check: [{ allergen: 'Egg', from: 'aioli' }],
+      labelNote: 'Check the supplier label for allergens.'
+    },
+    {
+      id: 'tartare', no: '82', kind: 'batch', forLine: 'For the fish dishes', name: 'Tartare Sauce', short: 'Tartare sauce', art: 'tartare',
+      yield: 'Bought in. No prep. Serve size is on each dish card.',
+      ingredients: [
+        { q: '1', name: 'Tartare sauce', note: 'Oli & Vine tartare sauce, bought in (AVC product).', tags: ['Egg?'] }
+      ],
+      sections: [
+        { title: 'Method', steps: ['Bought in. No prep.'] }
+      ],
+      contains: [],
+      check: [{ allergen: 'Egg', from: 'tartare sauce' }],
+      labelNote: 'Check the supplier label for allergens.'
+    },
+    {
+      id: 'pizza-sauce', no: '83', kind: 'batch', forLine: 'For the parmigiana', name: 'Pizza Sauce', short: 'Pizza sauce', art: 'pizza-sauce',
+      yield: 'Bought in. No prep. Serve size is on each dish card.',
+      ingredients: [
+        { q: '1', name: 'Pizza sauce', note: 'Mutti pizza sauce classica, bought in (AVC product).' }
+      ],
+      sections: [
+        { title: 'Method', steps: ['Bought in. No prep.'] }
+      ],
+      contains: [],
+      check: [],
+      labelNote: 'Check the supplier label for allergens.'
+    },
+    {
+      id: 'tomato-sauce', no: '84', kind: 'batch', forLine: 'For the fish and chips and the Diane sauce', name: 'Tomato Sauce', short: 'Tomato sauce', art: 'tomato-sauce',
+      yield: 'Bought in. No prep. Serve size is on each dish card.',
+      ingredients: [
+        { q: '1', name: 'Tomato sauce', note: 'Heinz tomato sauce, gluten free, bought in (AVC product).' }
+      ],
+      sections: [
+        { title: 'Method', steps: ['Bought in. No prep.'] }
+      ],
+      contains: [],
+      check: [],
+      labelNote: 'Check the supplier label for allergens.'
+    },
+    {
+      id: 'green-goddess', no: '85', kind: 'batch', forLine: 'For the chips salad', name: 'Green Goddess Dressing', short: 'Green goddess dressing', art: 'green-goddess',
+      yield: 'Bought in. No prep. Serve size is on each dish card.',
+      ingredients: [
+        { q: '1', name: 'Green goddess dressing', note: 'Birch & Waite green goddess dressing, vegan and gluten free, bought in (AVC product).' }
+      ],
+      sections: [
+        { title: 'Method', steps: ['Bought in. No prep.'] }
+      ],
+      contains: [],
+      check: [],
+      labelNote: 'Check the supplier label for allergens.'
+    },
+    {
+      id: 'beetroot-relish', no: '86', kind: 'batch', forLine: 'For the steak sandwich', name: 'Beetroot Relish', short: 'Beetroot relish', art: 'beetroot-relish',
+      yield: 'Bought in. No prep. Serve size is on each dish card.',
+      ingredients: [
+        { q: '1', name: 'Beetroot relish', note: 'Bought in, product to confirm.' }
+      ],
+      sections: [
+        { title: 'Method', steps: ['Bought in. No prep.'] }
+      ],
+      contains: [],
+      check: [],
+      labelNote: 'Check the supplier label for allergens.'
     }
   ]
 };
