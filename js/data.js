@@ -512,7 +512,7 @@ window.LK_DATA = {
     {
       id: 'steak-sandwich', diagram: 'steak-sandwich-build', art: 'steak-sandwich', no: '26', kind: 'main', forLine: 'Plate', name: 'Steak Sandwich', avc: 'Steak sandwich S26',
       menu: 'Steak Sandwich: rump steak, caramelised onion, smoky BBQ sauce, cheddar, bacon, fried egg, Turkish bread.',
-      yield: 'Per plate. 150 g topside, cheese, bacon, egg, chips.',
+      yield: 'Per plate. 150 g topside, cheese, bacon, egg, chips, side sauce.',
       ingredients: [
         { q: '1', name: 'Turkish roll', note: 'oval, 130 g', tags: ['Gluten', 'Sesame?', 'Soy?'] },
         { q: '150 g', name: 'Topside steak' },
@@ -520,17 +520,20 @@ window.LK_DATA = {
         { q: '90 g', name: 'Shortcut bacon' },
         { q: '1', name: 'Egg', tags: ['Egg'] },
         { q: '30 g', name: 'Caramelised onion relish' },
-        { q: '50 ml', name: 'Smokey BBQ sauce', tags: ['Gluten?', 'Soy?'] },
-        { q: '[Qty]', name: 'Baby cos' },
-        { q: '50 g', name: 'Tomato' },
-        { q: '1 portion', name: 'Chips', note: '200 g raw' }
+        { q: '50 ml', name: 'Smokey BBQ sauce', note: 'on the Turkish bread', tags: ['Gluten?', 'Soy?'] },
+        { q: '1 leaf', name: 'Oak leaf lettuce' },
+        { q: '3 slices', name: 'Tomato' },
+        { q: '1 portion', name: 'Chips', note: '200 g raw' },
+        { q: '[Qty]', name: 'Side sauce of choice', note: 'guest chooses' }
       ],
       sections: [
-        { title: 'Plating, bottom to top', steps: ['Turkish roll base.', 'Smoky BBQ sauce.', 'Baby cos.', 'Tomato.', 'Topside steak, cheese on top.', 'Onion relish.', 'Bacon.', 'Egg.', 'Turkish roll top.', 'Chips on the side.'] }
+        { title: 'Cooking', steps: ['Grill the steak to the guest\'s wished doneness.'] },
+        { title: 'Plating, bottom to top', steps: ['Turkish roll base.', 'Smoky BBQ sauce on the Turkish bread.', 'Oak lettuce.', '3 slices of tomato.', 'Topside steak, cheese on top.', 'Onion relish.', 'Bacon.', 'Egg.', 'Turkish roll top.', 'Chips and a side sauce of choice on the side.'] }
       ],
       pins: [
-        { label: 'Steak sandwich', x: 53.8, y: 34.9, side: 'right', tags: [], note: 'Turkish roll, 150 g topside, cheese, bacon, egg, onion relish, BBQ sauce, cos, tomato.' },
-        { label: 'Chips', x: 34.0, y: 69.8, side: 'right', tags: [], note: '1 portion, 200 g raw.' }
+        { label: 'Steak sandwich', x: 53.8, y: 34.9, side: 'right', tags: [], note: 'Turkish roll, 150 g topside, cheese, bacon, egg, onion relish, BBQ sauce, oak lettuce, tomato.' },
+        { label: 'Chips', x: 34.0, y: 69.8, side: 'right', tags: [], note: '1 portion, 200 g raw.' },
+        { label: 'Side sauce', x: 72.0, y: 70.0, side: 'left', tags: [], note: 'Sauce of choice.' }
       ],
       labelNote: 'Check the roll, BBQ sauce, relish, bacon and cheese labels.'
     },
