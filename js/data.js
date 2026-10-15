@@ -569,22 +569,22 @@ window.LK_DATA = {
       yield: 'Per bowl. 3 beetroot bites, mash, seasonal vegetables, gravy.',
       ingredients: [
         { q: '3', name: 'Beetroot bites', note: '40 g each, plant based, bought in', tags: ['Sesame?', 'Soy?'] },
-        { q: '200 g', name: 'Mash', link: 'mash' },
+        { q: '150 g', name: 'Dairy free mash', note: 'same amount as the lamb rissoles' },
         { q: '1 portion', name: 'Seasonal vegetables', note: 'about 120 g', link: 'side-veg' },
         { q: '50 ml', name: 'Gravy', note: 'gluten free, dairy free and vegan', link: 'gravy' },
         { q: '1 g', name: 'Table salt' }
       ],
       sections: [
-        { title: 'Cooking', steps: ['Steam off the mash in a flat tray for 20 min.', 'Heat the seasonal vegetables in the poaching pot, then finish them in a pan with a bit of oil, salt and pepper.'] },
+        { title: 'Cooking', steps: ['Deep fry the beetroot bites in the fryer until golden.', 'Steam off the dairy free mash in a flat tray for 20 min.', 'Heat the seasonal vegetables in the poaching pot, then finish them in a pan with a bit of oil, salt and pepper.'] },
         { title: 'Plating, in a bowl', steps: ['Mash on one half of the bowl.', 'Seasonal vegetables on the other half.', '3 beetroot bites on the mash.', 'Gravy over the bites. No onion rings.'] }
       ],
       pins: [
-        { label: 'Beetroot bites', x: 36.8, y: 46.7, side: 'right', tags: ['Sesame?', 'Soy?'], note: '3 x 40 g, on the mash.' },
-        { label: 'Mash', x: 22.6, y: 63.2, side: 'left', link: 'mash', note: '200 g, on one half of the bowl.' },
+        { label: 'Beetroot bites', x: 36.8, y: 46.7, side: 'right', tags: ['Sesame?', 'Soy?'], note: '3 pieces, 40 g each, deep fried until golden, on the mash.' },
+        { label: 'Dairy free mash', x: 22.6, y: 63.2, side: 'left', tags: [], note: '150 g, on one half of the bowl.' },
         { label: 'Gravy', x: 44.3, y: 55.7, side: 'right', link: 'gravy', note: '50 ml, over the bites.' },
         { label: 'Seasonal vegetables', x: 69.8, y: 51.4, side: 'right', link: 'side-veg', note: 'About 120 g, on the other half of the bowl.' }
       ],
-      labelNote: 'Check the beetroot bite and mash labels.'
+      labelNote: 'Check the beetroot bite and dairy free mash labels.'
     },
     {
       id: 'pork-belly', art: 'pork-belly', no: '29', kind: 'main', forLine: 'Plate', name: 'Pork Belly', avc: 'Pork Belly Main S26',
