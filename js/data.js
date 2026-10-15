@@ -36,7 +36,7 @@
   Quantities for cards 13 onward come from the AVC Live costings (Spring 26). Costs stay in AVC.
 */
 window.LK_DATA = {
-  updated: '14 October 2026',
+  updated: '15 October 2026',
   allergens: ['Gluten', 'Milk', 'Egg', 'Soy', 'Peanut', 'Tree nut', 'Fish', 'Crustacean', 'Mollusc', 'Sesame'],
   recipes: [
     {
@@ -1236,6 +1236,40 @@ window.LK_DATA = {
         { label: 'Chips', x: 28.3, y: 66.0, side: 'right', tags: [], note: 'Chips and salad portion. Card to come.' },
         { label: 'Salad', x: 71.7, y: 66.0, side: 'left', tags: [], note: 'Chips and salad portion. Card to come.' }
       ]
+    },
+    /* ---------- Batch cards from AVC Live (Oct 2026): only fully confirmed ingredient lists ---------- */
+    {
+      id: 'chips-salad', no: '66', art: 'chips-salad', kind: 'batch', forLine: 'For steaks, schnitzels, parmys and fish', name: 'Chips and Salad', short: 'Chips + salad',
+      avc: 'GLOBAL 200g CHIP PORTION MEALS SEP26 / GLOBAL BASE SALAD PORTION SEP26',
+      yield: 'Per serve: 200 g chips and one base salad.',
+      ingredients: [
+        { q: '200 g', name: 'Chips', note: '9 mm skin-on' },
+        { q: '3 g', name: 'Cooking salt', note: 'for the chips' },
+        { q: '15 g', name: 'Mesclun' },
+        { q: '25 g', name: 'Cherry tomatoes' },
+        { q: '5 g', name: 'Carrot, julienne' },
+        { q: '10 g', name: 'Peeled red onion' },
+        { q: '10 g', name: 'Lebanese cucumber' },
+        { q: '20 ml', name: 'Green goddess dressing', note: 'vegan', tags: ['Soy?', 'Sesame?'] },
+        { q: '2 g', name: 'Salt flakes', note: 'on the salad' }
+      ],
+      contains: [],
+      check: [{ allergen: 'Soy', from: 'green goddess dressing' }, { allergen: 'Sesame', from: 'green goddess dressing' }],
+      labelNote: 'Check the chip and dressing labels. AVC also lists chicken salt and lemon pepper on the chips at 0 g, so they are not counted here.'
+    },
+    {
+      id: 'pork-belly-batch', no: '67', art: 'pork-belly-batch', kind: 'batch', forLine: 'For the pork belly and the pork belly bites', name: 'Pork Belly and Crackle', short: 'Pork belly',
+      avc: 'Pork Belly & Crackle',
+      yield: 'Batch: 25 serves.',
+      ingredients: [
+        { q: '6 kg', name: 'Pork belly', note: 'boneless, rind on' },
+        { q: '1 kg', name: 'Pork skin', note: 'for the crackle' },
+        { q: '100 g', name: 'Cocoa powder', tags: ['Milk?', 'Soy?'] },
+        { q: '100 g', name: 'Caster sugar' }
+      ],
+      contains: [],
+      check: [{ allergen: 'Milk', from: 'cocoa powder' }, { allergen: 'Soy', from: 'cocoa powder' }],
+      labelNote: 'Check the cocoa label.'
     }
   ]
 };
