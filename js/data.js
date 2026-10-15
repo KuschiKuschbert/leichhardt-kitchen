@@ -36,7 +36,7 @@
   Quantities for cards 13 onward come from the AVC Live costings (Spring 26). Costs stay in AVC.
 */
 window.LK_DATA = {
-  updated: '14 October 2026',
+  updated: '15 October 2026',
   allergens: ['Gluten', 'Milk', 'Egg', 'Soy', 'Peanut', 'Tree nut', 'Fish', 'Crustacean', 'Mollusc', 'Sesame'],
   recipes: [
     {
@@ -1236,6 +1236,166 @@ window.LK_DATA = {
         { label: 'Chips', x: 28.3, y: 66.0, side: 'right', tags: [], note: 'Chips and salad portion. Card to come.' },
         { label: 'Salad', x: 71.7, y: 66.0, side: 'left', tags: [], note: 'Chips and salad portion. Card to come.' }
       ]
+    },
+    /* ---------- Batch cards from AVC Live (Oct 2026). Quantities as listed in AVC; anything unclear is in [brackets] ---------- */
+    {
+      id: 'chips-salad', no: '66', kind: 'batch', forLine: 'For steaks, schnitzels, parmys and fish', name: 'Chips and Salad', short: 'Chips + salad',
+      avc: 'GLOBAL 200g CHIP PORTION MEALS SEP26 / GLOBAL BASE SALAD PORTION SEP26',
+      yield: 'Per serve: 200 g chips and one base salad.',
+      ingredients: [
+        { q: '200 g', name: 'Chips', note: '9 mm skin-on' },
+        { q: '3 g', name: 'Cooking salt', note: 'for the chips' },
+        { q: '15 g', name: 'Mesclun' },
+        { q: '25 g', name: 'Cherry tomatoes' },
+        { q: '5 g', name: 'Carrot, julienne' },
+        { q: '10 g', name: 'Peeled red onion' },
+        { q: '10 g', name: 'Lebanese cucumber' },
+        { q: '20 ml', name: 'Green goddess dressing', note: 'vegan', tags: ['Soy?', 'Sesame?'] },
+        { q: '2 g', name: 'Salt flakes', note: 'on the salad' }
+      ],
+      contains: [],
+      check: [{ allergen: 'Soy', from: 'green goddess dressing' }, { allergen: 'Sesame', from: 'green goddess dressing' }],
+      labelNote: 'Check the chip and dressing labels. AVC also lists chicken salt and lemon pepper on the chips at 0 g, so they are not counted here.'
+    },
+    {
+      id: 'mushroom-sauce', no: '67', kind: 'batch', forLine: 'For the steaks and grill board', name: 'Mushroom Sauce', short: 'Mushroom sauce',
+      avc: 'Mushroom Sauce Portion A25',
+      yield: 'Batch: 14 L. A serve is 70 ml.',
+      ingredients: [
+        { q: '[Qty]', name: '[Ingredients to come: AVC shows this only as a linked batch]' }
+      ],
+      contains: [],
+      check: [],
+      labelNote: 'Allergens not worked out yet, because the ingredients are not confirmed.'
+    },
+    {
+      id: 'gravy', no: '68', kind: 'batch', forLine: 'For schnitzels, rissoles, mash and poutine', name: 'Base Gravy', short: 'Gravy',
+      avc: 'BASE GRAVY BATCH (1LT)',
+      yield: 'Batch: 1 L.',
+      ingredients: [
+        { q: '120 g', name: 'Rich brown gravy mix', tags: ['Gluten?'] },
+        { q: '[Qty]', name: 'Water', note: 'AVC lists the mix only' }
+      ],
+      contains: [],
+      check: [{ allergen: 'Gluten', from: 'gravy mix' }],
+      labelNote: 'Check the gravy mix label.'
+    },
+    {
+      id: 'beer-batter', no: '69', kind: 'batch', forLine: 'For the fish and chips and fish burger', name: 'Beer Batter', short: 'Beer batter',
+      avc: 'BEER BATTER BATCH (3KG)',
+      yield: 'Batch: 3 kg.',
+      ingredients: [
+        { q: '1 kg', name: 'Self-raising flour', tags: ['Gluten'] },
+        { q: '[Qty]', name: 'Beer', tags: ['Gluten'] },
+        { q: '[Qty]', name: 'Soda water' }
+      ],
+      contains: [{ allergen: 'Gluten', from: 'flour and beer' }],
+      check: [],
+      labelNote: 'AVC lists the flour only. The beer and soda quantities are costed as frying oil, so they are still to confirm.'
+    },
+    {
+      id: 'pork-belly-batch', no: '70', kind: 'batch', forLine: 'For the pork belly and the pork belly bites', name: 'Pork Belly and Crackle', short: 'Pork belly',
+      avc: 'Pork Belly & Crackle',
+      yield: 'Batch: 25 serves.',
+      ingredients: [
+        { q: '6 kg', name: 'Pork belly', note: 'boneless, rind on' },
+        { q: '1 kg', name: 'Pork skin', note: 'for the crackle' },
+        { q: '100 g', name: 'Cocoa powder', tags: ['Milk?', 'Soy?'] },
+        { q: '100 g', name: 'Caster sugar' }
+      ],
+      contains: [],
+      check: [{ allergen: 'Milk', from: 'cocoa powder' }, { allergen: 'Soy', from: 'cocoa powder' }],
+      labelNote: 'Check the cocoa label.'
+    },
+    {
+      id: 'red-wine-jus', no: '71', kind: 'batch', forLine: 'For the pork belly', name: 'Red Wine Jus', short: 'Red wine jus',
+      avc: 'GLOBAL BASE Red Wine Jus 70mls',
+      yield: 'Batch: 10 L. A serve is 70 ml.',
+      ingredients: [
+        { q: '[Qty]', name: '[Ingredients to come: AVC shows this only as a linked 10 L jus batch]' }
+      ],
+      contains: [],
+      check: [],
+      labelNote: 'Allergens not worked out yet, because the ingredients are not confirmed.'
+    },
+    {
+      id: 'diane-sauce', no: '72', kind: 'batch', forLine: 'For the grill board', name: 'Diane Sauce', short: 'Diane sauce',
+      avc: 'Diane Sauce Portion A25',
+      yield: 'Batch: 14 L. A serve is 70 ml.',
+      ingredients: [
+        { q: '[Qty]', name: '[Ingredients to come: AVC shows this only as a linked batch]' }
+      ],
+      contains: [],
+      check: [],
+      labelNote: 'Allergens not worked out yet, because the ingredients are not confirmed.'
+    },
+    {
+      id: 'pulled-pork', no: '73', kind: 'batch', forLine: 'For the taco board', name: 'Pulled Pork', short: 'Pulled pork',
+      avc: 'New pulled pork 10kg',
+      yield: 'Batch: 10 kg cooked pulled pork.',
+      ingredients: [
+        { q: '15 kg', name: 'Pork collar butt', note: 'raw' },
+        { q: '4 L', name: 'BBQ sauce', note: 'gluten free' },
+        { q: '150 g', name: 'Bourbon BBQ rub' },
+        { q: '[50 g]', name: 'Chicken booster', note: 'AVC unit unclear' }
+      ],
+      contains: [],
+      check: [{ allergen: 'Soy', from: 'BBQ sauce and rub' }],
+      labelNote: 'Check the BBQ sauce, rub and booster labels.'
+    },
+    {
+      id: 'smoked-mac', no: '74', kind: 'batch', forLine: 'For the smoked mac and cheese', name: 'Mac and Cheese Batch', short: 'Mac batch',
+      avc: 'MAC N CHEESE BATCH BF 1000GM',
+      yield: 'Batch: 1 kg.',
+      ingredients: [
+        { q: '600 g', name: 'Macaroni', tags: ['Gluten'] },
+        { q: '160 g', name: 'Butter', tags: ['Milk'] },
+        { q: '50 g', name: 'Peeled garlic' },
+        { q: '90 g', name: 'Plain flour', tags: ['Gluten'] },
+        { q: '1 L', name: 'Full cream milk', tags: ['Milk'] },
+        { q: '50 g', name: 'Dijon mustard' },
+        { q: '200 g', name: 'Gruyere', tags: ['Milk'] },
+        { q: '[300 g]', name: 'Cheese', note: 'AVC item marked unavailable', tags: ['Milk'] },
+        { q: '[120 g]', name: 'Pears', note: 'as listed in AVC, please confirm' },
+        { q: '15 g', name: 'Pink sea salt flakes' }
+      ],
+      contains: [{ allergen: 'Gluten', from: 'macaroni and flour' }, { allergen: 'Milk', from: 'butter, milk and cheese' }],
+      check: [],
+      labelNote: 'Check the mustard label.'
+    },
+    {
+      id: 'cookie-dough', no: '75', kind: 'batch', forLine: 'For the skillet cookie', name: 'Cookie Dough', short: 'Cookie dough',
+      avc: 'Cookie Skillet Batch',
+      yield: 'Batch yield [to confirm].',
+      ingredients: [
+        { q: '[2]', name: 'Eggs', note: 'AVC unit unclear', tags: ['Egg'] },
+        { q: '250 g', name: 'Unsalted butter', tags: ['Milk'] },
+        { q: '330 g', name: 'Brown sugar' },
+        { q: '110 g', name: 'Caster sugar' },
+        { q: '20 g', name: 'Vanilla bean paste' },
+        { q: '520 g', name: 'Plain flour', tags: ['Gluten'] },
+        { q: '5 g', name: 'Bicarb soda' },
+        { q: '5 g', name: 'Table salt' },
+        { q: '360 g', name: 'Milk chocolate buttons', tags: ['Milk', 'Soy?'] }
+      ],
+      contains: [{ allergen: 'Gluten', from: 'flour' }, { allergen: 'Milk', from: 'butter and chocolate' }, { allergen: 'Egg', from: 'eggs' }],
+      check: [{ allergen: 'Soy', from: 'chocolate buttons' }],
+      labelNote: 'Check the chocolate label.'
+    },
+    {
+      id: 'cowboy-butter', no: '76', kind: 'batch', forLine: 'For the flank steak', name: 'Cowboy Butter', short: 'Cowboy butter',
+      avc: 'Garlic Herb Butter BATCH 5KG',
+      yield: 'Batch: 5 kg. [Inference] AVC garlic herb butter is the cowboy butter on card 17, please confirm.',
+      ingredients: [
+        { q: '4.5 kg', name: 'Unsalted butter', tags: ['Milk'] },
+        { q: '500 g', name: 'Peeled garlic' },
+        { q: '2 bunches', name: 'Chives' },
+        { q: '80 g', name: 'Italian mixed herbs' },
+        { q: '50 g', name: 'Salt and pepper mix', note: '9 parts sea salt to 1 part cracked pepper' }
+      ],
+      contains: [{ allergen: 'Milk', from: 'butter' }],
+      check: [],
+      labelNote: 'Check the mixed herbs label.'
     }
   ]
 };

@@ -40,27 +40,20 @@ Dishes already link to these ids. Add a recipe with the same `id` and the links,
 
 | id | Used by cards |
 | --- | --- |
-| `chips-salad` | 13 14 15 16 17 18 19 20 21 33 34 58 59 60 64 65 |
-| `mushroom-sauce` | 13 14 15 16 31 |
-| `gravy` | 21 27 33 35 41 46 56 |
 | `side-veg` | 27 28 35 42 |
 | `mash` | 28 29 35 41 |
 | `smash-patty` | 22 23 |
-| `cookie-dough` | 12 |
-| `cowboy-butter` | 17 |
 | `french-topper` | 18 |
 | `mexican-topper` | 19 |
 | `americana-topper` | 20 |
-| `beer-batter` | 24 58 64 |
-| `pork-belly-batch` | 29 51 |
-| `spinach-puree`, `red-wine-jus` | 29 |
+| `spinach-puree` | 29 |
 | `fettuccine`, `carbonara-sauce` | 30 |
 | `wing-flour` | 31 49 |
-| `diane-sauce` | 31 |
-| `pulled-pork`, `pico` | 32 |
+| `pico` | 32 |
 | `spaghetti`, `kids-bolognese` | 36 |
-| `smoked-mac` | 39 |
 | `rum-butterscotch`, `honeycomb` | 43 |
+
+Cards 66 to 76 are batch cards taken from the AVC Live pages (October 2026). Quantities are as listed in AVC; unclear ones are in [brackets].
 
 Cards 13 to 45 came from the AVC Live costings (Spring 26). Only ingredients and quantities were taken over; prices and supplier codes stay in AVC.
 
