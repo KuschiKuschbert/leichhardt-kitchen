@@ -124,6 +124,8 @@ img, svg { display: block; }
 
 /* ---------- view A: tiles ---------- */
 .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(15.5rem, 1fr)); gap: 1rem; }
+.tile-groups { display: flex; flex-direction: column; gap: 1.6rem; }
+.tile-group { display: flex; flex-direction: column; gap: 0.6rem; }
 .tile { display: flex; flex-direction: column; gap: 0.6rem; min-height: 12rem; padding: 1.1rem; background: var(--paper); border: 1.5px solid var(--edge); border-radius: 12px; text-decoration: none; }
 .tile:hover { border-color: var(--ink); }
 .tile .t-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; }

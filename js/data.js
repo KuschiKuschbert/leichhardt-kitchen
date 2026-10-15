@@ -34,10 +34,27 @@
   out of the Free from filter. Add a recipe with id: 'gravy' later and the links and allergens switch on.
 
   Quantities for cards 13 onward come from the AVC Live costings (Spring 26). Costs stay in AVC.
+
+  menuOrder (just below) is the guest menu: the sections in the order they are printed, and the
+  dishes in each section in the order they are printed. All three views follow it. To move a dish,
+  or to put a new dish on the menu, add or move its id in the list. A dish that is in no section
+  still shows, under "Other dishes", so nothing goes missing. Batch recipes and components are not
+  on the guest menu, so they sit after the menu sections.
 */
 window.LK_DATA = {
   updated: '15 October 2026',
   allergens: ['Gluten', 'Milk', 'Egg', 'Soy', 'Peanut', 'Tree nut', 'Fish', 'Crustacean', 'Mollusc', 'Sesame'],
+  menuOrder: [
+    { title: "Snackin' Plates", ids: ['poutine', 'beetroot-bites', 'brisket-cob', 'wings', 'haloumi-tacos', 'pork-belly-bites', 'calamari', 'riblets', 'garlic-bread', 'bacon-cheese-bread', 'chips-snack'] },
+    { title: 'Salads', ids: ['caesar', 'green-bowl', 'pumpkin-salad'] },
+    { title: 'Big Country Feeds', ids: ['beef-cheek', 'ribs', 'barra', 'carbonara', 'fish-chips', 'lamb-rissoles', 'vegan-rissoles', 'pork-belly', 'pie'] },
+    { title: 'Off the Grill', ids: ['rump-250', 'rump-500', 'eye-fillet', 'rib-fillet', 'grill-board', 'taco-board', 'flank'] },
+    { title: 'Schnittys & Parmys', ids: ['chicken-schnitzel', 'beef-schnitzel', 'chicken-parmy', 'schnitzel-americana', 'schnitzel-french', 'schnitzel-mexican'] },
+    { title: 'Hand Held', ids: ['smash', 'oz-smash', 'steak-sandwich', 'fish-burger', 'chickpea-burger', 'burger'] },
+    { title: 'Sides', ids: ['slaw-side', 'mash-side', 'side-salad', 'mac-side', 'greens-side', 'wedges'] },
+    { title: 'Dessert', ids: ['donut-fries', 'sticky-toffee', 'snickers', 'skillet'] },
+    { title: 'Seniors', ids: ['senior-rissoles', 'senior-fish-chips', 'senior-bolognese', 'senior-calamari', 'senior-schnitzel', 'senior-parmy'] }
+  ],
   recipes: [
     {
       id: 'burger', no: '02', diagram: 'burger-build', kind: 'main', forLine: 'Plate', name: 'Chicken Burger', art: 'burger', avc: 'Ranch Chicken Burger Complete S26',

@@ -11,7 +11,7 @@ The recipe book for the Leichhardt Hotel kitchen team. It works on any phone, ta
 - **Linked batch recipes.** Any ingredient that has its own recipe is underlined orange with a "Recipe 06" tag, so tapping it opens that recipe. Batch recipes show which dishes they go on.
 - **Allergens roll up.** A dish picks up the allergens of the batch recipes it uses, and names where each one comes from. A "?" means "may be in it, check the supplier label".
 - **Cards to come.** A batch recipe that isn't in the book yet shows as "Card to come". Every dish that uses one is marked "Allergens incomplete", is left out of the Free from filter, and counts as "may have" under the allergen lens, until that card is added.
-- **Snacks and sides** each have their own group, filter and shelf.
+- **Set out like the guest menu.** Recipes are grouped in the order the menu prints them: Snackin' Plates, Salads, Big Country Feeds, Off the Grill, Schnittys & Parmys, Hand Held, Sides, Dessert and Seniors. Tiles, List and The Pass all follow it, and each section is also a filter chip in Tiles. Batch recipes and components come after the menu sections ("Bains and prep" on The Pass).
 - **From the side.** Plated dishes also show a labelled side view, so the team can see what sits on top. Burgers show their build, top to bottom, instead.
 - **Tick off steps** while cooking. The ticks clear when the page is closed.
 - **Settings:**
@@ -32,7 +32,8 @@ All recipes are in **`js/data.js`**. The top of that file explains every field. 
 4. To make an ingredient tappable, add `link: 'gravy'` (the other recipe's `id`).
 5. Put anything that isn't confirmed yet in `[square brackets]` so it shows as a placeholder.
 6. Allergens: tag each ingredient (`tags: ['Milk', 'Soy?']`) and leave out `contains` and `check`; the book works them out from the tags.
-7. Change `updated` at the top of the file to today's date.
+7. If it is a dish on the guest menu, add its `id` to the right section in `menuOrder` at the top of `js/data.js`, in the spot where the menu prints it. A dish left out of `menuOrder` still shows, under "Other dishes". Batch recipes and components are not listed there.
+8. Change `updated` at the top of the file to today's date.
 
 ### Batch cards still to come
 

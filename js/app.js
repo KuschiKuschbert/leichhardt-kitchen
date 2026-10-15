@@ -21,9 +21,6 @@
     { id: 'list', name: 'List', desc: 'A short list on one side and the open recipe on the other.' },
     { id: 'pass', name: 'The Pass', desc: 'Dishes as plates, batch recipes as pans. Tap the food to go deeper.' }
   ];
-  var KINDS = [['all', 'All'], ['main', 'Mains'], ['snack', 'Snacks'], ['side', 'Sides'], ['dessert', 'Desserts'], ['batch', 'Batch recipes'], ['component', 'Components']];
-  var GROUPS = [['Mains', ['main']], ['Snacks', ['snack']], ['Sides', ['side']], ['Desserts', ['dessert']], ['Batch recipes', ['batch']], ['Components', ['component']]];
-  var SHELVES = [['On the pass: mains', ['main']], ['Snacks', ['snack']], ['Sides', ['side']], ['Desserts', ['dessert']], ['Bains and prep', ['batch', 'component']]];
   var TEXT = [['normal', 'Normal'], ['large', 'Large'], ['xlarge', 'Extra large']];
 
   /* ---------- index: worked out once when the page loads ---------- */
@@ -49,6 +46,27 @@
   D.recipes.forEach(function (r) {
     r.ingredients.forEach(function (i) { if (i.link && byId[i.link]) { (usedIn[i.link] = usedIn[i.link] || []).push(r.id); } });
   });
+
+  /* ---------- menu sections: the guest menu in its printed order, then the prep recipes ---------- */
+  // Each group is { key, title, list }. All three views (Tiles, List, The Pass) use these.
+  var MENU = [], PREP = [], placed = {}, memb = {};
+  (D.menuOrder || []).forEach(function (s, i) {
+    var list = (s.ids || []).filter(function (id) { return byId[id] && !placed[id]; });
+    list.forEach(function (id) { placed[id] = true; byId[id].sec = s.title; });
+    if (list.length) MENU.push({ key: 'm' + i, title: s.title, list: list.map(function (id) { return byId[id]; }) });
+  });
+  // A dish that is in no menu section still shows, so nothing goes missing.
+  var other = D.recipes.filter(function (r) { return !placed[r.id] && (r.kind === 'main' || r.kind === 'snack' || r.kind === 'side' || r.kind === 'dessert'); });
+  other.forEach(function (r) { r.sec = 'Other dishes'; });
+  if (other.length) MENU.push({ key: 'mx', title: 'Other dishes', list: other });
+  [['batch', 'Batch recipes'], ['component', 'Components']].forEach(function (k) {
+    var list = D.recipes.filter(function (r) { return r.kind === k[0]; });
+    if (list.length) PREP.push({ key: k[0], title: k[1], list: list });
+  });
+  var GROUPS = MENU.concat(PREP);
+  GROUPS.forEach(function (g) { memb[g.key] = {}; g.list.forEach(function (r) { memb[g.key][r.id] = true; }); });
+  var SHELVES = MENU.concat([{ key: 'prep', title: 'Bains and prep', list: PREP.reduce(function (all, g) { return all.concat(g.list); }, []) }]);
+
   function addTo(bucket, a, src) { if (!bucket[a]) bucket[a] = []; if (bucket[a].indexOf(src) < 0) bucket[a].push(src); }
   function roll(id, seen) {
     if (rolled[id]) return rolled[id];
@@ -81,7 +99,7 @@
     rows[r.id] = list;
     tags[r.id] = t;
     missing[r.id] = ro.missing;
-    hay[r.id] = [r.name, r.avc || '', r.menu || '', r.yield, KIND[r.kind], r.forLine].concat(r.ingredients.map(function (i) { return i.name; }), t).join(' ').toLowerCase();
+    hay[r.id] = [r.name, r.avc || '', r.menu || '', r.yield, KIND[r.kind], r.sec || '', r.forLine].concat(r.ingredients.map(function (i) { return i.name; }), t).join(' ').toLowerCase();
   });
 
   /* ---------- settings (saved on this device) and ticked steps (this visit) ---------- */
@@ -104,6 +122,7 @@
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
   }
   function isDish(r) { return r.kind === 'main' || r.kind === 'snack' || r.kind === 'side' || r.kind === 'dessert'; }
+  function inKind(r) { return ui.kind === 'all' || !!(memb[ui.kind] && memb[ui.kind][r.id]); }
   function q() { return ui.query.trim().toLowerCase(); }
   function matches(id) { var s = q(); return !s || hay[id].indexOf(s) >= 0; }
   function freeOk(id) {
@@ -154,7 +173,7 @@
       '<div>Allergens are worked out from the ingredients. Always check the supplier labels before answering a guest.</div></footer>';
   }
   function countText() {
-    var shown = D.recipes.filter(function (r) { return matches(r.id) && freeOk(r.id) && (ui.kind === 'all' || r.kind === ui.kind || settings.view !== 'tiles'); }).length;
+    var shown = D.recipes.filter(function (r) { return matches(r.id) && freeOk(r.id) && (inKind(r) || settings.view !== 'tiles'); }).length;
     return shown === D.recipes.length ? plural(D.recipes.length, 'recipe', 'recipes') : shown + ' of ' + D.recipes.length + ' recipes';
   }
   function searchField(placeholder) {
@@ -269,23 +288,27 @@
 
   /* ---------- view A: tiles ---------- */
   function tilesHTML() {
-    var list = D.recipes.filter(function (r) { return (ui.kind === 'all' || r.kind === ui.kind) && freeOk(r.id) && matches(r.id); });
-    if (!list.length) return '<div class="empty">No recipes match. Clear the search or the filters.</div>';
-    return '<div class="tiles">' + list.map(function (r) {
-      return '<a class="tile" href="#/r/' + esc(r.id) + '"><span class="t-top"><span class="t-kind">' + esc(KIND[r.kind] + (r.forLine === 'Template' ? ' · Template' : '')) + '</span>' +
-        '<span class="t-no">' + esc(r.no) + '</span></span><span class="t-name">' + esc(r.name) + '</span><span class="t-yield">' + esc(r.yield) + '</span>' +
-        '<span class="chips">' + rows[r.id].map(function (a) { return '<span class="tag' + (a.maybe ? ' maybe' : '') + '">' + esc(a.label) + '</span>'; }).join('') +
-        (missing[r.id].length ? '<span class="tag maybe">Allergens incomplete</span>' : '') + '</span></a>';
-    }).join('') + '</div>';
+    var any = 0;
+    var html = GROUPS.filter(function (g) { return ui.kind === 'all' || g.key === ui.kind; }).map(function (g) {
+      var list = g.list.filter(function (r) { return freeOk(r.id) && matches(r.id); });
+      if (!list.length) return '';
+      any += list.length;
+      return '<section class="tile-group" aria-label="' + esc(g.title) + '"><div class="group-head"><span>' + esc(g.title) + '</span><span>' + list.length + '</span></div><div class="tiles">' + list.map(function (r) {
+        return '<a class="tile" href="#/r/' + esc(r.id) + '"><span class="t-top"><span class="t-kind">' + esc((r.sec || KIND[r.kind]) + (r.forLine === 'Template' ? ' · Template' : '')) + '</span>' +
+          '<span class="t-no">' + esc(r.no) + '</span></span><span class="t-name">' + esc(r.name) + '</span><span class="t-yield">' + esc(r.yield) + '</span>' +
+          '<span class="chips">' + rows[r.id].map(function (a) { return '<span class="tag' + (a.maybe ? ' maybe' : '') + '">' + esc(a.label) + '</span>'; }).join('') +
+          (missing[r.id].length ? '<span class="tag maybe">Allergens incomplete</span>' : '') + '</span></a>';
+      }).join('') + '</div></section>';
+    }).join('');
+    return any ? '<div class="tile-groups">' + html + '</div>' : '<div class="empty">No recipes match. Clear the search or the filters.</div>';
   }
   function viewTiles(route) {
     if (route.stack.length) {
       var r = byId[route.stack[route.stack.length - 1]];
       return '<div class="page">' + header() + '<main id="main">' + recipeCard(r, route.stack, true) + '</main>' + footer() + '</div>';
     }
-    var kinds = KINDS.map(function (k) {
-      var n = k[0] === 'all' ? D.recipes.length : D.recipes.filter(function (r) { return r.kind === k[0]; }).length;
-      return '<button type="button" class="chip" data-act="kind" data-val="' + k[0] + '" data-k="kind:' + k[0] + '" aria-pressed="' + (ui.kind === k[0]) + '">' + esc(k[1]) + ' (' + n + ')</button>';
+    var kinds = [{ key: 'all', title: 'All', list: D.recipes }].concat(GROUPS).map(function (g) {
+      return '<button type="button" class="chip" data-act="kind" data-val="' + g.key + '" data-k="kind:' + g.key + '" aria-pressed="' + (ui.kind === g.key) + '">' + esc(g.title) + ' (' + g.list.length + ')</button>';
     }).join('');
     return '<div class="page">' + header(countText()) + '<main id="main" style="display: flex; flex-direction: column; gap: 1.1rem">' +
       searchField('Dish, ingredient or allergen') +
@@ -297,7 +320,7 @@
   function groupsHTML(curId) {
     var s = q(), shown = 0;
     var html = GROUPS.map(function (g) {
-      var items = D.recipes.filter(function (r) { return g[1].indexOf(r.kind) >= 0 && freeOk(r.id) && matches(r.id); }).map(function (r) {
+      var items = g.list.filter(function (r) { return freeOk(r.id) && matches(r.id); }).map(function (r) {
         var sub = rows[r.id].length ? rows[r.id].map(function (a) { return a.label; }).join(' · ') : (r.forLine === 'Template' ? 'Template' : 'No listed allergens');
         if (missing[r.id].length) sub = 'Allergens incomplete' + (rows[r.id].length ? ' · ' + sub : '');
         if (s && r.name.toLowerCase().indexOf(s) < 0) {
@@ -308,7 +331,7 @@
           '<span class="l-main"><span class="l-name">' + esc(r.name) + '</span><span class="l-sub">' + esc(sub) + '</span></span>' + ICON.right + '</a>';
       });
       shown += items.length;
-      return items.length ? '<div class="group"><div class="group-head"><span>' + esc(g[0]) + '</span><span>' + items.length + '</span></div><div class="rows">' + items.join('') + '</div></div>' : '';
+      return items.length ? '<div class="group"><div class="group-head"><span>' + esc(g.title) + '</span><span>' + items.length + '</span></div><div class="rows">' + items.join('') + '</div></div>' : '';
     }).join('');
     return shown ? html : '<div class="empty">No recipes match. Clear the search or the Free from filter.</div>';
   }
@@ -331,7 +354,7 @@
   function shelvesHTML() {
     var s = q(), n = 0;
     var html = SHELVES.map(function (sh) {
-      var items = D.recipes.filter(function (r) { return sh[1].indexOf(r.kind) >= 0; }).map(function (r) {
+      var items = sh.list.map(function (r) {
         var h = hitId(r.id), m = matches(r.id), dish = isDish(r);
         if (s && m) n++;
         var links = r.ingredients.filter(function (i) { return i.link && byId[i.link]; }).map(function (i) { return byId[i.link].short || byId[i.link].name; });
@@ -343,7 +366,7 @@
           '<span class="d-name">' + esc(r.name) + '</span><span class="d-sub">' + esc(sub) + '</span>' +
           (h ? '<span class="tag dark">' + esc((h === 'may' ? 'May have ' : 'Has ') + ui.lens) + '</span>' : '') + '</a>';
       }).join('');
-      return '<section class="shelf" aria-label="' + esc(sh[0]) + '"><div class="group-head"><span>' + esc(sh[0]) + '</span></div><div class="shelf-items">' + items + '</div><div class="rail" aria-hidden="true"></div></section>';
+      return '<section class="shelf" aria-label="' + esc(sh.title) + '"><div class="group-head"><span>' + esc(sh.title) + '</span></div><div class="shelf-items">' + items + '</div><div class="rail" aria-hidden="true"></div></section>';
     }).join('');
     return html + (s && !n ? '<div class="empty">Nothing on the pass matches. Clear the search.</div>' : '');
   }
