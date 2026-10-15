@@ -1479,14 +1479,15 @@ window.LK_DATA = {
         { q: '3', name: 'Thyme sprigs' },
         { q: '80 ml', name: 'Red cooking wine' },
         { q: '2 g', name: 'Cracked black pepper' },
-        { q: '5 g', name: 'Table salt' }
+        { q: '5 g', name: 'Table salt' },
+        { q: '200 ml', name: 'Water', note: 'for the slurry' }
       ],
       sections: [
         { title: 'Method', steps: [
           'Cook off the ingredients individually: the mushrooms, onion, garlic and thyme.',
           'Deglaze with the red cooking wine.',
           'Top up with the cooking cream.',
-          'Make a slurry with the gravy powder and add it.',
+          'Make a slurry with the gravy powder and 200 ml of water, and add it.',
           'Season with the cracked black pepper and table salt. [When to add them to confirm]'
         ] }
       ],
@@ -1503,7 +1504,8 @@ window.LK_DATA = {
         { q: '1000 ml', name: 'Red cooking wine' },
         { q: '1 L', name: 'Cooking cream', tags: ['Milk'] },
         { q: '250 ml', name: 'Worcestershire sauce', tags: ['Fish?', 'Gluten?', 'Soy?'] },
-        { q: '500 g', name: 'Tomato sauce' }
+        { q: '500 g', name: 'Tomato sauce' },
+        { q: '200 ml', name: 'Water', note: 'for the slurry' }
       ],
       sections: [
         { title: 'Method', steps: [
@@ -1511,7 +1513,7 @@ window.LK_DATA = {
           'Deglaze with the red cooking wine.',
           'Add the Worcestershire sauce and the tomato sauce. [Order to confirm]',
           'Top up with the cooking cream.',
-          'Make a slurry with the gravy powder and add it.'
+          'Make a slurry with the gravy powder and 200 ml of water, and add it.'
         ] }
       ],
       contains: [{ allergen: 'Milk', from: 'cooking cream' }],
