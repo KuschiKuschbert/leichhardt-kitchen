@@ -108,7 +108,7 @@ window.LK_DATA = {
       yield: 'Per plate. 180 g rice, 160 ml laksa, charred greens, barra on top.',
       ingredients: [
         { q: '[Portion]', name: 'Barramundi', note: 'as current', tags: ['Fish'] },
-        { q: '180 g', name: 'Steamed rice', link: 'rice' },
+        { q: '180 g', name: 'Steamed rice', note: 'portioned in a small round container', link: 'rice' },
         { q: '160 ml', name: 'Coconut laksa', link: 'laksa' },
         { q: '[Qty]', name: 'Asian greens', note: 'bok choy, choy sum, kai lan' },
         { q: '[Qty]', name: 'Sesame oil', tags: ['Sesame'] }
@@ -122,7 +122,7 @@ window.LK_DATA = {
       sections: [
         { title: 'Prep: Asian greens', steps: ['Quickly wash the bok choy, choy sum and kai lan.', 'Hold in a prep bain.'] },
         { title: 'Cooking', steps: ['Cook the barra as current.', 'Probe: core 63 °C before the pass.', 'Greens to order: quick blanch in boiling water.', 'Sesame oil, then char in a pan.', 'Heat the laksa through.'] },
-        { title: 'Plating', steps: ['180 g steamed rice.', '160 ml laksa over the rice and a bit around.', 'Charred greens on the rice.', 'Barra on top of the greens.'] }
+        { title: 'Plating', steps: ['180 g steamed rice, from its small round container.', '160 ml laksa over the rice and a bit around.', 'Charred greens on the rice.', 'Barra on top of the greens.'] }
       ],
       contains: [{ allergen: 'Fish', from: 'barra' }, { allergen: 'Sesame', from: 'sesame oil' }],
       check: [],
@@ -138,7 +138,8 @@ window.LK_DATA = {
         { q: '5', name: 'Bay leaves' }
       ],
       sections: [
-        { title: 'Method', steps: ['Wash the rice 3 times until the water runs clear.', 'Spread the rice in a shallow GN pan. Add the water, chicken stock and bay leaves.', 'Steam 25 min.', 'Check the rice. It must not be too soft. If it needs more, steam on in 2 min steps, checking each time.'] }
+        { title: 'Method', steps: ['Wash the rice 3 times until the water runs clear.', 'Spread the rice in a shallow GN pan. Add the water, chicken stock and bay leaves.', 'Steam 25 min.', 'Check the rice. It must not be too soft. If it needs more, steam on in 2 min steps, checking each time.'] },
+        { title: 'Portioning', steps: ['Portion 180 g per serve into small round containers.'] }
       ],
       contains: [],
       check: [{ allergen: 'Gluten', from: 'chicken stock' }, { allergen: 'Soy', from: 'chicken stock' }],
