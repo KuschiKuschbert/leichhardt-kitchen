@@ -711,7 +711,8 @@ window.LK_DATA = {
           'Cook the rump steak (250 g). [Method and doneness to confirm]',
           'Cook the wings (400 g). [Fryer setting to confirm]',
           'Cook the chips and plate the standard side salad.'
-        ] }
+        ] },
+        { title: 'Plating', steps: ['Serve on a rounded rectangular wooden board.'] }
       ],
       labelNote: 'Check the sausage label.'
     },
