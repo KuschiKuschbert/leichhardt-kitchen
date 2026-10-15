@@ -150,17 +150,19 @@ window.LK_DATA = {
       yield: 'Full serve 600 g ribs, half 300 g. Both get 150 g new slaw and 5 corn ribs.',
       ingredients: [
         { q: '600 g or 300 g', name: 'Pork ribs', note: 'full or half serve, Barkers Creek, bought in' },
+        { q: '[Qty]', name: 'Bourbon BBQ sauce', note: 'drizzled on top of the ribs', tags: ['Gluten?', 'Soy?'] },
         { q: '150 g', name: 'New slaw', link: 'slaw' },
         { q: '5', name: 'Corn ribs', link: 'corn' }
       ],
       pins: [
         { label: 'Pork ribs', x: 46.2, y: 35.8, tags: [], note: 'Full serve 600 g, half 300 g, cooked as current. Check the glaze and seasoning labels.' },
+        { label: 'Bourbon BBQ sauce', x: 55.0, y: 41.0, side: 'right', tags: ['Gluten?', 'Soy?'], note: 'Drizzled on top of the ribs.' },
         { label: 'Corn ribs', x: 75.5, y: 62.3, link: 'corn' },
         { label: 'New slaw', x: 34.9, y: 73.6, link: 'slaw' }
       ],
       sections: [
         { title: 'Cooking', steps: ['Cook the pork ribs as current.', 'Corn ribs: steam, char and cut.', 'Slaw: dressed base from the prep fridge.'] },
-        { title: 'Plating', steps: ['Pork ribs: 600 g full serve or 300 g half serve.', '150 g new slaw, same for both serves.', '5 corn ribs, criss-cross stacked, same for both serves.'] }
+        { title: 'Plating', steps: ['Pork ribs: 600 g full serve or 300 g half serve.', 'Drizzle bourbon BBQ sauce on top of the ribs.', '150 g new slaw, same for both serves.', '5 corn ribs, criss-cross stacked, same for both serves.'] }
       ],
       contains: [], check: [],
       labelNote: 'Check the rib glaze and seasoning labels as current.'
@@ -205,22 +207,23 @@ window.LK_DATA = {
       ingredients: [
         { q: '3', name: 'Small Snickers bars', tags: ['Peanut', 'Milk', 'Soy', 'Egg'] },
         { q: '3', name: 'Spring roll wrappers', tags: ['Gluten'] },
+        { q: '[Qty]', name: 'Butterscotch sauce', note: 'drizzled on top of the rolls', link: 'butterscotch' },
         { q: '1 scoop', name: 'Ice cream', tags: ['Milk'] }
       ],
       pins: [
-        { label: 'Snickers rolls', x: 44.3, y: 45.3, tags: ['Peanut', 'Milk', 'Soy', 'Egg', 'Gluten'], note: '3 small Snickers in spring roll wrappers, criss-cross stacked.' },
+        { label: 'Snickers rolls', x: 44.3, y: 45.3, tags: ['Peanut', 'Milk', 'Soy', 'Egg', 'Gluten'], note: '3 small Snickers in spring roll wrappers, criss-cross stacked, butterscotch drizzled on top.' },
         { label: 'Ice cream', x: 74.5, y: 71.7, tags: ['Milk'], note: '1 scoop.' }
       ],
       sections: [
         { title: 'Prep', steps: ['Wrap each Snickers, ends tucked in. Seal the top edge with a little water.'] },
         { title: 'Cooking', steps: ['Deep-fry in the low temp fryer until golden.'] },
-        { title: 'Plating', steps: ['Criss-cross stack the 3 rolls.', 'Add 1 scoop of ice cream.'] }
+        { title: 'Plating', steps: ['Criss-cross stack the 3 rolls.', 'Drizzle butterscotch sauce on top of the rolls.', 'Add 1 scoop of ice cream.'] }
       ],
       contains: [{ allergen: 'Peanut', from: 'Snickers' }, { allergen: 'Milk', from: 'Snickers, ice cream' }, { allergen: 'Soy', from: 'Snickers' }, { allergen: 'Egg', from: 'Snickers' }, { allergen: 'Gluten', from: 'spring roll wrappers' }],
       check: []
     },
     {
-      id: 'butterscotch', no: '11', kind: 'batch', forLine: 'For the skillet cookie', name: 'Butterscotch Sauce', short: 'Butterscotch', art: 'butterscotch',
+      id: 'butterscotch', no: '11', kind: 'batch', forLine: 'For the skillet cookie and the Snickers spring rolls', name: 'Butterscotch Sauce', short: 'Butterscotch', art: 'butterscotch',
       yield: 'Batch: roughly 500 g. About 75 ml per skillet cookie.',
       ingredients: [
         { q: '200 g', name: 'Dark brown sugar' },
