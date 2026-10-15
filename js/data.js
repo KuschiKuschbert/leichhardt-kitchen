@@ -1334,6 +1334,21 @@ window.LK_DATA = {
       contains: [],
       check: [{ allergen: 'Milk', from: 'butter mash' }],
       labelNote: 'Check the mash label.'
+    },
+    {
+      id: 'spinach-puree', no: '71', kind: 'batch', forLine: 'For the pork belly', name: 'Spinach Purée', short: 'Spinach purée', art: 'spinach-puree',
+      yield: 'Batch: 1.5 kg spinach. A serve is 50 ml, a wave squiggle on the bottom of the plate.',
+      ingredients: [
+        { q: '1.5 kg', name: 'Spinach' },
+        { q: '300 ml', name: 'Cooking cream', tags: ['Milk'] },
+        { q: '10 g', name: 'Table salt' }
+      ],
+      sections: [
+        { title: 'Method', steps: ['Quickly blanch the spinach in a pot of water for 2 min.', 'Put it straight into ice water to keep the green.', 'Squeeze out the excess liquid.', 'Blend with the cooking cream and salt until smooth.'] }
+      ],
+      contains: [{ allergen: 'Milk', from: 'cooking cream' }],
+      check: [],
+      labelNote: 'Check the cooking cream label.'
     }
   ]
 };
