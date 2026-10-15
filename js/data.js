@@ -674,7 +674,7 @@ window.LK_DATA = {
       yield: 'Per board. 250 g rump, 500 g brisket, 400 g szechuan wings, Cumberland sausage, chips, salad, two sauces of choice.',
       ingredients: [
         { q: '250 g', name: 'Rump steak', note: 'grain fed MB1' },
-        { q: '500 g', name: 'Smoked brisket', note: 'slow smoked, finished in the kick oven' },
+        { q: '500 g', name: 'Smoked brisket', note: 'finished in the kick oven', link: 'brisket' },
         { q: '400 g', name: 'Chicken middle wings', note: 'presteamed, floured, portioned in a sandwich bag' },
         { q: '50 g', name: 'Wing flour', note: 'cornflour and szechuan spice seasoning', link: 'wing-flour' },
         { q: '90 g', name: 'Pork Cumberland sausage', note: 'thick, bought in', tags: ['Gluten?', 'Soy?'] },
@@ -685,7 +685,7 @@ window.LK_DATA = {
       ],
       pins: [
         { label: 'Rump', x: 23.5, y: 28.3, side: 'left', tags: [], note: '250 g rump steak.' },
-        { label: 'Brisket', x: 52.7, y: 23.4, side: 'left', tags: [], note: '500 g, slow smoked, finished in the kick oven.' },
+        { label: 'Brisket', x: 52.7, y: 23.4, side: 'left', link: 'brisket', note: '500 g, slow smoked, finished in the kick oven.' },
         { label: 'Chicken wings', x: 29.2, y: 61.2, side: 'right', link: 'wing-flour', note: '400 g, with szechuan seasoning.' },
         { label: 'Cumberland sausage', x: 65.8, y: 48.1, side: 'right', tags: ['Gluten?', 'Soy?'], note: '90 g, bought in, on the grill first.' },
         { label: 'Chips', x: 50.7, y: 75.7, side: 'left', tags: [], note: '1.1 portions, standard.' },
@@ -694,11 +694,6 @@ window.LK_DATA = {
         { label: 'Second sauce', x: 87.0, y: 69.8, side: 'left', link: 'mushroom-sauce', note: 'Mushroom sauce, 1.5 portions of 50 ml (75 ml), as costed.' }
       ],
       sections: [
-        { title: 'Prep ahead: brisket', steps: [
-          'Slow smoke the brisket to a core of 73 °C.',
-          'Wrap it up.',
-          'Finish it in the smoker until the core reaches 93 °C.'
-        ] },
         { title: 'Prep ahead: wings', steps: [
           'Presteam the wings in the oven to a core of 75 °C.',
           'Cool them.',
@@ -723,7 +718,7 @@ window.LK_DATA = {
       ingredients: [
         { q: '6', name: 'Flour tortillas', note: '5 inch', tags: ['Gluten', 'Soy?'] },
         { q: '240 g', name: 'Southern-style chicken tenders', note: '60 to 80 g each, bought in', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'] },
-        { q: '200 g', name: 'Brisket', note: 'grain fed MB2' },
+        { q: '200 g', name: 'Brisket', note: 'grain fed MB2', link: 'brisket' },
         { q: '200 g', name: 'Pulled pork', link: 'pulled-pork' },
         { q: '200 g', name: 'Slaw', link: 'slaw' },
         { q: '100 g', name: 'Pico de gallo', link: 'pico' },
@@ -733,7 +728,7 @@ window.LK_DATA = {
       pins: [
         { label: 'Flour tortillas', x: 13.0, y: 22.4, side: 'right', tags: ['Gluten', 'Soy?'], note: '6, 5 inch.' },
         { label: 'Chicken tenders', x: 54.0, y: 30.4, side: 'left', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'], note: '240 g, southern style.' },
-        { label: 'Brisket', x: 77.4, y: 28.3, side: 'right', tags: [], note: '200 g.' },
+        { label: 'Brisket', x: 77.4, y: 28.3, side: 'right', link: 'brisket', note: '200 g.' },
         { label: 'Pulled pork', x: 24.8, y: 65.1, side: 'left', tags: [], note: '200 g. Card to come.' },
         { label: 'Slaw', x: 49.1, y: 66.0, side: 'left', link: 'slaw' },
         { label: 'Pico de gallo', x: 74.5, y: 57.5, side: 'left', tags: [], note: '100 g. Card to come.' },
@@ -1008,14 +1003,14 @@ window.LK_DATA = {
       yield: 'Per serve. Brisket, cream cheese, corn and caramelised onion in a cob loaf.',
       ingredients: [
         { q: '[Qty]', name: 'Cob loaf', tags: ['Gluten'] },
-        { q: '[Qty]', name: 'Brisket', note: 'slow roasted, house rub' },
+        { q: '[Qty]', name: 'Brisket', note: 'slow roasted, house rub', link: 'brisket' },
         { q: '[Qty]', name: 'Cream cheese', tags: ['Milk'] },
         { q: '[Qty]', name: 'Corn' },
         { q: '[Qty]', name: 'Caramelised onion' }
       ],
       pins: [
         { label: 'Cob loaf', x: 27.4, y: 41.5, side: 'left', tags: ['Gluten'], note: '' },
-        { label: 'Brisket', x: 46.2, y: 37.5, side: 'right', tags: [], note: 'Slow roasted, house rub.' },
+        { label: 'Brisket', x: 46.2, y: 37.5, side: 'right', link: 'brisket', note: 'Slow roasted, house rub.' },
         { label: 'Cream cheese', x: 61.5, y: 60.6, side: 'right', tags: ['Milk'], note: '' },
         { label: 'Corn', x: 51.9, y: 49.1, side: 'right', tags: [], note: '' },
         { label: 'Caramelised onion', x: 41.5, y: 56.6, side: 'left', tags: [], note: '' }
@@ -1533,6 +1528,25 @@ window.LK_DATA = {
       contains: [],
       check: [],
       labelNote: 'Check the szechuan seasoning label for gluten, soy and sesame.'
+    },
+    {
+      id: 'brisket', no: '79', kind: 'batch', forLine: 'For the Grill Maiden\'s Board, the Taco Board and the Brisket Cob', name: 'Smoked Brisket', short: 'Brisket', art: 'brisket',
+      yield: 'Batch: one whole brisket, about 12 kg.',
+      ingredients: [
+        { q: '1', name: 'Whole beef brisket', note: 'about 12 kg' },
+        { q: '[Qty]', name: 'Brisket rub', note: 'house rub, to confirm' }
+      ],
+      sections: [
+        { title: 'Method', steps: [
+          'Slow smoke the brisket to a core of 73 °C.',
+          'Wrap it up.',
+          'Finish it in the smoker until the core reaches 93 °C.'
+        ] },
+        { title: 'On the day', steps: ['Grill Maiden\'s Board: 500 g, finished in the kick oven. [Oven setting to confirm]'] }
+      ],
+      contains: [],
+      check: [],
+      labelNote: 'Check the rub label for allergens.'
     }
   ]
 };
