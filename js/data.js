@@ -1482,7 +1482,13 @@ window.LK_DATA = {
         { q: '5 g', name: 'Table salt' }
       ],
       sections: [
-        { title: 'Method', steps: ['[Method to confirm]'] }
+        { title: 'Method', steps: [
+          'Cook off the ingredients individually: the mushrooms, onion, garlic and thyme.',
+          'Deglaze with the red cooking wine.',
+          'Top up with the cooking cream.',
+          'Make a slurry with the gravy powder and add it.',
+          'Season with the cracked black pepper and table salt. [When to add them to confirm]'
+        ] }
       ],
       contains: [{ allergen: 'Milk', from: 'cooking cream' }],
       check: [],
@@ -1500,7 +1506,13 @@ window.LK_DATA = {
         { q: '500 g', name: 'Tomato sauce' }
       ],
       sections: [
-        { title: 'Method', steps: ['[Method to confirm]'] }
+        { title: 'Method', steps: [
+          'Cook off the ingredients individually, starting with the garlic.',
+          'Deglaze with the red cooking wine.',
+          'Add the Worcestershire sauce and the tomato sauce. [Order to confirm]',
+          'Top up with the cooking cream.',
+          'Make a slurry with the gravy powder and add it.'
+        ] }
       ],
       contains: [{ allergen: 'Milk', from: 'cooking cream' }],
       check: [{ allergen: 'Fish', from: 'Worcestershire sauce' }, { allergen: 'Gluten', from: 'Worcestershire sauce' }, { allergen: 'Soy', from: 'Worcestershire sauce' }],
