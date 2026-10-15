@@ -592,8 +592,8 @@ window.LK_DATA = {
       yield: 'Per plate. 300 g belly, mash, spinach purée, peas, bacon, red wine jus.',
       ingredients: [
         { q: '300 g', name: 'Roasted pork belly', note: 'portioned to 300 g', link: 'pork-belly-batch' },
-        { q: '[Qty]', name: 'Oil', note: 'for frying the belly' },
-        { q: '5 g', name: 'Table salt' },
+        { q: '25 ml', name: 'Oil', note: 'for frying the belly' },
+        { q: '5 g', name: 'Table salt', note: 'on the crackling' },
         { q: '150 g', name: 'Mash', link: 'mash' },
         { q: '50 ml', name: 'Spinach purée', note: 'a wavy squiggle across the whole plate', link: 'spinach-puree' },
         { q: '80 g', name: 'Peas' },
@@ -615,8 +615,9 @@ window.LK_DATA = {
       sections: [
         { title: 'Cooking', steps: [
           'Portion the roasted pork belly to 300 g.',
-          'Quickly fry the belly in a pan with a little oil, on all sides.',
-          'Finish it in the kick oven at 250 °C. [Time to confirm]',
+          'Season the crackling with the 5 g table salt.',
+          'Quickly fry the belly in a pan with the oil, on all sides.',
+          'Finish it in the kick oven at 250 °C for about 10 min.',
           'Heat the green peas and the diced bacon (about 80 g each) in a pan with a splash of water. Add the red wine jus once hot.'
         ] },
         { title: 'Plating', steps: [
@@ -1376,15 +1377,15 @@ window.LK_DATA = {
       id: 'red-wine-jus', no: '72', kind: 'batch', forLine: 'For the pork belly', name: 'Red Wine Jus', short: 'Red wine jus',
       yield: 'Batch: 5 L.',
       ingredients: [
-        { q: '750 g', name: 'Red wine jus powder' },
+        { q: '750 g', name: 'Red wine jus powder', tags: ['Soy'] },
         { q: '5 L', name: 'Water' }
       ],
       sections: [
         { title: 'Method', steps: ['Bring the water to the boil.', 'Make a slurry with the jus powder.', 'Mix the slurry into the boiling water.'] }
       ],
-      contains: [],
+      contains: [{ allergen: 'Soy', from: 'jus powder' }],
       check: [],
-      labelNote: 'Check the jus powder label for allergens.'
+      labelNote: 'Gluten free. Check the jus powder label when a new batch of powder comes in.'
     },
     {
       id: 'fried-onions', no: '73', kind: 'batch', forLine: 'For the pork belly', name: 'Fried Onions', short: 'Fried onions', art: 'fried-onions',
