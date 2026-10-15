@@ -208,7 +208,7 @@ window.LK_DATA = {
         { q: '3', name: 'Small Snickers bars', tags: ['Peanut', 'Milk', 'Soy', 'Egg'] },
         { q: '3', name: 'Spring roll wrappers', tags: ['Gluten'] },
         { q: '[Qty]', name: 'Butterscotch sauce', note: 'drizzled on top of the rolls', link: 'butterscotch' },
-        { q: '[Qty]', name: 'Roasted peanuts', note: 'sprinkled over the rolls', tags: ['Peanut'] },
+        { q: '15 g', name: 'Roasted peanuts', note: 'sprinkled over the rolls', tags: ['Peanut'] },
         { q: '1 scoop', name: 'Ice cream', tags: ['Milk'] }
       ],
       pins: [
