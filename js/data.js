@@ -575,7 +575,7 @@ window.LK_DATA = {
         { q: '1 g', name: 'Table salt' }
       ],
       sections: [
-        { title: 'Cooking', steps: ['Deep fry the beetroot bites in the fryer until golden.', 'Steam off the dairy free mash in a flat tray for 20 min.', 'Heat the seasonal vegetables in the poaching pot, then finish them in a pan with a bit of oil, salt and pepper.'] },
+        { title: 'Cooking', steps: ['Deep fry the beetroot bites in the fryer at 175 °C until golden.', 'Steam off the dairy free mash in a flat tray for 20 min.', 'Heat the seasonal vegetables in the poaching pot, then finish them in a pan with a bit of oil, salt and pepper.'] },
         { title: 'Plating, in a bowl', steps: ['Mash on one half of the bowl.', 'Seasonal vegetables on the other half.', '3 beetroot bites on the mash.', 'Gravy over the bites. No onion rings.'] }
       ],
       pins: [
@@ -1291,14 +1291,14 @@ window.LK_DATA = {
     },
     {
       id: 'side-veg', no: '68', kind: 'batch', forLine: 'For the rissoles', name: 'Seasonal Vegetables', short: 'Side veg', art: 'side-veg',
-      yield: 'Per plate: about 120 g, a bit of each vegetable.',
+      yield: 'Batch prep: 12 carrots, 6 cauliflower heads, 8 broccoli heads. Per plate: 3 pieces of each, about 120 g.',
       ingredients: [
-        { q: '3 pieces', name: 'Carrot' },
-        { q: '3 pieces', name: 'Broccoli' },
-        { q: '3 pieces', name: 'Cauliflower' }
+        { q: '12', name: 'Carrots' },
+        { q: '6 heads', name: 'Cauliflower' },
+        { q: '8 heads', name: 'Broccoli' }
       ],
       sections: [
-        { title: 'Prep', steps: ['Cut the carrots in half, then on an angle.', 'Take the florets from the cauliflower and the broccoli.', 'Put each vegetable in its own steam tray.', 'Steam the carrots for 6 min.', 'Steam the cauliflower for 4 min.', 'Steam the broccoli for 3 min.', 'Straight into ice water.'] },
+        { title: 'Prep', steps: ['Cut the 12 carrots in half, then on an angle.', 'Take the florets from the 6 cauliflower heads and the 8 broccoli heads.', 'Put each vegetable in its own steam tray.', 'Steam the carrots for 6 min.', 'Steam the cauliflower for 4 min.', 'Steam the broccoli for 2 min.', 'Straight into ice water.'] },
         { title: 'Service, per plate', steps: ['Heat the vegetables in the poaching pot.', 'Finish in a pan with a bit of oil, salt and pepper.', 'Every plate must get a bit of each: carrot, cauliflower and broccoli, 3 pieces of each, about 120 g in total.'] }
       ],
       contains: [],
