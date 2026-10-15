@@ -1435,12 +1435,12 @@ window.LK_DATA = {
     },
     {
       id: 'fettuccine', no: '75', kind: 'batch', forLine: 'For the carbonara', name: 'Fettuccine, Batch Cooked', short: 'Fettuccine', art: 'fettuccine',
-      yield: 'Portions of 300 g cooked fettuccine, each wrapped in glad wrap.',
+      yield: 'Batch: 5 kg fettuccine. Portions of 300 g cooked fettuccine, each wrapped in glad wrap.',
       ingredients: [
-        { q: '[Qty]', name: 'Fettuccine', note: 'dried, product to confirm', tags: ['Gluten'] }
+        { q: '5 kg', name: 'Fettuccine', note: 'one batch, dried or cooked weight and product to confirm', tags: ['Gluten'] }
       ],
       sections: [
-        { title: 'Method', steps: ['Cook the fettuccine for 8 min, in batches.', 'Portion it after cooking: 300 g per portion, each wrapped in glad wrap.', '[Storage and how it is reheated to confirm]'] }
+        { title: 'Method', steps: ['Cook the 5 kg batch of fettuccine for 8 min.', 'Portion it after cooking: 300 g per portion, each wrapped in glad wrap.', '[Storage and how it is reheated to confirm]'] }
       ],
       contains: [{ allergen: 'Gluten', from: 'fettuccine' }],
       check: [],
