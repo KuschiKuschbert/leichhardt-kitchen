@@ -418,22 +418,22 @@ window.LK_DATA = {
     {
       id: 'smash', no: '22', kind: 'main', forLine: 'Plate', name: 'Smash Burger', art: 'smash', diagram: 'smash-build', avc: 'Smash Burger S26',
       menu: 'Smashed Beef Burger: two smashed patties, cheese, pickles, American mustard.',
-      yield: 'Per plate. Two smashed patties (180 g), cheese on each, chips.',
+      yield: 'Per plate. Two smashed patties (180 g), cheese on each, sauce and mustard on both bun halves, chips.',
       ingredients: [
         { q: '1', name: 'Milk bun', note: 'sliced', tags: ['Gluten', 'Milk', 'Egg?', 'Soy?'] },
         { q: '180 g', name: 'Smash patty', note: '2 patties', link: 'smash-patty' },
         { q: '2 slices', name: 'Burger cheese', note: 'one on each patty', tags: ['Milk'] },
-        { q: '20 g', name: 'Bread and butter pickles' },
-        { q: '20 ml', name: 'American mustard' },
-        { q: '40 ml', name: 'Tomato sauce', link: 'tomato-sauce', note: 'ketchup' },
+        { q: '20 g', name: 'Bread and butter pickles', note: 'top half only' },
+        { q: '20 ml', name: 'American mustard', note: 'top and bottom' },
+        { q: '40 ml', name: 'Tomato sauce', link: 'tomato-sauce', note: 'ketchup, top and bottom' },
         { q: '[Qty]', name: 'Oak leaf lettuce' },
         { q: '1 portion', name: 'Chips', note: '200 g raw' }
       ],
       sections: [
-        { title: 'Plating, bottom to top', steps: ['Bun base.', 'Smashed patty, cheese on top.', 'Smashed patty, cheese on top.', 'Tomato sauce.', 'American mustard.', 'Pickles.', 'Bun top.', 'Chips on the side.'] }
+        { title: 'Plating, bottom to top', steps: ['Bun base.', 'Tomato sauce and American mustard on the base.', 'Smashed patty, cheese on top.', 'Smashed patty, cheese on top.', 'Bun top: tomato sauce, American mustard and pickles.', 'Close the burger.', 'Chips on the side.'] }
       ],
       pins: [
-        { label: 'Smash burger', x: 60.4, y: 35.8, side: 'right', tags: [], note: 'Milk bun, 2 smashed patties (180 g) with cheese on each, tomato sauce, American mustard, pickles. Card to come.' },
+        { label: 'Smash burger', x: 60.4, y: 35.8, side: 'right', tags: [], note: 'Milk bun, 2 smashed patties (180 g) with cheese on each, tomato sauce and American mustard on the top and the bottom, pickles on the top half.' },
         { label: 'Chips', x: 29.2, y: 63.2, side: 'right', tags: [], note: '1 portion, 200 g raw.' }
       ],
       labelNote: 'Check the bun label.'
