@@ -1301,9 +1301,9 @@ window.LK_DATA = {
     {
       id: 'pork-belly-batch', no: '67', art: 'pork-belly-batch', kind: 'batch', forLine: 'For the pork belly and the pork belly bites', name: 'Pork Belly and Crackle', short: 'Pork belly',
       avc: 'Pork Belly & Crackle',
-      yield: 'Batch: 25 serves.',
+      yield: 'Batch: 25 serves, 240 g of raw belly per serve.',
       ingredients: [
-        { q: '6 kg', name: 'Pork belly', note: 'boneless, rind on' },
+        { q: '6 kg', name: 'Pork belly', note: 'boneless, rind on, 240 g raw per serve' },
         { q: '1 kg', name: 'Pork skin', note: 'for the crackle' }
       ],
       sections: [
