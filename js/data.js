@@ -1266,7 +1266,7 @@ window.LK_DATA = {
         { q: '1 kg', name: 'Pork skin', note: 'for the crackle' }
       ],
       sections: [
-        { title: 'Method', steps: ['Put the pork belly in the iCombi and steam for 20 min.', 'Steam roast at 50% humidity, 140 °C, until the core reaches 75 °C.', 'Roast at 230 °C for another 20 min.'] }
+        { title: 'Method', steps: ['Cook the pork belly on the preprogrammed pork belly programme in the iCombi.', 'Or cook it by hand: steam for 20 min.', 'Steam roast at 50% humidity, 140 °C, until the core reaches 75 °C.', 'Roast at 230 °C for another 20 min.'] }
       ],
       contains: [],
       check: [],
