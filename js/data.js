@@ -1263,13 +1263,14 @@ window.LK_DATA = {
       yield: 'Batch: 25 serves.',
       ingredients: [
         { q: '6 kg', name: 'Pork belly', note: 'boneless, rind on' },
-        { q: '1 kg', name: 'Pork skin', note: 'for the crackle' },
-        { q: '100 g', name: 'Cocoa powder', tags: ['Milk?', 'Soy?'] },
-        { q: '100 g', name: 'Caster sugar' }
+        { q: '1 kg', name: 'Pork skin', note: 'for the crackle' }
+      ],
+      sections: [
+        { title: 'Method', steps: ['Put the pork belly in the iCombi and steam for 20 min.', 'Steam roast at 50% humidity, 140 °C, until the core reaches 75 °C.', 'Roast at 230 °C for another 20 min.'] }
       ],
       contains: [],
-      check: [{ allergen: 'Milk', from: 'cocoa powder' }, { allergen: 'Soy', from: 'cocoa powder' }],
-      labelNote: 'Check the cocoa label.'
+      check: [],
+      labelNote: 'Fresh pork only, so no label check needed.'
     }
   ]
 };
