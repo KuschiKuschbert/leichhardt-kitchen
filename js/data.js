@@ -740,6 +740,9 @@ window.LK_DATA = {
         { label: 'Avocado', x: 86.8, y: 67.7, side: 'left', tags: [], note: '60 g chunky.' },
         { label: 'Sour cream', x: 70.8, y: 76.4, side: 'left', tags: ['Milk'], note: '60 ml.' }
       ],
+      sections: [
+        { title: 'Cooking', steps: ['Chicken tenders: fry at 175 °C [time to confirm].', 'Flour tortillas: cook on the grill [time and how served to confirm].', 'Pulled pork: cooked in the smoker (card to come) [temperature and time to confirm].', 'Brisket: card 79 [slicing and reheat to confirm].'] }
+      ],
       labelNote: 'Check the tortilla and tender labels.'
     },
 
