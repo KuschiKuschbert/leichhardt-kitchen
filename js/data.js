@@ -599,7 +599,7 @@ window.LK_DATA = {
         { q: '80 g', name: 'Peas' },
         { q: '80 g', name: 'Bacon' },
         { q: '50 ml', name: 'Red wine jus', link: 'red-wine-jus' },
-        { q: '[Qty]', name: 'Fried shallots', note: 'fried onions, made in house with cornflour' },
+        { q: '[Qty]', name: 'Fried shallots', note: 'fried onions, made in house', link: 'fried-onions' },
         { q: '[Qty]', name: 'Green garnish' }
       ],
       pins: [
@@ -609,7 +609,7 @@ window.LK_DATA = {
         { label: 'Peas', x: 63.2, y: 61.3, side: 'right', tags: [], note: 'About 80 g, with jus.' },
         { label: 'Bacon', x: 63.2, y: 45.3, side: 'right', tags: [], note: 'About 80 g, with jus.' },
         { label: 'Red wine jus', x: 58.5, y: 52.8, side: 'right', link: 'red-wine-jus', note: 'On the peas and bacon, and on top of the belly.' },
-        { label: 'Fried shallots', x: 49.0, y: 43.4, side: 'right', tags: [], note: 'Fried onions on top.' },
+        { label: 'Fried shallots', x: 49.0, y: 43.4, side: 'right', link: 'fried-onions', note: 'Fried onions on top.' },
         { label: 'Green garnish', x: 51.9, y: 46.2, side: 'left', tags: [], note: 'To finish.' }
       ],
       sections: [
@@ -1384,6 +1384,20 @@ window.LK_DATA = {
       contains: [],
       check: [],
       labelNote: 'Check the jus powder label for allergens.'
+    },
+    {
+      id: 'fried-onions', no: '73', kind: 'batch', forLine: 'For the pork belly', name: 'Fried Onions', short: 'Fried onions', art: 'fried-onions',
+      yield: 'Batch: 8 white onions and 400 g cornflour.',
+      ingredients: [
+        { q: '8', name: 'White onions', note: 'sliced' },
+        { q: '400 g', name: 'Cornflour' }
+      ],
+      sections: [
+        { title: 'Method', steps: ['Slice the white onions.', 'Coat the sliced onions in the cornflour.', 'Deep fry at 175 °C until crispy.'] }
+      ],
+      contains: [],
+      check: [],
+      labelNote: 'Check the cornflour label.'
     }
   ]
 };
