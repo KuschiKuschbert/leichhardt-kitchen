@@ -633,20 +633,36 @@ window.LK_DATA = {
     {
       id: 'carbonara', art: 'carbonara', no: '30', kind: 'main', forLine: 'Plate', name: 'Carbonara', avc: 'Carbonara S26',
       menu: 'Classic Pub Carbonara: fettuccine, bacon, cream, parmesan, half a garlic bread.',
-      yield: 'Per plate. 300 g fettuccine, 400 ml sauce, garlic bread.',
+      yield: 'Per plate. 300 g fettuccine, 400 ml creamy garlic sauce, 120 g bacon, half a garlic bread.',
       ingredients: [
-        { q: '300 g', name: 'Fettuccine', link: 'fettuccine', tags: ['Gluten'] },
-        { q: '400 ml', name: 'Carbonara sauce', link: 'carbonara-sauce' },
-        { q: '10 ml', name: 'White cooking wine' },
-        { q: '20 g', name: 'Shaved parmesan', tags: ['Milk'] },
-        { q: '0.05 bunch', name: 'Chives' },
-        { q: '1 piece', name: 'Garlic bread', note: '7 inch, bought in', tags: ['Gluten', 'Milk?', 'Soy?'] }
+        { q: '300 g', name: 'Fettuccine', note: 'cooked, one wrapped portion', link: 'fettuccine', tags: ['Gluten'] },
+        { q: '400 ml', name: 'Creamy garlic sauce', note: 'the carbonara sauce', link: 'carbonara-sauce' },
+        { q: '120 g', name: 'Bacon' },
+        { q: '10 ml', name: 'White cooking wine', note: 'AVC costing, where it goes to confirm' },
+        { q: '[Qty]', name: 'Parmesan', note: 'a little in the pan with the sauce', tags: ['Milk'] },
+        { q: '20 g', name: 'Shaved parmesan', note: 'to garnish', tags: ['Milk'] },
+        { q: '0.05 bunch', name: 'Chives', note: 'the greens, to garnish' },
+        { q: '1/2', name: 'Garlic bread', note: '7 inch, bought in, cut in half', tags: ['Gluten', 'Milk?', 'Soy?'] }
       ],
       pins: [
-        { label: 'Fettuccine', x: 42.5, y: 52.8, side: 'right', tags: ['Gluten'], note: '300 g with 400 ml carbonara sauce (bacon, cream). Card to come.' },
-        { label: 'Parmesan', x: 55.9, y: 37.5, side: 'right', tags: ['Milk'], note: '20 g shaved.' },
-        { label: 'Chives', x: 44.3, y: 41.5, side: 'left', tags: [], note: '0.05 bunch.' },
-        { label: 'Garlic bread', x: 79.2, y: 71.7, side: 'left', tags: ['Gluten', 'Milk?', 'Soy?'], note: '1 piece, 7 inch.' }
+        { label: 'Fettuccine', x: 42.5, y: 52.8, side: 'right', link: 'fettuccine', tags: ['Gluten'], note: '300 g, wet and hot, tossed through 400 ml creamy garlic sauce.' },
+        { label: 'Bacon', x: 48.3, y: 57.5, side: 'left', tags: [], note: '120 g, cooked in the pan first.' },
+        { label: 'Parmesan', x: 55.9, y: 37.5, side: 'right', tags: ['Milk'], note: '20 g shaved, to garnish.' },
+        { label: 'Chives', x: 44.3, y: 41.5, side: 'left', tags: [], note: 'The greens, to garnish.' },
+        { label: 'Garlic bread', x: 79.2, y: 71.7, side: 'left', tags: ['Gluten', 'Milk?', 'Soy?'], note: 'Half a garlic bread on the side.' }
+      ],
+      sections: [
+        { title: 'Cooking', steps: [
+          'Cook the bacon (120 g) in a pan.',
+          'Deglaze the pan with the creamy garlic sauce (400 ml).',
+          'Add a little parmesan to the pan with the sauce.',
+          'Add the wet, hot fettuccine (one 300 g portion) and toss it through the sauce.'
+        ] },
+        { title: 'Plating', steps: [
+          'Fettuccine and sauce in the centre of the plate.',
+          'Garnish with shaved parmesan and the greens.',
+          'Half a garlic bread on the side.'
+        ] }
       ],
       labelNote: 'Check the garlic bread label.'
     },
@@ -1400,6 +1416,35 @@ window.LK_DATA = {
       contains: [],
       check: [],
       labelNote: 'Check the cornflour label.'
+    },
+    {
+      id: 'carbonara-sauce', no: '74', kind: 'batch', forLine: 'For the carbonara', name: 'Creamy Garlic Sauce', short: 'Creamy garlic sauce', art: 'carbonara-sauce',
+      yield: 'Batch: 10 L of cream. This is the carbonara sauce, 400 ml per plate.',
+      ingredients: [
+        { q: '10 L', name: 'Cream', tags: ['Milk'] },
+        { q: '500 g', name: 'Crushed garlic' },
+        { q: '1 L', name: 'White wine' },
+        { q: '25 g', name: 'Table salt' }
+      ],
+      sections: [
+        { title: 'Method', steps: ['[Method to confirm]'] }
+      ],
+      contains: [{ allergen: 'Milk', from: 'cream' }],
+      check: [],
+      labelNote: 'Check the cream label.'
+    },
+    {
+      id: 'fettuccine', no: '75', kind: 'batch', forLine: 'For the carbonara', name: 'Fettuccine, Batch Cooked', short: 'Fettuccine', art: 'fettuccine',
+      yield: 'Portions of 300 g cooked fettuccine, each wrapped in glad wrap.',
+      ingredients: [
+        { q: '[Qty]', name: 'Fettuccine', note: 'dried, product to confirm', tags: ['Gluten'] }
+      ],
+      sections: [
+        { title: 'Method', steps: ['Cook the fettuccine for 8 min, in batches.', 'Portion it after cooking: 300 g per portion, each wrapped in glad wrap.', '[Storage and how it is reheated to confirm]'] }
+      ],
+      contains: [{ allergen: 'Gluten', from: 'fettuccine' }],
+      check: [],
+      labelNote: 'Check the fettuccine label for egg.'
     }
   ]
 };
