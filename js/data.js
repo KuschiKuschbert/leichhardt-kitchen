@@ -542,23 +542,24 @@ window.LK_DATA = {
     {
       id: 'lamb-rissoles', art: 'lamb-rissoles', no: '27', kind: 'main', forLine: 'Plate', name: 'Lamb Rissoles', avc: 'Lamb Rissoles FULL S26',
       menu: 'Lamb Rissoles: butter mash, seasonal vegetables, onion rings, gravy.',
-      yield: 'Per plate. 3 rissoles, mash, veg, onion rings, gravy.',
+      yield: 'Per bowl. 3 rissoles, mash, seasonal vegetables, gravy, 4 onion rings.',
       ingredients: [
-        { q: '1 serve', name: 'Lamb rissoles', note: '240 g, 3 rissoles', link: 'rissole-mix' },
-        { q: '150 g', name: 'Potato mash', note: 'Farm Frites, bought in', tags: ['Milk?'] },
+        { q: '3', name: 'Lamb rissoles', note: '90 g balls before cooking', link: 'rissole-mix' },
+        { q: '150 g', name: 'Potato mash', note: 'Farm Frites, bought in', link: 'mash', tags: ['Milk?'] },
         { q: '1 portion', name: 'Seasonal vegetables', note: 'about 120 g', link: 'side-veg' },
-        { q: '80 g', name: 'Tempura onion rings', note: 'bought in', tags: ['Gluten', 'Egg?', 'Soy?'] },
+        { q: '4', name: 'Tempura onion rings', note: 'bought in', tags: ['Gluten', 'Egg?', 'Soy?'] },
         { q: '50 ml', name: 'Gravy', link: 'gravy' }
       ],
       sections: [
-        { title: 'Cooking', steps: ['Cook the rissoles on steam bake, 50% steam, 140 °C, until the core reaches 75 °C (see the Lamb Rissole Mix card).'] }
+        { title: 'Cooking', steps: ['Cook the rissoles on steam bake, 50% steam, 140 °C, until the core reaches 75 °C (see the Lamb Rissole Mix card).', 'Steam off the mash in a flat tray.'] },
+        { title: 'Plating, in a bowl', steps: ['Mash on one half of the bowl.', 'Seasonal vegetables on the other half.', '3 lamb rissoles on the mash.', 'Gravy over the rissoles.', '4 onion rings on top.'] }
       ],
       pins: [
-        { label: 'Lamb rissoles', x: 34.9, y: 41.5, side: 'left', link: 'rissole-mix' },
-        { label: 'Mash', x: 41.3, y: 56.6, side: 'left', tags: ['Milk?'], note: '150 g butter mash, bought in.' },
-        { label: 'Gravy', x: 51.9, y: 47.2, side: 'right', tags: [], note: '50 ml. Card to come.' },
-        { label: 'Seasonal vegetables', x: 65.8, y: 66.0, side: 'right', link: 'side-veg', note: 'About 120 g: 3 pieces each of carrot, broccoli and cauliflower.' },
-        { label: 'Onion rings', x: 30.2, y: 67.9, side: 'left', tags: ['Gluten', 'Egg?', 'Soy?'], note: '80 g, tempura.' }
+        { label: 'Lamb rissoles', x: 36.8, y: 46.7, side: 'right', link: 'rissole-mix' },
+        { label: 'Mash', x: 22.6, y: 63.2, side: 'left', link: 'mash', tags: ['Milk?'], note: 'On one half of the bowl.' },
+        { label: 'Gravy', x: 44.3, y: 55.7, side: 'right', link: 'gravy', note: 'Over the rissoles.' },
+        { label: 'Seasonal vegetables', x: 69.8, y: 51.4, side: 'right', link: 'side-veg', note: 'About 120 g, on the other half of the bowl.' },
+        { label: 'Onion rings', x: 30.2, y: 40.6, side: 'left', tags: ['Gluten', 'Egg?', 'Soy?'], note: '4, tempura, on top.' }
       ],
       labelNote: 'Check the mash and onion ring labels.'
     },
@@ -1295,6 +1296,31 @@ window.LK_DATA = {
       ],
       contains: [],
       check: []
+    },
+    {
+      id: 'gravy', no: '69', kind: 'batch', forLine: 'For schnitzels, rissoles, mash and poutine', name: 'Gravy', short: 'Gravy',
+      avc: 'BASE GRAVY BATCH (1LT)',
+      yield: 'Batch: 10 L.',
+      ingredients: [
+        { q: '1.2 kg', name: 'Rich brown gravy mix', tags: ['Gluten?'] },
+        { q: '10 L', name: 'Water' }
+      ],
+      contains: [],
+      check: [{ allergen: 'Gluten', from: 'gravy mix' }],
+      labelNote: 'Check the gravy mix label.'
+    },
+    {
+      id: 'mash', no: '70', kind: 'batch', forLine: 'For the rissoles and other plates', name: 'Potato Mash', short: 'Mash',
+      yield: 'Per serve: 150 g. Bought in, Farm Frites butter mash.',
+      ingredients: [
+        { q: '150 g', name: 'Potato mash', note: 'Farm Frites, bought in', tags: ['Milk?'] }
+      ],
+      sections: [
+        { title: 'Method', steps: ['Steam off the mash in a flat tray.'] }
+      ],
+      contains: [],
+      check: [{ allergen: 'Milk', from: 'butter mash' }],
+      labelNote: 'Check the mash label.'
     }
   ]
 };
