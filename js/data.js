@@ -68,7 +68,7 @@ window.LK_DATA = {
       ingredients: [
         { q: '250 g', name: 'Guinness beef pie mix', note: 'from the bag', tags: ['Gluten'] },
         { q: '1', name: 'Pie shell and lid', tags: ['Gluten', 'Milk?'] },
-        { q: '200 g', name: 'Mash', tags: ['Milk'] },
+        { q: '200 g', name: 'Mash', link: 'mash', tags: ['Milk'] },
         { q: '80 g', name: 'Peas' },
         { q: '80 ml', name: 'Gravy', tags: ['Gluten?'] },
         { q: '[Qty]', name: 'Garnish' }
@@ -593,7 +593,7 @@ window.LK_DATA = {
       ingredients: [
         { q: '200 g', name: 'Roasted pork belly', link: 'pork-belly-batch' },
         { q: '5 g', name: 'Table salt' },
-        { q: '200 g', name: 'Mash', link: 'mash' },
+        { q: '150 g', name: 'Mash', link: 'mash' },
         { q: '50 ml', name: 'Spinach purée', note: 'a wave squiggle on the bottom of the plate', link: 'spinach-puree' },
         { q: '50 ml', name: 'Red wine jus', link: 'red-wine-jus' },
         { q: '[Qty]', name: 'Peas' },
@@ -601,7 +601,7 @@ window.LK_DATA = {
       ],
       pins: [
         { label: 'Pork belly', x: 59.4, y: 35.7, side: 'right', tags: [], note: '200 g, roasted. Card to come.' },
-        { label: 'Mash', x: 34.0, y: 41.5, side: 'left', tags: [], note: '200 g. Card to come.' },
+        { label: 'Mash', x: 34.0, y: 41.5, side: 'left', link: 'mash', note: '150 g.' },
         { label: 'Spinach purée', x: 49.1, y: 67.9, side: 'left', tags: [], note: '50 ml, a wave squiggle on the bottom of the plate. Card to come.' },
         { label: 'Red wine jus', x: 67.1, y: 46.1, side: 'right', tags: [], note: '50 ml. Card to come.' },
         { label: 'Peas', x: 76.6, y: 57.8, side: 'right', tags: [], note: '' },
@@ -833,7 +833,7 @@ window.LK_DATA = {
         { q: '0.05 bunch', name: 'Chives' }
       ],
       pins: [
-        { label: 'Mash', x: 36.8, y: 58.5, side: 'left', tags: [], note: '250 g. Card to come.' },
+        { label: 'Mash', x: 36.8, y: 58.5, side: 'left', link: 'mash', note: '250 g.' },
         { label: 'Gravy', x: 54.0, y: 53.1, side: 'right', tags: [], note: '60 ml. Card to come.' },
         { label: 'Chives', x: 51.9, y: 41.4, side: 'left', tags: [], note: '0.05 bunch.' }
       ]
@@ -1324,7 +1324,7 @@ window.LK_DATA = {
     },
     {
       id: 'mash', no: '70', kind: 'batch', forLine: 'For the rissoles and other plates', name: 'Potato Mash', short: 'Mash',
-      yield: 'Per serve: 150 g. Bought in, Farm Frites butter mash.',
+      yield: 'The same mash on every plate across the menu. Main plates: 150 g. Bought in, Farm Frites butter mash.',
       ingredients: [
         { q: '150 g', name: 'Potato mash', note: 'Farm Frites, bought in', tags: ['Milk?'] }
       ],
