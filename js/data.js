@@ -729,15 +729,15 @@ window.LK_DATA = {
       yield: 'Senior plate. 2 rissoles, mash, veg, gravy.',
       ingredients: [
         { q: '2', name: 'Lamb rissoles', note: '0.66 of the 240 g, 3-rissole serve', link: 'rissole-mix' },
-        { q: '150 g', name: 'Mash', link: 'mash' },
-        { q: '½ portion', name: 'Side veg', link: 'side-veg' },
+        { q: '150 g', name: 'Mash', link: 'mash', tags: ['Milk?'] },
+        { q: '1 portion', name: 'Seasonal vegetables', note: 'about 120 g', link: 'side-veg' },
         { q: '60 ml', name: 'Gravy', link: 'gravy' }
       ],
       pins: [
         { label: 'Lamb rissoles', x: 38.7, y: 39.6, side: 'left', link: 'rissole-mix' },
-        { label: 'Mash', x: 41.3, y: 56.6, side: 'left', tags: [], note: '150 g house mash. Card to come.' },
-        { label: 'Gravy', x: 51.9, y: 47.2, side: 'right', tags: [], note: '60 ml. Card to come.' },
-        { label: 'Seasonal vegetables', x: 69.8, y: 66.0, side: 'left', tags: [], note: 'Half portion. Card to come.' }
+        { label: 'Mash', x: 41.3, y: 56.6, side: 'left', link: 'mash', note: '150 g mash.' },
+        { label: 'Gravy', x: 51.9, y: 47.2, side: 'right', link: 'gravy', note: '60 ml.' },
+        { label: 'Seasonal vegetables', x: 69.8, y: 66.0, side: 'left', link: 'side-veg', note: 'About 120 g: 3 pieces each of carrot, cauliflower and broccoli.' }
       ]
     },
     {
@@ -839,14 +839,17 @@ window.LK_DATA = {
       ]
     },
     {
-      id: 'greens-side', art: 'greens-side', no: '42', kind: 'side', forLine: 'Side', name: 'Steamed Greens', avc: 'Sides - Steamed Greens Serve S26',
+      id: 'greens-side', art: 'greens-side', no: '42', kind: 'side', forLine: 'Side', name: 'Steamed Seasonal Vegetables', avc: 'Sides - Steamed Greens Serve S26',
       menu: 'Steamed Seasonal Vegetables.',
-      yield: 'Per side. One portion of side veg.',
+      yield: 'Per side. One portion: 3 pieces each of carrot, cauliflower and broccoli, about 120 g.',
       ingredients: [
-        { q: '1 portion', name: 'Side veg', link: 'side-veg' }
+        { q: '1 portion', name: 'Seasonal vegetables', note: 'about 120 g', link: 'side-veg' }
+      ],
+      sections: [
+        { title: 'Cooking', steps: ['Heat the steamed vegetables in the poaching pot.', 'Finish in a pan with a bit of oil, salt and pepper.', 'Every portion gets 3 pieces each of carrot, cauliflower and broccoli, about 120 g in total.'] }
       ],
       pins: [
-        { label: 'Side veg', x: 49.1, y: 49.1, side: 'right', tags: [], note: '1 portion, steamed. Card to come.' }
+        { label: 'Seasonal vegetables', x: 49.1, y: 49.1, side: 'right', link: 'side-veg', note: '1 portion, about 120 g: 3 pieces each of carrot, cauliflower and broccoli.' }
       ]
     },
 
