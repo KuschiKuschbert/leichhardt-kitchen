@@ -642,14 +642,14 @@ window.LK_DATA = {
         { q: '[Qty]', name: 'Parmesan', note: 'a little in the pan with the sauce', tags: ['Milk'] },
         { q: '20 g', name: 'Shaved parmesan', note: 'to garnish', tags: ['Milk'] },
         { q: '0.05 bunch', name: 'Chives', note: 'the greens, to garnish' },
-        { q: '1/2', name: 'Garlic bread', note: '7 inch, bought in, cut in half', tags: ['Gluten', 'Milk?', 'Soy?'] }
+        { q: '1/2', name: 'Garlic bread', note: '7 inch, bought in, cut in half', tags: ['Gluten', 'Milk', 'Soy?'] }
       ],
       pins: [
         { label: 'Fettuccine', x: 42.5, y: 52.8, side: 'right', link: 'fettuccine', tags: ['Gluten'], note: '300 g, wet and hot, tossed through 400 ml creamy garlic sauce.' },
         { label: 'Bacon', x: 48.3, y: 57.5, side: 'left', tags: [], note: '120 g, cooked in the pan first.' },
         { label: 'Parmesan', x: 55.9, y: 37.5, side: 'right', tags: ['Milk'], note: '20 g shaved, to garnish.' },
         { label: 'Chives', x: 44.3, y: 41.5, side: 'left', tags: [], note: 'The greens, to garnish.' },
-        { label: 'Garlic bread', x: 79.2, y: 71.7, side: 'left', tags: ['Gluten', 'Milk?', 'Soy?'], note: 'Half a garlic bread on the side.' }
+        { label: 'Garlic bread', x: 79.2, y: 71.7, side: 'left', tags: ['Gluten', 'Milk', 'Soy?'], note: 'Half a garlic bread on the side.' }
       ],
       sections: [
         { title: 'Cooking', steps: [
@@ -671,27 +671,47 @@ window.LK_DATA = {
     {
       id: 'grill-board', art: 'grill-board', no: '31', kind: 'main', forLine: 'Share board', name: "Grill Maiden's Board", avc: "Grill Maiden's Board S26",
       menu: 'Grill Maiden\'s Shareboard: 300 g slow-roast brisket, 250 g rump, Cumberland pork sausage, chicken wings, chips and salad, choice of two sauces.',
-      yield: 'Per board. Rump, brisket, wings, sausage, chips, salad, two sauces of choice.',
+      yield: 'Per board. 250 g rump, 500 g brisket, 400 g szechuan wings, Cumberland sausage, chips, salad, two sauces of choice.',
       ingredients: [
-        { q: '250 g', name: 'Rump', note: 'grain fed MB1' },
-        { q: '500 g', name: 'Brisket', note: 'slow roasted' },
-        { q: '400 g', name: 'Chicken middle wings' },
-        { q: '50 g', name: 'Wing flour', link: 'wing-flour', tags: ['Gluten?'] },
-        { q: '90 g', name: 'Pork Cumberland sausage', note: 'thick', tags: ['Gluten?', 'Soy?'] },
-        { q: '1 portion', name: 'Diane sauce', note: 'first sauce of choice, costed as Diane', link: 'diane-sauce' },
-        { q: '1.5 portions', name: 'Mushroom sauce', note: 'second sauce of choice, costed as mushroom', link: 'mushroom-sauce' },
+        { q: '250 g', name: 'Rump steak', note: 'grain fed MB1' },
+        { q: '500 g', name: 'Smoked brisket', note: 'slow smoked, finished in the kick oven' },
+        { q: '400 g', name: 'Chicken middle wings', note: 'presteamed, floured, portioned in a sandwich bag' },
+        { q: '50 g', name: 'Wing flour', note: 'cornflour and szechuan spice seasoning', link: 'wing-flour' },
+        { q: '90 g', name: 'Pork Cumberland sausage', note: 'thick, bought in', tags: ['Gluten?', 'Soy?'] },
+        { q: '1 portion', name: 'Diane sauce', note: 'first sauce of choice', link: 'diane-sauce' },
+        { q: '1.5 portions', name: 'Mushroom sauce', note: 'second sauce of choice', link: 'mushroom-sauce' },
         { q: '1.1 portions', name: 'Chips', note: '200 g raw portion' },
-        { q: '1', name: 'Side salad', link: 'side-salad' }
+        { q: '1', name: 'Side salad', note: 'standard size', link: 'side-salad' }
       ],
       pins: [
-        { label: 'Rump', x: 23.5, y: 28.3, side: 'left', tags: [], note: '250 g.' },
-        { label: 'Brisket', x: 52.7, y: 23.4, side: 'left', tags: [], note: '500 g, slow roasted.' },
-        { label: 'Chicken wings', x: 29.2, y: 61.2, side: 'right', tags: [], note: '400 g, wing flour.' },
-        { label: 'Cumberland sausage', x: 65.8, y: 48.1, side: 'right', tags: ['Gluten?', 'Soy?'], note: '90 g.' },
-        { label: 'Chips', x: 50.7, y: 75.7, side: 'left', tags: [], note: '1.1 portions.' },
-        { label: 'Side salad', x: 17.9, y: 48.1, side: 'right', link: 'side-salad' },
-        { label: 'Sauce of choice', x: 82.1, y: 31.4, side: 'left', tags: [], note: 'Costed as Diane. Card to come.' },
-        { label: 'Second sauce', x: 87.0, y: 69.8, side: 'left', tags: [], note: 'Costed as mushroom, 1.5 portions. Card to come.' }
+        { label: 'Rump', x: 23.5, y: 28.3, side: 'left', tags: [], note: '250 g rump steak.' },
+        { label: 'Brisket', x: 52.7, y: 23.4, side: 'left', tags: [], note: '500 g, slow smoked, finished in the kick oven.' },
+        { label: 'Chicken wings', x: 29.2, y: 61.2, side: 'right', link: 'wing-flour', note: '400 g, with szechuan seasoning.' },
+        { label: 'Cumberland sausage', x: 65.8, y: 48.1, side: 'right', tags: ['Gluten?', 'Soy?'], note: '90 g, bought in, on the grill first.' },
+        { label: 'Chips', x: 50.7, y: 75.7, side: 'left', tags: [], note: '1.1 portions, standard.' },
+        { label: 'Side salad', x: 17.9, y: 48.1, side: 'right', link: 'side-salad', note: 'Standard size.' },
+        { label: 'Sauce of choice', x: 82.1, y: 31.4, side: 'left', link: 'diane-sauce', note: 'Diane sauce.' },
+        { label: 'Second sauce', x: 87.0, y: 69.8, side: 'left', link: 'mushroom-sauce', note: 'Mushroom sauce.' }
+      ],
+      sections: [
+        { title: 'Prep ahead: brisket', steps: [
+          'Slow smoke the brisket to a core of 73 °C.',
+          'Wrap it up.',
+          'Finish it in the smoker until the core reaches 93 °C.'
+        ] },
+        { title: 'Prep ahead: wings', steps: [
+          'Presteam the wings in the oven to a core of 75 °C.',
+          'Cool them.',
+          'Mix them with the wing flour.',
+          'Portion 400 g into sandwich bags.'
+        ] },
+        { title: 'Cooking', steps: [
+          'Put the Cumberland sausage on the grill first.',
+          'Finish the brisket (500 g) in the kick oven. [Oven setting to confirm]',
+          'Cook the rump steak (250 g). [Method and doneness to confirm]',
+          'Cook the wings (400 g). [Fryer setting to confirm]',
+          'Cook the chips and plate the standard side salad.'
+        ] }
       ],
       labelNote: 'Check the sausage label.'
     },
@@ -786,13 +806,13 @@ window.LK_DATA = {
         { q: '1.5 portions', name: 'Spaghetti', note: '180 g portion', link: 'spaghetti', tags: ['Gluten'] },
         { q: '200 g', name: 'Kids bolognese', link: 'kids-bolognese' },
         { q: '10 g', name: 'Shaved parmesan', tags: ['Milk'] },
-        { q: '½ piece', name: 'Garlic bread', note: '7 inch, bought in', tags: ['Gluten', 'Milk?', 'Soy?'] }
+        { q: '½ piece', name: 'Garlic bread', note: '7 inch, bought in', tags: ['Gluten', 'Milk', 'Soy?'] }
       ],
       pins: [
         { label: 'Spaghetti', x: 37.7, y: 58.5, side: 'left', tags: ['Gluten'], note: '1.5 portions. Card to come.' },
         { label: 'Kids bolognese', x: 54.9, y: 50.1, side: 'right', tags: [], note: '200 g. Card to come.' },
         { label: 'Parmesan', x: 43.2, y: 42.5, side: 'left', tags: ['Milk'], note: '10 g shaved.' },
-        { label: 'Garlic bread', x: 78.3, y: 71.7, side: 'left', tags: ['Gluten', 'Milk?', 'Soy?'], note: 'Half piece.' }
+        { label: 'Garlic bread', x: 78.3, y: 71.7, side: 'left', tags: ['Gluten', 'Milk', 'Soy?'], note: 'Half piece.' }
       ],
       labelNote: 'Check the garlic bread label.'
     },
@@ -1085,10 +1105,10 @@ window.LK_DATA = {
       menu: 'Garlic Bread.',
       yield: 'Per serve.',
       ingredients: [
-        { q: '[Qty]', name: 'Garlic bread', note: '7 inch, bought in', tags: ['Gluten', 'Milk?', 'Soy?'] }
+        { q: '[Qty]', name: 'Garlic bread', note: '7 inch, bought in', tags: ['Gluten', 'Milk', 'Soy?'] }
       ],
       pins: [
-        { label: 'Garlic bread', x: 49.1, y: 49.1, side: 'right', tags: ['Gluten', 'Milk?', 'Soy?'], note: '7 inch, bought in.' }
+        { label: 'Garlic bread', x: 49.1, y: 49.1, side: 'right', tags: ['Gluten', 'Milk', 'Soy?'], note: '7 inch, bought in.' }
       ]
     },
     {
@@ -1445,6 +1465,59 @@ window.LK_DATA = {
       contains: [{ allergen: 'Gluten', from: 'fettuccine' }],
       check: [],
       labelNote: 'Check the fettuccine label for egg.'
+    },
+    {
+      id: 'mushroom-sauce', no: '76', kind: 'batch', forLine: 'For the Grill Maiden\'s Board', name: 'Mushroom Sauce', short: 'Mushroom sauce', art: 'mushroom-sauce',
+      yield: 'Batch: 5 L.',
+      ingredients: [
+        { q: '960 g', name: 'Mushrooms' },
+        { q: '600 g', name: 'Gravy powder' },
+        { q: '80 g', name: 'Crushed garlic' },
+        { q: '1', name: 'Large onion' },
+        { q: '400 ml', name: 'Cooking cream', tags: ['Milk'] },
+        { q: '3', name: 'Thyme sprigs' },
+        { q: '80 ml', name: 'Red cooking wine' },
+        { q: '2 g', name: 'Cracked black pepper' },
+        { q: '5 g', name: 'Table salt' }
+      ],
+      sections: [
+        { title: 'Method', steps: ['[Method to confirm]'] }
+      ],
+      contains: [{ allergen: 'Milk', from: 'cooking cream' }],
+      check: [],
+      labelNote: 'Check the gravy powder and cooking cream labels.'
+    },
+    {
+      id: 'diane-sauce', no: '77', kind: 'batch', forLine: 'For the Grill Maiden\'s Board', name: 'Diane Sauce', short: 'Diane sauce', art: 'diane-sauce',
+      yield: 'Batch: 5 L.',
+      ingredients: [
+        { q: '1150 g', name: 'Gravy powder' },
+        { q: '125 g', name: 'Crushed garlic' },
+        { q: '1000 ml', name: 'Red cooking wine' },
+        { q: '1 L', name: 'Cooking cream', tags: ['Milk'] },
+        { q: '250 ml', name: 'Worcestershire sauce', tags: ['Fish?', 'Gluten?', 'Soy?'] },
+        { q: '500 g', name: 'Tomato sauce' }
+      ],
+      sections: [
+        { title: 'Method', steps: ['[Method to confirm]'] }
+      ],
+      contains: [{ allergen: 'Milk', from: 'cooking cream' }],
+      check: [{ allergen: 'Fish', from: 'Worcestershire sauce' }, { allergen: 'Gluten', from: 'Worcestershire sauce' }, { allergen: 'Soy', from: 'Worcestershire sauce' }],
+      labelNote: 'Check the Worcestershire sauce, tomato sauce, gravy powder and cooking cream labels.'
+    },
+    {
+      id: 'wing-flour', no: '78', kind: 'batch', forLine: 'For the wings', name: 'Szechuan Wing Flour', short: 'Wing flour', art: 'wing-flour',
+      yield: 'Batch: 1.15 kg of mix. 50 g per Grill Maiden\'s Board.',
+      ingredients: [
+        { q: '1000 g', name: 'Cornflour' },
+        { q: '150 g', name: 'Szechuan spice seasoning' }
+      ],
+      sections: [
+        { title: 'Method', steps: ['Mix the cornflour and the szechuan spice seasoning together.'] }
+      ],
+      contains: [],
+      check: [],
+      labelNote: 'Check the szechuan seasoning label for gluten, soy and sesame.'
     }
   ]
 };
