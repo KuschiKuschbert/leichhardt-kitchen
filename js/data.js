@@ -566,19 +566,25 @@ window.LK_DATA = {
     {
       id: 'vegan-rissoles', art: 'vegan-rissoles', no: '28', kind: 'main', forLine: 'Plate', name: 'Vegan Rissoles', avc: 'Vegan Rissoles Full S26',
       menu: 'Vegan Rissoles: mash, seasonal vegetables.',
-      yield: 'Per plate. 3 beetroot falafel, mash, veg.',
+      yield: 'Per bowl. 3 beetroot bites, mash, seasonal vegetables, gravy.',
       ingredients: [
-        { q: '3', name: 'Beetroot falafel', note: '40 g each, plant based, bought in', tags: ['Sesame?', 'Soy?'] },
+        { q: '3', name: 'Beetroot bites', note: '40 g each, plant based, bought in', tags: ['Sesame?', 'Soy?'] },
         { q: '200 g', name: 'Mash', link: 'mash' },
-        { q: '1 portion', name: 'Side veg', link: 'side-veg' },
+        { q: '1 portion', name: 'Seasonal vegetables', note: 'about 120 g', link: 'side-veg' },
+        { q: '50 ml', name: 'Gravy', note: 'gluten free, dairy free and vegan', link: 'gravy' },
         { q: '1 g', name: 'Table salt' }
       ],
-      pins: [
-        { label: 'Beetroot falafel', x: 47.2, y: 35.8, side: 'right', tags: ['Sesame?', 'Soy?'], note: '3 x 40 g.' },
-        { label: 'Mash', x: 42.5, y: 55.7, side: 'right', tags: [], note: '200 g. Card to come.' },
-        { label: 'Seasonal vegetables', x: 67.0, y: 67.0, side: 'left', tags: [], note: '1 portion. Card to come.' }
+      sections: [
+        { title: 'Cooking', steps: ['Steam off the mash in a flat tray for 20 min.', 'Heat the seasonal vegetables in the poaching pot, then finish them in a pan with a bit of oil, salt and pepper.'] },
+        { title: 'Plating, in a bowl', steps: ['Mash on one half of the bowl.', 'Seasonal vegetables on the other half.', '3 beetroot bites on the mash.', 'Gravy over the bites. No onion rings.'] }
       ],
-      labelNote: 'Check the falafel label.'
+      pins: [
+        { label: 'Beetroot bites', x: 36.8, y: 46.7, side: 'right', tags: ['Sesame?', 'Soy?'], note: '3 x 40 g, on the mash.' },
+        { label: 'Mash', x: 22.6, y: 63.2, side: 'left', link: 'mash', note: '200 g, on one half of the bowl.' },
+        { label: 'Gravy', x: 44.3, y: 55.7, side: 'right', link: 'gravy', note: '50 ml, over the bites.' },
+        { label: 'Seasonal vegetables', x: 69.8, y: 51.4, side: 'right', link: 'side-veg', note: 'About 120 g, on the other half of the bowl.' }
+      ],
+      labelNote: 'Check the beetroot bite and mash labels.'
     },
     {
       id: 'pork-belly', art: 'pork-belly', no: '29', kind: 'main', forLine: 'Plate', name: 'Pork Belly', avc: 'Pork Belly Main S26',
@@ -1303,15 +1309,15 @@ window.LK_DATA = {
       avc: 'BASE GRAVY BATCH (1LT)',
       yield: 'Batch: 10 L.',
       ingredients: [
-        { q: '1.2 kg', name: 'Rich brown gravy mix', tags: ['Gluten?'] },
+        { q: '1.2 kg', name: 'Rich brown gravy mix' },
         { q: '10 L', name: 'Water' }
       ],
       sections: [
         { title: 'Method', steps: ['Bring the water to the boil.', 'Make a slurry with the gravy powder.', 'Mix the slurry into the boiling water.'] }
       ],
       contains: [],
-      check: [{ allergen: 'Gluten', from: 'gravy mix' }],
-      labelNote: 'Check the gravy mix label.'
+      check: [],
+      labelNote: 'Gluten free, dairy free and vegan. Check the gravy mix label when a new batch of powder comes in.'
     },
     {
       id: 'mash', no: '70', kind: 'batch', forLine: 'For the rissoles and other plates', name: 'Potato Mash', short: 'Mash',
