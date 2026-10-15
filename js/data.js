@@ -551,14 +551,14 @@ window.LK_DATA = {
         { q: '50 ml', name: 'Gravy', link: 'gravy' }
       ],
       sections: [
-        { title: 'Cooking', steps: ['Cook the rissoles on steam bake, 50% steam, 140 °C, until the core reaches 75 °C (see the Lamb Rissole Mix card).', 'Steam off the mash in a flat tray.'] },
+        { title: 'Cooking', steps: ['Cook the rissoles on steam bake, 50% steam, 140 °C, until the core reaches 75 °C. Use the core temperature setting in the oven (see the Lamb Rissole Mix card).', 'Steam off the mash in a flat tray for 20 min.', 'Heat the seasonal vegetables in the poaching pot, then finish them in a pan with a bit of oil, salt and pepper.'] },
         { title: 'Plating, in a bowl', steps: ['Mash on one half of the bowl.', 'Seasonal vegetables on the other half.', '3 lamb rissoles on the mash.', 'Gravy over the rissoles.', '4 onion rings on top.'] }
       ],
       pins: [
         { label: 'Lamb rissoles', x: 36.8, y: 46.7, side: 'right', link: 'rissole-mix' },
         { label: 'Mash', x: 22.6, y: 63.2, side: 'left', link: 'mash', tags: ['Milk?'], note: 'On one half of the bowl.' },
         { label: 'Gravy', x: 44.3, y: 55.7, side: 'right', link: 'gravy', note: 'Over the rissoles.' },
-        { label: 'Seasonal vegetables', x: 69.8, y: 51.4, side: 'right', link: 'side-veg', note: 'About 120 g, on the other half of the bowl.' },
+        { label: 'Seasonal vegetables', x: 69.8, y: 51.4, side: 'right', link: 'side-veg', note: 'About 120 g: 3 pieces each of carrot, cauliflower and broccolini, on the other half of the bowl.' },
         { label: 'Onion rings', x: 30.2, y: 40.6, side: 'left', tags: ['Gluten', 'Egg?', 'Soy?'], note: '4, tempura, on top.' }
       ],
       labelNote: 'Check the mash and onion ring labels.'
@@ -1288,11 +1288,12 @@ window.LK_DATA = {
       yield: 'Per plate: about 120 g, a bit of each vegetable.',
       ingredients: [
         { q: '3 pieces', name: 'Carrot' },
-        { q: '3 pieces', name: 'Broccoli' },
+        { q: '3 pieces', name: 'Broccolini' },
         { q: '3 pieces', name: 'Cauliflower' }
       ],
       sections: [
-        { title: 'Portioning', steps: ['Every plate must get a bit of each: carrot, broccoli and cauliflower, 3 pieces of each, about 120 g in total.'] }
+        { title: 'Prep', steps: ['Cut the carrots in half, then on an angle.', 'Take the florets from the cauliflower and the broccolini.', 'Put each vegetable in its own steam tray.', 'Steam the carrots for 6 min.', 'Steam the cauliflower for 4 min.', 'Steam the broccolini for 3 min.', 'Straight into ice water.'] },
+        { title: 'Service, per plate', steps: ['Heat the vegetables in the poaching pot.', 'Finish in a pan with a bit of oil, salt and pepper.', 'Every plate must get a bit of each: carrot, cauliflower and broccolini, 3 pieces of each, about 120 g in total.'] }
       ],
       contains: [],
       check: []
@@ -1305,6 +1306,9 @@ window.LK_DATA = {
         { q: '1.2 kg', name: 'Rich brown gravy mix', tags: ['Gluten?'] },
         { q: '10 L', name: 'Water' }
       ],
+      sections: [
+        { title: 'Method', steps: ['Bring the water to the boil.', 'Make a slurry with the gravy powder.', 'Mix the slurry into the boiling water.'] }
+      ],
       contains: [],
       check: [{ allergen: 'Gluten', from: 'gravy mix' }],
       labelNote: 'Check the gravy mix label.'
@@ -1316,7 +1320,7 @@ window.LK_DATA = {
         { q: '150 g', name: 'Potato mash', note: 'Farm Frites, bought in', tags: ['Milk?'] }
       ],
       sections: [
-        { title: 'Method', steps: ['Steam off the mash in a flat tray.'] }
+        { title: 'Method', steps: ['Steam off the mash in a flat tray for 20 min.'] }
       ],
       contains: [],
       check: [{ allergen: 'Milk', from: 'butter mash' }],
