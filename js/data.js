@@ -1351,7 +1351,11 @@ window.LK_DATA = {
         { q: '[Qty]', name: 'Texas sausages', tags: ['Gluten?', 'Soy?'] },
         { q: '[Qty]', name: 'New slaw', note: 'the coleslaw', link: 'slaw' },
         { q: '[Qty]', name: 'Cornbread', note: '[recipe or bought in to confirm]', tags: ['Gluten?', 'Milk?', 'Egg?'] },
-        { q: '[Qty]', name: 'Maple butter', note: 'glaze on the cornbread', tags: ['Milk'] }
+        { q: '[Qty]', name: 'Maple butter', note: 'glaze on the cornbread', tags: ['Milk'] },
+        { q: '[Qty]', name: 'Alabama white sauce', note: '[recipe to confirm]', tags: ['Egg?'] },
+        { q: '[Qty]', name: 'Double-smoked BBQ sauce', tags: ['Gluten?', 'Soy?'] },
+        { q: '[Qty]', name: 'Bourbon BBQ sauce', tags: ['Gluten?', 'Soy?'] },
+        { q: '[Qty]', name: 'Bread and butter pickles' }
       ],
       pins: [
         { label: 'Brisket', x: 23.6, y: 25.5, side: 'left', tags: [], note: 'Smoked, sliced.' },
@@ -1359,7 +1363,11 @@ window.LK_DATA = {
         { label: 'Pulled lamb', x: 74.5, y: 38.7, side: 'left', tags: [], note: 'From the smoker.' },
         { label: 'Texas sausages', x: 32.1, y: 52.8, side: 'right', tags: ['Gluten?', 'Soy?'], note: '' },
         { label: 'New slaw', x: 66.0, y: 64.2, side: 'left', link: 'slaw', note: 'The coleslaw.' },
-        { label: 'Cornbread', x: 80.2, y: 61.3, side: 'left', tags: ['Gluten?', 'Milk?', 'Egg?'], note: 'Glazed with maple butter, then in the oven. Recipe or bought in, to confirm.' }
+        { label: 'Cornbread', x: 80.2, y: 61.3, side: 'left', tags: ['Gluten?', 'Milk?', 'Egg?'], note: 'Glazed with maple butter, then in the oven. Recipe or bought in, to confirm.' },
+        { label: 'Alabama white sauce', x: 15.1, y: 75.5, side: 'right', tags: ['Egg?'], note: 'Recipe to confirm.' },
+        { label: 'Double-smoked BBQ sauce', x: 26.4, y: 78.3, side: 'right', tags: ['Gluten?', 'Soy?'], note: '' },
+        { label: 'Bourbon BBQ sauce', x: 37.7, y: 76.4, side: 'left', tags: ['Gluten?', 'Soy?'], note: '' },
+        { label: 'Bread and butter pickles', x: 51.9, y: 78.3, side: 'left', tags: [], note: '' }
       ],
       sections: [
         { title: 'Cooking', steps: ['Brisket, pulled pork and pulled lamb come from the smoker [times and holding to confirm].', 'Cornbread: glaze the top with maple butter, then into the oven [oven setting and time to confirm].'] },
@@ -1380,7 +1388,11 @@ window.LK_DATA = {
         { q: '380 to 420 g', name: 'Chicken wings', note: '[seasoning to confirm]' },
         { q: '[Qty]', name: 'New slaw', note: 'the coleslaw', link: 'slaw' },
         { q: '[Qty]', name: 'Cornbread', note: '[recipe or bought in to confirm]', tags: ['Gluten?', 'Milk?', 'Egg?'] },
-        { q: '[Qty]', name: 'Maple butter', note: 'glaze on the cornbread', tags: ['Milk'] }
+        { q: '[Qty]', name: 'Maple butter', note: 'glaze on the cornbread', tags: ['Milk'] },
+        { q: '[Qty]', name: 'Alabama white sauce', note: '[recipe to confirm]', tags: ['Egg?'] },
+        { q: '[Qty]', name: 'Double-smoked BBQ sauce', tags: ['Gluten?', 'Soy?'] },
+        { q: '[Qty]', name: 'Bourbon BBQ sauce', tags: ['Gluten?', 'Soy?'] },
+        { q: '[Qty]', name: 'Bread and butter pickles' }
       ],
       pins: [
         { label: 'Brisket', x: 21.7, y: 23.6, side: 'left', tags: [], note: 'Smoked, sliced.' },
@@ -1390,7 +1402,11 @@ window.LK_DATA = {
         { label: 'Texas sausages', x: 50.9, y: 50.5, side: 'left', tags: ['Gluten?', 'Soy?'], note: '' },
         { label: 'Chicken wings', x: 72.6, y: 50.9, side: 'left', tags: [], note: '380 to 420 g. Seasoning to confirm.' },
         { label: 'New slaw', x: 56.6, y: 75.5, side: 'left', link: 'slaw', note: 'The coleslaw.' },
-        { label: 'Cornbread', x: 23.6, y: 73.6, side: 'left', tags: ['Gluten?', 'Milk?', 'Egg?'], note: 'Glazed with maple butter, then in the oven. Recipe or bought in, to confirm.' }
+        { label: 'Cornbread', x: 23.6, y: 73.6, side: 'left', tags: ['Gluten?', 'Milk?', 'Egg?'], note: 'Glazed with maple butter, then in the oven. Recipe or bought in, to confirm.' },
+        { label: 'Alabama white sauce', x: 68.9, y: 79.2, side: 'right', tags: ['Egg?'], note: 'Recipe to confirm.' },
+        { label: 'Double-smoked BBQ sauce', x: 79.2, y: 79.2, side: 'right', tags: ['Gluten?', 'Soy?'], note: '' },
+        { label: 'Bourbon BBQ sauce', x: 89.6, y: 77.4, side: 'left', tags: ['Gluten?', 'Soy?'], note: '' },
+        { label: 'Bread and butter pickles', x: 88.7, y: 64.2, side: 'left', tags: [], note: '' }
       ],
       sections: [
         { title: 'Cooking', steps: ['Brisket, pulled pork and pulled lamb come from the smoker [times and holding to confirm].', 'Cornbread: glaze the top with maple butter, then into the oven [oven setting and time to confirm].'] },
