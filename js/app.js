@@ -155,6 +155,9 @@
     plate: '<svg width="16" height="16" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7.5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="9" cy="9" r="3.5" fill="#E2602A"/></svg>'
   };
 
+  // A card flagged done: true in data.js is 100% finished: green frame on the card and its drawings, plus a Finished chip.
+  var DONE_TAG = '<span class="tag done-tag">Finished</span>';
+
   function art(r, cls) {
     if (r.art && ART.plates[r.art]) return '<svg class="' + cls + '" viewBox="2 16 212 212" aria-hidden="true" focusable="false">' + ART.plates[r.art] + '</svg>';
     if (r.art && ART.pans[r.art]) return '<svg class="' + cls + '" viewBox="0 0 200 140" aria-hidden="true" focusable="false">' + ART.pans[r.art] + '</svg>';
@@ -197,7 +200,7 @@
 
   /* ---------- recipe parts ---------- */
   function cardHead(r) {
-    return '<div class="card-head"><div><span class="eyebrow">' + esc(KIND[r.kind] + ' · ' + r.forLine) + '</span>' +
+    return '<div class="card-head"><div><span class="eyebrow">' + esc(KIND[r.kind] + ' · ' + r.forLine) + '</span>' + (r.done ? DONE_TAG : '') +
       '<h2 id="rtitle" tabindex="-1">' + esc(r.name) + '</h2><span class="yield">' + esc(r.yield) + '</span>' +
       (r.menu ? '<span class="menu-line"><b>On the menu:</b> ' + esc(r.menu) + '</span>' : '') + '</div>' +
       '<span class="num"><span class="visually-hidden">Card </span>' + esc(r.no) + '</span></div>';
@@ -279,7 +282,7 @@
     return '<nav class="crumbs" aria-label="Breadcrumb">' + parts.join('<span class="sep" aria-hidden="true">/</span>') + '</nav>';
   }
   function recipeCard(r, stack, withHome) {
-    return '<article class="card">' + crumbs(stack, withHome) + cardHead(r) + allergenBox(r) +
+    return '<article class="card' + (r.done ? ' done' : '') + '">' + crumbs(stack, withHome) + cardHead(r) + allergenBox(r) +
       '<div class="cols"><div class="col"><h3 class="h3">Ingredients</h3>' + ingTable(r, stack, false) + tipBox(r) + usedBox(r, stack) +
       (isDish(r) && r.art && ART.plates[r.art] ? '<div class="sec"><h3 class="h3">On the plate</h3>' + art(r, 'card-art') + '</div>' : '') + sideView(r) +
       (!isDish(r) && r.art && ART.pans[r.art] ? '<div class="sec"><h3 class="h3">In the pan</h3>' + art(r, 'card-art') + '</div>' : '') + '</div>' +
@@ -294,9 +297,9 @@
       if (!list.length) return '';
       any += list.length;
       return '<section class="tile-group" aria-label="' + esc(g.title) + '"><div class="group-head"><span>' + esc(g.title) + '</span><span>' + list.length + '</span></div><div class="tiles">' + list.map(function (r) {
-        return '<a class="tile" href="#/r/' + esc(r.id) + '"><span class="t-top"><span class="t-kind">' + esc((r.sec || KIND[r.kind]) + (r.forLine === 'Template' ? ' · Template' : '')) + '</span>' +
+        return '<a class="tile' + (r.done ? ' done' : '') + '" href="#/r/' + esc(r.id) + '"><span class="t-top"><span class="t-kind">' + esc((r.sec || KIND[r.kind]) + (r.forLine === 'Template' ? ' · Template' : '')) + '</span>' +
           '<span class="t-no">' + esc(r.no) + '</span></span><span class="t-name">' + esc(r.name) + '</span><span class="t-yield">' + esc(r.yield) + '</span>' +
-          '<span class="chips">' + rows[r.id].map(function (a) { return '<span class="tag' + (a.maybe ? ' maybe' : '') + '">' + esc(a.label) + '</span>'; }).join('') +
+          '<span class="chips">' + (r.done ? DONE_TAG : '') + rows[r.id].map(function (a) { return '<span class="tag' + (a.maybe ? ' maybe' : '') + '">' + esc(a.label) + '</span>'; }).join('') +
           (missing[r.id].length ? '<span class="tag maybe">Allergens incomplete</span>' : '') + '</span></a>';
       }).join('') + '</div></section>';
     }).join('');
@@ -327,7 +330,7 @@
           var hits = r.ingredients.filter(function (i) { return i.name.toLowerCase().indexOf(s) >= 0; }).map(function (i) { return i.name; });
           if (hits.length) sub = 'Uses ' + hits.join(', ');
         }
-        return '<a class="lrow" href="#/r/' + esc(r.id) + '"' + (r.id === curId ? ' aria-current="page"' : '') + '><span class="l-no">' + esc(r.no) + '</span>' +
+        return '<a class="lrow' + (r.done ? ' done' : '') + '" href="#/r/' + esc(r.id) + '"' + (r.id === curId ? ' aria-current="page"' : '') + '><span class="l-no">' + esc(r.no) + '</span>' +
           '<span class="l-main"><span class="l-name">' + esc(r.name) + '</span><span class="l-sub">' + esc(sub) + '</span></span>' + ICON.right + '</a>';
       });
       shown += items.length;
@@ -361,7 +364,7 @@
         var used = (usedIn[r.id] || []).map(function (id) { return byId[id].name; });
         var sub = dish ? (r.forLine === 'Template' ? 'Template' : (links.length ? 'With ' + links.join(', ') : 'Card ' + r.no)) : (used.length ? 'Goes on ' + used.join(', ') : KIND[r.kind]);
         var faded = (ui.lens && !h) || (s && !m);
-        return '<a class="dish' + (dish ? '' : ' pan') + (h ? ' lit' : '') + (faded ? ' faded' : '') + '" href="#/r/' + esc(r.id) + '" aria-label="' +
+        return '<a class="dish' + (r.done ? ' done' : '') + (dish ? '' : ' pan') + (h ? ' lit' : '') + (faded ? ' faded' : '') + '" href="#/r/' + esc(r.id) + '" aria-label="' +
           esc(r.name + (h ? (h === 'may' ? ', may have ' : ', has ') + ui.lens : '')) + '">' + art(r, 'art') +
           '<span class="d-name">' + esc(r.name) + '</span><span class="d-sub">' + esc(sub) + '</span>' +
           (h ? '<span class="tag dark">' + esc((h === 'may' ? 'May have ' : 'Has ') + ui.lens) + '</span>' : '') + '</a>';
@@ -400,12 +403,12 @@
     var left;
     if (dish) {
       var pk = ui.pick !== null && r.pins[ui.pick] && !r.pins[ui.pick].link ? r.pins[ui.pick] : null;
-      left = '<div class="stage' + (ui.lens ? ' lensed' : '') + '">' + art(r, 'art') + r.pins.map(function (p, k) { return pinHTML(p, k, stack); }).join('') + '</div>' +
+      left = '<div class="stage' + (ui.lens ? ' lensed' : '') + (r.done ? ' done' : '') + '">' + art(r, 'art') + r.pins.map(function (p, k) { return pinHTML(p, k, stack); }).join('') + '</div>' +
         (pk ? '<div class="box outline" style="background: #fff"><span class="h3">' + esc(pk.label) + '</span>' + (pk.note ? '<div>' + esc(pk.note) + '</div>' : '') + '<div class="chips">' +
           ((pk.tags && pk.tags.length) ? pk.tags.map(function (t) { return '<span class="tag' + (t.slice(-1) === '?' ? ' maybe' : '') + '">' + esc(t) + '</span>'; }).join('') : '<span class="hint">No listed allergens</span>') + '</div></div>'
           : '<div class="hint" style="text-align: center">' + (r.pins.length ? 'Tap anything on the plate. A pin with an arrow opens its own recipe.' : 'No pins on this plate yet.') + '</div>') + sideView(r);
     } else {
-      left = '<div class="pan-art">' + art(r, 'art') + '</div>' + usedBox(r, stack, 'Goes on') + tipBox(r);
+      left = '<div class="pan-art' + (r.done ? ' done' : '') + '">' + art(r, 'art') + '</div>' + usedBox(r, stack, 'Goes on') + tipBox(r);
     }
     var parent = stack.length > 1 ? byId[stack[stack.length - 2]].name : 'the pass';
     return '<div class="page">' + header() + trail + lensChips() +

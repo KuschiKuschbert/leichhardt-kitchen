@@ -12,6 +12,8 @@
   --line: #E0DBCF;
   --edge: #D9D4C8;
   --hit: #FFF1E6;
+  --done: #2E8B57;
+  --done-tint: #EAF5EE;
   --steel: #CFD3D8;
   --steel-dark: #A9AFB6;
   --display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
@@ -226,3 +228,14 @@ img, svg { display: block; }
   .backbar { margin: -1rem -1rem 0; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* Finished cards (done: true in js/data.js): green frame on the card, tile, row and drawings */
+.card.done, .tile.done { border-color: var(--done); border-width: 2.5px; }
+.tile.done:hover { border-color: var(--done); }
+.lrow.done { box-shadow: inset 4px 0 0 var(--done); }
+.dish.done { box-shadow: inset 0 0 0 2.5px var(--done); background: var(--done-tint); }
+.card.done .card-art, .card.done .side-art, .stage.done, .pan-art.done { border: 2.5px solid var(--done); border-radius: 12px; background: var(--done-tint); box-sizing: border-box; }
+.card.done .card-art, .pan-art.done { padding: 0.35rem; }
+.stage.done { padding: 0.35rem; }
+.tag.done-tag { background: var(--done); border-color: var(--done); color: #fff; }
+.card-head .done-tag { display: block; width: max-content; margin: 0.35rem 0 0; }
