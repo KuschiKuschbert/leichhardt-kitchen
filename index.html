@@ -24,5 +24,29 @@
 <script src="js/data.js" defer></script>
 <script src="js/art.js" defer></script>
 <script src="js/app.js" defer></script>
+<script>
+  // Daily self-refresh: the book reloads itself once a day (about 04:00) so a tablet left open on the pass
+  // always shows the latest cards. If the device was asleep at 04:00, it refreshes as soon as it wakes.
+  (function () {
+    var DAY = 24 * 60 * 60 * 1000, CATCH_UP = 20 * 60 * 60 * 1000, loaded = Date.now();
+    function nextFour() { var d = new Date(); d.setHours(4, 0, 0, 0); if (d.getTime() <= Date.now() + 60000) d.setDate(d.getDate() + 1); return d.getTime(); }
+    function refresh() {
+      // Re-fetch the data files past the browser cache first, so the reload shows the newest cards. The page stays on the same card.
+      var files = ['js/data.js', 'js/art.js', 'js/app.js', 'css/app.css'];
+      var go = function () { location.reload(); };
+      try {
+        Promise.all(files.map(function (f) { return fetch(f, { cache: 'reload' }); })).then(go, go);
+        setTimeout(go, 8000);
+      } catch (e) { go(); }
+    }
+    var timer = null;
+    function schedule() { clearTimeout(timer); timer = setTimeout(refresh, Math.max(1000, nextFour() - Date.now())); }
+    schedule();
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState !== 'visible') return;
+      if (Date.now() - loaded > CATCH_UP) refresh(); else schedule();
+    });
+  })();
+</script>
 </body>
 </html>
