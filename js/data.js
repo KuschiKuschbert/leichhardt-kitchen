@@ -656,9 +656,9 @@ window.LK_DATA = {
     {
       id: 'carbonara', art: 'carbonara', no: '30', kind: 'main', forLine: 'Plate', name: 'Carbonara', avc: 'Carbonara S26',
       menu: 'Classic Pub Carbonara: fettuccine, bacon, cream, parmesan, half a garlic bread.',
-      yield: 'Per plate. 300 g fettuccine, 400 ml creamy garlic sauce, 120 g bacon, half a garlic bread.',
+      yield: 'Per plate. 250 g fettuccine, 400 ml creamy garlic sauce, 120 g bacon, half a garlic bread.',
       ingredients: [
-        { q: '300 g', name: 'Fettuccine', note: 'cooked, one wrapped portion', link: 'fettuccine', tags: ['Gluten'] },
+        { q: '250 g', name: 'Fettuccine', note: 'cooked, one wrapped portion', link: 'fettuccine', tags: ['Gluten'] },
         { q: '400 ml', name: 'Creamy garlic sauce', note: 'the carbonara sauce', link: 'carbonara-sauce' },
         { q: '120 g', name: 'Bacon' },
         { q: '10 ml', name: 'White cooking wine', note: 'AVC costing, where it goes to confirm' },
@@ -668,7 +668,7 @@ window.LK_DATA = {
         { q: '1/2', name: 'Garlic bread', note: '7 inch, bought in, cut in half', tags: ['Gluten', 'Milk', 'Soy?'] }
       ],
       pins: [
-        { label: 'Fettuccine', x: 42.5, y: 52.8, side: 'right', link: 'fettuccine', tags: ['Gluten'], note: '300 g, wet and hot, tossed through 400 ml creamy garlic sauce.' },
+        { label: 'Fettuccine', x: 42.5, y: 52.8, side: 'right', link: 'fettuccine', tags: ['Gluten'], note: '250 g, wet and hot, tossed through 400 ml creamy garlic sauce.' },
         { label: 'Bacon', x: 48.3, y: 57.5, side: 'left', tags: [], note: '120 g, cooked in the pan first.' },
         { label: 'Parmesan', x: 55.9, y: 37.5, side: 'right', tags: ['Milk'], note: '20 g shaved, to garnish.' },
         { label: 'Chives', x: 44.3, y: 41.5, side: 'left', tags: [], note: 'The greens, to garnish.' },
@@ -679,7 +679,7 @@ window.LK_DATA = {
           'Cook the bacon (120 g) in a pan.',
           'Deglaze the pan with the creamy garlic sauce (400 ml).',
           'Add a little parmesan to the pan with the sauce.',
-          'Add the wet, hot fettuccine (one 300 g portion) and toss it through the sauce.'
+          'Add the wet, hot fettuccine (one 250 g portion) and toss it through the sauce.'
         ] },
         { title: 'Plating', steps: [
           'Fettuccine and sauce in the centre of the plate.',
@@ -1580,12 +1580,12 @@ window.LK_DATA = {
     },
     {
       id: 'fettuccine', no: '75', kind: 'batch', forLine: 'For the carbonara', name: 'Fettuccine, Batch Cooked', short: 'Fettuccine', art: 'fettuccine',
-      yield: 'Batch: 5 kg fettuccine. Portions of 300 g cooked fettuccine, each wrapped in glad wrap.',
+      yield: 'Batch: 5 kg fettuccine. Portions of 250 g cooked fettuccine, each wrapped in glad wrap.',
       ingredients: [
         { q: '5 kg', name: 'Fettuccine', note: 'one batch, dried or cooked weight and product to confirm', tags: ['Gluten'] }
       ],
       sections: [
-        { title: 'Method', steps: ['Cook the 5 kg batch of fettuccine for 8 min.', 'Portion it after cooking: 300 g per portion, each wrapped in glad wrap.', '[Storage and how it is reheated to confirm]'] }
+        { title: 'Method', steps: ['Cook the 5 kg batch of fettuccine for 8 min.', 'Portion it after cooking: 250 g per portion, each wrapped in glad wrap.', '[Storage and how it is reheated to confirm]'] }
       ],
       contains: [{ allergen: 'Gluten', from: 'fettuccine' }],
       check: [],
