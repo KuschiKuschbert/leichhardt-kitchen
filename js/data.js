@@ -1349,7 +1349,7 @@ window.LK_DATA = {
         { q: '[Qty]', name: 'Pulled pork', note: 'from the smoker' },
         { q: '[Qty]', name: 'Pulled lamb', note: 'from the smoker' },
         { q: '[Qty]', name: 'Texas sausages', tags: ['Gluten?', 'Soy?'] },
-        { q: '[Qty]', name: 'Coleslaw', note: '[which slaw to confirm]' },
+        { q: '[Qty]', name: 'New slaw', note: 'the coleslaw', link: 'slaw' },
         { q: '[Qty]', name: 'Cornbread', note: '[recipe or bought in to confirm]', tags: ['Gluten?', 'Milk?', 'Egg?'] },
         { q: '[Qty]', name: 'Maple butter', note: 'glaze on the cornbread', tags: ['Milk'] }
       ],
@@ -1358,7 +1358,7 @@ window.LK_DATA = {
         { label: 'Pulled pork', x: 55.7, y: 23.6, side: 'right', tags: [], note: 'From the smoker.' },
         { label: 'Pulled lamb', x: 74.5, y: 38.7, side: 'left', tags: [], note: 'From the smoker.' },
         { label: 'Texas sausages', x: 32.1, y: 52.8, side: 'right', tags: ['Gluten?', 'Soy?'], note: '' },
-        { label: 'Coleslaw', x: 66.0, y: 64.2, side: 'left', tags: [], note: 'Which slaw to confirm.' },
+        { label: 'New slaw', x: 66.0, y: 64.2, side: 'left', link: 'slaw', note: 'The coleslaw.' },
         { label: 'Cornbread', x: 80.2, y: 61.3, side: 'left', tags: ['Gluten?', 'Milk?', 'Egg?'], note: 'Glazed with maple butter, then in the oven. Recipe or bought in, to confirm.' }
       ],
       sections: [
@@ -1378,7 +1378,7 @@ window.LK_DATA = {
         { q: '[Qty]', name: 'Sliders', note: '[filling to confirm]', tags: ['Gluten?'] },
         { q: '[Qty]', name: 'Texas sausages', tags: ['Gluten?', 'Soy?'] },
         { q: '380 to 420 g', name: 'Chicken wings', note: '[seasoning to confirm]' },
-        { q: '[Qty]', name: 'Coleslaw', note: '[which slaw to confirm]' },
+        { q: '[Qty]', name: 'New slaw', note: 'the coleslaw', link: 'slaw' },
         { q: '[Qty]', name: 'Cornbread', note: '[recipe or bought in to confirm]', tags: ['Gluten?', 'Milk?', 'Egg?'] },
         { q: '[Qty]', name: 'Maple butter', note: 'glaze on the cornbread', tags: ['Milk'] }
       ],
@@ -1389,7 +1389,7 @@ window.LK_DATA = {
         { label: 'Sliders', x: 24.1, y: 50.9, side: 'right', tags: ['Gluten?'], note: 'Filling to confirm.' },
         { label: 'Texas sausages', x: 50.9, y: 50.5, side: 'left', tags: ['Gluten?', 'Soy?'], note: '' },
         { label: 'Chicken wings', x: 72.6, y: 50.9, side: 'left', tags: [], note: '380 to 420 g. Seasoning to confirm.' },
-        { label: 'Coleslaw', x: 56.6, y: 75.5, side: 'left', tags: [], note: 'Which slaw to confirm.' },
+        { label: 'New slaw', x: 56.6, y: 75.5, side: 'left', link: 'slaw', note: 'The coleslaw.' },
         { label: 'Cornbread', x: 23.6, y: 73.6, side: 'left', tags: ['Gluten?', 'Milk?', 'Egg?'], note: 'Glazed with maple butter, then in the oven. Recipe or bought in, to confirm.' }
       ],
       sections: [
@@ -1406,13 +1406,13 @@ window.LK_DATA = {
         { q: '[Qty]', name: 'Burger bun', tags: ['Gluten?', 'Sesame?'] },
         { q: '[Qty]', name: 'Pulled pork', note: 'from the smoker' },
         { q: '[Qty]', name: 'Carolina BBQ sauce', tags: ['Gluten?', 'Soy?'] },
-        { q: '[Qty]', name: 'Slaw', note: '[which slaw to confirm]' },
+        { q: '[Qty]', name: 'New slaw', link: 'slaw' },
         { q: '[Qty]', name: 'Fries' }
       ],
       pins: [
         { label: 'Pulled pork burger', x: 35.8, y: 39.6, side: 'right', tags: ['Gluten?'], note: 'Pulled pork, Carolina BBQ and slaw. Build to confirm.' },
         { label: 'Fries', x: 66.0, y: 57.5, side: 'left', tags: [], note: '' },
-        { label: 'Slaw', x: 32.1, y: 67.9, side: 'right', tags: [], note: 'On the side or in the bun, to confirm.' }
+        { label: 'New slaw', x: 32.1, y: 67.9, side: 'right', link: 'slaw', note: 'On the side or in the bun, to confirm.' }
       ],
       sections: [
         { title: 'Cooking', steps: ['Pulled pork from the smoker [reheat to confirm].'] }
@@ -1425,12 +1425,12 @@ window.LK_DATA = {
       yield: 'Per board. Brisket, slaw, fries.',
       ingredients: [
         { q: '[Qty]', name: 'Smoked brisket', link: 'brisket' },
-        { q: '[Qty]', name: 'Slaw', note: '[which slaw to confirm]' },
+        { q: '[Qty]', name: 'New slaw', link: 'slaw' },
         { q: '[Qty]', name: 'Fries' }
       ],
       pins: [
         { label: 'Brisket', x: 30.2, y: 29.2, side: 'right', tags: [], note: 'Smoked, sliced.' },
-        { label: 'Slaw', x: 69.8, y: 24.5, side: 'left', tags: [], note: '' },
+        { label: 'New slaw', x: 69.8, y: 24.5, side: 'left', link: 'slaw', note: '' },
         { label: 'Fries', x: 48.1, y: 63.2, side: 'left', tags: [], note: '' }
       ],
       sections: [
