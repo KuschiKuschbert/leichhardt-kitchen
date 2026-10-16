@@ -42,7 +42,7 @@
   on the guest menu, so they sit after the menu sections.
 */
 window.LK_DATA = {
-  updated: '15 October 2026',
+  updated: '16 October 2026',
   allergens: ['Gluten', 'Milk', 'Egg', 'Soy', 'Peanut', 'Tree nut', 'Fish', 'Crustacean', 'Mollusc', 'Sesame'],
   menuOrder: [
     { title: "Snackin' Plates", ids: ['poutine', 'beetroot-bites', 'brisket-cob', 'wings', 'haloumi-tacos', 'pork-belly-bites', 'calamari', 'riblets', 'garlic-bread', 'bacon-cheese-bread', 'chips-snack'] },
@@ -1084,7 +1084,7 @@ window.LK_DATA = {
       menu: 'Crispy Pork Belly Bites: caramelised chilli jam, Korean-style cucumber.',
       yield: 'Per serve. Crispy pork belly, chilli jam, Korean-style cucumber.',
       ingredients: [
-        { q: '[Qty]', name: 'Roasted pork belly', note: 'cut into bites', link: 'pork-belly-batch' },
+        { q: '280 to 290 g', name: 'Roasted pork belly', note: 'cut into bites, portioned in a sandwich bag', link: 'pork-belly-batch' },
         { q: '[Qty]', name: 'Caramelised chilli jam' },
         { q: '[Qty]', name: 'Korean-style cucumber', tags: ['Sesame?', 'Soy?'] }
       ],
@@ -1092,6 +1092,9 @@ window.LK_DATA = {
         { label: 'Pork belly bites', x: 30.2, y: 48.1, side: 'right', tags: [], note: 'Crispy. Card to come.' },
         { label: 'Caramelised chilli jam', x: 48.1, y: 37.7, side: 'right', tags: [], note: 'Over the bites.' },
         { label: 'Korean-style cucumber', x: 65.1, y: 67.9, side: 'left', tags: ['Sesame?', 'Soy?'], note: '' }
+      ],
+      sections: [
+        { title: 'Prep ahead', steps: ['Portion the roasted pork belly bites, 280 to 290 g per bag, into sandwich bags.'] }
       ]
     },
     {
@@ -1335,6 +1338,100 @@ window.LK_DATA = {
         { label: 'Chips', x: 28.3, y: 66.0, side: 'right', tags: [], note: 'Chips and salad portion. Card to come.' },
         { label: 'Salad', x: 71.7, y: 66.0, side: 'left', tags: [], note: 'Chips and salad portion. Card to come.' }
       ]
+    },
+    /* ---------- Country Rev-Up Specials: from the smoker (permanent, Oct 2026) ---------- */
+    {
+      id: 'butchers-board', art: 'butchers-board', no: '87', kind: 'main', forLine: 'Smoker special', name: 'Butchers Board',
+      menu: 'Butchers Board: brisket, pulled pork, pulled lamb, Texas sausages and sides.',
+      yield: 'Per board. Brisket, pulled pork, pulled lamb, Texas sausages and sides.',
+      ingredients: [
+        { q: '[Qty]', name: 'Smoked brisket', link: 'brisket' },
+        { q: '[Qty]', name: 'Pulled pork', note: 'from the smoker' },
+        { q: '[Qty]', name: 'Pulled lamb', note: 'from the smoker' },
+        { q: '[Qty]', name: 'Texas sausages', tags: ['Gluten?', 'Soy?'] },
+        { q: '[Qty]', name: 'Sides', note: '[which sides to confirm]' }
+      ],
+      pins: [
+        { label: 'Brisket', x: 23.6, y: 25.5, side: 'left', tags: [], note: 'Smoked, sliced.' },
+        { label: 'Pulled pork', x: 55.7, y: 23.6, side: 'right', tags: [], note: 'From the smoker.' },
+        { label: 'Pulled lamb', x: 74.5, y: 38.7, side: 'left', tags: [], note: 'From the smoker.' },
+        { label: 'Texas sausages', x: 32.1, y: 52.8, side: 'right', tags: ['Gluten?', 'Soy?'], note: '' },
+        { label: 'Sides', x: 69.8, y: 63.2, side: 'left', tags: [], note: 'Which sides to confirm.' }
+      ],
+      sections: [
+        { title: 'Cooking', steps: ['Brisket, pulled pork and pulled lamb come from the smoker [times and holding to confirm].'] },
+        { title: 'Plating', steps: ['Serve on a rounded rectangular wooden board. [Layout to confirm]'] }
+      ],
+      labelNote: 'Check the sausage label.'
+    },
+    {
+      id: 'beast-board', art: 'beast-board', no: '88', kind: 'main', forLine: 'Smoker special', name: 'The Beast Board',
+      menu: 'The Beast Board: brisket, pulled pork, pulled lamb, sliders, Texas sausages, chicken wings and sides.',
+      yield: 'Per board. Brisket, pulled pork, pulled lamb, sliders, Texas sausages, chicken wings and sides.',
+      ingredients: [
+        { q: '[Qty]', name: 'Smoked brisket', link: 'brisket' },
+        { q: '[Qty]', name: 'Pulled pork', note: 'from the smoker' },
+        { q: '[Qty]', name: 'Pulled lamb', note: 'from the smoker' },
+        { q: '[Qty]', name: 'Sliders', note: '[filling to confirm]', tags: ['Gluten?'] },
+        { q: '[Qty]', name: 'Texas sausages', tags: ['Gluten?', 'Soy?'] },
+        { q: '[Qty]', name: 'Chicken wings', note: '[seasoning to confirm]' },
+        { q: '[Qty]', name: 'Sides', note: '[which sides to confirm]' }
+      ],
+      pins: [
+        { label: 'Brisket', x: 21.7, y: 23.6, side: 'left', tags: [], note: 'Smoked, sliced.' },
+        { label: 'Pulled pork', x: 48.1, y: 21.7, side: 'right', tags: [], note: 'From the smoker.' },
+        { label: 'Pulled lamb', x: 70.8, y: 25.5, side: 'left', tags: [], note: 'From the smoker.' },
+        { label: 'Sliders', x: 24.1, y: 50.9, side: 'right', tags: ['Gluten?'], note: 'Filling to confirm.' },
+        { label: 'Texas sausages', x: 50.9, y: 50.5, side: 'left', tags: ['Gluten?', 'Soy?'], note: '' },
+        { label: 'Chicken wings', x: 72.6, y: 50.9, side: 'left', tags: [], note: 'Seasoning to confirm.' },
+        { label: 'Sides', x: 27.4, y: 74.5, side: 'right', tags: [], note: 'Which sides to confirm.' }
+      ],
+      sections: [
+        { title: 'Cooking', steps: ['Brisket, pulled pork and pulled lamb come from the smoker [times and holding to confirm].'] },
+        { title: 'Plating', steps: ['Serve on a rounded rectangular wooden board. [Layout to confirm]'] }
+      ],
+      labelNote: 'Check the sausage and slider labels.'
+    },
+    {
+      id: 'pulled-pork-burger', art: 'pulled-pork-burger', no: '89', kind: 'main', forLine: 'Smoker special', name: 'Pulled Pork Burger',
+      menu: 'Pulled Pork Burger: pulled pork, Carolina BBQ and slaw with fries.',
+      yield: 'Per plate. Pulled pork burger with Carolina BBQ and slaw, fries.',
+      ingredients: [
+        { q: '[Qty]', name: 'Burger bun', tags: ['Gluten?', 'Sesame?'] },
+        { q: '[Qty]', name: 'Pulled pork', note: 'from the smoker' },
+        { q: '[Qty]', name: 'Carolina BBQ sauce', tags: ['Gluten?', 'Soy?'] },
+        { q: '[Qty]', name: 'Slaw', note: '[which slaw to confirm]' },
+        { q: '[Qty]', name: 'Fries' }
+      ],
+      pins: [
+        { label: 'Pulled pork burger', x: 35.8, y: 39.6, side: 'right', tags: ['Gluten?'], note: 'Pulled pork, Carolina BBQ and slaw. Build to confirm.' },
+        { label: 'Fries', x: 66.0, y: 57.5, side: 'left', tags: [], note: '' },
+        { label: 'Slaw', x: 32.1, y: 67.9, side: 'right', tags: [], note: 'On the side or in the bun, to confirm.' }
+      ],
+      sections: [
+        { title: 'Cooking', steps: ['Pulled pork from the smoker [reheat to confirm].'] }
+      ],
+      labelNote: 'Check the bun and sauce labels.'
+    },
+    {
+      id: 'brisket-board', art: 'brisket-board', no: '90', kind: 'main', forLine: 'Smoker special', name: 'Brisket Board',
+      menu: 'Brisket Board: brisket, slaw, served with fries.',
+      yield: 'Per board. Brisket, slaw, fries.',
+      ingredients: [
+        { q: '[Qty]', name: 'Smoked brisket', link: 'brisket' },
+        { q: '[Qty]', name: 'Slaw', note: '[which slaw to confirm]' },
+        { q: '[Qty]', name: 'Fries' }
+      ],
+      pins: [
+        { label: 'Brisket', x: 30.2, y: 29.2, side: 'right', tags: [], note: 'Smoked, sliced.' },
+        { label: 'Slaw', x: 69.8, y: 24.5, side: 'left', tags: [], note: '' },
+        { label: 'Fries', x: 48.1, y: 63.2, side: 'left', tags: [], note: '' }
+      ],
+      sections: [
+        { title: 'Cooking', steps: ['Brisket from the smoker, card 79.'] },
+        { title: 'Plating', steps: ['Serve on a rounded rectangular wooden board. [Layout to confirm]'] }
+      ],
+      labelNote: ''
     },
     /* ---------- Batch cards from AVC Live (Oct 2026): only fully confirmed ingredient lists ---------- */
     {
