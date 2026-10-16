@@ -1343,23 +1343,26 @@ window.LK_DATA = {
     {
       id: 'butchers-board', art: 'butchers-board', no: '87', kind: 'main', forLine: 'Smoker special', name: 'Butchers Board',
       menu: 'Butchers Board: brisket, pulled pork, pulled lamb, Texas sausages and sides.',
-      yield: 'Per board. Brisket, pulled pork, pulled lamb, Texas sausages and sides.',
+      yield: 'Per board. Brisket, pulled pork, pulled lamb, Texas sausages, coleslaw and cornbread.',
       ingredients: [
         { q: '[Qty]', name: 'Smoked brisket', link: 'brisket' },
         { q: '[Qty]', name: 'Pulled pork', note: 'from the smoker' },
         { q: '[Qty]', name: 'Pulled lamb', note: 'from the smoker' },
         { q: '[Qty]', name: 'Texas sausages', tags: ['Gluten?', 'Soy?'] },
-        { q: '[Qty]', name: 'Sides', note: '[which sides to confirm]' }
+        { q: '[Qty]', name: 'Coleslaw', note: '[which slaw to confirm]' },
+        { q: '[Qty]', name: 'Cornbread', note: '[recipe or bought in to confirm]', tags: ['Gluten?', 'Milk?', 'Egg?'] },
+        { q: '[Qty]', name: 'Maple butter', note: 'glaze on the cornbread', tags: ['Milk'] }
       ],
       pins: [
         { label: 'Brisket', x: 23.6, y: 25.5, side: 'left', tags: [], note: 'Smoked, sliced.' },
         { label: 'Pulled pork', x: 55.7, y: 23.6, side: 'right', tags: [], note: 'From the smoker.' },
         { label: 'Pulled lamb', x: 74.5, y: 38.7, side: 'left', tags: [], note: 'From the smoker.' },
         { label: 'Texas sausages', x: 32.1, y: 52.8, side: 'right', tags: ['Gluten?', 'Soy?'], note: '' },
-        { label: 'Sides', x: 69.8, y: 63.2, side: 'left', tags: [], note: 'Which sides to confirm.' }
+        { label: 'Coleslaw', x: 66.0, y: 64.2, side: 'left', tags: [], note: 'Which slaw to confirm.' },
+        { label: 'Cornbread', x: 80.2, y: 61.3, side: 'left', tags: ['Gluten?', 'Milk?', 'Egg?'], note: 'Glazed with maple butter, then in the oven. Recipe or bought in, to confirm.' }
       ],
       sections: [
-        { title: 'Cooking', steps: ['Brisket, pulled pork and pulled lamb come from the smoker [times and holding to confirm].'] },
+        { title: 'Cooking', steps: ['Brisket, pulled pork and pulled lamb come from the smoker [times and holding to confirm].', 'Cornbread: glaze the top with maple butter, then into the oven [oven setting and time to confirm].'] },
         { title: 'Plating', steps: ['Serve on a rounded rectangular wooden board. [Layout to confirm]'] }
       ],
       labelNote: 'Check the sausage label.'
@@ -1367,7 +1370,7 @@ window.LK_DATA = {
     {
       id: 'beast-board', art: 'beast-board', no: '88', kind: 'main', forLine: 'Smoker special', name: 'The Beast Board',
       menu: 'The Beast Board: brisket, pulled pork, pulled lamb, sliders, Texas sausages, chicken wings and sides.',
-      yield: 'Per board. Brisket, pulled pork, pulled lamb, sliders, Texas sausages, chicken wings and sides.',
+      yield: 'Per board. Brisket, pulled pork, pulled lamb, sliders, Texas sausages, chicken wings, coleslaw and cornbread.',
       ingredients: [
         { q: '[Qty]', name: 'Smoked brisket', link: 'brisket' },
         { q: '[Qty]', name: 'Pulled pork', note: 'from the smoker' },
@@ -1375,7 +1378,9 @@ window.LK_DATA = {
         { q: '[Qty]', name: 'Sliders', note: '[filling to confirm]', tags: ['Gluten?'] },
         { q: '[Qty]', name: 'Texas sausages', tags: ['Gluten?', 'Soy?'] },
         { q: '380 to 420 g', name: 'Chicken wings', note: '[seasoning to confirm]' },
-        { q: '[Qty]', name: 'Sides', note: '[which sides to confirm]' }
+        { q: '[Qty]', name: 'Coleslaw', note: '[which slaw to confirm]' },
+        { q: '[Qty]', name: 'Cornbread', note: '[recipe or bought in to confirm]', tags: ['Gluten?', 'Milk?', 'Egg?'] },
+        { q: '[Qty]', name: 'Maple butter', note: 'glaze on the cornbread', tags: ['Milk'] }
       ],
       pins: [
         { label: 'Brisket', x: 21.7, y: 23.6, side: 'left', tags: [], note: 'Smoked, sliced.' },
@@ -1384,10 +1389,11 @@ window.LK_DATA = {
         { label: 'Sliders', x: 24.1, y: 50.9, side: 'right', tags: ['Gluten?'], note: 'Filling to confirm.' },
         { label: 'Texas sausages', x: 50.9, y: 50.5, side: 'left', tags: ['Gluten?', 'Soy?'], note: '' },
         { label: 'Chicken wings', x: 72.6, y: 50.9, side: 'left', tags: [], note: '380 to 420 g. Seasoning to confirm.' },
-        { label: 'Sides', x: 27.4, y: 74.5, side: 'right', tags: [], note: 'Which sides to confirm.' }
+        { label: 'Coleslaw', x: 56.6, y: 75.5, side: 'left', tags: [], note: 'Which slaw to confirm.' },
+        { label: 'Cornbread', x: 23.6, y: 73.6, side: 'left', tags: ['Gluten?', 'Milk?', 'Egg?'], note: 'Glazed with maple butter, then in the oven. Recipe or bought in, to confirm.' }
       ],
       sections: [
-        { title: 'Cooking', steps: ['Brisket, pulled pork and pulled lamb come from the smoker [times and holding to confirm].'] },
+        { title: 'Cooking', steps: ['Brisket, pulled pork and pulled lamb come from the smoker [times and holding to confirm].', 'Cornbread: glaze the top with maple butter, then into the oven [oven setting and time to confirm].'] },
         { title: 'Plating', steps: ['Serve on a rounded rectangular wooden board. [Layout to confirm]'] }
       ],
       labelNote: 'Check the sausage and slider labels.'
