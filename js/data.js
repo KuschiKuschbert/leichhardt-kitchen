@@ -25,6 +25,7 @@
     labelNote  one line about labels to check
     tip        optional box, e.g. iCombi settings: { title, text }
     safety     optional orange warning: { title, text }
+    done       optional: true once the card and its drawings are 100% finished (shows a green frame and a Finished chip)
     diagram    optional technique or build drawing id (see js/art.js), e.g. "corn-cut" or "smash-build"
 
   Write anything not confirmed yet in [square brackets] so it shows as a placeholder.
@@ -129,7 +130,7 @@ window.LK_DATA = {
       labelNote: 'Check the laksa paste and stock labels.'
     },
     {
-      id: 'rice', no: '05', kind: 'batch', forLine: 'For the barramundi', name: 'Steamed Rice', short: 'Rice', art: 'rice',
+      id: 'rice', done: true, no: '05', kind: 'batch', forLine: 'For the barramundi', name: 'Steamed Rice', short: 'Rice', art: 'rice',
       yield: 'Batch: 2 kg raw rice. 180 g per plate.',
       ingredients: [
         { q: '2 kg', name: 'Rice' },
@@ -147,7 +148,7 @@ window.LK_DATA = {
       tip: { title: 'On the iCombi', text: 'Steam mode, 100 °C, 25 min. Save it as a programme called RICE using the programming guide.' }
     },
     {
-      id: 'laksa', no: '06', kind: 'batch', forLine: 'For the barramundi', name: 'Coconut Laksa', short: 'Laksa', art: 'laksa',
+      id: 'laksa', done: true, no: '06', kind: 'batch', forLine: 'For the barramundi', name: 'Coconut Laksa', short: 'Laksa', art: 'laksa',
       yield: 'Batch: about 5 L, roughly 31 serves at 160 ml.',
       ingredients: [
         { q: '520 g', name: 'Laksa paste', tags: ['Crustacean?', 'Peanut?', 'Soy?'] },
@@ -186,7 +187,7 @@ window.LK_DATA = {
       labelNote: 'Check the rib glaze and seasoning labels as current.'
     },
     {
-      id: 'corn', no: '08', kind: 'component', forLine: 'For the new pork ribs', name: 'Corn Ribs', short: 'Corn ribs', art: 'corn',
+      id: 'corn', done: true, no: '08', kind: 'component', forLine: 'For the new pork ribs', name: 'Corn Ribs', short: 'Corn ribs', art: 'corn',
       yield: 'One cob makes 8 corn ribs. Full pork rib serve 6 corn ribs, half serve 4.',
       ingredients: [
         { q: '1 cob', name: 'Corn', note: 'makes 8 corn ribs' },
@@ -243,7 +244,7 @@ window.LK_DATA = {
       check: []
     },
     {
-      id: 'butterscotch', no: '11', kind: 'batch', forLine: 'For the skillet cookie and the Snickers spring rolls', name: 'Butterscotch Sauce', short: 'Butterscotch', art: 'butterscotch',
+      id: 'butterscotch', done: true, no: '11', kind: 'batch', forLine: 'For the skillet cookie and the Snickers spring rolls', name: 'Butterscotch Sauce', short: 'Butterscotch', art: 'butterscotch',
       yield: 'Batch: roughly 500 g. About 75 ml per skillet cookie.',
       ingredients: [
         { q: '200 g', name: 'Dark brown sugar' },
@@ -919,7 +920,7 @@ window.LK_DATA = {
       ]
     },
     {
-      id: 'greens-side', art: 'greens-side', no: '42', kind: 'side', forLine: 'Side', name: 'Steamed Seasonal Vegetables', avc: 'Sides - Steamed Greens Serve S26',
+      id: 'greens-side', done: true, art: 'greens-side', no: '42', kind: 'side', forLine: 'Side', name: 'Steamed Seasonal Vegetables', avc: 'Sides - Steamed Greens Serve S26',
       menu: 'Steamed Seasonal Vegetables.',
       yield: 'Per side. One portion: 3 pieces each of carrot, cauliflower and broccoli, about 120 g.',
       ingredients: [
@@ -973,7 +974,7 @@ window.LK_DATA = {
 
     /* Batch recipes */
     {
-      id: 'rissole-mix', no: '45', kind: 'batch', forLine: 'For the lamb rissoles', name: 'Lamb Rissole Mix', short: 'Rissoles', art: 'rissole-mix', avc: 'Rissoles Batch 5000g A25',
+      id: 'rissole-mix', done: true, no: '45', kind: 'batch', forLine: 'For the lamb rissoles', name: 'Lamb Rissole Mix', short: 'Rissoles', art: 'rissole-mix', avc: 'Rissoles Batch 5000g A25',
       yield: 'Batch: 5 kg lamb mince. A 240 g serve is 3 rissoles.',
       ingredients: [
         { q: '5 kg', name: 'Lamb mince' },
@@ -1476,7 +1477,7 @@ window.LK_DATA = {
       labelNote: 'Check the chip and dressing labels. AVC also lists chicken salt and lemon pepper on the chips at 0 g, so they are not counted here.'
     },
     {
-      id: 'pork-belly-batch', no: '67', art: 'pork-belly-batch', kind: 'batch', forLine: 'For the pork belly and the pork belly bites', name: 'Pork Belly and Crackle', short: 'Pork belly',
+      id: 'pork-belly-batch', done: true, no: '67', art: 'pork-belly-batch', kind: 'batch', forLine: 'For the pork belly and the pork belly bites', name: 'Pork Belly and Crackle', short: 'Pork belly',
       avc: 'Pork Belly & Crackle',
       yield: 'Batch: 25 serves, 240 g of raw belly per serve.',
       ingredients: [
@@ -1492,7 +1493,7 @@ window.LK_DATA = {
       labelNote: 'Fresh pork only, so no label check needed.'
     },
     {
-      id: 'side-veg', no: '68', kind: 'batch', forLine: 'For the rissoles', name: 'Seasonal Vegetables', short: 'Side veg', art: 'side-veg',
+      id: 'side-veg', done: true, no: '68', kind: 'batch', forLine: 'For the rissoles', name: 'Seasonal Vegetables', short: 'Side veg', art: 'side-veg',
       yield: 'Batch prep: 12 carrots, 6 cauliflower heads, 8 broccoli heads. Per plate: 3 pieces of each, about 120 g.',
       ingredients: [
         { q: '12', name: 'Carrots' },
@@ -1535,7 +1536,7 @@ window.LK_DATA = {
       labelNote: 'Check the mash label.'
     },
     {
-      id: 'spinach-puree', no: '71', kind: 'batch', forLine: 'For the pork belly', name: 'Spinach Purée', short: 'Spinach purée', art: 'spinach-puree',
+      id: 'spinach-puree', done: true, no: '71', kind: 'batch', forLine: 'For the pork belly', name: 'Spinach Purée', short: 'Spinach purée', art: 'spinach-puree',
       yield: 'Batch: 1.5 kg spinach, about 1 L of purée. A serve is 50 ml, a wavy squiggle across the plate.',
       ingredients: [
         { q: '1.5 kg', name: 'Spinach' },
@@ -1565,7 +1566,7 @@ window.LK_DATA = {
       labelNote: 'Gluten free. Check the jus powder label when a new batch of powder comes in.'
     },
     {
-      id: 'fried-onions', no: '73', kind: 'batch', forLine: 'For the pork belly', name: 'Fried Onions', short: 'Fried onions', art: 'fried-onions',
+      id: 'fried-onions', done: true, no: '73', kind: 'batch', forLine: 'For the pork belly', name: 'Fried Onions', short: 'Fried onions', art: 'fried-onions',
       yield: 'Batch: 8 white onions and 400 g cornflour. Makes about 3 kg.',
       ingredients: [
         { q: '8', name: 'White onions', note: 'sliced' },
@@ -1661,7 +1662,7 @@ window.LK_DATA = {
       labelNote: 'Check the Worcestershire sauce, tomato sauce, gravy powder and cooking cream labels.'
     },
     {
-      id: 'wing-flour', no: '78', kind: 'batch', forLine: 'For the wings', name: 'Szechuan Wing Flour', short: 'Wing flour', art: 'wing-flour',
+      id: 'wing-flour', done: true, no: '78', kind: 'batch', forLine: 'For the wings', name: 'Szechuan Wing Flour', short: 'Wing flour', art: 'wing-flour',
       yield: 'Batch: 1.15 kg of mix. 50 g per Grill Maiden\'s Board.',
       ingredients: [
         { q: '1000 g', name: 'Cornflour' },
@@ -1707,7 +1708,7 @@ window.LK_DATA = {
       labelNote: 'Check the supplier label for allergens.'
     },
     {
-      id: 'aioli', no: '81', kind: 'batch', forLine: 'For several dishes', name: 'Garlic Aioli', short: 'Aioli', art: 'aioli',
+      id: 'aioli', done: true, no: '81', kind: 'batch', forLine: 'For several dishes', name: 'Garlic Aioli', short: 'Aioli', art: 'aioli',
       yield: 'Bought in. No prep. Serve size is on each dish card.',
       ingredients: [
         { q: '1', name: 'Aioli', note: 'Oli & Vine garlic aioli, bought in (AVC product).', tags: ['Egg?'] }
@@ -1720,7 +1721,7 @@ window.LK_DATA = {
       labelNote: 'Check the supplier label for allergens.'
     },
     {
-      id: 'tartare', no: '82', kind: 'batch', forLine: 'For the fish dishes', name: 'Tartare Sauce', short: 'Tartare sauce', art: 'tartare',
+      id: 'tartare', done: true, no: '82', kind: 'batch', forLine: 'For the fish dishes', name: 'Tartare Sauce', short: 'Tartare sauce', art: 'tartare',
       yield: 'Bought in. No prep. Serve size is on each dish card.',
       ingredients: [
         { q: '1', name: 'Tartare sauce', note: 'Oli & Vine tartare sauce, bought in (AVC product).', tags: ['Egg?'] }
@@ -1733,7 +1734,7 @@ window.LK_DATA = {
       labelNote: 'Check the supplier label for allergens.'
     },
     {
-      id: 'pizza-sauce', no: '83', kind: 'batch', forLine: 'For the parmigiana', name: 'Pizza Sauce', short: 'Pizza sauce', art: 'pizza-sauce',
+      id: 'pizza-sauce', done: true, no: '83', kind: 'batch', forLine: 'For the parmigiana', name: 'Pizza Sauce', short: 'Pizza sauce', art: 'pizza-sauce',
       yield: 'Bought in. No prep. Serve size is on each dish card.',
       ingredients: [
         { q: '1', name: 'Pizza sauce', note: 'Mutti pizza sauce classica, bought in (AVC product).' }
@@ -1746,7 +1747,7 @@ window.LK_DATA = {
       labelNote: 'Check the supplier label for allergens.'
     },
     {
-      id: 'tomato-sauce', no: '84', kind: 'batch', forLine: 'For the fish and chips and the Diane sauce', name: 'Tomato Sauce', short: 'Tomato sauce', art: 'tomato-sauce',
+      id: 'tomato-sauce', done: true, no: '84', kind: 'batch', forLine: 'For the fish and chips and the Diane sauce', name: 'Tomato Sauce', short: 'Tomato sauce', art: 'tomato-sauce',
       yield: 'Bought in. No prep. Serve size is on each dish card.',
       ingredients: [
         { q: '1', name: 'Tomato sauce', note: 'Heinz tomato sauce, gluten free, bought in (AVC product).' }
@@ -1759,7 +1760,7 @@ window.LK_DATA = {
       labelNote: 'Check the supplier label for allergens.'
     },
     {
-      id: 'green-goddess', no: '85', kind: 'batch', forLine: 'For the chips salad', name: 'Green Goddess Dressing', short: 'Green goddess dressing', art: 'green-goddess',
+      id: 'green-goddess', done: true, no: '85', kind: 'batch', forLine: 'For the chips salad', name: 'Green Goddess Dressing', short: 'Green goddess dressing', art: 'green-goddess',
       yield: 'Bought in. No prep. Serve size is on each dish card.',
       ingredients: [
         { q: '1', name: 'Green goddess dressing', note: 'Birch & Waite green goddess dressing, vegan and gluten free, bought in (AVC product).' }
