@@ -446,7 +446,7 @@ window.LK_DATA = {
         { q: '1', name: 'Milk bun', note: 'sliced', tags: ['Gluten', 'Milk', 'Egg?', 'Soy?'] },
         { q: '180 g', name: 'Smash patty', note: '2 patties', link: 'smash-patty' },
         { q: '2 slices', name: 'Burger cheese', note: 'one on each patty', tags: ['Milk'] },
-        { q: '20 g', name: 'Bread and butter pickles', note: 'top half only' },
+        { q: '20 g', name: 'Bread and butter pickles', note: 'bought in, top half only' },
         { q: '20 ml', name: 'American mustard', note: 'top and bottom' },
         { q: '40 ml', name: 'Tomato sauce', link: 'tomato-sauce', note: 'ketchup, top and bottom' },
         { q: '[Qty]', name: 'Oak leaf lettuce' },
@@ -473,7 +473,7 @@ window.LK_DATA = {
         { q: '50 g', name: 'Sliced beetroot' },
         { q: '50 g', name: 'Tomato' },
         { q: '10 g', name: 'Red onion' },
-        { q: '10 g', name: 'Bread and butter pickles' },
+        { q: '10 g', name: 'Bread and butter pickles', note: 'bought in' },
         { q: '40 ml', name: 'Tomato ketchup' },
         { q: '[Qty]', name: 'Oak leaf lettuce' },
         { q: '½ portion', name: 'Chips', note: 'of the 200 g raw portion' }
@@ -1355,7 +1355,7 @@ window.LK_DATA = {
         { q: '[Qty]', name: 'Alabama white sauce', note: '[recipe to confirm]', tags: ['Egg?'] },
         { q: '[Qty]', name: 'Double-smoked BBQ sauce', tags: ['Gluten?', 'Soy?'] },
         { q: '[Qty]', name: 'Bourbon BBQ sauce', tags: ['Gluten?', 'Soy?'] },
-        { q: '[Qty]', name: 'Bread and butter pickles' }
+        { q: '[Qty]', name: 'Bread and butter pickles', note: 'bought in' }
       ],
       pins: [
         { label: 'Brisket', x: 23.6, y: 25.5, side: 'left', tags: [], note: 'Smoked, sliced.' },
@@ -1392,7 +1392,7 @@ window.LK_DATA = {
         { q: '[Qty]', name: 'Alabama white sauce', note: '[recipe to confirm]', tags: ['Egg?'] },
         { q: '[Qty]', name: 'Double-smoked BBQ sauce', tags: ['Gluten?', 'Soy?'] },
         { q: '[Qty]', name: 'Bourbon BBQ sauce', tags: ['Gluten?', 'Soy?'] },
-        { q: '[Qty]', name: 'Bread and butter pickles' }
+        { q: '[Qty]', name: 'Bread and butter pickles', note: 'bought in' }
       ],
       pins: [
         { label: 'Brisket', x: 21.7, y: 23.6, side: 'left', tags: [], note: 'Smoked, sliced.' },
