@@ -91,6 +91,7 @@ There's no build step and nothing to install. To try it on a computer, open `ind
 
 ## Prep book and admin panel
 
+- Staff only see today in `#/prep` (no back, forward or date picker); the head chef and sous chefs can still browse other days. Unfinished lines roll over to today by themselves. This is the page only: past days stay readable in the database to anyone with the kitchen PIN.
 - `#/prep` is the prep book, laid out as an open notebook: today on the left, yesterday on the right (two pages on a big screen, stacked on a phone). Staff enter the kitchen PIN once per phone, pick their name, and the first time choose their own 4-digit PIN. That phone then stays signed in.
 - Sections are not preset. Whoever writes a line types a section name (or picks one already used) and it appears as a section on the page and as a tab. The app keeps track of sections in the background and offers them as suggestions.
 - Ticking, writing and removing lines is counted per person in the background.
