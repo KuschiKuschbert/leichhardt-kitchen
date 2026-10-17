@@ -437,3 +437,24 @@ img, svg { display: block; }
 .nb-sg { min-height: 40px; }
 .a-heat { text-align: center; min-width: 2.4rem; font-weight: 600; }
 .p-toast-btn { margin-left: 0.8rem; min-height: 32px; padding: 0 0.8rem; border-radius: 16px; border: 1.5px solid #fff; background: transparent; color: #fff; font-weight: 700; cursor: pointer; }
+
+/* ---------- admin panel tabs and layout ---------- */
+.a-tabs { position: sticky; top: 0; z-index: 12; display: flex; gap: 0.4rem; padding: 0.5rem 0; margin: 0 -0.25rem; background: var(--bg); border-bottom: 1.5px solid var(--ink); overflow-x: auto; scrollbar-width: none; }
+.a-tabs::-webkit-scrollbar { display: none; }
+.a-tab { flex: 1 0 auto; min-height: 46px; padding: 0 1.1rem; border: 1.5px solid var(--ink); border-radius: 999px; background: var(--paper); font: 700 1rem var(--body); color: var(--ink); cursor: pointer; }
+.a-tab[aria-pressed="true"] { background: var(--ink); color: #fff; }
+.a-pane { display: flex; flex-direction: column; gap: 1.1rem; }
+.a-pane .set-block { padding: 1rem; border: 1.5px solid var(--edge); border-radius: var(--radius); background: var(--paper); }
+.a-pane .set-block:last-child { border-bottom: 1.5px solid var(--edge); }
+.a-person { padding: 0.8rem; margin-bottom: 0.6rem; border: 1.5px solid var(--edge); border-radius: var(--radius); background: var(--bg); }
+.a-list { list-style: none; margin: 0; padding: 0; }
+@media (min-width: 900px) {
+  .p-admin { max-width: 68rem; }
+  .a-tab { flex: 0 0 auto; min-width: 8rem; }
+  .a-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; }
+  .a-list .a-person { margin: 0; }
+}
+@media (max-width: 599px) { .a-pane .set-block { padding: 0.8rem; } .a-perms { gap: 0.2rem 0.8rem; } }
+@media (max-width: 599px) { .a-tabs { gap: 0.3rem; } .a-tab { flex: 1 1 0; min-width: 0; padding: 0 0.4rem; font-size: 0.9rem; } }
+.a-pane .set-block:has([data-p="a-save"]) { position: sticky; bottom: 0; z-index: 11; box-shadow: 0 -6px 12px rgba(0, 0, 0, 0.08); }
+@media (max-width: 719px) { .nb-badges { order: 5; } }
