@@ -43,7 +43,7 @@
   on the guest menu, so they sit after the menu sections.
 */
 window.LK_DATA = {
-  updated: '16 October 2026',
+  updated: '17 October 2026',
   allergens: ['Gluten', 'Milk', 'Egg', 'Soy', 'Peanut', 'Tree nut', 'Fish', 'Crustacean', 'Mollusc', 'Sesame'],
   menuOrder: [
     { title: "Snackin' Plates", ids: ['poutine', 'beetroot-bites', 'brisket-cob', 'wings', 'haloumi-tacos', 'pork-belly-bites', 'calamari', 'riblets', 'garlic-bread', 'bacon-cheese-bread', 'chips-snack'] },
@@ -1456,6 +1456,41 @@ window.LK_DATA = {
       ],
       labelNote: ''
     },
+    {
+      id: 'pork-knuckle', art: 'pork-knuckle', no: '92', kind: 'main', forLine: 'Special', name: 'Pork Knuckle',
+      yield: 'Per plate. Pork knuckle on potato mash with pork sauce, hot honey glaze, 5 onion rings, fried shallots and sauerkraut.',
+      ingredients: [
+        { q: '[Qty]', name: 'Potato mash', link: 'mash' },
+        { q: '[Qty]', name: 'Pork sauce', tags: ['Gluten?', 'Soy?'] },
+        { q: '[Qty]', name: 'Pork knuckle' },
+        { q: '[Qty]', name: 'Hot honey glaze', note: 'on the knuckle' },
+        { q: '5', name: 'Onion rings', tags: ['Gluten?', 'Egg?'] },
+        { q: '[Qty]', name: 'Fried shallots', tags: ['Gluten?'] },
+        { q: '[Qty]', name: 'Sauerkraut' }
+      ],
+      pins: [
+        { label: 'Onion rings', x: 49.1, y: 30.2, side: 'left', tags: ['Gluten?', 'Egg?'], note: '5 rings on top of the knuckle.' },
+        { label: 'Hot honey glaze', x: 44.3, y: 38.7, side: 'left', tags: [], note: 'Over the knuckle.' },
+        { label: 'Pork knuckle', x: 61.3, y: 42.5, side: 'right', tags: [], note: '' },
+        { label: 'Fried shallots', x: 69.8, y: 50.9, side: 'right', tags: ['Gluten?'], note: 'Scattered over the knuckle and the sauce.' },
+        { label: 'Potato mash', x: 54.7, y: 59.4, side: 'right', link: 'mash', note: 'The knuckle sits on it.' },
+        { label: 'Pork sauce', x: 30.2, y: 51.9, side: 'left', tags: ['Gluten?', 'Soy?'], note: 'Around the mash. Recipe to confirm.' },
+        { label: 'Sauerkraut', x: 26.4, y: 61.3, side: 'left', tags: [], note: 'Position to confirm.' }
+      ],
+      sections: [
+        { title: 'Plating', steps: [
+          'Potato mash in the middle of the plate.',
+          'Pork sauce around the mash.',
+          'Pork knuckle on the mash.',
+          'Hot honey glaze over the knuckle.',
+          '5 onion rings stacked on top of the knuckle.',
+          'Fried shallots over the knuckle and the sauce.',
+          'Sauerkraut on the plate [position to confirm].'
+        ] }
+      ],
+      labelNote: 'Check the sauce, onion ring and fried shallot labels.'
+    },
+
     /* ---------- Batch cards from AVC Live (Oct 2026): only fully confirmed ingredient lists ---------- */
     {
       id: 'chips-salad', no: '66', art: 'chips-salad', kind: 'batch', forLine: 'For steaks, schnitzels, parmys and fish', name: 'Chips and Salad', short: 'Chips + salad',
