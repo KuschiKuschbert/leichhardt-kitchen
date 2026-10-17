@@ -148,6 +148,7 @@
   function plural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }
 
   var ICON = {
+    key: '<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M12 12h9M18 12v3M21 12v2" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>',
     gear: '<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z M19.4 13.5l1.6 1.2-1.8 3.1-1.9-.7a7.6 7.6 0 0 1-1.7 1l-.3 2h-3.6l-.3-2a7.6 7.6 0 0 1-1.7-1l-1.9.7L5 14.7l1.6-1.2a7.4 7.4 0 0 1 0-2L5 10.3l1.8-3.1 1.9.7a7.6 7.6 0 0 1 1.7-1l.3-2h3.6l.3 2a7.6 7.6 0 0 1 1.7 1l1.9-.7 1.8 3.1-1.6 1.2a7.4 7.4 0 0 1 0 2Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
     left: '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 L5 8 L10 13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     right: '<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" style="flex:0 0 14px"><path d="M6 3 L11 8 L6 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
@@ -199,16 +200,23 @@
       return '<button type="button" data-act="topview" data-val="' + v.id + '" data-k="topview:' + v.id + '" aria-pressed="' + (settings.view === v.id) + '" aria-label="' + esc(v.name) + '">' + SW_ICON[v.id] + '<span>' + (v.id === 'pass' ? 'Pass' : 'Tiles') + '</span></button>';
     }).join('') + '</div>';
   }
+  /* The Admin button shows on every page on a phone or computer where the head chef has signed in with Google. */
+  function isAdminDevice() { try { return localStorage.getItem('lk.admin') === '1'; } catch (e) { return false; } }
+  function adminLink(cls) {
+    if (!isAdminDevice()) return '';
+    var on = parseRoute().name === 'admin';
+    return '<a class="' + cls + '" href="#/admin" aria-label="Admin panel"' + (on ? ' aria-current="page"' : '') + '>' + ICON.key + (cls === 'icon-btn' ? '<span class="icon-lbl">Admin</span>' : '') + '</a>';
+  }
   function header(count) {
     return '<header class="top"><a class="brand" href="#/"><span class="eyebrow">Leichhardt Hotel Kitchen</span><h1>Kitchen Book</h1></a>' +
       '<div class="top-right">' + (count ? '<span class="count" id="count">' + esc(count) + '</span>' : '') + pillNav() + viewSwitch() +
-      '<a class="icon-btn" href="#/settings" aria-label="Settings">' + ICON.gear + '<span class="icon-lbl">Settings</span></a></div></header>';
+      adminLink('icon-btn') + '<a class="icon-btn" href="#/settings" aria-label="Settings">' + ICON.gear + '<span class="icon-lbl">Settings</span></a></div></header>';
   }
   var DOCKETS = [['01', 'Recipes', '#/recipes', 'recipes'], ['02', 'Prep list', '#/prep', 'prep'], ['03', 'Orders', '#/orders', 'orders'], ['04', 'Wastage', '#/waste', 'waste']];
   function viewLanding() {
     var today = new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
     return '<div class="wall"><div class="rail"><a class="rail-brand" href="#/"><span>Leichhardt Hotel Kitchen</span><b>Kitchen Book</b></a>' + pillNav() +
-      '<a class="rail-set" href="#/settings" aria-label="Settings">' + ICON.gear + '</a></div>' +
+      '<span class="rail-icons">' + adminLink('rail-set') + '<a class="rail-set" href="#/settings" aria-label="Settings">' + ICON.gear + '</a></span></div>' +
       '<main id="main" class="wall-main"><h2 class="wall-h" id="rtitle" tabindex="-1">Pick a docket</h2><p class="wall-date">' + esc(today) + '</p>' +
       '<div class="dockets">' + DOCKETS.map(function (d) {
         return '<a class="docket" href="' + d[2] + '"><span class="pin" aria-hidden="true"></span><span class="dk-top"><span class="dk-name">' + d[1] + '</span><span class="dk-no">No. ' + d[0] + '</span></span>' +
@@ -461,6 +469,7 @@
       }).join('') + '</div></section>' +
       '<section class="set-block" aria-label="Ticked steps"><span class="label">Ticked steps</span><span class="hint">' + esc(plural(nTicks, 'step is', 'steps are')) + ' ticked. Ticks clear when you close the page.</span>' +
       '<div class="btn-row"><button type="button" class="btn" data-act="clearticks" data-k="clearticks">Clear all ticks</button></div></section>' +
+      '<section class="set-block" aria-label="Admin panel"><span class="label">Admin panel</span><span class="hint">For the head chef: insights, team, wastage, learning, people and tools. Sign in with Google once on this phone or computer and the Admin button shows on every page.</span><div class="btn-row"><a class="btn" href="#/admin">Open the admin panel</a></div></section>' +
       '<section class="set-block" aria-label="About"><span class="label">About</span><span class="saved">' + esc(plural(D.recipes.length, 'recipe', 'recipes')) + ', updated ' + esc(D.updated) +
       '. Settings are saved on this phone or tablet only.</span></section></main>' + footer() + '</div>';
   }
@@ -476,6 +485,13 @@
     }
     if (parts[0] === 'recipes') return { name: 'home', stack: [] };
     return { name: 'landing', stack: [] };
+  }
+  /* Recipe cards opened, counted on this phone (no names). The prep book sends the counts once someone is signed in. */
+  function noteView(id) {
+    if (!id) return;
+    var v; try { v = JSON.parse(localStorage.getItem('lk.views') || '{}'); } catch (e) { v = {}; }
+    v[id] = (v[id] || 0) + 1;
+    try { localStorage.setItem('lk.views', JSON.stringify(v)); } catch (e) {}
   }
   var lastHash = null, lastRoute = '', homeY = 0;
   window.addEventListener('scroll', function () { if (lastRoute === 'home') homeY = window.scrollY; }, { passive: true });
@@ -501,6 +517,7 @@
     var r = route.stack.length ? byId[route.stack[route.stack.length - 1]] : null;
     document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'waste' ? 'Wastage · ' : route.name === 'landing' ? '' : route.name === 'admin' ? 'Admin panel · ' : '')) + 'Leichhardt Kitchen Book';
     var prevRoute = lastRoute; lastRoute = route.name;
+    if (changed && route.name === 'recipe') noteView(route.stack[route.stack.length - 1]);
     if (changed) {
       lastHash = location.hash;
       // Coming back to the recipe list from a recipe puts you where you were.

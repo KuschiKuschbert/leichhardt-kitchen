@@ -120,6 +120,19 @@ There's no build step and nothing to install. To try it on a computer, open `ind
 - Anyone signed in can add. Only the head chef or a sous chef can remove a line (enforced by the rules). Staff see today only.
 - Admin panel, Waste tab: totals, by reason, wasted most often (with how often the same item was on the prep list, to spot over-prepping, and a suggestion per main reason), by weekday, who logs, and the reviews.
 
+### Suggestions and data, round two
+
+- **Admin button on every page** (key icon next to Settings) on any phone or computer where the head chef has signed in with Google (`lk.admin` on the device). Settings always has an "Open the admin panel" link, and Orders and Wastage link to Admin for the head chef and sous chefs.
+- **Past days read once a day:** the last 14 days of prep lines are read once a day per phone and kept on the phone (`lk.past`); today comes from the live list. (Before, every phone re-read 7 days every 5 minutes, which could use up the free daily read limit.) Badges, usual amounts, Start here, Due today, the pace card and the close-out nudge all work from it.
+- **Due today** (Handy page): made on 3 or more of the last 14 days, about every 4 days or more often, and the usual gap has passed. One tap adds it with the usual amount and section.
+- **Pace** (Handy page, head chef and sous chefs only): share ticked now against the usual share by this time of day (same weekday when there are 2 or more, otherwise all days).
+- **Closing soon** (top of the list): from an hour before the usual time of the last tick, open lines that will roll over, a Log waste button, and Hide for today.
+- **Stuck lines** (Handy page, head chef and sous chefs): lines rolled over 3 or more times, with Urgent and Remove.
+- **Waste warnings:** writing a prep line that was logged as excess or expired waste 2 or more times in 14 days shows a hint; writing an order line that was logged as expired stock shows "Order a little less?".
+- **Order list:** "Usually ordered on a Sunday or often" chips from the last 14 days (2 or more of the same weekday, or 5 or more days). One tap adds it with the usual amount.
+- **Wastage, last 7 days** (head chef and sous chefs): every entry grouped by day with totals, most often, and reasons. The admin Waste tab adds an each-day table (entries, amount, review) and an Open the wastage log button.
+- **Recipe cards opened:** each card opened is counted on the phone (`lk.views`, no names) and sent to `views/<recipe>` once someone is signed in. Insights shows the most opened cards and the ones not opened yet. Cooking-fault and returned waste shows how often the card was opened.
+
 ### Insights added in October 2026
 
 - **Insights tab:** load by weekday and section (lines written or rolled over, average per day), slow and sticky lines with a suggestion each, and recipe book searches that found nothing.
