@@ -21,6 +21,16 @@ service cloud.firestore {
         && getAfter(proofDoc(request.resource.data.by)).data.tok == get(pinDoc(request.resource.data.by)).data.hash;
     }
     function writer() { return isAdmin() || staff(); }
+    // A ticked prep line stays ticked. Only the head chef, a sous chef, or the person who ticked it
+    // (within 2 minutes, for a mis-tap) may undo it. A tick time cannot be re-stamped by anyone else.
+    function sousBy() { return request.resource.data.by in get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/config/main).data.get('sousIds', []); }
+    function tickKept() {
+      return resource.data.get('done', false) != true
+        || (request.resource.data.get('done', false) == true && request.resource.data.get('doneAt', 0) == resource.data.get('doneAt', 0))
+        || isAdmin() || sousBy()
+        || (request.resource.data.get('done', false) != true && resource.data.get('doneById', '') == request.resource.data.by
+            && request.time.toMillis() - resource.data.get('doneAt', 0) < 120000);
+    }
 
     match /kitchens/KITCHEN_PIN/config/main {
       allow read: if true;
@@ -35,7 +45,8 @@ service cloud.firestore {
     match /kitchens/KITCHEN_PIN/config/admins { allow read, write: if isAdmin(); }
     match /kitchens/KITCHEN_PIN/days/{day}/items/{item} {
       allow read: if true;
-      allow create, update: if writer() && request.resource.data.text is string && request.resource.data.text.size() <= 160;
+      allow create: if writer() && request.resource.data.text is string && request.resource.data.text.size() <= 160;
+      allow update: if writer() && request.resource.data.text is string && request.resource.data.text.size() <= 160 && tickKept();
       allow delete: if false;
     }
     match /kitchens/KITCHEN_PIN/orders/{day}/lines/{line} {
