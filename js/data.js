@@ -1014,19 +1014,19 @@ window.LK_DATA = {
     {
       id: 'beetroot-bites', art: 'beetroot-bites', no: '47', kind: 'snack', forLine: 'Snack', name: 'Crispy Beetroot Bites',
       menu: 'Crispy Beetroot Bites: fried beetroot, caramelised chilli jam, Korean-style cucumber.',
-      yield: 'Per serve. Fried beetroot tossed in chilli jam, piled in the middle, Korean-style cucumber on top.',
+      yield: 'Per serve. 7 pieces of fried beetroot tossed in chilli jam, piled in the middle, Korean-style cucumber on top.',
       ingredients: [
-        { q: '[Qty]', name: 'Crispy beetroot bites', note: 'fried', tags: ['Gluten?'] },
+        { q: '7 pieces', name: 'Crispy beetroot bites', note: 'fried', tags: ['Gluten?'] },
         { q: '[Qty]', name: 'Caramelised chilli jam' },
         { q: '[Qty]', name: 'Korean-style cucumber', tags: ['Sesame?', 'Soy?'] }
       ],
       pins: [
-        { label: 'Crispy beetroot bites', x: 36.3, y: 56.6, side: 'left', tags: ['Gluten?'], note: 'Fried, tossed in chilli jam, piled in the middle.' },
+        { label: 'Crispy beetroot bites', x: 36.3, y: 56.6, side: 'left', tags: ['Gluten?'], note: '7 pieces, fried, tossed in chilli jam, piled in the middle.' },
         { label: 'Korean-style cucumber', x: 50.5, y: 38.2, side: 'right', tags: ['Sesame?', 'Soy?'], note: 'On top of the pile.' },
         { label: 'Caramelised chilli jam', x: 41.5, y: 46.5, side: 'left', tags: [], note: 'The bites are tossed in it.' }
       ],
       sections: [
-        { title: 'Plating', steps: ['Toss the beetroot bites in the caramelised chilli jam.', 'Pile them in the middle of the plate.', 'Korean-style cucumber on top.'] }
+        { title: 'Plating', steps: ['Toss the 7 beetroot bites in the caramelised chilli jam.', 'Pile them in the middle of the plate.', 'Korean-style cucumber on top.'] }
       ]
     },
     {
