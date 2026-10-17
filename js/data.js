@@ -1684,30 +1684,39 @@ window.LK_DATA = {
     },
 
     {
-      id: 'prawn-topper', no: '100', kind: 'side', forLine: 'Topper', name: 'Prawn Topper',
+      id: 'prawn-topper', art: 'prawn-topper', no: '100', kind: 'side', forLine: 'Topper', name: 'Prawn Topper',
       menu: 'Prawn topper: 5 pieces.',
       yield: 'Per topper. 5 pieces of prawn.',
       ingredients: [
         { q: '5 pieces', name: 'Prawns', tags: ['Crustacean'] }
       ],
+      pins: [
+        { label: 'Prawns', x: 40, y: 45, side: 'left', tags: ['Crustacean'], note: '5 pieces.' }
+      ],
       sections: [{ title: 'Plating', steps: ['Place the 5 prawns on top of the steak. [Cooking and finish to confirm]'] }]
     },
     {
-      id: 'calamari-topper', no: '101', kind: 'side', forLine: 'Topper', name: 'Calamari Topper',
+      id: 'calamari-topper', art: 'calamari-topper', no: '101', kind: 'side', forLine: 'Topper', name: 'Calamari Topper',
       menu: 'Calamari topper: 8 pieces.',
       yield: 'Per topper. 8 pieces of calamari.',
       ingredients: [
         { q: '8 pieces', name: 'Calamari', tags: ['Mollusc', 'Gluten?'] }
       ],
+      pins: [
+        { label: 'Calamari', x: 40, y: 45, side: 'left', tags: ['Mollusc', 'Gluten?'], note: '8 pieces.' }
+      ],
       sections: [{ title: 'Plating', steps: ['Place the 8 pieces of calamari on top of the steak. [Cooking and finish to confirm]'] }]
     },
     {
-      id: 'chicken-topper', no: '102', kind: 'side', forLine: 'Topper', name: 'Chicken Topper',
+      id: 'chicken-topper', art: 'chicken-topper', no: '102', kind: 'side', forLine: 'Topper', name: 'Chicken Topper',
       menu: 'Chicken topper: chicken tenders.',
       yield: 'Per topper. Chicken tenders cooked in Italian herbs. [Number of tenders to confirm]',
       ingredients: [
         { q: '[Qty]', name: 'Chicken tenders' },
         { q: '[Qty]', name: 'Italian herbs' }
+      ],
+      pins: [
+        { label: 'Chicken tenders', x: 40, y: 45, side: 'left', tags: [], note: 'Cooked in Italian herbs, steamed to 75°C core. Number of tenders to confirm. [Unverified] drawing shows 3.' }
       ],
       sections: [
         { title: 'Cooking', steps: [
@@ -1718,11 +1727,14 @@ window.LK_DATA = {
       ]
     },
     {
-      id: 'mushroom-topper', no: '103', kind: 'side', forLine: 'Topper', name: 'Mushroom Topper',
+      id: 'mushroom-topper', art: 'mushroom-topper', no: '103', kind: 'side', forLine: 'Topper', name: 'Mushroom Topper',
       menu: 'Mushroom topper.',
       yield: 'Per topper. [Make-up to confirm]',
       ingredients: [
         { q: '[Qty]', name: 'Mushrooms [to confirm]' }
+      ],
+      pins: [
+        { label: 'Mushrooms', x: 40, y: 45, side: 'left', tags: [], note: 'Make-up to confirm. [Unverified] drawing is a guide only.' }
       ],
       sections: [{ title: 'Plating', steps: ['[Make-up and plating to confirm]'] }]
     },
