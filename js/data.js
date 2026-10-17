@@ -1619,7 +1619,7 @@ window.LK_DATA = {
     },
     {
       id: 'antipasto-platter', art: 'antipasto-platter', no: '98', kind: 'main', forLine: 'Functions', name: 'Antipasto Platter',
-      yield: 'Per platter. Prosciutto, leg ham, salami, cheese, crackers, grilled sourdough, dried fruit salad, 3 dips: tomato relish, caramelised onions and basil pesto.',
+      yield: 'Per platter. Prosciutto, leg ham, salami, cheese, crackers, grilled sourdough, dried fruit salad, 3 dips, 2 of each: tomato relish, caramelised onions and basil pesto.',
       ingredients: [
         { q: '80 g', name: 'Prosciutto' },
         { q: '100 g', name: 'Leg ham' },
@@ -1628,9 +1628,9 @@ window.LK_DATA = {
         { q: '1/2 pkt', name: 'Crackers', tags: ['Gluten', 'Sesame?', 'Soy?'] },
         { q: '1 cob', name: 'Sourdough', note: 'cut and grilled', tags: ['Gluten'] },
         { q: '[Qty]', name: 'Dried fruit salad', note: 'the dried fruit selection' },
-        { q: '1ea', name: 'Tomato relish', note: 'dip', link: 'tomato-relish' },
-        { q: '1ea', name: 'Caramelised onions', note: 'dip' },
-        { q: '1ea', name: 'Basil pesto', note: 'dip', tags: ['Tree nut?', 'Milk?'] }
+        { q: '2ea', name: 'Tomato relish', note: 'dip', link: 'tomato-relish' },
+        { q: '2ea', name: 'Caramelised onions', note: 'dip' },
+        { q: '2ea', name: 'Basil pesto', note: 'dip', tags: ['Tree nut?', 'Milk?'] }
       ],
       pins: [
         { label: 'Prosciutto', x: 17.9, y: 28.3, side: 'left', tags: [], note: '80 g.' },
@@ -1642,9 +1642,9 @@ window.LK_DATA = {
         { label: 'Crackers', x: 60.4, y: 48.6, side: 'right', tags: ['Gluten', 'Sesame?', 'Soy?'], note: '1/2 pkt.' },
         { label: 'Sourdough', x: 84.4, y: 48.6, side: 'right', tags: ['Gluten'], note: '1 cob, cut and grilled.' },
         { label: 'Dried fruit salad', x: 13.2, y: 67.9, side: 'left', tags: [], note: 'Quantity to come.' },
-        { label: 'Tomato relish', x: 36.8, y: 65.6, side: 'left', link: 'tomato-relish', note: 'A dip.' },
-        { label: 'Caramelised onions', x: 50, y: 67.9, side: 'right', tags: [], note: 'A dip.' },
-        { label: 'Basil pesto', x: 63.2, y: 67.9, side: 'right', tags: ['Tree nut?', 'Milk?'], note: 'A dip.' }
+        { label: 'Tomato relish', x: 34.9, y: 67.9, side: 'left', link: 'tomato-relish', note: 'A dip. 2 pots.' },
+        { label: 'Caramelised onions', x: 55.7, y: 67.9, side: 'right', tags: [], note: 'A dip. 2 pots.' },
+        { label: 'Basil pesto', x: 76.4, y: 67.9, side: 'right', tags: ['Tree nut?', 'Milk?'], note: 'A dip. 2 pots.' }
       ],
       sections: [
         { title: 'Plating', steps: ['Serve on a large rectangular white and grey marble board. [Layout to confirm]'] }
