@@ -99,10 +99,12 @@ There's no build step and nothing to install. To try it on a computer, open `ind
 - Personal PINs only say who is writing. They are not a lock, and permissions per person are guidance on the client. Items are never hard deleted.
 - Changing the kitchen PIN means editing the Firestore rules and re-entering it on every phone.
 
-### Admin levels, insights, badges and recipe links
+### Roles, rollover, insights, badges and recipe links
 
-- The head chef (owner) signs in with Google and sees everything: charts and numbers for the last 7, 14 or 30 days (lines per day, by person, time of day, sections), the tallies, people and permissions, PIN resets, the badge switch, and the sous chef sign-in list. The owner is whoever first signs in to the admin panel and matches the admin email in the Firestore rules.
-- A sous chef (Google emails listed by the owner) sees only a Staff page where people can be added and removed.
-- Weekly badges: the top 3 ranks for ticked lines over the last 7 days show above the notebook, with a rank line for the person writing. The owner can switch them off.
-- Hand-written lines link to recipe cards by matching the words in the line against card names and short names (`matchRecipe` in `js/prep.js`). Batch and component cards win ties, and a line that could mean several cards links to none.
-- Sous chef limits and permissions are guidance in the page, except that only listed Google accounts can write the staff list (see the Firestore rules).
+- **Head chef (owner):** signs in with Google at `#/admin` and sees everything: charts and numbers for 7, 14 or 30 days (lines per day, by person, time of day, rolled over most often, sections), the tallies, people and permissions, PIN resets and the badge switch.
+- **Sous chef:** no Google needed. Set a person's role to Sous chef in the admin panel. They sign in with their name and PIN like everyone else, and get a "Manage staff" button on the Handy page to add and remove people. The Firestore rules only let a PIN holder change the `people` list of `config/main` (nothing else in that document). Which person may do it is guidance in the page, not a lock.
+- **Rollover:** the first person to open today's book writes every line that was not ticked on the last written day (up to 7 days back) onto today, marked "Rolled" (with "x2" and so on for repeats) and sorted to the top of its section. Each rolled line stores `rolled`, `root`, `from` and `rolledFrom`, so the Insights page can show how often and which lines roll over. There is no Yesterday page any more.
+- **Urgent:** the ! button on a line pins it above the rest.
+- **Handy page:** priorities, progress by section, "Usual for a Saturday" (lines on at least two of the last four same weekdays, tap to add), hide ticked lines, copy the list as text, print the list.
+- **Weekly badges:** the top 3 ranks for ticked lines over the last 7 days show above the notebook. The owner can switch them off.
+- **Recipe links:** hand-written lines link to recipe cards by matching words against card names and short names (`matchRecipe` in `js/prep.js`). A line that could mean several cards links to none.

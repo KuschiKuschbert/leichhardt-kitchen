@@ -22,6 +22,7 @@
   var SDK = 'https://www.gstatic.com/firebasejs/10.14.1/';
   var ROLES = {
     lead: { name: 'Lead', add: true, tick: true, del: true },
+    sous: { name: 'Sous chef', add: true, tick: true, del: true },
     staff: { name: 'Staff', add: true, tick: true, del: false },
     view: { name: 'View only', add: false, tick: false, del: false }
   };
@@ -56,7 +57,7 @@
     items: [], itemsState: 'idle', prev: [], showRemoved: false,
     section: '', text: '', qty: '', recipeSearch: '', recipeOpen: false, tab: '',
     authed: false, pinStep: '', pinData: null, pf1: '', pf2: '', pinMsg: '',
-    sections: [], activity: [], resetId: '',
+    sections: [], activity: [], resetId: '', hideDone: false, rolledFor: '', usual: [], usualFor: '', staffOpen: false,
     admins: null, adminsFor: '', level: '', stats: null, statsRange: 14, week: null, weekAt: 0, weekBusy: false,
     user: null, authState: 'idle', draft: null, saveMsg: '', busy: false, toast: ''
   };
@@ -113,10 +114,6 @@
       S.items = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; });
       S.itemsState = 'ok'; draw();
     }, function () { S.itemsState = 'error'; draw(); });
-    unsubPrev = fb.fs.onSnapshot(itemsCol(shift(S.date, -1)), function (snap) {
-      S.prev = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; });
-      draw();
-    }, function () {});
   }
   function watchSections() {
     if (unsubSec || !fb) return;
@@ -206,7 +203,7 @@
   function suggestions() {
     var seen = {}, out = [];
     S.sections.filter(function (x) { return !x.hidden; }).sort(function (a, b) { return (b.uses || 0) - (a.uses || 0); }).forEach(function (x) { seen[x.name.toLowerCase()] = 1; out.push(x.name); });
-    S.items.concat(S.prev).forEach(function (x) { var n = x.station; if (n && !seen[n.toLowerCase()]) { seen[n.toLowerCase()] = 1; out.push(n); } });
+    S.items.forEach(function (x) { var n = x.station; if (n && !seen[n.toLowerCase()]) { seen[n.toLowerCase()] = 1; out.push(n); } });
     return out;
   }
 
@@ -240,8 +237,7 @@
     S.qty = ''; S.recipeSearch = ''; S.recipeOpen = false; toast('Added ' + (r.short || r.name));
   }
   function tick(date, id) {
-    var list = date === S.date ? S.items : S.prev;
-    var it = list.filter(function (x) { return x.id === id; })[0], p = me();
+    var it = S.items.filter(function (x) { return x.id === id; })[0], p = me();
     if (!it || !can('tick')) return;
     var done = !it.done;
     fb.fs.updateDoc(itemRef(date, id), { done: done, doneBy: done ? p.name : '', doneById: done ? p.id : '', doneAt: done ? Date.now() : 0 }).catch(function () { toast('Could not save. Check the connection.'); });
@@ -253,17 +249,92 @@
     if (!can('del')) return;
     fb.fs.updateDoc(itemRef(date, id), { deleted: !restore, deletedBy: restore ? '' : p.name }).catch(function () { toast('Could not save. Check the connection.'); });
   }
-  function carryOver() {
-    if (!can('add')) return;
-    var have = {}; S.items.forEach(function (x) { if (x.from) have[x.from] = true; });
-    var n = 0, jobs = [];
-    S.prev.forEach(function (x) {
-      if (x.done || x.deleted || have[x.id]) return;
-      n++; jobs.push(newItem({ text: x.text, station: x.station || '', qty: x.qty || '', recipe: x.recipe || '', from: x.id }));
-    });
-    Promise.all(jobs).then(function () { toast(n ? 'Copied ' + n + (n === 1 ? ' line' : ' lines') + ' onto ' + dayName(S.date).toLowerCase() : 'Everything from ' + dayName(shift(S.date, -1)).toLowerCase() + ' was ticked'); },
-      function () { toast('Could not copy. Check the connection.'); });
+  /* Anything not ticked on the last written day rolls onto today by itself. */
+  function maybeRoll() {
+    var today = ymd(new Date());
+    if (!S.authed || !fb || !can('add') || S.date !== today || S.itemsState !== 'ok' || S.rolledFor === today) return;
+    S.rolledFor = today;
+    var dates = [], k;
+    for (k = 1; k <= 7; k++) dates.push(shift(today, -k));
+    Promise.all([fb.fs.getDocs(itemsCol(today))].concat(dates.map(function (d) { return fb.fs.getDocs(itemsCol(d)); }))).then(function (res) {
+      var have = {};
+      res[0].docs.forEach(function (d) { have[d.id] = true; });
+      var src = null, j;
+      for (j = 1; j < res.length && !src; j++) {
+        var docs = res[j].docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }).filter(function (x) { return !x.deleted; });
+        if (docs.length) src = { date: dates[j - 1], items: docs };
+      }
+      if (!src) return;
+      var jobs = [];
+      src.items.forEach(function (x) {
+        if (x.done) return;
+        var root = x.root || x.id, id = 'r' + today.replace(/-/g, '') + '-' + root;
+        if (have[id]) return;
+        have[id] = true;
+        jobs.push(fb.fs.setDoc(itemRef(today, id), {
+          text: x.text, station: x.station || '', qty: x.qty || '', recipe: x.recipe || '',
+          addedBy: 'Rolled over', addedById: '', addedAt: Date.now(), done: false, deleted: false,
+          rolled: (x.rolled || 0) + 1, root: root, from: x.id, rolledFrom: src.date, origBy: x.origBy || x.addedBy || '', urgent: !!x.urgent
+        }));
+      });
+      if (!jobs.length) return;
+      return Promise.all(jobs).then(function () { toast(jobs.length + (jobs.length === 1 ? ' line' : ' lines') + ' rolled over from ' + dayName(src.date).toLowerCase()); });
+    }).catch(function () { S.rolledFor = ''; });
   }
+  function toggleUrgent(id) {
+    var it = S.items.filter(function (x) { return x.id === id; })[0];
+    if (!it || !can('add')) return;
+    fb.fs.updateDoc(itemRef(S.date, id), { urgent: !it.urgent }).catch(function () { toast('Could not save. Check the connection.'); });
+  }
+  /* "Usual for a Saturday": lines that were on at least two of the last four same weekdays. */
+  function maybeUsual() {
+    if (!S.authed || !fb || S.usualFor === S.date) return;
+    var date = S.date; S.usualFor = date; S.usual = [];
+    var dates = [7, 14, 21, 28].map(function (n) { return shift(date, -n); });
+    Promise.all(dates.map(function (d) { return fb.fs.getDocs(itemsCol(d)).then(function (sn) { return sn.docs.map(function (x) { return x.data(); }); }, function () { return []; }); })).then(function (lists) {
+      var map = {};
+      lists.forEach(function (l) {
+        var once = {};
+        l.forEach(function (x) {
+          if (x.deleted || x.rolled || !x.text) return;
+          var k = x.text.trim().toLowerCase();
+          if (once[k]) return; once[k] = 1;
+          var m = map[k] = map[k] || { text: x.text.trim(), n: 0, secs: {} };
+          m.n++; var sc = x.station || ''; m.secs[sc] = (m.secs[sc] || 0) + 1;
+        });
+      });
+      S.usual = Object.keys(map).map(function (k) { var m = map[k]; var best = Object.keys(m.secs).sort(function (a, b) { return m.secs[b] - m.secs[a]; })[0] || ''; return { text: m.text, n: m.n, station: best }; })
+        .filter(function (m) { return m.n >= 2; }).sort(function (a, b) { return b.n - a.n || a.text.localeCompare(b.text); }).slice(0, 14);
+      if (S.date === date) draw();
+    });
+  }
+  function addUsual(i) {
+    var u = S.usual[i];
+    if (!u || !can('add')) return;
+    var rm = matchRecipe(u.text);
+    newItem({ text: u.text.slice(0, 160), station: u.station, recipe: rm ? rm.id : '' }).catch(function () { toast('Could not save. Check the connection.'); });
+    noteSection(u.station); bump({ added: 1, lastAdded: Date.now() });
+  }
+  function listText() {
+    var rows = S.items.filter(function (x) { return !x.deleted; }).sort(sortItems), out = [], last = null;
+    out.push('Prep list, ' + dayName(S.date) + ' ' + longDate(S.date));
+    rows.forEach(function (x) {
+      var sec = x.station || 'General';
+      if (sec !== last) { out.push('', sec.toUpperCase()); last = sec; }
+      out.push((x.done ? '[x] ' : '[ ] ') + (x.urgent ? 'URGENT ' : '') + (x.rolled ? '(rolled over) ' : '') + x.text + (x.qty ? ' - ' + x.qty : ''));
+    });
+    return out.join('\n');
+  }
+  function copyList() {
+    var t = listText();
+    function fallback() {
+      var ta = document.createElement('textarea'); ta.value = t; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select(); var ok = false; try { ok = document.execCommand('copy'); } catch (e) {} document.body.removeChild(ta);
+      toast(ok ? 'List copied. Paste it into a message.' : 'Could not copy on this device.');
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(function () { toast('List copied. Paste it into a message.'); }, fallback); else fallback();
+  }
+  function sortItems(a, b) { return (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0) || (b.rolled || 0) - (a.rolled || 0) || (a.addedAt || 0) - (b.addedAt || 0); }
 
   /* ---------- admin actions ---------- */
   function startDraft() {
@@ -277,14 +348,14 @@
         return { id: p.id, name: String(p.name).trim().slice(0, 40), role: p.role || 'staff', add: !!p.add, tick: !!p.tick, del: !!p.del, active: p.active !== false };
       }),
       stations: [], showBadges: cfg.showBadges !== false,
-      updated: Date.now(), updatedBy: (S.user && S.user.email) || ''
+      updated: Date.now(), updatedBy: (S.user && S.user.email) || (who() ? who().name : '')
     };
     return sdk().then(function () { return fb.fs.setDoc(cfgDoc(), clean); }).then(function () { return clean; });
   }
   function adminSave() {
     S.busy = true; S.saveMsg = 'Saving...'; draw();
     saveConfig(S.draft).then(function () { S.busy = false; startDraft(); S.saveMsg = 'Saved. Everyone sees the changes now.'; draw(); },
-      function (e) { S.busy = false; S.saveMsg = e && e.code === 'permission-denied' ? 'That Google account is not allowed to change these settings.' : 'Could not save. Check the connection.'; draw(); });
+      function (e) { S.busy = false; S.saveMsg = e && e.code === 'permission-denied' ? 'Not allowed to change these settings.' : 'Could not save. Check the connection.'; draw(); });
   }
   function resetPin(id) {
     if (S.resetId !== id) { S.resetId = id; draw(); return; }
@@ -362,7 +433,6 @@
   function setLevel() {
     var em = String((S.user && S.user.email) || '').toLowerCase(), a = S.admins || {};
     if (String(a.owner || '').toLowerCase() === em) S.level = 'owner';
-    else if ((a.sous || []).map(function (x) { return String(x).toLowerCase(); }).indexOf(em) >= 0) S.level = 'sous';
     else S.level = 'none';
     draw();
   }
@@ -374,17 +444,9 @@
     fb.fs.getDoc(adminsRef()).then(function (s) {
       if (s.exists()) { S.admins = s.data(); setLevel(); return; }
       // first sign-in ever: only the real owner is allowed to create this record
-      return fb.fs.setDoc(adminsRef(), { owner: em, sous: [], created: Date.now() }).then(function () { S.admins = { owner: em, sous: [] }; setLevel(); });
+      return fb.fs.setDoc(adminsRef(), { owner: em, created: Date.now() }).then(function () { S.admins = { owner: em }; setLevel(); });
     }).catch(function () { S.level = 'none'; draw(); });
   }
-  function saveSous() {
-    var box = S.root.querySelector('#a-sous');
-    var list = (box ? box.value : '').split(/[\n,; ]+/).map(function (x) { return x.trim().toLowerCase(); }).filter(function (x) { return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x); });
-    S.busy = true; S.saveMsg = 'Saving...'; draw();
-    fb.fs.setDoc(adminsRef(), { sous: list }, { merge: true }).then(function () { S.admins = Object.assign({}, S.admins, { sous: list }); S.busy = false; S.saveMsg = 'Sous chef sign-in saved.'; draw(); },
-      function () { S.busy = false; S.saveMsg = 'Could not save. Sign in as the owner.'; draw(); });
-  }
-
   /* ---------- the weekly ticking badges (shown to everyone) ---------- */
   function loadWeek() {
     if (!fb || S.weekBusy) return;
@@ -402,6 +464,7 @@
     });
   }
   var MEDAL = { 1: '#C9971C', 2: '#8E959C', 3: '#A8693A' };
+  function isSous() { var p = me(); return !!(p && p.role === 'sous'); }
   function ordinal(n) { return n + (n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th'); }
   function medal(rank) {
     return '<svg class="nb-medal" viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><circle cx="13" cy="13" r="12" fill="' + (MEDAL[rank] || '#8E959C') + '"/><circle cx="13" cy="13" r="9" fill="none" stroke="#fff" stroke-width="1.5" opacity=".8"/><text x="13" y="17.5" text-anchor="middle" font-size="13" font-weight="700" fill="#fff" font-family="Barlow Condensed, sans-serif">' + rank + '</text></svg>';
@@ -436,17 +499,26 @@
   function aggregate(n) {
     var today = ymd(new Date()), dates = [], i, h;
     for (i = n - 1; i >= 0; i--) dates.push(shift(today, -i));
-    var agg = { dates: dates, perDay: {}, people: {}, sections: {}, wHour: [], tHour: [], times: [], written: 0, ticked: 0 };
+    var agg = { dates: dates, perDay: {}, people: {}, sections: {}, wHour: [], tHour: [], times: [], written: 0, ticked: 0, rolled: 0, rollKeys: {} };
     for (h = 0; h < 24; h++) { agg.wHour.push(0); agg.tHour.push(0); }
     dates.forEach(function (d) {
-      var items = (S.stats.days[d] || []).filter(function (x) { return !x.deleted; });
-      var pd = agg.perDay[d] = { w: items.length, t: 0 };
-      items.forEach(function (x) {
-        agg.written++;
-        var nm = x.addedBy || 'Unknown', pp = agg.people[nm] = agg.people[nm] || { w: 0, t: 0 };
-        pp.w++;
-        if (x.station) agg.sections[x.station] = (agg.sections[x.station] || 0) + 1;
-        if (x.addedAt) agg.wHour[new Date(x.addedAt).getHours()]++;
+      var all = (S.stats.days[d] || []).filter(function (x) { return !x.deleted; });
+      var items = all.filter(function (x) { return !x.rolled; });
+      var pd = agg.perDay[d] = { w: items.length, t: 0, r: all.length - items.length };
+      agg.rolled += pd.r;
+      all.forEach(function (x) {
+        if (!x.rolled) return;
+        var k = String(x.text || '').trim().toLowerCase(), rk = agg.rollKeys[k] = agg.rollKeys[k] || { text: String(x.text || '').trim(), n: 0, max: 0 };
+        rk.n++; if (x.rolled > rk.max) rk.max = x.rolled;
+      });
+      all.forEach(function (x) {
+        if (!x.rolled) {
+          agg.written++;
+          var nm = x.addedBy || 'Unknown', pp = agg.people[nm] = agg.people[nm] || { w: 0, t: 0 };
+          pp.w++;
+          if (x.station) agg.sections[x.station] = (agg.sections[x.station] || 0) + 1;
+          if (x.addedAt) agg.wHour[new Date(x.addedAt).getHours()]++;
+        }
         if (x.done) {
           pd.t++; agg.ticked++;
           var tn = x.doneBy || 'Unknown', tp = agg.people[tn] = agg.people[tn] || { w: 0, t: 0 };
@@ -540,6 +612,16 @@
     });
     return out + '</svg>';
   }
+  function rollChart(agg) {
+    var rows = Object.keys(agg.rollKeys).map(function (k) { return agg.rollKeys[k]; }).sort(function (a, b) { return b.n - a.n || b.max - a.max; }).slice(0, 10);
+    if (!rows.length) return '<p class="hint">Nothing has rolled over in this time. That is a good sign.</p>';
+    var W = 720, l = 190, r = 44, rh = 28, H = rows.length * rh + 8, pw = W - l - r, max = niceMax(rows[0].n), out = '<svg class="ch" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Lines that rolled over most often">';
+    rows.forEach(function (x, i) {
+      var y = 4 + i * rh, w = Math.max(4, x.n / max * pw);
+      out += '<g><title>' + esc(x.text + ': rolled over ' + x.n + (x.n === 1 ? ' time' : ' times') + ', longest run ' + x.max + (x.max === 1 ? ' day' : ' days')) + '</title><rect x="0" y="' + y + '" width="' + W + '" height="' + rh + '" fill="transparent"/><text class="ch-lb" x="' + (l - 10) + '" y="' + (y + 18) + '" text-anchor="end">' + esc(x.text.length > 26 ? x.text.slice(0, 25) + '…' : x.text) + '</text><path d="' + barPath(l, y + 5, w, 14, 4, true) + '" fill="' + CT + '"/><text class="ch-val" x="' + (l + w + 6) + '" y="' + (y + 17) + '">' + x.n + '</text></g>';
+    });
+    return out + '</svg>';
+  }
   function insightsHTML() {
     var st = S.stats;
     var head = '<section class="set-block"><span class="label">Insights</span><span class="hint">Worked out from the lines themselves, the last 30 days at most.</span>';
@@ -552,18 +634,21 @@
     var tiles = [
       [agg.written, 'lines written'], [agg.ticked, 'lines ticked off'],
       [agg.written ? Math.round(agg.ticked / agg.written * 100) + '%' : 'n/a', 'ticked off'],
+      [agg.rolled, 'lines rolled over'],
+      [agg.written ? Math.round(agg.rolled / (agg.written + agg.rolled) * 100) + '%' : 'n/a', 'of each list was rolled over'],
       [dur(med), 'typical time to tick'],
       [bh >= 0 ? (bh < 10 ? '0' : '') + bh + ':00' : 'n/a', 'busiest writing hour'],
       [best && agg.perDay[best].w ? parseYmd(best).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }) : 'n/a', 'busiest day']
     ];
-    var tbl = '<details class="a-details"><summary>Show the daily numbers as a table</summary><div class="a-scroll"><table class="a-table"><thead><tr><th scope="col">Day</th><th scope="col">Written</th><th scope="col">Ticked</th></tr></thead><tbody>' +
-      agg.dates.slice().reverse().map(function (d) { return '<tr><th scope="row">' + esc(parseYmd(d).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })) + '</th><td>' + agg.perDay[d].w + '</td><td>' + agg.perDay[d].t + '</td></tr>'; }).join('') + '</tbody></table></div></details>';
+    var tbl = '<details class="a-details"><summary>Show the daily numbers as a table</summary><div class="a-scroll"><table class="a-table"><thead><tr><th scope="col">Day</th><th scope="col">Written</th><th scope="col">Ticked</th><th scope="col">Rolled over</th></tr></thead><tbody>' +
+      agg.dates.slice().reverse().map(function (d) { return '<tr><th scope="row">' + esc(parseYmd(d).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })) + '</th><td>' + agg.perDay[d].w + '</td><td>' + agg.perDay[d].t + '</td><td>' + agg.perDay[d].r + '</td></tr>'; }).join('') + '</tbody></table></div></details>';
     return head + '<div class="chips">' + [7, 14, 30].map(function (k) { return '<button type="button" class="chip" data-p="range" data-v="' + k + '" aria-pressed="' + (n === k) + '">' + k + ' days</button>'; }).join('') +
       '<button type="button" class="chip" data-p="stats-refresh">Refresh</button></div>' +
       '<div class="a-tiles">' + tiles.map(function (x) { return '<div class="a-tile"><strong>' + esc(String(x[0])) + '</strong><span>' + esc(x[1]) + '</span></div>'; }).join('') + '</div>' +
       '<h3 class="a-ch-h">Lines each day</h3>' + legend([['Written', CW], ['Ticked off', CT]]) + dailyChart(agg) + tbl +
       '<h3 class="a-ch-h">By person</h3>' + legend([['Written', CW], ['Ticked off', CT]]) + peopleChart(agg) +
       '<h3 class="a-ch-h">Time of day</h3>' + legend([['Written', CW], ['Ticked off', CT]]) + hoursChart(agg) +
+      '<h3 class="a-ch-h">Rolled over most often</h3><span class="hint">Lines that were not finished and moved onto the next day. Longest runs show when you hover a bar.</span>' + rollChart(agg) +
       '<h3 class="a-ch-h">Sections</h3>' + sectionsChart(agg) + '</section>';
   }
 
@@ -600,21 +685,22 @@
   var BOX = '<svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><rect x="2.5" y="2.5" width="21" height="21" rx="3" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
   function rowHTML(x, date, readonly) {
     var tickOk = can('tick') && !x.deleted, delOk = can('del');
-    var by = x.done && x.doneBy ? esc(x.doneBy) + (x.doneAt ? ' ' + clock(x.doneAt) : '') : (x.addedBy ? esc(x.addedBy) : '');
+    var by = x.done && x.doneBy ? esc(x.doneBy) + (x.doneAt ? ' ' + clock(x.doneAt) : '') : (x.rolled ? (x.origBy ? 'from ' + esc(x.origBy) : '') : (x.addedBy ? esc(x.addedBy) : ''));
+    var marks = (x.urgent ? '<span class="nb-urg">Urgent</span>' : '') + (x.rolled ? '<span class="nb-roll" title="Not finished earlier, so it rolled over">Rolled' + (x.rolled > 1 ? ' x' + x.rolled : '') + '</span>' : '');
+    var star = can('add') && !x.deleted && !readonly ? '<button type="button" class="nb-star" data-p="urgent" data-id="' + esc(x.id) + '" aria-pressed="' + !!x.urgent + '" aria-label="' + esc((x.urgent ? 'Not urgent: ' : 'Mark urgent: ') + x.text) + '">!</button>' : '';
     var rid = x.recipe || ((matchRecipe(x.text) || {}).id || ''), rr = rid ? recipeById(rid) : null;
     var link = rid ? '<a class="nb-go" href="#/r/' + encodeURIComponent(rid) + '" title="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '">recipe</a>' : '';
-    return '<li class="nb-row' + (x.done ? ' is-done' : '') + (x.deleted ? ' is-removed' : '') + '">' +
+    return '<li class="nb-row' + (x.done ? ' is-done' : '') + (x.rolled && !x.done ? ' is-rolled' : '') + (x.urgent && !x.done ? ' is-urgent' : '') + (x.deleted ? ' is-removed' : '') + '">' +
       '<button type="button" class="nb-box" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-pressed="' + !!x.done + '" aria-label="' + esc((x.done ? 'Untick ' : 'Tick ') + x.text) + '"' + (tickOk ? '' : ' disabled') + '>' + (x.done ? TICK : BOX) + '</button>' +
-      '<span class="nb-t">' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + '</span>' +
-      '<span class="nb-by">' + by + '</span>' + link +
+      '<span class="nb-t">' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + '</span>' + marks +
+      '<span class="nb-by">' + by + '</span>' + star + link +
       (delOk ? '<button type="button" class="nb-x" data-p="' + (x.deleted ? 'restore' : 'del') + '" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-label="' + (x.deleted ? 'Put back ' : 'Remove ') + esc(x.text) + '">' + (x.deleted ? 'put back' : 'remove') + '</button>' : '') + '</li>';
   }
   function pageBody(items, date) {
-    var shown = items.filter(function (x) { return (S.showRemoved || !x.deleted) && (!S.tab || (x.station || '') === S.tab); });
-    shown.sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); });
+    var shown = items.filter(function (x) { return (S.showRemoved || !x.deleted) && (!S.tab || (x.station || '') === S.tab) && !(S.hideDone && x.done && !x.deleted); });
+    shown.sort(sortItems);
     var order = [], seen = {};
     shown.forEach(function (x) { var k = x.station || ''; if (!seen[k]) { seen[k] = 1; order.push(k); } });
-    order.sort(function (a, b) { return (a === '' ? 0 : 1) - (b === '' ? 0 : 1); });
     return order.map(function (sec) {
       var rows = shown.filter(function (x) { return (x.station || '') === sec; });
       var live = rows.filter(function (x) { return !x.deleted; });
@@ -631,15 +717,35 @@
       '<p class="hint">It goes under the section written in the box above.</p></details>';
   }
   function hintText(t) { var m = t && t.trim().length > 2 ? matchRecipe(t) : null; return m ? 'Links to the ' + m.name + ' card' : ''; }
+  function sideHTML(today) {
+    var live = S.items.filter(function (x) { return !x.deleted; });
+    var rolled = live.filter(function (x) { return x.rolled && !x.done; }), urg = live.filter(function (x) { return x.urgent && !x.done; });
+    var secs = {}, order = [];
+    live.forEach(function (x) { var k = x.station || 'General'; if (!secs[k]) { secs[k] = { n: 0, d: 0 }; order.push(k); } secs[k].n++; if (x.done) secs[k].d++; });
+    var prio = rolled.length || urg.length ? '<div class="nb-prio"><strong>Do these first</strong><span>' + (urg.length ? urg.length + ' urgent' : '') + (urg.length && rolled.length ? ', ' : '') + (rolled.length ? rolled.length + ' rolled over from earlier' : '') + '. They sit at the top of each section.</span></div>' : '';
+    var meters = order.length ? '<h3 class="nb-sh">Progress by section</h3>' + order.map(function (k) {
+      var m = secs[k], pc = m.n ? Math.round(m.d / m.n * 100) : 0;
+      return '<div class="nb-meter"><span class="nb-ml">' + esc(k) + '</span><span class="nb-mb" role="img" aria-label="' + esc(k + ': ' + m.d + ' of ' + m.n + ' done') + '"><i style="width:' + pc + '%"></i></span><span class="nb-mn">' + m.d + '/' + m.n + '</span></div>';
+    }).join('') : '';
+    var have = {}; live.forEach(function (x) { have[String(x.text).trim().toLowerCase()] = 1; });
+    var us = S.usual.map(function (u, i) { return { u: u, i: i }; }).filter(function (o) { return !have[o.u.text.toLowerCase()]; });
+    var usual = can('add') && us.length ? '<h3 class="nb-sh">Usual for a ' + esc(parseYmd(S.date).toLocaleDateString('en-AU', { weekday: 'long' })) + '</h3><p class="nb-sd">On the list at least twice in the last four weeks. Tap to add.</p><div class="nb-usual">' +
+      us.map(function (o) { return '<button type="button" class="chip sq" data-p="usual" data-i="' + o.i + '">' + esc(o.u.text) + (o.u.station ? ' <span class="nb-us">' + esc(o.u.station) + '</span>' : '') + '</button>'; }).join('') + '</div>' : '';
+    var tools = '<h3 class="nb-sh">Tools</h3><div class="nb-tools">' +
+      '<button type="button" class="nb-btn" data-p="hide-done" aria-pressed="' + S.hideDone + '">' + (S.hideDone ? 'Show ticked lines' : 'Hide ticked lines') + '</button>' +
+      '<button type="button" class="nb-btn" data-p="copy">Copy the list</button>' +
+      '<button type="button" class="nb-btn" data-p="print">Print the list</button>' +
+      (isSous() ? '<button type="button" class="nb-btn" data-p="staff-open">Manage staff</button>' : '') + '</div>';
+    return prio + meters + usual + tools;
+  }
   function listHTML() {
     var p = me(), today = ymd(new Date());
     if (S.authed && fb && !S.weekBusy && Date.now() - S.weekAt > 300000) loadWeek();
+    maybeRoll(); maybeUsual();
     var live = S.items.filter(function (x) { return !x.deleted; }), doneN = live.filter(function (x) { return x.done; }).length;
-    var pl = S.prev.filter(function (x) { return !x.deleted; }), pDone = pl.filter(function (x) { return x.done; }).length;
     var removed = S.items.filter(function (x) { return x.deleted; });
-    var pdate = shift(S.date, -1);
     var secs = {}, tabs = [];
-    S.items.concat(S.prev).forEach(function (x) { if (x.station && !x.deleted && !secs[x.station]) { secs[x.station] = 1; tabs.push(x.station); } });
+    S.items.forEach(function (x) { if (x.station && !x.deleted && !secs[x.station]) { secs[x.station] = 1; tabs.push(x.station); } });
     var tabHTML = tabs.length ? '<nav class="nb-tabs" aria-label="Sections"><button type="button" class="nb-tab" data-p="tab" data-v="" aria-pressed="' + !S.tab + '">All</button>' +
       tabs.map(function (t) { return '<button type="button" class="nb-tab" data-p="tab" data-v="' + esc(t) + '" aria-pressed="' + (S.tab === t) + '">' + esc(t) + '</button>'; }).join('') + '</nav>' : '';
     var sug = suggestions();
@@ -650,22 +756,16 @@
       '<label class="visually-hidden" for="p-qty">Amount</label><input id="p-qty" class="nb-in nb-in-qty" data-k="p-qty" autocomplete="off" placeholder="Amount" maxlength="40" value="' + esc(S.qty) + '">' +
       '<button type="submit" class="nb-addbtn">Add</button></div><p class="nb-hint" id="p-hint" aria-live="polite">' + esc(hintText(S.text)) + '</p>' + recipePicker() + '</form>' : '<p class="hint">You can read the book but not write in it. Ask the admin if that is wrong.</p>';
     var todayEmpty = !live.length && S.itemsState === 'ok' ? '<p class="nb-empty">Nothing written for ' + esc(dayName(S.date).toLowerCase()) + ' yet.</p>' : '';
-    var prevEmpty = !S.prev.length ? '<p class="nb-empty">Nothing was written on ' + esc(dayName(pdate).toLowerCase()) + '.</p>' : '';
     var left = '<section class="nb-page nb-left"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + esc(dayName(S.date)) + '</h2><span class="nb-date">' + esc(longDate(S.date)) + '</span></div>' +
       '<div class="nb-prog" role="status">' + doneN + ' of ' + live.length + ' done</div></header>' +
       (S.itemsState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' : '') +
       '<div class="nb-body">' + pageBody(S.items, S.date) + todayEmpty + '</div>' +
       '<div class="nb-foot">' + add + (removed.length && can('del') ? '<button type="button" class="nb-link" data-p="removed">' + (S.showRemoved ? 'Hide' : 'Show') + ' removed (' + removed.length + ')</button>' : '') + '</div></section>';
-    var notTicked = S.prev.filter(function (x) { return !x.done && !x.deleted; }).length;
-    var right = '<section class="nb-page nb-right"><header class="nb-ph"><div><h2 class="nb-title nb-dim">' + esc(dayName(pdate)) + '</h2><span class="nb-date">' + esc(longDate(pdate)) + '</span></div>' +
-      '<div class="nb-prog nb-dim">' + pDone + ' of ' + pl.length + ' done</div></header>' +
-      '<div class="nb-body">' + pageBody(S.prev, pdate) + prevEmpty + '</div>' +
-      '<div class="nb-foot nb-foot-r"><span class="nb-note">' + (notTicked ? notTicked + (notTicked === 1 ? ' line was' : ' lines were') + ' not ticked' : '') + '</span>' +
-      (notTicked && can('add') ? '<button type="button" class="nb-btn" data-p="carry">Copy onto ' + esc(dayName(S.date).toLowerCase()) + '</button>' : '') + '</div></section>';
+    var right = '<section class="nb-page nb-right"><header class="nb-ph"><div><h2 class="nb-title nb-dim">Handy</h2><span class="nb-date">Priorities, progress and tools</span></div></header>' +
+      '<div class="nb-body nb-side">' + sideHTML(today) + '</div></section>';
     return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' + (can('tick') ? '' : ' (read only)') + esc(myRank()) : '') + '</span><span class="p-links"><button type="button" class="p-link" data-p="who-change">Not you?</button><a class="p-link" href="#/admin">Admin</a></span></div>' +
       '<div class="nb-nav"><button type="button" class="chip" data-p="day" data-d="-1" aria-label="Back one day">&lsaquo;</button>' +
       '<button type="button" class="chip" data-p="today" aria-pressed="' + (S.date === today) + '">Today</button>' +
-      '<button type="button" class="chip" data-p="yesterday" aria-pressed="' + (S.date === shift(today, -1)) + '">Yesterday</button>' +
       '<label class="visually-hidden" for="p-day">Pick a date</label><input id="p-day" type="date" class="p-dateinput" data-k="p-day" value="' + esc(S.date) + '">' +
       '<button type="button" class="chip" data-p="day" data-d="1" aria-label="Forward one day">&rsaquo;</button></div>' +
       badgeStrip() + '<div class="nb-wrap"><div class="nb">' + left + '<div class="nb-spine" aria-hidden="true"></div>' + right + '</div>' + tabHTML + '</div>';
@@ -712,17 +812,9 @@
     if (!S.draft) startDraft();
     var d = S.draft, owner = S.level === 'owner';
     if (owner) { watchActivity(); loadStats(false); }
-    var bar = '<div class="p-bar"><span>Signed in as <strong>' + esc(S.user.email) + '</strong> (' + (owner ? 'head chef' : 'sous chef') + ')</span><span class="p-links"><button type="button" class="p-link" data-p="signout">Sign out</button><a class="p-link" href="#/prep">Prep book</a></span></div>';
+    var bar = '<div class="p-bar"><span>Signed in as <strong>' + esc(S.user.email) + '</strong> (' + 'head chef' + ')</span><span class="p-links"><button type="button" class="p-link" data-p="signout">Sign out</button><a class="p-link" href="#/prep">Prep book</a></span></div>';
     var bulk = '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line"></textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div>';
     var saveBlock = '<section class="set-block"><div class="btn-row"><button type="button" class="btn dark" data-p="a-save"' + (S.busy ? ' disabled' : '') + '>Save changes</button><button type="button" class="btn" data-p="a-reset">Undo unsaved changes</button></div><span class="saved" role="status">' + esc(S.saveMsg) + '</span></section>';
-    if (!owner) {
-      var srows = d.people.map(function (p, i) {
-        return '<li class="a-person"><div class="a-top">' + (p.isNew ? '<label class="visually-hidden" for="a-n' + i + '">Name</label><input id="a-n' + i + '" class="search a-name" data-k="a-n' + i + '" data-a="name" data-i="' + i + '" value="' + esc(p.name) + '" maxlength="40">' : '<span class="a-name-ro">' + esc(p.name) + '</span>') +
-          '<button type="button" class="p-x" data-p="a-remove-person" data-i="' + i + '">Remove</button></div></li>';
-      }).join('');
-      return '<div class="p-admin">' + bar + '<h2 class="p-h" id="rtitle" tabindex="-1">Staff</h2>' +
-        '<section class="set-block"><span class="hint">Add a person or remove one. New people start as Staff. Removing someone keeps their name on old lines. Roles and PINs are looked after by the head chef.</span><ul class="a-list">' + (srows || '<li class="hint">No names yet.</li>') + '</ul><div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' + saveBlock + '</div>';
-    }
     var rows = d.people.map(function (p, i) {
       return '<li class="a-person' + (p.active === false ? ' is-off' : '') + '"><div class="a-top"><label class="visually-hidden" for="a-n' + i + '">Name</label><input id="a-n' + i + '" class="search a-name" data-k="a-n' + i + '" data-a="name" data-i="' + i + '" value="' + esc(p.name) + '" maxlength="40">' +
         '<label class="visually-hidden" for="a-r' + i + '">Role</label><select id="a-r' + i + '" class="p-select" data-k="a-r' + i + '" data-a="role" data-i="' + i + '">' + Object.keys(ROLES).map(function (k) { return '<option value="' + k + '"' + (p.role === k ? ' selected' : '') + '>' + ROLES[k].name + '</option>'; }).join('') + '</select></div>' +
@@ -732,15 +824,22 @@
         '<button type="button" class="p-x" data-p="a-reset-pin" data-id="' + esc(p.id) + '">' + (S.resetId === p.id ? 'Tap again to reset PIN' : 'Reset PIN') + '</button>' +
         '<button type="button" class="p-x" data-p="a-remove-person" data-i="' + i + '">Delete</button></div></li>';
     }).join('');
-    var sous = ((S.admins && S.admins.sous) || []).join('\n');
     return '<div class="p-admin">' + bar + '<h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2>' + insightsHTML() + statsHTML() +
-      '<section class="set-block"><span class="label">People</span><span class="hint">Pick a role to set the usual permissions, then adjust the ticks for one person if you need to. Reset PIN lets that person choose a new one. Removing someone from the list keeps their name on old lines.</span>' +
+      '<section class="set-block"><span class="label">People</span><span class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Reset PIN lets that person choose a new one. Removing someone from the list keeps their name on old lines.</span>' +
       '<ul class="a-list">' + (rows || '<li class="hint">No names yet.</li>') + '</ul><div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' +
       '<section class="set-block"><span class="label">Badges</span><label class="a-check"><input type="checkbox" data-a="badges"' + (d.showBadges !== false ? ' checked' : '') + '> Show the weekly top tickers to everyone on the prep book</label></section>' + saveBlock +
-      '<section class="set-block"><span class="label">Sous chef sign-in</span><span class="hint">Google accounts that may add and remove staff in this panel, and nothing else. One email per line.</span>' +
-      '<div class="field"><label class="label" for="a-sous">Sous chef Google emails</label><textarea id="a-sous" class="p-bulk" data-k="a-sous" rows="2" placeholder="name@gmail.com">' + esc(sous) + '</textarea></div>' +
-      '<div class="btn-row"><button type="button" class="btn" data-p="a-save-sous"' + (S.busy ? ' disabled' : '') + '>Save sous chef sign-in</button></div></section>' +
       '<section class="set-block"><span class="label">Kitchen PIN</span><span class="hint">The kitchen PIN is part of the security rules in the Firebase console. To change it, change it there and on every phone. People\'s own PINs only say who is writing. They are not a lock.</span></section></div>';
+  }
+  function staffHTML() {
+    var d = S.draft || (startDraft(), S.draft);
+    var srows = d.people.map(function (p, i) {
+      return '<li class="a-person"><div class="a-top">' + (p.isNew ? '<label class="visually-hidden" for="a-n' + i + '">Name</label><input id="a-n' + i + '" class="search a-name" data-k="a-n' + i + '" data-a="name" data-i="' + i + '" value="' + esc(p.name) + '" maxlength="40">' : '<span class="a-name-ro">' + esc(p.name) + '</span>') +
+        '<button type="button" class="p-x" data-p="a-remove-person" data-i="' + i + '">Remove</button></div></li>';
+    }).join('');
+    var bulk = '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line"></textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div>';
+    return '<div class="p-admin"><div class="p-bar"><span>Staff list</span><span class="p-links"><button type="button" class="p-link" data-p="staff-close">Back to the prep book</button></span></div><h2 class="p-h" id="rtitle" tabindex="-1">Staff</h2>' +
+      '<section class="set-block"><span class="hint">Add a person or remove one, then save. New people start as Staff. Removing someone keeps their name on old lines. Roles and PINs are looked after by the head chef.</span><ul class="a-list">' + (srows || '<li class="hint">No names yet.</li>') + '</ul><div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' +
+      '<section class="set-block"><div class="btn-row"><button type="button" class="btn dark" data-p="a-save"' + (S.busy ? ' disabled' : '') + '>Save changes</button><button type="button" class="btn" data-p="a-reset">Undo unsaved changes</button></div><span class="saved" role="status">' + esc(S.saveMsg) + '</span></section></div>';
   }
   function bodyHTML() {
     if (!S.pin) return gateHTML();
@@ -749,6 +848,7 @@
     if (S.name === 'admin') return adminHTML();
     if (!who()) return whoHTML();
     if (!S.authed) return ownPinHTML();
+    if (S.staffOpen && isSous()) return staffHTML();
     return listHTML();
   }
   var rendering = false;
@@ -777,15 +877,20 @@
     if (a === 'retry') { cfgKey = ''; connect(); return; }
     if (a === 'who') { pickName(id); return; }
     if (a === 'who-change') { leave(); return; }
-    if (a === 'day') { S.date = shift(S.date, +el.getAttribute('data-d')); S.tab = ''; watchItems(); draw(); return; }
-    if (a === 'today') { S.date = ymd(new Date()); S.tab = ''; watchItems(); draw(); return; }
-    if (a === 'yesterday') { S.date = shift(ymd(new Date()), -1); S.tab = ''; watchItems(); draw(); return; }
+    if (a === 'day') { S.date = shift(S.date, +el.getAttribute('data-d')); S.tab = ''; S.usualFor = ''; watchItems(); draw(); return; }
+    if (a === 'today') { S.date = ymd(new Date()); S.tab = ''; S.usualFor = ''; watchItems(); draw(); return; }
     if (a === 'tab') { S.tab = el.getAttribute('data-v') || ''; draw(); return; }
     if (a === 'tick') { tick(dt || S.date, id); return; }
     if (a === 'del') { removeItem(dt || S.date, id, false); return; }
     if (a === 'restore') { removeItem(dt || S.date, id, true); return; }
     if (a === 'removed') { S.showRemoved = !S.showRemoved; draw(); return; }
-    if (a === 'carry') { carryOver(); return; }
+    if (a === 'urgent') { toggleUrgent(id); return; }
+    if (a === 'usual') { addUsual(i); return; }
+    if (a === 'hide-done') { S.hideDone = !S.hideDone; draw(); return; }
+    if (a === 'copy') { copyList(); return; }
+    if (a === 'print') { window.print(); return; }
+    if (a === 'staff-open') { if (isSous()) { startDraft(); S.staffOpen = true; draw(); } return; }
+    if (a === 'staff-close') { S.staffOpen = false; S.draft = null; draw(); return; }
     if (a === 'add-recipe') { addRecipe(id); return; }
     if (a === 'signin') { signIn(); return; }
     if (a === 'signout') { signOut(); draw(); return; }
@@ -793,7 +898,6 @@
     if (a === 'a-reset-pin') { resetPin(id); return; }
     if (a === 'range') { S.statsRange = +el.getAttribute('data-v'); draw(); return; }
     if (a === 'stats-refresh') { loadStats(true); draw(); return; }
-    if (a === 'a-save-sous') { saveSous(); return; }
     if (!S.draft) return;
     var d = S.draft;
     if (a === 'a-add-person') { d.people.push({ id: slug('person') + '-' + Date.now().toString(36), name: '', role: 'staff', add: true, tick: true, del: false, active: true, isNew: true }); draw(); var n = S.root.querySelector('[data-k="a-n' + (d.people.length - 1) + '"]'); if (n) n.focus(); return; }
@@ -824,7 +928,7 @@
   function onChange(e) {
     var el = e.target, k = el.getAttribute && el.getAttribute('data-k');
     if (!S.root || !S.root.contains(el)) return;
-    if (k === 'p-day') { if (el.value) { S.date = el.value; S.tab = ''; watchItems(); draw(); } return; }
+    if (k === 'p-day') { if (el.value) { S.date = el.value; S.tab = ''; S.usualFor = ''; watchItems(); draw(); } return; }
     var a = el.getAttribute && el.getAttribute('data-a');
     if (!a || !S.draft) return;
     if (a === 'badges') { S.draft.showBadges = el.checked; return; }
