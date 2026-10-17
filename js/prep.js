@@ -1301,7 +1301,7 @@
       '<div class="nb-foot">' + add + (removed.length && can('del') ? '<button type="button" class="nb-link" data-p="removed">' + (S.showRemoved ? 'Hide' : 'Show') + ' removed (' + removed.length + ')</button>' : '') + '</div></section>';
     var right = '<section class="nb-page nb-right"><header class="nb-ph"><div><h2 class="nb-title nb-dim">Handy</h2><span class="nb-date">Priorities, progress and tools</span></div></header>' +
       '<div class="nb-body nb-side">' + sideHTML(today) + '</div></section>';
-    return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' + (can('tick') ? '' : ' (read only)') + esc(myRank()) : '') + '</span><span class="p-links"><button type="button" class="p-link" data-p="who-change">Not you?</button>' + (canBrowse() || S.user ? '<a class="p-link" href="#/admin">Admin</a>' : '') + '</span></div>' +
+    return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' + (can('tick') ? '' : ' (read only)') + esc(myRank()) : '') + '</span><span class="p-links"><button type="button" class="p-link" data-p="who-change">Not you?</button>' + '' + '</span></div>' +
       (canBrowse() ? '<div class="nb-nav"><button type="button" class="chip" data-p="day" data-d="-1" aria-label="Back one day">&lsaquo;</button>' +
       '<button type="button" class="chip" data-p="today" aria-pressed="' + (S.date === today) + '">Today</button>' +
       '<label class="visually-hidden" for="p-day">Pick a date</label><input id="p-day" type="date" class="p-dateinput" data-k="p-day" value="' + esc(S.date) + '">' +
@@ -1486,7 +1486,7 @@
       return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2><p class="hint">Loading...</p></section>';
     }
     if (!S.user) {
-      return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2><p class="hint">Sign in with your Google account to open the admin panel.</p>' +
+      return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2><p class="hint">The admin panel is for the head chef. Sign in with the head chef\'s Google account. Staff and sous chefs use their own PIN in the prep book instead.</p>' +
         (S.saveMsg ? '<p class="p-err">' + esc(S.saveMsg) + '</p>' : '') +
         '<div class="btn-row"><button type="button" class="btn dark" data-p="signin">Sign in with Google</button><a class="btn" href="#/prep">Back to the prep book</a></div></section>';
     }
@@ -1720,7 +1720,7 @@
     var body = view === 'all' ? ordAllHTML() :
       (S.ordState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' :
         (live.length ? '<ul class="nb-rows">' + live.slice().sort(function (a, b) { return (a.ordered ? 1 : 0) - (b.ordered ? 1 : 0) || (a.addedAt || 0) - (b.addedAt || 0); }).map(ordRow).join('') + '</ul>' : (S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : '')));
-    return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' : '') + '</span><span class="p-links"><a class="p-link" href="#/prep">Prep list</a>' + (canBrowse() || S.user ? '<a class="p-link" href="#/admin">Admin</a>' : '') + '</span></div>' + tabs +
+    return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' : '') + '</span><span class="p-links"><a class="p-link" href="#/prep">Prep list</a>' + '' + '</span></div>' + tabs +
       '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + (view === 'all' ? 'To order' : 'Order list') + '</h2><span class="nb-date">' + (view === 'all' ? 'Across the last ' + ORD_DAYS + ' days' : esc(longDate(S.ordDate))) + '</span></div>' +
       (view === 'day' ? '<div class="nb-prog" role="status">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') + '</header><div class="nb-body">' + body + '</div><div class="nb-foot">' + (view === 'day' ? add : '') + '</div></section>';
   }
@@ -1838,7 +1838,7 @@
     var view = br ? (S.wView || 'day') : 'day';
     var nav = br ? '<div class="nb-nav o-nav"><button type="button" class="chip" data-p="wview" data-v="day" aria-pressed="' + (view === 'day') + '">By day</button><button type="button" class="chip" data-p="wview" data-v="week" aria-pressed="' + (view === 'week') + '">Last 7 days</button>' +
       (view === 'day' ? '<button type="button" class="chip" data-p="wday" data-d="-1" aria-label="Back one day">&lsaquo;</button><button type="button" class="chip" data-p="wtoday" aria-pressed="' + (S.wDate === today) + '">Today</button><button type="button" class="chip" data-p="wday" data-d="1" aria-label="Forward one day">&rsaquo;</button>' : '') + '</div>' : '';
-    if (view === 'week') return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' : '') + '</span><span class="p-links"><a class="p-link" href="#/prep">Prep list</a><a class="p-link" href="#/admin">Admin</a></span></div>' + nav + wasteWeekHTML();
+    if (view === 'week') return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' : '') + '</span><span class="p-links"><a class="p-link" href="#/prep">Prep list</a></span></div>' + nav + wasteWeekHTML();
     var often = wOften();
     var add = can('add') && S.wDate === today ?
       '<form class="nb-add w-add" data-p-form="wadd">' + (often.length ? '<div class="w-often"><span class="nb-ql">Logged often</span>' + often.map(function (e, i) { return '<button type="button" class="chip sq" data-p="woften" data-i="' + i + '">' + esc(e.text) + '</button>'; }).join('') + '</div>' : '') +
@@ -1861,7 +1861,7 @@
     var tot = totalsText(wTotals(live));
     var body = S.wState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' :
       (shown.length ? '<ul class="nb-rows">' + shown.map(wRow).join('') + '</ul>' : (S.wState === 'ok' ? '<p class="nb-empty">Nothing logged for ' + esc(dayName(S.wDate).toLowerCase()) + ' yet. Log waste when it happens: prep waste, expired stock, cooking faults, returns and excess production.</p>' : ''));
-    return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' : '') + '</span><span class="p-links"><a class="p-link" href="#/prep">Prep list</a>' + (canBrowse() || S.user ? '<a class="p-link" href="#/admin">Admin</a>' : '') + '</span></div>' + nav +
+    return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' : '') + '</span><span class="p-links"><a class="p-link" href="#/prep">Prep list</a>' + '' + '</span></div>' + nav +
       '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Wastage</h2><span class="nb-date">' + esc(longDate(S.wDate)) + (tot ? ' &middot; ' + esc(tot) : '') + '</span></div>' +
       '<div class="nb-prog" role="status">' + live.length + (live.length === 1 ? ' entry' : ' entries') + '</div></header>' +
       '<p class="w-rule">Write the actual amount and unit, not a dollar value. Unsafe food must never be reused to avoid logging waste.</p>' +
