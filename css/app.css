@@ -758,3 +758,43 @@ img, svg { display: block; }
 @media (max-width: 399px) { .rb-mark { width: 44px; height: 39px; } .rail-brand { gap: 0.5rem; } }
 @media (min-width: 720px) and (max-width: 1099px) { .rb-mark { width: 46px; height: 40px; } .rail-brand { gap: 0.5rem; } .rail-brand b { font-size: 1.85rem; } }
 @media (min-width: 720px) and (max-width: 819px) { .rail-brand .rb-eb { display: none; } .wtop { padding: 0 1rem; gap: 0.6rem; } .wtop .pnav a { padding: 0 0.6rem; } }
+
+/* Phones: fewer chips on screen at once.
+   Single choice from a few short options: a segmented control. Single choice with longer names: a picker that opens a bottom sheet.
+   Suggestion chips: one row you swipe sideways instead of a wall of chips. */
+.w-pick { flex-direction: column; align-items: stretch; gap: 6px; }
+.w-often { flex-direction: column; align-items: stretch; gap: 6px; }
+.chiprow { display: flex; flex-wrap: wrap; gap: 6px; }
+.w-rchips { display: flex; flex-wrap: wrap; gap: 6px; }
+.w-rchips .chip[aria-checked="true"] { background: var(--ink); color: #fff; }
+.seg { display: flex; border: 1.5px solid var(--ink); border-radius: 999px; overflow: hidden; background: var(--paper); }
+.seg-b { flex: 1 1 0; min-width: 0; min-height: 44px; padding: 0 0.35rem; border: 0; border-left: 1.5px solid var(--ink); background: none; color: var(--ink); font: 600 0.9375rem var(--body); cursor: pointer; white-space: nowrap; }
+.seg-b:first-child { border-left: 0; }
+.seg-b[aria-checked="true"] { background: var(--ink); color: #fff; }
+.w-rbtn { display: none; }
+@media (max-width: 719px) {
+  .w-rchips { display: none; }
+  .w-rbtn { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; width: 100%; min-height: 48px; padding: 0 0.9rem; border: 1.5px solid var(--ink); border-radius: 10px; background: var(--paper); color: var(--ink); font: 600 1rem var(--body); text-align: left; cursor: pointer; }
+  .w-rbtn.is-empty { color: var(--muted); }
+  .nb-sugg, .chiprow, .nb-usual { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding-bottom: 2px; -webkit-mask-image: linear-gradient(to right, #000 86%, transparent); mask-image: linear-gradient(to right, #000 86%, transparent); }
+  .nb-sugg::-webkit-scrollbar, .chiprow::-webkit-scrollbar, .nb-usual::-webkit-scrollbar { display: none; }
+  .nb-sugg > *, .chiprow > *, .nb-usual > * { flex: 0 0 auto; }
+  .seg-b { font-size: 0.875rem; }
+}
+/* bottom sheet */
+.sheet-bg { position: fixed; inset: 0; z-index: 60; background: rgba(28, 29, 31, 0.45); }
+.sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 61; max-height: 80vh; overflow: auto; box-sizing: border-box; padding: 10px 16px calc(16px + env(safe-area-inset-bottom)); background: var(--paper); color: var(--ink); border-radius: 16px 16px 0 0; box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.2); font-family: var(--body); animation: sheetUp 0.18s ease-out; }
+.sheet-grip { width: 44px; height: 5px; margin: 0 auto 10px; border-radius: 3px; background: var(--edge); }
+.sheet h3 { margin: 0 0 6px; font: 700 1.35rem var(--display); }
+.sheet-list { display: flex; flex-direction: column; }
+.sheet-o { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-height: 58px; padding: 10px 6px; border: 0; border-bottom: 1px solid var(--line); background: none; color: var(--ink); text-align: left; font: inherit; cursor: pointer; }
+.sheet-o strong { font: 700 1.05rem var(--body); }
+.sheet-o span { font-size: 0.875rem; color: var(--muted); }
+.sheet-o[aria-checked="true"] { background: var(--hit); }
+.sheet-o[aria-checked="true"] strong::after { content: '  \2713'; color: var(--accent-ink); }
+.sheet-x { width: 100%; margin-top: 12px; }
+html.sheet-open, html.sheet-open body { overflow: hidden; }
+@keyframes sheetUp { from { transform: translateY(40px); opacity: 0.6; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .sheet { animation: none; } }
+@media (min-width: 720px) { .sheet { left: 50%; right: auto; bottom: auto; top: 50%; width: 420px; border-radius: 16px; transform: translate(-50%, -50%); animation: none; } }
+@media (max-width: 719px) { .nb-sugg, .chiprow, .nb-usual, .w-often, .w-pick, .nb-add, .nb-foot, .nb-page, .nb-side { min-width: 0; max-width: 100%; } }
