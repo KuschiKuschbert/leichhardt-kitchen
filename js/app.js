@@ -461,10 +461,27 @@
   function viewPrep() {
     return '<div class="page">' + header() + '<main id="main" class="prep"><div id="prep-root"></div></main>' + footer() + '</div>';
   }
+  /* Installing the book as an app. Chrome, Edge and Samsung Internet offer a real Install button;
+     iPhone and iPad use Share, then Add to Home Screen. */
+  var installEvt = null, installedNow = false;
+  window.addEventListener('beforeinstallprompt', function (e) { installEvt = e; if (parseRoute().name === 'settings') render(); });
+  window.addEventListener('appinstalled', function () { installEvt = null; installedNow = true; if (parseRoute().name === 'settings') render(); });
+  function isStandalone() { return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true; }
+  function installHTML() {
+    var ua = navigator.userAgent || '', ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1), mac = /Macintosh/.test(ua) && !ios, safari = /Safari/.test(ua) && !/Chrome|CriOS|Edg|FxiOS|Firefox/.test(ua);
+    var body;
+    if (isStandalone() || installedNow) body = '<span class="saved">' + (installedNow ? 'Installed. Open it from your home screen or apps.' : 'You are using the installed app.') + '</span>';
+    else if (installEvt) body = '<span class="hint">Puts Kitchen Book on the home screen or desktop like any other app, full screen, without the browser bar. It still updates by itself.</span><div class="btn-row"><button type="button" class="btn dark" data-act="install">Install the app</button></div>';
+    else if (ios) body = '<span class="hint">On iPhone and iPad: tap the Share button' + (safari ? '' : ' in Safari') + ', then <strong>Add to Home Screen</strong>. Kitchen Book then opens full screen from its own icon.</span>';
+    else if (mac && safari) body = '<span class="hint">In Safari on a Mac: <strong>File, Add to Dock</strong>.</span>';
+    else body = '<span class="hint">Open the browser menu and choose <strong>Install</strong> or <strong>Add to Home screen</strong>. In Chrome or Edge it is also the install icon at the right of the address bar.</span>';
+    return '<section class="set-block" aria-label="Install the app"><span class="label">Install the app</span>' + body + '</section>';
+  }
   function viewSettings() {
     var nTicks = Object.keys(ticks).filter(function (k) { return ticks[k]; }).length;
     return '<div class="page">' + header() + '<main id="main" class="settings"><div class="row-label" style="justify-content: space-between; align-items: center">' +
       '<h2 tabindex="-1" id="rtitle">Settings</h2><a class="btn dark" href="#/">Done</a></div>' +
+      installHTML() +
       '<section class="set-block" aria-label="Opens with"><span class="label">Opens with</span><span class="hint">How the recipe book looks when you arrive.</span>' + viewOptions('setview', true) + '</section>' +
       '<section class="set-block" aria-label="Text size"><span class="label">Text size</span><div class="chips">' + TEXT.map(function (t) {
         return '<button type="button" class="chip" data-act="settext" data-val="' + t[0] + '" data-k="settext:' + t[0] + '" aria-pressed="' + (settings.text === t[0]) + '">' + esc(t[1]) + '</button>';
@@ -606,6 +623,7 @@
     else if (act === 'setview' || act === 'topview') { settings.view = val; saveSettings(); }
     else if (act === 'settext') { settings.text = val; saveSettings(); document.documentElement.setAttribute('data-text', val); }
     else if (act === 'clearticks') { ticks = {}; saveTicks(); }
+    else if (act === 'install') { if (installEvt) { var ev = installEvt; installEvt = null; ev.prompt(); (ev.userChoice || Promise.resolve({})).then(function (c) { if (c && c.outcome === 'accepted') installedNow = true; render(); }); } return; }
     render();
   });
 

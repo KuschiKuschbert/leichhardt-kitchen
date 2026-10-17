@@ -1,0 +1,25 @@
+{
+  "name": "Leichhardt Kitchen Book",
+  "short_name": "Kitchen Book",
+  "description": "Recipes, prep list, orders and wastage for the Leichhardt Hotel kitchen team.",
+  "id": "./",
+  "start_url": "./#/",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#FBFAF7",
+  "theme_color": "#2b2a27",
+  "lang": "en-AU",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "Prep list", "url": "./#/prep", "icons": [{ "src": "icons/shortcut-96.png", "sizes": "96x96", "type": "image/png" }] },
+    { "name": "Orders", "url": "./#/orders", "icons": [{ "src": "icons/shortcut-96.png", "sizes": "96x96", "type": "image/png" }] },
+    { "name": "Wastage", "url": "./#/waste", "icons": [{ "src": "icons/shortcut-96.png", "sizes": "96x96", "type": "image/png" }] },
+    { "name": "Recipes", "url": "./#/recipes", "icons": [{ "src": "icons/shortcut-96.png", "sizes": "96x96", "type": "image/png" }] }
+  ]
+}
