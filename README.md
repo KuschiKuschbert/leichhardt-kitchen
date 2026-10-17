@@ -108,3 +108,10 @@ There's no build step and nothing to install. To try it on a computer, open `ind
 - **Handy page:** priorities, progress by section, "Usual for a Saturday" (lines on at least two of the last four same weekdays, tap to add), hide ticked lines, copy the list as text, print the list.
 - **Weekly badges:** the top 3 ranks for ticked lines over the last 7 days show above the notebook. The owner can switch them off.
 - **Recipe links:** hand-written lines link to recipe cards by matching words against card names and short names (`matchRecipe` in `js/prep.js`). A line that could mean several cards links to none.
+
+### Smart prep list
+
+- Every line written or picked is counted in `kitchens/<pin>/learned/<item>`: total uses, typed versus picked, uses per weekday (`dow`, 0 is Sunday) and per section. Rolled-over copies are not counted.
+- While typing, matching learned items (and batch and component recipe names) show as tap-to-fill chips under the box. A learned item also fills in its usual section when the section box is empty.
+- The Handy page shows "Usual for a <weekday>" (written on at least two of that weekday) and "Regulars" (4 or more uses, `REGULAR` in `js/prep.js`) as one-tap adds.
+- Owner insights: items learned, regulars, share added by tapping a suggestion, most written items, a weekday heat table, and a manage table to hide typos. "Learn from the last 30 days" seeds the list from past lines.

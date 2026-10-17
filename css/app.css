@@ -425,3 +425,8 @@ img, svg { display: block; }
   .nb-t { flex: 1 1 9rem; }
   .nb-box { align-self: flex-start; margin-top: 4px; }
 }
+
+.nb-sugg { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.nb-sugg:empty { display: none; }
+.nb-sg { min-height: 40px; }
+.a-heat { text-align: center; min-width: 2.4rem; font-weight: 600; }
