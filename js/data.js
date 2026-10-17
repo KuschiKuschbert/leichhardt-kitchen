@@ -746,6 +746,7 @@ window.LK_DATA = {
         { q: '200 g', name: 'Pulled pork', link: 'pulled-pork' },
         { q: '200 g', name: 'Slaw', link: 'slaw' },
         { q: '100 g', name: 'Pico de gallo', link: 'pico' },
+        { q: '[Qty]', name: 'Charred corn kernels', link: 'charred-corn' },
         { q: '60 g', name: 'Chunky avocado' },
         { q: '60 ml', name: 'Light sour cream', tags: ['Milk'] }
       ],
@@ -760,7 +761,7 @@ window.LK_DATA = {
         { label: 'Sour cream', x: 70.8, y: 76.4, side: 'left', tags: ['Milk'], note: '60 ml.' }
       ],
       sections: [
-        { title: 'Cooking', steps: ['Chicken tenders: fry at 175 °C [time to confirm].', 'Flour tortillas: cook on the grill [time and how served to confirm].', 'Pulled pork: cooked in the smoker (card to come) [temperature and time to confirm].', 'Brisket: card 79 [slicing and reheat to confirm].'] }
+        { title: 'Cooking', steps: ['Chicken tenders: fry at 175 °C [time to confirm].', 'Flour tortillas: cook on the grill [time and how served to confirm].', 'Pulled pork: cooked in the smoker (card to come) [temperature and time to confirm].', 'Brisket: card 79 [slicing and reheat to confirm].', 'Charred corn kernels: card 93.'] }
       ],
       labelNote: 'Check the tortilla and tender labels.'
     },
@@ -1012,16 +1013,19 @@ window.LK_DATA = {
     {
       id: 'beetroot-bites', art: 'beetroot-bites', no: '47', kind: 'snack', forLine: 'Snack', name: 'Crispy Beetroot Bites',
       menu: 'Crispy Beetroot Bites: fried beetroot, caramelised chilli jam, Korean-style cucumber.',
-      yield: 'Per serve. Fried beetroot, chilli jam, Korean-style cucumber.',
+      yield: 'Per serve. Fried beetroot piled in the middle, chilli jam, Korean-style cucumber on top.',
       ingredients: [
         { q: '[Qty]', name: 'Crispy beetroot bites', note: 'fried', tags: ['Gluten?'] },
         { q: '[Qty]', name: 'Caramelised chilli jam' },
         { q: '[Qty]', name: 'Korean-style cucumber', tags: ['Sesame?', 'Soy?'] }
       ],
       pins: [
-        { label: 'Crispy beetroot bites', x: 38.7, y: 45.5, side: 'right', tags: ['Gluten?'], note: 'Fried.' },
-        { label: 'Caramelised chilli jam', x: 72.6, y: 35.8, side: 'left', tags: [], note: '' },
-        { label: 'Korean-style cucumber', x: 63.2, y: 67.0, side: 'left', tags: ['Sesame?', 'Soy?'], note: '' }
+        { label: 'Crispy beetroot bites', x: 36.3, y: 56.6, side: 'left', tags: ['Gluten?'], note: 'Fried. Piled in the middle of the plate.' },
+        { label: 'Korean-style cucumber', x: 50.5, y: 38.2, side: 'right', tags: ['Sesame?', 'Soy?'], note: 'On top of the pile.' },
+        { label: 'Caramelised chilli jam', x: 72.6, y: 35.8, side: 'right', tags: [], note: 'Position to confirm.' }
+      ],
+      sections: [
+        { title: 'Plating', steps: ['Pile the beetroot bites in the middle of the plate.', 'Korean-style cucumber on top.', 'Caramelised chilli jam [position to confirm].'] }
       ]
     },
     {
@@ -1065,7 +1069,7 @@ window.LK_DATA = {
         { q: '[Qty]', name: 'Flour tortillas', tags: ['Gluten', 'Soy?'] },
         { q: '[Qty]', name: 'Haloumi', tags: ['Milk'] },
         { q: '[Qty]', name: 'Slaw', link: 'slaw' },
-        { q: '[Qty]', name: 'Charred corn' },
+        { q: '[Qty]', name: 'Charred corn', link: 'charred-corn' },
         { q: '[Qty]', name: 'Avocado' },
         { q: '[Qty]', name: 'Lime aioli', tags: ['Egg'] },
         { q: '[Qty]', name: 'Sour cream', tags: ['Milk'] }
@@ -1083,19 +1087,20 @@ window.LK_DATA = {
     {
       id: 'pork-belly-bites', art: 'pork-belly-bites', no: '51', kind: 'snack', forLine: 'Snack', name: 'Crispy Pork Belly Bites',
       menu: 'Crispy Pork Belly Bites: caramelised chilli jam, Korean-style cucumber.',
-      yield: 'Per serve. Crispy pork belly, chilli jam, Korean-style cucumber.',
+      yield: 'Per serve. Crispy pork belly piled in the middle, chilli jam, Korean-style cucumber on top.',
       ingredients: [
         { q: '280 to 290 g', name: 'Roasted pork belly', note: 'cut into bites, portioned in a sandwich bag', link: 'pork-belly-batch' },
         { q: '[Qty]', name: 'Caramelised chilli jam' },
         { q: '[Qty]', name: 'Korean-style cucumber', tags: ['Sesame?', 'Soy?'] }
       ],
       pins: [
-        { label: 'Pork belly bites', x: 30.2, y: 48.1, side: 'right', tags: [], note: 'Crispy. Card to come.' },
-        { label: 'Caramelised chilli jam', x: 48.1, y: 37.7, side: 'right', tags: [], note: 'Over the bites.' },
-        { label: 'Korean-style cucumber', x: 65.1, y: 67.9, side: 'left', tags: ['Sesame?', 'Soy?'], note: '' }
+        { label: 'Pork belly bites', x: 36.3, y: 56.6, side: 'left', link: 'pork-belly-batch', note: 'Crispy. Piled in the middle of the plate.' },
+        { label: 'Korean-style cucumber', x: 50.5, y: 38.2, side: 'right', tags: ['Sesame?', 'Soy?'], note: 'On top of the pile.' },
+        { label: 'Caramelised chilli jam', x: 37.7, y: 47.2, side: 'left', tags: [], note: 'Over the bites. Position to confirm.' }
       ],
       sections: [
-        { title: 'Prep ahead', steps: ['Portion the roasted pork belly bites, 280 to 290 g per bag, into sandwich bags.'] }
+        { title: 'Prep ahead', steps: ['Portion the roasted pork belly bites, 280 to 290 g per bag, into sandwich bags.'] },
+        { title: 'Plating', steps: ['Pile the pork belly bites in the middle of the plate.', 'Korean-style cucumber on top.', 'Caramelised chilli jam [position to confirm].'] }
       ]
     },
     {
@@ -1489,6 +1494,23 @@ window.LK_DATA = {
         ] }
       ],
       labelNote: 'Check the sauce, onion ring and fried shallot labels.'
+    },
+
+    {
+      id: 'charred-corn', art: 'charred-corn', no: '93', kind: 'component', forLine: 'For the taco board and the haloumi tacos', name: 'Charred Corn Kernels', short: 'Charred corn',
+      yield: 'Corn prepped the same way as the corn ribs, with all the kernels cut off the cob. Quantity per serve to come.',
+      ingredients: [
+        { q: '[Qty]', name: 'Corn cobs', note: 'same start as the corn ribs', link: 'corn' }
+      ],
+      sections: [
+        { title: 'Method', steps: [
+          'Steam the whole cobs 12 min, then char on the grill until well charred, as for the corn ribs (card 08).',
+          'Cut all the kernels off the cob.'
+        ] }
+      ],
+      contains: [],
+      check: [],
+      labelNote: 'Recheck if butter or a seasoning goes on.'
     },
 
     /* ---------- Batch cards from AVC Live (Oct 2026): only fully confirmed ingredient lists ---------- */
