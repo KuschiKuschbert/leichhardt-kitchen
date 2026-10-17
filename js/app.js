@@ -305,18 +305,21 @@
     }).join('');
     return any ? '<div class="tile-groups">' + html + '</div>' : '<div class="empty">No recipes match. Clear the search or the filters.</div>';
   }
+  // The Functions chip sits first after All so it is always on view; every other chip follows the menu order.
+  function kindChips() {
+    var all = [{ key: 'all', title: 'All', list: D.recipes }].concat(GROUPS.filter(function (g) { return g.title === 'Functions'; }), GROUPS.filter(function (g) { return g.title !== 'Functions'; }));
+    return '<div class="chips scroll" role="group" aria-label="Recipe type">' + all.map(function (g) {
+      return '<button type="button" class="chip' + (g.title === 'Functions' ? ' sq' : '') + '" data-act="kind" data-val="' + g.key + '" data-k="kind:' + g.key + '" aria-pressed="' + (ui.kind === g.key) + '">' + esc(g.title) + ' (' + g.list.length + ')</button>';
+    }).join('') + '</div>';
+  }
   function viewTiles(route) {
     if (route.stack.length) {
       var r = byId[route.stack[route.stack.length - 1]];
       return '<div class="page">' + header() + '<main id="main">' + recipeCard(r, route.stack, true) + '</main>' + footer() + '</div>';
     }
-    // The Functions chip sits first after All so it is always on view; every other chip follows the menu order.
-    var kinds = [{ key: 'all', title: 'All', list: D.recipes }].concat(GROUPS.filter(function (g) { return g.title === 'Functions'; }), GROUPS.filter(function (g) { return g.title !== 'Functions'; })).map(function (g) {
-      return '<button type="button" class="chip' + (g.title === 'Functions' ? ' sq' : '') + '" data-act="kind" data-val="' + g.key + '" data-k="kind:' + g.key + '" aria-pressed="' + (ui.kind === g.key) + '">' + esc(g.title) + ' (' + g.list.length + ')</button>';
-    }).join('');
     return '<div class="page">' + header(countText()) + '<main id="main" style="display: flex; flex-direction: column; gap: 1.1rem">' +
       searchField('Dish, ingredient or allergen') +
-      '<div class="chips scroll" role="group" aria-label="Recipe type">' + kinds + '</div>' + freeChips(true) +
+      kindChips() + freeChips(true) +
       '<div id="results">' + tilesHTML() + '</div><div class="hint">Allergen tags with a ? may be in it: check the supplier label.</div></main>' + footer() + '</div>';
   }
 
@@ -357,7 +360,7 @@
   /* ---------- view C: the pass ---------- */
   function shelvesHTML() {
     var s = q(), n = 0;
-    var html = SHELVES.map(function (sh) {
+    var html = SHELVES.filter(function (sh) { return ui.kind === 'all' || sh.key === ui.kind || (sh.key === 'prep' && (ui.kind === 'batch' || ui.kind === 'component')); }).map(function (sh) {
       var items = sh.list.map(function (r) {
         var h = hitId(r.id), m = matches(r.id), dish = isDish(r);
         if (s && m) n++;
@@ -394,7 +397,7 @@
     var stack = route.stack;
     if (!stack.length) {
       return '<div class="page">' + header(passCount()) + '<main id="main" style="display: flex; flex-direction: column; gap: 1.1rem">' +
-        searchField('Dish, ingredient or allergen') + lensChips() + '<div id="shelves" class="shelves">' + shelvesHTML() + '</div></main>' + footer() + '</div>';
+        searchField('Dish, ingredient or allergen') + kindChips() + lensChips() + '<div id="shelves" class="shelves">' + shelvesHTML() + '</div></main>' + footer() + '</div>';
     }
     var r = byId[stack[stack.length - 1]], dish = isDish(r);
     var trail = '<nav class="trail" aria-label="Zoom level"><a class="pill-link" href="#/">' + ICON.left + 'The pass</a>' + stack.map(function (id, i) {
