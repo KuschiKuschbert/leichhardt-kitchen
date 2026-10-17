@@ -176,7 +176,7 @@
     orders: '<svg width="26" height="26" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 20l24-12 24 12v26L32 58 8 46z"/><path d="M8 20l24 12 24-12M32 32v26"/><path d="M20 14l24 12"/></svg>',
     waste: '<svg width="26" height="26" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 18h44"/><path d="M25 18v-6h14v6"/><path d="M15 18l3 38h28l3-38"/><path d="M27 28v18M37 28v18"/></svg>'
   };
-  var NAV = [['home', 'Home', '#/'], ['recipes', 'Recipes', '#/recipes'], ['prep', 'Prep', '#/prep'], ['orders', 'Orders', '#/orders'], ['waste', 'Waste', '#/waste']];
+  var NAV = [['recipes', 'Recipes', '#/recipes'], ['prep', 'Prep', '#/prep'], ['orders', 'Orders', '#/orders'], ['waste', 'Waste', '#/waste']];
   function navActive() {
     var n = parseRoute().name;
     return n === 'landing' ? 'home' : (n === 'home' || n === 'recipe') ? 'recipes' : (n === 'prep' || n === 'admin') ? 'prep' : n === 'orders' ? 'orders' : n === 'waste' ? 'waste' : '';
@@ -200,12 +200,12 @@
       return '<button type="button" data-act="topview" data-val="' + v.id + '" data-k="topview:' + v.id + '" aria-pressed="' + (settings.view === v.id) + '" aria-label="' + esc(v.name) + '">' + SW_ICON[v.id] + '<span>' + (v.id === 'pass' ? 'Pass' : 'Tiles') + '</span></button>';
     }).join('') + '</div>';
   }
-  /* The Admin button shows on every page on a phone or computer where the head chef has signed in with Google. */
+  /* Admin always lives in the same place: the key button top right, next to Settings, on every page.
+     It is filled in on a phone or computer where the head chef is signed in with Google. */
   function isAdminDevice() { try { return localStorage.getItem('lk.admin') === '1'; } catch (e) { return false; } }
   function adminLink(cls) {
-    if (!isAdminDevice()) return '';
-    var on = parseRoute().name === 'admin';
-    return '<a class="' + cls + '" href="#/admin" aria-label="Admin panel"' + (on ? ' aria-current="page"' : '') + '>' + ICON.key + (cls === 'icon-btn' ? '<span class="icon-lbl">Admin</span>' : '') + '</a>';
+    var on = parseRoute().name === 'admin', signed = isAdminDevice();
+    return '<a class="' + cls + ' adm' + (signed ? ' is-signed' : '') + '" href="#/admin" title="' + (signed ? 'Admin panel' : 'Admin panel: head chef sign in') + '" aria-label="' + (signed ? 'Admin panel (signed in)' : 'Admin panel (head chef sign in)') + '"' + (on ? ' aria-current="page"' : '') + '>' + ICON.key + (cls === 'icon-btn' ? '<span class="icon-lbl">Admin</span>' : '<span class="rail-lbl">Admin</span>') + '</a>';
   }
   function header(count) {
     return '<header class="top"><a class="brand" href="#/"><span class="eyebrow">Leichhardt Hotel Kitchen</span><h1>Kitchen Book</h1></a>' +
@@ -216,7 +216,7 @@
   function viewLanding() {
     var today = new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
     return '<div class="wall"><div class="rail"><a class="rail-brand" href="#/"><span>Leichhardt Hotel Kitchen</span><b>Kitchen Book</b></a>' + pillNav() +
-      '<span class="rail-icons">' + adminLink('rail-set') + '<a class="rail-set" href="#/settings" aria-label="Settings">' + ICON.gear + '</a></span></div>' +
+      '<span class="rail-icons">' + adminLink('rail-set') + '<a class="rail-set" href="#/settings" aria-label="Settings">' + ICON.gear + '<span class="rail-lbl">Settings</span></a></span></div>' +
       '<main id="main" class="wall-main"><h2 class="wall-h" id="rtitle" tabindex="-1">Pick a docket</h2><p class="wall-date">' + esc(today) + '</p>' +
       '<div class="dockets">' + DOCKETS.map(function (d) {
         return '<a class="docket" href="' + d[2] + '"><span class="pin" aria-hidden="true"></span><span class="dk-top"><span class="dk-name">' + d[1] + '</span><span class="dk-no">No. ' + d[0] + '</span></span>' +
@@ -469,7 +469,7 @@
       }).join('') + '</div></section>' +
       '<section class="set-block" aria-label="Ticked steps"><span class="label">Ticked steps</span><span class="hint">' + esc(plural(nTicks, 'step is', 'steps are')) + ' ticked. Ticks clear when you close the page.</span>' +
       '<div class="btn-row"><button type="button" class="btn" data-act="clearticks" data-k="clearticks">Clear all ticks</button></div></section>' +
-      '<section class="set-block" aria-label="Admin panel"><span class="label">Admin panel</span><span class="hint">For the head chef: insights, team, wastage, learning, people and tools. Sign in with Google once on this phone or computer and the Admin button shows on every page.</span><div class="btn-row"><a class="btn" href="#/admin">Open the admin panel</a></div></section>' +
+      '<section class="set-block" aria-label="Admin panel"><span class="label">Admin panel</span><span class="hint">For the head chef. It is always the key button at the top right of every page, next to Settings. The key is filled in when this phone or computer is signed in.</span></section>' +
       '<section class="set-block" aria-label="About"><span class="label">About</span><span class="saved">' + esc(plural(D.recipes.length, 'recipe', 'recipes')) + ', updated ' + esc(D.updated) +
       '. Settings are saved on this phone or tablet only.</span></section></main>' + footer() + '</div>';
   }

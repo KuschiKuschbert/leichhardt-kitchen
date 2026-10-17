@@ -649,3 +649,9 @@ img, svg { display: block; }
 .nb-close .btn, .nb-stuck .p-x { font-family: var(--body); font-size: 0.9375rem; }
 @media (max-width: 479px) { .icon-btn[href="#/admin"] span { display: none; } .icon-btn[href="#/admin"] { padding: 0 0.7rem; } }
 @media (max-width: 399px) { .top-right { gap: 0.25rem; } .vsw button { padding: 0 0.5rem; } .icon-btn, .icon-btn[href="#/admin"], .icon-btn[href="#/settings"] { padding: 0 0.5rem; } .brand h1 { font-size: 1.5rem; } }
+/* Admin key: always top right next to Settings; filled in when this device is signed in */
+.adm.is-signed { background: var(--ink); color: #fff; border-color: var(--ink); }
+.rail-set.adm.is-signed { background: #FBF8F1; color: #2b2a27; border-color: #FBF8F1; }
+.adm[aria-current="page"] { box-shadow: 0 0 0 3px var(--accent); }
+.rail-lbl { display: none; }
+@media (min-width: 1100px) { .rail-set { width: auto; padding: 0 1rem; gap: 0.45rem; border-radius: 999px; font-weight: 600; text-decoration: none; } .rail-lbl { display: inline; } }

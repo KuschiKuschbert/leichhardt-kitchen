@@ -90,7 +90,7 @@ There's no build step and nothing to install. To try it on a computer, open `ind
 ## Prep book and admin panel
 
 - Staff only see today in `#/prep` (no back, forward or date picker); the head chef and sous chefs can still browse other days. Unfinished lines roll over to today by themselves. This is the page only: past days stay readable in the database to anyone with the kitchen PIN.
-- `#/` is the landing page (four dockets: Recipes, Prep list, Orders, Wastage). The recipes live at `#/recipes`, the order list at `#/orders`, the wastage log at `#/waste`. A pill menu (big screens) or a bottom tab bar (phones) switches between them.
+- `#/` is the landing page (four dockets: Recipes, Prep list, Orders, Wastage). The recipes live at `#/recipes`, the order list at `#/orders`, the wastage log at `#/waste`. A pill menu (big screens) or a bottom tab bar (phones) switches between them; tapping "Kitchen Book" goes back to the landing page.
 - `#/prep` is the prep book, laid out as an open notebook: today on the left, yesterday on the right (two pages on a big screen, stacked on a phone). Staff enter the kitchen PIN once per phone, pick their name, and the first time choose their own 4-digit PIN. That phone then stays signed in.
 - Sections are not preset. Whoever writes a line types a section name (or picks one already used) and it appears as a section on the page and as a tab. The app keeps track of sections in the background and offers them as suggestions.
 - Ticking, writing and removing lines is counted per person in the background.
@@ -122,7 +122,8 @@ There's no build step and nothing to install. To try it on a computer, open `ind
 
 ### Suggestions and data, round two
 
-- **Admin button on every page** (key icon next to Settings) on any phone or computer where the head chef has signed in with Google (`lk.admin` on the device). Settings always has an "Open the admin panel" link, and Orders and Wastage link to Admin for the head chef and sous chefs.
+- **Admin has one home:** the key button at the top right of every page, next to Settings. It is filled in on a phone or computer where the head chef is signed in with Google (`lk.admin` on the device), and outlined everywhere else (tapping it then asks for the head chef's Google sign-in). There are no other Admin links.
+- **No Home button in the menus:** tapping "Kitchen Book" goes to the landing page. The menus are Recipes, Prep, Orders and Waste.
 - **Past days read once a day:** the last 14 days of prep lines are read once a day per phone and kept on the phone (`lk.past`); today comes from the live list. (Before, every phone re-read 7 days every 5 minutes, which could use up the free daily read limit.) Badges, usual amounts, Start here, Due today, the pace card and the close-out nudge all work from it.
 - **Due today** (Handy page): made on 3 or more of the last 14 days, about every 4 days or more often, and the usual gap has passed. One tap adds it with the usual amount and section.
 - **Pace** (Handy page, head chef and sous chefs only): share ticked now against the usual share by this time of day (same weekday when there are 2 or more, otherwise all days).
