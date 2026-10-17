@@ -88,3 +88,11 @@ There's no build step and nothing to install. To try it on a computer, open `ind
 - This repo is **public**, so anyone with the link can read the recipes. The page asks search engines not to list it.
 - Allergens are worked out from the ingredients listed. Always check the supplier labels before answering a guest.
 - Cook as written. Check with the head chef or sous chef before changing anything.
+
+## Prep list and admin panel
+
+- `#/prep` is a live prep list for staff (Firebase Firestore, free Spark plan). Staff enter the Kitchen PIN once per phone, pick their name, then add, tick and remove items by station. Yesterday's list can be viewed and unticked items brought over.
+- `#/admin` is the admin panel (names, roles, add/tick/remove permissions, stations). It needs Google sign-in as the project owner.
+- Firebase config is in `js/firebase-config.js` (public by design). The PIN and the admin email live in the published Firestore rules, not in this repo. Staff names are not in the repo either.
+- Permissions per person are guidance on the client only. The PIN is a shared secret. Items are never hard deleted.
+- Changing the PIN means editing the Firestore rules and re-entering it on every phone.

@@ -5,6 +5,7 @@
   Pages (hash links, so the phone's back button works):
     #/welcome          first visit: pick how the book opens
     #/settings         settings
+    #/prep             the daily prep list (js/prep.js), #/admin is its admin panel
     #/                 home, in the chosen view (Tiles, List or The Pass)
     #/r/barra/laksa    a recipe; the path is the trail you took to get there
 */
@@ -169,7 +170,7 @@
   function header(count) {
     return '<header class="top"><a class="brand" href="#/"><span class="eyebrow">Leichhardt Hotel Kitchen</span><h1>Recipe Book</h1></a>' +
       '<div class="top-right">' + (count ? '<span class="count" id="count">' + esc(count) + '</span>' : '') +
-      '<a class="icon-btn" href="#/settings">' + ICON.gear + '<span>Settings</span></a></div></header>';
+      '<a class="icon-btn" href="#/prep"><span>Prep</span></a>' + '<a class="icon-btn" href="#/settings">' + ICON.gear + '<span>Settings</span></a></div></header>';
   }
   function footer() {
     return '<footer class="foot"><div>Cook as written. Check with the head chef or sous chef before changing anything.</div>' +
@@ -441,6 +442,9 @@
     return '<div class="page">' + header() + '<main id="main" class="welcome"><h2 tabindex="-1" id="rtitle">How do you want to see the recipes?</h2>' +
       '<div class="hint" style="font-size: 1rem">Pick one to start. You can change it any time in Settings.</div>' + viewOptions('choose', false) + '</main>' + footer() + '</div>';
   }
+  function viewPrep() {
+    return '<div class="page">' + header() + '<main id="main" class="prep"><div id="prep-root"></div></main>' + footer() + '</div>';
+  }
   function viewSettings() {
     var nTicks = Object.keys(ticks).filter(function (k) { return ticks[k]; }).length;
     return '<div class="page">' + header() + '<main id="main" class="settings"><div class="row-label" style="justify-content: space-between; align-items: center">' +
@@ -462,6 +466,7 @@
     var parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
     if (parts[0] === 'welcome') return { name: 'welcome', stack: [] };
     if (parts[0] === 'settings') return { name: 'settings', stack: [] };
+    if (parts[0] === 'prep' || parts[0] === 'admin') return { name: parts[0], stack: [] };
     if (parts[0] === 'r') {
       var stack = parts.slice(1).filter(function (id) { return byId[id]; });
       if (stack.length) return { name: 'recipe', stack: stack };
@@ -479,6 +484,7 @@
     var html;
     if (route.name === 'welcome') html = viewWelcome();
     else if (route.name === 'settings') html = viewSettings();
+    else if (route.name === 'prep' || route.name === 'admin') html = viewPrep();
     else if (view === 'list') html = viewList(route);
     else if (view === 'pass') html = viewPass(route);
     else html = viewTiles(route);
@@ -487,8 +493,9 @@
     app.innerHTML = html;
     if (!changed) Array.prototype.forEach.call(app.querySelectorAll('.chips.scroll'), function (el, i) { if (rowsAt[i]) el.scrollLeft = rowsAt[i]; });
     fitPins();
+    if ((route.name === 'prep' || route.name === 'admin') && window.LK_PREP) window.LK_PREP.mount(route.name, document.getElementById('prep-root'));
     var r = route.stack.length ? byId[route.stack[route.stack.length - 1]] : null;
-    document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : '')) + 'Leichhardt Kitchen Recipe Book';
+    document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'admin' ? 'Admin panel · ' : '')) + 'Leichhardt Kitchen Recipe Book';
     if (changed) {
       lastHash = location.hash;
       window.scrollTo(0, 0);
