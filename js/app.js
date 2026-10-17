@@ -170,7 +170,7 @@
   function header(count) {
     return '<header class="top"><a class="brand" href="#/"><span class="eyebrow">Leichhardt Hotel Kitchen</span><h1>Recipe Book</h1></a>' +
       '<div class="top-right">' + (count ? '<span class="count" id="count">' + esc(count) + '</span>' : '') +
-      '<a class="icon-btn" href="#/prep"><span>Prep</span></a>' + '<a class="icon-btn" href="#/settings">' + ICON.gear + '<span>Settings</span></a></div></header>';
+      '<a class="icon-btn" href="#/prep"><span>Prep</span></a><a class="icon-btn" href="#/orders"><span>Orders</span></a>' + '<a class="icon-btn" href="#/settings">' + ICON.gear + '<span>Settings</span></a></div></header>';
   }
   function footer() {
     return '<footer class="foot"><div>Cook as written. Check with the head chef or sous chef before changing anything.</div>' +
@@ -466,7 +466,7 @@
     var parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
     if (parts[0] === 'welcome') return { name: 'welcome', stack: [] };
     if (parts[0] === 'settings') return { name: 'settings', stack: [] };
-    if (parts[0] === 'prep' || parts[0] === 'admin') return { name: parts[0], stack: [] };
+    if (parts[0] === 'prep' || parts[0] === 'admin' || parts[0] === 'orders') return { name: parts[0], stack: [] };
     if (parts[0] === 'r') {
       var stack = parts.slice(1).filter(function (id) { return byId[id]; });
       if (stack.length) return { name: 'recipe', stack: stack };
@@ -484,7 +484,7 @@
     var html;
     if (route.name === 'welcome') html = viewWelcome();
     else if (route.name === 'settings') html = viewSettings();
-    else if (route.name === 'prep' || route.name === 'admin') html = viewPrep();
+    else if (route.name === 'prep' || route.name === 'admin' || route.name === 'orders') html = viewPrep();
     else if (view === 'list') html = viewList(route);
     else if (view === 'pass') html = viewPass(route);
     else html = viewTiles(route);
@@ -493,9 +493,9 @@
     app.innerHTML = html;
     if (!changed) Array.prototype.forEach.call(app.querySelectorAll('.chips.scroll'), function (el, i) { if (rowsAt[i]) el.scrollLeft = rowsAt[i]; });
     fitPins();
-    if ((route.name === 'prep' || route.name === 'admin') && window.LK_PREP) window.LK_PREP.mount(route.name, document.getElementById('prep-root'));
+    if ((route.name === 'prep' || route.name === 'admin' || route.name === 'orders') && window.LK_PREP) window.LK_PREP.mount(route.name, document.getElementById('prep-root'));
     var r = route.stack.length ? byId[route.stack[route.stack.length - 1]] : null;
-    document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'admin' ? 'Admin panel · ' : '')) + 'Leichhardt Kitchen Recipe Book';
+    document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'admin' ? 'Admin panel · ' : '')) + 'Leichhardt Kitchen Recipe Book';
     if (changed) {
       lastHash = location.hash;
       window.scrollTo(0, 0);

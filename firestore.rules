@@ -38,6 +38,11 @@ service cloud.firestore {
       allow create, update: if writer() && request.resource.data.text is string && request.resource.data.text.size() <= 160;
       allow delete: if false;
     }
+    match /kitchens/KITCHEN_PIN/orders/{day}/lines/{line} {
+      allow read: if true;
+      allow create, update: if writer() && request.resource.data.text is string && request.resource.data.text.size() <= 120;
+      allow delete: if false;
+    }
     match /kitchens/KITCHEN_PIN/staffpins/{id} {
       allow read: if isAdmin();
       allow create: if request.resource.data.hash is string && request.resource.data.hash.size() == 64

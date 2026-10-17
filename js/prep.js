@@ -60,7 +60,7 @@
     items: [], itemsState: 'idle', showRemoved: false,
     section: '', text: '', qty: '', recipeSearch: '', recipeOpen: false, tab: '',
     authed: false, tok: '', pinStep: '', pinData: null, pf1: '', pf2: '', pinMsg: '',
-    sections: [], activity: [], resetId: '', hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false, exporting: '', moving: false, moveMsg: '', newPin: '', atab: lsGet('lk.prep.atab') || 'insights',
+    sections: [], activity: [], resetId: '', hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false, exporting: '', moving: false, moveMsg: '', newPin: '', atab: lsGet('lk.prep.atab') || 'insights', ordDate: ymd(new Date()), ordLines: [], ordState: 'idle', ordView: 'day', otext: '', oqty: '', ordAll: [], ordAllAt: 0, ordBusy: false, osugg: [],
     adminsFor: '', level: '', stats: null, statsRange: 14, week: null, weekAt: 0, weekBusy: false,
     user: null, authState: 'idle', draft: null, saveMsg: '', busy: false, toast: '', toastAct: null
   };
@@ -99,7 +99,7 @@
       unsubCfg = fb.fs.onSnapshot(cfgDoc(), function (snap) {
         S.config = snap.exists() ? snap.data() : { people: [] };
         S.config.people = S.config.people || [];
-        S.configState = 'ok'; watchItems(); watchSections(); watchLearned(); resume(); draw();
+        S.configState = 'ok'; watchItems(); watchSections(); watchLearned(); if (S.name === 'orders') watchOrders(); resume(); draw();
       }, function (err) {
         S.configState = err && err.code === 'permission-denied' ? 'badpin' : 'error';
         if (S.configState === 'badpin') { S.pinError = 'That PIN is not right.'; S.pin = ''; lsSet('lk.prep.pin', ''); cfgKey = ''; unsubCfg = null; }
@@ -107,6 +107,7 @@
       });
     }, function () { S.configState = 'error'; draw(); });
   }
+  var unsubOrd = null, ordKey = '';
   function watchItems() {
     if (S.configState !== 'ok' || !fb) return;
     var key = S.pin + '|' + S.date;
@@ -1166,6 +1167,7 @@
     if (S.name === 'admin') return adminHTML();
     if (!who()) return whoHTML();
     if (!S.authed) return ownPinHTML();
+    if (S.name === 'orders') return ordersHTML();
     if (S.staffOpen && isSous()) return staffHTML();
     return listHTML();
   }
@@ -1184,6 +1186,142 @@
     rendering = false;
   }
 
+  /* ---------- the order list ----------
+     Everyone writes today's order list. The head chef and sous chefs see what is still to order across the last 14 days,
+     or any single day, and tick lines off as ordered. Lines whose name matches a recipe ingredient link to those recipes. */
+  var ORD_DAYS = 14;
+  function ordCol(date) { return fb.fs.collection.apply(null, [fb.db].concat(base(), ['orders', date, 'lines'])); }
+  function ordRef(date, id) { return fb.fs.doc.apply(null, [fb.db].concat(base(), ['orders', date, 'lines', id])); }
+  function okey(t) { return String(t || '').toLowerCase().replace(/\s+/g, ' ').trim(); }
+  var ingIdx = null;
+  function ingIndex() {
+    if (ingIdx) return ingIdx;
+    ingIdx = {};
+    D.recipes.forEach(function (r) {
+      (r.ingredients || []).forEach(function (g) {
+        var n = okey(g && g.name); if (!n || n.length < 3) return;
+        var e = ingIdx[n] = ingIdx[n] || { name: g.name, ids: [] };
+        if (e.ids.indexOf(r.id) < 0 && e.ids.length < 6) e.ids.push(r.id);
+      });
+    });
+    return ingIdx;
+  }
+  function watchOrders() {
+    if (S.configState !== 'ok' || !fb) return;
+    var key = S.pin + '|' + S.ordDate;
+    if (key === ordKey && unsubOrd) return;
+    if (unsubOrd) unsubOrd();
+    ordKey = key; S.ordState = 'loading';
+    unsubOrd = fb.fs.onSnapshot(ordCol(S.ordDate), function (snap) {
+      S.ordLines = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; x.date = S.ordDate; return x; });
+      S.ordState = 'ok'; draw();
+    }, function () { S.ordState = 'error'; draw(); });
+  }
+  function loadOrdAll(force) {
+    if (!fb || S.ordBusy || S.configState !== 'ok') return;
+    if (!force && Date.now() - S.ordAllAt < 60000) return;
+    S.ordBusy = true; S.ordAllAt = Date.now();
+    var today = ymd(new Date()), dates = [], i;
+    for (i = 0; i < ORD_DAYS; i++) dates.push(shift(today, -i));
+    Promise.all(dates.map(function (d) { return fb.fs.getDocs(ordCol(d)).then(function (s) { return s.docs.map(function (x) { var v = x.data(); v.id = x.id; v.date = d; return v; }); }, function () { return []; }); })).then(function (lists) {
+      S.ordAll = [].concat.apply([], lists); S.ordBusy = false; draw();
+    });
+  }
+  function ordReload() { S.ordAllAt = 0; if (S.ordView === 'all') loadOrdAll(true); }
+  function addOrder() {
+    var t = S.otext.trim();
+    if (!t || !can('add')) return;
+    var typed = t, pr = proofread(t); t = (pr.text || t).slice(0, 120);
+    var hit = ingredientFor(t), p = me(), ref = fb.fs.doc(ordCol(S.ordDate));
+    S.otext = ''; var q = S.oqty.trim().slice(0, 40); S.oqty = ''; draw();
+    sset(ref, { text: t, qty: q, recipes: hit ? hit.ids : [], addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: Date.now(), ordered: false, deleted: false, orig: t !== typed ? typed.slice(0, 120) : '' })
+      .then(function () { ordReload(); }, function () { toast('Could not save. Check the connection.'); });
+    var el = S.root && S.root.querySelector('[data-k="o-text"]'); if (el) el.focus();
+  }
+  function ingredientFor(text) { return ingIndex()[okey(text)] || null; }
+  function setOrdered(date, id, on) {
+    if (!canBrowse()) return;
+    var p = me();
+    return supd(ordRef(date, id), { ordered: on, orderedBy: on ? p.name : '', orderedAt: on ? Date.now() : 0 });
+  }
+  function tickOrderLine(date, id, on) {
+    setOrdered(date, id, on).then(ordReload, function () { toast('Could not save. Check the connection.'); });
+  }
+  function tickOrderGroup(key) {
+    var jobs = (S.ordAll || []).filter(function (x) { return !x.deleted && !x.ordered && okey(x.text) === key; }).map(function (x) { return setOrdered(x.date, x.id, true); });
+    Promise.all(jobs).then(function () { toast('Marked as ordered.'); ordReload(); }, function () { toast('Could not save. Check the connection.'); });
+  }
+  function removeOrderLine(date, id) {
+    if (!can('del')) return;
+    supd(ordRef(date, id), { deleted: true, deletedBy: (me() || {}).name || '' }).then(ordReload, function () { toast('Could not save. Check the connection.'); });
+  }
+  function ordSuggest() {
+    var q = okey(S.otext); if (q.length < 2) return [];
+    var seen = {}, out = [];
+    function add(t) { var k = okey(t); if (k && !seen[k] && k !== q && (k.indexOf(q) === 0 || k.indexOf(' ' + q) >= 0)) { seen[k] = 1; out.push(t); } }
+    (S.ordLines || []).concat(S.ordAll || []).forEach(function (x) { add(x.text); });
+    var idx = ingIndex(); Object.keys(idx).forEach(function (k) { add(idx[k].name); });
+    return out.slice(0, 6);
+  }
+  function ordSuggHTML() {
+    var l = ordSuggest(); S.osugg = l;
+    return l.map(function (t, i) { return '<button type="button" class="chip sq nb-sg" data-p="osugg" data-i="' + i + '">' + esc(t) + '</button>'; }).join('');
+  }
+  function recipeChips(x) {
+    var ids = x.recipes && x.recipes.length ? x.recipes : ((ingredientFor(x.text) || {}).ids || []);
+    if (!ids.length) return '';
+    return '<span class="o-used">Used in ' + ids.slice(0, 3).map(function (id) { var r = recipeById(id); return r ? '<a href="#/r/' + encodeURIComponent(id) + '">' + esc(r.name) + '</a>' : ''; }).join(', ') + (ids.length > 3 ? ' +' + (ids.length - 3) : '') + '</span>';
+  }
+  function ordRow(x) {
+    var canTick = canBrowse() && !x.deleted;
+    var by = x.ordered && x.orderedBy ? 'Ordered by ' + esc(x.orderedBy) : esc(x.addedBy || '');
+    return '<li class="nb-row' + (x.ordered ? ' is-done' : '') + (x.deleted ? ' is-removed' : '') + '">' +
+      '<button type="button" class="nb-box" data-p="otick" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-pressed="' + !!x.ordered + '" aria-label="' + esc((x.ordered ? 'Not ordered: ' : 'Ordered: ') + x.text) + '"' + (canTick ? '' : ' disabled') + '>' + (x.ordered ? TICK : BOX) + '</button>' +
+      '<span class="nb-t"' + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + recipeChips(x) + '</span>' +
+      '<span class="nb-by">' + by + '</span>' +
+      (can('del') && !x.deleted && !x.ordered ? '<button type="button" class="p-x" data-p="odel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') + '</li>';
+  }
+  function ordGroups() {
+    var map = {}, order = [];
+    (S.ordAll || []).filter(function (x) { return !x.deleted && !x.ordered; }).sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }).forEach(function (x) {
+      var k = okey(x.text); if (!k) return;
+      if (!map[k]) { map[k] = { key: k, text: x.text, lines: [] }; order.push(k); }
+      map[k].lines.push(x); map[k].text = x.text;
+    });
+    return order.map(function (k) { return map[k]; }).sort(function (a, b) { return a.text.localeCompare(b.text); });
+  }
+  function ordAllHTML() {
+    if (S.ordBusy && !(S.ordAll || []).length) return '<p class="hint">Loading the last ' + ORD_DAYS + ' days...</p>';
+    var gs = ordGroups();
+    if (!gs.length) return '<p class="nb-empty">Nothing waiting to be ordered. Anything written in the last ' + ORD_DAYS + ' days has been ticked off.</p>';
+    return '<p class="hint">' + gs.length + ' item' + (gs.length === 1 ? '' : 's') + ' still to order from the last ' + ORD_DAYS + ' days. Tick one to mark every line for it as ordered.</p><ul class="nb-rows">' + gs.map(function (g) {
+      var first = g.lines[0];
+      return '<li class="nb-row o-group"><button type="button" class="nb-box" data-p="ogroup" data-k2="' + esc(g.key) + '" aria-label="' + esc('Ordered: ' + g.text) + '">' + BOX + '</button>' +
+        '<span class="nb-t">' + esc(g.text) + (g.lines.length > 1 ? ' <span class="o-n">x' + g.lines.length + '</span>' : '') +
+        '<span class="o-who">' + g.lines.map(function (x) { return esc((x.qty ? x.qty + ' ' : '') + '(' + (x.addedBy || '?') + ', ' + dayShort(x.date) + ')'); }).join(' &middot; ') + '</span>' + recipeChips(first) + '</span></li>';
+    }).join('') + '</ul>';
+  }
+  function dayShort(s) { return parseYmd(s).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }); }
+  function ordersHTML() {
+    var p = me(), br = canBrowse(), view = br ? (S.ordView || 'day') : 'day', today = ymd(new Date());
+    if (!br && S.ordDate !== today) { S.ordDate = today; watchOrders(); }
+    if (view === 'all') loadOrdAll(false);
+    var live = (S.ordLines || []).filter(function (x) { return !x.deleted; });
+    var nOrd = live.filter(function (x) { return x.ordered; }).length;
+    var tabs = br ? '<div class="nb-nav o-nav"><button type="button" class="chip" data-p="oview" data-v="day" aria-pressed="' + (view === 'day') + '">By day</button><button type="button" class="chip" data-p="oview" data-v="all" aria-pressed="' + (view === 'all') + '">Everything to order</button>' +
+      (view === 'day' ? '<button type="button" class="chip" data-p="oday" data-d="-1" aria-label="Back one day">&lsaquo;</button><button type="button" class="chip" data-p="otoday" aria-pressed="' + (S.ordDate === today) + '">Today</button><button type="button" class="chip" data-p="oday" data-d="1" aria-label="Forward one day">&rsaquo;</button>' : '') + '</div>' : '';
+    var add = can('add') && S.ordDate === today ?
+      '<form class="nb-add" data-p-form="oadd"><div class="nb-add-row"><label class="visually-hidden" for="o-text">Item to order</label><input id="o-text" class="nb-in nb-in-text" data-k="o-text" autocomplete="off" placeholder="What do we need to order?" maxlength="120" value="' + esc(S.otext) + '">' +
+      '<label class="visually-hidden" for="o-qty">Amount</label><input id="o-qty" class="nb-in nb-in-qty" data-k="o-qty" autocomplete="off" placeholder="Amount" maxlength="40" value="' + esc(S.oqty) + '"><button type="submit" class="nb-addbtn">Add</button></div>' +
+      '<div class="nb-sugg" id="o-sugg">' + ordSuggHTML() + '</div></form>' : (S.ordDate === today ? '<p class="hint">You can read the order list but not write in it.</p>' : '');
+    var body = view === 'all' ? ordAllHTML() :
+      (S.ordState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' :
+        (live.length ? '<ul class="nb-rows">' + live.slice().sort(function (a, b) { return (a.ordered ? 1 : 0) - (b.ordered ? 1 : 0) || (a.addedAt || 0) - (b.addedAt || 0); }).map(ordRow).join('') + '</ul>' : (S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : '')));
+    return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' : '') + '</span><span class="p-links"><a class="p-link" href="#/prep">Prep list</a></span></div>' + tabs +
+      '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + (view === 'all' ? 'To order' : 'Order list') + '</h2><span class="nb-date">' + (view === 'all' ? 'Across the last ' + ORD_DAYS + ' days' : esc(longDate(S.ordDate))) + '</span></div>' +
+      (view === 'day' ? '<div class="nb-prog" role="status">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') + '</header><div class="nb-body">' + body + '</div><div class="nb-foot">' + (view === 'day' ? add : '') + '</div></section>';
+  }
+
   /* ---------- events ---------- */
   function onClick(e) {
     var el = e.target.closest('[data-p]');
@@ -1193,6 +1331,13 @@
     if (a === 'pin-go') { var v = S.pinInput.trim(); if (!/^\d{4}$/.test(v)) { S.pinError = 'The kitchen PIN is 4 digits.'; draw(); return; } S.pin = v; S.pinError = ''; S.pinInput = ''; lsSet('lk.prep.pin', v); connect(); return; }
     if (a === 'pin-forget') { S.pin = ''; lsSet('lk.prep.pin', ''); S.config = null; S.configState = 'idle'; if (unsubCfg) unsubCfg(); if (unsubItems) unsubItems(); if (unsubSec) unsubSec(); if (unsubLrn) unsubLrn(); unsubCfg = unsubItems = unsubSec = unsubLrn = null; cfgKey = itemsKey = ''; draw(); return; }
     if (a === 'retry') { cfgKey = ''; connect(); return; }
+    if (a === 'otick') { tickOrderLine(el.getAttribute('data-d'), id, el.getAttribute('aria-pressed') !== 'true'); return; }
+    if (a === 'odel') { removeOrderLine(el.getAttribute('data-d'), id); return; }
+    if (a === 'ogroup') { tickOrderGroup(el.getAttribute('data-k2')); return; }
+    if (a === 'oview') { S.ordView = el.getAttribute('data-v'); if (S.ordView === 'all') loadOrdAll(true); draw(); return; }
+    if (a === 'oday') { S.ordDate = shift(S.ordDate, +el.getAttribute('data-d')); watchOrders(); draw(); return; }
+    if (a === 'otoday') { S.ordDate = ymd(new Date()); watchOrders(); draw(); return; }
+    if (a === 'osugg') { var st = (S.osugg || [])[i]; if (st) { S.otext = st; draw(); var oe = S.root.querySelector('[data-k="o-text"]'); if (oe) { oe.focus(); try { oe.setSelectionRange(oe.value.length, oe.value.length); } catch (x) {} } } return; }
     if (a === 'who') { pickName(id); return; }
     if (a === 'who-change') { leave(); return; }
     if (a === 'day') { S.date = shift(S.date, +el.getAttribute('data-d')); S.tab = ''; watchItems(); draw(); return; }
@@ -1242,6 +1387,8 @@
     if (k === 'pf1') { S.pf1 = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.pf1; pinCells(el); return; }
     if (k === 'pf2') { S.pf2 = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.pf2; pinCells(el); return; }
     if (k === 'p-text') { S.text = el.value; var hn = S.root.querySelector('#p-hint'); if (hn) hn.textContent = hintText(S.text); var sg = S.root.querySelector('#p-sugg'); if (sg) sg.innerHTML = suggestHTML(); return; }
+    if (k === 'o-text') { S.otext = el.value; var og = S.root.querySelector('#o-sugg'); if (og) og.innerHTML = ordSuggHTML(); return; }
+    if (k === 'o-qty') { S.oqty = el.value; return; }
     if (k === 'p-qty') { S.qty = el.value; return; }
     if (k === 'p-section') { S.section = el.value; return; }
     if (k === 'p-rs') { S.recipeSearch = el.value; S.recipeOpen = true; draw(); return; }
@@ -1265,6 +1412,7 @@
   function onSubmit(e) {
     var f = e.target.getAttribute && e.target.getAttribute('data-p-form');
     if (f === 'add') { e.preventDefault(); addTyped(); }
+    else if (f === 'oadd') { e.preventDefault(); addOrder(); }
     else if (f === 'pin') { e.preventDefault(); submitPin(); }
   }
   function onKey(e) {
@@ -1288,7 +1436,7 @@
       S.name = name; S.root = root;
       if (name === 'admin') S.draft = S.draft || null;
       draw();
-      if (S.pin) { connect(); if (name === 'admin') sdk(); }
+      if (S.pin) { connect(); if (name === 'admin') sdk(); if (name === 'orders') { S.ordDate = ymd(new Date()); watchOrders(); } }
     },
     saveConfig: saveConfig,
     proofread: proofread,

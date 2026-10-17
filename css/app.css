@@ -485,3 +485,21 @@ img, svg { display: block; }
   .a-table .p-select { max-width: 5.6rem; padding: 0 0.3rem; }
   .a-table .a-c { width: 2.9rem; }
 }
+
+/* order list */
+.o-page { max-width: 46rem; }
+.o-used { display: block; margin-top: 0.15rem; font-family: var(--body); font-size: 0.8125rem; color: var(--muted); }
+.o-used a { color: var(--accent-ink); text-decoration: underline dotted; }
+.o-n { display: inline-block; margin-left: 0.3rem; padding: 0 0.4rem; border-radius: 999px; background: var(--ink); color: #fff; font: 700 0.75rem var(--body); vertical-align: middle; }
+.o-who { display: block; margin-top: 0.15rem; font-family: var(--body); font-size: 0.8125rem; color: var(--muted); }
+.o-page .nb-row .p-x { margin-left: 0.4rem; }
+.o-nav { flex-wrap: wrap; }
+.o-nav .chip { font: 700 0.9375rem var(--body); min-height: 44px; padding: 0 1rem; }
+@media (max-width: 479px) {
+  .top-right { gap: 0.4rem; }
+  .icon-btn { padding: 0 0.7rem; }
+}
+.o-nav .chip[aria-pressed] { font: 700 0.9375rem var(--body); }
+@media (max-width: 479px) { .brand h1 { font-size: 1.7rem; } .icon-btn { padding: 0 0.55rem; font-size: 0.875rem; } .top-right { gap: 0.3rem; } }
+@media (max-width: 479px) { .icon-btn[href="#/settings"] span { display: none; } .icon-btn[href="#/settings"] { padding: 0 0.7rem; } }
+@media (max-width: 359px) { .brand h1 { font-size: 1.35rem; } .eyebrow { font-size: 0.6rem; } .icon-btn { padding: 0 0.45rem; font-size: 0.8125rem; } }
