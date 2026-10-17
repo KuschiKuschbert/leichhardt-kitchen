@@ -57,11 +57,11 @@
     items: [], itemsState: 'idle', prev: [], showRemoved: false,
     section: '', text: '', qty: '', recipeSearch: '', recipeOpen: false, tab: '',
     authed: false, pinStep: '', pinData: null, pf1: '', pf2: '', pinMsg: '',
-    sections: [], activity: [], resetId: '', hideDone: false, rolledFor: '', usual: [], usualFor: '', staffOpen: false,
+    sections: [], activity: [], resetId: '', hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false,
     admins: null, adminsFor: '', level: '', stats: null, statsRange: 14, week: null, weekAt: 0, weekBusy: false,
     user: null, authState: 'idle', draft: null, saveMsg: '', busy: false, toast: ''
   };
-  var fb = null, sdkP = null, unsubCfg = null, unsubItems = null, unsubPrev = null, unsubSec = null, unsubAct = null;
+  var fb = null, sdkP = null, unsubCfg = null, unsubItems = null, unsubPrev = null, unsubSec = null, unsubAct = null, unsubLrn = null;
   var itemsKey = '', cfgKey = '', toastTimer = null, resumed = false;
 
   /* ---------- Firebase (loaded only when the prep pages are opened) ---------- */
@@ -95,7 +95,7 @@
       unsubCfg = fb.fs.onSnapshot(cfgDoc(), function (snap) {
         S.config = snap.exists() ? snap.data() : { people: [] };
         S.config.people = S.config.people || [];
-        S.configState = 'ok'; watchItems(); watchSections(); resume(); draw();
+        S.configState = 'ok'; watchItems(); watchSections(); watchLearned(); resume(); draw();
       }, function (err) {
         S.configState = err && err.code === 'permission-denied' ? 'badpin' : 'error';
         if (S.configState === 'badpin') { S.pinError = 'That PIN is not right.'; S.pin = ''; lsSet('lk.prep.pin', ''); cfgKey = ''; unsubCfg = null; }
@@ -114,6 +114,13 @@
       S.items = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; });
       S.itemsState = 'ok'; draw();
     }, function () { S.itemsState = 'error'; draw(); });
+  }
+  function watchLearned() {
+    if (unsubLrn || !fb) return;
+    unsubLrn = fb.fs.onSnapshot(colRef('learned'), function (snap) {
+      S.learned = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; });
+      draw();
+    }, function () {});
   }
   function watchSections() {
     if (unsubSec || !fb) return;
@@ -223,9 +230,10 @@
     if (!t || !can('add')) return;
     var sec = cleanSection(S.section);
     var rm = matchRecipe(t);
+    if (!sec) { var lx = learnedFor(t); if (lx && bestSection(lx)) sec = bestSection(lx); }
     newItem({ text: t.slice(0, 160), qty: S.qty.trim().slice(0, 40), station: sec, recipe: rm ? rm.id : '' }).catch(function () { toast('Could not save. Check the connection.'); });
-    noteSection(sec); bump({ added: 1, lastAdded: Date.now() });
-    S.text = ''; S.qty = ''; S.section = sec; draw();
+    noteSection(sec); bump({ added: 1, lastAdded: Date.now() }); learn(t, sec, t === S.pickedText ? 'pick' : 'type');
+    S.text = ''; S.qty = ''; S.section = sec; S.pickedText = ''; draw();
     var el = S.root && S.root.querySelector('[data-k="p-text"]'); if (el) el.focus();
   }
   function addRecipe(id) {
@@ -233,7 +241,7 @@
     if (!r || !can('add')) return;
     var sec = cleanSection(S.section);
     newItem({ text: (r.short || r.name), recipe: r.id, qty: S.qty.trim().slice(0, 40), station: sec }).catch(function () { toast('Could not save. Check the connection.'); });
-    noteSection(sec); bump({ added: 1, lastAdded: Date.now() });
+    noteSection(sec); bump({ added: 1, lastAdded: Date.now() }); learn(r.short || r.name, sec, 'pick');
     S.qty = ''; S.recipeSearch = ''; S.recipeOpen = false; toast('Added ' + (r.short || r.name));
   }
   function tick(date, id) {
@@ -286,34 +294,82 @@
     if (!it || !can('add')) return;
     fb.fs.updateDoc(itemRef(S.date, id), { urgent: !it.urgent }).catch(function () { toast('Could not save. Check the connection.'); });
   }
-  /* "Usual for a Saturday": lines that were on at least two of the last four same weekdays. */
-  function maybeUsual() {
-    if (!S.authed || !fb || S.usualFor === S.date) return;
-    var date = S.date; S.usualFor = date; S.usual = [];
-    var dates = [7, 14, 21, 28].map(function (n) { return shift(date, -n); });
-    Promise.all(dates.map(function (d) { return fb.fs.getDocs(itemsCol(d)).then(function (sn) { return sn.docs.map(function (x) { return x.data(); }); }, function () { return []; }); })).then(function (lists) {
-      var map = {};
-      lists.forEach(function (l) {
-        var once = {};
-        l.forEach(function (x) {
-          if (x.deleted || x.rolled || !x.text) return;
-          var k = x.text.trim().toLowerCase();
-          if (once[k]) return; once[k] = 1;
-          var m = map[k] = map[k] || { text: x.text.trim(), n: 0, secs: {} };
-          m.n++; var sc = x.station || ''; m.secs[sc] = (m.secs[sc] || 0) + 1;
-        });
-      });
-      S.usual = Object.keys(map).map(function (k) { var m = map[k]; var best = Object.keys(m.secs).sort(function (a, b) { return m.secs[b] - m.secs[a]; })[0] || ''; return { text: m.text, n: m.n, station: best }; })
-        .filter(function (m) { return m.n >= 2; }).sort(function (a, b) { return b.n - a.n || a.text.localeCompare(b.text); }).slice(0, 14);
-      if (S.date === date) draw();
-    });
+  /* ---------- the prep list learns: every line added is counted per item, weekday and section ---------- */
+  var REGULAR = 4;   // typed or picked this many times and it becomes a regular
+  function lkey(t) { return slug(String(t).toLowerCase()).slice(0, 80); }
+  function learn(text, sec, how) {
+    if (!fb || !text) return;
+    var p = who(), f = fb.fs, dow = String(parseYmd(S.date).getDay()), sk = lkey(sec || 'general');
+    var secs = {}; secs[sk] = { name: sec || '', n: f.increment(1) };
+    var data = { text: String(text).trim().slice(0, 160), uses: f.increment(1), lastUsed: Date.now(), lastBy: p ? p.name : '', dow: {}, secs: secs };
+    data.dow[dow] = f.increment(1);
+    data[how === 'pick' ? 'picked' : 'typed'] = f.increment(1);
+    f.setDoc(docRef('learned', lkey(text)), data, { merge: true }).catch(function () {});
   }
-  function addUsual(i) {
-    var u = S.usual[i];
-    if (!u || !can('add')) return;
-    var rm = matchRecipe(u.text);
-    newItem({ text: u.text.slice(0, 160), station: u.station, recipe: rm ? rm.id : '' }).catch(function () { toast('Could not save. Check the connection.'); });
-    noteSection(u.station); bump({ added: 1, lastAdded: Date.now() });
+  function learnedFor(text) { var k = lkey(text); return S.learned.filter(function (x) { return x.id === k; })[0] || null; }
+  function bestSection(x) {
+    var best = '', n = 0;
+    Object.keys(x.secs || {}).forEach(function (k) { var v = x.secs[k]; if (v && v.name && v.n > n) { n = v.n; best = v.name; } });
+    return best;
+  }
+  function onList() { var h = {}; S.items.forEach(function (x) { if (!x.deleted) h[lkey(x.text)] = 1; }); return h; }
+  function isRegular(x) { return !x.hidden && (x.uses || 0) >= REGULAR; }
+  function typeahead(q) {
+    q = String(q || '').trim().toLowerCase();
+    if (q.length < 2) return [];
+    var words = q.split(/\s+/), have = onList(), seen = {}, out = [];
+    function ok(t) { var l = t.toLowerCase(); return words.every(function (w) { return l.indexOf(w) >= 0; }); }
+    S.learned.filter(function (x) { return !x.hidden && x.text && ok(x.text) && !have[x.id]; })
+      .sort(function (a, b) { return ((b.text.toLowerCase().indexOf(q) === 0) - (a.text.toLowerCase().indexOf(q) === 0)) || (b.uses || 0) - (a.uses || 0); })
+      .forEach(function (x) { seen[x.id] = 1; out.push({ text: x.text, section: bestSection(x), uses: x.uses || 0 }); });
+    D.recipes.filter(function (r) { return r.kind === 'batch' || r.kind === 'component'; }).forEach(function (r) {
+      var t = r.short || r.name, k = lkey(t);
+      if (!seen[k] && !have[k] && ok(t)) { seen[k] = 1; out.push({ text: t, section: '', uses: 0 }); }
+    });
+    return out.slice(0, 6);
+  }
+  function suggestHTML() {
+    var list = typeahead(S.text);
+    S.sugg = list;
+    return list.map(function (x, i) { return '<button type="button" class="chip sq nb-sg" data-p="sugg" data-i="' + i + '">' + esc(x.text) + (x.section ? ' <span class="nb-us">' + esc(x.section) + '</span>' : '') + '</button>'; }).join('');
+  }
+  function pickSugg(i) {
+    var x = (S.sugg || [])[i];
+    if (!x) return;
+    S.text = x.text; S.pickedText = x.text;
+    if (!S.section.trim() && x.section) S.section = x.section;
+    draw();
+    var el = S.root && S.root.querySelector('[data-k="p-text"]'); if (el) { el.focus(); try { el.setSelectionRange(el.value.length, el.value.length); } catch (e) {} }
+  }
+  function quickAdd(i) {
+    var x = (S.quick || [])[i];
+    if (!x || !can('add')) return;
+    var rm = matchRecipe(x.text);
+    newItem({ text: x.text.slice(0, 160), station: x.section, recipe: rm ? rm.id : '' }).catch(function () { toast('Could not save. Check the connection.'); });
+    noteSection(x.section); bump({ added: 1, lastAdded: Date.now() }); learn(x.text, x.section, 'pick');
+  }
+  function hideLearned(id, hidden) {
+    fb.fs.setDoc(docRef('learned', id), { hidden: hidden }, { merge: true }).catch(function () { toast('Could not save.'); });
+  }
+  function backfill() {
+    if (!fb || !S.stats || S.stats.loading || S.busy) return;
+    S.busy = true; draw();
+    var map = {}, have = {}; S.learned.forEach(function (x) { have[x.id] = 1; });
+    Object.keys(S.stats.days).forEach(function (d) {
+      var dow = String(parseYmd(d).getDay());
+      S.stats.days[d].forEach(function (x) {
+        if (x.deleted || x.rolled || !x.text) return;
+        var k = lkey(x.text); if (have[k]) return;
+        var m = map[k] = map[k] || { text: String(x.text).trim(), uses: 0, typed: 0, dow: {}, secs: {}, lastUsed: 0, lastBy: '' };
+        m.uses++; m.typed++; m.dow[dow] = (m.dow[dow] || 0) + 1;
+        var sk = lkey(x.station || 'general'); m.secs[sk] = m.secs[sk] || { name: x.station || '', n: 0 }; m.secs[sk].n++;
+        if ((x.addedAt || 0) >= m.lastUsed) { m.lastUsed = x.addedAt || 0; m.lastBy = x.addedBy || ''; m.text = String(x.text).trim(); }
+      });
+    });
+    var keys = Object.keys(map);
+    Promise.all(keys.map(function (k) { var m = map[k]; m.text = m.text.slice(0, 160); return fb.fs.setDoc(docRef('learned', k), m); })).then(function () {
+      S.busy = false; toast('Learned ' + keys.length + (keys.length === 1 ? ' item' : ' items') + ' from the last 30 days.'); draw();
+    }, function () { S.busy = false; toast('Could not save. Check the connection.'); });
   }
   function listText() {
     var rows = S.items.filter(function (x) { return !x.deleted; }).sort(sortItems), out = [], last = null;
@@ -602,10 +658,10 @@
     });
     return out + '</svg>';
   }
-  function sectionsChart(agg) {
+  function sectionsChart(agg, label) {
     var rows = Object.keys(agg.sections).map(function (n) { return { n: n, v: agg.sections[n] }; }).sort(function (a, b) { return b.v - a.v; }).slice(0, 10);
     if (!rows.length) return '<p class="hint">No sections used in this time yet.</p>';
-    var W = 720, l = 150, r = 44, rh = 28, H = rows.length * rh + 8, pw = W - l - r, max = niceMax(rows[0].v), out = '<svg class="ch" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Lines per section">';
+    var W = 720, l = 150, r = 44, rh = 28, H = rows.length * rh + 8, pw = W - l - r, max = niceMax(rows[0].v), out = '<svg class="ch" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(label || 'Lines per section') + '">';
     rows.forEach(function (x, i) {
       var y = 4 + i * rh, w = Math.max(4, x.v / max * pw);
       out += '<g><title>' + esc(x.n + ': ' + x.v + ' lines') + '</title><rect x="0" y="' + y + '" width="' + W + '" height="' + rh + '" fill="transparent"/><text class="ch-lb" x="' + (l - 10) + '" y="' + (y + 18) + '" text-anchor="end">' + esc(x.n.length > 20 ? x.n.slice(0, 19) + '…' : x.n) + '</text><path d="' + barPath(l, y + 5, w, 14, 4, true) + '" fill="' + CW + '"/><text class="ch-val" x="' + (l + w + 6) + '" y="' + (y + 17) + '">' + x.v + '</text></g>';
@@ -621,6 +677,32 @@
       out += '<g><title>' + esc(x.text + ': rolled over ' + x.n + (x.n === 1 ? ' time' : ' times') + ', longest run ' + x.max + (x.max === 1 ? ' day' : ' days')) + '</title><rect x="0" y="' + y + '" width="' + W + '" height="' + rh + '" fill="transparent"/><text class="ch-lb" x="' + (l - 10) + '" y="' + (y + 18) + '" text-anchor="end">' + esc(x.text.length > 26 ? x.text.slice(0, 25) + '…' : x.text) + '</text><path d="' + barPath(l, y + 5, w, 14, 4, true) + '" fill="' + CT + '"/><text class="ch-val" x="' + (l + w + 6) + '" y="' + (y + 17) + '">' + x.n + '</text></g>';
     });
     return out + '</svg>';
+  }
+  var DOWS = [[1, 'Mon'], [2, 'Tue'], [3, 'Wed'], [4, 'Thu'], [5, 'Fri'], [6, 'Sat'], [0, 'Sun']];
+  function learnedHTML() {
+    var L = S.learned.filter(function (x) { return x.text; });
+    var head = '<section class="set-block"><span class="label">What the prep list has learned</span><span class="hint">Every line written or picked is counted per item, weekday and section. An item becomes a regular after ' + REGULAR + ' uses.</span>';
+    var btn = '<div class="btn-row"><button type="button" class="btn" data-p="backfill"' + (S.busy || !S.stats || S.stats.loading ? ' disabled' : '') + '>Learn from the last 30 days</button></div><span class="hint">Adds items from past lists that the list has not learned yet. Safe to press more than once.</span>';
+    if (!L.length) return head + '<p class="hint">Nothing learned yet. It starts as soon as lines are written, or press the button to learn from the past 30 days.</p>' + btn + '</section>';
+    var regs = L.filter(isRegular), picked = 0, typed = 0;
+    L.forEach(function (x) { picked += x.picked || 0; typed += x.typed || 0; });
+    var top = L.slice().sort(function (a, b) { return (b.uses || 0) - (a.uses || 0); });
+    var tiles = [[L.length, 'items learned'], [regs.length, 'regulars'], [picked + typed ? Math.round(picked / (picked + typed) * 100) + '%' : 'n/a', 'added by tapping a suggestion'], [top[0].text, 'most written item']];
+    var sec = {}; top.slice(0, 10).forEach(function (x) { sec[x.text] = x.uses || 0; });
+    var heat = top.slice(0, 12).map(function (x) {
+      var mx = Math.max.apply(null, DOWS.map(function (d) { return (x.dow || {})[d[0]] || 0; })) || 1;
+      return '<tr><th scope="row">' + esc(x.text) + (x.hidden ? ' <span class="a-badge off">hidden</span>' : '') + '</th>' + DOWS.map(function (d) { var n = (x.dow || {})[d[0]] || 0; return '<td class="a-heat" style="background:rgba(235,104,52,' + (n ? (0.15 + 0.7 * n / mx).toFixed(2) : 0) + ')">' + (n || '') + '</td>'; }).join('') + '</tr>';
+    }).join('');
+    var manage = top.slice(0, 40).map(function (x) {
+      return '<tr><th scope="row">' + esc(x.text) + (x.hidden ? ' <span class="a-badge off">hidden</span>' : '') + (isRegular(x) ? ' <span class="a-badge">regular</span>' : '') + '</th><td>' + (x.uses || 0) + '</td><td>' + (x.typed || 0) + '/' + (x.picked || 0) + '</td><td>' + esc(bestSection(x)) + '</td><td>' + esc(ago(x.lastUsed)) + '</td>' +
+        '<td><button type="button" class="p-x" data-p="learn-hide" data-id="' + esc(x.id) + '" data-hide="' + (x.hidden ? '0' : '1') + '">' + (x.hidden ? 'Show in suggestions' : 'Hide from suggestions') + '</button></td></tr>';
+    }).join('');
+    return head + '<div class="a-tiles">' + tiles.map(function (x) { return '<div class="a-tile"><strong>' + esc(String(x[0])) + '</strong><span>' + esc(x[1]) + '</span></div>'; }).join('') + '</div>' +
+      '<h3 class="a-ch-h">Most written items</h3>' + sectionsChart({ sections: sec }, 'Most written prep items') +
+      '<h3 class="a-ch-h">Which days each item is written</h3><span class="hint">Number of times written on each weekday. Darker is more.</span>' +
+      '<div class="a-scroll"><table class="a-table"><thead><tr><th scope="col">Item</th>' + DOWS.map(function (d) { return '<th scope="col">' + d[1] + '</th>'; }).join('') + '</tr></thead><tbody>' + heat + '</tbody></table></div>' +
+      '<h3 class="a-ch-h">Manage learned items</h3><span class="hint">Hide a typo or a one-off so it stops showing as a suggestion. Typed and picked counts show as typed/picked.</span>' +
+      '<div class="a-scroll"><table class="a-table"><thead><tr><th scope="col">Item</th><th scope="col">Uses</th><th scope="col">Typed/picked</th><th scope="col">Usual section</th><th scope="col">Last used</th><th scope="col"></th></tr></thead><tbody>' + manage + '</tbody></table></div>' + btn + '</section>';
   }
   function insightsHTML() {
     var st = S.stats;
@@ -727,10 +809,14 @@
       var m = secs[k], pc = m.n ? Math.round(m.d / m.n * 100) : 0;
       return '<div class="nb-meter"><span class="nb-ml">' + esc(k) + '</span><span class="nb-mb" role="img" aria-label="' + esc(k + ': ' + m.d + ' of ' + m.n + ' done') + '"><i style="width:' + pc + '%"></i></span><span class="nb-mn">' + m.d + '/' + m.n + '</span></div>';
     }).join('') : '';
-    var have = {}; live.forEach(function (x) { have[String(x.text).trim().toLowerCase()] = 1; });
-    var us = S.usual.map(function (u, i) { return { u: u, i: i }; }).filter(function (o) { return !have[o.u.text.toLowerCase()]; });
-    var usual = can('add') && us.length ? '<h3 class="nb-sh">Usual for a ' + esc(parseYmd(S.date).toLocaleDateString('en-AU', { weekday: 'long' })) + '</h3><p class="nb-sd">On the list at least twice in the last four weeks. Tap to add.</p><div class="nb-usual">' +
-      us.map(function (o) { return '<button type="button" class="chip sq" data-p="usual" data-i="' + o.i + '">' + esc(o.u.text) + (o.u.station ? ' <span class="nb-us">' + esc(o.u.station) + '</span>' : '') + '</button>'; }).join('') + '</div>' : '';
+    var have = onList(), dn = String(parseYmd(S.date).getDay()), dname = parseYmd(S.date).toLocaleDateString('en-AU', { weekday: 'long' });
+    var today2 = S.learned.filter(function (x) { return !x.hidden && !have[x.id] && x.text && ((x.dow || {})[dn] || 0) >= 2; }).sort(function (a, b) { return ((b.dow || {})[dn] || 0) - ((a.dow || {})[dn] || 0) || (b.uses || 0) - (a.uses || 0); }).slice(0, 12);
+    var shownK = {}; today2.forEach(function (x) { shownK[x.id] = 1; });
+    var regs = S.learned.filter(function (x) { return isRegular(x) && !have[x.id] && !shownK[x.id] && x.text; }).sort(function (a, b) { return (b.uses || 0) - (a.uses || 0); }).slice(0, 14);
+    S.quick = [];
+    function chip(x, note) { S.quick.push({ text: x.text, section: bestSection(x) }); return '<button type="button" class="chip sq" data-p="quick" data-i="' + (S.quick.length - 1) + '">' + esc(x.text) + (note ? ' <span class="nb-us">' + esc(note) + '</span>' : '') + '</button>'; }
+    var usual = can('add') && today2.length ? '<h3 class="nb-sh">Usual for a ' + esc(dname) + '</h3><p class="nb-sd">Written on at least two ' + esc(dname) + 's. Tap to add.</p><div class="nb-usual">' + today2.map(function (x) { return chip(x, ((x.dow || {})[dn] || 0) + 'x'); }).join('') + '</div>' : '';
+    usual += can('add') && regs.length ? '<h3 class="nb-sh">Regulars</h3><p class="nb-sd">Written or picked ' + REGULAR + ' or more times. Tap to add.</p><div class="nb-usual">' + regs.map(function (x) { return chip(x, x.uses + 'x'); }).join('') + '</div>' : '';
     var tools = '<h3 class="nb-sh">Tools</h3><div class="nb-tools">' +
       '<button type="button" class="nb-btn" data-p="hide-done" aria-pressed="' + S.hideDone + '">' + (S.hideDone ? 'Show ticked lines' : 'Hide ticked lines') + '</button>' +
       '<button type="button" class="nb-btn" data-p="copy">Copy the list</button>' +
@@ -741,7 +827,7 @@
   function listHTML() {
     var p = me(), today = ymd(new Date());
     if (S.authed && fb && !S.weekBusy && Date.now() - S.weekAt > 300000) loadWeek();
-    maybeRoll(); maybeUsual();
+    maybeRoll();
     var live = S.items.filter(function (x) { return !x.deleted; }), doneN = live.filter(function (x) { return x.done; }).length;
     var removed = S.items.filter(function (x) { return x.deleted; });
     var secs = {}, tabs = [];
@@ -754,7 +840,7 @@
       '<div class="nb-add-row"><label class="visually-hidden" for="p-section">Section</label><input id="p-section" class="nb-in nb-in-sec" data-k="p-section" list="p-sections" autocomplete="off" placeholder="Section (new or old)" maxlength="40" value="' + esc(S.section) + '">' +
       '<label class="visually-hidden" for="p-text">Prep item</label><input id="p-text" class="nb-in nb-in-text" data-k="p-text" autocomplete="off" placeholder="Write a new line..." maxlength="160" value="' + esc(S.text) + '">' +
       '<label class="visually-hidden" for="p-qty">Amount</label><input id="p-qty" class="nb-in nb-in-qty" data-k="p-qty" autocomplete="off" placeholder="Amount" maxlength="40" value="' + esc(S.qty) + '">' +
-      '<button type="submit" class="nb-addbtn">Add</button></div><p class="nb-hint" id="p-hint" aria-live="polite">' + esc(hintText(S.text)) + '</p>' + recipePicker() + '</form>' : '<p class="hint">You can read the book but not write in it. Ask the admin if that is wrong.</p>';
+      '<button type="submit" class="nb-addbtn">Add</button></div><div class="nb-sugg" id="p-sugg">' + suggestHTML() + '</div><p class="nb-hint" id="p-hint" aria-live="polite">' + esc(hintText(S.text)) + '</p>' + recipePicker() + '</form>' : '<p class="hint">You can read the book but not write in it. Ask the admin if that is wrong.</p>';
     var todayEmpty = !live.length && S.itemsState === 'ok' ? '<p class="nb-empty">Nothing written for ' + esc(dayName(S.date).toLowerCase()) + ' yet.</p>' : '';
     var left = '<section class="nb-page nb-left"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + esc(dayName(S.date)) + '</h2><span class="nb-date">' + esc(longDate(S.date)) + '</span></div>' +
       '<div class="nb-prog" role="status">' + doneN + ' of ' + live.length + ' done</div></header>' +
@@ -824,7 +910,7 @@
         '<button type="button" class="p-x" data-p="a-reset-pin" data-id="' + esc(p.id) + '">' + (S.resetId === p.id ? 'Tap again to reset PIN' : 'Reset PIN') + '</button>' +
         '<button type="button" class="p-x" data-p="a-remove-person" data-i="' + i + '">Delete</button></div></li>';
     }).join('');
-    return '<div class="p-admin">' + bar + '<h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2>' + insightsHTML() + statsHTML() +
+    return '<div class="p-admin">' + bar + '<h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2>' + insightsHTML() + learnedHTML() + statsHTML() +
       '<section class="set-block"><span class="label">People</span><span class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Reset PIN lets that person choose a new one. Removing someone from the list keeps their name on old lines.</span>' +
       '<ul class="a-list">' + (rows || '<li class="hint">No names yet.</li>') + '</ul><div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' +
       '<section class="set-block"><span class="label">Badges</span><label class="a-check"><input type="checkbox" data-a="badges"' + (d.showBadges !== false ? ' checked' : '') + '> Show the weekly top tickers to everyone on the prep book</label></section>' + saveBlock +
@@ -873,19 +959,22 @@
     var a = el.getAttribute('data-p'), id = el.getAttribute('data-id'), i = +el.getAttribute('data-i'), dt = el.getAttribute('data-d');
     if (el.tagName === 'SUMMARY') { S.recipeOpen = !S.recipeOpen; return; }
     if (a === 'pin-go') { var v = S.pinInput.trim(); if (!/^\d{4,6}$/.test(v)) { S.pinError = 'The PIN is 4 to 6 digits.'; draw(); return; } S.pin = v; S.pinError = ''; S.pinInput = ''; lsSet('lk.prep.pin', v); connect(); return; }
-    if (a === 'pin-forget') { S.pin = ''; lsSet('lk.prep.pin', ''); S.config = null; S.configState = 'idle'; if (unsubCfg) unsubCfg(); if (unsubItems) unsubItems(); if (unsubPrev) unsubPrev(); if (unsubSec) unsubSec(); unsubCfg = unsubItems = unsubPrev = unsubSec = null; cfgKey = itemsKey = ''; draw(); return; }
+    if (a === 'pin-forget') { S.pin = ''; lsSet('lk.prep.pin', ''); S.config = null; S.configState = 'idle'; if (unsubCfg) unsubCfg(); if (unsubItems) unsubItems(); if (unsubPrev) unsubPrev(); if (unsubSec) unsubSec(); if (unsubLrn) unsubLrn(); unsubCfg = unsubItems = unsubPrev = unsubSec = unsubLrn = null; cfgKey = itemsKey = ''; draw(); return; }
     if (a === 'retry') { cfgKey = ''; connect(); return; }
     if (a === 'who') { pickName(id); return; }
     if (a === 'who-change') { leave(); return; }
-    if (a === 'day') { S.date = shift(S.date, +el.getAttribute('data-d')); S.tab = ''; S.usualFor = ''; watchItems(); draw(); return; }
-    if (a === 'today') { S.date = ymd(new Date()); S.tab = ''; S.usualFor = ''; watchItems(); draw(); return; }
+    if (a === 'day') { S.date = shift(S.date, +el.getAttribute('data-d')); S.tab = ''; watchItems(); draw(); return; }
+    if (a === 'today') { S.date = ymd(new Date()); S.tab = ''; watchItems(); draw(); return; }
     if (a === 'tab') { S.tab = el.getAttribute('data-v') || ''; draw(); return; }
     if (a === 'tick') { tick(dt || S.date, id); return; }
     if (a === 'del') { removeItem(dt || S.date, id, false); return; }
     if (a === 'restore') { removeItem(dt || S.date, id, true); return; }
     if (a === 'removed') { S.showRemoved = !S.showRemoved; draw(); return; }
     if (a === 'urgent') { toggleUrgent(id); return; }
-    if (a === 'usual') { addUsual(i); return; }
+    if (a === 'sugg') { pickSugg(i); return; }
+    if (a === 'quick') { quickAdd(i); return; }
+    if (a === 'learn-hide') { hideLearned(id, el.getAttribute('data-hide') === '1'); return; }
+    if (a === 'backfill') { backfill(); return; }
     if (a === 'hide-done') { S.hideDone = !S.hideDone; draw(); return; }
     if (a === 'copy') { copyList(); return; }
     if (a === 'print') { window.print(); return; }
@@ -916,7 +1005,7 @@
     if (k === 'p-pin') { S.pinInput = el.value.replace(/\D/g, ''); el.value = S.pinInput; return; }
     if (k === 'pf1') { S.pf1 = el.value.replace(/\D/g, ''); el.value = S.pf1; return; }
     if (k === 'pf2') { S.pf2 = el.value.replace(/\D/g, ''); el.value = S.pf2; return; }
-    if (k === 'p-text') { S.text = el.value; var hn = S.root.querySelector('#p-hint'); if (hn) hn.textContent = hintText(S.text); return; }
+    if (k === 'p-text') { S.text = el.value; var hn = S.root.querySelector('#p-hint'); if (hn) hn.textContent = hintText(S.text); var sg = S.root.querySelector('#p-sugg'); if (sg) sg.innerHTML = suggestHTML(); return; }
     if (k === 'p-qty') { S.qty = el.value; return; }
     if (k === 'p-section') { S.section = el.value; return; }
     if (k === 'p-rs') { S.recipeSearch = el.value; S.recipeOpen = true; draw(); return; }
@@ -928,7 +1017,7 @@
   function onChange(e) {
     var el = e.target, k = el.getAttribute && el.getAttribute('data-k');
     if (!S.root || !S.root.contains(el)) return;
-    if (k === 'p-day') { if (el.value) { S.date = el.value; S.tab = ''; S.usualFor = ''; watchItems(); draw(); } return; }
+    if (k === 'p-day') { if (el.value) { S.date = el.value; S.tab = ''; watchItems(); draw(); } return; }
     var a = el.getAttribute && el.getAttribute('data-a');
     if (!a || !S.draft) return;
     if (a === 'badges') { S.draft.showBadges = el.checked; return; }
