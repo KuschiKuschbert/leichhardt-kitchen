@@ -127,3 +127,10 @@ There's no build step and nothing to install. To try it on a computer, open `ind
 - The first phone to open the prep book reads every past day in the last 90 that has not been read yet, 8 days at a time, and adds the lines to the learned items (proofread, per weekday and section). Nobody has to press anything.
 - A day is claimed by creating `learnlog/<date>`. The rules refuse a second create, so two phones can never count the same day twice. Days that already learned live (a line was added that day) are marked the same way and skipped.
 - After that it keeps learning with every new line, and each morning the previous day is already marked, so only days nobody opened are read later.
+
+### Security setup
+
+- `firestore.rules` is the rules template. The live rules are pasted into the Firebase console with the real kitchen PIN and owner email filled in. Never commit those values.
+- The Firebase web key in `js/firebase-config.js` is public by design. Restrict it in Google Cloud (Credentials, the Browser key) to the site address, and turn on App Check (reCAPTCHA v3) so only the real site can talk to the database. To switch App Check on in the page, add `appCheckKey: '<reCAPTCHA v3 site key>'` to `js/firebase-config.js`.
+- The owner panel has a Backup button that downloads everything as one JSON file. The free Firebase plan has no scheduled backups.
+- Who is the owner: only the owner's Google account may read `config/admins`, so the page checks that read. No email is stored in the database or the repository.

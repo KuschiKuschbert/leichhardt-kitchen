@@ -54,21 +54,22 @@
     who: lsGet('lk.prep.who') || '',
     date: ymd(new Date()),
     config: null, configState: 'idle',   // idle, loading, ok, badpin, error
-    items: [], itemsState: 'idle', prev: [], showRemoved: false,
+    items: [], itemsState: 'idle', showRemoved: false,
     section: '', text: '', qty: '', recipeSearch: '', recipeOpen: false, tab: '',
     authed: false, pinStep: '', pinData: null, pf1: '', pf2: '', pinMsg: '',
-    sections: [], activity: [], resetId: '', hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false,
-    admins: null, adminsFor: '', level: '', stats: null, statsRange: 14, week: null, weekAt: 0, weekBusy: false,
+    sections: [], activity: [], resetId: '', hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false, exporting: '',
+    adminsFor: '', level: '', stats: null, statsRange: 14, week: null, weekAt: 0, weekBusy: false,
     user: null, authState: 'idle', draft: null, saveMsg: '', busy: false, toast: '', toastAct: null
   };
-  var fb = null, sdkP = null, unsubCfg = null, unsubItems = null, unsubPrev = null, unsubSec = null, unsubAct = null, unsubLrn = null;
+  var fb = null, sdkP = null, unsubCfg = null, unsubItems = null, unsubSec = null, unsubAct = null, unsubLrn = null;
   var itemsKey = '', cfgKey = '', toastTimer = null, resumed = false;
 
   /* ---------- Firebase (loaded only when the prep pages are opened) ---------- */
   function sdk() {
     if (sdkP) return sdkP;
-    sdkP = Promise.all([import(SDK + 'firebase-app.js'), import(SDK + 'firebase-firestore.js'), import(SDK + 'firebase-auth.js')]).then(function (m) {
+    sdkP = Promise.all([import(SDK + 'firebase-app.js'), import(SDK + 'firebase-firestore.js'), import(SDK + 'firebase-auth.js'), FB.appCheckKey ? import(SDK + 'firebase-app-check.js') : Promise.resolve(null)]).then(function (m) {
       var app = m[0].initializeApp(FB), fs = m[1], au = m[2], db;
+      if (FB.appCheckKey && m[3]) { try { m[3].initializeAppCheck(app, { provider: new m[3].ReCaptchaV3Provider(FB.appCheckKey), isTokenAutoRefreshEnabled: true }); } catch (e) {} }
       try { db = fs.initializeFirestore(app, { localCache: fs.persistentLocalCache({ tabManager: fs.persistentMultipleTabManager() }) }); }
       catch (e) { db = fs.getFirestore(app); }
       var auth = au.getAuth(app);
@@ -108,7 +109,6 @@
     var key = S.pin + '|' + S.date;
     if (key === itemsKey && unsubItems) return;
     if (unsubItems) unsubItems();
-    if (unsubPrev) unsubPrev();
     itemsKey = key; S.itemsState = 'loading';
     unsubItems = fb.fs.onSnapshot(itemsCol(S.date), function (snap) {
       S.items = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; });
@@ -408,6 +408,38 @@
     newItem({ text: x.text.slice(0, 160), station: x.section, recipe: rm ? rm.id : '' }).catch(function () { toast('Could not save. Check the connection.'); });
     noteSection(x.section); bump({ added: 1, lastAdded: Date.now() }); learn(x.text, x.section, 'pick');
   }
+  /* Owner backup: everything the book holds, as one JSON file (PIN fingerprints left out). */
+  function exportAll() {
+    if (!fb || S.exporting) return;
+    S.exporting = 'Reading the data...'; draw();
+    var f = fb.fs, out = { exportedAt: new Date().toISOString(), config: null, days: {}, activity: [], sections: [], learned: [], learnlog: [], pins: [] };
+    function all(name) { return f.getDocs(colRef(name)).then(function (sn) { return sn.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }); }); }
+    var today = ymd(new Date()), dates = [], k;
+    for (k = 0; k < 400; k++) dates.push(shift(today, -k));
+    f.getDoc(cfgDoc()).then(function (sn) { out.config = sn.exists() ? sn.data() : null; })
+      .then(function () { return all('activity'); }).then(function (r) { out.activity = r; })
+      .then(function () { return all('sections'); }).then(function (r) { out.sections = r; })
+      .then(function () { return all('learned'); }).then(function (r) { out.learned = r; })
+      .then(function () { return all('learnlog'); }).then(function (r) { out.learnlog = r; })
+      .then(function () { return all('pins'); }).then(function (r) { out.pins = r.map(function (x) { return { id: x.id, name: x.name, setAt: x.setAt }; }); })
+      .then(function () {
+        var i = 0, n = 0;
+        function next() {
+          if (i >= dates.length) return;
+          var chunk = dates.slice(i, i + 20); i += 20;
+          S.exporting = 'Reading days ' + Math.min(i, dates.length) + ' of ' + dates.length + '...'; draw();
+          return Promise.all(chunk.map(function (d) { return f.getDocs(itemsCol(d)).then(function (sn) { if (sn.docs.length) { out.days[d] = sn.docs.map(function (x) { var y = x.data(); y.id = x.id; return y; }); n += sn.docs.length; } }); })).then(next);
+        }
+        return next().then(function () { return n; });
+      })
+      .then(function (n) {
+        var blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' }), a = document.createElement('a');
+        a.href = URL.createObjectURL(blob); a.download = 'leichhardt-prep-backup-' + today + '.json';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+        S.exporting = ''; toast('Backup saved: ' + n + ' lines from ' + Object.keys(out.days).length + ' days.');
+      }).catch(function () { S.exporting = ''; toast('Could not read everything. Check the connection.'); });
+  }
   function hideLearned(id, hidden) {
     fb.fs.setDoc(docRef('learned', id), { hidden: hidden }, { merge: true }).catch(function () { toast('Could not save.'); });
   }
@@ -529,7 +561,7 @@
       S.saveMsg = (c === 'auth/popup-closed-by-user') ? '' : 'Sign-in did not work (' + (c || 'unknown') + '). Try again.'; draw();
     });
   }
-  function signOut() { if (fb) fb.au.signOut(fb.auth); S.draft = null; S.level = ''; S.admins = null; S.adminsFor = ''; S.stats = null; if (unsubAct) { unsubAct(); unsubAct = null; } S.activity = []; }
+  function signOut() { if (fb) fb.au.signOut(fb.auth); S.draft = null; S.level = ''; S.adminsFor = ''; S.stats = null; if (unsubAct) { unsubAct(); unsubAct = null; } S.activity = []; }
 
   /* ---------- recognising recipes in hand-written lines ---------- */
   var STOP = { and: 1, the: 1, for: 1, with: 1, of: 1, a: 1, in: 1, to: 1, on: 1, fresh: 1, more: 1 };
@@ -582,24 +614,14 @@
   }
   function recipeById(id) { return D.recipes.filter(function (r) { return r.id === id; })[0] || null; }
 
-  /* ---------- who is an admin: the owner sees everything, a sous chef only adds and removes staff ---------- */
+  /* ---------- who is the owner: only the owner's Google account may read config/admins, so a successful read proves it ---------- */
   function adminsRef() { return docRef('config', 'admins'); }
-  function setLevel() {
-    var em = String((S.user && S.user.email) || '').toLowerCase(), a = S.admins || {};
-    if (String(a.owner || '').toLowerCase() === em) S.level = 'owner';
-    else S.level = 'none';
-    draw();
-  }
   function loadAdmins() {
     if (!S.user || !fb || S.configState !== 'ok') return;
     var em = S.user.email || '';
     if (S.adminsFor === em) return;
     S.adminsFor = em; S.level = '';
-    fb.fs.getDoc(adminsRef()).then(function (s) {
-      if (s.exists()) { S.admins = s.data(); setLevel(); return; }
-      // first sign-in ever: only the real owner is allowed to create this record
-      return fb.fs.setDoc(adminsRef(), { owner: em, created: Date.now() }).then(function () { S.admins = { owner: em }; setLevel(); });
-    }).catch(function () { S.level = 'none'; draw(); });
+    fb.fs.getDoc(adminsRef()).then(function () { S.level = 'owner'; draw(); }, function () { S.level = 'none'; draw(); });
   }
   /* ---------- the weekly ticking badges (shown to everyone) ---------- */
   function loadWeek() {
@@ -1020,6 +1042,7 @@
       '<section class="set-block"><span class="label">People</span><span class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Reset PIN lets that person choose a new one. Removing someone from the list keeps their name on old lines.</span>' +
       '<ul class="a-list">' + (rows || '<li class="hint">No names yet.</li>') + '</ul><div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' +
       '<section class="set-block"><span class="label">Badges</span><label class="a-check"><input type="checkbox" data-a="badges"' + (d.showBadges !== false ? ' checked' : '') + '> Show the weekly top tickers to everyone on the prep book</label></section>' + saveBlock +
+      '<section class="set-block"><span class="label">Backup</span><span class="hint">Saves everything the prep book holds (people, lines from the last 400 days, learned items, tallies) as one file on this device. People\'s PIN fingerprints are left out. Do this now and then.</span><div class="btn-row"><button type="button" class="btn" data-p="export"' + (S.exporting ? ' disabled' : '') + '>' + (S.exporting ? esc(S.exporting) : 'Download a backup') + '</button></div></section>' +
       '<section class="set-block"><span class="label">Kitchen PIN</span><span class="hint">The kitchen PIN is part of the security rules in the Firebase console. To change it, change it there and on every phone. People\'s own PINs only say who is writing. They are not a lock.</span></section></div>';
   }
   function staffHTML() {
@@ -1065,7 +1088,7 @@
     var a = el.getAttribute('data-p'), id = el.getAttribute('data-id'), i = +el.getAttribute('data-i'), dt = el.getAttribute('data-d');
     if (el.tagName === 'SUMMARY') { S.recipeOpen = !S.recipeOpen; return; }
     if (a === 'pin-go') { var v = S.pinInput.trim(); if (!/^\d{4,6}$/.test(v)) { S.pinError = 'The PIN is 4 to 6 digits.'; draw(); return; } S.pin = v; S.pinError = ''; S.pinInput = ''; lsSet('lk.prep.pin', v); connect(); return; }
-    if (a === 'pin-forget') { S.pin = ''; lsSet('lk.prep.pin', ''); S.config = null; S.configState = 'idle'; if (unsubCfg) unsubCfg(); if (unsubItems) unsubItems(); if (unsubPrev) unsubPrev(); if (unsubSec) unsubSec(); if (unsubLrn) unsubLrn(); unsubCfg = unsubItems = unsubPrev = unsubSec = unsubLrn = null; cfgKey = itemsKey = ''; draw(); return; }
+    if (a === 'pin-forget') { S.pin = ''; lsSet('lk.prep.pin', ''); S.config = null; S.configState = 'idle'; if (unsubCfg) unsubCfg(); if (unsubItems) unsubItems(); if (unsubSec) unsubSec(); if (unsubLrn) unsubLrn(); unsubCfg = unsubItems = unsubSec = unsubLrn = null; cfgKey = itemsKey = ''; draw(); return; }
     if (a === 'retry') { cfgKey = ''; connect(); return; }
     if (a === 'who') { pickName(id); return; }
     if (a === 'who-change') { leave(); return; }
@@ -1078,6 +1101,7 @@
     if (a === 'removed') { S.showRemoved = !S.showRemoved; draw(); return; }
     if (a === 'urgent') { toggleUrgent(id); return; }
     if (a === 'toast-act') { var ta = S.toastAct; S.toast = ''; S.toastAct = null; if (ta && ta.fn) ta.fn(); draw(); return; }
+    if (a === 'export') { exportAll(); return; }
     if (a === 'sugg') { pickSugg(i); return; }
     if (a === 'quick') { quickAdd(i); return; }
     if (a === 'learn-hide') { hideLearned(id, el.getAttribute('data-hide') === '1'); return; }
