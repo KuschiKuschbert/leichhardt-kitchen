@@ -503,3 +503,8 @@ img, svg { display: block; }
 @media (max-width: 479px) { .brand h1 { font-size: 1.7rem; } .icon-btn { padding: 0 0.55rem; font-size: 0.875rem; } .top-right { gap: 0.3rem; } }
 @media (max-width: 479px) { .icon-btn[href="#/settings"] span { display: none; } .icon-btn[href="#/settings"] { padding: 0 0.7rem; } }
 @media (max-width: 359px) { .brand h1 { font-size: 1.35rem; } .eyebrow { font-size: 0.6rem; } .icon-btn { padding: 0 0.45rem; font-size: 0.8125rem; } }
+.a-flag { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 999px; background: var(--hit); border: 1.5px solid var(--accent); color: var(--accent-ink); font-weight: 700; font-size: 0.8125rem; white-space: nowrap; }
+.o-who-i { color: var(--muted); font-size: 0.8125rem; }
+.a-table.a-plain { min-width: 34rem; }
+.a-table.a-plain th[scope="col"], .a-table.a-plain td { text-align: left; }
+.a-table.a-plain tbody th { position: static; background: inherit; }

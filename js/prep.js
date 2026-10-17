@@ -1108,6 +1108,96 @@
       '<section class="set-block"><span class="label">Sections people have written</span><span class="hint">Sections appear by themselves when someone types a new one. Hide one to stop it showing as a suggestion.</span>' +
       '<div class="a-scroll"><table class="a-table"><thead><tr><th scope="col">Section</th><th scope="col">Lines</th><th scope="col">Last written by</th><th scope="col">Last used</th><th scope="col"></th></tr></thead><tbody>' + (secRows || '<tr><td colspan="5">No sections yet.</td></tr>') + '</tbody></table></div></section>';
   }
+  /* ---------- team: who writes where, who writes rarely, order tracking (owner) ---------- */
+  function loadOrdStats(force) {
+    if (!fb || S.configState !== 'ok') return;
+    if (S.ordStats && (S.ordStats.loading || !force)) return;
+    S.ordStats = { loading: true, lines: [] };
+    var today = ymd(new Date()), dates = [], i;
+    for (i = 0; i < 30; i++) dates.push(shift(today, -i));
+    Promise.all(dates.map(function (d) { return fb.fs.getDocs(ordCol(d)).then(function (s) { return s.docs.map(function (x) { var v = x.data(); v.date = d; return v; }); }, function () { return []; }); })).then(function (l) {
+      S.ordStats = { loading: false, lines: [].concat.apply([], l) }; draw();
+    });
+  }
+  function teamData(n) {
+    var today = ymd(new Date()), dates = [], i, names = {}, per = {}, secTotal = {}, activeDays = {};
+    for (i = n - 1; i >= 0; i--) dates.push(shift(today, -i));
+    (S.config.people || []).forEach(function (p) { names[p.id] = p.name; });
+    function rec(x) {
+      var id = x.addedById || ('n:' + (x.addedBy || 'Unknown'));
+      if (!names[id] && x.addedBy) names[id] = x.addedBy;
+      return per[id] = per[id] || { id: id, w: 0, days: {}, secDay: {}, secs: {}, t: 0, tdays: {}, last: '' };
+    }
+    dates.forEach(function (d) {
+      (S.stats.days[d] || []).forEach(function (x) {
+        if (x.deleted) return;
+        if (!x.rolled) {
+          var r = rec(x); r.w++; r.days[d] = 1; activeDays[d] = 1; if (!r.last || d > r.last) r.last = d;
+          if (x.station) { r.secs[x.station] = (r.secs[x.station] || 0) + 1; secTotal[x.station] = (secTotal[x.station] || 0) + 1; (r.secDay[d] = r.secDay[d] || {})[x.station] = ((r.secDay[d] || {})[x.station] || 0) + 1; }
+        }
+        if (x.done && x.doneById) { var tr = per[x.doneById] = per[x.doneById] || { id: x.doneById, w: 0, days: {}, secDay: {}, secs: {}, t: 0, tdays: {}, last: '' }; tr.t++; tr.tdays[d] = 1; }
+      });
+    });
+    return { dates: dates, names: names, per: per, secTotal: secTotal, nActive: Object.keys(activeDays).length };
+  }
+  function habit(r, td) {
+    var secs = Object.keys(r.secs).sort(function (a, b) { return r.secs[b] - r.secs[a]; }), tot = 0;
+    secs.forEach(function (k) { tot += r.secs[k]; });
+    if (!tot) return { top: '', share: 0, streak: 0, tot: 0, also: [], suggest: '', flag: false };
+    var top = secs[0], share = r.secs[top] / tot, streak = 0, i;
+    // consecutive written days (newest first) whose busiest section is the same as the top one
+    var wd = Object.keys(r.secDay).sort().reverse();
+    for (i = 0; i < wd.length; i++) {
+      var m = r.secDay[wd[i]], best = Object.keys(m).sort(function (a, b) { return m[b] - m[a]; })[0];
+      if (best === top) streak++; else break;
+    }
+    var tried = {}; secs.forEach(function (k) { tried[k] = 1; });
+    var alt = Object.keys(td.secTotal).filter(function (k) { return k !== top && td.secTotal[k] >= 5; }).sort(function (a, b) { return (r.secs[a] || 0) - (r.secs[b] || 0) || td.secTotal[b] - td.secTotal[a]; })[0] || '';
+    var flag = tot >= 8 && ((share >= 0.7 && Object.keys(r.days).length >= 5) || streak >= 5);
+    return { top: top, share: share, streak: streak, tot: tot, also: secs.slice(1, 3), suggest: flag ? alt : '', flag: flag };
+  }
+  function teamHTML() {
+    var st = S.stats;
+    if (!st || st.loading) return '<section class="set-block"><span class="label">Team</span><p class="hint">Loading the last 30 days...</p></section>';
+    loadOrdStats(false);
+    var n = S.statsRange, td = teamData(n), people = (S.config.people || []).filter(function (p) { return p.active !== false; });
+    var rows = people.map(function (p) { var r = td.per[p.id] || { id: p.id, w: 0, days: {}, secDay: {}, secs: {}, t: 0, tdays: {}, last: '' }; return { p: p, r: r, h: habit(r, td), wd: Object.keys(r.days).length, tdN: Object.keys(r.tdays).length }; });
+    var chips = '<div class="chips">' + [7, 14, 30].map(function (k) { return '<button type="button" class="chip" data-p="range" data-v="' + k + '" aria-pressed="' + (n === k) + '">' + k + ' days</button>'; }).join('') + '<button type="button" class="chip" data-p="stats-refresh">Refresh</button></div>';
+    var hab = rows.filter(function (x) { return x.h.tot; }).sort(function (a, b) { return (b.h.flag ? 1 : 0) - (a.h.flag ? 1 : 0) || b.h.streak - a.h.streak; }).map(function (x) {
+      return '<tr><th scope="row">' + esc(x.p.name) + '</th><td>' + x.h.tot + '</td><td>' + esc(x.h.top) + ' <span class="o-who-i">' + Math.round(x.h.share * 100) + '%</span></td><td>' + esc(x.h.also.join(', ') || 'none') + '</td><td>' + x.h.streak + (x.h.streak === 1 ? ' day' : ' days') + '</td><td>' +
+        (x.h.flag ? '<span class="a-flag">Consider rotating' + (x.h.suggest ? ' to ' + esc(x.h.suggest) : '') + '</span>' : '<span class="o-who-i">Fine for now</span>') + '</td></tr>';
+    }).join('');
+    var act = rows.slice().sort(function (a, b) { return a.wd - b.wd || a.r.w - b.r.w; }).map(function (x) {
+      var share = td.nActive ? x.wd / td.nActive : 0, quiet = td.nActive >= 3 && share < 0.3;
+      return '<tr><th scope="row">' + esc(x.p.name) + '</th><td>' + x.r.w + '</td><td>' + x.wd + ' of ' + td.nActive + '</td><td>' + x.r.t + ' (' + x.tdN + ' days)</td><td>' + (x.r.last ? esc(dayShort(x.r.last)) : 'none in this time') + '</td><td>' + (quiet ? '<span class="a-flag">Writes rarely</span>' : '<span class="o-who-i">OK</span>') + '</td></tr>';
+    }).join('');
+    return '<section class="set-block"><span class="label">Team</span><span class="hint">Worked out from who wrote each line and which section it went under. It shows where people write, not where they actually worked, so use it as a prompt for a chat, not a verdict.</span>' + chips +
+      '<h3 class="a-ch-h">Section habits</h3><span class="hint">Flagged when someone has written 8 or more lines, and most of them (70% or more, over 5 or more days) or the last 5 or more days they wrote were in one section. The suggestion is the section they have written in least.</span>' +
+      (hab ? '<div class="a-tablewrap"><table class="a-table a-plain"><thead><tr><th scope="col">Person</th><th scope="col">Lines</th><th scope="col">Main section</th><th scope="col">Also</th><th scope="col">In a row</th><th scope="col">Rotation</th></tr></thead><tbody>' + hab + '</tbody></table></div>' : '<p class="hint">No lines with a section in this time.</p>') +
+      '<h3 class="a-ch-h">Who writes, and who does not</h3><span class="hint">Days written is out of the ' + td.nActive + ' days in this time that had any lines written. Fewest first. Ticks are shown so you can tell someone who works but does not write.</span>' +
+      (act ? '<div class="a-tablewrap"><table class="a-table a-plain"><thead><tr><th scope="col">Person</th><th scope="col">Lines</th><th scope="col">Days written</th><th scope="col">Ticks</th><th scope="col">Last wrote</th><th scope="col">Note</th></tr></thead><tbody>' + act + '</tbody></table></div>' : '<p class="hint">No people on the list.</p>') + '</section>' + orderStatsHTML(td, n);
+  }
+  function orderStatsHTML(td, n) {
+    var os = S.ordStats;
+    if (!os || os.loading) return '<section class="set-block"><span class="label">Order list</span><p class="hint">Loading...</p></section>';
+    var from = shift(ymd(new Date()), -(n - 1)), lines = os.lines.filter(function (x) { return !x.deleted && x.date >= from; });
+    var byDay = {}, byPerson = {}, items = {}, ordered = 0;
+    lines.forEach(function (x) {
+      var d = byDay[x.date] = byDay[x.date] || { n: 0, who: {} }; d.n++; d.who[x.addedBy || 'Unknown'] = 1;
+      var p = byPerson[x.addedBy || 'Unknown'] = byPerson[x.addedBy || 'Unknown'] || { n: 0, days: {}, last: '' }; p.n++; p.days[x.date] = 1; if (!p.last || x.date > p.last) p.last = x.date;
+      var k = okey(x.text); if (k) { var it = items[k] = items[k] || { text: x.text, n: 0, days: {} }; it.n++; it.days[x.date] = 1; }
+      if (x.ordered) ordered++;
+    });
+    var dayRows = Object.keys(byDay).sort().reverse().map(function (d) { return '<tr><th scope="row">' + esc(dayShort(d)) + '</th><td>' + byDay[d].n + '</td><td>' + esc(Object.keys(byDay[d].who).join(', ')) + '</td></tr>'; }).join('');
+    var perRows = Object.keys(byPerson).sort(function (a, b) { return byPerson[b].n - byPerson[a].n; }).map(function (k) { var p = byPerson[k]; return '<tr><th scope="row">' + esc(k) + '</th><td>' + p.n + '</td><td>' + Object.keys(p.days).length + '</td><td>' + esc(dayShort(p.last)) + '</td></tr>'; }).join('');
+    var itemRows = Object.keys(items).sort(function (a, b) { return items[b].n - items[a].n; }).slice(0, 10).map(function (k) { var it = items[k]; return '<tr><th scope="row">' + esc(it.text) + '</th><td>' + it.n + '</td><td>' + Object.keys(it.days).length + '</td></tr>'; }).join('');
+    return '<section class="set-block"><span class="label">Order list</span><span class="hint">Who put what on the order list and on which days, over the same time range. No scores, just a record.</span>' +
+      '<div class="a-tiles"><div class="a-tile"><strong>' + lines.length + '</strong><span>lines written</span></div><div class="a-tile"><strong>' + ordered + '</strong><span>ticked as ordered</span></div><div class="a-tile"><strong>' + (lines.length - ordered) + '</strong><span>not yet ordered</span></div></div>' +
+      (lines.length ? '<h3 class="a-ch-h">By day</h3><div class="a-tablewrap"><table class="a-table a-plain"><thead><tr><th scope="col">Day</th><th scope="col">Lines</th><th scope="col">Written by</th></tr></thead><tbody>' + dayRows + '</tbody></table></div>' +
+        '<h3 class="a-ch-h">By person</h3><div class="a-tablewrap"><table class="a-table a-plain"><thead><tr><th scope="col">Person</th><th scope="col">Lines</th><th scope="col">Days</th><th scope="col">Last</th></tr></thead><tbody>' + perRows + '</tbody></table></div>' +
+        '<h3 class="a-ch-h">Ordered most often</h3><div class="a-tablewrap"><table class="a-table a-plain"><thead><tr><th scope="col">Item</th><th scope="col">Lines</th><th scope="col">Days</th></tr></thead><tbody>' + itemRows + '</tbody></table></div>' : '<p class="hint">Nothing has been written on the order list in this time.</p>') + '</section>';
+  }
+
   function adminHTML() {
     if (S.authState !== 'ready' && !S.user) {
       return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2><p class="hint">Loading...</p></section>';
@@ -1135,10 +1225,10 @@
         '<button type="button" class="p-x" data-p="a-remove-person" data-i="' + i + '">Delete</button></td></tr>';
     }).join('');
     var at = S.atab || 'insights';
-    var tabsBar = '<nav class="a-tabs" aria-label="Admin sections">' + [['insights', 'Insights'], ['learning', 'Learning'], ['people', 'People'], ['tools', 'Tools']].map(function (t) {
+    var tabsBar = '<nav class="a-tabs" aria-label="Admin sections">' + [['insights', 'Insights'], ['team', 'Team'], ['learning', 'Learning'], ['people', 'People'], ['tools', 'Tools']].map(function (t) {
       return '<button type="button" class="a-tab" data-p="a-tab" data-t="' + t[0] + '" aria-pressed="' + (at === t[0]) + '">' + t[1] + '</button>';
     }).join('') + '</nav>';
-    var pane = at === 'insights' ? (insightsHTML() + statsHTML()) : at === 'learning' ? learnedHTML() : at === 'people' ? (
+    var pane = at === 'insights' ? (insightsHTML() + statsHTML()) : at === 'team' ? teamHTML() : at === 'learning' ? learnedHTML() : at === 'people' ? (
       '<section class="set-block"><span class="label">People</span><span class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Reset PIN lets that person choose a new one. Removing someone from the list keeps their name on old lines.</span>' +
       (rows ? '<p class="a-swipe">Swipe the table sideways to see every column.</p><div class="a-tablewrap"><table class="a-table"><thead><tr><th scope="col">Name</th><th scope="col">Role</th><th scope="col" class="a-c">Write</th><th scope="col" class="a-c">Tick</th><th scope="col" class="a-c">Remove</th><th scope="col" class="a-c">On list</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead><tbody>' + rows + '</tbody></table></div>' : '<p class="hint">No names yet.</p>') + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' +
       '<section class="set-block"><span class="label">Badges</span><label class="a-check"><input type="checkbox" data-a="badges"' + (d.showBadges !== false ? ' checked' : '') + '> Show the weekly top tickers to everyone on the prep book</label></section>' + saveBlock
@@ -1252,7 +1342,7 @@
     Promise.all(jobs).then(function () { toast('Marked as ordered.'); ordReload(); }, function () { toast('Could not save. Check the connection.'); });
   }
   function removeOrderLine(date, id) {
-    if (!can('del')) return;
+    if (!canBrowse() || !can('del')) return;
     supd(ordRef(date, id), { deleted: true, deletedBy: (me() || {}).name || '' }).then(ordReload, function () { toast('Could not save. Check the connection.'); });
   }
   function ordSuggest() {
@@ -1279,7 +1369,7 @@
       '<button type="button" class="nb-box" data-p="otick" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-pressed="' + !!x.ordered + '" aria-label="' + esc((x.ordered ? 'Not ordered: ' : 'Ordered: ') + x.text) + '"' + (canTick ? '' : ' disabled') + '>' + (x.ordered ? TICK : BOX) + '</button>' +
       '<span class="nb-t"' + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + recipeChips(x) + '</span>' +
       '<span class="nb-by">' + by + '</span>' +
-      (can('del') && !x.deleted && !x.ordered ? '<button type="button" class="p-x" data-p="odel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') + '</li>';
+      (canBrowse() && can('del') && !x.deleted && !x.ordered ? '<button type="button" class="p-x" data-p="odel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') + '</li>';
   }
   function ordGroups() {
     var map = {}, order = [];
