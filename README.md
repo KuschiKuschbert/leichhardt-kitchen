@@ -90,7 +90,7 @@ There's no build step and nothing to install. To try it on a computer, open `ind
 
 ## Installing it as an app
 
-- The logo is a rope "KB" (Kitchen Book) on the dark top-bar colour: `icon.svg` (favicon) and `icons/` (app icons; the maskable one is drawn smaller so Android's circle crop keeps the letters). Phones that installed the app before the change may need it removed and added again to show the new icon (iPhone always does).
+- The logo is a rope "KB" (Kitchen Book) in the page colours: off-white and orange strands twisted together on the dark top-bar colour. `icon.svg` is a simpler striped version for the browser tab (it has to read at 16 px) and `icons/` (app icons; the maskable one is drawn smaller so Android's circle crop keeps the letters). Phones that installed the app before the change may need it removed and added again to show the new icon (iPhone always does).
 - The book is an installable web app: `manifest.webmanifest` (name, colours, icons in `icons/`, shortcuts to Prep list, Orders, Wastage and Recipes on a long press of the icon) and `sw.js` (service worker).
 - Settings has an **Install the app** section: an Install button in Chrome, Edge and Samsung Internet; on iPhone and iPad it explains Share, then Add to Home Screen; on a Mac in Safari, File, Add to Dock.
 - The service worker is network first for the book's own files, so the newest cards load whenever there is a connection, and keeps the last copy so the recipe book still opens with no signal. Google Fonts are kept once loaded. Firebase (prep list, orders, wastage) is not touched; it keeps its own offline copy. To force everyone onto a fresh cache, change `CACHE` in `sw.js`.
