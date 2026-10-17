@@ -10,7 +10,7 @@
     kitchens/<PIN>/days/<YYYY-MM-DD>/items/<id> one prep item per document (removed items are only flagged, never erased)
     kitchens/<PIN>/staffpins/<personId>        { hash }   each person's own PIN (hashed). Nobody can read it; the rules compare it on every write
     kitchens/<PIN>/pinset/<personId>           { at }   only says that a PIN has been chosen
-    kitchens/<PIN>/proofs/<personId>           { tok }   write only: sent with each write so the rules can check the writer's PIN
+    kitchens/<PIN>/proofs/<personId>           { tok, at } write only: sent with each write so the rules can check the writer's PIN (at = server time, so an old proof cannot be reused)
     kitchens/<PIN>/activity/<personId>         { name, added, ticked, visits, lastSeen }   tallies shown in the admin panel
     kitchens/<PIN>/sections/<slug>             { name, uses, lastUsed }   sections people have written, offered as suggestions
 
@@ -61,6 +61,7 @@
     section: '', text: '', qty: '', recipeSearch: '', recipeOpen: false, tab: '',
     authed: false, tok: '', pinStep: '', pinData: null, pf1: '', pf2: '', pinMsg: '',
     sections: [], activity: [], resetId: '', hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false, exporting: '', moving: false, moveMsg: '', newPin: '', atab: lsGet('lk.prep.atab') || 'insights', ordDate: ymd(new Date()), ordLines: [], ordState: 'idle', ordView: 'day', otext: '', oqty: '', ordAll: [], ordAllAt: 0, ordBusy: false, osugg: [],
+    wDate: ymd(new Date()), wLines: [], wState: 'idle', wReview: null, wrA: null, wrC: null, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wRecent: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, misses: null, heat: 'w', hist: {},
     adminsFor: '', level: '', stats: null, statsRange: 14, week: null, weekAt: 0, weekBusy: false,
     user: null, authState: 'idle', draft: null, saveMsg: '', busy: false, toast: '', toastAct: null
   };
@@ -160,7 +161,7 @@
      The security rules compare that proof with the stored PIN, so only people who know a personal PIN can write. */
   function W(ops) {
     var b = fb.fs.writeBatch(fb.db), pf = S.who && S.tok;
-    if (pf) b.set(docRef('proofs', S.who), { tok: S.tok });
+    if (pf) b.set(docRef('proofs', S.who), { tok: S.tok, at: fb.fs.serverTimestamp() });
     ops.forEach(function (o) {
       var data = pf ? Object.assign({ by: S.who }, o[2]) : o[2];
       if (o[0] === 'upd') b.update(o[1], data); else if (o[3]) b.set(o[1], data, { merge: true }); else b.set(o[1], data);
@@ -284,7 +285,7 @@
     if (!sec) { var lx = learnedFor(t); if (lx && bestSection(lx)) sec = bestSection(lx); }
     var made = newItem(Object.assign({ text: t.slice(0, 160), qty: S.qty.trim().slice(0, 40), station: sec, recipe: rm ? rm.id : '' }, fixed ? { orig: typedAs.slice(0, 160) } : {}));
     made.catch(function () { toast('Could not save. Check the connection.'); });
-    noteSection(sec); bump({ added: 1, lastAdded: Date.now() }); learn(t, sec, t === S.pickedText ? 'pick' : 'type');
+    noteSection(sec); bump({ added: 1, lastAdded: Date.now() }); learn(t, sec, t === S.pickedText ? 'pick' : 'type', S.qty);
     if (pr.changes.length) {
       var ch = pr.changes, mid = made.id, dte = S.date;
       toast('Corrected ' + ch.map(function (c) { return c[0] + ' to ' + c[1]; }).join(', '), { label: 'Undo', fn: function () {
@@ -300,7 +301,7 @@
     if (!r || !can('add')) return;
     var sec = cleanSection(S.section);
     newItem({ text: (r.short || r.name), recipe: r.id, qty: S.qty.trim().slice(0, 40), station: sec }).catch(function () { toast('Could not save. Check the connection.'); });
-    noteSection(sec); bump({ added: 1, lastAdded: Date.now() }); learn(r.short || r.name, sec, 'pick');
+    noteSection(sec); bump({ added: 1, lastAdded: Date.now() }); learn(r.short || r.name, sec, 'pick', S.qty);
     S.qty = ''; S.recipeSearch = ''; S.recipeOpen = false; toast('Added ' + (r.short || r.name));
   }
   function canUntick(x) {
@@ -318,7 +319,7 @@
   function removeItem(date, id, restore) {
     var p = me();
     if (!can('del')) return;
-    supd(itemRef(date, id), { deleted: !restore, deletedBy: restore ? '' : p.name }).catch(function () { toast('Could not save. Check the connection.'); });
+    supd(itemRef(date, id), { deleted: !restore, deletedBy: restore ? '' : p.name, deletedAt: restore ? 0 : Date.now() }).catch(function () { toast('Could not save. Check the connection.'); });
   }
   /* Anything not ticked on the last written day rolls onto today by itself. */
   function maybeRoll() {
@@ -355,7 +356,8 @@
   function toggleUrgent(id) {
     var it = S.items.filter(function (x) { return x.id === id; })[0];
     if (!it || !can('add')) return;
-    supd(itemRef(S.date, id), { urgent: !it.urgent }).catch(function () { toast('Could not save. Check the connection.'); });
+    var p = me(), on = !it.urgent;
+    supd(itemRef(S.date, id), { urgent: on, urgentBy: on && p ? p.name : '', urgentById: on && p ? p.id : '', urgentAt: on ? Date.now() : 0 }).catch(function () { toast('Could not save. Check the connection.'); });
   }
 
   /* ---------- proofreading: every new line is tidied and spell-checked before it is saved ---------- */
@@ -410,13 +412,15 @@
   /* ---------- the prep list learns: every line added is counted per item, weekday and section ---------- */
   var REGULAR = 4;   // typed or picked this many times and it becomes a regular
   function lkey(t) { return slug(String(t).toLowerCase()).slice(0, 80); }
-  function learn(text, sec, how) {
+  function learn(text, sec, how, qty) {
     if (!fb || !text) return;
     var p = who(), f = fb.fs, dow = String(parseYmd(S.date).getDay()), sk = lkey(sec || 'general');
     var secs = {}; secs[sk] = { name: sec || '', n: f.increment(1) };
     var data = { text: String(text).trim().slice(0, 160), uses: f.increment(1), lastUsed: Date.now(), lastBy: p ? p.name : '', dow: {}, secs: secs };
     data.dow[dow] = f.increment(1);
     data[how === 'pick' ? 'picked' : 'typed'] = f.increment(1);
+    qty = String(qty || '').trim().slice(0, 40);
+    if (qty) { data.qtys = {}; data.qtys[lkey(qty).slice(0, 40)] = { q: qty, n: f.increment(1) }; }
     sset(docRef('learned', lkey(text)), data, true).catch(function () {});
     markLive(S.date);
   }
@@ -425,6 +429,52 @@
     var best = '', n = 0;
     Object.keys(x.secs || {}).forEach(function (k) { var v = x.secs[k]; if (v && v.name && v.n > n) { n = v.n; best = v.name; } });
     return best;
+  }
+  /* Amounts written for a line before: the learned record (kept for good) and the last 7 days, most used first. */
+  function qtyList(text) {
+    var k = lkey(String(text || '').trim()), out = {}, lx = S.learned.filter(function (x) { return x.id === k; })[0], h = (S.hist || {})[k];
+    if (!k) return [];
+    Object.keys((lx && lx.qtys) || {}).forEach(function (q) { var v = lx.qtys[q]; if (v && v.q) out[q] = { q: v.q, n: v.n || 0 }; });
+    Object.keys((h && h.q) || {}).forEach(function (q) { var v = h.q[q]; if (!out[q] || out[q].n < v.n) out[q] = { q: v.q, n: v.n }; });
+    return Object.keys(out).map(function (q) { return out[q]; }).sort(function (a, b) { return b.n - a.n; });
+  }
+  function usualQty(text) {
+    var l = qtyList(text), tot = 0;
+    l.forEach(function (x) { tot += x.n; });
+    return l.length && l[0].n >= 2 && l[0].n / tot >= 0.5 ? l[0].q : '';
+  }
+  function qtyChipsHTML() {
+    if (S.qty.trim() || S.text.trim().length < 3) return '';
+    var l = qtyList(S.text).slice(0, 3);
+    if (!l.length) return '';
+    return '<span class="nb-ql">Usual amount</span>' + l.map(function (x) { return '<button type="button" class="chip sq nb-qc" data-p="qset" data-v="' + esc(x.q) + '">' + esc(x.q) + '</button>'; }).join('');
+  }
+  /* Start here: up to three open lines to do first, across all sections. */
+  function startHere(live) {
+    var open = live.filter(function (x) { return !x.done; }), picked = [], seen = {};
+    function take(list, why) { list.forEach(function (x) { if (picked.length < 3 && !seen[x.id]) { seen[x.id] = 1; picked.push({ x: x, why: why(x) }); } }); }
+    take(open.filter(function (x) { return x.urgent; }).sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }), function () { return 'Urgent'; });
+    take(open.filter(function (x) { return x.rolled; }).sort(function (a, b) { return (b.rolled || 0) - (a.rolled || 0); }), function (x) { return 'Rolled over' + (x.rolled > 1 ? ' x' + x.rolled : ''); });
+    var slow = open.map(function (x) { return { x: x, m: ((S.hist || {})[lkey(x.text)] || {}).med || 0 }; }).filter(function (o) { return o.m >= 2 * 3600000; }).sort(function (a, b) { return b.m - a.m; }).map(function (o) { return o.x; });
+    take(slow, function (x) { return 'Usually takes ' + dur(((S.hist || {})[lkey(x.text)] || {}).med); });
+    take(open.slice().sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }), function (x) { return x.addedAt ? 'Waiting since ' + clock(x.addedAt) : 'Waiting longest'; });
+    return picked;
+  }
+  function startHTML(live) {
+    if (!can('tick') || S.date !== ymd(new Date())) return '';
+    if (live.filter(function (x) { return !x.done; }).length < 4) return '';
+    var l = startHere(live);
+    return '<div class="nb-start"><span class="nb-sl">Start here</span><ol>' + l.map(function (o) {
+      return '<li><button type="button" class="nb-sb" data-p="goto" data-id="' + esc(o.x.id) + '"><span class="nb-st">' + esc(o.x.text) + (o.x.qty ? ' <span class="nb-q">' + esc(o.x.qty) + '</span>' : '') + '</span><span class="nb-sw">' + esc(o.why) + (o.x.station ? ' &middot; ' + esc(o.x.station) : '') + '</span></button></li>';
+    }).join('') + '</ol></div>';
+  }
+  function gotoRow(id) {
+    var it = S.items.filter(function (x) { return x.id === id; })[0];
+    if (it && S.tab && (it.station || '') !== S.tab) { S.tab = ''; draw(); }
+    var row = S.root && S.root.querySelector('#nbr-' + CSS.escape(id));
+    if (!row) return;
+    row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    row.classList.remove('is-flash'); void row.offsetWidth; row.classList.add('is-flash');
   }
   function onList() { var h = {}; S.items.forEach(function (x) { if (!x.deleted) h[lkey(x.text)] = 1; }); return h; }
   function isRegular(x) { return !x.hidden && (x.uses || 0) >= REGULAR; }
@@ -458,15 +508,15 @@
   function quickAdd(i) {
     var x = (S.quick || [])[i];
     if (!x || !can('add')) return;
-    var rm = matchRecipe(x.text);
-    newItem({ text: x.text.slice(0, 160), station: x.section, recipe: rm ? rm.id : '' }).catch(function () { toast('Could not save. Check the connection.'); });
-    noteSection(x.section); bump({ added: 1, lastAdded: Date.now() }); learn(x.text, x.section, 'pick');
+    var rm = matchRecipe(x.text), uq = usualQty(x.text);
+    newItem({ text: x.text.slice(0, 160), station: x.section, recipe: rm ? rm.id : '', qty: uq }).catch(function () { toast('Could not save. Check the connection.'); });
+    noteSection(x.section); bump({ added: 1, lastAdded: Date.now() }); learn(x.text, x.section, 'pick', uq);
   }
   /* Owner backup: everything the book holds, as one JSON file (PIN fingerprints left out). */
   function exportAll() {
     if (!fb || S.exporting) return;
     S.exporting = 'Reading the data...'; draw();
-    var f = fb.fs, out = { exportedAt: new Date().toISOString(), config: null, days: {}, activity: [], sections: [], learned: [], learnlog: [], pins: [] };
+    var f = fb.fs, out = { exportedAt: new Date().toISOString(), config: null, days: {}, orders: {}, waste: {}, wasteReviews: {}, activity: [], sections: [], learned: [], learnlog: [], misses: [], pins: [] };
     function all(name) { return f.getDocs(colRef(name)).then(function (sn) { return sn.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }); }); }
     var today = ymd(new Date()), dates = [], k;
     for (k = 0; k < 400; k++) dates.push(shift(today, -k));
@@ -475,6 +525,7 @@
       .then(function () { return all('sections'); }).then(function (r) { out.sections = r; })
       .then(function () { return all('learned'); }).then(function (r) { out.learned = r; })
       .then(function () { return all('learnlog'); }).then(function (r) { out.learnlog = r; })
+      .then(function () { return all('misses'); }).then(function (r) { out.misses = r; })
       .then(function () { return all('pinset'); }).then(function (r) { out.pins = r.map(function (x) { return { id: x.id, name: x.name, setAt: x.setAt }; }); })
       .then(function () {
         var i = 0, n = 0;
@@ -482,7 +533,13 @@
           if (i >= dates.length) return;
           var chunk = dates.slice(i, i + 20); i += 20;
           S.exporting = 'Reading days ' + Math.min(i, dates.length) + ' of ' + dates.length + '...'; draw();
-          return Promise.all(chunk.map(function (d) { return f.getDocs(itemsCol(d)).then(function (sn) { if (sn.docs.length) { out.days[d] = sn.docs.map(function (x) { var y = x.data(); y.id = x.id; return y; }); n += sn.docs.length; } }); })).then(next);
+          function grab(sn) { return sn.docs.map(function (x) { var y = x.data(); y.id = x.id; return y; }); }
+          return Promise.all(chunk.map(function (d) { return Promise.all([
+            f.getDocs(itemsCol(d)).then(function (sn) { if (sn.docs.length) { out.days[d] = grab(sn); n += sn.docs.length; } }),
+            f.getDocs(ordCol(d)).then(function (sn) { if (sn.docs.length) out.orders[d] = grab(sn); }),
+            f.getDocs(wCol(d)).then(function (sn) { if (sn.docs.length) out.waste[d] = grab(sn); }),
+            f.getDoc(wDay(d)).then(function (sn) { if (sn.exists()) out.wasteReviews[d] = sn.data(); })
+          ]); })).then(next);
         }
         return next().then(function () { return n; });
       })
@@ -510,7 +567,7 @@
     for (k = 0; k < 400; k++) dates.push(shift(today, -k));
     f.getDoc(f.doc(fb.db, 'kitchens', old, 'config', 'main')).then(function (sn) { if (sn.exists()) { n++; return f.setDoc(f.doc(fb.db, 'kitchens', np, 'config', 'main'), sn.data()); } })
       .then(function () { return copyCol('staffpins'); }).then(function () { return copyCol('pinset'); }).then(function () { return copyCol('activity'); }).then(function () { return copyCol('sections'); })
-      .then(function () { return copyCol('learned'); }).then(function () { return copyCol('learnlog'); })
+      .then(function () { return copyCol('learned'); }).then(function () { return copyCol('learnlog'); }).then(function () { return copyCol('misses'); })
       .then(function () {
         var i = 0;
         function next() {
@@ -518,7 +575,9 @@
           var chunk = dates.slice(i, i + 20); i += 20;
           S.moveMsg = 'Copying days ' + Math.min(i, dates.length) + ' of ' + dates.length + '...'; draw();
           return Promise.all(chunk.map(function (d) {
-            return f.getDocs(f.collection(fb.db, 'kitchens', old, 'days', d, 'items')).then(function (sn) { n += sn.docs.length; return Promise.all(sn.docs.map(function (x) { return f.setDoc(f.doc(fb.db, 'kitchens', np, 'days', d, 'items', x.id), x.data()); })); });
+            function sub(top, col) { return f.getDocs(f.collection(fb.db, 'kitchens', old, top, d, col)).then(function (sn) { n += sn.docs.length; return Promise.all(sn.docs.map(function (x) { return f.setDoc(f.doc(fb.db, 'kitchens', np, top, d, col, x.id), x.data()); })); }); }
+            return Promise.all([sub('days', 'items'), sub('orders', 'lines'), sub('waste', 'lines'),
+              f.getDoc(f.doc(fb.db, 'kitchens', old, 'waste', d)).then(function (sn) { if (sn.exists()) { n++; return f.setDoc(f.doc(fb.db, 'kitchens', np, 'waste', d), sn.data()); } })]);
           })).then(next);
         }
         return next();
@@ -731,7 +790,15 @@
     start.setHours(0, 0, 0, 0); start = start.getTime() - 6 * 86400000;
     for (i = 0; i < 7; i++) dates.push(shift(today, -i));
     Promise.all(dates.map(function (d) { return fb.fs.getDocs(itemsCol(d)).then(function (s) { return s.docs.map(function (x) { return x.data(); }); }, function () { return []; }); })).then(function (lists) {
-      var counts = {};
+      var counts = {}, hist = {};
+      lists.forEach(function (l) { l.forEach(function (x) {
+        if (x.deleted || !x.text) return;
+        var h = hist[lkey(x.text)] = hist[lkey(x.text)] || { q: {}, tt: [] };
+        if (!x.rolled && x.qty) { var qk = lkey(x.qty).slice(0, 40); h.q[qk] = h.q[qk] || { q: x.qty, n: 0 }; h.q[qk].n++; }
+        if (!x.rolled && x.done && x.doneAt && x.addedAt && x.doneAt > x.addedAt) h.tt.push(Math.min(x.doneAt - x.addedAt, 16 * 3600000));
+      }); });
+      Object.keys(hist).forEach(function (k) { var t = hist[k].tt.sort(function (a, b) { return a - b; }); hist[k].med = t.length >= 2 ? t[Math.floor(t.length / 2)] : 0; });
+      S.hist = hist;
       lists.forEach(function (l) { l.forEach(function (x) { if (x.done && !x.deleted && x.doneBy && (x.doneAt || 0) >= start) counts[x.doneBy] = (counts[x.doneBy] || 0) + 1; }); });
       var arr = Object.keys(counts).map(function (n) { return { name: n, n: counts[n] }; }).sort(function (a, b) { return b.n - a.n || a.name.localeCompare(b.name); });
       var rank = 0, prev = -1;
@@ -930,6 +997,55 @@
       '<h3 class="a-ch-h">Manage learned items</h3><span class="hint">Hide a typo or a one-off so it stops showing as a suggestion. Typed and picked counts show as typed/picked.</span>' +
       '<div class="a-scroll"><table class="a-table"><thead><tr><th scope="col">Item</th><th scope="col">Uses</th><th scope="col">Typed/picked</th><th scope="col">Usual section</th><th scope="col">Last used</th><th scope="col"></th></tr></thead><tbody>' + manage + '</tbody></table></div>' + '</section>';
   }
+  var DOW = [1, 2, 3, 4, 5, 6, 0], DOWN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  var HB = { w: ['#FFFFFF', '#E3EEFA', '#C4DAF4', '#97BEEC', '#6CA2E4'], r: SK };
+  function heatHTML(n) {
+    var today = ymd(new Date()), occ = {}, cell = {}, tot = {}, secT = {}, mode = S.heat === 'r' ? 'r' : 'w', i;
+    for (i = 0; i < n; i++) { var d = shift(today, -i), dw = parseYmd(d).getDay(); occ[dw] = (occ[dw] || 0) + 1;
+      (S.stats.days[d] || []).forEach(function (x) {
+        if (x.deleted) return;
+        if (mode === 'w' ? x.rolled : !x.rolled) return;
+        var k = x.station || 'General', c = cell[k] = cell[k] || {};
+        c[dw] = (c[dw] || 0) + 1; tot[dw] = (tot[dw] || 0) + 1; secT[k] = (secT[k] || 0) + 1;
+      });
+    }
+    var secs = Object.keys(secT).sort(function (a, b) { return secT[b] - secT[a]; }).slice(0, 8), max = 0;
+    function avg(v, dw) { return occ[dw] ? v / occ[dw] : 0; }
+    secs.forEach(function (k) { DOW.forEach(function (dw) { max = Math.max(max, avg((cell[k] || {})[dw] || 0, dw)); }); });
+    function td(v, dw, label) {
+      var a = avg(v || 0, dw), lv = !a ? 0 : Math.min(4, 1 + Math.floor(a / (max || 1) * 3.999));
+      return '<td class="sk-c" style="background:' + HB[mode][lv] + '" title="' + esc(label + ', ' + DOWN[DOW.indexOf(dw)] + ': ' + (Math.round(a * 10) / 10) + ' a day') + '">' + (a ? Math.round(a * 10) / 10 : '<span class="sk-0">0</span>') + '</td>';
+    }
+    var chips = '<div class="chips"><button type="button" class="chip" data-p="heat" data-v="w" aria-pressed="' + (mode === 'w') + '">Lines written</button><button type="button" class="chip" data-p="heat" data-v="r" aria-pressed="' + (mode === 'r') + '">Rolled over</button></div>';
+    if (!secs.length) return chips + '<p class="hint">Nothing to show in this time.</p>';
+    var busiest = DOW.slice().sort(function (a, b) { return avg(tot[b] || 0, b) - avg(tot[a] || 0, a); })[0];
+    return chips + '<div class="a-tablewrap"><table class="a-table a-plain sk-t"><thead><tr><th scope="col">Section</th>' + DOWN.map(function (x) { return '<th scope="col">' + x + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      secs.map(function (k) { return '<tr><th scope="row">' + esc(k) + '</th>' + DOW.map(function (dw) { return td((cell[k] || {})[dw], dw, k); }).join('') + '</tr>'; }).join('') +
+      '<tr class="sk-tot"><th scope="row">All sections</th>' + DOW.map(function (dw) { var a = avg(tot[dw] || 0, dw); return '<td>' + (Math.round(a * 10) / 10) + '</td>'; }).join('') + '</tr></tbody></table></div>' +
+      '<p class="hint">Average ' + (mode === 'w' ? 'lines written' : 'lines rolled over') + ' per day, by weekday. ' + (tot[busiest] ? 'Heaviest day: ' + DOWN[DOW.indexOf(busiest)] + '.' : '') + (n < 14 ? ' Pick 14 or 30 days for steadier averages.' : '') + '</p>';
+  }
+  function stickyHTML(n) {
+    var today = ymd(new Date()), m = {}, i;
+    for (i = 0; i < n; i++) (S.stats.days[shift(today, -i)] || []).forEach(function (x) {
+      var k = okey(x.text); if (!k) return;
+      var e = m[k] = m[k] || { text: String(x.text).trim(), w: 0, tt: [], r: 0, del: 0 };
+      if (x.rolled) { if (!x.deleted) e.r++; return; }
+      if (x.deleted) { e.del++; return; }
+      e.w++;
+      if (x.done && x.doneAt && x.addedAt && x.doneAt > x.addedAt) e.tt.push(x.doneAt - x.addedAt);
+    });
+    var rows = Object.keys(m).map(function (k) {
+      var e = m[k], t = e.tt.sort(function (a, b) { return a - b; }), med = t.length >= 2 ? t[Math.floor(t.length / 2)] : 0, tips = [], score = 0;
+      if (e.r >= 3) { tips.push('Rolls over a lot: start it earlier or split it into smaller jobs.'); score += e.r * 2; }
+      if (med >= 4 * 3600000) { tips.push('Slow to finish: start it earlier in the day.'); score += 3; }
+      if (e.del >= 2 && e.del / (e.w + e.del) >= 0.3) { tips.push('Often removed: check it is still needed.'); score += e.del; }
+      return { e: e, med: med, tips: tips, score: score };
+    }).filter(function (x) { return x.tips.length; }).sort(function (a, b) { return b.score - a.score; }).slice(0, 10);
+    if (!rows.length) return '<p class="hint">Nothing slow or sticky in this time.</p>';
+    return '<div class="a-tablewrap"><table class="a-table a-plain"><thead><tr><th scope="col">Line</th><th scope="col">Written</th><th scope="col">Typical time to tick</th><th scope="col">Rolled over</th><th scope="col">Removed</th><th scope="col">Suggestion</th></tr></thead><tbody>' +
+      rows.map(function (x) { return '<tr><th scope="row">' + esc(x.e.text) + '</th><td>' + x.e.w + '</td><td>' + (x.med ? dur(x.med) : 'n/a') + '</td><td>' + x.e.r + '</td><td>' + x.e.del + '</td><td>' + x.tips.map(function (t) { return '<span class="a-flag">' + esc(t) + '</span>'; }).join(' ') + '</td></tr>'; }).join('') +
+      '</tbody></table></div>';
+  }
   function insightsHTML() {
     var st = S.stats;
     var head = '<section class="set-block"><span class="label">Insights</span><span class="hint">Worked out from the lines themselves, the last 30 days at most.</span>';
@@ -959,7 +1075,10 @@
       '<h3 class="a-ch-h">Time of day</h3>' + legend([['Written', CW], ['Ticked off', CT]]) + hoursChart(agg) +
       '<h3 class="a-ch-h">Rolled over most often</h3><span class="hint">Lines that were not finished and moved onto the next day. Longest runs show when you hover a bar.</span>' + rollChart(agg) +
       fixesHTML(agg) +
-      '<h3 class="a-ch-h">Sections</h3>' + sectionsChart(agg) + '</section>';
+      '<h3 class="a-ch-h">Sections</h3>' + sectionsChart(agg) +
+      '<h3 class="a-ch-h">Load by weekday and section</h3><span class="hint">Which sections are busy on which days. Useful for the roster.</span>' + heatHTML(n) +
+      '<h3 class="a-ch-h">Slow and sticky lines</h3><span class="hint">Lines that roll over 3 or more times, usually take 4 hours or more to tick, or keep being removed. Lines that rolled over count against the line they came from.</span>' + stickyHTML(n) +
+      missesHTML() + '</section>';
   }
 
   /* ---------- drawing ---------- */
@@ -1000,7 +1119,7 @@
     var star = can('add') && !x.deleted && !readonly ? '<button type="button" class="nb-star" data-p="urgent" data-id="' + esc(x.id) + '" aria-pressed="' + !!x.urgent + '" aria-label="' + esc((x.urgent ? 'Not urgent: ' : 'Mark urgent: ') + x.text) + '">!</button>' : '';
     var rid = x.recipe || ((matchRecipe(x.text) || {}).id || ''), rr = rid ? recipeById(rid) : null;
     var link = rid ? '<a class="nb-go" href="#/r/' + encodeURIComponent(rid) + '" title="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '">recipe</a>' : '';
-    return '<li class="nb-row' + (x.done ? ' is-done' : '') + (x.rolled && !x.done ? ' is-rolled' : '') + (x.urgent && !x.done ? ' is-urgent' : '') + (x.deleted ? ' is-removed' : '') + '">' +
+    return '<li id="nbr-' + esc(x.id) + '" class="nb-row' + (x.done ? ' is-done' : '') + (x.rolled && !x.done ? ' is-rolled' : '') + (x.urgent && !x.done ? ' is-urgent' : '') + (x.deleted ? ' is-removed' : '') + '">' +
       '<button type="button" class="nb-box" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-pressed="' + !!x.done + '" aria-label="' + esc((x.done ? 'Untick ' : 'Tick ') + x.text) + '"' + (tickOk ? '' : ' disabled') + '>' + (x.done ? TICK : BOX) + '</button>' +
       '<span class="nb-t"' + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + '</span>' + marks +
       '<span class="nb-by">' + by + '</span>' + star + link +
@@ -1032,7 +1151,8 @@
     var rolled = live.filter(function (x) { return x.rolled && !x.done; }), urg = live.filter(function (x) { return x.urgent && !x.done; });
     var secs = {}, order = [];
     live.forEach(function (x) { var k = x.station || 'General'; if (!secs[k]) { secs[k] = { n: 0, d: 0 }; order.push(k); } secs[k].n++; if (x.done) secs[k].d++; });
-    var prio = rolled.length || urg.length ? '<div class="nb-prio"><strong>Do these first</strong><span>' + (urg.length ? urg.length + ' urgent' : '') + (urg.length && rolled.length ? ', ' : '') + (rolled.length ? rolled.length + ' rolled over from earlier' : '') + '. They sit at the top of each section.</span></div>' : '';
+    var startShown = can('tick') && S.date === ymd(new Date()) && live.filter(function (x) { return !x.done; }).length >= 4;
+    var prio = !startShown && (rolled.length || urg.length) ? '<div class="nb-prio"><strong>Do these first</strong><span>' + (urg.length ? urg.length + ' urgent' : '') + (urg.length && rolled.length ? ', ' : '') + (rolled.length ? rolled.length + ' rolled over from earlier' : '') + '. They sit at the top of each section.</span></div>' : '';
     var meters = order.length ? '<h3 class="nb-sh">Progress by section</h3>' + order.map(function (k) {
       var m = secs[k], pc = m.n ? Math.round(m.d / m.n * 100) : 0;
       return '<div class="nb-meter"><span class="nb-ml">' + esc(k) + '</span><span class="nb-mb" role="img" aria-label="' + esc(k + ': ' + m.d + ' of ' + m.n + ' done') + '"><i style="width:' + pc + '%"></i></span><span class="nb-mn">' + m.d + '/' + m.n + '</span></div>';
@@ -1042,7 +1162,7 @@
     var shownK = {}; today2.forEach(function (x) { shownK[x.id] = 1; });
     var regs = S.learned.filter(function (x) { return isRegular(x) && !have[x.id] && !shownK[x.id] && x.text; }).sort(function (a, b) { return (b.uses || 0) - (a.uses || 0); }).slice(0, 14);
     S.quick = [];
-    function chip(x, note) { S.quick.push({ text: x.text, section: bestSection(x) }); return '<button type="button" class="chip sq" data-p="quick" data-i="' + (S.quick.length - 1) + '">' + esc(x.text) + (note ? ' <span class="nb-us">' + esc(note) + '</span>' : '') + '</button>'; }
+    function chip(x, note) { var uq = usualQty(x.text); S.quick.push({ text: x.text, section: bestSection(x) }); return '<button type="button" class="chip sq" data-p="quick" data-i="' + (S.quick.length - 1) + '">' + esc(x.text) + (uq ? ' <span class="nb-uq">' + esc(uq) + '</span>' : '') + (note ? ' <span class="nb-us">' + esc(note) + '</span>' : '') + '</button>'; }
     var usual = can('add') && today2.length ? '<h3 class="nb-sh">Usual for a ' + esc(dname) + '</h3><p class="nb-sd">Written on at least two ' + esc(dname) + 's. Tap to add.</p><div class="nb-usual">' + today2.map(function (x) { return chip(x, ((x.dow || {})[dn] || 0) + 'x'); }).join('') + '</div>' : '';
     usual += can('add') && regs.length ? '<h3 class="nb-sh">Regulars</h3><p class="nb-sd">Written or picked ' + REGULAR + ' or more times. Tap to add.</p><div class="nb-usual">' + regs.map(function (x) { return chip(x, x.uses + 'x'); }).join('') + '</div>' : '';
     var tools = '<h3 class="nb-sh">Tools</h3><div class="nb-tools">' +
@@ -1059,7 +1179,7 @@
     var p = me(), today = ymd(new Date());
     if (S.date !== today && !canBrowse() && !S.user) { S.date = today; S.tab = ''; watchItems(); }
     if (S.authed && fb && !S.weekBusy && Date.now() - S.weekAt > 300000) loadWeek();
-    maybeRoll(); maybeLearn();
+    maybeRoll(); maybeLearn(); loadWNote();
     var live = S.items.filter(function (x) { return !x.deleted; }), doneN = live.filter(function (x) { return x.done; }).length;
     var removed = S.items.filter(function (x) { return x.deleted; });
     var secs = {}, tabs = [];
@@ -1072,12 +1192,12 @@
       '<div class="nb-add-row"><label class="visually-hidden" for="p-section">Section</label><input id="p-section" class="nb-in nb-in-sec" data-k="p-section" list="p-sections" autocomplete="off" placeholder="Section" maxlength="40" value="' + esc(S.section) + '">' +
       '<label class="visually-hidden" for="p-text">Prep item</label><input id="p-text" class="nb-in nb-in-text" data-k="p-text" autocomplete="off" placeholder="Write a new line..." maxlength="160" value="' + esc(S.text) + '">' +
       '<label class="visually-hidden" for="p-qty">Amount</label><input id="p-qty" class="nb-in nb-in-qty" data-k="p-qty" autocomplete="off" placeholder="Amount" maxlength="40" value="' + esc(S.qty) + '">' +
-      '<button type="submit" class="nb-addbtn">Add</button></div><div class="nb-sugg" id="p-sugg">' + suggestHTML() + '</div><p class="nb-hint" id="p-hint" aria-live="polite">' + esc(hintText(S.text)) + '</p>' + recipePicker() + '</form>' : '<p class="hint">You can read the book but not write in it. Ask the admin if that is wrong.</p>';
+      '<button type="submit" class="nb-addbtn">Add</button></div><div class="nb-sugg" id="p-sugg">' + suggestHTML() + '</div><div class="nb-sugg nb-qs" id="p-qsugg">' + qtyChipsHTML() + '</div><p class="nb-hint" id="p-hint" aria-live="polite">' + esc(hintText(S.text)) + '</p>' + recipePicker() + '</form>' : '<p class="hint">You can read the book but not write in it. Ask the admin if that is wrong.</p>';
     var todayEmpty = !live.length && S.itemsState === 'ok' ? '<p class="nb-empty">Nothing written for ' + esc(dayName(S.date).toLowerCase()) + ' yet.</p>' : '';
     var left = '<section class="nb-page nb-left"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + esc(dayName(S.date)) + '</h2><span class="nb-date">' + esc(longDate(S.date)) + '</span></div>' +
       '<div class="nb-prog" role="status">' + doneN + ' of ' + live.length + ' done</div></header>' +
       (S.itemsState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' : '') +
-      '<div class="nb-body">' + pageBody(S.items, S.date) + todayEmpty + '</div>' +
+      '<div class="nb-body">' + wNoteHTML() + startHTML(live) + pageBody(S.items, S.date) + todayEmpty + '</div>' +
       '<div class="nb-foot">' + add + (removed.length && can('del') ? '<button type="button" class="nb-link" data-p="removed">' + (S.showRemoved ? 'Hide' : 'Show') + ' removed (' + removed.length + ')</button>' : '') + '</div></section>';
     var right = '<section class="nb-page nb-right"><header class="nb-ph"><div><h2 class="nb-title nb-dim">Handy</h2><span class="nb-date">Priorities, progress and tools</span></div></header>' +
       '<div class="nb-body nb-side">' + sideHTML(today) + '</div></section>';
@@ -1095,7 +1215,7 @@
     if (m < 60) return m + ' min ago';
     var h = Math.round(m / 60);
     if (h < 24) return h + ' h ago';
-    return Math.round(h / 24) + ' days ago';
+    var dd = Math.round(h / 24); return dd + (dd === 1 ? ' day ago' : ' days ago');
   }
   function statsHTML() {
     var act = S.activity.slice();
@@ -1126,14 +1246,15 @@
       S.ordStats = { loading: false, lines: [].concat.apply([], l) }; draw();
     });
   }
+  function blankRec(id) { return { id: id, w: 0, days: {}, secDay: {}, secs: {}, t: 0, tdays: {}, tsecs: {}, tsecDay: {}, last: '' }; }
   function teamData(n) {
-    var today = ymd(new Date()), dates = [], i, names = {}, per = {}, secTotal = {}, activeDays = {};
+    var today = ymd(new Date()), dates = [], i, names = {}, per = {}, secTotal = {}, tickSec = {}, activeDays = {};
     for (i = n - 1; i >= 0; i--) dates.push(shift(today, -i));
     (S.config.people || []).forEach(function (p) { names[p.id] = p.name; });
     function rec(x) {
       var id = x.addedById || ('n:' + (x.addedBy || 'Unknown'));
       if (!names[id] && x.addedBy) names[id] = x.addedBy;
-      return per[id] = per[id] || { id: id, w: 0, days: {}, secDay: {}, secs: {}, t: 0, tdays: {}, last: '' };
+      return per[id] = per[id] || blankRec(id);
     }
     dates.forEach(function (d) {
       (S.stats.days[d] || []).forEach(function (x) {
@@ -1142,47 +1263,98 @@
           var r = rec(x); r.w++; r.days[d] = 1; activeDays[d] = 1; if (!r.last || d > r.last) r.last = d;
           if (x.station) { r.secs[x.station] = (r.secs[x.station] || 0) + 1; secTotal[x.station] = (secTotal[x.station] || 0) + 1; (r.secDay[d] = r.secDay[d] || {})[x.station] = ((r.secDay[d] || {})[x.station] || 0) + 1; }
         }
-        if (x.done && x.doneById) { var tr = per[x.doneById] = per[x.doneById] || { id: x.doneById, w: 0, days: {}, secDay: {}, secs: {}, t: 0, tdays: {}, last: '' }; tr.t++; tr.tdays[d] = 1; }
+        if (x.done && x.doneById) {
+          var tr = per[x.doneById] = per[x.doneById] || blankRec(x.doneById); tr.t++; tr.tdays[d] = 1;
+          if (x.station) { tr.tsecs[x.station] = (tr.tsecs[x.station] || 0) + 1; tickSec[x.station] = (tickSec[x.station] || 0) + 1; var td2 = tr.tsecDay[d] = tr.tsecDay[d] || {}; td2[x.station] = (td2[x.station] || 0) + 1; }
+        }
       });
     });
-    return { dates: dates, names: names, per: per, secTotal: secTotal, nActive: Object.keys(activeDays).length };
+    return { dates: dates, names: names, per: per, secTotal: secTotal, tickSec: tickSec, nActive: Object.keys(activeDays).length };
   }
   function habit(r, td) {
-    var secs = Object.keys(r.secs).sort(function (a, b) { return r.secs[b] - r.secs[a]; }), tot = 0;
-    secs.forEach(function (k) { tot += r.secs[k]; });
-    if (!tot) return { top: '', share: 0, streak: 0, tot: 0, also: [], suggest: '', flag: false };
-    var top = secs[0], share = r.secs[top] / tot, streak = 0, i;
-    // consecutive written days (newest first) whose busiest section is the same as the top one
-    var wd = Object.keys(r.secDay).sort().reverse();
+    // Ticks show where someone actually worked, so they come first. Writing is the fallback for people who rarely tick.
+    var tTot = 0; Object.keys(r.tsecs || {}).forEach(function (k) { tTot += r.tsecs[k]; });
+    var useT = tTot >= 8, by = useT ? r.tsecs : r.secs, byDay = useT ? r.tsecDay : r.secDay, totals = useT ? td.tickSec : td.secTotal;
+    var secs = Object.keys(by).sort(function (a, b) { return by[b] - by[a]; }), tot = 0;
+    secs.forEach(function (k) { tot += by[k]; });
+    if (!tot) return { top: '', share: 0, streak: 0, tot: 0, also: [], suggest: '', flag: false, basis: '' };
+    var top = secs[0], share = by[top] / tot, streak = 0, i;
+    // consecutive days (newest first) whose busiest section is the same as the top one
+    var wd = Object.keys(byDay).sort().reverse();
     for (i = 0; i < wd.length; i++) {
-      var m = r.secDay[wd[i]], best = Object.keys(m).sort(function (a, b) { return m[b] - m[a]; })[0];
+      var m = byDay[wd[i]], best = Object.keys(m).sort(function (a, b) { return m[b] - m[a]; })[0];
       if (best === top) streak++; else break;
     }
-    var tried = {}; secs.forEach(function (k) { tried[k] = 1; });
-    var alt = Object.keys(td.secTotal).filter(function (k) { return k !== top && td.secTotal[k] >= 5; }).sort(function (a, b) { return (r.secs[a] || 0) - (r.secs[b] || 0) || td.secTotal[b] - td.secTotal[a]; })[0] || '';
-    var flag = tot >= 8 && ((share >= 0.7 && Object.keys(r.days).length >= 5) || streak >= 5);
-    return { top: top, share: share, streak: streak, tot: tot, also: secs.slice(1, 3), suggest: flag ? alt : '', flag: flag };
+    var alt = Object.keys(totals).filter(function (k) { return k !== top && totals[k] >= 5; }).sort(function (a, b) { return (by[a] || 0) - (by[b] || 0) || totals[b] - totals[a]; })[0] || '';
+    var flag = tot >= 8 && ((share >= 0.7 && wd.length >= 5) || streak >= 5);
+    return { top: top, share: share, streak: streak, tot: tot, also: secs.slice(1, 3), suggest: flag ? alt : '', flag: flag, basis: useT ? 'ticks' : 'writing' };
+  }
+  /* Skills matrix: how many lines each person ticked in each section. Gaps are cross-training chances. */
+  var SK = ['#FFFFFF', '#FCE3D5', '#F8C3A4', '#F29A6A', '#EB6834'];
+  function skLevel(v) { return !v ? 0 : v <= 2 ? 1 : v <= 5 ? 2 : v <= 10 ? 3 : 4; }
+  function skillsHTML(rows, td) {
+    var secs = Object.keys(td.tickSec).sort(function (a, b) { return td.tickSec[b] - td.tickSec[a]; }).slice(0, 8);
+    var ppl = rows.filter(function (x) { return x.r.t || x.r.w; });
+    if (!secs.length || !ppl.length) return '<p class="hint">No ticked lines with a section in this time yet.</p>';
+    var head = '<tr><th scope="col">Person</th>' + secs.map(function (k) { return '<th scope="col">' + esc(k) + '</th>'; }).join('') + '<th scope="col">Sections</th></tr>';
+    var body = ppl.sort(function (a, b) { return b.r.t - a.r.t; }).map(function (x) {
+      var have = secs.filter(function (k) { return (x.r.tsecs || {})[k]; }).length;
+      return '<tr><th scope="row">' + esc(x.p.name) + '</th>' + secs.map(function (k) {
+        var v = (x.r.tsecs || {})[k] || 0;
+        return '<td class="sk-c" style="background:' + SK[skLevel(v)] + '" title="' + esc(x.p.name + ', ' + k + ': ' + v + (v === 1 ? ' line ticked' : ' lines ticked')) + '">' + (v || '<span class="sk-0">never</span>') + '</td>';
+      }).join('') + '<td>' + have + ' of ' + secs.length + '</td></tr>';
+    }).join('');
+    var key = '<div class="a-legend sk-key"><span>Lines ticked:</span>' + [['never', 0], ['1 to 2', 1], ['3 to 5', 2], ['6 to 10', 3], ['over 10', 4]].map(function (k) { return '<span><i style="background:' + SK[k[1]] + '"></i>' + k[0] + '</span>'; }).join('') + '</div>';
+    var gaps = secs.filter(function (k) { return td.tickSec[k] >= 5; }).map(function (k) {
+      var pros = ppl.filter(function (x) { return ((x.r.tsecs || {})[k] || 0) >= 3; }).sort(function (a, b) { return b.r.tsecs[k] - a.r.tsecs[k]; }).slice(0, 2);
+      var never = ppl.filter(function (x) { return x.r.t >= 5 && !(x.r.tsecs || {})[k]; });
+      if (!never.length || !pros.length) return '';
+      return '<li><strong>' + esc(k) + ':</strong> ' + esc(never.map(function (x) { return x.p.name; }).join(', ')) + (never.length === 1 ? ' has' : ' have') + ' not ticked a line here. Pair them with ' + esc(pros.map(function (x) { return x.p.name + ' (' + x.r.tsecs[k] + ')'; }).join(' or ')) + '.</li>';
+    }).filter(Boolean).join('');
+    return key + '<div class="a-tablewrap"><table class="a-table a-plain sk-t"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>' +
+      '<h3 class="a-ch-h">Cross-training chances</h3><span class="hint">Sections with at least 5 ticked lines, people with 5 or more ticks overall who have never ticked one there, and who has done that section most.</span>' +
+      (gaps ? '<ul class="a-list">' + gaps + '</ul>' : '<p class="hint">No gaps worth flagging in this time.</p>');
   }
   function teamHTML() {
     var st = S.stats;
     if (!st || st.loading) return '<section class="set-block"><span class="label">Team</span><p class="hint">Loading the last 30 days...</p></section>';
     loadOrdStats(false);
     var n = S.statsRange, td = teamData(n), people = (S.config.people || []).filter(function (p) { return p.active !== false; });
-    var rows = people.map(function (p) { var r = td.per[p.id] || { id: p.id, w: 0, days: {}, secDay: {}, secs: {}, t: 0, tdays: {}, last: '' }; return { p: p, r: r, h: habit(r, td), wd: Object.keys(r.days).length, tdN: Object.keys(r.tdays).length }; });
+    var rows = people.map(function (p) { var r = td.per[p.id] || blankRec(p.id); return { p: p, r: r, h: habit(r, td), wd: Object.keys(r.days).length, tdN: Object.keys(r.tdays).length }; });
     var chips = '<div class="chips">' + [7, 14, 30].map(function (k) { return '<button type="button" class="chip" data-p="range" data-v="' + k + '" aria-pressed="' + (n === k) + '">' + k + ' days</button>'; }).join('') + '<button type="button" class="chip" data-p="stats-refresh">Refresh</button></div>';
     var hab = rows.filter(function (x) { return x.h.tot; }).sort(function (a, b) { return (b.h.flag ? 1 : 0) - (a.h.flag ? 1 : 0) || b.h.streak - a.h.streak; }).map(function (x) {
-      return '<tr><th scope="row">' + esc(x.p.name) + '</th><td>' + x.h.tot + '</td><td>' + esc(x.h.top) + ' <span class="o-who-i">' + Math.round(x.h.share * 100) + '%</span></td><td>' + esc(x.h.also.join(', ') || 'none') + '</td><td>' + x.h.streak + (x.h.streak === 1 ? ' day' : ' days') + '</td><td>' +
+      return '<tr><th scope="row">' + esc(x.p.name) + '</th><td>' + x.h.tot + ' <span class="o-who-i">' + (x.h.basis === 'ticks' ? 'ticked' : 'written') + '</span></td><td>' + esc(x.h.top) + ' <span class="o-who-i">' + Math.round(x.h.share * 100) + '%</span></td><td>' + esc(x.h.also.join(', ') || 'none') + '</td><td>' + x.h.streak + (x.h.streak === 1 ? ' day' : ' days') + '</td><td>' +
         (x.h.flag ? '<span class="a-flag">Consider rotating' + (x.h.suggest ? ' to ' + esc(x.h.suggest) : '') + '</span>' : '<span class="o-who-i">Fine for now</span>') + '</td></tr>';
     }).join('');
     var act = rows.slice().sort(function (a, b) { return a.wd - b.wd || a.r.w - b.r.w; }).map(function (x) {
       var share = td.nActive ? x.wd / td.nActive : 0, quiet = td.nActive >= 3 && share < 0.3;
       return '<tr><th scope="row">' + esc(x.p.name) + '</th><td>' + x.r.w + '</td><td>' + x.wd + ' of ' + td.nActive + '</td><td>' + x.r.t + ' (' + x.tdN + ' days)</td><td>' + (x.r.last ? esc(dayShort(x.r.last)) : 'none in this time') + '</td><td>' + (quiet ? '<span class="a-flag">Writes rarely</span>' : '<span class="o-who-i">OK</span>') + '</td></tr>';
     }).join('');
-    return '<section class="set-block"><span class="label">Team</span><span class="hint">Worked out from who wrote each line and which section it went under. It shows where people write, not where they actually worked, so use it as a prompt for a chat, not a verdict.</span>' + chips +
-      '<h3 class="a-ch-h">Section habits</h3><span class="hint">Flagged when someone has written 8 or more lines, and most of them (70% or more, over 5 or more days) or the last 5 or more days they wrote were in one section. The suggestion is the section they have written in least.</span>' +
+    return '<section class="set-block"><span class="label">Team</span><span class="hint">Worked out from the section each line sits under, who ticked it and who wrote it. Ticks show where someone actually worked, so they count first. Use it as a prompt for a chat, not a verdict.</span>' + chips +
+      '<h3 class="a-ch-h">Skills matrix</h3><span class="hint">Lines each person ticked in each section (the 8 busiest sections).</span>' + skillsHTML(rows, td) +
+      '<h3 class="a-ch-h">Section habits</h3><span class="hint">Based on ticks for anyone with 8 or more ticked lines, otherwise on the lines they wrote. Flagged when 70% or more of them over 5 or more days, or the last 5 or more days, were in one section. The suggestion is the section they have done least.</span>' +
       (hab ? '<div class="a-tablewrap"><table class="a-table a-plain"><thead><tr><th scope="col">Person</th><th scope="col">Lines</th><th scope="col">Main section</th><th scope="col">Also</th><th scope="col">In a row</th><th scope="col">Rotation</th></tr></thead><tbody>' + hab + '</tbody></table></div>' : '<p class="hint">No lines with a section in this time.</p>') +
       '<h3 class="a-ch-h">Who writes, and who does not</h3><span class="hint">Days written is out of the ' + td.nActive + ' days in this time that had any lines written. Fewest first. Ticks are shown so you can tell someone who works but does not write.</span>' +
       (act ? '<div class="a-tablewrap"><table class="a-table a-plain"><thead><tr><th scope="col">Person</th><th scope="col">Lines</th><th scope="col">Days written</th><th scope="col">Ticks</th><th scope="col">Last wrote</th><th scope="col">Note</th></tr></thead><tbody>' + act + '</tbody></table></div>' : '<p class="hint">No people on the list.</p>') + '</section>' + orderStatsHTML(td, n);
+  }
+  /* Items that keep coming back onto the order list in the last 14 days: candidates for a standing order. */
+  function standingHTML(all) {
+    var from = shift(ymd(new Date()), -13), m = {};
+    all.filter(function (x) { return !x.deleted && x.date >= from; }).forEach(function (x) {
+      var k = okey(x.text); if (!k) return;
+      var e = m[k] = m[k] || { text: x.text, days: {}, dow: {}, q: {} };
+      if (!e.days[x.date]) { e.days[x.date] = 1; var dw = parseYmd(x.date).getDay(); e.dow[dw] = (e.dow[dw] || 0) + 1; }
+      if (x.qty) e.q[x.qty] = (e.q[x.qty] || 0) + 1;
+    });
+    var rows = Object.keys(m).map(function (k) { return m[k]; }).filter(function (e) { return Object.keys(e.days).length >= 3; })
+      .sort(function (a, b) { return Object.keys(b.days).length - Object.keys(a.days).length; }).slice(0, 12);
+    var head = '<h3 class="a-ch-h">Standing order candidates</h3><span class="hint">On the order list on 3 or more different days in the last 14 days. A standing order with the supplier saves writing them every time.</span>';
+    if (!rows.length) return head + '<p class="hint">Nothing comes back often enough yet.</p>';
+    return head + '<div class="a-tablewrap"><table class="a-table a-plain"><thead><tr><th scope="col">Item</th><th scope="col">Days on the list</th><th scope="col">Usual amount</th><th scope="col">Suggestion</th></tr></thead><tbody>' + rows.map(function (e) {
+      var nd = Object.keys(e.days).length, dows = DOW.filter(function (d) { return (e.dow[d] || 0) >= 2; }).map(function (d) { return DOWN[DOW.indexOf(d)]; });
+      var uq = Object.keys(e.q).sort(function (a, b) { return e.q[b] - e.q[a]; })[0] || '';
+      return '<tr><th scope="row">' + esc(e.text) + '</th><td>' + nd + ' of 14</td><td>' + esc(uq || 'not written') + '</td><td><span class="a-flag">' + esc(dows.length ? 'Standing order on ' + dows.join(' and ') : 'Standing order about every ' + Math.max(1, Math.round(14 / nd)) + ' days') + '</span></td></tr>';
+    }).join('') + '</tbody></table></div>';
   }
   function orderStatsHTML(td, n) {
     var os = S.ordStats;
@@ -1198,8 +1370,12 @@
     var dayRows = Object.keys(byDay).sort().reverse().map(function (d) { return '<tr><th scope="row">' + esc(dayShort(d)) + '</th><td>' + byDay[d].n + '</td><td>' + esc(Object.keys(byDay[d].who).join(', ')) + '</td></tr>'; }).join('');
     var perRows = Object.keys(byPerson).sort(function (a, b) { return byPerson[b].n - byPerson[a].n; }).map(function (k) { var p = byPerson[k]; return '<tr><th scope="row">' + esc(k) + '</th><td>' + p.n + '</td><td>' + Object.keys(p.days).length + '</td><td>' + esc(dayShort(p.last)) + '</td></tr>'; }).join('');
     var itemRows = Object.keys(items).sort(function (a, b) { return items[b].n - items[a].n; }).slice(0, 10).map(function (k) { var it = items[k]; return '<tr><th scope="row">' + esc(it.text) + '</th><td>' + it.n + '</td><td>' + Object.keys(it.days).length + '</td></tr>'; }).join('');
+    var lag = lines.filter(function (x) { return x.ordered && x.orderedAt && x.addedAt && x.orderedAt > x.addedAt; }).map(function (x) { return x.orderedAt - x.addedAt; }).sort(function (a, b) { return a - b; });
+    var old = lines.filter(function (x) { return !x.ordered && x.addedAt && Date.now() - x.addedAt > 3 * 86400000; }).length;
     return '<section class="set-block"><span class="label">Order list</span><span class="hint">Who put what on the order list and on which days, over the same time range. No scores, just a record.</span>' +
-      '<div class="a-tiles"><div class="a-tile"><strong>' + lines.length + '</strong><span>lines written</span></div><div class="a-tile"><strong>' + ordered + '</strong><span>ticked as ordered</span></div><div class="a-tile"><strong>' + (lines.length - ordered) + '</strong><span>not yet ordered</span></div></div>' +
+      '<div class="a-tiles"><div class="a-tile"><strong>' + lines.length + '</strong><span>lines written</span></div><div class="a-tile"><strong>' + ordered + '</strong><span>ticked as ordered</span></div><div class="a-tile"><strong>' + (lines.length - ordered) + '</strong><span>not yet ordered</span></div>' +
+      '<div class="a-tile"><strong>' + (lag.length ? dur(lag[Math.floor(lag.length / 2)]) : 'n/a') + '</strong><span>typical time from written to ordered</span></div><div class="a-tile"><strong>' + old + '</strong><span>waiting more than 3 days</span></div></div>' +
+      standingHTML(os.lines) +
       (lines.length ? '<h3 class="a-ch-h">By day</h3><div class="a-tablewrap"><table class="a-table a-plain"><thead><tr><th scope="col">Day</th><th scope="col">Lines</th><th scope="col">Written by</th></tr></thead><tbody>' + dayRows + '</tbody></table></div>' +
         '<h3 class="a-ch-h">By person</h3><div class="a-tablewrap"><table class="a-table a-plain"><thead><tr><th scope="col">Person</th><th scope="col">Lines</th><th scope="col">Days</th><th scope="col">Last</th></tr></thead><tbody>' + perRows + '</tbody></table></div>' +
         '<h3 class="a-ch-h">Ordered most often</h3><div class="a-tablewrap"><table class="a-table a-plain"><thead><tr><th scope="col">Item</th><th scope="col">Lines</th><th scope="col">Days</th></tr></thead><tbody>' + itemRows + '</tbody></table></div>' : '<p class="hint">Nothing has been written on the order list in this time.</p>') + '</section>';
@@ -1232,10 +1408,10 @@
         '<button type="button" class="p-x" data-p="a-remove-person" data-i="' + i + '">Delete</button></td></tr>';
     }).join('');
     var at = S.atab || 'insights';
-    var tabsBar = '<nav class="a-tabs" aria-label="Admin sections">' + [['insights', 'Insights'], ['team', 'Team'], ['learning', 'Learning'], ['people', 'People'], ['tools', 'Tools']].map(function (t) {
+    var tabsBar = '<nav class="a-tabs" aria-label="Admin sections">' + [['insights', 'Insights'], ['team', 'Team'], ['waste', 'Waste'], ['learning', 'Learning'], ['people', 'People'], ['tools', 'Tools']].map(function (t) {
       return '<button type="button" class="a-tab" data-p="a-tab" data-t="' + t[0] + '" aria-pressed="' + (at === t[0]) + '">' + t[1] + '</button>';
     }).join('') + '</nav>';
-    var pane = at === 'insights' ? (insightsHTML() + statsHTML()) : at === 'team' ? teamHTML() : at === 'learning' ? learnedHTML() : at === 'people' ? (
+    var pane = at === 'insights' ? (insightsHTML() + statsHTML()) : at === 'team' ? teamHTML() : at === 'waste' ? wasteStatsHTML() : at === 'learning' ? learnedHTML() : at === 'people' ? (
       '<section class="set-block"><span class="label">People</span><span class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Reset PIN lets that person choose a new one. Removing someone from the list keeps their name on old lines.</span>' +
       (rows ? '<p class="a-swipe">Swipe the table sideways to see every column.</p><div class="a-tablewrap"><table class="a-table"><thead><tr><th scope="col">Name</th><th scope="col">Role</th><th scope="col" class="a-c">Write</th><th scope="col" class="a-c">Tick</th><th scope="col" class="a-c">Remove</th><th scope="col" class="a-c">On list</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead><tbody>' + rows + '</tbody></table></div>' : '<p class="hint">No names yet.</p>') + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' +
       '<section class="set-block"><span class="label">Badges</span><label class="a-check"><input type="checkbox" data-a="badges"' + (d.showBadges !== false ? ' checked' : '') + '> Show the weekly top tickers to everyone on the prep book</label></section>' + saveBlock
@@ -1264,7 +1440,9 @@
     if (S.name === 'admin') return adminHTML();
     if (!who()) return whoHTML();
     if (!S.authed) return ownPinHTML();
+    flushMisses();
     if (S.name === 'orders') return ordersHTML();
+    if (S.name === 'waste') return wasteHTML();
     if (S.staffOpen && isSous()) return staffHTML();
     return listHTML();
   }
@@ -1350,7 +1528,7 @@
   }
   function removeOrderLine(date, id) {
     if (!canBrowse() || !can('del')) return;
-    supd(ordRef(date, id), { deleted: true, deletedBy: (me() || {}).name || '' }).then(ordReload, function () { toast('Could not save. Check the connection.'); });
+    supd(ordRef(date, id), { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: Date.now() }).then(ordReload, function () { toast('Could not save. Check the connection.'); });
   }
   function ordSuggest() {
     var q = okey(S.otext); if (q.length < 2) return [];
@@ -1419,6 +1597,242 @@
       (view === 'day' ? '<div class="nb-prog" role="status">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') + '</header><div class="nb-body">' + body + '</div><div class="nb-foot">' + (view === 'day' ? add : '') + '</div></section>';
   }
 
+
+  /* ---------- the wastage log ----------
+     The Daily Wastage Sheet, on the phone: section, item, amount and unit, reason, what to do to stop it happening again,
+     and who wrote it (time and name are added by themselves). The end-of-day review is saved per day and its
+     "change for the next shift" shows on the next prep list. Staff add; the head chef and sous chefs can remove. */
+  var UNITS = ['g', 'kg', 'L', 'portions', 'pieces'];
+  var REASONS = [['prep', 'Prep waste'], ['expired', 'Expired stock'], ['fault', 'Cooking fault'], ['returned', 'Returned'], ['excess', 'Excess production']];
+  function reasonName(k) { var r = REASONS.filter(function (x) { return x[0] === k; })[0]; return r ? r[1] : k; }
+  function wCol(date) { return fb.fs.collection.apply(null, [fb.db].concat(base(), ['waste', date, 'lines'])); }
+  function wRef(date, id) { return fb.fs.doc.apply(null, [fb.db].concat(base(), ['waste', date, 'lines', id])); }
+  function wDay(date) { return fb.fs.doc.apply(null, [fb.db].concat(base(), ['waste', date])); }
+  var unsubW = null, wKey = '';
+  function watchWaste() {
+    if (S.configState !== 'ok' || !fb) return;
+    var key = S.pin + '|' + S.wDate;
+    if (key === wKey && unsubW) return;
+    if (unsubW) unsubW();
+    wKey = key; S.wState = 'loading'; S.wReview = null; S.wrA = null; S.wrC = null;
+    unsubW = fb.fs.onSnapshot(wCol(S.wDate), function (snap) {
+      S.wLines = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; x.date = S.wDate; return x; });
+      S.wState = 'ok'; draw();
+    }, function () { S.wState = 'error'; draw(); });
+    var dd = S.wDate;
+    fb.fs.getDoc(wDay(dd)).then(function (sn) { if (S.wDate === dd) { S.wReview = sn.exists() ? sn.data() : {}; draw(); } }, function () { S.wReview = {}; });
+    loadWRecent(false);
+  }
+  function loadWRecent(force) {
+    if (!fb || S.wRecentBusy || (S.wRecent && !force)) return;
+    S.wRecentBusy = true;
+    var today = ymd(new Date()), dates = [], i;
+    for (i = 1; i <= 14; i++) dates.push(shift(today, -i));
+    Promise.all(dates.map(function (d) { return fb.fs.getDocs(wCol(d)).then(function (sn) { return sn.docs.map(function (x) { var v = x.data(); v.date = d; return v; }); }, function () { return []; }); })).then(function (l) {
+      S.wRecent = [].concat.apply([], l).filter(function (x) { return !x.deleted; }); S.wRecentBusy = false; draw();
+    });
+  }
+  function wTotals(lines) {
+    var t = { kg: 0, L: 0, portions: 0, pieces: 0 };
+    lines.forEach(function (x) { var a = +x.amount || 0; if (x.unit === 'g') t.kg += a / 1000; else if (x.unit === 'kg') t.kg += a; else if (x.unit === 'L') t.L += a; else if (t[x.unit] != null) t[x.unit] += a; });
+    return t;
+  }
+  function num(v) { return String(Math.round(v * 100) / 100); }
+  function totalsText(t) {
+    var out = [];
+    if (t.kg) out.push(num(t.kg) + ' kg'); if (t.L) out.push(num(t.L) + ' L'); if (t.portions) out.push(num(t.portions) + ' portions'); if (t.pieces) out.push(num(t.pieces) + ' pieces');
+    return out.join(', ');
+  }
+  function wSuggest() {
+    var q = okey(S.wf.text); if (q.length < 2) return [];
+    var seen = {}, out = [];
+    function add(t) { var k = okey(t); if (k && !seen[k] && k !== q && (k.indexOf(q) === 0 || k.indexOf(' ' + q) >= 0)) { seen[k] = 1; out.push(t); } }
+    (S.wRecent || []).forEach(function (x) { add(x.text); });
+    S.learned.forEach(function (x) { if (!x.hidden && x.text) add(x.text); });
+    D.recipes.forEach(function (r) { add(r.short || r.name); });
+    var idx = ingIndex(); Object.keys(idx).forEach(function (k) { add(idx[k].name); });
+    return out.slice(0, 6);
+  }
+  function wSuggHTML() {
+    var l = wSuggest(); S.wsugg = l;
+    return l.map(function (t, i) { return '<button type="button" class="chip sq nb-sg" data-p="wsugg" data-i="' + i + '">' + esc(t) + '</button>'; }).join('');
+  }
+  function wOften() {
+    var m = {};
+    (S.wRecent || []).forEach(function (x) {
+      var k = okey(x.text); if (!k) return;
+      var e = m[k] = m[k] || { text: x.text, n: 0, unit: {}, reason: {}, sec: {} };
+      e.n++; e.unit[x.unit] = (e.unit[x.unit] || 0) + 1; e.reason[x.reason] = (e.reason[x.reason] || 0) + 1; if (x.station) e.sec[x.station] = (e.sec[x.station] || 0) + 1;
+    });
+    function top(o) { return Object.keys(o).sort(function (a, b) { return o[b] - o[a]; })[0] || ''; }
+    return Object.keys(m).map(function (k) { var e = m[k]; return { text: e.text, n: e.n, unit: top(e.unit), reason: top(e.reason), sec: top(e.sec) }; })
+      .filter(function (e) { return e.n >= 2; }).sort(function (a, b) { return b.n - a.n; }).slice(0, 8);
+  }
+  function addWaste() {
+    var f = S.wf, p = me();
+    if (!can('add')) return;
+    var t = (proofread(f.text.trim()).text || '').slice(0, 80), amt = parseFloat(String(f.amt).replace(',', '.'));
+    if (!t) { toast('Write what was wasted.'); return; }
+    if (!(amt > 0) || amt >= 100000) { toast('Write the amount as a number.'); return; }
+    if (UNITS.indexOf(f.unit) < 0) { toast('Pick a unit.'); return; }
+    if (!REASONS.some(function (r) { return r[0] === f.reason; })) { toast('Pick a reason.'); return; }
+    var sec = cleanSection(f.sec), rm = matchRecipe(t), ref = fb.fs.doc(wCol(S.wDate));
+    sset(ref, { text: t, amount: amt, unit: f.unit, reason: f.reason, action: f.act.trim().slice(0, 120), station: sec, recipe: rm ? rm.id : '',
+      addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: Date.now(), deleted: false }).catch(function () { toast('Could not save. Check the connection.'); });
+    if (sec) noteSection(sec);
+    S.wf = { text: '', amt: '', unit: f.unit, reason: '', sec: sec, act: '' };
+    toast('Logged ' + t);
+  }
+  function removeWaste(date, id) {
+    if (!canBrowse() || !can('del')) return;
+    supd(wRef(date, id), { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: Date.now() }).catch(function () { toast('Could not save. Check the connection.'); });
+  }
+  function saveReview() {
+    if (!can('add')) return;
+    var p = me(), r = S.wReview || {};
+    var a = (S.wrA != null ? S.wrA : r.avoidable || '').trim().slice(0, 300), c = (S.wrC != null ? S.wrC : r.change || '').trim().slice(0, 300);
+    sset(wDay(S.wDate), { avoidable: a, change: c, reviewBy: p ? p.name : '', reviewAt: Date.now() }, true).then(function () {
+      S.wReview = { avoidable: a, change: c, reviewBy: p ? p.name : '', reviewAt: Date.now() }; S.wrA = S.wrC = null; toast('Review saved'); 
+    }, function () { toast('Could not save. Check the connection.'); });
+  }
+  function wRow(x) {
+    var del = canBrowse() && can('del') && !x.deleted;
+    return '<li class="nb-row w-row' + (x.deleted ? ' is-removed' : '') + '"><span class="w-time">' + (x.addedAt ? clock(x.addedAt) : '') + (x.station ? '<br><span class="w-sec">' + esc(x.station) + '</span>' : '') + '</span>' +
+      '<span class="nb-t"><strong>' + esc(x.text) + '</strong> <span class="w-amt">' + esc(num(+x.amount || 0) + ' ' + x.unit) + '</span> <span class="w-rs w-' + esc(x.reason) + '">' + esc(reasonName(x.reason)) + '</span>' +
+      (x.action ? '<span class="w-act">' + esc(x.action) + '</span>' : '') + '</span><span class="nb-by">' + esc(x.addedBy || '') + '</span>' +
+      (del ? '<button type="button" class="p-x" data-p="wdel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') + '</li>';
+  }
+  function wasteHTML() {
+    var p = me(), br = canBrowse(), today = ymd(new Date());
+    if (!br && S.wDate !== today) { S.wDate = today; watchWaste(); }
+    var f = S.wf, live = (S.wLines || []).filter(function (x) { return !x.deleted; }).sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); });
+    var shown = (S.wLines || []).filter(function (x) { return br || !x.deleted; }).sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); });
+    var nav = br ? '<div class="nb-nav o-nav"><button type="button" class="chip" data-p="wday" data-d="-1" aria-label="Back one day">&lsaquo;</button><button type="button" class="chip" data-p="wtoday" aria-pressed="' + (S.wDate === today) + '">Today</button><button type="button" class="chip" data-p="wday" data-d="1" aria-label="Forward one day">&rsaquo;</button></div>' : '';
+    var often = wOften();
+    var add = can('add') && S.wDate === today ?
+      '<form class="nb-add w-add" data-p-form="wadd">' + (often.length ? '<div class="w-often"><span class="nb-ql">Logged often</span>' + often.map(function (e, i) { return '<button type="button" class="chip sq" data-p="woften" data-i="' + i + '">' + esc(e.text) + '</button>'; }).join('') + '</div>' : '') +
+      '<datalist id="w-sections">' + suggestions().map(function (n) { return '<option value="' + esc(n) + '"></option>'; }).join('') + '</datalist>' +
+      '<div class="nb-add-row"><label class="visually-hidden" for="w-sec">Section</label><input id="w-sec" class="nb-in nb-in-sec" data-k="w-sec" list="w-sections" autocomplete="off" placeholder="Section" maxlength="40" value="' + esc(f.sec) + '">' +
+      '<label class="visually-hidden" for="w-text">Item</label><input id="w-text" class="nb-in nb-in-text" data-k="w-text" autocomplete="off" placeholder="What was wasted?" maxlength="80" value="' + esc(f.text) + '">' +
+      '<label class="visually-hidden" for="w-amt">Amount</label><input id="w-amt" class="nb-in nb-in-qty" data-k="w-amt" inputmode="decimal" autocomplete="off" placeholder="Amount" maxlength="8" value="' + esc(f.amt) + '"></div>' +
+      '<div class="nb-sugg" id="w-sugg">' + wSuggHTML() + '</div>' +
+      '<div class="w-pick" role="group" aria-label="Unit"><span class="nb-ql">Unit</span>' + UNITS.map(function (u) { return '<button type="button" class="chip" data-p="wunit" data-v="' + u + '" aria-pressed="' + (f.unit === u) + '">' + u + '</button>'; }).join('') + '</div>' +
+      '<div class="w-pick" role="group" aria-label="Reason"><span class="nb-ql">Reason</span>' + REASONS.map(function (r) { return '<button type="button" class="chip" data-p="wreason" data-v="' + r[0] + '" aria-pressed="' + (f.reason === r[0]) + '">' + r[1] + '</button>'; }).join('') + '</div>' +
+      '<div class="nb-add-row"><label class="visually-hidden" for="w-act">Action or how to stop it happening again</label><input id="w-act" class="nb-in nb-in-text" data-k="w-act" autocomplete="off" placeholder="Action or how to stop it happening again (optional)" maxlength="120" value="' + esc(f.act) + '">' +
+      '<button type="submit" class="nb-addbtn">Log it</button></div></form>' : (S.wDate === today ? '<p class="hint">You can read the wastage log but not write in it.</p>' : '');
+    var r = S.wReview || {}, ra = S.wrA != null ? S.wrA : (r.avoidable || ''), rc = S.wrC != null ? S.wrC : (r.change || '');
+    var review = '<section class="set-block w-review"><span class="label">End-of-day review</span>' +
+      (can('add') ? '<div class="field"><label class="label" for="w-ra">Main avoidable waste today</label><textarea id="w-ra" class="w-ta" data-k="w-ra" maxlength="300" rows="2">' + esc(ra) + '</textarea></div>' +
+        '<div class="field"><label class="label" for="w-rc">Prep or ordering change for the next shift</label><textarea id="w-rc" class="w-ta" data-k="w-rc" maxlength="300" rows="2">' + esc(rc) + '</textarea><span class="hint">This shows at the top of the next prep list.</span></div>' +
+        '<div class="btn-row"><button type="button" class="btn dark" data-p="wreview">Save the review</button></div>' :
+        '<p>' + esc(r.avoidable || 'Not written yet.') + '</p><p>' + esc(r.change || '') + '</p>') +
+      (r.reviewBy ? '<span class="hint">Last saved by ' + esc(r.reviewBy) + (r.reviewAt ? ' at ' + clock(r.reviewAt) : '') + '.</span>' : '') + '</section>';
+    var tot = totalsText(wTotals(live));
+    var body = S.wState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' :
+      (shown.length ? '<ul class="nb-rows">' + shown.map(wRow).join('') + '</ul>' : (S.wState === 'ok' ? '<p class="nb-empty">Nothing logged for ' + esc(dayName(S.wDate).toLowerCase()) + ' yet. Log waste when it happens: prep waste, expired stock, cooking faults, returns and excess production.</p>' : ''));
+    return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' : '') + '</span><span class="p-links"><a class="p-link" href="#/prep">Prep list</a></span></div>' + nav +
+      '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Wastage</h2><span class="nb-date">' + esc(longDate(S.wDate)) + (tot ? ' &middot; ' + esc(tot) : '') + '</span></div>' +
+      '<div class="nb-prog" role="status">' + live.length + (live.length === 1 ? ' entry' : ' entries') + '</div></header>' +
+      '<p class="w-rule">Write the actual amount and unit, not a dollar value. Unsafe food must never be reused to avoid logging waste.</p>' +
+      '<div class="nb-body">' + body + '</div><div class="nb-foot">' + add + '</div></section>' + review;
+  }
+  /* Last night's "change for the next shift" note, shown on the prep list (the latest of the last 3 days). */
+  function loadWNote() {
+    var today = ymd(new Date());
+    if (!fb || S.wNoteFor === today) return;
+    S.wNoteFor = today;
+    var ds = [1, 2, 3].map(function (k) { return shift(today, -k); });
+    Promise.all(ds.map(function (d) { return fb.fs.getDoc(wDay(d)).then(function (sn) { return sn.exists() ? Object.assign({ date: d }, sn.data()) : null; }, function () { return null; }); })).then(function (l) {
+      S.wNote = l.filter(function (x) { return x && x.change; })[0] || null; draw();
+    });
+  }
+  function wNoteHTML() {
+    var n = S.wNote; if (!n || S.date !== ymd(new Date())) return '';
+    return '<div class="nb-note"><span class="nb-sl">' + (n.date === shift(ymd(new Date()), -1) ? 'From yesterday\'s waste review' : 'From the ' + esc(parseYmd(n.date).toLocaleDateString('en-AU', { weekday: 'long' })) + ' waste review') + '</span><p>' + esc(n.change) + '</p>' + (n.reviewBy ? '<span class="nb-sw">' + esc(n.reviewBy) + '</span>' : '') + '</div>';
+  }
+
+  /* ---------- wastage insights (admin) ---------- */
+  function loadWStats(force) {
+    if (!fb || S.configState !== 'ok') return;
+    if (S.wStats && (S.wStats.loading || !force)) return;
+    S.wStats = { loading: true, lines: [], reviews: [] };
+    var today = ymd(new Date()), dates = [], i;
+    for (i = 0; i < 30; i++) dates.push(shift(today, -i));
+    Promise.all(dates.map(function (d) {
+      return Promise.all([
+        fb.fs.getDocs(wCol(d)).then(function (sn) { return sn.docs.map(function (x) { var v = x.data(); v.date = d; return v; }); }, function () { return []; }),
+        fb.fs.getDoc(wDay(d)).then(function (sn) { return sn.exists() ? Object.assign({ date: d }, sn.data()) : null; }, function () { return null; })
+      ]);
+    })).then(function (res) {
+      S.wStats = { loading: false, lines: [].concat.apply([], res.map(function (r) { return r[0]; })), reviews: res.map(function (r) { return r[1]; }).filter(Boolean) }; draw();
+    });
+  }
+  var WTIP = { excess: 'Prep smaller batches or less often.', expired: 'Order less or use it sooner. Check stock rotation.', fault: 'Check the method on the recipe card and run a quick refresher.', prep: 'Check trimming and yield.', returned: 'Check the dish against the recipe card and talk to front of house.' };
+  function wasteStatsHTML() {
+    loadWStats(false); loadStats(false);
+    var ws = S.wStats, n = S.statsRange;
+    var chips = '<div class="chips">' + [7, 14, 30].map(function (k) { return '<button type="button" class="chip" data-p="range" data-v="' + k + '" aria-pressed="' + (n === k) + '">' + k + ' days</button>'; }).join('') + '<button type="button" class="chip" data-p="w-refresh">Refresh</button></div>';
+    var head = '<section class="set-block"><span class="label">Wastage</span><span class="hint">From the wastage log on the phones. Amounts are what people wrote, in kg, L, portions and pieces (grams are counted as kg).</span>' + chips;
+    if (!ws || ws.loading) return head + '<p class="hint">Loading the last 30 days...</p></section>';
+    var from = shift(ymd(new Date()), -(n - 1)), lines = ws.lines.filter(function (x) { return !x.deleted && x.date >= from; });
+    var days = {}; lines.forEach(function (x) { days[x.date] = 1; });
+    var t = wTotals(lines);
+    var tiles = [[lines.length, 'entries'], [num(t.kg), 'kg'], [num(t.L), 'L'], [num(t.portions), 'portions'], [num(t.pieces), 'pieces'], [Object.keys(days).length + ' of ' + n, 'days with something logged']];
+    if (!lines.length) return head + '<div class="a-tiles">' + tiles.map(function (x) { return '<div class="a-tile"><strong>' + esc(String(x[0])) + '</strong><span>' + esc(x[1]) + '</span></div>'; }).join('') + '</div><p class="hint">Nothing logged in this time yet.</p></section>';
+    var byR = {}; lines.forEach(function (x) { var e = byR[x.reason] = byR[x.reason] || []; e.push(x); });
+    var rRows = REASONS.filter(function (r) { return byR[r[0]]; }).sort(function (a, b) { return byR[b[0]].length - byR[a[0]].length; }).map(function (r) {
+      var l = byR[r[0]]; return '<tr><th scope="row">' + esc(r[1]) + '</th><td>' + l.length + '</td><td>' + Math.round(l.length / lines.length * 100) + '%</td><td>' + esc(totalsText(wTotals(l))) + '</td></tr>';
+    }).join('');
+    // link waste to the prep list: how often the same item was written on the prep list in the same time
+    var prepN = {};
+    if (S.stats && !S.stats.loading) Object.keys(S.stats.days).forEach(function (d) { if (d < from) return; S.stats.days[d].forEach(function (x) { if (!x.deleted && !x.rolled && x.text) { var k = okey(x.text); prepN[k] = (prepN[k] || 0) + 1; } }); });
+    var m = {};
+    lines.forEach(function (x) { var k = okey(x.text), e = m[k] = m[k] || { text: x.text, l: [], r: {} }; e.l.push(x); e.r[x.reason] = (e.r[x.reason] || 0) + 1; });
+    var iRows = Object.keys(m).map(function (k) { return { k: k, e: m[k] }; }).sort(function (a, b) { return b.e.l.length - a.e.l.length; }).slice(0, 12).map(function (o) {
+      var e = o.e, mr = Object.keys(e.r).sort(function (a, b) { return e.r[b] - e.r[a]; })[0], pn = prepN[o.k] || 0;
+      var tip = (WTIP[mr] || '') + (mr === 'excess' && pn >= 3 ? ' It was on the prep list ' + pn + ' times.' : '');
+      return '<tr><th scope="row">' + esc(e.text) + '</th><td>' + e.l.length + '</td><td>' + esc(totalsText(wTotals(e.l))) + '</td><td>' + esc(reasonName(mr)) + '</td><td>' + (pn || '') + '</td><td>' + (e.l.length >= 2 ? '<span class="a-flag">' + esc(tip) + '</span>' : '<span class="o-who-i">Once so far</span>') + '</td></tr>';
+    }).join('');
+    var dw = {}, occ = {}, i;
+    for (i = 0; i < n; i++) { var dd = parseYmd(shift(ymd(new Date()), -i)).getDay(); occ[dd] = (occ[dd] || 0) + 1; }
+    lines.forEach(function (x) { var d = parseYmd(x.date).getDay(); dw[d] = (dw[d] || 0) + 1; });
+    var who = {}; lines.forEach(function (x) { var k = x.addedBy || 'Unknown'; who[k] = (who[k] || 0) + 1; });
+    var revs = ws.reviews.filter(function (r) { return r.date >= from && (r.avoidable || r.change); }).sort(function (a, b) { return a.date < b.date ? 1 : -1; }).slice(0, 10);
+    return head + '<div class="a-tiles">' + tiles.map(function (x) { return '<div class="a-tile"><strong>' + esc(String(x[0])) + '</strong><span>' + esc(x[1]) + '</span></div>'; }).join('') + '</div>' +
+      '<h3 class="a-ch-h">By reason</h3><div class="a-tablewrap"><table class="a-table a-plain"><thead><tr><th scope="col">Reason</th><th scope="col">Entries</th><th scope="col">Share</th><th scope="col">Amount</th></tr></thead><tbody>' + rRows + '</tbody></table></div>' +
+      '<h3 class="a-ch-h">Wasted most often</h3><span class="hint">"On the prep list" counts how many times the same item was written on the prep list in this time, so you can see over-prepping.</span><div class="a-tablewrap"><table class="a-table a-plain"><thead><tr><th scope="col">Item</th><th scope="col">Entries</th><th scope="col">Amount</th><th scope="col">Main reason</th><th scope="col">On the prep list</th><th scope="col">Suggestion</th></tr></thead><tbody>' + iRows + '</tbody></table></div>' +
+      '<h3 class="a-ch-h">By weekday</h3><div class="a-tablewrap"><table class="a-table a-plain sk-t"><thead><tr><th scope="col"></th>' + DOWN.map(function (x) { return '<th scope="col">' + x + '</th>'; }).join('') + '</tr></thead><tbody><tr><th scope="row">Entries a day</th>' + DOW.map(function (d) { return '<td>' + (occ[d] ? num((dw[d] || 0) / occ[d]) : '0') + '</td>'; }).join('') + '</tr></tbody></table></div>' +
+      '<h3 class="a-ch-h">Who logs waste</h3><span class="hint">A record, not a score: someone who never logs may just not know about the log.</span><div class="a-tablewrap"><table class="a-table a-plain"><thead><tr><th scope="col">Person</th><th scope="col">Entries</th></tr></thead><tbody>' + Object.keys(who).sort(function (a, b) { return who[b] - who[a]; }).map(function (k) { return '<tr><th scope="row">' + esc(k) + '</th><td>' + who[k] + '</td></tr>'; }).join('') + '</tbody></table></div>' +
+      '<h3 class="a-ch-h">End-of-day reviews</h3>' + (revs.length ? '<ul class="a-list">' + revs.map(function (r) { return '<li><strong>' + esc(dayShort(r.date)) + (r.reviewBy ? ', ' + esc(r.reviewBy) : '') + ':</strong> ' + esc(r.avoidable || '') + (r.change ? ' <em>Change: ' + esc(r.change) + '</em>' : '') + '</li>'; }).join('') + '</ul>' : '<p class="hint">No reviews written in this time.</p>') + '</section>';
+  }
+
+  /* ---------- recipe searches that found nothing (queued by the recipe book, sent once someone is signed in) ---------- */
+  var flushing = false;
+  function flushMisses() {
+    if (flushing || !fb || !S.authed || !S.who || !S.tok) return;
+    var q; try { q = JSON.parse(localStorage.getItem('lk.miss') || '[]'); } catch (e) { q = []; }
+    if (!q.length) return;
+    flushing = true;
+    var f = fb.fs, p = me();
+    Promise.all(q.slice(0, 20).map(function (x) {
+      var t = String(x.q || '').trim().slice(0, 60); if (!t) return null;
+      return sset(docRef('misses', lkey(t).slice(0, 60)), { q: t, n: f.increment(1), last: x.at || Date.now(), lastBy: p ? p.name : '' }, true);
+    })).then(function () { try { localStorage.setItem('lk.miss', JSON.stringify(q.slice(20))); } catch (e) {} flushing = false; }, function () { flushing = false; });
+  }
+  function loadMisses(force) {
+    if (!fb || S.configState !== 'ok' || S.missBusy || (S.misses && !force)) return;
+    S.missBusy = true;
+    fb.fs.getDocs(colRef('misses')).then(function (sn) { S.misses = sn.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }); S.missBusy = false; draw(); }, function () { S.misses = []; S.missBusy = false; });
+  }
+  function missesHTML() {
+    loadMisses(false);
+    var l = (S.misses || []).filter(function (x) { return !x.hidden && x.q; }).sort(function (a, b) { return (b.n || 0) - (a.n || 0) || (b.last || 0) - (a.last || 0); }).slice(0, 20);
+    return '<h3 class="a-ch-h">Searched for, not in the book</h3><span class="hint">Recipe book searches that found nothing, sent from phones where someone is signed in to the prep book. These are the cards people are looking for. Hide one once the card is written.</span>' +
+      (l.length ? '<div class="a-tablewrap"><table class="a-table a-plain"><thead><tr><th scope="col">Searched for</th><th scope="col">Times</th><th scope="col">Last</th><th scope="col"></th></tr></thead><tbody>' + l.map(function (x) {
+        return '<tr><th scope="row">' + esc(x.q) + '</th><td>' + (x.n || 1) + '</td><td>' + esc(ago(x.last)) + (x.lastBy ? ', ' + esc(x.lastBy) : '') + '</td><td><button type="button" class="p-x" data-p="miss-hide" data-id="' + esc(x.id) + '">Hide</button></td></tr>';
+      }).join('') + '</tbody></table></div>' : '<p class="hint">No empty searches yet.</p>');
+  }
+
   /* ---------- events ---------- */
   function onClick(e) {
     var el = e.target.closest('[data-p]');
@@ -1450,6 +1864,19 @@
     if (a === 'move-pin') { movePin(); return; }
     if (a === 'sugg') { pickSugg(i); return; }
     if (a === 'quick') { quickAdd(i); return; }
+    if (a === 'heat') { S.heat = el.getAttribute('data-v'); draw(); return; }
+    if (a === 'wunit') { S.wf.unit = el.getAttribute('data-v'); draw(); return; }
+    if (a === 'wreason') { S.wf.reason = el.getAttribute('data-v'); draw(); return; }
+    if (a === 'wsugg') { var wt = (S.wsugg || [])[i]; if (wt) { S.wf.text = wt; draw(); var wa = S.root.querySelector('[data-k="w-amt"]'); if (wa) wa.focus(); } return; }
+    if (a === 'woften') { var wo = wOften()[i]; if (wo) { S.wf.text = wo.text; if (wo.unit) S.wf.unit = wo.unit; if (wo.reason) S.wf.reason = wo.reason; if (wo.sec && !S.wf.sec) S.wf.sec = wo.sec; draw(); var wa2 = S.root.querySelector('[data-k="w-amt"]'); if (wa2) wa2.focus(); } return; }
+    if (a === 'wdel') { removeWaste(dt, id); return; }
+    if (a === 'wday') { S.wDate = shift(S.wDate, +el.getAttribute('data-d')); watchWaste(); draw(); return; }
+    if (a === 'wtoday') { S.wDate = ymd(new Date()); watchWaste(); draw(); return; }
+    if (a === 'wreview') { saveReview(); return; }
+    if (a === 'w-refresh') { loadWStats(true); loadStats(true); draw(); return; }
+    if (a === 'miss-hide') { sset(docRef('misses', id), { hidden: true, q: ((S.misses || []).filter(function (x) { return x.id === id; })[0] || {}).q || id }, true).then(function () { loadMisses(true); }, function () { toast('Could not save. Check the connection.'); }); return; }
+    if (a === 'qset') { S.qty = el.getAttribute('data-v') || ''; draw(); var tq = S.root.querySelector('[data-k="p-text"]'); if (tq) tq.focus(); return; }
+    if (a === 'goto') { gotoRow(id); return; }
     if (a === 'learn-hide') { hideLearned(id, el.getAttribute('data-hide') === '1'); return; }
     if (a === 'copy') { copyList(); return; }
     if (a === 'print') { window.print(); return; }
@@ -1482,10 +1909,16 @@
     if (k === 'a-newpin') { S.newPin = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.newPin; return; }
     if (k === 'pf1') { S.pf1 = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.pf1; pinCells(el); return; }
     if (k === 'pf2') { S.pf2 = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.pf2; pinCells(el); return; }
-    if (k === 'p-text') { S.text = el.value; var hn = S.root.querySelector('#p-hint'); if (hn) hn.textContent = hintText(S.text); var sg = S.root.querySelector('#p-sugg'); if (sg) sg.innerHTML = suggestHTML(); return; }
+    if (k === 'p-text') { S.text = el.value; var hn = S.root.querySelector('#p-hint'); if (hn) hn.textContent = hintText(S.text); var sg = S.root.querySelector('#p-sugg'); if (sg) sg.innerHTML = suggestHTML(); var qs = S.root.querySelector('#p-qsugg'); if (qs) qs.innerHTML = qtyChipsHTML(); return; }
     if (k === 'o-text') { S.otext = el.value; var og = S.root.querySelector('#o-sugg'); if (og) og.innerHTML = ordSuggHTML(); return; }
     if (k === 'o-qty') { S.oqty = el.value; return; }
-    if (k === 'p-qty') { S.qty = el.value; return; }
+    if (k === 'w-text') { S.wf.text = el.value; var wg = S.root.querySelector('#w-sugg'); if (wg) wg.innerHTML = wSuggHTML(); return; }
+    if (k === 'w-amt') { S.wf.amt = el.value.replace(/[^0-9.,]/g, ''); if (el.value !== S.wf.amt) el.value = S.wf.amt; return; }
+    if (k === 'w-sec') { S.wf.sec = el.value; return; }
+    if (k === 'w-act') { S.wf.act = el.value; return; }
+    if (k === 'w-ra') { S.wrA = el.value; return; }
+    if (k === 'w-rc') { S.wrC = el.value; return; }
+    if (k === 'p-qty') { S.qty = el.value; var qs2 = S.root.querySelector('#p-qsugg'); if (qs2) qs2.innerHTML = qtyChipsHTML(); return; }
     if (k === 'p-section') { S.section = el.value; return; }
     if (k === 'p-rs') { S.recipeSearch = el.value; S.recipeOpen = true; draw(); return; }
     var a = el.getAttribute && el.getAttribute('data-a');
@@ -1509,6 +1942,7 @@
     var f = e.target.getAttribute && e.target.getAttribute('data-p-form');
     if (f === 'add') { e.preventDefault(); addTyped(); }
     else if (f === 'oadd') { e.preventDefault(); addOrder(); }
+    else if (f === 'wadd') { e.preventDefault(); addWaste(); }
     else if (f === 'pin') { e.preventDefault(); submitPin(); }
   }
   function onKey(e) {
@@ -1532,7 +1966,7 @@
       S.name = name; S.root = root;
       if (name === 'admin') S.draft = S.draft || null;
       draw();
-      if (S.pin) { connect(); if (name === 'admin') sdk(); if (name === 'orders') { S.ordDate = ymd(new Date()); watchOrders(); } }
+      if (S.pin) { connect(); if (name === 'admin') sdk(); if (name === 'orders') { S.ordDate = ymd(new Date()); watchOrders(); } if (name === 'waste') { S.wDate = ymd(new Date()); watchWaste(); } }
     },
     saveConfig: saveConfig,
     proofread: proofread,

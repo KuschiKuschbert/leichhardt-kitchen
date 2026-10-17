@@ -172,12 +172,13 @@
     home: '<svg width="26" height="26" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 30L32 10l24 20"/><path d="M14 26v28h36V26"/><path d="M27 54V38h10v16"/></svg>',
     recipes: '<svg width="26" height="26" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="32" cy="32" r="22"/><circle cx="32" cy="32" r="13" stroke-dasharray="4 5"/><path d="M6 14v14M10 14v14M14 14v14M6 28h8M10 28v22"/><path d="M58 14c-3 2-5 6-5 11v3h5v22"/></svg>',
     prep: '<svg width="26" height="26" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="12" y="10" width="40" height="48" rx="5"/><path d="M24 10V7h16v3"/><path d="M20 24l3 3 5-6M20 38l3 3 5-6"/><path d="M34 25h12M34 39h12"/></svg>',
-    orders: '<svg width="26" height="26" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 20l24-12 24 12v26L32 58 8 46z"/><path d="M8 20l24 12 24-12M32 32v26"/><path d="M20 14l24 12"/></svg>'
+    orders: '<svg width="26" height="26" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 20l24-12 24 12v26L32 58 8 46z"/><path d="M8 20l24 12 24-12M32 32v26"/><path d="M20 14l24 12"/></svg>',
+    waste: '<svg width="26" height="26" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 18h44"/><path d="M25 18v-6h14v6"/><path d="M15 18l3 38h28l3-38"/><path d="M27 28v18M37 28v18"/></svg>'
   };
-  var NAV = [['home', 'Home', '#/'], ['recipes', 'Recipes', '#/recipes'], ['prep', 'Prep', '#/prep'], ['orders', 'Orders', '#/orders']];
+  var NAV = [['home', 'Home', '#/'], ['recipes', 'Recipes', '#/recipes'], ['prep', 'Prep', '#/prep'], ['orders', 'Orders', '#/orders'], ['waste', 'Waste', '#/waste']];
   function navActive() {
     var n = parseRoute().name;
-    return n === 'landing' ? 'home' : (n === 'home' || n === 'recipe') ? 'recipes' : (n === 'prep' || n === 'admin') ? 'prep' : n === 'orders' ? 'orders' : '';
+    return n === 'landing' ? 'home' : (n === 'home' || n === 'recipe') ? 'recipes' : (n === 'prep' || n === 'admin') ? 'prep' : n === 'orders' ? 'orders' : n === 'waste' ? 'waste' : '';
   }
   function pillNav() {
     var a = navActive();
@@ -203,7 +204,7 @@
       '<div class="top-right">' + (count ? '<span class="count" id="count">' + esc(count) + '</span>' : '') + pillNav() + viewSwitch() +
       '<a class="icon-btn" href="#/settings" aria-label="Settings">' + ICON.gear + '<span class="icon-lbl">Settings</span></a></div></header>';
   }
-  var DOCKETS = [['01', 'Recipes', '#/recipes', 'recipes'], ['02', 'Prep list', '#/prep', 'prep'], ['03', 'Orders', '#/orders', 'orders']];
+  var DOCKETS = [['01', 'Recipes', '#/recipes', 'recipes'], ['02', 'Prep list', '#/prep', 'prep'], ['03', 'Orders', '#/orders', 'orders'], ['04', 'Wastage', '#/waste', 'waste']];
   function viewLanding() {
     var today = new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
     return '<div class="wall"><div class="rail"><a class="rail-brand" href="#/"><span>Leichhardt Hotel Kitchen</span><b>Kitchen Book</b></a>' + pillNav() +
@@ -468,7 +469,7 @@
   function parseRoute() {
     var parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
     if (parts[0] === 'settings') return { name: 'settings', stack: [] };
-    if (parts[0] === 'prep' || parts[0] === 'admin' || parts[0] === 'orders') return { name: parts[0], stack: [] };
+    if (parts[0] === 'prep' || parts[0] === 'admin' || parts[0] === 'orders' || parts[0] === 'waste') return { name: parts[0], stack: [] };
     if (parts[0] === 'r') {
       var stack = parts.slice(1).filter(function (id) { return byId[id]; });
       if (stack.length) return { name: 'recipe', stack: stack };
@@ -487,7 +488,7 @@
     var html;
     if (route.name === 'landing') html = viewLanding();
     else if (route.name === 'settings') html = viewSettings();
-    else if (route.name === 'prep' || route.name === 'admin' || route.name === 'orders') html = viewPrep();
+    else if (route.name === 'prep' || route.name === 'admin' || route.name === 'orders' || route.name === 'waste') html = viewPrep();
     else if (view === 'pass') html = viewPass(route);
     else html = viewTiles(route);
     // Swipeable chip rows keep their place when the page redraws (for example after tapping a chip at the far end).
@@ -496,9 +497,9 @@
     app.innerHTML = html;
     if (!changed) Array.prototype.forEach.call(app.querySelectorAll('.chips.scroll'), function (el, i) { if (rowsAt[i]) el.scrollLeft = rowsAt[i]; });
     fitPins();
-    if ((route.name === 'prep' || route.name === 'admin' || route.name === 'orders') && window.LK_PREP) window.LK_PREP.mount(route.name, document.getElementById('prep-root'));
+    if ((route.name === 'prep' || route.name === 'admin' || route.name === 'orders' || route.name === 'waste') && window.LK_PREP) window.LK_PREP.mount(route.name, document.getElementById('prep-root'));
     var r = route.stack.length ? byId[route.stack[route.stack.length - 1]] : null;
-    document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'landing' ? '' : route.name === 'admin' ? 'Admin panel · ' : '')) + 'Leichhardt Kitchen Book';
+    document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'waste' ? 'Wastage · ' : route.name === 'landing' ? '' : route.name === 'admin' ? 'Admin panel · ' : '')) + 'Leichhardt Kitchen Book';
     var prevRoute = lastRoute; lastRoute = route.name;
     if (changed) {
       lastHash = location.hash;
@@ -535,11 +536,25 @@
     else if (view === 'pass' && (box = document.getElementById('shelves'))) { box.innerHTML = shelvesHTML(); if (count) count.textContent = passCount(); }
   }
 
+  /* A search that finds no recipe at all is queued on this phone (prefixes typed on the way are dropped).
+     The prep book sends the queue once someone is signed in, so the admin panel can show which cards people look for. */
+  var missTimer = null;
+  function noteMiss() {
+    var s = q();
+    if (s.length < 3 || D.recipes.some(function (r) { return matches(r.id); })) return;
+    var l; try { l = JSON.parse(localStorage.getItem('lk.miss') || '[]'); } catch (x) { l = []; }
+    var now = Date.now();
+    l = l.filter(function (m) { return !(now - m.at < 120000 && (s.indexOf(m.q) === 0 || m.q.indexOf(s) === 0)); });
+    l.push({ q: s.slice(0, 60), at: now });
+    try { localStorage.setItem('lk.miss', JSON.stringify(l.slice(-40))); } catch (x) {}
+  }
   app.addEventListener('input', function (e) {
     if (e.target.id !== 'find') return;
     ui.query = e.target.value;
     clearTimeout(timer);
     timer = setTimeout(updateResults, 60);
+    clearTimeout(missTimer);
+    missTimer = setTimeout(noteMiss, 2500);
   });
 
   app.addEventListener('click', function (e) {

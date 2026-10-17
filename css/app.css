@@ -572,3 +572,58 @@ img, svg { display: block; }
 .nb-dt { font-variant-numeric: tabular-nums; opacity: .65; }
 .nb-dx em { font-style: normal; opacity: .65; }
 .nb-dw { opacity: .65; font-size: .82rem; }
+
+/* Start here, usual amounts, waste review note on the prep list */
+.nb-start, .nb-note { margin: 0 0 12px; padding: 8px 10px 10px; border: 2px solid var(--ink); border-radius: 8px; background: #FFFEFA; }
+.nb-note { border-color: var(--accent-ink); background: #FFF6EF; }
+.nb-note p { margin: 2px 0 2px; font-weight: 600; }
+.nb-sl { display: block; font: 700 0.75rem var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-ink); }
+.nb-start ol { margin: 4px 0 0; padding: 0; list-style: none; counter-reset: sh; }
+.nb-start li { counter-increment: sh; }
+.nb-sb { display: grid; grid-template-columns: 1.6rem 1fr; column-gap: 6px; width: 100%; min-height: 44px; padding: 4px 0; border: 0; border-top: 1px solid var(--line); background: none; text-align: left; cursor: pointer; }
+.nb-start li:first-child .nb-sb { border-top: 0; }
+.nb-sb::before { content: counter(sh); grid-row: 1 / span 2; align-self: center; display: inline-flex; align-items: center; justify-content: center; width: 1.4rem; height: 1.4rem; border-radius: 50%; background: var(--ink); color: #fff; font: 700 0.8rem var(--display); }
+.nb-st { font-weight: 600; }
+.nb-sw { font-size: 0.8125rem; color: var(--muted); }
+.nb-row.is-flash { animation: nbflash 1.6s ease-out; }
+@keyframes nbflash { 0%, 30% { background: #FFE2CC; } 100% { background: transparent; } }
+@media (prefers-reduced-motion: reduce) { .nb-row.is-flash { animation: none; outline: 3px solid var(--accent); } }
+.nb-qs:empty { display: none; }
+.nb-ql { align-self: center; margin-right: 4px; font: 700 0.75rem var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.nb-uq { font-weight: 400; color: var(--muted); }
+
+/* Skills matrix and weekday heatmap */
+.sk-t td, .sk-t th { text-align: center; }
+.sk-t tbody th { text-align: left; }
+.sk-c { font-weight: 700; font-variant-numeric: tabular-nums; border-left: 2px solid var(--paper); }
+.sk-0 { font-weight: 400; color: var(--faint); font-size: 0.8125rem; }
+.a-table.sk-t tbody tr:nth-child(even) { background: transparent; }
+.sk-tot td, .sk-tot th { font-weight: 700; border-top: 1.5px solid var(--ink); }
+.sk-key { flex-wrap: wrap; }
+.sk-key i { border: 1px solid var(--edge); }
+.a-list { margin: 0.4rem 0 0; padding-left: 1.1rem; }
+.a-list li { margin: 0.3rem 0; }
+
+/* Wastage log */
+.w-rule { margin: 0 0 8px; padding: 0 12px; font-size: 0.8125rem; color: var(--muted); }
+.w-row { align-items: start; }
+.w-time { min-width: 3.4rem; font-variant-numeric: tabular-nums; font-size: 0.875rem; color: var(--muted); }
+.w-sec { font-size: 0.75rem; }
+.w-amt { font-weight: 700; white-space: nowrap; }
+.w-rs { display: inline-block; padding: 0 6px; border: 1.5px solid var(--ink); border-radius: 999px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
+.w-act { display: block; font-size: 0.8125rem; color: var(--muted); }
+.w-pick, .w-often { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 8px 0; }
+.w-pick .chip[aria-pressed="true"] { background: var(--ink); color: #fff; }
+.w-ta { width: 100%; min-height: 3.2rem; padding: 0.5rem 0.6rem; border: 1.5px solid var(--ink); border-radius: 8px; font: inherit; background: var(--paper); resize: vertical; }
+.w-review { margin-top: 1rem; }
+
+/* four dockets on the landing wall */
+@media (min-width: 720px) and (max-width: 1099px) { .dockets { grid-template-columns: repeat(2, minmax(0, 1fr)); } .docket { min-height: 19rem; } }
+@media (min-width: 1100px) { .dockets { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.8rem; } .dk-name { font-size: 2.5rem; } }
+/* six admin tabs: two rows of three on a phone */
+@media (max-width: 599px) { .a-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); overflow: visible; } .a-tab { min-height: 42px; } }
+/* five pills in the header on a tablet: tighter pills, icon-only view switch and settings */
+@media (min-width: 720px) and (max-width: 1099px) { .top .pnav { gap: 0.35rem; } .top .pnav a { padding: 0 0.75rem; } .top .icon-btn .icon-lbl, .top .vsw button span { display: none; } }
+.dk-top { gap: 0.5rem; }
+@media (min-width: 1100px) { .dk-name { font-size: 2.25rem; } }
+@media (min-width: 720px) and (max-width: 1099px) { .rail-brand b { font-size: 2.1rem; white-space: nowrap; } .rail { padding: 0 1.5rem; } }

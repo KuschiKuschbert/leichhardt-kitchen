@@ -6,6 +6,8 @@
 // Reading needs only the kitchen PIN (it is the path). Writing needs a person's own PIN:
 // every write carries the writer's id (by) and, in the same batch, a write-only proof (proofs/<id>.tok).
 // The rules compare the proof with the stored PIN hash (staffpins/<id>.hash), which nobody can read.
+// The proof also carries a server timestamp that must equal this request's time, so a proof left over
+// from an earlier write cannot be reused by someone who does not know the PIN.
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -18,7 +20,8 @@ service cloud.firestore {
     function staff() {
       return request.resource.data.by is string
         && exists(pinDoc(request.resource.data.by))
-        && getAfter(proofDoc(request.resource.data.by)).data.tok == get(pinDoc(request.resource.data.by)).data.hash;
+        && getAfter(proofDoc(request.resource.data.by)).data.tok == get(pinDoc(request.resource.data.by)).data.hash
+        && getAfter(proofDoc(request.resource.data.by)).data.at == request.time;
     }
     function writer() { return isAdmin() || staff(); }
     // A ticked prep line stays ticked. Only the head chef, a sous chef, or the person who ticked it
@@ -53,6 +56,33 @@ service cloud.firestore {
       allow read: if true;
       allow create, update: if writer() && request.resource.data.text is string && request.resource.data.text.size() <= 120;
       allow delete: if false;
+    }
+    // Wastage log: anyone signed in adds a line; only the head chef or a sous chef may change one (to remove it).
+    match /kitchens/KITCHEN_PIN/waste/{day}/lines/{line} {
+      allow read: if true;
+      allow create: if writer()
+        && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 80
+        && request.resource.data.amount is number && request.resource.data.amount > 0 && request.resource.data.amount < 100000
+        && request.resource.data.unit in ['g', 'kg', 'L', 'portions', 'pieces']
+        && request.resource.data.reason in ['prep', 'expired', 'fault', 'returned', 'excess']
+        && request.resource.data.get('action', '') is string && request.resource.data.get('action', '').size() <= 120
+        && request.resource.data.get('station', '') is string && request.resource.data.get('station', '').size() <= 40;
+      allow update: if writer() && (isAdmin() || sousBy()) && request.resource.data.text is string && request.resource.data.text.size() <= 80;
+      allow delete: if false;
+    }
+    // End-of-day waste review, one per day.
+    match /kitchens/KITCHEN_PIN/waste/{day} {
+      allow read: if true;
+      allow create, update: if writer()
+        && request.resource.data.get('avoidable', '') is string && request.resource.data.get('avoidable', '').size() <= 300
+        && request.resource.data.get('change', '') is string && request.resource.data.get('change', '').size() <= 300;
+      allow delete: if false;
+    }
+    // Recipe book searches that found nothing.
+    match /kitchens/KITCHEN_PIN/misses/{id} {
+      allow read: if true;
+      allow create, update: if writer() && request.resource.data.q is string && request.resource.data.q.size() <= 60;
+      allow delete: if isAdmin();
     }
     match /kitchens/KITCHEN_PIN/staffpins/{id} {
       allow read: if isAdmin();

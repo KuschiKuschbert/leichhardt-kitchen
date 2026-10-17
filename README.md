@@ -90,7 +90,7 @@ There's no build step and nothing to install. To try it on a computer, open `ind
 ## Prep book and admin panel
 
 - Staff only see today in `#/prep` (no back, forward or date picker); the head chef and sous chefs can still browse other days. Unfinished lines roll over to today by themselves. This is the page only: past days stay readable in the database to anyone with the kitchen PIN.
-- `#/` is the landing page (three dockets: Recipes, Prep list, Orders). The recipes live at `#/recipes`, the order list at `#/orders`. A pill menu (big screens) or a bottom tab bar (phones) switches between them.
+- `#/` is the landing page (four dockets: Recipes, Prep list, Orders, Wastage). The recipes live at `#/recipes`, the order list at `#/orders`, the wastage log at `#/waste`. A pill menu (big screens) or a bottom tab bar (phones) switches between them.
 - `#/prep` is the prep book, laid out as an open notebook: today on the left, yesterday on the right (two pages on a big screen, stacked on a phone). Staff enter the kitchen PIN once per phone, pick their name, and the first time choose their own 4-digit PIN. That phone then stays signed in.
 - Sections are not preset. Whoever writes a line types a section name (or picks one already used) and it appears as a section on the page and as a tab. The app keeps track of sections in the background and offers them as suggestions.
 - Ticking, writing and removing lines is counted per person in the background.
@@ -101,14 +101,31 @@ There's no build step and nothing to install. To try it on a computer, open `ind
 
 ### Roles, rollover, insights, badges and recipe links
 
-- **Head chef (owner):** signs in with Google at `#/admin` and sees everything: charts and numbers for 7, 14 or 30 days (lines per day, by person, time of day, rolled over most often, sections), the tallies, people and permissions, PIN resets and the badge switch.
+- **Head chef (owner):** signs in with Google at `#/admin` and sees everything: charts and numbers for 7, 14 or 30 days (lines per day, by person, time of day, rolled over most often, sections, weekday load, slow and sticky lines, empty searches), the Team and Waste tabs, the tallies, people and permissions, PIN resets and the badge switch.
 - **Sous chef:** no Google needed. Set a person's role to Sous chef in the admin panel. They sign in with their name and PIN like everyone else, and get a "Manage staff" button on the Handy page to add and remove people. The Firestore rules only let a PIN holder change the `people` list of `config/main` (nothing else in that document). Only people listed in `sousIds` (kept in step by the owner panel) may change it.
 - **Rollover:** the first person to open today's book writes every line that was not ticked on the last written day (up to 7 days back) onto today, marked "Rolled" (with "x2" and so on for repeats) and sorted to the top of its section. Each rolled line stores `rolled`, `root`, `from` and `rolledFrom`, so the Insights page can show how often and which lines roll over. There is no Yesterday page any more.
 - **Urgent:** the ! button on a line pins it above the rest.
+- **Start here:** with 4 or more open lines today, a card at the top of the list picks up to 3 to do first: urgent lines, then the longest rolled-over, then lines that usually take 2 hours or more (last 7 days), then the ones waiting longest. Tapping one jumps to it.
+- **Usual amounts:** while typing a line, the amounts written for it before show as chips ("Usual amount: 2 tubs"). One-tap adds carry the usual amount when one clearly wins. Amounts are kept in `learned/<item>.qtys`.
+- **Waste review note:** the latest "change for the next shift" from the last 3 days of waste reviews shows at the top of today's list.
 - **Handy page:** priorities, progress by section, "Usual for a Saturday" (lines on at least two of the last four same weekdays, tap to add), the "Done today" checklist (who ticked what and when), copy the list as text, print the list.
 - **Ticked lines stay ticked:** a ticked line stays on the list and cannot be unticked by staff, except the person who ticked it within 2 minutes (for a mis-tap). The head chef and sous chefs can always undo a tick. The rules enforce this on the server. Each new day starts a fresh list (only unfinished lines roll over), so old ticks are never in the way.
 - **Weekly badges:** the top 3 ranks for ticked lines over the last 7 days show above the notebook. The owner can switch them off.
 - **Recipe links:** hand-written lines link to recipe cards by matching words against card names and short names (`matchRecipe` in `js/prep.js`). A line that could mean several cards links to none.
+
+### Wastage log
+
+- `#/waste` is the Daily Wastage Sheet on the phone: section, item, amount and unit (g, kg, L, portions, pieces), reason (prep waste, expired stock, cooking fault, returned, excess production), action or how to stop it happening again. Time and name are added by themselves. Items logged twice or more in 14 days show as one-tap chips.
+- The end-of-day review (main avoidable waste, prep or ordering change for the next shift) is saved per day in `waste/<date>`; lines live in `waste/<date>/lines`.
+- Anyone signed in can add. Only the head chef or a sous chef can remove a line (enforced by the rules). Staff see today only.
+- Admin panel, Waste tab: totals, by reason, wasted most often (with how often the same item was on the prep list, to spot over-prepping, and a suggestion per main reason), by weekday, who logs, and the reviews.
+
+### Insights added in October 2026
+
+- **Insights tab:** load by weekday and section (lines written or rolled over, average per day), slow and sticky lines with a suggestion each, and recipe book searches that found nothing.
+- **Team tab:** a skills matrix (lines each person ticked per section) with cross-training pairs, and section habits now based on ticks (where people actually worked) with writing as the fallback. The order list part adds typical time from written to ordered, lines waiting over 3 days and standing order candidates (3 or more days in 14).
+- **Recorded for later:** when a line was removed (`deletedAt`), who marked it urgent and when (`urgentBy`, `urgentAt`), removal time on order lines.
+- **Empty searches:** a recipe search that finds no card at all is queued on the phone (`lk.miss`) and sent to `misses/<slug>` once someone is signed in to the prep book on that phone. The owner can hide one once the card is written.
 
 ### Smart prep list
 
@@ -137,12 +154,12 @@ There's no build step and nothing to install. To try it on a computer, open `ind
 - Who is the owner: only the owner's Google account may read `config/admins`, so the page checks that read. No email is stored in the database or the repository.
 
 ### Staff lock
-- Each write sends the writer's id (`by`) and, in the same batch, `proofs/<id>.tok` (a hash of the person's own PIN). The rules compare it with `staffpins/<id>.hash`, which nobody can read, using `getAfter`. A wrong or missing PIN is refused by the server.
+- Each write sends the writer's id (`by`) and, in the same batch, `proofs/<id>` with `tok` (a hash of the person's own PIN) and `at` (a server timestamp). The rules compare `tok` with `staffpins/<id>.hash`, which nobody can read, using `getAfter`, and require `at` to equal the request time, so a proof left over from an earlier write cannot be reused. A wrong or missing PIN is refused by the server.
 - The first person to set a PIN for a name claims it. The owner can reset it (Reset PIN) and it is chosen again.
 - Limits: someone with the kitchen PIN could still guess a 4-digit PIN online by script (the page makes people wait after 3 wrong tries, 1 to 30 minutes and kept on the phone, but a script skips the page; only App Check or a paid server function can truly rate limit), and add, tick and delete rights per person are checked in the page only.
 
 ### Changing the kitchen PIN
 
 1. Add a second copy of the `kitchens/<pin>/...` rules for the new 4 digit PIN to the live rules (see `firestore.rules`).
-2. Owner panel, "Move to a new 4 digit kitchen PIN": copies the people, lines (400 days), learned items, tallies and PIN fingerprints to the new PIN, then switches that device over.
+2. Owner panel, "Move to a new 4 digit kitchen PIN": copies the people, prep lines, order lines, wastage and reviews (400 days), learned items, empty searches, tallies and PIN fingerprints to the new PIN, then switches that device over.
 3. Everyone else is asked for the PIN next time they open the book once the old rules are removed. Remove the old PIN's rules last, so nothing is cut off while moving.
