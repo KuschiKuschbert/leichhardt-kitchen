@@ -303,10 +303,14 @@
     noteSection(sec); bump({ added: 1, lastAdded: Date.now() }); learn(r.short || r.name, sec, 'pick');
     S.qty = ''; S.recipeSearch = ''; S.recipeOpen = false; toast('Added ' + (r.short || r.name));
   }
+  function canUntick(x) {
+    return canBrowse() || (!!x.doneById && x.doneById === S.who && Date.now() - (x.doneAt || 0) < 110000);
+  }
   function tick(date, id) {
     var it = S.items.filter(function (x) { return x.id === id; })[0], p = me();
     if (!it || !can('tick')) return;
     var done = !it.done;
+    if (!done && !canUntick(it)) { toast('Ticked lines stay ticked. Ask the head chef or sous chef to undo it.'); return; }
     supd(itemRef(date, id), { done: done, doneBy: done ? p.name : '', doneById: done ? p.id : '', doneAt: done ? Date.now() : 0 }).catch(function () { toast('Could not save. Check the connection.'); });
     if (done) bump({ ticked: 1 });
     else if (it.doneById && fb) sset(docRef('activity', it.doneById), { name: it.doneBy || '', ticked: fb.fs.increment(-1) }, true).catch(function () {});
@@ -990,7 +994,7 @@
 
   var BOX = '<svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><rect x="2.5" y="2.5" width="21" height="21" rx="3" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
   function rowHTML(x, date, readonly) {
-    var tickOk = can('tick') && !x.deleted, delOk = can('del');
+    var tickOk = can('tick') && !x.deleted && (!x.done || canUntick(x)), delOk = can('del');
     var by = x.done && x.doneBy ? esc(x.doneBy) + (x.doneAt ? ' ' + clock(x.doneAt) : '') : (x.rolled ? (x.origBy ? 'from ' + esc(x.origBy) : '') : (x.addedBy ? esc(x.addedBy) : ''));
     var marks = (x.urgent ? '<span class="nb-urg">Urgent</span>' : '') + (x.rolled ? '<span class="nb-roll" title="Not finished earlier, so it rolled over">Rolled' + (x.rolled > 1 ? ' x' + x.rolled : '') + '</span>' : '');
     var star = can('add') && !x.deleted && !readonly ? '<button type="button" class="nb-star" data-p="urgent" data-id="' + esc(x.id) + '" aria-pressed="' + !!x.urgent + '" aria-label="' + esc((x.urgent ? 'Not urgent: ' : 'Mark urgent: ') + x.text) + '">!</button>' : '';
@@ -1003,7 +1007,7 @@
       (delOk ? '<button type="button" class="nb-x" data-p="' + (x.deleted ? 'restore' : 'del') + '" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-label="' + (x.deleted ? 'Put back ' : 'Remove ') + esc(x.text) + '">' + (x.deleted ? 'put back' : 'remove') + '</button>' : '') + '</li>';
   }
   function pageBody(items, date) {
-    var shown = items.filter(function (x) { return (S.showRemoved || !x.deleted) && (!S.tab || (x.station || '') === S.tab) && !(S.hideDone && x.done && !x.deleted); });
+    var shown = items.filter(function (x) { return (S.showRemoved || !x.deleted) && (!S.tab || (x.station || '') === S.tab); });
     shown.sort(sortItems);
     var order = [], seen = {};
     shown.forEach(function (x) { var k = x.station || ''; if (!seen[k]) { seen[k] = 1; order.push(k); } });
@@ -1042,11 +1046,14 @@
     var usual = can('add') && today2.length ? '<h3 class="nb-sh">Usual for a ' + esc(dname) + '</h3><p class="nb-sd">Written on at least two ' + esc(dname) + 's. Tap to add.</p><div class="nb-usual">' + today2.map(function (x) { return chip(x, ((x.dow || {})[dn] || 0) + 'x'); }).join('') + '</div>' : '';
     usual += can('add') && regs.length ? '<h3 class="nb-sh">Regulars</h3><p class="nb-sd">Written or picked ' + REGULAR + ' or more times. Tap to add.</p><div class="nb-usual">' + regs.map(function (x) { return chip(x, x.uses + 'x'); }).join('') + '</div>' : '';
     var tools = '<h3 class="nb-sh">Tools</h3><div class="nb-tools">' +
-      '<button type="button" class="nb-btn" data-p="hide-done" aria-pressed="' + S.hideDone + '">' + (S.hideDone ? 'Show ticked lines' : 'Hide ticked lines') + '</button>' +
       '<button type="button" class="nb-btn" data-p="copy">Copy the list</button>' +
       '<button type="button" class="nb-btn" data-p="print">Print the list</button>' +
       (isSous() ? '<button type="button" class="nb-btn" data-p="staff-open">Manage staff</button>' : '') + '</div>';
-    return prio + meters + usual + tools;
+    var dl = live.filter(function (x) { return x.done; }).sort(function (a, b) { return (b.doneAt || 0) - (a.doneAt || 0); });
+    var donebox = '<h3 class="nb-sh">Done today (' + dl.length + ')</h3>' + (dl.length ? '<ul class="nb-done">' + dl.map(function (x) {
+      return '<li><span class="nb-dt">' + (x.doneAt ? clock(x.doneAt) : '') + '</span><span class="nb-dx">' + esc(x.text) + (x.qty ? ' <em>' + esc(x.qty) + '</em>' : '') + '</span><span class="nb-dw">' + esc(x.doneBy || '') + '</span></li>';
+    }).join('') + '</ul>' : '<p class="nb-sd">Nothing ticked yet.</p>');
+    return prio + donebox + meters + usual + tools;
   }
   function listHTML() {
     var p = me(), today = ymd(new Date());
@@ -1444,7 +1451,6 @@
     if (a === 'sugg') { pickSugg(i); return; }
     if (a === 'quick') { quickAdd(i); return; }
     if (a === 'learn-hide') { hideLearned(id, el.getAttribute('data-hide') === '1'); return; }
-    if (a === 'hide-done') { S.hideDone = !S.hideDone; draw(); return; }
     if (a === 'copy') { copyList(); return; }
     if (a === 'print') { window.print(); return; }
     if (a === 'a-tab') { S.atab = el.getAttribute('data-t'); lsSet('lk.prep.atab', S.atab); draw(); window.scrollTo(0, 0); return; }

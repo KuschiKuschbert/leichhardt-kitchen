@@ -476,7 +476,8 @@
     if (parts[0] === 'recipes') return { name: 'home', stack: [] };
     return { name: 'landing', stack: [] };
   }
-  var lastHash = null;
+  var lastHash = null, lastRoute = '', homeY = 0;
+  window.addEventListener('scroll', function () { if (lastRoute === 'home') homeY = window.scrollY; }, { passive: true });
   function render() {
     var route = parseRoute();
     var changed = location.hash !== lastHash;
@@ -498,9 +499,11 @@
     if ((route.name === 'prep' || route.name === 'admin' || route.name === 'orders') && window.LK_PREP) window.LK_PREP.mount(route.name, document.getElementById('prep-root'));
     var r = route.stack.length ? byId[route.stack[route.stack.length - 1]] : null;
     document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'landing' ? '' : route.name === 'admin' ? 'Admin panel · ' : '')) + 'Leichhardt Kitchen Book';
+    var prevRoute = lastRoute; lastRoute = route.name;
     if (changed) {
       lastHash = location.hash;
-      window.scrollTo(0, 0);
+      // Coming back to the recipe list from a recipe puts you where you were.
+      window.scrollTo(0, route.name === 'home' && prevRoute === 'recipe' ? homeY : 0);
       var title = document.getElementById('rtitle');
       if (title && route.name !== 'home') title.focus({ preventScroll: true });
     } else if (keep) {
