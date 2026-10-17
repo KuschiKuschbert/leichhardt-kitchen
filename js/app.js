@@ -3,7 +3,6 @@
   Plain JavaScript, no build step. Recipes live in js/data.js, drawings in js/art.js.
 
   Pages (hash links, so the phone's back button works):
-    #/welcome          first visit: pick how the book opens
     #/settings         settings
     #/prep             the daily prep list (js/prep.js), #/admin is its admin panel
     #/                 landing page: pick Recipes, Prep or Orders
@@ -20,9 +19,8 @@
 
   var KIND = { main: 'Main', snack: 'Snack', side: 'Side', dessert: 'Dessert', batch: 'Batch recipe', component: 'Component' };
   var VIEWS = [
-    { id: 'tiles', name: 'Tiles', desc: 'Every recipe as a card, with search and filters on top.' },
-    { id: 'list', name: 'List', desc: 'A short list on one side and the open recipe on the other.' },
-    { id: 'pass', name: 'The Pass', desc: 'Dishes as plates, batch recipes as pans. Tap the food to go deeper.' }
+    { id: 'pass', name: 'The Pass', desc: 'Dishes as plates, batch recipes as pans. Tap the food to go deeper.' },
+    { id: 'tiles', name: 'Tiles', desc: 'Every recipe as a card with its drawing, search and filters on top.' }
   ];
   var TEXT = [['normal', 'Normal'], ['large', 'Large'], ['xlarge', 'Extra large']];
 
@@ -112,6 +110,7 @@
   function readJSON(s, key) { if (!s) return null; try { return JSON.parse(s.getItem(key) || 'null'); } catch (e) { return null; } }
   function writeJSON(s, key, val) { if (!s) return; try { s.setItem(key, JSON.stringify(val)); } catch (e) {} }
   var settings = Object.assign({ view: null, text: 'normal' }, readJSON(LS, SKEY) || {});
+  if (settings.view !== 'tiles') settings.view = 'pass'; // the list view is gone: everyone starts on the pass
   var ticks = readJSON(SS, TKEY) || {};
   function saveSettings() { writeJSON(LS, SKEY, settings); }
   function saveTicks() { writeJSON(SS, TKEY, ticks); }
@@ -188,9 +187,20 @@
     var a = navActive();
     return '<nav class="tabbar" aria-label="Main">' + NAV.map(function (t) { return '<a href="' + t[2] + '"' + (a === t[0] ? ' aria-current="page"' : '') + '>' + NAV_ICON[t[0]] + '<span>' + t[1] + '</span></a>'; }).join('') + '</nav>';
   }
+  var SW_ICON = {
+    pass: '<svg width="20" height="20" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" aria-hidden="true"><circle cx="32" cy="32" r="22"/><circle cx="32" cy="32" r="12" stroke-dasharray="4 5"/></svg>',
+    tiles: '<svg width="20" height="20" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="20" height="20" rx="3"/><rect x="36" y="8" width="20" height="20" rx="3"/><rect x="8" y="36" width="20" height="20" rx="3"/><rect x="36" y="36" width="20" height="20" rx="3"/></svg>'
+  };
+  function viewSwitch() {
+    var n = parseRoute().name;
+    if (n !== 'home' && n !== 'recipe') return '';
+    return '<div class="vsw" role="group" aria-label="How the recipes are shown">' + VIEWS.map(function (v) {
+      return '<button type="button" data-act="topview" data-val="' + v.id + '" data-k="topview:' + v.id + '" aria-pressed="' + (settings.view === v.id) + '" aria-label="' + esc(v.name) + '">' + SW_ICON[v.id] + '<span>' + (v.id === 'pass' ? 'Pass' : 'Tiles') + '</span></button>';
+    }).join('') + '</div>';
+  }
   function header(count) {
     return '<header class="top"><a class="brand" href="#/"><span class="eyebrow">Leichhardt Hotel Kitchen</span><h1>Kitchen Book</h1></a>' +
-      '<div class="top-right">' + (count ? '<span class="count" id="count">' + esc(count) + '</span>' : '') + pillNav() +
+      '<div class="top-right">' + (count ? '<span class="count" id="count">' + esc(count) + '</span>' : '') + pillNav() + viewSwitch() +
       '<a class="icon-btn" href="#/settings" aria-label="Settings">' + ICON.gear + '<span class="icon-lbl">Settings</span></a></div></header>';
   }
   var DOCKETS = [['01', 'Recipes', '#/recipes', 'recipes'], ['02', 'Prep list', '#/prep', 'prep'], ['03', 'Orders', '#/orders', 'orders']];
@@ -332,7 +342,7 @@
       any += list.length;
       return '<section class="tile-group" aria-label="' + esc(g.title) + '"><div class="group-head"><span>' + esc(g.title) + '</span><span>' + list.length + '</span></div><div class="tiles">' + list.map(function (r) {
         return '<a class="tile' + (r.done ? ' done' : '') + '" href="#/r/' + esc(r.id) + '"><span class="t-top"><span class="t-kind">' + esc((r.sec || KIND[r.kind]) + (r.forLine === 'Template' ? ' · Template' : '')) + '</span>' +
-          '<span class="t-no">' + esc(r.no) + '</span></span><span class="t-name">' + esc(r.name) + '</span><span class="t-yield">' + esc(r.yield) + '</span>' +
+          '<span class="t-no">' + esc(r.no) + '</span></span><span class="t-mid"><span class="t-txt"><span class="t-name">' + esc(r.name) + '</span><span class="t-yield">' + esc(r.yield) + '</span></span>' + art(r, 't-art') + '</span>' +
           '<span class="chips">' + (r.done ? DONE_TAG : '') + rows[r.id].map(function (a) { return '<span class="tag' + (a.maybe ? ' maybe' : '') + '">' + esc(a.label) + '</span>'; }).join('') +
           (missing[r.id].length ? '<span class="tag maybe">Allergens incomplete</span>' : '') + '</span></a>';
       }).join('') + '</div></section>';
@@ -355,40 +365,6 @@
       searchField('Dish, ingredient or allergen') +
       kindChips() + freeChips(true) +
       '<div id="results">' + tilesHTML() + '</div><div class="hint">Allergen tags with a ? may be in it: check the supplier label.</div></main>' + footer() + '</div>';
-  }
-
-  /* ---------- view B: list and card ---------- */
-  function groupsHTML(curId) {
-    var s = q(), shown = 0;
-    var html = GROUPS.filter(function (g) { return ui.kind === 'all' || g.key === ui.kind; }).map(function (g) {
-      var items = g.list.filter(function (r) { return freeOk(r.id) && matches(r.id); }).map(function (r) {
-        var sub = rows[r.id].length ? rows[r.id].map(function (a) { return a.label; }).join(' · ') : (r.forLine === 'Template' ? 'Template' : 'No listed allergens');
-        if (missing[r.id].length) sub = 'Allergens incomplete' + (rows[r.id].length ? ' · ' + sub : '');
-        if (s && r.name.toLowerCase().indexOf(s) < 0) {
-          var hits = r.ingredients.filter(function (i) { return i.name.toLowerCase().indexOf(s) >= 0; }).map(function (i) { return i.name; });
-          if (hits.length) sub = 'Uses ' + hits.join(', ');
-        }
-        return '<a class="lrow' + (r.done ? ' done' : '') + '" href="#/r/' + esc(r.id) + '"' + (r.id === curId ? ' aria-current="page"' : '') + '><span class="l-no">' + esc(r.no) + '</span>' +
-          '<span class="l-main"><span class="l-name">' + esc(r.name) + '</span><span class="l-sub">' + esc(sub) + '</span></span>' + ICON.right + '</a>';
-      });
-      shown += items.length;
-      return items.length ? '<div class="group"><div class="group-head"><span>' + esc(g.title) + '</span><span>' + items.length + '</span></div><div class="rows">' + items.join('') + '</div></div>' : '';
-    }).join('');
-    return shown ? html : '<div class="empty">No recipes match. Clear the search or the Free from filter.</div>';
-  }
-  function viewList(route) {
-    var stack = route.stack, r = stack.length ? byId[stack[stack.length - 1]] : null;
-    var back = '';
-    if (r) {
-      var parent = stack.length > 1 ? byId[stack[stack.length - 2]] : null;
-      back = '<div class="backbar"><a class="pill-link" href="' + href(stack.slice(0, -1)) + '">' + ICON.left + esc(parent ? parent.name : 'All recipes') + '</a></div>';
-    }
-    return '<div class="page">' + back + header(countText()) +
-      '<div class="split' + (r ? ' has-recipe' : '') + '"><aside class="split-list" aria-label="Recipe list">' +
-      searchField('Dish, ingredient or allergen') + kindChips() + freeChips(true) + '<div id="groups" style="display: flex; flex-direction: column; gap: 0.9rem">' + groupsHTML(r && r.id) + '</div></aside>' +
-      '<main id="main" class="split-main">' + (r ? recipeCard(r, stack, false)
-        : '<div class="pick-panel"><span class="label" style="color: var(--ink)">Pick a recipe</span><span>Choose one from the list. Its allergens show first, then ingredients and method.</span></div>') +
-      '</main></div>' + footer() + '</div>';
   }
 
   /* ---------- view C: the pass ---------- */
@@ -471,10 +447,6 @@
         (role ? ' role="radio" aria-checked="' + on + '"' : '') + '>' + MINI[v.id] + '<span class="vo-name">' + esc(v.name) + '</span><span class="vo-desc">' + esc(v.desc) + '</span></button>';
     }).join('') + '</div>';
   }
-  function viewWelcome() {
-    return '<div class="page">' + header() + '<main id="main" class="welcome"><h2 tabindex="-1" id="rtitle">How do you want to see the recipes?</h2>' +
-      '<div class="hint" style="font-size: 1rem">Pick one to start. You can change it any time in Settings.</div>' + viewOptions('choose', false) + '</main>' + footer() + '</div>';
-  }
   function viewPrep() {
     return '<div class="page">' + header() + '<main id="main" class="prep"><div id="prep-root"></div></main>' + footer() + '</div>';
   }
@@ -488,8 +460,6 @@
       }).join('') + '</div></section>' +
       '<section class="set-block" aria-label="Ticked steps"><span class="label">Ticked steps</span><span class="hint">' + esc(plural(nTicks, 'step is', 'steps are')) + ' ticked. Ticks clear when you close the page.</span>' +
       '<div class="btn-row"><button type="button" class="btn" data-act="clearticks" data-k="clearticks">Clear all ticks</button></div></section>' +
-      '<section class="set-block" aria-label="Welcome screen"><span class="label">Welcome screen</span><span class="hint">Show the "How do you want to see the recipes?" screen again.</span>' +
-      '<div class="btn-row"><button type="button" class="btn" data-act="welcome" data-k="welcome">Show the welcome screen</button></div></section>' +
       '<section class="set-block" aria-label="About"><span class="label">About</span><span class="saved">' + esc(plural(D.recipes.length, 'recipe', 'recipes')) + ', updated ' + esc(D.updated) +
       '. Settings are saved on this phone or tablet only.</span></section></main>' + footer() + '</div>';
   }
@@ -497,7 +467,6 @@
   /* ---------- routing and drawing ---------- */
   function parseRoute() {
     var parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
-    if (parts[0] === 'welcome') return { name: 'welcome', stack: [] };
     if (parts[0] === 'settings') return { name: 'settings', stack: [] };
     if (parts[0] === 'prep' || parts[0] === 'admin' || parts[0] === 'orders') return { name: parts[0], stack: [] };
     if (parts[0] === 'r') {
@@ -510,22 +479,19 @@
   var lastHash = null;
   function render() {
     var route = parseRoute();
-    if (route.name === 'home' && !settings.view) { location.replace('#/welcome'); return; }
     var changed = location.hash !== lastHash;
     if (changed) { ui.pick = null; }
     var keep = document.activeElement && document.activeElement.getAttribute && document.activeElement.getAttribute('data-k');
-    var view = settings.view || 'tiles';
+    var view = settings.view || 'pass';
     var html;
-    if (route.name === 'welcome') html = viewWelcome();
-    else if (route.name === 'landing') html = viewLanding();
+    if (route.name === 'landing') html = viewLanding();
     else if (route.name === 'settings') html = viewSettings();
     else if (route.name === 'prep' || route.name === 'admin' || route.name === 'orders') html = viewPrep();
-    else if (view === 'list') html = viewList(route);
     else if (view === 'pass') html = viewPass(route);
     else html = viewTiles(route);
     // Swipeable chip rows keep their place when the page redraws (for example after tapping a chip at the far end).
     var rowsAt = Array.prototype.map.call(app.querySelectorAll('.chips.scroll'), function (el) { return el.scrollLeft; });
-    if (route.name !== 'landing' && route.name !== 'welcome') html += tabBar();
+    if (route.name !== 'landing') html += tabBar();
     app.innerHTML = html;
     if (!changed) Array.prototype.forEach.call(app.querySelectorAll('.chips.scroll'), function (el, i) { if (rowsAt[i]) el.scrollLeft = rowsAt[i]; });
     fitPins();
@@ -560,13 +526,9 @@
   // Search redraws only the results, so typing stays fast and the keyboard stays open.
   var timer = null;
   function updateResults() {
-    var route = parseRoute(), view = settings.view || 'tiles';
+    var route = parseRoute(), view = settings.view || 'pass';
     var box, count = document.getElementById('count');
     if (view === 'tiles' && (box = document.getElementById('results'))) { box.innerHTML = tilesHTML(); if (count) count.textContent = countText(); }
-    else if (view === 'list' && (box = document.getElementById('groups'))) {
-      box.innerHTML = groupsHTML(route.stack.length ? route.stack[route.stack.length - 1] : null);
-      if (count) count.textContent = countText();
-    }
     else if (view === 'pass' && (box = document.getElementById('shelves'))) { box.innerHTML = shelvesHTML(); if (count) count.textContent = passCount(); }
   }
 
@@ -595,11 +557,9 @@
     else if (act === 'free') { ui.free = ui.free.indexOf(val) >= 0 ? ui.free.filter(function (x) { return x !== val; }) : ui.free.concat([val]); }
     else if (act === 'lens') { ui.lens = ui.lens === val ? null : val; }
     else if (act === 'pick') { var k = Number(val); ui.pick = ui.pick === k ? null : k; }
-    else if (act === 'choose') { settings.view = val; saveSettings(); location.hash = '#/recipes'; return; }
-    else if (act === 'setview') { settings.view = val; saveSettings(); }
+    else if (act === 'setview' || act === 'topview') { settings.view = val; saveSettings(); }
     else if (act === 'settext') { settings.text = val; saveSettings(); document.documentElement.setAttribute('data-text', val); }
     else if (act === 'clearticks') { ticks = {}; saveTicks(); }
-    else if (act === 'welcome') { location.hash = '#/welcome'; return; }
     render();
   });
 
