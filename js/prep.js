@@ -57,6 +57,7 @@
     section: '', text: '', qty: '', recipeSearch: '', recipeOpen: false, tab: '',
     authed: false, pinStep: '', pinData: null, pf1: '', pf2: '', pinMsg: '',
     sections: [], activity: [], resetId: '',
+    admins: null, adminsFor: '', level: '', stats: null, statsRange: 14, week: null, weekAt: 0, weekBusy: false,
     user: null, authState: 'idle', draft: null, saveMsg: '', busy: false, toast: ''
   };
   var fb = null, sdkP = null, unsubCfg = null, unsubItems = null, unsubPrev = null, unsubSec = null, unsubAct = null;
@@ -224,7 +225,8 @@
     var t = S.text.trim();
     if (!t || !can('add')) return;
     var sec = cleanSection(S.section);
-    newItem({ text: t.slice(0, 160), qty: S.qty.trim().slice(0, 40), station: sec }).catch(function () { toast('Could not save. Check the connection.'); });
+    var rm = matchRecipe(t);
+    newItem({ text: t.slice(0, 160), qty: S.qty.trim().slice(0, 40), station: sec, recipe: rm ? rm.id : '' }).catch(function () { toast('Could not save. Check the connection.'); });
     noteSection(sec); bump({ added: 1, lastAdded: Date.now() });
     S.text = ''; S.qty = ''; S.section = sec; draw();
     var el = S.root && S.root.querySelector('[data-k="p-text"]'); if (el) el.focus();
@@ -266,7 +268,7 @@
   /* ---------- admin actions ---------- */
   function startDraft() {
     var c = S.config || { people: [] };
-    S.draft = JSON.parse(JSON.stringify({ people: c.people || [] }));
+    S.draft = JSON.parse(JSON.stringify({ people: c.people || [], showBadges: c.showBadges !== false }));
     S.saveMsg = '';
   }
   function saveConfig(cfg) {
@@ -274,14 +276,14 @@
       people: cfg.people.filter(function (p) { return String(p.name).trim(); }).map(function (p) {
         return { id: p.id, name: String(p.name).trim().slice(0, 40), role: p.role || 'staff', add: !!p.add, tick: !!p.tick, del: !!p.del, active: p.active !== false };
       }),
-      stations: [],
+      stations: [], showBadges: cfg.showBadges !== false,
       updated: Date.now(), updatedBy: (S.user && S.user.email) || ''
     };
     return sdk().then(function () { return fb.fs.setDoc(cfgDoc(), clean); }).then(function () { return clean; });
   }
   function adminSave() {
     S.busy = true; S.saveMsg = 'Saving...'; draw();
-    saveConfig(S.draft).then(function () { S.busy = false; S.saveMsg = 'Saved. Everyone sees the changes now.'; draw(); },
+    saveConfig(S.draft).then(function () { S.busy = false; startDraft(); S.saveMsg = 'Saved. Everyone sees the changes now.'; draw(); },
       function (e) { S.busy = false; S.saveMsg = e && e.code === 'permission-denied' ? 'That Google account is not allowed to change these settings.' : 'Could not save. Check the connection.'; draw(); });
   }
   function resetPin(id) {
@@ -302,7 +304,268 @@
       S.saveMsg = (c === 'auth/popup-closed-by-user') ? '' : 'Sign-in did not work (' + (c || 'unknown') + '). Try again.'; draw();
     });
   }
-  function signOut() { if (fb) fb.au.signOut(fb.auth); S.draft = null; if (unsubAct) { unsubAct(); unsubAct = null; } S.activity = []; }
+  function signOut() { if (fb) fb.au.signOut(fb.auth); S.draft = null; S.level = ''; S.admins = null; S.adminsFor = ''; S.stats = null; if (unsubAct) { unsubAct(); unsubAct = null; } S.activity = []; }
+
+  /* ---------- recognising recipes in hand-written lines ---------- */
+  var STOP = { and: 1, the: 1, for: 1, with: 1, of: 1, a: 1, in: 1, to: 1, on: 1, fresh: 1, more: 1 };
+  function toks(s) {
+    return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9 ]+/g, ' ').split(/\s+/).filter(Boolean)
+      .filter(function (w) { return !STOP[w]; })
+      .map(function (w) { return w.length > 3 && /s$/.test(w) && !/ss$/.test(w) ? w.slice(0, -1) : w; });
+  }
+  var RIDX = null, RCACHE = {};
+  function recipeIndex() {
+    if (RIDX) return RIDX;
+    RIDX = [];
+    D.recipes.forEach(function (r) {
+      var seen = {};
+      [r.name, r.short].forEach(function (c) {
+        var t = toks(c), k = t.join(' ');
+        if (!t.length || seen[k]) return;
+        if (t.length === 1 && t[0].length < 4) return;
+        seen[k] = 1; RIDX.push({ r: r, t: t });
+      });
+    });
+    return RIDX;
+  }
+  function matchRecipe(text) {
+    // a line links to a recipe card when every word of the card's name (or short name) is in the line.
+    // The most specific card wins, batch and component cards win ties. Otherwise a line that is only part of
+    // one card's name links to it, when that is the only card it could mean.
+    var key = String(text || '').toLowerCase();
+    if (RCACHE.hasOwnProperty(key)) return RCACHE[key];
+    var tt = toks(text), res = null;
+    if (tt.length) {
+      var set = {}, best = null;
+      tt.forEach(function (w) { set[w] = 1; });
+      recipeIndex().forEach(function (c) {
+        if (!c.t.every(function (w) { return set[w]; })) return;
+        var pri = (c.r.kind === 'batch' || c.r.kind === 'component') ? 0 : 1, bp = best ? ((best.r.kind === 'batch' || best.r.kind === 'component') ? 0 : 1) : 0;
+        if (!best || c.t.length > best.t.length || (c.t.length === best.t.length && pri < bp)) best = c;
+      });
+      if (best) res = best.r;
+      else {
+        var hits = {}, n = 0, one = null;
+        recipeIndex().forEach(function (c) {
+          if (tt.every(function (w) { return c.t.indexOf(w) >= 0; }) && c.t.length <= tt.length + 2 && !hits[c.r.id]) { hits[c.r.id] = 1; n++; one = c.r; }
+        });
+        if (n === 1) res = one;
+      }
+    }
+    RCACHE[key] = res;
+    return res;
+  }
+  function recipeById(id) { return D.recipes.filter(function (r) { return r.id === id; })[0] || null; }
+
+  /* ---------- who is an admin: the owner sees everything, a sous chef only adds and removes staff ---------- */
+  function adminsRef() { return docRef('config', 'admins'); }
+  function setLevel() {
+    var em = String((S.user && S.user.email) || '').toLowerCase(), a = S.admins || {};
+    if (String(a.owner || '').toLowerCase() === em) S.level = 'owner';
+    else if ((a.sous || []).map(function (x) { return String(x).toLowerCase(); }).indexOf(em) >= 0) S.level = 'sous';
+    else S.level = 'none';
+    draw();
+  }
+  function loadAdmins() {
+    if (!S.user || !fb || S.configState !== 'ok') return;
+    var em = S.user.email || '';
+    if (S.adminsFor === em) return;
+    S.adminsFor = em; S.level = '';
+    fb.fs.getDoc(adminsRef()).then(function (s) {
+      if (s.exists()) { S.admins = s.data(); setLevel(); return; }
+      // first sign-in ever: only the real owner is allowed to create this record
+      return fb.fs.setDoc(adminsRef(), { owner: em, sous: [], created: Date.now() }).then(function () { S.admins = { owner: em, sous: [] }; setLevel(); });
+    }).catch(function () { S.level = 'none'; draw(); });
+  }
+  function saveSous() {
+    var box = S.root.querySelector('#a-sous');
+    var list = (box ? box.value : '').split(/[\n,; ]+/).map(function (x) { return x.trim().toLowerCase(); }).filter(function (x) { return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x); });
+    S.busy = true; S.saveMsg = 'Saving...'; draw();
+    fb.fs.setDoc(adminsRef(), { sous: list }, { merge: true }).then(function () { S.admins = Object.assign({}, S.admins, { sous: list }); S.busy = false; S.saveMsg = 'Sous chef sign-in saved.'; draw(); },
+      function () { S.busy = false; S.saveMsg = 'Could not save. Sign in as the owner.'; draw(); });
+  }
+
+  /* ---------- the weekly ticking badges (shown to everyone) ---------- */
+  function loadWeek() {
+    if (!fb || S.weekBusy) return;
+    S.weekBusy = true; S.weekAt = Date.now();
+    var today = ymd(new Date()), dates = [], i, start = new Date();
+    start.setHours(0, 0, 0, 0); start = start.getTime() - 6 * 86400000;
+    for (i = 0; i < 7; i++) dates.push(shift(today, -i));
+    Promise.all(dates.map(function (d) { return fb.fs.getDocs(itemsCol(d)).then(function (s) { return s.docs.map(function (x) { return x.data(); }); }, function () { return []; }); })).then(function (lists) {
+      var counts = {};
+      lists.forEach(function (l) { l.forEach(function (x) { if (x.done && !x.deleted && x.doneBy && (x.doneAt || 0) >= start) counts[x.doneBy] = (counts[x.doneBy] || 0) + 1; }); });
+      var arr = Object.keys(counts).map(function (n) { return { name: n, n: counts[n] }; }).sort(function (a, b) { return b.n - a.n || a.name.localeCompare(b.name); });
+      var rank = 0, prev = -1;
+      arr.forEach(function (x, k) { if (x.n !== prev) { rank = k + 1; prev = x.n; } x.rank = rank; });
+      S.week = arr; S.weekBusy = false; draw();
+    });
+  }
+  var MEDAL = { 1: '#C9971C', 2: '#8E959C', 3: '#A8693A' };
+  function ordinal(n) { return n + (n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th'); }
+  function medal(rank) {
+    return '<svg class="nb-medal" viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><circle cx="13" cy="13" r="12" fill="' + (MEDAL[rank] || '#8E959C') + '"/><circle cx="13" cy="13" r="9" fill="none" stroke="#fff" stroke-width="1.5" opacity=".8"/><text x="13" y="17.5" text-anchor="middle" font-size="13" font-weight="700" fill="#fff" font-family="Barlow Condensed, sans-serif">' + rank + '</text></svg>';
+  }
+  function badgesOn() { return !S.config || S.config.showBadges !== false; }
+  function badgeStrip() {
+    if (!badgesOn() || !S.week || !S.week.length) return '';
+    var top = S.week.filter(function (x) { return x.rank <= 3; }).slice(0, 5);
+    return '<div class="nb-badges" aria-label="Top tickers this week"><span class="nb-bl">Top tickers, last 7 days</span>' +
+      top.map(function (x) { return '<span class="nb-bd">' + medal(x.rank) + '<span><strong>' + esc(x.name) + '</strong> <span class="nb-bn">' + ordinal(x.rank) + ', ' + x.n + (x.n === 1 ? ' tick' : ' ticks') + '</span></span></span>'; }).join('') + '</div>';
+  }
+  function myRank() {
+    var p = who();
+    if (!p || !badgesOn() || !S.week) return '';
+    var r = S.week.filter(function (x) { return x.name === p.name; })[0];
+    return r ? ' · ' + ordinal(r.rank) + ' for ticks this week' : '';
+  }
+
+  /* ---------- insights for the owner: numbers and charts from the last 30 days of lines ---------- */
+  function loadStats(force) {
+    if (!fb || S.configState !== 'ok') return;
+    if (S.stats && (S.stats.loading || !force)) return;
+    S.stats = { loading: true, days: {} };
+    var today = ymd(new Date()), dates = [], i;
+    for (i = 0; i < 30; i++) dates.push(shift(today, -i));
+    Promise.all(dates.map(function (d) { return fb.fs.getDocs(itemsCol(d)).then(function (s) { return [d, s.docs.map(function (x) { return x.data(); })]; }, function () { return [d, []]; }); })).then(function (res) {
+      var days = {}; res.forEach(function (r) { days[r[0]] = r[1]; });
+      S.stats = { loading: false, days: days, at: Date.now() };
+      draw();
+    });
+  }
+  function aggregate(n) {
+    var today = ymd(new Date()), dates = [], i, h;
+    for (i = n - 1; i >= 0; i--) dates.push(shift(today, -i));
+    var agg = { dates: dates, perDay: {}, people: {}, sections: {}, wHour: [], tHour: [], times: [], written: 0, ticked: 0 };
+    for (h = 0; h < 24; h++) { agg.wHour.push(0); agg.tHour.push(0); }
+    dates.forEach(function (d) {
+      var items = (S.stats.days[d] || []).filter(function (x) { return !x.deleted; });
+      var pd = agg.perDay[d] = { w: items.length, t: 0 };
+      items.forEach(function (x) {
+        agg.written++;
+        var nm = x.addedBy || 'Unknown', pp = agg.people[nm] = agg.people[nm] || { w: 0, t: 0 };
+        pp.w++;
+        if (x.station) agg.sections[x.station] = (agg.sections[x.station] || 0) + 1;
+        if (x.addedAt) agg.wHour[new Date(x.addedAt).getHours()]++;
+        if (x.done) {
+          pd.t++; agg.ticked++;
+          var tn = x.doneBy || 'Unknown', tp = agg.people[tn] = agg.people[tn] || { w: 0, t: 0 };
+          tp.t++;
+          if (x.doneAt) { agg.tHour[new Date(x.doneAt).getHours()]++; if (x.addedAt && x.doneAt > x.addedAt) agg.times.push(x.doneAt - x.addedAt); }
+        }
+      });
+    });
+    agg.times.sort(function (a, b) { return a - b; });
+    return agg;
+  }
+  function dur(ms) {
+    if (!ms) return 'n/a';
+    var m = Math.round(ms / 60000);
+    if (m < 60) return m + ' min';
+    var h = Math.floor(m / 60), r = m % 60;
+    return h + ' h' + (r ? ' ' + r + ' min' : '');
+  }
+  var CW = '#2a78d6', CT = '#eb6834';
+  function niceMax(v) { if (v <= 4) return 4; var p = Math.pow(10, Math.floor(Math.log10(v))), f = v / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p; }
+  function barPath(x, y, w, h, r, horiz) {
+    // 4px rounded data-end, square at the baseline
+    r = Math.max(0, Math.min(r, horiz ? Math.min(w, h / 2) : Math.min(h, w / 2)));
+    if (horiz) return 'M' + x + ' ' + y + 'H' + (x + w - r) + 'Q' + (x + w) + ' ' + y + ' ' + (x + w) + ' ' + (y + r) + 'V' + (y + h - r) + 'Q' + (x + w) + ' ' + (y + h) + ' ' + (x + w - r) + ' ' + (y + h) + 'H' + x + 'Z';
+    return 'M' + x + ' ' + (y + h) + 'V' + (y + r) + 'Q' + x + ' ' + y + ' ' + (x + r) + ' ' + y + 'H' + (x + w - r) + 'Q' + (x + w) + ' ' + y + ' ' + (x + w) + ' ' + (y + r) + 'V' + (y + h) + 'Z';
+  }
+  function legend(items) { return '<div class="a-legend">' + items.map(function (i) { return '<span><i style="background:' + i[1] + '"></i>' + esc(i[0]) + '</span>'; }).join('') + '</div>'; }
+  function yGrid(W, l, r, t, ph, max, fmt) {
+    var out = '';
+    for (var g = 0; g <= 4; g++) {
+      var y = t + ph - ph * g / 4, v = max * g / 4;
+      out += '<line class="ch-grid" x1="' + l + '" x2="' + (W - r) + '" y1="' + y + '" y2="' + y + '"/><text class="ch-ax" x="' + (l - 6) + '" y="' + (y + 4) + '" text-anchor="end">' + (fmt ? fmt(v) : (Math.round(v * 10) / 10)) + '</text>';
+    }
+    return out;
+  }
+  function dailyChart(agg) {
+    var W = 720, H = 250, l = 34, r = 8, t = 12, b = 30, ph = H - t - b, pw = W - l - r, n = agg.dates.length, band = pw / n, bw = Math.min(12, band * 0.34), max = 0;
+    agg.dates.forEach(function (d) { max = Math.max(max, agg.perDay[d].w, agg.perDay[d].t); });
+    max = niceMax(max);
+    var out = '<svg class="ch" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Lines written and ticked each day">' + yGrid(W, l, r, t, ph, max, function (v) { return Math.round(v); });
+    agg.dates.forEach(function (d, i) {
+      var pd = agg.perDay[d], cx = l + band * i + band / 2, hw = pd.w / max * ph, ht = pd.t / max * ph;
+      var dn = parseYmd(d).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
+      out += '<g><title>' + esc(dn + ': ' + pd.w + ' written, ' + pd.t + ' ticked') + '</title><rect x="' + (cx - band / 2) + '" y="' + t + '" width="' + band + '" height="' + ph + '" fill="transparent"/>' +
+        (pd.w ? '<path d="' + barPath(cx - bw - 1, t + ph - hw, bw, hw, 4) + '" fill="' + CW + '"/>' : '') +
+        (pd.t ? '<path d="' + barPath(cx + 1, t + ph - ht, bw, ht, 4) + '" fill="' + CT + '"/>' : '') + '</g>';
+      if (n <= 14 || i % 3 === 0 || i === n - 1) out += '<text class="ch-ax" x="' + cx + '" y="' + (H - 10) + '" text-anchor="middle">' + parseYmd(d).getDate() + '</text>';
+    });
+    return out + '</svg>';
+  }
+  function peopleChart(agg) {
+    var rows = Object.keys(agg.people).map(function (n) { return { n: n, w: agg.people[n].w, t: agg.people[n].t }; }).filter(function (x) { return x.w || x.t; })
+      .sort(function (a, b) { return (b.t - a.t) || (b.w - a.w); }).slice(0, 12);
+    if (!rows.length) return '<p class="hint">Nothing written in this time yet.</p>';
+    var W = 720, l = 112, r = 44, rh = 34, H = rows.length * rh + 8, pw = W - l - r, max = niceMax(Math.max.apply(null, rows.map(function (x) { return Math.max(x.w, x.t); })));
+    var out = '<svg class="ch" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Lines written and ticked by each person">';
+    rows.forEach(function (x, i) {
+      var y = 4 + i * rh, ww = Math.max(x.w ? 4 : 0, x.w / max * pw), tw = Math.max(x.t ? 4 : 0, x.t / max * pw);
+      out += '<g><title>' + esc(x.n + ': ' + x.w + ' written, ' + x.t + ' ticked') + '</title><rect x="0" y="' + y + '" width="' + W + '" height="' + rh + '" fill="transparent"/>' +
+        '<text class="ch-lb" x="' + (l - 10) + '" y="' + (y + 21) + '" text-anchor="end">' + esc(x.n) + '</text>' +
+        (x.w ? '<path d="' + barPath(l, y + 3, ww, 12, 4, true) + '" fill="' + CW + '"/>' : '') + '<text class="ch-val" x="' + (l + ww + 6) + '" y="' + (y + 13) + '">' + x.w + '</text>' +
+        (x.t ? '<path d="' + barPath(l, y + 17, tw, 12, 4, true) + '" fill="' + CT + '"/>' : '') + '<text class="ch-val" x="' + (l + tw + 6) + '" y="' + (y + 27) + '">' + x.t + '</text></g>';
+    });
+    return out + '</svg>';
+  }
+  function hoursChart(agg) {
+    var lo = 24, hi = -1, h;
+    for (h = 0; h < 24; h++) if (agg.wHour[h] || agg.tHour[h]) { lo = Math.min(lo, h); hi = Math.max(hi, h); }
+    if (hi < 0) return '<p class="hint">Nothing written in this time yet.</p>';
+    lo = Math.max(0, Math.min(lo, hi - 5)); hi = Math.min(23, Math.max(hi, lo + 5));
+    var W = 720, H = 230, l = 34, r = 14, t = 14, b = 28, ph = H - t - b, pw = W - l - r, n = hi - lo + 1, max = 0;
+    for (h = lo; h <= hi; h++) max = Math.max(max, agg.wHour[h], agg.tHour[h]);
+    max = niceMax(max);
+    function pt(arr) { var out = []; for (var k = lo; k <= hi; k++) out.push([l + pw * (k - lo) / (n - 1), t + ph - arr[k] / max * ph]); return out; }
+    var out = '<svg class="ch" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Lines written and ticked by hour of the day">' + yGrid(W, l, r, t, ph, max, function (v) { return Math.round(v); });
+    for (h = lo; h <= hi; h++) out += '<text class="ch-ax" x="' + (l + pw * (h - lo) / (n - 1)) + '" y="' + (H - 8) + '" text-anchor="middle">' + (h < 10 ? '0' : '') + h + '</text>';
+    [[agg.wHour, CW, 'written'], [agg.tHour, CT, 'ticked']].forEach(function (s) {
+      var p = pt(s[0]);
+      out += '<polyline points="' + p.map(function (q) { return q[0].toFixed(1) + ',' + q[1].toFixed(1); }).join(' ') + '" fill="none" stroke="' + s[1] + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+      p.forEach(function (q, k) { out += '<circle cx="' + q[0].toFixed(1) + '" cy="' + q[1].toFixed(1) + '" r="4" fill="' + s[1] + '" stroke="#fff" stroke-width="2"><title>' + esc((lo + k < 10 ? '0' : '') + (lo + k) + ':00, ' + s[0][lo + k] + ' ' + s[2]) + '</title></circle>'; });
+    });
+    return out + '</svg>';
+  }
+  function sectionsChart(agg) {
+    var rows = Object.keys(agg.sections).map(function (n) { return { n: n, v: agg.sections[n] }; }).sort(function (a, b) { return b.v - a.v; }).slice(0, 10);
+    if (!rows.length) return '<p class="hint">No sections used in this time yet.</p>';
+    var W = 720, l = 150, r = 44, rh = 28, H = rows.length * rh + 8, pw = W - l - r, max = niceMax(rows[0].v), out = '<svg class="ch" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Lines per section">';
+    rows.forEach(function (x, i) {
+      var y = 4 + i * rh, w = Math.max(4, x.v / max * pw);
+      out += '<g><title>' + esc(x.n + ': ' + x.v + ' lines') + '</title><rect x="0" y="' + y + '" width="' + W + '" height="' + rh + '" fill="transparent"/><text class="ch-lb" x="' + (l - 10) + '" y="' + (y + 18) + '" text-anchor="end">' + esc(x.n.length > 20 ? x.n.slice(0, 19) + '…' : x.n) + '</text><path d="' + barPath(l, y + 5, w, 14, 4, true) + '" fill="' + CW + '"/><text class="ch-val" x="' + (l + w + 6) + '" y="' + (y + 17) + '">' + x.v + '</text></g>';
+    });
+    return out + '</svg>';
+  }
+  function insightsHTML() {
+    var st = S.stats;
+    var head = '<section class="set-block"><span class="label">Insights</span><span class="hint">Worked out from the lines themselves, the last 30 days at most.</span>';
+    if (!st || st.loading) return head + '<p class="hint">Loading the last 30 days...</p></section>';
+    var n = S.statsRange, agg = aggregate(n);
+    var med = agg.times.length ? agg.times[Math.floor(agg.times.length / 2)] : 0;
+    var bh = -1, bm = 0, hh;
+    for (hh = 0; hh < 24; hh++) if (agg.wHour[hh] > bm) { bm = agg.wHour[hh]; bh = hh; }
+    var best = null; agg.dates.forEach(function (d) { if (!best || agg.perDay[d].w > agg.perDay[best].w) best = d; });
+    var tiles = [
+      [agg.written, 'lines written'], [agg.ticked, 'lines ticked off'],
+      [agg.written ? Math.round(agg.ticked / agg.written * 100) + '%' : 'n/a', 'ticked off'],
+      [dur(med), 'typical time to tick'],
+      [bh >= 0 ? (bh < 10 ? '0' : '') + bh + ':00' : 'n/a', 'busiest writing hour'],
+      [best && agg.perDay[best].w ? parseYmd(best).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }) : 'n/a', 'busiest day']
+    ];
+    var tbl = '<details class="a-details"><summary>Show the daily numbers as a table</summary><div class="a-scroll"><table class="a-table"><thead><tr><th scope="col">Day</th><th scope="col">Written</th><th scope="col">Ticked</th></tr></thead><tbody>' +
+      agg.dates.slice().reverse().map(function (d) { return '<tr><th scope="row">' + esc(parseYmd(d).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })) + '</th><td>' + agg.perDay[d].w + '</td><td>' + agg.perDay[d].t + '</td></tr>'; }).join('') + '</tbody></table></div></details>';
+    return head + '<div class="chips">' + [7, 14, 30].map(function (k) { return '<button type="button" class="chip" data-p="range" data-v="' + k + '" aria-pressed="' + (n === k) + '">' + k + ' days</button>'; }).join('') +
+      '<button type="button" class="chip" data-p="stats-refresh">Refresh</button></div>' +
+      '<div class="a-tiles">' + tiles.map(function (x) { return '<div class="a-tile"><strong>' + esc(String(x[0])) + '</strong><span>' + esc(x[1]) + '</span></div>'; }).join('') + '</div>' +
+      '<h3 class="a-ch-h">Lines each day</h3>' + legend([['Written', CW], ['Ticked off', CT]]) + dailyChart(agg) + tbl +
+      '<h3 class="a-ch-h">By person</h3>' + legend([['Written', CW], ['Ticked off', CT]]) + peopleChart(agg) +
+      '<h3 class="a-ch-h">Time of day</h3>' + legend([['Written', CW], ['Ticked off', CT]]) + hoursChart(agg) +
+      '<h3 class="a-ch-h">Sections</h3>' + sectionsChart(agg) + '</section>';
+  }
 
   /* ---------- drawing ---------- */
   var TICK = '<svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><path d="M5 14 L11 20 L22 5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -338,7 +601,8 @@
   function rowHTML(x, date, readonly) {
     var tickOk = can('tick') && !x.deleted, delOk = can('del');
     var by = x.done && x.doneBy ? esc(x.doneBy) + (x.doneAt ? ' ' + clock(x.doneAt) : '') : (x.addedBy ? esc(x.addedBy) : '');
-    var link = x.recipe ? '<a class="nb-go" href="#/r/' + encodeURIComponent(x.recipe) + '">recipe</a>' : '';
+    var rid = x.recipe || ((matchRecipe(x.text) || {}).id || ''), rr = rid ? recipeById(rid) : null;
+    var link = rid ? '<a class="nb-go" href="#/r/' + encodeURIComponent(rid) + '" title="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '">recipe</a>' : '';
     return '<li class="nb-row' + (x.done ? ' is-done' : '') + (x.deleted ? ' is-removed' : '') + '">' +
       '<button type="button" class="nb-box" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-pressed="' + !!x.done + '" aria-label="' + esc((x.done ? 'Untick ' : 'Tick ') + x.text) + '"' + (tickOk ? '' : ' disabled') + '>' + (x.done ? TICK : BOX) + '</button>' +
       '<span class="nb-t">' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + '</span>' +
@@ -366,8 +630,10 @@
       '<div class="p-recipes">' + (list.length ? list.map(function (r) { return '<button type="button" class="chip sq" data-p="add-recipe" data-id="' + esc(r.id) + '">' + esc(r.short || r.name) + '</button>'; }).join('') : '<span class="hint">No recipe matches.</span>') + '</div>' +
       '<p class="hint">It goes under the section written in the box above.</p></details>';
   }
+  function hintText(t) { var m = t && t.trim().length > 2 ? matchRecipe(t) : null; return m ? 'Links to the ' + m.name + ' card' : ''; }
   function listHTML() {
     var p = me(), today = ymd(new Date());
+    if (S.authed && fb && !S.weekBusy && Date.now() - S.weekAt > 300000) loadWeek();
     var live = S.items.filter(function (x) { return !x.deleted; }), doneN = live.filter(function (x) { return x.done; }).length;
     var pl = S.prev.filter(function (x) { return !x.deleted; }), pDone = pl.filter(function (x) { return x.done; }).length;
     var removed = S.items.filter(function (x) { return x.deleted; });
@@ -382,7 +648,7 @@
       '<div class="nb-add-row"><label class="visually-hidden" for="p-section">Section</label><input id="p-section" class="nb-in nb-in-sec" data-k="p-section" list="p-sections" autocomplete="off" placeholder="Section (new or old)" maxlength="40" value="' + esc(S.section) + '">' +
       '<label class="visually-hidden" for="p-text">Prep item</label><input id="p-text" class="nb-in nb-in-text" data-k="p-text" autocomplete="off" placeholder="Write a new line..." maxlength="160" value="' + esc(S.text) + '">' +
       '<label class="visually-hidden" for="p-qty">Amount</label><input id="p-qty" class="nb-in nb-in-qty" data-k="p-qty" autocomplete="off" placeholder="Amount" maxlength="40" value="' + esc(S.qty) + '">' +
-      '<button type="submit" class="nb-addbtn">Add</button></div>' + recipePicker() + '</form>' : '<p class="hint">You can read the book but not write in it. Ask the admin if that is wrong.</p>';
+      '<button type="submit" class="nb-addbtn">Add</button></div><p class="nb-hint" id="p-hint" aria-live="polite">' + esc(hintText(S.text)) + '</p>' + recipePicker() + '</form>' : '<p class="hint">You can read the book but not write in it. Ask the admin if that is wrong.</p>';
     var todayEmpty = !live.length && S.itemsState === 'ok' ? '<p class="nb-empty">Nothing written for ' + esc(dayName(S.date).toLowerCase()) + ' yet.</p>' : '';
     var prevEmpty = !S.prev.length ? '<p class="nb-empty">Nothing was written on ' + esc(dayName(pdate).toLowerCase()) + '.</p>' : '';
     var left = '<section class="nb-page nb-left"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + esc(dayName(S.date)) + '</h2><span class="nb-date">' + esc(longDate(S.date)) + '</span></div>' +
@@ -396,13 +662,13 @@
       '<div class="nb-body">' + pageBody(S.prev, pdate) + prevEmpty + '</div>' +
       '<div class="nb-foot nb-foot-r"><span class="nb-note">' + (notTicked ? notTicked + (notTicked === 1 ? ' line was' : ' lines were') + ' not ticked' : '') + '</span>' +
       (notTicked && can('add') ? '<button type="button" class="nb-btn" data-p="carry">Copy onto ' + esc(dayName(S.date).toLowerCase()) + '</button>' : '') + '</div></section>';
-    return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' + (can('tick') ? '' : ' (read only)') : '') + '</span><span class="p-links"><button type="button" class="p-link" data-p="who-change">Not you?</button><a class="p-link" href="#/admin">Admin</a></span></div>' +
+    return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' + (can('tick') ? '' : ' (read only)') + esc(myRank()) : '') + '</span><span class="p-links"><button type="button" class="p-link" data-p="who-change">Not you?</button><a class="p-link" href="#/admin">Admin</a></span></div>' +
       '<div class="nb-nav"><button type="button" class="chip" data-p="day" data-d="-1" aria-label="Back one day">&lsaquo;</button>' +
       '<button type="button" class="chip" data-p="today" aria-pressed="' + (S.date === today) + '">Today</button>' +
       '<button type="button" class="chip" data-p="yesterday" aria-pressed="' + (S.date === shift(today, -1)) + '">Yesterday</button>' +
       '<label class="visually-hidden" for="p-day">Pick a date</label><input id="p-day" type="date" class="p-dateinput" data-k="p-day" value="' + esc(S.date) + '">' +
       '<button type="button" class="chip" data-p="day" data-d="1" aria-label="Forward one day">&rsaquo;</button></div>' +
-      '<div class="nb-wrap"><div class="nb">' + left + '<div class="nb-spine" aria-hidden="true"></div>' + right + '</div>' + tabHTML + '</div>';
+      badgeStrip() + '<div class="nb-wrap"><div class="nb">' + left + '<div class="nb-spine" aria-hidden="true"></div>' + right + '</div>' + tabHTML + '</div>';
   }
   function ago(ms) {
     if (!ms) return 'never';
@@ -436,13 +702,27 @@
       return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2><p class="hint">Loading...</p></section>';
     }
     if (!S.user) {
-      return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2><p class="hint">Sign in with the admin Google account to change names, permissions and see the tallies.</p>' +
+      return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2><p class="hint">Sign in with your Google account to open the admin panel.</p>' +
         (S.saveMsg ? '<p class="p-err">' + esc(S.saveMsg) + '</p>' : '') +
         '<div class="btn-row"><button type="button" class="btn dark" data-p="signin">Sign in with Google</button><a class="btn" href="#/prep">Back to the prep book</a></div></section>';
     }
-    watchActivity();
+    loadAdmins();
+    if (!S.level) return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2><p class="hint">Checking your access...</p></section>';
+    if (S.level === 'none') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2><p class="p-err">' + esc(S.user.email) + ' is not an admin here. Ask the head chef to add this Google account.</p><div class="btn-row"><button type="button" class="btn dark" data-p="signout">Sign out</button><a class="btn" href="#/prep">Back to the prep book</a></div></section>';
     if (!S.draft) startDraft();
-    var d = S.draft;
+    var d = S.draft, owner = S.level === 'owner';
+    if (owner) { watchActivity(); loadStats(false); }
+    var bar = '<div class="p-bar"><span>Signed in as <strong>' + esc(S.user.email) + '</strong> (' + (owner ? 'head chef' : 'sous chef') + ')</span><span class="p-links"><button type="button" class="p-link" data-p="signout">Sign out</button><a class="p-link" href="#/prep">Prep book</a></span></div>';
+    var bulk = '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line"></textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div>';
+    var saveBlock = '<section class="set-block"><div class="btn-row"><button type="button" class="btn dark" data-p="a-save"' + (S.busy ? ' disabled' : '') + '>Save changes</button><button type="button" class="btn" data-p="a-reset">Undo unsaved changes</button></div><span class="saved" role="status">' + esc(S.saveMsg) + '</span></section>';
+    if (!owner) {
+      var srows = d.people.map(function (p, i) {
+        return '<li class="a-person"><div class="a-top">' + (p.isNew ? '<label class="visually-hidden" for="a-n' + i + '">Name</label><input id="a-n' + i + '" class="search a-name" data-k="a-n' + i + '" data-a="name" data-i="' + i + '" value="' + esc(p.name) + '" maxlength="40">' : '<span class="a-name-ro">' + esc(p.name) + '</span>') +
+          '<button type="button" class="p-x" data-p="a-remove-person" data-i="' + i + '">Remove</button></div></li>';
+      }).join('');
+      return '<div class="p-admin">' + bar + '<h2 class="p-h" id="rtitle" tabindex="-1">Staff</h2>' +
+        '<section class="set-block"><span class="hint">Add a person or remove one. New people start as Staff. Removing someone keeps their name on old lines. Roles and PINs are looked after by the head chef.</span><ul class="a-list">' + (srows || '<li class="hint">No names yet.</li>') + '</ul><div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' + saveBlock + '</div>';
+    }
     var rows = d.people.map(function (p, i) {
       return '<li class="a-person' + (p.active === false ? ' is-off' : '') + '"><div class="a-top"><label class="visually-hidden" for="a-n' + i + '">Name</label><input id="a-n' + i + '" class="search a-name" data-k="a-n' + i + '" data-a="name" data-i="' + i + '" value="' + esc(p.name) + '" maxlength="40">' +
         '<label class="visually-hidden" for="a-r' + i + '">Role</label><select id="a-r' + i + '" class="p-select" data-k="a-r' + i + '" data-a="role" data-i="' + i + '">' + Object.keys(ROLES).map(function (k) { return '<option value="' + k + '"' + (p.role === k ? ' selected' : '') + '>' + ROLES[k].name + '</option>'; }).join('') + '</select></div>' +
@@ -452,13 +732,14 @@
         '<button type="button" class="p-x" data-p="a-reset-pin" data-id="' + esc(p.id) + '">' + (S.resetId === p.id ? 'Tap again to reset PIN' : 'Reset PIN') + '</button>' +
         '<button type="button" class="p-x" data-p="a-remove-person" data-i="' + i + '">Delete</button></div></li>';
     }).join('');
-    return '<div class="p-admin"><div class="p-bar"><span>Signed in as <strong>' + esc(S.user.email) + '</strong></span><span class="p-links"><button type="button" class="p-link" data-p="signout">Sign out</button><a class="p-link" href="#/prep">Prep book</a></span></div>' +
-      '<h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2>' + statsHTML() +
+    var sous = ((S.admins && S.admins.sous) || []).join('\n');
+    return '<div class="p-admin">' + bar + '<h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2>' + insightsHTML() + statsHTML() +
       '<section class="set-block"><span class="label">People</span><span class="hint">Pick a role to set the usual permissions, then adjust the ticks for one person if you need to. Reset PIN lets that person choose a new one. Removing someone from the list keeps their name on old lines.</span>' +
-      '<ul class="a-list">' + (rows || '<li class="hint">No names yet.</li>') + '</ul><div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' +
-      '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line"></textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div></section>' +
-      '<section class="set-block"><div class="btn-row"><button type="button" class="btn dark" data-p="a-save"' + (S.busy ? ' disabled' : '') + '>Save changes</button><button type="button" class="btn" data-p="a-reset">Undo unsaved changes</button></div>' +
-      '<span class="saved" role="status">' + esc(S.saveMsg) + '</span></section>' +
+      '<ul class="a-list">' + (rows || '<li class="hint">No names yet.</li>') + '</ul><div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' +
+      '<section class="set-block"><span class="label">Badges</span><label class="a-check"><input type="checkbox" data-a="badges"' + (d.showBadges !== false ? ' checked' : '') + '> Show the weekly top tickers to everyone on the prep book</label></section>' + saveBlock +
+      '<section class="set-block"><span class="label">Sous chef sign-in</span><span class="hint">Google accounts that may add and remove staff in this panel, and nothing else. One email per line.</span>' +
+      '<div class="field"><label class="label" for="a-sous">Sous chef Google emails</label><textarea id="a-sous" class="p-bulk" data-k="a-sous" rows="2" placeholder="name@gmail.com">' + esc(sous) + '</textarea></div>' +
+      '<div class="btn-row"><button type="button" class="btn" data-p="a-save-sous"' + (S.busy ? ' disabled' : '') + '>Save sous chef sign-in</button></div></section>' +
       '<section class="set-block"><span class="label">Kitchen PIN</span><span class="hint">The kitchen PIN is part of the security rules in the Firebase console. To change it, change it there and on every phone. People\'s own PINs only say who is writing. They are not a lock.</span></section></div>';
   }
   function bodyHTML() {
@@ -510,9 +791,12 @@
     if (a === 'signout') { signOut(); draw(); return; }
     if (a === 'sec-hide') { hideSection(id, el.getAttribute('data-hide') === '1'); return; }
     if (a === 'a-reset-pin') { resetPin(id); return; }
+    if (a === 'range') { S.statsRange = +el.getAttribute('data-v'); draw(); return; }
+    if (a === 'stats-refresh') { loadStats(true); draw(); return; }
+    if (a === 'a-save-sous') { saveSous(); return; }
     if (!S.draft) return;
     var d = S.draft;
-    if (a === 'a-add-person') { d.people.push({ id: slug('person') + '-' + Date.now().toString(36), name: '', role: 'staff', add: true, tick: true, del: false, active: true }); draw(); var n = S.root.querySelector('[data-k="a-n' + (d.people.length - 1) + '"]'); if (n) n.focus(); return; }
+    if (a === 'a-add-person') { d.people.push({ id: slug('person') + '-' + Date.now().toString(36), name: '', role: 'staff', add: true, tick: true, del: false, active: true, isNew: true }); draw(); var n = S.root.querySelector('[data-k="a-n' + (d.people.length - 1) + '"]'); if (n) n.focus(); return; }
     if (a === 'a-bulk-add') {
       var box = S.root.querySelector('#a-bulk'); var lines = box ? box.value.split(/\n/).map(function (s) { return s.trim(); }).filter(Boolean) : [];
       lines.forEach(function (nm, k) { d.people.push({ id: slug(nm) + '-' + Date.now().toString(36) + k, name: nm, role: 'staff', add: true, tick: true, del: false, active: true }); });
@@ -528,7 +812,7 @@
     if (k === 'p-pin') { S.pinInput = el.value.replace(/\D/g, ''); el.value = S.pinInput; return; }
     if (k === 'pf1') { S.pf1 = el.value.replace(/\D/g, ''); el.value = S.pf1; return; }
     if (k === 'pf2') { S.pf2 = el.value.replace(/\D/g, ''); el.value = S.pf2; return; }
-    if (k === 'p-text') { S.text = el.value; return; }
+    if (k === 'p-text') { S.text = el.value; var hn = S.root.querySelector('#p-hint'); if (hn) hn.textContent = hintText(S.text); return; }
     if (k === 'p-qty') { S.qty = el.value; return; }
     if (k === 'p-section') { S.section = el.value; return; }
     if (k === 'p-rs') { S.recipeSearch = el.value; S.recipeOpen = true; draw(); return; }
@@ -543,6 +827,7 @@
     if (k === 'p-day') { if (el.value) { S.date = el.value; S.tab = ''; watchItems(); draw(); } return; }
     var a = el.getAttribute && el.getAttribute('data-a');
     if (!a || !S.draft) return;
+    if (a === 'badges') { S.draft.showBadges = el.checked; return; }
     var i = +el.getAttribute('data-i'), p = S.draft.people[i];
     if (a === 'role') { p.role = el.value; var r = ROLES[el.value]; p.add = r.add; p.tick = r.tick; p.del = r.del; draw(); }
     else if (a === 'perm') { p[el.getAttribute('data-perm')] = el.checked; }
