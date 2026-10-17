@@ -50,6 +50,7 @@ window.LK_DATA = {
     { title: 'Salads', ids: ['caesar', 'green-bowl', 'pumpkin-salad'] },
     { title: 'Big Country Feeds', ids: ['beef-cheek', 'ribs', 'barra', 'carbonara', 'fish-chips', 'lamb-rissoles', 'vegan-rissoles', 'pork-belly', 'pie'] },
     { title: 'Off the Grill', ids: ['rump-250', 'rump-500', 'eye-fillet', 'rib-fillet', 'grill-board', 'taco-board', 'flank'] },
+    { title: 'Toppers', ids: ['prawn-topper', 'calamari-topper', 'chicken-topper', 'mushroom-topper'] },
     { title: 'Schnittys & Parmys', ids: ['chicken-schnitzel', 'beef-schnitzel', 'chicken-parmy', 'schnitzel-americana', 'schnitzel-french', 'schnitzel-mexican'] },
     { title: 'Hand Held', ids: ['smash', 'oz-smash', 'steak-sandwich', 'fish-burger', 'chickpea-burger', 'burger'] },
     { title: 'Sides', ids: ['slaw-side', 'mash-side', 'side-salad', 'mac-side', 'greens-side', 'wedges'] },
@@ -1682,6 +1683,42 @@ window.LK_DATA = {
       labelNote: 'Check the labels of all bought-in items.'
     },
 
+    {
+      id: 'prawn-topper', no: '100', kind: 'side', forLine: 'Topper', name: 'Prawn Topper',
+      menu: 'Prawn topper: 5 pieces.',
+      yield: 'Per topper. 5 pieces of prawn.',
+      ingredients: [
+        { q: '5 pieces', name: 'Prawns', tags: ['Crustacean'] }
+      ],
+      sections: [{ title: 'Plating', steps: ['Place the 5 prawns on top of the steak. [Cooking and finish to confirm]'] }]
+    },
+    {
+      id: 'calamari-topper', no: '101', kind: 'side', forLine: 'Topper', name: 'Calamari Topper',
+      menu: 'Calamari topper: 8 pieces.',
+      yield: 'Per topper. 8 pieces of calamari.',
+      ingredients: [
+        { q: '8 pieces', name: 'Calamari', tags: ['Mollusc', 'Gluten?'] }
+      ],
+      sections: [{ title: 'Plating', steps: ['Place the 8 pieces of calamari on top of the steak. [Cooking and finish to confirm]'] }]
+    },
+    {
+      id: 'chicken-topper', no: '102', kind: 'side', forLine: 'Topper', name: 'Chicken Topper',
+      menu: 'Chicken topper.',
+      yield: 'Per topper. [Pieces and make-up to confirm]',
+      ingredients: [
+        { q: '[Qty]', name: 'Chicken [to confirm]' }
+      ],
+      sections: [{ title: 'Plating', steps: ['[Make-up and plating to confirm]'] }]
+    },
+    {
+      id: 'mushroom-topper', no: '103', kind: 'side', forLine: 'Topper', name: 'Mushroom Topper',
+      menu: 'Mushroom topper.',
+      yield: 'Per topper. [Make-up to confirm]',
+      ingredients: [
+        { q: '[Qty]', name: 'Mushrooms [to confirm]' }
+      ],
+      sections: [{ title: 'Plating', steps: ['[Make-up and plating to confirm]'] }]
+    },
     /* ---------- Batch cards from AVC Live (Oct 2026): only fully confirmed ingredient lists ---------- */
     {
       id: 'chips-salad', no: '66', art: 'chips-salad', kind: 'batch', forLine: 'For steaks, schnitzels, parmys and fish', name: 'Chips and Salad', short: 'Chips + salad',
