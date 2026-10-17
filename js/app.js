@@ -1,12 +1,14 @@
 /*
-  Leichhardt Kitchen Recipe Book
+  Leichhardt Kitchen Book
   Plain JavaScript, no build step. Recipes live in js/data.js, drawings in js/art.js.
 
   Pages (hash links, so the phone's back button works):
     #/welcome          first visit: pick how the book opens
     #/settings         settings
     #/prep             the daily prep list (js/prep.js), #/admin is its admin panel
-    #/                 home, in the chosen view (Tiles, List or The Pass)
+    #/                 landing page: pick Recipes, Prep or Orders
+    #/recipes          the recipes, in the chosen view (Tiles, List or The Pass)
+    #/orders           the order list (js/prep.js)
     #/r/barra/laksa    a recipe; the path is the trail you took to get there
 */
 (function () {
@@ -142,7 +144,7 @@
   // A recipe with parts still to come counts as "may have" for every allergen.
   function hitId(id) { return hit(tags[id]) || (ui.lens && missing[id].length ? 'may' : null); }
   function lensWord(h) { return h === 'may' ? ui.lens + '?' : ui.lens; }
-  function href(stack) { return stack.length ? '#/r/' + stack.join('/') : '#/'; }
+  function href(stack) { return stack.length ? '#/r/' + stack.join('/') : '#/recipes'; }
   function stackTo(stack, id) { var i = stack.indexOf(id); return i >= 0 ? stack.slice(0, i + 1) : stack.concat([id]); }
   function plural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }
 
@@ -167,10 +169,41 @@
   }
 
   /* ---------- shared page parts ---------- */
+  var NAV_ICON = {
+    home: '<svg width="26" height="26" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 30L32 10l24 20"/><path d="M14 26v28h36V26"/><path d="M27 54V38h10v16"/></svg>',
+    recipes: '<svg width="26" height="26" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="32" cy="32" r="22"/><circle cx="32" cy="32" r="13" stroke-dasharray="4 5"/><path d="M6 14v14M10 14v14M14 14v14M6 28h8M10 28v22"/><path d="M58 14c-3 2-5 6-5 11v3h5v22"/></svg>',
+    prep: '<svg width="26" height="26" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="12" y="10" width="40" height="48" rx="5"/><path d="M24 10V7h16v3"/><path d="M20 24l3 3 5-6M20 38l3 3 5-6"/><path d="M34 25h12M34 39h12"/></svg>',
+    orders: '<svg width="26" height="26" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 20l24-12 24 12v26L32 58 8 46z"/><path d="M8 20l24 12 24-12M32 32v26"/><path d="M20 14l24 12"/></svg>'
+  };
+  var NAV = [['home', 'Home', '#/'], ['recipes', 'Recipes', '#/recipes'], ['prep', 'Prep', '#/prep'], ['orders', 'Orders', '#/orders']];
+  function navActive() {
+    var n = parseRoute().name;
+    return n === 'landing' ? 'home' : (n === 'home' || n === 'recipe') ? 'recipes' : (n === 'prep' || n === 'admin') ? 'prep' : n === 'orders' ? 'orders' : '';
+  }
+  function pillNav() {
+    var a = navActive();
+    return '<nav class="pnav" aria-label="Main">' + NAV.map(function (t) { return '<a href="' + t[2] + '"' + (a === t[0] ? ' aria-current="page"' : '') + '>' + t[1] + '</a>'; }).join('') + '</nav>';
+  }
+  function tabBar() {
+    var a = navActive();
+    return '<nav class="tabbar" aria-label="Main">' + NAV.map(function (t) { return '<a href="' + t[2] + '"' + (a === t[0] ? ' aria-current="page"' : '') + '>' + NAV_ICON[t[0]] + '<span>' + t[1] + '</span></a>'; }).join('') + '</nav>';
+  }
   function header(count) {
-    return '<header class="top"><a class="brand" href="#/"><span class="eyebrow">Leichhardt Hotel Kitchen</span><h1>Recipe Book</h1></a>' +
-      '<div class="top-right">' + (count ? '<span class="count" id="count">' + esc(count) + '</span>' : '') +
-      '<a class="icon-btn" href="#/prep"><span>Prep</span></a><a class="icon-btn" href="#/orders"><span>Orders</span></a>' + '<a class="icon-btn" href="#/settings">' + ICON.gear + '<span>Settings</span></a></div></header>';
+    return '<header class="top"><a class="brand" href="#/"><span class="eyebrow">Leichhardt Hotel Kitchen</span><h1>Kitchen Book</h1></a>' +
+      '<div class="top-right">' + (count ? '<span class="count" id="count">' + esc(count) + '</span>' : '') + pillNav() +
+      '<a class="icon-btn" href="#/settings" aria-label="Settings">' + ICON.gear + '<span class="icon-lbl">Settings</span></a></div></header>';
+  }
+  var DOCKETS = [['01', 'Recipes', '#/recipes', 'recipes'], ['02', 'Prep list', '#/prep', 'prep'], ['03', 'Orders', '#/orders', 'orders']];
+  function viewLanding() {
+    var today = new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
+    return '<div class="wall"><div class="rail"><a class="rail-brand" href="#/"><span>Leichhardt Hotel Kitchen</span><b>Kitchen Book</b></a>' + pillNav() +
+      '<a class="rail-set" href="#/settings" aria-label="Settings">' + ICON.gear + '</a></div>' +
+      '<main id="main" class="wall-main"><h2 class="wall-h" id="rtitle" tabindex="-1">Pick a docket</h2><p class="wall-date">' + esc(today) + '</p>' +
+      '<div class="dockets">' + DOCKETS.map(function (d) {
+        return '<a class="docket" href="' + d[2] + '"><span class="pin" aria-hidden="true"></span><span class="dk-top"><span class="dk-name">' + d[1] + '</span><span class="dk-no">No. ' + d[0] + '</span></span>' +
+          '<span class="dk-icon">' + NAV_ICON[d[3]].replace(/width="26" height="26"/, 'width="72" height="72"') + '</span><span class="dk-go">Open</span></a>';
+      }).join('') + '</div>' +
+      '<p class="wall-foot">Cook as written. Check with the head chef or sous chef before changing anything.</p></main>' + tabBar() + '</div>';
   }
   function footer() {
     return '<footer class="foot"><div>Cook as written. Check with the head chef or sous chef before changing anything.</div>' +
@@ -275,7 +308,7 @@
   function crumbs(stack, withHome) {
     if (!withHome && stack.length < 2) return '';
     var parts = [];
-    if (withHome) parts.push('<a href="#/">All recipes</a>');
+    if (withHome) parts.push('<a href="#/recipes">All recipes</a>');
     stack.forEach(function (id, i) {
       var last = i === stack.length - 1;
       parts.push(last ? '<span aria-current="page">' + esc(byId[id].name) + '</span>' : '<a href="' + href(stack.slice(0, i + 1)) + '">' + esc(byId[id].name) + '</a>');
@@ -401,7 +434,7 @@
         searchField('Dish, ingredient or allergen') + kindChips() + lensChips() + '<div id="shelves" class="shelves">' + shelvesHTML() + '</div></main>' + footer() + '</div>';
     }
     var r = byId[stack[stack.length - 1]], dish = isDish(r);
-    var trail = '<nav class="trail" aria-label="Zoom level"><a class="pill-link" href="#/">' + ICON.left + 'The pass</a>' + stack.map(function (id, i) {
+    var trail = '<nav class="trail" aria-label="Zoom level"><a class="pill-link" href="#/recipes">' + ICON.left + 'The pass</a>' + stack.map(function (id, i) {
       var last = i === stack.length - 1;
       return '<span class="sep" aria-hidden="true">/</span>' + (last ? '<span class="here" aria-current="page">' + esc(byId[id].name) + '</span>' : '<a class="pill-link" href="' + href(stack.slice(0, i + 1)) + '">' + esc(byId[id].name) + '</a>');
     }).join('') + '</nav>';
@@ -471,7 +504,8 @@
       var stack = parts.slice(1).filter(function (id) { return byId[id]; });
       if (stack.length) return { name: 'recipe', stack: stack };
     }
-    return { name: 'home', stack: [] };
+    if (parts[0] === 'recipes') return { name: 'home', stack: [] };
+    return { name: 'landing', stack: [] };
   }
   var lastHash = null;
   function render() {
@@ -483,6 +517,7 @@
     var view = settings.view || 'tiles';
     var html;
     if (route.name === 'welcome') html = viewWelcome();
+    else if (route.name === 'landing') html = viewLanding();
     else if (route.name === 'settings') html = viewSettings();
     else if (route.name === 'prep' || route.name === 'admin' || route.name === 'orders') html = viewPrep();
     else if (view === 'list') html = viewList(route);
@@ -490,12 +525,13 @@
     else html = viewTiles(route);
     // Swipeable chip rows keep their place when the page redraws (for example after tapping a chip at the far end).
     var rowsAt = Array.prototype.map.call(app.querySelectorAll('.chips.scroll'), function (el) { return el.scrollLeft; });
+    if (route.name !== 'landing' && route.name !== 'welcome') html += tabBar();
     app.innerHTML = html;
     if (!changed) Array.prototype.forEach.call(app.querySelectorAll('.chips.scroll'), function (el, i) { if (rowsAt[i]) el.scrollLeft = rowsAt[i]; });
     fitPins();
     if ((route.name === 'prep' || route.name === 'admin' || route.name === 'orders') && window.LK_PREP) window.LK_PREP.mount(route.name, document.getElementById('prep-root'));
     var r = route.stack.length ? byId[route.stack[route.stack.length - 1]] : null;
-    document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'admin' ? 'Admin panel · ' : '')) + 'Leichhardt Kitchen Recipe Book';
+    document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'landing' ? '' : route.name === 'admin' ? 'Admin panel · ' : '')) + 'Leichhardt Kitchen Book';
     if (changed) {
       lastHash = location.hash;
       window.scrollTo(0, 0);
@@ -559,7 +595,7 @@
     else if (act === 'free') { ui.free = ui.free.indexOf(val) >= 0 ? ui.free.filter(function (x) { return x !== val; }) : ui.free.concat([val]); }
     else if (act === 'lens') { ui.lens = ui.lens === val ? null : val; }
     else if (act === 'pick') { var k = Number(val); ui.pick = ui.pick === k ? null : k; }
-    else if (act === 'choose') { settings.view = val; saveSettings(); location.hash = '#/'; return; }
+    else if (act === 'choose') { settings.view = val; saveSettings(); location.hash = '#/recipes'; return; }
     else if (act === 'setview') { settings.view = val; saveSettings(); }
     else if (act === 'settext') { settings.text = val; saveSettings(); document.documentElement.setAttribute('data-text', val); }
     else if (act === 'clearticks') { ticks = {}; saveTicks(); }
