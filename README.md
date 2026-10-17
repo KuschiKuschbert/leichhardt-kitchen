@@ -124,6 +124,7 @@ There's no build step and nothing to install. To try it on a computer, open `ind
 ### Wastage log
 
 - `#/waste` is the Daily Wastage Sheet on the phone: section, item, amount and unit (g, kg, L, portions, pieces), reason (prep waste, expired stock, cooking fault, returned, excess production), action or how to stop it happening again. Time and name are added by themselves. Items logged twice or more in 14 days show as one-tap chips.
+- **Phone chip patterns:** on phones, long choices never fill the page. Unit is one segmented control row. Reason is one button that opens a bottom sheet ("Why was it wasted?", each reason with a one-line hint; closes on pick, Cancel, the backdrop or Escape). Suggestion chips (Logged often, Handy chips, usual amounts, order regulars) are single sideways swipe rows with a fade. Big screens still show all chips.
 - The end-of-day review (main avoidable waste, prep or ordering change for the next shift) is saved per day in `waste/<date>`; lines live in `waste/<date>/lines`.
 - Anyone signed in can add. Only the head chef or a sous chef can remove a line (enforced by the rules). Staff see today only.
 - Admin panel, Waste tab: totals, by reason, wasted most often (with how often the same item was on the prep list, to spot over-prepping, and a suggestion per main reason), by weekday, who logs, and the reviews.

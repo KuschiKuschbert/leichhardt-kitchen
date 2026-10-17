@@ -1816,6 +1816,7 @@
     if (keepScroll) Array.prototype.forEach.call(keepScroll, function (b) { scrolls.push(b.scrollTop); });
     S.root.innerHTML = bodyHTML() + (S.toast ? '<div class="p-toast" role="status">' + esc(S.toast) + (S.toastAct ? ' <button type="button" class="p-toast-btn" data-p="toast-act">' + esc(S.toastAct.label) + '</button>' : '') + '</div>' : '');
     S.root.classList.toggle('is-book', S.name === 'prep' && !!S.root.querySelector('.nb'));
+    document.documentElement.classList.toggle('sheet-open', !!S.root.querySelector('.sheet'));
     if (scrolls.length) Array.prototype.forEach.call(S.root.querySelectorAll('.nb-body'), function (b, i) { if (scrolls[i] != null) b.scrollTop = scrolls[i]; });
     if (key) { var el = S.root.querySelector('[data-k="' + key + '"]'); if (el) { el.focus({ preventScroll: true }); if (start != null && el.setSelectionRange) { try { el.setSelectionRange(start, end); } catch (e) {} } } }
     rendering = false;
@@ -1962,7 +1963,7 @@
     }).filter(function (e) { return e.same >= 2 || e.nd >= 5; }).sort(function (a, b) { return b.same - a.same || b.nd - a.nd; }).slice(0, 10);
     S.oregs = list;
     if (!list.length) return '';
-    return '<div class="w-often"><span class="nb-ql">Usually ordered on a ' + esc(dname) + ' or often</span>' + list.map(function (e, i) { return '<button type="button" class="chip sq" data-p="oreg" data-i="' + i + '">' + esc(e.text) + (e.q ? ' <span class="nb-uq">' + esc(e.q) + '</span>' : '') + '</button>'; }).join('') + '</div>';
+    return '<div class="w-often"><span class="nb-ql">Usually ordered on a ' + esc(dname) + ' or often</span><div class="chiprow">' + list.map(function (e, i) { return '<button type="button" class="chip sq" data-p="oreg" data-i="' + i + '">' + esc(e.text) + (e.q ? ' <span class="nb-uq">' + esc(e.q) + '</span>' : '') + '</button>'; }).join('') + '</div></div>';
   }
   function ordersHTML() {
     if (can('add')) { loadOrdHist(); loadWRecent(false); }
@@ -2090,6 +2091,14 @@
       (x.action ? '<span class="w-act">' + esc(x.action) + '</span>' : '') + '</span><span class="nb-by">' + esc(x.addedBy || '') + '</span>' +
       (del ? '<button type="button" class="p-x" data-p="wdel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') + '</li>';
   }
+  /* Bottom sheet for picking one thing on a phone (the waste reason). Big rows, a hint under each, Cancel or tap outside to close. */
+  var REASON_HINT = { prep: 'Trim, peel and offcuts', expired: 'Past its date or gone off', fault: 'Burnt, dropped or done wrong', returned: 'Sent back by a guest', excess: 'Made more than was needed' };
+  function sheetHTML() {
+    if (S.sheet !== 'reason') return '';
+    return '<div class="sheet-bg" data-p="sheet-close"></div><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-h"><div class="sheet-grip" aria-hidden="true"></div><h3 id="sheet-h">Why was it wasted?</h3><div class="sheet-list" role="radiogroup" aria-labelledby="sheet-h">' +
+      REASONS.map(function (r) { return '<button type="button" class="sheet-o" role="radio" data-p="wreason" data-v="' + r[0] + '" aria-checked="' + (S.wf.reason === r[0]) + '"><strong>' + esc(r[1]) + '</strong><span>' + esc(REASON_HINT[r[0]] || '') + '</span></button>'; }).join('') +
+      '</div><button type="button" class="btn sheet-x" data-p="sheet-close">Cancel</button></div>';
+  }
   function wasteHTML() {
     var p = me(), br = canBrowse(), today = ymd(new Date());
     if (!br && S.wDate !== today) { S.wDate = today; watchWaste(); }
@@ -2101,14 +2110,15 @@
     if (view === 'week') return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' : '') + '</span><span class="p-links"><a class="p-link" href="#/prep">Prep list</a></span></div>' + nav + wasteWeekHTML();
     var often = wOften();
     var add = can('add') && S.wDate === today ?
-      '<form class="nb-add w-add" data-p-form="wadd">' + (often.length ? '<div class="w-often"><span class="nb-ql">Logged often</span>' + often.map(function (e, i) { return '<button type="button" class="chip sq" data-p="woften" data-i="' + i + '">' + esc(e.text) + '</button>'; }).join('') + '</div>' : '') +
+      '<form class="nb-add w-add" data-p-form="wadd">' + (often.length ? '<div class="w-often"><span class="nb-ql">Logged often</span><div class="chiprow">' + often.map(function (e, i) { return '<button type="button" class="chip sq" data-p="woften" data-i="' + i + '">' + esc(e.text) + '</button>'; }).join('') + '</div></div>' : '') +
       '<datalist id="w-sections">' + suggestions().map(function (n) { return '<option value="' + esc(n) + '"></option>'; }).join('') + '</datalist>' +
       '<div class="nb-add-row"><label class="visually-hidden" for="w-sec">Section</label><input id="w-sec" class="nb-in nb-in-sec" data-k="w-sec" list="w-sections" autocomplete="off" placeholder="Section" maxlength="40" value="' + esc(f.sec) + '">' +
       '<label class="visually-hidden" for="w-text">Item</label><input id="w-text" class="nb-in nb-in-text" data-k="w-text" autocomplete="off" placeholder="What was wasted?" maxlength="80" value="' + esc(f.text) + '">' +
       '<label class="visually-hidden" for="w-amt">Amount</label><input id="w-amt" class="nb-in nb-in-qty" data-k="w-amt" inputmode="decimal" autocomplete="off" placeholder="Amount" maxlength="8" value="' + esc(f.amt) + '"></div>' +
       '<div class="nb-sugg" id="w-sugg">' + wSuggHTML() + '</div>' +
-      '<div class="w-pick" role="group" aria-label="Unit"><span class="nb-ql">Unit</span>' + UNITS.map(function (u) { return '<button type="button" class="chip" data-p="wunit" data-v="' + u + '" aria-pressed="' + (f.unit === u) + '">' + u + '</button>'; }).join('') + '</div>' +
-      '<div class="w-pick" role="group" aria-label="Reason"><span class="nb-ql">Reason</span>' + REASONS.map(function (r) { return '<button type="button" class="chip" data-p="wreason" data-v="' + r[0] + '" aria-pressed="' + (f.reason === r[0]) + '">' + r[1] + '</button>'; }).join('') + '</div>' +
+      '<div class="w-pick"><span class="nb-ql" id="w-unit-l">Unit</span><div class="seg" role="radiogroup" aria-labelledby="w-unit-l">' + UNITS.map(function (u) { return '<button type="button" class="seg-b" role="radio" data-p="wunit" data-v="' + u + '" aria-checked="' + (f.unit === u) + '">' + u + '</button>'; }).join('') + '</div></div>' +
+      '<div class="w-pick"><span class="nb-ql" id="w-reason-l">Reason</span><div class="w-rchips" role="radiogroup" aria-labelledby="w-reason-l">' + REASONS.map(function (r) { return '<button type="button" class="chip" role="radio" data-p="wreason" data-v="' + r[0] + '" aria-checked="' + (f.reason === r[0]) + '">' + r[1] + '</button>'; }).join('') + '</div>' +
+      '<button type="button" class="w-rbtn' + (f.reason ? '' : ' is-empty') + '" data-p="sheet" data-v="reason" aria-haspopup="dialog">' + (f.reason ? esc(reasonName(f.reason)) : 'Pick a reason') + '<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>' +
       '<div class="nb-add-row"><label class="visually-hidden" for="w-act">Action or how to stop it happening again</label><input id="w-act" class="nb-in nb-in-text" data-k="w-act" autocomplete="off" placeholder="Action or how to stop it happening again (optional)" maxlength="120" value="' + esc(f.act) + '">' +
       '<button type="submit" class="nb-addbtn">Log it</button></div></form>' : (S.wDate === today ? '<p class="hint">You can read the wastage log but not write in it.</p>' : '');
     var r = S.wReview || {}, ra = S.wrA != null ? S.wrA : (r.avoidable || ''), rc = S.wrC != null ? S.wrC : (r.change || '');
@@ -2125,7 +2135,7 @@
       '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Wastage</h2><span class="nb-date">' + esc(longDate(S.wDate)) + (tot ? ' &middot; ' + esc(tot) : '') + '</span></div>' +
       '<div class="nb-prog" role="status">' + live.length + (live.length === 1 ? ' entry' : ' entries') + '</div></header>' +
       '<p class="w-rule">Write the actual amount and unit, not a dollar value. Unsafe food must never be reused to avoid logging waste.</p>' +
-      '<div class="nb-body">' + body + '</div><div class="nb-foot">' + add + '</div></section>' + review;
+      '<div class="nb-body">' + body + '</div><div class="nb-foot">' + add + '</div></section>' + review + sheetHTML();
   }
   /* The last 7 days on one page, grouped by day, for the head chef and sous chefs. */
   function wasteWeekHTML() {
@@ -2368,7 +2378,9 @@
     if (a === 'oreg') { var orr = (S.oregs || [])[i]; if (orr) { S.otext = orr.text; S.oqty = orr.q || ''; addOrder(); } return; }
     if (a === 'wview') { S.wView = el.getAttribute('data-v'); if (S.wView === 'week') loadWRecent(true); draw(); return; }
     if (a === 'wunit') { S.wf.unit = el.getAttribute('data-v'); draw(); return; }
-    if (a === 'wreason') { S.wf.reason = el.getAttribute('data-v'); draw(); return; }
+    if (a === 'wreason') { S.wf.reason = el.getAttribute('data-v'); var fromSheet = S.sheet === 'reason'; S.sheet = ''; draw(); if (fromSheet) { var rb = S.root.querySelector('.w-rbtn'); if (rb) rb.focus(); } return; }
+    if (a === 'sheet') { S.sheet = el.getAttribute('data-v'); draw(); var so = S.root.querySelector('.sheet-o[aria-checked="true"]') || S.root.querySelector('.sheet-o'); if (so) so.focus(); return; }
+    if (a === 'sheet-close') { S.sheet = ''; draw(); var rb2 = S.root.querySelector('.w-rbtn'); if (rb2) rb2.focus(); return; }
     if (a === 'wsugg') { var wt = (S.wsugg || [])[i]; if (wt) { S.wf.text = wt; draw(); var wa = S.root.querySelector('[data-k="w-amt"]'); if (wa) wa.focus(); } return; }
     if (a === 'woften') { var wo = wOften()[i]; if (wo) { S.wf.text = wo.text; if (wo.unit) S.wf.unit = wo.unit; if (wo.reason) S.wf.reason = wo.reason; if (wo.sec && !S.wf.sec) S.wf.sec = wo.sec; draw(); var wa2 = S.root.querySelector('[data-k="w-amt"]'); if (wa2) wa2.focus(); } return; }
     if (a === 'wdel') { removeWaste(dt, id); return; }
@@ -2450,6 +2462,7 @@
     else if (f === 'pin') { e.preventDefault(); submitPin(); }
   }
   function onKey(e) {
+    if (e.key === 'Escape' && S.sheet) { S.sheet = ''; draw(); return; }
     if (e.key === 'Enter' && e.target.getAttribute && e.target.getAttribute('data-k') === 'p-pin') { e.preventDefault(); var b = S.root.querySelector('[data-p="pin-go"]'); if (b) b.click(); }
   }
   var wired = false;
