@@ -310,8 +310,9 @@
       var r = byId[route.stack[route.stack.length - 1]];
       return '<div class="page">' + header() + '<main id="main">' + recipeCard(r, route.stack, true) + '</main>' + footer() + '</div>';
     }
-    var kinds = [{ key: 'all', title: 'All', list: D.recipes }].concat(GROUPS).map(function (g) {
-      return '<button type="button" class="chip" data-act="kind" data-val="' + g.key + '" data-k="kind:' + g.key + '" aria-pressed="' + (ui.kind === g.key) + '">' + esc(g.title) + ' (' + g.list.length + ')</button>';
+    // The Functions chip sits first after All so it is always on view; every other chip follows the menu order.
+    var kinds = [{ key: 'all', title: 'All', list: D.recipes }].concat(GROUPS.filter(function (g) { return g.title === 'Functions'; }), GROUPS.filter(function (g) { return g.title !== 'Functions'; })).map(function (g) {
+      return '<button type="button" class="chip' + (g.title === 'Functions' ? ' sq' : '') + '" data-act="kind" data-val="' + g.key + '" data-k="kind:' + g.key + '" aria-pressed="' + (ui.kind === g.key) + '">' + esc(g.title) + ' (' + g.list.length + ')</button>';
     }).join('');
     return '<div class="page">' + header(countText()) + '<main id="main" style="display: flex; flex-direction: column; gap: 1.1rem">' +
       searchField('Dish, ingredient or allergen') +

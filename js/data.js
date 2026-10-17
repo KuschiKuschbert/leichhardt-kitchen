@@ -54,7 +54,8 @@ window.LK_DATA = {
     { title: 'Hand Held', ids: ['smash', 'oz-smash', 'steak-sandwich', 'fish-burger', 'chickpea-burger', 'burger'] },
     { title: 'Sides', ids: ['slaw-side', 'mash-side', 'side-salad', 'mac-side', 'greens-side', 'wedges'] },
     { title: 'Dessert', ids: ['donut-fries', 'sticky-toffee', 'snickers', 'skillet'] },
-    { title: 'Seniors', ids: ['senior-rissoles', 'senior-fish-chips', 'senior-bolognese', 'senior-calamari', 'senior-schnitzel', 'senior-parmy'] }
+    { title: 'Seniors', ids: ['senior-rissoles', 'senior-fish-chips', 'senior-bolognese', 'senior-calamari', 'senior-schnitzel', 'senior-parmy'] },
+    { title: 'Functions', ids: ['pizza-platter', 'aussie-platter', 'vege-platter', 'yumcha-platter', 'antipasto-platter', 'seafood-platter'] }
   ],
   recipes: [
     {
@@ -1511,6 +1512,170 @@ window.LK_DATA = {
       contains: [],
       check: [],
       labelNote: 'Recheck if butter or a seasoning goes on.'
+    },
+
+    /* ---------- Functions platters (functions menu, 17 Oct 2026). Prices stay off the site. */
+    {
+      id: 'pizza-platter', art: 'pizza-platter', no: '94', kind: 'main', forLine: 'Functions', name: 'Pizza Platter',
+      yield: 'Per platter. Margherita and pepperoni pizza, G. Banga.',
+      ingredients: [
+        { q: '1/2 slab', name: 'Margherita pizza', tags: ['Gluten', 'Milk', 'Soy?'] },
+        { q: '1/2 slab', name: 'Pepperoni pizza', tags: ['Gluten', 'Milk', 'Soy?'] },
+        { q: '1 whole', name: 'G. Banga', note: 'as written on the functions menu', tags: ['Gluten', 'Milk?', 'Soy?'] }
+      ],
+      pins: [
+        { label: 'Margherita pizza', x: 22.6, y: 32.1, side: 'left', tags: ['Gluten', 'Milk', 'Soy?'], note: '1/2 slab.' },
+        { label: 'Pepperoni pizza', x: 69.8, y: 32.1, side: 'right', tags: ['Gluten', 'Milk', 'Soy?'], note: '1/2 slab.' },
+        { label: 'G. Banga', x: 46.2, y: 58.5, side: 'right', tags: ['Gluten', 'Milk?', 'Soy?'], note: '1 whole.' }
+      ],
+      sections: [
+        { title: 'Plating', steps: ['Serve on a large rectangular white and grey marble board. [Layout to confirm]'] }
+      ],
+      labelNote: 'Check the labels of all bought-in items.'
+    },
+    {
+      id: 'aussie-platter', art: 'aussie-platter', no: '95', kind: 'main', forLine: 'Functions', name: 'Aussie Platter',
+      yield: 'Per platter. Party pies, sausage rolls, duck spring rolls, meatballs, quiche, 3 sauces.',
+      ingredients: [
+        { q: '10ea', name: 'Party pies', tags: ['Gluten', 'Milk?', 'Soy?'] },
+        { q: '10ea', name: 'Sausage rolls', tags: ['Gluten', 'Milk?', 'Soy?'] },
+        { q: '8ea', name: 'Spring rolls, duck', note: 'cut', tags: ['Gluten', 'Soy?', 'Sesame?'] },
+        { q: '20ea', name: 'Meatballs', tags: ['Gluten?', 'Egg?', 'Milk?', 'Soy?'] },
+        { q: '8ea', name: 'Quiche', tags: ['Gluten', 'Milk', 'Egg'] },
+        { q: '2ea', name: 'Tomato sauce', link: 'tomato-sauce' },
+        { q: '2ea', name: 'BBQ sauce', tags: ['Gluten?', 'Soy?'] },
+        { q: '2ea', name: 'Sweet chilli sauce' }
+      ],
+      pins: [
+        { label: 'Party pies', x: 19.8, y: 29.2, side: 'left', tags: ['Gluten', 'Milk?', 'Soy?'], note: '10.' },
+        { label: 'Sausage rolls', x: 51.9, y: 29.7, side: 'left', tags: ['Gluten', 'Milk?', 'Soy?'], note: '10.' },
+        { label: 'Duck spring rolls', x: 81.1, y: 29.7, side: 'right', tags: ['Gluten', 'Soy?', 'Sesame?'], note: '8, cut.' },
+        { label: 'Meatballs', x: 19.3, y: 53.8, side: 'left', tags: ['Gluten?', 'Egg?', 'Milk?', 'Soy?'], note: '20.' },
+        { label: 'Quiche', x: 53.3, y: 55.7, side: 'left', tags: ['Gluten', 'Milk', 'Egg'], note: '8.' },
+        { label: 'Tomato sauce', x: 81.1, y: 50, side: 'right', link: 'tomato-sauce', note: '2 pots.' },
+        { label: 'BBQ sauce', x: 81.1, y: 60.4, side: 'right', tags: ['Gluten?', 'Soy?'], note: '2 pots.' },
+        { label: 'Sweet chilli sauce', x: 81.1, y: 70.8, side: 'right', tags: [], note: '2 pots.' }
+      ],
+      sections: [
+        { title: 'Plating', steps: ['Serve on a large rectangular white and grey marble board. [Layout to confirm]'] }
+      ],
+      labelNote: 'Check the labels of all bought-in items.'
+    },
+    {
+      id: 'vege-platter', art: 'vege-platter', no: '96', kind: 'main', forLine: 'Functions', name: 'Vege Platter',
+      yield: 'Per platter. Vege spring rolls, vege quiche, mozzarella sticks, pumpkin arancini, fried haloumi, G. Banga, 3 sauces.',
+      ingredients: [
+        { q: '10ea', name: 'Spring rolls, vege', tags: ['Gluten', 'Soy?', 'Sesame?'] },
+        { q: '8ea', name: 'Quiche, vege', tags: ['Gluten', 'Milk', 'Egg'] },
+        { q: '10ea', name: 'Mozzarella sticks', tags: ['Gluten', 'Milk', 'Egg?'] },
+        { q: '10ea', name: 'Pumpkin arancini', tags: ['Gluten?', 'Milk?', 'Egg?'] },
+        { q: '8ea', name: 'Fried haloumi', tags: ['Milk', 'Gluten?'] },
+        { q: '1 whole', name: 'G. Banga', note: 'as written on the functions menu', tags: ['Gluten', 'Milk?', 'Soy?'] },
+        { q: '2ea', name: 'Tomato sauce', link: 'tomato-sauce' },
+        { q: '2ea', name: 'BBQ sauce', tags: ['Gluten?', 'Soy?'] },
+        { q: '2ea', name: 'Sweet chilli sauce' }
+      ],
+      pins: [
+        { label: 'Vege spring rolls', x: 19.3, y: 29.2, side: 'left', tags: ['Gluten', 'Soy?', 'Sesame?'], note: '10.' },
+        { label: 'Vege quiche', x: 51.9, y: 30.2, side: 'left', tags: ['Gluten', 'Milk', 'Egg'], note: '8.' },
+        { label: 'Mozzarella sticks', x: 81.6, y: 29.7, side: 'right', tags: ['Gluten', 'Milk', 'Egg?'], note: '10.' },
+        { label: 'Pumpkin arancini', x: 19.3, y: 51.9, side: 'left', tags: ['Gluten?', 'Milk?', 'Egg?'], note: '10.' },
+        { label: 'Fried haloumi', x: 51.9, y: 52.8, side: 'left', tags: ['Milk', 'Gluten?'], note: '8.' },
+        { label: 'G. Banga', x: 35.4, y: 70.3, side: 'left', tags: ['Gluten', 'Milk?', 'Soy?'], note: '1 whole.' },
+        { label: 'Tomato sauce', x: 81.1, y: 50, side: 'right', link: 'tomato-sauce', note: '2 pots.' },
+        { label: 'BBQ sauce', x: 81.1, y: 60.4, side: 'right', tags: ['Gluten?', 'Soy?'], note: '2 pots.' },
+        { label: 'Sweet chilli sauce', x: 81.1, y: 70.8, side: 'right', tags: [], note: '2 pots.' }
+      ],
+      sections: [
+        { title: 'Plating', steps: ['Serve on a large rectangular white and grey marble board. [Layout to confirm]'] }
+      ],
+      labelNote: 'Check the labels of all bought-in items.'
+    },
+    {
+      id: 'yumcha-platter', art: 'yumcha-platter', no: '97', kind: 'main', forLine: 'Functions', name: 'Yumcha Platter',
+      yield: 'Per platter. Dim sims, cocktail spring rolls, wontons, karage chicken, prawn crackers, 2 sauces.',
+      ingredients: [
+        { q: '10ea', name: 'Dim sims', tags: ['Gluten', 'Soy?', 'Sesame?', 'Egg?'] },
+        { q: '10ea', name: 'Spring rolls, cocktail', tags: ['Gluten', 'Soy?', 'Sesame?'] },
+        { q: '10ea', name: 'Wontons', tags: ['Gluten', 'Egg?', 'Soy?', 'Crustacean?'] },
+        { q: '10ea', name: 'Karage chicken', tags: ['Gluten', 'Soy?', 'Egg?'] },
+        { q: 'handful', name: 'Prawn crackers', tags: ['Crustacean', 'Gluten?'] },
+        { q: '2ea', name: 'Sweet soy sauce', tags: ['Soy', 'Gluten?'] },
+        { q: '2ea', name: 'Sweet chilli sauce' }
+      ],
+      pins: [
+        { label: 'Dim sims', x: 19.3, y: 29.7, side: 'left', tags: ['Gluten', 'Soy?', 'Sesame?', 'Egg?'], note: '10.' },
+        { label: 'Cocktail spring rolls', x: 50.9, y: 29.7, side: 'left', tags: ['Gluten', 'Soy?', 'Sesame?'], note: '10.' },
+        { label: 'Wontons', x: 80.7, y: 29.7, side: 'right', tags: ['Gluten', 'Egg?', 'Soy?', 'Crustacean?'], note: '10.' },
+        { label: 'Karage chicken', x: 19.8, y: 54.7, side: 'left', tags: ['Gluten', 'Soy?', 'Egg?'], note: '10.' },
+        { label: 'Prawn crackers', x: 53.3, y: 54.7, side: 'left', tags: ['Crustacean', 'Gluten?'], note: 'A handful.' },
+        { label: 'Sweet soy sauce', x: 81.1, y: 50.9, side: 'right', tags: ['Soy', 'Gluten?'], note: '2 pots.' },
+        { label: 'Sweet chilli sauce', x: 81.1, y: 63.2, side: 'right', tags: [], note: '2 pots.' }
+      ],
+      sections: [
+        { title: 'Plating', steps: ['Serve on a large rectangular white and grey marble board. [Layout to confirm]'] }
+      ],
+      labelNote: 'Check the labels of all bought-in items.'
+    },
+    {
+      id: 'antipasto-platter', art: 'antipasto-platter', no: '98', kind: 'main', forLine: 'Functions', name: 'Antipasto Platter',
+      yield: 'Per platter. Prosciutto, leg ham, salami, cheese, crackers, grilled sourdough, dried fruit salad, dips.',
+      ingredients: [
+        { q: '80 g', name: 'Prosciutto' },
+        { q: '100 g', name: 'Leg ham' },
+        { q: '100 g', name: 'Salami' },
+        { q: '300 g total', name: 'Cheese selection', note: 'Cracker Barrel, blue cheese and brie', tags: ['Milk'] },
+        { q: '1/2 pkt', name: 'Crackers', tags: ['Gluten', 'Sesame?', 'Soy?'] },
+        { q: '1 cob', name: 'Sourdough', note: 'cut and grilled', tags: ['Gluten'] },
+        { q: '[Qty]', name: 'Dried fruit salad', note: 'the dried fruit selection' },
+        { q: '2-3ea', name: 'Dips', note: '[which dips to confirm]' }
+      ],
+      pins: [
+        { label: 'Prosciutto', x: 17.9, y: 28.3, side: 'left', tags: [], note: '80 g.' },
+        { label: 'Leg ham', x: 43.4, y: 28.3, side: 'left', tags: [], note: '100 g.' },
+        { label: 'Salami', x: 75.5, y: 28.3, side: 'right', tags: [], note: '100 g.' },
+        { label: 'Cracker Barrel cheese', x: 10.4, y: 48.6, side: 'left', tags: ['Milk'], note: 'Part of the 300 g cheese selection.' },
+        { label: 'Blue cheese', x: 24.5, y: 48.6, side: 'left', tags: ['Milk'], note: 'Part of the 300 g cheese selection.' },
+        { label: 'Brie', x: 36.8, y: 48.6, side: 'right', tags: ['Milk'], note: 'Part of the 300 g cheese selection.' },
+        { label: 'Crackers', x: 60.4, y: 48.6, side: 'right', tags: ['Gluten', 'Sesame?', 'Soy?'], note: '1/2 pkt.' },
+        { label: 'Sourdough', x: 84.4, y: 48.6, side: 'right', tags: ['Gluten'], note: '1 cob, cut and grilled.' },
+        { label: 'Dried fruit salad', x: 13.2, y: 67.9, side: 'left', tags: [], note: 'Quantity to come.' },
+        { label: 'Dips', x: 50, y: 67.9, side: 'right', tags: [], note: '2-3. Which dips to confirm.' }
+      ],
+      sections: [
+        { title: 'Plating', steps: ['Serve on a large rectangular white and grey marble board. [Layout to confirm]'] }
+      ],
+      labelNote: 'Check the labels of all bought-in items.'
+    },
+    {
+      id: 'seafood-platter', art: 'seafood-platter', no: '99', kind: 'main', forLine: 'Functions', name: 'Seafood Platter',
+      yield: 'Per platter. Scallops, B.B. whiting, fried squid, king prawns, oysters, sweet potato chips, lemon wedges, 2 sauces.',
+      ingredients: [
+        { q: '6-8ea', name: 'Scallops', tags: ['Mollusc'] },
+        { q: '7ea', name: 'B.B. whiting', note: 'kids fish', tags: ['Fish', 'Gluten?', 'Egg?'] },
+        { q: '100 g', name: 'Fried squid', tags: ['Mollusc', 'Gluten?', 'Egg?'] },
+        { q: '6-8ea', name: 'King prawns', tags: ['Crustacean'] },
+        { q: '10ea', name: 'Oysters', tags: ['Mollusc'] },
+        { q: 'Large handful', name: 'Sweet potato chips' },
+        { q: '[Qty]', name: 'Lemon wedges' },
+        { q: '2ea', name: 'Tartare sauce', link: 'tartare' },
+        { q: '2ea', name: 'Sweet chilli sauce' }
+      ],
+      pins: [
+        { label: 'Scallops', x: 17.9, y: 29.2, side: 'left', tags: ['Mollusc'], note: '6-8.' },
+        { label: 'B.B. whiting', x: 49.5, y: 29.2, side: 'left', tags: ['Fish', 'Gluten?', 'Egg?'], note: '7. The kids fish.' },
+        { label: 'Fried squid', x: 80.2, y: 29.2, side: 'right', tags: ['Mollusc', 'Gluten?', 'Egg?'], note: '100 g.' },
+        { label: 'King prawns', x: 19.3, y: 51.9, side: 'left', tags: ['Crustacean'], note: '6-8.' },
+        { label: 'Oysters', x: 53.3, y: 51.9, side: 'left', tags: ['Mollusc'], note: '10.' },
+        { label: 'Sweet potato chips', x: 82.1, y: 55.7, side: 'right', tags: [], note: 'Large handful.' },
+        { label: 'Lemon wedges', x: 16, y: 70.8, side: 'left', tags: [], note: 'Quantity to come.' },
+        { label: 'Tartare sauce', x: 42, y: 70.8, side: 'right', link: 'tartare', note: '2 pots.' },
+        { label: 'Sweet chilli sauce', x: 62.7, y: 70.8, side: 'right', tags: [], note: '2 pots.' }
+      ],
+      sections: [
+        { title: 'Plating', steps: ['Serve on a large rectangular white and grey marble board. [Layout to confirm]'] }
+      ],
+      labelNote: 'Check the labels of all bought-in items.'
     },
 
     /* ---------- Batch cards from AVC Live (Oct 2026): only fully confirmed ingredient lists ---------- */
