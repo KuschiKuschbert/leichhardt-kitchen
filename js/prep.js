@@ -364,6 +364,7 @@
     data.dow[dow] = f.increment(1);
     data[how === 'pick' ? 'picked' : 'typed'] = f.increment(1);
     f.setDoc(docRef('learned', lkey(text)), data, { merge: true }).catch(function () {});
+    markLive(S.date);
   }
   function learnedFor(text) { var k = lkey(text); return S.learned.filter(function (x) { return x.id === k; })[0] || null; }
   function bestSection(x) {
@@ -410,25 +411,63 @@
   function hideLearned(id, hidden) {
     fb.fs.setDoc(docRef('learned', id), { hidden: hidden }, { merge: true }).catch(function () { toast('Could not save.'); });
   }
-  function backfill() {
-    if (!fb || !S.stats || S.stats.loading || S.busy) return;
-    S.busy = true; draw();
-    var map = {}, have = {}; S.learned.forEach(function (x) { have[x.id] = 1; });
-    Object.keys(S.stats.days).forEach(function (d) {
-      var dow = String(parseYmd(d).getDay());
-      S.stats.days[d].forEach(function (x) {
-        if (x.deleted || x.rolled || !x.text) return;
-        var k = lkey(x.text); if (have[k]) return;
-        var m = map[k] = map[k] || { text: String(x.text).trim(), uses: 0, typed: 0, dow: {}, secs: {}, lastUsed: 0, lastBy: '' };
-        m.uses++; m.typed++; m.dow[dow] = (m.dow[dow] || 0) + 1;
-        var sk = lkey(x.station || 'general'); m.secs[sk] = m.secs[sk] || { name: x.station || '', n: 0 }; m.secs[sk].n++;
-        if ((x.addedAt || 0) >= m.lastUsed) { m.lastUsed = x.addedAt || 0; m.lastBy = x.addedBy || ''; m.text = String(x.text).trim(); }
+  /* Progressive learning: every past day (up to 90 back) is read once, by whichever phone opens the book first.
+     A day is claimed by creating learnlog/<date>; the rules refuse a second create, so nothing is counted twice. */
+  var LEARN_DAYS = 90;
+  function markLive(date) {
+    if (!fb) return;
+    S.marked = S.marked || {};
+    if (S.marked[date]) return;
+    S.marked[date] = 1;
+    fb.fs.setDoc(docRef('learnlog', date), { at: Date.now(), by: 'live' }).catch(function () {});
+  }
+  function maybeLearn() {
+    if (S.learnRan || !S.authed || !fb || S.configState !== 'ok') return;
+    S.learnRan = true;
+    setTimeout(autoLearn, 2500);
+  }
+  function autoLearn() {
+    var today = ymd(new Date()), dates = [], k;
+    for (k = 1; k <= LEARN_DAYS; k++) dates.push(shift(today, -k));
+    S.learnState = { total: LEARN_DAYS, done: 0, running: true };
+    fb.fs.getDocs(colRef('learnlog')).then(function (snap) {
+      var have = {}; snap.docs.forEach(function (d) { have[d.id] = 1; });
+      var todo = dates.filter(function (d) { return !have[d]; });
+      S.learnState.done = LEARN_DAYS - todo.length; draw();
+      learnChunk(todo, 0);
+    }, function () { S.learnState = null; });
+  }
+  function learnChunk(todo, i) {
+    if (i >= todo.length) { if (S.learnState) S.learnState.running = false; draw(); return; }
+    var chunk = todo.slice(i, i + 8), f = fb.fs, p = who();
+    Promise.all(chunk.map(function (d) {
+      return f.setDoc(docRef('learnlog', d), { at: Date.now(), by: p ? p.name : '', kind: 'auto' }).then(function () {
+        return f.getDocs(itemsCol(d)).then(function (sn) { return { d: d, items: sn.docs.map(function (x) { return x.data(); }) }; });
+      }, function () { return null; });
+    })).then(function (res) {
+      var map = {}, known = {};
+      S.learned.forEach(function (x) { known[x.id] = 1; });
+      res.filter(Boolean).forEach(function (r) {
+        var dow = String(parseYmd(r.d).getDay());
+        r.items.forEach(function (x) {
+          if (x.deleted || x.rolled || !x.text) return;
+          var text = proofread(x.text).text, k = lkey(text);
+          var m = map[k] = map[k] || { text: text.slice(0, 160), n: 0, dow: {}, secs: {}, last: 0, by: '' };
+          m.n++; m.dow[dow] = (m.dow[dow] || 0) + 1;
+          var sk = lkey(x.station || 'general'); m.secs[sk] = m.secs[sk] || { name: x.station || '', n: 0 }; m.secs[sk].n++;
+          if ((x.addedAt || 0) >= m.last) { m.last = x.addedAt || 0; m.by = x.addedBy || ''; }
+        });
       });
-    });
-    var keys = Object.keys(map);
-    Promise.all(keys.map(function (k) { var m = map[k]; m.text = m.text.slice(0, 160); return fb.fs.setDoc(docRef('learned', k), m); })).then(function () {
-      S.busy = false; toast('Learned ' + keys.length + (keys.length === 1 ? ' item' : ' items') + ' from the last 30 days.'); draw();
-    }, function () { S.busy = false; toast('Could not save. Check the connection.'); });
+      var jobs = Object.keys(map).map(function (k) {
+        var m = map[k], secs = {}, dw = {};
+        Object.keys(m.secs).forEach(function (sk) { secs[sk] = { name: m.secs[sk].name, n: f.increment(m.secs[sk].n) }; });
+        Object.keys(m.dow).forEach(function (d) { dw[d] = f.increment(m.dow[d]); });
+        var data = { text: m.text, uses: f.increment(m.n), typed: f.increment(m.n), dow: dw, secs: secs };
+        if (!known[k]) { data.lastUsed = m.last; data.lastBy = m.by; }
+        return f.setDoc(docRef('learned', k), data, { merge: true });
+      });
+      return Promise.all(jobs).then(function () { if (S.learnState) S.learnState.done += chunk.length; draw(); learnChunk(todo, i + 8); });
+    }).catch(function () { if (S.learnState) S.learnState.running = false; });
   }
   function listText() {
     var rows = S.items.filter(function (x) { return !x.deleted; }).sort(sortItems), out = [], last = null;
@@ -747,8 +786,8 @@
   function learnedHTML() {
     var L = S.learned.filter(function (x) { return x.text; });
     var head = '<section class="set-block"><span class="label">What the prep list has learned</span><span class="hint">Every line written or picked is counted per item, weekday and section. An item becomes a regular after ' + REGULAR + ' uses.</span>';
-    var btn = '<div class="btn-row"><button type="button" class="btn" data-p="backfill"' + (S.busy || !S.stats || S.stats.loading ? ' disabled' : '') + '>Learn from the last 30 days</button></div><span class="hint">Adds items from past lists that the list has not learned yet. Safe to press more than once.</span>';
-    if (!L.length) return head + '<p class="hint">Nothing learned yet. It starts as soon as lines are written, or press the button to learn from the past 30 days.</p>' + btn + '</section>';
+    var ls = S.learnState, btn = '<p class="hint">' + (ls && ls.running ? 'Reading past lists: ' + ls.done + ' of ' + ls.total + ' days so far.' : 'It reads past lists by itself, up to ' + LEARN_DAYS + ' days back' + (ls ? ' (' + ls.done + ' days read)' : '') + ', and keeps learning from every new line.') + '</p>';
+    if (!L.length) return head + '<p class="hint">Nothing learned yet. It reads past lists by itself the next time the prep book is opened, and learns from every new line.</p>' + btn + '</section>';
     var regs = L.filter(isRegular), picked = 0, typed = 0;
     L.forEach(function (x) { picked += x.picked || 0; typed += x.typed || 0; });
     var top = L.slice().sort(function (a, b) { return (b.uses || 0) - (a.uses || 0); });
@@ -762,12 +801,12 @@
       return '<tr><th scope="row">' + esc(x.text) + (x.hidden ? ' <span class="a-badge off">hidden</span>' : '') + (isRegular(x) ? ' <span class="a-badge">regular</span>' : '') + '</th><td>' + (x.uses || 0) + '</td><td>' + (x.typed || 0) + '/' + (x.picked || 0) + '</td><td>' + esc(bestSection(x)) + '</td><td>' + esc(ago(x.lastUsed)) + '</td>' +
         '<td><button type="button" class="p-x" data-p="learn-hide" data-id="' + esc(x.id) + '" data-hide="' + (x.hidden ? '0' : '1') + '">' + (x.hidden ? 'Show in suggestions' : 'Hide from suggestions') + '</button></td></tr>';
     }).join('');
-    return head + '<div class="a-tiles">' + tiles.map(function (x) { return '<div class="a-tile"><strong>' + esc(String(x[0])) + '</strong><span>' + esc(x[1]) + '</span></div>'; }).join('') + '</div>' +
+    return head + btn + '<div class="a-tiles">' + tiles.map(function (x) { return '<div class="a-tile"><strong>' + esc(String(x[0])) + '</strong><span>' + esc(x[1]) + '</span></div>'; }).join('') + '</div>' +
       '<h3 class="a-ch-h">Most written items</h3>' + sectionsChart({ sections: sec }, 'Most written prep items') +
       '<h3 class="a-ch-h">Which days each item is written</h3><span class="hint">Number of times written on each weekday. Darker is more.</span>' +
       '<div class="a-scroll"><table class="a-table"><thead><tr><th scope="col">Item</th>' + DOWS.map(function (d) { return '<th scope="col">' + d[1] + '</th>'; }).join('') + '</tr></thead><tbody>' + heat + '</tbody></table></div>' +
       '<h3 class="a-ch-h">Manage learned items</h3><span class="hint">Hide a typo or a one-off so it stops showing as a suggestion. Typed and picked counts show as typed/picked.</span>' +
-      '<div class="a-scroll"><table class="a-table"><thead><tr><th scope="col">Item</th><th scope="col">Uses</th><th scope="col">Typed/picked</th><th scope="col">Usual section</th><th scope="col">Last used</th><th scope="col"></th></tr></thead><tbody>' + manage + '</tbody></table></div>' + btn + '</section>';
+      '<div class="a-scroll"><table class="a-table"><thead><tr><th scope="col">Item</th><th scope="col">Uses</th><th scope="col">Typed/picked</th><th scope="col">Usual section</th><th scope="col">Last used</th><th scope="col"></th></tr></thead><tbody>' + manage + '</tbody></table></div>' + '</section>';
   }
   function insightsHTML() {
     var st = S.stats;
@@ -894,7 +933,7 @@
   function listHTML() {
     var p = me(), today = ymd(new Date());
     if (S.authed && fb && !S.weekBusy && Date.now() - S.weekAt > 300000) loadWeek();
-    maybeRoll();
+    maybeRoll(); maybeLearn();
     var live = S.items.filter(function (x) { return !x.deleted; }), doneN = live.filter(function (x) { return x.done; }).length;
     var removed = S.items.filter(function (x) { return x.deleted; });
     var secs = {}, tabs = [];
@@ -1042,7 +1081,6 @@
     if (a === 'sugg') { pickSugg(i); return; }
     if (a === 'quick') { quickAdd(i); return; }
     if (a === 'learn-hide') { hideLearned(id, el.getAttribute('data-hide') === '1'); return; }
-    if (a === 'backfill') { backfill(); return; }
     if (a === 'hide-done') { S.hideDone = !S.hideDone; draw(); return; }
     if (a === 'copy') { copyList(); return; }
     if (a === 'print') { window.print(); return; }
