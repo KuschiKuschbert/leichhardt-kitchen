@@ -1697,15 +1697,15 @@ window.LK_DATA = {
     },
     {
       id: 'calamari-topper', art: 'calamari-topper', no: '101', kind: 'side', forLine: 'Topper', name: 'Calamari Topper',
-      menu: 'Calamari topper: 8 pieces.',
-      yield: 'Per topper. 8 pieces of calamari.',
+      menu: 'Calamari topper: 8 calamari strips.',
+      yield: 'Per topper. 8 calamari strips.',
       ingredients: [
-        { q: '8 pieces', name: 'Calamari', tags: ['Mollusc', 'Gluten?'] }
+        { q: '8 strips', name: 'Calamari strips', tags: ['Mollusc', 'Gluten?'] }
       ],
       pins: [
-        { label: 'Calamari', x: 40, y: 45, side: 'left', tags: ['Mollusc', 'Gluten?'], note: '8 pieces.' }
+        { label: 'Calamari strips', x: 40, y: 45, side: 'left', tags: ['Mollusc', 'Gluten?'], note: '8 strips.' }
       ],
-      sections: [{ title: 'Plating', steps: ['Place the 8 pieces of calamari on top of the steak. [Cooking and finish to confirm]'] }]
+      sections: [{ title: 'Plating', steps: ['Place the 8 calamari strips on top of the steak. [Cooking and finish to confirm]'] }]
     },
     {
       id: 'chicken-topper', art: 'chicken-topper', no: '102', kind: 'side', forLine: 'Topper', name: 'Chicken Topper',
@@ -1728,15 +1728,19 @@ window.LK_DATA = {
     },
     {
       id: 'mushroom-topper', art: 'mushroom-topper', no: '103', kind: 'side', forLine: 'Topper', name: 'Mushroom Topper',
-      menu: 'Mushroom topper.',
-      yield: 'Per topper. [Make-up to confirm]',
+      menu: 'Mushroom topper: mushrooms roasted in Italian herbs.',
+      yield: 'Per topper. Mushrooms cooked with Italian herbs in the oven. [Quantity and cut to confirm]',
       ingredients: [
-        { q: '[Qty]', name: 'Mushrooms [to confirm]' }
+        { q: '[Qty]', name: 'Mushrooms' },
+        { q: '[Qty]', name: 'Italian herbs' }
       ],
       pins: [
-        { label: 'Mushrooms', x: 40, y: 45, side: 'left', tags: [], note: 'Make-up to confirm. [Unverified] drawing is a guide only.' }
+        { label: 'Mushrooms', x: 40, y: 45, side: 'left', tags: [], note: 'Cooked with Italian herbs in the oven. Quantity and cut to confirm. [Unverified] drawing is a guide only.' }
       ],
-      sections: [{ title: 'Plating', steps: ['[Make-up and plating to confirm]'] }]
+      sections: [
+        { title: 'Cooking', steps: ['Cook the mushrooms with Italian herbs in the oven. [Oven programme, temperature and time to confirm]'] },
+        { title: 'Plating', steps: ['[Plating to confirm]'] }
+      ]
     },
     /* ---------- Batch cards from AVC Live (Oct 2026): only fully confirmed ingredient lists ---------- */
     {
