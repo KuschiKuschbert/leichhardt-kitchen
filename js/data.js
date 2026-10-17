@@ -1014,19 +1014,19 @@ window.LK_DATA = {
     {
       id: 'beetroot-bites', art: 'beetroot-bites', no: '47', kind: 'snack', forLine: 'Snack', name: 'Crispy Beetroot Bites',
       menu: 'Crispy Beetroot Bites: fried beetroot, caramelised chilli jam, Korean-style cucumber.',
-      yield: 'Per serve. Fried beetroot piled in the middle, chilli jam, Korean-style cucumber on top.',
+      yield: 'Per serve. Fried beetroot tossed in chilli jam, piled in the middle, Korean-style cucumber on top.',
       ingredients: [
         { q: '[Qty]', name: 'Crispy beetroot bites', note: 'fried', tags: ['Gluten?'] },
         { q: '[Qty]', name: 'Caramelised chilli jam' },
         { q: '[Qty]', name: 'Korean-style cucumber', tags: ['Sesame?', 'Soy?'] }
       ],
       pins: [
-        { label: 'Crispy beetroot bites', x: 36.3, y: 56.6, side: 'left', tags: ['Gluten?'], note: 'Fried. Piled in the middle of the plate.' },
+        { label: 'Crispy beetroot bites', x: 36.3, y: 56.6, side: 'left', tags: ['Gluten?'], note: 'Fried, tossed in chilli jam, piled in the middle.' },
         { label: 'Korean-style cucumber', x: 50.5, y: 38.2, side: 'right', tags: ['Sesame?', 'Soy?'], note: 'On top of the pile.' },
-        { label: 'Caramelised chilli jam', x: 72.6, y: 35.8, side: 'right', tags: [], note: 'Position to confirm.' }
+        { label: 'Caramelised chilli jam', x: 41.5, y: 46.5, side: 'left', tags: [], note: 'The bites are tossed in it.' }
       ],
       sections: [
-        { title: 'Plating', steps: ['Pile the beetroot bites in the middle of the plate.', 'Korean-style cucumber on top.', 'Caramelised chilli jam [position to confirm].'] }
+        { title: 'Plating', steps: ['Toss the beetroot bites in the caramelised chilli jam.', 'Pile them in the middle of the plate.', 'Korean-style cucumber on top.'] }
       ]
     },
     {
@@ -1088,20 +1088,20 @@ window.LK_DATA = {
     {
       id: 'pork-belly-bites', art: 'pork-belly-bites', no: '51', kind: 'snack', forLine: 'Snack', name: 'Crispy Pork Belly Bites',
       menu: 'Crispy Pork Belly Bites: caramelised chilli jam, Korean-style cucumber.',
-      yield: 'Per serve. Crispy pork belly piled in the middle, chilli jam, Korean-style cucumber on top.',
+      yield: 'Per serve. Crispy pork belly tossed in chilli jam, piled in the middle, Korean-style cucumber on top.',
       ingredients: [
         { q: '280 to 290 g', name: 'Roasted pork belly', note: 'cut into bites, portioned in a sandwich bag', link: 'pork-belly-batch' },
         { q: '[Qty]', name: 'Caramelised chilli jam' },
         { q: '[Qty]', name: 'Korean-style cucumber', tags: ['Sesame?', 'Soy?'] }
       ],
       pins: [
-        { label: 'Pork belly bites', x: 36.3, y: 56.6, side: 'left', link: 'pork-belly-batch', note: 'Crispy. Piled in the middle of the plate.' },
+        { label: 'Pork belly bites', x: 36.3, y: 56.6, side: 'left', link: 'pork-belly-batch', note: 'Crispy, tossed in chilli jam, piled in the middle.' },
         { label: 'Korean-style cucumber', x: 50.5, y: 38.2, side: 'right', tags: ['Sesame?', 'Soy?'], note: 'On top of the pile.' },
-        { label: 'Caramelised chilli jam', x: 37.7, y: 47.2, side: 'left', tags: [], note: 'Over the bites. Position to confirm.' }
+        { label: 'Caramelised chilli jam', x: 37.7, y: 47.2, side: 'left', tags: [], note: 'The bites are tossed in it.' }
       ],
       sections: [
         { title: 'Prep ahead', steps: ['Portion the roasted pork belly bites, 280 to 290 g per bag, into sandwich bags.'] },
-        { title: 'Plating', steps: ['Pile the pork belly bites in the middle of the plate.', 'Korean-style cucumber on top.', 'Caramelised chilli jam [position to confirm].'] }
+        { title: 'Plating', steps: ['Toss the pork belly bites in the caramelised chilli jam.', 'Pile them in the middle of the plate.', 'Korean-style cucumber on top.'] }
       ]
     },
     {
@@ -1517,16 +1517,16 @@ window.LK_DATA = {
     /* ---------- Functions platters (functions menu, 17 Oct 2026). Prices stay off the site. */
     {
       id: 'pizza-platter', art: 'pizza-platter', no: '94', kind: 'main', forLine: 'Functions', name: 'Pizza Platter',
-      yield: 'Per platter. Margherita and pepperoni pizza, G. Banga.',
+      yield: 'Per platter. Margherita and pepperoni pizza, garlic bread.',
       ingredients: [
         { q: '1/2 slab', name: 'Margherita pizza', tags: ['Gluten', 'Milk', 'Soy?'] },
         { q: '1/2 slab', name: 'Pepperoni pizza', tags: ['Gluten', 'Milk', 'Soy?'] },
-        { q: '1 whole', name: 'G. Banga', note: 'as written on the functions menu', tags: ['Gluten', 'Milk?', 'Soy?'] }
+        { q: '1 whole', name: 'Garlic bread', note: 'G. Banga on the functions menu', tags: ['Gluten', 'Milk?', 'Soy?'] }
       ],
       pins: [
         { label: 'Margherita pizza', x: 22.6, y: 32.1, side: 'left', tags: ['Gluten', 'Milk', 'Soy?'], note: '1/2 slab.' },
         { label: 'Pepperoni pizza', x: 69.8, y: 32.1, side: 'right', tags: ['Gluten', 'Milk', 'Soy?'], note: '1/2 slab.' },
-        { label: 'G. Banga', x: 46.2, y: 58.5, side: 'right', tags: ['Gluten', 'Milk?', 'Soy?'], note: '1 whole.' }
+        { label: 'Garlic bread', x: 46.2, y: 58.5, side: 'right', tags: ['Gluten', 'Milk?', 'Soy?'], note: '1 whole.' }
       ],
       sections: [
         { title: 'Plating', steps: ['Serve on a large rectangular white and grey marble board. [Layout to confirm]'] }
@@ -1563,14 +1563,14 @@ window.LK_DATA = {
     },
     {
       id: 'vege-platter', art: 'vege-platter', no: '96', kind: 'main', forLine: 'Functions', name: 'Vege Platter',
-      yield: 'Per platter. Vege spring rolls, vege quiche, mozzarella sticks, pumpkin arancini, fried haloumi, G. Banga, 3 sauces.',
+      yield: 'Per platter. Vege spring rolls, vege quiche, mozzarella sticks, pumpkin arancini, fried haloumi, garlic bread, 3 sauces.',
       ingredients: [
         { q: '10ea', name: 'Spring rolls, vege', tags: ['Gluten', 'Soy?', 'Sesame?'] },
         { q: '8ea', name: 'Quiche, vege', tags: ['Gluten', 'Milk', 'Egg'] },
         { q: '10ea', name: 'Mozzarella sticks', tags: ['Gluten', 'Milk', 'Egg?'] },
         { q: '10ea', name: 'Pumpkin arancini', tags: ['Gluten?', 'Milk?', 'Egg?'] },
         { q: '8ea', name: 'Fried haloumi', tags: ['Milk', 'Gluten?'] },
-        { q: '1 whole', name: 'G. Banga', note: 'as written on the functions menu', tags: ['Gluten', 'Milk?', 'Soy?'] },
+        { q: '1 whole', name: 'Garlic bread', note: 'G. Banga on the functions menu', tags: ['Gluten', 'Milk?', 'Soy?'] },
         { q: '2ea', name: 'Tomato sauce', link: 'tomato-sauce' },
         { q: '2ea', name: 'BBQ sauce', tags: ['Gluten?', 'Soy?'] },
         { q: '2ea', name: 'Sweet chilli sauce' }
@@ -1581,7 +1581,7 @@ window.LK_DATA = {
         { label: 'Mozzarella sticks', x: 81.6, y: 29.7, side: 'right', tags: ['Gluten', 'Milk', 'Egg?'], note: '10.' },
         { label: 'Pumpkin arancini', x: 19.3, y: 51.9, side: 'left', tags: ['Gluten?', 'Milk?', 'Egg?'], note: '10.' },
         { label: 'Fried haloumi', x: 51.9, y: 52.8, side: 'left', tags: ['Milk', 'Gluten?'], note: '8.' },
-        { label: 'G. Banga', x: 35.4, y: 70.3, side: 'left', tags: ['Gluten', 'Milk?', 'Soy?'], note: '1 whole.' },
+        { label: 'Garlic bread', x: 35.4, y: 70.3, side: 'left', tags: ['Gluten', 'Milk?', 'Soy?'], note: '1 whole.' },
         { label: 'Tomato sauce', x: 81.1, y: 50, side: 'right', link: 'tomato-sauce', note: '2 pots.' },
         { label: 'BBQ sauce', x: 81.1, y: 60.4, side: 'right', tags: ['Gluten?', 'Soy?'], note: '2 pots.' },
         { label: 'Sweet chilli sauce', x: 81.1, y: 70.8, side: 'right', tags: [], note: '2 pots.' }
@@ -1619,7 +1619,7 @@ window.LK_DATA = {
     },
     {
       id: 'antipasto-platter', art: 'antipasto-platter', no: '98', kind: 'main', forLine: 'Functions', name: 'Antipasto Platter',
-      yield: 'Per platter. Prosciutto, leg ham, salami, cheese, crackers, grilled sourdough, dried fruit salad, dips.',
+      yield: 'Per platter. Prosciutto, leg ham, salami, cheese, crackers, grilled sourdough, dried fruit salad, 3 dips: tomato relish, caramelised onions and basil pesto.',
       ingredients: [
         { q: '80 g', name: 'Prosciutto' },
         { q: '100 g', name: 'Leg ham' },
@@ -1628,7 +1628,9 @@ window.LK_DATA = {
         { q: '1/2 pkt', name: 'Crackers', tags: ['Gluten', 'Sesame?', 'Soy?'] },
         { q: '1 cob', name: 'Sourdough', note: 'cut and grilled', tags: ['Gluten'] },
         { q: '[Qty]', name: 'Dried fruit salad', note: 'the dried fruit selection' },
-        { q: '2-3ea', name: 'Dips', note: '[which dips to confirm]' }
+        { q: '1ea', name: 'Tomato relish', note: 'dip', link: 'tomato-relish' },
+        { q: '1ea', name: 'Caramelised onions', note: 'dip' },
+        { q: '1ea', name: 'Basil pesto', note: 'dip', tags: ['Tree nut?', 'Milk?'] }
       ],
       pins: [
         { label: 'Prosciutto', x: 17.9, y: 28.3, side: 'left', tags: [], note: '80 g.' },
@@ -1640,7 +1642,9 @@ window.LK_DATA = {
         { label: 'Crackers', x: 60.4, y: 48.6, side: 'right', tags: ['Gluten', 'Sesame?', 'Soy?'], note: '1/2 pkt.' },
         { label: 'Sourdough', x: 84.4, y: 48.6, side: 'right', tags: ['Gluten'], note: '1 cob, cut and grilled.' },
         { label: 'Dried fruit salad', x: 13.2, y: 67.9, side: 'left', tags: [], note: 'Quantity to come.' },
-        { label: 'Dips', x: 50, y: 67.9, side: 'right', tags: [], note: '2-3. Which dips to confirm.' }
+        { label: 'Tomato relish', x: 36.8, y: 65.6, side: 'left', link: 'tomato-relish', note: 'A dip.' },
+        { label: 'Caramelised onions', x: 50, y: 67.9, side: 'right', tags: [], note: 'A dip.' },
+        { label: 'Basil pesto', x: 63.2, y: 67.9, side: 'right', tags: ['Tree nut?', 'Milk?'], note: 'A dip.' }
       ],
       sections: [
         { title: 'Plating', steps: ['Serve on a large rectangular white and grey marble board. [Layout to confirm]'] }
