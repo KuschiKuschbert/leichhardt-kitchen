@@ -183,7 +183,11 @@
     sdk().then(function () {
       var provider = new fb.au.GoogleAuthProvider();
       return fb.au.signInWithPopup(fb.auth, provider);
-    }).catch(function (e) { S.saveMsg = (e && e.code === 'auth/popup-closed-by-user') ? '' : 'Sign-in did not work. Try again.'; draw(); });
+    }).catch(function (e) {
+      var c = e && e.code;
+      if (c === 'auth/popup-blocked' || c === 'auth/operation-not-supported-in-this-environment') { return fb.au.signInWithRedirect(fb.auth, new fb.au.GoogleAuthProvider()); }
+      S.saveMsg = (c === 'auth/popup-closed-by-user') ? '' : 'Sign-in did not work (' + (c || 'unknown') + '). Try again.'; draw();
+    });
   }
   function signOut() { if (fb) fb.au.signOut(fb.auth); S.draft = null; }
 
