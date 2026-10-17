@@ -23,6 +23,8 @@
 <noscript><p style="padding: 24px; font-family: sans-serif">The recipe book needs JavaScript switched on.</p></noscript>
 <script src="js/data.js" defer></script>
 <script src="js/art.js" defer></script>
+<script src="js/firebase-config.js" defer></script>
+<script src="js/prep.js" defer></script>
 <script src="js/app.js" defer></script>
 <script>
   // Daily self-refresh: the book reloads itself once a day (about 04:00) so a tablet left open on the pass
@@ -32,7 +34,7 @@
     function nextFour() { var d = new Date(); d.setHours(4, 0, 0, 0); if (d.getTime() <= Date.now() + 60000) d.setDate(d.getDate() + 1); return d.getTime(); }
     function refresh() {
       // Re-fetch the data files past the browser cache first, so the reload shows the newest cards. The page stays on the same card.
-      var files = ['js/data.js', 'js/art.js', 'js/app.js', 'css/app.css'];
+      var files = ['js/data.js', 'js/art.js', 'js/app.js', 'js/prep.js', 'js/firebase-config.js', 'css/app.css'];
       var go = function () { location.reload(); };
       try {
         Promise.all(files.map(function (f) { return fetch(f, { cache: 'reload' }); })).then(go, go);
