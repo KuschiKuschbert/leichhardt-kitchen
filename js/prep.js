@@ -144,6 +144,8 @@
   function people() { return ((S.config && S.config.people) || []).filter(function (p) { return p.active !== false; }); }
   function who() { return people().filter(function (p) { return p.id === S.who; })[0] || null; }
   function me() { return S.authed ? who() : null; }
+  /* only the head chef (signed in with Google) and sous chefs may look at other days; everyone else stays on today */
+  function canBrowse() { return S.level === 'owner' || isSous(); }
   function can(what) { var p = me(); return !!(p && p[what]); }
   function toast(msg, act) { S.toast = msg; S.toastAct = act || null; draw(); clearTimeout(toastTimer); toastTimer = setTimeout(function () { S.toast = ''; S.toastAct = null; draw(); }, act ? 9000 : 3500); }
 
@@ -1047,6 +1049,7 @@
   }
   function listHTML() {
     var p = me(), today = ymd(new Date());
+    if (S.date !== today && !canBrowse() && !S.user) { S.date = today; S.tab = ''; watchItems(); }
     if (S.authed && fb && !S.weekBusy && Date.now() - S.weekAt > 300000) loadWeek();
     maybeRoll(); maybeLearn();
     var live = S.items.filter(function (x) { return !x.deleted; }), doneN = live.filter(function (x) { return x.done; }).length;
@@ -1071,10 +1074,10 @@
     var right = '<section class="nb-page nb-right"><header class="nb-ph"><div><h2 class="nb-title nb-dim">Handy</h2><span class="nb-date">Priorities, progress and tools</span></div></header>' +
       '<div class="nb-body nb-side">' + sideHTML(today) + '</div></section>';
     return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' + (can('tick') ? '' : ' (read only)') + esc(myRank()) : '') + '</span><span class="p-links"><button type="button" class="p-link" data-p="who-change">Not you?</button><a class="p-link" href="#/admin">Admin</a></span></div>' +
-      '<div class="nb-nav"><button type="button" class="chip" data-p="day" data-d="-1" aria-label="Back one day">&lsaquo;</button>' +
+      (canBrowse() ? '<div class="nb-nav"><button type="button" class="chip" data-p="day" data-d="-1" aria-label="Back one day">&lsaquo;</button>' +
       '<button type="button" class="chip" data-p="today" aria-pressed="' + (S.date === today) + '">Today</button>' +
       '<label class="visually-hidden" for="p-day">Pick a date</label><input id="p-day" type="date" class="p-dateinput" data-k="p-day" value="' + esc(S.date) + '">' +
-      '<button type="button" class="chip" data-p="day" data-d="1" aria-label="Forward one day">&rsaquo;</button></div>' +
+      '<button type="button" class="chip" data-p="day" data-d="1" aria-label="Forward one day">&rsaquo;</button></div>' : '') +
       badgeStrip() + '<div class="nb-wrap"><div class="nb">' + left + '<div class="nb-spine" aria-hidden="true"></div>' + right + '</div>' + tabHTML + '</div>';
   }
   function ago(ms) {
