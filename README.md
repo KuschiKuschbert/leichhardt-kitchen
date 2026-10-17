@@ -57,7 +57,7 @@ Dishes already link to these ids. Add a recipe with the same `id` and the links,
 | `wing-flour` | 31 49 |
 | `diane-sauce` | 31 |
 | `pulled-pork`, `pico` | 32 |
-| `spaghetti`, `kids-bolognese` | 36 |
+| `spaghetti` | 36 |
 | `smoked-mac` | 39 |
 | `rum-butterscotch`, `honeycomb` | 43 |
 
