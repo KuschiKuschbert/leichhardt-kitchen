@@ -134,3 +134,9 @@ There's no build step and nothing to install. To try it on a computer, open `ind
 - The Firebase web key in `js/firebase-config.js` is public by design. Restrict it in Google Cloud (Credentials, the Browser key) to the site address, and turn on App Check (reCAPTCHA v3) so only the real site can talk to the database. To switch App Check on in the page, add `appCheckKey: '<reCAPTCHA v3 site key>'` to `js/firebase-config.js`.
 - The owner panel has a Backup button that downloads everything as one JSON file. The free Firebase plan has no scheduled backups.
 - Who is the owner: only the owner's Google account may read `config/admins`, so the page checks that read. No email is stored in the database or the repository.
+
+### Changing the kitchen PIN
+
+1. Add a second copy of the `kitchens/<pin>/...` rules for the new 6 digit PIN to the live rules (see `firestore.rules`).
+2. Owner panel, "Move to a new 6 digit kitchen PIN": copies the people, lines (400 days), learned items, tallies and PIN fingerprints to the new PIN, then switches that device over.
+3. Everyone else is asked for the PIN next time they open the book once the old rules are removed. Remove the old PIN's rules last, so nothing is cut off while moving.
