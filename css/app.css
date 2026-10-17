@@ -627,3 +627,25 @@ img, svg { display: block; }
 .dk-top { gap: 0.5rem; }
 @media (min-width: 1100px) { .dk-name { font-size: 2.25rem; } }
 @media (min-width: 720px) and (max-width: 1099px) { .rail-brand b { font-size: 2.1rem; white-space: nowrap; } .rail { padding: 0 1.5rem; } }
+
+/* Admin button next to Settings */
+.rail-icons { display: inline-flex; gap: 0.5rem; }
+.icon-btn[aria-current="page"] { background: var(--ink); color: #fff; }
+
+/* Pace, stuck lines, closing soon */
+.nb-pace { margin: 0 0 12px; padding: 8px 10px; border: 2px solid var(--ink); border-radius: 8px; background: #FFFEFA; }
+.nb-pace p { margin: 2px 0; }
+.nb-pace.is-behind { border-color: var(--accent-ink); background: #FFF6EF; }
+.nb-stuck { list-style: none; margin: 0 0 12px; padding: 0; }
+.nb-stuck li { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.nb-stuck li > span { flex: 1 1 10rem; font-weight: 600; }
+.nb-close p { font-family: var(--body); font-size: 0.9375rem; font-weight: 600; }
+.nb-close .btn-row { margin-top: 6px; }
+
+/* Wastage, last 7 days */
+.w-sum { margin: 0 0 10px; padding: 8px 10px; border: 2px solid var(--ink); border-radius: 8px; background: #FFFEFA; }
+.w-sum p { margin: 3px 0; }
+.o-nav .chip[data-p="wview"], .o-nav .chip[data-p="oview"] { min-width: 0; padding: 0 1rem; font: 700 0.9375rem var(--body); }
+.nb-close .btn, .nb-stuck .p-x { font-family: var(--body); font-size: 0.9375rem; }
+@media (max-width: 479px) { .icon-btn[href="#/admin"] span { display: none; } .icon-btn[href="#/admin"] { padding: 0 0.7rem; } }
+@media (max-width: 399px) { .top-right { gap: 0.25rem; } .vsw button { padding: 0 0.5rem; } .icon-btn, .icon-btn[href="#/admin"], .icon-btn[href="#/settings"] { padding: 0 0.5rem; } .brand h1 { font-size: 1.5rem; } }
