@@ -98,3 +98,11 @@ There's no build step and nothing to install. To try it on a computer, open `ind
 - Data lives in Firebase Firestore (free Spark plan): `config/main`, `days/<date>/items`, `pins/<person>` (hashed), `activity/<person>`, `sections/<slug>`. Firebase config is in `js/firebase-config.js` (public by design). The kitchen PIN and admin email live in the published Firestore rules, not in this repo. Staff names are not in the repo either.
 - Personal PINs only say who is writing. They are not a lock, and permissions per person are guidance on the client. Items are never hard deleted.
 - Changing the kitchen PIN means editing the Firestore rules and re-entering it on every phone.
+
+### Admin levels, insights, badges and recipe links
+
+- The head chef (owner) signs in with Google and sees everything: charts and numbers for the last 7, 14 or 30 days (lines per day, by person, time of day, sections), the tallies, people and permissions, PIN resets, the badge switch, and the sous chef sign-in list. The owner is whoever first signs in to the admin panel and matches the admin email in the Firestore rules.
+- A sous chef (Google emails listed by the owner) sees only a Staff page where people can be added and removed.
+- Weekly badges: the top 3 ranks for ticked lines over the last 7 days show above the notebook, with a rank line for the person writing. The owner can switch them off.
+- Hand-written lines link to recipe cards by matching the words in the line against card names and short names (`matchRecipe` in `js/prep.js`). Batch and component cards win ties, and a line that could mean several cards links to none.
+- Sous chef limits and permissions are guidance in the page, except that only listed Google accounts can write the staff list (see the Firestore rules).

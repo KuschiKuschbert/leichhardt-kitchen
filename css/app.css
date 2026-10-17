@@ -370,3 +370,26 @@ img, svg { display: block; }
   .nb-row { font-size: 1.5rem; }
   .nb-by { display: none; }
 }
+
+/* badges, insights and charts */
+.nb-hint { margin: 0; min-height: 1.2em; font-size: 0.8125rem; color: var(--accent-ink); font-weight: 600; }
+.nb-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1.2rem; padding: 0.5rem 0.9rem; border: 1.5px solid var(--ink); border-radius: var(--radius); background: var(--paper); }
+.nb-bl { font-family: var(--display); font-weight: 700; font-size: 0.8125rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.nb-bd { display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.9375rem; }
+.nb-bn { font-size: 0.8125rem; color: var(--muted); }
+.nb-medal { flex: 0 0 auto; }
+.a-name-ro { flex: 1 1 10rem; font-weight: 700; font-size: 1.05rem; align-self: center; }
+.a-legend { display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; font-size: 0.875rem; color: var(--muted); }
+.a-legend span { display: inline-flex; align-items: center; gap: 0.4rem; }
+.a-legend i { width: 14px; height: 4px; border-radius: 2px; display: inline-block; }
+.a-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: 0.6rem; }
+.a-tile { display: flex; flex-direction: column; gap: 0.1rem; padding: 0.7rem 0.8rem; border: 1.5px solid var(--ink); border-radius: var(--radius); background: var(--paper); }
+.a-tile strong { font-family: var(--display); font-size: 2rem; line-height: 1; }
+.a-tile span { font-size: 0.8125rem; color: var(--muted); }
+.a-ch-h { margin: 0.6rem 0 0; font-family: var(--display); font-weight: 700; font-size: 1.15rem; }
+.ch { width: 100%; height: auto; display: block; }
+.ch-grid { stroke: var(--line); stroke-width: 1; }
+.ch-ax { fill: var(--muted); font-size: 11px; font-family: var(--body); }
+.ch-lb { fill: var(--ink); font-size: 13px; font-weight: 600; font-family: var(--body); }
+.ch-val { fill: var(--ink); font-size: 12px; font-weight: 700; font-family: var(--body); }
+.a-details summary { cursor: pointer; font-weight: 600; min-height: 40px; display: flex; align-items: center; }
