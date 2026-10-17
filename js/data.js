@@ -1423,23 +1423,23 @@ window.LK_DATA = {
       labelNote: 'Check the sausage and slider labels.'
     },
     {
-      id: 'pulled-pork-burger', art: 'pulled-pork-burger', no: '89', kind: 'main', forLine: 'Smoker special', name: 'Pulled Pork Burger',
+      id: 'pulled-pork-burger', art: 'pulled-pork-burger', diagram: 'pulled-pork-burger-build', no: '89', kind: 'main', forLine: 'Smoker special', name: 'Pulled Pork Burger',
       menu: 'Pulled Pork Burger: pulled pork, Carolina BBQ and slaw with fries.',
-      yield: 'Per plate. Pulled pork burger with Carolina BBQ and slaw, fries.',
+      yield: 'Per plate. Pulled pork and slaw in the bun, Carolina BBQ, fries on the side.',
       ingredients: [
         { q: '[Qty]', name: 'Burger bun', tags: ['Gluten?', 'Sesame?'] },
         { q: '[Qty]', name: 'Pulled pork', note: 'from the smoker' },
         { q: '[Qty]', name: 'Carolina BBQ sauce', tags: ['Gluten?', 'Soy?'] },
-        { q: '[Qty]', name: 'New slaw', link: 'slaw' },
-        { q: '[Qty]', name: 'Fries' }
+        { q: '[Qty]', name: 'New slaw', link: 'slaw', note: 'in the burger, on the pulled pork' },
+        { q: '[Qty]', name: 'Fries', note: 'on the side' }
       ],
       pins: [
-        { label: 'Pulled pork burger', x: 35.8, y: 39.6, side: 'right', tags: ['Gluten?'], note: 'Pulled pork, Carolina BBQ and slaw. Build to confirm.' },
-        { label: 'Fries', x: 66.0, y: 57.5, side: 'left', tags: [], note: '' },
-        { label: 'New slaw', x: 32.1, y: 67.9, side: 'right', link: 'slaw', note: 'On the side or in the bun, to confirm.' }
+        { label: 'Pulled pork burger', x: 35.8, y: 39.6, side: 'right', tags: ['Gluten?'], note: 'Bottom to top: bun base, pulled pork with Carolina BBQ, new slaw, bun top. Quantities to confirm.' },
+        { label: 'Fries', x: 66.0, y: 57.5, side: 'left', tags: [], note: 'On the side.' }
       ],
       sections: [
-        { title: 'Cooking', steps: ['Pulled pork from the smoker [reheat to confirm].'] }
+        { title: 'Cooking', steps: ['Pulled pork from the smoker [reheat to confirm].'] },
+        { title: 'Plating, bottom to top', steps: ['Bun base.', 'Pulled pork with Carolina BBQ. [Inference: sauce tossed through the pork, to confirm]', 'New slaw on top of the pulled pork. [Inference: slaw above the pork, to confirm]', 'Bun top.', 'Fries on the side.'] }
       ],
       labelNote: 'Check the bun and sauce labels.'
     },
