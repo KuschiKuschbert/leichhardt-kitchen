@@ -1359,20 +1359,20 @@ window.LK_DATA = {
         { q: '[Qty]', name: 'Bread and butter pickles', note: 'bought in' }
       ],
       pins: [
-        { label: 'Brisket', x: 23.6, y: 25.5, side: 'left', tags: [], note: 'Smoked, sliced.' },
-        { label: 'Pulled pork', x: 55.7, y: 23.6, side: 'right', tags: [], note: 'From the smoker.' },
-        { label: 'Pulled lamb', x: 74.5, y: 38.7, side: 'left', tags: [], note: 'From the smoker.' },
-        { label: 'Texas sausages', x: 32.1, y: 52.8, side: 'right', tags: ['Gluten?', 'Soy?'], note: '' },
-        { label: 'New slaw', x: 66.0, y: 64.2, side: 'left', link: 'slaw', note: 'The coleslaw.' },
-        { label: 'Cornbread', x: 80.2, y: 61.3, side: 'left', tags: ['Gluten?', 'Milk?', 'Egg?'], note: 'Glazed with maple butter, then in the oven. Recipe or bought in, to confirm.' },
-        { label: 'Alabama white sauce', x: 15.1, y: 75.5, side: 'right', tags: ['Egg?'], note: 'Recipe to confirm.' },
-        { label: 'Double-smoked BBQ sauce', x: 26.4, y: 78.3, side: 'right', tags: ['Gluten?', 'Soy?'], note: '' },
-        { label: 'Bourbon BBQ sauce', x: 37.7, y: 76.4, side: 'left', tags: ['Gluten?', 'Soy?'], note: '' },
-        { label: 'Bread and butter pickles', x: 51.9, y: 78.3, side: 'left', tags: [], note: '' }
+        { label: 'New slaw', x: 16, y: 45.8, side: 'left', link: 'slaw', note: 'The coleslaw.' },
+        { label: 'Cornbread', x: 24.5, y: 34.9, side: 'left', tags: ['Gluten?', 'Milk?', 'Egg?'], note: 'Glazed with maple butter, then in the oven. Recipe or bought in, to confirm.' },
+        { label: 'Pulled pork', x: 41.5, y: 35.8, side: 'right', tags: [], note: 'From the smoker.' },
+        { label: 'Pulled lamb', x: 56.6, y: 43.4, side: 'left', tags: [], note: 'From the smoker.' },
+        { label: 'Texas sausages', x: 69.3, y: 33, side: 'right', tags: ['Gluten?', 'Soy?'], note: '' },
+        { label: 'Brisket', x: 83, y: 54.7, side: 'left', tags: [], note: 'Smoked, sliced.' },
+        { label: 'Bread and butter pickles', x: 17.9, y: 64.6, side: 'left', tags: [], note: '' },
+        { label: 'Double-smoked BBQ sauce', x: 29.7, y: 66, side: 'right', tags: ['Gluten?', 'Soy?'], note: '' },
+        { label: 'Bourbon BBQ sauce', x: 41.5, y: 64.2, side: 'right', tags: ['Gluten?', 'Soy?'], note: '' },
+        { label: 'Alabama white sauce', x: 53.3, y: 66, side: 'right', tags: ['Egg?'], note: 'Recipe to confirm.' }
       ],
       sections: [
         { title: 'Cooking', steps: ['Brisket, pulled pork and pulled lamb come from the smoker [times and holding to confirm].', 'Cornbread: glaze the top with maple butter, then into the oven [oven setting and time to confirm].'] },
-        { title: 'Plating', steps: ['Serve on a rounded rectangular wooden board. [Layout to confirm]'] }
+        { title: 'Plating', steps: ['Serve on a plastic board with a wood finish. Back row, left to right: cornbread on coleslaw, pulled pork, pulled lamb, Texas sausages, brisket. Front left: four small bowls on a napkin with pickles, double-smoked BBQ sauce, bourbon BBQ sauce and Alabama white sauce.'] }
       ],
       labelNote: 'Check the sausage label.'
     },
@@ -1396,22 +1396,22 @@ window.LK_DATA = {
         { q: '[Qty]', name: 'Bread and butter pickles', note: 'bought in' }
       ],
       pins: [
-        { label: 'Brisket', x: 21.7, y: 23.6, side: 'left', tags: [], note: 'Smoked, sliced.' },
-        { label: 'Pulled pork', x: 48.1, y: 21.7, side: 'right', tags: [], note: 'From the smoker.' },
-        { label: 'Pulled lamb', x: 70.8, y: 25.5, side: 'left', tags: [], note: 'From the smoker.' },
-        { label: 'Sliders', x: 24.1, y: 50.9, side: 'right', tags: ['Gluten?'], note: 'Filling to confirm.' },
-        { label: 'Texas sausages', x: 50.9, y: 50.5, side: 'left', tags: ['Gluten?', 'Soy?'], note: '' },
-        { label: 'Chicken wings', x: 72.6, y: 50.9, side: 'left', tags: [], note: '380 to 420 g. Seasoning to confirm.' },
-        { label: 'New slaw', x: 56.6, y: 75.5, side: 'left', link: 'slaw', note: 'The coleslaw.' },
-        { label: 'Cornbread', x: 23.6, y: 73.6, side: 'left', tags: ['Gluten?', 'Milk?', 'Egg?'], note: 'Glazed with maple butter, then in the oven. Recipe or bought in, to confirm.' },
-        { label: 'Alabama white sauce', x: 68.9, y: 79.2, side: 'right', tags: ['Egg?'], note: 'Recipe to confirm.' },
-        { label: 'Double-smoked BBQ sauce', x: 79.2, y: 79.2, side: 'right', tags: ['Gluten?', 'Soy?'], note: '' },
-        { label: 'Bourbon BBQ sauce', x: 89.6, y: 77.4, side: 'left', tags: ['Gluten?', 'Soy?'], note: '' },
-        { label: 'Bread and butter pickles', x: 88.7, y: 64.2, side: 'left', tags: [], note: '' }
+        { label: 'New slaw', x: 11.3, y: 45.8, side: 'left', link: 'slaw', note: 'The coleslaw.' },
+        { label: 'Cornbread', x: 19.8, y: 34.9, side: 'left', tags: ['Gluten?', 'Milk?', 'Egg?'], note: 'Glazed with maple butter, then in the oven. Recipe or bought in, to confirm.' },
+        { label: 'Pulled pork', x: 36.8, y: 35.8, side: 'right', tags: [], note: 'From the smoker.' },
+        { label: 'Pulled lamb', x: 51.9, y: 43.4, side: 'left', tags: [], note: 'From the smoker.' },
+        { label: 'Texas sausages', x: 64.6, y: 33, side: 'right', tags: ['Gluten?', 'Soy?'], note: '' },
+        { label: 'Brisket', x: 78.3, y: 54.7, side: 'left', tags: [], note: 'Smoked, sliced.' },
+        { label: 'Chicken wings', x: 92.5, y: 30.2, side: 'left', tags: [], note: '380 to 420 g. Seasoning to confirm.' },
+        { label: 'Sliders', x: 92.9, y: 62.3, side: 'left', tags: ['Gluten?'], note: 'Filling to confirm.' },
+        { label: 'Bread and butter pickles', x: 13.2, y: 64.6, side: 'left', tags: [], note: '' },
+        { label: 'Double-smoked BBQ sauce', x: 25, y: 66, side: 'right', tags: ['Gluten?', 'Soy?'], note: '' },
+        { label: 'Bourbon BBQ sauce', x: 36.8, y: 64.2, side: 'right', tags: ['Gluten?', 'Soy?'], note: '' },
+        { label: 'Alabama white sauce', x: 48.6, y: 66, side: 'right', tags: ['Egg?'], note: 'Recipe to confirm.' }
       ],
       sections: [
         { title: 'Cooking', steps: ['Brisket, pulled pork and pulled lamb come from the smoker [times and holding to confirm].', 'Cornbread: glaze the top with maple butter, then into the oven [oven setting and time to confirm].'] },
-        { title: 'Plating', steps: ['Serve on a rounded rectangular wooden board. [Layout to confirm]'] }
+        { title: 'Plating', steps: ['Serve on a plastic board with a wood finish. Back row, left to right: cornbread on coleslaw, pulled pork, pulled lamb, Texas sausages, brisket, with the chicken wings at the back right and the sliders at the front right. Front left: four small bowls on a napkin with pickles, double-smoked BBQ sauce, bourbon BBQ sauce and Alabama white sauce.'] }
       ],
       labelNote: 'Check the sausage and slider labels.'
     },
@@ -1452,7 +1452,7 @@ window.LK_DATA = {
       ],
       sections: [
         { title: 'Cooking', steps: ['Brisket from the smoker, card 79.'] },
-        { title: 'Plating', steps: ['Serve on a rounded rectangular wooden board. [Layout to confirm]'] }
+        { title: 'Plating', steps: ['Serve on a plastic board with a wood finish. [Layout to confirm]'] }
       ],
       labelNote: ''
     },
