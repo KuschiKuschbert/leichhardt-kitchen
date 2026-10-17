@@ -17,6 +17,7 @@ The recipe book for the Leichhardt Hotel kitchen team. It works on any phone, ta
   - Which view it opens with
   - Text size (Normal, Large, Extra large)
   - Clear ticked steps
+  - Open on a phone (computers and wide tablets only, 900 px and wider): the QR code (`qr.svg`) that opens the book, with Print the A4 sign (`qr-sign.pdf`) and Download the QR code (`qr.png`)
 
   Settings are saved on each phone or tablet.
 
