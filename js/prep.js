@@ -57,7 +57,7 @@
     items: [], itemsState: 'idle', showRemoved: false,
     section: '', text: '', qty: '', recipeSearch: '', recipeOpen: false, tab: '',
     authed: false, pinStep: '', pinData: null, pf1: '', pf2: '', pinMsg: '',
-    sections: [], activity: [], resetId: '', hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false, exporting: '',
+    sections: [], activity: [], resetId: '', hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false, exporting: '', moving: false, moveMsg: '', newPin: '',
     adminsFor: '', level: '', stats: null, statsRange: 14, week: null, weekAt: 0, weekBusy: false,
     user: null, authState: 'idle', draft: null, saveMsg: '', busy: false, toast: '', toastAct: null
   };
@@ -439,6 +439,43 @@
         setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
         S.exporting = ''; toast('Backup saved: ' + n + ' lines from ' + Object.keys(out.days).length + ' days.');
       }).catch(function () { S.exporting = ''; toast('Could not read everything. Check the connection.'); });
+  }
+  /* Owner only: copy everything under the current kitchen PIN to a new one, then switch this device over.
+     The security rules must already allow the new PIN (see firestore.rules) or the copy is refused. */
+  function movePin() {
+    var box = S.root.querySelector('#a-newpin'), np = box ? box.value.trim() : '';
+    if (S.moving || !fb) return;
+    if (!/^\d{6}$/.test(np)) { S.moveMsg = 'The new PIN is exactly 6 digits.'; draw(); return; }
+    if (np === S.pin) { S.moveMsg = 'That is the PIN already in use.'; draw(); return; }
+    S.moving = true; S.moveMsg = 'Copying...'; draw();
+    var f = fb.fs, old = S.pin, n = 0;
+    function oc(name) { return f.collection.apply(null, [fb.db, 'kitchens', old, name]); }
+    function nd(name, id) { return f.doc(fb.db, 'kitchens', np, name, id); }
+    function copyCol(name) { return f.getDocs(oc(name)).then(function (sn) { n += sn.docs.length; return Promise.all(sn.docs.map(function (d) { return f.setDoc(nd(name, d.id), d.data()); })); }); }
+    var today = ymd(new Date()), dates = [], k;
+    for (k = 0; k < 400; k++) dates.push(shift(today, -k));
+    f.getDoc(f.doc(fb.db, 'kitchens', old, 'config', 'main')).then(function (sn) { if (sn.exists()) { n++; return f.setDoc(f.doc(fb.db, 'kitchens', np, 'config', 'main'), sn.data()); } })
+      .then(function () { return copyCol('pins'); }).then(function () { return copyCol('activity'); }).then(function () { return copyCol('sections'); })
+      .then(function () { return copyCol('learned'); }).then(function () { return copyCol('learnlog'); })
+      .then(function () {
+        var i = 0;
+        function next() {
+          if (i >= dates.length) return;
+          var chunk = dates.slice(i, i + 20); i += 20;
+          S.moveMsg = 'Copying days ' + Math.min(i, dates.length) + ' of ' + dates.length + '...'; draw();
+          return Promise.all(chunk.map(function (d) {
+            return f.getDocs(f.collection(fb.db, 'kitchens', old, 'days', d, 'items')).then(function (sn) { n += sn.docs.length; return Promise.all(sn.docs.map(function (x) { return f.setDoc(f.doc(fb.db, 'kitchens', np, 'days', d, 'items', x.id), x.data()); })); });
+          })).then(next);
+        }
+        return next();
+      })
+      .then(function () {
+        S.moving = false; S.moveMsg = 'Copied ' + n + ' records. This device now uses the new PIN. Everyone else enters the new PIN next time they open the book.';
+        S.pin = np; lsSet('lk.prep.pin', np); S.items = []; S.learned = []; S.sections = []; S.activity = [];
+        if (unsubCfg) unsubCfg(); if (unsubItems) unsubItems(); if (unsubSec) unsubSec(); if (unsubLrn) unsubLrn(); if (unsubAct) unsubAct();
+        unsubCfg = unsubItems = unsubSec = unsubLrn = unsubAct = null; cfgKey = itemsKey = ''; S.rolledFor = ''; S.learnRan = false; S.weekAt = 0; S.stats = null;
+        connect();
+      }).catch(function (e) { S.moving = false; S.moveMsg = e && e.code === 'permission-denied' ? 'The rules do not allow the new PIN yet. Nothing was changed on the old PIN.' : 'Stopped part way. Nothing was changed on the old PIN, so it is safe to try again.'; draw(); });
   }
   function hideLearned(id, hidden) {
     fb.fs.setDoc(docRef('learned', id), { hidden: hidden }, { merge: true }).catch(function () { toast('Could not save.'); });
@@ -1043,7 +1080,9 @@
       '<ul class="a-list">' + (rows || '<li class="hint">No names yet.</li>') + '</ul><div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' +
       '<section class="set-block"><span class="label">Badges</span><label class="a-check"><input type="checkbox" data-a="badges"' + (d.showBadges !== false ? ' checked' : '') + '> Show the weekly top tickers to everyone on the prep book</label></section>' + saveBlock +
       '<section class="set-block"><span class="label">Backup</span><span class="hint">Saves everything the prep book holds (people, lines from the last 400 days, learned items, tallies) as one file on this device. People\'s PIN fingerprints are left out. Do this now and then.</span><div class="btn-row"><button type="button" class="btn" data-p="export"' + (S.exporting ? ' disabled' : '') + '>' + (S.exporting ? esc(S.exporting) : 'Download a backup') + '</button></div></section>' +
-      '<section class="set-block"><span class="label">Kitchen PIN</span><span class="hint">The kitchen PIN is part of the security rules in the Firebase console. To change it, change it there and on every phone. People\'s own PINs only say who is writing. They are not a lock.</span></section></div>';
+      '<section class="set-block"><span class="label">Kitchen PIN</span><span class="hint">The kitchen PIN is the lock on the whole book, so keep it to 6 digits and only for staff. People\'s own PINs only say who is writing. They are not a lock.</span>' +
+      '<div class="field"><label class="label" for="a-newpin">Move to a new 6 digit kitchen PIN</label><input id="a-newpin" class="search" inputmode="numeric" maxlength="6" autocomplete="off" data-k="a-newpin" placeholder="6 digits" value="' + esc(S.newPin) + '"></div>' +
+      '<div class="btn-row"><button type="button" class="btn" data-p="move-pin"' + (S.moving ? ' disabled' : '') + '>Copy everything to the new PIN</button></div><span class="saved" role="status">' + esc(S.moveMsg) + '</span><span class="hint">Ask for the new PIN to be added to the security rules first. The old PIN keeps working until its rules are removed.</span></section></div>';
   }
   function staffHTML() {
     var d = S.draft || (startDraft(), S.draft);
@@ -1102,6 +1141,7 @@
     if (a === 'urgent') { toggleUrgent(id); return; }
     if (a === 'toast-act') { var ta = S.toastAct; S.toast = ''; S.toastAct = null; if (ta && ta.fn) ta.fn(); draw(); return; }
     if (a === 'export') { exportAll(); return; }
+    if (a === 'move-pin') { movePin(); return; }
     if (a === 'sugg') { pickSugg(i); return; }
     if (a === 'quick') { quickAdd(i); return; }
     if (a === 'learn-hide') { hideLearned(id, el.getAttribute('data-hide') === '1'); return; }
@@ -1133,6 +1173,7 @@
     var el = e.target, k = el.getAttribute && el.getAttribute('data-k');
     if (!S.root || !S.root.contains(el)) return;
     if (k === 'p-pin') { S.pinInput = el.value.replace(/\D/g, ''); el.value = S.pinInput; return; }
+    if (k === 'a-newpin') { S.newPin = el.value.replace(/\D/g, '').slice(0, 6); el.value = S.newPin; return; }
     if (k === 'pf1') { S.pf1 = el.value.replace(/\D/g, ''); el.value = S.pf1; return; }
     if (k === 'pf2') { S.pf2 = el.value.replace(/\D/g, ''); el.value = S.pf2; return; }
     if (k === 'p-text') { S.text = el.value; var hn = S.root.querySelector('#p-hint'); if (hn) hn.textContent = hintText(S.text); var sg = S.root.querySelector('#p-sugg'); if (sg) sg.innerHTML = suggestHTML(); return; }
