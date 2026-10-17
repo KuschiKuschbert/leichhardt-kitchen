@@ -59,7 +59,7 @@
     authed: false, pinStep: '', pinData: null, pf1: '', pf2: '', pinMsg: '',
     sections: [], activity: [], resetId: '', hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false,
     admins: null, adminsFor: '', level: '', stats: null, statsRange: 14, week: null, weekAt: 0, weekBusy: false,
-    user: null, authState: 'idle', draft: null, saveMsg: '', busy: false, toast: ''
+    user: null, authState: 'idle', draft: null, saveMsg: '', busy: false, toast: '', toastAct: null
   };
   var fb = null, sdkP = null, unsubCfg = null, unsubItems = null, unsubPrev = null, unsubSec = null, unsubAct = null, unsubLrn = null;
   var itemsKey = '', cfgKey = '', toastTimer = null, resumed = false;
@@ -142,7 +142,7 @@
   function who() { return people().filter(function (p) { return p.id === S.who; })[0] || null; }
   function me() { return S.authed ? who() : null; }
   function can(what) { var p = me(); return !!(p && p[what]); }
-  function toast(msg) { S.toast = msg; draw(); clearTimeout(toastTimer); toastTimer = setTimeout(function () { S.toast = ''; draw(); }, 3500); }
+  function toast(msg, act) { S.toast = msg; S.toastAct = act || null; draw(); clearTimeout(toastTimer); toastTimer = setTimeout(function () { S.toast = ''; S.toastAct = null; draw(); }, act ? 9000 : 3500); }
 
   function sha(str) {
     return crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)).then(function (b) {
@@ -218,7 +218,7 @@
   function newItem(extra) {
     var p = me(), f = fb.fs, ref = f.doc(itemsCol(S.date));
     var data = Object.assign({ text: '', station: '', qty: '', recipe: '', addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: Date.now(), done: false, deleted: false }, extra);
-    return f.setDoc(ref, data);
+    var pr = f.setDoc(ref, data); pr.id = ref.id; return pr;
   }
   function noteSection(name) {
     if (!name || !fb) return;
@@ -228,11 +228,20 @@
   function addTyped() {
     var t = S.text.trim();
     if (!t || !can('add')) return;
-    var sec = cleanSection(S.section);
+    var sec = cleanSection(S.section), typedAs = t, pr = proofread(t), fixed = pr.changes.length || pr.text !== t;
+    t = pr.text;
     var rm = matchRecipe(t);
     if (!sec) { var lx = learnedFor(t); if (lx && bestSection(lx)) sec = bestSection(lx); }
-    newItem({ text: t.slice(0, 160), qty: S.qty.trim().slice(0, 40), station: sec, recipe: rm ? rm.id : '' }).catch(function () { toast('Could not save. Check the connection.'); });
+    var made = newItem(Object.assign({ text: t.slice(0, 160), qty: S.qty.trim().slice(0, 40), station: sec, recipe: rm ? rm.id : '' }, fixed ? { orig: typedAs.slice(0, 160) } : {}));
+    made.catch(function () { toast('Could not save. Check the connection.'); });
     noteSection(sec); bump({ added: 1, lastAdded: Date.now() }); learn(t, sec, t === S.pickedText ? 'pick' : 'type');
+    if (pr.changes.length) {
+      var ch = pr.changes, mid = made.id, dte = S.date;
+      toast('Corrected ' + ch.map(function (c) { return c[0] + ' to ' + c[1]; }).join(', '), { label: 'Undo', fn: function () {
+        keepWords(ch);
+        fb.fs.updateDoc(itemRef(dte, mid), { text: typedAs.slice(0, 160), orig: '' }).catch(function () { toast('Could not undo.'); });
+      } });
+    }
     S.text = ''; S.qty = ''; S.section = sec; S.pickedText = ''; draw();
     var el = S.root && S.root.querySelector('[data-k="p-text"]'); if (el) el.focus();
   }
@@ -294,6 +303,56 @@
     if (!it || !can('add')) return;
     fb.fs.updateDoc(itemRef(S.date, id), { urgent: !it.urgent }).catch(function () { toast('Could not save. Check the connection.'); });
   }
+
+  /* ---------- proofreading: every new line is tidied and spell-checked before it is saved ---------- */
+  var KITCHEN = ('blanch julienne dice diced slice sliced marinate marinated portion portioned batch wash pick chop chopped shred shredded trim tray crumb crumbed batter gravy sauce stock reduce season seasoned mix mixed roast roasted smoke smoked pulled pull cook cooked cool chill chilled defrost thaw label date rotate fill refill restock set setup stack fold grate grated peel peeled core cut cure brine rub glaze whip whipped steam steamed fry fried grill grilled bake baked char charred toast toasted dress dressing garnish drizzle lemon lime orange tomato tomatoes onion onions garlic potato potatoes lettuce cucumber carrot carrots cabbage capsicum mushroom mushrooms bacon cheese chicken beef pork lamb barramundi calamari prawn prawns salmon rice pasta mash chips fries slaw coleslaw aioli mayo mayonnaise pickle pickles parmesan parmigiana parmy schnitzel schnitty beetroot spinach broccoli zucchini pumpkin sweet corn peas beans dough pastry pie pies brownie cookie caramel butterscotch cream ice vanilla chocolate guinness snickers laksa coconut asian greens oak leaf salad salads burger burgers patties patty bun buns brioche ribs rib wings wing steak sandwich skillet spring rolls roll roll bourbon bbq chilli chili ginger shallot shallots herbs parsley coriander basil thyme rosemary sage mint dill chives pepper salt sugar flour butter milk eggs egg oil vinegar mustard ketchup tomato relish jus beer batter fish chip sauce sides side dessert desserts entree entrees mains main kids ketchup bacon jam onion rings nachos tacos taco quesadilla wrap wraps hummus dip dips bread garlic focaccia fetta feta halloumi mozzarella cheddar swiss tasty gravy peppercorn mushroom diane creamy white red green yellow large small half full double single extra spare backup morning afternoon night lunch dinner breakfast service base bases bowl bowls sheet sheets lid lids tub tubs bag bags pack packs cup cups jar jars pot pots pan pans oven rack racks jug jugs make made need needs more less last next each every both some thing things stuff work done ready first top bottom front back cold hot warm mild spicy fresh frozen dried raw plain with without from into over under before after until only also then than that this these those mince stir drain rest wrap cover covered uncover break bone bones skin skinned skinless fillet fillets cube cubes strip strips wedge wedges round rounds ring rings whole sliced thick thin fine rough coarse smooth').split(/\s+/);
+  var vocabCache = null, vocabKey = '';
+  function vocab() {
+    var key = S.learned.length + ':' + D.recipes.length;
+    if (vocabCache && vocabKey === key) return vocabCache;
+    var v = {};
+    function add(t, w) { String(t || '').toLowerCase().split(/[^a-z']+/).forEach(function (x) { if (x.length >= 3) v[x] = Math.max(v[x] || 0, w); }); }
+    KITCHEN.forEach(function (w) { add(w, 1); });
+    D.recipes.forEach(function (r) { add(r.name, 3); add(r.short, 3); (r.ingredients || []).forEach(function (i) { add(i.name, 2); }); });
+    S.learned.forEach(function (x) { add(x.text, 2 + Math.min(5, x.uses || 0)); });
+    vocabCache = v; vocabKey = key; return v;
+  }
+  function osa(a, b) {
+    var d = [], i, j;
+    for (i = 0; i <= a.length; i++) { d[i] = [i]; }
+    for (j = 1; j <= b.length; j++) d[0][j] = j;
+    for (i = 1; i <= a.length; i++) for (j = 1; j <= b.length; j++) {
+      var c = a[i - 1] === b[j - 1] ? 0 : 1;
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + c);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+    }
+    return d[a.length][b.length];
+  }
+  var KEEP = (function () { try { return JSON.parse(lsGet('lk.prep.keep') || '{}'); } catch (e) { return {}; } })();
+  function keepWords(list) { list.forEach(function (c) { KEEP[c[0].toLowerCase()] = 1; }); lsSet('lk.prep.keep', JSON.stringify(KEEP)); }
+  function fixWord(w) {
+    var lw = w.toLowerCase(), v = vocab();
+    if (lw.length < 4 || v[lw] || KEEP[lw] || v[lw.replace(/(es|s|ed|ing)$/, '')] || v[lw.replace(/s$/, '')]) return null;
+    var maxd = lw.length >= 8 ? 2 : 1, best = null, bd = 9, bw = -1, tie = false;
+    Object.keys(v).forEach(function (c) {
+      if (c[0] !== lw[0] || Math.abs(c.length - lw.length) > maxd) return;
+      var dd = osa(lw, c);
+      if (dd > maxd) return;
+      if (dd < bd || (dd === bd && v[c] > bw)) { best = c; bd = dd; bw = v[c]; tie = false; }
+      else if (dd === bd && v[c] === bw) tie = true;
+    });
+    if (!best || tie) return null;
+    if (w === w.toUpperCase() && w.length > 1) return best.toUpperCase();
+    if (w[0] === w[0].toUpperCase()) return best[0].toUpperCase() + best.slice(1);
+    return best;
+  }
+  function proofread(text) {
+    var changes = [], t = String(text).replace(/\s+/g, ' ').trim().replace(/\s+([,.;:!?])/g, '$1').replace(/([,;:])(?=\S)/g, '$1 ');
+    t = t.replace(/[A-Za-z']+/g, function (w) { var f = fixWord(w); if (f && f !== w) { changes.push([w, f]); return f; } return w; });
+    if (/^[a-z]/.test(t)) t = t[0].toUpperCase() + t.slice(1);
+    return { text: t, changes: changes };
+  }
+
   /* ---------- the prep list learns: every line added is counted per item, weekday and section ---------- */
   var REGULAR = 4;   // typed or picked this many times and it becomes a regular
   function lkey(t) { return slug(String(t).toLowerCase()).slice(0, 80); }
@@ -555,7 +614,7 @@
   function aggregate(n) {
     var today = ymd(new Date()), dates = [], i, h;
     for (i = n - 1; i >= 0; i--) dates.push(shift(today, -i));
-    var agg = { dates: dates, perDay: {}, people: {}, sections: {}, wHour: [], tHour: [], times: [], written: 0, ticked: 0, rolled: 0, rollKeys: {} };
+    var agg = { dates: dates, perDay: {}, people: {}, sections: {}, wHour: [], tHour: [], times: [], written: 0, ticked: 0, rolled: 0, rollKeys: {}, fixes: [] };
     for (h = 0; h < 24; h++) { agg.wHour.push(0); agg.tHour.push(0); }
     dates.forEach(function (d) {
       var all = (S.stats.days[d] || []).filter(function (x) { return !x.deleted; });
@@ -568,6 +627,7 @@
         rk.n++; if (x.rolled > rk.max) rk.max = x.rolled;
       });
       all.forEach(function (x) {
+        if (x.orig && x.orig !== x.text) agg.fixes.push({ d: d, from: x.orig, to: x.text, by: x.addedBy || '' });
         if (!x.rolled) {
           agg.written++;
           var nm = x.addedBy || 'Unknown', pp = agg.people[nm] = agg.people[nm] || { w: 0, t: 0 };
@@ -668,6 +728,11 @@
     });
     return out + '</svg>';
   }
+  function fixesHTML(agg) {
+    if (!agg.fixes.length) return '<h3 class="a-ch-h">Proofreader</h3><p class="hint">No lines needed correcting in this time.</p>';
+    var rows = agg.fixes.slice(-15).reverse().map(function (f) { return '<tr><th scope="row">' + esc(f.from) + '</th><td>' + esc(f.to) + '</td><td>' + esc(f.by) + '</td><td>' + esc(parseYmd(f.d).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })) + '</td></tr>'; }).join('');
+    return '<h3 class="a-ch-h">Proofreader</h3><span class="hint">The latest corrections. Anyone can tap Undo straight after, and that word is then left alone on their device.</span><div class="a-scroll"><table class="a-table"><thead><tr><th scope="col">Typed</th><th scope="col">Saved as</th><th scope="col">By</th><th scope="col">Day</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+  }
   function rollChart(agg) {
     var rows = Object.keys(agg.rollKeys).map(function (k) { return agg.rollKeys[k]; }).sort(function (a, b) { return b.n - a.n || b.max - a.max; }).slice(0, 10);
     if (!rows.length) return '<p class="hint">Nothing has rolled over in this time. That is a good sign.</p>';
@@ -716,6 +781,7 @@
     var tiles = [
       [agg.written, 'lines written'], [agg.ticked, 'lines ticked off'],
       [agg.written ? Math.round(agg.ticked / agg.written * 100) + '%' : 'n/a', 'ticked off'],
+      [agg.fixes.length, 'lines corrected by the proofreader'],
       [agg.rolled, 'lines rolled over'],
       [agg.written ? Math.round(agg.rolled / (agg.written + agg.rolled) * 100) + '%' : 'n/a', 'of each list was rolled over'],
       [dur(med), 'typical time to tick'],
@@ -731,6 +797,7 @@
       '<h3 class="a-ch-h">By person</h3>' + legend([['Written', CW], ['Ticked off', CT]]) + peopleChart(agg) +
       '<h3 class="a-ch-h">Time of day</h3>' + legend([['Written', CW], ['Ticked off', CT]]) + hoursChart(agg) +
       '<h3 class="a-ch-h">Rolled over most often</h3><span class="hint">Lines that were not finished and moved onto the next day. Longest runs show when you hover a bar.</span>' + rollChart(agg) +
+      fixesHTML(agg) +
       '<h3 class="a-ch-h">Sections</h3>' + sectionsChart(agg) + '</section>';
   }
 
@@ -774,7 +841,7 @@
     var link = rid ? '<a class="nb-go" href="#/r/' + encodeURIComponent(rid) + '" title="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '">recipe</a>' : '';
     return '<li class="nb-row' + (x.done ? ' is-done' : '') + (x.rolled && !x.done ? ' is-rolled' : '') + (x.urgent && !x.done ? ' is-urgent' : '') + (x.deleted ? ' is-removed' : '') + '">' +
       '<button type="button" class="nb-box" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-pressed="' + !!x.done + '" aria-label="' + esc((x.done ? 'Untick ' : 'Tick ') + x.text) + '"' + (tickOk ? '' : ' disabled') + '>' + (x.done ? TICK : BOX) + '</button>' +
-      '<span class="nb-t">' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + '</span>' + marks +
+      '<span class="nb-t"' + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + '</span>' + marks +
       '<span class="nb-by">' + by + '</span>' + star + link +
       (delOk ? '<button type="button" class="nb-x" data-p="' + (x.deleted ? 'restore' : 'del') + '" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-label="' + (x.deleted ? 'Put back ' : 'Remove ') + esc(x.text) + '">' + (x.deleted ? 'put back' : 'remove') + '</button>' : '') + '</li>';
   }
@@ -945,7 +1012,7 @@
     if (key && ae.selectionStart != null) { try { start = ae.selectionStart; end = ae.selectionEnd; } catch (e) {} }
     var bodyEl = S.root.querySelector('.nb-body'), keepScroll = bodyEl ? S.root.querySelectorAll('.nb-body') : null, scrolls = [];
     if (keepScroll) Array.prototype.forEach.call(keepScroll, function (b) { scrolls.push(b.scrollTop); });
-    S.root.innerHTML = bodyHTML() + (S.toast ? '<div class="p-toast" role="status">' + esc(S.toast) + '</div>' : '');
+    S.root.innerHTML = bodyHTML() + (S.toast ? '<div class="p-toast" role="status">' + esc(S.toast) + (S.toastAct ? ' <button type="button" class="p-toast-btn" data-p="toast-act">' + esc(S.toastAct.label) + '</button>' : '') + '</div>' : '');
     S.root.classList.toggle('is-book', S.name === 'prep' && !!S.root.querySelector('.nb'));
     if (scrolls.length) Array.prototype.forEach.call(S.root.querySelectorAll('.nb-body'), function (b, i) { if (scrolls[i] != null) b.scrollTop = scrolls[i]; });
     if (key) { var el = S.root.querySelector('[data-k="' + key + '"]'); if (el) { el.focus({ preventScroll: true }); if (start != null && el.setSelectionRange) { try { el.setSelectionRange(start, end); } catch (e) {} } } }
@@ -971,6 +1038,7 @@
     if (a === 'restore') { removeItem(dt || S.date, id, true); return; }
     if (a === 'removed') { S.showRemoved = !S.showRemoved; draw(); return; }
     if (a === 'urgent') { toggleUrgent(id); return; }
+    if (a === 'toast-act') { var ta = S.toastAct; S.toast = ''; S.toastAct = null; if (ta && ta.fn) ta.fn(); draw(); return; }
     if (a === 'sugg') { pickSugg(i); return; }
     if (a === 'quick') { quickAdd(i); return; }
     if (a === 'learn-hide') { hideLearned(id, el.getAttribute('data-hide') === '1'); return; }
@@ -1055,6 +1123,7 @@
       if (S.pin) { connect(); if (name === 'admin') sdk(); }
     },
     saveConfig: saveConfig,
+    proofread: proofread,
     state: S
   };
 })();
