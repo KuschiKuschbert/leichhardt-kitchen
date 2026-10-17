@@ -1190,7 +1190,7 @@
     }
     var chips = '<div class="chips">' + [['done', 'Share ticked'], ['w', 'Lines written'], ['r', 'Rolled over']].map(function (c) { return '<button type="button" class="chip" data-p="calm" data-v="' + c[0] + '" aria-pressed="' + (m === c[0]) + '"' + (c[0] === 'done' && a.who ? ' disabled' : '') + '>' + c[1] + '</button>'; }).join('') + '</div>';
     var key = '<div class="a-legend sk-key"><span>' + (m === 'done' ? 'Ticked:' : 'Fewer to more:') + '</span>' + (m === 'done' ? [['under 40%', 1], ['40 to 69%', 2], ['70 to 89%', 3], ['90% or more', 4]] : [['few', 1], ['', 2], ['', 3], ['most', 4]]).map(function (k) { return '<span><i style="background:' + ramp[k[1]] + '"></i>' + k[0] + '</span>'; }).join('') + '</div>';
-    return '<h3 class="a-ch-h">Every day at a glance</h3><span class="hint">Tap a day to open it in the prep book.</span>' + chips + key +
+    return '<h3 class="a-ch-h">Every day at a glance <span class="a-sub">' + (m === 'done' ? 'share ticked' : m === 'w' ? 'lines written' : 'rolled over') + '</span></h3><span class="hint">Tap a day to open it in the prep book.</span>' + chips + key +
       '<div class="a-tablewrap cal-wrap"><table class="a-table a-plain cal"><thead><tr>' + DOWN.map(function (x) { return '<th scope="col">' + x + '</th>'; }).join('') + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
   }
   /* When the work happens: weekday by hour, average per day. The busiest hour is outlined. */
@@ -1253,9 +1253,73 @@
     }
     return out.length ? card('<h3 class="a-ch-h">What stands out</h3><ul class="a-list a-smart">' + out.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>', 'full') : '';
   }
+  /* ---------- export and print (Insights, Team, Waste) ---------- */
+  function rangeText(n) { var t = ymd(new Date()); return n + ' days, ' + dayShort(shift(t, -(n - 1))) + ' to ' + dayShort(t); }
+  function toolsHTML(kind, title) {
+    var n = S.statsRange;
+    return '<div class="a-tools"><div><h3 class="a-title">' + esc(title) + '</h3><span class="hint">' + esc(rangeText(n)) + ', compared with the ' + n + ' days before.</span></div>' +
+      '<div class="a-tbtns"><button type="button" class="btn dark" data-p="print-tab">Print or save as PDF</button><button type="button" class="btn" data-p="csv" data-v="' + kind + '">Download CSV</button></div></div>' +
+      '<div class="a-print-h"><strong>Leichhardt Kitchen Book</strong> &middot; ' + esc(title) + ' &middot; ' + esc(rangeText(n)) + '<span>Printed ' + esc(dayShort(ymd(new Date())) + ' ' + clock(Date.now())) + '</span></div>';
+  }
+  function printTab() {
+    var pane = S.root && S.root.querySelector('.a-pane'); if (!pane) return;
+    var closed = [].filter.call(pane.querySelectorAll('details'), function (d) { return !d.open; });
+    closed.forEach(function (d) { d.open = true; });
+    document.documentElement.classList.add('print-admin');
+    function done() { document.documentElement.classList.remove('print-admin'); closed.forEach(function (d) { d.open = false; }); window.removeEventListener('afterprint', done); }
+    window.addEventListener('afterprint', done);
+    setTimeout(function () { window.print(); setTimeout(function () { if (document.documentElement.classList.contains('print-admin') && !window.matchMedia('print').matches) done(); }, 1500); }, 50);
+  }
+  function csvCell(v) { v = v == null ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+  function downloadCSV(name, rows) {
+    var text = '﻿' + rows.map(function (r) { return r.map(csvCell).join(','); }).join('\r\n');
+    var blob = new Blob([text], { type: 'text/csv;charset=utf-8' }), a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+  }
+  function hm(ms) { return ms ? clock(ms) : ''; }
+  function exportCSV(kind) {
+    var n = S.statsRange, a = AF(), tag = ymd(new Date()) + '-' + n + 'd';
+    if (kind === 'insights' && S.stats && !S.stats.loading) {
+      var rows = [['Date', 'Weekday', 'Section', 'Line', 'Amount', 'Written by', 'Written at', 'Rolled over (times)', 'Ticked', 'Ticked by', 'Ticked at', 'Minutes to tick']];
+      afDates(n, 0).forEach(function (d) { afItems(d).forEach(function (x) {
+        if (a.who && x.addedById !== a.who && x.doneById !== a.who) return;
+        rows.push([d, DOWN[DOW.indexOf(parseYmd(d).getDay())], x.station || 'General', x.text, x.qty || '', x.rolled ? (x.origBy || '') : (x.addedBy || ''), hm(x.addedAt), x.rolled || 0, x.done ? 'yes' : 'no', x.doneBy || '', hm(x.doneAt), x.done && x.doneAt && x.addedAt && !x.rolled ? Math.round((x.doneAt - x.addedAt) / 60000) : '']);
+      }); });
+      downloadCSV('leichhardt-prep-lines-' + tag + '.csv', rows);
+    } else if (kind === 'waste' && S.wStats && !S.wStats.loading) {
+      var ds = {}; afDates(n, 0).forEach(function (d) { ds[d] = 1; });
+      var w = [['Date', 'Weekday', 'Time', 'Section', 'Item', 'Amount', 'Unit', 'Reason', 'Action', 'Logged by']];
+      S.wStats.lines.filter(function (x) { return !x.deleted && ds[x.date] && (!a.sec || (x.station || 'General') === a.sec) && (!a.reason || x.reason === a.reason); })
+        .sort(function (p, q) { return (p.date + hm(p.addedAt)) < (q.date + hm(q.addedAt)) ? -1 : 1; })
+        .forEach(function (x) { w.push([x.date, DOWN[DOW.indexOf(parseYmd(x.date).getDay())], hm(x.addedAt), x.station || '', x.text, x.amount, x.unit, reasonName(x.reason), x.action || '', x.addedBy || '']); });
+      downloadCSV('leichhardt-wastage-' + tag + '.csv', w);
+    } else if (kind === 'team' && S.stats && !S.stats.loading) {
+      var td = teamData(n), t = [['Person', 'Lines written', 'Days written', 'Lines ticked', 'Days ticked', 'Main section', 'Share in main section', 'Days in a row', 'Based on', 'Rotation', 'Last wrote']];
+      ((S.config && S.config.people) || []).filter(function (p) { return p.active !== false; }).forEach(function (p) {
+        var r = td.per[p.id] || blankRec(p.id), h = habit(r, td);
+        t.push([p.name, r.w, Object.keys(r.days).length, r.t, Object.keys(r.tdays).length, h.top, h.tot ? Math.round(h.share * 100) + '%' : '', h.streak, h.basis, h.flag ? 'Consider rotating' + (h.suggest ? ' to ' + h.suggest : '') : '', r.last]);
+      });
+      downloadCSV('leichhardt-team-' + tag + '.csv', t);
+    } else toast('Still loading. Try again in a moment.');
+  }
+  /* Typical time from written to ticked, per section. */
+  function tickBySectionHTML(n) {
+    var m = {}, who = AF().who;
+    afDates(n, 0).forEach(function (d) { afItems(d).forEach(function (x) {
+      if (x.rolled || !x.done || !x.doneAt || !x.addedAt || x.doneAt <= x.addedAt || (who && x.doneById !== who)) return;
+      (m[x.station || 'General'] = m[x.station || 'General'] || []).push(x.doneAt - x.addedAt);
+    }); });
+    var rows = Object.keys(m).filter(function (k) { return m[k].length >= 2; }).map(function (k) { var v = m[k].sort(function (a, b) { return a - b; }); return { k: k, n: v.length, med: v[Math.floor(v.length / 2)], p90: v[Math.min(v.length - 1, Math.floor(v.length * 0.9))] }; }).sort(function (a, b) { return b.med - a.med; });
+    if (!rows.length) return '<h3 class="a-ch-h">Time to tick by section</h3><p class="hint">Not enough ticked lines yet.</p>';
+    return '<h3 class="a-ch-h">Time to tick by section</h3><span class="hint">From writing a line to ticking it. "Slow days" is how long the slowest 1 in 10 took.</span><div class="a-tablewrap"><table class="a-table a-plain"><thead><tr><th scope="col">Section</th><th scope="col">Lines</th><th scope="col">Typical</th><th scope="col">Slow days</th></tr></thead><tbody>' +
+      rows.map(function (r) { return '<tr><th scope="row">' + esc(r.k) + '</th><td>' + r.n + '</td><td>' + dur(r.med) + '</td><td>' + dur(r.p90) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+  }
+  var INS_SECS = [['ins-overview', 'Overview'], ['ins-days', 'Days'], ['ins-timing', 'Timing'], ['ins-sections', 'Sections and people'], ['ins-problems', 'Problem lines'], ['ins-book', 'Recipe book']];
+  function secHead(i) { return '<h3 class="a-sh" id="' + INS_SECS[i][0] + '"><span class="a-sn">' + (i < 9 ? '0' : '') + (i + 1) + '</span>' + esc(INS_SECS[i][1]) + '</h3>'; }
   function insightsHTML() {
     var st = S.stats, n = S.statsRange, a = AF();
-    var head = '<section class="set-block a-ins"><span class="label">Insights</span><span class="hint">Worked out from the lines themselves. Compared with the same number of days before.</span>' + filtersHTML('insights') + filterNote('insights');
+    var head = '<section class="set-block a-ins">' + toolsHTML('insights', 'Insights') + filtersHTML('insights') + filterNote('insights');
     if (!st || st.loading) return head + '<p class="hint">Loading the last 60 days...</p></section>';
     loadWStats(false);
     var agg = aggregate(n, 0), prev = aggregate(n, n);
@@ -1270,17 +1334,18 @@
     ];
     var tbl = '<details class="a-details"><summary>Show the daily numbers as a table</summary><div class="a-scroll"><table class="a-table"><thead><tr><th scope="col">Day</th><th scope="col">Written</th><th scope="col">Ticked</th><th scope="col">Rolled over</th></tr></thead><tbody>' +
       agg.dates.slice().reverse().map(function (d) { return '<tr><th scope="row">' + esc(dayShort(d)) + '</th><td>' + agg.perDay[d].w + '</td><td>' + agg.perDay[d].t + '</td><td>' + agg.perDay[d].r + '</td></tr>'; }).join('') + '</tbody></table></div></details>';
-    return head + '<div class="a-tiles">' + tiles.map(tileHTML).join('') + '</div>' +
-      '<div class="a-grid">' + smartHTML(agg, prev, n) +
-      card(calHTML(n)) + card(hourHTML(n)) +
-      card('<h3 class="a-ch-h">Lines each day</h3>' + legend([['Written', CW], ['Ticked off', CT]]) + dailyChart(agg) + tbl, 'full') +
-      card('<h3 class="a-ch-h">By person</h3>' + legend([['Written', CW], ['Ticked off', CT]]) + peopleChart(agg)) +
-      card('<h3 class="a-ch-h">Sections</h3>' + sectionsChart(agg)) +
-      card('<h3 class="a-ch-h">Load by weekday and section</h3><span class="hint">Which sections are busy on which days. Useful for the roster.</span>' + heatHTML(n), 'full') +
-      card('<h3 class="a-ch-h">Slow and sticky lines</h3><span class="hint">Roll over 3 or more times, usually take 4 hours or more to tick, or keep being removed.</span>' + stickyHTML(n), 'full') +
-      card('<h3 class="a-ch-h">Rolled over most often</h3><span class="hint">Lines that were not finished and moved onto the next day.</span>' + rollChart(agg)) +
-      card(missesHTML()) + card(viewsHTML()) + card(fixesHTML(agg)) + '</div></section>';
+    var jump = '<nav class="a-jump" aria-label="Jump to">' + INS_SECS.map(function (x, i) { return '<button type="button" class="chip" data-p="jump" data-v="' + x[0] + '"><span class="a-sn">' + (i < 9 ? '0' : '') + (i + 1) + '</span>' + esc(x[1]) + '</button>'; }).join('') + '</nav>';
+    return head + jump +
+      '<section class="a-sec">' + secHead(0) + '<div class="a-tiles">' + tiles.map(tileHTML).join('') + '</div><div class="a-grid">' + smartHTML(agg, prev, n) + '</div></section>' +
+      '<section class="a-sec">' + secHead(1) + '<div class="a-grid">' + card(calHTML(n), 'full') + card('<h3 class="a-ch-h">Lines each day</h3>' + legend([['Written', CW], ['Ticked off', CT]]) + dailyChart(agg) + tbl, 'full') + '</div></section>' +
+      '<section class="a-sec">' + secHead(2) + '<div class="a-grid">' + card(hourHTML(n), 'full') + card(tickBySectionHTML(n)) + card('<h3 class="a-ch-h">Time of day</h3>' + legend([['Written', CW], ['Ticked off', CT]]) + hoursChart(agg)) + '</div></section>' +
+      '<section class="a-sec">' + secHead(3) + '<div class="a-grid">' + card('<h3 class="a-ch-h">Load by weekday and section</h3><span class="hint">Which sections are busy on which days. Useful for the roster.</span>' + heatHTML(n), 'full') +
+        card('<h3 class="a-ch-h">Sections</h3>' + sectionsChart(agg)) + card('<h3 class="a-ch-h">By person</h3>' + legend([['Written', CW], ['Ticked off', CT]]) + peopleChart(agg) + '<p class="hint">More on people in the Team tab.</p>') + '</div></section>' +
+      '<section class="a-sec">' + secHead(4) + '<div class="a-grid">' + card('<h3 class="a-ch-h">Slow and sticky lines</h3><span class="hint">Roll over 3 or more times, usually take 4 hours or more to tick, or keep being removed.</span>' + stickyHTML(n), 'full') +
+        card('<h3 class="a-ch-h">Rolled over most often</h3><span class="hint">Lines that were not finished and moved onto the next day.</span>' + rollChart(agg)) + card(fixesHTML(agg)) + '</div></section>' +
+      '<section class="a-sec">' + secHead(5) + '<div class="a-grid">' + card(missesHTML()) + card(viewsHTML()) + '</div></section></section>';
   }
+
 
 
   /* ---------- drawing ---------- */
@@ -1556,7 +1621,7 @@
     loadOrdStats(false);
     var n = S.statsRange, td = teamData(n), people = (S.config.people || []).filter(function (p) { return p.active !== false; });
     var rows = people.map(function (p) { var r = td.per[p.id] || blankRec(p.id); return { p: p, r: r, h: habit(r, td), wd: Object.keys(r.days).length, tdN: Object.keys(r.tdays).length }; });
-    var chips = filtersHTML('team');
+    var chips = toolsHTML('team', 'Team') + filtersHTML('team');
     var hab = rows.filter(function (x) { return x.h.tot; }).sort(function (a, b) { return (b.h.flag ? 1 : 0) - (a.h.flag ? 1 : 0) || b.h.streak - a.h.streak; }).map(function (x) {
       return '<tr><th scope="row">' + esc(x.p.name) + '</th><td>' + x.h.tot + ' <span class="o-who-i">' + (x.h.basis === 'ticks' ? 'ticked' : 'written') + '</span></td><td>' + esc(x.h.top) + ' <span class="o-who-i">' + Math.round(x.h.share * 100) + '%</span></td><td>' + esc(x.h.also.join(', ') || 'none') + '</td><td>' + x.h.streak + (x.h.streak === 1 ? ' day' : ' days') + '</td><td>' +
         (x.h.flag ? '<span class="a-flag">Consider rotating' + (x.h.suggest ? ' to ' + esc(x.h.suggest) : '') + '</span>' : '<span class="o-who-i">Fine for now</span>') + '</td></tr>';
@@ -1565,7 +1630,7 @@
       var share = td.nActive ? x.wd / td.nActive : 0, quiet = td.nActive >= 3 && share < 0.3;
       return '<tr><th scope="row">' + esc(x.p.name) + '</th><td>' + x.r.w + '</td><td>' + x.wd + ' of ' + td.nActive + '</td><td>' + x.r.t + ' (' + x.tdN + ' days)</td><td>' + (x.r.last ? esc(dayShort(x.r.last)) : 'none in this time') + '</td><td>' + (quiet ? '<span class="a-flag">Writes rarely</span>' : '<span class="o-who-i">OK</span>') + '</td></tr>';
     }).join('');
-    return '<section class="set-block"><span class="label">Team</span><span class="hint">Worked out from the section each line sits under, who ticked it and who wrote it. Ticks show where someone actually worked, so they count first. Use it as a prompt for a chat, not a verdict.</span>' + chips +
+    return '<section class="set-block">' + chips + '<span class="hint">Worked out from the section each line sits under, who ticked it and who wrote it. Ticks show where someone actually worked, so they count first. Use it as a prompt for a chat, not a verdict.</span>' +
       '<h3 class="a-ch-h">Skills matrix</h3><span class="hint">Lines each person ticked in each section (the 8 busiest sections).</span>' + skillsHTML(rows, td) +
       '<h3 class="a-ch-h">Section habits</h3><span class="hint">Based on ticks for anyone with 8 or more ticked lines, otherwise on the lines they wrote. Flagged when 70% or more of them over 5 or more days, or the last 5 or more days, were in one section. The suggestion is the section they have done least.</span>' +
       (hab ? '<div class="a-tablewrap"><table class="a-table a-plain"><thead><tr><th scope="col">Person</th><th scope="col">Lines</th><th scope="col">Main section</th><th scope="col">Also</th><th scope="col">In a row</th><th scope="col">Rotation</th></tr></thead><tbody>' + hab + '</tbody></table></div>' : '<p class="hint">No lines with a section in this time.</p>') +
@@ -2109,8 +2174,7 @@
     loadWStats(false); loadStats(false);
     var ws = S.wStats, n = S.statsRange;
     var chips = filtersHTML('waste') + filterNote('waste');
-    var head = '<section class="set-block"><span class="label">Wastage</span><span class="hint">From the wastage log on the phones. Amounts are what people wrote, in kg, L, portions and pieces (grams are counted as kg).</span>' +
-      '<div class="btn-row"><a class="btn dark" href="#/waste">Open the wastage log</a></div>' + chips;
+    var head = '<section class="set-block">' + toolsHTML('waste', 'Wastage') + '<span class="hint">From the wastage log on the phones. Amounts are what people wrote, in kg, L, portions and pieces (grams are counted as kg). <a href="#/waste">Open the wastage log</a></span>' + chips;
     if (!ws || ws.loading) return head + '<p class="hint">Loading the last 60 days...</p></section>';
     var af = AF(), from = shift(ymd(new Date()), -(n - 1));
     function wfilter(off) { var ds = {}; afDates(n, off).forEach(function (d) { ds[d] = 1; }); return ws.lines.filter(function (x) { return !x.deleted && ds[x.date] && (!af.sec || (x.station || 'General') === af.sec) && (!af.reason || x.reason === af.reason); }); }
@@ -2240,6 +2304,9 @@
     if (a === 'quick') { quickAdd(i); return; }
     if (a === 'heat') { S.heat = el.getAttribute('data-v'); draw(); return; }
     if (a === 'calm') { S.calM = el.getAttribute('data-v'); draw(); return; }
+    if (a === 'jump') { var tg = document.getElementById(el.getAttribute('data-v')); if (tg) tg.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    if (a === 'print-tab') { printTab(); return; }
+    if (a === 'csv') { exportCSV(el.getAttribute('data-v')); return; }
     if (a === 'hrm') { S.hrM = el.getAttribute('data-v'); draw(); return; }
     if (a === 'af-reset') { S.af = { sec: '', who: '', dow: '', reason: '' }; afSave(); draw(); return; }
     if (a === 'cal-day') { S.date = el.getAttribute('data-d'); S.tab = ''; watchItems(); location.hash = '#/prep'; return; }

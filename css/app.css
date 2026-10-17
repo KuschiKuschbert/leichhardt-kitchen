@@ -709,3 +709,39 @@ img, svg { display: block; }
 .hr-c.is-peak { outline: 2.5px solid var(--ink); outline-offset: -2.5px; }
 /* the hour map needs room: full width next to the calendar on big screens */
 @media (min-width: 1100px) { .a-grid > .a-card:has(.a-table.hr) { grid-column: 1 / -1; } .a-grid > .a-card:has(.cal) { grid-column: 1 / -1; } .a-table.cal { max-width: 46rem; } }
+
+/* Insights: title row with print and export, numbered sections, jump bar */
+.a-tools { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 0.75rem 1rem; }
+.a-title { margin: 0; font: 700 1.9rem var(--display); line-height: 1.05; }
+.a-tbtns { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.a-print-h { display: none; }
+.a-jump { display: flex; gap: 0.4rem; overflow-x: auto; padding: 0.35rem 0 0.5rem; scrollbar-width: none; }
+.a-jump::-webkit-scrollbar { display: none; }
+.a-jump .chip { flex: 0 0 auto; }
+.a-sn { margin-right: 0.4rem; font: 700 0.85em var(--display); color: var(--accent-ink); letter-spacing: 0.04em; }
+.a-jump .chip .a-sn { margin-right: 0.3rem; }
+.a-sec { margin-top: 1.4rem; }
+.a-sh { display: flex; align-items: baseline; margin: 0 0 0.6rem; padding-bottom: 0.3rem; border-bottom: 3px solid var(--ink); font: 700 1.5rem var(--display); text-transform: uppercase; letter-spacing: 0.03em; scroll-margin-top: 7rem; }
+.a-sh .a-sn { font-size: 1.5rem; margin-right: 0.6rem; }
+.a-sec > .a-grid { margin-top: 0.8rem; }
+.a-sub { font: 600 0.8125rem var(--body); color: var(--muted); text-transform: none; letter-spacing: 0; margin-left: 0.3rem; }
+@media (max-width: 599px) { .a-tbtns { width: 100%; } .a-tbtns .btn { flex: 1 1 auto; } .a-title { font-size: 1.6rem; } }
+
+/* Printing the admin panel (Insights, Team or Waste): A4, chrome hidden, cards kept whole */
+@media print {
+  html.print-admin body * { visibility: visible !important; }
+  html.print-admin .wtop, html.print-admin .tabbar, html.print-admin .a-tabs, html.print-admin .p-bar, html.print-admin .a-filters, html.print-admin .a-tbtns, html.print-admin .a-jump, html.print-admin .foot, html.print-admin .p-admin > .p-h, html.print-admin .a-pane .chips, html.print-admin .a-pane button.p-x, html.print-admin summary { display: none !important; }
+  html.print-admin .a-print-h { display: flex !important; justify-content: space-between; gap: 1rem; margin-bottom: 4mm; padding-bottom: 2mm; border-bottom: 2px solid #000; font-size: 10pt; }
+  html.print-admin body, html.print-admin #app, html.print-admin .page { background: #fff !important; padding: 0 !important; margin: 0 !important; max-width: none !important; }
+  html.print-admin .a-grid { display: block !important; }
+  html.print-admin .a-card { break-inside: avoid; margin: 0 0 5mm; border: 1px solid #999; }
+  html.print-admin .a-tile { break-inside: avoid; }
+  html.print-admin .a-tablewrap, html.print-admin .a-scroll { overflow: visible !important; }
+  html.print-admin .a-table { min-width: 0 !important; }
+  html.print-admin * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  html.print-admin .a-table thead th { position: static !important; }
+  html.print-admin .a-sh { break-after: avoid-page; page-break-after: avoid; }
+  html.print-admin .a-sec { break-inside: auto; }
+  html.print-admin .a-sec + .a-sec { break-before: page; }
+  @page { size: A4 portrait; margin: 12mm; }
+}
