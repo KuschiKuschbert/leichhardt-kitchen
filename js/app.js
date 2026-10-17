@@ -326,7 +326,7 @@
   /* ---------- view B: list and card ---------- */
   function groupsHTML(curId) {
     var s = q(), shown = 0;
-    var html = GROUPS.map(function (g) {
+    var html = GROUPS.filter(function (g) { return ui.kind === 'all' || g.key === ui.kind; }).map(function (g) {
       var items = g.list.filter(function (r) { return freeOk(r.id) && matches(r.id); }).map(function (r) {
         var sub = rows[r.id].length ? rows[r.id].map(function (a) { return a.label; }).join(' · ') : (r.forLine === 'Template' ? 'Template' : 'No listed allergens');
         if (missing[r.id].length) sub = 'Allergens incomplete' + (rows[r.id].length ? ' · ' + sub : '');
@@ -351,7 +351,7 @@
     }
     return '<div class="page">' + back + header(countText()) +
       '<div class="split' + (r ? ' has-recipe' : '') + '"><aside class="split-list" aria-label="Recipe list">' +
-      searchField('Dish, ingredient or allergen') + freeChips(true) + '<div id="groups" style="display: flex; flex-direction: column; gap: 0.9rem">' + groupsHTML(r && r.id) + '</div></aside>' +
+      searchField('Dish, ingredient or allergen') + kindChips() + freeChips(true) + '<div id="groups" style="display: flex; flex-direction: column; gap: 0.9rem">' + groupsHTML(r && r.id) + '</div></aside>' +
       '<main id="main" class="split-main">' + (r ? recipeCard(r, stack, false)
         : '<div class="pick-panel"><span class="label" style="color: var(--ink)">Pick a recipe</span><span>Choose one from the list. Its allergens show first, then ingredients and method.</span></div>') +
       '</main></div>' + footer() + '</div>';
