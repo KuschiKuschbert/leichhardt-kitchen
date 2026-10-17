@@ -179,7 +179,7 @@
   var NAV = [['recipes', 'Recipes', '#/recipes'], ['prep', 'Prep', '#/prep'], ['orders', 'Orders', '#/orders'], ['waste', 'Waste', '#/waste']];
   function navActive() {
     var n = parseRoute().name;
-    return n === 'landing' ? 'home' : (n === 'home' || n === 'recipe') ? 'recipes' : (n === 'prep' || n === 'admin') ? 'prep' : n === 'orders' ? 'orders' : n === 'waste' ? 'waste' : '';
+    return n === 'landing' ? 'home' : (n === 'home' || n === 'recipe') ? 'recipes' : n === 'prep' ? 'prep' : n === 'orders' ? 'orders' : n === 'waste' ? 'waste' : '';
   }
   function pillNav() {
     var a = navActive();
@@ -207,16 +207,17 @@
     var on = parseRoute().name === 'admin', signed = isAdminDevice();
     return '<a class="' + cls + ' adm' + (signed ? ' is-signed' : '') + '" href="#/admin" title="' + (signed ? 'Admin panel' : 'Admin panel: head chef sign in') + '" aria-label="' + (signed ? 'Admin panel (signed in)' : 'Admin panel (head chef sign in)') + '"' + (on ? ' aria-current="page"' : '') + '>' + ICON.key + (cls === 'icon-btn' ? '<span class="icon-lbl">Admin</span>' : '<span class="rail-lbl">Admin</span>') + '</a>';
   }
-  function header(count) {
-    return '<header class="top"><a class="brand" href="#/"><span class="eyebrow">Leichhardt Hotel Kitchen</span><h1>Kitchen Book</h1></a>' +
-      '<div class="top-right">' + (count ? '<span class="count" id="count">' + esc(count) + '</span>' : '') + pillNav() + viewSwitch() +
-      adminLink('icon-btn') + '<a class="icon-btn" href="#/settings" aria-label="Settings">' + ICON.gear + '<span class="icon-lbl">Settings</span></a></div></header>';
+  /* The same top bar on every page as on the landing page: brand (goes home), the menu, Admin and Settings. */
+  function topBar() {
+    return '<header class="wtop"><a class="rail-brand" href="#/"><span>Leichhardt Hotel Kitchen</span><b>Kitchen Book</b></a>' + pillNav() +
+      '<span class="rail-icons">' + adminLink('rail-set') + '<a class="rail-set" href="#/settings" aria-label="Settings"' + (parseRoute().name === 'settings' ? ' aria-current="page"' : '') + '>' + ICON.gear + '<span class="rail-lbl">Settings</span></a></span></header>';
   }
+  /* Under the top bar, the recipe pages get their own tools row: how many recipes, and the Pass / Tiles switch. */
+  function header() { return ''; }
   var DOCKETS = [['01', 'Recipes', '#/recipes', 'recipes'], ['02', 'Prep list', '#/prep', 'prep'], ['03', 'Orders', '#/orders', 'orders'], ['04', 'Wastage', '#/waste', 'waste']];
   function viewLanding() {
     var today = new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
-    return '<div class="wall"><div class="rail"><a class="rail-brand" href="#/"><span>Leichhardt Hotel Kitchen</span><b>Kitchen Book</b></a>' + pillNav() +
-      '<span class="rail-icons">' + adminLink('rail-set') + '<a class="rail-set" href="#/settings" aria-label="Settings">' + ICON.gear + '<span class="rail-lbl">Settings</span></a></span></div>' +
+    return '<div class="wall">' + topBar() +
       '<main id="main" class="wall-main"><h2 class="wall-h" id="rtitle" tabindex="-1">Pick a docket</h2><p class="wall-date">' + esc(today) + '</p>' +
       '<div class="dockets">' + DOCKETS.map(function (d) {
         return '<a class="docket" href="' + d[2] + '"><span class="pin" aria-hidden="true"></span><span class="dk-top"><span class="dk-name">' + d[1] + '</span><span class="dk-no">No. ' + d[0] + '</span></span>' +
@@ -232,9 +233,10 @@
     var shown = D.recipes.filter(function (r) { return matches(r.id) && freeOk(r.id) && (inKind(r) || settings.view !== 'tiles'); }).length;
     return shown === D.recipes.length ? plural(D.recipes.length, 'recipe', 'recipes') : shown + ' of ' + D.recipes.length + ' recipes';
   }
-  function searchField(placeholder) {
-    return '<div class="field"><label class="label" for="find">Search</label>' +
-      '<input id="find" class="search" type="search" autocomplete="off" data-k="find" placeholder="' + esc(placeholder) + '" value="' + esc(ui.query) + '"></div>';
+  /* Search, with the recipe count above it and the Pass / Tiles switch right next to it. */
+  function searchField(placeholder, count) {
+    return '<div class="field"><div class="field-head"><label class="label" for="find">Search</label>' + (count != null ? '<span class="count" id="count">' + esc(count) + '</span>' : '') + '</div>' +
+      '<div class="search-row"><input id="find" class="search" type="search" autocomplete="off" data-k="find" placeholder="' + esc(placeholder) + '" value="' + esc(ui.query) + '">' + viewSwitch() + '</div></div>';
   }
   function freeChips(scroll) {
     return '<div class="field"><span class="label" id="free-label">Free from</span><div class="chips' + (scroll ? ' scroll' : '') + '" role="group" aria-labelledby="free-label">' +
@@ -370,8 +372,8 @@
       var r = byId[route.stack[route.stack.length - 1]];
       return '<div class="page">' + header() + '<main id="main">' + recipeCard(r, route.stack, true) + '</main>' + footer() + '</div>';
     }
-    return '<div class="page">' + header(countText()) + '<main id="main" style="display: flex; flex-direction: column; gap: 1.1rem">' +
-      searchField('Dish, ingredient or allergen') +
+    return '<div class="page">' + header() + '<main id="main" style="display: flex; flex-direction: column; gap: 1.1rem">' +
+      searchField('Dish, ingredient or allergen', countText()) +
       kindChips() + freeChips(true) +
       '<div id="results">' + tilesHTML() + '</div><div class="hint">Allergen tags with a ? may be in it: check the supplier label.</div></main>' + footer() + '</div>';
   }
@@ -415,8 +417,8 @@
   function viewPass(route) {
     var stack = route.stack;
     if (!stack.length) {
-      return '<div class="page">' + header(passCount()) + '<main id="main" style="display: flex; flex-direction: column; gap: 1.1rem">' +
-        searchField('Dish, ingredient or allergen') + kindChips() + lensChips() + '<div id="shelves" class="shelves">' + shelvesHTML() + '</div></main>' + footer() + '</div>';
+      return '<div class="page">' + header() + '<main id="main" style="display: flex; flex-direction: column; gap: 1.1rem">' +
+        searchField('Dish, ingredient or allergen', passCount()) + kindChips() + lensChips() + '<div id="shelves" class="shelves">' + shelvesHTML() + '</div></main>' + footer() + '</div>';
     }
     var r = byId[stack[stack.length - 1]], dish = isDish(r);
     var trail = '<nav class="trail" aria-label="Zoom level"><a class="pill-link" href="#/recipes">' + ICON.left + 'The pass</a>' + stack.map(function (id, i) {
@@ -493,6 +495,7 @@
     v[id] = (v[id] || 0) + 1;
     try { localStorage.setItem('lk.views', JSON.stringify(v)); } catch (e) {}
   }
+  var warmed = false;
   var lastHash = null, lastRoute = '', homeY = 0;
   window.addEventListener('scroll', function () { if (lastRoute === 'home') homeY = window.scrollY; }, { passive: true });
   function render() {
@@ -509,11 +512,13 @@
     else html = viewTiles(route);
     // Swipeable chip rows keep their place when the page redraws (for example after tapping a chip at the far end).
     var rowsAt = Array.prototype.map.call(app.querySelectorAll('.chips.scroll'), function (el) { return el.scrollLeft; });
-    if (route.name !== 'landing') html += tabBar();
+    if (route.name !== 'landing') html = topBar() + html + tabBar();
     app.innerHTML = html;
     if (!changed) Array.prototype.forEach.call(app.querySelectorAll('.chips.scroll'), function (el, i) { if (rowsAt[i]) el.scrollLeft = rowsAt[i]; });
     fitPins();
     if ((route.name === 'prep' || route.name === 'admin' || route.name === 'orders' || route.name === 'waste') && window.LK_PREP) window.LK_PREP.mount(route.name, document.getElementById('prep-root'));
+    // On any other page, connect to the prep book in the background so Prep, Orders and Wastage open straight away.
+    else if (window.LK_PREP && window.LK_PREP.warm && !warmed) { warmed = true; setTimeout(function () { window.LK_PREP.warm(); }, 900); }
     var r = route.stack.length ? byId[route.stack[route.stack.length - 1]] : null;
     document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'waste' ? 'Wastage · ' : route.name === 'landing' ? '' : route.name === 'admin' ? 'Admin panel · ' : '')) + 'Leichhardt Kitchen Book';
     var prevRoute = lastRoute; lastRoute = route.name;
@@ -537,9 +542,12 @@
   function fitPins() {
     var vw = document.documentElement.clientWidth;
     Array.prototype.forEach.call(app.querySelectorAll('.stage .pin'), function (pin) {
+      pin.classList.remove('wrap');
       var box = pin.getBoundingClientRect();
-      if (box.right > vw - 4 && !pin.classList.contains('left')) pin.classList.add('left');
-      else if (box.left < 4 && pin.classList.contains('left')) pin.classList.remove('left');
+      if (box.right > vw - 4 && !pin.classList.contains('left')) { pin.classList.add('left'); box = pin.getBoundingClientRect(); }
+      else if (box.left < 4 && pin.classList.contains('left')) { pin.classList.remove('left'); box = pin.getBoundingClientRect(); }
+      // a long label that fits on neither side wraps onto two lines instead of pushing the page sideways
+      if (box.right > vw - 4 || box.left < 4) { pin.classList.add('wrap'); box = pin.getBoundingClientRect(); if (box.left < 4 && pin.classList.contains('left')) pin.classList.remove('left'); }
     });
   }
   window.addEventListener('resize', function () { fitPins(); });

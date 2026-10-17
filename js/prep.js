@@ -100,7 +100,7 @@
       unsubCfg = fb.fs.onSnapshot(cfgDoc(), function (snap) {
         S.config = snap.exists() ? snap.data() : { people: [] };
         S.config.people = S.config.people || [];
-        S.configState = 'ok'; watchItems(); watchSections(); watchLearned(); if (S.name === 'orders') watchOrders(); resume(); draw();
+        S.configState = 'ok'; watchItems(); watchSections(); watchLearned(); if (S.name === 'orders') watchOrders(); if (S.name === 'waste') watchWaste(); resume(); draw();
       }, function (err) {
         S.configState = err && err.code === 'permission-denied' ? 'badpin' : 'error';
         if (S.configState === 'badpin') { S.pinError = 'That PIN is not right.'; S.pin = ''; lsSet('lk.prep.pin', ''); cfgKey = ''; unsubCfg = null; }
@@ -871,7 +871,7 @@
     if (S.date !== today || !S.closeMin || !can('add') || lsGet('lk.closeout') === today) return '';
     var now = new Date(), mins = now.getHours() * 60 + now.getMinutes(), open = live.filter(function (x) { return !x.done; }).length;
     if (mins < S.closeMin - 60 || !open) return '';
-    return '<div class="nb-note nb-close"><span class="nb-sl">Closing soon</span><p>The last tick is usually around ' + hhmm(S.closeMin) + '. ' + open + (open === 1 ? ' line is' : ' lines are') + ' still open and will roll to tomorrow. Mark what matters urgent, and log any waste before you go.</p>' +
+    return '<div class="nb-flag nb-close"><span class="nb-sl">Closing soon</span><p>The last tick is usually around ' + hhmm(S.closeMin) + '. ' + open + (open === 1 ? ' line is' : ' lines are') + ' still open and will roll to tomorrow. Mark what matters urgent, and log any waste before you go.</p>' +
       '<div class="btn-row"><a class="btn" href="#/waste">Log waste</a><button type="button" class="btn" data-p="close-hide">Hide for today</button></div></div>';
   }
   var MEDAL = { 1: '#C9971C', 2: '#8E959C', 3: '#A8693A' };
@@ -900,44 +900,85 @@
     if (S.stats && (S.stats.loading || !force)) return;
     S.stats = { loading: true, days: {} };
     var today = ymd(new Date()), dates = [], i;
-    for (i = 0; i < 30; i++) dates.push(shift(today, -i));
+    for (i = 0; i < 60; i++) dates.push(shift(today, -i));
     Promise.all(dates.map(function (d) { return fb.fs.getDocs(itemsCol(d)).then(function (s) { return [d, s.docs.map(function (x) { return x.data(); })]; }, function () { return [d, []]; }); })).then(function (res) {
       var days = {}; res.forEach(function (r) { days[r[0]] = r[1]; });
       S.stats = { loading: false, days: days, at: Date.now() };
       draw();
     });
   }
-  function aggregate(n) {
-    var today = ymd(new Date()), dates = [], i, h;
-    for (i = n - 1; i >= 0; i--) dates.push(shift(today, -i));
-    var agg = { dates: dates, perDay: {}, people: {}, sections: {}, wHour: [], tHour: [], times: [], written: 0, ticked: 0, rolled: 0, rollKeys: {}, fixes: [] };
+  /* ---------- admin filters: time range, section, person, weekday (reason on the Waste tab) ---------- */
+  function AF() {
+    if (!S.af) { try { var a = JSON.parse(lsGet('lk.prep.af') || '{}'); S.af = { sec: a.sec || '', who: a.who || '', dow: a.dow || '', reason: a.reason || '' }; } catch (e) { S.af = { sec: '', who: '', dow: '', reason: '' }; } }
+    return S.af;
+  }
+  function afSave() { lsSet('lk.prep.af', JSON.stringify(AF())); }
+  function afDates(n, offset) {
+    var today = ymd(new Date()), out = [], i, dw = AF().dow;
+    for (i = n - 1 + offset; i >= offset; i--) { var d = shift(today, -i); if (dw === '' || String(parseYmd(d).getDay()) === dw) out.push(d); }
+    return out;
+  }
+  function afItems(d) { var sec = AF().sec; return ((S.stats && S.stats.days[d]) || []).filter(function (x) { return !x.deleted && (!sec || (x.station || 'General') === sec); }); }
+  function personName(id) { var p = ((S.config && S.config.people) || []).filter(function (x) { return x.id === id; })[0]; return p ? p.name : ''; }
+  function afSections() {
+    var m = {};
+    if (S.stats && S.stats.days) Object.keys(S.stats.days).forEach(function (d) { S.stats.days[d].forEach(function (x) { if (!x.deleted) m[x.station || 'General'] = 1; }); });
+    if (S.wStats && S.wStats.lines) S.wStats.lines.forEach(function (x) { if (!x.deleted) m[x.station || 'General'] = 1; });
+    return Object.keys(m).sort();
+  }
+  function filtersHTML(kind) {
+    var a = AF(), n = S.statsRange;
+    function sel(k, label, val, opts) { return '<label class="a-f"><span>' + label + '</span><select data-k="' + k + '">' + opts.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (o[0] === val ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select></label>'; }
+    var out = '<div class="a-filters" role="group" aria-label="Filters"><div class="a-range">' + [7, 14, 30].map(function (k) { return '<button type="button" class="chip" data-p="range" data-v="' + k + '" aria-pressed="' + (n === k) + '">' + k + ' days</button>'; }).join('') +
+      '<button type="button" class="chip" data-p="' + (kind === 'waste' ? 'w-refresh' : 'stats-refresh') + '">Refresh</button></div>';
+    if (kind !== 'team') {
+      out += sel('af-sec', 'Section', a.sec, [['', 'All sections']].concat(afSections().map(function (x) { return [x, x]; })));
+      if (kind === 'insights') out += sel('af-who', 'Person', a.who, [['', 'Everyone']].concat(((S.config && S.config.people) || []).map(function (p) { return [p.id, p.name]; })));
+      if (kind === 'waste') out += sel('af-reason', 'Reason', a.reason, [['', 'All reasons']].concat(REASONS.map(function (r) { return [r[0], r[1]]; })));
+      out += sel('af-dow', 'Weekday', a.dow, [['', 'Every day']].concat(DOW.map(function (d, i) { return [String(d), DOWN[i]]; })));
+      if (a.sec || a.dow || (kind === 'insights' && a.who) || (kind === 'waste' && a.reason)) out += '<button type="button" class="chip a-reset" data-p="af-reset">Clear filters</button>';
+    }
+    return out + '</div>';
+  }
+  function filterNote(kind) {
+    var a = AF(), bits = [];
+    if (a.sec) bits.push(a.sec);
+    if (kind === 'insights' && a.who) bits.push(personName(a.who) || 'one person');
+    if (kind === 'waste' && a.reason) bits.push(reasonName(a.reason));
+    if (a.dow !== '') bits.push(DOWN[DOW.indexOf(+a.dow)] + 's only');
+    return bits.length ? '<p class="a-fnote">Showing: ' + esc(bits.join(', ')) + '.</p>' : '';
+  }
+  function aggregate(n, offset) {
+    var a = AF(), who = a.who, whoName = who ? personName(who) : '', dates = afDates(n, offset || 0), h;
+    var agg = { dates: dates, perDay: {}, people: {}, sections: {}, wHour: [], tHour: [], times: [], written: 0, ticked: 0, rolled: 0, lines: 0, rollKeys: {}, fixes: [] };
     for (h = 0; h < 24; h++) { agg.wHour.push(0); agg.tHour.push(0); }
     dates.forEach(function (d) {
-      var all = (S.stats.days[d] || []).filter(function (x) { return !x.deleted; });
-      var items = all.filter(function (x) { return !x.rolled; });
-      var pd = agg.perDay[d] = { w: items.length, t: 0, r: all.length - items.length };
-      agg.rolled += pd.r;
-      all.forEach(function (x) {
-        if (!x.rolled) return;
-        var k = String(x.text || '').trim().toLowerCase(), rk = agg.rollKeys[k] = agg.rollKeys[k] || { text: String(x.text || '').trim(), n: 0, max: 0 };
-        rk.n++; if (x.rolled > rk.max) rk.max = x.rolled;
-      });
-      all.forEach(function (x) {
-        if (x.orig && x.orig !== x.text) agg.fixes.push({ d: d, from: x.orig, to: x.text, by: x.addedBy || '' });
-        if (!x.rolled) {
-          agg.written++;
+      var pd = agg.perDay[d] = { w: 0, t: 0, r: 0, n: 0 };
+      afItems(d).forEach(function (x) {
+        var mine = !who || (x.rolled ? x.origBy === whoName : x.addedById === who);
+        if (x.rolled) {
+          if (mine) {
+            pd.r++; agg.rolled++;
+            var k = String(x.text || '').trim().toLowerCase(), rk = agg.rollKeys[k] = agg.rollKeys[k] || { text: String(x.text || '').trim(), n: 0, max: 0 };
+            rk.n++; if (x.rolled > rk.max) rk.max = x.rolled;
+          }
+        } else if (mine) {
+          pd.w++; agg.written++;
           var nm = x.addedBy || 'Unknown', pp = agg.people[nm] = agg.people[nm] || { w: 0, t: 0 };
           pp.w++;
           if (x.station) agg.sections[x.station] = (agg.sections[x.station] || 0) + 1;
           if (x.addedAt) agg.wHour[new Date(x.addedAt).getHours()]++;
+          if (x.orig && x.orig !== x.text) agg.fixes.push({ d: d, from: x.orig, to: x.text, by: x.addedBy || '' });
         }
-        if (x.done) {
+        if (!who) pd.n++;
+        if (x.done && (!who || x.doneById === who)) {
           pd.t++; agg.ticked++;
           var tn = x.doneBy || 'Unknown', tp = agg.people[tn] = agg.people[tn] || { w: 0, t: 0 };
           tp.t++;
-          if (x.doneAt) { agg.tHour[new Date(x.doneAt).getHours()]++; if (x.addedAt && x.doneAt > x.addedAt) agg.times.push(x.doneAt - x.addedAt); }
+          if (x.doneAt) { agg.tHour[new Date(x.doneAt).getHours()]++; if (!x.rolled && x.addedAt && x.doneAt > x.addedAt) agg.times.push(x.doneAt - x.addedAt); }
         }
       });
+      agg.lines += pd.n;
     });
     agg.times.sort(function (a, b) { return a - b; });
     return agg;
@@ -1068,15 +1109,15 @@
   var DOW = [1, 2, 3, 4, 5, 6, 0], DOWN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   var HB = { w: ['#FFFFFF', '#E3EEFA', '#C4DAF4', '#97BEEC', '#6CA2E4'], r: SK };
   function heatHTML(n) {
-    var today = ymd(new Date()), occ = {}, cell = {}, tot = {}, secT = {}, mode = S.heat === 'r' ? 'r' : 'w', i;
-    for (i = 0; i < n; i++) { var d = shift(today, -i), dw = parseYmd(d).getDay(); occ[dw] = (occ[dw] || 0) + 1;
-      (S.stats.days[d] || []).forEach(function (x) {
-        if (x.deleted) return;
+    var occ = {}, cell = {}, tot = {}, secT = {}, mode = S.heat === 'r' ? 'r' : 'w', who = AF().who;
+    afDates(n, 0).forEach(function (d) { var dw = parseYmd(d).getDay(); occ[dw] = (occ[dw] || 0) + 1;
+      afItems(d).forEach(function (x) {
         if (mode === 'w' ? x.rolled : !x.rolled) return;
+        if (who && mode === 'w' && x.addedById !== who) return;
         var k = x.station || 'General', c = cell[k] = cell[k] || {};
         c[dw] = (c[dw] || 0) + 1; tot[dw] = (tot[dw] || 0) + 1; secT[k] = (secT[k] || 0) + 1;
       });
-    }
+    });
     var secs = Object.keys(secT).sort(function (a, b) { return secT[b] - secT[a]; }).slice(0, 8), max = 0;
     function avg(v, dw) { return occ[dw] ? v / occ[dw] : 0; }
     secs.forEach(function (k) { DOW.forEach(function (dw) { max = Math.max(max, avg((cell[k] || {})[dw] || 0, dw)); }); });
@@ -1093,8 +1134,9 @@
       '<p class="hint">Average ' + (mode === 'w' ? 'lines written' : 'lines rolled over') + ' per day, by weekday. ' + (tot[busiest] ? 'Heaviest day: ' + DOWN[DOW.indexOf(busiest)] + '.' : '') + (n < 14 ? ' Pick 14 or 30 days for steadier averages.' : '') + '</p>';
   }
   function stickyHTML(n) {
-    var today = ymd(new Date()), m = {}, i;
-    for (i = 0; i < n; i++) (S.stats.days[shift(today, -i)] || []).forEach(function (x) {
+    var m = {}, all = [];
+    afDates(n, 0).forEach(function (d) { all = all.concat(((S.stats && S.stats.days[d]) || []).filter(function (x) { var sec = AF().sec; return !sec || (x.station || 'General') === sec; })); });
+    all.forEach(function (x) {
       var k = okey(x.text); if (!k) return;
       var e = m[k] = m[k] || { text: String(x.text).trim(), w: 0, tt: [], r: 0, del: 0 };
       if (x.rolled) { if (!x.deleted) e.r++; return; }
@@ -1114,40 +1156,132 @@
       rows.map(function (x) { return '<tr><th scope="row">' + esc(x.e.text) + '</th><td>' + x.e.w + '</td><td>' + (x.med ? dur(x.med) : 'n/a') + '</td><td>' + x.e.r + '</td><td>' + x.e.del + '</td><td>' + x.tips.map(function (t) { return '<span class="a-flag">' + esc(t) + '</span>'; }).join(' ') + '</td></tr>'; }).join('') +
       '</tbody></table></div>';
   }
+  function pct(a, b) { return b ? Math.round(a / b * 100) : 0; }
+  function delta(cur, prev, n, lowIsGood, unit) {
+    if (prev == null || !isFinite(prev)) return '';
+    if (unit === 'pts') { var dp = Math.round(cur - prev); return '<em class="a-d">' + (dp === 0 ? 'same as' : (dp > 0 ? 'up ' : 'down ') + Math.abs(dp) + ' points on') + ' the ' + n + ' days before</em>'; }
+    if (!prev) return cur ? '<em class="a-d">none in the ' + n + ' days before</em>' : '';
+    var d = Math.round((cur - prev) / prev * 100);
+    return '<em class="a-d' + (d && (d > 0) === !!lowIsGood ? ' is-worse' : '') + '">' + (d === 0 ? 'same as' : (d > 0 ? 'up ' : 'down ') + Math.abs(d) + '% on') + ' the ' + n + ' days before</em>';
+  }
+  function tileHTML(x) { return '<div class="a-tile"><strong>' + esc(String(x[0])) + '</strong><span>' + esc(x[1]) + '</span>' + (x[2] || '') + '</div>'; }
+  function card(inner, cls) { return '<div class="a-card' + (cls ? ' ' + cls : '') + '">' + inner + '</div>'; }
+  /* Every day at a glance: a calendar, darker means more. Tap a day to open it in the prep book. */
+  function calHTML(n) {
+    var a = AF(), m = S.calM || 'done', today = ymd(new Date()), agg = aggregate(n, 0), first = shift(today, -(n - 1)), start = first, i;
+    while (parseYmd(start).getDay() !== 1) start = shift(start, -1);
+    var vals = {}, max = 0;
+    agg.dates.forEach(function (d) { var pd = agg.perDay[d], v = m === 'done' ? (pd.n ? pd.t / pd.n : null) : m === 'w' ? pd.w : pd.r; vals[d] = v; if (v != null && m !== 'done') max = Math.max(max, v); });
+    var ramp = m === 'w' ? HB.w : SK;
+    function lv(v) { if (v == null || v === 0) return 0; if (m === 'done') return v >= 0.9 ? 4 : v >= 0.7 ? 3 : v >= 0.4 ? 2 : 1; return Math.min(4, 1 + Math.floor(v / (max || 1) * 3.999)); }
+    var rows = '', d = start;
+    while (d <= today) {
+      rows += '<tr>';
+      for (i = 0; i < 7; i++) {
+        if (d < first || d > today) rows += '<td class="cal-off"></td>';
+        else if (!(d in vals)) rows += '<td class="cal-x" title="' + esc(dayShort(d) + ': filtered out') + '"><span class="cal-n">' + parseYmd(d).getDate() + '</span></td>';
+        else {
+          var v = vals[d], txt = v == null ? '' : m === 'done' ? Math.round(v * 100) + '%' : String(v), pd = agg.perDay[d];
+          rows += '<td class="cal-c" style="background:' + ramp[lv(v)] + '"><button type="button" data-p="cal-day" data-d="' + d + '" title="' + esc(dayShort(d) + ': ' + pd.w + ' written, ' + pd.t + ' ticked' + (pd.r ? ', ' + pd.r + ' rolled over' : '') + '. Tap to open this day.') + '"><span class="cal-n">' + parseYmd(d).getDate() + '</span><span class="cal-v">' + esc(txt) + '</span></button></td>';
+        }
+        d = shift(d, 1);
+      }
+      rows += '</tr>';
+    }
+    var chips = '<div class="chips">' + [['done', 'Share ticked'], ['w', 'Lines written'], ['r', 'Rolled over']].map(function (c) { return '<button type="button" class="chip" data-p="calm" data-v="' + c[0] + '" aria-pressed="' + (m === c[0]) + '"' + (c[0] === 'done' && a.who ? ' disabled' : '') + '>' + c[1] + '</button>'; }).join('') + '</div>';
+    var key = '<div class="a-legend sk-key"><span>' + (m === 'done' ? 'Ticked:' : 'Fewer to more:') + '</span>' + (m === 'done' ? [['under 40%', 1], ['40 to 69%', 2], ['70 to 89%', 3], ['90% or more', 4]] : [['few', 1], ['', 2], ['', 3], ['most', 4]]).map(function (k) { return '<span><i style="background:' + ramp[k[1]] + '"></i>' + k[0] + '</span>'; }).join('') + '</div>';
+    return '<h3 class="a-ch-h">Every day at a glance</h3><span class="hint">Tap a day to open it in the prep book.</span>' + chips + key +
+      '<div class="a-tablewrap cal-wrap"><table class="a-table a-plain cal"><thead><tr>' + DOWN.map(function (x) { return '<th scope="col">' + x + '</th>'; }).join('') + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+  }
+  /* When the work happens: weekday by hour, average per day. The busiest hour is outlined. */
+  function hourHTML(n) {
+    var m = S.hrM === 'w' ? 'w' : 't', who = AF().who, occ = {}, cnt = {}, lo = 24, hi = -1, max = 0, peak = null;
+    afDates(n, 0).forEach(function (d) {
+      var dw = parseYmd(d).getDay(); occ[dw] = (occ[dw] || 0) + 1;
+      afItems(d).forEach(function (x) {
+        var t = m === 't' ? (x.done && (!who || x.doneById === who) ? x.doneAt : 0) : (!x.rolled && (!who || x.addedById === who) ? x.addedAt : 0);
+        if (!t) return;
+        var dt = new Date(t), h = dt.getHours(), k = dw + ':' + h;
+        cnt[k] = (cnt[k] || 0) + 1; lo = Math.min(lo, h); hi = Math.max(hi, h);
+      });
+    });
+    var chips = '<div class="chips"><button type="button" class="chip" data-p="hrm" data-v="t" aria-pressed="' + (m === 't') + '">Ticked</button><button type="button" class="chip" data-p="hrm" data-v="w" aria-pressed="' + (m === 'w') + '">Written</button></div>';
+    var head = '<h3 class="a-ch-h">When the work happens</h3><span class="hint">Average lines ' + (m === 't' ? 'ticked' : 'written') + ' per day, by weekday and hour. The busiest slot is outlined.</span>' + chips;
+    if (hi < 0) return head + '<p class="hint">Nothing in this time yet.</p>';
+    var hrs = [], h, rows = DOW.filter(function (d) { return occ[d]; });
+    for (h = lo; h <= hi; h++) hrs.push(h);
+    rows.forEach(function (d) { hrs.forEach(function (h) { var v = (cnt[d + ':' + h] || 0) / occ[d]; if (v > max) { max = v; peak = d + ':' + h; } }); });
+    var ramp = m === 't' ? SK : HB.w;
+    var body = rows.map(function (d) {
+      return '<tr><th scope="row">' + DOWN[DOW.indexOf(d)] + '</th>' + hrs.map(function (h) {
+        var v = (cnt[d + ':' + h] || 0) / occ[d], lv = !v ? 0 : Math.min(4, 1 + Math.floor(v / (max || 1) * 3.999));
+        return '<td class="hr-c' + (peak === d + ':' + h ? ' is-peak' : '') + '" style="background:' + ramp[lv] + '" title="' + esc(DOWN[DOW.indexOf(d)] + ' ' + (h < 10 ? '0' : '') + h + ':00: ' + (Math.round(v * 10) / 10) + ' a day') + '">' + (v ? Math.round(v * 10) / 10 : '') + '</td>';
+      }).join('') + '</tr>';
+    }).join('');
+    var pk = peak ? peak.split(':') : null;
+    return head + '<div class="a-tablewrap"><table class="a-table a-plain hr"><thead><tr><th scope="col"></th>' + hrs.map(function (h) { return '<th scope="col">' + (h < 10 ? '0' : '') + h + '</th>'; }).join('') + '</tr></thead><tbody>' + body + '</tbody></table></div>' +
+      (pk ? '<p class="hint">Busiest: ' + DOWN[DOW.indexOf(+pk[0])] + ' ' + (+pk[1] < 10 ? '0' : '') + pk[1] + ':00 to ' + (+pk[1] + 1 < 10 ? '0' : '') + (+pk[1] + 1) + ':00, about ' + (Math.round(max * 10) / 10) + ' lines ' + (m === 't' ? 'ticked' : 'written') + '.</p>' : '');
+  }
+  /* A few plain sentences worked out from the same numbers. */
+  function smartHTML(agg, prev, n) {
+    var out = [], a = AF();
+    var byDow = {}, occ = {};
+    agg.dates.forEach(function (d) { var dw = parseYmd(d).getDay(); occ[dw] = (occ[dw] || 0) + 1; byDow[dw] = (byDow[dw] || 0) + agg.perDay[d].w + agg.perDay[d].r; });
+    var hd = Object.keys(byDow).sort(function (x, y) { return byDow[y] / occ[y] - byDow[x] / occ[x]; })[0];
+    if (hd != null && a.dow === '' && byDow[hd]) out.push(DOWN[DOW.indexOf(+hd)] + ' is the heaviest day: about ' + Math.round(byDow[hd] / occ[hd]) + ' lines on the list.');
+    var bh = -1, bm = 0, h; for (h = 0; h < 24; h++) if (agg.tHour[h] > bm) { bm = agg.tHour[h]; bh = h; }
+    if (bh >= 0) out.push('Most lines get ticked between ' + (bh < 10 ? '0' : '') + bh + ':00 and ' + (bh + 1 < 10 ? '0' : '') + (bh + 1) + ':00.');
+    if (!a.sec) {
+      var sr = {};
+      agg.dates.forEach(function (d) { afItems(d).forEach(function (x) { var k = x.station || 'General', e = sr[k] = sr[k] || { n: 0, r: 0 }; e.n++; if (x.rolled) e.r++; }); });
+      var worst = Object.keys(sr).filter(function (k) { return sr[k].n >= 8; }).sort(function (x, y) { return sr[y].r / sr[y].n - sr[x].r / sr[x].n; })[0];
+      if (worst && sr[worst].r) out.push(worst + ' rolls over most: ' + pct(sr[worst].r, sr[worst].n) + '% of its lines were carried from an earlier day.');
+    }
+    if (!a.who && prev && prev.lines && agg.lines) {
+      var c = pct(agg.ticked, agg.lines), p = pct(prev.ticked, prev.lines);
+      if (Math.abs(c - p) >= 5) out.push('The share of lines ticked off is ' + (c > p ? 'up' : 'down') + ' from ' + p + '% to ' + c + '% compared with the ' + n + ' days before.');
+    }
+    var slow = {};
+    agg.dates.forEach(function (d) { afItems(d).forEach(function (x) { if (!x.rolled && x.done && x.doneAt && x.addedAt && x.doneAt > x.addedAt) { var k = okey(x.text); (slow[k] = slow[k] || { t: x.text, v: [] }).v.push(x.doneAt - x.addedAt); } }); });
+    var sl = Object.keys(slow).filter(function (k) { return slow[k].v.length >= 3; }).map(function (k) { var v = slow[k].v.sort(function (x, y) { return x - y; }); return { t: slow[k].t, m: v[Math.floor(v.length / 2)] }; }).sort(function (x, y) { return y.m - x.m; })[0];
+    if (sl && sl.m >= 3600000) out.push(sl.t + ' takes longest to get ticked: usually ' + dur(sl.m) + ' after it is written.');
+    if (S.wStats && !S.wStats.loading) {
+      var from = shift(ymd(new Date()), -(n - 1)), wm = {};
+      S.wStats.lines.forEach(function (x) { if (!x.deleted && x.date >= from && (!a.sec || (x.station || 'General') === a.sec)) { var k = okey(x.text); (wm[k] = wm[k] || { t: x.text, n: 0 }).n++; } });
+      var tw = Object.keys(wm).sort(function (x, y) { return wm[y].n - wm[x].n; })[0];
+      if (tw && wm[tw].n >= 2) out.push(wm[tw].t + ' is the most wasted item: logged ' + wm[tw].n + ' times.');
+    }
+    return out.length ? card('<h3 class="a-ch-h">What stands out</h3><ul class="a-list a-smart">' + out.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>', 'full') : '';
+  }
   function insightsHTML() {
-    var st = S.stats;
-    var head = '<section class="set-block"><span class="label">Insights</span><span class="hint">Worked out from the lines themselves, the last 30 days at most.</span>';
-    if (!st || st.loading) return head + '<p class="hint">Loading the last 30 days...</p></section>';
-    var n = S.statsRange, agg = aggregate(n);
-    var med = agg.times.length ? agg.times[Math.floor(agg.times.length / 2)] : 0;
-    var bh = -1, bm = 0, hh;
-    for (hh = 0; hh < 24; hh++) if (agg.wHour[hh] > bm) { bm = agg.wHour[hh]; bh = hh; }
-    var best = null; agg.dates.forEach(function (d) { if (!best || agg.perDay[d].w > agg.perDay[best].w) best = d; });
+    var st = S.stats, n = S.statsRange, a = AF();
+    var head = '<section class="set-block a-ins"><span class="label">Insights</span><span class="hint">Worked out from the lines themselves. Compared with the same number of days before.</span>' + filtersHTML('insights') + filterNote('insights');
+    if (!st || st.loading) return head + '<p class="hint">Loading the last 60 days...</p></section>';
+    loadWStats(false);
+    var agg = aggregate(n, 0), prev = aggregate(n, n);
+    var med = agg.times.length ? agg.times[Math.floor(agg.times.length / 2)] : 0, pmed = prev.times.length ? prev.times[Math.floor(prev.times.length / 2)] : 0;
     var tiles = [
-      [agg.written, 'lines written'], [agg.ticked, 'lines ticked off'],
-      [agg.written ? Math.round(agg.ticked / agg.written * 100) + '%' : 'n/a', 'ticked off'],
-      [agg.fixes.length, 'lines corrected by the proofreader'],
-      [agg.rolled, 'lines rolled over'],
-      [agg.written ? Math.round(agg.rolled / (agg.written + agg.rolled) * 100) + '%' : 'n/a', 'of each list was rolled over'],
-      [dur(med), 'typical time to tick'],
-      [bh >= 0 ? (bh < 10 ? '0' : '') + bh + ':00' : 'n/a', 'busiest writing hour'],
-      [best && agg.perDay[best].w ? parseYmd(best).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }) : 'n/a', 'busiest day']
+      [agg.written, 'lines written', delta(agg.written, prev.written, n)],
+      [agg.ticked, 'lines ticked off', delta(agg.ticked, prev.ticked, n)],
+      [a.who ? 'n/a' : pct(agg.ticked, agg.lines) + '%', 'of the list ticked off', a.who ? '' : delta(pct(agg.ticked, agg.lines), pct(prev.ticked, prev.lines), n, false, 'pts')],
+      [agg.rolled, 'lines rolled over', delta(agg.rolled, prev.rolled, n, true)],
+      [dur(med), 'typical time to tick', med && pmed ? delta(med, pmed, n, true) : ''],
+      [agg.fixes.length, 'lines corrected by the proofreader', '']
     ];
     var tbl = '<details class="a-details"><summary>Show the daily numbers as a table</summary><div class="a-scroll"><table class="a-table"><thead><tr><th scope="col">Day</th><th scope="col">Written</th><th scope="col">Ticked</th><th scope="col">Rolled over</th></tr></thead><tbody>' +
-      agg.dates.slice().reverse().map(function (d) { return '<tr><th scope="row">' + esc(parseYmd(d).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })) + '</th><td>' + agg.perDay[d].w + '</td><td>' + agg.perDay[d].t + '</td><td>' + agg.perDay[d].r + '</td></tr>'; }).join('') + '</tbody></table></div></details>';
-    return head + '<div class="chips">' + [7, 14, 30].map(function (k) { return '<button type="button" class="chip" data-p="range" data-v="' + k + '" aria-pressed="' + (n === k) + '">' + k + ' days</button>'; }).join('') +
-      '<button type="button" class="chip" data-p="stats-refresh">Refresh</button></div>' +
-      '<div class="a-tiles">' + tiles.map(function (x) { return '<div class="a-tile"><strong>' + esc(String(x[0])) + '</strong><span>' + esc(x[1]) + '</span></div>'; }).join('') + '</div>' +
-      '<h3 class="a-ch-h">Lines each day</h3>' + legend([['Written', CW], ['Ticked off', CT]]) + dailyChart(agg) + tbl +
-      '<h3 class="a-ch-h">By person</h3>' + legend([['Written', CW], ['Ticked off', CT]]) + peopleChart(agg) +
-      '<h3 class="a-ch-h">Time of day</h3>' + legend([['Written', CW], ['Ticked off', CT]]) + hoursChart(agg) +
-      '<h3 class="a-ch-h">Rolled over most often</h3><span class="hint">Lines that were not finished and moved onto the next day. Longest runs show when you hover a bar.</span>' + rollChart(agg) +
-      fixesHTML(agg) +
-      '<h3 class="a-ch-h">Sections</h3>' + sectionsChart(agg) +
-      '<h3 class="a-ch-h">Load by weekday and section</h3><span class="hint">Which sections are busy on which days. Useful for the roster.</span>' + heatHTML(n) +
-      '<h3 class="a-ch-h">Slow and sticky lines</h3><span class="hint">Lines that roll over 3 or more times, usually take 4 hours or more to tick, or keep being removed. Lines that rolled over count against the line they came from.</span>' + stickyHTML(n) +
-      missesHTML() + viewsHTML() + '</section>';
+      agg.dates.slice().reverse().map(function (d) { return '<tr><th scope="row">' + esc(dayShort(d)) + '</th><td>' + agg.perDay[d].w + '</td><td>' + agg.perDay[d].t + '</td><td>' + agg.perDay[d].r + '</td></tr>'; }).join('') + '</tbody></table></div></details>';
+    return head + '<div class="a-tiles">' + tiles.map(tileHTML).join('') + '</div>' +
+      '<div class="a-grid">' + smartHTML(agg, prev, n) +
+      card(calHTML(n)) + card(hourHTML(n)) +
+      card('<h3 class="a-ch-h">Lines each day</h3>' + legend([['Written', CW], ['Ticked off', CT]]) + dailyChart(agg) + tbl, 'full') +
+      card('<h3 class="a-ch-h">By person</h3>' + legend([['Written', CW], ['Ticked off', CT]]) + peopleChart(agg)) +
+      card('<h3 class="a-ch-h">Sections</h3>' + sectionsChart(agg)) +
+      card('<h3 class="a-ch-h">Load by weekday and section</h3><span class="hint">Which sections are busy on which days. Useful for the roster.</span>' + heatHTML(n), 'full') +
+      card('<h3 class="a-ch-h">Slow and sticky lines</h3><span class="hint">Roll over 3 or more times, usually take 4 hours or more to tick, or keep being removed.</span>' + stickyHTML(n), 'full') +
+      card('<h3 class="a-ch-h">Rolled over most often</h3><span class="hint">Lines that were not finished and moved onto the next day.</span>' + rollChart(agg)) +
+      card(missesHTML()) + card(viewsHTML()) + card(fixesHTML(agg)) + '</div></section>';
   }
+
 
   /* ---------- drawing ---------- */
   var TICK = '<svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><path d="M5 14 L11 20 L22 5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -1317,7 +1451,7 @@
     if (h < 24) return h + ' h ago';
     var dd = Math.round(h / 24); return dd + (dd === 1 ? ' day ago' : ' days ago');
   }
-  function statsHTML() {
+  function statsHTML(part) {
     var act = S.activity.slice();
     var byId = {}; act.forEach(function (a) { byId[a.id] = a; });
     var peopleRows = (S.config.people || []).map(function (p) { var a = byId[p.id] || {}; return { id: p.id, name: p.name, added: Math.max(0, a.added || 0), ticked: Math.max(0, a.ticked || 0), visits: a.visits || 0, lastSeen: a.lastSeen || 0 }; });
@@ -1330,10 +1464,11 @@
       return '<tr><th scope="row">' + esc(x.name) + (x.hidden ? ' <span class="a-badge off">hidden</span>' : '') + '</th><td>' + (x.uses || 0) + '</td><td>' + esc(x.lastBy || '') + '</td><td>' + esc(ago(x.lastUsed)) + '</td>' +
         '<td><button type="button" class="p-x" data-p="sec-hide" data-id="' + esc(x.id) + '" data-hide="' + (x.hidden ? '0' : '1') + '">' + (x.hidden ? 'Show in suggestions' : 'Hide from suggestions') + '</button></td></tr>';
     }).join('');
-    return '<section class="set-block"><span class="label">Who is writing and ticking</span><span class="hint">Counted in the background since this feature started. Ticks that are taken back are taken off.</span>' +
-      '<div class="a-scroll"><table class="a-table"><thead><tr><th scope="col">Name</th><th scope="col">Lines written</th><th scope="col">Ticked off</th><th scope="col">Sign-ins</th><th scope="col">Last seen</th></tr></thead><tbody>' + (rows || '<tr><td colspan="5">No people yet.</td></tr>') + '</tbody></table></div></section>' +
-      '<section class="set-block"><span class="label">Sections people have written</span><span class="hint">Sections appear by themselves when someone types a new one. Hide one to stop it showing as a suggestion.</span>' +
+    var people = '<section class="set-block"><span class="label">Who is writing and ticking</span><span class="hint">Counted in the background since this feature started. Ticks that are taken back are taken off.</span>' +
+      '<div class="a-scroll"><table class="a-table"><thead><tr><th scope="col">Name</th><th scope="col">Lines written</th><th scope="col">Ticked off</th><th scope="col">Sign-ins</th><th scope="col">Last seen</th></tr></thead><tbody>' + (rows || '<tr><td colspan="5">No people yet.</td></tr>') + '</tbody></table></div></section>';
+    var secs = '<section class="set-block"><span class="label">Sections people have written</span><span class="hint">Sections appear by themselves when someone types a new one. Hide one to stop it showing as a suggestion.</span>' +
       '<div class="a-scroll"><table class="a-table"><thead><tr><th scope="col">Section</th><th scope="col">Lines</th><th scope="col">Last written by</th><th scope="col">Last used</th><th scope="col"></th></tr></thead><tbody>' + (secRows || '<tr><td colspan="5">No sections yet.</td></tr>') + '</tbody></table></div></section>';
+    return part === 'sections' ? secs : people;
   }
   /* ---------- team: who writes where, who writes rarely, order tracking (owner) ---------- */
   function loadOrdStats(force) {
@@ -1421,7 +1556,7 @@
     loadOrdStats(false);
     var n = S.statsRange, td = teamData(n), people = (S.config.people || []).filter(function (p) { return p.active !== false; });
     var rows = people.map(function (p) { var r = td.per[p.id] || blankRec(p.id); return { p: p, r: r, h: habit(r, td), wd: Object.keys(r.days).length, tdN: Object.keys(r.tdays).length }; });
-    var chips = '<div class="chips">' + [7, 14, 30].map(function (k) { return '<button type="button" class="chip" data-p="range" data-v="' + k + '" aria-pressed="' + (n === k) + '">' + k + ' days</button>'; }).join('') + '<button type="button" class="chip" data-p="stats-refresh">Refresh</button></div>';
+    var chips = filtersHTML('team');
     var hab = rows.filter(function (x) { return x.h.tot; }).sort(function (a, b) { return (b.h.flag ? 1 : 0) - (a.h.flag ? 1 : 0) || b.h.streak - a.h.streak; }).map(function (x) {
       return '<tr><th scope="row">' + esc(x.p.name) + '</th><td>' + x.h.tot + ' <span class="o-who-i">' + (x.h.basis === 'ticks' ? 'ticked' : 'written') + '</span></td><td>' + esc(x.h.top) + ' <span class="o-who-i">' + Math.round(x.h.share * 100) + '%</span></td><td>' + esc(x.h.also.join(', ') || 'none') + '</td><td>' + x.h.streak + (x.h.streak === 1 ? ' day' : ' days') + '</td><td>' +
         (x.h.flag ? '<span class="a-flag">Consider rotating' + (x.h.suggest ? ' to ' + esc(x.h.suggest) : '') + '</span>' : '<span class="o-who-i">Fine for now</span>') + '</td></tr>';
@@ -1511,7 +1646,7 @@
     var tabsBar = '<nav class="a-tabs" aria-label="Admin sections">' + [['insights', 'Insights'], ['team', 'Team'], ['waste', 'Waste'], ['learning', 'Learning'], ['people', 'People'], ['tools', 'Tools']].map(function (t) {
       return '<button type="button" class="a-tab" data-p="a-tab" data-t="' + t[0] + '" aria-pressed="' + (at === t[0]) + '">' + t[1] + '</button>';
     }).join('') + '</nav>';
-    var pane = at === 'insights' ? (insightsHTML() + statsHTML()) : at === 'team' ? teamHTML() : at === 'waste' ? wasteStatsHTML() : at === 'learning' ? learnedHTML() : at === 'people' ? (
+    var pane = at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'learning' ? (learnedHTML() + statsHTML('sections')) : at === 'people' ? (
       '<section class="set-block"><span class="label">People</span><span class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Reset PIN lets that person choose a new one. Removing someone from the list keeps their name on old lines.</span>' +
       (rows ? '<p class="a-swipe">Swipe the table sideways to see every column.</p><div class="a-tablewrap"><table class="a-table"><thead><tr><th scope="col">Name</th><th scope="col">Role</th><th scope="col" class="a-c">Write</th><th scope="col" class="a-c">Tick</th><th scope="col" class="a-c">Remove</th><th scope="col" class="a-c">On list</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead><tbody>' + rows + '</tbody></table></div>' : '<p class="hint">No names yet.</p>') + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' +
       '<section class="set-block"><span class="label">Badges</span><label class="a-check"><input type="checkbox" data-a="badges"' + (d.showBadges !== false ? ' checked' : '') + '> Show the weekly top tickers to everyone on the prep book</label></section>' + saveBlock
@@ -1533,10 +1668,18 @@
       '<section class="set-block"><span class="hint">Add a person or remove one, then save. New people start as Staff. Removing someone keeps their name on old lines. Roles and PINs are looked after by the head chef.</span><ul class="a-list">' + (srows || '<li class="hint">No names yet.</li>') + '</ul><div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' +
       '<section class="set-block"><div class="btn-row"><button type="button" class="btn dark" data-p="a-save"' + (S.busy ? ' disabled' : '') + '>Save changes</button><button type="button" class="btn" data-p="a-reset">Undo unsaved changes</button></div><span class="saved" role="status">' + esc(S.saveMsg) + '</span></section></div>';
   }
+  /* While connecting, show the page that is opening (not a generic prep book card), so nothing flashes. */
+  var PAGE_NAME = { prep: 'Prep list', orders: 'Order list', waste: 'Wastage', admin: 'Admin panel' };
+  function loadingHTML() {
+    var t = PAGE_NAME[S.name] || 'Prep book';
+    if (S.name === 'admin') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">' + t + '</h2><p class="hint">Loading...</p></section>';
+    return '<section class="nb-page o-page is-loading"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + t + '</h2><span class="nb-date">' + esc(longDate(ymd(new Date()))) + '</span></div></header>' +
+      '<div class="nb-body"><p class="nb-empty">Loading...</p></div></section>';
+  }
   function bodyHTML() {
     if (!S.pin) return gateHTML();
     if (S.configState === 'error') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Prep book</h2><p class="p-err">Could not connect. Check the connection and try again.</p><div class="btn-row"><button type="button" class="btn dark" data-p="retry">Try again</button></div></section>';
-    if (S.configState !== 'ok') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Prep book</h2><p class="hint">Connecting...</p></section>';
+    if (S.configState !== 'ok') return loadingHTML();
     if (S.name === 'admin') return adminHTML();
     if (!who()) return whoHTML();
     if (!S.authed) return ownPinHTML();
@@ -1719,7 +1862,7 @@
       '<div class="nb-sugg" id="o-sugg">' + ordSuggHTML() + '</div><p class="nb-hint" id="o-hint" aria-live="polite">' + esc(oHintText(S.otext)) + '</p>' + oRegsHTML() + '</form>' : (S.ordDate === today ? '<p class="hint">You can read the order list but not write in it.</p>' : '');
     var body = view === 'all' ? ordAllHTML() :
       (S.ordState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' :
-        (live.length ? '<ul class="nb-rows">' + live.slice().sort(function (a, b) { return (a.ordered ? 1 : 0) - (b.ordered ? 1 : 0) || (a.addedAt || 0) - (b.addedAt || 0); }).map(ordRow).join('') + '</ul>' : (S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : '')));
+        (live.length ? '<ul class="nb-rows">' + live.slice().sort(function (a, b) { return (a.ordered ? 1 : 0) - (b.ordered ? 1 : 0) || (a.addedAt || 0) - (b.addedAt || 0); }).map(ordRow).join('') + '</ul>' : (S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : '<p class="nb-empty">Loading...</p>')));
     return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' : '') + '</span><span class="p-links"><a class="p-link" href="#/prep">Prep list</a>' + '' + '</span></div>' + tabs +
       '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + (view === 'all' ? 'To order' : 'Order list') + '</h2><span class="nb-date">' + (view === 'all' ? 'Across the last ' + ORD_DAYS + ' days' : esc(longDate(S.ordDate))) + '</span></div>' +
       (view === 'day' ? '<div class="nb-prog" role="status">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') + '</header><div class="nb-body">' + body + '</div><div class="nb-foot">' + (view === 'day' ? add : '') + '</div></section>';
@@ -1860,7 +2003,7 @@
       (r.reviewBy ? '<span class="hint">Last saved by ' + esc(r.reviewBy) + (r.reviewAt ? ' at ' + clock(r.reviewAt) : '') + '.</span>' : '') + '</section>';
     var tot = totalsText(wTotals(live));
     var body = S.wState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' :
-      (shown.length ? '<ul class="nb-rows">' + shown.map(wRow).join('') + '</ul>' : (S.wState === 'ok' ? '<p class="nb-empty">Nothing logged for ' + esc(dayName(S.wDate).toLowerCase()) + ' yet. Log waste when it happens: prep waste, expired stock, cooking faults, returns and excess production.</p>' : ''));
+      (shown.length ? '<ul class="nb-rows">' + shown.map(wRow).join('') + '</ul>' : (S.wState !== 'ok' ? '<p class="nb-empty">Loading...</p>' : '<p class="nb-empty">Nothing logged for ' + esc(dayName(S.wDate).toLowerCase()) + ' yet. Log waste when it happens: prep waste, expired stock, cooking faults, returns and excess production.</p>'));
     return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' : '') + '</span><span class="p-links"><a class="p-link" href="#/prep">Prep list</a>' + '' + '</span></div>' + nav +
       '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Wastage</h2><span class="nb-date">' + esc(longDate(S.wDate)) + (tot ? ' &middot; ' + esc(tot) : '') + '</span></div>' +
       '<div class="nb-prog" role="status">' + live.length + (live.length === 1 ? ' entry' : ' entries') + '</div></header>' +
@@ -1901,7 +2044,7 @@
   }
   function wNoteHTML() {
     var n = S.wNote; if (!n || S.date !== ymd(new Date())) return '';
-    return '<div class="nb-note"><span class="nb-sl">' + (n.date === shift(ymd(new Date()), -1) ? 'From yesterday\'s waste review' : 'From the ' + esc(parseYmd(n.date).toLocaleDateString('en-AU', { weekday: 'long' })) + ' waste review') + '</span><p>' + esc(n.change) + '</p>' + (n.reviewBy ? '<span class="nb-sw">' + esc(n.reviewBy) + '</span>' : '') + '</div>';
+    return '<div class="nb-flag"><span class="nb-sl">' + (n.date === shift(ymd(new Date()), -1) ? 'From yesterday\'s waste review' : 'From the ' + esc(parseYmd(n.date).toLocaleDateString('en-AU', { weekday: 'long' })) + ' waste review') + '</span><p>' + esc(n.change) + '</p>' + (n.reviewBy ? '<span class="nb-sw">' + esc(n.reviewBy) + '</span>' : '') + '</div>';
   }
 
   /* ---------- wastage insights (admin) ---------- */
@@ -1910,7 +2053,7 @@
     if (S.wStats && (S.wStats.loading || !force)) return;
     S.wStats = { loading: true, lines: [], reviews: [] };
     var today = ymd(new Date()), dates = [], i;
-    for (i = 0; i < 30; i++) dates.push(shift(today, -i));
+    for (i = 0; i < 60; i++) dates.push(shift(today, -i));
     Promise.all(dates.map(function (d) {
       return Promise.all([
         fb.fs.getDocs(wCol(d)).then(function (sn) { return sn.docs.map(function (x) { var v = x.data(); v.date = d; return v; }); }, function () { return []; }),
@@ -1929,18 +2072,53 @@
     }
     return out;
   }
+  /* Waste calendar: entries per day, darker is more. Days nobody logged anything are marked. */
+  function wasteCalHTML(n, lines) {
+    var today = ymd(new Date()), first = shift(today, -(n - 1)), start = first, i, by = {}, max = 0, inF = {};
+    afDates(n, 0).forEach(function (d) { inF[d] = 1; });
+    lines.forEach(function (x) { by[x.date] = (by[x.date] || []).concat([x]); });
+    Object.keys(by).forEach(function (d) { max = Math.max(max, by[d].length); });
+    while (parseYmd(start).getDay() !== 1) start = shift(start, -1);
+    var rows = '', d = start;
+    while (d <= today) {
+      rows += '<tr>';
+      for (i = 0; i < 7; i++) {
+        if (d < first || d > today) rows += '<td class="cal-off"></td>';
+        else if (!inF[d]) rows += '<td class="cal-x"><span class="cal-n">' + parseYmd(d).getDate() + '</span></td>';
+        else { var l = by[d] || [], lv = !l.length ? 0 : Math.min(4, 1 + Math.floor(l.length / (max || 1) * 3.999));
+          rows += '<td class="cal-c' + (l.length ? '' : ' cal-none') + '" style="background:' + SK[lv] + '" title="' + esc(dayShort(d) + ': ' + (l.length ? l.length + (l.length === 1 ? ' entry, ' : ' entries, ') + totalsText(wTotals(l)) : 'nothing logged')) + '"><span class="cal-n">' + parseYmd(d).getDate() + '</span><span class="cal-v">' + (l.length || '') + '</span></td>'; }
+        d = shift(d, 1);
+      }
+      rows += '</tr>';
+    }
+    return '<h3 class="a-ch-h">Every day at a glance</h3><span class="hint">Entries per day. A blank day means nothing was logged, which may mean nobody logged it.</span>' +
+      '<div class="a-tablewrap cal-wrap"><table class="a-table a-plain cal"><thead><tr>' + DOWN.map(function (x) { return '<th scope="col">' + x + '</th>'; }).join('') + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+  }
+  /* Reasons by weekday: which kind of waste happens on which day. */
+  function reasonDowHTML(lines, n) {
+    var occ = {}, c = {}, max = 0;
+    afDates(n, 0).forEach(function (d) { var dw = parseYmd(d).getDay(); occ[dw] = (occ[dw] || 0) + 1; });
+    lines.forEach(function (x) { var k = x.reason + ':' + parseYmd(x.date).getDay(); c[k] = (c[k] || 0) + 1; });
+    var rs = REASONS.filter(function (r) { return lines.some(function (x) { return x.reason === r[0]; }); });
+    if (!rs.length) return '';
+    rs.forEach(function (r) { DOW.forEach(function (d) { if (occ[d]) max = Math.max(max, (c[r[0] + ':' + d] || 0) / occ[d]); }); });
+    return '<h3 class="a-ch-h">Reasons by weekday</h3><span class="hint">Average entries per day. Darker is more.</span><div class="a-tablewrap"><table class="a-table a-plain sk-t"><thead><tr><th scope="col">Reason</th>' + DOWN.map(function (x) { return '<th scope="col">' + x + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      rs.map(function (r) { return '<tr><th scope="row">' + esc(r[1]) + '</th>' + DOW.map(function (d) { var v = occ[d] ? (c[r[0] + ':' + d] || 0) / occ[d] : 0, lv = !v ? 0 : Math.min(4, 1 + Math.floor(v / (max || 1) * 3.999)); return '<td class="sk-c" style="background:' + SK[lv] + '">' + (v ? Math.round(v * 10) / 10 : '<span class="sk-0">0</span>') + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>';
+  }
   function wasteStatsHTML() {
     loadWStats(false); loadStats(false);
     var ws = S.wStats, n = S.statsRange;
-    var chips = '<div class="chips">' + [7, 14, 30].map(function (k) { return '<button type="button" class="chip" data-p="range" data-v="' + k + '" aria-pressed="' + (n === k) + '">' + k + ' days</button>'; }).join('') + '<button type="button" class="chip" data-p="w-refresh">Refresh</button></div>';
+    var chips = filtersHTML('waste') + filterNote('waste');
     var head = '<section class="set-block"><span class="label">Wastage</span><span class="hint">From the wastage log on the phones. Amounts are what people wrote, in kg, L, portions and pieces (grams are counted as kg).</span>' +
       '<div class="btn-row"><a class="btn dark" href="#/waste">Open the wastage log</a></div>' + chips;
-    if (!ws || ws.loading) return head + '<p class="hint">Loading the last 30 days...</p></section>';
-    var from = shift(ymd(new Date()), -(n - 1)), lines = ws.lines.filter(function (x) { return !x.deleted && x.date >= from; });
+    if (!ws || ws.loading) return head + '<p class="hint">Loading the last 60 days...</p></section>';
+    var af = AF(), from = shift(ymd(new Date()), -(n - 1));
+    function wfilter(off) { var ds = {}; afDates(n, off).forEach(function (d) { ds[d] = 1; }); return ws.lines.filter(function (x) { return !x.deleted && ds[x.date] && (!af.sec || (x.station || 'General') === af.sec) && (!af.reason || x.reason === af.reason); }); }
+    var lines = wfilter(0), plines = wfilter(n);
     var days = {}; lines.forEach(function (x) { days[x.date] = 1; });
-    var t = wTotals(lines);
-    var tiles = [[lines.length, 'entries'], [num(t.kg), 'kg'], [num(t.L), 'L'], [num(t.portions), 'portions'], [num(t.pieces), 'pieces'], [Object.keys(days).length + ' of ' + n, 'days with something logged']];
-    if (!lines.length) return head + '<div class="a-tiles">' + tiles.map(function (x) { return '<div class="a-tile"><strong>' + esc(String(x[0])) + '</strong><span>' + esc(x[1]) + '</span></div>'; }).join('') + '</div><p class="hint">Nothing logged in this time yet.</p></section>';
+    var t = wTotals(lines), pt = wTotals(plines), nd = afDates(n, 0).length;
+    var tiles = [[lines.length, lines.length === 1 ? 'entry' : 'entries', delta(lines.length, plines.length, n, true)], [num(t.kg), 'kg', delta(t.kg, pt.kg, n, true)], [num(t.L), 'L', delta(t.L, pt.L, n, true)], [num(t.portions), 'portions', delta(t.portions, pt.portions, n, true)], [num(t.pieces), 'pieces', delta(t.pieces, pt.pieces, n, true)], [Object.keys(days).length + ' of ' + nd, 'days with something logged', '']];
+    if (!lines.length) return head + '<div class="a-tiles">' + tiles.map(tileHTML).join('') + '</div><p class="hint">Nothing logged in this time yet.</p></section>';
     var byR = {}; lines.forEach(function (x) { var e = byR[x.reason] = byR[x.reason] || []; e.push(x); });
     var rRows = REASONS.filter(function (r) { return byR[r[0]]; }).sort(function (a, b) { return byR[b[0]].length - byR[a[0]].length; }).map(function (r) {
       var l = byR[r[0]]; return '<tr><th scope="row">' + esc(r[1]) + '</th><td>' + l.length + '</td><td>' + Math.round(l.length / lines.length * 100) + '%</td><td>' + esc(totalsText(wTotals(l))) + '</td></tr>';
@@ -1961,7 +2139,7 @@
     lines.forEach(function (x) { var d = parseYmd(x.date).getDay(); dw[d] = (dw[d] || 0) + 1; });
     var who = {}; lines.forEach(function (x) { var k = x.addedBy || 'Unknown'; who[k] = (who[k] || 0) + 1; });
     var revs = ws.reviews.filter(function (r) { return r.date >= from && (r.avoidable || r.change); }).sort(function (a, b) { return a.date < b.date ? 1 : -1; }).slice(0, 10);
-    return head + '<div class="a-tiles">' + tiles.map(function (x) { return '<div class="a-tile"><strong>' + esc(String(x[0])) + '</strong><span>' + esc(x[1]) + '</span></div>'; }).join('') + '</div>' +
+    return head + '<div class="a-tiles">' + tiles.map(tileHTML).join('') + '</div>' + wasteCalHTML(n, lines) + reasonDowHTML(lines, n) +
       '<h3 class="a-ch-h">By reason</h3><div class="a-tablewrap"><table class="a-table a-plain"><thead><tr><th scope="col">Reason</th><th scope="col">Entries</th><th scope="col">Share</th><th scope="col">Amount</th></tr></thead><tbody>' + rRows + '</tbody></table></div>' +
       '<h3 class="a-ch-h">Wasted most often</h3><span class="hint">"On the prep list" counts how many times the same item was written on the prep list in this time, so you can see over-prepping.</span><div class="a-tablewrap"><table class="a-table a-plain"><thead><tr><th scope="col">Item</th><th scope="col">Entries</th><th scope="col">Amount</th><th scope="col">Main reason</th><th scope="col">On the prep list</th><th scope="col">Suggestion</th></tr></thead><tbody>' + iRows + '</tbody></table></div>' +
       '<h3 class="a-ch-h">Each day</h3>' + (n > 7 ? '<details class="a-details"><summary>Show all ' + n + ' days</summary>' : '') + '<div class="a-tablewrap"><table class="a-table a-plain"><thead><tr><th scope="col">Day</th><th scope="col">Entries</th><th scope="col">Amount</th><th scope="col">Review</th></tr></thead><tbody>' + eachDay(n, lines, ws.reviews) + '</tbody></table></div>' + (n > 7 ? '</details>' : '') +
@@ -2061,6 +2239,10 @@
     if (a === 'sugg') { pickSugg(i); return; }
     if (a === 'quick') { quickAdd(i); return; }
     if (a === 'heat') { S.heat = el.getAttribute('data-v'); draw(); return; }
+    if (a === 'calm') { S.calM = el.getAttribute('data-v'); draw(); return; }
+    if (a === 'hrm') { S.hrM = el.getAttribute('data-v'); draw(); return; }
+    if (a === 'af-reset') { S.af = { sec: '', who: '', dow: '', reason: '' }; afSave(); draw(); return; }
+    if (a === 'cal-day') { S.date = el.getAttribute('data-d'); S.tab = ''; watchItems(); location.hash = '#/prep'; return; }
     if (a === 'close-hide') { lsSet('lk.closeout', ymd(new Date())); draw(); return; }
     if (a === 'due') { var du = (S.due || [])[i]; if (du && can('add')) { var rmd = matchRecipe(du.text), uqd = usualQty(du.text); newItem({ text: du.text.slice(0, 160), station: du.sec, recipe: rmd ? rmd.id : '', qty: uqd }).catch(function () { toast('Could not save. Check the connection.'); }); noteSection(du.sec); bump({ added: 1, lastAdded: Date.now() }); learn(du.text, du.sec, 'pick', uqd); } return; }
     if (a === 'stuck-urgent') { toggleUrgent(id); return; }
@@ -2131,6 +2313,7 @@
     var el = e.target, k = el.getAttribute && el.getAttribute('data-k');
     if (!S.root || !S.root.contains(el)) return;
     if (k === 'p-day') { if (el.value) { S.date = el.value; S.tab = ''; watchItems(); draw(); } return; }
+    if (k === 'af-sec' || k === 'af-who' || k === 'af-dow' || k === 'af-reason') { AF()[k.slice(3)] = el.value; afSave(); draw(); return; }
     var a = el.getAttribute && el.getAttribute('data-a');
     if (!a || !S.draft) return;
     if (a === 'badges') { S.draft.showBadges = el.checked; return; }
@@ -2169,6 +2352,7 @@
       draw();
       if (S.pin) { connect(); if (name === 'admin') sdk(); if (name === 'orders') { S.ordDate = ymd(new Date()); watchOrders(); } if (name === 'waste') { S.wDate = ymd(new Date()); watchWaste(); } }
     },
+    warm: function () { if (S.pin && S.configState !== 'ok' && S.configState !== 'loading') connect(); },
     saveConfig: saveConfig,
     proofread: proofread,
     state: S
