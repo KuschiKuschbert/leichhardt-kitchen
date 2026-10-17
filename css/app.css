@@ -430,3 +430,4 @@ img, svg { display: block; }
 .nb-sugg:empty { display: none; }
 .nb-sg { min-height: 40px; }
 .a-heat { text-align: center; min-width: 2.4rem; font-weight: 600; }
+.p-toast-btn { margin-left: 0.8rem; min-height: 32px; padding: 0 0.8rem; border-radius: 16px; border: 1.5px solid #fff; background: transparent; color: #fff; font-weight: 700; cursor: pointer; }

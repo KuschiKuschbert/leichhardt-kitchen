@@ -115,3 +115,9 @@ There's no build step and nothing to install. To try it on a computer, open `ind
 - While typing, matching learned items (and batch and component recipe names) show as tap-to-fill chips under the box. A learned item also fills in its usual section when the section box is empty.
 - The Handy page shows "Usual for a <weekday>" (written on at least two of that weekday) and "Regulars" (4 or more uses, `REGULAR` in `js/prep.js`) as one-tap adds.
 - Owner insights: items learned, regulars, share added by tapping a suggestion, most written items, a weekday heat table, and a manage table to hide typos. "Learn from the last 30 days" seeds the list from past lines.
+
+### Proofreader
+
+- Every new written line is tidied (spacing, punctuation, capital first letter) and spell-checked before it is saved, in the browser, no service needed.
+- A word is only corrected when it is not already known and exactly one known word is one slip away (two for long words). Known words come from recipe names and ingredients, a kitchen word list in `js/prep.js` (`KITCHEN`), and everything the list has learned, so new dish names stop being touched once they have been written.
+- A corrected line keeps what was typed in `orig`. A toast offers Undo, and an undone word is left alone on that device. The owner sees the latest corrections in Insights.
