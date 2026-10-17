@@ -1,0 +1,52 @@
+// Firestore security rules for the prep book. The live copy is edited in the Firebase console
+// (Firestore Database > Rules). Keep this file in step with it after every change.
+// Replace KITCHEN_PIN with the kitchen PIN and OWNER_EMAIL with the head chef's Google account.
+// Never commit the real values: this repository is public.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email == 'OWNER_EMAIL' && request.auth.token.email_verified == true;
+    }
+    match /kitchens/KITCHEN_PIN/config/main {
+      allow read: if true;
+      allow create: if isAdmin();
+      // A sous chef (no Google sign-in) may only change the people list.
+      allow update: if isAdmin() || (request.resource.data.people is list && request.resource.data.people.size() <= 80
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['people', 'updated', 'updatedBy']));
+      allow delete: if isAdmin();
+    }
+    match /kitchens/KITCHEN_PIN/config/admins { allow read, write: if isAdmin(); }
+    match /kitchens/KITCHEN_PIN/days/{day}/items/{item} {
+      allow read: if true;
+      allow create, update: if request.resource.data.text is string && request.resource.data.text.size() <= 160;
+      allow delete: if false;
+    }
+    match /kitchens/KITCHEN_PIN/pins/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.hash is string && request.resource.data.hash.size() == 64;
+      allow update, delete: if isAdmin();
+    }
+    match /kitchens/KITCHEN_PIN/activity/{id} {
+      allow read: if true;
+      allow create, update: if request.resource.data.name is string && request.resource.data.name.size() <= 40;
+      allow delete: if isAdmin();
+    }
+    match /kitchens/KITCHEN_PIN/sections/{id} {
+      allow read: if true;
+      allow create, update: if request.resource.data.name is string && request.resource.data.name.size() <= 40;
+      allow delete: if isAdmin();
+    }
+    match /kitchens/KITCHEN_PIN/learned/{id} {
+      allow read: if true;
+      allow create, update: if request.resource.data.text is string && request.resource.data.text.size() <= 160;
+      allow delete: if isAdmin();
+    }
+    match /kitchens/KITCHEN_PIN/learnlog/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.at is number;
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+  }
+}
