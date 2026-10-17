@@ -833,7 +833,7 @@ window.LK_DATA = {
       ],
       pins: [
         { label: 'Spaghetti', x: 37.7, y: 58.5, side: 'left', tags: ['Gluten'], note: '1.5 portions. Card to come.' },
-        { label: 'Kids bolognese', x: 54.9, y: 50.1, side: 'right', tags: [], note: '200 g. Card to come.' },
+        { label: 'Kids bolognese', x: 54.9, y: 50.1, side: 'right', tags: [], note: '200 g.' },
         { label: 'Parmesan', x: 43.2, y: 42.5, side: 'left', tags: ['Milk'], note: '10 g shaved.' },
         { label: 'Garlic bread', x: 78.3, y: 71.7, side: 'left', tags: ['Gluten', 'Milk', 'Soy?'], note: 'Half piece.' }
       ],
@@ -1771,6 +1771,35 @@ window.LK_DATA = {
       contains: [],
       check: [],
       labelNote: 'Check the supplier label for allergens.'
+    },
+    {
+      id: 'kids-bolognese', no: '91', kind: 'batch', forLine: 'For the senior spaghetti bolognese', name: 'Bolognese Sauce', short: 'Bolognese sauce', art: 'kids-bolognese', avc: 'Bolognaise Batch S25',
+      yield: 'Batch: 10 kg. Serve size is on each dish card.',
+      ingredients: [
+        { q: '1 kg', name: 'Brown onions' },
+        { q: '0.5 kg', name: 'Garlic, peeled' },
+        { q: '5 kg', name: 'Pizza sauce', link: 'pizza-sauce' },
+        { q: '10 g', name: 'Black pepper, cracked fine' },
+        { q: '0.15 kg', name: 'Tomato paste' },
+        { q: '0.15 kg', name: 'Caster sugar' },
+        { q: '5000 g', name: 'Beef mince, prime 85' },
+        { q: '100 g', name: 'Italian mixed herbs' },
+        { q: '30 g', name: 'Salt' },
+        { q: '500 ml', name: 'Red wine' }
+      ],
+      sections: [
+        { title: 'Method', steps: [
+          'Cook the beef mince in a hot pot until coloured.',
+          'Remove the beef.',
+          'Saute the onion and garlic, add the herbs.',
+          'Deglaze with the red wine and reduce.',
+          'Put the beef back in the pot.',
+          'Add the pizza sauce and the sugar.'
+        ] }
+      ],
+      contains: [],
+      check: [],
+      labelNote: 'Check the supplier labels for allergens, especially the herbs and tomato paste.'
     },
     {
       id: 'tomato-relish', no: '86', kind: 'batch', forLine: 'For the steak sandwich', name: 'Tomato Relish', short: 'Tomato relish', art: 'tomato-relish',
