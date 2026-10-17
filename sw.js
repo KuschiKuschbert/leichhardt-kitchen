@@ -2,7 +2,7 @@
    Network first for the book's own files, so staff always get the newest cards when online;
    the last copy is kept so the book still opens with no signal. Google Fonts are kept once loaded.
    The prep list, orders and wastage talk to Firebase directly (it has its own offline copy), so those are not touched. */
-var CACHE = 'lk-book-v1';
+var CACHE = 'lk-book-v2';
 var SHELL = ['./', './index.html', 'css/app.css', 'js/data.js', 'js/art.js', 'js/app.js', 'js/prep.js', 'js/firebase-config.js', 'icon.svg', 'manifest.webmanifest', 'icons/icon-192.png'];
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(SHELL); }).then(function () { return self.skipWaiting(); }));
