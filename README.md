@@ -4,9 +4,8 @@ The recipe book for the Leichhardt Hotel kitchen team. It works on any phone, ta
 
 ## What it does
 
-- **Three ways to look at the recipes.** Staff pick one the first time they open it, and can change it any time in **Settings**:
-  - **Tiles:** every recipe as a card, with search, recipe type and "Free from" filters on top.
-  - **List:** a short grouped list, with the open recipe beside it on a tablet or computer and full screen on a phone.
+- **Two ways to look at the recipes.** The Pass opens first. The Pass / Tiles switch next to Settings changes it any time (and **Settings** sets which one opens):
+  - **Tiles:** every recipe as a card with its small drawn dish, with search, recipe type and "Free from" filters on top.
   - **The Pass:** dishes drawn as plates and batch recipes as GN pans. Tap a plate to zoom in, then tap the laksa on the barramundi to open the laksa. The allergen lens shows where an allergen is at every level.
 - **Linked batch recipes.** Any ingredient that has its own recipe is underlined orange with a "Recipe 06" tag, so tapping it opens that recipe. Batch recipes show which dishes they go on.
 - **Allergens roll up.** A dish picks up the allergens of the batch recipes it uses, and names where each one comes from. A "?" means "may be in it, check the supplier label".
@@ -18,7 +17,6 @@ The recipe book for the Leichhardt Hotel kitchen team. It works on any phone, ta
   - Which view it opens with
   - Text size (Normal, Large, Extra large)
   - Clear ticked steps
-  - Show the welcome screen again
 
   Settings are saved on each phone or tablet.
 
