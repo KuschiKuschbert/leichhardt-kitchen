@@ -120,6 +120,15 @@ There's no build step and nothing to install. To try it on a computer, open `ind
 - Anyone signed in can add. Only the head chef or a sous chef can remove a line (enforced by the rules). Staff see today only.
 - Admin panel, Waste tab: totals, by reason, wasted most often (with how often the same item was on the prep list, to spot over-prepping, and a suggestion per main reason), by weekday, who logs, and the reviews.
 
+### Layout and admin, round three
+
+- **One top bar everywhere:** every page has the same dark top bar as the landing page: "Kitchen Book" on the left (goes home), Recipes, Prep, Orders and Waste in the middle, Admin (key) and Settings on the right. The phone tab bar is dark on every page too.
+- **Recipes:** the recipe count sits above the search box and the Pass / Tiles switch sits right next to it.
+- **No flash when opening Prep, Orders or Wastage:** the app connects to the prep book in the background on any page, and while it connects the page shows its own name with "Loading..." instead of a generic prep book card.
+- **Admin filters:** a filter bar on Insights (time range, section, person, weekday), Team (time range) and Waste (time range, section, reason, weekday). Filters are kept on the device. Numbers are compared with the same number of days before (60 days are read).
+- **Admin Insights:** tiles with the change on the period before, "What stands out" (plain sentences worked out from the numbers), a calendar of every day (share ticked, lines written or rolled over; tap a day to open it in the prep book), "When the work happens" (weekday by hour, busiest slot outlined), and the other charts as cards in two columns on a big screen. "Who is writing and ticking" moved to Team, "Sections people have written" to Learning.
+- **Admin Waste:** a calendar of entries per day (blank days stand out) and reasons by weekday, both following the filters.
+
 ### Suggestions and data, round two
 
 - **Admin has one home:** the key button at the top right of every page, next to Settings. It is filled in on a phone or computer where the head chef is signed in with Google (`lk.admin` on the device), and outlined everywhere else (tapping it then asks for the head chef's Google sign-in). There are no other Admin links.
