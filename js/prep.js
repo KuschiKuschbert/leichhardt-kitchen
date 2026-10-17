@@ -252,11 +252,55 @@
   function leave() { S.who = ''; S.authed = false; S.pinStep = ''; lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; draw(); }
 
   /* ---------- sections: whatever people write becomes a section ---------- */
-  function cleanSection(v) {
+  /* Sections are spell-checked too. A section close to one already in use (one slip, two for long names) becomes that
+     section, so "Fryre" goes under "Fryer" instead of starting a new section. Otherwise each word is checked like a
+     line and the first letter is made a capital. Pass an object as info to learn what was changed. */
+  var SEC_WORDS = 'grill fryer larder pans pastry cold hot prep sauce sauces garnish butchery pass salads salad dessert desserts bakery smoker veg vegetables sides mains entree starters breakfast functions station oven combi rational stove wok bbq barbecue deli sandwiches pizza burgers coolroom freezer dry store line hotline bench room side section walk cool cooler chiller fridge shelf back front kitchen main bar wash dish upstairs downstairs outside inside morning night lunch dinner'.split(' ');
+  var KEEP_SEC = (function () { try { return JSON.parse(lsGet('lk.prep.keepsec') || '{}'); } catch (e) { return {}; } })();
+  function keepSection(t) { KEEP_SEC[String(t).toLowerCase()] = 1; lsSet('lk.prep.keepsec', JSON.stringify(KEEP_SEC)); }
+  function cleanSection(v, info) {
     var t = String(v || '').replace(/\s+/g, ' ').trim().slice(0, 40);
     if (!t) return '';
-    var hit = S.sections.filter(function (x) { return String(x.name).toLowerCase() === t.toLowerCase(); })[0];
-    return hit ? hit.name : t;
+    var lt = t.toLowerCase();
+    var hit = S.sections.filter(function (x) { return String(x.name).toLowerCase() === lt; })[0];
+    if (hit) return hit.name;
+    if (KEEP_SEC[lt]) return t;
+    var known = S.sections.filter(function (x) { return x.name && !x.hidden; }), best = null, bd = 9, tie = false, maxd = lt.length >= 7 ? 2 : 1;
+    // singular or plural of a section in use ("Salad" and "Salads") is the same section
+    var pl = known.filter(function (x) { var c = String(x.name).toLowerCase(); return c === lt + 's' || c + 's' === lt || c === lt + 'es' || c + 'es' === lt; }).sort(function (a, b) { return (b.uses || 0) - (a.uses || 0); })[0];
+    if (pl) { if (info) { info.from = t; info.to = pl.name; } return pl.name; }
+    // a real word ("Pans" when "Pass" exists) is never swapped for a different section
+    if (lt.length >= 4 && !realWords(lt)) known.forEach(function (x) {
+      var c = String(x.name).toLowerCase();
+      if (Math.abs(c.length - lt.length) > maxd) return;
+      var d = osa(lt, c);
+      if (d > maxd) return;
+      if (!best || d < bd || (d === bd && (x.uses || 0) > (best.uses || 0))) { best = x; bd = d; tie = false; }
+      else if (d === bd && (x.uses || 0) === (best.uses || 0)) tie = true;
+    });
+    var out = best && !tie ? best.name : t.replace(/[A-Za-z']+/g, function (w) { return w.length >= 5 ? (fixWord(w) || w) : w; });
+    out = out.charAt(0).toUpperCase() + out.slice(1);
+    if (info && out.toLowerCase() !== lt) { info.from = t; info.to = out; }
+    return out;
+  }
+  /* When someone leaves the section box, a typo is put right there and then, with Undo. */
+  var baseCache = null;
+  function realWords(lt) {
+    if (!baseCache) {
+      baseCache = {};
+      function add(t) { String(t || '').toLowerCase().split(/[^a-z']+/).forEach(function (x) { if (x.length >= 3) baseCache[x] = 1; }); }
+      KITCHEN.forEach(add); SEC_WORDS.forEach(add);
+      D.recipes.forEach(function (r) { add(r.name); add(r.short); (r.ingredients || []).forEach(function (i) { add(i.name); }); });
+    }
+    var ws = lt.split(/[^a-z']+/).filter(function (w) { return w.length >= 3; });
+    return ws.length > 0 && ws.every(function (w) { return baseCache[w] || baseCache[w.replace(/(es|s)$/, '')]; });
+  }
+  function checkSectionBox(el, key) {
+    var info = {}, v = cleanSection(el.value, info);
+    if (!info.from) { if (v && v !== el.value) { el.value = v; if (key === 'p-section') S.section = v; else S.wf.sec = v; } return; }
+    if (key === 'p-section') S.section = v; else S.wf.sec = v;
+    el.value = v;
+    toast('Section corrected: ' + info.from + ' to ' + v, { label: 'Undo', fn: function () { keepSection(info.from); if (key === 'p-section') S.section = info.from; else S.wf.sec = info.from; } });
   }
   function suggestions() {
     var seen = {}, out = [];
@@ -279,18 +323,21 @@
   function addTyped() {
     var t = S.text.trim();
     if (!t || !can('add')) return;
-    var sec = cleanSection(S.section), typedAs = t, pr = proofread(t), fixed = pr.changes.length || pr.text !== t;
+    var secInfo = {}, sec = cleanSection(S.section, secInfo), typedAs = t, pr = proofread(t), fixed = pr.changes.length || pr.text !== t;
     t = pr.text;
     var rm = matchRecipe(t);
     if (!sec) { var lx = learnedFor(t); if (lx && bestSection(lx)) sec = bestSection(lx); }
     var made = newItem(Object.assign({ text: t.slice(0, 160), qty: S.qty.trim().slice(0, 40), station: sec, recipe: rm ? rm.id : '' }, fixed ? { orig: typedAs.slice(0, 160) } : {}));
     made.catch(function () { toast('Could not save. Check the connection.'); });
     noteSection(sec); bump({ added: 1, lastAdded: Date.now() }); learn(t, sec, t === S.pickedText ? 'pick' : 'type', S.qty);
-    if (pr.changes.length) {
-      var ch = pr.changes, mid = made.id, dte = S.date;
-      toast('Corrected ' + ch.map(function (c) { return c[0] + ' to ' + c[1]; }).join(', '), { label: 'Undo', fn: function () {
-        keepWords(ch);
-        supd(itemRef(dte, mid), { text: typedAs.slice(0, 160), orig: '' }).catch(function () { toast('Could not undo.'); });
+    if (pr.changes.length || secInfo.from) {
+      var ch = pr.changes, mid = made.id, dte = S.date, sf = secInfo.from;
+      var msg = ch.map(function (c) { return c[0] + ' to ' + c[1]; }).concat(sf ? ['section ' + sf + ' to ' + sec] : []).join(', ');
+      toast('Corrected ' + msg, { label: 'Undo', fn: function () {
+        var undo = {};
+        if (ch.length) { keepWords(ch); undo.text = typedAs.slice(0, 160); undo.orig = ''; }
+        if (sf) { keepSection(sf); undo.station = sf; noteSection(sf); if (S.section === sec) S.section = sf; }
+        supd(itemRef(dte, mid), undo).catch(function () { toast('Could not undo.'); });
       } });
     }
     S.text = ''; S.qty = ''; S.section = sec; S.pickedText = ''; draw();
@@ -299,10 +346,13 @@
   function addRecipe(id) {
     var r = D.recipes.filter(function (x) { return x.id === id; })[0];
     if (!r || !can('add')) return;
-    var sec = cleanSection(S.section);
-    newItem({ text: (r.short || r.name), recipe: r.id, qty: S.qty.trim().slice(0, 40), station: sec }).catch(function () { toast('Could not save. Check the connection.'); });
+    var secInfo = {}, sec = cleanSection(S.section, secInfo);
+    var made = newItem({ text: (r.short || r.name), recipe: r.id, qty: S.qty.trim().slice(0, 40), station: sec });
+    made.catch(function () { toast('Could not save. Check the connection.'); });
     noteSection(sec); bump({ added: 1, lastAdded: Date.now() }); learn(r.short || r.name, sec, 'pick', S.qty);
-    S.qty = ''; S.recipeSearch = ''; S.recipeOpen = false; toast('Added ' + (r.short || r.name));
+    S.qty = ''; S.recipeSearch = ''; S.recipeOpen = false;
+    if (secInfo.from) { S.section = sec; var sf = secInfo.from, mid = made.id, dte = S.date; toast('Added ' + (r.short || r.name) + ', section ' + sf + ' corrected to ' + sec, { label: 'Undo', fn: function () { keepSection(sf); noteSection(sf); S.section = sf; supd(itemRef(dte, mid), { station: sf }).catch(function () { toast('Could not undo.'); }); } }); }
+    else toast('Added ' + (r.short || r.name));
   }
   function canUntick(x) {
     return canBrowse() || (!!x.doneById && x.doneById === S.who && Date.now() - (x.doneAt || 0) < 110000);
@@ -364,11 +414,13 @@
   var KITCHEN = ('blanch julienne dice diced slice sliced marinate marinated portion portioned batch wash pick chop chopped shred shredded trim tray crumb crumbed batter gravy sauce stock reduce season seasoned mix mixed roast roasted smoke smoked pulled pull cook cooked cool chill chilled defrost thaw label date rotate fill refill restock set setup stack fold grate grated peel peeled core cut cure brine rub glaze whip whipped steam steamed fry fried grill grilled bake baked char charred toast toasted dress dressing garnish drizzle lemon lime orange tomato tomatoes onion onions garlic potato potatoes lettuce cucumber carrot carrots cabbage capsicum mushroom mushrooms bacon cheese chicken beef pork lamb barramundi calamari prawn prawns salmon rice pasta mash chips fries slaw coleslaw aioli mayo mayonnaise pickle pickles parmesan parmigiana parmy schnitzel schnitty beetroot spinach broccoli zucchini pumpkin sweet corn peas beans dough pastry pie pies brownie cookie caramel butterscotch cream ice vanilla chocolate guinness snickers laksa coconut asian greens oak leaf salad salads burger burgers patties patty bun buns brioche ribs rib wings wing steak sandwich skillet spring rolls roll roll bourbon bbq chilli chili ginger shallot shallots herbs parsley coriander basil thyme rosemary sage mint dill chives pepper salt sugar flour butter milk eggs egg oil vinegar mustard ketchup tomato relish jus beer batter fish chip sauce sides side dessert desserts entree entrees mains main kids ketchup bacon jam onion rings nachos tacos taco quesadilla wrap wraps hummus dip dips bread garlic focaccia fetta feta halloumi mozzarella cheddar swiss tasty gravy peppercorn mushroom diane creamy white red green yellow large small half full double single extra spare backup morning afternoon night lunch dinner breakfast service base bases bowl bowls sheet sheets lid lids tub tubs bag bags pack packs cup cups jar jars pot pots pan pans oven rack racks jug jugs make made need needs more less last next each every both some thing things stuff work done ready first top bottom front back cold hot warm mild spicy fresh frozen dried raw plain with without from into over under before after until only also then than that this these those mince stir drain rest wrap cover covered uncover break bone bones skin skinned skinless fillet fillets cube cubes strip strips wedge wedges round rounds ring rings whole sliced thick thin fine rough coarse smooth').split(/\s+/);
   var vocabCache = null, vocabKey = '';
   function vocab() {
-    var key = S.learned.length + ':' + D.recipes.length;
+    var key = S.learned.length + ':' + D.recipes.length + ':' + S.sections.length;
     if (vocabCache && vocabKey === key) return vocabCache;
     var v = {};
     function add(t, w) { String(t || '').toLowerCase().split(/[^a-z']+/).forEach(function (x) { if (x.length >= 3) v[x] = Math.max(v[x] || 0, w); }); }
     KITCHEN.forEach(function (w) { add(w, 1); });
+    SEC_WORDS.forEach(function (w) { add(w, 1); });
+    S.sections.forEach(function (x) { if (!x.hidden) add(x.name, 2 + Math.min(5, x.uses || 0)); });
     D.recipes.forEach(function (r) { add(r.name, 3); add(r.short, 3); (r.ingredients || []).forEach(function (i) { add(i.name, 2); }); });
     S.learned.forEach(function (x) { add(x.text, 2 + Math.min(5, x.uses || 0)); });
     vocabCache = v; vocabKey = key; return v;
@@ -2012,12 +2064,12 @@
     if (!(amt > 0) || amt >= 100000) { toast('Write the amount as a number.'); return; }
     if (UNITS.indexOf(f.unit) < 0) { toast('Pick a unit.'); return; }
     if (!REASONS.some(function (r) { return r[0] === f.reason; })) { toast('Pick a reason.'); return; }
-    var sec = cleanSection(f.sec), rm = matchRecipe(t), ref = fb.fs.doc(wCol(S.wDate));
+    var secInfo = {}, sec = cleanSection(f.sec, secInfo), rm = matchRecipe(t), ref = fb.fs.doc(wCol(S.wDate));
     sset(ref, { text: t, amount: amt, unit: f.unit, reason: f.reason, action: f.act.trim().slice(0, 120), station: sec, recipe: rm ? rm.id : '',
       addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: Date.now(), deleted: false }).catch(function () { toast('Could not save. Check the connection.'); });
     if (sec) noteSection(sec);
     S.wf = { text: '', amt: '', unit: f.unit, reason: '', sec: sec, act: '' };
-    toast('Logged ' + t);
+    toast('Logged ' + t + (secInfo.from ? ' under ' + sec + ' (typed ' + secInfo.from + ')' : ''));
   }
   function removeWaste(date, id) {
     if (!canBrowse() || !can('del')) return;
@@ -2380,6 +2432,7 @@
     var el = e.target, k = el.getAttribute && el.getAttribute('data-k');
     if (!S.root || !S.root.contains(el)) return;
     if (k === 'p-day') { if (el.value) { S.date = el.value; S.tab = ''; watchItems(); draw(); } return; }
+    if (k === 'p-section' || k === 'w-sec') { checkSectionBox(el, k); return; }
     if (k === 'af-sec' || k === 'af-who' || k === 'af-dow' || k === 'af-reason') { AF()[k.slice(3)] = el.value; afSave(); draw(); return; }
     var a = el.getAttribute && el.getAttribute('data-a');
     if (!a || !S.draft) return;

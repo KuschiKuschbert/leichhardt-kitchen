@@ -166,6 +166,8 @@ There's no build step and nothing to install. To try it on a computer, open `ind
 - A word is only corrected when it is not already known and exactly one known word is one slip away (two for long words). Known words come from recipe names and ingredients, a kitchen word list in `js/prep.js` (`KITCHEN`), and everything the list has learned, so new dish names stop being touched once they have been written.
 - A corrected line keeps what was typed in `orig`. A toast offers Undo, and an undone word is left alone on that device. The owner sees the latest corrections in Insights.
 
+- **Sections are spell-checked too.** A section one slip away from a section already in use (two for long names) becomes that section, so "Fryre" goes under "Fryer" instead of starting a new one. Singular and plural are the same section ("Salad" goes under "Salads"). A real word is never swapped for a different section ("Pans" stays "Pans" even when "Pass" exists). Otherwise longer words are checked like a line and the first letter becomes a capital. It happens when you leave the section box (toast with Undo) and again when the line is saved; an undone section is left alone on that device (`lk.prep.keepsec`). The wastage log's section box works the same way.
+
 ### Progressive learning
 
 - The first phone to open the prep book reads every past day in the last 90 that has not been read yet, 8 days at a time, and adds the lines to the learned items (proofread, per weekday and section). Nobody has to press anything.
