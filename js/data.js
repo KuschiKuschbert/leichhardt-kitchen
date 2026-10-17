@@ -1430,16 +1430,16 @@ window.LK_DATA = {
         { q: '[Qty]', name: 'Burger bun', tags: ['Gluten?', 'Sesame?'] },
         { q: '[Qty]', name: 'Pulled pork', note: 'from the smoker' },
         { q: '[Qty]', name: 'Carolina BBQ sauce', tags: ['Gluten?', 'Soy?'] },
-        { q: '[Qty]', name: 'New slaw', link: 'slaw', note: 'in the burger, on the pulled pork' },
+        { q: '[Qty]', name: 'New slaw', link: 'slaw', note: 'in the burger, under the pulled pork' },
         { q: '[Qty]', name: 'Fries', note: 'on the side' }
       ],
       pins: [
-        { label: 'Pulled pork burger', x: 35.8, y: 39.6, side: 'right', tags: ['Gluten?'], note: 'Bottom to top: bun base, pulled pork with Carolina BBQ, new slaw, bun top. Quantities to confirm.' },
+        { label: 'Pulled pork burger', x: 35.8, y: 39.6, side: 'right', tags: ['Gluten?'], note: 'Bottom to top: bun base, new slaw, pulled pork with Carolina BBQ, bun top. Quantities to confirm.' },
         { label: 'Fries', x: 66.0, y: 57.5, side: 'left', tags: [], note: 'On the side.' }
       ],
       sections: [
         { title: 'Cooking', steps: ['Pulled pork from the smoker [reheat to confirm].'] },
-        { title: 'Plating, bottom to top', steps: ['Bun base.', 'Pulled pork with Carolina BBQ. [Inference: sauce tossed through the pork, to confirm]', 'New slaw on top of the pulled pork. [Inference: slaw above the pork, to confirm]', 'Bun top.', 'Fries on the side.'] }
+        { title: 'Plating, bottom to top', steps: ['Bun base.', 'New slaw on the bun base.', 'Pulled pork with Carolina BBQ on top of the slaw. [Inference: sauce tossed through the pork, to confirm]', 'Bun top.', 'Fries on the side.'] }
       ],
       labelNote: 'Check the bun and sauce labels.'
     },
