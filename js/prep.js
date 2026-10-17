@@ -167,6 +167,16 @@
   function sset(ref, data, merge) { return W([['set', ref, data, merge]]); }
   function supd(ref, data) { return W([['upd', ref, data]]); }
   function pinHash(id, pin) { return sha('lk:' + id + ':' + pin); }
+  /* four drawn cells over one real input: numbers only, shown as dots */
+  function pinField(id, k, val) {
+    var cells = '', i;
+    for (i = 0; i < 4; i++) cells += '<span class="pin-cell' + (i < val.length ? ' full' : '') + (i === Math.min(val.length, 3) ? ' on' : '') + '" aria-hidden="true">' + (i < val.length ? '\u25CF' : '') + '</span>';
+    return '<div class="pinbox"><div class="pin-cells">' + cells + '</div><input id="' + id + '" class="pin-in" type="password" data-k="' + k + '" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="4" aria-label="4 digit PIN" value="' + esc(val) + '"></div>';
+  }
+  function pinCells(el) {
+    var cs = el.parentNode.querySelectorAll('.pin-cell'), n = el.value.length, i;
+    for (i = 0; i < cs.length; i++) { cs[i].className = 'pin-cell' + (i < n ? ' full' : '') + (i === Math.min(n, 3) ? ' on' : ''); cs[i].textContent = i < n ? '\u25CF' : ''; }
+  }
   function bump(patch) {
     // adds to a person's tally in the background; never blocks the page
     var p = who(); if (!p || !fb) return;
@@ -482,7 +492,7 @@
   function movePin() {
     var box = S.root.querySelector('#a-newpin'), np = box ? box.value.trim() : '';
     if (S.moving || !fb) return;
-    if (!/^\d{6}$/.test(np)) { S.moveMsg = 'The new PIN is exactly 6 digits.'; draw(); return; }
+    if (!/^\d{4}$/.test(np)) { S.moveMsg = 'The new PIN is exactly 4 digits.'; draw(); return; }
     if (np === S.pin) { S.moveMsg = 'That is the PIN already in use.'; draw(); return; }
     S.moving = true; S.moveMsg = 'Copying...'; draw();
     var f = fb.fs, old = S.pin, n = 0;
@@ -950,7 +960,7 @@
 
   function gateHTML() {
     return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Kitchen PIN</h2><p class="hint">Enter the kitchen PIN to open the prep book. This phone remembers it.</p>' +
-      '<div class="field"><label class="label" for="p-pin">PIN</label><input id="p-pin" class="search p-pin" data-k="p-pin" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="6" value="' + esc(S.pinInput) + '"></div>' +
+      '<div class="field"><label class="label" for="p-pin">PIN</label>' + pinField('p-pin', 'p-pin', S.pinInput) + '</div>' +
       (S.pinError ? '<p class="p-err" role="alert">' + esc(S.pinError) + '</p>' : '') +
       '<div class="btn-row"><button type="button" class="btn dark" data-p="pin-go">Open the prep book</button></div></section>';
   }
@@ -969,8 +979,8 @@
     var setting = step === 'set';
     return '<form class="p-card" data-p-form="pin"><h2 class="p-h" id="rtitle" tabindex="-1">' + (setting ? 'Hi ' + esc(p.name) + ', choose your PIN' : esc(p.name) + ', enter your PIN') + '</h2>' +
       '<p class="hint">' + (setting ? 'Pick 4 digits you will remember. You use it with your name from now on. This phone stays signed in.' : 'Your own 4-digit PIN.') + '</p>' +
-      '<div class="field"><label class="label" for="pf1">' + (setting ? 'New PIN' : 'PIN') + '</label><input id="pf1" class="search p-pin" type="password" data-k="pf1" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="4" value="' + esc(S.pf1) + '"></div>' +
-      (setting ? '<div class="field"><label class="label" for="pf2">Type it again</label><input id="pf2" class="search p-pin" type="password" data-k="pf2" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="4" value="' + esc(S.pf2) + '"></div>' : '') +
+      '<div class="field"><label class="label" for="pf1">' + (setting ? 'New PIN' : 'PIN') + '</label>' + pinField('pf1', 'pf1', S.pf1) + '</div>' +
+      (setting ? '<div class="field"><label class="label" for="pf2">Type it again</label>' + pinField('pf2', 'pf2', S.pf2) + '</div>' : '') +
       (S.pinMsg ? '<p class="p-err" role="alert">' + esc(S.pinMsg) + '</p>' : '') +
       '<div class="btn-row"><button type="submit" class="btn dark">' + (setting ? 'Save my PIN' : 'Open the prep book') + '</button><button type="button" class="btn" data-p="who-change">Not me</button></div></form>';
   }
@@ -1126,8 +1136,8 @@
       '<ul class="a-list">' + (rows || '<li class="hint">No names yet.</li>') + '</ul><div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' +
       '<section class="set-block"><span class="label">Badges</span><label class="a-check"><input type="checkbox" data-a="badges"' + (d.showBadges !== false ? ' checked' : '') + '> Show the weekly top tickers to everyone on the prep book</label></section>' + saveBlock +
       '<section class="set-block"><span class="label">Backup</span><span class="hint">Saves everything the prep book holds (people, lines from the last 400 days, learned items, tallies) as one file on this device. People\'s PIN fingerprints are left out. Do this now and then.</span><div class="btn-row"><button type="button" class="btn" data-p="export"' + (S.exporting ? ' disabled' : '') + '>' + (S.exporting ? esc(S.exporting) : 'Download a backup') + '</button></div></section>' +
-      '<section class="set-block"><span class="label">Kitchen PIN</span><span class="hint">The kitchen PIN is the lock on the whole book, so keep it to 6 digits and only for staff. People\'s own PINs only say who is writing. They are not a lock.</span>' +
-      '<div class="field"><label class="label" for="a-newpin">Move to a new 6 digit kitchen PIN</label><input id="a-newpin" class="search" inputmode="numeric" maxlength="6" autocomplete="off" data-k="a-newpin" placeholder="6 digits" value="' + esc(S.newPin) + '"></div>' +
+      '<section class="set-block"><span class="label">Kitchen PIN</span><span class="hint">The kitchen PIN is the lock on the whole book, so keep it to staff only. Writing needs a person\'s own PIN as well.</span>' +
+      '<div class="field"><label class="label" for="a-newpin">Move to a new 4 digit kitchen PIN</label><input id="a-newpin" class="search" inputmode="numeric" maxlength="4" autocomplete="off" data-k="a-newpin" placeholder="4 digits" value="' + esc(S.newPin) + '"></div>' +
       '<div class="btn-row"><button type="button" class="btn" data-p="move-pin"' + (S.moving ? ' disabled' : '') + '>Copy everything to the new PIN</button></div><span class="saved" role="status">' + esc(S.moveMsg) + '</span><span class="hint">Ask for the new PIN to be added to the security rules first. The old PIN keeps working until its rules are removed.</span></section></div>';
   }
   function staffHTML() {
@@ -1172,7 +1182,7 @@
     if (!el || !S.root || !S.root.contains(el)) return;
     var a = el.getAttribute('data-p'), id = el.getAttribute('data-id'), i = +el.getAttribute('data-i'), dt = el.getAttribute('data-d');
     if (el.tagName === 'SUMMARY') { S.recipeOpen = !S.recipeOpen; return; }
-    if (a === 'pin-go') { var v = S.pinInput.trim(); if (!/^\d{4,6}$/.test(v)) { S.pinError = 'The PIN is 4 to 6 digits.'; draw(); return; } S.pin = v; S.pinError = ''; S.pinInput = ''; lsSet('lk.prep.pin', v); connect(); return; }
+    if (a === 'pin-go') { var v = S.pinInput.trim(); if (!/^\d{4}$/.test(v)) { S.pinError = 'The kitchen PIN is 4 digits.'; draw(); return; } S.pin = v; S.pinError = ''; S.pinInput = ''; lsSet('lk.prep.pin', v); connect(); return; }
     if (a === 'pin-forget') { S.pin = ''; lsSet('lk.prep.pin', ''); S.config = null; S.configState = 'idle'; if (unsubCfg) unsubCfg(); if (unsubItems) unsubItems(); if (unsubSec) unsubSec(); if (unsubLrn) unsubLrn(); unsubCfg = unsubItems = unsubSec = unsubLrn = null; cfgKey = itemsKey = ''; draw(); return; }
     if (a === 'retry') { cfgKey = ''; connect(); return; }
     if (a === 'who') { pickName(id); return; }
@@ -1218,10 +1228,10 @@
   function onInput(e) {
     var el = e.target, k = el.getAttribute && el.getAttribute('data-k');
     if (!S.root || !S.root.contains(el)) return;
-    if (k === 'p-pin') { S.pinInput = el.value.replace(/\D/g, ''); el.value = S.pinInput; return; }
-    if (k === 'a-newpin') { S.newPin = el.value.replace(/\D/g, '').slice(0, 6); el.value = S.newPin; return; }
-    if (k === 'pf1') { S.pf1 = el.value.replace(/\D/g, ''); el.value = S.pf1; return; }
-    if (k === 'pf2') { S.pf2 = el.value.replace(/\D/g, ''); el.value = S.pf2; return; }
+    if (k === 'p-pin') { S.pinInput = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.pinInput; pinCells(el); return; }
+    if (k === 'a-newpin') { S.newPin = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.newPin; return; }
+    if (k === 'pf1') { S.pf1 = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.pf1; pinCells(el); return; }
+    if (k === 'pf2') { S.pf2 = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.pf2; pinCells(el); return; }
     if (k === 'p-text') { S.text = el.value; var hn = S.root.querySelector('#p-hint'); if (hn) hn.textContent = hintText(S.text); var sg = S.root.querySelector('#p-sugg'); if (sg) sg.innerHTML = suggestHTML(); return; }
     if (k === 'p-qty') { S.qty = el.value; return; }
     if (k === 'p-section') { S.section = el.value; return; }
