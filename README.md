@@ -91,18 +91,18 @@ There's no build step and nothing to install. To try it on a computer, open `ind
 
 ## Prep book and admin panel
 
-- `#/prep` is the prep book, laid out as an open notebook: today on the left, yesterday on the right (two pages on a big screen, stacked on a phone). Staff enter the kitchen PIN once per phone, pick their name, and the first time choose their own 4-digit PIN. That phone then stays signed in.
+- `#/prep` is the prep book, laid out as an open notebook: today on the left, yesterday on the right (two pages on a big screen, stacked on a phone). Staff enter the kitchen PIN once per phone, pick their name, and the first time choose their own 6-digit PIN. That phone then stays signed in.
 - Sections are not preset. Whoever writes a line types a section name (or picks one already used) and it appears as a section on the page and as a tab. The app keeps track of sections in the background and offers them as suggestions.
 - Ticking, writing and removing lines is counted per person in the background.
 - `#/admin` is the admin panel: who is writing and ticking most, the sections people have written (hide one from suggestions), names, roles and permissions, and Reset PIN for a person. It needs Google sign-in as the project owner.
-- Data lives in Firebase Firestore (free Spark plan): `config/main`, `days/<date>/items`, `pins/<person>` (hashed), `activity/<person>`, `sections/<slug>`. Firebase config is in `js/firebase-config.js` (public by design). The kitchen PIN and admin email live in the published Firestore rules, not in this repo. Staff names are not in the repo either.
-- Personal PINs only say who is writing. They are not a lock, and permissions per person are guidance on the client. Items are never hard deleted.
+- Data lives in Firebase Firestore (free Spark plan): `config/main`, `days/<date>/items`, `staffpins/<person>` (hashed, unreadable), `pinset/<person>`, `proofs/<person>` (write only), `activity/<person>`, `sections/<slug>`. Firebase config is in `js/firebase-config.js` (public by design). The kitchen PIN and admin email live in the published Firestore rules, not in this repo. Staff names are not in the repo either.
+- Personal PINs are the write lock. Anyone with the kitchen PIN can read, but every write must carry the writer's own 6-digit PIN, which the Firestore rules check against the stored hash (see Staff lock). Per-person permissions (add, tick, delete) are still guidance in the page. Items are never hard deleted.
 - Changing the kitchen PIN means editing the Firestore rules and re-entering it on every phone.
 
 ### Roles, rollover, insights, badges and recipe links
 
 - **Head chef (owner):** signs in with Google at `#/admin` and sees everything: charts and numbers for 7, 14 or 30 days (lines per day, by person, time of day, rolled over most often, sections), the tallies, people and permissions, PIN resets and the badge switch.
-- **Sous chef:** no Google needed. Set a person's role to Sous chef in the admin panel. They sign in with their name and PIN like everyone else, and get a "Manage staff" button on the Handy page to add and remove people. The Firestore rules only let a PIN holder change the `people` list of `config/main` (nothing else in that document). Which person may do it is guidance in the page, not a lock.
+- **Sous chef:** no Google needed. Set a person's role to Sous chef in the admin panel. They sign in with their name and PIN like everyone else, and get a "Manage staff" button on the Handy page to add and remove people. The Firestore rules only let a PIN holder change the `people` list of `config/main` (nothing else in that document). Only people listed in `sousIds` (kept in step by the owner panel) may change it.
 - **Rollover:** the first person to open today's book writes every line that was not ticked on the last written day (up to 7 days back) onto today, marked "Rolled" (with "x2" and so on for repeats) and sorted to the top of its section. Each rolled line stores `rolled`, `root`, `from` and `rolledFrom`, so the Insights page can show how often and which lines roll over. There is no Yesterday page any more.
 - **Urgent:** the ! button on a line pins it above the rest.
 - **Handy page:** priorities, progress by section, "Usual for a Saturday" (lines on at least two of the last four same weekdays, tap to add), hide ticked lines, copy the list as text, print the list.
@@ -134,6 +134,11 @@ There's no build step and nothing to install. To try it on a computer, open `ind
 - The Firebase web key in `js/firebase-config.js` is public by design. Restrict it in Google Cloud (Credentials, the Browser key) to the site address, and turn on App Check (reCAPTCHA v3) so only the real site can talk to the database. To switch App Check on in the page, add `appCheckKey: '<reCAPTCHA v3 site key>'` to `js/firebase-config.js`.
 - The owner panel has a Backup button that downloads everything as one JSON file. The free Firebase plan has no scheduled backups.
 - Who is the owner: only the owner's Google account may read `config/admins`, so the page checks that read. No email is stored in the database or the repository.
+
+### Staff lock
+- Each write sends the writer's id (`by`) and, in the same batch, `proofs/<id>.tok` (a hash of the person's own PIN). The rules compare it with `staffpins/<id>.hash`, which nobody can read, using `getAfter`. A wrong or missing PIN is refused by the server.
+- The first person to set a PIN for a name claims it. The owner can reset it (Reset PIN) and it is chosen again.
+- Limits: someone with the kitchen PIN could still guess a 6-digit PIN online (no rate limit without App Check), and add, tick and delete rights per person are checked in the page only.
 
 ### Changing the kitchen PIN
 
