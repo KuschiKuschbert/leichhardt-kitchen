@@ -745,3 +745,9 @@ img, svg { display: block; }
   html.print-admin .a-sec + .a-sec { break-before: page; }
   @page { size: A4 portrait; margin: 12mm; }
 }
+/* Settings: the QR code to open the book on a phone. Shown on computers and wide tablets only, not on phones. */
+.set-qr { display: none; }
+@media (min-width: 900px) { .set-qr { display: flex; } }
+.qr-row { display: flex; align-items: center; gap: 1.5rem; }
+.qr-img { flex: 0 0 auto; width: 180px; height: 180px; padding: 8px; border: 2px solid var(--ink); border-radius: var(--radius); background: #fff; }
+.qr-url { margin: 0.4rem 0 0.2rem; font-weight: 700; }

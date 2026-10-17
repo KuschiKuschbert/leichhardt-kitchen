@@ -471,6 +471,9 @@
       }).join('') + '</div></section>' +
       '<section class="set-block" aria-label="Ticked steps"><span class="label">Ticked steps</span><span class="hint">' + esc(plural(nTicks, 'step is', 'steps are')) + ' ticked. Ticks clear when you close the page.</span>' +
       '<div class="btn-row"><button type="button" class="btn" data-act="clearticks" data-k="clearticks">Clear all ticks</button></div></section>' +
+      '<section class="set-block set-qr" aria-label="Open on a phone"><span class="label">Open on a phone</span><div class="qr-row"><img class="qr-img" src="qr.svg" width="180" height="180" alt="QR code that opens the Kitchen Book">' +
+      '<div><p class="hint">Scan with a phone camera to open the Kitchen Book on that phone, then add it to the home screen so it is one tap away.</p><p class="qr-url">kuschikuschbert.github.io/leichhardt-kitchen</p>' +
+      '<div class="btn-row"><a class="btn" href="qr-sign.pdf" target="_blank" rel="noopener">Print the A4 sign</a><a class="btn" href="qr.png" download="Leichhardt Kitchen Book QR.png">Download the QR code</a></div></div></div></section>' +
       '<section class="set-block" aria-label="Admin panel"><span class="label">Admin panel</span><span class="hint">For the head chef. It is always the key button at the top right of every page, next to Settings. The key is filled in when this phone or computer is signed in.</span></section>' +
       '<section class="set-block" aria-label="About"><span class="label">About</span><span class="saved">' + esc(plural(D.recipes.length, 'recipe', 'recipes')) + ', updated ' + esc(D.updated) +
       '. Settings are saved on this phone or tablet only.</span></section></main>' + footer() + '</div>';
