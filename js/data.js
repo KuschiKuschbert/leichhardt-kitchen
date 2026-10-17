@@ -1703,12 +1703,19 @@ window.LK_DATA = {
     },
     {
       id: 'chicken-topper', no: '102', kind: 'side', forLine: 'Topper', name: 'Chicken Topper',
-      menu: 'Chicken topper.',
-      yield: 'Per topper. [Pieces and make-up to confirm]',
+      menu: 'Chicken topper: chicken tenders.',
+      yield: 'Per topper. Chicken tenders cooked in Italian herbs. [Number of tenders to confirm]',
       ingredients: [
-        { q: '[Qty]', name: 'Chicken [to confirm]' }
+        { q: '[Qty]', name: 'Chicken tenders' },
+        { q: '[Qty]', name: 'Italian herbs' }
       ],
-      sections: [{ title: 'Plating', steps: ['[Make-up and plating to confirm]'] }]
+      sections: [
+        { title: 'Cooking', steps: [
+          'Cook the chicken tenders in Italian herbs.',
+          'Steam them in the oven to a core temperature of 75°C. [Oven programme, temperature and time to confirm]'
+        ] },
+        { title: 'Plating', steps: ['[Plating to confirm]'] }
+      ]
     },
     {
       id: 'mushroom-topper', no: '103', kind: 'side', forLine: 'Topper', name: 'Mushroom Topper',
