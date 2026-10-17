@@ -1,0 +1,44 @@
+# Working on the Leichhardt Kitchen Book
+
+The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the prep list, the order list, the wastage log and the head chef's admin panel. Plain HTML, CSS and JavaScript on GitHub Pages, no build step. Live at https://kuschikuschbert.github.io/leichhardt-kitchen/.
+
+## Never in this repo (it is public)
+- The kitchen PIN and the owner's email. `firestore.rules` is a template with `KITCHEN_PIN` and `OWNER_EMAIL`; the real values only live in the published rules in the Firebase console.
+- Prices, GP, supplier codes or anything else from AVC Live beyond ingredient names and quantities. AVC Live itself is read only: never change it.
+- Staff names or PINs (they live in Firestore).
+
+## Writing style (everything the team sees, and the code comments)
+- No em dashes anywhere. Australian English, metric units, 24-hour time, Celsius, Australian kitchen terms.
+- Plain, short sentences. Staff read this on the line.
+- Only recipes, quantities, temperatures and times the head chef confirmed. Anything else goes in `[square brackets]` and shows as "To come".
+
+## Files
+| File | What it is |
+| --- | --- |
+| `index.html` | The page, the daily 04:00 self-refresh, the service worker registration |
+| `js/data.js` | Every recipe (the only file staff edit). Field guide at the top |
+| `js/art.js` | Plates, pans, side views, build views, technique diagrams |
+| `js/app.js` | Routing, top bar, recipe views (Pass, Tiles), recipe cards, settings, install, QR |
+| `js/prep.js` | Prep list, orders, wastage, admin panel, staff lock, insights, learning, suggestions |
+| `js/firebase-config.js` | Public Firebase web config |
+| `css/app.css` | The Leichhardt look |
+| `firestore.rules` | Rules template (see above) |
+| `manifest.webmanifest`, `sw.js`, `icons/`, `icon.svg` | Installable app: manifest, service worker (network first), rope KB logo |
+| `qr.svg`, `qr.png`, `qr-sign.pdf` | QR code to open the book, and the A4 sign |
+| `README.md` | Everything the app does, for people and for the next session |
+
+## Routes
+`#/` landing (four dockets), `#/recipes` (Pass or Tiles), `#/r/<id>[/<id>...]` a recipe and the trail to it, `#/prep`, `#/orders`, `#/waste`, `#/admin`, `#/settings`.
+
+## How changes ship
+1. Branch from `main`, one theme per pull request, squash merge.
+2. Test before merging: `node --check` on changed JS, a local server (`python3 -m http.server`), Playwright click tests on phone (390 px) and desktop (1280 px) for overflow, JS errors and the click paths you touched.
+3. If `firestore.rules` changes: test it on the Firestore emulator first, publish it in the Firebase console (with the real PIN and email filled in), then merge the code that needs it. Publish rules before code that writes new fields or collections; publish after code when the rules get stricter about something old code does not send.
+4. After merging, wait for GitHub Pages (about a minute), then check the live site.
+5. Keep `README.md` in step with every change.
+
+## Things that are easy to break
+- `.rail` is the steel shelf rail on the Pass; the landing and top bar use `.wtop`. Do not reuse class names across features (check `css/app.css` first).
+- Every write goes through `W()` in `js/prep.js`, which adds the writer's id (`by`) and the PIN proof with a server timestamp. Direct `setDoc` calls bypass the staff lock and are refused.
+- The prep pages read Firestore; keep reads small (the free plan has a daily read limit). Past days are cached once a day per phone; do not add polling.
+- The service worker caches the app shell. Bump `CACHE` in `sw.js` when icons or the manifest change.

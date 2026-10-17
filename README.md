@@ -1,16 +1,16 @@
-# Leichhardt Kitchen Recipe Book
+# Leichhardt Kitchen Book
 
-The recipe book for the Leichhardt Hotel kitchen team. It works on any phone, tablet or computer with a web browser.
+The Leichhardt Hotel kitchen's app: the recipe book, the prep list, the order list and the wastage log, plus the head chef's admin panel. It works on any phone, tablet or computer with a web browser and can be installed as an app. Working rules for changing it are in `CLAUDE.md`.
 
 ## What it does
 
-- **Two ways to look at the recipes.** The Pass opens first. The Pass / Tiles switch next to Settings changes it any time (and **Settings** sets which one opens):
+- **Two ways to look at the recipes.** The Pass opens first. The Pass / Tiles switch next to the search box changes it any time (and **Settings** sets which one opens):
   - **Tiles:** every recipe as a card with its small drawn dish, with search, recipe type and "Free from" filters on top.
   - **The Pass:** dishes drawn as plates and batch recipes as GN pans. Tap a plate to zoom in, then tap the laksa on the barramundi to open the laksa. The allergen lens shows where an allergen is at every level.
 - **Linked batch recipes.** Any ingredient that has its own recipe is underlined orange with a "Recipe 06" tag, so tapping it opens that recipe. Batch recipes show which dishes they go on.
 - **Allergens roll up.** A dish picks up the allergens of the batch recipes it uses, and names where each one comes from. A "?" means "may be in it, check the supplier label".
 - **Cards to come.** A batch recipe that isn't in the book yet shows as "Card to come". Every dish that uses one is marked "Allergens incomplete", is left out of the Free from filter, and counts as "may have" under the allergen lens, until that card is added.
-- **Set out like the guest menu.** Recipes are grouped in the order the menu prints them: Snackin' Plates, Salads, Big Country Feeds, Off the Grill, Schnittys & Parmys, Hand Held, Sides, Dessert and Seniors, then the Functions platters. Tiles, List and The Pass all follow it, and each section is also a filter chip in Tiles. The Functions chip is a rounded rectangle and always sits first after All. Batch recipes and components come after the menu sections ("Bains and prep" on The Pass).
+- **Set out like the guest menu.** Recipes are grouped in the order the menu prints them: Snackin' Plates, Salads, Big Country Feeds, Off the Grill, Schnittys & Parmys, Hand Held, Sides, Dessert and Seniors, then the Functions platters. Tiles and The Pass both follow it, and each section is also a filter chip in Tiles. The Functions chip is a rounded rectangle and always sits first after All. Batch recipes and components come after the menu sections ("Bains and prep" on The Pass).
 - **From the side.** Plated dishes also show a labelled side view, so the team can see what sits on top. Burgers show their build, top to bottom, instead.
 - **Tick off steps** while cooking. The ticks clear when the page is closed.
 - **Settings:**
