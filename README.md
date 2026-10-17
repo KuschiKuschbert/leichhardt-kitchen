@@ -91,12 +91,12 @@ There's no build step and nothing to install. To try it on a computer, open `ind
 
 ## Prep book and admin panel
 
-- `#/prep` is the prep book, laid out as an open notebook: today on the left, yesterday on the right (two pages on a big screen, stacked on a phone). Staff enter the kitchen PIN once per phone, pick their name, and the first time choose their own 6-digit PIN. That phone then stays signed in.
+- `#/prep` is the prep book, laid out as an open notebook: today on the left, yesterday on the right (two pages on a big screen, stacked on a phone). Staff enter the kitchen PIN once per phone, pick their name, and the first time choose their own 4-digit PIN. That phone then stays signed in.
 - Sections are not preset. Whoever writes a line types a section name (or picks one already used) and it appears as a section on the page and as a tab. The app keeps track of sections in the background and offers them as suggestions.
 - Ticking, writing and removing lines is counted per person in the background.
 - `#/admin` is the admin panel: who is writing and ticking most, the sections people have written (hide one from suggestions), names, roles and permissions, and Reset PIN for a person. It needs Google sign-in as the project owner.
 - Data lives in Firebase Firestore (free Spark plan): `config/main`, `days/<date>/items`, `staffpins/<person>` (hashed, unreadable), `pinset/<person>`, `proofs/<person>` (write only), `activity/<person>`, `sections/<slug>`. Firebase config is in `js/firebase-config.js` (public by design). The kitchen PIN and admin email live in the published Firestore rules, not in this repo. Staff names are not in the repo either.
-- Personal PINs are the write lock. Anyone with the kitchen PIN can read, but every write must carry the writer's own 6-digit PIN, which the Firestore rules check against the stored hash (see Staff lock). Per-person permissions (add, tick, delete) are still guidance in the page. Items are never hard deleted.
+- Personal PINs are the write lock. Anyone with the kitchen PIN can read, but every write must carry the writer's own 4-digit PIN, which the Firestore rules check against the stored hash (see Staff lock). Per-person permissions (add, tick, delete) are still guidance in the page. Items are never hard deleted.
 - Changing the kitchen PIN means editing the Firestore rules and re-entering it on every phone.
 
 ### Roles, rollover, insights, badges and recipe links
@@ -138,7 +138,7 @@ There's no build step and nothing to install. To try it on a computer, open `ind
 ### Staff lock
 - Each write sends the writer's id (`by`) and, in the same batch, `proofs/<id>.tok` (a hash of the person's own PIN). The rules compare it with `staffpins/<id>.hash`, which nobody can read, using `getAfter`. A wrong or missing PIN is refused by the server.
 - The first person to set a PIN for a name claims it. The owner can reset it (Reset PIN) and it is chosen again.
-- Limits: someone with the kitchen PIN could still guess a 6-digit PIN online (no rate limit without App Check), and add, tick and delete rights per person are checked in the page only.
+- Limits: someone with the kitchen PIN could still guess a 4-digit PIN online by script (the page makes people wait after 3 wrong tries, 1 to 30 minutes and kept on the phone, but a script skips the page; only App Check or a paid server function can truly rate limit), and add, tick and delete rights per person are checked in the page only.
 
 ### Changing the kitchen PIN
 

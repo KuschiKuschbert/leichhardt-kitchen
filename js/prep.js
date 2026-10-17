@@ -184,11 +184,21 @@
     lsSet('lk.prep.tok', id + ':' + hash);
     draw();
   }
-  var tries = 0;
+  /* After 3 wrong PINs the page makes the person wait (1, 2, 5, 15 then 30 minutes). Kept on the phone, so a reload does not skip it.
+     This slows someone using the page; it cannot stop a script that talks to the database directly. */
+  var WAITS = [60, 120, 300, 900, 1800];
+  function lockGet() { try { return JSON.parse(lsGet('lk.prep.lock') || '{}'); } catch (e) { return {}; } }
+  function lockLeft() { var l = lockGet(); return Math.max(0, Math.ceil(((l.until || 0) - Date.now()) / 1000)); }
+  function lockFail() {
+    var l = lockGet(); l.n = (l.n || 0) + 1; l.f = l.f || 0;
+    if (l.n >= 3) { l.until = Date.now() + WAITS[Math.min(l.f, WAITS.length - 1)] * 1000; l.f++; l.n = 0; }
+    lsSet('lk.prep.lock', JSON.stringify(l)); return l;
+  }
+  function lockWait(sec) { return 'Too many wrong tries. Wait ' + (sec >= 60 ? Math.ceil(sec / 60) + ' minute' + (sec > 60 ? 's' : '') : sec + ' seconds') + ' and try again.'; }
   function submitPin() {
     var id = S.who, p = who();
     if (!p) return;
-    if (!/^\d{6}$/.test(S.pf1)) { S.pinMsg = 'Your PIN is 6 digits.'; draw(); return; }
+    if (!/^\d{4}$/.test(S.pf1)) { S.pinMsg = 'Your PIN is 4 digits.'; draw(); return; }
     if (S.pinStep === 'set') {
       if (S.pf1 !== S.pf2) { S.pinMsg = 'The two PINs do not match.'; draw(); return; }
       pinHash(id, S.pf1).then(function (h) {
@@ -200,14 +210,14 @@
       return;
     }
     if (S.pinStep === 'enter') {
-      if (tries >= 5) { S.pinMsg = 'Too many tries. Wait a minute and try again.'; draw(); return; }
+      if (lockLeft() > 0) { S.pinMsg = lockWait(lockLeft()); S.pf1 = ''; draw(); return; }
       pinHash(id, S.pf1).then(function (h) {
         S.who = id; S.tok = h;
         // a write only succeeds with the right PIN, so a visit count doubles as the PIN check
-        return sset(docRef('activity', id), { name: p.name, visits: fb.fs.increment(1), lastSeen: Date.now() }, true).then(function () { tries = 0; signedIn(id, h); },
+        return sset(docRef('activity', id), { name: p.name, visits: fb.fs.increment(1), lastSeen: Date.now() }, true).then(function () { lsSet('lk.prep.lock', ''); signedIn(id, h); },
           function (e) {
             S.tok = '';
-            if (e && e.code === 'permission-denied') { tries++; setTimeout(function () { tries = 0; }, 60000); S.pinMsg = 'That PIN is not right.'; S.pf1 = ''; }
+            if (e && e.code === 'permission-denied') { lockFail(); S.pinMsg = lockLeft() > 0 ? lockWait(lockLeft()) : 'That PIN is not right.'; S.pf1 = ''; }
             else S.pinMsg = 'Could not check your PIN. Check the connection.';
             draw();
           });
@@ -946,7 +956,7 @@
   }
   function whoHTML() {
     var list = people();
-    return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Who are you?</h2><p class="hint">Pick your name. The first time, you choose your own 6-digit PIN to go with it.</p>' +
+    return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Who are you?</h2><p class="hint">Pick your name. The first time, you choose your own 4-digit PIN to go with it.</p>' +
       (list.length ? '<div class="p-names">' + list.map(function (p) { return '<button type="button" class="chip p-name" data-p="who" data-id="' + esc(p.id) + '">' + esc(p.name) + '</button>'; }).join('') + '</div>' :
         '<p class="p-err">No names are set up yet. The admin adds them in the admin panel.</p>') +
       '<div class="btn-row"><button type="button" class="btn" data-p="pin-forget">Change kitchen PIN</button></div></section>';
@@ -958,9 +968,9 @@
     if (step === 'error') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">' + esc(p.name) + '</h2><p class="p-err">Could not check your PIN. Check the connection.</p><div class="btn-row"><button type="button" class="btn dark" data-p="who" data-id="' + esc(p.id) + '">Try again</button><button type="button" class="btn" data-p="who-change">Not me</button></div></section>';
     var setting = step === 'set';
     return '<form class="p-card" data-p-form="pin"><h2 class="p-h" id="rtitle" tabindex="-1">' + (setting ? 'Hi ' + esc(p.name) + ', choose your PIN' : esc(p.name) + ', enter your PIN') + '</h2>' +
-      '<p class="hint">' + (setting ? 'Pick 6 digits you will remember. You use it with your name from now on. This phone stays signed in.' : 'Your own 6-digit PIN.') + '</p>' +
-      '<div class="field"><label class="label" for="pf1">' + (setting ? 'New PIN' : 'PIN') + '</label><input id="pf1" class="search p-pin" type="password" data-k="pf1" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="6" value="' + esc(S.pf1) + '"></div>' +
-      (setting ? '<div class="field"><label class="label" for="pf2">Type it again</label><input id="pf2" class="search p-pin" type="password" data-k="pf2" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="6" value="' + esc(S.pf2) + '"></div>' : '') +
+      '<p class="hint">' + (setting ? 'Pick 4 digits you will remember. You use it with your name from now on. This phone stays signed in.' : 'Your own 4-digit PIN.') + '</p>' +
+      '<div class="field"><label class="label" for="pf1">' + (setting ? 'New PIN' : 'PIN') + '</label><input id="pf1" class="search p-pin" type="password" data-k="pf1" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="4" value="' + esc(S.pf1) + '"></div>' +
+      (setting ? '<div class="field"><label class="label" for="pf2">Type it again</label><input id="pf2" class="search p-pin" type="password" data-k="pf2" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="4" value="' + esc(S.pf2) + '"></div>' : '') +
       (S.pinMsg ? '<p class="p-err" role="alert">' + esc(S.pinMsg) + '</p>' : '') +
       '<div class="btn-row"><button type="submit" class="btn dark">' + (setting ? 'Save my PIN' : 'Open the prep book') + '</button><button type="button" class="btn" data-p="who-change">Not me</button></div></form>';
   }
