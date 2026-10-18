@@ -30,6 +30,8 @@ const row = (page, id) => page.evaluate(i => { const e = document.getElementById
   ok(!!late && late.rolled === 1 && late.ahead === true, 'late line: moved to today and marked as written ahead');
   ok(!!day && day.rolled === 1 && !day.ahead, 'daytime line: rolled as before');
   ok(!!duck && duck.rolled === 2 && duck.ahead === true, 'late line still open a day later: rolls again, keeps ahead');
+  ok(!!day && day.origAt === at(yday, 10, 0) && !!late && late.origAt === at(yday, 21, 30), 'rolled lines: keep the time they were first written (origAt)');
+  ok(!!duck && duck.origAt === 0, 'a line that rolled before origAt was kept: origAt 0, not a roll time');
   const tLate = await row(p, rid('late')), tDay = await row(p, rid('day')), tDuck = await row(p, rid('old'));
   ok(!/Rolled/.test(tLate) && /From last night/.test(tLate), 'late line: no Rolled badge, says from last night (' + tLate.trim().slice(0, 60) + ')');
   ok(/Rolled/.test(tDay), 'daytime line: Rolled badge');
@@ -41,6 +43,7 @@ const row = (page, id) => page.evaluate(i => { const e = document.getElementById
   s = await store(p);
   const fl = s[fsKey(['orders', today, 'lines', rid('ol')])];
   ok(!!fl && fl.ahead === true && fl.since === today, 'late order line: moved to today, waiting since today');
+  ok(!!fl && fl.origAt === at(yday, 22, 15), 'late order line: keeps the time it was first written (origAt)');
   ok(!/Since/.test(await p.evaluate(() => document.querySelector('.o-page').textContent)), 'late order line: no Since label yet');
   ok(p.errors.length === 0, 'orders: no page errors ' + p.errors.join(' | '));
   await p.context().close();

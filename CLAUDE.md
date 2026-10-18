@@ -15,7 +15,7 @@ The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the
 ## Files
 | File | What it is |
 | --- | --- |
-| `index.html` | The page, the daily 04:00 self-refresh, the service worker registration |
+| `index.html` | The page, the book's clock (`LK_TIME`), the daily 04:00 self-refresh, the service worker registration |
 | `js/data.js` | Every recipe (the only file staff edit). Field guide at the top |
 | `js/art.js` | Plates, pans, side views, build views, technique diagrams |
 | `js/app.js` | Routing, top bar, recipe views (Pass, Tiles), recipe cards, settings, install, QR |
@@ -46,3 +46,4 @@ The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the
 - Meeting minutes follow the same pattern (one small query, refreshed after 30 minutes away), a bell (`.mbell`) in the top bar, clicks via `data-p` / `data-k` with `mn-` names. Sign-offs and `hist` copies are immutable in the rules; a change after publishing is a new version, never an edit of the old one.
 - Admin lists that can grow go through `lvHTML()` in `js/prep.js` (search, filter chips, sort, Show more, phone cards). Give each list its own `key`, keep `data-k` names unique (`lv-q:<key>`, `lv-s:<key>`), and use `lvReveal(key)` when a row is added so it is on screen. Do not hand-build a long `<table>` in the admin area.
 - The service worker caches the app shell. Bump `CACHE` in `sw.js` when icons or the manifest change.
+- One clock: anything saved, or compared with a saved time, uses `now()` in `js/prep.js` (`LK_TIME.now()` elsewhere), and today's date, hours and weekdays use `dayNow()` and `T.day`, `T.hour`, `T.mins`, `T.dow`, `T.clock`, `T.at` (kitchen time, Queensland). Never `new Date()` or `Date.now()` for those: the phone's clock and zone can be wrong. `Date.now()` is only for time passing on the phone (timers, the PIN lock, the idle sign-out). Do not name a local variable `now` or `dayNow`, it hides the helper.

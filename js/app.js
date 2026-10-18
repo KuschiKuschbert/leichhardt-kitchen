@@ -291,7 +291,7 @@
   /* Under the top bar, the recipe pages get their own tools row: how many recipes, and the Pass / Tiles switch. */
   var DOCKETS = [['01', 'Recipes', '#/recipes', 'recipes'], ['02', 'Prep list', '#/prep', 'prep'], ['03', 'Orders', '#/orders', 'orders'], ['04', 'Wastage', '#/waste', 'waste']];
   function viewLanding() {
-    var today = new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
+    var d = window.LK_TIME.day().split('-'), today = new Date(+d[0], d[1] - 1, +d[2], 12).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
     return '<div class="wall">' + topBar() +
       '<main id="main" class="wall-main"><h2 class="wall-h" id="rtitle" tabindex="-1">Pick a docket</h2><p class="wall-date">' + esc(today) + '</p>' + installCard() +
       '<div class="dockets">' + DOCKETS.map(function (d) {
@@ -808,7 +808,7 @@
     var s = q();
     if (s.length < 3 || D.recipes.some(function (r) { return matches(r.id); })) return;
     var l = readJSON(LS, 'lk.miss') || [];
-    var now = Date.now();
+    var now = window.LK_TIME.now();
     l = l.filter(function (m) { return !(now - m.at < 120000 && (s.indexOf(m.q) === 0 || m.q.indexOf(s) === 0)); });
     l.push({ q: s.slice(0, 60), at: now });
     writeJSON(LS, 'lk.miss', l.slice(-40));
