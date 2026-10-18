@@ -1,5 +1,5 @@
 /*
-  Leichhardt Kitchen prep book: prep list, order list, wastage log, daily notes, meeting minutes, guides and the admin panel.
+  Leichhardt Kitchen prep book: prep list, order list, wastage log, shift pings, meeting minutes, guides and the admin panel.
   Staff add and tick on any phone. Everything syncs through Firebase (Cloud Firestore, free plan).
 
   Pages:   #/prep     the daily prep list         #/orders   the order list       #/waste   the wastage log
@@ -16,7 +16,7 @@
     kitchens/<PIN>/sections/<slug>             { name, uses, lastUsed }   sections people have written, offered as suggestions
     kitchens/<PIN>/orders/<date>/lines/<id>    one order line (rolls over until ordered)
     kitchens/<PIN>/waste/<date>, .../lines/<id> the end-of-day waste review, and one wastage entry each
-    kitchens/<PIN>/notes/<id>, .../seen/<id>   daily notes and who has seen them
+    kitchens/<PIN>/notes/<id>, .../seen/<id>   shift pings and who has seen them
     kitchens/<PIN>/minutes/<id>, .../hist, .../signs   meeting minutes, earlier versions and sign-offs
     kitchens/<PIN>/learned/<item>, ordlearned/<item>   what the prep and order lists have learned
     kitchens/<PIN>/learnlog/<id>               days already learned (create only)
@@ -33,10 +33,10 @@
   var FB = window.LK_FIREBASE, D = window.LK_DATA || { recipes: [] };
   var SDK = 'https://www.gstatic.com/firebasejs/10.14.1/';
   var ROLES = {
-    lead: { name: 'Lead', add: true, tick: true, del: true },
-    sous: { name: 'Sous chef', add: true, tick: true, del: true },
-    staff: { name: 'Staff', add: true, tick: true, del: false },
-    view: { name: 'View only', add: false, tick: false, del: false }
+    lead: { name: 'Lead', add: true, tick: true, del: true, ping: false },
+    sous: { name: 'Sous chef', add: true, tick: true, del: true, ping: true },
+    staff: { name: 'Staff', add: true, tick: true, del: false, ping: false },
+    view: { name: 'View only', add: false, tick: false, del: false, ping: false }
   };
 
   /* ---------- small helpers ---------- */
@@ -892,16 +892,21 @@
     S.draftSnap = JSON.stringify(S.draft);
     S.saveMsg = '';
   }
+  /* sousIds and pingIds are what the rules check: sous chefs, and everyone who may write shift pings (sous chefs always may) */
+  function idsFor(people, fn) { return people.filter(function (p) { return p.active !== false && String(p.name).trim() && fn(p); }).map(function (p) { return p.id; }); }
+  function isSousP(p) { return p.role === 'sous'; }
+  function canPingP(p) { return p.role === 'sous' || !!p.ping; }
   function saveConfig(cfg) {
     var clean = {
       people: cfg.people.filter(function (p) { return String(p.name).trim(); }).map(function (p) {
-        return { id: p.id, name: String(p.name).trim().slice(0, 40), role: p.role || 'staff', add: !!p.add, tick: !!p.tick, del: !!p.del, active: p.active !== false };
+        return { id: p.id, name: String(p.name).trim().slice(0, 40), role: p.role || 'staff', add: !!p.add, tick: !!p.tick, del: !!p.del, ping: !!p.ping, active: p.active !== false };
       }),
       stations: [], showBadges: cfg.showBadges !== false,
-      sousIds: S.user ? cfg.people.filter(function (p) { return p.role === 'sous' && p.active !== false && String(p.name).trim(); }).map(function (p) { return p.id; }) : ((S.config && S.config.sousIds) || []),
+      sousIds: idsFor(cfg.people, isSousP), pingIds: idsFor(cfg.people, canPingP),
       updated: now(), updatedBy: (S.user && S.user.email) || (who() ? who().name : '')
     };
-    return sdk().then(function () { return S.user ? track(fb.fs.setDoc(cfgDoc(), clean)) : sset(cfgDoc(), clean); }).then(function () { return clean; });
+    /* a sous chef may only change the people list, so only that is sent (merged): the rules refuse any other field */
+    return sdk().then(function () { return S.user ? track(fb.fs.setDoc(cfgDoc(), clean)) : sset(cfgDoc(), { people: clean.people, updated: clean.updated, updatedBy: clean.updatedBy }, true); }).then(function () { return clean; });
   }
   function adminSave() {
     S.busy = true; S.saveMsg = 'Saving...'; draw();
@@ -986,13 +991,14 @@
     var em = S.user.email || '';
     if (S.adminsFor === em) return;
     S.adminsFor = em; S.level = '';
-    fb.fs.getDoc(adminsRef()).then(function () { S.level = 'owner'; seedSous(); draw(); }, function () { S.level = 'none'; draw(); });
+    fb.fs.getDoc(adminsRef()).then(function () { S.level = 'owner'; seedIds(); draw(); }, function () { S.level = 'none'; draw(); });
   }
-  /* the rules let a sous chef edit the staff list only if listed in sousIds, so the owner keeps that list in step */
-  function seedSous() {
+  /* the rules let a sous chef edit the staff list only if listed in sousIds, and write shift pings only if listed in
+     sousIds or pingIds, so the owner keeps both lists in step with the people list */
+  function seedIds() {
     var c = S.config; if (!c || !c.people) return;
-    var want = c.people.filter(function (p) { return p.role === 'sous' && p.active !== false; }).map(function (p) { return p.id; }).sort().join(',');
-    if ((c.sousIds || []).slice().sort().join(',') === want) return;
+    function same(have, fn) { return (have || []).slice().sort().join(',') === idsFor(c.people, fn).sort().join(','); }
+    if (same(c.sousIds, isSousP) && same(c.pingIds, canPingP)) return;
     saveConfig({ people: c.people, showBadges: c.showBadges }).catch(function () {});
   }
   /* ---------- the last 14 days, read once a day per phone ----------
@@ -1089,6 +1095,8 @@
   }
   var MEDAL = { 1: '#C9971C', 2: '#8E959C', 3: '#A8693A' };
   function isSous() { var p = me(); return !!(p && p.role === 'sous'); }
+  /* shift pings: sous chefs, and anyone the head chef ticked for Pings in the People tab */
+  function canPing() { var p = me(); return !!(p && canPingP(p)); }
   function ordinal(n) { return n + (n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th'); }
   function medal(rank) {
     return '<svg class="nb-medal" viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><circle cx="13" cy="13" r="12" fill="' + (MEDAL[rank] || '#8E959C') + '"/><circle cx="13" cy="13" r="9" fill="none" stroke="#fff" stroke-width="1.5" opacity=".8"/><text x="13" y="17.5" text-anchor="middle" font-size="13" font-weight="700" fill="#fff" font-family="Barlow Condensed, sans-serif">' + rank + '</text></svg>';
@@ -1813,7 +1821,8 @@
       '<button type="button" class="nb-btn" data-p="copy">Copy the list</button>' +
       '<button type="button" class="nb-btn" data-p="print">Print the list</button>' +
       '<a class="nb-btn" href="#/minutes">Meeting minutes</a>' +
-      (isSous() ? '<button type="button" class="nb-btn" data-p="notes-open">Daily notes</button><button type="button" class="nb-btn" data-p="mn-open">Minutes register</button><button type="button" class="nb-btn" data-p="staff-open">Manage staff</button>' : '') + '</div>';
+      (canPing() ? '<button type="button" class="nb-btn" data-p="notes-open">Shift pings</button>' : '') +
+      (isSous() ? '<button type="button" class="nb-btn" data-p="mn-open">Minutes register</button><button type="button" class="nb-btn" data-p="staff-open">Manage staff</button>' : '') + '</div>';
     var dl = live.filter(function (x) { return x.done; }).sort(function (a, b) { return (b.doneAt || 0) - (a.doneAt || 0); });
     var donebox = '<h3 class="nb-sh">Done today (' + dl.length + ')</h3>' + (dl.length ? '<ul class="nb-done">' + dl.map(function (x) {
       return '<li><span class="nb-dt">' + (x.doneAt ? clock(x.doneAt) : '') + '</span><span class="nb-dx">' + esc(x.text) + (x.qty ? ' <em>' + esc(x.qty) + '</em>' : '') + '</span><span class="nb-dw">' + esc(x.doneBy || '') + '</span>' + (can('tick') && canUntick(x) ? '<button type="button" class="p-x nb-undo" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(S.date) + '" aria-label="' + esc('Undo the tick on ' + x.text) + '">Undo</button>' : '') + '</li>';
@@ -2087,7 +2096,7 @@
   /* The People tab: every person with role, permissions and PIN reset. Search, filter chips and Show more once the list is long. */
   function peopleListHTML(d) {
     var items = d.people.map(function (p, i) { return { p: p, i: i }; });
-    function cb(o, kind, perm, on, label) { return '<label class="a-cl"><input type="checkbox" aria-label="' + label + ' for ' + esc(o.p.name) + '" data-a="' + kind + '"' + (perm ? ' data-perm="' + perm + '"' : '') + ' data-i="' + o.i + '"' + (on ? ' checked' : '') + '></label>'; }
+    function cb(o, kind, perm, on, label, off) { return '<label class="a-cl"><input type="checkbox" aria-label="' + label + ' for ' + esc(o.p.name) + '" data-a="' + kind + '"' + (perm ? ' data-perm="' + perm + '"' : '') + ' data-i="' + o.i + '"' + (on ? ' checked' : '') + (off ? ' disabled title="Sous chefs can always write shift pings"' : '') + '></label>'; }
     function nm(o) { return String(o.p.name || '').toLowerCase(); }
     return lvHTML({
       key: 'people', items: items, step: 15, tools: 8, noun: ['person', 'people'], ph: 'Search names', table: 'lv-people', empty: 'No names yet.',
@@ -2104,6 +2113,7 @@
         { h: 'Write', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'add', o.p.add, 'Write'); } },
         { h: 'Tick', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'tick', o.p.tick, 'Tick'); } },
         { h: 'Remove', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'del', o.p.del, 'Remove'); } },
+        { h: 'Pings', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'ping', canPingP(o.p), 'Shift pings', o.p.role === 'sous'); } },
         { h: 'On list', cls: 'a-c', html: function (o) { return cb(o, 'active', '', o.p.active !== false, 'On list'); } },
         { h: '', cls: 'a-act', html: function (o) { return '<button type="button" class="p-x" data-p="a-reset-pin" data-id="' + esc(o.p.id) + '">' + (armed('pin:' + o.p.id) ? 'Tap again to reset' : 'Reset PIN') + '</button>' + removePersonBtn(o.p, o.i); } }
       ]
@@ -2141,14 +2151,14 @@
     var bulk = '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line">' + esc(S.bulk || '') + '</textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div>';
     var saveBlock = '<section class="set-block"><div class="btn-row"><button type="button" class="btn dark" data-p="a-save"' + (S.busy ? ' disabled' : '') + '>Save changes</button><button type="button" class="btn" data-p="a-reset">Undo unsaved changes</button></div><span class="saved" role="status">' + esc(S.saveMsg) + '</span></section>';
     var at = S.atab || 'insights';
-    var tabsBar = '<nav class="a-tabs" aria-label="Admin sections">' + [['insights', 'Insights'], ['team', 'Team'], ['waste', 'Waste'], ['learning', 'Learning'], ['notes', 'Notes'], ['minutes', 'Minutes'], ['guides', 'Guides'], ['people', 'People'], ['tools', 'Tools']].map(function (t) {
+    var tabsBar = '<nav class="a-tabs" aria-label="Admin sections">' + [['insights', 'Insights'], ['team', 'Team'], ['waste', 'Waste'], ['learning', 'Learning'], ['notes', 'Shift pings'], ['minutes', 'Minutes'], ['guides', 'Guides'], ['people', 'People'], ['tools', 'Tools']].map(function (t) {
       return '<button type="button" class="a-tab" data-p="a-tab" data-t="' + t[0] + '" aria-pressed="' + (at === t[0]) + '">' + t[1] + '</button>';
     }).join('') + '</nav>';
     if (at === 'notes') loadNotes();
     if (at === 'minutes') loadMinutes();
     if (at === 'guides') loadGuides();
     var pane = at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'learning' ? (learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() : at === 'people' ? (
-      '<section class="set-block"><span class="label">People</span><span class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Reset PIN lets that person choose a new one. Removing someone from the list keeps their name on old lines.</span>' +
+      '<section class="set-block"><span class="label">People</span><span class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Pings lets that person write shift pings from the prep book (sous chefs always can). Reset PIN lets that person choose a new one. Removing someone from the list keeps their name on old lines.</span>' +
       peopleListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' +
       '<section class="set-block"><span class="label">Badges</span><label class="a-check"><input type="checkbox" data-a="badges"' + (d.showBadges !== false ? ' checked' : '') + '> Show the weekly top tickers to everyone on the prep book</label></section>' + saveBlock
     ) : (
@@ -2192,7 +2202,7 @@
     if (S.name === 'waste') return wasteHTML();
     if (S.name === 'minutes') return minutesPageHTML();
     if (S.minOpen && isSous()) return minSousPageHTML();
-    if (S.notesOpen && isSous()) return notesPageHTML();
+    if (S.notesOpen && canPing()) return notesPageHTML();
     if (S.staffOpen && isSous()) return staffHTML();
     return listHTML();
   }
@@ -2797,18 +2807,19 @@
     return '<div class="nb-flag"><span class="nb-sl">' + (n.date === shift(dayNow(), -1) ? 'From yesterday\'s waste review' : 'From the ' + esc(parseYmd(n.date).toLocaleDateString('en-AU', { weekday: 'long' })) + ' waste review') + '</span><p>' + esc(n.change) + '</p>' + (n.reviewBy ? '<span class="nb-sw">' + esc(n.reviewBy) + '</span>' : '') + '</div>';
   }
 
-  /* ---------- daily notes ----------
-     The head chef or a sous chef writes short notes for the day (Notes tab in the admin panel; Daily notes in the prep book for a sous chef).
-     The first time the book is opened after 10:30 on a day with a note, the notes show once as a popup. The bell in the top bar opens them again.
+  /* ---------- shift pings (stored as notes) ----------
+     The head chef, a sous chef, or anyone ticked for Pings in the People tab writes short pings for the shift (Shift pings tab in
+     the admin panel; Shift pings in the prep book for everyone else). In the code and the data they are still called notes.
+     The first time the book is opened after 10:30 on a day with a ping, the pings show once as a popup. The bell in the top bar opens them again.
      Data: kitchens/<PIN>/notes/<id> { text, tag, start, until, dows, removed, at, upd }. A note shows from start to until (YYYY-MM-DD),
      on the weekdays in dows when there are any (0 is Sunday). Notes are only flagged as removed, never deleted.
      Reads stay small: one query for notes that have not ended yet, once a phone opens each day (and again after 30 minutes away, or at 10:30
      if the book was already open). No live listener, no polling. "Got it" is remembered on the phone only (lk.note.seen). */
-  var NOTE_TAGS = [['none', 'Note'], ['off', 'Off today'], ['special', 'Special'], ['function', 'Function'], ['delivery', 'Delivery'], ['safety', 'Safety'], ['allergen', 'Allergen alert']];
+  var NOTE_TAGS = [['none', 'Ping'], ['off', 'Off today'], ['special', 'Special'], ['function', 'Function'], ['delivery', 'Delivery'], ['safety', 'Safety'], ['allergen', 'Allergen alert']];
   var NOTE_RANK = { safety: 0, allergen: 1, off: 2, special: 3, function: 4, delivery: 5, none: 6 };
   var NOTE_MIN = 10 * 60 + 30, NOTE_FAR = '2099-12-31', NOTE_STALE = 30 * 60000;
   var npop = null, nprev = null, nTick = null, n1030 = '', nSnooze = 0;
-  function noteTagName(t) { var x = NOTE_TAGS.filter(function (n) { return n[0] === t; })[0]; return x ? x[1] : 'Note'; }
+  function noteTagName(t) { var x = NOTE_TAGS.filter(function (n) { return n[0] === t; })[0]; return x ? x[1] : 'Ping'; }
   function noteOn(n, day) {
     if (!n || n.removed || !n.text || !n.start || !n.until || n.start > day || n.until < day) return false;
     return !(n.dows && n.dows.length) || n.dows.indexOf(parseYmd(day).getDay()) >= 0;
@@ -2822,12 +2833,12 @@
   function noteSeen() { try { return JSON.parse(lsGet('lk.note.seen') || '{}') || {}; } catch (e) { return {}; } }
   function noteUnread() { var l = todaysNotes(), s = noteSeen(); return !!l.length && !(s.d === dayNow() && s.sig === noteSig(l)); }
   function noteInfo() { var l = todaysNotes(); return { n: l.length, unread: noteUnread() }; }
-  /* the bell in the top bar: hidden until there is a note for today, with a dot while it is unread */
+  /* the bell in the top bar: hidden until there is a ping for today, with a dot while it is unread */
   function noteBell() {
     var i = noteInfo();
     Array.prototype.forEach.call(document.querySelectorAll('.nbell'), function (b) {
       b.hidden = !i.n; b.classList.toggle('has-new', i.unread);
-      b.setAttribute('aria-label', 'Today\'s notes' + (i.unread ? ', new' : ''));
+      b.setAttribute('aria-label', 'Today\'s shift pings' + (i.unread ? ', new' : ''));
     });
   }
   function notesInit() {
@@ -2902,12 +2913,12 @@
   function noteOpen(pv) {
     var list = pv ? pv.list : todaysNotes();
     if (npop || !list.length) return;
-    var t = dayNow(), admDev = lsGet('lk.admin') === '1', editor = admDev ? '<a class="nt-edit" href="#/admin" data-note="edit">Write or edit notes</a>' : (isSous() ? '<a class="nt-edit" href="#/prep" data-note="edit-sous">Write or edit notes</a>' : '');
+    var t = dayNow(), admDev = lsGet('lk.admin') === '1', editor = admDev ? '<a class="nt-edit" href="#/admin" data-note="edit">Write or edit pings</a>' : (canPing() ? '<a class="nt-edit" href="#/prep" data-note="edit-sous">Write or edit pings</a>' : '');
     nprev = document.activeElement;
     var el = document.createElement('div');
     el.className = 'nt-wrap';
     el.innerHTML = '<div class="nt-bg" data-note="dismiss"></div><section class="nt" role="dialog" aria-modal="true" aria-labelledby="nt-h" tabindex="-1">' +
-      '<header class="nt-head"><span class="nt-eb">Leichhardt Hotel Kitchen</span><h2 class="nt-h" id="nt-h">' + (pv ? 'Preview' : 'Today\'s notes') + '</h2><span class="nt-date">' + esc(pv ? pv.label : parseYmd(t).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })) + '</span></header>' +
+      '<header class="nt-head"><span class="nt-eb">Leichhardt Hotel Kitchen</span><h2 class="nt-h" id="nt-h">' + (pv ? 'Preview' : 'Today\'s shift pings') + '</h2><span class="nt-date">' + esc(pv ? pv.label : parseYmd(t).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })) + '</span></header>' +
       '<ul class="nt-list">' + list.map(noteRowHTML).join('') + '</ul>' +
       '<div class="nt-sum" id="nt-sum">' + (pv ? '' : noteSummary()) + '</div>' +
       '<footer class="nt-foot"><button type="button" class="nt-got" data-note="close">' + (pv ? 'Close preview' : 'Got it') + '</button>' + (pv ? '' : editor) + '</footer></section>';
@@ -2975,7 +2986,7 @@
     else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
   });
 
-  /* writing notes: the Notes tab of the admin panel (head chef) and Daily notes in the prep book (sous chef).
+  /* writing shift pings: the Shift pings tab of the admin panel (head chef) and Shift pings in the prep book (sous chefs and anyone ticked for Pings).
      The list comes first (showing today, coming up, past notes on request). The editor opens beside it on a
      big screen and above it on a phone. Days are picked on a five week grid and every tap can be undone. */
   var NOTE_START = { off: 'Off today: ', special: 'Special: ', 'function': 'Function: ', delivery: 'Delivery: ', safety: 'Safety: ', allergen: 'Allergen alert: ' };
@@ -2999,7 +3010,7 @@
   function nfDraft(f) { return { id: 'draft', text: f.text.replace(/^\s+|\s+$/g, ''), tag: f.tag, start: f.start, until: nfUntil(f), dows: f.dows.slice() }; }
   function draftPreviewHTML(f) {
     var d = nfDraft(f);
-    return d.text ? '<ul class="nt-list n-pl">' + noteRowHTML(d) + '</ul>' : '<p class="hint">Type the note to see how it will look.</p>';
+    return d.text ? '<ul class="nt-list n-pl">' + noteRowHTML(d) + '</ul>' : '<p class="hint">Type the ping to see how it will look.</p>';
   }
   function noteRowAdmin(n, t, past) {
     var who = personName(n.by), sn = S.nSeen && S.nSeen[n.id], today = !past && noteOn(n, t), seen = '';
@@ -3024,24 +3035,24 @@
     function noteList(key, title, l, past, sorter) {
       if (!l.length) return '';
       return '<h3 class="n-gh3">' + title + ' (' + l.length + ')</h3>' + lvHTML({
-        key: key, items: l, step: 8, tools: 6, noun: ['note', 'notes'], ph: 'Search notes', empty: 'No notes.',
+        key: key, items: l, step: 8, tools: 6, noun: ['ping', 'pings'], ph: 'Search pings', empty: 'No pings.',
         find: function (n) { return n.text + ' ' + noteTagName(n.tag) + ' ' + (personName(n.by) || ''); },
-        filters: [['all', 'All notes']].concat(NOTE_TAGS.map(function (x) { return [x[0], x[1], function (n) { return (n.tag || 'none') === x[0]; }]; })),
+        filters: [['all', 'All pings']].concat(NOTE_TAGS.map(function (x) { return [x[0], x[1], function (n) { return (n.tag || 'none') === x[0]; }]; })),
         sorts: sorter, card: function (n) { return noteRowAdmin(n, t, past); }
       });
     }
     var out = grp('Showing today', now) + noteList('notes-later', 'Coming up', later, false, [['soon', 'Soonest first', function (a, b) { return String(a.start).localeCompare(String(b.start)) || (a.at || 0) - (b.at || 0); }], ['late', 'Furthest away first', function (a, b) { return String(b.start).localeCompare(String(a.start)) || (b.at || 0) - (a.at || 0); }]]);
-    if (!now.length && !later.length) out = '<p class="hint">No notes are set for today or the days ahead. Tap Write a note to add one.</p>';
-    var pastBtn = '<button type="button" class="btn" data-p="n-past">' + (S.nPastOpen ? 'Hide past notes' : 'Past notes') + '</button>';
+    if (!now.length && !later.length) out = '<p class="hint">No pings are set for today or the days ahead. Tap Write a ping to add one.</p>';
+    var pastBtn = '<button type="button" class="btn" data-p="n-past">' + (S.nPastOpen ? 'Hide past pings' : 'Past pings') + '</button>';
     var pastList = '';
     if (S.nPastOpen) {
       if (S.nPast === 'loading') pastList = '<p class="hint">Loading...</p>';
-      else if (S.nPast === 'error') pastList = '<p class="hint">Could not load past notes. Check the connection and try again.</p>';
+      else if (S.nPast === 'error') pastList = '<p class="hint">Could not load past pings. Check the connection and try again.</p>';
       else if (S.nPast && S.nPast.length) {
         var moreOld = S.nPast.length >= (S.nPastN || 30);
-        pastList = noteList('notes-past', 'Past notes', S.nPast, true, [['new', 'Newest first', function (a, b) { return String(b.until).localeCompare(String(a.until)) || (b.at || 0) - (a.at || 0); }], ['old', 'Oldest first', function (a, b) { return String(a.until).localeCompare(String(b.until)) || (a.at || 0) - (b.at || 0); }]]) +
-          '<p class="hint">The last ' + S.nPast.length + ' notes that have finished. Use again copies one into a new note.</p>' + (moreOld ? '<div class="btn-row"><button type="button" class="btn" data-p="n-past-more">Load 30 older notes</button></div>' : '');
-      } else pastList = '<p class="hint">No finished notes yet.</p>';
+        pastList = noteList('notes-past', 'Past pings', S.nPast, true, [['new', 'Newest first', function (a, b) { return String(b.until).localeCompare(String(a.until)) || (b.at || 0) - (a.at || 0); }], ['old', 'Oldest first', function (a, b) { return String(a.until).localeCompare(String(b.until)) || (a.at || 0) - (b.at || 0); }]]) +
+          '<p class="hint">The last ' + S.nPast.length + ' pings that have finished. Use again copies one into a new ping.</p>' + (moreOld ? '<div class="btn-row"><button type="button" class="btn" data-p="n-past-more">Load 30 older pings</button></div>' : '');
+      } else pastList = '<p class="hint">No finished pings yet.</p>';
     }
     return out + '<div class="btn-row n-pastrow">' + pastBtn + '</div>' + pastList;
   }
@@ -3063,34 +3074,34 @@
     var dows = DOW.map(function (d, i) { return '<button type="button" class="chip sq" data-p="n-dow" data-v="' + d + '" aria-pressed="' + (f.dows.indexOf(d) >= 0) + '" aria-label="' + DOWN[i] + '">' + DOWN[i] + '</button>'; }).join('');
     var when = f.start && until >= f.start ? 'Shows: ' + noteWhen({ start: f.start, until: until, dows: f.dows }) + '.' : 'The last day cannot be before the first day.';
     var single = !f.run && !f.until;
-    return '<section class="set-block n-edit"><span class="label">' + (f.id ? 'Edit this note' : 'Write a note') + '</span>' +
+    return '<section class="set-block n-edit"><span class="label">' + (f.id ? 'Edit this ping' : 'Write a ping') + '</span>' +
       '<span class="hint">Short and plain. It pops up the first time the book is opened after 10:30, and shows from the bell. No prices, PINs or staff names. A recipe name links to its card.</span>' +
-      '<div class="field"><label class="label" for="n-text">Note</label><textarea id="n-text" class="p-bulk" data-k="n-text" rows="4" maxlength="400" placeholder="For example: Barramundi is off until Thursday.">' + esc(f.text) + '</textarea><span class="hint" id="n-count">' + f.text.length + ' of 400. Ctrl+Enter saves.</span></div>' +
-      '<div class="field"><span class="label">Tag (starts the note for you)</span><div class="nt-chips" role="group" aria-label="Tag">' + tags + '</div></div>' +
+      '<div class="field"><label class="label" for="n-text">Ping</label><textarea id="n-text" class="p-bulk" data-k="n-text" rows="4" maxlength="400" placeholder="For example: Barramundi is off until Thursday.">' + esc(f.text) + '</textarea><span class="hint" id="n-count">' + f.text.length + ' of 400. Ctrl+Enter saves.</span></div>' +
+      '<div class="field"><span class="label">Tag (starts the ping for you)</span><div class="nt-chips" role="group" aria-label="Tag">' + tags + '</div></div>' +
       '<div class="field"><span class="label">How it will look</span><div id="n-prev" class="n-prev">' + draftPreviewHTML(f) + '</div></div>' +
       '<div class="field"><span class="label">Show on</span><div class="nt-chips"><button type="button" class="chip" data-p="n-quick" data-v="0" aria-pressed="' + (f.start === t && single && !f.dows.length) + '">Today</button><button type="button" class="chip" data-p="n-quick" data-v="1" aria-pressed="' + (f.start === shift(t, 1) && single && !f.dows.length) + '">Tomorrow</button>' +
       '<button type="button" class="chip" data-p="n-mode" data-v="one" aria-pressed="' + (!f.run && !f.until) + '">One day</button><button type="button" class="chip" data-p="n-mode" data-v="run" aria-pressed="' + (f.run || !!f.until) + '">Several days</button></div>' +
-      '<span class="hint">' + (f.run || f.until ? 'Tap the first day, then the last day. Tap the last day again to take it back.' : 'Tap a day to schedule the note ahead of time.') + '</span>' + dayGridHTML(f) +
+      '<span class="hint">' + (f.run || f.until ? 'Tap the first day, then the last day. Tap the last day again to take it back.' : 'Tap a day to schedule the ping ahead of time.') + '</span>' + dayGridHTML(f) +
       '<details class="n-more"' + (f.start > shift(t, 34) || (f.until && f.until > shift(t, 34)) ? ' open' : '') + '><summary>A date further ahead</summary><div class="nt-dates"><label class="nt-dl">From<input type="date" class="p-dateinput" data-k="n-start" value="' + esc(f.start) + '"' + (f.id ? '' : ' min="' + t + '"') + '></label><label class="nt-dl">Until (optional)<input type="date" class="p-dateinput" data-k="n-until" value="' + esc(f.until) + '"' + (f.start ? ' min="' + esc(f.start) + '"' : '') + '></label></div></details></div>' +
-      '<div class="field"><span class="label">Repeat every week on (optional)</span><div class="nt-chips" role="group" aria-label="Weekdays">' + dows + (f.dows.length ? '<button type="button" class="chip" data-p="n-dowclr">Clear weekdays</button>' : '') + '</div><span class="hint">With weekdays picked and no last day, the note comes back every week until you remove it.</span></div>' +
+      '<div class="field"><span class="label">Repeat every week on (optional)</span><div class="nt-chips" role="group" aria-label="Weekdays">' + dows + (f.dows.length ? '<button type="button" class="chip" data-p="n-dowclr">Clear weekdays</button>' : '') + '</div><span class="hint">With weekdays picked and no last day, the ping comes back every week until you remove it.</span></div>' +
       '<p class="nt-whenline" role="status">' + esc(when) + '</p>' +
-      '<div class="btn-row"><button type="button" class="btn dark" data-p="n-save"' + (S.nSaving ? ' disabled' : '') + '>' + (f.id ? 'Save changes' : 'Save note') + '</button><button type="button" class="btn" data-p="n-preview">Preview the popup</button><button type="button" class="btn" data-p="n-reset">Reset days</button><button type="button" class="btn" data-p="n-cancel">' + (armed('n-cancel') ? 'Tap again to discard' : f.id ? 'Cancel' : 'Close') + '</button></div>' +
+      '<div class="btn-row"><button type="button" class="btn dark" data-p="n-save"' + (S.nSaving ? ' disabled' : '') + '>' + (f.id ? 'Save changes' : 'Save ping') + '</button><button type="button" class="btn" data-p="n-preview">Preview the popup</button><button type="button" class="btn" data-p="n-reset">Reset days</button><button type="button" class="btn" data-p="n-cancel">' + (armed('n-cancel') ? 'Tap again to discard' : f.id ? 'Cancel' : 'Close') + '</button></div>' +
       '<span class="saved" role="status">' + esc(S.nMsg) + '</span></section>';
   }
   function notesEditorHTML() {
     var open = !!S.nOpen;
     return '<div class="n-ws' + (open ? ' has-ed' : '') + '">' + (open ? '<div class="n-ed">' + noteEditForm() + '</div>' : '') +
-      '<section class="set-block n-lst"><div class="n-lh"><div><span class="label">Notes set</span><span class="hint">Today first, then the days ahead.</span></div>' + (open ? '' : '<button type="button" class="btn dark" data-p="n-new">Write a note</button>') + '</div>' +
+      '<section class="set-block n-lst"><div class="n-lh"><div><span class="label">Pings set</span><span class="hint">Today first, then the days ahead.</span></div>' + (open ? '' : '<button type="button" class="btn dark" data-p="n-new">Write a ping</button>') + '</div>' +
       (open ? '' : '<span class="saved" role="status">' + esc(S.nMsg) + '</span>') + notesListHTML() + '</section></div>';
   }
   function notesPageHTML() {
-    return '<div class="p-admin"><div class="p-bar"><span>Daily notes</span><span class="p-links"><button type="button" class="p-link" data-p="notes-close">Back to the prep book</button></span></div><h2 class="p-h" id="rtitle" tabindex="-1">Daily notes</h2>' + notesEditorHTML() + '</div>';
+    return '<div class="p-admin"><div class="p-bar"><span>Shift pings</span><span class="p-links"><button type="button" class="p-link" data-p="notes-close">Back to the prep book</button></span></div><h2 class="p-h" id="rtitle" tabindex="-1">Shift pings</h2>' + notesEditorHTML() + '</div>';
   }
   function saveNote() {
     var f = S.nf;
     if (!f || S.nSaving || !fb) return;
     var text = f.text.replace(/\s+$/g, '').replace(/^\s+/g, ''), start = f.start, until = nfUntil(f), re = /^\d{4}-\d{2}-\d{2}$/;
-    if (!text) { S.nMsg = 'Write the note first.'; draw(); return; }
+    if (!text) { S.nMsg = 'Write the ping first.'; draw(); return; }
     if (!re.test(start || '') || !re.test(until)) { S.nMsg = 'Pick the first day.'; draw(); return; }
     if (until < start) { S.nMsg = 'The last day cannot be before the first day.'; draw(); return; }
     var data = { text: text.slice(0, 400), tag: f.tag, start: start, until: until, dows: f.dows.slice().sort(), removed: false, upd: now() };
@@ -3100,7 +3111,7 @@
     sset(ref, data, !!f.id).then(function () {
       S.nSaving = false; S.nf = nfNew(); S.nOpen = false; S.nMsg = 'Saved. Shows: ' + when + '.'; loadNotes(true); draw();
     }, function (e) {
-      S.nSaving = false; S.nMsg = e && e.code === 'permission-denied' ? 'Not allowed. Only the head chef and sous chefs can write notes.' : 'Could not save. Check the connection and try again.'; draw();
+      S.nSaving = false; S.nMsg = e && e.code === 'permission-denied' ? 'Not allowed. Ask the head chef to tick Pings for you in the admin panel.' : 'Could not save. Check the connection and try again.'; draw();
     });
   }
   function removeNote(id) {
@@ -3110,7 +3121,7 @@
       S.nMsg = 'Removed.'; loadNotes(true); draw();
     }, function () { S.nMsg = 'Could not remove. Check the connection and try again.'; draw(); });
   }
-  /* finished notes: one query when the head chef asks for them (30 at most) */
+  /* finished pings: one query when asked for (30 at most) */
   function loadPastNotes(more) {
     if (!fb || S.nPast === 'loading') return;
     S.nPastN = more ? (S.nPastN || 30) + 30 : 30;
@@ -4191,7 +4202,7 @@
     if (a === 'pin-go') { submitKitchenPin(); return; }
     if (a === 'pin-forget') { if (!arm('pin-forget')) return; S.pin = ''; lsSet('lk.prep.pin', ''); S.config = null; S.configState = 'idle'; stopLive(); gForget(); draw(); return; }
     if (a === 'retry') { cfgKey = ''; connect(); return; }
-    if (a === 'notes-open') { if (isSous()) { S.notesOpen = true; S.nf = null; S.nOpen = false; S.nMsg = ''; loadNotes(); draw(); window.scrollTo(0, 0); } return; }
+    if (a === 'notes-open') { if (canPing()) { S.notesOpen = true; S.nf = null; S.nOpen = false; S.nMsg = ''; loadNotes(); draw(); window.scrollTo(0, 0); } return; }
     if (a === 'notes-close') { S.notesOpen = false; draw(); return; }
     if (a === 'n-new') { S.nf = nfNew(); S.nfSnap = JSON.stringify(S.nf); S.nOpen = true; S.nMsg = ''; draw(); var ntx = S.root.querySelector('[data-k="n-text"]'); if (ntx) { focusNoteText(ntx); } return; }
     if (a === 'n-tag') {
@@ -4225,7 +4236,7 @@
     if (a === 'n-preview') {
       var pf = S.nf, pd = pf && pf.text.replace(/\s+/g, '') ? nfDraft(pf) : null;
       if (pd) noteOpen({ list: [pd], label: noteWhen(pd) + (pd.start > dayNow() ? ' (not saved yet)' : ' (not saved)') });
-      else if (todaysNotes().length) noteOpen(); else toast('Write a note first, or no note is set for today yet.');
+      else if (todaysNotes().length) noteOpen(); else toast('Write a ping first, or no ping is set for today yet.');
       return;
     }
     if (a === 'mn-open') { if (isSous()) { S.minOpen = true; S.mMsg = ''; S.mf = null; loadMinutes(true); draw(); window.scrollTo(0, 0); } return; }
@@ -4430,7 +4441,7 @@
     if (!a || !S.draft) return;
     if (a === 'badges') { S.draft.showBadges = el.checked; return; }
     var i = +el.getAttribute('data-i'), p = S.draft.people[i];
-    if (a === 'role') { p.role = el.value; var r = ROLES[el.value]; p.add = r.add; p.tick = r.tick; p.del = r.del; draw(); }
+    if (a === 'role') { p.role = el.value; var r = ROLES[el.value]; p.add = r.add; p.tick = r.tick; p.del = r.del; p.ping = r.ping; draw(); }
     else if (a === 'perm') { p[el.getAttribute('data-perm')] = el.checked; }
     else if (a === 'active') { p.active = el.checked; draw(); }
   }
