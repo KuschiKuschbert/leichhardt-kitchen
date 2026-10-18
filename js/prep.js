@@ -1867,7 +1867,7 @@
   /* ---------- the order list ----------
      Everyone writes today's order list. The head chef and sous chefs see what is still to order across the last 14 days,
      or any single day, and tick lines off as ordered. Lines whose name matches a recipe ingredient link to those recipes. */
-  var ORD_DAYS = 14;
+  var ORD_DAYS = 14, ORD_HIDE = 10 * 60000, ordHideTimer = null;
   function ordCol(date) { return fb.fs.collection.apply(null, [fb.db].concat(base(), ['orders', date, 'lines'])); }
   function ordRef(date, id) { return fb.fs.doc.apply(null, [fb.db].concat(base(), ['orders', date, 'lines', id])); }
   function okey(t) { return String(t || '').toLowerCase().replace(/\s+/g, ' ').trim(); }
@@ -2015,18 +2015,29 @@
     if (view === 'all') loadOrdAll(false);
     var live = (S.ordLines || []).filter(function (x) { return !x.deleted; });
     var nOrd = live.filter(function (x) { return x.ordered; }).length;
+    /* on today's list, a line that was ticked as ordered stays for 10 minutes (so a mis-tap can be undone), then leaves the list. Other days show everything. */
+    var shown = live.filter(function (x) { return !(S.ordDate === today && x.ordered && x.orderedAt && Date.now() - x.orderedAt > ORD_HIDE); });
+    clearTimeout(ordHideTimer);
+    var nextHide = Infinity;
+    if (S.ordDate === today) live.forEach(function (x) { if (x.ordered && x.orderedAt) { var left = x.orderedAt + ORD_HIDE - Date.now(); if (left > 0 && left < nextHide) nextHide = left; } });
+    if (nextHide < Infinity) ordHideTimer = setTimeout(function () { if (S.name === 'orders') draw(); }, nextHide + 500);
     var tabs = br ? '<div class="nb-nav o-nav"><button type="button" class="chip" data-p="oview" data-v="day" aria-pressed="' + (view === 'day') + '">By day</button><button type="button" class="chip" data-p="oview" data-v="all" aria-pressed="' + (view === 'all') + '">Everything to order</button>' +
       (view === 'day' ? '<button type="button" class="chip" data-p="oday" data-d="-1" aria-label="Back one day">&lsaquo;</button><button type="button" class="chip" data-p="otoday" aria-pressed="' + (S.ordDate === today) + '">Today</button><button type="button" class="chip" data-p="oday" data-d="1" aria-label="Forward one day">&rsaquo;</button>' : '') + '</div>' : '';
     var add = can('add') && S.ordDate === today ?
       '<form class="nb-add" data-p-form="oadd"><div class="nb-add-row"><label class="visually-hidden" for="o-text">Item to order</label><input id="o-text" class="nb-in nb-in-text" data-k="o-text" autocomplete="off" placeholder="What do we need to order?" maxlength="120" value="' + esc(S.otext) + '">' +
       '<label class="visually-hidden" for="o-qty">Amount</label><input id="o-qty" class="nb-in nb-in-qty" data-k="o-qty" autocomplete="off" placeholder="Amount" maxlength="40" value="' + esc(S.oqty) + '"><button type="submit" class="nb-addbtn">Add</button></div>' +
       '<div class="nb-sugg" id="o-sugg">' + ordSuggHTML() + '</div><p class="nb-hint" id="o-hint" aria-live="polite">' + esc(oHintText(S.otext)) + '</p>' + oRegsHTML() + '</form>' : (S.ordDate === today ? '<p class="hint">You can read the order list but not write in it.</p>' : '');
+    var moved = live.filter(function (x) { return shown.indexOf(x) < 0; }).sort(function (a, b) { return (b.orderedAt || 0) - (a.orderedAt || 0); });
+    var orderedBox = view === 'day' && moved.length ? '<h3 class="nb-sh">Ordered today (' + moved.length + ')</h3><ul class="nb-done">' + moved.map(function (x) {
+      return '<li><span class="nb-dt">' + (x.orderedAt ? clock(x.orderedAt) : '') + '</span><span class="nb-dx">' + esc(x.text) + (x.qty ? ' <em>' + esc(x.qty) + '</em>' : '') + '</span><span class="nb-dw">' + esc(x.orderedBy || '') + '</span>' +
+        (canBrowse() ? '<button type="button" class="p-x nb-undo" data-p="otick" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-pressed="true" aria-label="' + esc('Not ordered after all: ' + x.text) + '">Undo</button>' : '') + '</li>';
+    }).join('') + '</ul>' : '';
     var body = view === 'all' ? ordAllHTML() :
       (S.ordState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' :
-        (live.length ? '<ul class="nb-rows">' + live.slice().sort(function (a, b) { return (a.ordered ? 1 : 0) - (b.ordered ? 1 : 0) || (a.addedAt || 0) - (b.addedAt || 0); }).map(ordRow).join('') + '</ul>' : (S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : '<p class="nb-empty">Loading...</p>')));
+        (shown.length ? '<ul class="nb-rows">' + shown.slice().sort(function (a, b) { return (a.ordered ? 1 : 0) - (b.ordered ? 1 : 0) || (a.addedAt || 0) - (b.addedAt || 0); }).map(ordRow).join('') + '</ul>' : (live.length ? '<p class="nb-empty">Everything on this list has been ordered. See Ordered today below.</p>' : S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : '<p class="nb-empty">Loading...</p>')));
     return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' : '') + '</span><span class="p-links"><a class="p-link" href="#/prep">Prep list</a>' + '' + '</span></div>' + tabs +
       '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + (view === 'all' ? 'To order' : 'Order list') + '</h2><span class="nb-date">' + (view === 'all' ? 'Across the last ' + ORD_DAYS + ' days' : esc(longDate(S.ordDate))) + '</span></div>' +
-      (view === 'day' ? '<div class="nb-prog" role="status">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') + '</header><div class="nb-body">' + body + '</div><div class="nb-foot">' + (view === 'day' ? add : '') + '</div></section>';
+      (view === 'day' ? '<div class="nb-prog" role="status">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') + '</header><div class="nb-body">' + body + orderedBox + '</div><div class="nb-foot">' + (view === 'day' ? add : '') + '</div></section>';
   }
 
 
