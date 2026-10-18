@@ -1773,7 +1773,7 @@
     if (S.date !== today && !canBrowse() && !S.user) { S.date = today; S.tab = ''; watchItems(); }
     if (S.authed && fb) { loadPast(); loadWRecent(false); }
     S.week = S.past ? weekRanks() : null;
-    maybeRoll(); maybeLearn(); loadWNote();
+    maybeRoll(); ordRoll(); maybeLearn(); loadWNote();
     var live = S.items.filter(function (x) { return !x.deleted; }), doneN = live.filter(function (x) { return x.done; }).length;
     var removed = S.items.filter(function (x) { return x.deleted; });
     var secs = {}, tabs = [];
@@ -1853,8 +1853,8 @@
     S.ordStats = { loading: true, lines: [] };
     var today = ymd(new Date()), dates = [], i;
     for (i = 0; i < 30; i++) dates.push(shift(today, -i));
-    Promise.all(dates.map(function (d) { return fb.fs.getDocs(ordCol(d)).then(function (s) { return s.docs.map(function (x) { var v = x.data(); v.date = d; return v; }); }, function () { return []; }); })).then(function (l) {
-      S.ordStats = { loading: false, lines: [].concat.apply([], l) }; draw();
+    Promise.all(dates.map(function (d) { return fb.fs.getDocs(ordCol(d)).then(function (s) { return s.docs.map(function (x) { var v = x.data(); v.id = x.id; v.date = d; return v; }); }, function () { return []; }); })).then(function (l) {
+      S.ordStats = { loading: false, lines: ordNewest([].concat.apply([], l)) }; draw();
     });
   }
   function blankRec(id) { return { id: id, w: 0, days: {}, secDay: {}, secs: {}, t: 0, tdays: {}, tsecs: {}, tsecDay: {}, last: '' }; }
@@ -2201,6 +2201,46 @@
     });
   }
   function ordReload() { S.ordAllAt = 0; if (S.ordView === 'all') loadOrdAll(true); }
+  /* Like the prep list: anything not ordered on the last written day rolls onto today's order list by itself, every day
+     until someone ticks it as ordered. The copy's id comes from the first line (root), so two phones rolling at once
+     write the same line once. Each phone tries once a day (lk.ord.rolled), so the reads stay small. */
+  function ordRoll() {
+    var today = ymd(new Date());
+    if (!S.authed || !fb || !can('add') || S.configState !== 'ok' || S.ordRolling || lsGet('lk.ord.rolled') === today) return;
+    S.ordRolling = true;
+    var dates = [], k;
+    for (k = 1; k <= 7; k++) dates.push(shift(today, -k));
+    Promise.all([fb.fs.getDocs(ordCol(today))].concat(dates.map(function (d) { return fb.fs.getDocs(ordCol(d)); }))).then(function (res) {
+      var have = {};
+      res[0].docs.forEach(function (d) { have[d.id] = true; });
+      var src = null, j;
+      for (j = 1; j < res.length && !src; j++) {
+        var docs = res[j].docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }).filter(function (x) { return !x.deleted; });
+        if (docs.length) src = { date: dates[j - 1], items: docs };
+      }
+      var jobs = [];
+      (src ? src.items : []).forEach(function (x) {
+        if (x.ordered) return;
+        var root = x.root || x.id, id = 'r' + today.replace(/-/g, '') + '-' + root;
+        if (have[id]) return;
+        have[id] = true;
+        jobs.push(['set', ordRef(today, id), {
+          text: x.text, qty: x.qty || '', recipes: x.recipes || [], addedBy: 'Rolled over', addedById: '', addedAt: Date.now(), ordered: false, deleted: false,
+          rolled: (x.rolled || 0) + 1, root: root, from: x.id, rolledFrom: src.date, since: x.since || src.date, origBy: x.origBy || x.addedBy || ''
+        }]);
+      });
+      if (!jobs.length) { S.ordRolling = false; lsSet('lk.ord.rolled', today); return; }
+      return W(jobs.slice(0, 400)).then(function () {
+        S.ordRolling = false; lsSet('lk.ord.rolled', today); ordReload();
+        if (S.name === 'orders') toast(jobs.length + (jobs.length === 1 ? ' line' : ' lines') + ' not ordered yet rolled over from ' + dayName(src.date).toLowerCase());
+      });
+    }).catch(function () { S.ordRolling = false; });
+  }
+  /* a line that rolled onto a later day is shown once, as its newest copy */
+  function ordNewest(list) {
+    var gone = {}; list.forEach(function (x) { if (x.from) gone[x.from] = 1; });
+    return list.filter(function (x) { return !gone[x.id]; });
+  }
   function addOrder(oneTapAdd) {
     var t = S.otext.trim();
     if (!t || !can('add')) return;
@@ -2260,17 +2300,18 @@
   }
   function ordRow(x) {
     var canTick = canBrowse() && !x.deleted;
-    var by = x.ordered && x.orderedBy ? 'Ordered by ' + esc(x.orderedBy) : esc(x.addedBy || '');
+    var by = x.ordered && x.orderedBy ? 'Ordered by ' + esc(x.orderedBy) : (x.rolled ? (x.origBy ? 'from ' + esc(x.origBy) : '') : esc(x.addedBy || ''));
     return '<li class="nb-row' + (x.ordered ? ' is-done' : '') + (x.deleted ? ' is-removed' : '') + '">' +
       '<button type="button" class="nb-box" data-p="otick" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-pressed="' + !!x.ordered + '" aria-label="' + esc((x.ordered ? 'Not ordered: ' : 'Ordered: ') + x.text) + '"' + (canTick ? '' : ' disabled') + '>' + (x.ordered ? TICK : BOX) + '</button>' +
-      '<span class="nb-t"' + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + recipeChips(x) + '</span>' +
+      '<span class="nb-t"' + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') +
+      (x.rolled ? ' <span class="nb-roll" title="Not ordered yet, so it rolled over">Since ' + esc(dayShort(x.since || x.rolledFrom || x.date)) + '</span>' : '') + recipeChips(x) + '</span>' +
       '<span class="nb-by">' + by + '</span>' +
       (canBrowse() && can('del') && !x.deleted && !x.ordered ? '<button type="button" class="p-x" data-p="odel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') +
       (canBrowse() && can('del') && x.deleted ? '<button type="button" class="p-x" data-p="orestore" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Put back ' + x.text) + '">Put back</button>' : '') + '</li>';
   }
   function ordGroups() {
     var map = {}, order = [];
-    (S.ordAll || []).filter(function (x) { return !x.deleted && !x.ordered; }).sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }).forEach(function (x) {
+    ordNewest(S.ordAll || []).filter(function (x) { return !x.deleted && !x.ordered; }).sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }).forEach(function (x) {
       var k = okey(x.text); if (!k) return;
       if (!map[k]) { map[k] = { key: k, text: x.text, lines: [] }; order.push(k); }
       map[k].lines.push(x); map[k].text = x.text;
@@ -2295,7 +2336,7 @@
     S.ordHistBusy = true;
     var dates = [], i; for (i = 1; i <= 14; i++) dates.push(shift(today, -i));
     Promise.all(dates.map(function (d) { return fb.fs.getDocs(ordCol(d)).then(function (sn) { return sn.docs.map(function (x) { var v = x.data(); v.date = d; return v; }); }, function () { return []; }); })).then(function (l) {
-      S.ordHist = [].concat.apply([], l).filter(function (x) { return !x.deleted; }); S.ordHistFor = today; S.ordHistBusy = false; draw();
+      S.ordHist = [].concat.apply([], l).filter(function (x) { return !x.deleted && !x.rolled; }); S.ordHistFor = today; S.ordHistBusy = false; draw();
     });
   }
   function oRegsHTML() {
@@ -2321,6 +2362,7 @@
     var p = me(), br = canBrowse(), view = br ? (S.ordView || 'day') : 'day', today = ymd(new Date());
     if (!br && S.ordDate !== today) { S.ordDate = today; watchOrders(); }
     if (view === 'all') loadOrdAll(false);
+    if (S.ordDate === today && S.ordState === 'ok') ordRoll();
     var live = (S.ordLines || []).filter(function (x) { return !x.deleted; });
     var nOrd = live.filter(function (x) { return x.ordered; }).length;
     /* on today's list, a line that was ticked as ordered stays for 10 minutes (so a mis-tap can be undone), then leaves the list. Other days show everything. */
