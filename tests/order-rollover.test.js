@@ -25,6 +25,7 @@ const rid = id => 'r' + today.replace(/-/g, '') + '-' + id;
   const cream = s[fsKey(['orders', today, 'lines', rid('y1')])], flour = s[fsKey(['orders', today, 'lines', rid('f1')])];
   ok(!!cream && cream.rolled === 1 && cream.from === 'y1' && cream.ordered === false, 'rollover: a line not ordered yesterday is on today\'s list');
   ok(!!flour && flour.rolled === 2 && flour.since === ago2 && flour.origBy === 'Ann', 'rollover: it keeps rolling, counting days and the first day');
+  ok(!!cream && cream.origAt === L.NOW - 90000000 && !!flour && flour.origAt === 0, 'rollover: origAt is the first written time (0 for a line rolled before it was kept)');
   ok(!s[fsKey(['orders', today, 'lines', rid('y2')])], 'rollover: an ordered line does not roll');
   ok(!s[fsKey(['orders', today, 'lines', rid('y3')])], 'rollover: a removed line does not roll');
   ok(/Since/.test(await p.evaluate(() => document.querySelector('.o-page').textContent)), 'rollover: the line shows since when it is waiting');
