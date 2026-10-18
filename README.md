@@ -134,6 +134,7 @@ There's no build step and nothing to install. To try it on a computer, open `ind
 ### Layout and admin, round three
 
 - **One top bar everywhere:** every page has the same dark top bar as the landing page: "Kitchen Book" on the left (goes home), Recipes, Prep, Orders and Waste in the middle, Admin (key) and Settings on the right. The phone tab bar is dark on every page too.
+- **Pass search:** typing in the search box shows only the dishes and batches that match, and hides empty shelves. The count reads "5 of 114 match". Clearing the box brings everything back. (The allergen lens still fades instead of hiding.)
 - **Recipes:** the recipe count sits above the search box and the Pass / Tiles switch sits right next to it.
 - **No flash when opening Prep, Orders or Wastage:** the app connects to the prep book in the background on any page, and while it connects the page shows its own name with "Loading..." instead of a generic prep book card.
 - **Admin filters:** a filter bar on Insights (time range, section, person, weekday), Team (time range) and Waste (time range, section, reason, weekday). Filters are kept on the device. Numbers are compared with the same number of days before (60 days are read).
