@@ -171,13 +171,13 @@ window.LK_DATA = {
       yield: 'Full serve 600 g ribs, half 300 g. Both get 150 g new slaw. Half serve gets 4 corn ribs, full serve 6.',
       ingredients: [
         { q: '600 g or 300 g', name: 'Pork ribs', note: 'full or half serve, Barkers Creek, bought in' },
-        { q: '[Qty]', name: 'Bourbon BBQ sauce', note: 'drizzled on top of the ribs', tags: ['Gluten?', 'Soy?'] },
+        { q: '[Qty]', name: 'Bourbon BBQ sauce', note: 'drizzled on top of the ribs', link: 'bourbon-bbq-sauce' },
         { q: '150 g', name: 'New slaw', link: 'slaw' },
         { q: '6 or 4', name: 'Corn ribs', note: 'full serve 6, half serve 4', link: 'corn' }
       ],
       pins: [
         { label: 'Pork ribs', x: 46.2, y: 35.8, tags: [], note: 'Full serve 600 g, half 300 g, cooked as current. Check the glaze and seasoning labels.' },
-        { label: 'Bourbon BBQ sauce', x: 55.0, y: 41.0, side: 'right', tags: ['Gluten?', 'Soy?'], note: 'Drizzled on top of the ribs.' },
+        { label: 'Bourbon BBQ sauce', x: 55.0, y: 41.0, side: 'right', link: 'bourbon-bbq-sauce', note: 'Drizzled on top of the ribs.' },
         { label: 'Corn ribs', x: 75.5, y: 62.3, link: 'corn' },
         { label: 'New slaw', x: 34.9, y: 73.6, link: 'slaw' }
       ],
@@ -262,20 +262,20 @@ window.LK_DATA = {
     },
     {
       id: 'skillet', no: '12', kind: 'dessert', forLine: 'Plate', name: 'Skillet Cookie', art: 'skillet', avc: 'Skillet Cookie Portion S26',
-      yield: 'Per plate. 300 g cookie, ice cream, butterscotch sauce.',
+      yield: 'Per plate. 140 g cookie, ice cream, butterscotch sauce.',
       ingredients: [
-        { q: '300 g', name: 'Skillet cookie dough', link: 'cookie-dough' },
+        { q: '140 g', name: 'Skillet cookie dough', note: 'one ball', link: 'cookie-dough' },
         { q: '80 g', name: 'Vanilla ice cream', tags: ['Milk'] },
         { q: 'About 75 ml', name: 'Butterscotch sauce', link: 'butterscotch' }
       ],
       pins: [
-        { label: 'Cookie', x: 34.0, y: 58.5, side: 'left', tags: [], note: '300 g dough, baked in the skillet. Card to come.' },
+        { label: 'Cookie', x: 34.0, y: 58.5, side: 'left', link: 'cookie-dough', note: '140 g dough, baked in the skillet.' },
         { label: 'Butterscotch sauce', x: 44.3, y: 41.5, side: 'right', link: 'butterscotch' },
         { label: 'Vanilla ice cream', x: 50.9, y: 51.9, side: 'right', tags: ['Milk'], note: '80 g.' }
       ],
       sections: [
-        { title: 'Cooking', steps: ['[Bake temperature and time]'] },
-        { title: 'Plating', steps: ['[How the butterscotch goes on]'] }
+        { title: 'Cooking', steps: ['Spray the cast iron pan with canola spray and press the cookie into the pan slightly so it spreads evenly while baking.', 'Bake at 190 °C for 9 to 10 minutes.'] },
+        { title: 'Plating', steps: ['Set the cast iron pan on a wooden serving board.', 'Quenelle the ice cream on top and drizzle lightly with butterscotch sauce.', 'Dust with icing sugar and serve.'] }
       ],
       contains: [{ allergen: 'Milk', from: 'ice cream' }], check: [],
       labelNote: 'Check the ice cream label.'
@@ -1018,13 +1018,13 @@ window.LK_DATA = {
       yield: 'Per serve. 7 pieces of fried beetroot tossed in chilli jam, piled in the middle, Korean-style cucumber on top.',
       ingredients: [
         { q: '7 pieces', name: 'Crispy beetroot bites', note: 'fried', tags: ['Gluten?'] },
-        { q: '[Qty]', name: 'Caramelised chilli jam' },
+        { q: '[Qty]', name: 'Caramelised chilli jam', link: 'chilli-jam' },
         { q: '[Qty]', name: 'Korean-style cucumber', tags: ['Sesame?', 'Soy?'] }
       ],
       pins: [
         { label: 'Crispy beetroot bites', x: 36.3, y: 56.6, side: 'left', tags: ['Gluten?'], note: '7 pieces, fried, tossed in chilli jam, piled in the middle.' },
         { label: 'Korean-style cucumber', x: 50.5, y: 38.2, side: 'right', tags: ['Sesame?', 'Soy?'], note: 'On top of the pile.' },
-        { label: 'Caramelised chilli jam', x: 41.5, y: 46.5, side: 'left', tags: [], note: 'The bites are tossed in it.' }
+        { label: 'Caramelised chilli jam', x: 41.5, y: 46.5, side: 'left', link: 'chilli-jam', note: 'The bites are tossed in it.' }
       ],
       sections: [
         { title: 'Plating', steps: ['Toss the 7 beetroot bites in the caramelised chilli jam.', 'Pile them in the middle of the plate.', 'Korean-style cucumber on top.'] }
@@ -1089,13 +1089,13 @@ window.LK_DATA = {
       yield: 'Per serve. Crispy pork belly tossed in chilli jam, piled in the middle, Korean-style cucumber on top.',
       ingredients: [
         { q: '280 to 290 g', name: 'Roasted pork belly', note: 'cut into bites, portioned in a sandwich bag', link: 'pork-belly-batch' },
-        { q: '[Qty]', name: 'Caramelised chilli jam' },
+        { q: '[Qty]', name: 'Caramelised chilli jam', link: 'chilli-jam' },
         { q: '[Qty]', name: 'Korean-style cucumber', tags: ['Sesame?', 'Soy?'] }
       ],
       pins: [
         { label: 'Pork belly bites', x: 36.3, y: 56.6, side: 'left', link: 'pork-belly-batch', note: 'Crispy, tossed in chilli jam, piled in the middle.' },
         { label: 'Korean-style cucumber', x: 50.5, y: 38.2, side: 'right', tags: ['Sesame?', 'Soy?'], note: 'On top of the pile.' },
-        { label: 'Caramelised chilli jam', x: 37.7, y: 47.2, side: 'left', tags: [], note: 'The bites are tossed in it.' }
+        { label: 'Caramelised chilli jam', x: 37.7, y: 47.2, side: 'left', link: 'chilli-jam', note: 'The bites are tossed in it.' }
       ],
       sections: [
         { title: 'Prep ahead', steps: ['Portion the roasted pork belly bites, 280 to 290 g per bag, into sandwich bags.'] },
@@ -1121,13 +1121,13 @@ window.LK_DATA = {
       yield: 'Per serve. Smoked riblets tossed in bourbon BBQ sauce, topped with cowboy candy.',
       ingredients: [
         { q: '390 to 410 g', name: 'Pork riblets', note: 'smoked, cut from the pork ribs into individual riblets, portioned in a sandwich bag' },
-        { q: '[Qty]', name: 'Bourbon BBQ sauce', tags: ['Gluten?', 'Soy?'] },
-        { q: '[Qty]', name: 'Cowboy candy', note: 'candied jalapeños' }
+        { q: '[Qty]', name: 'Bourbon BBQ sauce', link: 'bourbon-bbq-sauce' },
+        { q: '[Qty]', name: 'Cowboy candy', note: 'candied jalapeños', link: 'cowboy-candy' }
       ],
       pins: [
         { label: 'Pork riblets', x: 36.8, y: 54.7, side: 'right', tags: [], note: 'Smoked. 390 to 410 g.' },
-        { label: 'Bourbon BBQ sauce', x: 56.6, y: 33.7, side: 'left', tags: ['Gluten?', 'Soy?'], note: 'The riblets are tossed in it.' },
-        { label: 'Cowboy candy', x: 48.1, y: 44.3, side: 'left', tags: [], note: 'Candied jalapeños. On top.' }
+        { label: 'Bourbon BBQ sauce', x: 56.6, y: 33.7, side: 'left', link: 'bourbon-bbq-sauce', note: 'The riblets are tossed in it.' },
+        { label: 'Cowboy candy', x: 48.1, y: 44.3, side: 'left', link: 'cowboy-candy', note: 'Candied jalapeños. On top.' }
       ],
       sections: [
         { title: 'Prep ahead', steps: ['Cut the pork ribs into individual riblets.', 'Portion the riblets, 390 to 410 g per bag, into sandwich bags. One bag is one serve.'] },
@@ -1181,13 +1181,13 @@ window.LK_DATA = {
       menu: 'Beef Cheek: red wine-braised beef cheek, roasted honey pumpkin purée, fried onion, herb oil.',
       yield: 'Per plate. Braised beef cheek, pumpkin purée, fried onion, herb oil.',
       ingredients: [
-        { q: '[Qty]', name: 'Beef cheek', note: 'braised in red wine' },
+        { q: '[Qty]', name: 'Beef cheek', note: 'braised in red wine', link: 'beef-cheek-batch' },
         { q: '[Qty]', name: 'Roasted honey pumpkin purée' },
         { q: '[Qty]', name: 'Fried onion', tags: ['Gluten?'] },
         { q: '[Qty]', name: 'Herb oil' }
       ],
       pins: [
-        { label: 'Beef cheek', x: 40.5, y: 47.2, side: 'left', tags: [], note: 'Red wine braised.' },
+        { label: 'Beef cheek', x: 40.5, y: 47.2, side: 'left', link: 'beef-cheek-batch', note: 'Red wine braised.' },
         { label: 'Roasted honey pumpkin purée', x: 63.2, y: 59.4, side: 'left', tags: [], note: '' },
         { label: 'Fried onion', x: 50.9, y: 37.7, side: 'right', tags: ['Gluten?'], note: 'On top.' },
         { label: 'Herb oil', x: 69.8, y: 47.2, side: 'right', tags: [], note: 'Dots round the plate.' }
@@ -1301,7 +1301,7 @@ window.LK_DATA = {
       ingredients: [
         { q: '[Qty]', name: 'Pumpkin', note: 'five-spice roasted' },
         { q: '[Qty]', name: 'Maple' },
-        { q: '[Qty]', name: 'Seed granola', tags: ['Gluten?', 'Sesame?'] },
+        { q: '[Qty]', name: 'Seed granola', link: 'seed-granola' },
         { q: '[Qty]', name: 'Basil pesto', tags: ['Tree nut?', 'Milk?'] },
         { q: '[Qty]', name: 'Feta', tags: ['Milk'] },
         { q: '[Qty]', name: 'Fried kale' }
@@ -1309,7 +1309,7 @@ window.LK_DATA = {
       pins: [
         { label: 'Pumpkin', x: 36.8, y: 37.7, side: 'left', tags: [], note: 'Five-spice roasted.' },
         { label: 'Maple', x: 55.7, y: 37.5, side: 'right', tags: [], note: 'Drizzled.' },
-        { label: 'Seed granola', x: 44.1, y: 49.1, side: 'left', tags: ['Gluten?', 'Sesame?'], note: '' },
+        { label: 'Seed granola', x: 44.1, y: 49.1, side: 'left', link: 'seed-granola', note: '' },
         { label: 'Basil pesto', x: 69.1, y: 62.5, side: 'right', tags: ['Tree nut?', 'Milk?'], note: '' },
         { label: 'Feta', x: 54.7, y: 52.7, side: 'right', tags: ['Milk'], note: '' },
         { label: 'Fried kale', x: 33.0, y: 62.3, side: 'left', tags: [], note: '' }
@@ -1363,7 +1363,7 @@ window.LK_DATA = {
         { q: '[Qty]', name: 'Maple butter', note: 'glaze on the cornbread', tags: ['Milk'] },
         { q: '[Qty]', name: 'Alabama white sauce', note: '[recipe to confirm]', tags: ['Egg?'] },
         { q: '[Qty]', name: 'Double-smoked BBQ sauce', tags: ['Gluten?', 'Soy?'] },
-        { q: '[Qty]', name: 'Bourbon BBQ sauce', tags: ['Gluten?', 'Soy?'] },
+        { q: '[Qty]', name: 'Bourbon BBQ sauce', link: 'bourbon-bbq-sauce' },
         { q: '[Qty]', name: 'Bread and butter pickles', note: 'bought in' }
       ],
       pins: [
@@ -1375,7 +1375,7 @@ window.LK_DATA = {
         { label: 'Brisket', x: 83, y: 54.7, side: 'left', tags: [], note: 'Smoked, sliced.' },
         { label: 'Bread and butter pickles', x: 17.9, y: 64.6, side: 'left', tags: [], note: '' },
         { label: 'Double-smoked BBQ sauce', x: 29.7, y: 66, side: 'right', tags: ['Gluten?', 'Soy?'], note: '' },
-        { label: 'Bourbon BBQ sauce', x: 41.5, y: 64.2, side: 'right', tags: ['Gluten?', 'Soy?'], note: '' },
+        { label: 'Bourbon BBQ sauce', x: 41.5, y: 64.2, side: 'right', link: 'bourbon-bbq-sauce', note: '' },
         { label: 'Alabama white sauce', x: 53.3, y: 66, side: 'right', tags: ['Egg?'], note: 'Recipe to confirm.' }
       ],
       sections: [
@@ -1400,7 +1400,7 @@ window.LK_DATA = {
         { q: '[Qty]', name: 'Maple butter', note: 'glaze on the cornbread', tags: ['Milk'] },
         { q: '[Qty]', name: 'Alabama white sauce', note: '[recipe to confirm]', tags: ['Egg?'] },
         { q: '[Qty]', name: 'Double-smoked BBQ sauce', tags: ['Gluten?', 'Soy?'] },
-        { q: '[Qty]', name: 'Bourbon BBQ sauce', tags: ['Gluten?', 'Soy?'] },
+        { q: '[Qty]', name: 'Bourbon BBQ sauce', link: 'bourbon-bbq-sauce' },
         { q: '[Qty]', name: 'Bread and butter pickles', note: 'bought in' }
       ],
       pins: [
@@ -1414,7 +1414,7 @@ window.LK_DATA = {
         { label: 'Sliders', x: 92.9, y: 62.3, side: 'left', tags: ['Gluten?'], note: 'Filling to confirm.' },
         { label: 'Bread and butter pickles', x: 13.2, y: 64.6, side: 'left', tags: [], note: '' },
         { label: 'Double-smoked BBQ sauce', x: 25, y: 66, side: 'right', tags: ['Gluten?', 'Soy?'], note: '' },
-        { label: 'Bourbon BBQ sauce', x: 36.8, y: 64.2, side: 'right', tags: ['Gluten?', 'Soy?'], note: '' },
+        { label: 'Bourbon BBQ sauce', x: 36.8, y: 64.2, side: 'right', link: 'bourbon-bbq-sauce', note: '' },
         { label: 'Alabama white sauce', x: 48.6, y: 66, side: 'right', tags: ['Egg?'], note: 'Recipe to confirm.' }
       ],
       sections: [
@@ -2132,6 +2132,149 @@ window.LK_DATA = {
       contains: [{ allergen: 'Milk', from: 'sour cream, cream cheese, mozzarella' }],
       check: [],
       labelNote: 'Check the supplier labels for allergens, especially the caramelised onion. The cob loaf itself has gluten (see the Brisket Cob card).'
+    },
+    {
+      id: 'bourbon-bbq-sauce', no: '105', kind: 'batch', forLine: 'For the ribs, riblets and smoked boards', name: 'Bourbon BBQ Sauce', short: 'Bourbon BBQ', avc: 'Bourbon BBQ Sauce Batch A25',
+      yield: 'Batch: 5 litres.',
+      ingredients: [
+        { q: '4 kg', name: 'Heinz BBQ sauce', note: 'gluten free' },
+        { q: '250 g', name: 'Bourbon BBQ dry rub', note: 'Krio Krush', tags: ['Gluten?', 'Soy?'] },
+        { q: '1 kg', name: 'Hickory smoked BBQ sauce', note: 'Sunshine', tags: ['Gluten?', 'Soy?'] }
+      ],
+      sections: [
+        { title: 'Method', steps: ['Combine all ingredients.'] }
+      ],
+      labelNote: 'Check the supplier labels for allergens on the dry rub and the hickory smoked BBQ sauce.'
+    },
+    {
+      id: 'chilli-jam', no: '106', kind: 'batch', forLine: 'For the beetroot bites and the pork belly bites', name: 'Chilli Jam', short: 'Chilli jam',
+      yield: 'Batch: 2000 g.',
+      ingredients: [
+        { q: '500 g', name: 'Gochujang', tags: ['Gluten?', 'Soy?'] },
+        { q: '1 kg', name: 'Red capsicum' },
+        { q: '250 g', name: 'Red chilli' },
+        { q: '100 g', name: 'Crushed garlic' },
+        { q: '100 g', name: 'Crushed ginger' },
+        { q: '150 g', name: 'Caster sugar' },
+        { q: '150 ml', name: 'Rice wine vinegar' },
+        { q: '20 g', name: 'Salt' }
+      ],
+      sections: [
+        { title: 'Method', steps: ['Roast and blitz the capsicum and chilli.', 'Add all the ingredients to a pot.', '[Add water to the right consistency: rest of the step to confirm]'] }
+      ],
+      labelNote: 'Check the gochujang label for allergens.'
+    },
+    {
+      id: 'korean-dressing', no: '107', kind: 'batch', forLine: 'For the Korean-style cucumber', name: 'Korean Dressing', short: 'Korean dressing',
+      yield: 'Batch: 1500 ml.',
+      ingredients: [
+        { q: '300 g', name: 'Gochujang hot pepper paste', tags: ['Gluten?', 'Soy?'] },
+        { q: '300 g', name: 'Caster sugar' },
+        { q: '150 ml', name: 'Soy sauce', tags: ['Soy', 'Gluten?'] },
+        { q: '200 g', name: 'Crushed ginger' },
+        { q: '100 g', name: 'White sesame seeds', tags: ['Sesame'] },
+        { q: '300 ml', name: 'Sesame oil', tags: ['Sesame'] },
+        { q: '300 ml', name: 'Rice wine vinegar' },
+        { q: '0.5 bunch', name: 'Spring onion' }
+      ],
+      sections: [
+        { title: 'Method', steps: ['[Method to confirm]'] }
+      ],
+      labelNote: 'Check the gochujang and soy sauce labels for allergens.'
+    },
+    {
+      id: 'seed-granola', no: '108', kind: 'batch', forLine: 'For the honey and maple roasted pumpkin', name: 'Seed Granola', short: 'Seed granola',
+      yield: 'Batch: 2000 g.',
+      ingredients: [
+        { q: '500 g', name: 'Linseeds' },
+        { q: '500 g', name: 'Pumpkin seeds (pepitas)' },
+        { q: '500 g', name: 'Pine nuts', tags: ['Tree nut?'] },
+        { q: '250 g', name: 'Black sesame seeds', tags: ['Sesame'] },
+        { q: '250 g', name: 'White sesame seeds', tags: ['Sesame'] },
+        { q: '500 g', name: 'Honey' },
+        { q: '500 ml', name: 'Canola oil' }
+      ],
+      sections: [
+        { title: 'Method', steps: ['Boil the honey and canola oil until combined.', 'Mix with the seeds in trays.', 'Bake at 120 °C, stirring every 10 minutes.', '[Bake time to confirm]'] }
+      ],
+      labelNote: 'Check the supplier labels for allergens, especially the pine nuts.'
+    },
+    {
+      id: 'cowboy-candy', no: '109', kind: 'batch', forLine: 'For the smoked BBQ pork riblets', name: 'Cowboy Candy', short: 'Cowboy candy',
+      yield: 'Batch: 1000 g.',
+      ingredients: [
+        { q: '500 ml', name: 'Cider vinegar' },
+        { q: '1 kg', name: 'Caster sugar' },
+        { q: '20 g', name: 'Salt' },
+        { q: '5 g', name: 'Turmeric' },
+        { q: '10 g', name: 'Mustard seed' },
+        { q: '1 kg', name: 'Jalapeños', note: 'sliced' }
+      ],
+      sections: [
+        { title: 'Method', steps: ['Add all the ingredients except the jalapeños to a pot.', 'Simmer to a syrup consistency.', 'Add the sliced jalapeños.', 'Transfer to containers to cool. Pour over the remaining syrup.'] }
+      ],
+      labelNote: 'Check the supplier labels for allergens, especially the mustard seed.'
+    },
+    {
+      id: 'beef-cheek-batch', no: '110', kind: 'batch', forLine: 'For the beef cheek', name: 'Braised Beef Cheek', short: 'Beef cheek',
+      yield: 'Batch: 10 kg raw beef cheeks, red wine braise.',
+      ingredients: [
+        { q: '10 kg', name: 'Beef cheeks', note: 'raw, untrimmed' },
+        { q: '150 ml', name: 'Cooking oil', note: 'high smoke point' },
+        { q: '1 kg', name: 'Brown onions', note: 'medium dice' },
+        { q: '600 g', name: 'Carrots', note: 'medium dice' },
+        { q: '400 g', name: 'Celery sticks', note: 'medium dice' },
+        { q: '300 g', name: 'Garlic' },
+        { q: '200 g', name: 'Tomato paste' },
+        { q: '3 L', name: 'Dry red wine', note: 'shiraz or cabernet, 4 standard bottles' },
+        { q: '5 to 6 L', name: 'Dark beef stock', note: 'good quality or glace base, enough to submerge the meat' },
+        { q: '1 large bunch', name: 'Fresh thyme' },
+        { q: '5 sprigs', name: 'Fresh rosemary' },
+        { q: '10 pieces', name: 'Bay leaves', note: 'dried' },
+        { q: '1 tablespoon', name: 'Black peppercorns', note: 'whole' }
+      ],
+      sections: [
+        { title: 'Method', steps: ['[Method to confirm]'] }
+      ],
+      labelNote: 'Check the beef stock label for allergens.'
+    },
+    {
+      id: 'cookie-dough', no: '111', kind: 'batch', forLine: 'For the skillet cookie', name: 'Skillet Cookie Dough', short: 'Cookie dough',
+      yield: 'Batch: roughly 6.65 kg, portioned into 140 g balls. 15 balls per tub.',
+      ingredients: [
+        { q: '1.6 kg', name: 'Flour', note: 'sifted', tags: ['Gluten'] },
+        { q: '32 g', name: 'Flaky sea salt' },
+        { q: '32 g', name: 'Bi-carb soda' },
+        { q: '904 g', name: 'Unsalted butter', note: 'for the beurre noisette', tags: ['Milk'] },
+        { q: '448 g', name: 'Unsalted butter', note: 'cubed', tags: ['Milk'] },
+        { q: '1.6 kg', name: 'Brown sugar' },
+        { q: '400 g', name: 'Caster sugar' },
+        { q: '8', name: 'Eggs', tags: ['Egg'] },
+        { q: '16', name: 'Egg yolks', tags: ['Egg'] },
+        { q: '1.36 kg', name: 'Dark chocolate nibs', tags: ['Milk?', 'Soy?'] },
+        { q: '80 g', name: 'Vanilla extract' }
+      ],
+      sections: [
+        { title: 'Method', steps: [
+          'Place the 904 g butter in a heavy based saucepan over medium heat until it foams, turns a dark colour, smells nutty and the milk solids have fallen to the bottom of the pan. Careful not to burn.',
+          'Scrape the butter and milk solids into a bowl and leave to cool.',
+          'Once cool, whisk in the 448 g cubed butter gently. It should start to melt but not foam and sizzle, so test with one piece first.',
+          'Whisk together the flour, salt and bi-carb in a bowl.',
+          'Put the butter in a stand mixer and whisk in the brown sugar and caster sugar until smooth with no lumps.',
+          'Add the eggs and yolks gradually, one at a time, whisking between each. Whisk in the vanilla extract.',
+          'Change the whisk for the paddle. Add the premixed dry ingredients a third at a time, mixing between each addition. Add the chocolate nibs and mix until all incorporated.',
+          'The mix should be very soft at this stage. Cover the large metal bowl in glad wrap and rest and set in the fridge.',
+          'Ball the dough into 140 g servings. Wrap each one in glad wrap and place on a tray in a single layer so they do not squash.',
+          'Freeze the trays to solidify. Once set, place the balls in ice cream tubs, 15 balls per tub for stocktake.',
+          'Defrost 1 tub at a time to keep wastage to a minimum.'
+        ] },
+        { title: 'Baking and plating (from the printed recipe)', steps: [
+          'Spray the cast iron pan with canola spray and press the cookie into the pan slightly so it spreads evenly while baking.',
+          'Bake at 190 °C for 9 to 10 minutes.',
+          'Set the cast iron pan on a wooden serving board. Quenelle the ice cream on top and drizzle lightly with butterscotch sauce. Dust with icing sugar and serve.'
+        ] }
+      ],
+      labelNote: 'Check the supplier labels for allergens, especially the chocolate nibs.'
     }
   ]
 };
