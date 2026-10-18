@@ -2,7 +2,7 @@
   "name": "Leichhardt Kitchen Book",
   "short_name": "Kitchen Book",
   "description": "Recipes, prep list, orders and wastage for the Leichhardt Hotel kitchen team.",
-  "id": "./",
+  "id": "/leichhardt-kitchen/",
   "start_url": "./#/",
   "scope": "./",
   "display": "standalone",
