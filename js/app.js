@@ -436,7 +436,7 @@
     var left;
     if (dish) {
       var pk = ui.pick !== null && r.pins[ui.pick] && !r.pins[ui.pick].link ? r.pins[ui.pick] : null;
-      left = '<div class="stage' + (ui.lens ? ' lensed' : '') + (r.done ? ' done' : '') + '">' + art(r, 'art') + r.pins.map(function (p, k) { return pinHTML(p, k, stack); }).join('') + '</div>' +
+      left = '<div class="stage' + (ui.lens ? ' lensed' : '') + (r.done ? ' done' : '') + '" data-rid="' + esc(r.id) + '">' + art(r, 'art') + r.pins.map(function (p, k) { return pinHTML(p, k, stack); }).join('') + '</div>' +
         (pk ? '<div class="box outline" style="background: #fff"><span class="h3">' + esc(pk.label) + '</span>' + (pk.note ? '<div>' + esc(pk.note) + '</div>' : '') + '<div class="chips">' +
           ((pk.tags && pk.tags.length) ? pk.tags.map(function (t) { return '<span class="tag' + (t.slice(-1) === '?' ? ' maybe' : '') + '">' + esc(t) + '</span>'; }).join('') : '<span class="hint">No listed allergens</span>') + '</div></div>'
           : '<div class="hint" style="text-align: center">' + (r.pins.length ? 'Tap anything on the plate. A pin with an arrow opens its own recipe.' : 'No pins on this plate yet.') + '</div>') + sideView(r);
@@ -583,16 +583,137 @@
     }
   }
 
-  // On narrow screens a pin label can run off the edge: flip it to the other side of its pin when it does.
+  // Pin labels stay off the food. Each plate drawing is painted to a small canvas to find where the food is,
+  // then every label goes to the nearest free spot (not over food, other labels or other pins) with a thin
+  // leader line back to its pin. Until the drawing has been read, the middle of the plate counts as food.
+  var maskCache = {};
+  function foodMask(stage, cb) {
+    var svg = stage.querySelector('svg.art');
+    if (!svg) return cb(null);
+    var box = svg.getBoundingClientRect(), w = Math.round(box.width), h = Math.round(box.height);
+    var key = (stage.getAttribute('data-rid') || '') + ':' + w;
+    if (maskCache[key]) return cb(maskCache[key]);
+    try {
+      var c = svg.cloneNode(true);
+      c.setAttribute('width', w); c.setAttribute('height', h); c.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+      var img = new Image();
+      img.onload = function () {
+        try {
+          var sc = 3, cw = Math.max(1, Math.round(w / sc)), ch = Math.max(1, Math.round(h / sc));
+          var cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
+          var cx = cv.getContext('2d'); cx.drawImage(img, 0, 0, cw, ch);
+          var d = cx.getImageData(0, 0, cw, ch).data, W1 = cw + 1, integ = new Int32Array(W1 * (ch + 1));
+          for (var y = 0; y < ch; y++) {
+            var row = 0;
+            for (var x = 0; x < cw; x++) {
+              var i = (y * cw + x) * 4, f = 0;
+              if (d[i + 3] > 128) {
+                var r = d[i], g = d[i + 1], b = d[i + 2], mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+                var sat = mx ? (mx - mn) / mx : 0, lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+                f = (sat >= 0.14 || lum < 0.7) ? 1 : 0;   // plate, rim and shadow are pale greys; food is not
+              }
+              row += f;
+              integ[(y + 1) * W1 + x + 1] = integ[y * W1 + x + 1] + row;
+            }
+          }
+          var m = { s: sc, cw: cw, ch: ch, integ: integ };
+          maskCache[key] = m; cb(m);
+        } catch (e) { cb(null); }
+      };
+      img.onerror = function () { cb(null); };
+      img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(c));
+    } catch (e) { cb(null); }
+  }
+  function maskFrac(m, x0, y0, x1, y1) {
+    var s = m.s, a = Math.max(0, Math.floor(x0 / s)), b = Math.max(0, Math.floor(y0 / s)), c = Math.min(m.cw, Math.ceil(x1 / s)), d = Math.min(m.ch, Math.ceil(y1 / s));
+    if (c <= a || d <= b) return 0;
+    var W1 = m.cw + 1, n = m.integ[d * W1 + c] - m.integ[b * W1 + c] - m.integ[d * W1 + a] + m.integ[b * W1 + a];
+    return n / ((c - a) * (d - b));
+  }
+  function overlapArea(a, b) {
+    var w = Math.min(a[2], b[2]) - Math.max(a[0], b[0]), h = Math.min(a[3], b[3]) - Math.max(a[1], b[1]);
+    return w > 0 && h > 0 ? w * h : 0;
+  }
+  function layoutStage(stage, m) {
+    var pins = Array.prototype.slice.call(stage.querySelectorAll('.pin'));
+    if (!pins.length) return;
+    var hints = pins.map(function (p) { return p.classList.contains('left'); });
+    stage.classList.add('laid');
+    stage.classList.toggle('dense', pins.length > 8);   // boards and platters: smaller labels
+    var sr = stage.getBoundingClientRect(), svg = stage.querySelector('svg.art'), ar = svg ? svg.getBoundingClientRect() : sr;
+    var ox = ar.left - sr.left, oy = ar.top - sr.top, W = sr.width, H = sr.height;
+    var items = pins.map(function (p, k) {
+      p.classList.remove('left', 'wrap');
+      var rr = p.querySelector('.ring').getBoundingClientRect();
+      return { p: p, lab: p.querySelector('.plabel'), wasLeft: hints[k], cx: rr.left + rr.width / 2 - sr.left, cy: rr.top + rr.height / 2 - sr.top, w: 0, h: 0 };
+    });
+    function food(x0, y0, x1, y1) {
+      if (m) return maskFrac(m, x0 - ox, y0 - oy, x1 - ox, y1 - oy);
+      return overlapArea([x0, y0, x1, y1], [W * 0.25, H * 0.25, W * 0.75, H * 0.75]) / ((x1 - x0) * (y1 - y0));
+    }
+    function arrange(wrapped) {
+      items.forEach(function (it) { it.lab.classList.toggle('wrapl', wrapped); it.w = it.lab.offsetWidth; it.h = it.lab.offsetHeight; it.box = null; });
+      var order = items.slice().sort(function (a, b) { return b.w * b.h - a.w * a.h; }), total = 0, step = 6;
+      order.forEach(function (it) {
+        var cands = [];
+        for (var y = 2; y <= H - it.h - 2; y += step) {
+          for (var x = 2; x <= W - it.w - 2; x += step) {
+            var box = [x, y, x + it.w, y + it.h], pen = 0;
+            items.forEach(function (o) {
+              var rad = o === it ? 25 : 22, ring = [o.cx - rad, o.cy - rad, o.cx + rad, o.cy + rad];
+              if (overlapArea(box, ring) > 0) pen += 40;
+              if (o !== it && o.box && overlapArea([box[0] - 3, box[1] - 3, box[2] + 3, box[3] + 3], o.box) > 0) pen += 30;
+            });
+            var dx = Math.max(box[0] - it.cx, 0, it.cx - box[2]), dy = Math.max(box[1] - it.cy, 0, it.cy - box[3]);
+            var sc = pen + food(box[0], box[1], box[2], box[3]) * 6 + Math.sqrt(dx * dx + dy * dy) / W * 4 + (((x + it.w / 2 < it.cx) !== it.wasLeft) ? 0.3 : 0);
+            cands.push({ box: box, sc: sc, pen: pen });
+          }
+        }
+        cands.sort(function (a, b) { return a.sc - b.sc; });
+        // among the best spots, prefer one whose leader line does not cross another label or pin
+        var best = null, bs = 1e9, bp = 0;
+        cands.slice(0, 30).forEach(function (cd) {
+          var bx = cd.box, px = Math.min(Math.max(it.cx, bx[0]), bx[2]), py = Math.min(Math.max(it.cy, bx[1]), bx[3]), cross = 0;
+          for (var t = 0.2; t < 1; t += 0.2) {
+            var qx = it.cx + (px - it.cx) * t, qy = it.cy + (py - it.cy) * t;
+            items.forEach(function (o) {
+              if (o === it) return;
+              if (o.box && qx > o.box[0] - 2 && qx < o.box[2] + 2 && qy > o.box[1] - 2 && qy < o.box[3] + 2) cross += 1;
+              if (Math.abs(qx - o.cx) < 22 && Math.abs(qy - o.cy) < 22) cross += 0.5;
+            });
+          }
+          var tot = cd.sc + cross * 0.6;
+          if (tot < bs) { bs = tot; best = cd.box; bp = cd.pen; }
+        });
+        if (!best) best = [2, 2, 2 + it.w, 2 + it.h];
+        it.box = best; total += bp;
+      });
+      return total;
+    }
+    var t1 = arrange(false);
+    if (t1 > 0) {
+      var keep = items.map(function (it) { return it.box; });
+      var t2 = arrange(true);
+      if (t2 >= t1) { items.forEach(function (it, i) { it.lab.classList.remove('wrapl'); it.box = keep[i]; }); }
+    }
+    items.forEach(function (it) {
+      var bx = it.box[0], by = it.box[1];
+      it.lab.style.left = (bx - (it.cx - 22)) + 'px';
+      it.lab.style.top = (by - (it.cy - 22)) + 'px';
+      var lead = it.p.querySelector('.lead');
+      if (!lead) { lead = document.createElement('span'); lead.className = 'lead'; lead.setAttribute('aria-hidden', 'true'); it.p.insertBefore(lead, it.p.firstChild); }
+      var px = Math.min(Math.max(it.cx, bx), it.box[2]), py = Math.min(Math.max(it.cy, by), it.box[3]);
+      var dist = Math.sqrt((px - it.cx) * (px - it.cx) + (py - it.cy) * (py - it.cy));
+      if (dist > 26) {
+        lead.style.display = 'block'; lead.style.width = dist + 'px';
+        lead.style.transform = 'rotate(' + Math.atan2(py - it.cy, px - it.cx) + 'rad)';
+      } else lead.style.display = 'none';
+    });
+  }
   function fitPins() {
-    var vw = document.documentElement.clientWidth;
-    Array.prototype.forEach.call(app.querySelectorAll('.stage .pin'), function (pin) {
-      pin.classList.remove('wrap');
-      var box = pin.getBoundingClientRect();
-      if (box.right > vw - 4 && !pin.classList.contains('left')) { pin.classList.add('left'); box = pin.getBoundingClientRect(); }
-      else if (box.left < 4 && pin.classList.contains('left')) { pin.classList.remove('left'); box = pin.getBoundingClientRect(); }
-      // a long label that fits on neither side wraps onto two lines instead of pushing the page sideways
-      if (box.right > vw - 4 || box.left < 4) { pin.classList.add('wrap'); box = pin.getBoundingClientRect(); if (box.left < 4 && pin.classList.contains('left')) pin.classList.remove('left'); }
+    Array.prototype.forEach.call(app.querySelectorAll('.stage'), function (stage) {
+      layoutStage(stage, null);
+      foodMask(stage, function (m) { if (m && document.body.contains(stage)) layoutStage(stage, m); });
     });
   }
   window.addEventListener('resize', function () { fitPins(); });

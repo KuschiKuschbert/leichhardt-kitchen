@@ -12,6 +12,7 @@ The Leichhardt Hotel kitchen's app: the recipe book, the prep list, the order li
 - **Cards to come.** A batch recipe that isn't in the book yet shows as "Card to come". Every dish that uses one is marked "Allergens incomplete", is left out of the Free from filter, and counts as "may have" under the allergen lens, until that card is added.
 - **Set out like the guest menu.** Recipes are grouped in the order the menu prints them: Snackin' Plates, Salads, Big Country Feeds, Off the Grill, Schnittys & Parmys, Hand Held, Sides, Dessert and Seniors, then the Functions platters. Tiles and The Pass both follow it, and each section is also a filter chip in Tiles. The Functions chip is a rounded rectangle and always sits first after All. Batch recipes and components come after the menu sections ("Bains and prep" on The Pass).
 - **From the side.** Plated dishes also show a labelled side view, so the team can see what sits on top. Burgers show their build, top to bottom, instead.
+- **Pin labels.** On the plate drawing the page places each label where it does not cover the food, other labels or other pins, with a thin line back to its pin. It reads the drawing to find the food, so a new dish needs no label tuning. Boards and platters (more than 8 pins) use smaller labels. The ring is see-through so the food shows through it.
 - **Tick off steps** while cooking. The ticks clear when the page is closed.
 - **Settings:**
   - Which view it opens with
