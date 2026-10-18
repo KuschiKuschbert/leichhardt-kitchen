@@ -153,6 +153,51 @@ const txt = (page, sel) => page.evaluate(s => { const e = document.querySelector
   ok(p.errors.length === 0, 'admin: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // the same Undo on every add: wastage (head chef and sous chefs), and an order line after a spelling fix
+  p = await L.open(b, '#/waste', { wait: 1500 });
+  await p.fill('#w-text', 'Rice');
+  await p.fill('#w-amt', '1.5');
+  await p.evaluate(() => { const b = document.querySelector('.w-rchips [data-v="excess"]') || document.querySelector('[data-p="wreason"][data-v="excess"]'); b.click(); });
+  await p.click('.w-add .nb-addbtn');
+  await p.waitForTimeout(300);
+  ok(/Logged Rice/.test(await txt(p, '.p-toast')) && /Undo/.test(await txt(p, '.p-toast-btn')), 'waste: a sous chef gets Undo after logging');
+  await p.click('.p-toast-btn');
+  await p.waitForTimeout(300);
+  s = await store(p);
+  const rice = Object.keys(s).filter(k => /\/waste\/[^/]+\/lines\//.test(k) && s[k].text === 'Rice');
+  ok(rice.length === 1 && s[rice[0]].deleted === true, 'waste: Undo flags the new entry removed');
+  ok(p.errors.length === 0, 'waste undo: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  p = await L.open(b, '#/waste', { who: 'ann', wait: 1500 });
+  await p.fill('#w-text', 'Rice');
+  await p.fill('#w-amt', '2');
+  await p.evaluate(() => { const b = document.querySelector('.w-rchips [data-v="excess"]') || document.querySelector('[data-p="wreason"][data-v="excess"]'); b.click(); });
+  await p.click('.w-add .nb-addbtn');
+  await p.waitForTimeout(300);
+  ok(/Ask the head chef or a sous chef/.test(await txt(p, '.p-toast')), 'waste: staff are told who can remove an entry');
+  await p.context().close();
+
+  p = await L.open(b, '#/orders', { wait: 1500 });
+  await p.fill('#o-text', 'Tomatoe paste');
+  await p.press('#o-text', 'Enter');
+  await p.waitForTimeout(300);
+  const otoast = await txt(p, '.p-toast');
+  if (/corrected/.test(otoast)) {
+    ok(/Undo/.test(await txt(p, '.p-toast-btn')), 'orders: a corrected line also gets Undo (' + otoast + ')');
+    await p.click('.p-toast-btn');
+    await p.waitForTimeout(300);
+    s = await store(p);
+    ok(Object.keys(s).some(k => /\/orders\/.*\/lines\//.test(k) && s[k].text === 'Tomatoe paste'), 'orders: Undo puts back what was typed');
+  } else ok(/Added/.test(otoast), 'orders: add shows a toast (' + otoast + ')');
+  await p.context().close();
+
+  // a typed amount counts as unsaved, so the daily refresh waits
+  p = await L.open(b, '#/prep', { wait: 1500 });
+  await p.fill('#p-qty', '2 tubs');
+  ok(await p.evaluate(() => window.LK_PREP.unsaved()), 'prep: a typed amount on its own counts as unsaved');
+  await p.context().close();
+
   await b.close();
   L.report(R);
 })().catch(e => { console.error(e); console.log(R.join('\n')); process.exit(1); });
