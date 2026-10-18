@@ -459,7 +459,8 @@
   function maybeRoll() {
     var today = ymd(new Date());
     if (!S.authed || !fb || !can('add') || S.date !== today || S.itemsState !== 'ok' || S.rolledFor === today) return;
-    if (S.pastFor !== S.pin + '|' + today) return; // the usual close time comes from the past days, so wait for them
+    if (S.pastFor !== pastTag()) return; // the usual close time comes from the past days, so wait for them
+    repairAhead();
     S.rolledFor = today;
     var dates = [], k;
     for (k = 1; k <= 7; k++) dates.push(shift(today, -k));
@@ -482,7 +483,7 @@
           text: x.text, station: x.station || '', qty: x.qty || '', recipe: x.recipe || '',
           addedBy: 'Rolled over', addedById: '', addedAt: Date.now(), done: false, deleted: false,
           rolled: (x.rolled || 0) + 1, root: root, from: x.id, rolledFrom: src.date, origBy: x.origBy || x.addedBy || '', urgent: !!x.urgent,
-          ahead: !!(x.ahead || writtenLate(x, src.date))
+          ahead: !!(x.ahead || writtenLate(x, src.date)), origAt: x.origAt || x.addedAt || 0
         }]);
       });
       if (!jobs.length) return;
@@ -852,6 +853,21 @@
     if (x.rolled || !x.addedAt || ymd(new Date(x.addedAt)) !== day) return false;
     var t = new Date(x.addedAt); return t.getHours() * 60 + t.getMinutes() >= lateMin();
   }
+  /* Lines that rolled over before the written-for-tomorrow rule (19 Oct 2026), or on a phone with older code: a copy
+     that rolled once is checked against the time its original was written, and marked ahead for everyone if it was
+     written after the usual close. Once a day per phone, only today's list, no extra reads (the past days are cached). */
+  function repairAhead() {
+    var today = ymd(new Date());
+    if (S.aheadFixed === today || !S.authed || !fb || !can('add') || S.date !== today || S.itemsState !== 'ok' || S.pastFor !== pastTag()) return;
+    S.aheadFixed = today;
+    var ops = [];
+    S.items.forEach(function (x) {
+      if (x.rolled !== 1 || x.ahead || x.deleted || !x.from || !x.rolledFrom) return;
+      var src = ((S.past || {})[x.rolledFrom] || []).filter(function (y) { return y.id === x.from; })[0];
+      if (src && writtenLate(src, x.rolledFrom)) ops.push(['upd', itemRef(today, x.id), { ahead: true, origAt: src.addedAt }]);
+    });
+    if (ops.length) W(ops.slice(0, 400)).catch(function () { S.aheadFixed = ''; });
+  }
   function rolledN(x) { return Math.max(0, (x.rolled || 0) - (x.ahead ? 1 : 0)); }
   function sortItems(a, b) { return (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0) || rolledN(b) - rolledN(a) || (a.addedAt || 0) - (b.addedAt || 0); }
 
@@ -969,14 +985,15 @@
      Past days hardly change, so they are read once a day and kept on the phone. Today comes from the live list.
      The weekly badges, usual amounts, Start here, Due today, the pace card and the close-out nudge all work from this. */
   var PAST_DAYS = 14, PAST_KEYS = ['text', 'station', 'qty', 'addedBy', 'addedById', 'addedAt', 'done', 'doneBy', 'doneById', 'doneAt', 'rolled', 'ahead', 'deleted', 'urgent'];
+  function pastTag() { return S.pin + '|' + ymd(new Date()) + '|2'; }
   function loadPast() {
-    var today = ymd(new Date()), tag = S.pin + '|' + today;
+    var today = ymd(new Date()), tag = pastTag();
     if (!fb || S.pastBusy || S.pastFor === tag) return;
     try { var c = JSON.parse(lsGet('lk.past') || 'null'); if (c && c.tag === tag && c.days) { S.past = c.days; S.pastFor = tag; pastDerive(); return; } } catch (e) {}
     S.pastBusy = true;
     var dates = [], i;
     for (i = 1; i <= PAST_DAYS; i++) dates.push(shift(today, -i));
-    Promise.all(dates.map(function (d) { return fb.fs.getDocs(itemsCol(d)).then(function (sn) { return [d, sn.docs.map(function (x) { var v = x.data(), o = {}; PAST_KEYS.forEach(function (k) { if (v[k] != null && v[k] !== '' && v[k] !== false && v[k] !== 0) o[k] = v[k]; }); return o; })]; }, function () { return [d, null]; }); })).then(function (res) {
+    Promise.all(dates.map(function (d) { return fb.fs.getDocs(itemsCol(d)).then(function (sn) { return [d, sn.docs.map(function (x) { var v = x.data(), o = { id: x.id }; PAST_KEYS.forEach(function (k) { if (v[k] != null && v[k] !== '' && v[k] !== false && v[k] !== 0) o[k] = v[k]; }); return o; })]; }, function () { return [d, null]; }); })).then(function (res) {
       var days = {}, ok = true;
       res.forEach(function (r) { if (r[1] === null) ok = false; else days[r[0]] = r[1]; });
       S.past = days; S.pastFor = tag; S.pastBusy = false;

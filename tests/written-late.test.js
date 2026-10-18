@@ -22,6 +22,12 @@ const row = (page, id) => page.evaluate(i => { const e = document.getElementById
   // written late two days ago, moved to yesterday (ahead), still not done: now it counts as rolled once
   extra[fsKey(['days', ago2, 'items', 'old'])] = item('Confit duck', at(ago2, 22, 0));
   extra[fsKey(['days', yday, 'items', 'r-old'])] = item('Confit duck', at(yday, 6, 0), { addedBy: 'Rolled over', addedById: '', rolled: 1, ahead: true, root: 'old', from: 'old', rolledFrom: ago2, origBy: 'Ann' });
+  // rolled this morning by older code, before the rule: the original was written at 21:45, the copy has no ahead mark
+  extra[fsKey(['days', yday, 'items', 'old2'])] = item('Brine pork', at(yday, 21, 45));
+  extra[fsKey(['days', today, 'items', rid('old2')])] = item('Brine pork', at(today, 6, 0), { addedBy: 'Rolled over', addedById: '', rolled: 1, root: 'old2', from: 'old2', rolledFrom: yday, origBy: 'Ann' });
+  // and one written in the afternoon: it really did roll over
+  extra[fsKey(['days', yday, 'items', 'day2'])] = item('Peel garlic', at(yday, 15, 0));
+  extra[fsKey(['days', today, 'items', rid('day2')])] = item('Peel garlic', at(today, 6, 0), { addedBy: 'Rolled over', addedById: '', rolled: 1, root: 'day2', from: 'day2', rolledFrom: yday, origBy: 'Ann' });
   extra[fsKey(['orders', yday, 'lines', 'ol'])] = { text: 'Flour', qty: '', recipes: [], addedBy: 'Ann', addedById: 'ann', addedAt: at(yday, 22, 15), ordered: false, deleted: false };
 
   p = await L.open(b, '#/prep', { who: 'ann', wait: 2500, extra });
@@ -34,6 +40,12 @@ const row = (page, id) => page.evaluate(i => { const e = document.getElementById
   ok(!/Rolled/.test(tLate) && /From last night/.test(tLate), 'late line: no Rolled badge, says from last night (' + tLate.trim().slice(0, 60) + ')');
   ok(/Rolled/.test(tDay), 'daytime line: Rolled badge');
   ok(/Rolled/.test(tDuck) && !/Rolled x2/.test(tDuck), 'late line open a day later: Rolled once, not x2');
+  const fixed = s[fsKey(['days', today, 'items', rid('old2')])], kept = s[fsKey(['days', today, 'items', rid('day2')])];
+  ok(fixed.ahead === true && fixed.origAt === at(yday, 21, 45), 'repair: a line rolled before the rule, written late, is marked from last night');
+  ok(!kept.ahead, 'repair: a line written in the afternoon stays rolled');
+  ok(!/Rolled/.test(await row(p, rid('old2'))) && /From last night/.test(await row(p, rid('old2'))), 'repair: no Rolled badge on the repaired line');
+  ok(/Rolled/.test(await row(p, rid('day2'))), 'repair: the afternoon line still shows Rolled');
+  ok(late.origAt === at(yday, 21, 30), 'new copies carry the time the original was written');
   ok(p.errors.length === 0, 'prep: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
