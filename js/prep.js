@@ -195,7 +195,7 @@
   }
   function signedIn(id, hash) {
     S.authed = true; S.tok = hash; S.pf1 = S.pf2 = ''; S.pinMsg = ''; S.pinStep = '';
-    lsSet('lk.prep.tok', id + ':' + hash);
+    lsSet('lk.prep.tok', id + ':' + hash); lsSet('lk.prep.seen', String(Date.now())); lastAct = Date.now(); startIdle();
     draw();
   }
   /* After 3 wrong PINs the page makes the person wait (1, 2, 5, 15 then 30 minutes). Kept on the phone, so a reload does not skip it.
@@ -243,11 +243,30 @@
     if (resumed || !S.who) return;
     resumed = true;
     var tok = (lsGet('lk.prep.tok') || '').split(':');
-    if (tok[0] !== S.who || !tok[1]) { if (S.who) pickName(S.who); return; }
+    if (tok[0] !== S.who || !tok[1] || idleExpired()) { if (S.who) pickName(S.who); startIdle(); return; }
+    startIdle();
     S.authed = true; S.tok = tok[1]; draw();
     sset(docRef('activity', S.who), { name: (who() || {}).name || '', visits: fb.fs.increment(1), lastSeen: Date.now() }, true).catch(function (e) {
       if (e && e.code === 'permission-denied') { S.authed = false; S.tok = ''; pickName(S.who); }
     });
+  }
+  /* Desktop idle lock: after 7.5 minutes with no mouse, keyboard or touch, a desktop browser goes back to the person's own
+     PIN screen (the kitchen PIN stays). Phones and tablets (no mouse) are left alone. No network use: a timer and a timestamp. */
+  var IDLE_MS = 450000, lastAct = Date.now(), idleOn = false;
+  function isDesktop() { try { return window.matchMedia('(hover: hover) and (pointer: fine)').matches; } catch (e) { return false; } }
+  function idleExpired() { return isDesktop() && Date.now() - (+lsGet('lk.prep.seen') || lastAct) > IDLE_MS; }
+  function idleLock() {
+    if (!S.authed || !S.who || !fb) return;
+    var id = S.who; S.draft = null; pickName(id);
+  }
+  function startIdle() {
+    if (idleOn) return; idleOn = true;
+    var last = 0;
+    function act() { var n = Date.now(); lastAct = n; if (n - last > 5000) { last = n; lsSet('lk.prep.seen', String(n)); } }
+    ['pointerdown', 'keydown', 'mousemove', 'wheel', 'touchstart'].forEach(function (ev) { document.addEventListener(ev, act, { passive: true, capture: true }); });
+    setInterval(function () { if (S.authed && idleExpired()) idleLock(); }, 15000);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden && S.authed && idleExpired()) idleLock(); });
+    lsSet('lk.prep.seen', String(Date.now()));
   }
   function leave() { S.who = ''; S.authed = false; S.pinStep = ''; lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; draw(); }
 

@@ -205,6 +205,7 @@ There's no build step and nothing to install. To try it on a computer, open `ind
 - Who is the owner: only the owner's Google account may read `config/admins`, so the page checks that read. No email is stored in the database or the repository.
 
 ### Staff lock
+- **Desktop idle lock.** On a computer (mouse and keyboard), 7.5 minutes with no mouse, key or touch sends the prep pages back to the person's own PIN screen. The kitchen PIN is not asked again. Phones and tablets are not timed. A page that was left closed for longer than that also asks for the own PIN when it opens. It uses a timer and a timestamp on the device (`lk.prep.seen`), no reads or writes. Change `IDLE_MS` in `js/prep.js`.
 - Each write sends the writer's id (`by`) and, in the same batch, `proofs/<id>` with `tok` (a hash of the person's own PIN) and `at` (a server timestamp). The rules compare `tok` with `staffpins/<id>.hash`, which nobody can read, using `getAfter`, and require `at` to equal the request time, so a proof left over from an earlier write cannot be reused. A wrong or missing PIN is refused by the server.
 - The first person to set a PIN for a name claims it. The owner can reset it (Reset PIN) and it is chosen again.
 - Limits: someone with the kitchen PIN could still guess a 4-digit PIN online by script (the page makes people wait after 3 wrong tries, 1 to 30 minutes and kept on the phone, but a script skips the page; only App Check or a paid server function can truly rate limit), and add, tick and delete rights per person are checked in the page only.
