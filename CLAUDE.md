@@ -28,7 +28,7 @@ The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the
 | `README.md` | Everything the app does, for people and for the next session |
 
 ## Routes
-`#/` landing (four dockets), `#/recipes` (Pass or Tiles), `#/r/<id>[/<id>...]` a recipe and the trail to it, `#/prep`, `#/orders`, `#/waste`, `#/admin`, `#/settings`.
+`#/` landing (four dockets), `#/recipes` (Pass or Tiles), `#/r/<id>[/<id>...]` a recipe and the trail to it, `#/prep`, `#/orders`, `#/waste`, `#/minutes`, `#/admin`, `#/settings`.
 
 ## How changes ship
 1. Branch from `main`, one theme per pull request, squash merge.
@@ -42,4 +42,5 @@ The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the
 - Every write goes through `W()` in `js/prep.js`, which adds the writer's id (`by`) and the PIN proof with a server timestamp. Direct `setDoc` calls bypass the staff lock and are refused.
 - The prep pages read Firestore; keep reads small (the free plan has a daily read limit). Past days are cached once a day per phone; do not add polling.
 - The daily note popup is appended to `document.body`, not `#app`, so page redraws do not remove it. Its clicks use `data-note` (the bell and the popup), the editor inside the prep root uses `data-p`, and the recipe pages use `data-act`; keep them apart. Notes are read with one query a day per phone: do not add a listener or polling.
+- Meeting minutes follow the same pattern: one query a day per phone, a bell (`.mbell`) in the top bar, clicks via `data-p` / `data-k` with `mn-` names. Sign-offs and `hist` copies are immutable in the rules; a change after publishing is a new version, never an edit of the old one.
 - The service worker caches the app shell. Bump `CACHE` in `sw.js` when icons or the manifest change.

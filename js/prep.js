@@ -62,6 +62,7 @@
     authed: false, tok: '', pinStep: '', pinData: null, pf1: '', pf2: '', pinMsg: '',
     sections: [], activity: [], resetId: '', hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false, exporting: '', moving: false, moveMsg: '', newPin: '', atab: lsGet('lk.prep.atab') || 'insights', ordDate: ymd(new Date()), ordLines: [], ordState: 'idle', ordView: 'day', otext: '', oqty: '', ordAll: [], ordAllAt: 0, ordBusy: false, osugg: [],
     wDate: ymd(new Date()), wLines: [], wState: 'idle', wReview: null, wrA: null, wrC: null, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wRecent: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nDel: '', nMsg: '', nSaving: false,
+    mins: null, minsFor: '', minsAt: 0, minsBusy: false, mmine: {}, msigns: {}, mSel: '', mf: null, mMsg: '', mSaving: false, mSigning: false, mpin: '', mpinOk: false, minOpen: false, mErr: '',
     adminsFor: '', level: '', stats: null, statsRange: 14, week: null, weekAt: 0, weekBusy: false,
     user: null, authState: 'idle', draft: null, saveMsg: '', busy: false, toast: '', toastAct: null
   };
@@ -100,7 +101,7 @@
       unsubCfg = fb.fs.onSnapshot(cfgDoc(), function (snap) {
         S.config = snap.exists() ? snap.data() : { people: [] };
         S.config.people = S.config.people || [];
-        S.configState = 'ok'; watchItems(); watchSections(); watchLearned(); if (S.name === 'orders') watchOrders(); if (S.name === 'waste') watchWaste(); resume(); loadNotes(); draw();
+        S.configState = 'ok'; watchItems(); watchSections(); watchLearned(); if (S.name === 'orders') watchOrders(); if (S.name === 'waste') watchWaste(); resume(); loadNotes(); loadMinutes(); draw();
       }, function (err) {
         S.configState = err && err.code === 'permission-denied' ? 'badpin' : 'error';
         if (S.configState === 'badpin') { S.pinError = 'That PIN is not right.'; S.pin = ''; lsSet('lk.prep.pin', ''); cfgKey = ''; unsubCfg = null; }
@@ -1556,7 +1557,8 @@
     var tools = '<h3 class="nb-sh">Tools</h3><div class="nb-tools">' +
       '<button type="button" class="nb-btn" data-p="copy">Copy the list</button>' +
       '<button type="button" class="nb-btn" data-p="print">Print the list</button>' +
-      (isSous() ? '<button type="button" class="nb-btn" data-p="notes-open">Daily notes</button><button type="button" class="nb-btn" data-p="staff-open">Manage staff</button>' : '') + '</div>';
+      '<a class="nb-btn" href="#/minutes">Meeting minutes</a>' +
+      (isSous() ? '<button type="button" class="nb-btn" data-p="notes-open">Daily notes</button><button type="button" class="nb-btn" data-p="min-open">Minutes register</button><button type="button" class="nb-btn" data-p="staff-open">Manage staff</button>' : '') + '</div>';
     var dl = live.filter(function (x) { return x.done; }).sort(function (a, b) { return (b.doneAt || 0) - (a.doneAt || 0); });
     var donebox = '<h3 class="nb-sh">Done today (' + dl.length + ')</h3>' + (dl.length ? '<ul class="nb-done">' + dl.map(function (x) {
       return '<li><span class="nb-dt">' + (x.doneAt ? clock(x.doneAt) : '') + '</span><span class="nb-dx">' + esc(x.text) + (x.qty ? ' <em>' + esc(x.qty) + '</em>' : '') + '</span><span class="nb-dw">' + esc(x.doneBy || '') + '</span>' + (can('tick') && canUntick(x) ? '<button type="button" class="p-x nb-undo" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(S.date) + '" aria-label="' + esc('Undo the tick on ' + x.text) + '">Undo</button>' : '') + '</li>';
@@ -1587,7 +1589,7 @@
     var left = '<section class="nb-page nb-left"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + esc(dayName(S.date)) + '</h2><span class="nb-date">' + esc(longDate(S.date)) + '</span></div>' +
       '<div class="nb-prog" role="status">' + doneN + ' of ' + live.length + ' done</div></header>' +
       (S.itemsState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' : '') +
-      '<div class="nb-body">' + closeoutHTML(live) + wNoteHTML() + startHTML(live) + pageBody(S.items, S.date) + todayEmpty + '</div>' +
+      '<div class="nb-body">' + minNudgeHTML() + closeoutHTML(live) + wNoteHTML() + startHTML(live) + pageBody(S.items, S.date) + todayEmpty + '</div>' +
       '<div class="nb-foot">' + add + (removed.length && can('del') ? '<button type="button" class="nb-link" data-p="removed">' + (S.showRemoved ? 'Hide' : 'Show') + ' removed (' + removed.length + ')</button>' : '') + '</div></section>';
     var right = '<section class="nb-page nb-right"><header class="nb-ph"><div><h2 class="nb-title nb-dim">Handy</h2><span class="nb-date">Priorities, progress and tools</span></div></header>' +
       '<div class="nb-body nb-side">' + sideHTML(today) + '</div></section>';
@@ -1799,11 +1801,12 @@
         '<button type="button" class="p-x" data-p="a-remove-person" data-i="' + i + '">Delete</button></td></tr>';
     }).join('');
     var at = S.atab || 'insights';
-    var tabsBar = '<nav class="a-tabs" aria-label="Admin sections">' + [['insights', 'Insights'], ['team', 'Team'], ['waste', 'Waste'], ['learning', 'Learning'], ['notes', 'Notes'], ['people', 'People'], ['tools', 'Tools']].map(function (t) {
+    var tabsBar = '<nav class="a-tabs" aria-label="Admin sections">' + [['insights', 'Insights'], ['team', 'Team'], ['waste', 'Waste'], ['learning', 'Learning'], ['notes', 'Notes'], ['minutes', 'Minutes'], ['people', 'People'], ['tools', 'Tools']].map(function (t) {
       return '<button type="button" class="a-tab" data-p="a-tab" data-t="' + t[0] + '" aria-pressed="' + (at === t[0]) + '">' + t[1] + '</button>';
     }).join('') + '</nav>';
     if (at === 'notes') loadNotes();
-    var pane = at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'learning' ? (learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() : at === 'people' ? (
+    if (at === 'minutes') loadMinutes();
+    var pane = at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'learning' ? (learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() : at === 'people' ? (
       '<section class="set-block"><span class="label">People</span><span class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Reset PIN lets that person choose a new one. Removing someone from the list keeps their name on old lines.</span>' +
       (rows ? '<p class="a-swipe">Swipe the table sideways to see every column.</p><div class="a-tablewrap"><table class="a-table"><thead><tr><th scope="col">Name</th><th scope="col">Role</th><th scope="col" class="a-c">Write</th><th scope="col" class="a-c">Tick</th><th scope="col" class="a-c">Remove</th><th scope="col" class="a-c">On list</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead><tbody>' + rows + '</tbody></table></div>' : '<p class="hint">No names yet.</p>') + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' +
       '<section class="set-block"><span class="label">Badges</span><label class="a-check"><input type="checkbox" data-a="badges"' + (d.showBadges !== false ? ' checked' : '') + '> Show the weekly top tickers to everyone on the prep book</label></section>' + saveBlock
@@ -1826,7 +1829,7 @@
       '<section class="set-block"><div class="btn-row"><button type="button" class="btn dark" data-p="a-save"' + (S.busy ? ' disabled' : '') + '>Save changes</button><button type="button" class="btn" data-p="a-reset">Undo unsaved changes</button></div><span class="saved" role="status">' + esc(S.saveMsg) + '</span></section></div>';
   }
   /* While connecting, show the page that is opening (not a generic prep book card), so nothing flashes. */
-  var PAGE_NAME = { prep: 'Prep list', orders: 'Order list', waste: 'Wastage', admin: 'Admin panel' };
+  var PAGE_NAME = { prep: 'Prep list', orders: 'Order list', waste: 'Wastage', admin: 'Admin panel', minutes: 'Meeting minutes' };
   function loadingHTML() {
     var t = PAGE_NAME[S.name] || 'Prep book';
     if (S.name === 'admin') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">' + t + '</h2><p class="hint">Loading...</p></section>';
@@ -1843,6 +1846,8 @@
     flushMisses(); flushViews();
     if (S.name === 'orders') return ordersHTML();
     if (S.name === 'waste') return wasteHTML();
+    if (S.name === 'minutes') return minutesPageHTML();
+    if (S.minOpen && isSous()) return minSousPageHTML();
     if (S.notesOpen && isSous()) return notesPageHTML();
     if (S.staffOpen && isSous()) return staffHTML();
     return listHTML();
@@ -1850,6 +1855,7 @@
   var rendering = false;
   function draw() {
     noteSummaryRefresh();
+    if (S.mins) { loadMine(); minBell(); }
     if (!S.root || !document.body.contains(S.root) || rendering) return;
     rendering = true;
     var ae = document.activeElement, key = ae && ae.getAttribute && ae.getAttribute('data-k'), start = null, end = null;
@@ -2266,7 +2272,7 @@
   }
   function notesInit() {
     if (!/^\d{4,6}$/.test(S.pin)) return;
-    sdk().then(function () { loadNotes(); startNoteTick(); }, function () {});
+    sdk().then(function () { loadNotes(); loadMinutes(); startNoteTick(); }, function () {});
   }
   function loadNotes(force) {
     var today = ymd(new Date());
@@ -2564,6 +2570,301 @@
     });
   }
 
+  /* ---------- kitchen meeting minutes ----------
+     The head chef (admin panel, Minutes tab) writes the minutes after a meeting and publishes them. Sous chefs (Handy, "Minutes register") only see the register.
+     Staff read them at #/minutes in one fixed layout and sign with their own PIN. A bell in the top bar and a nudge on the prep list show until a person has signed.
+     Data: kitchens/<PIN>/minutes/<id> { no, v, status draft|published, date, start, loc, chair, taker, guests, next, decisions, menu, safety, dates, other,
+       att: [{ id, st present|apology|absent }], acts: [{ what, who, by, st open|done|dropped, carried }], pubAt, removed, at, upd }.
+     A change after publishing makes version v+1 and everyone signs again. Each earlier version is kept in minutes/<id>/hist/<v>.
+     Sign-offs: minutes/<id>/signs/<v>_<staffId> { v, st, at, name }. Created once, never changed or deleted.
+     Reads stay small: one query a day per phone for minutes of the last 90 days, plus one read per open minutes for the person's own sign-off.
+     Staff ids only are stored in att and acts (names are looked up from the staff list). No listener, no polling. */
+  var MN_DAYS = 90, MN_OPEN = 30, MN_LATE = 3, MN_STALE = 30 * 60000;
+  var MN_ATT = [['present', 'Present'], ['apology', 'Apology'], ['absent', 'Absent']];
+  var MN_ALL = { decisions: 'Decisions', menu: 'Menu changes', safety: 'Safety', dates: 'Dates ahead', other: 'Other' };
+  function mpad(n) { return n < 10 ? '0' + n : String(n); }
+  function mnName(id) { var p = ((S.config && S.config.people) || []).filter(function (x) { return x.id === id; })[0]; return p ? p.name : (id ? 'Former staff' : ''); }
+  function mnLines(t) { return String(t || '').split(/\n/).map(function (s) { return s.trim(); }).filter(Boolean); }
+  /* only the head chef (Google account) writes and publishes minutes. Sous chefs read the register. */
+  function mnCanWrite() { return S.level === 'owner'; }
+  function mnById(id) { return (S.mins || []).filter(function (m) { return m.id === id; })[0] || null; }
+  function mnPub() { return (S.mins || []).filter(function (m) { return m.status === 'published' && !m.removed; }).sort(function (a, b) { return String(b.date).localeCompare(String(a.date)) || (b.no || 0) - (a.no || 0); }); }
+  function mnDrafts() { return (S.mins || []).filter(function (m) { return m.status === 'draft' && !m.removed; }).sort(function (a, b) { return (b.upd || 0) - (a.upd || 0); }); }
+  function mnOpenList() { var from = shift(ymd(new Date()), -MN_OPEN); return mnPub().filter(function (m) { return m.date >= from; }); }
+  function mnKey(m) { return m.id + '_' + m.v + '_' + S.who; }
+  function mnUnsigned() {
+    if (!S.who || !S.mins || (S.config && !who())) return [];
+    return mnOpenList().filter(function (m) { return S.mmine[mnKey(m)] === null; });
+  }
+  function minInfo() { return { n: mnUnsigned().length }; }
+  /* the bell in the top bar: hidden unless the person on this phone has minutes to sign */
+  function minBell() {
+    var n = mnUnsigned().length;
+    Array.prototype.forEach.call(document.querySelectorAll('.mbell'), function (b) {
+      b.hidden = !n; b.classList.toggle('has-new', !!n);
+      b.setAttribute('aria-label', 'Meeting minutes to sign' + (n ? ', ' + n : ''));
+    });
+  }
+  function minNudgeHTML() {
+    var u = mnUnsigned();
+    if (!u.length) return '';
+    return '<div class="mn-nudge" role="status"><span><b>Minutes not signed yet</b> Kitchen meeting, ' + esc(dayShort(u[0].date)) + (u.length > 1 ? ' and ' + (u.length - 1) + ' more' : '') + '</span><a class="mn-nudge-btn" href="#/minutes">Read and sign</a></div>';
+  }
+  function loadMinutes(force) {
+    var today = ymd(new Date());
+    if (!fb || !/^\d{4,6}$/.test(S.pin) || S.minsBusy) return;
+    if (!force && S.mins && S.minsFor === today && Date.now() - S.minsAt < MN_STALE) return;
+    S.minsBusy = true;
+    fb.fs.getDocs(fb.fs.query(colRef('minutes'), fb.fs.where('date', '>=', shift(today, -MN_DAYS)))).then(function (snap) {
+      S.mins = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; });
+      S.minsFor = today; S.minsAt = Date.now(); S.minsBusy = false;
+      loadMine(); minBell(); draw();
+    }, function () {
+      // no signal, or the minutes rules are not published yet: carry on without them and try again in about 5 minutes
+      S.minsBusy = false; S.minsAt = Date.now() - MN_STALE + 5 * 60000; if (!S.mins) S.mins = [];
+      minBell(); draw();
+    });
+  }
+  /* has this person signed the current version? one small read per open minutes, remembered for the day */
+  function loadMine() {
+    if (!fb || !S.who || !S.mins) return;
+    var w = S.who, jobs = [];
+    mnOpenList().forEach(function (m) {
+      var k = m.id + '_' + m.v + '_' + w;
+      if (S.mmine[k] !== undefined) return;
+      S.mmine[k] = 'loading';
+      jobs.push(fb.fs.getDoc(fb.fs.doc.apply(null, [fb.db].concat(base(), ['minutes', m.id, 'signs', m.v + '_' + w]))).then(function (sn) { S.mmine[k] = sn.exists() ? sn.data() : null; }, function () { delete S.mmine[k]; }));
+    });
+    if (jobs.length) Promise.all(jobs).then(function () { minBell(); draw(); });
+  }
+  function loadSigns(id, force) {
+    if (!fb || !id) return;
+    var cur = S.msigns[id];
+    if (cur && (cur.loading || !force)) return;
+    S.msigns[id] = { loading: true, list: (cur && cur.list) || null };
+    fb.fs.getDocs(fb.fs.collection.apply(null, [fb.db].concat(base(), ['minutes', id, 'signs']))).then(function (sn) {
+      S.msigns[id] = { loading: false, list: sn.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }) }; draw();
+    }, function () { S.msigns[id] = { loading: false, list: [], err: true }; draw(); });
+  }
+
+  /* ---- the minutes as staff read them ---- */
+  function mnBox(num, title, inner, cls) {
+    return '<section class="mn-box' + (cls ? ' ' + cls : '') + '"><h3 class="mn-bh">' + (num ? '<span class="mn-bn">' + num + '</span>' : '') + esc(title) + '</h3>' + inner + '</section>';
+  }
+  function mnList(t, link) { return '<ul class="mn-ul">' + mnLines(t).map(function (l) { return '<li>' + (link ? linkNote(l) : esc(l)) + '</li>'; }).join('') + '</ul>'; }
+  function mnDocHTML(m, sign) {
+    var d = m.date ? parseYmd(m.date) : new Date(), n = 0, att = m.att || [], by = { present: [], apology: [], absent: [] };
+    function nx() { n++; return mpad(n); }
+    att.forEach(function (x) { if (by[x.st]) by[x.st].push(mnName(x.id)); });
+    var cells = [['Time', m.start || ''], ['Location', m.loc || ''], ['Run by', mnName(m.chair)], ['Minutes taken by', mnName(m.taker)]].filter(function (c) { return c[1]; }).map(function (c) { return '<div class="mn-cell"><span>' + esc(c[0]) + '</span><b>' + esc(c[1]) + '</b></div>'; }).join('');
+    var counts = by.present.length + ' present' + (by.apology.length ? ', ' + by.apology.length + ' apology' : '') + (by.absent.length ? ', ' + by.absent.length + ' absent' : '');
+    var out = '<article class="mn-doc"><header class="mn-head"><div><span class="mn-eb">Kitchen meeting &middot; Version ' + (m.v || 1) + '</span><h2 class="mn-title" id="rtitle" tabindex="-1">' + esc(d.toLocaleDateString('en-AU', { weekday: 'long' })) + '<br>' + esc(d.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })) + '</h2></div><div class="mn-no"><span>Minutes</span><b>' + mpad(m.no || 0) + '</b></div></header>' +
+      '<div class="mn-strip">' + cells + '<div class="mn-cell mn-wide"><span>Attendance</span><b>' + esc(counts) + '</b></div></div>';
+    if (mnLines(m.safety).length) out += '<div class="mn-safety" role="note"><span class="mn-sl">Safety</span>' + mnList(m.safety, true) + '</div>';
+    if (mnLines(m.decisions).length) out += mnBox(nx(), 'Decisions', '<ol class="mn-ol">' + mnLines(m.decisions).map(function (l) { return '<li><span class="mn-c">' + '</span><span>' + linkNote(l) + '</span></li>'; }).join('') + '</ol>');
+    var acts = (m.acts || []).filter(function (a) { return a && a.what; });
+    if (acts.length) out += mnBox(nx(), 'Actions', '<div class="mn-tw"><table class="mn-tbl"><thead><tr><th scope="col">Action</th><th scope="col">Who</th><th scope="col">By</th></tr></thead><tbody>' + acts.map(function (a) {
+      var tag = a.st === 'done' ? '<span class="mn-chip">Done</span>' : a.st === 'dropped' ? '<span class="mn-chip">Dropped</span>' : a.carried ? '<span class="mn-chip">Carried over</span>' : '';
+      return '<tr class="' + (a.st && a.st !== 'open' ? 'is-closed' : '') + '"><td>' + linkNote(a.what) + (tag ? '<br>' + tag : '') + '</td><td>' + esc(a.who === 'all' ? 'Everyone' : mnName(a.who)) + '</td><td>' + esc(a.by ? dayShort(a.by) : '') + '</td></tr>';
+    }).join('') + '</tbody></table></div>');
+    if (mnLines(m.menu).length) out += mnBox(nx(), 'Menu changes', mnList(m.menu, true));
+    if (mnLines(m.dates).length) out += mnBox(nx(), 'Dates ahead', mnList(m.dates, true));
+    if (mnLines(m.other).length) out += mnBox(nx(), 'Other', mnList(m.other, true));
+    var who2 = MN_ATT.map(function (x) { return by[x[0]].length ? '<div class="mn-wr"><b>' + x[1] + '</b><span>' + esc(by[x[0]].join(', ')) + '</span></div>' : ''; }).join('') + (m.guests ? '<div class="mn-wr"><b>Guests</b><span>' + esc(m.guests) + '</span></div>' : '') + (m.next ? '<div class="mn-wr"><b>Next meeting</b><span>' + esc(dayShort(m.next)) + '</span></div>' : '');
+    out += mnBox('', 'Who was there', who2, 'mn-who') + '</article>';
+    return out + (sign ? mnSignHTML(m) : '');
+  }
+  function mnSignHTML(m) {
+    var p = me(); if (!p) return '';
+    var s = S.mmine[mnKey(m)], my = (m.att || []).filter(function (x) { return x.id === S.who; })[0], st = my ? my.st : 'absent';
+    if (s && s !== 'loading') return '<section class="mn-sign is-done"><h3 class="mn-bh">Signed</h3><p>' + esc(p.name) + ' signed on ' + esc(dayShort(ymd(new Date(s.at)))) + ' at ' + esc(clock(s.at)) + '. Version ' + m.v + '.</p></section>';
+    if (s === undefined || s === 'loading') return '<section class="mn-sign mn-noprint"><p class="hint">Checking your sign-off...</p></section>';
+    return '<section class="mn-sign mn-noprint"><h3 class="mn-bh">Sign off</h3><p>' + (st === 'present' ? 'I attended and have read and understood these minutes.' : 'I have read and understood these minutes.') + '</p>' +
+      '<label class="label" for="mn-pin">Your PIN</label>' + pinField('mn-pin', 'mn-pin', S.mpin) +
+      '<button type="button" class="btn dark mn-signbtn" data-p="mn-sign" data-id="' + esc(m.id) + '"' + (S.mpinOk && !S.mSigning ? '' : ' disabled') + '>Sign</button>' +
+      '<span class="mn-err" role="status" id="mn-pinmsg">' + esc(S.mErr) + '</span><p class="hint">Your name, the version and the time are recorded. Apology and absent staff sign too.</p></section>';
+  }
+  function mnWriteLink() {
+    var l = S.level === 'owner' || lsGet('lk.admin') === '1' ? '<button type="button" class="p-link" data-p="mn-admin">Write minutes and see who has signed</button>' : (isSous() ? '<button type="button" class="p-link" data-p="mn-sous">See who has signed</button>' : '');
+    return l ? '<p class="mn-noprint mn-wl">' + l + '</p>' : '';
+  }
+  function minutesPageHTML() {
+    loadMinutes();
+    var p = me(), list = mnPub();
+    var top = '<div class="nb-top mn-noprint"><span>' + (p ? 'Signing as <strong>' + esc(p.name) + '</strong>' : '') + '</span><span class="p-links"><button type="button" class="p-link" data-p="who-change">Not you?</button></span></div>';
+    if (S.mins == null) return top + '<section class="mn"><h2 class="mn-title" id="rtitle" tabindex="-1">Meeting minutes</h2><p class="hint">Loading...</p></section>';
+    if (!list.length) return top + '<section class="mn"><h2 class="mn-title" id="rtitle" tabindex="-1">Meeting minutes</h2><p class="hint">No minutes have been published in the last ' + MN_DAYS + ' days.</p>' + mnWriteLink() + '</section>';
+    var m = list.filter(function (x) { return x.id === S.mSel; })[0] || list[0], older = list.filter(function (x) { return x.id !== m.id; }).slice(0, 12);
+    return top + '<section class="mn">' + mnDocHTML(m, true) +
+      '<div class="mn-noprint"><div class="mn-btns"><button type="button" class="btn" data-p="mn-print">Print or save as PDF</button></div>' +
+      (older.length ? '<h3 class="mn-eh">Earlier minutes (last ' + MN_DAYS + ' days)</h3><div class="mn-earlier">' + older.map(function (x) { return '<button type="button" class="chip" data-p="mn-pickdoc" data-id="' + esc(x.id) + '">' + mpad(x.no || 0) + ' &middot; ' + esc(dayShort(x.date)) + '</button>'; }).join('') + '</div>' : '') + '</div>' + mnWriteLink() + '</section>';
+  }
+  function signMinutes(id) {
+    var m = mnById(id), p = who();
+    if (!m || !p || !fb || !S.authed || !S.tok || S.mSigning || !S.mpinOk) return;
+    var my = (m.att || []).filter(function (x) { return x.id === S.who; })[0], st = my ? my.st : 'absent', k = mnKey(m);
+    var ref = fb.fs.doc.apply(null, [fb.db].concat(base(), ['minutes', m.id, 'signs', m.v + '_' + S.who])), data = { v: m.v, st: st, at: Date.now(), name: p.name };
+    S.mSigning = true; S.mErr = ''; draw();
+    sset(ref, data, false).then(function () {
+      S.mSigning = false; S.mmine[k] = data; S.mpin = ''; S.mpinOk = false; minBell(); toast('Signed. Thank you.'); draw();
+    }, function (e) {
+      S.mSigning = false; delete S.mmine[k];
+      S.mErr = e && e.code === 'permission-denied' ? 'Not allowed. The minutes may have changed, or you have already signed this version. Reload the page.' : 'Could not sign. Check the connection and try again.';
+      loadMinutes(true); draw();
+    });
+  }
+
+  /* ---- writing the minutes, and the register (head chef and sous chefs) ---- */
+  function mfNew() {
+    var prev = mnPub()[0], nos = (S.mins || []).map(function (m) { return m.no || 0; });
+    var carried = prev ? (prev.acts || []).filter(function (a) { return a.st === 'open'; }).map(function (a) { return { what: a.what, who: a.who || '', by: a.by || '', st: 'open', carried: true }; }) : [];
+    return { id: '', no: (nos.length ? Math.max.apply(null, nos) : 0) + 1, v: 1, status: 'draft', date: ymd(new Date()), start: '', loc: '', chair: S.who || '', taker: '', att: {}, guests: '', decisions: '', menu: '', safety: '', dates: '', other: '', acts: carried, next: '', orig: null, prev: false };
+  }
+  function mfFrom(m) {
+    var att = {}; (m.att || []).forEach(function (x) { att[x.id] = x.st; });
+    return { id: m.id, no: m.no, v: m.v, status: m.status, date: m.date, start: m.start || '', loc: m.loc || '', chair: m.chair || '', taker: m.taker || '', att: att, guests: m.guests || '', decisions: m.decisions || '', menu: m.menu || '', safety: m.safety || '', dates: m.dates || '', other: m.other || '', acts: (m.acts || []).map(function (a) { return Object.assign({}, a); }), next: m.next || '', orig: m, prev: false };
+  }
+  function mfSet(k, el) {
+    var f = S.mf; if (!f) return;
+    var v = el.value, i = +el.getAttribute('data-i'), map = { 'mn-date': 'date', 'mn-start': 'start', 'mn-loc': 'loc', 'mn-chair': 'chair', 'mn-taker': 'taker', 'mn-guests': 'guests', 'mn-decisions': 'decisions', 'mn-menu': 'menu', 'mn-safety': 'safety', 'mn-dates': 'dates', 'mn-other': 'other', 'mn-next': 'next' };
+    if (k === 'mn-aw' && f.acts[i]) f.acts[i].what = v;
+    else if (k === 'mn-awho' && f.acts[i]) f.acts[i].who = v;
+    else if (k === 'mn-aby' && f.acts[i]) f.acts[i].by = v;
+    else if (map[k]) f[map[k]] = v;
+  }
+  function mfClip(t) { return String(t || '').replace(/^\s+|\s+$/g, '').slice(0, 1200); }
+  function mfData(f, publish) {
+    var att = [];
+    people().forEach(function (p) { if (f.att[p.id]) att.push({ id: p.id, st: f.att[p.id] }); });
+    var acts = f.acts.filter(function (a) { return String(a.what || '').trim(); }).map(function (a) { var o = { what: String(a.what).trim().slice(0, 160), who: a.who || '', by: a.by || '', st: a.st || 'open' }; if (a.carried) o.carried = true; return o; });
+    return { no: f.no, v: f.v, status: publish ? 'published' : 'draft', date: f.date, start: f.start || '', loc: String(f.loc || '').trim().slice(0, 60), chair: f.chair || '', taker: f.taker || '', guests: String(f.guests || '').trim().slice(0, 120), next: f.next || '',
+      decisions: mfClip(f.decisions), menu: mfClip(f.menu), safety: mfClip(f.safety), dates: mfClip(f.dates), other: mfClip(f.other), att: att, acts: acts, removed: false, upd: Date.now() };
+  }
+  function personSelect(k, val, i, any) {
+    return '<select class="p-select" data-k="' + k + '"' + (i != null ? ' data-i="' + i + '"' : '') + ' aria-label="' + (k === 'mn-chair' ? 'Run by' : k === 'mn-taker' ? 'Minutes taken by' : 'Who') + '"><option value="">' + (any ? 'Team' : 'Pick') + '</option>' + (any ? '<option value="all"' + (val === 'all' ? ' selected' : '') + '>Everyone</option>' : '') + people().map(function (p) { return '<option value="' + esc(p.id) + '"' + (val === p.id ? ' selected' : '') + '>' + esc(p.name) + '</option>'; }).join('') + '</select>';
+  }
+  function mfTextarea(k, label, rows, hint) {
+    return '<div class="field"><label class="label" for="' + k + '">' + label + '</label><textarea id="' + k + '" class="p-bulk" data-k="' + k + '" rows="' + rows + '" maxlength="1200">' + esc(S.mf[k.slice(3)]) + '</textarea>' + (hint ? '<span class="hint">' + hint + '</span>' : '') + '</div>';
+  }
+  function mfHTML() {
+    var f = S.mf, isEdit = f.status === 'published';
+    if (f.prev) {
+      var d = mfData(f, true); d.id = 'preview'; d.v = isEdit ? f.v + 1 : f.v;
+      return '<section class="set-block"><span class="label">Preview</span><div class="mn">' + mnDocHTML(d, false) + '</div><div class="btn-row"><button type="button" class="btn" data-p="mn-prev">Back to writing</button></div></section>';
+    }
+    var attRows = people().map(function (p) {
+      return '<div class="mn-arow"><span class="mn-an">' + esc(p.name) + '</span><div class="mn-seg" role="group" aria-label="Attendance for ' + esc(p.name) + '">' + MN_ATT.map(function (x) { return '<button type="button" class="chip" data-p="mn-att" data-id="' + esc(p.id) + '" data-v="' + x[0] + '" aria-pressed="' + (f.att[p.id] === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div></div>';
+    }).join('');
+    var actRows = f.acts.map(function (a, i) {
+      if (a.carried) return '<div class="mn-act is-carried"><span class="mn-at">' + esc(a.what) + ' <small>' + esc((a.who === 'all' ? 'Everyone' : mnName(a.who)) + (a.by ? ', by ' + dayShort(a.by) : '')) + '</small></span><div class="mn-seg" role="group" aria-label="Carried action">' + [['done', 'Done'], ['open', 'Carry over'], ['dropped', 'Drop']].map(function (x) { return '<button type="button" class="chip" data-p="mn-ast" data-i="' + i + '" data-v="' + x[0] + '" aria-pressed="' + ((a.st || 'open') === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div></div>';
+      return '<div class="mn-act"><label class="visually-hidden" for="mn-aw' + i + '">Action</label><input id="mn-aw' + i + '" class="search" data-k="mn-aw" data-i="' + i + '" maxlength="160" placeholder="What needs doing" value="' + esc(a.what) + '">' +
+        '<div class="mn-act2">' + personSelect('mn-awho', a.who || '', i, true) + '<label class="visually-hidden" for="mn-aby' + i + '">By</label><input id="mn-aby' + i + '" type="date" class="p-dateinput" data-k="mn-aby" data-i="' + i + '" value="' + esc(a.by || '') + '"><button type="button" class="p-x" data-p="mn-arem" data-i="' + i + '">Remove</button></div></div>';
+    }).join('');
+    return '<section class="set-block mn-form"><span class="label">' + (isEdit ? 'Change these minutes (becomes version ' + (f.v + 1) + ')' : f.id ? 'Draft minutes ' + mpad(f.no) : 'New minutes ' + mpad(f.no)) + '</span>' +
+      (isEdit ? '<span class="hint">Everyone signs again after a change. The earlier version is kept.</span>' : '<span class="hint">Short lines, one per line. Spelling is yours to check. Recipe names link to their card. Leave out prices, PINs and private details. A draft is not shown to staff in the app.</span>') +
+      '<div class="mn-grid"><div class="field"><label class="label" for="mn-date">Date</label><input id="mn-date" type="date" class="p-dateinput" data-k="mn-date" value="' + esc(f.date) + '"></div><div class="field"><label class="label" for="mn-start">Start time</label><input id="mn-start" type="time" class="p-dateinput" data-k="mn-start" value="' + esc(f.start) + '"></div>' +
+      '<div class="field"><label class="label" for="mn-loc">Location</label><input id="mn-loc" class="search" data-k="mn-loc" maxlength="60" value="' + esc(f.loc) + '"></div><div class="field"><span class="label">Run by</span>' + personSelect('mn-chair', f.chair) + '</div><div class="field"><span class="label">Minutes taken by</span>' + personSelect('mn-taker', f.taker) + '</div></div>' +
+      '<div class="field"><div class="mn-arh"><span class="label">Attendance</span><button type="button" class="p-x" data-p="mn-all">Mark all present</button></div>' + (attRows || '<p class="hint">No names on the staff list yet.</p>') + '<label class="label" for="mn-guests">Guests (not signed)</label><input id="mn-guests" class="search" data-k="mn-guests" maxlength="120" placeholder="For example a supplier or manager" value="' + esc(f.guests) + '"></div>' +
+      '<div class="field"><span class="label">Actions</span>' + (actRows || '<p class="hint">No actions yet.</p>') + '<div class="btn-row"><button type="button" class="btn" data-p="mn-aadd">Add an action</button></div></div>' +
+      mfTextarea('mn-decisions', 'Decisions', 4, 'One decision per line.') + mfTextarea('mn-menu', 'Menu changes', 3, 'What changes, and for which dish.') + mfTextarea('mn-safety', 'Safety', 3, 'Shows first, in orange.') + mfTextarea('mn-dates', 'Dates ahead', 3, 'Deliveries, functions, events.') + mfTextarea('mn-other', 'Other', 3, '') +
+      '<div class="field"><label class="label" for="mn-next">Next meeting (optional)</label><input id="mn-next" type="date" class="p-dateinput" data-k="mn-next" value="' + esc(f.next) + '"></div>' +
+      '<div class="btn-row"><button type="button" class="btn dark" data-p="mn-pub"' + (S.mSaving ? ' disabled' : '') + '>' + (isEdit ? 'Publish as version ' + (f.v + 1) : 'Publish and start sign-off') + '</button>' + (isEdit ? '' : '<button type="button" class="btn" data-p="mn-draft"' + (S.mSaving ? ' disabled' : '') + '>Save draft</button>') + '<button type="button" class="btn" data-p="mn-prev">Preview</button><button type="button" class="btn" data-p="mn-cancel">Cancel</button></div><span class="saved" role="status">' + esc(S.mMsg) + '</span></section>';
+  }
+  function saveMinutes(publish) {
+    var f = S.mf; if (!f || S.mSaving || !fb) return;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(f.date || '')) { S.mMsg = 'Pick the meeting date.'; draw(); return; }
+    var data = mfData(f, publish), wasPub = f.status === 'published';
+    if (publish) {
+      var missing = people().filter(function (p) { return !f.att[p.id]; });
+      if (missing.length) { S.mMsg = 'Set attendance for ' + missing.slice(0, 4).map(function (p) { return p.name; }).join(', ') + (missing.length > 4 ? ' and ' + (missing.length - 4) + ' more' : '') + ' (Present, Apology or Absent).'; draw(); return; }
+      if (!data.decisions && !data.menu && !data.safety && !data.dates && !data.other && !data.acts.length) { S.mMsg = 'Write something in at least one section first.'; draw(); return; }
+      data.pubAt = Date.now();
+      if (wasPub) data.v = f.v + 1;
+    } else if (!data.decisions && !data.menu && !data.safety && !data.dates && !data.other && !data.acts.length && !data.guests) { S.mMsg = 'Nothing to save yet.'; draw(); return; }
+    if (!f.id) data.at = Date.now();
+    var ref = f.id ? mnRef(f.id) : fb.fs.doc(colRef('minutes')), ops = [];
+    if (publish && wasPub && f.orig) {
+      var snap = Object.assign({}, f.orig); delete snap.id; delete snap.by;
+      ops.push(['set', fb.fs.doc.apply(null, [fb.db].concat(base(), ['minutes', f.id, 'hist', String(f.orig.v)])), snap, false]);
+    }
+    ops.push(['set', ref, data, !!f.id]);
+    S.mSaving = true; S.mMsg = ''; draw();
+    W(ops).then(function () {
+      S.mSaving = false; S.mf = null; if (publish) { S.mSel = ref.id; delete S.mmine[ref.id + '_' + data.v + '_' + S.who]; }
+      S.mMsg = publish ? 'Published. Staff can read and sign it now.' : 'Draft saved.';
+      loadMinutes(true); if (publish) loadSigns(ref.id, true); draw();
+    }, function (e) {
+      S.mSaving = false; S.mMsg = e && e.code === 'permission-denied' ? 'Not allowed. Only the head chef and sous chefs can write minutes, and the minutes rules must be published.' : 'Could not save. Check the connection and try again.'; draw();
+    });
+  }
+  function mnRef(id) { return docRef('minutes', id); }
+  function removeMinutes(id) {
+    if (S.mDel !== id) { S.mDel = id; draw(); return; }
+    S.mDel = '';
+    sset(mnRef(id), { removed: true, upd: Date.now() }, true).then(function () { S.mMsg = 'Removed.'; if (S.mSel === id) S.mSel = ''; loadMinutes(true); draw(); }, function () { S.mMsg = 'Could not remove. Check the connection and try again.'; draw(); });
+  }
+  /* who has signed the current version, who has not, and who is late */
+  function mnRegister(m) {
+    var sg = S.msigns[m.id], list = sg && sg.list ? sg.list.filter(function (s) { return s.v === m.v; }) : null;
+    if (!list) return null;
+    var lateAt = (m.pubAt || m.at || Date.now()) + MN_LATE * 86400000, now = Date.now(), att = {}, rows = [];
+    (m.att || []).forEach(function (x) { att[x.id] = x.st; });
+    people().forEach(function (p) {
+      var s = list.filter(function (x) { return x.by === p.id; })[0], st = att[p.id] || 'absent';
+      rows.push({ id: p.id, name: p.name, att: st, at: s ? s.at : 0, signed: !!s, late: s ? s.at > lateAt : now > lateAt });
+    });
+    var chase = rows.filter(function (r) { return !r.signed; }), pubAt = m.pubAt || m.at || now;
+    return { rows: rows, chase: chase, days: Math.max(0, Math.floor((now - pubAt) / 86400000)), signed: rows.length - chase.length, late: rows.filter(function (r) { return r.signed && r.late; }).length };
+  }
+  function mnOverdue() {
+    var latest = mnPub()[0], t = ymd(new Date());
+    return latest ? (latest.acts || []).filter(function (a) { return a.st === 'open' && a.by && a.by < t; }) : [];
+  }
+  function mnRegisterHTML(pub) {
+    if (!pub.length) return '<section class="set-block"><span class="label">Register</span><p class="hint">No minutes have been published yet.</p></section>';
+    var m = pub.filter(function (x) { return x.id === S.mSel; })[0] || pub[0]; loadSigns(m.id, false);
+    var reg = mnRegister(m), od = mnOverdue();
+    var chips = '<div class="mn-earlier mn-noprint">' + pub.slice(0, 8).map(function (x) { return '<button type="button" class="chip" data-p="mn-sel" data-id="' + esc(x.id) + '" aria-pressed="' + (x.id === m.id) + '">' + mpad(x.no || 0) + ' &middot; ' + esc(dayShort(x.date)) + '</button>'; }).join('') + '</div>';
+    var body;
+    if (!reg) body = '<p class="hint">' + (S.msigns[m.id] && S.msigns[m.id].err ? 'Could not load the sign-offs. Check the connection.' : 'Loading the sign-offs...') + '</p>';
+    else {
+      var tiles = '<div class="mn-tiles"><div class="mn-tile"><span>Signed</span><b>' + reg.signed + '<small> of ' + reg.rows.length + '</small></b></div><div class="mn-tile' + (reg.chase.length ? ' is-hot' : '') + '"><span>Not signed</span><b>' + reg.chase.length + '</b></div><div class="mn-tile"><span>Signed late</span><b>' + reg.late + '</b></div><div class="mn-tile"><span>Actions overdue</span><b>' + od.length + '</b></div></div>';
+      var table = '<div class="a-tablewrap"><table class="a-table mn-reg"><thead><tr><th scope="col">Person</th><th scope="col">Attendance</th><th scope="col">Signed</th><th scope="col">Status</th></tr></thead><tbody>' + reg.rows.map(function (r) {
+        return '<tr><th scope="row">' + esc(r.name) + '</th><td>' + esc(r.att.charAt(0).toUpperCase() + r.att.slice(1)) + '</td><td>' + (r.signed ? esc(dayShort(ymd(new Date(r.at))) + ', ' + clock(r.at)) : '<span class="o-who-i">Not yet</span>') + '</td><td class="' + (!r.signed || r.late ? 'mn-hot' : '') + '">' + (r.signed ? (r.late ? 'Signed late' : 'Signed') : (r.late ? 'Not signed (late)' : 'Not signed')) + '</td></tr>';
+      }).join('') + '</tbody></table></div>';
+      var chase = '<div class="mn-side"><h3 class="a-ch-h">Chase list</h3>' + (reg.chase.length ? '<ul class="mn-chase">' + reg.chase.map(function (r) { return '<li><b>' + esc(r.name) + '</b> ' + reg.days + (reg.days === 1 ? ' day' : ' days') + '</li>'; }).join('') + '</ul>' : '<p class="hint">Everyone has signed this version.</p>') +
+        '<h3 class="a-ch-h">Actions overdue</h3>' + (od.length ? '<ul class="mn-chase">' + od.map(function (a) { return '<li>' + esc(a.what) + ' <b>' + esc(a.who === 'all' ? 'Everyone' : mnName(a.who)) + '</b> was ' + esc(dayShort(a.by)) + '</li>'; }).join('') + '</ul>' : '<p class="hint">None. Seen by the head chef and sous chefs only.</p>') + '</div>';
+      body = tiles + '<div class="mn-regrid">' + table + chase + '</div>';
+    }
+    return '<section class="set-block mn-print"><span class="label">Sign-off register</span><span class="hint">Minutes ' + mpad(m.no || 0) + ', ' + esc(longDate(m.date)) + ', version ' + m.v + (m.v > 1 ? '. Earlier versions are kept' : '') + '. Staff who have not signed within ' + MN_LATE + ' days are marked late. Everyone on the staff list signs, including apology and absent.</span>' + chips + body +
+      '<div class="a-print-h"><strong>Leichhardt Kitchen Book</strong> &middot; Minutes ' + mpad(m.no || 0) + ' sign-off register &middot; version ' + m.v + '<span>Printed ' + esc(dayShort(ymd(new Date())) + ' ' + clock(Date.now())) + '</span></div>' +
+      '<div class="btn-row mn-noprint"><button type="button" class="btn dark" data-p="mn-print">Print or save as PDF</button><button type="button" class="btn" data-p="mn-csv" data-id="' + esc(m.id) + '">Download CSV</button><button type="button" class="btn" data-p="mn-refresh">Refresh</button>' + (mnCanWrite() ? '<button type="button" class="btn" data-p="mn-edit" data-id="' + esc(m.id) + '">Change as a new version</button><button type="button" class="btn" data-p="mn-remove" data-id="' + esc(m.id) + '">' + (S.mDel === m.id ? 'Tap again to remove' : 'Remove') + '</button>' : '') + '</div></section>';
+  }
+  function minAdminHTML() {
+    loadMinutes();
+    if (S.mins == null) return '<p class="hint">Loading...</p>';
+    var drafts = mnDrafts(), pub = mnPub();
+    var intro = '<section class="set-block mn-noprint"><span class="label">Kitchen meeting minutes</span><span class="hint">Write the minutes after the meeting. Staff read them at Meeting minutes in the app and sign with their own PIN. A change after publishing makes a new version and everyone signs again.</span>' +
+      '<div class="btn-row"><button type="button" class="btn dark" data-p="mn-new">Write new minutes</button>' + drafts.map(function (d) { return '<button type="button" class="btn" data-p="mn-draft-open" data-id="' + esc(d.id) + '">Continue draft ' + mpad(d.no || 0) + ' (' + esc(dayShort(d.date)) + ')</button>'; }).join('') + '</div><span class="saved" role="status">' + (S.mf ? '' : esc(S.mMsg)) + '</span></section>';
+    if (!mnCanWrite()) intro = '<section class="set-block mn-noprint"><span class="label">Kitchen meeting minutes</span><span class="hint">See who has signed the minutes and who still needs to. Only the head chef writes and publishes minutes.</span></section>';
+    return intro + (S.mf && mnCanWrite() ? mfHTML() : '') + mnRegisterHTML(pub);
+  }
+  function minSousPageHTML() {
+    return '<div class="p-admin"><div class="p-bar"><span>Meeting minutes</span><span class="p-links"><button type="button" class="p-link" data-p="min-close">Back to the prep book</button></span></div><h2 class="p-h" id="rtitle" tabindex="-1">Meeting minutes</h2>' + minAdminHTML() + '</div>';
+  }
+  function printMinutes() {
+    document.documentElement.classList.add('print-min');
+    function done() { document.documentElement.classList.remove('print-min'); window.removeEventListener('afterprint', done); }
+    window.addEventListener('afterprint', done);
+    setTimeout(function () { window.print(); setTimeout(function () { if (document.documentElement.classList.contains('print-min') && !window.matchMedia('print').matches) done(); }, 1500); }, 50);
+  }
+  function csvMinutes(id) {
+    var m = mnById(id), reg = m && mnRegister(m); if (!reg) return;
+    var rows = [['Minutes', 'Version', 'Meeting date', 'Person', 'Attendance', 'Signed at', 'Status']];
+    reg.rows.forEach(function (r) { rows.push([mpad(m.no || 0), m.v, m.date, r.name, r.att, r.signed ? ymd(new Date(r.at)) + ' ' + clock(r.at) : '', r.signed ? (r.late ? 'Signed late' : 'Signed') : (r.late ? 'Not signed (late)' : 'Not signed')]); });
+    downloadCSV('leichhardt-minutes-' + mpad(m.no || 0) + '-v' + m.v + '.csv', rows);
+  }
+
   /* ---------- wastage insights (admin) ---------- */
   function loadWStats(force) {
     if (!fb || S.configState !== 'ok') return;
@@ -2770,6 +3071,29 @@
       else if (todaysNotes().length) noteOpen(); else toast('Write a note first, or no note is set for today yet.');
       return;
     }
+    if (a === 'min-open') { if (isSous()) { S.minOpen = true; S.mMsg = ''; S.mf = null; loadMinutes(true); draw(); window.scrollTo(0, 0); } return; }
+    if (a === 'min-close') { S.minOpen = false; S.mf = null; draw(); return; }
+    if (a === 'mn-admin') { S.atab = 'minutes'; lsSet('lk.prep.atab', 'minutes'); location.hash = '#/admin'; return; }
+    if (a === 'mn-sous') { S.minOpen = true; S.mf = null; location.hash = '#/prep'; return; }
+    if (a === 'mn-pickdoc') { S.mSel = id; S.mpin = ''; S.mpinOk = false; S.mErr = ''; draw(); window.scrollTo(0, 0); return; }
+    if (a === 'mn-sign') { signMinutes(id); return; }
+    if (a === 'mn-print') { printMinutes(); return; }
+    if (a === 'mn-csv') { csvMinutes(id); return; }
+    if (a === 'mn-refresh') { loadMinutes(true); loadSigns(S.mSel || (mnPub()[0] || {}).id, true); draw(); return; }
+    if (a === 'mn-sel') { S.mSel = id; loadSigns(id, true); draw(); return; }
+    if (/^mn-(new|draft-open|edit|draft|pub|remove)$/.test(a) && !mnCanWrite()) return;
+    if (a === 'mn-new') { S.mf = mfNew(); S.mMsg = ''; draw(); var mfe = S.root.querySelector('.mn-form'); if (mfe) mfe.scrollIntoView({ block: 'start' }); return; }
+    if (a === 'mn-draft-open' || a === 'mn-edit') { var mm = mnById(id); if (mm) { S.mf = mfFrom(mm); S.mMsg = ''; draw(); var mfe2 = S.root.querySelector('.mn-form'); if (mfe2) mfe2.scrollIntoView({ block: 'start' }); } return; }
+    if (a === 'mn-cancel') { S.mf = null; S.mMsg = ''; draw(); return; }
+    if (a === 'mn-prev') { if (S.mf) { S.mf.prev = !S.mf.prev; draw(); } return; }
+    if (a === 'mn-att') { if (S.mf) { S.mf.att[id] = el.getAttribute('data-v'); draw(); } return; }
+    if (a === 'mn-all') { if (S.mf) { people().forEach(function (p) { S.mf.att[p.id] = 'present'; }); draw(); } return; }
+    if (a === 'mn-ast') { if (S.mf && S.mf.acts[i]) { S.mf.acts[i].st = el.getAttribute('data-v'); draw(); } return; }
+    if (a === 'mn-aadd') { if (S.mf) { S.mf.acts.push({ what: '', who: '', by: '', st: 'open' }); draw(); var mw = S.root.querySelector('[data-k="mn-aw"][data-i="' + (S.mf.acts.length - 1) + '"]'); if (mw) mw.focus(); } return; }
+    if (a === 'mn-arem') { if (S.mf) { S.mf.acts.splice(i, 1); draw(); } return; }
+    if (a === 'mn-draft') { saveMinutes(false); return; }
+    if (a === 'mn-pub') { saveMinutes(true); return; }
+    if (a === 'mn-remove') { removeMinutes(id); return; }
     if (a === 'otick') { tickOrderLine(el.getAttribute('data-d'), id, el.getAttribute('aria-pressed') !== 'true'); return; }
     if (a === 'odel') { removeOrderLine(el.getAttribute('data-d'), id); return; }
     if (a === 'ogroup') { tickOrderGroup(el.getAttribute('data-k2')); return; }
@@ -2850,6 +3174,22 @@
     // a PIN goes in by itself the moment the fourth digit is typed (only when it reaches four, so it cannot send twice)
     if (k === 'p-pin') { var pp = S.pinInput.length; S.pinInput = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.pinInput; pinCells(el); if (pp < 4 && S.pinInput.length === 4) submitKitchenPin(); return; }
     if (k === 'a-newpin') { S.newPin = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.newPin; return; }
+    if (k === 'mn-pin') {
+      S.mpin = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.mpin; pinCells(el); S.mpinOk = false; S.mErr = '';
+      var sb = S.root.querySelector('.mn-signbtn'), pm = S.root.querySelector('#mn-pinmsg');
+      if (sb) sb.disabled = true; if (pm) pm.textContent = '';
+      if (S.mpin.length === 4) {
+        var pv = S.mpin;
+        sha('lk:' + S.who + ':' + pv).then(function (h) {
+          if (S.mpin !== pv) return;
+          S.mpinOk = h === S.tok; S.mErr = S.mpinOk ? '' : 'That PIN is not right.';
+          var b2 = S.root && S.root.querySelector('.mn-signbtn'), m2 = S.root && S.root.querySelector('#mn-pinmsg');
+          if (b2) b2.disabled = !S.mpinOk || S.mSigning; if (m2) m2.textContent = S.mErr;
+        });
+      }
+      return;
+    }
+    if (k && k.indexOf('mn-') === 0) { mfSet(k, el); return; }
     if (k === 'pf1') {
       var p1 = S.pf1.length; S.pf1 = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.pf1; pinCells(el);
       if (p1 < 4 && S.pf1.length === 4) {
@@ -2880,6 +3220,7 @@
   function onChange(e) {
     var el = e.target, k = el.getAttribute && el.getAttribute('data-k');
     if (!S.root || !S.root.contains(el)) return;
+    if (k && k.indexOf('mn-') === 0 && k !== 'mn-pin') { mfSet(k, el); return; }
     if (k === 'p-day') { if (el.value) { S.date = el.value; S.tab = ''; watchItems(); draw(); } return; }
     if (k === 'n-start') { if (S.nf && el.value) { S.nf.start = el.value; if (S.nf.until && S.nf.until < el.value) S.nf.until = ''; draw(); } return; }
     if (k === 'n-until') { if (S.nf) { S.nf.until = el.value; S.nf.run = !!el.value; draw(); } return; }
@@ -2929,6 +3270,7 @@
     warm: function () { if (S.pin && S.configState !== 'ok' && S.configState !== 'loading') connect(); notesInit(); },
     noteInfo: noteInfo,
     noteOpen: noteOpen,
+    minInfo: minInfo,
     saveConfig: saveConfig,
     proofread: proofread,
     state: S

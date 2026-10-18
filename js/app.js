@@ -215,10 +215,15 @@
     var i = window.LK_PREP && window.LK_PREP.noteInfo ? window.LK_PREP.noteInfo() : { n: 0, unread: false };
     return '<button type="button" class="rail-set nbell' + (i.unread ? ' has-new' : '') + '" data-note="open"' + (i.n ? '' : ' hidden') + ' aria-label="Today\'s notes' + (i.unread ? ', new' : '') + '">' + BELL + '<span class="rail-lbl">Notes</span></button>';
   }
+  /* The minutes bell: shown only while the person on this phone has meeting minutes to sign (the prep book fills it in once it has read them). */
+  function minBellHTML() {
+    var i = window.LK_PREP && window.LK_PREP.minInfo ? window.LK_PREP.minInfo() : { n: 0 };
+    return '<a class="rail-set mbell' + (i.n ? ' has-new' : '') + '" href="#/minutes"' + (i.n ? '' : ' hidden') + ' aria-label="Meeting minutes to sign' + (i.n ? ', ' + i.n : '') + '"' + (parseRoute().name === 'minutes' ? ' aria-current="page"' : '') + '>' + BELL + '<span class="rail-lbl">Minutes</span></a>';
+  }
   /* The same top bar on every page as on the landing page: brand (goes home), the menu, Notes, Admin and Settings. */
   function topBar() {
     return '<header class="wtop"><a class="rail-brand" href="#/" aria-label="Kitchen Book, home">' + LOGO_MARK + '<span class="rb-text"><span class="rb-eb">Leichhardt Hotel Kitchen</span><b>Kitchen Book</b></span></a>' + pillNav() +
-      '<span class="rail-icons">' + noteBellHTML() + adminLink('rail-set') + '<a class="rail-set" href="#/settings" aria-label="Settings"' + (parseRoute().name === 'settings' ? ' aria-current="page"' : '') + '>' + ICON.gear + '<span class="rail-lbl">Settings</span></a></span></header>';
+      '<span class="rail-icons">' + noteBellHTML() + minBellHTML() + adminLink('rail-set') + '<a class="rail-set" href="#/settings" aria-label="Settings"' + (parseRoute().name === 'settings' ? ' aria-current="page"' : '') + '>' + ICON.gear + '<span class="rail-lbl">Settings</span></a></span></header>';
   }
   /* Under the top bar, the recipe pages get their own tools row: how many recipes, and the Pass / Tiles switch. */
   function header() { return ''; }
@@ -527,7 +532,7 @@
   function parseRoute() {
     var parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
     if (parts[0] === 'settings') return { name: 'settings', stack: [] };
-    if (parts[0] === 'prep' || parts[0] === 'admin' || parts[0] === 'orders' || parts[0] === 'waste') return { name: parts[0], stack: [] };
+    if (parts[0] === 'prep' || parts[0] === 'admin' || parts[0] === 'orders' || parts[0] === 'waste' || parts[0] === 'minutes') return { name: parts[0], stack: [] };
     if (parts[0] === 'r') {
       var stack = parts.slice(1).filter(function (id) { return byId[id]; });
       if (stack.length) return { name: 'recipe', stack: stack };
@@ -554,7 +559,7 @@
     var html;
     if (route.name === 'landing') html = viewLanding();
     else if (route.name === 'settings') html = viewSettings();
-    else if (route.name === 'prep' || route.name === 'admin' || route.name === 'orders' || route.name === 'waste') html = viewPrep();
+    else if (route.name === 'prep' || route.name === 'admin' || route.name === 'orders' || route.name === 'waste' || route.name === 'minutes') html = viewPrep();
     else if (view === 'pass') html = viewPass(route);
     else html = viewTiles(route);
     // Swipeable chip rows keep their place when the page redraws (for example after tapping a chip at the far end).
@@ -563,11 +568,11 @@
     app.innerHTML = html;
     if (!changed) Array.prototype.forEach.call(app.querySelectorAll('.chips.scroll'), function (el, i) { if (rowsAt[i]) el.scrollLeft = rowsAt[i]; });
     fitPins();
-    if ((route.name === 'prep' || route.name === 'admin' || route.name === 'orders' || route.name === 'waste') && window.LK_PREP) window.LK_PREP.mount(route.name, document.getElementById('prep-root'));
+    if ((route.name === 'prep' || route.name === 'admin' || route.name === 'orders' || route.name === 'waste' || route.name === 'minutes') && window.LK_PREP) window.LK_PREP.mount(route.name, document.getElementById('prep-root'));
     // On any other page, connect to the prep book in the background so Prep, Orders and Wastage open straight away.
     else if (window.LK_PREP && window.LK_PREP.warm && !warmed) { warmed = true; setTimeout(function () { window.LK_PREP.warm(); }, 900); }
     var r = route.stack.length ? byId[route.stack[route.stack.length - 1]] : null;
-    document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'waste' ? 'Wastage · ' : route.name === 'landing' ? '' : route.name === 'admin' ? 'Admin panel · ' : '')) + 'Leichhardt Kitchen Book';
+    document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'waste' ? 'Wastage · ' : route.name === 'minutes' ? 'Meeting minutes · ' : route.name === 'landing' ? '' : route.name === 'admin' ? 'Admin panel · ' : '')) + 'Leichhardt Kitchen Book';
     var prevRoute = lastRoute; lastRoute = route.name;
     if (changed && route.name === 'recipe') noteView(route.stack[route.stack.length - 1]);
     if (changed) {
