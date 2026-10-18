@@ -2,8 +2,7 @@
 // "Progress by section" bars. Quick add is one row of one-tap chips: due today, then usual for this weekday, then
 // regulars, each line once and never one that is already on the list.
 const L = require('./lib');
-const R = [];
-const ok = (c, m) => L.check(c, m, R);
+const { R, ok } = L.results();
 const today = L.ymd(new Date(L.NOW));
 const ago = n => L.ymd(new Date(L.NOW - n * 86400000));
 const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');

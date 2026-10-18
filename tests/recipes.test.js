@@ -1,7 +1,6 @@
 // Recipe search (typos, word order, gluten free and the like), the search bar that stays in reach, and the recipe card jumps (pull request 156).
 const L = require('./lib');
-const R = [];
-const ok = (c, m) => L.check(c, m, R);
+const { R, ok } = L.results();
 const names = p => p.evaluate(() => [...document.querySelectorAll('#shelves a.dish:not(.faded), #results a.tile')].map(a => a.getAttribute('aria-label') || a.querySelector('.t-name').textContent));
 async function find(p, v) { await p.fill('#find', v); await p.waitForTimeout(250); }
 (async () => {

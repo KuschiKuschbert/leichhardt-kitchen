@@ -1,8 +1,6 @@
 // No signal and Not sent yet, typed text kept when a save fails, and the self-update waiting for unsaved work (pull request 154).
 const L = require('./lib');
-const R = [];
-const ok = (c, m) => L.check(c, m, R);
-const txt = (page, sel) => page.evaluate(s => { const e = document.querySelector(s); return e ? e.textContent.trim() : null; }, sel);
+const { R, ok } = L.results(), { txt } = L;
 (async () => {
   const b = await L.start();
   let p = await L.open(b, '#/prep', { wait: 1500 });

@@ -1,7 +1,6 @@
 // Order lines that were not ordered roll onto today's order list, like prep lines, until someone ticks them as ordered.
 const L = require('./lib');
-const R = [];
-const ok = (c, m) => L.check(c, m, R);
+const { R, ok } = L.results();
 const today = L.ymd(new Date(L.NOW));
 const yday = L.ymd(new Date(L.NOW - 86400000));
 const ago2 = L.ymd(new Date(L.NOW - 2 * 86400000));

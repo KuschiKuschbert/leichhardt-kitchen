@@ -1,14 +1,12 @@
 // One clock: the book takes the server's time from the Date header of its update check (LK_TIME in index.html) and
 // works in kitchen time (Queensland), whatever the phone's own clock and time zone say.
 const L = require('./lib');
-const R = [];
-const ok = (c, m) => L.check(c, m, R);
+const { R, ok } = L.results(), { txt } = L;
 const H = 3600000;
 const today = L.ymd(new Date(L.NOW));
 const tomorrow = L.ymd(new Date(L.NOW + 26 * H));
 const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
 const store = page => page.evaluate(() => window.__fake.dump());
-const txt = (page, sel) => page.evaluate(s => { const e = document.querySelector(s); return e ? e.textContent : ''; }, sel);
 const near = (a, b, ms) => typeof a === 'number' && Math.abs(a - b) <= ms;
 (async () => {
   const b = await L.start();

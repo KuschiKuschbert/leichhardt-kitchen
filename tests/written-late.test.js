@@ -2,8 +2,7 @@
 // Only if it is still open after that day does it show as rolled. Same for order lines. (No past ticks in the seed,
 // so the cut-off is the 20:00 fallback.)
 const L = require('./lib');
-const R = [];
-const ok = (c, m) => L.check(c, m, R);
+const { R, ok } = L.results(), { row } = L;
 const today = L.ymd(new Date(L.NOW));
 const yday = L.ymd(new Date(L.NOW - 86400000));
 const ago2 = L.ymd(new Date(L.NOW - 2 * 86400000));
@@ -11,7 +10,6 @@ const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
 const store = page => page.evaluate(() => window.__fake.dump());
 const rid = id => 'r' + today.replace(/-/g, '') + '-' + id;
 const at = (day, h, m) => { const p = day.split('-'); return new Date(+p[0], +p[1] - 1, +p[2], h, m).getTime(); };
-const row = (page, id) => page.evaluate(i => { const e = document.getElementById('nbr-' + i); return e ? e.textContent : ''; }, id);
 (async () => {
   const b = await L.start();
   let p, s;

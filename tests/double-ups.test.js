@@ -1,13 +1,11 @@
 // Double ups on the prep list: the same item open twice on today's list, in any section, becomes one line by itself
 // (with Undo), and writing an item that is already open does not add it again (with Add anyway).
 const L = require('./lib');
-const R = [];
-const ok = (c, m) => L.check(c, m, R);
+const { R, ok } = L.results(), { row } = L;
 const today = L.ymd(new Date(L.NOW));
 const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
 const ik = id => fsKey(['days', today, 'items', id]);
 const store = page => page.evaluate(() => window.__fake.dump());
-const row = (page, id) => page.evaluate(i => { const e = document.getElementById('nbr-' + i); return e ? e.textContent : null; }, id);
 const toast = page => page.evaluate(() => { const e = document.querySelector('.p-toast'); return e ? e.textContent : ''; });
 const serverReads = page => page.evaluate(() => window.__fake.reads.filter(r => /\/days\/[^/]+\/items\/[^/]+$/.test(r)).length);
 (async () => {

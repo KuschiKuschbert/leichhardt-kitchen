@@ -1,13 +1,11 @@
 // The order list learns what is ordered (like the prep list) and nudges about lines waiting more than 3 days.
 const L = require('./lib');
-const R = [];
-const ok = (c, m) => L.check(c, m, R);
+const { R, ok } = L.results(), { txt } = L;
 const today = L.ymd(new Date(L.NOW));
 const back = n => L.ymd(new Date(L.NOW - n * 86400000));
 const dow = String(new Date(L.NOW).getDay());
 const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
 const store = page => page.evaluate(() => window.__fake.dump());
-const txt = (page, sel) => page.evaluate(s => { const e = document.querySelector(s); return e ? e.textContent : ''; }, sel);
 (async () => {
   const b = await L.start();
   let p, s;
