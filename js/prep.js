@@ -1548,7 +1548,7 @@
       '<button type="button" class="nb-btn" data-p="copy">Copy the list</button>' +
       '<button type="button" class="nb-btn" data-p="print">Print the list</button>' +
       '<a class="nb-btn" href="#/minutes">Meeting minutes</a>' +
-      (isSous() ? '<button type="button" class="nb-btn" data-p="notes-open">Daily notes</button><button type="button" class="nb-btn" data-p="min-open">Write minutes and register</button><button type="button" class="nb-btn" data-p="staff-open">Manage staff</button>' : '') + '</div>';
+      (isSous() ? '<button type="button" class="nb-btn" data-p="notes-open">Daily notes</button><button type="button" class="nb-btn" data-p="min-open">Minutes register</button><button type="button" class="nb-btn" data-p="staff-open">Manage staff</button>' : '') + '</div>';
     var dl = live.filter(function (x) { return x.done; }).sort(function (a, b) { return (b.doneAt || 0) - (a.doneAt || 0); });
     var donebox = '<h3 class="nb-sh">Done today (' + dl.length + ')</h3>' + (dl.length ? '<ul class="nb-done">' + dl.map(function (x) {
       return '<li><span class="nb-dt">' + (x.doneAt ? clock(x.doneAt) : '') + '</span><span class="nb-dx">' + esc(x.text) + (x.qty ? ' <em>' + esc(x.qty) + '</em>' : '') + '</span><span class="nb-dw">' + esc(x.doneBy || '') + '</span></li>';
@@ -2457,7 +2457,7 @@
   }
 
   /* ---------- kitchen meeting minutes ----------
-     The head chef (admin panel, Minutes tab) or a sous chef (Handy, "Write minutes and register") writes the minutes after a meeting and publishes them.
+     The head chef (admin panel, Minutes tab) writes the minutes after a meeting and publishes them. Sous chefs (Handy, "Minutes register") only see the register.
      Staff read them at #/minutes in one fixed layout and sign with their own PIN. A bell in the top bar and a nudge on the prep list show until a person has signed.
      Data: kitchens/<PIN>/minutes/<id> { no, v, status draft|published, date, start, loc, chair, taker, guests, next, decisions, menu, safety, dates, other,
        att: [{ id, st present|apology|absent }], acts: [{ what, who, by, st open|done|dropped, carried }], pubAt, removed, at, upd }.
@@ -2471,6 +2471,8 @@
   function mpad(n) { return n < 10 ? '0' + n : String(n); }
   function mnName(id) { var p = ((S.config && S.config.people) || []).filter(function (x) { return x.id === id; })[0]; return p ? p.name : (id ? 'Former staff' : ''); }
   function mnLines(t) { return String(t || '').split(/\n/).map(function (s) { return s.trim(); }).filter(Boolean); }
+  /* only the head chef (Google account) writes and publishes minutes. Sous chefs read the register. */
+  function mnCanWrite() { return S.level === 'owner'; }
   function mnById(id) { return (S.mins || []).filter(function (m) { return m.id === id; })[0] || null; }
   function mnPub() { return (S.mins || []).filter(function (m) { return m.status === 'published' && !m.removed; }).sort(function (a, b) { return String(b.date).localeCompare(String(a.date)) || (b.no || 0) - (a.no || 0); }); }
   function mnDrafts() { return (S.mins || []).filter(function (m) { return m.status === 'draft' && !m.removed; }).sort(function (a, b) { return (b.upd || 0) - (a.upd || 0); }); }
@@ -2569,7 +2571,7 @@
       '<span class="mn-err" role="status" id="mn-pinmsg">' + esc(S.mErr) + '</span><p class="hint">Your name, the version and the time are recorded. Apology and absent staff sign too.</p></section>';
   }
   function mnWriteLink() {
-    var l = S.level === 'owner' || lsGet('lk.admin') === '1' ? '<button type="button" class="p-link" data-p="mn-admin">Write minutes and see who has signed</button>' : (isSous() ? '<button type="button" class="p-link" data-p="mn-sous">Write minutes and see who has signed</button>' : '');
+    var l = S.level === 'owner' || lsGet('lk.admin') === '1' ? '<button type="button" class="p-link" data-p="mn-admin">Write minutes and see who has signed</button>' : (isSous() ? '<button type="button" class="p-link" data-p="mn-sous">See who has signed</button>' : '');
     return l ? '<p class="mn-noprint mn-wl">' + l + '</p>' : '';
   }
   function minutesPageHTML() {
@@ -2722,7 +2724,7 @@
     }
     return '<section class="set-block mn-print"><span class="label">Sign-off register</span><span class="hint">Minutes ' + mpad(m.no || 0) + ', ' + esc(longDate(m.date)) + ', version ' + m.v + (m.v > 1 ? '. Earlier versions are kept' : '') + '. Staff who have not signed within ' + MN_LATE + ' days are marked late. Everyone on the staff list signs, including apology and absent.</span>' + chips + body +
       '<div class="a-print-h"><strong>Leichhardt Kitchen Book</strong> &middot; Minutes ' + mpad(m.no || 0) + ' sign-off register &middot; version ' + m.v + '<span>Printed ' + esc(dayShort(ymd(new Date())) + ' ' + clock(Date.now())) + '</span></div>' +
-      '<div class="btn-row mn-noprint"><button type="button" class="btn dark" data-p="mn-print">Print or save as PDF</button><button type="button" class="btn" data-p="mn-csv" data-id="' + esc(m.id) + '">Download CSV</button><button type="button" class="btn" data-p="mn-refresh">Refresh</button><button type="button" class="btn" data-p="mn-edit" data-id="' + esc(m.id) + '">Change as a new version</button><button type="button" class="btn" data-p="mn-remove" data-id="' + esc(m.id) + '">' + (S.mDel === m.id ? 'Tap again to remove' : 'Remove') + '</button></div></section>';
+      '<div class="btn-row mn-noprint"><button type="button" class="btn dark" data-p="mn-print">Print or save as PDF</button><button type="button" class="btn" data-p="mn-csv" data-id="' + esc(m.id) + '">Download CSV</button><button type="button" class="btn" data-p="mn-refresh">Refresh</button>' + (mnCanWrite() ? '<button type="button" class="btn" data-p="mn-edit" data-id="' + esc(m.id) + '">Change as a new version</button><button type="button" class="btn" data-p="mn-remove" data-id="' + esc(m.id) + '">' + (S.mDel === m.id ? 'Tap again to remove' : 'Remove') + '</button>' : '') + '</div></section>';
   }
   function minAdminHTML() {
     loadMinutes();
@@ -2730,7 +2732,8 @@
     var drafts = mnDrafts(), pub = mnPub();
     var intro = '<section class="set-block mn-noprint"><span class="label">Kitchen meeting minutes</span><span class="hint">Write the minutes after the meeting. Staff read them at Meeting minutes in the app and sign with their own PIN. A change after publishing makes a new version and everyone signs again.</span>' +
       '<div class="btn-row"><button type="button" class="btn dark" data-p="mn-new">Write new minutes</button>' + drafts.map(function (d) { return '<button type="button" class="btn" data-p="mn-draft-open" data-id="' + esc(d.id) + '">Continue draft ' + mpad(d.no || 0) + ' (' + esc(dayShort(d.date)) + ')</button>'; }).join('') + '</div><span class="saved" role="status">' + (S.mf ? '' : esc(S.mMsg)) + '</span></section>';
-    return intro + (S.mf ? mfHTML() : '') + mnRegisterHTML(pub);
+    if (!mnCanWrite()) intro = '<section class="set-block mn-noprint"><span class="label">Kitchen meeting minutes</span><span class="hint">See who has signed the minutes and who still needs to. Only the head chef writes and publishes minutes.</span></section>';
+    return intro + (S.mf && mnCanWrite() ? mfHTML() : '') + mnRegisterHTML(pub);
   }
   function minSousPageHTML() {
     return '<div class="p-admin"><div class="p-bar"><span>Meeting minutes</span><span class="p-links"><button type="button" class="p-link" data-p="min-close">Back to the prep book</button></span></div><h2 class="p-h" id="rtitle" tabindex="-1">Meeting minutes</h2>' + minAdminHTML() + '</div>';
@@ -2936,6 +2939,7 @@
     if (a === 'mn-csv') { csvMinutes(id); return; }
     if (a === 'mn-refresh') { loadMinutes(true); loadSigns(S.mSel || (mnPub()[0] || {}).id, true); draw(); return; }
     if (a === 'mn-sel') { S.mSel = id; loadSigns(id, true); draw(); return; }
+    if (/^mn-(new|draft-open|edit|draft|pub|remove)$/.test(a) && !mnCanWrite()) return;
     if (a === 'mn-new') { S.mf = mfNew(); S.mMsg = ''; draw(); var mfe = S.root.querySelector('.mn-form'); if (mfe) mfe.scrollIntoView({ block: 'start' }); return; }
     if (a === 'mn-draft-open' || a === 'mn-edit') { var mm = mnById(id); if (mm) { S.mf = mfFrom(mm); S.mMsg = ''; draw(); var mfe2 = S.root.querySelector('.mn-form'); if (mfe2) mfe2.scrollIntoView({ block: 'start' }); } return; }
     if (a === 'mn-cancel') { S.mf = null; S.mMsg = ''; draw(); return; }
