@@ -1,2 +1,6 @@
 .DS_Store
 *.log
+
+# click tests
+tests/node_modules/
+tests/shots/

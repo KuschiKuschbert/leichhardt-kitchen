@@ -1,0 +1,11 @@
+{
+  "name": "leichhardt-kitchen-tests",
+  "private": true,
+  "description": "Click tests for the Kitchen Book. The book itself needs no install; only the tests do.",
+  "scripts": {
+    "test": "node run.js"
+  },
+  "devDependencies": {
+    "playwright-core": "1.48.2"
+  }
+}

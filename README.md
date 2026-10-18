@@ -86,6 +86,22 @@ Drawings for The Pass are in `js/art.js`. A recipe with no drawing still shows, 
 
 There's no build step and nothing to install. To try it on a computer, open `index.html` in a browser.
 
+## Testing
+
+The `tests/` folder holds click tests that open the book in Chrome and use it like the team does, on a phone, a tablet and a computer. Only the tests need installing (Node.js and Google Chrome on the computer):
+
+```
+cd tests
+npm install
+npm test
+```
+
+- **What it checks:** every page and admin tab at 390, 768 and 1280 px (no sideways scroll, no errors), and the click paths for the prep list, orders, wastage, minutes, notes, the admin panel and the recipe search. About 180 checks, a few minutes.
+- **No real data.** The prep pages normally talk to Firebase. The tests answer those requests with a small stand-in (`tests/fake/`) that keeps made-up people (Sam, Ann and Bo), prep lines, orders and wastage in the browser. No kitchen PIN, staff names or real lines are needed, and nothing is written to the real book.
+- **Any time of day.** Each page opens at 14:00 today and the clock runs from there, so the 10:30 notes popup and the rest behave the same whenever the tests run.
+- `npm test -- recipes` runs only the files with "recipes" in the name. `SHOTS=1 npm test -- pages` also saves a screenshot of every page to `tests/shots/`. `BASE=https://kuschikuschbert.github.io/leichhardt-kitchen/ npm test` runs the tests on the live site (Firebase is still the stand-in). `CHROME=/path/to/chromium` uses another browser.
+- `node tests/serve.js` serves the book at http://127.0.0.1:8777/ for trying it by hand.
+
 ## Good to know
 
 - This repo is **public**, so anyone with the link can read the recipes. The page asks search engines not to list it.
