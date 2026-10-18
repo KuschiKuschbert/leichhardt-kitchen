@@ -55,11 +55,11 @@ Dishes already link to these ids. Add a recipe with the same `id` and the links,
 | `wing-flour` | 31 49 |
 | `diane-sauce` | 31 |
 | `pulled-pork`, `pico` | 32 |
-| `spaghetti` | 36 |
+| `spaghetti` | 36 113 |
 | `smoked-mac` | 39 |
 | `rum-butterscotch`, `honeycomb` | 43 |
 
-Card 104 (Cob Loaf Mix) is the batch for the Brisket Cob, from the kitchen's own printed recipe doubled to a 5000 ml batch (October 2026). Cards 105 to 112 (Bourbon BBQ Sauce, Chilli Jam, Korean Dressing, Seed Granola, Cowboy Candy, Braised Beef Cheek, Skillet Cookie Dough, Korean-Style Cucumber) are batch cards from the kitchen's own printed recipes (18 October 2026), with only the printed quantities; the handwritten scale-ups on the chilli jam sheet were not readable and are not used. Cards 66 and 67 are batch cards taken from the AVC Live pages (October 2026). Only fully confirmed ingredient lists were added. The rest of the batch cards below wait for confirmed quantities.
+Card 104 (Cob Loaf Mix) is the batch for the Brisket Cob, from the kitchen's own printed recipe doubled to a 5000 ml batch (October 2026). Card 113 (Kids Spaghetti Bolognese, Kids section of the menu) uses the Bolognese Sauce batch (card 91, now for the senior and kids plates) and the senior plate's drawing; its sauce and parmesan amounts are to come. Cards 105 to 112 (Bourbon BBQ Sauce, Chilli Jam, Korean Dressing, Seed Granola, Cowboy Candy, Braised Beef Cheek, Skillet Cookie Dough, Korean-Style Cucumber) are batch cards from the kitchen's own printed recipes (18 October 2026), with only the printed quantities; the handwritten scale-ups on the chilli jam sheet were not readable and are not used. Cards 66 and 67 are batch cards taken from the AVC Live pages (October 2026). Only fully confirmed ingredient lists were added. The rest of the batch cards below wait for confirmed quantities.
 
 Cards 13 to 45 came from the AVC Live costings (Spring 26). Only ingredients and quantities were taken over; prices and supplier codes stay in AVC.
 
