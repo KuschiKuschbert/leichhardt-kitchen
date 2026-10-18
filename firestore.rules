@@ -29,6 +29,8 @@ service cloud.firestore {
     // A ticked prep line stays ticked. Only the head chef, a sous chef, or the person who ticked it
     // (within 2 minutes, for a mis-tap) may undo it. A tick time cannot be re-stamped by anyone else.
     function sousBy() { return request.resource.data.by in get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/config/main).data.get('sousIds', []); }
+    // People the head chef ticked for Pings (and every sous chef) may write shift pings. The head chef keeps pingIds in step.
+    function pingBy() { return request.resource.data.by in get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/config/main).data.get('pingIds', []); }
     function tickKept() {
       return resource.data.get('done', false) != true
         || (request.resource.data.get('done', false) == true && request.resource.data.get('doneAt', 0) == resource.data.get('doneAt', 0))
@@ -41,6 +43,7 @@ service cloud.firestore {
       allow read: if true;
       allow create: if isAdmin();
       // A sous chef (own PIN, no Google sign-in) may only change the people list, and only if listed in sousIds.
+      // So sousIds and pingIds can only be changed by the head chef.
       allow update: if isAdmin() || (staff()
         && request.resource.data.by in resource.data.get('sousIds', [])
         && request.resource.data.people is list && request.resource.data.people.size() <= 80
@@ -92,7 +95,8 @@ service cloud.firestore {
       allow create, update: if writer() && request.resource.data.name is string && request.resource.data.name.size() <= 80 && request.resource.data.n is int;
       allow delete: if isAdmin();
     }
-    // Daily notes shown as a popup. Everyone with the kitchen PIN reads them; only the head chef or a sous chef writes them.
+    // Shift pings (stored as notes), shown as a popup. Everyone with the kitchen PIN reads them; only the head chef,
+    // a sous chef, or someone listed in pingIds (ticked for Pings in the People tab) writes them.
     // A note shows from "start" to "until" (YYYY-MM-DD). "dows" (0 to 6, Sunday is 0) limits it to those weekdays.
     // Notes are never deleted, only flagged as removed.
     function noteOk() {
@@ -106,7 +110,7 @@ service cloud.firestore {
     }
     match /kitchens/KITCHEN_PIN/notes/{id} {
       allow read: if true;
-      allow create, update: if (isAdmin() || (staff() && sousBy())) && noteOk();
+      allow create, update: if (isAdmin() || (staff() && (sousBy() || pingBy()))) && noteOk();
       allow delete: if false;
     }
     // Kitchen meeting minutes. Only the head chef (Google account) writes them (draft, then published). Sous chefs read the register. Everyone with the kitchen PIN reads them.
@@ -185,7 +189,7 @@ service cloud.firestore {
         allow delete: if isAdmin();
       }
     }
-    // Who has seen a note: one small record per person, note and day, written when they tap Got it.
+    // Who has seen a shift ping: one small record per person, ping and day, written when they tap Got it.
     // The record id is the day, an underscore and the writer's id. Records are never changed or deleted.
     match /kitchens/KITCHEN_PIN/notes/{id}/seen/{sid} {
       allow read: if true;

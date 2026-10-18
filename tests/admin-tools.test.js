@@ -52,7 +52,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   const chunks = []; for await (const c of await file.createReadStream()) chunks.push(c);
   const bk = JSON.parse(Buffer.concat(chunks).toString('utf8'));
   ok(/^leichhardt-prep-backup-\d{4}-\d{2}-\d{2}\.json$/.test(file.suggestedFilename()), 'backup: a dated JSON file (' + file.suggestedFilename() + ')');
-  ok(bk.notes.length === 1 && bk.notes[0].id === 'n1' && bk.notes[0].text === 'Fryer oil change', 'backup: daily notes included');
+  ok(bk.notes.length === 1 && bk.notes[0].id === 'n1' && bk.notes[0].text === 'Fryer oil change', 'backup: shift pings included');
   ok((bk.notesSeen.n1 || []).some(x => x.id === today + '_ann' && x.by === 'ann'), 'backup: who has seen a note included');
   ok(bk.minutes.length === 1 && bk.minutes[0].v === 2, 'backup: meeting minutes included');
   ok((bk.minutesHist.m1 || []).some(x => x.id === '1' && x.v === 1), 'backup: earlier versions of the minutes included');
@@ -60,7 +60,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   ok(bk.ordlearned.length === 1 && bk.ordlearned[0].text === 'Milk' && bk.ordlearned[0].uses === 6, 'backup: what the order list learned included');
   ok(Object.keys(bk.days).length === 1 && bk.days[today].length === 6 && Array.isArray(bk.pins) && !bk.pins.some(x => x.hash), 'backup: prep lines still in, PIN fingerprints still left out');
   await p.waitForTimeout(200);
-  ok(/6 lines from 1 day, 1 note and minutes from 1 meeting/.test(await p.evaluate(() => window.LK_PREP.state.toast)), 'backup: the message counts notes and minutes');
+  ok(/6 lines from 1 day, 1 shift ping and minutes from 1 meeting/.test(await p.evaluate(() => window.LK_PREP.state.toast)), 'backup: the message counts shift pings and minutes');
   ok(p.errors.length === 0, 'backup: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 

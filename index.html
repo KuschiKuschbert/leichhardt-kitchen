@@ -88,7 +88,7 @@
     var DAY = 24 * 60 * 60 * 1000, CATCH_UP = 20 * 60 * 60 * 1000, loaded = Date.now(), T = window.LK_TIME;
     function untilFour() { var n = T.now(), t = T.at(T.day(n), 240); if (t <= n + 60000) t += DAY; return t - n; }
     function refresh() {
-      // Something half written in the prep pages (a line, a note, minutes, the staff list): try again in 10 minutes.
+      // Something half written in the prep pages (a line, a shift ping, minutes, the staff list): try again in 10 minutes.
       try { if (window.LK_PREP && window.LK_PREP.unsaved && window.LK_PREP.unsaved()) { clearTimeout(timer); timer = setTimeout(refresh, 600000); return; } } catch (e) {}
       // Re-fetch the data files past the browser cache first, so the reload shows the newest cards. The page stays on the same card.
       var files = ['js/data.js', 'js/art.js', 'js/app.js', 'js/prep.js', 'js/firebase-config.js', 'css/app.css'];
