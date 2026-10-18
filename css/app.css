@@ -365,15 +365,8 @@ img, svg { display: block; }
 .nb-row.is-urgent { box-shadow: inset 4px 0 0 var(--ink); padding-left: 0.5rem; }
 .nb-star { flex: 0 0 auto; width: 32px; min-height: 36px; border: 1.5px solid #BDB5A3; border-radius: 50%; background: none; font-family: var(--display); font-weight: 700; font-size: 1rem; color: var(--muted); cursor: pointer; padding: 0; }
 .nb-star[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
-.nb-prio { display: flex; flex-direction: column; gap: 2px; margin: 1rem 0 0.4rem; padding: 0.6rem 0.8rem; border: 1.5px solid var(--accent-ink); border-radius: 8px; font-size: 0.9375rem; }
-.nb-prio strong { font-family: var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-ink); }
 .nb-sh { margin: 1.1rem 0 0.4rem; font-family: var(--display); font-weight: 700; font-size: 0.9375rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent-ink); }
 .nb-sd { margin: 0 0 0.5rem; font-size: 0.8125rem; color: var(--muted); }
-.nb-meter { display: flex; align-items: center; gap: 0.6rem; min-height: 32px; font-size: 0.9375rem; }
-.nb-ml { flex: 0 0 7.5rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
-.nb-mb { flex: 1 1 auto; height: 12px; border-radius: 6px; background: #E4DCCB; overflow: hidden; }
-.nb-mb i { display: block; height: 100%; background: var(--accent-ink); border-radius: 6px; }
-.nb-mn { flex: 0 0 3rem; text-align: right; color: var(--muted); font-size: 0.8125rem; }
 .nb-usual, .nb-tools { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .nb-us { font-size: 0.75rem; color: var(--muted); margin-left: 0.3rem; }
 .nb-side { padding-bottom: 1rem; }

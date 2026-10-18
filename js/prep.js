@@ -664,7 +664,7 @@
     if (!x || !can('add')) return;
     oneTap(x.text, x.section);
   }
-  /* One-tap adds (Usual, Regulars, Due today): the line goes on with its usual amount, and the toast says where, with Undo. */
+  /* One-tap adds (Quick add in Handy): the line goes on with its usual amount, and the toast says where, with Undo. */
   function oneTap(text, sec) {
     var rm = matchRecipe(text), uq = usualQty(text), dte = S.date;
     var made = newItem({ text: text.slice(0, 160), station: sec, recipe: rm ? rm.id : '', qty: uq });
@@ -1778,37 +1778,25 @@
   }
   function sideHTML(today) {
     var live = S.items.filter(function (x) { return !x.deleted; });
-    var rolled = live.filter(function (x) { return rolledN(x) && !x.done; }), urg = live.filter(function (x) { return x.urgent && !x.done; });
-    var secs = {}, order = [];
-    live.forEach(function (x) { var k = x.station || 'General'; if (!secs[k]) { secs[k] = { n: 0, d: 0 }; order.push(k); } secs[k].n++; if (x.done) secs[k].d++; });
-    var startShown = can('tick') && S.date === dayNow() && live.filter(function (x) { return !x.done; }).length >= 4;
-    var prio = !startShown && (rolled.length || urg.length) ? '<div class="nb-prio"><strong>Do these first</strong><span>' + (urg.length ? urg.length + ' urgent' : '') + (urg.length && rolled.length ? ', ' : '') + (rolled.length ? rolled.length + ' rolled over from earlier' : '') + '. They sit at the top of each section.</span></div>' : '';
-    var meters = order.length ? '<h3 class="nb-sh">Progress by section</h3>' + order.map(function (k) {
-      var m = secs[k], pc = m.n ? Math.round(m.d / m.n * 100) : 0;
-      return '<div class="nb-meter"><span class="nb-ml">' + esc(k) + '</span><span class="nb-mb" role="img" aria-label="' + esc(k + ': ' + m.d + ' of ' + m.n + ' done') + '"><i style="width:' + pc + '%"></i></span><span class="nb-mn">' + m.d + '/' + m.n + '</span></div>';
-    }).join('') : '';
     var have = onList(), dn = String(parseYmd(S.date).getDay()), dname = parseYmd(S.date).toLocaleDateString('en-AU', { weekday: 'long' });
-    var today2 = S.learned.filter(function (x) { return !x.hidden && !have[x.id] && x.text && ((x.dow || {})[dn] || 0) >= 2; }).sort(function (a, b) { return ((b.dow || {})[dn] || 0) - ((a.dow || {})[dn] || 0) || (b.uses || 0) - (a.uses || 0); }).slice(0, 12);
-    var shownK = {}; today2.forEach(function (x) { shownK[x.id] = 1; });
+    /* Quick add: due today first, then usual for this weekday, then regulars. A line shows once, in the first group it fits. */
+    var due = can('add') && S.date === dayNow() && S.past ? dueList() : [];
+    var shownK = {}; due.forEach(function (x) { shownK[x.k] = 1; });
+    var today2 = S.learned.filter(function (x) { return !x.hidden && !have[x.id] && !shownK[x.id] && x.text && ((x.dow || {})[dn] || 0) >= 2; }).sort(function (a, b) { return ((b.dow || {})[dn] || 0) - ((a.dow || {})[dn] || 0) || (b.uses || 0) - (a.uses || 0); }).slice(0, 12);
+    today2.forEach(function (x) { shownK[x.id] = 1; });
     var regs = S.learned.filter(function (x) { return isRegular(x) && !have[x.id] && !shownK[x.id] && x.text; }).sort(function (a, b) { return (b.uses || 0) - (a.uses || 0); }).slice(0, 14);
     S.quick = [];
-    function chip(x, note) { var uq = usualQty(x.text); S.quick.push({ text: x.text, section: bestSection(x) }); return '<button type="button" class="chip sq" data-p="quick" data-i="' + (S.quick.length - 1) + '">' + esc(x.text) + (uq ? ' <span class="nb-uq">' + esc(uq) + '</span>' : '') + (note ? ' <span class="nb-us">' + esc(note) + '</span>' : '') + '</button>'; }
-    var due = can('add') && S.date === dayNow() && S.past ? dueList() : [];
-    S.due = due;
-    due.forEach(function (x) { shownK[x.k] = 1; });
-    today2 = today2.filter(function (x) { return !due.some(function (d) { return d.k === x.id; }); });
-    var dueHTML = due.length ? '<h3 class="nb-sh">Due today</h3><p class="nb-sd">Made every few days and the usual gap has passed. Tap to add.</p><div class="nb-usual">' + due.map(function (x, i) {
-      var uq = usualQty(x.text);
-      return '<button type="button" class="chip sq" data-p="due" data-i="' + i + '">' + esc(x.text) + (uq ? ' <span class="nb-uq">' + esc(uq) + '</span>' : '') + ' <span class="nb-us">' + esc((x.gap === 1 ? 'daily' : 'every ' + x.gap + ' days') + ', last ' + parseYmd(x.last).toLocaleDateString('en-AU', { weekday: 'short' })) + '</span></button>';
-    }).join('') + '</div>' : '';
+    function chip(text, sec, note) { var uq = usualQty(text); S.quick.push({ text: text, section: sec }); return '<button type="button" class="chip sq" data-p="quick" data-i="' + (S.quick.length - 1) + '">' + esc(text) + (uq ? ' <span class="nb-uq">' + esc(uq) + '</span>' : '') + ' <span class="nb-us">' + esc(note) + '</span></button>'; }
+    var chips = can('add') ? due.map(function (x) { return chip(x.text, x.sec, (x.gap === 1 ? 'daily' : 'every ' + x.gap + ' days') + ', last ' + parseYmd(x.last).toLocaleDateString('en-AU', { weekday: 'short' })); })
+      .concat(today2.map(function (x) { return chip(x.text, bestSection(x), ((x.dow || {})[dn] || 0) + ' ' + dname + 's'); }))
+      .concat(regs.map(function (x) { return chip(x.text, bestSection(x), x.uses + 'x'); })).join('') : '';
+    var quick = chips ? '<h3 class="nb-sh">Quick add</h3><p class="nb-sd">Due today, usual for a ' + esc(dname) + ' and regulars. Tap to add.</p><div class="nb-usual">' + chips + '</div>' : '';
     var pc = canBrowse() && S.date === dayNow() && S.past ? pace() : null;
     var paceHTML = pc ? '<div class="nb-pace' + (pc.today + 0.1 < pc.usual ? ' is-behind' : '') + '"><span class="nb-sl">Pace</span><p><strong>' + Math.round(pc.today * 100) + '%</strong> ticked now (' + pc.done + ' of ' + pc.n + '). By ' + clock(now()) + ' it is usually <strong>' + Math.round(pc.usual * 100) + '%</strong>' + (pc.sameDay ? ' on a ' + esc(dname) : '') + '.</p><span class="nb-sw">' + (pc.today + 0.1 < pc.usual ? 'Behind the usual pace. Check who needs a hand.' : 'On pace.') + ' Only the head chef and sous chefs see this.</span></div>' : '';
     var stuck = canBrowse() && S.date === dayNow() ? live.filter(function (x) { return !x.done && rolledN(x) >= 3; }) : [];
     var stuckHTML = stuck.length ? '<h3 class="nb-sh">Stuck lines</h3><p class="nb-sd">Rolled over 3 or more times. Make it urgent, split it into smaller jobs, or remove it if it is not needed.</p><ul class="nb-stuck">' + stuck.map(function (x) {
       return '<li><span>' + esc(x.text) + ' <span class="nb-us">x' + rolledN(x) + '</span></span>' + (x.urgent ? '' : '<button type="button" class="p-x" data-p="urgent" data-id="' + esc(x.id) + '">Urgent</button>') + (can('del') ? '<button type="button" class="p-x" data-p="del" data-id="' + esc(x.id) + '" data-d="' + esc(S.date) + '">Remove</button>' : '') + '</li>';
     }).join('') + '</ul>' : '';
-    var usual = can('add') && today2.length ? '<h3 class="nb-sh">Usual for a ' + esc(dname) + '</h3><p class="nb-sd">Written on at least two ' + esc(dname) + 's. Tap to add.</p><div class="nb-usual">' + today2.map(function (x) { return chip(x, ((x.dow || {})[dn] || 0) + 'x'); }).join('') + '</div>' : '';
-    usual += can('add') && regs.length ? '<h3 class="nb-sh">Regulars</h3><p class="nb-sd">Written or picked ' + REGULAR + ' or more times. Tap to add.</p><div class="nb-usual">' + regs.map(function (x) { return chip(x, x.uses + 'x'); }).join('') + '</div>' : '';
     var tools = '<h3 class="nb-sh">Tools</h3><div class="nb-tools">' +
       '<button type="button" class="nb-btn" data-p="copy">Copy the list</button>' +
       '<button type="button" class="nb-btn" data-p="print">Print the list</button>' +
@@ -1818,7 +1806,7 @@
     var donebox = '<h3 class="nb-sh">Done today (' + dl.length + ')</h3>' + (dl.length ? '<ul class="nb-done">' + dl.map(function (x) {
       return '<li><span class="nb-dt">' + (x.doneAt ? clock(x.doneAt) : '') + '</span><span class="nb-dx">' + esc(x.text) + (x.qty ? ' <em>' + esc(x.qty) + '</em>' : '') + '</span><span class="nb-dw">' + esc(x.doneBy || '') + '</span>' + (can('tick') && canUntick(x) ? '<button type="button" class="p-x nb-undo" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(S.date) + '" aria-label="' + esc('Undo the tick on ' + x.text) + '">Undo</button>' : '') + '</li>';
     }).join('') + '</ul>' : '<p class="nb-sd">Nothing ticked yet.</p>');
-    return startHTML(live, true) + paceHTML + prio + stuckHTML + donebox + meters + dueHTML + usual + tools;
+    return startHTML(live, true) + paceHTML + stuckHTML + donebox + quick + tools;
   }
   function listHTML() {
     var p = me(), today = dayNow();
@@ -1847,7 +1835,7 @@
       (S.itemsState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' : '') +
       '<div class="nb-body">' + minNudgeHTML() + closeoutHTML(live) + wNoteHTML() + startHTML(live) + pageBody(S.items, S.date) + todayEmpty + '</div>' +
       '<div class="nb-foot">' + add + (removed.length && can('del') ? '<button type="button" class="nb-link" data-p="removed">' + (S.showRemoved ? 'Hide' : 'Show') + ' removed (' + removed.length + ')</button>' : '') + '</div></section>';
-    var right = '<section class="nb-page nb-right"><header class="nb-ph"><div><h2 class="nb-title nb-dim">Handy</h2><span class="nb-date">Priorities, progress and tools</span></div></header>' +
+    var right = '<section class="nb-page nb-right"><header class="nb-ph"><div><h2 class="nb-title nb-dim">Handy</h2><span class="nb-date">Done today, quick add and tools</span></div></header>' +
       '<div class="nb-body nb-side">' + sideHTML(today) + '</div></section>';
     return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' + (can('tick') ? '' : ' (read only)') + esc(myRank()) : '') + '</span><span class="p-links"><button type="button" class="p-link" data-p="who-change">Not you?</button>' + '' + '</span></div>' +
       (canBrowse() ? '<div class="nb-nav"><button type="button" class="chip" data-p="day" data-d="-1" aria-label="Back one day">&lsaquo;</button>' +
@@ -4298,7 +4286,6 @@
     if (a === 'af-reset') { S.af = { sec: '', who: '', dow: '', reason: '' }; afSave(); draw(); return; }
     if (a === 'cal-day') { S.date = el.getAttribute('data-d'); S.tab = ''; watchItems(); location.hash = '#/prep'; return; }
     if (a === 'close-hide') { lsSet('lk.closeout', dayNow()); draw(); return; }
-    if (a === 'due') { var du = (S.due || [])[i]; if (du && can('add')) oneTap(du.text, du.sec); return; }
     if (a === 'oreg') { var orr = (S.oregs || [])[i]; if (orr) { S.otext = orr.text; S.oqty = orr.q || ''; addOrder(true); } return; }
     if (a === 'wview') { S.wView = el.getAttribute('data-v'); if (S.wView === 'week') loadWRecent(true); draw(); return; }
     if (a === 'wunit') { S.wf.unit = el.getAttribute('data-v'); draw(); return; }
