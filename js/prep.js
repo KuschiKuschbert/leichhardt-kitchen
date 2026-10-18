@@ -151,6 +151,16 @@
   function canBrowse() { return S.level === 'owner' || isSous(); }
   function can(what) { var p = me(); return !!(p && p[what]); }
   function toast(msg, act) { S.toast = msg; S.toastAct = act || null; draw(); clearTimeout(toastTimer); toastTimer = setTimeout(function () { S.toast = ''; S.toastAct = null; draw(); }, act ? 9000 : 3500); }
+  /* Two taps for anything that is hard to take back: the first tap arms the button ("Tap again..."), a second tap
+     within 4 seconds does it. Left alone, the button goes back to normal by itself. */
+  var armKey = '', armTimer = null;
+  function armed(k) { return armKey === k; }
+  function arm(k) {
+    clearTimeout(armTimer);
+    if (armKey === k) { armKey = ''; return true; }
+    armKey = k; armTimer = setTimeout(function () { armKey = ''; draw(); }, 4000); draw();
+    return false;
+  }
 
   function sha(str) {
     return crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)).then(function (b) {
@@ -392,9 +402,10 @@
     else if (it.doneById && fb) sset(docRef('activity', it.doneById), { name: it.doneBy || '', ticked: fb.fs.increment(-1) }, true).catch(function () {});
   }
   function removeItem(date, id, restore) {
-    var p = me();
+    var p = me(), it = S.items.filter(function (x) { return x.id === id; })[0];
     if (!can('del')) return;
     supd(itemRef(date, id), { deleted: !restore, deletedBy: restore ? '' : p.name, deletedAt: restore ? 0 : Date.now() }).catch(function () { toast('Could not save. Check the connection.'); });
+    if (!restore) toast('Removed ' + (it ? it.text : 'the line'), { label: 'Undo', fn: function () { removeItem(date, id, true); } });
   }
   /* Anything not ticked on the last written day rolls onto today by itself. */
   function maybeRoll() {
@@ -758,6 +769,7 @@
   function startDraft() {
     var c = S.config || { people: [] };
     S.draft = JSON.parse(JSON.stringify({ people: c.people || [], showBadges: c.showBadges !== false }));
+    S.draftSnap = JSON.stringify(S.draft);
     S.saveMsg = '';
   }
   function saveConfig(cfg) {
@@ -777,8 +789,7 @@
       function (e) { S.busy = false; S.saveMsg = e && e.code === 'permission-denied' ? 'Not allowed to change these settings.' : 'Could not save. Check the connection.'; draw(); });
   }
   function resetPin(id) {
-    if (S.resetId !== id) { S.resetId = id; draw(); return; }
-    S.resetId = '';
+    if (!arm('pin:' + id)) return;
     var rb = fb.fs.writeBatch(fb.db); rb.delete(docRef('staffpins', id)); rb.delete(docRef('pinset', id));
     rb.commit().then(function () { toast('PIN reset. They set a new one next time they sign in.'); }, function () { toast('Could not reset. Sign in as the admin.'); });
   }
@@ -1562,7 +1573,7 @@
     return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Who are you?</h2><p class="hint">Pick your name. The first time, you choose your own 4-digit PIN to go with it.</p>' +
       (list.length ? '<div class="p-names">' + list.map(function (p) { return '<button type="button" class="chip p-name" data-p="who" data-id="' + esc(p.id) + '">' + esc(p.name) + '</button>'; }).join('') + '</div>' :
         '<p class="p-err">No names are set up yet. The admin adds them in the admin panel.</p>') +
-      '<div class="btn-row"><button type="button" class="btn" data-p="pin-forget">Change kitchen PIN</button></div></section>';
+      '<div class="btn-row p-forget"><button type="button" class="btn" data-p="pin-forget">' + (armed('pin-forget') ? 'Tap again: this phone forgets the kitchen PIN' : 'Use a different kitchen PIN') + '</button></div></section>';
   }
   function ownPinHTML() {
     var p = who(), step = S.pinStep;
@@ -1954,7 +1965,7 @@
         { h: 'Tick', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'tick', o.p.tick, 'Tick'); } },
         { h: 'Remove', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'del', o.p.del, 'Remove'); } },
         { h: 'On list', cls: 'a-c', html: function (o) { return cb(o, 'active', '', o.p.active !== false, 'On list'); } },
-        { h: '', cls: 'a-act', html: function (o) { return '<button type="button" class="p-x" data-p="a-reset-pin" data-id="' + esc(o.p.id) + '">' + (S.resetId === o.p.id ? 'Tap again' : 'Reset PIN') + '</button><button type="button" class="p-x" data-p="a-remove-person" data-i="' + o.i + '">Delete</button>'; } }
+        { h: '', cls: 'a-act', html: function (o) { return '<button type="button" class="p-x" data-p="a-reset-pin" data-id="' + esc(o.p.id) + '">' + (armed('pin:' + o.p.id) ? 'Tap again to reset' : 'Reset PIN') + '</button>' + removePersonBtn(o.p, o.i); } }
       ]
     });
   }
@@ -1967,7 +1978,7 @@
       sorts: [['order', 'Order added', function (a, b) { return a.i - b.i; }], ['name', 'Name A to Z', function (a, b) { return (b.p.isNew ? 1 : 0) - (a.p.isNew ? 1 : 0) || String(a.p.name).toLowerCase().localeCompare(String(b.p.name).toLowerCase()); }]],
       card: function (o) {
         return '<li class="a-person"><div class="a-top">' + (o.p.isNew ? '<label class="visually-hidden" for="a-n' + o.i + '">Name</label><input id="a-n' + o.i + '" class="search a-name" data-k="a-n' + o.i + '" data-a="name" data-i="' + o.i + '" value="' + esc(o.p.name) + '" maxlength="40">' : '<span class="a-name-ro">' + esc(o.p.name) + '</span>') +
-          '<button type="button" class="p-x" data-p="a-remove-person" data-i="' + o.i + '">Remove</button></div></li>';
+          removePersonBtn(o.p, o.i) + '</div></li>';
       }
     });
   }
@@ -2006,10 +2017,15 @@
       '<div class="btn-row"><button type="button" class="btn" data-p="move-pin"' + (S.moving ? ' disabled' : '') + '>Copy everything to the new PIN</button></div><span class="saved" role="status">' + esc(S.moveMsg) + '</span><span class="hint">Ask for the new PIN to be added to the security rules first. The old PIN keeps working until its rules are removed.</span></section></div>');
     return '<div class="p-admin">' + bar + '<h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2>' + tabsBar + '<div class="a-pane">' + pane + '</div></div>';
   }
+  /* the same Remove button on the admin People tab and the sous chef's staff list, with a second tap to be sure */
+  function removePersonBtn(p, i) {
+    return '<button type="button" class="p-x" data-p="a-remove-person" data-i="' + i + '" aria-label="' + esc('Remove ' + (p.name || 'this person')) + '">' + (armed('rm:' + p.id) ? 'Tap again to remove' : 'Remove') + '</button>';
+  }
+  function draftDirty() { return !!S.draft && JSON.stringify(S.draft) !== S.draftSnap; }
   function staffHTML() {
     var d = S.draft || (startDraft(), S.draft);
     var bulk = '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line"></textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div>';
-    return '<div class="p-admin"><div class="p-bar"><span>Staff list</span><span class="p-links"><button type="button" class="p-link" data-p="staff-close">Back to the prep book</button></span></div><h2 class="p-h" id="rtitle" tabindex="-1">Staff</h2>' +
+    return '<div class="p-admin"><div class="p-bar"><span>Staff list</span><span class="p-links"><button type="button" class="p-link" data-p="staff-close">' + (armed('staff-close') ? 'Tap again to leave without saving' : 'Back to the prep book') + '</button></span></div><h2 class="p-h" id="rtitle" tabindex="-1">Staff</h2>' +
       '<section class="set-block"><span class="hint">Add a person or remove one, then save. New people start as Staff. Removing someone keeps their name on old lines. Roles and PINs are looked after by the head chef.</span>' + staffListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' +
       '<section class="set-block"><div class="btn-row"><button type="button" class="btn dark" data-p="a-save"' + (S.busy ? ' disabled' : '') + '>Save changes</button><button type="button" class="btn" data-p="a-reset">Undo unsaved changes</button></div><span class="saved" role="status">' + esc(S.saveMsg) + '</span></section></div>';
   }
@@ -2121,9 +2137,11 @@
     var jobs = (S.ordAll || []).filter(function (x) { return !x.deleted && !x.ordered && okey(x.text) === key; }).map(function (x) { return setOrdered(x.date, x.id, true); });
     Promise.all(jobs).then(function () { toast('Marked as ordered.'); ordReload(); }, function () { toast('Could not save. Check the connection.'); });
   }
-  function removeOrderLine(date, id) {
+  function removeOrderLine(date, id, restore) {
     if (!canBrowse() || !can('del')) return;
-    supd(ordRef(date, id), { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: Date.now() }).then(ordReload, function () { toast('Could not save. Check the connection.'); });
+    var it = (S.ordLines || []).concat(S.ordAll || []).filter(function (x) { return x.id === id; })[0];
+    supd(ordRef(date, id), { deleted: !restore, deletedBy: restore ? '' : (me() || {}).name || '', deletedAt: restore ? 0 : Date.now() }).then(ordReload, function () { toast('Could not save. Check the connection.'); });
+    if (!restore) toast('Removed ' + (it ? it.text : 'the line') + ' from the order list', { label: 'Undo', fn: function () { removeOrderLine(date, id, true); } });
   }
   function ordSuggest() {
     var q = okey(S.otext); if (q.length < 2) return [];
@@ -2149,7 +2167,8 @@
       '<button type="button" class="nb-box" data-p="otick" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-pressed="' + !!x.ordered + '" aria-label="' + esc((x.ordered ? 'Not ordered: ' : 'Ordered: ') + x.text) + '"' + (canTick ? '' : ' disabled') + '>' + (x.ordered ? TICK : BOX) + '</button>' +
       '<span class="nb-t"' + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + recipeChips(x) + '</span>' +
       '<span class="nb-by">' + by + '</span>' +
-      (canBrowse() && can('del') && !x.deleted && !x.ordered ? '<button type="button" class="p-x" data-p="odel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') + '</li>';
+      (canBrowse() && can('del') && !x.deleted && !x.ordered ? '<button type="button" class="p-x" data-p="odel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') +
+      (canBrowse() && can('del') && x.deleted ? '<button type="button" class="p-x" data-p="orestore" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Put back ' + x.text) + '">Put back</button>' : '') + '</li>';
   }
   function ordGroups() {
     var map = {}, order = [];
@@ -2219,6 +2238,9 @@
       '<label class="visually-hidden" for="o-qty">Amount</label><input id="o-qty" class="nb-in nb-in-qty" data-k="o-qty" autocomplete="off" placeholder="Amount" maxlength="40" value="' + esc(S.oqty) + '"><button type="submit" class="nb-addbtn">Add</button></div>' +
       '<div class="nb-sugg" id="o-sugg">' + ordSuggHTML() + '</div><p class="nb-hint" id="o-hint" aria-live="polite">' + esc(oHintText(S.otext)) + '</p>' + oRegsHTML() + '</form>' : (S.ordDate === today ? '<p class="hint">You can read the order list but not write in it.</p>' : '');
     var moved = live.filter(function (x) { return shown.indexOf(x) < 0; }).sort(function (a, b) { return (b.orderedAt || 0) - (a.orderedAt || 0); });
+    var removedO = (S.ordLines || []).filter(function (x) { return x.deleted; });
+    var removedBox = view === 'day' && removedO.length && canBrowse() && can('del') ? '<button type="button" class="nb-link" data-p="oremoved">' + (S.oShowRemoved ? 'Hide' : 'Show') + ' removed (' + removedO.length + ')</button>' +
+      (S.oShowRemoved ? '<ul class="nb-rows">' + removedO.map(ordRow).join('') + '</ul>' : '') : '';
     var orderedBox = view === 'day' && moved.length ? '<h3 class="nb-sh">Ordered today (' + moved.length + ')</h3><ul class="nb-done">' + moved.map(function (x) {
       return '<li><span class="nb-dt">' + (x.orderedAt ? clock(x.orderedAt) : '') + '</span><span class="nb-dx">' + esc(x.text) + (x.qty ? ' <em>' + esc(x.qty) + '</em>' : '') + '</span><span class="nb-dw">' + esc(x.orderedBy || '') + '</span>' +
         (canBrowse() ? '<button type="button" class="p-x nb-undo" data-p="otick" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-pressed="true" aria-label="' + esc('Not ordered after all: ' + x.text) + '">Undo</button>' : '') + '</li>';
@@ -2231,7 +2253,7 @@
       (view === 'day' ? '<div class="nb-prog" role="status">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') + '</header>' +
       /* the add box is at the top, so it is always in reach; on big screens the list and the ordered-today list sit side by side below it */
       (view === 'day' && add ? '<div class="nb-foot o-add">' + add + '</div>' : '') +
-      '<div class="o-cols"><div class="nb-body o-main">' + body + '</div>' + (orderedBox ? '<div class="o-ordered">' + orderedBox + '</div>' : '') + '</div></section>';
+      '<div class="o-cols"><div class="nb-body o-main">' + body + removedBox + '</div>' + (orderedBox ? '<div class="o-ordered">' + orderedBox + '</div>' : '') + '</div></section>';
   }
 
 
@@ -2265,7 +2287,7 @@
     S.wRecentBusy = true;
     var today = ymd(new Date()), dates = [], i;
     for (i = 1; i <= 14; i++) dates.push(shift(today, -i));
-    Promise.all(dates.map(function (d) { return fb.fs.getDocs(wCol(d)).then(function (sn) { return sn.docs.map(function (x) { var v = x.data(); v.date = d; return v; }); }, function () { return []; }); })).then(function (l) {
+    Promise.all(dates.map(function (d) { return fb.fs.getDocs(wCol(d)).then(function (sn) { return sn.docs.map(function (x) { var v = x.data(); v.id = x.id; v.date = d; return v; }); }, function () { return []; }); })).then(function (l) {
       S.wRecent = [].concat.apply([], l).filter(function (x) { return !x.deleted; }); S.wRecentBusy = false; draw();
     });
   }
@@ -2320,9 +2342,11 @@
     S.wf = { text: '', amt: '', unit: f.unit, reason: '', sec: sec, act: '' };
     toast('Logged ' + t + (wpr.changes.length ? ' (corrected ' + wpr.changes.map(function (c) { return c[0] + ' to ' + c[1]; }).join(', ') + ')' : '') + (secInfo.from ? ' under ' + sec + ' (typed ' + secInfo.from + ')' : ''));
   }
-  function removeWaste(date, id) {
+  function removeWaste(date, id, restore) {
     if (!canBrowse() || !can('del')) return;
-    supd(wRef(date, id), { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: Date.now() }).catch(function () { toast('Could not save. Check the connection.'); });
+    var it = (S.wLines || []).concat(S.wRecent || []).filter(function (x) { return x.id === id; })[0];
+    supd(wRef(date, id), { deleted: !restore, deletedBy: restore ? '' : (me() || {}).name || '', deletedAt: restore ? 0 : Date.now() }).catch(function () { toast('Could not save. Check the connection.'); });
+    if (!restore) toast('Removed ' + (it ? it.text : 'the entry') + ' from the wastage log', { label: 'Undo', fn: function () { removeWaste(date, id, true); } });
   }
   function saveReview() {
     if (!can('add')) return;
@@ -2337,7 +2361,8 @@
     return '<li class="nb-row w-row' + (x.deleted ? ' is-removed' : '') + '"><span class="w-time">' + (x.addedAt ? clock(x.addedAt) : '') + (x.station ? '<br><span class="w-sec">' + esc(x.station) + '</span>' : '') + '</span>' +
       '<span class="nb-t"><strong>' + esc(x.text) + '</strong> <span class="w-amt">' + esc(num(+x.amount || 0) + ' ' + x.unit) + '</span> <span class="w-rs w-' + esc(x.reason) + '">' + esc(reasonName(x.reason)) + '</span>' +
       (x.action ? '<span class="w-act">' + esc(x.action) + '</span>' : '') + '</span><span class="nb-by">' + esc(x.addedBy || '') + '</span>' +
-      (del ? '<button type="button" class="p-x" data-p="wdel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') + '</li>';
+      (del ? '<button type="button" class="p-x" data-p="wdel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') +
+      (x.deleted && canBrowse() && can('del') ? '<button type="button" class="p-x" data-p="wrestore" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Put back ' + x.text) + '">Put back</button>' : '') + '</li>';
   }
   /* Bottom sheet for picking one thing on a phone (the waste reason). Big rows, a hint under each, Cancel or tap outside to close. */
   var REASON_HINT = { prep: 'Trim, peel and offcuts', expired: 'Past its date or gone off', fault: 'Burnt, dropped or done wrong', returned: 'Sent back by a guest', excess: 'Made more than was needed' };
@@ -2432,7 +2457,7 @@
   var NOTE_TAGS = [['none', 'Note'], ['off', 'Off today'], ['special', 'Special'], ['function', 'Function'], ['delivery', 'Delivery'], ['safety', 'Safety'], ['allergen', 'Allergen alert']];
   var NOTE_RANK = { safety: 0, allergen: 1, off: 2, special: 3, function: 4, delivery: 5, none: 6 };
   var NOTE_MIN = 10 * 60 + 30, NOTE_FAR = '2099-12-31', NOTE_STALE = 30 * 60000;
-  var npop = null, nprev = null, nTick = null, n1030 = '';
+  var npop = null, nprev = null, nTick = null, n1030 = '', nSnooze = 0;
   function noteTagName(t) { var x = NOTE_TAGS.filter(function (n) { return n[0] === t; })[0]; return x ? x[1] : 'Note'; }
   function noteOn(n, day) {
     if (!n || n.removed || !n.text || !n.start || !n.until || n.start > day || n.until < day) return false;
@@ -2531,7 +2556,7 @@
     nprev = document.activeElement;
     var el = document.createElement('div');
     el.className = 'nt-wrap';
-    el.innerHTML = '<div class="nt-bg" data-note="close"></div><section class="nt" role="dialog" aria-modal="true" aria-labelledby="nt-h" tabindex="-1">' +
+    el.innerHTML = '<div class="nt-bg" data-note="dismiss"></div><section class="nt" role="dialog" aria-modal="true" aria-labelledby="nt-h" tabindex="-1">' +
       '<header class="nt-head"><span class="nt-eb">Leichhardt Hotel Kitchen</span><h2 class="nt-h" id="nt-h">' + (pv ? 'Preview' : 'Today\'s notes') + '</h2><span class="nt-date">' + esc(pv ? pv.label : parseYmd(t).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })) + '</span></header>' +
       '<ul class="nt-list">' + list.map(noteRowHTML).join('') + '</ul>' +
       '<div class="nt-sum" id="nt-sum">' + (pv ? '' : noteSummary()) + '</div>' +
@@ -2543,19 +2568,22 @@
     loadWNote();
     var got = el.querySelector('.nt-got'); if (got) got.focus({ preventScroll: true });
   }
-  function noteClose() {
+  /* Only Got it (or opening a link in the note) counts as read. Tapping outside or Escape just closes it: the bell
+     keeps its dot and the popup comes back by itself after 15 minutes, so a stray tap cannot dismiss a safety note. */
+  function noteClose(dismiss) {
     if (!npop) return;
     var wasPv = npop.getAttribute('data-pv') === '1';
     npop.parentNode.removeChild(npop); npop = null;
     document.documentElement.classList.remove('note-open');
-    if (!wasPv) { noteMarkSeen(); noteWriteSeen(todaysNotes()); }
+    if (!wasPv && dismiss) nSnooze = Date.now();
+    else if (!wasPv) { noteMarkSeen(); noteWriteSeen(todaysNotes()); }
     if (nprev && nprev.focus && document.body.contains(nprev)) { try { nprev.focus({ preventScroll: true }); } catch (e) {} }
     nprev = null;
   }
   function noteMarkSeen() { lsSet('lk.note.seen', JSON.stringify({ d: ymd(new Date()), sig: noteSig(todaysNotes()) })); noteBell(); }
   /* pops up by itself: after 10:30, when today has a note that has not been seen on this phone, and nobody is typing */
   function noteMaybePop() {
-    if (npop || !noteUnread() || document.visibilityState === 'hidden') return;
+    if (npop || !noteUnread() || document.visibilityState === 'hidden' || Date.now() - nSnooze < 15 * 60000) return;
     var d = new Date(), ae = document.activeElement;
     if (d.getHours() * 60 + d.getMinutes() < NOTE_MIN) return;
     if (ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) && ae.type !== 'button') return;
@@ -2579,13 +2607,14 @@
     var a = el.getAttribute('data-note');
     if (a === 'open') { noteOpen(); return; }
     if (a === 'close') { noteClose(); return; }
+    if (a === 'dismiss') { noteClose(true); return; }
     if (a === 'link') { noteClose(); return; }
     if (a === 'edit') { S.atab = 'notes'; lsSet('lk.prep.atab', 'notes'); noteClose(); if (location.hash === '#/admin') draw(); return; }
     if (a === 'edit-sous') { S.notesOpen = true; S.nf = null; noteClose(); if (location.hash === '#/prep') draw(); return; }
   });
   document.addEventListener('keydown', function (e) {
     if (!npop) return;
-    if (e.key === 'Escape') { e.preventDefault(); noteClose(); return; }
+    if (e.key === 'Escape') { e.preventDefault(); noteClose(true); return; }
     if (e.key !== 'Tab') return;
     var f = Array.prototype.filter.call(npop.querySelectorAll('button, a[href]'), function (x) { return x.offsetParent !== null; });
     if (!f.length) return;
@@ -2598,6 +2627,8 @@
      The list comes first (showing today, coming up, past notes on request). The editor opens beside it on a
      big screen and above it on a phone. Days are picked on a five week grid and every tap can be undone. */
   var NOTE_START = { off: 'Off today: ', special: 'Special: ', 'function': 'Function: ', delivery: 'Delivery: ', safety: 'Safety: ', allergen: 'Allergen alert: ' };
+  /* a note being written counts as unsaved once it differs from what the editor opened with (or has any text, if that is unknown) */
+  function nfDirty() { var f = S.nf; if (!f || !S.nOpen) return false; return S.nfSnap ? JSON.stringify(f) !== S.nfSnap : !!f.text.trim(); }
   function nfNew() { return { id: '', text: '', tag: 'none', start: ymd(new Date()), until: '', dows: [], run: false }; }
   function nfFrom(n) {
     var rep = n.dows && n.dows.length, until = n.until === NOTE_FAR || (n.until === n.start && !rep) ? '' : n.until;
@@ -2629,7 +2660,7 @@
       (who ? '<span class="nt-by">Written by ' + esc(who) + '</span>' : '') + seen +
       '<div class="btn-row">' + (past ? '' : '<button type="button" class="p-x" data-p="n-edit" data-id="' + esc(n.id) + '">Edit</button>') +
       '<button type="button" class="p-x" data-p="n-reuse" data-id="' + esc(n.id) + '">Use again</button>' +
-      (past ? '' : '<button type="button" class="p-x" data-p="n-del" data-id="' + esc(n.id) + '">' + (S.nDel === n.id ? 'Tap again to remove' : 'Remove') + '</button>') + '</div></li>';
+      (past ? '' : '<button type="button" class="p-x" data-p="n-del" data-id="' + esc(n.id) + '">' + (armed('n-del:' + n.id) ? 'Tap again to remove' : 'Remove') + '</button>') + '</div></li>';
   }
   function notesListHTML() {
     if (S.notes == null) return '<p class="hint">Loading...</p>';
@@ -2691,7 +2722,7 @@
       '<details class="n-more"' + (f.start > shift(t, 34) || (f.until && f.until > shift(t, 34)) ? ' open' : '') + '><summary>A date further ahead</summary><div class="nt-dates"><label class="nt-dl">From<input type="date" class="p-dateinput" data-k="n-start" value="' + esc(f.start) + '"' + (f.id ? '' : ' min="' + t + '"') + '></label><label class="nt-dl">Until (optional)<input type="date" class="p-dateinput" data-k="n-until" value="' + esc(f.until) + '"' + (f.start ? ' min="' + esc(f.start) + '"' : '') + '></label></div></details></div>' +
       '<div class="field"><span class="label">Repeat every week on (optional)</span><div class="nt-chips" role="group" aria-label="Weekdays">' + dows + (f.dows.length ? '<button type="button" class="chip" data-p="n-dowclr">Clear weekdays</button>' : '') + '</div><span class="hint">With weekdays picked and no last day, the note comes back every week until you remove it.</span></div>' +
       '<p class="nt-whenline" role="status">' + esc(when) + '</p>' +
-      '<div class="btn-row"><button type="button" class="btn dark" data-p="n-save"' + (S.nSaving ? ' disabled' : '') + '>' + (f.id ? 'Save changes' : 'Save note') + '</button><button type="button" class="btn" data-p="n-preview">Preview the popup</button><button type="button" class="btn" data-p="n-reset">Reset days</button><button type="button" class="btn" data-p="n-cancel">' + (f.id ? 'Cancel' : 'Close') + '</button></div>' +
+      '<div class="btn-row"><button type="button" class="btn dark" data-p="n-save"' + (S.nSaving ? ' disabled' : '') + '>' + (f.id ? 'Save changes' : 'Save note') + '</button><button type="button" class="btn" data-p="n-preview">Preview the popup</button><button type="button" class="btn" data-p="n-reset">Reset days</button><button type="button" class="btn" data-p="n-cancel">' + (armed('n-cancel') ? 'Tap again to discard' : f.id ? 'Cancel' : 'Close') + '</button></div>' +
       '<span class="saved" role="status">' + esc(S.nMsg) + '</span></section>';
   }
   function notesEditorHTML() {
@@ -2721,8 +2752,7 @@
     });
   }
   function removeNote(id) {
-    if (S.nDel !== id) { S.nDel = id; draw(); return; }
-    S.nDel = '';
+    if (!arm('n-del:' + id)) return;
     sset(docRef('notes', id), { removed: true, upd: Date.now() }, true).then(function () {
       if (S.nf && S.nf.id === id) { S.nf = nfNew(); S.nOpen = false; }
       S.nMsg = 'Removed.'; loadNotes(true); draw();
@@ -2746,7 +2776,7 @@
   function reuseNote(id) {
     var n = (S.notes || []).concat(Array.isArray(S.nPast) ? S.nPast : []).filter(function (x) { return x.id === id; })[0];
     if (!n) return;
-    S.nf = nfNew(); S.nf.text = n.text; S.nf.tag = n.tag || 'none'; S.nOpen = true; S.nMsg = '';
+    S.nf = nfNew(); S.nf.text = n.text; S.nf.tag = n.tag || 'none'; S.nfSnap = ''; S.nOpen = true; S.nMsg = '';
     draw(); var tx = S.root.querySelector('[data-k="n-text"]'); if (tx) { focusNoteText(tx); }
   }
   /* who tapped Got it today for one note (one small query, only when asked) */
@@ -2921,6 +2951,9 @@
     var carried = prev ? (prev.acts || []).filter(function (a) { return a.st === 'open'; }).map(function (a) { return { what: a.what, who: a.who || '', by: a.by || '', st: 'open', carried: true }; }) : [];
     return { id: '', no: (nos.length ? Math.max.apply(null, nos) : 0) + 1, v: 1, status: 'draft', date: ymd(new Date()), start: '', loc: '', chair: S.who || '', taker: '', att: {}, guests: '', decisions: '', menu: '', safety: '', dates: '', other: '', acts: carried, next: '', orig: null, prev: false };
   }
+  /* what the form held when it was opened, to tell whether Cancel would throw anything away */
+  function mfSnap(f) { return f ? JSON.stringify(Object.assign({}, f, { prev: false, orig: null })) : ''; }
+  function mfDirty() { return !!S.mf && mfSnap(S.mf) !== S.mfSnap; }
   function mfFrom(m) {
     var att = {}; (m.att || []).forEach(function (x) { att[x.id] = x.st; });
     return { id: m.id, no: m.no, v: m.v, status: m.status, date: m.date, start: m.start || '', loc: m.loc || '', chair: m.chair || '', taker: m.taker || '', att: att, guests: m.guests || '', decisions: m.decisions || '', menu: m.menu || '', safety: m.safety || '', dates: m.dates || '', other: m.other || '', acts: (m.acts || []).map(function (a) { return Object.assign({}, a); }), next: m.next || '', orig: m, prev: false };
@@ -2976,7 +3009,7 @@
       '<div class="field"><span class="label">Actions</span>' + (actRows || '<p class="hint">No actions yet.</p>') + '<div class="btn-row"><button type="button" class="btn" data-p="mn-aadd">Add an action</button></div></div>' +
       mfTextarea('mn-menu', 'Menu changes', 3, 'What changes, and for which dish.') + mfTextarea('mn-dates', 'Dates ahead', 3, 'Deliveries, functions, events.') + mfTextarea('mn-other', 'Other', 3, '') + attBlock +
       '<div class="field"><label class="label" for="mn-next">Next meeting (optional)</label><input id="mn-next" type="date" class="p-dateinput" data-k="mn-next" value="' + esc(f.next) + '"></div>' +
-      '<div class="btn-row"><button type="button" class="btn dark" data-p="mn-pub"' + (S.mSaving ? ' disabled' : '') + '>' + (isEdit ? 'Publish as version ' + (f.v + 1) : 'Publish and start sign-off') + '</button>' + (isEdit ? '' : '<button type="button" class="btn" data-p="mn-draft"' + (S.mSaving ? ' disabled' : '') + '>Save draft</button>') + '<button type="button" class="btn" data-p="mn-prev">Preview</button><button type="button" class="btn" data-p="mn-cancel">Cancel</button></div><span class="saved" role="status">' + esc(S.mMsg) + '</span></section>';
+      '<div class="btn-row"><button type="button" class="btn dark" data-p="mn-pub"' + (S.mSaving ? ' disabled' : '') + '>' + (armed('mn-pub') ? 'Tap again to publish to ' + people().length + ' staff' : isEdit ? 'Publish as version ' + (f.v + 1) : 'Publish and start sign-off') + '</button>' + (isEdit ? '' : '<button type="button" class="btn" data-p="mn-draft"' + (S.mSaving ? ' disabled' : '') + '>Save draft</button>') + '<button type="button" class="btn" data-p="mn-prev">Preview</button><button type="button" class="btn" data-p="mn-cancel">' + (armed('mn-cancel') ? 'Tap again to discard' : 'Cancel') + '</button></div><span class="saved" role="status">' + esc(S.mMsg) + '</span></section>';
   }
   function saveMinutes(publish) {
     var f = S.mf; if (!f || S.mSaving || !fb) return;
@@ -2989,6 +3022,8 @@
       data.pubAt = Date.now();
       if (wasPub) data.v = f.v + 1;
     } else if (!data.decisions && !data.menu && !data.safety && !data.dates && !data.other && !data.acts.length && !data.guests) { S.mMsg = 'Nothing to save yet.'; draw(); return; }
+    // publishing starts sign-off for everyone (and a change means everyone signs again), so it takes a second tap
+    if (publish && !arm('mn-pub')) return;
     if (!f.id) data.at = Date.now();
     var ref = f.id ? mnRef(f.id) : fb.fs.doc(colRef('minutes')), ops = [];
     if (publish && wasPub && f.orig) {
@@ -3007,8 +3042,7 @@
   }
   function mnRef(id) { return docRef('minutes', id); }
   function removeMinutes(id) {
-    if (S.mDel !== id) { S.mDel = id; draw(); return; }
-    S.mDel = '';
+    if (!arm('mn-del:' + id)) return;
     sset(mnRef(id), { removed: true, upd: Date.now() }, true).then(function () { S.mMsg = 'Removed.'; if (S.mSel === id) S.mSel = ''; loadMinutes(true); draw(); }, function () { S.mMsg = 'Could not remove. Check the connection and try again.'; draw(); });
   }
   /* who has signed the current version, who has not, and who is late */
@@ -3058,7 +3092,7 @@
     }
     return '<section class="set-block mn-print"><span class="label">Sign-off register</span><span class="hint">Minutes ' + mpad(m.no || 0) + ', ' + esc(longDate(m.date)) + ', version ' + m.v + (m.v > 1 ? '. Earlier versions are kept' : '') + '. Staff who have not signed within ' + MN_LATE + ' days are marked late. Everyone on the staff list signs, including apology and absent.</span>' + chips + body +
       '<div class="a-print-h"><strong>Leichhardt Kitchen Book</strong> &middot; Minutes ' + mpad(m.no || 0) + ' sign-off register &middot; version ' + m.v + '<span>Printed ' + esc(dayShort(ymd(new Date())) + ' ' + clock(Date.now())) + '</span></div>' +
-      '<div class="btn-row mn-noprint"><button type="button" class="btn dark" data-p="mn-print">Print or save as PDF</button><button type="button" class="btn" data-p="mn-csv" data-id="' + esc(m.id) + '">Download CSV</button><button type="button" class="btn" data-p="mn-refresh">Refresh</button>' + (mnCanWrite() ? '<button type="button" class="btn" data-p="mn-edit" data-id="' + esc(m.id) + '">Change as a new version</button><button type="button" class="btn" data-p="mn-remove" data-id="' + esc(m.id) + '">' + (S.mDel === m.id ? 'Tap again to remove' : 'Remove') + '</button>' : '') + '</div></section>';
+      '<div class="btn-row mn-noprint"><button type="button" class="btn dark" data-p="mn-print">Print or save as PDF</button><button type="button" class="btn" data-p="mn-csv" data-id="' + esc(m.id) + '">Download CSV</button><button type="button" class="btn" data-p="mn-refresh">Refresh</button>' + (mnCanWrite() ? '<button type="button" class="btn" data-p="mn-edit" data-id="' + esc(m.id) + '">Change as a new version</button><button type="button" class="btn" data-p="mn-remove" data-id="' + esc(m.id) + '">' + (armed('mn-del:' + m.id) ? 'Tap again to remove' : 'Remove') + '</button>' : '') + '</div></section>';
   }
   function minAdminHTML() {
     loadMinutes();
@@ -3304,11 +3338,11 @@
     if (a === 'recipe-close') { S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; draw(); return; }
     if (a === 'recipe-all') { S.recipeAll = true; draw(); var rse2 = S.root.querySelector('#p-rs'); if (rse2) rse2.focus({ preventScroll: true }); return; }
     if (a === 'pin-go') { submitKitchenPin(); return; }
-    if (a === 'pin-forget') { S.pin = ''; lsSet('lk.prep.pin', ''); S.config = null; S.configState = 'idle'; if (unsubCfg) unsubCfg(); if (unsubItems) unsubItems(); if (unsubSec) unsubSec(); if (unsubLrn) unsubLrn(); unsubCfg = unsubItems = unsubSec = unsubLrn = null; cfgKey = itemsKey = ''; draw(); return; }
+    if (a === 'pin-forget') { if (!arm('pin-forget')) return; S.pin = ''; lsSet('lk.prep.pin', ''); S.config = null; S.configState = 'idle'; if (unsubCfg) unsubCfg(); if (unsubItems) unsubItems(); if (unsubSec) unsubSec(); if (unsubLrn) unsubLrn(); unsubCfg = unsubItems = unsubSec = unsubLrn = null; cfgKey = itemsKey = ''; draw(); return; }
     if (a === 'retry') { cfgKey = ''; connect(); return; }
     if (a === 'notes-open') { if (isSous()) { S.notesOpen = true; S.nf = null; S.nOpen = false; S.nMsg = ''; loadNotes(); draw(); window.scrollTo(0, 0); } return; }
     if (a === 'notes-close') { S.notesOpen = false; draw(); return; }
-    if (a === 'n-new') { S.nf = nfNew(); S.nOpen = true; S.nMsg = ''; draw(); var ntx = S.root.querySelector('[data-k="n-text"]'); if (ntx) { focusNoteText(ntx); } return; }
+    if (a === 'n-new') { S.nf = nfNew(); S.nfSnap = JSON.stringify(S.nf); S.nOpen = true; S.nMsg = ''; draw(); var ntx = S.root.querySelector('[data-k="n-text"]'); if (ntx) { focusNoteText(ntx); } return; }
     if (a === 'n-tag') {
       var tg = el.getAttribute('data-v'), ft = S.nf, old = NOTE_START[ft.tag] || '', cur = ft.text.replace(/^\s+/, '');
       if (!cur || (old && cur === old) || (old && cur.indexOf(old) === 0 && cur.length === old.length)) ft.text = NOTE_START[tg] || '';
@@ -3330,8 +3364,8 @@
       draw(); return;
     }
     if (a === 'n-save') { saveNote(); return; }
-    if (a === 'n-cancel') { S.nf = nfNew(); S.nOpen = false; S.nMsg = ''; draw(); return; }
-    if (a === 'n-edit') { var nn = (S.notes || []).filter(function (x) { return x.id === id; })[0]; if (nn) { S.nf = nfFrom(nn); S.nOpen = true; S.nMsg = ''; draw(); var tx = S.root.querySelector('[data-k="n-text"]'); if (tx) { focusNoteText(tx); } } return; }
+    if (a === 'n-cancel') { if (nfDirty() && !arm('n-cancel')) return; S.nf = nfNew(); S.nOpen = false; S.nMsg = ''; draw(); return; }
+    if (a === 'n-edit') { var nn = (S.notes || []).filter(function (x) { return x.id === id; })[0]; if (nn) { S.nf = nfFrom(nn); S.nfSnap = JSON.stringify(S.nf); S.nOpen = true; S.nMsg = ''; draw(); var tx = S.root.querySelector('[data-k="n-text"]'); if (tx) { focusNoteText(tx); } } return; }
     if (a === 'n-reuse') { reuseNote(id); return; }
     if (a === 'n-past-more') { loadPastNotes(true); return; }
     if (a === 'n-past') { S.nPastOpen = !S.nPastOpen; if (S.nPastOpen && !Array.isArray(S.nPast)) loadPastNotes(); else draw(); return; }
@@ -3354,9 +3388,9 @@
     if (a === 'mn-refresh') { loadMinutes(true); loadSigns(S.mSel || (mnPub()[0] || {}).id, true); draw(); return; }
     if (a === 'mn-sel') { S.mSel = id; loadSigns(id, true); draw(); return; }
     if (/^mn-(new|draft-open|edit|draft|pub|remove)$/.test(a) && !mnCanWrite()) return;
-    if (a === 'mn-new') { S.mf = mfNew(); S.mMsg = ''; draw(); var mfe = S.root.querySelector('.mn-form'); if (mfe) mfe.scrollIntoView({ block: 'start' }); return; }
-    if (a === 'mn-draft-open' || a === 'mn-edit') { var mm = mnById(id); if (mm) { S.mf = mfFrom(mm); S.mMsg = ''; draw(); var mfe2 = S.root.querySelector('.mn-form'); if (mfe2) mfe2.scrollIntoView({ block: 'start' }); } return; }
-    if (a === 'mn-cancel') { S.mf = null; S.mMsg = ''; draw(); return; }
+    if (a === 'mn-new') { S.mf = mfNew(); S.mfSnap = mfSnap(S.mf); S.mMsg = ''; draw(); var mfe = S.root.querySelector('.mn-form'); if (mfe) mfe.scrollIntoView({ block: 'start' }); return; }
+    if (a === 'mn-draft-open' || a === 'mn-edit') { var mm = mnById(id); if (mm) { S.mf = mfFrom(mm); S.mfSnap = mfSnap(S.mf); S.mMsg = ''; draw(); var mfe2 = S.root.querySelector('.mn-form'); if (mfe2) mfe2.scrollIntoView({ block: 'start' }); } return; }
+    if (a === 'mn-cancel') { if (mfDirty() && !arm('mn-cancel')) return; S.mf = null; S.mMsg = ''; draw(); return; }
     if (a === 'mn-prev') { if (S.mf) { S.mf.prev = !S.mf.prev; draw(); } return; }
     if (a === 'mn-attopen') { S.mAttOpen = !S.mAttOpen; draw(); return; }
     if (a === 'mn-attc') { if (S.mf) { var cur = S.mf.att[id]; S.mf.att[id] = cur === 'present' ? 'apology' : cur === 'apology' ? 'absent' : 'present'; draw(); } return; }
@@ -3371,6 +3405,8 @@
     if (a === 'mn-remove') { removeMinutes(id); return; }
     if (a === 'otick') { tickOrderLine(el.getAttribute('data-d'), id, el.getAttribute('aria-pressed') !== 'true'); return; }
     if (a === 'odel') { removeOrderLine(el.getAttribute('data-d'), id); return; }
+    if (a === 'orestore') { removeOrderLine(el.getAttribute('data-d'), id, true); return; }
+    if (a === 'oremoved') { S.oShowRemoved = !S.oShowRemoved; draw(); return; }
     if (a === 'ogroup') { tickOrderGroup(el.getAttribute('data-k2')); return; }
     if (a === 'oview') { S.ordView = el.getAttribute('data-v'); if (S.ordView === 'all') loadOrdAll(true); draw(); return; }
     if (a === 'oday') { S.ordDate = shift(S.ordDate, +el.getAttribute('data-d')); watchOrders(); draw(); return; }
@@ -3411,6 +3447,7 @@
     if (a === 'wsugg') { var wt = (S.wsugg || [])[i]; if (wt) { S.wf.text = wt; draw(); var wa = S.root.querySelector('[data-k="w-amt"]'); if (wa) wa.focus(); } return; }
     if (a === 'woften') { var wo = wOften()[i]; if (wo) { S.wf.text = wo.text; if (wo.unit) S.wf.unit = wo.unit; if (wo.reason) S.wf.reason = wo.reason; if (wo.sec && !S.wf.sec) S.wf.sec = wo.sec; draw(); var wa2 = S.root.querySelector('[data-k="w-amt"]'); if (wa2) wa2.focus(); } return; }
     if (a === 'wdel') { removeWaste(dt, id); return; }
+    if (a === 'wrestore') { removeWaste(dt, id, true); return; }
     if (a === 'wday') { S.wDate = shift(S.wDate, +el.getAttribute('data-d')); watchWaste(); draw(); return; }
     if (a === 'wtoday') { S.wDate = ymd(new Date()); watchWaste(); draw(); return; }
     if (a === 'wreview') { saveReview(); return; }
@@ -3423,7 +3460,7 @@
     if (a === 'print') { window.print(); return; }
     if (a === 'a-tab') { S.atab = el.getAttribute('data-t'); lsSet('lk.prep.atab', S.atab); draw(); window.scrollTo(0, 0); return; }
     if (a === 'staff-open') { if (isSous()) { startDraft(); S.staffOpen = true; draw(); } return; }
-    if (a === 'staff-close') { S.staffOpen = false; S.draft = null; draw(); return; }
+    if (a === 'staff-close') { if (draftDirty() && !arm('staff-close')) return; S.staffOpen = false; S.draft = null; draw(); return; }
     if (a === 'add-recipe') { addRecipe(id); return; }
     if (a === 'signin') { signIn(); return; }
     if (a === 'signout') { signOut(); draw(); return; }
@@ -3440,7 +3477,12 @@
       lines.forEach(function (nm, k) { d.people.push({ id: slug(nm) + '-' + Date.now().toString(36) + k, name: nm, role: 'staff', add: true, tick: true, del: false, active: true }); });
       draw(); return;
     }
-    if (a === 'a-remove-person') { d.people.splice(i, 1); draw(); return; }
+    if (a === 'a-remove-person') {
+      var rp = d.people[i];
+      // a row just added and still blank goes in one tap; anyone else needs a second tap
+      if (!rp || (!(rp.isNew && !String(rp.name).trim()) && !arm('rm:' + rp.id))) return;
+      d.people.splice(i, 1); draw(); return;
+    }
     if (a === 'a-save') { adminSave(); return; }
     if (a === 'a-reset') { startDraft(); draw(); return; }
   }

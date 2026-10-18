@@ -127,6 +127,14 @@ There's no build step and nothing to install. To try it on a computer, open `ind
 - **Weekly badges:** the top 3 ranks for ticked lines over the last 7 days show above the notebook. The owner can switch them off.
 - **Recipe links:** hand-written lines link to recipe cards by matching words against card names and short names (`matchRecipe` in `js/prep.js`). A line that could mean several cards links to none.
 
+### Undo and second taps (October 2026)
+
+- **Remove always has Undo.** Removing a prep line, an order line or a wastage entry shows "Removed ... Undo" for 9 seconds. The head chef and sous chefs can also get a line back later: Show removed on the prep list and the order list, and Put back on removed wastage entries.
+- **A second tap for anything hard to take back.** The first tap changes the button to "Tap again...", a second tap within 4 seconds does it, and left alone it goes back to normal. This covers Reset PIN, Remove a person (admin People tab and the sous chef's staff list), Remove a note, Remove minutes, Publish minutes ("Tap again to publish to 14 staff"), Cancel on minutes or a note with unsaved writing, leaving the staff list with unsaved changes, and "Use a different kitchen PIN" on the name screen (it used to be "Change kitchen PIN" and forgot the PIN in one tap).
+- **Notes popup.** Only Got it (or a link in the note) counts as read. Tapping outside the popup or Escape just closes it: the bell keeps its dot and the popup comes back after 15 minutes, so a stray tap during service cannot dismiss a safety or allergen note.
+- **Toasts on phones** sit above the bottom tab bar instead of covering it, and their Undo button is full size.
+- The admin People tab says Remove (not Delete), the same as the staff list.
+
 ### Wastage log
 
 - `#/waste` is the Daily Wastage Sheet on the phone: section, item, amount and unit (g, kg, L, portions, pieces), reason (prep waste, expired stock, cooking fault, returned, excess production), action or how to stop it happening again. Time and name are added by themselves. Items logged twice or more in 14 days show as one-tap chips.
