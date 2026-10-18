@@ -5,9 +5,11 @@
   small stand-ins in tests/fake/, which keep the data in the page's localStorage. So no real kitchen PIN, staff
   names or prep lines are needed, and nothing is written to the real book, even when BASE points at the live site.
 
-  Every page opens at 14:00 today (the clock then runs as normal), so time-of-day features such as the 10:30
-  notes popup behave the same whenever the tests are run.
+  Every page opens at 14:00 today, kitchen time (the clock then runs as normal), so time-of-day features such as the
+  10:30 notes popup behave the same whenever the tests are run. The tests and the browser run in kitchen time
+  (Queensland), whatever zone the computer is set to.
 */
+process.env.TZ = 'Australia/Brisbane';
 const { chromium } = require('playwright-core');
 const crypto = require('crypto'), fs = require('fs'), path = require('path');
 const BASE = process.env.BASE || 'http://127.0.0.1:8777/';
@@ -69,12 +71,24 @@ async function start() {
    o.admin            the head chef's Google account is signed in
    o.settings         saved recipe book settings, for example { view: 'tiles' }
    o.extra            more seed documents (see seed)
-   o.touch            a touch screen */
+   o.touch            a touch screen
+   o.clock            the phone's clock when the page opens (NOW by default)
+   o.tz               the phone's time zone (kitchen time by default)
+   o.server           the server's time when the page opens; without it the update check's answer has no Date,
+                      so the book keeps the phone's clock (LK_TIME in index.html) */
 async function open(browser, hash, o) {
   o = o || {};
   const w = o.width || 390, h = o.height || 844;
-  const ctx = await browser.newContext({ viewport: { width: w, height: h }, serviceWorkers: 'block', hasTouch: !!o.touch, deviceScaleFactor: 1 });
-  await ctx.clock.install({ time: NOW });
+  const ctx = await browser.newContext({ viewport: { width: w, height: h }, serviceWorkers: 'block', hasTouch: !!o.touch, deviceScaleFactor: 1, timezoneId: o.tz || 'Australia/Brisbane' });
+  await ctx.clock.install({ time: o.clock || NOW });
+  const opened = Date.now();
+  await ctx.route(u => u.href === BASE + 'index.html', async r => {
+    if (r.request().method() !== 'HEAD') return r.continue();
+    const res = await r.fetch(), hd = Object.assign({}, res.headers());
+    delete hd.date;
+    if (o.server) hd.date = new Date(o.server + Date.now() - opened).toUTCString();
+    return r.fulfill({ status: res.status(), headers: hd });
+  });
   await ctx.route('https://www.gstatic.com/firebasejs/**', r => {
     const f = path.join(FAKE, path.basename(new URL(r.request().url()).pathname));
     if (fs.existsSync(f)) return r.fulfill({ status: 200, contentType: 'text/javascript', body: fs.readFileSync(f, 'utf8') });
@@ -93,7 +107,7 @@ async function open(browser, hash, o) {
     'lk.prep.pin': o.noPin ? '' : PIN,
     'lk.prep.who': who || '',
     'lk.prep.tok': who && !o.noTok ? who + ':' + sha('lk:' + who + ':' + pins[who]) : '',
-    'lk.prep.seen': String(NOW),
+    'lk.prep.seen': String(o.clock || NOW),   // on the phone's clock, like the idle check
     'lk.settings.v1': JSON.stringify(Object.assign({ installNo: true }, o.settings || {}))
   };
   if (o.admin) ls['fake.user'] = '1';

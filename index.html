@@ -29,6 +29,48 @@
   // Apply the saved text size before the page draws, so nothing jumps.
   try { var s = JSON.parse(localStorage.getItem('lk.settings.v1') || '{}'); if (s.text) document.documentElement.setAttribute('data-text', s.text); } catch (e) {}
 </script>
+<script>
+  // One clock for the whole book: the server's time, in kitchen time (Queensland, UTC+10, no daylight saving).
+  // A phone's own clock can be minutes or hours out, or set to another zone. The update check further down asks the site
+  // for its headers anyway; their Date is the server's time, so the book keeps the gap (lk.clock.gap) and adds it.
+  // now() is the time to save on a line and to compare with saved times. Time passing on this phone (a timer, a lock,
+  // "30 minutes away") still uses Date.now(). day, hour, mins, dow and clock read a time in kitchen time.
+  // ready() turns true once this visit has asked the server (or after 10 s without an answer); the prep pages wait for it
+  // before rolling lines onto today, so a phone with the wrong date never rolls them onto the wrong day.
+  window.LK_TIME = (function () {
+    var ZONE = 10 * 3600000, gap = 0, checked = false;
+    try { gap = +localStorage.getItem('lk.clock.gap') || 0; } catch (e) {}
+    function now() { return Date.now() + gap; }
+    function done(changed) { var first = !checked; checked = true; if (first || changed) window.dispatchEvent(new Event('lk-clock')); }
+    setTimeout(function () { if (!checked) done(false); }, 10000);
+    function k(ms) { return new Date((ms == null ? now() : ms) + ZONE); }   // read with the getUTC... methods
+    function p(n) { return (n < 10 ? '0' : '') + n; }
+    return {
+      now: now,
+      gap: function () { return gap; },
+      ready: function () { return checked; },
+      day: function (ms) { var d = k(ms); return d.getUTCFullYear() + '-' + p(d.getUTCMonth() + 1) + '-' + p(d.getUTCDate()); },
+      hour: function (ms) { return k(ms).getUTCHours(); },
+      mins: function (ms) { var d = k(ms); return d.getUTCHours() * 60 + d.getUTCMinutes(); },
+      dow: function (ms) { return k(ms).getUTCDay(); },
+      clock: function (ms) { var d = k(ms); return p(d.getUTCHours()) + ':' + p(d.getUTCMinutes()); },
+      // a kitchen date (YYYY-MM-DD) and minutes after midnight, as a time
+      at: function (ymd, min) { var a = ymd.split('-'); return Date.UTC(+a[0], a[1] - 1, +a[2]) - ZONE + (min || 0) * 60000; },
+      // learn the gap from a server answer, sent at t0 and back at t1 (phone time). Date is whole seconds, so add half a second.
+      // With no answer (no signal) the saved gap stays. lk-clock tells the pages to draw again.
+      learn: function (r, t0, t1) {
+        var s = Date.parse((r && r.headers && r.headers.get('date')) || '');
+        if (!isFinite(s) || t1 - t0 > 5000) return done(false);
+        var g = Math.round(s + 500 - (t0 + t1) / 2);
+        if (Math.abs(g - gap) < 1500) return done(false);
+        var jump = Math.abs(g - gap) > 60000;
+        gap = g;
+        try { localStorage.setItem('lk.clock.gap', String(g)); } catch (e) {}
+        done(jump);
+      }
+    };
+  })();
+</script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -43,8 +85,8 @@
   // Daily self-refresh: the book reloads itself once a day (about 04:00) so a tablet left open on the pass
   // always shows the latest cards. If the device was asleep at 04:00, it refreshes as soon as it wakes.
   (function () {
-    var DAY = 24 * 60 * 60 * 1000, CATCH_UP = 20 * 60 * 60 * 1000, loaded = Date.now();
-    function nextFour() { var d = new Date(); d.setHours(4, 0, 0, 0); if (d.getTime() <= Date.now() + 60000) d.setDate(d.getDate() + 1); return d.getTime(); }
+    var DAY = 24 * 60 * 60 * 1000, CATCH_UP = 20 * 60 * 60 * 1000, loaded = Date.now(), T = window.LK_TIME;
+    function untilFour() { var n = T.now(), t = T.at(T.day(n), 240); if (t <= n + 60000) t += DAY; return t - n; }
     function refresh() {
       // Something half written in the prep pages (a line, a note, minutes, the staff list): try again in 10 minutes.
       try { if (window.LK_PREP && window.LK_PREP.unsaved && window.LK_PREP.unsaved()) { clearTimeout(timer); timer = setTimeout(refresh, 600000); return; } } catch (e) {}
@@ -57,8 +99,9 @@
       } catch (e) { go(); }
     }
     var timer = null;
-    function schedule() { clearTimeout(timer); timer = setTimeout(refresh, Math.max(1000, nextFour() - Date.now())); }
+    function schedule() { clearTimeout(timer); timer = setTimeout(refresh, Math.max(1000, untilFour())); }
     schedule();
+    window.addEventListener('lk-clock', schedule);
     document.addEventListener('visibilitychange', function () {
       if (document.visibilityState !== 'visible') return;
       if (Date.now() - loaded > CATCH_UP) refresh(); else schedule();
@@ -70,12 +113,15 @@
   // headers (a tiny request, no Firestore) when it opens, when someone comes back to it, and every 15 minutes while it is open.
   // If they changed, the book updates itself: straight away when it was just brought back from the background,
   // otherwise when nobody has touched it for 2 minutes and nothing is being typed. A bar offers "Update now" meanwhile.
+  // The same answer carries the server's time, which keeps the book's clock right (LK_TIME, at the top).
   (function () {
     var STAMP_URL = 'index.html', base = null, found = false, lastTouch = Date.now(), hiddenAt = 0, lastCheck = 0, bar = null;
     function stamp() {
+      var t0 = Date.now();
       return fetch(STAMP_URL, { method: 'HEAD', cache: 'no-store' }).then(function (r) {
+        window.LK_TIME.learn(r.ok ? r : null, t0, Date.now());
         return r.ok ? (r.headers.get('last-modified') || '') + '|' + (r.headers.get('etag') || '') : '';
-      }, function () { return ''; });
+      }, function () { window.LK_TIME.learn(null); return ''; });
     }
     function typing() {
       var a = document.activeElement, t = a && a.tagName;
