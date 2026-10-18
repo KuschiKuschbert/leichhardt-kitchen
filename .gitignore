@@ -4,3 +4,6 @@
 # click tests
 tests/node_modules/
 tests/shots/
+
+# nightly learning script
+scripts/node_modules/
