@@ -1,5 +1,5 @@
 // Shift pings (they used to be called daily notes): the new names, the Pings tick in the admin People tab, and a person
-// ticked for Pings writing them from the prep book. Sous chefs always may; a sous chef's staff list save sends only people.
+// ticked for Pings writing them from the prep book. Sous chefs always may; a sous chef's staff list save sends only people and staffIds.
 const L = require('./lib');
 const { R, ok } = L.results(), { txt, tap } = L;
 const today = L.ymd(new Date());
@@ -97,7 +97,7 @@ function withAnn() {
   await p.click('[data-p="a-save"]');
   await p.waitForTimeout(500);
   const w = await p.evaluate(k => { const all = [].concat.apply([], window.__fake.writes); return all.filter(o => o.path === k).map(o => Object.keys(o.data).sort().join(',')); }, CFG);
-  ok(w.length === 1 && w[0] === 'by,people,updated,updatedBy', 'staff: a sous chef sends only people (' + w.join(' | ') + ')');
+  ok(w.length === 1 && w[0] === 'by,people,staffIds,updated,updatedBy', 'staff: a sous chef sends only people and staffIds (' + w.join(' | ') + ')');
   s = await store(p);
   ok(JSON.stringify(s[CFG].pingIds) === '["sam","ann"]' && JSON.stringify(s[CFG].sousIds) === '["sam"]', 'staff: pingIds and sousIds kept');
   ok(s[CFG].people.length === 4 && s[CFG].people.filter(x => x.id === 'ann')[0].ping === true, 'staff: new person added, Ann keeps her Pings tick');

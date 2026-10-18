@@ -26,11 +26,19 @@ service cloud.firestore {
         && getAfter(proofDoc(request.resource.data.by)).data.at == request.time;
     }
     function writer() { return isAdmin() || staff(); }
+    function cfg() { return get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/config/main).data; }
+    // The head chef or a sous chef, writing as themselves (own PIN proof).
+    function lead() { return isAdmin() || sousBy(); }
+    // A picture the book made itself (a data URL), not a link to somewhere else.
+    function picture(s) { return s is string && (s.size() == 0 || s.matches('data:image/(png|jpeg|webp);base64,.*')); }
+    // The fields a write may set: all of them on a new record, only the changed ones on an old one (so an older
+    // record with a field the book no longer writes can still be updated).
+    function onlyKeys(list) { return (resource == null ? request.resource.data.keys() : request.resource.data.diff(resource.data).affectedKeys()).hasOnly(list); }
     // A ticked prep line stays ticked. Only the head chef, a sous chef, or the person who ticked it
     // (within 2 minutes, for a mis-tap) may undo it. A tick time cannot be re-stamped by anyone else.
-    function sousBy() { return request.resource.data.by in get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/config/main).data.get('sousIds', []); }
+    function sousBy() { return request.resource.data.by in cfg().get('sousIds', []); }
     // People the head chef ticked for Pings (and every sous chef) may write shift pings. The head chef keeps pingIds in step.
-    function pingBy() { return request.resource.data.by in get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/config/main).data.get('pingIds', []); }
+    function pingBy() { return request.resource.data.by in cfg().get('pingIds', []); }
     function tickKept() {
       return resource.data.get('done', false) != true
         || (request.resource.data.get('done', false) == true && request.resource.data.get('doneAt', 0) == resource.data.get('doneAt', 0))
@@ -42,24 +50,31 @@ service cloud.firestore {
     match /kitchens/KITCHEN_PIN/config/main {
       allow read: if true;
       allow create: if isAdmin();
-      // A sous chef (own PIN, no Google sign-in) may only change the people list, and only if listed in sousIds.
-      // So sousIds and pingIds can only be changed by the head chef.
+      // A sous chef (own PIN, no Google sign-in) may only change the people list and staffIds (who may set a PIN),
+      // and only if listed in sousIds. sousIds and pingIds can only be changed by the head chef: the admin panel
+      // shows the head chef any role or Pings tick a sous chef changed in the people list before it takes effect.
       allow update: if isAdmin() || (staff()
         && request.resource.data.by in resource.data.get('sousIds', [])
         && request.resource.data.people is list && request.resource.data.people.size() <= 80
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['people', 'updated', 'updatedBy', 'by']));
+        && request.resource.data.get('staffIds', []) is list && request.resource.data.get('staffIds', []).size() <= 80
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['people', 'staffIds', 'updated', 'updatedBy', 'by']));
       allow delete: if isAdmin();
     }
     match /kitchens/KITCHEN_PIN/config/admins { allow read, write: if isAdmin(); }
+    function lineOk(max) {
+      return request.resource.data.text is string && request.resource.data.text.size() <= max
+        && request.resource.data.get('qty', '') is string && request.resource.data.get('qty', '').size() <= 40
+        && request.resource.data.get('station', '') is string && request.resource.data.get('station', '').size() <= 40;
+    }
     match /kitchens/KITCHEN_PIN/days/{day}/items/{item} {
       allow read: if true;
-      allow create: if writer() && request.resource.data.text is string && request.resource.data.text.size() <= 160;
-      allow update: if writer() && request.resource.data.text is string && request.resource.data.text.size() <= 160 && tickKept();
+      allow create: if writer() && lineOk(160);
+      allow update: if writer() && lineOk(160) && tickKept();
       allow delete: if false;
     }
     match /kitchens/KITCHEN_PIN/orders/{day}/lines/{line} {
       allow read: if true;
-      allow create, update: if writer() && request.resource.data.text is string && request.resource.data.text.size() <= 120;
+      allow create, update: if writer() && lineOk(120);
       allow delete: if false;
     }
     // Wastage log: anyone signed in adds a line; only the head chef or a sous chef may change one (to remove it).
@@ -86,13 +101,15 @@ service cloud.firestore {
     // Recipe book searches that found nothing.
     match /kitchens/KITCHEN_PIN/misses/{id} {
       allow read: if true;
-      allow create, update: if writer() && request.resource.data.q is string && request.resource.data.q.size() <= 60;
+      allow create, update: if isAdmin() || (staff() && request.resource.data.q is string && request.resource.data.q.size() <= 60
+        && onlyKeys(['q', 'n', 'last', 'lastBy', 'hidden', 'by']));
       allow delete: if isAdmin();
     }
     // Recipe cards opened (counts only).
     match /kitchens/KITCHEN_PIN/views/{id} {
       allow read: if true;
-      allow create, update: if writer() && request.resource.data.name is string && request.resource.data.name.size() <= 80 && request.resource.data.n is int;
+      allow create, update: if isAdmin() || (staff() && request.resource.data.name is string && request.resource.data.name.size() <= 80 && request.resource.data.n is int
+        && onlyKeys(['name', 'n', 'last', 'by']));
       allow delete: if isAdmin();
     }
     // Shift pings (stored as notes), shown as a popup. Everyone with the kitchen PIN reads them; only the head chef,
@@ -108,9 +125,11 @@ service cloud.firestore {
         && request.resource.data.get('dows', []) is list && request.resource.data.get('dows', []).size() <= 7
         && request.resource.data.get('removed', false) is bool;
     }
+    // A ping is changed or removed by the person who wrote it, the head chef, or a sous chef.
     match /kitchens/KITCHEN_PIN/notes/{id} {
       allow read: if true;
-      allow create, update: if (isAdmin() || (staff() && (sousBy() || pingBy()))) && noteOk();
+      allow create: if (isAdmin() || (staff() && (sousBy() || pingBy()))) && noteOk();
+      allow update: if (lead() || (staff() && pingBy() && resource.data.get('by', '') == request.resource.data.by)) && noteOk();
       allow delete: if false;
     }
     // Kitchen meeting minutes. Only the head chef (Google account) writes them (draft, then published). Sous chefs read the register. Everyone with the kitchen PIN reads them.
@@ -171,7 +190,7 @@ service cloud.firestore {
         && request.resource.data.get('steps', '') is string && request.resource.data.get('steps', '').size() <= 3000
         && request.resource.data.get('kw', '') is string && request.resource.data.get('kw', '').size() <= 200
         && request.resource.data.get('text', '') is string && request.resource.data.get('text', '').size() <= 8000
-        && request.resource.data.get('thumb', '') is string && request.resource.data.get('thumb', '').size() <= 60000
+        && picture(request.resource.data.get('thumb', '')) && request.resource.data.get('thumb', '').size() <= 60000
         && request.resource.data.get('file', '') is string && request.resource.data.get('file', '').size() <= 120
         && request.resource.data.pages is int && request.resource.data.pages >= 0 && request.resource.data.pages <= 20
         && request.resource.data.get('dims', []) is list && request.resource.data.get('dims', []).size() <= 20
@@ -184,7 +203,7 @@ service cloud.firestore {
       allow delete: if false;
       match /pages/{n} {
         allow read: if true;
-        allow create, update: if isAdmin() && request.resource.data.img is string && request.resource.data.img.size() <= 1000000
+        allow create, update: if isAdmin() && picture(request.resource.data.img) && request.resource.data.img.size() > 0 && request.resource.data.img.size() <= 1000000
           && request.resource.data.v is int && request.resource.data.n is int;
         allow delete: if isAdmin();
       }
@@ -198,9 +217,12 @@ service cloud.firestore {
         && sid == request.resource.data.day + '_' + request.resource.data.by;
       allow update, delete: if false;
     }
+    // Only a person on the list (config/main.staffIds, kept in step by the admin panel and a sous chef's staff page)
+    // may set a PIN, once. So nobody with just the kitchen PIN can make up a new writer.
     match /kitchens/KITCHEN_PIN/staffpins/{id} {
       allow read: if isAdmin();
       allow create: if request.resource.data.hash is string && request.resource.data.hash.size() == 64
+        && id in cfg().get('staffIds', [])
         && getAfter(setDoc(id)).data.at is number;
       allow update, delete: if isAdmin();
     }
@@ -214,19 +236,28 @@ service cloud.firestore {
       allow create, update: if request.resource.data.tok is string && request.resource.data.tok.size() == 64;
       allow delete: if isAdmin();
     }
+    // A person's tally (visits, lines added, ticks): their own, or anyone's for the head chef and sous chefs (an untick).
     match /kitchens/KITCHEN_PIN/activity/{id} {
       allow read: if true;
-      allow create, update: if writer() && request.resource.data.name is string && request.resource.data.name.size() <= 40;
+      allow create, update: if isAdmin() || (staff() && (sousBy() || id == request.resource.data.by)
+        && request.resource.data.name is string && request.resource.data.name.size() <= 40
+        && onlyKeys(['name', 'visits', 'lastSeen', 'added', 'lastAdded', 'ticked', 'by']));
       allow delete: if isAdmin();
     }
+    // Sections and what the prep list learned: anyone with a PIN counts a use; hiding one is for the head chef or a sous chef.
+    function hideOk() { return sousBy() || request.resource.data.get('hidden', false) == resource.data.get('hidden', false); }
     match /kitchens/KITCHEN_PIN/sections/{id} {
       allow read: if true;
-      allow create, update: if writer() && request.resource.data.name is string && request.resource.data.name.size() <= 40;
+      allow create: if isAdmin() || (staff() && request.resource.data.name is string && request.resource.data.name.size() <= 40
+        && onlyKeys(['name', 'uses', 'lastUsed', 'lastBy', 'hidden', 'by']) && (sousBy() || request.resource.data.get('hidden', false) == false));
+      allow update: if isAdmin() || (staff() && request.resource.data.name is string && request.resource.data.name.size() <= 40
+        && onlyKeys(['name', 'uses', 'lastUsed', 'lastBy', 'hidden', 'by']) && hideOk());
       allow delete: if isAdmin();
     }
     match /kitchens/KITCHEN_PIN/learned/{id} {
       allow read: if true;
-      allow create, update: if writer() && request.resource.data.text is string && request.resource.data.text.size() <= 160;
+      allow create: if isAdmin() || (staff() && request.resource.data.text is string && request.resource.data.text.size() <= 160 && (sousBy() || request.resource.data.get('hidden', false) == false));
+      allow update: if isAdmin() || (staff() && request.resource.data.text is string && request.resource.data.text.size() <= 160 && hideOk());
       allow delete: if isAdmin();
     }
     // What the order list has learned: one record per item ordered (text, uses, weekdays, usual amounts). Anyone with a PIN adds to it.

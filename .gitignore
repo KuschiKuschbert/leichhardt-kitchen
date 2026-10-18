@@ -8,3 +8,4 @@ tests/shots/
 # nightly learning script
 scripts/node_modules/
 tests/shots-baseline/
+tests/rules/node_modules/
