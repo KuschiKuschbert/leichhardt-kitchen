@@ -2036,8 +2036,11 @@
       (S.ordState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' :
         (shown.length ? '<ul class="nb-rows">' + shown.slice().sort(function (a, b) { return (a.ordered ? 1 : 0) - (b.ordered ? 1 : 0) || (a.addedAt || 0) - (b.addedAt || 0); }).map(ordRow).join('') + '</ul>' : (live.length ? '<p class="nb-empty">Everything on this list has been ordered. See Ordered today below.</p>' : S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : '<p class="nb-empty">Loading...</p>')));
     return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' : '') + '</span><span class="p-links"><a class="p-link" href="#/prep">Prep list</a>' + '' + '</span></div>' + tabs +
-      '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + (view === 'all' ? 'To order' : 'Order list') + '</h2><span class="nb-date">' + (view === 'all' ? 'Across the last ' + ORD_DAYS + ' days' : esc(longDate(S.ordDate))) + '</span></div>' +
-      (view === 'day' ? '<div class="nb-prog" role="status">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') + '</header><div class="nb-body">' + body + orderedBox + '</div><div class="nb-foot">' + (view === 'day' ? add : '') + '</div></section>';
+      '<section class="nb-page o-page' + (view === 'all' ? ' o-all' : '') + '"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + (view === 'all' ? 'To order' : 'Order list') + '</h2><span class="nb-date">' + (view === 'all' ? 'Across the last ' + ORD_DAYS + ' days' : esc(longDate(S.ordDate))) + '</span></div>' +
+      (view === 'day' ? '<div class="nb-prog" role="status">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') + '</header>' +
+      /* the add box is at the top, so it is always in reach; on big screens the list and the ordered-today list sit side by side below it */
+      (view === 'day' && add ? '<div class="nb-foot o-add">' + add + '</div>' : '') +
+      '<div class="o-cols"><div class="nb-body o-main">' + body + '</div>' + (orderedBox ? '<div class="o-ordered">' + orderedBox + '</div>' : '') + '</div></section>';
   }
 
 
