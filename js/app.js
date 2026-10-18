@@ -126,7 +126,71 @@
   function isDish(r) { return r.kind === 'main' || r.kind === 'snack' || r.kind === 'side' || r.kind === 'dessert'; }
   function inKind(r) { return ui.kind === 'all' || !!(memb[ui.kind] && memb[ui.kind][r.id]); }
   function q() { return ui.query.trim().toLowerCase(); }
-  function matches(id) { var s = q(); return !s || hay[id].indexOf(s) >= 0; }
+  function matches(id) {
+    var s = search();
+    if (s.free && !freeFrom(id, s.free)) return false;
+    return !s.words.length || s.words.every(function (w) { return hay[id].indexOf(w) >= 0; });
+  }
+  /* What the search box means, worked out once per change of the box:
+     - "gluten free", "gf", "no dairy", "nut free" and so on: the recipes free from those allergens (same rule as Free from)
+     - otherwise every word must be in the recipe, in any order ("parmy chicken" finds Chicken Parmy)
+     - and when nothing matches, a word one slip away from a word in the book is put right ("chiken" finds Chicken) */
+  var ALG = { gluten: ['Gluten'], wheat: ['Gluten'], coeliac: ['Gluten'], celiac: ['Gluten'], dairy: ['Milk'], milk: ['Milk'], lactose: ['Milk'], egg: ['Egg'], eggs: ['Egg'],
+    soy: ['Soy'], soya: ['Soy'], peanut: ['Peanut'], peanuts: ['Peanut'], nut: ['Peanut', 'Tree nut'], nuts: ['Peanut', 'Tree nut'], fish: ['Fish'],
+    shellfish: ['Crustacean', 'Mollusc'], seafood: ['Fish', 'Crustacean', 'Mollusc'], crustacean: ['Crustacean'], prawn: ['Crustacean'], prawns: ['Crustacean'], mollusc: ['Mollusc'], sesame: ['Sesame'] };
+  // Pulls the free-from part out of a search ("gf burger" is burgers free from gluten). Returns { list, rest }.
+  function freeQuery(s) {
+    var out = [], rest = (' ' + s + ' ').replace(/-/g, ' ').replace(/\b(gf)\b/g, ' gluten free ').replace(/\b(df)\b/g, ' dairy free ')
+      .replace(/\b(?:no|without)\s+([a-z]+)|\b([a-z]+)\s+free\b/g, function (m, a, b) { var w = ALG[a || b]; if (!w) return m; w.forEach(function (x) { if (out.indexOf(x) < 0) out.push(x); }); return ' '; });
+    if (!out.length) return { list: null, rest: s };
+    return { list: out, rest: rest.replace(/\b(and|or)\b|[,+&]/g, ' ').replace(/\s+/g, ' ').trim() };
+  }
+  function freeFrom(id, list) {
+    if (missing[id].length) return false;
+    var ro = rolled[id];
+    return list.every(function (a) { return !ro.contains[a] && !ro.check[a]; });
+  }
+  var sq = { key: null }, vocab = null;
+  function search() {
+    var s = q();
+    if (sq.key === s) return sq;
+    var fq = freeQuery(s);
+    sq = { key: s, words: fq.rest ? fq.rest.split(/\s+/) : [], free: fq.list, fixed: '' };
+    if (!sq.words.length) return sq;
+    var hits = function (ws) { return D.recipes.some(function (r) { return (!sq.free || freeFrom(r.id, sq.free)) && ws.every(function (w) { return hay[r.id].indexOf(w) >= 0; }); }); };
+    if (hits(sq.words)) return sq;
+    if (!vocab) { vocab = {}; D.recipes.forEach(function (r) { hay[r.id].split(/[^a-z]+/).forEach(function (w) { if (w.length >= 3) vocab[w] = (vocab[w] || 0) + 1; }); }); }
+    var changed = false, fixed = sq.words.map(function (w) {
+      if (w.length < 4 || vocab[w] || D.recipes.some(function (r) { return hay[r.id].indexOf(w) >= 0; })) return w;
+      var maxd = w.length >= 8 ? 2 : 1, best = null, bn = 0, tie = false;
+      Object.keys(vocab).forEach(function (c) {
+        if (Math.abs(c.length - w.length) > maxd || osa(w, c) > maxd) return;
+        if (!best || vocab[c] > bn) { best = c; bn = vocab[c]; tie = false; } else if (vocab[c] === bn) tie = true;
+      });
+      if (best && !tie) { changed = true; return best; }
+      return w;
+    });
+    if (changed && hits(fixed)) { sq.words = fixed; sq.fixed = fixed.join(' '); }
+    return sq;
+  }
+  function osa(a, b) {
+    var d = [], i, j;
+    for (i = 0; i <= a.length; i++) d[i] = [i];
+    for (j = 1; j <= b.length; j++) d[0][j] = j;
+    for (i = 1; i <= a.length; i++) for (j = 1; j <= b.length; j++) {
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+    }
+    return d[a.length][b.length];
+  }
+  /* One line above the results when the search was read as something else. */
+  function searchNote() {
+    var s = search();
+    var out = '';
+    if (s.fixed) out += '<p class="s-note" role="status">Nothing for "' + esc(q()) + '". Showing <b>' + esc(s.fixed) + '</b> instead.</p>';
+    if (s.free) out += '<p class="s-note" role="status"><b>Free from ' + esc(s.free.join(', ').toLowerCase()) + ':</b> recipes with none of it and no "may have". Recipes with a card still to come are left out. Always check the supplier labels before answering a guest.</p>';
+    return out;
+  }
   function freeOk(id) {
     if (!ui.free.length) return true;
     if (missing[id].length) return false; // can't promise free-from until every part has a card
@@ -248,7 +312,7 @@
   }
   /* Search, with the recipe count above it and the Pass / Tiles switch right next to it. */
   function searchField(placeholder, count) {
-    return '<div class="field"><div class="field-head"><label class="label" for="find">Search</label>' + (count != null ? '<span class="count" id="count">' + esc(count) + '</span>' : '') + '</div>' +
+    return '<div class="field find-bar"><div class="field-head"><label class="label" for="find">Search</label>' + (count != null ? '<span class="count' + (/ of /.test(count) ? ' is-on' : '') + '" id="count">' + esc(count) + '</span>' : '') + '</div>' +
       '<div class="search-row"><input id="find" class="search" type="search" autocomplete="off" data-k="find" placeholder="' + esc(placeholder) + '" value="' + esc(ui.query) + '">' + viewSwitch() + '</div></div>';
   }
   function freeChips(scroll) {
@@ -275,7 +339,7 @@
   }
   function allergenBox(r) {
     var list = rows[r.id], miss = missing[r.id];
-    var h = '<section class="box outline" aria-label="Allergens"><div class="row-label" style="justify-content: space-between"><span class="label">Allergens</span>' +
+    var h = '<section class="box outline" id="r-allergens" aria-label="Allergens"><div class="row-label" style="justify-content: space-between"><span class="label">Allergens</span>' +
       (list.some(function (a) { return a.maybe; }) ? '<span class="hint">? = may be in it, check the supplier label</span>' : '') + '</div>';
     if (list.length) {
       h += '<div class="allergen-grid">' + list.map(function (a) {
@@ -349,12 +413,17 @@
     });
     return '<nav class="crumbs" aria-label="Breadcrumb">' + parts.join('<span class="sep" aria-hidden="true">/</span>') + '</nav>';
   }
+  /* Phones and tablets (the columns stack): jump straight to the allergens, the ingredients or the method. */
+  function jumps() {
+    return '<nav class="jumps" aria-label="Jump to"><button type="button" class="chip" data-act="jump" data-val="r-allergens">Allergens</button>' +
+      '<button type="button" class="chip" data-act="jump" data-val="r-ing">Ingredients</button><button type="button" class="chip" data-act="jump" data-val="r-steps">Method</button></nav>';
+  }
   function recipeCard(r, stack, withHome) {
-    return '<article class="card' + (r.done ? ' done' : '') + '">' + crumbs(stack, withHome) + cardHead(r) + allergenBox(r) +
-      '<div class="cols"><div class="col"><h3 class="h3">Ingredients</h3>' + ingTable(r, stack, false) + tipBox(r) + usedBox(r, stack) +
+    return '<article class="card' + (r.done ? ' done' : '') + '">' + crumbs(stack, withHome) + cardHead(r) + jumps() + allergenBox(r) +
+      '<div class="cols"><div class="col"><h3 class="h3" id="r-ing">Ingredients</h3>' + ingTable(r, stack, false) + tipBox(r) + usedBox(r, stack) +
       (isDish(r) && r.art && ART.plates[r.art] ? '<div class="sec"><h3 class="h3">On the plate</h3>' + art(r, 'card-art') + '</div>' : '') + sideView(r) +
       (!isDish(r) && r.art && ART.pans[r.art] ? '<div class="sec"><h3 class="h3">In the pan</h3>' + art(r, 'card-art') + '</div>' : '') + '</div>' +
-      '<div class="col wide">' + safetyBox(r) + diagram(r) + steps(r) + '</div></div></article>';
+      '<div class="col wide"><div id="r-steps" class="jump-at"></div>' + safetyBox(r) + diagram(r) + steps(r) + '</div></div></article>';
   }
 
   /* ---------- view A: tiles ---------- */
@@ -371,7 +440,7 @@
           (missing[r.id].length ? '<span class="tag maybe">Allergens incomplete</span>' : '') + '</span></a>';
       }).join('') + '</div></section>';
     }).join('');
-    return any ? '<div class="tile-groups">' + html + '</div>' : '<div class="empty">No recipes match. Clear the search or the filters.</div>';
+    return searchNote() + (any ? '<div class="tile-groups">' + html + '</div>' : '<div class="empty">No recipes match. Clear the search or the filters.</div>');
   }
   // The Functions chip sits first after All so it is always on view; every other chip follows the menu order.
   function kindChips() {
@@ -411,7 +480,7 @@
       }).join('');
       return '<section class="shelf" aria-label="' + esc(sh.title) + '"><div class="group-head"><span>' + esc(sh.title) + '</span></div><div class="shelf-items">' + items + '</div><div class="rail" aria-hidden="true"></div></section>';
     }).join('');
-    return html + (s && !n ? '<div class="empty">Nothing on the pass matches. Clear the search.</div>' : '');
+    return searchNote() + html + (s && !n ? '<div class="empty">Nothing on the pass matches. Clear the search.</div>' : '');
   }
   function passCount() {
     var s = q();
@@ -451,11 +520,11 @@
       left = '<div class="pan-art' + (r.done ? ' done' : '') + '">' + art(r, 'art') + '</div>' + usedBox(r, stack, 'Goes on') + tipBox(r);
     }
     var parent = stack.length > 1 ? byId[stack[stack.length - 2]].name : 'the pass';
-    return '<div class="page">' + header() + trail + lensChips() +
+    return '<div class="page">' + header() + trail + jumps() + lensChips() +
       '<main id="main" class="cols"><div class="col">' + left + '</div><div class="col wide">' + cardHead(r) + allergenBox(r) +
-      (dish ? '' : '<div class="sec"><h3 class="h3">Into the pan</h3>' + ingTable(r, stack, true) + '</div>') +
-      safetyBox(r) + diagram(r) + steps(r) +
-      (dish ? '<div class="sec"><h3 class="h3">Everything on it</h3>' + ingTable(r, stack, true) + '</div>' : '') +
+      (dish ? '' : '<div class="sec"><h3 class="h3" id="r-ing">Into the pan</h3>' + ingTable(r, stack, true) + '</div>') +
+      '<div id="r-steps" class="jump-at"></div>' + safetyBox(r) + diagram(r) + steps(r) +
+      (dish ? '<div class="sec"><h3 class="h3" id="r-ing">Everything on it</h3>' + ingTable(r, stack, true) + '</div>' : '') +
       '</div></main>' + footer() +
       '<div class="zoombar"><a href="' + href(stack.slice(0, -1)) + '">' + ICON.zoom + 'Zoom out to ' + esc(parent) + '</a></div></div>';
   }
@@ -732,6 +801,7 @@
     var box, count = document.getElementById('count');
     if (view === 'tiles' && (box = document.getElementById('results'))) { box.innerHTML = tilesHTML(); if (count) count.textContent = countText(); }
     else if (view === 'pass' && (box = document.getElementById('shelves'))) { box.innerHTML = shelvesHTML(); if (count) count.textContent = passCount(); }
+    if (count) count.classList.toggle('is-on', / of /.test(count.textContent));
   }
 
   /* A search that finds no recipe at all is queued on this phone (prefixes typed on the way are dropped).
@@ -769,11 +839,12 @@
       el.querySelector('.dot').innerHTML = on ? ICON.check : el.getAttribute('data-n');
       return;
     }
+    if (act === 'jump') { var jt = document.getElementById(val); if (jt) jt.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     if (act === 'kind') { ui.kind = val; }
     else if (act === 'free') { ui.free = ui.free.indexOf(val) >= 0 ? ui.free.filter(function (x) { return x !== val; }) : ui.free.concat([val]); }
     else if (act === 'lens') { ui.lens = ui.lens === val ? null : val; }
     else if (act === 'pick') { var k = Number(val); ui.pick = ui.pick === k ? null : k; }
-    else if (act === 'setview' || act === 'topview') { settings.view = val; saveSettings(); }
+    else if (act === 'setview' || act === 'topview') { var was = settings.view; settings.view = val; saveSettings(); if (act === 'topview' && was !== val) { render(); window.scrollTo(0, 0); return; } }
     else if (act === 'settext') { settings.text = val; saveSettings(); document.documentElement.setAttribute('data-text', val); }
     else if (act === 'clearticks') { ticks = {}; saveTicks(); }
     else if (act === 'installno') { settings.installNo = true; saveSettings(); }

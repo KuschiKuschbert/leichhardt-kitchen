@@ -14,6 +14,12 @@ The Leichhardt Hotel kitchen's app: the recipe book, the prep list, the order li
 - **From the side.** Plated dishes also show a labelled side view, so the team can see what sits on top. Burgers show their build, top to bottom, instead.
 - **Pin labels.** On the plate drawing the page places each label where it does not cover the food, other labels or other pins, with a thin line back to its pin. It reads the drawing to find the food, so a new dish needs no label tuning. Boards and platters (more than 8 pins) use smaller labels. The ring is see-through so the food shows through it.
 - **Tick off steps** while cooking. The ticks clear when the page is closed.
+- **Search (October 2026):**
+  - Every word counts, in any order: "parmy chicken" finds Chicken Parmy.
+  - "Gluten free", "gf", "no dairy", "df", "nut free", "egg free", "shellfish free" and so on show the recipes free from it, by the same rule as the Free from chips (no "may have", and no recipe with a card still to come). A note above the results says so. It also works with a word: "gf burger". So the Pass, which has the allergen lens instead of Free from chips, can do free-from too.
+  - A word that is one slip away from a word in the book is put right when nothing else matches ("chiken" shows chicken, with a note saying so). Searches that still find nothing are queued for the admin panel as before.
+  - The search bar stays at the top of the screen while the list scrolls. On phones the "16 of 114 match" count shows while a search or filter is on. Switching between the Pass and Tiles starts at the top of the list.
+- **Recipe cards on phones and tablets:** the drawings come first, so a row under the name trail jumps straight to Allergens, Ingredients or Method. It is hidden on wide screens, where the card is in two columns.
 - **Settings:**
   - Which view it opens with
   - Text size (Normal, Large, Extra large)

@@ -1129,3 +1129,18 @@ html.print-min .mn-regtbl { display: block; }
   .nb-go { padding: 0 0.3rem; }
   .nb-x { margin-left: 0.2rem; padding: 0 0.35rem; }
 }
+
+/* Recipe book, finding and reading (October 2026) */
+/* the search bar stays at the top while the list scrolls */
+.find-bar { position: sticky; top: 0; z-index: 6; margin: 0 -1.25rem; padding: 0.6rem 1.25rem 0.7rem; background: var(--bg); }
+@media (max-width: 719px) { .count.is-on { display: inline; } }
+.vsw button { min-width: 44px; justify-content: center; }
+/* a search read as something else ("gluten free", or a near miss) says so above the results */
+.s-note { margin: 0 0 0.9rem; padding: 0.55rem 0.8rem; border-left: 4px solid var(--accent); background: var(--paper); font-size: 0.9375rem; }
+/* jump row on recipe pages where the columns stack */
+.jumps { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.jumps .chip { min-height: 44px; }
+@media (min-width: 900px) { .jumps { display: none; } }
+#r-allergens, #r-ing, .jump-at { scroll-margin-top: 0.75rem; }
+.jump-at { height: 0; }
+@media (max-width: 599px) { .find-bar { margin: 0 -1rem; padding: 0.6rem 1rem 0.7rem; } }
