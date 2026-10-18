@@ -46,6 +46,8 @@
     var DAY = 24 * 60 * 60 * 1000, CATCH_UP = 20 * 60 * 60 * 1000, loaded = Date.now();
     function nextFour() { var d = new Date(); d.setHours(4, 0, 0, 0); if (d.getTime() <= Date.now() + 60000) d.setDate(d.getDate() + 1); return d.getTime(); }
     function refresh() {
+      // Something half written in the prep pages (a line, a note, minutes, the staff list): try again in 10 minutes.
+      try { if (window.LK_PREP && window.LK_PREP.unsaved && window.LK_PREP.unsaved()) { clearTimeout(timer); timer = setTimeout(refresh, 600000); return; } } catch (e) {}
       // Re-fetch the data files past the browser cache first, so the reload shows the newest cards. The page stays on the same card.
       var files = ['js/data.js', 'js/art.js', 'js/app.js', 'js/prep.js', 'js/firebase-config.js', 'css/app.css'];
       var go = function () { location.reload(); };
@@ -77,6 +79,8 @@
     }
     function typing() {
       var a = document.activeElement, t = a && a.tagName;
+      // also anything half written in the prep pages, even when the cursor has left the box
+      try { if (window.LK_PREP && window.LK_PREP.unsaved && window.LK_PREP.unsaved()) return true; } catch (e) {}
       return t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT' || !!(a && a.isContentEditable);
     }
     function reloadNow() {
