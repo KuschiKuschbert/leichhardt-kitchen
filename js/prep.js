@@ -58,7 +58,7 @@
     date: ymd(new Date()),
     config: null, configState: 'idle',   // idle, loading, ok, badpin, error
     items: [], itemsState: 'idle', showRemoved: false,
-    section: '', text: '', qty: '', recipeSearch: '', recipeOpen: false, tab: '',
+    section: '', text: '', qty: '', recipeSearch: '', recipeOpen: false, recipeAll: false, tab: '',
     authed: false, tok: '', pinStep: '', pinData: null, pf1: '', pf2: '', pinMsg: '',
     sections: [], activity: [], resetId: '', hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false, exporting: '', moving: false, moveMsg: '', newPin: '', atab: lsGet('lk.prep.atab') || 'insights', ordDate: ymd(new Date()), ordLines: [], ordState: 'idle', ordView: 'day', otext: '', oqty: '', ordAll: [], ordAllAt: 0, ordBusy: false, osugg: [],
     wDate: ymd(new Date()), wLines: [], wState: 'idle', wReview: null, wrA: null, wrC: null, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wRecent: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nDel: '', nMsg: '', nSaving: false,
@@ -374,7 +374,7 @@
     var made = newItem({ text: (r.short || r.name), recipe: r.id, qty: S.qty.trim().slice(0, 40), station: sec });
     made.catch(function () { toast('Could not save. Check the connection.'); });
     noteSection(sec); bump({ added: 1, lastAdded: Date.now() }); learn(r.short || r.name, sec, 'pick', S.qty);
-    S.qty = ''; S.recipeSearch = ''; S.recipeOpen = false;
+    S.qty = ''; S.recipeSearch = ''; S.recipeOpen = false; S.recipeAll = false;
     if (secInfo.from) { S.section = sec; var sf = secInfo.from, mid = made.id, dte = S.date; toast('Added ' + (r.short || r.name) + ', section ' + sf + ' corrected to ' + sec, { label: 'Undo', fn: function () { keepSection(sf); noteSection(sf); S.section = sf; supd(itemRef(dte, mid), { station: sf }).catch(function () { toast('Could not undo.'); }); } }); }
     else toast('Added ' + (r.short || r.name));
   }
@@ -1487,13 +1487,20 @@
         '<ul class="nb-rows">' + rows.map(function (x) { return rowHTML(x, date); }).join('') + '</ul>';
     }).join('');
   }
+  /* "Add from the recipes" opens a panel that floats over the list (it does not push the list or the add form around).
+     Nothing is listed until the person types or taps Show all. The list inside scrolls. */
   function recipePicker() {
     var s = S.recipeSearch.trim().toLowerCase();
-    var list = D.recipes.filter(function (r) { return (r.kind === 'batch' || r.kind === 'component') && (!s || (r.name + ' ' + (r.short || '')).toLowerCase().indexOf(s) >= 0); }).slice(0, 40);
-    return '<details class="p-pick"' + (S.recipeOpen ? ' open' : '') + '><summary data-p="recipe-toggle">Add from the recipes</summary>' +
-      '<div class="field"><label class="label" for="p-rs">Find a batch or component recipe</label><input id="p-rs" class="search" type="search" data-k="p-rs" autocomplete="off" value="' + esc(S.recipeSearch) + '"></div>' +
-      '<div class="p-recipes">' + (list.length ? list.map(function (r) { return '<button type="button" class="chip sq" data-p="add-recipe" data-id="' + esc(r.id) + '">' + esc(r.short || r.name) + '</button>'; }).join('') : '<span class="hint">No recipe matches.</span>') + '</div>' +
-      '<p class="hint">It goes under the section written in the box above.</p></details>';
+    var all = D.recipes.filter(function (r) { return r.kind === 'batch' || r.kind === 'component'; });
+    var btn = '<button type="button" class="nb-btn p-pickbtn" data-p="recipe-toggle" aria-expanded="' + !!S.recipeOpen + '">Add from the recipes</button>';
+    if (!S.recipeOpen) return '<div class="p-pick">' + btn + '</div>';
+    var list = s ? all.filter(function (r) { return (r.name + ' ' + (r.short || '')).toLowerCase().indexOf(s) >= 0; }).slice(0, 40) : (S.recipeAll ? all : []);
+    var body = list.length ? '<div class="p-recipes">' + list.map(function (r) { return '<button type="button" class="chip sq" data-p="add-recipe" data-id="' + esc(r.id) + '">' + esc(r.short || r.name) + '</button>'; }).join('') + '</div>'
+      : (s ? '<p class="hint">No recipe matches.</p>' : '<p class="hint">Type a name to find a recipe.</p><button type="button" class="p-link" data-p="recipe-all">Show all ' + all.length + ' recipes</button>');
+    return '<div class="p-pick is-open">' + btn + '<div class="p-pick-panel" role="dialog" aria-label="Add from the recipes">' +
+      '<div class="p-pick-h"><label class="label" for="p-rs">Find a batch or component recipe</label><button type="button" class="p-link" data-p="recipe-close">Close</button></div>' +
+      '<input id="p-rs" class="search" type="search" data-k="p-rs" autocomplete="off" placeholder="Start typing..." value="' + esc(S.recipeSearch) + '">' + body +
+      '<p class="hint">It goes under the section written in the add box.</p></div></div>';
   }
   function wasteFor(t, reasons) {
     var k = okey(t); if (k.length < 3 || !S.wRecent) return null;
@@ -2618,7 +2625,9 @@
     var el = e.target.closest('[data-p]');
     if (!el || !S.root || !S.root.contains(el)) return;
     var a = el.getAttribute('data-p'), id = el.getAttribute('data-id'), i = +el.getAttribute('data-i'), dt = el.getAttribute('data-d');
-    if (el.tagName === 'SUMMARY') { S.recipeOpen = !S.recipeOpen; return; }
+    if (a === 'recipe-toggle') { S.recipeOpen = !S.recipeOpen; if (!S.recipeOpen) { S.recipeSearch = ''; S.recipeAll = false; } draw(); if (S.recipeOpen) { var rse = S.root.querySelector('#p-rs'); if (rse) rse.focus({ preventScroll: true }); } return; }
+    if (a === 'recipe-close') { S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; draw(); return; }
+    if (a === 'recipe-all') { S.recipeAll = true; draw(); var rse2 = S.root.querySelector('#p-rs'); if (rse2) rse2.focus({ preventScroll: true }); return; }
     if (a === 'pin-go') { submitKitchenPin(); return; }
     if (a === 'pin-forget') { S.pin = ''; lsSet('lk.prep.pin', ''); S.config = null; S.configState = 'idle'; if (unsubCfg) unsubCfg(); if (unsubItems) unsubItems(); if (unsubSec) unsubSec(); if (unsubLrn) unsubLrn(); unsubCfg = unsubItems = unsubSec = unsubLrn = null; cfgKey = itemsKey = ''; draw(); return; }
     if (a === 'retry') { cfgKey = ''; connect(); return; }
@@ -2764,6 +2773,7 @@
   }
   function onKey(e) {
     if (e.key === 'Escape' && S.sheet) { S.sheet = ''; draw(); return; }
+    if (e.key === 'Escape' && S.recipeOpen) { S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; draw(); return; }
     if (e.key === 'Enter' && e.target.getAttribute && e.target.getAttribute('data-k') === 'p-pin') { e.preventDefault(); var b = S.root.querySelector('[data-p="pin-go"]'); if (b) b.click(); }
   }
   var wired = false;
