@@ -60,7 +60,7 @@ Dishes already link to these ids. Add a recipe with the same `id` and the links,
 | `smoked-mac` | 39 |
 | `rum-butterscotch`, `honeycomb` | 43 |
 
-Card 104 (Cob Loaf Mix) is the batch for the Brisket Cob, from the kitchen's own printed recipe doubled to a 5000 ml batch (October 2026). Cards 66 and 67 are batch cards taken from the AVC Live pages (October 2026). Only fully confirmed ingredient lists were added. The rest of the batch cards below wait for confirmed quantities.
+Card 104 (Cob Loaf Mix) is the batch for the Brisket Cob, from the kitchen's own printed recipe doubled to a 5000 ml batch (October 2026). Cards 105 to 108 (Bourbon BBQ Sauce, Chilli Jam, Korean Dressing, Seed Granola) are batch cards from the kitchen's own printed recipes (18 October 2026), with only the printed quantities; the handwritten scale-ups on the chilli jam sheet were not readable and are not used. Cards 66 and 67 are batch cards taken from the AVC Live pages (October 2026). Only fully confirmed ingredient lists were added. The rest of the batch cards below wait for confirmed quantities.
 
 Cards 13 to 45 came from the AVC Live costings (Spring 26). Only ingredients and quantities were taken over; prices and supplier codes stay in AVC.
 
