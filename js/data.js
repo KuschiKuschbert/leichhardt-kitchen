@@ -156,12 +156,12 @@ window.LK_DATA = {
       ingredients: [
         { q: '520 g', name: 'Laksa paste', tags: ['Crustacean?', 'Peanut?', 'Soy?'] },
         { q: '4200 ml', name: 'Coconut cream' },
-        { q: '42 g', name: 'Brown sugar' },
+        { q: '42 g', name: 'Palm sugar' },
         { q: '105 ml', name: 'Lime juice' },
         { q: '210 ml', name: 'Fish sauce', tags: ['Fish'] }
       ],
       sections: [
-        { title: 'Method', steps: ['Fry the laksa paste in a heavy pot over medium heat, 2 to 3 min, until fragrant.', 'Whisk in the coconut cream gradually. Bring to a gentle simmer; a hard boil can split it.', 'Add the brown sugar and simmer 5 min until dissolved.', 'Off the heat, add the fish sauce and lime juice. Taste and adjust.'] }
+        { title: 'Method', steps: ['Fry the laksa paste in a heavy pot over medium heat, 2 to 3 min, until fragrant.', 'Whisk in the coconut cream gradually. Bring to a gentle simmer; a hard boil can split it.', 'Add the palm sugar and simmer 5 min until dissolved.', 'Off the heat, add the fish sauce and lime juice. Taste and adjust.'] }
       ],
       contains: [{ allergen: 'Fish', from: 'fish sauce' }],
       check: [{ allergen: 'Crustacean', from: 'laksa paste' }, { allergen: 'Peanut', from: 'laksa paste' }, { allergen: 'Soy', from: 'laksa paste' }],
