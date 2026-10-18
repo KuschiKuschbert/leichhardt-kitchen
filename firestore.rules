@@ -141,15 +141,16 @@ service cloud.firestore {
         allow create: if isAdmin() && minutesOk();
         allow update, delete: if false;
       }
+      // The head chef may also create one when moving everything to a new kitchen PIN (an exact copy of the old record).
       match /signs/{sid} {
         allow read: if true;
-        allow create: if staff()
+        allow create: if (isAdmin() && request.resource.data.v is int && request.resource.data.st in ['present', 'apology', 'absent']) || (staff()
           && request.resource.data.v is int
           && request.resource.data.st in ['present', 'apology', 'absent']
           && request.resource.data.at is number
           && sid == string(request.resource.data.v) + '_' + request.resource.data.by
           && get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/minutes/$(id)).data.status == 'published'
-          && get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/minutes/$(id)).data.v == request.resource.data.v;
+          && get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/minutes/$(id)).data.v == request.resource.data.v);
         allow update, delete: if false;
       }
     }
@@ -157,7 +158,7 @@ service cloud.firestore {
     // The record id is the day, an underscore and the writer's id. Records are never changed or deleted.
     match /kitchens/KITCHEN_PIN/notes/{id}/seen/{sid} {
       allow read: if true;
-      allow create: if staff() && request.resource.data.day is string && request.resource.data.day.size() == 10
+      allow create: if (isAdmin() || staff()) && request.resource.data.day is string && request.resource.data.day.size() == 10
         && request.resource.data.at is number
         && sid == request.resource.data.day + '_' + request.resource.data.by;
       allow update, delete: if false;
