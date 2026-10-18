@@ -32,7 +32,7 @@ The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the
 `#/` landing (four dockets), `#/recipes` (Pass or Tiles), `#/r/<id>[/<id>...]` a recipe and the trail to it, `#/prep`, `#/orders`, `#/waste`, `#/minutes`, `#/admin`, `#/settings`.
 
 ## How changes ship
-1. Branch from `main`, one theme per pull request, squash merge.
+1. Every new piece of work starts in its own git worktree, on a fresh branch from the latest `main`. Never edit in the main checkout and never commit straight to `main`. One theme per worktree, per branch and per pull request: unrelated changes get their own worktree. Squash merge, then remove the worktree and its branch.
 2. Test before merging: `node --check` on changed JS, then `cd tests && npm install && npm test`. It serves the repo locally and runs every file in `tests/` in Chrome: each page at 390, 768 and 1280 px (no sideways scroll, no JS errors) and the click paths for the prep pages, orders, wastage, minutes, admin and recipe search. Firebase is replaced by the stand-in in `tests/fake/`, so no real PIN or data is needed and nothing is written to the real book. Add checks for the click paths you change to the matching `*.test.js` file (or a new one). After merging, `BASE=https://kuschikuschbert.github.io/leichhardt-kitchen/ npm test` runs the same tests on the live site.
 3. If `firestore.rules` changes: test it on the Firestore emulator first, publish it in the Firebase console (with the real PIN and email filled in), then merge the code that needs it. Publish rules before code that writes new fields or collections; publish after code when the rules get stricter about something old code does not send.
 4. After merging, wait for GitHub Pages (about a minute), then check the live site.
