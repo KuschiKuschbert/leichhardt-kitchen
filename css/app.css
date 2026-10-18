@@ -884,3 +884,17 @@ html.note-open, html.note-open body { overflow: hidden; }
 .stage.laid .pin.lit .ring { background: var(--ink); }
 .stage.laid .pin .lead { position: absolute; left: 22px; top: 21px; height: 2px; background: var(--ink); transform-origin: 0 50%; z-index: 1; pointer-events: none; }
 .stage.laid.dense .pin .plabel { font-size: 0.75rem; padding: 0.12rem 0.4rem; }
+
+/* Order list: the add box sits at the top. On big screens the list and "Ordered today" sit side by side and the page uses the width. */
+.o-add.nb-foot { border-top: 0; border-bottom: 2px solid var(--ink); padding: 0.8rem 0 1rem; }
+.o-cols { display: block; }
+@media (min-width: 1000px) {
+  .o-page { max-width: 72rem; }
+  .o-page:not(.o-all) .o-cols { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 0 2.5rem; align-items: start; }
+  .o-page:not(.o-all) .o-ordered { padding-top: 0.2rem; }
+  .o-page:not(.o-all) .o-ordered .nb-sh { margin-top: 0.9rem; }
+  .o-page .o-add .nb-add-row { flex-wrap: nowrap; }
+  .o-page .o-add .nb-in-text { flex: 5 1 0; min-width: 0; }
+  .o-page .o-add .nb-in-qty { flex: 1 1 0; min-width: 6rem; }
+  .o-page.o-all { max-width: 52rem; }
+}
