@@ -1,6 +1,6 @@
 # Working on the Leichhardt Kitchen Book
 
-The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the prep list, the order list, the wastage log and the head chef's admin panel. Plain HTML, CSS and JavaScript on GitHub Pages, no build step. Live at https://kuschikuschbert.github.io/leichhardt-kitchen/.
+The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the prep list, the order list, the wastage log, the team's how-to guides and the head chef's admin panel. Plain HTML, CSS and JavaScript on GitHub Pages, no build step. Live at https://kuschikuschbert.github.io/leichhardt-kitchen/.
 
 ## Never in this repo (it is public)
 - The kitchen PIN and the owner's email. `firestore.rules` is a template with `KITCHEN_PIN` and `OWNER_EMAIL`; the real values only live in the published rules in the Firebase console.
@@ -15,11 +15,11 @@ The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the
 ## Files
 | File | What it is |
 | --- | --- |
-| `index.html` | The page, the daily 04:00 self-refresh, the service worker registration |
+| `index.html` | The page, the book's clock (`LK_TIME`), the daily 04:00 self-refresh, the service worker registration |
 | `js/data.js` | Every recipe (the only file staff edit). Field guide at the top |
 | `js/art.js` | Plates, pans, side views, build views, technique diagrams |
 | `js/app.js` | Routing, top bar, recipe views (Pass, Tiles), recipe cards, settings, install, QR |
-| `js/prep.js` | Prep list, orders, wastage, admin panel, staff lock, insights, learning, suggestions |
+| `js/prep.js` | Prep list, orders, wastage, guides, admin panel, staff lock, insights, learning, suggestions |
 | `js/firebase-config.js` | Public Firebase web config |
 | `css/app.css` | The Leichhardt look |
 | `firestore.rules` | Rules template (see above) |
@@ -29,7 +29,7 @@ The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the
 | `tests/` | Click tests (Playwright with a stand-in for Firebase): `cd tests && npm install && npm test` |
 
 ## Routes
-`#/` landing (four dockets), `#/recipes` (Pass or Tiles), `#/r/<id>[/<id>...]` a recipe and the trail to it, `#/prep`, `#/orders`, `#/waste`, `#/minutes`, `#/admin`, `#/settings`.
+`#/` landing (five dockets), `#/recipes` (Pass or Tiles), `#/r/<id>[/<id>...]` a recipe and the trail to it, `#/prep`, `#/orders`, `#/waste`, `#/guides`, `#/guides/<id>`, `#/minutes`, `#/admin`, `#/settings`.
 
 ## How changes ship
 1. Every new piece of work starts in its own git worktree, on a fresh branch from the latest `main`. Never edit in the main checkout and never commit straight to `main`. One theme per worktree, per branch and per pull request: unrelated changes get their own worktree. Squash merge, then remove the worktree and its branch.
@@ -45,4 +45,6 @@ The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the
 - The daily note popup is appended to `document.body`, not `#app`, so page redraws do not remove it. Its clicks use `data-note` (the bell and the popup), the editor inside the prep root uses `data-p`, and the recipe pages use `data-act`; keep them apart. Notes are read with one small query when the book opens each day, and again only after 30 minutes away or at 10:30 if the book was already open: do not add a listener or polling.
 - Meeting minutes follow the same pattern (one small query, refreshed after 30 minutes away), clicks via `data-p` / `data-k` with `mn-` names. Minutes to sign show as the "Minutes not signed yet" card on the landing page (`.wall-mn`, an empty slot drawn by `js/app.js` and filled in by `minCard()` in `js/prep.js`) and on the prep list, not in the top bar. Keep the top bar to Notes, Admin and Settings: one more button there pushes "Kitchen Book" onto two lines on a laptop. Sign-offs and `hist` copies are immutable in the rules; a change after publishing is a new version, never an edit of the old one.
 - Admin lists that can grow go through `lvHTML()` in `js/prep.js` (search, filter chips, sort, Show more, phone cards). Give each list its own `key`, keep `data-k` names unique (`lv-q:<key>`, `lv-s:<key>`), and use `lvReveal(key)` when a row is added so it is on screen. Do not hand-build a long `<table>` in the admin area.
+- Guides keep each PDF page or photo as a picture in its own Firestore record (`guides/<id>/pages/<n>`, under 950 kB, made on the head chef's device), because the free plan has no file storage and a record holds at most 1 MB. The list is read once a day per phone and kept in `lk.guides`; pages are read once per version and then come from Firestore's offline copy. Do not add a listener. A page opened big is appended to `document.body` and its clicks use `data-gz`. pdf.js is loaded from jsDelivr only when a PDF is chosen; the tests serve it from `tests/node_modules/pdfjs-dist`.
 - The service worker caches the app shell. Bump `CACHE` in `sw.js` when icons or the manifest change.
+- One clock: anything saved, or compared with a saved time, uses `now()` in `js/prep.js` (`LK_TIME.now()` elsewhere), and today's date, hours and weekdays use `dayNow()` and `T.day`, `T.hour`, `T.mins`, `T.dow`, `T.clock`, `T.at` (kitchen time, Queensland). Never `new Date()` or `Date.now()` for those: the phone's clock and zone can be wrong. `Date.now()` is only for time passing on the phone (timers, the PIN lock, the idle sign-out). Do not name a local variable `now` or `dayNow`, it hides the helper.

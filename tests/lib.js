@@ -5,13 +5,16 @@
   small stand-ins in tests/fake/, which keep the data in the page's localStorage. So no real kitchen PIN, staff
   names or prep lines are needed, and nothing is written to the real book, even when BASE points at the live site.
 
-  Every page opens at 14:00 today (the clock then runs as normal), so time-of-day features such as the 10:30
-  notes popup behave the same whenever the tests are run.
+  Every page opens at 14:00 today, kitchen time (the clock then runs as normal), so time-of-day features such as the
+  10:30 notes popup behave the same whenever the tests are run. The tests and the browser run in kitchen time
+  (Queensland), whatever zone the computer is set to.
 */
+process.env.TZ = 'Australia/Brisbane';
 const { chromium } = require('playwright-core');
 const crypto = require('crypto'), fs = require('fs'), path = require('path');
 const BASE = process.env.BASE || 'http://127.0.0.1:8777/';
 const FAKE = path.join(__dirname, 'fake');
+const PDFJS = path.join(__dirname, 'node_modules', 'pdfjs-dist') + path.sep;
 const sha = s => crypto.createHash('sha256').update(s).digest('hex');
 const PIN = '000000';   // the stand-in kitchen PIN: 6 digits, so it can never be the real one (always 4)
 const K = ['kitchens', PIN];
@@ -41,6 +44,20 @@ function seed(extra) {
   return Object.assign(s, extra || {});
 }
 
+/* A tiny picture (4 x 6 px, orange over black) for guide pages, and two made-up guides: "combi" (Equipment, two pages,
+   the search word iCombi and the words "Pork Belly" read from its PDF) and "fryer" (Cleaning, written steps only),
+   plus a removed one that must never show. */
+const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAGCAIAAABrW6giAAAAF0lEQVR4nGN4lKAFRwy4OTKy8nCEmwMAP54VMW8NxTYAAAAASUVORK5CYII=';
+function guides() {
+  const g = {}, put = (p, v) => { g[K.concat(['guides']).concat(p).join('/')] = v; };
+  put(['combi'], { title: 'iCombi: programme a new recipe', cat: 'equipment', sum: 'Set up any new dish as a programme.', steps: '', kw: 'iCombi', text: 'Programme a new recipe. Example: PORK BELLY. Press the dial to confirm.', thumb: PNG, pages: 2, dims: [{ w: 4, h: 6 }, { w: 4, h: 6 }], v: 1, file: 'combi.pdf', removed: false, at: NOW - 3600000, upd: NOW - 3600000 });
+  put(['combi', 'pages', '0'], { img: PNG, w: 4, h: 6, v: 1, n: 0 });
+  put(['combi', 'pages', '1'], { img: PNG, w: 4, h: 6, v: 1, n: 1 });
+  put(['fryer'], { title: 'Fryer oil change', cat: 'cleaning', sum: 'Drain, clean and refill the fryer.', steps: 'Turn the fryer off and let the oil cool.\nDrain the oil into the caddy.\nWipe the basin and refill to the line.', kw: '', text: '', thumb: '', pages: 0, dims: [], v: 1, file: '', removed: false, at: NOW - 30 * 86400000, upd: NOW - 20 * 86400000 });
+  put(['gone'], { title: 'Old slicer guide', cat: 'equipment', sum: '', steps: 'Gone.', kw: '', text: '', thumb: '', pages: 0, dims: [], v: 1, file: '', removed: true, at: NOW - 40 * 86400000, upd: NOW - 40 * 86400000 });
+  return g;
+}
+
 /* Installed Google Chrome by default. CHROME=/path/to/chrome uses another Chromium (for example on a server). */
 async function start() {
   return chromium.launch(process.env.CHROME ? { executablePath: process.env.CHROME, headless: true } : { channel: 'chrome', headless: true });
@@ -54,25 +71,43 @@ async function start() {
    o.admin            the head chef's Google account is signed in
    o.settings         saved recipe book settings, for example { view: 'tiles' }
    o.extra            more seed documents (see seed)
-   o.touch            a touch screen */
+   o.touch            a touch screen
+   o.clock            the phone's clock when the page opens (NOW by default)
+   o.tz               the phone's time zone (kitchen time by default)
+   o.server           the server's time when the page opens; without it the update check's answer has no Date,
+                      so the book keeps the phone's clock (LK_TIME in index.html) */
 async function open(browser, hash, o) {
   o = o || {};
   const w = o.width || 390, h = o.height || 844;
-  const ctx = await browser.newContext({ viewport: { width: w, height: h }, serviceWorkers: 'block', hasTouch: !!o.touch, deviceScaleFactor: 1 });
-  await ctx.clock.install({ time: NOW });
+  const ctx = await browser.newContext({ viewport: { width: w, height: h }, serviceWorkers: 'block', hasTouch: !!o.touch, deviceScaleFactor: 1, timezoneId: o.tz || 'Australia/Brisbane' });
+  await ctx.clock.install({ time: o.clock || NOW });
+  const opened = Date.now();
+  await ctx.route(u => u.href === BASE + 'index.html', async r => {
+    if (r.request().method() !== 'HEAD') return r.continue();
+    const res = await r.fetch(), hd = Object.assign({}, res.headers());
+    delete hd.date;
+    if (o.server) hd.date = new Date(o.server + Date.now() - opened).toUTCString();
+    return r.fulfill({ status: res.status(), headers: hd });
+  });
   await ctx.route('https://www.gstatic.com/firebasejs/**', r => {
     const f = path.join(FAKE, path.basename(new URL(r.request().url()).pathname));
     if (fs.existsSync(f)) return r.fulfill({ status: 200, contentType: 'text/javascript', body: fs.readFileSync(f, 'utf8') });
     return r.fulfill({ status: 200, contentType: 'text/javascript', body: 'export {}' });
   });
   await ctx.route(/fonts\.(googleapis|gstatic)\.com/, r => r.fulfill({ status: 200, body: '' }));
+  // pdf.js (the admin Guides tab reads PDFs with it) comes from the copy installed with the tests, not the internet
+  await ctx.route(/^https:\/\/cdn\.jsdelivr\.net\/npm\/pdfjs-dist@[^/]+\//, r => {
+    const rel = new URL(r.request().url()).pathname.replace(/^\/npm\/pdfjs-dist@[^/]+\//, ''), f = path.join(PDFJS, rel);
+    if (!f.startsWith(PDFJS) || !fs.existsSync(f)) return r.fulfill({ status: 404, body: '' });
+    return r.fulfill({ status: 200, headers: { 'Access-Control-Allow-Origin': '*' }, contentType: /\.m?js$/.test(f) ? 'text/javascript' : 'application/octet-stream', body: fs.readFileSync(f) });
+  });
   const who = o.who === undefined ? 'sam' : o.who, pins = { sam: '1111', ann: '2222', bo: '3333' };
   const ls = {
     'fake.fs': JSON.stringify(seed(o.extra)),
     'lk.prep.pin': o.noPin ? '' : PIN,
     'lk.prep.who': who || '',
     'lk.prep.tok': who && !o.noTok ? who + ':' + sha('lk:' + who + ':' + pins[who]) : '',
-    'lk.prep.seen': String(NOW),
+    'lk.prep.seen': String(o.clock || NOW),   // on the phone's clock, like the idle check
     'lk.settings.v1': JSON.stringify(Object.assign({ installNo: true }, o.settings || {}))
   };
   if (o.admin) ls['fake.user'] = '1';
@@ -102,4 +137,4 @@ function report(results) {
   console.log(failed.length + ' failed of ' + results.length);
   process.exitCode = failed.length ? 1 : 0;
 }
-module.exports = { start, open, overflow, check, report, seed, sha, ymd, PIN, NOW, BASE };
+module.exports = { start, open, overflow, check, report, seed, guides, sha, ymd, PIN, NOW, BASE, PNG };

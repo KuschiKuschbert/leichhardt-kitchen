@@ -1,9 +1,10 @@
 /*
-  Leichhardt Kitchen prep book: prep list, order list, wastage log, daily notes, meeting minutes and the admin panel.
+  Leichhardt Kitchen prep book: prep list, order list, wastage log, daily notes, meeting minutes, guides and the admin panel.
   Staff add and tick on any phone. Everything syncs through Firebase (Cloud Firestore, free plan).
 
   Pages:   #/prep     the daily prep list         #/orders   the order list       #/waste   the wastage log
            #/minutes  meeting minutes to sign     #/admin    admin panel, Google sign-in for the head chef only
+           #/guides   how-to guides (the head chef uploads them in the admin panel's Guides tab)
 
   Data (the kitchen PIN is part of the path, so only people who know it can reach the data):
     kitchens/<PIN>/config/main                 { people: [...] }                    read by staff, written by the admin only
@@ -20,6 +21,7 @@
     kitchens/<PIN>/learned/<item>, ordlearned/<item>   what the prep and order lists have learned
     kitchens/<PIN>/learnlog/<id>               days already learned (create only)
     kitchens/<PIN>/misses/<slug>, views/<id>   recipe searches that found nothing, and card opens
+    kitchens/<PIN>/guides/<id>, .../pages/<n>   how-to guides, and each page as a picture (see the guides section)
 
   Who is allowed to add, tick or remove is set in the admin panel. Those permissions guide the page. The security
   rules in the Firebase console are what really lock the data: the kitchen PIN to read, a person's own PIN to write,
@@ -43,18 +45,23 @@
   function lsSet(k, v) { try { if (LS) { if (v == null || v === '') LS.removeItem(k); else LS.setItem(k, v); } } catch (e) {} }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function pad(n) { return (n < 10 ? '0' : '') + n; }
+  /* Time is the server's, in kitchen time (LK_TIME in index.html). now() is for anything saved on a line or compared with
+     a saved time; dayNow() is the kitchen's date. Date.now() is only for time passing on this phone (timers, the lock). */
+  var T = window.LK_TIME;
+  function now() { return T.now(); }
+  function dayNow() { return T.day(); }
   function ymd(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
   function parseYmd(s) { var p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2], 12, 0, 0); }
   function shift(s, days) { var d = parseYmd(s); d.setDate(d.getDate() + days); return ymd(d); }
   function dayName(s) {
-    var t = ymd(new Date());
+    var t = dayNow();
     if (s === t) return 'Today';
     if (s === shift(t, -1)) return 'Yesterday';
     if (s === shift(t, 1)) return 'Tomorrow';
     return parseYmd(s).toLocaleDateString('en-AU', { weekday: 'long' });
   }
   function longDate(s) { return parseYmd(s).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' }); }
-  function clock(ms) { return new Date(ms).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: false }); }
+  function clock(ms) { return T.clock(ms); }
   function slug(s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'person'; }
 
     /* ---------- state ---------- */
@@ -62,14 +69,15 @@
     name: 'prep', root: null,
     pin: lsGet('lk.prep.pin') || '', pinInput: '', pinError: '',
     who: lsGet('lk.prep.who') || '',
-    date: ymd(new Date()),
+    date: dayNow(),
     config: null, configState: 'idle',   // idle, loading, ok, badpin, error
     items: [], itemsState: 'idle', showRemoved: false,
     section: '', text: '', qty: '', recipeSearch: '', recipeOpen: false, recipeAll: false, tab: '',
     authed: false, tok: '', pinStep: '', pinData: null, pf1: '', pf2: '', pinMsg: '',
-    sections: [], activity: [], hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false, exporting: '', moving: false, moveMsg: '', newPin: '', atab: lsGet('lk.prep.atab') || 'insights', ordDate: ymd(new Date()), ordLines: [], ordState: 'idle', ordView: 'day', otext: '', oqty: '', ordAll: [], ordAllAt: 0, ordBusy: false, osugg: [],
-    wDate: ymd(new Date()), wLines: [], wState: 'idle', wReview: null, wrA: null, wrC: null, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wRecent: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nMsg: '', nSaving: false,
+    sections: [], activity: [], hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false, exporting: '', moving: false, moveMsg: '', newPin: '', atab: lsGet('lk.prep.atab') || 'insights', ordDate: dayNow(), ordLines: [], ordState: 'idle', ordView: 'day', otext: '', oqty: '', ordAll: [], ordAllAt: 0, ordBusy: false, osugg: [],
+    wDate: dayNow(), wLines: [], wState: 'idle', wReview: null, wrA: null, wrC: null, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wRecent: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nMsg: '', nSaving: false,
     mins: null, minsFor: '', minsAt: 0, minsBusy: false, mmine: {}, msigns: {}, mSel: '', mf: null, mMsg: '', mSaving: false, mSigning: false, mpin: '', mpinOk: false, minOpen: false, mErr: '',
+    guides: null, guidesFor: '', guidesAt: 0, gBusy: false, gRetry: 0, gq: '', gcat: 'all', gSel: '', gf: null, gfSnap: '', gMsg: '',
     adminsFor: '', level: '', stats: null, statsRange: 14, week: null, weekAt: 0, weekBusy: false,
     user: null, authState: 'idle', draft: null, saveMsg: '', busy: false, toast: '', toastAct: null
   };
@@ -111,7 +119,7 @@
         S.configState = 'ok'; watchItems(); watchSections(); watchLearned(); if (S.name === 'orders') watchOrders(); if (S.name === 'waste') watchWaste(); resume(); loadNotes(); loadMinutes(); draw();
       }, function (err) {
         S.configState = err && err.code === 'permission-denied' ? 'badpin' : 'error';
-        if (S.configState === 'badpin') { S.pinError = 'That PIN is not right.'; S.pin = ''; lsSet('lk.prep.pin', ''); cfgKey = ''; unsubCfg = null; }
+        if (S.configState === 'badpin') { S.pinError = 'That PIN is not right.'; S.pin = ''; lsSet('lk.prep.pin', ''); cfgKey = ''; unsubCfg = null; gForget(); }
         draw();
       });
     }, function () { S.configState = 'error'; draw(); });
@@ -219,6 +227,7 @@
     var b = fb.fs.writeBatch(fb.db), pf = S.who && S.tok;
     if (pf) b.set(docRef('proofs', S.who), { tok: S.tok, at: fb.fs.serverTimestamp() });
     ops.forEach(function (o) {
+      if (o[0] === 'del') { b.delete(o[1]); return; }
       var data = pf ? Object.assign({ by: S.who }, o[2]) : o[2];
       if (o[0] === 'upd') b.update(o[1], data); else if (o[3]) b.set(o[1], data, { merge: true }); else b.set(o[1], data);
     });
@@ -278,9 +287,9 @@
       if (S.pf1 !== S.pf2) { S.pinMsg = 'The two PINs do not match. Type it again.'; S.pf2 = ''; draw(); focusK('pf2'); return; }
       pinHash(id, S.pf1).then(function (h) {
         var b = fb.fs.writeBatch(fb.db);
-        b.set(docRef('staffpins', id), { hash: h, setAt: Date.now(), name: p.name });
-        b.set(docRef('pinset', id), { at: Date.now(), name: p.name });
-        return track(b.commit()).then(function () { signedIn(id, h); S.tok = h; bump({ visits: 1, lastSeen: Date.now() }); });
+        b.set(docRef('staffpins', id), { hash: h, setAt: now(), name: p.name });
+        b.set(docRef('pinset', id), { at: now(), name: p.name });
+        return track(b.commit()).then(function () { signedIn(id, h); S.tok = h; bump({ visits: 1, lastSeen: now() }); });
       }).catch(function () { S.pinMsg = 'Could not save your PIN. If someone already set one for this name, pick the name again.'; draw(); });
       return;
     }
@@ -289,7 +298,7 @@
       pinHash(id, S.pf1).then(function (h) {
         S.who = id; S.tok = h;
         // a write only succeeds with the right PIN, so a visit count doubles as the PIN check
-        return sset(docRef('activity', id), { name: p.name, visits: fb.fs.increment(1), lastSeen: Date.now() }, true).then(function () { lsSet('lk.prep.lock', ''); signedIn(id, h); },
+        return sset(docRef('activity', id), { name: p.name, visits: fb.fs.increment(1), lastSeen: now() }, true).then(function () { lsSet('lk.prep.lock', ''); signedIn(id, h); },
           function (e) {
             S.tok = '';
             if (e && e.code === 'permission-denied') { lockFail(); S.pinMsg = lockLeft() > 0 ? lockWait(lockLeft()) : 'That PIN is not right.'; S.pf1 = ''; }
@@ -307,7 +316,7 @@
     if (tok[0] !== S.who || !tok[1] || idleExpired()) { if (S.who) pickName(S.who); startIdle(); return; }
     startIdle();
     S.authed = true; S.tok = tok[1]; draw();
-    sset(docRef('activity', S.who), { name: (who() || {}).name || '', visits: fb.fs.increment(1), lastSeen: Date.now() }, true).catch(function (e) {
+    sset(docRef('activity', S.who), { name: (who() || {}).name || '', visits: fb.fs.increment(1), lastSeen: now() }, true).catch(function (e) {
       if (e && e.code === 'permission-denied') { S.authed = false; S.tok = ''; pickName(S.who); }
     });
   }
@@ -392,13 +401,13 @@
   /* ---------- item actions ---------- */
   function newItem(extra) {
     var p = me(), f = fb.fs, ref = f.doc(itemsCol(S.date));
-    var data = Object.assign({ text: '', station: '', qty: '', recipe: '', addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: Date.now(), done: false, deleted: false }, extra);
+    var data = Object.assign({ text: '', station: '', qty: '', recipe: '', addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: now(), done: false, deleted: false }, extra);
     var pr = sset(ref, data); pr.id = ref.id; return pr;
   }
   function noteSection(name) {
     if (!name || !fb) return;
     var p = who();
-    sset(docRef('sections', slug(name)), { name: name, uses: fb.fs.increment(1), lastUsed: Date.now(), lastBy: p ? p.name : '' }, true).catch(function () {});
+    sset(docRef('sections', slug(name)), { name: name, uses: fb.fs.increment(1), lastUsed: now(), lastBy: p ? p.name : '' }, true).catch(function () {});
   }
   function addTyped() {
     var t = S.text.trim();
@@ -410,7 +419,7 @@
     var q0 = S.qty;
     var made = newItem(Object.assign({ text: t.slice(0, 160), qty: S.qty.trim().slice(0, 40), station: sec, recipe: rm ? rm.id : '' }, fixed ? { orig: typedAs.slice(0, 160) } : {}));
     made.catch(function (e) { failed(e, function () { if (!S.text.trim()) { S.text = typedAs; S.qty = q0; } }); });
-    noteSection(sec); bump({ added: 1, lastAdded: Date.now() }); learn(t, sec, t === S.pickedText ? 'pick' : 'type', S.qty);
+    noteSection(sec); bump({ added: 1, lastAdded: now() }); learn(t, sec, t === S.pickedText ? 'pick' : 'type', S.qty);
     if (pr.changes.length || secInfo.from) {
       var ch = pr.changes, mid = made.id, dte = S.date, sf = secInfo.from;
       var msg = ch.map(function (c) { return c[0] + ' to ' + c[1]; }).concat(sf ? ['section ' + sf + ' to ' + sec] : []).join(', ');
@@ -432,34 +441,36 @@
     var q0 = S.qty;
     var made = newItem({ text: (r.short || r.name), recipe: r.id, qty: S.qty.trim().slice(0, 40), station: sec });
     made.catch(function (e) { failed(e, function () { if (!S.qty.trim()) S.qty = q0; }); });
-    noteSection(sec); bump({ added: 1, lastAdded: Date.now() }); learn(r.short || r.name, sec, 'pick', S.qty);
+    noteSection(sec); bump({ added: 1, lastAdded: now() }); learn(r.short || r.name, sec, 'pick', S.qty);
     S.qty = ''; S.recipeSearch = ''; S.recipeOpen = false; S.recipeAll = false;
     if (secInfo.from) { S.section = sec; var sf = secInfo.from, mid = made.id, dte = S.date; toast('Added ' + (r.short || r.name) + ', section ' + sf + ' corrected to ' + sec, { label: 'Undo', fn: function () { keepSection(sf); noteSection(sf); S.section = sf; supd(itemRef(dte, mid), { station: sf }).catch(failed); } }); }
     else addedToast(r.short || r.name, sec, S.date, made.id);
   }
   function canUntick(x) {
-    return canBrowse() || (!!x.doneById && x.doneById === S.who && Date.now() - (x.doneAt || 0) < 110000);
+    return canBrowse() || (!!x.doneById && x.doneById === S.who && now() - (x.doneAt || 0) < 110000);
   }
   function tick(date, id) {
     var it = S.items.filter(function (x) { return x.id === id; })[0], p = me();
     if (!it || !can('tick')) return;
     var done = !it.done;
     if (!done && !canUntick(it)) { toast('Ticked lines stay ticked. Ask the head chef or sous chef to undo it.'); return; }
-    supd(itemRef(date, id), { done: done, doneBy: done ? p.name : '', doneById: done ? p.id : '', doneAt: done ? Date.now() : 0 }).catch(failed);
+    supd(itemRef(date, id), { done: done, doneBy: done ? p.name : '', doneById: done ? p.id : '', doneAt: done ? now() : 0 }).catch(failed);
     if (done) { bump({ ticked: 1 }); toast('Ticked ' + it.text, { label: 'Undo', fn: function () { tick(date, id); } }); setTimeout(draw, LINGER + 100); }
     else if (it.doneById && fb) sset(docRef('activity', it.doneById), { name: it.doneBy || '', ticked: fb.fs.increment(-1) }, true).catch(function () {});
   }
   function removeItem(date, id, restore) {
     var p = me(), it = S.items.filter(function (x) { return x.id === id; })[0];
     if (!can('del')) return;
-    supd(itemRef(date, id), { deleted: !restore, deletedBy: restore ? '' : p.name, deletedAt: restore ? 0 : Date.now() }).catch(failed);
+    supd(itemRef(date, id), { deleted: !restore, deletedBy: restore ? '' : p.name, deletedAt: restore ? 0 : now() }).catch(failed);
     if (!restore) toast('Removed ' + (it ? it.text : 'the line'), { label: 'Undo', fn: function () { removeItem(date, id, true); } });
   }
-  /* Anything not ticked on the last written day rolls onto today by itself. */
+  /* Anything not ticked on the last written day rolls onto today by itself, once the clock has been checked (see LK_TIME).
+     origAt keeps the time the line was first written (0 for lines that rolled before it was kept). */
   function maybeRoll() {
-    var today = ymd(new Date());
-    if (!S.authed || !fb || !can('add') || S.date !== today || S.itemsState !== 'ok' || S.rolledFor === today) return;
-    if (S.pastFor !== S.pin + '|' + today) return; // the usual close time comes from the past days, so wait for them
+    var today = dayNow();
+    if (!T.ready() || !S.authed || !fb || !can('add') || S.date !== today || S.itemsState !== 'ok' || S.rolledFor === today) return;
+    if (S.pastFor !== pastTag()) return; // the usual close time comes from the past days, so wait for them
+    repairAhead();
     S.rolledFor = today;
     var dates = [], k;
     for (k = 1; k <= 7; k++) dates.push(shift(today, -k));
@@ -480,8 +491,8 @@
         have[id] = true;
         jobs.push(['set', itemRef(today, id), {
           text: x.text, station: x.station || '', qty: x.qty || '', recipe: x.recipe || '',
-          addedBy: 'Rolled over', addedById: '', addedAt: Date.now(), done: false, deleted: false,
-          rolled: (x.rolled || 0) + 1, root: root, from: x.id, rolledFrom: src.date, origBy: x.origBy || x.addedBy || '', urgent: !!x.urgent,
+          addedBy: 'Rolled over', addedById: '', addedAt: now(), done: false, deleted: false,
+          rolled: (x.rolled || 0) + 1, root: root, from: x.id, rolledFrom: src.date, origBy: x.origBy || x.addedBy || '', origAt: x.origAt || (x.rolled ? 0 : x.addedAt || 0), urgent: !!x.urgent,
           ahead: !!(x.ahead || writtenLate(x, src.date))
         }]);
       });
@@ -493,7 +504,7 @@
     var it = S.items.filter(function (x) { return x.id === id; })[0];
     if (!it || !can('add')) return;
     var p = me(), on = !it.urgent;
-    supd(itemRef(S.date, id), { urgent: on, urgentBy: on && p ? p.name : '', urgentById: on && p ? p.id : '', urgentAt: on ? Date.now() : 0 }).catch(failed);
+    supd(itemRef(S.date, id), { urgent: on, urgentBy: on && p ? p.name : '', urgentById: on && p ? p.id : '', urgentAt: on ? now() : 0 }).catch(failed);
   }
 
   /* ---------- proofreading: every new line is tidied and spell-checked before it is saved ---------- */
@@ -558,7 +569,7 @@
     if (!fb || !text) return;
     var p = who(), f = fb.fs, dow = String(parseYmd(S.date).getDay()), sk = lkey(sec || 'general');
     var secs = {}; secs[sk] = { name: sec || '', n: f.increment(1) };
-    var data = { text: String(text).trim().slice(0, 160), uses: f.increment(1), lastUsed: Date.now(), lastBy: p ? p.name : '', dow: {}, secs: secs };
+    var data = { text: String(text).trim().slice(0, 160), uses: f.increment(1), lastUsed: now(), lastBy: p ? p.name : '', dow: {}, secs: secs };
     data.dow[dow] = f.increment(1);
     data[how === 'pick' ? 'picked' : 'typed'] = f.increment(1);
     qty = String(qty || '').trim().slice(0, 40);
@@ -604,7 +615,7 @@
   }
   /* Start here is drawn twice: above the lines on phones and tablets (nb-start-l), and at the top of the Handy page on big screens (nb-start-r), so it does not push the lines down. CSS shows one of the two. */
   function startHTML(live, side) {
-    if (!can('tick') || S.date !== ymd(new Date())) return '';
+    if (!can('tick') || S.date !== dayNow()) return '';
     if (live.filter(function (x) { return !x.done; }).length < 4) return '';
     var l = startHere(live);
     return '<div class="nb-start ' + (side ? 'nb-start-r' : 'nb-start-l') + '"><span class="nb-sl">Start here</span><ol>' + l.map(function (o) {
@@ -658,20 +669,20 @@
     var rm = matchRecipe(text), uq = usualQty(text), dte = S.date;
     var made = newItem({ text: text.slice(0, 160), station: sec, recipe: rm ? rm.id : '', qty: uq });
     made.catch(failed);
-    noteSection(sec); bump({ added: 1, lastAdded: Date.now() }); learn(text, sec, 'pick', uq);
+    noteSection(sec); bump({ added: 1, lastAdded: now() }); learn(text, sec, 'pick', uq);
     addedToast(text + (uq ? ' (' + uq + ')' : ''), sec, dte, made.id);
   }
   /* Undo on an add flags the new line as removed. Anyone may take back a line they just wrote (the rules let the writer update it). */
   function addedToast(what, sec, dte, mid) {
-    toast('Added ' + what + (sec ? ' to ' + sec : ''), { label: 'Undo', fn: function () { supd(itemRef(dte, mid), { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: Date.now() }).catch(failed); } });
+    toast('Added ' + what + (sec ? ' to ' + sec : ''), { label: 'Undo', fn: function () { supd(itemRef(dte, mid), { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: now() }).catch(failed); } });
   }
   /* Owner backup: everything the book holds, as one JSON file (PIN fingerprints left out). */
   function exportAll() {
     if (!fb || S.exporting) return;
     S.exporting = 'Reading the data...'; draw();
-    var f = fb.fs, out = { exportedAt: new Date().toISOString(), config: null, days: {}, orders: {}, waste: {}, wasteReviews: {}, activity: [], sections: [], learned: [], learnlog: [], misses: [], pins: [] };
+    var f = fb.fs, out = { exportedAt: new Date(now()).toISOString(), config: null, days: {}, orders: {}, waste: {}, wasteReviews: {}, activity: [], sections: [], learned: [], learnlog: [], misses: [], pins: [] };
     function all(name) { return f.getDocs(colRef(name)).then(function (sn) { return sn.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }); }); }
-    var today = ymd(new Date()), dates = [], k;
+    var today = dayNow(), dates = [], k;
     for (k = 0; k < 400; k++) dates.push(shift(today, -k));
     f.getDoc(cfgDoc()).then(function (sn) { out.config = sn.exists() ? sn.data() : null; })
       .then(function () { return all('activity'); }).then(function (r) { out.activity = r; })
@@ -680,6 +691,7 @@
       .then(function () { return all('learnlog'); }).then(function (r) { out.learnlog = r; })
       .then(function () { return all('misses'); }).then(function (r) { out.misses = r; })
       .then(function () { return all('views'); }).then(function (r) { out.views = r; })
+      .then(function () { return all('guides'); }).then(function (r) { out.guides = r; })
       .then(function () { return all('pinset'); }).then(function (r) { out.pins = r.map(function (x) { return { id: x.id, name: x.name, setAt: x.setAt }; }); })
       .then(function () {
         var i = 0, n = 0;
@@ -731,13 +743,14 @@
         });
       }));
     }
-    var today = ymd(new Date()), dates = [], k;
+    var today = dayNow(), dates = [], k;
     for (k = 0; k < 400; k++) dates.push(shift(today, -k));
     f.getDoc(f.doc(fb.db, 'kitchens', old, 'config', 'main')).then(function (sn) { if (sn.exists()) { n++; return f.setDoc(f.doc(fb.db, 'kitchens', np, 'config', 'main'), sn.data()); } })
       .then(function () { return copyCol('pinset'); }).then(function () { return copyCol('staffpins'); }).then(function () { return copyCol('activity'); }).then(function () { return copyCol('sections'); })
       .then(function () { return copyCol('learned'); }).then(function () { return copyCol('learnlog'); }).then(function () { return copyCol('misses'); }).then(function () { return copyCol('views'); })
       .then(function () { return copyCol('notes'); }).then(function () { return copyCol('minutes'); }).then(function () { return copySub('minutes', 'hist'); })
       .then(function () { return copySub('minutes', 'signs', true); }).then(function () { return copySub('notes', 'seen', true); })
+      .then(function () { return copyCol('guides'); }).then(function () { return copySub('guides', 'pages'); })
       .then(function () {
         var i = 0;
         function next() {
@@ -755,7 +768,7 @@
       .then(function () {
         S.moving = false; S.moveMsg = 'Copied ' + n + ' records. This device now uses the new PIN. Everyone else enters the new PIN next time they open the book.' +
           (skipped ? ' ' + skipped + ' sign-offs and seen records were left on the old PIN: the published rules do not let the head chef copy them yet.' : '');
-        S.pin = np; lsSet('lk.prep.pin', np); S.items = []; S.learned = []; S.sections = []; S.activity = [];
+        S.pin = np; lsSet('lk.prep.pin', np); S.items = []; S.learned = []; S.sections = []; S.activity = []; gForget();
         stopLive(); S.rolledFor = ''; S.learnRan = false; S.weekAt = 0; S.stats = null;
         connect();
       }).catch(function (e) { S.moving = false; S.moveMsg = e && e.code === 'permission-denied' ? 'The rules do not allow the new PIN yet. Nothing was changed on the old PIN.' : 'Stopped part way. Nothing was changed on the old PIN, so it is safe to try again.'; draw(); });
@@ -774,7 +787,7 @@
     S.marked[date] = 1;
     /* the rules allow only the first create of a day, so each phone tries once a day (another phone may have claimed it already) */
     var done = function () { lsSet(lk, date); };
-    sset(docRef('learnlog', date), { at: Date.now(), who: 'live' }).then(done, done);
+    sset(docRef('learnlog', date), { at: now(), who: 'live' }).then(done, done);
   }
   function maybeLearn() {
     if (S.learnRan || !S.authed || !fb || S.configState !== 'ok') return;
@@ -782,7 +795,7 @@
     setTimeout(autoLearn, 2500);
   }
   function autoLearn() {
-    var today = ymd(new Date()), dates = [], k;
+    var today = dayNow(), dates = [], k;
     for (k = 1; k <= LEARN_DAYS; k++) dates.push(shift(today, -k));
     S.learnState = { total: LEARN_DAYS, done: 0, running: true };
     fb.fs.getDocs(colRef('learnlog')).then(function (snap) {
@@ -797,7 +810,7 @@
     if (i >= todo.length) { if (S.learnState) S.learnState.running = false; draw(); return; }
     var chunk = todo.slice(i, i + 8), f = fb.fs, p = who();
     Promise.all(chunk.map(function (d) {
-      return sset(docRef('learnlog', d), { at: Date.now(), who: p ? p.name : '', kind: 'auto' }).then(function () {
+      return sset(docRef('learnlog', d), { at: now(), who: p ? p.name : '', kind: 'auto' }).then(function () {
         return f.getDocs(itemsCol(d)).then(function (sn) { return { d: d, items: sn.docs.map(function (x) { return x.data(); }) }; });
       }, function () { return null; });
     })).then(function (res) {
@@ -849,10 +862,27 @@
      open after that day does it show as rolled. rolled stays the number of copies, so a copy is never counted twice. */
   function lateMin() { return S.closeMin || 20 * 60; }
   function writtenLate(x, day) {
-    if (x.rolled || !x.addedAt || ymd(new Date(x.addedAt)) !== day) return false;
-    var t = new Date(x.addedAt); return t.getHours() * 60 + t.getMinutes() >= lateMin();
+    if (x.rolled || !x.addedAt || T.day(x.addedAt) !== day) return false;
+    return T.mins(x.addedAt) >= lateMin();
+  }
+  /* Lines that rolled over before the written-for-tomorrow rule (19 Oct 2026), or on a phone with older code: a copy
+     that rolled once is checked against the time its original was written, and marked ahead for everyone if it was
+     written after the usual close. Once a day per phone, only today's list, no extra reads (the past days are cached). */
+  function repairAhead() {
+    var today = dayNow();
+    if (S.aheadFixed === today || !S.authed || !fb || !can('add') || S.date !== today || S.itemsState !== 'ok' || S.pastFor !== pastTag()) return;
+    S.aheadFixed = today;
+    var ops = [];
+    S.items.forEach(function (x) {
+      if (x.rolled !== 1 || x.ahead || x.deleted || !x.from || !x.rolledFrom) return;
+      var src = ((S.past || {})[x.rolledFrom] || []).filter(function (y) { return y.id === x.from; })[0];
+      if (src && writtenLate(src, x.rolledFrom)) ops.push(['upd', itemRef(today, x.id), { ahead: true, origAt: src.addedAt }]);
+    });
+    if (ops.length) W(ops.slice(0, 400)).catch(function () { S.aheadFixed = ''; });
   }
   function rolledN(x) { return Math.max(0, (x.rolled || 0) - (x.ahead ? 1 : 0)); }
+  /* when a line was first written: a rolled copy keeps it in origAt (0 if it rolled before origAt was kept) */
+  function firstAt(x) { return x.rolled ? x.origAt || 0 : x.addedAt || 0; }
   function sortItems(a, b) { return (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0) || rolledN(b) - rolledN(a) || (a.addedAt || 0) - (b.addedAt || 0); }
 
   /* ---------- admin actions ---------- */
@@ -869,7 +899,7 @@
       }),
       stations: [], showBadges: cfg.showBadges !== false,
       sousIds: S.user ? cfg.people.filter(function (p) { return p.role === 'sous' && p.active !== false && String(p.name).trim(); }).map(function (p) { return p.id; }) : ((S.config && S.config.sousIds) || []),
-      updated: Date.now(), updatedBy: (S.user && S.user.email) || (who() ? who().name : '')
+      updated: now(), updatedBy: (S.user && S.user.email) || (who() ? who().name : '')
     };
     return sdk().then(function () { return S.user ? track(fb.fs.setDoc(cfgDoc(), clean)) : sset(cfgDoc(), clean); }).then(function () { return clean; });
   }
@@ -969,14 +999,15 @@
      Past days hardly change, so they are read once a day and kept on the phone. Today comes from the live list.
      The weekly badges, usual amounts, Start here, Due today, the pace card and the close-out nudge all work from this. */
   var PAST_DAYS = 14, PAST_KEYS = ['text', 'station', 'qty', 'addedBy', 'addedById', 'addedAt', 'done', 'doneBy', 'doneById', 'doneAt', 'rolled', 'ahead', 'deleted', 'urgent'];
+  function pastTag() { return S.pin + '|' + dayNow() + '|2'; }
   function loadPast() {
-    var today = ymd(new Date()), tag = S.pin + '|' + today;
+    var today = dayNow(), tag = pastTag();
     if (!fb || S.pastBusy || S.pastFor === tag) return;
     try { var c = JSON.parse(lsGet('lk.past') || 'null'); if (c && c.tag === tag && c.days) { S.past = c.days; S.pastFor = tag; pastDerive(); return; } } catch (e) {}
     S.pastBusy = true;
     var dates = [], i;
     for (i = 1; i <= PAST_DAYS; i++) dates.push(shift(today, -i));
-    Promise.all(dates.map(function (d) { return fb.fs.getDocs(itemsCol(d)).then(function (sn) { return [d, sn.docs.map(function (x) { var v = x.data(), o = {}; PAST_KEYS.forEach(function (k) { if (v[k] != null && v[k] !== '' && v[k] !== false && v[k] !== 0) o[k] = v[k]; }); return o; })]; }, function () { return [d, null]; }); })).then(function (res) {
+    Promise.all(dates.map(function (d) { return fb.fs.getDocs(itemsCol(d)).then(function (sn) { return [d, sn.docs.map(function (x) { var v = x.data(), o = { id: x.id }; PAST_KEYS.forEach(function (k) { if (v[k] != null && v[k] !== '' && v[k] !== false && v[k] !== 0) o[k] = v[k]; }); return o; })]; }, function () { return [d, null]; }); })).then(function (res) {
       var days = {}, ok = true;
       res.forEach(function (r) { if (r[1] === null) ok = false; else days[r[0]] = r[1]; });
       S.past = days; S.pastFor = tag; S.pastBusy = false;
@@ -984,7 +1015,7 @@
       pastDerive(); draw();
     });
   }
-  function pastDays(n) { var today = ymd(new Date()), out = [], i; for (i = 1; i <= n; i++) { var d = shift(today, -i); if (S.past && S.past[d]) out.push([d, S.past[d]]); } return out; }
+  function pastDays(n) { var today = dayNow(), out = [], i; for (i = 1; i <= n; i++) { var d = shift(today, -i); if (S.past && S.past[d]) out.push([d, S.past[d]]); } return out; }
   function pastDerive() {
     // amounts and time to tick per line
     var hist = {};
@@ -998,14 +1029,14 @@
     S.hist = hist;
     // the usual time of the last tick of the day (minutes after midnight)
     var lasts = [];
-    pastDays(PAST_DAYS).forEach(function (e) { var mx = 0; e[1].forEach(function (x) { if (x.done && x.doneAt && !x.deleted) mx = Math.max(mx, x.doneAt); }); if (mx) { var dt = new Date(mx); lasts.push(dt.getHours() * 60 + dt.getMinutes()); } });
+    pastDays(PAST_DAYS).forEach(function (e) { var mx = 0; e[1].forEach(function (x) { if (x.done && x.doneAt && !x.deleted) mx = Math.max(mx, x.doneAt); }); if (mx) { lasts.push(T.mins(mx)); } });
     lasts.sort(function (a, b) { return a - b; });
     S.closeMin = lasts.length >= 3 ? lasts[Math.floor(lasts.length / 2)] : 0;
   }
   /* Weekly badges: ticks over the last 7 days, today included (from the live list). */
   function weekRanks() {
-    var counts = {}, start = new Date(); start.setHours(0, 0, 0, 0); start = start.getTime() - 6 * 86400000;
-    var lists = pastDays(6).map(function (e) { return e[1]; }).concat([S.date === ymd(new Date()) ? S.items : []]);
+    var counts = {}, start = T.at(shift(dayNow(), -6));
+    var lists = pastDays(6).map(function (e) { return e[1]; }).concat([S.date === dayNow() ? S.items : []]);
     lists.forEach(function (l) { l.forEach(function (x) { if (x.done && !x.deleted && x.doneBy && (x.doneAt || 0) >= start) counts[x.doneBy] = (counts[x.doneBy] || 0) + 1; }); });
     var arr = Object.keys(counts).map(function (n) { return { name: n, n: counts[n] }; }).sort(function (a, b) { return b.n - a.n || a.name.localeCompare(b.name); });
     var rank = 0, prev = -1;
@@ -1014,7 +1045,7 @@
   }
   /* Due today: made on 3 or more of the last 14 days, about every 4 days or more often, and the usual gap has passed. */
   function dueList() {
-    var m = {}, today = ymd(new Date()), have = onList();
+    var m = {}, today = dayNow(), have = onList();
     pastDays(PAST_DAYS).forEach(function (e) { e[1].forEach(function (x) {
       if (x.deleted || x.rolled || !x.text) return;
       var k = lkey(x.text), o = m[k] = m[k] || { text: x.text, days: {}, sec: {} };
@@ -1034,10 +1065,10 @@
   }
   /* Pace: how much of the list is usually ticked by this time of day, against today. */
   function pace() {
-    var now = new Date(), mins = now.getHours() * 60 + now.getMinutes(), dn = now.getDay(), all = [], same = [];
+    var mins = T.mins(), dn = T.dow(), all = [], same = [];
     pastDays(PAST_DAYS).forEach(function (e) {
       var l = e[1].filter(function (x) { return !x.deleted; }); if (l.length < 5) return;
-      var by = l.filter(function (x) { if (!x.done || !x.doneAt) return false; var t = new Date(x.doneAt); return t.getHours() * 60 + t.getMinutes() <= mins; }).length;
+      var by = l.filter(function (x) { if (!x.done || !x.doneAt) return false; return T.mins(x.doneAt) <= mins; }).length;
       var share = by / l.length; all.push(share); if (parseYmd(e[0]).getDay() === dn) same.push(share);
     });
     var src = same.length >= 2 ? same : all;
@@ -1049,9 +1080,9 @@
   }
   function hhmm(m) { return (m < 600 ? '0' : '') + Math.floor(m / 60) + ':' + (m % 60 < 10 ? '0' : '') + (m % 60); }
   function closeoutHTML(live) {
-    var today = ymd(new Date());
+    var today = dayNow();
     if (S.date !== today || !S.closeMin || !can('add') || lsGet('lk.closeout') === today) return '';
-    var now = new Date(), mins = now.getHours() * 60 + now.getMinutes(), open = live.filter(function (x) { return !x.done; }).length;
+    var mins = T.mins(), open = live.filter(function (x) { return !x.done; }).length;
     if (mins < S.closeMin - 60 || !open) return '';
     return '<div class="nb-flag nb-close"><span class="nb-sl">Closing soon</span><p>The last tick is usually around ' + hhmm(S.closeMin) + '. ' + open + (open === 1 ? ' line is' : ' lines are') + ' still open and will roll to tomorrow. Mark what matters urgent, and log any waste before you go.</p>' +
       '<div class="btn-row"><a class="btn" href="#/waste">Log waste</a><button type="button" class="btn" data-p="close-hide">Hide for today</button></div></div>';
@@ -1081,7 +1112,7 @@
     if (!fb || S.configState !== 'ok') return;
     if (S.stats && (S.stats.loading || !force)) return;
     S.stats = { loading: true, days: {} };
-    var today = ymd(new Date()), dates = [], i;
+    var today = dayNow(), dates = [], i;
     for (i = 0; i < 60; i++) dates.push(shift(today, -i));
     Promise.all(dates.map(function (d) { return fb.fs.getDocs(itemsCol(d)).then(function (s) { return [d, s.docs.map(function (x) { return x.data(); })]; }, function () { return [d, []]; }); })).then(function (res) {
       var days = {}; res.forEach(function (r) { days[r[0]] = r[1]; });
@@ -1096,7 +1127,7 @@
   }
   function afSave() { lsSet('lk.prep.af', JSON.stringify(AF())); }
   function afDates(n, offset) {
-    var today = ymd(new Date()), out = [], i, dw = AF().dow;
+    var today = dayNow(), out = [], i, dw = AF().dow;
     for (i = n - 1 + offset; i >= offset; i--) { var d = shift(today, -i); if (dw === '' || String(parseYmd(d).getDay()) === dw) out.push(d); }
     return out;
   }
@@ -1149,7 +1180,7 @@
           var nm = x.addedBy || 'Unknown', pp = agg.people[nm] = agg.people[nm] || { w: 0, t: 0 };
           pp.w++;
           if (x.station) agg.sections[x.station] = (agg.sections[x.station] || 0) + 1;
-          if (x.addedAt) agg.wHour[new Date(x.addedAt).getHours()]++;
+          if (x.addedAt) agg.wHour[T.hour(x.addedAt)]++;
           if (x.orig && x.orig !== x.text) agg.fixes.push({ d: d, from: x.orig, to: x.text, by: x.addedBy || '' });
         }
         if (!who) pd.n++;
@@ -1157,7 +1188,7 @@
           pd.t++; agg.ticked++;
           var tn = x.doneBy || 'Unknown', tp = agg.people[tn] = agg.people[tn] || { w: 0, t: 0 };
           tp.t++;
-          if (x.doneAt) { agg.tHour[new Date(x.doneAt).getHours()]++; if (!x.rolled && x.addedAt && x.doneAt > x.addedAt) agg.times.push(x.doneAt - x.addedAt); }
+          if (x.doneAt) { agg.tHour[T.hour(x.doneAt)]++; if (!x.rolled && x.addedAt && x.doneAt > x.addedAt) agg.times.push(x.doneAt - x.addedAt); }
         }
       });
       agg.lines += pd.n;
@@ -1468,7 +1499,7 @@
   function lvPrintAll(on) { S.lvAll = !!on; Object.keys(LVR).forEach(lvRefresh); }
   /* Every day at a glance: a calendar, darker means more. Tap a day to open it in the prep book. */
   function calHTML(n) {
-    var a = AF(), m = S.calM || 'done', today = ymd(new Date()), agg = aggregate(n, 0), first = shift(today, -(n - 1)), start = first, i;
+    var a = AF(), m = S.calM || 'done', today = dayNow(), agg = aggregate(n, 0), first = shift(today, -(n - 1)), start = first, i;
     while (parseYmd(start).getDay() !== 1) start = shift(start, -1);
     var vals = {}, max = 0;
     agg.dates.forEach(function (d) { var pd = agg.perDay[d], v = m === 'done' ? (pd.n ? pd.t / pd.n : null) : m === 'w' ? pd.w : pd.r; vals[d] = v; if (v != null && m !== 'done') max = Math.max(max, v); });
@@ -1501,7 +1532,7 @@
       afItems(d).forEach(function (x) {
         var t = m === 't' ? (x.done && (!who || x.doneById === who) ? x.doneAt : 0) : (!x.rolled && (!who || x.addedById === who) ? x.addedAt : 0);
         if (!t) return;
-        var dt = new Date(t), h = dt.getHours(), k = dw + ':' + h;
+        var h = T.hour(t), k = dw + ':' + h;
         cnt[k] = (cnt[k] || 0) + 1; lo = Math.min(lo, h); hi = Math.max(hi, h);
       });
     });
@@ -1546,7 +1577,7 @@
     var sl = Object.keys(slow).filter(function (k) { return slow[k].v.length >= 3; }).map(function (k) { var v = slow[k].v.sort(function (x, y) { return x - y; }); return { t: slow[k].t, m: v[Math.floor(v.length / 2)] }; }).sort(function (x, y) { return y.m - x.m; })[0];
     if (sl && sl.m >= 3600000) out.push(sl.t + ' takes longest to get ticked: usually ' + dur(sl.m) + ' after it is written.');
     if (S.wStats && !S.wStats.loading) {
-      var from = shift(ymd(new Date()), -(n - 1)), wm = {};
+      var from = shift(dayNow(), -(n - 1)), wm = {};
       S.wStats.lines.forEach(function (x) { if (!x.deleted && x.date >= from && (!a.sec || (x.station || 'General') === a.sec)) { var k = okey(x.text); (wm[k] = wm[k] || { t: x.text, n: 0 }).n++; } });
       var tw = Object.keys(wm).sort(function (x, y) { return wm[y].n - wm[x].n; })[0];
       if (tw && wm[tw].n >= 2) out.push(wm[tw].t + ' is the most wasted item: logged ' + wm[tw].n + ' times.');
@@ -1554,12 +1585,12 @@
     return out.length ? card('<h3 class="a-ch-h">What stands out</h3><ul class="a-list a-smart">' + out.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>', 'full') : '';
   }
   /* ---------- export and print (Insights, Team, Waste) ---------- */
-  function rangeText(n) { var t = ymd(new Date()); return n + ' days, ' + dayShort(shift(t, -(n - 1))) + ' to ' + dayShort(t); }
+  function rangeText(n) { var t = dayNow(); return n + ' days, ' + dayShort(shift(t, -(n - 1))) + ' to ' + dayShort(t); }
   function toolsHTML(kind, title) {
     var n = S.statsRange;
     return '<div class="a-tools"><div><h3 class="a-title">' + esc(title) + '</h3><span class="hint">' + esc(rangeText(n)) + ', compared with the ' + n + ' days before.</span></div>' +
       '<div class="a-tbtns"><button type="button" class="btn dark" data-p="print-tab">Print or save as PDF</button><button type="button" class="btn" data-p="csv" data-v="' + kind + '">Download CSV</button></div></div>' +
-      '<div class="a-print-h"><strong>Leichhardt Kitchen Book</strong> &middot; ' + esc(title) + ' &middot; ' + esc(rangeText(n)) + '<span>Printed ' + esc(dayShort(ymd(new Date())) + ' ' + clock(Date.now())) + '</span></div>';
+      '<div class="a-print-h"><strong>Leichhardt Kitchen Book</strong> &middot; ' + esc(title) + ' &middot; ' + esc(rangeText(n)) + '<span>Printed ' + esc(dayShort(dayNow()) + ' ' + clock(now())) + '</span></div>';
   }
   function printTab() {
     var pane = S.root && S.root.querySelector('.a-pane'); if (!pane) return;
@@ -1580,12 +1611,12 @@
   }
   function hm(ms) { return ms ? clock(ms) : ''; }
   function exportCSV(kind) {
-    var n = S.statsRange, a = AF(), tag = ymd(new Date()) + '-' + n + 'd';
+    var n = S.statsRange, a = AF(), tag = dayNow() + '-' + n + 'd';
     if (kind === 'insights' && S.stats && !S.stats.loading) {
-      var rows = [['Date', 'Weekday', 'Section', 'Line', 'Amount', 'Written by', 'Written at', 'Rolled over (times)', 'Ticked', 'Ticked by', 'Ticked at', 'Minutes to tick']];
+      var rows = [['Date', 'Weekday', 'Section', 'Line', 'Amount', 'Written by', 'Written on', 'Written at', 'Rolled over (times)', 'Ticked', 'Ticked by', 'Ticked at', 'Minutes to tick']];
       afDates(n, 0).forEach(function (d) { afItems(d).forEach(function (x) {
         if (a.who && x.addedById !== a.who && x.doneById !== a.who) return;
-        rows.push([d, DOWN[DOW.indexOf(parseYmd(d).getDay())], x.station || 'General', x.text, x.qty || '', x.rolled ? (x.origBy || '') : (x.addedBy || ''), hm(x.addedAt), rolledN(x), x.done ? 'yes' : 'no', x.doneBy || '', hm(x.doneAt), x.done && x.doneAt && x.addedAt && !x.rolled ? Math.round((x.doneAt - x.addedAt) / 60000) : '']);
+        rows.push([d, DOWN[DOW.indexOf(parseYmd(d).getDay())], x.station || 'General', x.text, x.qty || '', x.rolled ? (x.origBy || '') : (x.addedBy || ''), firstAt(x) ? T.day(firstAt(x)) : '', hm(firstAt(x)), rolledN(x), x.done ? 'yes' : 'no', x.doneBy || '', hm(x.doneAt), x.done && x.doneAt && x.addedAt && !x.rolled ? Math.round((x.doneAt - x.addedAt) / 60000) : '']);
       }); });
       downloadCSV('leichhardt-prep-lines-' + tag + '.csv', rows);
     } else if (kind === 'waste' && S.wStats && !S.wStats.loading) {
@@ -1652,9 +1683,9 @@
   /* ---------- drawing ---------- */
   var TICK = '<svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><path d="M5 14 L11 20 L22 5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
-  function openLabel() { return { orders: 'Open the order list', waste: 'Open the wastage log', minutes: 'Open the minutes' }[S.name] || 'Open the prep list'; }
+  function openLabel() { return { orders: 'Open the order list', waste: 'Open the wastage log', minutes: 'Open the minutes', guides: 'Open the guides' }[S.name] || 'Open the prep list'; }
   function gateHTML() {
-    return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Kitchen PIN</h2><p class="hint">Enter the kitchen PIN to open the prep list, orders, wastage and minutes. This phone remembers it.</p>' +
+    return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Kitchen PIN</h2><p class="hint">Enter the kitchen PIN to open the prep list, orders, wastage, minutes and guides. This phone remembers it.</p>' +
       '<div class="field"><label class="label" for="p-pin">PIN</label>' + pinField('p-pin', 'p-pin', S.pinInput) + '</div>' +
       (S.pinError ? '<p class="p-err" role="alert">' + esc(S.pinError) + '</p>' : '') +
       '<div class="btn-row"><button type="button" class="btn dark" data-p="pin-go">' + openLabel() + '</button></div></section>';
@@ -1683,8 +1714,8 @@
   var BOX = '<svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><rect x="2.5" y="2.5" width="21" height="21" rx="3" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
   function rowHTML(x, date, readonly) {
     var tickOk = can('tick') && !x.deleted && (!x.done || canUntick(x)), delOk = can('del');
-    var by = x.done && x.doneBy ? esc(x.doneBy) + (x.doneAt ? ' ' + clock(x.doneAt) : '') : (x.rolled ? (x.origBy ? 'from ' + esc(x.origBy) : '') : (x.addedBy ? esc(x.addedBy) : ''));
-    var marks = (x.urgent ? '<span class="nb-urg">Urgent</span>' : '') + (rolledN(x) ? '<span class="nb-roll" title="Not finished earlier, so it rolled over">Rolled' + (rolledN(x) > 1 ? ' x' + rolledN(x) : '') + '</span>' : (x.ahead && x.rolled ? '<span class="nb-us" title="Written the night before for today">From last night</span>' : ''));
+    var by = x.done && x.doneBy ? esc(x.doneBy) + (x.doneAt ? ' ' + clock(x.doneAt) : '') : (rolledN(x) ? (x.origBy ? 'from ' + esc(x.origBy) : '') : x.rolled ? esc(x.origBy || '') : (x.addedBy ? esc(x.addedBy) : ''));
+    var marks = (x.urgent ? '<span class="nb-urg">Urgent</span>' : '') + (rolledN(x) ? '<span class="nb-roll" title="Not finished earlier, so it rolled over">Rolled' + (rolledN(x) > 1 ? ' x' + rolledN(x) : '') + '</span>' : '');
     var star = can('add') && !x.deleted && !readonly ? '<button type="button" class="nb-star" data-p="urgent" data-id="' + esc(x.id) + '" aria-pressed="' + !!x.urgent + '" aria-label="' + esc((x.urgent ? 'Not urgent: ' : 'Mark urgent: ') + x.text) + '">!</button>' : '';
     var rid = x.recipe || ((matchRecipe(x.text) || {}).id || ''), rr = rid ? recipeById(rid) : null;
     var link = rid ? '<a class="nb-go" href="#/r/' + encodeURIComponent(rid) + '" title="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '" aria-label="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '">recipe</a>' : '';
@@ -1696,7 +1727,7 @@
   }
   /* A line ticked on this phone stays where it is, struck through, for 3.5 seconds before it leaves the list. */
   var LINGER = 3500;
-  function lingers(x) { return x.done && !x.deleted && x.doneById === S.who && Date.now() - (x.doneAt || 0) < LINGER; }
+  function lingers(x) { return x.done && !x.deleted && x.doneById === S.who && now() - (x.doneAt || 0) < LINGER; }
   function pageBody(items, date) {
     /* ticked lines leave the list and show under Done today in Handy. Sections with nothing left to do are hidden. */
     var shown = items.filter(function (x) { return (S.showRemoved || !x.deleted) && (!S.tab || (x.station || '') === S.tab); });
@@ -1750,7 +1781,7 @@
     var rolled = live.filter(function (x) { return rolledN(x) && !x.done; }), urg = live.filter(function (x) { return x.urgent && !x.done; });
     var secs = {}, order = [];
     live.forEach(function (x) { var k = x.station || 'General'; if (!secs[k]) { secs[k] = { n: 0, d: 0 }; order.push(k); } secs[k].n++; if (x.done) secs[k].d++; });
-    var startShown = can('tick') && S.date === ymd(new Date()) && live.filter(function (x) { return !x.done; }).length >= 4;
+    var startShown = can('tick') && S.date === dayNow() && live.filter(function (x) { return !x.done; }).length >= 4;
     var prio = !startShown && (rolled.length || urg.length) ? '<div class="nb-prio"><strong>Do these first</strong><span>' + (urg.length ? urg.length + ' urgent' : '') + (urg.length && rolled.length ? ', ' : '') + (rolled.length ? rolled.length + ' rolled over from earlier' : '') + '. They sit at the top of each section.</span></div>' : '';
     var meters = order.length ? '<h3 class="nb-sh">Progress by section</h3>' + order.map(function (k) {
       var m = secs[k], pc = m.n ? Math.round(m.d / m.n * 100) : 0;
@@ -1762,7 +1793,7 @@
     var regs = S.learned.filter(function (x) { return isRegular(x) && !have[x.id] && !shownK[x.id] && x.text; }).sort(function (a, b) { return (b.uses || 0) - (a.uses || 0); }).slice(0, 14);
     S.quick = [];
     function chip(x, note) { var uq = usualQty(x.text); S.quick.push({ text: x.text, section: bestSection(x) }); return '<button type="button" class="chip sq" data-p="quick" data-i="' + (S.quick.length - 1) + '">' + esc(x.text) + (uq ? ' <span class="nb-uq">' + esc(uq) + '</span>' : '') + (note ? ' <span class="nb-us">' + esc(note) + '</span>' : '') + '</button>'; }
-    var due = can('add') && S.date === ymd(new Date()) && S.past ? dueList() : [];
+    var due = can('add') && S.date === dayNow() && S.past ? dueList() : [];
     S.due = due;
     due.forEach(function (x) { shownK[x.k] = 1; });
     today2 = today2.filter(function (x) { return !due.some(function (d) { return d.k === x.id; }); });
@@ -1770,9 +1801,9 @@
       var uq = usualQty(x.text);
       return '<button type="button" class="chip sq" data-p="due" data-i="' + i + '">' + esc(x.text) + (uq ? ' <span class="nb-uq">' + esc(uq) + '</span>' : '') + ' <span class="nb-us">' + esc((x.gap === 1 ? 'daily' : 'every ' + x.gap + ' days') + ', last ' + parseYmd(x.last).toLocaleDateString('en-AU', { weekday: 'short' })) + '</span></button>';
     }).join('') + '</div>' : '';
-    var pc = canBrowse() && S.date === ymd(new Date()) && S.past ? pace() : null;
-    var paceHTML = pc ? '<div class="nb-pace' + (pc.today + 0.1 < pc.usual ? ' is-behind' : '') + '"><span class="nb-sl">Pace</span><p><strong>' + Math.round(pc.today * 100) + '%</strong> ticked now (' + pc.done + ' of ' + pc.n + '). By ' + clock(Date.now()) + ' it is usually <strong>' + Math.round(pc.usual * 100) + '%</strong>' + (pc.sameDay ? ' on a ' + esc(dname) : '') + '.</p><span class="nb-sw">' + (pc.today + 0.1 < pc.usual ? 'Behind the usual pace. Check who needs a hand.' : 'On pace.') + ' Only the head chef and sous chefs see this.</span></div>' : '';
-    var stuck = canBrowse() && S.date === ymd(new Date()) ? live.filter(function (x) { return !x.done && rolledN(x) >= 3; }) : [];
+    var pc = canBrowse() && S.date === dayNow() && S.past ? pace() : null;
+    var paceHTML = pc ? '<div class="nb-pace' + (pc.today + 0.1 < pc.usual ? ' is-behind' : '') + '"><span class="nb-sl">Pace</span><p><strong>' + Math.round(pc.today * 100) + '%</strong> ticked now (' + pc.done + ' of ' + pc.n + '). By ' + clock(now()) + ' it is usually <strong>' + Math.round(pc.usual * 100) + '%</strong>' + (pc.sameDay ? ' on a ' + esc(dname) : '') + '.</p><span class="nb-sw">' + (pc.today + 0.1 < pc.usual ? 'Behind the usual pace. Check who needs a hand.' : 'On pace.') + ' Only the head chef and sous chefs see this.</span></div>' : '';
+    var stuck = canBrowse() && S.date === dayNow() ? live.filter(function (x) { return !x.done && rolledN(x) >= 3; }) : [];
     var stuckHTML = stuck.length ? '<h3 class="nb-sh">Stuck lines</h3><p class="nb-sd">Rolled over 3 or more times. Make it urgent, split it into smaller jobs, or remove it if it is not needed.</p><ul class="nb-stuck">' + stuck.map(function (x) {
       return '<li><span>' + esc(x.text) + ' <span class="nb-us">x' + rolledN(x) + '</span></span>' + (x.urgent ? '' : '<button type="button" class="p-x" data-p="urgent" data-id="' + esc(x.id) + '">Urgent</button>') + (can('del') ? '<button type="button" class="p-x" data-p="del" data-id="' + esc(x.id) + '" data-d="' + esc(S.date) + '">Remove</button>' : '') + '</li>';
     }).join('') + '</ul>' : '';
@@ -1790,7 +1821,7 @@
     return startHTML(live, true) + paceHTML + prio + stuckHTML + donebox + meters + dueHTML + usual + tools;
   }
   function listHTML() {
-    var p = me(), today = ymd(new Date());
+    var p = me(), today = dayNow();
     if (S.date !== today && !canBrowse() && !S.user) { S.date = today; S.tab = ''; watchItems(); }
     if (S.authed && fb) { loadPast(); loadWRecent(false); }
     S.week = S.past ? weekRanks() : null;
@@ -1827,7 +1858,7 @@
   }
   function ago(ms) {
     if (!ms) return 'never';
-    var m = Math.round((Date.now() - ms) / 60000);
+    var m = Math.round((now() - ms) / 60000);
     if (m < 2) return 'just now';
     if (m < 60) return m + ' min ago';
     var h = Math.round(m / 60);
@@ -1872,7 +1903,7 @@
     if (!fb || S.configState !== 'ok') return;
     if (S.ordStats && (S.ordStats.loading || !force)) return;
     S.ordStats = { loading: true, lines: [] };
-    var today = ymd(new Date()), dates = [], i;
+    var today = dayNow(), dates = [], i;
     for (i = 0; i < 30; i++) dates.push(shift(today, -i));
     Promise.all(dates.map(function (d) { return fb.fs.getDocs(ordCol(d)).then(function (s) { return s.docs.map(function (x) { var v = x.data(); v.id = x.id; v.date = d; return v; }); }, function () { return []; }); })).then(function (l) {
       S.ordStats = { loading: false, lines: ordNewest([].concat.apply([], l)) }; draw();
@@ -1880,7 +1911,7 @@
   }
   function blankRec(id) { return { id: id, w: 0, days: {}, secDay: {}, secs: {}, t: 0, tdays: {}, tsecs: {}, tsecDay: {}, last: '' }; }
   function teamData(n) {
-    var today = ymd(new Date()), dates = [], i, names = {}, per = {}, secTotal = {}, tickSec = {}, activeDays = {};
+    var today = dayNow(), dates = [], i, names = {}, per = {}, secTotal = {}, tickSec = {}, activeDays = {};
     for (i = n - 1; i >= 0; i--) dates.push(shift(today, -i));
     (S.config.people || []).forEach(function (p) { names[p.id] = p.name; });
     function rec(x) {
@@ -1992,7 +2023,7 @@
   }
   /* Items that keep coming back onto the order list in the last 14 days: candidates for a standing order. */
   function standingHTML(all) {
-    var from = shift(ymd(new Date()), -13), m = {};
+    var from = shift(dayNow(), -13), m = {};
     all.filter(function (x) { return !x.deleted && x.date >= from; }).forEach(function (x) {
       var k = okey(x.text); if (!k) return;
       var e = m[k] = m[k] || { text: x.text, days: {}, dow: {}, q: {} };
@@ -2018,7 +2049,7 @@
   function orderStatsHTML(td, n) {
     var os = S.ordStats;
     if (!os || os.loading) return '<section class="set-block"><span class="label">Order list</span><p class="hint">Loading...</p></section>';
-    var from = shift(ymd(new Date()), -(n - 1)), lines = os.lines.filter(function (x) { return !x.deleted && x.date >= from; });
+    var from = shift(dayNow(), -(n - 1)), lines = os.lines.filter(function (x) { return !x.deleted && x.date >= from; });
     var byDay = {}, byPerson = {}, items = {}, ordered = 0;
     lines.forEach(function (x) {
       var d = byDay[x.date] = byDay[x.date] || { n: 0, who: {} }; d.n++; d.who[x.addedBy || 'Unknown'] = 1;
@@ -2044,8 +2075,8 @@
       sorts: [['most', 'Most lines', function (a, b) { return b.n - a.n || a.t.toLowerCase().localeCompare(b.t.toLowerCase()); }], ['days', 'Most days', function (a, b) { return b.days - a.days || b.n - a.n; }], ['az', 'A to Z', function (a, b) { return a.t.toLowerCase().localeCompare(b.t.toLowerCase()); }]],
       cols: [{ h: 'Item', th: true, html: function (o) { return esc(o.t); } }, { h: 'Lines', html: function (o) { return String(o.n); } }, { h: 'Days', html: function (o) { return String(o.days); } }]
     });
-    var lag = lines.filter(function (x) { return x.ordered && x.orderedAt && x.addedAt && x.orderedAt > x.addedAt; }).map(function (x) { return x.orderedAt - x.addedAt; }).sort(function (a, b) { return a - b; });
-    var old = lines.filter(function (x) { return !x.ordered && x.addedAt && Date.now() - x.addedAt > 3 * 86400000; }).length;
+    var lag = lines.filter(function (x) { var a = x.origAt || x.addedAt; return x.ordered && x.orderedAt && a && x.orderedAt > a; }).map(function (x) { return x.orderedAt - (x.origAt || x.addedAt); }).sort(function (a, b) { return a - b; });
+    var old = lines.filter(function (x) { return !x.ordered && x.addedAt && now() - x.addedAt > 3 * 86400000; }).length;
     return '<section class="set-block"><span class="label">Order list</span><span class="hint">Who put what on the order list and on which days, over the same time range. No scores, just a record.</span>' +
       '<div class="a-tiles"><div class="a-tile"><strong>' + lines.length + '</strong><span>lines written</span></div><div class="a-tile"><strong>' + ordered + '</strong><span>ticked as ordered</span></div><div class="a-tile"><strong>' + (lines.length - ordered) + '</strong><span>not yet ordered</span></div>' +
       '<div class="a-tile"><strong>' + (lag.length ? dur(lag[Math.floor(lag.length / 2)]) : 'n/a') + '</strong><span>typical time from written to ordered</span></div><div class="a-tile"><strong>' + old + '</strong><span>waiting more than 3 days</span></div></div>' +
@@ -2110,17 +2141,18 @@
     var bulk = '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line">' + esc(S.bulk || '') + '</textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div>';
     var saveBlock = '<section class="set-block"><div class="btn-row"><button type="button" class="btn dark" data-p="a-save"' + (S.busy ? ' disabled' : '') + '>Save changes</button><button type="button" class="btn" data-p="a-reset">Undo unsaved changes</button></div><span class="saved" role="status">' + esc(S.saveMsg) + '</span></section>';
     var at = S.atab || 'insights';
-    var tabsBar = '<nav class="a-tabs" aria-label="Admin sections">' + [['insights', 'Insights'], ['team', 'Team'], ['waste', 'Waste'], ['learning', 'Learning'], ['notes', 'Notes'], ['minutes', 'Minutes'], ['people', 'People'], ['tools', 'Tools']].map(function (t) {
+    var tabsBar = '<nav class="a-tabs" aria-label="Admin sections">' + [['insights', 'Insights'], ['team', 'Team'], ['waste', 'Waste'], ['learning', 'Learning'], ['notes', 'Notes'], ['minutes', 'Minutes'], ['guides', 'Guides'], ['people', 'People'], ['tools', 'Tools']].map(function (t) {
       return '<button type="button" class="a-tab" data-p="a-tab" data-t="' + t[0] + '" aria-pressed="' + (at === t[0]) + '">' + t[1] + '</button>';
     }).join('') + '</nav>';
     if (at === 'notes') loadNotes();
     if (at === 'minutes') loadMinutes();
-    var pane = at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'learning' ? (learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() : at === 'people' ? (
+    if (at === 'guides') loadGuides();
+    var pane = at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'learning' ? (learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() : at === 'people' ? (
       '<section class="set-block"><span class="label">People</span><span class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Reset PIN lets that person choose a new one. Removing someone from the list keeps their name on old lines.</span>' +
       peopleListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' +
       '<section class="set-block"><span class="label">Badges</span><label class="a-check"><input type="checkbox" data-a="badges"' + (d.showBadges !== false ? ' checked' : '') + '> Show the weekly top tickers to everyone on the prep book</label></section>' + saveBlock
     ) : (
-      '<section class="set-block"><span class="label">Backup</span><span class="hint">Saves everything the prep book holds (people, lines from the last 400 days, learned items, tallies) as one file on this device. People\'s PIN fingerprints are left out. Do this now and then.</span><div class="btn-row"><button type="button" class="btn" data-p="export"' + (S.exporting ? ' disabled' : '') + '>' + (S.exporting ? esc(S.exporting) : 'Download a backup') + '</button></div></section>' +
+      '<section class="set-block"><span class="label">Backup</span><span class="hint">Saves everything the prep book holds (people, lines from the last 400 days, learned items, tallies and the guides\' words) as one file on this device. People\'s PIN fingerprints and the guides\' page pictures are left out (keep the original files). Do this now and then.</span><div class="btn-row"><button type="button" class="btn" data-p="export"' + (S.exporting ? ' disabled' : '') + '>' + (S.exporting ? esc(S.exporting) : 'Download a backup') + '</button></div></section>' +
       '<section class="set-block"><span class="label">Kitchen PIN</span><span class="hint">The kitchen PIN is the lock on the whole book, so keep it to staff only. Writing needs a person\'s own PIN as well.</span>' +
       '<div class="field"><label class="label" for="a-newpin">Move to a new 4 digit kitchen PIN</label><input id="a-newpin" class="search" inputmode="numeric" maxlength="4" autocomplete="off" data-k="a-newpin" placeholder="4 digits" value="' + esc(S.newPin) + '"></div>' +
       '<div class="btn-row"><button type="button" class="btn" data-p="move-pin"' + (S.moving ? ' disabled' : '') + '>' + (armed('move-pin') ? 'Tap again to copy everything' : 'Copy everything to the new PIN') + '</button></div><span class="saved" role="status">' + esc(S.moveMsg) + '</span><span class="hint">Ask for the new PIN to be added to the security rules first. The old PIN keeps working until its rules are removed.</span></section></div>');
@@ -2139,15 +2171,17 @@
       '<section class="set-block"><div class="btn-row"><button type="button" class="btn dark" data-p="a-save"' + (S.busy ? ' disabled' : '') + '>Save changes</button><button type="button" class="btn" data-p="a-reset">Undo unsaved changes</button></div><span class="saved" role="status">' + esc(S.saveMsg) + '</span></section></div>';
   }
   /* While connecting, show the page that is opening (not a generic prep book card), so nothing flashes. */
-  var PAGE_NAME = { prep: 'Prep list', orders: 'Order list', waste: 'Wastage', admin: 'Admin panel', minutes: 'Meeting minutes' };
+  var PAGE_NAME = { prep: 'Prep list', orders: 'Order list', waste: 'Wastage', admin: 'Admin panel', minutes: 'Meeting minutes', guides: 'Guides' };
   function loadingHTML() {
     var t = PAGE_NAME[S.name] || 'Prep book';
     if (S.name === 'admin') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">' + t + '</h2><p class="hint">Loading...</p></section>';
-    return '<section class="nb-page o-page is-loading"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + t + '</h2><span class="nb-date">' + esc(longDate(ymd(new Date()))) + '</span></div></header>' +
+    return '<section class="nb-page o-page is-loading"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + t + '</h2><span class="nb-date">' + esc(longDate(dayNow())) + '</span></div></header>' +
       '<div class="nb-body"><p class="nb-empty">Loading...</p></div></section>';
   }
   function bodyHTML() {
     if (!S.pin) return gateHTML();
+    // guides need only the kitchen PIN (reading, like the recipes); a list kept on the phone shows straight away, even with no signal
+    if (S.name === 'guides' && (S.guides || S.configState === 'ok')) return guidesPageHTML();
     if (S.configState === 'error') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Prep book</h2><p class="p-err">Could not connect. Check the connection and try again.</p><div class="btn-row"><button type="button" class="btn dark" data-p="retry">Try again</button></div></section>';
     if (S.configState !== 'ok') return loadingHTML();
     if (S.name === 'admin') return adminHTML();
@@ -2215,7 +2249,7 @@
     if (!fb || S.ordBusy || S.configState !== 'ok') return;
     if (!force && Date.now() - S.ordAllAt < 60000) return;
     S.ordBusy = true; S.ordAllAt = Date.now();
-    var today = ymd(new Date()), dates = [], i;
+    var today = dayNow(), dates = [], i;
     for (i = 0; i < ORD_DAYS; i++) dates.push(shift(today, -i));
     Promise.all(dates.map(function (d) { return fb.fs.getDocs(ordCol(d)).then(function (s) { return s.docs.map(function (x) { var v = x.data(); v.id = x.id; v.date = d; return v; }); }, function () { return []; }); })).then(function (lists) {
       S.ordAll = [].concat.apply([], lists); S.ordBusy = false; draw();
@@ -2226,15 +2260,15 @@
   function ordReload() { draw(); }
   function ordPatch(date, id, ch) { (S.ordAll || []).forEach(function (x) { if (x.date === date && x.id === id) Object.assign(x, ch); }); draw(); }
   function ordAllLines() {
-    var t = ymd(new Date());
+    var t = dayNow();
     return S.ordDate === t && S.ordState === 'ok' ? (S.ordAll || []).filter(function (x) { return x.date !== t; }).concat(S.ordLines || []) : (S.ordAll || []);
   }
   /* Like the prep list: anything not ordered on the last written day rolls onto today's order list by itself, every day
      until someone ticks it as ordered. The copy's id comes from the first line (root), so two phones rolling at once
      write the same line once. Each phone tries once a day (lk.ord.rolled), so the reads stay small. */
   function ordRoll() {
-    var today = ymd(new Date());
-    if (!S.authed || !fb || !can('add') || S.configState !== 'ok' || S.ordRolling || lsGet('lk.ord.rolled') === today) return;
+    var today = dayNow();
+    if (!T.ready() || !S.authed || !fb || !can('add') || S.configState !== 'ok' || S.ordRolling || lsGet('lk.ord.rolled') === today) return;
     S.ordRolling = true;
     var dates = [], k;
     for (k = 1; k <= 7; k++) dates.push(shift(today, -k));
@@ -2253,8 +2287,8 @@
         if (have[id]) return;
         have[id] = true;
         jobs.push(['set', ordRef(today, id), {
-          text: x.text, qty: x.qty || '', recipes: x.recipes || [], addedBy: 'Rolled over', addedById: '', addedAt: Date.now(), ordered: false, deleted: false,
-          rolled: (x.rolled || 0) + 1, root: root, from: x.id, rolledFrom: src.date, origBy: x.origBy || x.addedBy || '',
+          text: x.text, qty: x.qty || '', recipes: x.recipes || [], addedBy: 'Rolled over', addedById: '', addedAt: now(), ordered: false, deleted: false,
+          rolled: (x.rolled || 0) + 1, root: root, from: x.id, rolledFrom: src.date, origBy: x.origBy || x.addedBy || '', origAt: x.origAt || (x.rolled ? 0 : x.addedAt || 0),
           ahead: !!(x.ahead || writtenLate(x, src.date)), since: x.since || (writtenLate(x, src.date) ? today : src.date)
         }]);
       });
@@ -2272,7 +2306,7 @@
      the suggestions while typing, the usual amounts and the "usually ordered" chips. */
   var ORD_LEARN_N = 300;
   function loadOrdLearned() {
-    var tag = S.pin + '|' + ymd(new Date());
+    var tag = S.pin + '|' + dayNow();
     if (!fb || S.ordLearnBusy || S.ordLearnFor === tag) return;
     try { var c = JSON.parse(lsGet('lk.ord.learned') || 'null'); if (c && c.tag === tag && c.list) { S.ordLearned = c.list; S.ordLearnFor = tag; S.ordLearnOk = true; return; } } catch (e) {}
     S.ordLearnBusy = true;
@@ -2288,14 +2322,14 @@
   function ordLearnedFor(text) { var k = lkey(text); return (S.ordLearned || []).filter(function (x) { return x.id === k; })[0] || null; }
   function ordLearn(text, qty) {
     if (!fb || !text || S.ordLearnOk === false) return;
-    var p = who(), f = fb.fs, dw = String(new Date().getDay()), k = lkey(text).slice(0, 80);
+    var p = who(), f = fb.fs, dw = String(T.dow()), k = lkey(text).slice(0, 80);
     if (!k) return;
     qty = String(qty || '').trim().slice(0, 40);
-    var qk = lkey(qty).slice(0, 40), data = { text: String(text).trim().slice(0, 120), uses: f.increment(1), lastUsed: Date.now(), lastBy: p ? p.name : '', dow: {} };
+    var qk = lkey(qty).slice(0, 40), data = { text: String(text).trim().slice(0, 120), uses: f.increment(1), lastUsed: now(), lastBy: p ? p.name : '', dow: {} };
     data.dow[dw] = f.increment(1);
     if (qty && qk) { data.qtys = {}; data.qtys[qk] = { q: qty, n: f.increment(1) }; }
     sset(docRef('ordlearned', k), data, true).catch(function () {});
-    markLive('o-' + ymd(new Date()), 'lk.ord.live');
+    markLive('o-' + dayNow(), 'lk.ord.live');
     // keep this phone's copy in step, so the next suggestion already knows
     var e = ordLearnedFor(text);
     if (!e) { e = { id: k, text: data.text, uses: 0, dow: {}, qtys: {} }; (S.ordLearned = S.ordLearned || []).push(e); }
@@ -2306,7 +2340,7 @@
   function ordAutoLearn(have) {
     if (!S.ordLearnOk || S.ordLearnRan || !can('add')) return;
     S.ordLearnRan = true;
-    var today = ymd(new Date()), todo = [], k;
+    var today = dayNow(), todo = [], k;
     for (k = 1; k <= LEARN_DAYS; k++) { var d = shift(today, -k); if (!have['o-' + d]) todo.push(d); }
     // a little after the prep learner, so the two do not read at the same moment
     if (todo.length) setTimeout(function () { ordLearnChunk(todo, 0, { wrote: false }); }, 8000);
@@ -2319,7 +2353,7 @@
     }
     var chunk = todo.slice(i, i + 8), f = fb.fs, p = who();
     Promise.all(chunk.map(function (d) {
-      return sset(docRef('learnlog', 'o-' + d), { at: Date.now(), who: p ? p.name : '', kind: 'order' }).then(function () {
+      return sset(docRef('learnlog', 'o-' + d), { at: now(), who: p ? p.name : '', kind: 'order' }).then(function () {
         return f.getDocs(ordCol(d)).then(function (sn) { return { d: d, lines: sn.docs.map(function (x) { return x.data(); }) }; });
       }, function () { return null; });
     })).then(function (res) {
@@ -2376,16 +2410,16 @@
     var oFix = pr.changes.map(function (c) { return c[0] + ' to ' + c[1]; }).join(', ');
     S.otext = ''; var q = S.oqty.trim().slice(0, 40); S.oqty = ''; draw();
     ordLearn(t, q);
-    sset(ref, { text: t, qty: q, recipes: hit ? hit.ids : [], addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: Date.now(), ordered: false, deleted: false, orig: t !== typed ? typed.slice(0, 120) : '' })
+    sset(ref, { text: t, qty: q, recipes: hit ? hit.ids : [], addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: now(), ordered: false, deleted: false, orig: t !== typed ? typed.slice(0, 120) : '' })
       .then(ordReload, function (e) { failed(e, function () { if (!S.otext.trim()) { S.otext = typed; S.oqty = q; } }); });
     /* like the prep list: Undo takes the line back, or after a spelling fix puts back what was typed */
     if (oFix) toast('Added ' + t + ', corrected ' + oFix, { label: 'Undo', fn: function () { keepWords(pr.changes); supd(ref, { text: typed.slice(0, 120), orig: '' }).then(ordReload, failed); } });
-    else toast('Added ' + t + (q ? ' (' + q + ')' : '') + ' to the order list', { label: 'Undo', fn: function () { supd(ref, { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: Date.now() }).then(ordReload, failed); } });
+    else toast('Added ' + t + (q ? ' (' + q + ')' : '') + ' to the order list', { label: 'Undo', fn: function () { supd(ref, { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: now() }).then(ordReload, failed); } });
     if (oneTapAdd) return;
     var el = S.root && S.root.querySelector('[data-k="o-text"]'); if (el) el.focus();
   }
   function ingredientFor(text) { return ingIndex()[okey(text)] || null; }
-  function orderedOp(date, id, on) { var p = me(); return ['upd', ordRef(date, id), { ordered: on, orderedBy: on ? p.name : '', orderedAt: on ? Date.now() : 0 }]; }
+  function orderedOp(date, id, on) { var p = me(); return ['upd', ordRef(date, id), { ordered: on, orderedBy: on ? p.name : '', orderedAt: on ? now() : 0 }]; }
   function setOrdered(date, id, on) {
     if (!canBrowse()) return Promise.resolve();
     return W([orderedOp(date, id, on)]);
@@ -2406,7 +2440,7 @@
   function removeOrderLine(date, id, restore) {
     if (!canBrowse() || !can('del')) return;
     var it = (S.ordLines || []).concat(S.ordAll || []).filter(function (x) { return x.id === id; })[0];
-    supd(ordRef(date, id), { deleted: !restore, deletedBy: restore ? '' : (me() || {}).name || '', deletedAt: restore ? 0 : Date.now() }).then(function () { ordPatch(date, id, { deleted: !restore }); }, failed);
+    supd(ordRef(date, id), { deleted: !restore, deletedBy: restore ? '' : (me() || {}).name || '', deletedAt: restore ? 0 : now() }).then(function () { ordPatch(date, id, { deleted: !restore }); }, failed);
     if (!restore) toast('Removed ' + (it ? it.text : 'the line') + ' from the order list', { label: 'Undo', fn: function () { removeOrderLine(date, id, true); } });
   }
   function ordSuggest() {
@@ -2460,7 +2494,7 @@
   }
   function dayShort(s) { return parseYmd(s).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }); }
   function loadOrdHist() {
-    var today = ymd(new Date());
+    var today = dayNow();
     if (!fb || S.ordHistBusy || S.ordHistFor === today) return;
     var tag = S.pin + '|' + today, c = dayCache('lk.ord.hist', tag);
     if (c) { S.ordHist = c; S.ordHistFor = today; return; }
@@ -2472,8 +2506,8 @@
     });
   }
   function oRegsHTML() {
-    if (!S.ordHist || S.ordDate !== ymd(new Date())) return '';
-    var dn = new Date().getDay(), dname = new Date().toLocaleDateString('en-AU', { weekday: 'long' }), m = {}, have = {};
+    if (!S.ordHist || S.ordDate !== dayNow()) return '';
+    var dn = T.dow(), dname = parseYmd(dayNow()).toLocaleDateString('en-AU', { weekday: 'long' }), m = {}, have = {};
     (S.ordLines || []).forEach(function (x) { if (!x.deleted) have[okey(x.text)] = 1; });
     S.ordHist.forEach(function (x) {
       var k = okey(x.text); if (!k || have[k]) return;
@@ -2516,17 +2550,17 @@
   }
   function ordersHTML() {
     if (can('add')) { loadOrdHist(); loadWRecent(false); loadOrdLearned(); maybeLearn(); }
-    var p = me(), br = canBrowse(), view = br ? (S.ordView || 'day') : 'day', today = ymd(new Date());
+    var p = me(), br = canBrowse(), view = br ? (S.ordView || 'day') : 'day', today = dayNow();
     if (!br && S.ordDate !== today) { S.ordDate = today; watchOrders(); }
     if (view === 'all') loadOrdAll(false);
     if (S.ordDate === today && S.ordState === 'ok') ordRoll();
     var live = (S.ordLines || []).filter(function (x) { return !x.deleted; });
     var nOrd = live.filter(function (x) { return x.ordered; }).length;
     /* on today's list, a line that was ticked as ordered stays for 10 minutes (so a mis-tap can be undone), then leaves the list. Other days show everything. */
-    var shown = live.filter(function (x) { return !(S.ordDate === today && x.ordered && x.orderedAt && Date.now() - x.orderedAt > ORD_HIDE); });
+    var shown = live.filter(function (x) { return !(S.ordDate === today && x.ordered && x.orderedAt && now() - x.orderedAt > ORD_HIDE); });
     clearTimeout(ordHideTimer);
     var nextHide = Infinity;
-    if (S.ordDate === today) live.forEach(function (x) { if (x.ordered && x.orderedAt) { var left = x.orderedAt + ORD_HIDE - Date.now(); if (left > 0 && left < nextHide) nextHide = left; } });
+    if (S.ordDate === today) live.forEach(function (x) { if (x.ordered && x.orderedAt) { var left = x.orderedAt + ORD_HIDE - now(); if (left > 0 && left < nextHide) nextHide = left; } });
     if (nextHide < Infinity) ordHideTimer = setTimeout(function () { if (S.name === 'orders') draw(); }, nextHide + 500);
     var tabs = br ? '<div class="nb-nav o-nav"><button type="button" class="chip" data-p="oview" data-v="day" aria-pressed="' + (view === 'day') + '">By day</button><button type="button" class="chip" data-p="oview" data-v="all" aria-pressed="' + (view === 'all') + '">Everything to order</button>' +
       (view === 'day' ? '<button type="button" class="chip" data-p="oday" data-d="-1" aria-label="Back one day">&lsaquo;</button><button type="button" class="chip" data-p="otoday" aria-pressed="' + (S.ordDate === today) + '">Today</button><button type="button" class="chip" data-p="oday" data-d="1" aria-label="Forward one day">&rsaquo;</button>' : '') + '</div>' : '';
@@ -2585,7 +2619,7 @@
   function dayCache(k, tag) { try { var c = JSON.parse(lsGet(k) || 'null'); return c && c.tag === tag ? c.v : null; } catch (e) { return null; } }
   function dayCacheSet(k, tag, v) { lsSet(k, JSON.stringify({ tag: tag, v: v })); }
   function loadWRecent(force) {
-    var today = ymd(new Date()), tag = S.pin + '|' + today;
+    var today = dayNow(), tag = S.pin + '|' + today;
     if (!fb || S.wRecentBusy || (S.wRecent && S.wRecentFor === today && !force)) return;
     var c = force ? null : dayCache('lk.w.recent', tag);
     if (c) { S.wRecent = c; S.wRecentFor = today; return; }
@@ -2643,13 +2677,13 @@
     if (!REASONS.some(function (r) { return r[0] === f.reason; })) { toast('Pick a reason.'); focusSel(window.matchMedia && window.matchMedia('(max-width: 719px)').matches ? '.w-rbtn' : '.w-rchips .chip'); return; }
     var secInfo = {}, sec = cleanSection(f.sec, secInfo), rm = matchRecipe(t), ref = fb.fs.doc(wCol(S.wDate));
     sset(ref, { text: t, amount: amt, unit: f.unit, reason: f.reason, action: f.act.trim().slice(0, 120), station: sec, recipe: rm ? rm.id : '',
-      addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: Date.now(), deleted: false }).catch(function (e) { failed(e, function () { if (!S.wf.text.trim()) S.wf = f; }); });
+      addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: now(), deleted: false }).catch(function (e) { failed(e, function () { if (!S.wf.text.trim()) S.wf = f; }); });
     if (sec) noteSection(sec);
     S.wf = { text: '', amt: '', unit: f.unit, reason: '', sec: sec, act: '' };
     draw(); focusK('w-text');
     /* Undo like the other lists. The rules let only the head chef or a sous chef change a wastage entry, so staff are told who can fix it. */
     var wmsg = 'Logged ' + t + (wpr.changes.length ? ' (corrected ' + wpr.changes.map(function (c) { return c[0] + ' to ' + c[1]; }).join(', ') + ')' : '') + (secInfo.from ? ' under ' + sec + ' (typed ' + secInfo.from + ')' : '');
-    if (canBrowse()) toast(wmsg, { label: 'Undo', fn: function () { supd(ref, { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: Date.now() }).catch(failed); } });
+    if (canBrowse()) toast(wmsg, { label: 'Undo', fn: function () { supd(ref, { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: now() }).catch(failed); } });
     else toast(wmsg + '. Wrong? Ask the head chef or a sous chef to remove it.', null, 6000);
   }
   function focusK(k) { var el = S.root && S.root.querySelector('[data-k="' + k + '"]'); if (el) el.focus(); }
@@ -2658,16 +2692,16 @@
     if (!canBrowse() || !can('del')) return;
     var it = (S.wLines || []).concat(S.wRecent || []).filter(function (x) { return x.id === id; })[0];
     // an older day changed: the copy kept on this phone is read again next time
-    if (date !== ymd(new Date())) lsSet('lk.w.recent', '');
-    supd(wRef(date, id), { deleted: !restore, deletedBy: restore ? '' : (me() || {}).name || '', deletedAt: restore ? 0 : Date.now() }).catch(failed);
+    if (date !== dayNow()) lsSet('lk.w.recent', '');
+    supd(wRef(date, id), { deleted: !restore, deletedBy: restore ? '' : (me() || {}).name || '', deletedAt: restore ? 0 : now() }).catch(failed);
     if (!restore) toast('Removed ' + (it ? it.text : 'the entry') + ' from the wastage log', { label: 'Undo', fn: function () { removeWaste(date, id, true); } });
   }
   function saveReview() {
     if (!can('add')) return;
     var p = me(), r = S.wReview || {};
     var a = (S.wrA != null ? S.wrA : r.avoidable || '').trim().slice(0, 300), c = (S.wrC != null ? S.wrC : r.change || '').trim().slice(0, 300);
-    sset(wDay(S.wDate), { avoidable: a, change: c, reviewBy: p ? p.name : '', reviewAt: Date.now() }, true).then(function () {
-      S.wReview = { avoidable: a, change: c, reviewBy: p ? p.name : '', reviewAt: Date.now() }; S.wrA = S.wrC = null; toast('Review saved'); 
+    sset(wDay(S.wDate), { avoidable: a, change: c, reviewBy: p ? p.name : '', reviewAt: now() }, true).then(function () {
+      S.wReview = { avoidable: a, change: c, reviewBy: p ? p.name : '', reviewAt: now() }; S.wrA = S.wrC = null; toast('Review saved'); 
     }, failed);
   }
   function wRow(x) {
@@ -2687,7 +2721,7 @@
       '</div><button type="button" class="btn sheet-x" data-p="sheet-close">Cancel</button></div>';
   }
   function wasteHTML() {
-    var p = me(), br = canBrowse(), today = ymd(new Date());
+    var p = me(), br = canBrowse(), today = dayNow();
     if (!br && S.wDate !== today) { S.wDate = today; watchWaste(); }
     var f = S.wf, live = (S.wLines || []).filter(function (x) { return !x.deleted; }).sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); });
     var shown = (S.wLines || []).filter(function (x) { return br || !x.deleted; }).sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); });
@@ -2726,7 +2760,7 @@
   }
   /* The last 7 days on one page, grouped by day, for the head chef and sous chefs. */
   function wasteWeekHTML() {
-    var today = ymd(new Date()), from = shift(today, -6);
+    var today = dayNow(), from = shift(today, -6);
     if (!S.wRecent && S.wRecentBusy) return '<p class="hint">Loading the last 7 days...</p>';
     var todayL = S.wDate === today ? (S.wLines || []).filter(function (x) { return !x.deleted; }) : [];
     var lines = todayL.concat((S.wRecent || []).filter(function (x) { return x.date >= from && x.date < today; }));
@@ -2748,7 +2782,7 @@
   }
   /* Last night's "change for the next shift" note, shown on the prep list (the latest of the last 3 days). */
   function loadWNote() {
-    var today = ymd(new Date());
+    var today = dayNow();
     if (!fb || S.wNoteFor === today) return;
     S.wNoteFor = today;
     var tag = S.pin + '|' + today, c = dayCache('lk.w.note', tag);
@@ -2759,8 +2793,8 @@
     });
   }
   function wNoteHTML() {
-    var n = S.wNote; if (!n || S.date !== ymd(new Date())) return '';
-    return '<div class="nb-flag"><span class="nb-sl">' + (n.date === shift(ymd(new Date()), -1) ? 'From yesterday\'s waste review' : 'From the ' + esc(parseYmd(n.date).toLocaleDateString('en-AU', { weekday: 'long' })) + ' waste review') + '</span><p>' + esc(n.change) + '</p>' + (n.reviewBy ? '<span class="nb-sw">' + esc(n.reviewBy) + '</span>' : '') + '</div>';
+    var n = S.wNote; if (!n || S.date !== dayNow()) return '';
+    return '<div class="nb-flag"><span class="nb-sl">' + (n.date === shift(dayNow(), -1) ? 'From yesterday\'s waste review' : 'From the ' + esc(parseYmd(n.date).toLocaleDateString('en-AU', { weekday: 'long' })) + ' waste review') + '</span><p>' + esc(n.change) + '</p>' + (n.reviewBy ? '<span class="nb-sw">' + esc(n.reviewBy) + '</span>' : '') + '</div>';
   }
 
   /* ---------- daily notes ----------
@@ -2781,12 +2815,12 @@
   }
   function noteRank(n) { return NOTE_RANK[n.tag] == null ? 6 : NOTE_RANK[n.tag]; }
   function todaysNotes() {
-    var t = ymd(new Date());
+    var t = dayNow();
     return (S.notes || []).filter(function (n) { return noteOn(n, t); }).sort(function (a, b) { return noteRank(a) - noteRank(b) || (a.at || 0) - (b.at || 0); });
   }
   function noteSig(list) { return list.map(function (n) { return n.id + ':' + (n.upd || n.at || 0); }).join('|'); }
   function noteSeen() { try { return JSON.parse(lsGet('lk.note.seen') || '{}') || {}; } catch (e) { return {}; } }
-  function noteUnread() { var l = todaysNotes(), s = noteSeen(); return !!l.length && !(s.d === ymd(new Date()) && s.sig === noteSig(l)); }
+  function noteUnread() { var l = todaysNotes(), s = noteSeen(); return !!l.length && !(s.d === dayNow() && s.sig === noteSig(l)); }
   function noteInfo() { var l = todaysNotes(); return { n: l.length, unread: noteUnread() }; }
   /* the bell in the top bar: hidden until there is a note for today, with a dot while it is unread */
   function noteBell() {
@@ -2798,10 +2832,10 @@
   }
   function notesInit() {
     if (!/^\d{4,6}$/.test(S.pin)) return;
-    sdk().then(function () { loadNotes(); loadMinutes(); startNoteTick(); }, function () {});
+    sdk().then(function () { loadNotes(); loadMinutes(); loadGuides(); startNoteTick(); }, function () {});
   }
   function loadNotes(force) {
-    var today = ymd(new Date());
+    var today = dayNow();
     if (!fb || !/^\d{4,6}$/.test(S.pin) || S.notesBusy) return;
     if (!force && S.notes && S.notesFor === today && Date.now() - S.notesAt < NOTE_STALE) return;
     S.notesBusy = true;
@@ -2849,7 +2883,7 @@
   }
   /* under the notes: last night's waste review change, and how the prep list stands (both already on the phone, no extra reads) */
   function noteSummary() {
-    var out = [], t = ymd(new Date()), w = S.wNote;
+    var out = [], t = dayNow(), w = S.wNote;
     if (w && w.change) out.push('<p><span class="nt-sl">' + (w.date === shift(t, -1) ? 'From yesterday\'s waste review' : 'From the ' + esc(parseYmd(w.date).toLocaleDateString('en-AU', { weekday: 'long' })) + ' waste review') + '</span> ' + esc(w.change) + '</p>');
     if (S.itemsState === 'ok' && S.date === t) {
       var live = S.items.filter(function (x) { return !x.deleted; }), open = live.filter(function (x) { return !x.done; });
@@ -2868,7 +2902,7 @@
   function noteOpen(pv) {
     var list = pv ? pv.list : todaysNotes();
     if (npop || !list.length) return;
-    var t = ymd(new Date()), admDev = lsGet('lk.admin') === '1', editor = admDev ? '<a class="nt-edit" href="#/admin" data-note="edit">Write or edit notes</a>' : (isSous() ? '<a class="nt-edit" href="#/prep" data-note="edit-sous">Write or edit notes</a>' : '');
+    var t = dayNow(), admDev = lsGet('lk.admin') === '1', editor = admDev ? '<a class="nt-edit" href="#/admin" data-note="edit">Write or edit notes</a>' : (isSous() ? '<a class="nt-edit" href="#/prep" data-note="edit-sous">Write or edit notes</a>' : '');
     nprev = document.activeElement;
     var el = document.createElement('div');
     el.className = 'nt-wrap';
@@ -2896,27 +2930,29 @@
     if (nprev && nprev.focus && document.body.contains(nprev)) { try { nprev.focus({ preventScroll: true }); } catch (e) {} }
     nprev = null;
   }
-  function noteMarkSeen() { lsSet('lk.note.seen', JSON.stringify({ d: ymd(new Date()), sig: noteSig(todaysNotes()) })); noteBell(); }
+  function noteMarkSeen() { lsSet('lk.note.seen', JSON.stringify({ d: dayNow(), sig: noteSig(todaysNotes()) })); noteBell(); }
   /* pops up by itself: after 10:30, when today has a note that has not been seen on this phone, and nobody is typing */
   function noteMaybePop() {
     if (npop || !noteUnread() || document.visibilityState === 'hidden' || Date.now() - nSnooze < 15 * 60000) return;
-    var d = new Date(), ae = document.activeElement;
-    if (d.getHours() * 60 + d.getMinutes() < NOTE_MIN) return;
+    var ae = document.activeElement;
+    if (T.mins() < NOTE_MIN) return;
     if (ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) && ae.type !== 'button') return;
     noteOpen();
   }
   /* A local check once a minute (no reads): pops the note when 10:30 arrives or typing stops, and fetches once at 10:30 and when a new day starts. */
   function startNoteTick() {
     if (nTick) return;
-    var d = new Date(); if (d.getHours() * 60 + d.getMinutes() >= NOTE_MIN) n1030 = ymd(d);
+    if (T.mins() >= NOTE_MIN) n1030 = dayNow();
     nTick = setInterval(function () {
-      var now = new Date(), t = ymd(now);
+      var t = dayNow();
+      if (S.guidesFor && S.guidesFor !== t) loadGuides();
       if (S.notesFor && S.notesFor !== t) { loadNotes(true); return; }
-      if (n1030 !== t && now.getHours() * 60 + now.getMinutes() >= NOTE_MIN) { n1030 = t; loadNotes(true); return; }
+      if (n1030 !== t && T.mins() >= NOTE_MIN) { n1030 = t; loadNotes(true); return; }
       noteMaybePop();
     }, 60000);
   }
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && /^\d{4,6}$/.test(S.pin) && fb) { loadNotes(); noteMaybePop(); } });
+  window.addEventListener('lk-clock', function () { draw(); });
   document.addEventListener('click', function (e) {
     var el = e.target.closest && e.target.closest('[data-note]');
     if (!el) return;
@@ -2945,14 +2981,14 @@
   var NOTE_START = { off: 'Off today: ', special: 'Special: ', 'function': 'Function: ', delivery: 'Delivery: ', safety: 'Safety: ', allergen: 'Allergen alert: ' };
   /* a note being written counts as unsaved once it differs from what the editor opened with (or has any text, if that is unknown) */
   function nfDirty() { var f = S.nf; if (!f || !S.nOpen) return false; return S.nfSnap ? JSON.stringify(f) !== S.nfSnap : !!f.text.trim(); }
-  function nfNew() { return { id: '', text: '', tag: 'none', start: ymd(new Date()), until: '', dows: [], run: false }; }
+  function nfNew() { return { id: '', text: '', tag: 'none', start: dayNow(), until: '', dows: [], run: false }; }
   function nfFrom(n) {
     var rep = n.dows && n.dows.length, until = n.until === NOTE_FAR || (n.until === n.start && !rep) ? '' : n.until;
     return { id: n.id, text: n.text, tag: n.tag || 'none', start: n.start, until: until, dows: (n.dows || []).slice(), run: !!until };
   }
   function noteDay(s, t) { return s === t ? 'today' : s === shift(t, 1) ? 'tomorrow' : dayShort(s); }
   function noteWhen(n) {
-    var t = ymd(new Date()), rep = n.dows && n.dows.length, out;
+    var t = dayNow(), rep = n.dows && n.dows.length, out;
     if (rep) {
       var names = DOW.filter(function (d) { return n.dows.indexOf(d) >= 0; }).map(function (d) { return DOWN[DOW.indexOf(d)]; }).join(', ');
       out = 'Every ' + names + ' from ' + noteDay(n.start, t) + (n.until === NOTE_FAR ? '' : ' until ' + noteDay(n.until, t));
@@ -2980,7 +3016,7 @@
   }
   function notesListHTML() {
     if (S.notes == null) return '<p class="hint">Loading...</p>';
-    var t = ymd(new Date()), live = S.notes.filter(function (n) { return !n.removed && n.until >= t; });
+    var t = dayNow(), live = S.notes.filter(function (n) { return !n.removed && n.until >= t; });
     var now = live.filter(function (n) { return noteOn(n, t); }).sort(function (a, b) { return noteRank(a) - noteRank(b) || (a.at || 0) - (b.at || 0); });
     var later = live.filter(function (n) { return !noteOn(n, t); }).sort(function (a, b) { return String(a.start).localeCompare(String(b.start)) || (a.at || 0) - (b.at || 0); });
     function grp(title, l, past) { return l.length ? '<h3 class="n-gh3">' + title + ' (' + l.length + ')</h3><ul class="nt-rows">' + l.map(function (n) { return noteRowAdmin(n, t, past); }).join('') + '</ul>' : ''; }
@@ -3010,7 +3046,7 @@
     return out + '<div class="btn-row n-pastrow">' + pastBtn + '</div>' + pastList;
   }
   function dayGridHTML(f) {
-    var t = ymd(new Date()), lead = (parseYmd(t).getDay() + 6) % 7, first = shift(t, -lead), end = f.until || f.start, cells = '', i;
+    var t = dayNow(), lead = (parseYmd(t).getDay() + 6) % 7, first = shift(t, -lead), end = f.until || f.start, cells = '', i;
     DOWN.forEach(function (h) { cells += '<span class="n-gh" aria-hidden="true">' + h + '</span>'; });
     for (i = 0; i < 35; i++) {
       var d = shift(first, i), dt = parseYmd(d), inr = d >= f.start && d <= end;
@@ -3022,7 +3058,7 @@
     return '<div class="n-grid" role="group" aria-label="Days">' + cells + '</div>';
   }
   function noteEditForm() {
-    var f = S.nf || (S.nf = nfNew()), t = ymd(new Date()), until = nfUntil(f);
+    var f = S.nf || (S.nf = nfNew()), t = dayNow(), until = nfUntil(f);
     var tags = NOTE_TAGS.map(function (x) { return '<button type="button" class="chip" data-p="n-tag" data-v="' + x[0] + '" aria-pressed="' + (f.tag === x[0]) + '">' + esc(x[1]) + '</button>'; }).join('');
     var dows = DOW.map(function (d, i) { return '<button type="button" class="chip sq" data-p="n-dow" data-v="' + d + '" aria-pressed="' + (f.dows.indexOf(d) >= 0) + '" aria-label="' + DOWN[i] + '">' + DOWN[i] + '</button>'; }).join('');
     var when = f.start && until >= f.start ? 'Shows: ' + noteWhen({ start: f.start, until: until, dows: f.dows }) + '.' : 'The last day cannot be before the first day.';
@@ -3057,8 +3093,8 @@
     if (!text) { S.nMsg = 'Write the note first.'; draw(); return; }
     if (!re.test(start || '') || !re.test(until)) { S.nMsg = 'Pick the first day.'; draw(); return; }
     if (until < start) { S.nMsg = 'The last day cannot be before the first day.'; draw(); return; }
-    var data = { text: text.slice(0, 400), tag: f.tag, start: start, until: until, dows: f.dows.slice().sort(), removed: false, upd: Date.now() };
-    if (!f.id) data.at = Date.now();
+    var data = { text: text.slice(0, 400), tag: f.tag, start: start, until: until, dows: f.dows.slice().sort(), removed: false, upd: now() };
+    if (!f.id) data.at = now();
     var ref = f.id ? docRef('notes', f.id) : fb.fs.doc(colRef('notes')), when = noteWhen({ start: start, until: until, dows: data.dows });
     S.nSaving = true; S.nMsg = ''; draw();
     sset(ref, data, !!f.id).then(function () {
@@ -3069,7 +3105,7 @@
   }
   function removeNote(id) {
     if (!arm('n-del:' + id)) return;
-    sset(docRef('notes', id), { removed: true, upd: Date.now() }, true).then(function () {
+    sset(docRef('notes', id), { removed: true, upd: now() }, true).then(function () {
       if (S.nf && S.nf.id === id) { S.nf = nfNew(); S.nOpen = false; }
       S.nMsg = 'Removed.'; loadNotes(true); draw();
     }, function () { S.nMsg = 'Could not remove. Check the connection and try again.'; draw(); });
@@ -3080,7 +3116,7 @@
     S.nPastN = more ? (S.nPastN || 30) + 30 : 30;
     var keep = Array.isArray(S.nPast) ? S.nPast : null;
     S.nPast = 'loading'; draw();
-    fb.fs.getDocs(fb.fs.query(colRef('notes'), fb.fs.where('until', '<', ymd(new Date())), fb.fs.orderBy('until', 'desc'), fb.fs.limit(S.nPastN))).then(function (snap) {
+    fb.fs.getDocs(fb.fs.query(colRef('notes'), fb.fs.where('until', '<', dayNow()), fb.fs.orderBy('until', 'desc'), fb.fs.limit(S.nPastN))).then(function (snap) {
       S.nPast = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }).filter(function (x) { return !x.removed; }); draw();
     }, function () { S.nPast = keep || 'error'; if (keep) toast('Could not load more. Check the connection.'); draw(); });
   }
@@ -3099,7 +3135,7 @@
   function loadSeen(id) {
     if (!fb) return;
     S.nSeen = S.nSeen || {}; S.nSeen[id] = { state: 'loading', names: [] }; draw();
-    fb.fs.getDocs(fb.fs.query(fb.fs.collection.apply(null, [fb.db].concat(base(), ['notes', id, 'seen'])), fb.fs.where('day', '==', ymd(new Date())))).then(function (snap) {
+    fb.fs.getDocs(fb.fs.query(fb.fs.collection.apply(null, [fb.db].concat(base(), ['notes', id, 'seen'])), fb.fs.where('day', '==', dayNow()))).then(function (snap) {
       var seen = {}, names = [];
       snap.docs.forEach(function (d) { var by = d.data().by; if (by && !seen[by]) { seen[by] = 1; names.push(personName(by) || 'Someone'); } });
       S.nSeen[id] = { state: 'ok', names: names.sort() }; draw();
@@ -3108,12 +3144,12 @@
   /* "Got it" on a phone where someone is signed in leaves one small record per person, note and day */
   function noteWriteSeen(list) {
     if (!fb || !S.who || !S.tok || !list.length) return;
-    var day = ymd(new Date()), rec; try { rec = JSON.parse(lsGet('lk.note.sw') || '{}') || {}; } catch (e) { rec = {}; }
+    var day = dayNow(), rec; try { rec = JSON.parse(lsGet('lk.note.sw') || '{}') || {}; } catch (e) { rec = {}; }
     if (rec.d !== day || rec.w !== S.who) rec = { d: day, w: S.who, ids: [] };
     list.forEach(function (n) {
       if (rec.ids.indexOf(n.id) >= 0) return;
       rec.ids.push(n.id); lsSet('lk.note.sw', JSON.stringify(rec));
-      sset(fb.fs.doc.apply(null, [fb.db].concat(base(), ['notes', n.id, 'seen', day + '_' + S.who])), { day: day, at: Date.now() }).catch(function () {});
+      sset(fb.fs.doc.apply(null, [fb.db].concat(base(), ['notes', n.id, 'seen', day + '_' + S.who])), { day: day, at: now() }).catch(function () {});
     });
   }
 
@@ -3136,7 +3172,7 @@
   function mnById(id) { return (S.mins || []).filter(function (m) { return m.id === id; })[0] || null; }
   function mnPub() { return (S.mins || []).filter(function (m) { return m.status === 'published' && !m.removed; }).sort(function (a, b) { return String(b.date).localeCompare(String(a.date)) || (b.no || 0) - (a.no || 0); }); }
   function mnDrafts() { return (S.mins || []).filter(function (m) { return m.status === 'draft' && !m.removed; }).sort(function (a, b) { return (b.upd || 0) - (a.upd || 0); }); }
-  function mnOpenList() { var from = shift(ymd(new Date()), -MN_OPEN); return mnPub().filter(function (m) { return m.date >= from; }); }
+  function mnOpenList() { var from = shift(dayNow(), -MN_OPEN); return mnPub().filter(function (m) { return m.date >= from; }); }
   function mnKey(m) { return m.id + '_' + m.v + '_' + S.who; }
   function mnUnsigned() {
     if (!S.who || !S.mins || (S.config && !who())) return [];
@@ -3153,7 +3189,7 @@
     return '<div class="mn-nudge" role="status"><span><b>Minutes not signed yet</b> Kitchen meeting, ' + esc(dayShort(u[0].date)) + (u.length > 1 ? ' and ' + (u.length - 1) + ' more' : '') + '</span><a class="mn-nudge-btn" href="#/minutes">Read and sign</a></div>';
   }
   function loadMinutes(force) {
-    var today = ymd(new Date());
+    var today = dayNow();
     if (!fb || !/^\d{4,6}$/.test(S.pin) || S.minsBusy) return;
     if (!force && S.mins && S.minsFor === today && Date.now() - S.minsAt < MN_STALE) return;
     S.minsBusy = true;
@@ -3195,7 +3231,7 @@
   }
   function mnList(t, link) { return '<ul class="mn-ul">' + mnLines(t).map(function (l) { return '<li>' + (link ? linkNote(l) : esc(l)) + '</li>'; }).join('') + '</ul>'; }
   function mnDocHTML(m, sign) {
-    var d = m.date ? parseYmd(m.date) : new Date(), n = 0, att = m.att || [], by = { present: [], apology: [], absent: [] };
+    var d = parseYmd(m.date || dayNow()), n = 0, att = m.att || [], by = { present: [], apology: [], absent: [] };
     function nx() { n++; return pad(n); }
     att.forEach(function (x) { if (by[x.st]) by[x.st].push(mnName(x.id)); });
     var cells = [['Time', m.start || ''], ['Location', m.loc || ''], ['Run by', mnName(m.chair)], ['Minutes taken by', mnName(m.taker)]].filter(function (c) { return c[1]; }).map(function (c) { return '<div class="mn-cell"><span>' + esc(c[0]) + '</span><b>' + esc(c[1]) + '</b></div>'; }).join('');
@@ -3219,7 +3255,7 @@
   function mnSignHTML(m) {
     var p = me(); if (!p) return '';
     var s = S.mmine[mnKey(m)], my = (m.att || []).filter(function (x) { return x.id === S.who; })[0], st = my ? my.st : 'absent';
-    if (s && s !== 'loading') return '<section class="mn-sign is-done"><h3 class="mn-bh">Signed</h3><p>' + esc(p.name) + ' signed on ' + esc(dayShort(ymd(new Date(s.at)))) + ' at ' + esc(clock(s.at)) + '. Version ' + m.v + '.</p></section>';
+    if (s && s !== 'loading') return '<section class="mn-sign is-done"><h3 class="mn-bh">Signed</h3><p>' + esc(p.name) + ' signed on ' + esc(dayShort(T.day(s.at))) + ' at ' + esc(clock(s.at)) + '. Version ' + m.v + '.</p></section>';
     if (s === undefined || s === 'loading') return '<section class="mn-sign mn-noprint"><p class="hint">Checking your sign-off...</p></section>';
     return '<section class="mn-sign mn-noprint"><h3 class="mn-bh">Sign off</h3><p>' + (st === 'present' ? 'I attended and have read and understood these minutes.' : 'I have read and understood these minutes.') + '</p>' +
       '<label class="label" for="mn-pin">Your PIN</label>' + pinField('mn-pin', 'mn-pin', S.mpin) +
@@ -3245,7 +3281,7 @@
     var m = mnById(id), p = who();
     if (!m || !p || !fb || !S.authed || !S.tok || S.mSigning || !S.mpinOk) return;
     var my = (m.att || []).filter(function (x) { return x.id === S.who; })[0], st = my ? my.st : 'absent', k = mnKey(m);
-    var ref = fb.fs.doc.apply(null, [fb.db].concat(base(), ['minutes', m.id, 'signs', m.v + '_' + S.who])), data = { v: m.v, st: st, at: Date.now(), name: p.name };
+    var ref = fb.fs.doc.apply(null, [fb.db].concat(base(), ['minutes', m.id, 'signs', m.v + '_' + S.who])), data = { v: m.v, st: st, at: now(), name: p.name };
     S.mSigning = true; S.mErr = ''; draw();
     sset(ref, data, false).then(function () {
       S.mSigning = false; S.mmine[k] = data; S.mpin = ''; S.mpinOk = false; minCard(); toast('Signed. Thank you.'); draw();
@@ -3260,7 +3296,7 @@
   function mfNew() {
     var prev = mnPub()[0], nos = (S.mins || []).map(function (m) { return m.no || 0; });
     var carried = prev ? (prev.acts || []).filter(function (a) { return a.st === 'open'; }).map(function (a) { return { what: a.what, who: a.who || '', by: a.by || '', st: 'open', carried: true }; }) : [];
-    return { id: '', no: (nos.length ? Math.max.apply(null, nos) : 0) + 1, v: 1, status: 'draft', date: ymd(new Date()), start: '', loc: '', chair: S.who || '', taker: '', att: {}, guests: '', decisions: '', menu: '', safety: '', dates: '', other: '', acts: carried, next: '', orig: null, prev: false };
+    return { id: '', no: (nos.length ? Math.max.apply(null, nos) : 0) + 1, v: 1, status: 'draft', date: dayNow(), start: '', loc: '', chair: S.who || '', taker: '', att: {}, guests: '', decisions: '', menu: '', safety: '', dates: '', other: '', acts: carried, next: '', orig: null, prev: false };
   }
   /* what the form held when it was opened, to tell whether Cancel would throw anything away */
   function mfSnap(f) { return f ? JSON.stringify(Object.assign({}, f, { prev: false, orig: null })) : ''; }
@@ -3283,7 +3319,7 @@
     people().forEach(function (p) { if (f.att[p.id]) att.push({ id: p.id, st: f.att[p.id] }); });
     var acts = f.acts.filter(function (a) { return String(a.what || '').trim(); }).map(function (a) { var o = { what: String(a.what).trim().slice(0, 160), who: a.who || '', by: a.by || '', st: a.st || 'open' }; if (a.carried) o.carried = true; return o; });
     return { no: f.no, v: f.v, status: publish ? 'published' : 'draft', date: f.date, start: f.start || '', loc: String(f.loc || '').trim().slice(0, 60), chair: f.chair || '', taker: f.taker || '', guests: String(f.guests || '').trim().slice(0, 120), next: f.next || '',
-      decisions: mfClip(f.decisions), menu: mfClip(f.menu), safety: mfClip(f.safety), dates: mfClip(f.dates), other: mfClip(f.other), att: att, acts: acts, removed: false, upd: Date.now() };
+      decisions: mfClip(f.decisions), menu: mfClip(f.menu), safety: mfClip(f.safety), dates: mfClip(f.dates), other: mfClip(f.other), att: att, acts: acts, removed: false, upd: now() };
   }
   function personSelect(k, val, i, any) {
     return '<select class="p-select" data-k="' + k + '"' + (i != null ? ' data-i="' + i + '"' : '') + ' aria-label="' + (k === 'mn-chair' ? 'Run by' : k === 'mn-taker' ? 'Minutes taken by' : 'Who') + '"><option value="">' + (any ? 'Team' : 'Pick') + '</option>' + (any ? '<option value="all"' + (val === 'all' ? ' selected' : '') + '>Everyone</option>' : '') + people().map(function (p) { return '<option value="' + esc(p.id) + '"' + (val === p.id ? ' selected' : '') + '>' + esc(p.name) + '</option>'; }).join('') + '</select>';
@@ -3330,12 +3366,12 @@
       var missing = people().filter(function (p) { return !f.att[p.id]; });
       if (missing.length) { S.mAttOpen = true; S.mMsg = 'Set attendance for ' + missing.slice(0, 4).map(function (p) { return p.name; }).join(', ') + (missing.length > 4 ? ' and ' + (missing.length - 4) + ' more' : '') + ' (Present, Apology or Absent).'; draw(); return; }
       if (!data.decisions && !data.menu && !data.safety && !data.dates && !data.other && !data.acts.length) { S.mMsg = 'Write something in at least one section first.'; draw(); return; }
-      data.pubAt = Date.now();
+      data.pubAt = now();
       if (wasPub) data.v = f.v + 1;
     } else if (!data.decisions && !data.menu && !data.safety && !data.dates && !data.other && !data.acts.length && !data.guests) { S.mMsg = 'Nothing to save yet.'; draw(); return; }
     // publishing starts sign-off for everyone (and a change means everyone signs again), so it takes a second tap
     if (publish && !arm('mn-pub')) return;
-    if (!f.id) data.at = Date.now();
+    if (!f.id) data.at = now();
     var ref = f.id ? mnRef(f.id) : fb.fs.doc(colRef('minutes')), ops = [];
     if (publish && wasPub && f.orig) {
       var snap = Object.assign({}, f.orig); delete snap.id; delete snap.by;
@@ -3354,23 +3390,23 @@
   function mnRef(id) { return docRef('minutes', id); }
   function removeMinutes(id) {
     if (!arm('mn-del:' + id)) return;
-    sset(mnRef(id), { removed: true, upd: Date.now() }, true).then(function () { S.mMsg = 'Removed.'; if (S.mSel === id) S.mSel = ''; loadMinutes(true); draw(); }, function () { S.mMsg = 'Could not remove. Check the connection and try again.'; draw(); });
+    sset(mnRef(id), { removed: true, upd: now() }, true).then(function () { S.mMsg = 'Removed.'; if (S.mSel === id) S.mSel = ''; loadMinutes(true); draw(); }, function () { S.mMsg = 'Could not remove. Check the connection and try again.'; draw(); });
   }
   /* who has signed the current version, who has not, and who is late */
   function mnRegister(m) {
     var sg = S.msigns[m.id], list = sg && sg.list ? sg.list.filter(function (s) { return s.v === m.v; }) : null;
     if (!list) return null;
-    var lateAt = (m.pubAt || m.at || Date.now()) + MN_LATE * 86400000, now = Date.now(), att = {}, rows = [];
+    var t = now(), lateAt = (m.pubAt || m.at || t) + MN_LATE * 86400000, att = {}, rows = [];
     (m.att || []).forEach(function (x) { att[x.id] = x.st; });
     people().forEach(function (p) {
       var s = list.filter(function (x) { return x.by === p.id; })[0], st = att[p.id] || 'absent';
-      rows.push({ id: p.id, name: p.name, att: st, at: s ? s.at : 0, signed: !!s, late: s ? s.at > lateAt : now > lateAt });
+      rows.push({ id: p.id, name: p.name, att: st, at: s ? s.at : 0, signed: !!s, late: s ? s.at > lateAt : t > lateAt });
     });
-    var chase = rows.filter(function (r) { return !r.signed; }), pubAt = m.pubAt || m.at || now;
-    return { rows: rows, chase: chase, days: Math.max(0, Math.floor((now - pubAt) / 86400000)), signed: rows.length - chase.length, late: rows.filter(function (r) { return r.signed && r.late; }).length };
+    var chase = rows.filter(function (r) { return !r.signed; }), pubAt = m.pubAt || m.at || t;
+    return { rows: rows, chase: chase, days: Math.max(0, Math.floor((t - pubAt) / 86400000)), signed: rows.length - chase.length, late: rows.filter(function (r) { return r.signed && r.late; }).length };
   }
   function mnOverdue() {
-    var latest = mnPub()[0], t = ymd(new Date());
+    var latest = mnPub()[0], t = dayNow();
     return latest ? (latest.acts || []).filter(function (a) { return a.st === 'open' && a.by && a.by < t; }) : [];
   }
   function mnRegisterHTML(pub) {
@@ -3392,7 +3428,7 @@
         cols: [
           { h: 'Person', th: true, html: function (r) { return esc(r.name); } },
           { h: 'Attendance', html: function (r) { return esc(r.att.charAt(0).toUpperCase() + r.att.slice(1)); } },
-          { h: 'Signed', html: function (r) { return r.signed ? esc(dayShort(ymd(new Date(r.at))) + ', ' + clock(r.at)) : '<span class="o-who-i">Not yet</span>'; } },
+          { h: 'Signed', html: function (r) { return r.signed ? esc(dayShort(T.day(r.at)) + ', ' + clock(r.at)) : '<span class="o-who-i">Not yet</span>'; } },
           { h: 'Status', cls: 'mnst', html: function (r) { return '<span class="' + (!r.signed || r.late ? 'mn-hot' : '') + '">' + (r.signed ? (r.late ? 'Signed late' : 'Signed') : (r.late ? 'Not signed (late)' : 'Not signed')) + '</span>'; } }
         ]
       });
@@ -3402,7 +3438,7 @@
       body = tiles + '<div class="mn-regrid">' + chase + '<div class="mn-regall"><button type="button" class="btn mn-noprint" data-p="mn-regall" aria-expanded="' + !!S.mRegAll + '">' + (S.mRegAll ? 'Hide the full list' : 'Show everyone (' + reg.rows.length + ')') + '</button>' + table + '</div></div>';
     }
     return '<section class="set-block mn-print"><span class="label">Sign-off register</span><span class="hint">Minutes ' + pad(m.no || 0) + ', ' + esc(longDate(m.date)) + ', version ' + m.v + (m.v > 1 ? '. Earlier versions are kept' : '') + '. Staff who have not signed within ' + MN_LATE + ' days are marked late. Everyone on the staff list signs, including apology and absent.</span>' + chips + body +
-      '<div class="a-print-h"><strong>Leichhardt Kitchen Book</strong> &middot; Minutes ' + pad(m.no || 0) + ' sign-off register &middot; version ' + m.v + '<span>Printed ' + esc(dayShort(ymd(new Date())) + ' ' + clock(Date.now())) + '</span></div>' +
+      '<div class="a-print-h"><strong>Leichhardt Kitchen Book</strong> &middot; Minutes ' + pad(m.no || 0) + ' sign-off register &middot; version ' + m.v + '<span>Printed ' + esc(dayShort(dayNow()) + ' ' + clock(now())) + '</span></div>' +
       '<div class="btn-row mn-noprint"><button type="button" class="btn dark" data-p="mn-print">Print or save as PDF</button><button type="button" class="btn" data-p="mn-csv" data-id="' + esc(m.id) + '">Download CSV</button><button type="button" class="btn" data-p="mn-refresh">Refresh</button>' + (mnCanWrite() ? '<button type="button" class="btn" data-p="mn-edit" data-id="' + esc(m.id) + '">Change as a new version</button><button type="button" class="btn" data-p="mn-remove" data-id="' + esc(m.id) + '">' + (armed('mn-del:' + m.id) ? 'Tap again to remove' : 'Remove') + '</button>' : '') + '</div></section>';
   }
   function minAdminHTML() {
@@ -3427,7 +3463,7 @@
   function csvMinutes(id) {
     var m = mnById(id), reg = m && mnRegister(m); if (!reg) return;
     var rows = [['Minutes', 'Version', 'Meeting date', 'Person', 'Attendance', 'Signed at', 'Status']];
-    reg.rows.forEach(function (r) { rows.push([pad(m.no || 0), m.v, m.date, r.name, r.att, r.signed ? ymd(new Date(r.at)) + ' ' + clock(r.at) : '', r.signed ? (r.late ? 'Signed late' : 'Signed') : (r.late ? 'Not signed (late)' : 'Not signed')]); });
+    reg.rows.forEach(function (r) { rows.push([pad(m.no || 0), m.v, m.date, r.name, r.att, r.signed ? T.day(r.at) + ' ' + clock(r.at) : '', r.signed ? (r.late ? 'Signed late' : 'Signed') : (r.late ? 'Not signed (late)' : 'Not signed')]); });
     downloadCSV('leichhardt-minutes-' + pad(m.no || 0) + '-v' + m.v + '.csv', rows);
   }
 
@@ -3436,7 +3472,7 @@
     if (!fb || S.configState !== 'ok') return;
     if (S.wStats && (S.wStats.loading || !force)) return;
     S.wStats = { loading: true, lines: [], reviews: [] };
-    var today = ymd(new Date()), dates = [], i;
+    var today = dayNow(), dates = [], i;
     for (i = 0; i < 60; i++) dates.push(shift(today, -i));
     Promise.all(dates.map(function (d) {
       return Promise.all([
@@ -3450,7 +3486,7 @@
   var WTIP = { excess: 'Prep smaller batches or less often.', expired: 'Order less or use it sooner. Check stock rotation.', fault: 'Check the method on the recipe card and run a quick refresher.', prep: 'Check trimming and yield.', returned: 'Check the dish against the recipe card and talk to front of house.' };
   function eachDayList(n, lines, reviews) {
     var i, rv = {}, days = []; reviews.forEach(function (r) { rv[r.date] = r; });
-    for (i = 0; i < n; i++) { var d = shift(ymd(new Date()), -i), l = lines.filter(function (x) { return x.date === d; }); days.push({ d: d, l: l, r: rv[d] && (rv[d].avoidable || rv[d].change) ? rv[d] : null }); }
+    for (i = 0; i < n; i++) { var d = shift(dayNow(), -i), l = lines.filter(function (x) { return x.date === d; }); days.push({ d: d, l: l, r: rv[d] && (rv[d].avoidable || rv[d].change) ? rv[d] : null }); }
     return lvHTML({
       key: 'waste-days', items: days, step: 7, tools: 14, noun: ['day', 'days'], empty: 'No days in this time.',
       filters: [['all', 'All days'], ['some', 'Something logged', function (x) { return x.l.length > 0; }], ['none', 'Nothing logged', function (x) { return !x.l.length; }], ['rev', 'Has a review', function (x) { return !!x.r; }]],
@@ -3465,7 +3501,7 @@
   }
   /* Waste calendar: entries per day, darker is more. Days nobody logged anything are marked. */
   function wasteCalHTML(n, lines) {
-    var today = ymd(new Date()), first = shift(today, -(n - 1)), start = first, i, by = {}, max = 0, inF = {};
+    var today = dayNow(), first = shift(today, -(n - 1)), start = first, i, by = {}, max = 0, inF = {};
     afDates(n, 0).forEach(function (d) { inF[d] = 1; });
     lines.forEach(function (x) { by[x.date] = (by[x.date] || []).concat([x]); });
     Object.keys(by).forEach(function (d) { max = Math.max(max, by[d].length); });
@@ -3502,7 +3538,7 @@
     var chips = filtersHTML('waste') + filterNote('waste');
     var head = '<section class="set-block">' + toolsHTML('waste', 'Wastage') + '<span class="hint">From the wastage log on the phones. Amounts are what people wrote, in kg, L, portions and pieces (grams are counted as kg). <a href="#/waste">Open the wastage log</a></span>' + chips;
     if (!ws || ws.loading) return head + '<p class="hint">Loading the last 60 days...</p></section>';
-    var af = AF(), from = shift(ymd(new Date()), -(n - 1));
+    var af = AF(), from = shift(dayNow(), -(n - 1));
     function wfilter(off) { var ds = {}; afDates(n, off).forEach(function (d) { ds[d] = 1; }); return ws.lines.filter(function (x) { return !x.deleted && ds[x.date] && (!af.sec || (x.station || 'General') === af.sec) && (!af.reason || x.reason === af.reason); }); }
     var lines = wfilter(0), plines = wfilter(n);
     var days = {}; lines.forEach(function (x) { days[x.date] = 1; });
@@ -3539,7 +3575,7 @@
       ]
     });
     var dw = {}, occ = {}, i;
-    for (i = 0; i < n; i++) { var dd = parseYmd(shift(ymd(new Date()), -i)).getDay(); occ[dd] = (occ[dd] || 0) + 1; }
+    for (i = 0; i < n; i++) { var dd = parseYmd(shift(dayNow(), -i)).getDay(); occ[dd] = (occ[dd] || 0) + 1; }
     lines.forEach(function (x) { var d = parseYmd(x.date).getDay(); dw[d] = (dw[d] || 0) + 1; });
     var who = {}; lines.forEach(function (x) { var k = x.addedBy || 'Unknown'; who[k] = (who[k] || 0) + 1; });
     var whoList = lvHTML({
@@ -3575,7 +3611,7 @@
     var f = fb.fs, p = me(), sent = q.slice(0, 20);
     Promise.all(sent.map(function (x) {
       var t = String(x.q || '').trim().slice(0, 60); if (!t) return null;
-      return sset(docRef('misses', lkey(t).slice(0, 60)), { q: t, n: f.increment(1), last: x.at || Date.now(), lastBy: p ? p.name : '' }, true);
+      return sset(docRef('misses', lkey(t).slice(0, 60)), { q: t, n: f.increment(1), last: x.at || now(), lastBy: p ? p.name : '' }, true);
     })).then(function () {
       /* the recipe book may have queued more searches while these were sending: read the queue again and drop only the ones sent */
       var cur; try { cur = JSON.parse(lsGet('lk.miss') || '[]'); } catch (e) { cur = []; }
@@ -3592,7 +3628,7 @@
     if (!ids.length) { if (Object.keys(v).length) lsSet('lk.views', '{}'); return; }
     flushingV = true;
     var f = fb.fs;
-    Promise.all(ids.map(function (id) { var r = recipeById(id); return sset(docRef('views', id), { name: r.name.slice(0, 80), n: f.increment(Math.min(v[id], 500)), last: Date.now() }, true); })).then(function () {
+    Promise.all(ids.map(function (id) { var r = recipeById(id); return sset(docRef('views', id), { name: r.name.slice(0, 80), n: f.increment(Math.min(v[id], 500)), last: now() }, true); })).then(function () {
       var cur; try { cur = JSON.parse(lsGet('lk.views') || '{}'); } catch (e) { cur = {}; }
       ids.forEach(function (id) { cur[id] = Math.max(0, (cur[id] || 0) - v[id]); if (!cur[id]) delete cur[id]; });
       Object.keys(cur).forEach(function (id) { if (!recipeById(id)) delete cur[id]; });
@@ -3645,6 +3681,500 @@
       }) : '<p class="hint">No empty searches yet.</p>');
   }
 
+  /* ---------- guides ----------
+     How-to guides for the team at #/guides: how to programme the iCombi, clean the fryer, where the order forms are.
+     The head chef adds them in the admin panel (Guides tab): a PDF or photos, a title, a category, and if wanted written steps and search words.
+     The free Firebase plan has no file storage and a Firestore record holds at most 1 MB, so the head chef's own phone or computer turns
+     each PDF page (drawn with pdf.js, loaded only then) or photo into one picture of under 1 MB and saves each picture as its own record.
+     Data: kitchens/<PIN>/guides/<id> { title, cat, sum, steps (one per line), kw (search words), text (the words read from the PDF, for search),
+       thumb (a small picture of page 1), pages, dims [{ w, h }], v (goes up when the file is replaced), file (its name), removed, at, upd }
+       kitchens/<PIN>/guides/<id>/pages/<n> { img (a WebP or JPEG data URL), w, h, v, n }
+     Staff need only the kitchen PIN to read them, like the recipe book. Only the head chef (Google account) writes them. Guides are never
+     deleted, only flagged as removed.
+     Reads stay small: the list is read once a day per phone and kept on the phone (lk.guides), so the recipe book links to guides with no
+     reads; opening the Guides page reads it again after 30 minutes. A guide's pages are read the first time that version is opened on a
+     phone; after that they come from the phone's own copy (Firestore's offline cache), so they open with no signal too. No listener, no polling. */
+  var G_CATS = [['equipment', 'Equipment'], ['cleaning', 'Cleaning'], ['safety', 'Food safety'], ['prep', 'Prep and cooking'], ['stock', 'Orders and stock'], ['shift', 'Opening and closing'], ['other', 'Other']];
+  var G_MAXP = 20, G_IMG = 950000, G_LONG = 2000, G_TEXT = 6000, G_STALE = 30 * 60000, G_NEW = 14 * 86400000;
+  var PDFJS = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/';
+  var G_RANK = {}; G_CATS.forEach(function (c, i) { G_RANK[c[0]] = i; });
+  var G_ICON = '<svg viewBox="0 0 64 64" width="40" height="40" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M32 16c-6-4-14-6-24-6v38c10 0 18 2 24 6 6-4 14-6 24-6V10c-10 0-18 2-24 6z"/><path d="M32 16v38"/><path d="M14 20c4 0 8 1 12 3M14 30c4 0 8 1 12 3M38 23c4-2 8-3 12-3M38 33c4-2 8-3 12-3"/></svg>';
+  function gCatName(c) { return (G_CATS.filter(function (k) { return k[0] === c; })[0] || [0, 'Other'])[1]; }
+  function gRef(id) { return docRef('guides', id); }
+  function gPageRef(id, n) { return fb.fs.doc.apply(null, [fb.db].concat(base(), ['guides', id, 'pages', String(n)])); }
+  function gPagesCol(id) { return fb.fs.collection.apply(null, [fb.db].concat(base(), ['guides', id, 'pages'])); }
+  function gById(id) { return (S.guides || []).filter(function (g) { return g.id === id; })[0] || null; }
+  function gOrder(a, b) { return (G_RANK[a.cat] == null ? 99 : G_RANK[a.cat]) - (G_RANK[b.cat] == null ? 99 : G_RANK[b.cat]) || String(a.title).localeCompare(String(b.title)); }
+  function gLive() { return (S.guides || []).filter(function (g) { return !g.removed && g.title; }).sort(gOrder); }
+  function gSig(list) { return (list || []).map(function (g) { return g.id + ':' + (g.upd || 0) + (g.removed ? 'r' : ''); }).join('|'); }
+  function gIsNew(g) { return now() - (g.at || 0) < G_NEW; }
+  function gMeta(g) {
+    var n = g.pages || 0, st = mnLines(g.steps).length, out = [];
+    if (n) out.push(n + (n === 1 ? ' page' : ' pages'));
+    if (st) out.push(st + (st === 1 ? ' step' : ' steps'));
+    if (g.upd || g.at) out.push('Updated ' + dayShort(T.day(g.upd || g.at)));
+    return out.join(' · ');
+  }
+
+  /* the list is kept on the phone, so the Guides page and the recipe cards have it straight away */
+  (function () {
+    try { var c = JSON.parse(lsGet('lk.guides') || 'null'); if (c && c.pin === S.pin && Array.isArray(c.list)) { S.guides = c.list; S.guidesFor = c.d || ''; S.guidesAt = c.at || 0; } } catch (e) {}
+  })();
+  function gKeep() {
+    var c = { pin: S.pin, d: S.guidesFor, at: S.guidesAt, list: S.guides || [] }, t = JSON.stringify(c);
+    // a very long list keeps only the start of each PDF's words and no small pictures, so the phone's storage never fills up
+    if (t.length > 1500000) t = JSON.stringify(Object.assign(c, { list: c.list.map(function (g) { return Object.assign({}, g, { thumb: '', text: String(g.text || '').slice(0, 600) }); }) }));
+    lsSet('lk.guides', t);
+  }
+  function gForget() { S.guides = null; S.guidesFor = ''; S.guidesAt = 0; S.gRetry = 0; lsSet('lk.guides', ''); }
+  function loadGuides(force) {
+    if (!fb || !/^\d{4,6}$/.test(S.pin) || S.gBusy || Date.now() < S.gRetry) return;
+    var today = dayNow(), pin = S.pin;
+    if (!force && S.guides && S.guidesFor === today) return;
+    S.gBusy = true;
+    fb.fs.getDocs(colRef('guides')).then(function (snap) {
+      S.gBusy = false;
+      if (pin !== S.pin) return;
+      var list = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }), was = S.guides, changed = !was || gSig(list) !== gSig(was);
+      S.guides = list; S.guidesFor = today; S.guidesAt = Date.now(); gKeep();
+      if (changed) { try { window.dispatchEvent(new Event('lk-guides')); } catch (e) {} draw(); }
+    }, function () {
+      // no signal or a wrong PIN: carry on with the list kept on the phone and try again in a minute
+      S.gBusy = false; S.gRetry = Date.now() + 60000; if (!S.guides) S.guides = []; draw();
+    });
+  }
+
+  /* search: every word must be in the guide (title, what it is for, steps, search words, category or the words in the PDF); titles first */
+  function gHay(g) { return [g.title, g.sum, g.steps, g.kw, gCatName(g.cat), g.text].join(' ').toLowerCase(); }
+  function gWords(q) { return String(q || '').toLowerCase().replace(/[^a-z0-9À-ɏ]+/g, ' ').trim().split(' ').filter(Boolean); }
+  function gMatch(list, q) {
+    var ws = gWords(q);
+    if (!ws.length) return list;
+    return list.filter(function (g) { var h = gHay(g); return ws.every(function (w) { return h.indexOf(w) >= 0; }); }).map(function (g) {
+      var top = [g.title, g.kw].join(' ').toLowerCase();
+      return { g: g, n: ws.filter(function (w) { return top.indexOf(w) >= 0; }).length };
+    }).sort(function (a, b) { return b.n - a.n || gOrder(a.g, b.g); }).map(function (x) { return x.g; });
+  }
+  /* a found word that is only inside the steps or the PDF shows with the words around it */
+  function gSnip(g, q) {
+    var ws = gWords(q), top = [g.title, g.sum, g.kw, gCatName(g.cat)].join(' ').toLowerCase(), src = (String(g.steps || '') + ' ' + String(g.text || '')).replace(/\s+/g, ' '), lt = src.toLowerCase(), at = -1;
+    ws.some(function (w) { if (top.indexOf(w) >= 0) return false; at = lt.indexOf(w); return at >= 0; });
+    if (at < 0) return '';
+    var a = Math.max(0, at - 40), b = Math.min(src.length, at + 90);
+    return (a ? '...' : '') + src.slice(a, b).trim() + (b < src.length ? '...' : '');
+  }
+
+  /* Which recipe cards a guide belongs on: cards it names (the same names a note links to, "Pork Belly"), and cards that mention one of
+     its search words ("iCombi" puts the iCombi guide on every card with an iCombi tip or step). Worked out once per change of the list. */
+  var gIdx = null;
+  function gWordAt(lt, w) {
+    var i = lt.indexOf(w);
+    while (i >= 0) {
+      var e = i + w.length;
+      if (lt.charAt(e) === 's') e++;
+      if (!/[a-z0-9]/.test(lt.charAt(i - 1)) && !/[a-z0-9]/.test(lt.charAt(e))) return true;
+      i = lt.indexOf(w, i + 1);
+    }
+    return false;
+  }
+  function gKw(g) { return String(g.kw || '').toLowerCase().split(/[,;\n]+/).map(function (w) { return w.replace(/\s+/g, ' ').trim(); }).filter(function (w) { return w.length >= 4; }); }
+  function gCardText(r) {
+    return ' ' + [r.name, r.tip ? r.tip.title + ' ' + r.tip.text : '', r.safety ? r.safety.title + ' ' + r.safety.text : ''].concat((r.sections || []).map(function (s) { return s.title + ' ' + s.steps.join(' '); })).join(' ').toLowerCase().replace(/\s+/g, ' ') + ' ';
+  }
+  var gCardsText = null;
+  function gLinkIds(g) {
+    var lt = ' ' + [g.title, g.sum, g.steps, g.kw, g.text].join(' ').toLowerCase().replace(/\s+/g, ' ') + ' ', ids = [], kws = gKw(g);
+    noteNames().forEach(function (c) { if (ids.indexOf(c.id) < 0 && gWordAt(lt, c.n)) ids.push(c.id); });
+    if (kws.length) {
+      if (!gCardsText) { gCardsText = {}; D.recipes.forEach(function (r) { gCardsText[r.id] = gCardText(r); }); }
+      D.recipes.forEach(function (r) { if (ids.indexOf(r.id) < 0 && kws.some(function (w) { return gWordAt(gCardsText[r.id], w); })) ids.push(r.id); });
+    }
+    return ids;
+  }
+  function gIndex() {
+    var sig = gSig(S.guides);
+    if (gIdx && gIdx.sig === sig) return gIdx;
+    var idx = { sig: sig, by: {}, of: {} };
+    gLive().forEach(function (g) {
+      var ids = gLinkIds(g);
+      idx.of[g.id] = ids;
+      ids.forEach(function (id) { (idx.by[id] = idx.by[id] || []).push(g.id); });
+    });
+    gIdx = idx;
+    return idx;
+  }
+  function gCards(g) { return (gIndex().of[g.id] || []).map(recipeById).filter(Boolean); }
+  function guidesFor(rid) { return (gIndex().by[rid] || []).map(gById).filter(Boolean).map(function (g) { return { id: g.id, title: g.title, cat: gCatName(g.cat) }; }); }
+  function guideSearch(q) { return gWords(q).join('').length < 3 ? [] : gMatch(gLive(), q).slice(0, 4).map(function (g) { return { id: g.id, title: g.title }; }); }
+
+  /* A guide's pages: from the phone's own copy when it has this version, otherwise one read per page. Shown through blob: links so
+     a redraw of the page never copies the big pictures again. */
+  var gPg = {};
+  function gBlob(u) {
+    try {
+      var i = u.indexOf(','), bin = atob(u.slice(i + 1)), a = new Uint8Array(bin.length), k;
+      for (k = 0; k < bin.length; k++) a[k] = bin.charCodeAt(k);
+      return URL.createObjectURL(new Blob([a], { type: u.slice(5, i).split(';')[0] || 'image/jpeg' }));
+    } catch (e) { return u; }
+  }
+  function gPagesFor(g) {
+    var v = g.v || 1, k = g.id + ':' + v, e = gPg[k];
+    if (e && (e.state !== 'error' || Date.now() < e.retry)) return e;
+    e = gPg[k] = { state: 'loading', urls: [] };
+    if (!g.pages) { e.state = 'ok'; return e; }
+    var newer = false;
+    function pick(sn) {
+      var d = sn.docs.map(function (x) { return x.data(); });
+      if (d.some(function (x) { return (x.v || 0) > v; })) newer = true;
+      d = d.filter(function (x) { return x.v === v && x.img; });
+      return d.length >= g.pages ? d : null;
+    }
+    sdk().then(function () {
+      var col = gPagesCol(g.id), fromCache = fb.fs.getDocsFromCache ? fb.fs.getDocsFromCache(col).then(pick, function () { return null; }) : Promise.resolve(null);
+      return fromCache.then(function (d) { return d || fb.fs.getDocs(col).then(pick); });
+    }).then(function (d) {
+      if (!d) throw new Error('pages missing');
+      d.sort(function (a, b) { return (a.n || 0) - (b.n || 0); });
+      Object.keys(gPg).forEach(function (o) { if (o !== k && o.indexOf(g.id + ':') === 0) { gPg[o].urls.forEach(function (u) { try { URL.revokeObjectURL(u); } catch (x) {} }); delete gPg[o]; } });
+      e.urls = d.slice(0, g.pages).map(function (x) { return gBlob(x.img); }); e.state = 'ok';
+      draw(); gzDraw();
+    }).catch(function () {
+      e.state = 'error'; e.retry = Date.now() + 30000;
+      // the head chef replaced the file since this phone read the list: read the list again
+      if (newer) { S.gRetry = 0; loadGuides(true); }
+      draw();
+    });
+    return e;
+  }
+
+  /* ---- the Guides page, as staff use it ---- */
+  function gThumbHTML(g) { return '<span class="g-thumb" aria-hidden="true">' + (g.thumb ? '<img src="' + esc(g.thumb) + '" alt="">' : G_ICON) + '</span>'; }
+  function gCardHTML(g, q) {
+    var snip = q ? gSnip(g, q) : '';
+    return '<li><a class="g-card" href="#/guides/' + encodeURIComponent(g.id) + '">' + gThumbHTML(g) + '<span class="g-cb"><span class="g-ct">' + esc(gCatName(g.cat)) + (gIsNew(g) ? '<span class="g-new">New</span>' : '') + '</span>' +
+      '<b class="g-cn">' + esc(g.title) + '</b>' + (g.sum ? '<span class="g-cs">' + esc(g.sum) + '</span>' : '') + (snip ? '<span class="g-snip">' + esc(snip) + '</span>' : '') +
+      '<span class="g-cm">' + esc(gMeta(g)) + '</span></span></a></li>';
+  }
+  function gAdminLink() { return lsGet('lk.admin') === '1' ? '<p class="g-wl g-noprint"><button type="button" class="p-link" data-p="g-admin">Add or change guides</button></p>' : ''; }
+  function gListHTML() {
+    var q = S.gq.trim(), list = gLive().filter(function (g) { return S.gcat === 'all' || g.cat === S.gcat; });
+    if (q) {
+      list = gMatch(list, q);
+      if (!list.length) return '<p class="p-empty">No guide matches "' + esc(q) + '"' + (S.gcat !== 'all' ? ' in ' + esc(gCatName(S.gcat)) : '') + '. <button type="button" class="p-x" data-p="g-clear">Clear the search</button></p><p class="hint">Ask the head chef if a guide is missing.</p>';
+      return '<p class="lv-count" role="status">' + list.length + (list.length === 1 ? ' guide matches' : ' guides match') + '</p><ul class="g-cards">' + list.map(function (g) { return gCardHTML(g, q); }).join('') + '</ul>';
+    }
+    return G_CATS.map(function (c) {
+      var l = list.filter(function (g) { return g.cat === c[0]; });
+      return l.length ? '<section class="g-grp" aria-label="' + esc(c[1]) + '"><h3 class="g-gh"><span>' + esc(c[1]) + '</span><span>' + l.length + '</span></h3><ul class="g-cards">' + l.map(function (g) { return gCardHTML(g, ''); }).join('') + '</ul></section>' : '';
+    }).join('');
+  }
+  function guidesPageHTML() {
+    loadGuides(Date.now() - S.guidesAt > G_STALE);
+    if (S.gSel) return guideDocHTML();
+    var live = gLive(), head = '<header class="g-head"><span class="g-eb">Leichhardt Hotel Kitchen</span><h2 class="g-title" id="rtitle" tabindex="-1">Guides</h2><p class="g-lead">How to work the equipment, clean it and find things. Written by the head chef.</p></header>';
+    if (S.guides == null) return '<section class="g-page">' + head + '<p class="hint">Loading...</p></section>';
+    if (!live.length) return '<section class="g-page">' + head + '<p class="p-empty">No guides yet. The head chef adds them in the admin panel.</p>' + gAdminLink() + '</section>';
+    var cats = G_CATS.filter(function (c) { return live.some(function (g) { return g.cat === c[0]; }); });
+    if (S.gcat !== 'all' && !cats.some(function (c) { return c[0] === S.gcat; })) S.gcat = 'all';
+    var chips = cats.length > 1 ? '<div class="chips scroll g-cats" role="group" aria-label="Category">' + [['all', 'All']].concat(cats).map(function (c) {
+      var n = c[0] === 'all' ? live.length : live.filter(function (g) { return g.cat === c[0]; }).length;
+      return '<button type="button" class="chip" data-p="g-cat" data-v="' + c[0] + '" aria-pressed="' + (S.gcat === c[0]) + '">' + esc(c[1]) + ' <span class="lv-n">' + n + '</span></button>';
+    }).join('') + '</div>' : '';
+    return '<section class="g-page">' + head +
+      '<div class="g-find"><label class="visually-hidden" for="g-q">Search the guides</label><input id="g-q" type="search" class="search" data-k="g-q" placeholder="Search: oven, fryer, cleaning" value="' + esc(S.gq) + '" autocomplete="off" enterkeyhint="search"></div>' + chips +
+      '<div id="g-list" class="g-list">' + gListHTML() + '</div>' + gAdminLink() + '</section>';
+  }
+  function guideDocHTML() {
+    var g = gById(S.gSel), back = '<nav class="g-top g-noprint" aria-label="Back"><a class="p-link" href="#/guides">All guides</a></nav>';
+    if (!g || g.removed) return back + '<section class="g-page"><h2 class="g-title" id="rtitle" tabindex="-1">Guide not found</h2><p class="hint">' + (S.guides == null || S.gBusy ? 'Loading...' : 'This guide was removed or the link is old. Look for it in the list.') + '</p></section>';
+    var pv = gPagesFor(g), n = g.pages || 0, steps = mnLines(g.steps), cards = gCards(g), figs = '', i;
+    for (i = 0; i < n; i++) {
+      var d = (g.dims || [])[i] || { w: 1414, h: 2000 }, u = pv.urls[i];
+      figs += '<figure class="g-pg">' + (u ? '<button type="button" class="g-pgb" data-p="g-zoom" data-i="' + i + '" aria-label="' + esc('Open page ' + (i + 1) + ' big') + '"><img src="' + esc(u) + '" width="' + (+d.w || 1414) + '" height="' + (+d.h || 2000) + '" alt="' + esc('Page ' + (i + 1) + ' of ' + g.title) + '"></button>' :
+        '<div class="g-ph" style="aspect-ratio: ' + (+d.w || 1414) + ' / ' + (+d.h || 2000) + '">' + (pv.state === 'error' ? 'Could not load this page.' : 'Loading page ' + (i + 1) + '...') + '</div>') +
+        (n > 1 ? '<figcaption>Page ' + (i + 1) + ' of ' + n + '</figcaption>' : '') + '</figure>';
+    }
+    var admin = S.level === 'owner' || lsGet('lk.admin') === '1';
+    return back + '<article class="g-doc"><header class="g-dh"><span class="g-eb">' + esc(gCatName(g.cat)) + ' guide</span><h2 class="g-title" id="rtitle" tabindex="-1">' + esc(g.title) + '</h2>' +
+      (g.sum ? '<p class="g-lead">' + esc(g.sum) + '</p>' : '') + '<p class="g-meta">' + esc(gMeta(g)) + '</p></header>' +
+      (steps.length ? '<section class="g-steps"><h3 class="g-h3">Steps</h3><ol class="g-ol">' + steps.map(function (t) { return '<li><span class="g-c" aria-hidden="true"></span><span>' + linkNote(t) + '</span></li>'; }).join('') + '</ol></section>' : '') +
+      (n ? '<section class="g-pages" aria-label="Pages"><p class="hint g-noprint">Tap a page to open it big.</p>' + figs +
+        (pv.state === 'error' ? '<p class="p-err g-noprint">Could not load the pages. Check the connection. <button type="button" class="p-x" data-p="g-retry">Try again</button></p>' : '') + '</section>' : '') +
+      (cards.length ? '<section class="g-rec g-noprint"><h3 class="g-h3">On these recipe cards</h3><div class="g-rchips">' + cards.map(function (r) { return '<a class="g-rchip" href="#/r/' + esc(r.id) + '">' + esc(r.name) + '</a>'; }).join('') + '</div></section>' : '') +
+      '<div class="btn-row g-noprint"><button type="button" class="btn" data-p="g-print">Print</button>' + (admin ? '<button type="button" class="btn" data-p="g-change" data-id="' + esc(g.id) + '">Change this guide</button>' : '') + '</div></article>';
+  }
+  function printGuide() {
+    document.documentElement.classList.add('print-guide');
+    function done() { document.documentElement.classList.remove('print-guide'); window.removeEventListener('afterprint', done); }
+    window.addEventListener('afterprint', done);
+    setTimeout(function () { window.print(); setTimeout(function () { if (document.documentElement.classList.contains('print-guide') && !window.matchMedia('print').matches) done(); }, 1500); }, 50);
+  }
+
+  /* A page opened big: over everything (appended to the body, so page redraws leave it alone), Previous and Next, Fit or Full size.
+     Its clicks use data-gz. Escape or Close shuts it. Pinching zooms further on a phone. */
+  var gz = null;
+  function gzOpen(id, i) {
+    if (gz) gzClose();
+    var el = document.createElement('div');
+    el.className = 'gz-wrap'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true');
+    gz = { id: id, i: i, full: false, el: el, prev: document.activeElement };
+    document.body.appendChild(el);
+    document.documentElement.classList.add('gz-open');
+    gzDraw();
+    var c = el.querySelector('[data-gz="close"]'); if (c) c.focus({ preventScroll: true });
+  }
+  function gzDraw() {
+    if (!gz) return;
+    var g = gById(gz.id), e = g && gPg[g.id + ':' + (g.v || 1)];
+    if (!g || !e) { gzClose(); return; }
+    var n = g.pages || 0, u = e.urls[gz.i], d = (g.dims || [])[gz.i] || {};
+    gz.el.setAttribute('aria-label', 'Page ' + (gz.i + 1) + ' of ' + n + ', ' + g.title);
+    gz.el.innerHTML = '<div class="gz-bar"><span class="gz-t">' + esc(g.title) + '<small>Page ' + (gz.i + 1) + ' of ' + n + '</small></span><span class="gz-btns">' +
+      (n > 1 ? '<button type="button" class="gz-b" data-gz="prev"' + (gz.i ? '' : ' disabled') + '>Previous</button><button type="button" class="gz-b" data-gz="next"' + (gz.i < n - 1 ? '' : ' disabled') + '>Next</button>' : '') +
+      '<button type="button" class="gz-b" data-gz="size">' + (gz.full ? 'Fit to screen' : 'Full size') + '</button><button type="button" class="gz-b gz-x" data-gz="close">Close</button></span></div>' +
+      '<div class="gz-body' + (gz.full ? ' is-full' : '') + '">' + (u ? '<img src="' + esc(u) + '" alt="' + esc('Page ' + (gz.i + 1) + ' of ' + g.title) + '"' + (d.w ? ' width="' + (+d.w) + '" height="' + (+d.h) + '"' : '') + '>' : '<p class="gz-wait">Loading...</p>') + '</div>';
+  }
+  function gzClose() {
+    if (!gz) return;
+    var prev = gz.prev;
+    if (gz.el.parentNode) gz.el.parentNode.removeChild(gz.el);
+    gz = null;
+    document.documentElement.classList.remove('gz-open');
+    if (prev && prev.focus && document.body.contains(prev)) { try { prev.focus({ preventScroll: true }); } catch (e) {} }
+  }
+  document.addEventListener('click', function (e) {
+    var el = gz && e.target.closest && e.target.closest('[data-gz]');
+    if (!el || !gz.el.contains(el)) return;
+    var a = el.getAttribute('data-gz'), g = gById(gz.id);
+    if (a === 'close') { gzClose(); return; }
+    if (a === 'size') { gz.full = !gz.full; gzDraw(); gz.el.querySelector('[data-gz="size"]').focus(); return; }
+    if ((a === 'prev' || a === 'next') && g) { gz.i = Math.max(0, Math.min((g.pages || 1) - 1, gz.i + (a === 'next' ? 1 : -1))); gzDraw(); var b = gz.el.querySelector('[data-gz="' + a + '"]:not([disabled])') || gz.el.querySelector('[data-gz="close"]'); if (b) b.focus(); }
+  });
+  document.addEventListener('keydown', function (e) {
+    if (!gz) return;
+    if (e.key === 'Escape') { e.preventDefault(); gzClose(); return; }
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { var b = gz.el.querySelector('[data-gz="' + (e.key === 'ArrowRight' ? 'next' : 'prev') + '"]:not([disabled])'); if (b) { e.preventDefault(); b.click(); } return; }
+    if (e.key !== 'Tab') return;
+    var f = Array.prototype.filter.call(gz.el.querySelectorAll('button:not([disabled])'), function (x) { return x.offsetParent !== null; });
+    if (!f.length) return;
+    if (e.shiftKey && (document.activeElement === f[0] || !gz.el.contains(document.activeElement))) { e.preventDefault(); f[f.length - 1].focus(); }
+    else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+  });
+  window.addEventListener('hashchange', function () { if (gz) gzClose(); });
+
+  /* ---- adding and changing guides (admin panel, Guides tab, head chef only) ---- */
+  var gSeq = 0;
+  function gfNew() { return { id: '', nid: '', title: '', cat: '', sum: '', steps: '', kw: '', pages: null, text: '', file: '', busy: '', msg: '', saving: false }; }
+  function gfFrom(g) { return { id: g.id, nid: '', title: g.title || '', cat: g.cat || 'other', sum: g.sum || '', steps: g.steps || '', kw: g.kw || '', pages: null, text: '', file: '', busy: '', msg: '', saving: false }; }
+  function gfSnap(f) { return f ? JSON.stringify([f.title, f.cat, f.sum, f.steps, f.kw, f.pages ? f.pages.map(function (p) { return p.k; }) : null]) : ''; }
+  function gfDirty() { return !!S.gf && (!!S.gf.busy || !!S.gf.saving || gfSnap(S.gf) !== S.gfSnap); }
+  function gOpenEditor(f) {
+    S.gf = f; S.gfSnap = gfSnap(f); S.gMsg = ''; S.atab = 'guides'; lsSet('lk.prep.atab', 'guides'); draw();
+    var t = S.root && S.root.querySelector('[data-k="g-title"]');
+    if (t) { t.focus({ preventScroll: true }); t.scrollIntoView({ block: 'start' }); }
+  }
+  var pdfP = null;
+  function pdfjs() {
+    if (pdfP) return pdfP;
+    pdfP = import(PDFJS + 'legacy/build/pdf.min.mjs').then(function (m) { m.GlobalWorkerOptions.workerSrc = PDFJS + 'legacy/build/pdf.worker.min.mjs'; return m; }, function (e) { pdfP = null; throw e; });
+    return pdfP;
+  }
+  var WEBP = null;
+  function webpOk() { if (WEBP == null) { var c = document.createElement('canvas'); c.width = c.height = 1; WEBP = c.toDataURL('image/webp').indexOf('data:image/webp') === 0; } return WEBP; }
+  /* one page as a picture of under 950 kB: WebP where the browser can make it (JPEG otherwise), less sharp and then smaller until it fits */
+  function gEncode(cv) {
+    var src = cv, qs = [0.86, 0.76, 0.66, 0.56], url = '', t, i;
+    for (t = 0; t < 4; t++) {
+      for (i = 0; i < qs.length; i++) {
+        url = webpOk() ? src.toDataURL('image/webp', qs[i]) : src.toDataURL('image/jpeg', qs[i]);
+        if (url.length <= G_IMG) return { img: url, w: src.width, h: src.height, thumb: gThumb(src), k: ++gSeq };
+      }
+      var c2 = document.createElement('canvas'); c2.width = Math.round(src.width * 0.8); c2.height = Math.round(src.height * 0.8);
+      c2.getContext('2d').drawImage(src, 0, 0, c2.width, c2.height); src = c2;
+    }
+    return { img: url, w: src.width, h: src.height, thumb: gThumb(src), k: ++gSeq };
+  }
+  /* the small picture on the list: 240 px on its long side, JPEG */
+  function gThumb(cv) {
+    var sc = 240 / Math.max(cv.width, cv.height), c = document.createElement('canvas'), x;
+    c.width = Math.max(1, Math.round(cv.width * sc)); c.height = Math.max(1, Math.round(cv.height * sc));
+    x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(cv, 0, 0, c.width, c.height);
+    return c.toDataURL('image/jpeg', 0.72);
+  }
+  function gCanvas(w, h) { var c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); var x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); return c; }
+  /* the words read from a PDF, for search: one space between words, and letter-spaced headings ("I C O M B I") joined up */
+  function gTidy(t) { return String(t).replace(/\s+/g, ' ').replace(/(^|\s)((?:[A-Za-z0-9] ){2,}[A-Za-z0-9])(?=\s|$)/g, function (m, a, b) { return a + b.replace(/ /g, ''); }).trim().slice(0, G_TEXT); }
+  function gPdf(file, f, label) {
+    return Promise.all([pdfjs().catch(function (e) { f.noReader = true; throw e; }), file.arrayBuffer()]).then(function (r) {
+      return r[0].getDocument({ data: new Uint8Array(r[1]), isEvalSupported: false, standardFontDataUrl: PDFJS + 'standard_fonts/', cMapUrl: PDFJS + 'cmaps/', cMapPacked: true }).promise;
+    }).then(function (doc) {
+      var room = G_MAXP - f.pages.length, n = Math.min(doc.numPages, room), i = 0, words = [];
+      if (doc.numPages > room) f.cut = true;
+      function next() {
+        if (i >= n) { doc.destroy(); f.text = gTidy(f.text + ' ' + words.join(' ')); return; }
+        i++; f.busy = 'Reading ' + label + ': page ' + i + ' of ' + n + '...'; draw();
+        return doc.getPage(i).then(function (pg) {
+          var v1 = pg.getViewport({ scale: 1 }), vp = pg.getViewport({ scale: G_LONG / Math.max(v1.width, v1.height) }), cv = gCanvas(vp.width, vp.height);
+          return pg.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise.then(function () { return pg.getTextContent(); }).then(function (tc) {
+            words.push(tc.items.map(function (x) { return x.str; }).join(' '));
+            f.pages.push(gEncode(cv)); pg.cleanup();
+          });
+        }).then(next);
+      }
+      return next();
+    });
+  }
+  function gPhoto(file, f, label) {
+    f.busy = 'Reading ' + label + '...'; draw();
+    return new Promise(function (res, rej) {
+      var u = URL.createObjectURL(file), im = new Image();
+      im.onload = function () {
+        var sc = Math.min(1, G_LONG / Math.max(im.naturalWidth, im.naturalHeight)), cv = gCanvas(im.naturalWidth * sc, im.naturalHeight * sc);
+        cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height);
+        URL.revokeObjectURL(u); f.pages.push(gEncode(cv)); res();
+      };
+      im.onerror = function () { URL.revokeObjectURL(u); rej(new Error('photo')); };
+      im.src = u;
+    });
+  }
+  /* Files chosen in the editor: each PDF page and each photo becomes one page, in the order chosen. Choosing more adds pages.
+     When changing a saved guide, the new pages replace the old file once it is saved. */
+  function gReadFiles(files) {
+    var f = S.gf, list = Array.prototype.slice.call(files || []);
+    if (!f || !list.length || f.busy || f.saving) return;
+    f.pages = f.pages || []; f.msg = ''; f.cut = false; f.noReader = false;
+    var bad = [], chain = Promise.resolve();
+    list.forEach(function (file) {
+      chain = chain.then(function () {
+        if (f.pages.length >= G_MAXP) { f.cut = true; return; }
+        var label = '"' + String(file.name || 'file').slice(0, 40) + '"', pdf = /pdf$/i.test(file.type) || /\.pdf$/i.test(file.name || '');
+        if (!pdf && !/^image\//.test(file.type)) { bad.push(file.name); return; }
+        if (!f.file) f.file = String(file.name || '').slice(0, 120);
+        return (pdf ? gPdf(file, f, label) : gPhoto(file, f, label)).catch(function () { bad.push(file.name); });
+      });
+    });
+    chain.then(function () {
+      f.busy = '';
+      var m = [];
+      if (f.noReader) m.push('Could not load the PDF reader. Check the connection and choose the file again.');
+      else if (bad.length) m.push('Could not read ' + bad.map(function (b) { return '"' + b + '"'; }).join(', ') + '. Use a PDF, or photos as JPEG or PNG.');
+      if (f.cut) m.push('Only the first ' + G_MAXP + ' pages are kept. Split a longer file into two guides.');
+      if (f.pages.some(function (p) { return p.img.length > G_IMG; })) m.push('A page is still too big to save. Remove it, or use a smaller photo.');
+      f.msg = m.join(' ');
+      if (!f.title.trim() && f.file) f.title = f.file.replace(/\.[a-z0-9]+$/i, '').replace(/[_]+/g, ' ').slice(0, 80);
+      draw();
+    });
+  }
+  function gKb(p) { return Math.round(p.img.length * 0.75 / 1024) + ' kB'; }
+  function gEditHTML() {
+    var f = S.gf, old = f.id ? gById(f.id) : null, pages = f.pages;
+    var cats = G_CATS.map(function (c) { return '<button type="button" class="chip" data-p="g-fcat" data-v="' + c[0] + '" aria-pressed="' + (f.cat === c[0]) + '">' + esc(c[1]) + '</button>'; }).join('');
+    var strip = '';
+    if (pages && pages.length) {
+      strip = '<ol class="g-strip">' + pages.map(function (p, i) {
+        return '<li><img src="' + esc(p.thumb) + '" alt="' + esc('Page ' + (i + 1)) + '"><span>Page ' + (i + 1) + ' · ' + gKb(p) + '</span><span class="g-sbtn">' +
+          (i ? '<button type="button" class="p-x" data-p="g-pup" data-i="' + i + '" aria-label="' + esc('Move page ' + (i + 1) + ' earlier') + '">Earlier</button>' : '') +
+          '<button type="button" class="p-x" data-p="g-prm" data-i="' + i + '" aria-label="' + esc('Remove page ' + (i + 1)) + '">Remove</button></span></li>';
+      }).join('') + '</ol>';
+    }
+    var now = pages ? (pages.length ? pages.length + (pages.length === 1 ? ' page' : ' pages') + ' ready to save.' + (old && old.pages ? ' They replace the ' + old.pages + ' saved now.' : '') : 'No pages chosen.' + (old && old.pages ? ' Saving removes the ' + old.pages + ' saved now.' : '')) :
+      (old && old.pages ? 'Saved now: ' + old.pages + (old.pages === 1 ? ' page' : ' pages') + (old.file ? ' from "' + old.file + '"' : '') + '. Choose a new file to replace them.' : 'No file yet.');
+    return '<section class="set-block g-edit"><span class="label">' + (f.id ? 'Change this guide' : 'Add a guide') + '</span>' +
+      '<span class="hint">A PDF or photos, a clear title and a category. Staff search the title, the words in the PDF and the search words. No prices, PINs or staff names.</span>' +
+      '<div class="field"><label class="label" for="g-title">Title</label><input id="g-title" class="search" data-k="g-title" maxlength="80" autocomplete="off" placeholder="For example: iCombi, programme a new recipe" value="' + esc(f.title) + '"></div>' +
+      '<div class="field"><span class="label">Category</span><div class="nt-chips" role="group" aria-label="Category">' + cats + '</div></div>' +
+      '<div class="field"><label class="label" for="g-sum">What it is for (one line)</label><input id="g-sum" class="search" data-k="g-sum" maxlength="200" autocomplete="off" placeholder="For example: set up any new dish as a programme" value="' + esc(f.sum) + '"></div>' +
+      '<div class="field"><span class="label">File</span><label class="btn g-filebtn' + (f.busy || f.saving ? ' is-off' : '') + '">' + (pages && pages.length ? 'Add more pages' : old && old.pages ? 'Choose a new file' : 'Choose a PDF or photos') +
+        '<input type="file" id="g-file" class="visually-hidden" data-k="g-file" accept="application/pdf,image/*" multiple' + (f.busy || f.saving ? ' disabled' : '') + '></label>' +
+        '<span class="hint">Each PDF page or photo becomes a picture staff can open big. Up to ' + G_MAXP + ' pages.</span>' +
+        (f.busy ? '<p class="g-busy" role="status">' + esc(f.busy) + '</p>' : '<p class="g-now" role="status">' + esc(now) + '</p>') + strip + '</div>' +
+      '<div class="field"><label class="label" for="g-steps">Steps (optional, one per line)</label><textarea id="g-steps" class="p-bulk" data-k="g-steps" rows="5" maxlength="3000" placeholder="For example: Press the menu button, bottom right.">' + esc(f.steps) + '</textarea></div>' +
+      '<div class="field"><label class="label" for="g-kw">Search words (optional)</label><input id="g-kw" class="search" data-k="g-kw" maxlength="200" autocomplete="off" placeholder="For example: iCombi, oven, programme" value="' + esc(f.kw) + '"><span class="hint">Separate them with commas. A recipe card that mentions one of these words shows a link to this guide.</span></div>' +
+      '<p class="g-links" id="g-links">' + esc(gLinksText(f)) + '</p>' +
+      (f.msg ? '<p class="p-err" role="alert">' + esc(f.msg) + '</p>' : '') +
+      '<div class="btn-row"><button type="button" class="btn dark" data-p="g-save"' + (f.busy || f.saving ? ' disabled' : '') + '>' + (f.saving ? 'Saving...' : f.id ? 'Save changes' : 'Save guide') + '</button>' +
+      '<button type="button" class="btn" data-p="g-cancel">' + (armed('g-cancel') ? 'Tap again to discard' : f.id ? 'Cancel' : 'Close') + '</button></div></section>';
+  }
+  /* while writing: which recipe cards the guide will show on (the same rule as gIndex) */
+  function gLinksText(f) {
+    var old = f.id ? gById(f.id) : null, names = gLinkIds({ title: f.title, sum: f.sum, steps: f.steps, kw: f.kw, text: f.pages ? f.text : old ? old.text : '' }).map(recipeById).filter(Boolean).map(function (r) { return r.name; });
+    return names.length ? 'Shows on these recipe cards: ' + names.slice(0, 12).join(', ') + (names.length > 12 ? ' and ' + (names.length - 12) + ' more' : '') + '.' : 'Not on any recipe card yet. A recipe name or a search word puts it there.';
+  }
+  function gRowAdmin(g) {
+    var cards = gCards(g).map(function (r) { return r.name; });
+    return '<li class="nt-row g-row"><div class="g-rt">' + gThumbHTML(g) + '<div class="g-rb"><span class="nt-tag">' + esc(gCatName(g.cat)) + '</span><b>' + esc(g.title) + '</b>' + (g.sum ? '<span>' + esc(g.sum) + '</span>' : '') +
+      '<span class="nt-by">' + esc(gMeta(g)) + (cards.length ? '. On ' + esc(cards.slice(0, 4).join(', ')) + (cards.length > 4 ? ' and ' + (cards.length - 4) + ' more' : '') : '') + '</span></div></div>' +
+      '<div class="btn-row"><a class="p-x g-open" href="#/guides/' + encodeURIComponent(g.id) + '">Open</a><button type="button" class="p-x" data-p="g-edit" data-id="' + esc(g.id) + '">Change</button>' +
+      '<button type="button" class="p-x" data-p="g-del" data-id="' + esc(g.id) + '">' + (armed('g-del:' + g.id) ? 'Tap again to remove' : 'Remove') + '</button></div></li>';
+  }
+  function guidesAdminHTML() {
+    var open = !!S.gf, live = gLive();
+    var list = S.guides == null ? '<p class="hint">Loading...</p>' : lvHTML({
+      key: 'guides', items: live, step: 10, tools: 6, noun: ['guide', 'guides'], ph: 'Search guides', empty: 'No guides yet. Tap Add a guide to upload the first one.',
+      find: gHay,
+      filters: [['all', 'All guides']].concat(G_CATS.map(function (c) { return [c[0], c[1], function (g) { return g.cat === c[0]; }]; })),
+      sorts: [['cat', 'By category', gOrder], ['new', 'Newest first', function (a, b) { return (b.upd || b.at || 0) - (a.upd || a.at || 0); }], ['az', 'A to Z', function (a, b) { return String(a.title).localeCompare(String(b.title)); }]],
+      card: gRowAdmin
+    });
+    return '<div class="n-ws' + (open ? ' has-ed' : '') + '">' + (open ? '<div class="n-ed">' + gEditHTML() + '</div>' : '') +
+      '<section class="set-block n-lst"><div class="n-lh"><div><span class="label">Guides</span><span class="hint">Staff open them from Guides in the menu, search them, and find them on the recipe cards they mention.</span></div>' +
+      (open ? '' : '<button type="button" class="btn dark" data-p="g-new">Add a guide</button>') + '</div>' +
+      (open ? '' : '<span class="saved" role="status">' + esc(S.gMsg) + '</span>') + list + '</section></div>';
+  }
+  function gClean(t, n) { return String(t || '').replace(/\r/g, '').replace(/[ \t]+\n/g, '\n').replace(/^\s+|\s+$/g, '').slice(0, n); }
+  /* Saving: the pages first (one record each, they are big), then old pages the new file does not need, then the guide itself,
+     so a guide never shows before its pages are there. A failed save keeps everything in the editor to try again. */
+  function saveGuide() {
+    var f = S.gf;
+    if (!f || f.saving || f.busy || !fb) return;
+    var old = f.id ? gById(f.id) : null, pages = f.pages, title = gClean(f.title, 80).replace(/\s+/g, ' ');
+    function stop(m) { f.msg = m; draw(); }
+    if (S.level !== 'owner') return stop('Only the head chef can save guides.');
+    if (!title) { stop('Give the guide a title.'); focusK('g-title'); return; }
+    if (!f.cat) return stop('Pick a category.');
+    if (!(pages ? pages.length : old && old.pages) && !gClean(f.steps, 3000)) return stop('Add a PDF, photos or written steps.');
+    if (pages && pages.some(function (p) { return p.img.length > G_IMG; })) return stop('A page is too big to save. Remove it, or use a smaller photo.');
+    var id = f.id || f.nid || (f.nid = fb.fs.doc(colRef('guides')).id), v = old ? (old.v || 1) + (pages ? 1 : 0) : 1, oldN = old ? old.pages || 0 : 0;
+    f.saving = true; f.msg = ''; draw();
+    var chain = Promise.resolve();
+    if (pages) pages.forEach(function (p, n) {
+      chain = chain.then(function () { f.busy = 'Saving page ' + (n + 1) + ' of ' + pages.length + '...'; draw(); return W([['set', gPageRef(id, n), { img: p.img, w: p.w, h: p.h, v: v, n: n }]]); });
+    });
+    if (pages && oldN > pages.length) chain = chain.then(function () { var ops = [], n; for (n = pages.length; n < oldN; n++) ops.push(['del', gPageRef(id, n)]); return W(ops); });
+    chain.then(function () {
+      var data = { title: title, cat: f.cat, sum: gClean(f.sum, 200).replace(/\s+/g, ' '), steps: gClean(f.steps, 3000), kw: gClean(f.kw, 200).replace(/\s+/g, ' '), v: v, removed: false, upd: now() };
+      if (pages || !old) {
+        pages = pages || [];
+        data.pages = pages.length; data.dims = pages.map(function (p) { return { w: p.w, h: p.h }; });
+        data.thumb = pages.length ? pages[0].thumb : ''; data.text = pages.length ? f.text.slice(0, G_TEXT) : ''; data.file = pages.length ? f.file : '';
+      }
+      if (!old) data.at = now();
+      f.busy = 'Saving the guide...'; draw();
+      return sset(gRef(id), data, !!old).then(function () { return data; });
+    }).then(function (data) {
+      var mine = Object.assign({}, old || {}, data, { id: id });
+      S.guides = (S.guides || []).filter(function (g) { return g.id !== id; }).concat([mine]); gKeep();
+      try { window.dispatchEvent(new Event('lk-guides')); } catch (e) {}
+      S.gf = null; S.gfSnap = ''; S.gMsg = 'Saved "' + title + '". Staff see it under Guides.';
+      lvReveal('guides'); S.gRetry = 0; draw(); loadGuides(true);
+    }, function (e) {
+      f.saving = false; f.busy = '';
+      f.msg = e && e.code === 'permission-denied' ? 'Not saved: the security rules refused it. Sign in again with the head chef\'s Google account.' : 'Not saved. Check the connection and try again. Nothing typed or chosen is lost.';
+      draw();
+    });
+  }
+  function removeGuide(id, back) {
+    var g = gById(id);
+    if (!g || (!back && !arm('g-del:' + id))) return;
+    sset(gRef(id), { removed: !back, upd: now() }, true).then(function () {
+      g.removed = !back; g.upd = now(); gKeep();
+      try { window.dispatchEvent(new Event('lk-guides')); } catch (e) {}
+      if (!back) toast('Removed "' + g.title + '".', { label: 'Undo', fn: function () { removeGuide(id, true); } });
+      else toast('Put back "' + g.title + '".');
+      S.gRetry = 0; loadGuides(true);
+    }, failed);
+  }
+
   /* ---------- events ---------- */
   function onClick(e) {
     var el = e.target.closest('[data-p]');
@@ -3655,7 +4185,7 @@
     if (a === 'recipe-close') { S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; draw(); focusSel('.p-pickbtn'); return; }
     if (a === 'recipe-all') { S.recipeAll = true; draw(); var rse2 = S.root.querySelector('#p-rs'); if (rse2) rse2.focus({ preventScroll: true }); return; }
     if (a === 'pin-go') { submitKitchenPin(); return; }
-    if (a === 'pin-forget') { if (!arm('pin-forget')) return; S.pin = ''; lsSet('lk.prep.pin', ''); S.config = null; S.configState = 'idle'; stopLive(); draw(); return; }
+    if (a === 'pin-forget') { if (!arm('pin-forget')) return; S.pin = ''; lsSet('lk.prep.pin', ''); S.config = null; S.configState = 'idle'; stopLive(); gForget(); draw(); return; }
     if (a === 'retry') { cfgKey = ''; connect(); return; }
     if (a === 'notes-open') { if (isSous()) { S.notesOpen = true; S.nf = null; S.nOpen = false; S.nMsg = ''; loadNotes(); draw(); window.scrollTo(0, 0); } return; }
     if (a === 'notes-close') { S.notesOpen = false; draw(); return; }
@@ -3667,9 +4197,9 @@
     }
     if (a === 'n-dow') { var dv = +el.getAttribute('data-v'), dx = S.nf.dows.indexOf(dv); if (dx >= 0) S.nf.dows.splice(dx, 1); else S.nf.dows.push(dv); draw(); return; }
     if (a === 'n-dowclr') { S.nf.dows = []; draw(); return; }
-    if (a === 'n-quick') { S.nf.start = shift(ymd(new Date()), +el.getAttribute('data-v')); S.nf.until = ''; S.nf.run = false; S.nf.dows = []; draw(); return; }
+    if (a === 'n-quick') { S.nf.start = shift(dayNow(), +el.getAttribute('data-v')); S.nf.until = ''; S.nf.run = false; S.nf.dows = []; draw(); return; }
     if (a === 'n-mode') { var nm = el.getAttribute('data-v'); S.nf.run = nm === 'run'; if (nm === 'one') S.nf.until = ''; draw(); return; }
-    if (a === 'n-reset') { S.nf.start = ymd(new Date()); S.nf.until = ''; S.nf.run = false; S.nf.dows = []; draw(); return; }
+    if (a === 'n-reset') { S.nf.start = dayNow(); S.nf.until = ''; S.nf.run = false; S.nf.dows = []; draw(); return; }
     if (a === 'n-day') {
       var dd = el.getAttribute('data-v'), nf = S.nf;
       if (!nf.run && !nf.until) { nf.start = dd; }
@@ -3690,7 +4220,7 @@
     if (a === 'n-del') { removeNote(id); return; }
     if (a === 'n-preview') {
       var pf = S.nf, pd = pf && pf.text.replace(/\s+/g, '') ? nfDraft(pf) : null;
-      if (pd) noteOpen({ list: [pd], label: noteWhen(pd) + (pd.start > ymd(new Date()) ? ' (not saved yet)' : ' (not saved)') });
+      if (pd) noteOpen({ list: [pd], label: noteWhen(pd) + (pd.start > dayNow() ? ' (not saved yet)' : ' (not saved)') });
       else if (todaysNotes().length) noteOpen(); else toast('Write a note first, or no note is set for today yet.');
       return;
     }
@@ -3719,6 +4249,22 @@
     if (a === 'mn-draft') { saveMinutes(false); return; }
     if (a === 'mn-pub') { saveMinutes(true); return; }
     if (a === 'mn-remove') { removeMinutes(id); return; }
+    if (a === 'g-cat') { S.gcat = el.getAttribute('data-v') || 'all'; draw(); return; }
+    if (a === 'g-clear') { S.gq = ''; draw(); focusK('g-q'); return; }
+    if (a === 'g-zoom') { var gzg = gById(S.gSel); if (gzg) gzOpen(gzg.id, i); return; }
+    if (a === 'g-retry') { var grg = gById(S.gSel); if (grg) { delete gPg[grg.id + ':' + (grg.v || 1)]; draw(); } return; }
+    if (a === 'g-print') { printGuide(); return; }
+    if (a === 'g-admin') { S.atab = 'guides'; lsSet('lk.prep.atab', 'guides'); location.hash = '#/admin'; return; }
+    if (a === 'g-change') { var gcg = gById(id); if (gcg) { S.gf = gfFrom(gcg); S.gfSnap = gfSnap(S.gf); S.atab = 'guides'; lsSet('lk.prep.atab', 'guides'); location.hash = '#/admin'; } return; }
+    if (/^g-(new|edit|del|save|cancel|fcat|pup|prm)$/.test(a) && S.level !== 'owner') return;
+    if (a === 'g-new') { gOpenEditor(gfNew()); return; }
+    if (a === 'g-edit') { var geg = gById(id); if (geg) gOpenEditor(gfFrom(geg)); return; }
+    if (a === 'g-del') { removeGuide(id); return; }
+    if (a === 'g-save') { saveGuide(); return; }
+    if (a === 'g-cancel') { if (gfDirty() && !arm('g-cancel')) return; S.gf = null; S.gfSnap = ''; draw(); return; }
+    if (a === 'g-fcat') { if (S.gf) { S.gf.cat = el.getAttribute('data-v'); S.gf.msg = ''; draw(); } return; }
+    if (a === 'g-pup') { var gp = S.gf && S.gf.pages; if (gp && i > 0 && gp[i]) { gp.splice(i - 1, 0, gp.splice(i, 1)[0]); draw(); } return; }
+    if (a === 'g-prm') { var gp2 = S.gf && S.gf.pages; if (gp2 && gp2[i]) { gp2.splice(i, 1); S.gf.msg = ''; draw(); } return; }
     if (a === 'otick') { tickOrderLine(el.getAttribute('data-d'), id, el.getAttribute('aria-pressed') !== 'true'); return; }
     if (a === 'odel') { removeOrderLine(el.getAttribute('data-d'), id); return; }
     if (a === 'orestore') { removeOrderLine(el.getAttribute('data-d'), id, true); return; }
@@ -3726,12 +4272,12 @@
     if (a === 'ogroup') { tickOrderGroup(el.getAttribute('data-k2')); return; }
     if (a === 'oview') { S.ordView = el.getAttribute('data-v'); if (S.ordView === 'all') loadOrdAll(false); draw(); return; }
     if (a === 'oday') { S.ordDate = shift(S.ordDate, +el.getAttribute('data-d')); watchOrders(); draw(); return; }
-    if (a === 'otoday') { S.ordDate = ymd(new Date()); watchOrders(); draw(); return; }
+    if (a === 'otoday') { S.ordDate = dayNow(); watchOrders(); draw(); return; }
     if (a === 'osugg') { var st = (S.osugg || [])[i]; if (st) { S.otext = st; draw(); var oe = S.root.querySelector('[data-k="o-text"]'); if (oe) { oe.focus(); try { oe.setSelectionRange(oe.value.length, oe.value.length); } catch (x) {} } } return; }
     if (a === 'who') { pickName(id); return; }
     if (a === 'who-change') { leave(); return; }
     if (a === 'day') { S.date = shift(S.date, +el.getAttribute('data-d')); S.tab = ''; watchItems(); draw(); return; }
-    if (a === 'today') { S.date = ymd(new Date()); S.tab = ''; watchItems(); draw(); return; }
+    if (a === 'today') { S.date = dayNow(); S.tab = ''; watchItems(); draw(); return; }
     if (a === 'tab') { S.tab = el.getAttribute('data-v') || ''; draw(); return; }
     if (a === 'tick') { tick(dt || S.date, id); return; }
     if (a === 'del') { removeItem(dt || S.date, id, false); return; }
@@ -3751,7 +4297,7 @@
     if (a === 'hrm') { S.hrM = el.getAttribute('data-v'); draw(); return; }
     if (a === 'af-reset') { S.af = { sec: '', who: '', dow: '', reason: '' }; afSave(); draw(); return; }
     if (a === 'cal-day') { S.date = el.getAttribute('data-d'); S.tab = ''; watchItems(); location.hash = '#/prep'; return; }
-    if (a === 'close-hide') { lsSet('lk.closeout', ymd(new Date())); draw(); return; }
+    if (a === 'close-hide') { lsSet('lk.closeout', dayNow()); draw(); return; }
     if (a === 'due') { var du = (S.due || [])[i]; if (du && can('add')) oneTap(du.text, du.sec); return; }
     if (a === 'oreg') { var orr = (S.oregs || [])[i]; if (orr) { S.otext = orr.text; S.oqty = orr.q || ''; addOrder(true); } return; }
     if (a === 'wview') { S.wView = el.getAttribute('data-v'); if (S.wView === 'week') loadWRecent(true); draw(); return; }
@@ -3764,11 +4310,11 @@
     if (a === 'wdel') { removeWaste(dt, id); return; }
     if (a === 'wrestore') { removeWaste(dt, id, true); return; }
     if (a === 'wday') { S.wDate = shift(S.wDate, +el.getAttribute('data-d')); watchWaste(); draw(); return; }
-    if (a === 'wtoday') { S.wDate = ymd(new Date()); watchWaste(); draw(); return; }
+    if (a === 'wtoday') { S.wDate = dayNow(); watchWaste(); draw(); return; }
     if (a === 'wreview') { saveReview(); return; }
     if (a === 'w-refresh') { loadWStats(true); loadStats(true); draw(); return; }
     if (a === 'miss-hide') { sset(docRef('misses', id), { hidden: true, q: ((S.misses || []).filter(function (x) { return x.id === id; })[0] || {}).q || id }, true).then(function () { loadMisses(true); }, failed); return; }
-    if (a === 'onudge-hide') { lsSet('lk.ord.nudge', ymd(new Date())); draw(); return; }
+    if (a === 'onudge-hide') { lsSet('lk.ord.nudge', dayNow()); draw(); return; }
     if (a === 'onudge-show') { var od = document.getElementById('o-overdue'); if (od) { od.scrollIntoView({ block: 'start' }); var ob = od.querySelector('.nb-box'); if (ob) ob.focus({ preventScroll: true }); } return; }
     if (a === 'oqset') { S.oqty = el.getAttribute('data-v') || ''; draw(); var to = S.root.querySelector('[data-k="o-text"]'); if (to) to.focus(); return; }
     if (a === 'qset') { S.qty = el.getAttribute('data-v') || ''; draw(); var tq = S.root.querySelector('[data-k="p-text"]'); if (tq) tq.focus(); return; }
@@ -3842,6 +4388,13 @@
     if (k === 'p-text') { S.text = el.value; var hn = S.root.querySelector('#p-hint'); if (hn) hn.textContent = hintText(S.text); var sg = S.root.querySelector('#p-sugg'); if (sg) sg.innerHTML = suggestHTML(); var qs = S.root.querySelector('#p-qsugg'); if (qs) qs.innerHTML = qtyChipsHTML(); return; }
     if (k === 'o-text') { S.otext = el.value; var og = S.root.querySelector('#o-sugg'); if (og) og.innerHTML = ordSuggHTML(); var oh = S.root.querySelector('#o-hint'); if (oh) oh.textContent = oHintText(S.otext); return; }
     if (k === 'o-qty') { S.oqty = el.value; return; }
+    if (k === 'g-q') { S.gq = el.value; var gl = S.root.querySelector('#g-list'); if (gl) gl.innerHTML = gListHTML(); return; }
+    if (k === 'g-title' || k === 'g-sum' || k === 'g-steps' || k === 'g-kw') {
+      if (!S.gf) return;
+      S.gf[k.slice(2)] = el.value;
+      var gln = S.root.querySelector('#g-links'); if (gln) gln.textContent = gLinksText(S.gf);
+      return;
+    }
     if (k === 'n-text') { if (S.nf) S.nf.text = el.value; var nc = S.root.querySelector('#n-count'); if (nc) nc.textContent = el.value.length + ' of 400. Ctrl+Enter saves.'; var npv = S.root.querySelector('#n-prev'); if (npv && S.nf) npv.innerHTML = draftPreviewHTML(S.nf); return; }
     if (k === 'w-text') { S.wf.text = el.value; var wg = S.root.querySelector('#w-sugg'); if (wg) wg.innerHTML = wSuggHTML(); return; }
     if (k === 'w-amt') { S.wf.amt = el.value.replace(/[^0-9.,]/g, ''); if (el.value !== S.wf.amt) el.value = S.wf.amt; return; }
@@ -3861,6 +4414,7 @@
     var el = e.target, k = el.getAttribute && el.getAttribute('data-k');
     if (!S.root || !S.root.contains(el)) return;
     if (k && k.indexOf('lv-s:') === 0) { var sk = k.slice(5), sc = LVR[sk]; if (sc) { var ss = lvState(sc); ss.sort = el.value; ss.shown = sc.step || 15; lvRefresh(sk); } return; }
+    if (k === 'g-file') { var gfl = el.files; gReadFiles(gfl); try { el.value = ''; } catch (x) {} return; }
     if (k === 'mn-older') { S.mSel = el.value; loadSigns(el.value, true); draw(); return; }
     if (k && k.indexOf('mn-') === 0 && k !== 'mn-pin') { mfSet(k, el); return; }
     if (k === 'p-day') { if (el.value) { S.date = el.value; S.tab = ''; watchItems(); draw(); } return; }
@@ -3912,20 +4466,23 @@
 
   /* ---------- public bits used by app.js ---------- */
   window.LK_PREP = {
-    mount: function (name, root) {
+    mount: function (name, root, sel) {
       wire();
       S.name = name; S.root = root;
+      if (name === 'guides') { if ((sel || '') !== S.gSel) S.gSel = sel || ''; }
       if (name === 'admin') S.draft = S.draft || null;
       draw();
-      if (S.pin) { connect(); if (name === 'admin') sdk(); if (name === 'orders') { S.ordDate = ymd(new Date()); watchOrders(); } if (name === 'waste') { S.wDate = ymd(new Date()); watchWaste(); } notesInit(); }
+      if (S.pin) { connect(); if (name === 'admin') sdk(); if (name === 'orders') { S.ordDate = dayNow(); watchOrders(); } if (name === 'waste') { S.wDate = dayNow(); watchWaste(); } notesInit(); }
     },
     warm: function () { if (S.pin && S.configState !== 'ok' && S.configState !== 'loading') connect(); notesInit(); },
     unsaved: function () {
-      return pending > 0 || mfDirty() || nfDirty() || draftDirty() || !!String(S.bulk || '').trim() || !!S.sheet || !!S.recipeOpen ||
+      return pending > 0 || mfDirty() || nfDirty() || gfDirty() || draftDirty() || !!String(S.bulk || '').trim() || !!S.sheet || !!S.recipeOpen ||
         !!(S.text.trim() || S.qty.trim() || S.otext.trim() || S.oqty.trim() || S.wf.text.trim() || String(S.wf.amt).trim() || S.wf.act.trim() || (S.wrA != null && S.wrA !== ((S.wReview || {}).avoidable || '')) || (S.wrC != null && S.wrC !== ((S.wReview || {}).change || '')) || S.mpin);
     },
     noteInfo: noteInfo,
     noteOpen: noteOpen,
+    guidesFor: function (rid) { try { return guidesFor(rid); } catch (e) { return []; } },
+    guideSearch: function (q) { try { return guideSearch(q); } catch (e) { return []; } },
     minNudge: minNudgeHTML,
     saveConfig: saveConfig,
     proofread: proofread,
