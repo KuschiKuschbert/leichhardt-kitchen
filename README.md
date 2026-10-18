@@ -142,6 +142,17 @@ There's no build step and nothing to install. To try it on a computer, open `ind
 - **Self-updates wait for unsaved work.** The automatic update (and the 04:00 refresh) no longer reloads while something is half written in the prep pages: a line, an order, a wastage entry or review, a note, minutes, the staff list, or changes still waiting to send. Before, it only waited while the cursor was in a box. `LK_PREP.unsaved()` in `js/prep.js` decides.
 - The admin "Add several names" box keeps its text when the page redraws (it used to empty itself during service).
 
+### Lists and buttons (October 2026)
+
+- **Full-size targets.** Every button on a prep line (tick box, !, recipe, remove), the tick boxes on the order list, Show removed, Undo, Not you? and the admin permission tick boxes are at least 44 px, with the same look as before. On a prep line the three buttons sit together on the right in the same place on every line, and Urgent and Rolled flow with the text.
+- **Lists do not jump.** A line ticked on this phone stays where it is, struck through, for 3.5 seconds before it moves to Done today, so a second tap cannot hit the next line. On the order list an ordered line keeps its place for its 10 minutes instead of jumping to the bottom.
+- **Every add and tick says so.** Typed lines, Add from the recipes and the one-tap chips (Usual, Regulars, Due today) show "Added Mise onions to Larder" with Undo (the person who added a line may take it back). The order list shows "Ordered Milk" with Undo, also for a tick in Everything to order (which marks every line for that item), and "Added ... to the order list" with Undo. The order regulars row now says "Tap to add".
+- **Empty section tab.** A section tab with everything ticked says "Nothing left to do in Grill" instead of showing a blank page.
+- **Phones.** "Write a line" under the date on the prep list goes straight to the add box at the end of the page. Pressing Enter in Section moves on to the line. The phone keyboard shows Next or Done on the add boxes.
+- **Wastage.** When Log it finds something missing, the cursor goes to that box (or the reason button), and after a good entry it goes back to "What was wasted?". Tab stays inside the reason sheet.
+- **PIN screens** name the page they open ("Open the order list"). When the two new PINs do not match, "Type it again" is emptied and gets the cursor. On the minutes, Enter signs once the PIN is right.
+- Closing "Add from the recipes" puts the cursor back on its button. The recipe link on a line is read out as "Open the Coconut Laksa card".
+
 ### Wastage log
 
 - `#/waste` is the Daily Wastage Sheet on the phone: section, item, amount and unit (g, kg, L, portions, pieces), reason (prep waste, expired stock, cooking fault, returned, excess production), action or how to stop it happening again. Time and name are added by themselves. Items logged twice or more in 14 days show as one-tap chips.
