@@ -3,12 +3,11 @@
   Plain JavaScript, no build step. Recipes live in js/data.js, drawings in js/art.js.
 
   Pages (hash links, so the phone's back button works):
-    #/settings         settings
-    #/prep             the daily prep list (js/prep.js), #/admin is its admin panel
-    #/                 landing page: pick Recipes, Prep or Orders
-    #/recipes          the recipes, in the chosen view (Tiles, List or The Pass)
-    #/orders           the order list (js/prep.js)
+    #/                 landing page: four dockets (Recipes, Prep, Orders, Wastage)
+    #/recipes          the recipes, as The Pass or Tiles
     #/r/barra/laksa    a recipe; the path is the trail you took to get there
+    #/prep, #/orders, #/waste, #/minutes, #/admin   the prep book (js/prep.js)
+    #/settings         settings
 */
 (function () {
   'use strict';
@@ -266,10 +265,10 @@
   }
   /* Admin always lives in the same place: the key button top right, next to Settings, on every page.
      It is filled in on a phone or computer where the head chef is signed in with Google. */
-  function isAdminDevice() { try { return localStorage.getItem('lk.admin') === '1'; } catch (e) { return false; } }
+  function isAdminDevice() { try { return !!LS && LS.getItem('lk.admin') === '1'; } catch (e) { return false; } }
   function adminLink(cls) {
     var on = parseRoute().name === 'admin', signed = isAdminDevice();
-    return '<a class="' + cls + ' adm' + (signed ? ' is-signed' : '') + '" href="#/admin" title="' + (signed ? 'Admin panel' : 'Admin panel: head chef sign in') + '" aria-label="' + (signed ? 'Admin panel (signed in)' : 'Admin panel (head chef sign in)') + '"' + (on ? ' aria-current="page"' : '') + '>' + ICON.key + (cls === 'icon-btn' ? '<span class="icon-lbl">Admin</span>' : '<span class="rail-lbl">Admin</span>') + '</a>';
+    return '<a class="' + cls + ' adm' + (signed ? ' is-signed' : '') + '" href="#/admin" title="' + (signed ? 'Admin panel' : 'Admin panel: head chef sign in') + '" aria-label="' + (signed ? 'Admin panel (signed in)' : 'Admin panel (head chef sign in)') + '"' + (on ? ' aria-current="page"' : '') + '>' + ICON.key + '<span class="wtop-lbl">Admin</span>' + '</a>';
   }
   /* The chalk KB logo (letters drawn as paths, so it needs no font). The same mark is the app icon and the browser tab icon. */
   var LOGO_MARK = '<svg class="rb-mark" viewBox="40 60 432 380" width="56" height="49" aria-hidden="true" focusable="false"><path d="M113.44999999999999 365.98Q109.03 363.26 105.28999999999999 359.35Q101.54999999999998 355.44 103.58999999999999 348.3Q103.25 344.22 104.1 340.48Q104.94999999999999 336.74 105.28999999999999 335.38Q106.99 335.38 107.32999999999998 333.51Q107.66999999999999 331.64 107.66999999999999 330.28Q107.66999999999999 327.56 109.71 321.1Q111.75 314.64 113.78999999999999 307.5Q116.50999999999999 301.72 119.05999999999999 295.26Q121.60999999999999 288.8 121.60999999999999 287.44Q121.60999999999999 284.72 122.96999999999998 281.83000000000004Q124.32999999999998 278.94 126.03 276.22Q127.72999999999999 272.14 128.57999999999998 267.21Q129.43 262.28 129.43 259.56Q131.47 255.14 133.85 250.04Q136.23 244.94 137.59 239.5Q139.63 233.71999999999997 143.70999999999998 222.32999999999998Q147.79 210.94 152.20999999999998 199.38Q155.26999999999998 192.92 158.16 185.95Q161.05 178.98 163.43 174.04999999999998Q165.81 169.11999999999998 166.82999999999998 169.11999999999998Q166.82999999999998 169.11999999999998 166.82999999999998 167.92999999999998Q166.82999999999998 166.73999999999998 166.82999999999998 165.38Q166.82999999999998 163.67999999999998 169.54999999999998 158.75Q172.26999999999998 153.82 174.64999999999998 148.38Q178.05 143.27999999999997 179.41 138.69Q180.76999999999998 134.1 180.76999999999998 134.1Q180.76999999999998 134.1 182.13 131.89Q183.49 129.67999999999998 184.85 128.32Q193.69 123.55999999999997 199.98000000000002 123.55999999999997Q206.27 123.55999999999997 208.65 131.71999999999997Q211.37 139.2 211.03 142.08999999999997Q210.69 144.98 208.65 149.05999999999997Q205.93 155.17999999999998 201.51 164.52999999999997Q197.09 173.88 192.32999999999998 184.42Q187.57 194.95999999999998 183.32 204.64999999999998Q179.07 214.34 176.51999999999998 221.14Q173.97 227.94 173.97 229.64L159.69 264.65999999999997Q158.32999999999998 267.03999999999996 155.26999999999998 276.73Q152.20999999999998 286.42 148.13 299.85Q144.05 313.28 139.8 327.04999999999995Q135.55 340.82 131.47 352.04Q129.43 357.82 127.73 361.73Q126.03 365.64 124.33 367.68Q122.63 369.72 120.25 369.72Q118.88999999999999 369.72 117.19 368.70000000000005Q115.49 367.68 113.44999999999999 365.98ZM233.81 365.3Q230.75 365.64 225.48000000000002 362.40999999999997Q220.21 359.18 214.26 354.42Q208.31 349.66 203.04 344.56Q197.76999999999998 339.46 194.70999999999998 335.72Q189.26999999999998 327.9 180.94 314.64Q172.61 301.38 168.53 286.76Q166.14999999999998 275.88 163.6 269.25Q161.05 262.62 161.05 257.52L161.39 236.44L186.20999999999998 234.74Q187.91 253.1 191.64999999999998 265.17Q195.39 277.24 200.49 286.76Q204.57 295.6 209.5 304.1Q214.43 312.6 220.55 318.38Q228.37 326.88 234.49 330.96000000000004Q240.61 335.04 243.67000000000002 335.04Q250.13 338.1 253.19 340.82000000000005Q256.25 343.54 257.27 345.58000000000004Q258.28999999999996 347.62 257.95 349.32Q258.28999999999996 350.34 257.61 353.90999999999997Q256.93 357.48 255.57 361.05Q254.21 364.62 251.83 365.64Q249.45 368.02 245.70999999999998 368.53Q241.97 369.04 233.81 365.3ZM154.93 235.42 179.75 217.06Q180.76999999999998 216.04 185.7 211.45Q190.63 206.85999999999999 204.91 195.98L249.79 159.6Q258.28999999999996 155.17999999999998 265.42999999999995 149.73999999999998Q272.57 144.29999999999998 277.33000000000004 141.23999999999998Q283.11 137.16 289.23 132.74Q295.35 128.32 296.71000000000004 128.66Q299.43 127.29999999999998 303.16999999999996 131.20999999999998Q306.90999999999997 135.11999999999998 309.46 140.39Q312.01 145.66 311.67 148.38Q312.35 151.77999999999997 310.65000000000003 154.15999999999997Q308.95000000000005 156.54 301.81 160.61999999999998Q293.31 164.35999999999999 288.38 167.76Q283.45000000000005 171.16 282.77 172.85999999999999Q282.77 172.85999999999999 275.63 178.29999999999998Q268.49 183.73999999999998 258.63 190.54Q245.03 199.72 236.36 206.69Q227.69 213.66 224.97 217.73999999999998Q223.61 217.73999999999998 222.42000000000002 218.76Q221.23 219.78 219.87 219.44Q219.87 219.44 217.15 221.31Q214.43 223.18 213.07 225.21999999999997Q212.39 226.92 210.18 229.64Q207.97 232.35999999999999 204.91 232.01999999999998Q202.53 233.38 196.41 237.63Q190.29 241.88 183.66 246.98Q177.03 252.07999999999998 172.26999999999998 256.15999999999997Q167.51 260.24 167.17000000000002 260.91999999999996ZM318.47 374.48Q303.85 364.96 301.3 355.44Q298.75 345.92 307.93 340.14Q309.96999999999997 338.78 315.91999999999996 339.79999999999995Q321.87 340.82 324.93 343.88Q331.73 350.0 340.4 351.53Q349.07 353.06 361.65 349.66Q375.93 345.24 383.58000000000004 338.61Q391.23 331.98 400.75 320.42Q407.89 311.24 410.78 302.4Q413.66999999999996 293.56 413.5 286.25Q413.33000000000004 278.94 409.93 275.2Q401.43 263.3 388.85 258.71000000000004Q376.27 254.12 355.87 259.56Q353.49 259.9 348.73 260.91999999999996Q343.97 261.94 340.23 262.78999999999996Q336.49 263.64 336.15 263.64Q333.77 264.32 332.40999999999997 264.32Q331.05 264.32 329.18 267.54999999999995Q327.31 270.78 323.57 280.80999999999995Q319.83 290.84 312.35 311.58Q305.21 332.32 300.28 340.99Q295.35 349.66 291.61 348.81Q287.87 347.96 283.11 341.5Q280.39 336.74 277.15999999999997 330.96000000000004Q273.93 325.18 277.33 319.06Q279.03 316.0 280.04999999999995 313.45Q281.07 310.9 282.77 304.44Q284.46999999999997 299.34 289.4 286.59Q294.33 273.84 301.13 256.66999999999996Q307.93 239.5 315.40999999999997 221.14Q322.89 202.78 329.86 186.45999999999998Q336.83 170.14 341.59 158.92Q346.35 148.38 347.37 143.62Q348.39 138.85999999999999 346.69 138.51999999999998Q346.69 136.82 345.66999999999996 135.29Q344.65 133.76 344.99 132.39999999999998Q344.99 131.04 350.94 128.65999999999997Q356.89 126.27999999999997 363.69 124.23999999999998Q370.49 122.19999999999999 373.55 122.88Q375.25 122.88 377.63 122.71Q380.01 122.53999999999999 380.01 121.17999999999998Q381.03 121.17999999999998 386.46999999999997 120.49999999999999Q391.90999999999997 119.82 398.37 120.49999999999997Q421.15 122.53999999999999 435.77 133.58999999999997Q450.39 144.64 450.05 168.78Q449.71000000000004 174.55999999999997 445.29 183.73999999999998Q440.87 192.92 434.24 202.1Q427.61 211.28 420.13 218.07999999999998Q415.71000000000004 221.82 410.78000000000003 225.73Q405.85 229.64 402.28000000000003 232.19Q398.71000000000004 234.74 398.71000000000004 234.74Q398.71000000000004 234.74 401.43 235.76Q404.15 236.77999999999997 407.21000000000004 237.8Q422.85 243.57999999999998 431.86 252.42Q440.87 261.26 444.61 276.9Q445.97 282.0 444.78000000000003 289.48Q443.59000000000003 296.96 441.55 304.27Q439.51 311.58 437.13 316.68Q434.75 319.06 433.39 321.61Q432.03 324.15999999999997 432.03 324.15999999999997Q432.03 324.84 429.31 329.42999999999995Q426.59000000000003 334.02 422.85 339.46Q419.11 344.9 415.71000000000004 348.98Q412.31 351.7 406.02 356.63Q399.73 361.56 392.42 366.32Q385.11 371.08 378.65 373.46Q369.13 377.54 357.4 379.07000000000005Q345.67 380.6 335.13 379.41Q324.59 378.22 318.47 374.48ZM342.95 233.38Q342.95 233.38 348.56 232.19Q354.17 231.0 360.97 229.47Q367.77 227.94 371.17 226.57999999999998Q372.87 225.56 376.1 223.86Q379.33 222.16 382.73 218.76Q387.49 214.34 392.93 208.73Q398.37 203.11999999999998 403.64 196.65999999999997Q408.90999999999997 190.2 412.65 182.72Q420.47 170.48 421.15000000000003 165.04Q421.83000000000004 159.6 417.40999999999997 155.17999999999998Q414.35 151.44 408.91 149.57Q403.47 147.7 397.18 147.52999999999997Q390.89 147.35999999999999 385.11 149.05999999999997Q380.69 150.42 378.31 152.29Q375.93 154.16 375.93 157.89999999999998Q375.93 160.95999999999998 374.06 164.19Q372.19 167.42 370.49 169.11999999999998Q370.15 171.5 368.28 173.70999999999998Q366.40999999999997 175.92 366.40999999999997 175.92Q366.40999999999997 177.28 362.15999999999997 184.25Q357.90999999999997 191.22 353.15 204.14Q347.03 218.76 344.99 225.22Q342.95 231.68 342.95 233.38Z" fill="#FBF8F1" transform="rotate(-6 256 256)"/><path d="M90 400 C190 378 300 374 430 388" fill="none" stroke="#E2602A" stroke-width="28" stroke-linecap="round"/></svg>';
@@ -277,20 +276,19 @@
   var BELL = '<svg width="22" height="22" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M32 8c-9 0-16 7-16 16v10c0 5-3 8-6 12h44c-3-4-6-7-6-12V24c0-9-7-16-16-16z"/><path d="M26 52c1 4 3 6 6 6s5-2 6-6"/></svg>';
   function noteBellHTML() {
     var i = window.LK_PREP && window.LK_PREP.noteInfo ? window.LK_PREP.noteInfo() : { n: 0, unread: false };
-    return '<button type="button" class="rail-set nbell' + (i.unread ? ' has-new' : '') + '" data-note="open"' + (i.n ? '' : ' hidden') + ' aria-label="Today\'s notes' + (i.unread ? ', new' : '') + '">' + BELL + '<span class="rail-lbl">Notes</span></button>';
+    return '<button type="button" class="wtop-btn nbell' + (i.unread ? ' has-new' : '') + '" data-note="open"' + (i.n ? '' : ' hidden') + ' aria-label="Today\'s notes' + (i.unread ? ', new' : '') + '">' + BELL + '<span class="wtop-lbl">Notes</span></button>';
   }
   /* The minutes bell: shown only while the person on this phone has meeting minutes to sign (the prep book fills it in once it has read them). */
   function minBellHTML() {
     var i = window.LK_PREP && window.LK_PREP.minInfo ? window.LK_PREP.minInfo() : { n: 0 };
-    return '<a class="rail-set mbell' + (i.n ? ' has-new' : '') + '" href="#/minutes"' + (i.n ? '' : ' hidden') + ' aria-label="Meeting minutes to sign' + (i.n ? ', ' + i.n : '') + '"' + (parseRoute().name === 'minutes' ? ' aria-current="page"' : '') + '>' + BELL + '<span class="rail-lbl">Minutes</span></a>';
+    return '<a class="wtop-btn mbell' + (i.n ? ' has-new' : '') + '" href="#/minutes"' + (i.n ? '' : ' hidden') + ' aria-label="Meeting minutes to sign' + (i.n ? ', ' + i.n : '') + '"' + (parseRoute().name === 'minutes' ? ' aria-current="page"' : '') + '>' + BELL + '<span class="wtop-lbl">Minutes</span></a>';
   }
   /* The same top bar on every page as on the landing page: brand (goes home), the menu, Notes, Admin and Settings. */
   function topBar() {
-    return '<header class="wtop"><a class="rail-brand" href="#/" aria-label="Kitchen Book, home">' + LOGO_MARK + '<span class="rb-text"><span class="rb-eb">Leichhardt Hotel Kitchen</span><b>Kitchen Book</b></span></a>' + pillNav() +
-      '<span class="rail-icons">' + noteBellHTML() + minBellHTML() + adminLink('rail-set') + '<a class="rail-set" href="#/settings" aria-label="Settings"' + (parseRoute().name === 'settings' ? ' aria-current="page"' : '') + '>' + ICON.gear + '<span class="rail-lbl">Settings</span></a></span></header>';
+    return '<header class="wtop"><a class="wtop-brand" href="#/" aria-label="Kitchen Book, home">' + LOGO_MARK + '<span class="rb-text"><span class="rb-eb">Leichhardt Hotel Kitchen</span><b>Kitchen Book</b></span></a>' + pillNav() +
+      '<span class="wtop-icons">' + noteBellHTML() + minBellHTML() + adminLink('wtop-btn') + '<a class="wtop-btn" href="#/settings" aria-label="Settings"' + (parseRoute().name === 'settings' ? ' aria-current="page"' : '') + '>' + ICON.gear + '<span class="wtop-lbl">Settings</span></a></span></header>';
   }
   /* Under the top bar, the recipe pages get their own tools row: how many recipes, and the Pass / Tiles switch. */
-  function header() { return ''; }
   var DOCKETS = [['01', 'Recipes', '#/recipes', 'recipes'], ['02', 'Prep list', '#/prep', 'prep'], ['03', 'Orders', '#/orders', 'orders'], ['04', 'Wastage', '#/waste', 'waste']];
   function viewLanding() {
     var today = new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -452,9 +450,9 @@
   function viewTiles(route) {
     if (route.stack.length) {
       var r = byId[route.stack[route.stack.length - 1]];
-      return '<div class="page">' + header() + '<main id="main">' + recipeCard(r, route.stack, true) + '</main>' + footer() + '</div>';
+      return '<div class="page">' + '<main id="main">' + recipeCard(r, route.stack, true) + '</main>' + footer() + '</div>';
     }
-    return '<div class="page">' + header() + '<main id="main" style="display: flex; flex-direction: column; gap: 1.1rem">' +
+    return '<div class="page">' + '<main id="main" style="display: flex; flex-direction: column; gap: 1.1rem">' +
       searchField('Dish, ingredient or allergen', countText()) +
       kindChips() + freeChips(true) +
       '<div id="results">' + tilesHTML() + '</div><div class="hint">Allergen tags with a ? may be in it: check the supplier label.</div></main>' + footer() + '</div>';
@@ -501,7 +499,7 @@
   function viewPass(route) {
     var stack = route.stack;
     if (!stack.length) {
-      return '<div class="page">' + header() + '<main id="main" style="display: flex; flex-direction: column; gap: 1.1rem">' +
+      return '<div class="page">' + '<main id="main" style="display: flex; flex-direction: column; gap: 1.1rem">' +
         searchField('Dish, ingredient or allergen', passCount()) + kindChips() + lensChips() + '<div id="shelves" class="shelves">' + shelvesHTML() + '</div></main>' + footer() + '</div>';
     }
     var r = byId[stack[stack.length - 1]], dish = isDish(r);
@@ -520,7 +518,7 @@
       left = '<div class="pan-art' + (r.done ? ' done' : '') + '">' + art(r, 'art') + '</div>' + usedBox(r, stack, 'Goes on') + tipBox(r);
     }
     var parent = stack.length > 1 ? byId[stack[stack.length - 2]].name : 'the pass';
-    return '<div class="page">' + header() + trail + jumps() + lensChips() +
+    return '<div class="page">' + trail + jumps() + lensChips() +
       '<main id="main" class="cols"><div class="col">' + left + '</div><div class="col wide">' + cardHead(r) + allergenBox(r) +
       (dish ? '' : '<div class="sec"><h3 class="h3" id="r-ing">Into the pan</h3>' + ingTable(r, stack, true) + '</div>') +
       '<div id="r-steps" class="jump-at"></div>' + safetyBox(r) + diagram(r) + steps(r) +
@@ -532,7 +530,6 @@
   /* ---------- welcome and settings ---------- */
   var MINI = {
     tiles: '<svg viewBox="0 0 240 130" aria-hidden="true"><rect width="240" height="130" fill="#FBFAF7"/><g fill="#FFFFFF" stroke="#D9D4C8" stroke-width="2"><rect x="12" y="14" width="66" height="48" rx="6"/><rect x="87" y="14" width="66" height="48" rx="6"/><rect x="162" y="14" width="66" height="48" rx="6"/><rect x="12" y="70" width="66" height="48" rx="6"/><rect x="87" y="70" width="66" height="48" rx="6"/><rect x="162" y="70" width="66" height="48" rx="6"/></g><g fill="#E2602A"><rect x="62" y="20" width="10" height="8" rx="1"/><rect x="137" y="20" width="10" height="8" rx="1"/><rect x="212" y="20" width="10" height="8" rx="1"/><rect x="62" y="76" width="10" height="8" rx="1"/><rect x="137" y="76" width="10" height="8" rx="1"/><rect x="212" y="76" width="10" height="8" rx="1"/></g><g fill="#1C1D1F"><rect x="20" y="38" width="38" height="6" rx="2"/><rect x="95" y="38" width="38" height="6" rx="2"/><rect x="170" y="38" width="38" height="6" rx="2"/><rect x="20" y="94" width="38" height="6" rx="2"/><rect x="95" y="94" width="38" height="6" rx="2"/><rect x="170" y="94" width="38" height="6" rx="2"/></g></svg>',
-    list: '<svg viewBox="0 0 240 130" aria-hidden="true"><rect width="240" height="130" fill="#FBFAF7"/><rect x="12" y="14" width="72" height="3" fill="#1C1D1F"/><g fill="#FFFFFF" stroke="#E0DBCF" stroke-width="1.5"><rect x="12" y="20" width="72" height="22"/><rect x="12" y="44" width="72" height="22"/><rect x="12" y="68" width="72" height="22"/><rect x="12" y="92" width="72" height="22"/></g><rect x="12" y="44" width="72" height="22" fill="#F2EFE8"/><g fill="#E2602A"><rect x="17" y="27" width="8" height="8" rx="1"/><rect x="17" y="51" width="8" height="8" rx="1"/><rect x="17" y="75" width="8" height="8" rx="1"/><rect x="17" y="99" width="8" height="8" rx="1"/></g><rect x="96" y="14" width="132" height="104" rx="8" fill="#FFFFFF" stroke="#D9D4C8" stroke-width="2"/><rect x="106" y="24" width="70" height="9" rx="2" fill="#1C1D1F"/><rect x="106" y="38" width="112" height="2.5" fill="#1C1D1F"/><rect x="106" y="46" width="112" height="18" rx="4" fill="none" stroke="#1C1D1F" stroke-width="1.5"/><g fill="#1C1D1F"><circle cx="160" cy="76" r="4"/><circle cx="160" cy="90" r="4"/><circle cx="160" cy="104" r="4"/></g><g fill="#B9B4AA"><rect x="106" y="72" width="44" height="5" rx="2"/><rect x="106" y="84" width="44" height="5" rx="2"/><rect x="106" y="96" width="44" height="5" rx="2"/><rect x="168" y="74" width="50" height="4" rx="2"/><rect x="168" y="88" width="50" height="4" rx="2"/><rect x="168" y="102" width="50" height="4" rx="2"/></g></svg>',
     pass: '<svg viewBox="0 0 240 130" aria-hidden="true"><rect width="240" height="130" fill="#FBFAF7"/><g fill="#FFFFFF" stroke="#D3CEC4" stroke-width="2"><circle cx="36" cy="34" r="20"/><circle cx="92" cy="34" r="20"/><circle cx="148" cy="34" r="20"/><circle cx="204" cy="34" r="20"/></g><g><circle cx="36" cy="34" r="11" fill="#C98A45"/><circle cx="92" cy="34" r="12" fill="#B97A36"/><circle cx="148" cy="34" r="14" fill="#EFA444"/><rect x="194" y="26" width="20" height="14" rx="4" fill="#7A391D"/></g><rect x="10" y="60" width="220" height="5" rx="2.5" fill="#CFD3D8"/><g fill="#DADDE1" stroke="#A9AFB6" stroke-width="2"><rect x="16" y="76" width="46" height="32" rx="6"/><rect x="72" y="76" width="46" height="32" rx="6"/><rect x="128" y="76" width="46" height="32" rx="6"/><rect x="184" y="76" width="46" height="32" rx="6"/></g><rect x="21" y="81" width="36" height="22" rx="3" fill="#FBF7EE"/><rect x="77" y="81" width="36" height="22" rx="3" fill="#EFA444"/><rect x="133" y="81" width="36" height="22" rx="3" fill="#8E3A66"/><rect x="189" y="81" width="36" height="22" rx="3" fill="#B8742F"/><rect x="10" y="114" width="220" height="5" rx="2.5" fill="#CFD3D8"/></svg>'
   };
   function viewOptions(act, role) {
@@ -543,7 +540,7 @@
     }).join('') + '</div>';
   }
   function viewPrep() {
-    return '<div class="page">' + header() + '<main id="main" class="prep"><div id="prep-root"></div></main>' + footer() + '</div>';
+    return '<div class="page">' + '<main id="main" class="prep"><div id="prep-root"></div></main></div>';
   }
   /* Installing the book as an app. Chrome, Edge and Samsung Internet offer a real Install button;
      iPhone and iPad use Share, then Add to Home Screen. */
@@ -580,7 +577,7 @@
   }
   function viewSettings() {
     var nTicks = Object.keys(ticks).filter(function (k) { return ticks[k]; }).length;
-    return '<div class="page">' + header() + '<main id="main" class="settings"><div class="row-label" style="justify-content: space-between; align-items: center">' +
+    return '<div class="page">' + '<main id="main" class="settings"><div class="row-label" style="justify-content: space-between; align-items: center">' +
       '<h2 tabindex="-1" id="rtitle">Settings</h2><a class="btn dark" href="#/">Done</a></div>' +
       installHTML() +
       '<section class="set-block" aria-label="Opens with"><span class="label">Opens with</span><span class="hint">How the recipe book looks when you arrive.</span>' + viewOptions('setview', true) + '</section>' +
@@ -612,9 +609,9 @@
   /* Recipe cards opened, counted on this phone (no names). The prep book sends the counts once someone is signed in. */
   function noteView(id) {
     if (!id) return;
-    var v; try { v = JSON.parse(localStorage.getItem('lk.views') || '{}'); } catch (e) { v = {}; }
+    var v = readJSON(LS, 'lk.views') || {};
     v[id] = (v[id] || 0) + 1;
-    try { localStorage.setItem('lk.views', JSON.stringify(v)); } catch (e) {}
+    writeJSON(LS, 'lk.views', v);
   }
   var warmed = false;
   var lastHash = null, lastRoute = '', homeY = 0;
@@ -641,7 +638,7 @@
     // On any other page, connect to the prep book in the background so Prep, Orders and Wastage open straight away.
     else if (window.LK_PREP && window.LK_PREP.warm && !warmed) { warmed = true; setTimeout(function () { window.LK_PREP.warm(); }, 900); }
     var r = route.stack.length ? byId[route.stack[route.stack.length - 1]] : null;
-    document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'waste' ? 'Wastage · ' : route.name === 'minutes' ? 'Meeting minutes · ' : route.name === 'landing' ? '' : route.name === 'admin' ? 'Admin panel · ' : '')) + 'Leichhardt Kitchen Book';
+    document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'waste' ? 'Wastage · ' : route.name === 'minutes' ? 'Meeting minutes · ' : route.name === 'landing' ? '' : route.name === 'home' ? 'Recipes · ' : route.name === 'admin' ? 'Admin panel · ' : '')) + 'Leichhardt Kitchen Book';
     var prevRoute = lastRoute; lastRoute = route.name;
     if (changed && route.name === 'recipe') noteView(route.stack[route.stack.length - 1]);
     if (changed) {
@@ -810,11 +807,11 @@
   function noteMiss() {
     var s = q();
     if (s.length < 3 || D.recipes.some(function (r) { return matches(r.id); })) return;
-    var l; try { l = JSON.parse(localStorage.getItem('lk.miss') || '[]'); } catch (x) { l = []; }
+    var l = readJSON(LS, 'lk.miss') || [];
     var now = Date.now();
     l = l.filter(function (m) { return !(now - m.at < 120000 && (s.indexOf(m.q) === 0 || m.q.indexOf(s) === 0)); });
     l.push({ q: s.slice(0, 60), at: now });
-    try { localStorage.setItem('lk.miss', JSON.stringify(l.slice(-40))); } catch (x) {}
+    writeJSON(LS, 'lk.miss', l.slice(-40));
   }
   app.addEventListener('input', function (e) {
     if (e.target.id !== 'find') return;

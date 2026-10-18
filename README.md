@@ -173,7 +173,7 @@ npm test
 
 ### Lists and buttons (October 2026)
 
-- **Full-size targets.** Every button on a prep line (tick box, !, recipe, remove), the tick boxes on the order list, Show removed, Undo, Not you? and the admin permission tick boxes are at least 44 px, with the same look as before. On a prep line the three buttons sit together on the right in the same place on every line, and Urgent and Rolled flow with the text.
+- **Full-size targets.** Every small Remove, Put back, Urgent and Reset PIN button, the section tabs, the Pass / Tiles switch, Update now, and every button on a prep line (tick box, !, recipe, remove), the tick boxes on the order list, Show removed, Undo, Not you? and the admin permission tick boxes are at least 44 px, with the same look as before. On a prep line the three buttons sit together on the right in the same place on every line, and Urgent and Rolled flow with the text.
 - **Lists do not jump.** A line ticked on this phone stays where it is, struck through, for 3.5 seconds before it moves to Done today, so a second tap cannot hit the next line. On the order list an ordered line keeps its place for its 10 minutes instead of jumping to the bottom.
 - **Every add and tick says so.** Typed lines, Add from the recipes and the one-tap chips (Usual, Regulars, Due today) show "Added Mise onions to Larder" with Undo (the person who added a line may take it back). The order list shows "Ordered Milk" with Undo, also for a tick in Everything to order (which marks every line for that item), and "Added ... to the order list" with Undo. The order regulars row now says "Tap to add".
 - **Empty section tab.** A section tab with everything ticked says "Nothing left to do in Grill" instead of showing a blank page.
