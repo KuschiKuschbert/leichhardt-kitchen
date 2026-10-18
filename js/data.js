@@ -1067,15 +1067,17 @@ window.LK_DATA = {
     {
       id: 'wings', art: 'wings', no: '49', kind: 'snack', forLine: 'Snack', name: 'Fried Chicken Wings',
       menu: 'Fried Chicken Wings: double-smoked BBQ sauce.',
-      yield: 'Per serve. 380 to 420 g fried wings in double-smoked BBQ sauce.',
+      yield: 'Per serve. 380 to 420 g fried wings in double-smoked BBQ sauce, with cowboy candy.',
       ingredients: [
         { q: '380 to 420 g', name: 'Chicken wings', note: 'portioned in a sandwich bag' },
         { q: '[Qty]', name: 'Wing flour', link: 'wing-flour', tags: ['Gluten?'] },
-        { q: '[Qty]', name: 'Double-smoked BBQ sauce', tags: ['Gluten?', 'Soy?'] }
+        { q: '[Qty]', name: 'Double-smoked BBQ sauce', tags: ['Gluten?', 'Soy?'] },
+        { q: '[Qty]', name: 'Cowboy candy', note: 'candied jalapeños', link: 'cowboy-candy' }
       ],
       pins: [
         { label: 'Chicken wings', x: 39.6, y: 42.5, side: 'right', tags: [], note: '380 to 420 g, fried.' },
-        { label: 'Double-smoked BBQ sauce', x: 58.5, y: 64.2, side: 'left', tags: ['Gluten?', 'Soy?'], note: 'On the wings.' }
+        { label: 'Double-smoked BBQ sauce', x: 58.5, y: 64.2, side: 'left', tags: ['Gluten?', 'Soy?'], note: 'On the wings.' },
+        { label: 'Cowboy candy', x: 56.0, y: 44.0, side: 'right', link: 'cowboy-candy', note: 'Candied jalapeños.' }
       ]
     },
     {
