@@ -1,0 +1,41 @@
+// Checks nightly-learn.mjs against the Firestore emulator: seeds two days, runs it twice, compares the counts.
+// Run from scripts/: FIRESTORE_EMULATOR_HOST=127.0.0.1:8089 node emulator-check.mjs (inside "firebase emulators:exec")
+import { initializeApp } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
+import { execFileSync } from 'child_process';
+initializeApp({ projectId: 'demo-test' });
+const db = getFirestore(), K = db.collection('kitchens').doc('000000');
+const pad = n => (n < 10 ? '0' : '') + n;
+const day = n => { const d = new Date(Date.now() + 10 * 3600000 - n * 86400000); return d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate()); };
+const y = day(1), y2 = day(2), today = day(0);
+const it = (text, x) => Object.assign({ text, station: 'Larder', qty: '', recipe: '', addedBy: 'Ann', addedAt: Date.now() - 86400000, deleted: false }, x || {});
+const w = (p, v) => K.collection(p[0]).doc(p[1]).collection(p[2]).doc(p[3]).set(v);
+await w(['days', y, 'items', 'a'], it('Slice onions', { qty: '2 tubs' }));
+await w(['days', y, 'items', 'b'], it('Slice onions', { qty: '2 tubs', station: 'Grill' }));
+await w(['days', y, 'items', 'c'], it('Laksa', { recipe: 'laksa' }));
+await w(['days', y, 'items', 'd'], it('Removed thing', { deleted: true }));
+await w(['days', y, 'items', 'e'], it('Slice onions', { rolled: 1 }));
+await w(['days', y2, 'items', 'f'], it('Slice onions', { qty: '3 tubs' }));
+await w(['days', today, 'items', 'g'], it('Slice onions'));
+await w(['orders', y, 'lines', 'o1'], { text: 'Flour', qty: '2 bags', addedBy: 'Sam', addedAt: Date.now() - 86400000, deleted: false });
+await w(['orders', y, 'lines', 'o2'], { text: 'Flour', qty: '2 bags', addedBy: 'Sam', addedAt: Date.now() - 86000000, deleted: false, rolled: 1 });
+await K.collection('learnlog').doc('o-' + y2).set({ at: 1, who: 'live' });  // already learned live on a phone
+const run = () => execFileSync(process.execPath, ['nightly-learn.mjs'], { env: Object.assign({}, process.env, { KITCHEN_PIN: '000000', LEARN_DAYS: '5' }), encoding: 'utf8' });
+let fails = 0; const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++; };
+const out1 = run();
+ok(/Learned \d+ kitchen days/.test(out1) && !/000000/.test(out1), 'runs and prints no PIN: ' + out1.trim());
+const on = (await K.collection('learned').doc('slice-onions').get()).data();
+ok(on.uses === 3 && on.typed === 3, 'prep: 3 uses over two days, rolled and today not counted (' + on.uses + ')');
+ok(on.secs.larder.n === 2 && on.secs.grill.n === 1, 'prep: sections counted');
+ok(on.qtys['2-tubs'].n === 2 && on.qtys['3-tubs'].n === 1, 'prep: amounts counted');
+const lk = (await K.collection('learned').doc('laksa').get()).data();
+ok(lk.picked === 1 && !lk.typed, 'prep: a line with a recipe counts as picked');
+ok(!(await K.collection('learned').doc('removed-thing').get()).exists, 'prep: removed lines not counted');
+const fl = (await K.collection('ordlearned').doc('flour').get()).data();
+ok(fl.uses === 1 && fl.qtys['2-bags'].n === 1, 'orders: counted once (rolled copy left out)');
+ok((await K.collection('learnlog').doc(y).get()).exists && (await K.collection('learnlog').doc('o-' + y).get()).exists, 'days claimed');
+ok(!(await K.collection('learnlog').doc(today).get()).exists, 'today is not learned yet');
+run();
+const on2 = (await K.collection('learned').doc('slice-onions').get()).data();
+ok(on2.uses === 3, 'second run counts nothing twice (' + on2.uses + ')');
+process.exit(fails ? 1 : 0);
