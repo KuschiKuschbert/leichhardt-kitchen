@@ -2317,6 +2317,19 @@ window.LK_DATA = {
         { title: 'Method', steps: ['[Method to confirm]'] }
       ],
       labelNote: 'Check the supplier label for allergens.'
+    },
+    {
+      id: 'cowboy-butter', no: '115', kind: 'batch', forLine: 'For the flank steak', name: 'Cowboy Butter', short: 'Cowboy butter',
+      yield: 'Batch: 1850 g.',
+      ingredients: [
+        { q: '1500 g', name: 'Butter', tags: ['Milk'] },
+        { q: '350 g', name: 'Bourbon BBQ dry rub', note: 'Krio Krush', tags: ['Gluten?', 'Soy?'] }
+      ],
+      sections: [
+        { title: 'Method', steps: ['Mix the bourbon BBQ dry rub through the butter.', '[Softening, mixing and storage to confirm]'] }
+      ],
+      contains: [{ allergen: 'Milk', from: 'butter' }],
+      labelNote: 'Check the supplier label for allergens on the dry rub.'
     }
   ]
 };
