@@ -263,7 +263,7 @@
     if (!p) return;
     if (!/^\d{4}$/.test(S.pf1)) { S.pinMsg = 'Your PIN is 4 digits.'; draw(); return; }
     if (S.pinStep === 'set') {
-      if (S.pf1 !== S.pf2) { S.pinMsg = 'The two PINs do not match.'; draw(); return; }
+      if (S.pf1 !== S.pf2) { S.pinMsg = 'The two PINs do not match. Type it again.'; S.pf2 = ''; draw(); focusK('pf2'); return; }
       pinHash(id, S.pf1).then(function (h) {
         var b = fb.fs.writeBatch(fb.db);
         b.set(docRef('staffpins', id), { hash: h, setAt: Date.now(), name: p.name });
@@ -409,6 +409,7 @@
         supd(itemRef(dte, mid), undo).catch(function () { toast('Could not undo.'); });
       } });
     }
+    else addedToast(t + (q0.trim() ? ' (' + q0.trim() + ')' : ''), sec, S.date, made.id);
     S.text = ''; S.qty = ''; S.section = sec; S.pickedText = ''; draw();
     var el = S.root && S.root.querySelector('[data-k="p-text"]'); if (el) el.focus();
   }
@@ -421,7 +422,7 @@
     noteSection(sec); bump({ added: 1, lastAdded: Date.now() }); learn(r.short || r.name, sec, 'pick', S.qty);
     S.qty = ''; S.recipeSearch = ''; S.recipeOpen = false; S.recipeAll = false;
     if (secInfo.from) { S.section = sec; var sf = secInfo.from, mid = made.id, dte = S.date; toast('Added ' + (r.short || r.name) + ', section ' + sf + ' corrected to ' + sec, { label: 'Undo', fn: function () { keepSection(sf); noteSection(sf); S.section = sf; supd(itemRef(dte, mid), { station: sf }).catch(function () { toast('Could not undo.'); }); } }); }
-    else toast('Added ' + (r.short || r.name));
+    else addedToast(r.short || r.name, sec, S.date, made.id);
   }
   function canUntick(x) {
     return canBrowse() || (!!x.doneById && x.doneById === S.who && Date.now() - (x.doneAt || 0) < 110000);
@@ -432,7 +433,7 @@
     var done = !it.done;
     if (!done && !canUntick(it)) { toast('Ticked lines stay ticked. Ask the head chef or sous chef to undo it.'); return; }
     supd(itemRef(date, id), { done: done, doneBy: done ? p.name : '', doneById: done ? p.id : '', doneAt: done ? Date.now() : 0 }).catch(failed);
-    if (done) { bump({ ticked: 1 }); toast('Ticked ' + it.text, { label: 'Undo', fn: function () { tick(date, id); } }); }
+    if (done) { bump({ ticked: 1 }); toast('Ticked ' + it.text, { label: 'Undo', fn: function () { tick(date, id); } }); setTimeout(draw, LINGER + 100); }
     else if (it.doneById && fb) sset(docRef('activity', it.doneById), { name: it.doneBy || '', ticked: fb.fs.increment(-1) }, true).catch(function () {});
   }
   function removeItem(date, id, restore) {
@@ -634,9 +635,19 @@
   function quickAdd(i) {
     var x = (S.quick || [])[i];
     if (!x || !can('add')) return;
-    var rm = matchRecipe(x.text), uq = usualQty(x.text);
-    newItem({ text: x.text.slice(0, 160), station: x.section, recipe: rm ? rm.id : '', qty: uq }).catch(failed);
-    noteSection(x.section); bump({ added: 1, lastAdded: Date.now() }); learn(x.text, x.section, 'pick', uq);
+    oneTap(x.text, x.section);
+  }
+  /* One-tap adds (Usual, Regulars, Due today): the line goes on with its usual amount, and the toast says where, with Undo. */
+  function oneTap(text, sec) {
+    var rm = matchRecipe(text), uq = usualQty(text), dte = S.date;
+    var made = newItem({ text: text.slice(0, 160), station: sec, recipe: rm ? rm.id : '', qty: uq });
+    made.catch(failed);
+    noteSection(sec); bump({ added: 1, lastAdded: Date.now() }); learn(text, sec, 'pick', uq);
+    addedToast(text + (uq ? ' (' + uq + ')' : ''), sec, dte, made.id);
+  }
+  /* Undo on an add flags the new line as removed. Anyone may take back a line they just wrote (the rules let the writer update it). */
+  function addedToast(what, sec, dte, mid) {
+    toast('Added ' + what + (sec ? ' to ' + sec : ''), { label: 'Undo', fn: function () { supd(itemRef(dte, mid), { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: Date.now() }).catch(failed); } });
   }
   /* Owner backup: everything the book holds, as one JSON file (PIN fingerprints left out). */
   function exportAll() {
@@ -1596,11 +1607,12 @@
   /* ---------- drawing ---------- */
   var TICK = '<svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><path d="M5 14 L11 20 L22 5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
+  function openLabel() { return { orders: 'Open the order list', waste: 'Open the wastage log', minutes: 'Open the minutes' }[S.name] || 'Open the prep list'; }
   function gateHTML() {
-    return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Kitchen PIN</h2><p class="hint">Enter the kitchen PIN to open the prep book. This phone remembers it.</p>' +
+    return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Kitchen PIN</h2><p class="hint">Enter the kitchen PIN to open the prep list, orders, wastage and minutes. This phone remembers it.</p>' +
       '<div class="field"><label class="label" for="p-pin">PIN</label>' + pinField('p-pin', 'p-pin', S.pinInput) + '</div>' +
       (S.pinError ? '<p class="p-err" role="alert">' + esc(S.pinError) + '</p>' : '') +
-      '<div class="btn-row"><button type="button" class="btn dark" data-p="pin-go">Open the prep book</button></div></section>';
+      '<div class="btn-row"><button type="button" class="btn dark" data-p="pin-go">' + openLabel() + '</button></div></section>';
   }
   function whoHTML() {
     var list = people();
@@ -1620,7 +1632,7 @@
       '<div class="field"><label class="label" for="pf1">' + (setting ? 'New PIN' : 'PIN') + '</label>' + pinField('pf1', 'pf1', S.pf1) + '</div>' +
       (setting ? '<div class="field"><label class="label" for="pf2">Type it again</label>' + pinField('pf2', 'pf2', S.pf2) + '</div>' : '') +
       (S.pinMsg ? '<p class="p-err" role="alert">' + esc(S.pinMsg) + '</p>' : '') +
-      '<div class="btn-row"><button type="submit" class="btn dark">' + (setting ? 'Save my PIN' : 'Open the prep book') + '</button><button type="button" class="btn" data-p="who-change">Not me</button></div></form>';
+      '<div class="btn-row"><button type="submit" class="btn dark">' + (setting ? 'Save my PIN' : openLabel()) + '</button><button type="button" class="btn" data-p="who-change">Not me</button></div></form>';
   }
 
   var BOX = '<svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><rect x="2.5" y="2.5" width="21" height="21" rx="3" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
@@ -1630,13 +1642,16 @@
     var marks = (x.urgent ? '<span class="nb-urg">Urgent</span>' : '') + (x.rolled ? '<span class="nb-roll" title="Not finished earlier, so it rolled over">Rolled' + (x.rolled > 1 ? ' x' + x.rolled : '') + '</span>' : '');
     var star = can('add') && !x.deleted && !readonly ? '<button type="button" class="nb-star" data-p="urgent" data-id="' + esc(x.id) + '" aria-pressed="' + !!x.urgent + '" aria-label="' + esc((x.urgent ? 'Not urgent: ' : 'Mark urgent: ') + x.text) + '">!</button>' : '';
     var rid = x.recipe || ((matchRecipe(x.text) || {}).id || ''), rr = rid ? recipeById(rid) : null;
-    var link = rid ? '<a class="nb-go" href="#/r/' + encodeURIComponent(rid) + '" title="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '">recipe</a>' : '';
+    var link = rid ? '<a class="nb-go" href="#/r/' + encodeURIComponent(rid) + '" title="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '" aria-label="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '">recipe</a>' : '';
+    var del = delOk ? '<button type="button" class="nb-x" data-p="' + (x.deleted ? 'restore' : 'del') + '" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-label="' + (x.deleted ? 'Put back ' : 'Remove ') + esc(x.text) + '">' + (x.deleted ? 'put back' : 'remove') + '</button>' : '';
     return '<li id="nbr-' + esc(x.id) + '" class="nb-row' + (x.done ? ' is-done' : '') + (x.rolled && !x.done ? ' is-rolled' : '') + (x.urgent && !x.done ? ' is-urgent' : '') + (x.deleted ? ' is-removed' : '') + '">' +
       '<button type="button" class="nb-box" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-pressed="' + !!x.done + '" aria-label="' + esc((x.done ? 'Untick ' : 'Tick ') + x.text) + '"' + (tickOk ? '' : ' disabled') + '>' + (x.done ? TICK : BOX) + '</button>' +
-      '<span class="nb-t"' + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + '</span>' + marks +
-      '<span class="nb-by">' + by + '</span>' + star + link +
-      (delOk ? '<button type="button" class="nb-x" data-p="' + (x.deleted ? 'restore' : 'del') + '" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-label="' + (x.deleted ? 'Put back ' : 'Remove ') + esc(x.text) + '">' + (x.deleted ? 'put back' : 'remove') + '</button>' : '') + '</li>';
+      '<span class="nb-t"' + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + (marks ? ' <span class="nb-marks">' + marks + '</span>' : '') + '</span>' +
+      '<span class="nb-by">' + by + '</span>' + (star || link || del ? '<span class="nb-acts">' + star + link + del + '</span>' : '') + '</li>';
   }
+  /* A line ticked on this phone stays where it is, struck through, for 3.5 seconds before it leaves the list. */
+  var LINGER = 3500;
+  function lingers(x) { return x.done && !x.deleted && x.doneById === S.who && Date.now() - (x.doneAt || 0) < LINGER; }
   function pageBody(items, date) {
     /* ticked lines leave the list and show under Done today in Handy. Sections with nothing left to do are hidden. */
     var shown = items.filter(function (x) { return (S.showRemoved || !x.deleted) && (!S.tab || (x.station || '') === S.tab); });
@@ -1646,7 +1661,7 @@
     return order.map(function (sec) {
       var all = shown.filter(function (x) { return (x.station || '') === sec; });
       var live = all.filter(function (x) { return !x.deleted; });
-      var rows = all.filter(function (x) { return !(x.done && !x.deleted); });
+      var rows = all.filter(function (x) { return !(x.done && !x.deleted) || lingers(x); });
       if (!rows.length) return '';
       return (sec ? '<div class="nb-hd"><span>' + esc(sec) + '</span><span>' + live.filter(function (x) { return x.done; }).length + '/' + live.length + '</span></div>' : '') +
         '<ul class="nb-rows">' + rows.map(function (x) { return rowHTML(x, date); }).join('') + '</ul>';
@@ -1744,14 +1759,15 @@
     var sug = suggestions();
     var add = can('add') ?
       '<form class="nb-add" data-p-form="add"><datalist id="p-sections">' + sug.map(function (n) { return '<option value="' + esc(n) + '"></option>'; }).join('') + '</datalist>' +
-      '<div class="nb-add-row"><label class="visually-hidden" for="p-section">Section</label><input id="p-section" class="nb-in nb-in-sec" data-k="p-section" list="p-sections" autocomplete="off" placeholder="Section" maxlength="40" value="' + esc(S.section) + '">' +
-      '<label class="visually-hidden" for="p-text">Prep item</label><input id="p-text" class="nb-in nb-in-text" data-k="p-text" autocomplete="off" placeholder="Write a new line..." maxlength="160" value="' + esc(S.text) + '">' +
-      '<label class="visually-hidden" for="p-qty">Amount</label><input id="p-qty" class="nb-in nb-in-qty" data-k="p-qty" autocomplete="off" placeholder="Amount" maxlength="40" value="' + esc(S.qty) + '">' +
+      '<div class="nb-add-row"><label class="visually-hidden" for="p-section">Section</label><input id="p-section" class="nb-in nb-in-sec" data-k="p-section" list="p-sections" enterkeyhint="next" autocomplete="off" placeholder="Section" maxlength="40" value="' + esc(S.section) + '">' +
+      '<label class="visually-hidden" for="p-text">Prep item</label><input id="p-text" class="nb-in nb-in-text" data-k="p-text" enterkeyhint="done" autocomplete="off" placeholder="Write a new line..." maxlength="160" value="' + esc(S.text) + '">' +
+      '<label class="visually-hidden" for="p-qty">Amount</label><input id="p-qty" class="nb-in nb-in-qty" data-k="p-qty" enterkeyhint="done" autocomplete="off" placeholder="Amount" maxlength="40" value="' + esc(S.qty) + '">' +
       '<button type="submit" class="nb-addbtn">Add</button></div><div class="nb-sugg" id="p-sugg">' + suggestHTML() + '</div><div class="nb-sugg nb-qs" id="p-qsugg">' + qtyChipsHTML() + '</div><p class="nb-hint" id="p-hint" aria-live="polite">' + esc(hintText(S.text)) + '</p>' + recipePicker() + '</form>' : '<p class="hint">You can read the book but not write in it. Ask the admin if that is wrong.</p>';
     var todayEmpty = !live.length && S.itemsState === 'ok' ? '<p class="nb-empty">Nothing written for ' + esc(dayName(S.date).toLowerCase()) + ' yet.</p>' : '';
     if (live.length && doneN === live.length && !S.tab) todayEmpty = '<p class="nb-empty">Everything on this list is ticked off. See Done today under Handy.</p>';
+    if (S.tab && !live.some(function (x) { return (x.station || '') === S.tab && (!x.done || lingers(x)); })) todayEmpty = '<p class="nb-empty">Nothing left to do in ' + esc(S.tab) + '. Ticked lines are under Done today in Handy.</p>';
     var left = '<section class="nb-page nb-left"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + esc(dayName(S.date)) + '</h2><span class="nb-date">' + esc(longDate(S.date)) + '</span></div>' +
-      '<div class="nb-prog" role="status">' + doneN + ' of ' + live.length + ' done</div></header>' +
+      '<div class="nb-prog" role="status">' + doneN + ' of ' + live.length + ' done</div>' + (can('add') ? '<button type="button" class="nb-jump" data-p="write">Write a line</button>' : '') + '</header>' +
       (S.itemsState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' : '') +
       '<div class="nb-body">' + minNudgeHTML() + closeoutHTML(live) + wNoteHTML() + startHTML(live) + pageBody(S.items, S.date) + todayEmpty + '</div>' +
       '<div class="nb-foot">' + add + (removed.length && can('del') ? '<button type="button" class="nb-link" data-p="removed">' + (S.showRemoved ? 'Hide' : 'Show') + ' removed (' + removed.length + ')</button>' : '') + '</div></section>';
@@ -1981,7 +1997,7 @@
   /* The People tab: every person with role, permissions and PIN reset. Search, filter chips and Show more once the list is long. */
   function peopleListHTML(d) {
     var items = d.people.map(function (p, i) { return { p: p, i: i }; });
-    function cb(o, kind, perm, on, label) { return '<input type="checkbox" aria-label="' + label + ' for ' + esc(o.p.name) + '" data-a="' + kind + '"' + (perm ? ' data-perm="' + perm + '"' : '') + ' data-i="' + o.i + '"' + (on ? ' checked' : '') + '>'; }
+    function cb(o, kind, perm, on, label) { return '<label class="a-cl"><input type="checkbox" aria-label="' + label + ' for ' + esc(o.p.name) + '" data-a="' + kind + '"' + (perm ? ' data-perm="' + perm + '"' : '') + ' data-i="' + o.i + '"' + (on ? ' checked' : '') + '></label>'; }
     function nm(o) { return String(o.p.name || '').toLowerCase(); }
     return lvHTML({
       key: 'people', items: items, step: 15, tools: 8, noun: ['person', 'people'], ph: 'Search names', table: 'lv-people', empty: 'No names yet.',
@@ -2147,7 +2163,7 @@
     });
   }
   function ordReload() { S.ordAllAt = 0; if (S.ordView === 'all') loadOrdAll(true); }
-  function addOrder() {
+  function addOrder(oneTapAdd) {
     var t = S.otext.trim();
     if (!t || !can('add')) return;
     var typed = t, pr = proofread(t); t = (pr.text || t).slice(0, 120);
@@ -2156,6 +2172,8 @@
     S.otext = ''; var q = S.oqty.trim().slice(0, 40); S.oqty = ''; draw();
     sset(ref, { text: t, qty: q, recipes: hit ? hit.ids : [], addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: Date.now(), ordered: false, deleted: false, orig: t !== typed ? typed.slice(0, 120) : '' })
       .then(function () { ordReload(); if (oFix) toast('Corrected ' + oFix); }, function (e) { failed(e, function () { if (!S.otext.trim()) { S.otext = typed; S.oqty = q; } }); });
+    if (!oFix) toast('Added ' + t + (q ? ' (' + q + ')' : '') + ' to the order list', { label: 'Undo', fn: function () { supd(ref, { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: Date.now() }).then(ordReload, failed); } });
+    if (oneTapAdd) return;
     var el = S.root && S.root.querySelector('[data-k="o-text"]'); if (el) el.focus();
   }
   function ingredientFor(text) { return ingIndex()[okey(text)] || null; }
@@ -2165,11 +2183,16 @@
     return supd(ordRef(date, id), { ordered: on, orderedBy: on ? p.name : '', orderedAt: on ? Date.now() : 0 });
   }
   function tickOrderLine(date, id, on) {
+    var it = (S.ordLines || []).concat(S.ordAll || []).filter(function (x) { return x.id === id; })[0];
     setOrdered(date, id, on).then(ordReload, failed);
+    if (on) toast('Ordered ' + (it ? it.text : 'the line'), { label: 'Undo', fn: function () { tickOrderLine(date, id, false); } });
   }
   function tickOrderGroup(key) {
-    var jobs = (S.ordAll || []).filter(function (x) { return !x.deleted && !x.ordered && okey(x.text) === key; }).map(function (x) { return setOrdered(x.date, x.id, true); });
-    Promise.all(jobs).then(function () { toast('Marked as ordered.'); ordReload(); }, failed);
+    var lines = (S.ordAll || []).filter(function (x) { return !x.deleted && !x.ordered && okey(x.text) === key; });
+    Promise.all(lines.map(function (x) { return setOrdered(x.date, x.id, true); })).then(ordReload, failed);
+    if (lines.length) toast('Ordered ' + lines[0].text + (lines.length > 1 ? ' (' + lines.length + ' lines)' : ''), { label: 'Undo', fn: function () {
+      Promise.all(lines.map(function (x) { return setOrdered(x.date, x.id, false); })).then(ordReload, failed);
+    } });
   }
   function removeOrderLine(date, id, restore) {
     if (!canBrowse() || !can('del')) return;
@@ -2250,7 +2273,7 @@
     }).filter(function (e) { return e.same >= 2 || e.nd >= 5; }).sort(function (a, b) { return b.same - a.same || b.nd - a.nd; }).slice(0, 10);
     S.oregs = list;
     if (!list.length) return '';
-    return '<div class="w-often"><span class="nb-ql">Usually ordered on a ' + esc(dname) + ' or often</span><div class="chiprow">' + list.map(function (e, i) { return '<button type="button" class="chip sq" data-p="oreg" data-i="' + i + '">' + esc(e.text) + (e.q ? ' <span class="nb-uq">' + esc(e.q) + '</span>' : '') + '</button>'; }).join('') + '</div></div>';
+    return '<div class="w-often"><span class="nb-ql">Usually ordered on a ' + esc(dname) + ' or often. Tap to add</span><div class="chiprow">' + list.map(function (e, i) { return '<button type="button" class="chip sq" data-p="oreg" data-i="' + i + '">' + esc(e.text) + (e.q ? ' <span class="nb-uq">' + esc(e.q) + '</span>' : '') + '</button>'; }).join('') + '</div></div>';
   }
   function ordersHTML() {
     if (can('add')) { loadOrdHist(); loadWRecent(false); }
@@ -2268,8 +2291,8 @@
     var tabs = br ? '<div class="nb-nav o-nav"><button type="button" class="chip" data-p="oview" data-v="day" aria-pressed="' + (view === 'day') + '">By day</button><button type="button" class="chip" data-p="oview" data-v="all" aria-pressed="' + (view === 'all') + '">Everything to order</button>' +
       (view === 'day' ? '<button type="button" class="chip" data-p="oday" data-d="-1" aria-label="Back one day">&lsaquo;</button><button type="button" class="chip" data-p="otoday" aria-pressed="' + (S.ordDate === today) + '">Today</button><button type="button" class="chip" data-p="oday" data-d="1" aria-label="Forward one day">&rsaquo;</button>' : '') + '</div>' : '';
     var add = can('add') && S.ordDate === today ?
-      '<form class="nb-add" data-p-form="oadd"><div class="nb-add-row"><label class="visually-hidden" for="o-text">Item to order</label><input id="o-text" class="nb-in nb-in-text" data-k="o-text" autocomplete="off" placeholder="What do we need to order?" maxlength="120" value="' + esc(S.otext) + '">' +
-      '<label class="visually-hidden" for="o-qty">Amount</label><input id="o-qty" class="nb-in nb-in-qty" data-k="o-qty" autocomplete="off" placeholder="Amount" maxlength="40" value="' + esc(S.oqty) + '"><button type="submit" class="nb-addbtn">Add</button></div>' +
+      '<form class="nb-add" data-p-form="oadd"><div class="nb-add-row"><label class="visually-hidden" for="o-text">Item to order</label><input id="o-text" class="nb-in nb-in-text" data-k="o-text" enterkeyhint="done" autocomplete="off" placeholder="What do we need to order?" maxlength="120" value="' + esc(S.otext) + '">' +
+      '<label class="visually-hidden" for="o-qty">Amount</label><input id="o-qty" class="nb-in nb-in-qty" data-k="o-qty" enterkeyhint="done" autocomplete="off" placeholder="Amount" maxlength="40" value="' + esc(S.oqty) + '"><button type="submit" class="nb-addbtn">Add</button></div>' +
       '<div class="nb-sugg" id="o-sugg">' + ordSuggHTML() + '</div><p class="nb-hint" id="o-hint" aria-live="polite">' + esc(oHintText(S.otext)) + '</p>' + oRegsHTML() + '</form>' : (S.ordDate === today ? '<p class="hint">You can read the order list but not write in it.</p>' : '');
     var moved = live.filter(function (x) { return shown.indexOf(x) < 0; }).sort(function (a, b) { return (b.orderedAt || 0) - (a.orderedAt || 0); });
     var removedO = (S.ordLines || []).filter(function (x) { return x.deleted; });
@@ -2281,7 +2304,7 @@
     }).join('') + '</ul>' : '';
     var body = view === 'all' ? ordAllHTML() :
       (S.ordState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' :
-        (shown.length ? '<ul class="nb-rows">' + shown.slice().sort(function (a, b) { return (a.ordered ? 1 : 0) - (b.ordered ? 1 : 0) || (a.addedAt || 0) - (b.addedAt || 0); }).map(ordRow).join('') + '</ul>' : (live.length ? '<p class="nb-empty">Everything on this list has been ordered. See Ordered today below.</p>' : S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : '<p class="nb-empty">Loading...</p>')));
+        (shown.length ? '<ul class="nb-rows">' + shown.slice().sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }).map(ordRow).join('') + '</ul>' : (live.length ? '<p class="nb-empty">Everything on this list has been ordered. See Ordered today below.</p>' : S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : '<p class="nb-empty">Loading...</p>')));
     return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' : '') + '</span><span class="p-links"><a class="p-link" href="#/prep">Prep list</a>' + '' + '</span></div>' + tabs +
       '<section class="nb-page o-page' + (view === 'all' ? ' o-all' : '') + '"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + (view === 'all' ? 'To order' : 'Order list') + '</h2><span class="nb-date">' + (view === 'all' ? 'Across the last ' + ORD_DAYS + ' days' : esc(longDate(S.ordDate))) + '</span></div>' +
       (view === 'day' ? '<div class="nb-prog" role="status">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') + '</header>' +
@@ -2365,17 +2388,20 @@
     var f = S.wf, p = me();
     if (!can('add')) return;
     var wpr = proofread(f.text.trim()), t = (wpr.text || '').slice(0, 80), amt = parseFloat(String(f.amt).replace(',', '.'));
-    if (!t) { toast('Write what was wasted.'); return; }
-    if (!(amt > 0) || amt >= 100000) { toast('Write the amount as a number.'); return; }
-    if (UNITS.indexOf(f.unit) < 0) { toast('Pick a unit.'); return; }
-    if (!REASONS.some(function (r) { return r[0] === f.reason; })) { toast('Pick a reason.'); return; }
+    if (!t) { toast('Write what was wasted.'); focusK('w-text'); return; }
+    if (!(amt > 0) || amt >= 100000) { toast('Write the amount as a number.'); focusK('w-amt'); return; }
+    if (UNITS.indexOf(f.unit) < 0) { toast('Pick a unit.'); focusSel('.seg-b'); return; }
+    if (!REASONS.some(function (r) { return r[0] === f.reason; })) { toast('Pick a reason.'); focusSel(window.matchMedia && window.matchMedia('(max-width: 719px)').matches ? '.w-rbtn' : '.w-rchips .chip'); return; }
     var secInfo = {}, sec = cleanSection(f.sec, secInfo), rm = matchRecipe(t), ref = fb.fs.doc(wCol(S.wDate));
     sset(ref, { text: t, amount: amt, unit: f.unit, reason: f.reason, action: f.act.trim().slice(0, 120), station: sec, recipe: rm ? rm.id : '',
       addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: Date.now(), deleted: false }).catch(function (e) { failed(e, function () { if (!S.wf.text.trim()) S.wf = f; }); });
     if (sec) noteSection(sec);
     S.wf = { text: '', amt: '', unit: f.unit, reason: '', sec: sec, act: '' };
+    draw(); focusK('w-text');
     toast('Logged ' + t + (wpr.changes.length ? ' (corrected ' + wpr.changes.map(function (c) { return c[0] + ' to ' + c[1]; }).join(', ') + ')' : '') + (secInfo.from ? ' under ' + sec + ' (typed ' + secInfo.from + ')' : ''));
   }
+  function focusK(k) { var el = S.root && S.root.querySelector('[data-k="' + k + '"]'); if (el) el.focus(); }
+  function focusSel(sel) { var el = S.root && S.root.querySelector(sel); if (el && el.offsetParent !== null) el.focus(); }
   function removeWaste(date, id, restore) {
     if (!canBrowse() || !can('del')) return;
     var it = (S.wLines || []).concat(S.wRecent || []).filter(function (x) { return x.id === id; })[0];
@@ -2419,9 +2445,9 @@
     var add = can('add') && S.wDate === today ?
       '<form class="nb-add w-add" data-p-form="wadd">' + (often.length ? '<div class="w-often"><span class="nb-ql">Logged often</span><div class="chiprow">' + often.map(function (e, i) { return '<button type="button" class="chip sq" data-p="woften" data-i="' + i + '">' + esc(e.text) + '</button>'; }).join('') + '</div></div>' : '') +
       '<datalist id="w-sections">' + suggestions().map(function (n) { return '<option value="' + esc(n) + '"></option>'; }).join('') + '</datalist>' +
-      '<div class="nb-add-row"><label class="visually-hidden" for="w-sec">Section</label><input id="w-sec" class="nb-in nb-in-sec" data-k="w-sec" list="w-sections" autocomplete="off" placeholder="Section" maxlength="40" value="' + esc(f.sec) + '">' +
-      '<label class="visually-hidden" for="w-text">Item</label><input id="w-text" class="nb-in nb-in-text" data-k="w-text" autocomplete="off" placeholder="What was wasted?" maxlength="80" value="' + esc(f.text) + '">' +
-      '<label class="visually-hidden" for="w-amt">Amount</label><input id="w-amt" class="nb-in nb-in-qty" data-k="w-amt" inputmode="decimal" autocomplete="off" placeholder="Amount" maxlength="8" value="' + esc(f.amt) + '"></div>' +
+      '<div class="nb-add-row"><label class="visually-hidden" for="w-sec">Section</label><input id="w-sec" class="nb-in nb-in-sec" data-k="w-sec" list="w-sections" enterkeyhint="next" autocomplete="off" placeholder="Section" maxlength="40" value="' + esc(f.sec) + '">' +
+      '<label class="visually-hidden" for="w-text">Item</label><input id="w-text" class="nb-in nb-in-text" data-k="w-text" enterkeyhint="next" autocomplete="off" placeholder="What was wasted?" maxlength="80" value="' + esc(f.text) + '">' +
+      '<label class="visually-hidden" for="w-amt">Amount</label><input id="w-amt" class="nb-in nb-in-qty" data-k="w-amt" inputmode="decimal" enterkeyhint="next" autocomplete="off" placeholder="Amount" maxlength="8" value="' + esc(f.amt) + '"></div>' +
       '<div class="nb-sugg" id="w-sugg">' + wSuggHTML() + '</div>' +
       '<div class="w-pick"><span class="nb-ql" id="w-unit-l">Unit</span><div class="seg" role="radiogroup" aria-labelledby="w-unit-l">' + UNITS.map(function (u) { return '<button type="button" class="seg-b" role="radio" data-p="wunit" data-v="' + u + '" aria-checked="' + (f.unit === u) + '">' + u + '</button>'; }).join('') + '</div></div>' +
       '<div class="w-pick"><span class="nb-ql" id="w-reason-l">Reason</span><div class="w-rchips" role="radiogroup" aria-labelledby="w-reason-l">' + REASONS.map(function (r) { return '<button type="button" class="chip" role="radio" data-p="wreason" data-v="' + r[0] + '" aria-checked="' + (f.reason === r[0]) + '">' + r[1] + '</button>'; }).join('') + '</div>' +
@@ -3369,7 +3395,7 @@
     var a = el.getAttribute('data-p'), id = el.getAttribute('data-id'), i = +el.getAttribute('data-i'), dt = el.getAttribute('data-d');
     if (a.indexOf('lv-') === 0) { lvClick(a, el); return; }
     if (a === 'recipe-toggle') { S.recipeOpen = !S.recipeOpen; if (!S.recipeOpen) { S.recipeSearch = ''; S.recipeAll = false; } draw(); if (S.recipeOpen) { var rse = S.root.querySelector('#p-rs'); if (rse) rse.focus({ preventScroll: true }); } return; }
-    if (a === 'recipe-close') { S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; draw(); return; }
+    if (a === 'recipe-close') { S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; draw(); focusSel('.p-pickbtn'); return; }
     if (a === 'recipe-all') { S.recipeAll = true; draw(); var rse2 = S.root.querySelector('#p-rs'); if (rse2) rse2.focus({ preventScroll: true }); return; }
     if (a === 'pin-go') { submitKitchenPin(); return; }
     if (a === 'pin-forget') { if (!arm('pin-forget')) return; S.pin = ''; lsSet('lk.prep.pin', ''); S.config = null; S.configState = 'idle'; if (unsubCfg) unsubCfg(); if (unsubItems) unsubItems(); if (unsubSec) unsubSec(); if (unsubLrn) unsubLrn(); unsubCfg = unsubItems = unsubSec = unsubLrn = null; cfgKey = itemsKey = ''; draw(); return; }
@@ -3470,9 +3496,9 @@
     if (a === 'af-reset') { S.af = { sec: '', who: '', dow: '', reason: '' }; afSave(); draw(); return; }
     if (a === 'cal-day') { S.date = el.getAttribute('data-d'); S.tab = ''; watchItems(); location.hash = '#/prep'; return; }
     if (a === 'close-hide') { lsSet('lk.closeout', ymd(new Date())); draw(); return; }
-    if (a === 'due') { var du = (S.due || [])[i]; if (du && can('add')) { var rmd = matchRecipe(du.text), uqd = usualQty(du.text); newItem({ text: du.text.slice(0, 160), station: du.sec, recipe: rmd ? rmd.id : '', qty: uqd }).catch(failed); noteSection(du.sec); bump({ added: 1, lastAdded: Date.now() }); learn(du.text, du.sec, 'pick', uqd); } return; }
+    if (a === 'due') { var du = (S.due || [])[i]; if (du && can('add')) oneTap(du.text, du.sec); return; }
     if (a === 'stuck-urgent') { toggleUrgent(id); return; }
-    if (a === 'oreg') { var orr = (S.oregs || [])[i]; if (orr) { S.otext = orr.text; S.oqty = orr.q || ''; addOrder(); } return; }
+    if (a === 'oreg') { var orr = (S.oregs || [])[i]; if (orr) { S.otext = orr.text; S.oqty = orr.q || ''; addOrder(true); } return; }
     if (a === 'wview') { S.wView = el.getAttribute('data-v'); if (S.wView === 'week') loadWRecent(true); draw(); return; }
     if (a === 'wunit') { S.wf.unit = el.getAttribute('data-v'); draw(); return; }
     if (a === 'wreason') { S.wf.reason = el.getAttribute('data-v'); var fromSheet = S.sheet === 'reason'; S.sheet = ''; draw(); if (fromSheet) { var rb = S.root.querySelector('.w-rbtn'); if (rb) rb.focus(); } return; }
@@ -3489,6 +3515,7 @@
     if (a === 'miss-hide') { sset(docRef('misses', id), { hidden: true, q: ((S.misses || []).filter(function (x) { return x.id === id; })[0] || {}).q || id }, true).then(function () { loadMisses(true); }, failed); return; }
     if (a === 'qset') { S.qty = el.getAttribute('data-v') || ''; draw(); var tq = S.root.querySelector('[data-k="p-text"]'); if (tq) tq.focus(); return; }
     if (a === 'goto') { gotoRow(id); return; }
+    if (a === 'write') { var wt = S.root.querySelector('[data-k="p-text"]'); if (wt) { wt.scrollIntoView({ block: 'center', behavior: 'smooth' }); wt.focus({ preventScroll: true }); } return; }
     if (a === 'learn-hide') { hideLearned(id, el.getAttribute('data-hide') === '1'); return; }
     if (a === 'copy') { copyList(); return; }
     if (a === 'print') { window.print(); return; }
@@ -3593,14 +3620,24 @@
   }
   function onSubmit(e) {
     var f = e.target.getAttribute && e.target.getAttribute('data-p-form');
-    if (f === 'add') { e.preventDefault(); addTyped(); }
+    if (f === 'add') { e.preventDefault(); if (!S.text.trim()) { var pt = S.root.querySelector('[data-k="p-text"]'); if (pt) pt.focus(); return; } addTyped(); }
     else if (f === 'oadd') { e.preventDefault(); addOrder(); }
     else if (f === 'wadd') { e.preventDefault(); addWaste(); }
     else if (f === 'pin') { e.preventDefault(); submitPin(); }
   }
   function onKey(e) {
-    if (e.key === 'Escape' && S.sheet) { S.sheet = ''; draw(); return; }
-    if (e.key === 'Escape' && S.recipeOpen) { S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; draw(); return; }
+    if (e.key === 'Escape' && S.sheet) { S.sheet = ''; draw(); focusSel('.w-rbtn'); return; }
+    if (e.key === 'Tab' && S.sheet) {
+      var sh = S.root.querySelector('.sheet'), fs = sh ? Array.prototype.slice.call(sh.querySelectorAll('button')) : [];
+      if (fs.length) {
+        var first = fs[0], last = fs[fs.length - 1];
+        if (e.shiftKey && (document.activeElement === first || !sh.contains(document.activeElement))) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && (document.activeElement === last || !sh.contains(document.activeElement))) { e.preventDefault(); first.focus(); }
+      }
+      return;
+    }
+    if (e.key === 'Escape' && S.recipeOpen) { S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; draw(); focusSel('.p-pickbtn'); return; }
+    if (e.key === 'Enter' && e.target.getAttribute && e.target.getAttribute('data-k') === 'mn-pin') { e.preventDefault(); var sgb = S.root.querySelector('.mn-signbtn'); if (sgb && !sgb.disabled) sgb.click(); return; }
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.target.getAttribute && e.target.getAttribute('data-k') === 'n-text') { e.preventDefault(); saveNote(); return; }
     if (e.key === 'Enter' && e.target.getAttribute && e.target.getAttribute('data-k') === 'p-pin') { e.preventDefault(); var b = S.root.querySelector('[data-p="pin-go"]'); if (b) b.click(); }
   }

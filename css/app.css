@@ -1101,3 +1101,31 @@ html.print-min .mn-regtbl { display: block; }
 .p-sync { position: sticky; top: 0; z-index: 25; margin: 0 0 0.75rem; padding: 0.6rem 0.9rem; border: 2px solid var(--accent); border-radius: 10px; background: #FFF3EA; color: var(--ink); font-size: 0.95rem; line-height: 1.35; }
 .p-sync strong { color: var(--accent-ink); }
 @media print { .p-sync { display: none; } }
+
+/* Lists and buttons (October 2026): every tap target on a prep, order or wastage line is at least 44 px, with the
+   same look as before. The row buttons sit together on the right; Urgent and Rolled flow with the text. */
+.nb-box { flex: 0 0 44px; width: 44px; height: 44px; margin-left: -5px; }
+.nb-marks { display: inline-flex; gap: 0.3rem; vertical-align: 0.25em; margin-left: 0.3rem; }
+.nb-acts { flex: 0 0 auto; display: flex; align-items: center; gap: 2px; }
+.nb-star { position: relative; width: 44px; min-height: 44px; border: 0; border-radius: 0; background: none; }
+.nb-star::before { content: ''; position: absolute; left: 6px; top: 50%; width: 32px; height: 32px; margin-top: -16px; border: 1.5px solid #BDB5A3; border-radius: 50%; box-sizing: border-box; z-index: -1; }
+.nb-star { isolation: isolate; }
+.nb-star[aria-pressed="true"] { background: none; border-color: transparent; }
+.nb-star[aria-pressed="true"]::before { background: var(--ink); border-color: var(--ink); }
+.nb-go { display: inline-flex; align-items: center; min-height: 44px; padding: 0 0.4rem; border-bottom: 0; text-decoration: underline dotted 1.5px; text-underline-offset: 4px; }
+.nb-x { min-height: 44px; padding: 0 0.5rem; margin-left: 0.5rem; }
+.nb-link, .nb-undo { min-height: 44px; }
+.p-link { display: inline-flex; align-items: center; min-height: 44px; }
+.a-cl { display: flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; margin: -0.3rem auto; cursor: pointer; }
+.nb-jump { flex: none; align-self: center; min-height: 44px; padding: 0 0.9rem; border: 1.5px solid var(--ink); border-radius: 22px; background: var(--paper); font: 600 0.875rem var(--body); color: var(--ink); cursor: pointer; }
+@media (min-width: 900px) { .nb-jump { display: none; } }
+@media (max-width: 599px) {
+  .nb-row { flex-wrap: nowrap; }
+  .nb-t { flex: 1 1 auto; }
+  .nb-box { align-self: center; margin-top: 0; }
+  .nb-ph { flex-wrap: wrap; row-gap: 0.4rem; }
+  .nb-row { gap: 0.35rem; }
+  .nb-acts { gap: 0; }
+  .nb-go { padding: 0 0.3rem; }
+  .nb-x { margin-left: 0.2rem; padding: 0 0.35rem; }
+}
