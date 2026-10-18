@@ -1,6 +1,8 @@
 // Stand-in for the Firestore web SDK, for the click tests only (tests/lib.js serves it instead of the real SDK).
 // Data lives in localStorage ('fake.fs') so reloads keep it. window.__fake controls failures:
 //   __fake.mode = 'ok' | 'deny' (every write refused, permission-denied) | 'hold' (writes wait, like no signal)
+// __fake.reads lists the paths asked for (getDoc, getDocs) and __fake.readLog every document read from the "server";
+// getDocsFromCache only returns documents this page has read before.
 const KEY = 'fake.fs';
 function load() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } }
 let store = load();
@@ -8,6 +10,8 @@ function save() { localStorage.setItem(KEY, JSON.stringify(store)); }
 const subs = new Set();
 const held = [];
 window.__fake = window.__fake || { mode: 'ok', writes: [], reads: [] };
+window.__fake.readLog = [];
+const seen = new Set();
 window.__fake.release = function () { const h = held.splice(0); h.forEach(f => f()); };
 window.__fake.dump = function () { return store; };
 let seq = 0;
@@ -47,7 +51,11 @@ function listCol(path, c) {
   });
   return { docs, empty: !docs.length, size: docs.length, forEach: f => docs.forEach(f) };
 }
-function result(ref) { return ref.type === 'doc' ? snapDoc(ref.path) : listCol(ref.path, ref.c); }
+function result(ref) {
+  const r = ref.type === 'doc' ? snapDoc(ref.path) : listCol(ref.path, ref.c);
+  (ref.type === 'doc' ? [r] : r.docs).forEach(d => { if (d.exists()) { const k = key(d.ref.path); seen.add(k); window.__fake.readLog.push(k); } });
+  return r;
+}
 function delay(v) { return new Promise(r => setTimeout(() => r(v), 5)); }
 export function getDoc(ref) {
   if (/\/config\/admins$/.test(key(ref.path)) && !window.__fakeUser) return Promise.reject({ code: 'permission-denied' });
@@ -55,6 +63,10 @@ export function getDoc(ref) {
   return delay(result(ref));
 }
 export function getDocs(ref) { window.__fake.reads.push(key(ref.path)); return delay(result(ref)); }
+export function getDocsFromCache(ref) {
+  const r = listCol(ref.path, ref.c), docs = r.docs.filter(d => seen.has(key(d.ref.path)));
+  return delay({ docs, empty: !docs.length, size: docs.length, forEach: f => docs.forEach(f) });
+}
 export function onSnapshot(ref, next, err) {
   const s = { ref, next };
   subs.add(s);

@@ -188,8 +188,12 @@
     var out = '';
     if (s.fixed) out += '<p class="s-note" role="status">Nothing for "' + esc(q()) + '". Showing <b>' + esc(s.fixed) + '</b> instead.</p>';
     if (s.free) out += '<p class="s-note" role="status"><b>Free from ' + esc(s.free.join(', ').toLowerCase()) + ':</b> recipes with none of it and no "may have". Recipes with a card still to come are left out. Always check the supplier labels before answering a guest.</p>';
+    var gl = guideHits();
+    if (gl.length) out += '<p class="s-note g-hits"><b>' + (gl.length === 1 ? 'Guide' : 'Guides') + ':</b> ' + gl.map(function (g) { return '<a href="#/guides/' + encodeURIComponent(g.id) + '">' + esc(g.title) + '</a>'; }).join(', ') + '</p>';
     return out;
   }
+  /* How-to guides that match the search ("icombi", "fryer"), from the list kept on this phone */
+  function guideHits() { return q().length >= 3 && window.LK_PREP && window.LK_PREP.guideSearch ? window.LK_PREP.guideSearch(q()) : []; }
   function freeOk(id) {
     if (!ui.free.length) return true;
     if (missing[id].length) return false; // can't promise free-from until every part has a card
@@ -237,12 +241,13 @@
     recipes: '<svg width="26" height="26" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="32" cy="32" r="22"/><circle cx="32" cy="32" r="13" stroke-dasharray="4 5"/><path d="M6 14v14M10 14v14M14 14v14M6 28h8M10 28v22"/><path d="M58 14c-3 2-5 6-5 11v3h5v22"/></svg>',
     prep: '<svg width="26" height="26" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="12" y="10" width="40" height="48" rx="5"/><path d="M24 10V7h16v3"/><path d="M20 24l3 3 5-6M20 38l3 3 5-6"/><path d="M34 25h12M34 39h12"/></svg>',
     orders: '<svg width="26" height="26" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 20l24-12 24 12v26L32 58 8 46z"/><path d="M8 20l24 12 24-12M32 32v26"/><path d="M20 14l24 12"/></svg>',
-    waste: '<svg width="26" height="26" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 18h44"/><path d="M25 18v-6h14v6"/><path d="M15 18l3 38h28l3-38"/><path d="M27 28v18M37 28v18"/></svg>'
+    waste: '<svg width="26" height="26" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 18h44"/><path d="M25 18v-6h14v6"/><path d="M15 18l3 38h28l3-38"/><path d="M27 28v18M37 28v18"/></svg>',
+    guides: '<svg width="26" height="26" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M32 16c-6-4-14-6-24-6v38c10 0 18 2 24 6 6-4 14-6 24-6V10c-10 0-18 2-24 6z"/><path d="M32 16v38"/><path d="M14 21c4 0 8 1 12 3M14 31c4 0 8 1 12 3M38 24c4-2 8-3 12-3M38 34c4-2 8-3 12-3"/></svg>'
   };
-  var NAV = [['recipes', 'Recipes', '#/recipes'], ['prep', 'Prep', '#/prep'], ['orders', 'Orders', '#/orders'], ['waste', 'Waste', '#/waste']];
+  var NAV = [['recipes', 'Recipes', '#/recipes'], ['prep', 'Prep', '#/prep'], ['orders', 'Orders', '#/orders'], ['waste', 'Waste', '#/waste'], ['guides', 'Guides', '#/guides']];
   function navActive() {
     var n = parseRoute().name;
-    return n === 'landing' ? 'home' : (n === 'home' || n === 'recipe') ? 'recipes' : n === 'prep' ? 'prep' : n === 'orders' ? 'orders' : n === 'waste' ? 'waste' : '';
+    return n === 'landing' ? 'home' : (n === 'home' || n === 'recipe') ? 'recipes' : n === 'prep' ? 'prep' : n === 'orders' ? 'orders' : n === 'waste' ? 'waste' : n === 'guides' ? 'guides' : '';
   }
   function pillNav() {
     var a = navActive();
@@ -289,13 +294,15 @@
       '<span class="wtop-icons">' + noteBellHTML() + minBellHTML() + adminLink('wtop-btn') + '<a class="wtop-btn" href="#/settings" aria-label="Settings"' + (parseRoute().name === 'settings' ? ' aria-current="page"' : '') + '>' + ICON.gear + '<span class="wtop-lbl">Settings</span></a></span></header>';
   }
   /* Under the top bar, the recipe pages get their own tools row: how many recipes, and the Pass / Tiles switch. */
-  var DOCKETS = [['01', 'Recipes', '#/recipes', 'recipes'], ['02', 'Prep list', '#/prep', 'prep'], ['03', 'Orders', '#/orders', 'orders'], ['04', 'Wastage', '#/waste', 'waste']];
+  var DOCKETS = [['01', 'Recipes', '#/recipes', 'recipes'], ['02', 'Prep list', '#/prep', 'prep'], ['03', 'Orders', '#/orders', 'orders'], ['04', 'Wastage', '#/waste', 'waste'], ['05', 'Guides', '#/guides', 'guides', 'How to work the equipment, clean it and find things']];
   function viewLanding() {
     var d = window.LK_TIME.day().split('-'), today = new Date(+d[0], d[1] - 1, +d[2], 12).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
     return '<div class="wall">' + topBar() +
       '<main id="main" class="wall-main"><h2 class="wall-h" id="rtitle" tabindex="-1">Pick a docket</h2><p class="wall-date">' + esc(today) + '</p>' + installCard() +
       '<div class="dockets">' + DOCKETS.map(function (d) {
-        return '<a class="docket" href="' + d[2] + '"><span class="dk-pin" aria-hidden="true"></span><span class="dk-top"><span class="dk-name">' + d[1] + '</span><span class="dk-no">No. ' + d[0] + '</span></span>' +
+        // the Guides docket is the long one under the other four: reference, not a job for today
+        return '<a class="docket' + (d[4] ? ' dk-wide' : '') + '" href="' + d[2] + '"><span class="dk-pin" aria-hidden="true"></span><span class="dk-top"><span class="dk-name">' + d[1] + '</span><span class="dk-no">No. ' + d[0] + '</span></span>' +
+          (d[4] ? '<span class="dk-sub">' + esc(d[4]) + '</span>' : '') +
           '<span class="dk-icon">' + NAV_ICON[d[3]].replace(/width="26" height="26"/, 'width="72" height="72"') + '</span><span class="dk-go">Open</span></a>';
       }).join('') + '</div>' +
       '<p class="wall-foot">Cook as written. Check with the head chef or sous chef before changing anything.</p></main>' + tabBar() + '</div>';
@@ -378,6 +385,14 @@
   function tipBox(r) {
     return r.tip ? '<div class="box beige"><span class="label">' + esc(r.tip.title) + '</span><div>' + esc(r.tip.text) + '</div></div>' : '';
   }
+  /* How-to guides that belong on this card: they name it, or it mentions one of their search words ("iCombi").
+     The list is the one js/prep.js keeps on this phone, so this needs no reads. The wrapper is always there so it can be refreshed. */
+  function guideBox(r) {
+    var l = window.LK_PREP && window.LK_PREP.guidesFor ? window.LK_PREP.guidesFor(r.id) : [];
+    return '<div id="r-guides" class="r-guides">' + (l.length ? '<div class="box beige"><span class="label">How-to ' + (l.length === 1 ? 'guide' : 'guides') + '</span><div class="used">' + l.map(function (g) {
+      return '<a class="ilink" href="#/guides/' + encodeURIComponent(g.id) + '"><span>' + esc(g.title) + '</span><span class="rtag">' + esc(g.cat) + '</span></a>';
+    }).join('') + '</div></div>' : '') + '</div>';
+  }
   function safetyBox(r) {
     return r.safety ? '<div class="box safety" role="note"><span class="label">' + esc(r.safety.title) + '</span><div>' + esc(r.safety.text) + '</div></div>' : '';
   }
@@ -418,7 +433,7 @@
   }
   function recipeCard(r, stack, withHome) {
     return '<article class="card' + (r.done ? ' done' : '') + '">' + crumbs(stack, withHome) + cardHead(r) + jumps() + allergenBox(r) +
-      '<div class="cols"><div class="col"><h3 class="h3" id="r-ing">Ingredients</h3>' + ingTable(r, stack, false) + tipBox(r) + usedBox(r, stack) +
+      '<div class="cols"><div class="col"><h3 class="h3" id="r-ing">Ingredients</h3>' + ingTable(r, stack, false) + tipBox(r) + guideBox(r) + usedBox(r, stack) +
       (isDish(r) && r.art && ART.plates[r.art] ? '<div class="sec"><h3 class="h3">On the plate</h3>' + art(r, 'card-art') + '</div>' : '') + sideView(r) +
       (!isDish(r) && r.art && ART.pans[r.art] ? '<div class="sec"><h3 class="h3">In the pan</h3>' + art(r, 'card-art') + '</div>' : '') + '</div>' +
       '<div class="col wide"><div id="r-steps" class="jump-at"></div>' + safetyBox(r) + diagram(r) + steps(r) + '</div></div></article>';
@@ -515,13 +530,13 @@
           ((pk.tags && pk.tags.length) ? pk.tags.map(function (t) { return '<span class="tag' + (t.slice(-1) === '?' ? ' maybe' : '') + '">' + esc(t) + '</span>'; }).join('') : '<span class="hint">No listed allergens</span>') + '</div></div>'
           : '<div class="hint" style="text-align: center">' + (r.pins.length ? 'Tap anything on the plate. A pin with an arrow opens its own recipe.' : 'No pins on this plate yet.') + '</div>') + sideView(r);
     } else {
-      left = '<div class="pan-art' + (r.done ? ' done' : '') + '">' + art(r, 'art') + '</div>' + usedBox(r, stack, 'Goes on') + tipBox(r);
+      left = '<div class="pan-art' + (r.done ? ' done' : '') + '">' + art(r, 'art') + '</div>' + usedBox(r, stack, 'Goes on') + tipBox(r) + guideBox(r);
     }
     var parent = stack.length > 1 ? byId[stack[stack.length - 2]].name : 'the pass';
     return '<div class="page">' + trail + jumps() + lensChips() +
       '<main id="main" class="cols"><div class="col">' + left + '</div><div class="col wide">' + cardHead(r) + allergenBox(r) +
       (dish ? '' : '<div class="sec"><h3 class="h3" id="r-ing">Into the pan</h3>' + ingTable(r, stack, true) + '</div>') +
-      '<div id="r-steps" class="jump-at"></div>' + safetyBox(r) + diagram(r) + steps(r) +
+      '<div id="r-steps" class="jump-at"></div>' + safetyBox(r) + diagram(r) + (dish ? guideBox(r) : '') + steps(r) +
       (dish ? '<div class="sec"><h3 class="h3" id="r-ing">Everything on it</h3>' + ingTable(r, stack, true) + '</div>' : '') +
       '</div></main>' + footer() +
       '<div class="zoombar"><a href="' + href(stack.slice(0, -1)) + '">' + ICON.zoom + 'Zoom out to ' + esc(parent) + '</a></div></div>';
@@ -599,6 +614,7 @@
     var parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
     if (parts[0] === 'settings') return { name: 'settings', stack: [] };
     if (parts[0] === 'prep' || parts[0] === 'admin' || parts[0] === 'orders' || parts[0] === 'waste' || parts[0] === 'minutes') return { name: parts[0], stack: [] };
+    if (parts[0] === 'guides') return { name: 'guides', stack: [], gid: parts[1] || '' };
     if (parts[0] === 'r') {
       var stack = parts.slice(1).filter(function (id) { return byId[id]; });
       if (stack.length) return { name: 'recipe', stack: stack };
@@ -613,6 +629,8 @@
     v[id] = (v[id] || 0) + 1;
     writeJSON(LS, 'lk.views', v);
   }
+  // the pages drawn by js/prep.js (Firebase): prep book, orders, wastage, minutes, guides and the admin panel
+  var PREP_PAGES = { prep: 1, admin: 1, orders: 1, waste: 1, minutes: 1, guides: 1 };
   var warmed = false;
   var lastHash = null, lastRoute = '', homeY = 0;
   window.addEventListener('scroll', function () { if (lastRoute === 'home') homeY = window.scrollY; }, { passive: true });
@@ -625,7 +643,7 @@
     var html;
     if (route.name === 'landing') html = viewLanding();
     else if (route.name === 'settings') html = viewSettings();
-    else if (route.name === 'prep' || route.name === 'admin' || route.name === 'orders' || route.name === 'waste' || route.name === 'minutes') html = viewPrep();
+    else if (PREP_PAGES[route.name]) html = viewPrep();
     else if (view === 'pass') html = viewPass(route);
     else html = viewTiles(route);
     // Swipeable chip rows keep their place when the page redraws (for example after tapping a chip at the far end).
@@ -634,11 +652,11 @@
     app.innerHTML = html;
     if (!changed) Array.prototype.forEach.call(app.querySelectorAll('.chips.scroll'), function (el, i) { if (rowsAt[i]) el.scrollLeft = rowsAt[i]; });
     fitPins();
-    if ((route.name === 'prep' || route.name === 'admin' || route.name === 'orders' || route.name === 'waste' || route.name === 'minutes') && window.LK_PREP) window.LK_PREP.mount(route.name, document.getElementById('prep-root'));
+    if (PREP_PAGES[route.name] && window.LK_PREP) window.LK_PREP.mount(route.name, document.getElementById('prep-root'), route.gid);
     // On any other page, connect to the prep book in the background so Prep, Orders and Wastage open straight away.
     else if (window.LK_PREP && window.LK_PREP.warm && !warmed) { warmed = true; setTimeout(function () { window.LK_PREP.warm(); }, 900); }
     var r = route.stack.length ? byId[route.stack[route.stack.length - 1]] : null;
-    document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'waste' ? 'Wastage · ' : route.name === 'minutes' ? 'Meeting minutes · ' : route.name === 'landing' ? '' : route.name === 'home' ? 'Recipes · ' : route.name === 'admin' ? 'Admin panel · ' : '')) + 'Leichhardt Kitchen Book';
+    document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'waste' ? 'Wastage · ' : route.name === 'minutes' ? 'Meeting minutes · ' : route.name === 'guides' ? 'Guides · ' : route.name === 'landing' ? '' : route.name === 'home' ? 'Recipes · ' : route.name === 'admin' ? 'Admin panel · ' : '')) + 'Leichhardt Kitchen Book';
     var prevRoute = lastRoute; lastRoute = route.name;
     if (changed && route.name === 'recipe') noteView(route.stack[route.stack.length - 1]);
     if (changed) {
@@ -806,7 +824,7 @@
   var missTimer = null;
   function noteMiss() {
     var s = q();
-    if (s.length < 3 || D.recipes.some(function (r) { return matches(r.id); })) return;
+    if (s.length < 3 || D.recipes.some(function (r) { return matches(r.id); }) || guideHits().length) return;
     var l = readJSON(LS, 'lk.miss') || [];
     var now = window.LK_TIME.now();
     l = l.filter(function (m) { return !(now - m.at < 120000 && (s.indexOf(m.q) === 0 || m.q.indexOf(s) === 0)); });
@@ -860,6 +878,12 @@
     render();
   });
 
+  // js/prep.js read a changed guides list: refresh the guides box on a recipe card and any search
+  window.addEventListener('lk-guides', function () {
+    var route = parseRoute(), box = document.getElementById('r-guides');
+    if (route.name === 'recipe' && box) box.outerHTML = guideBox(byId[route.stack[route.stack.length - 1]]);
+    else if (route.name === 'home' && q()) updateResults();
+  });
   window.addEventListener('hashchange', render);
   render();
 })();

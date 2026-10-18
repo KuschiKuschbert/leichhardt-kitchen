@@ -1,9 +1,10 @@
 /*
-  Leichhardt Kitchen prep book: prep list, order list, wastage log, daily notes, meeting minutes and the admin panel.
+  Leichhardt Kitchen prep book: prep list, order list, wastage log, daily notes, meeting minutes, guides and the admin panel.
   Staff add and tick on any phone. Everything syncs through Firebase (Cloud Firestore, free plan).
 
   Pages:   #/prep     the daily prep list         #/orders   the order list       #/waste   the wastage log
            #/minutes  meeting minutes to sign     #/admin    admin panel, Google sign-in for the head chef only
+           #/guides   how-to guides (the head chef uploads them in the admin panel's Guides tab)
 
   Data (the kitchen PIN is part of the path, so only people who know it can reach the data):
     kitchens/<PIN>/config/main                 { people: [...] }                    read by staff, written by the admin only
@@ -20,6 +21,7 @@
     kitchens/<PIN>/learned/<item>, ordlearned/<item>   what the prep and order lists have learned
     kitchens/<PIN>/learnlog/<id>               days already learned (create only)
     kitchens/<PIN>/misses/<slug>, views/<id>   recipe searches that found nothing, and card opens
+    kitchens/<PIN>/guides/<id>, .../pages/<n>   how-to guides, and each page as a picture (see the guides section)
 
   Who is allowed to add, tick or remove is set in the admin panel. Those permissions guide the page. The security
   rules in the Firebase console are what really lock the data: the kitchen PIN to read, a person's own PIN to write,
@@ -75,6 +77,7 @@
     sections: [], activity: [], hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false, exporting: '', moving: false, moveMsg: '', newPin: '', atab: lsGet('lk.prep.atab') || 'insights', ordDate: dayNow(), ordLines: [], ordState: 'idle', ordView: 'day', otext: '', oqty: '', ordAll: [], ordAllAt: 0, ordBusy: false, osugg: [],
     wDate: dayNow(), wLines: [], wState: 'idle', wReview: null, wrA: null, wrC: null, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wRecent: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nMsg: '', nSaving: false,
     mins: null, minsFor: '', minsAt: 0, minsBusy: false, mmine: {}, msigns: {}, mSel: '', mf: null, mMsg: '', mSaving: false, mSigning: false, mpin: '', mpinOk: false, minOpen: false, mErr: '',
+    guides: null, guidesFor: '', guidesAt: 0, gBusy: false, gRetry: 0, gq: '', gcat: 'all', gSel: '', gf: null, gfSnap: '', gMsg: '',
     adminsFor: '', level: '', stats: null, statsRange: 14, week: null, weekAt: 0, weekBusy: false,
     user: null, authState: 'idle', draft: null, saveMsg: '', busy: false, toast: '', toastAct: null
   };
@@ -116,7 +119,7 @@
         S.configState = 'ok'; watchItems(); watchSections(); watchLearned(); if (S.name === 'orders') watchOrders(); if (S.name === 'waste') watchWaste(); resume(); loadNotes(); loadMinutes(); draw();
       }, function (err) {
         S.configState = err && err.code === 'permission-denied' ? 'badpin' : 'error';
-        if (S.configState === 'badpin') { S.pinError = 'That PIN is not right.'; S.pin = ''; lsSet('lk.prep.pin', ''); cfgKey = ''; unsubCfg = null; }
+        if (S.configState === 'badpin') { S.pinError = 'That PIN is not right.'; S.pin = ''; lsSet('lk.prep.pin', ''); cfgKey = ''; unsubCfg = null; gForget(); }
         draw();
       });
     }, function () { S.configState = 'error'; draw(); });
@@ -224,6 +227,7 @@
     var b = fb.fs.writeBatch(fb.db), pf = S.who && S.tok;
     if (pf) b.set(docRef('proofs', S.who), { tok: S.tok, at: fb.fs.serverTimestamp() });
     ops.forEach(function (o) {
+      if (o[0] === 'del') { b.delete(o[1]); return; }
       var data = pf ? Object.assign({ by: S.who }, o[2]) : o[2];
       if (o[0] === 'upd') b.update(o[1], data); else if (o[3]) b.set(o[1], data, { merge: true }); else b.set(o[1], data);
     });
@@ -465,7 +469,8 @@
   function maybeRoll() {
     var today = dayNow();
     if (!T.ready() || !S.authed || !fb || !can('add') || S.date !== today || S.itemsState !== 'ok' || S.rolledFor === today) return;
-    if (S.pastFor !== S.pin + '|' + today) return; // the usual close time comes from the past days, so wait for them
+    if (S.pastFor !== pastTag()) return; // the usual close time comes from the past days, so wait for them
+    repairAhead();
     S.rolledFor = today;
     var dates = [], k;
     for (k = 1; k <= 7; k++) dates.push(shift(today, -k));
@@ -686,6 +691,7 @@
       .then(function () { return all('learnlog'); }).then(function (r) { out.learnlog = r; })
       .then(function () { return all('misses'); }).then(function (r) { out.misses = r; })
       .then(function () { return all('views'); }).then(function (r) { out.views = r; })
+      .then(function () { return all('guides'); }).then(function (r) { out.guides = r; })
       .then(function () { return all('pinset'); }).then(function (r) { out.pins = r.map(function (x) { return { id: x.id, name: x.name, setAt: x.setAt }; }); })
       .then(function () {
         var i = 0, n = 0;
@@ -744,6 +750,7 @@
       .then(function () { return copyCol('learned'); }).then(function () { return copyCol('learnlog'); }).then(function () { return copyCol('misses'); }).then(function () { return copyCol('views'); })
       .then(function () { return copyCol('notes'); }).then(function () { return copyCol('minutes'); }).then(function () { return copySub('minutes', 'hist'); })
       .then(function () { return copySub('minutes', 'signs', true); }).then(function () { return copySub('notes', 'seen', true); })
+      .then(function () { return copyCol('guides'); }).then(function () { return copySub('guides', 'pages'); })
       .then(function () {
         var i = 0;
         function next() {
@@ -761,7 +768,7 @@
       .then(function () {
         S.moving = false; S.moveMsg = 'Copied ' + n + ' records. This device now uses the new PIN. Everyone else enters the new PIN next time they open the book.' +
           (skipped ? ' ' + skipped + ' sign-offs and seen records were left on the old PIN: the published rules do not let the head chef copy them yet.' : '');
-        S.pin = np; lsSet('lk.prep.pin', np); S.items = []; S.learned = []; S.sections = []; S.activity = [];
+        S.pin = np; lsSet('lk.prep.pin', np); S.items = []; S.learned = []; S.sections = []; S.activity = []; gForget();
         stopLive(); S.rolledFor = ''; S.learnRan = false; S.weekAt = 0; S.stats = null;
         connect();
       }).catch(function (e) { S.moving = false; S.moveMsg = e && e.code === 'permission-denied' ? 'The rules do not allow the new PIN yet. Nothing was changed on the old PIN.' : 'Stopped part way. Nothing was changed on the old PIN, so it is safe to try again.'; draw(); });
@@ -857,6 +864,21 @@
   function writtenLate(x, day) {
     if (x.rolled || !x.addedAt || T.day(x.addedAt) !== day) return false;
     return T.mins(x.addedAt) >= lateMin();
+  }
+  /* Lines that rolled over before the written-for-tomorrow rule (19 Oct 2026), or on a phone with older code: a copy
+     that rolled once is checked against the time its original was written, and marked ahead for everyone if it was
+     written after the usual close. Once a day per phone, only today's list, no extra reads (the past days are cached). */
+  function repairAhead() {
+    var today = dayNow();
+    if (S.aheadFixed === today || !S.authed || !fb || !can('add') || S.date !== today || S.itemsState !== 'ok' || S.pastFor !== pastTag()) return;
+    S.aheadFixed = today;
+    var ops = [];
+    S.items.forEach(function (x) {
+      if (x.rolled !== 1 || x.ahead || x.deleted || !x.from || !x.rolledFrom) return;
+      var src = ((S.past || {})[x.rolledFrom] || []).filter(function (y) { return y.id === x.from; })[0];
+      if (src && writtenLate(src, x.rolledFrom)) ops.push(['upd', itemRef(today, x.id), { ahead: true, origAt: src.addedAt }]);
+    });
+    if (ops.length) W(ops.slice(0, 400)).catch(function () { S.aheadFixed = ''; });
   }
   function rolledN(x) { return Math.max(0, (x.rolled || 0) - (x.ahead ? 1 : 0)); }
   /* when a line was first written: a rolled copy keeps it in origAt (0 if it rolled before origAt was kept) */
@@ -977,14 +999,15 @@
      Past days hardly change, so they are read once a day and kept on the phone. Today comes from the live list.
      The weekly badges, usual amounts, Start here, Due today, the pace card and the close-out nudge all work from this. */
   var PAST_DAYS = 14, PAST_KEYS = ['text', 'station', 'qty', 'addedBy', 'addedById', 'addedAt', 'done', 'doneBy', 'doneById', 'doneAt', 'rolled', 'ahead', 'deleted', 'urgent'];
+  function pastTag() { return S.pin + '|' + dayNow() + '|2'; }
   function loadPast() {
-    var today = dayNow(), tag = S.pin + '|' + today;
+    var today = dayNow(), tag = pastTag();
     if (!fb || S.pastBusy || S.pastFor === tag) return;
     try { var c = JSON.parse(lsGet('lk.past') || 'null'); if (c && c.tag === tag && c.days) { S.past = c.days; S.pastFor = tag; pastDerive(); return; } } catch (e) {}
     S.pastBusy = true;
     var dates = [], i;
     for (i = 1; i <= PAST_DAYS; i++) dates.push(shift(today, -i));
-    Promise.all(dates.map(function (d) { return fb.fs.getDocs(itemsCol(d)).then(function (sn) { return [d, sn.docs.map(function (x) { var v = x.data(), o = {}; PAST_KEYS.forEach(function (k) { if (v[k] != null && v[k] !== '' && v[k] !== false && v[k] !== 0) o[k] = v[k]; }); return o; })]; }, function () { return [d, null]; }); })).then(function (res) {
+    Promise.all(dates.map(function (d) { return fb.fs.getDocs(itemsCol(d)).then(function (sn) { return [d, sn.docs.map(function (x) { var v = x.data(), o = { id: x.id }; PAST_KEYS.forEach(function (k) { if (v[k] != null && v[k] !== '' && v[k] !== false && v[k] !== 0) o[k] = v[k]; }); return o; })]; }, function () { return [d, null]; }); })).then(function (res) {
       var days = {}, ok = true;
       res.forEach(function (r) { if (r[1] === null) ok = false; else days[r[0]] = r[1]; });
       S.past = days; S.pastFor = tag; S.pastBusy = false;
@@ -1660,9 +1683,9 @@
   /* ---------- drawing ---------- */
   var TICK = '<svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><path d="M5 14 L11 20 L22 5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
-  function openLabel() { return { orders: 'Open the order list', waste: 'Open the wastage log', minutes: 'Open the minutes' }[S.name] || 'Open the prep list'; }
+  function openLabel() { return { orders: 'Open the order list', waste: 'Open the wastage log', minutes: 'Open the minutes', guides: 'Open the guides' }[S.name] || 'Open the prep list'; }
   function gateHTML() {
-    return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Kitchen PIN</h2><p class="hint">Enter the kitchen PIN to open the prep list, orders, wastage and minutes. This phone remembers it.</p>' +
+    return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Kitchen PIN</h2><p class="hint">Enter the kitchen PIN to open the prep list, orders, wastage, minutes and guides. This phone remembers it.</p>' +
       '<div class="field"><label class="label" for="p-pin">PIN</label>' + pinField('p-pin', 'p-pin', S.pinInput) + '</div>' +
       (S.pinError ? '<p class="p-err" role="alert">' + esc(S.pinError) + '</p>' : '') +
       '<div class="btn-row"><button type="button" class="btn dark" data-p="pin-go">' + openLabel() + '</button></div></section>';
@@ -1691,8 +1714,8 @@
   var BOX = '<svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><rect x="2.5" y="2.5" width="21" height="21" rx="3" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
   function rowHTML(x, date, readonly) {
     var tickOk = can('tick') && !x.deleted && (!x.done || canUntick(x)), delOk = can('del');
-    var by = x.done && x.doneBy ? esc(x.doneBy) + (x.doneAt ? ' ' + clock(x.doneAt) : '') : (x.rolled ? (x.origBy ? 'from ' + esc(x.origBy) : '') : (x.addedBy ? esc(x.addedBy) : ''));
-    var marks = (x.urgent ? '<span class="nb-urg">Urgent</span>' : '') + (rolledN(x) ? '<span class="nb-roll" title="Not finished earlier, so it rolled over">Rolled' + (rolledN(x) > 1 ? ' x' + rolledN(x) : '') + '</span>' : (x.ahead && x.rolled ? '<span class="nb-us" title="Written the night before for today">From last night</span>' : ''));
+    var by = x.done && x.doneBy ? esc(x.doneBy) + (x.doneAt ? ' ' + clock(x.doneAt) : '') : (rolledN(x) ? (x.origBy ? 'from ' + esc(x.origBy) : '') : x.rolled ? esc(x.origBy || '') : (x.addedBy ? esc(x.addedBy) : ''));
+    var marks = (x.urgent ? '<span class="nb-urg">Urgent</span>' : '') + (rolledN(x) ? '<span class="nb-roll" title="Not finished earlier, so it rolled over">Rolled' + (rolledN(x) > 1 ? ' x' + rolledN(x) : '') + '</span>' : '');
     var star = can('add') && !x.deleted && !readonly ? '<button type="button" class="nb-star" data-p="urgent" data-id="' + esc(x.id) + '" aria-pressed="' + !!x.urgent + '" aria-label="' + esc((x.urgent ? 'Not urgent: ' : 'Mark urgent: ') + x.text) + '">!</button>' : '';
     var rid = x.recipe || ((matchRecipe(x.text) || {}).id || ''), rr = rid ? recipeById(rid) : null;
     var link = rid ? '<a class="nb-go" href="#/r/' + encodeURIComponent(rid) + '" title="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '" aria-label="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '">recipe</a>' : '';
@@ -2118,17 +2141,18 @@
     var bulk = '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line">' + esc(S.bulk || '') + '</textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div>';
     var saveBlock = '<section class="set-block"><div class="btn-row"><button type="button" class="btn dark" data-p="a-save"' + (S.busy ? ' disabled' : '') + '>Save changes</button><button type="button" class="btn" data-p="a-reset">Undo unsaved changes</button></div><span class="saved" role="status">' + esc(S.saveMsg) + '</span></section>';
     var at = S.atab || 'insights';
-    var tabsBar = '<nav class="a-tabs" aria-label="Admin sections">' + [['insights', 'Insights'], ['team', 'Team'], ['waste', 'Waste'], ['learning', 'Learning'], ['notes', 'Notes'], ['minutes', 'Minutes'], ['people', 'People'], ['tools', 'Tools']].map(function (t) {
+    var tabsBar = '<nav class="a-tabs" aria-label="Admin sections">' + [['insights', 'Insights'], ['team', 'Team'], ['waste', 'Waste'], ['learning', 'Learning'], ['notes', 'Notes'], ['minutes', 'Minutes'], ['guides', 'Guides'], ['people', 'People'], ['tools', 'Tools']].map(function (t) {
       return '<button type="button" class="a-tab" data-p="a-tab" data-t="' + t[0] + '" aria-pressed="' + (at === t[0]) + '">' + t[1] + '</button>';
     }).join('') + '</nav>';
     if (at === 'notes') loadNotes();
     if (at === 'minutes') loadMinutes();
-    var pane = at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'learning' ? (learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() : at === 'people' ? (
+    if (at === 'guides') loadGuides();
+    var pane = at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'learning' ? (learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() : at === 'people' ? (
       '<section class="set-block"><span class="label">People</span><span class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Reset PIN lets that person choose a new one. Removing someone from the list keeps their name on old lines.</span>' +
       peopleListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' +
       '<section class="set-block"><span class="label">Badges</span><label class="a-check"><input type="checkbox" data-a="badges"' + (d.showBadges !== false ? ' checked' : '') + '> Show the weekly top tickers to everyone on the prep book</label></section>' + saveBlock
     ) : (
-      '<section class="set-block"><span class="label">Backup</span><span class="hint">Saves everything the prep book holds (people, lines from the last 400 days, learned items, tallies) as one file on this device. People\'s PIN fingerprints are left out. Do this now and then.</span><div class="btn-row"><button type="button" class="btn" data-p="export"' + (S.exporting ? ' disabled' : '') + '>' + (S.exporting ? esc(S.exporting) : 'Download a backup') + '</button></div></section>' +
+      '<section class="set-block"><span class="label">Backup</span><span class="hint">Saves everything the prep book holds (people, lines from the last 400 days, learned items, tallies and the guides\' words) as one file on this device. People\'s PIN fingerprints and the guides\' page pictures are left out (keep the original files). Do this now and then.</span><div class="btn-row"><button type="button" class="btn" data-p="export"' + (S.exporting ? ' disabled' : '') + '>' + (S.exporting ? esc(S.exporting) : 'Download a backup') + '</button></div></section>' +
       '<section class="set-block"><span class="label">Kitchen PIN</span><span class="hint">The kitchen PIN is the lock on the whole book, so keep it to staff only. Writing needs a person\'s own PIN as well.</span>' +
       '<div class="field"><label class="label" for="a-newpin">Move to a new 4 digit kitchen PIN</label><input id="a-newpin" class="search" inputmode="numeric" maxlength="4" autocomplete="off" data-k="a-newpin" placeholder="4 digits" value="' + esc(S.newPin) + '"></div>' +
       '<div class="btn-row"><button type="button" class="btn" data-p="move-pin"' + (S.moving ? ' disabled' : '') + '>' + (armed('move-pin') ? 'Tap again to copy everything' : 'Copy everything to the new PIN') + '</button></div><span class="saved" role="status">' + esc(S.moveMsg) + '</span><span class="hint">Ask for the new PIN to be added to the security rules first. The old PIN keeps working until its rules are removed.</span></section></div>');
@@ -2147,7 +2171,7 @@
       '<section class="set-block"><div class="btn-row"><button type="button" class="btn dark" data-p="a-save"' + (S.busy ? ' disabled' : '') + '>Save changes</button><button type="button" class="btn" data-p="a-reset">Undo unsaved changes</button></div><span class="saved" role="status">' + esc(S.saveMsg) + '</span></section></div>';
   }
   /* While connecting, show the page that is opening (not a generic prep book card), so nothing flashes. */
-  var PAGE_NAME = { prep: 'Prep list', orders: 'Order list', waste: 'Wastage', admin: 'Admin panel', minutes: 'Meeting minutes' };
+  var PAGE_NAME = { prep: 'Prep list', orders: 'Order list', waste: 'Wastage', admin: 'Admin panel', minutes: 'Meeting minutes', guides: 'Guides' };
   function loadingHTML() {
     var t = PAGE_NAME[S.name] || 'Prep book';
     if (S.name === 'admin') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">' + t + '</h2><p class="hint">Loading...</p></section>';
@@ -2156,6 +2180,8 @@
   }
   function bodyHTML() {
     if (!S.pin) return gateHTML();
+    // guides need only the kitchen PIN (reading, like the recipes); a list kept on the phone shows straight away, even with no signal
+    if (S.name === 'guides' && (S.guides || S.configState === 'ok')) return guidesPageHTML();
     if (S.configState === 'error') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Prep book</h2><p class="p-err">Could not connect. Check the connection and try again.</p><div class="btn-row"><button type="button" class="btn dark" data-p="retry">Try again</button></div></section>';
     if (S.configState !== 'ok') return loadingHTML();
     if (S.name === 'admin') return adminHTML();
@@ -2806,7 +2832,7 @@
   }
   function notesInit() {
     if (!/^\d{4,6}$/.test(S.pin)) return;
-    sdk().then(function () { loadNotes(); loadMinutes(); startNoteTick(); }, function () {});
+    sdk().then(function () { loadNotes(); loadMinutes(); loadGuides(); startNoteTick(); }, function () {});
   }
   function loadNotes(force) {
     var today = dayNow();
@@ -2919,6 +2945,7 @@
     if (T.mins() >= NOTE_MIN) n1030 = dayNow();
     nTick = setInterval(function () {
       var t = dayNow();
+      if (S.guidesFor && S.guidesFor !== t) loadGuides();
       if (S.notesFor && S.notesFor !== t) { loadNotes(true); return; }
       if (n1030 !== t && T.mins() >= NOTE_MIN) { n1030 = t; loadNotes(true); return; }
       noteMaybePop();
@@ -3658,6 +3685,500 @@
       }) : '<p class="hint">No empty searches yet.</p>');
   }
 
+  /* ---------- guides ----------
+     How-to guides for the team at #/guides: how to programme the iCombi, clean the fryer, where the order forms are.
+     The head chef adds them in the admin panel (Guides tab): a PDF or photos, a title, a category, and if wanted written steps and search words.
+     The free Firebase plan has no file storage and a Firestore record holds at most 1 MB, so the head chef's own phone or computer turns
+     each PDF page (drawn with pdf.js, loaded only then) or photo into one picture of under 1 MB and saves each picture as its own record.
+     Data: kitchens/<PIN>/guides/<id> { title, cat, sum, steps (one per line), kw (search words), text (the words read from the PDF, for search),
+       thumb (a small picture of page 1), pages, dims [{ w, h }], v (goes up when the file is replaced), file (its name), removed, at, upd }
+       kitchens/<PIN>/guides/<id>/pages/<n> { img (a WebP or JPEG data URL), w, h, v, n }
+     Staff need only the kitchen PIN to read them, like the recipe book. Only the head chef (Google account) writes them. Guides are never
+     deleted, only flagged as removed.
+     Reads stay small: the list is read once a day per phone and kept on the phone (lk.guides), so the recipe book links to guides with no
+     reads; opening the Guides page reads it again after 30 minutes. A guide's pages are read the first time that version is opened on a
+     phone; after that they come from the phone's own copy (Firestore's offline cache), so they open with no signal too. No listener, no polling. */
+  var G_CATS = [['equipment', 'Equipment'], ['cleaning', 'Cleaning'], ['safety', 'Food safety'], ['prep', 'Prep and cooking'], ['stock', 'Orders and stock'], ['shift', 'Opening and closing'], ['other', 'Other']];
+  var G_MAXP = 20, G_IMG = 950000, G_LONG = 2000, G_TEXT = 6000, G_STALE = 30 * 60000, G_NEW = 14 * 86400000;
+  var PDFJS = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/';
+  var G_RANK = {}; G_CATS.forEach(function (c, i) { G_RANK[c[0]] = i; });
+  var G_ICON = '<svg viewBox="0 0 64 64" width="40" height="40" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M32 16c-6-4-14-6-24-6v38c10 0 18 2 24 6 6-4 14-6 24-6V10c-10 0-18 2-24 6z"/><path d="M32 16v38"/><path d="M14 20c4 0 8 1 12 3M14 30c4 0 8 1 12 3M38 23c4-2 8-3 12-3M38 33c4-2 8-3 12-3"/></svg>';
+  function gCatName(c) { return (G_CATS.filter(function (k) { return k[0] === c; })[0] || [0, 'Other'])[1]; }
+  function gRef(id) { return docRef('guides', id); }
+  function gPageRef(id, n) { return fb.fs.doc.apply(null, [fb.db].concat(base(), ['guides', id, 'pages', String(n)])); }
+  function gPagesCol(id) { return fb.fs.collection.apply(null, [fb.db].concat(base(), ['guides', id, 'pages'])); }
+  function gById(id) { return (S.guides || []).filter(function (g) { return g.id === id; })[0] || null; }
+  function gOrder(a, b) { return (G_RANK[a.cat] == null ? 99 : G_RANK[a.cat]) - (G_RANK[b.cat] == null ? 99 : G_RANK[b.cat]) || String(a.title).localeCompare(String(b.title)); }
+  function gLive() { return (S.guides || []).filter(function (g) { return !g.removed && g.title; }).sort(gOrder); }
+  function gSig(list) { return (list || []).map(function (g) { return g.id + ':' + (g.upd || 0) + (g.removed ? 'r' : ''); }).join('|'); }
+  function gIsNew(g) { return now() - (g.at || 0) < G_NEW; }
+  function gMeta(g) {
+    var n = g.pages || 0, st = mnLines(g.steps).length, out = [];
+    if (n) out.push(n + (n === 1 ? ' page' : ' pages'));
+    if (st) out.push(st + (st === 1 ? ' step' : ' steps'));
+    if (g.upd || g.at) out.push('Updated ' + dayShort(T.day(g.upd || g.at)));
+    return out.join(' · ');
+  }
+
+  /* the list is kept on the phone, so the Guides page and the recipe cards have it straight away */
+  (function () {
+    try { var c = JSON.parse(lsGet('lk.guides') || 'null'); if (c && c.pin === S.pin && Array.isArray(c.list)) { S.guides = c.list; S.guidesFor = c.d || ''; S.guidesAt = c.at || 0; } } catch (e) {}
+  })();
+  function gKeep() {
+    var c = { pin: S.pin, d: S.guidesFor, at: S.guidesAt, list: S.guides || [] }, t = JSON.stringify(c);
+    // a very long list keeps only the start of each PDF's words and no small pictures, so the phone's storage never fills up
+    if (t.length > 1500000) t = JSON.stringify(Object.assign(c, { list: c.list.map(function (g) { return Object.assign({}, g, { thumb: '', text: String(g.text || '').slice(0, 600) }); }) }));
+    lsSet('lk.guides', t);
+  }
+  function gForget() { S.guides = null; S.guidesFor = ''; S.guidesAt = 0; S.gRetry = 0; lsSet('lk.guides', ''); }
+  function loadGuides(force) {
+    if (!fb || !/^\d{4,6}$/.test(S.pin) || S.gBusy || Date.now() < S.gRetry) return;
+    var today = dayNow(), pin = S.pin;
+    if (!force && S.guides && S.guidesFor === today) return;
+    S.gBusy = true;
+    fb.fs.getDocs(colRef('guides')).then(function (snap) {
+      S.gBusy = false;
+      if (pin !== S.pin) return;
+      var list = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }), was = S.guides, changed = !was || gSig(list) !== gSig(was);
+      S.guides = list; S.guidesFor = today; S.guidesAt = Date.now(); gKeep();
+      if (changed) { try { window.dispatchEvent(new Event('lk-guides')); } catch (e) {} draw(); }
+    }, function () {
+      // no signal or a wrong PIN: carry on with the list kept on the phone and try again in a minute
+      S.gBusy = false; S.gRetry = Date.now() + 60000; if (!S.guides) S.guides = []; draw();
+    });
+  }
+
+  /* search: every word must be in the guide (title, what it is for, steps, search words, category or the words in the PDF); titles first */
+  function gHay(g) { return [g.title, g.sum, g.steps, g.kw, gCatName(g.cat), g.text].join(' ').toLowerCase(); }
+  function gWords(q) { return String(q || '').toLowerCase().replace(/[^a-z0-9À-ɏ]+/g, ' ').trim().split(' ').filter(Boolean); }
+  function gMatch(list, q) {
+    var ws = gWords(q);
+    if (!ws.length) return list;
+    return list.filter(function (g) { var h = gHay(g); return ws.every(function (w) { return h.indexOf(w) >= 0; }); }).map(function (g) {
+      var top = [g.title, g.kw].join(' ').toLowerCase();
+      return { g: g, n: ws.filter(function (w) { return top.indexOf(w) >= 0; }).length };
+    }).sort(function (a, b) { return b.n - a.n || gOrder(a.g, b.g); }).map(function (x) { return x.g; });
+  }
+  /* a found word that is only inside the steps or the PDF shows with the words around it */
+  function gSnip(g, q) {
+    var ws = gWords(q), top = [g.title, g.sum, g.kw, gCatName(g.cat)].join(' ').toLowerCase(), src = (String(g.steps || '') + ' ' + String(g.text || '')).replace(/\s+/g, ' '), lt = src.toLowerCase(), at = -1;
+    ws.some(function (w) { if (top.indexOf(w) >= 0) return false; at = lt.indexOf(w); return at >= 0; });
+    if (at < 0) return '';
+    var a = Math.max(0, at - 40), b = Math.min(src.length, at + 90);
+    return (a ? '...' : '') + src.slice(a, b).trim() + (b < src.length ? '...' : '');
+  }
+
+  /* Which recipe cards a guide belongs on: cards it names (the same names a note links to, "Pork Belly"), and cards that mention one of
+     its search words ("iCombi" puts the iCombi guide on every card with an iCombi tip or step). Worked out once per change of the list. */
+  var gIdx = null;
+  function gWordAt(lt, w) {
+    var i = lt.indexOf(w);
+    while (i >= 0) {
+      var e = i + w.length;
+      if (lt.charAt(e) === 's') e++;
+      if (!/[a-z0-9]/.test(lt.charAt(i - 1)) && !/[a-z0-9]/.test(lt.charAt(e))) return true;
+      i = lt.indexOf(w, i + 1);
+    }
+    return false;
+  }
+  function gKw(g) { return String(g.kw || '').toLowerCase().split(/[,;\n]+/).map(function (w) { return w.replace(/\s+/g, ' ').trim(); }).filter(function (w) { return w.length >= 4; }); }
+  function gCardText(r) {
+    return ' ' + [r.name, r.tip ? r.tip.title + ' ' + r.tip.text : '', r.safety ? r.safety.title + ' ' + r.safety.text : ''].concat((r.sections || []).map(function (s) { return s.title + ' ' + s.steps.join(' '); })).join(' ').toLowerCase().replace(/\s+/g, ' ') + ' ';
+  }
+  var gCardsText = null;
+  function gLinkIds(g) {
+    var lt = ' ' + [g.title, g.sum, g.steps, g.kw, g.text].join(' ').toLowerCase().replace(/\s+/g, ' ') + ' ', ids = [], kws = gKw(g);
+    noteNames().forEach(function (c) { if (ids.indexOf(c.id) < 0 && gWordAt(lt, c.n)) ids.push(c.id); });
+    if (kws.length) {
+      if (!gCardsText) { gCardsText = {}; D.recipes.forEach(function (r) { gCardsText[r.id] = gCardText(r); }); }
+      D.recipes.forEach(function (r) { if (ids.indexOf(r.id) < 0 && kws.some(function (w) { return gWordAt(gCardsText[r.id], w); })) ids.push(r.id); });
+    }
+    return ids;
+  }
+  function gIndex() {
+    var sig = gSig(S.guides);
+    if (gIdx && gIdx.sig === sig) return gIdx;
+    var idx = { sig: sig, by: {}, of: {} };
+    gLive().forEach(function (g) {
+      var ids = gLinkIds(g);
+      idx.of[g.id] = ids;
+      ids.forEach(function (id) { (idx.by[id] = idx.by[id] || []).push(g.id); });
+    });
+    gIdx = idx;
+    return idx;
+  }
+  function gCards(g) { return (gIndex().of[g.id] || []).map(recipeById).filter(Boolean); }
+  function guidesFor(rid) { return (gIndex().by[rid] || []).map(gById).filter(Boolean).map(function (g) { return { id: g.id, title: g.title, cat: gCatName(g.cat) }; }); }
+  function guideSearch(q) { return gWords(q).join('').length < 3 ? [] : gMatch(gLive(), q).slice(0, 4).map(function (g) { return { id: g.id, title: g.title }; }); }
+
+  /* A guide's pages: from the phone's own copy when it has this version, otherwise one read per page. Shown through blob: links so
+     a redraw of the page never copies the big pictures again. */
+  var gPg = {};
+  function gBlob(u) {
+    try {
+      var i = u.indexOf(','), bin = atob(u.slice(i + 1)), a = new Uint8Array(bin.length), k;
+      for (k = 0; k < bin.length; k++) a[k] = bin.charCodeAt(k);
+      return URL.createObjectURL(new Blob([a], { type: u.slice(5, i).split(';')[0] || 'image/jpeg' }));
+    } catch (e) { return u; }
+  }
+  function gPagesFor(g) {
+    var v = g.v || 1, k = g.id + ':' + v, e = gPg[k];
+    if (e && (e.state !== 'error' || Date.now() < e.retry)) return e;
+    e = gPg[k] = { state: 'loading', urls: [] };
+    if (!g.pages) { e.state = 'ok'; return e; }
+    var newer = false;
+    function pick(sn) {
+      var d = sn.docs.map(function (x) { return x.data(); });
+      if (d.some(function (x) { return (x.v || 0) > v; })) newer = true;
+      d = d.filter(function (x) { return x.v === v && x.img; });
+      return d.length >= g.pages ? d : null;
+    }
+    sdk().then(function () {
+      var col = gPagesCol(g.id), fromCache = fb.fs.getDocsFromCache ? fb.fs.getDocsFromCache(col).then(pick, function () { return null; }) : Promise.resolve(null);
+      return fromCache.then(function (d) { return d || fb.fs.getDocs(col).then(pick); });
+    }).then(function (d) {
+      if (!d) throw new Error('pages missing');
+      d.sort(function (a, b) { return (a.n || 0) - (b.n || 0); });
+      Object.keys(gPg).forEach(function (o) { if (o !== k && o.indexOf(g.id + ':') === 0) { gPg[o].urls.forEach(function (u) { try { URL.revokeObjectURL(u); } catch (x) {} }); delete gPg[o]; } });
+      e.urls = d.slice(0, g.pages).map(function (x) { return gBlob(x.img); }); e.state = 'ok';
+      draw(); gzDraw();
+    }).catch(function () {
+      e.state = 'error'; e.retry = Date.now() + 30000;
+      // the head chef replaced the file since this phone read the list: read the list again
+      if (newer) { S.gRetry = 0; loadGuides(true); }
+      draw();
+    });
+    return e;
+  }
+
+  /* ---- the Guides page, as staff use it ---- */
+  function gThumbHTML(g) { return '<span class="g-thumb" aria-hidden="true">' + (g.thumb ? '<img src="' + esc(g.thumb) + '" alt="">' : G_ICON) + '</span>'; }
+  function gCardHTML(g, q) {
+    var snip = q ? gSnip(g, q) : '';
+    return '<li><a class="g-card" href="#/guides/' + encodeURIComponent(g.id) + '">' + gThumbHTML(g) + '<span class="g-cb"><span class="g-ct">' + esc(gCatName(g.cat)) + (gIsNew(g) ? '<span class="g-new">New</span>' : '') + '</span>' +
+      '<b class="g-cn">' + esc(g.title) + '</b>' + (g.sum ? '<span class="g-cs">' + esc(g.sum) + '</span>' : '') + (snip ? '<span class="g-snip">' + esc(snip) + '</span>' : '') +
+      '<span class="g-cm">' + esc(gMeta(g)) + '</span></span></a></li>';
+  }
+  function gAdminLink() { return lsGet('lk.admin') === '1' ? '<p class="g-wl g-noprint"><button type="button" class="p-link" data-p="g-admin">Add or change guides</button></p>' : ''; }
+  function gListHTML() {
+    var q = S.gq.trim(), list = gLive().filter(function (g) { return S.gcat === 'all' || g.cat === S.gcat; });
+    if (q) {
+      list = gMatch(list, q);
+      if (!list.length) return '<p class="p-empty">No guide matches "' + esc(q) + '"' + (S.gcat !== 'all' ? ' in ' + esc(gCatName(S.gcat)) : '') + '. <button type="button" class="p-x" data-p="g-clear">Clear the search</button></p><p class="hint">Ask the head chef if a guide is missing.</p>';
+      return '<p class="lv-count" role="status">' + list.length + (list.length === 1 ? ' guide matches' : ' guides match') + '</p><ul class="g-cards">' + list.map(function (g) { return gCardHTML(g, q); }).join('') + '</ul>';
+    }
+    return G_CATS.map(function (c) {
+      var l = list.filter(function (g) { return g.cat === c[0]; });
+      return l.length ? '<section class="g-grp" aria-label="' + esc(c[1]) + '"><h3 class="g-gh"><span>' + esc(c[1]) + '</span><span>' + l.length + '</span></h3><ul class="g-cards">' + l.map(function (g) { return gCardHTML(g, ''); }).join('') + '</ul></section>' : '';
+    }).join('');
+  }
+  function guidesPageHTML() {
+    loadGuides(Date.now() - S.guidesAt > G_STALE);
+    if (S.gSel) return guideDocHTML();
+    var live = gLive(), head = '<header class="g-head"><span class="g-eb">Leichhardt Hotel Kitchen</span><h2 class="g-title" id="rtitle" tabindex="-1">Guides</h2><p class="g-lead">How to work the equipment, clean it and find things. Written by the head chef.</p></header>';
+    if (S.guides == null) return '<section class="g-page">' + head + '<p class="hint">Loading...</p></section>';
+    if (!live.length) return '<section class="g-page">' + head + '<p class="p-empty">No guides yet. The head chef adds them in the admin panel.</p>' + gAdminLink() + '</section>';
+    var cats = G_CATS.filter(function (c) { return live.some(function (g) { return g.cat === c[0]; }); });
+    if (S.gcat !== 'all' && !cats.some(function (c) { return c[0] === S.gcat; })) S.gcat = 'all';
+    var chips = cats.length > 1 ? '<div class="chips scroll g-cats" role="group" aria-label="Category">' + [['all', 'All']].concat(cats).map(function (c) {
+      var n = c[0] === 'all' ? live.length : live.filter(function (g) { return g.cat === c[0]; }).length;
+      return '<button type="button" class="chip" data-p="g-cat" data-v="' + c[0] + '" aria-pressed="' + (S.gcat === c[0]) + '">' + esc(c[1]) + ' <span class="lv-n">' + n + '</span></button>';
+    }).join('') + '</div>' : '';
+    return '<section class="g-page">' + head +
+      '<div class="g-find"><label class="visually-hidden" for="g-q">Search the guides</label><input id="g-q" type="search" class="search" data-k="g-q" placeholder="Search: oven, fryer, cleaning" value="' + esc(S.gq) + '" autocomplete="off" enterkeyhint="search"></div>' + chips +
+      '<div id="g-list" class="g-list">' + gListHTML() + '</div>' + gAdminLink() + '</section>';
+  }
+  function guideDocHTML() {
+    var g = gById(S.gSel), back = '<nav class="g-top g-noprint" aria-label="Back"><a class="p-link" href="#/guides">All guides</a></nav>';
+    if (!g || g.removed) return back + '<section class="g-page"><h2 class="g-title" id="rtitle" tabindex="-1">Guide not found</h2><p class="hint">' + (S.guides == null || S.gBusy ? 'Loading...' : 'This guide was removed or the link is old. Look for it in the list.') + '</p></section>';
+    var pv = gPagesFor(g), n = g.pages || 0, steps = mnLines(g.steps), cards = gCards(g), figs = '', i;
+    for (i = 0; i < n; i++) {
+      var d = (g.dims || [])[i] || { w: 1414, h: 2000 }, u = pv.urls[i];
+      figs += '<figure class="g-pg">' + (u ? '<button type="button" class="g-pgb" data-p="g-zoom" data-i="' + i + '" aria-label="' + esc('Open page ' + (i + 1) + ' big') + '"><img src="' + esc(u) + '" width="' + (+d.w || 1414) + '" height="' + (+d.h || 2000) + '" alt="' + esc('Page ' + (i + 1) + ' of ' + g.title) + '"></button>' :
+        '<div class="g-ph" style="aspect-ratio: ' + (+d.w || 1414) + ' / ' + (+d.h || 2000) + '">' + (pv.state === 'error' ? 'Could not load this page.' : 'Loading page ' + (i + 1) + '...') + '</div>') +
+        (n > 1 ? '<figcaption>Page ' + (i + 1) + ' of ' + n + '</figcaption>' : '') + '</figure>';
+    }
+    var admin = S.level === 'owner' || lsGet('lk.admin') === '1';
+    return back + '<article class="g-doc"><header class="g-dh"><span class="g-eb">' + esc(gCatName(g.cat)) + ' guide</span><h2 class="g-title" id="rtitle" tabindex="-1">' + esc(g.title) + '</h2>' +
+      (g.sum ? '<p class="g-lead">' + esc(g.sum) + '</p>' : '') + '<p class="g-meta">' + esc(gMeta(g)) + '</p></header>' +
+      (steps.length ? '<section class="g-steps"><h3 class="g-h3">Steps</h3><ol class="g-ol">' + steps.map(function (t) { return '<li><span class="g-c" aria-hidden="true"></span><span>' + linkNote(t) + '</span></li>'; }).join('') + '</ol></section>' : '') +
+      (n ? '<section class="g-pages" aria-label="Pages"><p class="hint g-noprint">Tap a page to open it big.</p>' + figs +
+        (pv.state === 'error' ? '<p class="p-err g-noprint">Could not load the pages. Check the connection. <button type="button" class="p-x" data-p="g-retry">Try again</button></p>' : '') + '</section>' : '') +
+      (cards.length ? '<section class="g-rec g-noprint"><h3 class="g-h3">On these recipe cards</h3><div class="g-rchips">' + cards.map(function (r) { return '<a class="g-rchip" href="#/r/' + esc(r.id) + '">' + esc(r.name) + '</a>'; }).join('') + '</div></section>' : '') +
+      '<div class="btn-row g-noprint"><button type="button" class="btn" data-p="g-print">Print</button>' + (admin ? '<button type="button" class="btn" data-p="g-change" data-id="' + esc(g.id) + '">Change this guide</button>' : '') + '</div></article>';
+  }
+  function printGuide() {
+    document.documentElement.classList.add('print-guide');
+    function done() { document.documentElement.classList.remove('print-guide'); window.removeEventListener('afterprint', done); }
+    window.addEventListener('afterprint', done);
+    setTimeout(function () { window.print(); setTimeout(function () { if (document.documentElement.classList.contains('print-guide') && !window.matchMedia('print').matches) done(); }, 1500); }, 50);
+  }
+
+  /* A page opened big: over everything (appended to the body, so page redraws leave it alone), Previous and Next, Fit or Full size.
+     Its clicks use data-gz. Escape or Close shuts it. Pinching zooms further on a phone. */
+  var gz = null;
+  function gzOpen(id, i) {
+    if (gz) gzClose();
+    var el = document.createElement('div');
+    el.className = 'gz-wrap'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true');
+    gz = { id: id, i: i, full: false, el: el, prev: document.activeElement };
+    document.body.appendChild(el);
+    document.documentElement.classList.add('gz-open');
+    gzDraw();
+    var c = el.querySelector('[data-gz="close"]'); if (c) c.focus({ preventScroll: true });
+  }
+  function gzDraw() {
+    if (!gz) return;
+    var g = gById(gz.id), e = g && gPg[g.id + ':' + (g.v || 1)];
+    if (!g || !e) { gzClose(); return; }
+    var n = g.pages || 0, u = e.urls[gz.i], d = (g.dims || [])[gz.i] || {};
+    gz.el.setAttribute('aria-label', 'Page ' + (gz.i + 1) + ' of ' + n + ', ' + g.title);
+    gz.el.innerHTML = '<div class="gz-bar"><span class="gz-t">' + esc(g.title) + '<small>Page ' + (gz.i + 1) + ' of ' + n + '</small></span><span class="gz-btns">' +
+      (n > 1 ? '<button type="button" class="gz-b" data-gz="prev"' + (gz.i ? '' : ' disabled') + '>Previous</button><button type="button" class="gz-b" data-gz="next"' + (gz.i < n - 1 ? '' : ' disabled') + '>Next</button>' : '') +
+      '<button type="button" class="gz-b" data-gz="size">' + (gz.full ? 'Fit to screen' : 'Full size') + '</button><button type="button" class="gz-b gz-x" data-gz="close">Close</button></span></div>' +
+      '<div class="gz-body' + (gz.full ? ' is-full' : '') + '">' + (u ? '<img src="' + esc(u) + '" alt="' + esc('Page ' + (gz.i + 1) + ' of ' + g.title) + '"' + (d.w ? ' width="' + (+d.w) + '" height="' + (+d.h) + '"' : '') + '>' : '<p class="gz-wait">Loading...</p>') + '</div>';
+  }
+  function gzClose() {
+    if (!gz) return;
+    var prev = gz.prev;
+    if (gz.el.parentNode) gz.el.parentNode.removeChild(gz.el);
+    gz = null;
+    document.documentElement.classList.remove('gz-open');
+    if (prev && prev.focus && document.body.contains(prev)) { try { prev.focus({ preventScroll: true }); } catch (e) {} }
+  }
+  document.addEventListener('click', function (e) {
+    var el = gz && e.target.closest && e.target.closest('[data-gz]');
+    if (!el || !gz.el.contains(el)) return;
+    var a = el.getAttribute('data-gz'), g = gById(gz.id);
+    if (a === 'close') { gzClose(); return; }
+    if (a === 'size') { gz.full = !gz.full; gzDraw(); gz.el.querySelector('[data-gz="size"]').focus(); return; }
+    if ((a === 'prev' || a === 'next') && g) { gz.i = Math.max(0, Math.min((g.pages || 1) - 1, gz.i + (a === 'next' ? 1 : -1))); gzDraw(); var b = gz.el.querySelector('[data-gz="' + a + '"]:not([disabled])') || gz.el.querySelector('[data-gz="close"]'); if (b) b.focus(); }
+  });
+  document.addEventListener('keydown', function (e) {
+    if (!gz) return;
+    if (e.key === 'Escape') { e.preventDefault(); gzClose(); return; }
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { var b = gz.el.querySelector('[data-gz="' + (e.key === 'ArrowRight' ? 'next' : 'prev') + '"]:not([disabled])'); if (b) { e.preventDefault(); b.click(); } return; }
+    if (e.key !== 'Tab') return;
+    var f = Array.prototype.filter.call(gz.el.querySelectorAll('button:not([disabled])'), function (x) { return x.offsetParent !== null; });
+    if (!f.length) return;
+    if (e.shiftKey && (document.activeElement === f[0] || !gz.el.contains(document.activeElement))) { e.preventDefault(); f[f.length - 1].focus(); }
+    else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+  });
+  window.addEventListener('hashchange', function () { if (gz) gzClose(); });
+
+  /* ---- adding and changing guides (admin panel, Guides tab, head chef only) ---- */
+  var gSeq = 0;
+  function gfNew() { return { id: '', nid: '', title: '', cat: '', sum: '', steps: '', kw: '', pages: null, text: '', file: '', busy: '', msg: '', saving: false }; }
+  function gfFrom(g) { return { id: g.id, nid: '', title: g.title || '', cat: g.cat || 'other', sum: g.sum || '', steps: g.steps || '', kw: g.kw || '', pages: null, text: '', file: '', busy: '', msg: '', saving: false }; }
+  function gfSnap(f) { return f ? JSON.stringify([f.title, f.cat, f.sum, f.steps, f.kw, f.pages ? f.pages.map(function (p) { return p.k; }) : null]) : ''; }
+  function gfDirty() { return !!S.gf && (!!S.gf.busy || !!S.gf.saving || gfSnap(S.gf) !== S.gfSnap); }
+  function gOpenEditor(f) {
+    S.gf = f; S.gfSnap = gfSnap(f); S.gMsg = ''; S.atab = 'guides'; lsSet('lk.prep.atab', 'guides'); draw();
+    var t = S.root && S.root.querySelector('[data-k="g-title"]');
+    if (t) { t.focus({ preventScroll: true }); t.scrollIntoView({ block: 'start' }); }
+  }
+  var pdfP = null;
+  function pdfjs() {
+    if (pdfP) return pdfP;
+    pdfP = import(PDFJS + 'legacy/build/pdf.min.mjs').then(function (m) { m.GlobalWorkerOptions.workerSrc = PDFJS + 'legacy/build/pdf.worker.min.mjs'; return m; }, function (e) { pdfP = null; throw e; });
+    return pdfP;
+  }
+  var WEBP = null;
+  function webpOk() { if (WEBP == null) { var c = document.createElement('canvas'); c.width = c.height = 1; WEBP = c.toDataURL('image/webp').indexOf('data:image/webp') === 0; } return WEBP; }
+  /* one page as a picture of under 950 kB: WebP where the browser can make it (JPEG otherwise), less sharp and then smaller until it fits */
+  function gEncode(cv) {
+    var src = cv, qs = [0.86, 0.76, 0.66, 0.56], url = '', t, i;
+    for (t = 0; t < 4; t++) {
+      for (i = 0; i < qs.length; i++) {
+        url = webpOk() ? src.toDataURL('image/webp', qs[i]) : src.toDataURL('image/jpeg', qs[i]);
+        if (url.length <= G_IMG) return { img: url, w: src.width, h: src.height, thumb: gThumb(src), k: ++gSeq };
+      }
+      var c2 = document.createElement('canvas'); c2.width = Math.round(src.width * 0.8); c2.height = Math.round(src.height * 0.8);
+      c2.getContext('2d').drawImage(src, 0, 0, c2.width, c2.height); src = c2;
+    }
+    return { img: url, w: src.width, h: src.height, thumb: gThumb(src), k: ++gSeq };
+  }
+  /* the small picture on the list: 240 px on its long side, JPEG */
+  function gThumb(cv) {
+    var sc = 240 / Math.max(cv.width, cv.height), c = document.createElement('canvas'), x;
+    c.width = Math.max(1, Math.round(cv.width * sc)); c.height = Math.max(1, Math.round(cv.height * sc));
+    x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(cv, 0, 0, c.width, c.height);
+    return c.toDataURL('image/jpeg', 0.72);
+  }
+  function gCanvas(w, h) { var c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); var x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); return c; }
+  /* the words read from a PDF, for search: one space between words, and letter-spaced headings ("I C O M B I") joined up */
+  function gTidy(t) { return String(t).replace(/\s+/g, ' ').replace(/(^|\s)((?:[A-Za-z0-9] ){2,}[A-Za-z0-9])(?=\s|$)/g, function (m, a, b) { return a + b.replace(/ /g, ''); }).trim().slice(0, G_TEXT); }
+  function gPdf(file, f, label) {
+    return Promise.all([pdfjs().catch(function (e) { f.noReader = true; throw e; }), file.arrayBuffer()]).then(function (r) {
+      return r[0].getDocument({ data: new Uint8Array(r[1]), isEvalSupported: false, standardFontDataUrl: PDFJS + 'standard_fonts/', cMapUrl: PDFJS + 'cmaps/', cMapPacked: true }).promise;
+    }).then(function (doc) {
+      var room = G_MAXP - f.pages.length, n = Math.min(doc.numPages, room), i = 0, words = [];
+      if (doc.numPages > room) f.cut = true;
+      function next() {
+        if (i >= n) { doc.destroy(); f.text = gTidy(f.text + ' ' + words.join(' ')); return; }
+        i++; f.busy = 'Reading ' + label + ': page ' + i + ' of ' + n + '...'; draw();
+        return doc.getPage(i).then(function (pg) {
+          var v1 = pg.getViewport({ scale: 1 }), vp = pg.getViewport({ scale: G_LONG / Math.max(v1.width, v1.height) }), cv = gCanvas(vp.width, vp.height);
+          return pg.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise.then(function () { return pg.getTextContent(); }).then(function (tc) {
+            words.push(tc.items.map(function (x) { return x.str; }).join(' '));
+            f.pages.push(gEncode(cv)); pg.cleanup();
+          });
+        }).then(next);
+      }
+      return next();
+    });
+  }
+  function gPhoto(file, f, label) {
+    f.busy = 'Reading ' + label + '...'; draw();
+    return new Promise(function (res, rej) {
+      var u = URL.createObjectURL(file), im = new Image();
+      im.onload = function () {
+        var sc = Math.min(1, G_LONG / Math.max(im.naturalWidth, im.naturalHeight)), cv = gCanvas(im.naturalWidth * sc, im.naturalHeight * sc);
+        cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height);
+        URL.revokeObjectURL(u); f.pages.push(gEncode(cv)); res();
+      };
+      im.onerror = function () { URL.revokeObjectURL(u); rej(new Error('photo')); };
+      im.src = u;
+    });
+  }
+  /* Files chosen in the editor: each PDF page and each photo becomes one page, in the order chosen. Choosing more adds pages.
+     When changing a saved guide, the new pages replace the old file once it is saved. */
+  function gReadFiles(files) {
+    var f = S.gf, list = Array.prototype.slice.call(files || []);
+    if (!f || !list.length || f.busy || f.saving) return;
+    f.pages = f.pages || []; f.msg = ''; f.cut = false; f.noReader = false;
+    var bad = [], chain = Promise.resolve();
+    list.forEach(function (file) {
+      chain = chain.then(function () {
+        if (f.pages.length >= G_MAXP) { f.cut = true; return; }
+        var label = '"' + String(file.name || 'file').slice(0, 40) + '"', pdf = /pdf$/i.test(file.type) || /\.pdf$/i.test(file.name || '');
+        if (!pdf && !/^image\//.test(file.type)) { bad.push(file.name); return; }
+        if (!f.file) f.file = String(file.name || '').slice(0, 120);
+        return (pdf ? gPdf(file, f, label) : gPhoto(file, f, label)).catch(function () { bad.push(file.name); });
+      });
+    });
+    chain.then(function () {
+      f.busy = '';
+      var m = [];
+      if (f.noReader) m.push('Could not load the PDF reader. Check the connection and choose the file again.');
+      else if (bad.length) m.push('Could not read ' + bad.map(function (b) { return '"' + b + '"'; }).join(', ') + '. Use a PDF, or photos as JPEG or PNG.');
+      if (f.cut) m.push('Only the first ' + G_MAXP + ' pages are kept. Split a longer file into two guides.');
+      if (f.pages.some(function (p) { return p.img.length > G_IMG; })) m.push('A page is still too big to save. Remove it, or use a smaller photo.');
+      f.msg = m.join(' ');
+      if (!f.title.trim() && f.file) f.title = f.file.replace(/\.[a-z0-9]+$/i, '').replace(/[_]+/g, ' ').slice(0, 80);
+      draw();
+    });
+  }
+  function gKb(p) { return Math.round(p.img.length * 0.75 / 1024) + ' kB'; }
+  function gEditHTML() {
+    var f = S.gf, old = f.id ? gById(f.id) : null, pages = f.pages;
+    var cats = G_CATS.map(function (c) { return '<button type="button" class="chip" data-p="g-fcat" data-v="' + c[0] + '" aria-pressed="' + (f.cat === c[0]) + '">' + esc(c[1]) + '</button>'; }).join('');
+    var strip = '';
+    if (pages && pages.length) {
+      strip = '<ol class="g-strip">' + pages.map(function (p, i) {
+        return '<li><img src="' + esc(p.thumb) + '" alt="' + esc('Page ' + (i + 1)) + '"><span>Page ' + (i + 1) + ' · ' + gKb(p) + '</span><span class="g-sbtn">' +
+          (i ? '<button type="button" class="p-x" data-p="g-pup" data-i="' + i + '" aria-label="' + esc('Move page ' + (i + 1) + ' earlier') + '">Earlier</button>' : '') +
+          '<button type="button" class="p-x" data-p="g-prm" data-i="' + i + '" aria-label="' + esc('Remove page ' + (i + 1)) + '">Remove</button></span></li>';
+      }).join('') + '</ol>';
+    }
+    var now = pages ? (pages.length ? pages.length + (pages.length === 1 ? ' page' : ' pages') + ' ready to save.' + (old && old.pages ? ' They replace the ' + old.pages + ' saved now.' : '') : 'No pages chosen.' + (old && old.pages ? ' Saving removes the ' + old.pages + ' saved now.' : '')) :
+      (old && old.pages ? 'Saved now: ' + old.pages + (old.pages === 1 ? ' page' : ' pages') + (old.file ? ' from "' + old.file + '"' : '') + '. Choose a new file to replace them.' : 'No file yet.');
+    return '<section class="set-block g-edit"><span class="label">' + (f.id ? 'Change this guide' : 'Add a guide') + '</span>' +
+      '<span class="hint">A PDF or photos, a clear title and a category. Staff search the title, the words in the PDF and the search words. No prices, PINs or staff names.</span>' +
+      '<div class="field"><label class="label" for="g-title">Title</label><input id="g-title" class="search" data-k="g-title" maxlength="80" autocomplete="off" placeholder="For example: iCombi, programme a new recipe" value="' + esc(f.title) + '"></div>' +
+      '<div class="field"><span class="label">Category</span><div class="nt-chips" role="group" aria-label="Category">' + cats + '</div></div>' +
+      '<div class="field"><label class="label" for="g-sum">What it is for (one line)</label><input id="g-sum" class="search" data-k="g-sum" maxlength="200" autocomplete="off" placeholder="For example: set up any new dish as a programme" value="' + esc(f.sum) + '"></div>' +
+      '<div class="field"><span class="label">File</span><label class="btn g-filebtn' + (f.busy || f.saving ? ' is-off' : '') + '">' + (pages && pages.length ? 'Add more pages' : old && old.pages ? 'Choose a new file' : 'Choose a PDF or photos') +
+        '<input type="file" id="g-file" class="visually-hidden" data-k="g-file" accept="application/pdf,image/*" multiple' + (f.busy || f.saving ? ' disabled' : '') + '></label>' +
+        '<span class="hint">Each PDF page or photo becomes a picture staff can open big. Up to ' + G_MAXP + ' pages.</span>' +
+        (f.busy ? '<p class="g-busy" role="status">' + esc(f.busy) + '</p>' : '<p class="g-now" role="status">' + esc(now) + '</p>') + strip + '</div>' +
+      '<div class="field"><label class="label" for="g-steps">Steps (optional, one per line)</label><textarea id="g-steps" class="p-bulk" data-k="g-steps" rows="5" maxlength="3000" placeholder="For example: Press the menu button, bottom right.">' + esc(f.steps) + '</textarea></div>' +
+      '<div class="field"><label class="label" for="g-kw">Search words (optional)</label><input id="g-kw" class="search" data-k="g-kw" maxlength="200" autocomplete="off" placeholder="For example: iCombi, oven, programme" value="' + esc(f.kw) + '"><span class="hint">Separate them with commas. A recipe card that mentions one of these words shows a link to this guide.</span></div>' +
+      '<p class="g-links" id="g-links">' + esc(gLinksText(f)) + '</p>' +
+      (f.msg ? '<p class="p-err" role="alert">' + esc(f.msg) + '</p>' : '') +
+      '<div class="btn-row"><button type="button" class="btn dark" data-p="g-save"' + (f.busy || f.saving ? ' disabled' : '') + '>' + (f.saving ? 'Saving...' : f.id ? 'Save changes' : 'Save guide') + '</button>' +
+      '<button type="button" class="btn" data-p="g-cancel">' + (armed('g-cancel') ? 'Tap again to discard' : f.id ? 'Cancel' : 'Close') + '</button></div></section>';
+  }
+  /* while writing: which recipe cards the guide will show on (the same rule as gIndex) */
+  function gLinksText(f) {
+    var old = f.id ? gById(f.id) : null, names = gLinkIds({ title: f.title, sum: f.sum, steps: f.steps, kw: f.kw, text: f.pages ? f.text : old ? old.text : '' }).map(recipeById).filter(Boolean).map(function (r) { return r.name; });
+    return names.length ? 'Shows on these recipe cards: ' + names.slice(0, 12).join(', ') + (names.length > 12 ? ' and ' + (names.length - 12) + ' more' : '') + '.' : 'Not on any recipe card yet. A recipe name or a search word puts it there.';
+  }
+  function gRowAdmin(g) {
+    var cards = gCards(g).map(function (r) { return r.name; });
+    return '<li class="nt-row g-row"><div class="g-rt">' + gThumbHTML(g) + '<div class="g-rb"><span class="nt-tag">' + esc(gCatName(g.cat)) + '</span><b>' + esc(g.title) + '</b>' + (g.sum ? '<span>' + esc(g.sum) + '</span>' : '') +
+      '<span class="nt-by">' + esc(gMeta(g)) + (cards.length ? '. On ' + esc(cards.slice(0, 4).join(', ')) + (cards.length > 4 ? ' and ' + (cards.length - 4) + ' more' : '') : '') + '</span></div></div>' +
+      '<div class="btn-row"><a class="p-x g-open" href="#/guides/' + encodeURIComponent(g.id) + '">Open</a><button type="button" class="p-x" data-p="g-edit" data-id="' + esc(g.id) + '">Change</button>' +
+      '<button type="button" class="p-x" data-p="g-del" data-id="' + esc(g.id) + '">' + (armed('g-del:' + g.id) ? 'Tap again to remove' : 'Remove') + '</button></div></li>';
+  }
+  function guidesAdminHTML() {
+    var open = !!S.gf, live = gLive();
+    var list = S.guides == null ? '<p class="hint">Loading...</p>' : lvHTML({
+      key: 'guides', items: live, step: 10, tools: 6, noun: ['guide', 'guides'], ph: 'Search guides', empty: 'No guides yet. Tap Add a guide to upload the first one.',
+      find: gHay,
+      filters: [['all', 'All guides']].concat(G_CATS.map(function (c) { return [c[0], c[1], function (g) { return g.cat === c[0]; }]; })),
+      sorts: [['cat', 'By category', gOrder], ['new', 'Newest first', function (a, b) { return (b.upd || b.at || 0) - (a.upd || a.at || 0); }], ['az', 'A to Z', function (a, b) { return String(a.title).localeCompare(String(b.title)); }]],
+      card: gRowAdmin
+    });
+    return '<div class="n-ws' + (open ? ' has-ed' : '') + '">' + (open ? '<div class="n-ed">' + gEditHTML() + '</div>' : '') +
+      '<section class="set-block n-lst"><div class="n-lh"><div><span class="label">Guides</span><span class="hint">Staff open them from Guides in the menu, search them, and find them on the recipe cards they mention.</span></div>' +
+      (open ? '' : '<button type="button" class="btn dark" data-p="g-new">Add a guide</button>') + '</div>' +
+      (open ? '' : '<span class="saved" role="status">' + esc(S.gMsg) + '</span>') + list + '</section></div>';
+  }
+  function gClean(t, n) { return String(t || '').replace(/\r/g, '').replace(/[ \t]+\n/g, '\n').replace(/^\s+|\s+$/g, '').slice(0, n); }
+  /* Saving: the pages first (one record each, they are big), then old pages the new file does not need, then the guide itself,
+     so a guide never shows before its pages are there. A failed save keeps everything in the editor to try again. */
+  function saveGuide() {
+    var f = S.gf;
+    if (!f || f.saving || f.busy || !fb) return;
+    var old = f.id ? gById(f.id) : null, pages = f.pages, title = gClean(f.title, 80).replace(/\s+/g, ' ');
+    function stop(m) { f.msg = m; draw(); }
+    if (S.level !== 'owner') return stop('Only the head chef can save guides.');
+    if (!title) { stop('Give the guide a title.'); focusK('g-title'); return; }
+    if (!f.cat) return stop('Pick a category.');
+    if (!(pages ? pages.length : old && old.pages) && !gClean(f.steps, 3000)) return stop('Add a PDF, photos or written steps.');
+    if (pages && pages.some(function (p) { return p.img.length > G_IMG; })) return stop('A page is too big to save. Remove it, or use a smaller photo.');
+    var id = f.id || f.nid || (f.nid = fb.fs.doc(colRef('guides')).id), v = old ? (old.v || 1) + (pages ? 1 : 0) : 1, oldN = old ? old.pages || 0 : 0;
+    f.saving = true; f.msg = ''; draw();
+    var chain = Promise.resolve();
+    if (pages) pages.forEach(function (p, n) {
+      chain = chain.then(function () { f.busy = 'Saving page ' + (n + 1) + ' of ' + pages.length + '...'; draw(); return W([['set', gPageRef(id, n), { img: p.img, w: p.w, h: p.h, v: v, n: n }]]); });
+    });
+    if (pages && oldN > pages.length) chain = chain.then(function () { var ops = [], n; for (n = pages.length; n < oldN; n++) ops.push(['del', gPageRef(id, n)]); return W(ops); });
+    chain.then(function () {
+      var data = { title: title, cat: f.cat, sum: gClean(f.sum, 200).replace(/\s+/g, ' '), steps: gClean(f.steps, 3000), kw: gClean(f.kw, 200).replace(/\s+/g, ' '), v: v, removed: false, upd: now() };
+      if (pages || !old) {
+        pages = pages || [];
+        data.pages = pages.length; data.dims = pages.map(function (p) { return { w: p.w, h: p.h }; });
+        data.thumb = pages.length ? pages[0].thumb : ''; data.text = pages.length ? f.text.slice(0, G_TEXT) : ''; data.file = pages.length ? f.file : '';
+      }
+      if (!old) data.at = now();
+      f.busy = 'Saving the guide...'; draw();
+      return sset(gRef(id), data, !!old).then(function () { return data; });
+    }).then(function (data) {
+      var mine = Object.assign({}, old || {}, data, { id: id });
+      S.guides = (S.guides || []).filter(function (g) { return g.id !== id; }).concat([mine]); gKeep();
+      try { window.dispatchEvent(new Event('lk-guides')); } catch (e) {}
+      S.gf = null; S.gfSnap = ''; S.gMsg = 'Saved "' + title + '". Staff see it under Guides.';
+      lvReveal('guides'); S.gRetry = 0; draw(); loadGuides(true);
+    }, function (e) {
+      f.saving = false; f.busy = '';
+      f.msg = e && e.code === 'permission-denied' ? 'Not saved: the security rules refused it. Sign in again with the head chef\'s Google account.' : 'Not saved. Check the connection and try again. Nothing typed or chosen is lost.';
+      draw();
+    });
+  }
+  function removeGuide(id, back) {
+    var g = gById(id);
+    if (!g || (!back && !arm('g-del:' + id))) return;
+    sset(gRef(id), { removed: !back, upd: now() }, true).then(function () {
+      g.removed = !back; g.upd = now(); gKeep();
+      try { window.dispatchEvent(new Event('lk-guides')); } catch (e) {}
+      if (!back) toast('Removed "' + g.title + '".', { label: 'Undo', fn: function () { removeGuide(id, true); } });
+      else toast('Put back "' + g.title + '".');
+      S.gRetry = 0; loadGuides(true);
+    }, failed);
+  }
+
   /* ---------- events ---------- */
   function onClick(e) {
     var el = e.target.closest('[data-p]');
@@ -3668,7 +4189,7 @@
     if (a === 'recipe-close') { S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; draw(); focusSel('.p-pickbtn'); return; }
     if (a === 'recipe-all') { S.recipeAll = true; draw(); var rse2 = S.root.querySelector('#p-rs'); if (rse2) rse2.focus({ preventScroll: true }); return; }
     if (a === 'pin-go') { submitKitchenPin(); return; }
-    if (a === 'pin-forget') { if (!arm('pin-forget')) return; S.pin = ''; lsSet('lk.prep.pin', ''); S.config = null; S.configState = 'idle'; stopLive(); draw(); return; }
+    if (a === 'pin-forget') { if (!arm('pin-forget')) return; S.pin = ''; lsSet('lk.prep.pin', ''); S.config = null; S.configState = 'idle'; stopLive(); gForget(); draw(); return; }
     if (a === 'retry') { cfgKey = ''; connect(); return; }
     if (a === 'notes-open') { if (isSous()) { S.notesOpen = true; S.nf = null; S.nOpen = false; S.nMsg = ''; loadNotes(); draw(); window.scrollTo(0, 0); } return; }
     if (a === 'notes-close') { S.notesOpen = false; draw(); return; }
@@ -3732,6 +4253,22 @@
     if (a === 'mn-draft') { saveMinutes(false); return; }
     if (a === 'mn-pub') { saveMinutes(true); return; }
     if (a === 'mn-remove') { removeMinutes(id); return; }
+    if (a === 'g-cat') { S.gcat = el.getAttribute('data-v') || 'all'; draw(); return; }
+    if (a === 'g-clear') { S.gq = ''; draw(); focusK('g-q'); return; }
+    if (a === 'g-zoom') { var gzg = gById(S.gSel); if (gzg) gzOpen(gzg.id, i); return; }
+    if (a === 'g-retry') { var grg = gById(S.gSel); if (grg) { delete gPg[grg.id + ':' + (grg.v || 1)]; draw(); } return; }
+    if (a === 'g-print') { printGuide(); return; }
+    if (a === 'g-admin') { S.atab = 'guides'; lsSet('lk.prep.atab', 'guides'); location.hash = '#/admin'; return; }
+    if (a === 'g-change') { var gcg = gById(id); if (gcg) { S.gf = gfFrom(gcg); S.gfSnap = gfSnap(S.gf); S.atab = 'guides'; lsSet('lk.prep.atab', 'guides'); location.hash = '#/admin'; } return; }
+    if (/^g-(new|edit|del|save|cancel|fcat|pup|prm)$/.test(a) && S.level !== 'owner') return;
+    if (a === 'g-new') { gOpenEditor(gfNew()); return; }
+    if (a === 'g-edit') { var geg = gById(id); if (geg) gOpenEditor(gfFrom(geg)); return; }
+    if (a === 'g-del') { removeGuide(id); return; }
+    if (a === 'g-save') { saveGuide(); return; }
+    if (a === 'g-cancel') { if (gfDirty() && !arm('g-cancel')) return; S.gf = null; S.gfSnap = ''; draw(); return; }
+    if (a === 'g-fcat') { if (S.gf) { S.gf.cat = el.getAttribute('data-v'); S.gf.msg = ''; draw(); } return; }
+    if (a === 'g-pup') { var gp = S.gf && S.gf.pages; if (gp && i > 0 && gp[i]) { gp.splice(i - 1, 0, gp.splice(i, 1)[0]); draw(); } return; }
+    if (a === 'g-prm') { var gp2 = S.gf && S.gf.pages; if (gp2 && gp2[i]) { gp2.splice(i, 1); S.gf.msg = ''; draw(); } return; }
     if (a === 'otick') { tickOrderLine(el.getAttribute('data-d'), id, el.getAttribute('aria-pressed') !== 'true'); return; }
     if (a === 'odel') { removeOrderLine(el.getAttribute('data-d'), id); return; }
     if (a === 'orestore') { removeOrderLine(el.getAttribute('data-d'), id, true); return; }
@@ -3855,6 +4392,13 @@
     if (k === 'p-text') { S.text = el.value; var hn = S.root.querySelector('#p-hint'); if (hn) hn.textContent = hintText(S.text); var sg = S.root.querySelector('#p-sugg'); if (sg) sg.innerHTML = suggestHTML(); var qs = S.root.querySelector('#p-qsugg'); if (qs) qs.innerHTML = qtyChipsHTML(); return; }
     if (k === 'o-text') { S.otext = el.value; var og = S.root.querySelector('#o-sugg'); if (og) og.innerHTML = ordSuggHTML(); var oh = S.root.querySelector('#o-hint'); if (oh) oh.textContent = oHintText(S.otext); return; }
     if (k === 'o-qty') { S.oqty = el.value; return; }
+    if (k === 'g-q') { S.gq = el.value; var gl = S.root.querySelector('#g-list'); if (gl) gl.innerHTML = gListHTML(); return; }
+    if (k === 'g-title' || k === 'g-sum' || k === 'g-steps' || k === 'g-kw') {
+      if (!S.gf) return;
+      S.gf[k.slice(2)] = el.value;
+      var gln = S.root.querySelector('#g-links'); if (gln) gln.textContent = gLinksText(S.gf);
+      return;
+    }
     if (k === 'n-text') { if (S.nf) S.nf.text = el.value; var nc = S.root.querySelector('#n-count'); if (nc) nc.textContent = el.value.length + ' of 400. Ctrl+Enter saves.'; var npv = S.root.querySelector('#n-prev'); if (npv && S.nf) npv.innerHTML = draftPreviewHTML(S.nf); return; }
     if (k === 'w-text') { S.wf.text = el.value; var wg = S.root.querySelector('#w-sugg'); if (wg) wg.innerHTML = wSuggHTML(); return; }
     if (k === 'w-amt') { S.wf.amt = el.value.replace(/[^0-9.,]/g, ''); if (el.value !== S.wf.amt) el.value = S.wf.amt; return; }
@@ -3874,6 +4418,7 @@
     var el = e.target, k = el.getAttribute && el.getAttribute('data-k');
     if (!S.root || !S.root.contains(el)) return;
     if (k && k.indexOf('lv-s:') === 0) { var sk = k.slice(5), sc = LVR[sk]; if (sc) { var ss = lvState(sc); ss.sort = el.value; ss.shown = sc.step || 15; lvRefresh(sk); } return; }
+    if (k === 'g-file') { var gfl = el.files; gReadFiles(gfl); try { el.value = ''; } catch (x) {} return; }
     if (k === 'mn-older') { S.mSel = el.value; loadSigns(el.value, true); draw(); return; }
     if (k && k.indexOf('mn-') === 0 && k !== 'mn-pin') { mfSet(k, el); return; }
     if (k === 'p-day') { if (el.value) { S.date = el.value; S.tab = ''; watchItems(); draw(); } return; }
@@ -3925,20 +4470,23 @@
 
   /* ---------- public bits used by app.js ---------- */
   window.LK_PREP = {
-    mount: function (name, root) {
+    mount: function (name, root, sel) {
       wire();
       S.name = name; S.root = root;
+      if (name === 'guides') { if ((sel || '') !== S.gSel) S.gSel = sel || ''; }
       if (name === 'admin') S.draft = S.draft || null;
       draw();
       if (S.pin) { connect(); if (name === 'admin') sdk(); if (name === 'orders') { S.ordDate = dayNow(); watchOrders(); } if (name === 'waste') { S.wDate = dayNow(); watchWaste(); } notesInit(); }
     },
     warm: function () { if (S.pin && S.configState !== 'ok' && S.configState !== 'loading') connect(); notesInit(); },
     unsaved: function () {
-      return pending > 0 || mfDirty() || nfDirty() || draftDirty() || !!String(S.bulk || '').trim() || !!S.sheet || !!S.recipeOpen ||
+      return pending > 0 || mfDirty() || nfDirty() || gfDirty() || draftDirty() || !!String(S.bulk || '').trim() || !!S.sheet || !!S.recipeOpen ||
         !!(S.text.trim() || S.qty.trim() || S.otext.trim() || S.oqty.trim() || S.wf.text.trim() || String(S.wf.amt).trim() || S.wf.act.trim() || (S.wrA != null && S.wrA !== ((S.wReview || {}).avoidable || '')) || (S.wrC != null && S.wrC !== ((S.wReview || {}).change || '')) || S.mpin);
     },
     noteInfo: noteInfo,
     noteOpen: noteOpen,
+    guidesFor: function (rid) { try { return guidesFor(rid); } catch (e) { return []; } },
+    guideSearch: function (q) { try { return guideSearch(q); } catch (e) { return []; } },
     minInfo: minInfo,
     saveConfig: saveConfig,
     proofread: proofread,

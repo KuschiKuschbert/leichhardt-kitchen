@@ -6,17 +6,17 @@ const SHOTS = process.env.SHOTS ? path.join(__dirname, 'shots') : '';
 if (SHOTS) fs.mkdirSync(SHOTS, { recursive: true });
 (async () => {
   const b = await L.start(), R = [];
-  const pages = ['#/', '#/recipes', '#/r/barra', '#/r/laksa', '#/settings', '#/prep', '#/orders', '#/waste', '#/minutes'];
+  const pages = ['#/', '#/recipes', '#/r/barra', '#/r/laksa', '#/r/rice', '#/settings', '#/prep', '#/orders', '#/waste', '#/minutes', '#/guides', '#/guides/combi', '#/guides/fryer'];
   for (const [w, h, touch] of [[390, 844, true], [768, 1024, true], [1280, 900, false]]) {
     for (const hash of pages) {
-      const p = await L.open(b, hash, { width: w, height: h, touch, wait: 1400 });
+      const p = await L.open(b, hash, { width: w, height: h, touch, wait: 1400, extra: L.guides() });
       const of = await L.overflow(p);
       L.check(!of && !p.errors.length, w + ' ' + hash + (of ? ' sideways scroll' : '') + (p.errors.length ? ' errors: ' + p.errors.join(' | ') : ''), R);
       if (SHOTS) await p.screenshot({ path: path.join(SHOTS, w + '-' + (hash.replace(/[#/]/g, '') || 'landing') + '.png') });
       await p.context().close();
     }
-    const p = await L.open(b, '#/admin', { width: w, height: h, touch, admin: true, wait: 1600 });
-    for (const t of ['insights', 'team', 'waste', 'learning', 'notes', 'minutes', 'people', 'tools']) {
+    const p = await L.open(b, '#/admin', { width: w, height: h, touch, admin: true, wait: 1600, extra: L.guides() });
+    for (const t of ['insights', 'team', 'waste', 'learning', 'notes', 'minutes', 'guides', 'people', 'tools']) {
       await p.click('[data-p="a-tab"][data-t="' + t + '"]'); await p.waitForTimeout(500);
       L.check(!(await L.overflow(p)), w + ' admin ' + t + ' no sideways scroll', R);
       if (SHOTS) await p.screenshot({ path: path.join(SHOTS, w + '-admin-' + t + '.png') });
