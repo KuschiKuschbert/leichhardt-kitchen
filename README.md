@@ -10,7 +10,7 @@ The Leichhardt Hotel kitchen's app: the recipe book, the prep list, the order li
 - **Linked batch recipes.** Any ingredient that has its own recipe is underlined orange with a "Recipe 06" tag, so tapping it opens that recipe. Batch recipes show which dishes they go on.
 - **Allergens roll up.** A dish picks up the allergens of the batch recipes it uses, and names where each one comes from. A "?" means "may be in it, check the supplier label".
 - **Cards to come.** A batch recipe that isn't in the book yet shows as "Card to come". Every dish that uses one is marked "Allergens incomplete", is left out of the Free from filter, and counts as "may have" under the allergen lens, until that card is added.
-- **Set out like the guest menu.** Recipes are grouped in the order the menu prints them: Snackin' Plates, Salads, Big Country Feeds, Off the Grill, Schnittys & Parmys, Hand Held, Sides, Dessert and Seniors, then the Functions platters. Tiles and The Pass both follow it, and each section is also a filter chip in Tiles. The Functions chip is a rounded rectangle and always sits first after All. Batch recipes and components come after the menu sections ("Bains and prep" on The Pass).
+- **Set out like the guest menu.** Recipes are grouped in the order the menu prints them: Snackin' Plates, Salads, Big Country Feeds, Off the Grill, Toppers, Schnittys & Parmys, Hand Held, Sides, Dessert, Seniors and Kids, then the Functions platters. Tiles and The Pass both follow it, and each section is also a filter chip in Tiles. The Functions chip is a rounded rectangle and always sits first after All. Batch recipes and components come after the menu sections ("Bains and prep" on The Pass).
 - **From the side.** Plated dishes also show a labelled side view, so the team can see what sits on top. Burgers show their build, top to bottom, instead.
 - **Pin labels.** On the plate drawing the page places each label where it does not cover the food, other labels or other pins, with a thin line back to its pin. It reads the drawing to find the food, so a new dish needs no label tuning. Boards and platters (more than 8 pins) use smaller labels. The ring is see-through so the food shows through it.
 - **Tick off steps** while cooking. The ticks clear when the page is closed.
@@ -47,19 +47,11 @@ Dishes already link to these ids. Add a recipe with the same `id` and the links,
 
 | id | Used by cards |
 | --- | --- |
-| `mushroom-sauce` | 13 14 15 16 31 |
-| `gravy` | 21 27 33 35 41 46 56 |
-| `side-veg` | 27 28 35 42 |
-| `mash` | 28 29 35 41 |
+| `beer-batter` | 24 58 64 |
 | `smash-patty` | 22 23 |
 | `french-topper` | 18 |
 | `mexican-topper` | 19 |
 | `americana-topper` | 20 |
-| `beer-batter` | 24 58 64 |
-| `spinach-puree`, `red-wine-jus` | 29 |
-| `fettuccine`, `carbonara-sauce` | 30 |
-| `wing-flour` | 31 49 |
-| `diane-sauce` | 31 |
 | `pulled-pork`, `pico` | 32 |
 | `smoked-mac` | 39 |
 | `rum-butterscotch`, `honeycomb` | 43 |
@@ -78,11 +70,17 @@ Drawings for The Pass are in `js/art.js`. A recipe with no drawing still shows, 
 
 | File | What it is |
 | --- | --- |
-| `index.html` | The page itself |
+| `index.html` | The page itself, the daily 04:00 self-refresh, the update bar, the service worker registration |
 | `css/app.css` | The Leichhardt look: Barlow fonts, off-white, black rules, orange accent |
 | `js/data.js` | The recipes (edit this one) |
 | `js/art.js` | Plate, pan and technique drawings |
-| `js/app.js` | How it all works: views, search, links, allergens, settings |
+| `js/app.js` | Recipe book: routing, top bar, views, search, links, allergens, settings, install, QR |
+| `js/prep.js` | Prep list, orders, wastage, notes, minutes, admin panel, staff lock, learning |
+| `js/firebase-config.js` | Public Firebase web config |
+| `firestore.rules` | Security rules template (`KITCHEN_PIN` and `OWNER_EMAIL` are placeholders) |
+| `manifest.webmanifest`, `sw.js`, `icons/`, `icon.svg` | Installable app: manifest, service worker (network first), icons |
+| `qr.svg`, `qr.png`, `qr-sign.pdf` | QR code to open the book, and the A4 sign |
+| `tests/` | Click tests with a stand-in for Firebase (see Testing) |
 
 There's no build step and nothing to install. To try it on a computer, open `index.html` in a browser.
 
@@ -126,7 +124,7 @@ npm test
 - Sections are not preset. Whoever writes a line types a section name (or picks one already used) and it appears as a section on the page and as a tab. The app keeps track of sections in the background and offers them as suggestions.
 - Ticking, writing and removing lines is counted per person in the background.
 - `#/admin` is the admin panel: who is writing and ticking most, the sections people have written (hide one from suggestions), names, roles and permissions, and Reset PIN for a person. It needs Google sign-in as the project owner.
-- Data lives in Firebase Firestore (free Spark plan): `config/main`, `days/<date>/items`, `staffpins/<person>` (hashed, unreadable), `pinset/<person>`, `proofs/<person>` (write only), `activity/<person>`, `sections/<slug>`, `notes/<id>` (daily notes, see Daily notes), `guides/<id>` (see Guides). Firebase config is in `js/firebase-config.js` (public by design). The kitchen PIN and admin email live in the published Firestore rules, not in this repo. Staff names are not in the repo either.
+- Data lives in Firebase Firestore (free Spark plan): `config/main`, `days/<date>/items`, `staffpins/<person>` (hashed, unreadable), `pinset/<person>`, `proofs/<person>` (write only), `activity/<person>`, `sections/<slug>`, `orders/<date>/lines`, `waste/<date>` and `waste/<date>/lines`, `notes/<id>` (daily notes), `minutes/<id>` (meeting minutes), `learned/<item>` and `ordlearned/<item>` (what the prep and order lists learned), `learnlog/<date>`, `misses/<slug>` (searches that found nothing), `views/<recipe>` (cards opened), `guides/<id>` and `guides/<id>/pages/<n>` (see Guides). Firebase config is in `js/firebase-config.js` (public by design). The kitchen PIN and admin email live in the published Firestore rules, not in this repo. Staff names are not in the repo either.
 - Personal PINs are the write lock. Anyone with the kitchen PIN can read, but every write must carry the writer's own 4-digit PIN, which the Firestore rules check against the stored hash (see Staff lock). Per-person permissions (add, tick, delete) are still guidance in the page. Items are never hard deleted.
 - Changing the kitchen PIN means editing the Firestore rules and re-entering it on every phone.
 
@@ -134,6 +132,7 @@ npm test
 
 - **Head chef (owner):** signs in with Google at `#/admin` and sees everything: charts and numbers for 7, 14 or 30 days (lines per day, by person, time of day, rolled over most often, sections, weekday load, slow and sticky lines, empty searches), the Team and Waste tabs, the tallies, people and permissions, PIN resets and the badge switch.
 - **Sous chef:** no Google needed. Set a person's role to Sous chef in the admin panel. They sign in with their name and PIN like everyone else, and get a "Manage staff" button on the Handy page to add and remove people. The Firestore rules only let a PIN holder change the `people` list of `config/main` (nothing else in that document). Only people listed in `sousIds` (kept in step by the owner panel) may change it.
+- **Reads kept small.** Past days are read once a day per phone and kept on the phone: prep (`lk.past`), order history (`lk.ord.hist`), recent waste (`lk.w.recent`, read again after a past entry is removed) and the waste review note (`lk.w.note`). Everything to order reads the last 14 days once (at most once a minute) and then keeps itself in step: today's lines come from the live list and a tick or remove on an older line is applied on the phone.
 - **Rollover:** the first person to open today's book writes every line that was not ticked on the last written day (up to 7 days back) onto today, marked "Rolled" (with "x2" and so on for repeats) and sorted to the top of its section. Each rolled line stores `rolled`, `root`, `from` and `rolledFrom`, so the Insights page can show how often and which lines roll over. There is no Yesterday page any more.
 - **Written for tomorrow.** A line written after the usual close (the time of the last tick on most days, worked out from the past 14 days; 20:00 until the book knows) is meant for the next day. When it moves onto that day it shows "From last night" instead of Rolled, and it does not count in Rolled, Stuck, Start here, the CSV or the Insights rolled numbers. Only if it is still open after that day does it show as Rolled (once). The same goes for order lines: a late order line waits "Since" the next day. Data: `ahead: true` on the copy (kept as it rolls on); `rolled` still counts the copies, so learning and timings never count a line twice. The prep rollover waits for the past days to load, so it knows the usual close.
 - **Urgent:** the ! button on a line pins it above the rest.
@@ -144,6 +143,8 @@ npm test
 - **Ticked lines leave the list.** Once a line is ticked it disappears from the prep list and shows only under Done today in Handy, so the list stays short. A section with nothing left to do is hidden. When everything is ticked the page says so. Ticking shows a short "Ticked ... Undo" message for mis-taps. The same rules apply as before (the ticker for 2 minutes, head chef and sous chefs any time), now through the Undo button in Done today. The header count ("2 of 4 done"), Progress by section, Copy the list and Print the list still include ticked lines.
 - **Add from the recipes.** The button opens a panel that floats over the list, so the list and the add box do not move or shrink. Nothing is listed until you type a name or tap Show all. The list inside scrolls. Escape, Close or adding a recipe closes it.
 - **Order list: lines roll over until ordered.** Like the prep list, anything not ticked as ordered on the last written day is copied onto today's order list by itself, every day, until someone ticks it as ordered (removed lines do not roll). A rolled line shows "Since" and the day it was first written, and "from" the person who wrote it. Each phone tries once a day (`lk.ord.rolled`), the copy's id comes from the first line (`r<date>-<root>`), so two phones never make two copies. Everything to order, the regulars chips and the admin order stats count each rolled item once (its newest copy). Data: `rolled` (times rolled), `root`, `from`, `rolledFrom`, `since`, `origBy`.
+- **Order list: waiting more than 3 days.** On today's list, lines not ordered more than 3 days after they were first written sit together at the top under "Waiting more than 3 days", grouped by the day they were written ("Written Wed 15 Oct, 4 days ago"). When the order list opens, a "Still not ordered" nudge says how many (head chef and sous chefs: order them or remove them; staff: tell the head chef or a sous chef), with Show them and Hide for today (`lk.ord.nudge`).
+- **Order list: it learns.** Every order line written is remembered for good in `ordlearned/<item>` (`text`, `uses`, `dow` weekday counts, `qtys` usual amounts, `lastUsed`, `lastBy`, `hidden`). Past order days (up to 90 back) are learned once in the background, each day claimed in `learnlog` as `o-<date>` so nothing is counted twice, starting 8 seconds after the prep learner. The list is read once a day per phone (`lk.ord.learned`, the 300 most used). It drives the suggestions while typing (most used first, with the usual amount), a Usual amount chip once the name is typed, the "Usually ordered" chips (items ordered 3 or more times on this weekday), and the proofreader's word list. Needs the `ordlearned` rules; until they are published the order list suggests from the last 14 days only.
 - **Order list: ordered lines move to the bottom.** On today's order list a line stays in the list for 10 minutes after it is ticked as ordered (so a mis-tap is easy to undo), then it leaves the list and shows under "Ordered today" at the bottom, with the time, who ordered it and an Undo button for the head chef and sous chefs. Every line is in one place only. The list belongs to the day, so it is empty again tomorrow; the By day view still shows any past day in full, and "Everything to order" only ever shows lines not yet ordered. The "2 of 3 ordered" count includes the moved lines.
 - **Order list layout.** The "What do we need to order?" box is at the top of the page so it is always in reach. On wide screens (1000 px and up) the page is wider: the list on the left and "Ordered today" on the right, side by side under the add box. On phones everything stacks: add box, list, Ordered today. Everything to order stays a single column.
 - **Handy page:** priorities, progress by section, "Usual for a Saturday" (lines on at least two of the last four same weekdays, tap to add), the "Done today" checklist (who ticked what and when, with an Undo button for anyone allowed to undo that tick), copy the list as text, print the list.
@@ -170,7 +171,7 @@ npm test
 
 ### Lists and buttons (October 2026)
 
-- **Full-size targets.** Every button on a prep line (tick box, !, recipe, remove), the tick boxes on the order list, Show removed, Undo, Not you? and the admin permission tick boxes are at least 44 px, with the same look as before. On a prep line the three buttons sit together on the right in the same place on every line, and Urgent and Rolled flow with the text.
+- **Full-size targets.** Every small Remove, Put back, Urgent and Reset PIN button, the section tabs, the Pass / Tiles switch, Update now, and every button on a prep line (tick box, !, recipe, remove), the tick boxes on the order list, Show removed, Undo, Not you? and the admin permission tick boxes are at least 44 px, with the same look as before. On a prep line the three buttons sit together on the right in the same place on every line, and Urgent and Rolled flow with the text.
 - **Lists do not jump.** A line ticked on this phone stays where it is, struck through, for 3.5 seconds before it moves to Done today, so a second tap cannot hit the next line. On the order list an ordered line keeps its place for its 10 minutes instead of jumping to the bottom.
 - **Every add and tick says so.** Typed lines, Add from the recipes and the one-tap chips (Usual, Regulars, Due today) show "Added Mise onions to Larder" with Undo (the person who added a line may take it back). The order list shows "Ordered Milk" with Undo, also for a tick in Everything to order (which marks every line for that item), and "Added ... to the order list" with Undo. The order regulars row now says "Tap to add".
 - **Empty section tab.** A section tab with everything ticked says "Nothing left to do in Grill" instead of showing a blank page.

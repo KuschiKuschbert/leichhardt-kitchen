@@ -1,10 +1,10 @@
 /*
-  Leichhardt Kitchen prep list.
-  Staff add and tick prep items on any phone. Everything syncs live through Firebase (Cloud Firestore, free plan).
+  Leichhardt Kitchen prep book: prep list, order list, wastage log, daily notes, meeting minutes, guides and the admin panel.
+  Staff add and tick on any phone. Everything syncs through Firebase (Cloud Firestore, free plan).
 
-  Pages:   #/prep    the daily prep list
-           #/guides  how-to guides for the team (the head chef uploads them in the admin panel)
-           #/admin   admin panel (names, permissions, tallies), Google sign-in for the admin only
+  Pages:   #/prep     the daily prep list         #/orders   the order list       #/waste   the wastage log
+           #/minutes  meeting minutes to sign     #/admin    admin panel, Google sign-in for the head chef only
+           #/guides   how-to guides (the head chef uploads them in the admin panel's Guides tab)
 
   Data (the kitchen PIN is part of the path, so only people who know it can reach the data):
     kitchens/<PIN>/config/main                 { people: [...] }                    read by staff, written by the admin only
@@ -14,6 +14,14 @@
     kitchens/<PIN>/proofs/<personId>           { tok, at } write only: sent with each write so the rules can check the writer's PIN (at = server time, so an old proof cannot be reused)
     kitchens/<PIN>/activity/<personId>         { name, added, ticked, visits, lastSeen }   tallies shown in the admin panel
     kitchens/<PIN>/sections/<slug>             { name, uses, lastUsed }   sections people have written, offered as suggestions
+    kitchens/<PIN>/orders/<date>/lines/<id>    one order line (rolls over until ordered)
+    kitchens/<PIN>/waste/<date>, .../lines/<id> the end-of-day waste review, and one wastage entry each
+    kitchens/<PIN>/notes/<id>, .../seen/<id>   daily notes and who has seen them
+    kitchens/<PIN>/minutes/<id>, .../hist, .../signs   meeting minutes, earlier versions and sign-offs
+    kitchens/<PIN>/learned/<item>, ordlearned/<item>   what the prep and order lists have learned
+    kitchens/<PIN>/learnlog/<id>               days already learned (create only)
+    kitchens/<PIN>/misses/<slug>, views/<id>   recipe searches that found nothing, and card opens
+    kitchens/<PIN>/guides/<id>, .../pages/<n>   how-to guides, and each page as a picture (see the guides section)
 
   Who is allowed to add, tick or remove is set in the admin panel. Those permissions guide the page. The security
   rules in the Firebase console are what really lock the data: the kitchen PIN to read, a person's own PIN to write,
@@ -493,10 +501,10 @@
   }
 
   /* ---------- proofreading: every new line is tidied and spell-checked before it is saved ---------- */
-  var KITCHEN = ('blanch julienne dice diced slice sliced marinate marinated portion portioned batch wash pick chop chopped shred shredded trim tray crumb crumbed batter gravy sauce stock reduce season seasoned mix mixed roast roasted smoke smoked pulled pull cook cooked cool chill chilled defrost thaw label date rotate fill refill restock set setup stack fold grate grated peel peeled core cut cure brine rub glaze whip whipped steam steamed fry fried grill grilled bake baked char charred toast toasted dress dressing garnish drizzle lemon lime orange tomato tomatoes onion onions garlic potato potatoes lettuce cucumber carrot carrots cabbage capsicum mushroom mushrooms bacon cheese chicken beef pork lamb barramundi calamari prawn prawns salmon rice pasta mash chips fries slaw coleslaw aioli mayo mayonnaise pickle pickles parmesan parmigiana parmy schnitzel schnitty beetroot spinach broccoli zucchini pumpkin sweet corn peas beans dough pastry pie pies brownie cookie caramel butterscotch cream ice vanilla chocolate guinness snickers laksa coconut asian greens oak leaf salad salads burger burgers patties patty bun buns brioche ribs rib wings wing steak sandwich skillet spring rolls roll roll bourbon bbq chilli chili ginger shallot shallots herbs parsley coriander basil thyme rosemary sage mint dill chives pepper salt sugar flour butter milk eggs egg oil vinegar mustard ketchup tomato relish jus beer batter fish chip sauce sides side dessert desserts entree entrees mains main kids ketchup bacon jam onion rings nachos tacos taco quesadilla wrap wraps hummus dip dips bread garlic focaccia fetta feta halloumi mozzarella cheddar swiss tasty gravy peppercorn mushroom diane creamy white red green yellow large small half full double single extra spare backup morning afternoon night lunch dinner breakfast service base bases bowl bowls sheet sheets lid lids tub tubs bag bags pack packs bit bits bin bins tin tins can cans foil film wipe wipes glove gloves towel towels cloth cloths bleach soap spray sanitiser sanitizer paper napkin napkins straw straws tong tongs whisk knife knives board boards peeler ladle ladles spoon spoons fork forks plate plates dish dishes pickled jalapeno jalapenos tortilla tortillas wonton wontons tomatoes cup cups jar jars pot pots pan pans oven rack racks jug jugs make made need needs more less last next each every both some thing things stuff work done ready first top bottom front back cold hot warm mild spicy fresh frozen dried raw plain with without from into over under before after until only also then than that this these those mince stir drain rest wrap cover covered uncover break bone bones skin skinned skinless fillet fillets cube cubes strip strips wedge wedges round rounds ring rings whole sliced thick thin fine rough coarse smooth').split(/\s+/);
+  var KITCHEN = ('star anise blanch julienne dice diced slice sliced marinate marinated portion portioned batch wash pick chop chopped shred shredded trim tray crumb crumbed batter gravy sauce stock reduce season seasoned mix mixed roast roasted smoke smoked pulled pull cook cooked cool chill chilled defrost thaw label date rotate fill refill restock set setup stack fold grate grated peel peeled core cut cure brine rub glaze whip whipped steam steamed fry fried grill grilled bake baked char charred toast toasted dress dressing garnish drizzle lemon lime orange tomato tomatoes onion onions garlic potato potatoes lettuce cucumber carrot carrots cabbage capsicum mushroom mushrooms bacon cheese chicken beef pork lamb barramundi calamari prawn prawns salmon rice pasta mash chips fries slaw coleslaw aioli mayo mayonnaise pickle pickles parmesan parmigiana parmy schnitzel schnitty beetroot spinach broccoli zucchini pumpkin sweet corn peas beans dough pastry pie pies brownie cookie caramel butterscotch cream ice vanilla chocolate guinness snickers laksa coconut asian greens oak leaf salad salads burger burgers patties patty bun buns brioche ribs rib wings wing steak sandwich skillet spring rolls roll roll bourbon bbq chilli chili ginger shallot shallots herbs parsley coriander basil thyme rosemary sage mint dill chives pepper salt sugar flour butter milk eggs egg oil vinegar mustard ketchup tomato relish jus beer batter fish chip sauce sides side dessert desserts entree entrees mains main kids ketchup bacon jam onion rings nachos tacos taco quesadilla wrap wraps hummus dip dips bread garlic focaccia fetta feta halloumi mozzarella cheddar swiss tasty gravy peppercorn mushroom diane creamy white red green yellow large small half full double single extra spare backup morning afternoon night lunch dinner breakfast service base bases bowl bowls sheet sheets lid lids tub tubs bag bags pack packs bit bits bin bins tin tins can cans foil film wipe wipes glove gloves towel towels cloth cloths bleach soap spray sanitiser sanitizer paper napkin napkins straw straws tong tongs whisk knife knives board boards peeler ladle ladles spoon spoons fork forks plate plates dish dishes pickled jalapeno jalapenos tortilla tortillas wonton wontons tomatoes cup cups jar jars pot pots pan pans oven rack racks jug jugs make made need needs more less last next each every both some thing things stuff work done ready first top bottom front back cold hot warm mild spicy fresh frozen dried raw plain with without from into over under before after until only also then than that this these those mince stir drain rest wrap cover covered uncover break bone bones skin skinned skinless fillet fillets cube cubes strip strips wedge wedges round rounds ring rings whole sliced thick thin fine rough coarse smooth').split(/\s+/);
   var vocabCache = null, vocabKey = '';
   function vocab() {
-    var key = S.learned.length + ':' + D.recipes.length + ':' + S.sections.length;
+    var key = S.learned.length + ':' + D.recipes.length + ':' + S.sections.length + ':' + (S.ordLearned || []).length;
     if (vocabCache && vocabKey === key) return vocabCache;
     var v = {};
     function add(t, w) { String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/[^a-z']+/).forEach(function (x) { if (x.length >= 3) v[x] = Math.max(v[x] || 0, w); }); }
@@ -505,6 +513,7 @@
     S.sections.forEach(function (x) { if (!x.hidden) add(x.name, 2 + Math.min(5, x.uses || 0)); });
     D.recipes.forEach(function (r) { add(r.name, 3); add(r.short, 3); (r.ingredients || []).forEach(function (i) { add(i.name, 2); }); });
     S.learned.forEach(function (x) { add(x.text, 2 + Math.min(5, x.uses || 0)); });
+    (S.ordLearned || []).forEach(function (x) { if (!x.hidden) add(x.text, 2 + Math.min(5, x.uses || 0)); });
     vocabCache = v; vocabKey = key; return v;
   }
   function osa(a, b) {
@@ -763,13 +772,14 @@
   /* Progressive learning: every past day (up to 90 back) is read once, by whichever phone opens the book first.
      A day is claimed by creating learnlog/<date>; the rules refuse a second create, so nothing is counted twice. */
   var LEARN_DAYS = 90;
-  function markLive(date) {
+  function markLive(date, lk) {
     if (!fb) return;
+    lk = lk || 'lk.prep.live';
     S.marked = S.marked || {};
-    if (S.marked[date] || lsGet('lk.prep.live') === date) return;
+    if (S.marked[date] || lsGet(lk) === date) return;
     S.marked[date] = 1;
     /* the rules allow only the first create of a day, so each phone tries once a day (another phone may have claimed it already) */
-    var done = function () { lsSet('lk.prep.live', date); };
+    var done = function () { lsSet(lk, date); };
     sset(docRef('learnlog', date), { at: Date.now(), who: 'live' }).then(done, done);
   }
   function maybeLearn() {
@@ -783,6 +793,7 @@
     S.learnState = { total: LEARN_DAYS, done: 0, running: true };
     fb.fs.getDocs(colRef('learnlog')).then(function (snap) {
       var have = {}; snap.docs.forEach(function (d) { have[d.id] = 1; });
+      ordAutoLearn(have);
       var todo = dates.filter(function (d) { return !have[d]; });
       S.learnState.done = LEARN_DAYS - todo.length; draw();
       learnChunk(todo, 0);
@@ -1789,7 +1800,7 @@
     if (S.date !== today && !canBrowse() && !S.user) { S.date = today; S.tab = ''; watchItems(); }
     if (S.authed && fb) { loadPast(); loadWRecent(false); }
     S.week = S.past ? weekRanks() : null;
-    maybeRoll(); ordRoll(); maybeLearn(); loadWNote();
+    maybeRoll(); ordRoll(); loadOrdLearned(); maybeLearn(); loadWNote();
     var live = S.items.filter(function (x) { return !x.deleted; }), doneN = live.filter(function (x) { return x.done; }).length;
     var removed = S.items.filter(function (x) { return x.deleted; });
     var secs = {}, tabs = [];
@@ -2219,7 +2230,14 @@
       S.ordAll = [].concat.apply([], lists); S.ordBusy = false; draw();
     });
   }
-  function ordReload() { S.ordAllAt = 0; if (S.ordView === 'all') loadOrdAll(true); }
+  /* Everything to order is read once (14 days) and then kept in step on the phone: today's lines come from the live list,
+     and a tick or remove on an older line is applied to the copy here. No re-reading after every tap. */
+  function ordReload() { draw(); }
+  function ordPatch(date, id, ch) { (S.ordAll || []).forEach(function (x) { if (x.date === date && x.id === id) Object.assign(x, ch); }); draw(); }
+  function ordAllLines() {
+    var t = ymd(new Date());
+    return S.ordDate === t && S.ordState === 'ok' ? (S.ordAll || []).filter(function (x) { return x.date !== t; }).concat(S.ordLines || []) : (S.ordAll || []);
+  }
   /* Like the prep list: anything not ordered on the last written day rolls onto today's order list by itself, every day
      until someone ticks it as ordered. The copy's id comes from the first line (root), so two phones rolling at once
      write the same line once. Each phone tries once a day (lk.ord.rolled), so the reads stay small. */
@@ -2256,6 +2274,104 @@
       });
     }).catch(function () { S.ordRolling = false; });
   }
+  /* ---------- order learning ----------
+     Like the prep list: every order line written is remembered for good in ordlearned/<key> { text, uses, dow, qtys,
+     lastUsed, lastBy }, and past order days (up to 90 back) are learned once in the background, each day claimed in
+     learnlog as o-<date> so nothing is counted twice. The list is read once a day per phone (lk.ord.learned) and drives
+     the suggestions while typing, the usual amounts and the "usually ordered" chips. */
+  var ORD_LEARN_N = 300;
+  function loadOrdLearned() {
+    var tag = S.pin + '|' + ymd(new Date());
+    if (!fb || S.ordLearnBusy || S.ordLearnFor === tag) return;
+    try { var c = JSON.parse(lsGet('lk.ord.learned') || 'null'); if (c && c.tag === tag && c.list) { S.ordLearned = c.list; S.ordLearnFor = tag; S.ordLearnOk = true; return; } } catch (e) {}
+    S.ordLearnBusy = true;
+    fb.fs.getDocs(fb.fs.query(colRef('ordlearned'), fb.fs.orderBy('uses', 'desc'), fb.fs.limit(ORD_LEARN_N))).then(function (sn) {
+      S.ordLearned = sn.docs.map(function (d) { var x = d.data(); return { id: d.id, text: x.text || '', uses: x.uses || 0, dow: x.dow || {}, qtys: x.qtys || {}, hidden: !!x.hidden }; });
+      S.ordLearnFor = tag; S.ordLearnOk = true; S.ordLearnBusy = false; ordLearnSave(); draw();
+    }, function () {
+      // the rules for ordlearned are not published yet (or no signal): suggest from the last 14 days only, try again tomorrow
+      S.ordLearned = S.ordLearned || []; S.ordLearnFor = tag; S.ordLearnOk = false; S.ordLearnBusy = false;
+    });
+  }
+  function ordLearnSave() { lsSet('lk.ord.learned', JSON.stringify({ tag: S.ordLearnFor, list: S.ordLearned || [] })); }
+  function ordLearnedFor(text) { var k = lkey(text); return (S.ordLearned || []).filter(function (x) { return x.id === k; })[0] || null; }
+  function ordLearn(text, qty) {
+    if (!fb || !text || S.ordLearnOk === false) return;
+    var p = who(), f = fb.fs, dw = String(new Date().getDay()), k = lkey(text).slice(0, 80);
+    if (!k) return;
+    qty = String(qty || '').trim().slice(0, 40);
+    var qk = lkey(qty).slice(0, 40), data = { text: String(text).trim().slice(0, 120), uses: f.increment(1), lastUsed: Date.now(), lastBy: p ? p.name : '', dow: {} };
+    data.dow[dw] = f.increment(1);
+    if (qty && qk) { data.qtys = {}; data.qtys[qk] = { q: qty, n: f.increment(1) }; }
+    sset(docRef('ordlearned', k), data, true).catch(function () {});
+    markLive('o-' + ymd(new Date()), 'lk.ord.live');
+    // keep this phone's copy in step, so the next suggestion already knows
+    var e = ordLearnedFor(text);
+    if (!e) { e = { id: k, text: data.text, uses: 0, dow: {}, qtys: {} }; (S.ordLearned = S.ordLearned || []).push(e); }
+    e.uses++; e.dow[dw] = (e.dow[dw] || 0) + 1;
+    if (qty && qk) { e.qtys[qk] = e.qtys[qk] || { q: qty, n: 0 }; e.qtys[qk].n++; }
+    if (S.ordLearnFor) ordLearnSave();
+  }
+  function ordAutoLearn(have) {
+    if (!S.ordLearnOk || S.ordLearnRan || !can('add')) return;
+    S.ordLearnRan = true;
+    var today = ymd(new Date()), todo = [], k;
+    for (k = 1; k <= LEARN_DAYS; k++) { var d = shift(today, -k); if (!have['o-' + d]) todo.push(d); }
+    // a little after the prep learner, so the two do not read at the same moment
+    if (todo.length) setTimeout(function () { ordLearnChunk(todo, 0, { wrote: false }); }, 8000);
+  }
+  function ordLearnChunk(todo, i, run) {
+    if (i >= todo.length) {
+      // read the learned list again once, so the new counts show (next time it is read once a day again)
+      if (run.wrote) { S.ordLearnFor = ''; lsSet('lk.ord.learned', ''); loadOrdLearned(); }
+      return;
+    }
+    var chunk = todo.slice(i, i + 8), f = fb.fs, p = who();
+    Promise.all(chunk.map(function (d) {
+      return sset(docRef('learnlog', 'o-' + d), { at: Date.now(), who: p ? p.name : '', kind: 'order' }).then(function () {
+        return f.getDocs(ordCol(d)).then(function (sn) { return { d: d, lines: sn.docs.map(function (x) { return x.data(); }) }; });
+      }, function () { return null; });
+    })).then(function (res) {
+      var map = {};
+      res.filter(Boolean).forEach(function (r) {
+        var dw = String(parseYmd(r.d).getDay());
+        r.lines.forEach(function (x) {
+          if (x.deleted || x.rolled || !x.text) return;
+          var key = lkey(x.text).slice(0, 80); if (!key) return;
+          var m = map[key] = map[key] || { text: String(x.text).trim().slice(0, 120), n: 0, dow: {}, q: {}, last: 0, by: '' };
+          m.n++; m.dow[dw] = (m.dow[dw] || 0) + 1;
+          var qk = lkey(x.qty || '').slice(0, 40); if (qk) { m.q[qk] = m.q[qk] || { q: String(x.qty).slice(0, 40), n: 0 }; m.q[qk].n++; }
+          if ((x.addedAt || 0) >= m.last) { m.last = x.addedAt || 0; m.by = x.addedBy || ''; }
+        });
+      });
+      var ops = Object.keys(map).map(function (key) {
+        var m = map[key], dw = {}, qs = {};
+        Object.keys(m.dow).forEach(function (d) { dw[d] = f.increment(m.dow[d]); });
+        Object.keys(m.q).forEach(function (q) { qs[q] = { q: m.q[q].q, n: f.increment(m.q[q].n) }; });
+        var data = { text: m.text, uses: f.increment(m.n), dow: dw, qtys: qs };
+        if (!ordLearnedFor(m.text)) { data.lastUsed = m.last; data.lastBy = m.by; }
+        return ['set', docRef('ordlearned', key), data, true];
+      });
+      return (ops.length ? W(ops.slice(0, 400)) : Promise.resolve()).then(function () {
+        if (ops.length) run.wrote = true;
+        ordLearnChunk(todo, i + 8, run);
+      });
+    }).catch(function () {});
+  }
+  /* amounts ordered for an item before: the learned record and the last 14 days, most used first */
+  function ordQtyList(text) {
+    var k = lkey(String(text || '').trim()), out = {}, lx = ordLearnedFor(text);
+    if (!k) return [];
+    Object.keys((lx && lx.qtys) || {}).forEach(function (q) { var v = lx.qtys[q]; if (v && v.q) out[q] = { q: v.q, n: v.n || 0 }; });
+    (S.ordHist || []).forEach(function (x) { if (lkey(x.text) === k && x.qty) { var q = lkey(x.qty).slice(0, 40); out[q] = out[q] || { q: x.qty, n: 0 }; if (!lx) out[q].n++; } });
+    return Object.keys(out).map(function (q) { return out[q]; }).sort(function (a, b) { return b.n - a.n; });
+  }
+  function oQtyChipsHTML() {
+    if (S.oqty.trim() || S.otext.trim().length < 3) return '';
+    var l = ordQtyList(S.otext).slice(0, 3);
+    if (!l.length) return '';
+    return '<span class="nb-ql">Usual amount</span>' + l.map(function (x) { return '<button type="button" class="chip sq nb-qc" data-p="oqset" data-v="' + esc(x.q) + '">' + esc(x.q) + '</button>'; }).join('');
+  }
   /* a line that rolled onto a later day is shown once, as its newest copy */
   function ordNewest(list) {
     var gone = {}; list.forEach(function (x) { if (x.from) gone[x.from] = 1; });
@@ -2268,6 +2384,7 @@
     var hit = ingredientFor(t), p = me(), ref = fb.fs.doc(ordCol(S.ordDate));
     var oFix = pr.changes.map(function (c) { return c[0] + ' to ' + c[1]; }).join(', ');
     S.otext = ''; var q = S.oqty.trim().slice(0, 40); S.oqty = ''; draw();
+    ordLearn(t, q);
     sset(ref, { text: t, qty: q, recipes: hit ? hit.ids : [], addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: Date.now(), ordered: false, deleted: false, orig: t !== typed ? typed.slice(0, 120) : '' })
       .then(ordReload, function (e) { failed(e, function () { if (!S.otext.trim()) { S.otext = typed; S.oqty = q; } }); });
     /* like the prep list: Undo takes the line back, or after a spelling fix puts back what was typed */
@@ -2284,34 +2401,35 @@
   }
   function tickOrderLine(date, id, on) {
     var it = (S.ordLines || []).concat(S.ordAll || []).filter(function (x) { return x.id === id; })[0];
-    setOrdered(date, id, on).then(ordReload, failed);
+    setOrdered(date, id, on).then(function () { ordPatch(date, id, { ordered: on }); }, failed);
     if (on) toast('Ordered ' + (it ? it.text : 'the line'), { label: 'Undo', fn: function () { tickOrderLine(date, id, false); } });
   }
   function tickOrderGroup(key) {
-    var lines = (S.ordAll || []).filter(function (x) { return !x.deleted && !x.ordered && okey(x.text) === key; });
+    var lines = ordNewest(ordAllLines()).filter(function (x) { return !x.deleted && !x.ordered && okey(x.text) === key; });
     if (!lines.length || !canBrowse()) return;
-    W(lines.map(function (x) { return orderedOp(x.date, x.id, true); })).then(ordReload, failed);
+    W(lines.map(function (x) { return orderedOp(x.date, x.id, true); })).then(function () { lines.forEach(function (x) { ordPatch(x.date, x.id, { ordered: true }); }); }, failed);
     toast('Ordered ' + lines[0].text + (lines.length > 1 ? ' (' + lines.length + ' lines)' : ''), { label: 'Undo', fn: function () {
-      W(lines.map(function (x) { return orderedOp(x.date, x.id, false); })).then(ordReload, failed);
+      W(lines.map(function (x) { return orderedOp(x.date, x.id, false); })).then(function () { lines.forEach(function (x) { ordPatch(x.date, x.id, { ordered: false }); }); }, failed);
     } });
   }
   function removeOrderLine(date, id, restore) {
     if (!canBrowse() || !can('del')) return;
     var it = (S.ordLines || []).concat(S.ordAll || []).filter(function (x) { return x.id === id; })[0];
-    supd(ordRef(date, id), { deleted: !restore, deletedBy: restore ? '' : (me() || {}).name || '', deletedAt: restore ? 0 : Date.now() }).then(ordReload, failed);
+    supd(ordRef(date, id), { deleted: !restore, deletedBy: restore ? '' : (me() || {}).name || '', deletedAt: restore ? 0 : Date.now() }).then(function () { ordPatch(date, id, { deleted: !restore }); }, failed);
     if (!restore) toast('Removed ' + (it ? it.text : 'the line') + ' from the order list', { label: 'Undo', fn: function () { removeOrderLine(date, id, true); } });
   }
   function ordSuggest() {
     var q = okey(S.otext); if (q.length < 2) return [];
     var seen = {}, out = [];
     function add(t) { var k = okey(t); if (k && !seen[k] && k !== q && (k.indexOf(q) === 0 || k.indexOf(' ' + q) >= 0)) { seen[k] = 1; out.push(t); } }
+    (S.ordLearned || []).filter(function (x) { return !x.hidden; }).slice().sort(function (a, b) { return b.uses - a.uses; }).forEach(function (x) { add(x.text); });
     (S.ordLines || []).concat(S.ordAll || []).forEach(function (x) { add(x.text); });
     var idx = ingIndex(); Object.keys(idx).forEach(function (k) { add(idx[k].name); });
     return out.slice(0, 6);
   }
   function ordSuggHTML() {
     var l = ordSuggest(); S.osugg = l;
-    return l.map(function (t, i) { return '<button type="button" class="chip sq nb-sg" data-p="osugg" data-i="' + i + '">' + esc(t) + '</button>'; }).join('');
+    return l.map(function (t, i) { var uq = (ordQtyList(t)[0] || {}).q; return '<button type="button" class="chip sq nb-sg" data-p="osugg" data-i="' + i + '">' + esc(t) + (uq ? ' <span class="nb-uq">' + esc(uq) + '</span>' : '') + '</button>'; }).join('') + oQtyChipsHTML();
   }
   function recipeChips(x) {
     var ids = x.recipes && x.recipes.length ? x.recipes : ((ingredientFor(x.text) || {}).ids || []);
@@ -2331,7 +2449,7 @@
   }
   function ordGroups() {
     var map = {}, order = [];
-    ordNewest(S.ordAll || []).filter(function (x) { return !x.deleted && !x.ordered; }).sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }).forEach(function (x) {
+    ordNewest(ordAllLines()).filter(function (x) { return !x.deleted && !x.ordered; }).sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }).forEach(function (x) {
       var k = okey(x.text); if (!k) return;
       if (!map[k]) { map[k] = { key: k, text: x.text, lines: [] }; order.push(k); }
       map[k].lines.push(x); map[k].text = x.text;
@@ -2353,10 +2471,13 @@
   function loadOrdHist() {
     var today = ymd(new Date());
     if (!fb || S.ordHistBusy || S.ordHistFor === today) return;
+    var tag = S.pin + '|' + today, c = dayCache('lk.ord.hist', tag);
+    if (c) { S.ordHist = c; S.ordHistFor = today; return; }
     S.ordHistBusy = true;
     var dates = [], i; for (i = 1; i <= 14; i++) dates.push(shift(today, -i));
     Promise.all(dates.map(function (d) { return fb.fs.getDocs(ordCol(d)).then(function (sn) { return sn.docs.map(function (x) { var v = x.data(); v.date = d; return v; }); }, function () { return []; }); })).then(function (l) {
-      S.ordHist = [].concat.apply([], l).filter(function (x) { return !x.deleted && !x.rolled; }); S.ordHistFor = today; S.ordHistBusy = false; draw();
+      S.ordHist = [].concat.apply([], l).filter(function (x) { return !x.deleted && !x.rolled; }).map(function (x) { return { text: x.text, qty: x.qty || '', date: x.date }; });
+      S.ordHistFor = today; S.ordHistBusy = false; dayCacheSet('lk.ord.hist', tag, S.ordHist); draw();
     });
   }
   function oRegsHTML() {
@@ -2373,12 +2494,37 @@
       var e = m[k], same = Object.keys(e.days).filter(function (d) { return parseYmd(d).getDay() === dn; }).length, nd = Object.keys(e.days).length;
       return { text: e.text, same: same, nd: nd, q: Object.keys(e.q).sort(function (a, b) { return e.q[b] - e.q[a]; })[0] || '' };
     }).filter(function (e) { return e.same >= 2 || e.nd >= 5; }).sort(function (a, b) { return b.same - a.same || b.nd - a.nd; }).slice(0, 10);
+    // and what the book has learned is ordered on this weekday (3 or more times), beyond the last 14 days
+    var inL = {}; list.forEach(function (e) { inL[okey(e.text)] = 1; });
+    (S.ordLearned || []).filter(function (x) { var k = okey(x.text); return !x.hidden && k && !have[k] && !inL[k] && (x.dow[dn] || 0) >= 3; })
+      .sort(function (a, b) { return (b.dow[dn] || 0) - (a.dow[dn] || 0); })
+      .forEach(function (x) { if (list.length < 10) list.push({ text: x.text, same: x.dow[dn], nd: x.uses, q: (ordQtyList(x.text)[0] || {}).q || '' }); });
     S.oregs = list;
     if (!list.length) return '';
     return '<div class="w-often"><span class="nb-ql">Usually ordered on a ' + esc(dname) + ' or often. Tap to add</span><div class="chiprow">' + list.map(function (e, i) { return '<button type="button" class="chip sq" data-p="oreg" data-i="' + i + '">' + esc(e.text) + (e.q ? ' <span class="nb-uq">' + esc(e.q) + '</span>' : '') + '</button>'; }).join('') + '</div></div>';
   }
+  /* Lines still not ordered after more than 3 days sit together at the top of today's list, under the day they were
+     first written, and a nudge shows when the order list opens (hidden for the day with Hide for today). */
+  var ORD_LATE = 3;
+  function ordWait(x, today) { return Math.round((parseYmd(today) - parseYmd(x.since || x.date)) / 86400000); }
+  function ordOverdueHTML(list, today) {
+    if (!list.length) return '';
+    var by = {}, days = [];
+    list.forEach(function (x) { var d = x.since || x.date; if (!by[d]) { by[d] = []; days.push(d); } by[d].push(x); });
+    days.sort();
+    return '<div class="o-od" id="o-overdue"><h3 class="nb-sh">Waiting more than ' + ORD_LATE + ' days (' + list.length + ')</h3>' + days.map(function (d) {
+      var n = ordWait(by[d][0], today);
+      return '<h4 class="o-od-h">Written ' + esc(dayShort(d)) + ', ' + n + ' days ago</h4><ul class="nb-rows">' + by[d].map(ordRow).join('') + '</ul>';
+    }).join('') + '</div>';
+  }
+  function ordNudgeHTML(list, today) {
+    if (!list.length || lsGet('lk.ord.nudge') === today) return '';
+    return '<div class="nb-flag o-nudge" role="status"><span class="nb-sl">Still not ordered</span><p>' + list.length + (list.length === 1 ? ' item has' : ' items have') + ' waited more than ' + ORD_LATE + ' days. ' +
+      (canBrowse() ? 'Order them today, or remove what is not needed any more.' : 'Tell the head chef or a sous chef.') + '</p>' +
+      '<div class="btn-row"><button type="button" class="btn" data-p="onudge-show">Show them</button><button type="button" class="btn" data-p="onudge-hide">Hide for today</button></div></div>';
+  }
   function ordersHTML() {
-    if (can('add')) { loadOrdHist(); loadWRecent(false); }
+    if (can('add')) { loadOrdHist(); loadWRecent(false); loadOrdLearned(); maybeLearn(); }
     var p = me(), br = canBrowse(), view = br ? (S.ordView || 'day') : 'day', today = ymd(new Date());
     if (!br && S.ordDate !== today) { S.ordDate = today; watchOrders(); }
     if (view === 'all') loadOrdAll(false);
@@ -2397,7 +2543,9 @@
       '<form class="nb-add" data-p-form="oadd"><div class="nb-add-row"><label class="visually-hidden" for="o-text">Item to order</label><input id="o-text" class="nb-in nb-in-text" data-k="o-text" enterkeyhint="done" autocomplete="off" placeholder="What do we need to order?" maxlength="120" value="' + esc(S.otext) + '">' +
       '<label class="visually-hidden" for="o-qty">Amount</label><input id="o-qty" class="nb-in nb-in-qty" data-k="o-qty" enterkeyhint="done" autocomplete="off" placeholder="Amount" maxlength="40" value="' + esc(S.oqty) + '"><button type="submit" class="nb-addbtn">Add</button></div>' +
       '<div class="nb-sugg" id="o-sugg">' + ordSuggHTML() + '</div><p class="nb-hint" id="o-hint" aria-live="polite">' + esc(oHintText(S.otext)) + '</p>' + oRegsHTML() + '</form>' : (S.ordDate === today ? '<p class="hint">You can read the order list but not write in it.</p>' : '');
-    var moved = live.filter(function (x) { return shown.indexOf(x) < 0; }).sort(function (a, b) { return (b.orderedAt || 0) - (a.orderedAt || 0); });
+    var overdue = view === 'day' && S.ordDate === today ? shown.filter(function (x) { return !x.ordered && ordWait(x, today) > ORD_LATE; }) : [];
+    if (overdue.length) shown = shown.filter(function (x) { return overdue.indexOf(x) < 0; });
+    var moved = live.filter(function (x) { return shown.indexOf(x) < 0 && overdue.indexOf(x) < 0; }).sort(function (a, b) { return (b.orderedAt || 0) - (a.orderedAt || 0); });
     var removedO = (S.ordLines || []).filter(function (x) { return x.deleted; });
     var removedBox = view === 'day' && removedO.length && canBrowse() && can('del') ? '<button type="button" class="nb-link" data-p="oremoved">' + (S.oShowRemoved ? 'Hide' : 'Show') + ' removed (' + removedO.length + ')</button>' +
       (S.oShowRemoved ? '<ul class="nb-rows">' + removedO.map(ordRow).join('') + '</ul>' : '') : '';
@@ -2407,12 +2555,13 @@
     }).join('') + '</ul>' : '';
     var body = view === 'all' ? ordAllHTML() :
       (S.ordState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' :
-        (shown.length ? '<ul class="nb-rows">' + shown.slice().sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }).map(ordRow).join('') + '</ul>' : (live.length ? '<p class="nb-empty">Everything on this list has been ordered. See Ordered today below.</p>' : S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : '<p class="nb-empty">Loading...</p>')));
+        ordOverdueHTML(overdue, today) + (shown.length ? '<ul class="nb-rows">' + shown.slice().sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }).map(ordRow).join('') + '</ul>' : (overdue.length ? '' : live.length ? '<p class="nb-empty">Everything on this list has been ordered. See Ordered today below.</p>' : S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : '<p class="nb-empty">Loading...</p>')));
     return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' : '') + '</span><span class="p-links"><a class="p-link" href="#/prep">Prep list</a>' + '' + '</span></div>' + tabs +
       '<section class="nb-page o-page' + (view === 'all' ? ' o-all' : '') + '"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + (view === 'all' ? 'To order' : 'Order list') + '</h2><span class="nb-date">' + (view === 'all' ? 'Across the last ' + ORD_DAYS + ' days' : esc(longDate(S.ordDate))) + '</span></div>' +
       (view === 'day' ? '<div class="nb-prog" role="status">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') + '</header>' +
       /* the add box is at the top, so it is always in reach; on big screens the list and the ordered-today list sit side by side below it */
       (view === 'day' && add ? '<div class="nb-foot o-add">' + add + '</div>' : '') +
+      (view === 'day' && S.ordDate === today ? ordNudgeHTML(overdue, today) : '') +
       '<div class="o-cols"><div class="nb-body o-main">' + body + removedBox + '</div>' + (orderedBox ? '<div class="o-ordered">' + orderedBox + '</div>' : '') + '</div></section>';
   }
 
@@ -2441,13 +2590,20 @@
     fb.fs.getDoc(wDay(dd)).then(function (sn) { if (S.wDate === dd) { S.wReview = sn.exists() ? sn.data() : {}; draw(); } }, function () { S.wReview = {}; });
     loadWRecent(false);
   }
+  /* Past days hardly change, so these reads are kept on the phone for the day (like lk.past): tag is kitchen PIN and day. */
+  function dayCache(k, tag) { try { var c = JSON.parse(lsGet(k) || 'null'); return c && c.tag === tag ? c.v : null; } catch (e) { return null; } }
+  function dayCacheSet(k, tag, v) { lsSet(k, JSON.stringify({ tag: tag, v: v })); }
   function loadWRecent(force) {
-    if (!fb || S.wRecentBusy || (S.wRecent && !force)) return;
+    var today = ymd(new Date()), tag = S.pin + '|' + today;
+    if (!fb || S.wRecentBusy || (S.wRecent && S.wRecentFor === today && !force)) return;
+    var c = force ? null : dayCache('lk.w.recent', tag);
+    if (c) { S.wRecent = c; S.wRecentFor = today; return; }
     S.wRecentBusy = true;
-    var today = ymd(new Date()), dates = [], i;
+    var dates = [], i;
     for (i = 1; i <= 14; i++) dates.push(shift(today, -i));
     Promise.all(dates.map(function (d) { return fb.fs.getDocs(wCol(d)).then(function (sn) { return sn.docs.map(function (x) { var v = x.data(); v.id = x.id; v.date = d; return v; }); }, function () { return []; }); })).then(function (l) {
-      S.wRecent = [].concat.apply([], l).filter(function (x) { return !x.deleted; }); S.wRecentBusy = false; draw();
+      S.wRecent = [].concat.apply([], l).filter(function (x) { return !x.deleted; }); S.wRecentFor = today; S.wRecentBusy = false;
+      dayCacheSet('lk.w.recent', tag, S.wRecent); draw();
     });
   }
   function wTotals(lines) {
@@ -2510,6 +2666,8 @@
   function removeWaste(date, id, restore) {
     if (!canBrowse() || !can('del')) return;
     var it = (S.wLines || []).concat(S.wRecent || []).filter(function (x) { return x.id === id; })[0];
+    // an older day changed: the copy kept on this phone is read again next time
+    if (date !== ymd(new Date())) lsSet('lk.w.recent', '');
     supd(wRef(date, id), { deleted: !restore, deletedBy: restore ? '' : (me() || {}).name || '', deletedAt: restore ? 0 : Date.now() }).catch(failed);
     if (!restore) toast('Removed ' + (it ? it.text : 'the entry') + ' from the wastage log', { label: 'Undo', fn: function () { removeWaste(date, id, true); } });
   }
@@ -2602,9 +2760,11 @@
     var today = ymd(new Date());
     if (!fb || S.wNoteFor === today) return;
     S.wNoteFor = today;
+    var tag = S.pin + '|' + today, c = dayCache('lk.w.note', tag);
+    if (c) { S.wNote = c.n; return; }
     var ds = [1, 2, 3].map(function (k) { return shift(today, -k); });
     Promise.all(ds.map(function (d) { return fb.fs.getDoc(wDay(d)).then(function (sn) { return sn.exists() ? Object.assign({ date: d }, sn.data()) : null; }, function () { return null; }); })).then(function (l) {
-      S.wNote = l.filter(function (x) { return x && x.change; })[0] || null; draw();
+      S.wNote = l.filter(function (x) { return x && x.change; })[0] || null; dayCacheSet('lk.w.note', tag, { n: S.wNote }); draw();
     });
   }
   function wNoteHTML() {
@@ -4088,7 +4248,7 @@
     if (a === 'orestore') { removeOrderLine(el.getAttribute('data-d'), id, true); return; }
     if (a === 'oremoved') { S.oShowRemoved = !S.oShowRemoved; draw(); return; }
     if (a === 'ogroup') { tickOrderGroup(el.getAttribute('data-k2')); return; }
-    if (a === 'oview') { S.ordView = el.getAttribute('data-v'); if (S.ordView === 'all') loadOrdAll(true); draw(); return; }
+    if (a === 'oview') { S.ordView = el.getAttribute('data-v'); if (S.ordView === 'all') loadOrdAll(false); draw(); return; }
     if (a === 'oday') { S.ordDate = shift(S.ordDate, +el.getAttribute('data-d')); watchOrders(); draw(); return; }
     if (a === 'otoday') { S.ordDate = ymd(new Date()); watchOrders(); draw(); return; }
     if (a === 'osugg') { var st = (S.osugg || [])[i]; if (st) { S.otext = st; draw(); var oe = S.root.querySelector('[data-k="o-text"]'); if (oe) { oe.focus(); try { oe.setSelectionRange(oe.value.length, oe.value.length); } catch (x) {} } } return; }
@@ -4132,6 +4292,9 @@
     if (a === 'wreview') { saveReview(); return; }
     if (a === 'w-refresh') { loadWStats(true); loadStats(true); draw(); return; }
     if (a === 'miss-hide') { sset(docRef('misses', id), { hidden: true, q: ((S.misses || []).filter(function (x) { return x.id === id; })[0] || {}).q || id }, true).then(function () { loadMisses(true); }, failed); return; }
+    if (a === 'onudge-hide') { lsSet('lk.ord.nudge', ymd(new Date())); draw(); return; }
+    if (a === 'onudge-show') { var od = document.getElementById('o-overdue'); if (od) { od.scrollIntoView({ block: 'start' }); var ob = od.querySelector('.nb-box'); if (ob) ob.focus({ preventScroll: true }); } return; }
+    if (a === 'oqset') { S.oqty = el.getAttribute('data-v') || ''; draw(); var to = S.root.querySelector('[data-k="o-text"]'); if (to) to.focus(); return; }
     if (a === 'qset') { S.qty = el.getAttribute('data-v') || ''; draw(); var tq = S.root.querySelector('[data-k="p-text"]'); if (tq) tq.focus(); return; }
     if (a === 'goto') { gotoRow(id); return; }
     if (a === 'write') { var wt = S.root.querySelector('[data-k="p-text"]'); if (wt) { wt.scrollIntoView({ block: 'center', behavior: 'smooth' }); wt.focus({ preventScroll: true }); } return; }
