@@ -545,6 +545,12 @@ img, svg { display: block; }
 .dk-go { grid-column: 2; grid-row: 2; justify-self: start; margin-top: 0.7rem; display: inline-flex; align-items: center; height: 44px; padding: 0 1.3rem; border-radius: 8px; background: var(--accent-ink); color: #FBF8F1; font-weight: 700; }
 .docket:hover .dk-go, .docket:focus-visible .dk-go { background: var(--ink); }
 .wall-foot { margin: 2rem 0 0; font-size: 0.8125rem; color: #4a4231; }
+/* Install card on the landing page (phones and tablets that have not installed the book) */
+.wall-install { display: flex; flex-direction: column; gap: 0.5rem; margin: 0 0 1.6rem; padding: 0.9rem 1rem; background: #FFFEFA; border: 1.5px solid var(--ink); border-left: 6px solid var(--accent); border-radius: 8px; }
+.wall-install p { margin: 0; }
+.wi-t { font-family: var(--display); font-weight: 700; font-size: 1.3rem; letter-spacing: 0.02em; }
+.wi-m { font-size: 0.9375rem; }
+@media (min-width: 720px) { .wall-install { max-width: 38rem; } }
 .wall .tabbar { background: #2b2a27; border-top: 3px solid var(--accent); }
 .wall .tabbar a { color: #FBF8F1; }
 .wall .tabbar a[aria-current="page"] { color: #F08A4B; box-shadow: none; }

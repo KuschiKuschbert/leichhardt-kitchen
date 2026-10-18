@@ -19,6 +19,13 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&amp;family=Barlow+Condensed:wght@700&amp;family=Caveat:wght@700&amp;display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/app.css">
 <script>
+  // Catch the browser's install offer the moment it arrives, before the app scripts load.
+  // Chrome only lets the page open its install box after preventDefault() has been called on the event.
+  window.lkInstall = null;
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); window.lkInstall = e; window.dispatchEvent(new Event('lk-install')); });
+  window.addEventListener('appinstalled', function () { window.lkInstall = null; });
+</script>
+<script>
   // Apply the saved text size before the page draws, so nothing jumps.
   try { var s = JSON.parse(localStorage.getItem('lk.settings.v1') || '{}'); if (s.text) document.documentElement.setAttribute('data-text', s.text); } catch (e) {}
 </script>
