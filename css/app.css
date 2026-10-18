@@ -990,8 +990,8 @@ html.note-open, html.note-open body { overflow: hidden; }
   .a-table.lv-table td.lv-wide, .a-table.lv-table td.a-act { grid-column: 1 / -1; text-align: left; }
   .a-table.lv-table td.a-act { display: flex; flex-wrap: wrap; gap: 0.4rem; padding-top: 0.2rem; }
   .a-table.lv-table td.a-act .p-x { margin: 0; }
-  /* People: name and role full width, the four permissions in one row, then the buttons */
-  .lv-people tr { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  /* People: name and role full width, the four permissions and On list in one row, then the buttons */
+  .lv-people tr { grid-template-columns: repeat(5, minmax(0, 1fr)); }
   .lv-people th[scope="row"], .lv-people td.lv-wide { grid-column: 1 / -1; }
   .lv-people .a-name { width: 100%; min-width: 0; }
   .lv-people .p-select { max-width: none; width: 100%; }
