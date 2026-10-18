@@ -512,11 +512,12 @@
     take(open.slice().sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }), function (x) { return x.addedAt ? 'Waiting since ' + clock(x.addedAt) : 'Waiting longest'; });
     return picked;
   }
-  function startHTML(live) {
+  /* Start here is drawn twice: above the lines on phones and tablets (nb-start-l), and at the top of the Handy page on big screens (nb-start-r), so it does not push the lines down. CSS shows one of the two. */
+  function startHTML(live, side) {
     if (!can('tick') || S.date !== ymd(new Date())) return '';
     if (live.filter(function (x) { return !x.done; }).length < 4) return '';
     var l = startHere(live);
-    return '<div class="nb-start"><span class="nb-sl">Start here</span><ol>' + l.map(function (o) {
+    return '<div class="nb-start ' + (side ? 'nb-start-r' : 'nb-start-l') + '"><span class="nb-sl">Start here</span><ol>' + l.map(function (o) {
       return '<li><button type="button" class="nb-sb" data-p="goto" data-id="' + esc(o.x.id) + '"><span class="nb-st">' + esc(o.x.text) + (o.x.qty ? ' <span class="nb-q">' + esc(o.x.qty) + '</span>' : '') + '</span><span class="nb-sw">' + esc(o.why) + (o.x.station ? ' &middot; ' + esc(o.x.station) : '') + '</span></button></li>';
     }).join('') + '</ol></div>';
   }
@@ -1523,7 +1524,7 @@
     var donebox = '<h3 class="nb-sh">Done today (' + dl.length + ')</h3>' + (dl.length ? '<ul class="nb-done">' + dl.map(function (x) {
       return '<li><span class="nb-dt">' + (x.doneAt ? clock(x.doneAt) : '') + '</span><span class="nb-dx">' + esc(x.text) + (x.qty ? ' <em>' + esc(x.qty) + '</em>' : '') + '</span><span class="nb-dw">' + esc(x.doneBy || '') + '</span></li>';
     }).join('') + '</ul>' : '<p class="nb-sd">Nothing ticked yet.</p>');
-    return paceHTML + prio + stuckHTML + donebox + meters + dueHTML + usual + tools;
+    return startHTML(live, true) + paceHTML + prio + stuckHTML + donebox + meters + dueHTML + usual + tools;
   }
   function listHTML() {
     var p = me(), today = ymd(new Date());
