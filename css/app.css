@@ -984,9 +984,9 @@ html.note-open, html.note-open body { overflow: hidden; }
 .mn-tile b small { font-size: 1.2rem; color: var(--muted); }
 .mn-tile.is-hot { border-color: var(--accent-ink); } .mn-tile.is-hot span, .mn-tile.is-hot b { color: var(--accent-ink); }
 .mn-regrid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; }
-@media (min-width: 900px) { .mn-regrid { grid-template-columns: minmax(0, 1fr) 18rem; } }
 .mn-hot { color: var(--accent-ink); font-weight: 700; }
-.mn-chase { list-style: none; margin: 0 0 0.8rem; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
+.mn-chase { list-style: none; margin: 0 0 0.5rem; padding: 0; display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.mn-chase li { padding: 0.15rem 0.7rem; border: 1.5px solid var(--ink); border-radius: 999px; background: #fff; }
 .mn-side { padding: 0.7rem 0.9rem; border: 2px solid var(--ink); background: var(--paper); align-self: start; }
 @media (max-width: 599px) { .mn-title { font-size: 2.2rem; } .mn-no b { font-size: 4rem; } .mn-doc { padding: 0.8rem; } }
 @media print {
@@ -1072,3 +1072,20 @@ html.note-open, html.note-open body { overflow: hidden; }
   .lv-chips.scroll { flex-wrap: wrap; overflow: visible; -webkit-mask-image: none; mask-image: none; }
   .lv-chips.scroll::after { display: none; }
 }
+/* Minutes: attendance sits after the writing, as a folded block of name chips; the register keeps the full table behind a button */
+.mn-attblock { display: flex; flex-direction: column; gap: 0.5rem; }
+.mn-atth { display: flex; flex-wrap: wrap; align-items: center; gap: 0.2rem 0.8rem; width: 100%; min-height: 48px; padding: 0.5rem 0.8rem; border: 2px solid var(--ink); border-radius: 10px; background: #fff; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.mn-atth .label { margin: 0; }
+.mn-attsum { flex: 1 1 10rem; font-weight: 600; }
+.mn-attsum.is-open { color: var(--accent-ink); }
+.mn-attgo { font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.mn-attbody { display: flex; flex-direction: column; gap: 0.6rem; }
+.mn-pcs { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.mn-pc small { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; margin-left: 0.2rem; }
+.mn-pc[data-st="present"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+.mn-pc[data-st="apology"], .mn-pc[data-st="absent"] { background: #F6D9C4; border-color: var(--accent); }
+.mn-pc[data-st=""] { border-style: dashed; }
+.mn-regall { display: flex; flex-direction: column; gap: 0.6rem; align-items: flex-start; }
+.mn-regtbl { display: none; width: 100%; }
+.mn-regtbl.is-open { display: block; }
+html.print-min .mn-regtbl { display: block; }

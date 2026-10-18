@@ -2953,9 +2953,16 @@
       var d = mfData(f, true); d.id = 'preview'; d.v = isEdit ? f.v + 1 : f.v;
       return '<section class="set-block"><span class="label">Preview</span><div class="mn">' + mnDocHTML(d, false) + '</div><div class="btn-row"><button type="button" class="btn" data-p="mn-prev">Back to writing</button></div></section>';
     }
-    var attRows = people().map(function (p) {
-      return '<div class="mn-arow"><span class="mn-an">' + esc(p.name) + '</span><div class="mn-seg" role="group" aria-label="Attendance for ' + esc(p.name) + '">' + MN_ATT.map(function (x) { return '<button type="button" class="chip" data-p="mn-att" data-id="' + esc(p.id) + '" data-v="' + x[0] + '" aria-pressed="' + (f.att[p.id] === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div></div>';
+    var ppl = people(), nSet = ppl.filter(function (p) { return f.att[p.id]; }).length, cnt = { present: 0, apology: 0, absent: 0 };
+    ppl.forEach(function (p) { if (cnt[f.att[p.id]] != null) cnt[f.att[p.id]]++; });
+    var attSum = !ppl.length ? 'No names on the staff list yet.' : !nSet ? 'Not set yet. Tap to set.' : nSet + ' of ' + ppl.length + ' set: ' + cnt.present + ' present' + (cnt.apology ? ', ' + cnt.apology + ' apology' : '') + (cnt.absent ? ', ' + cnt.absent + ' absent' : '');
+    var attChips = ppl.map(function (p) {
+      var st = f.att[p.id] || '', lab = st === 'present' ? 'Present' : st === 'apology' ? 'Apology' : st === 'absent' ? 'Absent' : 'Not set';
+      return '<button type="button" class="chip mn-pc" data-p="mn-attc" data-id="' + esc(p.id) + '" data-st="' + st + '" aria-label="' + esc(p.name) + ', ' + lab + '. Tap to change.">' + esc(p.name) + (st === 'present' ? '' : ' <small>' + (st ? lab : '?') + '</small>') + '</button>';
     }).join('');
+    var attBlock = '<div class="field mn-attblock"><button type="button" class="mn-atth" data-p="mn-attopen" aria-expanded="' + !!S.mAttOpen + '"><span class="label">Who was there</span><span class="mn-attsum' + (ppl.length && nSet < ppl.length ? ' is-open' : '') + '">' + esc(attSum) + '</span><span class="mn-attgo" aria-hidden="true">' + (S.mAttOpen ? 'Hide' : 'Set') + '</span></button>' +
+      (S.mAttOpen ? '<div class="mn-attbody"><div class="btn-row"><button type="button" class="btn" data-p="mn-all">Mark all present</button></div><div class="mn-pcs" role="group" aria-label="Attendance">' + attChips + '</div><span class="hint">Tap a name to change it: Present, Apology, then Absent.</span></div>' : '') +
+      '<label class="label" for="mn-guests">Guests (not signed)</label><input id="mn-guests" class="search" data-k="mn-guests" maxlength="120" placeholder="For example a supplier or manager" value="' + esc(f.guests) + '"></div>';
     var actRows = f.acts.map(function (a, i) {
       if (a.carried) return '<div class="mn-act is-carried"><span class="mn-at">' + esc(a.what) + ' <small>' + esc((a.who === 'all' ? 'Everyone' : mnName(a.who)) + (a.by ? ', by ' + dayShort(a.by) : '')) + '</small></span><div class="mn-seg" role="group" aria-label="Carried action">' + [['done', 'Done'], ['open', 'Carry over'], ['dropped', 'Drop']].map(function (x) { return '<button type="button" class="chip" data-p="mn-ast" data-i="' + i + '" data-v="' + x[0] + '" aria-pressed="' + ((a.st || 'open') === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div></div>';
       return '<div class="mn-act"><label class="visually-hidden" for="mn-aw' + i + '">Action</label><input id="mn-aw' + i + '" class="search" data-k="mn-aw" data-i="' + i + '" maxlength="160" placeholder="What needs doing" value="' + esc(a.what) + '">' +
@@ -2965,9 +2972,9 @@
       (isEdit ? '<span class="hint">Everyone signs again after a change. The earlier version is kept.</span>' : '<span class="hint">Short lines, one per line. Spelling is yours to check. Recipe names link to their card. Leave out prices, PINs and private details. A draft is not shown to staff in the app.</span>') +
       '<div class="mn-grid"><div class="field"><label class="label" for="mn-date">Date</label><input id="mn-date" type="date" class="p-dateinput" data-k="mn-date" value="' + esc(f.date) + '"></div><div class="field"><label class="label" for="mn-start">Start time</label><input id="mn-start" type="time" class="p-dateinput" data-k="mn-start" value="' + esc(f.start) + '"></div>' +
       '<div class="field"><label class="label" for="mn-loc">Location</label><input id="mn-loc" class="search" data-k="mn-loc" maxlength="60" value="' + esc(f.loc) + '"></div><div class="field"><span class="label">Run by</span>' + personSelect('mn-chair', f.chair) + '</div><div class="field"><span class="label">Minutes taken by</span>' + personSelect('mn-taker', f.taker) + '</div></div>' +
-      '<div class="field"><div class="mn-arh"><span class="label">Attendance</span><button type="button" class="p-x" data-p="mn-all">Mark all present</button></div>' + (attRows || '<p class="hint">No names on the staff list yet.</p>') + '<label class="label" for="mn-guests">Guests (not signed)</label><input id="mn-guests" class="search" data-k="mn-guests" maxlength="120" placeholder="For example a supplier or manager" value="' + esc(f.guests) + '"></div>' +
+      mfTextarea('mn-safety', 'Safety', 3, 'Shows first, in orange.') + mfTextarea('mn-decisions', 'Decisions', 4, 'One decision per line.') +
       '<div class="field"><span class="label">Actions</span>' + (actRows || '<p class="hint">No actions yet.</p>') + '<div class="btn-row"><button type="button" class="btn" data-p="mn-aadd">Add an action</button></div></div>' +
-      mfTextarea('mn-decisions', 'Decisions', 4, 'One decision per line.') + mfTextarea('mn-menu', 'Menu changes', 3, 'What changes, and for which dish.') + mfTextarea('mn-safety', 'Safety', 3, 'Shows first, in orange.') + mfTextarea('mn-dates', 'Dates ahead', 3, 'Deliveries, functions, events.') + mfTextarea('mn-other', 'Other', 3, '') +
+      mfTextarea('mn-menu', 'Menu changes', 3, 'What changes, and for which dish.') + mfTextarea('mn-dates', 'Dates ahead', 3, 'Deliveries, functions, events.') + mfTextarea('mn-other', 'Other', 3, '') + attBlock +
       '<div class="field"><label class="label" for="mn-next">Next meeting (optional)</label><input id="mn-next" type="date" class="p-dateinput" data-k="mn-next" value="' + esc(f.next) + '"></div>' +
       '<div class="btn-row"><button type="button" class="btn dark" data-p="mn-pub"' + (S.mSaving ? ' disabled' : '') + '>' + (isEdit ? 'Publish as version ' + (f.v + 1) : 'Publish and start sign-off') + '</button>' + (isEdit ? '' : '<button type="button" class="btn" data-p="mn-draft"' + (S.mSaving ? ' disabled' : '') + '>Save draft</button>') + '<button type="button" class="btn" data-p="mn-prev">Preview</button><button type="button" class="btn" data-p="mn-cancel">Cancel</button></div><span class="saved" role="status">' + esc(S.mMsg) + '</span></section>';
   }
@@ -2977,7 +2984,7 @@
     var data = mfData(f, publish), wasPub = f.status === 'published';
     if (publish) {
       var missing = people().filter(function (p) { return !f.att[p.id]; });
-      if (missing.length) { S.mMsg = 'Set attendance for ' + missing.slice(0, 4).map(function (p) { return p.name; }).join(', ') + (missing.length > 4 ? ' and ' + (missing.length - 4) + ' more' : '') + ' (Present, Apology or Absent).'; draw(); return; }
+      if (missing.length) { S.mAttOpen = true; S.mMsg = 'Set attendance for ' + missing.slice(0, 4).map(function (p) { return p.name; }).join(', ') + (missing.length > 4 ? ' and ' + (missing.length - 4) + ' more' : '') + ' (Present, Apology or Absent).'; draw(); return; }
       if (!data.decisions && !data.menu && !data.safety && !data.dates && !data.other && !data.acts.length) { S.mMsg = 'Write something in at least one section first.'; draw(); return; }
       data.pubAt = Date.now();
       if (wasPub) data.v = f.v + 1;
@@ -3032,7 +3039,7 @@
     if (!reg) body = '<p class="hint">' + (S.msigns[m.id] && S.msigns[m.id].err ? 'Could not load the sign-offs. Check the connection.' : 'Loading the sign-offs...') + '</p>';
     else {
       var tiles = '<div class="mn-tiles"><div class="mn-tile"><span>Signed</span><b>' + reg.signed + '<small> of ' + reg.rows.length + '</small></b></div><div class="mn-tile' + (reg.chase.length ? ' is-hot' : '') + '"><span>Not signed</span><b>' + reg.chase.length + '</b></div><div class="mn-tile"><span>Signed late</span><b>' + reg.late + '</b></div><div class="mn-tile"><span>Actions overdue</span><b>' + od.length + '</b></div></div>';
-      var table = lvHTML({
+      var regList = lvHTML({
         key: 'minreg', items: reg.rows, step: 12, tools: 10, noun: ['person', 'people'], ph: 'Search names', table: 'mn-reg', empty: 'Nobody is on the staff list yet.',
         find: function (r) { return r.name; },
         filters: [['all', 'Everyone'], ['not', 'Not signed', function (r) { return !r.signed; }], ['late', 'Late', function (r) { return r.late; }], ['ok', 'Signed', function (r) { return r.signed; }]],
@@ -3044,9 +3051,10 @@
           { h: 'Status', cls: 'mnst', html: function (r) { return '<span class="' + (!r.signed || r.late ? 'mn-hot' : '') + '">' + (r.signed ? (r.late ? 'Signed late' : 'Signed') : (r.late ? 'Not signed (late)' : 'Not signed')) + '</span>'; } }
         ]
       });
-      var chase = '<div class="mn-side"><h3 class="a-ch-h">Chase list</h3>' + (reg.chase.length ? '<ul class="mn-chase">' + reg.chase.map(function (r) { return '<li><b>' + esc(r.name) + '</b> ' + reg.days + (reg.days === 1 ? ' day' : ' days') + '</li>'; }).join('') + '</ul>' : '<p class="hint">Everyone has signed this version.</p>') +
+      var table = '<div class="mn-regtbl' + (S.mRegAll ? ' is-open' : '') + '">' + regList + '</div>';
+      var chase = '<div class="mn-side"><h3 class="a-ch-h">Chase list (' + reg.chase.length + ')</h3>' + (reg.chase.length ? '<ul class="mn-chase">' + reg.chase.map(function (r) { return '<li><b>' + esc(r.name) + '</b></li>'; }).join('') + '</ul><p class="hint">Published ' + reg.days + (reg.days === 1 ? ' day' : ' days') + ' ago.</p>' : '<p class="hint">Everyone has signed this version.</p>') +
         '<h3 class="a-ch-h">Actions overdue</h3>' + (od.length ? '<ul class="mn-chase">' + od.map(function (a) { return '<li>' + esc(a.what) + ' <b>' + esc(a.who === 'all' ? 'Everyone' : mnName(a.who)) + '</b> was ' + esc(dayShort(a.by)) + '</li>'; }).join('') + '</ul>' : '<p class="hint">None. Seen by the head chef and sous chefs only.</p>') + '</div>';
-      body = tiles + '<div class="mn-regrid">' + table + chase + '</div>';
+      body = tiles + '<div class="mn-regrid">' + chase + '<div class="mn-regall"><button type="button" class="btn mn-noprint" data-p="mn-regall" aria-expanded="' + !!S.mRegAll + '">' + (S.mRegAll ? 'Hide the full list' : 'Show everyone (' + reg.rows.length + ')') + '</button>' + table + '</div></div>';
     }
     return '<section class="set-block mn-print"><span class="label">Sign-off register</span><span class="hint">Minutes ' + mpad(m.no || 0) + ', ' + esc(longDate(m.date)) + ', version ' + m.v + (m.v > 1 ? '. Earlier versions are kept' : '') + '. Staff who have not signed within ' + MN_LATE + ' days are marked late. Everyone on the staff list signs, including apology and absent.</span>' + chips + body +
       '<div class="a-print-h"><strong>Leichhardt Kitchen Book</strong> &middot; Minutes ' + mpad(m.no || 0) + ' sign-off register &middot; version ' + m.v + '<span>Printed ' + esc(dayShort(ymd(new Date())) + ' ' + clock(Date.now())) + '</span></div>' +
@@ -3350,6 +3358,9 @@
     if (a === 'mn-draft-open' || a === 'mn-edit') { var mm = mnById(id); if (mm) { S.mf = mfFrom(mm); S.mMsg = ''; draw(); var mfe2 = S.root.querySelector('.mn-form'); if (mfe2) mfe2.scrollIntoView({ block: 'start' }); } return; }
     if (a === 'mn-cancel') { S.mf = null; S.mMsg = ''; draw(); return; }
     if (a === 'mn-prev') { if (S.mf) { S.mf.prev = !S.mf.prev; draw(); } return; }
+    if (a === 'mn-attopen') { S.mAttOpen = !S.mAttOpen; draw(); return; }
+    if (a === 'mn-attc') { if (S.mf) { var cur = S.mf.att[id]; S.mf.att[id] = cur === 'present' ? 'apology' : cur === 'apology' ? 'absent' : 'present'; draw(); } return; }
+    if (a === 'mn-regall') { S.mRegAll = !S.mRegAll; draw(); return; }
     if (a === 'mn-att') { if (S.mf) { S.mf.att[id] = el.getAttribute('data-v'); draw(); } return; }
     if (a === 'mn-all') { if (S.mf) { people().forEach(function (p) { S.mf.att[p.id] = 'present'; }); draw(); } return; }
     if (a === 'mn-ast') { if (S.mf && S.mf.acts[i]) { S.mf.acts[i].st = el.getAttribute('data-v'); draw(); } return; }
