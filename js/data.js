@@ -262,20 +262,20 @@ window.LK_DATA = {
     },
     {
       id: 'skillet', no: '12', kind: 'dessert', forLine: 'Plate', name: 'Skillet Cookie', art: 'skillet', avc: 'Skillet Cookie Portion S26',
-      yield: 'Per plate. 300 g cookie, ice cream, butterscotch sauce.',
+      yield: 'Per plate. 140 g cookie, ice cream, butterscotch sauce.',
       ingredients: [
-        { q: '300 g', name: 'Skillet cookie dough', link: 'cookie-dough' },
+        { q: '140 g', name: 'Skillet cookie dough', note: 'one ball', link: 'cookie-dough' },
         { q: '80 g', name: 'Vanilla ice cream', tags: ['Milk'] },
         { q: 'About 75 ml', name: 'Butterscotch sauce', link: 'butterscotch' }
       ],
       pins: [
-        { label: 'Cookie', x: 34.0, y: 58.5, side: 'left', link: 'cookie-dough', note: '300 g dough, baked in the skillet.' },
+        { label: 'Cookie', x: 34.0, y: 58.5, side: 'left', link: 'cookie-dough', note: '140 g dough, baked in the skillet.' },
         { label: 'Butterscotch sauce', x: 44.3, y: 41.5, side: 'right', link: 'butterscotch' },
         { label: 'Vanilla ice cream', x: 50.9, y: 51.9, side: 'right', tags: ['Milk'], note: '80 g.' }
       ],
       sections: [
-        { title: 'Cooking', steps: ['[Bake temperature and time]'] },
-        { title: 'Plating', steps: ['[How the butterscotch goes on]'] }
+        { title: 'Cooking', steps: ['Spray the cast iron pan with canola spray and press the cookie into the pan slightly so it spreads evenly while baking.', 'Bake at 190 °C for 9 to 10 minutes.'] },
+        { title: 'Plating', steps: ['Set the cast iron pan on a wooden serving board.', 'Quenelle the ice cream on top and drizzle lightly with butterscotch sauce.', 'Dust with icing sugar and serve.'] }
       ],
       contains: [{ allergen: 'Milk', from: 'ice cream' }], check: [],
       labelNote: 'Check the ice cream label.'
