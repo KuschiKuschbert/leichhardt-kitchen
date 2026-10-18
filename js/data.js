@@ -1118,16 +1118,20 @@ window.LK_DATA = {
     {
       id: 'riblets', art: 'riblets', no: '53', kind: 'snack', forLine: 'Snack', name: 'Smoked BBQ Pork Riblets',
       menu: 'Smoked BBQ Pork Riblets: bourbon BBQ sauce, cowboy candy.',
-      yield: 'Per serve. Smoked riblets, bourbon BBQ sauce, cowboy candy.',
+      yield: 'Per serve. Smoked riblets tossed in bourbon BBQ sauce, topped with cowboy candy.',
       ingredients: [
-        { q: '[Qty]', name: 'Pork riblets', note: 'smoked' },
+        { q: '390 to 410 g', name: 'Pork riblets', note: 'smoked, cut from the pork ribs into individual riblets, portioned in a sandwich bag' },
         { q: '[Qty]', name: 'Bourbon BBQ sauce', tags: ['Gluten?', 'Soy?'] },
         { q: '[Qty]', name: 'Cowboy candy', note: 'candied jalapeños' }
       ],
       pins: [
-        { label: 'Pork riblets', x: 36.8, y: 54.7, side: 'right', tags: [], note: 'Smoked.' },
-        { label: 'Bourbon BBQ sauce', x: 56.6, y: 33.7, side: 'left', tags: ['Gluten?', 'Soy?'], note: 'On the riblets.' },
-        { label: 'Cowboy candy', x: 48.1, y: 44.3, side: 'left', tags: [], note: 'Candied jalapeños.' }
+        { label: 'Pork riblets', x: 36.8, y: 54.7, side: 'right', tags: [], note: 'Smoked. 390 to 410 g.' },
+        { label: 'Bourbon BBQ sauce', x: 56.6, y: 33.7, side: 'left', tags: ['Gluten?', 'Soy?'], note: 'The riblets are tossed in it.' },
+        { label: 'Cowboy candy', x: 48.1, y: 44.3, side: 'left', tags: [], note: 'Candied jalapeños. On top.' }
+      ],
+      sections: [
+        { title: 'Prep ahead', steps: ['Cut the pork ribs into individual riblets.', 'Portion the riblets, 390 to 410 g per bag, into sandwich bags. One bag is one serve.'] },
+        { title: 'Plating', steps: ['Toss the riblets through the bourbon BBQ sauce.', 'Pile them on the plate.', 'Cowboy candy on top.'] }
       ]
     },
     {
