@@ -7,7 +7,7 @@ let store = load();
 function save() { localStorage.setItem(KEY, JSON.stringify(store)); }
 const subs = new Set();
 const held = [];
-window.__fake = window.__fake || { mode: 'ok', writes: [] };
+window.__fake = window.__fake || { mode: 'ok', writes: [], reads: [] };
 window.__fake.release = function () { const h = held.splice(0); h.forEach(f => f()); };
 window.__fake.dump = function () { return store; };
 let seq = 0;
@@ -51,9 +51,10 @@ function result(ref) { return ref.type === 'doc' ? snapDoc(ref.path) : listCol(r
 function delay(v) { return new Promise(r => setTimeout(() => r(v), 5)); }
 export function getDoc(ref) {
   if (/\/config\/admins$/.test(key(ref.path)) && !window.__fakeUser) return Promise.reject({ code: 'permission-denied' });
+  window.__fake.reads.push(key(ref.path));
   return delay(result(ref));
 }
-export function getDocs(ref) { return delay(result(ref)); }
+export function getDocs(ref) { window.__fake.reads.push(key(ref.path)); return delay(result(ref)); }
 export function onSnapshot(ref, next, err) {
   const s = { ref, next };
   subs.add(s);

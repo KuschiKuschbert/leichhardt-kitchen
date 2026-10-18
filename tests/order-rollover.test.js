@@ -46,11 +46,21 @@ const rid = id => 'r' + today.replace(/-/g, '') + '-' + id;
   await p.waitForTimeout(800);
   const groups = await p.evaluate(() => Array.prototype.map.call(document.querySelectorAll('.o-group .nb-t'), e => e.firstChild.textContent.trim() + (e.querySelector('.o-n') ? ' ' + e.querySelector('.o-n').textContent : '')));
   ok(groups.indexOf('Flour') >= 0 && groups.indexOf('Cream') >= 0 && !groups.some(g => / x\d/.test(g) && /Flour|Cream/.test(g)), 'everything to order: each rolled item shows once (' + groups.join(', ') + ')');
+  const readsBefore = await p.evaluate(() => window.__fake.reads.length);
   await p.click('.o-group [data-k2="flour"]');
   await p.waitForTimeout(500);
+  const newReads = await p.evaluate(n => window.__fake.reads.slice(n), readsBefore);
+  ok(!newReads.some(r => /\/orders\//.test(r)), 'everything to order: a tick does not read the 14 days again (' + newReads.join(', ') + ')');
+  ok(!(await p.evaluate(() => document.querySelector('.o-group [data-k2="flour"]'))), 'everything to order: the ticked item leaves the list at once');
   s = await store(p);
   ok(s[fsKey(['orders', today, 'lines', rid('f1')])].ordered === true, 'everything to order: ticking marks the newest copy ordered');
   ok(p.errors.length === 0, 'everything to order: no page errors ' + p.errors.join(' | '));
+  // past days are kept on the phone for the day: a reload does not read the last 14 days of orders again
+  await p.click('[data-p="oview"][data-v="day"]');
+  await p.reload({ waitUntil: 'load' });
+  await p.waitForTimeout(1500);
+  const past = await p.evaluate(t => window.__fake.reads.filter(r => /\/orders\/\d{4}-\d\d-\d\d\/lines$/.test(r) && r.indexOf(t) < 0).length, today);
+  ok(past === 0, 'reload: no past order days read again (' + past + ' reads)');
   await p.context().close();
 
   await b.close();

@@ -2214,7 +2214,14 @@
       S.ordAll = [].concat.apply([], lists); S.ordBusy = false; draw();
     });
   }
-  function ordReload() { S.ordAllAt = 0; if (S.ordView === 'all') loadOrdAll(true); }
+  /* Everything to order is read once (14 days) and then kept in step on the phone: today's lines come from the live list,
+     and a tick or remove on an older line is applied to the copy here. No re-reading after every tap. */
+  function ordReload() { draw(); }
+  function ordPatch(date, id, ch) { (S.ordAll || []).forEach(function (x) { if (x.date === date && x.id === id) Object.assign(x, ch); }); draw(); }
+  function ordAllLines() {
+    var t = ymd(new Date());
+    return S.ordDate === t && S.ordState === 'ok' ? (S.ordAll || []).filter(function (x) { return x.date !== t; }).concat(S.ordLines || []) : (S.ordAll || []);
+  }
   /* Like the prep list: anything not ordered on the last written day rolls onto today's order list by itself, every day
      until someone ticks it as ordered. The copy's id comes from the first line (root), so two phones rolling at once
      write the same line once. Each phone tries once a day (lk.ord.rolled), so the reads stay small. */
@@ -2378,21 +2385,21 @@
   }
   function tickOrderLine(date, id, on) {
     var it = (S.ordLines || []).concat(S.ordAll || []).filter(function (x) { return x.id === id; })[0];
-    setOrdered(date, id, on).then(ordReload, failed);
+    setOrdered(date, id, on).then(function () { ordPatch(date, id, { ordered: on }); }, failed);
     if (on) toast('Ordered ' + (it ? it.text : 'the line'), { label: 'Undo', fn: function () { tickOrderLine(date, id, false); } });
   }
   function tickOrderGroup(key) {
-    var lines = (S.ordAll || []).filter(function (x) { return !x.deleted && !x.ordered && okey(x.text) === key; });
+    var lines = ordNewest(ordAllLines()).filter(function (x) { return !x.deleted && !x.ordered && okey(x.text) === key; });
     if (!lines.length || !canBrowse()) return;
-    W(lines.map(function (x) { return orderedOp(x.date, x.id, true); })).then(ordReload, failed);
+    W(lines.map(function (x) { return orderedOp(x.date, x.id, true); })).then(function () { lines.forEach(function (x) { ordPatch(x.date, x.id, { ordered: true }); }); }, failed);
     toast('Ordered ' + lines[0].text + (lines.length > 1 ? ' (' + lines.length + ' lines)' : ''), { label: 'Undo', fn: function () {
-      W(lines.map(function (x) { return orderedOp(x.date, x.id, false); })).then(ordReload, failed);
+      W(lines.map(function (x) { return orderedOp(x.date, x.id, false); })).then(function () { lines.forEach(function (x) { ordPatch(x.date, x.id, { ordered: false }); }); }, failed);
     } });
   }
   function removeOrderLine(date, id, restore) {
     if (!canBrowse() || !can('del')) return;
     var it = (S.ordLines || []).concat(S.ordAll || []).filter(function (x) { return x.id === id; })[0];
-    supd(ordRef(date, id), { deleted: !restore, deletedBy: restore ? '' : (me() || {}).name || '', deletedAt: restore ? 0 : Date.now() }).then(ordReload, failed);
+    supd(ordRef(date, id), { deleted: !restore, deletedBy: restore ? '' : (me() || {}).name || '', deletedAt: restore ? 0 : Date.now() }).then(function () { ordPatch(date, id, { deleted: !restore }); }, failed);
     if (!restore) toast('Removed ' + (it ? it.text : 'the line') + ' from the order list', { label: 'Undo', fn: function () { removeOrderLine(date, id, true); } });
   }
   function ordSuggest() {
@@ -2426,7 +2433,7 @@
   }
   function ordGroups() {
     var map = {}, order = [];
-    ordNewest(S.ordAll || []).filter(function (x) { return !x.deleted && !x.ordered; }).sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }).forEach(function (x) {
+    ordNewest(ordAllLines()).filter(function (x) { return !x.deleted && !x.ordered; }).sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }).forEach(function (x) {
       var k = okey(x.text); if (!k) return;
       if (!map[k]) { map[k] = { key: k, text: x.text, lines: [] }; order.push(k); }
       map[k].lines.push(x); map[k].text = x.text;
@@ -2448,10 +2455,13 @@
   function loadOrdHist() {
     var today = ymd(new Date());
     if (!fb || S.ordHistBusy || S.ordHistFor === today) return;
+    var tag = S.pin + '|' + today, c = dayCache('lk.ord.hist', tag);
+    if (c) { S.ordHist = c; S.ordHistFor = today; return; }
     S.ordHistBusy = true;
     var dates = [], i; for (i = 1; i <= 14; i++) dates.push(shift(today, -i));
     Promise.all(dates.map(function (d) { return fb.fs.getDocs(ordCol(d)).then(function (sn) { return sn.docs.map(function (x) { var v = x.data(); v.date = d; return v; }); }, function () { return []; }); })).then(function (l) {
-      S.ordHist = [].concat.apply([], l).filter(function (x) { return !x.deleted && !x.rolled; }); S.ordHistFor = today; S.ordHistBusy = false; draw();
+      S.ordHist = [].concat.apply([], l).filter(function (x) { return !x.deleted && !x.rolled; }).map(function (x) { return { text: x.text, qty: x.qty || '', date: x.date }; });
+      S.ordHistFor = today; S.ordHistBusy = false; dayCacheSet('lk.ord.hist', tag, S.ordHist); draw();
     });
   }
   function oRegsHTML() {
@@ -2564,13 +2574,20 @@
     fb.fs.getDoc(wDay(dd)).then(function (sn) { if (S.wDate === dd) { S.wReview = sn.exists() ? sn.data() : {}; draw(); } }, function () { S.wReview = {}; });
     loadWRecent(false);
   }
+  /* Past days hardly change, so these reads are kept on the phone for the day (like lk.past): tag is kitchen PIN and day. */
+  function dayCache(k, tag) { try { var c = JSON.parse(lsGet(k) || 'null'); return c && c.tag === tag ? c.v : null; } catch (e) { return null; } }
+  function dayCacheSet(k, tag, v) { lsSet(k, JSON.stringify({ tag: tag, v: v })); }
   function loadWRecent(force) {
-    if (!fb || S.wRecentBusy || (S.wRecent && !force)) return;
+    var today = ymd(new Date()), tag = S.pin + '|' + today;
+    if (!fb || S.wRecentBusy || (S.wRecent && S.wRecentFor === today && !force)) return;
+    var c = force ? null : dayCache('lk.w.recent', tag);
+    if (c) { S.wRecent = c; S.wRecentFor = today; return; }
     S.wRecentBusy = true;
-    var today = ymd(new Date()), dates = [], i;
+    var dates = [], i;
     for (i = 1; i <= 14; i++) dates.push(shift(today, -i));
     Promise.all(dates.map(function (d) { return fb.fs.getDocs(wCol(d)).then(function (sn) { return sn.docs.map(function (x) { var v = x.data(); v.id = x.id; v.date = d; return v; }); }, function () { return []; }); })).then(function (l) {
-      S.wRecent = [].concat.apply([], l).filter(function (x) { return !x.deleted; }); S.wRecentBusy = false; draw();
+      S.wRecent = [].concat.apply([], l).filter(function (x) { return !x.deleted; }); S.wRecentFor = today; S.wRecentBusy = false;
+      dayCacheSet('lk.w.recent', tag, S.wRecent); draw();
     });
   }
   function wTotals(lines) {
@@ -2633,6 +2650,8 @@
   function removeWaste(date, id, restore) {
     if (!canBrowse() || !can('del')) return;
     var it = (S.wLines || []).concat(S.wRecent || []).filter(function (x) { return x.id === id; })[0];
+    // an older day changed: the copy kept on this phone is read again next time
+    if (date !== ymd(new Date())) lsSet('lk.w.recent', '');
     supd(wRef(date, id), { deleted: !restore, deletedBy: restore ? '' : (me() || {}).name || '', deletedAt: restore ? 0 : Date.now() }).catch(failed);
     if (!restore) toast('Removed ' + (it ? it.text : 'the entry') + ' from the wastage log', { label: 'Undo', fn: function () { removeWaste(date, id, true); } });
   }
@@ -2725,9 +2744,11 @@
     var today = ymd(new Date());
     if (!fb || S.wNoteFor === today) return;
     S.wNoteFor = today;
+    var tag = S.pin + '|' + today, c = dayCache('lk.w.note', tag);
+    if (c) { S.wNote = c.n; return; }
     var ds = [1, 2, 3].map(function (k) { return shift(today, -k); });
     Promise.all(ds.map(function (d) { return fb.fs.getDoc(wDay(d)).then(function (sn) { return sn.exists() ? Object.assign({ date: d }, sn.data()) : null; }, function () { return null; }); })).then(function (l) {
-      S.wNote = l.filter(function (x) { return x && x.change; })[0] || null; draw();
+      S.wNote = l.filter(function (x) { return x && x.change; })[0] || null; dayCacheSet('lk.w.note', tag, { n: S.wNote }); draw();
     });
   }
   function wNoteHTML() {
@@ -3700,7 +3721,7 @@
     if (a === 'orestore') { removeOrderLine(el.getAttribute('data-d'), id, true); return; }
     if (a === 'oremoved') { S.oShowRemoved = !S.oShowRemoved; draw(); return; }
     if (a === 'ogroup') { tickOrderGroup(el.getAttribute('data-k2')); return; }
-    if (a === 'oview') { S.ordView = el.getAttribute('data-v'); if (S.ordView === 'all') loadOrdAll(true); draw(); return; }
+    if (a === 'oview') { S.ordView = el.getAttribute('data-v'); if (S.ordView === 'all') loadOrdAll(false); draw(); return; }
     if (a === 'oday') { S.ordDate = shift(S.ordDate, +el.getAttribute('data-d')); watchOrders(); draw(); return; }
     if (a === 'otoday') { S.ordDate = ymd(new Date()); watchOrders(); draw(); return; }
     if (a === 'osugg') { var st = (S.osugg || [])[i]; if (st) { S.otext = st; draw(); var oe = S.root.querySelector('[data-k="o-text"]'); if (oe) { oe.focus(); try { oe.setSelectionRange(oe.value.length, oe.value.length); } catch (x) {} } } return; }
