@@ -1,4 +1,4 @@
-// Moving to a new kitchen PIN, sending missed recipe searches, and the once-a-day learning mark (consistency audit fixes).
+// Moving to a new kitchen PIN, the backup file, sending missed recipe searches, and the once-a-day learning mark.
 const L = require('./lib');
 const R = [];
 const ok = (c, m) => L.check(c, m, R);
@@ -18,6 +18,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   extra[fsKey(['minutes', 'm1'])] = { no: 1, v: 2, status: 'published', date: today, att: [], acts: [], removed: false, at: 1, upd: 1 };
   extra[fsKey(['minutes', 'm1', 'hist', '1'])] = { no: 1, v: 1, status: 'published', date: today, att: [], acts: [], removed: false, at: 1, upd: 1 };
   extra[fsKey(['minutes', 'm1', 'signs', '2_ann'])] = { v: 2, st: 'present', at: 1, name: 'Ann', by: 'ann' };
+  extra[fsKey(['ordlearned', 'milk'])] = { text: 'Milk', uses: 6, dow: { 1: 3 }, qtys: { '6 L': 4 }, by: 'ann' };
   p = await L.open(b, '#/admin', { admin: true, wait: 1800, extra });
   await p.click('[data-p="a-tab"][data-t="tools"]');
   await p.waitForTimeout(200);
@@ -37,7 +38,30 @@ const store = page => page.evaluate(() => window.__fake.dump());
   ok(!!s[newKey(['minutes', 'm1', 'hist', '1'])], 'move PIN: earlier minutes versions copied');
   ok(!!s[newKey(['minutes', 'm1', 'signs', '2_ann'])], 'move PIN: sign-offs copied');
   ok(!!s[newKey(['orders', today, 'lines', 'o1'])], 'move PIN: order lines copied');
+  ok(!!s[newKey(['ordlearned', 'milk'])], 'move PIN: what the order list learned copied');
   ok(p.errors.length === 0, 'move PIN: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // Backup: one JSON file with notes and who has seen them, minutes with earlier versions and sign-offs, and order learning
+  p = await L.open(b, '#/admin', { admin: true, wait: 1800, extra });
+  await p.click('[data-p="a-tab"][data-t="tools"]');
+  await p.waitForTimeout(200);
+  const dl = p.waitForEvent('download', { timeout: 15000 });
+  await p.click('[data-p="export"]');
+  const file = await dl;
+  const chunks = []; for await (const c of await file.createReadStream()) chunks.push(c);
+  const bk = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+  ok(/^leichhardt-prep-backup-\d{4}-\d{2}-\d{2}\.json$/.test(file.suggestedFilename()), 'backup: a dated JSON file (' + file.suggestedFilename() + ')');
+  ok(bk.notes.length === 1 && bk.notes[0].id === 'n1' && bk.notes[0].text === 'Fryer oil change', 'backup: shift pings included');
+  ok((bk.notesSeen.n1 || []).some(x => x.id === today + '_ann' && x.by === 'ann'), 'backup: who has seen a note included');
+  ok(bk.minutes.length === 1 && bk.minutes[0].v === 2, 'backup: meeting minutes included');
+  ok((bk.minutesHist.m1 || []).some(x => x.id === '1' && x.v === 1), 'backup: earlier versions of the minutes included');
+  ok((bk.minutesSigns.m1 || []).some(x => x.id === '2_ann' && x.st === 'present'), 'backup: minutes sign-offs included');
+  ok(bk.ordlearned.length === 1 && bk.ordlearned[0].text === 'Milk' && bk.ordlearned[0].uses === 6, 'backup: what the order list learned included');
+  ok(Object.keys(bk.days).length === 1 && bk.days[today].length === 6 && Array.isArray(bk.pins) && !bk.pins.some(x => x.hash), 'backup: prep lines still in, PIN fingerprints still left out');
+  await p.waitForTimeout(200);
+  ok(/6 lines from 1 day, 1 shift ping and minutes from 1 meeting/.test(await p.evaluate(() => window.LK_PREP.state.toast)), 'backup: the message counts shift pings and minutes');
+  ok(p.errors.length === 0, 'backup: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
   // Missed recipe searches: a search queued while the queue is being sent is kept for next time

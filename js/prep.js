@@ -664,7 +664,7 @@
     if (!x || !can('add')) return;
     oneTap(x.text, x.section);
   }
-  /* One-tap adds (Usual, Regulars, Due today): the line goes on with its usual amount, and the toast says where, with Undo. */
+  /* One-tap adds (Quick add in Handy): the line goes on with its usual amount, and the toast says where, with Undo. */
   function oneTap(text, sec) {
     var rm = matchRecipe(text), uq = usualQty(text), dte = S.date;
     var made = newItem({ text: text.slice(0, 160), station: sec, recipe: rm ? rm.id : '', qty: uq });
@@ -680,18 +680,28 @@
   function exportAll() {
     if (!fb || S.exporting) return;
     S.exporting = 'Reading the data...'; draw();
-    var f = fb.fs, out = { exportedAt: new Date(now()).toISOString(), config: null, days: {}, orders: {}, waste: {}, wasteReviews: {}, activity: [], sections: [], learned: [], learnlog: [], misses: [], pins: [] };
-    function all(name) { return f.getDocs(colRef(name)).then(function (sn) { return sn.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }); }); }
+    var f = fb.fs, out = { exportedAt: new Date(now()).toISOString(), config: null, days: {}, orders: {}, waste: {}, wasteReviews: {}, activity: [], sections: [], learned: [], ordlearned: [], learnlog: [], misses: [], notes: [], notesSeen: {}, minutes: [], minutesHist: {}, minutesSigns: {}, pins: [] };
+    function grab(sn) { return sn.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }); }
+    function all(name) { return f.getDocs(colRef(name)).then(grab); }
+    /* the records under each note (who has seen it) and each minutes (earlier versions, sign-offs): one small query each, kept by the note's or the minutes' id */
+    function subs(list, top, name, into) {
+      return Promise.all(list.map(function (x) {
+        return f.getDocs(f.collection.apply(null, [fb.db].concat(base(), [top, x.id, name]))).then(function (sn) { var r = grab(sn); if (r.length) into[x.id] = r; });
+      }));
+    }
     var today = dayNow(), dates = [], k;
     for (k = 0; k < 400; k++) dates.push(shift(today, -k));
     f.getDoc(cfgDoc()).then(function (sn) { out.config = sn.exists() ? sn.data() : null; })
       .then(function () { return all('activity'); }).then(function (r) { out.activity = r; })
       .then(function () { return all('sections'); }).then(function (r) { out.sections = r; })
       .then(function () { return all('learned'); }).then(function (r) { out.learned = r; })
+      .then(function () { return all('ordlearned'); }).then(function (r) { out.ordlearned = r; })
       .then(function () { return all('learnlog'); }).then(function (r) { out.learnlog = r; })
       .then(function () { return all('misses'); }).then(function (r) { out.misses = r; })
       .then(function () { return all('views'); }).then(function (r) { out.views = r; })
       .then(function () { return all('guides'); }).then(function (r) { out.guides = r; })
+      .then(function () { S.exporting = 'Reading shift pings and minutes...'; draw(); return all('notes'); }).then(function (r) { out.notes = r; return subs(r, 'notes', 'seen', out.notesSeen); })
+      .then(function () { return all('minutes'); }).then(function (r) { out.minutes = r; return Promise.all([subs(r, 'minutes', 'hist', out.minutesHist), subs(r, 'minutes', 'signs', out.minutesSigns)]); })
       .then(function () { return all('pinset'); }).then(function (r) { out.pins = r.map(function (x) { return { id: x.id, name: x.name, setAt: x.setAt }; }); })
       .then(function () {
         var i = 0, n = 0;
@@ -699,7 +709,6 @@
           if (i >= dates.length) return;
           var chunk = dates.slice(i, i + 20); i += 20;
           S.exporting = 'Reading days ' + Math.min(i, dates.length) + ' of ' + dates.length + '...'; draw();
-          function grab(sn) { return sn.docs.map(function (x) { var y = x.data(); y.id = x.id; return y; }); }
           return Promise.all(chunk.map(function (d) { return Promise.all([
             f.getDocs(itemsCol(d)).then(function (sn) { if (sn.docs.length) { out.days[d] = grab(sn); n += sn.docs.length; } }),
             f.getDocs(ordCol(d)).then(function (sn) { if (sn.docs.length) out.orders[d] = grab(sn); }),
@@ -714,7 +723,8 @@
         a.href = URL.createObjectURL(blob); a.download = 'leichhardt-prep-backup-' + today + '.json';
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
         setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
-        S.exporting = ''; toast('Backup saved: ' + n + ' lines from ' + Object.keys(out.days).length + ' days.');
+        var nn = out.notes.length, mn = out.minutes.length, dn = Object.keys(out.days).length;
+        S.exporting = ''; toast('Backup saved: ' + n + (n === 1 ? ' line' : ' lines') + ' from ' + dn + (dn === 1 ? ' day, ' : ' days, ') + nn + (nn === 1 ? ' shift ping' : ' shift pings') + ' and minutes from ' + mn + (mn === 1 ? ' meeting.' : ' meetings.'));
       }).catch(function () { S.exporting = ''; toast('Could not read everything. Check the connection.'); });
   }
   /* Owner only: copy everything under the current kitchen PIN to a new one, then switch this device over.
@@ -747,7 +757,7 @@
     for (k = 0; k < 400; k++) dates.push(shift(today, -k));
     f.getDoc(f.doc(fb.db, 'kitchens', old, 'config', 'main')).then(function (sn) { if (sn.exists()) { n++; return f.setDoc(f.doc(fb.db, 'kitchens', np, 'config', 'main'), sn.data()); } })
       .then(function () { return copyCol('pinset'); }).then(function () { return copyCol('staffpins'); }).then(function () { return copyCol('activity'); }).then(function () { return copyCol('sections'); })
-      .then(function () { return copyCol('learned'); }).then(function () { return copyCol('learnlog'); }).then(function () { return copyCol('misses'); }).then(function () { return copyCol('views'); })
+      .then(function () { return copyCol('learned'); }).then(function () { return copyCol('ordlearned'); }).then(function () { return copyCol('learnlog'); }).then(function () { return copyCol('misses'); }).then(function () { return copyCol('views'); })
       .then(function () { return copyCol('notes'); }).then(function () { return copyCol('minutes'); }).then(function () { return copySub('minutes', 'hist'); })
       .then(function () { return copySub('minutes', 'signs', true); }).then(function () { return copySub('notes', 'seen', true); })
       .then(function () { return copyCol('guides'); }).then(function () { return copySub('guides', 'pages'); })
@@ -1786,37 +1796,25 @@
   }
   function sideHTML(today) {
     var live = S.items.filter(function (x) { return !x.deleted; });
-    var rolled = live.filter(function (x) { return rolledN(x) && !x.done; }), urg = live.filter(function (x) { return x.urgent && !x.done; });
-    var secs = {}, order = [];
-    live.forEach(function (x) { var k = x.station || 'General'; if (!secs[k]) { secs[k] = { n: 0, d: 0 }; order.push(k); } secs[k].n++; if (x.done) secs[k].d++; });
-    var startShown = can('tick') && S.date === dayNow() && live.filter(function (x) { return !x.done; }).length >= 4;
-    var prio = !startShown && (rolled.length || urg.length) ? '<div class="nb-prio"><strong>Do these first</strong><span>' + (urg.length ? urg.length + ' urgent' : '') + (urg.length && rolled.length ? ', ' : '') + (rolled.length ? rolled.length + ' rolled over from earlier' : '') + '. They sit at the top of each section.</span></div>' : '';
-    var meters = order.length ? '<h3 class="nb-sh">Progress by section</h3>' + order.map(function (k) {
-      var m = secs[k], pc = m.n ? Math.round(m.d / m.n * 100) : 0;
-      return '<div class="nb-meter"><span class="nb-ml">' + esc(k) + '</span><span class="nb-mb" role="img" aria-label="' + esc(k + ': ' + m.d + ' of ' + m.n + ' done') + '"><i style="width:' + pc + '%"></i></span><span class="nb-mn">' + m.d + '/' + m.n + '</span></div>';
-    }).join('') : '';
     var have = onList(), dn = String(parseYmd(S.date).getDay()), dname = parseYmd(S.date).toLocaleDateString('en-AU', { weekday: 'long' });
-    var today2 = S.learned.filter(function (x) { return !x.hidden && !have[x.id] && x.text && ((x.dow || {})[dn] || 0) >= 2; }).sort(function (a, b) { return ((b.dow || {})[dn] || 0) - ((a.dow || {})[dn] || 0) || (b.uses || 0) - (a.uses || 0); }).slice(0, 12);
-    var shownK = {}; today2.forEach(function (x) { shownK[x.id] = 1; });
+    /* Quick add: due today first, then usual for this weekday, then regulars. A line shows once, in the first group it fits. */
+    var due = can('add') && S.date === dayNow() && S.past ? dueList() : [];
+    var shownK = {}; due.forEach(function (x) { shownK[x.k] = 1; });
+    var today2 = S.learned.filter(function (x) { return !x.hidden && !have[x.id] && !shownK[x.id] && x.text && ((x.dow || {})[dn] || 0) >= 2; }).sort(function (a, b) { return ((b.dow || {})[dn] || 0) - ((a.dow || {})[dn] || 0) || (b.uses || 0) - (a.uses || 0); }).slice(0, 12);
+    today2.forEach(function (x) { shownK[x.id] = 1; });
     var regs = S.learned.filter(function (x) { return isRegular(x) && !have[x.id] && !shownK[x.id] && x.text; }).sort(function (a, b) { return (b.uses || 0) - (a.uses || 0); }).slice(0, 14);
     S.quick = [];
-    function chip(x, note) { var uq = usualQty(x.text); S.quick.push({ text: x.text, section: bestSection(x) }); return '<button type="button" class="chip sq" data-p="quick" data-i="' + (S.quick.length - 1) + '">' + esc(x.text) + (uq ? ' <span class="nb-uq">' + esc(uq) + '</span>' : '') + (note ? ' <span class="nb-us">' + esc(note) + '</span>' : '') + '</button>'; }
-    var due = can('add') && S.date === dayNow() && S.past ? dueList() : [];
-    S.due = due;
-    due.forEach(function (x) { shownK[x.k] = 1; });
-    today2 = today2.filter(function (x) { return !due.some(function (d) { return d.k === x.id; }); });
-    var dueHTML = due.length ? '<h3 class="nb-sh">Due today</h3><p class="nb-sd">Made every few days and the usual gap has passed. Tap to add.</p><div class="nb-usual">' + due.map(function (x, i) {
-      var uq = usualQty(x.text);
-      return '<button type="button" class="chip sq" data-p="due" data-i="' + i + '">' + esc(x.text) + (uq ? ' <span class="nb-uq">' + esc(uq) + '</span>' : '') + ' <span class="nb-us">' + esc((x.gap === 1 ? 'daily' : 'every ' + x.gap + ' days') + ', last ' + parseYmd(x.last).toLocaleDateString('en-AU', { weekday: 'short' })) + '</span></button>';
-    }).join('') + '</div>' : '';
+    function chip(text, sec, note) { var uq = usualQty(text); S.quick.push({ text: text, section: sec }); return '<button type="button" class="chip sq" data-p="quick" data-i="' + (S.quick.length - 1) + '">' + esc(text) + (uq ? ' <span class="nb-uq">' + esc(uq) + '</span>' : '') + ' <span class="nb-us">' + esc(note) + '</span></button>'; }
+    var chips = can('add') ? due.map(function (x) { return chip(x.text, x.sec, (x.gap === 1 ? 'daily' : 'every ' + x.gap + ' days') + ', last ' + parseYmd(x.last).toLocaleDateString('en-AU', { weekday: 'short' })); })
+      .concat(today2.map(function (x) { return chip(x.text, bestSection(x), ((x.dow || {})[dn] || 0) + ' ' + dname + 's'); }))
+      .concat(regs.map(function (x) { return chip(x.text, bestSection(x), x.uses + 'x'); })).join('') : '';
+    var quick = chips ? '<h3 class="nb-sh">Quick add</h3><p class="nb-sd">Due today, usual for a ' + esc(dname) + ' and regulars. Tap to add.</p><div class="nb-usual">' + chips + '</div>' : '';
     var pc = canBrowse() && S.date === dayNow() && S.past ? pace() : null;
     var paceHTML = pc ? '<div class="nb-pace' + (pc.today + 0.1 < pc.usual ? ' is-behind' : '') + '"><span class="nb-sl">Pace</span><p><strong>' + Math.round(pc.today * 100) + '%</strong> ticked now (' + pc.done + ' of ' + pc.n + '). By ' + clock(now()) + ' it is usually <strong>' + Math.round(pc.usual * 100) + '%</strong>' + (pc.sameDay ? ' on a ' + esc(dname) : '') + '.</p><span class="nb-sw">' + (pc.today + 0.1 < pc.usual ? 'Behind the usual pace. Check who needs a hand.' : 'On pace.') + ' Only the head chef and sous chefs see this.</span></div>' : '';
     var stuck = canBrowse() && S.date === dayNow() ? live.filter(function (x) { return !x.done && rolledN(x) >= 3; }) : [];
     var stuckHTML = stuck.length ? '<h3 class="nb-sh">Stuck lines</h3><p class="nb-sd">Rolled over 3 or more times. Make it urgent, split it into smaller jobs, or remove it if it is not needed.</p><ul class="nb-stuck">' + stuck.map(function (x) {
       return '<li><span>' + esc(x.text) + ' <span class="nb-us">x' + rolledN(x) + '</span></span>' + (x.urgent ? '' : '<button type="button" class="p-x" data-p="urgent" data-id="' + esc(x.id) + '">Urgent</button>') + (can('del') ? '<button type="button" class="p-x" data-p="del" data-id="' + esc(x.id) + '" data-d="' + esc(S.date) + '">Remove</button>' : '') + '</li>';
     }).join('') + '</ul>' : '';
-    var usual = can('add') && today2.length ? '<h3 class="nb-sh">Usual for a ' + esc(dname) + '</h3><p class="nb-sd">Written on at least two ' + esc(dname) + 's. Tap to add.</p><div class="nb-usual">' + today2.map(function (x) { return chip(x, ((x.dow || {})[dn] || 0) + 'x'); }).join('') + '</div>' : '';
-    usual += can('add') && regs.length ? '<h3 class="nb-sh">Regulars</h3><p class="nb-sd">Written or picked ' + REGULAR + ' or more times. Tap to add.</p><div class="nb-usual">' + regs.map(function (x) { return chip(x, x.uses + 'x'); }).join('') + '</div>' : '';
     var tools = '<h3 class="nb-sh">Tools</h3><div class="nb-tools">' +
       '<button type="button" class="nb-btn" data-p="copy">Copy the list</button>' +
       '<button type="button" class="nb-btn" data-p="print">Print the list</button>' +
@@ -1827,7 +1825,7 @@
     var donebox = '<h3 class="nb-sh">Done today (' + dl.length + ')</h3>' + (dl.length ? '<ul class="nb-done">' + dl.map(function (x) {
       return '<li><span class="nb-dt">' + (x.doneAt ? clock(x.doneAt) : '') + '</span><span class="nb-dx">' + esc(x.text) + (x.qty ? ' <em>' + esc(x.qty) + '</em>' : '') + '</span><span class="nb-dw">' + esc(x.doneBy || '') + '</span>' + (can('tick') && canUntick(x) ? '<button type="button" class="p-x nb-undo" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(S.date) + '" aria-label="' + esc('Undo the tick on ' + x.text) + '">Undo</button>' : '') + '</li>';
     }).join('') + '</ul>' : '<p class="nb-sd">Nothing ticked yet.</p>');
-    return startHTML(live, true) + paceHTML + prio + stuckHTML + donebox + meters + dueHTML + usual + tools;
+    return startHTML(live, true) + paceHTML + stuckHTML + donebox + quick + tools;
   }
   function listHTML() {
     var p = me(), today = dayNow();
@@ -1856,7 +1854,7 @@
       (S.itemsState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' : '') +
       '<div class="nb-body">' + minNudgeHTML() + closeoutHTML(live) + wNoteHTML() + startHTML(live) + pageBody(S.items, S.date) + todayEmpty + '</div>' +
       '<div class="nb-foot">' + add + (removed.length && can('del') ? '<button type="button" class="nb-link" data-p="removed">' + (S.showRemoved ? 'Hide' : 'Show') + ' removed (' + removed.length + ')</button>' : '') + '</div></section>';
-    var right = '<section class="nb-page nb-right"><header class="nb-ph"><div><h2 class="nb-title nb-dim">Handy</h2><span class="nb-date">Priorities, progress and tools</span></div></header>' +
+    var right = '<section class="nb-page nb-right"><header class="nb-ph"><div><h2 class="nb-title nb-dim">Handy</h2><span class="nb-date">Done today, quick add and tools</span></div></header>' +
       '<div class="nb-body nb-side">' + sideHTML(today) + '</div></section>';
     return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' + (can('tick') ? '' : ' (read only)') + esc(myRank()) : '') + '</span><span class="p-links"><button type="button" class="p-link" data-p="who-change">Not you?</button>' + '' + '</span></div>' +
       (canBrowse() ? '<div class="nb-nav"><button type="button" class="chip" data-p="day" data-d="-1" aria-label="Back one day">&lsaquo;</button>' +
@@ -2162,7 +2160,7 @@
       peopleListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' +
       '<section class="set-block"><span class="label">Badges</span><label class="a-check"><input type="checkbox" data-a="badges"' + (d.showBadges !== false ? ' checked' : '') + '> Show the weekly top tickers to everyone on the prep book</label></section>' + saveBlock
     ) : (
-      '<section class="set-block"><span class="label">Backup</span><span class="hint">Saves everything the prep book holds (people, lines from the last 400 days, learned items, tallies and the guides\' words) as one file on this device. People\'s PIN fingerprints and the guides\' page pictures are left out (keep the original files). Do this now and then.</span><div class="btn-row"><button type="button" class="btn" data-p="export"' + (S.exporting ? ' disabled' : '') + '>' + (S.exporting ? esc(S.exporting) : 'Download a backup') + '</button></div></section>' +
+      '<section class="set-block"><span class="label">Backup</span><span class="hint">Saves everything the prep book holds (people, prep lines, orders and wastage from the last 400 days, shift pings and who has seen them, meeting minutes with earlier versions and sign-offs, what the prep and order lists have learned, tallies and the guides\' words) as one file on this device. People\'s PIN fingerprints and the guides\' page pictures are left out (keep the original files). Do this now and then.</span><div class="btn-row"><button type="button" class="btn" data-p="export"' + (S.exporting ? ' disabled' : '') + '>' + (S.exporting ? esc(S.exporting) : 'Download a backup') + '</button></div></section>' +
       '<section class="set-block"><span class="label">Kitchen PIN</span><span class="hint">The kitchen PIN is the lock on the whole book, so keep it to staff only. Writing needs a person\'s own PIN as well.</span>' +
       '<div class="field"><label class="label" for="a-newpin">Move to a new 4 digit kitchen PIN</label><input id="a-newpin" class="search" inputmode="numeric" maxlength="4" autocomplete="off" data-k="a-newpin" placeholder="4 digits" value="' + esc(S.newPin) + '"></div>' +
       '<div class="btn-row"><button type="button" class="btn" data-p="move-pin"' + (S.moving ? ' disabled' : '') + '>' + (armed('move-pin') ? 'Tap again to copy everything' : 'Copy everything to the new PIN') + '</button></div><span class="saved" role="status">' + esc(S.moveMsg) + '</span><span class="hint">Ask for the new PIN to be added to the security rules first. The old PIN keeps working until its rules are removed.</span></section></div>');
@@ -2209,7 +2207,7 @@
   var rendering = false;
   function draw() {
     noteSummaryRefresh();
-    if (S.mins) { loadMine(); minBell(); }
+    if (S.mins) { loadMine(); minCard(); }
     if (!S.root || !document.body.contains(S.root) || rendering) return;
     rendering = true;
     var ae = document.activeElement, key = ae && ae.getAttribute && ae.getAttribute('data-k'), start = null, end = null;
@@ -2324,7 +2322,7 @@
       S.ordLearned = sn.docs.map(function (d) { var x = d.data(); return { id: d.id, text: x.text || '', uses: x.uses || 0, dow: x.dow || {}, qtys: x.qtys || {}, hidden: !!x.hidden }; });
       S.ordLearnFor = tag; S.ordLearnOk = true; S.ordLearnBusy = false; ordLearnSave(); draw();
     }, function () {
-      // the rules for ordlearned are not published yet (or no signal): suggest from the last 14 days only, try again tomorrow
+      // no signal, or rules without ordlearned (a new kitchen PIN): suggest from the last 14 days only, try again tomorrow
       S.ordLearned = S.ordLearned || []; S.ordLearnFor = tag; S.ordLearnOk = false; S.ordLearnBusy = false;
     });
   }
@@ -3166,7 +3164,7 @@
 
   /* ---------- kitchen meeting minutes ----------
      The head chef (admin panel, Minutes tab) writes the minutes after a meeting and publishes them. Sous chefs (Handy, "Minutes register") only see the register.
-     Staff read them at #/minutes in one fixed layout and sign with their own PIN. A bell in the top bar and a nudge on the prep list show until a person has signed.
+     Staff read them at #/minutes in one fixed layout and sign with their own PIN. A card on the landing page and a nudge on the prep list show until a person has signed; Meeting minutes in Handy opens them any time.
      Data: kitchens/<PIN>/minutes/<id> { no, v, status draft|published, date, start, loc, chair, taker, guests, next, decisions, menu, safety, dates, other,
        att: [{ id, st present|apology|absent }], acts: [{ what, who, by, st open|done|dropped, carried }], pubAt, removed, at, upd }.
      A change after publishing makes version v+1 and everyone signs again. Each earlier version is kept in minutes/<id>/hist/<v>.
@@ -3189,14 +3187,10 @@
     if (!S.who || !S.mins || (S.config && !who())) return [];
     return mnOpenList().filter(function (m) { return S.mmine[mnKey(m)] === null; });
   }
-  function minInfo() { return { n: mnUnsigned().length }; }
-  /* the bell in the top bar: hidden unless the person on this phone has minutes to sign */
-  function minBell() {
-    var n = mnUnsigned().length;
-    Array.prototype.forEach.call(document.querySelectorAll('.mbell'), function (b) {
-      b.hidden = !n; b.classList.toggle('has-new', !!n);
-      b.setAttribute('aria-label', 'Meeting minutes to sign' + (n ? ', ' + n : ''));
-    });
+  /* the card on the landing page (js/app.js draws the empty slot): filled in while the person on this phone has minutes to sign */
+  function minCard() {
+    var h = minNudgeHTML();
+    Array.prototype.forEach.call(document.querySelectorAll('.wall-mn'), function (el) { if (el.lkMn !== h) { el.innerHTML = h; el.lkMn = h; } });
   }
   function minNudgeHTML() {
     var u = mnUnsigned();
@@ -3211,11 +3205,11 @@
     fb.fs.getDocs(fb.fs.query(colRef('minutes'), fb.fs.where('date', '>=', shift(today, -MN_DAYS)))).then(function (snap) {
       S.mins = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; });
       S.minsFor = today; S.minsAt = Date.now(); S.minsBusy = false;
-      loadMine(); minBell(); draw();
+      loadMine(); minCard(); draw();
     }, function () {
       // no signal, or the minutes rules are not published yet: carry on without them and try again in about 5 minutes
       S.minsBusy = false; S.minsAt = Date.now() - MN_STALE + 5 * 60000; if (!S.mins) S.mins = [];
-      minBell(); draw();
+      minCard(); draw();
     });
   }
   /* has this person signed the current version? one small read per open minutes, remembered for the day */
@@ -3228,7 +3222,7 @@
       S.mmine[k] = 'loading';
       jobs.push(fb.fs.getDoc(fb.fs.doc.apply(null, [fb.db].concat(base(), ['minutes', m.id, 'signs', m.v + '_' + w]))).then(function (sn) { S.mmine[k] = sn.exists() ? sn.data() : null; }, function () { delete S.mmine[k]; }));
     });
-    if (jobs.length) Promise.all(jobs).then(function () { minBell(); draw(); });
+    if (jobs.length) Promise.all(jobs).then(function () { minCard(); draw(); });
   }
   function loadSigns(id, force) {
     if (!fb || !id) return;
@@ -3299,7 +3293,7 @@
     var ref = fb.fs.doc.apply(null, [fb.db].concat(base(), ['minutes', m.id, 'signs', m.v + '_' + S.who])), data = { v: m.v, st: st, at: now(), name: p.name };
     S.mSigning = true; S.mErr = ''; draw();
     sset(ref, data, false).then(function () {
-      S.mSigning = false; S.mmine[k] = data; S.mpin = ''; S.mpinOk = false; minBell(); toast('Signed. Thank you.'); draw();
+      S.mSigning = false; S.mmine[k] = data; S.mpin = ''; S.mpinOk = false; minCard(); toast('Signed. Thank you.'); draw();
     }, function (e) {
       S.mSigning = false; delete S.mmine[k];
       S.mErr = e && e.code === 'permission-denied' ? 'Not allowed. The minutes may have changed, or you have already signed this version. Reload the page.' : 'Could not sign. Check the connection and try again.';
@@ -4313,7 +4307,6 @@
     if (a === 'af-reset') { S.af = { sec: '', who: '', dow: '', reason: '' }; afSave(); draw(); return; }
     if (a === 'cal-day') { S.date = el.getAttribute('data-d'); S.tab = ''; watchItems(); location.hash = '#/prep'; return; }
     if (a === 'close-hide') { lsSet('lk.closeout', dayNow()); draw(); return; }
-    if (a === 'due') { var du = (S.due || [])[i]; if (du && can('add')) oneTap(du.text, du.sec); return; }
     if (a === 'oreg') { var orr = (S.oregs || [])[i]; if (orr) { S.otext = orr.text; S.oqty = orr.q || ''; addOrder(true); } return; }
     if (a === 'wview') { S.wView = el.getAttribute('data-v'); if (S.wView === 'week') loadWRecent(true); draw(); return; }
     if (a === 'wunit') { S.wf.unit = el.getAttribute('data-v'); draw(); return; }
@@ -4498,7 +4491,7 @@
     noteOpen: noteOpen,
     guidesFor: function (rid) { try { return guidesFor(rid); } catch (e) { return []; } },
     guideSearch: function (q) { try { return guideSearch(q); } catch (e) { return []; } },
-    minInfo: minInfo,
+    minNudge: minNudgeHTML,
     saveConfig: saveConfig,
     proofread: proofread,
     state: S
