@@ -1181,13 +1181,13 @@ window.LK_DATA = {
       menu: 'Beef Cheek: red wine-braised beef cheek, roasted honey pumpkin purée, fried onion, herb oil.',
       yield: 'Per plate. Braised beef cheek, pumpkin purée, fried onion, herb oil.',
       ingredients: [
-        { q: '[Qty]', name: 'Beef cheek', note: 'braised in red wine' },
+        { q: '[Qty]', name: 'Beef cheek', note: 'braised in red wine', link: 'beef-cheek-batch' },
         { q: '[Qty]', name: 'Roasted honey pumpkin purée' },
         { q: '[Qty]', name: 'Fried onion', tags: ['Gluten?'] },
         { q: '[Qty]', name: 'Herb oil' }
       ],
       pins: [
-        { label: 'Beef cheek', x: 40.5, y: 47.2, side: 'left', tags: [], note: 'Red wine braised.' },
+        { label: 'Beef cheek', x: 40.5, y: 47.2, side: 'left', link: 'beef-cheek-batch', note: 'Red wine braised.' },
         { label: 'Roasted honey pumpkin purée', x: 63.2, y: 59.4, side: 'left', tags: [], note: '' },
         { label: 'Fried onion', x: 50.9, y: 37.7, side: 'right', tags: ['Gluten?'], note: 'On top.' },
         { label: 'Herb oil', x: 69.8, y: 47.2, side: 'right', tags: [], note: 'Dots round the plate.' }
@@ -2214,6 +2214,29 @@ window.LK_DATA = {
         { title: 'Method', steps: ['Add all the ingredients except the jalapeños to a pot.', 'Simmer to a syrup consistency.', 'Add the sliced jalapeños.', 'Transfer to containers to cool. Pour over the remaining syrup.'] }
       ],
       labelNote: 'Check the supplier labels for allergens, especially the mustard seed.'
+    },
+    {
+      id: 'beef-cheek-batch', no: '110', kind: 'batch', forLine: 'For the beef cheek', name: 'Braised Beef Cheek', short: 'Beef cheek',
+      yield: 'Batch: 10 kg raw beef cheeks, red wine braise.',
+      ingredients: [
+        { q: '10 kg', name: 'Beef cheeks', note: 'raw, untrimmed' },
+        { q: '150 ml', name: 'Cooking oil', note: 'high smoke point' },
+        { q: '1 kg', name: 'Brown onions', note: 'medium dice' },
+        { q: '600 g', name: 'Carrots', note: 'medium dice' },
+        { q: '400 g', name: 'Celery sticks', note: 'medium dice' },
+        { q: '300 g', name: 'Garlic' },
+        { q: '200 g', name: 'Tomato paste' },
+        { q: '3 L', name: 'Dry red wine', note: 'shiraz or cabernet, 4 standard bottles' },
+        { q: '5 to 6 L', name: 'Dark beef stock', note: 'good quality or glace base, enough to submerge the meat' },
+        { q: '1 large bunch', name: 'Fresh thyme' },
+        { q: '5 sprigs', name: 'Fresh rosemary' },
+        { q: '10 pieces', name: 'Bay leaves', note: 'dried' },
+        { q: '1 tablespoon', name: 'Black peppercorns', note: 'whole' }
+      ],
+      sections: [
+        { title: 'Method', steps: ['[Method to confirm]'] }
+      ],
+      labelNote: 'Check the beef stock label for allergens.'
     }
   ]
 };
