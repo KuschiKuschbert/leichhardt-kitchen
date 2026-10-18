@@ -269,7 +269,7 @@ window.LK_DATA = {
         { q: 'About 75 ml', name: 'Butterscotch sauce', link: 'butterscotch' }
       ],
       pins: [
-        { label: 'Cookie', x: 34.0, y: 58.5, side: 'left', tags: [], note: '300 g dough, baked in the skillet. Card to come.' },
+        { label: 'Cookie', x: 34.0, y: 58.5, side: 'left', link: 'cookie-dough', note: '300 g dough, baked in the skillet.' },
         { label: 'Butterscotch sauce', x: 44.3, y: 41.5, side: 'right', link: 'butterscotch' },
         { label: 'Vanilla ice cream', x: 50.9, y: 51.9, side: 'right', tags: ['Milk'], note: '80 g.' }
       ],
@@ -2237,6 +2237,44 @@ window.LK_DATA = {
         { title: 'Method', steps: ['[Method to confirm]'] }
       ],
       labelNote: 'Check the beef stock label for allergens.'
+    },
+    {
+      id: 'cookie-dough', no: '111', kind: 'batch', forLine: 'For the skillet cookie', name: 'Skillet Cookie Dough', short: 'Cookie dough',
+      yield: 'Batch: roughly 6.65 kg, portioned into 140 g balls. 15 balls per tub.',
+      ingredients: [
+        { q: '1.6 kg', name: 'Flour', note: 'sifted', tags: ['Gluten'] },
+        { q: '32 g', name: 'Flaky sea salt' },
+        { q: '32 g', name: 'Bi-carb soda' },
+        { q: '904 g', name: 'Unsalted butter', note: 'for the beurre noisette', tags: ['Milk'] },
+        { q: '448 g', name: 'Unsalted butter', note: 'cubed', tags: ['Milk'] },
+        { q: '1.6 kg', name: 'Brown sugar' },
+        { q: '400 g', name: 'Caster sugar' },
+        { q: '8', name: 'Eggs', tags: ['Egg'] },
+        { q: '16', name: 'Egg yolks', tags: ['Egg'] },
+        { q: '1.36 kg', name: 'Dark chocolate nibs', tags: ['Milk?', 'Soy?'] },
+        { q: '80 g', name: 'Vanilla extract' }
+      ],
+      sections: [
+        { title: 'Method', steps: [
+          'Place the 904 g butter in a heavy based saucepan over medium heat until it foams, turns a dark colour, smells nutty and the milk solids have fallen to the bottom of the pan. Careful not to burn.',
+          'Scrape the butter and milk solids into a bowl and leave to cool.',
+          'Once cool, whisk in the 448 g cubed butter gently. It should start to melt but not foam and sizzle, so test with one piece first.',
+          'Whisk together the flour, salt and bi-carb in a bowl.',
+          'Put the butter in a stand mixer and whisk in the brown sugar and caster sugar until smooth with no lumps.',
+          'Add the eggs and yolks gradually, one at a time, whisking between each. Whisk in the vanilla extract.',
+          'Change the whisk for the paddle. Add the premixed dry ingredients a third at a time, mixing between each addition. Add the chocolate nibs and mix until all incorporated.',
+          'The mix should be very soft at this stage. Cover the large metal bowl in glad wrap and rest and set in the fridge.',
+          'Ball the dough into 140 g servings. Wrap each one in glad wrap and place on a tray in a single layer so they do not squash.',
+          'Freeze the trays to solidify. Once set, place the balls in ice cream tubs, 15 balls per tub for stocktake.',
+          'Defrost 1 tub at a time to keep wastage to a minimum.'
+        ] },
+        { title: 'Baking and plating (from the printed recipe)', steps: [
+          'Spray the cast iron pan with canola spray and press the cookie into the pan slightly so it spreads evenly while baking.',
+          'Bake at 190 °C for 9 to 10 minutes.',
+          'Set the cast iron pan on a wooden serving board. Quenelle the ice cream on top and drizzle lightly with butterscotch sauce. Dust with icing sugar and serve.'
+        ] }
+      ],
+      labelNote: 'Check the supplier labels for allergens, especially the chocolate nibs.'
     }
   ]
 };
