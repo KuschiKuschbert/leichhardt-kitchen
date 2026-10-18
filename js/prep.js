@@ -150,7 +150,40 @@
   /* only the head chef (signed in with Google) and sous chefs may look at other days; everyone else stays on today */
   function canBrowse() { return S.level === 'owner' || isSous(); }
   function can(what) { var p = me(); return !!(p && p[what]); }
-  function toast(msg, act) { S.toast = msg; S.toastAct = act || null; draw(); clearTimeout(toastTimer); toastTimer = setTimeout(function () { S.toast = ''; S.toastAct = null; draw(); }, act ? 9000 : 3500); }
+  function toast(msg, act, ms) { S.toast = msg; S.toastAct = act || null; draw(); clearTimeout(toastTimer); toastTimer = setTimeout(function () { S.toast = ''; S.toastAct = null; draw(); }, ms || (act ? 9000 : 3500)); }
+  /* A write the server refused or could not take. Whatever was typed goes back in its box (restore). Refused
+     (permission-denied) means this phone's PIN no longer counts, usually because the head chef reset it, so the
+     person signs in again. Other errors stay up for 12 seconds with an OK button, so nobody misses them. */
+  function failed(e, restore) {
+    if (typeof restore === 'function') restore();
+    if (e && e.code === 'permission-denied' && S.authed && S.who && S.name !== 'admin') {
+      pickName(S.who);
+      toast('Not saved: sign in again with your PIN.' + (typeof restore === 'function' ? ' What you wrote is still in the box.' : ''), { label: 'OK', fn: function () {} }, 12000);
+      return;
+    }
+    toast('Not saved. Check the connection and try again.', { label: 'OK', fn: function () {} }, 12000);
+  }
+  /* Writes still waiting for the server. With no signal Firestore keeps them on the phone and sends them later, so the
+     page looks saved when nobody else can see the change yet. This count (and the browser's online flag) drives the
+     strip at the top of the prep pages. No reads, no polling. */
+  var pending = 0, pendSince = 0, offline = navigator.onLine === false, lastSync = '';
+  function track(pr) {
+    pending++; if (pending === 1) pendSince = Date.now();
+    setTimeout(syncDraw, 3100);
+    var done = function () { pending = Math.max(0, pending - 1); syncDraw(); };
+    pr.then(done, done);
+    return pr;
+  }
+  function syncState() { return offline ? 'off' : (pending && Date.now() - pendSince > 3000 ? 'wait' : ''); }
+  function syncDraw() { var st = syncState(); if (st !== lastSync) { lastSync = st; draw(); } }
+  window.addEventListener('online', function () { offline = false; syncDraw(); });
+  window.addEventListener('offline', function () { offline = true; syncDraw(); });
+  function syncHTML() {
+    var st = syncState();
+    if (!st || !S.pin) return '';
+    return '<div class="p-sync" role="status">' + (st === 'off' ? '<strong>No signal.</strong> What you write is kept on this phone and sent when the signal is back.' :
+      '<strong>Not sent yet.</strong> Other phones cannot see your latest changes yet. Keep the book open.') + '</div>';
+  }
   /* Two taps for anything that is hard to take back: the first tap arms the button ("Tap again..."), a second tap
      within 4 seconds does it. Left alone, the button goes back to normal by itself. */
   var armKey = '', armTimer = null;
@@ -177,7 +210,7 @@
       var data = pf ? Object.assign({ by: S.who }, o[2]) : o[2];
       if (o[0] === 'upd') b.update(o[1], data); else if (o[3]) b.set(o[1], data, { merge: true }); else b.set(o[1], data);
     });
-    return b.commit();
+    return track(b.commit());
   }
   function sset(ref, data, merge) { return W([['set', ref, data, merge]]); }
   function supd(ref, data) { return W([['upd', ref, data]]); }
@@ -362,8 +395,9 @@
     t = pr.text;
     var rm = matchRecipe(t);
     if (!sec) { var lx = learnedFor(t); if (lx && bestSection(lx)) sec = bestSection(lx); }
+    var q0 = S.qty;
     var made = newItem(Object.assign({ text: t.slice(0, 160), qty: S.qty.trim().slice(0, 40), station: sec, recipe: rm ? rm.id : '' }, fixed ? { orig: typedAs.slice(0, 160) } : {}));
-    made.catch(function () { toast('Could not save. Check the connection.'); });
+    made.catch(function (e) { failed(e, function () { if (!S.text.trim()) { S.text = typedAs; S.qty = q0; } }); });
     noteSection(sec); bump({ added: 1, lastAdded: Date.now() }); learn(t, sec, t === S.pickedText ? 'pick' : 'type', S.qty);
     if (pr.changes.length || secInfo.from) {
       var ch = pr.changes, mid = made.id, dte = S.date, sf = secInfo.from;
@@ -383,7 +417,7 @@
     if (!r || !can('add')) return;
     var secInfo = {}, sec = cleanSection(S.section, secInfo);
     var made = newItem({ text: (r.short || r.name), recipe: r.id, qty: S.qty.trim().slice(0, 40), station: sec });
-    made.catch(function () { toast('Could not save. Check the connection.'); });
+    made.catch(failed);
     noteSection(sec); bump({ added: 1, lastAdded: Date.now() }); learn(r.short || r.name, sec, 'pick', S.qty);
     S.qty = ''; S.recipeSearch = ''; S.recipeOpen = false; S.recipeAll = false;
     if (secInfo.from) { S.section = sec; var sf = secInfo.from, mid = made.id, dte = S.date; toast('Added ' + (r.short || r.name) + ', section ' + sf + ' corrected to ' + sec, { label: 'Undo', fn: function () { keepSection(sf); noteSection(sf); S.section = sf; supd(itemRef(dte, mid), { station: sf }).catch(function () { toast('Could not undo.'); }); } }); }
@@ -397,14 +431,14 @@
     if (!it || !can('tick')) return;
     var done = !it.done;
     if (!done && !canUntick(it)) { toast('Ticked lines stay ticked. Ask the head chef or sous chef to undo it.'); return; }
-    supd(itemRef(date, id), { done: done, doneBy: done ? p.name : '', doneById: done ? p.id : '', doneAt: done ? Date.now() : 0 }).catch(function () { toast('Could not save. Check the connection.'); });
+    supd(itemRef(date, id), { done: done, doneBy: done ? p.name : '', doneById: done ? p.id : '', doneAt: done ? Date.now() : 0 }).catch(failed);
     if (done) { bump({ ticked: 1 }); toast('Ticked ' + it.text, { label: 'Undo', fn: function () { tick(date, id); } }); }
     else if (it.doneById && fb) sset(docRef('activity', it.doneById), { name: it.doneBy || '', ticked: fb.fs.increment(-1) }, true).catch(function () {});
   }
   function removeItem(date, id, restore) {
     var p = me(), it = S.items.filter(function (x) { return x.id === id; })[0];
     if (!can('del')) return;
-    supd(itemRef(date, id), { deleted: !restore, deletedBy: restore ? '' : p.name, deletedAt: restore ? 0 : Date.now() }).catch(function () { toast('Could not save. Check the connection.'); });
+    supd(itemRef(date, id), { deleted: !restore, deletedBy: restore ? '' : p.name, deletedAt: restore ? 0 : Date.now() }).catch(failed);
     if (!restore) toast('Removed ' + (it ? it.text : 'the line'), { label: 'Undo', fn: function () { removeItem(date, id, true); } });
   }
   /* Anything not ticked on the last written day rolls onto today by itself. */
@@ -443,7 +477,7 @@
     var it = S.items.filter(function (x) { return x.id === id; })[0];
     if (!it || !can('add')) return;
     var p = me(), on = !it.urgent;
-    supd(itemRef(S.date, id), { urgent: on, urgentBy: on && p ? p.name : '', urgentById: on && p ? p.id : '', urgentAt: on ? Date.now() : 0 }).catch(function () { toast('Could not save. Check the connection.'); });
+    supd(itemRef(S.date, id), { urgent: on, urgentBy: on && p ? p.name : '', urgentById: on && p ? p.id : '', urgentAt: on ? Date.now() : 0 }).catch(failed);
   }
 
   /* ---------- proofreading: every new line is tidied and spell-checked before it is saved ---------- */
@@ -601,7 +635,7 @@
     var x = (S.quick || [])[i];
     if (!x || !can('add')) return;
     var rm = matchRecipe(x.text), uq = usualQty(x.text);
-    newItem({ text: x.text.slice(0, 160), station: x.section, recipe: rm ? rm.id : '', qty: uq }).catch(function () { toast('Could not save. Check the connection.'); });
+    newItem({ text: x.text.slice(0, 160), station: x.section, recipe: rm ? rm.id : '', qty: uq }).catch(failed);
     noteSection(x.section); bump({ added: 1, lastAdded: Date.now() }); learn(x.text, x.section, 'pick', uq);
   }
   /* Owner backup: everything the book holds, as one JSON file (PIN fingerprints left out). */
@@ -1998,7 +2032,7 @@
     var d = S.draft, owner = S.level === 'owner';
     if (owner) { watchActivity(); loadStats(false); }
     var bar = '<div class="p-bar"><span>Signed in as <strong>' + esc(S.user.email) + '</strong> (' + 'head chef' + ')</span><span class="p-links"><button type="button" class="p-link" data-p="signout">Sign out</button><a class="p-link" href="#/prep">Prep book</a></span></div>';
-    var bulk = '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line"></textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div>';
+    var bulk = '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line">' + esc(S.bulk || '') + '</textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div>';
     var saveBlock = '<section class="set-block"><div class="btn-row"><button type="button" class="btn dark" data-p="a-save"' + (S.busy ? ' disabled' : '') + '>Save changes</button><button type="button" class="btn" data-p="a-reset">Undo unsaved changes</button></div><span class="saved" role="status">' + esc(S.saveMsg) + '</span></section>';
     var at = S.atab || 'insights';
     var tabsBar = '<nav class="a-tabs" aria-label="Admin sections">' + [['insights', 'Insights'], ['team', 'Team'], ['waste', 'Waste'], ['learning', 'Learning'], ['notes', 'Notes'], ['minutes', 'Minutes'], ['people', 'People'], ['tools', 'Tools']].map(function (t) {
@@ -2024,7 +2058,7 @@
   function draftDirty() { return !!S.draft && JSON.stringify(S.draft) !== S.draftSnap; }
   function staffHTML() {
     var d = S.draft || (startDraft(), S.draft);
-    var bulk = '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line"></textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div>';
+    var bulk = '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line">' + esc(S.bulk || '') + '</textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div>';
     return '<div class="p-admin"><div class="p-bar"><span>Staff list</span><span class="p-links"><button type="button" class="p-link" data-p="staff-close">' + (armed('staff-close') ? 'Tap again to leave without saving' : 'Back to the prep book') + '</button></span></div><h2 class="p-h" id="rtitle" tabindex="-1">Staff</h2>' +
       '<section class="set-block"><span class="hint">Add a person or remove one, then save. New people start as Staff. Removing someone keeps their name on old lines. Roles and PINs are looked after by the head chef.</span>' + staffListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' +
       '<section class="set-block"><div class="btn-row"><button type="button" class="btn dark" data-p="a-save"' + (S.busy ? ' disabled' : '') + '>Save changes</button><button type="button" class="btn" data-p="a-reset">Undo unsaved changes</button></div><span class="saved" role="status">' + esc(S.saveMsg) + '</span></section></div>';
@@ -2063,7 +2097,7 @@
     if (key && ae.selectionStart != null) { try { start = ae.selectionStart; end = ae.selectionEnd; } catch (e) {} }
     var bodyEl = S.root.querySelector('.nb-body'), keepScroll = bodyEl ? S.root.querySelectorAll('.nb-body') : null, scrolls = [];
     if (keepScroll) Array.prototype.forEach.call(keepScroll, function (b) { scrolls.push(b.scrollTop); });
-    S.root.innerHTML = bodyHTML() + (S.toast ? '<div class="p-toast" role="status">' + esc(S.toast) + (S.toastAct ? ' <button type="button" class="p-toast-btn" data-p="toast-act">' + esc(S.toastAct.label) + '</button>' : '') + '</div>' : '');
+    S.root.innerHTML = syncHTML() + bodyHTML() + (S.toast ? '<div class="p-toast" role="status">' + esc(S.toast) + (S.toastAct ? ' <button type="button" class="p-toast-btn" data-p="toast-act">' + esc(S.toastAct.label) + '</button>' : '') + '</div>' : '');
     S.root.classList.toggle('is-book', S.name === 'prep' && !!S.root.querySelector('.nb'));
     document.documentElement.classList.toggle('sheet-open', !!S.root.querySelector('.sheet'));
     if (scrolls.length) Array.prototype.forEach.call(S.root.querySelectorAll('.nb-body'), function (b, i) { if (scrolls[i] != null) b.scrollTop = scrolls[i]; });
@@ -2121,7 +2155,7 @@
     var oFix = pr.changes.map(function (c) { return c[0] + ' to ' + c[1]; }).join(', ');
     S.otext = ''; var q = S.oqty.trim().slice(0, 40); S.oqty = ''; draw();
     sset(ref, { text: t, qty: q, recipes: hit ? hit.ids : [], addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: Date.now(), ordered: false, deleted: false, orig: t !== typed ? typed.slice(0, 120) : '' })
-      .then(function () { ordReload(); if (oFix) toast('Corrected ' + oFix); }, function () { toast('Could not save. Check the connection.'); });
+      .then(function () { ordReload(); if (oFix) toast('Corrected ' + oFix); }, function (e) { failed(e, function () { if (!S.otext.trim()) { S.otext = typed; S.oqty = q; } }); });
     var el = S.root && S.root.querySelector('[data-k="o-text"]'); if (el) el.focus();
   }
   function ingredientFor(text) { return ingIndex()[okey(text)] || null; }
@@ -2131,16 +2165,16 @@
     return supd(ordRef(date, id), { ordered: on, orderedBy: on ? p.name : '', orderedAt: on ? Date.now() : 0 });
   }
   function tickOrderLine(date, id, on) {
-    setOrdered(date, id, on).then(ordReload, function () { toast('Could not save. Check the connection.'); });
+    setOrdered(date, id, on).then(ordReload, failed);
   }
   function tickOrderGroup(key) {
     var jobs = (S.ordAll || []).filter(function (x) { return !x.deleted && !x.ordered && okey(x.text) === key; }).map(function (x) { return setOrdered(x.date, x.id, true); });
-    Promise.all(jobs).then(function () { toast('Marked as ordered.'); ordReload(); }, function () { toast('Could not save. Check the connection.'); });
+    Promise.all(jobs).then(function () { toast('Marked as ordered.'); ordReload(); }, failed);
   }
   function removeOrderLine(date, id, restore) {
     if (!canBrowse() || !can('del')) return;
     var it = (S.ordLines || []).concat(S.ordAll || []).filter(function (x) { return x.id === id; })[0];
-    supd(ordRef(date, id), { deleted: !restore, deletedBy: restore ? '' : (me() || {}).name || '', deletedAt: restore ? 0 : Date.now() }).then(ordReload, function () { toast('Could not save. Check the connection.'); });
+    supd(ordRef(date, id), { deleted: !restore, deletedBy: restore ? '' : (me() || {}).name || '', deletedAt: restore ? 0 : Date.now() }).then(ordReload, failed);
     if (!restore) toast('Removed ' + (it ? it.text : 'the line') + ' from the order list', { label: 'Undo', fn: function () { removeOrderLine(date, id, true); } });
   }
   function ordSuggest() {
@@ -2337,7 +2371,7 @@
     if (!REASONS.some(function (r) { return r[0] === f.reason; })) { toast('Pick a reason.'); return; }
     var secInfo = {}, sec = cleanSection(f.sec, secInfo), rm = matchRecipe(t), ref = fb.fs.doc(wCol(S.wDate));
     sset(ref, { text: t, amount: amt, unit: f.unit, reason: f.reason, action: f.act.trim().slice(0, 120), station: sec, recipe: rm ? rm.id : '',
-      addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: Date.now(), deleted: false }).catch(function () { toast('Could not save. Check the connection.'); });
+      addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: Date.now(), deleted: false }).catch(function (e) { failed(e, function () { if (!S.wf.text.trim()) S.wf = f; }); });
     if (sec) noteSection(sec);
     S.wf = { text: '', amt: '', unit: f.unit, reason: '', sec: sec, act: '' };
     toast('Logged ' + t + (wpr.changes.length ? ' (corrected ' + wpr.changes.map(function (c) { return c[0] + ' to ' + c[1]; }).join(', ') + ')' : '') + (secInfo.from ? ' under ' + sec + ' (typed ' + secInfo.from + ')' : ''));
@@ -2345,7 +2379,7 @@
   function removeWaste(date, id, restore) {
     if (!canBrowse() || !can('del')) return;
     var it = (S.wLines || []).concat(S.wRecent || []).filter(function (x) { return x.id === id; })[0];
-    supd(wRef(date, id), { deleted: !restore, deletedBy: restore ? '' : (me() || {}).name || '', deletedAt: restore ? 0 : Date.now() }).catch(function () { toast('Could not save. Check the connection.'); });
+    supd(wRef(date, id), { deleted: !restore, deletedBy: restore ? '' : (me() || {}).name || '', deletedAt: restore ? 0 : Date.now() }).catch(failed);
     if (!restore) toast('Removed ' + (it ? it.text : 'the entry') + ' from the wastage log', { label: 'Undo', fn: function () { removeWaste(date, id, true); } });
   }
   function saveReview() {
@@ -2354,7 +2388,7 @@
     var a = (S.wrA != null ? S.wrA : r.avoidable || '').trim().slice(0, 300), c = (S.wrC != null ? S.wrC : r.change || '').trim().slice(0, 300);
     sset(wDay(S.wDate), { avoidable: a, change: c, reviewBy: p ? p.name : '', reviewAt: Date.now() }, true).then(function () {
       S.wReview = { avoidable: a, change: c, reviewBy: p ? p.name : '', reviewAt: Date.now() }; S.wrA = S.wrC = null; toast('Review saved'); 
-    }, function () { toast('Could not save. Check the connection.'); });
+    }, failed);
   }
   function wRow(x) {
     var del = canBrowse() && can('del') && !x.deleted;
@@ -3436,7 +3470,7 @@
     if (a === 'af-reset') { S.af = { sec: '', who: '', dow: '', reason: '' }; afSave(); draw(); return; }
     if (a === 'cal-day') { S.date = el.getAttribute('data-d'); S.tab = ''; watchItems(); location.hash = '#/prep'; return; }
     if (a === 'close-hide') { lsSet('lk.closeout', ymd(new Date())); draw(); return; }
-    if (a === 'due') { var du = (S.due || [])[i]; if (du && can('add')) { var rmd = matchRecipe(du.text), uqd = usualQty(du.text); newItem({ text: du.text.slice(0, 160), station: du.sec, recipe: rmd ? rmd.id : '', qty: uqd }).catch(function () { toast('Could not save. Check the connection.'); }); noteSection(du.sec); bump({ added: 1, lastAdded: Date.now() }); learn(du.text, du.sec, 'pick', uqd); } return; }
+    if (a === 'due') { var du = (S.due || [])[i]; if (du && can('add')) { var rmd = matchRecipe(du.text), uqd = usualQty(du.text); newItem({ text: du.text.slice(0, 160), station: du.sec, recipe: rmd ? rmd.id : '', qty: uqd }).catch(failed); noteSection(du.sec); bump({ added: 1, lastAdded: Date.now() }); learn(du.text, du.sec, 'pick', uqd); } return; }
     if (a === 'stuck-urgent') { toggleUrgent(id); return; }
     if (a === 'oreg') { var orr = (S.oregs || [])[i]; if (orr) { S.otext = orr.text; S.oqty = orr.q || ''; addOrder(); } return; }
     if (a === 'wview') { S.wView = el.getAttribute('data-v'); if (S.wView === 'week') loadWRecent(true); draw(); return; }
@@ -3452,7 +3486,7 @@
     if (a === 'wtoday') { S.wDate = ymd(new Date()); watchWaste(); draw(); return; }
     if (a === 'wreview') { saveReview(); return; }
     if (a === 'w-refresh') { loadWStats(true); loadStats(true); draw(); return; }
-    if (a === 'miss-hide') { sset(docRef('misses', id), { hidden: true, q: ((S.misses || []).filter(function (x) { return x.id === id; })[0] || {}).q || id }, true).then(function () { loadMisses(true); }, function () { toast('Could not save. Check the connection.'); }); return; }
+    if (a === 'miss-hide') { sset(docRef('misses', id), { hidden: true, q: ((S.misses || []).filter(function (x) { return x.id === id; })[0] || {}).q || id }, true).then(function () { loadMisses(true); }, failed); return; }
     if (a === 'qset') { S.qty = el.getAttribute('data-v') || ''; draw(); var tq = S.root.querySelector('[data-k="p-text"]'); if (tq) tq.focus(); return; }
     if (a === 'goto') { gotoRow(id); return; }
     if (a === 'learn-hide') { hideLearned(id, el.getAttribute('data-hide') === '1'); return; }
@@ -3473,7 +3507,8 @@
     if (a === 'a-add-person') { lvReveal('people'); lvReveal('staff'); d.people.push({ id: slug('person') + '-' + Date.now().toString(36), name: '', role: 'staff', add: true, tick: true, del: false, active: true, isNew: true }); draw(); var n = S.root.querySelector('[data-k="a-n' + (d.people.length - 1) + '"]'); if (n) n.focus(); return; }
     if (a === 'a-bulk-add') {
       lvReveal('people'); lvReveal('staff');
-      var box = S.root.querySelector('#a-bulk'); var lines = box ? box.value.split(/\n/).map(function (s) { return s.trim(); }).filter(Boolean) : [];
+      var lines = String(S.bulk || '').split(/\n/).map(function (s) { return s.trim(); }).filter(Boolean);
+      S.bulk = '';
       lines.forEach(function (nm, k) { d.people.push({ id: slug(nm) + '-' + Date.now().toString(36) + k, name: nm, role: 'staff', add: true, tick: true, del: false, active: true }); });
       draw(); return;
     }
@@ -3492,6 +3527,7 @@
     if (k && k.indexOf('lv-q:') === 0) { var lk = k.slice(5), lc = LVR[lk]; if (lc) { var ls0 = lvState(lc); ls0.q = el.value; ls0.shown = lc.step || 15; lvRefresh(lk); } return; }
     // a PIN goes in by itself the moment the fourth digit is typed (only when it reaches four, so it cannot send twice)
     if (k === 'p-pin') { var pp = S.pinInput.length; S.pinInput = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.pinInput; pinCells(el); if (pp < 4 && S.pinInput.length === 4) submitKitchenPin(); return; }
+    if (k === 'a-bulk') { S.bulk = el.value; return; }
     if (k === 'a-newpin') { S.newPin = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.newPin; return; }
     if (k === 'mn-pin') {
       S.mpin = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.mpin; pinCells(el); S.mpinOk = false; S.mErr = '';
@@ -3589,6 +3625,10 @@
       if (S.pin) { connect(); if (name === 'admin') sdk(); if (name === 'orders') { S.ordDate = ymd(new Date()); watchOrders(); } if (name === 'waste') { S.wDate = ymd(new Date()); watchWaste(); } notesInit(); }
     },
     warm: function () { if (S.pin && S.configState !== 'ok' && S.configState !== 'loading') connect(); notesInit(); },
+    unsaved: function () {
+      return pending > 0 || mfDirty() || nfDirty() || draftDirty() || !!String(S.bulk || '').trim() || !!S.sheet || !!S.recipeOpen ||
+        !!(S.text.trim() || S.otext.trim() || S.wf.text.trim() || S.wf.act.trim() || (S.wrA != null && S.wrA !== ((S.wReview || {}).avoidable || '')) || (S.wrC != null && S.wrC !== ((S.wReview || {}).change || '')) || S.mpin);
+    },
     noteInfo: noteInfo,
     noteOpen: noteOpen,
     minInfo: minInfo,

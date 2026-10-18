@@ -135,6 +135,13 @@ There's no build step and nothing to install. To try it on a computer, open `ind
 - **Toasts on phones** sit above the bottom tab bar instead of covering it, and their Undo button is full size.
 - The admin People tab says Remove (not Delete), the same as the staff list.
 
+### No signal and failed saves (October 2026)
+
+- **Not sent yet.** With no signal, Firestore keeps every change on the phone and sends it later, so the page looks saved while other phones cannot see it. The prep pages now show a strip at the top: "No signal" when the phone is offline, and "Not sent yet" when changes have waited more than 3 seconds for the server. It goes away by itself once everything is sent. It only counts this phone's own writes: no reads, no polling.
+- **Nothing typed is lost.** If a new prep line, order line or wastage entry cannot be saved, what was typed goes back into the box. A refused write (usually because the head chef reset that person's PIN) sends them to their own PIN screen, and the line is still in the box after they sign in. Other errors stay on screen for 12 seconds with an OK button.
+- **Self-updates wait for unsaved work.** The automatic update (and the 04:00 refresh) no longer reloads while something is half written in the prep pages: a line, an order, a wastage entry or review, a note, minutes, the staff list, or changes still waiting to send. Before, it only waited while the cursor was in a box. `LK_PREP.unsaved()` in `js/prep.js` decides.
+- The admin "Add several names" box keeps its text when the page redraws (it used to empty itself during service).
+
 ### Wastage log
 
 - `#/waste` is the Daily Wastage Sheet on the phone: section, item, amount and unit (g, kg, L, portions, pieces), reason (prep waste, expired stock, cooking fault, returned, excess production), action or how to stop it happening again. Time and name are added by themselves. Items logged twice or more in 14 days show as one-tap chips.
