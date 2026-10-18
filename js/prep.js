@@ -209,6 +209,11 @@
     lsSet('lk.prep.lock', JSON.stringify(l)); return l;
   }
   function lockWait(sec) { return 'Too many wrong tries. Wait ' + (sec >= 60 ? Math.ceil(sec / 60) + ' minute' + (sec > 60 ? 's' : '') : sec + ' seconds') + ' and try again.'; }
+  function submitKitchenPin() {
+    var v = S.pinInput.trim();
+    if (!/^\d{4}$/.test(v)) { S.pinError = 'The kitchen PIN is 4 digits.'; draw(); return; }
+    S.pin = v; S.pinError = ''; S.pinInput = ''; lsSet('lk.prep.pin', v); connect();
+  }
   function submitPin() {
     var id = S.who, p = who();
     if (!p) return;
@@ -430,13 +435,13 @@
   }
 
   /* ---------- proofreading: every new line is tidied and spell-checked before it is saved ---------- */
-  var KITCHEN = ('blanch julienne dice diced slice sliced marinate marinated portion portioned batch wash pick chop chopped shred shredded trim tray crumb crumbed batter gravy sauce stock reduce season seasoned mix mixed roast roasted smoke smoked pulled pull cook cooked cool chill chilled defrost thaw label date rotate fill refill restock set setup stack fold grate grated peel peeled core cut cure brine rub glaze whip whipped steam steamed fry fried grill grilled bake baked char charred toast toasted dress dressing garnish drizzle lemon lime orange tomato tomatoes onion onions garlic potato potatoes lettuce cucumber carrot carrots cabbage capsicum mushroom mushrooms bacon cheese chicken beef pork lamb barramundi calamari prawn prawns salmon rice pasta mash chips fries slaw coleslaw aioli mayo mayonnaise pickle pickles parmesan parmigiana parmy schnitzel schnitty beetroot spinach broccoli zucchini pumpkin sweet corn peas beans dough pastry pie pies brownie cookie caramel butterscotch cream ice vanilla chocolate guinness snickers laksa coconut asian greens oak leaf salad salads burger burgers patties patty bun buns brioche ribs rib wings wing steak sandwich skillet spring rolls roll roll bourbon bbq chilli chili ginger shallot shallots herbs parsley coriander basil thyme rosemary sage mint dill chives pepper salt sugar flour butter milk eggs egg oil vinegar mustard ketchup tomato relish jus beer batter fish chip sauce sides side dessert desserts entree entrees mains main kids ketchup bacon jam onion rings nachos tacos taco quesadilla wrap wraps hummus dip dips bread garlic focaccia fetta feta halloumi mozzarella cheddar swiss tasty gravy peppercorn mushroom diane creamy white red green yellow large small half full double single extra spare backup morning afternoon night lunch dinner breakfast service base bases bowl bowls sheet sheets lid lids tub tubs bag bags pack packs cup cups jar jars pot pots pan pans oven rack racks jug jugs make made need needs more less last next each every both some thing things stuff work done ready first top bottom front back cold hot warm mild spicy fresh frozen dried raw plain with without from into over under before after until only also then than that this these those mince stir drain rest wrap cover covered uncover break bone bones skin skinned skinless fillet fillets cube cubes strip strips wedge wedges round rounds ring rings whole sliced thick thin fine rough coarse smooth').split(/\s+/);
+  var KITCHEN = ('blanch julienne dice diced slice sliced marinate marinated portion portioned batch wash pick chop chopped shred shredded trim tray crumb crumbed batter gravy sauce stock reduce season seasoned mix mixed roast roasted smoke smoked pulled pull cook cooked cool chill chilled defrost thaw label date rotate fill refill restock set setup stack fold grate grated peel peeled core cut cure brine rub glaze whip whipped steam steamed fry fried grill grilled bake baked char charred toast toasted dress dressing garnish drizzle lemon lime orange tomato tomatoes onion onions garlic potato potatoes lettuce cucumber carrot carrots cabbage capsicum mushroom mushrooms bacon cheese chicken beef pork lamb barramundi calamari prawn prawns salmon rice pasta mash chips fries slaw coleslaw aioli mayo mayonnaise pickle pickles parmesan parmigiana parmy schnitzel schnitty beetroot spinach broccoli zucchini pumpkin sweet corn peas beans dough pastry pie pies brownie cookie caramel butterscotch cream ice vanilla chocolate guinness snickers laksa coconut asian greens oak leaf salad salads burger burgers patties patty bun buns brioche ribs rib wings wing steak sandwich skillet spring rolls roll roll bourbon bbq chilli chili ginger shallot shallots herbs parsley coriander basil thyme rosemary sage mint dill chives pepper salt sugar flour butter milk eggs egg oil vinegar mustard ketchup tomato relish jus beer batter fish chip sauce sides side dessert desserts entree entrees mains main kids ketchup bacon jam onion rings nachos tacos taco quesadilla wrap wraps hummus dip dips bread garlic focaccia fetta feta halloumi mozzarella cheddar swiss tasty gravy peppercorn mushroom diane creamy white red green yellow large small half full double single extra spare backup morning afternoon night lunch dinner breakfast service base bases bowl bowls sheet sheets lid lids tub tubs bag bags pack packs bit bits bin bins tin tins can cans foil film wipe wipes glove gloves towel towels cloth cloths bleach soap spray sanitiser sanitizer paper napkin napkins straw straws tong tongs whisk knife knives board boards peeler ladle ladles spoon spoons fork forks plate plates dish dishes pickled jalapeno jalapenos tortilla tortillas wonton wontons tomatoes cup cups jar jars pot pots pan pans oven rack racks jug jugs make made need needs more less last next each every both some thing things stuff work done ready first top bottom front back cold hot warm mild spicy fresh frozen dried raw plain with without from into over under before after until only also then than that this these those mince stir drain rest wrap cover covered uncover break bone bones skin skinned skinless fillet fillets cube cubes strip strips wedge wedges round rounds ring rings whole sliced thick thin fine rough coarse smooth').split(/\s+/);
   var vocabCache = null, vocabKey = '';
   function vocab() {
     var key = S.learned.length + ':' + D.recipes.length + ':' + S.sections.length;
     if (vocabCache && vocabKey === key) return vocabCache;
     var v = {};
-    function add(t, w) { String(t || '').toLowerCase().split(/[^a-z']+/).forEach(function (x) { if (x.length >= 3) v[x] = Math.max(v[x] || 0, w); }); }
+    function add(t, w) { String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/[^a-z']+/).forEach(function (x) { if (x.length >= 3) v[x] = Math.max(v[x] || 0, w); }); }
     KITCHEN.forEach(function (w) { add(w, 1); });
     SEC_WORDS.forEach(function (w) { add(w, 1); });
     S.sections.forEach(function (x) { if (!x.hidden) add(x.name, 2 + Math.min(5, x.uses || 0)); });
@@ -459,7 +464,9 @@
   function keepWords(list) { list.forEach(function (c) { KEEP[c[0].toLowerCase()] = 1; }); lsSet('lk.prep.keep', JSON.stringify(KEEP)); }
   function fixWord(w) {
     var lw = w.toLowerCase(), v = vocab();
-    if (lw.length < 4 || v[lw] || KEEP[lw] || v[lw.replace(/(es|s|ed|ing)$/, '')] || v[lw.replace(/s$/, '')]) return null;
+    if (lw.length < 4 || /[^\x00-\x7f]/.test(w) || v[lw] || KEEP[lw] || v[lw.replace(/(es|s|ed|ing)$/, '')] || v[lw.replace(/s$/, '')] || v[lw.replace(/d$/, '')]) return null;
+    // a word that is only the singular or plural, or the past tense, of a word we know is not a slip
+    if (v[lw + 's'] || v[lw + 'es'] || v[lw + 'd'] || v[lw + 'ed'] || v[lw + 'ing']) return null;
     var maxd = lw.length >= 8 ? 2 : 1, best = null, bd = 9, bw = -1, tie = false;
     Object.keys(v).forEach(function (c) {
       if (c[0] !== lw[0] || Math.abs(c.length - lw.length) > maxd) return;
@@ -469,13 +476,14 @@
       else if (dd === bd && v[c] === bw) tie = true;
     });
     if (!best || tie) return null;
+    if (best === lw + 's' || best === lw + 'es' || best + 's' === lw || best + 'es' === lw) return null;
     if (w === w.toUpperCase() && w.length > 1) return best.toUpperCase();
     if (w[0] === w[0].toUpperCase()) return best[0].toUpperCase() + best.slice(1);
     return best;
   }
   function proofread(text) {
     var changes = [], t = String(text).replace(/\s+/g, ' ').trim().replace(/\s+([,.;:!?])/g, '$1').replace(/([,;:])(?=\S)/g, '$1 ');
-    t = t.replace(/[A-Za-z']+/g, function (w) { var f = fixWord(w); if (f && f !== w) { changes.push([w, f]); return f; } return w; });
+    t = t.replace(/[A-Za-z\u00C0-\u024F']+/g, function (w) { var f = fixWord(w); if (f && f !== w) { changes.push([w, f]); return f; } return w; });
     if (/^[a-z]/.test(t)) t = t[0].toUpperCase() + t.slice(1);
     return { text: t, changes: changes };
   }
@@ -1892,9 +1900,10 @@
     if (!t || !can('add')) return;
     var typed = t, pr = proofread(t); t = (pr.text || t).slice(0, 120);
     var hit = ingredientFor(t), p = me(), ref = fb.fs.doc(ordCol(S.ordDate));
+    var oFix = pr.changes.map(function (c) { return c[0] + ' to ' + c[1]; }).join(', ');
     S.otext = ''; var q = S.oqty.trim().slice(0, 40); S.oqty = ''; draw();
     sset(ref, { text: t, qty: q, recipes: hit ? hit.ids : [], addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: Date.now(), ordered: false, deleted: false, orig: t !== typed ? typed.slice(0, 120) : '' })
-      .then(function () { ordReload(); }, function () { toast('Could not save. Check the connection.'); });
+      .then(function () { ordReload(); if (oFix) toast('Corrected ' + oFix); }, function () { toast('Could not save. Check the connection.'); });
     var el = S.root && S.root.querySelector('[data-k="o-text"]'); if (el) el.focus();
   }
   function ingredientFor(text) { return ingIndex()[okey(text)] || null; }
@@ -2083,7 +2092,7 @@
   function addWaste() {
     var f = S.wf, p = me();
     if (!can('add')) return;
-    var t = (proofread(f.text.trim()).text || '').slice(0, 80), amt = parseFloat(String(f.amt).replace(',', '.'));
+    var wpr = proofread(f.text.trim()), t = (wpr.text || '').slice(0, 80), amt = parseFloat(String(f.amt).replace(',', '.'));
     if (!t) { toast('Write what was wasted.'); return; }
     if (!(amt > 0) || amt >= 100000) { toast('Write the amount as a number.'); return; }
     if (UNITS.indexOf(f.unit) < 0) { toast('Pick a unit.'); return; }
@@ -2093,7 +2102,7 @@
       addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: Date.now(), deleted: false }).catch(function () { toast('Could not save. Check the connection.'); });
     if (sec) noteSection(sec);
     S.wf = { text: '', amt: '', unit: f.unit, reason: '', sec: sec, act: '' };
-    toast('Logged ' + t + (secInfo.from ? ' under ' + sec + ' (typed ' + secInfo.from + ')' : ''));
+    toast('Logged ' + t + (wpr.changes.length ? ' (corrected ' + wpr.changes.map(function (c) { return c[0] + ' to ' + c[1]; }).join(', ') + ')' : '') + (secInfo.from ? ' under ' + sec + ' (typed ' + secInfo.from + ')' : ''));
   }
   function removeWaste(date, id) {
     if (!canBrowse() || !can('del')) return;
@@ -2606,7 +2615,7 @@
     if (!el || !S.root || !S.root.contains(el)) return;
     var a = el.getAttribute('data-p'), id = el.getAttribute('data-id'), i = +el.getAttribute('data-i'), dt = el.getAttribute('data-d');
     if (el.tagName === 'SUMMARY') { S.recipeOpen = !S.recipeOpen; return; }
-    if (a === 'pin-go') { var v = S.pinInput.trim(); if (!/^\d{4}$/.test(v)) { S.pinError = 'The kitchen PIN is 4 digits.'; draw(); return; } S.pin = v; S.pinError = ''; S.pinInput = ''; lsSet('lk.prep.pin', v); connect(); return; }
+    if (a === 'pin-go') { submitKitchenPin(); return; }
     if (a === 'pin-forget') { S.pin = ''; lsSet('lk.prep.pin', ''); S.config = null; S.configState = 'idle'; if (unsubCfg) unsubCfg(); if (unsubItems) unsubItems(); if (unsubSec) unsubSec(); if (unsubLrn) unsubLrn(); unsubCfg = unsubItems = unsubSec = unsubLrn = null; cfgKey = itemsKey = ''; draw(); return; }
     if (a === 'retry') { cfgKey = ''; connect(); return; }
     if (a === 'notes-open') { if (isSous()) { S.notesOpen = true; S.nf = null; S.nMsg = ''; loadNotes(); draw(); window.scrollTo(0, 0); } return; }
@@ -2696,10 +2705,18 @@
   function onInput(e) {
     var el = e.target, k = el.getAttribute && el.getAttribute('data-k');
     if (!S.root || !S.root.contains(el)) return;
-    if (k === 'p-pin') { S.pinInput = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.pinInput; pinCells(el); return; }
+    // a PIN goes in by itself the moment the fourth digit is typed (only when it reaches four, so it cannot send twice)
+    if (k === 'p-pin') { var pp = S.pinInput.length; S.pinInput = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.pinInput; pinCells(el); if (pp < 4 && S.pinInput.length === 4) submitKitchenPin(); return; }
     if (k === 'a-newpin') { S.newPin = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.newPin; return; }
-    if (k === 'pf1') { S.pf1 = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.pf1; pinCells(el); return; }
-    if (k === 'pf2') { S.pf2 = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.pf2; pinCells(el); return; }
+    if (k === 'pf1') {
+      var p1 = S.pf1.length; S.pf1 = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.pf1; pinCells(el);
+      if (p1 < 4 && S.pf1.length === 4) {
+        if (S.pinStep === 'enter') submitPin();
+        else { var n2 = S.root.querySelector('[data-k="pf2"]'); if (n2) n2.focus(); }
+      }
+      return;
+    }
+    if (k === 'pf2') { var p2 = S.pf2.length; S.pf2 = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.pf2; pinCells(el); if (p2 < 4 && S.pf2.length === 4 && /^\d{4}$/.test(S.pf1)) submitPin(); return; }
     if (k === 'p-text') { S.text = el.value; var hn = S.root.querySelector('#p-hint'); if (hn) hn.textContent = hintText(S.text); var sg = S.root.querySelector('#p-sugg'); if (sg) sg.innerHTML = suggestHTML(); var qs = S.root.querySelector('#p-qsugg'); if (qs) qs.innerHTML = qtyChipsHTML(); return; }
     if (k === 'o-text') { S.otext = el.value; var og = S.root.querySelector('#o-sugg'); if (og) og.innerHTML = ordSuggHTML(); var oh = S.root.querySelector('#o-hint'); if (oh) oh.textContent = oHintText(S.otext); return; }
     if (k === 'o-qty') { S.oqty = el.value; return; }
