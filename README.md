@@ -10,7 +10,7 @@ The Leichhardt Hotel kitchen's app: the recipe book, the prep list, the order li
 - **Linked batch recipes.** Any ingredient that has its own recipe is underlined orange with a "Recipe 06" tag, so tapping it opens that recipe. Batch recipes show which dishes they go on.
 - **Allergens roll up.** A dish picks up the allergens of the batch recipes it uses, and names where each one comes from. A "?" means "may be in it, check the supplier label".
 - **Cards to come.** A batch recipe that isn't in the book yet shows as "Card to come". Every dish that uses one is marked "Allergens incomplete", is left out of the Free from filter, and counts as "may have" under the allergen lens, until that card is added.
-- **Set out like the guest menu.** Recipes are grouped in the order the menu prints them: Snackin' Plates, Salads, Big Country Feeds, Off the Grill, Schnittys & Parmys, Hand Held, Sides, Dessert and Seniors, then the Functions platters. Tiles and The Pass both follow it, and each section is also a filter chip in Tiles. The Functions chip is a rounded rectangle and always sits first after All. Batch recipes and components come after the menu sections ("Bains and prep" on The Pass).
+- **Set out like the guest menu.** Recipes are grouped in the order the menu prints them: Snackin' Plates, Salads, Big Country Feeds, Off the Grill, Toppers, Schnittys & Parmys, Hand Held, Sides, Dessert, Seniors and Kids, then the Functions platters. Tiles and The Pass both follow it, and each section is also a filter chip in Tiles. The Functions chip is a rounded rectangle and always sits first after All. Batch recipes and components come after the menu sections ("Bains and prep" on The Pass).
 - **From the side.** Plated dishes also show a labelled side view, so the team can see what sits on top. Burgers show their build, top to bottom, instead.
 - **Pin labels.** On the plate drawing the page places each label where it does not cover the food, other labels or other pins, with a thin line back to its pin. It reads the drawing to find the food, so a new dish needs no label tuning. Boards and platters (more than 8 pins) use smaller labels. The ring is see-through so the food shows through it.
 - **Tick off steps** while cooking. The ticks clear when the page is closed.
@@ -47,19 +47,11 @@ Dishes already link to these ids. Add a recipe with the same `id` and the links,
 
 | id | Used by cards |
 | --- | --- |
-| `mushroom-sauce` | 13 14 15 16 31 |
-| `gravy` | 21 27 33 35 41 46 56 |
-| `side-veg` | 27 28 35 42 |
-| `mash` | 28 29 35 41 |
+| `beer-batter` | 24 58 64 |
 | `smash-patty` | 22 23 |
 | `french-topper` | 18 |
 | `mexican-topper` | 19 |
 | `americana-topper` | 20 |
-| `beer-batter` | 24 58 64 |
-| `spinach-puree`, `red-wine-jus` | 29 |
-| `fettuccine`, `carbonara-sauce` | 30 |
-| `wing-flour` | 31 49 |
-| `diane-sauce` | 31 |
 | `pulled-pork`, `pico` | 32 |
 | `smoked-mac` | 39 |
 | `rum-butterscotch`, `honeycomb` | 43 |
@@ -78,11 +70,17 @@ Drawings for The Pass are in `js/art.js`. A recipe with no drawing still shows, 
 
 | File | What it is |
 | --- | --- |
-| `index.html` | The page itself |
+| `index.html` | The page itself, the daily 04:00 self-refresh, the update bar, the service worker registration |
 | `css/app.css` | The Leichhardt look: Barlow fonts, off-white, black rules, orange accent |
 | `js/data.js` | The recipes (edit this one) |
 | `js/art.js` | Plate, pan and technique drawings |
-| `js/app.js` | How it all works: views, search, links, allergens, settings |
+| `js/app.js` | Recipe book: routing, top bar, views, search, links, allergens, settings, install, QR |
+| `js/prep.js` | Prep list, orders, wastage, notes, minutes, admin panel, staff lock, learning |
+| `js/firebase-config.js` | Public Firebase web config |
+| `firestore.rules` | Security rules template (`KITCHEN_PIN` and `OWNER_EMAIL` are placeholders) |
+| `manifest.webmanifest`, `sw.js`, `icons/`, `icon.svg` | Installable app: manifest, service worker (network first), icons |
+| `qr.svg`, `qr.png`, `qr-sign.pdf` | QR code to open the book, and the A4 sign |
+| `tests/` | Click tests with a stand-in for Firebase (see Testing) |
 
 There's no build step and nothing to install. To try it on a computer, open `index.html` in a browser.
 
@@ -126,7 +124,7 @@ npm test
 - Sections are not preset. Whoever writes a line types a section name (or picks one already used) and it appears as a section on the page and as a tab. The app keeps track of sections in the background and offers them as suggestions.
 - Ticking, writing and removing lines is counted per person in the background.
 - `#/admin` is the admin panel: who is writing and ticking most, the sections people have written (hide one from suggestions), names, roles and permissions, and Reset PIN for a person. It needs Google sign-in as the project owner.
-- Data lives in Firebase Firestore (free Spark plan): `config/main`, `days/<date>/items`, `staffpins/<person>` (hashed, unreadable), `pinset/<person>`, `proofs/<person>` (write only), `activity/<person>`, `sections/<slug>`, `notes/<id>` (daily notes, see Daily notes). Firebase config is in `js/firebase-config.js` (public by design). The kitchen PIN and admin email live in the published Firestore rules, not in this repo. Staff names are not in the repo either.
+- Data lives in Firebase Firestore (free Spark plan): `config/main`, `days/<date>/items`, `staffpins/<person>` (hashed, unreadable), `pinset/<person>`, `proofs/<person>` (write only), `activity/<person>`, `sections/<slug>`, `orders/<date>/lines`, `waste/<date>` and `waste/<date>/lines`, `notes/<id>` (daily notes), `minutes/<id>` (meeting minutes), `learned/<item>` and `ordlearned/<item>` (what the prep and order lists learned), `learnlog/<date>`, `misses/<slug>` (searches that found nothing), `views/<recipe>` (cards opened). Firebase config is in `js/firebase-config.js` (public by design). The kitchen PIN and admin email live in the published Firestore rules, not in this repo. Staff names are not in the repo either.
 - Personal PINs are the write lock. Anyone with the kitchen PIN can read, but every write must carry the writer's own 4-digit PIN, which the Firestore rules check against the stored hash (see Staff lock). Per-person permissions (add, tick, delete) are still guidance in the page. Items are never hard deleted.
 - Changing the kitchen PIN means editing the Firestore rules and re-entering it on every phone.
 

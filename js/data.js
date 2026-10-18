@@ -9,6 +9,7 @@
     kind       "main", "snack", "side", "dessert", "batch" or "component"
     forLine    where it belongs, e.g. "Plate" or "For the barramundi"
     name       the name staff see
+    short      optional: a shorter name for prep lines and tight spaces, e.g. "Laksa" for "Coconut Laksa"
     avc        optional: the recipe's name in AVC Live, so a search for it finds the card
     menu       optional: how the guest menu describes it (shown on the card, and searchable)
     yield      the portion or batch line under the name
@@ -18,7 +19,7 @@
     pins       (plated dishes, The Pass view) where each part sits on the plate drawing:
                { label, x, y (percent across and down), side ('left' or 'right' for the label,
                optional), link or tags, note }
-    sections   list of { title, steps: [ ... ] }
+    sections   optional: list of { title, steps: [ ... ] }. Leave it out and the card says "Not written up yet".
     contains   allergens it definitely has: { allergen, from }
     check      allergens it may have, so check the label: { allergen, from }
                Leave contains and check out and the book works them out from the ingredient tags.
@@ -34,7 +35,8 @@
   It shows as "Card to come", and every dish that uses it is marked "Allergens incomplete" and left
   out of the Free from filter. Add a recipe with id: 'gravy' later and the links and allergens switch on.
 
-  Quantities for cards 13 onward come from the AVC Live costings (Spring 26). Costs stay in AVC.
+  Quantities for cards 13 to 45 come from the AVC Live costings (Spring 26). Costs stay in AVC.
+  Cards 46 to 65 are online-menu dishes with no AVC costing yet: their quantities are "[Qty]" (shows "To come").
 
   menuOrder (just below) is the guest menu: the sections in the order they are printed, and the
   dishes in each section in the order they are printed. All three views follow it. To move a dish,
@@ -43,7 +45,7 @@
   on the guest menu, so they sit after the menu sections.
 */
 window.LK_DATA = {
-  updated: '18 October 2026',
+  updated: '19 October 2026',
   allergens: ['Gluten', 'Milk', 'Egg', 'Soy', 'Peanut', 'Tree nut', 'Fish', 'Crustacean', 'Mollusc', 'Sesame'],
   menuOrder: [
     { title: "Snackin' Plates", ids: ['poutine', 'beetroot-bites', 'brisket-cob', 'wings', 'haloumi-tacos', 'pork-belly-bites', 'calamari', 'riblets', 'garlic-bread', 'bacon-cheese-bread', 'chips-snack'] },
@@ -665,7 +667,7 @@ window.LK_DATA = {
         { q: '250 g', name: 'Fettuccine', note: 'cooked, one wrapped portion', link: 'fettuccine', tags: ['Gluten'] },
         { q: '400 ml', name: 'Creamy garlic sauce', note: 'the carbonara sauce', link: 'carbonara-sauce' },
         { q: '120 g', name: 'Bacon' },
-        { q: '10 ml', name: 'White cooking wine', note: 'AVC costing, where it goes to confirm' },
+        { q: '10 ml', name: 'White cooking wine', note: 'AVC costing [where it goes to confirm]' },
         { q: '[Qty]', name: 'Parmesan', note: 'a little in the pan with the sauce', tags: ['Milk'] },
         { q: '20 g', name: 'Shaved parmesan', note: 'to garnish', tags: ['Milk'] },
         { q: '0.05 bunch', name: 'Chives', note: 'the greens, to garnish' },
@@ -1388,7 +1390,7 @@ window.LK_DATA = {
       ],
       pins: [
         { label: 'New slaw', x: 16, y: 45.8, side: 'left', link: 'slaw', note: 'The coleslaw.' },
-        { label: 'Cornbread', x: 24.5, y: 34.9, side: 'left', tags: ['Gluten?', 'Milk?', 'Egg?'], note: 'Glazed with maple butter, then in the oven. Recipe or bought in, to confirm.' },
+        { label: 'Cornbread', x: 24.5, y: 34.9, side: 'left', tags: ['Gluten?', 'Milk?', 'Egg?'], note: 'Glazed with maple butter, then in the oven. [Recipe or bought in to confirm]' },
         { label: 'Pulled pork', x: 41.5, y: 35.8, side: 'right', tags: [], note: 'From the smoker.' },
         { label: 'Pulled lamb', x: 56.6, y: 43.4, side: 'left', tags: [], note: 'From the smoker.' },
         { label: 'Texas sausages', x: 69.3, y: 33, side: 'right', tags: ['Gluten?', 'Soy?'], note: '' },
@@ -1396,7 +1398,7 @@ window.LK_DATA = {
         { label: 'Bread and butter pickles', x: 17.9, y: 64.6, side: 'left', tags: [], note: '' },
         { label: 'Double-smoked BBQ sauce', x: 29.7, y: 66, side: 'right', tags: ['Gluten?', 'Soy?'], note: '' },
         { label: 'Bourbon BBQ sauce', x: 41.5, y: 64.2, side: 'right', link: 'bourbon-bbq-sauce', note: '' },
-        { label: 'Alabama white sauce', x: 53.3, y: 66, side: 'right', tags: ['Egg?'], note: 'Recipe to confirm.' }
+        { label: 'Alabama white sauce', x: 53.3, y: 66, side: 'right', tags: ['Egg?'], note: '[Recipe to confirm]' }
       ],
       sections: [
         { title: 'Cooking', steps: ['Brisket, pulled pork and pulled lamb come from the smoker [times and holding to confirm].', 'Cornbread: glaze the top with maple butter, then into the oven [oven setting and time to confirm].'] },
@@ -1425,17 +1427,17 @@ window.LK_DATA = {
       ],
       pins: [
         { label: 'New slaw', x: 11.3, y: 45.8, side: 'left', link: 'slaw', note: 'The coleslaw.' },
-        { label: 'Cornbread', x: 19.8, y: 34.9, side: 'left', tags: ['Gluten?', 'Milk?', 'Egg?'], note: 'Glazed with maple butter, then in the oven. Recipe or bought in, to confirm.' },
+        { label: 'Cornbread', x: 19.8, y: 34.9, side: 'left', tags: ['Gluten?', 'Milk?', 'Egg?'], note: 'Glazed with maple butter, then in the oven. [Recipe or bought in to confirm]' },
         { label: 'Pulled pork', x: 36.8, y: 35.8, side: 'right', tags: [], note: 'From the smoker.' },
         { label: 'Pulled lamb', x: 51.9, y: 43.4, side: 'left', tags: [], note: 'From the smoker.' },
         { label: 'Texas sausages', x: 64.6, y: 33, side: 'right', tags: ['Gluten?', 'Soy?'], note: '' },
         { label: 'Brisket', x: 78.3, y: 54.7, side: 'left', tags: [], note: 'Smoked, sliced.' },
-        { label: 'Chicken wings', x: 92.5, y: 30.2, side: 'left', tags: [], note: '380 to 420 g. Seasoning to confirm.' },
-        { label: 'Sliders', x: 92.9, y: 62.3, side: 'left', tags: ['Gluten?'], note: 'Filling to confirm.' },
+        { label: 'Chicken wings', x: 92.5, y: 30.2, side: 'left', tags: [], note: '380 to 420 g. [Seasoning to confirm]' },
+        { label: 'Sliders', x: 92.9, y: 62.3, side: 'left', tags: ['Gluten?'], note: '[Filling to confirm]' },
         { label: 'Bread and butter pickles', x: 13.2, y: 64.6, side: 'left', tags: [], note: '' },
         { label: 'Double-smoked BBQ sauce', x: 25, y: 66, side: 'right', tags: ['Gluten?', 'Soy?'], note: '' },
         { label: 'Bourbon BBQ sauce', x: 36.8, y: 64.2, side: 'right', link: 'bourbon-bbq-sauce', note: '' },
-        { label: 'Alabama white sauce', x: 48.6, y: 66, side: 'right', tags: ['Egg?'], note: 'Recipe to confirm.' }
+        { label: 'Alabama white sauce', x: 48.6, y: 66, side: 'right', tags: ['Egg?'], note: '[Recipe to confirm]' }
       ],
       sections: [
         { title: 'Cooking', steps: ['Brisket, pulled pork and pulled lamb come from the smoker [times and holding to confirm].', 'Cornbread: glaze the top with maple butter, then into the oven [oven setting and time to confirm].'] },
@@ -1455,7 +1457,7 @@ window.LK_DATA = {
         { q: '[Qty]', name: 'Fries', note: 'on the side' }
       ],
       pins: [
-        { label: 'Pulled pork burger', x: 35.8, y: 39.6, side: 'right', tags: ['Gluten?'], note: 'Bottom to top: bun base, new slaw, pulled pork with Carolina BBQ, bun top. Quantities to confirm.' },
+        { label: 'Pulled pork burger', x: 35.8, y: 39.6, side: 'right', tags: ['Gluten?'], note: 'Bottom to top: bun base, new slaw, pulled pork with Carolina BBQ, bun top. [Quantities to confirm]' },
         { label: 'Fries', x: 66.0, y: 57.5, side: 'left', tags: [], note: 'On the side.' }
       ],
       sections: [
@@ -1502,8 +1504,8 @@ window.LK_DATA = {
         { label: 'Pork knuckle', x: 61.3, y: 42.5, side: 'right', tags: [], note: '' },
         { label: 'Fried shallots', x: 69.8, y: 50.9, side: 'right', tags: ['Gluten?'], note: 'Scattered over the knuckle and the sauce.' },
         { label: 'Potato mash', x: 54.7, y: 59.4, side: 'right', link: 'mash', note: 'The knuckle sits on it.' },
-        { label: 'Pork sauce', x: 30.2, y: 51.9, side: 'left', tags: ['Gluten?', 'Soy?'], note: 'Around the mash. Recipe to confirm.' },
-        { label: 'Sauerkraut', x: 26.4, y: 61.3, side: 'left', tags: [], note: 'Position to confirm.' }
+        { label: 'Pork sauce', x: 30.2, y: 51.9, side: 'left', tags: ['Gluten?', 'Soy?'], note: 'Around the mash. [Recipe to confirm]' },
+        { label: 'Sauerkraut', x: 26.4, y: 61.3, side: 'left', tags: [], note: '[Position to confirm]' }
       ],
       sections: [
         { title: 'Plating', steps: [
@@ -1737,12 +1739,12 @@ window.LK_DATA = {
         { q: '[Qty]', name: 'Italian herbs' }
       ],
       pins: [
-        { label: 'Chicken tenders', x: 40, y: 45, side: 'left', tags: [], note: 'Cooked in Italian herbs, steamed to 75°C core. Number of tenders to confirm. [Unverified] drawing shows 3.' }
+        { label: 'Chicken tenders', x: 40, y: 45, side: 'left', tags: [], note: 'Cooked in Italian herbs, steamed to 75 °C core. [Number of tenders to confirm] [Unverified] drawing shows 3.' }
       ],
       sections: [
         { title: 'Cooking', steps: [
           'Cook the chicken tenders in Italian herbs.',
-          'Steam them in the oven to a core temperature of 75°C. [Oven programme, temperature and time to confirm]'
+          'Steam them in the oven to a core temperature of 75 °C. [Oven programme, temperature and time to confirm]'
         ] },
         { title: 'Plating', steps: ['[Plating to confirm]'] }
       ]
@@ -1756,7 +1758,7 @@ window.LK_DATA = {
         { q: '[Qty]', name: 'Italian herbs' }
       ],
       pins: [
-        { label: 'Mushrooms', x: 40, y: 45, side: 'left', tags: [], note: 'Cooked with Italian herbs in the oven. Quantity and cut to confirm. [Unverified] drawing is a guide only.' }
+        { label: 'Mushrooms', x: 40, y: 45, side: 'left', tags: [], note: 'Cooked with Italian herbs in the oven. [Quantity and cut to confirm] [Unverified] drawing is a guide only.' }
       ],
       sections: [
         { title: 'Cooking', steps: ['Cook the mushrooms with Italian herbs in the oven. [Oven programme, temperature and time to confirm]'] },
@@ -1906,7 +1908,7 @@ window.LK_DATA = {
       id: 'fettuccine', no: '75', kind: 'batch', forLine: 'For the carbonara', name: 'Fettuccine, Batch Cooked', short: 'Fettuccine', art: 'fettuccine',
       yield: 'Batch: 5 kg fettuccine. Portions of 250 g cooked fettuccine, each wrapped in glad wrap.',
       ingredients: [
-        { q: '5 kg', name: 'Fettuccine', note: 'one batch, dried or cooked weight and product to confirm', tags: ['Gluten'] }
+        { q: '5 kg', name: 'Fettuccine', note: 'one batch [dried or cooked weight and product to confirm]', tags: ['Gluten'] }
       ],
       sections: [
         { title: 'Method', steps: ['Cook the 5 kg batch of fettuccine for 8 min.', 'Portion it after cooking: 250 g per portion, each wrapped in glad wrap.', '[Storage and how it is reheated to confirm]'] }
@@ -1987,7 +1989,7 @@ window.LK_DATA = {
       yield: 'Batch: one whole brisket, about 12 kg.',
       ingredients: [
         { q: '1', name: 'Whole beef brisket', note: 'about 12 kg' },
-        { q: '[Qty]', name: 'Brisket rub', note: 'house rub, to confirm' }
+        { q: '[Qty]', name: 'Brisket rub', note: 'house rub [to confirm]' }
       ],
       sections: [
         { title: 'Method', steps: [
@@ -2005,7 +2007,7 @@ window.LK_DATA = {
       id: 'ranch', no: '80', kind: 'batch', forLine: 'For the chicken burger', name: 'Ranch', short: 'Ranch', art: 'ranch',
       yield: 'Bought in. No prep. Serve size is on each dish card.',
       ingredients: [
-        { q: '1', name: 'Ranch', note: 'Bought in, product to confirm.', tags: ['Milk?', 'Egg?'] }
+        { q: '1', name: 'Ranch', note: 'Bought in [product to confirm]', tags: ['Milk?', 'Egg?'] }
       ],
       sections: [
         { title: 'Method', steps: ['Bought in. No prep.'] }
@@ -2112,7 +2114,7 @@ window.LK_DATA = {
       id: 'tomato-relish', no: '86', kind: 'batch', forLine: 'For the steak sandwich', name: 'Tomato Relish', short: 'Tomato relish', art: 'tomato-relish',
       yield: 'Bought in. No prep. Serve size is on each dish card.',
       ingredients: [
-        { q: '1', name: 'Tomato relish', note: 'Bought in, product to confirm.' }
+        { q: '1', name: 'Tomato relish', note: 'Bought in [product to confirm]' }
       ],
       sections: [
         { title: 'Method', steps: ['Bought in. No prep.'] }
@@ -2155,7 +2157,7 @@ window.LK_DATA = {
     },
     {
       id: 'bourbon-bbq-sauce', art: 'bourbon-bbq-sauce', no: '105', kind: 'batch', forLine: 'For the ribs, riblets and smoked boards', name: 'Bourbon BBQ Sauce', short: 'Bourbon BBQ', avc: 'Bourbon BBQ Sauce Batch A25',
-      yield: 'Batch: 5 litres.',
+      yield: 'Batch: 5 L.',
       ingredients: [
         { q: '4 kg', name: 'Heinz BBQ sauce', note: 'gluten free' },
         { q: '250 g', name: 'Bourbon BBQ dry rub', note: 'Krio Krush', tags: ['Gluten?', 'Soy?'] },
