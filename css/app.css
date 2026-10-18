@@ -575,11 +575,12 @@ img, svg { display: block; }
 
 /* Done today checklist */
 .nb-done { list-style: none; margin: 0 0 14px; padding: 0; border: 2px solid var(--ink, #1a1a1a); border-radius: 8px; max-height: 280px; overflow: auto; background: rgba(255,255,255,.5); }
-.nb-done li { display: grid; grid-template-columns: 3.2em 1fr auto; gap: 8px; padding: 6px 10px; border-bottom: 1px solid rgba(0,0,0,.12); font-size: .9rem; align-items: baseline; }
+.nb-done li { display: grid; grid-template-columns: 3.2em 1fr auto auto; gap: 8px; padding: 6px 10px; border-bottom: 1px solid rgba(0,0,0,.12); font-size: .9rem; align-items: baseline; }
 .nb-done li:last-child { border-bottom: 0; }
 .nb-dt { font-variant-numeric: tabular-nums; opacity: .65; }
 .nb-dx em { font-style: normal; opacity: .65; }
 .nb-dw { opacity: .65; font-size: .82rem; }
+.nb-undo { min-height: 32px; padding: 0 .6rem; align-self: center; }
 
 /* Start here, usual amounts, waste review note on the prep list */
 .nb-start, .nb-flag { margin: 0 0 12px; padding: 8px 10px 10px; border: 2px solid var(--ink); border-radius: 8px; background: #FFFEFA; }
