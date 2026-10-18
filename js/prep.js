@@ -1,9 +1,9 @@
 /*
-  Leichhardt Kitchen prep list.
-  Staff add and tick prep items on any phone. Everything syncs live through Firebase (Cloud Firestore, free plan).
+  Leichhardt Kitchen prep book: prep list, order list, wastage log, daily notes, meeting minutes and the admin panel.
+  Staff add and tick on any phone. Everything syncs through Firebase (Cloud Firestore, free plan).
 
-  Pages:   #/prep    the daily prep list
-           #/admin   admin panel (names, permissions, tallies), Google sign-in for the admin only
+  Pages:   #/prep     the daily prep list         #/orders   the order list       #/waste   the wastage log
+           #/minutes  meeting minutes to sign     #/admin    admin panel, Google sign-in for the head chef only
 
   Data (the kitchen PIN is part of the path, so only people who know it can reach the data):
     kitchens/<PIN>/config/main                 { people: [...] }                    read by staff, written by the admin only
@@ -13,6 +13,13 @@
     kitchens/<PIN>/proofs/<personId>           { tok, at } write only: sent with each write so the rules can check the writer's PIN (at = server time, so an old proof cannot be reused)
     kitchens/<PIN>/activity/<personId>         { name, added, ticked, visits, lastSeen }   tallies shown in the admin panel
     kitchens/<PIN>/sections/<slug>             { name, uses, lastUsed }   sections people have written, offered as suggestions
+    kitchens/<PIN>/orders/<date>/lines/<id>    one order line (rolls over until ordered)
+    kitchens/<PIN>/waste/<date>, .../lines/<id> the end-of-day waste review, and one wastage entry each
+    kitchens/<PIN>/notes/<id>, .../seen/<id>   daily notes and who has seen them
+    kitchens/<PIN>/minutes/<id>, .../hist, .../signs   meeting minutes, earlier versions and sign-offs
+    kitchens/<PIN>/learned/<item>, ordlearned/<item>   what the prep and order lists have learned
+    kitchens/<PIN>/learnlog/<id>               days already learned (create only)
+    kitchens/<PIN>/misses/<slug>, views/<id>   recipe searches that found nothing, and card opens
 
   Who is allowed to add, tick or remove is set in the admin panel. Those permissions guide the page. The security
   rules in the Firebase console are what really lock the data: the kitchen PIN to read, a person's own PIN to write,

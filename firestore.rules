@@ -2,6 +2,8 @@
 // (Firestore Database > Rules). Keep this file in step with it after every change.
 // Replace KITCHEN_PIN with the kitchen PIN and OWNER_EMAIL with the head chef's Google account.
 // Never commit the real values: this repository is public.
+// Moving to a new kitchen PIN (admin Tools): publish a second copy of every kitchens/KITCHEN_PIN/... block for the
+// new PIN first, move, then remove the old PIN's copy once every phone has the new one.
 //
 // Reading needs only the kitchen PIN (it is the path). Writing needs a person's own PIN:
 // every write carries the writer's id (by) and, in the same batch, a write-only proof (proofs/<id>.tok).
