@@ -2299,11 +2299,22 @@ window.LK_DATA = {
       yield: 'Batch: 4 kg sliced cucumbers.',
       ingredients: [
         { q: '4 kg', name: 'Sliced cucumbers' },
-        { q: '[Qty]', name: 'Korean dressing', link: 'korean-dressing' }
+        { q: '1500 ml', name: 'Korean dressing', note: 'the whole batch', link: 'korean-dressing' }
       ],
       sections: [
         { title: 'Method', steps: ['[Method to confirm]'] }
       ]
+    },
+    {
+      id: 'spaghetti', no: '114', kind: 'batch', forLine: 'For the senior and kids bolognese', name: 'Spaghetti', short: 'Spaghetti',
+      yield: 'Senior plate: 1.5 portions of 180 g. Kids plate: 120 g.',
+      ingredients: [
+        { q: '[Qty]', name: 'Spaghetti', tags: ['Gluten'] }
+      ],
+      sections: [
+        { title: 'Method', steps: ['[Method to confirm]'] }
+      ],
+      labelNote: 'Check the supplier label for allergens.'
     }
   ]
 };
