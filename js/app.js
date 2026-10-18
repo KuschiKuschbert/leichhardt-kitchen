@@ -283,22 +283,22 @@
     var i = window.LK_PREP && window.LK_PREP.noteInfo ? window.LK_PREP.noteInfo() : { n: 0, unread: false };
     return '<button type="button" class="wtop-btn nbell' + (i.unread ? ' has-new' : '') + '" data-note="open"' + (i.n ? '' : ' hidden') + ' aria-label="Today\'s notes' + (i.unread ? ', new' : '') + '">' + BELL + '<span class="wtop-lbl">Notes</span></button>';
   }
-  /* The minutes bell: shown only while the person on this phone has meeting minutes to sign (the prep book fills it in once it has read them). */
-  function minBellHTML() {
-    var i = window.LK_PREP && window.LK_PREP.minInfo ? window.LK_PREP.minInfo() : { n: 0 };
-    return '<a class="wtop-btn mbell' + (i.n ? ' has-new' : '') + '" href="#/minutes"' + (i.n ? '' : ' hidden') + ' aria-label="Meeting minutes to sign' + (i.n ? ', ' + i.n : '') + '"' + (parseRoute().name === 'minutes' ? ' aria-current="page"' : '') + '>' + BELL + '<span class="wtop-lbl">Minutes</span></a>';
-  }
   /* The same top bar on every page as on the landing page: brand (goes home), the menu, Notes, Admin and Settings. */
   function topBar() {
     return '<header class="wtop"><a class="wtop-brand" href="#/" aria-label="Kitchen Book, home">' + LOGO_MARK + '<span class="rb-text"><span class="rb-eb">Leichhardt Hotel Kitchen</span><b>Kitchen Book</b></span></a>' + pillNav() +
-      '<span class="wtop-icons">' + noteBellHTML() + minBellHTML() + adminLink('wtop-btn') + '<a class="wtop-btn" href="#/settings" aria-label="Settings"' + (parseRoute().name === 'settings' ? ' aria-current="page"' : '') + '>' + ICON.gear + '<span class="wtop-lbl">Settings</span></a></span></header>';
+      '<span class="wtop-icons">' + noteBellHTML() + adminLink('wtop-btn') + '<a class="wtop-btn" href="#/settings" aria-label="Settings"' + (parseRoute().name === 'settings' ? ' aria-current="page"' : '') + '>' + ICON.gear + '<span class="wtop-lbl">Settings</span></a></span></header>';
+  }
+  /* Meeting minutes to sign show as a card on the landing page, above the dockets, not in the top bar.
+     The prep book fills it in once it has read the minutes, and empties it once the person has signed. */
+  function minCard() {
+    return '<div class="wall-mn">' + (window.LK_PREP && window.LK_PREP.minNudge ? window.LK_PREP.minNudge() : '') + '</div>';
   }
   /* Under the top bar, the recipe pages get their own tools row: how many recipes, and the Pass / Tiles switch. */
   var DOCKETS = [['01', 'Recipes', '#/recipes', 'recipes'], ['02', 'Prep list', '#/prep', 'prep'], ['03', 'Orders', '#/orders', 'orders'], ['04', 'Wastage', '#/waste', 'waste'], ['05', 'Guides', '#/guides', 'guides', 'How to work the equipment, clean it and find things']];
   function viewLanding() {
     var d = window.LK_TIME.day().split('-'), today = new Date(+d[0], d[1] - 1, +d[2], 12).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
     return '<div class="wall">' + topBar() +
-      '<main id="main" class="wall-main"><h2 class="wall-h" id="rtitle" tabindex="-1">Pick a docket</h2><p class="wall-date">' + esc(today) + '</p>' + installCard() +
+      '<main id="main" class="wall-main"><h2 class="wall-h" id="rtitle" tabindex="-1">Pick a docket</h2><p class="wall-date">' + esc(today) + '</p>' + minCard() + installCard() +
       '<div class="dockets">' + DOCKETS.map(function (d) {
         // the Guides docket is the long one under the other four: reference, not a job for today
         return '<a class="docket' + (d[4] ? ' dk-wide' : '') + '" href="' + d[2] + '"><span class="dk-pin" aria-hidden="true"></span><span class="dk-top"><span class="dk-name">' + d[1] + '</span><span class="dk-no">No. ' + d[0] + '</span></span>' +
