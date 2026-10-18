@@ -452,6 +452,7 @@
   function maybeRoll() {
     var today = ymd(new Date());
     if (!S.authed || !fb || !can('add') || S.date !== today || S.itemsState !== 'ok' || S.rolledFor === today) return;
+    if (S.pastFor !== S.pin + '|' + today) return; // the usual close time comes from the past days, so wait for them
     S.rolledFor = today;
     var dates = [], k;
     for (k = 1; k <= 7; k++) dates.push(shift(today, -k));
@@ -473,7 +474,8 @@
         jobs.push(['set', itemRef(today, id), {
           text: x.text, station: x.station || '', qty: x.qty || '', recipe: x.recipe || '',
           addedBy: 'Rolled over', addedById: '', addedAt: Date.now(), done: false, deleted: false,
-          rolled: (x.rolled || 0) + 1, root: root, from: x.id, rolledFrom: src.date, origBy: x.origBy || x.addedBy || '', urgent: !!x.urgent
+          rolled: (x.rolled || 0) + 1, root: root, from: x.id, rolledFrom: src.date, origBy: x.origBy || x.addedBy || '', urgent: !!x.urgent,
+          ahead: !!(x.ahead || writtenLate(x, src.date))
         }]);
       });
       if (!jobs.length) return;
@@ -586,7 +588,7 @@
     var open = live.filter(function (x) { return !x.done; }), picked = [], seen = {};
     function take(list, why) { list.forEach(function (x) { if (picked.length < 3 && !seen[x.id]) { seen[x.id] = 1; picked.push({ x: x, why: why(x) }); } }); }
     take(open.filter(function (x) { return x.urgent; }).sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }), function () { return 'Urgent'; });
-    take(open.filter(function (x) { return x.rolled; }).sort(function (a, b) { return (b.rolled || 0) - (a.rolled || 0); }), function (x) { return 'Rolled over' + (x.rolled > 1 ? ' x' + x.rolled : ''); });
+    take(open.filter(function (x) { return rolledN(x); }).sort(function (a, b) { return rolledN(b) - rolledN(a); }), function (x) { return 'Rolled over' + (x.rolled > 1 ? ' x' + x.rolled : ''); });
     var slow = open.map(function (x) { return { x: x, m: ((S.hist || {})[lkey(x.text)] || {}).med || 0 }; }).filter(function (o) { return o.m >= 2 * 3600000; }).sort(function (a, b) { return b.m - a.m; }).map(function (o) { return o.x; });
     take(slow, function (x) { return 'Usually takes ' + dur(((S.hist || {})[lkey(x.text)] || {}).med); });
     take(open.slice().sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }), function (x) { return x.addedAt ? 'Waiting since ' + clock(x.addedAt) : 'Waiting longest'; });
@@ -819,7 +821,7 @@
     rows.forEach(function (x) {
       var sec = x.station || 'General';
       if (sec !== last) { out.push('', sec.toUpperCase()); last = sec; }
-      out.push((x.done ? '[x] ' : '[ ] ') + (x.urgent ? 'URGENT ' : '') + (x.rolled ? '(rolled over) ' : '') + x.text + (x.qty ? ' - ' + x.qty : ''));
+      out.push((x.done ? '[x] ' : '[ ] ') + (x.urgent ? 'URGENT ' : '') + (rolledN(x) ? '(rolled over) ' : '') + x.text + (x.qty ? ' - ' + x.qty : ''));
     });
     return out.join('\n');
   }
@@ -832,7 +834,16 @@
     }
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(function () { toast('List copied. Paste it into a message.'); }, fallback); else fallback();
   }
-  function sortItems(a, b) { return (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0) || (b.rolled || 0) - (a.rolled || 0) || (a.addedAt || 0) - (b.addedAt || 0); }
+  /* A line written after the usual close (the time of the last tick on most days, 20:00 until the book knows) is meant
+     for the next day. When it moves onto that day it is marked ahead and does not count as rolled; only if it is still
+     open after that day does it show as rolled. rolled stays the number of copies, so a copy is never counted twice. */
+  function lateMin() { return S.closeMin || 20 * 60; }
+  function writtenLate(x, day) {
+    if (x.rolled || !x.addedAt || ymd(new Date(x.addedAt)) !== day) return false;
+    var t = new Date(x.addedAt); return t.getHours() * 60 + t.getMinutes() >= lateMin();
+  }
+  function rolledN(x) { return Math.max(0, (x.rolled || 0) - (x.ahead ? 1 : 0)); }
+  function sortItems(a, b) { return (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0) || rolledN(b) - rolledN(a) || (a.addedAt || 0) - (b.addedAt || 0); }
 
   /* ---------- admin actions ---------- */
   function startDraft() {
@@ -947,7 +958,7 @@
   /* ---------- the last 14 days, read once a day per phone ----------
      Past days hardly change, so they are read once a day and kept on the phone. Today comes from the live list.
      The weekly badges, usual amounts, Start here, Due today, the pace card and the close-out nudge all work from this. */
-  var PAST_DAYS = 14, PAST_KEYS = ['text', 'station', 'qty', 'addedBy', 'addedById', 'addedAt', 'done', 'doneBy', 'doneById', 'doneAt', 'rolled', 'deleted', 'urgent'];
+  var PAST_DAYS = 14, PAST_KEYS = ['text', 'station', 'qty', 'addedBy', 'addedById', 'addedAt', 'done', 'doneBy', 'doneById', 'doneAt', 'rolled', 'ahead', 'deleted', 'urgent'];
   function loadPast() {
     var today = ymd(new Date()), tag = S.pin + '|' + today;
     if (!fb || S.pastBusy || S.pastFor === tag) return;
@@ -1118,10 +1129,10 @@
       afItems(d).forEach(function (x) {
         var mine = !who || (x.rolled ? x.origBy === whoName : x.addedById === who);
         if (x.rolled) {
-          if (mine) {
+          if (mine && rolledN(x)) {
             pd.r++; agg.rolled++;
             var k = String(x.text || '').trim().toLowerCase(), rk = agg.rollKeys[k] = agg.rollKeys[k] || { text: String(x.text || '').trim(), n: 0, max: 0 };
-            rk.n++; if (x.rolled > rk.max) rk.max = x.rolled;
+            rk.n++; if (rolledN(x) > rk.max) rk.max = rolledN(x);
           }
         } else if (mine) {
           pd.w++; agg.written++;
@@ -1295,7 +1306,7 @@
     var occ = {}, cell = {}, tot = {}, secT = {}, mode = S.heat === 'r' ? 'r' : 'w', who = AF().who;
     afDates(n, 0).forEach(function (d) { var dw = parseYmd(d).getDay(); occ[dw] = (occ[dw] || 0) + 1;
       afItems(d).forEach(function (x) {
-        if (mode === 'w' ? x.rolled : !x.rolled) return;
+        if (mode === 'w' ? x.rolled : !rolledN(x)) return;
         if (who && mode === 'w' && x.addedById !== who) return;
         var k = x.station || 'General', c = cell[k] = cell[k] || {};
         c[dw] = (c[dw] || 0) + 1; tot[dw] = (tot[dw] || 0) + 1; secT[k] = (secT[k] || 0) + 1;
@@ -1322,7 +1333,7 @@
     all.forEach(function (x) {
       var k = okey(x.text); if (!k) return;
       var e = m[k] = m[k] || { text: String(x.text).trim(), w: 0, tt: [], r: 0, del: 0 };
-      if (x.rolled) { if (!x.deleted) e.r++; return; }
+      if (x.rolled) { if (!x.deleted && rolledN(x)) e.r++; return; }
       if (x.deleted) { e.del++; return; }
       e.w++;
       if (x.done && x.doneAt && x.addedAt && x.doneAt > x.addedAt) e.tt.push(x.doneAt - x.addedAt);
@@ -1512,7 +1523,7 @@
     if (bh >= 0) out.push('Most lines get ticked between ' + (bh < 10 ? '0' : '') + bh + ':00 and ' + (bh + 1 < 10 ? '0' : '') + (bh + 1) + ':00.');
     if (!a.sec) {
       var sr = {};
-      agg.dates.forEach(function (d) { afItems(d).forEach(function (x) { var k = x.station || 'General', e = sr[k] = sr[k] || { n: 0, r: 0 }; e.n++; if (x.rolled) e.r++; }); });
+      agg.dates.forEach(function (d) { afItems(d).forEach(function (x) { var k = x.station || 'General', e = sr[k] = sr[k] || { n: 0, r: 0 }; e.n++; if (rolledN(x)) e.r++; }); });
       var worst = Object.keys(sr).filter(function (k) { return sr[k].n >= 8; }).sort(function (x, y) { return sr[y].r / sr[y].n - sr[x].r / sr[x].n; })[0];
       if (worst && sr[worst].r) out.push(worst + ' rolls over most: ' + pct(sr[worst].r, sr[worst].n) + '% of its lines were carried from an earlier day.');
     }
@@ -1564,7 +1575,7 @@
       var rows = [['Date', 'Weekday', 'Section', 'Line', 'Amount', 'Written by', 'Written at', 'Rolled over (times)', 'Ticked', 'Ticked by', 'Ticked at', 'Minutes to tick']];
       afDates(n, 0).forEach(function (d) { afItems(d).forEach(function (x) {
         if (a.who && x.addedById !== a.who && x.doneById !== a.who) return;
-        rows.push([d, DOWN[DOW.indexOf(parseYmd(d).getDay())], x.station || 'General', x.text, x.qty || '', x.rolled ? (x.origBy || '') : (x.addedBy || ''), hm(x.addedAt), x.rolled || 0, x.done ? 'yes' : 'no', x.doneBy || '', hm(x.doneAt), x.done && x.doneAt && x.addedAt && !x.rolled ? Math.round((x.doneAt - x.addedAt) / 60000) : '']);
+        rows.push([d, DOWN[DOW.indexOf(parseYmd(d).getDay())], x.station || 'General', x.text, x.qty || '', x.rolled ? (x.origBy || '') : (x.addedBy || ''), hm(x.addedAt), rolledN(x), x.done ? 'yes' : 'no', x.doneBy || '', hm(x.doneAt), x.done && x.doneAt && x.addedAt && !x.rolled ? Math.round((x.doneAt - x.addedAt) / 60000) : '']);
       }); });
       downloadCSV('leichhardt-prep-lines-' + tag + '.csv', rows);
     } else if (kind === 'waste' && S.wStats && !S.wStats.loading) {
@@ -1663,12 +1674,12 @@
   function rowHTML(x, date, readonly) {
     var tickOk = can('tick') && !x.deleted && (!x.done || canUntick(x)), delOk = can('del');
     var by = x.done && x.doneBy ? esc(x.doneBy) + (x.doneAt ? ' ' + clock(x.doneAt) : '') : (x.rolled ? (x.origBy ? 'from ' + esc(x.origBy) : '') : (x.addedBy ? esc(x.addedBy) : ''));
-    var marks = (x.urgent ? '<span class="nb-urg">Urgent</span>' : '') + (x.rolled ? '<span class="nb-roll" title="Not finished earlier, so it rolled over">Rolled' + (x.rolled > 1 ? ' x' + x.rolled : '') + '</span>' : '');
+    var marks = (x.urgent ? '<span class="nb-urg">Urgent</span>' : '') + (rolledN(x) ? '<span class="nb-roll" title="Not finished earlier, so it rolled over">Rolled' + (rolledN(x) > 1 ? ' x' + rolledN(x) : '') + '</span>' : (x.ahead && x.rolled ? '<span class="nb-us" title="Written the night before for today">From last night</span>' : ''));
     var star = can('add') && !x.deleted && !readonly ? '<button type="button" class="nb-star" data-p="urgent" data-id="' + esc(x.id) + '" aria-pressed="' + !!x.urgent + '" aria-label="' + esc((x.urgent ? 'Not urgent: ' : 'Mark urgent: ') + x.text) + '">!</button>' : '';
     var rid = x.recipe || ((matchRecipe(x.text) || {}).id || ''), rr = rid ? recipeById(rid) : null;
     var link = rid ? '<a class="nb-go" href="#/r/' + encodeURIComponent(rid) + '" title="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '" aria-label="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '">recipe</a>' : '';
     var del = delOk ? '<button type="button" class="nb-x" data-p="' + (x.deleted ? 'restore' : 'del') + '" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-label="' + (x.deleted ? 'Put back ' : 'Remove ') + esc(x.text) + '">' + (x.deleted ? 'Put back' : 'Remove') + '</button>' : '';
-    return '<li id="nbr-' + esc(x.id) + '" class="nb-row' + (x.done ? ' is-done' : '') + (x.rolled && !x.done ? ' is-rolled' : '') + (x.urgent && !x.done ? ' is-urgent' : '') + (x.deleted ? ' is-removed' : '') + '">' +
+    return '<li id="nbr-' + esc(x.id) + '" class="nb-row' + (x.done ? ' is-done' : '') + (rolledN(x) && !x.done ? ' is-rolled' : '') + (x.urgent && !x.done ? ' is-urgent' : '') + (x.deleted ? ' is-removed' : '') + '">' +
       '<button type="button" class="nb-box" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-pressed="' + !!x.done + '" aria-label="' + esc((x.done ? 'Untick ' : 'Tick ') + x.text) + '"' + (tickOk ? '' : ' disabled') + '>' + (x.done ? TICK : BOX) + '</button>' +
       '<span class="nb-t"' + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + (marks ? ' <span class="nb-marks">' + marks + '</span>' : '') + '</span>' +
       '<span class="nb-by">' + by + '</span>' + (star || link || del ? '<span class="nb-acts">' + star + link + del + '</span>' : '') + '</li>';
@@ -1726,7 +1737,7 @@
   }
   function sideHTML(today) {
     var live = S.items.filter(function (x) { return !x.deleted; });
-    var rolled = live.filter(function (x) { return x.rolled && !x.done; }), urg = live.filter(function (x) { return x.urgent && !x.done; });
+    var rolled = live.filter(function (x) { return rolledN(x) && !x.done; }), urg = live.filter(function (x) { return x.urgent && !x.done; });
     var secs = {}, order = [];
     live.forEach(function (x) { var k = x.station || 'General'; if (!secs[k]) { secs[k] = { n: 0, d: 0 }; order.push(k); } secs[k].n++; if (x.done) secs[k].d++; });
     var startShown = can('tick') && S.date === ymd(new Date()) && live.filter(function (x) { return !x.done; }).length >= 4;
@@ -1751,9 +1762,9 @@
     }).join('') + '</div>' : '';
     var pc = canBrowse() && S.date === ymd(new Date()) && S.past ? pace() : null;
     var paceHTML = pc ? '<div class="nb-pace' + (pc.today + 0.1 < pc.usual ? ' is-behind' : '') + '"><span class="nb-sl">Pace</span><p><strong>' + Math.round(pc.today * 100) + '%</strong> ticked now (' + pc.done + ' of ' + pc.n + '). By ' + clock(Date.now()) + ' it is usually <strong>' + Math.round(pc.usual * 100) + '%</strong>' + (pc.sameDay ? ' on a ' + esc(dname) : '') + '.</p><span class="nb-sw">' + (pc.today + 0.1 < pc.usual ? 'Behind the usual pace. Check who needs a hand.' : 'On pace.') + ' Only the head chef and sous chefs see this.</span></div>' : '';
-    var stuck = canBrowse() && S.date === ymd(new Date()) ? live.filter(function (x) { return !x.done && (x.rolled || 0) >= 3; }) : [];
+    var stuck = canBrowse() && S.date === ymd(new Date()) ? live.filter(function (x) { return !x.done && rolledN(x) >= 3; }) : [];
     var stuckHTML = stuck.length ? '<h3 class="nb-sh">Stuck lines</h3><p class="nb-sd">Rolled over 3 or more times. Make it urgent, split it into smaller jobs, or remove it if it is not needed.</p><ul class="nb-stuck">' + stuck.map(function (x) {
-      return '<li><span>' + esc(x.text) + ' <span class="nb-us">x' + x.rolled + '</span></span>' + (x.urgent ? '' : '<button type="button" class="p-x" data-p="urgent" data-id="' + esc(x.id) + '">Urgent</button>') + (can('del') ? '<button type="button" class="p-x" data-p="del" data-id="' + esc(x.id) + '" data-d="' + esc(S.date) + '">Remove</button>' : '') + '</li>';
+      return '<li><span>' + esc(x.text) + ' <span class="nb-us">x' + rolledN(x) + '</span></span>' + (x.urgent ? '' : '<button type="button" class="p-x" data-p="urgent" data-id="' + esc(x.id) + '">Urgent</button>') + (can('del') ? '<button type="button" class="p-x" data-p="del" data-id="' + esc(x.id) + '" data-d="' + esc(S.date) + '">Remove</button>' : '') + '</li>';
     }).join('') + '</ul>' : '';
     var usual = can('add') && today2.length ? '<h3 class="nb-sh">Usual for a ' + esc(dname) + '</h3><p class="nb-sd">Written on at least two ' + esc(dname) + 's. Tap to add.</p><div class="nb-usual">' + today2.map(function (x) { return chip(x, ((x.dow || {})[dn] || 0) + 'x'); }).join('') + '</div>' : '';
     usual += can('add') && regs.length ? '<h3 class="nb-sh">Regulars</h3><p class="nb-sd">Written or picked ' + REGULAR + ' or more times. Tap to add.</p><div class="nb-usual">' + regs.map(function (x) { return chip(x, x.uses + 'x'); }).join('') + '</div>' : '';
@@ -2226,7 +2237,8 @@
         have[id] = true;
         jobs.push(['set', ordRef(today, id), {
           text: x.text, qty: x.qty || '', recipes: x.recipes || [], addedBy: 'Rolled over', addedById: '', addedAt: Date.now(), ordered: false, deleted: false,
-          rolled: (x.rolled || 0) + 1, root: root, from: x.id, rolledFrom: src.date, since: x.since || src.date, origBy: x.origBy || x.addedBy || ''
+          rolled: (x.rolled || 0) + 1, root: root, from: x.id, rolledFrom: src.date, origBy: x.origBy || x.addedBy || '',
+          ahead: !!(x.ahead || writtenLate(x, src.date)), since: x.since || (writtenLate(x, src.date) ? today : src.date)
         }]);
       });
       if (!jobs.length) { S.ordRolling = false; lsSet('lk.ord.rolled', today); return; }
@@ -2304,7 +2316,7 @@
     return '<li class="nb-row' + (x.ordered ? ' is-done' : '') + (x.deleted ? ' is-removed' : '') + '">' +
       '<button type="button" class="nb-box" data-p="otick" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-pressed="' + !!x.ordered + '" aria-label="' + esc((x.ordered ? 'Not ordered: ' : 'Ordered: ') + x.text) + '"' + (canTick ? '' : ' disabled') + '>' + (x.ordered ? TICK : BOX) + '</button>' +
       '<span class="nb-t"' + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') +
-      (x.rolled ? ' <span class="nb-roll" title="Not ordered yet, so it rolled over">Since ' + esc(dayShort(x.since || x.rolledFrom || x.date)) + '</span>' : '') + recipeChips(x) + '</span>' +
+      (rolledN(x) ? ' <span class="nb-roll" title="Not ordered yet, so it rolled over">Since ' + esc(dayShort(x.since || x.rolledFrom || x.date)) + '</span>' : '') + recipeChips(x) + '</span>' +
       '<span class="nb-by">' + by + '</span>' +
       (canBrowse() && can('del') && !x.deleted && !x.ordered ? '<button type="button" class="p-x" data-p="odel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') +
       (canBrowse() && can('del') && x.deleted ? '<button type="button" class="p-x" data-p="orestore" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Put back ' + x.text) + '">Put back</button>' : '') + '</li>';
@@ -2682,7 +2694,7 @@
     if (w && w.change) out.push('<p><span class="nt-sl">' + (w.date === shift(t, -1) ? 'From yesterday\'s waste review' : 'From the ' + esc(parseYmd(w.date).toLocaleDateString('en-AU', { weekday: 'long' })) + ' waste review') + '</span> ' + esc(w.change) + '</p>');
     if (S.itemsState === 'ok' && S.date === t) {
       var live = S.items.filter(function (x) { return !x.deleted; }), open = live.filter(function (x) { return !x.done; });
-      var urg = open.filter(function (x) { return x.urgent; }).length, stuck = canBrowse() ? open.filter(function (x) { return (x.rolled || 0) >= 3; }).length : 0;
+      var urg = open.filter(function (x) { return x.urgent; }).length, stuck = canBrowse() ? open.filter(function (x) { return rolledN(x) >= 3; }).length : 0;
       if (live.length) out.push('<p><span class="nt-sl">Prep list</span> ' + open.length + ' of ' + live.length + ' lines still to do' + (urg ? ', ' + urg + ' urgent' : '') + (stuck ? ', ' + stuck + ' stuck (rolled over 3 times or more)' : '') + '.</p>');
     }
     return out.join('');
