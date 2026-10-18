@@ -1815,7 +1815,7 @@ window.LK_DATA = {
       check: []
     },
     {
-      id: 'gravy', no: '69', kind: 'batch', forLine: 'For schnitzels, rissoles, mash and poutine', name: 'Gravy', short: 'Gravy',
+      id: 'gravy', art: 'gravy', no: '69', kind: 'batch', forLine: 'For schnitzels, rissoles, mash and poutine', name: 'Gravy', short: 'Gravy',
       avc: 'BASE GRAVY BATCH (1LT)',
       yield: 'Batch: 10 L.',
       ingredients: [
@@ -1830,7 +1830,7 @@ window.LK_DATA = {
       labelNote: 'Gluten free, dairy free and vegan. Check the gravy mix label when a new batch of powder comes in.'
     },
     {
-      id: 'mash', no: '70', kind: 'batch', forLine: 'For the rissoles and other plates', name: 'Potato Mash', short: 'Mash',
+      id: 'mash', art: 'mash', no: '70', kind: 'batch', forLine: 'For the rissoles and other plates', name: 'Potato Mash', short: 'Mash',
       yield: 'The same mash on every plate across the menu. Main plates: 150 g. Bought in, Farm Frites butter mash.',
       ingredients: [
         { q: '150 g', name: 'Potato mash', note: 'Farm Frites, bought in', tags: ['Milk?'] }
@@ -1859,7 +1859,7 @@ window.LK_DATA = {
       labelNote: 'Check the cooking cream and butter labels.'
     },
     {
-      id: 'red-wine-jus', no: '72', kind: 'batch', forLine: 'For the pork belly', name: 'Red Wine Jus', short: 'Red wine jus',
+      id: 'red-wine-jus', art: 'red-wine-jus', no: '72', kind: 'batch', forLine: 'For the pork belly', name: 'Red Wine Jus', short: 'Red wine jus',
       yield: 'Batch: 5 L.',
       ingredients: [
         { q: '750 g', name: 'Red wine jus powder', tags: ['Soy'] },
@@ -2154,7 +2154,7 @@ window.LK_DATA = {
       labelNote: 'Check the supplier labels for allergens, especially the caramelised onion. The cob loaf itself has gluten (see the Brisket Cob card).'
     },
     {
-      id: 'bourbon-bbq-sauce', no: '105', kind: 'batch', forLine: 'For the ribs, riblets and smoked boards', name: 'Bourbon BBQ Sauce', short: 'Bourbon BBQ', avc: 'Bourbon BBQ Sauce Batch A25',
+      id: 'bourbon-bbq-sauce', art: 'bourbon-bbq-sauce', no: '105', kind: 'batch', forLine: 'For the ribs, riblets and smoked boards', name: 'Bourbon BBQ Sauce', short: 'Bourbon BBQ', avc: 'Bourbon BBQ Sauce Batch A25',
       yield: 'Batch: 5 litres.',
       ingredients: [
         { q: '4 kg', name: 'Heinz BBQ sauce', note: 'gluten free' },
@@ -2167,7 +2167,7 @@ window.LK_DATA = {
       labelNote: 'Check the supplier labels for allergens on the dry rub and the hickory smoked BBQ sauce.'
     },
     {
-      id: 'chilli-jam', no: '106', kind: 'batch', forLine: 'For the beetroot bites and the pork belly bites', name: 'Chilli Jam', short: 'Chilli jam',
+      id: 'chilli-jam', art: 'chilli-jam', no: '106', kind: 'batch', forLine: 'For the beetroot bites and the pork belly bites', name: 'Chilli Jam', short: 'Chilli jam',
       yield: 'Batch: 2000 g.',
       ingredients: [
         { q: '500 g', name: 'Gochujang', tags: ['Gluten?', 'Soy?'] },
@@ -2185,7 +2185,7 @@ window.LK_DATA = {
       labelNote: 'Check the gochujang label for allergens.'
     },
     {
-      id: 'korean-dressing', no: '107', kind: 'batch', forLine: 'For the Korean-style cucumber', name: 'Korean Dressing', short: 'Korean dressing',
+      id: 'korean-dressing', art: 'korean-dressing', no: '107', kind: 'batch', forLine: 'For the Korean-style cucumber', name: 'Korean Dressing', short: 'Korean dressing',
       yield: 'Batch: 1500 ml.',
       ingredients: [
         { q: '300 g', name: 'Gochujang hot pepper paste', tags: ['Gluten?', 'Soy?'] },
@@ -2203,7 +2203,7 @@ window.LK_DATA = {
       labelNote: 'Check the gochujang and soy sauce labels for allergens.'
     },
     {
-      id: 'seed-granola', no: '108', kind: 'batch', forLine: 'For the honey and maple roasted pumpkin', name: 'Seed Granola', short: 'Seed granola',
+      id: 'seed-granola', art: 'seed-granola', no: '108', kind: 'batch', forLine: 'For the honey and maple roasted pumpkin', name: 'Seed Granola', short: 'Seed granola',
       yield: 'Batch: 2000 g.',
       ingredients: [
         { q: '500 g', name: 'Linseeds' },
@@ -2220,7 +2220,7 @@ window.LK_DATA = {
       labelNote: 'Check the supplier labels for allergens, especially the pine nuts.'
     },
     {
-      id: 'cowboy-candy', no: '109', kind: 'batch', forLine: 'For the smoked BBQ pork riblets', name: 'Cowboy Candy', short: 'Cowboy candy',
+      id: 'cowboy-candy', art: 'cowboy-candy', no: '109', kind: 'batch', forLine: 'For the smoked BBQ pork riblets', name: 'Cowboy Candy', short: 'Cowboy candy',
       yield: 'Batch: 1000 g.',
       ingredients: [
         { q: '500 ml', name: 'Cider vinegar' },
@@ -2236,7 +2236,7 @@ window.LK_DATA = {
       labelNote: 'Check the supplier labels for allergens, especially the mustard seed.'
     },
     {
-      id: 'beef-cheek-batch', no: '110', kind: 'batch', forLine: 'For the beef cheek', name: 'Braised Beef Cheek', short: 'Beef cheek',
+      id: 'beef-cheek-batch', art: 'beef-cheek-batch', no: '110', kind: 'batch', forLine: 'For the beef cheek', name: 'Braised Beef Cheek', short: 'Beef cheek',
       yield: 'Batch: 10 kg raw beef cheeks, red wine braise.',
       ingredients: [
         { q: '10 kg', name: 'Beef cheeks', note: 'raw, untrimmed' },
@@ -2259,7 +2259,7 @@ window.LK_DATA = {
       labelNote: 'Check the beef stock label for allergens.'
     },
     {
-      id: 'cookie-dough', no: '111', kind: 'batch', forLine: 'For the skillet cookie', name: 'Skillet Cookie Dough', short: 'Cookie dough',
+      id: 'cookie-dough', art: 'cookie-dough', no: '111', kind: 'batch', forLine: 'For the skillet cookie', name: 'Skillet Cookie Dough', short: 'Cookie dough',
       yield: 'Batch: roughly 6.65 kg, portioned into 140 g balls. 15 balls per tub.',
       ingredients: [
         { q: '1.6 kg', name: 'Flour', note: 'sifted', tags: ['Gluten'] },
@@ -2297,7 +2297,7 @@ window.LK_DATA = {
       labelNote: 'Check the supplier labels for allergens, especially the chocolate nibs.'
     },
     {
-      id: 'korean-cucumber', no: '112', kind: 'batch', forLine: 'For the beetroot bites and the pork belly bites', name: 'Korean-Style Cucumber', short: 'Korean cucumber',
+      id: 'korean-cucumber', art: 'korean-cucumber', no: '112', kind: 'batch', forLine: 'For the beetroot bites and the pork belly bites', name: 'Korean-Style Cucumber', short: 'Korean cucumber',
       yield: 'Batch: 4 kg sliced cucumbers.',
       ingredients: [
         { q: '4 kg', name: 'Sliced cucumbers' },
@@ -2308,7 +2308,7 @@ window.LK_DATA = {
       ]
     },
     {
-      id: 'spaghetti', no: '114', kind: 'batch', forLine: 'For the senior and kids bolognese', name: 'Spaghetti', short: 'Spaghetti',
+      id: 'spaghetti', art: 'spaghetti', no: '114', kind: 'batch', forLine: 'For the senior and kids bolognese', name: 'Spaghetti', short: 'Spaghetti',
       yield: 'Senior plate: 1.5 portions of 180 g. Kids plate: 120 g.',
       ingredients: [
         { q: '[Qty]', name: 'Spaghetti', tags: ['Gluten'] }
@@ -2319,7 +2319,7 @@ window.LK_DATA = {
       labelNote: 'Check the supplier label for allergens.'
     },
     {
-      id: 'cowboy-butter', no: '115', kind: 'batch', forLine: 'For the flank steak', name: 'Cowboy Butter', short: 'Cowboy butter',
+      id: 'cowboy-butter', art: 'cowboy-butter', no: '115', kind: 'batch', forLine: 'For the flank steak', name: 'Cowboy Butter', short: 'Cowboy butter',
       yield: 'Batch: 1850 g.',
       ingredients: [
         { q: '1500 g', name: 'Butter', tags: ['Milk'] },
