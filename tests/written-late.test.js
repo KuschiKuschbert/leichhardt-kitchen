@@ -37,13 +37,13 @@ const row = (page, id) => page.evaluate(i => { const e = document.getElementById
   ok(!!day && day.rolled === 1 && !day.ahead, 'daytime line: rolled as before');
   ok(!!duck && duck.rolled === 2 && duck.ahead === true, 'late line still open a day later: rolls again, keeps ahead');
   const tLate = await row(p, rid('late')), tDay = await row(p, rid('day')), tDuck = await row(p, rid('old'));
-  ok(!/Rolled/.test(tLate) && /From last night/.test(tLate), 'late line: no Rolled badge, says from last night (' + tLate.trim().slice(0, 60) + ')');
+  ok(!/Rolled|last night|from Ann/.test(tLate) && /Ann/.test(tLate), 'late line: looks like a normal line, with who wrote it (' + tLate.trim().slice(0, 60) + ')');
   ok(/Rolled/.test(tDay), 'daytime line: Rolled badge');
   ok(/Rolled/.test(tDuck) && !/Rolled x2/.test(tDuck), 'late line open a day later: Rolled once, not x2');
   const fixed = s[fsKey(['days', today, 'items', rid('old2')])], kept = s[fsKey(['days', today, 'items', rid('day2')])];
   ok(fixed.ahead === true && fixed.origAt === at(yday, 21, 45), 'repair: a line rolled before the rule, written late, is marked from last night');
   ok(!kept.ahead, 'repair: a line written in the afternoon stays rolled');
-  ok(!/Rolled/.test(await row(p, rid('old2'))) && /From last night/.test(await row(p, rid('old2'))), 'repair: no Rolled badge on the repaired line');
+  ok(!/Rolled|last night/.test(await row(p, rid('old2'))), 'repair: the repaired line looks like a normal line');
   ok(/Rolled/.test(await row(p, rid('day2'))), 'repair: the afternoon line still shows Rolled');
   ok(late.origAt === at(yday, 21, 30), 'new copies carry the time the original was written');
   ok(p.errors.length === 0, 'prep: no page errors ' + p.errors.join(' | '));
