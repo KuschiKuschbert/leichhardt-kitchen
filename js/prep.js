@@ -2197,7 +2197,7 @@
   var rendering = false;
   function draw() {
     noteSummaryRefresh();
-    if (S.mins) { loadMine(); minBell(); }
+    if (S.mins) { loadMine(); minCard(); }
     if (!S.root || !document.body.contains(S.root) || rendering) return;
     rendering = true;
     var ae = document.activeElement, key = ae && ae.getAttribute && ae.getAttribute('data-k'), start = null, end = null;
@@ -3153,7 +3153,7 @@
 
   /* ---------- kitchen meeting minutes ----------
      The head chef (admin panel, Minutes tab) writes the minutes after a meeting and publishes them. Sous chefs (Handy, "Minutes register") only see the register.
-     Staff read them at #/minutes in one fixed layout and sign with their own PIN. A bell in the top bar and a nudge on the prep list show until a person has signed.
+     Staff read them at #/minutes in one fixed layout and sign with their own PIN. A card on the landing page and a nudge on the prep list show until a person has signed; Meeting minutes in Handy opens them any time.
      Data: kitchens/<PIN>/minutes/<id> { no, v, status draft|published, date, start, loc, chair, taker, guests, next, decisions, menu, safety, dates, other,
        att: [{ id, st present|apology|absent }], acts: [{ what, who, by, st open|done|dropped, carried }], pubAt, removed, at, upd }.
      A change after publishing makes version v+1 and everyone signs again. Each earlier version is kept in minutes/<id>/hist/<v>.
@@ -3176,14 +3176,10 @@
     if (!S.who || !S.mins || (S.config && !who())) return [];
     return mnOpenList().filter(function (m) { return S.mmine[mnKey(m)] === null; });
   }
-  function minInfo() { return { n: mnUnsigned().length }; }
-  /* the bell in the top bar: hidden unless the person on this phone has minutes to sign */
-  function minBell() {
-    var n = mnUnsigned().length;
-    Array.prototype.forEach.call(document.querySelectorAll('.mbell'), function (b) {
-      b.hidden = !n; b.classList.toggle('has-new', !!n);
-      b.setAttribute('aria-label', 'Meeting minutes to sign' + (n ? ', ' + n : ''));
-    });
+  /* the card on the landing page (js/app.js draws the empty slot): filled in while the person on this phone has minutes to sign */
+  function minCard() {
+    var h = minNudgeHTML();
+    Array.prototype.forEach.call(document.querySelectorAll('.wall-mn'), function (el) { if (el.lkMn !== h) { el.innerHTML = h; el.lkMn = h; } });
   }
   function minNudgeHTML() {
     var u = mnUnsigned();
@@ -3198,11 +3194,11 @@
     fb.fs.getDocs(fb.fs.query(colRef('minutes'), fb.fs.where('date', '>=', shift(today, -MN_DAYS)))).then(function (snap) {
       S.mins = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; });
       S.minsFor = today; S.minsAt = Date.now(); S.minsBusy = false;
-      loadMine(); minBell(); draw();
+      loadMine(); minCard(); draw();
     }, function () {
       // no signal, or the minutes rules are not published yet: carry on without them and try again in about 5 minutes
       S.minsBusy = false; S.minsAt = Date.now() - MN_STALE + 5 * 60000; if (!S.mins) S.mins = [];
-      minBell(); draw();
+      minCard(); draw();
     });
   }
   /* has this person signed the current version? one small read per open minutes, remembered for the day */
@@ -3215,7 +3211,7 @@
       S.mmine[k] = 'loading';
       jobs.push(fb.fs.getDoc(fb.fs.doc.apply(null, [fb.db].concat(base(), ['minutes', m.id, 'signs', m.v + '_' + w]))).then(function (sn) { S.mmine[k] = sn.exists() ? sn.data() : null; }, function () { delete S.mmine[k]; }));
     });
-    if (jobs.length) Promise.all(jobs).then(function () { minBell(); draw(); });
+    if (jobs.length) Promise.all(jobs).then(function () { minCard(); draw(); });
   }
   function loadSigns(id, force) {
     if (!fb || !id) return;
@@ -3286,7 +3282,7 @@
     var ref = fb.fs.doc.apply(null, [fb.db].concat(base(), ['minutes', m.id, 'signs', m.v + '_' + S.who])), data = { v: m.v, st: st, at: now(), name: p.name };
     S.mSigning = true; S.mErr = ''; draw();
     sset(ref, data, false).then(function () {
-      S.mSigning = false; S.mmine[k] = data; S.mpin = ''; S.mpinOk = false; minBell(); toast('Signed. Thank you.'); draw();
+      S.mSigning = false; S.mmine[k] = data; S.mpin = ''; S.mpinOk = false; minCard(); toast('Signed. Thank you.'); draw();
     }, function (e) {
       S.mSigning = false; delete S.mmine[k];
       S.mErr = e && e.code === 'permission-denied' ? 'Not allowed. The minutes may have changed, or you have already signed this version. Reload the page.' : 'Could not sign. Check the connection and try again.';
@@ -4484,7 +4480,7 @@
     noteOpen: noteOpen,
     guidesFor: function (rid) { try { return guidesFor(rid); } catch (e) { return []; } },
     guideSearch: function (q) { try { return guideSearch(q); } catch (e) { return []; } },
-    minInfo: minInfo,
+    minNudge: minNudgeHTML,
     saveConfig: saveConfig,
     proofread: proofread,
     state: S
