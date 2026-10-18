@@ -846,3 +846,22 @@ html.note-open, html.note-open body { overflow: hidden; }
 .nb-page.o-page { height: auto; min-height: 0; flex: 0 0 auto; }
 .o-page .nb-body { overflow: visible; min-height: 0; }
 .w-review { max-width: 46rem; }
+
+/* Prep list on big screens: show more lines. The notebook page uses the screen height (no 780 px cap), Start here moves to the Handy page, the add row is one line, and lines are a little tighter for a mouse or a keyboard. Phones and tablets keep the big touch rows. */
+.nb-start-r { display: none; }
+.nb-hint:empty { display: none; }
+@media (min-width: 900px) {
+  .nb-start-l { display: none; }
+  .nb-start-r { display: block; }
+  .nb-page { height: max(30rem, calc(100vh - 16.5rem)); }
+  .nb-left { flex: 3 1 0; }
+  .nb-right { flex: 2 1 0; }
+  .nb-left .nb-in-text { flex: 4 1 11rem; }
+  .nb-left .nb-in-sec { flex: 1 1 6rem; }
+  .nb-left .nb-in-qty { flex: 1 1 5rem; }
+}
+@media (min-width: 900px) and (hover: hover) and (pointer: fine) {
+  .nb-row { min-height: 40px; font-size: 1.55rem; }
+  .nb-hd { min-height: 32px; margin-top: 0.2rem; }
+}
+@media (min-width: 720px) and (max-height: 860px) { .wtop { min-height: 96px; } }
