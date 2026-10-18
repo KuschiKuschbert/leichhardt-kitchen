@@ -1122,12 +1122,12 @@ window.LK_DATA = {
       ingredients: [
         { q: '390 to 410 g', name: 'Pork riblets', note: 'smoked, cut from the pork ribs into individual riblets, portioned in a sandwich bag' },
         { q: '[Qty]', name: 'Bourbon BBQ sauce', link: 'bourbon-bbq-sauce' },
-        { q: '[Qty]', name: 'Cowboy candy', note: 'candied jalapeños' }
+        { q: '[Qty]', name: 'Cowboy candy', note: 'candied jalapeños', link: 'cowboy-candy' }
       ],
       pins: [
         { label: 'Pork riblets', x: 36.8, y: 54.7, side: 'right', tags: [], note: 'Smoked. 390 to 410 g.' },
         { label: 'Bourbon BBQ sauce', x: 56.6, y: 33.7, side: 'left', link: 'bourbon-bbq-sauce', note: 'The riblets are tossed in it.' },
-        { label: 'Cowboy candy', x: 48.1, y: 44.3, side: 'left', tags: [], note: 'Candied jalapeños. On top.' }
+        { label: 'Cowboy candy', x: 48.1, y: 44.3, side: 'left', link: 'cowboy-candy', note: 'Candied jalapeños. On top.' }
       ],
       sections: [
         { title: 'Prep ahead', steps: ['Cut the pork ribs into individual riblets.', 'Portion the riblets, 390 to 410 g per bag, into sandwich bags. One bag is one serve.'] },
@@ -2198,6 +2198,22 @@ window.LK_DATA = {
         { title: 'Method', steps: ['Boil the honey and canola oil until combined.', 'Mix with the seeds in trays.', 'Bake at 120 °C, stirring every 10 minutes.', '[Bake time to confirm]'] }
       ],
       labelNote: 'Check the supplier labels for allergens, especially the pine nuts.'
+    },
+    {
+      id: 'cowboy-candy', no: '109', kind: 'batch', forLine: 'For the smoked BBQ pork riblets', name: 'Cowboy Candy', short: 'Cowboy candy',
+      yield: 'Batch: 1000 g.',
+      ingredients: [
+        { q: '500 ml', name: 'Cider vinegar' },
+        { q: '1 kg', name: 'Caster sugar' },
+        { q: '20 g', name: 'Salt' },
+        { q: '5 g', name: 'Turmeric' },
+        { q: '10 g', name: 'Mustard seed' },
+        { q: '1 kg', name: 'Jalapeños', note: 'sliced' }
+      ],
+      sections: [
+        { title: 'Method', steps: ['Add all the ingredients except the jalapeños to a pot.', 'Simmer to a syrup consistency.', 'Add the sliced jalapeños.', 'Transfer to containers to cool. Pour over the remaining syrup.'] }
+      ],
+      labelNote: 'Check the supplier labels for allergens, especially the mustard seed.'
     }
   ]
 };
