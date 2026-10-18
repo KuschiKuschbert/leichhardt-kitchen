@@ -2099,16 +2099,17 @@ window.LK_DATA = {
     },
     {
       id: 'cob-mix', no: '104', kind: 'batch', forLine: 'For the Brisket Cob', name: 'Cob Loaf Mix', short: 'Cob loaf mix', art: 'cob-mix',
-      yield: 'Batch: 2500 ml. 280 ml fills one cob loaf.',
+      yield: 'Batch: 5000 ml. 280 ml fills one cob loaf.',
       ingredients: [
-        { q: '1 kg', name: 'Sour cream', tags: ['Milk'] },
-        { q: '1 kg', name: 'Cream cheese', tags: ['Milk'] },
-        { q: '200 g', name: 'Mozzarella', tags: ['Milk'] },
-        { q: '500 g', name: 'Caramelised onion' },
-        { q: '500 g', name: 'Corn kernels' },
-        { q: '500 g', name: 'Sliced mushrooms' },
-        { q: '50 g', name: 'Garlic' },
-        { q: '[Qty]', name: 'Salt and pepper', note: 'seasoning' }
+        { q: '2 kg', name: 'Sour cream', tags: ['Milk'] },
+        { q: '2 kg', name: 'Cream cheese', tags: ['Milk'] },
+        { q: '400 g', name: 'Mozzarella', tags: ['Milk'] },
+        { q: '1 kg', name: 'Caramelised onion' },
+        { q: '1 kg', name: 'Corn kernels' },
+        { q: '1 kg', name: 'Sliced mushrooms' },
+        { q: '100 g', name: 'Garlic' },
+        { q: '10 g', name: 'Salt', note: 'seasoning' },
+        { q: '4 g', name: 'Black pepper', note: 'seasoning' }
       ],
       sections: [
         { title: 'Method', steps: [
