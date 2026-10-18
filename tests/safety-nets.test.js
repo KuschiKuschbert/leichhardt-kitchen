@@ -1,11 +1,9 @@
 // Undo on every remove, the second tap for anything hard to take back, the notes popup and the toast (pull request 153).
 const L = require('./lib');
-const R = [];
-const ok = (c, m) => L.check(c, m, R);
+const { R, ok } = L.results(), { txt } = L;
 const today = L.ymd(new Date());
 const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
 const store = page => page.evaluate(() => window.__fake.dump());
-const txt = (page, sel) => page.evaluate(s => { const e = document.querySelector(s); return e ? e.textContent.trim() : null; }, sel);
 (async () => {
   const b = await L.start();
   let p;

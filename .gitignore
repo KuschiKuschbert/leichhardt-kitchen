@@ -7,3 +7,4 @@ tests/shots/
 
 # nightly learning script
 scripts/node_modules/
+tests/shots-baseline/

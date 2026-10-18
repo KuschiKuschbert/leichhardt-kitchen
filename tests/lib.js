@@ -132,6 +132,12 @@ async function overflow(page) {
   return page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
 }
 function check(cond, msg, results) { results.push((cond ? 'PASS ' : 'FAIL ') + msg); }
+/* The helpers every test file uses: results() gives the list and its ok(); txt reads an element's trimmed text
+   (null when it is not on the page), tap clicks one from inside the page, row reads a prep line by its item id. */
+function results() { const R = []; return { R, ok: (c, m) => check(c, m, R) }; }
+const txt = (page, sel) => page.evaluate(s => { const e = document.querySelector(s); return e ? e.textContent.trim() : null; }, sel);
+const tap = (page, sel) => page.evaluate(s => { const e = document.querySelector(s); if (e) e.click(); return !!e; }, sel);
+const row = (page, id) => page.evaluate(i => { const e = document.getElementById('nbr-' + i); return e ? e.textContent : null; }, id);
 /* Prints the results and sets the exit code, so run.js knows whether the file passed. */
 function report(results) {
   const failed = results.filter(x => x.startsWith('FAIL'));
@@ -139,4 +145,4 @@ function report(results) {
   console.log(failed.length + ' failed of ' + results.length);
   process.exitCode = failed.length ? 1 : 0;
 }
-module.exports = { start, open, overflow, check, report, seed, guides, sha, ymd, PIN, NOW, BASE, PNG };
+module.exports = { start, open, overflow, check, report, results, txt, tap, row, seed, guides, sha, ymd, PIN, NOW, BASE, PNG };

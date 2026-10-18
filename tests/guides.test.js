@@ -1,8 +1,7 @@
 // Guides: the staff page (categories, search, a guide's pages read once, a page opened big), the guides box on recipe
 // cards and in the recipe search, and the admin Guides tab (photos and a PDF uploaded, changed, replaced, removed).
 const L = require('./lib');
-const R = [];
-const ok = (c, m) => L.check(c, m, R);
+const { R, ok } = L.results();
 const G = p => ['kitchens', L.PIN, 'guides'].concat(p).join('/');
 const store = page => page.evaluate(() => window.__fake.dump());
 const S = (page, f) => page.evaluate(f);

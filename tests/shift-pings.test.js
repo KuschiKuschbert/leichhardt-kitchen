@@ -1,14 +1,11 @@
 // Shift pings (they used to be called daily notes): the new names, the Pings tick in the admin People tab, and a person
 // ticked for Pings writing them from the prep book. Sous chefs always may; a sous chef's staff list save sends only people.
 const L = require('./lib');
-const R = [];
-const ok = (c, m) => L.check(c, m, R);
+const { R, ok } = L.results(), { txt, tap } = L;
 const today = L.ymd(new Date());
 const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
 const CFG = fsKey(['config', 'main']);
 const store = page => page.evaluate(() => window.__fake.dump());
-const txt = (page, sel) => page.evaluate(s => { const e = document.querySelector(s); return e ? e.textContent.trim() : null; }, sel);
-const tap = (page, sel) => page.evaluate(s => { const e = document.querySelector(s); if (e) e.click(); return !!e; }, sel);
 /* the seed people, with Ann ticked for Pings */
 function withAnn() {
   const x = {};

@@ -1,11 +1,9 @@
 // Full-size buttons on prep, order and wastage lines, lists that do not jump, and a confirmation for every add and tick (pull request 155).
 const L = require('./lib');
-const R = [];
-const ok = (c, m) => L.check(c, m, R);
+const { R, ok } = L.results(), { txt } = L;
 const today = L.ymd(new Date());
 const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
 const store = page => page.evaluate(() => window.__fake.dump());
-const txt = (page, sel) => page.evaluate(s => { const e = document.querySelector(s); return e ? e.textContent.trim() : null; }, sel);
 const active = page => page.evaluate(() => { const a = document.activeElement; return a ? (a.getAttribute('data-k') || a.className || a.tagName) : ''; });
 function past(n) { const d = new Date(); d.setDate(d.getDate() - n); return L.ymd(d); }
 (async () => {
