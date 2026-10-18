@@ -43,7 +43,7 @@
   on the guest menu, so they sit after the menu sections.
 */
 window.LK_DATA = {
-  updated: '17 October 2026',
+  updated: '18 October 2026',
   allergens: ['Gluten', 'Milk', 'Egg', 'Soy', 'Peanut', 'Tree nut', 'Fish', 'Crustacean', 'Mollusc', 'Sesame'],
   menuOrder: [
     { title: "Snackin' Plates", ids: ['poutine', 'beetroot-bites', 'brisket-cob', 'wings', 'haloumi-tacos', 'pork-belly-bites', 'calamari', 'riblets', 'garlic-bread', 'bacon-cheese-bread', 'chips-snack'] },
@@ -1035,18 +1035,15 @@ window.LK_DATA = {
       menu: 'Brisket Cob: slow-roasted house-rubbed brisket, cream cheese, corn, caramelised onion, in a cob.',
       yield: 'Per serve. Brisket, cream cheese, corn and caramelised onion in a cob loaf.',
       ingredients: [
-        { q: '[Qty]', name: 'Cob loaf', tags: ['Gluten'] },
+        { q: '1', name: 'Cob loaf', tags: ['Gluten'] },
         { q: '[Qty]', name: 'Brisket', note: 'slow roasted, house rub', link: 'brisket' },
-        { q: '[Qty]', name: 'Cream cheese', tags: ['Milk'] },
-        { q: '[Qty]', name: 'Corn' },
-        { q: '[Qty]', name: 'Caramelised onion' }
+        { q: '280 ml', name: 'Cob loaf mix', note: 'cream cheese, corn and caramelised onion are in the mix', link: 'cob-mix' },
+        { q: '[Qty]', name: 'Mozzarella', note: 'some on top', tags: ['Milk'] }
       ],
       pins: [
         { label: 'Cob loaf', x: 27.4, y: 41.5, side: 'left', tags: ['Gluten'], note: '' },
         { label: 'Brisket', x: 46.2, y: 37.5, side: 'right', link: 'brisket', note: 'Slow roasted, house rub.' },
-        { label: 'Cream cheese', x: 61.5, y: 60.6, side: 'right', tags: ['Milk'], note: '' },
-        { label: 'Corn', x: 51.9, y: 49.1, side: 'right', tags: [], note: '' },
-        { label: 'Caramelised onion', x: 41.5, y: 56.6, side: 'left', tags: [], note: '' }
+        { label: 'Cob loaf mix', x: 51.9, y: 49.1, side: 'right', link: 'cob-mix', note: '280 ml in the hollowed cob, mozzarella on top.' }
       ]
     },
     {
@@ -2099,6 +2096,37 @@ window.LK_DATA = {
       contains: [],
       check: [],
       labelNote: 'Check the supplier label for allergens.'
+    },
+    {
+      id: 'cob-mix', no: '104', kind: 'batch', forLine: 'For the Brisket Cob', name: 'Cob Loaf Mix', short: 'Cob loaf mix', art: 'cob-mix',
+      yield: 'Batch: 2500 ml. 280 ml fills one cob loaf.',
+      ingredients: [
+        { q: '1 kg', name: 'Sour cream', tags: ['Milk'] },
+        { q: '1 kg', name: 'Cream cheese', tags: ['Milk'] },
+        { q: '200 g', name: 'Mozzarella', tags: ['Milk'] },
+        { q: '500 g', name: 'Caramelised onion' },
+        { q: '500 g', name: 'Corn kernels' },
+        { q: '500 g', name: 'Sliced mushrooms' },
+        { q: '50 g', name: 'Garlic' },
+        { q: '[Qty]', name: 'Salt and pepper', note: 'seasoning' }
+      ],
+      sections: [
+        { title: 'Method', steps: [
+          'Saute the garlic and mushrooms. Season.',
+          'Soften the cream cheese and sour cream, and add.',
+          'Add the mozzarella last.',
+          'Check the seasoning.'
+        ] },
+        { title: 'For the bread and service', steps: [
+          'Hollow out the Laurent cob loaf. Keep the lid.',
+          'Add 280 ml of cob loaf mix. Add some mozzarella on top.',
+          'Oven at 180 °C for 5 min, or until the contents are hot.',
+          'Garnish.'
+        ] }
+      ],
+      contains: [{ allergen: 'Milk', from: 'sour cream, cream cheese, mozzarella' }],
+      check: [],
+      labelNote: 'Check the supplier labels for allergens, especially the caramelised onion. The cob loaf itself has gluten (see the Brisket Cob card).'
     }
   ]
 };
