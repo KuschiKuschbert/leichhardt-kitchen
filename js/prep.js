@@ -696,16 +696,31 @@
     if (S.moving || !fb) return;
     if (!/^\d{4}$/.test(np)) { S.moveMsg = 'The new PIN is exactly 4 digits.'; draw(); return; }
     if (np === S.pin) { S.moveMsg = 'That is the PIN already in use.'; draw(); return; }
+    if (!arm('move-pin')) return;
     S.moving = true; S.moveMsg = 'Copying...'; draw();
     var f = fb.fs, old = S.pin, n = 0;
     function oc(name) { return f.collection.apply(null, [fb.db, 'kitchens', old, name]); }
     function nd(name, id) { return f.doc(fb.db, 'kitchens', np, name, id); }
-    function copyCol(name) { return f.getDocs(oc(name)).then(function (sn) { n += sn.docs.length; return Promise.all(sn.docs.map(function (d) { return f.setDoc(nd(name, d.id), d.data()); })); }); }
+    var ids = {}, skipped = 0;
+    function copyCol(name) { return f.getDocs(oc(name)).then(function (sn) { n += sn.docs.length; ids[name] = sn.docs.map(function (d) { return d.id; }); return Promise.all(sn.docs.map(function (d) { return f.setDoc(nd(name, d.id), d.data()); })); }); }
+    /* records under a note or a minutes entry (seen, hist, signs). Sign-offs and seen records need the newer rules
+       that let the head chef copy them; where the rules refuse, they are counted as left behind instead of stopping the move. */
+    function copySub(top, sub, soft) {
+      return Promise.all((ids[top] || []).map(function (id) {
+        return f.getDocs(f.collection(fb.db, 'kitchens', old, top, id, sub)).then(function (sn) {
+          return Promise.all(sn.docs.map(function (x) {
+            return f.setDoc(f.doc(fb.db, 'kitchens', np, top, id, sub, x.id), x.data()).then(function () { n++; }, function (e) { if (!soft) throw e; skipped++; });
+          }));
+        });
+      }));
+    }
     var today = ymd(new Date()), dates = [], k;
     for (k = 0; k < 400; k++) dates.push(shift(today, -k));
     f.getDoc(f.doc(fb.db, 'kitchens', old, 'config', 'main')).then(function (sn) { if (sn.exists()) { n++; return f.setDoc(f.doc(fb.db, 'kitchens', np, 'config', 'main'), sn.data()); } })
-      .then(function () { return copyCol('staffpins'); }).then(function () { return copyCol('pinset'); }).then(function () { return copyCol('activity'); }).then(function () { return copyCol('sections'); })
+      .then(function () { return copyCol('pinset'); }).then(function () { return copyCol('staffpins'); }).then(function () { return copyCol('activity'); }).then(function () { return copyCol('sections'); })
       .then(function () { return copyCol('learned'); }).then(function () { return copyCol('learnlog'); }).then(function () { return copyCol('misses'); }).then(function () { return copyCol('views'); })
+      .then(function () { return copyCol('notes'); }).then(function () { return copyCol('minutes'); }).then(function () { return copySub('minutes', 'hist'); })
+      .then(function () { return copySub('minutes', 'signs', true); }).then(function () { return copySub('notes', 'seen', true); })
       .then(function () {
         var i = 0;
         function next() {
@@ -721,7 +736,8 @@
         return next();
       })
       .then(function () {
-        S.moving = false; S.moveMsg = 'Copied ' + n + ' records. This device now uses the new PIN. Everyone else enters the new PIN next time they open the book.';
+        S.moving = false; S.moveMsg = 'Copied ' + n + ' records. This device now uses the new PIN. Everyone else enters the new PIN next time they open the book.' +
+          (skipped ? ' ' + skipped + ' sign-offs and seen records were left on the old PIN: the published rules do not let the head chef copy them yet.' : '');
         S.pin = np; lsSet('lk.prep.pin', np); S.items = []; S.learned = []; S.sections = []; S.activity = [];
         if (unsubCfg) unsubCfg(); if (unsubItems) unsubItems(); if (unsubSec) unsubSec(); if (unsubLrn) unsubLrn(); if (unsubAct) unsubAct();
         unsubCfg = unsubItems = unsubSec = unsubLrn = unsubAct = null; cfgKey = itemsKey = ''; S.rolledFor = ''; S.learnRan = false; S.weekAt = 0; S.stats = null;
@@ -737,9 +753,11 @@
   function markLive(date) {
     if (!fb) return;
     S.marked = S.marked || {};
-    if (S.marked[date]) return;
+    if (S.marked[date] || lsGet('lk.prep.live') === date) return;
     S.marked[date] = 1;
-    sset(docRef('learnlog', date), { at: Date.now(), who: 'live' }).catch(function () {});
+    /* the rules allow only the first create of a day, so each phone tries once a day (another phone may have claimed it already) */
+    var done = function () { lsSet('lk.prep.live', date); };
+    sset(docRef('learnlog', date), { at: Date.now(), who: 'live' }).then(done, done);
   }
   function maybeLearn() {
     if (S.learnRan || !S.authed || !fb || S.configState !== 'ok') return;
@@ -2064,7 +2082,7 @@
       '<section class="set-block"><span class="label">Backup</span><span class="hint">Saves everything the prep book holds (people, lines from the last 400 days, learned items, tallies) as one file on this device. People\'s PIN fingerprints are left out. Do this now and then.</span><div class="btn-row"><button type="button" class="btn" data-p="export"' + (S.exporting ? ' disabled' : '') + '>' + (S.exporting ? esc(S.exporting) : 'Download a backup') + '</button></div></section>' +
       '<section class="set-block"><span class="label">Kitchen PIN</span><span class="hint">The kitchen PIN is the lock on the whole book, so keep it to staff only. Writing needs a person\'s own PIN as well.</span>' +
       '<div class="field"><label class="label" for="a-newpin">Move to a new 4 digit kitchen PIN</label><input id="a-newpin" class="search" inputmode="numeric" maxlength="4" autocomplete="off" data-k="a-newpin" placeholder="4 digits" value="' + esc(S.newPin) + '"></div>' +
-      '<div class="btn-row"><button type="button" class="btn" data-p="move-pin"' + (S.moving ? ' disabled' : '') + '>Copy everything to the new PIN</button></div><span class="saved" role="status">' + esc(S.moveMsg) + '</span><span class="hint">Ask for the new PIN to be added to the security rules first. The old PIN keeps working until its rules are removed.</span></section></div>');
+      '<div class="btn-row"><button type="button" class="btn" data-p="move-pin"' + (S.moving ? ' disabled' : '') + '>' + (armed('move-pin') ? 'Tap again to copy everything' : 'Copy everything to the new PIN') + '</button></div><span class="saved" role="status">' + esc(S.moveMsg) + '</span><span class="hint">Ask for the new PIN to be added to the security rules first. The old PIN keeps working until its rules are removed.</span></section></div>');
     return '<div class="p-admin">' + bar + '<h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2>' + tabsBar + '<div class="a-pane">' + pane + '</div></div>';
   }
   /* the same Remove button on the admin People tab and the sous chef's staff list, with a second tap to be sure */
@@ -3097,7 +3115,7 @@
       S.mMsg = publish ? 'Published. Staff can read and sign it now.' : 'Draft saved.';
       loadMinutes(true); if (publish) loadSigns(ref.id, true); draw();
     }, function (e) {
-      S.mSaving = false; S.mMsg = e && e.code === 'permission-denied' ? 'Not allowed. Only the head chef and sous chefs can write minutes, and the minutes rules must be published.' : 'Could not save. Check the connection and try again.'; draw();
+      S.mSaving = false; S.mMsg = e && e.code === 'permission-denied' ? 'Not allowed. Only the head chef can write minutes, and the minutes rules must be published.' : 'Could not save. Check the connection and try again.'; draw();
     });
   }
   function mnRef(id) { return docRef('minutes', id); }
@@ -3318,25 +3336,31 @@
   var flushing = false;
   function flushMisses() {
     if (flushing || !fb || !S.authed || !S.who || !S.tok) return;
-    var q; try { q = JSON.parse(localStorage.getItem('lk.miss') || '[]'); } catch (e) { q = []; }
+    var q; try { q = JSON.parse(lsGet('lk.miss') || '[]'); } catch (e) { q = []; }
     if (!q.length) return;
     flushing = true;
-    var f = fb.fs, p = me();
-    Promise.all(q.slice(0, 20).map(function (x) {
+    var f = fb.fs, p = me(), sent = q.slice(0, 20);
+    Promise.all(sent.map(function (x) {
       var t = String(x.q || '').trim().slice(0, 60); if (!t) return null;
       return sset(docRef('misses', lkey(t).slice(0, 60)), { q: t, n: f.increment(1), last: x.at || Date.now(), lastBy: p ? p.name : '' }, true);
-    })).then(function () { try { localStorage.setItem('lk.miss', JSON.stringify(q.slice(20))); } catch (e) {} flushing = false; }, function () { flushing = false; });
+    })).then(function () {
+      /* the recipe book may have queued more searches while these were sending: read the queue again and drop only the ones sent */
+      var cur; try { cur = JSON.parse(lsGet('lk.miss') || '[]'); } catch (e) { cur = []; }
+      var gone = {}; sent.forEach(function (x) { gone[x.q + '|' + x.at] = 1; });
+      lsSet('lk.miss', JSON.stringify(cur.filter(function (x) { return !gone[x.q + '|' + x.at]; })));
+      flushing = false;
+    }, function () { flushing = false; });
   }
   var flushingV = false;
   function flushViews() {
     if (flushingV || !fb || !S.authed || !S.who || !S.tok) return;
-    var v; try { v = JSON.parse(localStorage.getItem('lk.views') || '{}'); } catch (e) { v = {}; }
+    var v; try { v = JSON.parse(lsGet('lk.views') || '{}'); } catch (e) { v = {}; }
     var ids = Object.keys(v).filter(function (id) { return recipeById(id); }).slice(0, 20);
     if (!ids.length) { if (Object.keys(v).length) lsSet('lk.views', '{}'); return; }
     flushingV = true;
     var f = fb.fs;
     Promise.all(ids.map(function (id) { var r = recipeById(id); return sset(docRef('views', id), { name: r.name.slice(0, 80), n: f.increment(Math.min(v[id], 500)), last: Date.now() }, true); })).then(function () {
-      var cur; try { cur = JSON.parse(localStorage.getItem('lk.views') || '{}'); } catch (e) { cur = {}; }
+      var cur; try { cur = JSON.parse(lsGet('lk.views') || '{}'); } catch (e) { cur = {}; }
       ids.forEach(function (id) { cur[id] = Math.max(0, (cur[id] || 0) - v[id]); if (!cur[id]) delete cur[id]; });
       Object.keys(cur).forEach(function (id) { if (!recipeById(id)) delete cur[id]; });
       lsSet('lk.views', JSON.stringify(cur)); flushingV = false;

@@ -297,7 +297,7 @@
     return '<div class="wall">' + topBar() +
       '<main id="main" class="wall-main"><h2 class="wall-h" id="rtitle" tabindex="-1">Pick a docket</h2><p class="wall-date">' + esc(today) + '</p>' + installCard() +
       '<div class="dockets">' + DOCKETS.map(function (d) {
-        return '<a class="docket" href="' + d[2] + '"><span class="pin" aria-hidden="true"></span><span class="dk-top"><span class="dk-name">' + d[1] + '</span><span class="dk-no">No. ' + d[0] + '</span></span>' +
+        return '<a class="docket" href="' + d[2] + '"><span class="dk-pin" aria-hidden="true"></span><span class="dk-top"><span class="dk-name">' + d[1] + '</span><span class="dk-no">No. ' + d[0] + '</span></span>' +
           '<span class="dk-icon">' + NAV_ICON[d[3]].replace(/width="26" height="26"/, 'width="72" height="72"') + '</span><span class="dk-go">Open</span></a>';
       }).join('') + '</div>' +
       '<p class="wall-foot">Cook as written. Check with the head chef or sous chef before changing anything.</p></main>' + tabBar() + '</div>';

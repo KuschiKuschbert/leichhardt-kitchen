@@ -84,6 +84,15 @@ function commitOps(ops) {
     const id = proof.ref.path[proof.ref.path.length - 1], pin = store[key(proof.ref.path.slice(0, -2).concat(['staffpins', id]))];
     if (!pin || pin.hash !== proof.data.tok) return Promise.reject({ code: 'permission-denied' });
   }
+  // two of the real rules that order of writes depends on: a staff PIN hash is only created once its pinset record
+  // exists (already stored or in the same batch), and a learnlog day is create only
+  const has = p => store[p] !== undefined || ops.some(o => key(o.ref.path) === p && o.kind === 'set');
+  const refused = ops.some(o => {
+    const k = key(o.ref.path), m = k.match(/^(.*)\/staffpins\/([^/]+)$/);
+    if (m && o.kind === 'set' && store[k] === undefined && !has(m[1] + '/pinset/' + m[2])) return true;
+    return /\/learnlog\/[^/]+$/.test(k) && store[k] !== undefined;
+  });
+  if (refused) return Promise.reject({ code: 'permission-denied' });
   if (window.__fake.mode === 'deny') return Promise.reject({ code: 'permission-denied' });
   if (window.__fake.mode === 'fail') return Promise.reject({ code: 'unavailable' });
   const run = () => { ops.filter(o => !/\/proofs\//.test(key(o.ref.path))).forEach(applyOp); save(); notify(); };
