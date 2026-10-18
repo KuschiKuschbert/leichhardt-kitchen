@@ -170,6 +170,17 @@ There's no build step and nothing to install. To try it on a computer, open `ind
 - **Recorded for later:** when a line was removed (`deletedAt`), who marked it urgent and when (`urgentBy`, `urgentAt`), removal time on order lines.
 - **Empty searches:** a recipe search that finds no card at all is queued on the phone (`lk.miss`) and sent to `misses/<slug>` once someone is signed in to the prep book on that phone. The owner can hide one once the card is written.
 
+### Big lists in the admin area (October 2026)
+Every admin list that can keep growing now uses one shared layout (`lvHTML` in `js/prep.js`, styles at the end of `css/app.css`):
+- **Tools appear once a list is long enough** (usually 8 or more rows): a search box, filter chips with a count on each, and a Sort choice. A short list stays plain.
+- **Show more**: lists open at one page (7 to 20 rows depending on the list) with "Show N more", "Show all" and "Show fewer". The count line says "Showing 15 of 26 people".
+- **Wide screen** shows a table. **A phone** shows each row as a small card, so nothing needs swiping sideways.
+- **Search, filter, sort and rows opened are remembered per list** until the page is closed. Typing in the search box only redraws the rows, so it keeps its focus.
+- **Print or save as PDF** and the minutes print show every row, not just the first page.
+- Lists moved onto it: People and the sous chef's Staff page, Learned items (all of them, not the top 40), Notes (Coming up and Past notes, with Load 30 older notes), the Minutes register (with an Older minutes picker beyond the latest six), Waste (wasted most often, each day, who logs, end-of-day reviews), Orders (standing candidates, by day, by person, ordered most often), Team (section habits, who writes), Insights (slow and sticky lines, proofreader, recipe cards opened, searches that found nothing).
+- Adding a person clears the search and filter and opens every row, so the new row is on screen and focused.
+- Charts, heatmaps and the skills matrix are not lists and are unchanged.
+
 ### Daily notes
 
 - The head chef or a sous chef writes short notes for the day. The first time the book is opened after 10:30 on a day with a note, they show once as a popup ("Today's notes") with a Got it button. Escape or tapping outside also closes it. It does not pop up while someone is typing in a field; the bell shows a dot instead and the popup follows once typing stops. A book left open on the pass pops it at 10:30.

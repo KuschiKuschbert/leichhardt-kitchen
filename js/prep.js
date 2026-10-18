@@ -1148,8 +1148,17 @@
   }
   function fixesHTML(agg) {
     if (!agg.fixes.length) return '<h3 class="a-ch-h">Proofreader</h3><p class="hint">No lines needed correcting in this time.</p>';
-    var rows = agg.fixes.slice(-15).reverse().map(function (f) { return '<tr><th scope="row">' + esc(f.from) + '</th><td>' + esc(f.to) + '</td><td>' + esc(f.by) + '</td><td>' + esc(parseYmd(f.d).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })) + '</td></tr>'; }).join('');
-    return '<h3 class="a-ch-h">Proofreader</h3><span class="hint">The latest corrections. Anyone can tap Undo straight after, and that word is then left alone on their device.</span><div class="a-scroll"><table class="a-table"><thead><tr><th scope="col">Typed</th><th scope="col">Saved as</th><th scope="col">By</th><th scope="col">Day</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+    return '<h3 class="a-ch-h">Proofreader</h3><span class="hint">The latest corrections. Anyone can tap Undo straight after, and that word is then left alone on their device.</span>' + lvHTML({
+      key: 'ins-fixes', items: agg.fixes.slice().reverse(), step: 10, tools: 10, noun: ['correction', 'corrections'], ph: 'Search typed or saved words',
+      find: function (f) { return f.from + ' ' + f.to + ' ' + f.by; },
+      sorts: [['new', 'Newest first', function () { return 0; }], ['az', 'Typed A to Z', function (a, b) { return String(a.from).toLowerCase().localeCompare(String(b.from).toLowerCase()); }]],
+      cols: [
+        { h: 'Typed', th: true, html: function (f) { return esc(f.from); } },
+        { h: 'Saved as', html: function (f) { return esc(f.to); } },
+        { h: 'By', html: function (f) { return esc(f.by); } },
+        { h: 'Day', html: function (f) { return esc(parseYmd(f.d).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })); } }
+      ]
+    });
   }
   function rollChart(agg) {
     var rows = Object.keys(agg.rollKeys).map(function (k) { return agg.rollKeys[k]; }).sort(function (a, b) { return b.n - a.n || b.max - a.max; }).slice(0, 10);
@@ -1162,6 +1171,24 @@
     return out + '</svg>';
   }
   var DOWS = [[1, 'Mon'], [2, 'Tue'], [3, 'Wed'], [4, 'Thu'], [5, 'Fri'], [6, 'Sat'], [0, 'Sun']];
+  /* Every learned item, not just the top 40: it keeps growing as lines are written. */
+  function learnedListHTML(list) {
+    return lvHTML({
+      key: 'learned', items: list, step: 20, tools: 12, noun: ['item', 'items'], ph: 'Search items', empty: 'Nothing learned yet.',
+      find: function (x) { return x.text + ' ' + bestSection(x); },
+      filters: [['all', 'All items'], ['reg', 'Regulars', function (x) { return isRegular(x); }], ['hid', 'Hidden', function (x) { return !!x.hidden; }], ['one', 'Written once', function (x) { return (x.uses || 0) <= 1; }]],
+      sorts: [['uses', 'Most used', function (a, b) { return (b.uses || 0) - (a.uses || 0); }], ['az', 'A to Z', function (a, b) { return String(a.text).toLowerCase().localeCompare(String(b.text).toLowerCase()); }],
+        ['new', 'Last used', function (a, b) { return (b.lastUsed || 0) - (a.lastUsed || 0); }], ['few', 'Least used', function (a, b) { return (a.uses || 0) - (b.uses || 0); }]],
+      cols: [
+        { h: 'Item', th: true, html: function (x) { return esc(x.text) + (x.hidden ? ' <span class="a-badge off">hidden</span>' : '') + (isRegular(x) ? ' <span class="a-badge">regular</span>' : ''); } },
+        { h: 'Uses', html: function (x) { return String(x.uses || 0); } },
+        { h: 'Typed/picked', html: function (x) { return (x.typed || 0) + '/' + (x.picked || 0); } },
+        { h: 'Usual section', html: function (x) { return esc(bestSection(x)); } },
+        { h: 'Last used', html: function (x) { return esc(ago(x.lastUsed)); } },
+        { h: '', cls: 'a-act', html: function (x) { return '<button type="button" class="p-x" data-p="learn-hide" data-id="' + esc(x.id) + '" data-hide="' + (x.hidden ? '0' : '1') + '">' + (x.hidden ? 'Show in suggestions' : 'Hide from suggestions') + '</button>'; } }
+      ]
+    });
+  }
   function learnedHTML() {
     var L = S.learned.filter(function (x) { return x.text; });
     var head = '<section class="set-block"><span class="label">What the prep list has learned</span><span class="hint">Every line written or picked is counted per item, weekday and section. An item becomes a regular after ' + REGULAR + ' uses.</span>';
@@ -1176,16 +1203,11 @@
       var mx = Math.max.apply(null, DOWS.map(function (d) { return (x.dow || {})[d[0]] || 0; })) || 1;
       return '<tr><th scope="row">' + esc(x.text) + (x.hidden ? ' <span class="a-badge off">hidden</span>' : '') + '</th>' + DOWS.map(function (d) { var n = (x.dow || {})[d[0]] || 0; return '<td class="a-heat" style="background:rgba(235,104,52,' + (n ? (0.15 + 0.7 * n / mx).toFixed(2) : 0) + ')">' + (n || '') + '</td>'; }).join('') + '</tr>';
     }).join('');
-    var manage = top.slice(0, 40).map(function (x) {
-      return '<tr><th scope="row">' + esc(x.text) + (x.hidden ? ' <span class="a-badge off">hidden</span>' : '') + (isRegular(x) ? ' <span class="a-badge">regular</span>' : '') + '</th><td>' + (x.uses || 0) + '</td><td>' + (x.typed || 0) + '/' + (x.picked || 0) + '</td><td>' + esc(bestSection(x)) + '</td><td>' + esc(ago(x.lastUsed)) + '</td>' +
-        '<td><button type="button" class="p-x" data-p="learn-hide" data-id="' + esc(x.id) + '" data-hide="' + (x.hidden ? '0' : '1') + '">' + (x.hidden ? 'Show in suggestions' : 'Hide from suggestions') + '</button></td></tr>';
-    }).join('');
     return head + btn + '<div class="a-tiles">' + tiles.map(function (x) { return '<div class="a-tile"><strong>' + esc(String(x[0])) + '</strong><span>' + esc(x[1]) + '</span></div>'; }).join('') + '</div>' +
       '<h3 class="a-ch-h">Most written items</h3>' + sectionsChart({ sections: sec }, 'Most written prep items') +
       '<h3 class="a-ch-h">Which days each item is written</h3><span class="hint">Number of times written on each weekday. Darker is more.</span>' +
       '<div class="a-scroll"><table class="a-table"><thead><tr><th scope="col">Item</th>' + DOWS.map(function (d) { return '<th scope="col">' + d[1] + '</th>'; }).join('') + '</tr></thead><tbody>' + heat + '</tbody></table></div>' +
-      '<h3 class="a-ch-h">Manage learned items</h3><span class="hint">Hide a typo or a one-off so it stops showing as a suggestion. Typed and picked counts show as typed/picked.</span>' +
-      '<div class="a-scroll"><table class="a-table"><thead><tr><th scope="col">Item</th><th scope="col">Uses</th><th scope="col">Typed/picked</th><th scope="col">Usual section</th><th scope="col">Last used</th><th scope="col"></th></tr></thead><tbody>' + manage + '</tbody></table></div>' + '</section>';
+      '<h3 class="a-ch-h">Manage learned items</h3><span class="hint">Hide a typo or a one-off so it stops showing as a suggestion. Typed and picked counts show as typed/picked.</span>' + learnedListHTML(top) + '</section>';
   }
   var DOW = [1, 2, 3, 4, 5, 6, 0], DOWN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   var HB = { w: ['#FFFFFF', '#E3EEFA', '#C4DAF4', '#97BEEC', '#6CA2E4'], r: SK };
@@ -1231,11 +1253,22 @@
       if (med >= 4 * 3600000) { tips.push('Slow to finish: start it earlier in the day.'); score += 3; }
       if (e.del >= 2 && e.del / (e.w + e.del) >= 0.3) { tips.push('Often removed: check it is still needed.'); score += e.del; }
       return { e: e, med: med, tips: tips, score: score };
-    }).filter(function (x) { return x.tips.length; }).sort(function (a, b) { return b.score - a.score; }).slice(0, 10);
+    }).filter(function (x) { return x.tips.length; }).sort(function (a, b) { return b.score - a.score; });
     if (!rows.length) return '<p class="hint">Nothing slow or sticky in this time.</p>';
-    return '<div class="a-tablewrap"><table class="a-table a-plain"><thead><tr><th scope="col">Line</th><th scope="col">Written</th><th scope="col">Typical time to tick</th><th scope="col">Rolled over</th><th scope="col">Removed</th><th scope="col">Suggestion</th></tr></thead><tbody>' +
-      rows.map(function (x) { return '<tr><th scope="row">' + esc(x.e.text) + '</th><td>' + x.e.w + '</td><td>' + (x.med ? dur(x.med) : 'n/a') + '</td><td>' + x.e.r + '</td><td>' + x.e.del + '</td><td>' + x.tips.map(function (t) { return '<span class="a-flag">' + esc(t) + '</span>'; }).join(' ') + '</td></tr>'; }).join('') +
-      '</tbody></table></div>';
+    return lvHTML({
+      key: 'ins-sticky', items: rows, step: 8, tools: 8, noun: ['line', 'lines'], ph: 'Search lines',
+      find: function (x) { return x.e.text; },
+      filters: [['all', 'All lines'], ['roll', 'Rolls over', function (x) { return x.e.r >= 3; }], ['slow', 'Slow to finish', function (x) { return x.med >= 4 * 3600000; }], ['rem', 'Often removed', function (x) { return x.e.del >= 2; }]],
+      sorts: [['worst', 'Worst first', function (a, b) { return b.score - a.score; }], ['az', 'A to Z', function (a, b) { return a.e.text.toLowerCase().localeCompare(b.e.text.toLowerCase()); }], ['roll', 'Most rolled over', function (a, b) { return b.e.r - a.e.r; }]],
+      cols: [
+        { h: 'Line', th: true, html: function (x) { return esc(x.e.text); } },
+        { h: 'Written', html: function (x) { return String(x.e.w); } },
+        { h: 'Typical time to tick', html: function (x) { return x.med ? dur(x.med) : 'n/a'; } },
+        { h: 'Rolled over', html: function (x) { return String(x.e.r); } },
+        { h: 'Removed', html: function (x) { return String(x.e.del); } },
+        { h: 'Suggestion', wide: true, html: function (x) { return x.tips.map(function (t) { return '<span class="a-flag">' + esc(t) + '</span>'; }).join(' '); } }
+      ]
+    });
   }
   function pct(a, b) { return b ? Math.round(a / b * 100) : 0; }
   function delta(cur, prev, n, lowIsGood, unit) {
@@ -1247,6 +1280,91 @@
   }
   function tileHTML(x) { return '<div class="a-tile"><strong>' + esc(String(x[0])) + '</strong><span>' + esc(x[1]) + '</span>' + (x[2] || '') + '</div>'; }
   function card(inner, cls) { return '<div class="a-card' + (cls ? ' ' + cls : '') + '">' + inner + '</div>'; }
+
+  /* ---------- big admin lists ----------
+     One helper for every admin list that can keep growing: a search box, filter chips with counts, a sort choice,
+     a count line and "Show more" instead of one long scroll. On a wide screen a list is a table; on a phone each
+     row turns into a small card, so nothing needs swiping sideways. A short list gets no tools and stays plain.
+     cfg: { key, items, step (rows per page, 15), tools (show the tools from this many rows, 8), noun: [one, many],
+            ph (search hint), find(item) (text to search), filters: [[id, label, test(item)]] (first is the default),
+            sorts: [[id, label, compare(a, b)]] (first is the default), cols: [{ h, th, cls, wide, html(item) }]
+            or card(item) (a list item for rows that are cards, not table rows), rowCls(item), empty, table (extra class) }
+     The page remembers search, filter, sort and how many rows are open per list key until the tab is closed. */
+  var LV = {}, LVR = {}, LV_BIG = 100000;
+  function lvState(c) {
+    var s = LV[c.key];
+    if (!s) s = LV[c.key] = { q: '', f: c.filters && c.filters.length ? c.filters[0][0] : '', sort: c.sorts && c.sorts.length ? c.sorts[0][0] : '', shown: c.step || 15 };
+    return s;
+  }
+  function lvRows(c) {
+    var s = lvState(c), q = s.q.replace(/^\s+|\s+$/g, '').toLowerCase(), l = c.items, f, so, words;
+    f = (c.filters || []).filter(function (x) { return x[0] === s.f; })[0];
+    if (f && f[2]) l = l.filter(f[2]);
+    if (q && c.find) { words = q.split(/\s+/); l = l.filter(function (it) { var t = String(c.find(it)).toLowerCase(); return words.every(function (w) { return t.indexOf(w) >= 0; }); }); }
+    so = (c.sorts || []).filter(function (x) { return x[0] === s.sort; })[0];
+    return so ? l.slice().sort(so[2]) : l;
+  }
+  function lvBody(c) {
+    var s = lvState(c), step = c.step || 15, noun = c.noun || ['item', 'items'], total = c.items.length;
+    if (!total) return '<p class="hint">' + esc(c.empty || 'Nothing here yet.') + '</p>';
+    var rows = lvRows(c), all = rows.length;
+    if (!all) return '<p class="hint lv-none">Nothing matches' + (s.q.replace(/\s/g, '') ? ' "' + esc(s.q.trim()) + '"' : ' this filter') + '. <button type="button" class="p-x" data-p="lv-clear" data-lv="' + esc(c.key) + '">Clear search and filter</button></p>';
+    var lim = S.lvAll ? all : Math.max(step, s.shown), shown = rows.slice(0, lim), left = all - shown.length, body;
+    if (c.card) body = '<ul class="lv-cards nt-rows">' + shown.map(c.card).join('') + '</ul>';
+    else {
+      body = '<div class="a-tablewrap lv-wrap"><table class="a-table a-plain lv-table' + (c.table ? ' ' + esc(c.table) : '') + '"><thead><tr>' + c.cols.map(function (x) {
+        return '<th scope="col"' + (x.cls ? ' class="' + esc(x.cls) + '"' : '') + '>' + (x.h ? esc(x.h) : '<span class="visually-hidden">Actions</span>') + '</th>';
+      }).join('') + '</tr></thead><tbody>' + shown.map(function (it) {
+        return '<tr' + (c.rowCls && c.rowCls(it) ? ' class="' + esc(c.rowCls(it)) + '"' : '') + '>' + c.cols.map(function (x) {
+          var inner = x.html(it);
+          return x.th ? '<th scope="row">' + inner + '</th>' : '<td' + (x.h ? ' data-l="' + esc(x.h) + '"' : '') + (x.cls || x.wide ? ' class="' + esc((x.cls || '') + (x.wide ? ' lv-wide' : '')) + '"' : '') + '>' + inner + '</td>';
+        }).join('') + '</tr>';
+      }).join('') + '</tbody></table></div>';
+    }
+    var count = '<p class="lv-count" role="status">' + (left ? 'Showing ' + shown.length + ' of ' + all : all) + (all !== total ? ' matching' : '') + ' ' + (all === 1 ? noun[0] : noun[1]) + (all !== total ? ' (' + total + ' in all)' : '') + '</p>';
+    var more = '';
+    if (left > 0) more = '<div class="btn-row lv-more"><button type="button" class="btn" data-p="lv-more" data-lv="' + esc(c.key) + '">Show ' + Math.min(step, left) + ' more</button>' + (left > step ? '<button type="button" class="btn" data-p="lv-all" data-lv="' + esc(c.key) + '">Show all ' + all + '</button>' : '') + '</div>';
+    else if (shown.length > step && !S.lvAll) more = '<div class="btn-row lv-more"><button type="button" class="btn" data-p="lv-less" data-lv="' + esc(c.key) + '">Show fewer</button></div>';
+    return count + body + more;
+  }
+  function lvHTML(c) {
+    LVR[c.key] = c;
+    var s = lvState(c), key = esc(c.key), bar = '';
+    if (c.items.length >= (c.tools == null ? 8 : c.tools)) {
+      var fl = (c.filters || []).map(function (f) { return { f: f, n: f[2] ? c.items.filter(f[2]).length : c.items.length }; }).filter(function (x, i) { return i === 0 || x.n > 0 || x.f[0] === s.f; });
+      bar = '<div class="lv-tools">' +
+        (c.find ? '<div class="lv-qw"><label class="visually-hidden" for="lv-q-' + key + '">Search</label><input id="lv-q-' + key + '" type="search" class="search lv-q" data-k="lv-q:' + key + '" placeholder="' + esc(c.ph || 'Search') + '" value="' + esc(s.q) + '" autocomplete="off" enterkeyhint="search"></div>' : '') +
+        (c.sorts && c.sorts.length > 1 ? '<label class="a-f lv-sort"><span>Sort</span><select data-k="lv-s:' + key + '" aria-label="Sort">' + c.sorts.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (o[0] === s.sort ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select></label>' : '') + '</div>' +
+        (fl.length > 1 ? '<div class="chips lv-chips scroll" role="group" aria-label="Filter">' + fl.map(function (x) { return '<button type="button" class="chip" data-p="lv-f" data-lv="' + key + '" data-v="' + esc(x.f[0]) + '" aria-pressed="' + (x.f[0] === s.f) + '">' + esc(x.f[1]) + ' <span class="lv-n">' + x.n + '</span></button>'; }).join('') + '</div>' : '');
+    }
+    return '<div class="lv" data-lv="' + key + '">' + bar + '<div class="lv-body" data-lvb="' + key + '">' + lvBody(c) + '</div></div>';
+  }
+  /* redraw just the rows of one list, so the search box keeps its focus while someone types */
+  function lvRefresh(key) {
+    var c = LVR[key], b = S.root && S.root.querySelector('[data-lvb="' + key + '"]');
+    if (!c || !b) return;
+    b.innerHTML = lvBody(c);
+    var s = lvState(c);
+    Array.prototype.forEach.call(S.root.querySelectorAll('[data-p="lv-f"][data-lv="' + key + '"]'), function (ch) { ch.setAttribute('aria-pressed', ch.getAttribute('data-v') === s.f ? 'true' : 'false'); });
+  }
+  function lvClick(a, el) {
+    var key = el.getAttribute('data-lv'), c = LVR[key]; if (!c) return;
+    var s = lvState(c), step = c.step || 15;
+    if (a === 'lv-f') { s.f = el.getAttribute('data-v'); s.shown = step; }
+    else if (a === 'lv-more') s.shown = Math.max(step, s.shown) + step;
+    else if (a === 'lv-all') s.shown = LV_BIG;
+    else if (a === 'lv-less') s.shown = step;
+    else if (a === 'lv-clear') {
+      s.q = ''; s.f = c.filters && c.filters.length ? c.filters[0][0] : ''; s.shown = step;
+      var qi = S.root.querySelector('[data-k="lv-q:' + key + '"]'); if (qi) qi.value = '';
+      Array.prototype.forEach.call(S.root.querySelectorAll('[data-p="lv-f"][data-lv="' + key + '"]'), function (ch) { ch.setAttribute('aria-pressed', ch.getAttribute('data-v') === s.f ? 'true' : 'false'); });
+    }
+    lvRefresh(key);
+  }
+  /* a row that was just added must be on screen: clear the search and filter and open every row */
+  function lvReveal(key) { var s = LV[key], c = LVR[key]; if (!s) return; s.q = ''; if (c && c.filters && c.filters.length) s.f = c.filters[0][0]; s.shown = LV_BIG; }
+  /* printing shows every row, not just the first page */
+  function lvPrintAll(on) { S.lvAll = !!on; Object.keys(LVR).forEach(lvRefresh); }
   /* Every day at a glance: a calendar, darker means more. Tap a day to open it in the prep book. */
   function calHTML(n) {
     var a = AF(), m = S.calM || 'done', today = ymd(new Date()), agg = aggregate(n, 0), first = shift(today, -(n - 1)), start = first, i;
@@ -1346,8 +1464,9 @@
     var pane = S.root && S.root.querySelector('.a-pane'); if (!pane) return;
     var closed = [].filter.call(pane.querySelectorAll('details'), function (d) { return !d.open; });
     closed.forEach(function (d) { d.open = true; });
+    lvPrintAll(true);
     document.documentElement.classList.add('print-admin');
-    function done() { document.documentElement.classList.remove('print-admin'); closed.forEach(function (d) { d.open = false; }); window.removeEventListener('afterprint', done); }
+    function done() { document.documentElement.classList.remove('print-admin'); closed.forEach(function (d) { d.open = false; }); lvPrintAll(false); window.removeEventListener('afterprint', done); }
     window.addEventListener('afterprint', done);
     setTimeout(function () { window.print(); setTimeout(function () { if (document.documentElement.classList.contains('print-admin') && !window.matchMedia('print').matches) done(); }, 1500); }, 50);
   }
@@ -1715,20 +1834,41 @@
     var n = S.statsRange, td = teamData(n), people = (S.config.people || []).filter(function (p) { return p.active !== false; });
     var rows = people.map(function (p) { var r = td.per[p.id] || blankRec(p.id); return { p: p, r: r, h: habit(r, td), wd: Object.keys(r.days).length, tdN: Object.keys(r.tdays).length }; });
     var chips = toolsHTML('team', 'Team') + filtersHTML('team');
-    var hab = rows.filter(function (x) { return x.h.tot; }).sort(function (a, b) { return (b.h.flag ? 1 : 0) - (a.h.flag ? 1 : 0) || b.h.streak - a.h.streak; }).map(function (x) {
-      return '<tr><th scope="row">' + esc(x.p.name) + '</th><td>' + x.h.tot + ' <span class="o-who-i">' + (x.h.basis === 'ticks' ? 'ticked' : 'written') + '</span></td><td>' + esc(x.h.top) + ' <span class="o-who-i">' + Math.round(x.h.share * 100) + '%</span></td><td>' + esc(x.h.also.join(', ') || 'none') + '</td><td>' + x.h.streak + (x.h.streak === 1 ? ' day' : ' days') + '</td><td>' +
-        (x.h.flag ? '<span class="a-flag">Consider rotating' + (x.h.suggest ? ' to ' + esc(x.h.suggest) : '') + '</span>' : '<span class="o-who-i">Fine for now</span>') + '</td></tr>';
-    }).join('');
-    var act = rows.slice().sort(function (a, b) { return a.wd - b.wd || a.r.w - b.r.w; }).map(function (x) {
-      var share = td.nActive ? x.wd / td.nActive : 0, quiet = td.nActive >= 3 && share < 0.3;
-      return '<tr><th scope="row">' + esc(x.p.name) + '</th><td>' + x.r.w + '</td><td>' + x.wd + ' of ' + td.nActive + '</td><td>' + x.r.t + ' (' + x.tdN + ' days)</td><td>' + (x.r.last ? esc(dayShort(x.r.last)) : 'none in this time') + '</td><td>' + (quiet ? '<span class="a-flag">Writes rarely</span>' : '<span class="o-who-i">OK</span>') + '</td></tr>';
-    }).join('');
+    var habRows = rows.filter(function (x) { return x.h.tot; });
+    var hab = habRows.length ? lvHTML({
+      key: 'team-habits', items: habRows, step: 10, tools: 10, noun: ['person', 'people'], ph: 'Search names',
+      find: function (x) { return x.p.name + ' ' + x.h.top; },
+      filters: [['all', 'Everyone'], ['flag', 'Consider rotating', function (x) { return !!x.h.flag; }]],
+      sorts: [['flag', 'Flagged first', function (a, b) { return (b.h.flag ? 1 : 0) - (a.h.flag ? 1 : 0) || b.h.streak - a.h.streak; }], ['az', 'A to Z', function (a, b) { return a.p.name.toLowerCase().localeCompare(b.p.name.toLowerCase()); }], ['streak', 'Longest in a row', function (a, b) { return b.h.streak - a.h.streak; }]],
+      cols: [
+        { h: 'Person', th: true, html: function (x) { return esc(x.p.name); } },
+        { h: 'Lines', html: function (x) { return x.h.tot + ' <span class="o-who-i">' + (x.h.basis === 'ticks' ? 'ticked' : 'written') + '</span>'; } },
+        { h: 'Main section', html: function (x) { return esc(x.h.top) + ' <span class="o-who-i">' + Math.round(x.h.share * 100) + '%</span>'; } },
+        { h: 'Also', html: function (x) { return esc(x.h.also.join(', ') || 'none'); } },
+        { h: 'In a row', html: function (x) { return x.h.streak + (x.h.streak === 1 ? ' day' : ' days'); } },
+        { h: 'Rotation', wide: true, html: function (x) { return x.h.flag ? '<span class="a-flag">Consider rotating' + (x.h.suggest ? ' to ' + esc(x.h.suggest) : '') + '</span>' : '<span class="o-who-i">Fine for now</span>'; } }
+      ]
+    }) : '';
+    var act = rows.length ? lvHTML({
+      key: 'team-writers', items: rows.map(function (x) { x.quiet = td.nActive >= 3 && (td.nActive ? x.wd / td.nActive : 0) < 0.3; return x; }), step: 10, tools: 10, noun: ['person', 'people'], ph: 'Search names',
+      find: function (x) { return x.p.name; },
+      filters: [['all', 'Everyone'], ['quiet', 'Writes rarely', function (x) { return x.quiet; }]],
+      sorts: [['few', 'Fewest days written', function (a, b) { return a.wd - b.wd || a.r.w - b.r.w; }], ['most', 'Most days written', function (a, b) { return b.wd - a.wd || b.r.w - a.r.w; }], ['az', 'A to Z', function (a, b) { return a.p.name.toLowerCase().localeCompare(b.p.name.toLowerCase()); }]],
+      cols: [
+        { h: 'Person', th: true, html: function (x) { return esc(x.p.name); } },
+        { h: 'Lines', html: function (x) { return String(x.r.w); } },
+        { h: 'Days written', html: function (x) { return x.wd + ' of ' + td.nActive; } },
+        { h: 'Ticks', html: function (x) { return x.r.t + ' (' + x.tdN + ' days)'; } },
+        { h: 'Last wrote', html: function (x) { return x.r.last ? esc(dayShort(x.r.last)) : 'none in this time'; } },
+        { h: 'Note', html: function (x) { return x.quiet ? '<span class="a-flag">Writes rarely</span>' : '<span class="o-who-i">OK</span>'; } }
+      ]
+    }) : '';
     return '<section class="set-block">' + chips + '<span class="hint">Worked out from the section each line sits under, who ticked it and who wrote it. Ticks show where someone actually worked, so they count first. Use it as a prompt for a chat, not a verdict.</span>' +
       '<h3 class="a-ch-h">Skills matrix</h3><span class="hint">Lines each person ticked in each section (the 8 busiest sections).</span>' + skillsHTML(rows, td) +
       '<h3 class="a-ch-h">Section habits</h3><span class="hint">Based on ticks for anyone with 8 or more ticked lines, otherwise on the lines they wrote. Flagged when 70% or more of them over 5 or more days, or the last 5 or more days, were in one section. The suggestion is the section they have done least.</span>' +
-      (hab ? '<div class="a-tablewrap"><table class="a-table a-plain"><thead><tr><th scope="col">Person</th><th scope="col">Lines</th><th scope="col">Main section</th><th scope="col">Also</th><th scope="col">In a row</th><th scope="col">Rotation</th></tr></thead><tbody>' + hab + '</tbody></table></div>' : '<p class="hint">No lines with a section in this time.</p>') +
+      (hab || '<p class="hint">No lines with a section in this time.</p>') +
       '<h3 class="a-ch-h">Who writes, and who does not</h3><span class="hint">Days written is out of the ' + td.nActive + ' days in this time that had any lines written. Fewest first. Ticks are shown so you can tell someone who works but does not write.</span>' +
-      (act ? '<div class="a-tablewrap"><table class="a-table a-plain"><thead><tr><th scope="col">Person</th><th scope="col">Lines</th><th scope="col">Days written</th><th scope="col">Ticks</th><th scope="col">Last wrote</th><th scope="col">Note</th></tr></thead><tbody>' + act + '</tbody></table></div>' : '<p class="hint">No people on the list.</p>') + '</section>' + orderStatsHTML(td, n);
+      (act || '<p class="hint">No people on the list.</p>') + '</section>' + orderStatsHTML(td, n);
   }
   /* Items that keep coming back onto the order list in the last 14 days: candidates for a standing order. */
   function standingHTML(all) {
@@ -1740,14 +1880,20 @@
       if (x.qty) e.q[x.qty] = (e.q[x.qty] || 0) + 1;
     });
     var rows = Object.keys(m).map(function (k) { return m[k]; }).filter(function (e) { return Object.keys(e.days).length >= 3; })
-      .sort(function (a, b) { return Object.keys(b.days).length - Object.keys(a.days).length; }).slice(0, 12);
+      .sort(function (a, b) { return Object.keys(b.days).length - Object.keys(a.days).length; });
     var head = '<h3 class="a-ch-h">Standing order candidates</h3><span class="hint">On the order list on 3 or more different days in the last 14 days. A standing order with the supplier saves writing them every time.</span>';
     if (!rows.length) return head + '<p class="hint">Nothing comes back often enough yet.</p>';
-    return head + '<div class="a-tablewrap"><table class="a-table a-plain"><thead><tr><th scope="col">Item</th><th scope="col">Days on the list</th><th scope="col">Usual amount</th><th scope="col">Suggestion</th></tr></thead><tbody>' + rows.map(function (e) {
-      var nd = Object.keys(e.days).length, dows = DOW.filter(function (d) { return (e.dow[d] || 0) >= 2; }).map(function (d) { return DOWN[DOW.indexOf(d)]; });
-      var uq = Object.keys(e.q).sort(function (a, b) { return e.q[b] - e.q[a]; })[0] || '';
-      return '<tr><th scope="row">' + esc(e.text) + '</th><td>' + nd + ' of 14</td><td>' + esc(uq || 'not written') + '</td><td><span class="a-flag">' + esc(dows.length ? 'Standing order on ' + dows.join(' and ') : 'Standing order about every ' + Math.max(1, Math.round(14 / nd)) + ' days') + '</span></td></tr>';
-    }).join('') + '</tbody></table></div>';
+    return head + lvHTML({
+      key: 'ord-standing', items: rows, step: 10, tools: 8, noun: ['item', 'items'], ph: 'Search items',
+      find: function (e) { return e.text; },
+      sorts: [['days', 'Most days', function (a, b) { return Object.keys(b.days).length - Object.keys(a.days).length; }], ['az', 'A to Z', function (a, b) { return String(a.text).toLowerCase().localeCompare(String(b.text).toLowerCase()); }]],
+      cols: [
+        { h: 'Item', th: true, html: function (e) { return esc(e.text); } },
+        { h: 'Days on the list', html: function (e) { return Object.keys(e.days).length + ' of 14'; } },
+        { h: 'Usual amount', html: function (e) { var uq = Object.keys(e.q).sort(function (a, b) { return e.q[b] - e.q[a]; })[0] || ''; return esc(uq || 'not written'); } },
+        { h: 'Suggestion', wide: true, html: function (e) { var nd = Object.keys(e.days).length, dows = DOW.filter(function (d) { return (e.dow[d] || 0) >= 2; }).map(function (d) { return DOWN[DOW.indexOf(d)]; }); return '<span class="a-flag">' + esc(dows.length ? 'Standing order on ' + dows.join(' and ') : 'Standing order about every ' + Math.max(1, Math.round(14 / nd)) + ' days') + '</span>'; } }
+      ]
+    });
   }
   function orderStatsHTML(td, n) {
     var os = S.ordStats;
@@ -1760,20 +1906,71 @@
       var k = okey(x.text); if (k) { var it = items[k] = items[k] || { text: x.text, n: 0, days: {} }; it.n++; it.days[x.date] = 1; }
       if (x.ordered) ordered++;
     });
-    var dayRows = Object.keys(byDay).sort().reverse().map(function (d) { return '<tr><th scope="row">' + esc(dayShort(d)) + '</th><td>' + byDay[d].n + '</td><td>' + esc(Object.keys(byDay[d].who).join(', ')) + '</td></tr>'; }).join('');
-    var perRows = Object.keys(byPerson).sort(function (a, b) { return byPerson[b].n - byPerson[a].n; }).map(function (k) { var p = byPerson[k]; return '<tr><th scope="row">' + esc(k) + '</th><td>' + p.n + '</td><td>' + Object.keys(p.days).length + '</td><td>' + esc(dayShort(p.last)) + '</td></tr>'; }).join('');
-    var itemRows = Object.keys(items).sort(function (a, b) { return items[b].n - items[a].n; }).slice(0, 10).map(function (k) { var it = items[k]; return '<tr><th scope="row">' + esc(it.text) + '</th><td>' + it.n + '</td><td>' + Object.keys(it.days).length + '</td></tr>'; }).join('');
+    var dayList = lvHTML({
+      key: 'ord-days', items: Object.keys(byDay).map(function (d) { return { d: d, n: byDay[d].n, who: Object.keys(byDay[d].who) }; }), step: 7, tools: 10, noun: ['day', 'days'], ph: 'Search by day or name',
+      find: function (o) { return dayShort(o.d) + ' ' + o.who.join(' '); },
+      sorts: [['new', 'Newest first', function (a, b) { return a.d < b.d ? 1 : -1; }], ['most', 'Most lines', function (a, b) { return b.n - a.n || (a.d < b.d ? 1 : -1); }]],
+      cols: [{ h: 'Day', th: true, html: function (o) { return esc(dayShort(o.d)); } }, { h: 'Lines', html: function (o) { return String(o.n); } }, { h: 'Written by', wide: true, html: function (o) { return esc(o.who.join(', ')); } }]
+    });
+    var perList = lvHTML({
+      key: 'ord-people', items: Object.keys(byPerson).map(function (k) { var q = byPerson[k]; return { k: k, n: q.n, days: Object.keys(q.days).length, last: q.last }; }), step: 10, tools: 10, noun: ['person', 'people'], ph: 'Search names',
+      find: function (o) { return o.k; },
+      sorts: [['most', 'Most lines', function (a, b) { return b.n - a.n || a.k.localeCompare(b.k); }], ['az', 'A to Z', function (a, b) { return a.k.toLowerCase().localeCompare(b.k.toLowerCase()); }], ['last', 'Wrote most recently', function (a, b) { return a.last < b.last ? 1 : -1; }]],
+      cols: [{ h: 'Person', th: true, html: function (o) { return esc(o.k); } }, { h: 'Lines', html: function (o) { return String(o.n); } }, { h: 'Days', html: function (o) { return String(o.days); } }, { h: 'Last', html: function (o) { return esc(dayShort(o.last)); } }]
+    });
+    var itemList = lvHTML({
+      key: 'ord-items', items: Object.keys(items).map(function (k) { var it = items[k]; return { t: it.text, n: it.n, days: Object.keys(it.days).length }; }), step: 10, tools: 10, noun: ['item', 'items'], ph: 'Search items',
+      find: function (o) { return o.t; },
+      sorts: [['most', 'Most lines', function (a, b) { return b.n - a.n || a.t.toLowerCase().localeCompare(b.t.toLowerCase()); }], ['days', 'Most days', function (a, b) { return b.days - a.days || b.n - a.n; }], ['az', 'A to Z', function (a, b) { return a.t.toLowerCase().localeCompare(b.t.toLowerCase()); }]],
+      cols: [{ h: 'Item', th: true, html: function (o) { return esc(o.t); } }, { h: 'Lines', html: function (o) { return String(o.n); } }, { h: 'Days', html: function (o) { return String(o.days); } }]
+    });
     var lag = lines.filter(function (x) { return x.ordered && x.orderedAt && x.addedAt && x.orderedAt > x.addedAt; }).map(function (x) { return x.orderedAt - x.addedAt; }).sort(function (a, b) { return a - b; });
     var old = lines.filter(function (x) { return !x.ordered && x.addedAt && Date.now() - x.addedAt > 3 * 86400000; }).length;
     return '<section class="set-block"><span class="label">Order list</span><span class="hint">Who put what on the order list and on which days, over the same time range. No scores, just a record.</span>' +
       '<div class="a-tiles"><div class="a-tile"><strong>' + lines.length + '</strong><span>lines written</span></div><div class="a-tile"><strong>' + ordered + '</strong><span>ticked as ordered</span></div><div class="a-tile"><strong>' + (lines.length - ordered) + '</strong><span>not yet ordered</span></div>' +
       '<div class="a-tile"><strong>' + (lag.length ? dur(lag[Math.floor(lag.length / 2)]) : 'n/a') + '</strong><span>typical time from written to ordered</span></div><div class="a-tile"><strong>' + old + '</strong><span>waiting more than 3 days</span></div></div>' +
       standingHTML(os.lines) +
-      (lines.length ? '<h3 class="a-ch-h">By day</h3><div class="a-tablewrap"><table class="a-table a-plain"><thead><tr><th scope="col">Day</th><th scope="col">Lines</th><th scope="col">Written by</th></tr></thead><tbody>' + dayRows + '</tbody></table></div>' +
-        '<h3 class="a-ch-h">By person</h3><div class="a-tablewrap"><table class="a-table a-plain"><thead><tr><th scope="col">Person</th><th scope="col">Lines</th><th scope="col">Days</th><th scope="col">Last</th></tr></thead><tbody>' + perRows + '</tbody></table></div>' +
-        '<h3 class="a-ch-h">Ordered most often</h3><div class="a-tablewrap"><table class="a-table a-plain"><thead><tr><th scope="col">Item</th><th scope="col">Lines</th><th scope="col">Days</th></tr></thead><tbody>' + itemRows + '</tbody></table></div>' : '<p class="hint">Nothing has been written on the order list in this time.</p>') + '</section>';
+      (lines.length ? '<h3 class="a-ch-h">By day</h3>' + dayList + '<h3 class="a-ch-h">By person</h3>' + perList + '<h3 class="a-ch-h">Ordered most often</h3>' + itemList : '<p class="hint">Nothing has been written on the order list in this time.</p>') + '</section>';
   }
 
+  /* The People tab: every person with role, permissions and PIN reset. Search, filter chips and Show more once the list is long. */
+  function peopleListHTML(d) {
+    var items = d.people.map(function (p, i) { return { p: p, i: i }; });
+    function cb(o, kind, perm, on, label) { return '<input type="checkbox" aria-label="' + label + ' for ' + esc(o.p.name) + '" data-a="' + kind + '"' + (perm ? ' data-perm="' + perm + '"' : '') + ' data-i="' + o.i + '"' + (on ? ' checked' : '') + '>'; }
+    function nm(o) { return String(o.p.name || '').toLowerCase(); }
+    return lvHTML({
+      key: 'people', items: items, step: 15, tools: 8, noun: ['person', 'people'], ph: 'Search names', table: 'lv-people', empty: 'No names yet.',
+      find: function (o) { return o.p.name + ' ' + ((ROLES[o.p.role] || {}).name || ''); },
+      rowCls: function (o) { return o.p.active === false ? 'is-off' : ''; },
+      filters: [['all', 'Everyone'], ['on', 'On the list', function (o) { return o.p.active !== false; }], ['sous', 'Sous chefs', function (o) { return o.p.role === 'sous' || o.p.role === 'lead'; }],
+        ['staff', 'Staff', function (o) { return o.p.role === 'staff'; }], ['view', 'View only', function (o) { return o.p.role === 'view'; }], ['off', 'Off the list', function (o) { return o.p.active === false; }]],
+      sorts: [['order', 'Order added', function (a, b) { return a.i - b.i; }],
+        ['name', 'Name A to Z', function (a, b) { return (b.p.isNew ? 1 : 0) - (a.p.isNew ? 1 : 0) || nm(a).localeCompare(nm(b)); }],
+        ['role', 'Role', function (a, b) { return Object.keys(ROLES).indexOf(a.p.role) - Object.keys(ROLES).indexOf(b.p.role) || nm(a).localeCompare(nm(b)); }]],
+      cols: [
+        { h: 'Name', th: true, html: function (o) { return '<label class="visually-hidden" for="a-n' + o.i + '">Name</label><input id="a-n' + o.i + '" class="search a-name" data-k="a-n' + o.i + '" data-a="name" data-i="' + o.i + '" value="' + esc(o.p.name) + '" maxlength="40">'; } },
+        { h: 'Role', wide: true, html: function (o) { return '<label class="visually-hidden" for="a-r' + o.i + '">Role</label><select id="a-r' + o.i + '" class="p-select" data-k="a-r' + o.i + '" data-a="role" data-i="' + o.i + '">' + Object.keys(ROLES).map(function (k) { return '<option value="' + k + '"' + (o.p.role === k ? ' selected' : '') + '>' + ROLES[k].name + '</option>'; }).join('') + '</select>'; } },
+        { h: 'Write', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'add', o.p.add, 'Write'); } },
+        { h: 'Tick', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'tick', o.p.tick, 'Tick'); } },
+        { h: 'Remove', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'del', o.p.del, 'Remove'); } },
+        { h: 'On list', cls: 'a-c', html: function (o) { return cb(o, 'active', '', o.p.active !== false, 'On list'); } },
+        { h: '', cls: 'a-act', html: function (o) { return '<button type="button" class="p-x" data-p="a-reset-pin" data-id="' + esc(o.p.id) + '">' + (S.resetId === o.p.id ? 'Tap again' : 'Reset PIN') + '</button><button type="button" class="p-x" data-p="a-remove-person" data-i="' + o.i + '">Delete</button>'; } }
+      ]
+    });
+  }
+  /* The sous chef's Staff page: a short list of names with Remove. Same helper, rows as cards. */
+  function staffListHTML(d) {
+    var items = d.people.map(function (p, i) { return { p: p, i: i }; });
+    return lvHTML({
+      key: 'staff', items: items, step: 15, tools: 10, noun: ['person', 'people'], ph: 'Search names', empty: 'No names yet.',
+      find: function (o) { return o.p.name; },
+      sorts: [['order', 'Order added', function (a, b) { return a.i - b.i; }], ['name', 'Name A to Z', function (a, b) { return (b.p.isNew ? 1 : 0) - (a.p.isNew ? 1 : 0) || String(a.p.name).toLowerCase().localeCompare(String(b.p.name).toLowerCase()); }]],
+      card: function (o) {
+        return '<li class="a-person"><div class="a-top">' + (o.p.isNew ? '<label class="visually-hidden" for="a-n' + o.i + '">Name</label><input id="a-n' + o.i + '" class="search a-name" data-k="a-n' + o.i + '" data-a="name" data-i="' + o.i + '" value="' + esc(o.p.name) + '" maxlength="40">' : '<span class="a-name-ro">' + esc(o.p.name) + '</span>') +
+          '<button type="button" class="p-x" data-p="a-remove-person" data-i="' + o.i + '">Remove</button></div></li>';
+      }
+    });
+  }
   function adminHTML() {
     if (S.authState !== 'ready' && !S.user) {
       return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2><p class="hint">Loading...</p></section>';
@@ -1792,14 +1989,6 @@
     var bar = '<div class="p-bar"><span>Signed in as <strong>' + esc(S.user.email) + '</strong> (' + 'head chef' + ')</span><span class="p-links"><button type="button" class="p-link" data-p="signout">Sign out</button><a class="p-link" href="#/prep">Prep book</a></span></div>';
     var bulk = '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line"></textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div>';
     var saveBlock = '<section class="set-block"><div class="btn-row"><button type="button" class="btn dark" data-p="a-save"' + (S.busy ? ' disabled' : '') + '>Save changes</button><button type="button" class="btn" data-p="a-reset">Undo unsaved changes</button></div><span class="saved" role="status">' + esc(S.saveMsg) + '</span></section>';
-    var rows = d.people.map(function (p, i) {
-      var cb = function (kind, perm, on, label) { return '<td class="a-c" data-l="' + label + '"><input type="checkbox" aria-label="' + label + ' for ' + esc(p.name) + '" data-a="' + kind + '"' + (perm ? ' data-perm="' + perm + '"' : '') + ' data-i="' + i + '"' + (on ? ' checked' : '') + '></td>'; };
-      return '<tr class="' + (p.active === false ? 'is-off' : '') + '"><th scope="row"><label class="visually-hidden" for="a-n' + i + '">Name</label><input id="a-n' + i + '" class="search a-name" data-k="a-n' + i + '" data-a="name" data-i="' + i + '" value="' + esc(p.name) + '" maxlength="40"></th>' +
-        '<td><label class="visually-hidden" for="a-r' + i + '">Role</label><select id="a-r' + i + '" class="p-select" data-k="a-r' + i + '" data-a="role" data-i="' + i + '">' + Object.keys(ROLES).map(function (k) { return '<option value="' + k + '"' + (p.role === k ? ' selected' : '') + '>' + ROLES[k].name + '</option>'; }).join('') + '</select></td>' +
-        cb('perm', 'add', p.add, 'Write') + cb('perm', 'tick', p.tick, 'Tick') + cb('perm', 'del', p.del, 'Remove') + cb('active', '', p.active !== false, 'On list') +
-        '<td class="a-act"><button type="button" class="p-x" data-p="a-reset-pin" data-id="' + esc(p.id) + '">' + (S.resetId === p.id ? 'Tap again' : 'Reset PIN') + '</button>' +
-        '<button type="button" class="p-x" data-p="a-remove-person" data-i="' + i + '">Delete</button></td></tr>';
-    }).join('');
     var at = S.atab || 'insights';
     var tabsBar = '<nav class="a-tabs" aria-label="Admin sections">' + [['insights', 'Insights'], ['team', 'Team'], ['waste', 'Waste'], ['learning', 'Learning'], ['notes', 'Notes'], ['minutes', 'Minutes'], ['people', 'People'], ['tools', 'Tools']].map(function (t) {
       return '<button type="button" class="a-tab" data-p="a-tab" data-t="' + t[0] + '" aria-pressed="' + (at === t[0]) + '">' + t[1] + '</button>';
@@ -1808,7 +1997,7 @@
     if (at === 'minutes') loadMinutes();
     var pane = at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'learning' ? (learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() : at === 'people' ? (
       '<section class="set-block"><span class="label">People</span><span class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Reset PIN lets that person choose a new one. Removing someone from the list keeps their name on old lines.</span>' +
-      (rows ? '<p class="a-swipe">Swipe the table sideways to see every column.</p><div class="a-tablewrap"><table class="a-table"><thead><tr><th scope="col">Name</th><th scope="col">Role</th><th scope="col" class="a-c">Write</th><th scope="col" class="a-c">Tick</th><th scope="col" class="a-c">Remove</th><th scope="col" class="a-c">On list</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead><tbody>' + rows + '</tbody></table></div>' : '<p class="hint">No names yet.</p>') + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' +
+      peopleListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' +
       '<section class="set-block"><span class="label">Badges</span><label class="a-check"><input type="checkbox" data-a="badges"' + (d.showBadges !== false ? ' checked' : '') + '> Show the weekly top tickers to everyone on the prep book</label></section>' + saveBlock
     ) : (
       '<section class="set-block"><span class="label">Backup</span><span class="hint">Saves everything the prep book holds (people, lines from the last 400 days, learned items, tallies) as one file on this device. People\'s PIN fingerprints are left out. Do this now and then.</span><div class="btn-row"><button type="button" class="btn" data-p="export"' + (S.exporting ? ' disabled' : '') + '>' + (S.exporting ? esc(S.exporting) : 'Download a backup') + '</button></div></section>' +
@@ -1819,13 +2008,9 @@
   }
   function staffHTML() {
     var d = S.draft || (startDraft(), S.draft);
-    var srows = d.people.map(function (p, i) {
-      return '<li class="a-person"><div class="a-top">' + (p.isNew ? '<label class="visually-hidden" for="a-n' + i + '">Name</label><input id="a-n' + i + '" class="search a-name" data-k="a-n' + i + '" data-a="name" data-i="' + i + '" value="' + esc(p.name) + '" maxlength="40">' : '<span class="a-name-ro">' + esc(p.name) + '</span>') +
-        '<button type="button" class="p-x" data-p="a-remove-person" data-i="' + i + '">Remove</button></div></li>';
-    }).join('');
     var bulk = '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line"></textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div>';
     return '<div class="p-admin"><div class="p-bar"><span>Staff list</span><span class="p-links"><button type="button" class="p-link" data-p="staff-close">Back to the prep book</button></span></div><h2 class="p-h" id="rtitle" tabindex="-1">Staff</h2>' +
-      '<section class="set-block"><span class="hint">Add a person or remove one, then save. New people start as Staff. Removing someone keeps their name on old lines. Roles and PINs are looked after by the head chef.</span><ul class="a-list">' + (srows || '<li class="hint">No names yet.</li>') + '</ul><div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' +
+      '<section class="set-block"><span class="hint">Add a person or remove one, then save. New people start as Staff. Removing someone keeps their name on old lines. Roles and PINs are looked after by the head chef.</span>' + staffListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' +
       '<section class="set-block"><div class="btn-row"><button type="button" class="btn dark" data-p="a-save"' + (S.busy ? ' disabled' : '') + '>Save changes</button><button type="button" class="btn" data-p="a-reset">Undo unsaved changes</button></div><span class="saved" role="status">' + esc(S.saveMsg) + '</span></section></div>';
   }
   /* While connecting, show the page that is opening (not a generic prep book card), so nothing flashes. */
@@ -2452,14 +2637,28 @@
     var now = live.filter(function (n) { return noteOn(n, t); }).sort(function (a, b) { return noteRank(a) - noteRank(b) || (a.at || 0) - (b.at || 0); });
     var later = live.filter(function (n) { return !noteOn(n, t); }).sort(function (a, b) { return String(a.start).localeCompare(String(b.start)) || (a.at || 0) - (b.at || 0); });
     function grp(title, l, past) { return l.length ? '<h3 class="n-gh3">' + title + ' (' + l.length + ')</h3><ul class="nt-rows">' + l.map(function (n) { return noteRowAdmin(n, t, past); }).join('') + '</ul>' : ''; }
-    var out = grp('Showing today', now) + grp('Coming up', later);
+    /* Coming up and Past notes can both get long (weekly repeats, months of history): search, tag chips and Show more */
+    function noteList(key, title, l, past, sorter) {
+      if (!l.length) return '';
+      return '<h3 class="n-gh3">' + title + ' (' + l.length + ')</h3>' + lvHTML({
+        key: key, items: l, step: 8, tools: 6, noun: ['note', 'notes'], ph: 'Search notes', empty: 'No notes.',
+        find: function (n) { return n.text + ' ' + noteTagName(n.tag) + ' ' + (personName(n.by) || ''); },
+        filters: [['all', 'All notes']].concat(NOTE_TAGS.map(function (x) { return [x[0], x[1], function (n) { return (n.tag || 'none') === x[0]; }]; })),
+        sorts: sorter, card: function (n) { return noteRowAdmin(n, t, past); }
+      });
+    }
+    var out = grp('Showing today', now) + noteList('notes-later', 'Coming up', later, false, [['soon', 'Soonest first', function (a, b) { return String(a.start).localeCompare(String(b.start)) || (a.at || 0) - (b.at || 0); }], ['late', 'Furthest away first', function (a, b) { return String(b.start).localeCompare(String(a.start)) || (b.at || 0) - (a.at || 0); }]]);
     if (!now.length && !later.length) out = '<p class="hint">No notes are set for today or the days ahead. Tap Write a note to add one.</p>';
     var pastBtn = '<button type="button" class="btn" data-p="n-past">' + (S.nPastOpen ? 'Hide past notes' : 'Past notes') + '</button>';
     var pastList = '';
     if (S.nPastOpen) {
       if (S.nPast === 'loading') pastList = '<p class="hint">Loading...</p>';
       else if (S.nPast === 'error') pastList = '<p class="hint">Could not load past notes. Check the connection and try again.</p>';
-      else pastList = (S.nPast && S.nPast.length) ? grp('Past notes', S.nPast, true) + '<p class="hint">The last 30 notes that have finished. Use again copies one into a new note.</p>' : '<p class="hint">No finished notes yet.</p>';
+      else if (S.nPast && S.nPast.length) {
+        var moreOld = S.nPast.length >= (S.nPastN || 30);
+        pastList = noteList('notes-past', 'Past notes', S.nPast, true, [['new', 'Newest first', function (a, b) { return String(b.until).localeCompare(String(a.until)) || (b.at || 0) - (a.at || 0); }], ['old', 'Oldest first', function (a, b) { return String(a.until).localeCompare(String(b.until)) || (a.at || 0) - (b.at || 0); }]]) +
+          '<p class="hint">The last ' + S.nPast.length + ' notes that have finished. Use again copies one into a new note.</p>' + (moreOld ? '<div class="btn-row"><button type="button" class="btn" data-p="n-past-more">Load 30 older notes</button></div>' : '');
+      } else pastList = '<p class="hint">No finished notes yet.</p>';
     }
     return out + '<div class="btn-row n-pastrow">' + pastBtn + '</div>' + pastList;
   }
@@ -2530,12 +2729,14 @@
     }, function () { S.nMsg = 'Could not remove. Check the connection and try again.'; draw(); });
   }
   /* finished notes: one query when the head chef asks for them (30 at most) */
-  function loadPastNotes() {
+  function loadPastNotes(more) {
     if (!fb || S.nPast === 'loading') return;
+    S.nPastN = more ? (S.nPastN || 30) + 30 : 30;
+    var keep = Array.isArray(S.nPast) ? S.nPast : null;
     S.nPast = 'loading'; draw();
-    fb.fs.getDocs(fb.fs.query(colRef('notes'), fb.fs.where('until', '<', ymd(new Date())), fb.fs.orderBy('until', 'desc'), fb.fs.limit(30))).then(function (snap) {
+    fb.fs.getDocs(fb.fs.query(colRef('notes'), fb.fs.where('until', '<', ymd(new Date())), fb.fs.orderBy('until', 'desc'), fb.fs.limit(S.nPastN))).then(function (snap) {
       S.nPast = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }).filter(function (x) { return !x.removed; }); draw();
-    }, function () { S.nPast = 'error'; draw(); });
+    }, function () { S.nPast = keep || 'error'; if (keep) toast('Could not load more. Check the connection.'); draw(); });
   }
   /* put the cursor in the note and bring the editor up under the sticky tabs, so the phone keyboard never hides it */
   function focusNoteText(tx) {
@@ -2831,14 +3032,26 @@
     if (!pub.length) return '<section class="set-block"><span class="label">Register</span><p class="hint">No minutes have been published yet.</p></section>';
     var m = pub.filter(function (x) { return x.id === S.mSel; })[0] || pub[0]; loadSigns(m.id, false);
     var reg = mnRegister(m), od = mnOverdue();
-    var chips = '<div class="mn-earlier mn-noprint">' + pub.slice(0, 8).map(function (x) { return '<button type="button" class="chip" data-p="mn-sel" data-id="' + esc(x.id) + '" aria-pressed="' + (x.id === m.id) + '">' + mpad(x.no || 0) + ' &middot; ' + esc(dayShort(x.date)) + '</button>'; }).join('') + '</div>';
+    var recent = pub.slice(0, 6), older = pub.slice(6), inOlder = older.some(function (x) { return x.id === m.id; });
+    var chips = '<div class="mn-earlier mn-noprint">' + recent.map(function (x) { return '<button type="button" class="chip" data-p="mn-sel" data-id="' + esc(x.id) + '" aria-pressed="' + (x.id === m.id) + '">' + mpad(x.no || 0) + ' &middot; ' + esc(dayShort(x.date)) + '</button>'; }).join('') +
+      (older.length ? '<label class="a-f mn-older"><span class="visually-hidden">Older minutes</span><select data-k="lv-m" aria-label="Older minutes"><option value=""' + (inOlder ? '' : ' selected') + ' disabled>Older minutes (' + older.length + ')</option>' + older.map(function (x) { return '<option value="' + esc(x.id) + '"' + (x.id === m.id ? ' selected' : '') + '>' + mpad(x.no || 0) + ' - ' + esc(dayShort(x.date)) + '</option>'; }).join('') + '</select></label>' : '') + '</div>';
     var body;
     if (!reg) body = '<p class="hint">' + (S.msigns[m.id] && S.msigns[m.id].err ? 'Could not load the sign-offs. Check the connection.' : 'Loading the sign-offs...') + '</p>';
     else {
       var tiles = '<div class="mn-tiles"><div class="mn-tile"><span>Signed</span><b>' + reg.signed + '<small> of ' + reg.rows.length + '</small></b></div><div class="mn-tile' + (reg.chase.length ? ' is-hot' : '') + '"><span>Not signed</span><b>' + reg.chase.length + '</b></div><div class="mn-tile"><span>Signed late</span><b>' + reg.late + '</b></div><div class="mn-tile"><span>Actions overdue</span><b>' + od.length + '</b></div></div>';
-      var table = '<div class="a-tablewrap mn-regtbl' + (S.mRegAll ? ' is-open' : '') + '"><table class="a-table mn-reg"><thead><tr><th scope="col">Person</th><th scope="col">Attendance</th><th scope="col">Signed</th><th scope="col">Status</th></tr></thead><tbody>' + reg.rows.map(function (r) {
-        return '<tr><th scope="row">' + esc(r.name) + '</th><td>' + esc(r.att.charAt(0).toUpperCase() + r.att.slice(1)) + '</td><td>' + (r.signed ? esc(dayShort(ymd(new Date(r.at))) + ', ' + clock(r.at)) : '<span class="o-who-i">Not yet</span>') + '</td><td class="' + (!r.signed || r.late ? 'mn-hot' : '') + '">' + (r.signed ? (r.late ? 'Signed late' : 'Signed') : (r.late ? 'Not signed (late)' : 'Not signed')) + '</td></tr>';
-      }).join('') + '</tbody></table></div>';
+      var regList = lvHTML({
+        key: 'minreg', items: reg.rows, step: 12, tools: 10, noun: ['person', 'people'], ph: 'Search names', table: 'mn-reg', empty: 'Nobody is on the staff list yet.',
+        find: function (r) { return r.name; },
+        filters: [['all', 'Everyone'], ['not', 'Not signed', function (r) { return !r.signed; }], ['late', 'Late', function (r) { return r.late; }], ['ok', 'Signed', function (r) { return r.signed; }]],
+        sorts: [['name', 'Name A to Z', function (a, b) { return a.name.toLowerCase().localeCompare(b.name.toLowerCase()); }], ['not', 'Not signed first', function (a, b) { return (a.signed ? 1 : 0) - (b.signed ? 1 : 0) || a.name.toLowerCase().localeCompare(b.name.toLowerCase()); }]],
+        cols: [
+          { h: 'Person', th: true, html: function (r) { return esc(r.name); } },
+          { h: 'Attendance', html: function (r) { return esc(r.att.charAt(0).toUpperCase() + r.att.slice(1)); } },
+          { h: 'Signed', html: function (r) { return r.signed ? esc(dayShort(ymd(new Date(r.at))) + ', ' + clock(r.at)) : '<span class="o-who-i">Not yet</span>'; } },
+          { h: 'Status', cls: 'mnst', html: function (r) { return '<span class="' + (!r.signed || r.late ? 'mn-hot' : '') + '">' + (r.signed ? (r.late ? 'Signed late' : 'Signed') : (r.late ? 'Not signed (late)' : 'Not signed')) + '</span>'; } }
+        ]
+      });
+      var table = '<div class="mn-regtbl' + (S.mRegAll ? ' is-open' : '') + '">' + regList + '</div>';
       var chase = '<div class="mn-side"><h3 class="a-ch-h">Chase list (' + reg.chase.length + ')</h3>' + (reg.chase.length ? '<ul class="mn-chase">' + reg.chase.map(function (r) { return '<li><b>' + esc(r.name) + '</b></li>'; }).join('') + '</ul><p class="hint">Published ' + reg.days + (reg.days === 1 ? ' day' : ' days') + ' ago.</p>' : '<p class="hint">Everyone has signed this version.</p>') +
         '<h3 class="a-ch-h">Actions overdue</h3>' + (od.length ? '<ul class="mn-chase">' + od.map(function (a) { return '<li>' + esc(a.what) + ' <b>' + esc(a.who === 'all' ? 'Everyone' : mnName(a.who)) + '</b> was ' + esc(dayShort(a.by)) + '</li>'; }).join('') + '</ul>' : '<p class="hint">None. Seen by the head chef and sous chefs only.</p>') + '</div>';
       body = tiles + '<div class="mn-regrid">' + chase + '<div class="mn-regall"><button type="button" class="btn mn-noprint" data-p="mn-regall" aria-expanded="' + !!S.mRegAll + '">' + (S.mRegAll ? 'Hide the full list' : 'Show everyone (' + reg.rows.length + ')') + '</button>' + table + '</div></div>';
@@ -2860,8 +3073,9 @@
     return '<div class="p-admin"><div class="p-bar"><span>Meeting minutes</span><span class="p-links"><button type="button" class="p-link" data-p="min-close">Back to the prep book</button></span></div><h2 class="p-h" id="rtitle" tabindex="-1">Meeting minutes</h2>' + minAdminHTML() + '</div>';
   }
   function printMinutes() {
+    lvPrintAll(true);
     document.documentElement.classList.add('print-min');
-    function done() { document.documentElement.classList.remove('print-min'); window.removeEventListener('afterprint', done); }
+    function done() { document.documentElement.classList.remove('print-min'); lvPrintAll(false); window.removeEventListener('afterprint', done); }
     window.addEventListener('afterprint', done);
     setTimeout(function () { window.print(); setTimeout(function () { if (document.documentElement.classList.contains('print-min') && !window.matchMedia('print').matches) done(); }, 1500); }, 50);
   }
@@ -2889,13 +3103,20 @@
     });
   }
   var WTIP = { excess: 'Prep smaller batches or less often.', expired: 'Order less or use it sooner. Check stock rotation.', fault: 'Check the method on the recipe card and run a quick refresher.', prep: 'Check trimming and yield.', returned: 'Check the dish against the recipe card and talk to front of house.' };
-  function eachDay(n, lines, reviews) {
-    var out = '', i, rv = {}; reviews.forEach(function (r) { rv[r.date] = r; });
-    for (i = 0; i < n; i++) {
-      var d = shift(ymd(new Date()), -i), l = lines.filter(function (x) { return x.date === d; }), r = rv[d];
-      out += '<tr><th scope="row">' + esc(dayShort(d)) + '</th><td>' + (l.length || '<span class="o-who-i">none</span>') + '</td><td>' + esc(totalsText(wTotals(l))) + '</td><td>' + (r && (r.avoidable || r.change) ? esc((r.reviewBy || '') + ': ' + (r.change || r.avoidable)) : '<span class="o-who-i">not written</span>') + '</td></tr>';
-    }
-    return out;
+  function eachDayList(n, lines, reviews) {
+    var i, rv = {}, days = []; reviews.forEach(function (r) { rv[r.date] = r; });
+    for (i = 0; i < n; i++) { var d = shift(ymd(new Date()), -i), l = lines.filter(function (x) { return x.date === d; }); days.push({ d: d, l: l, r: rv[d] && (rv[d].avoidable || rv[d].change) ? rv[d] : null }); }
+    return lvHTML({
+      key: 'waste-days', items: days, step: 7, tools: 14, noun: ['day', 'days'], empty: 'No days in this time.',
+      filters: [['all', 'All days'], ['some', 'Something logged', function (x) { return x.l.length > 0; }], ['none', 'Nothing logged', function (x) { return !x.l.length; }], ['rev', 'Has a review', function (x) { return !!x.r; }]],
+      sorts: [['new', 'Newest first', function (a, b) { return a.d < b.d ? 1 : -1; }], ['old', 'Oldest first', function (a, b) { return a.d < b.d ? -1 : 1; }], ['most', 'Most entries', function (a, b) { return b.l.length - a.l.length || (a.d < b.d ? 1 : -1); }]],
+      cols: [
+        { h: 'Day', th: true, html: function (x) { return esc(dayShort(x.d)); } },
+        { h: 'Entries', html: function (x) { return x.l.length ? String(x.l.length) : '<span class="o-who-i">none</span>'; } },
+        { h: 'Amount', html: function (x) { return esc(totalsText(wTotals(x.l))); } },
+        { h: 'Review', wide: true, html: function (x) { return x.r ? esc((x.r.reviewBy || '') + ': ' + (x.r.change || x.r.avoidable)) : '<span class="o-who-i">not written</span>'; } }
+      ]
+    });
   }
   /* Waste calendar: entries per day, darker is more. Days nobody logged anything are marked. */
   function wasteCalHTML(n, lines) {
@@ -2952,24 +3173,51 @@
     if (S.stats && !S.stats.loading) Object.keys(S.stats.days).forEach(function (d) { if (d < from) return; S.stats.days[d].forEach(function (x) { if (!x.deleted && !x.rolled && x.text) { var k = okey(x.text); prepN[k] = (prepN[k] || 0) + 1; } }); });
     var m = {};
     lines.forEach(function (x) { var k = okey(x.text), e = m[k] = m[k] || { text: x.text, l: [], r: {} }; e.l.push(x); e.r[x.reason] = (e.r[x.reason] || 0) + 1; });
-    var iRows = Object.keys(m).map(function (k) { return { k: k, e: m[k] }; }).sort(function (a, b) { return b.e.l.length - a.e.l.length; }).slice(0, 12).map(function (o) {
-      var e = o.e, mr = Object.keys(e.r).sort(function (a, b) { return e.r[b] - e.r[a]; })[0], pn = prepN[o.k] || 0;
+    var iItems = Object.keys(m).map(function (k) {
+      var e = m[k], mr = Object.keys(e.r).sort(function (a, b) { return e.r[b] - e.r[a]; })[0], pn = prepN[k] || 0;
       var tip = (WTIP[mr] || '') + (mr === 'excess' && pn >= 3 ? ' It was on the prep list ' + pn + ' times.' : '');
       if (mr === 'fault' || mr === 'returned') { loadViews(false); var rid = (e.l.filter(function (x) { return x.recipe; })[0] || {}).recipe || ((matchRecipe(e.text) || {}).id || ''); if (rid && S.views) tip += ' Card opened ' + ((S.views[rid] || {}).n || 0) + ' times so far.'; }
-      return '<tr><th scope="row">' + esc(e.text) + '</th><td>' + e.l.length + '</td><td>' + esc(totalsText(wTotals(e.l))) + '</td><td>' + esc(reasonName(mr)) + '</td><td>' + (pn || '') + '</td><td>' + (e.l.length >= 2 ? '<span class="a-flag">' + esc(tip) + '</span>' : '<span class="o-who-i">Once so far</span>') + '</td></tr>';
-    }).join('');
+      return { e: e, mr: mr, pn: pn, tip: tip };
+    });
+    var itemsList = lvHTML({
+      key: 'waste-items', items: iItems, step: 10, tools: 8, noun: ['item', 'items'], ph: 'Search wasted items', empty: 'Nothing logged in this time yet.',
+      find: function (o) { return o.e.text + ' ' + reasonName(o.mr); },
+      filters: [['all', 'All items'], ['rep', 'More than once', function (o) { return o.e.l.length >= 2; }]].concat(REASONS.map(function (r) { return [r[0], r[1], function (o) { return o.mr === r[0]; }]; })),
+      sorts: [['most', 'Most entries', function (a, b) { return b.e.l.length - a.e.l.length || String(a.e.text).toLowerCase().localeCompare(String(b.e.text).toLowerCase()); }], ['az', 'A to Z', function (a, b) { return String(a.e.text).toLowerCase().localeCompare(String(b.e.text).toLowerCase()); }], ['prep', 'Most on the prep list', function (a, b) { return b.pn - a.pn; }]],
+      cols: [
+        { h: 'Item', th: true, html: function (o) { return esc(o.e.text); } },
+        { h: 'Entries', html: function (o) { return String(o.e.l.length); } },
+        { h: 'Amount', html: function (o) { return esc(totalsText(wTotals(o.e.l))); } },
+        { h: 'Main reason', html: function (o) { return esc(reasonName(o.mr)); } },
+        { h: 'On the prep list', html: function (o) { return o.pn ? String(o.pn) : ''; } },
+        { h: 'Suggestion', wide: true, html: function (o) { return o.e.l.length >= 2 ? '<span class="a-flag">' + esc(o.tip) + '</span>' : '<span class="o-who-i">Once so far</span>'; } }
+      ]
+    });
     var dw = {}, occ = {}, i;
     for (i = 0; i < n; i++) { var dd = parseYmd(shift(ymd(new Date()), -i)).getDay(); occ[dd] = (occ[dd] || 0) + 1; }
     lines.forEach(function (x) { var d = parseYmd(x.date).getDay(); dw[d] = (dw[d] || 0) + 1; });
     var who = {}; lines.forEach(function (x) { var k = x.addedBy || 'Unknown'; who[k] = (who[k] || 0) + 1; });
-    var revs = ws.reviews.filter(function (r) { return r.date >= from && (r.avoidable || r.change); }).sort(function (a, b) { return a.date < b.date ? 1 : -1; }).slice(0, 10);
+    var whoList = lvHTML({
+      key: 'waste-who', items: Object.keys(who).map(function (k) { return { k: k, n: who[k] }; }), step: 10, tools: 10, noun: ['person', 'people'], ph: 'Search names', empty: 'Nobody has logged anything.',
+      find: function (o) { return o.k; },
+      sorts: [['most', 'Most entries', function (a, b) { return b.n - a.n || a.k.localeCompare(b.k); }], ['az', 'A to Z', function (a, b) { return a.k.toLowerCase().localeCompare(b.k.toLowerCase()); }]],
+      cols: [{ h: 'Person', th: true, html: function (o) { return esc(o.k); } }, { h: 'Entries', html: function (o) { return String(o.n); } }]
+    });
+    var revs = ws.reviews.filter(function (r) { return r.date >= from && (r.avoidable || r.change); }).sort(function (a, b) { return a.date < b.date ? 1 : -1; });
+    var revList = lvHTML({
+      key: 'waste-rev', items: revs, step: 6, tools: 8, noun: ['review', 'reviews'], ph: 'Search reviews', empty: 'No reviews written in this time.',
+      find: function (r) { return (r.avoidable || '') + ' ' + (r.change || '') + ' ' + (r.reviewBy || ''); },
+      sorts: [['new', 'Newest first', function (a, b) { return a.date < b.date ? 1 : -1; }], ['old', 'Oldest first', function (a, b) { return a.date < b.date ? -1 : 1; }]],
+      card: function (r) { return '<li class="a-rev"><strong>' + esc(dayShort(r.date)) + (r.reviewBy ? ', ' + esc(r.reviewBy) : '') + ':</strong> ' + esc(r.avoidable || '') + (r.change ? ' <em>Change: ' + esc(r.change) + '</em>' : '') + '</li>'; }
+    });
+    var dayList = eachDayList(n, lines, ws.reviews);
     return head + '<div class="a-tiles">' + tiles.map(tileHTML).join('') + '</div>' + wasteCalHTML(n, lines) + reasonDowHTML(lines, n) +
       '<h3 class="a-ch-h">By reason</h3><div class="a-tablewrap"><table class="a-table a-plain"><thead><tr><th scope="col">Reason</th><th scope="col">Entries</th><th scope="col">Share</th><th scope="col">Amount</th></tr></thead><tbody>' + rRows + '</tbody></table></div>' +
-      '<h3 class="a-ch-h">Wasted most often</h3><span class="hint">"On the prep list" counts how many times the same item was written on the prep list in this time, so you can see over-prepping.</span><div class="a-tablewrap"><table class="a-table a-plain"><thead><tr><th scope="col">Item</th><th scope="col">Entries</th><th scope="col">Amount</th><th scope="col">Main reason</th><th scope="col">On the prep list</th><th scope="col">Suggestion</th></tr></thead><tbody>' + iRows + '</tbody></table></div>' +
-      '<h3 class="a-ch-h">Each day</h3>' + (n > 7 ? '<details class="a-details"><summary>Show all ' + n + ' days</summary>' : '') + '<div class="a-tablewrap"><table class="a-table a-plain"><thead><tr><th scope="col">Day</th><th scope="col">Entries</th><th scope="col">Amount</th><th scope="col">Review</th></tr></thead><tbody>' + eachDay(n, lines, ws.reviews) + '</tbody></table></div>' + (n > 7 ? '</details>' : '') +
+      '<h3 class="a-ch-h">Wasted most often</h3><span class="hint">"On the prep list" counts how many times the same item was written on the prep list in this time, so you can see over-prepping.</span>' + itemsList +
+      '<h3 class="a-ch-h">Each day</h3>' + dayList +
       '<h3 class="a-ch-h">By weekday</h3><div class="a-tablewrap"><table class="a-table a-plain sk-t"><thead><tr><th scope="col"></th>' + DOWN.map(function (x) { return '<th scope="col">' + x + '</th>'; }).join('') + '</tr></thead><tbody><tr><th scope="row">Entries a day</th>' + DOW.map(function (d) { return '<td>' + (occ[d] ? num((dw[d] || 0) / occ[d]) : '0') + '</td>'; }).join('') + '</tr></tbody></table></div>' +
-      '<h3 class="a-ch-h">Who logs waste</h3><span class="hint">A record, not a score: someone who never logs may just not know about the log.</span><div class="a-tablewrap"><table class="a-table a-plain"><thead><tr><th scope="col">Person</th><th scope="col">Entries</th></tr></thead><tbody>' + Object.keys(who).sort(function (a, b) { return who[b] - who[a]; }).map(function (k) { return '<tr><th scope="row">' + esc(k) + '</th><td>' + who[k] + '</td></tr>'; }).join('') + '</tbody></table></div>' +
-      '<h3 class="a-ch-h">End-of-day reviews</h3>' + (revs.length ? '<ul class="a-list">' + revs.map(function (r) { return '<li><strong>' + esc(dayShort(r.date)) + (r.reviewBy ? ', ' + esc(r.reviewBy) : '') + ':</strong> ' + esc(r.avoidable || '') + (r.change ? ' <em>Change: ' + esc(r.change) + '</em>' : '') + '</li>'; }).join('') + '</ul>' : '<p class="hint">No reviews written in this time.</p>') + '</section>';
+      '<h3 class="a-ch-h">Who logs waste</h3><span class="hint">A record, not a score: someone who never logs may just not know about the log.</span>' + whoList +
+      '<h3 class="a-ch-h">End-of-day reviews</h3>' + revList + '</section>';
   }
 
   /* ---------- recipe searches that found nothing (queued by the recipe book, sent once someone is signed in) ---------- */
@@ -3012,9 +3260,16 @@
     var dishes = D.recipes.filter(function (r) { return !vm[r.id]; });
     var total = 0; ids.forEach(function (id) { total += vm[id].n || 0; });
     return '<h3 class="a-ch-h">Recipe cards opened</h3><span class="hint">Counted on phones where someone is signed in to the prep book, no names. Cards nobody opens may need a walk-through with the team; cards opened a lot may need to be clearer or printed for the section.</span>' +
-      (ids.length ? '<div class="a-tablewrap"><table class="a-table a-plain"><thead><tr><th scope="col">Card</th><th scope="col">Opened</th><th scope="col">Last</th></tr></thead><tbody>' + ids.slice(0, 15).map(function (id) {
-        return '<tr><th scope="row"><a href="#/r/' + encodeURIComponent(id) + '">' + esc(recipeById(id).name) + '</a></th><td>' + (vm[id].n || 0) + '</td><td>' + esc(ago(vm[id].last)) + '</td></tr>';
-      }).join('') + '</tbody></table></div><p class="hint">' + total + ' opens counted so far.</p>' : '<p class="hint">No card opens counted yet.</p>') +
+      (ids.length ? lvHTML({
+        key: 'ins-views', items: ids.map(function (id) { return { id: id, r: recipeById(id), n: vm[id].n || 0, last: vm[id].last || 0 }; }), step: 10, tools: 10, noun: ['card', 'cards'], ph: 'Search cards',
+        find: function (o) { return o.r.name; },
+        sorts: [['most', 'Most opened', function (a, b) { return b.n - a.n; }], ['few', 'Least opened', function (a, b) { return a.n - b.n; }], ['az', 'A to Z', function (a, b) { return a.r.name.toLowerCase().localeCompare(b.r.name.toLowerCase()); }], ['new', 'Opened most recently', function (a, b) { return b.last - a.last; }]],
+        cols: [
+          { h: 'Card', th: true, html: function (o) { return '<a href="#/r/' + encodeURIComponent(o.id) + '">' + esc(o.r.name) + '</a>'; } },
+          { h: 'Opened', html: function (o) { return String(o.n); } },
+          { h: 'Last', html: function (o) { return esc(ago(o.last)); } }
+        ]
+      }) + '<p class="hint">' + total + ' opens counted so far.</p>' : '<p class="hint">No card opens counted yet.</p>') +
       (ids.length ? '<details class="a-details"><summary>Not opened yet (' + dishes.length + ' cards)</summary><p>' + dishes.map(function (r) { return esc(r.name); }).join(', ') + '</p></details>' : '');
   }
   function loadMisses(force) {
@@ -3024,11 +3279,19 @@
   }
   function missesHTML() {
     loadMisses(false);
-    var l = (S.misses || []).filter(function (x) { return !x.hidden && x.q; }).sort(function (a, b) { return (b.n || 0) - (a.n || 0) || (b.last || 0) - (a.last || 0); }).slice(0, 20);
+    var l = (S.misses || []).filter(function (x) { return !x.hidden && x.q; }).sort(function (a, b) { return (b.n || 0) - (a.n || 0) || (b.last || 0) - (a.last || 0); });
     return '<h3 class="a-ch-h">Searched for, not in the book</h3><span class="hint">Recipe book searches that found nothing, sent from phones where someone is signed in to the prep book. These are the cards people are looking for. Hide one once the card is written.</span>' +
-      (l.length ? '<div class="a-tablewrap"><table class="a-table a-plain"><thead><tr><th scope="col">Searched for</th><th scope="col">Times</th><th scope="col">Last</th><th scope="col"></th></tr></thead><tbody>' + l.map(function (x) {
-        return '<tr><th scope="row">' + esc(x.q) + '</th><td>' + (x.n || 1) + '</td><td>' + esc(ago(x.last)) + (x.lastBy ? ', ' + esc(x.lastBy) : '') + '</td><td><button type="button" class="p-x" data-p="miss-hide" data-id="' + esc(x.id) + '">Hide</button></td></tr>';
-      }).join('') + '</tbody></table></div>' : '<p class="hint">No empty searches yet.</p>');
+      (l.length ? lvHTML({
+        key: 'ins-misses', items: l, step: 10, tools: 10, noun: ['search', 'searches'], ph: 'Search these',
+        find: function (x) { return x.q + ' ' + (x.lastBy || ''); },
+        sorts: [['most', 'Most often', function (a, b) { return (b.n || 0) - (a.n || 0) || (b.last || 0) - (a.last || 0); }], ['new', 'Most recent', function (a, b) { return (b.last || 0) - (a.last || 0); }], ['az', 'A to Z', function (a, b) { return String(a.q).toLowerCase().localeCompare(String(b.q).toLowerCase()); }]],
+        cols: [
+          { h: 'Searched for', th: true, html: function (x) { return esc(x.q); } },
+          { h: 'Times', html: function (x) { return String(x.n || 1); } },
+          { h: 'Last', html: function (x) { return esc(ago(x.last)) + (x.lastBy ? ', ' + esc(x.lastBy) : ''); } },
+          { h: '', cls: 'a-act', html: function (x) { return '<button type="button" class="p-x" data-p="miss-hide" data-id="' + esc(x.id) + '">Hide</button>'; } }
+        ]
+      }) : '<p class="hint">No empty searches yet.</p>');
   }
 
   /* ---------- events ---------- */
@@ -3036,6 +3299,7 @@
     var el = e.target.closest('[data-p]');
     if (!el || !S.root || !S.root.contains(el)) return;
     var a = el.getAttribute('data-p'), id = el.getAttribute('data-id'), i = +el.getAttribute('data-i'), dt = el.getAttribute('data-d');
+    if (a.indexOf('lv-') === 0) { lvClick(a, el); return; }
     if (a === 'recipe-toggle') { S.recipeOpen = !S.recipeOpen; if (!S.recipeOpen) { S.recipeSearch = ''; S.recipeAll = false; } draw(); if (S.recipeOpen) { var rse = S.root.querySelector('#p-rs'); if (rse) rse.focus({ preventScroll: true }); } return; }
     if (a === 'recipe-close') { S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; draw(); return; }
     if (a === 'recipe-all') { S.recipeAll = true; draw(); var rse2 = S.root.querySelector('#p-rs'); if (rse2) rse2.focus({ preventScroll: true }); return; }
@@ -3069,6 +3333,7 @@
     if (a === 'n-cancel') { S.nf = nfNew(); S.nOpen = false; S.nMsg = ''; draw(); return; }
     if (a === 'n-edit') { var nn = (S.notes || []).filter(function (x) { return x.id === id; })[0]; if (nn) { S.nf = nfFrom(nn); S.nOpen = true; S.nMsg = ''; draw(); var tx = S.root.querySelector('[data-k="n-text"]'); if (tx) { focusNoteText(tx); } } return; }
     if (a === 'n-reuse') { reuseNote(id); return; }
+    if (a === 'n-past-more') { loadPastNotes(true); return; }
     if (a === 'n-past') { S.nPastOpen = !S.nPastOpen; if (S.nPastOpen && !Array.isArray(S.nPast)) loadPastNotes(); else draw(); return; }
     if (a === 'n-seen') { loadSeen(id); return; }
     if (a === 'n-del') { removeNote(id); return; }
@@ -3168,8 +3433,9 @@
     if (a === 'stats-refresh') { loadStats(true); draw(); return; }
     if (!S.draft) return;
     var d = S.draft;
-    if (a === 'a-add-person') { d.people.push({ id: slug('person') + '-' + Date.now().toString(36), name: '', role: 'staff', add: true, tick: true, del: false, active: true, isNew: true }); draw(); var n = S.root.querySelector('[data-k="a-n' + (d.people.length - 1) + '"]'); if (n) n.focus(); return; }
+    if (a === 'a-add-person') { lvReveal('people'); lvReveal('staff'); d.people.push({ id: slug('person') + '-' + Date.now().toString(36), name: '', role: 'staff', add: true, tick: true, del: false, active: true, isNew: true }); draw(); var n = S.root.querySelector('[data-k="a-n' + (d.people.length - 1) + '"]'); if (n) n.focus(); return; }
     if (a === 'a-bulk-add') {
+      lvReveal('people'); lvReveal('staff');
       var box = S.root.querySelector('#a-bulk'); var lines = box ? box.value.split(/\n/).map(function (s) { return s.trim(); }).filter(Boolean) : [];
       lines.forEach(function (nm, k) { d.people.push({ id: slug(nm) + '-' + Date.now().toString(36) + k, name: nm, role: 'staff', add: true, tick: true, del: false, active: true }); });
       draw(); return;
@@ -3181,6 +3447,7 @@
   function onInput(e) {
     var el = e.target, k = el.getAttribute && el.getAttribute('data-k');
     if (!S.root || !S.root.contains(el)) return;
+    if (k && k.indexOf('lv-q:') === 0) { var lk = k.slice(5), lc = LVR[lk]; if (lc) { var ls0 = lvState(lc); ls0.q = el.value; ls0.shown = lc.step || 15; lvRefresh(lk); } return; }
     // a PIN goes in by itself the moment the fourth digit is typed (only when it reaches four, so it cannot send twice)
     if (k === 'p-pin') { var pp = S.pinInput.length; S.pinInput = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.pinInput; pinCells(el); if (pp < 4 && S.pinInput.length === 4) submitKitchenPin(); return; }
     if (k === 'a-newpin') { S.newPin = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.newPin; return; }
@@ -3230,6 +3497,8 @@
   function onChange(e) {
     var el = e.target, k = el.getAttribute && el.getAttribute('data-k');
     if (!S.root || !S.root.contains(el)) return;
+    if (k && k.indexOf('lv-s:') === 0) { var sk = k.slice(5), sc = LVR[sk]; if (sc) { var ss = lvState(sc); ss.sort = el.value; ss.shown = sc.step || 15; lvRefresh(sk); } return; }
+    if (k === 'lv-m') { S.mSel = el.value; loadSigns(el.value, true); draw(); return; }
     if (k && k.indexOf('mn-') === 0 && k !== 'mn-pin') { mfSet(k, el); return; }
     if (k === 'p-day') { if (el.value) { S.date = el.value; S.tab = ''; watchItems(); draw(); } return; }
     if (k === 'n-start') { if (S.nf && el.value) { S.nf.start = el.value; if (S.nf.until && S.nf.until < el.value) S.nf.until = ''; draw(); } return; }

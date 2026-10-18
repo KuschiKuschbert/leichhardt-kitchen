@@ -1016,6 +1016,62 @@ html.note-open, html.note-open body { overflow: hidden; }
   .o-page.o-all { max-width: 52rem; }
 }
 
+/* ---------- big admin lists: search, filter chips, sort, Show more ---------- */
+/* One look for every list in the admin area that can grow (People, learned items, notes, minutes register, waste, orders, team, insights).
+   A wide screen shows a table. A phone shows each row as a small card, so nothing needs swiping sideways. */
+.lv { display: flex; flex-direction: column; gap: 0.6rem; min-width: 0; }
+.lv-tools { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0.5rem 0.8rem; }
+.lv-qw { flex: 1 1 14rem; min-width: 0; }
+.lv-q { height: 2.75rem; font-size: 1rem; }
+.lv-sort select { min-width: 10rem; }
+.lv-chips { margin: 0; }
+.lv-n { margin-left: 0.25rem; font-weight: 700; opacity: 0.65; }
+.lv-count { margin: 0; font-size: 0.8125rem; color: var(--muted); }
+.lv-body { display: flex; flex-direction: column; gap: 0.6rem; min-width: 0; }
+.lv-none { margin: 0.2rem 0; }
+.lv-more { margin-top: 0.1rem; }
+.a-table.lv-table { min-width: 0; }
+.a-table.lv-table td { overflow-wrap: anywhere; }
+.a-table.lv-table td.a-c { text-align: center; }
+.a-table.lv-table td.a-act { text-align: right; white-space: normal; }
+.lv-people .a-name { min-width: 8rem; }
+.lv-cards { margin: 0; }
+.a-rev { padding: 0.55rem 0.75rem; border: 1.5px solid var(--edge); border-radius: var(--radius); background: var(--paper); }
+.mn-older { margin-left: 0.2rem; }
+.mn-older select { min-height: 44px; border-radius: 22px; font-weight: 700; min-width: 0; }
+@media (max-width: 599px) {
+  .lv-tools { flex-wrap: nowrap; align-items: stretch; gap: 0.5rem; }
+  .lv-qw { flex: 1 1 0; }
+  .lv-sort { flex: 0 0 auto; }
+  .lv-sort span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .lv-sort select { min-width: 0; width: 7.6rem; height: 2.75rem; padding: 0 0.4rem; }
+  .lv-table thead { display: none; }
+  .lv-table, .lv-table tbody { display: block; width: 100%; }
+  .lv-table tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.3rem 0.9rem; padding: 0.7rem 0.75rem; border-bottom: 1px solid var(--line); }
+  .lv-table tbody tr:last-child { border-bottom: 0; }
+  .lv-table th, .lv-table td { display: block; min-width: 0; padding: 0; border: 0; }
+  .lv-table th[scope="row"] { grid-column: 1 / -1; font-size: 1.0625rem; }
+  .lv-table td[data-l]::before { content: attr(data-l); display: block; font: 700 0.6875rem var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .a-table.lv-table td.lv-wide, .a-table.lv-table td.a-act { grid-column: 1 / -1; text-align: left; }
+  .a-table.lv-table td.a-act { display: flex; flex-wrap: wrap; gap: 0.4rem; padding-top: 0.2rem; }
+  .a-table.lv-table td.a-act .p-x { margin: 0; }
+  /* People: name and role full width, the four permissions in one row, then the buttons */
+  .lv-people tr { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .lv-people th[scope="row"], .lv-people td.lv-wide { grid-column: 1 / -1; }
+  .lv-people .a-name { width: 100%; min-width: 0; }
+  .lv-people .p-select { max-width: none; width: 100%; }
+  .a-table.lv-people td.a-c { grid-column: auto; width: auto; display: flex; flex-direction: column; align-items: flex-start; gap: 0.3rem; text-align: left; }
+  .a-table.lv-people td.a-c input[type=checkbox] { width: 1.5rem; height: 1.5rem; }
+  .lv-table.mn-reg td.mnst { grid-column: 1 / -1; }
+}
+@media print {
+  html.print-admin .lv-tools, html.print-admin .lv-more, html.print-admin .lv-chips { display: none !important; }
+  html.print-min .lv-tools, html.print-min .lv-more, html.print-min .lv-chips, html.print-min .mn-earlier { display: none !important; }
+}
+@media (min-width: 600px) {
+  .lv-chips.scroll { flex-wrap: wrap; overflow: visible; -webkit-mask-image: none; mask-image: none; }
+  .lv-chips.scroll::after { display: none; }
+}
 /* Minutes: attendance sits after the writing, as a folded block of name chips; the register keeps the full table behind a button */
 .mn-attblock { display: flex; flex-direction: column; gap: 0.5rem; }
 .mn-atth { display: flex; flex-wrap: wrap; align-items: center; gap: 0.2rem 0.8rem; width: 100%; min-height: 48px; padding: 0.5rem 0.8rem; border: 2px solid var(--ink); border-radius: 10px; background: #fff; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
