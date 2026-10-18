@@ -107,6 +107,52 @@ service cloud.firestore {
       allow create, update: if (isAdmin() || (staff() && sousBy())) && noteOk();
       allow delete: if false;
     }
+    // Kitchen meeting minutes. The head chef or a sous chef writes them (draft, then published). Everyone with the kitchen PIN reads them.
+    // Minutes are never deleted, only flagged as removed. "v" is the version: a change after publishing makes version 2 and everyone signs again.
+    // Every earlier version is kept in minutes/<id>/hist/<v> and cannot be changed.
+    // A person signs once per version, as themselves (their own PIN proof): minutes/<id>/signs/<v>_<staffId>. A sign-off cannot be changed or deleted.
+    // Limit: drafts are hidden by the page only. Anyone holding the kitchen PIN could read one with a script.
+    function minutesOk() {
+      return request.resource.data.status in ['draft', 'published']
+        && request.resource.data.v is int && request.resource.data.v >= 1 && request.resource.data.v <= 50
+        && request.resource.data.no is int && request.resource.data.no >= 1
+        && request.resource.data.date is string && request.resource.data.date.size() == 10
+        && request.resource.data.get('start', '') is string && request.resource.data.get('start', '').size() <= 5
+        && request.resource.data.get('loc', '') is string && request.resource.data.get('loc', '').size() <= 60
+        && request.resource.data.get('guests', '') is string && request.resource.data.get('guests', '').size() <= 120
+        && request.resource.data.get('chair', '') is string && request.resource.data.get('chair', '').size() <= 80
+        && request.resource.data.get('taker', '') is string && request.resource.data.get('taker', '').size() <= 80
+        && request.resource.data.get('next', '') is string && request.resource.data.get('next', '').size() <= 10
+        && request.resource.data.get('decisions', '') is string && request.resource.data.get('decisions', '').size() <= 1200
+        && request.resource.data.get('menu', '') is string && request.resource.data.get('menu', '').size() <= 1200
+        && request.resource.data.get('safety', '') is string && request.resource.data.get('safety', '').size() <= 1200
+        && request.resource.data.get('dates', '') is string && request.resource.data.get('dates', '').size() <= 1200
+        && request.resource.data.get('other', '') is string && request.resource.data.get('other', '').size() <= 1200
+        && request.resource.data.get('att', []) is list && request.resource.data.get('att', []).size() <= 80
+        && request.resource.data.get('acts', []) is list && request.resource.data.get('acts', []).size() <= 40
+        && request.resource.data.get('removed', false) is bool;
+    }
+    match /kitchens/KITCHEN_PIN/minutes/{id} {
+      allow read: if true;
+      allow create, update: if (isAdmin() || (staff() && sousBy())) && minutesOk();
+      allow delete: if false;
+      match /hist/{v} {
+        allow read: if true;
+        allow create: if (isAdmin() || (staff() && sousBy())) && minutesOk();
+        allow update, delete: if false;
+      }
+      match /signs/{sid} {
+        allow read: if true;
+        allow create: if staff()
+          && request.resource.data.v is int
+          && request.resource.data.st in ['present', 'apology', 'absent']
+          && request.resource.data.at is number
+          && sid == string(request.resource.data.v) + '_' + request.resource.data.by
+          && get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/minutes/$(id)).data.status == 'published'
+          && get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/minutes/$(id)).data.v == request.resource.data.v;
+        allow update, delete: if false;
+      }
+    }
     match /kitchens/KITCHEN_PIN/staffpins/{id} {
       allow read: if isAdmin();
       allow create: if request.resource.data.hash is string && request.resource.data.hash.size() == 64

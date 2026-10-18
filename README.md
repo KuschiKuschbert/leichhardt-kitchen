@@ -176,6 +176,19 @@ There's no build step and nothing to install. To try it on a computer, open `ind
 - **Reads stay small.** One query for notes that have not ended yet (`until` on or after today), once a phone opens each day, again after 30 minutes away, and once at 10:30 if the book was already open. No live listener and no polling; the once-a-minute check on the page is local only.
 - Not built yet: how many phones tapped Got it (a count only, no names).
 
+### Kitchen meeting minutes
+
+- The head chef (admin panel, **Minutes** tab) or a sous chef (**Meeting minutes** in Handy) writes the minutes in the app, always in one layout in the recipe card style: header (date, start time, location, run by, minutes taken by), attendance, then Safety (orange, first), Decisions, Actions, Menu changes, Dates ahead and Other. Recipe names in Menu changes link to their cards. Keep prices, PINs and private details out.
+- **Attendance** per person on the staff list: Present, Apology or Absent, plus a free-text guests line. **Actions** have who, by when and status. Open actions from the last meeting carry over (Done, Carry over or Drop). Overdue actions show to the head chef and sous chefs only.
+- **Drafts and publishing.** Save draft, Preview, then Publish and start sign-off. A change after publishing (Change as a new version) makes version 2 and everyone signs again. Earlier versions are kept in `hist`. Minutes are never deleted, only flagged `removed`.
+- **Reading and signing.** Staff open `#/minutes` (bell in the top bar, or the "Minutes not signed yet" nudge at the top of the Prep page) and sign with their own 4-digit PIN. Present staff sign "I attended and have read and understood these minutes." Apology and absent staff sign "I have read and understood these minutes." The bell and nudge go away once the person has signed. Minutes stay readable in the app for 90 days.
+- **Register** (admin Minutes tab and the sous chef page): per meeting and version, who has signed and when, who has not, late (more than 3 days after publishing), a chase list, overdue actions, Print or save as PDF (A4) and Download CSV as proof. A sous chef sees the same register, so Jimmy sees it as a sous chef.
+- **Data.** `kitchens/<pin>/minutes/<id>`: `no`, `v`, `status` (draft or published), `date`, `start`, `loc`, `chair`, `taker` (staff ids), `guests`, `att` [{id, st}], `decisions`, `menu`, `safety`, `dates`, `other` (one line per item), `acts` [{what, who, by, st, carried}], `next`, `pubAt`, `removed`, `at`, `upd`, `by`. `minutes/<id>/hist/<v>` is the frozen copy of each published version. `minutes/<id>/signs/<v>_<staffId>`: `v`, `st`, `at`, `by`. Staff ids only, no names, are stored.
+- **Rules.** Only the head chef (Google account) or a listed sous chef (own PIN proof) writes minutes, with size limits. A sign-off can only be created, by the person themselves (own PIN proof, document id must match their id), for the current published version, once. Sign-offs and `hist` copies cannot be changed or deleted. Tested on the Firestore emulator.
+- **Limit.** Drafts are hidden by the page only. Anyone holding the kitchen PIN could read one with a script.
+- **Reads stay small.** One query for minutes from the last 90 days, once a day per phone (and after 30 minutes away), plus one read per open minutes for the person's own sign-off. The register reads the signs of the meeting being viewed. No listener, no polling.
+- Not built yet: viewing old versions in the app (they are stored), reminders outside the app.
+
 ### Smart prep list
 
 - Every line written or picked is counted in `kitchens/<pin>/learned/<item>`: total uses, typed versus picked, uses per weekday (`dow`, 0 is Sunday) and per section. Rolled-over copies are not counted.
