@@ -2333,18 +2333,19 @@
   function noteRowHTML(n) {
     return '<li class="nt-i t-' + esc(n.tag || 'none') + '"><span class="nt-tag">' + esc(noteTagName(n.tag)) + '</span><p>' + linkNote(n.text) + '</p></li>';
   }
-  function noteOpen() {
-    var list = todaysNotes();
+  function noteOpen(pv) {
+    var list = pv ? pv.list : todaysNotes();
     if (npop || !list.length) return;
     var t = ymd(new Date()), admDev = lsGet('lk.admin') === '1', editor = admDev ? '<a class="nt-edit" href="#/admin" data-note="edit">Write or edit notes</a>' : (isSous() ? '<a class="nt-edit" href="#/prep" data-note="edit-sous">Write or edit notes</a>' : '');
     nprev = document.activeElement;
     var el = document.createElement('div');
     el.className = 'nt-wrap';
     el.innerHTML = '<div class="nt-bg" data-note="close"></div><section class="nt" role="dialog" aria-modal="true" aria-labelledby="nt-h" tabindex="-1">' +
-      '<header class="nt-head"><span class="nt-eb">Leichhardt Hotel Kitchen</span><h2 class="nt-h" id="nt-h">Today\'s notes</h2><span class="nt-date">' + esc(parseYmd(t).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })) + '</span></header>' +
+      '<header class="nt-head"><span class="nt-eb">Leichhardt Hotel Kitchen</span><h2 class="nt-h" id="nt-h">' + (pv ? 'Preview' : 'Today\'s notes') + '</h2><span class="nt-date">' + esc(pv ? pv.label : parseYmd(t).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })) + '</span></header>' +
       '<ul class="nt-list">' + list.map(noteRowHTML).join('') + '</ul>' +
-      '<div class="nt-sum" id="nt-sum">' + noteSummary() + '</div>' +
-      '<footer class="nt-foot"><button type="button" class="nt-got" data-note="close">Got it</button>' + editor + '</footer></section>';
+      '<div class="nt-sum" id="nt-sum">' + (pv ? '' : noteSummary()) + '</div>' +
+      '<footer class="nt-foot"><button type="button" class="nt-got" data-note="close">' + (pv ? 'Close preview' : 'Got it') + '</button>' + (pv ? '' : editor) + '</footer></section>';
+    if (pv) el.setAttribute('data-pv', '1');
     document.body.appendChild(el);
     npop = el;
     document.documentElement.classList.add('note-open');
@@ -2353,9 +2354,10 @@
   }
   function noteClose() {
     if (!npop) return;
+    var wasPv = npop.getAttribute('data-pv') === '1';
     npop.parentNode.removeChild(npop); npop = null;
     document.documentElement.classList.remove('note-open');
-    noteMarkSeen();
+    if (!wasPv) { noteMarkSeen(); noteWriteSeen(todaysNotes()); }
     if (nprev && nprev.focus && document.body.contains(nprev)) { try { nprev.focus({ preventScroll: true }); } catch (e) {} }
     nprev = null;
   }
@@ -2401,11 +2403,14 @@
     else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
   });
 
-  /* writing notes: the Notes tab of the admin panel (head chef) and Daily notes in the prep book (sous chef) */
-  function nfNew() { return { id: '', text: '', tag: 'none', start: ymd(new Date()), until: '', dows: [] }; }
+  /* writing notes: the Notes tab of the admin panel (head chef) and Daily notes in the prep book (sous chef).
+     The list comes first (showing today, coming up, past notes on request). The editor opens beside it on a
+     big screen and above it on a phone. Days are picked on a five week grid and every tap can be undone. */
+  var NOTE_START = { off: 'Off today: ', special: 'Special: ', 'function': 'Function: ', delivery: 'Delivery: ', safety: 'Safety: ', allergen: 'Allergen alert: ' };
+  function nfNew() { return { id: '', text: '', tag: 'none', start: ymd(new Date()), until: '', dows: [], run: false }; }
   function nfFrom(n) {
-    var rep = n.dows && n.dows.length;
-    return { id: n.id, text: n.text, tag: n.tag || 'none', start: n.start, until: n.until === NOTE_FAR || (n.until === n.start && !rep) ? '' : n.until, dows: (n.dows || []).slice() };
+    var rep = n.dows && n.dows.length, until = n.until === NOTE_FAR || (n.until === n.start && !rep) ? '' : n.until;
+    return { id: n.id, text: n.text, tag: n.tag || 'none', start: n.start, until: until, dows: (n.dows || []).slice(), run: !!until };
   }
   function noteDay(s, t) { return s === t ? 'today' : s === shift(t, 1) ? 'tomorrow' : dayShort(s); }
   function noteWhen(n) {
@@ -2416,35 +2421,79 @@
     } else out = n.until === n.start ? noteDay(n.start, t) : noteDay(n.start, t) + ' to ' + noteDay(n.until, t);
     return out.charAt(0).toUpperCase() + out.slice(1);
   }
+  function nfUntil(f) { return f.until || (f.dows.length ? NOTE_FAR : f.start); }
+  function nfDraft(f) { return { id: 'draft', text: f.text.replace(/^\s+|\s+$/g, ''), tag: f.tag, start: f.start, until: nfUntil(f), dows: f.dows.slice() }; }
+  function draftPreviewHTML(f) {
+    var d = nfDraft(f);
+    return d.text ? '<ul class="nt-list n-pl">' + noteRowHTML(d) + '</ul>' : '<p class="hint">Type the note to see how it will look.</p>';
+  }
+  function noteRowAdmin(n, t, past) {
+    var who = personName(n.by), sn = S.nSeen && S.nSeen[n.id], today = !past && noteOn(n, t), seen = '';
+    if (today) {
+      if (sn && sn.state === 'ok') seen = '<span class="nt-by n-seen">Seen today by ' + sn.names.length + (sn.names.length ? ': ' + esc(sn.names.join(', ')) : '') + '. <button type="button" class="p-x" data-p="n-seen" data-id="' + esc(n.id) + '">Refresh</button></span>';
+      else if (sn && sn.state === 'loading') seen = '<span class="nt-by n-seen">Checking who has seen it...</span>';
+      else seen = '<span class="nt-by n-seen"><button type="button" class="p-x" data-p="n-seen" data-id="' + esc(n.id) + '">Who has seen it today</button></span>';
+    }
+    return '<li class="nt-row t-' + esc(n.tag || 'none') + '"><div class="nt-rt"><span class="nt-tag">' + esc(noteTagName(n.tag)) + '</span><span class="nt-when">' + esc(noteWhen(n)) + '</span></div><p>' + esc(n.text) + '</p>' +
+      (who ? '<span class="nt-by">Written by ' + esc(who) + '</span>' : '') + seen +
+      '<div class="btn-row">' + (past ? '' : '<button type="button" class="p-x" data-p="n-edit" data-id="' + esc(n.id) + '">Edit</button>') +
+      '<button type="button" class="p-x" data-p="n-reuse" data-id="' + esc(n.id) + '">Use again</button>' +
+      (past ? '' : '<button type="button" class="p-x" data-p="n-del" data-id="' + esc(n.id) + '">' + (S.nDel === n.id ? 'Tap again to remove' : 'Remove') + '</button>') + '</div></li>';
+  }
   function notesListHTML() {
     if (S.notes == null) return '<p class="hint">Loading...</p>';
-    var t = ymd(new Date());
-    var l = S.notes.filter(function (n) { return !n.removed && n.until >= t; }).sort(function (a, b) {
-      return (noteOn(a, t) ? 0 : 1) - (noteOn(b, t) ? 0 : 1) || String(a.start).localeCompare(String(b.start)) || (a.at || 0) - (b.at || 0);
-    });
-    if (!l.length) return '<p class="hint">No notes are set for today or the days ahead.</p>';
-    return '<ul class="nt-rows">' + l.map(function (n) {
-      return '<li class="nt-row t-' + esc(n.tag || 'none') + '"><div class="nt-rt"><span class="nt-tag">' + esc(noteTagName(n.tag)) + '</span><span class="nt-when">' + esc(noteWhen(n)) + (noteOn(n, t) ? ' (showing today)' : '') + '</span></div><p>' + esc(n.text) + '</p>' +
-        '<div class="btn-row"><button type="button" class="p-x" data-p="n-edit" data-id="' + esc(n.id) + '">Edit</button><button type="button" class="p-x" data-p="n-del" data-id="' + esc(n.id) + '">' + (S.nDel === n.id ? 'Tap again to remove' : 'Remove') + '</button></div></li>';
-    }).join('') + '</ul>';
+    var t = ymd(new Date()), live = S.notes.filter(function (n) { return !n.removed && n.until >= t; });
+    var now = live.filter(function (n) { return noteOn(n, t); }).sort(function (a, b) { return noteRank(a) - noteRank(b) || (a.at || 0) - (b.at || 0); });
+    var later = live.filter(function (n) { return !noteOn(n, t); }).sort(function (a, b) { return String(a.start).localeCompare(String(b.start)) || (a.at || 0) - (b.at || 0); });
+    function grp(title, l, past) { return l.length ? '<h3 class="n-gh3">' + title + ' (' + l.length + ')</h3><ul class="nt-rows">' + l.map(function (n) { return noteRowAdmin(n, t, past); }).join('') + '</ul>' : ''; }
+    var out = grp('Showing today', now) + grp('Coming up', later);
+    if (!now.length && !later.length) out = '<p class="hint">No notes are set for today or the days ahead. Tap Write a note to add one.</p>';
+    var pastBtn = '<button type="button" class="btn" data-p="n-past">' + (S.nPastOpen ? 'Hide past notes' : 'Past notes') + '</button>';
+    var pastList = '';
+    if (S.nPastOpen) {
+      if (S.nPast === 'loading') pastList = '<p class="hint">Loading...</p>';
+      else if (S.nPast === 'error') pastList = '<p class="hint">Could not load past notes. Check the connection and try again.</p>';
+      else pastList = (S.nPast && S.nPast.length) ? grp('Past notes', S.nPast, true) + '<p class="hint">The last 30 notes that have finished. Use again copies one into a new note.</p>' : '<p class="hint">No finished notes yet.</p>';
+    }
+    return out + '<div class="btn-row n-pastrow">' + pastBtn + '</div>' + pastList;
   }
-  function notesEditorHTML() {
-    var f = S.nf || (S.nf = nfNew()), t = ymd(new Date()), until = f.until || (f.dows.length ? NOTE_FAR : f.start);
+  function dayGridHTML(f) {
+    var t = ymd(new Date()), lead = (parseYmd(t).getDay() + 6) % 7, first = shift(t, -lead), end = f.until || f.start, cells = '', i;
+    DOWN.forEach(function (h) { cells += '<span class="n-gh" aria-hidden="true">' + h + '</span>'; });
+    for (i = 0; i < 35; i++) {
+      var d = shift(first, i), dt = parseYmd(d), inr = d >= f.start && d <= end;
+      if (d < t) { cells += '<span class="n-gd n-off" aria-hidden="true"></span>'; continue; }
+      var dim = f.dows.length && inr && f.dows.indexOf(dt.getDay()) < 0;
+      cells += '<button type="button" class="n-gd' + (inr ? ' n-in' : '') + (d === f.start ? ' n-s' : '') + (f.until && d === f.until ? ' n-e' : '') + (dim ? ' n-dim' : '') + (d === t ? ' n-today' : '') + '" data-p="n-day" data-v="' + d + '" aria-pressed="' + inr + '" aria-label="' + esc(dt.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })) + '">' +
+        (dt.getDate() === 1 || i === 0 ? '<small>' + esc(dt.toLocaleDateString('en-AU', { month: 'short' })) + '</small>' : '') + dt.getDate() + '</button>';
+    }
+    return '<div class="n-grid" role="group" aria-label="Days">' + cells + '</div>';
+  }
+  function noteEditForm() {
+    var f = S.nf || (S.nf = nfNew()), t = ymd(new Date()), until = nfUntil(f);
     var tags = NOTE_TAGS.map(function (x) { return '<button type="button" class="chip" data-p="n-tag" data-v="' + x[0] + '" aria-pressed="' + (f.tag === x[0]) + '">' + esc(x[1]) + '</button>'; }).join('');
     var dows = DOW.map(function (d, i) { return '<button type="button" class="chip sq" data-p="n-dow" data-v="' + d + '" aria-pressed="' + (f.dows.indexOf(d) >= 0) + '" aria-label="' + DOWN[i] + '">' + DOWN[i] + '</button>'; }).join('');
     var when = f.start && until >= f.start ? 'Shows: ' + noteWhen({ start: f.start, until: until, dows: f.dows }) + '.' : 'The last day cannot be before the first day.';
-    return '<section class="set-block"><span class="label">' + (f.id ? 'Edit this note' : 'Write a note') + '</span>' +
-      '<span class="hint">Short and plain. It shows as a popup the first time the book is opened after 10:30, and from the bell in the top bar. Leave out prices, PINs and staff names. A recipe name in the note links to its card.</span>' +
-      '<div class="field"><label class="label" for="n-text">Note</label><textarea id="n-text" class="p-bulk" data-k="n-text" rows="4" maxlength="400" placeholder="For example: Barramundi is off until Thursday.">' + esc(f.text) + '</textarea><span class="hint" id="n-count">' + f.text.length + ' of 400</span></div>' +
-      '<div class="field"><span class="label">Tag</span><div class="nt-chips" role="group" aria-label="Tag">' + tags + '</div></div>' +
-      '<div class="field"><span class="label">Show on</span><div class="nt-chips"><button type="button" class="chip" data-p="n-quick" data-v="0" aria-pressed="' + (f.start === t && !f.until && !f.dows.length) + '">Today</button><button type="button" class="chip" data-p="n-quick" data-v="1" aria-pressed="' + (f.start === shift(t, 1) && !f.until && !f.dows.length) + '">Tomorrow</button></div>' +
-      '<div class="nt-dates"><label class="nt-dl">From<input type="date" class="p-dateinput" data-k="n-start" value="' + esc(f.start) + '"' + (f.id ? '' : ' min="' + t + '"') + '></label><label class="nt-dl">Until (optional)<input type="date" class="p-dateinput" data-k="n-until" value="' + esc(f.until) + '"' + (f.start ? ' min="' + esc(f.start) + '"' : '') + '></label></div>' +
-      '<span class="hint">Leave Until empty for one day. Set it to keep a note up until then.</span></div>' +
-      '<div class="field"><span class="label">Repeat every week on (optional)</span><div class="nt-chips" role="group" aria-label="Weekdays">' + dows + '</div><span class="hint">With weekdays picked and Until empty, the note comes back every week until you remove it.</span></div>' +
+    var single = !f.run && !f.until;
+    return '<section class="set-block n-edit"><span class="label">' + (f.id ? 'Edit this note' : 'Write a note') + '</span>' +
+      '<span class="hint">Short and plain. It pops up the first time the book is opened after 10:30, and shows from the bell. No prices, PINs or staff names. A recipe name links to its card.</span>' +
+      '<div class="field"><span class="label">Tag (starts the note for you)</span><div class="nt-chips" role="group" aria-label="Tag">' + tags + '</div></div>' +
+      '<div class="field"><label class="label" for="n-text">Note</label><textarea id="n-text" class="p-bulk" data-k="n-text" rows="4" maxlength="400" placeholder="For example: Barramundi is off until Thursday.">' + esc(f.text) + '</textarea><span class="hint" id="n-count">' + f.text.length + ' of 400. Ctrl+Enter saves.</span></div>' +
+      '<div class="field"><span class="label">How it will look</span><div id="n-prev" class="n-prev">' + draftPreviewHTML(f) + '</div></div>' +
+      '<div class="field"><span class="label">Show on</span><div class="nt-chips"><button type="button" class="chip" data-p="n-quick" data-v="0" aria-pressed="' + (f.start === t && single && !f.dows.length) + '">Today</button><button type="button" class="chip" data-p="n-quick" data-v="1" aria-pressed="' + (f.start === shift(t, 1) && single && !f.dows.length) + '">Tomorrow</button>' +
+      '<button type="button" class="chip" data-p="n-mode" data-v="one" aria-pressed="' + (!f.run && !f.until) + '">One day</button><button type="button" class="chip" data-p="n-mode" data-v="run" aria-pressed="' + (f.run || !!f.until) + '">Several days</button></div>' +
+      '<span class="hint">' + (f.run || f.until ? 'Tap the first day, then the last day. Tap the last day again to take it back.' : 'Tap a day to schedule the note ahead of time.') + '</span>' + dayGridHTML(f) +
+      '<details class="n-more"' + (f.start > shift(t, 34) || (f.until && f.until > shift(t, 34)) ? ' open' : '') + '><summary>A date further ahead</summary><div class="nt-dates"><label class="nt-dl">From<input type="date" class="p-dateinput" data-k="n-start" value="' + esc(f.start) + '"' + (f.id ? '' : ' min="' + t + '"') + '></label><label class="nt-dl">Until (optional)<input type="date" class="p-dateinput" data-k="n-until" value="' + esc(f.until) + '"' + (f.start ? ' min="' + esc(f.start) + '"' : '') + '></label></div></details></div>' +
+      '<div class="field"><span class="label">Repeat every week on (optional)</span><div class="nt-chips" role="group" aria-label="Weekdays">' + dows + (f.dows.length ? '<button type="button" class="chip" data-p="n-dowclr">Clear weekdays</button>' : '') + '</div><span class="hint">With weekdays picked and no last day, the note comes back every week until you remove it.</span></div>' +
       '<p class="nt-whenline" role="status">' + esc(when) + '</p>' +
-      '<div class="btn-row"><button type="button" class="btn dark" data-p="n-save"' + (S.nSaving ? ' disabled' : '') + '>' + (f.id ? 'Save changes' : 'Save note') + '</button>' + (f.id ? '<button type="button" class="btn" data-p="n-cancel">Cancel</button>' : '') + '<button type="button" class="btn" data-p="n-preview">Preview the popup</button></div>' +
-      '<span class="saved" role="status">' + esc(S.nMsg) + '</span></section>' +
-      '<section class="set-block"><span class="label">Notes set</span><span class="hint">Today first, then the days ahead.</span>' + notesListHTML() + '</section>';
+      '<div class="btn-row"><button type="button" class="btn dark" data-p="n-save"' + (S.nSaving ? ' disabled' : '') + '>' + (f.id ? 'Save changes' : 'Save note') + '</button><button type="button" class="btn" data-p="n-preview">Preview the popup</button><button type="button" class="btn" data-p="n-reset">Reset days</button><button type="button" class="btn" data-p="n-cancel">' + (f.id ? 'Cancel' : 'Close') + '</button></div>' +
+      '<span class="saved" role="status">' + esc(S.nMsg) + '</span></section>';
+  }
+  function notesEditorHTML() {
+    var open = !!S.nOpen;
+    return '<div class="n-ws' + (open ? ' has-ed' : '') + '">' + (open ? '<div class="n-ed">' + noteEditForm() + '</div>' : '') +
+      '<section class="set-block n-lst"><div class="n-lh"><div><span class="label">Notes set</span><span class="hint">Today first, then the days ahead.</span></div>' + (open ? '' : '<button type="button" class="btn dark" data-p="n-new">Write a note</button>') + '</div>' +
+      (open ? '' : '<span class="saved" role="status">' + esc(S.nMsg) + '</span>') + notesListHTML() + '</section></div>';
   }
   function notesPageHTML() {
     return '<div class="p-admin"><div class="p-bar"><span>Daily notes</span><span class="p-links"><button type="button" class="p-link" data-p="notes-close">Back to the prep book</button></span></div><h2 class="p-h" id="rtitle" tabindex="-1">Daily notes</h2>' + notesEditorHTML() + '</div>';
@@ -2452,16 +2501,16 @@
   function saveNote() {
     var f = S.nf;
     if (!f || S.nSaving || !fb) return;
-    var text = f.text.replace(/\s+$/g, '').replace(/^\s+/g, ''), start = f.start, until = f.until || (f.dows.length ? NOTE_FAR : f.start), re = /^\d{4}-\d{2}-\d{2}$/;
+    var text = f.text.replace(/\s+$/g, '').replace(/^\s+/g, ''), start = f.start, until = nfUntil(f), re = /^\d{4}-\d{2}-\d{2}$/;
     if (!text) { S.nMsg = 'Write the note first.'; draw(); return; }
     if (!re.test(start || '') || !re.test(until)) { S.nMsg = 'Pick the first day.'; draw(); return; }
     if (until < start) { S.nMsg = 'The last day cannot be before the first day.'; draw(); return; }
     var data = { text: text.slice(0, 400), tag: f.tag, start: start, until: until, dows: f.dows.slice().sort(), removed: false, upd: Date.now() };
     if (!f.id) data.at = Date.now();
-    var ref = f.id ? docRef('notes', f.id) : fb.fs.doc(colRef('notes'));
+    var ref = f.id ? docRef('notes', f.id) : fb.fs.doc(colRef('notes')), when = noteWhen({ start: start, until: until, dows: data.dows });
     S.nSaving = true; S.nMsg = ''; draw();
     sset(ref, data, !!f.id).then(function () {
-      S.nSaving = false; S.nf = nfNew(); S.nMsg = 'Saved.'; loadNotes(true); draw();
+      S.nSaving = false; S.nf = nfNew(); S.nOpen = false; S.nMsg = 'Saved. Shows: ' + when + '.'; loadNotes(true); draw();
     }, function (e) {
       S.nSaving = false; S.nMsg = e && e.code === 'permission-denied' ? 'Not allowed. Only the head chef and sous chefs can write notes.' : 'Could not save. Check the connection and try again.'; draw();
     });
@@ -2470,9 +2519,44 @@
     if (S.nDel !== id) { S.nDel = id; draw(); return; }
     S.nDel = '';
     sset(docRef('notes', id), { removed: true, upd: Date.now() }, true).then(function () {
-      if (S.nf && S.nf.id === id) S.nf = nfNew();
+      if (S.nf && S.nf.id === id) { S.nf = nfNew(); S.nOpen = false; }
       S.nMsg = 'Removed.'; loadNotes(true); draw();
     }, function () { S.nMsg = 'Could not remove. Check the connection and try again.'; draw(); });
+  }
+  /* finished notes: one query when the head chef asks for them (30 at most) */
+  function loadPastNotes() {
+    if (!fb || S.nPast === 'loading') return;
+    S.nPast = 'loading'; draw();
+    fb.fs.getDocs(fb.fs.query(colRef('notes'), fb.fs.where('until', '<', ymd(new Date())), fb.fs.orderBy('until', 'desc'), fb.fs.limit(30))).then(function (snap) {
+      S.nPast = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }).filter(function (x) { return !x.removed; }); draw();
+    }, function () { S.nPast = 'error'; draw(); });
+  }
+  function reuseNote(id) {
+    var n = (S.notes || []).concat(Array.isArray(S.nPast) ? S.nPast : []).filter(function (x) { return x.id === id; })[0];
+    if (!n) return;
+    S.nf = nfNew(); S.nf.text = n.text; S.nf.tag = n.tag || 'none'; S.nOpen = true; S.nMsg = '';
+    draw(); var tx = S.root.querySelector('[data-k="n-text"]'); if (tx) { tx.focus(); window.scrollTo(0, 0); }
+  }
+  /* who tapped Got it today for one note (one small query, only when asked) */
+  function loadSeen(id) {
+    if (!fb) return;
+    S.nSeen = S.nSeen || {}; S.nSeen[id] = { state: 'loading', names: [] }; draw();
+    fb.fs.getDocs(fb.fs.query(fb.fs.collection.apply(null, [fb.db].concat(base(), ['notes', id, 'seen'])), fb.fs.where('day', '==', ymd(new Date())))).then(function (snap) {
+      var seen = {}, names = [];
+      snap.docs.forEach(function (d) { var by = d.data().by; if (by && !seen[by]) { seen[by] = 1; names.push(personName(by) || 'Someone'); } });
+      S.nSeen[id] = { state: 'ok', names: names.sort() }; draw();
+    }, function () { delete S.nSeen[id]; S.nMsg = 'Could not check. Try again.'; draw(); });
+  }
+  /* "Got it" on a phone where someone is signed in leaves one small record per person, note and day */
+  function noteWriteSeen(list) {
+    if (!fb || !S.who || !S.tok || !list.length) return;
+    var day = ymd(new Date()), rec; try { rec = JSON.parse(lsGet('lk.note.sw') || '{}') || {}; } catch (e) { rec = {}; }
+    if (rec.d !== day || rec.w !== S.who) rec = { d: day, w: S.who, ids: [] };
+    list.forEach(function (n) {
+      if (rec.ids.indexOf(n.id) >= 0) return;
+      rec.ids.push(n.id); lsSet('lk.note.sw', JSON.stringify(rec));
+      sset(fb.fs.doc.apply(null, [fb.db].concat(base(), ['notes', n.id, 'seen', day + '_' + S.who])), { day: day, at: Date.now() }).catch(function () {});
+    });
   }
 
   /* ---------- wastage insights (admin) ---------- */
@@ -2645,16 +2729,42 @@
     if (a === 'pin-go') { submitKitchenPin(); return; }
     if (a === 'pin-forget') { S.pin = ''; lsSet('lk.prep.pin', ''); S.config = null; S.configState = 'idle'; if (unsubCfg) unsubCfg(); if (unsubItems) unsubItems(); if (unsubSec) unsubSec(); if (unsubLrn) unsubLrn(); unsubCfg = unsubItems = unsubSec = unsubLrn = null; cfgKey = itemsKey = ''; draw(); return; }
     if (a === 'retry') { cfgKey = ''; connect(); return; }
-    if (a === 'notes-open') { if (isSous()) { S.notesOpen = true; S.nf = null; S.nMsg = ''; loadNotes(); draw(); window.scrollTo(0, 0); } return; }
+    if (a === 'notes-open') { if (isSous()) { S.notesOpen = true; S.nf = null; S.nOpen = false; S.nMsg = ''; loadNotes(); draw(); window.scrollTo(0, 0); } return; }
     if (a === 'notes-close') { S.notesOpen = false; draw(); return; }
-    if (a === 'n-tag') { S.nf.tag = el.getAttribute('data-v'); draw(); return; }
+    if (a === 'n-new') { S.nf = nfNew(); S.nOpen = true; S.nMsg = ''; draw(); var ntx = S.root.querySelector('[data-k="n-text"]'); if (ntx) { ntx.focus(); window.scrollTo(0, 0); } return; }
+    if (a === 'n-tag') {
+      var tg = el.getAttribute('data-v'), ft = S.nf, old = NOTE_START[ft.tag] || '', cur = ft.text.replace(/^\s+/, '');
+      if (!cur || (old && cur === old) || (old && cur.indexOf(old) === 0 && cur.length === old.length)) ft.text = NOTE_START[tg] || '';
+      ft.tag = tg; draw(); var tx2 = S.root.querySelector('[data-k="n-text"]'); if (tx2) { tx2.focus(); tx2.setSelectionRange(tx2.value.length, tx2.value.length); } return;
+    }
     if (a === 'n-dow') { var dv = +el.getAttribute('data-v'), dx = S.nf.dows.indexOf(dv); if (dx >= 0) S.nf.dows.splice(dx, 1); else S.nf.dows.push(dv); draw(); return; }
-    if (a === 'n-quick') { S.nf.start = shift(ymd(new Date()), +el.getAttribute('data-v')); S.nf.until = ''; S.nf.dows = []; draw(); return; }
+    if (a === 'n-dowclr') { S.nf.dows = []; draw(); return; }
+    if (a === 'n-quick') { S.nf.start = shift(ymd(new Date()), +el.getAttribute('data-v')); S.nf.until = ''; S.nf.run = false; S.nf.dows = []; draw(); return; }
+    if (a === 'n-mode') { var nm = el.getAttribute('data-v'); S.nf.run = nm === 'run'; if (nm === 'one') S.nf.until = ''; draw(); return; }
+    if (a === 'n-reset') { S.nf.start = ymd(new Date()); S.nf.until = ''; S.nf.run = false; S.nf.dows = []; draw(); return; }
+    if (a === 'n-day') {
+      var dd = el.getAttribute('data-v'), nf = S.nf;
+      if (!nf.run && !nf.until) { nf.start = dd; }
+      else if (!nf.until) { if (dd > nf.start) nf.until = dd; else if (dd < nf.start) nf.start = dd; }
+      else if (dd === nf.until) { nf.until = ''; }
+      else if (dd === nf.start) { nf.start = shift(nf.start, 1); if (nf.start >= nf.until) { nf.start = nf.until; nf.until = ''; } }
+      else if (dd > nf.start) { nf.until = dd; }
+      else { nf.start = dd; }
+      draw(); return;
+    }
     if (a === 'n-save') { saveNote(); return; }
-    if (a === 'n-cancel') { S.nf = nfNew(); S.nMsg = ''; draw(); return; }
-    if (a === 'n-edit') { var nn = (S.notes || []).filter(function (x) { return x.id === id; })[0]; if (nn) { S.nf = nfFrom(nn); S.nMsg = ''; draw(); var tx = S.root.querySelector('[data-k="n-text"]'); if (tx) { tx.focus(); tx.scrollIntoView({ block: 'center' }); } } return; }
+    if (a === 'n-cancel') { S.nf = nfNew(); S.nOpen = false; S.nMsg = ''; draw(); return; }
+    if (a === 'n-edit') { var nn = (S.notes || []).filter(function (x) { return x.id === id; })[0]; if (nn) { S.nf = nfFrom(nn); S.nOpen = true; S.nMsg = ''; draw(); var tx = S.root.querySelector('[data-k="n-text"]'); if (tx) { tx.focus(); window.scrollTo(0, 0); } } return; }
+    if (a === 'n-reuse') { reuseNote(id); return; }
+    if (a === 'n-past') { S.nPastOpen = !S.nPastOpen; if (S.nPastOpen && !Array.isArray(S.nPast)) loadPastNotes(); else draw(); return; }
+    if (a === 'n-seen') { loadSeen(id); return; }
     if (a === 'n-del') { removeNote(id); return; }
-    if (a === 'n-preview') { if (todaysNotes().length) noteOpen(); else toast('No note is set for today yet.'); return; }
+    if (a === 'n-preview') {
+      var pf = S.nf, pd = pf && pf.text.replace(/\s+/g, '') ? nfDraft(pf) : null;
+      if (pd) noteOpen({ list: [pd], label: noteWhen(pd) + (pd.start > ymd(new Date()) ? ' (not saved yet)' : ' (not saved)') });
+      else if (todaysNotes().length) noteOpen(); else toast('Write a note first, or no note is set for today yet.');
+      return;
+    }
     if (a === 'otick') { tickOrderLine(el.getAttribute('data-d'), id, el.getAttribute('aria-pressed') !== 'true'); return; }
     if (a === 'odel') { removeOrderLine(el.getAttribute('data-d'), id); return; }
     if (a === 'ogroup') { tickOrderGroup(el.getAttribute('data-k2')); return; }
@@ -2747,7 +2857,7 @@
     if (k === 'p-text') { S.text = el.value; var hn = S.root.querySelector('#p-hint'); if (hn) hn.textContent = hintText(S.text); var sg = S.root.querySelector('#p-sugg'); if (sg) sg.innerHTML = suggestHTML(); var qs = S.root.querySelector('#p-qsugg'); if (qs) qs.innerHTML = qtyChipsHTML(); return; }
     if (k === 'o-text') { S.otext = el.value; var og = S.root.querySelector('#o-sugg'); if (og) og.innerHTML = ordSuggHTML(); var oh = S.root.querySelector('#o-hint'); if (oh) oh.textContent = oHintText(S.otext); return; }
     if (k === 'o-qty') { S.oqty = el.value; return; }
-    if (k === 'n-text') { if (S.nf) S.nf.text = el.value; var nc = S.root.querySelector('#n-count'); if (nc) nc.textContent = el.value.length + ' of 400'; return; }
+    if (k === 'n-text') { if (S.nf) S.nf.text = el.value; var nc = S.root.querySelector('#n-count'); if (nc) nc.textContent = el.value.length + ' of 400. Ctrl+Enter saves.'; var npv = S.root.querySelector('#n-prev'); if (npv && S.nf) npv.innerHTML = draftPreviewHTML(S.nf); return; }
     if (k === 'w-text') { S.wf.text = el.value; var wg = S.root.querySelector('#w-sugg'); if (wg) wg.innerHTML = wSuggHTML(); return; }
     if (k === 'w-amt') { S.wf.amt = el.value.replace(/[^0-9.,]/g, ''); if (el.value !== S.wf.amt) el.value = S.wf.amt; return; }
     if (k === 'w-sec') { S.wf.sec = el.value; return; }
@@ -2767,7 +2877,7 @@
     if (!S.root || !S.root.contains(el)) return;
     if (k === 'p-day') { if (el.value) { S.date = el.value; S.tab = ''; watchItems(); draw(); } return; }
     if (k === 'n-start') { if (S.nf && el.value) { S.nf.start = el.value; if (S.nf.until && S.nf.until < el.value) S.nf.until = ''; draw(); } return; }
-    if (k === 'n-until') { if (S.nf) { S.nf.until = el.value; draw(); } return; }
+    if (k === 'n-until') { if (S.nf) { S.nf.until = el.value; S.nf.run = !!el.value; draw(); } return; }
     if (k === 'p-section' || k === 'w-sec') { checkSectionBox(el, k); return; }
     if (k === 'af-sec' || k === 'af-who' || k === 'af-dow' || k === 'af-reason') { AF()[k.slice(3)] = el.value; afSave(); draw(); return; }
     var a = el.getAttribute && el.getAttribute('data-a');
@@ -2788,6 +2898,7 @@
   function onKey(e) {
     if (e.key === 'Escape' && S.sheet) { S.sheet = ''; draw(); return; }
     if (e.key === 'Escape' && S.recipeOpen) { S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; draw(); return; }
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.target.getAttribute && e.target.getAttribute('data-k') === 'n-text') { e.preventDefault(); saveNote(); return; }
     if (e.key === 'Enter' && e.target.getAttribute && e.target.getAttribute('data-k') === 'p-pin') { e.preventDefault(); var b = S.root.querySelector('[data-p="pin-go"]'); if (b) b.click(); }
   }
   var wired = false;

@@ -107,6 +107,15 @@ service cloud.firestore {
       allow create, update: if (isAdmin() || (staff() && sousBy())) && noteOk();
       allow delete: if false;
     }
+    // Who has seen a note: one small record per person, note and day, written when they tap Got it.
+    // The record id is the day, an underscore and the writer's id. Records are never changed or deleted.
+    match /kitchens/KITCHEN_PIN/notes/{id}/seen/{sid} {
+      allow read: if true;
+      allow create: if staff() && request.resource.data.day is string && request.resource.data.day.size() == 10
+        && request.resource.data.at is number
+        && sid == request.resource.data.day + '_' + request.resource.data.by;
+      allow update, delete: if false;
+    }
     match /kitchens/KITCHEN_PIN/staffpins/{id} {
       allow read: if isAdmin();
       allow create: if request.resource.data.hash is string && request.resource.data.hash.size() == 64
