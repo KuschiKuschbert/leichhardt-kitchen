@@ -1,7 +1,7 @@
 // Stand-in for the Firestore web SDK, for the click tests only (tests/lib.js serves it instead of the real SDK).
 // Data lives in localStorage ('fake.fs') so reloads keep it. window.__fake controls failures:
 //   __fake.mode = 'ok' | 'deny' (every write refused, permission-denied) | 'hold' (writes wait, like no signal)
-// __fake.reads lists the paths asked for (getDoc, getDocs) and __fake.readLog every document read from the "server";
+// __fake.reads lists the paths asked for (getDoc, getDocs, getDocFromServer) and __fake.readLog every document read from the "server";
 // getDocsFromCache only returns documents this page has read before.
 const KEY = 'fake.fs';
 function load() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } }
@@ -63,6 +63,15 @@ export function getDoc(ref) {
   return delay(result(ref));
 }
 export function getDocs(ref) { window.__fake.reads.push(key(ref.path)); return delay(result(ref)); }
+// a read that must come from the server: refused when there is no signal ('hold', 'fail'). __fake.server can hold a
+// newer copy of a document than this phone has (say a line ticked on another phone), keyed by path.
+export function getDocFromServer(ref) {
+  const k = key(ref.path), sv = window.__fake.server;
+  window.__fake.reads.push(k);
+  if (window.__fake.mode === 'hold' || window.__fake.mode === 'fail') return Promise.reject({ code: 'unavailable' });
+  if (sv && k in sv) { const v = sv[k]; return delay({ id: ref.path[ref.path.length - 1], ref, exists: () => v != null, data: () => (v == null ? undefined : JSON.parse(JSON.stringify(v))) }); }
+  return delay(result(ref));
+}
 export function getDocsFromCache(ref) {
   const r = listCol(ref.path, ref.c), docs = r.docs.filter(d => seen.has(key(d.ref.path)));
   return delay({ docs, empty: !docs.length, size: docs.length, forEach: f => docs.forEach(f) });

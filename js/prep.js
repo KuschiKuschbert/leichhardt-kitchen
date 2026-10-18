@@ -416,7 +416,14 @@
     t = pr.text;
     var rm = matchRecipe(t);
     if (!sec) { var lx = learnedFor(t); if (lx && bestSection(lx)) sec = bestSection(lx); }
-    var q0 = S.qty;
+    var q0 = S.qty, tw = openTwin(t, q0);
+    if (tw) {
+      var how = t === S.pickedText ? 'pick' : 'type', q1 = q0.trim().slice(0, 40);
+      addToTwin(tw, { text: t.slice(0, 160), qty: q1, station: sec, recipe: rm ? rm.id : '' }, function () { noteSection(sec); bump({ added: 1, lastAdded: now() }); learn(t, sec, how, q1); });
+      S.text = ''; S.qty = ''; S.section = sec; S.pickedText = ''; draw();
+      var el0 = S.root && S.root.querySelector('[data-k="p-text"]'); if (el0) el0.focus();
+      return;
+    }
     var made = newItem(Object.assign({ text: t.slice(0, 160), qty: S.qty.trim().slice(0, 40), station: sec, recipe: rm ? rm.id : '' }, fixed ? { orig: typedAs.slice(0, 160) } : {}));
     made.catch(function (e) { failed(e, function () { if (!S.text.trim()) { S.text = typedAs; S.qty = q0; } }); });
     noteSection(sec); bump({ added: 1, lastAdded: now() }); learn(t, sec, t === S.pickedText ? 'pick' : 'type', S.qty);
@@ -438,7 +445,13 @@
     var r = D.recipes.filter(function (x) { return x.id === id; })[0];
     if (!r || !can('add')) return;
     var secInfo = {}, sec = cleanSection(S.section, secInfo);
-    var q0 = S.qty;
+    var q0 = S.qty, tw = openTwin(r.short || r.name, q0);
+    if (tw) {
+      var q1 = q0.trim().slice(0, 40);
+      addToTwin(tw, { text: (r.short || r.name), recipe: r.id, qty: q1, station: sec }, function () { noteSection(sec); bump({ added: 1, lastAdded: now() }); learn(r.short || r.name, sec, 'pick', q1); });
+      S.qty = ''; S.recipeSearch = ''; S.recipeOpen = false; S.recipeAll = false; S.section = sec;
+      return;
+    }
     var made = newItem({ text: (r.short || r.name), recipe: r.id, qty: S.qty.trim().slice(0, 40), station: sec });
     made.catch(function (e) { failed(e, function () { if (!S.qty.trim()) S.qty = q0; }); });
     noteSection(sec); bump({ added: 1, lastAdded: now() }); learn(r.short || r.name, sec, 'pick', S.qty);
@@ -461,7 +474,8 @@
   function removeItem(date, id, restore) {
     var p = me(), it = S.items.filter(function (x) { return x.id === id; })[0];
     if (!can('del')) return;
-    supd(itemRef(date, id), { deleted: !restore, deletedBy: restore ? '' : p.name, deletedAt: restore ? 0 : now() }).catch(failed);
+    // a merged double up that is put back is kept apart, so it is not merged again
+    supd(itemRef(date, id), Object.assign({ deleted: !restore, deletedBy: restore ? '' : p.name, deletedAt: restore ? 0 : now() }, restore && it && it.mergedInto ? { mergedInto: '', dupOk: true } : {})).catch(failed);
     if (!restore) toast('Removed ' + (it ? it.text : 'the line'), { label: 'Undo', fn: function () { removeItem(date, id, true); } });
   }
   /* Anything not ticked on the last written day rolls onto today by itself, once the clock has been checked (see LK_TIME).
@@ -624,13 +638,118 @@
   }
   function gotoRow(id) {
     var it = S.items.filter(function (x) { return x.id === id; })[0];
-    if (it && S.tab && (it.station || '') !== S.tab) { S.tab = ''; draw(); }
+    if (it && !inTab(it)) { S.tab = ''; draw(); }
     var row = S.root && S.root.querySelector('#nbr-' + CSS.escape(id));
     if (!row) return;
     row.scrollIntoView({ block: 'center', behavior: 'smooth' });
     row.classList.remove('is-flash'); void row.offsetWidth; row.classList.add('is-flash');
   }
   function onList() { var h = {}; S.items.forEach(function (x) { if (!x.deleted) h[lkey(x.text)] = 1; }); return h; }
+
+  /* ---------- double ups: the same item open twice on one page, in any section ---------- */
+  /* Two lines are the same item when their words match, ignoring case, spacing, punctuation and plurals ("Slice onions"
+     and "slice onion."). Amounts agree when they are the same ("2 L" and "2l") or one of them is blank. */
+  function stem(w) {
+    if (w.length > 3 && /[^s]s$/.test(w)) w = w.slice(0, -1);
+    if (w.length > 3 && /e$/.test(w)) w = w.slice(0, -1);
+    return w.replace(/([^aeiou])y$/, '$1i');
+  }
+  function dupKey(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').split(/[^a-z0-9]+/).filter(Boolean).map(stem).join(' '); }
+  function qtyKey(q) { return String(q || '').toLowerCase().split(/[^a-z0-9.]+/).filter(Boolean).map(stem).join(''); }
+  function byFirst(a, b) { return firstAt(a) - firstAt(b) || (a.addedAt || 0) - (b.addedAt || 0) || (a.id < b.id ? -1 : 1); }
+  /* open lines grouped by item, two or more to a group, the line written first at the front */
+  function dupGroups(items) {
+    var m = {};
+    items.forEach(function (x) { var k = !x.done && !x.deleted && dupKey(x.text); if (k) (m[k] = m[k] || []).push(x); });
+    return Object.keys(m).map(function (k) { return m[k].sort(byFirst); }).filter(function (g) { return g.length > 1; });
+  }
+  function sameQty(g) { var q = {}; g.forEach(function (x) { if (qtyKey(x.qty)) q[qtyKey(x.qty)] = 1; }); return Object.keys(q).length <= 1; }
+  /* the obvious ones: amounts agree, and no line was kept apart on purpose (dupOk, from Add anyway or Undo) */
+  function obviousDups(items) { return dupGroups(items.filter(function (x) { return !x.dupOk; })).filter(sameQty); }
+  var DUP_BLANK = { qty: '', urgent: false, urgentBy: '', urgentById: '', urgentAt: 0, station: '', recipe: '', also: [] };
+  function prevOf(x, up) { var p = {}; Object.keys(up).forEach(function (k) { p[k] = x[k] === undefined ? DUP_BLANK[k] : x[k]; }); return p; }
+  /* Merging a group: the line written first stays. It takes the amount, the urgent mark, a section and a recipe link if
+     it had none, and the other sections (also), so it still shows on their tabs. The others are removed (mergedInto). */
+  function foldDups(g) {
+    var keep = g[0], up = {}, sec = keep.station || '', also = (keep.also || []).slice();
+    g.slice(1).forEach(function (x) {
+      if (!keep.qty && !up.qty && x.qty) up.qty = x.qty;
+      if (!keep.urgent && !up.urgent && x.urgent) { up.urgent = true; up.urgentBy = x.urgentBy || ''; up.urgentById = x.urgentById || ''; up.urgentAt = x.urgentAt || 0; }
+      if (!sec && x.station) sec = up.station = x.station;
+      if (!keep.recipe && !up.recipe && x.recipe) up.recipe = x.recipe;
+      [x.station || ''].concat(x.also || []).forEach(function (s) { if (s && also.indexOf(s) < 0) also.push(s); });
+    });
+    also = also.filter(function (s) { return s !== sec; }).slice(0, 8);
+    if (also.join('|') !== (keep.also || []).join('|')) up.also = also;
+    return { keep: keep, rest: g.slice(1), up: up, sec: sec };
+  }
+  /* Obvious double ups on today's list are merged by themselves, with Undo. Each phone waits a moment at random, so
+     usually only one does it, and reads those lines from the server first (a few reads, only when there is a double
+     up), so a phone with an old copy of the list never removes a line that was ticked or changed somewhere else.
+     A group is tried once per page load. */
+  var dupTimer = null, dupTried = {};
+  function dupSig(g) { return g.map(function (x) { return x.id; }).sort().join(','); }
+  function dupTodo(items) { return obviousDups(items).filter(function (g) { return !dupTried[dupSig(g)]; }); }
+  function mergeDups() {
+    if (dupTimer || !S.authed || !fb || !fb.fs.getDocFromServer || !can('add') || S.date !== dayNow() || S.itemsState !== 'ok' || !dupTodo(S.items).length) return;
+    dupTimer = setTimeout(function () {
+      dupTimer = null;
+      var dte = S.date, ids = [];
+      if (dte !== dayNow() || !can('add')) return;
+      dupTodo(S.items).forEach(function (g) { dupTried[dupSig(g)] = 1; g.forEach(function (x) { ids.push(x.id); }); });
+      if (!ids.length) return;
+      Promise.all(ids.map(function (id) { return fb.fs.getDocFromServer(itemRef(dte, id)); })).then(function (snaps) {
+        var fresh = snaps.filter(function (d) { return d.exists(); }).map(function (d) { var x = d.data(); x.id = d.id; return x; });
+        var gs = obviousDups(fresh), ops = [], undo = [], p = me(), last = null;
+        gs.forEach(function (g) {
+          var f = foldDups(g);
+          last = f;
+          if (Object.keys(f.up).length) { ops.push(['upd', itemRef(dte, f.keep.id), f.up]); undo.push(['upd', itemRef(dte, f.keep.id), prevOf(f.keep, f.up)]); }
+          f.rest.forEach(function (x) {
+            ops.push(['upd', itemRef(dte, x.id), { deleted: true, deletedBy: p ? p.name : '', deletedAt: now(), mergedInto: f.keep.id }]);
+            undo.push(['upd', itemRef(dte, x.id), { deleted: false, deletedBy: '', deletedAt: 0, mergedInto: '', dupOk: true }]);
+          });
+        });
+        if (!ops.length) return;
+        return W(ops.slice(0, 400)).then(function () {
+          var msg = gs.length === 1 ? last.keep.text + ' was on the list ' + (gs[0].length === 2 ? 'twice' : gs[0].length + ' times') + '. Now it is on once' + (last.sec ? ', under ' + last.sec : '') + '.'
+            : gs.length + ' double ups merged: ' + gs.map(function (g) { return g[0].text; }).join(', ') + '.';
+          toast(msg, { label: 'Undo', fn: function () { W(undo.slice(0, 400)).catch(failed); } });
+        });
+      }).catch(function () {});
+    }, 600 + Math.random() * 1800);
+  }
+  /* Writing an item that is already open on the page does not add it again. The open line takes the amount if it had
+     none, and the section written (also). An amount that differs is not a double up, so that line is added as usual.
+     Add anyway undoes the change and adds the line, kept apart (dupOk). */
+  function openTwin(text, qty) {
+    var k = dupKey(text), q = qtyKey(qty);
+    if (!k) return null;
+    return S.items.filter(function (x) { return !x.done && !x.deleted && dupKey(x.text) === k && (!q || !qtyKey(x.qty) || qtyKey(x.qty) === q); }).sort(byFirst)[0] || null;
+  }
+  function addToTwin(tw, data, after) {
+    var dte = S.date, up = {};
+    if (data.qty && !tw.qty) up.qty = data.qty;
+    if (data.station && data.station !== (tw.station || '') && (tw.also || []).indexOf(data.station) < 0) up.also = (tw.also || []).concat([data.station]).slice(0, 8);
+    var prev = prevOf(tw, up), changed = Object.keys(up).length;
+    if (changed) supd(itemRef(dte, tw.id), up).catch(failed);
+    toast(tw.text + ' is already on the list' + (tw.station ? ' under ' + tw.station : '') + (up.qty || tw.qty ? ', ' + (up.qty || tw.qty) : '') + '.', { label: 'Add anyway', fn: function () {
+      if (changed) supd(itemRef(dte, tw.id), prev).catch(failed);
+      var made = newItem(Object.assign({}, data, { dupOk: true }));
+      made.catch(failed);
+      if (after) after();
+      addedToast(data.text + (data.qty ? ' (' + data.qty + ')' : ''), data.station, dte, made.id);
+    } });
+  }
+  function inTab(x) { return !S.tab || (x.station || '') === S.tab || (x.also || []).indexOf(S.tab) >= 0; }
+  /* "Also" on a line: the other sections it was written under, and any other open line for the same item (a different
+     amount, or kept apart), so whoever does it sees both. */
+  function alsoHTML(x, under, twins) {
+    var out = [];
+    [x.station || ''].concat(x.also || []).forEach(function (s) { if (s && s !== under && out.indexOf(s) < 0) out.push(s); });
+    (twins[dupKey(x.text)] || []).forEach(function (y) { if (y.id !== x.id) out.push([(y.station || '') !== under ? y.station : '', y.qty].filter(Boolean).join(' ') || 'here'); });
+    return out.length ? '<span class="nb-also">Also ' + esc(out.join(', ')) + '</span>' : '';
+  }
   function isRegular(x) { return !x.hidden && (x.uses || 0) >= REGULAR; }
   function typeahead(q) {
     q = String(q || '').trim().toLowerCase();
@@ -666,7 +785,8 @@
   }
   /* One-tap adds (Quick add in Handy): the line goes on with its usual amount, and the toast says where, with Undo. */
   function oneTap(text, sec) {
-    var rm = matchRecipe(text), uq = usualQty(text), dte = S.date;
+    var rm = matchRecipe(text), uq = usualQty(text), dte = S.date, tw = openTwin(text, uq);
+    if (tw) { addToTwin(tw, { text: text.slice(0, 160), station: sec, recipe: rm ? rm.id : '', qty: uq }, function () { noteSection(sec); bump({ added: 1, lastAdded: now() }); learn(text, sec, 'pick', uq); }); return; }
     var made = newItem({ text: text.slice(0, 160), station: sec, recipe: rm ? rm.id : '', qty: uq });
     made.catch(failed);
     noteSection(sec); bump({ added: 1, lastAdded: now() }); learn(text, sec, 'pick', uq);
@@ -854,7 +974,7 @@
     rows.forEach(function (x) {
       var sec = x.station || 'General';
       if (sec !== last) { out.push('', sec.toUpperCase()); last = sec; }
-      out.push((x.done ? '[x] ' : '[ ] ') + (x.urgent ? 'URGENT ' : '') + (rolledN(x) ? '(rolled over) ' : '') + x.text + (x.qty ? ' - ' + x.qty : ''));
+      out.push((x.done ? '[x] ' : '[ ] ') + (x.urgent ? 'URGENT ' : '') + (rolledN(x) ? '(rolled over) ' : '') + x.text + (x.qty ? ' - ' + x.qty : '') + (x.also && x.also.length ? ' (also ' + x.also.join(', ') + ')' : ''));
     });
     return out.join('\n');
   }
@@ -1385,7 +1505,7 @@
       var k = okey(x.text); if (!k) return;
       var e = m[k] = m[k] || { text: String(x.text).trim(), w: 0, tt: [], r: 0, del: 0 };
       if (x.rolled) { if (!x.deleted && rolledN(x)) e.r++; return; }
-      if (x.deleted) { e.del++; return; }
+      if (x.deleted) { if (!x.mergedInto) e.del++; return; }
       e.w++;
       if (x.done && x.doneAt && x.addedAt && x.doneAt > x.addedAt) e.tt.push(x.doneAt - x.addedAt);
     });
@@ -1722,10 +1842,11 @@
   }
 
   var BOX = '<svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><rect x="2.5" y="2.5" width="21" height="21" rx="3" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
-  function rowHTML(x, date, readonly) {
+  function rowHTML(x, date, readonly, also) {
     var tickOk = can('tick') && !x.deleted && (!x.done || canUntick(x)), delOk = can('del');
     var by = x.done && x.doneBy ? esc(x.doneBy) + (x.doneAt ? ' ' + clock(x.doneAt) : '') : (rolledN(x) ? (x.origBy ? 'from ' + esc(x.origBy) : '') : x.rolled ? esc(x.origBy || '') : (x.addedBy ? esc(x.addedBy) : ''));
-    var marks = (x.urgent ? '<span class="nb-urg">Urgent</span>' : '') + (rolledN(x) ? '<span class="nb-roll" title="Not finished earlier, so it rolled over">Rolled' + (rolledN(x) > 1 ? ' x' + rolledN(x) : '') + '</span>' : '');
+    var marks = (x.urgent ? '<span class="nb-urg">Urgent</span>' : '') + (rolledN(x) ? '<span class="nb-roll" title="Not finished earlier, so it rolled over">Rolled' + (rolledN(x) > 1 ? ' x' + rolledN(x) : '') + '</span>' : '') +
+      (x.deleted && x.mergedInto ? '<span class="nb-also">Double up</span>' : (also || ''));
     var star = can('add') && !x.deleted && !readonly ? '<button type="button" class="nb-star" data-p="urgent" data-id="' + esc(x.id) + '" aria-pressed="' + !!x.urgent + '" aria-label="' + esc((x.urgent ? 'Not urgent: ' : 'Mark urgent: ') + x.text) + '">!</button>' : '';
     var rid = x.recipe || ((matchRecipe(x.text) || {}).id || ''), rr = rid ? recipeById(rid) : null;
     var link = rid ? '<a class="nb-go" href="#/r/' + encodeURIComponent(rid) + '" title="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '" aria-label="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '">recipe</a>' : '';
@@ -1740,17 +1861,20 @@
   function lingers(x) { return x.done && !x.deleted && x.doneById === S.who && now() - (x.doneAt || 0) < LINGER; }
   function pageBody(items, date) {
     /* ticked lines leave the list and show under Done today in Handy. Sections with nothing left to do are hidden. */
-    var shown = items.filter(function (x) { return (S.showRemoved || !x.deleted) && (!S.tab || (x.station || '') === S.tab); });
+    var shown = items.filter(function (x) { return (S.showRemoved || !x.deleted) && inTab(x); });
     shown.sort(sortItems);
-    var order = [], seen = {};
-    shown.forEach(function (x) { var k = x.station || ''; if (!seen[k]) { seen[k] = 1; order.push(k); } });
+    var order = [], seen = {}, twins = {};
+    dupGroups(items).forEach(function (g) { twins[dupKey(g[0].text)] = g; });
+    // on a section's tab every line sits under that section, also a line merged into another section
+    function secOf(x) { return S.tab || x.station || ''; }
+    shown.forEach(function (x) { var k = secOf(x); if (!seen[k]) { seen[k] = 1; order.push(k); } });
     return order.map(function (sec) {
-      var all = shown.filter(function (x) { return (x.station || '') === sec; });
+      var all = shown.filter(function (x) { return secOf(x) === sec; });
       var live = all.filter(function (x) { return !x.deleted; });
       var rows = all.filter(function (x) { return !(x.done && !x.deleted) || lingers(x); });
       if (!rows.length) return '';
       return (sec ? '<div class="nb-hd"><span>' + esc(sec) + '</span><span>' + live.filter(function (x) { return x.done; }).length + '/' + live.length + '</span></div>' : '') +
-        '<ul class="nb-rows">' + rows.map(function (x) { return rowHTML(x, date); }).join('') + '</ul>';
+        '<ul class="nb-rows">' + rows.map(function (x) { return rowHTML(x, date, false, alsoHTML(x, sec, twins)); }).join('') + '</ul>';
     }).join('');
   }
   /* "Add from the recipes" opens a panel that floats over the list (it does not push the list or the add form around).
@@ -1823,11 +1947,11 @@
     if (S.date !== today && !canBrowse() && !S.user) { S.date = today; S.tab = ''; watchItems(); }
     if (S.authed && fb) { loadPast(); loadWRecent(false); }
     S.week = S.past ? weekRanks() : null;
-    maybeRoll(); ordRoll(); loadOrdLearned(); maybeLearn(); loadWNote();
+    maybeRoll(); mergeDups(); ordRoll(); loadOrdLearned(); maybeLearn(); loadWNote();
     var live = S.items.filter(function (x) { return !x.deleted; }), doneN = live.filter(function (x) { return x.done; }).length;
     var removed = S.items.filter(function (x) { return x.deleted; });
     var secs = {}, tabs = [];
-    S.items.forEach(function (x) { if (x.station && !x.deleted && !secs[x.station]) { secs[x.station] = 1; tabs.push(x.station); } });
+    S.items.forEach(function (x) { if (!x.deleted) [x.station].concat(x.also || []).forEach(function (n) { if (n && !secs[n]) { secs[n] = 1; tabs.push(n); } }); });
     var tabHTML = tabs.length ? '<nav class="nb-tabs" aria-label="Sections"><button type="button" class="nb-tab" data-p="tab" data-v="" aria-pressed="' + !S.tab + '">All</button>' +
       tabs.map(function (t) { return '<button type="button" class="nb-tab" data-p="tab" data-v="' + esc(t) + '" aria-pressed="' + (S.tab === t) + '">' + esc(t) + '</button>'; }).join('') + '</nav>' : '';
     var sug = suggestions();
@@ -1839,7 +1963,7 @@
       '<button type="submit" class="nb-addbtn">Add</button></div><div class="nb-sugg" id="p-sugg">' + suggestHTML() + '</div><div class="nb-sugg nb-qs" id="p-qsugg">' + qtyChipsHTML() + '</div><p class="nb-hint" id="p-hint" aria-live="polite">' + esc(hintText(S.text)) + '</p>' + recipePicker() + '</form>' : '<p class="hint">You can read the book but not write in it. Ask the admin if that is wrong.</p>';
     var todayEmpty = !live.length && S.itemsState === 'ok' ? '<p class="nb-empty">Nothing written for ' + esc(dayName(S.date).toLowerCase()) + ' yet.</p>' : '';
     if (live.length && doneN === live.length && !S.tab) todayEmpty = '<p class="nb-empty">Everything on this list is ticked off. See Done today under Handy.</p>';
-    if (S.tab && !live.some(function (x) { return (x.station || '') === S.tab && (!x.done || lingers(x)); })) todayEmpty = '<p class="nb-empty">Nothing left to do in ' + esc(S.tab) + '. Ticked lines are under Done today in Handy.</p>';
+    if (S.tab && !live.some(function (x) { return inTab(x) && (!x.done || lingers(x)); })) todayEmpty = '<p class="nb-empty">Nothing left to do in ' + esc(S.tab) + '. Ticked lines are under Done today in Handy.</p>';
     var left = '<section class="nb-page nb-left"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + esc(dayName(S.date)) + '</h2><span class="nb-date">' + esc(longDate(S.date)) + '</span></div>' +
       '<div class="nb-prog" role="status">' + doneN + ' of ' + live.length + ' done</div>' + (can('add') ? '<button type="button" class="nb-jump" data-p="write">Write a line</button>' : '') + '</header>' +
       (S.itemsState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' : '') +
