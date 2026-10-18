@@ -12,6 +12,7 @@ const { chromium } = require('playwright-core');
 const crypto = require('crypto'), fs = require('fs'), path = require('path');
 const BASE = process.env.BASE || 'http://127.0.0.1:8777/';
 const FAKE = path.join(__dirname, 'fake');
+const PDFJS = path.join(__dirname, 'node_modules', 'pdfjs-dist') + path.sep;
 const sha = s => crypto.createHash('sha256').update(s).digest('hex');
 const PIN = '000000';   // the stand-in kitchen PIN: 6 digits, so it can never be the real one (always 4)
 const K = ['kitchens', PIN];
@@ -41,6 +42,20 @@ function seed(extra) {
   return Object.assign(s, extra || {});
 }
 
+/* A tiny picture (4 x 6 px, orange over black) for guide pages, and two made-up guides: "combi" (Equipment, two pages,
+   the search word iCombi and the words "Pork Belly" read from its PDF) and "fryer" (Cleaning, written steps only),
+   plus a removed one that must never show. */
+const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAGCAIAAABrW6giAAAAF0lEQVR4nGN4lKAFRwy4OTKy8nCEmwMAP54VMW8NxTYAAAAASUVORK5CYII=';
+function guides() {
+  const g = {}, put = (p, v) => { g[K.concat(['guides']).concat(p).join('/')] = v; };
+  put(['combi'], { title: 'iCombi: programme a new recipe', cat: 'equipment', sum: 'Set up any new dish as a programme.', steps: '', kw: 'iCombi', text: 'Programme a new recipe. Example: PORK BELLY. Press the dial to confirm.', thumb: PNG, pages: 2, dims: [{ w: 4, h: 6 }, { w: 4, h: 6 }], v: 1, file: 'combi.pdf', removed: false, at: NOW - 3600000, upd: NOW - 3600000 });
+  put(['combi', 'pages', '0'], { img: PNG, w: 4, h: 6, v: 1, n: 0 });
+  put(['combi', 'pages', '1'], { img: PNG, w: 4, h: 6, v: 1, n: 1 });
+  put(['fryer'], { title: 'Fryer oil change', cat: 'cleaning', sum: 'Drain, clean and refill the fryer.', steps: 'Turn the fryer off and let the oil cool.\nDrain the oil into the caddy.\nWipe the basin and refill to the line.', kw: '', text: '', thumb: '', pages: 0, dims: [], v: 1, file: '', removed: false, at: NOW - 30 * 86400000, upd: NOW - 20 * 86400000 });
+  put(['gone'], { title: 'Old slicer guide', cat: 'equipment', sum: '', steps: 'Gone.', kw: '', text: '', thumb: '', pages: 0, dims: [], v: 1, file: '', removed: true, at: NOW - 40 * 86400000, upd: NOW - 40 * 86400000 });
+  return g;
+}
+
 /* Installed Google Chrome by default. CHROME=/path/to/chrome uses another Chromium (for example on a server). */
 async function start() {
   return chromium.launch(process.env.CHROME ? { executablePath: process.env.CHROME, headless: true } : { channel: 'chrome', headless: true });
@@ -66,6 +81,12 @@ async function open(browser, hash, o) {
     return r.fulfill({ status: 200, contentType: 'text/javascript', body: 'export {}' });
   });
   await ctx.route(/fonts\.(googleapis|gstatic)\.com/, r => r.fulfill({ status: 200, body: '' }));
+  // pdf.js (the admin Guides tab reads PDFs with it) comes from the copy installed with the tests, not the internet
+  await ctx.route(/^https:\/\/cdn\.jsdelivr\.net\/npm\/pdfjs-dist@[^/]+\//, r => {
+    const rel = new URL(r.request().url()).pathname.replace(/^\/npm\/pdfjs-dist@[^/]+\//, ''), f = path.join(PDFJS, rel);
+    if (!f.startsWith(PDFJS) || !fs.existsSync(f)) return r.fulfill({ status: 404, body: '' });
+    return r.fulfill({ status: 200, headers: { 'Access-Control-Allow-Origin': '*' }, contentType: /\.m?js$/.test(f) ? 'text/javascript' : 'application/octet-stream', body: fs.readFileSync(f) });
+  });
   const who = o.who === undefined ? 'sam' : o.who, pins = { sam: '1111', ann: '2222', bo: '3333' };
   const ls = {
     'fake.fs': JSON.stringify(seed(o.extra)),
@@ -102,4 +123,4 @@ function report(results) {
   console.log(failed.length + ' failed of ' + results.length);
   process.exitCode = failed.length ? 1 : 0;
 }
-module.exports = { start, open, overflow, check, report, seed, sha, ymd, PIN, NOW, BASE };
+module.exports = { start, open, overflow, check, report, seed, guides, sha, ymd, PIN, NOW, BASE, PNG };

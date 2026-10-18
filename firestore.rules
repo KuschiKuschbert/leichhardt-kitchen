@@ -154,6 +154,35 @@ service cloud.firestore {
         allow update, delete: if false;
       }
     }
+    // How-to guides (#/guides). Everyone with the kitchen PIN reads them; only the head chef (Google account) writes them.
+    // Each PDF page or photo is one picture in guides/<id>/pages/<n> (a Firestore record holds at most 1 MB).
+    // "v" goes up when the file is replaced. Guides are never deleted, only flagged as removed. Page pictures may be
+    // replaced or deleted by the head chef (a new file with fewer pages deletes the pages it no longer needs).
+    function guideOk() {
+      return request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 80
+        && request.resource.data.cat in ['equipment', 'cleaning', 'safety', 'prep', 'stock', 'shift', 'other']
+        && request.resource.data.get('sum', '') is string && request.resource.data.get('sum', '').size() <= 200
+        && request.resource.data.get('steps', '') is string && request.resource.data.get('steps', '').size() <= 3000
+        && request.resource.data.get('kw', '') is string && request.resource.data.get('kw', '').size() <= 200
+        && request.resource.data.get('text', '') is string && request.resource.data.get('text', '').size() <= 8000
+        && request.resource.data.get('thumb', '') is string && request.resource.data.get('thumb', '').size() <= 60000
+        && request.resource.data.get('file', '') is string && request.resource.data.get('file', '').size() <= 120
+        && request.resource.data.pages is int && request.resource.data.pages >= 0 && request.resource.data.pages <= 20
+        && request.resource.data.get('dims', []) is list && request.resource.data.get('dims', []).size() <= 20
+        && request.resource.data.v is int && request.resource.data.v >= 1
+        && request.resource.data.get('removed', false) is bool;
+    }
+    match /kitchens/KITCHEN_PIN/guides/{id} {
+      allow read: if true;
+      allow create, update: if isAdmin() && guideOk();
+      allow delete: if false;
+      match /pages/{n} {
+        allow read: if true;
+        allow create, update: if isAdmin() && request.resource.data.img is string && request.resource.data.img.size() <= 1000000
+          && request.resource.data.v is int && request.resource.data.n is int;
+        allow delete: if isAdmin();
+      }
+    }
     // Who has seen a note: one small record per person, note and day, written when they tap Got it.
     // The record id is the day, an underscore and the writer's id. Records are never changed or deleted.
     match /kitchens/KITCHEN_PIN/notes/{id}/seen/{sid} {
