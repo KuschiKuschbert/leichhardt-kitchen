@@ -2326,7 +2326,7 @@ window.LK_DATA = {
         { q: '350 g', name: 'Bourbon BBQ dry rub', note: 'Krio Krush', tags: ['Gluten?', 'Soy?'] }
       ],
       sections: [
-        { title: 'Method', steps: ['Mix the bourbon BBQ dry rub through the butter.', '[Softening, mixing and storage to confirm]'] }
+        { title: 'Method', steps: ['Mix the bourbon BBQ dry rub through the butter.', 'Roll the butter and store it in the freezer.', 'When needed, cut portions of about 80 g.'] }
       ],
       contains: [{ allergen: 'Milk', from: 'butter' }],
       labelNote: 'Check the supplier label for allergens on the dry rub.'
