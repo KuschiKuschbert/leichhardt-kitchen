@@ -875,6 +875,7 @@ html.note-open, html.note-open body { overflow: hidden; }
 .n-gd.n-s, .n-gd.n-e { background: var(--ink); border-color: var(--ink); color: #fff; }
 .n-gd.n-s small, .n-gd.n-e small { color: #E7E1D3; }
 .n-gd:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; }
+#n-text { scroll-margin-top: 8rem; }
 .n-more { margin-top: 0.6rem; }
 .n-more summary { cursor: pointer; font-weight: 600; min-height: 44px; display: flex; align-items: center; }
 @media (min-width: 1000px) {

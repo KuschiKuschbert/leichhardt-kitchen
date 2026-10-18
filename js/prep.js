@@ -2483,8 +2483,8 @@
     var single = !f.run && !f.until;
     return '<section class="set-block n-edit"><span class="label">' + (f.id ? 'Edit this note' : 'Write a note') + '</span>' +
       '<span class="hint">Short and plain. It pops up the first time the book is opened after 10:30, and shows from the bell. No prices, PINs or staff names. A recipe name links to its card.</span>' +
-      '<div class="field"><span class="label">Tag (starts the note for you)</span><div class="nt-chips" role="group" aria-label="Tag">' + tags + '</div></div>' +
       '<div class="field"><label class="label" for="n-text">Note</label><textarea id="n-text" class="p-bulk" data-k="n-text" rows="4" maxlength="400" placeholder="For example: Barramundi is off until Thursday.">' + esc(f.text) + '</textarea><span class="hint" id="n-count">' + f.text.length + ' of 400. Ctrl+Enter saves.</span></div>' +
+      '<div class="field"><span class="label">Tag (starts the note for you)</span><div class="nt-chips" role="group" aria-label="Tag">' + tags + '</div></div>' +
       '<div class="field"><span class="label">How it will look</span><div id="n-prev" class="n-prev">' + draftPreviewHTML(f) + '</div></div>' +
       '<div class="field"><span class="label">Show on</span><div class="nt-chips"><button type="button" class="chip" data-p="n-quick" data-v="0" aria-pressed="' + (f.start === t && single && !f.dows.length) + '">Today</button><button type="button" class="chip" data-p="n-quick" data-v="1" aria-pressed="' + (f.start === shift(t, 1) && single && !f.dows.length) + '">Tomorrow</button>' +
       '<button type="button" class="chip" data-p="n-mode" data-v="one" aria-pressed="' + (!f.run && !f.until) + '">One day</button><button type="button" class="chip" data-p="n-mode" data-v="run" aria-pressed="' + (f.run || !!f.until) + '">Several days</button></div>' +
@@ -2537,11 +2537,16 @@
       S.nPast = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }).filter(function (x) { return !x.removed; }); draw();
     }, function () { S.nPast = 'error'; draw(); });
   }
+  /* put the cursor in the note and bring the editor up under the sticky tabs, so the phone keyboard never hides it */
+  function focusNoteText(tx) {
+    tx.focus({ preventScroll: true });
+    tx.scrollIntoView({ block: 'start' });
+  }
   function reuseNote(id) {
     var n = (S.notes || []).concat(Array.isArray(S.nPast) ? S.nPast : []).filter(function (x) { return x.id === id; })[0];
     if (!n) return;
     S.nf = nfNew(); S.nf.text = n.text; S.nf.tag = n.tag || 'none'; S.nOpen = true; S.nMsg = '';
-    draw(); var tx = S.root.querySelector('[data-k="n-text"]'); if (tx) { tx.focus(); window.scrollTo(0, 0); }
+    draw(); var tx = S.root.querySelector('[data-k="n-text"]'); if (tx) { focusNoteText(tx); }
   }
   /* who tapped Got it today for one note (one small query, only when asked) */
   function loadSeen(id) {
@@ -3032,7 +3037,7 @@
     if (a === 'retry') { cfgKey = ''; connect(); return; }
     if (a === 'notes-open') { if (isSous()) { S.notesOpen = true; S.nf = null; S.nOpen = false; S.nMsg = ''; loadNotes(); draw(); window.scrollTo(0, 0); } return; }
     if (a === 'notes-close') { S.notesOpen = false; draw(); return; }
-    if (a === 'n-new') { S.nf = nfNew(); S.nOpen = true; S.nMsg = ''; draw(); var ntx = S.root.querySelector('[data-k="n-text"]'); if (ntx) { ntx.focus(); window.scrollTo(0, 0); } return; }
+    if (a === 'n-new') { S.nf = nfNew(); S.nOpen = true; S.nMsg = ''; draw(); var ntx = S.root.querySelector('[data-k="n-text"]'); if (ntx) { focusNoteText(ntx); } return; }
     if (a === 'n-tag') {
       var tg = el.getAttribute('data-v'), ft = S.nf, old = NOTE_START[ft.tag] || '', cur = ft.text.replace(/^\s+/, '');
       if (!cur || (old && cur === old) || (old && cur.indexOf(old) === 0 && cur.length === old.length)) ft.text = NOTE_START[tg] || '';
@@ -3055,7 +3060,7 @@
     }
     if (a === 'n-save') { saveNote(); return; }
     if (a === 'n-cancel') { S.nf = nfNew(); S.nOpen = false; S.nMsg = ''; draw(); return; }
-    if (a === 'n-edit') { var nn = (S.notes || []).filter(function (x) { return x.id === id; })[0]; if (nn) { S.nf = nfFrom(nn); S.nOpen = true; S.nMsg = ''; draw(); var tx = S.root.querySelector('[data-k="n-text"]'); if (tx) { tx.focus(); window.scrollTo(0, 0); } } return; }
+    if (a === 'n-edit') { var nn = (S.notes || []).filter(function (x) { return x.id === id; })[0]; if (nn) { S.nf = nfFrom(nn); S.nOpen = true; S.nMsg = ''; draw(); var tx = S.root.querySelector('[data-k="n-text"]'); if (tx) { focusNoteText(tx); } } return; }
     if (a === 'n-reuse') { reuseNote(id); return; }
     if (a === 'n-past') { S.nPastOpen = !S.nPastOpen; if (S.nPastOpen && !Array.isArray(S.nPast)) loadPastNotes(); else draw(); return; }
     if (a === 'n-seen') { loadSeen(id); return; }
