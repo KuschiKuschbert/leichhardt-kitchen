@@ -94,7 +94,7 @@
       catch (e) { db = fs.getFirestore(app); }
       var auth = au.getAuth(app);
       fb = { app: app, fs: fs, au: au, db: db, auth: auth };
-      au.onAuthStateChanged(auth, function (u) { S.user = u; S.authState = 'ready'; lsSet('lk.admin', u ? '1' : ''); draw(); });
+      au.onAuthStateChanged(auth, function (u) { S.user = u; S.authState = 'ready'; lsSet('lk.admin', u ? '1' : ''); featSync(); draw(); });
       return fb;
     }, function (e) { sdkP = null; throw e; });
     return sdkP;
@@ -116,7 +116,7 @@
       unsubCfg = fb.fs.onSnapshot(cfgDoc(), function (snap) {
         S.config = snap.exists() ? snap.data() : { people: [] };
         S.config.people = S.config.people || [];
-        S.configState = 'ok'; watchItems(); watchSections(); watchLearned(); if (S.name === 'orders') watchOrders(); if (S.name === 'waste') watchWaste(); resume(); loadNotes(); loadMinutes(); draw();
+        S.configState = 'ok'; featSync(); watchItems(); watchSections(); watchLearned(); if (S.name === 'orders') watchOrders(); if (S.name === 'waste') watchWaste(); resume(); loadNotes(); loadMinutes(); draw();
       }, function (err) {
         S.configState = err && err.code === 'permission-denied' ? 'badpin' : 'error';
         if (S.configState === 'badpin') { S.pinError = 'That PIN is not right.'; S.pin = ''; lsSet('lk.prep.pin', ''); cfgKey = ''; unsubCfg = null; gForget(); }
@@ -171,6 +171,38 @@
   /* only the head chef (signed in with Google) and sous chefs may look at other days; everyone else stays on today */
   function canBrowse() { return S.level === 'owner' || isSous(); }
   function can(what) { var p = me(); return !!(p && p[what]); }
+  /* ---------- new pages the head chef can hold back from staff ----------
+     Guides, Shift pings and Meeting minutes always show for the head chef, sous chefs and leads (and pings for anyone
+     ticked for Pings). Staff and View only see each one unless the head chef unticks it under New pages in the People
+     tab (config/main staffSee, missing means shown). It only hides the links and skips the reads: it is not a lock.
+     What this phone may see is kept in lk.feat, so the landing page and the top bar are right before the book connects. */
+  var FEATS = [['guides', 'Guides'], ['pings', 'Shift pings'], ['minutes', 'Meeting minutes']];
+  var featHave = (function () { try { return JSON.parse(lsGet('lk.feat') || 'null') || {}; } catch (e) { return {}; } })();
+  function admDev() { return !!S.user || lsGet('lk.admin') === '1'; }
+  function featCalc(k) {
+    var p = who();
+    return admDev() || (S.config.staffSee || {})[k] !== false || !!(p && (p.role === 'sous' || p.role === 'lead' || (k === 'pings' && canPingP(p))));
+  }
+  function featOn(k) { return S.configState === 'ok' && S.config ? featCalc(k) : admDev() || featHave[k] !== false; }
+  /* run when the staff list, the person on this phone or the Google sign-in changes */
+  function featSync() {
+    if (S.configState !== 'ok' || !S.config) return;
+    var got = {}, was = featHave;
+    FEATS.forEach(function (f) { got[f[0]] = featCalc(f[0]); });
+    if (JSON.stringify(got) === JSON.stringify(was)) return;
+    featHave = got; lsSet('lk.feat', JSON.stringify(got));
+    if (got.guides && was.guides === false) loadGuides();
+    if (got.pings && was.pings === false) loadNotes();
+    if (got.minutes && was.minutes === false) loadMinutes();
+    if (!got.pings && npop && npop.getAttribute('data-pv') !== '1') noteClose(true);
+    noteBell(); minCard();
+    try { window.dispatchEvent(new Event('lk-feat')); } catch (e) {}
+  }
+  function notYetHTML(fk) {
+    var t = fk === 'guides' ? 'Guides' : 'Meeting minutes';
+    return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">' + t + '</h2><p class="hint">' + t + ' are not open to everyone yet. The head chef will switch them on soon.</p>' +
+      (who() ? '' : '<p class="hint">Lead or sous chef? Sign in on the prep list first.</p>') + '<div class="btn-row"><a class="btn dark" href="#/">Back to the start</a></div></section>';
+  }
   function toast(msg, act, ms) { S.toast = msg; S.toastAct = act || null; draw(); clearTimeout(toastTimer); toastTimer = setTimeout(function () { S.toast = ''; S.toastAct = null; draw(); }, ms || (act ? 9000 : 3500)); }
   /* A write the server refused or could not take. Whatever was typed goes back in its box (restore). Refused
      (permission-denied) means this phone's PIN no longer counts, usually because the head chef reset it, so the
@@ -254,7 +286,7 @@
     sset(docRef('activity', p.id), data, true).catch(function () {});
   }
   function pickName(id) {
-    S.who = id; lsSet('lk.prep.who', id); lsSet('lk.prep.tok', ''); S.authed = false; S.tok = ''; S.pf1 = S.pf2 = ''; S.pinMsg = ''; S.pinStep = 'checking'; draw();
+    S.who = id; lsSet('lk.prep.who', id); lsSet('lk.prep.tok', ''); S.authed = false; S.tok = ''; S.pf1 = S.pf2 = ''; S.pinMsg = ''; S.pinStep = 'checking'; featSync(); draw();
     fb.fs.getDoc(docRef('pinset', id)).then(function (s) { S.pinStep = s.exists() ? 'enter' : 'set'; draw(); },
       function () { S.pinStep = 'error'; draw(); });
   }
@@ -338,7 +370,7 @@
     document.addEventListener('visibilitychange', function () { if (!document.hidden && S.authed && idleExpired()) idleLock(); });
     lsSet('lk.prep.seen', String(Date.now()));
   }
-  function leave() { S.who = ''; S.authed = false; S.pinStep = ''; lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; draw(); }
+  function leave() { S.who = ''; S.authed = false; S.pinStep = ''; lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); }
 
   /* ---------- sections: whatever people write becomes a section ---------- */
   /* Sections are spell-checked too. A section close to one already in use (one slip, two for long names) becomes that
@@ -828,7 +860,7 @@
   /* ---------- admin actions ---------- */
   function startDraft() {
     var c = S.config || { people: [] };
-    S.draft = JSON.parse(JSON.stringify({ people: c.people || [], showBadges: c.showBadges !== false }));
+    S.draft = JSON.parse(JSON.stringify({ people: c.people || [], showBadges: c.showBadges !== false, staffSee: staffSee(c) }));
     S.draftSnap = JSON.stringify(S.draft);
     S.saveMsg = '';
   }
@@ -836,12 +868,13 @@
   function idsFor(people, fn) { return people.filter(function (p) { return p.active !== false && String(p.name).trim() && fn(p); }).map(function (p) { return p.id; }); }
   function isSousP(p) { return p.role === 'sous'; }
   function canPingP(p) { return p.role === 'sous' || !!p.ping; }
+  function staffSee(c) { var o = {}; FEATS.forEach(function (f) { o[f[0]] = ((c && c.staffSee) || {})[f[0]] !== false; }); return o; }
   function saveConfig(cfg) {
     var clean = {
       people: cfg.people.filter(function (p) { return String(p.name).trim(); }).map(function (p) {
         return { id: p.id, name: String(p.name).trim().slice(0, 40), role: p.role || 'staff', add: !!p.add, tick: !!p.tick, del: !!p.del, ping: !!p.ping, active: p.active !== false };
       }),
-      stations: [], showBadges: cfg.showBadges !== false,
+      stations: [], showBadges: cfg.showBadges !== false, staffSee: staffSee(cfg),
       sousIds: idsFor(cfg.people, isSousP), pingIds: idsFor(cfg.people, canPingP),
       updated: now(), updatedBy: (S.user && S.user.email) || (who() ? who().name : '')
     };
@@ -939,7 +972,7 @@
     var c = S.config; if (!c || !c.people) return;
     function same(have, fn) { return (have || []).slice().sort().join(',') === idsFor(c.people, fn).sort().join(','); }
     if (same(c.sousIds, isSousP) && same(c.pingIds, canPingP)) return;
-    saveConfig({ people: c.people, showBadges: c.showBadges }).catch(function () {});
+    saveConfig({ people: c.people, showBadges: c.showBadges, staffSee: c.staffSee }).catch(function () {});
   }
   /* ---------- the last 14 days, read once a day per phone ----------
      Past days hardly change, so they are read once a day and kept on the phone. Today comes from the live list.
@@ -1748,7 +1781,7 @@
     var tools = '<h3 class="nb-sh">Tools</h3><div class="nb-tools">' +
       '<button type="button" class="nb-btn" data-p="copy">Copy the list</button>' +
       '<button type="button" class="nb-btn" data-p="print">Print the list</button>' +
-      '<a class="nb-btn" href="#/minutes">Meeting minutes</a>' +
+      (featOn('minutes') ? '<a class="nb-btn" href="#/minutes">Meeting minutes</a>' : '') +
       (canPing() ? '<button type="button" class="nb-btn" data-p="notes-open">Shift pings</button>' : '') +
       (isSous() ? '<button type="button" class="nb-btn" data-p="mn-open">Minutes register</button><button type="button" class="nb-btn" data-p="staff-open">Manage staff</button>' : '') + '</div>';
     var dl = live.filter(function (x) { return x.done; }).sort(function (a, b) { return (b.doneAt || 0) - (a.doneAt || 0); });
@@ -2088,7 +2121,9 @@
     var pane = at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'learning' ? (learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() : at === 'people' ? (
       '<section class="set-block"><span class="label">People</span><span class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Pings lets that person write shift pings from the prep book (sous chefs always can). Reset PIN lets that person choose a new one. Removing someone from the list keeps their name on old lines.</span>' +
       peopleListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' +
-      '<section class="set-block"><span class="label">Badges</span><label class="a-check"><input type="checkbox" data-a="badges"' + (d.showBadges !== false ? ' checked' : '') + '> Show the weekly top tickers to everyone on the prep book</label></section>' + saveBlock
+      '<section class="set-block"><span class="label">Badges</span><label class="a-check"><input type="checkbox" data-a="badges"' + (d.showBadges !== false ? ' checked' : '') + '> Show the weekly top tickers to everyone on the prep book</label></section>' +
+      '<section class="set-block a-feats"><span class="label">New pages</span><span class="hint">You, sous chefs and leads always see these. Untick one to hide it from Staff and View only until the team is ready. Anyone ticked for Pings still sees shift pings.</span>' +
+      FEATS.map(function (f) { return '<label class="a-check"><input type="checkbox" data-a="staffsee" data-f="' + f[0] + '"' + (d.staffSee[f[0]] ? ' checked' : '') + '> Staff see ' + f[1] + '</label>'; }).join('') + '</section>' + saveBlock
     ) : (
       '<section class="set-block"><span class="label">Backup</span><span class="hint">Saves everything the prep book holds (people, prep lines, orders and wastage from the last 400 days, shift pings and who has seen them, meeting minutes with earlier versions and sign-offs, what the prep and order lists have learned, tallies and the guides\' words) as one file on this device. People\'s PIN fingerprints and the guides\' page pictures are left out (keep the original files). Do this now and then.</span><div class="btn-row"><button type="button" class="btn" data-p="export"' + (S.exporting ? ' disabled' : '') + '>' + (S.exporting ? esc(S.exporting) : 'Download a backup') + '</button></div></section>' +
       '<section class="set-block"><span class="label">Kitchen PIN</span><span class="hint">The kitchen PIN is the lock on the whole book, so keep it to staff only. Writing needs a person\'s own PIN as well.</span>' +
@@ -2118,6 +2153,9 @@
   }
   function bodyHTML() {
     if (!S.pin) return gateHTML();
+    // a page held back from staff: say so once it is known who is on this phone (or this phone already knows)
+    var fk = S.name === 'guides' || S.name === 'minutes' ? S.name : '';
+    if (fk && !featOn(fk)) { if (S.configState === 'ok' || featHave[fk] === false) return notYetHTML(fk); if (S.configState !== 'error') return loadingHTML(); }
     // guides need only the kitchen PIN (reading, like the recipes); a list kept on the phone shows straight away, even with no signal
     if (S.name === 'guides' && (S.guides || S.configState === 'ok')) return guidesPageHTML();
     if (S.configState === 'error') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Prep book</h2><p class="p-err">Could not connect. Check the connection and try again.</p><div class="btn-row"><button type="button" class="btn dark" data-p="retry">Try again</button></div></section>';
@@ -2705,6 +2743,7 @@
   function noteRank(n) { return NOTE_RANK[n.tag] == null ? 6 : NOTE_RANK[n.tag]; }
   function todaysNotes() {
     var t = dayNow();
+    if (!featOn('pings')) return [];
     return (S.notes || []).filter(function (n) { return noteOn(n, t); }).sort(function (a, b) { return noteRank(a) - noteRank(b) || (a.at || 0) - (b.at || 0); });
   }
   function noteSig(list) { return list.map(function (n) { return n.id + ':' + (n.upd || n.at || 0); }).join('|'); }
@@ -2725,7 +2764,7 @@
   }
   function loadNotes(force) {
     var today = dayNow();
-    if (!fb || !/^\d{4,6}$/.test(S.pin) || S.notesBusy) return;
+    if (!fb || !/^\d{4,6}$/.test(S.pin) || S.notesBusy || !featOn('pings')) return;
     if (!force && S.notes && S.notesFor === today && Date.now() - S.notesAt < NOTE_STALE) return;
     S.notesBusy = true;
     fb.fs.getDocs(fb.fs.query(colRef('notes'), fb.fs.where('until', '>=', today))).then(function (snap) {
@@ -3073,13 +3112,13 @@
     Array.prototype.forEach.call(document.querySelectorAll('.wall-mn'), function (el) { if (el.lkMn !== h) { el.innerHTML = h; el.lkMn = h; } });
   }
   function minNudgeHTML() {
-    var u = mnUnsigned();
+    var u = featOn('minutes') ? mnUnsigned() : [];
     if (!u.length) return '';
     return '<div class="mn-nudge" role="status"><span><b>Minutes not signed yet</b> Kitchen meeting, ' + esc(dayShort(u[0].date)) + (u.length > 1 ? ' and ' + (u.length - 1) + ' more' : '') + '</span><a class="mn-nudge-btn" href="#/minutes">Read and sign</a></div>';
   }
   function loadMinutes(force) {
     var today = dayNow();
-    if (!fb || !/^\d{4,6}$/.test(S.pin) || S.minsBusy) return;
+    if (!fb || !/^\d{4,6}$/.test(S.pin) || S.minsBusy || !featOn('minutes')) return;
     if (!force && S.mins && S.minsFor === today && Date.now() - S.minsAt < MN_STALE) return;
     S.minsBusy = true;
     fb.fs.getDocs(fb.fs.query(colRef('minutes'), fb.fs.where('date', '>=', shift(today, -MN_DAYS)))).then(function (snap) {
@@ -3617,7 +3656,7 @@
   }
   function gForget() { S.guides = null; S.guidesFor = ''; S.guidesAt = 0; S.gRetry = 0; lsSet('lk.guides', ''); }
   function loadGuides(force) {
-    if (!fb || !/^\d{4,6}$/.test(S.pin) || S.gBusy || Date.now() < S.gRetry) return;
+    if (!fb || !/^\d{4,6}$/.test(S.pin) || S.gBusy || Date.now() < S.gRetry || !featOn('guides')) return;
     var today = dayNow(), pin = S.pin;
     if (!force && S.guides && S.guidesFor === today) return;
     S.gBusy = true;
@@ -3693,8 +3732,8 @@
     return idx;
   }
   function gCards(g) { return (gIndex().of[g.id] || []).map(recipeById).filter(Boolean); }
-  function guidesFor(rid) { return (gIndex().by[rid] || []).map(gById).filter(Boolean).map(function (g) { return { id: g.id, title: g.title, cat: gCatName(g.cat) }; }); }
-  function guideSearch(q) { return gWords(q).join('').length < 3 ? [] : gMatch(gLive(), q).slice(0, 4).map(function (g) { return { id: g.id, title: g.title }; }); }
+  function guidesFor(rid) { return !featOn('guides') ? [] : (gIndex().by[rid] || []).map(gById).filter(Boolean).map(function (g) { return { id: g.id, title: g.title, cat: gCatName(g.cat) }; }); }
+  function guideSearch(q) { return !featOn('guides') ? [] : gWords(q).join('').length < 3 ? [] : gMatch(gLive(), q).slice(0, 4).map(function (g) { return { id: g.id, title: g.title }; }); }
 
   /* A guide's pages: from the phone's own copy when it has this version, otherwise one read per page. Shown through blob: links so
      a redraw of the page never copies the big pictures again. */
@@ -4313,6 +4352,7 @@
     var a = el.getAttribute && el.getAttribute('data-a');
     if (!a || !S.draft) return;
     if (a === 'badges') { S.draft.showBadges = el.checked; return; }
+    if (a === 'staffsee') { S.draft.staffSee[el.getAttribute('data-f')] = el.checked; return; }
     var i = +el.getAttribute('data-i'), p = S.draft.people[i];
     if (a === 'role') { p.role = el.value; var r = ROLES[el.value]; p.add = r.add; p.tick = r.tick; p.del = r.del; p.ping = r.ping; draw(); }
     else if (a === 'perm') { p[el.getAttribute('data-perm')] = el.checked; }
@@ -4371,6 +4411,7 @@
     noteOpen: noteOpen,
     guidesFor: function (rid) { try { return guidesFor(rid); } catch (e) { return []; } },
     guideSearch: function (q) { try { return guideSearch(q); } catch (e) { return []; } },
+    featOn: featOn,
     minNudge: minNudgeHTML,
     saveConfig: saveConfig,
     proofread: proofread,

@@ -245,17 +245,20 @@
     guides: '<svg width="26" height="26" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M32 16c-6-4-14-6-24-6v38c10 0 18 2 24 6 6-4 14-6 24-6V10c-10 0-18 2-24 6z"/><path d="M32 16v38"/><path d="M14 21c4 0 8 1 12 3M14 31c4 0 8 1 12 3M38 24c4-2 8-3 12-3M38 34c4-2 8-3 12-3"/></svg>'
   };
   var NAV = [['recipes', 'Recipes', '#/recipes'], ['prep', 'Prep', '#/prep'], ['orders', 'Orders', '#/orders'], ['waste', 'Waste', '#/waste'], ['guides', 'Guides', '#/guides']];
+  /* The head chef can hold Guides back from staff for now (People tab in the admin panel); js/prep.js knows who is on this phone */
+  function featOn(k) { return !window.LK_PREP || !window.LK_PREP.featOn || window.LK_PREP.featOn(k); }
+  function navList() { return NAV.filter(function (t) { return t[0] !== 'guides' || featOn('guides'); }); }
   function navActive() {
     var n = parseRoute().name;
     return n === 'landing' ? 'home' : (n === 'home' || n === 'recipe') ? 'recipes' : n === 'prep' ? 'prep' : n === 'orders' ? 'orders' : n === 'waste' ? 'waste' : n === 'guides' ? 'guides' : '';
   }
   function pillNav() {
     var a = navActive();
-    return '<nav class="pnav" aria-label="Main">' + NAV.map(function (t) { return '<a href="' + t[2] + '"' + (a === t[0] ? ' aria-current="page"' : '') + '>' + t[1] + '</a>'; }).join('') + '</nav>';
+    return '<nav class="pnav" aria-label="Main">' + navList().map(function (t) { return '<a href="' + t[2] + '"' + (a === t[0] ? ' aria-current="page"' : '') + '>' + t[1] + '</a>'; }).join('') + '</nav>';
   }
   function tabBar() {
     var a = navActive();
-    return '<nav class="tabbar" aria-label="Main">' + NAV.map(function (t) { return '<a href="' + t[2] + '"' + (a === t[0] ? ' aria-current="page"' : '') + '>' + NAV_ICON[t[0]] + '<span>' + t[1] + '</span></a>'; }).join('') + '</nav>';
+    return '<nav class="tabbar" aria-label="Main">' + navList().map(function (t) { return '<a href="' + t[2] + '"' + (a === t[0] ? ' aria-current="page"' : '') + '>' + NAV_ICON[t[0]] + '<span>' + t[1] + '</span></a>'; }).join('') + '</nav>';
   }
   var SW_ICON = {
     pass: '<svg width="20" height="20" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" aria-hidden="true"><circle cx="32" cy="32" r="22"/><circle cx="32" cy="32" r="12" stroke-dasharray="4 5"/></svg>',
@@ -299,7 +302,7 @@
     var d = window.LK_TIME.day().split('-'), today = new Date(+d[0], d[1] - 1, +d[2], 12).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
     return '<div class="wall">' + topBar() +
       '<main id="main" class="wall-main"><h2 class="wall-h" id="rtitle" tabindex="-1">Pick a docket</h2><p class="wall-date">' + esc(today) + '</p>' + minCard() + installCard() +
-      '<div class="dockets">' + DOCKETS.map(function (d) {
+      '<div class="dockets">' + DOCKETS.filter(function (d) { return d[3] !== 'guides' || featOn('guides'); }).map(function (d) {
         // the Guides docket is the long one under the other four: reference, not a job for today
         return '<a class="docket' + (d[4] ? ' dk-wide' : '') + '" href="' + d[2] + '"><span class="dk-pin" aria-hidden="true"></span><span class="dk-top"><span class="dk-name">' + d[1] + '</span><span class="dk-no">No. ' + d[0] + '</span></span>' +
           (d[4] ? '<span class="dk-sub">' + esc(d[4]) + '</span>' : '') +
@@ -883,6 +886,14 @@
     var route = parseRoute(), box = document.getElementById('r-guides');
     if (route.name === 'recipe' && box) box.outerHTML = guideBox(byId[route.stack[route.stack.length - 1]]);
     else if (route.name === 'home' && q()) updateResults();
+  });
+  // js/prep.js worked out that a page was switched on or off for this phone: redraw the menus, the dockets and the guides box
+  window.addEventListener('lk-feat', function () {
+    if (parseRoute().name === 'landing') { render(); return; }
+    var pn = app.querySelector('.pnav'), tb = app.querySelector('.tabbar');
+    if (pn) pn.outerHTML = pillNav();
+    if (tb) tb.outerHTML = tabBar();
+    try { window.dispatchEvent(new Event('lk-guides')); } catch (e) {}
   });
   window.addEventListener('hashchange', render);
   render();
