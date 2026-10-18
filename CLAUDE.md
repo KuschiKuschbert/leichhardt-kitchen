@@ -27,6 +27,7 @@ The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the
 | `qr.svg`, `qr.png`, `qr-sign.pdf` | QR code to open the book, and the A4 sign |
 | `README.md` | Everything the app does, for people and for the next session |
 | `tests/` | Click tests (Playwright with a stand-in for Firebase): `cd tests && npm install && npm test` |
+| `scripts/nightly-learn.mjs`, `.github/workflows/nightly-learning.yml` | Nightly learning on the server (03:00 kitchen time): counts each finished day into `learned` and `ordlearned`. Secrets `FIREBASE_SA` and `KITCHEN_PIN` live in GitHub only. The phones never write learning counts |
 
 ## Routes
 `#/` landing (five dockets), `#/recipes` (Pass or Tiles), `#/r/<id>[/<id>...]` a recipe and the trail to it, `#/prep`, `#/orders`, `#/waste`, `#/guides`, `#/guides/<id>`, `#/minutes`, `#/admin`, `#/settings`.

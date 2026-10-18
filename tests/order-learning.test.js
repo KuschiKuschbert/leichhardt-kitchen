@@ -36,24 +36,22 @@ const txt = (page, sel) => page.evaluate(s => { const e = document.querySelector
   ok(await p.inputValue('#o-qty') === '6 rolls', 'Usual amount chip fills the amount');
   await p.press('#o-text', 'Enter');
   await p.waitForTimeout(400);
-  s = await store(p);
-  const pt = s[fsKey(['ordlearned', 'paper-towels'])];
-  ok(pt && pt.uses === 10 && pt.qtys['6-rolls'].n === 6 && pt.dow[dow] === 1, 'adding a line adds to what was learned');
+  // the server learns at night: the phone writes nothing to what was learned, but its own suggestions already know
   await p.fill('#o-text', 'Star anise');
   await p.fill('#o-qty', '100 g');
   await p.press('#o-text', 'Enter');
   await p.waitForTimeout(400);
-  s = await store(p);
-  ok(s[fsKey(['ordlearned', 'star-anise'])] && s[fsKey(['ordlearned', 'star-anise'])].uses === 1, 'a new item is learned the first time');
+  const lw = await p.evaluate(() => window.__fake.writes.filter(w => w.some(o => /\/(ordlearned|learned|learnlog)\//.test(o.path))).length);
+  ok(lw === 0, 'adding lines writes nothing to what was learned (the server does it at night)');
+  ok(await p.evaluate(() => { const e = (window.LK_PREP.state.ordLearned || []).find(x => x.id === 'paper-towels'); return e && e.uses === 10 && e.qtys['6-rolls'].n === 6; }), 'this phone keeps its own copy in step for suggestions');
   ok(p.errors.length === 0, 'learning: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // past order days are learned once in the background
+  // no catch-up on the phone any more: past days are learned by the server
   p = await L.open(b, '#/orders', { wait: 1500, extra });
-  await p.waitForFunction(k => !!window.__fake.dump()[k], fsKey(['ordlearned', 'saffron']), { timeout: 15000 }).catch(() => {});
-  s = await store(p);
-  ok(s[fsKey(['ordlearned', 'saffron'])] && s[fsKey(['ordlearned', 'saffron'])].uses === 1, 'background: an item ordered 20 days ago is learned');
-  ok(!!s[fsKey(['learnlog', 'o-' + back(20)])], 'background: the day is claimed, so it is never counted twice');
+  await p.waitForTimeout(10000);
+  const bw = await p.evaluate(() => window.__fake.writes.filter(w => w.some(o => /\/(ordlearned|learned|learnlog)\//.test(o.path))).length);
+  ok(bw === 0, 'background: the phone does not learn past days (' + bw + ' writes)');
   ok(p.errors.length === 0, 'background: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 

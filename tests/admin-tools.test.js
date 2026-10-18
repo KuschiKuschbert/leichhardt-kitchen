@@ -1,4 +1,4 @@
-// Moving to a new kitchen PIN, the backup file, sending missed recipe searches, and the once-a-day learning mark.
+// Moving to a new kitchen PIN, the backup file, sending missed recipe searches, and no learning writes from the phone.
 const L = require('./lib');
 const R = [];
 const ok = (c, m) => L.check(c, m, R);
@@ -87,20 +87,17 @@ const store = page => page.evaluate(() => window.__fake.dump());
   ok(p.errors.length === 0, 'missed searches: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // The live learning mark: each phone claims the day once, so no refused write every time a line is picked
+  // Learning is done on the server at night: adding and picking lines writes nothing to learned or learnlog
   p = await L.open(b, '#/prep', { wait: 1500 });
-  ok(await p.evaluate(() => localStorage.getItem('lk.prep.live')) === null, 'learning mark: nothing claimed before a line is added');
   await p.fill('#p-text', 'Slice lemons');
   await p.press('#p-text', 'Enter');
   await p.waitForTimeout(500);
-  ok(await p.evaluate(() => localStorage.getItem('lk.prep.live')) === today, 'learning mark: the day is remembered on the phone');
-  const before = await p.evaluate(() => window.__fake.writes.length);
   await p.fill('#p-text', 'Juice limes');
   await p.press('#p-text', 'Enter');
-  await p.waitForTimeout(500);
-  const marks = await p.evaluate(a => window.__fake.writes.slice(a.n).filter(w => w.some(o => o.path.endsWith('/learnlog/' + a.d))).length, { n: before, d: today });
-  ok(marks === 0, 'learning mark: the second line does not write the mark again');
-  ok(p.errors.length === 0, 'learning mark: no page errors ' + p.errors.join(' | '));
+  await p.waitForTimeout(4000);
+  const lw = await p.evaluate(() => window.__fake.writes.filter(w => w.some(o => /\/(learned|learnlog)\//.test(o.path))).length);
+  ok(lw === 0, 'learning: the phone writes nothing to learned or learnlog (' + lw + ' writes)');
+  ok(p.errors.length === 0, 'learning: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
   await b.close();
