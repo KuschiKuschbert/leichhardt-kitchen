@@ -841,3 +841,8 @@ html.note-open, html.note-open body { overflow: hidden; }
 .nt-rt { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.6rem; }
 .nt-when { font-size: 0.875rem; font-weight: 600; color: var(--muted); }
 @media print { .nt-wrap, .nbell { display: none !important; } }
+
+/* Wastage and Orders: one tall form page, not the two-page prep notebook. On big screens the notebook page had a fixed height, so the form spilled over the review box under it. These pages now grow with their content. */
+.nb-page.o-page { height: auto; min-height: 0; flex: 0 0 auto; }
+.o-page .nb-body { overflow: visible; min-height: 0; }
+.w-review { max-width: 46rem; }
