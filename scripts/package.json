@@ -1,0 +1,12 @@
+{
+  "name": "leichhardt-kitchen-nightly",
+  "private": true,
+  "description": "Nightly learning for the Kitchen Book (run by the GitHub Action)",
+  "type": "module",
+  "scripts": {
+    "learn": "node nightly-learn.mjs"
+  },
+  "dependencies": {
+    "firebase-admin": "12.7.0"
+  }
+}

@@ -419,7 +419,7 @@
     var q0 = S.qty;
     var made = newItem(Object.assign({ text: t.slice(0, 160), qty: S.qty.trim().slice(0, 40), station: sec, recipe: rm ? rm.id : '' }, fixed ? { orig: typedAs.slice(0, 160) } : {}));
     made.catch(function (e) { failed(e, function () { if (!S.text.trim()) { S.text = typedAs; S.qty = q0; } }); });
-    noteSection(sec); bump({ added: 1, lastAdded: now() }); learn(t, sec, t === S.pickedText ? 'pick' : 'type', S.qty);
+    noteSection(sec); bump({ added: 1, lastAdded: now() });
     if (pr.changes.length || secInfo.from) {
       var ch = pr.changes, mid = made.id, dte = S.date, sf = secInfo.from;
       var msg = ch.map(function (c) { return c[0] + ' to ' + c[1]; }).concat(sf ? ['section ' + sf + ' to ' + sec] : []).join(', ');
@@ -441,7 +441,7 @@
     var q0 = S.qty;
     var made = newItem({ text: (r.short || r.name), recipe: r.id, qty: S.qty.trim().slice(0, 40), station: sec });
     made.catch(function (e) { failed(e, function () { if (!S.qty.trim()) S.qty = q0; }); });
-    noteSection(sec); bump({ added: 1, lastAdded: now() }); learn(r.short || r.name, sec, 'pick', S.qty);
+    noteSection(sec); bump({ added: 1, lastAdded: now() });
     S.qty = ''; S.recipeSearch = ''; S.recipeOpen = false; S.recipeAll = false;
     if (secInfo.from) { S.section = sec; var sf = secInfo.from, mid = made.id, dte = S.date; toast('Added ' + (r.short || r.name) + ', section ' + sf + ' corrected to ' + sec, { label: 'Undo', fn: function () { keepSection(sf); noteSection(sf); S.section = sf; supd(itemRef(dte, mid), { station: sf }).catch(failed); } }); }
     else addedToast(r.short || r.name, sec, S.date, made.id);
@@ -562,21 +562,12 @@
     return { text: t, changes: changes };
   }
 
-  /* ---------- the prep list learns: every line added is counted per item, weekday and section ---------- */
+  /* ---------- the prep list learns: every line added is counted per item, weekday and section ----------
+     The counting is done on the server every night (scripts/nightly-learn.mjs, a GitHub Action at 03:00 kitchen time):
+     it reads each finished day once and adds it to learned/<item>. The phones only read learned (live) and never write it,
+     apart from the head chef hiding an item. */
   var REGULAR = 4;   // typed or picked this many times and it becomes a regular
   function lkey(t) { return slug(String(t).toLowerCase()).slice(0, 80); }
-  function learn(text, sec, how, qty) {
-    if (!fb || !text) return;
-    var p = who(), f = fb.fs, dow = String(parseYmd(S.date).getDay()), sk = lkey(sec || 'general');
-    var secs = {}; secs[sk] = { name: sec || '', n: f.increment(1) };
-    var data = { text: String(text).trim().slice(0, 160), uses: f.increment(1), lastUsed: now(), lastBy: p ? p.name : '', dow: {}, secs: secs };
-    data.dow[dow] = f.increment(1);
-    data[how === 'pick' ? 'picked' : 'typed'] = f.increment(1);
-    qty = String(qty || '').trim().slice(0, 40);
-    if (qty) { data.qtys = {}; data.qtys[lkey(qty).slice(0, 40)] = { q: qty, n: f.increment(1) }; }
-    sset(docRef('learned', lkey(text)), data, true).catch(function () {});
-    markLive(S.date);
-  }
   function learnedFor(text) { var k = lkey(text); return S.learned.filter(function (x) { return x.id === k; })[0] || null; }
   function bestSection(x) {
     var best = '', n = 0;
@@ -669,7 +660,7 @@
     var rm = matchRecipe(text), uq = usualQty(text), dte = S.date;
     var made = newItem({ text: text.slice(0, 160), station: sec, recipe: rm ? rm.id : '', qty: uq });
     made.catch(failed);
-    noteSection(sec); bump({ added: 1, lastAdded: now() }); learn(text, sec, 'pick', uq);
+    noteSection(sec); bump({ added: 1, lastAdded: now() });
     addedToast(text + (uq ? ' (' + uq + ')' : ''), sec, dte, made.id);
   }
   /* Undo on an add flags the new line as removed. Anyone may take back a line they just wrote (the rules let the writer update it). */
@@ -786,68 +777,7 @@
   function hideLearned(id, hidden) {
     sset(docRef('learned', id), { hidden: hidden }, true).catch(failed);
   }
-  /* Progressive learning: every past day (up to 90 back) is read once, by whichever phone opens the book first.
-     A day is claimed by creating learnlog/<date>; the rules refuse a second create, so nothing is counted twice. */
-  var LEARN_DAYS = 90;
-  function markLive(date, lk) {
-    if (!fb) return;
-    lk = lk || 'lk.prep.live';
-    S.marked = S.marked || {};
-    if (S.marked[date] || lsGet(lk) === date) return;
-    S.marked[date] = 1;
-    /* the rules allow only the first create of a day, so each phone tries once a day (another phone may have claimed it already) */
-    var done = function () { lsSet(lk, date); };
-    sset(docRef('learnlog', date), { at: now(), who: 'live' }).then(done, done);
-  }
-  function maybeLearn() {
-    if (S.learnRan || !S.authed || !fb || S.configState !== 'ok') return;
-    S.learnRan = true;
-    setTimeout(autoLearn, 2500);
-  }
-  function autoLearn() {
-    var today = dayNow(), dates = [], k;
-    for (k = 1; k <= LEARN_DAYS; k++) dates.push(shift(today, -k));
-    S.learnState = { total: LEARN_DAYS, done: 0, running: true };
-    fb.fs.getDocs(colRef('learnlog')).then(function (snap) {
-      var have = {}; snap.docs.forEach(function (d) { have[d.id] = 1; });
-      ordAutoLearn(have);
-      var todo = dates.filter(function (d) { return !have[d]; });
-      S.learnState.done = LEARN_DAYS - todo.length; draw();
-      learnChunk(todo, 0);
-    }, function () { S.learnState = null; });
-  }
-  function learnChunk(todo, i) {
-    if (i >= todo.length) { if (S.learnState) S.learnState.running = false; draw(); return; }
-    var chunk = todo.slice(i, i + 8), f = fb.fs, p = who();
-    Promise.all(chunk.map(function (d) {
-      return sset(docRef('learnlog', d), { at: now(), who: p ? p.name : '', kind: 'auto' }).then(function () {
-        return f.getDocs(itemsCol(d)).then(function (sn) { return { d: d, items: sn.docs.map(function (x) { return x.data(); }) }; });
-      }, function () { return null; });
-    })).then(function (res) {
-      var map = {}, known = {};
-      S.learned.forEach(function (x) { known[x.id] = 1; });
-      res.filter(Boolean).forEach(function (r) {
-        var dow = String(parseYmd(r.d).getDay());
-        r.items.forEach(function (x) {
-          if (x.deleted || x.rolled || !x.text) return;
-          var text = proofread(x.text).text, k = lkey(text);
-          var m = map[k] = map[k] || { text: text.slice(0, 160), n: 0, dow: {}, secs: {}, last: 0, by: '' };
-          m.n++; m.dow[dow] = (m.dow[dow] || 0) + 1;
-          var sk = lkey(x.station || 'general'); m.secs[sk] = m.secs[sk] || { name: x.station || '', n: 0 }; m.secs[sk].n++;
-          if ((x.addedAt || 0) >= m.last) { m.last = x.addedAt || 0; m.by = x.addedBy || ''; }
-        });
-      });
-      var jobs = Object.keys(map).map(function (k) {
-        var m = map[k], secs = {}, dw = {};
-        Object.keys(m.secs).forEach(function (sk) { secs[sk] = { name: m.secs[sk].name, n: f.increment(m.secs[sk].n) }; });
-        Object.keys(m.dow).forEach(function (d) { dw[d] = f.increment(m.dow[d]); });
-        var data = { text: m.text, uses: f.increment(m.n), typed: f.increment(m.n), dow: dw, secs: secs };
-        if (!known[k]) { data.lastUsed = m.last; data.lastBy = m.by; }
-        return sset(docRef('learned', k), data, true);
-      });
-      return Promise.all(jobs).then(function () { if (S.learnState) S.learnState.done += chunk.length; draw(); learnChunk(todo, i + 8); });
-    }).catch(function () { if (S.learnState) S.learnState.running = false; });
-  }
+  var LEARN_DAYS = 90;   // how far back the nightly learning reads
   function listText() {
     var rows = S.items.filter(function (x) { return !x.deleted; }).sort(sortItems), out = [], last = null;
     out.push('Prep list, ' + dayName(S.date) + ' ' + longDate(S.date));
@@ -1334,8 +1264,8 @@
   function learnedHTML() {
     var L = S.learned.filter(function (x) { return x.text; });
     var head = '<section class="set-block"><span class="label">What the prep list has learned</span><span class="hint">Every line written or picked is counted per item, weekday and section. An item becomes a regular after ' + REGULAR + ' uses.</span>';
-    var ls = S.learnState, btn = '<p class="hint">' + (ls && ls.running ? 'Reading past lists: ' + ls.done + ' of ' + ls.total + ' days so far.' : 'It reads past lists by itself, up to ' + LEARN_DAYS + ' days back' + (ls ? ' (' + ls.done + ' days read)' : '') + ', and keeps learning from every new line.') + '</p>';
-    if (!L.length) return head + '<p class="hint">Nothing learned yet. It reads past lists by itself the next time the prep book is opened, and learns from every new line.</p>' + btn + '</section>';
+    var btn = '<p class="hint">The book learns every night at 03:00 from the day before (up to ' + LEARN_DAYS + ' days back), so new lines show here the next morning.</p>';
+    if (!L.length) return head + '<p class="hint">Nothing learned yet. The book learns every night at 03:00 from the day before.</p>' + btn + '</section>';
     var regs = L.filter(isRegular), picked = 0, typed = 0;
     L.forEach(function (x) { picked += x.picked || 0; typed += x.typed || 0; });
     var top = L.slice().sort(function (a, b) { return (b.uses || 0) - (a.uses || 0); });
@@ -1823,7 +1753,7 @@
     if (S.date !== today && !canBrowse() && !S.user) { S.date = today; S.tab = ''; watchItems(); }
     if (S.authed && fb) { loadPast(); loadWRecent(false); }
     S.week = S.past ? weekRanks() : null;
-    maybeRoll(); ordRoll(); loadOrdLearned(); maybeLearn(); loadWNote();
+    maybeRoll(); ordRoll(); loadOrdLearned(); loadWNote();
     var live = S.items.filter(function (x) { return !x.deleted; }), doneN = live.filter(function (x) { return x.done; }).length;
     var removed = S.items.filter(function (x) { return x.deleted; });
     var secs = {}, tabs = [];
@@ -2298,10 +2228,9 @@
     }).catch(function () { S.ordRolling = false; });
   }
   /* ---------- order learning ----------
-     Like the prep list: every order line written is remembered for good in ordlearned/<key> { text, uses, dow, qtys,
-     lastUsed, lastBy }, and past order days (up to 90 back) are learned once in the background, each day claimed in
-     learnlog as o-<date> so nothing is counted twice. The list is read once a day per phone (lk.ord.learned) and drives
-     the suggestions while typing, the usual amounts and the "usually ordered" chips. */
+     Like the prep list: every order line is remembered for good in ordlearned/<key> { text, uses, dow, qtys, lastUsed,
+     lastBy }. The server counts each finished day every night (scripts/nightly-learn.mjs). The list is read once a day per
+     phone (lk.ord.learned) and drives the suggestions while typing, the usual amounts and the "usually ordered" chips. */
   var ORD_LEARN_N = 300;
   function loadOrdLearned() {
     var tag = S.pin + '|' + dayNow();
@@ -2318,68 +2247,19 @@
   }
   function ordLearnSave() { lsSet('lk.ord.learned', JSON.stringify({ tag: S.ordLearnFor, list: S.ordLearned || [] })); }
   function ordLearnedFor(text) { var k = lkey(text); return (S.ordLearned || []).filter(function (x) { return x.id === k; })[0] || null; }
+  /* The server counts order lines every night (scripts/nightly-learn.mjs). This only keeps this phone's copy in step,
+     so the next suggestion already knows; nothing is written. */
   function ordLearn(text, qty) {
-    if (!fb || !text || S.ordLearnOk === false) return;
-    var p = who(), f = fb.fs, dw = String(T.dow()), k = lkey(text).slice(0, 80);
+    var dw = String(T.dow()), k = lkey(text || '').slice(0, 80);
     if (!k) return;
     qty = String(qty || '').trim().slice(0, 40);
-    var qk = lkey(qty).slice(0, 40), data = { text: String(text).trim().slice(0, 120), uses: f.increment(1), lastUsed: now(), lastBy: p ? p.name : '', dow: {} };
-    data.dow[dw] = f.increment(1);
-    if (qty && qk) { data.qtys = {}; data.qtys[qk] = { q: qty, n: f.increment(1) }; }
-    sset(docRef('ordlearned', k), data, true).catch(function () {});
-    markLive('o-' + dayNow(), 'lk.ord.live');
+    var qk = lkey(qty).slice(0, 40), data = { text: String(text).trim().slice(0, 120) };
     // keep this phone's copy in step, so the next suggestion already knows
     var e = ordLearnedFor(text);
     if (!e) { e = { id: k, text: data.text, uses: 0, dow: {}, qtys: {} }; (S.ordLearned = S.ordLearned || []).push(e); }
     e.uses++; e.dow[dw] = (e.dow[dw] || 0) + 1;
     if (qty && qk) { e.qtys[qk] = e.qtys[qk] || { q: qty, n: 0 }; e.qtys[qk].n++; }
     if (S.ordLearnFor) ordLearnSave();
-  }
-  function ordAutoLearn(have) {
-    if (!S.ordLearnOk || S.ordLearnRan || !can('add')) return;
-    S.ordLearnRan = true;
-    var today = dayNow(), todo = [], k;
-    for (k = 1; k <= LEARN_DAYS; k++) { var d = shift(today, -k); if (!have['o-' + d]) todo.push(d); }
-    // a little after the prep learner, so the two do not read at the same moment
-    if (todo.length) setTimeout(function () { ordLearnChunk(todo, 0, { wrote: false }); }, 8000);
-  }
-  function ordLearnChunk(todo, i, run) {
-    if (i >= todo.length) {
-      // read the learned list again once, so the new counts show (next time it is read once a day again)
-      if (run.wrote) { S.ordLearnFor = ''; lsSet('lk.ord.learned', ''); loadOrdLearned(); }
-      return;
-    }
-    var chunk = todo.slice(i, i + 8), f = fb.fs, p = who();
-    Promise.all(chunk.map(function (d) {
-      return sset(docRef('learnlog', 'o-' + d), { at: now(), who: p ? p.name : '', kind: 'order' }).then(function () {
-        return f.getDocs(ordCol(d)).then(function (sn) { return { d: d, lines: sn.docs.map(function (x) { return x.data(); }) }; });
-      }, function () { return null; });
-    })).then(function (res) {
-      var map = {};
-      res.filter(Boolean).forEach(function (r) {
-        var dw = String(parseYmd(r.d).getDay());
-        r.lines.forEach(function (x) {
-          if (x.deleted || x.rolled || !x.text) return;
-          var key = lkey(x.text).slice(0, 80); if (!key) return;
-          var m = map[key] = map[key] || { text: String(x.text).trim().slice(0, 120), n: 0, dow: {}, q: {}, last: 0, by: '' };
-          m.n++; m.dow[dw] = (m.dow[dw] || 0) + 1;
-          var qk = lkey(x.qty || '').slice(0, 40); if (qk) { m.q[qk] = m.q[qk] || { q: String(x.qty).slice(0, 40), n: 0 }; m.q[qk].n++; }
-          if ((x.addedAt || 0) >= m.last) { m.last = x.addedAt || 0; m.by = x.addedBy || ''; }
-        });
-      });
-      var ops = Object.keys(map).map(function (key) {
-        var m = map[key], dw = {}, qs = {};
-        Object.keys(m.dow).forEach(function (d) { dw[d] = f.increment(m.dow[d]); });
-        Object.keys(m.q).forEach(function (q) { qs[q] = { q: m.q[q].q, n: f.increment(m.q[q].n) }; });
-        var data = { text: m.text, uses: f.increment(m.n), dow: dw, qtys: qs };
-        if (!ordLearnedFor(m.text)) { data.lastUsed = m.last; data.lastBy = m.by; }
-        return ['set', docRef('ordlearned', key), data, true];
-      });
-      return (ops.length ? W(ops.slice(0, 400)) : Promise.resolve()).then(function () {
-        if (ops.length) run.wrote = true;
-        ordLearnChunk(todo, i + 8, run);
-      });
-    }).catch(function () {});
   }
   /* amounts ordered for an item before: the learned record and the last 14 days, most used first */
   function ordQtyList(text) {
@@ -2547,7 +2427,7 @@
       '<div class="btn-row"><button type="button" class="btn" data-p="onudge-show">Show them</button><button type="button" class="btn" data-p="onudge-hide">Hide for today</button></div></div>';
   }
   function ordersHTML() {
-    if (can('add')) { loadOrdHist(); loadWRecent(false); loadOrdLearned(); maybeLearn(); }
+    if (can('add')) { loadOrdHist(); loadWRecent(false); loadOrdLearned(); }
     var p = me(), br = canBrowse(), view = br ? (S.ordView || 'day') : 'day', today = dayNow();
     if (!br && S.ordDate !== today) { S.ordDate = today; watchOrders(); }
     if (view === 'all') loadOrdAll(false);
