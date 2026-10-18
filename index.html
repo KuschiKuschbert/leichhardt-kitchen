@@ -64,6 +64,63 @@
   })();
 </script>
 <script>
+  // Automatic updates. After every deploy the site files carry a new Last-Modified/ETag. The book asks for just those
+  // headers (a tiny request, no Firestore) when it opens, when someone comes back to it, and every 15 minutes while it is open.
+  // If they changed, the book updates itself: straight away when it was just brought back from the background,
+  // otherwise when nobody has touched it for 2 minutes and nothing is being typed. A bar offers "Update now" meanwhile.
+  (function () {
+    var STAMP_URL = 'index.html', base = null, found = false, lastTouch = Date.now(), hiddenAt = 0, lastCheck = 0, bar = null;
+    function stamp() {
+      return fetch(STAMP_URL, { method: 'HEAD', cache: 'no-store' }).then(function (r) {
+        return r.ok ? (r.headers.get('last-modified') || '') + '|' + (r.headers.get('etag') || '') : '';
+      }, function () { return ''; });
+    }
+    function typing() {
+      var a = document.activeElement, t = a && a.tagName;
+      return t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT' || !!(a && a.isContentEditable);
+    }
+    function reloadNow() {
+      // Once per 10 minutes at most, so a flapping header can never cause a reload loop.
+      try { var last = +localStorage.getItem('lk.upd.last') || 0; if (Date.now() - last < 600000) return; localStorage.setItem('lk.upd.last', String(Date.now())); } catch (e) {}
+      var files = ['index.html', 'js/data.js', 'js/art.js', 'js/app.js', 'js/prep.js', 'js/firebase-config.js', 'css/app.css'];
+      var go = function () { location.reload(); };
+      try { Promise.all(files.map(function (f) { return fetch(f, { cache: 'reload' }); })).then(go, go); setTimeout(go, 8000); } catch (e) { go(); }
+    }
+    function showBar() {
+      if (bar || !document.body) return;
+      bar = document.createElement('div'); bar.setAttribute('role', 'status');
+      bar.style.cssText = 'position:fixed;left:12px;right:12px;bottom:76px;z-index:9999;max-width:30rem;margin:0 auto;display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 14px;background:#1c1d1f;color:#fff;border-radius:10px;font:600 15px Barlow,system-ui,sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.3)';
+      var t = document.createElement('span'); t.textContent = 'New version available. It updates when you stop for a moment.';
+      var b = document.createElement('button'); b.type = 'button'; b.textContent = 'Update now';
+      b.style.cssText = 'flex:none;min-height:40px;padding:0 14px;border:0;border-radius:8px;background:#e8590c;color:#fff;font:700 15px Barlow,system-ui,sans-serif;cursor:pointer';
+      b.onclick = function () { try { localStorage.removeItem('lk.upd.last'); } catch (e) {} reloadNow(); };
+      bar.appendChild(t); bar.appendChild(b); document.body.appendChild(bar);
+    }
+    function check(returned) {
+      lastCheck = Date.now();
+      stamp().then(function (s) {
+        if (!s || s === '|') return;
+        if (base === null) { base = s; return; }
+        if (s === base) return;
+        found = true;
+        if (returned && !typing()) reloadNow(); else showBar();
+      });
+    }
+    ['pointerdown', 'keydown', 'touchstart', 'wheel'].forEach(function (ev) { document.addEventListener(ev, function () { lastTouch = Date.now(); }, { passive: true, capture: true }); });
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'hidden') { hiddenAt = Date.now(); return; }
+      var away = hiddenAt ? Date.now() - hiddenAt : 0;
+      if (Date.now() - lastCheck > 60000) check(away > 300000); else if (found && away > 300000 && !typing()) reloadNow();
+    });
+    setInterval(function () {
+      if (document.visibilityState !== 'visible') return;
+      if (found) { if (Date.now() - lastTouch > 120000 && !typing()) reloadNow(); }
+      else if (Date.now() - lastCheck > 15 * 60000) check(false);
+    }, 20000);
+    window.addEventListener('load', function () { check(false); });
+  })();
+</script>
+<script>
   // Installable: the service worker keeps the last copy of the book so it opens with no signal.
   if ('serviceWorker' in navigator) window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
 </script>

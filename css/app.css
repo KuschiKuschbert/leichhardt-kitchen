@@ -269,8 +269,11 @@ img, svg { display: block; }
 .p-add-row .p-select { flex: 1 1 9rem; }
 .p-add-row #p-text { flex: 3 1 14rem; height: 48px; font-size: 1rem; }
 .p-qtyin { flex: 1 1 7rem; height: 48px; font-size: 1rem; }
-.p-pick summary { cursor: pointer; font-weight: 700; min-height: 44px; display: flex; align-items: center; }
-.p-recipes { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.6rem; max-height: 14rem; overflow-y: auto; }
+.p-pick { position: static; }
+.p-pickbtn { min-height: 44px; }
+.p-pick-panel { position: absolute; left: 0; right: 0; bottom: calc(100% - 1px); z-index: 20; display: flex; flex-direction: column; gap: 0.5rem; padding: 0.8rem 0.9rem; max-height: min(24rem, 62vh); overflow-y: auto; background: #FBF8F1; border: 2px solid var(--ink); border-radius: 10px; box-shadow: 0 -6px 18px rgba(28, 29, 31, 0.22); }
+.p-pick-h { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; }
+.p-recipes { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .p-group { display: flex; flex-direction: column; gap: 0.35rem; }
 .p-items, .a-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .p-item { display: flex; align-items: center; gap: 0.75rem; min-height: 3.6rem; padding: 0.5rem 0.6rem; background: var(--paper); border-bottom: 1px solid var(--line); }
@@ -331,7 +334,7 @@ img, svg { display: block; }
 .nb-row.is-done .nb-t { text-decoration: line-through; text-decoration-thickness: 2px; color: #6b665c; }
 .nb-row.is-removed { opacity: 0.5; }
 .nb-empty { margin: 1rem 0; font-family: 'Caveat', cursive; font-size: 1.6rem; color: #8a8478; }
-.nb-foot { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.7rem 0 1rem; border-top: 2px solid var(--ink); }
+.nb-foot { position: relative; display: flex; flex-direction: column; gap: 0.5rem; padding: 0.7rem 0 1rem; border-top: 2px solid var(--ink); }
 .nb-foot-r { flex-direction: row; align-items: center; justify-content: space-between; flex-wrap: wrap; }
 .nb-note { font-family: 'Caveat', cursive; font-size: 1.5rem; color: #6b665c; }
 .nb-add { display: flex; flex-direction: column; gap: 0.4rem; }
@@ -575,11 +578,12 @@ img, svg { display: block; }
 
 /* Done today checklist */
 .nb-done { list-style: none; margin: 0 0 14px; padding: 0; border: 2px solid var(--ink, #1a1a1a); border-radius: 8px; max-height: 280px; overflow: auto; background: rgba(255,255,255,.5); }
-.nb-done li { display: grid; grid-template-columns: 3.2em 1fr auto; gap: 8px; padding: 6px 10px; border-bottom: 1px solid rgba(0,0,0,.12); font-size: .9rem; align-items: baseline; }
+.nb-done li { display: grid; grid-template-columns: 3.2em 1fr auto auto; gap: 8px; padding: 6px 10px; border-bottom: 1px solid rgba(0,0,0,.12); font-size: .9rem; align-items: baseline; }
 .nb-done li:last-child { border-bottom: 0; }
 .nb-dt { font-variant-numeric: tabular-nums; opacity: .65; }
 .nb-dx em { font-style: normal; opacity: .65; }
 .nb-dw { opacity: .65; font-size: .82rem; }
+.nb-undo { min-height: 32px; padding: 0 .6rem; align-self: center; }
 
 /* Start here, usual amounts, waste review note on the prep list */
 .nb-start, .nb-flag { margin: 0 0 12px; padding: 8px 10px 10px; border: 2px solid var(--ink); border-radius: 8px; background: #FFFEFA; }
@@ -848,6 +852,37 @@ html.note-open, html.note-open body { overflow: hidden; }
 .nt-when { font-size: 0.875rem; font-weight: 600; color: var(--muted); }
 @media print { .nt-wrap, .nbell, .mbell { display: none !important; } }
 
+/* Notes workspace (admin Notes tab and the sous chef's Daily notes): list first, editor beside it on a big screen */
+.n-ws { display: flex; flex-direction: column; gap: 1rem; }
+.n-lh { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 0.6rem 1rem; }
+.n-lh .label, .n-lh .hint { display: block; }
+.n-gh3 { margin: 0.9rem 0 0.4rem; font: 700 1.1rem var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
+.n-lst .n-gh3:first-of-type { margin-top: 0.4rem; }
+.n-pastrow { margin-top: 0.9rem; }
+.nt-by { font-size: 0.875rem; color: var(--muted); font-weight: 600; }
+.nt-by .p-x { margin-left: 0.2rem; }
+.n-prev { padding: 0.6rem; border: 1.5px dashed var(--ink); border-radius: 10px; background: #fff; }
+.n-prev .nt-list { padding: 0; overflow: visible; }
+.n-prev .hint { margin: 0; }
+.n-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; margin-top: 0.5rem; max-width: 26rem; }
+.n-gh { text-align: center; font-size: 0.75rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.n-gd { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 44px; padding: 0; border: 1.5px solid var(--line, #cfc8b8); border-radius: 8px; background: #fff; color: var(--ink); font: 700 1rem var(--body); cursor: pointer; }
+.n-gd small { font-size: 0.625rem; font-weight: 700; line-height: 1; text-transform: uppercase; color: var(--muted); }
+.n-gd.n-off { border-color: transparent; background: transparent; cursor: default; }
+.n-gd.n-today { border-color: var(--ink); }
+.n-gd.n-in { background: #F6D9C4; border-color: var(--accent); }
+.n-gd.n-in.n-dim { background: #fff; border-style: dashed; color: var(--muted); }
+.n-gd.n-s, .n-gd.n-e { background: var(--ink); border-color: var(--ink); color: #fff; }
+.n-gd.n-s small, .n-gd.n-e small { color: #E7E1D3; }
+.n-gd:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; }
+.n-more { margin-top: 0.6rem; }
+.n-more summary { cursor: pointer; font-weight: 600; min-height: 44px; display: flex; align-items: center; }
+@media (min-width: 1000px) {
+  .n-ws.has-ed { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 28rem); align-items: start; gap: 1rem; }
+  .n-ws.has-ed .n-lst { grid-column: 1; grid-row: 1; }
+  .n-ws.has-ed .n-ed { grid-column: 2; grid-row: 1; position: sticky; top: 0.5rem; }
+}
+
 /* Wastage and Orders: one tall form page, not the two-page prep notebook. On big screens the notebook page had a fixed height, so the form spilled over the review box under it. These pages now grow with their content. */
 .nb-page.o-page { height: auto; min-height: 0; flex: 0 0 auto; }
 .o-page .nb-body { overflow: visible; min-height: 0; }
@@ -964,4 +999,18 @@ html.note-open, html.note-open body { overflow: hidden; }
   html.print-min .a-print-h { display: flex !important; justify-content: space-between; gap: 1rem; margin-bottom: 4mm; padding-bottom: 2mm; border-bottom: 2px solid #000; font-size: 10pt; }
   html.print-min .a-tablewrap { overflow: visible !important; }
   html.print-min .a-pane .set-block:not(.mn-print) { display: none !important; }
+}
+
+/* Order list: the add box sits at the top. On big screens the list and "Ordered today" sit side by side and the page uses the width. */
+.o-add.nb-foot { border-top: 0; border-bottom: 2px solid var(--ink); padding: 0.8rem 0 1rem; }
+.o-cols { display: block; }
+@media (min-width: 1000px) {
+  .o-page { max-width: 72rem; }
+  .o-page:not(.o-all) .o-cols { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 0 2.5rem; align-items: start; }
+  .o-page:not(.o-all) .o-ordered { padding-top: 0.2rem; }
+  .o-page:not(.o-all) .o-ordered .nb-sh { margin-top: 0.9rem; }
+  .o-page .o-add .nb-add-row { flex-wrap: nowrap; }
+  .o-page .o-add .nb-in-text { flex: 5 1 0; min-width: 0; }
+  .o-page .o-add .nb-in-qty { flex: 1 1 0; min-width: 6rem; }
+  .o-page.o-all { max-width: 52rem; }
 }
