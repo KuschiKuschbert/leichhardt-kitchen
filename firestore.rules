@@ -194,6 +194,13 @@ service cloud.firestore {
       allow create, update: if writer() && request.resource.data.text is string && request.resource.data.text.size() <= 160;
       allow delete: if isAdmin();
     }
+    // What the order list has learned: one record per item ordered (text, uses, weekdays, usual amounts). Anyone with a PIN adds to it.
+    match /kitchens/KITCHEN_PIN/ordlearned/{id} {
+      allow read: if true;
+      allow create, update: if writer() && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 120
+        && request.resource.data.get('hidden', false) is bool;
+      allow delete: if isAdmin();
+    }
     match /kitchens/KITCHEN_PIN/learnlog/{id} {
       allow read: if true;
       allow create: if writer() && request.resource.data.at is number;
