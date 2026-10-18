@@ -90,6 +90,23 @@ service cloud.firestore {
       allow create, update: if writer() && request.resource.data.name is string && request.resource.data.name.size() <= 80 && request.resource.data.n is int;
       allow delete: if isAdmin();
     }
+    // Daily notes shown as a popup. Everyone with the kitchen PIN reads them; only the head chef or a sous chef writes them.
+    // A note shows from "start" to "until" (YYYY-MM-DD). "dows" (0 to 6, Sunday is 0) limits it to those weekdays.
+    // Notes are never deleted, only flagged as removed.
+    function noteOk() {
+      return request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 400
+        && request.resource.data.tag in ['none', 'off', 'special', 'function', 'delivery', 'safety', 'allergen']
+        && request.resource.data.start is string && request.resource.data.start.size() == 10
+        && request.resource.data.until is string && request.resource.data.until.size() == 10
+        && request.resource.data.until >= request.resource.data.start
+        && request.resource.data.get('dows', []) is list && request.resource.data.get('dows', []).size() <= 7
+        && request.resource.data.get('removed', false) is bool;
+    }
+    match /kitchens/KITCHEN_PIN/notes/{id} {
+      allow read: if true;
+      allow create, update: if (isAdmin() || (staff() && sousBy())) && noteOk();
+      allow delete: if false;
+    }
     match /kitchens/KITCHEN_PIN/staffpins/{id} {
       allow read: if isAdmin();
       allow create: if request.resource.data.hash is string && request.resource.data.hash.size() == 64

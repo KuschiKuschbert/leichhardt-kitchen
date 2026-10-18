@@ -41,4 +41,5 @@ The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the
 - `.rail` is the steel shelf rail on the Pass; the landing and top bar use `.wtop`. Do not reuse class names across features (check `css/app.css` first).
 - Every write goes through `W()` in `js/prep.js`, which adds the writer's id (`by`) and the PIN proof with a server timestamp. Direct `setDoc` calls bypass the staff lock and are refused.
 - The prep pages read Firestore; keep reads small (the free plan has a daily read limit). Past days are cached once a day per phone; do not add polling.
+- The daily note popup is appended to `document.body`, not `#app`, so page redraws do not remove it. Its clicks use `data-note` (the bell and the popup), the editor inside the prep root uses `data-p`, and the recipe pages use `data-act`; keep them apart. Notes are read with one query a day per phone: do not add a listener or polling.
 - The service worker caches the app shell. Bump `CACHE` in `sw.js` when icons or the manifest change.

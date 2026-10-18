@@ -103,7 +103,7 @@ There's no build step and nothing to install. To try it on a computer, open `ind
 - Sections are not preset. Whoever writes a line types a section name (or picks one already used) and it appears as a section on the page and as a tab. The app keeps track of sections in the background and offers them as suggestions.
 - Ticking, writing and removing lines is counted per person in the background.
 - `#/admin` is the admin panel: who is writing and ticking most, the sections people have written (hide one from suggestions), names, roles and permissions, and Reset PIN for a person. It needs Google sign-in as the project owner.
-- Data lives in Firebase Firestore (free Spark plan): `config/main`, `days/<date>/items`, `staffpins/<person>` (hashed, unreadable), `pinset/<person>`, `proofs/<person>` (write only), `activity/<person>`, `sections/<slug>`. Firebase config is in `js/firebase-config.js` (public by design). The kitchen PIN and admin email live in the published Firestore rules, not in this repo. Staff names are not in the repo either.
+- Data lives in Firebase Firestore (free Spark plan): `config/main`, `days/<date>/items`, `staffpins/<person>` (hashed, unreadable), `pinset/<person>`, `proofs/<person>` (write only), `activity/<person>`, `sections/<slug>`, `notes/<id>` (daily notes, see Daily notes). Firebase config is in `js/firebase-config.js` (public by design). The kitchen PIN and admin email live in the published Firestore rules, not in this repo. Staff names are not in the repo either.
 - Personal PINs are the write lock. Anyone with the kitchen PIN can read, but every write must carry the writer's own 4-digit PIN, which the Firestore rules check against the stored hash (see Staff lock). Per-person permissions (add, tick, delete) are still guidance in the page. Items are never hard deleted.
 - Changing the kitchen PIN means editing the Firestore rules and re-entering it on every phone.
 
@@ -161,6 +161,17 @@ There's no build step and nothing to install. To try it on a computer, open `ind
 - **Team tab:** a skills matrix (lines each person ticked per section) with cross-training pairs, and section habits now based on ticks (where people actually worked) with writing as the fallback. The order list part adds typical time from written to ordered, lines waiting over 3 days and standing order candidates (3 or more days in 14).
 - **Recorded for later:** when a line was removed (`deletedAt`), who marked it urgent and when (`urgentBy`, `urgentAt`), removal time on order lines.
 - **Empty searches:** a recipe search that finds no card at all is queued on the phone (`lk.miss`) and sent to `misses/<slug>` once someone is signed in to the prep book on that phone. The owner can hide one once the card is written.
+
+### Daily notes
+
+- The head chef or a sous chef writes short notes for the day. The first time the book is opened after 10:30 on a day with a note, they show once as a popup ("Today's notes") with a Got it button. Escape or tapping outside also closes it. It does not pop up while someone is typing in a field; the bell shows a dot instead and the popup follows once typing stops. A book left open on the pass pops it at 10:30.
+- **Bell in the top bar** (next to Admin and Settings). Hidden until there is a note for today. It has a dot while the notes are unread on that phone, and opens them again at any time. "Got it" is remembered on the phone only (`lk.note.seen`); if a note is changed later that day, it counts as unread again.
+- **Order and tags.** Each note has a tag: Note, Off today, Special, Function, Delivery, Safety or Allergen alert. Safety and Allergen alert show first, in orange. A recipe name written in a note (for example "Barramundi" or "Guinness beef pies") links to its card.
+- **Under the notes**, two lines from data already on the phone: the change from yesterday's waste review, and how many of today's prep lines are still to do (with urgent lines). The head chef and sous chefs also see how many lines are stuck (rolled over 3 times or more).
+- **Writing notes.** Head chef: the **Notes** tab in the admin panel. Sous chef: **Daily notes** in Handy (prep book), or the Write or edit notes link in the popup. Text up to 400 characters, a tag, and when it shows: Today, Tomorrow, a From date with an optional Until date (to keep a note up), and optional weekdays to repeat every week (with Until empty it repeats until removed). Notes can be edited and removed. The Preview button shows the popup. Keep prices, PINs and staff names out of notes.
+- **Data.** `kitchens/<pin>/notes/<id>`: `text`, `tag`, `start`, `until` (YYYY-MM-DD, last day inclusive), `dows` (0 is Sunday, empty means every day), `removed`, `at`, `upd`, `by`. Notes are never deleted, only flagged `removed`. The rules let only the head chef (Google account) or a listed sous chef (`sousIds`, with their own PIN proof) write, and check the text, tag, dates and weekday list.
+- **Reads stay small.** One query for notes that have not ended yet (`until` on or after today), once a phone opens each day, again after 30 minutes away, and once at 10:30 if the book was already open. No live listener and no polling; the once-a-minute check on the page is local only.
+- Not built yet: how many phones tapped Got it (a count only, no names).
 
 ### Smart prep list
 
