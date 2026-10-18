@@ -56,6 +56,7 @@ window.LK_DATA = {
     { title: 'Sides', ids: ['slaw-side', 'mash-side', 'side-salad', 'mac-side', 'greens-side', 'wedges'] },
     { title: 'Dessert', ids: ['donut-fries', 'sticky-toffee', 'snickers', 'skillet'] },
     { title: 'Seniors', ids: ['senior-rissoles', 'senior-fish-chips', 'senior-bolognese', 'senior-calamari', 'senior-schnitzel', 'senior-parmy'] },
+    { title: 'Kids', ids: ['kids-spaghetti-bolognese'] },
     { title: 'Functions', ids: ['pizza-platter', 'aussie-platter', 'vege-platter', 'yumcha-platter', 'antipasto-platter', 'seafood-platter'] }
   ],
   recipes: [
@@ -838,6 +839,23 @@ window.LK_DATA = {
         { label: 'Spaghetti', x: 37.7, y: 58.5, side: 'left', tags: ['Gluten'], note: '1.5 portions. Card to come.' },
         { label: 'Kids bolognese', x: 54.9, y: 50.1, side: 'right', tags: [], note: '200 g.' },
         { label: 'Parmesan', x: 43.2, y: 42.5, side: 'left', tags: ['Milk'], note: '10 g shaved.' },
+        { label: 'Garlic bread', x: 78.3, y: 71.7, side: 'left', tags: ['Gluten', 'Milk', 'Soy?'], note: 'Half piece.' }
+      ],
+      labelNote: 'Check the garlic bread label.'
+    },
+    {
+      id: 'kids-spaghetti-bolognese', art: 'senior-bolognese', no: '113', kind: 'main', forLine: 'Kids', name: 'Kids Spaghetti Bolognese',
+      yield: 'Kids plate. Spaghetti, bolognese sauce, parmesan, half a garlic bread.',
+      ingredients: [
+        { q: '120 g', name: 'Spaghetti', link: 'spaghetti', tags: ['Gluten'] },
+        { q: '[Qty]', name: 'Bolognese sauce', link: 'kids-bolognese' },
+        { q: '[Qty]', name: 'Parmesan', tags: ['Milk'] },
+        { q: '½ piece', name: 'Garlic bread', note: '7 inch, bought in', tags: ['Gluten', 'Milk', 'Soy?'] }
+      ],
+      pins: [
+        { label: 'Spaghetti', x: 37.7, y: 58.5, side: 'left', tags: ['Gluten'], note: '120 g.' },
+        { label: 'Bolognese sauce', x: 54.9, y: 50.1, side: 'right', link: 'kids-bolognese', note: '' },
+        { label: 'Parmesan', x: 43.2, y: 42.5, side: 'left', tags: ['Milk'], note: '' },
         { label: 'Garlic bread', x: 78.3, y: 71.7, side: 'left', tags: ['Gluten', 'Milk', 'Soy?'], note: 'Half piece.' }
       ],
       labelNote: 'Check the garlic bread label.'
@@ -2060,7 +2078,7 @@ window.LK_DATA = {
       labelNote: 'Check the supplier label for allergens.'
     },
     {
-      id: 'kids-bolognese', no: '91', kind: 'batch', forLine: 'For the senior spaghetti bolognese', name: 'Bolognese Sauce', short: 'Bolognese sauce', art: 'kids-bolognese', avc: 'Bolognaise Batch S25',
+      id: 'kids-bolognese', no: '91', kind: 'batch', forLine: 'For the senior and kids bolognese', name: 'Bolognese Sauce', short: 'Bolognese sauce', art: 'kids-bolognese', avc: 'Bolognaise Batch S25',
       yield: 'Batch: about 5 L, half of the 10 kg kitchen sheet. Serve size is on each dish card.',
       ingredients: [
         { q: '500 g', name: 'Brown onions' },
