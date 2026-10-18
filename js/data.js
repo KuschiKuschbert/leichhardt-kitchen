@@ -1019,11 +1019,11 @@ window.LK_DATA = {
       ingredients: [
         { q: '7 pieces', name: 'Crispy beetroot bites', note: 'fried', tags: ['Gluten?'] },
         { q: '[Qty]', name: 'Caramelised chilli jam', link: 'chilli-jam' },
-        { q: '[Qty]', name: 'Korean-style cucumber', tags: ['Sesame?', 'Soy?'] }
+        { q: '[Qty]', name: 'Korean-style cucumber', link: 'korean-cucumber' }
       ],
       pins: [
         { label: 'Crispy beetroot bites', x: 36.3, y: 56.6, side: 'left', tags: ['Gluten?'], note: '7 pieces, fried, tossed in chilli jam, piled in the middle.' },
-        { label: 'Korean-style cucumber', x: 50.5, y: 38.2, side: 'right', tags: ['Sesame?', 'Soy?'], note: 'On top of the pile.' },
+        { label: 'Korean-style cucumber', x: 50.5, y: 38.2, side: 'right', link: 'korean-cucumber', note: 'On top of the pile.' },
         { label: 'Caramelised chilli jam', x: 41.5, y: 46.5, side: 'left', link: 'chilli-jam', note: 'The bites are tossed in it.' }
       ],
       sections: [
@@ -1090,11 +1090,11 @@ window.LK_DATA = {
       ingredients: [
         { q: '280 to 290 g', name: 'Roasted pork belly', note: 'cut into bites, portioned in a sandwich bag', link: 'pork-belly-batch' },
         { q: '[Qty]', name: 'Caramelised chilli jam', link: 'chilli-jam' },
-        { q: '[Qty]', name: 'Korean-style cucumber', tags: ['Sesame?', 'Soy?'] }
+        { q: '[Qty]', name: 'Korean-style cucumber', link: 'korean-cucumber' }
       ],
       pins: [
         { label: 'Pork belly bites', x: 36.3, y: 56.6, side: 'left', link: 'pork-belly-batch', note: 'Crispy, tossed in chilli jam, piled in the middle.' },
-        { label: 'Korean-style cucumber', x: 50.5, y: 38.2, side: 'right', tags: ['Sesame?', 'Soy?'], note: 'On top of the pile.' },
+        { label: 'Korean-style cucumber', x: 50.5, y: 38.2, side: 'right', link: 'korean-cucumber', note: 'On top of the pile.' },
         { label: 'Caramelised chilli jam', x: 37.7, y: 47.2, side: 'left', link: 'chilli-jam', note: 'The bites are tossed in it.' }
       ],
       sections: [
@@ -2275,6 +2275,17 @@ window.LK_DATA = {
         ] }
       ],
       labelNote: 'Check the supplier labels for allergens, especially the chocolate nibs.'
+    },
+    {
+      id: 'korean-cucumber', no: '112', kind: 'batch', forLine: 'For the beetroot bites and the pork belly bites', name: 'Korean-Style Cucumber', short: 'Korean cucumber',
+      yield: 'Batch: 4 kg sliced cucumbers.',
+      ingredients: [
+        { q: '4 kg', name: 'Sliced cucumbers' },
+        { q: '[Qty]', name: 'Korean dressing', link: 'korean-dressing' }
+      ],
+      sections: [
+        { title: 'Method', steps: ['[Method to confirm]'] }
+      ]
     }
   ]
 };
