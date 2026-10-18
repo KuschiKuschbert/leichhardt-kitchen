@@ -390,7 +390,9 @@
   function shelvesHTML() {
     var s = q(), n = 0;
     var html = SHELVES.filter(function (sh) { return ui.kind === 'all' || sh.key === ui.kind || (sh.key === 'prep' && (ui.kind === 'batch' || ui.kind === 'component')); }).map(function (sh) {
-      var items = sh.list.map(function (r) {
+      var shown = s ? sh.list.filter(function (r) { return matches(r.id); }) : sh.list;
+      if (!shown.length) return '';
+      var items = shown.map(function (r) {
         var h = hitId(r.id), m = matches(r.id), dish = isDish(r);
         if (s && m) n++;
         var links = r.ingredients.filter(function (i) { return i.link && byId[i.link]; }).map(function (i) { return byId[i.link].short || byId[i.link].name; });
