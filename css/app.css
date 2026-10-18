@@ -1144,3 +1144,9 @@ html.print-min .mn-regtbl { display: block; }
 #r-allergens, #r-ing, .jump-at { scroll-margin-top: 0.75rem; }
 .jump-at { height: 0; }
 @media (max-width: 599px) { .find-bar { margin: 0 -1rem; padding: 0.6rem 1rem 0.7rem; } }
+
+/* order list: lines waiting more than 3 days, grouped by the day they were first written */
+.o-od { border-left: 4px solid var(--accent); padding-left: 0.6rem; margin: 0 0 1rem; }
+.o-od-h { margin: 0.6rem 0 0.2rem; font-size: 0.875rem; font-weight: 700; color: var(--muted); }
+.o-nudge { margin: 0 0 0.75rem; }
+.o-nudge p { font-family: var(--body); font-size: 0.9375rem; font-weight: 600; }
