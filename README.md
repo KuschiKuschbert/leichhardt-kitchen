@@ -85,6 +85,7 @@ There's no build step and nothing to install. To try it on a computer, open `ind
 - This repo is **public**, so anyone with the link can read the recipes. The page asks search engines not to list it.
 - Allergens are worked out from the ingredients listed. Always check the supplier labels before answering a guest.
 - Cook as written. Check with the head chef or sous chef before changing anything.
+- **The book updates itself.** Every merge to `main` changes the site's `Last-Modified` and `ETag`. The book asks for just the headers of `index.html` (a tiny request, no Firestore) when it opens, when someone comes back to it and every 15 minutes while open. If they changed, it reloads: straight away when the app was brought back after 5 minutes or more away, otherwise once nobody has touched it for 2 minutes and nothing is being typed (an input in focus blocks it). Meanwhile a bar says "New version available" with an Update now button. It reloads at most once every 10 minutes, so it cannot loop. The 04:00 daily refresh stays as a backstop. A phone running a version from before this feature picks it up on its next reload (04:00 or reopening the app). No version number to bump and nothing to configure.
 
 ## Installing it as an app
 
