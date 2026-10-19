@@ -350,6 +350,7 @@ img, svg { display: block; }
 .nb-bn { font-size: 0.8125rem; color: var(--muted); }
 .nb-medal { flex: 0 0 auto; }
 .a-name-ro { flex: 1 1 10rem; font-weight: 700; font-size: 1.05rem; align-self: center; }
+.a-head { align-self: center; font-size: .85rem; font-weight: 700; color: var(--muted); }
 .a-legend { display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; font-size: 0.875rem; color: var(--muted); }
 .a-legend span { display: inline-flex; align-items: center; gap: 0.4rem; }
 .a-legend i { width: 14px; height: 4px; border-radius: 2px; display: inline-block; }
