@@ -454,6 +454,8 @@ img, svg { display: block; }
 .o-who { display: block; margin-top: 0.15rem; font-family: var(--body); font-size: 0.8125rem; color: var(--muted); }
 .o-page .nb-row .p-x { margin-left: 0.4rem; }
 .o-nav { flex-wrap: wrap; }
+.o-days { display: inline-flex; flex-wrap: nowrap; gap: 0.5rem; }
+.o-nav .o-days .chip:first-child, .o-nav .o-days .chip:last-child { min-width: 48px; padding: 0; font-size: 1.4rem; }
 .o-nav .chip { font: 700 0.9375rem var(--body); min-height: 44px; padding: 0 1rem; }
 .o-nav .chip[aria-pressed] { font: 700 0.9375rem var(--body); }
 @media (max-width: 479px) { .brand h1 { font-size: 1.7rem; } }
