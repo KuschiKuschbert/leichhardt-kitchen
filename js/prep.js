@@ -1033,7 +1033,7 @@
       stations: [], showBadges: cfg.showBadges !== false, staffSee: staffSee(cfg),
       sousIds: hold ? (hold.sousIds || []) : idsFor(cfg.people, isSousP), pingIds: hold ? (hold.pingIds || []) : idsFor(cfg.people, canPingP),
       staffIds: idsFor(cfg.people, anyP),
-      updated: now(), updatedBy: (S.user && S.user.email) || (who() ? who().name : '')
+      updated: now(), updatedBy: S.user ? 'Head chef' : (who() ? who().name : '')   // never the Google email: anyone with the kitchen PIN can read this record
     };
     /* a sous chef may only change the people list and who may set a PIN, so only those are sent (merged): the rules refuse any other field */
     return sdk().then(function () { return S.user ? track(fb.fs.setDoc(cfgDoc(), clean)) : sset(cfgDoc(), { people: clean.people, staffIds: clean.staffIds, updated: clean.updated, updatedBy: clean.updatedBy }, true); }).then(function () { return clean; });
