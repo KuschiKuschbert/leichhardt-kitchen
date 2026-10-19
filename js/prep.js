@@ -96,7 +96,7 @@
       catch (e) { db = fs.getFirestore(app); }
       var auth = au.getAuth(app);
       fb = { app: app, fs: fs, au: au, db: db, auth: auth };
-      au.onAuthStateChanged(auth, function (u) { S.user = u; S.authState = 'ready'; if (!u) lsSet('lk.admin', ''); featSync(); loadAdmins(); draw(); });
+      au.onAuthStateChanged(auth, function (u) { S.user = u; S.authState = 'ready'; if (!u) admMark(false); featSync(); loadAdmins(); draw(); });
       return fb;
     }, function (e) { sdkP = null; throw e; });
     return sdkP;
@@ -184,6 +184,13 @@
      What this phone may see is kept in lk.feat, so the landing page and the top bar are right before the book connects. */
   var FEATS = [['guides', 'Guides'], ['pings', 'Shift pings'], ['minutes', 'Meeting minutes']];
   var featHave = (function () { try { return JSON.parse(lsGet('lk.feat') || 'null') || {}; } catch (e) { return {}; } })();
+  /* Marks this phone or computer as the head chef's (lk.admin) once the owner probe has passed, and clears the mark on sign out
+     or when the probe fails. js/app.js listens for lk-admin to show or drop the key button in the top bar. */
+  function admMark(on) {
+    var was = lsGet('lk.admin') === '1';
+    lsSet('lk.admin', on ? '1' : '');
+    if (was !== !!on) { try { window.dispatchEvent(new Event('lk-admin')); } catch (e) {} }
+  }
   /* the head chef's own device: the owner probe has passed on it (lk.admin), or is passing now. A Google account that is not the
      head chef's does not count, so held-back pages stay held back and the admin links stay hidden on that phone. */
   function admDev() { return S.level === 'owner' || (S.level !== 'none' && lsGet('lk.admin') === '1'); }
@@ -1160,7 +1167,7 @@
     var em = S.user.email || '';
     if (S.adminsFor === em) return;
     S.adminsFor = em; S.level = '';
-    fb.fs.getDoc(adminsRef()).then(function () { S.level = 'owner'; lsSet('lk.admin', '1'); featSync(); seedIds(); draw(); }, function () { S.level = 'none'; lsSet('lk.admin', ''); featSync(); draw(); });
+    fb.fs.getDoc(adminsRef()).then(function () { S.level = 'owner'; admMark(true); featSync(); seedIds(); draw(); }, function () { S.level = 'none'; admMark(false); featSync(); draw(); });
   }
   /* The rules read three lists next to the people list: sousIds (who may edit the staff list), pingIds (who may write
      shift pings) and staffIds (who may set a PIN). Only the head chef can write sousIds and pingIds, so the owner keeps
