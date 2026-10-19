@@ -895,6 +895,14 @@ html.note-open, html.note-open body { overflow: hidden; }
 
 /* Prep list on big screens: show more lines. The notebook page uses the screen height (no 780 px cap), Start here moves to the Handy page, the add row is one line, and lines are a little tighter for a mouse or a keyboard. Phones and tablets keep the big touch rows. */
 .nb-start-r { display: none; }
+details.nb-start-l > summary .nb-sl { white-space: nowrap; flex: 0 0 auto; }
+details.nb-start-l > summary { display: flex; align-items: center; gap: 0.6rem; min-height: 44px; cursor: pointer; list-style: none; }
+details.nb-start-l > summary::-webkit-details-marker { display: none; }
+details.nb-start-l > summary::after { content: '+'; margin-left: auto; font: 700 1.2rem var(--body); }
+details.nb-start-l[open] > summary::after { content: '\2212'; }
+.nb-sline { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.nb-donejump, .nb-qadd { display: none; }
+@media (max-width: 899px) { .nb-donejump { display: inline-flex; } .nb-qadd { display: block; margin-top: 0.6rem; } }
 .nb-hint:empty { display: none; }
 @media (min-width: 900px) {
   .nb-start-l { display: none; }
