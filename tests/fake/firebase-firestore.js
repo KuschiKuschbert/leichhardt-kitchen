@@ -25,6 +25,7 @@ export function initializeFirestore() { return { kind: 'db' }; }
 export function getFirestore() { return { kind: 'db' }; }
 export function persistentLocalCache() { return {}; }
 export function persistentMultipleTabManager() { return {}; }
+export function terminate() { window.__fake.terminated = true; return Promise.resolve(); }
 function segs(a) { return a.filter(x => typeof x === 'string'); }
 function baseOf(x) { return x && x.path ? x.path : []; }
 export function collection(parent, ...p) { return { type: 'col', path: baseOf(parent).concat(segs(p)) }; }
