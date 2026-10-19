@@ -2,6 +2,7 @@
 # Fills KITCHEN_PIN and OWNER_EMAIL into a copy of firestore.rules in the runner's temporary folder and deploys that
 # copy with the Firebase CLI, signed in as the service account the nightly learning already uses.
 # Needs three repository secrets: FIREBASE_SA (service account key, JSON), KITCHEN_PIN and OWNER_EMAIL.
+# After publishing it proves the lock on the live book (tests/rules/probe.mjs).
 # Run it from the Actions tab with "Run workflow" (or let Claude trigger it). Nothing secret is ever printed:
 # GitHub masks the secrets in the log, and the filled-in copy is never shown or kept.
 # The move to a new kitchen PIN (two PINs live at once) is still pasted by hand: see the header of firestore.rules.
@@ -55,3 +56,10 @@ jobs:
           "$GITHUB_WORKSPACE/tests/rules/node_modules/.bin/firebase" deploy --only firestore:rules --project leichhardt-kitchen --non-interactive
           rm -f "$RUNNER_TEMP/sa.json" "$RUNNER_TEMP/rules/firestore.rules"
           echo "Published. Changes can take up to a minute to reach the phones."
+      # Proves the lock on the live book straight after publishing: the reads and writes the rules must refuse, from a
+      # client that holds only the kitchen PIN, plus the one read they must allow. Fails the run if any is wrong.
+      - name: Prove the lock on the live book
+        working-directory: tests/rules
+        env:
+          KITCHEN_PIN: ${{ secrets.KITCHEN_PIN }}
+        run: sleep 20 && node probe.mjs
