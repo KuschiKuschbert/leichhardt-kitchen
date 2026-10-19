@@ -84,6 +84,7 @@ Drawings for The Pass are in `js/art.js`. A recipe with no drawing still shows, 
 | `.github/workflows/publish-rules.yml` | Publishes the rules from GitHub (Actions tab, Run workflow) with the `FIREBASE_SA`, `KITCHEN_PIN` and `OWNER_EMAIL` secrets, then proves the lock on the live book |
 | `.github/workflows/lock-probe.yml`, `tests/rules/probe.mjs` | The lock probe: every Monday 04:00 and from the Actions tab, from a client with only the kitchen PIN, the reads and writes the published rules must refuse are refused and the one allowed read works. Needs `KITCHEN_PIN`, plus `APPCHECK_DEBUG_TOKEN` once App Check is enforced |
 | `.github/workflows/nightly-backup.yml`, `scripts/nightly-backup.mjs` | Nightly backup at 03:30 kitchen time: the book as the Backup button reads it, encrypted with the `BACKUP_KEY` secret, kept as an artifact for 90 days |
+| `.github/workflows/pr-tests.yml` | Runs the click tests on every pull request to `main` (the **Click tests** check), and on request |
 | `.github/workflows/live-tests.yml` | Runs the click tests against the live site after each GitHub Pages deploy, and on request |
 | `manifest.webmanifest`, `sw.js`, `icons/`, `icon.svg` | Installable app: manifest, service worker (network first), icons |
 | `qr.svg`, `qr.png`, `qr-sign.pdf` | QR code to open the book, and the A4 sign |
@@ -110,6 +111,7 @@ npm test
 - `npm test -- recipes` runs only the files with "recipes" in the name. `SHOTS=1 npm test -- pages` also saves a screenshot of every page to `tests/shots/`. `BASE=https://kuschikuschbert.github.io/leichhardt-kitchen/ npm test` runs the tests on the live site (Firebase is still the stand-in). `CHROME=/path/to/chromium` uses another browser.
 - **Which pictures changed.** Before a change to the look, keep a copy of `tests/shots/` (for example as `tests/shots-baseline/` or `tests/shots-baseline-u/`, which git ignores). After the change, `SHOTS=1 npm test -- pages` again, then `node tests/shots-diff.js tests/shots-baseline` lists every page whose picture is not the same as before, so only those need a look.
 - `node tests/serve.js` serves the book at http://127.0.0.1:8777/ for trying it by hand.
+- **On GitHub.** The same tests run on every pull request to `main` as the **Click tests** check (`.github/workflows/pr-tests.yml`, Chrome on the runner, screenshots kept as an artifact when a run fails), so a pull request cannot merge until they pass. After each Pages deploy the **Live click tests** workflow runs them again against the live site.
 
 ## Good to know
 
