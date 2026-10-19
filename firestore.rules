@@ -219,11 +219,12 @@ service cloud.firestore {
     }
     // Only a person on the list (config/main.staffIds, kept in step by the admin panel and a sous chef's staff page)
     // may set a PIN, once. So nobody with just the kitchen PIN can make up a new writer.
+    // The head chef may also create one: the move to a new kitchen PIN copies every stored PIN as it is.
     match /kitchens/KITCHEN_PIN/staffpins/{id} {
       allow read: if isAdmin();
-      allow create: if request.resource.data.hash is string && request.resource.data.hash.size() == 64
+      allow create: if isAdmin() || (request.resource.data.hash is string && request.resource.data.hash.size() == 64
         && id in cfg().get('staffIds', [])
-        && getAfter(setDoc(id)).data.at is number;
+        && getAfter(setDoc(id)).data.at is number);
       allow update, delete: if isAdmin();
     }
     match /kitchens/KITCHEN_PIN/pinset/{id} {
