@@ -11,14 +11,15 @@ if (SHOTS) fs.mkdirSync(SHOTS, { recursive: true });
     for (const hash of pages) {
       const p = await L.open(b, hash, { width: w, height: h, touch, wait: 1400, extra: L.guides() });
       const of = await L.overflow(p);
-      L.check(!of && !p.errors.length, w + ' ' + hash + (of ? ' sideways scroll' : '') + (p.errors.length ? ' errors: ' + p.errors.join(' | ') : ''), R);
+      L.check(!of && !p.errors.length, w + ' ' + hash + (of ? ' sideways scroll: ' + of : '') + (p.errors.length ? ' errors: ' + p.errors.join(' | ') : ''), R);
       if (SHOTS) await p.screenshot({ path: path.join(SHOTS, w + '-' + (hash.replace(/[#/]/g, '') || 'landing') + '.png') });
       await p.context().close();
     }
     const p = await L.open(b, '#/admin', { width: w, height: h, touch, admin: true, wait: 1600, extra: L.guides() });
     for (const t of ['insights', 'team', 'waste', 'learning', 'notes', 'minutes', 'guides', 'people', 'tools']) {
       await p.click('[data-p="a-tab"][data-t="' + t + '"]'); await p.waitForTimeout(500);
-      L.check(!(await L.overflow(p)), w + ' admin ' + t + ' no sideways scroll', R);
+      const ofa = await L.overflow(p);
+      L.check(!ofa, w + ' admin ' + t + ' no sideways scroll' + (ofa ? ': ' + ofa : ''), R);
       if (SHOTS) await p.screenshot({ path: path.join(SHOTS, w + '-admin-' + t + '.png') });
     }
     L.check(!p.errors.length, w + ' admin no page errors ' + p.errors.join(' | '), R);

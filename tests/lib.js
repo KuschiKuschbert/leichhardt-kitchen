@@ -60,7 +60,9 @@ function guides() {
 
 /* Installed Google Chrome by default. CHROME=/path/to/chrome uses another Chromium (for example on a server). */
 async function start() {
-  return chromium.launch(process.env.CHROME ? { executablePath: process.env.CHROME, headless: true } : { channel: 'chrome', headless: true });
+  // scrollbars are hidden like on a phone or tablet (overlay scrollbars): a classic 15 px scrollbar at exactly 768 px would
+  // put the tablet layout in a 753 px window and count as sideways scroll
+  return chromium.launch(process.env.CHROME ? { executablePath: process.env.CHROME, headless: true, args: ['--hide-scrollbars'] } : { channel: 'chrome', headless: true, args: ['--hide-scrollbars'] });
 }
 
 /* Opens one page in a fresh browser profile.
@@ -129,8 +131,19 @@ async function open(browser, hash, o) {
   await page.waitForTimeout(o.wait || 600);
   return page;
 }
+/* Sideways scroll: false when the page fits, otherwise a short note saying by how much, the scrollbar width and the
+   first elements that stick out, so a failure on another machine (the GitHub runner) can be read from the log. */
 async function overflow(page) {
-  return page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+  return page.evaluate(() => {
+    const d = document.documentElement, over = d.scrollWidth - window.innerWidth;
+    if (over <= 1) return false;
+    const wide = [];
+    document.querySelectorAll('body *').forEach(el => {
+      const r = el.getBoundingClientRect();
+      if (r.width > 0 && r.right > window.innerWidth + 1 && wide.length < 4) wide.push(el.tagName.toLowerCase() + (el.className ? '.' + String(el.className).split(' ')[0] : '') + ' to ' + Math.round(r.right));
+    });
+    return over + ' px over (window ' + window.innerWidth + ', scrollbar ' + (window.innerWidth - d.clientWidth) + '): ' + wide.join(', ');
+  });
 }
 function check(cond, msg, results) { results.push((cond ? 'PASS ' : 'FAIL ') + msg); }
 /* The helpers every test file uses: results() gives the list and its ok(); txt reads an element's trimmed text
