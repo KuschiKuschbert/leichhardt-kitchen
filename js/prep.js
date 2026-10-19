@@ -275,10 +275,10 @@
   function supd(ref, data) { return W([['upd', ref, data]]); }
   function pinHash(id, pin) { return sha('lk:' + id + ':' + pin); }
   /* four drawn cells over one real input: numbers only, shown as dots */
-  function pinField(id, k, val) {
+  function pinField(id, k, val, auto) {
     var cells = '', i;
     for (i = 0; i < 4; i++) cells += '<span class="pin-cell' + (i < val.length ? ' full' : '') + (i === Math.min(val.length, 3) ? ' on' : '') + '" aria-hidden="true">' + (i < val.length ? '\u25CF' : '') + '</span>';
-    return '<div class="pinbox"><div class="pin-cells">' + cells + '</div><input id="' + id + '" class="pin-in" type="password" data-k="' + k + '" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="4" aria-label="4 digit PIN" value="' + esc(val) + '"></div>';
+    return '<div class="pinbox"><div class="pin-cells">' + cells + '</div><input id="' + id + '" class="pin-in' + (auto ? ' pin-auto' : '') + '" type="password" data-k="' + k + '" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="4" aria-label="4 digit PIN" value="' + esc(val) + '"></div>';
   }
   function pinCells(el) {
     var cs = el.parentNode.querySelectorAll('.pin-cell'), n = el.value.length, i;
@@ -293,8 +293,10 @@
   }
   function pickName(id) {
     S.who = id; lsSet('lk.prep.who', id); lsSet('lk.prep.tok', ''); S.authed = false; S.tok = ''; S.pf1 = S.pf2 = ''; S.pinMsg = ''; S.pinStep = 'checking'; featSync(); draw();
-    fb.fs.getDoc(docRef('pinset', id)).then(function (s) { S.pinStep = s.exists() ? 'enter' : 'set'; draw(); },
-      function () { S.pinStep = 'error'; draw(); });
+    fb.fs.getDoc(docRef('pinset', id)).then(function (s) {
+      S.pinStep = s.exists() ? 'enter' : 'set'; draw();
+      if (/^\d{4}$/.test(S.pf1)) { if (S.pinStep === 'enter') submitPin(); else focusK('pf2'); }
+    }, function () { S.pinStep = 'error'; draw(); });
   }
   function signedIn(id, hash) {
     S.authed = true; S.tok = hash; S.pf1 = S.pf2 = ''; S.pinMsg = ''; S.pinStep = '';
@@ -479,7 +481,7 @@
         supd(itemRef(dte, mid), undo).catch(failed);
       } });
     }
-    else addedToast(t + (q0.trim() ? ' (' + q0.trim() + ')' : ''), sec, S.date, made.id);
+    else addedToast(sec, S.date, made.id);
     S.text = ''; S.qty = ''; S.section = sec; S.pickedText = ''; draw();
     var el = S.root && S.root.querySelector('[data-k="p-text"]'); if (el) el.focus();
   }
@@ -497,8 +499,8 @@
     made.catch(function (e) { failed(e, function () { if (!S.qty.trim()) S.qty = q0; }); });
     noteSection(sec); bump({ added: 1, lastAdded: now() });
     S.qty = ''; S.recipeSearch = ''; S.recipeOpen = false; S.recipeAll = false;
-    if (secInfo.from) { S.section = sec; var sf = secInfo.from, mid = made.id, dte = S.date; toast('Added ' + (r.short || r.name) + ', section ' + sf + ' corrected to ' + sec, { label: 'Undo', fn: function () { keepSection(sf); noteSection(sf); S.section = sf; supd(itemRef(dte, mid), { station: sf }).catch(failed); } }); }
-    else addedToast(r.short || r.name, sec, S.date, made.id);
+    if (secInfo.from) { S.section = sec; var sf = secInfo.from, mid = made.id, dte = S.date; toast('Added, section ' + sf + ' corrected to ' + sec, { label: 'Undo', fn: function () { keepSection(sf); noteSection(sf); S.section = sf; supd(itemRef(dte, mid), { station: sf }).catch(failed); } }); }
+    else addedToast(sec, S.date, made.id);
   }
   function canUntick(x) {
     return canBrowse() || (!!x.doneById && x.doneById === S.who && now() - (x.doneAt || 0) < 110000);
@@ -509,7 +511,7 @@
     var done = !it.done;
     if (!done && !canUntick(it)) { toast('Ticked lines stay ticked. Ask the head chef or sous chef to undo it.'); return; }
     supd(itemRef(date, id), { done: done, doneBy: done ? p.name : '', doneById: done ? p.id : '', doneAt: done ? now() : 0 }).catch(failed);
-    if (done) { bump({ ticked: 1 }); toast('Ticked ' + it.text, { label: 'Undo', fn: function () { tick(date, id); } }); setTimeout(draw, LINGER + 100); }
+    if (done) { bump({ ticked: 1 }); toast('Ticked', { label: 'Undo', fn: function () { tick(date, id); } }); setTimeout(draw, LINGER + 100); }
     else if (it.doneById && fb) sset(docRef('activity', it.doneById), { name: it.doneBy || '', ticked: fb.fs.increment(-1) }, true).catch(function () {});
   }
   function removeItem(date, id, restore) {
@@ -776,7 +778,7 @@
       var made = newItem(Object.assign({}, data, { dupOk: true }));
       made.catch(failed);
       if (after) after();
-      addedToast(data.text + (data.qty ? ' (' + data.qty + ')' : ''), data.station, dte, made.id);
+      addedToast(data.station, dte, made.id);
     } });
   }
   function inTab(x) { return !S.tab || (x.station || '') === S.tab || (x.also || []).indexOf(S.tab) >= 0; }
@@ -828,11 +830,12 @@
     var made = newItem({ text: text.slice(0, 160), station: sec, recipe: rm ? rm.id : '', qty: uq });
     made.catch(failed);
     noteSection(sec); bump({ added: 1, lastAdded: now() });
-    addedToast(text + (uq ? ' (' + uq + ')' : ''), sec, dte, made.id);
+    addedToast(sec, dte, made.id);
   }
-  /* Undo on an add flags the new line as removed. Anyone may take back a line they just wrote (the rules let the writer update it). */
-  function addedToast(what, sec, dte, mid) {
-    toast('Added ' + what + (sec ? ' to ' + sec : ''), { label: 'Undo', fn: function () { supd(itemRef(dte, mid), { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: now() }).catch(failed); } });
+  /* Undo on an add flags the new line as removed. Anyone may take back a line they just wrote (the rules let the writer update it).
+     The toast does not repeat the line: it is on the list already, and on a phone a long name plus Undo covered the list. */
+  function addedToast(sec, dte, mid) {
+    toast('Added' + (sec ? ' to ' + sec : ''), { label: 'Undo', fn: function () { supd(itemRef(dte, mid), { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: now() }).catch(failed); } });
   }
   /* Owner backup: everything the book holds, as one JSON file (PIN fingerprints left out). */
   function exportAll() {
@@ -1876,7 +1879,7 @@
   function openLabel() { return { orders: 'Open the order list', waste: 'Open the wastage log', minutes: 'Open the minutes', guides: 'Open the guides' }[S.name] || 'Open the prep list'; }
   function gateHTML() {
     return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Kitchen PIN</h2><p class="hint">Enter the kitchen PIN to open the prep list, orders, wastage, minutes and guides. This phone remembers it.</p>' +
-      '<div class="field"><label class="label" for="p-pin">PIN</label>' + pinField('p-pin', 'p-pin', S.pinInput) + '</div>' +
+      '<div class="field"><label class="label" for="p-pin">PIN</label>' + pinField('p-pin', 'p-pin', S.pinInput, true) + '</div>' +
       (S.pinError ? '<p class="p-err" role="alert">' + esc(S.pinError) + '</p>' : '') +
       '<div class="btn-row"><button type="button" class="btn dark" data-p="pin-go">' + openLabel() + '</button></div></section>';
   }
@@ -1890,13 +1893,14 @@
   function ownPinHTML() {
     var p = who(), step = S.pinStep;
     if (!p) return whoHTML();
-    if (step === 'checking' || !step) return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">' + esc(p.name) + '</h2><p class="hint">One moment...</p></section>';
     if (step === 'error') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">' + esc(p.name) + '</h2><p class="p-err">Could not check your PIN. Check the connection.</p><div class="btn-row"><button type="button" class="btn dark" data-p="who" data-id="' + esc(p.id) + '">Try again</button><button type="button" class="btn" data-p="who-change">Not me</button></div></section>';
-    var setting = step === 'set';
+    var setting = step === 'set', checking = step !== 'set' && step !== 'enter';
+    // while the book checks whether this person has a PIN yet, the box is already there: it takes the keyboard inside
+    // the tap on the name (an iPhone opens the keyboard only inside a tap), and a PIN typed early is sent once it knows
     return '<form class="p-card" data-p-form="pin"><h2 class="p-h" id="rtitle" tabindex="-1">' + (setting ? 'Hi ' + esc(p.name) + ', choose your PIN' : esc(p.name) + ', enter your PIN') + '</h2>' +
-      '<p class="hint">' + (setting ? 'Pick 4 digits you will remember. You use it with your name from now on. This phone stays signed in.' : 'Your own 4-digit PIN.') + '</p>' +
-      '<div class="field"><label class="label" for="pf1">' + (setting ? 'New PIN' : 'PIN') + '</label>' + pinField('pf1', 'pf1', S.pf1) + '</div>' +
-      (setting ? '<div class="field"><label class="label" for="pf2">Type it again</label>' + pinField('pf2', 'pf2', S.pf2) + '</div>' : '') +
+      '<p class="hint">' + (setting ? 'Pick 4 digits you will remember. You use it with your name from now on. This phone stays signed in.' : checking ? 'One moment...' : 'Your own 4-digit PIN.') + '</p>' +
+      '<div class="field"><label class="label" for="pf1">' + (setting ? 'New PIN' : 'PIN') + '</label>' + pinField('pf1', 'pf1', S.pf1, true) + '</div>' +
+      (setting ? '<div class="field"><label class="label" for="pf2">Type it again</label>' + pinField('pf2', 'pf2', S.pf2, true) + '</div>' : '') +
       (S.pinMsg ? '<p class="p-err" role="alert">' + esc(S.pinMsg) + '</p>' : '') +
       '<div class="btn-row"><button type="submit" class="btn dark">' + (setting ? 'Save my PIN' : openLabel()) + '</button><button type="button" class="btn" data-p="who-change">Not me</button></div></form>';
   }
@@ -2387,6 +2391,14 @@
     if (S.staffOpen && isSous()) return staffHTML();
     return listHTML();
   }
+  /* The PIN screens open the keyboard by themselves: the first PIN box still short of 4 digits takes focus, and inputmode
+     brings up the number pad on a phone, a tablet or a Windows touch screen (virtualKeyboard asks for it where the browser
+     has that). A computer with a keyboard just starts typing. Only the kitchen PIN and own PIN screens (pin-auto) do this. */
+  function focusPin() {
+    var ins = S.root.querySelectorAll('.pin-auto'), i;
+    for (i = 0; i < ins.length; i++) if (ins[i].value.length < 4) { ins[i].focus({ preventScroll: true }); kbShow(); return; }
+  }
+  function kbShow() { try { if (navigator.virtualKeyboard && navigator.virtualKeyboard.show) navigator.virtualKeyboard.show(); } catch (e) {} }
   var rendering = false;
   function draw() {
     noteSummaryRefresh();
@@ -2402,6 +2414,7 @@
     document.documentElement.classList.toggle('sheet-open', !!S.root.querySelector('.sheet'));
     if (scrolls.length) Array.prototype.forEach.call(S.root.querySelectorAll('.nb-body'), function (b, i) { if (scrolls[i] != null) b.scrollTop = scrolls[i]; });
     if (key) { var el = S.root.querySelector('[data-k="' + key + '"]'); if (el) { el.focus({ preventScroll: true }); if (start != null && el.setSelectionRange) { try { el.setSelectionRange(start, end); } catch (e) {} } } }
+    else focusPin();
     rendering = false;
   }
 
@@ -2554,8 +2567,8 @@
     sset(ref, { text: t, qty: q, recipes: hit ? hit.ids : [], addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: now(), ordered: false, deleted: false, orig: t !== typed ? typed.slice(0, 120) : '' })
       .then(ordReload, function (e) { failed(e, function () { if (!S.otext.trim()) { S.otext = typed; S.oqty = q; } }); });
     /* like the prep list: Undo takes the line back, or after a spelling fix puts back what was typed */
-    if (oFix) toast('Added ' + t + ', corrected ' + oFix, { label: 'Undo', fn: function () { keepWords(pr.changes); supd(ref, { text: typed.slice(0, 120), orig: '' }).then(ordReload, failed); } });
-    else toast('Added ' + t + (q ? ' (' + q + ')' : '') + ' to the order list', { label: 'Undo', fn: function () { supd(ref, { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: now() }).then(ordReload, failed); } });
+    if (oFix) toast('Added, corrected ' + oFix, { label: 'Undo', fn: function () { keepWords(pr.changes); supd(ref, { text: typed.slice(0, 120), orig: '' }).then(ordReload, failed); } });
+    else toast('Added to the order list', { label: 'Undo', fn: function () { supd(ref, { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: now() }).then(ordReload, failed); } });
     if (oneTapAdd) return;
     var el = S.root && S.root.querySelector('[data-k="o-text"]'); if (el) el.focus();
   }
@@ -2566,15 +2579,14 @@
     return W([orderedOp(date, id, on)]);
   }
   function tickOrderLine(date, id, on) {
-    var it = (S.ordLines || []).concat(S.ordAll || []).filter(function (x) { return x.id === id; })[0];
     setOrdered(date, id, on).then(function () { ordPatch(date, id, { ordered: on }); }, failed);
-    if (on) toast('Ordered ' + (it ? it.text : 'the line'), { label: 'Undo', fn: function () { tickOrderLine(date, id, false); } });
+    if (on) toast('Ordered', { label: 'Undo', fn: function () { tickOrderLine(date, id, false); } });
   }
   function tickOrderGroup(key) {
     var lines = ordNewest(ordAllLines()).filter(function (x) { return !x.deleted && !x.ordered && okey(x.text) === key; });
     if (!lines.length || !canBrowse()) return;
     W(lines.map(function (x) { return orderedOp(x.date, x.id, true); })).then(function () { lines.forEach(function (x) { ordPatch(x.date, x.id, { ordered: true }); }); }, failed);
-    toast('Ordered ' + lines[0].text + (lines.length > 1 ? ' (' + lines.length + ' lines)' : ''), { label: 'Undo', fn: function () {
+    toast('Ordered' + (lines.length > 1 ? ' ' + lines.length + ' lines' : ''), { label: 'Undo', fn: function () {
       W(lines.map(function (x) { return orderedOp(x.date, x.id, false); })).then(function () { lines.forEach(function (x) { ordPatch(x.date, x.id, { ordered: false }); }); }, failed);
     } });
   }
@@ -2823,7 +2835,7 @@
     S.wf = { text: '', amt: '', unit: f.unit, reason: '', sec: sec, act: '' };
     draw(); focusK('w-text');
     /* Undo like the other lists. The rules let only the head chef or a sous chef change a wastage entry, so staff are told who can fix it. */
-    var wmsg = 'Logged ' + t + (wpr.changes.length ? ' (corrected ' + wpr.changes.map(function (c) { return c[0] + ' to ' + c[1]; }).join(', ') + ')' : '') + (secInfo.from ? ' under ' + sec + ' (typed ' + secInfo.from + ')' : '');
+    var wmsg = 'Logged' + (wpr.changes.length ? ', corrected ' + wpr.changes.map(function (c) { return c[0] + ' to ' + c[1]; }).join(', ') : '') + (secInfo.from ? ' under ' + sec + ' (typed ' + secInfo.from + ')' : '');
     if (canBrowse()) toast(wmsg, { label: 'Undo', fn: function () { supd(ref, { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: now() }).catch(failed); } });
     else toast(wmsg + '. Wrong? Ask the head chef or a sous chef to remove it.', null, 6000);
   }

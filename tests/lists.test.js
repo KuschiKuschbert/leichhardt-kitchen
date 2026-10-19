@@ -25,14 +25,14 @@ function past(n) { const d = new Date(); d.setDate(d.getDate() - n); return L.ym
   ok(await p.evaluate(() => { const r = document.querySelector('#nbr-i5'); return r && r.classList.contains('is-done'); }), 'tick: line stays, struck through');
   const mid = await p.evaluate(() => [...document.querySelectorAll('.nb-row')].map(r => r.id));
   ok(JSON.stringify(before) === JSON.stringify(mid), 'tick: no line moved');
-  ok(/Ticked Laksa/.test(await txt(p, '.p-toast') || ''), 'tick: toast with Undo');
+  ok(/^Ticked\s*Undo/.test((await txt(p, '.p-toast') || '').trim()), 'tick: toast says just Ticked, with Undo (' + await txt(p, '.p-toast') + ')');
   await p.waitForTimeout(3600);
   ok(await p.$('#nbr-i5') === null, 'tick: line leaves after 3.5 seconds');
 
   // quick add from Handy: toast with Undo
   await p.evaluate(() => { const b = [...document.querySelectorAll('[data-p="quick"]')].find(x => /Mise onions/.test(x.textContent)); b.scrollIntoView(); b.click(); });
   await p.waitForTimeout(300);
-  ok(/Added Mise onions to Larder/.test(await txt(p, '.p-toast') || ''), 'one tap add: says what went where (' + await txt(p, '.p-toast') + ')');
+  ok(/^Added to Larder\s*Undo/.test((await txt(p, '.p-toast') || '').trim()), 'one tap add: says where it went, not the line (' + await txt(p, '.p-toast') + ')');
   await p.click('.p-toast-btn');
   await p.waitForTimeout(300);
   let s = await store(p);
@@ -47,7 +47,7 @@ function past(n) { const d = new Date(); d.setDate(d.getDate() - n); return L.ym
   await p.fill('#p-text', 'Pick mint');
   await p.press('#p-text', 'Enter');
   await p.waitForTimeout(300);
-  ok(/Added Pick mint to Larder/.test(await txt(p, '.p-toast') || ''), 'add box: typed line says Added (' + await txt(p, '.p-toast') + ')');
+  ok(/^Added to Larder\s*Undo/.test((await txt(p, '.p-toast') || '').trim()), 'add box: typed line says Added to Larder without the line (' + await txt(p, '.p-toast') + ')');
   ok(await p.getAttribute('#p-section', 'enterkeyhint') === 'next' && await p.getAttribute('#p-text', 'enterkeyhint') === 'done', 'add box: keyboard hints set');
 
   // section tab with everything ticked says so
@@ -84,7 +84,7 @@ function past(n) { const d = new Date(); d.setDate(d.getDate() - n); return L.ym
   await p.waitForTimeout(400);
   const oa = await p.evaluate(() => [...document.querySelectorAll('.o-main .nb-row .nb-t')].map(t => t.firstChild.textContent));
   ok(JSON.stringify(ob) === JSON.stringify(oa), 'orders: ordered line keeps its place ' + JSON.stringify(oa));
-  ok(/Ordered Milk/.test(await txt(p, '.p-toast') || ''), 'orders: tick says Ordered with Undo');
+  ok(/^Ordered\s*Undo/.test((await txt(p, '.p-toast') || '').trim()), 'orders: tick says just Ordered with Undo (' + await txt(p, '.p-toast') + ')');
   await p.click('.p-toast-btn');
   await p.waitForTimeout(300);
   s = await store(p);
@@ -92,12 +92,12 @@ function past(n) { const d = new Date(); d.setDate(d.getDate() - n); return L.ym
   ok(/Tap to add/.test(await p.evaluate(() => (document.querySelector('.w-often .nb-ql') || {}).textContent || '')), 'orders: regulars say Tap to add');
   await p.click('[data-p="oreg"]');
   await p.waitForTimeout(300);
-  ok(/Added Eggs/.test(await txt(p, '.p-toast') || ''), 'orders: one tap regular says Added (' + await txt(p, '.p-toast') + ')');
+  ok(/^Added to the order list\s*Undo/.test((await txt(p, '.p-toast') || '').trim()), 'orders: one tap regular says Added to the order list (' + await txt(p, '.p-toast') + ')');
   await p.click('[data-p="oview"][data-v="all"]');
   await p.waitForTimeout(600);
   await p.evaluate(() => { const g = [...document.querySelectorAll('[data-p="ogroup"]')].find(b => /Cream/.test(b.getAttribute('aria-label'))); g.click(); });
   await p.waitForTimeout(400);
-  ok(/Ordered Cream/.test(await txt(p, '.p-toast') || ''), 'orders: Everything to order tick has a toast');
+  ok(/^Ordered( \d+ lines)?\s*Undo/.test((await txt(p, '.p-toast') || '').trim()), 'orders: Everything to order tick says Ordered (' + await txt(p, '.p-toast') + ')');
   await p.click('.p-toast-btn');
   await p.waitForTimeout(400);
   s = await store(p);
