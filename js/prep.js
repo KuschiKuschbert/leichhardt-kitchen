@@ -90,6 +90,23 @@
   var itemsKey = '', cfgKey = '', toastTimer = null, resumed = false;
 
   /* ---------- Firebase (loaded only when the prep pages are opened) ---------- */
+  /* Firestore keeps an offline copy in the browser. Now and then that copy breaks ("INTERNAL ASSERTION FAILED",
+     canonifyTarget) and the prep pages hang on Loading with no names. The data on the server is fine, so the phone
+     throws its copy away and reloads, at most once a day (lk.fsheal) so it can never loop. */
+  function healCache() {
+    if (lsGet('lk.fsheal') === dayNow()) return;
+    lsSet('lk.fsheal', dayNow());
+    try { Object.keys(LS || {}).forEach(function (k) { if (/^firestore_/.test(k)) LS.removeItem(k); }); } catch (e) {}
+    var stop = fb ? fb.fs.terminate(fb.db).catch(function () {}) : Promise.resolve();
+    stop.then(function () { return indexedDB.databases ? indexedDB.databases() : [{ name: 'firestore/[DEFAULT]/' + FB.projectId + '/main' }]; }).then(function (dbs) {
+      return Promise.all(dbs.filter(function (d) { return /^firestore\//.test(d.name); }).map(function (d) {
+        return new Promise(function (ok) { var q = indexedDB.deleteDatabase(d.name); q.onsuccess = q.onerror = q.onblocked = function () { ok(); }; });
+      }));
+    }).catch(function () {}).then(function () { location.reload(); });
+  }
+  function brokenCache(x) { var s = x ? String(x.stack || x.message || x) : ''; return /FIRESTORE[^\n]*INTERNAL ASSERTION FAILED|canonifyTarget|IndexedDbTargetCache/.test(s); }
+  window.addEventListener('error', function (e) { if (brokenCache(e.error || e.message)) healCache(); });
+  window.addEventListener('unhandledrejection', function (e) { if (brokenCache(e.reason)) healCache(); });
   function sdk() {
     if (sdkP) return sdkP;
     // App Check: Fraud Defense (reCAPTCHA Enterprise, appCheckEnterpriseKey) or the older reCAPTCHA v3 (appCheckKey)
@@ -117,6 +134,8 @@
     if (!/^\d{4,6}$/.test(S.pin)) return;
     if (cfgKey === S.pin && unsubCfg) return;
     S.configState = 'loading'; draw();
+    // still Loading after 25 s while online: most likely a broken offline copy (see healCache)
+    setTimeout(function () { if (S.configState === 'loading' && navigator.onLine !== false) healCache(); }, 25000);
     sdk().then(function () {
       if (unsubCfg) unsubCfg();
       cfgKey = S.pin;
