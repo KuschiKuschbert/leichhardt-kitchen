@@ -975,6 +975,14 @@
   // js/prep.js read the head chef's open kitchen mail: redraw the count on the key button
   window.addEventListener('lk-mail', function () { var ic = app.querySelector('.wtop-icons'); if (ic) ic.outerHTML = topIcons(); });
   window.addEventListener('lk-who', function (e) { if (!(window.LK_PREP && window.LK_PREP.whoName && window.LK_PREP.whoName())) whoMenuClose(); var el = app.querySelector('.wtop-who'); if (el) el.outerHTML = whoMark(!!(e.detail && e.detail.signedIn)); });
+  // "Skip to content" must not change the address: #main is not a page, so the router would open the landing page
+  document.addEventListener('click', function (e) {
+    var sk = e.target.closest && e.target.closest('a.skip');
+    if (!sk) return;
+    e.preventDefault();
+    var m = document.getElementById('main');
+    if (m) { if (!m.hasAttribute('tabindex')) m.setAttribute('tabindex', '-1'); m.focus(); }
+  });
   window.addEventListener('hashchange', render);
   render();
 })();
