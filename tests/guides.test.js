@@ -67,9 +67,9 @@ async function saved(p) { await p.waitForFunction(() => !window.LK_PREP.state.gf
   ok(again === 2 && await p.locator('.g-pgb img[src^="blob:"]').count() === 2, 'guide: opened again, the pages are not read again');
   await p.click('[data-p="g-zoom"][data-i="0"]');
   ok(await p.locator('.gz-wrap').count() === 1 && /Page 1 of 2/.test(await p.locator('.gz-t').innerText()), 'page big: opens on page 1 of 2');
-  await p.click('[data-gz="next"]');
-  ok(/Page 2 of 2/.test(await p.locator('.gz-t').innerText()) && await p.locator('[data-gz="next"]').isDisabled(), 'page big: Next goes to page 2, the last');
-  await p.click('[data-gz="size"]');
+  await p.click('[data-gz="next"]:visible');
+  ok(/Page 2 of 2/.test(await p.locator('.gz-t').innerText()) && await p.locator('[data-gz="next"]:visible').isDisabled(), 'page big: Next goes to page 2, the last');
+  await p.click('[data-gz="size"]:visible');
   ok(await p.locator('.gz-body.is-full').count() === 1, 'page big: Full size');
   await p.keyboard.press('Escape');
   ok(await p.locator('.gz-wrap').count() === 0 && !(await S(p, () => document.documentElement.classList.contains('gz-open'))), 'page big: Escape closes it');

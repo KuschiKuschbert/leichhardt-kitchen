@@ -3220,14 +3220,16 @@
     if (pv) el.setAttribute('data-pv', '1');
     document.body.appendChild(el);
     npop = el;
+    ovPush('note');
     document.documentElement.classList.add('note-open');
     loadWNote();
     var got = el.querySelector('.nt-got'); if (got) got.focus({ preventScroll: true });
   }
   /* Only Got it (or opening a link in the note) counts as read. Tapping outside or Escape just closes it: the bell
      keeps its dot and the popup comes back by itself after 15 minutes, so a stray tap cannot dismiss a safety note. */
-  function noteClose(dismiss) {
+  function noteClose(dismiss, noBack) {
     if (!npop) return;
+    ovDone('note', noBack);
     var wasPv = npop.getAttribute('data-pv') === '1';
     npop.parentNode.removeChild(npop); npop = null;
     document.documentElement.classList.remove('note-open');
@@ -3266,9 +3268,9 @@
     if (a === 'open') { noteOpen(); return; }
     if (a === 'close') { noteClose(); return; }
     if (a === 'dismiss') { noteClose(true); return; }
-    if (a === 'link') { noteClose(); return; }
-    if (a === 'edit') { S.atab = 'notes'; lsSet('lk.prep.atab', 'notes'); noteClose(); if (location.hash === '#/admin') draw(); return; }
-    if (a === 'edit-sous') { S.notesOpen = true; S.nf = null; noteClose(); if (location.hash === '#/prep') draw(); return; }
+    if (a === 'link') { noteClose(false, true); return; }
+    if (a === 'edit') { S.atab = 'notes'; lsSet('lk.prep.atab', 'notes'); noteClose(false, true); if (location.hash === '#/admin') draw(); return; }
+    if (a === 'edit-sous') { S.notesOpen = true; S.nf = null; noteClose(false, true); if (location.hash === '#/prep') draw(); return; }
   });
   document.addEventListener('keydown', function (e) {
     if (!npop) return;
@@ -4235,7 +4237,8 @@
     return back + '<article class="g-doc"><header class="g-dh"><span class="g-eb">' + esc(gCatName(g.cat)) + ' guide</span><h2 class="g-title" id="rtitle" tabindex="-1">' + esc(g.title) + '</h2>' +
       (g.sum ? '<p class="g-lead">' + esc(g.sum) + '</p>' : '') + '<p class="g-meta">' + esc(gMeta(g)) + '</p></header>' +
       (steps.length ? '<section class="g-steps"><h3 class="g-h3">Steps</h3><ol class="g-ol">' + steps.map(function (t) { return '<li><span class="g-c" aria-hidden="true"></span><span>' + linkNote(t) + '</span></li>'; }).join('') + '</ol></section>' : '') +
-      (n ? '<section class="g-pages" aria-label="Pages"><p class="hint g-noprint">Tap a page to open it big.</p>' + figs +
+      (n ? '<section class="g-pages" aria-label="Pages"><p class="hint g-noprint">' + (n > 1 ? n + ' pages. ' : '') + 'Tap a page to open it big.</p>' +
+        (n > 2 ? '<div class="g-thumbs g-noprint">' + pv.urls.slice(0, n).map(function (u, k) { return u ? '<button type="button" class="g-thumb" data-p="g-zoom" data-i="' + k + '" aria-label="' + esc('Open page ' + (k + 1) + ' big') + '"><img src="' + esc(u) + '" alt=""><span>' + (k + 1) + '</span></button>' : ''; }).join('') + '</div>' : '') + figs +
         (pv.state === 'error' ? '<p class="p-err g-noprint">Could not load the pages. Check the connection. <button type="button" class="p-x" data-p="g-retry">Try again</button></p>' : '') + '</section>' : '') +
       (cards.length ? '<section class="g-rec g-noprint"><h3 class="g-h3">On these recipe cards</h3><div class="g-rchips">' + cards.map(function (r) { return '<a class="g-rchip" href="#/r/' + esc(r.id) + '">' + esc(r.name) + '</a>'; }).join('') + '</div></section>' : '') +
       '<div class="btn-row g-noprint"><button type="button" class="btn" data-p="g-print">Print</button>' + (admin ? '<button type="button" class="btn" data-p="g-change" data-id="' + esc(g.id) + '">Change this guide</button>' : '') + '</div></article>';
@@ -4250,12 +4253,25 @@
   /* A page opened big: over everything (appended to the body, so page redraws leave it alone), Previous and Next, Fit or Full size.
      Its clicks use data-gz. Escape or Close shuts it. Pinching zooms further on a phone. */
   var gz = null;
+  /* ---------- the phone's Back button closes what is open on top (20 Oct 2026) ----------
+     Opening the big guide page or the pings popup adds a history entry for the same address. Back closes it (pings count
+     as put off, not read), and closing it any other way takes that entry off again, so Back never leaves the page by
+     surprise. A close that comes with a move to another page (a link) leaves the entry. */
+  var ovOn = '';
+  function ovPush(k) { ovOn = k; try { history.pushState({ lkOv: k }, '', location.href); } catch (e) {} }
+  function ovDone(k, noBack) { if (ovOn !== k) return; ovOn = ''; if (noBack) return; try { if (history.state && history.state.lkOv === k) history.back(); } catch (e) {} }
+  window.addEventListener('popstate', function () {
+    var k = ovOn; ovOn = '';
+    if (k === 'gz' && gz) gzClose(true);
+    else if (k === 'note' && npop) noteClose(true, true);
+  });
   function gzOpen(id, i) {
     if (gz) gzClose();
     var el = document.createElement('div');
     el.className = 'gz-wrap'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true');
     gz = { id: id, i: i, full: false, el: el, prev: document.activeElement };
     document.body.appendChild(el);
+    ovPush('gz');
     document.documentElement.classList.add('gz-open');
     gzDraw();
     var c = el.querySelector('[data-gz="close"]'); if (c) c.focus({ preventScroll: true });
@@ -4268,12 +4284,15 @@
     gz.el.setAttribute('aria-label', 'Page ' + (gz.i + 1) + ' of ' + n + ', ' + g.title);
     gz.el.innerHTML = '<div class="gz-bar"><span class="gz-t">' + esc(g.title) + '<small>Page ' + (gz.i + 1) + ' of ' + n + '</small></span><span class="gz-btns">' +
       (n > 1 ? '<button type="button" class="gz-b" data-gz="prev"' + (gz.i ? '' : ' disabled') + '>Previous</button><button type="button" class="gz-b" data-gz="next"' + (gz.i < n - 1 ? '' : ' disabled') + '>Next</button>' : '') +
-      '<button type="button" class="gz-b" data-gz="size">' + (gz.full ? 'Fit to screen' : 'Full size') + '</button><button type="button" class="gz-b gz-x" data-gz="close">Close</button></span></div>' +
-      '<div class="gz-body' + (gz.full ? ' is-full' : '') + '">' + (u ? '<img src="' + esc(u) + '" alt="' + esc('Page ' + (gz.i + 1) + ' of ' + g.title) + '"' + (d.w ? ' width="' + (+d.w) + '" height="' + (+d.h) + '"' : '') + '>' : '<p class="gz-wait">Loading...</p>') + '</div>';
+      '<button type="button" class="gz-b gz-sz" data-gz="size">' + (gz.full ? 'Fit to screen' : 'Full size') + '</button><button type="button" class="gz-b gz-x" data-gz="close">Close</button></span></div>' +
+      '<div class="gz-body' + (gz.full ? ' is-full' : '') + '">' + (u ? '<img src="' + esc(u) + '" alt="' + esc('Page ' + (gz.i + 1) + ' of ' + g.title) + '"' + (d.w ? ' width="' + (+d.w) + '" height="' + (+d.h) + '"' : '') + '>' : '<p class="gz-wait">Loading...</p>') + '</div>' +
+      // phones: Previous, Full size and Next sit at the bottom, in thumb reach
+      (n > 1 ? '<div class="gz-foot"><button type="button" class="gz-b" data-gz="prev"' + (gz.i ? '' : ' disabled') + '>Previous</button><button type="button" class="gz-b" data-gz="size">' + (gz.full ? 'Fit' : 'Full size') + '</button><button type="button" class="gz-b" data-gz="next"' + (gz.i < n - 1 ? '' : ' disabled') + '>Next</button></div>' : '');
   }
-  function gzClose() {
+  function gzClose(noBack) {
     if (!gz) return;
     var prev = gz.prev;
+    ovDone('gz', noBack);
     if (gz.el.parentNode) gz.el.parentNode.removeChild(gz.el);
     gz = null;
     document.documentElement.classList.remove('gz-open');
@@ -4285,7 +4304,7 @@
     var a = el.getAttribute('data-gz'), g = gById(gz.id);
     if (a === 'close') { gzClose(); return; }
     if (a === 'size') { gz.full = !gz.full; gzDraw(); gz.el.querySelector('[data-gz="size"]').focus(); return; }
-    if ((a === 'prev' || a === 'next') && g) { gz.i = Math.max(0, Math.min((g.pages || 1) - 1, gz.i + (a === 'next' ? 1 : -1))); gzDraw(); var b = gz.el.querySelector('[data-gz="' + a + '"]:not([disabled])') || gz.el.querySelector('[data-gz="close"]'); if (b) b.focus(); }
+    if ((a === 'prev' || a === 'next') && g) { gz.i = Math.max(0, Math.min((g.pages || 1) - 1, gz.i + (a === 'next' ? 1 : -1))); gzDraw(); var b = Array.prototype.filter.call(gz.el.querySelectorAll('[data-gz="' + a + '"]:not([disabled])'), function (x) { return x.offsetParent !== null; })[0] || gz.el.querySelector('[data-gz="close"]'); if (b) b.focus(); }
   });
   document.addEventListener('keydown', function (e) {
     if (!gz) return;
@@ -4297,7 +4316,20 @@
     if (e.shiftKey && (document.activeElement === f[0] || !gz.el.contains(document.activeElement))) { e.preventDefault(); f[f.length - 1].focus(); }
     else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
   });
-  window.addEventListener('hashchange', function () { if (gz) gzClose(); });
+  window.addEventListener('hashchange', function () { if (gz) gzClose(true); });
+  /* Swipe left or right on the page (not while it is full size, and not with two fingers) turns the page. */
+  var gzSw = null;
+  document.addEventListener('pointerdown', function (e) {
+    if (!gz) return;
+    if (!e.isPrimary) { gzSw = null; return; }
+    gzSw = !gz.full && e.target.closest && e.target.closest('.gz-body') && gz.el.contains(e.target) ? { x: e.clientX, y: e.clientY } : null;
+  });
+  document.addEventListener('pointercancel', function () { gzSw = null; });
+  document.addEventListener('pointerup', function (e) {
+    if (!gzSw || !gz || !e.isPrimary) return;
+    var dx = e.clientX - gzSw.x, dy = e.clientY - gzSw.y; gzSw = null;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > 2 * Math.abs(dy)) { var b = gz.el.querySelector('[data-gz="' + (dx < 0 ? 'next' : 'prev') + '"]:not([disabled])'); if (b) b.click(); }
+  });
 
   /* ---- adding and changing guides (admin panel, Guides tab, head chef only) ---- */
   var gSeq = 0;
