@@ -1,17 +1,18 @@
 /*
   Proves the lock on the live book: with the public web settings from js/firebase-config.js and the kitchen PIN from
-  the KITCHEN_PIN secret, it asks the live database for the things the rules must refuse (see probe-checks.mjs) and
-  fails if any one is allowed, or if the one allowed read fails (no connection, or the PIN in the secret is not the
-  PIN in the published rules). Run by the Publish rules workflow after every publish and by the Lock probe workflow
-  on its own, or by hand:  cd tests/rules && KITCHEN_PIN=... node probe.mjs
-  The PIN is never printed. Nothing is written: every write it tries is one the rules refuse.
+  the KITCHEN_PIN secret, it asks the live database over plain HTTPS for the things the rules must refuse (see
+  probe-checks.mjs) and fails if any one is allowed, or if the one allowed read fails (no connection, or the PIN in
+  the secret is not the PIN in the published rules). Run by the Publish rules workflow after every publish and by the
+  Lock probe workflow on its own, or by hand:  cd tests/rules && KITCHEN_PIN=... node probe.mjs
+  Once App Check is enforced, the APPCHECK_DEBUG_TOKEN secret (App Check, Apps, the web app, Manage debug tokens)
+  is swapped for an App Check token first and sent with every request; without enforcement it is not needed.
+  The PIN and the tokens are never printed. Nothing is written: every write it tries is one the rules refuse.
+  Against the emulator (seeded by the rules tests): FIRESTORE_EMULATOR_HOST=127.0.0.1:8089 KITCHEN_PIN=000000 node probe.mjs
 */
-import { initializeApp, deleteApp } from 'firebase/app';
-import { getFirestore, terminate } from 'firebase/firestore';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { runProbe } from './probe-checks.mjs';
+import { runProbe, restClient } from './probe-checks.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const pin = process.env.KITCHEN_PIN || '';
@@ -20,8 +21,21 @@ const src = readFileSync(path.join(here, '..', '..', 'js', 'firebase-config.js')
 for (const m of src.matchAll(/(\w+):\s*'([^']*)'/g)) cfg[m[1]] = m[2];
 if (!cfg.projectId || !cfg.apiKey) { console.log('Could not read js/firebase-config.js.'); process.exit(1); }
 
-const app = initializeApp(cfg), db = getFirestore(app);
-const fails = await runProbe(db, pin, console.log);
-try { await terminate(db); await deleteApp(app); } catch (e) {}
-console.log(fails ? fails + ' check(s) failed: the published rules do not hold the lock. Publish the rules again and read firestore.rules.' : 'The lock holds on the live book.');
+const emu = process.env.FIRESTORE_EMULATOR_HOST, project = emu ? (process.env.GCLOUD_PROJECT || 'demo-test') : cfg.projectId;
+const base = (emu ? 'http://' + emu : 'https://firestore.googleapis.com') + '/v1/projects/' + project + '/databases/(default)/documents';
+const headers = {};
+if (!emu) {
+  headers['x-goog-api-key'] = cfg.apiKey;
+  const debug = process.env.APPCHECK_DEBUG_TOKEN || '';
+  if (debug) {
+    // the debug token becomes a short lived App Check token, the same exchange the SDK makes
+    const r = await fetch('https://firebaseappcheck.googleapis.com/v1/projects/' + cfg.projectId + '/apps/' + cfg.appId + ':exchangeDebugToken?key=' + cfg.apiKey,
+      { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ debug_token: debug }) });
+    if (!r.ok) { console.log('The APPCHECK_DEBUG_TOKEN secret was not accepted by App Check (' + r.status + '). Make a new debug token in the Firebase console.'); process.exit(1); }
+    headers['X-Firebase-AppCheck'] = (await r.json()).token;
+    console.log('App Check token in hand.');
+  }
+}
+const fails = await runProbe(restClient(base, headers), pin, console.log);
+console.log(fails ? fails + ' check(s) failed: the published rules do not hold the lock. Publish the rules again and read firestore.rules.' : 'The lock holds on the ' + (emu ? 'emulator' : 'live book') + '.');
 process.exit(fails ? 1 : 0);
