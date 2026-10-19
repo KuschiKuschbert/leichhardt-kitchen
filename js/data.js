@@ -1235,18 +1235,21 @@ window.LK_DATA = {
     {
       id: 'beef-cheek', art: 'beef-cheek', no: '57', kind: 'main', forLine: 'Plate', name: 'Beef Cheek',
       menu: 'Beef Cheek: red wine-braised beef cheek, roasted honey pumpkin purée, fried onion, herb oil.',
-      yield: 'Per plate. Braised beef cheek, pumpkin purée, fried onion, herb oil.',
+      yield: 'Per plate. Pumpkin purée swooped and smeared, braised beef cheek a bit off centre, herb oil drizzled round, fried shallots on top.',
       ingredients: [
+        { q: '[Qty]', name: 'Roasted honey pumpkin purée', note: 'big kitchen spoon swoop and smear' },
         { q: '[Qty]', name: 'Beef cheek', note: 'braised in red wine', link: 'beef-cheek-batch' },
-        { q: '[Qty]', name: 'Roasted honey pumpkin purée' },
-        { q: '[Qty]', name: 'Fried onion', tags: ['Gluten?'] },
-        { q: '[Qty]', name: 'Herb oil' }
+        { q: '[Qty]', name: 'Herb oil', note: 'lightly drizzled round' },
+        { q: '[Qty]', name: 'Fried shallots', note: 'on top', tags: ['Gluten?'] }
       ],
       pins: [
-        { label: 'Beef cheek', x: 40.5, y: 47.2, side: 'left', link: 'beef-cheek-batch', note: 'Red wine braised.' },
-        { label: 'Roasted honey pumpkin purée', x: 63.2, y: 59.4, side: 'left', tags: [], note: '' },
-        { label: 'Fried onion', x: 50.9, y: 37.7, side: 'right', tags: ['Gluten?'], note: 'On top.' },
-        { label: 'Herb oil', x: 69.8, y: 47.2, side: 'right', tags: [], note: 'Dots round the plate.' }
+        { label: 'Roasted honey pumpkin purée', x: 32.1, y: 58.5, side: 'left', tags: [], note: 'Big kitchen spoon swoop and smear.' },
+        { label: 'Beef cheek', x: 51.9, y: 45.3, side: 'left', link: 'beef-cheek-batch', note: 'Red wine braised. A bit off centre.' },
+        { label: 'Fried shallots', x: 54.7, y: 38.7, side: 'right', tags: ['Gluten?'], note: 'On top.' },
+        { label: 'Herb oil', x: 69.8, y: 33.0, side: 'right', tags: [], note: 'Lightly drizzled round the plate.' }
+      ],
+      sections: [
+        { title: 'Plating', steps: ['Swoop and smear the pumpkin purée across the plate with a big kitchen spoon.', 'Place the beef cheek a bit off centre.', 'Drizzle the herb oil lightly round the plate.', 'Top with the fried shallots.'] }
       ]
     },
     {
