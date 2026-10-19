@@ -1,0 +1,57 @@
+# Publish the Firestore rules from GitHub, so nobody needs the Firebase console or a laptop.
+# Fills KITCHEN_PIN and OWNER_EMAIL into a copy of firestore.rules in the runner's temporary folder and deploys that
+# copy with the Firebase CLI, signed in as the service account the nightly learning already uses.
+# Needs three repository secrets: FIREBASE_SA (service account key, JSON), KITCHEN_PIN and OWNER_EMAIL.
+# Run it from the Actions tab with "Run workflow" (or let Claude trigger it). Nothing secret is ever printed:
+# GitHub masks the secrets in the log, and the filled-in copy is never shown or kept.
+# The move to a new kitchen PIN (two PINs live at once) is still pasted by hand: see the header of firestore.rules.
+name: Publish rules
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-rules
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: tests/rules/package-lock.json
+      - name: Install the Firebase CLI (the copy the rules tests use)
+        working-directory: tests/rules
+        run: npm ci --no-audit --no-fund
+      - name: Fill in the template
+        env:
+          KITCHEN_PIN: ${{ secrets.KITCHEN_PIN }}
+          OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}
+        run: |
+          set -euo pipefail
+          [[ "$KITCHEN_PIN" =~ ^[0-9]{4,8}$ ]] || { echo "The KITCHEN_PIN secret is missing or not 4 to 8 digits."; exit 1; }
+          [[ "$OWNER_EMAIL" == *@*.* ]] || { echo "The OWNER_EMAIL secret is missing or not an email address."; exit 1; }
+          mkdir -p "$RUNNER_TEMP/rules"
+          sed "s/KITCHEN_PIN/$KITCHEN_PIN/g;s/OWNER_EMAIL/$OWNER_EMAIL/g" firestore.rules > "$RUNNER_TEMP/rules/firestore.rules"
+          if grep -q 'KITCHEN_PIN\|OWNER_EMAIL' "$RUNNER_TEMP/rules/firestore.rules"; then echo "A placeholder was left in. Nothing published."; exit 1; fi
+          printf '{ "firestore": { "rules": "firestore.rules" } }\n' > "$RUNNER_TEMP/rules/firebase.json"
+      - name: Publish
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+        run: |
+          set -euo pipefail
+          [ -n "$FIREBASE_SA" ] || { echo "The FIREBASE_SA secret is missing."; exit 1; }
+          printf '%s' "$FIREBASE_SA" > "$RUNNER_TEMP/sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
+          cd "$RUNNER_TEMP/rules"
+          "$GITHUB_WORKSPACE/tests/rules/node_modules/.bin/firebase" deploy --only firestore:rules --project leichhardt-kitchen --non-interactive
+          rm -f "$RUNNER_TEMP/sa.json" "$RUNNER_TEMP/rules/firestore.rules"
+          echo "Published. Changes can take up to a minute to reach the phones."
