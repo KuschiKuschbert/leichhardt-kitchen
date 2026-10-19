@@ -281,6 +281,8 @@ Every admin list that can keep growing now uses one shared layout (`lvHTML` in `
 - **Reads stay small.** One query for pings that have not ended yet (`until` on or after today), once a phone opens each day, again after 30 minutes away, and once at 10:30 if the book was already open. No live listener and no polling; the once-a-minute check on the page is local only.
 - Not built yet: how many phones tapped Got it (a count only, no names).
 
+- **The Back button and guide pages on a phone (20 Oct 2026).** Opening a guide page big or the pings popup adds a history entry for the same address, so the phone's Back button closes it instead of leaving the page (pings closed with Back count as put off, not read). Closing them with Close, Got it, Escape or a tap outside takes the entry off again, so Back after that works as before. On a phone the big page has Previous, Full size and Next at the bottom (56 px, in thumb reach) and a swipe left or right turns the page (not when full size, not with two fingers). The guide page says how many pages it has, and a guide with 3 or more pages gets a row of small page pictures to jump to one. `ovPush()`, `ovDone()` in `js/prep.js`; `tests/overlays-back.test.js`.
+
 ### Kitchen meeting minutes
 
 - Only the head chef (admin panel, **Minutes** tab, Google account) writes and publishes the minutes in the app, always in one layout in the recipe card style: header (date, start time, location, run by, minutes taken by), attendance, then Safety (orange, first), Decisions, Actions, Menu changes, Dates ahead and Other. Recipe names in Menu changes link to their cards. Keep prices, PINs and private details out.
