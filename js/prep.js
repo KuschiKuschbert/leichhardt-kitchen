@@ -486,6 +486,9 @@
     var p = who();
     sset(docRef('sections', slug(name)), { name: name, uses: fb.fs.increment(1), lastUsed: now(), lastBy: p ? p.name : '' }, true).catch(function () {});
   }
+  /* The section box after a line is added: a section the person typed or picked stays for the next line; one the book
+     filled in (the usual section from a suggestion or from what it learned) is cleared, so the next line gets its own. */
+  function keptSection(sec) { return S.secTyped ? sec : ''; }
   function addTyped() {
     var t = S.text.trim();
     if (!t || !can('add')) return;
@@ -496,7 +499,7 @@
     var q0 = S.qty, tw = openTwin(t, q0);
     if (tw) {
       addToTwin(tw, { text: t.slice(0, 160), qty: q0.trim().slice(0, 40), station: sec, recipe: rm ? rm.id : '' }, function () { noteSection(sec); bump({ added: 1, lastAdded: now() }); });
-      S.text = ''; S.qty = ''; S.section = sec; S.pickedText = ''; draw();
+      S.text = ''; S.qty = ''; S.section = keptSection(sec); S.pickedText = ''; draw();
       var el0 = S.root && S.root.querySelector('[data-k="p-text"]'); if (el0) el0.focus();
       return;
     }
@@ -514,7 +517,7 @@
       } });
     }
     else addedToast(sec, S.date, made.id);
-    S.text = ''; S.qty = ''; S.section = sec; S.pickedText = ''; draw();
+    S.text = ''; S.qty = ''; S.section = keptSection(sec); S.pickedText = ''; draw();
     var el = S.root && S.root.querySelector('[data-k="p-text"]'); if (el) el.focus();
   }
   function addRecipe(id) {
@@ -4631,7 +4634,7 @@
     if (k === 'w-ra') { S.wrA = el.value; return; }
     if (k === 'w-rc') { S.wrC = el.value; return; }
     if (k === 'p-qty') { S.qty = el.value; var qs2 = S.root.querySelector('#p-qsugg'); if (qs2) qs2.innerHTML = qtyChipsHTML(); return; }
-    if (k === 'p-section') { S.section = el.value; return; }
+    if (k === 'p-section') { S.section = el.value; S.secTyped = !!el.value.trim(); return; }
     if (k === 'p-rs') { S.recipeSearch = el.value; S.recipeOpen = true; draw(); return; }
     var a = el.getAttribute && el.getAttribute('data-a');
     if (!a || !S.draft) return;
