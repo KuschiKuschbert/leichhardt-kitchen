@@ -293,7 +293,7 @@ Every admin list that can keep growing now uses one shared layout (`lvHTML` in `
 - Every line written or picked is counted in `kitchens/<pin>/learned/<item>` by the nightly learning (see below): total uses, typed versus picked (a line with a recipe counts as picked), uses per weekday (`dow`, 0 is Sunday), per section and usual amounts. Removed lines and rolled-over copies are not counted. New lines show in what was learned the next morning.
 - While typing, matching learned items (and batch and component recipe names) show as tap-to-fill chips under the box. A learned item also fills in its usual section when the section box is empty.
 - Quick add on the Handy page uses the learned items for "Usual for a <weekday>" (written on at least two of that weekday) and "Regulars" (4 or more uses, `REGULAR` in `js/prep.js`), after Due today.
-- Owner insights: items learned, regulars, share added by tapping a suggestion, most written items, a weekday heat table, and a manage table to hide typos. The server reads past lists by itself, up to 90 days back (see below).
+- Owner insights: items learned, regulars, share added by tapping a suggestion, most written items, a weekday heat table, and a manage table to hide typos. The phones keep the 500 most used learned items (one bounded listener); a line used less often than that is not suggested and not in the manage table. The server reads past lists by itself, up to 90 days back (see below).
 
 ### Proofreader
 
