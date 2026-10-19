@@ -78,6 +78,7 @@ Drawings for The Pass are in `js/art.js`. A recipe with no drawing still shows, 
 | `js/prep.js` | Prep list, orders, wastage, shift pings, minutes, admin panel, staff lock, learning |
 | `js/firebase-config.js` | Public Firebase web config |
 | `firestore.rules` | Security rules template (`KITCHEN_PIN` and `OWNER_EMAIL` are placeholders) |
+| `scripts/publish-rules.sh` | Publishes the rules from your own computer with the Firebase CLI (asks for the PIN and email, never writes them into the repo) |
 | `manifest.webmanifest`, `sw.js`, `icons/`, `icon.svg` | Installable app: manifest, service worker (network first), icons |
 | `qr.svg`, `qr.png`, `qr-sign.pdf` | QR code to open the book, and the A4 sign |
 | `tests/` | Click tests with a stand-in for Firebase (see Testing) |
@@ -314,6 +315,7 @@ Every admin list that can keep growing now uses one shared layout (`lvHTML` in `
 ### Security setup
 
 - `firestore.rules` is the rules template. The live rules are pasted into the Firebase console with the real kitchen PIN and owner email filled in. Never commit those values.
+- To publish: `scripts/publish-rules.sh` on your own computer. It asks for the kitchen PIN (not shown) and the head chef's email, fills them into a copy in a temporary folder, deploys that copy with the Firebase CLI (`firebase deploy --only firestore:rules`, signed in as the head chef) and deletes the copy. Or paste a filled-in copy into the Firebase console, Firestore Database, Rules, Publish. Neither can be done from a cloud session: the real values live only in the console and on the head chef's computer.
 - The Firebase web key in `js/firebase-config.js` is public by design. Restrict it in Google Cloud (Credentials, the Browser key) to the site address, and turn on App Check (reCAPTCHA v3) so only the real site can talk to the database. To switch App Check on in the page, add `appCheckKey: '<reCAPTCHA v3 site key>'` to `js/firebase-config.js`.
 - The owner panel has a Backup button (Tools) that downloads everything as one JSON file: people, prep lines, orders, wastage and end-of-day reviews from the last 400 days, shift pings and who has seen them (`notes`, `notesSeen`), meeting minutes with their earlier versions (`minutesHist`) and sign-offs (`minutesSigns`), what the prep and order lists have learned (`learned`, `ordlearned`), tallies, empty searches, card opens and the guides' words. People's PIN fingerprints and the guides' page pictures are left out. The free Firebase plan has no scheduled backups. A backup reads one small query per shift ping and per minutes on top of the collections, which is fine now and then.
 - Who is the owner: only the owner's Google account may read `config/admins`, so the page checks that read. No email is stored in the database or the repository.
