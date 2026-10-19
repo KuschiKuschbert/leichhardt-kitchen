@@ -111,24 +111,25 @@ window.LK_DATA = {
     },
     {
       id: 'barra', no: '04', kind: 'main', forLine: 'Plate', name: 'Barramundi', art: 'barra',
-      yield: 'Per plate. 180 g rice, 160 ml laksa, charred greens, barra on top.',
+      yield: 'Per plate. 180 g rice, 160 ml laksa, charred greens and 2 pieces of broccolini, barra on top.',
       ingredients: [
         { q: '[Portion]', name: 'Barramundi', note: 'as current', tags: ['Fish'] },
         { q: '180 g', name: 'Steamed rice', note: 'portioned in a small round container', link: 'rice' },
         { q: '160 ml', name: 'Coconut laksa', link: 'laksa' },
-        { q: '[Qty]', name: 'Asian greens', note: 'bok choy, choy sum, kai lan' },
+        { q: '[Qty]', name: 'Asian greens', note: 'pak choy, gai lan, choy sum', link: 'asian-greens' },
+        { q: '2 pieces', name: 'Broccolini', note: 'steamed and shocked', link: 'asian-greens' },
         { q: '[Qty]', name: 'Sesame oil', tags: ['Sesame'] }
       ],
       pins: [
         { label: 'Barramundi', x: 46.2, y: 46.2, tags: ['Fish'], note: 'Cook as current. Probe: core 63 °C. On top of the greens.' },
-        { label: 'Greens', x: 59.4, y: 59.4, tags: ['Sesame'], note: 'Quick blanch to order, sesame oil, char in a pan. On the rice.' },
+        { label: 'Greens and broccolini', x: 59.4, y: 59.4, tags: ['Sesame'], note: 'Quick blanch to order, sesame oil, char in a pan. 2 pieces of broccolini with the greens. On the rice.' },
         { label: 'Coconut laksa', x: 77.4, y: 35.8, link: 'laksa' },
         { label: 'Steamed rice', x: 42.5, y: 68.9, link: 'rice' }
       ],
       sections: [
-        { title: 'Prep: Asian greens', steps: ['Quickly wash the bok choy, choy sum and kai lan.', 'Hold in a prep bain.'] },
+        { title: 'Prep: Asian greens', steps: ['Prepped ahead: see the Asian Greens card.'] },
         { title: 'Cooking', steps: ['Cook the barra as current.', 'Probe: core 63 °C before the pass.', 'Greens to order: quick blanch in boiling water.', 'Sesame oil, then char in a pan.', 'Heat the laksa through.'] },
-        { title: 'Plating', steps: ['180 g steamed rice, from its small round container.', '160 ml laksa over the rice and a bit around.', 'Charred greens on the rice.', 'Barra on top of the greens.'] }
+        { title: 'Plating', steps: ['180 g steamed rice, from its small round container.', '160 ml laksa over the rice and a bit around.', 'Charred greens and 2 pieces of broccolini on the rice.', 'Barra on top of the greens.'] }
       ],
       contains: [{ allergen: 'Fish', from: 'barra' }, { allergen: 'Sesame', from: 'sesame oil' }],
       check: [],
@@ -2332,6 +2333,21 @@ window.LK_DATA = {
       ],
       contains: [{ allergen: 'Milk', from: 'butter' }],
       labelNote: 'Check the supplier label for allergens on the dry rub.'
+    },
+    {
+      id: 'asian-greens', art: 'asian-greens', no: '116', kind: 'batch', forLine: 'For the barramundi', name: 'Asian Greens', short: 'Asian greens',
+      yield: 'Batch: pak choy, gai lan, choy sum and broccolini. 2 pieces of broccolini per plate.',
+      ingredients: [
+        { q: '[Qty]', name: 'Pak choy' },
+        { q: '[Qty]', name: 'Gai lan' },
+        { q: '[Qty]', name: 'Choy sum' },
+        { q: '[Qty]', name: 'Broccolini' }
+      ],
+      sections: [
+        { title: 'Prep', steps: ['Cut the stems off the pak choy, gai lan and choy sum.', 'Trim the bottom of the broccolini.', 'Place the greens and the broccolini in a perforated steam tray.', 'Steam for 2 min.', 'Shock in ice water.', '[Draining and storage to confirm]'] }
+      ],
+      contains: [],
+      check: []
     }
   ]
 };
