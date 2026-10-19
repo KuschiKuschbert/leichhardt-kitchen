@@ -579,15 +579,24 @@
   function isStandalone() { return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true; }
   function deviceKind() {
     var ua = navigator.userAgent || '', ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
-    return { ios: ios, mac: /Macintosh/.test(ua) && !ios, safari: /Safari/.test(ua) && !/Chrome|CriOS|Edg|FxiOS|Firefox/.test(ua), touch: ios || !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches) };
+    return { ios: ios, mac: /Macintosh/.test(ua) && !ios, win: /Windows/.test(ua), firefox: /Firefox|FxiOS/.test(ua), safari: /Safari/.test(ua) && !/Chrome|CriOS|Edg|FxiOS|Firefox/.test(ua), touch: ios || !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches) };
   }
-  /* A card on the landing page for phones and tablets that have not installed the book yet. "Not now" is remembered on that device. */
+  /* What to do by hand on a Windows or Mac computer when the browser has not offered its own Install button (20 Oct 2026). */
+  function computerSteps(k) {
+    if (k.mac && k.safari) return 'In Safari, choose <strong>File, Add to Dock</strong>. Kitchen Book then opens in its own window from the Dock.';
+    if (k.firefox) return 'Firefox on a computer cannot install apps. Open Kitchen Book in <strong>Edge</strong> or <strong>Chrome</strong> to install it.';
+    return 'Click the install icon at the right of the address bar, or open the browser menu (the three dots) and choose <strong>Install</strong>. In Edge it is under <strong>Apps, Install this site as an app</strong>. Kitchen Book then opens in its own window with its own icon.';
+  }
+  /* A card on the landing page for every phone, tablet and computer that has not installed the book yet. "Not now" is remembered on that device. */
   function installCard() {
     if (isStandalone() || installedNow || settings.installNo) return '';
     var k = deviceKind();
-    if (!k.touch) return '';
     var msg, btn = '';
-    if (installEvt && !installFailed) { msg = 'Put Kitchen Book on your home screen. It opens full screen, like any other app.'; btn = '<button type="button" class="btn dark" data-act="install">Install the app</button>'; }
+    if (installEvt && !installFailed) {
+      msg = k.touch ? 'Put Kitchen Book on your home screen. It opens full screen, like any other app.' : 'Install Kitchen Book on this computer. It opens in its own window with an icon on the taskbar or Dock, and it still updates by itself.';
+      btn = '<button type="button" class="btn dark" data-act="install">Install the app</button>';
+    }
+    else if (!k.touch) msg = computerSteps(k);
     else if (k.ios) msg = 'Tap the Share button' + (k.safari ? '' : ' in Safari') + ', then <strong>Add to Home Screen</strong>. Kitchen Book then opens full screen from its own icon.';
     else msg = 'Open the browser menu (the three dots), then choose <strong>Install app</strong> or <strong>Add to Home screen</strong>.';
     return '<section class="wall-install" aria-label="Install the app"><p class="wi-t">Install the app</p><p class="wi-m">' + msg + '</p><div class="btn-row">' + btn + '<button type="button" class="btn" data-act="installno">Not now</button></div></section>';
@@ -596,9 +605,9 @@
     var k = deviceKind(), ios = k.ios, mac = k.mac, safari = k.safari;
     var body;
     if (isStandalone() || installedNow) body = '<span class="saved">' + (installedNow ? 'Installed. Open it from your home screen or apps.' : 'You are using the installed app.') + '</span>';
-    else if (installEvt && !installFailed) body = '<span class="hint">Puts Kitchen Book on the home screen or desktop like any other app, full screen, without the browser bar. It still updates by itself.</span><div class="btn-row"><button type="button" class="btn dark" data-act="install">Install the app</button></div>';
+    else if (installEvt && !installFailed) body = '<span class="hint">' + (k.touch ? 'Puts Kitchen Book on the home screen like any other app, full screen, without the browser bar.' : 'Installs Kitchen Book on this computer. It opens in its own window with an icon on the taskbar or Dock, without the browser bar.') + ' It still updates by itself.</span><div class="btn-row"><button type="button" class="btn dark" data-act="install">Install the app</button></div>';
     else if (ios) body = '<span class="hint">On iPhone and iPad: tap the Share button' + (safari ? '' : ' in Safari') + ', then <strong>Add to Home Screen</strong>. Kitchen Book then opens full screen from its own icon.</span>';
-    else if (mac && safari) body = '<span class="hint">In Safari on a Mac: <strong>File, Add to Dock</strong>.</span>';
+    else if (!k.touch) body = '<span class="hint">' + computerSteps(k) + '</span>';
     else body = '<span class="hint">Open the browser menu and choose <strong>Install</strong> or <strong>Add to Home screen</strong>. In Chrome or Edge it is also the install icon at the right of the address bar.</span>';
     return '<section class="set-block" aria-label="Install the app"><span class="label">Install the app</span>' + body + '</section>';
   }
