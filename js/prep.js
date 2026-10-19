@@ -142,9 +142,13 @@
       S.itemsState = 'ok'; draw();
     }, function () { S.itemsState = 'error'; draw(); });
   }
+  /* What the prep list learned, for suggestions, Quick add and the Learning tab: the 500 most used items. The collection
+     gains a record for every distinct line ever written and nothing prunes it, so the listener is bounded here (the
+     order list's copy is bounded the same way, at 300). */
+  var LEARN_N = 500;
   function watchLearned() {
     if (unsubLrn || !fb) return;
-    unsubLrn = fb.fs.onSnapshot(colRef('learned'), function (snap) {
+    unsubLrn = fb.fs.onSnapshot(fb.fs.query(colRef('learned'), fb.fs.orderBy('uses', 'desc'), fb.fs.limit(LEARN_N)), function (snap) {
       S.learned = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; });
       draw();
     }, function () {});
