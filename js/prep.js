@@ -34,7 +34,10 @@
 
   var FB = window.LK_FIREBASE, D = window.LK_DATA || { recipes: [] };
   var SDK = 'https://www.gstatic.com/firebasejs/10.14.1/';
+  /* head: the head chef's own name on the list. Only the head chef's Google account can give it (config/main headId),
+     and that person always has every permission and the sous chef pages on any device, whatever the list says. */
   var ROLES = {
+    head: { name: 'Head chef', add: true, tick: true, del: true, ping: true },
     lead: { name: 'Lead', add: true, tick: true, del: true, ping: false },
     sous: { name: 'Sous chef', add: true, tick: true, del: true, ping: true },
     staff: { name: 'Staff', add: true, tick: true, del: false, ping: false },
@@ -139,6 +142,7 @@
       unsubCfg = fb.fs.onSnapshot(cfgDoc(), function (snap) {
         S.config = snap.exists() ? snap.data() : { people: [] };
         S.config.people = S.config.people || [];
+        headFix(S.config);
         S.configState = 'ok'; featSync(); refreshDraft(); watchItems(); watchSections(); watchLearned(); if (S.name === 'orders') watchOrders(); if (S.name === 'waste') watchWaste(); resume(); loadAdmins(); loadNotes(); loadMinutes(); draw();
       }, function (err) {
         S.configState = err && err.code === 'permission-denied' ? 'badpin' : 'error';
@@ -217,7 +221,7 @@
   function admDev() { return S.level === 'owner' || (S.level !== 'none' && lsGet('lk.admin') === '1'); }
   function featCalc(k) {
     var p = who();
-    return admDev() || (S.config.staffSee || {})[k] !== false || !!(p && (p.role === 'sous' || p.role === 'lead' || (k === 'pings' && canPingP(p))));
+    return admDev() || (S.config.staffSee || {})[k] !== false || !!(p && (isSousP(p) || p.role === 'lead' || (k === 'pings' && canPingP(p))));
   }
   function featOn(k) { return S.configState === 'ok' && S.config ? featCalc(k) : admDev() || featHave[k] !== false; }
   /* run when the staff list, the person on this phone or the Google sign-in changes */
@@ -236,10 +240,16 @@
   }
   function notYetHTML(fk) {
     var t = fk === 'guides' ? 'Guides' : 'Meeting minutes';
-    return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">' + t + '</h2><p class="hint">' + t + ' are not open to everyone yet. The head chef will switch them on soon.</p>' +
-      (who() ? '' : '<p class="hint">Lead or sous chef? Sign in on the prep list first.</p>') + '<div class="btn-row"><a class="btn dark" href="#/">Back to the start</a></div></section>';
+    return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">' + t + '</h2><p class="hint">' + t + ' are not open to everyone yet. The head chef decides when.</p>' +
+      (who() ? '' : '<p class="hint">Lead or sous chef? <a href="#/prep">Sign in on the prep list</a> first, then come back.</p>') + '<div class="btn-row"><a class="btn dark" href="#/">Back to the start</a></div></section>';
   }
-  function toast(msg, act, ms) { S.toast = msg; S.toastAct = act || null; draw(); clearTimeout(toastTimer); toastTimer = setTimeout(function () { S.toast = ''; S.toastAct = null; draw(); }, ms || (act ? 9000 : 3500)); }
+  /* A new toast never wipes an Undo that is still showing: that one moves up a row and stays for 6 more seconds, so two
+     quick taps in a row (remove, then tick) can both be undone. At most two show. */
+  var toastOldTimer;
+  function toast(msg, act, ms) {
+    if (S.toast && S.toastAct && S.toastAct !== act) { S.toastOld = { msg: S.toast, act: S.toastAct }; clearTimeout(toastOldTimer); toastOldTimer = setTimeout(function () { S.toastOld = null; draw(); }, 6000); }
+    S.toast = msg; S.toastAct = act || null; draw(); clearTimeout(toastTimer); toastTimer = setTimeout(function () { S.toast = ''; S.toastAct = null; draw(); }, ms || (act ? 9000 : 3500));
+  }
   /* A write the server refused or could not take. Whatever was typed goes back in its box (restore). Refused
      (permission-denied) is one of two things: this phone's PIN no longer counts (the head chef reset it), so the
      person signs in again; or the PIN is fine and the rules did not allow that write for this person (a right the
@@ -659,9 +669,13 @@
   function toggleUrgent(id) {
     var it = S.items.filter(function (x) { return x.id === id; })[0];
     if (!it || !can('add')) return;
-    var p = me(), on = !it.urgent;
-    supd(itemRef(S.date, id), { urgent: on, urgentBy: on && p ? p.name : '', urgentById: on && p ? p.id : '', urgentAt: on ? now() : 0 }).catch(failed);
+    var p = me(), on = !it.urgent, dt = S.date;
+    // the line keeps its place for a moment, so the next line does not slide under the same finger
+    S.urgHold = { id: id, was: !!it.urgent, until: Date.now() + LINGER }; setTimeout(function () { S.urgHold = null; draw(); }, LINGER + 50);
+    supd(itemRef(dt, id), { urgent: on, urgentBy: on && p ? p.name : '', urgentById: on && p ? p.id : '', urgentAt: on ? now() : 0 }).catch(failed);
+    toast(on ? 'Marked urgent' : 'Not urgent any more', { label: 'Undo', fn: function () { supd(itemRef(dt, id), { urgent: !on, urgentBy: !on && p ? p.name : '', urgentById: !on && p ? p.id : '', urgentAt: !on ? now() : 0 }).catch(failed); } });
   }
+  function urgOf(x) { var h = S.urgHold; return h && h.id === x.id && Date.now() < h.until ? h.was : !!x.urgent; }
 
   /* ---------- proofreading: every new line is tidied and spell-checked before it is saved ---------- */
   var KITCHEN = ('star anise blanch julienne dice diced slice sliced marinate marinated portion portioned batch wash pick chop chopped shred shredded trim tray crumb crumbed batter gravy sauce stock reduce season seasoned mix mixed roast roasted smoke smoked pulled pull cook cooked cool chill chilled defrost thaw label date rotate fill refill restock set setup stack fold grate grated peel peeled core cut cure brine rub glaze whip whipped steam steamed fry fried grill grilled bake baked char charred toast toasted dress dressing garnish drizzle lemon lime orange tomato tomatoes onion onions garlic potato potatoes lettuce cucumber carrot carrots cabbage capsicum mushroom mushrooms bacon cheese chicken beef pork lamb barramundi calamari prawn prawns salmon rice pasta mash chips fries slaw coleslaw aioli mayo mayonnaise pickle pickles parmesan parmigiana parmy schnitzel schnitty beetroot spinach broccoli zucchini pumpkin sweet corn peas beans dough pastry pie pies brownie cookie caramel butterscotch cream ice vanilla chocolate guinness snickers laksa coconut asian greens oak leaf salad salads burger burgers patties patty bun buns brioche ribs rib wings wing steak sandwich skillet spring rolls roll roll bourbon bbq chilli chili ginger shallot shallots herbs parsley coriander basil thyme rosemary sage mint dill chives pepper salt sugar flour butter milk eggs egg oil vinegar mustard ketchup tomato relish jus beer batter fish chip sauce sides side dessert desserts entree entrees mains main kids ketchup bacon jam onion rings nachos tacos taco quesadilla wrap wraps hummus dip dips bread garlic focaccia fetta feta halloumi mozzarella cheddar swiss tasty gravy peppercorn mushroom diane creamy white red green yellow large small half full double single extra spare backup morning afternoon night lunch dinner breakfast service base bases bowl bowls sheet sheets lid lids tub tubs bag bags pack packs bit bits bin bins tin tins can cans foil film wipe wipes glove gloves towel towels cloth cloths bleach soap spray sanitiser sanitizer paper napkin napkins straw straws tong tongs whisk knife knives board boards peeler ladle ladles spoon spoons fork forks plate plates dish dishes pickled jalapeno jalapenos tortilla tortillas wonton wontons tomatoes cup cups jar jars pot pots pan pans oven rack racks jug jugs make made need needs more less last next each every both some thing things stuff work done ready first top bottom front back cold hot warm mild spicy fresh frozen dried raw plain with without from into over under before after until only also then than that this these those mince stir drain rest wrap cover covered uncover break bone bones skin skinned skinless fillet fillets cube cubes strip strips wedge wedges round rounds ring rings whole sliced thick thin fine rough coarse smooth').split(/\s+/);
@@ -1043,24 +1057,51 @@
     sset(docRef('learned', id), { hidden: hidden }, true).catch(failed);
   }
   var LEARN_DAYS = 90;   // how far back the nightly learning reads
+  /* what is left to do (ticked lines are left out), and only the open section tab when one is open */
   function listText() {
-    var rows = S.items.filter(function (x) { return !x.deleted; }).sort(sortItems), out = [], last = null;
-    out.push('Prep list, ' + dayName(S.date) + ' ' + longDate(S.date));
+    var rows = S.items.filter(function (x) { return !x.deleted && !x.done && inTab(x); }).sort(sortItems), out = [], last = null;
+    out.push('Prep list' + (S.tab ? ', ' + S.tab : '') + ', ' + dayName(S.date) + ' ' + longDate(S.date));
+    if (!rows.length) out.push('', 'Nothing left to do.');
     rows.forEach(function (x) {
       var sec = x.station || 'General';
       if (sec !== last) { out.push('', sec.toUpperCase()); last = sec; }
-      out.push((x.done ? '[x] ' : '[ ] ') + (x.urgent ? 'URGENT ' : '') + (rolledN(x) ? '(rolled over) ' : '') + x.text + (x.qty ? ' - ' + x.qty : '') + (x.also && x.also.length ? ' (also ' + x.also.join(', ') + ')' : ''));
+      out.push('[ ] ' + (x.urgent ? 'URGENT ' : '') + (rolledN(x) ? '(rolled over) ' : '') + x.text + (x.qty ? ' - ' + x.qty : '') + (x.also && x.also.length ? ' (also ' + x.also.join(', ') + ')' : ''));
     });
     return out.join('\n');
   }
-  function copyList() {
-    var t = listText();
+  function copyList() { shareText(listText()); }
+  /* A phone or tablet opens its share sheet (straight into a message), a computer copies. If sharing is not there or
+     fails, the text is copied instead. */
+  function touchy() { try { return window.matchMedia('(pointer: coarse)').matches; } catch (e) { return false; } }
+  function shareLabel(what) { return (touchy() && navigator.share ? 'Share ' : 'Copy ') + what; }
+  function shareText(t) {
+    function copied(ok) { toast(ok ? 'Copied. Paste it into a message.' : 'Could not copy on this device.'); }
     function fallback() {
       var ta = document.createElement('textarea'); ta.value = t; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
       document.body.appendChild(ta); ta.select(); var ok = false; try { ok = document.execCommand('copy'); } catch (e) {} document.body.removeChild(ta);
-      toast(ok ? 'List copied. Paste it into a message.' : 'Could not copy on this device.');
+      copied(ok);
     }
-    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(function () { toast('List copied. Paste it into a message.'); }, fallback); else fallback();
+    function copy() { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(function () { copied(true); }, fallback); else fallback(); }
+    if (touchy() && navigator.share) navigator.share({ text: t }).catch(function (e) { if (!e || e.name !== 'AbortError') copy(); });
+    else copy();
+  }
+  /* Printing one part of the book: the class on <html> picks what the print rules in app.css show. */
+  function printWith(cls) {
+    var h = document.documentElement;
+    h.classList.add(cls);
+    function done() { h.classList.remove(cls); window.removeEventListener('afterprint', done); }
+    window.addEventListener('afterprint', done);
+    setTimeout(function () { window.print(); setTimeout(function () { if (h.classList.contains(cls) && !window.matchMedia('print').matches) done(); }, 1500); }, 50);
+  }
+  /* The order list as plain text for the supplier: one line per item, with the amounts asked for (Everything to order
+     adds up every day still open; By day is that day's lines not ticked yet). */
+  function ordText() {
+    var all = S.ordView === 'all' && canBrowse(), out = [], lines = [];
+    if (all) ordGroups().forEach(function (g) { var q = g.lines.map(function (x) { return x.qty; }).filter(Boolean); lines.push(g.text + (q.length ? ': ' + q.join(' + ') : '')); });
+    else (S.ordLines || []).filter(function (x) { return !x.deleted && !x.ordered; }).sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }).forEach(function (x) { lines.push(x.text + (x.qty ? ': ' + x.qty : '')); });
+    out.push('Order, ' + (all ? 'everything still to order' : dayName(S.ordDate) + ' ' + longDate(S.ordDate)));
+    out.push('');
+    return out.concat(lines.length ? lines : ['Nothing to order.']).join('\n');
   }
   /* A line written after the usual close (the time of the last tick on most days, 20:00 until the book knows) is meant
      for the next day. When it moves onto that day it is marked ahead and does not count as rolled; only if it is still
@@ -1088,7 +1129,7 @@
   function rolledN(x) { return Math.max(0, (x.rolled || 0) - (x.ahead ? 1 : 0)); }
   /* when a line was first written: a rolled copy keeps it in origAt (0 if it rolled before origAt was kept) */
   function firstAt(x) { return x.rolled ? x.origAt || 0 : x.addedAt || 0; }
-  function sortItems(a, b) { return (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0) || rolledN(b) - rolledN(a) || (a.addedAt || 0) - (b.addedAt || 0); }
+  function sortItems(a, b) { return (urgOf(b) ? 1 : 0) - (urgOf(a) ? 1 : 0) || rolledN(b) - rolledN(a) || (a.addedAt || 0) - (b.addedAt || 0); }
 
   /* ---------- admin actions ---------- */
   function startDraft() {
@@ -1129,8 +1170,19 @@
   function staleHint() { return draftStale() && draftDirty() ? '<p class="hint a-stale">The staff list changed on another phone while you were here. Only what you changed is saved on top of it.</p>' : ''; }
   /* sousIds and pingIds are what the rules check: sous chefs, and everyone who may write shift pings (sous chefs always may) */
   function idsFor(people, fn) { return people.filter(function (p) { return p.active !== false && String(p.name).trim() && fn(p); }).map(function (p) { return p.id; }); }
-  function isSousP(p) { return p.role === 'sous'; }
-  function canPingP(p) { return p.role === 'sous' || !!p.ping; }
+  function isSousP(p) { return p.role === 'sous' || p.role === 'head'; }
+  function canPingP(p) { return isSousP(p) || !!p.ping; }
+  function isHeadP(p) { return !!p && p.role === 'head'; }
+  /* The head chef's own name (headId, which only the head chef's Google account can write) is always Head chef, on the
+     list and with every permission, even if a sous chef's save changed or removed the role. Run on every config read. */
+  function headFix(c) {
+    var id = c && c.headId;
+    (c.people || []).forEach(function (p) {
+      if (id && p.id === id) { var r = ROLES.head; p.role = 'head'; p.add = r.add; p.tick = r.tick; p.del = r.del; p.ping = r.ping; p.active = true; }
+      else if (p.role === 'head') { p.role = 'sous'; }   // only one head chef: anyone else marked so counts as a sous chef
+    });
+  }
+  function headIdOf(people) { var h = people.filter(function (p) { return p.role === 'head' && p.active !== false && String(p.name).trim(); })[0]; return h ? h.id : ''; }
   function anyP() { return true; }
   function staffSee(c) { var o = {}; FEATS.forEach(function (f) { o[f[0]] = ((c && c.staffSee) || {})[f[0]] !== false; }); return o; }
   /* hold: keep these sousIds and pingIds as they are instead of working them out from the roles (see seedIds) */
@@ -1141,7 +1193,7 @@
       }),
       stations: [], showBadges: cfg.showBadges !== false, staffSee: staffSee(cfg),
       sousIds: hold ? (hold.sousIds || []) : idsFor(cfg.people, isSousP), pingIds: hold ? (hold.pingIds || []) : idsFor(cfg.people, canPingP),
-      staffIds: idsFor(cfg.people, anyP),
+      staffIds: idsFor(cfg.people, anyP), headId: headIdOf(cfg.people),
       updated: now(), updatedBy: S.user ? 'Head chef' : (who() ? who().name : '')   // never the Google email: anyone with the kitchen PIN can read this record
     };
     /* a sous chef may only change the people list and who may set a PIN, so only those are sent (merged): the rules refuse any other field */
@@ -1371,7 +1423,7 @@
       '<div class="btn-row"><a class="btn" href="#/waste">Log waste</a><button type="button" class="btn" data-p="close-hide">Hide for today</button></div></div>';
   }
   var MEDAL = { 1: '#C9971C', 2: '#8E959C', 3: '#A8693A' };
-  function isSous() { var p = me(); return !!(p && p.role === 'sous'); }
+  function isSous() { var p = me(); return !!(p && isSousP(p)); }
   /* shift pings: sous chefs, and anyone the head chef ticked for Pings in the People tab */
   function canPing() { var p = me(); return !!(p && canPingP(p)); }
   function ordinal(n) { return n + (n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th'); }
@@ -2096,7 +2148,7 @@
       return '<li><span>' + esc(x.text) + ' <span class="nb-us">x' + rolledN(x) + '</span></span>' + (x.urgent ? '' : '<button type="button" class="p-x" data-p="urgent" data-id="' + esc(x.id) + '">Urgent</button>') + (can('del') ? '<button type="button" class="p-x" data-p="del" data-id="' + esc(x.id) + '" data-d="' + esc(S.date) + '">Remove</button>' : '') + '</li>';
     }).join('') + '</ul>' : '';
     var tools = '<h3 class="nb-sh">Tools</h3><div class="nb-tools">' +
-      '<button type="button" class="nb-btn" data-p="copy">Copy the list</button>' +
+      '<button type="button" class="nb-btn" data-p="copy">' + shareLabel('the list') + '</button>' +
       '<button type="button" class="nb-btn" data-p="print">Print the list</button>' +
       (featOn('minutes') ? '<a class="nb-btn" href="#/minutes">Meeting minutes</a>' : '') +
       (canPing() ? '<button type="button" class="nb-btn" data-p="notes-open">Shift pings</button>' : '') +
@@ -2375,13 +2427,13 @@
   /* The People tab: every person with role, permissions and PIN reset. Search, filter chips and Show more once the list is long. */
   function peopleListHTML(d) {
     var items = d.people.map(function (p, i) { return { p: p, i: i }; });
-    function cb(o, kind, perm, on, label, off) { return '<label class="a-cl"><input type="checkbox" aria-label="' + label + ' for ' + esc(o.p.name) + '" data-a="' + kind + '"' + (perm ? ' data-perm="' + perm + '"' : '') + ' data-i="' + o.i + '"' + (on ? ' checked' : '') + (off ? ' disabled title="Sous chefs can always write shift pings"' : '') + '></label>'; }
+    function cb(o, kind, perm, on, label, off) { return '<label class="a-cl"><input type="checkbox" aria-label="' + label + ' for ' + esc(o.p.name) + '" data-a="' + kind + '"' + (perm ? ' data-perm="' + perm + '"' : '') + ' data-i="' + o.i + '"' + (on ? ' checked' : '') + (off ? ' disabled title="' + (isHeadP(o.p) ? 'The head chef can always do this' : 'Sous chefs can always write shift pings') + '"' : '') + '></label>'; }
     function nm(o) { return String(o.p.name || '').toLowerCase(); }
     return lvHTML({
       key: 'people', items: items, step: 15, tools: 8, noun: ['person', 'people'], ph: 'Search names', table: 'lv-people', empty: 'No names yet.',
       find: function (o) { return o.p.name + ' ' + ((ROLES[o.p.role] || {}).name || ''); },
       rowCls: function (o) { return o.p.active === false ? 'is-off' : ''; },
-      filters: [['all', 'Everyone'], ['on', 'On the list', function (o) { return o.p.active !== false; }], ['sous', 'Sous chefs', function (o) { return o.p.role === 'sous' || o.p.role === 'lead'; }],
+      filters: [['all', 'Everyone'], ['on', 'On the list', function (o) { return o.p.active !== false; }], ['sous', 'Sous chefs', function (o) { return isSousP(o.p) || o.p.role === 'lead'; }],
         ['staff', 'Staff', function (o) { return o.p.role === 'staff'; }], ['view', 'View only', function (o) { return o.p.role === 'view'; }], ['off', 'Off the list', function (o) { return o.p.active === false; }]],
       sorts: [['order', 'Order added', function (a, b) { return a.i - b.i; }],
         ['name', 'Name A to Z', function (a, b) { return (b.p.isNew ? 1 : 0) - (a.p.isNew ? 1 : 0) || nm(a).localeCompare(nm(b)); }],
@@ -2389,10 +2441,10 @@
       cols: [
         { h: 'Name', th: true, html: function (o) { return '<label class="visually-hidden" for="a-n' + o.i + '">Name</label><input id="a-n' + o.i + '" class="search a-name" data-k="a-n' + o.i + '" data-a="name" data-i="' + o.i + '" value="' + esc(o.p.name) + '" maxlength="40">'; } },
         { h: 'Role', wide: true, html: function (o) { return '<label class="visually-hidden" for="a-r' + o.i + '">Role</label><select id="a-r' + o.i + '" class="p-select" data-k="a-r' + o.i + '" data-a="role" data-i="' + o.i + '">' + Object.keys(ROLES).map(function (k) { return '<option value="' + k + '"' + (o.p.role === k ? ' selected' : '') + '>' + ROLES[k].name + '</option>'; }).join('') + '</select>'; } },
-        { h: 'Write', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'add', o.p.add, 'Write'); } },
-        { h: 'Tick', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'tick', o.p.tick, 'Tick'); } },
-        { h: 'Remove', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'del', o.p.del, 'Remove'); } },
-        { h: 'Pings', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'ping', canPingP(o.p), 'Shift pings', o.p.role === 'sous'); } },
+        { h: 'Write', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'add', o.p.add, 'Write', isHeadP(o.p)); } },
+        { h: 'Tick', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'tick', o.p.tick, 'Tick', isHeadP(o.p)); } },
+        { h: 'Remove', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'del', o.p.del, 'Remove', isHeadP(o.p)); } },
+        { h: 'Pings', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'ping', canPingP(o.p), 'Shift pings', isSousP(o.p)); } },
         { h: 'On list', cls: 'a-c', html: function (o) { return cb(o, 'active', '', o.p.active !== false, 'On list'); } },
         { h: '', cls: 'a-act', html: function (o) { return '<button type="button" class="p-x" data-p="a-reset-pin" data-id="' + esc(o.p.id) + '">' + (armed('pin:' + o.p.id) ? 'Tap again to reset' : 'Reset PIN') + '</button>' + removePersonBtn(o.p, o.i); } }
       ]
@@ -2437,7 +2489,8 @@
     if (at === 'minutes') loadMinutes();
     if (at === 'guides') loadGuides();
     var pane = at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'learning' ? (learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() : at === 'people' ? (
-      '<section class="set-block"><span class="label">People</span><span class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Pings lets that person write shift pings from the prep book (sous chefs always can). Reset PIN lets that person choose a new one. Removing someone from the list keeps their name on old lines.</span>' +
+      '<section class="set-block"><span class="label">People</span><span class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Pings lets that person write shift pings from the prep book (sous chefs always can). Reset PIN lets that person choose a new one. Removing someone from the list keeps their name on old lines. Head chef is for your own name: it always has every permission and the sous chef pages, and a sous chef cannot change or remove it.</span>' +
+      (headIdOf(d.people) ? '' : '<p class="hint a-nohead" role="note">No one is marked Head chef yet. Set your own name to Head chef and save, so your PIN has full rights on the kitchen devices.</p>') +
       peopleListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' +
       '<section class="set-block"><span class="label">Badges</span><label class="a-check"><input type="checkbox" data-a="badges"' + (d.showBadges !== false ? ' checked' : '') + '> Show the weekly top tickers to everyone on the prep book</label></section>' +
       '<section class="set-block a-feats"><span class="label">New pages</span><span class="hint">You, sous chefs and leads always see these. Untick one to hide it from Staff and View only until the team is ready. Anyone ticked for Pings still sees shift pings.</span>' +
@@ -2452,6 +2505,7 @@
   }
   /* the same Remove button on the admin People tab and the sous chef's staff list, with a second tap to be sure */
   function removePersonBtn(p, i) {
+    if (isHeadP(p) && S.level !== 'owner') return '<span class="a-head">Head chef</span>';
     return '<button type="button" class="p-x" data-p="a-remove-person" data-i="' + i + '" aria-label="' + esc('Remove ' + (p.name || 'this person')) + '">' + (armed('rm:' + p.id) ? 'Tap again to remove' : 'Remove') + '</button>';
   }
   function draftDirty() { return !!S.draft && JSON.stringify(S.draft) !== S.draftSnap; }
@@ -2511,7 +2565,7 @@
     if (key && ae.selectionStart != null) { try { start = ae.selectionStart; end = ae.selectionEnd; } catch (e) {} }
     var bodyEl = S.root.querySelector('.nb-body'), keepScroll = bodyEl ? S.root.querySelectorAll('.nb-body') : null, scrolls = [];
     if (keepScroll) Array.prototype.forEach.call(keepScroll, function (b) { scrolls.push(b.scrollTop); });
-    S.root.innerHTML = syncHTML() + bodyHTML() + (S.toast ? '<div class="p-toast" role="status">' + esc(S.toast) + (S.toastAct ? ' <button type="button" class="p-toast-btn" data-p="toast-act">' + esc(S.toastAct.label) + '</button>' : '') + '</div>' : '');
+    S.root.innerHTML = syncHTML() + bodyHTML() + (S.toast ? '<div class="p-toast" role="status">' + esc(S.toast) + (S.toastAct ? ' <button type="button" class="p-toast-btn" data-p="toast-act">' + esc(S.toastAct.label) + '</button>' : '') + '</div>' : '') + (S.toastOld && S.toast ? '<div class="p-toast p-toast-old" role="status">' + esc(S.toastOld.msg) + ' <button type="button" class="p-toast-btn" data-p="toast-old">' + esc(S.toastOld.act.label) + '</button></div>' : '');
     S.root.classList.toggle('is-book', S.name === 'prep' && !!S.root.querySelector('.nb'));
     document.documentElement.classList.toggle('sheet-open', !!S.root.querySelector('.sheet'));
     if (scrolls.length) Array.prototype.forEach.call(S.root.querySelectorAll('.nb-body'), function (b, i) { if (scrolls[i] != null) b.scrollTop = scrolls[i]; });
@@ -2721,7 +2775,7 @@
     var canTick = canBrowse() && !x.deleted;
     var by = x.ordered && x.orderedBy ? 'Ordered by ' + esc(x.orderedBy) : (x.rolled ? (x.origBy ? 'from ' + esc(x.origBy) : '') : esc(x.addedBy || ''));
     return '<li class="nb-row' + (x.ordered ? ' is-done' : '') + (x.deleted ? ' is-removed' : '') + '">' +
-      '<button type="button" class="nb-box" data-p="otick" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-pressed="' + !!x.ordered + '" aria-label="' + esc((x.ordered ? 'Not ordered: ' : 'Ordered: ') + x.text) + '"' + (canTick ? '' : ' disabled') + '>' + (x.ordered ? TICK : BOX) + '</button>' +
+      '<button type="button" class="nb-box" data-p="otick" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-pressed="' + !!x.ordered + '" aria-label="' + esc('Ordered: ' + x.text) + '"' + (canTick ? '' : ' disabled') + '>' + (x.ordered ? TICK : BOX) + '</button>' +
       '<span class="nb-t"' + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') +
       (rolledN(x) ? ' <span class="nb-roll" title="Not ordered yet, so it rolled over">Since ' + esc(dayShort(x.since || x.rolledFrom || x.date)) + '</span>' : '') + recipeChips(x) + '</span>' +
       '<span class="nb-by">' + by + '</span>' +
@@ -2825,7 +2879,7 @@
     if (S.ordDate === today) live.forEach(function (x) { if (x.ordered && x.orderedAt) { var left = x.orderedAt + ORD_HIDE - now(); if (left > 0 && left < nextHide) nextHide = left; } });
     if (nextHide < Infinity) ordHideTimer = setTimeout(function () { if (S.name === 'orders') draw(); }, nextHide + 500);
     var tabs = br ? '<div class="nb-nav o-nav"><button type="button" class="chip" data-p="oview" data-v="day" aria-pressed="' + (view === 'day') + '">By day</button><button type="button" class="chip" data-p="oview" data-v="all" aria-pressed="' + (view === 'all') + '">Everything to order</button>' +
-      (view === 'day' ? '<button type="button" class="chip" data-p="oday" data-d="-1" aria-label="Back one day">&lsaquo;</button><button type="button" class="chip" data-p="otoday" aria-pressed="' + (S.ordDate === today) + '">Today</button><button type="button" class="chip" data-p="oday" data-d="1" aria-label="Forward one day">&rsaquo;</button>' : '') + '</div>' : '';
+      (view === 'day' ? '<span class="o-days"><button type="button" class="chip" data-p="oday" data-d="-1" aria-label="Back one day">&lsaquo;</button><button type="button" class="chip" data-p="otoday" aria-pressed="' + (S.ordDate === today) + '">Today</button><button type="button" class="chip" data-p="oday" data-d="1" aria-label="Forward one day">&rsaquo;</button></span>' : '') + '</div>' : '';
     var add = can('add') && S.ordDate === today ?
       '<form class="nb-add" data-p-form="oadd"><div class="nb-add-row"><label class="visually-hidden" for="o-text">Item to order</label><input id="o-text" class="nb-in nb-in-text" data-k="o-text" enterkeyhint="done" autocomplete="off" placeholder="What do we need to order?" maxlength="120" value="' + esc(S.otext) + '">' +
       '<label class="visually-hidden" for="o-qty">Amount</label><input id="o-qty" class="nb-in nb-in-qty" data-k="o-qty" enterkeyhint="done" autocomplete="off" placeholder="Amount" maxlength="40" value="' + esc(S.oqty) + '"><button type="submit" class="nb-addbtn">Add</button></div>' +
@@ -2849,7 +2903,8 @@
       /* the add box is at the top, so it is always in reach; on big screens the list and the ordered-today list sit side by side below it */
       (view === 'day' && add ? '<div class="nb-foot o-add">' + add + (canBrowse() ? '' : '<p class="hint nb-who">Only the head chef or a sous chef ticks a line as ordered or removes it. Wrote the wrong thing? Undo it straight away, or ask them.</p>') + '</div>' : '') +
       (view === 'day' && S.ordDate === today ? ordNudgeHTML(overdue, today) : '') +
-      '<div class="o-cols"><div class="nb-body o-main">' + body + removedBox + '</div>' + (orderedBox ? '<div class="o-ordered">' + orderedBox + '</div>' : '') + '</div></section>';
+      '<div class="o-cols"><div class="nb-body o-main">' + body + removedBox + '</div>' + (orderedBox ? '<div class="o-ordered">' + orderedBox + '</div>' : '') + '</div>' +
+      '<div class="nb-tools o-tools"><button type="button" class="nb-btn" data-p="ocopy">' + shareLabel('for the supplier') + '</button><button type="button" class="nb-btn" data-p="oprint">Print</button></div></section>';
   }
 
 
@@ -2858,6 +2913,7 @@
      and who wrote it (time and name are added by themselves). The end-of-day review is saved per day and its
      "change for the next shift" shows on the next prep list. Staff add; the head chef and sous chefs can remove. */
   var UNITS = ['g', 'kg', 'L', 'portions', 'pieces'];
+  var W_BIG = { g: 2000, kg: 20, L: 20, portions: 100, pieces: 100 };
   var REASONS = [['prep', 'Prep waste'], ['expired', 'Expired stock'], ['fault', 'Cooking fault'], ['returned', 'Returned'], ['excess', 'Excess production']];
   function reasonName(k) { var r = REASONS.filter(function (x) { return x[0] === k; })[0]; return r ? r[1] : k; }
   function wCol(date) { return fb.fs.collection.apply(null, [fb.db].concat(base(), ['waste', date, 'lines'])); }
@@ -2933,6 +2989,8 @@
     return Object.keys(m).map(function (k) { var e = m[k]; return { text: e.text, n: e.n, unit: top(e.unit), reason: top(e.reason), sec: top(e.sec) }; })
       .filter(function (e) { return e.n >= 2; }).sort(function (a, b) { return b.n - a.n; }).slice(0, 8);
   }
+  /* the last time this item was logged (the last 14 days): a suggestion fills its unit, reason and section too */
+  function wLast(t) { var k = okey(t); return (S.wRecent || []).filter(function (x) { return okey(x.text) === k; }).sort(function (a, b) { return (b.addedAt || 0) - (a.addedAt || 0); })[0] || null; }
   function addWaste() {
     var f = S.wf, p = me();
     if (!can('add')) return;
@@ -2940,6 +2998,8 @@
     if (!t) { toast('Write what was wasted.'); focusK('w-text'); return; }
     if (!(amt > 0) || amt >= 100000) { toast('Write the amount as a number.'); focusK('w-amt'); return; }
     if (UNITS.indexOf(f.unit) < 0) { toast('Pick a unit.'); focusSel('.seg-b'); return; }
+    // a big number for its unit is often grams typed with kg still picked: ask once (second tap on Log it)
+    if (amt > (W_BIG[f.unit] || Infinity) && !arm('wbig:' + amt + f.unit)) { toast(amt + ' ' + f.unit + '? Check the unit. Tap Log it again if it is right.', null, 4000); focusSel('.seg-b[aria-checked="true"]'); return; }
     if (!REASONS.some(function (r) { return r[0] === f.reason; })) { toast('Pick a reason.'); focusSel(window.matchMedia && window.matchMedia('(max-width: 719px)').matches ? '.w-rbtn' : '.w-rchips .chip'); return; }
     var secInfo = {}, sec = cleanSection(f.sec, secInfo), rm = matchRecipe(t), ref = fb.fs.doc(wCol(S.wDate));
     sset(ref, { text: t, amount: amt, unit: f.unit, reason: f.reason, action: f.act.trim().slice(0, 120), station: sec, recipe: rm ? rm.id : '',
@@ -2974,6 +3034,21 @@
   function saveReview() {
     if (!can('add')) return;
     var p = me(), r = S.wReview || {};
+    // someone else may have saved a review since this page read it: one small read on Save, and a second tap to replace it
+    if (!S.wrChecked && fb.fs.getDocFromServer) {
+      S.wrChecked = true;
+      fb.fs.getDocFromServer(wDay(S.wDate)).then(function (sn) {
+        var v = sn.exists() ? sn.data() : {};
+        if ((v.reviewAt || 0) > (r.reviewAt || 0) && v.reviewBy && v.reviewBy !== (p ? p.name : '')) {
+          S.wReview = v; arm('wreview'); draw();
+          toast(v.reviewBy + ' saved a review at ' + clock(v.reviewAt) + ': "' + String(v.avoidable || v.change || '').slice(0, 60) + '". Tap Save again to replace it with yours.', null, 8000);
+          S.wrChecked = false; return;
+        }
+        saveReview(); S.wrChecked = false;
+      }, function () { saveReview(); S.wrChecked = false; });
+      return;
+    }
+    if (armKey === 'wreview') arm('wreview');
     var a = (S.wrA != null ? S.wrA : r.avoidable || '').trim().slice(0, 300), c = (S.wrC != null ? S.wrC : r.change || '').trim().slice(0, 300);
     sset(wDay(S.wDate), { avoidable: a, change: c, reviewBy: p ? p.name : '', reviewAt: now() }, true).then(function () {
       S.wReview = { avoidable: a, change: c, reviewBy: p ? p.name : '', reviewAt: now() }; S.wrA = S.wrC = null; toast('Review saved'); 
@@ -3002,7 +3077,7 @@
     var shown = (S.wLines || []).filter(function (x) { return br || !x.deleted; }).sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); });
     var view = br ? (S.wView || 'day') : 'day';
     var nav = br ? '<div class="nb-nav o-nav"><button type="button" class="chip" data-p="wview" data-v="day" aria-pressed="' + (view === 'day') + '">By day</button><button type="button" class="chip" data-p="wview" data-v="week" aria-pressed="' + (view === 'week') + '">Last 7 days</button>' +
-      (view === 'day' ? '<button type="button" class="chip" data-p="wday" data-d="-1" aria-label="Back one day">&lsaquo;</button><button type="button" class="chip" data-p="wtoday" aria-pressed="' + (S.wDate === today) + '">Today</button><button type="button" class="chip" data-p="wday" data-d="1" aria-label="Forward one day">&rsaquo;</button>' : '') + '</div>' : '';
+      (view === 'day' ? '<span class="o-days"><button type="button" class="chip" data-p="wday" data-d="-1" aria-label="Back one day">&lsaquo;</button><button type="button" class="chip" data-p="wtoday" aria-pressed="' + (S.wDate === today) + '">Today</button><button type="button" class="chip" data-p="wday" data-d="1" aria-label="Forward one day">&rsaquo;</button></span>' : '') + '</div>' : '';
     if (view === 'week') return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' : '') + '</span><span class="p-links"><a class="p-link" href="#/prep">Prep list</a></span></div>' + nav + wasteWeekHTML();
     var often = wOften();
     var add = can('add') && S.wDate === today ?
@@ -3010,7 +3085,7 @@
       '<datalist id="w-sections">' + suggestions().map(function (n) { return '<option value="' + esc(n) + '"></option>'; }).join('') + '</datalist>' +
       '<div class="nb-add-row"><label class="visually-hidden" for="w-sec">Section</label><input id="w-sec" class="nb-in nb-in-sec" data-k="w-sec" list="w-sections" enterkeyhint="next" autocomplete="off" placeholder="Section" maxlength="40" value="' + esc(f.sec) + '">' +
       '<label class="visually-hidden" for="w-text">Item</label><input id="w-text" class="nb-in nb-in-text" data-k="w-text" enterkeyhint="next" autocomplete="off" placeholder="What was wasted?" maxlength="80" value="' + esc(f.text) + '">' +
-      '<label class="visually-hidden" for="w-amt">Amount</label><input id="w-amt" class="nb-in nb-in-qty" data-k="w-amt" inputmode="decimal" enterkeyhint="next" autocomplete="off" placeholder="Amount" maxlength="8" value="' + esc(f.amt) + '"></div>' +
+      '<label class="visually-hidden" for="w-amt">Amount</label><input id="w-amt" class="nb-in nb-in-qty" data-k="w-amt" inputmode="decimal" enterkeyhint="next" autocomplete="off" placeholder="Amount (' + esc(f.unit || 'unit') + ')" maxlength="8" value="' + esc(f.amt) + '"></div>' +
       '<div class="nb-sugg" id="w-sugg">' + wSuggHTML() + '</div>' +
       '<div class="w-pick"><span class="nb-ql" id="w-unit-l">Unit</span><div class="seg" role="radiogroup" aria-labelledby="w-unit-l">' + UNITS.map(function (u) { return '<button type="button" class="seg-b" role="radio" data-p="wunit" data-v="' + u + '" aria-checked="' + (f.unit === u) + '">' + u + '</button>'; }).join('') + '</div></div>' +
       '<div class="w-pick"><span class="nb-ql" id="w-reason-l">Reason</span><div class="w-rchips" role="radiogroup" aria-labelledby="w-reason-l">' + REASONS.map(function (r) { return '<button type="button" class="chip" role="radio" data-p="wreason" data-v="' + r[0] + '" aria-checked="' + (f.reason === r[0]) + '">' + r[1] + '</button>'; }).join('') + '</div>' +
@@ -3029,7 +3104,7 @@
       (shown.length ? '<ul class="nb-rows">' + shown.map(wRow).join('') + '</ul>' : (S.wState !== 'ok' ? '<p class="nb-empty">Loading...</p>' : '<p class="nb-empty">Nothing logged for ' + esc(dayName(S.wDate).toLowerCase()) + ' yet. Log waste when it happens: prep waste, expired stock, cooking faults, returns and excess production.</p>'));
     return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' : '') + '</span><span class="p-links"><a class="p-link" href="#/prep">Prep list</a>' + '' + '</span></div>' + nav +
       '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Wastage</h2><span class="nb-date">' + esc(longDate(S.wDate)) + (tot ? ' &middot; ' + esc(tot) : '') + '</span></div>' +
-      '<div class="nb-prog" role="status">' + live.length + (live.length === 1 ? ' entry' : ' entries') + '</div></header>' +
+      '<div class="nb-prog" role="status">' + live.length + (live.length === 1 ? ' entry' : ' entries') + '</div>' + (add ? '<button type="button" class="nb-jump" data-p="wjump">Log waste</button>' : '') + '</header>' +
       '<p class="w-rule">Write the actual amount and unit, not a dollar value. Unsafe food must never be reused to avoid logging waste.</p>' +
       '<div class="nb-body">' + body + '</div><div class="nb-foot">' + add + '</div></section>' + review + sheetHTML();
   }
@@ -3105,7 +3180,7 @@
     var i = noteInfo();
     Array.prototype.forEach.call(document.querySelectorAll('.nbell'), function (b) {
       b.hidden = !i.n; b.classList.toggle('has-new', i.unread);
-      b.setAttribute('aria-label', 'Today\'s shift pings' + (i.unread ? ', new' : ''));
+      b.setAttribute('aria-label', i.n + ' shift ping' + (i.n === 1 ? '' : 's') + ' today' + (i.unread ? ', new' : ''));
     });
   }
   function notesInit() {
@@ -3192,14 +3267,16 @@
     if (pv) el.setAttribute('data-pv', '1');
     document.body.appendChild(el);
     npop = el;
+    ovPush('note');
     document.documentElement.classList.add('note-open');
     loadWNote();
     var got = el.querySelector('.nt-got'); if (got) got.focus({ preventScroll: true });
   }
   /* Only Got it (or opening a link in the note) counts as read. Tapping outside or Escape just closes it: the bell
      keeps its dot and the popup comes back by itself after 15 minutes, so a stray tap cannot dismiss a safety note. */
-  function noteClose(dismiss) {
+  function noteClose(dismiss, noBack) {
     if (!npop) return;
+    ovDone('note', noBack);
     var wasPv = npop.getAttribute('data-pv') === '1';
     npop.parentNode.removeChild(npop); npop = null;
     document.documentElement.classList.remove('note-open');
@@ -3238,9 +3315,9 @@
     if (a === 'open') { noteOpen(); return; }
     if (a === 'close') { noteClose(); return; }
     if (a === 'dismiss') { noteClose(true); return; }
-    if (a === 'link') { noteClose(); return; }
-    if (a === 'edit') { S.atab = 'notes'; lsSet('lk.prep.atab', 'notes'); noteClose(); if (location.hash === '#/admin') draw(); return; }
-    if (a === 'edit-sous') { S.notesOpen = true; S.nf = null; noteClose(); if (location.hash === '#/prep') draw(); return; }
+    if (a === 'link') { noteClose(false, true); return; }
+    if (a === 'edit') { S.atab = 'notes'; lsSet('lk.prep.atab', 'notes'); noteClose(false, true); if (location.hash === '#/admin') draw(); return; }
+    if (a === 'edit-sous') { S.notesOpen = true; S.nf = null; noteClose(false, true); if (location.hash === '#/prep') draw(); return; }
   });
   document.addEventListener('keydown', function (e) {
     if (!npop) return;
@@ -3387,6 +3464,7 @@
     sset(docRef('notes', id), { removed: true, upd: now() }, true).then(function () {
       if (S.nf && S.nf.id === id) { S.nf = nfNew(); S.nOpen = false; }
       S.nMsg = 'Removed.'; loadNotes(true); draw();
+      toast('Ping removed.', { label: 'Undo', fn: function () { sset(docRef('notes', id), { removed: false, upd: now() }, true).then(function () { S.nMsg = ''; loadNotes(true); draw(); }, failed); } });
     }, function () { S.nMsg = 'Could not remove. Check the connection and try again.'; draw(); });
   }
   /* finished pings: one query when asked for (30 at most) */
@@ -3472,8 +3550,10 @@
   function minNudgeHTML() {
     var u = featOn('minutes') ? mnUnsigned() : [];
     if (!u.length) return '';
-    return '<div class="mn-nudge" role="status"><span><b>Minutes not signed yet</b> Kitchen meeting, ' + esc(dayShort(u[0].date)) + (u.length > 1 ? ' and ' + (u.length - 1) + ' more' : '') + '</span><a class="mn-nudge-btn" href="#/minutes">Read and sign</a></div>';
+    return '<div class="mn-nudge" role="status"><span><b>Minutes not signed yet</b> Kitchen meeting, ' + esc(dayShort(u[0].date)) + (u.length > 1 ? ' and ' + (u.length - 1) + ' more' : '') + '</span><a class="mn-nudge-btn" href="#/minutes" data-mn="' + esc(u[0].id) + '">Read and sign</a></div>';
   }
+  // "Read and sign" opens the minutes the card names, not just the newest published ones (the card sits outside the prep root)
+  document.addEventListener('click', function (e) { var a = e.target.closest && e.target.closest('.mn-nudge-btn[data-mn]'); if (a) { S.mSel = a.getAttribute('data-mn'); S.mErr = ''; } }, true);
   function loadMinutes(force) {
     var today = dayNow();
     if (!fb || !/^\d{4,6}$/.test(S.pin) || S.minsBusy || !featOn('minutes')) return;
@@ -3529,7 +3609,8 @@
     var acts = (m.acts || []).filter(function (a) { return a && a.what; });
     if (acts.length) out += mnBox(nx(), 'Actions', '<div class="mn-tw"><table class="mn-tbl"><thead><tr><th scope="col">Action</th><th scope="col">Who</th><th scope="col">By</th></tr></thead><tbody>' + acts.map(function (a) {
       var tag = a.st === 'done' ? '<span class="mn-chip">Done</span>' : a.st === 'dropped' ? '<span class="mn-chip">Dropped</span>' : a.carried ? '<span class="mn-chip">Carried over</span>' : '';
-      return '<tr class="' + (a.st && a.st !== 'open' ? 'is-closed' : '') + '"><td>' + linkNote(a.what) + (tag ? '<br>' + tag : '') + '</td><td>' + esc(a.who === 'all' ? 'Everyone' : mnName(a.who)) + '</td><td>' + esc(a.by ? dayShort(a.by) : '') + '</td></tr>';
+      var mine = sign && S.who && (a.who === S.who || a.who === 'all');
+      return '<tr class="' + (a.st && a.st !== 'open' ? 'is-closed' : '') + (mine ? ' is-mine' : '') + '"><td>' + (mine ? '<span class="mn-chip mn-yours">Yours</span> ' : '') + linkNote(a.what) + (tag ? '<br>' + tag : '') + '</td><td>' + esc(a.who === 'all' ? 'Everyone' : mnName(a.who)) + '</td><td>' + esc(a.by ? dayShort(a.by) : '') + '</td></tr>';
     }).join('') + '</tbody></table></div>');
     if (mnLines(m.menu).length) out += mnBox(nx(), 'Menu changes', mnList(m.menu, true));
     if (mnLines(m.dates).length) out += mnBox(nx(), 'Dates ahead', mnList(m.dates, true));
@@ -3543,9 +3624,13 @@
     var s = S.mmine[mnKey(m)], my = (m.att || []).filter(function (x) { return x.id === S.who; })[0], st = my ? my.st : 'absent';
     if (s && s !== 'loading') return '<section class="mn-sign is-done"><h3 class="mn-bh">Signed</h3><p>' + esc(p.name) + ' signed on ' + esc(dayShort(T.day(s.at))) + ' at ' + esc(clock(s.at)) + '. Version ' + m.v + '.</p></section>';
     if (s === undefined || s === 'loading') return '<section class="mn-sign mn-noprint"><p class="hint">Checking your sign-off...</p></section>';
-    return '<section class="mn-sign mn-noprint"><h3 class="mn-bh">Sign off</h3><p>' + (st === 'present' ? 'I attended and have read and understood these minutes.' : 'I have read and understood these minutes.') + '</p>' +
-      '<label class="label" for="mn-pin">Your PIN</label>' + pinField('mn-pin', 'mn-pin', S.mpin) +
-      '<button type="button" class="btn dark mn-signbtn" data-p="mn-sign" data-id="' + esc(m.id) + '"' + (S.mpinOk && !S.mSigning ? '' : ' disabled') + '>Sign</button>' +
+    // one tap: the person already typed their own PIN to open this page (20 Oct 2026, no second PIN)
+    var mineN = (m.acts || []).filter(function (a) { return a && a.what && (!a.st || a.st === 'open') && (a.who === S.who || a.who === 'all'); }).length;
+    return '<section class="mn-sign mn-noprint"><h3 class="mn-bh">Sign off</h3>' +
+      ((m.v || 1) > 1 ? '<p class="mn-changed">These minutes were changed after they were first published (version ' + m.v + '). If you signed before, read them again and sign this version.</p>' : '') +
+      (mineN ? '<p class="mn-mine">Your actions: ' + mineN + ', marked Yours above.</p>' : '') +
+      '<p>' + (st === 'present' ? 'I attended and have read and understood these minutes.' : 'I have read and understood these minutes.') + '</p>' +
+      '<button type="button" class="btn dark mn-signbtn" data-p="mn-sign" data-id="' + esc(m.id) + '"' + (S.mSigning ? ' disabled' : '') + '>Sign as ' + esc(p.name) + '</button>' +
       '<span class="mn-err" role="status" id="mn-pinmsg">' + esc(S.mErr) + '</span><p class="hint">Your name, the version and the time are recorded. Apology and absent staff sign too.</p></section>';
   }
   function mnWriteLink() {
@@ -3559,13 +3644,16 @@
     if (S.mins == null) return top + '<section class="mn"><h2 class="mn-title" id="rtitle" tabindex="-1">Meeting minutes</h2><p class="hint">Loading...</p></section>';
     if (!list.length) return top + '<section class="mn"><h2 class="mn-title" id="rtitle" tabindex="-1">Meeting minutes</h2><p class="hint">No minutes have been published in the last ' + MN_DAYS + ' days.</p>' + mnWriteLink() + '</section>';
     var m = list.filter(function (x) { return x.id === S.mSel; })[0] || list[0], older = list.filter(function (x) { return x.id !== m.id; }).slice(0, 12);
+    // minutes this person still has to sign come first among the earlier ones, marked To sign
+    function toSign(x) { return S.mmine[mnKey(x)] === null; }
+    older = older.filter(toSign).concat(older.filter(function (x) { return !toSign(x); }));
     return top + '<section class="mn">' + mnDocHTML(m, true) +
       '<div class="mn-noprint"><div class="mn-btns"><button type="button" class="btn" data-p="mn-print">Print or save as PDF</button></div>' +
-      (older.length ? '<h3 class="mn-eh">Earlier minutes (last ' + MN_DAYS + ' days)</h3><div class="mn-earlier">' + older.map(function (x) { return '<button type="button" class="chip" data-p="mn-pickdoc" data-id="' + esc(x.id) + '">' + pad(x.no || 0) + ' &middot; ' + esc(dayShort(x.date)) + '</button>'; }).join('') + '</div>' : '') + '</div>' + mnWriteLink() + '</section>';
+      (older.length ? '<h3 class="mn-eh">Earlier minutes (last ' + MN_DAYS + ' days)</h3><div class="mn-earlier">' + older.map(function (x) { return '<button type="button" class="chip' + (toSign(x) ? ' mn-tosign' : '') + '" data-p="mn-pickdoc" data-id="' + esc(x.id) + '">' + pad(x.no || 0) + ' &middot; ' + esc(dayShort(x.date)) + (toSign(x) ? ' &middot; <b>To sign</b>' : '') + '</button>'; }).join('') + '</div>' : '') + '</div>' + mnWriteLink() + '</section>';
   }
   function signMinutes(id) {
     var m = mnById(id), p = who();
-    if (!m || !p || !fb || !S.authed || !S.tok || S.mSigning || !S.mpinOk) return;
+    if (!m || !p || !fb || !S.authed || !S.tok || S.mSigning) return;
     var my = (m.att || []).filter(function (x) { return x.id === S.who; })[0], st = my ? my.st : 'absent', k = mnKey(m);
     var ref = fb.fs.doc.apply(null, [fb.db].concat(base(), ['minutes', m.id, 'signs', m.v + '_' + S.who])), data = { v: m.v, st: st, at: now(), name: p.name };
     S.mSigning = true; S.mErr = ''; draw();
@@ -3685,7 +3773,10 @@
   function mnRef(id) { return docRef('minutes', id); }
   function removeMinutes(id) {
     if (!arm('mn-del:' + id)) return;
-    sset(mnRef(id), { removed: true, upd: now() }, true).then(function () { S.mMsg = 'Removed.'; if (S.mSel === id) S.mSel = ''; loadMinutes(true); draw(); }, function () { S.mMsg = 'Could not remove. Check the connection and try again.'; draw(); });
+    sset(mnRef(id), { removed: true, upd: now() }, true).then(function () {
+      S.mMsg = 'Removed.'; if (S.mSel === id) S.mSel = ''; loadMinutes(true); draw();
+      toast('Minutes removed.', { label: 'Undo', fn: function () { sset(mnRef(id), { removed: false, upd: now() }, true).then(function () { S.mMsg = ''; loadMinutes(true); draw(); }, failed); } });
+    }, function () { S.mMsg = 'Could not remove. Check the connection and try again.'; draw(); });
   }
   /* who has signed the current version, who has not, and who is late */
   function mnRegister(m) {
@@ -4193,7 +4284,8 @@
     return back + '<article class="g-doc"><header class="g-dh"><span class="g-eb">' + esc(gCatName(g.cat)) + ' guide</span><h2 class="g-title" id="rtitle" tabindex="-1">' + esc(g.title) + '</h2>' +
       (g.sum ? '<p class="g-lead">' + esc(g.sum) + '</p>' : '') + '<p class="g-meta">' + esc(gMeta(g)) + '</p></header>' +
       (steps.length ? '<section class="g-steps"><h3 class="g-h3">Steps</h3><ol class="g-ol">' + steps.map(function (t) { return '<li><span class="g-c" aria-hidden="true"></span><span>' + linkNote(t) + '</span></li>'; }).join('') + '</ol></section>' : '') +
-      (n ? '<section class="g-pages" aria-label="Pages"><p class="hint g-noprint">Tap a page to open it big.</p>' + figs +
+      (n ? '<section class="g-pages" aria-label="Pages"><p class="hint g-noprint">' + (n > 1 ? n + ' pages. ' : '') + 'Tap a page to open it big.</p>' +
+        (n > 2 ? '<div class="g-thumbs g-noprint">' + pv.urls.slice(0, n).map(function (u, k) { return u ? '<button type="button" class="g-thumb" data-p="g-zoom" data-i="' + k + '" aria-label="' + esc('Open page ' + (k + 1) + ' big') + '"><img src="' + esc(u) + '" alt=""><span>' + (k + 1) + '</span></button>' : ''; }).join('') + '</div>' : '') + figs +
         (pv.state === 'error' ? '<p class="p-err g-noprint">Could not load the pages. Check the connection. <button type="button" class="p-x" data-p="g-retry">Try again</button></p>' : '') + '</section>' : '') +
       (cards.length ? '<section class="g-rec g-noprint"><h3 class="g-h3">On these recipe cards</h3><div class="g-rchips">' + cards.map(function (r) { return '<a class="g-rchip" href="#/r/' + esc(r.id) + '">' + esc(r.name) + '</a>'; }).join('') + '</div></section>' : '') +
       '<div class="btn-row g-noprint"><button type="button" class="btn" data-p="g-print">Print</button>' + (admin ? '<button type="button" class="btn" data-p="g-change" data-id="' + esc(g.id) + '">Change this guide</button>' : '') + '</div></article>';
@@ -4208,12 +4300,25 @@
   /* A page opened big: over everything (appended to the body, so page redraws leave it alone), Previous and Next, Fit or Full size.
      Its clicks use data-gz. Escape or Close shuts it. Pinching zooms further on a phone. */
   var gz = null;
+  /* ---------- the phone's Back button closes what is open on top (20 Oct 2026) ----------
+     Opening the big guide page or the pings popup adds a history entry for the same address. Back closes it (pings count
+     as put off, not read), and closing it any other way takes that entry off again, so Back never leaves the page by
+     surprise. A close that comes with a move to another page (a link) leaves the entry. */
+  var ovOn = '';
+  function ovPush(k) { ovOn = k; try { history.pushState({ lkOv: k }, '', location.href); } catch (e) {} }
+  function ovDone(k, noBack) { if (ovOn !== k) return; ovOn = ''; if (noBack) return; try { if (history.state && history.state.lkOv === k) history.back(); } catch (e) {} }
+  window.addEventListener('popstate', function () {
+    var k = ovOn; ovOn = '';
+    if (k === 'gz' && gz) gzClose(true);
+    else if (k === 'note' && npop) noteClose(true, true);
+  });
   function gzOpen(id, i) {
     if (gz) gzClose();
     var el = document.createElement('div');
     el.className = 'gz-wrap'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true');
     gz = { id: id, i: i, full: false, el: el, prev: document.activeElement };
     document.body.appendChild(el);
+    ovPush('gz');
     document.documentElement.classList.add('gz-open');
     gzDraw();
     var c = el.querySelector('[data-gz="close"]'); if (c) c.focus({ preventScroll: true });
@@ -4226,12 +4331,15 @@
     gz.el.setAttribute('aria-label', 'Page ' + (gz.i + 1) + ' of ' + n + ', ' + g.title);
     gz.el.innerHTML = '<div class="gz-bar"><span class="gz-t">' + esc(g.title) + '<small>Page ' + (gz.i + 1) + ' of ' + n + '</small></span><span class="gz-btns">' +
       (n > 1 ? '<button type="button" class="gz-b" data-gz="prev"' + (gz.i ? '' : ' disabled') + '>Previous</button><button type="button" class="gz-b" data-gz="next"' + (gz.i < n - 1 ? '' : ' disabled') + '>Next</button>' : '') +
-      '<button type="button" class="gz-b" data-gz="size">' + (gz.full ? 'Fit to screen' : 'Full size') + '</button><button type="button" class="gz-b gz-x" data-gz="close">Close</button></span></div>' +
-      '<div class="gz-body' + (gz.full ? ' is-full' : '') + '">' + (u ? '<img src="' + esc(u) + '" alt="' + esc('Page ' + (gz.i + 1) + ' of ' + g.title) + '"' + (d.w ? ' width="' + (+d.w) + '" height="' + (+d.h) + '"' : '') + '>' : '<p class="gz-wait">Loading...</p>') + '</div>';
+      '<button type="button" class="gz-b gz-sz" data-gz="size">' + (gz.full ? 'Fit to screen' : 'Full size') + '</button><button type="button" class="gz-b gz-x" data-gz="close">Close</button></span></div>' +
+      '<div class="gz-body' + (gz.full ? ' is-full' : '') + '">' + (u ? '<img src="' + esc(u) + '" alt="' + esc('Page ' + (gz.i + 1) + ' of ' + g.title) + '"' + (d.w ? ' width="' + (+d.w) + '" height="' + (+d.h) + '"' : '') + '>' : '<p class="gz-wait">Loading...</p>') + '</div>' +
+      // phones: Previous, Full size and Next sit at the bottom, in thumb reach
+      (n > 1 ? '<div class="gz-foot"><button type="button" class="gz-b" data-gz="prev"' + (gz.i ? '' : ' disabled') + '>Previous</button><button type="button" class="gz-b" data-gz="size">' + (gz.full ? 'Fit' : 'Full size') + '</button><button type="button" class="gz-b" data-gz="next"' + (gz.i < n - 1 ? '' : ' disabled') + '>Next</button></div>' : '');
   }
-  function gzClose() {
+  function gzClose(noBack) {
     if (!gz) return;
     var prev = gz.prev;
+    ovDone('gz', noBack);
     if (gz.el.parentNode) gz.el.parentNode.removeChild(gz.el);
     gz = null;
     document.documentElement.classList.remove('gz-open');
@@ -4243,7 +4351,7 @@
     var a = el.getAttribute('data-gz'), g = gById(gz.id);
     if (a === 'close') { gzClose(); return; }
     if (a === 'size') { gz.full = !gz.full; gzDraw(); gz.el.querySelector('[data-gz="size"]').focus(); return; }
-    if ((a === 'prev' || a === 'next') && g) { gz.i = Math.max(0, Math.min((g.pages || 1) - 1, gz.i + (a === 'next' ? 1 : -1))); gzDraw(); var b = gz.el.querySelector('[data-gz="' + a + '"]:not([disabled])') || gz.el.querySelector('[data-gz="close"]'); if (b) b.focus(); }
+    if ((a === 'prev' || a === 'next') && g) { gz.i = Math.max(0, Math.min((g.pages || 1) - 1, gz.i + (a === 'next' ? 1 : -1))); gzDraw(); var b = Array.prototype.filter.call(gz.el.querySelectorAll('[data-gz="' + a + '"]:not([disabled])'), function (x) { return x.offsetParent !== null; })[0] || gz.el.querySelector('[data-gz="close"]'); if (b) b.focus(); }
   });
   document.addEventListener('keydown', function (e) {
     if (!gz) return;
@@ -4255,7 +4363,20 @@
     if (e.shiftKey && (document.activeElement === f[0] || !gz.el.contains(document.activeElement))) { e.preventDefault(); f[f.length - 1].focus(); }
     else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
   });
-  window.addEventListener('hashchange', function () { if (gz) gzClose(); });
+  window.addEventListener('hashchange', function () { if (gz) gzClose(true); });
+  /* Swipe left or right on the page (not while it is full size, and not with two fingers) turns the page. */
+  var gzSw = null;
+  document.addEventListener('pointerdown', function (e) {
+    if (!gz) return;
+    if (!e.isPrimary) { gzSw = null; return; }
+    gzSw = !gz.full && e.target.closest && e.target.closest('.gz-body') && gz.el.contains(e.target) ? { x: e.clientX, y: e.clientY } : null;
+  });
+  document.addEventListener('pointercancel', function () { gzSw = null; });
+  document.addEventListener('pointerup', function (e) {
+    if (!gzSw || !gz || !e.isPrimary) return;
+    var dx = e.clientX - gzSw.x, dy = e.clientY - gzSw.y; gzSw = null;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > 2 * Math.abs(dy)) { var b = gz.el.querySelector('[data-gz="' + (dx < 0 ? 'next' : 'prev') + '"]:not([disabled])'); if (b) b.click(); }
+  });
 
   /* ---- adding and changing guides (admin panel, Guides tab, head chef only) ---- */
   var gSeq = 0;
@@ -4576,7 +4697,7 @@
     if (a === 'oview') { S.ordView = el.getAttribute('data-v'); if (S.ordView === 'all') loadOrdAll(false); draw(); return; }
     if (a === 'oday') { S.ordDate = shift(S.ordDate, +el.getAttribute('data-d')); watchOrders(); draw(); return; }
     if (a === 'otoday') { S.ordDate = dayNow(); watchOrders(); draw(); return; }
-    if (a === 'osugg') { var st = (S.osugg || [])[i]; if (st) { S.otext = st; draw(); var oe = S.root.querySelector('[data-k="o-text"]'); if (oe) { oe.focus(); try { oe.setSelectionRange(oe.value.length, oe.value.length); } catch (x) {} } } return; }
+    if (a === 'osugg') { var st = (S.osugg || [])[i]; if (st) { S.otext = st; if (!S.oqty.trim()) S.oqty = (ordQtyList(st)[0] || {}).q || ''; draw(); var oe = S.root.querySelector('[data-k="o-text"]'); if (oe) { oe.focus(); try { oe.setSelectionRange(oe.value.length, oe.value.length); } catch (x) {} } } return; }
     if (a === 'who') { pickName(id); return; }
     if (a === 'who-change') { S.picking = shared(); S.pending = null; leave(); return; }
     if (a === 'guest-who') { guestAsk(null); return; }
@@ -4589,6 +4710,7 @@
     if (a === 'restore') { removeItem(dt || S.date, id, true); return; }
     if (a === 'removed') { S.showRemoved = !S.showRemoved; draw(); return; }
     if (a === 'urgent') { toggleUrgent(id); return; }
+    if (a === 'toast-old') { var to = S.toastOld; S.toastOld = null; clearTimeout(toastOldTimer); if (to && to.act && to.act.fn) to.act.fn(); draw(); return; }
     if (a === 'toast-act') { var ta = S.toastAct; S.toast = ''; S.toastAct = null; if (ta && ta.fn) ta.fn(); draw(); return; }
     if (a === 'export') { exportAll(); return; }
     if (a === 'move-pin') { movePin(); return; }
@@ -4610,7 +4732,7 @@
     if (a === 'wreason') { S.wf.reason = el.getAttribute('data-v'); var fromSheet = S.sheet === 'reason'; S.sheet = ''; draw(); if (fromSheet) { var rb = S.root.querySelector('.w-rbtn'); if (rb) rb.focus(); } return; }
     if (a === 'sheet') { S.sheet = el.getAttribute('data-v'); draw(); var so = S.root.querySelector('.sheet-o[aria-checked="true"]') || S.root.querySelector('.sheet-o'); if (so) so.focus(); return; }
     if (a === 'sheet-close') { S.sheet = ''; draw(); var rb2 = S.root.querySelector('.w-rbtn'); if (rb2) rb2.focus(); return; }
-    if (a === 'wsugg') { var wt = (S.wsugg || [])[i]; if (wt) { S.wf.text = wt; draw(); var wa = S.root.querySelector('[data-k="w-amt"]'); if (wa) wa.focus(); } return; }
+    if (a === 'wsugg') { var wt = (S.wsugg || [])[i]; if (wt) { S.wf.text = wt; var wl = wLast(wt); if (wl) { if (wl.unit) S.wf.unit = wl.unit; if (wl.reason && !S.wf.reason) S.wf.reason = wl.reason; if (wl.station && !S.wf.sec) S.wf.sec = wl.station; } draw(); var wa = S.root.querySelector('[data-k="w-amt"]'); if (wa) wa.focus(); } return; }
     if (a === 'woften') { var wo = wOften()[i]; if (wo) { S.wf.text = wo.text; if (wo.unit) S.wf.unit = wo.unit; if (wo.reason) S.wf.reason = wo.reason; if (wo.sec && !S.wf.sec) S.wf.sec = wo.sec; draw(); var wa2 = S.root.querySelector('[data-k="w-amt"]'); if (wa2) wa2.focus(); } return; }
     if (a === 'wdel') { removeWaste(dt, id); return; }
     if (a === 'wrestore') { removeWaste(dt, id, true); return; }
@@ -4624,10 +4746,13 @@
     if (a === 'oqset') { S.oqty = el.getAttribute('data-v') || ''; draw(); var to = S.root.querySelector('[data-k="o-text"]'); if (to) to.focus(); return; }
     if (a === 'qset') { S.qty = el.getAttribute('data-v') || ''; draw(); var tq = S.root.querySelector('[data-k="p-text"]'); if (tq) tq.focus(); return; }
     if (a === 'goto') { gotoRow(id); return; }
+    if (a === 'wjump') { var wj = S.root.querySelector('[data-k="w-text"]'); if (wj) { wj.scrollIntoView({ block: 'center', behavior: 'smooth' }); wj.focus({ preventScroll: true }); } return; }
     if (a === 'write') { var wt = S.root.querySelector('[data-k="p-text"]'); if (wt) { wt.scrollIntoView({ block: 'center', behavior: 'smooth' }); wt.focus({ preventScroll: true }); } return; }
     if (a === 'learn-hide') { hideLearned(id, el.getAttribute('data-hide') === '1'); return; }
     if (a === 'copy') { copyList(); return; }
-    if (a === 'print') { window.print(); return; }
+    if (a === 'print') { printWith('print-list'); return; }
+    if (a === 'ocopy') { shareText(ordText()); return; }
+    if (a === 'oprint') { printWith('print-orders'); return; }
     if (a === 'a-tab') { S.atab = el.getAttribute('data-t'); lsSet('lk.prep.atab', S.atab); draw(); window.scrollTo(0, 0); return; }
     if (a === 'staff-open') { if (isSous()) { startDraft(); S.staffOpen = true; draw(); } return; }
     if (a === 'staff-close') { if (draftDirty() && !arm('staff-close')) return; S.staffOpen = false; S.draft = null; draw(); return; }
@@ -4650,6 +4775,7 @@
     }
     if (a === 'a-remove-person') {
       var rp = d.people[i];
+      if (isHeadP(rp) && S.level !== 'owner') return;   // only the head chef's Google account takes the head chef off the list
       // a row just added and still blank goes in one tap; anyone else needs a second tap
       if (!rp || (!(rp.isNew && !String(rp.name).trim()) && !arm('rm:' + rp.id))) return;
       d.people.splice(i, 1); draw(); return;
@@ -4736,7 +4862,11 @@
     if (a === 'badges') { S.draft.showBadges = el.checked; return; }
     if (a === 'staffsee') { S.draft.staffSee[el.getAttribute('data-f')] = el.checked; return; }
     var i = +el.getAttribute('data-i'), p = S.draft.people[i];
-    if (a === 'role') { p.role = el.value; var r = ROLES[el.value]; p.add = r.add; p.tick = r.tick; p.del = r.del; p.ping = r.ping; draw(); }
+    if (a === 'role') {
+      if (el.value === 'head' && S.level !== 'owner') { el.value = p.role; return; }
+      if (el.value === 'head') S.draft.people.forEach(function (q) { if (q !== p && q.role === 'head') q.role = 'sous'; });   // one head chef
+      p.role = el.value; var r = ROLES[el.value]; p.add = r.add; p.tick = r.tick; p.del = r.del; p.ping = r.ping; draw();
+    }
     else if (a === 'perm') { p[el.getAttribute('data-perm')] = el.checked; }
     else if (a === 'active') { p.active = el.checked; draw(); }
   }
@@ -4750,6 +4880,10 @@
   }
   function onKey(e) {
     if (e.key === 'Escape' && S.sheet) { S.sheet = ''; draw(); focusSel('.w-rbtn'); return; }
+    // Next on "What was wasted?" goes to the next empty box instead of sending the form half filled
+    if (e.key === 'Enter' && e.target && e.target.getAttribute && e.target.getAttribute('data-k') === 'w-text' && S.wf.text.trim()) {
+      if (!String(S.wf.amt).trim()) { e.preventDefault(); focusK('w-amt'); return; }
+    }
     if (e.key === 'Tab' && S.sheet) {
       var sh = S.root.querySelector('.sheet'), fs = sh ? Array.prototype.slice.call(sh.querySelectorAll('button')) : [];
       if (fs.length) {

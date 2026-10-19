@@ -19,10 +19,8 @@ const minutes = (id, no, date) => ({ no, v: 1, status: 'published', date, start:
   await p.waitForTimeout(1200);
   ok(/Fryer oil every Monday/.test(await txt(p, '.mn')), 'older minutes: the minutes open');
   ok(!/Checking your sign-off/.test(await txt(p, '.mn')), 'older minutes: the sign box is not stuck on "Checking your sign-off..."');
-  ok(await p.$('#mn-pin') !== null, 'older minutes: the PIN box to sign is there');
-  await p.type('#mn-pin', '2222');
-  await p.waitForTimeout(300);
-  await p.press('#mn-pin', 'Enter');
+  ok(await p.$('#mn-pin') === null && await p.$('.mn-signbtn:not([disabled])') !== null, 'older minutes: one Sign button, no second PIN');
+  await p.click('.mn-signbtn');
   await p.waitForTimeout(800);
   const s = await store(p);
   ok(!!s[fsKey(['minutes', 'old1', 'signs', '1_ann'])], 'older minutes: Ann\'s sign-off is saved');
@@ -34,9 +32,7 @@ const minutes = (id, no, date) => ({ no, v: 1, status: 'published', date, start:
   const extra2 = {}; extra2[fsKey(['minutes', 'm2'])] = minutes('m2', 2, ago(1));
   p = await L.open(b, '#/minutes', { who: 'ann', extra: extra2, wait: 1800 });
   await p.evaluate(() => { window.__fake.mode = 'deny'; });
-  await p.type('#mn-pin', '2222');
-  await p.waitForTimeout(300);
-  await p.press('#mn-pin', 'Enter');
+  await p.click('.mn-signbtn');
   await p.waitForTimeout(1000);
   ok(/sign in again with your PIN/.test(await txt(p, '.p-toast') || ''), 'refused sign-off: "sign in again with your PIN" toast');
   ok(await p.$('#pf1') !== null, 'refused sign-off: back on the person\'s PIN screen');
