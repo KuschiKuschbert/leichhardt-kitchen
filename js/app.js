@@ -829,9 +829,9 @@
     var s = q();
     if (s.length < 3 || D.recipes.some(function (r) { return matches(r.id); }) || guideHits().length) return;
     var l = readJSON(LS, 'lk.miss') || [];
-    var now = window.LK_TIME.now();
-    l = l.filter(function (m) { return !(now - m.at < 120000 && (s.indexOf(m.q) === 0 || m.q.indexOf(s) === 0)); });
-    l.push({ q: s.slice(0, 60), at: now });
+    var t = window.LK_TIME.now();
+    l = l.filter(function (m) { return !(t - m.at < 120000 && (s.indexOf(m.q) === 0 || m.q.indexOf(s) === 0)); });
+    l.push({ q: s.slice(0, 60), at: t });
     writeJSON(LS, 'lk.miss', l.slice(-40));
   }
   app.addEventListener('input', function (e) {

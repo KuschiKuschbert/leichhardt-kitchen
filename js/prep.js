@@ -94,7 +94,7 @@
       catch (e) { db = fs.getFirestore(app); }
       var auth = au.getAuth(app);
       fb = { app: app, fs: fs, au: au, db: db, auth: auth };
-      au.onAuthStateChanged(auth, function (u) { S.user = u; S.authState = 'ready'; lsSet('lk.admin', u ? '1' : ''); featSync(); draw(); });
+      au.onAuthStateChanged(auth, function (u) { S.user = u; S.authState = 'ready'; if (!u) lsSet('lk.admin', ''); featSync(); loadAdmins(); draw(); });
       return fb;
     }, function (e) { sdkP = null; throw e; });
     return sdkP;
@@ -116,7 +116,7 @@
       unsubCfg = fb.fs.onSnapshot(cfgDoc(), function (snap) {
         S.config = snap.exists() ? snap.data() : { people: [] };
         S.config.people = S.config.people || [];
-        S.configState = 'ok'; featSync(); refreshDraft(); watchItems(); watchSections(); watchLearned(); if (S.name === 'orders') watchOrders(); if (S.name === 'waste') watchWaste(); resume(); loadNotes(); loadMinutes(); draw();
+        S.configState = 'ok'; featSync(); refreshDraft(); watchItems(); watchSections(); watchLearned(); if (S.name === 'orders') watchOrders(); if (S.name === 'waste') watchWaste(); resume(); loadAdmins(); loadNotes(); loadMinutes(); draw();
       }, function (err) {
         S.configState = err && err.code === 'permission-denied' ? 'badpin' : 'error';
         if (S.configState === 'badpin') { S.pinError = 'That PIN is not right.'; S.pin = ''; lsSet('lk.prep.pin', ''); cfgKey = ''; unsubCfg = null; gForget(); }
@@ -178,7 +178,9 @@
      What this phone may see is kept in lk.feat, so the landing page and the top bar are right before the book connects. */
   var FEATS = [['guides', 'Guides'], ['pings', 'Shift pings'], ['minutes', 'Meeting minutes']];
   var featHave = (function () { try { return JSON.parse(lsGet('lk.feat') || 'null') || {}; } catch (e) { return {}; } })();
-  function admDev() { return !!S.user || lsGet('lk.admin') === '1'; }
+  /* the head chef's own device: the owner probe has passed on it (lk.admin), or is passing now. A Google account that is not the
+     head chef's does not count, so held-back pages stay held back and the admin links stay hidden on that phone. */
+  function admDev() { return S.level === 'owner' || (S.level !== 'none' && lsGet('lk.admin') === '1'); }
   function featCalc(k) {
     var p = who();
     return admDev() || (S.config.staffSee || {})[k] !== false || !!(p && (p.role === 'sous' || p.role === 'lead' || (k === 'pings' && canPingP(p))));
@@ -1121,7 +1123,7 @@
     var em = S.user.email || '';
     if (S.adminsFor === em) return;
     S.adminsFor = em; S.level = '';
-    fb.fs.getDoc(adminsRef()).then(function () { S.level = 'owner'; seedIds(); draw(); }, function () { S.level = 'none'; draw(); });
+    fb.fs.getDoc(adminsRef()).then(function () { S.level = 'owner'; lsSet('lk.admin', '1'); featSync(); seedIds(); draw(); }, function () { S.level = 'none'; lsSet('lk.admin', ''); featSync(); draw(); });
   }
   /* The rules read three lists next to the people list: sousIds (who may edit the staff list), pingIds (who may write
      shift pings) and staffIds (who may set a PIN). Only the head chef can write sousIds and pingIds, so the owner keeps
@@ -2041,7 +2043,7 @@
     var peopleRows = (S.config.people || []).map(function (p) { var a = byId[p.id] || {}; return { id: p.id, name: p.name, added: Math.max(0, a.added || 0), ticked: Math.max(0, a.ticked || 0), visits: a.visits || 0, lastSeen: a.lastSeen || 0 }; });
     var topAdd = peopleRows.slice().sort(function (a, b) { return b.added - a.added; })[0];
     var topTick = peopleRows.slice().sort(function (a, b) { return b.ticked - a.ticked; })[0];
-    var people = '<section class="set-block"><span class="label">Who is writing and ticking</span><span class="hint">Counted in the background since this feature started. Ticks that are taken back are taken off.</span>' + lvHTML({
+    var people = '<section class="set-block"><span class="label">Who is writing and ticking (all time)</span><span class="hint">Counted in the background since this feature started. Ticks that are taken back are taken off.</span>' + lvHTML({
       key: 'stats-people', items: peopleRows, step: 10, tools: 10, noun: ['person', 'people'], ph: 'Search names', empty: 'No people yet.',
       find: function (r) { return r.name; },
       sorts: [['busy', 'Most written and ticked', function (a, b) { return (b.added + b.ticked) - (a.added + a.ticked); }], ['seen', 'Last seen', function (a, b) { return b.lastSeen - a.lastSeen; }], ['az', 'A to Z', function (a, b) { return a.name.toLowerCase().localeCompare(b.name.toLowerCase()); }]],
@@ -2304,7 +2306,7 @@
     }
     loadAdmins();
     if (!S.level) return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2><p class="hint">Checking your access...</p></section>';
-    if (S.level === 'none') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2><p class="p-err">' + esc(S.user.email) + ' is not an admin here. Ask the head chef to add this Google account.</p><div class="btn-row"><button type="button" class="btn dark" data-p="signout">Sign out</button><a class="btn" href="#/prep">Back to the prep book</a></div></section>';
+    if (S.level === 'none') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2><p class="p-err">' + esc(S.user.email) + ' is not the head chef\'s Google account, so it cannot open the admin panel. Sign out and sign in with the head chef\'s account.</p><div class="btn-row"><button type="button" class="btn dark" data-p="signout">Sign out</button><a class="btn" href="#/prep">Back to the prep book</a></div></section>';
     if (!S.draft) startDraft();
     var d = S.draft, owner = S.level === 'owner';
     if (owner) { watchActivity(); loadStats(false); }
@@ -3154,7 +3156,7 @@
   function notesListHTML() {
     if (S.notes == null) return '<p class="hint">Loading...</p>';
     var t = dayNow(), live = S.notes.filter(function (n) { return !n.removed && n.until >= t; });
-    var now = live.filter(function (n) { return noteOn(n, t); }).sort(function (a, b) { return noteRank(a) - noteRank(b) || (a.at || 0) - (b.at || 0); });
+    var onNow = live.filter(function (n) { return noteOn(n, t); }).sort(function (a, b) { return noteRank(a) - noteRank(b) || (a.at || 0) - (b.at || 0); });
     var later = live.filter(function (n) { return !noteOn(n, t); }).sort(function (a, b) { return String(a.start).localeCompare(String(b.start)) || (a.at || 0) - (b.at || 0); });
     function grp(title, l, past) { return l.length ? '<h3 class="n-gh3">' + title + ' (' + l.length + ')</h3><ul class="nt-rows">' + l.map(function (n) { return noteRowAdmin(n, t, past); }).join('') + '</ul>' : ''; }
     /* Coming up and Past notes can both get long (weekly repeats, months of history): search, tag chips and Show more */
@@ -3167,8 +3169,8 @@
         sorts: sorter, card: function (n) { return noteRowAdmin(n, t, past); }
       });
     }
-    var out = grp('Showing today', now) + noteList('notes-later', 'Coming up', later, false, [['soon', 'Soonest first', function (a, b) { return String(a.start).localeCompare(String(b.start)) || (a.at || 0) - (b.at || 0); }], ['late', 'Furthest away first', function (a, b) { return String(b.start).localeCompare(String(a.start)) || (b.at || 0) - (a.at || 0); }]]);
-    if (!now.length && !later.length) out = '<p class="hint">No pings are set for today or the days ahead. Tap Write a ping to add one.</p>';
+    var out = grp('Showing today', onNow) + noteList('notes-later', 'Coming up', later, false, [['soon', 'Soonest first', function (a, b) { return String(a.start).localeCompare(String(b.start)) || (a.at || 0) - (b.at || 0); }], ['late', 'Furthest away first', function (a, b) { return String(b.start).localeCompare(String(a.start)) || (b.at || 0) - (a.at || 0); }]]);
+    if (!onNow.length && !later.length) out = '<p class="hint">No pings are set for today or the days ahead. Tap Write a ping to add one.</p>';
     var pastBtn = '<button type="button" class="btn" data-p="n-past">' + (S.nPastOpen ? 'Hide past pings' : 'Past pings') + '</button>';
     var pastList = '';
     if (S.nPastOpen) {
@@ -4230,8 +4232,8 @@
           '<button type="button" class="p-x" data-p="g-prm" data-i="' + i + '" aria-label="' + esc('Remove page ' + (i + 1)) + '">Remove</button></span></li>';
       }).join('') + '</ol>';
     }
-    var now = pages ? (pages.length ? pages.length + (pages.length === 1 ? ' page' : ' pages') + ' ready to save.' + (old && old.pages ? ' They replace the ' + old.pages + ' saved now.' : '') : 'No pages chosen.' + (old && old.pages ? ' Saving removes the ' + old.pages + ' saved now.' : '')) :
-      (old && old.pages ? 'Saved now: ' + old.pages + (old.pages === 1 ? ' page' : ' pages') + (old.file ? ' from "' + old.file + '"' : '') + '. Choose a new file to replace them.' : 'No file yet.');
+    var pagesMsg = pages ? (pages.length ? pages.length + (pages.length === 1 ? ' page' : ' pages') + ' ready to save.' + (old && old.pages ? ' They replace the ' + old.pages + ' saved pagesMsg.' : '') : 'No pages chosen.' + (old && old.pages ? ' Saving removes the ' + old.pages + ' saved pagesMsg.' : '')) :
+      (old && old.pages ? 'Saved pagesMsg: ' + old.pages + (old.pages === 1 ? ' page' : ' pages') + (old.file ? ' from "' + old.file + '"' : '') + '. Choose a new file to replace them.' : 'No file yet.');
     return '<section class="set-block g-edit"><span class="label">' + (f.id ? 'Change this guide' : 'Add a guide') + '</span>' +
       '<span class="hint">A PDF or photos, a clear title and a category. Staff search the title, the words in the PDF and the search words. No prices, PINs or staff names.</span>' +
       '<div class="field"><label class="label" for="g-title">Title</label><input id="g-title" class="search" data-k="g-title" maxlength="80" autocomplete="off" placeholder="For example: iCombi, programme a new recipe" value="' + esc(f.title) + '"></div>' +
@@ -4240,7 +4242,7 @@
       '<div class="field"><span class="label">File</span><label class="btn g-filebtn' + (f.busy || f.saving ? ' is-off' : '') + '">' + (pages && pages.length ? 'Add more pages' : old && old.pages ? 'Choose a new file' : 'Choose a PDF or photos') +
         '<input type="file" id="g-file" class="visually-hidden" data-k="g-file" accept="application/pdf,image/*" multiple' + (f.busy || f.saving ? ' disabled' : '') + '></label>' +
         '<span class="hint">Each PDF page or photo becomes a picture staff can open big. Up to ' + G_MAXP + ' pages.</span>' +
-        (f.busy ? '<p class="g-busy" role="status">' + esc(f.busy) + '</p>' : '<p class="g-now" role="status">' + esc(now) + '</p>') + strip + '</div>' +
+        (f.busy ? '<p class="g-busy" role="status">' + esc(f.busy) + '</p>' : '<p class="g-pagesMsg" role="status">' + esc(pagesMsg) + '</p>') + strip + '</div>' +
       '<div class="field"><label class="label" for="g-steps">Steps (optional, one per line)</label><textarea id="g-steps" class="p-bulk" data-k="g-steps" rows="5" maxlength="3000" placeholder="For example: Press the menu button, bottom right.">' + esc(f.steps) + '</textarea></div>' +
       '<div class="field"><label class="label" for="g-kw">Search words (optional)</label><input id="g-kw" class="search" data-k="g-kw" maxlength="200" autocomplete="off" placeholder="For example: iCombi, oven, programme" value="' + esc(f.kw) + '"><span class="hint">Separate them with commas. A recipe card that mentions one of these words shows a link to this guide.</span></div>' +
       '<p class="g-links" id="g-links">' + esc(gLinksText(f)) + '</p>' +
