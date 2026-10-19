@@ -295,6 +295,7 @@ img, svg { display: block; }
 .nb-row.is-removed { opacity: 0.5; }
 .nb-empty { margin: 1rem 0; font-family: 'Caveat', cursive; font-size: 1.6rem; color: #8a8478; }
 .nb-foot { position: relative; display: flex; flex-direction: column; gap: 0.5rem; padding: 0.7rem 0 1rem; border-top: 2px solid var(--ink); }
+.nb-who { margin: 0; }
 .nb-add { display: flex; flex-direction: column; gap: 0.4rem; }
 .nb-add-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .nb-in { min-height: 46px; padding: 0 0.7rem; font: inherit; font-size: 1rem; border: 0; border-bottom: 2px dashed #BDB5A3; background: transparent; color: var(--ink); border-radius: 0; }
