@@ -275,10 +275,10 @@
   function supd(ref, data) { return W([['upd', ref, data]]); }
   function pinHash(id, pin) { return sha('lk:' + id + ':' + pin); }
   /* four drawn cells over one real input: numbers only, shown as dots */
-  function pinField(id, k, val) {
+  function pinField(id, k, val, auto) {
     var cells = '', i;
     for (i = 0; i < 4; i++) cells += '<span class="pin-cell' + (i < val.length ? ' full' : '') + (i === Math.min(val.length, 3) ? ' on' : '') + '" aria-hidden="true">' + (i < val.length ? '\u25CF' : '') + '</span>';
-    return '<div class="pinbox"><div class="pin-cells">' + cells + '</div><input id="' + id + '" class="pin-in" type="password" data-k="' + k + '" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="4" aria-label="4 digit PIN" value="' + esc(val) + '"></div>';
+    return '<div class="pinbox"><div class="pin-cells">' + cells + '</div><input id="' + id + '" class="pin-in' + (auto ? ' pin-auto' : '') + '" type="password" data-k="' + k + '" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="4" aria-label="4 digit PIN" value="' + esc(val) + '"></div>';
   }
   function pinCells(el) {
     var cs = el.parentNode.querySelectorAll('.pin-cell'), n = el.value.length, i;
@@ -293,8 +293,10 @@
   }
   function pickName(id) {
     S.who = id; lsSet('lk.prep.who', id); lsSet('lk.prep.tok', ''); S.authed = false; S.tok = ''; S.pf1 = S.pf2 = ''; S.pinMsg = ''; S.pinStep = 'checking'; featSync(); draw();
-    fb.fs.getDoc(docRef('pinset', id)).then(function (s) { S.pinStep = s.exists() ? 'enter' : 'set'; draw(); },
-      function () { S.pinStep = 'error'; draw(); });
+    fb.fs.getDoc(docRef('pinset', id)).then(function (s) {
+      S.pinStep = s.exists() ? 'enter' : 'set'; draw();
+      if (/^\d{4}$/.test(S.pf1)) { if (S.pinStep === 'enter') submitPin(); else focusK('pf2'); }
+    }, function () { S.pinStep = 'error'; draw(); });
   }
   function signedIn(id, hash) {
     S.authed = true; S.tok = hash; S.pf1 = S.pf2 = ''; S.pinMsg = ''; S.pinStep = '';
@@ -1877,7 +1879,7 @@
   function openLabel() { return { orders: 'Open the order list', waste: 'Open the wastage log', minutes: 'Open the minutes', guides: 'Open the guides' }[S.name] || 'Open the prep list'; }
   function gateHTML() {
     return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Kitchen PIN</h2><p class="hint">Enter the kitchen PIN to open the prep list, orders, wastage, minutes and guides. This phone remembers it.</p>' +
-      '<div class="field"><label class="label" for="p-pin">PIN</label>' + pinField('p-pin', 'p-pin', S.pinInput) + '</div>' +
+      '<div class="field"><label class="label" for="p-pin">PIN</label>' + pinField('p-pin', 'p-pin', S.pinInput, true) + '</div>' +
       (S.pinError ? '<p class="p-err" role="alert">' + esc(S.pinError) + '</p>' : '') +
       '<div class="btn-row"><button type="button" class="btn dark" data-p="pin-go">' + openLabel() + '</button></div></section>';
   }
@@ -1891,13 +1893,14 @@
   function ownPinHTML() {
     var p = who(), step = S.pinStep;
     if (!p) return whoHTML();
-    if (step === 'checking' || !step) return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">' + esc(p.name) + '</h2><p class="hint">One moment...</p></section>';
     if (step === 'error') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">' + esc(p.name) + '</h2><p class="p-err">Could not check your PIN. Check the connection.</p><div class="btn-row"><button type="button" class="btn dark" data-p="who" data-id="' + esc(p.id) + '">Try again</button><button type="button" class="btn" data-p="who-change">Not me</button></div></section>';
-    var setting = step === 'set';
+    var setting = step === 'set', checking = step !== 'set' && step !== 'enter';
+    // while the book checks whether this person has a PIN yet, the box is already there: it takes the keyboard inside
+    // the tap on the name (an iPhone opens the keyboard only inside a tap), and a PIN typed early is sent once it knows
     return '<form class="p-card" data-p-form="pin"><h2 class="p-h" id="rtitle" tabindex="-1">' + (setting ? 'Hi ' + esc(p.name) + ', choose your PIN' : esc(p.name) + ', enter your PIN') + '</h2>' +
-      '<p class="hint">' + (setting ? 'Pick 4 digits you will remember. You use it with your name from now on. This phone stays signed in.' : 'Your own 4-digit PIN.') + '</p>' +
-      '<div class="field"><label class="label" for="pf1">' + (setting ? 'New PIN' : 'PIN') + '</label>' + pinField('pf1', 'pf1', S.pf1) + '</div>' +
-      (setting ? '<div class="field"><label class="label" for="pf2">Type it again</label>' + pinField('pf2', 'pf2', S.pf2) + '</div>' : '') +
+      '<p class="hint">' + (setting ? 'Pick 4 digits you will remember. You use it with your name from now on. This phone stays signed in.' : checking ? 'One moment...' : 'Your own 4-digit PIN.') + '</p>' +
+      '<div class="field"><label class="label" for="pf1">' + (setting ? 'New PIN' : 'PIN') + '</label>' + pinField('pf1', 'pf1', S.pf1, true) + '</div>' +
+      (setting ? '<div class="field"><label class="label" for="pf2">Type it again</label>' + pinField('pf2', 'pf2', S.pf2, true) + '</div>' : '') +
       (S.pinMsg ? '<p class="p-err" role="alert">' + esc(S.pinMsg) + '</p>' : '') +
       '<div class="btn-row"><button type="submit" class="btn dark">' + (setting ? 'Save my PIN' : openLabel()) + '</button><button type="button" class="btn" data-p="who-change">Not me</button></div></form>';
   }
@@ -2388,6 +2391,14 @@
     if (S.staffOpen && isSous()) return staffHTML();
     return listHTML();
   }
+  /* The PIN screens open the keyboard by themselves: the first PIN box still short of 4 digits takes focus, and inputmode
+     brings up the number pad on a phone, a tablet or a Windows touch screen (virtualKeyboard asks for it where the browser
+     has that). A computer with a keyboard just starts typing. Only the kitchen PIN and own PIN screens (pin-auto) do this. */
+  function focusPin() {
+    var ins = S.root.querySelectorAll('.pin-auto'), i;
+    for (i = 0; i < ins.length; i++) if (ins[i].value.length < 4) { ins[i].focus({ preventScroll: true }); kbShow(); return; }
+  }
+  function kbShow() { try { if (navigator.virtualKeyboard && navigator.virtualKeyboard.show) navigator.virtualKeyboard.show(); } catch (e) {} }
   var rendering = false;
   function draw() {
     noteSummaryRefresh();
@@ -2403,6 +2414,7 @@
     document.documentElement.classList.toggle('sheet-open', !!S.root.querySelector('.sheet'));
     if (scrolls.length) Array.prototype.forEach.call(S.root.querySelectorAll('.nb-body'), function (b, i) { if (scrolls[i] != null) b.scrollTop = scrolls[i]; });
     if (key) { var el = S.root.querySelector('[data-k="' + key + '"]'); if (el) { el.focus({ preventScroll: true }); if (start != null && el.setSelectionRange) { try { el.setSelectionRange(start, end); } catch (e) {} } } }
+    else focusPin();
     rendering = false;
   }
 
