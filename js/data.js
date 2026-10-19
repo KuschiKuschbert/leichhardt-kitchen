@@ -1846,7 +1846,7 @@ window.LK_DATA = {
     },
     {
       id: 'spinach-puree', done: true, no: '71', kind: 'batch', forLine: 'For the pork belly', name: 'Spinach Purée', short: 'Spinach purée', art: 'spinach-puree',
-      yield: 'Batch: 1 kg spinach. A serve is 50 ml, a wavy squiggle across the plate. [About 1.2 L, so about 24 serves. Worked out from the ingredients. Confirm with the first batch]',
+      yield: 'Batch: 1 kg spinach. A serve is 50 ml, a wavy squiggle across the plate. Makes about 1.2 L, about 24 serves.',
       ingredients: [
         { q: '1 kg', name: 'Spinach' },
         { q: '700 ml', name: 'Cooking cream', tags: ['Milk'] },
