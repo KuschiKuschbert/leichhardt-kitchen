@@ -125,6 +125,7 @@
         S.config.people = S.config.people || [];
         headFix(S.config);
         S.configState = 'ok'; featSync(); refreshDraft(); watchItems(); watchSections(); watchLearned(); if (S.name === 'orders') watchOrders(); if (S.name === 'waste') watchWaste(); resume(); loadAdmins(); loadNotes(); loadMinutes(); draw();
+        if (whoHead() !== headSeen) whoSync();   // the Head chef role was given or taken while this person is signed in
       }, function (err) {
         S.configState = err && err.code === 'permission-denied' ? 'badpin' : 'error';
         if (S.configState === 'badpin') { S.pinError = 'That PIN is not right.'; S.pin = ''; lsSet('lk.prep.pin', ''); cfgKey = ''; unsubCfg = null; gForget(); }
@@ -464,7 +465,11 @@
   function leave() { S.who = ''; S.authed = false; S.pinStep = ''; lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); }
   /* The top bar shows a small chef mark while a person is signed in on this phone (js/app.js draws it from whoName()). */
   function whoName() { var p = S.authed ? who() : null; return p ? p.name : ''; }
-  function whoSync(signedIn) { try { window.dispatchEvent(new CustomEvent('lk-who', { detail: { signedIn: !!signedIn } })); } catch (e) {} }
+  /* the Head chef is signed in with their PIN on this phone: the top bar shows Admin, which leads to the Google sign-in.
+     The PIN alone never opens the admin panel: the rules only trust the head chef's Google account. */
+  function whoHead() { return !!(S.authed && isHeadP(who())); }
+  var headSeen = false;
+  function whoSync(signedIn) { headSeen = whoHead(); try { window.dispatchEvent(new CustomEvent('lk-who', { detail: { signedIn: !!signedIn } })); } catch (e) {} }
 
   /* ---------- sections: whatever people write becomes a section ---------- */
   /* Sections are spell-checked too. A section close to one already in use (one slip, two for long names) becomes that
@@ -2449,7 +2454,8 @@
       return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2><p class="hint">Loading...</p></section>';
     }
     if (!S.user) {
-      return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2><p class="hint">The admin panel is for the head chef. Sign in with the head chef\'s Google account. Staff and sous chefs use their own PIN in the prep book instead.</p>' +
+      return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2>' + (whoHead() ? '<p class="hint a-headpin">Chef, your PIN opens the prep book. The admin panel also needs your Google account, so a PIN seen over your shoulder cannot change the book. Sign in once on this phone and it stays signed in. On a shared kitchen device, sign out when you are done.</p>' :
+        '<p class="hint">The admin panel is for the head chef. Sign in with the head chef\'s Google account. Staff and sous chefs use their own PIN in the prep book instead.</p>') +
         (S.saveMsg ? '<p class="p-err">' + esc(S.saveMsg) + '</p>' : '') +
         '<div class="btn-row"><button type="button" class="btn dark" data-p="signin">Sign in with Google</button><a class="btn" href="#/prep">Back to the prep book</a></div></section>';
     }
@@ -5128,6 +5134,7 @@
     guideSearch: function (q) { try { return guideSearch(q); } catch (e) { return []; } },
     featOn: featOn,
     whoName: whoName,
+    headPin: whoHead,
     minNudge: minNudgeHTML,
     mailInfo: mlInfo,
     saveConfig: saveConfig,
