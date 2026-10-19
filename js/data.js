@@ -1852,10 +1852,11 @@ window.LK_DATA = {
         { q: '700 ml', name: 'Cooking cream', tags: ['Milk'] },
         { q: '100 g', name: 'Salted butter', tags: ['Milk'] },
         { q: '10 g', name: 'Table salt' },
-        { q: '5 g', name: 'Cracked black pepper' }
+        { q: '5 g', name: 'Cracked black pepper' },
+        { q: '2 g', name: 'Nutmeg' }
       ],
       sections: [
-        { title: 'Method', steps: ['Quickly blanch the spinach in a pot of water for 2 min.', 'Put it straight into ice water to keep the green.', 'Squeeze out the excess liquid.', 'Blend with the cooking cream, salted butter, salt and cracked black pepper until smooth.'] }
+        { title: 'Method', steps: ['Quickly blanch the spinach in a pot of water for 2 min.', 'Put it straight into ice water to keep the green.', 'Squeeze out the excess liquid.', 'Blend with the cooking cream, salted butter, salt, cracked black pepper and nutmeg until smooth.'] }
       ],
       contains: [{ allergen: 'Milk', from: 'cooking cream and butter' }],
       check: [],
