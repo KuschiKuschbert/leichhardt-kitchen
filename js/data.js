@@ -700,10 +700,11 @@ window.LK_DATA = {
     {
       id: 'grill-board', art: 'grill-board', no: '31', kind: 'main', forLine: 'Share board', name: "Grill Maiden's Board", avc: "Grill Maiden's Board S26",
       menu: 'Grill Maiden\'s Shareboard: 300 g slow-roast brisket, 250 g rump, Cumberland pork sausage, chicken wings, chips and salad, choice of two sauces.',
-      yield: 'Per board. 250 g rump, 500 g brisket, 380 to 420 g szechuan wings, Cumberland sausage, chips, salad, two sauces of choice.',
+      yield: 'Per board. 250 g rump, 500 g brisket (smoked or oven baked), 380 to 420 g szechuan wings, Cumberland sausage, chips, salad, two sauces of choice.',
       ingredients: [
         { q: '250 g', name: 'Rump steak', note: 'grain fed MB1' },
-        { q: '500 g', name: 'Smoked brisket', note: 'finished in the kick oven', link: 'brisket' },
+        { q: '500 g', name: 'Smoked brisket', note: 'finished in the kick oven. Use this or the oven baked brisket', link: 'brisket' },
+        { q: '500 g', name: 'Oven baked brisket', note: 'use this or the smoked brisket', link: 'oven-brisket' },
         { q: '380 to 420 g', name: 'Chicken middle wings', note: 'presteamed, floured, portioned in a sandwich bag' },
         { q: '50 g', name: 'Wing flour', note: 'cornflour and szechuan spice seasoning', link: 'wing-flour' },
         { q: '90 g', name: 'Pork Cumberland sausage', note: 'thick, bought in', tags: ['Gluten?', 'Soy?'] },
@@ -714,7 +715,7 @@ window.LK_DATA = {
       ],
       pins: [
         { label: 'Rump', x: 23.5, y: 28.3, side: 'left', tags: [], note: '250 g rump steak.' },
-        { label: 'Brisket', x: 52.7, y: 23.4, side: 'left', link: 'brisket', note: '500 g, slow smoked, finished in the kick oven.' },
+        { label: 'Brisket', x: 52.7, y: 23.4, side: 'left', link: 'brisket', note: '500 g. Smoked brisket (finished in the kick oven) or oven baked brisket (card 121).' },
         { label: 'Chicken wings', x: 29.2, y: 61.2, side: 'right', link: 'wing-flour', note: '380 to 420 g, with szechuan seasoning.' },
         { label: 'Cumberland sausage', x: 65.8, y: 48.1, side: 'right', tags: ['Gluten?', 'Soy?'], note: '90 g, bought in, on the grill first.' },
         { label: 'Chips', x: 50.7, y: 75.7, side: 'left', tags: [], note: '1.1 portions, standard.' },
@@ -731,7 +732,8 @@ window.LK_DATA = {
         ] },
         { title: 'Cooking', steps: [
           'Put the Cumberland sausage on the grill first.',
-          'Finish the brisket (500 g) in the kick oven. [Oven setting to confirm]',
+          'Smoked brisket (500 g): finish it in the kick oven. [Oven setting to confirm]',
+          'Oven baked brisket (500 g): [heating and finishing to confirm]',
           'Cook the rump steak (250 g). [Method and doneness to confirm]',
           'Cook the wings (380 to 420 g). [Fryer setting to confirm]',
           'Cook the chips and plate the standard side salad.'
