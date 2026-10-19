@@ -1235,18 +1235,21 @@ window.LK_DATA = {
     {
       id: 'beef-cheek', art: 'beef-cheek', no: '57', kind: 'main', forLine: 'Plate', name: 'Beef Cheek',
       menu: 'Beef Cheek: red wine-braised beef cheek, roasted honey pumpkin purée, fried onion, herb oil.',
-      yield: 'Per plate. Braised beef cheek, pumpkin purée, fried onion, herb oil.',
+      yield: 'Per plate. Pumpkin purée swooped and smeared, braised beef cheek a bit off centre, herb oil drizzled round, fried shallots on top.',
       ingredients: [
+        { q: '[Qty]', name: 'Roasted honey pumpkin purée', note: 'big kitchen spoon swoop and smear' },
         { q: '[Qty]', name: 'Beef cheek', note: 'braised in red wine', link: 'beef-cheek-batch' },
-        { q: '[Qty]', name: 'Roasted honey pumpkin purée' },
-        { q: '[Qty]', name: 'Fried onion', tags: ['Gluten?'] },
-        { q: '[Qty]', name: 'Herb oil' }
+        { q: '[Qty]', name: 'Herb oil', note: 'lightly drizzled round' },
+        { q: '[Qty]', name: 'Fried shallots', note: 'on top', tags: ['Gluten?'] }
       ],
       pins: [
-        { label: 'Beef cheek', x: 40.5, y: 47.2, side: 'left', link: 'beef-cheek-batch', note: 'Red wine braised.' },
-        { label: 'Roasted honey pumpkin purée', x: 63.2, y: 59.4, side: 'left', tags: [], note: '' },
-        { label: 'Fried onion', x: 50.9, y: 37.7, side: 'right', tags: ['Gluten?'], note: 'On top.' },
-        { label: 'Herb oil', x: 69.8, y: 47.2, side: 'right', tags: [], note: 'Dots round the plate.' }
+        { label: 'Roasted honey pumpkin purée', x: 32.1, y: 58.5, side: 'left', tags: [], note: 'Big kitchen spoon swoop and smear.' },
+        { label: 'Beef cheek', x: 51.9, y: 45.3, side: 'left', link: 'beef-cheek-batch', note: 'Red wine braised. A bit off centre.' },
+        { label: 'Fried shallots', x: 54.7, y: 38.7, side: 'right', tags: ['Gluten?'], note: 'On top.' },
+        { label: 'Herb oil', x: 69.8, y: 33.0, side: 'right', tags: [], note: 'Lightly drizzled round the plate.' }
+      ],
+      sections: [
+        { title: 'Plating', steps: ['Swoop and smear the pumpkin purée across the plate with a big kitchen spoon.', 'Place the beef cheek a bit off centre.', 'Drizzle the herb oil lightly round the plate.', 'Top with the fried shallots.'] }
       ]
     },
     {
@@ -1330,24 +1333,33 @@ window.LK_DATA = {
     {
       id: 'green-bowl', art: 'green-bowl', no: '62', kind: 'main', forLine: 'Salad', name: 'Green Bowl',
       menu: 'Green Bowl: charred broccolini, baby spinach, gem lettuce, brown rice, heirloom cherry tomatoes, red onion, toasted cashews.',
-      yield: 'Per bowl.',
+      yield: 'Per bowl. The premixed green bowl mix, crowded in the centre of the bowl, broccolini across the sides, cashews crumbled on top.',
       ingredients: [
+        { q: '[Qty]', name: 'Green bowl mix', note: 'premixed', link: 'green-bowl-mix' },
         { q: '[Qty]', name: 'Broccolini', note: 'charred' },
+        { q: '[Qty]', name: 'Toasted cashews', note: 'crumbled on top', tags: ['Tree nut'] }
+      ],
+      pins: [
+        { label: 'Green bowl mix', x: 58.0, y: 57.5, side: 'right', link: 'green-bowl-mix', note: 'Premixed. Crowded in the centre of the bowl.' },
+        { label: 'Broccolini', x: 36.8, y: 41.5, side: 'left', tags: [], note: 'Charred. Across the sides.' },
+        { label: 'Toasted cashews', x: 51.9, y: 45.3, side: 'right', tags: ['Tree nut'], note: 'Crumbled on top.' }
+      ],
+      sections: [
+        { title: 'Plating', steps: ['Put the green bowl mix in a bowl, crowded in the centre.', 'Lay the charred broccolini across the sides.', 'Crumble the toasted cashews on top.'] }
+      ]
+    },
+    {
+      id: 'green-bowl-mix', art: 'green-bowl-mix', no: '120', kind: 'batch', forLine: 'For the green bowl', name: 'Green Bowl Mix', short: 'Green bowl mix',
+      yield: 'Premixed. Everything in the green bowl except the broccolini and the cashews.',
+      ingredients: [
         { q: '[Qty]', name: 'Baby spinach' },
         { q: '[Qty]', name: 'Gem lettuce' },
         { q: '[Qty]', name: 'Brown rice' },
         { q: '[Qty]', name: 'Heirloom cherry tomatoes' },
-        { q: '[Qty]', name: 'Red onion' },
-        { q: '[Qty]', name: 'Toasted cashews', tags: ['Tree nut'] }
+        { q: '[Qty]', name: 'Red onion' }
       ],
-      pins: [
-        { label: 'Brown rice', x: 34.7, y: 37.5, side: 'left', tags: [], note: '' },
-        { label: 'Baby spinach', x: 62.3, y: 33.7, side: 'right', tags: [], note: '' },
-        { label: 'Gem lettuce', x: 31.8, y: 63.2, side: 'left', tags: [], note: '' },
-        { label: 'Broccolini', x: 65.1, y: 65.2, side: 'left', tags: [], note: 'Charred.' },
-        { label: 'Cherry tomatoes', x: 45.1, y: 46.9, side: 'left', tags: [], note: 'Heirloom.' },
-        { label: 'Red onion', x: 49.3, y: 55.7, side: 'right', tags: [], note: '' },
-        { label: 'Toasted cashews', x: 55.7, y: 44.3, side: 'right', tags: ['Tree nut'], note: '' }
+      sections: [
+        { title: 'Method', steps: ['Mix the baby spinach, gem lettuce, brown rice, heirloom cherry tomatoes and red onion together.', '[Batch size, mixing and storage to confirm]'] }
       ]
     },
     {
@@ -1880,15 +1892,18 @@ window.LK_DATA = {
     },
     {
       id: 'spinach-puree', done: true, no: '71', kind: 'batch', forLine: 'For the pork belly', name: 'Spinach Purée', short: 'Spinach purée', art: 'spinach-puree',
-      yield: 'Batch: 1.5 kg spinach, about 1 L of purée. A serve is 50 ml, a wavy squiggle across the plate.',
+      yield: 'Batch: 1 kg spinach. A serve is 50 ml, a wavy squiggle across the plate. Makes about 1.2 L, about 24 serves.',
       ingredients: [
-        { q: '1.5 kg', name: 'Spinach' },
-        { q: '300 ml', name: 'Cooking cream', tags: ['Milk'] },
-        { q: '80 g', name: 'Salted butter', tags: ['Milk'] },
-        { q: '10 g', name: 'Table salt' }
+        { q: '1 kg', name: 'Spinach' },
+        { q: '700 ml', name: 'Cooking cream', tags: ['Milk'] },
+        { q: '100 g', name: 'Salted butter', tags: ['Milk'] },
+        { q: '10 g', name: 'Table salt' },
+        { q: '5 g', name: 'Cracked black pepper' },
+        { q: '2 g', name: 'Nutmeg' },
+        { q: '15 ml', name: 'Lemon juice', note: 'added after blending and cooling' }
       ],
       sections: [
-        { title: 'Method', steps: ['Quickly blanch the spinach in a pot of water for 2 min.', 'Put it straight into ice water to keep the green.', 'Squeeze out the excess liquid.', 'Blend with the cooking cream, salted butter and salt until smooth.'] }
+        { title: 'Method', steps: ['Quickly blanch the spinach in a pot of water for 2 min.', 'Put it straight into ice water to keep the green.', 'Squeeze out the excess liquid.', 'Blend with the cooking cream, salted butter, salt, cracked black pepper and nutmeg until smooth.', 'Let the purée cool right down.', 'Stir in the lemon juice only once the purée is blended and cooled. Added warm, the acid can split the cream.'] }
       ],
       contains: [{ allergen: 'Milk', from: 'cooking cream and butter' }],
       check: [],

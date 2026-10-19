@@ -299,7 +299,7 @@
     sset(docRef('activity', p.id), data, true).catch(function () {});
   }
   function pickName(id) {
-    S.who = id; lsSet('lk.prep.who', id); lsSet('lk.prep.tok', ''); S.authed = false; S.tok = ''; S.pf1 = S.pf2 = ''; S.pinMsg = ''; S.pinStep = 'checking'; featSync(); draw();
+    S.who = id; lsSet('lk.prep.who', id); lsSet('lk.prep.tok', ''); S.authed = false; S.tok = ''; S.pf1 = S.pf2 = ''; S.pinMsg = ''; S.pinStep = 'checking'; featSync(); draw(); whoSync();
     fb.fs.getDoc(docRef('pinset', id)).then(function (s) {
       S.pinStep = s.exists() ? 'enter' : 'set'; draw();
       if (/^\d{4}$/.test(S.pf1)) { if (S.pinStep === 'enter') submitPin(); else focusK('pf2'); }
@@ -308,7 +308,7 @@
   function signedIn(id, hash) {
     S.authed = true; S.tok = hash; S.pf1 = S.pf2 = ''; S.pinMsg = ''; S.pinStep = '';
     lsSet('lk.prep.tok', id + ':' + hash); lsSet('lk.prep.seen', String(Date.now())); lastAct = Date.now(); startIdle();
-    draw();
+    draw(); whoSync(true);   // a real sign-in: the chef mark flips in
   }
   /* After 3 wrong PINs the page makes the person wait (1, 2, 5, 15 then 30 minutes). Kept on the phone, so a reload does not skip it.
      This slows someone using the page; it cannot stop a script that talks to the database directly. */
@@ -366,7 +366,7 @@
     var tok = (lsGet('lk.prep.tok') || '').split(':');
     if (tok[0] !== S.who || !tok[1] || idleExpired()) { if (S.who) pickName(S.who); startIdle(); return; }
     startIdle();
-    S.authed = true; S.tok = tok[1]; draw();
+    S.authed = true; S.tok = tok[1]; draw(); whoSync();
     sset(docRef('activity', S.who), { name: (who() || {}).name || '', visits: fb.fs.increment(1), lastSeen: now() }, true).catch(function (e) {
       if (e && e.code === 'permission-denied') { S.authed = false; S.tok = ''; pickName(S.who); }
     });
@@ -390,7 +390,10 @@
     document.addEventListener('visibilitychange', function () { if (!document.hidden && S.authed && idleExpired()) idleLock(); });
     lsSet('lk.prep.seen', String(Date.now()));
   }
-  function leave() { S.who = ''; S.authed = false; S.pinStep = ''; lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); }
+  function leave() { S.who = ''; S.authed = false; S.pinStep = ''; lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); }
+  /* The top bar shows a small chef mark while a person is signed in on this phone (js/app.js draws it from whoName()). */
+  function whoName() { var p = S.authed ? who() : null; return p ? p.name : ''; }
+  function whoSync(signedIn) { try { window.dispatchEvent(new CustomEvent('lk-who', { detail: { signedIn: !!signedIn } })); } catch (e) {} }
 
   /* ---------- sections: whatever people write becomes a section ---------- */
   /* Sections are spell-checked too. A section close to one already in use (one slip, two for long names) becomes that
@@ -4675,6 +4678,7 @@
     guidesFor: function (rid) { try { return guidesFor(rid); } catch (e) { return []; } },
     guideSearch: function (q) { try { return guideSearch(q); } catch (e) { return []; } },
     featOn: featOn,
+    whoName: whoName,
     minNudge: minNudgeHTML,
     saveConfig: saveConfig,
     proofread: proofread,
