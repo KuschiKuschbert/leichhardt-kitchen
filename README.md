@@ -197,6 +197,7 @@ npm test
 - **Phones.** "Write a line" under the date on the prep list goes straight to the add box at the end of the page. Pressing Enter in Section moves on to the line. The phone keyboard shows Next or Done on the add boxes.
 - **Wastage.** When Log it finds something missing, the cursor goes to that box (or the reason button), and after a good entry it goes back to "What was wasted?". Tab stays inside the reason sheet.
 - **PIN screens** name the page they open ("Open the order list"). When the two new PINs do not match, "Type it again" is emptied and gets the cursor. On the minutes, Enter signs once the PIN is right.
+- **Nothing under the phone tab bar (20 Oct 2026).** "Zoom out" on a recipe and the admin Save bar sit above the 68 px tab bar (`--tabbar-h`) instead of behind it, and a toast keeps clear of the update bar on phones. "Skip to content" moves the focus to the page without changing the address (it used to open the landing page). The admin tabs wrap onto a second row from 600 px instead of hiding Tools off the right edge, and on a phone they scroll away with the page. In People, Reset PIN and Remove never break mid-word, and from 600 to 899 px the list uses the card layout. `tests/layout-quick.test.js`.
 - Closing "Add from the recipes" puts the cursor back on its button. The recipe link on a line is read out as "Open the Coconut Laksa card".
 
 ### Wastage log
