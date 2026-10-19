@@ -666,8 +666,9 @@
       lastHash = location.hash;
       // Coming back to the recipe list from a recipe puts you where you were.
       window.scrollTo(0, route.name === 'home' && prevRoute === 'recipe' ? homeY : 0);
-      var title = document.getElementById('rtitle');
-      if (title && route.name !== 'home') title.focus({ preventScroll: true });
+      // the heading takes focus on a new page, unless a PIN box took it (the PIN screens open the keyboard by themselves)
+      var title = document.getElementById('rtitle'), ae = document.activeElement;
+      if (title && route.name !== 'home' && !(ae && ae.classList && ae.classList.contains('pin-auto'))) title.focus({ preventScroll: true });
     } else if (keep) {
       var el = app.querySelector('[data-k="' + keep + '"]');
       if (el) {
