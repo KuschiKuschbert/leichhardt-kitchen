@@ -1046,12 +1046,12 @@ html.note-open, html.note-open body { overflow: hidden; }
 html.print-min .mn-regtbl { display: block; }
 
 /* Safety nets (October 2026): the toast sits above the phone tab bar instead of on it, its Undo is a full-size
-   target, and "Use a different kitchen PIN" is kept apart from the name buttons. */
+   target, and "Use a different kitchen PIN" (admin Tools tab) is kept apart from the move to a new PIN. */
 .p-toast { display: flex; align-items: center; gap: 0.2rem; width: max-content; }
 .p-toast-btn { min-height: 44px; min-width: 64px; padding: 0 1rem; border-radius: 22px; flex: none; }
 @media (max-width: 719px) { .p-toast { bottom: 84px; } html.has-upd .p-toast { bottom: 156px; } }
 html.has-upd .p-toast { bottom: 140px; }
-.p-forget { margin-top: 1.6rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+.a-forget { margin-top: 1.6rem; padding-top: 1rem; border-top: 1px solid var(--line); }
 
 /* Not sent yet: no signal, or changes still waiting for the server (prep pages) */
 .p-sync { position: sticky; top: 0; z-index: 25; margin: 0 0 0.75rem; padding: 0.6rem 0.9rem; border: 2px solid var(--accent); border-radius: 10px; background: #FFF3EA; color: var(--ink); font-size: 0.95rem; line-height: 1.35; }
