@@ -195,6 +195,8 @@ img, svg { display: block; }
 .settings { display: flex; flex-direction: column; gap: 1.5rem; }
 .set-block { display: flex; flex-direction: column; gap: 0.6rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--line); }
 .set-block:last-child { border-bottom: 0; }
+.a-ids { padding: 0.8rem 1rem; border: 1.5px solid var(--accent); border-left-width: 6px; border-radius: 10px; background: var(--paper); margin-bottom: 1rem; }
+.a-ids-list { margin: 0; padding-left: 1.2rem; }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; min-height: 48px; padding: 0 1.2rem; border-radius: 24px; border: 1.5px solid var(--ink); background: var(--paper); font-weight: 700; cursor: pointer; text-decoration: none; }
 .btn.dark { background: var(--ink); color: #fff; }
 .btn-row { display: flex; flex-wrap: wrap; gap: 0.6rem; }

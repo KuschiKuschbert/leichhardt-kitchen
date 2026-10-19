@@ -986,18 +986,21 @@
   function idsFor(people, fn) { return people.filter(function (p) { return p.active !== false && String(p.name).trim() && fn(p); }).map(function (p) { return p.id; }); }
   function isSousP(p) { return p.role === 'sous'; }
   function canPingP(p) { return p.role === 'sous' || !!p.ping; }
+  function anyP() { return true; }
   function staffSee(c) { var o = {}; FEATS.forEach(function (f) { o[f[0]] = ((c && c.staffSee) || {})[f[0]] !== false; }); return o; }
-  function saveConfig(cfg) {
+  /* hold: keep these sousIds and pingIds as they are instead of working them out from the roles (see seedIds) */
+  function saveConfig(cfg, hold) {
     var clean = {
       people: cfg.people.filter(function (p) { return String(p.name).trim(); }).map(function (p) {
         return { id: p.id, name: String(p.name).trim().slice(0, 40), role: p.role || 'staff', add: !!p.add, tick: !!p.tick, del: !!p.del, ping: !!p.ping, active: p.active !== false };
       }),
       stations: [], showBadges: cfg.showBadges !== false, staffSee: staffSee(cfg),
-      sousIds: idsFor(cfg.people, isSousP), pingIds: idsFor(cfg.people, canPingP),
+      sousIds: hold ? (hold.sousIds || []) : idsFor(cfg.people, isSousP), pingIds: hold ? (hold.pingIds || []) : idsFor(cfg.people, canPingP),
+      staffIds: idsFor(cfg.people, anyP),
       updated: now(), updatedBy: (S.user && S.user.email) || (who() ? who().name : '')
     };
-    /* a sous chef may only change the people list, so only that is sent (merged): the rules refuse any other field */
-    return sdk().then(function () { return S.user ? track(fb.fs.setDoc(cfgDoc(), clean)) : sset(cfgDoc(), { people: clean.people, updated: clean.updated, updatedBy: clean.updatedBy }, true); }).then(function () { return clean; });
+    /* a sous chef may only change the people list and who may set a PIN, so only those are sent (merged): the rules refuse any other field */
+    return sdk().then(function () { return S.user ? track(fb.fs.setDoc(cfgDoc(), clean)) : sset(cfgDoc(), { people: clean.people, staffIds: clean.staffIds, updated: clean.updated, updatedBy: clean.updatedBy }, true); }).then(function () { return clean; });
   }
   function adminSave() {
     S.busy = true; S.saveMsg = 'Saving...'; draw();
@@ -1084,13 +1087,51 @@
     S.adminsFor = em; S.level = '';
     fb.fs.getDoc(adminsRef()).then(function () { S.level = 'owner'; seedIds(); draw(); }, function () { S.level = 'none'; draw(); });
   }
-  /* the rules let a sous chef edit the staff list only if listed in sousIds, and write shift pings only if listed in
-     sousIds or pingIds, so the owner keeps both lists in step with the people list */
+  /* The rules read three lists next to the people list: sousIds (who may edit the staff list), pingIds (who may write
+     shift pings) and staffIds (who may set a PIN). Only the head chef can write sousIds and pingIds, so the owner keeps
+     them in step with the roles when the admin panel opens. A sous chef can change a role or a Pings tick in the people
+     list (the rules cannot tell one field of a person from another), so when the roles and the lists disagree the
+     panel shows what changed and asks (idChanges, the card at the top of the admin panel) instead of saving it quietly.
+     staffIds follows the people list by itself: a sous chef's staff page sends it too. */
+  function sameIds(c, have, fn) { return (have || []).slice().sort().join(',') === idsFor(c.people, fn).sort().join(','); }
+  function idChanges(c) {
+    var out = [];
+    if (!c || !c.people || !c.sousIds || !c.pingIds) return out;   // a list never seeded yet: nothing to ask about
+    c.people.forEach(function (p) {
+      if (p.active === false || !String(p.name).trim()) return;
+      var sous = c.sousIds.indexOf(p.id) >= 0, ping = (c.pingIds || []).indexOf(p.id) >= 0;
+      if (isSousP(p) !== sous) out.push({ p: p, sous: isSousP(p), what: isSousP(p) ? 'is now marked Sous chef' : 'is no longer marked Sous chef' });
+      else if (canPingP(p) !== ping) out.push({ p: p, ping: canPingP(p), what: canPingP(p) ? 'is now ticked for Pings' : 'is no longer ticked for Pings' });
+    });
+    return out;
+  }
   function seedIds() {
     var c = S.config; if (!c || !c.people) return;
-    function same(have, fn) { return (have || []).slice().sort().join(',') === idsFor(c.people, fn).sort().join(','); }
-    if (same(c.sousIds, isSousP) && same(c.pingIds, canPingP)) return;
-    saveConfig({ people: c.people, showBadges: c.showBadges, staffSee: c.staffSee }).catch(function () {});
+    if (sameIds(c, c.sousIds, isSousP) && sameIds(c, c.pingIds, canPingP) && sameIds(c, c.staffIds, anyP)) return;
+    var asking = idChanges(c).length > 0;
+    if (asking && sameIds(c, c.staffIds, anyP)) return;
+    saveConfig({ people: c.people, showBadges: c.showBadges, staffSee: c.staffSee }, asking ? { sousIds: c.sousIds, pingIds: c.pingIds } : null).catch(function () {});
+  }
+  function idCardHTML() {
+    var c = S.config, ch = idChanges(c);
+    if (!ch.length) return '';
+    return '<section class="set-block a-ids"><span class="label">Changed from the prep book</span><span class="hint">A sous chef changed these in the people list. They only take effect once you keep them.</span>' +
+      '<ul class="a-ids-list">' + ch.map(function (x) { return '<li><strong>' + esc(x.p.name) + '</strong> ' + x.what + '</li>'; }).join('') + '</ul>' +
+      '<div class="btn-row"><button type="button" class="btn dark" data-p="a-ids-keep"' + (S.idBusy ? ' disabled' : '') + '>Keep these changes</button><button type="button" class="btn" data-p="a-ids-undo"' + (S.idBusy ? ' disabled' : '') + '>Undo them</button></div>' +
+      (S.idMsg ? '<span class="saved" role="status">' + esc(S.idMsg) + '</span>' : '') + '</section>';
+  }
+  /* keep: the roles as they are become the lists. undo: the people list goes back to what the lists say. */
+  function idDecide(keep) {
+    var c = S.config, ch = idChanges(c); if (!ch.length || S.idBusy) return;
+    var people = JSON.parse(JSON.stringify(c.people));
+    if (!keep) ch.forEach(function (x) {
+      var p = people.filter(function (q) { return q.id === x.p.id; })[0]; if (!p) return;
+      if (x.sous !== undefined) { p.role = x.sous ? 'staff' : 'sous'; var r = ROLES[p.role]; p.add = r.add; p.tick = r.tick; p.del = r.del; p.ping = r.ping; }
+      else p.ping = !x.ping;
+    });
+    S.idBusy = true; S.idMsg = 'Saving...'; draw();
+    saveConfig({ people: people, showBadges: c.showBadges, staffSee: c.staffSee }).then(function () { S.idBusy = false; S.idMsg = ''; startDraft(); draw(); },
+      function () { S.idBusy = false; S.idMsg = 'Could not save. Check the connection.'; draw(); });
   }
   /* ---------- the last 14 days, read once a day per phone ----------
      Past days hardly change, so they are read once a day and kept on the phone. Today comes from the live list.
@@ -2251,7 +2292,7 @@
       '<section class="set-block"><span class="label">Kitchen PIN</span><span class="hint">The kitchen PIN is the lock on the whole book, so keep it to staff only. Writing needs a person\'s own PIN as well.</span>' +
       '<div class="field"><label class="label" for="a-newpin">Move to a new 4 digit kitchen PIN</label><input id="a-newpin" class="search" inputmode="numeric" maxlength="4" autocomplete="off" data-k="a-newpin" placeholder="4 digits" value="' + esc(S.newPin) + '"></div>' +
       '<div class="btn-row"><button type="button" class="btn" data-p="move-pin"' + (S.moving ? ' disabled' : '') + '>' + (armed('move-pin') ? 'Tap again to copy everything' : 'Copy everything to the new PIN') + '</button></div><span class="saved" role="status">' + esc(S.moveMsg) + '</span><span class="hint">Ask for the new PIN to be added to the security rules first. The old PIN keeps working until its rules are removed.</span></section></div>');
-    return '<div class="p-admin">' + bar + '<h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2>' + tabsBar + '<div class="a-pane">' + pane + '</div></div>';
+    return '<div class="p-admin">' + bar + '<h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2>' + tabsBar + '<div class="a-pane">' + (owner ? idCardHTML() : '') + pane + '</div></div>';
   }
   /* the same Remove button on the admin People tab and the sous chef's staff list, with a second tap to be sure */
   function removePersonBtn(p, i) {
@@ -4399,6 +4440,8 @@
       d.people.splice(i, 1); draw(); return;
     }
     if (a === 'a-save') { adminSave(); return; }
+    if (a === 'a-ids-keep') { idDecide(true); return; }
+    if (a === 'a-ids-undo') { idDecide(false); return; }
     if (a === 'a-reset') { startDraft(); draw(); return; }
   }
   function onInput(e) {
