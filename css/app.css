@@ -241,6 +241,9 @@ img, svg { display: block; }
 @media (max-width: 380px) { .pin-cell { width: 3rem; height: 3.6rem; } .pin-cells { gap: 0.45rem; } }
 .p-err { margin: 0; color: var(--tag); font-weight: 700; }
 .p-names { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.p-here { margin: 0.9rem 0 0.4rem; }
+.is-guest .nb-top { display: none; }
+.nb-guest { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; margin: 0 0 1rem; padding: 0.6rem 0.8rem; border-left: 4px solid var(--accent); background: var(--hit); font-weight: 600; }
 .p-name { min-height: 52px; padding: 0 1.1rem; font-size: 1rem; }
 .p-bar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.4rem 1rem; font-size: 0.9375rem; }
 .p-links { display: flex; gap: 1rem; }
