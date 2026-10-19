@@ -616,6 +616,8 @@
       '<section class="set-block set-qr" aria-label="Open on a phone"><span class="label">Open on a phone</span><div class="qr-row"><img class="qr-img" src="qr.svg" width="180" height="180" alt="QR code that opens the Kitchen Book">' +
       '<div><p class="hint">Scan with a phone camera to open the Kitchen Book on that phone, then add it to the home screen so it is one tap away.</p><p class="qr-url">kuschikuschbert.github.io/leichhardt-kitchen</p>' +
       '<div class="btn-row"><a class="btn" href="qr-sign.pdf" target="_blank" rel="noopener">Print the A4 sign</a><a class="btn" href="qr.png" download="Leichhardt Kitchen Book QR.png">Download the QR code</a></div></div></div></section>' +
+      '<section class="set-block" aria-label="Shared kitchen device"><span class="label">Shared kitchen device</span><span class="hint">For a tablet or phone everyone picks up. After 10 minutes with no touch, and each new day, the prep pages ask who you are again, so nobody writes under the last person\'s name. Recipes and guides stay open and the kitchen PIN stays. A personal phone keeps you signed in.</span>' +
+      '<div class="chips"><button type="button" class="chip" data-act="setshared" data-val="0" data-k="setshared:0" aria-pressed="' + !settings.shared + '">Personal phone</button><button type="button" class="chip" data-act="setshared" data-val="1" data-k="setshared:1" aria-pressed="' + !!settings.shared + '">Shared device</button></div></section>' +
       '<section class="set-block" aria-label="Admin panel"><span class="label">Admin panel</span><span class="hint">For the head chef. It is always the key button at the top right of every page, next to Settings. The key is filled in when this phone or computer is signed in.</span></section>' +
       '<section class="set-block" aria-label="About"><span class="label">About</span><span class="saved">' + esc(plural(D.recipes.length, 'recipe', 'recipes')) + ', updated ' + esc(D.updated) +
       '. Settings are saved on this phone or tablet only.</span></section></main>' + footer() + '</div>';
@@ -875,6 +877,7 @@
     else if (act === 'setview' || act === 'topview') { var was = settings.view; settings.view = val; saveSettings(); if (act === 'topview' && was !== val) { render(); window.scrollTo(0, 0); return; } }
     else if (act === 'settext') { settings.text = val; saveSettings(); document.documentElement.setAttribute('data-text', val); }
     else if (act === 'clearticks') { ticks = {}; saveTicks(); }
+    else if (act === 'setshared') { settings.shared = val === '1'; saveSettings(); }
     else if (act === 'installno') { settings.installNo = true; saveSettings(); }
     else if (act === 'install') {
       if (installEvt) {
