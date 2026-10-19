@@ -380,12 +380,17 @@ img, svg { display: block; }
 .nb-usual, .nb-tools { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .nb-us { font-size: 0.75rem; color: var(--muted); margin-left: 0.3rem; }
 .nb-side { padding-bottom: 1rem; }
+/* Print the list (prep) and Print (orders) set a class on <html>: other pages print as they are, not blank */
 @media print {
-  body * { visibility: hidden !important; }
-  .nb-left, .nb-left * { visibility: visible !important; }
-  .nb-left { position: absolute; left: 0; top: 0; width: 100%; height: auto !important; box-shadow: none !important; border: 0 !important; }
-  .nb-left .nb-body { overflow: visible !important; }
-  .nb-left .nb-foot, .nb-star, .nb-x, .nb-go { display: none !important; }
+  html.print-list body *, html.print-orders body * { visibility: hidden !important; }
+  html.print-list .nb-left, html.print-list .nb-left * { visibility: visible !important; }
+  html.print-list .nb-left { position: absolute; left: 0; top: 0; width: 100%; height: auto !important; box-shadow: none !important; border: 0 !important; }
+  html.print-list .nb-left .nb-body { overflow: visible !important; }
+  html.print-list .nb-left .nb-foot, html.print-list .nb-star, html.print-list .nb-x, html.print-list .nb-go { display: none !important; }
+  html.print-orders .o-page, html.print-orders .o-page * { visibility: visible !important; }
+  html.print-orders .o-page { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none !important; border: 0 !important; }
+  html.print-orders .o-add, html.print-orders .o-tools, html.print-orders .nb-x, html.print-orders .p-x, html.print-orders .o-nudge, html.print-orders .nb-link { display: none !important; }
+  .zoombar, .tabbar, .skip { display: none !important; }
 }
 @media (max-width: 599px) {
   .nb-row { flex-wrap: wrap; row-gap: 2px; }
@@ -455,6 +460,7 @@ img, svg { display: block; }
 .o-who { display: block; margin-top: 0.15rem; font-family: var(--body); font-size: 0.8125rem; color: var(--muted); }
 .o-page .nb-row .p-x { margin-left: 0.4rem; }
 .o-nav { flex-wrap: wrap; }
+.o-tools { margin: 1rem 0 0; }
 .o-days { display: inline-flex; flex-wrap: nowrap; gap: 0.5rem; }
 .o-nav .o-days .chip:first-child, .o-nav .o-days .chip:last-child { min-width: 48px; padding: 0; font-size: 1.4rem; }
 .o-nav .chip { font: 700 0.9375rem var(--body); min-height: 44px; padding: 0 1rem; }
