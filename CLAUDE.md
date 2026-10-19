@@ -24,6 +24,7 @@ The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the
 | `css/app.css` | The Leichhardt look |
 | `firestore.rules` | Rules template (see above) |
 | `scripts/publish-rules.sh` | Publishes the rules from your own computer: asks for the PIN and email, deploys a filled-in copy from a temporary folder |
+| `.github/workflows/publish-rules.yml`, `.github/workflows/live-tests.yml` | Publish the rules from GitHub (secrets `FIREBASE_SA`, `KITCHEN_PIN`, `OWNER_EMAIL`), and run the click tests against the live site after each Pages deploy |
 | `manifest.webmanifest`, `sw.js`, `icons/`, `icon.svg` | Installable app: manifest, service worker (network first), rope KB logo |
 | `qr.svg`, `qr.png`, `qr-sign.pdf` | QR code to open the book, and the A4 sign |
 | `README.md` | Everything the app does, for people and for the next session |
@@ -36,8 +37,8 @@ The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the
 ## How changes ship
 1. Every new piece of work starts in its own git worktree, on a fresh branch from the latest `main`. Never edit in the main checkout and never commit straight to `main`. One theme per worktree, per branch and per pull request: unrelated changes get their own worktree. Squash merge, then remove the worktree and its branch.
 2. Test before merging: `node --check` on changed JS, then `cd tests && npm install && npm test`. It serves the repo locally and runs every file in `tests/` in Chrome: each page at 390, 768 and 1280 px (no sideways scroll, no JS errors) and the click paths for the prep pages, orders, wastage, minutes, admin and recipe search. Firebase is replaced by the stand-in in `tests/fake/`, so no real PIN or data is needed and nothing is written to the real book. Add checks for the click paths you change to the matching `*.test.js` file (or a new one). After merging, `BASE=https://kuschikuschbert.github.io/leichhardt-kitchen/ npm test` runs the same tests on the live site.
-3. If `firestore.rules` changes: test it on the Firestore emulator first (`cd tests/rules && npm install && npm test`, and add a check for every new rule), publish it from your own computer with `scripts/publish-rules.sh` (it asks for the real PIN and email, or paste a filled-in copy into the Firebase console), then merge the code that needs it. Publish rules before code that writes new fields or collections; publish after code when the rules get stricter about something old code does not send.
-4. After merging, wait for GitHub Pages (about a minute), then check the live site.
+3. If `firestore.rules` changes: test it on the Firestore emulator first (`cd tests/rules && npm install && npm test`, and add a check for every new rule), publish it with the **Publish rules** workflow in the Actions tab (Run workflow; it fills the `KITCHEN_PIN` and `OWNER_EMAIL` secrets into a copy and deploys it with the service account), or from your own computer with `scripts/publish-rules.sh`, then merge the code that needs it. Publish rules before code that writes new fields or collections; publish after code when the rules get stricter about something old code does not send.
+4. After merging, wait for GitHub Pages (about a minute), then check the live site. The **Live click tests** workflow runs the click tests against the live site by itself after each Pages deploy (and from the Actions tab); read its result.
 5. Keep `README.md` in step with every change.
 
 ## Things that are easy to break
