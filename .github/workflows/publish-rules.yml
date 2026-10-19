@@ -62,4 +62,5 @@ jobs:
         working-directory: tests/rules
         env:
           KITCHEN_PIN: ${{ secrets.KITCHEN_PIN }}
+          APPCHECK_DEBUG_TOKEN: ${{ secrets.APPCHECK_DEBUG_TOKEN }}
         run: sleep 20 && node probe.mjs

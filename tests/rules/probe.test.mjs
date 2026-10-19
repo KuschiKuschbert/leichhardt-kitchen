@@ -8,7 +8,7 @@ import { doc, setDoc } from 'firebase/firestore';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { runProbe } from './probe-checks.mjs';
+import { runProbe, restClient } from './probe-checks.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PIN = '000000', OWNER = 'headchef@test.local';
@@ -17,12 +17,14 @@ const env = await initializeTestEnvironment({ projectId: 'demo-test', firestore:
 await env.clearFirestore();
 await env.withSecurityRulesDisabled(async ctx => { await setDoc(doc(ctx.firestore(), 'kitchens/' + PIN + '/config/main'), { people: [], sousIds: [], staffIds: [] }); });
 
+// the probe talks to the emulator the way it talks to the live book: plain HTTP, no SDK
+const base = 'http://' + process.env.FIRESTORE_EMULATOR_HOST + '/v1/projects/demo-test/databases/(default)/documents';
 const lines = [];
-const fails = await runProbe(env.unauthenticatedContext().firestore(), PIN, l => lines.push(l));
+const fails = await runProbe(restClient(base, {}), PIN, l => lines.push(l));
 lines.forEach(l => console.log(l));
 let bad = fails;
 const wrong = [];
-const wrongFails = await runProbe(env.unauthenticatedContext().firestore(), '999999', l => wrong.push(l));
+const wrongFails = await runProbe(restClient(base, {}), '999999', l => wrong.push(l));
 const firstFailed = wrongFails === 1 && /^FAIL the kitchen PIN opens the book/.test(wrong[0]);
 console.log((firstFailed ? 'PASS ' : 'FAIL ') + 'a wrong kitchen PIN fails the allowed read and nothing else' + (firstFailed ? '' : ' (' + wrong.filter(l => /^FAIL/.test(l)).join('; ') + ')'));
 if (!firstFailed) bad++;

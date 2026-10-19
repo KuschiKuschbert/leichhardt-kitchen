@@ -59,18 +59,25 @@ const store = page => page.evaluate(() => window.__fake.dump());
   ok(p.errors.length === 0, 'waste: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // kitchen PIN: two taps on the name screen
+  // kitchen PIN: the name screen has no forget button any more; the admin Tools tab has it, with two taps
   p = await L.open(b, '#/prep', { who: '', wait: 1500 });
-  ok(/Use a different kitchen PIN/.test(await txt(p, '[data-p="pin-forget"]')), 'who screen: button reads "Use a different kitchen PIN"');
+  ok(await p.$('[data-p="pin-forget"]') === null, 'who screen: no "Use a different kitchen PIN" button for staff');
+  await p.context().close();
+  p = await L.open(b, '#/admin', { admin: true, wait: 1800 });
+  await p.click('[data-p="a-tab"][data-t="tools"]');
+  await p.waitForTimeout(200);
+  ok(/Use a different kitchen PIN/.test(await txt(p, '[data-p="pin-forget"]')), 'admin Tools: button reads "Use a different kitchen PIN on this device"');
   await p.click('[data-p="pin-forget"]');
   await p.waitForTimeout(150);
-  ok(/Tap again/.test(await txt(p, '[data-p="pin-forget"]')), 'who screen: first tap asks for a second tap');
-  ok(await p.evaluate(() => localStorage.getItem('lk.prep.pin')) === L.PIN, 'who screen: PIN still kept after one tap');
+  ok(/Tap again/.test(await txt(p, '[data-p="pin-forget"]')), 'admin Tools: first tap asks for a second tap');
+  ok(await p.evaluate(() => localStorage.getItem('lk.prep.pin')) === L.PIN, 'admin Tools: PIN still kept after one tap');
   await p.waitForTimeout(4300);
-  ok(/Use a different kitchen PIN/.test(await txt(p, '[data-p="pin-forget"]')), 'who screen: goes back to normal after 4 s');
+  ok(/Use a different kitchen PIN/.test(await txt(p, '[data-p="pin-forget"]')), 'admin Tools: goes back to normal after 4 s');
   await p.click('[data-p="pin-forget"]'); await p.waitForTimeout(100); await p.click('[data-p="pin-forget"]');
-  await p.waitForTimeout(200);
-  ok(await p.$('#p-pin') !== null, 'who screen: two taps forget the PIN');
+  await p.waitForTimeout(400);
+  ok(await p.evaluate(() => localStorage.getItem('lk.prep.pin')) === null, 'admin Tools: two taps forget the PIN');
+  ok(await p.evaluate(() => location.hash) === '#/prep' && await p.$('#p-pin') !== null, 'admin Tools: then shows the PIN screen of the prep book');
+  ok(p.errors.length === 0, 'admin Tools: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
   // staff list (sous chef): Remove takes two taps, leaving with unsaved changes takes two taps
