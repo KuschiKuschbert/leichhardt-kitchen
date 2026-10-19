@@ -1330,24 +1330,33 @@ window.LK_DATA = {
     {
       id: 'green-bowl', art: 'green-bowl', no: '62', kind: 'main', forLine: 'Salad', name: 'Green Bowl',
       menu: 'Green Bowl: charred broccolini, baby spinach, gem lettuce, brown rice, heirloom cherry tomatoes, red onion, toasted cashews.',
-      yield: 'Per bowl.',
+      yield: 'Per bowl. The premixed green bowl mix, crowded in the centre of the bowl, broccolini across the sides, cashews crumbled on top.',
       ingredients: [
+        { q: '[Qty]', name: 'Green bowl mix', note: 'premixed', link: 'green-bowl-mix' },
         { q: '[Qty]', name: 'Broccolini', note: 'charred' },
+        { q: '[Qty]', name: 'Toasted cashews', note: 'crumbled on top', tags: ['Tree nut'] }
+      ],
+      pins: [
+        { label: 'Green bowl mix', x: 58.0, y: 57.5, side: 'right', link: 'green-bowl-mix', note: 'Premixed. Crowded in the centre of the bowl.' },
+        { label: 'Broccolini', x: 36.8, y: 41.5, side: 'left', tags: [], note: 'Charred. Across the sides.' },
+        { label: 'Toasted cashews', x: 51.9, y: 45.3, side: 'right', tags: ['Tree nut'], note: 'Crumbled on top.' }
+      ],
+      sections: [
+        { title: 'Plating', steps: ['Put the green bowl mix in a bowl, crowded in the centre.', 'Lay the charred broccolini across the sides.', 'Crumble the toasted cashews on top.'] }
+      ]
+    },
+    {
+      id: 'green-bowl-mix', art: 'green-bowl-mix', no: '120', kind: 'batch', forLine: 'For the green bowl', name: 'Green Bowl Mix', short: 'Green bowl mix',
+      yield: 'Premixed. Everything in the green bowl except the broccolini and the cashews.',
+      ingredients: [
         { q: '[Qty]', name: 'Baby spinach' },
         { q: '[Qty]', name: 'Gem lettuce' },
         { q: '[Qty]', name: 'Brown rice' },
         { q: '[Qty]', name: 'Heirloom cherry tomatoes' },
-        { q: '[Qty]', name: 'Red onion' },
-        { q: '[Qty]', name: 'Toasted cashews', tags: ['Tree nut'] }
+        { q: '[Qty]', name: 'Red onion' }
       ],
-      pins: [
-        { label: 'Brown rice', x: 34.7, y: 37.5, side: 'left', tags: [], note: '' },
-        { label: 'Baby spinach', x: 62.3, y: 33.7, side: 'right', tags: [], note: '' },
-        { label: 'Gem lettuce', x: 31.8, y: 63.2, side: 'left', tags: [], note: '' },
-        { label: 'Broccolini', x: 65.1, y: 65.2, side: 'left', tags: [], note: 'Charred.' },
-        { label: 'Cherry tomatoes', x: 45.1, y: 46.9, side: 'left', tags: [], note: 'Heirloom.' },
-        { label: 'Red onion', x: 49.3, y: 55.7, side: 'right', tags: [], note: '' },
-        { label: 'Toasted cashews', x: 55.7, y: 44.3, side: 'right', tags: ['Tree nut'], note: '' }
+      sections: [
+        { title: 'Method', steps: ['Mix the baby spinach, gem lettuce, brown rice, heirloom cherry tomatoes and red onion together.', '[Batch size, mixing and storage to confirm]'] }
       ]
     },
     {
