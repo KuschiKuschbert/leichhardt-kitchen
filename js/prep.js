@@ -211,13 +211,22 @@
   }
   function toast(msg, act, ms) { S.toast = msg; S.toastAct = act || null; draw(); clearTimeout(toastTimer); toastTimer = setTimeout(function () { S.toast = ''; S.toastAct = null; draw(); }, ms || (act ? 9000 : 3500)); }
   /* A write the server refused or could not take. Whatever was typed goes back in its box (restore). Refused
-     (permission-denied) means this phone's PIN no longer counts, usually because the head chef reset it, so the
-     person signs in again. Other errors stay up for 12 seconds with an OK button, so nobody misses them. */
+     (permission-denied) is one of two things: this phone's PIN no longer counts (the head chef reset it), so the
+     person signs in again; or the PIN is fine and the rules did not allow that write for this person (a right the
+     page shows but the rules do not give, or rules published behind the code), where signing in again would only
+     loop. One small write any PIN holder may make (their own activity record) tells the two apart.
+     Other errors stay up for 12 seconds with an OK button, so nobody misses them. */
   function failed(e, restore) {
     if (typeof restore === 'function') restore();
     if (e && e.code === 'permission-denied' && S.authed && S.who && S.name !== 'admin') {
-      pickName(S.who);
-      toast('Not saved: sign in again with your PIN.' + (typeof restore === 'function' ? ' What you wrote is still in the box.' : ''), { label: 'OK', fn: function () {} }, 12000);
+      var p = who(), kept = typeof restore === 'function' ? ' What you wrote is still in the box.' : '';
+      toast('Not saved. Checking your PIN...', null, 12000);
+      sset(docRef('activity', S.who), { name: p ? p.name : '', lastSeen: now() }, true).then(function () {
+        toast('Not saved: the book\'s rules did not allow that for you. Ask the head chef.' + kept, { label: 'OK', fn: function () {} }, 12000);
+      }, function () {
+        pickName(S.who);
+        toast('Not saved: sign in again with your PIN.' + kept, { label: 'OK', fn: function () {} }, 12000);
+      });
       return;
     }
     toast('Not saved. Check the connection and try again.', { label: 'OK', fn: function () {} }, 12000);
