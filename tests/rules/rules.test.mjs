@@ -4,7 +4,7 @@
   Nothing here touches the real book. Every check is a write the rules must allow or refuse.
 */
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
-import { doc, setDoc, getDoc, deleteDoc, writeBatch, serverTimestamp, Timestamp, increment } from 'firebase/firestore';
+import { doc, setDoc, getDoc, getDocs, collection, updateDoc, deleteDoc, writeBatch, serverTimestamp, Timestamp, increment } from 'firebase/firestore';
 import { createHash } from 'crypto';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
@@ -157,6 +157,35 @@ await ok(deleteDoc(doc(anon, K + 'ordlearned/milk')), false, 'ordlearned: not de
 await ok(W([['learnlog/2026-10-19', { at: 5, who: 'ann', kind: 'phone' }]], { id: 'ann' }), true, 'learnlog: a day is claimed once');
 await ok(W([['learnlog/2026-10-18', { at: 6 }, true]], { id: 'ann' }), false, 'learnlog: a claimed day cannot be changed');
 await ok(W([['learnlog/2026-10-21', { who: 'ann' }]], { id: 'ann' }), false, 'learnlog: at must be a number');
+// kitchen mail: a person writes to the head chef; only the head chef reads it, ticks it done or marks it seen
+const mail = x => Object.assign({ from: 'ann', cat: 'equipment', pri: 'today', text: 'Fryer 2 thermostat reads 20 degrees low', at: 5, done: false, seen: false }, x || {});
+const stat = { seen: false, done: false };
+await ok(W([['mail/k1', mail()], ['mailstat/k1', stat]], { id: 'ann' }), true, 'mail: Ann sends a mail with its status record');
+await ok(W([['mail/k2', mail({ from: 'bo' })], ['mailstat/k2', stat]], { id: 'ann' }), false, 'mail: Ann cannot send as Bo (from must be the writer)');
+await ok(W([['mail/k3', mail()], ['mailstat/k3', stat]], { id: 'ann', pin: '9999' }), false, 'mail: wrong PIN refused');
+await ok(W([['mail/k4', mail({ cat: 'gossip' })], ['mailstat/k4', stat]], { id: 'ann' }), false, 'mail: an unknown category is refused');
+await ok(W([['mail/k5', mail({ pri: 'now' })], ['mailstat/k5', stat]], { id: 'ann' }), false, 'mail: an unknown priority is refused');
+await ok(W([['mail/k6', mail({ text: '' })], ['mailstat/k6', stat]], { id: 'ann' }), false, 'mail: an empty message is refused');
+await ok(W([['mail/k7', mail({ text: 'x'.repeat(601) })], ['mailstat/k7', stat]], { id: 'ann' }), false, 'mail: more than 600 characters is refused');
+await ok(W([['mail/k8', mail({ done: true })], ['mailstat/k8', stat]], { id: 'ann' }), false, 'mail: a new mail cannot arrive already done');
+await ok(W([['mail/k9', mail({ extra: 'x' })], ['mailstat/k9', stat]], { id: 'ann' }), false, 'mail: no fields beyond the message');
+await ok(W([['mailstat/k10', stat]], { id: 'ann' }), false, 'mailstat: no status record without its mail');
+await ok(W([['mailstat/k1', { seen: true, done: true }, true]], { id: 'ann' }), false, 'mailstat: the sender cannot mark their own mail done');
+await ok(W([['mail/k1', { done: true, doneAt: 6 }, true]], { id: 'sam' }), false, 'mail: a sous chef cannot tick mail done');
+await ok(getDoc(doc(anon, K + 'mail/k1')), false, 'mail: a PIN holder cannot read a mail');
+await ok(getDocs(collection(anon, K + 'mail')), false, 'mail: a PIN holder cannot list the mail');
+await ok(getDoc(doc(anon, K + 'mailstat/k1')), true, 'mailstat: the sender reads its status by id');
+await ok(getDocs(collection(anon, K + 'mailstat')), false, 'mailstat: nobody but the head chef lists the status records');
+await ok(getDocs(collection(env.authenticatedContext('other', { email: 'someone@test.local', email_verified: true }).firestore(), K + 'mail')), false, 'mail: another Google account cannot list the mail');
+await ok(getDocs(collection(owner, K + 'mail')), true, 'mail: the head chef lists the mail');
+await ok(updateDoc(doc(owner, K + 'mail/k1'), { seen: true, seenAt: 7 }), true, 'mail: the head chef marks it seen');
+await ok(updateDoc(doc(owner, K + 'mail/k1'), { done: true, doneAt: 8, pri: 'week' }), true, 'mail: the head chef ticks it done and changes the priority');
+await ok(updateDoc(doc(owner, K + 'mail/k1'), { text: 'Changed' }), false, 'mail: the message itself cannot be changed, not even by the head chef');
+await ok(updateDoc(doc(owner, K + 'mail/k1'), { from: 'bo' }), false, 'mail: the sender cannot be changed');
+await ok(updateDoc(doc(owner, K + 'mailstat/k1'), { seen: true, done: true }), true, 'mailstat: the head chef updates the status');
+await ok(updateDoc(doc(owner, K + 'mailstat/k1'), { note: 'x' }), false, 'mailstat: holds nothing but seen and done');
+await ok(deleteDoc(doc(owner, K + 'mail/k1')), false, 'mail: never deleted');
+await ok(setDoc(doc(owner, K + 'mail/k20'), mail({ from: 'bo', by: 'bo', done: true, doneAt: 9, seen: true, seenAt: 8 })), true, 'mail: the head chef copies one as it is (move to a new kitchen PIN)');
 // the owner probe
 await ok(getDoc(doc(owner, K + 'config/admins')), true, 'admins: the head chef may read the probe');
 await ok(getDoc(doc(anon, K + 'config/admins')), false, 'admins: nobody else may');

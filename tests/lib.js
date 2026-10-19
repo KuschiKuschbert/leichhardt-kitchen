@@ -58,6 +58,16 @@ function guides() {
   return g;
 }
 
+/* Three made-up kitchen mails to the head chef: an equipment one for today from Ann (11 hours old), a food safety one
+   from Bo whenever (2 hours old) and an idea from Sam this week, all open and unseen. */
+function mail() {
+  const m = {}, put = (id, v) => { m[K.concat(['mail', id]).join('/')] = Object.assign({ done: false, seen: false }, v); m[K.concat(['mailstat', id]).join('/')] = { seen: false, done: false, by: v.from }; };
+  put('m1', { from: 'ann', by: 'ann', cat: 'equipment', pri: 'today', text: 'Fryer 2 thermostat reads 20 degrees low', at: NOW - 11 * 3600000 });
+  put('m2', { from: 'bo', by: 'bo', cat: 'safety', pri: 'any', text: 'Cool room door seal is torn at the bottom', at: NOW - 2 * 3600000 });
+  put('m3', { from: 'sam', by: 'sam', cat: 'idea', pri: 'week', text: 'Pickle the leftover red onion for the burgers', at: NOW - 5 * 3600000 });
+  return m;
+}
+
 /* Installed Google Chrome by default. CHROME=/path/to/chrome uses another Chromium (for example on a server). */
 async function start() {
   // scrollbars are hidden like on a phone or tablet (overlay scrollbars): a classic 15 px scrollbar at exactly 768 px would
@@ -161,4 +171,4 @@ function report(results) {
   console.log(failed.length + ' failed of ' + results.length);
   process.exitCode = failed.length ? 1 : 0;
 }
-module.exports = { start, open, overflow, check, report, results, txt, tap, row, seed, guides, sha, ymd, PIN, NOW, BASE, PNG };
+module.exports = { start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };

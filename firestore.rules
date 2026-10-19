@@ -218,6 +218,40 @@ service cloud.firestore {
         && sid == request.resource.data.day + '_' + request.resource.data.by;
       allow update, delete: if false;
     }
+    // Kitchen mail: a person writes to the head chef from their name chip (#/mail). Only the head chef reads it.
+    // "from" is the sender, kept from the first save ("by" changes when the head chef ticks one on a phone where a person
+    // is signed in). The head chef ticks it done, marks it seen and may change how soon it matters. Never deleted.
+    function mailOk() {
+      return request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 600
+        && request.resource.data.cat in ['equipment', 'stock', 'safety', 'recipe', 'roster', 'idea', 'other']
+        && request.resource.data.pri in ['today', 'week', 'any']
+        && request.resource.data.seen is bool && request.resource.data.done is bool;
+    }
+    match /kitchens/KITCHEN_PIN/mail/{id} {
+      allow read: if isAdmin();
+      // The head chef may also create one when moving everything to a new kitchen PIN (an exact copy of the old record).
+      allow create: if isAdmin() || (staff() && mailOk()
+        && request.resource.data.from == request.resource.data.by
+        && request.resource.data.at is number
+        && request.resource.data.done == false && request.resource.data.seen == false
+        && request.resource.data.keys().hasOnly(['from', 'by', 'cat', 'pri', 'text', 'at', 'done', 'seen']));
+      allow update: if isAdmin() && mailOk()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pri', 'seen', 'seenAt', 'done', 'doneAt', 'by']);
+      allow delete: if false;
+    }
+    // What happened to a mail (seen, done), under the same id, so the sender's phone can show it without reading the
+    // message. It is read one record at a time by its id, never listed, and holds nothing else.
+    match /kitchens/KITCHEN_PIN/mailstat/{id} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create: if isAdmin() || (staff()
+        && request.resource.data.seen == false && request.resource.data.done == false
+        && request.resource.data.keys().hasOnly(['by', 'seen', 'done'])
+        && getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/mail/$(id)).data.from == request.resource.data.by);
+      allow update: if isAdmin() && request.resource.data.seen is bool && request.resource.data.done is bool
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['seen', 'done', 'by']);
+      allow delete: if false;
+    }
     // Only a person on the list (config/main.staffIds, kept in step by the admin panel and a sous chef's staff page)
     // may set a PIN, once. So nobody with just the kitchen PIN can make up a new writer.
     // The head chef may also create one: the move to a new kitchen PIN copies every stored PIN as it is.
