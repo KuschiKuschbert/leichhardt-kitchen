@@ -6,7 +6,7 @@ const SHOTS = process.env.SHOTS ? path.join(__dirname, 'shots') : '';
 if (SHOTS) fs.mkdirSync(SHOTS, { recursive: true });
 (async () => {
   const b = await L.start(), R = [];
-  const pages = ['#/', '#/recipes', '#/r/barra', '#/r/laksa', '#/r/rice', '#/settings', '#/prep', '#/orders', '#/waste', '#/minutes', '#/guides', '#/guides/combi', '#/guides/fryer'];
+  const pages = ['#/', '#/recipes', '#/r/barra', '#/r/laksa', '#/r/rice', '#/settings', '#/prep', '#/orders', '#/waste', '#/minutes', '#/mail', '#/guides', '#/guides/combi', '#/guides/fryer'];
   for (const [w, h, touch] of [[390, 844, true], [768, 1024, true], [1280, 900, false]]) {
     for (const hash of pages) {
       const p = await L.open(b, hash, { width: w, height: h, touch, wait: 1400, extra: L.guides() });
@@ -15,8 +15,8 @@ if (SHOTS) fs.mkdirSync(SHOTS, { recursive: true });
       if (SHOTS) await p.screenshot({ path: path.join(SHOTS, w + '-' + (hash.replace(/[#/]/g, '') || 'landing') + '.png') });
       await p.context().close();
     }
-    const p = await L.open(b, '#/admin', { width: w, height: h, touch, admin: true, wait: 1600, extra: L.guides() });
-    for (const t of ['insights', 'team', 'waste', 'learning', 'notes', 'minutes', 'guides', 'people', 'tools']) {
+    const p = await L.open(b, '#/admin', { width: w, height: h, touch, admin: true, wait: 1600, extra: Object.assign(L.guides(), L.mail(), { ['kitchens/' + L.PIN + '/config/admins']: { x: 1, mailOpened: L.NOW } }) });   // Mail opened just now: no nudge popup over the tabs
+    for (const t of ['insights', 'team', 'waste', 'learning', 'notes', 'minutes', 'guides', 'mail', 'people', 'tools']) {
       await p.click('[data-p="a-tab"][data-t="' + t + '"]'); await p.waitForTimeout(500);
       const ofa = await L.overflow(p);
       L.check(!ofa, w + ' admin ' + t + ' no sideways scroll' + (ofa ? ': ' + ofa : ''), R);
