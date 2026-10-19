@@ -4,7 +4,8 @@
   "description": "Checks firestore.rules on the Firestore emulator. See README, Publishing rules.",
   "type": "module",
   "scripts": {
-    "test": "firebase emulators:exec --only firestore --project demo-test \"node rules.test.mjs\""
+    "test": "firebase emulators:exec --only firestore --project demo-test \"node rules.test.mjs && node probe.test.mjs\"",
+    "probe": "node probe.mjs"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "3.0.4",
