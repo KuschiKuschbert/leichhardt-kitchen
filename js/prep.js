@@ -235,7 +235,7 @@
   window.addEventListener('offline', function () { offline = true; syncDraw(); });
   function syncHTML() {
     var st = syncState();
-    if (!st || !S.pin) return '';
+    if (!st || !S.pin || !S.authed) return '';
     return '<div class="p-sync" role="status">' + (st === 'off' ? '<strong>No signal.</strong> What you write is kept on this phone and sent when the signal is back.' :
       '<strong>Not sent yet.</strong> Other phones cannot see your latest changes yet. Keep the book open.') + '</div>';
   }
@@ -329,12 +329,16 @@
     }
     if (S.pinStep === 'enter') {
       if (lockLeft() > 0) { S.pinMsg = lockWait(lockLeft()); S.pf1 = ''; draw(); return; }
+      // the check is a write, which waits for the server: say so, and say when there is no signal (the write waits in
+      // the queue and the person is signed in by itself once the signal is back)
+      S.pinMsg = 'Checking your PIN...'; draw();
+      var slow = setTimeout(function () { if (S.pinMsg === 'Checking your PIN...') { S.pinMsg = 'No signal. Your PIN cannot be checked until the phone is back online. Keep the book open: it signs you in by itself when the signal is back.'; draw(); } }, 8000);
       pinHash(id, S.pf1).then(function (h) {
         S.who = id; S.tok = h;
         // a write only succeeds with the right PIN, so a visit count doubles as the PIN check
-        return sset(docRef('activity', id), { name: p.name, visits: fb.fs.increment(1), lastSeen: now() }, true).then(function () { lsSet('lk.prep.lock', ''); signedIn(id, h); },
+        return sset(docRef('activity', id), { name: p.name, visits: fb.fs.increment(1), lastSeen: now() }, true).then(function () { clearTimeout(slow); lsSet('lk.prep.lock', ''); signedIn(id, h); },
           function (e) {
-            S.tok = '';
+            clearTimeout(slow); S.tok = '';
             if (e && e.code === 'permission-denied') { lockFail(); S.pinMsg = lockLeft() > 0 ? lockWait(lockLeft()) : 'That PIN is not right.'; S.pf1 = ''; }
             else S.pinMsg = 'Could not check your PIN. Check the connection.';
             draw();
