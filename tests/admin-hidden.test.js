@@ -1,6 +1,6 @@
 // The Admin key button only shows on a phone or computer where the head chef has signed in and passed the owner check.
-// Staff never see it. The way in for the first time is the Head chef sign in link on Settings, and #/admin still opens
-// the Google sign-in card by its address.
+// Staff never see it, and Settings says nothing about it. #/admin opens the Google sign-in card by its address.
+// Clear all ticks and the device type (Personal phone or Shared device) only show on Settings on that device.
 const L = require('./lib');
 const { R, ok } = L.results(), { txt } = L;
 (async () => {
@@ -13,13 +13,16 @@ const { R, ok } = L.results(), { txt } = L;
     ok(p.errors.length === 0, 'staff ' + h + ': no page errors ' + p.errors.join(' | '));
     await p.context().close();
   }
-  // staff on Settings: a Head chef sign in link instead, which opens the sign-in card
+  // staff on Settings: no Admin panel block, no Clear all ticks, no device type; #/admin still opens the sign-in card
   let p = await L.open(b, '#/settings', { who: 'ann', wait: 1000 });
   ok(await p.$('.wtop .adm') === null, 'staff settings: no Admin key');
-  ok(await p.$('[data-k="adm-signin"]') !== null, 'staff settings: Head chef sign in link');
-  await p.click('[data-k="adm-signin"]');
+  ok(await p.$('[aria-label="Admin panel"]') === null && await p.$('[data-k="adm-signin"]') === null, 'staff settings: no Admin panel block');
+  ok(await p.$('[data-act="clearticks"]') === null, 'staff settings: no Clear all ticks');
+  ok(await p.$('[data-act="setshared"]') === null, 'staff settings: no device type');
+  ok(await p.$('[data-act="settext"]') !== null, 'staff settings: text size still there');
+  await p.goto(L.BASE + '#/admin');
   await p.waitForTimeout(1200);
-  ok(/Sign in with Google/.test(await txt(p, '#prep-root') || ''), 'staff: the link opens the Google sign-in card');
+  ok(/Sign in with Google/.test(await txt(p, '#prep-root') || ''), 'staff: #/admin opens the Google sign-in card');
   ok(await p.$('.wtop .adm') === null, 'staff on #/admin: still no Admin key');
   ok(p.errors.length === 0, 'staff settings: no page errors ' + p.errors.join(' | '));
   await p.context().close();
@@ -33,11 +36,19 @@ const { R, ok } = L.results(), { txt } = L;
   ok(await p.$('.wtop .adm[aria-current="page"]') !== null, 'head chef #/admin: the key marks the page');
   ok(p.errors.length === 0, 'head chef: no page errors ' + p.errors.join(' | '));
   await p.context().close();
-  // the head chef's Settings page: the sign-in link is gone, the hint says where the key is
+  // the head chef's Settings page: Clear all ticks and the device type, still no Admin panel block
   p = await L.open(b, '#/settings', { admin: true, who: 'ann', wait: 1800 });
-  ok(await p.$('[data-k="adm-signin"]') === null, 'head chef settings: no sign-in link');
-  ok(/signed in as the head chef/.test(await txt(p, '#app') || ''), 'head chef settings: hint says this device is signed in');
+  ok(await p.$('[aria-label="Admin panel"]') === null, 'head chef settings: no Admin panel block');
+  ok(await p.$('[data-act="clearticks"]') !== null, 'head chef settings: Clear all ticks');
+  ok(await p.$('[data-act="setshared"][data-val="1"]') !== null, 'head chef settings: device type');
   ok(await p.$('.wtop .adm.is-signed') !== null, 'head chef settings: Admin key in the top bar');
+  // signing out on that device drops them again without a reload, and the device type chosen stays
+  await p.click('[data-act="setshared"][data-val="1"]');
+  await p.evaluate(() => { localStorage.setItem('lk.admin', ''); window.dispatchEvent(new Event('lk-admin')); });
+  await p.waitForTimeout(300);
+  ok(await p.$('[data-act="setshared"]') === null && await p.$('[data-act="clearticks"]') === null, 'head chef signed out: the device blocks are gone');
+  ok(await p.evaluate(() => JSON.parse(localStorage.getItem('lk.settings.v1') || '{}').shared === true), 'head chef signed out: Shared device stays on the device');
+  ok(p.errors.length === 0, 'head chef settings: no page errors ' + p.errors.join(' | '));
   await p.context().close();
   await b.close();
   R.forEach(r => console.log(r));
