@@ -37,8 +37,8 @@ const state = p => p.evaluate(() => document.querySelector('#p-pin') ? 'kitchen-
   ok(/^in:Writing as Sam/.test(await state(p)), 'personal phone, new day: still signed in (' + await state(p) + ')');
   await p.context().close();
 
-  // the switch lives in Settings and is kept on the device
-  p = await L.open(b, '#/settings', {});
+  // the switch lives in Settings on the head chef's signed-in device and is kept on the device
+  p = await L.open(b, '#/settings', { admin: true, wait: 1800 });
   ok(await p.$('[data-act="setshared"][data-val="1"]') !== null, 'settings: the Shared device choice is there');
   ok((await p.getAttribute('[data-act="setshared"][data-val="0"]', 'aria-pressed')) === 'true', 'settings: Personal phone is the default');
   await p.click('[data-act="setshared"][data-val="1"]');
