@@ -135,6 +135,7 @@ npm test
 - **Recipe cards** under 900 px show the name, yield and allergens first, then the drawing, then the ingredients and method (CSS `order` on `main.cols`; the laptop layout is unchanged). On a dish, "Everything on it" comes before the method, as on Tiles. On a recipe the allergen lens folds into one line ("Allergen lens +"), which stays open and names the allergen while a lens is on.
 - **Landing** on a phone: compact dockets (the whole docket is the link, no Open button), so all five fit above the tab bar.
 - **Settings** starts with Text size; "Opens with" is two chips; Done goes back to the page you came from (or to the start when Settings was opened by its address).
+- **Prep list on a phone or tablet** (under 900 px): Start here is one line naming the jobs ("Start here: Portion rump, Make gravy, ...") until tapped, so the list itself starts higher; once something is ticked a "Done today (n)" button by the count jumps to the ticked lines in Handy; Quick add chips sit in the add box as well as in Handy. `tests/prep-first.test.js`.
 - `tests/phone-first.test.js`.
 
 ## Prep book and admin panel
