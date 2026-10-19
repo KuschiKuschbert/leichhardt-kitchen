@@ -1,6 +1,7 @@
 // Stand-in for the Firestore web SDK, for the click tests only (tests/lib.js serves it instead of the real SDK).
 // Data lives in localStorage ('fake.fs') so reloads keep it. window.__fake controls failures:
 //   __fake.mode = 'ok' | 'deny' (every write refused, permission-denied) | 'hold' (writes wait, like no signal)
+//   __fake.deny = /regex/ refuses only the writes whose path matches
 // __fake.reads lists the paths asked for (getDoc, getDocs, getDocFromServer) and __fake.readLog every document read from the "server";
 // getDocsFromCache only returns documents this page has read before.
 const KEY = 'fake.fs';
@@ -118,6 +119,8 @@ function commitOps(ops) {
   });
   if (refused) return Promise.reject({ code: 'permission-denied' });
   if (window.__fake.mode === 'deny') return Promise.reject({ code: 'permission-denied' });
+  // __fake.deny = /regex/ refuses only the writes whose path matches (a right the rules do not give), the rest go through
+  if (window.__fake.deny && ops.some(o => window.__fake.deny.test(key(o.ref.path)))) return Promise.reject({ code: 'permission-denied' });
   if (window.__fake.mode === 'fail') return Promise.reject({ code: 'unavailable' });
   const run = () => { ops.filter(o => !/\/proofs\//.test(key(o.ref.path))).forEach(applyOp); save(); notify(); };
   if (window.__fake.mode === 'hold') {
