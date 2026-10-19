@@ -1,0 +1,63 @@
+# Nightly backup: every night at 03:30 kitchen time (17:30 UTC) the book is read the way the admin panel's Backup
+# button reads it (scripts/nightly-backup.mjs), encrypted with the BACKUP_KEY secret and kept as a GitHub artifact for
+# 90 days. The repository is public and anyone signed in to GitHub can download an artifact, so the file is never kept
+# in the clear. Needs three repository secrets: FIREBASE_SA (service account key, JSON), KITCHEN_PIN and BACKUP_KEY
+# (a long random passphrase; keep a copy in your password manager, a lost key means unreadable backups).
+# To read one: download the artifact from the run, unzip it, then
+#   openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in kitchen-book-<date>.json.enc -out kitchen-book-<date>.json
+# and type the passphrase. Run it by hand from the Actions tab with "Run workflow".
+name: Nightly backup
+
+on:
+  schedule:
+    - cron: '30 17 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check the key is there before reading anything
+        env:
+          BACKUP_KEY: ${{ secrets.BACKUP_KEY }}
+        run: |
+          [ "${#BACKUP_KEY}" -ge 16 ] || { echo "The BACKUP_KEY secret is missing or shorter than 16 characters. Add a long random passphrase as the BACKUP_KEY repository secret. Nothing was read."; exit 1; }
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: scripts/package-lock.json
+      - name: Install
+        working-directory: scripts
+        run: npm ci --no-audit --no-fund
+      - name: Read the book
+        working-directory: scripts
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+          KITCHEN_PIN: ${{ secrets.KITCHEN_PIN }}
+        run: node nightly-backup.mjs "$RUNNER_TEMP/backup.json"
+      - name: Encrypt
+        env:
+          BACKUP_KEY: ${{ secrets.BACKUP_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/out"
+          openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -in "$RUNNER_TEMP/backup.json" -out "$RUNNER_TEMP/out/kitchen-book-$(date -u +%Y-%m-%d).json.enc" -pass env:BACKUP_KEY
+          rm -f "$RUNNER_TEMP/backup.json"
+          ls -l "$RUNNER_TEMP/out"
+      - name: Keep it for 90 days
+        uses: actions/upload-artifact@v4
+        with:
+          name: kitchen-book-backup-${{ github.run_id }}
+          path: ${{ runner.temp }}/out/*.json.enc
+          retention-days: 90
+          if-no-files-found: error
