@@ -2487,8 +2487,9 @@
     S.ordBusy = true; S.ordAllAt = Date.now();
     var today = dayNow(), dates = [], i;
     for (i = 0; i < ORD_DAYS; i++) dates.push(shift(today, -i));
-    Promise.all(dates.map(function (d) { return fb.fs.getDocs(ordCol(d)).then(function (s) { return s.docs.map(function (x) { var v = x.data(); v.id = x.id; v.date = d; return v; }); }, function () { return []; }); })).then(function (lists) {
-      S.ordAll = [].concat.apply([], lists); S.ordBusy = false; draw();
+    var miss = 0;
+    Promise.all(dates.map(function (d) { return fb.fs.getDocs(ordCol(d)).then(function (s) { return s.docs.map(function (x) { var v = x.data(); v.id = x.id; v.date = d; return v; }); }, function () { miss++; return []; }); })).then(function (lists) {
+      S.ordAll = [].concat.apply([], lists); S.ordAllMiss = miss; S.ordBusy = false; draw();
     });
   }
   /* Everything to order is read once (14 days) and then kept in step on the phone: today's lines come from the live list,
@@ -2666,11 +2667,13 @@
     });
     return order.map(function (k) { return map[k]; }).sort(function (a, b) { return a.text.localeCompare(b.text); });
   }
+  var MISS_TEXT = 'Could not load every day. Check the signal. The book tries again by itself in a few minutes.';
   function ordAllHTML() {
     if (S.ordBusy && !(S.ordAll || []).length) return '<p class="hint">Loading the last ' + ORD_DAYS + ' days...</p>';
-    var gs = ordGroups();
+    var gs = ordGroups(), miss = S.ordAllMiss ? '<p class="hint o-miss" role="alert">' + MISS_TEXT + '</p>' : '';
+    if (!gs.length && miss) return miss;
     if (!gs.length) return '<p class="nb-empty">Nothing waiting to be ordered. Anything written in the last ' + ORD_DAYS + ' days has been ticked off.</p>';
-    return '<p class="hint">' + gs.length + ' item' + (gs.length === 1 ? '' : 's') + ' still to order from the last ' + ORD_DAYS + ' days. Tick one to mark every line for it as ordered.</p><ul class="nb-rows">' + gs.map(function (g) {
+    return miss + '<p class="hint">' + gs.length + ' item' + (gs.length === 1 ? '' : 's') + ' still to order from the last ' + ORD_DAYS + ' days. Tick one to mark every line for it as ordered.</p><ul class="nb-rows">' + gs.map(function (g) {
       var first = g.lines[0];
       return '<li class="nb-row o-group"><button type="button" class="nb-box" data-p="ogroup" data-k2="' + esc(g.key) + '" aria-label="' + esc('Ordered: ' + g.text) + '">' + BOX + '</button>' +
         '<span class="nb-t">' + esc(g.text) + (g.lines.length > 1 ? ' <span class="o-n">x' + g.lines.length + '</span>' : '') +
@@ -2680,14 +2683,18 @@
   function dayShort(s) { return parseYmd(s).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }); }
   function loadOrdHist() {
     var today = dayNow();
-    if (!fb || S.ordHistBusy || S.ordHistFor === today) return;
+    if (!fb || S.ordHistBusy || waiting('ordHist') || S.ordHistFor === today) return;
     var tag = S.pin + '|' + today, c = dayCache('lk.ord.hist', tag);
     if (c) { S.ordHist = c; S.ordHistFor = today; return; }
     S.ordHistBusy = true;
     var dates = [], i; for (i = 1; i <= 14; i++) dates.push(shift(today, -i));
-    Promise.all(dates.map(function (d) { return fb.fs.getDocs(ordCol(d)).then(function (sn) { return sn.docs.map(function (x) { var v = x.data(); v.date = d; return v; }); }, function () { return []; }); })).then(function (l) {
+    var miss = 0;
+    Promise.all(dates.map(function (d) { return fb.fs.getDocs(ordCol(d)).then(function (sn) { return sn.docs.map(function (x) { var v = x.data(); v.date = d; return v; }); }, function () { miss++; return []; }); })).then(function (l) {
       S.ordHist = [].concat.apply([], l).filter(function (x) { return !x.deleted && !x.rolled; }).map(function (x) { return { text: x.text, qty: x.qty || '', date: x.date }; });
-      S.ordHistFor = today; S.ordHistBusy = false; dayCacheSet('lk.ord.hist', tag, S.ordHist); draw();
+      S.ordHistBusy = false;
+      // a day that could not be read is not cached as empty: the hints use what came in, and the book tries again later
+      if (miss) retryLater('ordHist'); else { S.ordHistFor = today; dayCacheSet('lk.ord.hist', tag, S.ordHist); }
+      draw();
     });
   }
   function oRegsHTML() {
@@ -2805,15 +2812,19 @@
   function dayCacheSet(k, tag, v) { lsSet(k, JSON.stringify({ tag: tag, v: v })); }
   function loadWRecent(force) {
     var today = dayNow(), tag = S.pin + '|' + today;
-    if (!fb || S.wRecentBusy || (S.wRecent && S.wRecentFor === today && !force)) return;
+    if (!fb || S.wRecentBusy || waiting('wRecent') || (S.wRecent && S.wRecentFor === today && !force)) return;
     var c = force ? null : dayCache('lk.w.recent', tag);
     if (c) { S.wRecent = c; S.wRecentFor = today; return; }
     S.wRecentBusy = true;
     var dates = [], i;
     for (i = 1; i <= 14; i++) dates.push(shift(today, -i));
-    Promise.all(dates.map(function (d) { return fb.fs.getDocs(wCol(d)).then(function (sn) { return sn.docs.map(function (x) { var v = x.data(); v.id = x.id; v.date = d; return v; }); }, function () { return []; }); })).then(function (l) {
-      S.wRecent = [].concat.apply([], l).filter(function (x) { return !x.deleted; }); S.wRecentFor = today; S.wRecentBusy = false;
-      dayCacheSet('lk.w.recent', tag, S.wRecent); draw();
+    // a day that cannot be read (bad signal) is not kept as an empty day: nothing is cached, and the book tries again later
+    var miss = [];
+    Promise.all(dates.map(function (d) { return fb.fs.getDocs(wCol(d)).then(function (sn) { return sn.docs.map(function (x) { var v = x.data(); v.id = x.id; v.date = d; return v; }); }, function () { miss.push(d); return []; }); })).then(function (l) {
+      S.wRecent = [].concat.apply([], l).filter(function (x) { return !x.deleted; }); S.wRecentMiss = miss; S.wRecentBusy = false;
+      if (miss.length) { S.wRecentFor = ''; retryLater('wRecent'); }
+      else { S.wRecentFor = today; dayCacheSet('lk.w.recent', tag, S.wRecent); }
+      draw();
     });
   }
   function wTotals(lines) {
@@ -2968,11 +2979,12 @@
     for (i = 0; i < 7; i++) days.push(shift(today, -i));
     var body = days.map(function (d) {
       var l = lines.filter(function (x) { return x.date === d; }).sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); });
-      return '<div class="nb-hd"><span>' + esc(d === today ? 'Today' : dayShort(d)) + '</span><span>' + (l.length ? l.length + ' &middot; ' + esc(totalsText(wTotals(l))) : 'nothing logged') + '</span></div>' +
+      var lost = !l.length && (S.wRecentMiss || []).indexOf(d) >= 0;
+      return '<div class="nb-hd"><span>' + esc(d === today ? 'Today' : dayShort(d)) + '</span><span>' + (l.length ? l.length + ' &middot; ' + esc(totalsText(wTotals(l))) : lost ? 'could not load' : 'nothing logged') + '</span></div>' +
         (l.length ? '<ul class="nb-rows">' + l.map(wRow).join('') + '</ul>' : '');
     }).join('');
     return '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Wastage</h2><span class="nb-date">Last 7 days</span></div><div class="nb-prog" role="status">' + lines.length + '</div></header>' +
-      '<div class="nb-body">' + sum + body + '</div></section>';
+      '<div class="nb-body">' + ((S.wRecentMiss || []).length ? '<p class="hint o-miss" role="alert">' + MISS_TEXT + '</p>' : '') + sum + body + '</div></section>';
   }
   /* Last night's "change for the next shift" note, shown on the prep list (the latest of the last 3 days). */
   function loadWNote() {
