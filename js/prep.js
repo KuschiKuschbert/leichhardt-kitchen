@@ -1315,6 +1315,9 @@
     return out;
   }
   function afItems(d) { var sec = AF().sec; return ((S.stats && S.stats.days[d]) || []).filter(function (x) { return !x.deleted && (!sec || (x.station || 'General') === sec); }); }
+  /* the Person filter: a line counts when the person wrote it, or when it rolled over from a line they wrote (origBy is a
+     name, since rolled copies carry no id). Every number and chart on Insights goes through this, so they agree. */
+  function afMine(x) { var who = AF().who; return !who || (x.rolled ? x.origBy === personName(who) : x.addedById === who); }
   function personName(id) { var p = ((S.config && S.config.people) || []).filter(function (x) { return x.id === id; })[0]; return p ? p.name : ''; }
   function afSections() {
     var m = {};
@@ -1345,13 +1348,13 @@
     return bits.length ? '<p class="a-fnote">Showing: ' + esc(bits.join(', ')) + '.</p>' : '';
   }
   function aggregate(n, offset) {
-    var a = AF(), who = a.who, whoName = who ? personName(who) : '', dates = afDates(n, offset || 0), h;
+    var a = AF(), who = a.who, dates = afDates(n, offset || 0), h;
     var agg = { dates: dates, perDay: {}, people: {}, sections: {}, wHour: [], tHour: [], times: [], written: 0, ticked: 0, rolled: 0, lines: 0, rollKeys: {}, fixes: [] };
     for (h = 0; h < 24; h++) { agg.wHour.push(0); agg.tHour.push(0); }
     dates.forEach(function (d) {
       var pd = agg.perDay[d] = { w: 0, t: 0, r: 0, n: 0 };
       afItems(d).forEach(function (x) {
-        var mine = !who || (x.rolled ? x.origBy === whoName : x.addedById === who);
+        var mine = afMine(x);
         if (x.rolled) {
           if (mine && rolledN(x)) {
             pd.r++; agg.rolled++;
@@ -1525,13 +1528,13 @@
       '<h3 class="a-ch-h">Manage learned items</h3><span class="hint">Hide a typo or a one-off so it stops showing as a suggestion. Typed and picked counts show as typed/picked.</span>' + learnedListHTML(top) + '</section>';
   }
   var DOW = [1, 2, 3, 4, 5, 6, 0], DOWN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  var HB = { w: ['#FFFFFF', '#E3EEFA', '#C4DAF4', '#97BEEC', '#6CA2E4'], r: SK };
+  var HB = { w: ['#FFFFFF', '#E3EEFA', '#C4DAF4', '#97BEEC', '#6CA2E4'] };   // the Rolled over mode uses SK, the orange scale declared below
   function heatHTML(n) {
     var occ = {}, cell = {}, tot = {}, secT = {}, mode = S.heat === 'r' ? 'r' : 'w', who = AF().who;
     afDates(n, 0).forEach(function (d) { var dw = parseYmd(d).getDay(); occ[dw] = (occ[dw] || 0) + 1;
       afItems(d).forEach(function (x) {
         if (mode === 'w' ? x.rolled : !rolledN(x)) return;
-        if (who && mode === 'w' && x.addedById !== who) return;
+        if (!afMine(x)) return;
         var k = x.station || 'General', c = cell[k] = cell[k] || {};
         c[dw] = (c[dw] || 0) + 1; tot[dw] = (tot[dw] || 0) + 1; secT[k] = (secT[k] || 0) + 1;
       });
@@ -1541,7 +1544,7 @@
     secs.forEach(function (k) { DOW.forEach(function (dw) { max = Math.max(max, avg((cell[k] || {})[dw] || 0, dw)); }); });
     function td(v, dw, label) {
       var a = avg(v || 0, dw), lv = !a ? 0 : Math.min(4, 1 + Math.floor(a / (max || 1) * 3.999));
-      return '<td class="sk-c" style="background:' + HB[mode][lv] + '" title="' + esc(label + ', ' + DOWN[DOW.indexOf(dw)] + ': ' + (Math.round(a * 10) / 10) + ' a day') + '">' + (a ? Math.round(a * 10) / 10 : '<span class="sk-0">0</span>') + '</td>';
+      return '<td class="sk-c" style="background:' + (mode === 'w' ? HB.w : SK)[lv] + '" title="' + esc(label + ', ' + DOWN[DOW.indexOf(dw)] + ': ' + (Math.round(a * 10) / 10) + ' a day') + '">' + (a ? Math.round(a * 10) / 10 : '<span class="sk-0">0</span>') + '</td>';
     }
     var chips = '<div class="chips"><button type="button" class="chip" data-p="heat" data-v="w" aria-pressed="' + (mode === 'w') + '">Lines written</button><button type="button" class="chip" data-p="heat" data-v="r" aria-pressed="' + (mode === 'r') + '">Rolled over</button></div>';
     if (!secs.length) return chips + '<p class="hint">Nothing to show in this time.</p>';
@@ -1553,7 +1556,7 @@
   }
   function stickyHTML(n) {
     var m = {}, all = [];
-    afDates(n, 0).forEach(function (d) { all = all.concat(((S.stats && S.stats.days[d]) || []).filter(function (x) { var sec = AF().sec; return !sec || (x.station || 'General') === sec; })); });
+    afDates(n, 0).forEach(function (d) { all = all.concat(((S.stats && S.stats.days[d]) || []).filter(function (x) { var sec = AF().sec; return (!sec || (x.station || 'General') === sec) && afMine(x); })); });
     all.forEach(function (x) {
       var k = okey(x.text); if (!k) return;
       var e = m[k] = m[k] || { text: String(x.text).trim(), w: 0, tt: [], r: 0, del: 0 };
@@ -1747,7 +1750,7 @@
     if (bh >= 0) out.push('Most lines get ticked between ' + (bh < 10 ? '0' : '') + bh + ':00 and ' + (bh + 1 < 10 ? '0' : '') + (bh + 1) + ':00.');
     if (!a.sec) {
       var sr = {};
-      agg.dates.forEach(function (d) { afItems(d).forEach(function (x) { var k = x.station || 'General', e = sr[k] = sr[k] || { n: 0, r: 0 }; e.n++; if (rolledN(x)) e.r++; }); });
+      agg.dates.forEach(function (d) { afItems(d).forEach(function (x) { if (!afMine(x)) return; var k = x.station || 'General', e = sr[k] = sr[k] || { n: 0, r: 0 }; e.n++; if (rolledN(x)) e.r++; }); });
       var worst = Object.keys(sr).filter(function (k) { return sr[k].n >= 8; }).sort(function (x, y) { return sr[y].r / sr[y].n - sr[x].r / sr[x].n; })[0];
       if (worst && sr[worst].r) out.push(worst + ' rolls over most: ' + pct(sr[worst].r, sr[worst].n) + '% of its lines were carried from an earlier day.');
     }
@@ -1756,12 +1759,12 @@
       if (Math.abs(c - p) >= 5) out.push('The share of lines ticked off is ' + (c > p ? 'up' : 'down') + ' from ' + p + '% to ' + c + '% compared with the ' + n + ' days before.');
     }
     var slow = {};
-    agg.dates.forEach(function (d) { afItems(d).forEach(function (x) { if (!x.rolled && x.done && x.doneAt && x.addedAt && x.doneAt > x.addedAt) { var k = okey(x.text); (slow[k] = slow[k] || { t: x.text, v: [] }).v.push(x.doneAt - x.addedAt); } }); });
+    agg.dates.forEach(function (d) { afItems(d).forEach(function (x) { if (afMine(x) && !x.rolled && x.done && x.doneAt && x.addedAt && x.doneAt > x.addedAt) { var k = okey(x.text); (slow[k] = slow[k] || { t: x.text, v: [] }).v.push(x.doneAt - x.addedAt); } }); });
     var sl = Object.keys(slow).filter(function (k) { return slow[k].v.length >= 3; }).map(function (k) { var v = slow[k].v.sort(function (x, y) { return x - y; }); return { t: slow[k].t, m: v[Math.floor(v.length / 2)] }; }).sort(function (x, y) { return y.m - x.m; })[0];
     if (sl && sl.m >= 3600000) out.push(sl.t + ' takes longest to get ticked: usually ' + dur(sl.m) + ' after it is written.');
     if (S.wStats && !S.wStats.loading) {
       var from = shift(dayNow(), -(n - 1)), wm = {};
-      S.wStats.lines.forEach(function (x) { if (!x.deleted && x.date >= from && (!a.sec || (x.station || 'General') === a.sec)) { var k = okey(x.text); (wm[k] = wm[k] || { t: x.text, n: 0 }).n++; } });
+      S.wStats.lines.forEach(function (x) { if (!x.deleted && x.date >= from && (!a.sec || (x.station || 'General') === a.sec) && (!a.who || x.addedById === a.who)) { var k = okey(x.text); (wm[k] = wm[k] || { t: x.text, n: 0 }).n++; } });
       var tw = Object.keys(wm).sort(function (x, y) { return wm[y].n - wm[x].n; })[0];
       if (tw && wm[tw].n >= 2) out.push(wm[tw].t + ' is the most wasted item: logged ' + wm[tw].n + ' times.');
     }
@@ -1798,7 +1801,7 @@
     if (kind === 'insights' && S.stats && !S.stats.loading) {
       var rows = [['Date', 'Weekday', 'Section', 'Line', 'Amount', 'Written by', 'Written on', 'Written at', 'Rolled over (times)', 'Ticked', 'Ticked by', 'Ticked at', 'Minutes to tick']];
       afDates(n, 0).forEach(function (d) { afItems(d).forEach(function (x) {
-        if (a.who && x.addedById !== a.who && x.doneById !== a.who) return;
+        if (!afMine(x) && !(a.who && x.doneById === a.who)) return;
         rows.push([d, DOWN[DOW.indexOf(parseYmd(d).getDay())], x.station || 'General', x.text, x.qty || '', x.rolled ? (x.origBy || '') : (x.addedBy || ''), firstAt(x) ? T.day(firstAt(x)) : '', hm(firstAt(x)), rolledN(x), x.done ? 'yes' : 'no', x.doneBy || '', hm(x.doneAt), x.done && x.doneAt && x.addedAt && !x.rolled ? Math.round((x.doneAt - x.addedAt) / 60000) : '']);
       }); });
       downloadCSV('leichhardt-prep-lines-' + tag + '.csv', rows);
@@ -1858,7 +1861,7 @@
         card('<h3 class="a-ch-h">Sections</h3>' + sectionsChart(agg)) + card('<h3 class="a-ch-h">By person</h3>' + legend([['Written', CW], ['Ticked off', CT]]) + peopleChart(agg) + '<p class="hint">More on people in the Team tab.</p>') + '</div></section>' +
       '<section class="a-sec">' + secHead(4) + '<div class="a-grid">' + card('<h3 class="a-ch-h">Slow and sticky lines</h3><span class="hint">Roll over 3 or more times, usually take 4 hours or more to tick, or keep being removed.</span>' + stickyHTML(n), 'full') +
         card('<h3 class="a-ch-h">Rolled over most often</h3><span class="hint">Lines that were not finished and moved onto the next day.</span>' + rollChart(agg)) + card(fixesHTML(agg)) + '</div></section>' +
-      '<section class="a-sec">' + secHead(5) + '<div class="a-grid">' + card(missesHTML()) + card(viewsHTML()) + '</div></section></section>';
+      '<section class="a-sec">' + secHead(5) + '<p class="hint a-fnote">Recipe book counts are for everyone and every day: the filters above do not apply here.</p><div class="a-grid">' + card(missesHTML()) + card(viewsHTML()) + '</div></section></section>';
   }
 
 
