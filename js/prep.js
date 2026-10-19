@@ -363,9 +363,10 @@
   var IDLE_MS = 450000, lastAct = Date.now(), idleOn = false;
   function isDesktop() { try { return window.matchMedia('(hover: hover) and (pointer: fine)').matches; } catch (e) { return false; } }
   function idleExpired() { return isDesktop() && Date.now() - (+lsGet('lk.prep.seen') || lastAct) > IDLE_MS; }
+  /* the staff list draft (Manage staff) is kept: the person types their PIN again and carries on where they were */
   function idleLock() {
     if (!S.authed || !S.who || !fb) return;
-    var id = S.who; S.draft = null; pickName(id);
+    pickName(S.who);
   }
   function startIdle() {
     if (idleOn) return; idleOn = true;
