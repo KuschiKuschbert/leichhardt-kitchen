@@ -176,7 +176,7 @@
   function me() { return S.authed ? who() : null; }
   /* only the head chef (signed in with Google) and sous chefs may look at other days; everyone else stays on today */
   function canBrowse() { return S.level === 'owner' || isSous(); }
-  function can(what) { var p = me(); return !!(p && p[what]); }
+  function can(what) { if (guest()) return what === 'add' || what === 'tick'; var p = me(); return !!(p && p[what]); }
   /* ---------- new pages the head chef can hold back from staff ----------
      Guides, Shift pings and Meeting minutes always show for the head chef, sous chefs and leads (and pings for anyone
      ticked for Pings). Staff and View only see each one unless the head chef unticks it under New pages in the People
@@ -319,17 +319,51 @@
   function signedIn(id, hash) {
     S.authed = true; S.tok = hash; S.pf1 = S.pf2 = ''; S.pinMsg = ''; S.pinStep = '';
     lsSet('lk.prep.tok', id + ':' + hash); lsSet('lk.prep.seen', String(Date.now())); lsSet('lk.prep.day', dayNow()); lastAct = Date.now(); startIdle();
+    hereAdd(id);
+    var pend = S.pending; S.pending = null; S.picking = false;
     draw(); whoSync(true);   // a real sign-in: the chef mark flips in
+    if (pend) guestReplay(pend);
+  }
+  /* Who signed in on this device today, newest first: "Who are you?" lists them first (lk.prep.here). */
+  function hereGet() { try { var h = JSON.parse(lsGet('lk.prep.here') || 'null'); return h && h.d === dayNow() ? h.ids : []; } catch (e) { return []; } }
+  function hereAdd(id) { var ids = hereGet().filter(function (x) { return x !== id; }); ids.unshift(id); lsSet('lk.prep.here', JSON.stringify({ d: dayNow(), ids: ids.slice(0, 12) })); }
+  /* ---------- a shared kitchen device with nobody signed in (20 Oct 2026) ----------
+     After the 10 minute lock, the prep list, orders and wastage still show. A tap that writes (tick, add, urgent, order,
+     log waste) asks "Who are you?" first, then does that same thing once the PIN is right, so nobody taps twice. What was
+     typed in the add boxes stays. Reading needs only the kitchen PIN, as before; every write still needs a person's PIN. */
+  var GUEST_WRITES = { oreg: 1, tick: 1, urgent: 1, del: 1, restore: 1, 'add-recipe': 1, quick: 1, 'toast-act': 1, ogroup: 1, otick: 1, odel: 1, orestore: 1, wdel: 1, wrestore: 1, wreview: 1 };
+  function guest() { return shared() && !S.authed && !S.picking && !S.who && (S.name === 'prep' || S.name === 'orders' || S.name === 'waste'); }
+  function guestAsk(pend) { S.pending = pend; S.picking = true; S.who = ''; draw(); window.scrollTo(0, 0); }
+  function guestSel(el) {
+    return ['data-p', 'data-id', 'data-d', 'data-i', 'data-v', 'data-k2'].filter(function (k) { return el.hasAttribute(k); })
+      .map(function (k) { return '[' + k + '="' + String(el.getAttribute(k)).replace(/["\\]/g, '\\$&') + '"]'; }).join('');
+  }
+  function guestReplay(pend) {
+    if (pend.form === 'add') { if (S.text.trim()) addTyped(); return; }
+    if (pend.form === 'oadd') { addOrder(); return; }
+    if (pend.form === 'wadd') { addWaste(); return; }
+    var el = pend.sel && S.root && S.root.querySelector(pend.sel);
+    if (el) el.click(); else toast('That line has changed. Try again.');
+  }
+  function guestBarHTML() {
+    return '<div class="nb-guest" role="status"><span>Nobody is signed in on this device. Tick or add and the book asks who you are.</span><button type="button" class="btn" data-p="guest-who">Sign in</button></div>';
   }
   /* After 3 wrong PINs the page makes the person wait (1, 2, 5, 15 then 30 minutes). Kept on the phone, so a reload does not skip it.
      This slows someone using the page; it cannot stop a script that talks to the database directly. */
   var WAITS = [60, 120, 300, 900, 1800];
-  function lockGet() { try { return JSON.parse(lsGet('lk.prep.lock') || '{}'); } catch (e) { return {}; } }
+  /* Counted per person (20 Oct 2026), so one cook's typos never make the whole team wait on a shared tablet. The old
+     shared count (lk.prep.lock) goes to the first person who types a PIN after the update, once. */
+  function lockKey() { return 'lk.prep.lock.' + (S.who || ''); }
+  function lockGet() {
+    var old = lsGet('lk.prep.lock');
+    if (old && S.who && !lsGet(lockKey())) { lsSet(lockKey(), old); lsSet('lk.prep.lock', ''); }
+    try { return JSON.parse(lsGet(lockKey()) || '{}'); } catch (e) { return {}; }
+  }
   function lockLeft() { var l = lockGet(); return Math.max(0, Math.ceil(((l.until || 0) - Date.now()) / 1000)); }
   function lockFail() {
     var l = lockGet(); l.n = (l.n || 0) + 1; l.f = l.f || 0;
     if (l.n >= 3) { l.until = Date.now() + WAITS[Math.min(l.f, WAITS.length - 1)] * 1000; l.f++; l.n = 0; }
-    lsSet('lk.prep.lock', JSON.stringify(l)); return l;
+    lsSet(lockKey(), JSON.stringify(l)); return l;
   }
   function lockWait(sec) { return 'Too many wrong tries. Wait ' + (sec >= 60 ? Math.ceil(sec / 60) + ' minute' + (sec > 60 ? 's' : '') : sec + ' seconds') + ' and try again.'; }
   function submitKitchenPin() {
@@ -360,7 +394,7 @@
       pinHash(id, S.pf1).then(function (h) {
         S.who = id; S.tok = h;
         // a write only succeeds with the right PIN, so a visit count doubles as the PIN check
-        return sset(docRef('activity', id), { name: p.name, visits: fb.fs.increment(1), lastSeen: now() }, true).then(function () { clearTimeout(slow); lsSet('lk.prep.lock', ''); signedIn(id, h); },
+        return sset(docRef('activity', id), { name: p.name, visits: fb.fs.increment(1), lastSeen: now() }, true).then(function () { clearTimeout(slow); lsSet(lockKey(), ''); signedIn(id, h); },
           function (e) {
             clearTimeout(slow); S.tok = '';
             if (e && e.code === 'permission-denied') { lockFail(); S.pinMsg = lockLeft() > 0 ? lockWait(lockLeft()) : 'That PIN is not right.'; S.pf1 = ''; }
@@ -372,13 +406,16 @@
   }
   function resume() {
     // a phone that has signed in before stays signed in, unless the admin has reset that PIN
-    if (resumed || !S.who) return;
+    // once per page load, also when nobody was signed in: run later (the config listener fires again on any change) it
+    // would sign out a person who is halfway through typing their PIN
+    if (resumed) return;
     resumed = true;
+    if (!S.who) return;
     var tok = (lsGet('lk.prep.tok') || '').split(':');
     if (dayExpired()) { leave(); startIdle(); return; }
     if (tok[0] !== S.who || !tok[1] || idleExpired()) { if (S.who) { if (shared()) leave(); else pickName(S.who); } startIdle(); return; }
     startIdle();
-    S.authed = true; S.tok = tok[1]; draw(); whoSync();
+    S.authed = true; S.tok = tok[1]; hereAdd(S.who); draw(); whoSync();
     sset(docRef('activity', S.who), { name: (who() || {}).name || '', visits: fb.fs.increment(1), lastSeen: now() }, true).catch(function (e) {
       if (e && e.code === 'permission-denied') { S.authed = false; S.tok = ''; pickName(S.who); }
     });
@@ -401,7 +438,7 @@
   /* the staff list draft (Manage staff) is kept: the person types their PIN again and carries on where they were */
   function idleLock() {
     if (!S.authed || !S.who || !fb) return;
-    if (shared()) leave(); else pickName(S.who);
+    if (shared()) { S.picking = false; S.pending = null; leave(); } else pickName(S.who);
   }
   function startIdle() {
     if (idleOn) return; idleOn = true;
@@ -1919,10 +1956,15 @@
       '<div class="btn-row"><button type="button" class="btn dark" data-p="pin-go">' + openLabel() + '</button></div></section>';
   }
   function whoHTML() {
-    var list = people();
-    return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Who are you?</h2><p class="hint">Pick your name. The first time, you choose your own 4-digit PIN to go with it.</p>' +
-      (list.length ? '<div class="p-names">' + list.map(function (p) { return '<button type="button" class="chip p-name" data-p="who" data-id="' + esc(p.id) + '">' + esc(p.name) + '</button>'; }).join('') + '</div>' :
-        '<p class="p-err">No names are set up yet. The head chef adds them in the admin panel.</p>') + '</section>';
+    var list = people(), here = hereGet(), first = [], rest = [];
+    // the people who signed in on this device today come first, newest first: one tap and 4 digits on a shared tablet
+    here.forEach(function (id) { var p = list.filter(function (x) { return x.id === id; })[0]; if (p) first.push(p); });
+    list.forEach(function (p) { if (first.indexOf(p) < 0) rest.push(p); });
+    function names(l) { return '<div class="p-names">' + l.map(function (p) { return '<button type="button" class="chip p-name" data-p="who" data-id="' + esc(p.id) + '">' + esc(p.name) + '</button>'; }).join('') + '</div>'; }
+    return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Who are you?</h2><p class="hint">' + (S.pending ? 'Pick your name and type your PIN. Then it is done for you.' : 'Pick your name. The first time, you choose your own 4-digit PIN to go with it.') + '</p>' +
+      (!list.length ? '<p class="p-err">No names are set up yet. The head chef adds them in the admin panel.</p>' :
+        first.length ? '<p class="nb-ql p-here">Here today</p>' + names(first) + (rest.length ? '<p class="nb-ql p-here">Everyone</p>' + names(rest) : '') : names(list)) +
+      (S.picking && shared() ? '<div class="btn-row"><button type="button" class="btn" data-p="who-back">Back to the list</button></div>' : '') + '</section>';
   }
   function ownPinHTML() {
     var p = who(), step = S.pinStep;
@@ -2415,6 +2457,7 @@
     if (S.configState === 'error') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Prep book</h2><p class="p-err">Could not connect. Check the connection and try again.</p><div class="btn-row"><button type="button" class="btn dark" data-p="retry">Try again</button></div></section>';
     if (S.configState !== 'ok') return loadingHTML();
     if (S.name === 'admin') return adminHTML();
+    if (guest()) return '<div class="is-guest">' + guestBarHTML() + (S.name === 'orders' ? ordersHTML() : S.name === 'waste' ? wasteHTML() : listHTML()) + '</div>';
     if (!who()) return whoHTML();
     if (!S.authed) return ownPinHTML();
     flushMisses(); flushViews();
@@ -4408,6 +4451,7 @@
     var el = e.target.closest('[data-p]');
     if (!el || !S.root || !S.root.contains(el)) return;
     var a = el.getAttribute('data-p'), id = el.getAttribute('data-id'), i = +el.getAttribute('data-i'), dt = el.getAttribute('data-d');
+    if (guest() && GUEST_WRITES[a]) { e.preventDefault(); guestAsk({ sel: guestSel(el) }); return; }
     if (a.indexOf('lv-') === 0) { lvClick(a, el); return; }
     if (a === 'recipe-toggle') { S.recipeOpen = !S.recipeOpen; if (!S.recipeOpen) { S.recipeSearch = ''; S.recipeAll = false; } draw(); if (S.recipeOpen) { var rse = S.root.querySelector('#p-rs'); if (rse) rse.focus({ preventScroll: true }); } return; }
     if (a === 'recipe-close') { S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; draw(); focusSel('.p-pickbtn'); return; }
@@ -4504,7 +4548,9 @@
     if (a === 'otoday') { S.ordDate = dayNow(); watchOrders(); draw(); return; }
     if (a === 'osugg') { var st = (S.osugg || [])[i]; if (st) { S.otext = st; draw(); var oe = S.root.querySelector('[data-k="o-text"]'); if (oe) { oe.focus(); try { oe.setSelectionRange(oe.value.length, oe.value.length); } catch (x) {} } } return; }
     if (a === 'who') { pickName(id); return; }
-    if (a === 'who-change') { leave(); return; }
+    if (a === 'who-change') { S.picking = shared(); S.pending = null; leave(); return; }
+    if (a === 'guest-who') { guestAsk(null); return; }
+    if (a === 'who-back') { S.picking = false; S.pending = null; leave(); return; }
     if (a === 'day') { S.date = shift(S.date, +el.getAttribute('data-d')); S.tab = ''; watchItems(); draw(); return; }
     if (a === 'today') { S.date = dayNow(); S.tab = ''; watchItems(); draw(); return; }
     if (a === 'tab') { S.tab = el.getAttribute('data-v') || ''; draw(); return; }
@@ -4664,6 +4710,7 @@
   }
   function onSubmit(e) {
     var f = e.target.getAttribute && e.target.getAttribute('data-p-form');
+    if (guest() && (f === 'add' || f === 'oadd' || f === 'wadd')) { e.preventDefault(); if (f !== 'add' || S.text.trim()) guestAsk({ form: f }); return; }
     if (f === 'add') { e.preventDefault(); if (!S.text.trim()) { var pt = S.root.querySelector('[data-k="p-text"]'); if (pt) pt.focus(); return; } addTyped(); }
     else if (f === 'oadd') { e.preventDefault(); addOrder(); }
     else if (f === 'wadd') { e.preventDefault(); addWaste(); }
