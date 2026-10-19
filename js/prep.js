@@ -479,7 +479,7 @@
         supd(itemRef(dte, mid), undo).catch(failed);
       } });
     }
-    else addedToast(t + (q0.trim() ? ' (' + q0.trim() + ')' : ''), sec, S.date, made.id);
+    else addedToast(sec, S.date, made.id);
     S.text = ''; S.qty = ''; S.section = sec; S.pickedText = ''; draw();
     var el = S.root && S.root.querySelector('[data-k="p-text"]'); if (el) el.focus();
   }
@@ -497,8 +497,8 @@
     made.catch(function (e) { failed(e, function () { if (!S.qty.trim()) S.qty = q0; }); });
     noteSection(sec); bump({ added: 1, lastAdded: now() });
     S.qty = ''; S.recipeSearch = ''; S.recipeOpen = false; S.recipeAll = false;
-    if (secInfo.from) { S.section = sec; var sf = secInfo.from, mid = made.id, dte = S.date; toast('Added ' + (r.short || r.name) + ', section ' + sf + ' corrected to ' + sec, { label: 'Undo', fn: function () { keepSection(sf); noteSection(sf); S.section = sf; supd(itemRef(dte, mid), { station: sf }).catch(failed); } }); }
-    else addedToast(r.short || r.name, sec, S.date, made.id);
+    if (secInfo.from) { S.section = sec; var sf = secInfo.from, mid = made.id, dte = S.date; toast('Added, section ' + sf + ' corrected to ' + sec, { label: 'Undo', fn: function () { keepSection(sf); noteSection(sf); S.section = sf; supd(itemRef(dte, mid), { station: sf }).catch(failed); } }); }
+    else addedToast(sec, S.date, made.id);
   }
   function canUntick(x) {
     return canBrowse() || (!!x.doneById && x.doneById === S.who && now() - (x.doneAt || 0) < 110000);
@@ -509,7 +509,7 @@
     var done = !it.done;
     if (!done && !canUntick(it)) { toast('Ticked lines stay ticked. Ask the head chef or sous chef to undo it.'); return; }
     supd(itemRef(date, id), { done: done, doneBy: done ? p.name : '', doneById: done ? p.id : '', doneAt: done ? now() : 0 }).catch(failed);
-    if (done) { bump({ ticked: 1 }); toast('Ticked ' + it.text, { label: 'Undo', fn: function () { tick(date, id); } }); setTimeout(draw, LINGER + 100); }
+    if (done) { bump({ ticked: 1 }); toast('Ticked', { label: 'Undo', fn: function () { tick(date, id); } }); setTimeout(draw, LINGER + 100); }
     else if (it.doneById && fb) sset(docRef('activity', it.doneById), { name: it.doneBy || '', ticked: fb.fs.increment(-1) }, true).catch(function () {});
   }
   function removeItem(date, id, restore) {
@@ -776,7 +776,7 @@
       var made = newItem(Object.assign({}, data, { dupOk: true }));
       made.catch(failed);
       if (after) after();
-      addedToast(data.text + (data.qty ? ' (' + data.qty + ')' : ''), data.station, dte, made.id);
+      addedToast(data.station, dte, made.id);
     } });
   }
   function inTab(x) { return !S.tab || (x.station || '') === S.tab || (x.also || []).indexOf(S.tab) >= 0; }
@@ -828,11 +828,12 @@
     var made = newItem({ text: text.slice(0, 160), station: sec, recipe: rm ? rm.id : '', qty: uq });
     made.catch(failed);
     noteSection(sec); bump({ added: 1, lastAdded: now() });
-    addedToast(text + (uq ? ' (' + uq + ')' : ''), sec, dte, made.id);
+    addedToast(sec, dte, made.id);
   }
-  /* Undo on an add flags the new line as removed. Anyone may take back a line they just wrote (the rules let the writer update it). */
-  function addedToast(what, sec, dte, mid) {
-    toast('Added ' + what + (sec ? ' to ' + sec : ''), { label: 'Undo', fn: function () { supd(itemRef(dte, mid), { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: now() }).catch(failed); } });
+  /* Undo on an add flags the new line as removed. Anyone may take back a line they just wrote (the rules let the writer update it).
+     The toast does not repeat the line: it is on the list already, and on a phone a long name plus Undo covered the list. */
+  function addedToast(sec, dte, mid) {
+    toast('Added' + (sec ? ' to ' + sec : ''), { label: 'Undo', fn: function () { supd(itemRef(dte, mid), { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: now() }).catch(failed); } });
   }
   /* Owner backup: everything the book holds, as one JSON file (PIN fingerprints left out). */
   function exportAll() {
@@ -2554,8 +2555,8 @@
     sset(ref, { text: t, qty: q, recipes: hit ? hit.ids : [], addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: now(), ordered: false, deleted: false, orig: t !== typed ? typed.slice(0, 120) : '' })
       .then(ordReload, function (e) { failed(e, function () { if (!S.otext.trim()) { S.otext = typed; S.oqty = q; } }); });
     /* like the prep list: Undo takes the line back, or after a spelling fix puts back what was typed */
-    if (oFix) toast('Added ' + t + ', corrected ' + oFix, { label: 'Undo', fn: function () { keepWords(pr.changes); supd(ref, { text: typed.slice(0, 120), orig: '' }).then(ordReload, failed); } });
-    else toast('Added ' + t + (q ? ' (' + q + ')' : '') + ' to the order list', { label: 'Undo', fn: function () { supd(ref, { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: now() }).then(ordReload, failed); } });
+    if (oFix) toast('Added, corrected ' + oFix, { label: 'Undo', fn: function () { keepWords(pr.changes); supd(ref, { text: typed.slice(0, 120), orig: '' }).then(ordReload, failed); } });
+    else toast('Added to the order list', { label: 'Undo', fn: function () { supd(ref, { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: now() }).then(ordReload, failed); } });
     if (oneTapAdd) return;
     var el = S.root && S.root.querySelector('[data-k="o-text"]'); if (el) el.focus();
   }
@@ -2566,15 +2567,14 @@
     return W([orderedOp(date, id, on)]);
   }
   function tickOrderLine(date, id, on) {
-    var it = (S.ordLines || []).concat(S.ordAll || []).filter(function (x) { return x.id === id; })[0];
     setOrdered(date, id, on).then(function () { ordPatch(date, id, { ordered: on }); }, failed);
-    if (on) toast('Ordered ' + (it ? it.text : 'the line'), { label: 'Undo', fn: function () { tickOrderLine(date, id, false); } });
+    if (on) toast('Ordered', { label: 'Undo', fn: function () { tickOrderLine(date, id, false); } });
   }
   function tickOrderGroup(key) {
     var lines = ordNewest(ordAllLines()).filter(function (x) { return !x.deleted && !x.ordered && okey(x.text) === key; });
     if (!lines.length || !canBrowse()) return;
     W(lines.map(function (x) { return orderedOp(x.date, x.id, true); })).then(function () { lines.forEach(function (x) { ordPatch(x.date, x.id, { ordered: true }); }); }, failed);
-    toast('Ordered ' + lines[0].text + (lines.length > 1 ? ' (' + lines.length + ' lines)' : ''), { label: 'Undo', fn: function () {
+    toast('Ordered' + (lines.length > 1 ? ' ' + lines.length + ' lines' : ''), { label: 'Undo', fn: function () {
       W(lines.map(function (x) { return orderedOp(x.date, x.id, false); })).then(function () { lines.forEach(function (x) { ordPatch(x.date, x.id, { ordered: false }); }); }, failed);
     } });
   }
@@ -2823,7 +2823,7 @@
     S.wf = { text: '', amt: '', unit: f.unit, reason: '', sec: sec, act: '' };
     draw(); focusK('w-text');
     /* Undo like the other lists. The rules let only the head chef or a sous chef change a wastage entry, so staff are told who can fix it. */
-    var wmsg = 'Logged ' + t + (wpr.changes.length ? ' (corrected ' + wpr.changes.map(function (c) { return c[0] + ' to ' + c[1]; }).join(', ') + ')' : '') + (secInfo.from ? ' under ' + sec + ' (typed ' + secInfo.from + ')' : '');
+    var wmsg = 'Logged' + (wpr.changes.length ? ', corrected ' + wpr.changes.map(function (c) { return c[0] + ' to ' + c[1]; }).join(', ') : '') + (secInfo.from ? ' under ' + sec + ' (typed ' + secInfo.from + ')' : '');
     if (canBrowse()) toast(wmsg, { label: 'Undo', fn: function () { supd(ref, { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: now() }).catch(failed); } });
     else toast(wmsg + '. Wrong? Ask the head chef or a sous chef to remove it.', null, 6000);
   }
