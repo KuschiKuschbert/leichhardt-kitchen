@@ -99,7 +99,7 @@
     rows[r.id] = list;
     tags[r.id] = t;
     missing[r.id] = ro.missing;
-    hay[r.id] = [r.name, r.avc || '', r.menu || '', r.yield, KIND[r.kind], r.sec || '', r.forLine].concat(r.ingredients.map(function (i) { return i.name; }), t).join(' ').toLowerCase();
+    hay[r.id] = [r.name, r.avc || '', r.menu || '', r.yield, KIND[r.kind], r.sec || '', r.forLine, r.aka || ''].concat(r.ingredients.map(function (i) { return i.name; }), t).join(' ').toLowerCase();
   });
 
   /* ---------- settings (saved on this device) and ticked steps (this visit) ---------- */
