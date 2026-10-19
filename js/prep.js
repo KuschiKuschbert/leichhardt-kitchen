@@ -34,7 +34,10 @@
 
   var FB = window.LK_FIREBASE, D = window.LK_DATA || { recipes: [] };
   var SDK = 'https://www.gstatic.com/firebasejs/10.14.1/';
+  /* head: the head chef's own name on the list. Only the head chef's Google account can give it (config/main headId),
+     and that person always has every permission and the sous chef pages on any device, whatever the list says. */
   var ROLES = {
+    head: { name: 'Head chef', add: true, tick: true, del: true, ping: true },
     lead: { name: 'Lead', add: true, tick: true, del: true, ping: false },
     sous: { name: 'Sous chef', add: true, tick: true, del: true, ping: true },
     staff: { name: 'Staff', add: true, tick: true, del: false, ping: false },
@@ -120,6 +123,7 @@
       unsubCfg = fb.fs.onSnapshot(cfgDoc(), function (snap) {
         S.config = snap.exists() ? snap.data() : { people: [] };
         S.config.people = S.config.people || [];
+        headFix(S.config);
         S.configState = 'ok'; featSync(); refreshDraft(); watchItems(); watchSections(); watchLearned(); if (S.name === 'orders') watchOrders(); if (S.name === 'waste') watchWaste(); resume(); loadAdmins(); loadNotes(); loadMinutes(); draw();
       }, function (err) {
         S.configState = err && err.code === 'permission-denied' ? 'badpin' : 'error';
@@ -198,7 +202,7 @@
   function admDev() { return S.level === 'owner' || (S.level !== 'none' && lsGet('lk.admin') === '1'); }
   function featCalc(k) {
     var p = who();
-    return admDev() || (S.config.staffSee || {})[k] !== false || !!(p && (p.role === 'sous' || p.role === 'lead' || (k === 'pings' && canPingP(p))));
+    return admDev() || (S.config.staffSee || {})[k] !== false || !!(p && (isSousP(p) || p.role === 'lead' || (k === 'pings' && canPingP(p))));
   }
   function featOn(k) { return S.configState === 'ok' && S.config ? featCalc(k) : admDev() || featHave[k] !== false; }
   /* run when the staff list, the person on this phone or the Google sign-in changes */
@@ -217,8 +221,8 @@
   }
   function notYetHTML(fk) {
     var t = fk === 'guides' ? 'Guides' : 'Meeting minutes';
-    return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">' + t + '</h2><p class="hint">' + t + ' are not open to everyone yet. The head chef will switch them on soon.</p>' +
-      (who() ? '' : '<p class="hint">Lead or sous chef? Sign in on the prep list first.</p>') + '<div class="btn-row"><a class="btn dark" href="#/">Back to the start</a></div></section>';
+    return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">' + t + '</h2><p class="hint">' + t + ' are not open to everyone yet. The head chef decides when.</p>' +
+      (who() ? '' : '<p class="hint">Lead or sous chef? <a href="#/prep">Sign in on the prep list</a> first, then come back.</p>') + '<div class="btn-row"><a class="btn dark" href="#/">Back to the start</a></div></section>';
   }
   function toast(msg, act, ms) { S.toast = msg; S.toastAct = act || null; draw(); clearTimeout(toastTimer); toastTimer = setTimeout(function () { S.toast = ''; S.toastAct = null; draw(); }, ms || (act ? 9000 : 3500)); }
   /* A write the server refused or could not take. Whatever was typed goes back in its box (restore). Refused
@@ -1110,8 +1114,19 @@
   function staleHint() { return draftStale() && draftDirty() ? '<p class="hint a-stale">The staff list changed on another phone while you were here. Only what you changed is saved on top of it.</p>' : ''; }
   /* sousIds and pingIds are what the rules check: sous chefs, and everyone who may write shift pings (sous chefs always may) */
   function idsFor(people, fn) { return people.filter(function (p) { return p.active !== false && String(p.name).trim() && fn(p); }).map(function (p) { return p.id; }); }
-  function isSousP(p) { return p.role === 'sous'; }
-  function canPingP(p) { return p.role === 'sous' || !!p.ping; }
+  function isSousP(p) { return p.role === 'sous' || p.role === 'head'; }
+  function canPingP(p) { return isSousP(p) || !!p.ping; }
+  function isHeadP(p) { return !!p && p.role === 'head'; }
+  /* The head chef's own name (headId, which only the head chef's Google account can write) is always Head chef, on the
+     list and with every permission, even if a sous chef's save changed or removed the role. Run on every config read. */
+  function headFix(c) {
+    var id = c && c.headId;
+    (c.people || []).forEach(function (p) {
+      if (id && p.id === id) { var r = ROLES.head; p.role = 'head'; p.add = r.add; p.tick = r.tick; p.del = r.del; p.ping = r.ping; p.active = true; }
+      else if (p.role === 'head') { p.role = 'sous'; }   // only one head chef: anyone else marked so counts as a sous chef
+    });
+  }
+  function headIdOf(people) { var h = people.filter(function (p) { return p.role === 'head' && p.active !== false && String(p.name).trim(); })[0]; return h ? h.id : ''; }
   function anyP() { return true; }
   function staffSee(c) { var o = {}; FEATS.forEach(function (f) { o[f[0]] = ((c && c.staffSee) || {})[f[0]] !== false; }); return o; }
   /* hold: keep these sousIds and pingIds as they are instead of working them out from the roles (see seedIds) */
@@ -1122,7 +1137,7 @@
       }),
       stations: [], showBadges: cfg.showBadges !== false, staffSee: staffSee(cfg),
       sousIds: hold ? (hold.sousIds || []) : idsFor(cfg.people, isSousP), pingIds: hold ? (hold.pingIds || []) : idsFor(cfg.people, canPingP),
-      staffIds: idsFor(cfg.people, anyP),
+      staffIds: idsFor(cfg.people, anyP), headId: headIdOf(cfg.people),
       updated: now(), updatedBy: S.user ? 'Head chef' : (who() ? who().name : '')   // never the Google email: anyone with the kitchen PIN can read this record
     };
     /* a sous chef may only change the people list and who may set a PIN, so only those are sent (merged): the rules refuse any other field */
@@ -1352,7 +1367,7 @@
       '<div class="btn-row"><a class="btn" href="#/waste">Log waste</a><button type="button" class="btn" data-p="close-hide">Hide for today</button></div></div>';
   }
   var MEDAL = { 1: '#C9971C', 2: '#8E959C', 3: '#A8693A' };
-  function isSous() { var p = me(); return !!(p && p.role === 'sous'); }
+  function isSous() { var p = me(); return !!(p && isSousP(p)); }
   /* shift pings: sous chefs, and anyone the head chef ticked for Pings in the People tab */
   function canPing() { var p = me(); return !!(p && canPingP(p)); }
   function ordinal(n) { return n + (n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th'); }
@@ -2356,13 +2371,13 @@
   /* The People tab: every person with role, permissions and PIN reset. Search, filter chips and Show more once the list is long. */
   function peopleListHTML(d) {
     var items = d.people.map(function (p, i) { return { p: p, i: i }; });
-    function cb(o, kind, perm, on, label, off) { return '<label class="a-cl"><input type="checkbox" aria-label="' + label + ' for ' + esc(o.p.name) + '" data-a="' + kind + '"' + (perm ? ' data-perm="' + perm + '"' : '') + ' data-i="' + o.i + '"' + (on ? ' checked' : '') + (off ? ' disabled title="Sous chefs can always write shift pings"' : '') + '></label>'; }
+    function cb(o, kind, perm, on, label, off) { return '<label class="a-cl"><input type="checkbox" aria-label="' + label + ' for ' + esc(o.p.name) + '" data-a="' + kind + '"' + (perm ? ' data-perm="' + perm + '"' : '') + ' data-i="' + o.i + '"' + (on ? ' checked' : '') + (off ? ' disabled title="' + (isHeadP(o.p) ? 'The head chef can always do this' : 'Sous chefs can always write shift pings') + '"' : '') + '></label>'; }
     function nm(o) { return String(o.p.name || '').toLowerCase(); }
     return lvHTML({
       key: 'people', items: items, step: 15, tools: 8, noun: ['person', 'people'], ph: 'Search names', table: 'lv-people', empty: 'No names yet.',
       find: function (o) { return o.p.name + ' ' + ((ROLES[o.p.role] || {}).name || ''); },
       rowCls: function (o) { return o.p.active === false ? 'is-off' : ''; },
-      filters: [['all', 'Everyone'], ['on', 'On the list', function (o) { return o.p.active !== false; }], ['sous', 'Sous chefs', function (o) { return o.p.role === 'sous' || o.p.role === 'lead'; }],
+      filters: [['all', 'Everyone'], ['on', 'On the list', function (o) { return o.p.active !== false; }], ['sous', 'Sous chefs', function (o) { return isSousP(o.p) || o.p.role === 'lead'; }],
         ['staff', 'Staff', function (o) { return o.p.role === 'staff'; }], ['view', 'View only', function (o) { return o.p.role === 'view'; }], ['off', 'Off the list', function (o) { return o.p.active === false; }]],
       sorts: [['order', 'Order added', function (a, b) { return a.i - b.i; }],
         ['name', 'Name A to Z', function (a, b) { return (b.p.isNew ? 1 : 0) - (a.p.isNew ? 1 : 0) || nm(a).localeCompare(nm(b)); }],
@@ -2370,10 +2385,10 @@
       cols: [
         { h: 'Name', th: true, html: function (o) { return '<label class="visually-hidden" for="a-n' + o.i + '">Name</label><input id="a-n' + o.i + '" class="search a-name" data-k="a-n' + o.i + '" data-a="name" data-i="' + o.i + '" value="' + esc(o.p.name) + '" maxlength="40">'; } },
         { h: 'Role', wide: true, html: function (o) { return '<label class="visually-hidden" for="a-r' + o.i + '">Role</label><select id="a-r' + o.i + '" class="p-select" data-k="a-r' + o.i + '" data-a="role" data-i="' + o.i + '">' + Object.keys(ROLES).map(function (k) { return '<option value="' + k + '"' + (o.p.role === k ? ' selected' : '') + '>' + ROLES[k].name + '</option>'; }).join('') + '</select>'; } },
-        { h: 'Write', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'add', o.p.add, 'Write'); } },
-        { h: 'Tick', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'tick', o.p.tick, 'Tick'); } },
-        { h: 'Remove', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'del', o.p.del, 'Remove'); } },
-        { h: 'Pings', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'ping', canPingP(o.p), 'Shift pings', o.p.role === 'sous'); } },
+        { h: 'Write', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'add', o.p.add, 'Write', isHeadP(o.p)); } },
+        { h: 'Tick', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'tick', o.p.tick, 'Tick', isHeadP(o.p)); } },
+        { h: 'Remove', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'del', o.p.del, 'Remove', isHeadP(o.p)); } },
+        { h: 'Pings', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'ping', canPingP(o.p), 'Shift pings', isSousP(o.p)); } },
         { h: 'On list', cls: 'a-c', html: function (o) { return cb(o, 'active', '', o.p.active !== false, 'On list'); } },
         { h: '', cls: 'a-act', html: function (o) { return '<button type="button" class="p-x" data-p="a-reset-pin" data-id="' + esc(o.p.id) + '">' + (armed('pin:' + o.p.id) ? 'Tap again to reset' : 'Reset PIN') + '</button>' + removePersonBtn(o.p, o.i); } }
       ]
@@ -2418,7 +2433,8 @@
     if (at === 'minutes') loadMinutes();
     if (at === 'guides') loadGuides();
     var pane = at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'learning' ? (learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() : at === 'people' ? (
-      '<section class="set-block"><span class="label">People</span><span class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Pings lets that person write shift pings from the prep book (sous chefs always can). Reset PIN lets that person choose a new one. Removing someone from the list keeps their name on old lines.</span>' +
+      '<section class="set-block"><span class="label">People</span><span class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Pings lets that person write shift pings from the prep book (sous chefs always can). Reset PIN lets that person choose a new one. Removing someone from the list keeps their name on old lines. Head chef is for your own name: it always has every permission and the sous chef pages, and a sous chef cannot change or remove it.</span>' +
+      (headIdOf(d.people) ? '' : '<p class="hint a-nohead" role="note">No one is marked Head chef yet. Set your own name to Head chef and save, so your PIN has full rights on the kitchen devices.</p>') +
       peopleListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' +
       '<section class="set-block"><span class="label">Badges</span><label class="a-check"><input type="checkbox" data-a="badges"' + (d.showBadges !== false ? ' checked' : '') + '> Show the weekly top tickers to everyone on the prep book</label></section>' +
       '<section class="set-block a-feats"><span class="label">New pages</span><span class="hint">You, sous chefs and leads always see these. Untick one to hide it from Staff and View only until the team is ready. Anyone ticked for Pings still sees shift pings.</span>' +
@@ -2433,6 +2449,7 @@
   }
   /* the same Remove button on the admin People tab and the sous chef's staff list, with a second tap to be sure */
   function removePersonBtn(p, i) {
+    if (isHeadP(p) && S.level !== 'owner') return '<span class="a-head">Head chef</span>';
     return '<button type="button" class="p-x" data-p="a-remove-person" data-i="' + i + '" aria-label="' + esc('Remove ' + (p.name || 'this person')) + '">' + (armed('rm:' + p.id) ? 'Tap again to remove' : 'Remove') + '</button>';
   }
   function draftDirty() { return !!S.draft && JSON.stringify(S.draft) !== S.draftSnap; }
@@ -3106,7 +3123,7 @@
     var i = noteInfo();
     Array.prototype.forEach.call(document.querySelectorAll('.nbell'), function (b) {
       b.hidden = !i.n; b.classList.toggle('has-new', i.unread);
-      b.setAttribute('aria-label', 'Today\'s shift pings' + (i.unread ? ', new' : ''));
+      b.setAttribute('aria-label', i.n + ' shift ping' + (i.n === 1 ? '' : 's') + ' today' + (i.unread ? ', new' : ''));
     });
   }
   function notesInit() {
@@ -3473,8 +3490,10 @@
   function minNudgeHTML() {
     var u = featOn('minutes') ? mnUnsigned() : [];
     if (!u.length) return '';
-    return '<div class="mn-nudge" role="status"><span><b>Minutes not signed yet</b> Kitchen meeting, ' + esc(dayShort(u[0].date)) + (u.length > 1 ? ' and ' + (u.length - 1) + ' more' : '') + '</span><a class="mn-nudge-btn" href="#/minutes">Read and sign</a></div>';
+    return '<div class="mn-nudge" role="status"><span><b>Minutes not signed yet</b> Kitchen meeting, ' + esc(dayShort(u[0].date)) + (u.length > 1 ? ' and ' + (u.length - 1) + ' more' : '') + '</span><a class="mn-nudge-btn" href="#/minutes" data-mn="' + esc(u[0].id) + '">Read and sign</a></div>';
   }
+  // "Read and sign" opens the minutes the card names, not just the newest published ones (the card sits outside the prep root)
+  document.addEventListener('click', function (e) { var a = e.target.closest && e.target.closest('.mn-nudge-btn[data-mn]'); if (a) { S.mSel = a.getAttribute('data-mn'); S.mErr = ''; } }, true);
   function loadMinutes(force) {
     var today = dayNow();
     if (!fb || !/^\d{4,6}$/.test(S.pin) || S.minsBusy || !featOn('minutes')) return;
@@ -3530,7 +3549,8 @@
     var acts = (m.acts || []).filter(function (a) { return a && a.what; });
     if (acts.length) out += mnBox(nx(), 'Actions', '<div class="mn-tw"><table class="mn-tbl"><thead><tr><th scope="col">Action</th><th scope="col">Who</th><th scope="col">By</th></tr></thead><tbody>' + acts.map(function (a) {
       var tag = a.st === 'done' ? '<span class="mn-chip">Done</span>' : a.st === 'dropped' ? '<span class="mn-chip">Dropped</span>' : a.carried ? '<span class="mn-chip">Carried over</span>' : '';
-      return '<tr class="' + (a.st && a.st !== 'open' ? 'is-closed' : '') + '"><td>' + linkNote(a.what) + (tag ? '<br>' + tag : '') + '</td><td>' + esc(a.who === 'all' ? 'Everyone' : mnName(a.who)) + '</td><td>' + esc(a.by ? dayShort(a.by) : '') + '</td></tr>';
+      var mine = sign && S.who && (a.who === S.who || a.who === 'all');
+      return '<tr class="' + (a.st && a.st !== 'open' ? 'is-closed' : '') + (mine ? ' is-mine' : '') + '"><td>' + (mine ? '<span class="mn-chip mn-yours">Yours</span> ' : '') + linkNote(a.what) + (tag ? '<br>' + tag : '') + '</td><td>' + esc(a.who === 'all' ? 'Everyone' : mnName(a.who)) + '</td><td>' + esc(a.by ? dayShort(a.by) : '') + '</td></tr>';
     }).join('') + '</tbody></table></div>');
     if (mnLines(m.menu).length) out += mnBox(nx(), 'Menu changes', mnList(m.menu, true));
     if (mnLines(m.dates).length) out += mnBox(nx(), 'Dates ahead', mnList(m.dates, true));
@@ -3544,9 +3564,13 @@
     var s = S.mmine[mnKey(m)], my = (m.att || []).filter(function (x) { return x.id === S.who; })[0], st = my ? my.st : 'absent';
     if (s && s !== 'loading') return '<section class="mn-sign is-done"><h3 class="mn-bh">Signed</h3><p>' + esc(p.name) + ' signed on ' + esc(dayShort(T.day(s.at))) + ' at ' + esc(clock(s.at)) + '. Version ' + m.v + '.</p></section>';
     if (s === undefined || s === 'loading') return '<section class="mn-sign mn-noprint"><p class="hint">Checking your sign-off...</p></section>';
-    return '<section class="mn-sign mn-noprint"><h3 class="mn-bh">Sign off</h3><p>' + (st === 'present' ? 'I attended and have read and understood these minutes.' : 'I have read and understood these minutes.') + '</p>' +
-      '<label class="label" for="mn-pin">Your PIN</label>' + pinField('mn-pin', 'mn-pin', S.mpin) +
-      '<button type="button" class="btn dark mn-signbtn" data-p="mn-sign" data-id="' + esc(m.id) + '"' + (S.mpinOk && !S.mSigning ? '' : ' disabled') + '>Sign</button>' +
+    // one tap: the person already typed their own PIN to open this page (20 Oct 2026, no second PIN)
+    var mineN = (m.acts || []).filter(function (a) { return a && a.what && (!a.st || a.st === 'open') && (a.who === S.who || a.who === 'all'); }).length;
+    return '<section class="mn-sign mn-noprint"><h3 class="mn-bh">Sign off</h3>' +
+      ((m.v || 1) > 1 ? '<p class="mn-changed">These minutes were changed after they were first published (version ' + m.v + '). If you signed before, read them again and sign this version.</p>' : '') +
+      (mineN ? '<p class="mn-mine">Your actions: ' + mineN + ', marked Yours above.</p>' : '') +
+      '<p>' + (st === 'present' ? 'I attended and have read and understood these minutes.' : 'I have read and understood these minutes.') + '</p>' +
+      '<button type="button" class="btn dark mn-signbtn" data-p="mn-sign" data-id="' + esc(m.id) + '"' + (S.mSigning ? ' disabled' : '') + '>Sign as ' + esc(p.name) + '</button>' +
       '<span class="mn-err" role="status" id="mn-pinmsg">' + esc(S.mErr) + '</span><p class="hint">Your name, the version and the time are recorded. Apology and absent staff sign too.</p></section>';
   }
   function mnWriteLink() {
@@ -3560,13 +3584,16 @@
     if (S.mins == null) return top + '<section class="mn"><h2 class="mn-title" id="rtitle" tabindex="-1">Meeting minutes</h2><p class="hint">Loading...</p></section>';
     if (!list.length) return top + '<section class="mn"><h2 class="mn-title" id="rtitle" tabindex="-1">Meeting minutes</h2><p class="hint">No minutes have been published in the last ' + MN_DAYS + ' days.</p>' + mnWriteLink() + '</section>';
     var m = list.filter(function (x) { return x.id === S.mSel; })[0] || list[0], older = list.filter(function (x) { return x.id !== m.id; }).slice(0, 12);
+    // minutes this person still has to sign come first among the earlier ones, marked To sign
+    function toSign(x) { return S.mmine[mnKey(x)] === null; }
+    older = older.filter(toSign).concat(older.filter(function (x) { return !toSign(x); }));
     return top + '<section class="mn">' + mnDocHTML(m, true) +
       '<div class="mn-noprint"><div class="mn-btns"><button type="button" class="btn" data-p="mn-print">Print or save as PDF</button></div>' +
-      (older.length ? '<h3 class="mn-eh">Earlier minutes (last ' + MN_DAYS + ' days)</h3><div class="mn-earlier">' + older.map(function (x) { return '<button type="button" class="chip" data-p="mn-pickdoc" data-id="' + esc(x.id) + '">' + pad(x.no || 0) + ' &middot; ' + esc(dayShort(x.date)) + '</button>'; }).join('') + '</div>' : '') + '</div>' + mnWriteLink() + '</section>';
+      (older.length ? '<h3 class="mn-eh">Earlier minutes (last ' + MN_DAYS + ' days)</h3><div class="mn-earlier">' + older.map(function (x) { return '<button type="button" class="chip' + (toSign(x) ? ' mn-tosign' : '') + '" data-p="mn-pickdoc" data-id="' + esc(x.id) + '">' + pad(x.no || 0) + ' &middot; ' + esc(dayShort(x.date)) + (toSign(x) ? ' &middot; <b>To sign</b>' : '') + '</button>'; }).join('') + '</div>' : '') + '</div>' + mnWriteLink() + '</section>';
   }
   function signMinutes(id) {
     var m = mnById(id), p = who();
-    if (!m || !p || !fb || !S.authed || !S.tok || S.mSigning || !S.mpinOk) return;
+    if (!m || !p || !fb || !S.authed || !S.tok || S.mSigning) return;
     var my = (m.att || []).filter(function (x) { return x.id === S.who; })[0], st = my ? my.st : 'absent', k = mnKey(m);
     var ref = fb.fs.doc.apply(null, [fb.db].concat(base(), ['minutes', m.id, 'signs', m.v + '_' + S.who])), data = { v: m.v, st: st, at: now(), name: p.name };
     S.mSigning = true; S.mErr = ''; draw();
@@ -4652,6 +4679,7 @@
     }
     if (a === 'a-remove-person') {
       var rp = d.people[i];
+      if (isHeadP(rp) && S.level !== 'owner') return;   // only the head chef's Google account takes the head chef off the list
       // a row just added and still blank goes in one tap; anyone else needs a second tap
       if (!rp || (!(rp.isNew && !String(rp.name).trim()) && !arm('rm:' + rp.id))) return;
       d.people.splice(i, 1); draw(); return;
@@ -4738,7 +4766,11 @@
     if (a === 'badges') { S.draft.showBadges = el.checked; return; }
     if (a === 'staffsee') { S.draft.staffSee[el.getAttribute('data-f')] = el.checked; return; }
     var i = +el.getAttribute('data-i'), p = S.draft.people[i];
-    if (a === 'role') { p.role = el.value; var r = ROLES[el.value]; p.add = r.add; p.tick = r.tick; p.del = r.del; p.ping = r.ping; draw(); }
+    if (a === 'role') {
+      if (el.value === 'head' && S.level !== 'owner') { el.value = p.role; return; }
+      if (el.value === 'head') S.draft.people.forEach(function (q) { if (q !== p && q.role === 'head') q.role = 'sous'; });   // one head chef
+      p.role = el.value; var r = ROLES[el.value]; p.add = r.add; p.tick = r.tick; p.del = r.del; p.ping = r.ping; draw();
+    }
     else if (a === 'perm') { p[el.getAttribute('data-perm')] = el.checked; }
     else if (a === 'active') { p.active = el.checked; draw(); }
   }
