@@ -87,9 +87,11 @@
   /* ---------- Firebase (loaded only when the prep pages are opened) ---------- */
   function sdk() {
     if (sdkP) return sdkP;
-    sdkP = Promise.all([import(SDK + 'firebase-app.js'), import(SDK + 'firebase-firestore.js'), import(SDK + 'firebase-auth.js'), FB.appCheckKey ? import(SDK + 'firebase-app-check.js') : Promise.resolve(null)]).then(function (m) {
+    // App Check: Fraud Defense (reCAPTCHA Enterprise, appCheckEnterpriseKey) or the older reCAPTCHA v3 (appCheckKey)
+    var ack = FB.appCheckEnterpriseKey || FB.appCheckKey;
+    sdkP = Promise.all([import(SDK + 'firebase-app.js'), import(SDK + 'firebase-firestore.js'), import(SDK + 'firebase-auth.js'), ack ? import(SDK + 'firebase-app-check.js') : Promise.resolve(null)]).then(function (m) {
       var app = m[0].initializeApp(FB), fs = m[1], au = m[2], db;
-      if (FB.appCheckKey && m[3]) { try { m[3].initializeAppCheck(app, { provider: new m[3].ReCaptchaV3Provider(FB.appCheckKey), isTokenAutoRefreshEnabled: true }); } catch (e) {} }
+      if (ack && m[3]) { try { m[3].initializeAppCheck(app, { provider: FB.appCheckEnterpriseKey ? new m[3].ReCaptchaEnterpriseProvider(FB.appCheckEnterpriseKey) : new m[3].ReCaptchaV3Provider(FB.appCheckKey), isTokenAutoRefreshEnabled: true }); } catch (e) {} }
       try { db = fs.initializeFirestore(app, { localCache: fs.persistentLocalCache({ tabManager: fs.persistentMultipleTabManager() }) }); }
       catch (e) { db = fs.getFirestore(app); }
       var auth = au.getAuth(app);

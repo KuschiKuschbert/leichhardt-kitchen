@@ -6,5 +6,8 @@ window.LK_FIREBASE = {
   projectId: 'leichhardt-kitchen',
   storageBucket: 'leichhardt-kitchen.firebasestorage.app',
   messagingSenderId: '674594425985',
-  appId: '1:674594425985:web:4e545f61102189329ad180'
+  appId: '1:674594425985:web:4e545f61102189329ad180',
+  // App Check (Fraud Defense, reCAPTCHA Enterprise): the site key is public too. With it every phone sends a token that
+  // says the request came from the real site; once Enforce is on in the Firebase console, nothing else gets through.
+  appCheckEnterpriseKey: '6LfIyfYtAAAAAGhFk-Cbb2biycRCkCD3uhAQcbvT'
 };
