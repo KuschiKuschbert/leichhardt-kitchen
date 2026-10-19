@@ -1111,7 +1111,10 @@ html.has-upd .p-toast { bottom: 140px; }
 }
 /* five menu items: tighter pills on a tablet, and the phone tab bar fits five */
 @media (min-width: 720px) and (max-width: 1099px) { .wtop .pnav { gap: 0.35rem; } .wtop .pnav a { padding: 0 0.75rem; } }
-@media (min-width: 720px) and (max-width: 899px) { .wtop-brand .rb-eb { display: none; } .wtop { padding: 0 0.9rem; gap: 0.5rem; } .wtop .pnav a { padding: 0 0.55rem; } .wtop-icons { gap: 0.35rem; } }
+@media (min-width: 720px) and (max-width: 899px) { .wtop-brand .rb-eb { display: none; } .wtop { padding: 0 0.9rem; gap: 0.5rem; } .wtop .pnav a { padding: 0 0.55rem; white-space: nowrap; } .wtop-icons { gap: 0.35rem; } }
+/* On a tablet the top bar is tight: with a wider fallback font (the kitchen font not loaded yet, or a browser without it) the pills
+   wrap onto a second row inside the bar instead of pushing the Pings, Admin and Settings buttons off the right edge. */
+@media (min-width: 720px) and (max-width: 899px) { .wtop .pnav { flex: 1 1 auto; min-width: 0; flex-wrap: wrap; justify-content: center; row-gap: 0.3rem; } .wtop-brand, .wtop-icons { flex: none; } }
 @media (max-width: 399px) { .tabbar a { font-size: 0.75rem; letter-spacing: 0.04em; } }
 /* a tablet with the notes bell showing: the KB mark stands for the name, so the five pills still fit */
 @media (min-width: 720px) and (max-width: 979px) { .wtop:has(.nbell:not([hidden])) .rb-text { display: none; } }
