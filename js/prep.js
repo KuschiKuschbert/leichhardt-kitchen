@@ -3142,7 +3142,7 @@
     return d.text ? '<ul class="nt-list n-pl">' + noteRowHTML(d) + '</ul>' : '<p class="hint">Type the ping to see how it will look.</p>';
   }
   function noteRowAdmin(n, t, past) {
-    var who = personName(n.by), sn = S.nSeen && S.nSeen[n.id], today = !past && noteOn(n, t), seen = '';
+    var who = personName(n.author || n.by), sn = S.nSeen && S.nSeen[n.id], today = !past && noteOn(n, t), seen = '';
     if (today) {
       if (sn && sn.state === 'ok') seen = '<span class="nt-by n-seen">Seen today by ' + sn.names.length + (sn.names.length ? ': ' + esc(sn.names.join(', ')) : '') + '. <button type="button" class="p-x" data-p="n-seen" data-id="' + esc(n.id) + '">Refresh</button></span>';
       else if (sn && sn.state === 'loading') seen = '<span class="nt-by n-seen">Checking who has seen it...</span>';
@@ -3234,7 +3234,8 @@
     if (!re.test(start || '') || !re.test(until)) { S.nMsg = 'Pick the first day.'; draw(); return; }
     if (until < start) { S.nMsg = 'The last day cannot be before the first day.'; draw(); return; }
     var data = { text: text.slice(0, 400), tag: f.tag, start: start, until: until, dows: f.dows.slice().sort(), removed: false, upd: now() };
-    if (!f.id) data.at = now();
+    // author is who wrote the ping and never changes; by is who saved it last (the rules need by to be the writer)
+    if (!f.id) { data.at = now(); data.author = S.who || ''; }
     var ref = f.id ? docRef('notes', f.id) : fb.fs.doc(colRef('notes')), when = noteWhen({ start: start, until: until, dows: data.dows });
     S.nSaving = true; S.nMsg = ''; draw();
     sset(ref, data, !!f.id).then(function () {

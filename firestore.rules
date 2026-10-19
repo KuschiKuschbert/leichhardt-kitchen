@@ -125,11 +125,12 @@ service cloud.firestore {
         && request.resource.data.get('dows', []) is list && request.resource.data.get('dows', []).size() <= 7
         && request.resource.data.get('removed', false) is bool;
     }
-    // A ping is changed or removed by the person who wrote it, the head chef, or a sous chef.
+    // A ping is changed or removed by the person who wrote it (author, kept from the first save; older pings have only by),
+    // the head chef, or a sous chef. A sous chef's edit does not take the ping over: the writer can still change it.
     match /kitchens/KITCHEN_PIN/notes/{id} {
       allow read: if true;
       allow create: if (isAdmin() || (staff() && (sousBy() || pingBy()))) && noteOk();
-      allow update: if (lead() || (staff() && pingBy() && resource.data.get('by', '') == request.resource.data.by)) && noteOk();
+      allow update: if (lead() || (staff() && pingBy() && resource.data.get('author', resource.data.get('by', '')) == request.resource.data.by)) && noteOk();
       allow delete: if false;
     }
     // Kitchen meeting minutes. Only the head chef (Google account) writes them (draft, then published). Sous chefs read the register. Everyone with the kitchen PIN reads them.

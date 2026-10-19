@@ -92,11 +92,13 @@ await ok(W([['activity/bo', { name: 'Bo', ticked: increment(-1) }, true]], { id:
 await ok(W([['activity/ann', { name: 'Ann', extra: 'x' }, true]], { id: 'ann' }), false, 'activity: only the known fields');
 
 // shift pings: write your own, change your own; the head chef and sous chefs change anyone's
-await ok(W([['notes/n-bo2', note()]], { id: 'bo' }), true, 'pings: a person ticked for Pings writes one');
+await ok(W([['notes/n-bo2', note({ author: 'bo' })]], { id: 'bo' }), true, 'pings: a person ticked for Pings writes one');
 await ok(W([['notes/n-ann', note()]], { id: 'ann' }), false, 'pings: someone not ticked cannot');
 await ok(W([['notes/n-bo', { removed: true, upd: 2 }, true]], { id: 'bo' }), true, 'pings: Bo removes Bo\'s ping');
 await ok(W([['notes/n-sam', { removed: true, upd: 2 }, true]], { id: 'bo' }), false, 'pings: Bo cannot remove Sam\'s ping');
 await ok(W([['notes/n-bo2', { text: 'Changed', upd: 2 }, true]], { id: 'sam' }), true, 'pings: a sous chef edits anyone\'s ping');
+await ok(W([['notes/n-bo2', { text: 'Changed back', upd: 3 }, true]], { id: 'bo' }), true, 'pings: the writer can still change it after a sous chef\'s edit (author is kept)');
+await ok(W([['notes/n-bo2', { text: 'Nope', upd: 4 }, true]], { id: 'ann' }), false, 'pings: someone else still cannot');
 await ok(setDoc(doc(owner, K + 'notes/n-bo2'), note({ text: 'Head chef edit' })), true, 'pings: the head chef edits anyone\'s ping');
 
 // sizes and shapes
