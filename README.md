@@ -106,9 +106,10 @@ npm test
 - **No real data.** The prep pages normally talk to Firebase. The tests answer those requests with a small stand-in (`tests/fake/`) that keeps made-up people (Sam, Ann and Bo), prep lines, orders, wastage and two guides in the browser. No kitchen PIN, staff names or real lines are needed, and nothing is written to the real book. pdf.js is installed with the tests (`pdfjs-dist`) and served from there, so the PDF test needs no internet.
 - **Any time of day.** Each page opens at 14:00 today, kitchen time, and the clock runs from there, so the 10:30 shift pings popup and the rest behave the same whenever the tests run. The tests and the browser run in Queensland time whatever zone the computer is set to. The update check's answer carries no `Date` in the tests, so the book keeps that 14:00; `clock.test.js` sets a wrong phone clock and zone (`clock`, `tz` and `server` in `L.open`) to check the book still uses the server's time.
 - `tests/wide-font.test.js` opens the top bar at 768 px with a wide fallback font forced (DejaVu Sans, what a Linux runner falls back to when the kitchen font is not loaded): the pills wrap inside the bar instead of pushing the Pings, Admin and Settings buttons off the page.
+- `tests/keep.test.js` holds what already works well and must not break while pages change around it (the usability work from 20 Oct 2026): "Logged often" fills item, unit, reason and section; the reason sheet closes with Escape; Back walks out of a sub-recipe and the trail and Zoom out link back; a long admin list shows 15, then more, then fewer, and its search keeps the cursor; a wastage day that cannot be read does not break the page. `failReads` in `L.open` (a regex) makes the stand-in's `getDoc` and `getDocs` fail for the paths that match, like a read lost to a bad signal.
 - `tests/minutes-version.test.js` publishes minutes as the head chef, changes them as a new version and checks that version 2 is published, version 1 is kept as it was under `hist`, and the second tap is asked for.
 - `npm test -- recipes` runs only the files with "recipes" in the name. `SHOTS=1 npm test -- pages` also saves a screenshot of every page to `tests/shots/`. `BASE=https://kuschikuschbert.github.io/leichhardt-kitchen/ npm test` runs the tests on the live site (Firebase is still the stand-in). `CHROME=/path/to/chromium` uses another browser.
-- **Which pictures changed.** Before a change to the look, keep a copy of `tests/shots/` (for example as `tests/shots-baseline/`, which git ignores). After the change, `SHOTS=1 npm test -- pages` again, then `node tests/shots-diff.js tests/shots-baseline` lists every page whose picture is not the same as before, so only those need a look.
+- **Which pictures changed.** Before a change to the look, keep a copy of `tests/shots/` (for example as `tests/shots-baseline/` or `tests/shots-baseline-u/`, which git ignores). After the change, `SHOTS=1 npm test -- pages` again, then `node tests/shots-diff.js tests/shots-baseline` lists every page whose picture is not the same as before, so only those need a look.
 - `node tests/serve.js` serves the book at http://127.0.0.1:8777/ for trying it by hand.
 
 ## Good to know
@@ -351,6 +352,17 @@ Every admin list that can keep growing now uses one shared layout (`lvHTML` in `
 - Each write sends the writer's id (`by`) and, in the same batch, `proofs/<id>` with `tok` (a hash of the person's own PIN) and `at` (a server timestamp). The rules compare `tok` with `staffpins/<id>.hash`, which nobody can read, using `getAfter`, and require `at` to equal the request time, so a proof left over from an earlier write cannot be reused. A wrong or missing PIN is refused by the server.
 - The first person to set a PIN for a name claims it. The owner can reset it (Reset PIN) and it is chosen again.
 - Limits: someone with the kitchen PIN could still guess a 4-digit PIN online by script (the page makes people wait after 3 wrong tries, 1 to 30 minutes and kept on the phone, but a script skips the page; only App Check or a paid server function can truly rate limit), and add, tick and delete rights per person are checked in the page only.
+
+### Open items (19 Oct 2026)
+
+Done on 19 Oct 2026: the lock is proved on the live book after every publish and weekly, the nightly backup runs and a backup was decrypted on the head chef's Mac, the web app is registered for App Check (Fraud Defense) and every phone sends a token, and the `BACKUP_KEY` secret is in. Still open, in order, for the head chef and the next session:
+
+1. **App Check debug token for the probe.** Firebase console, App Check, Apps, the three dots on the web app, Manage debug tokens, Add debug token, name it "Lock probe", copy it into a repository secret named `APPCHECK_DEBUG_TOKEN`. Check: run the Lock probe workflow from the Actions tab and read "App Check token in hand." in its log.
+2. **Browser key restriction.** Google Cloud console, APIs and Services, Credentials, the Browser key, Application restrictions, Websites, add `kuschikuschbert.github.io/*`, Save.
+3. **Enforce App Check**, two days or more after 19 Oct 2026 so every phone has reloaded with the key, and only after item 1. Firebase console, App Check, APIs tab, Cloud Firestore, Enforce. Straight after: run the Lock probe workflow (all seven checks must pass with the token in hand) and open the prep list on a phone. If a phone cannot load the list, switch Enforce off again at once and read the App Check metrics for unverified requests before trying again.
+4. The remote branch `ccr-c40e44af-ixs9p5` is level with main and can be deleted under Branches on GitHub.
+
+Remove each item here once it is done.
 
 ### Changing the kitchen PIN
 
