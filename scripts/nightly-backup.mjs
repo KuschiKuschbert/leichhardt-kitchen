@@ -54,7 +54,7 @@ const out = { exportedAt: new Date().toISOString(), by: 'nightly backup', days: 
 let reads = 0;
 const cfg = await K.collection('config').doc('main').get(); reads++;
 out.config = cfg.exists ? plain(cfg.data()) : null;
-for (const name of ['activity', 'sections', 'learned', 'ordlearned', 'learnlog', 'misses', 'views', 'guides']) { out[name] = await all(name); reads += out[name].length; }
+for (const name of ['activity', 'sections', 'learned', 'ordlearned', 'learnlog', 'misses', 'views', 'guides', 'mail', 'mailstat']) { out[name] = await all(name); reads += out[name].length; }
 out.notes = await all('notes'); out.notesSeen = await subs(out.notes, 'notes', 'seen');
 out.minutes = await all('minutes'); out.minutesHist = await subs(out.minutes, 'minutes', 'hist'); out.minutesSigns = await subs(out.minutes, 'minutes', 'signs');
 out.pins = (await all('pinset')).map(x => ({ id: x.id, name: x.name, setAt: x.setAt }));

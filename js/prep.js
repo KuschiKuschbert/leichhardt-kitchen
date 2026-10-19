@@ -5,6 +5,7 @@
   Pages:   #/prep     the daily prep list         #/orders   the order list       #/waste   the wastage log
            #/minutes  meeting minutes to sign     #/admin    admin panel, Google sign-in for the head chef only
            #/guides   how-to guides (the head chef uploads them in the admin panel's Guides tab)
+           #/mail     kitchen mail: write to the head chef (from the chef mark in the top bar)
 
   Data (the kitchen PIN is part of the path, so only people who know it can reach the data):
     kitchens/<PIN>/config/main                 { people: [...] }                    read by staff, written by the admin only
@@ -22,6 +23,7 @@
     kitchens/<PIN>/learnlog/<id>               days already learned (create only)
     kitchens/<PIN>/misses/<slug>, views/<id>   recipe searches that found nothing, and card opens
     kitchens/<PIN>/guides/<id>, .../pages/<n>   how-to guides, and each page as a picture (see the guides section)
+    kitchens/<PIN>/mail/<id>, mailstat/<id>    kitchen mail to the head chef (only the head chef reads it), and its seen and done
 
   Who is allowed to add, tick or remove is set in the admin panel. Those permissions guide the page. The security
   rules in the Firebase console are what really lock the data: the kitchen PIN to read, a person's own PIN to write,
@@ -896,6 +898,7 @@
       .then(function () { return all('misses'); }).then(function (r) { out.misses = r; })
       .then(function () { return all('views'); }).then(function (r) { out.views = r; })
       .then(function () { return all('guides'); }).then(function (r) { out.guides = r; })
+      .then(function () { return all('mail'); }).then(function (r) { out.mail = r; return all('mailstat'); }).then(function (r) { out.mailstat = r; })
       .then(function () { S.exporting = 'Reading shift pings and minutes...'; draw(); return all('notes'); }).then(function (r) { out.notes = r; return subs(r, 'notes', 'seen', out.notesSeen); })
       .then(function () { return all('minutes'); }).then(function (r) { out.minutes = r; return Promise.all([subs(r, 'minutes', 'hist', out.minutesHist), subs(r, 'minutes', 'signs', out.minutesSigns)]); })
       .then(function () { return all('pinset'); }).then(function (r) { out.pins = r.map(function (x) { return { id: x.id, name: x.name, setAt: x.setAt }; }); })
@@ -957,6 +960,7 @@
       .then(function () { return copyCol('notes'); }).then(function () { return copyCol('minutes'); }).then(function () { return copySub('minutes', 'hist'); })
       .then(function () { return copySub('minutes', 'signs', true); }).then(function () { return copySub('notes', 'seen', true); })
       .then(function () { return copyCol('guides'); }).then(function () { return copySub('guides', 'pages'); })
+      .then(function () { return copyCol('mail'); }).then(function () { return copyCol('mailstat'); })
       .then(function () {
         var i = 0;
         function next() {
@@ -1170,7 +1174,7 @@
     var em = S.user.email || '';
     if (S.adminsFor === em) return;
     S.adminsFor = em; S.level = '';
-    fb.fs.getDoc(adminsRef()).then(function () { S.level = 'owner'; admMark(true); featSync(); seedIds(); draw(); }, function () { S.level = 'none'; admMark(false); featSync(); draw(); });
+    fb.fs.getDoc(adminsRef()).then(function (sn) { S.level = 'owner'; var mo = sn && sn.exists() ? +(sn.data().mailOpened || 0) : 0; if (mo > mlOpened) { mlOpened = mo; lsSet('lk.mail.opened', String(mo)); } admMark(true); featSync(); seedIds(); loadMail(); draw(); }, function () { S.level = 'none'; admMark(false); featSync(); draw(); });
   }
   /* The rules read three lists next to the people list: sousIds (who may edit the staff list), pingIds (who may write
      shift pings) and staffIds (who may set a PIN). Only the head chef can write sousIds and pingIds, so the owner keeps
@@ -1911,7 +1915,7 @@
   /* ---------- drawing ---------- */
   var TICK = '<svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><path d="M5 14 L11 20 L22 5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
-  function openLabel() { return { orders: 'Open the order list', waste: 'Open the wastage log', minutes: 'Open the minutes', guides: 'Open the guides' }[S.name] || 'Open the prep list'; }
+  function openLabel() { return { orders: 'Open the order list', waste: 'Open the wastage log', minutes: 'Open the minutes', guides: 'Open the guides', mail: 'Open kitchen mail' }[S.name] || 'Open the prep list'; }
   function gateHTML() {
     return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Kitchen PIN</h2><p class="hint">Enter the kitchen PIN to open the prep list, orders, wastage, minutes and guides. This phone remembers it.</p>' +
       '<div class="field"><label class="label" for="p-pin">PIN</label>' + pinField('p-pin', 'p-pin', S.pinInput, true) + '</div>' +
@@ -2365,13 +2369,13 @@
     var bulk = '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line">' + esc(S.bulk || '') + '</textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div>';
     var saveBlock = '<section class="set-block">' + staleHint() + '<div class="btn-row"><button type="button" class="btn dark" data-p="a-save"' + (S.busy ? ' disabled' : '') + '>Save changes</button><button type="button" class="btn" data-p="a-reset">Undo unsaved changes</button></div><span class="saved" role="status">' + esc(S.saveMsg) + '</span></section>';
     var at = S.atab || 'insights';
-    var tabsBar = '<nav class="a-tabs" aria-label="Admin sections">' + [['insights', 'Insights'], ['team', 'Team'], ['waste', 'Waste'], ['learning', 'Learning'], ['notes', 'Shift pings'], ['minutes', 'Minutes'], ['guides', 'Guides'], ['people', 'People'], ['tools', 'Tools']].map(function (t) {
+    var tabsBar = '<nav class="a-tabs" aria-label="Admin sections">' + [['insights', 'Insights'], ['team', 'Team'], ['waste', 'Waste'], ['learning', 'Learning'], ['notes', 'Shift pings'], ['minutes', 'Minutes'], ['guides', 'Guides'], ['mail', 'Mail' + (mlInfo().n ? ' (' + mlInfo().n + ')' : '')], ['people', 'People'], ['tools', 'Tools']].map(function (t) {
       return '<button type="button" class="a-tab" data-p="a-tab" data-t="' + t[0] + '" aria-pressed="' + (at === t[0]) + '">' + t[1] + '</button>';
     }).join('') + '</nav>';
     if (at === 'notes') loadNotes();
     if (at === 'minutes') loadMinutes();
     if (at === 'guides') loadGuides();
-    var pane = at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'learning' ? (learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() : at === 'people' ? (
+    var pane = at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'learning' ? (learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() : at === 'people' ? (
       '<section class="set-block"><span class="label">People</span><span class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Pings lets that person write shift pings from the prep book (sous chefs always can). Reset PIN lets that person choose a new one. Removing someone from the list keeps their name on old lines.</span>' +
       peopleListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' +
       '<section class="set-block"><span class="label">Badges</span><label class="a-check"><input type="checkbox" data-a="badges"' + (d.showBadges !== false ? ' checked' : '') + '> Show the weekly top tickers to everyone on the prep book</label></section>' +
@@ -2398,7 +2402,7 @@
       '<section class="set-block">' + staleHint() + '<div class="btn-row"><button type="button" class="btn dark" data-p="a-save"' + (S.busy ? ' disabled' : '') + '>Save changes</button><button type="button" class="btn" data-p="a-reset">Undo unsaved changes</button></div><span class="saved" role="status">' + esc(S.saveMsg) + '</span></section></div>';
   }
   /* While connecting, show the page that is opening (not a generic prep book card), so nothing flashes. */
-  var PAGE_NAME = { prep: 'Prep list', orders: 'Order list', waste: 'Wastage', admin: 'Admin panel', minutes: 'Meeting minutes', guides: 'Guides' };
+  var PAGE_NAME = { prep: 'Prep list', orders: 'Order list', waste: 'Wastage', admin: 'Admin panel', minutes: 'Meeting minutes', guides: 'Guides', mail: 'Kitchen mail' };
   function loadingHTML() {
     var t = PAGE_NAME[S.name] || 'Prep book';
     if (S.name === 'admin') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">' + t + '</h2><p class="hint">Loading...</p></section>';
@@ -2421,6 +2425,7 @@
     if (S.name === 'orders') return ordersHTML();
     if (S.name === 'waste') return wasteHTML();
     if (S.name === 'minutes') return minutesPageHTML();
+    if (S.name === 'mail') return mailPageHTML();
     if (S.minOpen && isSous()) return minSousPageHTML();
     if (S.notesOpen && canPing()) return notesPageHTML();
     if (S.staffOpen && isSous()) return staffHTML();
@@ -3159,7 +3164,7 @@
       if (S.guidesFor && S.guidesFor !== t) loadGuides();
       if (S.notesFor && S.notesFor !== t) { loadNotes(true); return; }
       if (n1030 !== t && T.mins() >= NOTE_MIN) { n1030 = t; loadNotes(true); return; }
-      noteMaybePop();
+      noteMaybePop(); mlMaybePop();
     }, 60000);
   }
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && /^\d{4,6}$/.test(S.pin) && fb) { loadNotes(); noteMaybePop(); } });
@@ -4409,6 +4414,12 @@
     if (!el || !S.root || !S.root.contains(el)) return;
     var a = el.getAttribute('data-p'), id = el.getAttribute('data-id'), i = +el.getAttribute('data-i'), dt = el.getAttribute('data-d');
     if (a.indexOf('lv-') === 0) { lvClick(a, el); return; }
+    if (a === 'ml-cat') { mlf.cat = el.getAttribute('data-v'); mlMsg = ''; draw(); return; }
+    if (a === 'ml-pri') { mlf.pri = el.getAttribute('data-v'); draw(); return; }
+    if (a === 'ml-send') { mlSend(); return; }
+    if (a === 'ml-tick') { mlTick(id); return; }
+    if (a === 'ml-donebox') { S.mlDoneOpen = !el.parentNode.open; return; }
+    if (a === 'ml-goadmin') { S.atab = 'mail'; lsSet('lk.prep.atab', 'mail'); return; }
     if (a === 'recipe-toggle') { S.recipeOpen = !S.recipeOpen; if (!S.recipeOpen) { S.recipeSearch = ''; S.recipeAll = false; } draw(); if (S.recipeOpen) { var rse = S.root.querySelector('#p-rs'); if (rse) rse.focus({ preventScroll: true }); } return; }
     if (a === 'recipe-close') { S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; draw(); focusSel('.p-pickbtn'); return; }
     if (a === 'recipe-all') { S.recipeAll = true; draw(); var rse2 = S.root.querySelector('#p-rs'); if (rse2) rse2.focus({ preventScroll: true }); return; }
@@ -4590,6 +4601,7 @@
     // a PIN goes in by itself the moment the fourth digit is typed (only when it reaches four, so it cannot send twice)
     if (k === 'p-pin') { var pp = S.pinInput.length; S.pinInput = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.pinInput; pinCells(el); if (pp < 4 && S.pinInput.length === 4) submitKitchenPin(); return; }
     if (k === 'a-bulk') { S.bulk = el.value; return; }
+    if (k === 'ml-text') { mlf.text = el.value.slice(0, ML_MAX); mlMsg = ''; var mll = S.root.querySelector('#ml-left'), mln = ML_MAX - mlf.text.length; if (mll) mll.textContent = mln < 100 ? mln + ' characters left' : ''; return; }
     if (k === 'a-newpin') { S.newPin = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.newPin; return; }
     if (k === 'mn-pin') {
       S.mpin = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.mpin; pinCells(el); S.mpinOk = false; S.mErr = '';
@@ -4645,6 +4657,7 @@
     var el = e.target, k = el.getAttribute && el.getAttribute('data-k');
     if (!S.root || !S.root.contains(el)) return;
     if (k && k.indexOf('lv-s:') === 0) { var sk = k.slice(5), sc = LVR[sk]; if (sc) { var ss = lvState(sc); ss.sort = el.value; ss.shown = sc.step || 15; lvRefresh(sk); } return; }
+    if (k && k.indexOf('ml-pri:') === 0) { mlSetPri(k.slice(7), el.value); return; }
     if (k === 'g-file') { var gfl = el.files; gReadFiles(gfl); try { el.value = ''; } catch (x) {} return; }
     if (k === 'mn-older') { S.mSel = el.value; loadSigns(el.value, true); draw(); return; }
     if (k && k.indexOf('mn-') === 0 && k !== 'mn-pin') { mfSet(k, el); return; }
@@ -4696,6 +4709,223 @@
     app.addEventListener('keydown', onKey);
   }
 
+  /* ---------- kitchen mail ----------
+     Anyone signed in writes to the head chef from the chef mark in the top bar (#/mail): what it is about, how soon it
+     matters and a short message. Only the head chef reads mail (the rules: the head chef's Google account), in the admin
+     panel's Mail tab, as a tick-off list. mail/<id> holds the message; mailstat/<id> holds only seen and done, so the
+     sender's phone can show what happened to it without being able to read anyone's mail. The phone keeps its own copy
+     of what was sent from it (lk.mail.sent), shown only to the person who sent it.
+     On the head chef's device the open mail is read with one small query when the book opens and again only after
+     30 minutes away (no listener, no polling). It drives the count on the Admin key and the "Mail waiting" popup:
+     open mail, the Mail tab not opened for 10 hours, between 10:00 and 22:00 kitchen time. "Later" holds it off 10 hours. */
+  var ML_CATS = [['safety', 'Food safety'], ['equipment', 'Equipment'], ['stock', 'Stock or supplier'], ['recipe', 'Recipe or card'], ['roster', 'Roster request put in'], ['idea', 'Idea'], ['other', 'Other']];
+  var ML_PRI = [['today', 'Today'], ['week', 'This week'], ['any', 'Whenever']];
+  var ML_MAX = 600, ML_STALE = 30 * 60000, ML_NUDGE = 10 * 3600000, ML_DONE_DAYS = 30, ML_KEEP = 60 * 86400000, ML_SENT_MAX = 40;
+  var mlf = { cat: '', pri: 'week', text: '' }, mlMsg = '', mlBusy = false, mlStatAt = 0, mlStatBusy = false;
+  var mlOpen = null, mlDone = null, mlAt = 0, mlBusyR = false, mlDoneAt = 0, mlOpened = +(lsGet('lk.mail.opened') || 0), mlOpenedW = 0, mlPop = null, mlPrev = null, mlLastN = -1;
+  function mlCat(id) { var c = ML_CATS.filter(function (x) { return x[0] === id; })[0]; return c ? c[1] : 'Other'; }
+  function mlPri(id) { var c = ML_PRI.filter(function (x) { return x[0] === id; })[0]; return c ? c[1] : 'Whenever'; }
+  function mlWhen(ms) { return dayShort(T.day(ms)) + ', ' + clock(ms); }
+  function mlRef(id) { return docRef('mail', id); }
+  function mlStatRef(id) { return docRef('mailstat', id); }
+
+  /* ---- what this phone sent ---- */
+  function mlSentAll() { try { var l = JSON.parse(lsGet('lk.mail.sent') || '[]'); return Array.isArray(l) ? l : []; } catch (e) { return []; } }
+  function mlSentSave(l) {
+    var cut = now() - ML_KEEP;
+    lsSet('lk.mail.sent', JSON.stringify(l.filter(function (x) { return x && (x.at || 0) >= cut; }).slice(0, ML_SENT_MAX)));
+  }
+  function mlSentPatch(id, patch) { mlSentSave(mlSentAll().map(function (x) { return x.id === id ? Object.assign(x, patch) : x; })); }
+  function mlMine() { return mlSentAll().filter(function (x) { return x.w === S.who; }); }
+  /* what happened to each mail this person sent: one small read each, at most every 30 minutes, none once it is done */
+  function mlStatLoad(force) {
+    if (!fb || !S.who || mlStatBusy || (!force && Date.now() - mlStatAt < ML_STALE)) return;
+    var l = mlMine().filter(function (x) { return !x.d && !x.p; });
+    mlStatAt = Date.now();
+    if (!l.length) return;
+    mlStatBusy = true;
+    Promise.all(l.map(function (x) {
+      return fb.fs.getDoc(mlStatRef(x.id)).then(function (sn) { if (sn.exists()) { var d = sn.data(); mlSentPatch(x.id, { s: !!d.seen, d: !!d.done }); } }, function () {});
+    })).then(function () { mlStatBusy = false; draw(); });
+  }
+  function mlSend() {
+    var t = mlf.text.replace(/^\s+|\s+$/g, ''), p = who();
+    if (mlBusy || !fb || !p) return;
+    if (!mlf.cat) { mlMsg = 'Pick what it is about first.'; draw(); return; }
+    if (!t) { mlMsg = 'Write a few words first.'; draw(); focusK('ml-text'); return; }
+    var ref = fb.fs.doc(colRef('mail')), id = ref.id, at = now(), cat = mlf.cat, pri = mlf.pri || 'week', text = t.slice(0, ML_MAX), w = S.who;
+    var all = mlSentAll(); all.unshift({ id: id, w: w, cat: cat, pri: pri, text: text, at: at, p: 1 }); mlSentSave(all);
+    mlf = { cat: '', pri: 'week', text: '' }; mlBusy = true; mlMsg = ''; draw();
+    W([['set', ref, { from: w, cat: cat, pri: pri, text: text, at: at, done: false, seen: false }], ['set', mlStatRef(id), { seen: false, done: false }]]).then(function () {
+      mlBusy = false; mlSentPatch(id, { p: 0 }); toast('Sent. Thanks for letting Chef know.');
+    }, function (e) {
+      mlBusy = false; mlSentSave(mlSentAll().filter(function (x) { return x.id !== id; }));
+      failed(e, function () { mlf = { cat: cat, pri: pri, text: text }; });
+      draw();
+    });
+  }
+  function mlSentHTML() {
+    var l = mlMine();
+    if (!l.length) return '';
+    return '<section class="p-card ml-sent"><h3 class="ml-h3">What you sent</h3><p class="hint">Seen means Chef has read it. Done means it has been dealt with. Kept on this phone for 60 days.</p><ul class="ml-sl">' + l.map(function (x) {
+      var st = x.p ? ['wait', 'Sending'] : x.d ? ['done', 'Done'] : x.s ? ['seen', 'Seen'] : ['sent', 'Sent'];
+      return '<li class="ml-si"><div class="ml-meta"><span class="ml-cat c-' + esc(x.cat) + '">' + esc(mlCat(x.cat)) + '</span><span class="ml-when">' + esc(mlWhen(x.at)) + '</span><span class="ml-st st-' + st[0] + '">' + st[1] + '</span></div><p class="ml-text">' + esc(x.text) + '</p></li>';
+    }).join('') + '</ul></section>';
+  }
+  function mailPageHTML() {
+    mlStatLoad();
+    var left = ML_MAX - mlf.text.length;
+    var cats = '<div class="chips ml-cats" role="group" aria-labelledby="ml-cl">' + ML_CATS.map(function (c) {
+      return '<button type="button" class="chip ml-chip c-' + c[0] + '" data-p="ml-cat" data-v="' + c[0] + '" aria-pressed="' + (mlf.cat === c[0]) + '">' + esc(c[1]) + '</button>';
+    }).join('') + '</div>';
+    var pris = '<div class="ml-seg" role="group" aria-labelledby="ml-pl">' + ML_PRI.map(function (c) {
+      return '<button type="button" class="ml-sb" data-p="ml-pri" data-v="' + c[0] + '" aria-pressed="' + (mlf.pri === c[0]) + '">' + esc(c[1]) + '</button>';
+    }).join('') + '</div>';
+    return '<section class="p-card ml-page"><h2 class="p-h" id="rtitle" tabindex="-1">Kitchen mail</h2>' +
+      '<p class="hint">Anything Chef should know: broken equipment, stock, a recipe card that is wrong, or an idea. Only Chef reads it.</p>' +
+      '<p class="ml-urgent"><b>Something urgent?</b> Please tell the chef on shift straight away, so it gets sorted quickly.</p>' +
+      (admDev() ? '<p class="hint">Chef: the mail sent to you is in the <a href="#/admin" data-p="ml-goadmin">admin panel, Mail tab</a>.</p>' : '') +
+      '<div class="field"><span class="label" id="ml-cl">What is it about?</span>' + cats + '</div>' +
+      (mlf.cat === 'roster' ? '<p class="ml-roster" role="note">Roster and leave requests are made in Humanforce, ideally 2 weeks ahead, so the roster can be planned around you. Once yours is in, a quick note here lets Chef know to look for it. Thank you.</p>' : '') +
+      '<div class="field"><span class="label" id="ml-pl">How soon does it matter?</span>' + pris + '</div>' +
+      '<div class="field"><label class="label" for="ml-text">Message</label><textarea id="ml-text" class="ml-ta" data-k="ml-text" rows="4" maxlength="' + ML_MAX + '" placeholder="' + esc(mlf.cat === 'roster' ? 'For example: I put in a leave request for 3 to 7 November.' : 'Keep it short: what, where, since when.') + '">' + esc(mlf.text) + '</textarea>' +
+      '<span class="hint ml-left" id="ml-left">' + (left < 100 ? left + ' characters left' : '') + '</span></div>' +
+      (mlMsg ? '<p class="p-err" role="alert">' + esc(mlMsg) + '</p>' : '') +
+      '<div class="btn-row"><button type="button" class="btn dark" data-p="ml-send"' + (mlBusy ? ' disabled' : '') + '>' + (mlBusy ? 'Sending...' : 'Send to Chef') + '</button></div></section>' + mlSentHTML();
+  }
+
+  /* ---- the head chef's side ---- */
+  function mlOwner() { return S.level === 'owner' && !!fb && /^\d{4,6}$/.test(S.pin); }
+  function mlInfo() { return { n: mlOwner() && mlOpen ? mlOpen.length : 0 }; }
+  function mlTell() { var n = mlInfo().n; if (n !== mlLastN) { mlLastN = n; try { window.dispatchEvent(new Event('lk-mail')); } catch (e) {} } }
+  function mlGrab(sn) { return sn.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }); }
+  function loadMail(force) {
+    if (!mlOwner() || mlBusyR || (!force && mlOpen && Date.now() - mlAt < ML_STALE)) return;
+    mlBusyR = true;
+    fb.fs.getDocs(fb.fs.query(colRef('mail'), fb.fs.where('done', '==', false))).then(function (sn) {
+      mlOpen = mlGrab(sn); mlAt = Date.now(); mlBusyR = false;
+      mlTell(); mlSeenAll(); mlMaybePop(); draw();
+    }, function () {
+      // no signal, or the mail rules are not published yet: try again in about 5 minutes
+      mlBusyR = false; mlAt = Date.now() - ML_STALE + 5 * 60000; if (!mlOpen) mlOpen = [];
+      mlTell(); draw();
+    });
+  }
+  /* the ticked mail of the last 30 days, read once when the Mail tab opens */
+  function loadMailDone(force) {
+    if (!mlOwner() || (!force && mlDone && Date.now() - mlDoneAt < ML_STALE)) return;
+    mlDoneAt = Date.now(); if (!mlDone) mlDone = [];
+    fb.fs.getDocs(fb.fs.query(colRef('mail'), fb.fs.where('doneAt', '>=', now() - ML_DONE_DAYS * 86400000))).then(function (sn) {
+      mlDone = mlGrab(sn).filter(function (x) { return x.done; }); draw();
+    }, function () { mlDoneAt = 0; });
+  }
+  function mlOnTab() { return S.name === 'admin' && (S.atab || 'insights') === 'mail' && !!S.root && document.body.contains(S.root) && document.visibilityState !== 'hidden'; }
+  /* the Mail tab is open: everything on it counts as seen, and the nudge clock starts again (saved with the head chef's
+     account, config/admins, so reading mail on the laptop also stops the nudge on the phone) */
+  function mlSeenAll() {
+    if (!mlOnTab() || !mlOpen) return;
+    var t = now();
+    mlOpened = t; lsSet('lk.mail.opened', String(t)); mlPopClose();
+    if (t - mlOpenedW > 10 * 60000) { mlOpenedW = t; sset(docRef('config', 'admins'), { mailOpened: t }, true).catch(function () { mlOpenedW = 0; }); }
+    var l = mlOpen.filter(function (x) { return !x.seen; });
+    if (!l.length) return;
+    var ops = [];
+    l.forEach(function (x) { x.seen = true; x.seenAt = t; ops.push(['upd', mlRef(x.id), { seen: true, seenAt: t }], ['upd', mlStatRef(x.id), { seen: true, done: !!x.done }]); });
+    W(ops).catch(function () { l.forEach(function (x) { x.seen = false; }); });
+  }
+  function mlSeenSoon() { setTimeout(mlSeenAll, 0); return ''; }
+  function mlRank(x) { return (x.cat === 'safety' ? 0 : 3) + { today: 0, week: 1, any: 2 }[x.pri] * 1; }
+  function mlUrgent(x) { return x.cat === 'safety' || x.pri === 'today'; }
+  function mlRow(x) {
+    var pri = '<select class="ml-psel" data-k="ml-pri:' + esc(x.id) + '" aria-label="How soon it matters">' + ML_PRI.map(function (c) { return '<option value="' + c[0] + '"' + (x.pri === c[0] ? ' selected' : '') + '>' + esc(c[1]) + '</option>'; }).join('') + '</select>';
+    return '<li class="ml-row' + (x.done ? ' is-done' : '') + (!x.done && mlUrgent(x) ? ' is-hot' : '') + '">' +
+      '<button type="button" class="ml-tick" data-p="ml-tick" data-id="' + esc(x.id) + '" aria-pressed="' + !!x.done + '" aria-label="' + esc((x.done ? 'Untick: ' : 'Tick off: ') + String(x.text || '').slice(0, 40)) + '">' + TICK + '</button>' +
+      '<div class="ml-body"><div class="ml-meta"><span class="ml-cat c-' + esc(x.cat) + '">' + esc(mlCat(x.cat)) + '</span>' + (x.done ? '<span class="ml-when">' + esc(mlPri(x.pri)) + '</span>' : pri) +
+      '<span class="ml-from"><b>' + esc(mnName(x.from)) + '</b> ' + esc(mlWhen(x.at)) + ' (' + esc(ago(x.at)) + ')</span></div>' +
+      '<p class="ml-text">' + esc(x.text) + '</p>' + (x.done && x.doneAt ? '<span class="ml-when">Done ' + esc(mlWhen(x.doneAt)) + '</span>' : '') + '</div></li>';
+  }
+  function mlFind(x) { return x.text + ' ' + mnName(x.from) + ' ' + mlCat(x.cat) + ' ' + mlPri(x.pri); }
+  function mlFilters() { return [['all', 'All']].concat(ML_CATS.map(function (c) { return [c[0], c[1], function (x) { return x.cat === c[0]; }]; })); }
+  function mailAdminHTML() {
+    loadMail(); loadMailDone();
+    if (!mlOpen) return '<section class="set-block"><span class="label">Kitchen mail</span><p class="hint">Loading...</p></section>';
+    var done = (mlDone || []).slice().sort(function (a, b) { return (b.doneAt || 0) - (a.doneAt || 0); });
+    return '<section class="set-block ml-admin"><span class="label">Kitchen mail</span><span class="hint">What the team wrote to you, most urgent first: food safety, then Today, This week and Whenever, oldest first. Opening this list marks everything on it as seen, so the sender knows you have read it. Tick a line when it is dealt with.</span>' +
+      lvHTML({ key: 'mail', items: mlOpen, step: 20, noun: ['open message', 'open messages'], ph: 'Search mail', find: mlFind, filters: mlFilters(),
+        sorts: [['pri', 'Most urgent first', function (a, b) { return mlRank(a) - mlRank(b) || (a.at || 0) - (b.at || 0); }], ['new', 'Newest first', function (a, b) { return (b.at || 0) - (a.at || 0); }], ['old', 'Oldest first', function (a, b) { return (a.at || 0) - (b.at || 0); }]],
+        card: mlRow, empty: 'No open mail. Everything is dealt with.' }) + mlSeenSoon() +
+      '<details class="ml-donebox"' + (S.mlDoneOpen ? ' open' : '') + '><summary data-p="ml-donebox">Done in the last 30 days (' + done.length + ')</summary>' +
+      lvHTML({ key: 'maildone', items: done, step: 15, noun: ['message', 'messages'], ph: 'Search done mail', find: mlFind, filters: mlFilters(), card: mlRow, empty: 'Nothing ticked off in the last 30 days.' }) + '</details></section>';
+  }
+  function mlTick(id) {
+    var x = (mlOpen || []).concat(mlDone || []).filter(function (m) { return m.id === id; })[0];
+    if (!x) return;
+    var on = !x.done, t = now(), was = { done: x.done, doneAt: x.doneAt };
+    x.done = on; x.doneAt = on ? t : 0;
+    mlOpen = (mlOpen || []).filter(function (m) { return m.id !== id; }); mlDone = (mlDone || []).filter(function (m) { return m.id !== id; });
+    (on ? mlDone : mlOpen).push(x);
+    if (!on) lvReveal('mail');
+    mlTell(); draw();
+    W([['upd', mlRef(id), { done: on, doneAt: x.doneAt, seen: true, seenAt: x.seenAt || t }], ['upd', mlStatRef(id), { seen: true, done: on }]]).catch(function (e) {
+      x.done = was.done; x.doneAt = was.doneAt;
+      mlOpen = mlOpen.filter(function (m) { return m.id !== id; }); mlDone = mlDone.filter(function (m) { return m.id !== id; });
+      (x.done ? mlDone : mlOpen).push(x); mlTell(); failed(e); draw();
+    });
+  }
+  function mlSetPri(id, v) {
+    var x = (mlOpen || []).filter(function (m) { return m.id === id; })[0];
+    if (!x || x.pri === v || !ML_PRI.some(function (c) { return c[0] === v; })) return;
+    var was = x.pri; x.pri = v; draw();
+    supd(mlRef(id), { pri: v }).catch(function (e) { x.pri = was; failed(e); draw(); });
+  }
+
+  /* ---- the nudge: a popup on the head chef's device ---- */
+  function mlNudgeDue() {
+    if (!mlOwner() || !mlOpen || !mlOpen.length || mlOnTab()) return false;
+    var h = T.hour(), t = now();
+    if (h < 10 || h >= 22) return false;
+    if (t - mlOpened < ML_NUDGE) return false;
+    return t >= +(lsGet('lk.mail.later') || 0);
+  }
+  function mlMaybePop() {
+    if (mlPop || npop || !mlNudgeDue() || document.visibilityState === 'hidden') return;
+    var ae = document.activeElement;
+    if (ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) && ae.type !== 'button') return;
+    var l = mlOpen.slice().sort(function (a, b) { return (a.at || 0) - (b.at || 0); }), hot = l.filter(mlUrgent).length;
+    var old = Math.max(1, Math.round((now() - (l[0].at || now())) / 3600000));
+    mlPrev = document.activeElement;
+    var el = document.createElement('div');
+    el.className = 'mlp-wrap';
+    el.innerHTML = '<div class="mlp-bg" data-ml="later"></div><section class="mlp" role="dialog" aria-modal="true" aria-labelledby="mlp-h" tabindex="-1">' +
+      '<span class="mlp-eb">Kitchen mail</span><h2 class="mlp-h" id="mlp-h">' + l.length + (l.length === 1 ? ' message waiting' : ' messages waiting') + '</h2>' +
+      '<p class="mlp-p">The oldest is ' + old + ' h old' + (hot ? '. ' + hot + ' ' + (hot === 1 ? 'is' : 'are') + ' food safety or for today.' : '.') + '</p>' +
+      '<footer class="mlp-foot"><button type="button" class="mlp-go" data-ml="open">Open mail</button><button type="button" class="mlp-later" data-ml="later">Later</button></footer></section>';
+    document.body.appendChild(el); mlPop = el;
+    var go = el.querySelector('.mlp-go'); if (go) go.focus({ preventScroll: true });
+  }
+  function mlPopClose() {
+    if (!mlPop) return;
+    mlPop.parentNode.removeChild(mlPop); mlPop = null;
+    if (mlPrev && mlPrev.focus && document.body.contains(mlPrev)) { try { mlPrev.focus({ preventScroll: true }); } catch (e) {} }
+    mlPrev = null;
+  }
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest && e.target.closest('[data-ml]');
+    if (!el) return;
+    var a = el.getAttribute('data-ml');
+    if (a === 'later') { lsSet('lk.mail.later', String(now() + ML_NUDGE)); mlPopClose(); return; }
+    if (a === 'open') { mlPopClose(); S.atab = 'mail'; lsSet('lk.prep.atab', 'mail'); if (location.hash === '#/admin') { draw(); mlSeenAll(); } else location.hash = '#/admin'; }
+  });
+  document.addEventListener('keydown', function (e) {
+    if (!mlPop) return;
+    if (e.key === 'Escape') { e.preventDefault(); lsSet('lk.mail.later', String(now() + ML_NUDGE)); mlPopClose(); return; }
+    if (e.key !== 'Tab') return;
+    var f = mlPop.querySelectorAll('button'), first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  });
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') { loadMail(); mlMaybePop(); } });
+
   /* ---------- public bits used by app.js ---------- */
   window.LK_PREP = {
     mount: function (name, root, sel) {
@@ -4708,7 +4938,7 @@
     },
     warm: function () { if (S.pin && S.configState !== 'ok' && S.configState !== 'loading') connect(); notesInit(); },
     unsaved: function () {
-      return pending > 0 || mfDirty() || nfDirty() || gfDirty() || draftDirty() || !!String(S.bulk || '').trim() || !!S.sheet || !!S.recipeOpen ||
+      return pending > 0 || !!mlf.text.trim() || mfDirty() || nfDirty() || gfDirty() || draftDirty() || !!String(S.bulk || '').trim() || !!S.sheet || !!S.recipeOpen ||
         !!(S.text.trim() || S.qty.trim() || S.otext.trim() || S.oqty.trim() || S.wf.text.trim() || String(S.wf.amt).trim() || S.wf.act.trim() || (S.wrA != null && S.wrA !== ((S.wReview || {}).avoidable || '')) || (S.wrC != null && S.wrC !== ((S.wReview || {}).change || '')) || S.mpin);
     },
     noteInfo: noteInfo,
@@ -4718,6 +4948,7 @@
     featOn: featOn,
     whoName: whoName,
     minNudge: minNudgeHTML,
+    mailInfo: mlInfo,
     saveConfig: saveConfig,
     proofread: proofread,
     state: S
