@@ -164,8 +164,8 @@
     if (key === itemsKey && unsubItems) return;
     if (unsubItems) unsubItems();
     itemsKey = key; S.itemsState = 'loading';
-    unsubItems = fb.fs.onSnapshot(itemsCol(S.date), function (snap) {
-      S.items = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; });
+    unsubItems = fb.fs.onSnapshot(itemsCol(S.date), { includeMetadataChanges: true }, function (snap) {
+      S.items = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; x._unsent = !!(d.metadata && d.metadata.hasPendingWrites); return x; });
       S.itemsState = 'ok'; draw();
     }, function () { S.itemsState = 'error'; draw(); });
   }
@@ -289,8 +289,8 @@
   function syncHTML() {
     var st = syncState();
     if (!st || !S.pin || !S.authed) return '';
-    return '<div class="p-sync" role="status">' + (st === 'off' ? '<strong>No signal.</strong> What you write is kept on this phone and sent when the signal is back.' :
-      '<strong>Not sent yet.</strong> Other phones cannot see your latest changes yet. Keep the book open.') + '</div>';
+    return '<div class="p-sync" role="status">' + (st === 'off' ? '<strong>No signal.</strong> What you write is kept on this device and sent when the signal is back. Lines marked Not sent are waiting.' :
+      '<strong>Not sent yet.</strong> Other devices cannot see your latest changes yet. Keep the book open.') + '</div>';
   }
   /* Two taps for anything that is hard to take back: the first tap arms the button ("Tap again..."), a second tap
      within 4 seconds does it. Left alone, the button goes back to normal by itself. */
@@ -761,7 +761,7 @@
     if (S.qty.trim() || S.text.trim().length < 3) return '';
     var l = qtyList(S.text).slice(0, 3);
     if (!l.length) return '';
-    return '<span class="nb-ql">Usual amount</span>' + l.map(function (x) { return '<button type="button" class="chip sq nb-qc" data-p="qset" data-v="' + esc(x.q) + '">' + esc(x.q) + '</button>'; }).join('');
+    return '<span class="nb-ql">Usual amount</span>' + l.map(function (x) { return '<button type="button" class="chip sq nb-qc" data-p="qset" data-v="' + esc(x.q) + '" aria-label="' + esc('Add ' + S.text.trim() + ', ' + x.q) + '">Add ' + esc(x.q) + '</button>'; }).join('');
   }
   /* Start here: up to three open lines to do first, across all sections. */
   function startHere(live) {
@@ -2068,8 +2068,9 @@
     var del = delOk ? '<button type="button" class="nb-x" data-p="' + (x.deleted ? 'restore' : 'del') + '" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-label="' + (x.deleted ? 'Put back ' : 'Remove ') + esc(x.text) + '">' + (x.deleted ? 'Put back' : 'Remove') + '</button>' : '';
     return '<li id="nbr-' + esc(x.id) + '" class="nb-row' + (x.done ? ' is-done' : '') + (rolledN(x) && !x.done ? ' is-rolled' : '') + (x.urgent && !x.done ? ' is-urgent' : '') + (x.deleted ? ' is-removed' : '') + '">' +
       '<button type="button" class="nb-box" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-pressed="' + !!x.done + '" aria-label="' + esc((x.done ? 'Untick ' : 'Tick ') + x.text) + '"' + (tickOk ? '' : ' disabled') + '>' + (x.done ? TICK : BOX) + '</button>' +
-      '<span class="nb-t"' + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + (marks ? ' <span class="nb-marks">' + marks + '</span>' : '') + '</span>' +
-      '<span class="nb-by">' + by + '</span>' + (star || link || del ? '<span class="nb-acts">' + star + link + del + '</span>' : '') + '</li>';
+      // a tap on the words ticks too (the box is the button for keyboards and screen readers); Undo and the linger cover a slip
+      '<span class="nb-t' + (tickOk && !readonly ? ' nb-tt' : '') + '"' + (tickOk && !readonly ? ' data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '"' : '') + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + (marks ? ' <span class="nb-marks">' + marks + '</span>' : '') + '</span>' +
+      '<span class="nb-by">' + (x._unsent ? '<span class="nb-unsent">Not sent</span> ' : '') + by + '</span>' + (star || link || del ? '<span class="nb-acts">' + star + link + del + '</span>' : '') + '</li>';
   }
   /* A line ticked on this phone stays where it is, struck through, for 3.5 seconds before it leaves the list. */
   var LINGER = 3500;
@@ -2174,8 +2175,8 @@
     var sug = suggestions();
     var add = can('add') && S.date === today ?
       '<form class="nb-add" data-p-form="add"><datalist id="p-sections">' + sug.map(function (n) { return '<option value="' + esc(n) + '"></option>'; }).join('') + '</datalist>' +
-      '<div class="nb-add-row"><label class="visually-hidden" for="p-section">Section</label><input id="p-section" class="nb-in nb-in-sec" data-k="p-section" list="p-sections" enterkeyhint="next" autocomplete="off" placeholder="Section" maxlength="40" value="' + esc(S.section) + '">' +
-      '<label class="visually-hidden" for="p-text">Prep item</label><input id="p-text" class="nb-in nb-in-text" data-k="p-text" enterkeyhint="done" autocomplete="off" placeholder="Write a new line..." maxlength="160" value="' + esc(S.text) + '">' +
+      '<div class="nb-add-row"><label class="visually-hidden" for="p-text">Prep item</label><input id="p-text" class="nb-in nb-in-text" data-k="p-text" enterkeyhint="done" autocomplete="off" autocapitalize="sentences" placeholder="Write a new line..." maxlength="160" value="' + esc(S.text) + '">' +
+      '<label class="visually-hidden" for="p-section">Section</label><input id="p-section" class="nb-in nb-in-sec" data-k="p-section" list="p-sections" enterkeyhint="next" autocomplete="off" placeholder="Section" maxlength="40" value="' + esc(S.section) + '">' +
       '<label class="visually-hidden" for="p-qty">Amount</label><input id="p-qty" class="nb-in nb-in-qty" data-k="p-qty" enterkeyhint="done" autocomplete="off" placeholder="Amount" maxlength="40" value="' + esc(S.qty) + '">' +
       '<button type="submit" class="nb-addbtn">Add</button></div><div class="nb-sugg" id="p-sugg">' + suggestHTML() + '</div><div class="nb-sugg nb-qs" id="p-qsugg">' + qtyChipsHTML() + '</div><p class="nb-hint" id="p-hint" aria-live="polite">' + esc(hintText(S.text)) + '</p>' + recipePicker() + '</form>' : (S.date !== today ? '<p class="hint">You are looking at ' + esc(dayName(S.date)) + '. Lines are added on Today only.</p>' : '<p class="hint">You can read the book but not write in it. Ask the head chef if that is wrong.</p>');
     var todayEmpty = !live.length && S.itemsState === 'ok' ? '<p class="nb-empty">Nothing written for ' + esc(dayName(S.date).toLowerCase()) + ' yet.</p>' : '';
@@ -4744,7 +4745,8 @@
     if (a === 'onudge-hide') { lsSet('lk.ord.nudge', dayNow()); draw(); return; }
     if (a === 'onudge-show') { var od = document.getElementById('o-overdue'); if (od) { od.scrollIntoView({ block: 'start' }); var ob = od.querySelector('.nb-box'); if (ob) ob.focus({ preventScroll: true }); } return; }
     if (a === 'oqset') { S.oqty = el.getAttribute('data-v') || ''; draw(); var to = S.root.querySelector('[data-k="o-text"]'); if (to) to.focus(); return; }
-    if (a === 'qset') { S.qty = el.getAttribute('data-v') || ''; draw(); var tq = S.root.querySelector('[data-k="p-text"]'); if (tq) tq.focus(); return; }
+    // "Add 5 L": the usual amount goes in and the line is added in the same tap
+    if (a === 'qset') { S.qty = el.getAttribute('data-v') || ''; if (S.text.trim()) addTyped(); else { draw(); var tq = S.root.querySelector('[data-k="p-text"]'); if (tq) tq.focus(); } return; }
     if (a === 'goto') { gotoRow(id); return; }
     if (a === 'wjump') { var wj = S.root.querySelector('[data-k="w-text"]'); if (wj) { wj.scrollIntoView({ block: 'center', behavior: 'smooth' }); wj.focus({ preventScroll: true }); } return; }
     if (a === 'write') { var wt = S.root.querySelector('[data-k="p-text"]'); if (wt) { wt.scrollIntoView({ block: 'center', behavior: 'smooth' }); wt.focus({ preventScroll: true }); } return; }

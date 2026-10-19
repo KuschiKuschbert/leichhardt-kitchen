@@ -136,6 +136,7 @@ npm test
 - **Landing** on a phone: compact dockets (the whole docket is the link, no Open button), so all five fit above the tab bar.
 - **Settings** starts with Text size; "Opens with" is two chips; Done goes back to the page you came from (or to the start when Settings was opened by its address).
 - `tests/phone-first.test.js`.
+- **Faster ticking (20 Oct 2026, head chef decision).** A tap on a prep line's words ticks it as well as the box (the box stays the button for keyboards and screen readers; !, recipe and Remove do not tick). The box is drawn at 33 px. The add box goes Line, Section, Amount in the page, the same as it shows, and capitalises the first letter on a phone keyboard. With a line typed, a usual amount chip says "Add 2 tubs" and adds the line in one tap. A line whose change has not reached the server yet says "Not sent" (from the listener's own `hasPendingWrites`, no reads), and the signal strip says "device", not "phone". `tests/prep-speed.test.js`.
 
 ## Prep book and admin panel
 
