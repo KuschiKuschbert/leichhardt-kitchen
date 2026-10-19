@@ -586,7 +586,23 @@ img, svg { display: block; }
 @media (min-width: 720px) and (max-width: 1099px) { .wtop-brand b { font-size: 2.1rem; white-space: nowrap; } .wtop { padding: 0 1.5rem; } }
 
 /* Admin button next to Settings */
-.wtop-icons { display: inline-flex; gap: 0.5rem; }
+.wtop-icons { display: inline-flex; align-items: center; gap: 0.5rem; }
+/* the chef mark: a wtop-btn ring shown while a person is signed in; the first name joins it from 1400 px only, where
+   there is room (with it at 1280 px "Kitchen Book" wrapped onto two lines) */
+.wtop-who { display: none; }
+.wtop-who.on { display: inline-flex; }
+.wtop-who .wtop-lbl { display: none; }
+@media (min-width: 1400px) { .wtop-who .wtop-lbl { display: inline; } }
+/* on a sign-in the mark flips in like a coin (two turns), lands a little big and settles in place */
+@keyframes who-flip {
+  0% { transform: perspective(240px) rotateY(0deg) scale(0.4); opacity: 0; }
+  25% { opacity: 1; }
+  65% { transform: perspective(240px) rotateY(720deg) scale(1.3); }
+  82% { transform: perspective(240px) rotateY(720deg) scale(0.92); }
+  100% { transform: perspective(240px) rotateY(720deg) scale(1); }
+}
+.wtop-who.flip { animation: who-flip 1.1s cubic-bezier(0.25, 0.7, 0.3, 1) both; transform-origin: 50% 50%; position: relative; z-index: 1; }
+@media (prefers-reduced-motion: reduce) { .wtop-who.flip { animation: none; } }
 
 /* Pace, stuck lines, closing soon */
 .nb-pace { margin: 0 0 12px; padding: 8px 10px; border: 2px solid var(--ink); border-radius: 8px; background: #FFFEFA; }
@@ -1118,9 +1134,10 @@ html.has-upd .p-toast { bottom: 140px; }
 @media (max-width: 399px) { .tabbar a { font-size: 0.75rem; letter-spacing: 0.04em; } }
 /* a tablet with the notes bell showing: the KB mark stands for the name, so the five pills still fit */
 @media (min-width: 720px) and (max-width: 979px) { .wtop:has(.nbell:not([hidden])) .rb-text { display: none; } }
+/* the same when the chef mark (a person signed in) shows: the three rings fit where three pills did not */
 @media (min-width: 1100px) and (max-width: 1399px) {
-  .wtop:has(.nbell:not([hidden])) .wtop-btn { width: 44px; padding: 0; border-radius: 50%; }
-  .wtop:has(.nbell:not([hidden])) .wtop-lbl { display: none; }
+  .wtop:has(.nbell:not([hidden])) .wtop-btn, .wtop:has(.wtop-who.on) .wtop-btn { width: 44px; padding: 0; border-radius: 50%; }
+  .wtop:has(.nbell:not([hidden])) .wtop-lbl, .wtop:has(.wtop-who.on) .wtop-lbl { display: none; }
 }
 /* nine admin tabs: three rows of three on a phone */
 @media (max-width: 599px) { .a-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
