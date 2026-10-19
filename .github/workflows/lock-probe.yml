@@ -1,7 +1,7 @@
 # Proves the lock on the live book: from a client that holds only the kitchen PIN, the reads and writes the published
 # rules must refuse are refused, and the one read they must allow is allowed (tests/rules/probe.mjs). Runs every Monday
 # at 04:00 kitchen time and from the Actions tab, and the Publish rules workflow runs the same probe after each publish.
-# Needs the KITCHEN_PIN secret only. Nothing is written: every write it tries is one the rules refuse. The PIN is never
+# Needs the KITCHEN_PIN secret, and APPCHECK_DEBUG_TOKEN once App Check is enforced. Nothing is written: every write it tries is one the rules refuse. The PIN is never
 # printed. A failed run means the published rules no longer match firestore.rules: publish them again.
 name: Lock probe
 
@@ -31,4 +31,5 @@ jobs:
         working-directory: tests/rules
         env:
           KITCHEN_PIN: ${{ secrets.KITCHEN_PIN }}
+          APPCHECK_DEBUG_TOKEN: ${{ secrets.APPCHECK_DEBUG_TOKEN }}
         run: node probe.mjs
