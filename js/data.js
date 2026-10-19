@@ -2004,6 +2004,28 @@ window.LK_DATA = {
       labelNote: 'Check the rub label for allergens.'
     },
     {
+      id: 'oven-brisket', no: '121', kind: 'batch', forLine: 'Brisket cooked in the oven', name: 'Oven Baked Brisket', short: 'Oven brisket', art: 'oven-brisket',
+      yield: 'Per 1/1 GN pan. [Brisket weight per pan to confirm]',
+      ingredients: [
+        { q: '[Qty]', name: 'Beef brisket' },
+        { q: '[Qty]', name: 'Brisket rub', note: 'house rub [to confirm]' }
+      ],
+      tip: { title: 'On the iCombi', text: 'Steam bake, 70% humidity, 123 °C, 15 hours. Or start the preprogrammed brisket programme.' },
+      sections: [
+        { title: 'Method', steps: [
+          'Rub the brisket all over with the rub.',
+          'Put it in a big 1/1 GN gastro pan.',
+          'Lay one sheet of baking paper on top.',
+          'Wrap the pan in aluminium foil, twice.',
+          'Cook in the Rational: steam bake, 70% humidity, 123 °C, 15 hours. Or use the preprogrammed brisket programme.',
+          '[Core temperature, resting and slicing to confirm]'
+        ] }
+      ],
+      contains: [],
+      check: [],
+      labelNote: 'Check the rub label for allergens.'
+    },
+    {
       id: 'ranch', no: '80', kind: 'batch', forLine: 'For the chicken burger', name: 'Ranch', short: 'Ranch', art: 'ranch',
       yield: 'Bought in. No prep. Serve size is on each dish card.',
       ingredients: [
