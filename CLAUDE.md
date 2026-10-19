@@ -54,3 +54,6 @@ The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the
 - Double ups on the prep list merge by themselves (`mergeDups()` in `js/prep.js`). It reads the lines from the server first (`getDocFromServer`) and tries each group once per page load: keep both, or a phone with an old copy of the list can remove a line ticked elsewhere, or read again on every redraw. A line with `dupOk` is never merged.
 - The service worker caches the app shell. Bump `CACHE` in `sw.js` when icons or the manifest change.
 - One clock: anything saved, or compared with a saved time, uses `now()` in `js/prep.js` (`LK_TIME.now()` elsewhere), and today's date, hours and weekdays use `dayNow()` and `T.day`, `T.hour`, `T.mins`, `T.dow`, `T.clock`, `T.at` (kitchen time, Queensland). Never `new Date()` or `Date.now()` for those: the phone's clock and zone can be wrong. `Date.now()` is only for time passing on the phone (timers, the PIN lock, the idle sign-out). Do not name a local variable `now` or `dayNow`, it hides the helper.
+
+## Open items
+README, "Open items" under Prep book and admin panel, lists what is still to do with the head chef (App Check debug token and Enforce, the Browser key restriction). Read it when the head chef asks what is left, keep it in step, and remove items as they are done.
