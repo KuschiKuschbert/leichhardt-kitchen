@@ -350,6 +350,17 @@ Every admin list that can keep growing now uses one shared layout (`lvHTML` in `
 - The first person to set a PIN for a name claims it. The owner can reset it (Reset PIN) and it is chosen again.
 - Limits: someone with the kitchen PIN could still guess a 4-digit PIN online by script (the page makes people wait after 3 wrong tries, 1 to 30 minutes and kept on the phone, but a script skips the page; only App Check or a paid server function can truly rate limit), and add, tick and delete rights per person are checked in the page only.
 
+### Open items (19 Oct 2026)
+
+Done on 19 Oct 2026: the lock is proved on the live book after every publish and weekly, the nightly backup runs and a backup was decrypted on the head chef's Mac, the web app is registered for App Check (Fraud Defense) and every phone sends a token, and the `BACKUP_KEY` secret is in. Still open, in order, for the head chef and the next session:
+
+1. **App Check debug token for the probe.** Firebase console, App Check, Apps, the three dots on the web app, Manage debug tokens, Add debug token, name it "Lock probe", copy it into a repository secret named `APPCHECK_DEBUG_TOKEN`. Check: run the Lock probe workflow from the Actions tab and read "App Check token in hand." in its log.
+2. **Browser key restriction.** Google Cloud console, APIs and Services, Credentials, the Browser key, Application restrictions, Websites, add `kuschikuschbert.github.io/*`, Save.
+3. **Enforce App Check**, two days or more after 19 Oct 2026 so every phone has reloaded with the key, and only after item 1. Firebase console, App Check, APIs tab, Cloud Firestore, Enforce. Straight after: run the Lock probe workflow (all seven checks must pass with the token in hand) and open the prep list on a phone. If a phone cannot load the list, switch Enforce off again at once and read the App Check metrics for unverified requests before trying again.
+4. The remote branch `ccr-c40e44af-ixs9p5` is level with main and can be deleted under Branches on GitHub.
+
+Remove each item here once it is done.
+
 ### Changing the kitchen PIN
 
 1. Add a second copy of the `kitchens/<pin>/...` rules for the new 4 digit PIN to the live rules (see `firestore.rules`).
