@@ -336,7 +336,7 @@
   window.addEventListener('hashchange', function () { whoMenuClose(); });
   function noteBellHTML() {
     var i = window.LK_PREP && window.LK_PREP.noteInfo ? window.LK_PREP.noteInfo() : { n: 0, unread: false };
-    return '<button type="button" class="wtop-btn nbell' + (i.unread ? ' has-new' : '') + '" data-note="open"' + (i.n ? '' : ' hidden') + ' aria-label="Today\'s shift pings' + (i.unread ? ', new' : '') + '">' + BELL + '<span class="wtop-lbl">Pings</span></button>';
+    return '<button type="button" class="wtop-btn nbell' + (i.unread ? ' has-new' : '') + '" data-note="open"' + (i.n ? '' : ' hidden') + ' aria-label="' + i.n + ' shift ping' + (i.n === 1 ? '' : 's') + ' today' + (i.unread ? ', new' : '') + '">' + BELL + '<span class="wtop-lbl">Pings</span></button>';
   }
   /* The same top bar on every page as on the landing page: brand (goes home), the menu, Pings, Admin and Settings. */
   function topIcons() {
