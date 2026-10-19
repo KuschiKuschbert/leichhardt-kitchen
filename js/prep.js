@@ -1038,24 +1038,51 @@
     sset(docRef('learned', id), { hidden: hidden }, true).catch(failed);
   }
   var LEARN_DAYS = 90;   // how far back the nightly learning reads
+  /* what is left to do (ticked lines are left out), and only the open section tab when one is open */
   function listText() {
-    var rows = S.items.filter(function (x) { return !x.deleted; }).sort(sortItems), out = [], last = null;
-    out.push('Prep list, ' + dayName(S.date) + ' ' + longDate(S.date));
+    var rows = S.items.filter(function (x) { return !x.deleted && !x.done && inTab(x); }).sort(sortItems), out = [], last = null;
+    out.push('Prep list' + (S.tab ? ', ' + S.tab : '') + ', ' + dayName(S.date) + ' ' + longDate(S.date));
+    if (!rows.length) out.push('', 'Nothing left to do.');
     rows.forEach(function (x) {
       var sec = x.station || 'General';
       if (sec !== last) { out.push('', sec.toUpperCase()); last = sec; }
-      out.push((x.done ? '[x] ' : '[ ] ') + (x.urgent ? 'URGENT ' : '') + (rolledN(x) ? '(rolled over) ' : '') + x.text + (x.qty ? ' - ' + x.qty : '') + (x.also && x.also.length ? ' (also ' + x.also.join(', ') + ')' : ''));
+      out.push('[ ] ' + (x.urgent ? 'URGENT ' : '') + (rolledN(x) ? '(rolled over) ' : '') + x.text + (x.qty ? ' - ' + x.qty : '') + (x.also && x.also.length ? ' (also ' + x.also.join(', ') + ')' : ''));
     });
     return out.join('\n');
   }
-  function copyList() {
-    var t = listText();
+  function copyList() { shareText(listText()); }
+  /* A phone or tablet opens its share sheet (straight into a message), a computer copies. If sharing is not there or
+     fails, the text is copied instead. */
+  function touchy() { try { return window.matchMedia('(pointer: coarse)').matches; } catch (e) { return false; } }
+  function shareLabel(what) { return (touchy() && navigator.share ? 'Share ' : 'Copy ') + what; }
+  function shareText(t) {
+    function copied(ok) { toast(ok ? 'Copied. Paste it into a message.' : 'Could not copy on this device.'); }
     function fallback() {
       var ta = document.createElement('textarea'); ta.value = t; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
       document.body.appendChild(ta); ta.select(); var ok = false; try { ok = document.execCommand('copy'); } catch (e) {} document.body.removeChild(ta);
-      toast(ok ? 'List copied. Paste it into a message.' : 'Could not copy on this device.');
+      copied(ok);
     }
-    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(function () { toast('List copied. Paste it into a message.'); }, fallback); else fallback();
+    function copy() { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(function () { copied(true); }, fallback); else fallback(); }
+    if (touchy() && navigator.share) navigator.share({ text: t }).catch(function (e) { if (!e || e.name !== 'AbortError') copy(); });
+    else copy();
+  }
+  /* Printing one part of the book: the class on <html> picks what the print rules in app.css show. */
+  function printWith(cls) {
+    var h = document.documentElement;
+    h.classList.add(cls);
+    function done() { h.classList.remove(cls); window.removeEventListener('afterprint', done); }
+    window.addEventListener('afterprint', done);
+    setTimeout(function () { window.print(); setTimeout(function () { if (h.classList.contains(cls) && !window.matchMedia('print').matches) done(); }, 1500); }, 50);
+  }
+  /* The order list as plain text for the supplier: one line per item, with the amounts asked for (Everything to order
+     adds up every day still open; By day is that day's lines not ticked yet). */
+  function ordText() {
+    var all = S.ordView === 'all' && canBrowse(), out = [], lines = [];
+    if (all) ordGroups().forEach(function (g) { var q = g.lines.map(function (x) { return x.qty; }).filter(Boolean); lines.push(g.text + (q.length ? ': ' + q.join(' + ') : '')); });
+    else (S.ordLines || []).filter(function (x) { return !x.deleted && !x.ordered; }).sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }).forEach(function (x) { lines.push(x.text + (x.qty ? ': ' + x.qty : '')); });
+    out.push('Order, ' + (all ? 'everything still to order' : dayName(S.ordDate) + ' ' + longDate(S.ordDate)));
+    out.push('');
+    return out.concat(lines.length ? lines : ['Nothing to order.']).join('\n');
   }
   /* A line written after the usual close (the time of the last tick on most days, 20:00 until the book knows) is meant
      for the next day. When it moves onto that day it is marked ahead and does not count as rolled; only if it is still
@@ -2102,7 +2129,7 @@
       return '<li><span>' + esc(x.text) + ' <span class="nb-us">x' + rolledN(x) + '</span></span>' + (x.urgent ? '' : '<button type="button" class="p-x" data-p="urgent" data-id="' + esc(x.id) + '">Urgent</button>') + (can('del') ? '<button type="button" class="p-x" data-p="del" data-id="' + esc(x.id) + '" data-d="' + esc(S.date) + '">Remove</button>' : '') + '</li>';
     }).join('') + '</ul>' : '';
     var tools = '<h3 class="nb-sh">Tools</h3><div class="nb-tools">' +
-      '<button type="button" class="nb-btn" data-p="copy">Copy the list</button>' +
+      '<button type="button" class="nb-btn" data-p="copy">' + shareLabel('the list') + '</button>' +
       '<button type="button" class="nb-btn" data-p="print">Print the list</button>' +
       (featOn('minutes') ? '<a class="nb-btn" href="#/minutes">Meeting minutes</a>' : '') +
       (canPing() ? '<button type="button" class="nb-btn" data-p="notes-open">Shift pings</button>' : '') +
@@ -2857,7 +2884,8 @@
       /* the add box is at the top, so it is always in reach; on big screens the list and the ordered-today list sit side by side below it */
       (view === 'day' && add ? '<div class="nb-foot o-add">' + add + (canBrowse() ? '' : '<p class="hint nb-who">Only the head chef or a sous chef ticks a line as ordered or removes it. Wrote the wrong thing? Undo it straight away, or ask them.</p>') + '</div>' : '') +
       (view === 'day' && S.ordDate === today ? ordNudgeHTML(overdue, today) : '') +
-      '<div class="o-cols"><div class="nb-body o-main">' + body + removedBox + '</div>' + (orderedBox ? '<div class="o-ordered">' + orderedBox + '</div>' : '') + '</div></section>';
+      '<div class="o-cols"><div class="nb-body o-main">' + body + removedBox + '</div>' + (orderedBox ? '<div class="o-ordered">' + orderedBox + '</div>' : '') + '</div>' +
+      '<div class="nb-tools o-tools"><button type="button" class="nb-btn" data-p="ocopy">' + shareLabel('for the supplier') + '</button><button type="button" class="nb-btn" data-p="oprint">Print</button></div></section>';
   }
 
 
@@ -4671,7 +4699,9 @@
     if (a === 'write') { var wt = S.root.querySelector('[data-k="p-text"]'); if (wt) { wt.scrollIntoView({ block: 'center', behavior: 'smooth' }); wt.focus({ preventScroll: true }); } return; }
     if (a === 'learn-hide') { hideLearned(id, el.getAttribute('data-hide') === '1'); return; }
     if (a === 'copy') { copyList(); return; }
-    if (a === 'print') { window.print(); return; }
+    if (a === 'print') { printWith('print-list'); return; }
+    if (a === 'ocopy') { shareText(ordText()); return; }
+    if (a === 'oprint') { printWith('print-orders'); return; }
     if (a === 'a-tab') { S.atab = el.getAttribute('data-t'); lsSet('lk.prep.atab', S.atab); draw(); window.scrollTo(0, 0); return; }
     if (a === 'staff-open') { if (isSous()) { startDraft(); S.staffOpen = true; draw(); } return; }
     if (a === 'staff-close') { if (draftDirty() && !arm('staff-close')) return; S.staffOpen = false; S.draft = null; draw(); return; }
