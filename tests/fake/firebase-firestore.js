@@ -14,6 +14,8 @@ window.__fake.readLog = [];
 const seen = new Set();
 window.__fake.release = function () { const h = held.splice(0); h.forEach(f => f()); };
 window.__fake.dump = function () { return store; };
+// a write from another phone: the document changes under this page and its listeners hear about it
+window.__fake.write = function (path, data) { store[path] = JSON.parse(JSON.stringify(data)); save(); notify(); };
 let seq = 0;
 function rid() { return 'id' + Date.now().toString(36) + (seq++).toString(36); }
 

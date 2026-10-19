@@ -116,7 +116,7 @@
       unsubCfg = fb.fs.onSnapshot(cfgDoc(), function (snap) {
         S.config = snap.exists() ? snap.data() : { people: [] };
         S.config.people = S.config.people || [];
-        S.configState = 'ok'; featSync(); watchItems(); watchSections(); watchLearned(); if (S.name === 'orders') watchOrders(); if (S.name === 'waste') watchWaste(); resume(); loadNotes(); loadMinutes(); draw();
+        S.configState = 'ok'; featSync(); refreshDraft(); watchItems(); watchSections(); watchLearned(); if (S.name === 'orders') watchOrders(); if (S.name === 'waste') watchWaste(); resume(); loadNotes(); loadMinutes(); draw();
       }, function (err) {
         S.configState = err && err.code === 'permission-denied' ? 'badpin' : 'error';
         if (S.configState === 'badpin') { S.pinError = 'That PIN is not right.'; S.pin = ''; lsSet('lk.prep.pin', ''); cfgKey = ''; unsubCfg = null; gForget(); }
@@ -988,6 +988,36 @@
     S.draftSnap = JSON.stringify(S.draft);
     S.saveMsg = '';
   }
+  /* The staff list changed on another phone while a draft is open (the People tab, or a sous chef's Manage staff).
+     A draft with nothing changed yet follows it. One with changes keeps them: when it is saved, only the rows and fields
+     this draft touched are carried onto the list as it is now (mergeDraft), so a copy taken when the page opened never
+     wipes what someone else saved in the meantime. */
+  function draftBase() { try { return JSON.parse(S.draftSnap || 'null'); } catch (e) { return null; } }
+  function refreshDraft() { if (S.draft && !draftDirty()) { var msg = S.saveMsg; startDraft(); S.saveMsg = msg; } }
+  function draftStale() {
+    var was = draftBase(), c = S.config; if (!S.draft || !was || !c) return false;
+    return JSON.stringify({ people: c.people || [], showBadges: c.showBadges !== false, staffSee: staffSee(c) }) !== S.draftSnap;
+  }
+  function mergeDraft() {
+    var d = S.draft, was = draftBase(), c = S.config || { people: [] };
+    if (!d || !was || !draftStale()) return d;
+    var cur = {}, wasBy = {}, keep = {}, out = [];
+    (c.people || []).forEach(function (p) { cur[p.id] = Object.assign({}, p); out.push(cur[p.id]); });
+    (was.people || []).forEach(function (p) { wasBy[p.id] = p; });
+    d.people.forEach(function (p) { keep[p.id] = true; });
+    // rows this draft removed go; rows another phone removed stay gone
+    out = out.filter(function (p) { return !(wasBy[p.id] && !keep[p.id]); });
+    d.people.forEach(function (p) {
+      var w = wasBy[p.id], now_ = cur[p.id];
+      if (!w) { if (!now_) out.push(p); return; }   // added in this draft
+      if (!now_) return;
+      Object.keys(p).forEach(function (k) { if (JSON.stringify(p[k]) !== JSON.stringify(w[k])) now_[k] = p[k]; });
+    });
+    var m = { people: out, showBadges: d.showBadges !== was.showBadges ? d.showBadges : c.showBadges !== false, staffSee: {} }, see = staffSee(c);
+    FEATS.forEach(function (f) { var k = f[0]; m.staffSee[k] = (d.staffSee || {})[k] !== (was.staffSee || {})[k] ? d.staffSee[k] : see[k]; });
+    return m;
+  }
+  function staleHint() { return draftStale() && draftDirty() ? '<p class="hint a-stale">The staff list changed on another phone while you were here. Only what you changed is saved on top of it.</p>' : ''; }
   /* sousIds and pingIds are what the rules check: sous chefs, and everyone who may write shift pings (sous chefs always may) */
   function idsFor(people, fn) { return people.filter(function (p) { return p.active !== false && String(p.name).trim() && fn(p); }).map(function (p) { return p.id; }); }
   function isSousP(p) { return p.role === 'sous'; }
@@ -1010,7 +1040,7 @@
   }
   function adminSave() {
     S.busy = true; S.saveMsg = 'Saving...'; draw();
-    saveConfig(S.draft).then(function () { S.busy = false; startDraft(); S.saveMsg = 'Saved. Everyone sees the changes now.'; draw(); },
+    saveConfig(mergeDraft()).then(function () { S.busy = false; startDraft(); S.saveMsg = 'Saved. Everyone sees the changes now.'; draw(); },
       function (e) { S.busy = false; S.saveMsg = e && e.code === 'permission-denied' ? 'Not allowed to change these settings.' : 'Could not save. Check the connection.'; draw(); });
   }
   function resetPin(id) {
@@ -2279,7 +2309,7 @@
     if (owner) { watchActivity(); loadStats(false); }
     var bar = '<div class="p-bar"><span>Signed in as <strong>' + esc(S.user.email) + '</strong> (' + 'head chef' + ')</span><span class="p-links"><button type="button" class="p-link" data-p="signout">Sign out</button><a class="p-link" href="#/prep">Prep book</a></span></div>';
     var bulk = '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line">' + esc(S.bulk || '') + '</textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div>';
-    var saveBlock = '<section class="set-block"><div class="btn-row"><button type="button" class="btn dark" data-p="a-save"' + (S.busy ? ' disabled' : '') + '>Save changes</button><button type="button" class="btn" data-p="a-reset">Undo unsaved changes</button></div><span class="saved" role="status">' + esc(S.saveMsg) + '</span></section>';
+    var saveBlock = '<section class="set-block">' + staleHint() + '<div class="btn-row"><button type="button" class="btn dark" data-p="a-save"' + (S.busy ? ' disabled' : '') + '>Save changes</button><button type="button" class="btn" data-p="a-reset">Undo unsaved changes</button></div><span class="saved" role="status">' + esc(S.saveMsg) + '</span></section>';
     var at = S.atab || 'insights';
     var tabsBar = '<nav class="a-tabs" aria-label="Admin sections">' + [['insights', 'Insights'], ['team', 'Team'], ['waste', 'Waste'], ['learning', 'Learning'], ['notes', 'Shift pings'], ['minutes', 'Minutes'], ['guides', 'Guides'], ['people', 'People'], ['tools', 'Tools']].map(function (t) {
       return '<button type="button" class="a-tab" data-p="a-tab" data-t="' + t[0] + '" aria-pressed="' + (at === t[0]) + '">' + t[1] + '</button>';
@@ -2310,7 +2340,7 @@
     var bulk = '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line">' + esc(S.bulk || '') + '</textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div>';
     return '<div class="p-admin"><div class="p-bar"><span>Staff list</span><span class="p-links"><button type="button" class="p-link" data-p="staff-close">' + (armed('staff-close') ? 'Tap again to leave without saving' : 'Back to the prep book') + '</button></span></div><h2 class="p-h" id="rtitle" tabindex="-1">Staff</h2>' +
       '<section class="set-block"><span class="hint">Add a person or remove one, then save. New people start as Staff. Removing someone keeps their name on old lines. Roles and PINs are looked after by the head chef.</span>' + staffListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' +
-      '<section class="set-block"><div class="btn-row"><button type="button" class="btn dark" data-p="a-save"' + (S.busy ? ' disabled' : '') + '>Save changes</button><button type="button" class="btn" data-p="a-reset">Undo unsaved changes</button></div><span class="saved" role="status">' + esc(S.saveMsg) + '</span></section></div>';
+      '<section class="set-block">' + staleHint() + '<div class="btn-row"><button type="button" class="btn dark" data-p="a-save"' + (S.busy ? ' disabled' : '') + '>Save changes</button><button type="button" class="btn" data-p="a-reset">Undo unsaved changes</button></div><span class="saved" role="status">' + esc(S.saveMsg) + '</span></section></div>';
   }
   /* While connecting, show the page that is opening (not a generic prep book card), so nothing flashes. */
   var PAGE_NAME = { prep: 'Prep list', orders: 'Order list', waste: 'Wastage', admin: 'Admin panel', minutes: 'Meeting minutes', guides: 'Guides' };
