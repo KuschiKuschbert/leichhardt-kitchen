@@ -4,7 +4,7 @@
   Nothing here touches the real book. Every check is a write the rules must allow or refuse.
 */
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
-import { doc, setDoc, writeBatch, serverTimestamp, Timestamp, increment } from 'firebase/firestore';
+import { doc, setDoc, getDoc, deleteDoc, writeBatch, serverTimestamp, Timestamp, increment } from 'firebase/firestore';
 import { createHash } from 'crypto';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
@@ -17,6 +17,7 @@ const sha = s => createHash('sha256').update(s).digest('hex');
 const pins = { sam: '1111', ann: '2222', bo: '3333' };
 const hash = (id, pin) => sha('lk:' + id + ':' + pin);
 const K = 'kitchens/' + PIN + '/';
+const mins = x => Object.assign({ no: 1, v: 1, status: 'draft', date: '2026-10-19', start: '14:00', loc: 'Kitchen', guests: '', chair: 'sam', taker: 'sam', next: '', decisions: 'Fryer oil every Monday', menu: '', safety: '', dates: '', other: '', att: [{ id: 'ann', st: 'present' }], acts: [], removed: false }, x || {});
 const PEOPLE = [{ id: 'sam', name: 'Sam', role: 'sous', active: true }, { id: 'ann', name: 'Ann', role: 'staff', active: true }, { id: 'bo', name: 'Bo', role: 'staff', ping: true, active: true }, { id: 'cal', name: 'Cal', role: 'staff', active: true }];
 
 const env = await initializeTestEnvironment({ projectId: 'demo-test', firestore: { rules } });
@@ -33,6 +34,11 @@ await env.withSecurityRulesDisabled(async ctx => {
   await setDoc(doc(db, K + 'sections/larder'), { name: 'Larder', uses: 3, hidden: false, by: 'ann', old: 'a field the book no longer writes' });
   await setDoc(doc(db, K + 'activity/ann'), { name: 'Ann', visits: 2, legacy: 1 });
   await setDoc(doc(db, K + 'learned/slice-onions'), { text: 'Slice onions', uses: 3, hidden: false });
+  await setDoc(doc(db, K + 'minutes/m1'), mins({ status: 'published', pubAt: 1 }));
+  await setDoc(doc(db, K + 'minutes/m2'), mins({ no: 2, v: 2, status: 'published', pubAt: 2 }));
+  await setDoc(doc(db, K + 'minutes/d1'), mins({ no: 3, status: 'draft' }));
+  await setDoc(doc(db, K + 'ordlearned/milk'), { text: 'Milk', uses: 4, hidden: false });
+  await setDoc(doc(db, K + 'learnlog/2026-10-18'), { at: 1, who: 'server', kind: 'nightly' });
 });
 
 const anon = env.unauthenticatedContext().firestore();
@@ -113,6 +119,46 @@ await ok(setDoc(doc(owner, K + 'guides/g1'), guide({ thumb: 'data:image/webp;bas
 await ok(setDoc(doc(owner, K + 'guides/g2'), guide({ thumb: 'https://example.com/x.png' })), false, 'guides: a thumbnail that is not a picture is refused');
 await ok(setDoc(doc(owner, K + 'guides/g1/pages/0'), { img: 'data:image/jpeg;base64,AAAA', v: 1, n: 0 }), true, 'guides: a page picture is accepted');
 await ok(setDoc(doc(owner, K + 'guides/g1/pages/1'), { img: 'javascript:alert(1)', v: 1, n: 1 }), false, 'guides: a page that is not a picture is refused');
+
+// meeting minutes: only the head chef writes them and the hist copies, with the size caps
+await ok(setDoc(doc(owner, K + 'minutes/m3'), mins({ no: 4 })), true, 'minutes: the head chef writes a draft');
+await ok(setDoc(doc(owner, K + 'minutes/m3'), mins({ no: 4, status: 'published', pubAt: 3 })), true, 'minutes: and publishes it');
+await ok(setDoc(doc(owner, K + 'minutes/m3/hist/1'), mins({ no: 4, status: 'published', pubAt: 3 })), true, 'minutes: the frozen copy of version 1 is written');
+await ok(setDoc(doc(owner, K + 'minutes/m3/hist/1'), mins({ no: 4, status: 'published', decisions: 'Changed' })), false, 'minutes: a hist copy cannot be changed');
+await ok(setDoc(doc(owner, K + 'minutes/m3'), mins({ no: 4, status: 'published', decisions: 'x'.repeat(1201) })), false, 'minutes: decisions over 1200 characters refused');
+await ok(setDoc(doc(owner, K + 'minutes/m3'), mins({ no: 4, status: 'live' })), false, 'minutes: a status outside draft and published refused');
+await ok(W([['minutes/m4', mins({ no: 5 })]], { id: 'sam' }), false, 'minutes: a sous chef cannot write minutes');
+await ok(W([['minutes/m1', { removed: true }, true]], { id: 'sam' }), false, 'minutes: a sous chef cannot remove minutes');
+await ok(deleteDoc(doc(owner, K + 'minutes/m1')), false, 'minutes: never deleted, only flagged');
+// sign-offs: once, by the person, for the current published version, never changed
+await ok(W([['minutes/m1/signs/1_ann', { v: 1, st: 'present', at: 5, name: 'Ann' }]], { id: 'ann' }), true, 'sign-off: Ann signs version 1 of published minutes');
+await ok(W([['minutes/m1/signs/1_ann', { v: 1, st: 'present', at: 6 }]], { id: 'ann' }), false, 'sign-off: cannot be changed');
+await ok(deleteDoc(doc(owner, K + 'minutes/m1/signs/1_ann')), false, 'sign-off: cannot be deleted, not even by the head chef');
+await ok(W([['minutes/m1/signs/1_bo', { v: 1, st: 'apology', at: 5 }]], { id: 'ann' }), false, 'sign-off: Ann cannot sign for Bo (id must match the writer)');
+await ok(W([['minutes/m2/signs/1_ann', { v: 1, st: 'present', at: 5 }]], { id: 'ann' }), false, 'sign-off: an old version cannot be signed once version 2 is published');
+await ok(W([['minutes/m2/signs/2_ann', { v: 2, st: 'present', at: 5 }]], { id: 'ann' }), true, 'sign-off: the current version can');
+await ok(W([['minutes/d1/signs/1_ann', { v: 1, st: 'present', at: 5 }]], { id: 'ann' }), false, 'sign-off: a draft cannot be signed');
+await ok(W([['minutes/m1/signs/1_sam', { v: 1, st: 'late', at: 5 }]], { id: 'sam' }), false, 'sign-off: st outside present, apology, absent refused');
+await ok(setDoc(doc(owner, K + 'minutes/m1/signs/1_bo'), { v: 1, st: 'apology', at: 5, by: 'bo' }), true, 'sign-off: the head chef copies one as it is (move to a new kitchen PIN)');
+// who has seen a shift ping: one record per person, ping and day, never changed
+await ok(W([['notes/n-sam/seen/2026-10-19_ann', { day: '2026-10-19', at: 5 }]], { id: 'ann' }), true, 'seen: Ann marks a ping seen today');
+await ok(W([['notes/n-sam/seen/2026-10-19_ann', { day: '2026-10-19', at: 6 }]], { id: 'ann' }), false, 'seen: the record cannot be changed');
+await ok(W([['notes/n-sam/seen/2026-10-19_bo', { day: '2026-10-19', at: 5 }]], { id: 'ann' }), false, 'seen: Ann cannot mark it seen for Bo');
+await ok(W([['notes/n-sam/seen/2026-10-20_ann', { day: '2026-10-19', at: 5 }]], { id: 'ann' }), false, 'seen: the id must carry the day in the record');
+await ok(setDoc(doc(owner, K + 'notes/n-sam/seen/2026-10-19_sam'), { day: '2026-10-19', at: 5, by: 'sam' }), true, 'seen: the head chef copies one as it is (move to a new kitchen PIN)');
+// what the order list learned, and the learning log
+await ok(W([['ordlearned/cream', { text: 'Cream', uses: 1, hidden: false }]], { id: 'ann' }), true, 'ordlearned: a PIN holder adds an item');
+await ok(W([['ordlearned/blank', { text: '', uses: 1, hidden: false }]], { id: 'ann' }), false, 'ordlearned: an empty text is refused');
+await ok(W([['ordlearned/milk', { hidden: 'yes' }, true]], { id: 'sam' }), false, 'ordlearned: hidden must be true or false');
+await ok(W([['ordlearned/milk', { hidden: true }, true]], { id: 'sam' }), true, 'ordlearned: a sous chef hides an item');
+await ok(deleteDoc(doc(anon, K + 'ordlearned/milk')), false, 'ordlearned: not deleted from a phone');
+await ok(W([['learnlog/2026-10-19', { at: 5, who: 'ann', kind: 'phone' }]], { id: 'ann' }), true, 'learnlog: a day is claimed once');
+await ok(W([['learnlog/2026-10-18', { at: 6 }, true]], { id: 'ann' }), false, 'learnlog: a claimed day cannot be changed');
+await ok(W([['learnlog/2026-10-21', { who: 'ann' }]], { id: 'ann' }), false, 'learnlog: at must be a number');
+// the owner probe
+await ok(getDoc(doc(owner, K + 'config/admins')), true, 'admins: the head chef may read the probe');
+await ok(getDoc(doc(anon, K + 'config/admins')), false, 'admins: nobody else may');
+await ok(getDoc(doc(env.authenticatedContext('other', { email: 'someone@test.local', email_verified: true }).firestore(), K + 'config/admins')), false, 'admins: another Google account may not');
 
 await env.cleanup();
 console.log((fails ? fails + ' failed' : 'All passed') + ' of ' + n + ' rules checks.');
