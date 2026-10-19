@@ -2,6 +2,7 @@
 // Data lives in localStorage ('fake.fs') so reloads keep it. window.__fake controls failures:
 //   __fake.mode = 'ok' | 'deny' (every write refused, permission-denied) | 'hold' (writes wait, like no signal)
 //   __fake.deny = /regex/ refuses only the writes whose path matches
+//   __fake.failReads = /regex/ makes getDoc and getDocs fail (unavailable) for the paths that match, like a read lost to a bad signal
 // __fake.reads lists the paths asked for (getDoc, getDocs, getDocFromServer) and __fake.readLog every document read from the "server";
 // getDocsFromCache only returns documents this page has read before.
 const KEY = 'fake.fs';
@@ -63,9 +64,11 @@ function delay(v) { return new Promise(r => setTimeout(() => r(v), 5)); }
 export function getDoc(ref) {
   if (/\/config\/admins$/.test(key(ref.path)) && !window.__fakeUser) return Promise.reject({ code: 'permission-denied' });
   window.__fake.reads.push(key(ref.path));
+  if (readFails(ref)) return Promise.reject({ code: 'unavailable' });
   return delay(result(ref));
 }
-export function getDocs(ref) { window.__fake.reads.push(key(ref.path)); return delay(result(ref)); }
+export function getDocs(ref) { window.__fake.reads.push(key(ref.path)); if (readFails(ref)) return Promise.reject({ code: 'unavailable' }); return delay(result(ref)); }
+function readFails(ref) { const f = window.__fake.failReads; return !!(f && f.test(key(ref.path))); }
 // a read that must come from the server: refused when there is no signal ('hold', 'fail'). __fake.server can hold a
 // newer copy of a document than this phone has (say a line ticked on another phone), keyed by path.
 export function getDocFromServer(ref) {
