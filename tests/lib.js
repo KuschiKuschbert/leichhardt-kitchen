@@ -76,7 +76,8 @@ async function start() {
    o.tz               the phone's time zone (kitchen time by default)
    o.server           the server's time when the page opens; without it the update check's answer has no Date,
                       so the book keeps the phone's clock (LK_TIME in index.html)
-   o.fakeServer       documents the "server" holds newer copies of than the phone (path: data), for getDocFromServer */
+   o.fakeServer       documents the "server" holds newer copies of than the phone (path: data), for getDocFromServer
+   o.fakeMode         the stand-in's mode from the first request: 'fail' (every read and write fails, like no signal) or 'deny' */
 async function open(browser, hash, o) {
   o = o || {};
   const w = o.width || 390, h = o.height || 844;
@@ -112,7 +113,7 @@ async function open(browser, hash, o) {
     'lk.settings.v1': JSON.stringify(Object.assign({ installNo: true }, o.settings || {}))
   };
   if (o.admin) ls['fake.user'] = '1';
-  if (o.fakeServer) await ctx.addInitScript(sv => { window.__fake = { mode: 'ok', writes: [], reads: [], server: sv }; }, o.fakeServer);
+  if (o.fakeServer || o.fakeMode) await ctx.addInitScript(f => { window.__fake = { mode: f.mode || 'ok', writes: [], reads: [], server: f.server }; }, { mode: o.fakeMode, server: o.fakeServer });
   // seed once per tab, so a reload keeps whatever the test did
   await ctx.addInitScript(ls => {
     if (sessionStorage.getItem('seeded')) return;

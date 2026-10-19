@@ -75,7 +75,7 @@
     section: '', text: '', qty: '', recipeSearch: '', recipeOpen: false, recipeAll: false, tab: '',
     authed: false, tok: '', pinStep: '', pinData: null, pf1: '', pf2: '', pinMsg: '',
     sections: [], activity: [], hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false, exporting: '', moving: false, moveMsg: '', newPin: '', atab: lsGet('lk.prep.atab') || 'insights', ordDate: dayNow(), ordLines: [], ordState: 'idle', ordView: 'day', otext: '', oqty: '', ordAll: [], ordAllAt: 0, ordBusy: false, osugg: [],
-    wDate: dayNow(), wLines: [], wState: 'idle', wReview: null, wrA: null, wrC: null, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wRecent: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nMsg: '', nSaving: false,
+    retryAt: {}, wDate: dayNow(), wLines: [], wState: 'idle', wReview: null, wrA: null, wrC: null, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wRecent: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nMsg: '', nSaving: false,
     mins: null, minsFor: '', minsAt: 0, minsBusy: false, mmine: {}, msigns: {}, mSel: '', mf: null, mMsg: '', mSaving: false, mSigning: false, mpin: '', mpinOk: false, minOpen: false, mErr: '',
     guides: null, guidesFor: '', guidesAt: 0, gBusy: false, gRetry: 0, gq: '', gcat: 'all', gSel: '', gf: null, gfSnap: '', gMsg: '',
     adminsFor: '', level: '', stats: null, statsRange: 14, week: null, weekAt: 0, weekBusy: false,
@@ -510,9 +510,15 @@
   }
   /* Anything not ticked on the last written day rolls onto today by itself, once the clock has been checked (see LK_TIME).
      origAt keeps the time the line was first written (0 for lines that rolled before it was kept). */
+  /* Rollover, repair and sign-off checks run once a day per phone. When one fails (no signal, a refused write), it waits
+     this long before trying again, instead of trying again on every redraw: a redraw can happen many times a minute,
+     and each rollover attempt reads 8 days of lines (the free plan has a daily read limit). Time passing on the phone. */
+  var RETRY_WAIT = 5 * 60000;
+  function waiting(k) { return Date.now() < (S.retryAt[k] || 0); }
+  function retryLater(k) { S.retryAt[k] = Date.now() + RETRY_WAIT; }
   function maybeRoll() {
     var today = dayNow();
-    if (!T.ready() || !S.authed || !fb || !can('add') || S.date !== today || S.itemsState !== 'ok' || S.rolledFor === today) return;
+    if (!T.ready() || !S.authed || !fb || !can('add') || S.date !== today || S.itemsState !== 'ok' || S.rolledFor === today || waiting('roll')) return;
     if (S.pastFor !== pastTag()) return; // the usual close time comes from the past days, so wait for them
     repairAhead();
     S.rolledFor = today;
@@ -542,7 +548,7 @@
       });
       if (!jobs.length) return;
       return W(jobs.slice(0, 400)).then(function () { toast(jobs.length + (jobs.length === 1 ? ' line' : ' lines') + ' rolled over from ' + dayName(src.date).toLowerCase()); });
-    }).catch(function () { S.rolledFor = ''; });
+    }).catch(function () { S.rolledFor = ''; retryLater('roll'); });
   }
   function toggleUrgent(id) {
     var it = S.items.filter(function (x) { return x.id === id; })[0];
@@ -960,7 +966,7 @@
      written after the usual close. Once a day per phone, only today's list, no extra reads (the past days are cached). */
   function repairAhead() {
     var today = dayNow();
-    if (S.aheadFixed === today || !S.authed || !fb || !can('add') || S.date !== today || S.itemsState !== 'ok' || S.pastFor !== pastTag()) return;
+    if (S.aheadFixed === today || !S.authed || !fb || !can('add') || S.date !== today || S.itemsState !== 'ok' || S.pastFor !== pastTag() || waiting('ahead')) return;
     S.aheadFixed = today;
     var ops = [];
     S.items.forEach(function (x) {
@@ -968,7 +974,7 @@
       var src = ((S.past || {})[x.rolledFrom] || []).filter(function (y) { return y.id === x.from; })[0];
       if (src && writtenLate(src, x.rolledFrom)) ops.push(['upd', itemRef(today, x.id), { ahead: true, origAt: src.addedAt }]);
     });
-    if (ops.length) W(ops.slice(0, 400)).catch(function () { S.aheadFixed = ''; });
+    if (ops.length) W(ops.slice(0, 400)).catch(function () { S.aheadFixed = ''; retryLater('ahead'); });
   }
   function rolledN(x) { return Math.max(0, (x.rolled || 0) - (x.ahead ? 1 : 0)); }
   /* when a line was first written: a rolled copy keeps it in origAt (0 if it rolled before origAt was kept) */
@@ -2407,7 +2413,7 @@
      write the same line once. Each phone tries once a day (lk.ord.rolled), so the reads stay small. */
   function ordRoll() {
     var today = dayNow();
-    if (!T.ready() || !S.authed || !fb || !can('add') || S.configState !== 'ok' || S.ordRolling || lsGet('lk.ord.rolled') === today) return;
+    if (!T.ready() || !S.authed || !fb || !can('add') || S.configState !== 'ok' || S.ordRolling || lsGet('lk.ord.rolled') === today || waiting('ordroll')) return;
     S.ordRolling = true;
     var dates = [], k;
     for (k = 1; k <= 7; k++) dates.push(shift(today, -k));
@@ -2436,7 +2442,7 @@
         S.ordRolling = false; lsSet('lk.ord.rolled', today); ordReload();
         if (S.name === 'orders') toast(jobs.length + (jobs.length === 1 ? ' line' : ' lines') + ' not ordered yet rolled over from ' + dayName(src.date).toLowerCase());
       });
-    }).catch(function () { S.ordRolling = false; });
+    }).catch(function () { S.ordRolling = false; retryLater('ordroll'); });
   }
   /* ---------- order learning ----------
      Like the prep list: every order line is remembered for good in ordlearned/<key> { text, uses, dow, qtys, lastUsed,
@@ -3309,9 +3315,9 @@
     var w = S.who, jobs = [];
     mnOpenList().forEach(function (m) {
       var k = m.id + '_' + m.v + '_' + w;
-      if (S.mmine[k] !== undefined) return;
+      if (S.mmine[k] !== undefined || waiting('mine:' + k)) return;
       S.mmine[k] = 'loading';
-      jobs.push(fb.fs.getDoc(fb.fs.doc.apply(null, [fb.db].concat(base(), ['minutes', m.id, 'signs', m.v + '_' + w]))).then(function (sn) { S.mmine[k] = sn.exists() ? sn.data() : null; }, function () { delete S.mmine[k]; }));
+      jobs.push(fb.fs.getDoc(fb.fs.doc.apply(null, [fb.db].concat(base(), ['minutes', m.id, 'signs', m.v + '_' + w]))).then(function (sn) { S.mmine[k] = sn.exists() ? sn.data() : null; }, function () { delete S.mmine[k]; retryLater('mine:' + k); }));
     });
     if (jobs.length) Promise.all(jobs).then(function () { minCard(); draw(); });
   }
