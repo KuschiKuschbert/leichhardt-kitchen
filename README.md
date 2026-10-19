@@ -202,7 +202,7 @@ npm test
 ### Layout and admin, round three
 
 - **One top bar everywhere:** every page has the same dark top bar as the landing page: "Kitchen Book" on the left (goes home), Recipes, Prep, Orders, Waste and Guides in the middle, Admin (key) and Settings on the right. The phone tab bar is dark on every page too. On a tablet (720 to 979 px) with the pings bell showing, the KB mark stands in for the name; from 1100 to 1399 px the icons drop their words while the bell shows, so all five menu items fit.
-- **Spinach Purée (card 71), updated 20 October 2026.** The batch is now 1 kg spinach, 700 ml cooking cream, 100 g salted butter, 10 g salt, 5 g cracked black pepper and 2 g nutmeg, blended after the blanch. The total batch yield is still to confirm.
+- **Spinach Purée (card 71), updated 20 October 2026.** The batch is now 1 kg spinach, 700 ml cooking cream, 100 g salted butter, 10 g salt, 5 g cracked black pepper and 2 g nutmeg, blended after the blanch. 15 ml of lemon juice is stirred in only after the purée is blended and cooled, so it does not split the cream. The total batch yield is still to confirm.
 - **Pass search:** typing in the search box shows only the dishes and batches that match, and hides empty shelves. The count reads "5 of 114 match". Clearing the box brings everything back. (The allergen lens still fades instead of hiding.)
 - **Recipes:** the recipe count sits above the search box and the Pass / Tiles switch sits right next to it.
 - **No flash when opening Prep, Orders or Wastage:** the app connects to the prep book in the background on any page, and while it connects the page shows its own name with "Loading..." instead of a generic prep book card.
