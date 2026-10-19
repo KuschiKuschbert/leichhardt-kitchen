@@ -703,10 +703,11 @@ window.LK_DATA = {
     {
       id: 'grill-board', art: 'grill-board', no: '31', kind: 'main', forLine: 'Share board', name: "Grill Maiden's Board", avc: "Grill Maiden's Board S26",
       menu: 'Grill Maiden\'s Shareboard: 300 g slow-roast brisket, 250 g rump, Cumberland pork sausage, chicken wings, chips and salad, choice of two sauces.',
-      yield: 'Per board. 250 g rump, 500 g brisket, 380 to 420 g szechuan wings, Cumberland sausage, chips, salad, two sauces of choice.',
+      yield: 'Per board. 250 g rump, 500 g smoked brisket or oven brisket, 380 to 420 g szechuan wings, Cumberland sausage, chips, salad, two sauces of choice.',
       ingredients: [
         { q: '250 g', name: 'Rump steak', note: 'grain fed MB1' },
-        { q: '500 g', name: 'Smoked brisket', note: 'finished in the kick oven', link: 'brisket' },
+        { q: '500 g', name: 'Smoked brisket', note: 'or oven brisket, 500 g of either. Smoked brisket is finished in the kick oven', link: 'brisket' },
+        { q: '500 g', name: 'Oven brisket', note: 'or smoked brisket, 500 g of either', link: 'oven-brisket' },
         { q: '380 to 420 g', name: 'Chicken middle wings', note: 'presteamed, floured, portioned in a sandwich bag' },
         { q: '50 g', name: 'Wing flour', note: 'cornflour and szechuan spice seasoning', link: 'wing-flour' },
         { q: '90 g', name: 'Pork Cumberland sausage', note: 'thick, bought in', tags: ['Gluten?', 'Soy?'] },
@@ -717,7 +718,7 @@ window.LK_DATA = {
       ],
       pins: [
         { label: 'Rump', x: 23.5, y: 28.3, side: 'left', tags: [], note: '250 g rump steak.' },
-        { label: 'Brisket', x: 52.7, y: 23.4, side: 'left', link: 'brisket', note: '500 g, slow smoked, finished in the kick oven.' },
+        { label: 'Smoked or oven brisket', x: 52.7, y: 23.4, side: 'left', link: 'brisket', note: '500 g of smoked brisket (finished in the kick oven) or oven brisket (card 121).' },
         { label: 'Chicken wings', x: 29.2, y: 61.2, side: 'right', link: 'wing-flour', note: '380 to 420 g, with szechuan seasoning.' },
         { label: 'Cumberland sausage', x: 65.8, y: 48.1, side: 'right', tags: ['Gluten?', 'Soy?'], note: '90 g, bought in, on the grill first.' },
         { label: 'Chips', x: 50.7, y: 75.7, side: 'left', tags: [], note: '1.1 portions, standard.' },
@@ -734,7 +735,8 @@ window.LK_DATA = {
         ] },
         { title: 'Cooking', steps: [
           'Put the Cumberland sausage on the grill first.',
-          'Finish the brisket (500 g) in the kick oven. [Oven setting to confirm]',
+          'Smoked brisket (500 g): finish it in the kick oven. [Oven setting to confirm]',
+          'Oven brisket (500 g): [heating and finishing to confirm]',
           'Cook the rump steak (250 g). [Method and doneness to confirm]',
           'Cook the wings (380 to 420 g). [Fryer setting to confirm]',
           'Cook the chips and plate the standard side salad.'
@@ -746,11 +748,12 @@ window.LK_DATA = {
     {
       id: 'taco-board', art: 'taco-board', no: '32', kind: 'main', forLine: 'Share board', name: 'Guacho Taco Share Board', avc: 'Guacho Taco Share Board S26',
       menu: 'Guacho Taco Shareboard: pulled pork, beef brisket, southern-style chicken tenders, pico de gallo, sour cream, avocado, six tortillas, slaw, corn tostadas.',
-      yield: 'Per board. Six tortillas, tenders, brisket, pulled pork, slaw, pico.',
+      yield: 'Per board. Six tortillas, tenders, smoked brisket or oven brisket, pulled pork, slaw, pico.',
       ingredients: [
         { q: '6', name: 'Flour tortillas', note: '5 inch', tags: ['Gluten', 'Soy?'] },
         { q: '240 g', name: 'Southern-style chicken tenders', note: '60 to 80 g each, bought in', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'] },
-        { q: '200 g', name: 'Brisket', note: 'grain fed MB2', link: 'brisket' },
+        { q: '200 g', name: 'Smoked brisket', note: 'grain fed MB2, or oven brisket, 200 g of either', link: 'brisket' },
+        { q: '200 g', name: 'Oven brisket', note: 'or smoked brisket, 200 g of either', link: 'oven-brisket' },
         { q: '200 g', name: 'Pulled pork', link: 'pulled-pork' },
         { q: '200 g', name: 'Slaw', link: 'slaw' },
         { q: '100 g', name: 'Pico de gallo', link: 'pico' },
@@ -761,7 +764,7 @@ window.LK_DATA = {
       pins: [
         { label: 'Flour tortillas', x: 13.0, y: 22.4, side: 'right', tags: ['Gluten', 'Soy?'], note: '6, 5 inch.' },
         { label: 'Chicken tenders', x: 54.0, y: 30.4, side: 'left', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'], note: '240 g, southern style.' },
-        { label: 'Brisket', x: 77.4, y: 28.3, side: 'right', link: 'brisket', note: '200 g.' },
+        { label: 'Smoked or oven brisket', x: 77.4, y: 28.3, side: 'right', link: 'brisket', note: '200 g of smoked brisket (card 79) or oven brisket (card 121).' },
         { label: 'Pulled pork', x: 24.8, y: 65.1, side: 'left', tags: [], note: '200 g. Card to come.' },
         { label: 'Slaw', x: 49.1, y: 66.0, side: 'left', link: 'slaw' },
         { label: 'Pico de gallo', x: 74.5, y: 57.5, side: 'left', tags: [], note: '100 g. Card to come.' },
@@ -769,7 +772,7 @@ window.LK_DATA = {
         { label: 'Sour cream', x: 70.8, y: 76.4, side: 'left', tags: ['Milk'], note: '60 ml.' }
       ],
       sections: [
-        { title: 'Cooking', steps: ['Chicken tenders: fry at 175 °C [time to confirm].', 'Flour tortillas: cook on the grill [time and how served to confirm].', 'Pulled pork: cooked in the smoker (card to come) [temperature and time to confirm].', 'Brisket: card 79 [slicing and reheat to confirm].', 'Charred corn kernels: card 93.'] }
+        { title: 'Cooking', steps: ['Chicken tenders: fry at 175 °C [time to confirm].', 'Flour tortillas: cook on the grill [time and how served to confirm].', 'Pulled pork: cooked in the smoker (card to come) [temperature and time to confirm].', 'Brisket: smoked brisket (card 79) or oven brisket (card 121) [slicing and reheat to confirm].', 'Charred corn kernels: card 93.'] }
       ],
       labelNote: 'Check the tortilla and tender labels.'
     },
@@ -2047,6 +2050,28 @@ window.LK_DATA = {
           'Finish it in the smoker until the core reaches 93 °C.'
         ] },
         { title: 'On the day', steps: ['Grill Maiden\'s Board: 500 g, finished in the kick oven. [Oven setting to confirm]'] }
+      ],
+      contains: [],
+      check: [],
+      labelNote: 'Check the rub label for allergens.'
+    },
+    {
+      id: 'oven-brisket', no: '121', kind: 'batch', forLine: 'Brisket cooked in the oven', name: 'Oven Baked Brisket', short: 'Oven brisket', art: 'oven-brisket',
+      yield: 'Per 1/1 GN pan. [Brisket weight per pan to confirm]',
+      ingredients: [
+        { q: '[Qty]', name: 'Beef brisket' },
+        { q: '[Qty]', name: 'Brisket rub', note: 'house rub [to confirm]' }
+      ],
+      tip: { title: 'On the iCombi', text: 'Steam bake, 70% humidity, 123 °C, 15 hours. Or start the preprogrammed brisket programme.' },
+      sections: [
+        { title: 'Method', steps: [
+          'Rub the brisket all over with the rub.',
+          'Put it in a big 1/1 GN gastro pan.',
+          'Lay one sheet of baking paper on top.',
+          'Wrap the pan in aluminium foil, twice.',
+          'Cook in the Rational: steam bake, 70% humidity, 123 °C, 15 hours. Or use the preprogrammed brisket programme.',
+          '[Core temperature, resting and slicing to confirm]'
+        ] }
       ],
       contains: [],
       check: [],

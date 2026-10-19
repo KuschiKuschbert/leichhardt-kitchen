@@ -307,7 +307,7 @@
   }
   function signedIn(id, hash) {
     S.authed = true; S.tok = hash; S.pf1 = S.pf2 = ''; S.pinMsg = ''; S.pinStep = '';
-    lsSet('lk.prep.tok', id + ':' + hash); lsSet('lk.prep.seen', String(Date.now())); lastAct = Date.now(); startIdle();
+    lsSet('lk.prep.tok', id + ':' + hash); lsSet('lk.prep.seen', String(Date.now())); lsSet('lk.prep.day', dayNow()); lastAct = Date.now(); startIdle();
     draw(); whoSync(true);   // a real sign-in: the chef mark flips in
   }
   /* After 3 wrong PINs the page makes the person wait (1, 2, 5, 15 then 30 minutes). Kept on the phone, so a reload does not skip it.
@@ -364,7 +364,8 @@
     if (resumed || !S.who) return;
     resumed = true;
     var tok = (lsGet('lk.prep.tok') || '').split(':');
-    if (tok[0] !== S.who || !tok[1] || idleExpired()) { if (S.who) pickName(S.who); startIdle(); return; }
+    if (dayExpired()) { leave(); startIdle(); return; }
+    if (tok[0] !== S.who || !tok[1] || idleExpired()) { if (S.who) { if (shared()) leave(); else pickName(S.who); } startIdle(); return; }
     startIdle();
     S.authed = true; S.tok = tok[1]; draw(); whoSync();
     sset(docRef('activity', S.who), { name: (who() || {}).name || '', visits: fb.fs.increment(1), lastSeen: now() }, true).catch(function (e) {
@@ -372,14 +373,24 @@
     });
   }
   /* Desktop idle lock: after 7.5 minutes with no mouse, keyboard or touch, a desktop browser goes back to the person's own
-     PIN screen (the kitchen PIN stays). Phones and tablets (no mouse) are left alone. No network use: a timer and a timestamp. */
-  var IDLE_MS = 450000, lastAct = Date.now(), idleOn = false;
+     PIN screen (the kitchen PIN stays). Phones and tablets (no mouse) are left alone. No network use: a timer and a timestamp.
+     Shared kitchen device (Settings, kept on the device in lk.settings.v1): a tablet or phone everyone picks up. After
+     10 minutes with no touch, and when the book opens on a new kitchen day, it goes back to "Who are you?" instead, so the
+     next person does not write under the last person's name or see that person's pages. The kitchen PIN stays, so the
+     recipes, guides and the lists are never locked. */
+  var IDLE_MS = 450000, SHARED_MS = 600000, lastAct = Date.now(), idleOn = false;
   function isDesktop() { try { return window.matchMedia('(hover: hover) and (pointer: fine)').matches; } catch (e) { return false; } }
-  function idleExpired() { return isDesktop() && Date.now() - (+lsGet('lk.prep.seen') || lastAct) > IDLE_MS; }
+  function shared() { try { return !!JSON.parse(lsGet('lk.settings.v1') || '{}').shared; } catch (e) { return false; } }
+  function idleExpired() {
+    var away = Date.now() - (+lsGet('lk.prep.seen') || lastAct);
+    return shared() ? away > SHARED_MS : isDesktop() && away > IDLE_MS;
+  }
+  /* a new kitchen day on a shared device: the person who signed in yesterday is not the person holding it today */
+  function dayExpired() { var d = lsGet('lk.prep.day'); return shared() && !!d && d !== dayNow(); }
   /* the staff list draft (Manage staff) is kept: the person types their PIN again and carries on where they were */
   function idleLock() {
     if (!S.authed || !S.who || !fb) return;
-    pickName(S.who);
+    if (shared()) leave(); else pickName(S.who);
   }
   function startIdle() {
     if (idleOn) return; idleOn = true;
@@ -1908,7 +1919,7 @@
     // while the book checks whether this person has a PIN yet, the box is already there: it takes the keyboard inside
     // the tap on the name (an iPhone opens the keyboard only inside a tap), and a PIN typed early is sent once it knows
     return '<form class="p-card" data-p-form="pin"><h2 class="p-h" id="rtitle" tabindex="-1">' + (setting ? 'Hi ' + esc(p.name) + ', choose your PIN' : esc(p.name) + ', enter your PIN') + '</h2>' +
-      '<p class="hint">' + (setting ? 'Pick 4 digits you will remember. You use it with your name from now on. This phone stays signed in.' : checking ? 'One moment...' : 'Your own 4-digit PIN.') + '</p>' +
+      '<p class="hint">' + (setting ? 'Pick 4 digits you will remember. You use it with your name from now on. ' + (shared() ? 'This device asks who you are again after 10 minutes.' : 'This phone stays signed in.') : checking ? 'One moment...' : 'Your own 4-digit PIN.') + '</p>' +
       '<div class="field"><label class="label" for="pf1">' + (setting ? 'New PIN' : 'PIN') + '</label>' + pinField('pf1', 'pf1', S.pf1, true) + '</div>' +
       (setting ? '<div class="field"><label class="label" for="pf2">Type it again</label>' + pinField('pf2', 'pf2', S.pf2, true) + '</div>' : '') +
       (S.pinMsg ? '<p class="p-err" role="alert">' + esc(S.pinMsg) + '</p>' : '') +
