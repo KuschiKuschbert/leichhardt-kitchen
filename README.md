@@ -213,7 +213,7 @@ npm test
 
 ### Suggestions and data, round two
 
-- **Admin has one home:** the key button at the top right of every page, next to Settings. It is filled in on a phone or computer where the head chef is signed in with Google (`lk.admin` on the device), and outlined everywhere else (tapping it then asks for the head chef's Google sign-in). There are no other Admin links.
+- **Admin has one home:** the key button at the top right of every page, next to Settings. It is filled in on a phone or computer where the head chef's Google account has signed in and passed the owner check (`lk.admin` on the device; another Google account does not count), and outlined everywhere else (tapping it then asks for the head chef's Google sign-in). There are no other Admin links.
 - **No Home button in the menus:** tapping "Kitchen Book" goes to the landing page. The menus are Recipes, Prep, Orders, Waste and Guides.
 - **Past days read once a day:** the last 14 days of prep lines are read once a day per phone and kept on the phone (`lk.past`); today comes from the live list. (Before, every phone re-read 7 days every 5 minutes, which could use up the free daily read limit.) Badges, usual amounts, Start here, Due today, the pace card and the close-out nudge all work from it.
 - **Due today** (first in Quick add on the Handy page): made on 3 or more of the last 14 days, about every 4 days or more often, and the usual gap has passed. One tap adds it with the usual amount and section.
