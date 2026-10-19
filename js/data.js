@@ -1846,15 +1846,16 @@ window.LK_DATA = {
     },
     {
       id: 'spinach-puree', done: true, no: '71', kind: 'batch', forLine: 'For the pork belly', name: 'Spinach Purée', short: 'Spinach purée', art: 'spinach-puree',
-      yield: 'Batch: 1.5 kg spinach, about 1 L of purée. A serve is 50 ml, a wavy squiggle across the plate.',
+      yield: 'Batch: 1 kg spinach. A serve is 50 ml, a wavy squiggle across the plate. [Total batch yield to confirm]',
       ingredients: [
-        { q: '1.5 kg', name: 'Spinach' },
-        { q: '300 ml', name: 'Cooking cream', tags: ['Milk'] },
-        { q: '80 g', name: 'Salted butter', tags: ['Milk'] },
-        { q: '10 g', name: 'Table salt' }
+        { q: '1 kg', name: 'Spinach' },
+        { q: '700 ml', name: 'Cooking cream', tags: ['Milk'] },
+        { q: '100 g', name: 'Salted butter', tags: ['Milk'] },
+        { q: '10 g', name: 'Table salt' },
+        { q: '5 g', name: 'Cracked black pepper' }
       ],
       sections: [
-        { title: 'Method', steps: ['Quickly blanch the spinach in a pot of water for 2 min.', 'Put it straight into ice water to keep the green.', 'Squeeze out the excess liquid.', 'Blend with the cooking cream, salted butter and salt until smooth.'] }
+        { title: 'Method', steps: ['Quickly blanch the spinach in a pot of water for 2 min.', 'Put it straight into ice water to keep the green.', 'Squeeze out the excess liquid.', 'Blend with the cooking cream, salted butter, salt and cracked black pepper until smooth.'] }
       ],
       contains: [{ allergen: 'Milk', from: 'cooking cream and butter' }],
       check: [],
