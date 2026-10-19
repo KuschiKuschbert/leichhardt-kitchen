@@ -9,3 +9,6 @@ tests/shots/
 scripts/node_modules/
 tests/shots-baseline/
 tests/rules/node_modules/
+
+# other sessions' worktrees
+.claude/worktrees/
