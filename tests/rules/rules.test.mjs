@@ -70,6 +70,7 @@ await ok(setPin('cal'), true, 'PIN set: a listed person without a PIN sets one')
 await ok(setPin('zed'), false, 'PIN set: an id that is not on the list is refused (no minting a writer)');
 await ok(setPin('ann'), false, 'PIN set: an existing PIN cannot be overwritten');
 await ok(W([['days/2026-10-19/items/a6', line()]], { id: 'zed', pin: '4444' }), false, 'minted id: cannot write');
+await ok(setDoc(doc(owner, K + 'staffpins/old-hand'), { hash: hash('old-hand', '5555'), setAt: 1, name: 'Old Hand' }), true, 'PIN set: the head chef copies a stored PIN as it is (move to a new kitchen PIN), even for an id no longer on the list');
 
 // config: a sous chef may change the people list and staffIds, never sousIds or pingIds
 await ok(W([['config/main', { people: [{ id: 'sam', name: 'Sam', role: 'sous', active: true }, { id: 'ann', name: 'Ann', role: 'staff', active: true }, { id: 'dee', name: 'Dee', role: 'staff', active: true }], staffIds: ['sam', 'ann', 'dee'], updated: 1, updatedBy: 'Sam' }, true]], { id: 'sam' }), true, 'config: a sous chef adds a person and their id to staffIds');
