@@ -130,6 +130,13 @@ npm test
 - The browser's install offer (`beforeinstallprompt`) is caught by a small script in `index.html` before the app scripts load, and `preventDefault()` is called on it, because Chrome only opens its install box from our button once that has been done. If the box fails to open, the card and Settings fall back to the manual steps. The manifest `id` is `/leichhardt-kitchen/`, so the app has its own identity on `kuschikuschbert.github.io` and cannot clash with another app on the same address.
 - The service worker is network first for the book's own files, so the newest cards load whenever there is a connection, and keeps the last copy so the recipe book still opens with no signal. Google Fonts are kept once loaded. Firebase (prep list, orders, wastage) is not touched; it keeps its own offline copy. To force everyone onto a fresh cache, change `CACHE` in `sw.js`.
 
+## The first screen on a phone (20 Oct 2026)
+
+- **Recipe cards** under 900 px show the name, yield and allergens first, then the drawing, then the ingredients and method (CSS `order` on `main.cols`; the laptop layout is unchanged). On a dish, "Everything on it" comes before the method, as on Tiles. On a recipe the allergen lens folds into one line ("Allergen lens +"), which stays open and names the allergen while a lens is on.
+- **Landing** on a phone: compact dockets (the whole docket is the link, no Open button), so all five fit above the tab bar.
+- **Settings** starts with Text size; "Opens with" is two chips; Done goes back to the page you came from (or to the start when Settings was opened by its address).
+- `tests/phone-first.test.js`.
+
 ## Prep book and admin panel
 
 - Staff only see today in `#/prep` (no back, forward or date picker); the head chef and sous chefs can still browse other days. Unfinished lines roll over to today by themselves. This is the page only: past days stay readable in the database to anyone with the kitchen PIN.

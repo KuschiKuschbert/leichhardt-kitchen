@@ -384,6 +384,10 @@
         return '<button type="button" class="chip sq" data-act="free" data-val="' + esc(a) + '" data-k="free:' + esc(a) + '" aria-pressed="' + on + '">' + esc(a) + '</button>';
       }).join('') + '</div></div>';
   }
+  /* On a recipe the lens folds into one line (open while a lens is on), so the name and allergens come sooner on a phone */
+  function lensFold() {
+    return '<details class="lens-fold"' + (ui.lens ? ' open' : '') + '><summary><span class="label">Allergen lens</span>' + (ui.lens ? '<span class="lens-on">' + esc(ui.lens) + '</span>' : '<span class="hint">Show where an allergen is</span>') + '</summary>' + lensChips() + '</details>';
+  }
   function lensChips() {
     var hint = ui.lens ? 'Marked = has ' + ui.lens + '. ? = may have it.' : 'Pick one to see where it is, at every level.';
     return '<div class="field"><div class="row-label"><span class="label" id="lens-label">Allergen lens</span><span class="hint">' + esc(hint) + '</span></div>' +
@@ -590,11 +594,11 @@
       left = '<div class="pan-art' + (r.done ? ' done' : '') + '">' + art(r, 'art') + '</div>' + usedBox(r, stack, 'Goes on') + tipBox(r) + guideBox(r);
     }
     var parent = stack.length > 1 ? byId[stack[stack.length - 2]].name : 'the pass';
-    return '<div class="page">' + trail + jumps() + lensChips() +
+    // phones: the name, yield and allergens come first, then the drawing, then the rest (order in app.css, .cols under 900px)
+    return '<div class="page">' + trail + jumps() + lensFold() +
       '<main id="main" class="cols"><div class="col">' + left + '</div><div class="col wide">' + cardHead(r) + allergenBox(r) +
-      (dish ? '' : '<div class="sec"><h3 class="h3" id="r-ing">Into the pan</h3>' + ingTable(r, stack, true) + '</div>') +
+      '<div class="sec"><h3 class="h3" id="r-ing">' + (dish ? 'Everything on it' : 'Into the pan') + '</h3>' + ingTable(r, stack, true) + '</div>' +
       '<div id="r-steps" class="jump-at"></div>' + safetyBox(r) + diagram(r) + (dish ? guideBox(r) : '') + steps(r) +
-      (dish ? '<div class="sec"><h3 class="h3" id="r-ing">Everything on it</h3>' + ingTable(r, stack, true) + '</div>' : '') +
       '</div></main>' + footer() +
       '<div class="zoombar"><a href="' + href(stack.slice(0, -1)) + '">' + ICON.zoom + 'Zoom out to ' + esc(parent) + '</a></div></div>';
   }
@@ -661,11 +665,13 @@
     // Clear all ticks and the device type are for the head chef setting up a device: only on the head chef's signed-in device
     var adm = isAdminDevice();
     return '<div class="page">' + '<main id="main" class="settings"><div class="row-label" style="justify-content: space-between; align-items: center">' +
-      '<h2 tabindex="-1" id="rtitle">Settings</h2><a class="btn dark" href="#/">Done</a></div>' +
-      installHTML() +
-      '<section class="set-block" aria-label="Opens with"><span class="label">Opens with</span><span class="hint">How the recipe book looks when you arrive.</span>' + viewOptions('setview', true) + '</section>' +
+      '<h2 tabindex="-1" id="rtitle">Settings</h2><a class="btn dark" href="#/" data-act="done">Done</a></div>' +
       '<section class="set-block" aria-label="Text size"><span class="label">Text size</span><div class="chips">' + TEXT.map(function (t) {
         return '<button type="button" class="chip" data-act="settext" data-val="' + t[0] + '" data-k="settext:' + t[0] + '" aria-pressed="' + (settings.text === t[0]) + '">' + esc(t[1]) + '</button>';
+      }).join('') + '</div></section>' +
+      installHTML() +
+      '<section class="set-block" aria-label="Opens with"><span class="label">Opens with</span><span class="hint">How the recipe book looks when you arrive.</span><div class="chips" role="radiogroup" aria-label="How the recipe book opens">' + VIEWS.map(function (v) {
+        return '<button type="button" class="chip" role="radio" data-act="setview" data-val="' + v.id + '" data-k="setview:' + v.id + '" aria-checked="' + (settings.view === v.id) + '" aria-pressed="' + (settings.view === v.id) + '">' + esc(v.name) + '</button>';
       }).join('') + '</div></section>' +
       '<section class="set-block set-qr" aria-label="Open on a phone"><span class="label">Open on a phone</span><div class="qr-row"><img class="qr-img" src="qr.svg" width="180" height="180" alt="QR code that opens the Kitchen Book">' +
       '<div><p class="hint">Scan with a phone camera to open the Kitchen Book on that phone, then add it to the home screen so it is one tap away.</p><p class="qr-url">kuschikuschbert.github.io/leichhardt-kitchen</p>' +
@@ -925,6 +931,8 @@
       el.querySelector('.dot').innerHTML = on ? ICON.check : el.getAttribute('data-n');
       return;
     }
+    // Done in Settings goes back to where the person came from, or to the start when Settings was opened directly
+    if (act === 'done') { if (window.__lkNav) { e.preventDefault(); history.back(); } return; }
     if (act === 'jump') { var jt = document.getElementById(val); if (jt) jt.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     if (act === 'kind') { ui.kind = val; }
     else if (act === 'free') { ui.free = ui.free.indexOf(val) >= 0 ? ui.free.filter(function (x) { return x !== val; }) : ui.free.concat([val]); }
@@ -983,6 +991,7 @@
     var m = document.getElementById('main');
     if (m) { if (!m.hasAttribute('tabindex')) m.setAttribute('tabindex', '-1'); m.focus(); }
   });
+  window.addEventListener('hashchange', function () { window.__lkNav = true; });
   window.addEventListener('hashchange', render);
   render();
 })();

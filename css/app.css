@@ -528,6 +528,31 @@ img, svg { display: block; }
   .dk-icon { grid-column: 1; grid-row: 2; justify-self: center; width: 150px; height: 150px; } .dk-icon svg { width: 80px; height: 80px; }
   .dk-go { grid-column: 1; grid-row: 3; align-self: end; justify-self: stretch; justify-content: center; height: 52px; font-size: 1.05rem; } }
 .wall-h:focus { outline: none; }
+/* phones: compact dockets, so all five and the minutes card fit on the first screen */
+@media (max-width: 719px) {
+  .dockets { gap: 0.8rem; }
+  .docket { padding: 1.3rem 0.9rem 0.85rem; column-gap: 0.85rem; }
+  .dk-icon { width: 52px; height: 52px; border-width: 2px; grid-row: 1; } .dk-icon svg { width: 30px; height: 30px; }
+  .dk-wide .dk-icon { grid-row: 1 / span 2; }
+  .dk-name { font-size: 1.7rem; }
+  .dk-go { display: none; }
+  .docket { min-height: 64px; }
+  .dk-wide .dk-sub { font-size: 0.9375rem; margin-top: 0.25rem; }
+}
+/* recipe card on phones and tablets: name, yield and allergens first, then the drawing, then ingredients and method */
+@media (max-width: 899px) {
+  main.cols { flex-direction: column; flex-wrap: nowrap; align-items: stretch; }
+  main.cols > .col, main.cols > .col.wide { display: contents; }
+  main.cols > .col > *, main.cols > .col.wide > * { order: 4; }
+  main.cols > .col > * { order: 3; }
+  main.cols > .col.wide > .card-head { order: 1; }
+  main.cols > .col.wide > #r-allergens { order: 2; }
+}
+.lens-fold > summary { display: flex; align-items: center; gap: 0.6rem; min-height: 44px; cursor: pointer; list-style: none; }
+.lens-fold > summary::-webkit-details-marker { display: none; }
+.lens-fold > summary::after { content: '+'; font: 700 1.3rem var(--body); }
+.lens-fold[open] > summary::after { content: '\2212'; }
+.lens-on { padding: 0.15rem 0.6rem; border-radius: 999px; background: var(--accent-ink); color: #fff; font-weight: 700; }
 
 /* view switch (Pass / Tiles) next to Settings, and the little drawn dish on a tile */
 .vsw { display: inline-flex; border: 1.5px solid var(--ink); border-radius: 999px; overflow: hidden; background: var(--paper); }
