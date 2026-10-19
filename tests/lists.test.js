@@ -143,7 +143,6 @@ function past(n) { const d = new Date(); d.setDate(d.getDate() - n); return L.ym
   ok(nl >= 44, 'PIN: Not me / Not you are 44 tall');
   await p.context().close();
 
-  // minutes: Enter signs once the PIN is right
   const mins = {}; mins[fsKey(['minutes', 'm1'])] = { no: 1, v: 1, status: 'published', date: today, start: '14:00', loc: 'Kitchen', chair: 'sam', taker: 'sam', att: [{ id: 'ann', st: 'present' }, { id: 'sam', st: 'present' }, { id: 'bo', st: 'apology' }], guests: '', decisions: 'Fryer oil every Monday', menu: '', safety: '', dates: '', other: '', acts: [], next: '', pubAt: L.NOW, removed: false, at: 1, upd: 1, by: 'sam' };
   // minutes to sign show as a card on the landing page, not as a second bell in the top bar
   p = await L.open(b, '#/', { who: 'ann', extra: mins, wait: 1800 });
@@ -152,12 +151,10 @@ function past(n) { const d = new Date(); d.setDate(d.getDate() - n); return L.ym
   await p.click('.wall-mn .mn-nudge-btn');
   await p.waitForTimeout(800);
   ok(await p.evaluate(() => location.hash) === '#/minutes', 'minutes: Read and sign on the landing card opens the minutes');
-  await p.type('#mn-pin', '2222');
-  await p.waitForTimeout(300);
-  await p.press('#mn-pin', 'Enter');
+  await p.click('.mn-signbtn');
   await p.waitForTimeout(600);
   s = await store(p);
-  ok(!!s[fsKey(['minutes', 'm1', 'signs', '1_ann'])], 'minutes: Enter signs the minutes');
+  ok(!!s[fsKey(['minutes', 'm1', 'signs', '1_ann'])], 'minutes: one tap on Sign signs the minutes');
   await p.evaluate(() => { location.hash = '#/'; });
   await p.waitForTimeout(600);
   ok(await txt(p, '.wall-mn') === '', 'minutes: landing card gone once signed');

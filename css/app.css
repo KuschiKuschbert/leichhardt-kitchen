@@ -801,7 +801,11 @@ html.note-open, html.note-open body { overflow: hidden; }
 .nt-sl { font-weight: 700; color: var(--ink); }
 .nt-foot { flex: 0 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 14px 18px calc(14px + env(safe-area-inset-bottom)); }
 .nt-got { flex: 1 1 10rem; min-height: 52px; border: 2px solid var(--ink); border-radius: 26px; background: var(--ink); color: #fff; font-weight: 700; font-size: 1.125rem; cursor: pointer; }
-.nt-edit { font-weight: 600; }
+.nt-edit { font-weight: 600; display: inline-flex; align-items: center; min-height: 44px; }
+.mn-tbl tr.is-mine td { font-weight: 700; background: var(--hit); }
+.mn-yours { background: var(--accent); color: #fff; border-color: var(--accent); }
+.mn-tosign b { color: var(--accent-ink); }
+.mn-changed, .mn-mine { font-weight: 600; padding: 0.4rem 0.6rem; border-left: 4px solid var(--accent); background: var(--hit); }
 @keyframes ntIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .nt { animation: none; } }
 @media (max-width: 399px) { .nt-h { font-size: 1.9rem; } .nt-i p, .nt-row p { font-size: 1.0625rem; } }
