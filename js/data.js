@@ -1018,23 +1018,23 @@ window.LK_DATA = {
     {
       id: 'poutine', art: 'poutine', no: '46', kind: 'snack', forLine: 'Snack', name: 'Poutine Fries',
       menu: 'Poutine Fries: fries, melted cheddar and mozzarella, gravy.',
-      yield: 'Per serve, in a bowl. Chips, grated mozzarella, American cheese sauce and 160 ml of gravy over 200 g of chips, topped with fried shallots.',
+      yield: 'Per serve, in a bowl. 200 g of chips, grated mozzarella, 160 ml of gravy, a thin zigzag of American cheese sauce, topped with fried shallots.',
       ingredients: [
         { q: '200 g', name: 'Chips' },
         { q: '[Qty]', name: 'Grated mozzarella', note: 'bought in', link: 'grated-mozzarella', tags: ['Milk'] },
-        { q: '[Qty]', name: 'American cheese sauce', note: 'bought in', link: 'american-cheese-sauce', tags: ['Milk'] },
-        { q: '160 ml', name: 'Gravy', note: 'smothered over the chips', link: 'gravy' },
+        { q: '160 ml', name: 'Gravy', note: 'smothered over the mozzarella', link: 'gravy' },
+        { q: '[Qty]', name: 'American cheese sauce', note: 'bought in, thin zigzag over the gravy', link: 'american-cheese-sauce', tags: ['Milk'] },
         { q: '[Qty]', name: 'Fried shallots', note: 'bought in, on top' }
       ],
       pins: [
         { label: 'Chips', x: 34.0, y: 58.5, side: 'left', tags: [], note: '200 g, in a bowl.' },
-        { label: 'American cheese sauce', x: 49.1, y: 38.7, side: 'right', link: 'american-cheese-sauce', note: 'Bought in.' },
-        { label: 'Grated mozzarella', x: 58.5, y: 52.8, side: 'left', link: 'grated-mozzarella', note: 'Bought in.' },
-        { label: 'Gravy', x: 41.0, y: 47.2, side: 'left', link: 'gravy', note: '160 ml. Smothers the chips.' },
+        { label: 'American cheese sauce', x: 49.1, y: 38.7, side: 'right', link: 'american-cheese-sauce', note: 'Bought in. Thin zigzag across the whole gravy.' },
+        { label: 'Grated mozzarella', x: 27.8, y: 40.0, side: 'left', link: 'grated-mozzarella', note: 'Bought in. Under the gravy.' },
+        { label: 'Gravy', x: 41.0, y: 47.2, side: 'left', link: 'gravy', note: '160 ml. Sits on top of the mozzarella.' },
         { label: 'Fried shallots', x: 48.1, y: 44.3, side: 'right', tags: [], note: 'Bought in. On top.' }
       ],
       sections: [
-        { title: 'Plating', steps: ['Serve in a bowl.', 'Chips in the bowl.', 'Grated mozzarella.', 'American cheese sauce.', 'Smother with 160 ml of gravy.', 'Fried shallots on top.', '[Where the gravy goes in the order to confirm]'] }
+        { title: 'Plating', steps: ['Serve in a bowl.', 'Chips in the bowl.', 'Grated mozzarella over the chips.', 'Smother with 160 ml of gravy, on top of the mozzarella.', 'American cheese sauce in a thin zigzag across the whole gravy.', 'Fried shallots on top.'] }
       ]
     },
     {
