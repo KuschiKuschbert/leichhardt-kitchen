@@ -1018,21 +1018,23 @@ window.LK_DATA = {
     {
       id: 'poutine', art: 'poutine', no: '46', kind: 'snack', forLine: 'Snack', name: 'Poutine Fries',
       menu: 'Poutine Fries: fries, melted cheddar and mozzarella, gravy.',
-      yield: 'Per serve, in a bowl. Chips, American cheese sauce and grated mozzarella, topped with fried shallots.',
+      yield: 'Per serve, in a bowl. Chips, grated mozzarella, American cheese sauce and gravy, topped with fried shallots.',
       ingredients: [
         { q: '[Qty]', name: 'Chips' },
-        { q: '[Qty]', name: 'American cheese sauce', note: 'bought in', link: 'american-cheese-sauce', tags: ['Milk'] },
         { q: '[Qty]', name: 'Grated mozzarella', note: 'bought in', link: 'grated-mozzarella', tags: ['Milk'] },
-        { q: '[Qty]', name: 'Fried shallots', note: 'on top' }
+        { q: '[Qty]', name: 'American cheese sauce', note: 'bought in', link: 'american-cheese-sauce', tags: ['Milk'] },
+        { q: '[Qty]', name: 'Gravy', link: 'gravy' },
+        { q: '[Qty]', name: 'Fried shallots', note: 'bought in, on top' }
       ],
       pins: [
         { label: 'Chips', x: 34.0, y: 58.5, side: 'left', tags: [], note: 'In a bowl.' },
         { label: 'American cheese sauce', x: 49.1, y: 38.7, side: 'right', link: 'american-cheese-sauce', note: 'Bought in.' },
         { label: 'Grated mozzarella', x: 58.5, y: 52.8, side: 'left', link: 'grated-mozzarella', note: 'Bought in.' },
-        { label: 'Fried shallots', x: 48.1, y: 44.3, side: 'right', tags: [], note: 'On top.' }
+        { label: 'Gravy', x: 41.0, y: 47.2, side: 'left', link: 'gravy', note: 'Over the chips.' },
+        { label: 'Fried shallots', x: 48.1, y: 44.3, side: 'right', tags: [], note: 'Bought in. On top.' }
       ],
       sections: [
-        { title: 'Plating', steps: ['Serve in a bowl.', 'Chips in the bowl, with the American cheese sauce and the grated mozzarella.', 'Fried shallots on top.', '[Order of the sauce and the mozzarella to confirm]'] }
+        { title: 'Plating', steps: ['Serve in a bowl.', 'Chips in the bowl.', 'Grated mozzarella.', 'American cheese sauce.', 'Gravy.', 'Fried shallots on top.', '[Where the gravy goes in the order to confirm]'] }
       ]
     },
     {
@@ -1141,13 +1143,13 @@ window.LK_DATA = {
       ingredients: [
         { q: '12 pieces', name: 'Calamari', note: 'strips, not rings', tags: ['Mollusc'] },
         { q: '[Qty]', name: 'Corn flour', note: 'to dust' },
-        { q: '[Qty]', name: 'Szechuan seasoning', note: 'tossed through after frying' },
+        { q: '[Qty]', name: 'Szechuan seasoning', note: 'bought in, tossed through after frying' },
         { q: '[Qty]', name: 'Lime aioli', note: 'bought in', link: 'lime-aioli', tags: ['Egg?'] },
         { q: '1', name: 'Lemon wedge' }
       ],
       pins: [
         { label: 'Calamari strips', x: 41.5, y: 45.3, side: 'right', tags: ['Mollusc'], note: '12 strips, not rings.' },
-        { label: 'Szechuan seasoning', x: 55.7, y: 50.9, side: 'left', tags: [], note: 'Tossed through after frying.' },
+        { label: 'Szechuan seasoning', x: 55.7, y: 50.9, side: 'left', tags: [], note: 'Bought in. Tossed through after frying.' },
         { label: 'Lime aioli', x: 80.2, y: 73.6, side: 'left', link: 'lime-aioli', note: 'Bought in.' },
         { label: 'Lemon wedge', x: 25.5, y: 73.6, side: 'right', tags: [], note: '' }
       ],
