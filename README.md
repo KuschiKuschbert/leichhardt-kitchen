@@ -78,6 +78,8 @@ Drawings for The Pass are in `js/art.js`. A recipe with no drawing still shows, 
 | `js/prep.js` | Prep list, orders, wastage, shift pings, minutes, admin panel, staff lock, learning |
 | `js/firebase-config.js` | Public Firebase web config |
 | `firestore.rules` | Security rules template (`KITCHEN_PIN` and `OWNER_EMAIL` are placeholders) |
+| `.claude/settings.json`, `scripts/guard-main.mjs` | The main-branch guard: a Claude Code hook that refuses edits and commits on `main`, so every change starts in a worktree on its own branch |
+| `scripts/pre-merge.sh` | Run from a worktree before merging: shows the open pull requests, every worktree, and whether `main` moved, so only one merge happens at a time |
 | `scripts/publish-rules.sh` | Publishes the rules from your own computer with the Firebase CLI (asks for the PIN and email, never writes them into the repo) |
 | `.github/workflows/publish-rules.yml` | Publishes the rules from GitHub (Actions tab, Run workflow) with the `FIREBASE_SA`, `KITCHEN_PIN` and `OWNER_EMAIL` secrets, then proves the lock on the live book |
 | `.github/workflows/lock-probe.yml`, `tests/rules/probe.mjs` | The lock probe: every Monday 04:00 and from the Actions tab, from a client with only the kitchen PIN, the reads and writes the published rules must refuse are refused and the one allowed read works. Needs `KITCHEN_PIN`, plus `APPCHECK_DEBUG_TOKEN` once App Check is enforced |
@@ -310,7 +312,7 @@ Every admin list that can keep growing now uses one shared layout (`lvHTML` in `
 ### Smart prep list
 
 - Every line written or picked is counted in `kitchens/<pin>/learned/<item>` by the nightly learning (see below): total uses, typed versus picked (a line with a recipe counts as picked), uses per weekday (`dow`, 0 is Sunday), per section and usual amounts. Removed lines and rolled-over copies are not counted. New lines show in what was learned the next morning.
-- While typing, matching learned items (and batch and component recipe names) show as tap-to-fill chips under the box. A learned item also fills in its usual section when the section box is empty.
+- While typing, matching learned items (and batch and component recipe names) show as tap-to-fill chips under the box. A learned item also fills in its usual section when the section box is empty. After a line is added (20 Oct 2026), a section the book filled in is cleared again, so the next line goes to its own usual section; a section the person typed stays for the next line (`keptSection()` and `S.secTyped` in `js/prep.js`, `tests/section-box.test.js`).
 - Quick add on the Handy page uses the learned items for "Usual for a <weekday>" (written on at least two of that weekday) and "Regulars" (4 or more uses, `REGULAR` in `js/prep.js`), after Due today.
 - Owner insights: items learned, regulars, share added by tapping a suggestion, most written items, a weekday heat table, and a manage table to hide typos. The phones keep the 500 most used learned items (one bounded listener); a line used less often than that is not suggested and not in the manage table. The server reads past lists by itself, up to 90 days back (see below).
 

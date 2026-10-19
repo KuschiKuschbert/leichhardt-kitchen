@@ -23,6 +23,8 @@ The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the
 | `js/firebase-config.js` | Public Firebase web config |
 | `css/app.css` | The Leichhardt look |
 | `firestore.rules` | Rules template (see above) |
+| `.claude/settings.json`, `scripts/guard-main.mjs` | The main-branch guard: a Claude Code hook that refuses edits and commits on `main` |
+| `scripts/pre-merge.sh` | Run from the worktree before merging: open pull requests, worktrees, and whether `main` moved |
 | `scripts/publish-rules.sh` | Publishes the rules from your own computer: asks for the PIN and email, deploys a filled-in copy from a temporary folder |
 | `.github/workflows/publish-rules.yml`, `.github/workflows/live-tests.yml`, `.github/workflows/lock-probe.yml` | Publish the rules from GitHub (secrets `FIREBASE_SA`, `KITCHEN_PIN`, `OWNER_EMAIL`) and prove the lock on the live book straight after (`tests/rules/probe.mjs`, also weekly), and run the click tests against the live site after each Pages deploy |
 | `manifest.webmanifest`, `sw.js`, `icons/`, `icon.svg` | Installable app: manifest, service worker (network first), rope KB logo |
@@ -35,12 +37,22 @@ The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the
 ## Routes
 `#/` landing (five dockets), `#/recipes` (Pass or Tiles), `#/r/<id>[/<id>...]` a recipe and the trail to it, `#/prep`, `#/orders`, `#/waste`, `#/guides`, `#/guides/<id>`, `#/minutes`, `#/mail`, `#/admin`, `#/settings`.
 
+## Ground rules (no exceptions)
+These hold for every session, every message and every change, however small. A hook in `.claude/settings.json` (`scripts/guard-main.mjs`) refuses edits and commits on `main`, so a session that skips them is stopped.
+
+1. **Every interaction starts on a new branch.** Before touching a file, make a worktree on a fresh branch from the latest `main`:
+   `git fetch origin main && git worktree add -b <type>/<short-name> .claude/worktrees/<short-name> origin/main`
+   and work only in that folder. Never edit in the main checkout, never commit to `main`, never push `main`. One theme per worktree, branch and pull request: unrelated changes get their own worktree. A session that already has a worktree keeps it for that theme only.
+2. **Check what else is in flight before merging.** Run `scripts/pre-merge.sh` from the worktree. It lists the open pull requests with their state, every worktree with its branch and uncommitted changes, and whether `main` moved since the branch started. Only one merge at a time: if another branch is ready or merging, wait for it, pull the new `main` into your branch, run the tests again, then merge. Never remove or reset a worktree that is not yours.
+3. **Clean handoffs.** A branch is handed over only when it is pushed, has a pull request that says what was done and what is left, the tests pass, and `README.md` is in step. After a squash merge: `git -C "<main checkout>" pull --ff-only origin main`, remove the worktree and delete the branch. Nothing is left half done on `main`, and nothing lives only in a worktree.
+
 ## How changes ship
-1. Every new piece of work starts in its own git worktree, on a fresh branch from the latest `main`. Never edit in the main checkout and never commit straight to `main`. One theme per worktree, per branch and per pull request: unrelated changes get their own worktree. Squash merge, then remove the worktree and its branch.
+1. Start as above: a worktree on its own branch from the latest `main`.
 2. Test before merging: `node --check` on changed JS, then `cd tests && npm install && npm test`. It serves the repo locally and runs every file in `tests/` in Chrome: each page at 390, 768 and 1280 px (no sideways scroll, no JS errors) and the click paths for the prep pages, orders, wastage, minutes, admin and recipe search. Firebase is replaced by the stand-in in `tests/fake/`, so no real PIN or data is needed and nothing is written to the real book. Add checks for the click paths you change to the matching `*.test.js` file (or a new one). After merging, `BASE=https://kuschikuschbert.github.io/leichhardt-kitchen/ npm test` runs the same tests on the live site.
 3. If `firestore.rules` changes: test it on the Firestore emulator first (`cd tests/rules && npm install && npm test`, and add a check for every new rule), publish it with the **Publish rules** workflow in the Actions tab (Run workflow; it fills the `KITCHEN_PIN` and `OWNER_EMAIL` secrets into a copy and deploys it with the service account), or from your own computer with `scripts/publish-rules.sh`, then merge the code that needs it. Publish rules before code that writes new fields or collections; publish after code when the rules get stricter about something old code does not send.
 4. After merging, wait for GitHub Pages (about a minute), then check the live site. The **Live click tests** workflow runs the click tests against the live site by itself after each Pages deploy (and from the Actions tab); read its result.
 5. Keep `README.md` in step with every change.
+6. Before merging, run `scripts/pre-merge.sh` and follow the ground rules above.
 
 ## Things that are easy to break
 - `.rail` is the steel shelf rail on the Pass; the landing and top bar use `.wtop`. Do not reuse class names across features (check `css/app.css` first).
