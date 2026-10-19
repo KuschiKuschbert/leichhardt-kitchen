@@ -2777,11 +2777,20 @@
   }
   function focusK(k) { var el = S.root && S.root.querySelector('[data-k="' + k + '"]'); if (el) el.focus(); }
   function focusSel(sel) { var el = S.root && S.root.querySelector(sel); if (el && el.offsetParent !== null) el.focus(); }
+  var wGone = {};   // past entries removed on this phone, kept so Undo can put them back into the Last 7 days copy
   function removeWaste(date, id, restore) {
     if (!canBrowse() || !can('del')) return;
-    var it = (S.wLines || []).concat(S.wRecent || []).filter(function (x) { return x.id === id; })[0];
-    // an older day changed: the copy kept on this phone is read again next time
-    if (date !== dayNow()) lsSet('lk.w.recent', '');
+    var today = dayNow(), it = (S.wLines || []).concat(S.wRecent || []).filter(function (x) { return x.id === id; })[0] || wGone[id];
+    // an older day changed: today's lines come from the live list, so only the copy of the last 14 days needs patching.
+    // It is kept in step here (no read), so Last 7 days shows the change at once and the day cache stays right.
+    if (date !== today) {
+      if (S.wRecent && S.wRecentFor === today) {
+        S.wRecent = S.wRecent.filter(function (x) { return x.id !== id; });
+        if (restore && it) S.wRecent.push(Object.assign({}, it, { date: date, deleted: false, deletedBy: '', deletedAt: 0 }));
+        dayCacheSet('lk.w.recent', S.pin + '|' + today, S.wRecent);
+      } else lsSet('lk.w.recent', '');
+      if (it) { if (restore) delete wGone[id]; else wGone[id] = Object.assign({}, it, { date: date }); }
+    }
     supd(wRef(date, id), { deleted: !restore, deletedBy: restore ? '' : (me() || {}).name || '', deletedAt: restore ? 0 : now() }).catch(failed);
     if (!restore) toast('Removed ' + (it ? it.text : 'the entry') + ' from the wastage log', { label: 'Undo', fn: function () { removeWaste(date, id, true); } });
   }
@@ -4390,7 +4399,8 @@
     if (a === 'cal-day') { S.date = el.getAttribute('data-d'); S.tab = ''; watchItems(); location.hash = '#/prep'; return; }
     if (a === 'close-hide') { lsSet('lk.closeout', dayNow()); draw(); return; }
     if (a === 'oreg') { var orr = (S.oregs || [])[i]; if (orr) { S.otext = orr.text; S.oqty = orr.q || ''; addOrder(true); } return; }
-    if (a === 'wview') { S.wView = el.getAttribute('data-v'); if (S.wView === 'week') loadWRecent(true); draw(); return; }
+    // Last 7 days always counts today from the live list, whatever day was being browsed; the past days come from the day cache
+    if (a === 'wview') { S.wView = el.getAttribute('data-v'); if (S.wView === 'week') { if (S.wDate !== dayNow()) { S.wDate = dayNow(); watchWaste(); } loadWRecent(false); } draw(); return; }
     if (a === 'wunit') { S.wf.unit = el.getAttribute('data-v'); draw(); return; }
     if (a === 'wreason') { S.wf.reason = el.getAttribute('data-v'); var fromSheet = S.sheet === 'reason'; S.sheet = ''; draw(); if (fromSheet) { var rb = S.root.querySelector('.w-rbtn'); if (rb) rb.focus(); } return; }
     if (a === 'sheet') { S.sheet = el.getAttribute('data-v'); draw(); var so = S.root.querySelector('.sheet-o[aria-checked="true"]') || S.root.querySelector('.sheet-o'); if (so) so.focus(); return; }
