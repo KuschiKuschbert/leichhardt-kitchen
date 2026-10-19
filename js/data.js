@@ -1892,15 +1892,18 @@ window.LK_DATA = {
     },
     {
       id: 'spinach-puree', done: true, no: '71', kind: 'batch', forLine: 'For the pork belly', name: 'Spinach Purée', short: 'Spinach purée', art: 'spinach-puree',
-      yield: 'Batch: 1.5 kg spinach, about 1 L of purée. A serve is 50 ml, a wavy squiggle across the plate.',
+      yield: 'Batch: 1 kg spinach. A serve is 50 ml, a wavy squiggle across the plate. Makes about 1.2 L, about 24 serves.',
       ingredients: [
-        { q: '1.5 kg', name: 'Spinach' },
-        { q: '300 ml', name: 'Cooking cream', tags: ['Milk'] },
-        { q: '80 g', name: 'Salted butter', tags: ['Milk'] },
-        { q: '10 g', name: 'Table salt' }
+        { q: '1 kg', name: 'Spinach' },
+        { q: '700 ml', name: 'Cooking cream', tags: ['Milk'] },
+        { q: '100 g', name: 'Salted butter', tags: ['Milk'] },
+        { q: '10 g', name: 'Table salt' },
+        { q: '5 g', name: 'Cracked black pepper' },
+        { q: '2 g', name: 'Nutmeg' },
+        { q: '15 ml', name: 'Lemon juice', note: 'added after blending and cooling' }
       ],
       sections: [
-        { title: 'Method', steps: ['Quickly blanch the spinach in a pot of water for 2 min.', 'Put it straight into ice water to keep the green.', 'Squeeze out the excess liquid.', 'Blend with the cooking cream, salted butter and salt until smooth.'] }
+        { title: 'Method', steps: ['Quickly blanch the spinach in a pot of water for 2 min.', 'Put it straight into ice water to keep the green.', 'Squeeze out the excess liquid.', 'Blend with the cooking cream, salted butter, salt, cracked black pepper and nutmeg until smooth.', 'Let the purée cool right down.', 'Stir in the lemon juice only once the purée is blended and cooled. Added warm, the acid can split the cream.'] }
       ],
       contains: [{ allergen: 'Milk', from: 'cooking cream and butter' }],
       check: [],
