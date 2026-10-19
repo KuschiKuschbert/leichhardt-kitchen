@@ -3279,6 +3279,13 @@
   function mnPub() { return (S.mins || []).filter(function (m) { return m.status === 'published' && !m.removed; }).sort(function (a, b) { return String(b.date).localeCompare(String(a.date)) || (b.no || 0) - (a.no || 0); }); }
   function mnDrafts() { return (S.mins || []).filter(function (m) { return m.status === 'draft' && !m.removed; }).sort(function (a, b) { return (b.upd || 0) - (a.upd || 0); }); }
   function mnOpenList() { var from = shift(dayNow(), -MN_OPEN); return mnPub().filter(function (m) { return m.date >= from; }); }
+  /* whose sign-off to check: the minutes the book still nags about (last MN_OPEN days), plus whatever older minutes are open on
+     the page, so anything readable (MN_DAYS) can still be signed. One small read each, remembered for the day. */
+  function mnMineList() {
+    var list = mnOpenList(), pub = mnPub(), sel = S.name === 'minutes' ? (mnById(S.mSel) || pub[0] || null) : null;
+    if (sel && sel.status === 'published' && !sel.removed && list.indexOf(sel) < 0) list = list.concat([sel]);
+    return list;
+  }
   function mnKey(m) { return m.id + '_' + m.v + '_' + S.who; }
   function mnUnsigned() {
     if (!S.who || !S.mins || (S.config && !who())) return [];
@@ -3313,7 +3320,7 @@
   function loadMine() {
     if (!fb || !S.who || !S.mins) return;
     var w = S.who, jobs = [];
-    mnOpenList().forEach(function (m) {
+    mnMineList().forEach(function (m) {
       var k = m.id + '_' + m.v + '_' + w;
       if (S.mmine[k] !== undefined || waiting('mine:' + k)) return;
       S.mmine[k] = 'loading';
@@ -3393,7 +3400,16 @@
       S.mSigning = false; S.mmine[k] = data; S.mpin = ''; S.mpinOk = false; minCard(); toast('Signed. Thank you.'); draw();
     }, function (e) {
       S.mSigning = false; delete S.mmine[k];
-      S.mErr = e && e.code === 'permission-denied' ? 'Not allowed. The minutes may have changed, or you have already signed this version. Reload the page.' : 'Could not sign. Check the connection and try again.';
+      if (e && e.code === 'permission-denied') {
+        /* refused: this version is already signed (the record is there), the minutes moved on to a new version (read again),
+           or this phone's PIN no longer counts (the head chef reset it), which is what failed() handles */
+        fb.fs.getDoc(ref).then(function (sn) {
+          if (sn.exists()) { S.mmine[k] = sn.data(); S.mErr = ''; S.mpin = ''; S.mpinOk = false; minCard(); draw(); return; }
+          S.mErr = ''; loadMinutes(true); failed(e);
+        }, function () { S.mErr = 'Could not sign. Check the connection and try again.'; draw(); });
+        return;
+      }
+      S.mErr = 'Could not sign. Check the connection and try again.';
       loadMinutes(true); draw();
     });
   }
