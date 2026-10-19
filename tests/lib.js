@@ -74,6 +74,7 @@ async function start() {
    o.settings         saved recipe book settings, for example { view: 'tiles' }
    o.extra            more seed documents (see seed)
    o.touch            a touch screen
+   o.ua               the browser's user agent string (Windows, Mac, Firefox and so on)
    o.clock            the phone's clock when the page opens (NOW by default)
    o.tz               the phone's time zone (kitchen time by default)
    o.server           the server's time when the page opens; without it the update check's answer has no Date,
@@ -83,7 +84,7 @@ async function start() {
 async function open(browser, hash, o) {
   o = o || {};
   const w = o.width || 390, h = o.height || 844;
-  const ctx = await browser.newContext({ viewport: { width: w, height: h }, serviceWorkers: 'block', hasTouch: !!o.touch, deviceScaleFactor: 1, timezoneId: o.tz || 'Australia/Brisbane' });
+  const ctx = await browser.newContext(Object.assign({ viewport: { width: w, height: h }, serviceWorkers: 'block', hasTouch: !!o.touch, deviceScaleFactor: 1, timezoneId: o.tz || 'Australia/Brisbane' }, o.ua ? { userAgent: o.ua } : {}));
   await ctx.clock.install({ time: o.clock || NOW });
   const opened = Date.now();
   await ctx.route(u => u.href === BASE + 'index.html', async r => {
