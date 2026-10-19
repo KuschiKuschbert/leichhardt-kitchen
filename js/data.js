@@ -111,24 +111,27 @@ window.LK_DATA = {
     },
     {
       id: 'barra', no: '04', kind: 'main', forLine: 'Plate', name: 'Barramundi', art: 'barra',
-      yield: 'Per plate. 180 g rice, 160 ml laksa, charred greens, barra on top.',
+      yield: 'Per plate. 180 g rice, 160 ml laksa, charred Asian greens (2 pieces each of pak choy, gai lan, choy sum and broccolini), barra on top.',
       ingredients: [
         { q: '[Portion]', name: 'Barramundi', note: 'as current', tags: ['Fish'] },
         { q: '180 g', name: 'Steamed rice', note: 'portioned in a small round container', link: 'rice' },
         { q: '160 ml', name: 'Coconut laksa', link: 'laksa' },
-        { q: '[Qty]', name: 'Asian greens', note: 'bok choy, choy sum, kai lan' },
+        { q: '2 pieces', name: 'Pak choy', note: 'steamed and shocked', link: 'asian-greens' },
+        { q: '2 pieces', name: 'Gai lan', note: 'steamed and shocked', link: 'asian-greens' },
+        { q: '2 pieces', name: 'Choy sum', note: 'steamed and shocked', link: 'asian-greens' },
+        { q: '2 pieces', name: 'Broccolini', note: 'steamed and shocked', link: 'asian-greens' },
         { q: '[Qty]', name: 'Sesame oil', tags: ['Sesame'] }
       ],
       pins: [
         { label: 'Barramundi', x: 46.2, y: 46.2, tags: ['Fish'], note: 'Cook as current. Probe: core 63 °C. On top of the greens.' },
-        { label: 'Greens', x: 59.4, y: 59.4, tags: ['Sesame'], note: 'Quick blanch to order, sesame oil, char in a pan. On the rice.' },
+        { label: 'Asian greens', x: 59.4, y: 59.4, tags: ['Sesame'], note: '2 pieces each of pak choy, gai lan, choy sum and broccolini. Quick blanch to order, sesame oil, char in a pan. On the rice.' },
         { label: 'Coconut laksa', x: 77.4, y: 35.8, link: 'laksa' },
         { label: 'Steamed rice', x: 42.5, y: 68.9, link: 'rice' }
       ],
       sections: [
-        { title: 'Prep: Asian greens', steps: ['Quickly wash the bok choy, choy sum and kai lan.', 'Hold in a prep bain.'] },
+        { title: 'Prep: Asian greens', steps: ['Prepped ahead: see the Asian Greens card.'] },
         { title: 'Cooking', steps: ['Cook the barra as current.', 'Probe: core 63 °C before the pass.', 'Greens to order: quick blanch in boiling water.', 'Sesame oil, then char in a pan.', 'Heat the laksa through.'] },
-        { title: 'Plating', steps: ['180 g steamed rice, from its small round container.', '160 ml laksa over the rice and a bit around.', 'Charred greens on the rice.', 'Barra on top of the greens.'] }
+        { title: 'Plating', steps: ['180 g steamed rice, from its small round container.', '160 ml laksa over the rice and a bit around.', 'Charred Asian greens on the rice: 2 pieces each of pak choy, gai lan, choy sum and broccolini.', 'Barra on top of the greens.'] }
       ],
       contains: [{ allergen: 'Fish', from: 'barra' }, { allergen: 'Sesame', from: 'sesame oil' }],
       check: [],
@@ -1018,18 +1021,23 @@ window.LK_DATA = {
     {
       id: 'poutine', art: 'poutine', no: '46', kind: 'snack', forLine: 'Snack', name: 'Poutine Fries',
       menu: 'Poutine Fries: fries, melted cheddar and mozzarella, gravy.',
-      yield: 'Per serve. Fries, melted cheddar and mozzarella, gravy.',
+      yield: 'Per serve, in a bowl. 200 g of chips, grated mozzarella, 160 ml of gravy, a thin zigzag of American cheese sauce, topped with fried shallots.',
       ingredients: [
-        { q: '[Qty]', name: 'Chips' },
-        { q: '[Qty]', name: 'Cheddar', tags: ['Milk'] },
-        { q: '[Qty]', name: 'Mozzarella', tags: ['Milk'] },
-        { q: '[Qty]', name: 'Gravy', link: 'gravy' }
+        { q: '200 g', name: 'Chips' },
+        { q: '[Qty]', name: 'Grated mozzarella', note: 'bought in', link: 'grated-mozzarella', tags: ['Milk'] },
+        { q: '160 ml', name: 'Gravy', note: 'smothered over the mozzarella', link: 'gravy' },
+        { q: '[Qty]', name: 'American cheese sauce', note: 'bought in, thin zigzag over the gravy', link: 'american-cheese-sauce', tags: ['Milk'] },
+        { q: '[Qty]', name: 'Fried shallots', note: 'bought in, on top' }
       ],
       pins: [
-        { label: 'Chips', x: 30.9, y: 63.2, side: 'left', tags: [], note: 'Fries.' },
-        { label: 'Cheddar', x: 34.9, y: 39.6, side: 'left', tags: ['Milk'], note: 'Melted.' },
-        { label: 'Mozzarella', x: 65.1, y: 57.5, side: 'left', tags: ['Milk'], note: 'Melted.' },
-        { label: 'Gravy', x: 48.1, y: 47.2, side: 'right', tags: [], note: 'Over the top. Card to come.' }
+        { label: 'Chips', x: 34.0, y: 58.5, side: 'left', tags: [], note: '200 g, in a bowl.' },
+        { label: 'American cheese sauce', x: 49.1, y: 38.7, side: 'right', link: 'american-cheese-sauce', note: 'Bought in. Thin zigzag across the whole gravy.' },
+        { label: 'Grated mozzarella', x: 27.8, y: 40.0, side: 'left', link: 'grated-mozzarella', note: 'Bought in. Under the gravy.' },
+        { label: 'Gravy', x: 41.0, y: 47.2, side: 'left', link: 'gravy', note: '160 ml. Sits on top of the mozzarella.' },
+        { label: 'Fried shallots', x: 48.1, y: 44.3, side: 'right', tags: [], note: 'Bought in. On top.' }
+      ],
+      sections: [
+        { title: 'Plating', steps: ['Serve in a bowl.', 'Chips in the bowl.', 'Grated mozzarella over the chips.', 'Smother with 160 ml of gravy, on top of the mozzarella.', 'American cheese sauce in a thin zigzag across the whole gravy.', 'Fried shallots on top.'] }
       ]
     },
     {
@@ -1053,33 +1061,40 @@ window.LK_DATA = {
     {
       id: 'brisket-cob', art: 'brisket-cob', no: '48', kind: 'snack', forLine: 'Snack', name: 'Brisket Cob',
       menu: 'Brisket Cob: slow-roasted house-rubbed brisket, cream cheese, corn, caramelised onion, in a cob.',
-      yield: 'Per serve. Brisket, cream cheese, corn and caramelised onion in a cob loaf.',
+      yield: 'Per serve. A cob loaf filled with cob loaf mix, grated mozzarella on top, spring onions to garnish.',
       ingredients: [
         { q: '1', name: 'Cob loaf', tags: ['Gluten'] },
-        { q: '[Qty]', name: 'Brisket', note: 'slow roasted, house rub', link: 'brisket' },
         { q: '280 ml', name: 'Cob loaf mix', note: 'cream cheese, corn and caramelised onion are in the mix', link: 'cob-mix' },
-        { q: '[Qty]', name: 'Mozzarella', note: 'some on top', tags: ['Milk'] }
+        { q: 'about 50 g', name: 'Grated mozzarella', note: 'bought in, on top', link: 'grated-mozzarella', tags: ['Milk'] },
+        { q: '[Qty]', name: 'Spring onions', note: 'garnish' }
       ],
       pins: [
-        { label: 'Cob loaf', x: 27.4, y: 41.5, side: 'left', tags: ['Gluten'], note: '' },
-        { label: 'Brisket', x: 46.2, y: 37.5, side: 'right', link: 'brisket', note: 'Slow roasted, house rub.' },
-        { label: 'Cob loaf mix', x: 51.9, y: 49.1, side: 'right', link: 'cob-mix', note: '280 ml in the hollowed cob, mozzarella on top.' }
+        { label: 'Cob loaf', x: 49.1, y: 28.3, side: 'right', tags: ['Gluten'], note: '' },
+        { label: 'Cob loaf mix', x: 44.3, y: 51.9, side: 'left', link: 'cob-mix', note: '280 ml in the hollowed cob.' },
+        { label: 'Grated mozzarella', x: 54.7, y: 46.2, side: 'right', link: 'grated-mozzarella', note: 'About 50 g, on top.' },
+        { label: 'Spring onions', x: 50.9, y: 41.5, side: 'right', tags: [], note: 'Garnish.' }
+      ],
+      sections: [
+        { title: 'Plating', steps: ['Fill the hollowed cob with 280 ml of cob loaf mix.', 'About 50 g grated mozzarella on top.', 'Spring onions to garnish.'] }
       ]
     },
     {
       id: 'wings', art: 'wings', no: '49', kind: 'snack', forLine: 'Snack', name: 'Fried Chicken Wings',
       menu: 'Fried Chicken Wings: double-smoked BBQ sauce.',
-      yield: 'Per serve. 380 to 420 g fried wings in double-smoked BBQ sauce, with cowboy candy.',
+      yield: 'Per serve. 380 to 420 g fried wings in double-smoked BBQ sauce, with cowboy candy (jalapeño candy) on top.',
       ingredients: [
         { q: '380 to 420 g', name: 'Chicken wings', note: 'portioned in a sandwich bag' },
         { q: '[Qty]', name: 'Wing flour', link: 'wing-flour', tags: ['Gluten?'] },
         { q: '[Qty]', name: 'Double-smoked BBQ sauce', tags: ['Gluten?', 'Soy?'] },
-        { q: '[Qty]', name: 'Cowboy candy', note: 'candied jalapeños', link: 'cowboy-candy' }
+        { q: '[Qty]', name: 'Cowboy candy', note: 'also called jalapeño candy, candied jalapeños, on top', link: 'cowboy-candy' }
       ],
       pins: [
         { label: 'Chicken wings', x: 39.6, y: 42.5, side: 'right', tags: [], note: '380 to 420 g, fried.' },
         { label: 'Double-smoked BBQ sauce', x: 58.5, y: 64.2, side: 'left', tags: ['Gluten?', 'Soy?'], note: 'On the wings.' },
-        { label: 'Cowboy candy', x: 56.0, y: 44.0, side: 'right', link: 'cowboy-candy', note: 'Candied jalapeños.' }
+        { label: 'Cowboy candy', x: 51.9, y: 41.0, side: 'right', link: 'cowboy-candy', note: 'Also called jalapeño candy. On top of the wings.' }
+      ],
+      sections: [
+        { title: 'Plating', steps: ['Wings in the double-smoked BBQ sauce.', 'Cowboy candy (jalapeño candy) on top of the wings.'] }
       ]
     },
     {
@@ -1127,15 +1142,25 @@ window.LK_DATA = {
     {
       id: 'calamari', art: 'calamari', no: '52', kind: 'snack', forLine: 'Snack', name: 'Salt and Szechuan Pepper Calamari',
       menu: 'Salt and Szechuan Pepper Calamari: lime aioli.',
-      yield: 'Per serve. 12 pieces of salt and Szechuan pepper calamari, lime aioli.',
+      yield: 'Per serve. 12 strips of calamari, dusted in corn flour, fried and tossed in Szechuan seasoning. Lime aioli and a lemon wedge.',
       ingredients: [
-        { q: '12 pieces', name: 'Calamari', note: 'salt and Szechuan pepper coating', tags: ['Mollusc', 'Gluten?'] },
-        { q: '[Qty]', name: 'Lime aioli', tags: ['Egg'] }
+        { q: '12 pieces', name: 'Calamari', note: 'strips, not rings', tags: ['Mollusc'] },
+        { q: '[Qty]', name: 'Corn flour', note: 'to dust' },
+        { q: '[Qty]', name: 'Szechuan seasoning', note: 'bought in, tossed through after frying' },
+        { q: '[Qty]', name: 'Lime aioli', note: 'bought in', link: 'lime-aioli', tags: ['Egg?'] },
+        { q: '1', name: 'Lemon wedge' }
       ],
       pins: [
-        { label: 'Calamari', x: 42.5, y: 44.3, side: 'right', tags: ['Mollusc', 'Gluten?'], note: '12 pieces. Salt and Szechuan pepper.' },
-        { label: 'Lime aioli', x: 72.6, y: 66.0, side: 'left', tags: ['Egg'], note: '' }
-      ]
+        { label: 'Calamari strips', x: 41.5, y: 45.3, side: 'right', tags: ['Mollusc'], note: '12 strips, not rings.' },
+        { label: 'Szechuan seasoning', x: 55.7, y: 50.9, side: 'left', tags: [], note: 'Bought in. Tossed through after frying.' },
+        { label: 'Lime aioli', x: 80.2, y: 73.6, side: 'left', link: 'lime-aioli', note: 'Bought in.' },
+        { label: 'Lemon wedge', x: 25.5, y: 73.6, side: 'right', tags: [], note: '' }
+      ],
+      sections: [
+        { title: 'Cooking', steps: ['Dust the calamari strips in corn flour.', 'Deep-fry at 175 °C. [Time to confirm]', 'Toss through the Szechuan seasoning.'] },
+        { title: 'Plating', steps: ['Calamari strips on the plate.', 'Lime aioli on the side.', 'Lemon wedge.'] }
+      ],
+      labelNote: 'Check the Szechuan seasoning and lime aioli labels for allergens.'
     },
     {
       id: 'riblets', art: 'riblets', no: '53', kind: 'snack', forLine: 'Snack', name: 'Smoked BBQ Pork Riblets',
@@ -1144,7 +1169,7 @@ window.LK_DATA = {
       ingredients: [
         { q: '390 to 410 g', name: 'Pork riblets', note: 'smoked, cut from the pork ribs into individual riblets, portioned in a sandwich bag' },
         { q: '[Qty]', name: 'Bourbon BBQ sauce', link: 'bourbon-bbq-sauce' },
-        { q: '[Qty]', name: 'Cowboy candy', note: 'candied jalapeños', link: 'cowboy-candy' }
+        { q: '[Qty]', name: 'Cowboy candy', note: 'also called jalapeño candy, candied jalapeños', link: 'cowboy-candy' }
       ],
       pins: [
         { label: 'Pork riblets', x: 36.8, y: 54.7, side: 'right', tags: [], note: 'Smoked. 390 to 410 g.' },
@@ -1159,41 +1184,50 @@ window.LK_DATA = {
     {
       id: 'garlic-bread', art: 'garlic-bread', no: '54', kind: 'snack', forLine: 'Snack', name: 'Garlic Bread',
       menu: 'Garlic Bread.',
-      yield: 'Per serve.',
+      yield: 'Per serve. Cut diagonally through the centre and placed on the plate.',
       ingredients: [
         { q: '[Qty]', name: 'Garlic bread', note: '7 inch, bought in', tags: ['Gluten', 'Milk', 'Soy?'] }
       ],
       pins: [
-        { label: 'Garlic bread', x: 49.1, y: 49.1, side: 'right', tags: ['Gluten', 'Milk', 'Soy?'], note: '7 inch, bought in.' }
+        { label: 'Garlic bread', x: 36.3, y: 49.1, side: 'right', tags: ['Gluten', 'Milk', 'Soy?'], note: '7 inch, bought in. Cut diagonally through the centre.' }
+      ],
+      sections: [
+        { title: 'Plating', steps: ['Cut the garlic bread diagonally through the centre.', 'Place the two pieces nicely on the plate.'] }
       ]
     },
     {
       id: 'bacon-cheese-bread', art: 'bacon-cheese-bread', no: '55', kind: 'snack', forLine: 'Snack', name: 'Bacon and Cheese Bread',
       menu: 'Bacon and Cheese Bread.',
-      yield: 'Per serve.',
+      yield: 'Per serve. Cut diagonally through the centre and placed on the plate.',
       ingredients: [
         { q: '[Qty]', name: 'Bread', tags: ['Gluten'] },
         { q: '[Qty]', name: 'Bacon' },
         { q: '[Qty]', name: 'Cheese', tags: ['Milk'] }
       ],
       pins: [
-        { label: 'Bread', x: 32.1, y: 58.5, side: 'right', tags: ['Gluten'], note: '' },
-        { label: 'Bacon', x: 50.9, y: 47.2, side: 'left', tags: [], note: '' },
-        { label: 'Cheese', x: 61.3, y: 41.5, side: 'right', tags: ['Milk'], note: 'Melted.' }
+        { label: 'Bread', x: 26.0, y: 60.4, side: 'right', tags: ['Gluten'], note: '' },
+        { label: 'Bacon', x: 67.2, y: 46.7, side: 'left', tags: [], note: '' },
+        { label: 'Cheese', x: 36.3, y: 49.1, side: 'right', tags: ['Milk'], note: 'Melted.' }
+      ],
+      sections: [
+        { title: 'Plating', steps: ['Cut the bread diagonally through the centre.', 'Place the two pieces nicely on the plate.'] }
       ]
     },
     {
       id: 'chips-snack', art: 'chips-snack', no: '56', kind: 'snack', forLine: 'Snack', name: 'Chips',
       menu: 'Chips with a choice of aioli or gravy.',
-      yield: 'Per serve. Aioli or gravy.',
+      yield: 'Per serve, in a bowl. Aioli or gravy.',
       ingredients: [
         { q: '[Qty]', name: 'Chips' },
         { q: '[Qty]', name: 'Aioli', link: 'aioli', note: 'or gravy, guest\'s choice', tags: ['Egg'] },
         { q: '[Qty]', name: 'Gravy', note: 'or aioli', link: 'gravy' }
       ],
       pins: [
-        { label: 'Chips', x: 40.6, y: 52.8, side: 'right', tags: [], note: '' },
-        { label: 'Aioli or gravy', x: 74.5, y: 35.8, side: 'left', tags: ['Egg'], note: 'Guest\'s choice.' }
+        { label: 'Chips', x: 44.3, y: 52.8, side: 'right', tags: [], note: 'In a bowl.' },
+        { label: 'Aioli or gravy', x: 83.0, y: 17.9, side: 'left', tags: ['Egg'], note: 'Guest\'s choice.' }
+      ],
+      sections: [
+        { title: 'Plating', steps: ['Serve the chips in a bowl.', 'Aioli or gravy, the guest\'s choice.'] }
       ]
     },
 
@@ -2039,6 +2073,45 @@ window.LK_DATA = {
       labelNote: 'Check the supplier label for allergens.'
     },
     {
+      id: 'american-cheese-sauce', art: 'american-cheese-sauce', no: '117', kind: 'batch', forLine: 'For the poutine fries', name: 'American Cheese Sauce', short: 'Cheese sauce',
+      yield: 'Bought in. No prep. Serve size is on the dish card.',
+      ingredients: [
+        { q: '1', name: 'American cheese sauce', note: 'bought in', tags: ['Milk'] }
+      ],
+      sections: [
+        { title: 'Method', steps: ['Bought in. No prep.'] }
+      ],
+      contains: [{ allergen: 'Milk', from: 'cheese sauce' }],
+      check: [],
+      labelNote: 'Check the supplier label for allergens.'
+    },
+    {
+      id: 'grated-mozzarella', art: 'grated-mozzarella', no: '118', kind: 'batch', forLine: 'For the poutine fries and the brisket cob', name: 'Grated Mozzarella', short: 'Grated mozzarella',
+      yield: 'Bought in. No prep. Serve size is on each dish card.',
+      ingredients: [
+        { q: '1', name: 'Grated mozzarella', note: 'bought in', tags: ['Milk'] }
+      ],
+      sections: [
+        { title: 'Method', steps: ['Bought in. No prep.'] }
+      ],
+      contains: [{ allergen: 'Milk', from: 'mozzarella' }],
+      check: [],
+      labelNote: 'Check the supplier label for allergens.'
+    },
+    {
+      id: 'lime-aioli', art: 'lime-aioli', no: '119', kind: 'batch', forLine: 'For the calamari', name: 'Lime Aioli', short: 'Lime aioli',
+      yield: 'Bought in. No prep. Serve size is on the dish card.',
+      ingredients: [
+        { q: '1', name: 'Lime aioli', note: 'bought in', tags: ['Egg?'] }
+      ],
+      sections: [
+        { title: 'Method', steps: ['Bought in. No prep.'] }
+      ],
+      contains: [],
+      check: [{ allergen: 'Egg', from: 'aioli' }],
+      labelNote: 'Check the supplier label for allergens.'
+    },
+    {
       id: 'tartare', done: true, no: '82', kind: 'batch', forLine: 'For the fish dishes', name: 'Tartare Sauce', short: 'Tartare sauce', art: 'tartare',
       yield: 'Bought in. No prep. Serve size is on each dish card.',
       ingredients: [
@@ -2155,9 +2228,9 @@ window.LK_DATA = {
         ] },
         { title: 'For the bread and service', steps: [
           'Hollow out the Laurent cob loaf. Keep the lid.',
-          'Add 280 ml of cob loaf mix. Add some mozzarella on top.',
+          'Add 280 ml of cob loaf mix. Add about 50 g of grated mozzarella on top.',
           'Oven at 180 °C for 5 min, or until the contents are hot.',
-          'Garnish.'
+          'Garnish with spring onions.'
         ] }
       ],
       contains: [{ allergen: 'Milk', from: 'sour cream, cream cheese, mozzarella' }],
@@ -2231,8 +2304,8 @@ window.LK_DATA = {
       labelNote: 'Check the supplier labels for allergens, especially the pine nuts.'
     },
     {
-      id: 'cowboy-candy', art: 'cowboy-candy', no: '109', kind: 'batch', forLine: 'For the smoked BBQ pork riblets', name: 'Cowboy Candy', short: 'Cowboy candy',
-      yield: 'Batch: 1000 g.',
+      id: 'cowboy-candy', art: 'cowboy-candy', no: '109', kind: 'batch', forLine: 'For the riblets and the wings', name: 'Cowboy Candy', short: 'Cowboy candy', aka: 'jalapeno candy jalapeño candy candied jalapeno',
+      yield: 'Batch: 1000 g. Also called jalapeño candy.',
       ingredients: [
         { q: '500 ml', name: 'Cider vinegar' },
         { q: '1 kg', name: 'Caster sugar' },
@@ -2341,6 +2414,21 @@ window.LK_DATA = {
       ],
       contains: [{ allergen: 'Milk', from: 'butter' }],
       labelNote: 'Check the supplier label for allergens on the dry rub.'
+    },
+    {
+      id: 'asian-greens', art: 'asian-greens', no: '116', kind: 'batch', forLine: 'For the barramundi', name: 'Asian Greens', short: 'Asian greens',
+      yield: 'Batch: pak choy, gai lan, choy sum and broccolini. One serve is 2 pieces of each.',
+      ingredients: [
+        { q: '2 pieces', name: 'Pak choy', note: 'per serve' },
+        { q: '2 pieces', name: 'Gai lan', note: 'per serve' },
+        { q: '2 pieces', name: 'Choy sum', note: 'per serve' },
+        { q: '2 pieces', name: 'Broccolini', note: 'per serve' }
+      ],
+      sections: [
+        { title: 'Prep', steps: ['Cut the stems off the pak choy, gai lan and choy sum.', 'Trim the bottom of the broccolini.', 'Place the greens and the broccolini in a perforated steam tray.', 'Steam for 2 min.', 'Shock in ice water.', '[Draining and storage to confirm]'] }
+      ],
+      contains: [],
+      check: []
     }
   ]
 };

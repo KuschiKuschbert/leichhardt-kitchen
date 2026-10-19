@@ -24,7 +24,7 @@ The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the
 | `css/app.css` | The Leichhardt look |
 | `firestore.rules` | Rules template (see above) |
 | `scripts/publish-rules.sh` | Publishes the rules from your own computer: asks for the PIN and email, deploys a filled-in copy from a temporary folder |
-| `.github/workflows/publish-rules.yml`, `.github/workflows/live-tests.yml` | Publish the rules from GitHub (secrets `FIREBASE_SA`, `KITCHEN_PIN`, `OWNER_EMAIL`), and run the click tests against the live site after each Pages deploy |
+| `.github/workflows/publish-rules.yml`, `.github/workflows/live-tests.yml`, `.github/workflows/lock-probe.yml` | Publish the rules from GitHub (secrets `FIREBASE_SA`, `KITCHEN_PIN`, `OWNER_EMAIL`) and prove the lock on the live book straight after (`tests/rules/probe.mjs`, also weekly), and run the click tests against the live site after each Pages deploy |
 | `manifest.webmanifest`, `sw.js`, `icons/`, `icon.svg` | Installable app: manifest, service worker (network first), rope KB logo |
 | `qr.svg`, `qr.png`, `qr-sign.pdf` | QR code to open the book, and the A4 sign |
 | `README.md` | Everything the app does, for people and for the next session |
