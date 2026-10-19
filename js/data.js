@@ -745,11 +745,12 @@ window.LK_DATA = {
     {
       id: 'taco-board', art: 'taco-board', no: '32', kind: 'main', forLine: 'Share board', name: 'Guacho Taco Share Board', avc: 'Guacho Taco Share Board S26',
       menu: 'Guacho Taco Shareboard: pulled pork, beef brisket, southern-style chicken tenders, pico de gallo, sour cream, avocado, six tortillas, slaw, corn tostadas.',
-      yield: 'Per board. Six tortillas, tenders, brisket, pulled pork, slaw, pico.',
+      yield: 'Per board. Six tortillas, tenders, smoked brisket or oven brisket, pulled pork, slaw, pico.',
       ingredients: [
         { q: '6', name: 'Flour tortillas', note: '5 inch', tags: ['Gluten', 'Soy?'] },
         { q: '240 g', name: 'Southern-style chicken tenders', note: '60 to 80 g each, bought in', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'] },
-        { q: '200 g', name: 'Brisket', note: 'grain fed MB2', link: 'brisket' },
+        { q: '200 g', name: 'Smoked brisket', note: 'grain fed MB2, or oven brisket, 200 g of either', link: 'brisket' },
+        { q: '200 g', name: 'Oven brisket', note: 'or smoked brisket, 200 g of either', link: 'oven-brisket' },
         { q: '200 g', name: 'Pulled pork', link: 'pulled-pork' },
         { q: '200 g', name: 'Slaw', link: 'slaw' },
         { q: '100 g', name: 'Pico de gallo', link: 'pico' },
@@ -760,7 +761,7 @@ window.LK_DATA = {
       pins: [
         { label: 'Flour tortillas', x: 13.0, y: 22.4, side: 'right', tags: ['Gluten', 'Soy?'], note: '6, 5 inch.' },
         { label: 'Chicken tenders', x: 54.0, y: 30.4, side: 'left', tags: ['Gluten', 'Egg?', 'Milk?', 'Soy?'], note: '240 g, southern style.' },
-        { label: 'Brisket', x: 77.4, y: 28.3, side: 'right', link: 'brisket', note: '200 g.' },
+        { label: 'Smoked or oven brisket', x: 77.4, y: 28.3, side: 'right', link: 'brisket', note: '200 g of smoked brisket (card 79) or oven brisket (card 121).' },
         { label: 'Pulled pork', x: 24.8, y: 65.1, side: 'left', tags: [], note: '200 g. Card to come.' },
         { label: 'Slaw', x: 49.1, y: 66.0, side: 'left', link: 'slaw' },
         { label: 'Pico de gallo', x: 74.5, y: 57.5, side: 'left', tags: [], note: '100 g. Card to come.' },
@@ -768,7 +769,7 @@ window.LK_DATA = {
         { label: 'Sour cream', x: 70.8, y: 76.4, side: 'left', tags: ['Milk'], note: '60 ml.' }
       ],
       sections: [
-        { title: 'Cooking', steps: ['Chicken tenders: fry at 175 °C [time to confirm].', 'Flour tortillas: cook on the grill [time and how served to confirm].', 'Pulled pork: cooked in the smoker (card to come) [temperature and time to confirm].', 'Brisket: card 79 [slicing and reheat to confirm].', 'Charred corn kernels: card 93.'] }
+        { title: 'Cooking', steps: ['Chicken tenders: fry at 175 °C [time to confirm].', 'Flour tortillas: cook on the grill [time and how served to confirm].', 'Pulled pork: cooked in the smoker (card to come) [temperature and time to confirm].', 'Brisket: smoked brisket (card 79) or oven brisket (card 121) [slicing and reheat to confirm].', 'Charred corn kernels: card 93.'] }
       ],
       labelNote: 'Check the tortilla and tender labels.'
     },
