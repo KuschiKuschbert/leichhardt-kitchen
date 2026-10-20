@@ -2,6 +2,10 @@
 <html lang="en-AU">
 <head>
 <meta charset="utf-8">
+<!-- Security header (20 Oct 2026): scripts only from this site, Firebase and Google sign-in (gstatic, apis.google.com,
+     the reCAPTCHA bot check on www.google.com) and pdf.js (jsDelivr); styles and fonts from Google Fonts. A new outside
+     service has to be added here, or the browser blocks it. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://apis.google.com https://www.google.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data: blob: https://www.gstatic.com https://*.googleusercontent.com; connect-src 'self' https://*.googleapis.com https://www.google.com https://www.gstatic.com https://cdn.jsdelivr.net https://leichhardt-kitchen.firebaseapp.com; frame-src https://leichhardt-kitchen.firebaseapp.com https://accounts.google.com https://apis.google.com https://www.google.com https://recaptcha.google.com; worker-src 'self' blob: https://cdn.jsdelivr.net; manifest-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Leichhardt Kitchen Book</title>
 <meta name="description" content="Recipe book for the Leichhardt Hotel kitchen team.">
@@ -18,59 +22,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&amp;family=Barlow+Condensed:wght@700&amp;family=Caveat:wght@700&amp;display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/app.css">
-<script>
-  // Catch the browser's install offer the moment it arrives, before the app scripts load.
-  // Chrome only lets the page open its install box after preventDefault() has been called on the event.
-  window.lkInstall = null;
-  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); window.lkInstall = e; window.dispatchEvent(new Event('lk-install')); });
-  window.addEventListener('appinstalled', function () { window.lkInstall = null; });
-</script>
-<script>
-  // Apply the saved text size before the page draws, so nothing jumps.
-  try { var s = JSON.parse(localStorage.getItem('lk.settings.v1') || '{}'); if (s.text) document.documentElement.setAttribute('data-text', s.text); } catch (e) {}
-</script>
-<script>
-  // One clock for the whole book: the server's time, in kitchen time (Queensland, UTC+10, no daylight saving).
-  // A phone's own clock can be minutes or hours out, or set to another zone. The update check further down asks the site
-  // for its headers anyway; their Date is the server's time, so the book keeps the gap (lk.clock.gap) and adds it.
-  // now() is the time to save on a line and to compare with saved times. Time passing on this phone (a timer, a lock,
-  // "30 minutes away") still uses Date.now(). day, hour, mins, dow and clock read a time in kitchen time.
-  // ready() turns true once this visit has asked the server (or after 10 s without an answer); the prep pages wait for it
-  // before rolling lines onto today, so a phone with the wrong date never rolls them onto the wrong day.
-  window.LK_TIME = (function () {
-    var ZONE = 10 * 3600000, gap = 0, checked = false;
-    try { gap = +localStorage.getItem('lk.clock.gap') || 0; } catch (e) {}
-    function now() { return Date.now() + gap; }
-    function done(changed) { var first = !checked; checked = true; if (first || changed) window.dispatchEvent(new Event('lk-clock')); }
-    setTimeout(function () { if (!checked) done(false); }, 10000);
-    function k(ms) { return new Date((ms == null ? now() : ms) + ZONE); }   // read with the getUTC... methods
-    function p(n) { return (n < 10 ? '0' : '') + n; }
-    return {
-      now: now,
-      gap: function () { return gap; },
-      ready: function () { return checked; },
-      day: function (ms) { var d = k(ms); return d.getUTCFullYear() + '-' + p(d.getUTCMonth() + 1) + '-' + p(d.getUTCDate()); },
-      hour: function (ms) { return k(ms).getUTCHours(); },
-      mins: function (ms) { var d = k(ms); return d.getUTCHours() * 60 + d.getUTCMinutes(); },
-      dow: function (ms) { return k(ms).getUTCDay(); },
-      clock: function (ms) { var d = k(ms); return p(d.getUTCHours()) + ':' + p(d.getUTCMinutes()); },
-      // a kitchen date (YYYY-MM-DD) and minutes after midnight, as a time
-      at: function (ymd, min) { var a = ymd.split('-'); return Date.UTC(+a[0], a[1] - 1, +a[2]) - ZONE + (min || 0) * 60000; },
-      // learn the gap from a server answer, sent at t0 and back at t1 (phone time). Date is whole seconds, so add half a second.
-      // With no answer (no signal) the saved gap stays. lk-clock tells the pages to draw again.
-      learn: function (r, t0, t1) {
-        var s = Date.parse((r && r.headers && r.headers.get('date')) || '');
-        if (!isFinite(s) || t1 - t0 > 5000) return done(false);
-        var g = Math.round(s + 500 - (t0 + t1) / 2);
-        if (Math.abs(g - gap) < 1500) return done(false);
-        var jump = Math.abs(g - gap) > 60000;
-        gap = g;
-        try { localStorage.setItem('lk.clock.gap', String(g)); } catch (e) {}
-        done(jump);
-      }
-    };
-  })();
-</script>
+<script src="js/boot.js"></script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -81,99 +33,6 @@
 <script src="js/firebase-config.js" defer></script>
 <script src="js/prep.js" defer></script>
 <script src="js/app.js" defer></script>
-<script>
-  // Daily self-refresh: the book reloads itself once a day (about 04:00) so a tablet left open on the pass
-  // always shows the latest cards. If the device was asleep at 04:00, it refreshes as soon as it wakes.
-  (function () {
-    var DAY = 24 * 60 * 60 * 1000, CATCH_UP = 20 * 60 * 60 * 1000, loaded = Date.now(), T = window.LK_TIME;
-    function untilFour() { var n = T.now(), t = T.at(T.day(n), 240); if (t <= n + 60000) t += DAY; return t - n; }
-    function refresh() {
-      // Something half written in the prep pages (a line, a shift ping, minutes, the staff list): try again in 10 minutes.
-      try { if (window.LK_PREP && window.LK_PREP.unsaved && window.LK_PREP.unsaved()) { clearTimeout(timer); timer = setTimeout(refresh, 600000); return; } } catch (e) {}
-      // Re-fetch the data files past the browser cache first, so the reload shows the newest cards. The page stays on the same card.
-      var files = ['js/data.js', 'js/art.js', 'js/app.js', 'js/prep.js', 'js/firebase-config.js', 'css/app.css'];
-      var go = function () { location.reload(); };
-      try {
-        Promise.all(files.map(function (f) { return fetch(f, { cache: 'reload' }); })).then(go, go);
-        setTimeout(go, 8000);
-      } catch (e) { go(); }
-    }
-    var timer = null;
-    function schedule() { clearTimeout(timer); timer = setTimeout(refresh, Math.max(1000, untilFour())); }
-    schedule();
-    window.addEventListener('lk-clock', schedule);
-    document.addEventListener('visibilitychange', function () {
-      if (document.visibilityState !== 'visible') return;
-      if (Date.now() - loaded > CATCH_UP) refresh(); else schedule();
-    });
-  })();
-</script>
-<script>
-  // Automatic updates. After every deploy the site files carry a new Last-Modified/ETag. The book asks for just those
-  // headers (a tiny request, no Firestore) when it opens, when someone comes back to it, and every 15 minutes while it is open.
-  // If they changed, the book updates itself: straight away when it was just brought back from the background,
-  // otherwise when nobody has touched it for 2 minutes and nothing is being typed. A bar offers "Update now" meanwhile.
-  // The same answer carries the server's time, which keeps the book's clock right (LK_TIME, at the top).
-  (function () {
-    var STAMP_URL = 'index.html', base = null, found = false, lastTouch = Date.now(), hiddenAt = 0, lastCheck = 0, bar = null;
-    function stamp() {
-      var t0 = Date.now();
-      return fetch(STAMP_URL, { method: 'HEAD', cache: 'no-store' }).then(function (r) {
-        window.LK_TIME.learn(r.ok ? r : null, t0, Date.now());
-        return r.ok ? (r.headers.get('last-modified') || '') + '|' + (r.headers.get('etag') || '') : '';
-      }, function () { window.LK_TIME.learn(null); return ''; });
-    }
-    function typing() {
-      var a = document.activeElement, t = a && a.tagName;
-      // also anything half written in the prep pages, even when the cursor has left the box
-      try { if (window.LK_PREP && window.LK_PREP.unsaved && window.LK_PREP.unsaved()) return true; } catch (e) {}
-      return t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT' || !!(a && a.isContentEditable);
-    }
-    function reloadNow() {
-      // Once per 10 minutes at most, so a flapping header can never cause a reload loop.
-      try { var last = +localStorage.getItem('lk.upd.last') || 0; if (Date.now() - last < 600000) return; localStorage.setItem('lk.upd.last', String(Date.now())); } catch (e) {}
-      var files = ['index.html', 'js/data.js', 'js/art.js', 'js/app.js', 'js/prep.js', 'js/firebase-config.js', 'css/app.css'];
-      var go = function () { location.reload(); };
-      try { Promise.all(files.map(function (f) { return fetch(f, { cache: 'reload' }); })).then(go, go); setTimeout(go, 8000); } catch (e) { go(); }
-    }
-    function showBar() {
-      if (bar || !document.body) return;
-      bar = document.createElement('div'); bar.setAttribute('role', 'status'); bar.className = 'upd-bar';
-      document.documentElement.classList.add('has-upd');
-      bar.style.cssText = 'position:fixed;left:12px;right:12px;bottom:76px;z-index:9999;max-width:30rem;margin:0 auto;display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--ink);color:#fff;border-radius:10px;font:600 15px Barlow,system-ui,sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.3)';
-      var t = document.createElement('span'); t.textContent = 'New version available. It updates when you stop for a moment.';
-      var b = document.createElement('button'); b.type = 'button'; b.textContent = 'Update now';
-      b.style.cssText = 'flex:none;min-height:44px;padding:0 14px;border:0;border-radius:8px;background:var(--accent);color:#fff;font:700 15px Barlow,system-ui,sans-serif;cursor:pointer';
-      b.onclick = function () { try { localStorage.removeItem('lk.upd.last'); } catch (e) {} reloadNow(); };
-      bar.appendChild(t); bar.appendChild(b); document.body.appendChild(bar);
-    }
-    function check(returned) {
-      lastCheck = Date.now();
-      stamp().then(function (s) {
-        if (!s || s === '|') return;
-        if (base === null) { base = s; return; }
-        if (s === base) return;
-        found = true;
-        if (returned && !typing()) reloadNow(); else showBar();
-      });
-    }
-    ['pointerdown', 'keydown', 'touchstart', 'wheel'].forEach(function (ev) { document.addEventListener(ev, function () { lastTouch = Date.now(); }, { passive: true, capture: true }); });
-    document.addEventListener('visibilitychange', function () {
-      if (document.visibilityState === 'hidden') { hiddenAt = Date.now(); return; }
-      var away = hiddenAt ? Date.now() - hiddenAt : 0;
-      if (Date.now() - lastCheck > 60000) check(away > 300000); else if (found && away > 300000 && !typing()) reloadNow();
-    });
-    setInterval(function () {
-      if (document.visibilityState !== 'visible') return;
-      if (found) { if (Date.now() - lastTouch > 120000 && !typing()) reloadNow(); }
-      else if (Date.now() - lastCheck > 15 * 60000) check(false);
-    }, 20000);
-    window.addEventListener('load', function () { check(false); });
-  })();
-</script>
-<script>
-  // Installable: the service worker keeps the last copy of the book so it opens with no signal.
-  if ('serviceWorker' in navigator) window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
-</script>
+<script src="js/upkeep.js"></script>
 </body>
 </html>

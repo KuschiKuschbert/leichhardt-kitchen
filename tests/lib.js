@@ -168,12 +168,36 @@ function results() { const R = []; return { R, ok: (c, m) => check(c, m, R) }; }
 const txt = (page, sel) => page.evaluate(s => { const e = document.querySelector(s); return e ? e.textContent.trim() : null; }, sel);
 const tap = (page, sel) => page.evaluate(s => { const e = document.querySelector(s); if (e) e.click(); return !!e; }, sel);
 const row = (page, id) => page.evaluate(i => { const e = document.getElementById('nbr-' + i); return e ? e.textContent : null; }, id);
+/* The chef mark's menu in the top bar (20 Oct 2026): chefItems lists what it offers (the links by their page, the Chef
+   group by name: pings, register, staff, and out for Sign out) and closes it again; chef taps one of the Chef group. */
+async function chefItems(page) {
+  await page.evaluate(() => { const g = document.querySelector('.nt-got'); if (g) g.click(); });   // today's pings popup first
+  await page.click('.wtop-who'); await page.waitForTimeout(150);
+  const l = await page.evaluate(() => [...document.querySelectorAll('.wm .wm-a')].map(e => e.getAttribute('data-v') || (e.getAttribute('data-who') === 'out' ? 'out' : (e.getAttribute('href') || '').replace('#/', ''))));
+  await page.keyboard.press('Escape'); await page.waitForTimeout(100);
+  return l;
+}
+async function chef(page, v) {
+  await page.evaluate(() => { const g = document.querySelector('.nt-got'); if (g) g.click(); });
+  await page.click('.wtop-who'); await page.waitForTimeout(150);
+  await page.click('.wm [data-who="open"][data-v="' + v + '"]'); await page.waitForTimeout(400);
+}
 /* Prints the results and sets the exit code, so run.js knows whether the file passed. */
 function report(results) {
   const failed = results.filter(x => x.startsWith('FAIL'));
   console.log(results.join('\n'));
   console.log(failed.length + ' failed of ' + results.length);
   process.exitCode = failed.length ? 1 : 0;
+}
+/* Waits until fn (run in the page) returns something truthy. page.waitForFunction runs its check through eval, which the
+   book's security header (20 Oct 2026) blocks, so this asks with page.evaluate every 100 ms instead. */
+async function waitFor(page, fn, arg, timeout) {
+  const end = Date.now() + (timeout || 5000);
+  for (;;) {
+    if (await page.evaluate(fn, arg)) return true;
+    if (Date.now() > end) throw new Error('waitFor: timed out');
+    await page.waitForTimeout(100);
+  }
 }
 /* Opens an admin page by its id (people, notes, tools...): the page buttons sit under five groups (20 Oct 2026), so
    this taps each group until the page is open or its button shows, then taps that. */
@@ -190,4 +214,4 @@ async function adminTab(page, t) {
   }, t);
   await page.waitForTimeout(250);
 }
-module.exports = { adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
+module.exports = { waitFor, chefItems, chef, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };

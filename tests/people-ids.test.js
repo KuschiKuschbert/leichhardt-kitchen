@@ -1,5 +1,5 @@
 // Who may set a PIN (staffIds), and roles changed from the prep book. A sous chef's staff list save sends the people
-// list and staffIds only. When a role or a Pings tick in the people list does not match sousIds or pingIds (a sous
+// list and staffIds only. When a role in the people list does not match sousIds (a sous
 // chef changed it), the admin panel does not publish it quietly: it shows "Changed from the prep book" with Keep these
 // changes and Undo them, and only adds staffIds by itself.
 const L = require('./lib');
@@ -38,14 +38,10 @@ const same = (a, b) => (a || []).slice().sort().join(',') === b.slice().sort().j
   ok(p.errors.length === 0, 'admin: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // admin: Bo ticked for Pings from the prep book, Keep these changes publishes pingIds
+  // admin: an old Pings tick on Bo (before 20 Oct 2026) asks nothing: pings follow the role, so pingIds stays the sous chefs
   p = await L.open(b, '#/admin', { admin: true, extra: cfg({ ping: true }), wait: 1800 });
-  ok(/Bo/.test(await txt(p, '.a-ids-list')) && /ticked for Pings/.test(await txt(p, '.a-ids-list')), 'admin: the card says Bo is now ticked for Pings');
-  await p.click('[data-p="a-ids-keep"]');
-  await p.waitForTimeout(400);
   s = await store(p);
-  ok(same(s[CFG].pingIds, ['sam', 'bo']) && same(s[CFG].sousIds, ['sam']), 'admin: Keep publishes pingIds with Bo');
-  ok(await p.$('.a-ids') === null, 'admin: the card goes after Keep');
+  ok(await p.$('.a-ids') === null && same(s[CFG].pingIds, ['sam']), 'admin: no card for an old Pings tick, pingIds stays Sam');
   await p.context().close();
 
   // admin: everything in step, no card, and staffIds is seeded on its own
@@ -70,7 +66,7 @@ const same = (a, b) => (a || []).slice().sort().join(',') === b.slice().sort().j
 
   // sous chef's staff page: adding a person sends people and staffIds, nothing else
   p = await L.open(b, '#/prep', { extra: cfg(), wait: 1500 });
-  await p.click('[data-p="staff-open"]');
+  await L.chef(p, 'staff');
   await p.waitForTimeout(200);
   await p.fill('#a-bulk', 'Dee');
   await p.click('[data-p="a-bulk-add"]');

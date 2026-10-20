@@ -4,7 +4,7 @@
   --paper: #FFFFFF;
   --ink: #1C1D1F;
   --muted: #55585E;
-  --faint: #8A8F96;
+  --faint: #6B7077;   /* 4.9:1 on the page colour (was #8A8F96, 3.1:1) */
   --accent: #E2602A;
   --accent-ink: #C2451A;
   --tag: #B83F15;
@@ -37,6 +37,13 @@ img, svg { display: block; }
 .skip:focus { left: 8px; }
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .visually-hidden { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* tap targets (20 Oct 2026): nothing a cook taps is under 44 px, admin ticks are 28 px (html raises these over the
+   older rules further down, which they replace) */
+html .a-check, html .a-details summary, html .nb-sg, html .nb-hd { min-height: 44px; }
+html .a-table .a-name { height: 44px; }
+html .a-table .p-select { min-height: 44px; }
+html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 28px; height: 28px; }
+@media (max-width: 599px) { html .a-tab { min-height: 44px; } }
 
 /* ---------- page frame ---------- */
 .page { max-width: 1240px; margin: 0 auto; padding: 1.5rem 1.25rem 2.5rem; display: flex; flex-direction: column; gap: 1.1rem; }
@@ -393,19 +400,10 @@ img, svg { display: block; }
 .nb-star[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
 .nb-sh { margin: 1.1rem 0 0.4rem; font-family: var(--display); font-weight: 700; font-size: 0.9375rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent-ink); }
 .nb-sd { margin: 0 0 0.5rem; font-size: 0.8125rem; color: var(--muted); }
-.nb-usual, .nb-tools { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.nb-usual { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .nb-us { font-size: 0.75rem; color: var(--muted); margin-left: 0.3rem; }
 .nb-side { padding-bottom: 1rem; }
-/* Print the list (prep) and Print (orders) set a class on <html>: other pages print as they are, not blank */
 @media print {
-  html.print-list body *, html.print-orders body * { visibility: hidden !important; }
-  html.print-list .nb-left, html.print-list .nb-left * { visibility: visible !important; }
-  html.print-list .nb-left { position: absolute; left: 0; top: 0; width: 100%; height: auto !important; box-shadow: none !important; border: 0 !important; }
-  html.print-list .nb-left .nb-body { overflow: visible !important; }
-  html.print-list .nb-left .nb-foot, html.print-list .nb-star, html.print-list .nb-x, html.print-list .nb-go { display: none !important; }
-  html.print-orders .o-page, html.print-orders .o-page * { visibility: visible !important; }
-  html.print-orders .o-page { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none !important; border: 0 !important; }
-  html.print-orders .o-add, html.print-orders .o-tools, html.print-orders .nb-x, html.print-orders .p-x, html.print-orders .o-nudge, html.print-orders .nb-link { display: none !important; }
   .zoombar, .tabbar, .skip { display: none !important; }
 }
 @media (max-width: 599px) {
@@ -477,7 +475,6 @@ img, svg { display: block; }
 .o-who { display: block; margin-top: 0.15rem; font-family: var(--body); font-size: 0.8125rem; color: var(--muted); }
 .o-page .nb-row .p-x { margin-left: 0.4rem; }
 .o-nav { flex-wrap: wrap; }
-.o-tools { margin: 1rem 0 0; }
 .o-days { display: inline-flex; flex-wrap: nowrap; gap: 0.5rem; }
 .o-nav .o-days .chip:first-child, .o-nav .o-days .chip:last-child { min-width: 48px; padding: 0; font-size: 1.4rem; }
 .o-nav .chip { font: 700 0.9375rem var(--body); min-height: 44px; padding: 0 1rem; }
@@ -749,7 +746,12 @@ img, svg { display: block; }
 .a-tools { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 0.75rem 1rem; }
 .a-title { margin: 0; font: 700 1.9rem var(--display); line-height: 1.05; }
 .a-tbtns { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.a-print-h { display: none; }
+.a-export > summary { list-style: none; display: inline-flex; align-items: center; cursor: pointer; }
+.a-export > summary::-webkit-details-marker { display: none; }
+.a-export[open] > summary { background: var(--ink); color: #fff; }
+.a-export .btn-row { margin-top: 0.5rem; }
+.a-upd { margin: 0.4rem 0 0; }
+.a-step { margin: 0.4rem 0 0.6rem; }
 .a-jump { display: flex; gap: 0.4rem; overflow-x: auto; padding: 0.35rem 0 0.5rem; scrollbar-width: none; }
 .a-jump::-webkit-scrollbar { display: none; }
 .a-jump .chip { flex: 0 0 auto; }
@@ -762,24 +764,6 @@ img, svg { display: block; }
 .a-sub { font: 600 0.8125rem var(--body); color: var(--muted); text-transform: none; letter-spacing: 0; margin-left: 0.3rem; }
 @media (max-width: 599px) { .a-tbtns { width: 100%; } .a-tbtns .btn { flex: 1 1 auto; } .a-title { font-size: 1.6rem; } }
 
-/* Printing the admin panel (Insights, Team or Waste): A4, chrome hidden, cards kept whole */
-@media print {
-  html.print-admin body * { visibility: visible !important; }
-  html.print-admin .wtop, html.print-admin .tabbar, html.print-admin .a-tabs, html.print-admin .p-bar, html.print-admin .a-filters, html.print-admin .a-tbtns, html.print-admin .a-jump, html.print-admin .foot, html.print-admin .p-admin > .p-h, html.print-admin .a-pane .chips, html.print-admin .a-pane button.p-x, html.print-admin summary { display: none !important; }
-  html.print-admin .a-print-h { display: flex !important; justify-content: space-between; gap: 1rem; margin-bottom: 4mm; padding-bottom: 2mm; border-bottom: 2px solid #000; font-size: 10pt; }
-  html.print-admin body, html.print-admin #app, html.print-admin .page { background: #fff !important; padding: 0 !important; margin: 0 !important; max-width: none !important; }
-  html.print-admin .a-grid { display: block !important; }
-  html.print-admin .a-card { break-inside: avoid; margin: 0 0 5mm; border: 1px solid #999; }
-  html.print-admin .a-tile { break-inside: avoid; }
-  html.print-admin .a-tablewrap, html.print-admin .a-scroll { overflow: visible !important; }
-  html.print-admin .a-table { min-width: 0 !important; }
-  html.print-admin * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  html.print-admin .a-table thead th { position: static !important; }
-  html.print-admin .a-sh { break-after: avoid-page; page-break-after: avoid; }
-  html.print-admin .a-sec { break-inside: auto; }
-  html.print-admin .a-sec + .a-sec { break-before: page; }
-  @page { size: A4 portrait; margin: 12mm; }
-}
 /* Settings: the QR code to open the book on a phone. Shown on computers and wide tablets only, not on phones. */
 .set-qr { display: none; }
 @media (min-width: 900px) { .set-qr { display: flex; } }
@@ -997,7 +981,6 @@ details.nb-start-l[open] > summary::after { content: '\2212'; }
 .mn-err { min-height: 1.2em; color: var(--accent-ink); font-weight: 600; }
 .mn-eh { margin: 0.5rem 0 0; font: 700 1.25rem var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
 .mn-earlier { display: flex; flex-wrap: wrap; gap: 0.4rem; }
-.mn-btns { display: flex; gap: 0.5rem; margin-bottom: 0.6rem; }
 .mn-wl { margin: 0; }
 .mn-nudge { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 0.75rem; margin: 0.6rem 0; padding: 0.65rem 0.8rem; border: 2px solid var(--accent-ink); background: #FFF6EF; }
 .mn-nudge b { display: block; font: 700 1.125rem var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-ink); }
@@ -1005,7 +988,6 @@ details.nb-start-l[open] > summary::after { content: '\2212'; }
 /* the same nudge on the landing page, above the dockets (the slot is drawn by js/app.js and filled in by js/prep.js) */
 .wall-mn .mn-nudge { margin: 0 0 1.6rem; border-radius: 8px; }
 @media (min-width: 720px) { .wall-mn .mn-nudge { max-width: 38rem; } }
-.nb-tools a.nb-btn { display: inline-flex; align-items: center; text-decoration: none; }
 /* writing the minutes and the register */
 .mn-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.6rem 0.8rem; }
 .mn-seg { display: flex; flex-wrap: wrap; gap: 0.35rem; }
@@ -1024,18 +1006,6 @@ details.nb-start-l[open] > summary::after { content: '\2212'; }
 .mn-chase li { padding: 0.15rem 0.7rem; border: 1.5px solid var(--ink); border-radius: 999px; background: #fff; }
 .mn-side { padding: 0.7rem 0.9rem; border: 2px solid var(--ink); background: var(--paper); align-self: start; }
 @media (max-width: 599px) { .mn-title { font-size: 2.2rem; } .mn-no b { font-size: 4rem; } .mn-doc { padding: 0.8rem; } }
-@media print {
-  html.print-min body * { visibility: visible !important; }
-  html.print-min .wtop, html.print-min .tabbar, html.print-min .foot, html.print-min .mn-noprint, html.print-min .nb-top, html.print-min .p-bar, html.print-min .a-tabs, html.print-min .a-pane button, html.print-min .p-admin > .p-h { display: none !important; }
-  html.print-min body, html.print-min #app, html.print-min .page { background: #fff !important; padding: 0 !important; margin: 0 !important; max-width: none !important; }
-  html.print-min .mn { max-width: none; }
-  html.print-min .mn-doc { box-shadow: none; break-inside: auto; }
-  html.print-min .mn-box, html.print-min .mn-safety, html.print-min .mn-tbl tr { break-inside: avoid; }
-  html.print-min * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  html.print-min .a-print-h { display: flex !important; justify-content: space-between; gap: 1rem; margin-bottom: 4mm; padding-bottom: 2mm; border-bottom: 2px solid #000; font-size: 10pt; }
-  html.print-min .a-tablewrap { overflow: visible !important; }
-  html.print-min .a-pane .set-block:not(.mn-print) { display: none !important; }
-}
 
 /* Order list: the add box sits at the top. On big screens the list and "Ordered today" sit side by side and the page uses the width. */
 .o-add.nb-foot { border-top: 0; border-bottom: 2px solid var(--ink); padding: 0.8rem 0 1rem; }
@@ -1118,10 +1088,6 @@ details.nb-start-l[open] > summary::after { content: '\2212'; }
   .a-table.lv-people td.a-c input[type=checkbox] { width: 1.5rem; height: 1.5rem; }
   .lv-table.mn-reg td.mnst { grid-column: 1 / -1; }
 }
-@media print {
-  html.print-admin .lv-tools, html.print-admin .lv-more, html.print-admin .lv-chips { display: none !important; }
-  html.print-min .lv-tools, html.print-min .lv-more, html.print-min .lv-chips, html.print-min .mn-earlier { display: none !important; }
-}
 @media (min-width: 600px) {
   .lv-chips.scroll { flex-wrap: wrap; overflow: visible; -webkit-mask-image: none; mask-image: none; }
   .lv-chips.scroll::after { display: none; }
@@ -1142,7 +1108,6 @@ details.nb-start-l[open] > summary::after { content: '\2212'; }
 .mn-regall { display: flex; flex-direction: column; gap: 0.6rem; align-items: flex-start; }
 .mn-regtbl { display: none; width: 100%; }
 .mn-regtbl.is-open { display: block; }
-html.print-min .mn-regtbl { display: block; }
 
 /* Safety nets (October 2026): the toast sits above the phone tab bar instead of on it, its Undo is a full-size
    target, and "Use a different kitchen PIN" (admin Tools tab) is kept apart from the move to a new PIN. */
@@ -1337,17 +1302,7 @@ html.gz-open, html.gz-open body { overflow: hidden; }
 /* on a recipe card: the box only takes room when there is a guide */
 .r-guides { display: contents; }
 .g-hits a { font-weight: 700; color: var(--accent-ink); }
-/* printing one guide: its steps and pages on A4, the menus left off */
 @media print {
-  html.print-guide body * { visibility: visible !important; }
-  html.print-guide .wtop, html.print-guide .tabbar, html.print-guide .foot, html.print-guide .g-noprint, html.print-guide .p-sync, html.print-guide .p-toast { display: none !important; }
-  html.print-guide body, html.print-guide #app, html.print-guide .page { background: #fff !important; padding: 0 !important; margin: 0 !important; max-width: none !important; }
-  html.print-guide .g-doc { max-width: none; padding: 0; border: 0; box-shadow: none; background: #fff; }
-  html.print-guide .g-steps { break-inside: avoid; }
-  html.print-guide .g-pg { break-inside: avoid; break-before: page; }
-  html.print-guide .g-pgb { border: 0; }
-  html.print-guide .g-pgb img { width: auto; max-width: 100%; max-height: 260mm; margin: 0 auto; }
-  html.print-guide * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .gz-wrap { display: none !important; }
 }
 
@@ -1361,6 +1316,12 @@ html.gz-open, html.gz-open body { overflow: hidden; }
 .wm-a:hover, .wm-a:focus-visible { background: var(--hit); }
 .wm-a span { display: flex; flex-direction: column; }
 .wm-a small { color: var(--muted); font-size: 0.8125rem; }
+/* the menu items that are buttons (Chef group, Sign out) look like the links; a long menu scrolls inside the phone */
+.wm { max-height: calc(100dvh - 90px); overflow-y: auto; }
+button.wm-a { width: 100%; border: 0; background: none; font: inherit; text-align: left; cursor: pointer; }
+.wm-sh { margin: 10px 10px 4px; padding-top: 8px; border-top: 1.5px solid var(--line); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.75rem; }
+.wm-out { margin-top: 6px; border-top: 1.5px solid var(--line); border-radius: 0 0 8px 8px; }
+.wm-out.is-armed small { color: var(--accent-ink); font-weight: 700; }
 .wtop-btn.adm { position: relative; }
 .adm-n { position: absolute; top: -5px; right: -5px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--accent); color: #fff; border: 2px solid var(--bar); font-size: 0.6875rem; font-weight: 700; line-height: 16px; text-align: center; box-sizing: border-box; }
 .ml-urgent { margin: 0 0 12px; padding: 10px 12px; border-left: 4px solid var(--accent); background: var(--hit); border-radius: 6px; }
@@ -1411,29 +1372,46 @@ html.gz-open, html.gz-open body { overflow: hidden; }
 .dr-form { outline: none; }
 .dr-form .field, .dr-page .field, .dr-runbox .field { margin: 0 0 14px; }
 .dr-chips { gap: 8px; }
+/* a folded group of chips: what is picked on one line, tap to open it */
+.dr-fold { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; width: 100%; min-height: 44px; padding: 8px 12px; border: 1.5px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.dr-fold .label { flex: 1 0 100%; margin: 0; }
+.dr-fold .dr-val { flex: 1 1 auto; font-weight: 600; overflow-wrap: anywhere; }
+.dr-fold .dr-chg { flex: 0 0 auto; margin-left: auto; color: var(--ink); font-weight: 700; font-size: 0.875rem; text-decoration: underline; }
+.dr-fold.is-open { min-height: 0; margin: 0 0 8px; padding: 0; border: 0; background: none; align-items: center; }
+.dr-fold.is-open .label { flex: 1 1 auto; }
+.dr-more { display: block; width: 100%; min-height: 44px; margin: 0 0 14px; padding: 8px 4px; border: 0; border-top: 1px solid var(--line); background: none; color: var(--ink); font: inherit; font-weight: 600; text-align: left; text-decoration: underline; cursor: pointer; }
 .dr-eb { display: inline-block; margin: 0 0 4px; padding: 2px 8px; border-radius: 10px; background: var(--done-tint); color: var(--done); font-weight: 700; font-size: 0.8125rem; }
 .dr-prev { margin: 0 0 12px; padding: 10px 12px; border: 1.5px dashed var(--ink); border-radius: 8px; background: var(--beige); overflow-wrap: anywhere; }
 .dr-prev .label { display: block; margin-bottom: 2px; }
-.dr-mine { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 12px; border: 1.5px solid var(--ink); border-radius: var(--radius); background: var(--beige); }
+.dr-mine { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 12px; padding: 10px 12px; border: 1.5px solid var(--ink); border-radius: var(--radius); background: var(--beige); }
 .dr-mine .label { flex: 1 0 100%; }
-.dr-mine .dr-what { flex: 1 1 12rem; margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.dr-mine .dr-what { flex: 1 1 8rem; margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.dr-mine .btn { flex: 0 0 auto; }
 .dr-nudge { margin: 0 0 14px; padding: 12px 14px; border-left: 4px solid var(--accent); background: var(--hit); border-radius: 6px; }
 .dr-nudge p { margin: 0 0 8px; }
 .dr-team { list-style: none; margin: 0 0 14px; padding: 0; }
 .dr-team > li { border-top: 1px solid var(--line); }
 .dr-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 8px 4px; border: 0; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
-.dr-row.is-none { display: block; color: var(--muted); cursor: default; padding: 10px 4px; }
+.dr-row.is-none { display: block; min-height: 0; color: var(--muted); cursor: default; padding: 10px 4px; }
 .dr-row.is-in { background: var(--done-tint); }
 .dr-box { flex: 0 0 32px; width: 32px; height: 32px; border: 2px solid var(--ink); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; background: var(--paper); }
 .dr-row.is-in .dr-box { background: var(--done); border-color: var(--done); color: #fff; }
 .dr-txt { display: flex; flex-direction: column; min-width: 0; }
 .dr-who { font-weight: 700; }
-.dr-row.is-none .dr-who { color: var(--ink); margin-right: 8px; }
+.dr-row.is-none .dr-who { color: var(--ink); }
 .dr-what { overflow-wrap: anywhere; }
-.dr-run { padding: 12px; border: 1.5px solid var(--ink); border-radius: var(--radius); background: var(--paper); }
-.dr-order { margin: 6px 0 12px; padding-left: 1.1rem; }
+.dr-run { padding: 10px 12px; border: 1.5px solid var(--ink); border-radius: var(--radius); background: var(--paper); }
+.dr-run .ml-h3 { margin: 0; }
+.dr-order { margin: 6px 0 0; padding-left: 1.1rem; }
 .dr-order li { margin: 2px 0; overflow-wrap: anywhere; }
 .dr-runnone { margin: 0; }
+@media (max-width: 719px) {
+  .dr-row { min-height: 48px; padding: 6px 4px; gap: 10px; }
+  .dr-box { flex-basis: 28px; width: 28px; height: 28px; }
+  .dr-form .field, .dr-page .field, .dr-runbox .field { margin-bottom: 10px; }
+  .dr-chips { gap: 6px; }
+  .dr-chips .chip { padding: 0 0.7rem; }
+}
 /* ---------- readability (20 Oct 2026) ----------
    The amount is what a cook acts on, so it reads in ink, bold, in the body font, on one line. Allergen words are never
    the smallest text on a card, and "may have" tags get a tint as well as the dashed border. Small buttons use the body

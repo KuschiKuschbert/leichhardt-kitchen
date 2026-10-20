@@ -35,10 +35,10 @@ const side = page => page.evaluate(() => {
     const tag = w + ' px: ';
     const p = await L.open(b, '#/prep', { extra, width: w, height: w > 400 ? 900 : 844, wait: 1600 });
     const h = await side(p);
-    ok(h.sub === 'Done today, quick add and tools', tag + 'Handy says what is on it (' + h.sub + ')');
+    ok(h.sub === 'Done today and quick add', tag + 'Handy says what is on it (' + h.sub + ')');
     ok(!/Do these first/.test(h.text), tag + 'no Do these first box');
     ok(!h.heads.some(x => /Progress by section|^Due today$|^Regulars$|^Usual for/.test(x)), tag + 'no separate Progress, Due today, Usual or Regulars headings (' + h.heads.join(', ') + ')');
-    ok(h.heads.indexOf('Quick add') > h.heads.indexOf('Done today (0)') && h.heads.indexOf('Done today (0)') >= 0 && h.heads.indexOf('Tools') > h.heads.indexOf('Quick add'), tag + 'Done today, then Quick add, then Tools');
+    ok(h.heads.indexOf('Quick add') > h.heads.indexOf('Done today (0)') && h.heads.indexOf('Done today (0)') >= 0 && h.heads.indexOf('Tools') < 0, tag + 'Done today, then Quick add, and no Tools (they moved to the chef menu)');
     ok(new RegExp('Due today, usual for a ' + dname + ' and regulars\\. Tap to add\\.').test(h.text), tag + 'Quick add says what is in it');
     const names = h.chips.map(c => c.t.replace(/\s+/g, ' '));
     ok(names.length === 3 && /^Make aioli/.test(names[0]) && /^Pick mint/.test(names[1]) && /^Mise onions/.test(names[2]), tag + 'one row: due, then usual, then regular, each once (' + names.join(' | ') + ')');

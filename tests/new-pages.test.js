@@ -72,7 +72,7 @@ const tab = p => p.evaluate(() => Array.prototype.some.call(document.querySelect
   ok(/Meeting minutes are not open to everyone yet/.test(await txt(p, '#prep-root') || ''), 'staff: #/minutes says the minutes are not open yet');
   await p.goto(L.BASE + '#/prep');
   await p.waitForTimeout(1000);
-  ok(await p.$('.nb-btn[href="#/minutes"]') === null, 'staff: no Meeting minutes button in Handy');
+  ok(!(await L.chefItems(p)).includes('minutes'), 'staff: no Meeting minutes in the chef menu');
   ok(await p.$('.mn-nudge') === null, 'staff: no minutes nudge on the prep list');
   await p.goto(L.BASE + '#/recipes');
   await p.waitForTimeout(400);
@@ -94,7 +94,7 @@ const tab = p => p.evaluate(() => Array.prototype.some.call(document.querySelect
   ok(await p.$('.g-card') !== null, 'lead: guide cards show');
   await p.goto(L.BASE + '#/prep');
   await p.waitForTimeout(1000);
-  ok(await p.$('.nb-btn[href="#/minutes"]') !== null, 'lead: Meeting minutes button in Handy');
+  ok((await L.chefItems(p)).includes('minutes'), 'lead: Meeting minutes in the chef menu');
   ok(p.errors.length === 0, 'lead: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -122,7 +122,7 @@ const tab = p => p.evaluate(() => Array.prototype.some.call(document.querySelect
   p = await L.open(b, '#/prep', { who: 'sam', extra: world(HIDE), wait: 2000 });
   await p.click('.nt-got').catch(() => {});
   await p.waitForTimeout(200);
-  await p.click('[data-p="staff-open"]');
+  await L.chef(p, 'staff');
   await p.waitForTimeout(300);
   await p.click('[data-p="a-add-person"]');
   await p.waitForTimeout(150);
