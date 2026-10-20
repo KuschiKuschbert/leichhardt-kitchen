@@ -1462,7 +1462,7 @@ html.gz-open, html.gz-open body { overflow: hidden; }
   .dr-box { flex-basis: 28px; width: 28px; height: 28px; }
   .dr-form .field, .dr-page .field, .dr-runbox .field { margin-bottom: 10px; }
   .dr-chips { gap: 6px; }
-  .dr-chips .chip { min-height: 40px; padding: 0 0.7rem; }
+  .dr-chips .chip { padding: 0 0.7rem; }
 }
 /* ---------- readability (20 Oct 2026) ----------
    The amount is what a cook acts on, so it reads in ink, bold, in the body font, on one line. Allergen words are never

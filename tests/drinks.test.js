@@ -30,6 +30,7 @@ const val = (p, f) => txt(p, '.dr-fold[data-f="' + f + '"] .dr-val');
   ok(/Pick a coffee or a cold drink first/.test(await txt(p, '.dr-form') || ''), 'first PIN: saving with nothing picked asks for a drink');
   ok(!(await p.$('[data-f="size"]')), 'form: no size until a coffee is picked');
   ok(!!(await p.$('[data-f="kind"][data-v="flat"]')) && !(await p.$('[data-f="cold"][data-v="water"]')), 'form: a new usual opens on the coffee, the other groups are folded');
+  ok(await p.$eval('[data-f="kind"][data-v="flat"]', e => e.getBoundingClientRect().height) >= 44, 'form: drink buttons are 44 px to tap');
   await pick(p, 'kind', 'flat'); await p.waitForTimeout(150);
   ok(!(await p.$('[data-f="kind"][data-v="latte"]')) && /Flat white/.test(await val(p, 'kind') || '') && !!(await p.$('[data-f="milk"][data-v="oat"]')), 'form: picking a coffee folds it and opens Milk');
   await pick(p, 'size', 'large');
