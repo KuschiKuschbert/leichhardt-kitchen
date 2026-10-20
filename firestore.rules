@@ -259,8 +259,8 @@ service cloud.firestore {
     match /kitchens/KITCHEN_PIN/drinks/{id} {
       allow read: if true;
       allow create, update: if isAdmin() || (staff() && id == request.resource.data.by
-        && request.resource.data.keys().hasOnly(['by', 'kind', 'size', 'milk', 'shot', 'sugar', 'note', 'other', 'at'])
-        && dkStr('kind', 12) && dkStr('size', 12) && dkStr('milk', 12) && dkStr('shot', 12) && dkStr('sugar', 12)
+        && request.resource.data.keys().hasOnly(['by', 'kind', 'size', 'milk', 'shot', 'sugar', 'note', 'cold', 'other', 'at'])
+        && dkStr('kind', 12) && dkStr('cold', 12) && dkStr('size', 12) && dkStr('milk', 12) && dkStr('shot', 12) && dkStr('sugar', 12)
         && dkStr('note', 40) && dkStr('other', 60) && request.resource.data.at is number);
       allow delete: if isAdmin();
     }
