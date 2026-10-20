@@ -1024,6 +1024,8 @@
     if (S.moving || !fb || S.level !== 'owner' || !S.user) return;
     if (!/^\d{4}$/.test(np)) { S.moveMsg = 'The new PIN is exactly 4 digits.'; draw(); return; }
     if (np === S.pin) { S.moveMsg = 'That is the PIN already in use.'; draw(); return; }
+    var box2 = S.root.querySelector('#a-newpin2');
+    if (!box2 || box2.value.trim() !== np) { S.moveMsg = 'The two PINs do not match. Type the new PIN again.'; draw(); return; }
     if (!arm('move-pin')) return;
     S.moving = true; S.moveMsg = 'Copying...'; draw();
     var f = fb.fs, old = S.pin, n = 0;
@@ -1970,7 +1972,9 @@
   function toolsHTML(kind, title) {
     var n = S.statsRange;
     return '<div class="a-tools"><div><h3 class="a-title">' + esc(title) + '</h3><span class="hint">' + esc(rangeText(n)) + ', compared with the ' + n + ' days before.</span></div>' +
-      '<div class="a-tbtns"><button type="button" class="btn dark" data-p="print-tab">Print or save as PDF</button><button type="button" class="btn" data-p="csv" data-v="' + kind + '">Download CSV</button></div></div>' +
+      // the export buttons fold into one Export menu, so the first screen is the numbers, not the buttons
+      '<details class="a-tbtns a-export"><summary class="btn">Export</summary><div class="btn-row"><button type="button" class="btn" data-p="print-tab">Print or save as PDF</button><button type="button" class="btn" data-p="csv" data-v="' + kind + '">Download CSV</button></div></details></div>' +
+      (S.stats && S.stats.at ? '<p class="hint a-upd">Updated ' + esc(clock(S.stats.at)) + '. Refresh reads the newest.</p>' : '') +
       '<div class="a-print-h"><strong>Leichhardt Kitchen Book</strong> &middot; ' + esc(title) + ' &middot; ' + esc(rangeText(n)) + '<span>Printed ' + esc(dayShort(dayNow()) + ' ' + clock(now())) + '</span></div>';
   }
   function printTab() {
@@ -2046,7 +2050,7 @@
       agg.dates.slice().reverse().map(function (d) { return '<tr><th scope="row">' + esc(dayShort(d)) + '</th><td>' + agg.perDay[d].w + '</td><td>' + agg.perDay[d].t + '</td><td>' + agg.perDay[d].r + '</td></tr>'; }).join('') + '</tbody></table></div></details>';
     var jump = '<nav class="a-jump" aria-label="Jump to">' + INS_SECS.map(function (x, i) { return '<button type="button" class="chip" data-p="jump" data-v="' + x[0] + '"><span class="a-sn">' + (i < 9 ? '0' : '') + (i + 1) + '</span>' + esc(x[1]) + '</button>'; }).join('') + '</nav>';
     return head + jump +
-      '<section class="a-sec">' + secHead(0) + '<div class="a-tiles">' + tiles.map(tileHTML).join('') + '</div><div class="a-grid">' + smartHTML(agg, prev, n) + '</div></section>' +
+      '<section class="a-sec">' + secHead(0) + '<div class="a-grid">' + smartHTML(agg, prev, n) + '</div><div class="a-tiles">' + tiles.filter(function (x) { return !(x[0] === 'n/a' || ((x[0] === 0 || x[0] === '0' || x[0] === dur(0)) && !x[2])); }).map(tileHTML).join('') + '</div></section>' +
       '<section class="a-sec">' + secHead(1) + '<div class="a-grid">' + card(calHTML(n), 'full') + card('<h3 class="a-ch-h">Lines each day</h3>' + legend([['Written', CW], ['Ticked off', CT]]) + dailyChart(agg) + tbl, 'full') + '</div></section>' +
       '<section class="a-sec">' + secHead(2) + '<div class="a-grid">' + card(hourHTML(n), 'full') + card(tickBySectionHTML(n)) + card('<h3 class="a-ch-h">Time of day</h3>' + legend([['Written', CW], ['Ticked off', CT]]) + hoursChart(agg)) + '</div></section>' +
       '<section class="a-sec">' + secHead(3) + '<div class="a-grid">' + card('<h3 class="a-ch-h">Load by weekday and section</h3><span class="hint">Which sections are busy on which days. Useful for the roster.</span>' + heatHTML(n), 'full') +
@@ -2542,10 +2546,12 @@
       '<section class="set-block a-feats"><span class="label">New pages</span><span class="hint">You, sous chefs and leads always see these. Untick one to hide it from Staff and View only until the team is ready. Anyone ticked for Pings still sees shift pings.</span>' +
       FEATS.map(function (f) { return '<label class="a-check"><input type="checkbox" data-a="staffsee" data-f="' + f[0] + '"' + (d.staffSee[f[0]] ? ' checked' : '') + '> Staff see ' + f[1] + '</label>'; }).join('') + '</section>' + saveBlock
     ) : (
-      '<section class="set-block"><span class="label">Backup</span><span class="hint">Saves everything the prep book holds (people, prep lines, orders and wastage from the last 400 days, shift pings and who has seen them, meeting minutes with earlier versions and sign-offs, what the prep and order lists have learned, tallies and the guides\' words) as one file on this device. People\'s PIN fingerprints and the guides\' page pictures are left out (keep the original files). Do this now and then.</span><div class="btn-row"><button type="button" class="btn" data-p="export"' + (S.exporting ? ' disabled' : '') + '>' + (S.exporting ? esc(S.exporting) : 'Download a backup') + '</button></div></section>' +
+      '<section class="set-block"><span class="label">Backup</span><span class="hint">Saves everything the prep book holds (people, prep lines, orders and wastage from the last 400 days, shift pings and who has seen them, meeting minutes with earlier versions and sign-offs, what the prep and order lists have learned, tallies and the guides\' words) as one file on this device. People\'s PIN fingerprints and the guides\' page pictures are left out (keep the original files). The book is also backed up on the server every night at 03:30; download one here when you want a copy on this computer.</span><div class="btn-row"><button type="button" class="btn" data-p="export"' + (S.exporting ? ' disabled' : '') + '>' + (S.exporting ? esc(S.exporting) : 'Download a backup') + '</button></div></section>' +
       '<section class="set-block"><span class="label">Kitchen PIN</span><span class="hint">The kitchen PIN is the lock on the whole book, so keep it to staff only. Writing needs a person\'s own PIN as well.</span>' +
-      '<div class="field"><label class="label" for="a-newpin">Move to a new 4 digit kitchen PIN</label><input id="a-newpin" class="search" inputmode="numeric" maxlength="4" autocomplete="off" data-k="a-newpin" placeholder="4 digits" value="' + esc(S.newPin) + '"></div>' +
-      '<div class="btn-row"><button type="button" class="btn" data-p="move-pin"' + (S.moving ? ' disabled' : '') + '>' + (armed('move-pin') ? 'Tap again to copy everything' : 'Copy everything to the new PIN') + '</button></div><span class="saved" role="status">' + esc(S.moveMsg) + '</span><span class="hint">Ask for the new PIN to be added to the security rules first. The old PIN keeps working until its rules are removed.</span>' +
+      '<p class="hint a-step"><strong>Step 1.</strong> Ask for the new PIN to be added to the security rules. <strong>Step 2.</strong> Type it twice below and copy everything to it. The old PIN keeps working until its rules are removed.</p>' +
+      '<div class="field"><label class="label" for="a-newpin">New 4 digit kitchen PIN</label><input id="a-newpin" class="search" inputmode="numeric" maxlength="4" autocomplete="off" data-k="a-newpin" placeholder="4 digits" value="' + esc(S.newPin) + '"></div>' +
+      '<div class="field"><label class="label" for="a-newpin2">Type it again</label><input id="a-newpin2" class="search" inputmode="numeric" maxlength="4" autocomplete="off" data-k="a-newpin2" placeholder="4 digits" value="' + esc(S.newPin2 || '') + '"></div>' +
+      '<div class="btn-row"><button type="button" class="btn" data-p="move-pin"' + (S.moving ? ' disabled' : '') + '>' + (armed('move-pin') ? 'Tap again to copy everything' : 'Copy everything to the new PIN') + '</button></div><span class="saved" role="status">' + esc(S.moveMsg) + '</span>' +
       '<div class="btn-row a-forget"><button type="button" class="btn" data-p="pin-forget">' + (armed('pin-forget') ? 'Tap again: this device forgets the kitchen PIN' : 'Use a different kitchen PIN on this device') + '</button></div><span class="hint">Forgets the kitchen PIN on this device only and asks for one again. Staff phones pick up a new PIN by themselves once the old rules are removed.</span></section></div>');
     return '<div class="p-admin">' + bar + '<h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2>' + tabsBar + '<div class="a-pane">' + (owner ? idCardHTML() : '') + pane + '</div></div>';
   }
@@ -5065,6 +5071,7 @@
     if (k === 'dk-q') { dkQ = el.value; var dkl = S.root.querySelector('.dr-team'); if (dkl) dkl.outerHTML = dkTeamHTML(); return; }
     if (k === 'ml-text') { mlf.text = el.value.slice(0, ML_MAX); mlMsg = ''; var mll = S.root.querySelector('#ml-left'), mln = ML_MAX - mlf.text.length; if (mll) mll.textContent = mln < 100 ? mln + ' characters left' : ''; return; }
     if (k === 'a-newpin') { S.newPin = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.newPin; return; }
+    if (k === 'a-newpin2') { S.newPin2 = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.newPin2; return; }
     if (k === 'mn-pin') {
       S.mpin = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.mpin; pinCells(el); S.mpinOk = false; S.mErr = '';
       var sb = S.root.querySelector('.mn-signbtn'), pm = S.root.querySelector('#mn-pinmsg');
