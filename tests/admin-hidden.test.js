@@ -26,8 +26,8 @@ const { R, ok } = L.results(), { txt } = L;
   ok(await p.$('.wtop .adm') === null, 'staff on #/admin: still no Admin key');
   ok(p.errors.length === 0, 'staff settings: no page errors ' + p.errors.join(' | '));
   await p.context().close();
-  // the head chef's phone: nothing stored yet, the owner probe passes on the prep list and the key appears without a reload
-  p = await L.open(b, '#/prep', { admin: true, who: 'ann', wait: 1800 });
+  // the head chef's phone (a chef signed in, see shared-tablet-chef.test.js): nothing stored yet, the owner probe passes on the prep list and the key appears without a reload
+  p = await L.open(b, '#/prep', { admin: true, who: 'sam', wait: 1800 });
   ok(await p.evaluate(() => localStorage.getItem('lk.admin')) === '1', 'head chef: lk.admin set by the owner probe');
   ok(await p.$('.wtop .adm.is-signed[href="#/admin"]') !== null, 'head chef #/prep: Admin key filled in, drawn after the probe');
   await p.click('.wtop .adm');
@@ -37,7 +37,7 @@ const { R, ok } = L.results(), { txt } = L;
   ok(p.errors.length === 0, 'head chef: no page errors ' + p.errors.join(' | '));
   await p.context().close();
   // the head chef's Settings page: Clear all ticks and the device type, still no Admin panel block
-  p = await L.open(b, '#/settings', { admin: true, who: 'ann', wait: 1800 });
+  p = await L.open(b, '#/settings', { admin: true, who: 'sam', wait: 1800 });
   ok(await p.$('[aria-label="Admin panel"]') === null, 'head chef settings: no Admin panel block');
   ok(await p.$('[data-act="clearticks"]') !== null, 'head chef settings: Clear all ticks');
   ok(await p.$('[data-act="setshared"][data-val="1"]') !== null, 'head chef settings: device type');

@@ -203,7 +203,7 @@
   function who() { return people().filter(function (p) { return p.id === S.who; })[0] || null; }
   function me() { return S.authed ? who() : null; }
   /* only the head chef (signed in with Google) and sous chefs may look at other days; everyone else stays on today */
-  function canBrowse() { return S.level === 'owner' || isSous(); }
+  function canBrowse() { return (S.level === 'owner' && ownerHere()) || isSous(); }
   function can(what) { if (guest()) return what === 'add' || what === 'tick'; var p = me(); return !!(p && p[what]); }
   /* ---------- new pages the head chef can hold back from staff ----------
      Guides, Shift pings and Meeting minutes always show for the head chef, sous chefs and leads. Staff and View only see each one unless the head chef unticks it under New pages in the People
@@ -220,7 +220,12 @@
   }
   /* the head chef's own device: the owner probe has passed on it (lk.admin), or is passing now. A Google account that is not the
      head chef's does not count, so held-back pages stay held back and the admin links stay hidden on that phone. */
-  function admDev() { return S.level === 'owner' || (S.level !== 'none' && lsGet('lk.admin') === '1'); }
+  function admDev() { return (S.level === 'owner' || (S.level !== 'none' && lsGet('lk.admin') === '1')) && ownerHere(); }
+  /* The head chef's Google sign-in stays on a device, so on a shared kitchen tablet it opened the head chef's tools for
+     whoever picked it up (20 Oct 2026). The head chef's tools (Admin key and panel, reports, editing guides, minutes and
+     pings, kitchen mail) now show only while a chef (head chef or sous chef) is the person signed in on this device, or,
+     on a personal device (not ticked "Shared kitchen device"), while nobody is. Staff signed in get their own view. */
+  function ownerHere() { var p = who(); return p ? isSousP(p) : !shared(); }
   function featCalc(k) {
     var p = who();
     return admDev() || (S.config.staffSee || {})[k] !== false || !!(p && (isSousP(p) || p.role === 'lead' || (k === 'pings' && canPingP(p))));
@@ -2477,6 +2482,11 @@
     loadAdmins();
     if (!S.level) return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2><p class="hint">Checking your access...</p></section>';
     if (S.level === 'none') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2><p class="p-err">' + esc(S.user.email) + ' is not the head chef\'s Google account, so it cannot open the admin panel. Sign out and sign in with the head chef\'s account.</p><div class="btn-row"><button type="button" class="btn dark" data-p="signout">Sign out</button><a class="btn" href="#/prep">Back to the prep book</a></div></section>';
+    if (!ownerHere()) {
+      var op = who();
+      return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2><p class="hint">' + (op ? esc(op.name) + ' is signed in on this device. ' : 'Nobody is signed in on this shared device. ') + 'The admin panel opens only while a chef is signed in with their PIN.</p>' +
+        '<div class="btn-row"><a class="btn dark" href="#/prep" data-p="who-change">' + (op ? 'Not ' + esc(op.name.split(' ')[0]) + '? Change person' : 'Sign in') + '</a><button type="button" class="btn" data-p="signout">Sign out of Google</button></div></section>';
+    }
     if (!S.draft) startDraft();
     var d = S.draft, owner = S.level === 'owner';
     if (owner) { watchActivity(); loadStats(false); }
@@ -3301,7 +3311,7 @@
   function noteOpen(pv) {
     var list = pv ? pv.list : todaysNotes();
     if (npop || !list.length) return;
-    var t = dayNow(), admDev = lsGet('lk.admin') === '1', editor = admDev ? '<a class="nt-edit" href="#/admin" data-note="edit">Write or edit pings</a>' : (canPing() ? '<a class="nt-edit" href="#/prep" data-note="edit-sous">Write or edit pings</a>' : '');
+    var t = dayNow(), adm = admDev(), editor = adm ? '<a class="nt-edit" href="#/admin" data-note="edit">Write or edit pings</a>' : (canPing() ? '<a class="nt-edit" href="#/prep" data-note="edit-sous">Write or edit pings</a>' : '');
     nprev = document.activeElement;
     var el = document.createElement('div');
     el.className = 'nt-wrap';
@@ -3566,7 +3576,7 @@
   function mnName(id) { var p = ((S.config && S.config.people) || []).filter(function (x) { return x.id === id; })[0]; return p ? p.name : (id ? 'Former staff' : ''); }
   function mnLines(t) { return String(t || '').split(/\n/).map(function (s) { return s.trim(); }).filter(Boolean); }
   /* only the head chef (Google account) writes and publishes minutes. Sous chefs read the register. */
-  function mnCanWrite() { return S.level === 'owner'; }
+  function mnCanWrite() { return S.level === 'owner' && ownerHere(); }
   function mnById(id) { return (S.mins || []).filter(function (m) { return m.id === id; })[0] || null; }
   function mnPub() { return (S.mins || []).filter(function (m) { return m.status === 'published' && !m.removed; }).sort(function (a, b) { return String(b.date).localeCompare(String(a.date)) || (b.no || 0) - (a.no || 0); }); }
   function mnDrafts() { return (S.mins || []).filter(function (m) { return m.status === 'draft' && !m.removed; }).sort(function (a, b) { return (b.upd || 0) - (a.upd || 0); }); }
@@ -3675,7 +3685,7 @@
       '<span class="mn-err" role="status" id="mn-pinmsg">' + esc(S.mErr) + '</span><p class="hint">Your name, the version and the time are recorded. Apology and absent staff sign too.</p></section>';
   }
   function mnWriteLink() {
-    var l = S.level === 'owner' || lsGet('lk.admin') === '1' ? '<button type="button" class="p-link" data-p="mn-admin">Write minutes and see who has signed</button>' : (isSous() ? '<button type="button" class="p-link" data-p="mn-sous">See who has signed</button>' : '');
+    var l = admDev() ? '<button type="button" class="p-link" data-p="mn-admin">Write minutes and see who has signed</button>' : (isSous() ? '<button type="button" class="p-link" data-p="mn-sous">See who has signed</button>' : '');
     return l ? '<p class="mn-noprint mn-wl">' + l + '</p>' : '';
   }
   function minutesPageHTML() {
@@ -4274,7 +4284,7 @@
       '<b class="g-cn">' + esc(g.title) + '</b>' + (g.sum ? '<span class="g-cs">' + esc(g.sum) + '</span>' : '') + (snip ? '<span class="g-snip">' + esc(snip) + '</span>' : '') +
       '<span class="g-cm">' + esc(gMeta(g)) + '</span></span></a></li>';
   }
-  function gAdminLink() { return lsGet('lk.admin') === '1' ? '<p class="g-wl g-noprint"><button type="button" class="p-link" data-p="g-admin">Add or change guides</button></p>' : ''; }
+  function gAdminLink() { return admDev() ? '<p class="g-wl g-noprint"><button type="button" class="p-link" data-p="g-admin">Add or change guides</button></p>' : ''; }
   function gListHTML() {
     var q = S.gq.trim(), list = gLive().filter(function (g) { return S.gcat === 'all' || g.cat === S.gcat; });
     if (q) {
@@ -4313,7 +4323,7 @@
         '<div class="g-ph" style="aspect-ratio: ' + (+d.w || 1414) + ' / ' + (+d.h || 2000) + '">' + (pv.state === 'error' ? 'Could not load this page.' : 'Loading page ' + (i + 1) + '...') + '</div>') +
         (n > 1 ? '<figcaption>Page ' + (i + 1) + ' of ' + n + '</figcaption>' : '') + '</figure>';
     }
-    var admin = S.level === 'owner' || lsGet('lk.admin') === '1';
+    var admin = admDev();
     return back + '<article class="g-doc"><header class="g-dh"><span class="g-eb">' + esc(gCatName(g.cat)) + ' guide</span><h2 class="g-title" id="rtitle" tabindex="-1">' + esc(g.title) + '</h2>' +
       (g.sum ? '<p class="g-lead">' + esc(g.sum) + '</p>' : '') + '<p class="g-meta">' + esc(gMeta(g)) + '</p></header>' +
       (steps.length ? '<section class="g-steps"><h3 class="g-h3">Steps</h3><ol class="g-ol">' + steps.map(function (t) { return '<li><span class="g-c" aria-hidden="true"></span><span>' + linkNote(t) + '</span></li>'; }).join('') + '</ol></section>' : '') +
@@ -5239,7 +5249,7 @@
   }
 
   /* ---- the head chef's side ---- */
-  function mlOwner() { return S.level === 'owner' && !!fb && /^\d{4,6}$/.test(S.pin); }
+  function mlOwner() { return S.level === 'owner' && ownerHere() && !!fb && /^\d{4,6}$/.test(S.pin); }
   function mlInfo() { return { n: mlOwner() && mlOpen ? mlOpen.length : 0 }; }
   function mlTell() { var n = mlInfo().n; if (n !== mlLastN) { mlLastN = n; try { window.dispatchEvent(new Event('lk-mail')); } catch (e) {} } }
   function mlGrab(sn) { return sn.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }); }
@@ -5387,6 +5397,7 @@
     guidesFor: function (rid) { try { return guidesFor(rid); } catch (e) { return []; } },
     guideSearch: function (q) { try { return guideSearch(q); } catch (e) { return []; } },
     featOn: featOn,
+    ownerHere: ownerHere,
     whoName: whoName,
     // Sign in from the chef hat with nobody signed in: "Who are you?" on the prep list, then back to the page it came from
     signIn: function (back) {

@@ -282,7 +282,8 @@
      It only shows on a phone or computer where the head chef is signed in with Google and has passed the owner check
      (lk.admin, set by js/prep.js), or, as a plain outline, while the Head chef is signed in with their PIN on a phone
      that has not signed in with Google yet: a tap opens the admin page, one tap from the Google sign-in. */
-  function isAdminDevice() { try { return !!LS && LS.getItem('lk.admin') === '1'; } catch (e) { return false; } }
+  // the head chef's Google sign-in on this device, and the head chef is the one using it (not staff on a shared tablet)
+  function isAdminDevice() { try { return !!LS && LS.getItem('lk.admin') === '1' && !(window.LK_PREP && window.LK_PREP.ownerHere && !window.LK_PREP.ownerHere()); } catch (e) { return false; } }
   function adminLink(cls) {
     var on = parseRoute().name === 'admin';
     if (!isAdminDevice()) {
