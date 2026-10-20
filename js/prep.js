@@ -1098,10 +1098,19 @@
     else copy();
   }
   /* Printing one part of the book: the class on <html> picks what the print rules in app.css show. */
-  function printWith(cls) {
+  /* Tab and Shift+Tab stay inside an open popup: from the last control back to the first and the other way, and focus
+     that has slipped outside comes back in. Only controls that can be seen count. */
+  function trapTab(e, box, sel) {
+    var f = Array.prototype.filter.call(box.querySelectorAll(sel || 'button:not([disabled]), a[href]'), function (x) { return x.offsetParent !== null; });
+    if (!f.length) return;
+    var first = f[0], last = f[f.length - 1], out = !box.contains(document.activeElement);
+    if (e.shiftKey && (document.activeElement === first || out)) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && (document.activeElement === last || out)) { e.preventDefault(); first.focus(); }
+  }
+  function printWith(cls, after) {
     var h = document.documentElement;
     h.classList.add(cls);
-    function done() { h.classList.remove(cls); window.removeEventListener('afterprint', done); }
+    function done() { h.classList.remove(cls); if (after) after(); window.removeEventListener('afterprint', done); }
     window.addEventListener('afterprint', done);
     setTimeout(function () { window.print(); setTimeout(function () { if (h.classList.contains(cls) && !window.matchMedia('print').matches) done(); }, 1500); }, 50);
   }
@@ -1950,10 +1959,7 @@
     var closed = [].filter.call(pane.querySelectorAll('details'), function (d) { return !d.open; });
     closed.forEach(function (d) { d.open = true; });
     lvPrintAll(true);
-    document.documentElement.classList.add('print-admin');
-    function done() { document.documentElement.classList.remove('print-admin'); closed.forEach(function (d) { d.open = false; }); lvPrintAll(false); window.removeEventListener('afterprint', done); }
-    window.addEventListener('afterprint', done);
-    setTimeout(function () { window.print(); setTimeout(function () { if (document.documentElement.classList.contains('print-admin') && !window.matchMedia('print').matches) done(); }, 1500); }, 50);
+    printWith('print-admin', function () { closed.forEach(function (d) { d.open = false; }); lvPrintAll(false); });
   }
   function csvCell(v) { v = v == null ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
   function downloadCSV(name, rows) {
@@ -3366,12 +3372,7 @@
   document.addEventListener('keydown', function (e) {
     if (!npop) return;
     if (e.key === 'Escape') { e.preventDefault(); noteClose(true); return; }
-    if (e.key !== 'Tab') return;
-    var f = Array.prototype.filter.call(npop.querySelectorAll('button, a[href]'), function (x) { return x.offsetParent !== null; });
-    if (!f.length) return;
-    var first = f[0], last = f[f.length - 1];
-    if (e.shiftKey && (document.activeElement === first || !npop.contains(document.activeElement))) { e.preventDefault(); last.focus(); }
-    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    if (e.key === 'Tab') trapTab(e, npop);
   });
 
   /* writing shift pings: the Shift pings tab of the admin panel (head chef) and Shift pings in the prep book (sous chefs and anyone ticked for Pings).
@@ -3883,13 +3884,7 @@
   function minSousPageHTML() {
     return '<div class="p-admin"><div class="p-bar"><span>Meeting minutes</span><span class="p-links"><button type="button" class="p-link" data-p="mn-close">Back to the prep book</button></span></div><h2 class="p-h" id="rtitle" tabindex="-1">Meeting minutes</h2>' + minAdminHTML() + '</div>';
   }
-  function printMinutes() {
-    lvPrintAll(true);
-    document.documentElement.classList.add('print-min');
-    function done() { document.documentElement.classList.remove('print-min'); lvPrintAll(false); window.removeEventListener('afterprint', done); }
-    window.addEventListener('afterprint', done);
-    setTimeout(function () { window.print(); setTimeout(function () { if (document.documentElement.classList.contains('print-min') && !window.matchMedia('print').matches) done(); }, 1500); }, 50);
-  }
+  function printMinutes() { lvPrintAll(true); printWith('print-min', function () { lvPrintAll(false); }); }
   function csvMinutes(id) {
     var m = mnById(id), reg = m && mnRegister(m); if (!reg) return;
     var rows = [['Minutes', 'Version', 'Meeting date', 'Person', 'Attendance', 'Signed at', 'Status']];
@@ -4334,12 +4329,7 @@
       (cards.length ? '<section class="g-rec g-noprint"><h3 class="g-h3">On these recipe cards</h3><div class="g-rchips">' + cards.map(function (r) { return '<a class="g-rchip" href="#/r/' + esc(r.id) + '">' + esc(r.name) + '</a>'; }).join('') + '</div></section>' : '') +
       '<div class="btn-row g-noprint"><button type="button" class="btn" data-p="g-print">Print</button>' + (admin ? '<button type="button" class="btn" data-p="g-change" data-id="' + esc(g.id) + '">Change this guide</button>' : '') + '</div></article>';
   }
-  function printGuide() {
-    document.documentElement.classList.add('print-guide');
-    function done() { document.documentElement.classList.remove('print-guide'); window.removeEventListener('afterprint', done); }
-    window.addEventListener('afterprint', done);
-    setTimeout(function () { window.print(); setTimeout(function () { if (document.documentElement.classList.contains('print-guide') && !window.matchMedia('print').matches) done(); }, 1500); }, 50);
-  }
+  function printGuide() { printWith('print-guide'); }
 
   /* A page opened big: over everything (appended to the body, so page redraws leave it alone), Previous and Next, Fit or Full size.
      Its clicks use data-gz. Escape or Close shuts it. Pinching zooms further on a phone. */
@@ -4401,11 +4391,7 @@
     if (!gz) return;
     if (e.key === 'Escape') { e.preventDefault(); gzClose(); return; }
     if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { var b = gz.el.querySelector('[data-gz="' + (e.key === 'ArrowRight' ? 'next' : 'prev') + '"]:not([disabled])'); if (b) { e.preventDefault(); b.click(); } return; }
-    if (e.key !== 'Tab') return;
-    var f = Array.prototype.filter.call(gz.el.querySelectorAll('button:not([disabled])'), function (x) { return x.offsetParent !== null; });
-    if (!f.length) return;
-    if (e.shiftKey && (document.activeElement === f[0] || !gz.el.contains(document.activeElement))) { e.preventDefault(); f[f.length - 1].focus(); }
-    else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+    if (e.key === 'Tab') trapTab(e, gz.el, 'button:not([disabled])');
   });
   window.addEventListener('hashchange', function () { if (gz) gzClose(true); });
   /* Swipe left or right on the page (not while it is full size, and not with two fingers) turns the page. */
@@ -5135,12 +5121,7 @@
       if (!String(S.wf.amt).trim()) { e.preventDefault(); focusK('w-amt'); return; }
     }
     if (e.key === 'Tab' && S.sheet) {
-      var sh = S.root.querySelector('.sheet'), fs = sh ? Array.prototype.slice.call(sh.querySelectorAll('button')) : [];
-      if (fs.length) {
-        var first = fs[0], last = fs[fs.length - 1];
-        if (e.shiftKey && (document.activeElement === first || !sh.contains(document.activeElement))) { e.preventDefault(); last.focus(); }
-        else if (!e.shiftKey && (document.activeElement === last || !sh.contains(document.activeElement))) { e.preventDefault(); first.focus(); }
-      }
+      var sh = S.root.querySelector('.sheet'); if (sh) trapTab(e, sh, 'button');
       return;
     }
     if (e.key === 'Escape' && S.recipeOpen) { S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; draw(); focusSel('.p-pickbtn'); return; }
@@ -5369,10 +5350,7 @@
   document.addEventListener('keydown', function (e) {
     if (!mlPop) return;
     if (e.key === 'Escape') { e.preventDefault(); lsSet('lk.mail.later', String(now() + ML_NUDGE)); mlPopClose(); return; }
-    if (e.key !== 'Tab') return;
-    var f = mlPop.querySelectorAll('button'), first = f[0], last = f[f.length - 1];
-    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    if (e.key === 'Tab') trapTab(e, mlPop, 'button');
   });
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') { loadMail(); mlMaybePop(); } });
 
