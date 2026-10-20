@@ -644,10 +644,9 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 
 /* Admin button next to Settings */
 .wtop-icons { display: inline-flex; align-items: center; gap: 0.5rem; }
-/* the chef mark: a wtop-btn ring shown while a person is signed in; the first name joins it from 1400 px only, where
-   there is room (with it at 1280 px "Kitchen Book" wrapped onto two lines) */
-.wtop-who { display: none; }
-.wtop-who.on { display: inline-flex; }
+/* the chef mark: a wtop-btn ring on every phone (its menu holds Settings), dashed while nobody is signed in; the first
+   name joins it from 1400 px only, where there is room (with it at 1280 px "Kitchen Book" wrapped onto two lines) */
+.wtop-who { display: inline-flex; }
 .wtop-who .wtop-lbl { display: none; }
 @media (min-width: 1400px) { .wtop-who .wtop-lbl { display: inline; } }
 /* on a sign-in the mark flips in like a coin (two turns), lands a little big and settles in place */
@@ -1308,6 +1307,8 @@ html.gz-open, html.gz-open body { overflow: hidden; }
 
 /* ---------- kitchen mail (#/mail, the chef mark's menu, the admin Mail tab, the nudge popup) ---------- */
 .wtop-btn.wtop-who { font: inherit; cursor: pointer; background: transparent; }
+.wtop-btn.wtop-who:not(.on) { border-style: dashed; }
+.wtop-btn.wtop-who[aria-current="page"] { background: var(--bar-text); color: var(--bar); }
 .wm-wrap { position: fixed; inset: 0; z-index: 85; }
 .wm-bg { position: absolute; inset: 0; }
 .wm { position: absolute; width: min(18rem, calc(100vw - 16px)); background: var(--paper); color: var(--ink); border: 2px solid var(--ink); border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); padding: 6px; font-family: var(--body); }
@@ -1316,6 +1317,7 @@ html.gz-open, html.gz-open body { overflow: hidden; }
 .wm-a:hover, .wm-a:focus-visible { background: var(--hit); }
 .wm-a span { display: flex; flex-direction: column; }
 .wm-a small { color: var(--muted); font-size: 0.8125rem; }
+.wm-a.wm-in b { font-size: 1.125rem; }
 /* the menu items that are buttons (Chef group, Sign out) look like the links; a long menu scrolls inside the phone */
 .wm { max-height: calc(100dvh - 90px); overflow-y: auto; }
 button.wm-a { width: 100%; border: 0; background: none; font: inherit; text-align: left; cursor: pointer; }
