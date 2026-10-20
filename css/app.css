@@ -1394,10 +1394,8 @@ html.gz-open, html.gz-open body { overflow: hidden; }
 .mlp-go { background: var(--ink); color: #fff; }
 .mlp-later { background: var(--paper); color: var(--ink); }
 
-<<<<<<< HEAD
 .ch-read { margin: 0.3rem 0 0; min-height: 1.4em; font-weight: 700; }
 .ch g { cursor: pointer; }
-=======
 /* ---------- readability (20 Oct 2026) ----------
    The amount is what a cook acts on, so it reads in ink, bold, in the body font, on one line. Allergen words are never
    the smallest text on a card, and "may have" tags get a tint as well as the dashed border. Small buttons use the body
@@ -1417,4 +1415,3 @@ html.gz-open, html.gz-open body { overflow: hidden; }
 }
 @media (min-width: 720px) { .dk-name { white-space: nowrap; } .dk-top { flex-wrap: wrap; row-gap: 0.25rem; } }
 @media (min-width: 1100px) { .dk-name { font-size: 2rem; } }
->>>>>>> origin/main
