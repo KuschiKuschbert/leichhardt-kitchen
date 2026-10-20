@@ -1378,3 +1378,6 @@ html.gz-open, html.gz-open body { overflow: hidden; }
 .mlp-go, .mlp-later { flex: 1 1 8rem; min-height: 52px; border: 2px solid var(--ink); border-radius: 26px; font: inherit; font-weight: 700; font-size: 1.0625rem; cursor: pointer; }
 .mlp-go { background: var(--ink); color: #fff; }
 .mlp-later { background: var(--paper); color: var(--ink); }
+
+.ch-read { margin: 0.3rem 0 0; min-height: 1.4em; font-weight: 700; }
+.ch g { cursor: pointer; }
