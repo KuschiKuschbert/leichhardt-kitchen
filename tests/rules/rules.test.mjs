@@ -186,6 +186,21 @@ await ok(updateDoc(doc(owner, K + 'mailstat/k1'), { seen: true, done: true }), t
 await ok(updateDoc(doc(owner, K + 'mailstat/k1'), { note: 'x' }), false, 'mailstat: holds nothing but seen and done');
 await ok(deleteDoc(doc(owner, K + 'mail/k1')), false, 'mail: never deleted');
 await ok(setDoc(doc(owner, K + 'mail/k20'), mail({ from: 'bo', by: 'bo', done: true, doneAt: 9, seen: true, seenAt: 8 })), true, 'mail: the head chef copies one as it is (move to a new kitchen PIN)');
+// the drinks run: each person writes only their own usual drink; everyone with the kitchen PIN reads them
+const drink = x => Object.assign({ kind: 'flat', size: 'reg', milk: 'oat', shot: '', sugar: '1', note: 'Extra hot', other: 'Coke No Sugar', at: 5 }, x || {});
+await ok(W([['drinks/ann', drink()]], { id: 'ann' }), true, 'drinks: Ann saves her usual');
+await ok(W([['drinks/ann', drink({ kind: 'long', milk: '' })]], { id: 'ann' }), true, 'drinks: Ann changes her usual');
+await ok(W([['drinks/bo', drink()]], { id: 'ann' }), false, 'drinks: Ann cannot set Bo\'s usual');
+await ok(W([['drinks/ann', drink()]], { id: 'ann', pin: '9999' }), false, 'drinks: wrong PIN refused');
+await ok(setDoc(doc(anon, K + 'drinks/ann'), drink({ by: 'ann' })), false, 'drinks: no proof refused');
+await ok(W([['drinks/ann', drink({ note: 'x'.repeat(41) })]], { id: 'ann' }), false, 'drinks: a note over 40 characters is refused');
+await ok(W([['drinks/ann', drink({ other: 'x'.repeat(61) })]], { id: 'ann' }), false, 'drinks: something else over 60 characters is refused');
+await ok(W([['drinks/ann', drink({ kind: 7 })]], { id: 'ann' }), false, 'drinks: the drink must be words');
+await ok(W([['drinks/ann', drink({ price: 5 })]], { id: 'ann' }), false, 'drinks: no fields beyond the drink');
+await ok(W([['drinks/ann', drink({ at: 'now' })]], { id: 'ann' }), false, 'drinks: the time must be a number');
+await ok(getDocs(collection(anon, K + 'drinks')), true, 'drinks: a PIN holder reads the team\'s drinks');
+await ok(deleteDoc(doc(anon, K + 'drinks/ann')), false, 'drinks: staff cannot delete one');
+await ok(setDoc(doc(owner, K + 'drinks/old-hand'), drink({ by: 'old-hand' })), true, 'drinks: the head chef copies one as it is (move to a new kitchen PIN)');
 // the owner probe
 await ok(getDoc(doc(owner, K + 'config/admins')), true, 'admins: the head chef may read the probe');
 await ok(getDoc(doc(anon, K + 'config/admins')), false, 'admins: nobody else may');
