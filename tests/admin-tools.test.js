@@ -26,7 +26,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   await p.waitForTimeout(150);
   ok(!(await store(p))[newKey(['staffpins', 'sam'])], 'move PIN: the first tap only arms the button');
   await p.click('[data-p="move-pin"]');
-  await p.waitForFunction(() => !window.LK_PREP.state.moving, null, { timeout: 8000 });
+  await L.waitFor(p, () => !window.LK_PREP.state.moving, null, 8000);
   const msg = await p.evaluate(() => window.LK_PREP.state.moveMsg);
   ok(/^Copied \d+ records/.test(msg) && !/left on the old PIN/.test(msg), 'move PIN: finished without refusals (' + msg.slice(0, 60) + ')');
   s = await store(p);

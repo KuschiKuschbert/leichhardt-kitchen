@@ -15,7 +15,9 @@ The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the
 ## Files
 | File | What it is |
 | --- | --- |
-| `index.html` | The page, the book's clock (`LK_TIME`), the daily 04:00 self-refresh, the service worker registration |
+| `index.html` | The page and its security header (which outside services may load) |
+| `js/boot.js` | Runs first in `<head>`: the install offer, the saved text size, the book's clock (`LK_TIME`) |
+| `js/upkeep.js` | Runs at the end of `<body>`: the daily 04:00 self-refresh, automatic updates, the service worker registration |
 | `js/data.js` | Every recipe (the only file staff edit). Field guide at the top |
 | `js/art.js` | Plates, pans, side views, build views, technique diagrams |
 | `js/app.js` | Routing, top bar, recipe views (Pass, Tiles), recipe cards, settings, install, QR |
@@ -68,6 +70,7 @@ These hold for every session, every message and every change, however small. A h
 - Guides, Shift pings and Meeting minutes can be held back from staff (New pages in the admin People tab, `staffSee` in `config/main`). Any new link, card or read for those pages checks `featOn('guides' | 'pings' | 'minutes')` in `js/prep.js` (`LK_PREP.featOn` in `js/app.js`). It is worked out from the staff list and the person on the phone, kept in `lk.feat`, and `lk-feat` tells `js/app.js` to redraw the menus.
 - Double ups on the prep list merge by themselves (`mergeDups()` in `js/prep.js`). It reads the lines from the server first (`getDocFromServer`) and tries each group once per page load: keep both, or a phone with an old copy of the list can remove a line ticked elsewhere, or read again on every redraw. A line with `dupOk` is never merged.
 - The service worker caches the app shell. Bump `CACHE` in `sw.js` when icons or the manifest change.
+- The security header in `index.html` lists every outside service the book may load. A new one (a script, a font, an API, a frame) has to be added there or the browser blocks it. Keep scripts in files: inline `<script>` blocks and `onclick=` attributes do not run. In tests use `L.waitFor`, not `page.waitForFunction`.
 - One clock: anything saved, or compared with a saved time, uses `now()` in `js/prep.js` (`LK_TIME.now()` elsewhere), and today's date, hours and weekdays use `dayNow()` and `T.day`, `T.hour`, `T.mins`, `T.dow`, `T.clock`, `T.at` (kitchen time, Queensland). Never `new Date()` or `Date.now()` for those: the phone's clock and zone can be wrong. `Date.now()` is only for time passing on the phone (timers, the PIN lock, the idle sign-out). Do not name a local variable `now` or `dayNow`, it hides the helper.
 
 ## Open items

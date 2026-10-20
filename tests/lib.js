@@ -175,4 +175,14 @@ function report(results) {
   console.log(failed.length + ' failed of ' + results.length);
   process.exitCode = failed.length ? 1 : 0;
 }
-module.exports = { start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
+/* Waits until fn (run in the page) returns something truthy. page.waitForFunction runs its check through eval, which the
+   book's security header (20 Oct 2026) blocks, so this asks with page.evaluate every 100 ms instead. */
+async function waitFor(page, fn, arg, timeout) {
+  const end = Date.now() + (timeout || 5000);
+  for (;;) {
+    if (await page.evaluate(fn, arg)) return true;
+    if (Date.now() > end) throw new Error('waitFor: timed out');
+    await page.waitForTimeout(100);
+  }
+}
+module.exports = { waitFor, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };

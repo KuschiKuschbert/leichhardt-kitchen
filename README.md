@@ -70,7 +70,9 @@ Drawings for The Pass are in `js/art.js`. A recipe with no drawing still shows, 
 
 | File | What it is |
 | --- | --- |
-| `index.html` | The page itself, the book's clock (`LK_TIME`), the daily 04:00 self-refresh, the update bar, the service worker registration |
+| `index.html` | The page itself and its security header (which outside services may load) |
+| `js/boot.js` | Runs first in `<head>`: the install offer, the saved text size, the book's clock (`LK_TIME`) |
+| `js/upkeep.js` | Runs at the end of `<body>`: the daily 04:00 self-refresh, the update bar, the service worker registration |
 | `css/app.css` | The Leichhardt look: Barlow fonts, off-white, black rules, orange accent |
 | `js/data.js` | The recipes (edit this one) |
 | `js/art.js` | Plate, pan and technique drawings |
@@ -371,6 +373,12 @@ Every admin list that can keep growing now uses one shared layout (`lvHTML` in `
 - The file is encrypted on the runner with the `BACKUP_KEY` secret (openssl, AES-256, PBKDF2) and kept as the run's artifact for 90 days. The repository is public and anyone signed in to GitHub can download an artifact, so the clear file never leaves the runner. It needs three repository secrets: `FIREBASE_SA` and `KITCHEN_PIN` (the nightly learning has them) and `BACKUP_KEY`, a long random passphrase (16 characters or more; keep a copy in a password manager, because a lost key means unreadable backups). Without the key the run stops before reading anything.
 - To read a backup: Actions tab, Nightly backup, open a run, download the artifact, unzip it, then on a computer with openssl (a Mac has it): `openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in kitchen-book-<date>.json.enc -out kitchen-book-<date>.json` and type the passphrase. The result is the same file the Backup button saves. There is no restore button: putting something back is done by hand from the file, or with a script written for the case when it comes.
 - Test it on the Firestore emulator: `cd scripts && npm install`, then from `tests/rules`: `./node_modules/.bin/firebase emulators:exec --only firestore --project demo-test "node rules.test.mjs && KITCHEN_PIN=000000 BACKUP_DAYS=5 node ../../scripts/nightly-backup.mjs /tmp/backup.json"` (the rules tests seed the emulator first).
+
+### Security header (20 Oct 2026)
+
+- `index.html` carries a Content Security Policy: scripts only from this site, Firebase and Google sign-in (www.gstatic.com, apis.google.com, the reCAPTCHA bot check on www.google.com) and pdf.js (cdn.jsdelivr.net); styles from Google Fonts (inline styles allowed); fonts from Google Fonts and jsDelivr (pdf.js); data from Google's APIs and Firebase; frames only for Google sign-in and reCAPTCHA; no plugins; forms and `<base>` only to this site. A script from anywhere else, or one slipped into the page, does not run.
+- The six inline scripts moved into `js/boot.js` (head, before anything draws) and `js/upkeep.js` (end of body, before the deferred app scripts), in the same order. Both are in the update and refresh file lists, and the service worker cache is `lk-book-v6`.
+- **A new outside service has to be added to the header**, or the browser blocks it (the console says "violates the following Content Security Policy directive"). The click tests fail on any such message, so a blocked load shows up before merging. Tests that wait in the page use `L.waitFor`, because `page.waitForFunction` runs through eval, which the header blocks.
 
 ### Checking the rules
 - `tests/rules/` checks `firestore.rules` on the Firestore emulator with made-up values in place of the PIN and the email, and then the lock probe (`probe.test.mjs`): `cd tests/rules && npm install && npm test` (Java is needed for the emulator; on a Mac with Homebrew's openjdk, `PATH=/opt/homebrew/opt/openjdk@17/bin:$PATH npm test`). It covers the right and wrong PIN, a spoofed `by`, a replayed proof, who may set a PIN, what a sous chef may change in `config/main`, tallies, pings and who has seen them, minutes (head chef only, size caps, frozen `hist` copies), sign-offs (once, by the person, current published version only, never changed), what the order list learned, the learning log, the owner probe, the field lists and the guide pictures. Run it before publishing any rules change, and add a check for every new rule.
