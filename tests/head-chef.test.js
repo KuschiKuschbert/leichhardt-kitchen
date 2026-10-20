@@ -39,7 +39,7 @@ const cfg = (people, lists) => { const e = {}; e[CFG] = Object.assign({ people, 
   // a sous chef's save once demoted the head chef to Staff in the people list: every phone still reads Ann as Head chef
   const demoted = cfg([P('sam', 'Sam', 'sous'), P('ann', 'Ann', 'staff', { del: false, ping: false }), P('bo', 'Bo', 'staff')], { headId: 'ann', sousIds: ['sam', 'ann'], pingIds: ['sam', 'ann'] });
   p = await L.open(b, '#/prep', { who: 'ann', extra: demoted, wait: 1500 });
-  ok(await p.$('[data-p="staff-open"]') !== null && await p.$('[data-p="mn-open"]') !== null, 'head chef PIN: Manage staff and the Minutes register show, like a sous chef');
+  { const m = await L.chefItems(p); ok(m.includes('staff') && m.includes('register') && m.includes('pings'), 'head chef PIN: the chef menu has Shift pings, Minutes register and Manage staff, like a sous chef (' + m + ')'); }
   ok(p.errors.length === 0, 'head chef PIN: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -53,7 +53,7 @@ const cfg = (people, lists) => { const e = {}; e[CFG] = Object.assign({ people, 
 
   // sous chef's staff page: no Remove for the head chef, and the save keeps her as Head chef
   p = await L.open(b, '#/prep', { extra: demoted, wait: 1500 });
-  await p.click('[data-p="staff-open"]');
+  await L.chef(p, 'staff');
   await p.waitForTimeout(200);
   const rows = await p.evaluate(() => [...document.querySelectorAll('.a-person')].map(li => li.textContent));
   const annRow = rows.filter(t => /Ann/.test(t))[0] || '';
@@ -73,7 +73,7 @@ const cfg = (people, lists) => { const e = {}; e[CFG] = Object.assign({ people, 
 
   // staff stay staff: Bo has no sous chef pages
   p = await L.open(b, '#/prep', { who: 'bo', extra: demoted, wait: 1500 });
-  ok(await p.$('[data-p="staff-open"]') === null, 'staff PIN: no Manage staff for Bo');
+  { const m = await L.chefItems(p); ok(!m.includes('staff') && !m.includes('pings') && m.includes('out'), 'staff PIN: no Chef group for Bo, Sign out is there (' + m + ')'); }
   await p.context().close();
 
   // the Head chef's PIN on a phone without the Google sign-in: Admin shows in the top bar and leads to the sign-in.
