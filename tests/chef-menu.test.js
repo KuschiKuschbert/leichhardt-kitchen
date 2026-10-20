@@ -44,12 +44,12 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   // what the menu offers
   p = await L.open(b, '#/recipes', { who: 'ann', wait: 1800 });
   let m = await L.chefItems(p);
-  ok(m.join(',') === 'mail,drinks,minutes,out', 'staff: Kitchen mail, Drinks run, Meeting minutes and Sign out, no Chef group (' + m + ')');
+  ok(m.join(',') === 'mail,drinks,minutes,settings,out', 'staff: Kitchen mail, Drinks run, Meeting minutes, Settings and Sign out, no Chef group (' + m + ')');
   ok(!m.includes('prep'), 'staff: the old Prep list item is gone');
   await p.context().close();
   p = await L.open(b, '#/recipes', { who: 'sam', wait: 1800 });
   m = await L.chefItems(p);
-  ok(m.join(',') === 'mail,drinks,minutes,pings,register,staff,out', 'sous chef: the Chef group has Shift pings, Minutes register and Manage staff (' + m + ')');
+  ok(m.join(',') === 'mail,drinks,minutes,pings,register,staff,settings,out', 'sous chef: the Chef group has Shift pings, Minutes register and Manage staff (' + m + ')');
   await L.chef(p, 'register');
   await p.waitForTimeout(500);
   ok(/#\/prep$/.test(p.url()) && await txt(p, '#rtitle') === 'Meeting minutes' && !!(await p.$('[data-p="mn-close"]')), 'sous chef: Minutes register opens from the recipes (' + p.url() + ')');
