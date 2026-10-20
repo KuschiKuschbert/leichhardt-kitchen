@@ -193,7 +193,14 @@ img, svg { display: block; }
 .view-opt[aria-checked="true"] { border-color: var(--ink); box-shadow: 0 0 0 3px var(--accent); }
 .view-opt .vo-name { font-family: var(--display); font-weight: 700; font-size: 1.5rem; line-height: 1; }
 .view-opt .vo-desc { font-size: 0.9375rem; color: var(--muted); }
-.view-opt svg { width: 100%; height: auto; border-radius: 8px; }
+.view-opt .vo-shots { display: flex; align-items: flex-end; gap: 0.75rem; }
+.view-opt .vo-shot { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; min-width: 0; }
+.view-opt .vo-desk { flex: 200 1 0; }
+.view-opt .vo-phone { flex: 64 1 0; }
+.view-opt .vo-shot svg { display: block; width: 100%; height: auto; }
+.view-opt .vo-cap { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.view-opt .vo-name { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.view-opt .vo-on { font-family: var(--body); font-size: 0.8125rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 999px; background: var(--ink); color: var(--paper); }
 .settings { display: flex; flex-direction: column; gap: 1.5rem; }
 .set-block { display: flex; flex-direction: column; gap: 0.6rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--line); }
 .set-block:last-child { border-bottom: 0; }
