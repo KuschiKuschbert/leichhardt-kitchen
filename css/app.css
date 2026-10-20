@@ -418,6 +418,11 @@ img, svg { display: block; }
 .a-tabs::-webkit-scrollbar { display: none; }
 @media (min-width: 600px) { .a-tabs { flex-wrap: wrap; overflow-x: visible; } }
 @media (max-width: 599px) { .a-tabs { position: static; } }
+/* ---------- admin: five groups, the open group's pages underneath (20 Oct 2026) ---------- */
+.a-groups { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.4rem; margin: 0 0 0.6rem; }
+.a-group { min-height: 48px; padding: 0 0.4rem; border: 1.5px solid var(--ink); border-radius: 10px; background: var(--paper); font: 700 1rem var(--body); color: var(--ink); cursor: pointer; }
+.a-group[aria-current="page"] { background: var(--ink); color: #fff; }
+@media (max-width: 599px) { .a-groups { grid-template-columns: repeat(3, minmax(0, 1fr)); } .a-group { font-size: 0.9375rem; } }
 .a-tab { flex: 1 0 auto; min-height: 46px; padding: 0 1.1rem; border: 1.5px solid var(--ink); border-radius: 999px; background: var(--paper); font: 700 1rem var(--body); color: var(--ink); cursor: pointer; }
 .a-tab[aria-pressed="true"] { background: var(--ink); color: #fff; }
 .a-pane { display: flex; flex-direction: column; gap: 1.1rem; }
@@ -1394,8 +1399,22 @@ html.gz-open, html.gz-open body { overflow: hidden; }
 .mlp-go { background: var(--ink); color: #fff; }
 .mlp-later { background: var(--paper); color: var(--ink); }
 
-/* ---------- admin: five groups, the open group's pages underneath (20 Oct 2026) ---------- */
-.a-groups { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.4rem; margin: 0 0 0.6rem; }
-.a-group { min-height: 48px; padding: 0 0.4rem; border: 1.5px solid var(--ink); border-radius: 10px; background: var(--paper); font: 700 1rem var(--body); color: var(--ink); cursor: pointer; }
-.a-group[aria-current="page"] { background: var(--ink); color: #fff; }
-@media (max-width: 599px) { .a-groups { grid-template-columns: repeat(3, minmax(0, 1fr)); } .a-group { font-size: 0.9375rem; } }
+/* ---------- readability (20 Oct 2026) ----------
+   The amount is what a cook acts on, so it reads in ink, bold, in the body font, on one line. Allergen words are never
+   the smallest text on a card, and "may have" tags get a tint as well as the dashed border. Small buttons use the body
+   font, not the notebook script. A phone's top bar is one slim line. */
+.nb-q { font: 700 1.05rem var(--body); color: var(--ink); white-space: nowrap; margin-left: 0.4rem; }
+.tag { font-size: 0.9375rem; }
+.tag.maybe { background: var(--hit); }
+.allergen-row .from { font-size: 0.9375rem; color: var(--ink); }
+#r-allergens .hint { font-size: 0.9375rem; }
+.p-x { font-family: var(--body); font-size: 0.875rem; }
+.nb-date { margin-top: 0.5rem; }
+@media (max-width: 599px) {
+  .wtop-brand .rb-eb { display: none; }
+  .wtop { min-height: 64px; padding: 0.5rem 0.75rem; gap: 0.5rem; }
+  .wtop-brand { min-width: 0; flex: 1 1 auto; }
+  .wtop-brand b { font-size: 1.45rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+}
+@media (min-width: 720px) { .dk-name { white-space: nowrap; } .dk-top { flex-wrap: wrap; row-gap: 0.25rem; } }
+@media (min-width: 1100px) { .dk-name { font-size: 2rem; } }
