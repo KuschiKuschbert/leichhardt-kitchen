@@ -147,7 +147,7 @@ window.LK_DATA = {
         { q: '13', name: 'Bay leaves' }
       ],
       sections: [
-        { title: 'Method', steps: ['Wash the rice 3 times until the water runs clear.', 'Spread the rice in shallow GN pans, divided evenly. Add the water, chicken stock and bay leaves, divided evenly across the pans.', 'Steam 25 min.', 'Check the rice. It must not be too soft. If it needs more, steam on in 2 min steps, checking each time.'] },
+        { title: 'Method', steps: ['Wash the rice 3 times until the water runs clear.', 'Spread the rice in 1/1 GN pans, 60 mm deep, divided evenly. Add the water, chicken stock and bay leaves, divided evenly across the pans.', 'Steam 25 min.', 'Check the rice. It must not be too soft. If it needs more, steam on in 2 min steps, checking each time.'] },
         { title: 'Portioning', steps: ['Portion 180 g per serve into small round containers.'] }
       ],
       contains: [],
