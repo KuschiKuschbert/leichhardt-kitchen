@@ -185,6 +185,8 @@ npm test
 - **Weekly badges:** the top 3 ranks for ticked lines over the last 7 days show above the notebook. The owner can switch them off.
 - **Recipe links:** hand-written lines link to recipe cards by matching words against card names and short names (`matchRecipe` in `js/prep.js`). A line that could mean several cards links to none.
 
+- **Contrast and tap targets (20 Oct 2026).** The faint grey is #6B7077 (4.9:1 on the page, was 3.1:1). Admin name fields, role menus, the minutes ticks, suggestion chips and section heads are 44 px high, and admin ticks are 28 px. `tests/targets.test.js`.
+
 ### Undo and second taps (October 2026)
 
 - **A new toast never wipes an Undo (20 Oct 2026).** When a new toast comes while one with Undo is still showing, the older one moves up a row and stays 6 more seconds, so remove then tick can both be undone (`S.toastOld`). Urgent says "Marked urgent" with Undo, and the line keeps its place for 3.5 seconds before it moves to the top of its section (`urgOf()`), with a gap between ! and Remove on phones. Removing a shift ping or minutes in the admin panel has Undo, like guides. `tests/undo.test.js`.
