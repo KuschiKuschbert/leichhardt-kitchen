@@ -249,7 +249,15 @@
   /* A new toast never wipes an Undo that is still showing: that one moves up a row and stays for 6 more seconds, so two
      quick taps in a row (remove, then tick) can both be undone. At most two show. */
   var toastOldTimer;
+  /* One live region that is never redrawn (outside the prep root), so screen readers hear every toast: a region added
+     together with its text, as a redrawn toast is, is often not read out. */
+  function liveSay(t) {
+    var el = document.getElementById('lk-live');
+    if (!el) { el = document.createElement('div'); el.id = 'lk-live'; el.className = 'visually-hidden'; el.setAttribute('aria-live', 'polite'); el.setAttribute('role', 'status'); document.body.appendChild(el); }
+    el.textContent = ''; setTimeout(function () { el.textContent = t; }, 60);
+  }
   function toast(msg, act, ms) {
+    liveSay(msg + (act && act.label ? '. ' + act.label + ' is on screen.' : ''));
     if (S.toast && S.toastAct && S.toastAct !== act) { S.toastOld = { msg: S.toast, act: S.toastAct }; clearTimeout(toastOldTimer); toastOldTimer = setTimeout(function () { S.toastOld = null; draw(); }, 6000); }
     S.toast = msg; S.toastAct = act || null; draw(); clearTimeout(toastTimer); toastTimer = setTimeout(function () { S.toast = ''; S.toastAct = null; draw(); }, ms || (act ? 9000 : 3500));
   }
@@ -1098,10 +1106,19 @@
     else copy();
   }
   /* Printing one part of the book: the class on <html> picks what the print rules in app.css show. */
-  function printWith(cls) {
+  /* Tab and Shift+Tab stay inside an open popup: from the last control back to the first and the other way, and focus
+     that has slipped outside comes back in. Only controls that can be seen count. */
+  function trapTab(e, box, sel) {
+    var f = Array.prototype.filter.call(box.querySelectorAll(sel || 'button:not([disabled]), a[href]'), function (x) { return x.offsetParent !== null; });
+    if (!f.length) return;
+    var first = f[0], last = f[f.length - 1], out = !box.contains(document.activeElement);
+    if (e.shiftKey && (document.activeElement === first || out)) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && (document.activeElement === last || out)) { e.preventDefault(); first.focus(); }
+  }
+  function printWith(cls, after) {
     var h = document.documentElement;
     h.classList.add(cls);
-    function done() { h.classList.remove(cls); window.removeEventListener('afterprint', done); }
+    function done() { h.classList.remove(cls); if (after) after(); window.removeEventListener('afterprint', done); }
     window.addEventListener('afterprint', done);
     setTimeout(function () { window.print(); setTimeout(function () { if (h.classList.contains(cls) && !window.matchMedia('print').matches) done(); }, 1500); }, 50);
   }
@@ -1573,8 +1590,19 @@
     }
     return out;
   }
+  /* Charts are drawn at the screen's width on a phone, so their words stay readable (a 720 wide drawing shrunk onto a
+     phone made the axis about 5 px), and a tap on a bar shows its numbers under the chart (phones never show the
+     hover titles). */
+  function chW() { var w = window.innerWidth || 1024; return w < 600 ? Math.max(280, Math.min(720, w - 96)) : 720; }
+  document.addEventListener('click', function (e) {
+    var g = e.target.closest && e.target.closest('svg.ch g'); if (!g) return;
+    var t = g.querySelector('title'), svg = g.closest('svg.ch'); if (!t || !svg) return;
+    var rd = svg.nextElementSibling && svg.nextElementSibling.classList.contains('ch-read') ? svg.nextElementSibling : null;
+    if (!rd) { rd = document.createElement('p'); rd.className = 'ch-read'; rd.setAttribute('role', 'status'); svg.parentNode.insertBefore(rd, svg.nextSibling); }
+    rd.textContent = t.textContent;
+  });
   function dailyChart(agg) {
-    var W = 720, H = 250, l = 34, r = 8, t = 12, b = 30, ph = H - t - b, pw = W - l - r, n = agg.dates.length, band = pw / n, bw = Math.min(12, band * 0.34), max = 0;
+    var W = chW(), H = 250, l = 34, r = 8, t = 12, b = 30, ph = H - t - b, pw = W - l - r, n = agg.dates.length, band = pw / n, bw = Math.min(12, band * 0.34), max = 0;
     agg.dates.forEach(function (d) { max = Math.max(max, agg.perDay[d].w, agg.perDay[d].t); });
     max = niceMax(max);
     var out = '<svg class="ch" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Lines written and ticked each day">' + yGrid(W, l, r, t, ph, max, function (v) { return Math.round(v); });
@@ -1584,7 +1612,7 @@
       out += '<g><title>' + esc(dn + ': ' + pd.w + ' written, ' + pd.t + ' ticked') + '</title><rect x="' + (cx - band / 2) + '" y="' + t + '" width="' + band + '" height="' + ph + '" fill="transparent"/>' +
         (pd.w ? '<path d="' + barPath(cx - bw - 1, t + ph - hw, bw, hw, 4) + '" fill="' + CW + '"/>' : '') +
         (pd.t ? '<path d="' + barPath(cx + 1, t + ph - ht, bw, ht, 4) + '" fill="' + CT + '"/>' : '') + '</g>';
-      if (n <= 14 || i % 3 === 0 || i === n - 1) out += '<text class="ch-ax" x="' + cx + '" y="' + (H - 10) + '" text-anchor="middle">' + parseYmd(d).getDate() + '</text>';
+      if (n <= (W < 600 ? 7 : 14) || i % 3 === 0 || i === n - 1) out += '<text class="ch-ax" x="' + cx + '" y="' + (H - 10) + '" text-anchor="middle">' + parseYmd(d).getDate() + '</text>';
     });
     return out + '</svg>';
   }
@@ -1592,8 +1620,8 @@
     var rows = Object.keys(agg.people).map(function (n) { return { n: n, w: agg.people[n].w, t: agg.people[n].t }; }).filter(function (x) { return x.w || x.t; })
       .sort(function (a, b) { return (b.t - a.t) || (b.w - a.w); }).slice(0, 12);
     if (!rows.length) return '<p class="hint">Nothing written in this time yet.</p>';
-    var W = 720, l = 112, r = 44, rh = 34, H = rows.length * rh + 8, pw = W - l - r, max = niceMax(Math.max.apply(null, rows.map(function (x) { return Math.max(x.w, x.t); })));
-    var out = '<svg class="ch" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Lines written and ticked by each person">';
+    var W = chW(), l = 112, r = 44, rh = 34, H = rows.length * rh + 8, pw = W - l - r, max = niceMax(Math.max.apply(null, rows.map(function (x) { return Math.max(x.w, x.t); })));
+    var out = '<svg class="ch" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc('Lines written and ticked by each person. Most ticked: ' + rows[0].n + ', ' + rows[0].t + ' ticked, ' + rows[0].w + ' written') + '">';
     rows.forEach(function (x, i) {
       var y = 4 + i * rh, ww = Math.max(x.w ? 4 : 0, x.w / max * pw), tw = Math.max(x.t ? 4 : 0, x.t / max * pw);
       out += '<g><title>' + esc(x.n + ': ' + x.w + ' written, ' + x.t + ' ticked') + '</title><rect x="0" y="' + y + '" width="' + W + '" height="' + rh + '" fill="transparent"/>' +
@@ -1608,7 +1636,7 @@
     for (h = 0; h < 24; h++) if (agg.wHour[h] || agg.tHour[h]) { lo = Math.min(lo, h); hi = Math.max(hi, h); }
     if (hi < 0) return '<p class="hint">Nothing written in this time yet.</p>';
     lo = Math.max(0, Math.min(lo, hi - 5)); hi = Math.min(23, Math.max(hi, lo + 5));
-    var W = 720, H = 230, l = 34, r = 14, t = 14, b = 28, ph = H - t - b, pw = W - l - r, n = hi - lo + 1, max = 0;
+    var W = chW(), H = 230, l = 34, r = 14, t = 14, b = 28, ph = H - t - b, pw = W - l - r, n = hi - lo + 1, max = 0;
     for (h = lo; h <= hi; h++) max = Math.max(max, agg.wHour[h], agg.tHour[h]);
     max = niceMax(max);
     function pt(arr) { var out = []; for (var k = lo; k <= hi; k++) out.push([l + pw * (k - lo) / (n - 1), t + ph - arr[k] / max * ph]); return out; }
@@ -1624,7 +1652,7 @@
   function sectionsChart(agg, label) {
     var rows = Object.keys(agg.sections).map(function (n) { return { n: n, v: agg.sections[n] }; }).sort(function (a, b) { return b.v - a.v; }).slice(0, 10);
     if (!rows.length) return '<p class="hint">No sections used in this time yet.</p>';
-    var W = 720, l = 150, r = 44, rh = 28, H = rows.length * rh + 8, pw = W - l - r, max = niceMax(rows[0].v), out = '<svg class="ch" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(label || 'Lines per section') + '">';
+    var W = chW(), l = 150, r = 44, rh = 28, H = rows.length * rh + 8, pw = W - l - r, max = niceMax(rows[0].v), out = '<svg class="ch" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(label || 'Lines per section') + '">';
     rows.forEach(function (x, i) {
       var y = 4 + i * rh, w = Math.max(4, x.v / max * pw);
       out += '<g><title>' + esc(x.n + ': ' + x.v + ' lines') + '</title><rect x="0" y="' + y + '" width="' + W + '" height="' + rh + '" fill="transparent"/><text class="ch-lb" x="' + (l - 10) + '" y="' + (y + 18) + '" text-anchor="end">' + esc(x.n.length > 20 ? x.n.slice(0, 19) + '…' : x.n) + '</text><path d="' + barPath(l, y + 5, w, 14, 4, true) + '" fill="' + CW + '"/><text class="ch-val" x="' + (l + w + 6) + '" y="' + (y + 17) + '">' + x.v + '</text></g>';
@@ -1648,7 +1676,7 @@
   function rollChart(agg) {
     var rows = Object.keys(agg.rollKeys).map(function (k) { return agg.rollKeys[k]; }).sort(function (a, b) { return b.n - a.n || b.max - a.max; }).slice(0, 10);
     if (!rows.length) return '<p class="hint">Nothing has rolled over in this time. That is a good sign.</p>';
-    var W = 720, l = 190, r = 44, rh = 28, H = rows.length * rh + 8, pw = W - l - r, max = niceMax(rows[0].n), out = '<svg class="ch" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Lines that rolled over most often">';
+    var W = chW(), l = 190, r = 44, rh = 28, H = rows.length * rh + 8, pw = W - l - r, max = niceMax(rows[0].n), out = '<svg class="ch" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Lines that rolled over most often">';
     rows.forEach(function (x, i) {
       var y = 4 + i * rh, w = Math.max(4, x.n / max * pw);
       out += '<g><title>' + esc(x.text + ': rolled over ' + x.n + (x.n === 1 ? ' time' : ' times') + ', longest run ' + x.max + (x.max === 1 ? ' day' : ' days')) + '</title><rect x="0" y="' + y + '" width="' + W + '" height="' + rh + '" fill="transparent"/><text class="ch-lb" x="' + (l - 10) + '" y="' + (y + 18) + '" text-anchor="end">' + esc(x.text.length > 26 ? x.text.slice(0, 25) + '…' : x.text) + '</text><path d="' + barPath(l, y + 5, w, 14, 4, true) + '" fill="' + CT + '"/><text class="ch-val" x="' + (l + w + 6) + '" y="' + (y + 17) + '">' + x.n + '</text></g>';
@@ -1950,10 +1978,7 @@
     var closed = [].filter.call(pane.querySelectorAll('details'), function (d) { return !d.open; });
     closed.forEach(function (d) { d.open = true; });
     lvPrintAll(true);
-    document.documentElement.classList.add('print-admin');
-    function done() { document.documentElement.classList.remove('print-admin'); closed.forEach(function (d) { d.open = false; }); lvPrintAll(false); window.removeEventListener('afterprint', done); }
-    window.addEventListener('afterprint', done);
-    setTimeout(function () { window.print(); setTimeout(function () { if (document.documentElement.classList.contains('print-admin') && !window.matchMedia('print').matches) done(); }, 1500); }, 50);
+    printWith('print-admin', function () { closed.forEach(function (d) { d.open = false; }); lvPrintAll(false); });
   }
   function csvCell(v) { v = v == null ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
   function downloadCSV(name, rows) {
@@ -2198,7 +2223,7 @@
     if (live.length && doneN === live.length && !S.tab) todayEmpty = '<p class="nb-empty">Everything on this list is ticked off. See Done today under Handy.</p>';
     if (S.tab && !live.some(function (x) { return inTab(x) && (!x.done || lingers(x)); })) todayEmpty = '<p class="nb-empty">Nothing left to do in ' + esc(S.tab) + '. Ticked lines are under Done today in Handy.</p>';
     var left = '<section class="nb-page nb-left"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + esc(dayName(S.date)) + '</h2><span class="nb-date">' + esc(longDate(S.date)) + '</span></div>' +
-      '<div class="nb-prog" role="status">' + doneN + ' of ' + live.length + ' done</div>' + (can('add') ? '<button type="button" class="nb-jump" data-p="write">Write a line</button>' : '') + (doneN ? '<button type="button" class="nb-jump nb-donejump" data-p="donejump">Done today (' + doneN + ')</button>' : '') + '</header>' +
+      '<div class="nb-prog">' + doneN + ' of ' + live.length + ' done</div>' + (can('add') ? '<button type="button" class="nb-jump" data-p="write">Write a line</button>' : '') + (doneN ? '<button type="button" class="nb-jump nb-donejump" data-p="donejump">Done today (' + doneN + ')</button>' : '') + '</header>' +
       (S.itemsState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' : '') +
       '<div class="nb-body">' + minNudgeHTML() + closeoutHTML(live) + wNoteHTML() + startHTML(live) + pageBody(S.items, S.date) + todayEmpty + '</div>' +
       '<div class="nb-foot">' + add + (add && !can('del') ? '<p class="hint nb-who">Wrote the wrong thing? Undo it straight away, or ask the head chef or a sous chef to remove it.</p>' : '') +
@@ -2498,9 +2523,14 @@
     var bulk = '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line">' + esc(S.bulk || '') + '</textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div>';
     var saveBlock = saveBarHTML();
     var at = S.atab || 'insights';
-    var tabsBar = '<nav class="a-tabs" aria-label="Admin sections">' + [['insights', 'Insights'], ['team', 'Team'], ['waste', 'Wastage'], ['learning', 'Learning'], ['notes', 'Shift pings'], ['minutes', 'Minutes'], ['guides', 'Guides'], ['mail', 'Mail' + (mlInfo().n ? ' (' + mlInfo().n + ')' : '')], ['people', 'People'], ['tools', 'Tools']].map(function (t) {
-      return '<button type="button" class="a-tab" data-p="a-tab" data-t="' + t[0] + '" aria-pressed="' + (at === t[0]) + '">' + t[1] + '</button>';
-    }).join('') + '</nav>';
+    // Head chef decision D4 (20 Oct 2026): five groups on top, the pages of the open group underneath (the page ids
+    // stay the same, so lk.prep.atab and every link into a page still work)
+    var mlN = mlInfo().n, ag = adminGroupOf(at);
+    var tabsBar = '<nav class="a-groups" aria-label="Admin sections">' + A_GROUPS.map(function (g) {
+      return '<button type="button" class="a-group" data-p="a-group" data-g="' + g[0] + '" aria-current="' + (ag[0] === g[0] ? 'page' : 'false') + '">' + g[1] + (g[0] === 'today' && mlN ? ' (' + mlN + ')' : '') + '</button>';
+    }).join('') + '</nav>' + (ag[2].length > 1 ? '<nav class="a-tabs" aria-label="' + esc(ag[1]) + ' pages">' + ag[2].map(function (t) {
+      return '<button type="button" class="a-tab" data-p="a-tab" data-t="' + t + '" aria-pressed="' + (at === t) + '">' + A_TAB_NAMES[t] + (t === 'mail' && mlN ? ' (' + mlN + ')' : '') + '</button>';
+    }).join('') + '</nav>' : '');
     if (at === 'notes') loadNotes();
     if (at === 'minutes') loadMinutes();
     if (at === 'guides') loadGuides();
@@ -2548,6 +2578,9 @@
       '<button type="button" class="btn" data-p="a-reset"' + (n ? '' : ' disabled') + '>' + (armed('a-reset') ? 'Tap again to undo ' + (n === 1 ? 'it' : 'all ' + n) : 'Undo unsaved changes') + '</button>' +
       (n ? '<span class="a-unsaved">' + n + ' unsaved change' + (n === 1 ? '' : 's') + '</span>' : '') + '</div><span class="saved" role="status">' + esc(S.saveMsg) + '</span></section>';
   }
+  var A_TAB_NAMES = { mail: 'Kitchen mail', notes: 'Shift pings', insights: 'Insights', team: 'Team', waste: 'Wastage', learning: 'Learning', people: 'People', minutes: 'Minutes', guides: 'Guides', tools: 'Backup and PIN' };
+  var A_GROUPS = [['today', 'Today', ['mail', 'notes']], ['reports', 'Reports', ['insights', 'team', 'waste', 'learning']], ['people', 'People', ['people']], ['content', 'Content', ['minutes', 'guides']], ['settings', 'Settings', ['tools']]];
+  function adminGroupOf(t) { return A_GROUPS.filter(function (g) { return g[2].indexOf(t) >= 0; })[0] || A_GROUPS[1]; }
   function draftDirty() { return !!S.draft && JSON.stringify(S.draft) !== S.draftSnap; }
   window.addEventListener('beforeunload', function (e) { if ((S.name === 'admin' || S.staffOpen) && draftDirty()) { e.preventDefault(); e.returnValue = ''; } });
   function staffHTML() {
@@ -2605,14 +2638,21 @@
     if (!S.root || !document.body.contains(S.root) || rendering) return;
     rendering = true;
     var ae = document.activeElement, key = ae && ae.getAttribute && ae.getAttribute('data-k'), start = null, end = null;
+    var btnSel = !key && ae && S.root.contains(ae) && ae.getAttribute && ae.getAttribute('data-p') ? guestSel(ae) : '', tickAt = -1;
+    if (btnSel && ae.getAttribute('data-p') === 'tick') tickAt = Array.prototype.indexOf.call(S.root.querySelectorAll('.nb-box[data-p="tick"]'), ae);
     if (key && ae.selectionStart != null) { try { start = ae.selectionStart; end = ae.selectionEnd; } catch (e) {} }
     var bodyEl = S.root.querySelector('.nb-body'), keepScroll = bodyEl ? S.root.querySelectorAll('.nb-body') : null, scrolls = [];
     if (keepScroll) Array.prototype.forEach.call(keepScroll, function (b) { scrolls.push(b.scrollTop); });
-    S.root.innerHTML = syncHTML() + bodyHTML() + (S.toast ? '<div class="p-toast" role="status">' + esc(S.toast) + (S.toastAct ? ' <button type="button" class="p-toast-btn" data-p="toast-act">' + esc(S.toastAct.label) + '</button>' : '') + '</div>' : '') + (S.toastOld && S.toast ? '<div class="p-toast p-toast-old" role="status">' + esc(S.toastOld.msg) + ' <button type="button" class="p-toast-btn" data-p="toast-old">' + esc(S.toastOld.act.label) + '</button></div>' : '');
+    S.root.innerHTML = syncHTML() + bodyHTML() + (S.toast ? '<div class="p-toast">' + esc(S.toast) + (S.toastAct ? ' <button type="button" class="p-toast-btn" data-p="toast-act">' + esc(S.toastAct.label) + '</button>' : '') + '</div>' : '') + (S.toastOld && S.toast ? '<div class="p-toast p-toast-old">' + esc(S.toastOld.msg) + ' <button type="button" class="p-toast-btn" data-p="toast-old">' + esc(S.toastOld.act.label) + '</button></div>' : '');
     S.root.classList.toggle('is-book', S.name === 'prep' && !!S.root.querySelector('.nb'));
     document.documentElement.classList.toggle('sheet-open', !!S.root.querySelector('.sheet'));
     if (scrolls.length) Array.prototype.forEach.call(S.root.querySelectorAll('.nb-body'), function (b, i) { if (scrolls[i] != null) b.scrollTop = scrolls[i]; });
     if (key) { var el = S.root.querySelector('[data-k="' + key + '"]'); if (el) { el.focus({ preventScroll: true }); if (start != null && el.setSelectionRange) { try { el.setSelectionRange(start, end); } catch (e) {} } } }
+    else if (btnSel) {
+      var back = S.root.querySelector(btnSel);
+      if (!back && tickAt >= 0) { var ticks2 = S.root.querySelectorAll('.nb-box[data-p="tick"]:not([disabled])'); back = ticks2[Math.min(tickAt, ticks2.length - 1)]; }
+      if (back) back.focus({ preventScroll: true }); else focusPin();
+    }
     else focusPin();
     rendering = false;
   }
@@ -2942,7 +2982,7 @@
         ordOverdueHTML(overdue, today) + (shown.length ? '<ul class="nb-rows">' + shown.slice().sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }).map(ordRow).join('') + '</ul>' : (overdue.length ? '' : live.length ? '<p class="nb-empty">Everything on this list has been ordered. See Ordered today below.</p>' : S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : '<p class="nb-empty">Loading...</p>')));
     return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' : '') + '</span><span class="p-links"><a class="p-link" href="#/prep">Prep list</a>' + '' + '</span></div>' + tabs +
       '<section class="nb-page o-page' + (view === 'all' ? ' o-all' : '') + '"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + (view === 'all' ? 'To order' : 'Order list') + '</h2><span class="nb-date">' + (view === 'all' ? 'Across the last ' + ORD_DAYS + ' days' : esc(longDate(S.ordDate))) + '</span></div>' +
-      (view === 'day' ? '<div class="nb-prog" role="status">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') + '</header>' +
+      (view === 'day' ? '<div class="nb-prog">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') + '</header>' +
       /* the add box is at the top, so it is always in reach; on big screens the list and the ordered-today list sit side by side below it */
       (view === 'day' && add ? '<div class="nb-foot o-add">' + add + (canBrowse() ? '' : '<p class="hint nb-who">Only the head chef or a sous chef ticks a line as ordered or removes it. Wrote the wrong thing? Undo it straight away, or ask them.</p>') + '</div>' : '') +
       (view === 'day' && S.ordDate === today ? ordNudgeHTML(overdue, today) : '') +
@@ -3147,7 +3187,7 @@
       (shown.length ? '<ul class="nb-rows">' + shown.map(wRow).join('') + '</ul>' : (S.wState !== 'ok' ? '<p class="nb-empty">Loading...</p>' : '<p class="nb-empty">Nothing logged for ' + esc(dayName(S.wDate).toLowerCase()) + ' yet. Log waste when it happens: prep waste, expired stock, cooking faults, returns and excess production.</p>'));
     return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' : '') + '</span><span class="p-links"><a class="p-link" href="#/prep">Prep list</a>' + '' + '</span></div>' + nav +
       '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Wastage</h2><span class="nb-date">' + esc(longDate(S.wDate)) + (tot ? ' &middot; ' + esc(tot) : '') + '</span></div>' +
-      '<div class="nb-prog" role="status">' + live.length + (live.length === 1 ? ' entry' : ' entries') + '</div></header>' +
+      '<div class="nb-prog">' + live.length + (live.length === 1 ? ' entry' : ' entries') + '</div></header>' +
       '<p class="w-rule">Write the actual amount and unit, not a dollar value. Unsafe food must never be reused to avoid logging waste.</p>' +
       // the form sits at the top, like the order list, so logging waste on a busy day never means scrolling past every entry
       (add ? '<div class="nb-foot w-addtop">' + add + '</div>' : '') + '<div class="nb-body">' + body + '</div></section>' + review + sheetHTML();
@@ -3366,12 +3406,7 @@
   document.addEventListener('keydown', function (e) {
     if (!npop) return;
     if (e.key === 'Escape') { e.preventDefault(); noteClose(true); return; }
-    if (e.key !== 'Tab') return;
-    var f = Array.prototype.filter.call(npop.querySelectorAll('button, a[href]'), function (x) { return x.offsetParent !== null; });
-    if (!f.length) return;
-    var first = f[0], last = f[f.length - 1];
-    if (e.shiftKey && (document.activeElement === first || !npop.contains(document.activeElement))) { e.preventDefault(); last.focus(); }
-    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    if (e.key === 'Tab') trapTab(e, npop);
   });
 
   /* writing shift pings: the Shift pings tab of the admin panel (head chef) and Shift pings in the prep book (sous chefs and anyone ticked for Pings).
@@ -3883,13 +3918,7 @@
   function minSousPageHTML() {
     return '<div class="p-admin"><div class="p-bar"><span>Meeting minutes</span><span class="p-links"><button type="button" class="p-link" data-p="mn-close">Back to the prep book</button></span></div><h2 class="p-h" id="rtitle" tabindex="-1">Meeting minutes</h2>' + minAdminHTML() + '</div>';
   }
-  function printMinutes() {
-    lvPrintAll(true);
-    document.documentElement.classList.add('print-min');
-    function done() { document.documentElement.classList.remove('print-min'); lvPrintAll(false); window.removeEventListener('afterprint', done); }
-    window.addEventListener('afterprint', done);
-    setTimeout(function () { window.print(); setTimeout(function () { if (document.documentElement.classList.contains('print-min') && !window.matchMedia('print').matches) done(); }, 1500); }, 50);
-  }
+  function printMinutes() { lvPrintAll(true); printWith('print-min', function () { lvPrintAll(false); }); }
   function csvMinutes(id) {
     var m = mnById(id), reg = m && mnRegister(m); if (!reg) return;
     var rows = [['Minutes', 'Version', 'Meeting date', 'Person', 'Attendance', 'Signed at', 'Status']];
@@ -4334,12 +4363,7 @@
       (cards.length ? '<section class="g-rec g-noprint"><h3 class="g-h3">On these recipe cards</h3><div class="g-rchips">' + cards.map(function (r) { return '<a class="g-rchip" href="#/r/' + esc(r.id) + '">' + esc(r.name) + '</a>'; }).join('') + '</div></section>' : '') +
       '<div class="btn-row g-noprint"><button type="button" class="btn" data-p="g-print">Print</button>' + (admin ? '<button type="button" class="btn" data-p="g-change" data-id="' + esc(g.id) + '">Change this guide</button>' : '') + '</div></article>';
   }
-  function printGuide() {
-    document.documentElement.classList.add('print-guide');
-    function done() { document.documentElement.classList.remove('print-guide'); window.removeEventListener('afterprint', done); }
-    window.addEventListener('afterprint', done);
-    setTimeout(function () { window.print(); setTimeout(function () { if (document.documentElement.classList.contains('print-guide') && !window.matchMedia('print').matches) done(); }, 1500); }, 50);
-  }
+  function printGuide() { printWith('print-guide'); }
 
   /* A page opened big: over everything (appended to the body, so page redraws leave it alone), Previous and Next, Fit or Full size.
      Its clicks use data-gz. Escape or Close shuts it. Pinching zooms further on a phone. */
@@ -4401,11 +4425,7 @@
     if (!gz) return;
     if (e.key === 'Escape') { e.preventDefault(); gzClose(); return; }
     if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { var b = gz.el.querySelector('[data-gz="' + (e.key === 'ArrowRight' ? 'next' : 'prev') + '"]:not([disabled])'); if (b) { e.preventDefault(); b.click(); } return; }
-    if (e.key !== 'Tab') return;
-    var f = Array.prototype.filter.call(gz.el.querySelectorAll('button:not([disabled])'), function (x) { return x.offsetParent !== null; });
-    if (!f.length) return;
-    if (e.shiftKey && (document.activeElement === f[0] || !gz.el.contains(document.activeElement))) { e.preventDefault(); f[f.length - 1].focus(); }
-    else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+    if (e.key === 'Tab') trapTab(e, gz.el, 'button:not([disabled])');
   });
   window.addEventListener('hashchange', function () { if (gz) gzClose(true); });
   /* Swipe left or right on the page (not while it is full size, and not with two fingers) turns the page. */
@@ -4640,6 +4660,7 @@
      The first time someone sets their PIN, the book asks for it straight after ("One more thing"). People who signed up
      before this see a small card on the prep list, orders and wastage once, until they set it or tap Not now
      (lk.drink.<id> on the phone, so the check is at most one small read per person per phone).
+     Each person picks a coffee or hot drink, a soft drink or water, or both, and can add a few words.
      #/drinks (the chef mark menu, and Tools on the prep list) shows everyone's usual. Whoever does the run taps who is
      in and shares the order: the same drinks counted together for the cafe, then who has what. The team's drinks are
      read with one query when the page opens, again only after 30 minutes, and kept on the phone (lk.drinks).
@@ -4651,6 +4672,8 @@
   var DK_SIZE = [['small', 'Small'], ['reg', 'Regular'], ['large', 'Large']];
   var DK_MILK = [['full', 'Full cream'], ['skim', 'Skim'], ['lf', 'Lactose free'], ['oat', 'Oat'], ['almond', 'Almond'], ['soy', 'Soy'], ['none', 'No milk']];
   var DK_SHOT = [['extra', 'Extra shot'], ['half', 'Half strength'], ['decaf', 'Decaf']];
+  var DK_COLD = [['water', 'Water'], ['sparkling', 'Sparkling water'], ['coke', 'Coke'], ['cokens', 'Coke No Sugar'], ['diet', 'Diet Coke'], ['lemonade', 'Lemonade'],
+    ['llb', 'Lemon lime and bitters'], ['ginger', 'Ginger beer'], ['oj', 'Orange juice'], ['icedtea', 'Iced tea'], ['energy', 'Energy drink']];
   var DK_SUGAR = [['none', 'No sugar'], ['1', '1 sugar'], ['2', '2 sugars'], ['3', '3 sugars'], ['sweet', 'Sweetener']];
   var DK_NOTE = 40, DK_OTHER = 60, DK_STALE = 30 * 60000;
   var dkf = null, dkEditing = false, dkMsg = '', dkBusy = false, dkQ = '', dkList = null, dkAt = 0, dkLoading = false, dkErr = false;
@@ -4667,14 +4690,16 @@
     var t = head.charAt(0).toUpperCase() + head.slice(1) + (extra.length ? ', ' + extra.join(', ') : '');
     return t + (d.note ? '. ' + d.note : '');
   }
+  /* the cold drink and anything else, together: "Coke No Sugar, no ice" */
+  function dkCold(d) { return d ? [dkLabel(DK_COLD, d.cold), d.other || ''].filter(Boolean).join(', ') : ''; }
   function dkSum(d) {
-    var c = dkCoffee(d), o = d && d.other ? d.other : '';
+    var c = dkCoffee(d), o = dkCold(d);
     return c && o ? c + '. Also ' + o : c || o;
   }
   function dkMine() { return dkList && S.who ? dkList[S.who] || null : null; }
   function dkEdit() {
     var m = dkMine() || {};
-    dkf = { kind: m.kind || '', size: m.size || 'reg', milk: m.milk || '', shot: m.shot || '', sugar: m.sugar || '', note: m.note || '', other: m.other || '' };
+    dkf = { kind: m.kind || '', size: m.size || 'reg', milk: m.milk || '', shot: m.shot || '', sugar: m.sugar || '', note: m.note || '', cold: m.cold || '', other: m.other || '' };
     dkEditing = true; dkMsg = '';
   }
   function dkFlag(v) { if (S.who) lsSet('lk.drink.' + S.who, v); }
@@ -4707,9 +4732,9 @@
     var p = who(), f = dkf;
     if (dkBusy || !fb || !p || !f) return;
     f.note = f.note.replace(/^\s+|\s+$/g, ''); f.other = f.other.replace(/^\s+|\s+$/g, '');
-    if (!f.kind && !f.other) { dkMsg = 'Pick a coffee or drink first, or write something else you like.'; draw(); return; }
+    if (!f.kind && !f.cold && !f.other) { dkMsg = 'Pick a coffee or a cold drink first, or write something else you like.'; draw(); return; }
     var k = f.kind, data = { kind: k, size: dkAsks(k, 's') ? f.size : '', milk: dkAsks(k, 'm') ? f.milk : '', shot: dkAsks(k, 'e') ? f.shot : '',
-      sugar: k && k !== 'none' ? f.sugar : '', note: k && k !== 'none' ? f.note.slice(0, DK_NOTE) : '', other: f.other.slice(0, DK_OTHER), at: now() };
+      sugar: k && k !== 'none' ? f.sugar : '', note: k && k !== 'none' ? f.note.slice(0, DK_NOTE) : '', cold: f.cold, other: f.other.slice(0, DK_OTHER), at: now() };
     var id = S.who, old = dkList ? dkList[id] : undefined;
     dkBusy = true; dkMsg = ''; draw();
     sset(docRef('drinks', id), data).then(function () {
@@ -4747,7 +4772,7 @@
   }
   function dkFormHTML(first) {
     if (!dkf) dkEdit();
-    var k = dkf.kind, hot = k && k !== 'none', prev = dkSum({ kind: k, size: dkf.size, milk: dkf.milk, shot: dkf.shot, sugar: dkf.sugar, note: hot ? dkf.note.trim() : '', other: dkf.other.trim() });
+    var k = dkf.kind, hot = k && k !== 'none', prev = dkSum({ kind: k, size: dkf.size, milk: dkf.milk, shot: dkf.shot, sugar: dkf.sugar, note: hot ? dkf.note.trim() : '', cold: dkf.cold, other: dkf.other.trim() });
     return '<div class="dr-form" tabindex="-1">' + dkChips('kind', DK_KINDS, 'Coffee or hot drink') +
       (dkAsks(k, 's') ? '<div class="field"><span class="label" id="dk-l-size">Size</span><div class="ml-seg" role="group" aria-labelledby="dk-l-size">' + DK_SIZE.map(function (c) {
         return '<button type="button" class="ml-sb" data-p="dk-pick" data-f="size" data-v="' + c[0] + '" aria-pressed="' + (dkf.size === c[0]) + '">' + c[1] + '</button>';
@@ -4756,7 +4781,8 @@
       (dkAsks(k, 'e') ? dkChips('shot', DK_SHOT, 'Strength (tap again for normal)') : '') +
       (hot ? dkChips('sugar', DK_SUGAR, 'Sugar') : '') +
       (hot ? '<div class="field"><label class="label" for="dk-note">Anything else about it?</label><input id="dk-note" class="search" data-k="dk-note" maxlength="' + DK_NOTE + '" autocomplete="off" placeholder="Extra hot, honey, Earl Grey" value="' + esc(dkf.note) + '"></div>' : '') +
-      '<div class="field"><label class="label" for="dk-other">Something else you like</label><input id="dk-other" class="search" data-k="dk-other" maxlength="' + DK_OTHER + '" autocomplete="off" placeholder="Coke No Sugar, iced water" value="' + esc(dkf.other) + '"><span class="hint">A cold drink or snack for the run. Leave it empty if there is nothing.</span></div>' +
+      dkChips('cold', DK_COLD, 'Soft drink or water') +
+      '<div class="field"><label class="label" for="dk-other">Anything else for the run</label><input id="dk-other" class="search" data-k="dk-other" maxlength="' + DK_OTHER + '" autocomplete="off" placeholder="No ice, a banana bread" value="' + esc(dkf.other) + '"><span class="hint">Leave it empty if there is nothing.</span></div>' +
       (prev ? '<p class="dr-prev"><span class="label">Your usual</span>' + esc(prev) + '</p>' : '') +
       (dkMsg ? '<p class="p-err" role="alert">' + esc(dkMsg) + '</p>' : '') +
       '<div class="btn-row"><button type="button" class="btn dark" data-p="dk-save"' + (dkBusy ? ' disabled' : '') + '>' + (dkBusy ? 'Saving...' : 'Save my usual') + '</button>' +
@@ -4796,7 +4822,7 @@
     var g = {}, order = [];
     l.forEach(function (p) {
       var d = dkList[p.id];
-      [dkCoffee(d), d.other || ''].forEach(function (t) { if (!t) return; var key = t.toLowerCase(); if (!g[key]) { g[key] = { t: t, n: 0 }; order.push(key); } g[key].n++; });
+      [dkCoffee(d), dkCold(d)].forEach(function (t) { if (!t) return; var key = t.toLowerCase(); if (!g[key]) { g[key] = { t: t, n: 0 }; order.push(key); } g[key].n++; });
     });
     return order.map(function (k) { return g[k]; });
   }
@@ -4992,7 +5018,8 @@
     if (a === 'print') { printWith('print-list'); return; }
     if (a === 'ocopy') { shareText(ordText()); return; }
     if (a === 'oprint') { printWith('print-orders'); return; }
-    if (a === 'a-tab') { S.atab = el.getAttribute('data-t'); lsSet('lk.prep.atab', S.atab); draw(); window.scrollTo(0, 0); return; }
+    if (a === 'a-group') { var gg = A_GROUPS.filter(function (g) { return g[0] === el.getAttribute('data-g'); })[0]; if (gg) { S.atab = (S.agLast || {})[gg[0]] || gg[2][0]; lsSet('lk.prep.atab', S.atab); draw(); window.scrollTo(0, 0); } return; }
+    if (a === 'a-tab') { S.atab = el.getAttribute('data-t'); S.agLast = S.agLast || {}; S.agLast[adminGroupOf(S.atab)[0]] = S.atab; lsSet('lk.prep.atab', S.atab); draw(); window.scrollTo(0, 0); return; }
     if (a === 'staff-open') { if (isSous()) { startDraft(); S.staffOpen = true; draw(); } return; }
     if (a === 'staff-close') { if (draftDirty() && !arm('staff-close')) return; S.staffOpen = false; S.draft = null; draw(); return; }
     if (a === 'add-recipe') { addRecipe(id); return; }
@@ -5129,12 +5156,7 @@
       if (!String(S.wf.amt).trim()) { e.preventDefault(); focusK('w-amt'); return; }
     }
     if (e.key === 'Tab' && S.sheet) {
-      var sh = S.root.querySelector('.sheet'), fs = sh ? Array.prototype.slice.call(sh.querySelectorAll('button')) : [];
-      if (fs.length) {
-        var first = fs[0], last = fs[fs.length - 1];
-        if (e.shiftKey && (document.activeElement === first || !sh.contains(document.activeElement))) { e.preventDefault(); last.focus(); }
-        else if (!e.shiftKey && (document.activeElement === last || !sh.contains(document.activeElement))) { e.preventDefault(); first.focus(); }
-      }
+      var sh = S.root.querySelector('.sheet'); if (sh) trapTab(e, sh, 'button');
       return;
     }
     if (e.key === 'Escape' && S.recipeOpen) { S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; draw(); focusSel('.p-pickbtn'); return; }
@@ -5363,10 +5385,7 @@
   document.addEventListener('keydown', function (e) {
     if (!mlPop) return;
     if (e.key === 'Escape') { e.preventDefault(); lsSet('lk.mail.later', String(now() + ML_NUDGE)); mlPopClose(); return; }
-    if (e.key !== 'Tab') return;
-    var f = mlPop.querySelectorAll('button'), first = f[0], last = f[f.length - 1];
-    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    if (e.key === 'Tab') trapTab(e, mlPop, 'button');
   });
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') { loadMail(); mlMaybePop(); } });
 
