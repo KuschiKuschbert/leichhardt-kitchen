@@ -4,7 +4,7 @@
   --paper: #FFFFFF;
   --ink: #1C1D1F;
   --muted: #55585E;
-  --faint: #8A8F96;
+  --faint: #6B7077;   /* 4.9:1 on the page colour (was #8A8F96, 3.1:1) */
   --accent: #E2602A;
   --accent-ink: #C2451A;
   --tag: #B83F15;
@@ -37,6 +37,13 @@ img, svg { display: block; }
 .skip:focus { left: 8px; }
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .visually-hidden { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* tap targets (20 Oct 2026): nothing a cook taps is under 44 px, admin ticks are 28 px (html raises these over the
+   older rules further down, which they replace) */
+html .a-check, html .a-details summary, html .nb-sg, html .nb-hd { min-height: 44px; }
+html .a-table .a-name { height: 44px; }
+html .a-table .p-select { min-height: 44px; }
+html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 28px; height: 28px; }
+@media (max-width: 599px) { html .a-tab { min-height: 44px; } }
 
 /* ---------- page frame ---------- */
 .page { max-width: 1240px; margin: 0 auto; padding: 1.5rem 1.25rem 2.5rem; display: flex; flex-direction: column; gap: 1.1rem; }
