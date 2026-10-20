@@ -275,11 +275,16 @@
   }
   /* Admin always lives in the same place: the key button top right, next to Settings, on every page.
      It only shows on a phone or computer where the head chef is signed in with Google and has passed the owner check
-     (lk.admin, set by js/prep.js). Everyone else never sees it: the way in for the first time is the link on Settings. */
+     (lk.admin, set by js/prep.js), or, as a plain outline, while the Head chef is signed in with their PIN on a phone
+     that has not signed in with Google yet: a tap opens the admin page, one tap from the Google sign-in. */
   function isAdminDevice() { try { return !!LS && LS.getItem('lk.admin') === '1'; } catch (e) { return false; } }
   function adminLink(cls) {
-    if (!isAdminDevice()) return '';
-    var on = parseRoute().name === 'admin', m = window.LK_PREP && window.LK_PREP.mailInfo ? window.LK_PREP.mailInfo() : { n: 0 };
+    var on = parseRoute().name === 'admin';
+    if (!isAdminDevice()) {
+      if (!(window.LK_PREP && window.LK_PREP.headPin && window.LK_PREP.headPin())) return '';
+      return '<a class="' + cls + ' adm" href="#/admin" title="Admin panel: sign in with Google" aria-label="Admin panel, sign in with Google"' + (on ? ' aria-current="page"' : '') + '>' + ICON.key + '<span class="wtop-lbl">Admin</span></a>';
+    }
+    var m = window.LK_PREP && window.LK_PREP.mailInfo ? window.LK_PREP.mailInfo() : { n: 0 };
     // the number of open kitchen mail on the key (js/prep.js reads it on the head chef's device and says when it changes: lk-mail)
     return '<a class="' + cls + ' adm is-signed" href="#/admin" title="Admin panel' + (m.n ? ', ' + m.n + ' open mail' : '') + '" aria-label="Admin panel (signed in)' + (m.n ? ', ' + m.n + ' open kitchen mail' : '') + '"' + (on ? ' aria-current="page"' : '') + '>' + ICON.key + '<span class="wtop-lbl">Admin</span>' + (m.n ? '<span class="adm-n" aria-hidden="true">' + (m.n > 99 ? '99+' : m.n) + '</span>' : '') + '</a>';
   }
@@ -982,7 +987,12 @@
   // was already signed in) the mark flips in like a coin and settles, so the person sees it is now them.
   // js/prep.js read the head chef's open kitchen mail: redraw the count on the key button
   window.addEventListener('lk-mail', function () { var ic = app.querySelector('.wtop-icons'); if (ic) ic.outerHTML = topIcons(); });
-  window.addEventListener('lk-who', function (e) { if (!(window.LK_PREP && window.LK_PREP.whoName && window.LK_PREP.whoName())) whoMenuClose(); var el = app.querySelector('.wtop-who'); if (el) el.outerHTML = whoMark(!!(e.detail && e.detail.signedIn)); });
+  // The Head chef's PIN also shows or drops the Admin button, so the whole icon group is redrawn.
+  window.addEventListener('lk-who', function (e) {
+    if (!(window.LK_PREP && window.LK_PREP.whoName && window.LK_PREP.whoName())) whoMenuClose();
+    var ic = app.querySelector('.wtop-icons'); if (ic) ic.outerHTML = topIcons();
+    var el = app.querySelector('.wtop-who'); if (el) el.outerHTML = whoMark(!!(e.detail && e.detail.signedIn));
+  });
   // "Skip to content" must not change the address: #main is not a page, so the router would open the landing page
   document.addEventListener('click', function (e) {
     var sk = e.target.closest && e.target.closest('a.skip');
