@@ -19,7 +19,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   extra[fsKey(['minutes', 'm1', 'signs', '2_ann'])] = { v: 2, st: 'present', at: 1, name: 'Ann', by: 'ann' };
   extra[fsKey(['ordlearned', 'milk'])] = { text: 'Milk', uses: 6, dow: { 1: 3 }, qtys: { '6 L': 4 }, by: 'ann' };
   p = await L.open(b, '#/admin', { admin: true, wait: 1800, extra });
-  await p.click('[data-p="a-tab"][data-t="tools"]');
+  await L.adminTab(p, 'tools');
   await p.waitForTimeout(200);
   await p.fill('#a-newpin', NEW);
   await p.fill('#a-newpin2', NEW);
@@ -44,7 +44,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
 
   // Backup: one JSON file with notes and who has seen them, minutes with earlier versions and sign-offs, and order learning
   p = await L.open(b, '#/admin', { admin: true, wait: 1800, extra });
-  await p.click('[data-p="a-tab"][data-t="tools"]');
+  await L.adminTab(p, 'tools');
   await p.waitForTimeout(200);
   const dl = p.waitForEvent('download', { timeout: 15000 });
   await p.click('[data-p="export"]');

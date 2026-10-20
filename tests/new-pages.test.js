@@ -35,7 +35,7 @@ const tab = p => p.evaluate(() => Array.prototype.some.call(document.querySelect
   p = await L.open(b, '#/admin', { admin: true, extra: world(), wait: 1800 });
   await p.click('.nt-got', { timeout: 3000 }).catch(() => {});
   await p.waitForTimeout(200);
-  await p.click('[data-p="a-tab"][data-t="people"]');
+  await L.adminTab(p, 'people');
   await p.waitForTimeout(300);
   const ticks = await p.evaluate(() => Array.prototype.map.call(document.querySelectorAll('[data-a="staffsee"]'), e => e.getAttribute('data-f') + ':' + e.checked).join(','));
   ok(ticks === 'guides:true,pings:true,minutes:true', 'admin: New pages has Guides, Shift pings and Meeting minutes, all ticked to start (' + ticks + ')');

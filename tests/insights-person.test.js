@@ -14,7 +14,7 @@ const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
   extra[fsKey(['days', today, 'items', 'ra1'])] = line('Peel carrots', 'Rolled over', '', { rolled: 1, root: 'a1', from: 'a1', rolledFrom: yday, origBy: 'Ann', origAt: L.NOW - 90000000 });
   extra[fsKey(['days', today, 'items', 'rs1'])] = line('Make stock', 'Rolled over', '', { rolled: 1, root: 's1', from: 's1', rolledFrom: yday, origBy: 'Sam', origAt: L.NOW - 90000000 });
   const p = await L.open(b, '#/admin', { admin: true, extra, wait: 2500 });
-  await p.click('[data-p="a-tab"][data-t="insights"]');
+  await L.adminTab(p, 'insights');
   await p.waitForTimeout(800);
   ok(/Recipe book counts are for everyone/.test(await txt(p, '#prep-root') || ''), 'insights: the Recipe book section says the filters do not apply to it');
   await p.selectOption('select[data-k="af-who"]', 'ann');
