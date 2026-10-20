@@ -1085,6 +1085,11 @@ details.nb-start-l[open] > summary::after { content: '\2212'; }
   .a-table.lv-people td.a-act { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 0.4rem; text-align: left; }
 }
 .lv-cards { margin: 0; }
+/* ---------- admin: five groups, the open group's pages underneath (20 Oct 2026) ---------- */
+.a-groups { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.4rem; margin: 0 0 0.6rem; }
+.a-group { min-height: 48px; padding: 0 0.4rem; border: 1.5px solid var(--ink); border-radius: 10px; background: var(--paper); font: 700 1rem var(--body); color: var(--ink); cursor: pointer; }
+.a-group[aria-current="page"] { background: var(--ink); color: #fff; }
+@media (max-width: 599px) { .a-groups { grid-template-columns: repeat(3, minmax(0, 1fr)); } .a-group { font-size: 0.9375rem; } }
 .a-rev { padding: 0.55rem 0.75rem; border: 1.5px solid var(--edge); border-radius: var(--radius); background: var(--paper); }
 .mn-older { margin-left: 0.2rem; }
 .mn-older select { min-height: 44px; border-radius: 22px; font-weight: 700; min-width: 0; }
