@@ -4701,7 +4701,7 @@
     var v = el.getAttribute('data-v');
     if (a === 'dk-pick') { var fk = el.getAttribute('data-f'); if (dkf) { dkf[fk] = dkf[fk] === v && fk !== 'size' ? '' : v; dkMsg = ''; draw(); } return; }
     if (a === 'dk-save') { dkSave(); return; }
-    if (a === 'dk-edit') { dkEdit(); draw(); focusSel('.dk-form'); return; }
+    if (a === 'dk-edit') { dkEdit(); draw(); focusSel('.dr-form'); return; }
     if (a === 'dk-cancel') { dkEditing = false; dkf = null; dkMsg = ''; draw(); return; }
     if (a === 'dk-skip') { S.drinkAsk = ''; dkEditing = false; dkf = null; dkFlag('skip'); draw(); toast('No worries. Set it any time from the chef hat at the top.'); return; }
     if (a === 'dk-later') { S.drinkAsk = ''; dkFlag('later'); draw(); return; }
@@ -4716,14 +4716,14 @@
     if (a === 'dk-retry') { dkErr = false; dkLoad(true); draw(); }
   }
   function dkChips(f, list, label) {
-    return '<div class="field"><span class="label" id="dk-l-' + f + '">' + label + '</span><div class="chips dk-chips" role="group" aria-labelledby="dk-l-' + f + '">' + list.map(function (c) {
+    return '<div class="field"><span class="label" id="dk-l-' + f + '">' + label + '</span><div class="chips dr-chips" role="group" aria-labelledby="dk-l-' + f + '">' + list.map(function (c) {
       return '<button type="button" class="chip" data-p="dk-pick" data-f="' + f + '" data-v="' + c[0] + '" aria-pressed="' + (dkf[f] === c[0]) + '">' + esc(c[1]) + '</button>';
     }).join('') + '</div></div>';
   }
   function dkFormHTML(first) {
     if (!dkf) dkEdit();
     var k = dkf.kind, hot = k && k !== 'none', prev = dkSum({ kind: k, size: dkf.size, milk: dkf.milk, shot: dkf.shot, sugar: dkf.sugar, note: hot ? dkf.note.trim() : '', other: dkf.other.trim() });
-    return '<div class="dk-form" tabindex="-1">' + dkChips('kind', DK_KINDS, 'Coffee or hot drink') +
+    return '<div class="dr-form" tabindex="-1">' + dkChips('kind', DK_KINDS, 'Coffee or hot drink') +
       (dkAsks(k, 's') ? '<div class="field"><span class="label" id="dk-l-size">Size</span><div class="ml-seg" role="group" aria-labelledby="dk-l-size">' + DK_SIZE.map(function (c) {
         return '<button type="button" class="ml-sb" data-p="dk-pick" data-f="size" data-v="' + c[0] + '" aria-pressed="' + (dkf.size === c[0]) + '">' + c[1] + '</button>';
       }).join('') + '</div></div>' : '') +
@@ -4732,19 +4732,19 @@
       (hot ? dkChips('sugar', DK_SUGAR, 'Sugar') : '') +
       (hot ? '<div class="field"><label class="label" for="dk-note">Anything else about it?</label><input id="dk-note" class="search" data-k="dk-note" maxlength="' + DK_NOTE + '" autocomplete="off" placeholder="Extra hot, honey, Earl Grey" value="' + esc(dkf.note) + '"></div>' : '') +
       '<div class="field"><label class="label" for="dk-other">Something else you like</label><input id="dk-other" class="search" data-k="dk-other" maxlength="' + DK_OTHER + '" autocomplete="off" placeholder="Coke No Sugar, iced water" value="' + esc(dkf.other) + '"><span class="hint">A cold drink or snack for the run. Leave it empty if there is nothing.</span></div>' +
-      (prev ? '<p class="dk-prev"><span class="label">Your usual</span>' + esc(prev) + '</p>' : '') +
+      (prev ? '<p class="dr-prev"><span class="label">Your usual</span>' + esc(prev) + '</p>' : '') +
       (dkMsg ? '<p class="p-err" role="alert">' + esc(dkMsg) + '</p>' : '') +
       '<div class="btn-row"><button type="button" class="btn dark" data-p="dk-save"' + (dkBusy ? ' disabled' : '') + '>' + (dkBusy ? 'Saving...' : 'Save my usual') + '</button>' +
       (first ? '<button type="button" class="btn" data-p="dk-skip">Skip for now</button>' : '<button type="button" class="btn" data-p="dk-cancel">Cancel</button>') + '</div></div>';
   }
   function drinkAskHTML() {
     var p = who();
-    return '<section class="p-card dk-page dk-first"><span class="dk-eb">Your PIN is set</span><h2 class="p-h" id="rtitle" tabindex="-1">One more thing' + (p ? ', ' + esc(p.name.split(' ')[0]) : '') + '</h2>' +
+    return '<section class="p-card dr-page dr-first"><span class="dr-eb">Your PIN is set</span><h2 class="p-h" id="rtitle" tabindex="-1">One more thing' + (p ? ', ' + esc(p.name.split(' ')[0]) : '') + '</h2>' +
       '<p class="hint">What is your usual coffee or drink? When someone does a drinks run, they can see it and get it right. Change it any time from the chef hat at the top.</p>' + dkFormHTML(true) + '</section>';
   }
   function drinkNudgeHTML() {
     if (S.drinkAsk !== 'again' || !S.authed) return '';
-    return '<div class="dk-nudge" role="note"><p><b>New: the drinks run.</b> Lock in your usual coffee or drink, so whoever does the run gets it right.</p>' +
+    return '<div class="dr-nudge" role="note"><p><b>New: the drinks run.</b> Lock in your usual coffee or drink, so whoever does the run gets it right.</p>' +
       '<div class="btn-row"><a class="btn dark" href="#/drinks" data-p="dk-set">Set my usual</a><button type="button" class="btn" data-p="dk-later">Not now</button></div></div>';
   }
   function dkTeam() {
@@ -4754,12 +4754,12 @@
   }
   function dkTeamHTML() {
     var run = dkRunGet(), l = dkTeam();
-    return '<ul class="dk-team">' + (l.length ? l.map(function (p) {
+    return '<ul class="dr-team">' + (l.length ? l.map(function (p) {
       var d = dkList ? dkList[p.id] : null, sum = dkSum(d), on = run.indexOf(p.id) >= 0;
-      if (!sum) return '<li class="dk-row is-none"><span class="dk-who">' + esc(p.name) + (p.id === S.who ? ' (you)' : '') + '</span><span class="dk-what">No usual yet. Ask them.</span></li>';
-      return '<li><button type="button" class="dk-row' + (on ? ' is-in' : '') + '" data-p="dk-in" data-id="' + esc(p.id) + '" aria-pressed="' + on + '"><span class="dk-box" aria-hidden="true">' + (on ? '✓' : '') + '</span>' +
-        '<span class="dk-txt"><span class="dk-who">' + esc(p.name) + (p.id === S.who ? ' (you)' : '') + '</span><span class="dk-what">' + esc(sum) + '</span></span></button></li>';
-    }).join('') : '<li class="dk-row is-none">Nobody by that name.</li>') + '</ul>';
+      if (!sum) return '<li class="dr-row is-none"><span class="dr-who">' + esc(p.name) + (p.id === S.who ? ' (you)' : '') + '</span><span class="dr-what">No usual yet. Ask them.</span></li>';
+      return '<li><button type="button" class="dr-row' + (on ? ' is-in' : '') + '" data-p="dk-in" data-id="' + esc(p.id) + '" aria-pressed="' + on + '"><span class="dr-box" aria-hidden="true">' + (on ? '✓' : '') + '</span>' +
+        '<span class="dr-txt"><span class="dr-who">' + esc(p.name) + (p.id === S.who ? ' (you)' : '') + '</span><span class="dr-what">' + esc(sum) + '</span></span></button></li>';
+    }).join('') : '<li class="dr-row is-none">Nobody by that name.</li>') + '</ul>';
   }
   /* the order for the cafe: the same drinks counted together, then who has what */
   function dkRunList() {
@@ -4783,9 +4783,9 @@
   }
   function dkRunHTML() {
     var l = dkRunList();
-    if (!l.length) return '<p class="hint dk-runnone">Tap the people who are in on the run.</p>';
+    if (!l.length) return '<p class="hint dr-runnone">Tap the people who are in on the run.</p>';
     var gr = dkGroups(l);
-    return '<div class="dk-run" aria-live="polite"><h3 class="ml-h3">The order (' + l.length + (l.length === 1 ? ' person' : ' people') + ')</h3><ul class="dk-order">' + gr.map(function (x) {
+    return '<div class="dr-run" aria-live="polite"><h3 class="ml-h3">The order (' + l.length + (l.length === 1 ? ' person' : ' people') + ')</h3><ul class="dr-order">' + gr.map(function (x) {
       return '<li><b>' + x.n + ' x</b> ' + esc(x.t) + '</li>';
     }).join('') + '</ul><div class="btn-row"><button type="button" class="btn dark" data-p="dk-share">' + shareLabel('the order') + '</button><button type="button" class="btn" data-p="dk-clear">Start again</button></div></div>';
   }
@@ -4793,13 +4793,13 @@
     dkLoad();
     var mine = dkMine(), sum = dkSum(mine);
     var top = dkEditing ? dkFormHTML(false)
-      : '<div class="dk-mine"><span class="label">Your usual</span><p class="dk-what">' + (sum ? esc(sum) : dkList ? 'Not set yet.' : 'Loading...') + '</p>' +
+      : '<div class="dr-mine"><span class="label">Your usual</span><p class="dr-what">' + (sum ? esc(sum) : dkList ? 'Not set yet.' : 'Loading...') + '</p>' +
         '<button type="button" class="btn' + (sum ? '' : ' dark') + '" data-p="dk-edit">' + (sum ? 'Change it' : 'Set my usual') + '</button></div>';
     var team = !dkList ? (dkErr ? '<p class="p-err">Could not load the team\'s drinks. Check the connection.</p><div class="btn-row"><button type="button" class="btn" data-p="dk-retry">Try again</button></div>' : '<p class="hint">Loading...</p>')
       : (people().length > 12 ? '<div class="field"><label class="label" for="dk-q">Find a name</label><input id="dk-q" class="search" data-k="dk-q" type="search" autocomplete="off" value="' + esc(dkQ) + '"></div>' : '') + dkTeamHTML() + dkRunHTML();
-    return '<section class="p-card dk-page"><h2 class="p-h" id="rtitle" tabindex="-1">Drinks run</h2>' +
+    return '<section class="p-card dr-page"><h2 class="p-h" id="rtitle" tabindex="-1">Drinks run</h2>' +
       '<p class="hint">Everyone\'s usual coffee or drink. Going for a run? Tap who is in, then share the order.</p>' + top + '</section>' +
-      '<section class="p-card dk-runbox"><h3 class="ml-h3">Who is in</h3>' + team + '</section>';
+      '<section class="p-card dr-runbox"><h3 class="ml-h3">Who is in</h3>' + team + '</section>';
   }
 
   /* ---------- events ---------- */
@@ -5007,7 +5007,7 @@
     if (k === 'p-pin') { var pp = S.pinInput.length; S.pinInput = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.pinInput; pinCells(el); if (pp < 4 && S.pinInput.length === 4) submitKitchenPin(); return; }
     if (k === 'a-bulk') { S.bulk = el.value; return; }
     if (k === 'dk-note' || k === 'dk-other') { dkf[k.slice(3)] = el.value.slice(0, k === 'dk-note' ? DK_NOTE : DK_OTHER); return; }
-    if (k === 'dk-q') { dkQ = el.value; var dkl = S.root.querySelector('.dk-team'); if (dkl) dkl.outerHTML = dkTeamHTML(); return; }
+    if (k === 'dk-q') { dkQ = el.value; var dkl = S.root.querySelector('.dr-team'); if (dkl) dkl.outerHTML = dkTeamHTML(); return; }
     if (k === 'ml-text') { mlf.text = el.value.slice(0, ML_MAX); mlMsg = ''; var mll = S.root.querySelector('#ml-left'), mln = ML_MAX - mlf.text.length; if (mll) mll.textContent = mln < 100 ? mln + ' characters left' : ''; return; }
     if (k === 'a-newpin') { S.newPin = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.newPin; return; }
     if (k === 'mn-pin') {

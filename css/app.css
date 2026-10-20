@@ -1395,32 +1395,32 @@ html.gz-open, html.gz-open body { overflow: hidden; }
 .mlp-later { background: var(--paper); color: var(--ink); }
 
 /* ---------- the drinks run (#/drinks, and "One more thing" after a first PIN) ---------- */
-.dk-form { outline: none; }
-.dk-form .field, .dk-page .field, .dk-runbox .field { margin: 0 0 14px; }
-.dk-chips { gap: 8px; }
-.dk-eb { display: inline-block; margin: 0 0 4px; padding: 2px 8px; border-radius: 10px; background: var(--done-tint); color: var(--done); font-weight: 700; font-size: 0.8125rem; }
-.dk-prev { margin: 0 0 12px; padding: 10px 12px; border: 1.5px dashed var(--ink); border-radius: 8px; background: var(--beige); overflow-wrap: anywhere; }
-.dk-prev .label { display: block; margin-bottom: 2px; }
-.dk-mine { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 12px; border: 1.5px solid var(--ink); border-radius: var(--radius); background: var(--beige); }
-.dk-mine .label { flex: 1 0 100%; }
-.dk-mine .dk-what { flex: 1 1 12rem; margin: 0; font-weight: 600; overflow-wrap: anywhere; }
-.dk-nudge { margin: 0 0 14px; padding: 12px 14px; border-left: 4px solid var(--accent); background: var(--hit); border-radius: 6px; }
-.dk-nudge p { margin: 0 0 8px; }
-.dk-team { list-style: none; margin: 0 0 14px; padding: 0; }
-.dk-team > li { border-top: 1px solid var(--line); }
-.dk-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 8px 4px; border: 0; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
-.dk-row.is-none { display: block; color: var(--muted); cursor: default; padding: 10px 4px; }
-.dk-row.is-in { background: var(--done-tint); }
-.dk-box { flex: 0 0 32px; width: 32px; height: 32px; border: 2px solid var(--ink); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; background: var(--paper); }
-.dk-row.is-in .dk-box { background: var(--done); border-color: var(--done); color: #fff; }
-.dk-txt { display: flex; flex-direction: column; min-width: 0; }
-.dk-who { font-weight: 700; }
-.dk-row.is-none .dk-who { color: var(--ink); margin-right: 8px; }
-.dk-what { overflow-wrap: anywhere; }
-.dk-run { padding: 12px; border: 1.5px solid var(--ink); border-radius: var(--radius); background: var(--paper); }
-.dk-order { margin: 6px 0 12px; padding-left: 1.1rem; }
-.dk-order li { margin: 2px 0; overflow-wrap: anywhere; }
-.dk-runnone { margin: 0; }
+.dr-form { outline: none; }
+.dr-form .field, .dr-page .field, .dr-runbox .field { margin: 0 0 14px; }
+.dr-chips { gap: 8px; }
+.dr-eb { display: inline-block; margin: 0 0 4px; padding: 2px 8px; border-radius: 10px; background: var(--done-tint); color: var(--done); font-weight: 700; font-size: 0.8125rem; }
+.dr-prev { margin: 0 0 12px; padding: 10px 12px; border: 1.5px dashed var(--ink); border-radius: 8px; background: var(--beige); overflow-wrap: anywhere; }
+.dr-prev .label { display: block; margin-bottom: 2px; }
+.dr-mine { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 12px; border: 1.5px solid var(--ink); border-radius: var(--radius); background: var(--beige); }
+.dr-mine .label { flex: 1 0 100%; }
+.dr-mine .dr-what { flex: 1 1 12rem; margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.dr-nudge { margin: 0 0 14px; padding: 12px 14px; border-left: 4px solid var(--accent); background: var(--hit); border-radius: 6px; }
+.dr-nudge p { margin: 0 0 8px; }
+.dr-team { list-style: none; margin: 0 0 14px; padding: 0; }
+.dr-team > li { border-top: 1px solid var(--line); }
+.dr-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 8px 4px; border: 0; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.dr-row.is-none { display: block; color: var(--muted); cursor: default; padding: 10px 4px; }
+.dr-row.is-in { background: var(--done-tint); }
+.dr-box { flex: 0 0 32px; width: 32px; height: 32px; border: 2px solid var(--ink); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; background: var(--paper); }
+.dr-row.is-in .dr-box { background: var(--done); border-color: var(--done); color: #fff; }
+.dr-txt { display: flex; flex-direction: column; min-width: 0; }
+.dr-who { font-weight: 700; }
+.dr-row.is-none .dr-who { color: var(--ink); margin-right: 8px; }
+.dr-what { overflow-wrap: anywhere; }
+.dr-run { padding: 12px; border: 1.5px solid var(--ink); border-radius: var(--radius); background: var(--paper); }
+.dr-order { margin: 6px 0 12px; padding-left: 1.1rem; }
+.dr-order li { margin: 2px 0; overflow-wrap: anywhere; }
+.dr-runnone { margin: 0; }
 /* ---------- readability (20 Oct 2026) ----------
    The amount is what a cook acts on, so it reads in ink, bold, in the body font, on one line. Allergen words are never
    the smallest text on a card, and "may have" tags get a tint as well as the dashed border. Small buttons use the body
