@@ -1014,6 +1014,7 @@ details.nb-start-l[open] > summary::after { content: '\2212'; }
 
 /* Order list: the add box sits at the top. On big screens the list and "Ordered today" sit side by side and the page uses the width. */
 .o-add.nb-foot { border-top: 0; border-bottom: 2px solid var(--ink); padding: 0.8rem 0 1rem; }
+.w-addtop.nb-foot { border-top: 0; border-bottom: 2px solid var(--ink); padding: 0.8rem 0 1rem; margin-bottom: 0.4rem; }
 .o-cols { display: block; }
 @media (min-width: 1000px) {
   .o-page { max-width: 72rem; }
