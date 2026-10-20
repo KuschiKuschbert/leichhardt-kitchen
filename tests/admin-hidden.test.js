@@ -9,7 +9,7 @@ const { R, ok } = L.results(), { txt } = L;
   for (const h of ['#/', '#/prep', '#/recipes']) {
     const p = await L.open(b, h, { who: 'ann', wait: 1200 });
     ok(await p.$('.wtop .adm') === null, 'staff ' + h + ': no Admin key in the top bar');
-    ok(await p.$('.wtop a[href="#/settings"]') !== null, 'staff ' + h + ': Settings still there');
+    ok(await p.$('.wtop .wtop-who') !== null, 'staff ' + h + ': the chef mark (with Settings) still there');
     ok(p.errors.length === 0, 'staff ' + h + ': no page errors ' + p.errors.join(' | '));
     await p.context().close();
   }
