@@ -137,6 +137,7 @@ npm test
 - **Settings** starts with Text size; "Opens with" is two chips; Done goes back to the page you came from (or to the start when Settings was opened by its address).
 - **Prep list on a phone or tablet** (under 900 px): Start here is one line naming the jobs ("Start here: Portion rump, Make gravy, ...") until tapped, so the list itself starts higher; once something is ticked a "Done today (n)" button by the count jumps to the ticked lines in Handy; Quick add chips sit in the add box as well as in Handy. `tests/prep-first.test.js`.
 - `tests/phone-first.test.js`.
+- **Recipe search and allergens (20 Oct 2026).** The Pass list has one row of allergen chips with a switch: Show where (the lens, as before, the default) or Free from (the same filter as Tiles, so "what is gluten free" works in both views). The count above the search follows the search, Free from and the kind chip. The search box has no autocorrect or capitals (iOS would turn "parmy" into "party" before the book's own typo fix sees it), a Search key that drops the keyboard, and a 44 px Clear button while something is typed. When nothing matches, "Clear search and filters" puts everything back. `tests/recipe-filters.test.js`.
 
 ## Prep book and admin panel
 
