@@ -193,6 +193,8 @@ npm test
 - **Toasts on phones** sit above the bottom tab bar instead of covering it, and their Undo button is full size.
 - The admin People tab says Remove (not Delete), the same as the staff list.
 
+- **Screen readers and keyboards (20 Oct 2026).** Toasts are read out from one live region on the page body (`#lk-live`, `liveSay()`), which is never redrawn; a live region added together with its text, as the redrawn toast was, is often not read. The done counts are no longer live regions. After a redraw the focus goes back to the same button, or, when a ticked line has left the list, to the next line's tick box, so a keyboard user does not start again from the top. `tests/screen-reader.test.js`.
+
 ### No signal and failed saves (October 2026)
 
 - **A broken offline copy heals itself.** Firestore's offline copy in the browser can break ("INTERNAL ASSERTION FAILED" in the console); the prep pages then hang on Loading and the names list looks empty, while the data on the server is fine (20 Oct 2026). `healCache()` in `js/prep.js` throws that copy away and reloads the page when Firestore reports the break, or when the prep pages are still Loading after 25 seconds with a signal. At most once a day per phone (`lk.fsheal`), so it can never loop. By hand: Settings in the browser, clear the site data for the book, then type the kitchen PIN again. `tests/cache-heal.test.js`.
