@@ -189,6 +189,16 @@ function report(results) {
   console.log(failed.length + ' failed of ' + results.length);
   process.exitCode = failed.length ? 1 : 0;
 }
+/* Waits until fn (run in the page) returns something truthy. page.waitForFunction runs its check through eval, which the
+   book's security header (20 Oct 2026) blocks, so this asks with page.evaluate every 100 ms instead. */
+async function waitFor(page, fn, arg, timeout) {
+  const end = Date.now() + (timeout || 5000);
+  for (;;) {
+    if (await page.evaluate(fn, arg)) return true;
+    if (Date.now() > end) throw new Error('waitFor: timed out');
+    await page.waitForTimeout(100);
+  }
+}
 /* Opens an admin page by its id (people, notes, tools...): the page buttons sit under five groups (20 Oct 2026), so
    this taps each group until the page is open or its button shows, then taps that. */
 async function adminTab(page, t) {
@@ -204,4 +214,4 @@ async function adminTab(page, t) {
   }, t);
   await page.waitForTimeout(250);
 }
-module.exports = { chefItems, chef, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
+module.exports = { waitFor, chefItems, chef, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };

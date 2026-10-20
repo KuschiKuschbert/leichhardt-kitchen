@@ -28,9 +28,9 @@ function makePdf(texts) {
 }
 async function choose(p, file) {
   await p.setInputFiles('#g-file', file);
-  await p.waitForFunction(() => { const f = window.LK_PREP.state.gf; return f && !f.busy && f.pages && f.pages.length; }, null, { timeout: 30000 });
+  await L.waitFor(p, () => { const f = window.LK_PREP.state.gf; return f && !f.busy && f.pages && f.pages.length; }, null, 30000);
 }
-async function saved(p) { await p.waitForFunction(() => !window.LK_PREP.state.gf, null, { timeout: 15000 }); await p.waitForTimeout(150); }
+async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, null, 15000); await p.waitForTimeout(150); }
 
 (async () => {
   const b = await L.start();
@@ -55,7 +55,7 @@ async function saved(p) { await p.waitForFunction(() => !window.LK_PREP.state.gf
   // One guide: pages read once, then kept; steps; recipe cards it is on; a page opened big
   const before = await S(p, () => window.__fake.readLog.length);
   await p.click('.g-card[href="#/guides/combi"]');
-  await p.waitForFunction(() => document.querySelectorAll('.g-pgb img[src^="blob:"]').length === 2, null, { timeout: 5000 }).catch(() => {});
+  await L.waitFor(p, () => document.querySelectorAll('.g-pgb img[src^="blob:"]').length === 2, null, 5000).catch(() => {});
   ok(await p.locator('.g-pgb img[src^="blob:"]').count() === 2, 'guide: both pages show');
   const pageReads = await S(p, n => window.__fake.readLog.slice(n).filter(k => /\/pages\//.test(k)).length, before);
   ok(pageReads === 2, 'guide: the two pages are read once (' + pageReads + ')');

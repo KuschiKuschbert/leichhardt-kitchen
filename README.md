@@ -70,7 +70,9 @@ Drawings for The Pass are in `js/art.js`. A recipe with no drawing still shows, 
 
 | File | What it is |
 | --- | --- |
-| `index.html` | The page itself, the book's clock (`LK_TIME`), the daily 04:00 self-refresh, the update bar, the service worker registration |
+| `index.html` | The page itself and its security header (which outside services may load) |
+| `js/boot.js` | Runs first in `<head>`: the install offer, the saved text size, the book's clock (`LK_TIME`) |
+| `js/upkeep.js` | Runs at the end of `<body>`: the daily 04:00 self-refresh, the update bar, the service worker registration |
 | `css/app.css` | The Leichhardt look: Barlow fonts, off-white, black rules, orange accent |
 | `js/data.js` | The recipes (edit this one) |
 | `js/art.js` | Plate, pan and technique drawings |
@@ -182,6 +184,8 @@ npm test
 - **Ticked lines stay ticked:** a ticked line stays ticked (it moves to Done today in Handy) and cannot be unticked by staff, except the person who ticked it within 2 minutes (for a mis-tap). The head chef and sous chefs can always undo a tick. The rules enforce this on the server. Each new day starts a fresh list (only unfinished lines roll over), so old ticks are never in the way.
 - **Weekly badges:** the top 3 ranks for ticked lines over the last 7 days show above the notebook. The owner can switch them off.
 - **Recipe links:** hand-written lines link to recipe cards by matching words against card names and short names (`matchRecipe` in `js/prep.js`). A line that could mean several cards links to none.
+
+- **Contrast and tap targets (20 Oct 2026).** The faint grey is #6B7077 (4.9:1 on the page, was 3.1:1). Admin name fields, role menus, the minutes ticks, suggestion chips and section heads are 44 px high, and admin ticks are 28 px. `tests/targets.test.js`.
 
 ### Undo and second taps (October 2026)
 
@@ -380,6 +384,12 @@ Every admin list that can keep growing now uses one shared layout (`lvHTML` in `
 - Test it on the Firestore emulator: `cd scripts && npm install`, then from `tests/rules`: `./node_modules/.bin/firebase emulators:exec --only firestore --project demo-test "node rules.test.mjs && KITCHEN_PIN=000000 BACKUP_DAYS=5 node ../../scripts/nightly-backup.mjs /tmp/backup.json"` (the rules tests seed the emulator first).
 
 - **Shared helpers (20 Oct 2026).** Every popup (shift pings, the big guide page, the reason sheet, kitchen mail) keeps Tab inside with `trapTab()`. Same behaviour as before; `tests/tidy.test.js` holds it.
+
+### Security header (20 Oct 2026)
+
+- `index.html` carries a Content Security Policy: scripts only from this site, Firebase and Google sign-in (www.gstatic.com, apis.google.com, the reCAPTCHA bot check on www.google.com) and pdf.js (cdn.jsdelivr.net); styles from Google Fonts (inline styles allowed); fonts from Google Fonts and jsDelivr (pdf.js); data from Google's APIs and Firebase; frames only for Google sign-in and reCAPTCHA; no plugins; forms and `<base>` only to this site. A script from anywhere else, or one slipped into the page, does not run.
+- The six inline scripts moved into `js/boot.js` (head, before anything draws) and `js/upkeep.js` (end of body, before the deferred app scripts), in the same order. Both are in the update and refresh file lists, and the service worker cache is `lk-book-v6`.
+- **A new outside service has to be added to the header**, or the browser blocks it (the console says "violates the following Content Security Policy directive"). The click tests fail on any such message, so a blocked load shows up before merging. Tests that wait in the page use `L.waitFor`, because `page.waitForFunction` runs through eval, which the header blocks.
 
 ### Checking the rules
 - `tests/rules/` checks `firestore.rules` on the Firestore emulator with made-up values in place of the PIN and the email, and then the lock probe (`probe.test.mjs`): `cd tests/rules && npm install && npm test` (Java is needed for the emulator; on a Mac with Homebrew's openjdk, `PATH=/opt/homebrew/opt/openjdk@17/bin:$PATH npm test`). It covers the right and wrong PIN, a spoofed `by`, a replayed proof, who may set a PIN, what a sous chef may change in `config/main`, tallies, pings and who has seen them, minutes (head chef only, size caps, frozen `hist` copies), sign-offs (once, by the person, current published version only, never changed), what the order list learned, the learning log, the owner probe, the field lists and the guide pictures. Run it before publishing any rules change, and add a check for every new rule.
