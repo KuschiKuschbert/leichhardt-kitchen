@@ -78,7 +78,7 @@ const val = (p, f) => txt(p, '.dr-fold[data-f="' + f + '"] .dr-val');
   await pick(p, 'cold', 'cokens'); await p.waitForTimeout(100);
   ok(await val(p, 'cold') === 'Coke No Sugar', 'cold: one soft drink or water at a time (' + await val(p, 'cold') + ')');
   await tap(p, '[data-p="dk-save"]'); await p.waitForTimeout(800);
-  ok(/^Your usualCoke No SugarChange it$/.test(await txt(p, '.dr-mine') || ''), 'cold: just a soft drink saves as the usual (' + await txt(p, '.dr-mine') + ')');
+  ok(/^Your usualCoke No SugarChange$/.test(await txt(p, '.dr-mine') || ''), 'cold: just a soft drink saves as the usual (' + await txt(p, '.dr-mine') + ')');
   const ac = (await store(p))[fsKey(['drinks', 'ann'])];
   ok(ac.kind === '' && ac.cold === 'cokens' && ac.milk === '' && ac.sugar === '', 'cold: saved with no coffee');
   ok(p.errors.length === 0, 'card: no page errors ' + p.errors.join(' | '));
@@ -96,34 +96,43 @@ const val = (p, f) => txt(p, '.dr-fold[data-f="' + f + '"] .dr-val');
   await p.click('.wm a[href="#/drinks"]'); await p.waitForTimeout(1000);
   ok(/Drinks run/.test(await txt(p, '#rtitle') || ''), 'page: opens from the menu');
   ok(/Large long black, extra shot/.test(await txt(p, '.dr-mine') || ''), 'page: Sam sees his own usual');
-  ok(/Not signed in today: 2 more people/.test(await txt(p, '.dr-more') || ''), 'page: people not signed in today wait behind a note (' + await txt(p, '.dr-more') + ')');
+  ok(/Not signed in today: 2 more\. Show them/.test(await txt(p, '.dr-more') || ''), 'page: people not signed in today wait behind a note (' + await txt(p, '.dr-more') + ')');
   await tap(p, '[data-p="dk-all"]'); await p.waitForTimeout(150);
-  ok(/No usual yet: Bo\. Ask them\./.test(await txt(p, '.dr-team') || ''), 'page: the people with no usual share one line (' + await txt(p, '.dr-team .is-none') + ')');
+  ok(/No usual yet: Bo\. Ask them\./.test(await txt(p, '.dr-page') || ''), 'page: the people with no usual share one line (' + await txt(p, '.dr-none') + ')');
   await p.close();
-  // Ann opened the book today, Bo last did yesterday: Sam (on this phone) and Ann are in by themselves, Bo waits behind the note
-  const runSeed = { [fsKey(['drinks', 'bo'])]: { kind: 'flat', size: 'reg', milk: 'oat', shot: '', sugar: '1', note: '', cold: 'cokens', other: '', at: 1, by: 'bo' },
-    [fsKey(['activity', 'ann'])]: { name: 'Ann', lastSeen: L.NOW - 3600000 }, [fsKey(['activity', 'bo'])]: { name: 'Bo', lastSeen: L.NOW - 86400000 } };
+  // Ann and Bo opened the book today, Kim last did yesterday: Sam (on this phone), Ann and Bo show ticked, Kim waits behind the note
+  const runCfg = { people: [
+    { id: 'sam', name: 'Sam', role: 'sous', add: true, tick: true, del: true, active: true },
+    { id: 'ann', name: 'Ann', role: 'staff', add: true, tick: true, del: false, active: true },
+    { id: 'bo', name: 'Bo', role: 'staff', add: true, tick: true, del: false, active: true },
+    { id: 'kim', name: 'Kim Lee', role: 'staff', add: true, tick: true, del: false, active: true }
+  ], sousIds: ['sam'], showBadges: true };
+  const runSeed = { [fsKey(['config', 'main'])]: runCfg,
+    [fsKey(['drinks', 'bo'])]: { kind: 'flat', size: 'reg', milk: 'oat', shot: '', sugar: '1', note: '', cold: 'cokens', other: '', at: 1, by: 'bo' },
+    [fsKey(['drinks', 'kim'])]: { kind: 'latte', size: 'large', milk: 'skim', shot: '', sugar: '', note: '', cold: '', other: '', at: 1, by: 'kim' },
+    [fsKey(['activity', 'ann'])]: { name: 'Ann', lastSeen: L.NOW - 3600000 }, [fsKey(['activity', 'bo'])]: { name: 'Bo', lastSeen: L.NOW - 1800000 },
+    [fsKey(['activity', 'kim'])]: { name: 'Kim Lee', lastSeen: L.NOW - 86400000 } };
   p = await L.open(b, '#/drinks', { who: 'sam', extra: runSeed, wait: 1500 });
-  const pressed = id => p.$eval('[data-p="dk-in"][data-id="' + id + '"]', e => e.getAttribute('aria-pressed')).catch(() => null);
-  ok(await pressed('sam') === 'true' && await pressed('ann') === 'true', 'run: Sam and Ann (in the book today) are in by themselves');
-  ok(await pressed('bo') === null && /Not signed in today: 1 more person/.test(await txt(p, '.dr-more') || ''), 'run: Bo (not in today) is behind the note');
-  ok(/2 people/.test(await txt(p, '.dr-run h3') || ''), 'run: the order starts with 2 people');
-  await tap(p, '[data-p="dk-in"][data-id="sam"]'); await p.waitForTimeout(100);
-  await tap(p, '[data-p="dk-all"]'); await p.waitForTimeout(150);
-  await tap(p, '[data-p="dk-in"][data-id="bo"]'); await p.waitForTimeout(150);
-  ok(await pressed('sam') === 'false' && await pressed('bo') === 'true', 'run: Sam taken out, Bo added by hand');
+  const rows = () => p.$$eval('.dr-team .dr-row', l => l.map(e => e.textContent));
+  let r = await rows();
+  ok(r.length === 3 && r.every(t => t.charAt(0) === '✓') && /Ann/.test(r[0]) && /Bo/.test(r[1]) && /Sam \(you\)/.test(r[2]), 'run: Ann, Bo and Sam (in the book today) show ticked (' + r.join(' / ') + ')');
+  ok(/^✓AnnReg oat flat white, 1 sugar\. Coke No Sugar$/.test(r[0]), 'run: one short line per person (' + r[0] + ')');
+  ok(/On today\s*3/.test(await txt(p, '.dr-h') || ''), 'run: On today says 3');
+  ok(!(await p.$('.dr-team button, [data-p="dk-in"]')), 'run: just a list to read, nobody is ticked by hand');
+  ok(!(await p.$('[data-p="dk-share"]')) && !(await p.$('[data-p="dk-clear"]')), 'run: nothing to send or clear');
+  ok(!/Kim/.test(await txt(p, '.dr-team') || '') && /^Not signed in today: 1 more\. Show them$/.test(await txt(p, '.dr-more') || ''), 'run: Kim (not in today) waits behind the note');
   const order = await p.$$eval('.dr-order li', l => l.map(e => e.textContent));
-  ok(order.length === 2 && /^2 x Regular oat flat white, 1 sugar$/.test(order[0]) && /^2 x Coke No Sugar$/.test(order[1]), 'run: the same drinks are counted together (' + order.join(' / ') + ')');
-  ok(/2 people/.test(await txt(p, '.dr-run h3') || ''), 'run: says 2 people');
-  ok(!(await p.$('[data-p="dk-share"]')) && !(await p.$('[data-p="dk-clear"]')), 'run: just for looking at, nothing to send or clear');
-  await p.reload({ waitUntil: 'load' }); await p.waitForTimeout(1500);
-  ok((await p.$$('.dr-order li')).length === 2 && await pressed('bo') === 'true', 'run: who is in stays after a reload, Bo still shows');
-  await tap(p, '[data-p="dk-in"][data-id="bo"]'); await p.waitForTimeout(150);
-  ok((await p.$$eval('.dr-order li', l => l.map(e => e.textContent))).some(t => /^1 x Regular oat flat white/.test(t)), 'run: untick Bo, 1 flat white');
+  ok(order.length === 3 && /^2 x Regular oat flat white, 1 sugar$/.test(order[0]) && /^2 x Coke No Sugar$/.test(order[1]) && /^1 x Large long black, extra shot$/.test(order[2]), 'run: the same drinks are counted together (' + order.join(' / ') + ')');
+  await tap(p, '[data-p="dk-all"]'); await p.waitForTimeout(150);
+  r = await rows();
+  ok(r.length === 4 && /^Kim LeeLarge skim latte$/.test(r[3]) && /Not signed in today\s*1/.test(await txt(p, '.dr-h:last-of-type') || ''), 'run: Show them lists Kim, without a tick (' + r[3] + ')');
+  ok((await p.$$('.dr-order li')).length === 3 && /^Hide them$/.test(await txt(p, '.dr-more') || ''), 'run: Kim is not in the order, Hide them folds the list again');
+  await tap(p, '[data-p="dk-all"]'); await p.waitForTimeout(150);
+  ok((await rows()).length === 3, 'run: Hide them');
   // change it
   await tap(p, '[data-p="dk-edit"]'); await p.waitForTimeout(150);
   ok(await val(p, 'kind') === 'Long black' && await val(p, 'shot') === 'Extra shot' && !(await p.$('.dr-chips')), 'change: the form starts from the saved usual, every group folded');
-  ok(!(await p.$('.dr-runbox')), 'change: the team list steps aside while the form is open');
+  ok(!(await p.$('.dr-team')) && !(await p.$('.dr-order')), 'change: the team list steps aside while the form is open');
   await pick(p, 'kind', 'cap'); await p.waitForTimeout(100);
   await tap(p, '[data-p="dk-save"]'); await p.waitForTimeout(800);
   s = await store(p);
@@ -134,7 +143,7 @@ const val = (p, f) => txt(p, '.dr-fold[data-f="' + f + '"] .dr-val');
 
   for (const w of [768, 1280]) {
     p = await L.open(b, '#/drinks', { who: 'sam', width: w, height: 900, wait: 1500 });
-    await tap(p, '[data-p="dk-in"][data-id="sam"]'); await tap(p, '[data-p="dk-edit"]'); await p.waitForTimeout(200);
+    await tap(p, '[data-p="dk-edit"]'); await p.waitForTimeout(200);
     const ov = await L.overflow(p);
     ok(!ov, 'page: no sideways scroll at ' + w + ' px ' + (ov || ''));
     await p.context().close();
