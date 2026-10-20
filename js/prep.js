@@ -4783,14 +4783,17 @@
     return people().filter(function (p) { return !q || p.name.toLowerCase().indexOf(q) >= 0; })
       .sort(function (a, b) { return a.name.localeCompare(b.name); });
   }
+  /* people with a usual are a tap to put them in; the ones without share one line at the end, so the list stays short on a phone */
   function dkTeamHTML() {
-    var run = dkRunGet(), l = dkTeam();
-    return '<ul class="dr-team">' + (l.length ? l.map(function (p) {
-      var d = dkList ? dkList[p.id] : null, sum = dkSum(d), on = run.indexOf(p.id) >= 0;
-      if (!sum) return '<li class="dr-row is-none"><span class="dr-who">' + esc(p.name) + (p.id === S.who ? ' (you)' : '') + '</span><span class="dr-what">No usual yet. Ask them.</span></li>';
+    var run = dkRunGet(), l = dkTeam(), none = [];
+    var rows = l.map(function (p) {
+      var d = dkList ? dkList[p.id] : null, sum = dkSum(d), on = run.indexOf(p.id) >= 0, nm = esc(p.name) + (p.id === S.who ? ' (you)' : '');
+      if (!sum) { none.push(nm); return ''; }
       return '<li><button type="button" class="dr-row' + (on ? ' is-in' : '') + '" data-p="dk-in" data-id="' + esc(p.id) + '" aria-pressed="' + on + '"><span class="dr-box" aria-hidden="true">' + (on ? '✓' : '') + '</span>' +
-        '<span class="dr-txt"><span class="dr-who">' + esc(p.name) + (p.id === S.who ? ' (you)' : '') + '</span><span class="dr-what">' + esc(sum) + '</span></span></button></li>';
-    }).join('') : '<li class="dr-row is-none">Nobody by that name.</li>') + '</ul>';
+        '<span class="dr-txt"><span class="dr-who">' + nm + '</span><span class="dr-what">' + esc(sum) + '</span></span></button></li>';
+    }).join('');
+    if (none.length) rows += '<li class="dr-row is-none"><span class="dr-who">No usual yet:</span> ' + none.join(', ') + '. Ask them.</li>';
+    return '<ul class="dr-team">' + (l.length ? rows : '<li class="dr-row is-none">Nobody by that name.</li>') + '</ul>';
   }
   /* the order for the cafe: the same drinks counted together, then who has what */
   function dkRunList() {
@@ -4812,13 +4815,16 @@
     return 'Drinks run, ' + parseYmd(dayNow()).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' }) + '\n' +
       dkGroups(l).map(function (x) { return x.n + ' x ' + x.t; }).join('\n') + '\n\n' + l.map(function (p) { return p.name + ': ' + dkSum(dkList[p.id]); }).join('\n');
   }
+  /* the bar with the count and Share stays at the bottom of the screen while the list scrolls, the counted order follows */
   function dkRunHTML() {
     var l = dkRunList();
     if (!l.length) return '<p class="hint dr-runnone">Tap the people who are in on the run.</p>';
     var gr = dkGroups(l);
-    return '<div class="dr-run" aria-live="polite"><h3 class="ml-h3">The order (' + l.length + (l.length === 1 ? ' person' : ' people') + ')</h3><ul class="dr-order">' + gr.map(function (x) {
+    return '<div class="dr-run" aria-live="polite"><h3 class="ml-h3">The order (' + l.length + (l.length === 1 ? ' person' : ' people') + ')</h3>' +
+      '<div class="btn-row"><button type="button" class="btn dark" data-p="dk-share">' + shareLabel('the order') + '</button><button type="button" class="btn" data-p="dk-clear">Start again</button></div></div>' +
+      '<ul class="dr-order">' + gr.map(function (x) {
       return '<li><b>' + x.n + ' x</b> ' + esc(x.t) + '</li>';
-    }).join('') + '</ul><div class="btn-row"><button type="button" class="btn dark" data-p="dk-share">' + shareLabel('the order') + '</button><button type="button" class="btn" data-p="dk-clear">Start again</button></div></div>';
+    }).join('') + '</ul>';
   }
   function drinksPageHTML() {
     dkLoad();
@@ -4829,8 +4835,8 @@
     var team = !dkList ? (dkErr ? '<p class="p-err">Could not load the team\'s drinks. Check the connection.</p><div class="btn-row"><button type="button" class="btn" data-p="dk-retry">Try again</button></div>' : '<p class="hint">Loading...</p>')
       : (people().length > 12 ? '<div class="field"><label class="label" for="dk-q">Find a name</label><input id="dk-q" class="search" data-k="dk-q" type="search" autocomplete="off" value="' + esc(dkQ) + '"></div>' : '') + dkTeamHTML() + dkRunHTML();
     return '<section class="p-card dr-page"><h2 class="p-h" id="rtitle" tabindex="-1">Drinks run</h2>' +
-      '<p class="hint">Everyone\'s usual coffee or drink. Going for a run? Tap who is in, then share the order.</p>' + top + '</section>' +
-      '<section class="p-card dr-runbox"><h3 class="ml-h3">Who is in</h3>' + team + '</section>';
+      (dkEditing ? '' : '<p class="hint">Tap who is in, then share the order.</p>') + top + '</section>' +
+      (dkEditing ? '' : '<section class="p-card dr-runbox"><h3 class="ml-h3">Who is in</h3>' + team + '</section>');
   }
 
   /* ---------- events ---------- */
