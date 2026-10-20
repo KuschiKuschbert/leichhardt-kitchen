@@ -11,10 +11,12 @@ let store = load();
 function save() { localStorage.setItem(KEY, JSON.stringify(store)); }
 const subs = new Set();
 const held = [];
+// documents written while 'hold' (no signal): their snapshots say hasPendingWrites until release()
+const pendingKeys = new Set();
 window.__fake = window.__fake || { mode: 'ok', writes: [], reads: [] };
 window.__fake.readLog = [];
 const seen = new Set();
-window.__fake.release = function () { const h = held.splice(0); h.forEach(f => f()); };
+window.__fake.release = function () { const h = held.splice(0); pendingKeys.clear(); h.forEach(f => f()); notify(); };
 window.__fake.dump = function () { return store; };
 // a write from another phone: the document changes under this page and its listeners hear about it
 window.__fake.write = function (path, data) { store[path] = JSON.parse(JSON.stringify(data)); save(); notify(); };
@@ -44,7 +46,7 @@ export function increment(n) { return { __inc: n }; }
 const key = p => p.join('/');
 function snapDoc(path) {
   const v = store[key(path)];
-  return { id: path[path.length - 1], ref: { type: 'doc', path, id: path[path.length - 1] }, exists: () => v !== undefined, data: () => (v === undefined ? undefined : JSON.parse(JSON.stringify(v))) };
+  return { id: path[path.length - 1], ref: { type: 'doc', path, id: path[path.length - 1] }, metadata: { hasPendingWrites: pendingKeys.has(key(path)) }, exists: () => v !== undefined, data: () => (v === undefined ? undefined : JSON.parse(JSON.stringify(v))) };
 }
 function listCol(path, c) {
   const pre = key(path) + '/', n = path.length + 1;
@@ -84,6 +86,7 @@ export function getDocsFromCache(ref) {
   return delay({ docs, empty: !docs.length, size: docs.length, forEach: f => docs.forEach(f) });
 }
 export function onSnapshot(ref, next, err) {
+  if (next && typeof next === 'object') { next = err; err = arguments[3]; }   // onSnapshot(ref, options, next, error)
   const s = { ref, next };
   subs.add(s);
   setTimeout(() => { if (subs.has(s)) next(result(ref)); }, 5);
@@ -129,6 +132,7 @@ function commitOps(ops) {
   const run = () => { ops.filter(o => !/\/proofs\//.test(key(o.ref.path))).forEach(applyOp); save(); notify(); };
   if (window.__fake.mode === 'hold') {
     // like Firestore offline: the change shows on this phone at once, the promise waits for the server
+    ops.filter(o => !/\/proofs\//.test(key(o.ref.path))).forEach(o => pendingKeys.add(key(o.ref.path)));
     run();
     return new Promise(res => held.push(res));
   }
