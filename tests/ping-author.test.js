@@ -11,7 +11,7 @@ const today = L.ymd(new Date(L.NOW));
   const extra = {};
   extra[fsKey(['notes', 'n1'])] = { text: 'Function in the garden at 18:00', tag: 'function', start: today, until: today, dows: [], removed: false, at: L.NOW - 3600000, upd: L.NOW - 1800000, author: 'bo', by: 'sam' };
   let p = await L.open(b, '#/prep', { extra, wait: 1500 });
-  await tap(p, '[data-p="notes-open"]');
+  await L.chef(p, 'pings');
   await p.waitForTimeout(400);
   ok(/Written by Bo/.test(await txt(p, '#prep-root') || ''), 'pings list: a ping Sam edited still says Written by Bo');
   ok(!/Written by Sam/.test(await txt(p, '#prep-root') || ''), 'pings list: not Written by Sam');

@@ -1,5 +1,5 @@
 // The drinks run: a new person is asked for their usual coffee or drink straight after setting their PIN, people who
-// signed up before see a card once, and #/drinks shows everyone's usual so whoever does the run can share the order.
+// signed up before see a card once, and #/drinks shows everyone's usual so whoever does the run can read the order off the phone.
 const L = require('./lib');
 const { R, ok } = L.results(), { txt, tap } = L;
 const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');

@@ -99,17 +99,9 @@ const store = page => page.evaluate(() => window.__fake.dump());
   ok(p.errors.length === 0, 'learning: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // Print or save as PDF: the page gets the print-admin class (closed tables open), prints, and tidies up again.
-  // Headless Chrome has no print dialog, so window.print is replaced and the 1.5 s fallback does the tidy-up.
+  // Print or save as PDF is gone (20 Oct 2026, the book is used on phones): Download CSV stays
   p = await L.open(b, '#/admin', { admin: true, wait: 1800 });
-  await p.evaluate(() => { window.__printed = 0; window.print = () => { window.__printed++; }; });
-  await p.click('[data-p="print-tab"]');
-  await p.waitForTimeout(300);
-  const pr = await p.evaluate(() => ({ cls: document.documentElement.classList.contains('print-admin'), closed: document.querySelectorAll('.a-pane details:not([open])').length, n: window.__printed }));
-  ok(pr.cls && pr.closed === 0 && pr.n === 1, 'print: the print-admin class is on, every table is open and print was called once (' + JSON.stringify(pr) + ')');
-  await p.waitForTimeout(2000);
-  ok(!(await p.evaluate(() => document.documentElement.classList.contains('print-admin'))), 'print: the print-admin class comes off again after printing');
-  ok(p.errors.length === 0, 'print: no page errors ' + p.errors.join(' | '));
+  ok(!(await p.$('[data-p="print-tab"]')) && !!(await p.$('[data-p="csv"]')), 'insights: no Print or save as PDF, Download CSV stays');
   await p.context().close();
 
   await b.close();

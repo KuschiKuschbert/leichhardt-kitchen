@@ -122,7 +122,7 @@ const tab = p => p.evaluate(() => Array.prototype.some.call(document.querySelect
   p = await L.open(b, '#/prep', { who: 'sam', extra: world(HIDE), wait: 2000 });
   await p.click('.nt-got').catch(() => {});
   await p.waitForTimeout(200);
-  await p.click('[data-p="staff-open"]');
+  await L.chef(p, 'staff');
   await p.waitForTimeout(300);
   await p.click('[data-p="a-add-person"]');
   await p.waitForTimeout(150);

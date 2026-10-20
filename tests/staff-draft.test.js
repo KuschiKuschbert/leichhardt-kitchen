@@ -49,7 +49,7 @@ const elsewhere = (page, change) => page.evaluate(([k, ch]) => {
 
   // sous chef, Manage staff: the head chef makes Bo a sous chef while Sam adds someone
   p = await L.open(b, '#/prep', { wait: 1500 });
-  await p.click('[data-p="staff-open"]');
+  await L.chef(p, 'staff');
   await p.waitForTimeout(300);
   await p.fill('[data-k="a-bulk"]', 'Fay');
   await p.click('[data-p="a-bulk-add"]');

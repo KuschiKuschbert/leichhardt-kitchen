@@ -82,7 +82,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
 
   // staff list (sous chef): Remove takes two taps, leaving with unsaved changes takes two taps
   p = await L.open(b, '#/prep', { wait: 1500 });
-  await p.click('[data-p="staff-open"]');
+  await L.chef(p, 'staff');
   await p.waitForTimeout(200);
   await p.click('[data-p="a-remove-person"][data-i="2"]');
   await p.waitForTimeout(100);
