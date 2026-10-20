@@ -17,7 +17,7 @@ if (SHOTS) fs.mkdirSync(SHOTS, { recursive: true });
     }
     const p = await L.open(b, '#/admin', { width: w, height: h, touch, admin: true, wait: 1600, extra: Object.assign(L.guides(), L.mail(), { ['kitchens/' + L.PIN + '/config/admins']: { x: 1, mailOpened: L.NOW } }) });   // Mail opened just now: no nudge popup over the tabs
     for (const t of ['insights', 'team', 'waste', 'learning', 'notes', 'minutes', 'guides', 'mail', 'people', 'tools']) {
-      await p.click('[data-p="a-tab"][data-t="' + t + '"]'); await p.waitForTimeout(500);
+      await L.adminTab(p, t); await p.waitForTimeout(300);
       const ofa = await L.overflow(p);
       L.check(!ofa, w + ' admin ' + t + ' no sideways scroll' + (ofa ? ': ' + ofa : ''), R);
       if (SHOTS) await p.screenshot({ path: path.join(SHOTS, w + '-admin-' + t + '.png') });

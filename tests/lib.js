@@ -185,4 +185,19 @@ async function waitFor(page, fn, arg, timeout) {
     await page.waitForTimeout(100);
   }
 }
-module.exports = { waitFor, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
+/* Opens an admin page by its id (people, notes, tools...): the page buttons sit under five groups (20 Oct 2026), so
+   this taps each group until the page is open or its button shows, then taps that. */
+async function adminTab(page, t) {
+  await page.evaluate(t => {
+    const st = () => (window.LK_PREP && window.LK_PREP.state) || {};
+    const leaf = () => document.querySelector('[data-p="a-tab"][data-t="' + t + '"]');
+    if (leaf()) { leaf().click(); return; }
+    for (const g of [...document.querySelectorAll('[data-p="a-group"]')].map(x => x.getAttribute('data-g'))) {
+      document.querySelector('[data-p="a-group"][data-g="' + g + '"]').click();
+      if (st().atab === t) return;
+      if (leaf()) { leaf().click(); return; }
+    }
+  }, t);
+  await page.waitForTimeout(250);
+}
+module.exports = { waitFor, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };

@@ -101,7 +101,7 @@ async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, nul
 
   // Admin: add a guide from a photo
   p = await L.open(b, '#/admin', { admin: true, width: 1280, height: 900, extra, wait: 1800 });
-  await p.click('[data-p="a-tab"][data-t="guides"]'); await p.waitForTimeout(300);
+  await L.adminTab(p, 'guides'); await p.waitForTimeout(300);
   ok(await p.locator('.g-row').count() === 2, 'admin: the Guides tab lists the two guides');
   await p.click('[data-p="g-new"]'); await p.waitForTimeout(200);
   await p.click('[data-p="g-save"]'); await p.waitForTimeout(100);
