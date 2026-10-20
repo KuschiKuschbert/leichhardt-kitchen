@@ -4640,6 +4640,7 @@
      The first time someone sets their PIN, the book asks for it straight after ("One more thing"). People who signed up
      before this see a small card on the prep list, orders and wastage once, until they set it or tap Not now
      (lk.drink.<id> on the phone, so the check is at most one small read per person per phone).
+     Each person picks a coffee or hot drink, a soft drink or water, or both, and can add a few words.
      #/drinks (the chef mark menu, and Tools on the prep list) shows everyone's usual. Whoever does the run taps who is
      in and shares the order: the same drinks counted together for the cafe, then who has what. The team's drinks are
      read with one query when the page opens, again only after 30 minutes, and kept on the phone (lk.drinks).
@@ -4651,6 +4652,8 @@
   var DK_SIZE = [['small', 'Small'], ['reg', 'Regular'], ['large', 'Large']];
   var DK_MILK = [['full', 'Full cream'], ['skim', 'Skim'], ['lf', 'Lactose free'], ['oat', 'Oat'], ['almond', 'Almond'], ['soy', 'Soy'], ['none', 'No milk']];
   var DK_SHOT = [['extra', 'Extra shot'], ['half', 'Half strength'], ['decaf', 'Decaf']];
+  var DK_COLD = [['water', 'Water'], ['sparkling', 'Sparkling water'], ['coke', 'Coke'], ['cokens', 'Coke No Sugar'], ['diet', 'Diet Coke'], ['lemonade', 'Lemonade'],
+    ['llb', 'Lemon lime and bitters'], ['ginger', 'Ginger beer'], ['oj', 'Orange juice'], ['icedtea', 'Iced tea'], ['energy', 'Energy drink']];
   var DK_SUGAR = [['none', 'No sugar'], ['1', '1 sugar'], ['2', '2 sugars'], ['3', '3 sugars'], ['sweet', 'Sweetener']];
   var DK_NOTE = 40, DK_OTHER = 60, DK_STALE = 30 * 60000;
   var dkf = null, dkEditing = false, dkMsg = '', dkBusy = false, dkQ = '', dkList = null, dkAt = 0, dkLoading = false, dkErr = false;
@@ -4667,14 +4670,16 @@
     var t = head.charAt(0).toUpperCase() + head.slice(1) + (extra.length ? ', ' + extra.join(', ') : '');
     return t + (d.note ? '. ' + d.note : '');
   }
+  /* the cold drink and anything else, together: "Coke No Sugar, no ice" */
+  function dkCold(d) { return d ? [dkLabel(DK_COLD, d.cold), d.other || ''].filter(Boolean).join(', ') : ''; }
   function dkSum(d) {
-    var c = dkCoffee(d), o = d && d.other ? d.other : '';
+    var c = dkCoffee(d), o = dkCold(d);
     return c && o ? c + '. Also ' + o : c || o;
   }
   function dkMine() { return dkList && S.who ? dkList[S.who] || null : null; }
   function dkEdit() {
     var m = dkMine() || {};
-    dkf = { kind: m.kind || '', size: m.size || 'reg', milk: m.milk || '', shot: m.shot || '', sugar: m.sugar || '', note: m.note || '', other: m.other || '' };
+    dkf = { kind: m.kind || '', size: m.size || 'reg', milk: m.milk || '', shot: m.shot || '', sugar: m.sugar || '', note: m.note || '', cold: m.cold || '', other: m.other || '' };
     dkEditing = true; dkMsg = '';
   }
   function dkFlag(v) { if (S.who) lsSet('lk.drink.' + S.who, v); }
@@ -4707,9 +4712,9 @@
     var p = who(), f = dkf;
     if (dkBusy || !fb || !p || !f) return;
     f.note = f.note.replace(/^\s+|\s+$/g, ''); f.other = f.other.replace(/^\s+|\s+$/g, '');
-    if (!f.kind && !f.other) { dkMsg = 'Pick a coffee or drink first, or write something else you like.'; draw(); return; }
+    if (!f.kind && !f.cold && !f.other) { dkMsg = 'Pick a coffee or a cold drink first, or write something else you like.'; draw(); return; }
     var k = f.kind, data = { kind: k, size: dkAsks(k, 's') ? f.size : '', milk: dkAsks(k, 'm') ? f.milk : '', shot: dkAsks(k, 'e') ? f.shot : '',
-      sugar: k && k !== 'none' ? f.sugar : '', note: k && k !== 'none' ? f.note.slice(0, DK_NOTE) : '', other: f.other.slice(0, DK_OTHER), at: now() };
+      sugar: k && k !== 'none' ? f.sugar : '', note: k && k !== 'none' ? f.note.slice(0, DK_NOTE) : '', cold: f.cold, other: f.other.slice(0, DK_OTHER), at: now() };
     var id = S.who, old = dkList ? dkList[id] : undefined;
     dkBusy = true; dkMsg = ''; draw();
     sset(docRef('drinks', id), data).then(function () {
@@ -4747,7 +4752,7 @@
   }
   function dkFormHTML(first) {
     if (!dkf) dkEdit();
-    var k = dkf.kind, hot = k && k !== 'none', prev = dkSum({ kind: k, size: dkf.size, milk: dkf.milk, shot: dkf.shot, sugar: dkf.sugar, note: hot ? dkf.note.trim() : '', other: dkf.other.trim() });
+    var k = dkf.kind, hot = k && k !== 'none', prev = dkSum({ kind: k, size: dkf.size, milk: dkf.milk, shot: dkf.shot, sugar: dkf.sugar, note: hot ? dkf.note.trim() : '', cold: dkf.cold, other: dkf.other.trim() });
     return '<div class="dr-form" tabindex="-1">' + dkChips('kind', DK_KINDS, 'Coffee or hot drink') +
       (dkAsks(k, 's') ? '<div class="field"><span class="label" id="dk-l-size">Size</span><div class="ml-seg" role="group" aria-labelledby="dk-l-size">' + DK_SIZE.map(function (c) {
         return '<button type="button" class="ml-sb" data-p="dk-pick" data-f="size" data-v="' + c[0] + '" aria-pressed="' + (dkf.size === c[0]) + '">' + c[1] + '</button>';
@@ -4756,7 +4761,8 @@
       (dkAsks(k, 'e') ? dkChips('shot', DK_SHOT, 'Strength (tap again for normal)') : '') +
       (hot ? dkChips('sugar', DK_SUGAR, 'Sugar') : '') +
       (hot ? '<div class="field"><label class="label" for="dk-note">Anything else about it?</label><input id="dk-note" class="search" data-k="dk-note" maxlength="' + DK_NOTE + '" autocomplete="off" placeholder="Extra hot, honey, Earl Grey" value="' + esc(dkf.note) + '"></div>' : '') +
-      '<div class="field"><label class="label" for="dk-other">Something else you like</label><input id="dk-other" class="search" data-k="dk-other" maxlength="' + DK_OTHER + '" autocomplete="off" placeholder="Coke No Sugar, iced water" value="' + esc(dkf.other) + '"><span class="hint">A cold drink or snack for the run. Leave it empty if there is nothing.</span></div>' +
+      dkChips('cold', DK_COLD, 'Soft drink or water') +
+      '<div class="field"><label class="label" for="dk-other">Anything else for the run</label><input id="dk-other" class="search" data-k="dk-other" maxlength="' + DK_OTHER + '" autocomplete="off" placeholder="No ice, a banana bread" value="' + esc(dkf.other) + '"><span class="hint">Leave it empty if there is nothing.</span></div>' +
       (prev ? '<p class="dr-prev"><span class="label">Your usual</span>' + esc(prev) + '</p>' : '') +
       (dkMsg ? '<p class="p-err" role="alert">' + esc(dkMsg) + '</p>' : '') +
       '<div class="btn-row"><button type="button" class="btn dark" data-p="dk-save"' + (dkBusy ? ' disabled' : '') + '>' + (dkBusy ? 'Saving...' : 'Save my usual') + '</button>' +
@@ -4796,7 +4802,7 @@
     var g = {}, order = [];
     l.forEach(function (p) {
       var d = dkList[p.id];
-      [dkCoffee(d), d.other || ''].forEach(function (t) { if (!t) return; var key = t.toLowerCase(); if (!g[key]) { g[key] = { t: t, n: 0 }; order.push(key); } g[key].n++; });
+      [dkCoffee(d), dkCold(d)].forEach(function (t) { if (!t) return; var key = t.toLowerCase(); if (!g[key]) { g[key] = { t: t, n: 0 }; order.push(key); } g[key].n++; });
     });
     return order.map(function (k) { return g[k]; });
   }
