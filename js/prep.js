@@ -206,8 +206,7 @@
   function canBrowse() { return S.level === 'owner' || isSous(); }
   function can(what) { if (guest()) return what === 'add' || what === 'tick'; var p = me(); return !!(p && p[what]); }
   /* ---------- new pages the head chef can hold back from staff ----------
-     Guides, Shift pings and Meeting minutes always show for the head chef, sous chefs and leads (and pings for anyone
-     ticked for Pings). Staff and View only see each one unless the head chef unticks it under New pages in the People
+     Guides, Shift pings and Meeting minutes always show for the head chef, sous chefs and leads. Staff and View only see each one unless the head chef unticks it under New pages in the People
      tab (config/main staffSee, missing means shown). It only hides the links and skips the reads: it is not a lock.
      What this phone may see is kept in lk.feat, so the landing page and the top bar are right before the book connects. */
   var FEATS = [['guides', 'Guides'], ['pings', 'Shift pings'], ['minutes', 'Meeting minutes']];
@@ -492,7 +491,29 @@
     document.addEventListener('visibilitychange', function () { if (!document.hidden && S.authed && idleExpired()) idleLock(); });
     lsSet('lk.prep.seen', String(Date.now()));
   }
-  function leave() { S.who = ''; S.authed = false; S.pinStep = ''; lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); }
+  /* the next person never lands in the last person's staff draft, minutes register or ping editor */
+  function leave() { S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); }
+  /* The chef mark's menu (js/app.js) asks what to show: Meeting minutes for everyone (when the page is on), and for the
+     head chef and sous chefs Shift pings, the Minutes register and Manage staff. The head chef on their admin device gets
+     the matching admin tab instead. */
+  function chefMenu() { return { minutes: featOn('minutes'), chef: isSous() }; }
+  function chefOpen(k) {
+    if (!isSous()) return;
+    if (admDev() && whoHead()) { S.atab = k === 'pings' ? 'notes' : k === 'register' ? 'minutes' : 'people'; lsSet('lk.prep.atab', S.atab); if (location.hash === '#/admin') draw(); else location.hash = '#/admin'; return; }
+    S.minOpen = false; S.notesOpen = false; if (S.staffOpen && !draftDirty()) { S.staffOpen = false; S.draft = null; }
+    if (k === 'pings') { S.notesOpen = true; S.nf = null; S.nOpen = false; S.nMsg = ''; loadNotes(); }
+    else if (k === 'register') { S.minOpen = true; S.mMsg = ''; S.mf = null; loadMinutes(true); }
+    else { if (!S.staffOpen) startDraft(); S.staffOpen = true; }
+    if (location.hash === '#/prep') { draw(); window.scrollTo(0, 0); } else location.hash = '#/prep';
+  }
+  /* Sign out from the chef mark: back to Who are you? on this device (the kitchen PIN stays, so recipes and guides stay
+     open). Something not saved yet: false, and the menu asks for a second tap first. */
+  function signOutPerson(force) {
+    if (!S.authed) return true;
+    if (!force && window.LK_PREP.unsaved()) return false;
+    S.picking = shared(); S.pending = null; leave(); toast('Signed out. Hand the phone over.');
+    return true;
+  }
   /* The top bar shows a small chef mark while a person is signed in on this phone (js/app.js draws it from whoName()). */
   function whoName() { var p = S.authed ? who() : null; return p ? p.name : ''; }
   /* the Head chef is signed in with their PIN on this phone: the top bar shows Admin, which leads to the Google sign-in.
@@ -1079,35 +1100,6 @@
     sset(docRef('learned', id), { hidden: hidden }, true).catch(failed);
   }
   var LEARN_DAYS = 90;   // how far back the nightly learning reads
-  /* what is left to do (ticked lines are left out), and only the open section tab when one is open */
-  function listText() {
-    var rows = S.items.filter(function (x) { return !x.deleted && !x.done && inTab(x); }).sort(sortItems), out = [], last = null;
-    out.push('Prep list' + (S.tab ? ', ' + S.tab : '') + ', ' + dayName(S.date) + ' ' + longDate(S.date));
-    if (!rows.length) out.push('', 'Nothing left to do.');
-    rows.forEach(function (x) {
-      var sec = x.station || 'General';
-      if (sec !== last) { out.push('', sec.toUpperCase()); last = sec; }
-      out.push('[ ] ' + (x.urgent ? 'URGENT ' : '') + (rolledN(x) ? '(rolled over) ' : '') + x.text + (x.qty ? ' - ' + x.qty : '') + (x.also && x.also.length ? ' (also ' + x.also.join(', ') + ')' : ''));
-    });
-    return out.join('\n');
-  }
-  function copyList() { shareText(listText()); }
-  /* A phone or tablet opens its share sheet (straight into a message), a computer copies. If sharing is not there or
-     fails, the text is copied instead. */
-  function touchy() { try { return window.matchMedia('(pointer: coarse)').matches; } catch (e) { return false; } }
-  function shareLabel(what) { return (touchy() && navigator.share ? 'Share ' : 'Copy ') + what; }
-  function shareText(t) {
-    function copied(ok) { toast(ok ? 'Copied. Paste it into a message.' : 'Could not copy on this device.'); }
-    function fallback() {
-      var ta = document.createElement('textarea'); ta.value = t; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
-      document.body.appendChild(ta); ta.select(); var ok = false; try { ok = document.execCommand('copy'); } catch (e) {} document.body.removeChild(ta);
-      copied(ok);
-    }
-    function copy() { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(function () { copied(true); }, fallback); else fallback(); }
-    if (touchy() && navigator.share) navigator.share({ text: t }).catch(function (e) { if (!e || e.name !== 'AbortError') copy(); });
-    else copy();
-  }
-  /* Printing one part of the book: the class on <html> picks what the print rules in app.css show. */
   /* Tab and Shift+Tab stay inside an open popup: from the last control back to the first and the other way, and focus
      that has slipped outside comes back in. Only controls that can be seen count. */
   function trapTab(e, box, sel) {
@@ -1116,23 +1108,6 @@
     var first = f[0], last = f[f.length - 1], out = !box.contains(document.activeElement);
     if (e.shiftKey && (document.activeElement === first || out)) { e.preventDefault(); last.focus(); }
     else if (!e.shiftKey && (document.activeElement === last || out)) { e.preventDefault(); first.focus(); }
-  }
-  function printWith(cls, after) {
-    var h = document.documentElement;
-    h.classList.add(cls);
-    function done() { h.classList.remove(cls); if (after) after(); window.removeEventListener('afterprint', done); }
-    window.addEventListener('afterprint', done);
-    setTimeout(function () { window.print(); setTimeout(function () { if (h.classList.contains(cls) && !window.matchMedia('print').matches) done(); }, 1500); }, 50);
-  }
-  /* The order list as plain text for the supplier: one line per item, with the amounts asked for (Everything to order
-     adds up every day still open; By day is that day's lines not ticked yet). */
-  function ordText() {
-    var all = S.ordView === 'all' && canBrowse(), out = [], lines = [];
-    if (all) ordGroups().forEach(function (g) { var q = g.lines.map(function (x) { return x.qty; }).filter(Boolean); lines.push(g.text + (q.length ? ': ' + q.join(' + ') : '')); });
-    else (S.ordLines || []).filter(function (x) { return !x.deleted && !x.ordered; }).sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }).forEach(function (x) { lines.push(x.text + (x.qty ? ': ' + x.qty : '')); });
-    out.push('Order, ' + (all ? 'everything still to order' : dayName(S.ordDate) + ' ' + longDate(S.ordDate)));
-    out.push('');
-    return out.concat(lines.length ? lines : ['Nothing to order.']).join('\n');
   }
   /* A line written after the usual close (the time of the last tick on most days, 20:00 until the book knows) is meant
      for the next day. When it moves onto that day it is marked ahead and does not count as rolled; only if it is still
@@ -1199,10 +1174,11 @@
     return m;
   }
   function staleHint() { return draftStale() && draftDirty() ? '<p class="hint a-stale">The staff list changed on another phone while you were here. Only what you changed is saved on top of it.</p>' : ''; }
-  /* sousIds and pingIds are what the rules check: sous chefs, and everyone who may write shift pings (sous chefs always may) */
+  /* sousIds and pingIds are what the rules check. Only the head chef and sous chefs write shift pings (20 Oct 2026: the
+     Pings tick for other staff is gone), so pingIds is the same people as sousIds. Everyone else only reads them. */
   function idsFor(people, fn) { return people.filter(function (p) { return p.active !== false && String(p.name).trim() && fn(p); }).map(function (p) { return p.id; }); }
   function isSousP(p) { return p.role === 'sous' || p.role === 'head'; }
-  function canPingP(p) { return isSousP(p) || !!p.ping; }
+  function canPingP(p) { return isSousP(p); }
   function isHeadP(p) { return !!p && p.role === 'head'; }
   /* The head chef's own name (headId, which only the head chef's Google account can write) is always Head chef, on the
      list and with every permission, even if a sous chef's save changed or removed the role. Run on every config read. */
@@ -1318,7 +1294,7 @@
   }
   /* The rules read three lists next to the people list: sousIds (who may edit the staff list), pingIds (who may write
      shift pings) and staffIds (who may set a PIN). Only the head chef can write sousIds and pingIds, so the owner keeps
-     them in step with the roles when the admin panel opens. A sous chef can change a role or a Pings tick in the people
+     them in step with the roles when the admin panel opens. A sous chef can change a role in the people
      list (the rules cannot tell one field of a person from another), so when the roles and the lists disagree the
      panel shows what changed and asks (idChanges, the card at the top of the admin panel) instead of saving it quietly.
      staffIds follows the people list by itself: a sous chef's staff page sends it too. */
@@ -1328,9 +1304,8 @@
     if (!c || !c.people || !c.sousIds || !c.pingIds) return out;   // a list never seeded yet: nothing to ask about
     c.people.forEach(function (p) {
       if (p.active === false || !String(p.name).trim()) return;
-      var sous = c.sousIds.indexOf(p.id) >= 0, ping = (c.pingIds || []).indexOf(p.id) >= 0;
+      var sous = c.sousIds.indexOf(p.id) >= 0;
       if (isSousP(p) !== sous) out.push({ p: p, sous: isSousP(p), what: isSousP(p) ? 'is now marked Sous chef' : 'is no longer marked Sous chef' });
-      else if (canPingP(p) !== ping) out.push({ p: p, ping: canPingP(p), what: canPingP(p) ? 'is now ticked for Pings' : 'is no longer ticked for Pings' });
     });
     return out;
   }
@@ -1355,8 +1330,7 @@
     var people = JSON.parse(JSON.stringify(c.people));
     if (!keep) ch.forEach(function (x) {
       var p = people.filter(function (q) { return q.id === x.p.id; })[0]; if (!p) return;
-      if (x.sous !== undefined) { p.role = x.sous ? 'staff' : 'sous'; var r = ROLES[p.role]; p.add = r.add; p.tick = r.tick; p.del = r.del; p.ping = r.ping; }
-      else p.ping = !x.ping;
+      p.role = x.sous ? 'staff' : 'sous'; var r = ROLES[p.role]; p.add = r.add; p.tick = r.tick; p.del = r.del; p.ping = r.ping;
     });
     S.idBusy = true; S.idMsg = 'Saving...'; draw();
     saveConfig({ people: people, showBadges: c.showBadges, staffSee: c.staffSee }).then(function () { S.idBusy = false; S.idMsg = ''; startDraft(); draw(); },
@@ -1456,7 +1430,7 @@
   }
   var MEDAL = { 1: '#C9971C', 2: '#8E959C', 3: '#A8693A' };
   function isSous() { var p = me(); return !!(p && isSousP(p)); }
-  /* shift pings: sous chefs, and anyone the head chef ticked for Pings in the People tab */
+  /* shift pings: the head chef and sous chefs write them, everyone else reads them (20 Oct 2026) */
   function canPing() { var p = me(); return !!(p && canPingP(p)); }
   function ordinal(n) { return n + (n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th'); }
   function medal(rank) {
@@ -1824,7 +1798,7 @@
     if (!total) return '<p class="hint">' + esc(c.empty || 'Nothing here yet.') + '</p>';
     var rows = lvRows(c), all = rows.length;
     if (!all) return '<p class="hint lv-none">Nothing matches' + (s.q.replace(/\s/g, '') ? ' "' + esc(s.q.trim()) + '"' : ' this filter') + '. <button type="button" class="p-x" data-p="lv-clear" data-lv="' + esc(c.key) + '">Clear search and filter</button></p>';
-    var lim = S.lvAll ? all : Math.max(step, s.shown), shown = rows.slice(0, lim), left = all - shown.length, body;
+    var lim = Math.max(step, s.shown), shown = rows.slice(0, lim), left = all - shown.length, body;
     if (c.card) body = '<ul class="lv-cards nt-rows">' + shown.map(c.card).join('') + '</ul>';
     else {
       body = '<div class="a-tablewrap lv-wrap"><table class="a-table a-plain lv-table' + (c.table ? ' ' + esc(c.table) : '') + '"><thead><tr>' + c.cols.map(function (x) {
@@ -1839,7 +1813,7 @@
     var count = '<p class="lv-count" role="status">' + (left ? 'Showing ' + shown.length + ' of ' + all : all) + (all !== total ? ' matching' : '') + ' ' + (all === 1 ? noun[0] : noun[1]) + (all !== total ? ' (' + total + ' in all)' : '') + '</p>';
     var more = '';
     if (left > 0) more = '<div class="btn-row lv-more"><button type="button" class="btn" data-p="lv-more" data-lv="' + esc(c.key) + '">Show ' + Math.min(step, left) + ' more</button>' + (left > step ? '<button type="button" class="btn" data-p="lv-all" data-lv="' + esc(c.key) + '">Show all ' + all + '</button>' : '') + '</div>';
-    else if (shown.length > step && !S.lvAll) more = '<div class="btn-row lv-more"><button type="button" class="btn" data-p="lv-less" data-lv="' + esc(c.key) + '">Show fewer</button></div>';
+    else if (shown.length > step) more = '<div class="btn-row lv-more"><button type="button" class="btn" data-p="lv-less" data-lv="' + esc(c.key) + '">Show fewer</button></div>';
     return count + body + more;
   }
   function lvHTML(c) {
@@ -1878,8 +1852,6 @@
   }
   /* a row that was just added must be on screen: clear the search and filter and open every row */
   function lvReveal(key) { var s = LV[key], c = LVR[key]; if (!s) return; s.q = ''; if (c && c.filters && c.filters.length) s.f = c.filters[0][0]; s.shown = LV_BIG; }
-  /* printing shows every row, not just the first page */
-  function lvPrintAll(on) { S.lvAll = !!on; Object.keys(LVR).forEach(lvRefresh); }
   /* Every day at a glance: a calendar, darker means more. Tap a day to open it in the prep book. */
   function calHTML(n) {
     var a = AF(), m = S.calM || 'done', today = dayNow(), agg = aggregate(n, 0), first = shift(today, -(n - 1)), start = first, i;
@@ -1967,22 +1939,14 @@
     }
     return out.length ? card('<h3 class="a-ch-h">What stands out</h3><ul class="a-list a-smart">' + out.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>', 'full') : '';
   }
-  /* ---------- export and print (Insights, Team, Waste) ---------- */
+  /* ---------- export (Insights, Team, Waste) ---------- */
   function rangeText(n) { var t = dayNow(); return n + ' days, ' + dayShort(shift(t, -(n - 1))) + ' to ' + dayShort(t); }
   function toolsHTML(kind, title) {
     var n = S.statsRange;
     return '<div class="a-tools"><div><h3 class="a-title">' + esc(title) + '</h3><span class="hint">' + esc(rangeText(n)) + ', compared with the ' + n + ' days before.</span></div>' +
       // the export buttons fold into one Export menu, so the first screen is the numbers, not the buttons
-      '<details class="a-tbtns a-export"><summary class="btn">Export</summary><div class="btn-row"><button type="button" class="btn" data-p="print-tab">Print or save as PDF</button><button type="button" class="btn" data-p="csv" data-v="' + kind + '">Download CSV</button></div></details></div>' +
-      (S.stats && S.stats.at ? '<p class="hint a-upd">Updated ' + esc(clock(S.stats.at)) + '. Refresh reads the newest.</p>' : '') +
-      '<div class="a-print-h"><strong>Leichhardt Kitchen Book</strong> &middot; ' + esc(title) + ' &middot; ' + esc(rangeText(n)) + '<span>Printed ' + esc(dayShort(dayNow()) + ' ' + clock(now())) + '</span></div>';
-  }
-  function printTab() {
-    var pane = S.root && S.root.querySelector('.a-pane'); if (!pane) return;
-    var closed = [].filter.call(pane.querySelectorAll('details'), function (d) { return !d.open; });
-    closed.forEach(function (d) { d.open = true; });
-    lvPrintAll(true);
-    printWith('print-admin', function () { closed.forEach(function (d) { d.open = false; }); lvPrintAll(false); });
+      '<details class="a-tbtns a-export"><summary class="btn">Export</summary><div class="btn-row"><button type="button" class="btn" data-p="csv" data-v="' + kind + '">Download CSV</button></div></details></div>' +
+      (S.stats && S.stats.at ? '<p class="hint a-upd">Updated ' + esc(clock(S.stats.at)) + '. Refresh reads the newest.</p>' : '');
   }
   function csvCell(v) { v = v == null ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
   function downloadCSV(name, rows) {
@@ -2191,18 +2155,11 @@
     var stuckHTML = stuck.length ? '<h3 class="nb-sh">Stuck lines</h3><p class="nb-sd">Rolled over 3 or more times. Make it urgent, split it into smaller jobs, or remove it if it is not needed.</p><ul class="nb-stuck">' + stuck.map(function (x) {
       return '<li><span>' + esc(x.text) + ' <span class="nb-us">x' + rolledN(x) + '</span></span>' + (x.urgent ? '' : '<button type="button" class="p-x" data-p="urgent" data-id="' + esc(x.id) + '">Urgent</button>') + (can('del') ? '<button type="button" class="p-x" data-p="del" data-id="' + esc(x.id) + '" data-d="' + esc(S.date) + '">Remove</button>' : '') + '</li>';
     }).join('') + '</ul>' : '';
-    var tools = '<h3 class="nb-sh">Tools</h3><div class="nb-tools">' +
-      '<button type="button" class="nb-btn" data-p="copy">' + shareLabel('the list') + '</button>' +
-      '<button type="button" class="nb-btn" data-p="print">Print the list</button>' +
-      (featOn('minutes') ? '<a class="nb-btn" href="#/minutes">Meeting minutes</a>' : '') +
-      '<a class="nb-btn" href="#/drinks">Drinks run</a>' +
-      (canPing() ? '<button type="button" class="nb-btn" data-p="notes-open">Shift pings</button>' : '') +
-      (isSous() ? '<button type="button" class="nb-btn" data-p="mn-open">Minutes register</button><button type="button" class="nb-btn" data-p="staff-open">Manage staff</button>' : '') + '</div>';
     var dl = live.filter(function (x) { return x.done; }).sort(function (a, b) { return (b.doneAt || 0) - (a.doneAt || 0); });
     var donebox = '<h3 class="nb-sh" id="nb-donebox">' + (onToday ? 'Done today' : 'Done on ' + esc(dayShort(S.date))) + ' (' + dl.length + ')</h3>' + (dl.length ? '<ul class="nb-done">' + dl.map(function (x) {
       return '<li><span class="nb-dt">' + (x.doneAt ? clock(x.doneAt) : '') + '</span><span class="nb-dx">' + esc(x.text) + (x.qty ? ' <em>' + esc(x.qty) + '</em>' : '') + '</span><span class="nb-dw">' + esc(x.doneBy || '') + '</span>' + (can('tick') && canUntick(x) ? '<button type="button" class="p-x nb-undo" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(S.date) + '" aria-label="' + esc('Undo the tick on ' + x.text) + '">Undo</button>' : '') + '</li>';
     }).join('') + '</ul>' : '<p class="nb-sd">' + (onToday ? 'Nothing ticked yet.' : 'Nothing was ticked.') + '</p>');
-    return startHTML(live, true) + paceHTML + stuckHTML + donebox + quick + tools;
+    return startHTML(live, true) + paceHTML + stuckHTML + donebox + quick;
   }
   function listHTML() {
     var p = me(), today = dayNow();
@@ -2232,7 +2189,7 @@
       '<div class="nb-body">' + minNudgeHTML() + closeoutHTML(live) + wNoteHTML() + startHTML(live) + pageBody(S.items, S.date) + todayEmpty + '</div>' +
       '<div class="nb-foot">' + add + (add && !can('del') ? '<p class="hint nb-who">Wrote the wrong thing? Undo it straight away, or ask the head chef or a sous chef to remove it.</p>' : '') +
       (removed.length && can('del') ? '<button type="button" class="nb-link" data-p="removed">' + (S.showRemoved ? 'Hide' : 'Show') + ' removed (' + removed.length + ')</button>' : '') + '</div></section>';
-    var right = '<section class="nb-page nb-right"><header class="nb-ph"><div><h2 class="nb-title nb-dim">Handy</h2><span class="nb-date">' + (S.date === today ? 'Done today, quick add and tools' : 'Done on ' + esc(dayShort(S.date)) + ' and tools') + '</span></div></header>' +
+    var right = '<section class="nb-page nb-right"><header class="nb-ph"><div><h2 class="nb-title nb-dim">Handy</h2><span class="nb-date">' + (S.date === today ? 'Done today and quick add' : 'Done on ' + esc(dayShort(S.date))) + '</span></div></header>' +
       '<div class="nb-body nb-side">' + sideH + '</div></section>';
     return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' + (can('tick') ? '' : ' (read only)') + esc(myRank()) : '') + '</span><span class="p-links"><button type="button" class="p-link" data-p="who-change">Not you?</button>' + '' + '</span></div>' +
       (canBrowse() ? '<div class="nb-nav"><button type="button" class="chip" data-p="day" data-d="-1" aria-label="Back one day">&lsaquo;</button>' +
@@ -2489,7 +2446,6 @@
         { h: 'Write', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'add', o.p.add, 'Write', isHeadP(o.p)); } },
         { h: 'Tick', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'tick', o.p.tick, 'Tick', isHeadP(o.p)); } },
         { h: 'Remove', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'del', o.p.del, 'Remove', isHeadP(o.p)); } },
-        { h: 'Pings', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'ping', canPingP(o.p), 'Shift pings', isSousP(o.p)); } },
         { h: '', cls: 'a-act', html: function (o) { return '<button type="button" class="p-x" data-p="a-reset-pin" data-id="' + esc(o.p.id) + '">' + (armed('pin:' + o.p.id) ? 'Tap again to reset' : 'Reset PIN') + '</button>' + removePersonBtn(o.p, o.i); } }
       ]
     });
@@ -2543,7 +2499,7 @@
       (headIdOf(d.people) ? '' : '<p class="hint a-nohead" role="note">No one is marked Head chef yet. Set your own name to Head chef and save, so your PIN has full rights on the kitchen devices.</p>') +
       peopleListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' +
       '<section class="set-block"><span class="label">Badges</span><label class="a-check"><input type="checkbox" data-a="badges"' + (d.showBadges !== false ? ' checked' : '') + '> Show the weekly top tickers to everyone on the prep book</label></section>' +
-      '<section class="set-block a-feats"><span class="label">New pages</span><span class="hint">You, sous chefs and leads always see these. Untick one to hide it from Staff and View only until the team is ready. Anyone ticked for Pings still sees shift pings.</span>' +
+      '<section class="set-block a-feats"><span class="label">New pages</span><span class="hint">You, sous chefs and leads always see these. Untick one to hide it from Staff and View only until the team is ready.</span>' +
       FEATS.map(function (f) { return '<label class="a-check"><input type="checkbox" data-a="staffsee" data-f="' + f[0] + '"' + (d.staffSee[f[0]] ? ' checked' : '') + '> Staff see ' + f[1] + '</label>'; }).join('') + '</section>' + saveBlock
     ) : (
       '<section class="set-block"><span class="label">Backup</span><span class="hint">Saves everything the prep book holds (people, prep lines, orders and wastage from the last 400 days, shift pings and who has seen them, meeting minutes with earlier versions and sign-offs, what the prep and order lists have learned, tallies and the guides\' words) as one file on this device. People\'s PIN fingerprints and the guides\' page pictures are left out (keep the original files). The book is also backed up on the server every night at 03:30; download one here when you want a copy on this computer.</span><div class="btn-row"><button type="button" class="btn" data-p="export"' + (S.exporting ? ' disabled' : '') + '>' + (S.exporting ? esc(S.exporting) : 'Download a backup') + '</button></div></section>' +
@@ -2992,8 +2948,7 @@
       /* the add box is at the top, so it is always in reach; on big screens the list and the ordered-today list sit side by side below it */
       (view === 'day' && add ? '<div class="nb-foot o-add">' + add + (canBrowse() ? '' : '<p class="hint nb-who">Only the head chef or a sous chef ticks a line as ordered or removes it. Wrote the wrong thing? Undo it straight away, or ask them.</p>') + '</div>' : '') +
       (view === 'day' && S.ordDate === today ? ordNudgeHTML(overdue, today) : '') +
-      '<div class="o-cols"><div class="nb-body o-main">' + body + removedBox + '</div>' + (orderedBox ? '<div class="o-ordered">' + orderedBox + '</div>' : '') + '</div>' +
-      '<div class="nb-tools o-tools"><button type="button" class="nb-btn" data-p="ocopy">' + shareLabel('for the supplier') + '</button><button type="button" class="nb-btn" data-p="oprint">Print</button></div></section>';
+      '<div class="o-cols"><div class="nb-body o-main">' + body + removedBox + '</div>' + (orderedBox ? '<div class="o-ordered">' + orderedBox + '</div>' : '') + '</div></section>';
   }
 
 
@@ -3239,8 +3194,8 @@
   }
 
   /* ---------- shift pings (stored as notes) ----------
-     The head chef, a sous chef, or anyone ticked for Pings in the People tab writes short pings for the shift (Shift pings tab in
-     the admin panel; Shift pings in the prep book for everyone else). In the code and the data they are still called notes.
+     The head chef or a sous chef writes short pings for the shift (Shift pings tab in the admin panel; Shift pings in
+     the chef mark menu for sous chefs). Everyone else only reads them. In the code and the data they are still called notes.
      The first time the book is opened after 10:30 on a day with a ping, the pings show once as a popup. The bell in the top bar opens them again.
      Data: kitchens/<PIN>/notes/<id> { text, tag, start, until, dows, removed, at, upd }. A note shows from start to until (YYYY-MM-DD),
      on the weekdays in dows when there are any (0 is Sunday). Notes are only flagged as removed, never deleted.
@@ -3415,7 +3370,7 @@
     if (e.key === 'Tab') trapTab(e, npop);
   });
 
-  /* writing shift pings: the Shift pings tab of the admin panel (head chef) and Shift pings in the prep book (sous chefs and anyone ticked for Pings).
+  /* writing shift pings: the Shift pings tab of the admin panel (head chef) and Shift pings in the prep book (sous chefs, from the chef mark menu).
      The list comes first (showing today, coming up, past notes on request). The editor opens beside it on a
      big screen and above it on a phone. Days are picked on a five week grid and every tap can be undone. */
   var NOTE_START = { off: 'Off today: ', special: 'Special: ', 'function': 'Function: ', delivery: 'Delivery: ', safety: 'Safety: ', allergen: 'Allergen alert: ' };
@@ -3733,7 +3688,7 @@
     function toSign(x) { return S.mmine[mnKey(x)] === null; }
     older = older.filter(toSign).concat(older.filter(function (x) { return !toSign(x); }));
     return top + '<section class="mn">' + mnDocHTML(m, true) +
-      '<div class="mn-noprint"><div class="mn-btns"><button type="button" class="btn" data-p="mn-print">Print or save as PDF</button></div>' +
+      '<div class="mn-noprint">' +
       (older.length ? '<h3 class="mn-eh">Earlier minutes (last ' + MN_DAYS + ' days)</h3><div class="mn-earlier">' + older.map(function (x) { return '<button type="button" class="chip' + (toSign(x) ? ' mn-tosign' : '') + '" data-p="mn-pickdoc" data-id="' + esc(x.id) + '">' + pad(x.no || 0) + ' &middot; ' + esc(dayShort(x.date)) + (toSign(x) ? ' &middot; <b>To sign</b>' : '') + '</button>'; }).join('') + '</div>' : '') + '</div>' + mnWriteLink() + '</section>';
   }
   function signMinutes(id) {
@@ -3909,8 +3864,7 @@
       body = tiles + '<div class="mn-regrid">' + chase + '<div class="mn-regall"><button type="button" class="btn mn-noprint" data-p="mn-regall" aria-expanded="' + !!S.mRegAll + '">' + (S.mRegAll ? 'Hide the full list' : 'Show everyone (' + reg.rows.length + ')') + '</button>' + table + '</div></div>';
     }
     return '<section class="set-block mn-print"><span class="label">Sign-off register</span><span class="hint">Minutes ' + pad(m.no || 0) + ', ' + esc(longDate(m.date)) + ', version ' + m.v + (m.v > 1 ? '. Earlier versions are kept' : '') + '. Staff who have not signed within ' + MN_LATE + ' days are marked late. Everyone on the staff list signs, including apology and absent.</span>' + chips + body +
-      '<div class="a-print-h"><strong>Leichhardt Kitchen Book</strong> &middot; Minutes ' + pad(m.no || 0) + ' sign-off register &middot; version ' + m.v + '<span>Printed ' + esc(dayShort(dayNow()) + ' ' + clock(now())) + '</span></div>' +
-      '<div class="btn-row mn-noprint"><button type="button" class="btn dark" data-p="mn-print">Print or save as PDF</button><button type="button" class="btn" data-p="mn-csv" data-id="' + esc(m.id) + '">Download CSV</button><button type="button" class="btn" data-p="mn-refresh">Refresh</button>' + (mnCanWrite() ? '<button type="button" class="btn" data-p="mn-edit" data-id="' + esc(m.id) + '">Change as a new version</button><button type="button" class="btn" data-p="mn-remove" data-id="' + esc(m.id) + '">' + (armed('mn-del:' + m.id) ? 'Tap again to remove' : 'Remove') + '</button>' : '') + '</div></section>';
+      '<div class="btn-row mn-noprint"><button type="button" class="btn" data-p="mn-csv" data-id="' + esc(m.id) + '">Download CSV</button><button type="button" class="btn" data-p="mn-refresh">Refresh</button>' + (mnCanWrite() ? '<button type="button" class="btn" data-p="mn-edit" data-id="' + esc(m.id) + '">Change as a new version</button><button type="button" class="btn" data-p="mn-remove" data-id="' + esc(m.id) + '">' + (armed('mn-del:' + m.id) ? 'Tap again to remove' : 'Remove') + '</button>' : '') + '</div></section>';
   }
   function minAdminHTML() {
     loadMinutes();
@@ -3924,7 +3878,6 @@
   function minSousPageHTML() {
     return '<div class="p-admin"><div class="p-bar"><span>Meeting minutes</span><span class="p-links"><button type="button" class="p-link" data-p="mn-close">Back to the prep book</button></span></div><h2 class="p-h" id="rtitle" tabindex="-1">Meeting minutes</h2>' + minAdminHTML() + '</div>';
   }
-  function printMinutes() { lvPrintAll(true); printWith('print-min', function () { lvPrintAll(false); }); }
   function csvMinutes(id) {
     var m = mnById(id), reg = m && mnRegister(m); if (!reg) return;
     var rows = [['Minutes', 'Version', 'Meeting date', 'Person', 'Attendance', 'Signed at', 'Status']];
@@ -4367,9 +4320,8 @@
         (n > 2 ? '<div class="g-thumbs g-noprint">' + pv.urls.slice(0, n).map(function (u, k) { return u ? '<button type="button" class="g-thumb" data-p="g-zoom" data-i="' + k + '" aria-label="' + esc('Open page ' + (k + 1) + ' big') + '"><img src="' + esc(u) + '" alt=""><span>' + (k + 1) + '</span></button>' : ''; }).join('') + '</div>' : '') + figs +
         (pv.state === 'error' ? '<p class="p-err g-noprint">Could not load the pages. Check the connection. <button type="button" class="p-x" data-p="g-retry">Try again</button></p>' : '') + '</section>' : '') +
       (cards.length ? '<section class="g-rec g-noprint"><h3 class="g-h3">On these recipe cards</h3><div class="g-rchips">' + cards.map(function (r) { return '<a class="g-rchip" href="#/r/' + esc(r.id) + '">' + esc(r.name) + '</a>'; }).join('') + '</div></section>' : '') +
-      '<div class="btn-row g-noprint"><button type="button" class="btn" data-p="g-print">Print</button>' + (admin ? '<button type="button" class="btn" data-p="g-change" data-id="' + esc(g.id) + '">Change this guide</button>' : '') + '</div></article>';
+      (admin ? '<div class="btn-row g-noprint"><button type="button" class="btn" data-p="g-change" data-id="' + esc(g.id) + '">Change this guide</button></div>' : '') + '</article>';
   }
-  function printGuide() { printWith('print-guide'); }
 
   /* A page opened big: over everything (appended to the body, so page redraws leave it alone), Previous and Next, Fit or Full size.
      Its clicks use data-gz. Escape or Close shuts it. Pinching zooms further on a phone. */
@@ -4667,7 +4619,7 @@
      before this see a small card on the prep list, orders and wastage once, until they set it or tap Not now
      (lk.drink.<id> on the phone, so the check is at most one small read per person per phone).
      Each person picks a coffee or hot drink, a soft drink or water, or both, and can add a few words.
-     #/drinks (the chef mark menu, and Tools on the prep list) is for looking at, nothing is sent: everyone in the book
+     #/drinks (the chef mark menu) is for looking at, nothing is sent: everyone in the book
      today is in by themselves, the rest wait behind a note, and the order counts the same drinks together. The team's
      drinks and when each person last opened the book are read once when the page opens, again only after 30 minutes,
      and kept on the phone (lk.drinks). Who was added or taken out by hand stays on the phone for the day (lk.drinks.run). */
@@ -4948,7 +4900,6 @@
     if (a === 'mn-sous') { S.minOpen = true; S.mf = null; location.hash = '#/prep'; return; }
     if (a === 'mn-pickdoc') { S.mSel = id; S.mpin = ''; S.mpinOk = false; S.mErr = ''; draw(); window.scrollTo(0, 0); return; }
     if (a === 'mn-sign') { signMinutes(id); return; }
-    if (a === 'mn-print') { printMinutes(); return; }
     if (a === 'mn-csv') { csvMinutes(id); return; }
     if (a === 'mn-refresh') { loadMinutes(true); loadSigns(S.mSel || (mnPub()[0] || {}).id, true); draw(); return; }
     if (a === 'mn-sel') { S.mSel = id; loadSigns(id, true); draw(); return; }
@@ -4971,7 +4922,6 @@
     if (a === 'g-clear') { S.gq = ''; draw(); focusK('g-q'); return; }
     if (a === 'g-zoom') { var gzg = gById(S.gSel); if (gzg) gzOpen(gzg.id, i); return; }
     if (a === 'g-retry') { var grg = gById(S.gSel); if (grg) { delete gPg[grg.id + ':' + (grg.v || 1)]; draw(); } return; }
-    if (a === 'g-print') { printGuide(); return; }
     if (a === 'g-admin') { S.atab = 'guides'; lsSet('lk.prep.atab', 'guides'); location.hash = '#/admin'; return; }
     if (a === 'g-change') { var gcg = gById(id); if (gcg) { S.gf = gfFrom(gcg); S.gfSnap = gfSnap(S.gf); S.atab = 'guides'; lsSet('lk.prep.atab', 'guides'); location.hash = '#/admin'; } return; }
     if (/^g-(new|edit|del|save|cancel|fcat|pup|prm)$/.test(a) && S.level !== 'owner') return;
@@ -5013,7 +4963,6 @@
     if (a === 'heat') { S.heat = el.getAttribute('data-v'); draw(); return; }
     if (a === 'calm') { S.calM = el.getAttribute('data-v'); draw(); return; }
     if (a === 'jump') { var tg = document.getElementById(el.getAttribute('data-v')); if (tg) tg.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
-    if (a === 'print-tab') { printTab(); return; }
     if (a === 'csv') { exportCSV(el.getAttribute('data-v')); return; }
     if (a === 'hrm') { S.hrM = el.getAttribute('data-v'); draw(); return; }
     if (a === 'af-reset') { S.af = { sec: '', who: '', dow: '', reason: '' }; afSave(); draw(); return; }
@@ -5045,10 +4994,6 @@
     if (a === 'donejump') { var dj = S.root.querySelector('#nb-donebox'); if (dj) dj.scrollIntoView({ block: 'start', behavior: 'smooth' }); return; }
     if (a === 'write') { var wt = S.root.querySelector('[data-k="p-text"]'); if (wt) { wt.scrollIntoView({ block: 'center', behavior: 'smooth' }); wt.focus({ preventScroll: true }); } return; }
     if (a === 'learn-hide') { hideLearned(id, el.getAttribute('data-hide') === '1'); return; }
-    if (a === 'copy') { copyList(); return; }
-    if (a === 'print') { printWith('print-list'); return; }
-    if (a === 'ocopy') { shareText(ordText()); return; }
-    if (a === 'oprint') { printWith('print-orders'); return; }
     if (a === 'a-group') { var gg = A_GROUPS.filter(function (g) { return g[0] === el.getAttribute('data-g'); })[0]; if (gg) { S.atab = (S.agLast || {})[gg[0]] || gg[2][0]; lsSet('lk.prep.atab', S.atab); draw(); window.scrollTo(0, 0); } return; }
     if (a === 'a-tab') { S.atab = el.getAttribute('data-t'); S.agLast = S.agLast || {}; S.agLast[adminGroupOf(S.atab)[0]] = S.atab; lsSet('lk.prep.atab', S.atab); draw(); window.scrollTo(0, 0); return; }
     if (a === 'staff-open') { if (isSous()) { startDraft(); S.staffOpen = true; draw(); } return; }
@@ -5443,6 +5388,9 @@
     featOn: featOn,
     whoName: whoName,
     headPin: whoHead,
+    chefMenu: chefMenu,
+    chefOpen: chefOpen,
+    signOut: signOutPerson,
     minNudge: minNudgeHTML,
     mailInfo: mlInfo,
     saveConfig: saveConfig,

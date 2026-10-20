@@ -6,7 +6,7 @@ const has = async (page, name) => { const t = await page.evaluate(() => document
 (async () => {
   const b = await L.start();
   const p = await L.open(b, '#/prep', { width: 1280, height: 800, wait: 1500 });
-  await p.click('[data-p="staff-open"]');
+  await L.chef(p, 'staff');
   await p.waitForTimeout(300);
   await p.fill('[data-k="a-bulk"]', 'Zed');
   await p.click('[data-p="a-bulk-add"]');
