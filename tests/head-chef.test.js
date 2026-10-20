@@ -16,7 +16,7 @@ const cfg = (people, lists) => { const e = {}; e[CFG] = Object.assign({ people, 
 
   // admin: no head chef yet, the People tab says so; picking Head chef and saving writes headId, sousIds and pingIds
   p = await L.open(b, '#/admin', { admin: true, extra: cfg([P('sam', 'Sam', 'sous'), P('ann', 'Ann', 'staff'), P('bo', 'Bo', 'staff')], { sousIds: ['sam'], pingIds: ['sam'] }), wait: 1800 });
-  await p.click('[data-p="a-tab"][data-t="people"]');
+  await L.adminTab(p, 'people');
   await p.waitForTimeout(300);
   ok(/No one is marked Head chef yet/.test(await txt(p, '.a-nohead')), 'admin: the People tab asks for a head chef');
   ok(await p.evaluate(() => [...document.querySelectorAll('#a-r1 option')].some(o => o.value === 'head')), 'admin: Head chef is a role the head chef can pick');
@@ -46,7 +46,7 @@ const cfg = (people, lists) => { const e = {}; e[CFG] = Object.assign({ people, 
   // admin opens on the demoted list: no "Changed from the prep book" card, the head chef is still Head chef
   p = await L.open(b, '#/admin', { admin: true, extra: demoted, wait: 1800 });
   ok(await p.$('.a-ids') === null, 'admin: a sous chef cannot demote the head chef, so there is nothing to ask');
-  await p.click('[data-p="a-tab"][data-t="people"]');
+  await L.adminTab(p, 'people');
   await p.waitForTimeout(300);
   ok(await p.evaluate(() => document.querySelector('#a-r1').value) === 'head', 'admin: Ann shows as Head chef');
   await p.context().close();

@@ -6,7 +6,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
 (async () => {
   const b = await L.start();
   const p = await L.open(b, '#/admin', { admin: true, wait: 1800 });
-  await p.click('[data-p="a-tab"][data-t="minutes"]');
+  await L.adminTab(p, 'minutes');
   await p.waitForTimeout(400);
   await p.click('[data-p="mn-new"]');
   await p.waitForTimeout(200);
