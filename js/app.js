@@ -380,7 +380,9 @@
   /* Search, with the recipe count above it and the Pass / Tiles switch right next to it. */
   function searchField(placeholder, count) {
     return '<div class="field find-bar"><div class="field-head"><label class="label" for="find">Search</label>' + (count != null ? '<span class="count' + (/ of /.test(count) ? ' is-on' : '') + '" id="count">' + esc(count) + '</span>' : '') + '</div>' +
-      '<div class="search-row"><input id="find" class="search" type="search" autocomplete="off" data-k="find" placeholder="' + esc(placeholder) + '" value="' + esc(ui.query) + '">' + viewSwitch() + '</div></div>';
+      // autocorrect off: iOS would turn "parmy" into "party" before the book's own typo fix sees it
+      '<div class="search-row"><span class="find-wrap' + (ui.query ? ' has-q' : '') + '"><input id="find" class="search" type="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" data-k="find" placeholder="' + esc(placeholder) + '" value="' + esc(ui.query) + '">' +
+      '<button type="button" class="find-x" data-act="clearfind" aria-label="Clear the search">&times;</button></span>' + viewSwitch() + '</div></div>';
   }
   function freeChips(scroll) {
     return '<div class="field"><span class="label" id="free-label">Free from</span><div class="chips' + (scroll ? ' scroll' : '') + '" role="group" aria-labelledby="free-label">' +
@@ -393,9 +395,19 @@
   function lensFold() {
     return '<details class="lens-fold"' + (ui.lens ? ' open' : '') + '><summary><span class="label">Allergen lens</span>' + (ui.lens ? '<span class="lens-on">' + esc(ui.lens) + '</span>' : '<span class="hint">Show where an allergen is</span>') + '</summary>' + lensChips() + '</details>';
   }
-  function lensChips() {
+  /* The Pass list: one row of allergen chips with a switch, Show where (the lens, as before) or Free from */
+  function allergenRow() {
+    var free = ui.amode === 'free' || (!ui.amode && ui.free.length && !ui.lens);
+    if (!free) return lensChips(true);
+    return '<div class="field"><div class="row-label"><span class="label" id="free-label">Allergens</span>' + amodeSwitch(true) + '</div><div class="chips scroll" role="group" aria-labelledby="free-label">' +
+      D.allergens.map(function (a) { var on = ui.free.indexOf(a) >= 0; return '<button type="button" class="chip" data-act="free" data-val="' + esc(a) + '" data-k="free:' + esc(a) + '" aria-pressed="' + on + '">' + esc(a) + '</button>'; }).join('') + '</div></div>';
+  }
+  function amodeSwitch(free) {
+    return '<span class="amode" role="group" aria-label="What the allergen chips do"><button type="button" class="chip sq" data-act="amode" data-val="lens" aria-pressed="' + !free + '">Show where</button><button type="button" class="chip sq" data-act="amode" data-val="free" aria-pressed="' + free + '">Free from</button></span>';
+  }
+  function lensChips(withSwitch) {
     var hint = ui.lens ? 'Marked = has ' + ui.lens + '. ? = may have it.' : 'Pick one to see where it is, at every level.';
-    return '<div class="field"><div class="row-label"><span class="label" id="lens-label">Allergen lens</span><span class="hint">' + esc(hint) + '</span></div>' +
+    return '<div class="field"><div class="row-label"><span class="label" id="lens-label">' + (withSwitch ? 'Allergens' : 'Allergen lens') + '</span>' + (withSwitch ? amodeSwitch(false) : '') + '<span class="hint">' + esc(hint) + '</span></div>' +
       '<div class="chips scroll" role="group" aria-labelledby="lens-label">' + D.allergens.map(function (a) {
         return '<button type="button" class="chip" data-act="lens" data-val="' + esc(a) + '" data-k="lens:' + esc(a) + '" aria-pressed="' + (ui.lens === a) + '">' + esc(a) + '</button>';
       }).join('') + '</div></div>';
@@ -519,7 +531,7 @@
           (missing[r.id].length ? '<span class="tag maybe">Allergens incomplete</span>' : '') + '</span></a>';
       }).join('') + '</div></section>';
     }).join('');
-    return searchNote() + (any ? '<div class="tile-groups">' + html + '</div>' : '<div class="empty">No recipes match. Clear the search or the filters.</div>');
+    return searchNote() + (any ? '<div class="tile-groups">' + html + '</div>' : '<div class="empty">No recipes match. <button type="button" class="btn" data-act="clearall">Clear search and filters</button></div>');
   }
   // The Functions chip sits first after All so it is always on view; every other chip follows the menu order.
   function kindChips() {
@@ -540,13 +552,15 @@
   }
 
   /* ---------- view C: the pass ---------- */
+  function passShelves() { return SHELVES.filter(function (sh) { return ui.kind === 'all' || sh.key === ui.kind || (sh.key === 'prep' && (ui.kind === 'batch' || ui.kind === 'component')); }); }
+  function passOk(r) { return matches(r.id) && freeOk(r.id); }
   function shelvesHTML() {
-    var s = q(), n = 0;
-    var html = SHELVES.filter(function (sh) { return ui.kind === 'all' || sh.key === ui.kind || (sh.key === 'prep' && (ui.kind === 'batch' || ui.kind === 'component')); }).map(function (sh) {
-      var shown = s ? sh.list.filter(function (r) { return matches(r.id); }) : sh.list;
+    var s = q() || ui.free.length, n = 0;
+    var html = passShelves().map(function (sh) {
+      var shown = s ? sh.list.filter(passOk) : sh.list;
       if (!shown.length) return '';
       var items = shown.map(function (r) {
-        var h = hitId(r.id), m = matches(r.id), dish = isDish(r);
+        var h = hitId(r.id), m = passOk(r), dish = isDish(r);
         if (s && m) n++;
         var links = r.ingredients.filter(function (i) { return i.link && byId[i.link]; }).map(function (i) { return byId[i.link].short || byId[i.link].name; });
         var used = (usedIn[r.id] || []).map(function (id) { return byId[id].name; });
@@ -559,13 +573,13 @@
       }).join('');
       return '<section class="shelf" aria-label="' + esc(sh.title) + '"><div class="group-head"><span>' + esc(sh.title) + '</span></div><div class="shelf-items">' + items + '</div><div class="rail" aria-hidden="true"></div></section>';
     }).join('');
-    return searchNote() + html + (s && !n ? '<div class="empty">Nothing on the pass matches. Clear the search.</div>' : '');
+    return searchNote() + html + (s && !n ? '<div class="empty">Nothing on the pass matches. <button type="button" class="btn" data-act="clearall">Clear search and filters</button></div>' : '');
   }
   function passCount() {
-    var s = q();
-    if (!s) return plural(D.recipes.length, 'recipe', 'recipes') + ' on the pass';
-    var n = D.recipes.filter(function (r) { return matches(r.id); }).length;
-    return n + ' of ' + D.recipes.length + ' match';
+    var all = [], seen = {};
+    passShelves().forEach(function (sh) { sh.list.forEach(function (r) { if (!seen[r.id]) { seen[r.id] = 1; all.push(r); } }); });
+    if (!q() && !ui.free.length) return plural(all.length, 'recipe', 'recipes') + ' on the pass';
+    return all.filter(passOk).length + ' of ' + all.length + ' match';
   }
   function pinHTML(p, k, stack) {
     var h = p.link ? (byId[p.link] ? hitId(p.link) : (ui.lens ? 'may' : null)) : hit(p.tags || []);
@@ -581,7 +595,7 @@
     var stack = route.stack;
     if (!stack.length) {
       return '<div class="page">' + '<main id="main" style="display: flex; flex-direction: column; gap: 1.1rem">' +
-        searchField('Dish, ingredient or allergen', passCount()) + kindChips() + lensChips() + '<div id="shelves" class="shelves">' + shelvesHTML() + '</div></main>' + footer() + '</div>';
+        searchField('Dish, ingredient or allergen', passCount()) + kindChips() + allergenRow() + '<div id="shelves" class="shelves">' + shelvesHTML() + '</div></main>' + footer() + '</div>';
     }
     var r = byId[stack[stack.length - 1]], dish = isDish(r);
     var trail = '<nav class="trail" aria-label="Zoom level"><a class="pill-link" href="#/recipes">' + ICON.left + 'The pass</a>' + stack.map(function (id, i) {
@@ -609,15 +623,66 @@
   }
 
   /* ---------- welcome and settings ---------- */
-  var MINI = {
-    tiles: '<svg viewBox="0 0 240 130" aria-hidden="true"><rect width="240" height="130" fill="#FBFAF7"/><g fill="#FFFFFF" stroke="#D9D4C8" stroke-width="2"><rect x="12" y="14" width="66" height="48" rx="6"/><rect x="87" y="14" width="66" height="48" rx="6"/><rect x="162" y="14" width="66" height="48" rx="6"/><rect x="12" y="70" width="66" height="48" rx="6"/><rect x="87" y="70" width="66" height="48" rx="6"/><rect x="162" y="70" width="66" height="48" rx="6"/></g><g fill="#E2602A"><rect x="62" y="20" width="10" height="8" rx="1"/><rect x="137" y="20" width="10" height="8" rx="1"/><rect x="212" y="20" width="10" height="8" rx="1"/><rect x="62" y="76" width="10" height="8" rx="1"/><rect x="137" y="76" width="10" height="8" rx="1"/><rect x="212" y="76" width="10" height="8" rx="1"/></g><g fill="#1C1D1F"><rect x="20" y="38" width="38" height="6" rx="2"/><rect x="95" y="38" width="38" height="6" rx="2"/><rect x="170" y="38" width="38" height="6" rx="2"/><rect x="20" y="94" width="38" height="6" rx="2"/><rect x="95" y="94" width="38" height="6" rx="2"/><rect x="170" y="94" width="38" height="6" rx="2"/></g></svg>',
-    pass: '<svg viewBox="0 0 240 130" aria-hidden="true"><rect width="240" height="130" fill="#FBFAF7"/><g fill="#FFFFFF" stroke="#D3CEC4" stroke-width="2"><circle cx="36" cy="34" r="20"/><circle cx="92" cy="34" r="20"/><circle cx="148" cy="34" r="20"/><circle cx="204" cy="34" r="20"/></g><g><circle cx="36" cy="34" r="11" fill="#C98A45"/><circle cx="92" cy="34" r="12" fill="#B97A36"/><circle cx="148" cy="34" r="14" fill="#EFA444"/><rect x="194" y="26" width="20" height="14" rx="4" fill="#7A391D"/></g><rect x="10" y="60" width="220" height="5" rx="2.5" fill="#CFD3D8"/><g fill="#DADDE1" stroke="#A9AFB6" stroke-width="2"><rect x="16" y="76" width="46" height="32" rx="6"/><rect x="72" y="76" width="46" height="32" rx="6"/><rect x="128" y="76" width="46" height="32" rx="6"/><rect x="184" y="76" width="46" height="32" rx="6"/></g><rect x="21" y="81" width="36" height="22" rx="3" fill="#FBF7EE"/><rect x="77" y="81" width="36" height="22" rx="3" fill="#EFA444"/><rect x="133" y="81" width="36" height="22" rx="3" fill="#8E3A66"/><rect x="189" y="81" width="36" height="22" rx="3" fill="#B8742F"/><rect x="10" y="114" width="220" height="5" rx="2.5" fill="#CFD3D8"/></svg>'
-  };
-  function viewOptions(act, role) {
-    return '<div class="views"' + (role ? ' role="radiogroup" aria-label="How the recipe book opens"' : '') + '>' + VIEWS.map(function (v) {
+  /* Opens with: each view drawn small on a computer and on a phone, so staff see what they pick (20 Oct 2026).
+     Drawn from the real pages: dark top bar, search and the Pass / Tiles switch, then plates or cards, the tab bar on a phone. */
+  var MINI_FOOD = ['#7A391D', '#8E3A66', '#C98A45', '#B8742F', '#EFA444', '#6E8B3D', '#B97A36'];
+  function miniPlate(cx, cy, r, i) {
+    return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="#fff" stroke="#D3CEC4" stroke-width="1"/><circle cx="' + cx + '" cy="' + cy + '" r="' + (r * 0.55).toFixed(1) + '" fill="' + MINI_FOOD[i % MINI_FOOD.length] + '"/>' +
+      '<rect x="' + (cx - r * 0.75).toFixed(1) + '" y="' + (cy + r + 2.5).toFixed(1) + '" width="' + (r * 1.5).toFixed(1) + '" height="2.4" rx="1" fill="#1C1D1F"/>';
+  }
+  function miniCard(x, y, w, h, i) {
+    var r = Math.min(h * 0.2, w * 0.13);
+    return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="2.5" fill="#fff" stroke="#D9D4C8" stroke-width="0.8"/>' +
+      '<rect x="' + (x + 3) + '" y="' + (y + 3.5) + '" width="' + (w * 0.3).toFixed(1) + '" height="1.6" rx="0.8" fill="#E2602A"/><rect x="' + (x + w - 8) + '" y="' + (y + 3) + '" width="5" height="4" rx="1" fill="#E2602A"/>' +
+      '<rect x="' + (x + 3) + '" y="' + (y + 9.5) + '" width="' + (w * 0.5).toFixed(1) + '" height="3.2" rx="1" fill="#1C1D1F"/>' +
+      [0, 1, 2].map(function (k) { return '<rect x="' + (x + 3) + '" y="' + (y + 15.5 + k * 3.2) + '" width="' + (w * 0.52).toFixed(1) + '" height="1.5" rx="0.7" fill="#B9B4AA"/>'; }).join('') +
+      '<rect x="' + (x + 3) + '" y="' + (y + h - 6) + '" width="8" height="3.4" rx="1" fill="none" stroke="#1C1D1F" stroke-width="0.6"/>' +
+      miniPlateOnly(x + w - r - 4, y + h * 0.58, r, i);
+  }
+  function miniPlateOnly(cx, cy, r, i) {
+    return '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + r.toFixed(1) + '" fill="#fff" stroke="#D3CEC4" stroke-width="0.8"/><circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + (r * 0.55).toFixed(1) + '" fill="' + MINI_FOOD[i % MINI_FOOD.length] + '"/>';
+  }
+  function miniShot(view, phone) {
+    var W = phone ? 64 : 200, H = 128, id = 'mc-' + view + (phone ? 'p' : 'd'), g = '', i;
+    var top = phone ? 15 : 13, pad = phone ? 4 : 8;
+    // top bar: the name on the left, the menu pills in the middle on a computer, the round buttons on the right
+    g += '<rect width="' + W + '" height="' + top + '" fill="#2b2a27"/><rect x="' + pad + '" y="' + (top / 2 - 2.5) + '" width="' + (phone ? 22 : 34) + '" height="5" rx="1.5" fill="#FBFAF7"/>';
+    if (!phone) for (i = 0; i < 5; i++) g += '<rect x="' + (78 + i * 12) + '" y="4.5" width="10" height="4" rx="2" fill="' + (i ? 'none' : '#FBFAF7') + '" stroke="#FBFAF7" stroke-width="0.6"/>';
+    for (i = 0; i < 2; i++) g += '<circle cx="' + (W - pad - 2.5 - i * 7) + '" cy="' + (top / 2) + '" r="2.5" fill="none" stroke="#FBFAF7" stroke-width="0.6"/>';
+    // search box and the Pass / Tiles switch, with the side that is on filled in
+    var sy = top + 5, sw = phone ? 16 : 30;
+    g += '<rect x="' + pad + '" y="' + sy + '" width="' + (W - pad * 2 - sw - 2) + '" height="7" rx="2" fill="#fff" stroke="#1C1D1F" stroke-width="0.6"/>' +
+      '<rect x="' + (W - pad - sw) + '" y="' + sy + '" width="' + sw + '" height="7" rx="3.5" fill="#fff" stroke="#1C1D1F" stroke-width="0.6"/>' +
+      '<rect x="' + (W - pad - sw + (view === 'pass' ? 0 : sw / 2)) + '" y="' + sy + '" width="' + (sw / 2) + '" height="7" rx="3.5" fill="#1C1D1F"/>';
+    // filter chips and the orange section heading
+    var cy = sy + 11;
+    for (i = 0; i < (phone ? 3 : 8); i++) g += '<rect x="' + (pad + i * (phone ? 19 : 23)) + '" y="' + cy + '" width="' + (phone ? 16 : 20) + '" height="5" rx="2.5" fill="' + (i ? 'none' : '#1C1D1F') + '" stroke="#1C1D1F" stroke-width="0.5"/>';
+    var hy = cy + 10;
+    g += '<rect x="' + pad + '" y="' + hy + '" width="' + (phone ? 20 : 26) + '" height="2.2" rx="1" fill="#E2602A"/>';
+    var y0 = hy + 6, n = 0;
+    if (view === 'pass') {
+      var cols = phone ? 2 : 7, r = phone ? 12 : 10.5, step = (W - pad * 2) / cols;
+      for (var row = 0; row < 3; row++) for (i = 0; i < cols; i++) g += miniPlate(+(pad + step * (i + 0.5)).toFixed(1), +(y0 + r + 1 + row * (r * 2 + 10)).toFixed(1), r, n++);
+    } else {
+      var cc = phone ? 1 : 4, gap = 3, cw = (W - pad * 2 - gap * (cc - 1)) / cc, ch = phone ? 32 : 36;
+      for (var rw = 0; rw < 3; rw++) for (i = 0; i < cc; i++) g += miniCard(+(pad + i * (cw + gap)).toFixed(1), y0 + rw * (ch + gap), +cw.toFixed(1), ch, n++);
+    }
+    // the phone's dark tab bar with Recipes lit in orange
+    if (phone) {
+      g += '<rect y="' + (H - 11) + '" width="' + W + '" height="11" fill="#2b2a27"/><rect y="' + (H - 11) + '" width="' + W + '" height="0.8" fill="#E2602A"/>';
+      for (i = 0; i < 5; i++) g += '<rect x="' + (5 + i * 12) + '" y="' + (H - 7.5) + '" width="6" height="4.5" rx="1" fill="' + (i ? '#8B8780' : '#E2602A') + '"/>';
+    }
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true" focusable="false"><defs><clipPath id="' + id + '"><rect width="' + W + '" height="' + H + '" rx="' + (phone ? 7 : 3) + '"/></clipPath></defs>' +
+      '<g clip-path="url(#' + id + ')"><rect width="' + W + '" height="' + H + '" fill="#FBFAF7"/>' + g + '</g>' +
+      '<rect x="0.5" y="0.5" width="' + (W - 1) + '" height="' + (H - 1) + '" rx="' + (phone ? 7 : 3) + '" fill="none" stroke="#1C1D1F" stroke-width="1"/></svg>';
+  }
+  function viewOptions(act) {
+    return '<div class="views" role="radiogroup" aria-label="How the recipe book opens">' + VIEWS.map(function (v) {
       var on = settings.view === v.id;
-      return '<button type="button" class="view-opt" data-act="' + act + '" data-val="' + v.id + '" data-k="' + act + ':' + v.id + '"' +
-        (role ? ' role="radio" aria-checked="' + on + '"' : '') + '>' + MINI[v.id] + '<span class="vo-name">' + esc(v.name) + '</span><span class="vo-desc">' + esc(v.desc) + '</span></button>';
+      return '<button type="button" class="view-opt" role="radio" data-act="' + act + '" data-val="' + v.id + '" data-k="' + act + ':' + v.id + '" aria-checked="' + on + '">' +
+        '<span class="vo-shots"><span class="vo-shot vo-desk">' + miniShot(v.id, false) + '<span class="vo-cap">Computer</span></span>' +
+        '<span class="vo-shot vo-phone">' + miniShot(v.id, true) + '<span class="vo-cap">Phone</span></span></span>' +
+        '<span class="vo-name">' + esc(v.name) + (on ? '<span class="vo-on">Opens with this</span>' : '') + '</span><span class="vo-desc">' + esc(v.desc) + '</span></button>';
     }).join('') + '</div>';
   }
   function viewPrep() {
@@ -675,9 +740,7 @@
         return '<button type="button" class="chip" data-act="settext" data-val="' + t[0] + '" data-k="settext:' + t[0] + '" aria-pressed="' + (settings.text === t[0]) + '">' + esc(t[1]) + '</button>';
       }).join('') + '</div></section>' +
       installHTML() +
-      '<section class="set-block" aria-label="Opens with"><span class="label">Opens with</span><span class="hint">How the recipe book looks when you arrive.</span><div class="chips" role="radiogroup" aria-label="How the recipe book opens">' + VIEWS.map(function (v) {
-        return '<button type="button" class="chip" role="radio" data-act="setview" data-val="' + v.id + '" data-k="setview:' + v.id + '" aria-checked="' + (settings.view === v.id) + '" aria-pressed="' + (settings.view === v.id) + '">' + esc(v.name) + '</button>';
-      }).join('') + '</div></section>' +
+      '<section class="set-block" aria-label="Opens with"><span class="label">Opens with</span><span class="hint">Tap one. This is how the recipes look when you arrive, on a computer and on a phone.</span>' + viewOptions('setview') + '</section>' +
       '<section class="set-block set-qr" aria-label="Open on a phone"><span class="label">Open on a phone</span><div class="qr-row"><img class="qr-img" src="qr.svg" width="180" height="180" alt="QR code that opens the Kitchen Book">' +
       '<div><p class="hint">Scan with a phone camera to open the Kitchen Book on that phone, then add it to the home screen so it is one tap away.</p><p class="qr-url">kuschikuschbert.github.io/leichhardt-kitchen</p>' +
       '<div class="btn-row"><a class="btn" href="qr-sign.pdf" target="_blank" rel="noopener">Print the A4 sign</a><a class="btn" href="qr.png" download="Leichhardt Kitchen Book QR.png">Download the QR code</a></div></div></div></section>' +
@@ -913,9 +976,12 @@
     l.push({ q: s.slice(0, 60), at: t });
     writeJSON(LS, 'lk.miss', l.slice(-40));
   }
+  // Enter (the Search key) drops the phone keyboard so the results can be seen
+  app.addEventListener('keydown', function (e) { if (e.target.id === 'find' && e.key === 'Enter') { e.preventDefault(); e.target.blur(); } });
   app.addEventListener('input', function (e) {
     if (e.target.id !== 'find') return;
     ui.query = e.target.value;
+    var fw = e.target.parentNode; if (fw && fw.classList) fw.classList.toggle('has-q', !!ui.query);
     clearTimeout(timer);
     timer = setTimeout(updateResults, 60);
     clearTimeout(missTimer);
@@ -938,6 +1004,11 @@
     }
     // Done in Settings goes back to where the person came from, or to the start when Settings was opened directly
     if (act === 'done') { if (window.__lkNav) { e.preventDefault(); history.back(); } return; }
+    if (act === 'amode') { ui.amode = val; if (val === 'free') ui.lens = null; else ui.free = []; render(); return; }
+    if (act === 'clearfind' || act === 'clearall') {
+      ui.query = ''; if (act === 'clearall') { ui.free = []; ui.kind = 'all'; ui.lens = null; }
+      render(); var fi = document.getElementById('find'); if (fi) fi.focus(); return;
+    }
     if (act === 'jump') { var jt = document.getElementById(val); if (jt) jt.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     if (act === 'kind') { ui.kind = val; }
     else if (act === 'free') { ui.free = ui.free.indexOf(val) >= 0 ? ui.free.filter(function (x) { return x !== val; }) : ui.free.concat([val]); }
