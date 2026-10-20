@@ -21,7 +21,7 @@ const elsewhere = (page, change) => page.evaluate(([k, ch]) => {
 
   // head chef, People tab: a clean draft follows another phone's change
   let p = await L.open(b, '#/admin', { admin: true, wait: 1500 });
-  await p.click('[data-p="a-tab"][data-t="people"]');
+  await L.adminTab(p, 'people');
   await p.waitForTimeout(300);
   await elsewhere(p, { add: 'Dee' });
   await p.waitForTimeout(400);

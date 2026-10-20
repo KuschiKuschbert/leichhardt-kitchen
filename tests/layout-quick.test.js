@@ -33,11 +33,11 @@ const onTop = (p, sel) => p.evaluate(s => {
   // admin: every tab can be seen and tapped at 1280 and 768, and Tools opens
   for (const w of [1280, 768]) {
     p = await L.open(b, '#/admin', { admin: true, width: w, height: 900, wait: 1800 });
-    v = await onTop(p, '[data-p="a-tab"][data-t="tools"]');
-    ok(v === true, w + ' admin: the Tools tab can be seen and tapped (' + v + ')');
-    v = await onTop(p, '[data-p="a-tab"][data-t="people"]');
-    ok(v === true, w + ' admin: the People tab can be seen and tapped (' + v + ')');
-    await p.click('[data-p="a-tab"][data-t="people"]'); await p.waitForTimeout(300);
+    v = await onTop(p, '[data-p="a-group"][data-g="settings"]');
+    ok(v === true, w + ' admin: the Settings group can be seen and tapped (' + v + ')');
+    v = await onTop(p, '[data-p="a-group"][data-g="people"]');
+    ok(v === true, w + ' admin: the People group can be seen and tapped (' + v + ')');
+    await L.adminTab(p, 'people'); await p.waitForTimeout(300);
     const h = await p.evaluate(() => Math.max(...[...document.querySelectorAll('[data-p="a-reset-pin"]')].map(e => e.getBoundingClientRect().height)));
     ok(h > 0 && h <= 52, w + ' admin: Reset PIN fits on one line (' + Math.round(h) + ' px high)');
     ok(p.errors.length === 0, w + ' admin: no page errors ' + p.errors.join(' | '));
@@ -46,11 +46,11 @@ const onTop = (p, sel) => p.evaluate(s => {
 
   // phone admin: the Save bar sits above the tab bar
   p = await L.open(b, '#/admin', { admin: true, wait: 1800 });
-  await p.click('[data-p="a-tab"][data-t="people"]'); await p.waitForTimeout(300);
+  await L.adminTab(p, 'people'); await p.waitForTimeout(300);
   await p.evaluate(() => window.scrollTo(0, 0)); await p.waitForTimeout(150);
   v = await onTop(p, '[data-p="a-save"]');
   ok(v === true, 'phone admin: Save changes can be tapped, not under the tab bar (' + v + ')');
-  ok(await p.evaluate(() => getComputedStyle(document.querySelector('.a-tabs')).position) === 'static', 'phone admin: the tabs scroll away with the page');
+  ok(await p.evaluate(() => !document.querySelector('.a-tabs') || getComputedStyle(document.querySelector('.a-tabs')).position === 'static'), 'phone admin: the tabs scroll away with the page');
   await p.context().close();
 
   await b.close();
