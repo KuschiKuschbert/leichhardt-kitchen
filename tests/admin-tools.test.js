@@ -22,6 +22,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   await L.adminTab(p, 'tools');
   await p.waitForTimeout(200);
   await p.fill('#a-newpin', NEW);
+  await p.fill('#a-newpin2', NEW);
   await p.click('[data-p="move-pin"]');
   await p.waitForTimeout(150);
   ok(!(await store(p))[newKey(['staffpins', 'sam'])], 'move PIN: the first tap only arms the button');
