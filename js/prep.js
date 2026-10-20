@@ -4639,7 +4639,7 @@
      #/drinks (the chef mark menu) is for looking at, nothing is sent: everyone in the book
      today is in by themselves, the rest wait behind a note, and the order counts the same drinks together. The team's
      drinks and when each person last opened the book are read once when the page opens, again only after 30 minutes,
-     and kept on the phone (lk.drinks). Who was added or taken out by hand stays on the phone for the day (lk.drinks.run). */
+     and kept on the phone (lk.drinks). Nobody ticks anyone: the page only shows. */
   // id, label, and what to ask: s size, m milk, e strength (espresso drinks)
   var DK_KINDS = [['flat', 'Flat white', 'sme'], ['latte', 'Latte', 'sme'], ['cap', 'Cappuccino', 'sme'], ['long', 'Long black', 'se'], ['short', 'Short black', 'e'],
     ['picc', 'Piccolo', 'me'], ['mac', 'Macchiato', 'me'], ['mocha', 'Mocha', 'sme'], ['icedl', 'Iced latte', 'sme'], ['icedc', 'Iced coffee', 'sm'],
@@ -4651,7 +4651,7 @@
     ['llb', 'Lemon lime and bitters'], ['ginger', 'Ginger beer'], ['oj', 'Orange juice'], ['icedtea', 'Iced tea'], ['energy', 'Energy drink']];
   var DK_SUGAR = [['none', 'No sugar'], ['1', '1 sugar'], ['2', '2 sugars'], ['3', '3 sugars'], ['sweet', 'Sweetener']];
   var DK_NOTE = 40, DK_OTHER = 60, DK_STALE = 30 * 60000;
-  var dkf = null, dkEditing = false, dkMsg = '', dkBusy = false, dkQ = '', dkList = null, dkAt = 0, dkLoading = false, dkErr = false, dkSeen = {}, dkAll = false, dkOpen = '';
+  var dkf = null, dkEditing = false, dkMsg = '', dkBusy = false, dkList = null, dkAt = 0, dkLoading = false, dkErr = false, dkSeen = {}, dkAll = false, dkOpen = '';
   (function () { try { var c = JSON.parse(lsGet('lk.drinks') || 'null'); if (c && c.pin === S.pin && c.by) { dkList = c.by; dkSeen = c.seen || {}; dkAt = 0; } } catch (e) {} })();
   function dkLabel(list, id) { var x = list.filter(function (k) { return k[0] === id; })[0]; return x ? x[1] : ''; }
   function dkKind(id) { return DK_KINDS.filter(function (k) { return k[0] === id; })[0] || null; }
@@ -4705,13 +4705,6 @@
   }
   /* in the book today: opened it with their PIN today, or the person on this phone */
   function dkToday(id) { return id === S.who || (!!dkSeen[id] && T.day(dkSeen[id]) === dayNow()); }
-  /* who is in: everyone in the book today with a usual, plus the ones ticked by hand (on), less the ones taken out (off) */
-  function dkRunGet() {
-    try { var r = JSON.parse(lsGet('lk.drinks.run') || 'null'); if (r && r.d === dayNow() && Array.isArray(r.on) && Array.isArray(r.off)) return r; } catch (e) {}
-    return { d: dayNow(), on: [], off: [] };
-  }
-  function dkRunSet(r) { lsSet('lk.drinks.run', r.on.length || r.off.length ? JSON.stringify(r) : ''); }
-  function dkIn(r, id) { return r.off.indexOf(id) < 0 && (r.on.indexOf(id) >= 0 || dkToday(id)); }
   function dkSave() {
     var p = who(), f = dkf;
     if (dkBusy || !fb || !p || !f) return;
@@ -4740,12 +4733,6 @@
     if (a === 'dk-skip') { S.drinkAsk = ''; dkEditing = false; dkf = null; dkFlag('skip'); draw(); toast('No worries. Set it any time from the chef hat at the top.'); return; }
     if (a === 'dk-later') { S.drinkAsk = ''; dkFlag('later'); draw(); return; }
     if (a === 'dk-set') { S.drinkAsk = ''; dkFlag('later'); dkEdit(); return; }   // the link goes on to #/drinks with the form open
-    if (a === 'dk-in') {
-      var r = dkRunGet(), pid = el.getAttribute('data-id'), was = dkIn(r, pid);
-      r.on = r.on.filter(function (x) { return x !== pid; }); r.off = r.off.filter(function (x) { return x !== pid; });
-      if (was) r.off.push(pid); else if (!dkToday(pid)) r.on.push(pid);
-      dkRunSet(r); draw(); return;
-    }
     if (a === 'dk-all') { dkAll = !dkAll; draw(); return; }
     if (a === 'dk-open') { dkOpen = dkOpen === el.getAttribute('data-f') ? '' : el.getAttribute('data-f'); draw(); return; }
     if (a === 'dk-retry') { dkErr = false; dkLoad(true); draw(); }
@@ -4796,34 +4783,28 @@
     return '<div class="dr-nudge" role="note"><p><b>New: the drinks run.</b> Lock in your usual coffee or drink, so whoever does the run gets it right.</p>' +
       '<div class="btn-row"><a class="btn dark" href="#/drinks" data-p="dk-set">Set my usual</a><button type="button" class="btn" data-p="dk-later">Not now</button></div></div>';
   }
-  function dkTeam() {
-    var q = dkQ.trim().toLowerCase();
-    return people().filter(function (p) { return !q || p.name.toLowerCase().indexOf(q) >= 0; })
-      .sort(function (a, b) { return a.name.localeCompare(b.name); });
-  }
-  /* Who is in today shows straight away (in the book today, or ticked by hand); everyone else waits behind a note at
-     the bottom, for people who have not opened the book yet. A search looks through everyone. People with a usual are a
-     tap to put them in or take them out; the ones without share one line at the end. */
-  function dkTeamHTML() {
-    var run = dkRunGet(), all = dkTeam(), none = [], q = dkQ.trim();
-    var l = dkAll || q ? all : all.filter(function (p) { return dkToday(p.id) || run.on.indexOf(p.id) >= 0; }), more = all.length - l.length;
-    var rows = l.map(function (p) {
-      var d = dkList ? dkList[p.id] : null, sum = dkSum(d), on = dkIn(run, p.id), nm = esc(p.name) + (p.id === S.who ? ' (you)' : '');
-      if (!sum) { none.push(nm); return ''; }
-      return '<li><button type="button" class="dr-row' + (on ? ' is-in' : '') + '" data-p="dk-in" data-id="' + esc(p.id) + '" aria-pressed="' + on + '"><span class="dr-box" aria-hidden="true">' + (on ? '✓' : '') + '</span>' +
-        '<span class="dr-txt"><span class="dr-who">' + nm + '</span><span class="dr-what">' + esc(sum) + '</span></span></button></li>';
+  function dkTeam() { return people().slice().sort(function (a, b) { return a.name.localeCompare(b.name); }); }
+  /* one short line per person: "Reg oat flat white, 1 sugar. Coke No Sugar" */
+  function dkLine(d) { return [dkCoffee(d).replace(/^Regular /, 'Reg '), dkCold(d)].filter(Boolean).join('. '); }
+  /* a list to read, nobody is ticked by hand: a tick means the person opened the book with their PIN today */
+  function dkListHTML(l, ticked) {
+    var none = [], rows = l.map(function (p) {
+      var line = dkLine(dkList ? dkList[p.id] : null), nm = esc(p.name) + (p.id === S.who ? ' (you)' : '');
+      if (!line) { none.push(nm); return ''; }
+      return '<li class="dr-row"><span class="dr-tick" aria-hidden="true">' + (ticked ? '✓' : '') + '</span><span class="dr-who">' + nm + '</span><span class="dr-what">' + esc(line) + '</span></li>';
     }).join('');
-    if (none.length) rows += '<li class="dr-row is-none"><span class="dr-who">No usual yet:</span> ' + none.join(', ') + '. Ask them.</li>';
-    var tail = q ? '' : more ? '<button type="button" class="dr-more" data-p="dk-all" aria-expanded="false">Not signed in today: ' + more + (more === 1 ? ' more person' : ' more people') + '. Show them</button>'
-      : dkAll ? '<button type="button" class="dr-more" data-p="dk-all" aria-expanded="true">Show only who is in today</button>' : '';
-    return '<div class="dr-teamw"><ul class="dr-team">' + (all.length ? rows : '<li class="dr-row is-none">Nobody by that name.</li>') + '</ul>' + tail + '</div>';
+    return '<ul class="dr-team">' + rows + '</ul>' + (none.length ? '<p class="hint dr-none"><b>No usual yet:</b> ' + none.join(', ') + '. Ask them.</p>' : '');
   }
-  /* the order for the cafe: the same drinks counted together, then who has what */
-  function dkRunList() {
-    var run = dkRunGet();
-    return people().filter(function (p) { return dkIn(run, p.id) && dkSum(dkList ? dkList[p.id] : null); })
-      .sort(function (a, b) { return a.name.localeCompare(b.name); });
+  function dkCount(h, n) { return '<h3 class="ml-h3 dr-h">' + h + '<span class="dr-n">' + n + '</span></h3>'; }
+  /* who is on today, the order, then everyone else behind a note */
+  function dkTeamHTML() {
+    var all = dkTeam(), on = all.filter(function (p) { return dkToday(p.id); }), off = all.filter(function (p) { return !dkToday(p.id); });
+    return dkCount('On today', on.length) + dkListHTML(on, true) + dkRunHTML() +
+      (!off.length ? '' : dkAll ? dkCount('Not signed in today', off.length) + dkListHTML(off, false) + '<button type="button" class="dr-more" data-p="dk-all" aria-expanded="true">Hide them</button>'
+        : '<button type="button" class="dr-more" data-p="dk-all" aria-expanded="false">Not signed in today: ' + off.length + ' more. Show them</button>');
   }
+  /* the order: everyone on today with a usual, the same drinks counted together */
+  function dkRunList() { return dkTeam().filter(function (p) { return dkToday(p.id) && dkSum(dkList ? dkList[p.id] : null); }); }
   function dkGroups(l) {
     var g = {}, order = [];
     l.forEach(function (p) {
@@ -4832,11 +4813,10 @@
     });
     return order.map(function (k) { return g[k]; });
   }
-  /* the order, for everyone to see: the same drinks counted together */
   function dkRunHTML() {
     var l = dkRunList();
-    if (!l.length) return '<p class="hint dr-runnone">Nobody in yet. Tap the people who are in on the run.</p>';
-    return '<div class="dr-run" aria-live="polite"><h3 class="ml-h3">The order (' + l.length + (l.length === 1 ? ' person' : ' people') + ')</h3><ul class="dr-order">' + dkGroups(l).map(function (x) {
+    if (!l.length) return '';
+    return '<div class="dr-run"><h3 class="ml-h3">The order</h3><ul class="dr-order">' + dkGroups(l).map(function (x) {
       return '<li><b>' + x.n + ' x</b> ' + esc(x.t) + '</li>';
     }).join('') + '</ul></div>';
   }
@@ -4844,13 +4824,11 @@
     dkLoad();
     var mine = dkMine(), sum = dkSum(mine);
     var top = dkEditing ? dkFormHTML(false)
-      : '<div class="dr-mine"><span class="label">Your usual</span><p class="dr-what">' + (sum ? esc(sum) : dkList ? 'Not set yet.' : 'Loading...') + '</p>' +
-        '<button type="button" class="btn' + (sum ? '' : ' dark') + '" data-p="dk-edit">' + (sum ? 'Change it' : 'Set my usual') + '</button></div>';
+      : '<div class="dr-mine"><span class="dr-txt"><span class="label">Your usual</span><span class="dr-what">' + (sum ? esc(sum) : dkList ? 'Not set yet.' : 'Loading...') + '</span></span>' +
+        '<button type="button" class="dr-chg" data-p="dk-edit">' + (sum ? 'Change' : 'Set my usual') + '</button></div>';
     var team = !dkList ? (dkErr ? '<p class="p-err">Could not load the team\'s drinks. Check the connection.</p><div class="btn-row"><button type="button" class="btn" data-p="dk-retry">Try again</button></div>' : '<p class="hint">Loading...</p>')
-      : (people().length > 12 ? '<div class="field"><label class="label" for="dk-q">Find a name</label><input id="dk-q" class="search" data-k="dk-q" type="search" autocomplete="off" value="' + esc(dkQ) + '"></div>' : '') + dkTeamHTML() + dkRunHTML();
-    return '<section class="p-card dr-page"><h2 class="p-h" id="rtitle" tabindex="-1">Drinks run</h2>' +
-      (dkEditing ? '' : '<p class="hint">Everyone in the book today is in. Tap to take someone out or add them.</p>') + top + '</section>' +
-      (dkEditing ? '' : '<section class="p-card dr-runbox"><h3 class="ml-h3">Who is in</h3>' + team + '</section>');
+      : dkTeamHTML();
+    return '<section class="p-card dr-page"><h2 class="p-h" id="rtitle" tabindex="-1">Drinks run</h2>' + top + (dkEditing ? '' : team) + '</section>';
   }
 
   /* ---------- events ---------- */
@@ -5055,7 +5033,6 @@
     if (k === 'p-pin') { var pp = S.pinInput.length; S.pinInput = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.pinInput; pinCells(el); if (pp < 4 && S.pinInput.length === 4) submitKitchenPin(); return; }
     if (k === 'a-bulk') { S.bulk = el.value; return; }
     if (k === 'dk-note' || k === 'dk-other') { dkf[k.slice(3)] = el.value.slice(0, k === 'dk-note' ? DK_NOTE : DK_OTHER); return; }
-    if (k === 'dk-q') { dkQ = el.value; var dkl = S.root.querySelector('.dr-teamw'); if (dkl) dkl.outerHTML = dkTeamHTML(); return; }
     if (k === 'ml-text') { mlf.text = el.value.slice(0, ML_MAX); mlMsg = ''; var mll = S.root.querySelector('#ml-left'), mln = ML_MAX - mlf.text.length; if (mll) mll.textContent = mln < 100 ? mln + ' characters left' : ''; return; }
     if (k === 'a-newpin') { S.newPin = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.newPin; return; }
     if (k === 'a-newpin2') { S.newPin2 = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.newPin2; return; }

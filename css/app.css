@@ -1375,7 +1375,7 @@ button.wm-a { width: 100%; border: 0; background: none; font: inherit; text-alig
 
 /* ---------- the drinks run (#/drinks, and "One more thing" after a first PIN) ---------- */
 .dr-form { outline: none; }
-.dr-form .field, .dr-page .field, .dr-runbox .field { margin: 0 0 14px; }
+.dr-form .field, .dr-page .field { margin: 0 0 14px; }
 .dr-chips { gap: 8px; }
 /* a folded group of chips: what is picked on one line, tap to open it */
 .dr-fold { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; width: 100%; min-height: 44px; padding: 8px 12px; border: 1.5px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
@@ -1384,36 +1384,33 @@ button.wm-a { width: 100%; border: 0; background: none; font: inherit; text-alig
 .dr-fold .dr-chg { flex: 0 0 auto; margin-left: auto; color: var(--ink); font-weight: 700; font-size: 0.875rem; text-decoration: underline; }
 .dr-fold.is-open { min-height: 0; margin: 0 0 8px; padding: 0; border: 0; background: none; align-items: center; }
 .dr-fold.is-open .label { flex: 1 1 auto; }
-.dr-more { display: block; width: 100%; min-height: 44px; margin: 0 0 14px; padding: 8px 4px; border: 0; border-top: 1px solid var(--line); background: none; color: var(--ink); font: inherit; font-weight: 600; text-align: left; text-decoration: underline; cursor: pointer; }
+.dr-more { display: block; width: 100%; min-height: 44px; margin: 12px 0 0; padding: 8px 4px; border: 0; border-top: 1px solid var(--line); background: none; color: var(--ink); font: inherit; font-weight: 600; text-align: left; text-decoration: underline; cursor: pointer; }
 .dr-eb { display: inline-block; margin: 0 0 4px; padding: 2px 8px; border-radius: 10px; background: var(--done-tint); color: var(--done); font-weight: 700; font-size: 0.8125rem; }
 .dr-prev { margin: 0 0 12px; padding: 10px 12px; border: 1.5px dashed var(--ink); border-radius: 8px; background: var(--beige); overflow-wrap: anywhere; }
 .dr-prev .label { display: block; margin-bottom: 2px; }
-.dr-mine { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 12px; padding: 10px 12px; border: 1.5px solid var(--ink); border-radius: var(--radius); background: var(--beige); }
-.dr-mine .label { flex: 1 0 100%; }
-.dr-mine .dr-what { flex: 1 1 8rem; margin: 0; font-weight: 600; overflow-wrap: anywhere; }
-.dr-mine .btn { flex: 0 0 auto; }
+.dr-mine { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; padding: 6px 4px 6px 12px; border-radius: var(--radius); background: var(--beige); }
+.dr-mine .dr-txt { flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0; }
+.dr-mine .label { margin: 0; }
+.dr-mine .dr-what { font-weight: 600; }
+.dr-chg { flex: 0 0 auto; min-height: 44px; padding: 0 10px; border: 0; background: none; color: var(--ink); font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
 .dr-nudge { margin: 0 0 14px; padding: 12px 14px; border-left: 4px solid var(--accent); background: var(--hit); border-radius: 6px; }
 .dr-nudge p { margin: 0 0 8px; }
-.dr-team { list-style: none; margin: 0 0 14px; padding: 0; }
-.dr-team > li { border-top: 1px solid var(--line); }
-.dr-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 8px 4px; border: 0; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
-.dr-row.is-none { display: block; min-height: 0; color: var(--muted); cursor: default; padding: 10px 4px; }
-.dr-row.is-in { background: var(--done-tint); }
-.dr-box { flex: 0 0 32px; width: 32px; height: 32px; border: 2px solid var(--ink); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; background: var(--paper); }
-.dr-row.is-in .dr-box { background: var(--done); border-color: var(--done); color: #fff; }
-.dr-txt { display: flex; flex-direction: column; min-width: 0; }
-.dr-who { font-weight: 700; }
-.dr-row.is-none .dr-who { color: var(--ink); }
-.dr-what { overflow-wrap: anywhere; }
-.dr-run { padding: 10px 12px; border: 1.5px solid var(--ink); border-radius: var(--radius); background: var(--paper); }
+.dr-h { display: flex; justify-content: space-between; align-items: baseline; margin: 0 0 4px; }
+.dr-n { color: var(--muted); font-weight: 400; }
+.dr-team { list-style: none; margin: 0; padding: 0; }
+/* a row to read, not to tap: tick, name, drink on one line (the drink wraps under itself) */
+.dr-row { display: flex; align-items: baseline; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line); }
+.dr-tick { flex: 0 0 16px; color: var(--done); font-weight: 700; }
+.dr-who { flex: 0 0 auto; max-width: 40%; font-weight: 700; overflow-wrap: anywhere; }
+.dr-what { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.dr-row .dr-what { color: var(--muted); }
+.dr-none { margin: 6px 0 0; }
+.dr-run { margin: 12px 0 0; padding: 8px 12px; border-radius: var(--radius); background: var(--beige); }
 .dr-run .ml-h3 { margin: 0; }
-.dr-order { margin: 6px 0 0; padding-left: 1.1rem; }
+.dr-order { list-style: none; margin: 4px 0 0; padding: 0; }
 .dr-order li { margin: 2px 0; overflow-wrap: anywhere; }
-.dr-runnone { margin: 0; }
 @media (max-width: 719px) {
-  .dr-row { min-height: 48px; padding: 6px 4px; gap: 10px; }
-  .dr-box { flex-basis: 28px; width: 28px; height: 28px; }
-  .dr-form .field, .dr-page .field, .dr-runbox .field { margin-bottom: 10px; }
+  .dr-form .field, .dr-page .field { margin-bottom: 10px; }
   .dr-chips { gap: 6px; }
   .dr-chips .chip { padding: 0 0.7rem; }
 }
