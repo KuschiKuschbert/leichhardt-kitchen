@@ -416,6 +416,7 @@ img, svg { display: block; }
 /* ---------- admin panel tabs and layout ---------- */
 .a-tabs { position: sticky; top: 0; z-index: 12; display: flex; gap: 0.4rem; padding: 0.5rem 0; margin: 0 -0.25rem; background: var(--bg); border-bottom: 1.5px solid var(--ink); overflow-x: auto; scrollbar-width: none; }
 .a-tabs::-webkit-scrollbar { display: none; }
+.a-unsaved { align-self: center; font-weight: 700; color: var(--accent-ink); }
 @media (min-width: 600px) { .a-tabs { flex-wrap: wrap; overflow-x: visible; } }
 @media (max-width: 599px) { .a-tabs { position: static; } }
 .a-tab { flex: 1 0 auto; min-height: 46px; padding: 0 1.1rem; border: 1.5px solid var(--ink); border-radius: 999px; background: var(--paper); font: 700 1rem var(--body); color: var(--ink); cursor: pointer; }
@@ -1394,7 +1395,6 @@ html.gz-open, html.gz-open body { overflow: hidden; }
 .mlp-go { background: var(--ink); color: #fff; }
 .mlp-later { background: var(--paper); color: var(--ink); }
 
-.a-unsaved { align-self: center; font-weight: 700; color: var(--accent-ink); }
 /* ---------- readability (20 Oct 2026) ----------
    The amount is what a cook acts on, so it reads in ink, bold, in the body font, on one line. Allergen words are never
    the smallest text on a card, and "may have" tags get a tint as well as the dashed border. Small buttons use the body
