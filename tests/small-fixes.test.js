@@ -18,7 +18,7 @@ const { R, ok } = L.results(), { txt } = L;
   await p.context().close();
   // Team tab: the tallies say all time
   p = await L.open(b, '#/admin', { admin: true, wait: 1800 });
-  await p.click('[data-p="a-tab"][data-t="team"]');
+  await L.adminTab(p, 'team');
   await p.waitForTimeout(400);
   ok(/Who is writing and ticking \(all time\)/.test(await txt(p, '#prep-root') || ''), 'team: tallies labelled all time');
   ok(p.errors.length === 0, 'team: no page errors ' + p.errors.join(' | '));

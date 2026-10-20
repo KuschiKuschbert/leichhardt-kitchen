@@ -8,7 +8,7 @@ const cfg = p => p.evaluate(k => window.__fake.dump()[k], CFG);
 (async () => {
   const b = await L.start();
   const p = await L.open(b, '#/admin', { admin: true, width: 1280, height: 900, wait: 1800 });
-  await L.tap(p, '[data-p="a-tab"][data-t="people"]'); await p.waitForTimeout(300);
+  await L.adminTab(p, 'people'); await p.waitForTimeout(300);
   ok(await p.$('[data-p="a-save"][disabled]') !== null && await p.$('.a-unsaved') === null, 'nothing changed: Save is off, no count');
   await L.tap(p, '[data-p="a-remove-person"][data-i="2"]'); await p.waitForTimeout(150);
   ok(/Tap again: stopped working here/.test(await txt(p, '[data-p="a-remove-person"][data-i="2"]')), 'Stopped working here asks again');

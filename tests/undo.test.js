@@ -38,7 +38,7 @@ const larder = p => p.evaluate(() => [...document.querySelectorAll('.nb-rows li[
   // admin: a removed shift ping can be put back
   const extra = {}; extra[fsKey(['notes', 'n1'])] = { text: 'Delivery: Bidfood 09:00', tag: 'delivery', start: today, until: today, dows: [], removed: false, at: 1, upd: 1, by: 'sam' };
   p = await L.open(b, '#/admin', { admin: true, extra, width: 1280, height: 900, wait: 1800 });
-  await L.tap(p, '[data-p="a-tab"][data-t="notes"]'); await p.waitForTimeout(400);
+  await L.adminTab(p, 'notes'); await p.waitForTimeout(400);
   await L.tap(p, '[data-p="n-del"][data-id="n1"]'); await p.waitForTimeout(150);
   await L.tap(p, '[data-p="n-del"][data-id="n1"]'); await p.waitForTimeout(500);
   const n = () => p.evaluate(k => window.__fake.dump()[k] || {}, fsKey(['notes', 'n1']));

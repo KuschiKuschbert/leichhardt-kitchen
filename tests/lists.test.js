@@ -163,7 +163,7 @@ function past(n) { const d = new Date(); d.setDate(d.getDate() - n); return L.ym
 
   // admin: people tick boxes are full-size
   p = await L.open(b, '#/admin', { admin: true, wait: 1800 });
-  await p.click('[data-p="a-tab"][data-t="people"]');
+  await L.adminTab(p, 'people');
   await p.waitForTimeout(200);
   const cl = await p.evaluate(() => { const r = document.querySelector('.a-cl').getBoundingClientRect(); return [r.width, r.height]; });
   ok(cl[0] >= 44 && cl[1] >= 44, 'admin: permission tick boxes are 44x44 ' + JSON.stringify(cl));
