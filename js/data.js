@@ -45,7 +45,7 @@
   on the guest menu, so they sit after the menu sections.
 */
 window.LK_DATA = {
-  updated: '19 October 2026',
+  updated: '20 October 2026',
   allergens: ['Gluten', 'Milk', 'Egg', 'Soy', 'Peanut', 'Tree nut', 'Fish', 'Crustacean', 'Mollusc', 'Sesame'],
   menuOrder: [
     { title: "Snackin' Plates", ids: ['poutine', 'beetroot-bites', 'brisket-cob', 'wings', 'haloumi-tacos', 'pork-belly-bites', 'calamari', 'riblets', 'garlic-bread', 'bacon-cheese-bread', 'chips-snack'] },
@@ -139,15 +139,15 @@ window.LK_DATA = {
     },
     {
       id: 'rice', done: true, no: '05', kind: 'batch', forLine: 'For the barramundi', name: 'Steamed Rice', short: 'Rice', art: 'rice',
-      yield: 'Batch: 2 kg raw rice. 180 g per plate.',
+      yield: 'Batch: 5 kg raw rice. 180 g per plate.',
       ingredients: [
-        { q: '2 kg', name: 'Rice' },
-        { q: '3.8 L', name: 'Water' },
-        { q: '1 tbsp', name: 'Chicken stock', tags: ['Gluten?', 'Soy?'] },
-        { q: '5', name: 'Bay leaves' }
+        { q: '5 kg', name: 'Rice' },
+        { q: '9.5 L', name: 'Water' },
+        { q: '2.5 tbsp', name: 'Chicken stock', tags: ['Gluten?', 'Soy?'] },
+        { q: '13', name: 'Bay leaves' }
       ],
       sections: [
-        { title: 'Method', steps: ['Wash the rice 3 times until the water runs clear.', 'Spread the rice in a shallow GN pan. Add the water, chicken stock and bay leaves.', 'Steam 25 min.', 'Check the rice. It must not be too soft. If it needs more, steam on in 2 min steps, checking each time.'] },
+        { title: 'Method', steps: ['Wash the rice 3 times until the water runs clear.', 'Spread the rice in shallow GN pans, divided evenly. Add the water, chicken stock and bay leaves, divided evenly across the pans.', 'Steam 25 min.', 'Check the rice. It must not be too soft. If it needs more, steam on in 2 min steps, checking each time.'] },
         { title: 'Portioning', steps: ['Portion 180 g per serve into small round containers.'] }
       ],
       contains: [],
