@@ -380,6 +380,8 @@ Every admin list that can keep growing now uses one shared layout (`lvHTML` in `
 - To read a backup: Actions tab, Nightly backup, open a run, download the artifact, unzip it, then on a computer with openssl (a Mac has it): `openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in kitchen-book-<date>.json.enc -out kitchen-book-<date>.json` and type the passphrase. The result is the same file the Backup button saves. There is no restore button: putting something back is done by hand from the file, or with a script written for the case when it comes.
 - Test it on the Firestore emulator: `cd scripts && npm install`, then from `tests/rules`: `./node_modules/.bin/firebase emulators:exec --only firestore --project demo-test "node rules.test.mjs && KITCHEN_PIN=000000 BACKUP_DAYS=5 node ../../scripts/nightly-backup.mjs /tmp/backup.json"` (the rules tests seed the emulator first).
 
+- **Shared helpers (20 Oct 2026).** Every print (prep list, orders, admin, minutes, guide) goes through `printWith(cls, after)`, and every popup (shift pings, the big guide page, the reason sheet, kitchen mail) keeps Tab inside with `trapTab()`. Same behaviour as before; `tests/tidy.test.js` holds it.
+
 ### Security header (20 Oct 2026)
 
 - `index.html` carries a Content Security Policy: scripts only from this site, Firebase and Google sign-in (www.gstatic.com, apis.google.com, the reCAPTCHA bot check on www.google.com) and pdf.js (cdn.jsdelivr.net); styles from Google Fonts (inline styles allowed); fonts from Google Fonts and jsDelivr (pdf.js); data from Google's APIs and Firebase; frames only for Google sign-in and reCAPTCHA; no plugins; forms and `<base>` only to this site. A script from anywhere else, or one slipped into the page, does not run.
