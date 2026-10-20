@@ -266,6 +266,8 @@ npm test
 - **Recorded for later:** when a line was removed (`deletedAt`), who marked it urgent and when (`urgentBy`, `urgentAt`), removal time on order lines.
 - **Empty searches:** a recipe search that finds no card at all is queued on the phone (`lk.miss`) and sent to `misses/<slug>` once someone is signed in to the prep book on that phone. The owner can hide one once the card is written.
 
+- **People safety (20 Oct 2026, head chef decision D6).** Someone who leaves is taken off the list with "Stopped working here" (two taps), not deleted: their name stays on old lines and "Put back" brings them back (the On list tick is gone, this does the same). Only a new row that was never saved is really removed. The Save bar says how many changes are waiting ("2 unsaved changes"), Save is off when there are none, and Undo unsaved changes and Sign out ask again while changes wait; closing the page with changes waiting asks first. Reset PIN names the person ("Ann's PIN is reset"). Same on the sous chef's Staff page. `tests/people-safety.test.js`.
+
 ### Big lists in the admin area (October 2026)
 Every admin list that can keep growing now uses one shared layout (`lvHTML` in `js/prep.js`, styles at the end of `css/app.css`):
 - **Tools appear once a list is long enough** (usually 8 or more rows): a search box, filter chips with a count on each, and a Sort choice. A short list stays plain.
