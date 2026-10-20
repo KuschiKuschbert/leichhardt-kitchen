@@ -6,7 +6,7 @@ const SHOTS = process.env.SHOTS ? path.join(__dirname, 'shots') : '';
 if (SHOTS) fs.mkdirSync(SHOTS, { recursive: true });
 (async () => {
   const b = await L.start(), R = [];
-  const pages = ['#/', '#/recipes', '#/r/barra', '#/r/laksa', '#/r/rice', '#/settings', '#/prep', '#/orders', '#/waste', '#/minutes', '#/mail', '#/guides', '#/guides/combi', '#/guides/fryer'];
+  const pages = ['#/', '#/recipes', '#/r/barra', '#/r/laksa', '#/r/rice', '#/settings', '#/prep', '#/orders', '#/waste', '#/minutes', '#/mail', '#/drinks', '#/guides', '#/guides/combi', '#/guides/fryer'];
   for (const [w, h, touch] of [[390, 844, true], [768, 1024, true], [1280, 900, false]]) {
     for (const hash of pages) {
       const p = await L.open(b, hash, { width: w, height: h, touch, wait: 1400, extra: L.guides() });

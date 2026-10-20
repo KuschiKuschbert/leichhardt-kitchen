@@ -45,6 +45,9 @@ const active = p => p.evaluate(() => { const a = document.activeElement; return 
   ok((await active(p)) === 'pf2:numeric', 'new person: after four digits the cursor is in "Type it again" (' + await active(p) + ')');
   await p.keyboard.type('4444');
   await p.waitForTimeout(900);
+  ok(/One more thing, Kim/.test(await txt(p, '#prep-root') || ''), 'new person: asked for a usual drink straight after the PIN');
+  await p.click('[data-p="dk-skip"]');
+  await p.waitForTimeout(300);
   ok(/Writing as\s*Kim/.test(await txt(p, '.nb-top') || ''), 'new person: signed in with the PIN typed early (' + (await txt(p, '.nb-top') || '').trim() + ')');
   ok(p.errors.length === 0, 'pin keyboard new person: no page errors ' + p.errors.join(' | '));
   await p.context().close();

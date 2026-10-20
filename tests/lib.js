@@ -21,8 +21,8 @@ const K = ['kitchens', PIN];
 const NOW = (function () { const d = new Date(); d.setHours(14, 0, 0, 0); return d.getTime(); })();
 function ymd(d) { const p = n => (n < 10 ? '0' : '') + n; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }
 
-/* Three made-up people: Sam (sous chef, PIN 1111), Ann and Bo (staff, 2222 and 3333), today's prep lines in three
-   sections, two order lines and one wastage entry. "extra" adds or replaces documents (undefined removes one). */
+/* Three made-up people: Sam (sous chef, PIN 1111), Ann and Bo (staff, 2222 and 3333), their usual drinks, today's prep
+   lines in three sections, two order lines and one wastage entry. "extra" adds or replaces documents (undefined removes one). */
 function seed(extra) {
   const today = ymd(new Date(NOW)), s = {}, put = (p, v) => { s[K.concat(p).join('/')] = v; };
   const people = [
@@ -33,6 +33,10 @@ function seed(extra) {
   put(['config', 'main'], { people, sousIds: ['sam'], showBadges: true });
   put(['config', 'admins'], { x: 1 });
   [['sam', '1111'], ['ann', '2222'], ['bo', '3333']].forEach(([id, pin]) => { put(['staffpins', id], { hash: sha('lk:' + id + ':' + pin) }); put(['pinset', id], { at: 1 }); });
+  // everyone already has a usual drink, so the drinks run card does not show on every page (drinks.test.js takes them away)
+  put(['drinks', 'sam'], { kind: 'long', size: 'large', milk: '', shot: 'extra', sugar: '', note: '', other: '', at: NOW - 86400000, by: 'sam' });
+  put(['drinks', 'ann'], { kind: 'flat', size: 'reg', milk: 'oat', shot: '', sugar: '1', note: '', other: 'Coke No Sugar', at: NOW - 86400000, by: 'ann' });
+  put(['drinks', 'bo'], { kind: 'flat', size: 'reg', milk: 'oat', shot: '', sugar: '1', note: '', other: '', at: NOW - 86400000, by: 'bo' });
   const items = [
     ['i1', 'Slice onions', 'Larder', '2 tubs', {}], ['i2', 'Pick coriander', 'Larder', '', {}], ['i3', 'Portion rump', 'Grill', '20', { urgent: true }],
     ['i4', 'Make gravy', 'Sauce', '5 L', { rolled: 1 }], ['i5', 'Laksa', 'Sauce', '1 batch', {}], ['i6', 'Wash bok choy', 'Larder', '', {}]
