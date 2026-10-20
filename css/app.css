@@ -208,6 +208,11 @@ img, svg { display: block; }
 .a-ids-list { margin: 0; padding-left: 1.2rem; }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; min-height: 48px; padding: 0 1.2rem; border-radius: 24px; border: 1.5px solid var(--ink); background: var(--paper); font-weight: 700; cursor: pointer; text-decoration: none; }
 .btn.dark { background: var(--ink); color: #fff; }
+/* ---------- one primary button (20 Oct 2026, head chef: orange) ----------
+   Save, Sign, Add, Log it and the other main buttons are the same orange as the docket Open buttons. */
+.btn.dark, .nb-addbtn { background: var(--accent-ink); border-color: var(--accent-ink); color: #fff; }
+.btn.dark:hover, .nb-addbtn:hover { background: var(--ink); border-color: var(--ink); }
+.btn.dark[disabled], .nb-addbtn[disabled] { background: #b9b3a8; border-color: #b9b3a8; }
 .btn-row { display: flex; flex-wrap: wrap; gap: 0.6rem; }
 .saved { font-size: 0.875rem; color: var(--muted); }
 
