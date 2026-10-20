@@ -22,6 +22,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   await p.click('[data-p="a-tab"][data-t="tools"]');
   await p.waitForTimeout(200);
   await p.fill('#a-newpin', NEW);
+  await p.fill('#a-newpin2', NEW);
   await p.click('[data-p="move-pin"]');
   await p.waitForTimeout(150);
   ok(!(await store(p))[newKey(['staffpins', 'sam'])], 'move PIN: the first tap only arms the button');
@@ -103,6 +104,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   // Headless Chrome has no print dialog, so window.print is replaced and the 1.5 s fallback does the tidy-up.
   p = await L.open(b, '#/admin', { admin: true, wait: 1800 });
   await p.evaluate(() => { window.__printed = 0; window.print = () => { window.__printed++; }; });
+  await p.click('.a-export summary');
   await p.click('[data-p="print-tab"]');
   await p.waitForTimeout(300);
   const pr = await p.evaluate(() => ({ cls: document.documentElement.classList.contains('print-admin'), closed: document.querySelectorAll('.a-pane details:not([open])').length, n: window.__printed }));
