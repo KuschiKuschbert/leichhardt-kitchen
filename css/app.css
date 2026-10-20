@@ -940,7 +940,7 @@ details.nb-start-l[open] > summary::after { content: '\2212'; }
 .mn-doc { display: flex; flex-direction: column; gap: 0.9rem; padding: 1rem; background: var(--bar-text); border: 1.5px solid var(--ink); border-radius: 10px; box-shadow: 0 6px 0 rgba(28, 29, 31, 0.12); }
 .mn-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; }
 .mn-eb { display: block; font: 700 0.9375rem var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent-ink); }
-.mn-title { margin: 0.25rem 0 0; font: 700 2.6rem/0.95 var(--display); text-transform: uppercase; }
+.mn-title { margin: 0.25rem 0 0; font-family: 'Caveat', cursive; font-weight: 700; font-size: 2.9rem; line-height: 0.9; }   /* the notebook title, like the order list and wastage */
 .mn-no { display: flex; flex-direction: column; align-items: flex-end; font-family: var(--display); }
 .mn-no span { font-weight: 600; font-size: 0.8125rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
 .mn-no b { font-size: 5rem; line-height: 0.85; color: var(--accent-ink); }
@@ -949,11 +949,11 @@ details.nb-start-l[open] > summary::after { content: '\2212'; }
 .mn-cell span { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
 .mn-cell b { font-weight: 600; overflow-wrap: anywhere; }
 .mn-cell.mn-wide { grid-column: 1 / -1; border-top: 1px solid var(--ink); }
-.mn-safety { display: flex; flex-direction: column; gap: 0.3rem; padding: 0.8rem 0.9rem; background: var(--accent-ink); color: #fff; font-weight: 500; }
+.mn-safety { display: flex; flex-direction: column; gap: 0.3rem; padding: 0.8rem 0.9rem; border-radius: 8px; background: var(--accent-ink); color: #fff; font-weight: 500; }
 .mn-sl { font: 700 1.125rem var(--display); letter-spacing: 0.1em; text-transform: uppercase; }
 .mn-safety .mn-ul { margin: 0; }
 .mn-safety a { color: #fff; }
-.mn-box { display: flex; flex-direction: column; gap: 0.6rem; padding: 0.85rem 0.9rem; border: 2px solid var(--ink); }
+.mn-box { display: flex; flex-direction: column; gap: 0.6rem; padding: 0.85rem 0.9rem; border: 1.5px solid var(--ink); border-radius: 8px; }
 .mn-bh { margin: 0; display: flex; align-items: baseline; gap: 0.6rem; font: 700 1.5rem var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
 .mn-bn { font-size: 1rem; color: var(--accent-ink); }
 .mn-ul { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.25rem; }
@@ -972,8 +972,8 @@ details.nb-start-l[open] > summary::after { content: '\2212'; }
 .mn-who { border-width: 1.5px; }
 .mn-who .mn-bh { font-size: 1.25rem; }
 .mn-wr { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr); gap: 0.5rem; }
-.mn-sign { display: flex; flex-direction: column; align-items: flex-start; gap: 0.7rem; padding: 1rem; border: 3px solid var(--ink); background: var(--paper); }
-.mn-sign.is-done { border-width: 2px; background: var(--done-tint); border-color: var(--done); }
+.mn-sign { display: flex; flex-direction: column; align-items: flex-start; gap: 0.7rem; padding: 1rem; border: 1.5px solid var(--ink); border-radius: 10px; background: var(--bar-text); box-shadow: 0 6px 0 rgba(28, 29, 31, 0.12); }
+.mn-sign.is-done { border-width: 1.5px; background: var(--done-tint); border-color: var(--done); }
 .mn-sign p { margin: 0; }
 .mn-signbtn { min-height: 52px; min-width: 10rem; font-family: var(--display); font-size: 1.375rem; letter-spacing: 0.1em; text-transform: uppercase; }
 .mn-signbtn[disabled] { opacity: 0.45; cursor: not-allowed; }
@@ -981,9 +981,9 @@ details.nb-start-l[open] > summary::after { content: '\2212'; }
 .mn-eh { margin: 0.5rem 0 0; font: 700 1.25rem var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
 .mn-earlier { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .mn-wl { margin: 0; }
-.mn-nudge { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 0.75rem; margin: 0.6rem 0; padding: 0.65rem 0.8rem; border: 2px solid var(--accent-ink); background: #FFF6EF; }
+.mn-nudge { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 0.75rem; margin: 0.6rem 0; padding: 0.65rem 0.8rem; border: 2px solid var(--accent-ink); border-radius: 8px; background: #FFF6EF; }
 .mn-nudge b { display: block; font: 700 1.125rem var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-ink); }
-.mn-nudge-btn { display: inline-flex; align-items: center; min-height: 44px; padding: 0 1rem; background: var(--ink); color: #fff; font-weight: 700; text-decoration: none; }
+.mn-nudge-btn { display: inline-flex; align-items: center; min-height: 44px; padding: 0 1rem; border-radius: 8px; background: var(--ink); color: #fff; font-weight: 700; text-decoration: none; }
 /* the same nudge on the landing page, above the dockets (the slot is drawn by js/app.js and filled in by js/prep.js) */
 .wall-mn .mn-nudge { margin: 0 0 1.6rem; border-radius: 8px; }
 @media (min-width: 720px) { .wall-mn .mn-nudge { max-width: 38rem; } }
@@ -994,7 +994,7 @@ details.nb-start-l[open] > summary::after { content: '\2212'; }
 .mn-act2 { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
 .mn-at small { color: var(--muted); }
 .mn-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); gap: 0.6rem; }
-.mn-tile { display: flex; flex-direction: column; padding: 0.55rem 0.75rem; border: 2px solid var(--ink); background: var(--paper); }
+.mn-tile { display: flex; flex-direction: column; padding: 0.55rem 0.75rem; border: 1.5px solid var(--ink); border-radius: 8px; background: var(--paper); }
 .mn-tile span { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
 .mn-tile b { font: 700 2.4rem/1 var(--display); }
 .mn-tile b small { font-size: 1.2rem; color: var(--muted); }
@@ -1003,8 +1003,8 @@ details.nb-start-l[open] > summary::after { content: '\2212'; }
 .mn-hot { color: var(--accent-ink); font-weight: 700; }
 .mn-chase { list-style: none; margin: 0 0 0.5rem; padding: 0; display: flex; flex-wrap: wrap; gap: 0.35rem; }
 .mn-chase li { padding: 0.15rem 0.7rem; border: 1.5px solid var(--ink); border-radius: 999px; background: #fff; }
-.mn-side { padding: 0.7rem 0.9rem; border: 2px solid var(--ink); background: var(--paper); align-self: start; }
-@media (max-width: 599px) { .mn-title { font-size: 2.2rem; } .mn-no b { font-size: 4rem; } .mn-doc { padding: 0.8rem; } }
+.mn-side { padding: 0.7rem 0.9rem; border: 1.5px solid var(--ink); border-radius: 8px; background: var(--paper); align-self: start; }
+@media (max-width: 599px) { .mn-title { font-size: 2.15rem; } .mn-no b { font-size: 4rem; } .mn-doc { padding: 0.8rem; } }
 
 /* Order list: the add box sits at the top. On big screens the list and "Ordered today" sit side by side and the page uses the width. */
 .o-add.nb-foot { border-top: 0; border-bottom: 2px solid var(--ink); padding: 0.8rem 0 1rem; }

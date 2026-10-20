@@ -44,8 +44,21 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   // what the menu offers
   p = await L.open(b, '#/recipes', { who: 'ann', wait: 1800 });
   let m = await L.chefItems(p);
-  ok(m.join(',') === 'mail,drinks,minutes,settings,out', 'staff: Kitchen mail, Drinks run, Meeting minutes, Settings and Sign out, no Chef group (' + m + ')');
+  ok(m.join(',') === 'mail,drinks,settings,out', 'staff, nothing published: Kitchen mail, Drinks run, Settings and Sign out, no Meeting minutes, no Chef group (' + m + ')');
   ok(!m.includes('prep'), 'staff: the old Prep list item is gone');
+  await p.context().close();
+  // once Chef has published minutes, Meeting minutes joins the staff menu
+  const pub = {};
+  pub[['kitchens', L.PIN, 'minutes', 'm1'].join('/')] = { no: 1, v: 1, status: 'published', date: L.ymd(new Date(L.NOW - 86400000)), start: '14:00', loc: 'Kitchen', chair: 'sam', taker: 'sam',
+    att: [{ id: 'ann', st: 'present' }], guests: '', decisions: 'New menu from Friday', menu: '', safety: '', dates: '', other: '', acts: [], next: '', pubAt: L.NOW - 86400000, removed: false, at: 1, upd: 1, by: 'sam' };
+  p = await L.open(b, '#/recipes', { who: 'ann', extra: pub, wait: 1800 });
+  m = await L.chefItems(p);
+  ok(m.join(',') === 'mail,drinks,minutes,settings,out', 'staff, minutes published: Meeting minutes shows (' + m + ')');
+  await p.context().close();
+  // #/minutes by its address with nothing published: the notebook card, like the order list
+  p = await L.open(b, '#/minutes', { who: 'ann', wait: 1800 });
+  ok(!!(await p.$('.nb-page.mn-empty .nb-title')) && /No meeting minutes yet/.test(await txt(p, '#prep-root') || ''), 'minutes, nothing published: notebook card saying none yet');
+  ok(p.errors.length === 0, 'minutes empty: no page errors ' + p.errors.join(' | '));
   await p.context().close();
   p = await L.open(b, '#/recipes', { who: 'sam', wait: 1800 });
   m = await L.chefItems(p);
