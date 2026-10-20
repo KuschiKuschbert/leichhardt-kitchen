@@ -297,7 +297,7 @@
      While a person is signed in on this phone the ring is filled, their name is in the title everywhere and next to the
      hat from 1400 px, where there is room (at 1280 px it pushed "Kitchen Book" onto two lines). A tap opens a small menu:
      Kitchen mail (write to the head chef), the drinks run and the prep list, where "Not you?" changes the person, then
-     Settings. With nobody signed in the menu has the prep list (sign in there) and Settings. js/prep.js says when the
+     Settings. With nobody signed in the menu has Sign in ("Who are you?", then back to the same page) and Settings. js/prep.js says when the
      person changes (lk-who). */
   function whoMark(flip) {
     var n = window.LK_PREP && window.LK_PREP.whoName ? window.LK_PREP.whoName() : '';
@@ -323,7 +323,7 @@
         '<a class="wm-a" href="#/drinks" data-who="go">' + ICON.cup + '<span><b>Drinks run</b><small>Everyone\'s usual coffee</small></span></a>' +
         '<a class="wm-a" href="#/prep" data-who="go">' + ICON.chef + '<span><b>Prep list</b><small>Not you? Change it there</small></span></a>'
       : '<p class="wm-h">Nobody signed in on this phone</p>' +
-        '<a class="wm-a" href="#/prep" data-who="go">' + ICON.chef + '<span><b>Prep list</b><small>Sign in there with your PIN</small></span></a>') +
+        '<a class="wm-a wm-in" href="#/prep" data-who="signin">' + ICON.chef + '<span><b>Sign in</b><small>Your name and PIN, then back here</small></span></a>') +
       '<a class="wm-a wm-set" href="#/settings" data-who="go">' + ICON.gear + '<span><b>Settings</b><small>Text size, how recipes open</small></span></a></nav>';
     document.body.appendChild(el); wmenu = el;
     btn.setAttribute('aria-expanded', 'true');
@@ -336,6 +336,7 @@
     if (a === 'menu') { if (wmenu) whoMenuClose(); else whoMenuOpen(el); return; }
     if (a === 'close') { whoMenuClose(true); return; }
     if (a === 'go') whoMenuClose();
+    if (a === 'signin') { e.preventDefault(); whoMenuClose(); if (window.LK_PREP && window.LK_PREP.signIn) window.LK_PREP.signIn(location.hash || '#/'); else location.hash = '#/prep'; }
   });
   document.addEventListener('keydown', function (e) {
     if (!wmenu) return;

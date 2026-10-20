@@ -1362,6 +1362,7 @@ html.gz-open, html.gz-open body { overflow: hidden; }
 .wm-a:hover, .wm-a:focus-visible { background: var(--hit); }
 .wm-a span { display: flex; flex-direction: column; }
 .wm-a small { color: var(--muted); font-size: 0.8125rem; }
+.wm-a.wm-in b { font-size: 1.125rem; }
 .wtop-btn.adm { position: relative; }
 .adm-n { position: absolute; top: -5px; right: -5px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--accent); color: #fff; border: 2px solid var(--bar); font-size: 0.6875rem; font-weight: 700; line-height: 16px; text-align: center; box-sizing: border-box; }
 .ml-urgent { margin: 0 0 12px; padding: 10px 12px; border-left: 4px solid var(--accent); background: var(--hit); border-radius: 6px; }

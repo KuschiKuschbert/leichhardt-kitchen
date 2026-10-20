@@ -16,10 +16,20 @@ const mark = p => p.evaluate(() => { const e = document.querySelector('.wtop-who
   ok((await mark(p)) === 'on:Menu and Settings:', 'recipes, nobody signed in: the chef mark still shows (' + await mark(p) + ')');
   ok(await p.$('.wtop a[href="#/settings"]') === null, 'recipes: no separate Settings button in the top bar');
   await L.tap(p, '.wtop-who'); await p.waitForTimeout(200);
-  ok(!!(await p.$('.wm a[href="#/settings"]')) && !!(await p.$('.wm a[href="#/prep"]')) && !(await p.$('.wm a[href="#/mail"]')), 'recipes, nobody signed in: the menu has Prep list and Settings, no mail');
+  ok(!!(await p.$('.wm a[href="#/settings"]')) && !!(await p.$('.wm [data-who="signin"]')) && !(await p.$('.wm a[href="#/mail"]')), 'recipes, nobody signed in: the menu has Sign in and Settings, no mail');
   await p.click('.wm a[href="#/settings"]'); await p.waitForTimeout(400);
   ok(await p.evaluate(() => location.hash) === '#/settings' && !(await p.$('.wm')), 'recipes: Settings opens from the menu and the menu closes');
   ok(await p.evaluate(() => document.querySelector('.wtop-who').getAttribute('aria-current')) === 'page', 'settings: the chef mark is marked as the current page');
+  // Sign in from the hat: "Who are you?", the PIN, then back to the page it came from
+  await p.evaluate(() => { location.hash = '#/r/laksa'; }); await p.waitForTimeout(400);
+  await L.tap(p, '.wtop-who'); await p.waitForTimeout(200);
+  await p.click('.wm [data-who="signin"]'); await p.waitForTimeout(800);
+  ok(await p.evaluate(() => location.hash) === '#/prep' && /Who are you\?/.test(await txt(p, '#prep-root') || '') && /goes back to where you were/.test(await txt(p, '#prep-root') || ''), 'sign in from the hat: "Who are you?" on the prep list, saying it goes back');
+  await p.click('.p-name[data-id="ann"]'); await p.waitForTimeout(500);
+  await p.type('#pf1', '2222'); await p.waitForTimeout(1200);
+  ok(await p.evaluate(() => location.hash) === '#/r/laksa', 'sign in from the hat: back on the recipe after the PIN (' + await p.evaluate(() => location.hash) + ')');
+  ok((await mark(p)) === 'on:Signed in as Ann:', 'sign in from the hat: the mark has her name (' + await mark(p) + ')');
+  ok(p.errors.length === 0, 'sign in from the hat: no page errors ' + p.errors.join(' | '));
   await p.context().close();
   const brandLines = p => p.evaluate(() => { const el = document.querySelector('.wtop-brand b'); return el.getBoundingClientRect().height / parseFloat(getComputedStyle(el).fontSize); });
   for (const w of [768, 1280, 1440]) {
