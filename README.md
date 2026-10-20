@@ -261,6 +261,8 @@ npm test
 - **Wastage, last 7 days** (head chef and sous chefs): every entry grouped by day with totals, most often, and reasons. The admin Waste tab adds an each-day table (entries, amount, review) and an Open the wastage log button.
 - **Recipe cards opened:** each card opened is counted on the phone (`lk.views`, no names) and sent to `views/<recipe>` once someone is signed in. Insights shows the most opened cards and the ones not opened yet. Cooking-fault and returned waste shows how often the card was opened.
 
+- **Charts on a phone (20 Oct 2026).** The Insights and Team charts are drawn at the phone's width (`chW()`), not a 720 wide drawing shrunk down, so the axis and names stay readable; the daily chart labels fewer days when narrow. A tap on a bar shows its numbers under the chart (phones never show the hover titles), and the people chart's screen reader label names who ticked most. `tests/charts.test.js`.
+
 ### Insights added in October 2026
 
 - **Insights tab:** load by weekday and section (lines written or rolled over, average per day), slow and sticky lines with a suggestion each, and recipe book searches that found nothing.
