@@ -421,6 +421,7 @@ img, svg { display: block; }
 /* ---------- admin panel tabs and layout ---------- */
 .a-tabs { position: sticky; top: 0; z-index: 12; display: flex; gap: 0.4rem; padding: 0.5rem 0; margin: 0 -0.25rem; background: var(--bg); border-bottom: 1.5px solid var(--ink); overflow-x: auto; scrollbar-width: none; }
 .a-tabs::-webkit-scrollbar { display: none; }
+.a-unsaved { align-self: center; font-weight: 700; color: var(--accent-ink); }
 @media (min-width: 600px) { .a-tabs { flex-wrap: wrap; overflow-x: visible; } }
 @media (max-width: 599px) { .a-tabs { position: static; } }
 .a-tab { flex: 1 0 auto; min-height: 46px; padding: 0 1.1rem; border: 1.5px solid var(--ink); border-radius: 999px; background: var(--paper); font: 700 1rem var(--body); color: var(--ink); cursor: pointer; }

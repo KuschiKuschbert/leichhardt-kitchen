@@ -1219,7 +1219,8 @@
   function resetPin(id) {
     if (!arm('pin:' + id)) return;
     var rb = fb.fs.writeBatch(fb.db); rb.delete(docRef('staffpins', id)); rb.delete(docRef('pinset', id));
-    track(rb.commit()).then(function () { toast('PIN reset. They set a new one next time they sign in.'); }, function (e) { toast(e && e.code === 'permission-denied' ? 'Could not reset. Sign in as the admin.' : 'Could not reset. Check the connection and try again.', { label: 'OK', fn: function () {} }, 12000); });
+    var who2 = (people().filter(function (x) { return x.id === id; })[0] || {}).name || 'Their';
+    track(rb.commit()).then(function () { toast(who2 + (who2 === 'Their' ? ' PIN is reset.' : '\'s PIN is reset.') + ' They set a new one next time they sign in.'); }, function (e) { toast(e && e.code === 'permission-denied' ? 'Could not reset. Sign in as the admin.' : 'Could not reset. Check the connection and try again.', { label: 'OK', fn: function () {} }, 12000); });
   }
   function hideSection(id, hidden) {
     sset(docRef('sections', id), { hidden: hidden }, true).catch(failed);
@@ -2460,7 +2461,6 @@
         { h: 'Tick', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'tick', o.p.tick, 'Tick', isHeadP(o.p)); } },
         { h: 'Remove', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'del', o.p.del, 'Remove', isHeadP(o.p)); } },
         { h: 'Pings', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'ping', canPingP(o.p), 'Shift pings', isSousP(o.p)); } },
-        { h: 'On list', cls: 'a-c', html: function (o) { return cb(o, 'active', '', o.p.active !== false, 'On list'); } },
         { h: '', cls: 'a-act', html: function (o) { return '<button type="button" class="p-x" data-p="a-reset-pin" data-id="' + esc(o.p.id) + '">' + (armed('pin:' + o.p.id) ? 'Tap again to reset' : 'Reset PIN') + '</button>' + removePersonBtn(o.p, o.i); } }
       ]
     });
@@ -2496,7 +2496,7 @@
     if (owner) { watchActivity(); loadStats(false); }
     var bar = '<div class="p-bar"><span>Signed in as <strong>' + esc(S.user.email) + '</strong> (' + 'head chef' + ')</span><span class="p-links"><button type="button" class="p-link" data-p="signout">Sign out</button><a class="p-link" href="#/prep">Prep list</a></span></div>';
     var bulk = '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line">' + esc(S.bulk || '') + '</textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div>';
-    var saveBlock = '<section class="set-block">' + staleHint() + '<div class="btn-row"><button type="button" class="btn dark" data-p="a-save"' + (S.busy ? ' disabled' : '') + '>Save changes</button><button type="button" class="btn" data-p="a-reset">Undo unsaved changes</button></div><span class="saved" role="status">' + esc(S.saveMsg) + '</span></section>';
+    var saveBlock = saveBarHTML();
     var at = S.atab || 'insights';
     // Head chef decision D4 (20 Oct 2026): five groups on top, the pages of the open group underneath (the page ids
     // stay the same, so lk.prep.atab and every link into a page still work)
@@ -2525,20 +2525,45 @@
     return '<div class="p-admin">' + bar + '<h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2>' + tabsBar + '<div class="a-pane">' + (owner ? idCardHTML() : '') + pane + '</div></div>';
   }
   /* the same Remove button on the admin People tab and the sous chef's staff list, with a second tap to be sure */
+  /* Head chef decision D6 (20 Oct 2026): someone who leaves is taken off the list, not deleted, so their name stays on
+     old lines and they can be put back. Only a new row that was never saved is really removed. */
   function removePersonBtn(p, i) {
     if (isHeadP(p) && S.level !== 'owner') return '<span class="a-head">Head chef</span>';
-    return '<button type="button" class="p-x" data-p="a-remove-person" data-i="' + i + '" aria-label="' + esc('Remove ' + (p.name || 'this person')) + '">' + (armed('rm:' + p.id) ? 'Tap again to remove' : 'Remove') + '</button>';
+    if (p.active === false && !p.isNew) return '<button type="button" class="p-x" data-p="a-remove-person" data-i="' + i + '" aria-label="' + esc('Put ' + (p.name || 'this person') + ' back on the list') + '">Put back</button>';
+    var lab = p.isNew ? 'Remove' : 'Stopped working here';
+    return '<button type="button" class="p-x" data-p="a-remove-person" data-i="' + i + '" aria-label="' + esc(lab + ': ' + (p.name || 'this person')) + '">' + (armed('rm:' + p.id) ? 'Tap again: ' + lab.toLowerCase() : lab) + '</button>';
+  }
+  /* what the draft changes, counted per person and per setting, for the Save bar */
+  function draftChanges() {
+    if (!S.draft || !S.draftSnap) return 0;
+    var old; try { old = JSON.parse(S.draftSnap); } catch (e) { return draftDirty() ? 1 : 0; }
+    var n = 0, before = {}, now2 = {};
+    (old.people || []).forEach(function (p) { before[p.id] = JSON.stringify(p); });
+    (S.draft.people || []).forEach(function (p) { now2[p.id] = 1; if (before[p.id] !== JSON.stringify(p)) n++; });
+    Object.keys(before).forEach(function (id) { if (!now2[id]) n++; });
+    Object.keys(S.draft).forEach(function (k) { if (k !== 'people' && JSON.stringify(S.draft[k]) !== JSON.stringify(old[k])) n++; });
+    return n || (draftDirty() ? 1 : 0);
+  }
+  /* Ticks and names change the draft without a redraw (so the cursor stays put); the Save bar follows straight after. */
+  function saveBarRefresh() { var sb = S.root && S.root.querySelector('.a-savebar'); if (sb && S.draft) sb.outerHTML = saveBarHTML(); }
+  ['change', 'input'].forEach(function (ev) { document.addEventListener(ev, function (e) { if (e.target && e.target.getAttribute && e.target.getAttribute('data-a')) setTimeout(saveBarRefresh, 0); }, true); });
+  function saveBarHTML() {
+    var n = draftChanges();
+    return '<section class="set-block a-savebar">' + staleHint() + '<div class="btn-row"><button type="button" class="btn dark" data-p="a-save"' + (S.busy || !n ? ' disabled' : '') + '>Save changes</button>' +
+      '<button type="button" class="btn" data-p="a-reset"' + (n ? '' : ' disabled') + '>' + (armed('a-reset') ? 'Tap again to undo ' + (n === 1 ? 'it' : 'all ' + n) : 'Undo unsaved changes') + '</button>' +
+      (n ? '<span class="a-unsaved">' + n + ' unsaved change' + (n === 1 ? '' : 's') + '</span>' : '') + '</div><span class="saved" role="status">' + esc(S.saveMsg) + '</span></section>';
   }
   var A_TAB_NAMES = { mail: 'Kitchen mail', notes: 'Shift pings', insights: 'Insights', team: 'Team', waste: 'Wastage', learning: 'Learning', people: 'People', minutes: 'Minutes', guides: 'Guides', tools: 'Backup and PIN' };
   var A_GROUPS = [['today', 'Today', ['mail', 'notes']], ['reports', 'Reports', ['insights', 'team', 'waste', 'learning']], ['people', 'People', ['people']], ['content', 'Content', ['minutes', 'guides']], ['settings', 'Settings', ['tools']]];
   function adminGroupOf(t) { return A_GROUPS.filter(function (g) { return g[2].indexOf(t) >= 0; })[0] || A_GROUPS[1]; }
   function draftDirty() { return !!S.draft && JSON.stringify(S.draft) !== S.draftSnap; }
+  window.addEventListener('beforeunload', function (e) { if ((S.name === 'admin' || S.staffOpen) && draftDirty()) { e.preventDefault(); e.returnValue = ''; } });
   function staffHTML() {
     var d = S.draft || (startDraft(), S.draft);
     var bulk = '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line">' + esc(S.bulk || '') + '</textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div>';
     return '<div class="p-admin"><div class="p-bar"><span>Staff list</span><span class="p-links"><button type="button" class="p-link" data-p="staff-close">' + (armed('staff-close') ? 'Tap again to leave without saving' : 'Back to the prep book') + '</button></span></div><h2 class="p-h" id="rtitle" tabindex="-1">Staff</h2>' +
       '<section class="set-block"><span class="hint">Add a person or remove one, then save. New people start as Staff. Removing someone keeps their name on old lines. Roles and PINs are looked after by the head chef.</span>' + staffListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' +
-      '<section class="set-block">' + staleHint() + '<div class="btn-row"><button type="button" class="btn dark" data-p="a-save"' + (S.busy ? ' disabled' : '') + '>Save changes</button><button type="button" class="btn" data-p="a-reset">Undo unsaved changes</button></div><span class="saved" role="status">' + esc(S.saveMsg) + '</span></section></div>';
+      saveBarHTML() + '</div>';
   }
   /* While connecting, show the page that is opening (not a generic prep book card), so nothing flashes. */
   var PAGE_NAME = { prep: 'Prep list', orders: 'Order list', waste: 'Wastage', admin: 'Admin panel', minutes: 'Meeting minutes', guides: 'Guides', mail: 'Kitchen mail', drinks: 'Drinks run' };
@@ -4981,7 +5006,7 @@
     if (a === 'staff-close') { if (draftDirty() && !arm('staff-close')) return; S.staffOpen = false; S.draft = null; draw(); return; }
     if (a === 'add-recipe') { addRecipe(id); return; }
     if (a === 'signin') { signIn(); return; }
-    if (a === 'signout') { signOut(); draw(); return; }
+    if (a === 'signout') { if (draftDirty() && !arm('signout')) { toast('Unsaved staff changes. Tap Sign out again to drop them.'); return; } signOut(); draw(); return; }
     if (a === 'sec-hide') { hideSection(id, el.getAttribute('data-hide') === '1'); return; }
     if (a === 'a-reset-pin') { resetPin(id); return; }
     if (a === 'range') { S.statsRange = +el.getAttribute('data-v'); draw(); return; }
@@ -4999,14 +5024,17 @@
     if (a === 'a-remove-person') {
       var rp = d.people[i];
       if (isHeadP(rp) && S.level !== 'owner') return;   // only the head chef's Google account takes the head chef off the list
+      if (!rp) return;
+      if (rp.active === false && !rp.isNew) { rp.active = true; draw(); return; }   // Put back
       // a row just added and still blank goes in one tap; anyone else needs a second tap
-      if (!rp || (!(rp.isNew && !String(rp.name).trim()) && !arm('rm:' + rp.id))) return;
-      d.people.splice(i, 1); draw(); return;
+      if (!(rp.isNew && !String(rp.name).trim()) && !arm('rm:' + rp.id)) return;
+      if (rp.isNew) d.people.splice(i, 1); else rp.active = false;
+      draw(); return;
     }
     if (a === 'a-save') { adminSave(); return; }
     if (a === 'a-ids-keep') { idDecide(true); return; }
     if (a === 'a-ids-undo') { idDecide(false); return; }
-    if (a === 'a-reset') { startDraft(); draw(); return; }
+    if (a === 'a-reset') { if (draftDirty() && !arm('a-reset')) return; startDraft(); draw(); return; }
   }
   function onInput(e) {
     var el = e.target, k = el.getAttribute && el.getAttribute('data-k');

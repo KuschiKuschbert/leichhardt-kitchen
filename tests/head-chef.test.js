@@ -57,8 +57,8 @@ const cfg = (people, lists) => { const e = {}; e[CFG] = Object.assign({ people, 
   await p.waitForTimeout(200);
   const rows = await p.evaluate(() => [...document.querySelectorAll('.a-person')].map(li => li.textContent));
   const annRow = rows.filter(t => /Ann/.test(t))[0] || '';
-  ok(/Head chef/.test(annRow) && !/Remove/.test(annRow), 'staff: the head chef has no Remove button');
-  ok(rows.filter(t => /Bo/.test(t)).every(t => /Remove/.test(t)), 'staff: everyone else can still be removed');
+  ok(/Head chef/.test(annRow) && !/Remove|Stopped working here/.test(annRow), 'staff: the head chef has no Stopped working here button');
+  ok(rows.filter(t => /Bo/.test(t)).every(t => /Stopped working here/.test(t)), 'staff: everyone else can still be taken off the list');
   await p.fill('#a-bulk', 'Dee');
   await p.click('[data-p="a-bulk-add"]');
   await p.waitForTimeout(200);
