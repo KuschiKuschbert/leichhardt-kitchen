@@ -21,7 +21,7 @@ The Leichhardt Hotel kitchen's app: the recipe book, the prep list, the order li
   - The search bar stays at the top of the screen while the list scrolls. On phones the "16 of 114 match" count shows while a search or filter is on. Switching between the Pass and Tiles starts at the top of the list.
 - **Recipe cards on phones and tablets:** the drawings come first, so a row under the name trail jumps straight to Allergens, Ingredients or Method. It is hidden on wide screens, where the card is in two columns.
 - **Settings:**
-  - Which view it opens with
+  - Which view it opens with: The Pass and Tiles each show a small drawing of the recipes page on a computer and on a phone (`miniShot()` in `js/app.js`), so staff see the layout before they pick. The one in use says "Opens with this".
   - Text size (Normal, Large, Extra large)
   - Head chef only (shows only on a device where the head chef is signed in, see Admin has one home): Clear ticked steps, and Shared kitchen device (Personal phone or Shared device): on a shared device the prep pages ask who you are again after 10 minutes idle and each new day; see Shared kitchen device under Staff lock. The choice stays on the device after the head chef signs out.
   - Open on a phone (computers and wide tablets only, 900 px and wider): the QR code (`qr.svg`) that opens the book, with Print the A4 sign (`qr-sign.pdf`) and Download the QR code (`qr.png`)
@@ -134,7 +134,7 @@ npm test
 
 - **Recipe cards** under 900 px show the name, yield and allergens first, then the drawing, then the ingredients and method (CSS `order` on `main.cols`; the laptop layout is unchanged). On a dish, "Everything on it" comes before the method, as on Tiles. On a recipe the allergen lens folds into one line ("Allergen lens +"), which stays open and names the allergen while a lens is on.
 - **Landing** on a phone: compact dockets (the whole docket is the link, no Open button), so all five fit above the tab bar.
-- **Settings** starts with Text size; "Opens with" is two chips; Done goes back to the page you came from (or to the start when Settings was opened by its address).
+- **Settings** starts with Text size; "Opens with" is two cards with a computer and a phone preview; Done goes back to the page you came from (or to the start when Settings was opened by its address).
 - **Prep list on a phone or tablet** (under 900 px): Start here is one line naming the jobs ("Start here: Portion rump, Make gravy, ...") until tapped, so the list itself starts higher; once something is ticked a "Done today (n)" button by the count jumps to the ticked lines in Handy; Quick add chips sit in the add box as well as in Handy. `tests/prep-first.test.js`.
 - `tests/phone-first.test.js`.
 - **Recipe search and allergens (20 Oct 2026).** The Pass list has one row of allergen chips with a switch: Show where (the lens, as before, the default) or Free from (the same filter as Tiles, so "what is gluten free" works in both views). The count above the search follows the search, Free from and the kind chip. The search box has no autocorrect or capitals (iOS would turn "parmy" into "party" before the book's own typo fix sees it), a Search key that drops the keyboard, and a 44 px Clear button while something is typed. When nothing matches, "Clear search and filters" puts everything back. `tests/recipe-filters.test.js`.
