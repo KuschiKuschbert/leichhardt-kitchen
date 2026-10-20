@@ -248,7 +248,15 @@
   /* A new toast never wipes an Undo that is still showing: that one moves up a row and stays for 6 more seconds, so two
      quick taps in a row (remove, then tick) can both be undone. At most two show. */
   var toastOldTimer;
+  /* One live region that is never redrawn (outside the prep root), so screen readers hear every toast: a region added
+     together with its text, as a redrawn toast is, is often not read out. */
+  function liveSay(t) {
+    var el = document.getElementById('lk-live');
+    if (!el) { el = document.createElement('div'); el.id = 'lk-live'; el.className = 'visually-hidden'; el.setAttribute('aria-live', 'polite'); el.setAttribute('role', 'status'); document.body.appendChild(el); }
+    el.textContent = ''; setTimeout(function () { el.textContent = t; }, 60);
+  }
   function toast(msg, act, ms) {
+    liveSay(msg + (act && act.label ? '. ' + act.label + ' is on screen.' : ''));
     if (S.toast && S.toastAct && S.toastAct !== act) { S.toastOld = { msg: S.toast, act: S.toastAct }; clearTimeout(toastOldTimer); toastOldTimer = setTimeout(function () { S.toastOld = null; draw(); }, 6000); }
     S.toast = msg; S.toastAct = act || null; draw(); clearTimeout(toastTimer); toastTimer = setTimeout(function () { S.toast = ''; S.toastAct = null; draw(); }, ms || (act ? 9000 : 3500));
   }
@@ -1090,6 +1098,15 @@
     sset(docRef('learned', id), { hidden: hidden }, true).catch(failed);
   }
   var LEARN_DAYS = 90;   // how far back the nightly learning reads
+  /* Tab and Shift+Tab stay inside an open popup: from the last control back to the first and the other way, and focus
+     that has slipped outside comes back in. Only controls that can be seen count. */
+  function trapTab(e, box, sel) {
+    var f = Array.prototype.filter.call(box.querySelectorAll(sel || 'button:not([disabled]), a[href]'), function (x) { return x.offsetParent !== null; });
+    if (!f.length) return;
+    var first = f[0], last = f[f.length - 1], out = !box.contains(document.activeElement);
+    if (e.shiftKey && (document.activeElement === first || out)) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && (document.activeElement === last || out)) { e.preventDefault(); first.focus(); }
+  }
   /* A line written after the usual close (the time of the last tick on most days, 20:00 until the book knows) is meant
      for the next day. When it moves onto that day it is marked ahead and does not count as rolled; only if it is still
      open after that day does it show as rolled. rolled stays the number of copies, so a copy is never counted twice. */
@@ -2163,7 +2180,7 @@
     if (live.length && doneN === live.length && !S.tab) todayEmpty = '<p class="nb-empty">Everything on this list is ticked off. See Done today under Handy.</p>';
     if (S.tab && !live.some(function (x) { return inTab(x) && (!x.done || lingers(x)); })) todayEmpty = '<p class="nb-empty">Nothing left to do in ' + esc(S.tab) + '. Ticked lines are under Done today in Handy.</p>';
     var left = '<section class="nb-page nb-left"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + esc(dayName(S.date)) + '</h2><span class="nb-date">' + esc(longDate(S.date)) + '</span></div>' +
-      '<div class="nb-prog" role="status">' + doneN + ' of ' + live.length + ' done</div>' + (can('add') ? '<button type="button" class="nb-jump" data-p="write">Write a line</button>' : '') + (doneN ? '<button type="button" class="nb-jump nb-donejump" data-p="donejump">Done today (' + doneN + ')</button>' : '') + '</header>' +
+      '<div class="nb-prog">' + doneN + ' of ' + live.length + ' done</div>' + (can('add') ? '<button type="button" class="nb-jump" data-p="write">Write a line</button>' : '') + (doneN ? '<button type="button" class="nb-jump nb-donejump" data-p="donejump">Done today (' + doneN + ')</button>' : '') + '</header>' +
       (S.itemsState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' : '') +
       '<div class="nb-body">' + minNudgeHTML() + closeoutHTML(live) + wNoteHTML() + startHTML(live) + pageBody(S.items, S.date) + todayEmpty + '</div>' +
       '<div class="nb-foot">' + add + (add && !can('del') ? '<p class="hint nb-who">Wrote the wrong thing? Undo it straight away, or ask the head chef or a sous chef to remove it.</p>' : '') +
@@ -2577,14 +2594,21 @@
     if (!S.root || !document.body.contains(S.root) || rendering) return;
     rendering = true;
     var ae = document.activeElement, key = ae && ae.getAttribute && ae.getAttribute('data-k'), start = null, end = null;
+    var btnSel = !key && ae && S.root.contains(ae) && ae.getAttribute && ae.getAttribute('data-p') ? guestSel(ae) : '', tickAt = -1;
+    if (btnSel && ae.getAttribute('data-p') === 'tick') tickAt = Array.prototype.indexOf.call(S.root.querySelectorAll('.nb-box[data-p="tick"]'), ae);
     if (key && ae.selectionStart != null) { try { start = ae.selectionStart; end = ae.selectionEnd; } catch (e) {} }
     var bodyEl = S.root.querySelector('.nb-body'), keepScroll = bodyEl ? S.root.querySelectorAll('.nb-body') : null, scrolls = [];
     if (keepScroll) Array.prototype.forEach.call(keepScroll, function (b) { scrolls.push(b.scrollTop); });
-    S.root.innerHTML = syncHTML() + bodyHTML() + (S.toast ? '<div class="p-toast" role="status">' + esc(S.toast) + (S.toastAct ? ' <button type="button" class="p-toast-btn" data-p="toast-act">' + esc(S.toastAct.label) + '</button>' : '') + '</div>' : '') + (S.toastOld && S.toast ? '<div class="p-toast p-toast-old" role="status">' + esc(S.toastOld.msg) + ' <button type="button" class="p-toast-btn" data-p="toast-old">' + esc(S.toastOld.act.label) + '</button></div>' : '');
+    S.root.innerHTML = syncHTML() + bodyHTML() + (S.toast ? '<div class="p-toast">' + esc(S.toast) + (S.toastAct ? ' <button type="button" class="p-toast-btn" data-p="toast-act">' + esc(S.toastAct.label) + '</button>' : '') + '</div>' : '') + (S.toastOld && S.toast ? '<div class="p-toast p-toast-old">' + esc(S.toastOld.msg) + ' <button type="button" class="p-toast-btn" data-p="toast-old">' + esc(S.toastOld.act.label) + '</button></div>' : '');
     S.root.classList.toggle('is-book', S.name === 'prep' && !!S.root.querySelector('.nb'));
     document.documentElement.classList.toggle('sheet-open', !!S.root.querySelector('.sheet'));
     if (scrolls.length) Array.prototype.forEach.call(S.root.querySelectorAll('.nb-body'), function (b, i) { if (scrolls[i] != null) b.scrollTop = scrolls[i]; });
     if (key) { var el = S.root.querySelector('[data-k="' + key + '"]'); if (el) { el.focus({ preventScroll: true }); if (start != null && el.setSelectionRange) { try { el.setSelectionRange(start, end); } catch (e) {} } } }
+    else if (btnSel) {
+      var back = S.root.querySelector(btnSel);
+      if (!back && tickAt >= 0) { var ticks2 = S.root.querySelectorAll('.nb-box[data-p="tick"]:not([disabled])'); back = ticks2[Math.min(tickAt, ticks2.length - 1)]; }
+      if (back) back.focus({ preventScroll: true }); else focusPin();
+    }
     else focusPin();
     rendering = false;
   }
@@ -2914,7 +2938,7 @@
         ordOverdueHTML(overdue, today) + (shown.length ? '<ul class="nb-rows">' + shown.slice().sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }).map(ordRow).join('') + '</ul>' : (overdue.length ? '' : live.length ? '<p class="nb-empty">Everything on this list has been ordered. See Ordered today below.</p>' : S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : '<p class="nb-empty">Loading...</p>')));
     return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' : '') + '</span><span class="p-links"><a class="p-link" href="#/prep">Prep list</a>' + '' + '</span></div>' + tabs +
       '<section class="nb-page o-page' + (view === 'all' ? ' o-all' : '') + '"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + (view === 'all' ? 'To order' : 'Order list') + '</h2><span class="nb-date">' + (view === 'all' ? 'Across the last ' + ORD_DAYS + ' days' : esc(longDate(S.ordDate))) + '</span></div>' +
-      (view === 'day' ? '<div class="nb-prog" role="status">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') + '</header>' +
+      (view === 'day' ? '<div class="nb-prog">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') + '</header>' +
       /* the add box is at the top, so it is always in reach; on big screens the list and the ordered-today list sit side by side below it */
       (view === 'day' && add ? '<div class="nb-foot o-add">' + add + (canBrowse() ? '' : '<p class="hint nb-who">Only the head chef or a sous chef ticks a line as ordered or removes it. Wrote the wrong thing? Undo it straight away, or ask them.</p>') + '</div>' : '') +
       (view === 'day' && S.ordDate === today ? ordNudgeHTML(overdue, today) : '') +
@@ -3118,7 +3142,7 @@
       (shown.length ? '<ul class="nb-rows">' + shown.map(wRow).join('') + '</ul>' : (S.wState !== 'ok' ? '<p class="nb-empty">Loading...</p>' : '<p class="nb-empty">Nothing logged for ' + esc(dayName(S.wDate).toLowerCase()) + ' yet. Log waste when it happens: prep waste, expired stock, cooking faults, returns and excess production.</p>'));
     return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' : '') + '</span><span class="p-links"><a class="p-link" href="#/prep">Prep list</a>' + '' + '</span></div>' + nav +
       '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Wastage</h2><span class="nb-date">' + esc(longDate(S.wDate)) + (tot ? ' &middot; ' + esc(tot) : '') + '</span></div>' +
-      '<div class="nb-prog" role="status">' + live.length + (live.length === 1 ? ' entry' : ' entries') + '</div></header>' +
+      '<div class="nb-prog">' + live.length + (live.length === 1 ? ' entry' : ' entries') + '</div></header>' +
       '<p class="w-rule">Write the actual amount and unit, not a dollar value. Unsafe food must never be reused to avoid logging waste.</p>' +
       // the form sits at the top, like the order list, so logging waste on a busy day never means scrolling past every entry
       (add ? '<div class="nb-foot w-addtop">' + add + '</div>' : '') + '<div class="nb-body">' + body + '</div></section>' + review + sheetHTML();
@@ -3337,12 +3361,7 @@
   document.addEventListener('keydown', function (e) {
     if (!npop) return;
     if (e.key === 'Escape') { e.preventDefault(); noteClose(true); return; }
-    if (e.key !== 'Tab') return;
-    var f = Array.prototype.filter.call(npop.querySelectorAll('button, a[href]'), function (x) { return x.offsetParent !== null; });
-    if (!f.length) return;
-    var first = f[0], last = f[f.length - 1];
-    if (e.shiftKey && (document.activeElement === first || !npop.contains(document.activeElement))) { e.preventDefault(); last.focus(); }
-    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    if (e.key === 'Tab') trapTab(e, npop);
   });
 
   /* writing shift pings: the Shift pings tab of the admin panel (head chef) and Shift pings in the prep book (sous chefs, from the chef mark menu).
@@ -4358,11 +4377,7 @@
     if (!gz) return;
     if (e.key === 'Escape') { e.preventDefault(); gzClose(); return; }
     if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { var b = gz.el.querySelector('[data-gz="' + (e.key === 'ArrowRight' ? 'next' : 'prev') + '"]:not([disabled])'); if (b) { e.preventDefault(); b.click(); } return; }
-    if (e.key !== 'Tab') return;
-    var f = Array.prototype.filter.call(gz.el.querySelectorAll('button:not([disabled])'), function (x) { return x.offsetParent !== null; });
-    if (!f.length) return;
-    if (e.shiftKey && (document.activeElement === f[0] || !gz.el.contains(document.activeElement))) { e.preventDefault(); f[f.length - 1].focus(); }
-    else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+    if (e.key === 'Tab') trapTab(e, gz.el, 'button:not([disabled])');
   });
   window.addEventListener('hashchange', function () { if (gz) gzClose(true); });
   /* Swipe left or right on the page (not while it is full size, and not with two fingers) turns the page. */
@@ -5079,12 +5094,7 @@
       if (!String(S.wf.amt).trim()) { e.preventDefault(); focusK('w-amt'); return; }
     }
     if (e.key === 'Tab' && S.sheet) {
-      var sh = S.root.querySelector('.sheet'), fs = sh ? Array.prototype.slice.call(sh.querySelectorAll('button')) : [];
-      if (fs.length) {
-        var first = fs[0], last = fs[fs.length - 1];
-        if (e.shiftKey && (document.activeElement === first || !sh.contains(document.activeElement))) { e.preventDefault(); last.focus(); }
-        else if (!e.shiftKey && (document.activeElement === last || !sh.contains(document.activeElement))) { e.preventDefault(); first.focus(); }
-      }
+      var sh = S.root.querySelector('.sheet'); if (sh) trapTab(e, sh, 'button');
       return;
     }
     if (e.key === 'Escape' && S.recipeOpen) { S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; draw(); focusSel('.p-pickbtn'); return; }
@@ -5313,10 +5323,7 @@
   document.addEventListener('keydown', function (e) {
     if (!mlPop) return;
     if (e.key === 'Escape') { e.preventDefault(); lsSet('lk.mail.later', String(now() + ML_NUDGE)); mlPopClose(); return; }
-    if (e.key !== 'Tab') return;
-    var f = mlPop.querySelectorAll('button'), first = f[0], last = f[f.length - 1];
-    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    if (e.key === 'Tab') trapTab(e, mlPop, 'button');
   });
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') { loadMail(); mlMaybePop(); } });
 
