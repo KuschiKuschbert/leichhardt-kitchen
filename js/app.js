@@ -246,7 +246,7 @@
     waste: '<svg width="26" height="26" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 18h44"/><path d="M25 18v-6h14v6"/><path d="M15 18l3 38h28l3-38"/><path d="M27 28v18M37 28v18"/></svg>',
     guides: '<svg width="26" height="26" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M32 16c-6-4-14-6-24-6v38c10 0 18 2 24 6 6-4 14-6 24-6V10c-10 0-18 2-24 6z"/><path d="M32 16v38"/><path d="M14 21c4 0 8 1 12 3M14 31c4 0 8 1 12 3M38 24c4-2 8-3 12-3M38 34c4-2 8-3 12-3"/></svg>'
   };
-  var NAV = [['recipes', 'Recipes', '#/recipes'], ['prep', 'Prep', '#/prep'], ['orders', 'Orders', '#/orders'], ['waste', 'Waste', '#/waste'], ['guides', 'Guides', '#/guides']];
+  var NAV = [['recipes', 'Recipes', '#/recipes'], ['prep', 'Prep', '#/prep'], ['orders', 'Orders', '#/orders'], ['waste', 'Wastage', '#/waste'], ['guides', 'Guides', '#/guides']];
   /* The head chef can hold Guides back from staff for now (People tab in the admin panel); js/prep.js knows who is on this phone */
   function featOn(k) { return !window.LK_PREP || !window.LK_PREP.featOn || window.LK_PREP.featOn(k); }
   function navList() { return NAV.filter(function (t) { return t[0] !== 'guides' || featOn('guides'); }); }
