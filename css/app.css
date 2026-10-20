@@ -375,6 +375,8 @@ img, svg { display: block; }
 .a-tile span { font-size: 0.8125rem; color: var(--muted); }
 .a-ch-h { margin: 0.6rem 0 0; font-family: var(--display); font-weight: 700; font-size: 1.15rem; }
 .ch { width: 100%; height: auto; display: block; }
+.ch-read { margin: 0.3rem 0 0; min-height: 1.4em; font-weight: 700; }
+.ch g { cursor: pointer; }
 .ch-grid { stroke: var(--line); stroke-width: 1; }
 .ch-ax { fill: var(--muted); font-size: 11px; font-family: var(--body); }
 .ch-lb { fill: var(--ink); font-size: 13px; font-weight: 600; font-family: var(--body); }
