@@ -756,6 +756,12 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .a-tools { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 0.75rem 1rem; }
 .a-title { margin: 0; font: 700 1.9rem var(--display); line-height: 1.05; }
 .a-tbtns { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.a-export > summary { list-style: none; display: inline-flex; align-items: center; cursor: pointer; }
+.a-export > summary::-webkit-details-marker { display: none; }
+.a-export[open] > summary { background: var(--ink); color: #fff; }
+.a-export .btn-row { margin-top: 0.5rem; }
+.a-upd { margin: 0.4rem 0 0; }
+.a-step { margin: 0.4rem 0 0.6rem; }
 .a-print-h { display: none; }
 .a-jump { display: flex; gap: 0.4rem; overflow-x: auto; padding: 0.35rem 0 0.5rem; scrollbar-width: none; }
 .a-jump::-webkit-scrollbar { display: none; }
