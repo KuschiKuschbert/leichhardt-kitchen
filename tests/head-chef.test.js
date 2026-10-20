@@ -76,6 +76,28 @@ const cfg = (people, lists) => { const e = {}; e[CFG] = Object.assign({ people, 
   ok(await p.$('[data-p="staff-open"]') === null, 'staff PIN: no Manage staff for Bo');
   await p.context().close();
 
+  // the Head chef's PIN on a phone without the Google sign-in: Admin shows in the top bar and leads to the sign-in.
+  // The PIN alone never opens the panel.
+  const admBtn = p => p.evaluate(() => { const a = document.querySelector('.wtop-icons .adm'); return a ? (a.classList.contains('is-signed') ? 'signed' : 'outline') : 'none'; });
+  p = await L.open(b, '#/', { who: 'ann', extra: demoted, wait: 1800 });
+  ok((await admBtn(p)) === 'outline', 'head chef PIN: Admin shows in the top bar (' + await admBtn(p) + ')');
+  ok(!(await L.overflow(p)), 'head chef PIN: no sideways scroll with Admin (' + await L.overflow(p) + ')');
+  await p.click('.wtop-icons .adm');
+  await p.waitForTimeout(800);
+  ok(/stays signed in/.test(await txt(p, '.a-headpin')) && await p.$('[data-p="signin"]') !== null, 'head chef PIN: Admin opens the page with Sign in with Google');
+  ok(await p.$('[data-p="a-tab"]') === null, 'head chef PIN: the PIN alone does not open the admin panel');
+  ok(p.errors.length === 0, 'head chef PIN Admin: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+  for (const w of [1280, 1440]) {
+    p = await L.open(b, '#/', { who: 'ann', extra: demoted, width: w, height: 900, wait: 1800 });
+    const lines = await p.evaluate(() => { const el = document.querySelector('.wtop-brand b'); return el.getBoundingClientRect().height / parseFloat(getComputedStyle(el).fontSize); });
+    ok(lines < 1.6, 'head chef PIN at ' + w + ': "Kitchen Book" stays on one line with Admin (' + lines.toFixed(1) + ' lines)');
+    await p.context().close();
+  }
+  p = await L.open(b, '#/', { who: 'bo', extra: demoted, wait: 1800 });
+  ok((await admBtn(p)) === 'none', 'staff PIN: no Admin in the top bar for Bo (' + await admBtn(p) + ')');
+  await p.context().close();
+
   await b.close();
   L.report(R);
 })().catch(e => { console.error(e); process.exit(1); });
