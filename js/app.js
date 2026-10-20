@@ -298,15 +298,17 @@
   var LOGO_MARK = '<svg class="rb-mark" viewBox="40 60 432 380" width="56" height="49" aria-hidden="true" focusable="false"><path d="M113.44999999999999 365.98Q109.03 363.26 105.28999999999999 359.35Q101.54999999999998 355.44 103.58999999999999 348.3Q103.25 344.22 104.1 340.48Q104.94999999999999 336.74 105.28999999999999 335.38Q106.99 335.38 107.32999999999998 333.51Q107.66999999999999 331.64 107.66999999999999 330.28Q107.66999999999999 327.56 109.71 321.1Q111.75 314.64 113.78999999999999 307.5Q116.50999999999999 301.72 119.05999999999999 295.26Q121.60999999999999 288.8 121.60999999999999 287.44Q121.60999999999999 284.72 122.96999999999998 281.83000000000004Q124.32999999999998 278.94 126.03 276.22Q127.72999999999999 272.14 128.57999999999998 267.21Q129.43 262.28 129.43 259.56Q131.47 255.14 133.85 250.04Q136.23 244.94 137.59 239.5Q139.63 233.71999999999997 143.70999999999998 222.32999999999998Q147.79 210.94 152.20999999999998 199.38Q155.26999999999998 192.92 158.16 185.95Q161.05 178.98 163.43 174.04999999999998Q165.81 169.11999999999998 166.82999999999998 169.11999999999998Q166.82999999999998 169.11999999999998 166.82999999999998 167.92999999999998Q166.82999999999998 166.73999999999998 166.82999999999998 165.38Q166.82999999999998 163.67999999999998 169.54999999999998 158.75Q172.26999999999998 153.82 174.64999999999998 148.38Q178.05 143.27999999999997 179.41 138.69Q180.76999999999998 134.1 180.76999999999998 134.1Q180.76999999999998 134.1 182.13 131.89Q183.49 129.67999999999998 184.85 128.32Q193.69 123.55999999999997 199.98000000000002 123.55999999999997Q206.27 123.55999999999997 208.65 131.71999999999997Q211.37 139.2 211.03 142.08999999999997Q210.69 144.98 208.65 149.05999999999997Q205.93 155.17999999999998 201.51 164.52999999999997Q197.09 173.88 192.32999999999998 184.42Q187.57 194.95999999999998 183.32 204.64999999999998Q179.07 214.34 176.51999999999998 221.14Q173.97 227.94 173.97 229.64L159.69 264.65999999999997Q158.32999999999998 267.03999999999996 155.26999999999998 276.73Q152.20999999999998 286.42 148.13 299.85Q144.05 313.28 139.8 327.04999999999995Q135.55 340.82 131.47 352.04Q129.43 357.82 127.73 361.73Q126.03 365.64 124.33 367.68Q122.63 369.72 120.25 369.72Q118.88999999999999 369.72 117.19 368.70000000000005Q115.49 367.68 113.44999999999999 365.98ZM233.81 365.3Q230.75 365.64 225.48000000000002 362.40999999999997Q220.21 359.18 214.26 354.42Q208.31 349.66 203.04 344.56Q197.76999999999998 339.46 194.70999999999998 335.72Q189.26999999999998 327.9 180.94 314.64Q172.61 301.38 168.53 286.76Q166.14999999999998 275.88 163.6 269.25Q161.05 262.62 161.05 257.52L161.39 236.44L186.20999999999998 234.74Q187.91 253.1 191.64999999999998 265.17Q195.39 277.24 200.49 286.76Q204.57 295.6 209.5 304.1Q214.43 312.6 220.55 318.38Q228.37 326.88 234.49 330.96000000000004Q240.61 335.04 243.67000000000002 335.04Q250.13 338.1 253.19 340.82000000000005Q256.25 343.54 257.27 345.58000000000004Q258.28999999999996 347.62 257.95 349.32Q258.28999999999996 350.34 257.61 353.90999999999997Q256.93 357.48 255.57 361.05Q254.21 364.62 251.83 365.64Q249.45 368.02 245.70999999999998 368.53Q241.97 369.04 233.81 365.3ZM154.93 235.42 179.75 217.06Q180.76999999999998 216.04 185.7 211.45Q190.63 206.85999999999999 204.91 195.98L249.79 159.6Q258.28999999999996 155.17999999999998 265.42999999999995 149.73999999999998Q272.57 144.29999999999998 277.33000000000004 141.23999999999998Q283.11 137.16 289.23 132.74Q295.35 128.32 296.71000000000004 128.66Q299.43 127.29999999999998 303.16999999999996 131.20999999999998Q306.90999999999997 135.11999999999998 309.46 140.39Q312.01 145.66 311.67 148.38Q312.35 151.77999999999997 310.65000000000003 154.15999999999997Q308.95000000000005 156.54 301.81 160.61999999999998Q293.31 164.35999999999999 288.38 167.76Q283.45000000000005 171.16 282.77 172.85999999999999Q282.77 172.85999999999999 275.63 178.29999999999998Q268.49 183.73999999999998 258.63 190.54Q245.03 199.72 236.36 206.69Q227.69 213.66 224.97 217.73999999999998Q223.61 217.73999999999998 222.42000000000002 218.76Q221.23 219.78 219.87 219.44Q219.87 219.44 217.15 221.31Q214.43 223.18 213.07 225.21999999999997Q212.39 226.92 210.18 229.64Q207.97 232.35999999999999 204.91 232.01999999999998Q202.53 233.38 196.41 237.63Q190.29 241.88 183.66 246.98Q177.03 252.07999999999998 172.26999999999998 256.15999999999997Q167.51 260.24 167.17000000000002 260.91999999999996ZM318.47 374.48Q303.85 364.96 301.3 355.44Q298.75 345.92 307.93 340.14Q309.96999999999997 338.78 315.91999999999996 339.79999999999995Q321.87 340.82 324.93 343.88Q331.73 350.0 340.4 351.53Q349.07 353.06 361.65 349.66Q375.93 345.24 383.58000000000004 338.61Q391.23 331.98 400.75 320.42Q407.89 311.24 410.78 302.4Q413.66999999999996 293.56 413.5 286.25Q413.33000000000004 278.94 409.93 275.2Q401.43 263.3 388.85 258.71000000000004Q376.27 254.12 355.87 259.56Q353.49 259.9 348.73 260.91999999999996Q343.97 261.94 340.23 262.78999999999996Q336.49 263.64 336.15 263.64Q333.77 264.32 332.40999999999997 264.32Q331.05 264.32 329.18 267.54999999999995Q327.31 270.78 323.57 280.80999999999995Q319.83 290.84 312.35 311.58Q305.21 332.32 300.28 340.99Q295.35 349.66 291.61 348.81Q287.87 347.96 283.11 341.5Q280.39 336.74 277.15999999999997 330.96000000000004Q273.93 325.18 277.33 319.06Q279.03 316.0 280.04999999999995 313.45Q281.07 310.9 282.77 304.44Q284.46999999999997 299.34 289.4 286.59Q294.33 273.84 301.13 256.66999999999996Q307.93 239.5 315.40999999999997 221.14Q322.89 202.78 329.86 186.45999999999998Q336.83 170.14 341.59 158.92Q346.35 148.38 347.37 143.62Q348.39 138.85999999999999 346.69 138.51999999999998Q346.69 136.82 345.66999999999996 135.29Q344.65 133.76 344.99 132.39999999999998Q344.99 131.04 350.94 128.65999999999997Q356.89 126.27999999999997 363.69 124.23999999999998Q370.49 122.19999999999999 373.55 122.88Q375.25 122.88 377.63 122.71Q380.01 122.53999999999999 380.01 121.17999999999998Q381.03 121.17999999999998 386.46999999999997 120.49999999999999Q391.90999999999997 119.82 398.37 120.49999999999997Q421.15 122.53999999999999 435.77 133.58999999999997Q450.39 144.64 450.05 168.78Q449.71000000000004 174.55999999999997 445.29 183.73999999999998Q440.87 192.92 434.24 202.1Q427.61 211.28 420.13 218.07999999999998Q415.71000000000004 221.82 410.78000000000003 225.73Q405.85 229.64 402.28000000000003 232.19Q398.71000000000004 234.74 398.71000000000004 234.74Q398.71000000000004 234.74 401.43 235.76Q404.15 236.77999999999997 407.21000000000004 237.8Q422.85 243.57999999999998 431.86 252.42Q440.87 261.26 444.61 276.9Q445.97 282.0 444.78000000000003 289.48Q443.59000000000003 296.96 441.55 304.27Q439.51 311.58 437.13 316.68Q434.75 319.06 433.39 321.61Q432.03 324.15999999999997 432.03 324.15999999999997Q432.03 324.84 429.31 329.42999999999995Q426.59000000000003 334.02 422.85 339.46Q419.11 344.9 415.71000000000004 348.98Q412.31 351.7 406.02 356.63Q399.73 361.56 392.42 366.32Q385.11 371.08 378.65 373.46Q369.13 377.54 357.4 379.07000000000005Q345.67 380.6 335.13 379.41Q324.59 378.22 318.47 374.48ZM342.95 233.38Q342.95 233.38 348.56 232.19Q354.17 231.0 360.97 229.47Q367.77 227.94 371.17 226.57999999999998Q372.87 225.56 376.1 223.86Q379.33 222.16 382.73 218.76Q387.49 214.34 392.93 208.73Q398.37 203.11999999999998 403.64 196.65999999999997Q408.90999999999997 190.2 412.65 182.72Q420.47 170.48 421.15000000000003 165.04Q421.83000000000004 159.6 417.40999999999997 155.17999999999998Q414.35 151.44 408.91 149.57Q403.47 147.7 397.18 147.52999999999997Q390.89 147.35999999999999 385.11 149.05999999999997Q380.69 150.42 378.31 152.29Q375.93 154.16 375.93 157.89999999999998Q375.93 160.95999999999998 374.06 164.19Q372.19 167.42 370.49 169.11999999999998Q370.15 171.5 368.28 173.70999999999998Q366.40999999999997 175.92 366.40999999999997 175.92Q366.40999999999997 177.28 362.15999999999997 184.25Q357.90999999999997 191.22 353.15 204.14Q347.03 218.76 344.99 225.22Q342.95 231.68 342.95 233.38Z" fill="#FBF8F1" transform="rotate(-6 256 256)"/><path d="M90 400 C190 378 300 374 430 388" fill="none" stroke="#E2602A" stroke-width="28" stroke-linecap="round"/></svg>';
   /* The bell opens today's shift pings (written by the head chef or a sous chef). It stays hidden until there is a ping for today, and shows a dot while the pings are unread on this phone. The prep book fills it in once it has read them. */
   var BELL = '<svg width="22" height="22" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M32 8c-9 0-16 7-16 16v10c0 5-3 8-6 12h44c-3-4-6-7-6-12V24c0-9-7-16-16-16z"/><path d="M26 52c1 4 3 6 6 6s5-2 6-6"/></svg>';
-  /* A chef hat in a ring in the top bar while a person is signed in on this phone, framed like Admin and Settings: the
-     name in the title everywhere and next to the hat from 1400 px, where there is room (at 1280 px it pushed "Kitchen
-     Book" onto two lines). A tap opens a small menu: Kitchen mail (write to the head chef), the drinks run, Meeting
-     minutes, a Chef group for the head chef and sous chefs (Shift pings, Minutes register, Manage staff, 20 Oct 2026:
-     moved here from Handy on the prep list) and Sign out, which hands the phone to the next person. js/prep.js says
-     when the person changes (lk-who). */
+  /* A chef hat in a ring at the right of the top bar, on every phone, framed like Admin: it holds Settings for everyone.
+     While a person is signed in the ring is solid, their name is in the title everywhere and next to the hat from 1400
+     px, where there is room (at 1280 px it pushed "Kitchen Book" onto two lines). A tap opens a small menu: Kitchen mail
+     (write to the head chef), the drinks run, Meeting minutes, a Chef group for the head chef and sous chefs (Shift
+     pings, Minutes register, Manage staff, 20 Oct 2026: moved here from Handy on the prep list), Settings and Sign out,
+     which hands the phone to the next person. With nobody signed in the ring is dashed and the menu has Sign in ("Who
+     are you?", then back to the same page) and Settings. js/prep.js says when the person changes (lk-who). */
   function whoMark(flip) {
     var n = window.LK_PREP && window.LK_PREP.whoName ? window.LK_PREP.whoName() : '';
-    return '<button type="button" class="wtop-btn wtop-who' + (n ? ' on' : '') + (n && flip ? ' flip' : '') + '" data-who="menu" aria-haspopup="true" aria-expanded="false"' + (n ? ' title="Signed in as ' + esc(n) + '" aria-label="Signed in as ' + esc(n) + '"' : ' aria-hidden="true" tabindex="-1"') + '>' + ICON.chef + '<span class="wtop-lbl wtop-who-n">' + esc(n.split(' ')[0]) + '</span></button>';
+    var here = parseRoute().name === 'settings' ? ' aria-current="page"' : '';
+    return '<button type="button" class="wtop-btn wtop-who' + (n ? ' on' : '') + (n && flip ? ' flip' : '') + '" data-who="menu" aria-haspopup="true" aria-expanded="false"' + here + (n ? ' title="Signed in as ' + esc(n) + '" aria-label="Signed in as ' + esc(n) + ', menu and Settings"' : ' title="Menu and Settings" aria-label="Menu and Settings"') + '>' + ICON.chef + '<span class="wtop-lbl wtop-who-n">' + esc(n.split(' ')[0]) + '</span></button>';
   }
   /* The chef mark's menu, appended to document.body (a top bar redraw does not remove it). Clicks use data-who. */
   var wmenu = null;
@@ -318,20 +320,24 @@
   }
   function whoMenuOpen(btn) {
     var n = window.LK_PREP && window.LK_PREP.whoName ? window.LK_PREP.whoName() : '';
-    if (wmenu || !n) return;
-    var m = window.LK_PREP.chefMenu ? window.LK_PREP.chefMenu() : {};
+    if (wmenu) return;
+    var m = n && window.LK_PREP.chefMenu ? window.LK_PREP.chefMenu() : {};
     var r = btn.getBoundingClientRect(), el = document.createElement('div');
     el.className = 'wm-wrap';
-    el.innerHTML = '<div class="wm-bg" data-who="close"></div><nav class="wm" aria-label="' + esc(n) + '" style="top:' + Math.round(r.bottom + 8) + 'px;right:' + Math.max(8, Math.round(window.innerWidth - r.right)) + 'px">' +
-      '<p class="wm-h">Signed in as <b>' + esc(n) + '</b></p>' +
-      '<a class="wm-a" href="#/mail" data-who="go">' + ICON.mail + '<span><b>Kitchen mail</b><small>Write to Chef</small></span></a>' +
-      '<a class="wm-a" href="#/drinks" data-who="go">' + ICON.cup + '<span><b>Drinks run</b><small>Everyone\'s usual coffee</small></span></a>' +
-      (m.minutes ? '<a class="wm-a" href="#/minutes" data-who="go">' + ICON.doc + '<span><b>Meeting minutes</b><small>Read and sign</small></span></a>' : '') +
-      (m.chef ? '<p class="wm-h wm-sh">Chef</p>' +
-        '<button type="button" class="wm-a" data-who="open" data-v="pings">' + ICON.bell + '<span><b>Shift pings</b><small>Write to the whole team</small></span></button>' +
-        '<button type="button" class="wm-a" data-who="open" data-v="register">' + ICON.doc + '<span><b>Minutes register</b><small>Who has signed</small></span></button>' +
-        '<button type="button" class="wm-a" data-who="open" data-v="staff">' + ICON.team + '<span><b>Manage staff</b><small>Add or remove names</small></span></button>' : '') +
-      '<button type="button" class="wm-a wm-out" data-who="out">' + ICON.exit + '<span><b>Sign out</b><small>Hand the phone to someone else</small></span></button></nav>';
+    var set = '<a class="wm-a wm-set" href="#/settings" data-who="go">' + ICON.gear + '<span><b>Settings</b><small>Text size, how recipes open</small></span></a>';
+    el.innerHTML = '<div class="wm-bg" data-who="close"></div><nav class="wm" aria-label="' + (n ? esc(n) : 'Menu') + '" style="top:' + Math.round(r.bottom + 8) + 'px;right:' + Math.max(8, Math.round(window.innerWidth - r.right)) + 'px">' +
+      (n ? '<p class="wm-h">Signed in as <b>' + esc(n) + '</b></p>' +
+        '<a class="wm-a" href="#/mail" data-who="go">' + ICON.mail + '<span><b>Kitchen mail</b><small>Write to Chef</small></span></a>' +
+        '<a class="wm-a" href="#/drinks" data-who="go">' + ICON.cup + '<span><b>Drinks run</b><small>Everyone\'s usual coffee</small></span></a>' +
+        (m.minutes ? '<a class="wm-a" href="#/minutes" data-who="go">' + ICON.doc + '<span><b>Meeting minutes</b><small>Read and sign</small></span></a>' : '') +
+        (m.chef ? '<p class="wm-h wm-sh">Chef</p>' +
+          '<button type="button" class="wm-a" data-who="open" data-v="pings">' + ICON.bell + '<span><b>Shift pings</b><small>Write to the whole team</small></span></button>' +
+          '<button type="button" class="wm-a" data-who="open" data-v="register">' + ICON.doc + '<span><b>Minutes register</b><small>Who has signed</small></span></button>' +
+          '<button type="button" class="wm-a" data-who="open" data-v="staff">' + ICON.team + '<span><b>Manage staff</b><small>Add or remove names</small></span></button>' : '') +
+        set +
+        '<button type="button" class="wm-a wm-out" data-who="out">' + ICON.exit + '<span><b>Sign out</b><small>Hand the phone to someone else</small></span></button>'
+      : '<p class="wm-h">Nobody signed in on this phone</p>' +
+        '<a class="wm-a wm-in" href="#/prep" data-who="signin">' + ICON.chef + '<span><b>Sign in</b><small>Your name and PIN, then back here</small></span></a>' + set) + '</nav>';
     document.body.appendChild(el); wmenu = el;
     btn.setAttribute('aria-expanded', 'true');
     var first = el.querySelector('.wm-a'); if (first) first.focus({ preventScroll: true });
@@ -343,6 +349,7 @@
     if (a === 'menu') { if (wmenu) whoMenuClose(); else whoMenuOpen(el); return; }
     if (a === 'close') { whoMenuClose(true); return; }
     if (a === 'go') { whoMenuClose(); return; }
+    if (a === 'signin') { e.preventDefault(); whoMenuClose(); if (window.LK_PREP && window.LK_PREP.signIn) window.LK_PREP.signIn(location.hash || '#/'); else location.hash = '#/prep'; return; }
     if (a === 'open') { whoMenuClose(); window.LK_PREP.chefOpen(el.getAttribute('data-v')); return; }
     if (a === 'out') {
       // something not saved yet: the first tap says so, the second signs out anyway
@@ -371,9 +378,10 @@
     var i = window.LK_PREP && window.LK_PREP.noteInfo ? window.LK_PREP.noteInfo() : { n: 0, unread: false };
     return '<button type="button" class="wtop-btn nbell' + (i.unread ? ' has-new' : '') + '" data-note="open"' + (i.n ? '' : ' hidden') + ' aria-label="' + i.n + ' shift ping' + (i.n === 1 ? '' : 's') + ' today' + (i.unread ? ', new' : '') + '">' + BELL + '<span class="wtop-lbl">Pings</span></button>';
   }
-  /* The same top bar on every page as on the landing page: brand (goes home), the menu, Pings, Admin and Settings. */
+  /* The same top bar on every page as on the landing page: brand (goes home), the menu, Pings, Admin and the chef hat
+     (its menu holds Settings). */
   function topIcons() {
-    return '<span class="wtop-icons">' + whoMark() + noteBellHTML() + adminLink('wtop-btn') + '<a class="wtop-btn" href="#/settings" aria-label="Settings"' + (parseRoute().name === 'settings' ? ' aria-current="page"' : '') + '>' + ICON.gear + '<span class="wtop-lbl">Settings</span></a></span>';
+    return '<span class="wtop-icons">' + noteBellHTML() + adminLink('wtop-btn') + whoMark() + '</span>';
   }
   function topBar() {
     return '<header class="wtop"><a class="wtop-brand" href="#/" aria-label="Kitchen Book, home">' + LOGO_MARK + '<span class="rb-text"><span class="rb-eb">Leichhardt Hotel Kitchen</span><b>Kitchen Book</b></span></a>' + pillNav() + topIcons() + '</header>';
@@ -1088,7 +1096,7 @@
   window.addEventListener('lk-mail', function () { var ic = app.querySelector('.wtop-icons'); if (ic) ic.outerHTML = topIcons(); });
   // The Head chef's PIN also shows or drops the Admin button, so the whole icon group is redrawn.
   window.addEventListener('lk-who', function (e) {
-    if (!(window.LK_PREP && window.LK_PREP.whoName && window.LK_PREP.whoName())) whoMenuClose();
+    whoMenuClose();
     var ic = app.querySelector('.wtop-icons'); if (ic) ic.outerHTML = topIcons();
     var el = app.querySelector('.wtop-who'); if (el) el.outerHTML = whoMark(!!(e.detail && e.detail.signedIn));
   });

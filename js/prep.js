@@ -386,6 +386,7 @@
       .map(function (k) { return '[' + k + '="' + String(el.getAttribute(k)).replace(/["\\]/g, '\\$&') + '"]'; }).join('');
   }
   function guestReplay(pend) {
+    if (pend.back) { location.hash = pend.back; return; }   // Sign in from the chef hat: back to the page the person was on
     if (pend.form === 'add') { if (S.text.trim()) addTyped(); return; }
     if (pend.form === 'oadd') { addOrder(); return; }
     if (pend.form === 'wadd') { addWaste(); return; }
@@ -2047,7 +2048,7 @@
     here.forEach(function (id) { var p = list.filter(function (x) { return x.id === id; })[0]; if (p) first.push(p); });
     list.forEach(function (p) { if (first.indexOf(p) < 0) rest.push(p); });
     function names(l) { return '<div class="p-names">' + l.map(function (p) { return '<button type="button" class="chip p-name" data-p="who" data-id="' + esc(p.id) + '">' + esc(p.name) + '</button>'; }).join('') + '</div>'; }
-    return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Who are you?</h2><p class="hint">' + (S.pending ? 'Pick your name and type your PIN. Then it is done for you.' : 'Pick your name. The first time, you choose your own 4-digit PIN to go with it.') + '</p>' +
+    return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Who are you?</h2><p class="hint">' + (S.pending && S.pending.back ? 'Pick your name and type your PIN. Then the book goes back to where you were.' : S.pending ? 'Pick your name and type your PIN. Then it is done for you.' : 'Pick your name. The first time, you choose your own 4-digit PIN to go with it.') + '</p>' +
       (!list.length ? '<p class="p-err">No names are set up yet. The head chef adds them in the admin panel.</p>' :
         first.length ? '<p class="nb-ql p-here">Here today</p>' + names(first) + (rest.length ? '<p class="nb-ql p-here">Everyone</p>' + names(rest) : '') : names(list)) +
       (S.picking && shared() ? '<div class="btn-row"><button type="button" class="btn" data-p="who-back">Back to the list</button></div>' : '') + '</section>';
@@ -5398,6 +5399,13 @@
     featOn: featOn,
     ownerHere: ownerHere,
     whoName: whoName,
+    // Sign in from the chef hat with nobody signed in: "Who are you?" on the prep list, then back to the page it came from
+    signIn: function (back) {
+      if (whoName()) return;
+      S.picking = true; S.who = ''; S.pending = back && back !== '#/prep' && back.indexOf('#/') === 0 ? { back: back } : null;
+      if (location.hash === '#/prep') draw(); else location.hash = '#/prep';
+      window.scrollTo(0, 0);
+    },
     headPin: whoHead,
     chefMenu: chefMenu,
     chefOpen: chefOpen,
