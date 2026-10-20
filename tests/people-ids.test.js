@@ -25,7 +25,7 @@ const same = (a, b) => (a || []).slice().sort().join(',') === b.slice().sort().j
   ok(/Bo/.test(await txt(p, '.a-ids-list')) && /now marked Sous chef/.test(await txt(p, '.a-ids-list')), 'admin: the card says Bo is now marked Sous chef');
   ok(same(s[CFG].sousIds, ['sam']) && same(s[CFG].pingIds, ['sam']), 'admin: sousIds and pingIds were not published quietly');
   ok(same(s[CFG].staffIds, ['sam', 'ann', 'bo']), 'admin: staffIds was added by itself');
-  await p.click('[data-p="a-tab"][data-t="people"]');
+  await L.adminTab(p, 'people');
   await p.waitForTimeout(300);
   ok(await p.$('.a-ids') !== null, 'admin: the card is on every tab');
   await p.click('[data-p="a-ids-undo"]');
@@ -57,7 +57,7 @@ const same = (a, b) => (a || []).slice().sort().join(',') === b.slice().sort().j
 
   // admin: a save from the People tab writes all three lists from the roles
   p = await L.open(b, '#/admin', { admin: true, extra: cfg(), wait: 1800 });
-  await p.click('[data-p="a-tab"][data-t="people"]');
+  await L.adminTab(p, 'people');
   await p.waitForTimeout(300);
   await p.selectOption('#a-r2', 'sous');
   await p.waitForTimeout(200);

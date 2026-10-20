@@ -22,13 +22,14 @@ function withAnn() {
 
   // admin: the tab is called Shift pings, the People tab has a Pings tick, and saving keeps pingIds in step
   p = await L.open(b, '#/admin', { admin: true, wait: 1800 });
+  await L.adminTab(p, 'notes');
   ok(await txt(p, '[data-p="a-tab"][data-t="notes"]') === 'Shift pings', 'admin: the Notes tab is now called Shift pings');
   s = await store(p);
   ok(JSON.stringify(s[CFG].pingIds) === '["sam"]', 'admin: opening the panel adds pingIds (sous chefs) when it is missing (' + JSON.stringify(s[CFG].pingIds) + ')');
-  await p.click('[data-p="a-tab"][data-t="notes"]');
+  await L.adminTab(p, 'notes');
   await p.waitForTimeout(300);
   ok(/Write a ping/.test(await txt(p, '[data-p="n-new"]') || ''), 'admin: Write a ping button');
-  await p.click('[data-p="a-tab"][data-t="people"]');
+  await L.adminTab(p, 'people');
   await p.waitForTimeout(300);
   const box = i => p.evaluate(i => { const e = document.querySelector('[data-a="perm"][data-perm="ping"][data-i="' + i + '"]'); return e ? { on: e.checked, off: e.disabled } : null; }, i);
   const sam = await box(0), ann = await box(1);

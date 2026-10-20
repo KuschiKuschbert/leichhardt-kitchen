@@ -83,7 +83,7 @@ const { R, ok } = L.results(), { txt } = L;
 
   // admin: the Add several names box keeps its text through a redraw
   p = await L.open(b, '#/admin', { admin: true, wait: 1800 });
-  await p.click('[data-p="a-tab"][data-t="people"]');
+  await L.adminTab(p, 'people');
   await p.waitForTimeout(200);
   await p.fill('#a-bulk', 'Kim\nLee');
   await p.click('[data-p="a-add-person"]');

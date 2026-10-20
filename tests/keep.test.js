@@ -78,7 +78,7 @@ function riceTwice() {
   const many = cfg.people.concat(Array.from({ length: 17 }, (_, i) => ({ id: 'p' + i, name: 'Cook ' + (i + 1), role: 'staff', add: true, tick: true, del: false, active: true })));
   const extra = {}; extra[['kitchens', L.PIN, 'config', 'main'].join('/')] = Object.assign({}, cfg, { people: many });
   p = await L.open(b, '#/admin', { admin: true, wait: 1800, width: 1280, height: 900, extra });
-  await p.click('[data-p="a-tab"][data-t="people"]');
+  await L.adminTab(p, 'people');
   await p.waitForTimeout(300);
   const cnt = () => p.evaluate(() => (document.querySelector('[data-lvb="people"] .lv-count') || {}).textContent || '');
   ok(/Showing 15 of 20 people/.test(await cnt()), 'admin: the people list shows 15 of 20 (' + await cnt() + ')');

@@ -1378,3 +1378,9 @@ html.gz-open, html.gz-open body { overflow: hidden; }
 .mlp-go, .mlp-later { flex: 1 1 8rem; min-height: 52px; border: 2px solid var(--ink); border-radius: 26px; font: inherit; font-weight: 700; font-size: 1.0625rem; cursor: pointer; }
 .mlp-go { background: var(--ink); color: #fff; }
 .mlp-later { background: var(--paper); color: var(--ink); }
+
+/* ---------- admin: five groups, the open group's pages underneath (20 Oct 2026) ---------- */
+.a-groups { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.4rem; margin: 0 0 0.6rem; }
+.a-group { min-height: 48px; padding: 0 0.4rem; border: 1.5px solid var(--ink); border-radius: 10px; background: var(--paper); font: 700 1rem var(--body); color: var(--ink); cursor: pointer; }
+.a-group[aria-current="page"] { background: var(--ink); color: #fff; }
+@media (max-width: 599px) { .a-groups { grid-template-columns: repeat(3, minmax(0, 1fr)); } .a-group { font-size: 0.9375rem; } }
