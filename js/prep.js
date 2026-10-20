@@ -2534,9 +2534,12 @@
     Object.keys(S.draft).forEach(function (k) { if (k !== 'people' && JSON.stringify(S.draft[k]) !== JSON.stringify(old[k])) n++; });
     return n || (draftDirty() ? 1 : 0);
   }
+  /* Ticks and names change the draft without a redraw (so the cursor stays put); the Save bar follows straight after. */
+  function saveBarRefresh() { var sb = S.root && S.root.querySelector('.a-savebar'); if (sb && S.draft) sb.outerHTML = saveBarHTML(); }
+  ['change', 'input'].forEach(function (ev) { document.addEventListener(ev, function (e) { if (e.target && e.target.getAttribute && e.target.getAttribute('data-a')) setTimeout(saveBarRefresh, 0); }, true); });
   function saveBarHTML() {
     var n = draftChanges();
-    return '<section class="set-block">' + staleHint() + '<div class="btn-row"><button type="button" class="btn dark" data-p="a-save"' + (S.busy || !n ? ' disabled' : '') + '>Save changes</button>' +
+    return '<section class="set-block a-savebar">' + staleHint() + '<div class="btn-row"><button type="button" class="btn dark" data-p="a-save"' + (S.busy || !n ? ' disabled' : '') + '>Save changes</button>' +
       '<button type="button" class="btn" data-p="a-reset"' + (n ? '' : ' disabled') + '>' + (armed('a-reset') ? 'Tap again to undo ' + (n === 1 ? 'it' : 'all ' + n) : 'Undo unsaved changes') + '</button>' +
       (n ? '<span class="a-unsaved">' + n + ' unsaved change' + (n === 1 ? '' : 's') + '</span>' : '') + '</div><span class="saved" role="status">' + esc(S.saveMsg) + '</span></section>';
   }
