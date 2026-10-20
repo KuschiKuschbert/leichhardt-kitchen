@@ -276,11 +276,16 @@
   }
   /* Admin always lives in the same place: the key button top right, next to Settings, on every page.
      It only shows on a phone or computer where the head chef is signed in with Google and has passed the owner check
-     (lk.admin, set by js/prep.js). Everyone else never sees it: the way in for the first time is the link on Settings. */
+     (lk.admin, set by js/prep.js), or, as a plain outline, while the Head chef is signed in with their PIN on a phone
+     that has not signed in with Google yet: a tap opens the admin page, one tap from the Google sign-in. */
   function isAdminDevice() { try { return !!LS && LS.getItem('lk.admin') === '1'; } catch (e) { return false; } }
   function adminLink(cls) {
-    if (!isAdminDevice()) return '';
-    var on = parseRoute().name === 'admin', m = window.LK_PREP && window.LK_PREP.mailInfo ? window.LK_PREP.mailInfo() : { n: 0 };
+    var on = parseRoute().name === 'admin';
+    if (!isAdminDevice()) {
+      if (!(window.LK_PREP && window.LK_PREP.headPin && window.LK_PREP.headPin())) return '';
+      return '<a class="' + cls + ' adm" href="#/admin" title="Admin panel: sign in with Google" aria-label="Admin panel, sign in with Google"' + (on ? ' aria-current="page"' : '') + '>' + ICON.key + '<span class="wtop-lbl">Admin</span></a>';
+    }
+    var m = window.LK_PREP && window.LK_PREP.mailInfo ? window.LK_PREP.mailInfo() : { n: 0 };
     // the number of open kitchen mail on the key (js/prep.js reads it on the head chef's device and says when it changes: lk-mail)
     return '<a class="' + cls + ' adm is-signed" href="#/admin" title="Admin panel' + (m.n ? ', ' + m.n + ' open mail' : '') + '" aria-label="Admin panel (signed in)' + (m.n ? ', ' + m.n + ' open kitchen mail' : '') + '"' + (on ? ' aria-current="page"' : '') + '>' + ICON.key + '<span class="wtop-lbl">Admin</span>' + (m.n ? '<span class="adm-n" aria-hidden="true">' + (m.n > 99 ? '99+' : m.n) + '</span>' : '') + '</a>';
   }
@@ -377,7 +382,9 @@
   /* Search, with the recipe count above it and the Pass / Tiles switch right next to it. */
   function searchField(placeholder, count) {
     return '<div class="field find-bar"><div class="field-head"><label class="label" for="find">Search</label>' + (count != null ? '<span class="count' + (/ of /.test(count) ? ' is-on' : '') + '" id="count">' + esc(count) + '</span>' : '') + '</div>' +
-      '<div class="search-row"><input id="find" class="search" type="search" autocomplete="off" data-k="find" placeholder="' + esc(placeholder) + '" value="' + esc(ui.query) + '">' + viewSwitch() + '</div></div>';
+      // autocorrect off: iOS would turn "parmy" into "party" before the book's own typo fix sees it
+      '<div class="search-row"><span class="find-wrap' + (ui.query ? ' has-q' : '') + '"><input id="find" class="search" type="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" data-k="find" placeholder="' + esc(placeholder) + '" value="' + esc(ui.query) + '">' +
+      '<button type="button" class="find-x" data-act="clearfind" aria-label="Clear the search">&times;</button></span>' + viewSwitch() + '</div></div>';
   }
   function freeChips(scroll) {
     return '<div class="field"><span class="label" id="free-label">Free from</span><div class="chips' + (scroll ? ' scroll' : '') + '" role="group" aria-labelledby="free-label">' +
@@ -390,9 +397,19 @@
   function lensFold() {
     return '<details class="lens-fold"' + (ui.lens ? ' open' : '') + '><summary><span class="label">Allergen lens</span>' + (ui.lens ? '<span class="lens-on">' + esc(ui.lens) + '</span>' : '<span class="hint">Show where an allergen is</span>') + '</summary>' + lensChips() + '</details>';
   }
-  function lensChips() {
+  /* The Pass list: one row of allergen chips with a switch, Show where (the lens, as before) or Free from */
+  function allergenRow() {
+    var free = ui.amode === 'free' || (!ui.amode && ui.free.length && !ui.lens);
+    if (!free) return lensChips(true);
+    return '<div class="field"><div class="row-label"><span class="label" id="free-label">Allergens</span>' + amodeSwitch(true) + '</div><div class="chips scroll" role="group" aria-labelledby="free-label">' +
+      D.allergens.map(function (a) { var on = ui.free.indexOf(a) >= 0; return '<button type="button" class="chip" data-act="free" data-val="' + esc(a) + '" data-k="free:' + esc(a) + '" aria-pressed="' + on + '">' + esc(a) + '</button>'; }).join('') + '</div></div>';
+  }
+  function amodeSwitch(free) {
+    return '<span class="amode" role="group" aria-label="What the allergen chips do"><button type="button" class="chip sq" data-act="amode" data-val="lens" aria-pressed="' + !free + '">Show where</button><button type="button" class="chip sq" data-act="amode" data-val="free" aria-pressed="' + free + '">Free from</button></span>';
+  }
+  function lensChips(withSwitch) {
     var hint = ui.lens ? 'Marked = has ' + ui.lens + '. ? = may have it.' : 'Pick one to see where it is, at every level.';
-    return '<div class="field"><div class="row-label"><span class="label" id="lens-label">Allergen lens</span><span class="hint">' + esc(hint) + '</span></div>' +
+    return '<div class="field"><div class="row-label"><span class="label" id="lens-label">' + (withSwitch ? 'Allergens' : 'Allergen lens') + '</span>' + (withSwitch ? amodeSwitch(false) : '') + '<span class="hint">' + esc(hint) + '</span></div>' +
       '<div class="chips scroll" role="group" aria-labelledby="lens-label">' + D.allergens.map(function (a) {
         return '<button type="button" class="chip" data-act="lens" data-val="' + esc(a) + '" data-k="lens:' + esc(a) + '" aria-pressed="' + (ui.lens === a) + '">' + esc(a) + '</button>';
       }).join('') + '</div></div>';
@@ -516,7 +533,7 @@
           (missing[r.id].length ? '<span class="tag maybe">Allergens incomplete</span>' : '') + '</span></a>';
       }).join('') + '</div></section>';
     }).join('');
-    return searchNote() + (any ? '<div class="tile-groups">' + html + '</div>' : '<div class="empty">No recipes match. Clear the search or the filters.</div>');
+    return searchNote() + (any ? '<div class="tile-groups">' + html + '</div>' : '<div class="empty">No recipes match. <button type="button" class="btn" data-act="clearall">Clear search and filters</button></div>');
   }
   // The Functions chip sits first after All so it is always on view; every other chip follows the menu order.
   function kindChips() {
@@ -537,13 +554,15 @@
   }
 
   /* ---------- view C: the pass ---------- */
+  function passShelves() { return SHELVES.filter(function (sh) { return ui.kind === 'all' || sh.key === ui.kind || (sh.key === 'prep' && (ui.kind === 'batch' || ui.kind === 'component')); }); }
+  function passOk(r) { return matches(r.id) && freeOk(r.id); }
   function shelvesHTML() {
-    var s = q(), n = 0;
-    var html = SHELVES.filter(function (sh) { return ui.kind === 'all' || sh.key === ui.kind || (sh.key === 'prep' && (ui.kind === 'batch' || ui.kind === 'component')); }).map(function (sh) {
-      var shown = s ? sh.list.filter(function (r) { return matches(r.id); }) : sh.list;
+    var s = q() || ui.free.length, n = 0;
+    var html = passShelves().map(function (sh) {
+      var shown = s ? sh.list.filter(passOk) : sh.list;
       if (!shown.length) return '';
       var items = shown.map(function (r) {
-        var h = hitId(r.id), m = matches(r.id), dish = isDish(r);
+        var h = hitId(r.id), m = passOk(r), dish = isDish(r);
         if (s && m) n++;
         var links = r.ingredients.filter(function (i) { return i.link && byId[i.link]; }).map(function (i) { return byId[i.link].short || byId[i.link].name; });
         var used = (usedIn[r.id] || []).map(function (id) { return byId[id].name; });
@@ -556,13 +575,13 @@
       }).join('');
       return '<section class="shelf" aria-label="' + esc(sh.title) + '"><div class="group-head"><span>' + esc(sh.title) + '</span></div><div class="shelf-items">' + items + '</div><div class="rail" aria-hidden="true"></div></section>';
     }).join('');
-    return searchNote() + html + (s && !n ? '<div class="empty">Nothing on the pass matches. Clear the search.</div>' : '');
+    return searchNote() + html + (s && !n ? '<div class="empty">Nothing on the pass matches. <button type="button" class="btn" data-act="clearall">Clear search and filters</button></div>' : '');
   }
   function passCount() {
-    var s = q();
-    if (!s) return plural(D.recipes.length, 'recipe', 'recipes') + ' on the pass';
-    var n = D.recipes.filter(function (r) { return matches(r.id); }).length;
-    return n + ' of ' + D.recipes.length + ' match';
+    var all = [], seen = {};
+    passShelves().forEach(function (sh) { sh.list.forEach(function (r) { if (!seen[r.id]) { seen[r.id] = 1; all.push(r); } }); });
+    if (!q() && !ui.free.length) return plural(all.length, 'recipe', 'recipes') + ' on the pass';
+    return all.filter(passOk).length + ' of ' + all.length + ' match';
   }
   function pinHTML(p, k, stack) {
     var h = p.link ? (byId[p.link] ? hitId(p.link) : (ui.lens ? 'may' : null)) : hit(p.tags || []);
@@ -578,7 +597,7 @@
     var stack = route.stack;
     if (!stack.length) {
       return '<div class="page">' + '<main id="main" style="display: flex; flex-direction: column; gap: 1.1rem">' +
-        searchField('Dish, ingredient or allergen', passCount()) + kindChips() + lensChips() + '<div id="shelves" class="shelves">' + shelvesHTML() + '</div></main>' + footer() + '</div>';
+        searchField('Dish, ingredient or allergen', passCount()) + kindChips() + allergenRow() + '<div id="shelves" class="shelves">' + shelvesHTML() + '</div></main>' + footer() + '</div>';
     }
     var r = byId[stack[stack.length - 1]], dish = isDish(r);
     var trail = '<nav class="trail" aria-label="Zoom level"><a class="pill-link" href="#/recipes">' + ICON.left + 'The pass</a>' + stack.map(function (id, i) {
@@ -910,9 +929,12 @@
     l.push({ q: s.slice(0, 60), at: t });
     writeJSON(LS, 'lk.miss', l.slice(-40));
   }
+  // Enter (the Search key) drops the phone keyboard so the results can be seen
+  app.addEventListener('keydown', function (e) { if (e.target.id === 'find' && e.key === 'Enter') { e.preventDefault(); e.target.blur(); } });
   app.addEventListener('input', function (e) {
     if (e.target.id !== 'find') return;
     ui.query = e.target.value;
+    var fw = e.target.parentNode; if (fw && fw.classList) fw.classList.toggle('has-q', !!ui.query);
     clearTimeout(timer);
     timer = setTimeout(updateResults, 60);
     clearTimeout(missTimer);
@@ -935,6 +957,11 @@
     }
     // Done in Settings goes back to where the person came from, or to the start when Settings was opened directly
     if (act === 'done') { if (window.__lkNav) { e.preventDefault(); history.back(); } return; }
+    if (act === 'amode') { ui.amode = val; if (val === 'free') ui.lens = null; else ui.free = []; render(); return; }
+    if (act === 'clearfind' || act === 'clearall') {
+      ui.query = ''; if (act === 'clearall') { ui.free = []; ui.kind = 'all'; ui.lens = null; }
+      render(); var fi = document.getElementById('find'); if (fi) fi.focus(); return;
+    }
     if (act === 'jump') { var jt = document.getElementById(val); if (jt) jt.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     if (act === 'kind') { ui.kind = val; }
     else if (act === 'free') { ui.free = ui.free.indexOf(val) >= 0 ? ui.free.filter(function (x) { return x !== val; }) : ui.free.concat([val]); }
@@ -984,7 +1011,12 @@
   // was already signed in) the mark flips in like a coin and settles, so the person sees it is now them.
   // js/prep.js read the head chef's open kitchen mail: redraw the count on the key button
   window.addEventListener('lk-mail', function () { var ic = app.querySelector('.wtop-icons'); if (ic) ic.outerHTML = topIcons(); });
-  window.addEventListener('lk-who', function (e) { if (!(window.LK_PREP && window.LK_PREP.whoName && window.LK_PREP.whoName())) whoMenuClose(); var el = app.querySelector('.wtop-who'); if (el) el.outerHTML = whoMark(!!(e.detail && e.detail.signedIn)); });
+  // The Head chef's PIN also shows or drops the Admin button, so the whole icon group is redrawn.
+  window.addEventListener('lk-who', function (e) {
+    if (!(window.LK_PREP && window.LK_PREP.whoName && window.LK_PREP.whoName())) whoMenuClose();
+    var ic = app.querySelector('.wtop-icons'); if (ic) ic.outerHTML = topIcons();
+    var el = app.querySelector('.wtop-who'); if (el) el.outerHTML = whoMark(!!(e.detail && e.detail.signedIn));
+  });
   // "Skip to content" must not change the address: #main is not a page, so the router would open the landing page
   document.addEventListener('click', function (e) {
     var sk = e.target.closest && e.target.closest('a.skip');
