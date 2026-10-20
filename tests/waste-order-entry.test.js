@@ -26,8 +26,7 @@ async function log(p, text, amt, unit) {
   let p = await L.open(b, '#/waste', { wait: 1500, extra, touch: true });
 
   ok(await p.getAttribute('#w-amt', 'placeholder') === 'Amount (kg)', 'waste: the amount box says the unit (' + await p.getAttribute('#w-amt', 'placeholder') + ')');
-  await p.click('[data-p="wjump"]'); await p.waitForTimeout(400);
-  ok(await p.evaluate(() => document.activeElement && document.activeElement.id) === 'w-text', 'waste: Log waste jumps to What was wasted');
+  ok(await p.evaluate(() => document.querySelector('#w-text').getBoundingClientRect().top < document.querySelector('.w-row').getBoundingClientRect().top), 'waste: the form sits above the day\'s entries');
 
   await log(p, 'Chips', '500', 'kg');
   ok((await saved(p, 'Chips')).length === 1 && /500 kg\? Check the unit/.test(await txt(p, '.p-toast') || ''), 'waste: 500 kg asks first and saves nothing new');
