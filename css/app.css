@@ -1761,3 +1761,8 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav { top: var(--u
 .fe-dtot { margin: 0.35rem 0 0; color: var(--muted); font-size: 0.9rem; }
 @media print { .fn-band, .fn-pop { display: none !important; } }
 .fe-gu { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 1rem; }
+.fn-late { color: #A3230F; font-weight: 700; }
+.fn-sent { white-space: nowrap; }
+.fn-sent-b { min-height: 40px; padding: 0 0.8rem; }
+.fn-sent-ok { display: inline-flex; flex-direction: column; align-items: center; font-weight: 700; color: #1D5E39; line-height: 1.2; margin-right: 0.4rem; }
+.fn-sent-ok small { font-weight: 400; color: var(--muted); }

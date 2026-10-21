@@ -1126,7 +1126,7 @@
       .then(function () { return all('drawings'); }).then(function (r) { out.drawings = r; return subs(r, 'drawings', 'hist', out.drawingsHist); })
       .then(function () { return all('drawtpl'); }).then(function (r) { out.drawtpl = r; return all('drawlib'); }).then(function (r) { out.drawlib = r; })
       .then(function () { out.functionsHist = {}; return all('functions'); }).then(function (r) { out.functions = r; return subs(r, 'functions', 'hist', out.functionsHist); })
-      .then(function () { return all('fncontact'); }).then(function (r) { out.fncontact = r; })
+      .then(function () { return all('fncontact'); }).then(function (r) { out.fncontact = r; return all('fnsent'); }).then(function (r) { out.fnsent = r; })
       .then(function () { S.exporting = 'Reading shift pings and minutes...'; draw(); return all('notes'); }).then(function (r) { out.notes = r; return subs(r, 'notes', 'seen', out.notesSeen); })
       .then(function () { return all('minutes'); }).then(function (r) { out.minutes = r; return Promise.all([subs(r, 'minutes', 'hist', out.minutesHist), subs(r, 'minutes', 'signs', out.minutesSigns)]); })
       .then(function () { return all('pinset'); }).then(function (r) { out.pins = r.map(function (x) { return { id: x.id, name: x.name, setAt: x.setAt }; }); })
@@ -1194,7 +1194,7 @@
       .then(function () { return copyCol('book'); }).then(function () { return copyCol('recipes'); }).then(function () { return copySub('recipes', 'hist'); })
       .then(function () { return copyCol('drawings'); }).then(function () { return copySub('drawings', 'hist'); })
       .then(function () { return copyCol('drawtpl'); }).then(function () { return copyCol('drawlib'); })
-      .then(function () { return copyCol('functions'); }).then(function () { return copySub('functions', 'hist'); }).then(function () { return copyCol('fncontact'); })
+      .then(function () { return copyCol('functions'); }).then(function () { return copySub('functions', 'hist'); }).then(function () { return copyCol('fncontact'); }).then(function () { return copyCol('fnsent'); })
       .then(function () {
         var i = 0;
         function next() {

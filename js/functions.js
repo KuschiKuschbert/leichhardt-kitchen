@@ -193,6 +193,8 @@
   }
   // the first round still to come (its time not passed yet), or -1 when every round's time has passed
   function nextRound(f, now) { var R = f.rounds || [], i; for (i = 0; i < R.length; i++) if (R[i].at >= now) return i; return -1; }
+  // the first round not ticked as sent (22 Oct 2026), or -1 when every round is ticked. isSent(i) says whether round i is.
+  function nextOpen(f, isSent) { var R = f.rounds || [], i; for (i = 0; i < R.length; i++) if (!isSent(i)) return i; return -1; }
   // a short text fingerprint of a platter recipe, so a later change in the book can be flagged on a booked line
   function fingerprint(r) {
     var s = JSON.stringify([r.name, r.yield || '', (r.ingredients || []).map(function (i) { return [i.q, i.name]; })]), h = 5381, i;
@@ -205,7 +207,7 @@
     kday: kday, kat: kat, kclock: kclock, dayStart: dayStart, addDays: addDays, isYmd: isYmd, hmMin: hmMin, dayName: dayName, when: when,
     even: even, toU: toU, fromU: fromU, sum: sum, roundTimes: roundTimes, windowOf: windowOf, derive: derive, counts: counts,
     short: short, unitOf: unitOf, totalQty: totalQty, guestsText: guestsText, problems: problems, changes: changes, dayTotals: dayTotals,
-    overlaps: overlaps, showing: showing, nextRound: nextRound, fingerprint: fingerprint
+    overlaps: overlaps, showing: showing, nextRound: nextRound, nextOpen: nextOpen, fingerprint: fingerprint
   };
   if (typeof module === 'object' && module.exports) { module.exports = M; return; }
 
@@ -250,6 +252,7 @@
     var api = prep.book();
     api.ready().then(function () {
       var fs = api.fs();
+      watchSent(api, fs);
       F.unsub = fs.onSnapshot(fs.query(api.colRef('functions'), fs.where('kq', '>=', T.at(T.day(), 0)), fs.orderBy('kq'), fs.limit(150)), { includeMetadataChanges: true }, function (snap) {
         F.list = snap.docs.map(function (d) { return derive(Object.assign({ id: d.id }, d.data())); });
         F.offline = !!(snap.metadata && snap.metadata.fromCache);
@@ -259,7 +262,18 @@
       }, function (e) { F.state = 'error'; F.err = e && e.code || ''; F.unsub = null; F.key = ''; changed(); });
     }, function () { F.state = 'error'; changed(); });
   }
-  function stop() { if (F.unsub) F.unsub(); F.unsub = null; F.key = ''; }
+  function stop() { if (F.unsub) F.unsub(); if (F.unsub2) F.unsub2(); F.unsub = F.unsub2 = null; F.key = ''; }
+  /* Rounds ticked as sent (fnsent/<function>_<round time>): one more small listener, on yesterday and later, so an
+     overnight round is still there after midnight. A round whose time was changed after it was ticked shows as not sent. */
+  F.sent = {};
+  function watchSent(api, fs) {
+    if (F.unsub2) F.unsub2();
+    F.unsub2 = fs.onSnapshot(fs.query(api.colRef('fnsent'), fs.where('day', '>=', kday(now() - DAY))), function (snap) {
+      var m = {}; snap.docs.forEach(function (d) { m[d.id] = d.data(); }); F.sent = m; changed();
+    }, function () { F.unsub2 = null; });
+  }
+  function sentRec(f, i) { var r = (f.rounds || [])[i], x = r && r.at ? F.sent[f.id + '_' + r.at] : null; return x && x.sent ? x : null; }
+  function sentText(x) { return 'sent ' + kclock(x.sentAt) + ', ' + nameOf(x.sentBy); }
   // tell the pages: the band and the landing card redraw themselves, #/fn redraws through js/app.js
   function changed() { paint(); try { window.dispatchEvent(new Event('lk-fn')); } catch (e) {} }
 
@@ -286,12 +300,18 @@
       (c ? ' <span class="fn-tag fn-t-new">Changed ' + esc(kclock(c.at)) + '</span>' : '') + '</span>';
     var ev = f.first !== f.start ? 'Event ' + esc(when(f.start, kday(t))) + ' · ' : '';
     if (!f.first) food = 'Times TBC: <b>' + esc(linesText(f)) + '</b> (' + tot + ')';
-    else if (f.mode === 'all') food = (nx < 0 ? 'Was due ' : 'All ' + tot + ' due ') + esc(when(f.first, kday(t))) + ': <b>' + esc(linesText(f)) + '</b>';
-    else if (nx < 0) food = 'Last round was due ' + esc(when(f.last, kday(t))) + '. ' + tot + ' in all.';
     else {
-      var rc = roundCounts(f, nx), now_ = sum(rc);
-      food = 'Next ' + esc(when(f.rounds[nx].at, kday(t))) + ' (round ' + (nx + 1) + ' of ' + n + '): <b>' + esc(linesText(f, rc) || 'nothing') + '</b> <span class="fn-of">' + now_ + ' now, ' + tot + ' in all</span>';
+      // the next round is the first one not ticked as sent; past its time it says so (never "served" by the clock alone)
+      var k = nextOpen(f, function (i) { return !!sentRec(f, i); }), last = k < 0 ? n - 1 : k - 1, done = last >= 0 ? sentRec(f, last) : null;
+      if (k < 0) food = (n > 1 ? 'All ' + n + ' rounds sent, last ' : 'All ' + tot + ' ') + esc(sentText(done)) + '. ' + tot + ' in all.';
+      else {
+        var rc = roundCounts(f, k), now_ = sum(rc), at = f.rounds[k].at, late = at < t;
+        food = (done && n > 1 ? 'Round ' + (last + 1) + ' ' + esc(sentText(done)) + ' · ' : '') +
+          (late ? '<span class="fn-late">' + (n > 1 ? 'Round ' + (k + 1) + ' ' : '') + 'due ' + esc(when(at, kday(t))) + ', not sent yet</span>: ' : (n > 1 ? 'Next ' + esc(when(at, kday(t))) + ' (round ' + (k + 1) + ' of ' + n + '): ' : 'All ' + tot + ' due ' + esc(when(at, kday(t))) + ': ')) +
+          '<b>' + esc(linesText(f, rc) || 'nothing') + '</b>' + (n > 1 ? ' <span class="fn-of">' + now_ + ' now, ' + tot + ' in all</span>' : '');
+      }
     }
+    void nx;
     return out + head + '<span class="fn-r2">' + ev + food + '</span></button></li>';
   }
   function bandHTML() {
@@ -319,16 +339,35 @@
   /* ---------- the function sheet: the popup from the band and the page #/fn/<id> ---------- */
   function facts(rows) { return '<dl class="fn-facts">' + rows.filter(function (r) { return r[1]; }).map(function (r) { return '<div><dt>' + r[0] + '</dt><dd>' + r[1] + '</dd></div>'; }).join('') + '</dl>'; }
   function table(f) {
-    var n = (f.rounds || []).length, L = f.lines || [], t = now(), nx = nextRound(f, t);
+    var n = (f.rounds || []).length, L = f.lines || [], t = now(), nx = nextOpen(f, function (i) { return !!sentRec(f, i); }), tick = f.status === 'confirmed' && f.first;
     if (!n || !L.length) return '';
-    var head = '<tr><th scope="col">Due</th>' + L.map(function (l) { return '<th scope="col">' + esc(short(l.name)) + '</th>'; }).join('') + '<th scope="col">Total</th></tr>';
+    var head = '<tr><th scope="col">Due</th>' + L.map(function (l) { return '<th scope="col">' + esc(short(l.name)) + '</th>'; }).join('') + '<th scope="col">Total</th>' + (tick ? '<th scope="col">Sent</th>' : '') + '</tr>';
     var rows = f.rounds.map(function (r, i) {
       var rc = roundCounts(f, i);
       return '<tr' + (i === nx && f.status === 'confirmed' ? ' class="is-next"' : '') + '><th scope="row">' + esc(when(r.at, f.date)) + (i === nx && f.status === 'confirmed' ? ' <span class="fn-tag">Next</span>' : '') +
-        (r.note ? '<small>' + esc(r.note) + '</small>' : '') + '</th>' + rc.map(function (q) { return '<td>' + (q || '<span class="fn-zero">0</span>') + '</td>'; }).join('') + '<td><b>' + sum(rc) + '</b></td></tr>';
+        (r.note ? '<small>' + esc(r.note) + '</small>' : '') + '</th>' + rc.map(function (q) { return '<td>' + (q || '<span class="fn-zero">0</span>') + '</td>'; }).join('') + '<td><b>' + sum(rc) + '</b></td>' + (tick ? '<td class="fn-sent">' + sentCell(f, i) + '</td>' : '') + '</tr>';
     }).join('');
-    var foot = '<tr class="fn-tot"><th scope="row">Booked</th>' + L.map(function (l) { return '<td><b>' + l.qty + '</b></td>'; }).join('') + '<td><b>' + totalQty(f) + '</b></td></tr>';
+    var foot = '<tr class="fn-tot"><th scope="row">Booked</th>' + L.map(function (l) { return '<td><b>' + l.qty + '</b></td>'; }).join('') + '<td><b>' + totalQty(f) + '</b></td>' + (tick ? '<td></td>' : '') + '</tr>';
     return '<div class="fn-tw"><table class="fn-table"><caption class="visually-hidden">When each platter goes out</caption><thead>' + head + '</thead><tbody>' + rows + foot + '</tbody></table></div>';
+  }
+  // a round's Sent cell: a button to tick it, or who ticked it when, with Undo for a mis-tap (the same person within
+  // 2 minutes, or a sous chef or the head chef: the rules say the same)
+  function sentCell(f, i) {
+    var x = sentRec(f, i), d = ' data-id="' + esc(f.id) + '" data-r="' + i + '"';
+    if (!x) return '<button type="button" class="btn fn-sent-b" data-fn="sent"' + d + ' aria-label="Round ' + (i + 1) + ' sent">Sent</button>';
+    var prep = P(), me = prep && prep.book ? prep.book().who() : '', lead = !!(prep && prep.chefMenu && prep.chefMenu().chef);
+    var undo = lead || (me && x.sentBy === me && now() - x.sentAt < 2 * MIN);
+    return '<span class="fn-sent-ok">' + esc(kclock(x.sentAt)) + '<small>' + esc(nameOf(x.sentBy)) + '</small></span>' + (undo ? '<button type="button" class="linkish" data-fn="unsent"' + d + '>Undo</button>' : '');
+  }
+  function tickSent(id, i, on) {
+    var f = byId(id), prep = P(); if (!f || !prep) return;
+    var r = f.rounds[i], api = prep.book(), me = api.who();
+    if (!me && !(prep.state && prep.state.user)) { sheetClose(); prep.signIn(location.hash || '#/'); return; }   // who is ticking: sign in first
+    var x = F.sent[f.id + '_' + r.at], rec = on ? { fid: f.id, at: r.at, day: kday(r.at), sent: true, sentAt: now(), sentBy: me } : { fid: f.id, at: r.at, day: kday(r.at), sent: false, sentAt: x.sentAt, sentBy: x.sentBy };
+    F.sent[f.id + '_' + r.at] = rec; changed();   // shows at once; the listener brings the saved copy
+    api.ready().then(function () { return api.W([['set', api.docRef('fnsent', f.id + '_' + r.at), rec, true]]); }).then(function () {
+      api.say((f.rounds.length > 1 ? 'Round ' + (i + 1) : 'The platters') + (on ? ' ticked as sent.' : ' not sent after all.'));
+    }, function () { if (x) F.sent[f.id + '_' + r.at] = x; else delete F.sent[f.id + '_' + r.at]; changed(); api.say('Not saved. Only the person who ticked it, within 2 minutes, or a chef can take a tick back.'); });
   }
   function sheetHTML(f, inPop) {
     var t = now(), n = (f.rounds || []).length, tot = totalQty(f), c = f.chg || [];
@@ -340,7 +379,7 @@
       ['Date', esc(dayName(f.date))], ['Place', esc(f.loc || '')], ['Guests', f.gu ? 'Not known yet' : esc(f.guests)],
       ['Event start', esc(when(f.start, f.date))], ['Food', food], ['Platters', tot + ' in all (the booked numbers, not worked out from guests)']
     ]) + '<h3 class="fn-h">When each round goes out</h3>' + table(f) +
-      '<p class="hint fn-note">These are the times each round is due. The book does not track what has gone out.</p>' +
+      '<p class="hint fn-note">' + (f.status === 'confirmed' && f.first ? 'Tick each round as it goes out: the band moves on to the next one.' : 'These are the times each round is due.') + '</p>' +
       '<h3 class="fn-h">The platters</h3><ul class="fn-plist">' + (f.lines || []).map(function (l) {
         var r = recipeOf(l.rid);
         return '<li><b>' + l.qty + ' ' + esc(unitOf(l, l.qty)) + '</b> ' + (r ? '<a href="#/r/' + encodeURIComponent(l.rid) + '">' + esc(l.name) + '</a>' : esc(l.name)) + (l.spec ? '<small>' + esc(l.spec) + '</small>' : '') + '</li>';
@@ -439,6 +478,7 @@
     var a = el.getAttribute('data-fn');
     if (a === 'open') { sheetOpen(el.getAttribute('data-id'), el); return; }
     if (a === 'close') { sheetClose(true); return; }
+    if (a === 'sent' || a === 'unsent') { tickSent(el.getAttribute('data-id'), +el.getAttribute('data-r'), a === 'sent'); return; }
     if (a === 'go') { sheetClose(); return; }
     if (a === 'more') { F.more = !F.more; lastBand = null; paint(); var mb = document.querySelector('#fn-band [data-fn="more"]'); if (mb) mb.focus({ preventScroll: true }); return; }
     if (a === 'days') { pageDays = +el.getAttribute('data-v') || 3; try { window.dispatchEvent(new Event('lk-fn')); } catch (x) {} }
