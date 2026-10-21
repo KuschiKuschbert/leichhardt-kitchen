@@ -24,7 +24,8 @@ const draws = async (page, sel) => { for (let i = 0; i < 3; i++) { await page.cl
   await draws(p, '[data-p="tab"]');
   await L.settle(p, 800);
   const d3 = await reads(p, '/days/');
-  ok(d3 === d2 + 8, 'prep: five minutes later it tries once more, 8 reads (' + (d3 - d2) + ')');
+  // today and the one day the past days on the phone say was written last (yesterday), not seven days (22 Oct 2026)
+  ok(d3 === d2 + 2, 'prep: five minutes later it tries once more: today and yesterday, 2 reads (' + (d3 - d2) + ')');
   await draws(p, '[data-p="tab"]');
   await L.settle(p, 600);
   ok(await reads(p, '/days/') === d3, 'prep: and then waits again');

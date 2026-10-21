@@ -31,9 +31,10 @@ async function measure(b, hash, o, settle) {
 }
 (async () => {
   const b = await L.start();
-  // measured 22 Oct 2026 with this seed: first open 775, reload 17, admin 699, admin again 27 (before: reload 317 and
-  // admin again 699, the learned list and the admin's past days read again every time). RB_SHOW=1 prints what costs most.
-  const BUDGET = { first: 800, reload: 40, admin: 720, admin2: 60 };
+  // measured 22 Oct 2026 with this seed: first open 655, reload 17, admin 699, admin again 27 (before: first open 775, the
+  // rollover read seven past days the past-days list had just read; reload 317 and admin again 699, the learned list and
+  // the admin's past days read again every time). RB_SHOW=1 prints what costs most.
+  const BUDGET = { first: 680, reload: 40, admin: 720, admin2: 60 };
   const show = !!process.env.RB_SHOW;
 
   // a staff phone opens the prep list for the first time today, then goes to orders and wastage
