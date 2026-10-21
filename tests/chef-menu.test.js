@@ -44,7 +44,7 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   // what the menu offers
   p = await L.open(b, '#/recipes', { who: 'ann', wait: 1800 });
   let m = await L.chefItems(p);
-  ok(m.join(',') === 'mail,drinks,settings,out', 'staff, nothing published: Kitchen mail, Drinks run, Settings and Sign out, no Meeting minutes, no Chef group (' + m + ')');
+  ok(m.join(',') === 'mail,drinks,fn,settings,out', 'staff, nothing published: Kitchen mail, Drinks run, Functions to read, Settings and Sign out, no Meeting minutes, no Chef group (' + m + ')');
   ok(!m.includes('prep'), 'staff: the old Prep list item is gone');
   await p.context().close();
   // once Chef has published minutes, Meeting minutes joins the staff menu
@@ -53,7 +53,7 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
     att: [{ id: 'ann', st: 'present' }], guests: '', decisions: 'New menu from Friday', menu: '', safety: '', dates: '', other: '', acts: [], next: '', pubAt: L.NOW - 86400000, removed: false, at: 1, upd: 1, by: 'sam' };
   p = await L.open(b, '#/recipes', { who: 'ann', extra: pub, wait: 1800 });
   m = await L.chefItems(p);
-  ok(m.join(',') === 'mail,drinks,minutes,settings,out', 'staff, minutes published: Meeting minutes shows (' + m + ')');
+  ok(m.join(',') === 'mail,drinks,minutes,fn,settings,out', 'staff, minutes published: Meeting minutes shows (' + m + ')');
   await p.context().close();
   // #/minutes by its address with nothing published: the notebook card, like the order list
   p = await L.open(b, '#/minutes', { who: 'ann', wait: 1800 });
@@ -62,7 +62,7 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   await p.context().close();
   p = await L.open(b, '#/recipes', { who: 'sam', wait: 1800 });
   m = await L.chefItems(p);
-  ok(m.join(',') === 'mail,drinks,minutes,pings,register,staff,settings,out', 'sous chef: the Chef group has Shift pings, Minutes register and Manage staff (' + m + ')');
+  ok(m.join(',') === 'mail,drinks,minutes,fn,pings,register,staff,settings,out', 'sous chef: the Chef group has Shift pings, Minutes register and Manage staff (' + m + ')');
   await L.chef(p, 'register');
   await L.settle(p, 500);
   ok(/#\/prep$/.test(p.url()) && await txt(p, '#rtitle') === 'Meeting minutes' && !!(await p.$('[data-p="mn-close"]')), 'sous chef: Minutes register opens from the recipes (' + p.url() + ')');

@@ -40,7 +40,7 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   // 1. a coordinator books a function: menu, form, platters, staggered rounds by hand, kitchen comment, review, confirm
   let p = await L.open(b, '#/', { who: 'fay', extra: base, wait: 1200 });
   const items = await L.chefItems(p);
-  ok(items.indexOf('functions') >= 0, 'menu: a coordinator ticked for Functions sees Functions in the chef hat (' + items.join(' | ') + ')');
+  ok(items.indexOf('functions') >= 0 && items.indexOf('fn') < 0, 'menu: a coordinator ticked for Functions sees Functions (to book) in the chef hat, once (' + items.join(' | ') + ')');
   await p.keyboard.press('Escape');
   await p.goto(L.BASE + '#/functions/new'); await L.settle(p, 900);
   ok(/New function/.test(await txt(p, '#fe-root') || ''), 'form: New function opens');
@@ -119,7 +119,10 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   const smith = fn({ rounds: ['18:30', '19:00', '19:30'], lines: [['antipasto-platter', 'Antipasto Platter', [3, 0, 0]], ['aussie-platter', 'Aussie Platter', [2, 2, 0]], ['pizza-platter', 'Pizza Platter', [0, 2, 3]]], kc: 'Cake comes out at 20:00.\nKeep the pass clear.', kcBy: 'fay', notes: 'Two vegetarians.' });
   p = await L.open(b, '#/', { who: 'ann', extra: Object.assign(extra({ smith }), { [fsKey(['fncontact', 'smith'])]: { cname: 'Jo', phone: '0400 111 222', email: 'jo@example.com', upd: 1 } }), wait: 1200 });
   await L.waitFor(p, () => !!document.querySelector('#fn-band .fn-row'));
-  ok((await L.chefItems(p)).indexOf('functions') < 0, 'staff: no Functions in Ann\'s chef hat'); await p.keyboard.press('Escape');
+  { const m = await L.chefItems(p); ok(m.indexOf('functions') < 0 && m.indexOf('fn') >= 0, 'staff: Ann\'s chef hat has Functions to read (#/fn), not the managers\' page (' + m + ')'); }
+  await p.click('.wtop-who'); await L.settle(p, 150); await p.click('.wm a[href="#/fn"]'); await L.settle(p, 500);
+  { const pg = await txt(p, '#main') || ''; ok(/#\/fn$/.test(p.url()) && /Upcoming functions/.test(pg) && /Smith 50th/.test(pg) && !/Manage functions|New function/.test(pg), 'staff: Functions opens today and the next days, with no way to book or change one'); }
+  await p.goto(L.BASE + '#/'); await L.settle(p, 600);
   ok(/Functions/.test(await txt(p, '#fn-land') || '') && /Smith 50th/.test(await txt(p, '#fn-land') || ''), 'landing: the Functions card lists today\'s function');
   await tap(p, '#fn-band .fn-row'); await L.settle(p, 200);
   const sh = await txt(p, '.fn-sheet') || '';
