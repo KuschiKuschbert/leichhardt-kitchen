@@ -397,9 +397,9 @@
       out += P.path(wave(y), 'none', '#F2D98A', 2.6) + P.path(wave(y - 3), 'none', '#F4EBCB', 3);
     });
     var top = 'M' + N(-a) + ' -38';
-    for (var x = -a; x < a; x += 8) top += ' Q' + N(x + 4) + ' ' + N(-46 - rnd() * 2) + ' ' + N(x + 8) + ' -38';
-    out += P.path(top + ' Z', '#E8B45A', '#B9802F', 0.9);
-    for (var k = 0; k < 6; k++) out += P.ellipse(-a + 8 + k * 12 + rnd() * 4, -42 - rnd() * 2, 2.4, 1.1, '#B9772E', null, 0, { opacity: '0.85' });
+    for (var x = -a; x < a - 1; x += 12) top += ' Q' + N(x + 6) + ' ' + N(-45 - rnd() * 2.5) + ' ' + N(x + 12) + ' ' + N(-43 + rnd() * 1.5);
+    out += P.path(top + ' L' + N(a) + ' -38 Z', '#E8B45A', '#B9802F', 0.9);
+    for (var k = 0; k < 7; k++) out += P.ellipse(-a + 6 + k * 10.5 + rnd() * 3, -42.5 + rnd() * 2, 2.6, 1, k % 2 ? '#B9772E' : '#C98A3A', null, 0, { opacity: '0.85' });
     return out;
   }
 
