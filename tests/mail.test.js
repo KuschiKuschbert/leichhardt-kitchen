@@ -91,7 +91,11 @@ const badge = p => txt(p, '.wtop-who .adm-n');
 
   // the Mail tab: most urgent first, opening it marks all seen, a tick moves a line to Done
   p = await L.open(b, '#/', { admin: true, extra, wait: 1800 });
-  await tap(p, '[data-ml="open"]'); await L.settle(p, 1500);
+  // the popup and the Mail tab come after the mail is read: wait for each itself (a slow read missed a fixed pause)
+  await L.waitFor(p, () => !!document.querySelector('[data-ml="open"]'), null, 8000).catch(() => {});
+  await tap(p, '[data-ml="open"]');
+  await L.waitFor(p, () => document.querySelectorAll('.ml-admin [data-lv="mail"] .ml-row').length === 3, null, 8000).catch(() => {});
+  await L.settle(p, 1500);
   ok(/#\/admin$/.test(p.url()) && !!(await p.$('.ml-admin')), 'nudge: Open mail goes to the Mail tab');
   const order = await p.$$eval('.ml-admin [data-lv="mail"] .ml-row .ml-text', l => l.map(e => e.textContent));
   ok(order.length === 3 && /Cool room/.test(order[0]) && /Fryer 2/.test(order[1]) && /Pickle/.test(order[2]), 'mail tab: food safety first, then Today, then This week (' + order.join(' / ') + ')');
@@ -121,4 +125,4 @@ const badge = p => txt(p, '.wtop-who .adm-n');
 
   await b.close();
   L.report(R);
-})().catch(e => { console.error(e); process.exit(1); });
+})().catch(e => { console.log(R.join('\n')); console.error(e); process.exit(1); });
