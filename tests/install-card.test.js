@@ -22,11 +22,11 @@ const offer = p => p.evaluate(() => { const e = new Event('beforeinstallprompt',
   ok(!(await L.overflow(p)), 'Windows, Chrome: no sideways scroll with the card (' + await L.overflow(p) + ')');
   // the browser then offers its own Install button
   await offer(p);
-  await p.waitForTimeout(300);
+  await L.settle(p, 300);
   c = await card(p);
   ok(c && c.btn && /on this computer/.test(c.text) && /taskbar or Dock/.test(c.text), 'Windows, Chrome: when the browser offers it, the card has an Install button for this computer (' + JSON.stringify(c) + ')');
   await p.click('.wall-install [data-act="install"]');
-  await p.waitForTimeout(400);
+  await L.settle(p, 400);
   ok(!(await card(p)) || !(await card(p)).btn, 'Windows, Chrome: tapping Install uses the browser offer once (no second button)');
   ok(p.errors.length === 0, 'Windows, Chrome: no page errors ' + p.errors.join(' | '));
   await p.context().close();
@@ -35,7 +35,7 @@ const offer = p => p.evaluate(() => { const e = new Event('beforeinstallprompt',
   p = await open(WIN_EDGE);
   ok(!!(await card(p)), 'Windows, Edge: the card shows');
   await p.click('.wall-install [data-act="installno"]');
-  await p.waitForTimeout(300);
+  await L.settle(p, 300);
   ok(!(await card(p)), 'Windows, Edge: Not now hides the card');
   await p.context().close();
 
@@ -60,7 +60,7 @@ const offer = p => p.evaluate(() => { const e = new Event('beforeinstallprompt',
   let s = await setting(p);
   ok(s && !s.btn && /install icon at the right of the address bar/.test(s.text), 'Windows, Settings: the steps by hand (' + JSON.stringify(s) + ')');
   await offer(p);
-  await p.waitForTimeout(300);
+  await L.settle(p, 300);
   s = await setting(p);
   ok(s && s.btn, 'Windows, Settings: an Install button once the browser offers it (' + JSON.stringify(s) + ')');
   await p.context().close();

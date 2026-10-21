@@ -19,7 +19,7 @@ function riceTwice() {
   const often = await p.$('[data-p="woften"]');
   ok(!!often && /Rice/.test(await often.textContent()), 'waste: Rice logged on two days shows under Logged often');
   if (often) await often.click();
-  await p.waitForTimeout(250);
+  await L.settle(p, 250);
   const f = await p.evaluate(() => ({
     text: (document.getElementById('w-text') || {}).value,
     unit: (document.querySelector('[data-p="wunit"][aria-checked="true"]') || {}).textContent,
@@ -32,10 +32,10 @@ function riceTwice() {
 
   // wastage: the reason sheet closes with Escape and gives focus back to its button
   await p.click('.w-rbtn');
-  await p.waitForTimeout(200);
+  await L.settle(p, 200);
   ok(await p.$('.sheet') !== null, 'waste: the reason sheet opens');
   await p.keyboard.press('Escape');
-  await p.waitForTimeout(250);
+  await L.settle(p, 250);
   ok(await p.$('.sheet') === null, 'waste: Escape closes the reason sheet');
   ok(await p.evaluate(() => !!document.activeElement && document.activeElement.classList.contains('w-rbtn')), 'waste: focus goes back to the reason button');
   ok(p.errors.length === 0, 'waste: no page errors ' + p.errors.join(' | '));
@@ -54,7 +54,7 @@ function riceTwice() {
   let dish = '', sub = '';
   for (const h of dishes) {
     await p.evaluate(x => { location.hash = x; }, h);
-    await p.waitForTimeout(250);
+    await L.settle(p, 250);
     sub = await p.evaluate(x => { const a = [...document.querySelectorAll('#main a[href^="' + x + '/"]')][0]; return a ? a.getAttribute('href') : ''; }, h);
     if (sub) { dish = h; break; }
   }
@@ -62,12 +62,12 @@ function riceTwice() {
   if (sub) {
     const dishName = await p.evaluate(() => document.querySelector('.card-head h2').textContent);
     await L.tap(p, '#main a[href="' + sub + '"]');
-    await p.waitForTimeout(300);
+    await L.settle(p, 300);
     ok(await p.evaluate(() => location.hash) === sub, 'recipes: the sub-recipe opens on its own address');
     ok(await p.$('.trail a[href="' + dish + '"], .crumbs a[href="' + dish + '"]') !== null, 'recipes: the trail links back to the dish');
     ok(await p.$('.zoombar a[href="' + dish + '"]') !== null, 'recipes: Zoom out links back to the dish');
     await p.goBack();
-    await p.waitForTimeout(300);
+    await L.settle(p, 300);
     ok(await p.evaluate(() => location.hash) === dish && await p.evaluate(() => document.querySelector('.card-head h2').textContent) === dishName, 'recipes: Back returns to the dish');
   }
   ok(p.errors.length === 0, 'recipes: no page errors ' + p.errors.join(' | '));
@@ -79,14 +79,14 @@ function riceTwice() {
   const extra = {}; extra[['kitchens', L.PIN, 'config', 'main'].join('/')] = Object.assign({}, cfg, { people: many });
   p = await L.open(b, '#/admin', { admin: true, wait: 1800, width: 1280, height: 900, extra });
   await L.adminTab(p, 'people');
-  await p.waitForTimeout(300);
+  await L.settle(p, 300);
   const cnt = () => p.evaluate(() => (document.querySelector('[data-lvb="people"] .lv-count') || {}).textContent || '');
   ok(/Showing 15 of 20 people/.test(await cnt()), 'admin: the people list shows 15 of 20 (' + await cnt() + ')');
   await p.click('[data-p="lv-more"][data-lv="people"]');
-  await p.waitForTimeout(200);
+  await L.settle(p, 200);
   ok(/^20 people/.test(await cnt()) && await p.$('[data-p="lv-less"][data-lv="people"]') !== null, 'admin: Show more shows all 20, with Show fewer');
   await p.fill('[data-k="lv-q:people"]', 'cook 1');
-  await p.waitForTimeout(300);
+  await L.settle(p, 300);
   ok(/matching/.test(await cnt()) && await p.evaluate(() => document.activeElement && document.activeElement.getAttribute('data-k')) === 'lv-q:people', 'admin: the search narrows the list and keeps the cursor (' + await cnt() + ')');
   ok(p.errors.length === 0, 'admin: no page errors ' + p.errors.join(' | '));
   await p.context().close();

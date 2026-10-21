@@ -52,13 +52,13 @@ const serverReads = page => page.evaluate(() => window.__fake.reads.filter(r => 
   ok(reads === 6, 'reads: only the lines of the double ups are read from the server (' + reads + ')');
 
   await p.click('.nb-tab[data-v="Fryer"]');
-  await p.waitForTimeout(200);
+  await L.settle(p, 200);
   ok(/Also Larder/.test(await row(p, 'd1') || ''), 'Fryer tab: the merged line shows there too, Also Larder');
   await p.click('.nb-tab[data-v=""]');
-  await p.waitForTimeout(200);
+  await L.settle(p, 200);
 
   await p.click('.p-toast-btn');
-  await p.waitForTimeout(3500);
+  await L.settle(p, 3500);
   s = await store(p);
   ok(!s[ik('d2')].deleted && s[ik('d2')].dupOk === true && s[ik('d2')].mergedInto === '', 'Undo: the merged line is back, kept apart');
   ok(s[ik('d1')].qty === '' && s[ik('d1')].urgent === false && JSON.stringify(s[ik('d1')].also) === '[]', 'Undo: the line kept is as it was');
@@ -71,7 +71,7 @@ const serverReads = page => page.evaluate(() => window.__fake.reads.filter(r => 
   p = await L.open(b, '#/prep', { who: 'ann', wait: 1500 });
   const add = async (sec, text, qty) => {
     await p.fill('#p-section', sec); await p.fill('#p-text', text); await p.fill('#p-qty', qty);
-    await p.click('.nb-addbtn'); await p.waitForTimeout(400);
+    await p.click('.nb-addbtn'); await L.settle(p, 400);
   };
   const lines = (st, re) => Object.keys(st).filter(k => k.indexOf('/days/' + today + '/items/') > 0 && re.test(st[k].text));
   await add('Grill', 'pick coriander', '1 bunch');
@@ -80,7 +80,7 @@ const serverReads = page => page.evaluate(() => window.__fake.reads.filter(r => 
   ok(lines(s, /coriander/i).length === 1, 'write: no second line');
   ok(s[ik('i2')].qty === '1 bunch' && JSON.stringify(s[ik('i2')].also) === '["Grill"]', 'write: the open line takes the amount and the section');
   await p.click('.p-toast-btn');
-  await p.waitForTimeout(400);
+  await L.settle(p, 400);
   s = await store(p);
   const two = lines(s, /coriander/i).filter(k => !k.endsWith('/i2'));
   ok(two.length === 1 && s[two[0]].dupOk === true && s[two[0]].station === 'Grill' && s[two[0]].qty === '1 bunch', 'Add anyway: a second line, kept apart');
@@ -95,7 +95,7 @@ const serverReads = page => page.evaluate(() => window.__fake.reads.filter(r => 
   const lk = lines(s, /laksa/i);
   ok(lk.length === 2, 'write: a different amount is added as its own line');
   const nid = lk.filter(k => !k.endsWith('/i5'))[0].split('/').pop();
-  await p.waitForTimeout(3000);
+  await L.settle(p, 3000);
   ok(/Also 1 batch/.test(await row(p, nid) || '') && /Also 2 batches/.test(await row(p, 'i5') || ''), 'list: same section, different amounts point at each other');
   s = await store(p);
   ok(!s[ik('i5')].deleted && !s[ik(nid)].deleted, 'different amounts: not merged');

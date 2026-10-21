@@ -11,7 +11,7 @@ const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
   ok(vb > 0 && vb < 400, 'phone: the chart is drawn at the phone width (' + vb + ')');
   const scale = await p.evaluate(() => { const s = document.querySelector('svg.ch'); return s.getBoundingClientRect().width / +s.getAttribute('viewBox').split(' ')[2]; });
   ok(scale > 0.85, 'phone: chart words are not shrunk much (scale ' + scale.toFixed(2) + ')');
-  await (await p.$('svg.ch g')).click(); await p.waitForTimeout(200);
+  await (await p.$('svg.ch g')).click(); await L.settle(p, 200);
   ok(/written, \d+ ticked/.test(await p.evaluate(() => (document.querySelector('.ch-read') || {}).textContent || '')), 'phone: a tap on a bar shows its numbers');
   ok(p.errors.length === 0, 'no page errors ' + p.errors.join(' | '));
   await p.context().close();

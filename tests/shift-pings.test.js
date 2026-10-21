@@ -30,7 +30,7 @@ function withAnn() {
   ok(!(await p.$('.a-ids-list')), 'admin: no Changed from the prep book card for the old Pings tick');
   ok(/Write a ping/.test(await txt(p, '[data-p="n-new"]') || ''), 'admin: Write a ping button');
   await L.adminTab(p, 'people');
-  await p.waitForTimeout(300);
+  await L.settle(p, 300);
   ok(!(await p.$('[data-a="perm"][data-perm="ping"]')), 'people: no Pings tick');
   ok(p.errors.length === 0, 'admin: no page errors ' + p.errors.join(' | '));
   await p.context().close();
@@ -43,22 +43,22 @@ function withAnn() {
   ok(await p.$('.nt') !== null && await p.$('.nt-edit') === null, 'popup: Ann sees the ping but no Write or edit link');
   ok(await txt(p, '.nbell .wtop-lbl') === 'Pings', 'top bar: the bell says Pings');
   await p.click('.nt-got');
-  await p.waitForTimeout(200);
+  await L.settle(p, 200);
   { const m = await L.chefItems(p); ok(!m.includes('pings') && !m.includes('staff'), 'chef menu: no Shift pings or Manage staff for Ann (' + m + ')'); }
   ok(p.errors.length === 0, 'Ann: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
   // a sous chef writes a ping from the chef menu
   p = await L.open(b, '#/recipes', { who: 'sam', extra: ping, wait: 2000 });
-  await p.click('.nt-got').catch(() => {});
+  await p.click('.nt-got', { timeout: 2000 }).catch(() => {});
   await L.chef(p, 'pings');
-  await p.waitForTimeout(500);
+  await L.settle(p, 500);
   ok(/#\/prep$/.test(p.url()) && await txt(p, '#rtitle') === 'Shift pings', 'sous: Shift pings in the chef menu opens the pings page from another page (' + p.url() + ')');
   await tap(p, '[data-p="n-new"]');
-  await p.waitForTimeout(200);
+  await L.settle(p, 200);
   await p.fill('[data-k="n-text"]', 'Special: pork belly tonight');
   await tap(p, '[data-p="n-save"]');
-  await p.waitForTimeout(500);
+  await L.settle(p, 500);
   s = await store(p);
   ok(Object.keys(s).some(k => /\/notes\/[^/]+$/.test(k) && s[k].text === 'Special: pork belly tonight' && s[k].by === 'sam'), 'sous: the ping is saved with Sam\'s id');
   ok(p.errors.length === 0, 'sous pings: no page errors ' + p.errors.join(' | '));
@@ -68,11 +68,11 @@ function withAnn() {
   p = await L.open(b, '#/prep', { who: 'sam', extra: withAnn(), wait: 2000 });
   await L.chef(p, 'staff');
   await p.click('[data-p="a-add-person"]');
-  await p.waitForTimeout(150);
+  await L.settle(p, 150);
   await p.fill('[data-k="a-n3"]', 'Cy');
   await p.evaluate(() => { window.__fake.writes.length = 0; });
   await p.click('[data-p="a-save"]');
-  await p.waitForTimeout(500);
+  await L.settle(p, 500);
   const w = await p.evaluate(k => { const all = [].concat.apply([], window.__fake.writes); return all.filter(o => o.path === k).map(o => Object.keys(o.data).sort().join(',')); }, CFG);
   ok(w.length === 1 && w[0] === 'by,people,staffIds,updated,updatedBy', 'staff: a sous chef sends only people and staffIds (' + w.join(' | ') + ')');
   s = await store(p);

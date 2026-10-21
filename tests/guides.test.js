@@ -30,7 +30,7 @@ async function choose(p, file) {
   await p.setInputFiles('#g-file', file);
   await L.waitFor(p, () => { const f = window.LK_PREP.state.gf; return f && !f.busy && f.pages && f.pages.length; }, null, 30000);
 }
-async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, null, 15000); await p.waitForTimeout(150); }
+async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, null, 15000); await L.settle(p, 150); }
 
 (async () => {
   const b = await L.start();
@@ -62,7 +62,7 @@ async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, nul
   ok(await p.locator('.g-rchip[href="#/r/pork-belly"]').count() === 1 && await p.locator('.g-rchip[href="#/r/rice"]').count() === 1, 'guide: on the recipe cards it names (Pork Belly) and that mention its search word (Rice)');
   await p.click('.g-top a[href="#/guides"]');
   await p.click('.g-card[href="#/guides/combi"]');
-  await p.waitForTimeout(400);
+  await L.settle(p, 400);
   const again = await S(p, n => window.__fake.readLog.slice(n).filter(k => /\/pages\//.test(k)).length, before);
   ok(again === 2 && await p.locator('.g-pgb img[src^="blob:"]').count() === 2, 'guide: opened again, the pages are not read again');
   await p.click('[data-p="g-zoom"][data-i="0"]');
@@ -73,9 +73,9 @@ async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, nul
   ok(await p.locator('.gz-body.is-full').count() === 1, 'page big: Full size');
   await p.keyboard.press('Escape');
   ok(await p.locator('.gz-wrap').count() === 0 && !(await S(p, () => document.documentElement.classList.contains('gz-open'))), 'page big: Escape closes it');
-  await p.goto(L.BASE + '#/guides/fryer'); await p.waitForTimeout(600);
+  await p.goto(L.BASE + '#/guides/fryer'); await L.settle(p, 600);
   ok(await p.locator('.g-ol li').count() === 3, 'guide: written steps are numbered');
-  await p.goto(L.BASE + '#/guides/nope'); await p.waitForTimeout(600);
+  await p.goto(L.BASE + '#/guides/nope'); await L.settle(p, 600);
   ok(/not found/i.test(await p.locator('#rtitle').innerText()), 'guide: an old link says the guide was not found');
   ok(p.errors.length === 0, 'guides page: no page errors ' + p.errors.join(' | '));
   await p.context().close();
@@ -87,29 +87,31 @@ async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, nul
 
   // Recipe cards and the recipe search find guides, from the list kept on the phone (no extra reads)
   p = await L.open(b, '#/r/rice', { extra, wait: 2500 });
+  // the guide list comes in after the card is drawn (the stand-in loads, then the list), so wait for the link itself
+  await L.waitFor(p, () => !!document.querySelector('#r-guides a[href="#/guides/combi"]'), null, 5000).catch(() => {});
   ok(await p.locator('#r-guides a[href="#/guides/combi"]').count() === 1, 'recipe card: Rice (iCombi tip) links to the iCombi guide');
-  await p.goto(L.BASE + '#/r/barra'); await p.waitForTimeout(500);
+  await p.goto(L.BASE + '#/r/barra'); await L.settle(p, 500);
   ok(await p.locator('#r-guides .box').count() === 0, 'recipe card: a card no guide mentions has no guides box');
-  await p.goto(L.BASE + '#/recipes'); await p.waitForTimeout(500);
-  await p.fill('#find', 'icombi'); await p.waitForTimeout(300);
+  await p.goto(L.BASE + '#/recipes'); await L.settle(p, 500);
+  await p.fill('#find', 'icombi'); await L.settle(p, 300);
   ok(await p.locator('.g-hits a[href="#/guides/combi"]').count() === 1, 'recipe search: "icombi" shows the guide');
-  await p.goto(L.BASE + '#/settings'); await p.waitForTimeout(300);
-  await p.goto(L.BASE + '#/r/pork-belly'); await p.waitForTimeout(500);
+  await p.goto(L.BASE + '#/settings'); await L.settle(p, 300);
+  await p.goto(L.BASE + '#/r/pork-belly'); await L.settle(p, 500);
   ok(await p.locator('#r-guides a[href="#/guides/combi"]').count() === 1, 'recipe card: Pork Belly (named in the PDF) links to the guide');
   ok(p.errors.length === 0, 'recipe pages: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
   // Admin: add a guide from a photo
   p = await L.open(b, '#/admin', { admin: true, width: 1280, height: 900, extra, wait: 1800 });
-  await L.adminTab(p, 'guides'); await p.waitForTimeout(300);
+  await L.adminTab(p, 'guides'); await L.settle(p, 300);
   ok(await p.locator('.g-row').count() === 2, 'admin: the Guides tab lists the two guides');
-  await p.click('[data-p="g-new"]'); await p.waitForTimeout(200);
-  await p.click('[data-p="g-save"]'); await p.waitForTimeout(100);
+  await p.click('[data-p="g-new"]'); await L.settle(p, 200);
+  await p.click('[data-p="g-save"]'); await L.settle(p, 100);
   ok(/title/.test(await p.locator('.g-edit .p-err').innerText()), 'admin: saving with nothing asks for a title');
   await choose(p, png);
   ok(await S(p, () => window.LK_PREP.state.gf.title) === 'dishwasher panel', 'admin: the title starts as the file name');
   await p.fill('#g-title', 'Dishwasher start up');
-  await p.click('[data-p="g-save"]'); await p.waitForTimeout(100);
+  await p.click('[data-p="g-save"]'); await L.settle(p, 100);
   ok(/category/.test(await p.locator('.g-edit .p-err').innerText()), 'admin: saving with no category asks for one');
   await p.click('[data-p="g-fcat"][data-v="cleaning"]');
   await p.fill('#g-steps', 'Fill the tank.\nWait for the green light.');
@@ -122,7 +124,7 @@ async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, nul
   ok(/Saved "Dishwasher start up"/.test(await S(p, () => window.LK_PREP.state.gMsg)) && await p.locator('.g-row').count() === 3, 'admin photo: says saved, and the list shows it');
 
   // Admin: add a guide from a two page PDF (pages drawn and words read by pdf.js)
-  await p.click('[data-p="g-new"]'); await p.waitForTimeout(200);
+  await p.click('[data-p="g-new"]'); await L.settle(p, 200);
   await choose(p, makePdf(['Coolroom temperature log', 'Write the time and the reading']));
   const f = await S(p, () => { const x = window.LK_PREP.state.gf; return { n: x.pages.length, text: x.text, title: x.title, w: x.pages[0].w, h: x.pages[0].h }; });
   ok(f.n === 2 && /Coolroom temperature log/.test(f.text) && /reading/.test(f.text), 'admin PDF: two pages drawn and their words read (' + f.n + ', ' + f.text.slice(0, 40) + ')');
@@ -138,7 +140,7 @@ async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, nul
   ok(!!ck && s[ck].pages === 2 && /Coolroom/.test(s[ck].text) && s[ck].file === 'Coolroom checks.pdf' && !!s[G([cid, 'pages', '1'])], 'admin PDF: saved with both pages and its words');
 
   // Change it: a new file with fewer pages replaces the old one (the spare page is deleted, the version goes up)
-  await p.click('[data-p="g-edit"][data-id="' + cid + '"]'); await p.waitForTimeout(200);
+  await p.click('[data-p="g-edit"][data-id="' + cid + '"]'); await L.settle(p, 200);
   ok(/Saved now: 2 pages/.test(await p.locator('.g-now').innerText()), 'admin change: says what is saved now');
   await choose(p, png);
   ok(/replace the 2 saved now/.test(await p.locator('.g-now').innerText()), 'admin change: says the new pages replace the old');
@@ -147,7 +149,7 @@ async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, nul
   s = await store(p);
   ok(s[ck].pages === 1 && s[ck].v === 2 && !s[G([cid, 'pages', '1'])] && s[G([cid, 'pages', '0'])].v === 2, 'admin change: one page, version 2, the spare page deleted');
   // change only the words: the pages and the version stay
-  await p.click('[data-p="g-edit"][data-id="' + cid + '"]'); await p.waitForTimeout(200);
+  await p.click('[data-p="g-edit"][data-id="' + cid + '"]'); await L.settle(p, 200);
   await p.fill('#g-title', 'Coolroom temperature checks');
   await p.click('[data-p="g-save"]');
   await saved(p);
@@ -155,28 +157,28 @@ async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, nul
   ok(s[ck].title === 'Coolroom temperature checks' && s[ck].v === 2 && s[ck].pages === 1, 'admin change: a new title keeps the pages and the version');
 
   // Remove, with a second tap and Undo
-  await p.click('[data-p="g-del"][data-id="' + cid + '"]'); await p.waitForTimeout(100);
+  await p.click('[data-p="g-del"][data-id="' + cid + '"]'); await L.settle(p, 100);
   ok(/Tap again/.test(await p.locator('[data-p="g-del"][data-id="' + cid + '"]').innerText()) && !(await store(p))[ck].removed, 'admin remove: the first tap only asks again');
-  await p.click('[data-p="g-del"][data-id="' + cid + '"]'); await p.waitForTimeout(200);
+  await p.click('[data-p="g-del"][data-id="' + cid + '"]'); await L.settle(p, 200);
   ok((await store(p))[ck].removed === true && await p.locator('.g-row').count() === 3, 'admin remove: the second tap removes it from the list');
-  await p.click('[data-p="toast-act"]'); await p.waitForTimeout(300);
+  await p.click('[data-p="toast-act"]'); await L.settle(p, 300);
   ok((await store(p))[ck].removed === false, 'admin remove: Undo puts it back');
 
   // Close with unsaved writing asks twice; a refused save keeps everything in the editor
-  await p.click('[data-p="g-new"]'); await p.waitForTimeout(200);
+  await p.click('[data-p="g-new"]'); await L.settle(p, 200);
   await p.fill('#g-title', 'Half written');
-  await p.click('[data-p="g-cancel"]'); await p.waitForTimeout(100);
+  await p.click('[data-p="g-cancel"]'); await L.settle(p, 100);
   ok(await S(p, () => !!window.LK_PREP.state.gf) && /Tap again/.test(await p.locator('[data-p="g-cancel"]').innerText()), 'admin: Close with writing in it asks again');
   ok(await S(p, () => window.LK_PREP.unsaved()), 'admin: a guide being written blocks the self-update');
   await p.click('[data-p="g-fcat"][data-v="other"]');
   await p.fill('#g-steps', 'One step.');
   await S(p, () => { window.__fake.mode = 'deny'; });
-  await p.click('[data-p="g-save"]'); await p.waitForTimeout(400);
+  await p.click('[data-p="g-save"]'); await L.settle(p, 400);
   ok(/refused/.test(await p.locator('.g-edit .p-err').innerText()) && await p.inputValue('#g-title') === 'Half written', 'admin: a refused save says so and keeps the writing');
   await S(p, () => { window.__fake.mode = 'ok'; });
   // Close is still armed from before (4 seconds), so one tap discards it now; otherwise it takes two
-  await p.click('[data-p="g-cancel"]'); await p.waitForTimeout(100);
-  if (await S(p, () => !!window.LK_PREP.state.gf)) { await p.click('[data-p="g-cancel"]'); await p.waitForTimeout(100); }
+  await p.click('[data-p="g-cancel"]'); await L.settle(p, 100);
+  if (await S(p, () => !!window.LK_PREP.state.gf)) { await p.click('[data-p="g-cancel"]'); await L.settle(p, 100); }
   ok(await S(p, () => !window.LK_PREP.state.gf), 'admin: the second tap on Close discards it');
   ok(p.errors.length === 0, 'admin guides: no page errors ' + p.errors.join(' | '));
   await p.context().close();

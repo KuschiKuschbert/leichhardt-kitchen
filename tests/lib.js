@@ -72,11 +72,69 @@ function mail() {
   return m;
 }
 
-/* Installed Google Chrome by default. CHROME=/path/to/chrome uses another Chromium (for example on a server). */
-async function start() {
+/* Settling instead of fixed pauses (21 Oct 2026). Every page counts its own changes: each change to the page, each timer
+   that is still to run, each scroll and each short animation still playing. settle(page, ms) waits at most
+   ms, like page.waitForTimeout(ms), but returns as soon as the page has had nothing to do for QUIET ms, has nothing
+   loading (open() counts the page's requests, the Firebase stand-in's imports among them) and has no timer due inside
+   the ms it was given. So a pause that was there for a redraw ends when the redraw is done, and a pause that
+   was there for a timer (a toast, a retry, a debounced save) still waits for that timer. */
+const QUIET = 120;
+function track() {
+  if (window.__lkSettle) return;
+  const st = window.__lkSettle = { muts: 0, timers: new Map() };
+  const now = () => performance.now();
+  new MutationObserver(() => { st.muts++; }).observe(document, { subtree: true, childList: true, attributes: true, characterData: true });
+  const sT = window.setTimeout, cT = window.clearTimeout;
+  window.setTimeout = function (fn, ms) {
+    const args = [].slice.call(arguments, 2);
+    const id = sT.call(window, function () { st.timers.delete(id); if (typeof fn === 'function') fn.apply(this, args); }, ms);
+    st.timers.set(id, now() + (+ms || 0));
+    return id;
+  };
+  window.clearTimeout = function (id) { st.timers.delete(id); return cT.call(window, id); };
+  // a scroll (a smooth jump to the method) is a change too, while it moves
+  window.addEventListener('scroll', () => { st.muts++; }, { capture: true, passive: true });
+  // busy: anything that would still change the page before the time "until" (on the page's own clock)
+  st.check = until => {
+    let busy = false;
+    for (const due of st.timers.values()) if (due <= until) { busy = true; break; }
+    if (!busy && document.getAnimations) busy = document.getAnimations().some(a => a.playState === 'running' && a.effect && a.effect.getTiming().iterations !== Infinity);
+    return { muts: st.muts, busy };
+  };
+  st.at = () => now();
+}
+const sleep = ms => new Promise(r => setTimeout(r, Math.max(0, ms)));
+async function settle(page, ms, still, ready) {
+  still = still || QUIET;
+  const t0 = Date.now(), end = t0 + ms;
+  let until = null, muts = -1, quiet = t0;
+  for (;;) {
+    let r = null;
+    try {
+      if (until === null) until = await page.evaluate(ms => (window.__lkSettle ? window.__lkSettle.at() + ms : null), ms);
+      if (until !== null) r = await page.evaluate(u => window.__lkSettle.check(u), until);
+      if (r && ready && !(await page.evaluate(ready))) r.busy = true;
+    } catch (e) { r = null; until = null; }   // the page is loading again (a reload or a new hash): keep waiting
+    const t = Date.now();
+    if (t >= end) return;
+    if (r && page.loading > 0) r.busy = true;
+    if (!r) { muts = -1; quiet = t; }
+    else if (r.muts !== muts) { muts = r.muts; quiet = t; }
+    else if (!r.busy && t - quiet >= still) return;
+    await sleep(Math.min(25, end - t));
+  }
+}
+
+/* Installed Google Chrome by default. CHROME=/path/to/chrome uses another Chromium (for example on a server).
+   run.js starts one Chrome for the whole run and passes its address in LK_WS, so each file connects to it instead of
+   starting its own (each page still gets a fresh profile). A file run on its own (node recipes.test.js) starts one. */
+function chromeOpts() {
   // scrollbars are hidden like on a phone or tablet (overlay scrollbars): a classic 15 px scrollbar at exactly 768 px would
   // put the tablet layout in a 753 px window and count as sideways scroll
-  return chromium.launch(process.env.CHROME ? { executablePath: process.env.CHROME, headless: true, args: ['--hide-scrollbars'] } : { channel: 'chrome', headless: true, args: ['--hide-scrollbars'] });
+  return process.env.CHROME ? { executablePath: process.env.CHROME, headless: true, args: ['--hide-scrollbars'] } : { channel: 'chrome', headless: true, args: ['--hide-scrollbars'] };
+}
+async function start() {
+  return process.env.LK_WS ? chromium.connect(process.env.LK_WS) : chromium.launch(chromeOpts());
 }
 
 /* Opens one page in a fresh browser profile.
@@ -100,7 +158,10 @@ async function open(browser, hash, o) {
   o = o || {};
   const w = o.width || 390, h = o.height || 844;
   const ctx = await browser.newContext(Object.assign({ viewport: { width: w, height: h }, serviceWorkers: 'block', hasTouch: !!o.touch, deviceScaleFactor: 1, timezoneId: o.tz || 'Australia/Brisbane' }, o.ua ? { userAgent: o.ua } : {}));
+  // a click or a wait that has not worked in 10 s is not going to: fail then, not after Playwright's 30 s
+  ctx.setDefaultTimeout(10000);
   await ctx.clock.install({ time: o.clock || NOW });
+  await ctx.addInitScript(track);
   const opened = Date.now();
   await ctx.route(u => u.href === BASE + 'index.html', async r => {
     if (r.request().method() !== 'HEAD') return r.continue();
@@ -141,10 +202,16 @@ async function open(browser, hash, o) {
   }, ls);
   const page = await ctx.newPage();
   page.errors = [];
+  page.loading = 0;   // requests still out, for settle()
+  page.on('request', () => { page.loading++; });
+  page.on('requestfinished', () => { page.loading--; });
+  page.on('requestfailed', () => { page.loading--; });
   page.on('pageerror', e => page.errors.push(String(e)));
   page.on('console', m => { if (m.type() === 'error') page.errors.push('console: ' + m.text()); });
   await page.goto(BASE + (hash || ''), { waitUntil: 'load' });
-  await page.waitForTimeout(o.wait || 600);
+  // the book starts up in steps (the Firebase stand-in loads, then the kitchen's settings, then the lists and the
+  // sign-in), so a page that has just opened waits for the settings to be read (or to fail) and has to be still for longer
+  await settle(page, o.wait || 600, 300, () => { const st = window.LK_PREP && window.LK_PREP.state; return !st || !st.pin || st.configState === 'ok' || st.configState === 'error'; });
   return page;
 }
 /* Sideways scroll: false when the page fits, otherwise a short note saying by how much, the scrollbar width and the
@@ -172,23 +239,23 @@ const row = (page, id) => page.evaluate(i => { const e = document.getElementById
    group by name: pings, register, staff, and out for Sign out) and closes it again; chef taps one of the Chef group. */
 async function chefItems(page) {
   await page.evaluate(() => { const g = document.querySelector('.nt-got'); if (g) g.click(); });   // today's pings popup first
-  await page.click('.wtop-who'); await page.waitForTimeout(150);
+  await page.click('.wtop-who'); await settle(page, 150);
   const l = await page.evaluate(() => [...document.querySelectorAll('.wm .wm-a')].map(e => e.getAttribute('data-v') || (e.getAttribute('data-who') === 'out' ? 'out' : (e.getAttribute('href') || '').replace('#/', ''))));
-  await page.keyboard.press('Escape'); await page.waitForTimeout(100);
+  await page.keyboard.press('Escape'); await settle(page, 100);
   return l;
 }
 /* Admin in the chef mark's menu (21 Oct 2026): 'signed' (Google sign-in done), 'outline' (Head chef PIN only) or 'none'. */
 async function admItem(page) {
   await page.evaluate(() => { const g = document.querySelector('.nt-got'); if (g) g.click(); });
-  await page.click('.wtop-who'); await page.waitForTimeout(150);
+  await page.click('.wtop-who'); await settle(page, 150);
   const s = await page.evaluate(() => { const a = document.querySelector('.wm .wm-adm'); return a ? (a.classList.contains('is-signed') ? 'signed' : 'outline') : 'none'; });
-  await page.keyboard.press('Escape'); await page.waitForTimeout(100);
+  await page.keyboard.press('Escape'); await settle(page, 100);
   return s;
 }
 async function chef(page, v) {
   await page.evaluate(() => { const g = document.querySelector('.nt-got'); if (g) g.click(); });
-  await page.click('.wtop-who'); await page.waitForTimeout(150);
-  await page.click('.wm [data-who="open"][data-v="' + v + '"]'); await page.waitForTimeout(400);
+  await page.click('.wtop-who'); await settle(page, 150);
+  await page.click('.wm [data-who="open"][data-v="' + v + '"]'); await settle(page, 400);
 }
 /* Prints the results and sets the exit code, so run.js knows whether the file passed. */
 function report(results) {
@@ -198,13 +265,13 @@ function report(results) {
   process.exitCode = failed.length ? 1 : 0;
 }
 /* Waits until fn (run in the page) returns something truthy. page.waitForFunction runs its check through eval, which the
-   book's security header (20 Oct 2026) blocks, so this asks with page.evaluate every 100 ms instead. */
+   book's security header (20 Oct 2026) blocks, so this asks with page.evaluate every 50 ms instead. */
 async function waitFor(page, fn, arg, timeout) {
   const end = Date.now() + (timeout || 5000);
   for (;;) {
     if (await page.evaluate(fn, arg)) return true;
     if (Date.now() > end) throw new Error('waitFor: timed out');
-    await page.waitForTimeout(100);
+    await sleep(50);
   }
 }
 /* Opens an admin page by its id (people, notes, tools...): the page buttons sit under five groups (20 Oct 2026), so
@@ -220,6 +287,6 @@ async function adminTab(page, t) {
       if (leaf()) { leaf().click(); return; }
     }
   }, t);
-  await page.waitForTimeout(250);
+  await settle(page, 250);
 }
-module.exports = { waitFor, chefItems, admItem, chef, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
+module.exports = { chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
