@@ -145,7 +145,7 @@
         S.config = snap.exists() ? snap.data() : { people: [] };
         S.config.people = S.config.people || [];
         headFix(S.config);
-        S.configState = 'ok'; featSync(); refreshDraft(); watchItems(); watchSections(); watchLearned(); if (S.name === 'orders') watchOrders(); if (S.name === 'waste') watchWaste(); resume(); loadAdmins(); loadNotes(); loadMinutes(); draw();
+        S.configState = 'ok'; featSync(); refreshDraft(); watchItems(); watchSections(); watchLearned(); if (S.name === 'orders') watchOrders(); if (S.name === 'waste') watchWaste(); resume(); if (S.authed) ksCheck(); loadAdmins(); loadNotes(); loadMinutes(); draw();
         if (whoHead() !== headSeen) whoSync();   // the Head chef role was given or taken while this person is signed in
       }, function (err) {
         S.configState = err && err.code === 'permission-denied' ? 'badpin' : 'error';
@@ -369,7 +369,7 @@
     var pend = S.pending; S.pending = null; S.picking = false;
     draw(); whoSync(true);   // a real sign-in: the chef mark flips in
     if (pend) guestReplay(pend);
-    dkCheck();
+    dkCheck(); ksCheck();
   }
   /* Who signed in on this device today, newest first: "Who are you?" lists them first (lk.prep.here). */
   function hereGet() { try { var h = JSON.parse(lsGet('lk.prep.here') || 'null'); return h && h.d === dayNow() ? h.ids : []; } catch (e) { return []; } }
@@ -498,12 +498,12 @@
     lsSet('lk.prep.seen', String(Date.now()));
   }
   /* the next person never lands in the last person's staff draft, minutes register or ping editor */
-  function leave() { S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); }
+  function leave() { ksClose(); S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); }
   /* The chef mark's menu (js/app.js) asks what to show: Meeting minutes for everyone (when the page is on), and for the
      head chef and sous chefs Shift pings, the Minutes register and Manage staff. The head chef on their admin device gets
      the matching admin tab instead. */
   // Meeting minutes shows for staff only once there is something published to read (chefs always, for the register)
-  function chefMenu() { return { minutes: featOn('minutes') && (isSous() || mnPub().length > 0), chef: isSous() }; }
+  function chefMenu() { return { minutes: featOn('minutes') && (isSous() || mnPub().length > 0), chef: isSous(), sec: ksPicks(me()) ? (mySec() || 'Pick one for today') : '' }; }
   function chefOpen(k) {
     if (!isSous()) return;
     if (admDev() && whoHead()) { S.atab = k === 'pings' ? 'notes' : k === 'register' ? 'minutes' : 'people'; lsSet('lk.prep.atab', S.atab); if (location.hash === '#/admin') draw(); else location.hash = '#/admin'; return; }
@@ -607,6 +607,7 @@
     var secInfo = {}, sec = cleanSection(S.section, secInfo), typedAs = t, pr = proofread(t), fixed = pr.changes.length || pr.text !== t;
     t = pr.text;
     var rm = matchRecipe(t);
+    if (!sec) sec = mySec();
     if (!sec) { var lx = learnedFor(t); if (lx && bestSection(lx)) sec = bestSection(lx); }
     var q0 = S.qty, tw = openTwin(t, q0);
     if (tw) {
@@ -635,7 +636,7 @@
   function addRecipe(id) {
     var r = D.recipes.filter(function (x) { return x.id === id; })[0];
     if (!r || !can('add')) return;
-    var secInfo = {}, sec = cleanSection(S.section, secInfo);
+    var secInfo = {}, sec = cleanSection(S.section, secInfo) || mySec();
     var q0 = S.qty, tw = openTwin(r.short || r.name, q0);
     if (tw) {
       addToTwin(tw, { text: (r.short || r.name), recipe: r.id, qty: q0.trim().slice(0, 40), station: sec }, function () { noteSection(sec); bump({ added: 1, lastAdded: now() }); });
@@ -968,14 +969,14 @@
     var x = (S.sugg || [])[i];
     if (!x) return;
     S.text = x.text; S.pickedText = x.text;
-    if (!S.section.trim() && x.section) S.section = x.section;
+    if (!S.section.trim() && x.section && !mySec()) S.section = x.section;
     draw();
     var el = S.root && S.root.querySelector('[data-k="p-text"]'); if (el) { el.focus(); try { el.setSelectionRange(el.value.length, el.value.length); } catch (e) {} }
   }
   function quickAdd(i) {
     var x = (S.quick || [])[i];
     if (!x || !can('add')) return;
-    oneTap(x.text, x.section);
+    oneTap(x.text, mySec() || x.section);
   }
   /* One-tap adds (Quick add in Handy): the line goes on with its usual amount, and the toast says where, with Undo. */
   function oneTap(text, sec) {
@@ -1017,6 +1018,7 @@
       .then(function () { return all('guides'); }).then(function (r) { out.guides = r; })
       .then(function () { return all('mail'); }).then(function (r) { out.mail = r; return all('mailstat'); }).then(function (r) { out.mailstat = r; })
       .then(function () { return all('drinks'); }).then(function (r) { out.drinks = r; })
+      .then(function () { return all('shifts'); }).then(function (r) { out.shifts = r; })
       .then(function () { S.exporting = 'Reading shift pings and minutes...'; draw(); return all('notes'); }).then(function (r) { out.notes = r; return subs(r, 'notes', 'seen', out.notesSeen); })
       .then(function () { return all('minutes'); }).then(function (r) { out.minutes = r; return Promise.all([subs(r, 'minutes', 'hist', out.minutesHist), subs(r, 'minutes', 'signs', out.minutesSigns)]); })
       .then(function () { return all('pinset'); }).then(function (r) { out.pins = r.map(function (x) { return { id: x.id, name: x.name, setAt: x.setAt }; }); })
@@ -1080,7 +1082,7 @@
       .then(function () { return copyCol('notes'); }).then(function () { return copyCol('minutes'); }).then(function () { return copySub('minutes', 'hist'); })
       .then(function () { return copySub('minutes', 'signs', true); }).then(function () { return copySub('notes', 'seen', true); })
       .then(function () { return copyCol('guides'); }).then(function () { return copySub('guides', 'pages'); })
-      .then(function () { return copyCol('mail'); }).then(function () { return copyCol('mailstat'); }).then(function () { return copyCol('drinks'); })
+      .then(function () { return copyCol('mail'); }).then(function () { return copyCol('mailstat'); }).then(function () { return copyCol('drinks'); }).then(function () { return copyCol('shifts'); })
       .then(function () {
         var i = 0;
         function next() {
@@ -1147,7 +1149,7 @@
   /* ---------- admin actions ---------- */
   function startDraft() {
     var c = S.config || { people: [] };
-    S.draft = JSON.parse(JSON.stringify({ people: c.people || [], showBadges: c.showBadges !== false, staffSee: staffSee(c) }));
+    S.draft = JSON.parse(JSON.stringify(draftOf(c)));
     S.draftSnap = JSON.stringify(S.draft);
     S.saveMsg = '';
   }
@@ -1155,11 +1157,12 @@
      A draft with nothing changed yet follows it. One with changes keeps them: when it is saved, only the rows and fields
      this draft touched are carried onto the list as it is now (mergeDraft), so a copy taken when the page opened never
      wipes what someone else saved in the meantime. */
+  function draftOf(c) { return { people: c.people || [], showBadges: c.showBadges !== false, staffSee: staffSee(c), kitSecs: c.kitSecs || [] }; }
   function draftBase() { try { return JSON.parse(S.draftSnap || 'null'); } catch (e) { return null; } }
   function refreshDraft() { if (S.draft && !draftDirty()) { var msg = S.saveMsg; startDraft(); S.saveMsg = msg; } }
   function draftStale() {
     var was = draftBase(), c = S.config; if (!S.draft || !was || !c) return false;
-    return JSON.stringify({ people: c.people || [], showBadges: c.showBadges !== false, staffSee: staffSee(c) }) !== S.draftSnap;
+    return JSON.stringify(draftOf(c)) !== S.draftSnap;
   }
   function mergeDraft() {
     var d = S.draft, was = draftBase(), c = S.config || { people: [] };
@@ -1176,7 +1179,7 @@
       if (!now_) return;
       Object.keys(p).forEach(function (k) { if (JSON.stringify(p[k]) !== JSON.stringify(w[k])) now_[k] = p[k]; });
     });
-    var m = { people: out, showBadges: d.showBadges !== was.showBadges ? d.showBadges : c.showBadges !== false, staffSee: {} }, see = staffSee(c);
+    var m = { people: out, showBadges: d.showBadges !== was.showBadges ? d.showBadges : c.showBadges !== false, staffSee: {}, kitSecs: JSON.stringify(d.kitSecs) !== JSON.stringify(was.kitSecs) ? d.kitSecs : (c.kitSecs || []) }, see = staffSee(c);
     FEATS.forEach(function (f) { var k = f[0]; m.staffSee[k] = (d.staffSee || {})[k] !== (was.staffSee || {})[k] ? d.staffSee[k] : see[k]; });
     return m;
   }
@@ -1205,7 +1208,7 @@
       people: cfg.people.filter(function (p) { return String(p.name).trim(); }).map(function (p) {
         return { id: p.id, name: String(p.name).trim().slice(0, 40), role: p.role || 'staff', add: !!p.add, tick: !!p.tick, del: !!p.del, ping: !!p.ping, active: p.active !== false };
       }),
-      stations: [], showBadges: cfg.showBadges !== false, staffSee: staffSee(cfg),
+      kitSecs: ksClean(cfg.kitSecs !== undefined ? cfg.kitSecs : ((S.config && S.config.kitSecs) || [])), showBadges: cfg.showBadges !== false, staffSee: staffSee(cfg),
       sousIds: hold ? (hold.sousIds || []) : idsFor(cfg.people, isSousP), pingIds: hold ? (hold.pingIds || []) : idsFor(cfg.people, canPingP),
       staffIds: idsFor(cfg.people, anyP), headId: headIdOf(cfg.people),
       updated: now(), updatedBy: S.user ? 'Head chef' : (who() ? who().name : '')   // never the Google email: anyone with the kitchen PIN can read this record
@@ -2184,7 +2187,7 @@
     var add = can('add') && S.date === today ?
       '<form class="nb-add" data-p-form="add"><datalist id="p-sections">' + sug.map(function (n) { return '<option value="' + esc(n) + '"></option>'; }).join('') + '</datalist>' +
       '<div class="nb-add-row"><label class="visually-hidden" for="p-text">Prep item</label><input id="p-text" class="nb-in nb-in-text" data-k="p-text" enterkeyhint="done" autocomplete="off" autocapitalize="sentences" placeholder="Write a new line..." maxlength="160" value="' + esc(S.text) + '">' +
-      '<label class="visually-hidden" for="p-section">Section</label><input id="p-section" class="nb-in nb-in-sec" data-k="p-section" list="p-sections" enterkeyhint="next" autocomplete="off" placeholder="Section" maxlength="40" value="' + esc(S.section) + '">' +
+      '<label class="visually-hidden" for="p-section">Section</label><input id="p-section" class="nb-in nb-in-sec" data-k="p-section" list="p-sections" enterkeyhint="next" autocomplete="off" placeholder="Section" maxlength="40" value="' + esc(S.section || (S.secTyped ? '' : mySec())) + '">' +
       '<label class="visually-hidden" for="p-qty">Amount</label><input id="p-qty" class="nb-in nb-in-qty" data-k="p-qty" enterkeyhint="done" autocomplete="off" placeholder="Amount" maxlength="40" value="' + esc(S.qty) + '">' +
       '<button type="submit" class="nb-addbtn">Add</button></div><div class="nb-sugg" id="p-sugg">' + suggestHTML() + '</div><div class="nb-sugg nb-qs" id="p-qsugg">' + qtyChipsHTML() + '</div><p class="nb-hint" id="p-hint" aria-live="polite">' + esc(hintText(S.text)) + '</p>' + recipePicker() + (S.quickChips ? '<div class="nb-qadd"><span class="nb-ql">Quick add</span><div class="nb-usual">' + S.quickChips + '</div></div>' : '') + '</form>' : (S.date !== today ? '<p class="hint">You are looking at ' + esc(dayName(S.date)) + '. Lines are added on Today only.</p>' : '<p class="hint">You can read the book but not write in it. Ask the head chef if that is wrong.</p>');
     var todayEmpty = !live.length && S.itemsState === 'ok' ? '<p class="nb-empty">Nothing written for ' + esc(dayName(S.date).toLowerCase()) + ' yet.</p>' : '';
@@ -2198,7 +2201,7 @@
       (removed.length && can('del') ? '<button type="button" class="nb-link" data-p="removed">' + (S.showRemoved ? 'Hide' : 'Show') + ' removed (' + removed.length + ')</button>' : '') + '</div></section>';
     var right = '<section class="nb-page nb-right"><header class="nb-ph"><div><h2 class="nb-title nb-dim">Handy</h2><span class="nb-date">' + (S.date === today ? 'Done today and quick add' : 'Done on ' + esc(dayShort(S.date))) + '</span></div></header>' +
       '<div class="nb-body nb-side">' + sideH + '</div></section>';
-    return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' + (can('tick') ? '' : ' (read only)') + esc(myRank()) : '') + '</span><span class="p-links"><button type="button" class="p-link" data-p="who-change">Not you?</button>' + '' + '</span></div>' +
+    return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' + ksTagHTML() + (can('tick') ? '' : ' (read only)') + esc(myRank()) : '') + '</span><span class="p-links"><button type="button" class="p-link" data-p="who-change">Not you?</button>' + '' + '</span></div>' +
       (canBrowse() ? '<div class="nb-nav"><button type="button" class="chip" data-p="day" data-d="-1" aria-label="Back one day">&lsaquo;</button>' +
       '<button type="button" class="chip" data-p="today" aria-pressed="' + (S.date === today) + '">Today</button>' +
       '<label class="visually-hidden" for="p-day">Pick a date</label><input id="p-day" type="date" class="p-dateinput" data-k="p-day" value="' + esc(S.date) + '">' +
@@ -2509,7 +2512,7 @@
     var pane = at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'learning' ? (learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() : at === 'people' ? (
       '<section class="set-block"><span class="label">People</span><span class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Pings lets that person write shift pings from the prep book (sous chefs always can). Reset PIN lets that person choose a new one. Removing someone from the list keeps their name on old lines. Head chef is for your own name: it always has every permission and the sous chef pages, and a sous chef cannot change or remove it.</span>' +
       (headIdOf(d.people) ? '' : '<p class="hint a-nohead" role="note">No one is marked Head chef yet. Set your own name to Head chef and save, so your PIN has full rights on the kitchen devices.</p>') +
-      peopleListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' +
+      peopleListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' + ksAdminHTML(d) +
       '<section class="set-block"><span class="label">Badges</span><label class="a-check"><input type="checkbox" data-a="badges"' + (d.showBadges !== false ? ' checked' : '') + '> Show the weekly top tickers to everyone on the prep book</label></section>' +
       '<section class="set-block a-feats"><span class="label">New pages</span><span class="hint">You, sous chefs and leads always see these. Untick one to hide it from Staff and View only until the team is ready.</span>' +
       FEATS.map(function (f) { return '<label class="a-check"><input type="checkbox" data-a="staffsee" data-f="' + f[0] + '"' + (d.staffSee[f[0]] ? ' checked' : '') + '> Staff see ' + f[1] + '</label>'; }).join('') + '</section>' + saveBlock
@@ -3057,7 +3060,7 @@
     // a big number for its unit is often grams typed with kg still picked: ask once (second tap on Log it)
     if (amt > (W_BIG[f.unit] || Infinity) && !arm('wbig:' + amt + f.unit)) { toast(amt + ' ' + f.unit + '? Check the unit. Tap Log it again if it is right.', null, 4000); focusSel('.seg-b[aria-checked="true"]'); return; }
     if (!REASONS.some(function (r) { return r[0] === f.reason; })) { toast('Pick a reason.'); focusSel(window.matchMedia && window.matchMedia('(max-width: 719px)').matches ? '.w-rbtn' : '.w-rchips .chip'); return; }
-    var secInfo = {}, sec = cleanSection(f.sec, secInfo), rm = matchRecipe(t), ref = fb.fs.doc(wCol(S.wDate));
+    var secInfo = {}, sec = cleanSection(f.sec, secInfo) || mySec(), rm = matchRecipe(t), ref = fb.fs.doc(wCol(S.wDate));
     sset(ref, { text: t, amount: amt, unit: f.unit, reason: f.reason, action: f.act.trim().slice(0, 120), station: sec, recipe: rm ? rm.id : '',
       addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: now(), deleted: false }).catch(function (e) { failed(e, function () { if (!S.wf.text.trim()) S.wf = f; }); });
     if (sec) noteSection(sec);
@@ -3139,7 +3142,7 @@
     var add = can('add') && S.wDate === today ?
       '<form class="nb-add w-add" data-p-form="wadd">' + (often.length ? '<div class="w-often"><span class="nb-ql">Logged often</span><div class="chiprow">' + often.map(function (e, i) { return '<button type="button" class="chip sq" data-p="woften" data-i="' + i + '">' + esc(e.text) + '</button>'; }).join('') + '</div></div>' : '') +
       '<datalist id="w-sections">' + suggestions().map(function (n) { return '<option value="' + esc(n) + '"></option>'; }).join('') + '</datalist>' +
-      '<div class="nb-add-row"><label class="visually-hidden" for="w-sec">Section</label><input id="w-sec" class="nb-in nb-in-sec" data-k="w-sec" list="w-sections" enterkeyhint="next" autocomplete="off" placeholder="Section" maxlength="40" value="' + esc(f.sec) + '">' +
+      '<div class="nb-add-row"><label class="visually-hidden" for="w-sec">Section</label><input id="w-sec" class="nb-in nb-in-sec" data-k="w-sec" list="w-sections" enterkeyhint="next" autocomplete="off" placeholder="Section" maxlength="40" value="' + esc(f.sec || mySec()) + '">' +
       '<label class="visually-hidden" for="w-text">Item</label><input id="w-text" class="nb-in nb-in-text" data-k="w-text" enterkeyhint="next" autocomplete="off" placeholder="What was wasted?" maxlength="80" value="' + esc(f.text) + '">' +
       '<label class="visually-hidden" for="w-amt">Amount</label><input id="w-amt" class="nb-in nb-in-qty" data-k="w-amt" inputmode="decimal" enterkeyhint="next" autocomplete="off" placeholder="Amount (' + esc(f.unit || 'unit') + ')" maxlength="8" value="' + esc(f.amt) + '"></div>' +
       '<div class="nb-sugg" id="w-sugg">' + wSuggHTML() + '</div>' +
@@ -3158,7 +3161,7 @@
     var tot = totalsText(wTotals(live));
     var body = S.wState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' :
       (shown.length ? '<ul class="nb-rows">' + shown.map(wRow).join('') + '</ul>' : (S.wState !== 'ok' ? '<p class="nb-empty">Loading...</p>' : '<p class="nb-empty">Nothing logged for ' + esc(dayName(S.wDate).toLowerCase()) + ' yet. Log waste when it happens: prep waste, expired stock, cooking faults, returns and excess production.</p>'));
-    return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' : '') + '</span><span class="p-links"><a class="p-link" href="#/prep">Prep list</a>' + '' + '</span></div>' + nav +
+    return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' + ksTagHTML() : '') + '</span><span class="p-links"><a class="p-link" href="#/prep">Prep list</a>' + '' + '</span></div>' + nav +
       '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Wastage</h2><span class="nb-date">' + esc(longDate(S.wDate)) + (tot ? ' &middot; ' + esc(tot) : '') + '</span></div>' +
       '<div class="nb-prog">' + live.length + (live.length === 1 ? ' entry' : ' entries') + '</div></header>' +
       '<p class="w-rule">Write the actual amount and unit, not a dollar value. Unsafe food must never be reused to avoid logging waste.</p>' +
@@ -3345,7 +3348,7 @@
   function noteMarkSeen() { lsSet('lk.note.seen', JSON.stringify({ d: dayNow(), sig: noteSig(todaysNotes()) })); noteBell(); }
   /* pops up by itself: after 10:30, when today has a note that has not been seen on this phone, and nobody is typing */
   function noteMaybePop() {
-    if (npop || !noteUnread() || document.visibilityState === 'hidden' || Date.now() - nSnooze < 15 * 60000) return;
+    if (npop || ksPop || !noteUnread() || document.visibilityState === 'hidden' || Date.now() - nSnooze < 15 * 60000) return;
     var ae = document.activeElement;
     if (T.mins() < NOTE_MIN) return;
     if (ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) && ae.type !== 'button') return;
@@ -4354,6 +4357,7 @@
     var k = ovOn; ovOn = '';
     if (k === 'gz' && gz) gzClose(true);
     else if (k === 'note' && npop) noteClose(true, true);
+    else if (k === 'ks' && ksPop) ksClose(true);
   });
   function gzOpen(id, i) {
     if (gz) gzClose();
@@ -4831,6 +4835,168 @@
     return '<section class="p-card dr-page"><h2 class="p-h" id="rtitle" tabindex="-1">Drinks run</h2>' + top + (dkEditing ? '' : team) + '</section>';
   }
 
+  /* ---------- kitchen sections: where each person works today (21 Oct 2026) ----------
+     The head chef sets the kitchen's sections in the admin panel's People tab (config/main kitSecs: id, name, off).
+     Staff and leads pick one straight after their PIN, once a day, in a popup appended to document.body (clicks use
+     data-ks, classes ks-). That is their default section for the day: a prep line, a Quick add or a wastage entry with
+     the section box left alone goes under it. The head chef and sous chefs are not asked: their section is their role.
+     Each pick is one small record, shifts/<day>_<person id> { day, sec, name, auto, at }, so the admin panel can show
+     who worked where. The phone keeps today's pick (lk.sec.<id>), so it is read at most once a day per person. */
+  var KS_USUAL = ['Grill', 'Pass', 'Pans', 'Fryers', 'Hot larder', 'Salads and dessert', 'Prep'];
+  var KS_AUTO = { head: 'Head chef', sous: 'Sous chef' };
+  var ksPop = null, ksPrev = null, ksAsked = {};
+  function kitSecs() { return ((S.config && S.config.kitSecs) || []).filter(function (x) { return x && x.id && String(x.name || '').trim() && !x.off; }); }
+  /* who picks a section: staff and leads, once the head chef has set some up */
+  function ksPicks(p) { return !!p && (p.role === 'staff' || p.role === 'lead') && kitSecs().length > 0; }
+  function ksGet(id) { try { var v = JSON.parse(lsGet('lk.sec.' + id) || 'null'); return v && v.d === dayNow() ? v : null; } catch (e) { return null; } }
+  function ksPut(id, sec, name) { lsSet('lk.sec.' + id, JSON.stringify({ d: dayNow(), sec: sec, name: name })); }
+  /* the section a line goes under when the box is left alone. Staff and leads only: a sous chef writes for every section. */
+  function mySec() {
+    var p = me(); if (!ksPicks(p)) return '';
+    var v = ksGet(p.id); if (!v || !v.sec) return '';
+    var s = kitSecs().filter(function (x) { return x.id === v.sec; })[0];
+    return s ? s.name : '';   // renamed today: the new name; taken off the list: none
+  }
+  /* "Writing as Ann" on the prep list and wastage: the section next to it, a tap changes it */
+  function ksTagHTML() {
+    var p = me(); if (!ksPicks(p)) return '';
+    var n = mySec();
+    return ' <button type="button" class="p-link ks-tag" data-ks="change" aria-label="' + esc(n ? 'Your section today: ' + n + '. Change it' : 'Pick your section for today') + '">' + esc(n || 'Pick a section') + '</button>';
+  }
+  /* after the PIN (and when the book opens on a new day): staff and leads are asked once a day, chefs are given their role */
+  function ksCheck() {
+    var p = me(); if (!fb || !p || !kitSecs().length || ksGet(p.id)) return;
+    var day = dayNow(), id = p.id, ref = docRef('shifts', day + '_' + id);
+    if (isSousP(p)) {
+      var role = isHeadP(p) ? 'head' : 'sous';
+      ksPut(id, role, KS_AUTO[role]);
+      sset(ref, { day: day, sec: role, name: KS_AUTO[role], auto: true, at: now() }).catch(function () {});
+      return;
+    }
+    if (!ksPicks(p) || ksAsked[day + id]) return;
+    ksAsked[day + id] = 1;
+    // picked on another device today: no need to ask again
+    fb.fs.getDoc(ref).then(function (s) {
+      var x = s.exists() ? s.data() : null;
+      if (x && x.sec) { ksPut(id, x.sec, x.name || ''); draw(); return; }
+      if (S.who === id && S.authed) ksOpen();
+    }, function () { if (S.who === id && S.authed) ksOpen(); });
+  }
+  function ksOpen(change) {
+    var p = me(); if (ksPop || !ksPicks(p)) return;
+    if (npop) noteClose(true, true);   // the pings come back by themselves in 15 minutes
+    var cur = ksGet(p.id), out = change ? 'close' : 'skip';
+    ksPrev = document.activeElement;
+    var el = document.createElement('div');
+    el.className = 'ks-wrap';
+    el.innerHTML = '<div class="ks-bg" data-ks="' + out + '"></div><section class="ks" role="dialog" aria-modal="true" aria-labelledby="ks-h" tabindex="-1">' +
+      '<header class="ks-head"><span class="ks-eb">' + esc(p.name) + '</span><h2 class="ks-h" id="ks-h">Your section today</h2></header>' +
+      '<p class="ks-hint">Your prep lines and wastage go under it, unless you write another section.</p>' +
+      '<div class="ks-grid" role="group" aria-labelledby="ks-h">' + kitSecs().map(function (s) {
+        return '<button type="button" class="ks-b" data-ks="pick" data-v="' + esc(s.id) + '" aria-pressed="' + (!!cur && cur.sec === s.id) + '">' + esc(s.name) + '</button>';
+      }).join('') + '</div>' +
+      '<footer class="ks-foot"><button type="button" class="ks-out" data-ks="' + out + '">' + (change ? 'Close' : 'Not on a section today') + '</button></footer></section>';
+    document.body.appendChild(el);
+    ksPop = el;
+    ovPush('ks');
+    document.documentElement.classList.add('ks-open');
+    var f = el.querySelector('.ks-b[aria-pressed="true"]') || el.querySelector('.ks-b'); if (f) f.focus({ preventScroll: true });
+  }
+  function ksClose(noBack) {
+    if (!ksPop) return;
+    ovDone('ks', noBack);
+    ksPop.parentNode.removeChild(ksPop); ksPop = null;
+    document.documentElement.classList.remove('ks-open');
+    if (ksPrev && ksPrev.focus && document.body.contains(ksPrev)) { try { ksPrev.focus({ preventScroll: true }); } catch (e) {} }
+    ksPrev = null;
+  }
+  /* Skip (or Escape, or a tap outside, on the first ask): no section today, and no asking again today on this phone */
+  function ksSkip() { var p = me(); if (p && !ksGet(p.id)) ksPut(p.id, '', ''); ksClose(); draw(); }
+  function ksPick(sid) {
+    var p = me(), s = kitSecs().filter(function (x) { return x.id === sid; })[0];
+    if (!p || !s) return;
+    var day = dayNow();
+    ksPut(p.id, s.id, s.name);
+    // kept on the phone first, so a lost signal never loses the default section
+    sset(docRef('shifts', day + '_' + p.id), { day: day, sec: s.id, name: s.name, auto: false, at: now() }).catch(function () {});
+    ksClose(); draw();
+    toast('You are on ' + s.name + ' today.');
+  }
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest && e.target.closest('[data-ks]');
+    if (!el) return;
+    var a = el.getAttribute('data-ks');
+    if (a === 'pick') { ksPick(el.getAttribute('data-v')); return; }
+    if (a === 'skip') { ksSkip(); return; }
+    if (a === 'close') { ksClose(); return; }
+    if (a === 'change') { ksOpen(true); return; }
+  });
+  document.addEventListener('keydown', function (e) {
+    if (!ksPop) return;
+    if (e.key === 'Escape') { e.preventDefault(); if (ksPop.querySelector('[data-ks="skip"]')) ksSkip(); else ksClose(); return; }
+    if (e.key === 'Tab') trapTab(e, ksPop);
+  });
+
+  /* The admin People tab: the sections themselves (part of the staff draft, saved with Save changes), who is on which
+     today and who worked where over the last 14 days (one small query when the tab opens, once a day per page load). */
+  function ksClean(list) {
+    var on = {};
+    var out = (list || []).map(function (x) { return { id: String(x.id || ''), name: String(x.name || '').replace(/\s+/g, ' ').trim().slice(0, 40), off: !!x.off }; })
+      .filter(function (x) { if (!x.id || !x.name) return false; if (x.off) return true; var k = x.name.toLowerCase(); if (on[k]) return false; on[k] = 1; return true; });
+    return out.filter(function (x) { return !x.off || !on[x.name.toLowerCase()]; }).slice(0, 30);
+  }
+  var shiftsFor = '', shiftsBusy = false;
+  function loadShifts(force) {
+    if (!fb || shiftsBusy || (!force && shiftsFor === dayNow())) return;
+    shiftsBusy = true;
+    var f = fb.fs;
+    f.getDocs(f.query(colRef('shifts'), f.where('day', '>=', shift(dayNow(), -13)))).then(function (sn) {
+      shiftsBusy = false; shiftsFor = dayNow();
+      S.shifts = sn.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }); draw();
+    }, function () { shiftsBusy = false; S.shifts = S.shifts || []; draw(); });
+  }
+  function ksName(id) { var p = ((S.config && S.config.people) || []).filter(function (x) { return x.id === id; })[0]; return p ? p.name : ''; }
+  function ksAdminHTML(d) {
+    var list = d.kitSecs || [], t = dayNow();
+    var rows = list.map(function (s, i) {
+      return '<li class="a-ks-row' + (s.off ? ' is-off' : '') + '"><label class="visually-hidden" for="a-ks' + i + '">Section name</label><input id="a-ks' + i + '" class="search" data-k="a-ks' + i + '" data-a="ksec" data-i="' + i + '" maxlength="40" autocomplete="off" placeholder="Section name" value="' + esc(s.name) + '"' + (s.off ? ' disabled' : '') + '>' +
+        '<button type="button" class="p-x" data-p="ks-rm" data-i="' + i + '" aria-label="' + esc((s.off ? 'Put back: ' : 'Remove: ') + (s.name || 'this section')) + '">' + (s.off ? 'Put back' : 'Remove') + '</button></li>';
+    }).join('');
+    var out = '<section class="set-block a-ks"><span class="label">Kitchen sections</span><span class="hint">Staff and leads pick one of these straight after their PIN, once a day. Their prep lines and wastage go under it unless they write another section. You and the sous chefs are not asked: your section is your role. Renaming a section keeps its history. Save changes at the bottom to put them live.</span>' +
+      (rows ? '<ul class="a-ks-list">' + rows + '</ul>' : '<p class="hint">No sections yet, so nobody is asked.</p>') +
+      '<div class="btn-row"><button type="button" class="btn" data-p="ks-add">Add a section</button>' + (list.length ? '' : '<button type="button" class="btn" data-p="ks-usual">Add ' + esc(KS_USUAL.join(', ')) + '</button>') + '</div>';
+    if (!kitSecs().length && !(S.shifts || []).length) return out + '</section>';
+    loadShifts();
+    if (!S.shifts) return out + '<p class="hint">Reading who is on today...</p></section>';
+    var today = S.shifts.filter(function (x) { return x.day === t && x.sec; }), by = {};
+    today.forEach(function (x) { (by[x.name] = by[x.name] || []).push(ksName(x.by) || x.by); });
+    var names = kitSecs().map(function (s) { return s.name; }).concat([KS_AUTO.head, KS_AUTO.sous]);
+    Object.keys(by).forEach(function (n) { if (names.indexOf(n) < 0) names.push(n); });
+    out += '<h3 class="a-ks-h">On today</h3><ul class="a-ks-today">' + names.filter(function (n) { return by[n] || (n !== KS_AUTO.head && n !== KS_AUTO.sous); }).map(function (n) {
+      return '<li><span class="a-ks-sec">' + esc(n) + '</span><span class="a-ks-who">' + (by[n] ? esc(by[n].sort().join(', ')) : '<span class="a-ks-none">Nobody yet</span>') + '</span></li>';
+    }).join('') + '</ul>';
+    // who worked where: one row per person, days on each section over the last 14 days
+    var per = {};
+    S.shifts.forEach(function (x) {
+      if (!x.sec) return;
+      var r = per[x.by] = per[x.by] || { id: x.by, name: ksName(x.by) || x.by, days: 0, secs: {}, last: '' };
+      r.days++; r.secs[x.name] = (r.secs[x.name] || 0) + 1; if (x.day > r.last) r.last = x.day;
+    });
+    var items = Object.keys(per).map(function (k) { return per[k]; });
+    out += '<h3 class="a-ks-h">Who worked where, last 14 days</h3>' + lvHTML({
+      key: 'ks-days', items: items, step: 15, noun: ['person', 'people'], ph: 'Search names or sections', empty: 'Nobody has picked a section yet.',
+      find: function (r) { return r.name + ' ' + Object.keys(r.secs).join(' '); },
+      sorts: [['days', 'Most days', function (a, b) { return b.days - a.days || a.name.localeCompare(b.name); }], ['az', 'A to Z', function (a, b) { return a.name.localeCompare(b.name); }]],
+      cols: [
+        { h: 'Name', th: true, html: function (r) { return esc(r.name); } },
+        { h: 'Days', html: function (r) { return String(r.days); } },
+        { h: 'Sections', wide: true, html: function (r) { return esc(Object.keys(r.secs).sort(function (a, b) { return r.secs[b] - r.secs[a]; }).map(function (n) { return n + ' ' + r.secs[n]; }).join(', ')); } },
+        { h: 'Last', html: function (r) { return esc(dayShort(r.last)); } }
+      ]
+    });
+    return out + '</section>';
+  }
+
   /* ---------- events ---------- */
   function onClick(e) {
     var el = e.target.closest('[data-p]');
@@ -4970,8 +5136,8 @@
     if (a === 'wreason') { S.wf.reason = el.getAttribute('data-v'); var fromSheet = S.sheet === 'reason'; S.sheet = ''; draw(); if (fromSheet) { var rb = S.root.querySelector('.w-rbtn'); if (rb) rb.focus(); } return; }
     if (a === 'sheet') { S.sheet = el.getAttribute('data-v'); draw(); var so = S.root.querySelector('.sheet-o[aria-checked="true"]') || S.root.querySelector('.sheet-o'); if (so) so.focus(); return; }
     if (a === 'sheet-close') { S.sheet = ''; draw(); var rb2 = S.root.querySelector('.w-rbtn'); if (rb2) rb2.focus(); return; }
-    if (a === 'wsugg') { var wt = (S.wsugg || [])[i]; if (wt) { S.wf.text = wt; var wl = wLast(wt); if (wl) { if (wl.unit) S.wf.unit = wl.unit; if (wl.reason && !S.wf.reason) S.wf.reason = wl.reason; if (wl.station && !S.wf.sec) S.wf.sec = wl.station; } draw(); var wa = S.root.querySelector('[data-k="w-amt"]'); if (wa) wa.focus(); } return; }
-    if (a === 'woften') { var wo = wOften()[i]; if (wo) { S.wf.text = wo.text; if (wo.unit) S.wf.unit = wo.unit; if (wo.reason) S.wf.reason = wo.reason; if (wo.sec && !S.wf.sec) S.wf.sec = wo.sec; draw(); var wa2 = S.root.querySelector('[data-k="w-amt"]'); if (wa2) wa2.focus(); } return; }
+    if (a === 'wsugg') { var wt = (S.wsugg || [])[i]; if (wt) { S.wf.text = wt; var wl = wLast(wt); if (wl) { if (wl.unit) S.wf.unit = wl.unit; if (wl.reason && !S.wf.reason) S.wf.reason = wl.reason; if (wl.station && !S.wf.sec && !mySec()) S.wf.sec = wl.station; } draw(); var wa = S.root.querySelector('[data-k="w-amt"]'); if (wa) wa.focus(); } return; }
+    if (a === 'woften') { var wo = wOften()[i]; if (wo) { S.wf.text = wo.text; if (wo.unit) S.wf.unit = wo.unit; if (wo.reason) S.wf.reason = wo.reason; if (wo.sec && !S.wf.sec && !mySec()) S.wf.sec = wo.sec; draw(); var wa2 = S.root.querySelector('[data-k="w-amt"]'); if (wa2) wa2.focus(); } return; }
     if (a === 'wdel') { removeWaste(dt, id); return; }
     if (a === 'wrestore') { removeWaste(dt, id, true); return; }
     if (a === 'wday') { S.wDate = shift(S.wDate, +el.getAttribute('data-d')); watchWaste(); draw(); return; }
@@ -5003,6 +5169,9 @@
     if (!S.draft) return;
     var d = S.draft;
     if (a === 'a-add-person') { lvReveal('people'); lvReveal('staff'); d.people.push({ id: slug('person') + '-' + Date.now().toString(36), name: '', role: 'staff', add: true, tick: true, del: false, active: true, isNew: true }); draw(); var n = S.root.querySelector('[data-k="a-n' + (d.people.length - 1) + '"]'); if (n) n.focus(); return; }
+    if (a === 'ks-add') { d.kitSecs = d.kitSecs || []; d.kitSecs.push({ id: 'ks-' + Date.now().toString(36), name: '', off: false, isNew: true }); draw(); var kn = S.root.querySelector('[data-k="a-ks' + (d.kitSecs.length - 1) + '"]'); if (kn) kn.focus(); return; }
+    if (a === 'ks-usual') { d.kitSecs = KS_USUAL.map(function (n) { return { id: slug(n), name: n, off: false }; }); draw(); return; }
+    if (a === 'ks-rm') { var ks = (d.kitSecs || [])[i]; if (!ks) return; if (ks.isNew) d.kitSecs.splice(i, 1); else ks.off = !ks.off; draw(); return; }
     if (a === 'a-bulk-add') {
       lvReveal('people'); lvReveal('staff');
       var lines = String(S.bulk || '').split(/\n/).map(function (s) { return s.trim(); }).filter(Boolean);
@@ -5085,6 +5254,7 @@
     if (!a || !S.draft) return;
     var i = +el.getAttribute('data-i'), d = S.draft;
     if (a === 'name') d.people[i].name = el.value;
+    if (a === 'ksec' && d.kitSecs && d.kitSecs[i]) d.kitSecs[i].name = el.value;
   }
   function onChange(e) {
     var el = e.target, k = el.getAttribute && el.getAttribute('data-k');
@@ -5392,6 +5562,7 @@
     headPin: whoHead,
     chefMenu: chefMenu,
     chefOpen: chefOpen,
+    secOpen: function () { ksOpen(true); },
     signOut: signOutPerson,
     minNudge: minNudgeHTML,
     mailInfo: mlInfo,

@@ -203,6 +203,24 @@ await ok(W([['drinks/ann', drink({ at: 'now' })]], { id: 'ann' }), false, 'drink
 await ok(getDocs(collection(anon, K + 'drinks')), true, 'drinks: a PIN holder reads the team\'s drinks');
 await ok(deleteDoc(doc(anon, K + 'drinks/ann')), false, 'drinks: staff cannot delete one');
 await ok(setDoc(doc(owner, K + 'drinks/old-hand'), drink({ by: 'old-hand' })), true, 'drinks: the head chef copies one as it is (move to a new kitchen PIN)');
+
+// kitchen sections: each person writes only their own section for the day, shifts/<day>_<id>
+const sh = x => Object.assign({ day: '2026-10-21', sec: 'grill', name: 'Grill', auto: false, at: 1 }, x || {});
+await ok(W([['shifts/2026-10-21_ann', sh()]], { id: 'ann' }), true, 'shifts: Ann picks Grill for the day');
+await ok(W([['shifts/2026-10-21_ann', sh({ sec: 'pass', name: 'Pass', at: 2 })]], { id: 'ann' }), true, 'shifts: Ann changes to Pass');
+await ok(W([['shifts/2026-10-21_bo', sh()]], { id: 'ann' }), false, 'shifts: Ann cannot pick for Bo');
+await ok(W([['shifts/2026-10-20_ann', sh()]], { id: 'ann' }), false, 'shifts: the record id must be the day and the writer');
+await ok(W([['shifts/2026-10-21_ann', sh()]], { id: 'ann', pin: '9999' }), false, 'shifts: wrong PIN refused');
+await ok(setDoc(doc(anon, K + 'shifts/2026-10-21_ann'), sh({ by: 'ann' })), false, 'shifts: no proof refused');
+await ok(W([['shifts/2026-10-21_ann', sh({ name: 'x'.repeat(41) })]], { id: 'ann' }), false, 'shifts: a section name over 40 characters is refused');
+await ok(W([['shifts/2026-10-21_ann', sh({ score: 5 })]], { id: 'ann' }), false, 'shifts: no fields beyond the section');
+await ok(W([['shifts/2026-10-21_ann', sh({ at: 'now' })]], { id: 'ann' }), false, 'shifts: the time must be a number');
+await ok(W([['shifts/2026-10-21_sam', sh({ sec: 'sous', name: 'Sous chef', auto: true })]], { id: 'sam' }), true, 'shifts: a sous chef is given their role');
+await ok(getDocs(collection(anon, K + 'shifts')), true, 'shifts: a PIN holder reads who is on which section');
+await ok(deleteDoc(doc(anon, K + 'shifts/2026-10-21_ann')), false, 'shifts: staff cannot delete one');
+await ok(setDoc(doc(owner, K + 'shifts/2026-10-01_old-hand'), sh({ day: '2026-10-01', by: 'old-hand' })), true, 'shifts: the head chef copies one as it is (move to a new kitchen PIN)');
+await ok(W([['config/main', { kitSecs: [{ id: 'grill', name: 'Grill', off: false }] }, true]], { id: 'sam' }), false, 'config: a sous chef cannot change the kitchen sections');
+await ok(setDoc(doc(owner, K + 'config/main'), { kitSecs: [{ id: 'grill', name: 'Grill', off: false }] }, { merge: true }), true, 'config: the head chef sets the kitchen sections');
 // the owner probe
 await ok(getDoc(doc(owner, K + 'config/admins')), true, 'admins: the head chef may read the probe');
 await ok(getDoc(doc(anon, K + 'config/admins')), false, 'admins: nobody else may');
