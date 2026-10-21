@@ -79,7 +79,7 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   await p.fill('[data-ff="kc"]', 'Cake comes out at 20:00.\nKeep the pass clear.');
   await tap(p, '[data-fe="review"]'); await L.settle(p, 200);
   const rv = await txt(p, '.fe-review') || '';
-  ok(/Check before confirming/.test(rv) && /18:30/.test(rv) && /Event start/.test(rv) && /Kitchen comment/.test(rv) && !/0400/.test(rv), 'review: the summary shows times, platters and the comment, never the phone');
+  ok(/Check before confirming/.test(rv) && /18:30/.test(rv) && /event 18:00/.test(rv) && /Next out/.test(rv) && /Kitchen comment/.test(rv) && !/0400/.test(rv), 'review: the summary shows times, platters and the comment, never the phone');
   await p.click('[data-fe="confirm"]'); await p.click('[data-fe="confirm"]').catch(() => {});
   await L.waitFor(p, () => /Confirmed/.test((document.querySelector('.fe-head') || {}).textContent || ''));
   let s = await store(p);
@@ -110,7 +110,7 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   await p.goto(L.BASE + '#/recipes'); await L.settle(p, 900);
   await L.waitFor(p, () => /Smith 50th/.test((document.getElementById('fn-band') || {}).textContent || ''));
   const band = await txt(p, '#fn-band') || '';
-  ok(/Smith 50th/.test(band) && /Beer garden/.test(band) && /60 guests/.test(band) && /Event 18:00/.test(band) && /Next 18:30 \(round 1 of 3\): 3 Antipasto, 2 Aussie/.test(band) && /5 now, 12 in all/.test(band), 'band: event start, next round and "now" against "in all" (' + band.replace(/\s+/g, ' ').slice(0, 200) + ')');
+  ok(/Smith 50th/.test(band) && /Beer garden/.test(band) && !/guests/.test(band) && /Event 18:00/.test(band) && /Next 18:30 \(round 1 of 3\): 3 Antipasto, 2 Aussie/.test(band) && /5 now, 12 in all/.test(band), 'band: event start, next round and "now" against "in all" (' + band.replace(/\s+/g, ' ').slice(0, 200) + ')');
   ok(/Kitchen comment/.test(band) && /Staggered/.test(band), 'band: staggered and kitchen comment marked');
   ok(p.errors.length === 0, 'coordinator: no page errors ' + p.errors.join(' | '));
   await p.context().close();
@@ -173,13 +173,13 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   ok(/Upcoming functions/.test(pg) && new RegExp(M.dayName(day2)).test(pg) && /Brown 21st/.test(pg) && !/Draft do/.test(pg), '#/fn: the next three days, without drafts');
   await p.context().close();
 
-  // guests not known yet: confirmed, and the kitchen is told so
+  // guests not known yet: it can be confirmed, and the kitchen's views never show guests (22 Oct 2026)
   const unk = fn({ name: 'Mystery do', guests: 0 }); unk.gu = true; unk.guests = 0;
   p = await L.open(b, '#/recipes', { who: 'ann', extra: extra({ unk }), wait: 1200 });
   await L.waitFor(p, () => /Mystery do/.test((document.getElementById('fn-band') || {}).textContent || ''));
-  ok(/guests not known yet/.test(await txt(p, '#fn-band') || ''), 'guests: the band says guests are not known yet');
+  ok(!/guest/i.test(await txt(p, '#fn-band') || ''), 'guests: the band never mentions guests');
   await tap(p, '#fn-band .fn-row'); await L.settle(p, 200);
-  ok(/Not known yet/.test(await txt(p, '.fn-facts') || ''), 'guests: the sheet says Not known yet');
+  ok(!/guest/i.test(await txt(p, '.fn-sheet') || ''), 'guests: the sheet never mentions guests');
   await p.context().close();
 
   // start time TBC: the coordinator confirms anyway, the kitchen sees TBC all day
@@ -219,7 +219,14 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   await L.waitFor(p, () => /Smith 50th/.test((document.getElementById('fn-band') || {}).textContent || ''));
   ok(/Round 1 due 18:30, not sent yet/.test(await txt(p, '#fn-band') || ''), 'sent: a round past its time and not ticked says "not sent yet" (' + (await txt(p, '#fn-band') || '').replace(/\s+/g, ' ').slice(0, 160) + ')');
   await tap(p, '#fn-band .fn-row'); await L.settle(p, 200);
-  await tap(p, '.fn-sheet [data-fn="sent"][data-r="0"]'); await L.settle(p, 400);
+  // the sheet leads with what goes out next: the date line, then the next round's time and platters, then every round
+  const order = await p.evaluate(() => [...document.querySelectorAll('.fn-sheet .fn-sub, .fn-sheet .fn-next, .fn-sheet .fn-rounds, .fn-sheet .fn-kc')].map(e => e.className.split(' ')[0]));
+  ok(JSON.stringify(order) === JSON.stringify(['fn-sub', 'fn-next', 'fn-rounds', 'fn-kc']), 'sheet: date line, next out, every round, then the kitchen comment (' + order.join(',') + ')');
+  ok(new RegExp(M.dayName(today) + ' · Beer garden · event 18:00').test(await txt(p, '.fn-sub') || ''), 'sheet: one line for the day, the place and the event start');
+  const nx = (await txt(p, '.fn-next') || '').replace(/\s+/g, ' ');
+  ok(/Next out 18:30 · round 1 of 3/.test(nx) && /Due 18:30, not sent yet/.test(nx) && /3 ?Antipasto Platter ?2 ?Aussie Platter/.test(nx), 'sheet: next out is round 1 at 18:30 with 3 Antipasto and 2 Aussie, late (' + nx.slice(0, 160) + ')');
+  await tap(p, '.fn-next [data-fn="sent"]'); await L.settle(p, 400);
+  ok(/19:00 · round 2 of 3/.test(await txt(p, '.fn-next') || ''), 'sheet: Sent in the next box moves it on to round 2');
   s = await store(p);
   const st = s[fsKey(['fnsent', 'smith_' + at(today, '18:30')])];
   ok(!!st && st.sent === true && st.sentBy === 'ann' && st.by === 'ann' && st.day === today, 'sent: the tick is saved as Ann\'s');
@@ -278,6 +285,7 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   let f2 = s[fsKey(['functions', 'smith'])];
   ok(f2.v === 2 && f2.kcBy === 'finn' && f2.by === 'finn' && f2.cBy === 'fay' && f2.confBy === 'fay' && /Kitchen comment changed/.test(f2.chg[0].what) && f2.chg[0].by === 'finn', 'comment: Finn\'s change is his, Fay stays the one who made and confirmed it');
   ok(!!s[fsKey(['functions', 'smith', 'hist', '1'])], 'history: version 1 is kept');
+  ok(p.errors.length === 0, 'duplicate: no page errors ' + p.errors.join(' | '));
   await p.context().close();
   p = await L.open(b, '#/functions/smith', { who: 'fay', extra: extra({ smith }), wait: 1500 });
   await L.waitFor(p, () => !!document.querySelector('[data-ff="guests"]'));
@@ -305,12 +313,14 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   ok(await p.$eval('[data-ff="name"]', e => e.value) === 'Smith 50th (copy)' && await p.$eval('[data-ff="date"]', e => e.value) === '', 'duplicate: a new draft with the date left for you to pick');
   await setV(p, '[data-ff="date"]', day2);
   await tap(p, '[data-fe="save"]');
-  await L.waitFor(p, () => /Draft saved|Draft: the kitchen/.test((document.getElementById('fe-root') || {}).textContent || ''));
+  // the save itself: "Version 1" shows once it is saved (the draft tag is on the form before the save)
+  await L.waitFor(p, () => /Version 1\./.test((document.getElementById('fe-root') || {}).textContent || ''), null, 15000);
   s = await store(p);
   const copies = Object.keys(s).filter(k => /\/functions\/[^/]+$/.test(k) && !/\/smith$/.test(k)).map(k => s[k]);
   ok(copies.length === 1 && copies[0].status === 'draft' && copies[0].date === day2 && copies[0].rounds[0].at === at(day2, '18:30') && copies[0].kq === 0, 'duplicate: saved as a draft on the new date, times kept, never in the kitchen\'s list');
-  await p.goto(L.BASE + '#/functions/smith'); await L.settle(p, 1200);
-  await L.waitFor(p, () => !!document.querySelector('[data-fe="cancel"]'));
+  await p.context().close();
+  p = await L.open(b, '#/functions/smith', { who: 'fay', extra: extra({ smith }), wait: 1500 });
+  await L.waitFor(p, () => !!document.querySelector('[data-fe="cancel"]'), null, 15000);
   await tap(p, '[data-fe="cancel"]'); await L.settle(p, 100);
   ok(/Tap again to cancel/.test(await txt(p, '[data-fe="cancel"]') || ''), 'cancel: asks for a second tap');
   await tap(p, '[data-fe="cancel"]');

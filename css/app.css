@@ -1672,10 +1672,19 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav { top: var(--u
 .fn-sheet:focus { outline: none; }
 .fn-sheet-top { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.8rem 0 0.6rem; background: var(--paper); border-bottom: 1px solid var(--line); }
 .fn-sheet-top h2 { margin: 0; font: 700 1.6rem var(--display); overflow-wrap: anywhere; }
-.fn-facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.5rem 1rem; margin: 0.8rem 0; }
-.fn-facts div { min-width: 0; }
-.fn-facts dt { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
-.fn-facts dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.fn-sub { margin: 0.4rem 0 0; color: var(--muted); font-weight: 600; overflow-wrap: anywhere; }
+/* what goes out next: the one box on the sheet, because it is what the kitchen acts on */
+.fn-next { margin: 0.8rem 0 0.4rem; padding: 0.7rem 0.9rem 0.8rem; border: 2px solid var(--ink); border-radius: 12px; background: #FFF6D9; }
+.fn-next-h { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.2rem 0.6rem; }
+.fn-next-l { font: 700 0.75rem var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: #6A4A00; }
+.fn-next-h b { font: 700 1.9rem var(--display); line-height: 1.1; }
+.fn-next-s { margin: 0.15rem 0 0; color: #3b3a36; }
+.fn-next-list { list-style: none; margin: 0.5rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.25rem; }
+.fn-next-row { display: flex; align-items: baseline; gap: 0.7rem; }
+.fn-next-n { min-width: 2.2rem; font: 700 2rem var(--display); line-height: 1; text-align: right; font-variant-numeric: tabular-nums; }
+.fn-next-name { font-size: 1.1rem; font-weight: 600; overflow-wrap: anywhere; }
+.fn-next-sent { margin-top: 0.6rem; display: flex; align-items: center; gap: 0.4rem; }
+.fn-next-sent .fn-sent-b { min-height: 48px; padding: 0 1.4rem; font-size: 1.05rem; }
 .fn-h { margin: 1rem 0 0.4rem; font: 700 1.2rem var(--display); }
 .fn-tw { max-width: 100%; overflow-x: auto; }
 .fn-table { border-collapse: collapse; min-width: 100%; font-variant-numeric: tabular-nums; }
@@ -1685,7 +1694,6 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav { top: var(--u
 .fn-table tbody th small { display: block; font-weight: 400; color: var(--muted); white-space: normal; }
 .fn-table tr.is-next { background: #FFF6D9; }
 .fn-table .fn-tot th, .fn-table .fn-tot td { border-top: 2px solid var(--ink); }
-.fn-zero { color: var(--faint); }
 .fn-note { margin: 0.4rem 0 0; }
 .fn-plist, .fn-chg { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.3rem; }
 .fn-plist small { display: block; color: var(--muted); }
@@ -1791,3 +1799,12 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav { top: var(--u
 .nb-tab.nb-tab-fn { background: #FFF6D9; border-color: #E8C35A; color: #6A4A00; }
 .nb-tab.nb-tab-fn[aria-pressed="true"] { background: #E8C35A; border-color: #B8922A; color: var(--ink); }
 .nb-tab-n { display: inline-block; min-width: 1.3em; margin-left: 0.3em; padding: 0 0.3em; border-radius: 999px; background: var(--accent); color: #fff; font-size: 0.8em; text-align: center; }
+/* every round as a list in the function sheet: time, what goes out, Sent (22 Oct 2026) */
+.fn-rounds { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.fn-round { display: grid; grid-template-columns: 4.6rem minmax(0, 1fr) auto; align-items: center; gap: 0.3rem 0.6rem; padding: 0.45rem 0; border-bottom: 1px solid var(--line); }
+.fn-round.is-next { background: #FFF6D9; margin: 0 -0.5rem; padding-left: 0.5rem; padding-right: 0.5rem; }
+.fn-round.is-sent .fn-round-w { color: var(--muted); }
+.fn-round-t { font-weight: 700; font-variant-numeric: tabular-nums; }
+.fn-round-w { overflow-wrap: anywhere; }
+.fn-round-w i { display: block; font-style: normal; font-size: 0.85rem; color: var(--muted); }
+.fn-rounds-tot { margin: 0.4rem 0 0; font-weight: 700; }
