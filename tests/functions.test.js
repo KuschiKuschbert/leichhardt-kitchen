@@ -47,6 +47,9 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   await p.fill('[data-ff="name"]', 'Smith 50th');
   await setV(p, '[data-ff="date"]', today);
   await setV(p, '[data-ff="startT"]', '18:00');
+  await p.click('[data-ff="gu"]'); await L.settle(p, 150);
+  ok(await p.$eval('[data-ff="guests"]', e => e.disabled) && /guests not known yet/.test(await txt(p, '#fe-live') || ''), 'guests: Not known yet empties and locks the number');
+  await p.click('[data-ff="gu"]'); await L.settle(p, 150);
   await p.fill('[data-ff="guests"]', '60');
   await p.fill('[data-ff="loc"]', 'Beer garden');
   await p.fill('[data-ff="cname"]', 'Jo Smith');
@@ -87,6 +90,13 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   ok(JSON.stringify(saved.lines.map(l => [l.rid, l.qty, M.fromU(l.u, 3)])) === JSON.stringify([['antipasto-platter', 3, [3, 0, 0]], ['aussie-platter', 4, [2, 2, 0]], ['pizza-platter', 5, [0, 2, 3]]]), 'save: every line keeps its platter id and adds up across the rounds');
   ok(saved.first === at(today, '18:30') && saved.last === at(today, '19:30') && saved.start === at(today, '18:00') && saved.until === at(today, '20:00'), 'save: first, last and the end of the band come from the saved rounds');
   ok(!!contact && contact.phone === '0400 111 222' && contact.email === 'jo@example.com' && !JSON.stringify(saved).match(/0400|example\.com/), 'save: phone and email only in the contact record, not the kitchen\'s copy');
+  // the platters are on today's prep list, one line each, under Functions, linked to the recipe card
+  const pl = rid => s[fsKey(['days', today, 'items', 'fn-' + id + '-' + rid])];
+  ok(!!pl('antipasto-platter') && pl('antipasto-platter').text === 'Antipasto Platter: Smith 50th, from 18:30' && pl('antipasto-platter').qty === '3 platters' && pl('antipasto-platter').station === 'Functions' && pl('antipasto-platter').recipe === 'antipasto-platter' && pl('antipasto-platter').fn === id && pl('antipasto-platter').dupOk === true && !('done' in pl('antipasto-platter')),
+    'prep list: each platter is a prep line under Functions (' + JSON.stringify(pl('antipasto-platter')) + ')');
+  ok(!!pl('pizza-platter') && pl('pizza-platter').text === 'Pizza Platter: Smith 50th, from 19:00' && pl('pizza-platter').qty === '5 platters', 'prep list: the line says when that platter first goes out');
+  await p.goto(L.BASE + '#/prep'); await L.settle(p, 1200);
+  ok(/Pizza Platter: Smith 50th, from 19:00/.test(await txt(p, '#prep-root') || ''), 'prep list: the kitchen sees the platter lines on the prep list');
   // the band on the same phone
   await p.goto(L.BASE + '#/recipes'); await L.settle(p, 900);
   await L.waitFor(p, () => /Smith 50th/.test((document.getElementById('fn-band') || {}).textContent || ''));
@@ -154,6 +164,47 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   ok(/Upcoming functions/.test(pg) && new RegExp(M.dayName(day2)).test(pg) && /Brown 21st/.test(pg) && !/Draft do/.test(pg), '#/fn: the next three days, without drafts');
   await p.context().close();
 
+  // guests not known yet: confirmed, and the kitchen is told so
+  const unk = fn({ name: 'Mystery do', guests: 0 }); unk.gu = true; unk.guests = 0;
+  p = await L.open(b, '#/recipes', { who: 'ann', extra: extra({ unk }), wait: 1200 });
+  await L.waitFor(p, () => /Mystery do/.test((document.getElementById('fn-band') || {}).textContent || ''));
+  ok(/guests not known yet/.test(await txt(p, '#fn-band') || ''), 'guests: the band says guests are not known yet');
+  await tap(p, '#fn-band .fn-row'); await L.settle(p, 200);
+  ok(/Not known yet/.test(await txt(p, '.fn-facts') || ''), 'guests: the sheet says Not known yet');
+  await p.context().close();
+
+  // start time TBC: the coordinator confirms anyway, the kitchen sees TBC all day
+  p = await L.open(b, '#/functions/new', { who: 'fay', extra: base, wait: 1500 });
+  await L.waitFor(p, () => !!document.querySelector('[data-ff="st"]'));
+  await p.fill('[data-ff="name"]', 'Tbc party');
+  await setV(p, '[data-ff="date"]', today);
+  await p.click('[data-ff="st"]'); await L.settle(p, 150);
+  await p.click('[data-ff="gu"]'); await L.settle(p, 150);
+  ok(await p.$eval('[data-ff="startT"]', e => e.disabled), 'TBC: the start time box is locked');
+  await tap(p, '[data-fe="addline"][data-v="pizza-platter"]'); await L.settle(p, 100);
+  await setV(p, '[data-ff="qty0"]', '4');
+  await tap(p, '[data-fe="review"]'); await L.settle(p, 200);
+  ok(!!(await p.$('.fe-review')) && /TBC/.test(await txt(p, '.fe-review') || ''), 'TBC: confirming is allowed and the review says TBC');
+  await tap(p, '[data-fe="confirm"]');
+  await L.waitFor(p, () => /Confirmed/.test((document.querySelector('.fe-head') || {}).textContent || ''));
+  const tb = Object.values(await store(p)).filter(x => x && x.name === 'Tbc party')[0];
+  ok(!!tb && tb.status === 'confirmed' && tb.st === true && tb.start === 0 && tb.gu === true && tb.until === at(M.addDays(today, 1), '00:00'), 'TBC: saved confirmed, shown until midnight');
+  await p.goto(L.BASE + '#/recipes'); await L.settle(p, 900);
+  await L.waitFor(p, () => /Tbc party/.test((document.getElementById('fn-band') || {}).textContent || ''));
+  ok(/Times TBC: 4 Pizza/.test(await txt(p, '#fn-band') || ''), 'TBC: the band says Times TBC with the platters');
+  ok(p.errors.length === 0, 'TBC: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // a function's platter line left unticked yesterday never rolls over onto today; the kitchen's own line does
+  const yd = {}, yline = x => Object.assign({ station: 'Sauce', qty: '1', recipe: '', addedBy: 'Ann', addedById: 'ann', addedAt: L.NOW - 90000000, done: false, deleted: false }, x);
+  yd[fsKey(['days', yesterday, 'items', 'y1'])] = yline({ text: 'Make stock' });
+  yd[fsKey(['days', yesterday, 'items', 'fn-old-pizza-platter'])] = yline({ text: 'Pizza Platter: Old do, at 18:00', station: 'Functions', fn: 'old', dupOk: true });
+  p = await L.open(b, '#/prep', { extra: Object.assign({}, base, yd), wait: 3000 });
+  await L.waitFor(p, () => /Make stock/.test((document.getElementById('prep-root') || {}).textContent || ''), null, 15000).catch(() => {});
+  const tday = Object.keys(await store(p)).filter(k => k.indexOf('/days/' + today + '/items/r') >= 0).map(k => k.split('/').pop());
+  ok(tday.some(k => /y1$/.test(k)) && !tday.some(k => /fn-old/.test(k)), 'rollover: yesterday\'s Make stock rolls over, the function\'s platter line does not (' + tday.join(',') + ')');
+  await p.context().close();
+
   // 4. upcoming totals: each booked line once, confirmed only
   const t1 = fn({ name: 'Tomorrow A', date: tomorrow, rounds: ['12:00', '12:30'], lines: [['pizza-platter', 'Pizza Platter', [2, 3]]] });
   const t2 = fn({ name: 'Tomorrow B', date: tomorrow, guests: 200, lines: [['pizza-platter', 'Pizza Platter', [4]], ['vege-platter', 'Vege Platter', [2]]] });
@@ -214,6 +265,8 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   await L.waitFor(p, () => /Cancelled/.test((document.querySelector('.fe-head') || {}).textContent || ''));
   s = await store(p);
   f2 = s[fsKey(['functions', 'smith'])];
+  const gone2 = s[fsKey(['days', today, 'items', 'fn-smith-pizza-platter'])];
+  ok(!!gone2 && gone2.deleted === true && gone2.deletedBy === 'Fay', 'prep list: cancelling removes the function\'s platter lines');
   ok(f2.status === 'cancelled' && f2.canBy === 'fay' && f2.kq === f2.until && /Cancelled/.test(f2.chg[0].what), 'cancel: kept, marked cancelled by Fay, still in the kitchen\'s list for its notice');
   ok(p.errors.length === 0, 'duplicate and cancel: no page errors ' + p.errors.join(' | '));
   await p.context().close();
