@@ -60,7 +60,9 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   w = await S(p);
   const bun = w.els.find(e => /burger/.test(e.id)), chips = w.els.find(e => e.ing === 'Chips');
   ok(w.style === 'side' && w.surf.fam === 'plate', 'burger: side by side on a dinner plate');
-  ok(!!bun && !!chips && Math.abs(bun.x - chips.x) > 40 && w.els.filter(e => e.t === 'item').length === 2, 'burger: one burger and the chips, side by side');
+  ok(!!bun && !!chips && Math.abs(bun.x - chips.x) > 40 && w.els.filter(e => e.t === 'item' || e.t === 'raw').length === 2, 'burger: one burger and the chips, side by side');
+  // drawn from its own layers, the way the book draws a burger from above: the bun, the oak leaf and cheese peeking out
+  ok(!!bun && bun.t === 'raw' && bun.dr === 'chicken-burger' && await p.evaluate(k => { const b = window.LK_DRAW.state().d.defs[k] || ''; return /#7EA453/.test(b) && /#F2C14E/.test(b) && /#D9473B/.test(b) && /#C98A45/.test(b); }, bun.a), 'burger: drawn from its layers (bun, oak leaf, cheese and tomato showing)');
   ok(!!bun && ['Crumbed chicken thigh', 'Sliced cheese', 'Ranch', 'Oak leaf', 'Tomato'].every(k => String(bun.also).split('|').indexOf(k) >= 0), 'burger: the chicken, cheese, ranch, leaf and tomato are named with the burger');
   ok(w.onWare && !w.unsure.length, 'burger: every part on the plate, nothing left to pick');
   ok(/side by side/i.test(await L.txt(p, '.dw-smart-note') || ''), 'burger: the note says how it was laid out');
@@ -197,6 +199,19 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   p = await drawn('rice/pan');
   w = await S(p);
   ok(w.style === 'pan' && w.surf.shape === 'gn' && w.els.some(e => e.ing === 'Rice') && w.onWare, 'batch: the rice in a GN pan');
+  await p.context().close();
+  // a batch card's own pan, filled with what the card makes the way the book draws its pans: the Cowboy candy's
+  // jalapeño rings in syrup, one part for the whole pan, a Pass label for each of what is in it
+  p = await drawn('cowboy-candy/pan');
+  w = await S(p);
+  const fill = w.els.find(e => e.made === 'cowboy-candy');
+  ok(w.style === 'pan' && !!fill && fill.t === 'raw' && w.els.length === 1 && /Mustard seed/.test(fill.also || '') && /Turmeric/.test(fill.also || ''), 'batch: the Cowboy candy pan is filled from its card (' + (fill ? fill.ing + ' | ' + fill.also : 'nothing') + ')');
+  await p.click('[data-dw="save"]');
+  await wait(p, () => /Saved/.test((document.querySelector('.mg-toasts .p-toast') || {}).textContent || ''));
+  s = await store(p);
+  const ccPins = ((s[fsKey(['recipes', 'cowboy-candy'])] || { r: {} }).r.pins || []).map(x => x.label);
+  ok(['Jalapeños', 'Turmeric', 'Mustard seed'].every(k => ccPins.some(l => l.indexOf(k) === 0)), 'batch: the pan\'s Pass labels name what is in it (' + ccPins.join(', ') + ')');
+  ok(!errs(p).length, 'batch: no page errors ' + errs(p).join(' | '));
   await p.context().close();
   p = await drawn('sticky-toffee/plate');
   w = await S(p);
