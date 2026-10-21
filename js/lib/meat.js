@@ -244,13 +244,14 @@
     if (o.herb) for (var i = 0; i < 18; i++) { var a = rnd() * Math.PI * 2; out += P.circle(Math.cos(a) * (rx - 1.6), Math.sin(a) * (ry - 1.6), 0.8 + rnd() * 0.6, i % 2 ? '#4F7F2F' : '#7EA453'); }
     return out;
   }
-  // folded deli slices in a heap (pastrami): each a half moon with a peppered rim
+  // deli slices folded loosely into a heap (pastrami): deep pink, a peppered black edge, a streak of fat
   function pastrami(P, rnd) {
-    return P.pile(rnd, 7, 30, 18, function (x, y, i, q) {
-      var r = 18 + q() * 5, d = 'M' + P.n(-r) + ' 0 A' + P.n(r) + ' ' + P.n(r * 0.62) + ' 0 0 1 ' + P.n(r) + ' 0 Q0 3 ' + P.n(-r) + ' 0 Z';
-      var s = P.shadow(d, 1.2, 1.8) + P.path(d, '#A8343E', '#2E1A12', 2.4) + P.path('M' + P.n(-r * 0.7) + ' -2 A' + P.n(r * 0.7) + ' ' + P.n(r * 0.4) + ' 0 0 1 ' + P.n(r * 0.7) + ' -2', 'none', '#E7A6A6', 1.1, { opacity: '0.6' });
-      s += P.path('M' + P.n(-r + 2) + ' 0.6 Q0 2.6 ' + P.n(r - 2) + ' 0.6', 'none', '#C9545E', 1.6) + P.crumbs(q, 5, r * 0.8, r * 0.3, ['#2E1A12'], 0.6);
-      return P.g(P.at(x, y + 7, q() * 70 - 35), s);
+    return P.pile(rnd, 7, 22, 15, function (x, y, i, q) {
+      var l = 16 + q() * 4, b = 3 + q() * 2, rb = ribbon(P, [[-l, b * 0.5], [-l / 2, -b], [0, b], [l / 2, -b], [l, b * 0.5]], 13 + q() * 3);
+      var s = P.shadow(rb.d, 1.2, 1.8) + P.path(rb.d, i % 2 ? '#B0404A' : '#A33640', '#6E1E26', 0.9);
+      s += P.path(P.smooth(rb.r, true), 'none', '#E9B4B0', 1.6, { opacity: '0.8' }) + P.path(P.smooth(rb.l, true), 'none', '#2E1A12', 2.6, { 'stroke-linecap': 'round' });
+      s += P.crumbs(q, 6, l * 0.8, 3, ['#2E1A12', '#4A2A1E'], 0.6);
+      return P.g(P.at(x, y, q() * 120 - 60), s);
     });
   }
 
@@ -347,8 +348,8 @@
   // one lamb cutlet: the eye with its fat cap on the outer side, the frenched bone out to the right
   function cutlet(P, rnd) {
     var out = bone(P, 4, 0, 56, 0, 7.5, false);
-    var fc = P.blob(rnd, 20, 15.5, 0.06, 11, -15, -3.5), tail = P.smooth([[-10, -12], [10, -7.5], [21, -3.6], [21, 3.6], [10, 7.5], [-10, 12]]), eye = P.blob(rnd, 17.5, 14, 0.06, 10, -9, 1.5);
-    out += P.shadow(fc) + P.path(fc, '#E6C88E', FATG_ED, 1) + P.shadow(eye) + P.path(tail, LAMB, P.shade(LAMB, -0.3), 1) + P.path(eye, LAMB, P.shade(LAMB, -0.3), 1);
+    var fc = P.blob(rnd, 19, 15.5, 0.05, 11, -11.5, -0.5), tail = P.smooth([[-10, -12], [10, -7.5], [21, -3.6], [21, 3.6], [10, 7.5], [-10, 12]]), eye = P.blob(rnd, 17.5, 14, 0.05, 10, -9, 1.5);
+    out += P.shadow(fc) + P.path(fc, FATG, FATG_ED, 1) + P.path(tail, LAMB, P.shade(LAMB, -0.3), 1) + P.path(eye, LAMB, P.shade(LAMB, -0.3), 1);
     out += P.path(P.blob(rnd, 14, 11, 0.07, 9, -9, 1.5), LAMB_SEAR, null, 0) + P.g(P.at(-9, 1.5), P.grill(13, 10, 35, 8, C.charred, 2.2));
     return out + P.hl(-14, -4, 6, 2.2, '#FFFFFF', 0.25, -20);
   }
@@ -357,14 +358,18 @@
     var a = th * Math.PI / 180, c = Math.cos(a), s = Math.sin(a);
     return P.g(P.at(ex - (c * -9 - s * 1.5), ey - (s * -9 + c * 1.5), th), cutlet(P, rnd));
   }
+  // a rack of lamb, crust up: the loin as a rounded log with its herb crust, the frenched bones curving out below
   function lambRack(P, rnd) {
     var out = '';
-    [-27, -9, 9, 27].forEach(function (x) { out += bone(P, x * 0.95, -6, x * 1.22, 42, 7.5, false); });
-    var d = P.slab(rnd, 45, 21, 0.4, 0.04, 14), s = P.shadow(d) + P.path(d, '#5E3A1C', '#3E2410', 1.2) + P.path(P.slab(rnd, 41, 17, 0.4, 0.05, 14), '#6E4A24', null, 0);
-    s += P.crumbs(rnd, 60, 40, 16, ['#5E8C3A', '#4F7F2F', '#6E9A3E', '#C9A04A', '#3E5A22'], 1.2);
-    [-18, 0, 18].forEach(function (x) { s += P.line(x, -17, x + 0.5, 17, '#3E2410', 1, { opacity: '0.45' }); });
-    out += P.g(P.at(0, -18), s + P.hl(-14, -9, 16, 3, '#FFFFFF', 0.18));
-    return P.g('translate(0 6)', out);
+    [-30, -10, 10, 30].forEach(function (x) {
+      var c = 6 + x * 0.12, rb = ribbon(P, [[x, -6], [x + c * 0.25, 14], [x + c * 0.7, 30], [x + c, 42]], 7.5);
+      out += P.shadow(rb.d, 1.4, 1.8) + P.path(rb.d, BONE, BONE_ED, 1) + P.path(P.smooth([[x + 1, 6], [x + c * 0.25 - 1.6, 16], [x + c * 0.7 - 1.6, 30], [x + c - 1.4, 38]], true), 'none', '#FFFFFF', 1.6, { opacity: '0.55', 'stroke-linecap': 'round' });
+    });
+    var d = P.blob(rnd, 47, 20, 0.04, 14), s = P.shadow(d, 2.5, 3) + P.path(d, '#5E3A1C', '#3E2410', 1.2) + P.path(P.blob(rnd, 42, 15, 0.05, 12, 0, -1), '#6E4A24', null, 0);
+    s += P.crumbs(rnd, 60, 40, 14, ['#5E8C3A', '#4F7F2F', '#6E9A3E', '#C9A04A', '#3E5A22'], 1.2);
+    [-20, 0, 20].forEach(function (x) { s += P.path('M' + P.n(x) + ' -16 Q' + P.n(x + 2) + ' 0 ' + P.n(x) + ' 17', 'none', '#3E2410', 1, { opacity: '0.45' }); });
+    out += P.g(P.at(0, -16), s + P.hl(-12, -9, 20, 3, '#FFFFFF', 0.2, -3));
+    return P.g('translate(0 4)', out);
   }
   // a strand of slow-cooked meat (pulled pork, pulled lamb)
   function shred(P, x, y, q, col) {
@@ -390,16 +395,16 @@
   }
   // a lamb loin chop: the eye and the little fillet either side of the T, the fat tail curled under
   function loinChop(P, rnd) {
-    var out = '', tail = 'M-26 6 Q-32 30 -8 33 Q14 35 26 22 L21 17 Q10 27 -7 25 Q-21 23 -18 8 Z';
-    out += P.shadow(tail) + P.path(tail, '#E6C88E', FATG_ED, 1) + P.path('M-23 12 Q-22 28 -6 29 Q10 30 22 20', 'none', LAMB, 2.4, { opacity: '0.85', 'stroke-linecap': 'round' });
-    var fat = P.blob(rnd, 23, 20, 0.05, 11, -12, -2);
-    out += P.shadow(fat) + P.path(fat, '#E6C88E', FATG_ED, 1);
+    var out = '', tail = 'M-26 4 Q-34 30 -8 34 Q14 36 28 22 L20 15 Q10 26 -7 25 Q-20 24 -17 6 Z';
+    out += P.shadow(tail) + P.path(tail, LAMB, P.shade(LAMB, -0.3), 1) + P.path('M-24 10 Q-25 29 -7 30 Q10 31 23 19', 'none', FATG, 3, { 'stroke-linecap': 'round' });
+    var fat = P.blob(rnd, 21.5, 19.5, 0.05, 11, -10.5, -0.5);
+    out += P.shadow(fat) + P.path(fat, FATG, FATG_ED, 1);
     function lobe(cx, cy, rx, ry) {
       var d = P.blob(rnd, rx, ry, 0.05, 11, cx, cy);
       return P.path(d, LAMB, P.shade(LAMB, -0.3), 1.1) + P.path(P.blob(rnd, rx * 0.8, ry * 0.78, 0.06, 10, cx, cy), LAMB_SEAR, null, 0) + P.g(P.at(cx, cy), P.grill(rx * 0.8, ry * 0.76, 35, 8, C.charred, 2.2));
     }
     out += lobe(-9, 1, 19.5, 17.5) + lobe(21, 3, 11, 14);
-    out += bone(P, 10.5, -16, 11, 18, 4, false) + bone(P, -6, -18.5, 26, -16.5, 5.5, false);
+    out += P.line(10.5, -14, 11, 16, '#B9A27E', 4, { opacity: '0.9' }) + P.line(10.5, -14, 11, 16, '#EADCC0', 2.6) + P.line(-2, -18, 24, -16.5, '#B9A27E', 4.6) + P.line(-2, -18, 24, -16.5, '#EADCC0', 3.2);
     return out + P.hl(-14, -8, 7, 2.4, '#FFFFFF', 0.25, -20);
   }
   function shank(P, rnd) {
@@ -476,8 +481,8 @@
   // blistered crackling over an ellipse: many small puffed bubbles, a few darker ones
   function crackle(P, rnd, count, rx, ry) {
     return P.scatter(rnd, count, rx, ry, function (x, y, i, q) {
-      var r = 0.9 + q() * 2.2;
-      return i % 5 ? P.circle(x, y, r, '#F6E2A8', '#D9A450', 0.4) + P.circle(x - r * 0.3, y - r * 0.3, r * 0.35, '#FFF6DC') : P.circle(x, y, r * 0.8, '#C98A3A', null, 0, { opacity: '0.7' });
+      var r = 0.7 + q() * 1.3;
+      return i % 5 ? P.circle(x, y, r, '#F0CC84', '#C98E40', 0.35) + (i % 3 ? '' : P.circle(x - r * 0.3, y - r * 0.3, r * 0.4, '#FFF4D6', null, 0, { opacity: '0.8' })) : P.circle(x, y, r * 0.8, '#B9782E', null, 0, { opacity: '0.6' });
     });
   }
   // pork belly from above: a slab with blistered, scored crackling
@@ -486,7 +491,7 @@
       var w = o.w || 64, h = o.h || 44, d = P.slab(rnd, w / 2, h / 2, 0.75, 0.02, 16), out = P.shadow(d);
       out += P.path(d, '#D9A04A', '#9A6424', 1.2) + P.path(P.slab(rnd, w / 2 - 3.5, h / 2 - 3.5, 0.75, 0.02, 14), '#E9C27A', null, 0);
       for (var x = -w / 2 + 9; x < w / 2 - 4; x += 9) out += P.line(x, -h / 2 + 4, x - 6, h / 2 - 4, '#C08A3E', 1, { opacity: '0.7' });
-      out += crackle(P, rnd, Math.round(w * h / 22), w / 2 - 5, h / 2 - 5);
+      out += crackle(P, rnd, Math.round(w * h / 14), w / 2 - 5, h / 2 - 5);
       return out + P.hl(-w * 0.2, -h * 0.28, w * 0.2, h * 0.07, '#FFFFFF', 0.3, -6);
     };
   }
@@ -505,11 +510,14 @@
     });
     return out;
   }
+  // a pork chop: the eye with its rind of fat along the top, the rib bone out at the side
   function porkChop(P, rnd) {
-    var eye = P.slab(rnd, 44, 30, 0.4, 0.04, 14), out = bone(P, 26, 14, 56, 22, 11, false);
-    out += cap(46, 33, -3, -6, 0.4)(P, rnd);
-    out += P.g(P.at(-2, 3), P.path(eye, '#B9783A', '#7E4E22', 1.1) + P.path(P.slab(rnd, 37, 24, 0.4, 0.05, 12), '#D49A5C', null, 0) + P.grill(36, 24, 35, 13, '#5E3A18', 3) + P.hl(-12, -10, 12, 3, '#FFFFFF', 0.22, -15));
-    return P.g('translate(-5 2)', out);
+    var out = bone(P, 30, 10, 58, 18, 11, false), rind = 'M-46 -6 Q-44 -36 -6 -38 Q32 -36 48 -10';
+    out += P.path(rind, 'none', '#000000', 10, { opacity: '0.12', transform: 'translate(2 2.5)', 'stroke-linecap': 'round' }) + P.path(rind, 'none', '#B98440', 10, { 'stroke-linecap': 'round' }) + P.path(rind, 'none', '#EFD29A', 6.5, { 'stroke-linecap': 'round' });
+    var eye = P.smooth([[-46, -6], [-40, -28], [-6, -32], [28, -28], [46, -10], [46, 10], [32, 26], [4, 32], [-26, 30], [-44, 16]]);
+    out += P.shadow(eye) + P.path(eye, '#B9783A', '#7E4E22', 1.1) + P.path(P.blob(rnd, 37, 23, 0.06, 12, 0, 0), '#D9A266', null, 0);
+    out += P.grill(36, 23, 35, 13, '#5E3A18', 3) + P.hl(-14, -14, 14, 3.4, '#FFFFFF', 0.25, -10);
+    return P.g('translate(-5 3)', out);
   }
   function ribs(o) {
     return function (P, rnd) {
@@ -551,7 +559,7 @@
     var out = bone(P, 34, -4, 66, -10, 18, true), col = '#D49444';
     var d = P.smooth([[-62, 0], [-56, -34], [-24, -48], [12, -42], [40, -24], [50, -6], [42, 14], [12, 38], [-24, 46], [-54, 30]]);
     out += P.shadow(d, 3, 4) + P.path(d, '#C08236', '#7E4A18', 1.4) + P.path(P.blob(rnd, 46, 36, 0.08, 12, -8, -2), col, null, 0) + P.path(P.blob(rnd, 30, 22, 0.1, 10, -14, -8), '#E2AE5E', null, 0, { opacity: '0.8' });
-    out += P.g('translate(-8 -2)', crackle(P, rnd, 130, 44, 34));
+    out += P.g('translate(-8 -2)', crackle(P, rnd, 200, 44, 34));
     for (var i = 0; i < 7; i++) { var x = -44 + rnd() * 70, y = -30 + rnd() * 56; out += P.path('M' + P.n(x) + ' ' + P.n(y) + ' l4 3 l3 -2 l5 4', 'none', '#8E541C', 1.1, { opacity: '0.7' }); }
     return P.g('translate(-2 0)', out + P.hl(-22, -26, 20, 6, '#FFFFFF', 0.3, -20));
   }

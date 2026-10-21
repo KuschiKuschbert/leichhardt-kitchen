@@ -339,14 +339,15 @@
   }
   // a steamed bao folded over its filling, the open edge at the top
   function guaBao(P, rnd) {
-    var back = 'M-32 -2 C-30 -21 30 -21 32 -2 Q0 -6 -32 -2 Z', out = P.shadow(back, 2, 2.5) + P.path(back, '#F4EDDC', '#DCD0B6', 1);
-    out += P.g(P.at(-2, -7, -4), P.rect(-24, -5.5, 48, 11, 3, '#8A4A22', '#5E2E14', 0.8) + P.rect(-23, -1.6, 46, 2.8, 1, '#F0D8B0', null, 0) + P.rect(-22, -4.5, 44, 1.6, 0.8, '#B5652A', null, 0));
-    [[-20, -11], [-9, -13], [3, -12], [14, -13], [23, -9]].forEach(function (p, i) { out += i % 2 ? P.leaf(10, 6.5, C.herb, p[0], p[1], -70 + i * 35, { edge: '#3A6A22' }) : P.ellipse(p[0], p[1], 5, 3.2, '#8DB255', '#5E8C3A', 0.6, { transform: 'rotate(-10 ' + p[0] + ' ' + p[1] + ')' }) + P.ellipse(p[0], p[1], 3, 1.6, '#DCEBB8', null, 0); });
+    var back = 'M-31 -2 C-29 -20 29 -20 31 -2 Q0 -6 -31 -2 Z', out = P.shadow(back, 2, 2.5) + P.path(back, '#F2EAD8', '#DDD0B4', 0.9);
+    out += P.g(P.at(-1, -7, -4), P.rect(-30, -5.5, 60, 11, 3, '#8A4A22', '#5E2E14', 0.8) + P.rect(-29, -1.6, 58, 2.8, 1, '#F0D8B0', null, 0) + P.rect(-28, -4.5, 56, 1.6, 0.8, '#B5652A', null, 0));
+    [[-21, -11], [-10, -13], [2, -12], [13, -13], [23, -10]].forEach(function (p, i) { out += i % 2 ? P.leaf(11, 7, C.herb, p[0], p[1], -70 + i * 35, { edge: '#3A6A22' }) : P.ellipse(p[0], p[1], 5, 3.2, '#8DB255', '#5E8C3A', 0.6, { transform: 'rotate(-10 ' + p[0] + ' ' + p[1] + ')' }) + P.ellipse(p[0], p[1], 3, 1.6, '#DCEBB8', null, 0); });
     out += P.path('M-22 -6 Q-12 -10 -4 -5 T12 -6 T24 -5', 'none', '#4A2416', 1.6, { 'stroke-linecap': 'round' }) + P.g(P.at(0, -5), P.crumbs(rnd, 9, 20, 3, ['#C99A5A', '#E3C08A'], 1.1));
-    var d = 'M-35 -4 C-35 22 35 22 35 -4 Q0 2 -35 -4 Z';
-    out += P.shadow(d, 2, 2.5) + P.path(d, '#F8F3E6', '#DCD0B6', 1) + P.path('M-30 6 C-24 16 24 16 30 6', 'none', '#EAE0CA', 2.4, { opacity: '0.8' }) + P.path('M-31 -1 Q0 4.5 31 -1', 'none', '#E6DCC6', 1.2) + P.hl(-8, 5, 13, 2.6, '#FFFFFF', 0.9, -4);
-    return out;
+    var d = 'M-34 -4 C-34 17 34 17 34 -4 Q0 3 -34 -4 Z';
+    out += P.shadow(d, 2, 2.5) + P.path(d, '#F7F0E0', '#DDD0B4', 0.9) + P.path('M-29 4 C-22 11 22 11 29 4', 'none', '#ECE2CC', 2.6, { opacity: '0.8', 'stroke-linecap': 'round' }) + P.path('M-30 -1 Q0 5.5 30 -1', 'none', '#E6DAC0', 1.2);
+    return P.g(P.at(0, 1, -6), out);
   }
+
 
 
   /* ---------- sliced bread and toast ---------- */
@@ -464,13 +465,12 @@
   }
   // cheese (or a filling) bulging out along edge i of a polygon
   function ooze(P, rnd, a, i, count, col, size) {
-    var p = a[i], q = a[(i + 1) % a.length], sg = area(a) > 0 ? 1 : -1, dx = q[0] - p[0], dy = q[1] - p[1], l = Math.hypot(dx, dy), nx = dy / l * sg, ny = -dx / l * sg, ang = Math.atan2(dy, dx) * 180 / Math.PI, out = '';
-    for (var k = 0; k < count; k++) {
-      var t = (k + 0.5 + (rnd() - 0.5) * 0.5) / count, s = (size || 6) * (0.7 + rnd() * 0.5), x = p[0] + dx * t + nx * 1.2, y = p[1] + dy * t + ny * 1.2;
-      out += P.ellipse(x, y, s, s * 0.6, col, P.shade(col, -0.2), 0.6, { transform: 'rotate(' + P.n(ang) + ' ' + P.n(x) + ' ' + P.n(y) + ')' });
-    }
-    return out;
+    var p = a[i], q = a[(i + 1) % a.length], sg = area(a) > 0 ? 1 : -1, dx = q[0] - p[0], dy = q[1] - p[1], l = Math.hypot(dx, dy), nx = dy / l * sg, ny = -dx / l * sg, k = count * 2 + 2, pts = [], j, t, o;
+    for (j = 0; j <= k; j++) { t = 0.06 + 0.88 * j / k; o = (size || 6) * 0.45 * (j % 2 ? 0.55 + rnd() * 0.5 : 0.95 + rnd() * 0.5); pts.push([p[0] + dx * t + nx * o, p[1] + dy * t + ny * o]); }
+    for (j = k; j >= 0; j--) { t = 0.06 + 0.88 * j / k; pts.push([p[0] + dx * t - nx * 3, p[1] + dy * t - ny * 3]); }
+    return P.path(P.smooth(pts), col, P.shade(col, -0.2), 0.6);
   }
+
   var TOAST = { crust: '#A8642A', top: '#D9963E', light: '#E6B060', r: 5 };
   // a toastie cut corner to corner, the cheese oozing at the cut
   function toastie(P, rnd) {
@@ -727,7 +727,7 @@
   /* ---------- pies and pastry ---------- */
   // syrup or gravy running from a pool in the middle out over the edge: each [angle, how far from the middle]
   function runs(P, list, col, dk) {
-    return list.map(function (r) { var e = r[1]; return P.g(P.at(0, 0, r[0]), P.path('M' + P.n(e * 0.45) + ' -5 Q' + P.n(e * 0.85) + ' -6 ' + P.n(e - 1.5) + ' -2.5 Q' + P.n(e + 1.5) + ' 1 ' + P.n(e - 1.5) + ' 4.5 Q' + P.n(e * 0.85) + ' 6 ' + P.n(e * 0.45) + ' 5 Z', col, dk ? P.shade(col, -0.25) : P.shade(col, -0.25), 0.8)); }).join('');
+    return list.map(function (r) { var e = r[1]; return P.g(P.at(0, 0, r[0]), P.path('M' + P.n(e * 0.55) + ' -8 Q' + P.n(e * 0.85) + ' -5 ' + P.n(e - 3) + ' -3.6 Q' + P.n(e + 2.5) + ' -3.4 ' + P.n(e + 2.5) + ' 0.5 Q' + P.n(e + 2) + ' 4.2 ' + P.n(e - 3) + ' 3.6 Q' + P.n(e * 0.85) + ' 5 ' + P.n(e * 0.55) + ' 8 Z', col, P.shade(col, -0.25), 0.8) + P.line(e * 0.7, -1.5, e - 2, -1, '#FFFFFF', 1, { opacity: '0.3' })); }).join('');
   }
   function slit(P, l) { return P.path(lensD(P, l, l * 0.2), '#6B3A14', '#F0C98A', 0.9); }
   // a pie top: a crimped rim (fork, rope or flute), a domed egg-washed lid, steam vents (slits, hole, cross)
@@ -777,8 +777,8 @@
     return function (P, rnd) {
       var out = P.path(P.blob(rnd, 60, 55, 0.07, 14), '#7EA453', '#5E8C3A', 1) + P.path(P.blob(rnd, 52, 47, 0.1, 12), '#8DB255', null, 0, { opacity: '0.6' }) + P.crumbs(rnd, 50, 56, 50, ['#6E9A3E', '#9CC067', '#5E8C3A'], 1.6);
       out += P.g(P.at(-3, -2), o.pastie ? pastie({})(P, rnd) : pieTop({ r: 38, edge: 'fork', vents: 'hole' })(P, rnd));
-      var gd = o.pastie ? P.g(P.at(0, 0, 78), P.path(bandD(P, rnd, -36, 36, -12, 12, 1.6, 7), C.gravy, P.shade(C.gravy, -0.25), 0.8)) : P.path(P.blob(rnd, 26, 23, 0.16, 12, 2, 1), C.gravy, P.shade(C.gravy, -0.25), 0.8);
-      out += gd + (o.pastie ? '' : runs(P, [[30, 44], [150, 43]], C.gravy, 1) + P.path(P.blob(rnd, 24, 21, 0.16, 12, 2, 1), C.gravy, null, 0));
+      var gr = o.pastie ? [18, 24] : [26, 23], gd = P.blob(rnd, gr[0], gr[1], 0.14, 12, 2, 1);
+      out += P.path(gd, C.gravy, P.shade(C.gravy, -0.25), 0.8) + runs(P, o.pastie ? [[80, 34], [-100, 33]] : [[35, 40], [150, 40]], C.gravy, 1) + P.path(gd, C.gravy, null, 0);
       out += P.hl(-4, -8, 8, 2.5, '#FFFFFF', 0.35, -20) + P.hl(8, 8, 4, 1.4, '#FFFFFF', 0.25, -20);
       if (o.sauce) out += P.path('M-26 -14 Q-18 -22 -10 -14 T6 -14', 'none', C.sauceRed, 3, { 'stroke-linecap': 'round' });
       return out;
@@ -889,9 +889,10 @@
   function croissant(o) {
     o = o || {};
     return function (P, rnd) {
-      var R = o.R || 36, cy = o.cy || 24, span = 140, k = 7, i;
-      var hw = function (t) { return 2.5 + 19 * Math.pow(Math.max(0, Math.sin(Math.PI * t)), 1.3); };
-      var pt = function (t, side) { return polar(R + side * hw(t), -90 + (t - 0.5) * span, 0, cy); };
+      var R = o.R || 44, cy = o.cy || 30, sq = 0.7, span = 136, k = 7, i;
+      var hw = function (t) { return 2.5 + 16 * Math.pow(Math.max(0, Math.sin(Math.PI * t)), 1.2); };
+      // along a squashed arc, out from it (side 1) or in (side -1) by the thickness at t
+      var pt = function (t, side) { var a = (-90 + (t - 0.5) * span) * Math.PI / 180, c = Math.cos(a), s = Math.sin(a), nx = sq * c, ny = s, l = Math.hypot(nx, ny); return [R * c + side * hw(t) * nx / l, cy + R * sq * s + side * hw(t) * ny / l]; };
       var outer = [], inner = [], segs = [];
       for (i = 0; i <= 20; i++) { outer.push(pt(i / 20, 1)); inner.push(pt(i / 20, -1)); }
       var body = P.smooth(outer.concat(inner.reverse())), out = P.shadow(body, 2.5, 3) + P.path(body, '#9E5226', '#74381A', 1.1);
@@ -901,7 +902,7 @@
         var pts = [pt(a, 0.9), pt(mid, 1.05), pt(b, 0.9), pt(b, -0.85), pt(mid, -0.98), pt(a, -0.85)];
         out += P.path(P.smooth(pts), col, P.shade(col, -0.3), 0.9) + P.path(P.smooth(grow(pts, 0.5).map(function (p) { return [p[0] - 1, p[1] - 1.5]; })), P.shade(col, 0.28), null, 0, { opacity: '0.55' });
       });
-      return out + P.hl(-5, cy - R - 10, 5, 2, '#FFFFFF', 0.5, -10);
+      return out + P.hl(-5, cy - R * sq - 10, 5, 2, '#FFFFFF', 0.5, -10);
     };
   }
   function painChoc(P, rnd) {
@@ -934,7 +935,7 @@
     out += P.path(P.blob(rnd, r, r * 0.98, 0.05, 14, 3, 5), '#B9772E', '#8A5527', 1) + P.path(P.blob(rnd, r, r * 0.98, 0.05, 14, 1.5, 2.5), '#C98A3A', '#8A5527', 1);
     out += P.path(d0, '#E3B46A', '#8A5527', 1.1) + P.path(P.blob(rnd, r - 5, r - 5, 0.05, 14), '#C98838', null, 0) + P.path(P.blob(rnd, r * 0.5, r * 0.45, 0.1, 10, -8, -10), '#D9A050', null, 0, { opacity: '0.6' });
     var sy = P.blob(rnd, 28, 25, 0.18, 12, 6, 5);
-    out += P.path(sy, '#A8601E', '#7E4414', 0.8) + runs(P, [[38, 47], [118, 45]], '#A8601E') + P.path(sy, '#A8601E', null, 0) + P.hl(10, 10, 8, 2.5, '#FFFFFF', 0.35, -30);
+    out += P.path(sy, '#A8601E', '#7E4414', 0.8) + runs(P, [[40, 43], [125, 42]], '#A8601E') + P.path(sy, '#A8601E', null, 0) + P.hl(10, 10, 8, 2.5, '#FFFFFF', 0.35, -30);
     out += P.path(P.blob(rnd, 11, 10, 0.2, 9, -3, -5), '#F2D27A', null, 0, { opacity: '0.7' }) + P.g(P.at(-4, -6, 18), P.rect(-7.5, -6.5, 15, 13, 2, '#F6E08A', '#D9BF5A', 0.8) + P.rect(-5.5, -4.5, 7, 3, 1, '#FFF4C2', null, 0));
     return out;
   }
