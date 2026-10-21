@@ -250,6 +250,7 @@ How the book should work, as the head chef decided it. Newest first. Add new one
 
 ### Lists and buttons (October 2026)
 
+- **Popups and sideways rows (22 Oct 2026).** The chef hat menu dims the page behind it like every other popup (a tap on the dimmed page closes it). The section tabs on a phone and the admin page and On this page rows fade at their right edge when they scroll sideways, so it is clear there is more. `tests/screens.test.js`.
 - **Full-size targets.** Every small Remove, Put back, Urgent and Reset PIN button, the section tabs, the Pass / Tiles switch, Update now, and every button on a prep line (tick box, !, recipe, remove), the tick boxes on the order list, Show removed, Undo, Not you? and the admin permission tick boxes are at least 44 px, with the same look as before. On a prep line the three buttons sit together on the right in the same place on every line, and Urgent and Rolled flow with the text.
 - **Lists do not jump.** A line ticked on this phone stays where it is, struck through, for 3.5 seconds before it moves to Done today, so a second tap cannot hit the next line. On the order list an ordered line keeps its place for its 10 minutes instead of jumping to the bottom.
 - **Every add and tick says so, briefly.** Typed lines, Add from the recipes and the Quick add chips in Handy show "Added to Larder" with Undo (the person who added a line may take it back). The order list shows "Ordered" with Undo, also for a tick in Everything to order (which marks every line for that item, "Ordered 3 lines"), and "Added to the order list" with Undo. The toast does not repeat the line (it is on the list already), because on a phone a long name plus the Undo button covered the list (19 Oct 2026). It still names what changed when the book corrected a spelling or a section, and Removed still names the line, since that one is gone from the screen. The order regulars row now says "Tap to add".
@@ -410,6 +411,7 @@ The head chef can change and add recipes in the book itself, not only in `js/dat
 
 ### Manage Recipes & Drawings (21 Oct 2026)
 
+- **Recipe links are found by typing (22 Oct 2026).** The recipe an ingredient or a Pass label links to is a box that finds it as you type (one list for the whole form, `linkBox()` and `linkList()` in `js/manage.js`), not a dropdown of 119. Pick from the list or type the whole name; anything else goes back with a hint, and an empty box means no link. `tests/screens.test.js`.
 - **Opening it.** The chef hat menu, Chef group: Manage Recipes & Drawings, for the head chef signed in with their own PIN, and on the head chef's Google device while nobody else is signed in. Each recipe card also has Change this recipe for them. Everyone else gets neither, and `#/manage` typed by hand says only the head chef can change recipes. Staff phones never download the editor: `js/manage.js` is loaded the first time the page opens (fetched with `X-LK-Fresh`, so the service worker keeps a copy for no signal) and is not in the saved shell.
 - **The recipe list** (`#/manage`): search by name, card number or ingredient, and chips for Dishes, Batch and components, Changed here, New, Hidden, Cards to come, Book file changed, Not saved yet, Drawings, Templates and Made in the book. Cards to come lists every linked recipe that has no card yet, with Make this card. Templates and Made in the book list the head chef's templates, pieces and servingware, each with Hide (tap twice; Show it again brings it back).
 - **The recipe form** (`#/manage/r/<id>`, `#/manage/new`, `#/manage/new/<id>` for a card to come): name, short id (new recipes only, it cannot change once saved), card number, kind, where it belongs, short name, portion or batch line, guest menu words, AVC name (the name only), Finished. Ingredients with amount, name, note, a link to another recipe and allergen chips (once: has it, twice: may have it, three times: not in it), moved up and down. Method sections with one step per line. Allergens worked out from the ingredients or set by hand (about 40 recipes in `js/data.js` set them by hand; the form says which one a recipe uses), with what the card will show and the dishes that follow it. The plate drawing from the book with its Pass labels: drag a number to where its part sits, or type the place; each label has a note, a link and its own allergen tags. The guest menu section and place, the Tip and Safety boxes, other names staff search for.
@@ -543,6 +545,8 @@ A function manager enters a function once; the kitchen sees exactly what goes ou
 
 - `index.html` carries a Content Security Policy: scripts only from this site, Firebase and Google sign-in (www.gstatic.com, apis.google.com, the reCAPTCHA bot check on www.google.com) and pdf.js (cdn.jsdelivr.net); styles from Google Fonts (inline styles allowed); fonts from Google Fonts and jsDelivr (pdf.js); data from Google's APIs and Firebase; frames only for Google sign-in and reCAPTCHA; no plugins; forms and `<base>` only to this site. A script from anywhere else, or one slipped into the page, does not run.
 - The six inline scripts moved into `js/boot.js` (head, before anything draws) and `js/upkeep.js` (end of body, before the deferred app scripts), in the same order. Both are in the update and refresh file lists, and the service worker cache is `lk-book-v6`.
+- **Only the pdf.js the book uses (22 Oct 2026).** jsDelivr is allowed only for `https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/`, not the whole site, so nothing else hosted there can run. Moving pdf.js to another version means changing `PDFJS` in `js/prep.js` and the four places in the header together.
+- **Text on screen (22 Oct 2026).** Everything typed or read from Firestore goes through `esc()`; the drawing editor also checks colours and text anchors from a saved drawing by type (`okCol()`, `okAnchor()` in `js/draw.js`), and drawings kept on the phone are cleaned again when shown (`artRec()` in `js/overlay.js`). `tests/safe-text.test.js` seeds a booby-trapped line in prep, orders, wastage, pings, mail, drinks, guides, sections, the wastage summary and a drawing, and checks every page shows the words and adds no markup.
 - **A new outside service has to be added to the header**, or the browser blocks it (the console says "violates the following Content Security Policy directive"). The click tests fail on any such message, so a blocked load shows up before merging. Tests that wait in the page use `L.waitFor`, because `page.waitForFunction` runs through eval, which the header blocks.
 
 ### Checking the rules
@@ -587,20 +591,12 @@ Remove each item here once it is done.
 
 The coding rules in `CLAUDE.md` came from a check of the whole book on 21 Oct 2026. This is the older code that does not meet them yet, in the order to fix it. Each item is its own branch and pull request, with its tests. Remove an item once it is merged.
 
-Done: the wastage log, the read budget (what stays as it is, and why, is under Reads kept small) and past-day changes reaching every phone (all 22 Oct 2026).
+Done: the wastage log, the read budget (what stays as it is, and why, is under Reads kept small), past-day changes reaching every phone, and text on screen (all 22 Oct 2026).
 
-1. **Text on screen.**
-   - The drawing editor puts colours and anchors from Firestore straight into the drawing (`elSVG()` and `recolour()` in `js/draw.js`, read by `fromDoc()` and the template reader). Check them by type when a drawing loads.
-   - Drawings kept in IndexedDB are cleaned again when drawn.
-   - Add `tests/safe-text.test.js`.
-   - Narrow `cdn.jsdelivr.net` in the security header to the paths the book uses, if every browser accepts it.
-2. **Fill in what the book knows.** A Logged often chip also fills the usual amount (`amt` in `summary/waste`). An order chip fills the amount box from `ordlearned`. Head chef to decide: filled in outright, or greyed until tapped.
-3. **Screens.**
-   - The chef mark's menu (`.wm-bg`) dims the page like the other popups.
-   - The 119-recipe dropdowns in Manage Recipes (`linkOptions` in `js/manage.js`) become type-to-find.
-   - `.a-tabs` and `.nb-tabs` fade at the edge.
-   - A trial of fewer boxes on the admin panel, with before and after screenshots for the head chef first.
-4. **Plate drawings load when Recipes opens.** `js/art.js` (1.3 MB) loads at start on every page, though only Recipes and the recipe cards use it. Load it with the page loader, keep it in `SHELL` for no signal, read `LK_ART` at draw time in `js/app.js`, and let `js/overlay.js` merge into it.
+1. **Fill in what the book knows.** A Logged often chip also fills the usual amount (`amt` in `summary/waste`). An order chip fills the amount box from `ordlearned`. Head chef to decide: filled in outright, or greyed until tapped.
+2. **Screens, what is left.** A trial of fewer boxes on the admin panel, with before and after screenshots for the head chef first (the dimmed chef menu, the tab fades and the type-to-find recipe links were done on 22 Oct 2026).
+
+Measured and kept as it is: `js/art.js` (1.3 MB, 164 kB zipped) still loads at start (22 Oct 2026). Loading it only when Recipes opens was built and measured on a phone six times slower than a laptop: the start was 9 ms sooner (284 to 275 ms until the scripts had run, 71 to 65 ms at full speed), nothing less was downloaded (it stays in `SHELL`), and the first Recipes after each start was about 90 ms slower (944 to 1036 ms). Recipes is the page the book opens most, so the change was not merged.
 
 ### Changing the kitchen PIN
 
