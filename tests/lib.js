@@ -205,7 +205,8 @@ async function open(browser, hash, o) {
   const page = await ctx.newPage();
   page.errors = [];
   page.loading = 0;   // requests still out, for settle()
-  page.on('request', () => { page.loading++; });
+  page.urls = [];     // every address the page asked for, in order (routed answers leave no resource timing)
+  page.on('request', q => { page.loading++; page.urls.push(q.url()); });
   page.on('requestfinished', () => { page.loading--; });
   page.on('requestfailed', () => { page.loading--; });
   page.on('pageerror', e => page.errors.push(String(e)));

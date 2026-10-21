@@ -1,6 +1,7 @@
 // The PIN screens open the keyboard by themselves: the kitchen PIN box and the own PIN box take focus as soon as they
 // show (number pad from inputmode), the page heading does not take it back, and the own PIN box is already there while
-// the book checks whether the person has a PIN, so a PIN typed early still goes in (19 Oct 2026).
+// the book checks whether the person has a PIN, so a PIN typed early still goes in (19 Oct 2026). The kitchen PIN screen
+// already downloads the Firebase files (21 Oct 2026).
 const L = require('./lib');
 const { R, ok } = L.results(), { txt } = L;
 const active = p => p.evaluate(() => { const a = document.activeElement; return a ? (a.id || a.tagName) + ':' + (a.getAttribute('inputmode') || '') : ''; });
@@ -9,6 +10,9 @@ const active = p => p.evaluate(() => { const a = document.activeElement; return 
   // a phone with no kitchen PIN yet
   let p = await L.open(b, '#/prep', { noPin: true, who: '' });
   ok((await active(p)) === 'p-pin:numeric', 'kitchen PIN: the box has focus and asks for the number pad (' + await active(p) + ')');
+  // the Firebase files download while the PIN is typed (21 Oct 2026), so the list opens sooner after Open
+  const early = p.urls.filter(u => /\/firebasejs\/[^/]+\/firebase-(app|firestore|auth)\.js$/.test(u)).length;
+  ok(early === 3, 'kitchen PIN: the Firebase files are fetched before the PIN is in (' + early + ' of 3)');
   await p.keyboard.type('0000');   // typed with no click: only lands when the box already has focus (the stand-in's kitchen PIN is 6 digits, so this one is wrong and no names come up; the point is that the gate took it)
   await L.settle(p, 800);
   ok(/Who are you\?/.test(await txt(p, '#prep-root') || ''), 'kitchen PIN typed straight in: the gate took the four digits and moved on');

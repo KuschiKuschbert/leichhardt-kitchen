@@ -109,11 +109,25 @@
   function brokenCache(x) { var s = x ? String(x.stack || x.message || x) : ''; return /FIRESTORE[^\n]*INTERNAL ASSERTION FAILED|canonifyTarget|IndexedDbTargetCache/.test(s); }
   window.addEventListener('error', function (e) { if (brokenCache(e.error || e.message)) healCache(); });
   window.addEventListener('unhandledrejection', function (e) { if (brokenCache(e.reason)) healCache(); });
+  // App Check: Fraud Defense (reCAPTCHA Enterprise, appCheckEnterpriseKey) or the older reCAPTCHA v3 (appCheckKey)
+  function sdkNames() { return ['firebase-app.js', 'firebase-firestore.js', 'firebase-auth.js'].concat(FB.appCheckEnterpriseKey || FB.appCheckKey ? ['firebase-app-check.js'] : []); }
+  function sdkFiles() {
+    var n = sdkNames();
+    return Promise.all([import(SDK + n[0]), import(SDK + n[1]), import(SDK + n[2]), n[3] ? import(SDK + n[3]) : Promise.resolve(null)]);
+  }
+  /* The kitchen PIN screen downloads the Firebase files while the PIN is typed (21 Oct 2026), so the list opens sooner
+     after Open: sdk() then finds them in the browser's cache. A plain fetch, not import(): a failed import is
+     remembered for the rest of the page, and weak wifi on the PIN screen must not stop the real start later. */
+  var sdkPre = false;
+  function sdkEarly() {
+    if (sdkP || sdkPre || navigator.onLine === false) return;
+    sdkPre = true;
+    sdkNames().forEach(function (n) { fetch(SDK + n, { mode: 'cors', credentials: 'omit' }).catch(function () {}); });
+  }
   function sdk() {
     if (sdkP) return sdkP;
-    // App Check: Fraud Defense (reCAPTCHA Enterprise, appCheckEnterpriseKey) or the older reCAPTCHA v3 (appCheckKey)
     var ack = FB.appCheckEnterpriseKey || FB.appCheckKey;
-    sdkP = Promise.all([import(SDK + 'firebase-app.js'), import(SDK + 'firebase-firestore.js'), import(SDK + 'firebase-auth.js'), ack ? import(SDK + 'firebase-app-check.js') : Promise.resolve(null)]).then(function (m) {
+    sdkP = sdkFiles().then(function (m) {
       var app = m[0].initializeApp(FB), fs = m[1], au = m[2], db;
       if (ack && m[3]) { try { m[3].initializeAppCheck(app, { provider: FB.appCheckEnterpriseKey ? new m[3].ReCaptchaEnterpriseProvider(FB.appCheckEnterpriseKey) : new m[3].ReCaptchaV3Provider(FB.appCheckKey), isTokenAutoRefreshEnabled: true }); } catch (e) {} }
       try { db = fs.initializeFirestore(app, { localCache: fs.persistentLocalCache({ tabManager: fs.persistentMultipleTabManager() }) }); }
@@ -2660,7 +2674,7 @@
       '<div class="nb-body"><p class="nb-empty">Loading...</p></div></section>';
   }
   function bodyHTML() {
-    if (!S.pin) return gateHTML();
+    if (!S.pin) { sdkEarly(); return gateHTML(); }
     // a page held back from staff: say so once it is known who is on this phone (or this phone already knows)
     var fk = S.name === 'guides' || S.name === 'minutes' ? S.name : '';
     if (fk && !featOn(fk)) { if (S.configState === 'ok' || featHave[fk] === false) return notYetHTML(fk); if (S.configState !== 'error') return loadingHTML(); }
