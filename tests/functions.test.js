@@ -97,6 +97,9 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   ok(!!pl('pizza-platter') && pl('pizza-platter').text === 'Pizza Platter: Smith 50th, from 19:00' && pl('pizza-platter').qty === '5 platters', 'prep list: the line says when that platter first goes out');
   await p.goto(L.BASE + '#/prep'); await L.settle(p, 1200);
   ok(/Pizza Platter: Smith 50th, from 19:00/.test(await txt(p, '#prep-root') || ''), 'prep list: the kitchen sees the platter lines on the prep list');
+  // booked today: its stock goes on today's order list (short notice), once
+  const ol = s[fsKey(['orders', today, 'lines', 'fn-' + id])];
+  ok(!!ol && /^Function stock: Smith 50th, .*: 3 Antipasto, 4 Aussie, 5 Pizza$/.test(ol.text) && ol.qty === '12 platters' && ol.fn === id && !('ordered' in ol) && saved.od === today, 'order: the stock is on today\'s order list (' + (ol && ol.text) + ')');
   // the band on the same phone
   await p.goto(L.BASE + '#/recipes'); await L.settle(p, 900);
   await L.waitFor(p, () => /Smith 50th/.test((document.getElementById('fn-band') || {}).textContent || ''));
@@ -153,7 +156,7 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   p = await L.open(b, '#/prep', { who: 'ann', extra: extra({ smith, gone, moved, draft }), wait: 1200 });
   await L.waitFor(p, () => document.querySelectorAll('#fn-band .fn-row').length >= 2);
   let bt = await txt(p, '#fn-band') || '';
-  ok(/\+1 more function/.test(bt) && (await p.$$('#fn-band .fn-row')).length === 2, 'several: two show, then "+1 more function"');
+  ok(/\+1 more/.test(bt) && (await p.$$('#fn-band .fn-row')).length === 2, 'several: two show, then "+1 more"');
   await tap(p, '#fn-band [data-fn="more"]'); await L.settle(p, 100);
   bt = await txt(p, '#fn-band') || '';
   ok(/Cancelled/.test(bt) && /Jones wake/.test(bt) && /Do not send/.test(bt), 'cancel: a cancelled function shows as a notice in its old window');
@@ -228,6 +231,24 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   await tap(p, '#fn-band .fn-row'); await L.settle(p, 200);
   await tap(p, '.fn-sheet [data-fn="sent"][data-r="0"]'); await L.settle(p, 500);
   ok(/#\/prep/.test(p.url()) && !(await store(p))[fsKey(['fnsent', 'smith_' + at(today, '18:30')])], 'sent: with nobody signed in, Sent asks who you are first and saves nothing');
+  await p.context().close();
+
+  // the band the day before: an order reminder on the order day, and tomorrow's function; and the strip while scrolling
+  const tm = fn({ name: 'Tomorrow do', date: tomorrow, rounds: ['12:00'] }); tm.od = today;
+  p = await L.open(b, '#/prep', { who: 'ann', extra: extra({ smith, tm }), wait: 1500 });
+  await L.waitFor(p, () => /Tomorrow do/.test((document.getElementById('fn-band') || {}).textContent || ''));
+  const bn = (await txt(p, '#fn-band') || '').replace(/\s+/g, ' ');
+  ok(/Order today\s*Short notice Stock for Tomorrow do/.test(bn) && /on the order list/.test(bn), 'order: the band reminds the kitchen to order on the order day (' + bn.slice(0, 260) + ')');
+  ok(/Tomorrow\s*Tomorrow do · event 18:00 · food 12:00/.test(bn), 'tomorrow: a short line for tomorrow\'s function');
+  ok(!(await p.$('.fn-strip:not([hidden])')), 'strip: not there while the band is on screen');
+  await p.evaluate(() => { document.body.style.minHeight = '4000px'; window.scrollTo(0, 1500); }); await L.settle(p, 300);
+  ok(/Smith 50th/.test(await txt(p, '.fn-strip') || '') && await p.$eval('.fn-strip', e => !e.hidden && e.getBoundingClientRect().top === 0), 'strip: scrolled down, today\'s function stays pinned to the top');
+  ok(await p.evaluate(() => parseInt(getComputedStyle(document.documentElement).getPropertyValue('--fn-stick'))) > 30, 'strip: the bars that stick to the top move down below it');
+  await tap(p, '.fn-strip-b'); await L.settle(p, 200);
+  ok(!!(await p.$('.fn-sheet')), 'strip: a tap opens the sheet');
+  await p.keyboard.press('Escape'); await p.evaluate(() => window.scrollTo(0, 0)); await L.settle(p, 300);
+  ok(await p.$eval('.fn-strip', e => e.hidden), 'strip: gone again back at the top');
+  ok(p.errors.length === 0, 'strip: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
   // 4. upcoming totals: each booked line once, confirmed only

@@ -344,6 +344,8 @@ await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', guests: 0 })]], { 
 await ok(W([['functions/fg', fnc({ status: 'confirmed', guests: 0, gu: true })]], { id: 'fay' }), true, 'functions: or guests ticked Not known yet');
 await ok(W([['functions/ft', fnc({ status: 'confirmed', mode: 'all', start: 0, st: true, rounds: [{ at: 0, note: '' }], first: 0, last: 0, until: T0, lines: [Object.assign({}, fnc().lines[0], { u: [0, 0, 0] })] })]], { id: 'fay' }), true, 'functions: confirmed with the start time TBC');
 await ok(W([['functions/fu', fnc({ status: 'confirmed', start: 0 })]], { id: 'fay' }), false, 'functions: confirmed with no start needs TBC ticked');
+await ok(W([['functions/fo', fnc({ od: '2026-10-18' })]], { id: 'fay' }), true, 'functions: the order day is kept on the function');
+await ok(W([['functions/fp', fnc({ od: 'x'.repeat(11) })]], { id: 'fay' }), false, 'functions: the order day is a date');
 await ok(W([['functions/fh', fnc({ status: 'draft', gu: 'yes' })]], { id: 'fay' }), false, 'functions: Not known yet is a yes or no');
 await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', mode: 'all' })]], { id: 'fay' }), false, 'functions: all at once is one round');
 await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', price: 300 })]], { id: 'fay' }), false, 'functions: no fields beyond the function fields (no prices)');

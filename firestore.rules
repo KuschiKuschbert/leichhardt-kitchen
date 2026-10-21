@@ -380,21 +380,20 @@ service cloud.firestore {
         && d.first == d.rounds[0].at && d.last == d.rounds[d.rounds.size() - 1].at && d.until > d.last;
     }
     function fnOk(id) { return fnCheck(id, request.resource.data, resource == null ? {} : resource.data); }
+    // (the version is checked by nextVersion; a field's size() also refuses a number in place of text)
     function fnCheck(id, d, was) {
       return id.matches('[a-z0-9][a-z0-9-]{0,47}')
-        && d.keys().hasOnly(['v', 'status', 'name', 'date', 'start', 'st', 'loc', 'guests', 'gu', 'mode', 'lines', 'rounds', 'notes', 'kc', 'kcBy', 'kcAt',
+        && d.keys().hasOnly(['v', 'status', 'name', 'date', 'start', 'st', 'loc', 'guests', 'gu', 'mode', 'lines', 'rounds', 'notes', 'kc', 'kcBy', 'kcAt', 'od',
           'first', 'last', 'from', 'until', 'kq', 'was', 'chg', 'cBy', 'cAt', 'confBy', 'confAt', 'canBy', 'canAt', 'by', 'upd'])
-        && d.v is int && d.upd is int
-        && d.status in ['draft', 'confirmed', 'cancelled']
-        && d.name is string && d.name.size() <= 80
-        && d.date is string && (d.date.size() == 0 || d.date.size() == 10)
-        && d.start is int && d.guests is int && d.guests >= 0 && d.guests <= 2000 && d.get('gu', false) is bool && d.get('st', false) is bool
+        && d.upd is int && d.status in ['draft', 'confirmed', 'cancelled']
+        && d.name.size() <= 80 && (d.date.size() == 0 || d.date.size() == 10)
+        && d.start is int && d.guests is int && d.guests >= 0 && d.guests <= 2000 && d.get('gu', false) is bool && d.get('st', false) is bool && d.get('od', '').size() <= 10
         && d.mode in ['all', 'stag']
-        && d.loc is string && d.loc.size() <= 60 && d.notes is string && d.notes.size() <= 1000 && d.kc is string && d.kc.size() <= 2000
+        && d.loc.size() <= 60 && d.notes.size() <= 1000 && d.kc.size() <= 2000
         // the kitchen comment's author is whoever changed it, never someone else's name
         && (d.kc == was.get('kc', '') || d.kcBy == d.get('by', ''))
         && d.chg is list && d.chg.size() <= 8 && d.was is map
-        && d.first is int && d.last is int && d.from is int && d.until is int && d.kq is int
+        && d.until is int && d.kq is int
         && d.lines is list && d.lines.size() <= 6 && d.rounds is list && d.rounds.size() <= 8
         && (d.status != 'confirmed' || fnConfirmed(d));
     }
