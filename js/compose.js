@@ -334,7 +334,9 @@
     // over the soy, by how much of each)
     var tc = '', tw = 0;
     tints.forEach(function (L) { var s = L.g || 10; tc = tc ? mix(tc, L.col, s / (tw + s)) : L.col; tw += s; });
-    if (tc) col = col ? mix(col, tc, 0.5) : tc;
+    // a paste that is a good part of the card (the gochujang in the Korean dressing) colours it more than a pinch does
+    var all = mo.lines.reduce(function (t, L) { return t + (L.part === 'hidden' ? 0 : L.g || 0); }, 0) || 1;
+    if (tc) col = col ? mix(col, tc, Math.min(0.85, 0.5 + tw / all)) : tc;
     if (!col && (mo.wet || mo.form === 'liquid') && tints.length) col = tints[0].col;
     return col ? snap(col) : '';
   }
@@ -447,7 +449,7 @@
     if (L.raw && L.raw.alt && q() < 0.3) c = L.raw.alt;
     c = cooked(c, L.cook || (L.part === 'solid' && mo.cook !== 'steamed' ? mo.cook : ''));
     // pieces sitting in a coloured syrup or dressing take a little of it
-    if (mo.liq && mo.wet && L.part === 'solid' && !/seed|herb|speck|fleck/.test(kindOf(L))) c = mix(c, mo.liq, 0.18);
+    if (mo.liq && mo.wet && L.part === 'solid' && !/seed|herb|speck|fleck/.test(kindOf(L))) c = mix(c, mo.liq, 0.1);
     return c;
   }
 
