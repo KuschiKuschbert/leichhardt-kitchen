@@ -362,14 +362,15 @@
   function lambRack(P, rnd) {
     var out = '';
     [-30, -10, 10, 30].forEach(function (x) {
-      var c = 6 + x * 0.12, rb = ribbon(P, [[x, -6], [x + c * 0.25, 14], [x + c * 0.7, 30], [x + c, 42]], 7.5);
-      out += P.shadow(rb.d, 1.4, 1.8) + P.path(rb.d, BONE, BONE_ED, 1) + P.path(P.smooth([[x + 1, 6], [x + c * 0.25 - 1.6, 16], [x + c * 0.7 - 1.6, 30], [x + c - 1.4, 38]], true), 'none', '#FFFFFF', 1.6, { opacity: '0.55', 'stroke-linecap': 'round' });
+      var c = 8 + x * 0.3, rb = ribbon(P, [[x, -6], [x + c * 0.25, 12], [x + c * 0.7, 26], [x + c, 37]], 7.5);
+      out += P.shadow(rb.d, 1.4, 1.8) + P.path(rb.d, BONE, BONE_ED, 1) + P.path(P.smooth([[x + 1, 6], [x + c * 0.25 - 1.6, 14], [x + c * 0.7 - 1.6, 26], [x + c - 1.4, 33]], true), 'none', '#FFFFFF', 1.6, { opacity: '0.55', 'stroke-linecap': 'round' });
+      out += P.circle(x + c, 37, 3.2, '#B9884A', null, 0, { opacity: '0.5' });
     });
     var d = P.blob(rnd, 47, 20, 0.04, 14), s = P.shadow(d, 2.5, 3) + P.path(d, '#5E3A1C', '#3E2410', 1.2) + P.path(P.blob(rnd, 42, 15, 0.05, 12, 0, -1), '#6E4A24', null, 0);
     s += P.crumbs(rnd, 60, 40, 14, ['#5E8C3A', '#4F7F2F', '#6E9A3E', '#C9A04A', '#3E5A22'], 1.2);
     [-20, 0, 20].forEach(function (x) { s += P.path('M' + P.n(x) + ' -16 Q' + P.n(x + 2) + ' 0 ' + P.n(x) + ' 17', 'none', '#3E2410', 1, { opacity: '0.45' }); });
     out += P.g(P.at(0, -16), s + P.hl(-12, -9, 20, 3, '#FFFFFF', 0.2, -3));
-    return P.g('translate(0 4)', out);
+    return P.g(P.at(-3, 6, -12), out);
   }
   // a strand of slow-cooked meat (pulled pork, pulled lamb)
   function shred(P, x, y, q, col) {
