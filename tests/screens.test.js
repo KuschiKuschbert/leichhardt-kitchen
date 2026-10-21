@@ -36,17 +36,24 @@ const cfg = () => ({ [fsKey(['config', 'main'])]: { people: [P('sam', 'Sam', 'so
   ok(k >= 0, 'manage: an ingredient without a link (' + k + ')');
   const box = 'input.mg-link[data-fl="ing.' + k + '.link"]';
   const label = await p.evaluate(() => document.querySelector('#mg-rx option').value);
-  await p.fill(box, label); await p.dispatchEvent(box, 'change'); await L.settle(p, 400);
+  await p.fill(box, label); await p.dispatchEvent(box, 'change');
+  await L.waitFor(p, b => { const e = document.querySelector(b); return !!e && !!e.getAttribute('data-id'); }, box, 5000).catch(() => {});
   const id = await p.$eval(box, e => e.getAttribute('data-id'));
   ok(!!id && await p.$eval(box, e => e.value) === label, 'manage: picking ' + label + ' links it (' + id + ')');
+  // the form keeps its draft 400 ms after the last change (keepDraft() in js/manage.js): wait for it, not for a fixed time
+  await L.waitFor(p, i => (localStorage.getItem('lk.mg.draft.burger') || '').indexOf('"link":"' + i + '"') >= 0, id, 5000).catch(() => {});
   const draft = await p.evaluate(() => localStorage.getItem('lk.mg.draft.burger') || '');
   ok(draft.indexOf('"link":"' + id + '"') >= 0, 'manage: the link is in the draft');
   // a name that is not on the list goes back
   await p.fill(box, 'Not a recipe at all'); await p.dispatchEvent(box, 'change'); await L.settle(p, 400);
   ok(await p.$eval(box, e => e.value) === label && /Pick a recipe from the list/.test(await L.txt(p, '.mg-toasts') || ''), 'manage: a name not on the list goes back, with a hint');
   // empty means no link
-  await p.fill(box, ''); await p.dispatchEvent(box, 'change'); await L.settle(p, 400);
-  ok(!(await p.$eval(box, e => e.getAttribute('data-id'))) && (await p.evaluate(() => localStorage.getItem('lk.mg.draft.burger') || '')).indexOf('"link":"' + id + '"') < 0, 'manage: an empty box takes the link off');
+  await p.fill(box, ''); await p.dispatchEvent(box, 'change');
+  // the draft drops the link 400 ms later (keepDraft()), so this waits for that too
+  const gone = a => { const e = document.querySelector(a.box); return !!e && !e.getAttribute('data-id') && (localStorage.getItem('lk.mg.draft.burger') || '').indexOf('"link":"' + a.id + '"') < 0; };
+  await L.waitFor(p, gone, { box, id }, 5000).catch(() => {});
+  const seen = await p.evaluate(a => { const e = document.querySelector(a.box); return (e ? 'box "' + e.value + '" id "' + (e.getAttribute('data-id') || '') + '"' : 'no box') + ', draft has the link: ' + ((localStorage.getItem('lk.mg.draft.burger') || '').indexOf('"link":"' + a.id + '"') >= 0); }, { box, id });
+  ok(await p.evaluate(gone, { box, id }), 'manage: an empty box takes the link off (' + seen + ')');
   ok(p.errors.length === 0, 'manage: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
