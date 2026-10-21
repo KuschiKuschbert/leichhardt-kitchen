@@ -116,7 +116,7 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   const sh = await txt(p, '.fn-sheet') || '';
   ok(/Cake comes out at 20:00\.\s*Keep the pass clear\./.test(sh) && /Fay,/.test(sh), 'sheet: the whole kitchen comment with its author');
   ok(await p.$eval('.fn-kc .fn-text', e => getComputedStyle(e).whiteSpace) === 'pre-wrap', 'sheet: the comment keeps its lines');
-  ok(/Two vegetarians/.test(sh) && /The book does not track what has gone out/.test(sh), 'sheet: notes, and it says times are due times, not served');
+  ok(/Two vegetarians/.test(sh) && /Tick each round as it goes out/.test(sh), 'sheet: notes, and it asks for each round to be ticked as it goes out');
   ok(!/0400|jo@example|Jo Smith/.test(await p.content()), 'staff: no phone, email or contact name anywhere on the page');
   ok(!(await p.$('.fn-sheet a[href^="#/functions/"]')), 'staff: no Change this function');
   await p.keyboard.press('Escape'); await L.settle(p, 100);
@@ -133,7 +133,7 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   const late = fn({ name: 'Late one', rounds: ['18:30', '19:30', '20:30'] });   // gone at 21:00
   p = await L.open(b, '#/recipes', { who: 'ann', extra: extra({ late }), clock: at(today, '20:58'), wait: 1200 });
   await L.waitFor(p, () => /Late one/.test((document.getElementById('fn-band') || {}).textContent || ''));
-  ok(/Next 20:30|Last round was due 20:30/.test(await txt(p, '#fn-band') || ''), 'timing: at 20:58 the last round still shows (nothing marked served)');
+  ok(/Round 1 due 18:30, not sent yet/.test(await txt(p, '#fn-band') || ''), 'timing: at 20:58 with nothing ticked, the band says round 1 is not sent yet (time alone never marks it served)');
   await p.clock.fastForward(3 * 60000);
   await L.waitFor(p, () => { const el = document.getElementById('fn-band'); return !el || el.hidden; }, null, 30000).catch(() => {});
   ok(await p.$eval('#fn-band', e => e.hidden), 'timing: gone by itself at 21:00 (30 minutes after the last round), page left open');
@@ -203,6 +203,31 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   await L.waitFor(p, () => /Make stock/.test((document.getElementById('prep-root') || {}).textContent || ''), null, 15000).catch(() => {});
   const tday = Object.keys(await store(p)).filter(k => k.indexOf('/days/' + today + '/items/r') >= 0).map(k => k.split('/').pop());
   ok(tday.some(k => /y1$/.test(k)) && !tday.some(k => /fn-old/.test(k)), 'rollover: yesterday\'s Make stock rolls over, the function\'s platter line does not (' + tday.join(',') + ')');
+  await p.context().close();
+
+  // sent ticks: Ann ticks round 1 in the sheet, the band moves on; she can undo a mis-tap; a missed round says so
+  p = await L.open(b, '#/recipes', { who: 'ann', extra: extra({ smith }), clock: at(today, '18:31'), wait: 1200 });
+  await L.waitFor(p, () => /Smith 50th/.test((document.getElementById('fn-band') || {}).textContent || ''));
+  ok(/Round 1 due 18:30, not sent yet/.test(await txt(p, '#fn-band') || ''), 'sent: a round past its time and not ticked says "not sent yet" (' + (await txt(p, '#fn-band') || '').replace(/\s+/g, ' ').slice(0, 160) + ')');
+  await tap(p, '#fn-band .fn-row'); await L.settle(p, 200);
+  await tap(p, '.fn-sheet [data-fn="sent"][data-r="0"]'); await L.settle(p, 400);
+  s = await store(p);
+  const st = s[fsKey(['fnsent', 'smith_' + at(today, '18:30')])];
+  ok(!!st && st.sent === true && st.sentBy === 'ann' && st.by === 'ann' && st.day === today, 'sent: the tick is saved as Ann\'s');
+  ok(/Ann/.test(await txt(p, '.fn-sheet .fn-sent') || '') && !!(await p.$('.fn-sheet [data-fn="unsent"]')), 'sent: the sheet shows who ticked it, with Undo');
+  await p.keyboard.press('Escape'); await L.settle(p, 100);
+  const bs = await txt(p, '#fn-band') || '';
+  ok(/Round 1 sent 18:3\d, Ann/.test(bs) && /Next 19:00 \(round 2 of 3\): 2 Aussie, 2 Pizza/.test(bs), 'sent: the band moves on to round 2 (' + bs.replace(/\s+/g, ' ').slice(0, 200) + ')');
+  await tap(p, '#fn-band .fn-row'); await L.settle(p, 200);
+  await tap(p, '.fn-sheet [data-fn="unsent"]'); await L.settle(p, 400);
+  ok((await store(p))[fsKey(['fnsent', 'smith_' + at(today, '18:30')])].sent === false, 'sent: Undo takes the tick back');
+  ok(p.errors.length === 0, 'sent: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+  p = await L.open(b, '#/recipes', { who: '', extra: extra({ smith }), clock: at(today, '18:31'), wait: 1200 });
+  await L.waitFor(p, () => /Smith 50th/.test((document.getElementById('fn-band') || {}).textContent || ''));
+  await tap(p, '#fn-band .fn-row'); await L.settle(p, 200);
+  await tap(p, '.fn-sheet [data-fn="sent"][data-r="0"]'); await L.settle(p, 500);
+  ok(/#\/prep/.test(p.url()) && !(await store(p))[fsKey(['fnsent', 'smith_' + at(today, '18:30')])], 'sent: with nobody signed in, Sent asks who you are first and saves nothing');
   await p.context().close();
 
   // 4. upcoming totals: each booked line once, confirmed only

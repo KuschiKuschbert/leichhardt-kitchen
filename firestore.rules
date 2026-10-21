@@ -424,6 +424,24 @@ service cloud.firestore {
         && request.resource.data.upd is int;
       allow delete: if false;
     }
+    // Functions: a round ticked as sent in the kitchen (22 Oct 2026). One record per round, fnsent/<function id>_<round time>.
+    // Anyone signed in with their own PIN ticks a round, as themselves. Taking a tick back (a mis-tap) is for the person who
+    // ticked it within 2 minutes, a sous chef or the head chef, like a prep line. A tick is never deleted.
+    function sentOk(sid) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['fid', 'at', 'day', 'sent', 'sentAt', 'sentBy', 'by'])
+        && d.fid is string && d.fid.size() > 0 && d.fid.size() <= 64 && d.at is int && sid == d.fid + '_' + string(d.at)
+        && d.day is string && d.day.size() == 10 && d.sent is bool && d.sentAt is int && d.sentBy is string;
+    }
+    match /kitchens/KITCHEN_PIN/fnsent/{sid} {
+      allow read: if true;
+      allow create: if writer() && sentOk(sid) && request.resource.data.sent == true && request.resource.data.sentBy == request.resource.data.get('by', '');
+      allow update: if writer() && sentOk(sid) && (
+        (request.resource.data.sent == true && resource.data.sent == false && request.resource.data.sentBy == request.resource.data.get('by', ''))
+        || (request.resource.data.sent == false && resource.data.sent == true && request.resource.data.sentBy == resource.data.sentBy
+          && (lead() || (resource.data.sentBy == request.resource.data.get('by', '') && request.time.toMillis() - resource.data.sentAt < 120000))));
+      allow delete: if false;
+    }
     // Who has seen a shift ping: one small record per person, ping and day, written when they tap Got it.
     // The record id is the day, an underscore and the writer's id. Records are never changed or deleted.
     match /kitchens/KITCHEN_PIN/notes/{id}/seen/{sid} {
