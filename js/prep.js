@@ -799,7 +799,7 @@
       if (!src) return;
       var jobs = [];
       src.items.forEach(function (x) {
-        if (x.done) return;
+        if (x.done || x.fn) return;   // a function's platters belong to its day (js/fnedit.js), they never roll over
         var root = x.root || x.id, id = 'r' + today.replace(/-/g, '') + '-' + root;
         if (have[id]) return;
         have[id] = true;
