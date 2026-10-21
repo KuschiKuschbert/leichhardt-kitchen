@@ -90,9 +90,14 @@
     });
     return out;
   }
+  /* A saved drawing comes from Firestore (or a draft on this device), and its colours and anchors go into SVG attributes,
+     so each is checked by type first (coding rules, 22 Oct 2026): a colour is #rgb, #rrggbb or a plain colour word, an
+     anchor one of three words. Anything else falls back to the default, so a damaged record can never add markup. */
+  function okCol(v, d) { return typeof v === 'string' && /^(#[0-9A-Fa-f]{3}|#[0-9A-Fa-f]{6}|[a-zA-Z]{3,20})$/.test(v) ? v : d; }
+  function okAnchor(v) { return v === 'middle' || v === 'end' ? v : 'start'; }
   function recolour(body, cm) {
     if (!cm || !Object.keys(cm).length) return body;
-    return body.replace(/#([0-9A-Fa-f]{6})/g, function (m, h) { var t = cm[h.toUpperCase()]; return t ? t : m; });
+    return body.replace(/#([0-9A-Fa-f]{6})/g, function (m, h) { return okCol(cm[h.toUpperCase()], m); });
   }
 
   /* ---------- drawing the elements ---------- */
@@ -107,7 +112,7 @@
   function elSVG(el) {
     if (isPiece(el)) return '<g transform="' + tf(el) + '"' + (el.op != null && el.op < 1 ? ' opacity="' + f(el.op) + '"' : '') + '>' + recolour(bodyOf(el.a), el.cm) + '</g>';
     if (el.t === 'text') {
-      var sz = el.size || 10, anc = el.anchor || 'start', lead = '';
+      var sz = el.size || 10, anc = okAnchor(el.anchor), lead = '';
       if (el.lx != null && el.ly != null) {
         // the leader line starts at the label's near side and ends in a dot on the part
         // a label above its part (anchor middle): the line leaves from under the amount line
@@ -119,16 +124,16 @@
         var at = ' x="' + f(el.x) + '" y="' + f(y) + '" font-family="' + LABEL.font + '" font-weight="' + wt + '" font-size="' + f(size) + '" text-anchor="' + anc + '"';
         return (el.lx != null ? '<text' + at + ' fill="#FFFFFF" stroke="#FFFFFF" stroke-width="3" stroke-linejoin="round">' + escT(t) + '</text>' : '') + '<text' + at + ' fill="' + col + '">' + escT(t) + '</text>';
       };
-      return lead + line(el.s, el.y, sz, 700, el.col || LABEL.ink) + (el.sub ? line(el.sub, el.y + sz * 1.05, sz * 0.85, 500, LABEL.sub) : '');
+      return lead + line(el.s, el.y, sz, 700, okCol(el.col, LABEL.ink)) + (el.sub ? line(el.sub, el.y + sz * 1.05, sz * 0.85, 500, LABEL.sub) : '');
     }
     if (el.t === 'line') {
       var p = pts(el); if (p.length < 2) return '';
-      var col = el.col || LABEL.ink, w = el.w || 1.2;
+      var col = okCol(el.col, LABEL.ink), w = el.w || 1.2;
       return '<polyline points="' + p.map(function (q) { return f(q[0]) + ',' + f(q[1]); }).join(' ') + '" fill="none" stroke="' + col + '" stroke-width="' + f(w) + '" stroke-linecap="round" stroke-linejoin="round"' + (el.dash ? ' stroke-dasharray="4 4"' : '') + '/>' +
         (el.arrow ? arrowHead(p[p.length - 2][0], p[p.length - 2][1], p[p.length - 1][0], p[p.length - 1][1], w, col) : '');
     }
-    if (el.t === 'rect') return '<rect x="' + f(-el.w / 2) + '" y="' + f(-el.h / 2) + '" width="' + f(el.w) + '" height="' + f(el.h) + '" rx="' + f(el.rr || 0) + '" fill="' + (el.fill || 'none') + '" stroke="' + (el.stroke || LABEL.ink) + '" stroke-width="' + f(el.sw == null ? 1.2 : el.sw) + '" transform="translate(' + f(el.x) + ' ' + f(el.y) + ')' + (el.r ? ' rotate(' + f(el.r) + ')' : '') + '"/>';
-    if (el.t === 'ellipse') return '<ellipse cx="0" cy="0" rx="' + f(el.w / 2) + '" ry="' + f(el.h / 2) + '" fill="' + (el.fill || 'none') + '" stroke="' + (el.stroke || LABEL.ink) + '" stroke-width="' + f(el.sw == null ? 1.2 : el.sw) + '" transform="translate(' + f(el.x) + ' ' + f(el.y) + ')' + (el.r ? ' rotate(' + f(el.r) + ')' : '') + '"/>';
+    if (el.t === 'rect') return '<rect x="' + f(-el.w / 2) + '" y="' + f(-el.h / 2) + '" width="' + f(el.w) + '" height="' + f(el.h) + '" rx="' + f(el.rr || 0) + '" fill="' + okCol(el.fill, 'none') + '" stroke="' + okCol(el.stroke, LABEL.ink) + '" stroke-width="' + f(el.sw == null ? 1.2 : el.sw) + '" transform="translate(' + f(el.x) + ' ' + f(el.y) + ')' + (el.r ? ' rotate(' + f(el.r) + ')' : '') + '"/>';
+    if (el.t === 'ellipse') return '<ellipse cx="0" cy="0" rx="' + f(el.w / 2) + '" ry="' + f(el.h / 2) + '" fill="' + okCol(el.fill, 'none') + '" stroke="' + okCol(el.stroke, LABEL.ink) + '" stroke-width="' + f(el.sw == null ? 1.2 : el.sw) + '" transform="translate(' + f(el.x) + ' ' + f(el.y) + ')' + (el.r ? ' rotate(' + f(el.r) + ')' : '') + '"/>';
     return '';
   }
   function rawBox(el) { var b = String(el.bx || '').split(' ').map(Number); return b.length === 4 && b.every(isFinite) ? b : [-20, -20, 20, 20]; }
