@@ -689,7 +689,7 @@
         return P.g(P.at(x, y, a), P.shadow(d, 1, 1.4) + P.path(d, '#3E2014', '#22100A', 0.7, { 'stroke-linejoin': 'round' }) + P.path('M' + P.n(-l * 0.6) + ' ' + P.n(-w * 0.3) + ' L' + P.n(l * 0.6) + ' ' + P.n(-w * 0.15), 'none', '#FFFFFF', 0.9, { opacity: '0.35', 'stroke-linecap': 'round' }));
       }, 10);
     } });
-  add({ id: 'crumble-scatter', name: 'Crumble scatter', sub: 'Small sweets', kw: 'crumble streusel crumb oat crumble biscuit crumb soil', form: 'scatter', cook: 'baked', role: 'garnish', g: 20, w: 56, h: 36, side: side('pile', 4, '#C98A4A'),
+  add({ id: 'crumble-scatter', name: 'Crumble scatter', sub: 'Small sweets', kw: 'crumble streusel crumb oat crumble biscuit crumb soil spiced biscuit biscoff speculoos', form: 'scatter', cook: 'baked', role: 'garnish', g: 20, w: 56, h: 36, side: side('pile', 4, '#C98A4A'),
     draw: function (P, rnd) { return crumbBits(P, rnd, 26, 25, 15, ['#C98A4A', '#D9A55A', '#B9772E', '#E6C27A']) + P.scatter(rnd, 6, 22, 13, function (x, y, i, q) { return P.ellipse(x, y, 2.2, 1.2, '#EBD9A8', '#C9B07A', 0.3, { transform: rot(P, q() * 180, x, y) }); }); } });
   add({ id: 'anzac-biscuit', name: 'Anzac biscuit', sub: 'Small sweets', kw: 'cookie biscuit anzac oat golden syrup bikkie', form: 'piece', cook: 'baked', role: 'dside', n: 1, w: 48, h: 46, side: side('disc', 6, '#C98A3A'),
     draw: function (P, rnd) {

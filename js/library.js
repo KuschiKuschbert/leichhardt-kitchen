@@ -222,7 +222,9 @@
   L.box = function (it) { return it.cat === 'build' ? [-it.w / 2, -it.h, it.w / 2, 0] : [-it.w / 2, -it.h / 2, it.w / 2, it.h / 2]; };
 
   /* ---------- search ---------- */
-  function words(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9 ]+/g, ' ').split(/\s+/).filter(Boolean); }
+  // one form for plurals, on both sides of a search (fries and fry, pippies and pippy, tomatoes and tomato)
+  function one(w) { return w.length > 3 ? w.replace(/ies$/, 'y').replace(/oes$/, 'o').replace(/([^s])s$/, '$1') : w; }
+  function words(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9 ]+/g, ' ').split(/\s+/).filter(Boolean).map(one); }
   function oneSlip(a, b) {
     if (Math.abs(a.length - b.length) > 1 || a.length < 4) return false;
     var i = 0, j = 0, d = 0;
@@ -237,14 +239,14 @@
   function hay() {
     if (hayCache && hayCache.n === L.items.length) return hayCache.h;
     var catName = {}; L.cats.forEach(function (c) { catName[c.id] = c.name; });
-    var h = L.items.map(function (it) { return { it: it, name: words(it.name), all: words([it.name, it.kw, it.sub, catName[it.cat], it.form, it.cook].join(' ')) }; });
+    var h = L.items.map(function (it) { return { it: it, name: words(it.name), lead: words(it.name.split(',')[0]).join(' '), all: words([it.name, it.kw, it.sub, catName[it.cat], it.form, it.cook].join(' ')) }; });
     hayCache = { n: L.items.length, h: h };
     return h;
   }
   // items that match every word (a plural or a slip counts), best first: name matches, then the start of a word
   L.search = function (q, o) {
     o = o || {};
-    var ws = words(q).map(function (w) { return w.length > 3 ? w.replace(/(ies)$/, 'y').replace(/(es|s)$/, '') : w; });
+    var ws = words(q);
     var out = [];
     hay().forEach(function (h) {
       var it = h.it;
@@ -253,7 +255,10 @@
       if (o.form && it.form !== o.form) return;
       if (o.cook && it.cook !== o.cook) return;
       if (o.role && it.role !== o.role) return;
-      var score = 0;
+      var score = 0, nm = h.name.join(' ');
+      // the item's own name first: the whole name typed (or its name before the comma), then every word of its name typed
+      if (nm === ws.join(' ') || h.lead === ws.join(' ')) score += 20;
+      else if (h.name.length && h.name.every(function (x) { return ws.some(function (w) { return x.indexOf(w) === 0; }); })) score += 8;
       for (var i = 0; i < ws.length; i++) {
         var w = ws[i], best = 0;
         h.all.forEach(function (x) {
