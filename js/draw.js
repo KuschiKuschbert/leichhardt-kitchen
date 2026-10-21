@@ -297,12 +297,18 @@
 
   /* ---------- the recipe's ingredients and the parts on the plate ---------- */
   function rec() { return recipeOf(W.d.rid); }
-  function ingIndex(name) { var r = rec(); return (r && r.ingredients || []).map(ingName).indexOf(name); }
-  function ingOf(name) { var r = rec(); return (r && r.ingredients || []).filter(function (i) { return ingName(i) === name; })[0] || null; }
+  // "Chips and salad" is drawn as two parts, Chips and Salad: each half finds its ingredient
+  function halves(name) { return String(name || '').toLowerCase().split(/\s+(?:and|&|with)\s+/); }
+  function ingIndex(name) { var r = rec(), ns = (r && r.ingredients || []).map(ingName), k = ns.indexOf(name); return k >= 0 ? k : ns.map(halves).findIndex(function (h) { return h.length > 1 && h.indexOf(String(name).toLowerCase()) >= 0; }); }
+  function ingOf(name) { var r = rec(), k = ingIndex(name); return k >= 0 ? (r.ingredients || [])[k] : null; }
   // the ingredients a part shows: its own (ing) and any drawn inside it (also, "Sliced cheese|Ranch" under a burger bun)
   function ingsOf(el) { return (el.ing ? [el.ing] : []).concat(el.also ? String(el.also).split('|').filter(Boolean) : []); }
   function onPlate() { var s = {}; W.d.els.forEach(function (el) { ingsOf(el).forEach(function (k) { s[k] = 1; }); }); return s; }
-  function missingIngs() { if (W.d.slot === 'side' || W.d.slot === 'build') return []; var have = onPlate(); return plateIngs(rec()).filter(function (i) { return !have[ingName(i)]; }); }
+  function missingIngs() {
+    if (W.d.slot === 'side' || W.d.slot === 'build') return [];
+    var have = onPlate(), low = {}; Object.keys(have).forEach(function (k) { low[k.toLowerCase()] = 1; });
+    return plateIngs(rec()).filter(function (i) { var h = halves(ingName(i)); return !have[ingName(i)] && !(h.length > 1 && h.every(function (x) { return low[x]; })); });
+  }
   // the library piece for an ingredient: what the head chef picked before, else the best search match (js/smart.js makes this smarter)
   function matchIng(i) {
     if (window.LK_SMART && window.LK_SMART.match) { var m = window.LK_SMART.match(i, W.d); if (m) return m; }
@@ -338,7 +344,7 @@
     return own.concat(order.filter(function (k) { return !ownIng[k]; }).map(function (k) {
       var g = groups[k], cx = 0, cy = 0;
       g.forEach(function (el) { cx += el.x; cy += el.y; }); cx /= g.length; cy /= g.length;
-      var i = (r.ingredients || []).filter(function (x) { return ingName(x) === k; })[0] || {}, p = { label: k.slice(0, 60), x: n1((cx - v[0]) / v[2] * 100), y: n1((cy - v[1]) / v[3] * 100), ing: k };
+      var i = (r.ingredients || []).filter(function (x) { return ingName(x) === k; })[0] || (r.ingredients || []).filter(function (x) { var h = halves(ingName(x)); return h.length > 1 && h.indexOf(k.toLowerCase()) >= 0; })[0] || {}, p = { label: k.slice(0, 60), x: n1((cx - v[0]) / v[2] * 100), y: n1((cy - v[1]) / v[3] * 100), ing: k };
       if (i.link) p.link = i.link; else p.tags = (i.tags || []).slice();
       var note = [i.q, i.note].filter(Boolean).join(', '); if (note) p.note = note.slice(0, 400);
       return p;
@@ -989,11 +995,16 @@
   function followRenames() {
     var r = rec(); if (!r) return;
     var names = (r.ingredients || []).map(ingName), have = {};
-    W.d.els.forEach(function (el) { if (el.ing) have[el.ing] = 1; });
+    W.d.els.forEach(function (el) { ingsOf(el).forEach(function (k) { have[k] = 1; }); });
     W.d.els.forEach(function (el) {
-      if (!el.ing || names.indexOf(el.ing) >= 0 || el.ii == null) return;
+      if (!el.ing || names.indexOf(el.ing) >= 0 || el.ii == null || ingIndex(el.ing) >= 0) return;
       var nw = names[el.ii];
       if (nw && !have[nw]) { var old = el.ing; W.d.els.forEach(function (e2) { if (e2.ing === old) e2.ing = nw; }); have[nw] = 1; }
+    });
+    W.d.els.forEach(function (el) {
+      if (!el.also || el.ai == null) return;
+      var ai = String(el.ai).split('|');
+      el.also = String(el.also).split('|').map(function (k, j) { var nw = names[+ai[j]]; return names.indexOf(k) < 0 && ingIndex(k) < 0 && nw && !have[nw] ? (have[nw] = 1, nw) : k; }).join('|');
     });
   }
   function finishOpen() {

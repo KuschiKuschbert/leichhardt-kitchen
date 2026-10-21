@@ -139,7 +139,8 @@
     var m = String(i.name).match(/^(.+?)\s+(?:and|&|with)\s+(.+)$/i);
     if (!m || ONE.test(i.name)) return [i];
     var a = matchIng({ name: m[1] }), b = matchIng({ name: m[2] });
-    if (a.conf >= 0.8 && b.conf >= 0.8 && a.id !== b.id) return [Object.assign({}, i, { name: m[1].trim(), whole: i.name }), Object.assign({}, i, { name: m[2].trim(), whole: i.name })];
+    var cap = function (t) { t = t.trim(); return t.charAt(0).toUpperCase() + t.slice(1); };
+    if (a.conf >= 0.8 && b.conf >= 0.8 && a.id !== b.id) return [Object.assign({}, i, { name: cap(m[1]), whole: i.name }), Object.assign({}, i, { name: cap(m[2]), whole: i.name })];
     return [i];
   }
 
@@ -269,6 +270,7 @@
     }
     return { parts: out, unsure: unsure, also: also };
   }
+  function idxIn(r, name) { return (r.ingredients || []).map(R.ingName).indexOf(name); }
   function countOf(it, q) { var a = DR.amount(q); return a && a.n && it && it.n ? Math.max(1, Math.min(12, Math.round(a.n / it.n))) : 1; }
 
   /* ---------- the solver ---------- */
@@ -328,7 +330,9 @@
         var ang = p.count > 1 ? c / p.count * Math.PI * 2 + rnd() * 0.5 : 0, rr = p.count > 1 ? Math.max(it.w, it.h) * p.scale * 0.5 : 0;
         if (host && rr) { var hb = sizeEl(host); rr = Math.min(rr, Math.min(hb[0], hb[1]) * 0.28); }
         var el = { t: 'item', a: k2, x: n1(at[0] + Math.cos(ang) * rr), y: n1(at[1] + Math.sin(ang) * rr * 0.7), sx: n1(p.scale * 100) / 100, sy: n1(p.scale * 100) / 100, r: Math.round(rot + (p.count > 1 ? rnd() * 50 - 25 : 0)), ing: p.ing };
-        if (p.also && p.also.length) el.also = p.also.join('|').slice(0, 400);
+        var ii = idxIn(r, p.ing); if (ii < 0 && p.i && p.i.whole) ii = idxIn(r, R.ingName({ name: p.i.whole })); if (ii >= 0) el.ii = ii;
+        // what is drawn inside the part, and where each is in the ingredient list (so a rename follows)
+        if (p.also && p.also.length) { el.also = p.also.join('|').slice(0, 400); el.ai = p.also.map(function (x) { return idxIn(r, x); }).join('|'); }
         if (col && it.side && it.side.c) el.cm = R.tintMap(d.defs[k2], it.side.c, col);
         if (host) { el._h = host; el._o = [el.x - host.x, el.y - host.y]; }
         if (p.on) el._on = 1;
@@ -369,7 +373,8 @@
         place(p, at, role === 'main' || role === 'dessert' ? Math.round(rnd() * 20 - 10) : Math.round(rnd() * 40 - 20));
       });
     }
-    // what sits on the main: toppings stacked in the recipe's order, then sauces under or beside it, garnish on top
+    // what sits on the main: toppings stacked in the recipe's order, then sauces under or beside it (a dollop beside it
+    // is drawn over its edge), garnish on top
     var host = function () { var m = els.filter(function (e) { var it = LIB.get(e.a.split('@')[0]); return it && /^(main|dessert)$/.test(it.role); })[0]; return m || els[0]; };
     parts.forEach(function (p, k) {
       var role = p.on ? 'topping' : p.it.role, h = host();
@@ -380,7 +385,7 @@
       else if (role === 'garnish') place(p, [h.x + hs[0] * 0.18, h.y - hs[1] * 0.18], rnd() * 60 - 30, h);
       else if (style === 'dessert') place(p, [h.x - hs[0] * 0.06, h.y + hs[1] * 0.14], -12, h);
       // a dollop or a quenelle (tartare, aioli) sits beside the main, towards the middle of the plate
-      else if (/^(dollop|quenelle|scoop|bowlful)$/.test(p.it.form)) { var sgn = h.x > a.cx + 10 ? -1 : 1; place(p, [h.x + sgn * hs[0] * 0.42, h.y - hs[1] * 0.3], 0, h); }
+      else if (/^(dollop|quenelle|scoop|bowlful)$/.test(p.it.form)) { var sgn = h.x > a.cx + 10 ? -1 : 1; p.on = true; place(p, [h.x + sgn * hs[0] * 0.42, h.y - hs[1] * 0.3], 0, h); }
       else if (/^(swoosh|smear|line)$/.test(p.it.form)) place(p, [h.x - hs[0] * 0.18, h.y + hs[1] * 0.28], -8, h);
       // a sauce: in a ramekin at the side when the recipe says side or choice, else under the main
       else if (/\bside\b|ramekin|choice|choose/.test((p.ing + ' ' + (p.i.note || '')).toLowerCase())) place(p, spot(style, 'sidedish', a, 0), 0);
