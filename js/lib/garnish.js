@@ -216,6 +216,132 @@
     return sh(d, tf, 0.5, 0.7) + P.g(tf, P.path(d, '#B5203A', '#7A0E22', 0.4, { 'fill-opacity': '0.95' }) + P.ellipse(0.2 * s, 0.2 * s, 0.9 * s, 0.6 * s, '#F2E2E0', null, 0, { opacity: '0.45' }) + P.circle(-0.8 * s, -0.7 * s, 0.6 * s, '#FFFFFF', null, 0, { opacity: '0.7' }));
   }
 
+  /* ---------- whole spices, more nuts and herbs ---------- */
+  // the outline the book gives a fill (its own hue at 0.74 of its lightness) and a lighter tint of it for a shine
+  function ol(c) { return P.shade(c, -0.26); }
+  function tint(c, f) { return P.shade(c, f || 0.55); }
+  // a star anise from above: eight boat-shaped pods round a small middle, most split open on a shiny seed
+  function starAniseAt(q, x, y, a, s) {
+    var col = '#8E4A28', seed = '#C08A4A', b = '', sb = '';
+    for (var i = 0; i < 8; i++) {
+      var ang = i * 45 + (q() - 0.5) * 10, l = 8.6 + (q() - 0.5) * 1.2, tf = 'rotate(' + n(ang) + ')';
+      var d = 'M0.8 0 Q' + n(l * 0.4) + ' -2.7 ' + n(l) + ' -0.3 Q' + n(l + 0.4) + ' 0 ' + n(l) + ' 0.3 Q' + n(l * 0.4) + ' 2.7 0.8 0 Z';
+      sb += P.path(d, '#000000', null, 0, { transform: tf });
+      var pod = P.path(d, col, ol(col), 0.45) + P.path('M1.6 -0.2 Q' + n(l * 0.42) + ' -2 ' + n(l - 0.5) + ' -0.3 Q' + n(l * 0.45) + ' -0.7 1.6 -0.2 Z', '#A65E34', null, 0);
+      if (q() < 0.75) pod += P.ellipse(l * 0.56, 0, 2, 1, '#4E2614', null, 0) + P.ellipse(l * 0.56, 0, 1.45, 0.72, seed, ol(seed), 0.25) + P.ellipse(l * 0.52, -0.22, 0.5, 0.2, tint(seed), null, 0, { opacity: '0.8' });
+      b += P.g(tf, pod);
+    }
+    b += P.circle(0, 0, 1.6, '#6E3A1E', ol('#6E3A1E'), 0.4) + P.circle(-0.4, -0.4, 0.5, tint('#6E3A1E', 0.4), null, 0, { opacity: '0.75' });
+    return P.g(P.at(x + 0.8, y + 1.1, a, s), sb, { opacity: '0.12' }) + P.g(P.at(x, y, a, s), b);
+  }
+  // a green cardamom pod: a ribbed oval, pointed at the tip, a few split open on their dark seeds
+  function cardamomAt(q, x, y, a, open) {
+    var col = q() < 0.5 ? '#A3B46E' : '#98AA62', tf = P.at(x, y, a), d = seedD(10, 5.8);
+    var b = P.path(d, col, ol(col), 0.45) + P.path(seedD(7.6, 3.2), P.shade(col, 0.14), null, 0, { transform: 'translate(-0.4 -0.6)' });
+    b += P.path('M-4.4 -1.2 Q0 -2.4 4.2 -0.5 M-4.6 1 Q0 1.8 4.3 0.4', 'none', ol(col), 0.35, { 'stroke-linecap': 'round' }) + P.circle(-5.1, 0, 0.6, '#7E8A4E', ol('#7E8A4E'), 0.2);
+    if (open) b += P.path('M-2.6 -0.2 Q0.4 -2.2 3 -0.4 Q0.4 0.9 -2.6 -0.2 Z', '#3A2A1E', null, 0) + P.circle(-1, -0.5, 0.55, '#5A4430') + P.circle(0.6, -0.8, 0.55, '#4A3626') + P.circle(1.9, -0.6, 0.5, '#5A4430');
+    return sh(d, tf) + P.g(tf, b + P.hl(-1.2, -1.5, 1.8, 0.5, tint(col), 0.75));
+  }
+  // a peppercorn: a wrinkled ball, or a cracked half showing its pale middle
+  function peppercornAt(q, x, y, r, col) {
+    if (q() < 0.28) {
+      var tf = P.at(x, y, q() * 360), d = 'M' + n(-r) + ' 0 A' + n(r) + ' ' + n(r) + ' 0 0 1 ' + n(r) + ' 0 Z';
+      return sh(d, tf, 0.4, 0.55) + P.g(tf, P.path(d, col, ol(col), 0.3) + P.ellipse(0, -0.1, r * 0.78, r * 0.32, '#D2BE92', null, 0));
+    }
+    return P.circle(x + 0.4, y + 0.55, r, '#000000', null, 0, { opacity: '0.12' }) + P.circle(x, y, r, col, ol(col), 0.3) +
+      P.path('M' + n(x - r * 0.6) + ' ' + n(y + r * 0.1) + ' q' + n(r * 0.3) + ' ' + n(-r * 0.4) + ' ' + n(r * 0.6) + ' ' + n(-r * 0.05) + ' M' + n(x - r * 0.1) + ' ' + n(y + r * 0.55) + ' q' + n(r * 0.3) + ' ' + n(-r * 0.4) + ' ' + n(r * 0.6) + ' ' + n(-r * 0.1), 'none', P.shade(col, 0.25), 0.25) +
+      P.circle(x - r * 0.35, y - r * 0.38, r * 0.26, tint(col, 0.45), null, 0, { opacity: '0.75' });
+  }
+  // a pink peppercorn: a papery pink shell, a few cracked on the brown seed inside
+  function pinkPepperAt(q, x, y, r) {
+    var col = pick(q, ['#D4566A', '#C8485C', '#DE6A7A']), d = P.blob(q, r, r * 0.92, 0.08, 6, x, y);
+    var out = P.path(d, '#000000', null, 0, { opacity: '0.12', transform: tr(0.45, 0.6) }) + P.path(d, col, ol(col), 0.3) + P.circle(x - r * 0.12, y - r * 0.14, r * 0.62, P.shade(col, 0.14));
+    if (q() < 0.3) out += P.ellipse(x + r * 0.22, y + r * 0.18, r * 0.5, r * 0.4, '#6A4430', ol('#6A4430'), 0.2);
+    return out + P.circle(x - r * 0.38, y - r * 0.4, r * 0.22, tint(col, 0.6), null, 0, { opacity: '0.8' });
+  }
+  // a Sichuan peppercorn: a rough reddish husk split open on its dark hollow
+  function sichuanAt(q, x, y, r) {
+    var col = pick(q, ['#9A4A30', '#8A3E28', '#A85A3A']), a = q() * 2 * PI, d = P.blob(q, r, r * 0.9, 0.15, 6, x, y);
+    var out = P.path(d, '#000000', null, 0, { opacity: '0.12', transform: tr(0.45, 0.6) }) + P.path(d, col, ol(col), 0.3) + P.path(P.blob(q, r * 0.55, r * 0.45, 0.15, 5, x + Math.cos(a) * r * 0.25, y + Math.sin(a) * r * 0.25), '#4A2016', null, 0);
+    for (var i = 0; i < 2; i++) { var b = a + PI * (0.8 + i * 0.4); out += P.circle(x + Math.cos(b) * r * 0.62, y + Math.sin(b) * r * 0.62, r * 0.13, P.shade(col, 0.25)); }
+    if (q() < 0.3) out += P.line(x - Math.cos(a) * r * 0.9, y - Math.sin(a) * r * 0.9, x - Math.cos(a) * r * 1.6, y - Math.sin(a) * r * 1.6, '#7A4A2E', 0.35);
+    return out;
+  }
+  // an allspice berry: a rough brown ball with the little crown where the flower was
+  function allspiceAt(q, x, y, r) {
+    var col = pick(q, ['#7A4A2E', '#6E4228', '#86523A']), a = q() * 2 * PI, cx = x + Math.cos(a) * r * 0.35, cy = y + Math.sin(a) * r * 0.35;
+    var out = P.circle(x + 0.5, y + 0.7, r, '#000000', null, 0, { opacity: '0.12' }) + P.circle(x, y, r, col, ol(col), 0.35) + P.circle(x - r * 0.15, y - r * 0.15, r * 0.7, P.shade(col, 0.1));
+    out += P.scatter(q, 4, r * 0.6, r * 0.6, function (dx, dy) { return P.circle(x + dx, y + dy, 0.2, P.shade(col, -0.2)); });
+    return out + P.circle(cx, cy, r * 0.32, P.shade(col, 0.12), ol(P.shade(col, 0.12)), 0.25) + P.circle(cx, cy, r * 0.12, P.shade(col, -0.4)) + P.circle(x - r * 0.4, y - r * 0.42, r * 0.2, tint(col, 0.45), null, 0, { opacity: '0.75' });
+  }
+  // a marjoram sprig: pairs of small rounded grey-green leaves up a thin stem, a knot of buds at the tip
+  function marjoramSprig(q, x, y, a, len) {
+    var col = '#7E9A5C', out = stem([[-len / 2, 0.6], [0, -0.5], [len / 2, 0]], '#8A8A5A', 0.7);
+    for (var t = -len / 2 + 3.5; t < len / 2 - 6; t += 5) {
+      var k = (t + len / 2) / len, l = 6.6 - k * 2.4, w = l * 0.64;
+      [-1, 1].forEach(function (sd) {
+        var ang = sd * (52 + q() * 14), ar = ang * PI / 180, tf = P.at(t + Math.cos(ar) * l / 2, Math.sin(ar) * l / 2, ang), d = ovateD(l, w), c = sd > 0 ? col : '#8AA468';
+        out += sh(d, tf, 0.5, 0.7) + P.g(tf, P.path(d, c, ol(c), 0.35) + P.line(-l * 0.45, 0, l * 0.32, 0, tint(c, 0.3), 0.35));
+      });
+    }
+    for (var b = 0; b < 7; b++) { var bx = len / 2 - 2.5 + (q() - 0.5) * 4, by = (q() - 0.5) * 3.6, c2 = b % 2 ? '#C9D6A6' : '#B4C68E'; out += P.circle(bx, by, 0.9 + q() * 0.4, c2, ol(c2), 0.25); }
+    return P.g(P.at(x, y, a), out);
+  }
+  // a chervil sprig: fine stems and small, deeply cut light green leaflets
+  function chervilSprig(q, x, y, a, s) {
+    var st = '#8DBE6A', c = '#64A846', out = stem([[-14, 8], [-7, 4], [0, 0]], st, 0.6);
+    [[0, 0, -48, 12], [0, 0, -4, 14], [-7, 4, 58, 10], [-3.5, 2, -100, 8]].forEach(function (br) {
+      var ar = br[2] * PI / 180, ex = br[0] + Math.cos(ar) * br[3], ey = br[1] + Math.sin(ar) * br[3];
+      out += P.line(br[0], br[1], ex, ey, st, 0.45);
+      [0.42, 0.76].forEach(function (f, i) { var px = br[0] + Math.cos(ar) * br[3] * f, py = br[1] + Math.sin(ar) * br[3] * f; [-1, 1].forEach(function (sd) { out += leaflet(px, py, br[2] + sd * (58 - i * 10), 3 - i * 0.4, (i + sd) % 2 ? '#6EB24E' : c); }); });
+      out += leaflet(ex, ey, br[2], 3.4, c);
+    });
+    return P.g(P.at(x, y, a, s), out);
+  }
+  // a whole cashew lying on its side: a fat curved kernel, the round back up, rounded ends (one a little bigger), a lighter body
+  var CASHEW = [[-6.2, 2], [-7, -1.2], [-5.6, -4.4], [-2.2, -6], [1.6, -5.9], [4.8, -4.3], [6.5, -1.5], [6.3, 1.7], [4.6, 3.4], [3, 2.5], [1.5, 0.6], [0, 0], [-1.6, 0.6], [-3.3, 2.7], [-5, 3.6]];
+  function cashewAt(q, x, y, a, s) {
+    var col = q() < 0.5 ? '#E2B46A' : '#E8BE78', tf = P.at(x, y, a, s), d = P.smooth(CASHEW);
+    var b = P.path(d, col, ol(col), 0.45) + P.path(d, P.shade(col, 0.16), null, 0, { transform: 'translate(-0.2 -1.5) scale(0.64)' }) + P.path('M-5.2 -2.2 Q0 -6.2 5 -2.4', 'none', P.shade(col, -0.1), 0.35, { 'stroke-linecap': 'round' });
+    return sh(d, tf) + P.g(tf, b + P.hl(-2.4, -4, 2, 0.6, tint(col), 0.75, -14));
+  }
+  // a roasted chestnut: in its glossy shell, scored and opened in a cross on the golden nut, or peeled
+  function chestnutAt(q, x, y, a, peeled) {
+    var tf = P.at(x, y, a), b, d;
+    if (peeled) {
+      var nut = '#D9AE62';
+      d = P.smooth([[0, -9], [1.6, -7.6], [6.4, -5.4], [8.6, 0.6], [6.2, 6.8], [0.6, 8.2], [-6.4, 7], [-8.8, 0.4], [-6.4, -5.6], [-1.6, -7.6]]);
+      b = P.path(d, nut, ol(nut), 0.6) + P.path(P.blob(q, 5, 4, 0.12, 8, -1.4, -1.6), P.shade(nut, 0.14), null, 0);
+      b += P.path('M-6.6 -1.6 Q-3 0 -4.4 5 M-1.6 -6.4 Q1.6 -2 -0.4 1.6 Q-1.4 4 0.6 7 M4.6 -4.4 Q2.4 -0.4 5.6 3.6 M-2.4 1 Q-0.6 2.6 1.8 1.4', 'none', P.shade(nut, -0.24), 0.8, { 'stroke-linecap': 'round' });
+      b += P.path(P.blob(q, 2.4, 1.3, 0.2, 6, 5.2, 4.4, 40), '#8A4E2C', null, 0) + P.path(P.blob(q, 1.6, 0.9, 0.2, 5, -5.6, 3.2), '#8A4E2C', null, 0) + P.path('M-1.6 -7.6 Q0 -9.6 1.6 -7.6', 'none', '#8A4E2C', 1, { 'stroke-linecap': 'round' });
+      return sh(d, tf) + P.g(tf, b + P.hl(-3, -3.8, 2, 0.7, tint(nut), 0.75, -25));
+    }
+    var shell = '#6E3A22', kern = '#DDB46A';
+    d = P.smooth([[0, -10.6], [1.4, -9.4], [7.6, -6.6], [10.2, 1], [7.2, 8.2], [0, 9.8], [-7.2, 8.2], [-10.2, 1], [-7.6, -6.6], [-1.4, -9.4]]);
+    b = P.path(d, shell, ol(shell), 0.7) + P.path(P.blob(q, 6.4, 2.4, 0.08, 8, 0, 6.6), '#C8A27A', ol('#C8A27A'), 0.4) + P.path(P.blob(q, 5, 4.6, 0.1, 8, 0, -0.6), kern, ol(kern), 0.5);
+    b += P.path('M-6.4 -6.6 L-2.4 -2.6 M6.4 -6.6 L2.4 -2.6 M-6 5.2 L-2.6 1.8 M6 5.2 L2.6 1.8', 'none', ol(shell), 0.9, { 'stroke-linecap': 'round' }) + P.path('M-1.6 -2.4 Q0 -0.6 1.6 -2.4', 'none', P.shade(kern, -0.2), 0.5);
+    return sh(d, tf) + P.g(tf, b + P.hl(-6, -2.6, 0.8, 2.6, tint(shell, 0.4), 0.75, 25) + P.hl(-1.6, -2.6, 1.4, 0.5, tint(kern), 0.75));
+  }
+  // a cacao nib: a small angular dark brown piece with a lighter facet
+  function nibAt(q, x, y, s) {
+    var col = pick(q, ['#4E2A1A', '#5E3422', '#43231A']), a0 = q() * 2 * PI, pts = [];
+    for (var i = 0; i < 5; i++) { var b = a0 + i / 5 * 2 * PI + (q() - 0.5) * 0.6, r = s * (0.6 + q() * 0.5); pts.push([x + Math.cos(b) * r, y + Math.sin(b) * r]); }
+    var d = 'M' + pts.map(function (p) { return n(p[0]) + ' ' + n(p[1]); }).join(' L') + ' Z';
+    return P.path(d, '#000000', null, 0, { opacity: '0.12', transform: tr(0.5, 0.7) }) + P.path(d, col, ol(col), 0.3, { 'stroke-linejoin': 'round' }) + P.path('M' + n(pts[0][0]) + ' ' + n(pts[0][1]) + ' L' + n(pts[1][0]) + ' ' + n(pts[1][1]) + ' L' + n(x) + ' ' + n(y) + ' Z', P.shade(col, 0.2), null, 0);
+  }
+  // a strip cut from a nori sheet: a long dark green ribbon with its fibres and a dull sheen
+  function noriStrip(q, x, y, a, l, w) {
+    var col = '#26362A', tf = P.at(x, y, a), d = 'M' + n(-l / 2) + ' ' + n(-w / 2) + ' L' + n(l / 2) + ' ' + n(-w / 2 + (q() - 0.5) * 0.6) + ' L' + n(l / 2) + ' ' + n(w / 2) + ' L' + n(-l / 2) + ' ' + n(w / 2 + (q() - 0.5) * 0.6) + ' Z';
+    var b = P.path(d, col, ol(col), 0.5, { 'stroke-linejoin': 'round' });
+    for (var i = 0; i < 4; i++) { var fx = -l / 2 + 4 + q() * (l - 10), fy = (q() - 0.5) * w * 0.7; b += P.line(fx, fy, fx + 3 + q() * 4, fy + (q() - 0.5) * 1.2, '#3A4C3E', 0.45, { opacity: '0.9' }); }
+    return sh(d, tf, 0.9, 1.2) + P.g(tf, b + P.line(-l * 0.38, -w * 0.22, l * 0.2, -w * 0.26, '#4C6252', 0.7, { opacity: '0.75' }));
+  }
+  // a fenugreek seed: a small rounded box, yellow brown, with the furrow across one corner
+  function fenugreekAt(q, x, y) {
+    var c = pick(q, ['#C99A44', '#B88A3A', '#D4A852']), tf = P.at(x, y, q() * 180);
+    return P.g(tf, P.rect(-1.15, -0.8, 2.3, 1.6, 0.45, c, ol(c), 0.25) + P.line(-0.6, 0.55, 0.15, -0.25, P.shade(c, -0.2), 0.25) + P.circle(-0.45, -0.35, 0.22, tint(c, 0.5), null, 0, { opacity: '0.75' }));
+  }
+
   /* ---------- items ---------- */
   var HERB = '#3F7F2A';
   L.add('garnish', [
@@ -232,6 +358,8 @@
     { id: 'mint-leaves', name: 'Mint leaves', sub: 'Herbs', kw: 'mint leaves mint sprig tip spearmint fresh mint', form: 'sprig', cook: 'fresh', role: 'garnish', n: 1, w: 27, h: 31, side: { s: 'leafy', h: 3, c: '#4F9A3A' }, draw: function (P, rnd) { return mintTip(rnd, 0, 0, 0, 1); } },
     { id: 'micro-herbs', name: 'Micro herbs', sub: 'Herbs', kw: 'micro herbs microgreens micro greens shoots red amaranth cress', form: 'pile', cook: 'fresh', role: 'garnish', g: 3, w: 32, h: 28, side: { s: 'leafy', h: 4, c: '#6EAE4A' }, draw: function (P, rnd) { return heap(rnd, 20, 12, 9, function (x, y, i, q) { return seedlingAt(q, x, y, q() * 360, i % 4 === 0 ? '#9E2A52' : i % 3 === 0 ? '#8DC060' : '#5EA03A'); }); } },
     { id: 'spring-onion-curls', name: 'Spring onion curls', sub: 'Herbs', kw: 'spring onion curls scallion curls shredded shallots asian garnish', form: 'pile', cook: 'fresh', role: 'garnish', g: 5, w: 40, h: 33, side: { s: 'leafy', h: 4, c: '#5EA43A' }, draw: function (P, rnd) { return heap(rnd, 10, 16, 12, function (x, y, i, q) { return curlAt(q, x, y, i % 3 ? '#5EA43A' : '#E6F0C8', 1); }); } },
+    { id: 'marjoram-sprig', name: 'Marjoram sprig', sub: 'Herbs', kw: 'marjoram sprig sweet marjoram fresh herb', form: 'sprig', cook: 'fresh', role: 'garnish', n: 1, w: 36, h: 18, side: { s: 'leafy', h: 3, c: '#7E9A5C' }, draw: function (P, rnd) { return marjoramSprig(rnd, 0, 0, -6, 34); } },
+    { id: 'chervil-sprig', name: 'Chervil sprig', sub: 'Herbs', kw: 'chervil sprig french parsley fresh herb fines herbes', form: 'sprig', cook: 'fresh', role: 'garnish', n: 1, w: 32, h: 30, side: { s: 'leafy', h: 3, c: '#64A846' }, draw: function (P, rnd) { return chervilSprig(rnd, -2, -2, 0, 1); } },
     // flowers
     { id: 'viola-flowers', name: 'Viola flowers', sub: 'Flowers', kw: 'violas pansy edible flowers purple viola', form: 'cluster', cook: 'fresh', role: 'garnish', n: 3, w: 37, h: 29, side: { s: 'leafy', h: 2, c: '#5A3A8A' }, draw: function (P, rnd) { return violaAt(rnd, -11, -4, 8.5, -10) + violaAt(rnd, 11, -3, 8, 12, ['#6E3E9E', '#B29ADF', '#EEE6FA']) + violaAt(rnd, 0, 8, 8.5, 4, ['#3A2A6A', '#F2C94C', '#F6E08A']); } },
     { id: 'nasturtium-leaf', name: 'Nasturtium leaf', sub: 'Flowers', kw: 'nasturtium leaf round leaf peppery edible leaf', form: 'leaf', cook: 'fresh', role: 'garnish', n: 1, w: 31, h: 30, side: { s: 'leafy', h: 2, c: '#7EA453' }, draw: function (P, rnd) {
@@ -272,6 +400,8 @@
     { id: 'crushed-peanuts', name: 'Crushed peanuts', sub: 'Nuts and seeds', kw: 'crushed peanuts chopped peanuts roasted peanuts satay', form: 'scatter', cook: 'roasted', role: 'garnish', g: 8, w: 40, h: 30, side: { s: 'layer', h: 2, c: '#D9B07A' }, draw: function (P, rnd) { return P.scatter(rnd, 28, 19, 15, function (x, y, i, q) { return bitAt(q, x, y, 1.4 + q() * 1.6, i % 6 ? '#D9B07A' : '#A86A4A', i % 6 ? '#EED8A8' : ''); }); } },
     { id: 'pistachios-chopped', name: 'Pistachios, chopped', sub: 'Nuts and seeds', kw: 'pistachio pistachios chopped crushed green nuts', form: 'scatter', cook: 'roasted', role: 'garnish', g: 5, w: 39, h: 31, side: { s: 'layer', h: 2, c: '#9CB45A' }, draw: function (P, rnd) { return P.scatter(rnd, 26, 20, 15, function (x, y, i, q) { return bitAt(q, x, y, 1.2 + q() * 1.4, i % 5 ? (i % 2 ? '#9CB45A' : '#B9CC6A') : '#8A5A6A', i % 5 ? '#C9DA8A' : ''); }); } },
     { id: 'coconut-flakes', name: 'Coconut flakes, toasted', sub: 'Nuts and seeds', kw: 'coconut flakes toasted coconut chips shaved coconut', form: 'scatter', cook: 'roasted', role: 'garnish', g: 5, w: 42, h: 33, side: { s: 'layer', h: 2, c: '#E8C88A' }, draw: function (P, rnd) { return P.scatter(rnd, 15, 20, 15, function (x, y, i, q) { var tf = P.at(x, y, q() * 360), c = pick(q, ['#F4ECD8', '#EED8A8', '#E2BA78']), d = 'M-5 1 Q0 -3.4 5 0.6 Q0 -1 -5 1 Z'; return sh(d, tf, 0.5, 0.7) + P.g(tf, P.path(d, c, '#B98A4A', 0.6) + P.path('M-5 1 Q0 -3.4 5 0.6', 'none', '#C9944E', 0.6)); }); } },
+    { id: 'cashews', name: 'Cashews, whole', sub: 'Nuts and seeds', kw: 'cashews cashew nuts whole toasted cashews roasted', form: 'scatter', cook: 'roasted', role: 'garnish', n: 6, w: 42, h: 32, side: { s: 'pile', h: 6, c: '#E2B46A' }, draw: function (P, rnd) { return heap(rnd, 6, 15, 10, function (x, y, i, q) { return cashewAt(q, x, y, q() * 360, 0.95 + q() * 0.1); }); } },
+    { id: 'chestnuts-roasted', name: 'Chestnuts, roasted', sub: 'Nuts and seeds', kw: 'chestnuts roasted chestnut peeled scored winter', form: 'cluster', cook: 'roasted', role: 'garnish', n: 3, w: 46, h: 38, side: { s: 'pile', h: 13, c: '#6E3A22' }, draw: function (P, rnd) { return chestnutAt(rnd, -11, -3, -8, false) + chestnutAt(rnd, 11, -7, 30, true) + chestnutAt(rnd, 7, 9, -20, true); } },
     // crunch
     { id: 'pangrattato', name: 'Pangrattato', sub: 'Crunch', kw: 'pangrattato toasted breadcrumbs crumbs garlic herb crumb poor mans parmesan', form: 'scatter', cook: 'fried', role: 'garnish', g: 8, w: 47, h: 36, side: { s: 'layer', h: 2, c: '#D49B55' }, draw: function (P, rnd) { return P.scatter(rnd, 54, 23, 18, function (x, y, i, q) { return i % 9 === 0 ? P.circle(x, y, 0.7, '#4F8F2F') : bitAt(q, x, y, 0.8 + q() * 1.4, pick(q, ['#D49B55', '#E0AA58', '#C98A45', '#E8C27A'])); }); } },
     { id: 'croutons', name: 'Croutons', sub: 'Crunch', kw: 'croutons toasted bread cubes caesar', form: 'scatter', cook: 'baked', role: 'garnish', n: 8, w: 40, h: 31, side: { s: 'pile', h: 9, c: '#D99A4A' }, draw: function (P, rnd) { return heap(rnd, 8, 15, 11, function (x, y, i, q) { return croutonAt(q, x, y, 9 + q() * 2, q() * 90); }); } },
@@ -282,6 +412,7 @@
     { id: 'crispy-shallots', name: 'Crispy shallots', sub: 'Crunch', kw: 'crispy shallots fried shallots asian shallots crunchy onion', form: 'scatter', cook: 'fried', role: 'garnish', g: 5, w: 38, h: 30, side: { s: 'layer', h: 2, c: '#B9772E' }, draw: function (P, rnd) { return P.scatter(rnd, 26, 18, 13, function (x, y, i, q) { var r = 2 + q() * 1.8, a0 = q() * 2 * PI, a1 = a0 + 1.6 + q() * 2.4, col = pick(q, ['#C98A3A', '#E0A858', '#B9772E']), d = 'M' + n(x + Math.cos(a0) * r) + ' ' + n(y + Math.sin(a0) * r) + ' A' + n(r) + ' ' + n(r) + ' 0 ' + (a1 - a0 > PI ? 1 : 0) + ' 1 ' + n(x + Math.cos(a1) * r) + ' ' + n(y + Math.sin(a1) * r); return P.path(d, 'none', '#8A5420', 1.5, { 'stroke-linecap': 'round' }) + P.path(d, 'none', col, 0.9, { 'stroke-linecap': 'round' }); }); } },
     { id: 'crisp-garlic', name: 'Garlic chips', sub: 'Crunch', kw: 'garlic chips crisp garlic fried garlic slices', form: 'scatter', cook: 'fried', role: 'garnish', g: 3, w: 40, h: 32, side: { s: 'layer', h: 1, c: '#EBCB82' }, draw: function (P, rnd) { return P.scatter(rnd, 16, 19, 14, function (x, y, i, q) { var d = P.blob(q, 2.8, 2.3, 0.08, 7, x, y, q() * 180); return P.path(d, '#000000', null, 0, { opacity: '0.1', transform: tr(0.4, 0.6) }) + P.path(d, '#EBCB82', '#B9853A', 0.6) + P.circle(x, y, 0.9, '#F6E2AE'); }); } },
     { id: 'nori-strips', name: 'Nori strips', sub: 'Crunch', kw: 'nori strips shredded seaweed kizami nori', form: 'scatter', cook: 'fresh', role: 'garnish', g: 1, w: 40, h: 31, side: { s: 'layer', h: 1, c: '#22301F' }, draw: function (P, rnd) { return P.scatter(rnd, 18, 18, 13, function (x, y, i, q) { var tf = P.at(x, y, q() * 180), l = 8 + q() * 6; return P.g(tf, P.path('M' + n(-l / 2) + ' 0 Q0 ' + n((q() - 0.5) * 3) + ' ' + n(l / 2) + ' 0', 'none', '#22301F', 1.1) + P.line(-l / 2 + 1, -0.2, l / 2 - 2, -0.2, '#4A5A44', 0.25)); }); } },
+    { id: 'nori-sheet-strips', name: 'Nori, sheet strips', sub: 'Crunch', kw: 'nori sheets nori sheet strips seaweed sheet cut ribbons sushi onigiri', form: 'stack', cook: 'fresh', role: 'garnish', g: 2, w: 48, h: 34, side: { s: 'layer', h: 1, c: '#26362A' }, draw: function (P, rnd) { return noriStrip(rnd, -2, -10, -8, 40, 6.6) + noriStrip(rnd, 2, -2, 4, 40, 6.6) + noriStrip(rnd, -3, 5, -3, 38, 6.6) + noriStrip(rnd, 3, 11, 9, 40, 6.6); } },
     // heat and pickle
     { id: 'chilli-sliced', name: 'Chilli, sliced', sub: 'Heat and pickle', kw: 'chilli sliced fresh red chilli rings birdseye long red chili', form: 'scatter', cook: 'fresh', role: 'garnish', n: 10, w: 33, h: 26, side: { s: 'layer', h: 2, c: '#C9302A' }, draw: function (P, rnd) { return P.scatter(rnd, 10, 14, 10, function (x, y, i, q) { return chilliRing(q, x, y, 3.4 + q() * 0.6); }, 6); } },
     { id: 'chilli-flakes', name: 'Chilli flakes', sub: 'Heat and pickle', kw: 'chilli flakes dried chilli crushed red pepper flakes chili', form: 'scatter', cook: 'fresh', role: 'garnish', g: 1, w: 41, h: 32, side: { s: 'layer', h: 1, c: '#C9402A' }, draw: function (P, rnd) { return flakes(rnd, 46, 20, 16, ['#C9402A', '#E0602A', '#9E2B20', '#C9402A', '#F2DDA0'], 0.9); } },
@@ -292,6 +423,7 @@
     { id: 'dukkah', name: 'Dukkah', sub: 'Spice and dust', kw: 'dukkah dukka egyptian nut spice mix hazelnut sesame coriander', form: 'scatter', cook: 'roasted', role: 'garnish', g: 5, w: 52, h: 37, side: { s: 'layer', h: 1, c: '#C9A06A' }, draw: function (P, rnd) { return P.pile(rnd, 80, 30, 24, function (x, y, i, q) { var k = i % 5; return k === 0 ? seedAt(x, y, q() * 360, 2.2, 1.3, '#F2E6C4', '#BFA978') : k === 1 ? P.circle(x, y, 0.9, '#B9925A', '#8A6A3A', 0.3) : flakeAt(q, x, y, 0.8 + q() * 0.9, pick(q, ['#C9A06A', '#8A5A2E', '#A87A44'])); }); } },
     { id: 'parmesan-grated', name: 'Parmesan, finely grated', sub: 'Spice and dust', kw: 'parmesan grated parmigiano dust snow microplane cheese', form: 'scatter', cook: 'fresh', role: 'garnish', g: 5, w: 48, h: 42, side: { s: 'layer', h: 1, c: '#F4E3A8' }, draw: function (P, rnd) { return P.pile(rnd, 80, 30, 24, function (x, y, i, q) { var a = q() * PI, l = 0.8 + q() * 1.6, c = pick(q, ['#EED890', '#F2E2A8', '#DCC27A']); return i % 3 ? P.line(x - Math.cos(a) * l, y - Math.sin(a) * l, x + Math.cos(a) * l, y + Math.sin(a) * l, c, 1) : P.circle(x, y, 0.6, c); }); } },
     { id: 'mustard-seeds', name: 'Mustard seeds, whole', sub: 'Nuts and seeds', kw: 'mustard seeds whole yellow brown mustard seed pickling spice', form: 'scatter', cook: 'fresh', role: 'garnish', g: 1, w: 44, h: 34, side: { s: 'layer', h: 1, c: '#C9962E' }, draw: function (P, rnd) { return P.scatter(rnd, 46, 22, 17, function (x, y, i, q) { var c = pick(q, ['#C9962E', '#B07A22', '#D9AE48', '#9E6A1E']), r = 0.9 + q() * 0.35; return P.circle(x, y, r, c, ed(c, -0.3), 0.3) + P.circle(x - r * 0.3, y - r * 0.3, r * 0.35, '#F2D98A', null, 0, { opacity: '0.7' }); }); } },
+    { id: 'fenugreek-seeds', name: 'Fenugreek seeds', sub: 'Nuts and seeds', kw: 'fenugreek seeds methi whole spice curry', form: 'scatter', cook: 'fresh', role: 'garnish', g: 1, w: 42, h: 32, side: { s: 'layer', h: 1, c: '#C99A44' }, draw: function (P, rnd) { return P.scatter(rnd, 38, 20, 15, function (x, y, i, q) { return fenugreekAt(q, x, y); }); } },
     { id: 'spice-flecks', name: 'Spice rub flecks', sub: 'Spice and dust', kw: 'spice rub dry rub bbq rub seasoning flecks cajun jerk five spice crust', form: 'scatter', cook: 'roasted', role: 'garnish', g: 1, w: 46, h: 36, side: { s: 'layer', h: 1, c: '#7A3A1C' }, draw: function (P, rnd) { return P.pile(rnd, 70, 26, 20, function (x, y, i, q) { return i % 3 ? flakeAt(q, x, y, 0.5 + q() * 0.7, pick(q, ['#7A3A1C', '#9E4A22', '#5E2A14', '#B5652E'])) : P.circle(x, y, 0.45 + q() * 0.3, pick(q, ['#3A2416', '#C98A45'])); }); } },
     { id: 'sumac', name: 'Sumac', sub: 'Spice and dust', kw: 'sumac dust spice middle eastern red', form: 'scatter', cook: 'fresh', role: 'garnish', g: 1, w: 50, h: 39, side: { s: 'layer', h: 1, c: '#8E2A3A' }, draw: function (P, rnd) { return dust(rnd, 130, 30, 24, ['#8E2A3A', '#A8384A', '#6E1E2E', '#9E3048'], 0.75); } },
     { id: 'zaatar', name: 'Za\'atar', sub: 'Spice and dust', kw: 'zaatar za atar zatar thyme sesame sumac spice mix', form: 'scatter', cook: 'fresh', role: 'garnish', g: 2, w: 50, h: 40, side: { s: 'layer', h: 1, c: '#7A7A3A' }, draw: function (P, rnd) { return dust(rnd, 95, 30, 24, ['#7A7A3A', '#5E6A2E', '#9A8A4A', '#6E7438'], 0.8) + seeds(rnd, 16, 24, 18, 2.2, 1.3, ['#F2E6C4'], { edge: '#BFA978' }) + dust(rnd, 10, 20, 15, ['#8E2A3A'], 0.6); } },
@@ -300,6 +432,15 @@
     { id: 'rosemary-salt', name: 'Rosemary salt', sub: 'Spice and dust', kw: 'rosemary salt herb salt chips salt', form: 'scatter', cook: 'fresh', role: 'garnish', g: 1, w: 43, h: 33, of: 'salt-flakes', side: { s: 'layer', h: 1, c: '#FFFFFF' }, draw: saltFlakes('#FFFFFF', '#AEB6BE', true) },
     { id: 'oregano-dried', name: 'Oregano, dried', sub: 'Spice and dust', kw: 'oregano dried oregano rigani herb sprinkle', form: 'scatter', cook: 'fresh', role: 'garnish', g: 1, w: 40, h: 31, side: { s: 'layer', h: 1, c: '#7A8A4A' }, draw: function (P, rnd) { return flakes(rnd, 60, 20, 15, ['#7A8A4A', '#6A7A3A', '#8E9A5A', '#5E6E34'], 0.8); } },
     { id: 'furikake', name: 'Furikake', sub: 'Spice and dust', kw: 'furikake japanese rice seasoning nori sesame bonito', form: 'scatter', cook: 'fresh', role: 'garnish', g: 2, w: 41, h: 35, side: { s: 'layer', h: 1, c: '#2E2A28' }, draw: function (P, rnd) { return P.scatter(rnd, 60, 21, 17, function (x, y, i, q) { var k = i % 5; return k === 0 ? P.rect(x - 1.4, y - 0.9, 2.8, 1.8, 0.3, '#22301F', null, 0, { transform: rot(q() * 180, x, y) }) : k === 1 ? seedAt(x, y, q() * 360, 2.2, 1.3, '#F2E6C4', '#BFA978') : k === 2 ? seedAt(x, y, q() * 360, 2.2, 1.3, '#2E2A28', '#141210') : flakeAt(q, x, y, 0.8, pick(q, ['#E8823A', '#C9402A', '#F2B86A'])); }); } },
+    { id: 'star-anise', name: 'Star anise', sub: 'Spice and dust', kw: 'star anise whole spice chinese five spice pho aniseed', form: 'cluster', cook: 'fresh', role: 'garnish', n: 2, w: 42, h: 30, side: { s: 'pile', h: 3, c: '#8E4A28' }, draw: function (P, rnd) { return starAniseAt(rnd, -10, -3, 10, 1) + starAniseAt(rnd, 10, 4, 32, 0.9); } },
+    { id: 'cardamom-pods', name: 'Cardamom pods, green', sub: 'Spice and dust', kw: 'cardamom pods green cardamom whole spice elaichi chai', form: 'scatter', cook: 'fresh', role: 'garnish', n: 6, w: 32, h: 24, side: { s: 'pile', h: 4, c: '#A3B46E' }, draw: function (P, rnd) { return P.g('translate(-2 1.8)', heap(rnd, 6, 11, 8, function (x, y, i, q) { return cardamomAt(q, x, y, q() * 360, i % 3 === 1); })); } },
+    { id: 'peppercorns-black', name: 'Black peppercorns', sub: 'Spice and dust', kw: 'black peppercorns cracked pepper black pepper whole pepper coarse', form: 'scatter', cook: 'fresh', role: 'garnish', g: 2, w: 42, h: 32, side: { s: 'layer', h: 2, c: '#3A302A' }, draw: function (P, rnd) { return P.scatter(rnd, 40, 20, 15, function (x, y, i, q) { return peppercornAt(q, x, y, 1.5 + q() * 0.4, pick(q, ['#3A302A', '#463A30', '#30282A'])); }); } },
+    { id: 'peppercorns-pink', name: 'Pink peppercorns', sub: 'Spice and dust', kw: 'pink peppercorns pink pepper baies roses', form: 'scatter', cook: 'fresh', role: 'garnish', g: 1, w: 40, h: 30, side: { s: 'layer', h: 2, c: '#D4566A' }, draw: function (P, rnd) { return P.scatter(rnd, 26, 19, 14, function (x, y, i, q) { return pinkPepperAt(q, x, y, 1.9 + q() * 0.4); }); } },
+    { id: 'peppercorns-sichuan', name: 'Sichuan peppercorns', sub: 'Spice and dust', kw: 'sichuan peppercorns szechuan pepper prickly ash numbing mala', form: 'scatter', cook: 'fresh', role: 'garnish', g: 1, w: 40, h: 30, side: { s: 'layer', h: 2, c: '#9A4A30' }, draw: function (P, rnd) { return P.scatter(rnd, 21, 19, 14, function (x, y, i, q) { return sichuanAt(q, x, y, 1.75 + q() * 0.4); }); } },
+    { id: 'allspice-berries', name: 'Allspice berries', sub: 'Spice and dust', kw: 'allspice berries pimento whole spice jamaican pepper', form: 'scatter', cook: 'fresh', role: 'garnish', n: 10, w: 28, h: 22, side: { s: 'pile', h: 4, c: '#7A4A2E' }, draw: function (P, rnd) { return P.scatter(rnd, 10, 13, 10, function (x, y, i, q) { return allspiceAt(q, x, y, 2.4 + q() * 0.3); }, 5); } },
+    { id: 'cayenne-dusting', name: 'Cayenne pepper, dusted', sub: 'Spice and dust', kw: 'cayenne pepper cayenne chilli powder dusting dust ground red pepper', form: 'scatter', cook: 'fresh', role: 'garnish', g: 1, w: 46, h: 38, side: { s: 'layer', h: 1, c: '#C8442A' }, draw: function (P, rnd) { return dust(rnd, 160, 27, 21, ['#C8442A', '#D8562E', '#A83420', '#E06A3A'], 0.55); } },
+    { id: 'garam-masala-dusting', name: 'Garam masala, dusted', sub: 'Spice and dust', kw: 'garam masala indian spice mix dusting dust ground spice', form: 'scatter', cook: 'fresh', role: 'garnish', g: 1, w: 50, h: 38, side: { s: 'layer', h: 1, c: '#8A5A32' }, draw: function (P, rnd) { return dust(rnd, 150, 27, 21, ['#8A5A32', '#7A4A28', '#A06A3A', '#5E3A20'], 0.6); } },
+    { id: 'herbes-de-provence', name: 'Herbes de Provence', sub: 'Spice and dust', kw: 'herbes de provence herbs de provence dried herbs french herb mix thyme rosemary savory lavender', form: 'scatter', cook: 'fresh', role: 'garnish', g: 1, w: 46, h: 36, side: { s: 'layer', h: 1, c: '#7A8A4A' }, draw: function (P, rnd) { return P.scatter(rnd, 70, 22, 17, function (x, y, i, q) { var k = i % 7, b = q() * PI; if (k === 0) { var c = pick(q, ['#7E66A6', '#6E5896']); return P.ellipse(x, y, 0.9, 0.5, c, ol(c), 0.2, { transform: rot(b * 57.3, x, y) }); } if (k < 3) return P.line(x - Math.cos(b) * 1.7, y - Math.sin(b) * 1.7, x + Math.cos(b) * 1.7, y + Math.sin(b) * 1.7, pick(q, ['#5A6E3E', '#4E6236']), 0.7); return flakeAt(q, x, y, 0.6 + q() * 0.6, pick(q, ['#7A8A4A', '#8E9A5A', '#6A7A42', '#9AA266'])); }); } },
     // native
     { id: 'finger-lime-pearls', name: 'Finger lime pearls', sub: 'Native', kw: 'finger lime pearls caviar lime citrus caviar native bush tucker', form: 'cluster', cook: 'fresh', role: 'garnish', g: 3, w: 25, h: 21, side: { s: 'pile', h: 3, c: '#CFE08E' }, draw: function (P, rnd) { return P.pile(rnd, 46, 15, 12, function (x, y, i, q) { var c = i % 4 === 0 ? '#F2B0BE' : '#CFE08E'; return P.circle(x, y, 1.4, c, ed(c, -0.3), 0.3, { 'fill-opacity': '0.9' }) + P.circle(x - 0.45, y - 0.45, 0.45, '#FFFFFF', null, 0, { opacity: '0.85' }); }); } },
     { id: 'wattleseed', name: 'Wattleseed, ground', sub: 'Native', kw: 'wattleseed wattle seed roasted ground native spice bush tucker', form: 'scatter', cook: 'roasted', role: 'garnish', g: 1, w: 46, h: 35, side: { s: 'layer', h: 1, c: '#5E3A1E' }, draw: function (P, rnd) { return dust(rnd, 105, 26, 20, ['#5E3A1E', '#7A4E2A', '#3E2614', '#6A4424'], 0.75) + seeds(rnd, 9, 21, 16, 2.6, 1.6, ['#4A2C16'], { edge: '#2A180A', hl: true }); } },
@@ -310,7 +451,8 @@
     { id: 'candied-citrus', name: 'Candied citrus peel', sub: 'Sweet garnish', kw: 'candied orange peel candied citrus lemon peel glace strips', form: 'scatter', cook: 'cured', role: 'garnish', n: 5, w: 34, h: 31, side: { s: 'layer', h: 2, c: '#E8822A' }, draw: function (P, rnd) { return heap(rnd, 5, 6, 8, function (x, y, i, q) { var tf = P.at(x, y, (q() - 0.5) * 70), c = i % 3 ? '#E8822A' : '#EBC23A', d = 'M-14 -1.6 Q0 -4.2 14 -1.2 L14 2.2 Q0 -0.6 -14 2.4 Z'; return sh(d, tf) + P.g(tf, P.path(d, c, ed(c, -0.3), 0.6, { 'fill-opacity': '0.95' }) + P.path('M-12 -0.2 Q0 -2.4 12 0', 'none', P.shade(c, 0.4), 0.8, { opacity: '0.8' }) + P.crumbs(q, 6, 12, 1.4, ['#FFFFFF'], 0.45)); }); } },
     { id: 'hundreds-and-thousands', name: 'Hundreds and thousands', sub: 'Sweet garnish', kw: 'hundreds and thousands sprinkles nonpareils fairy bread rainbow', form: 'scatter', cook: 'fresh', role: 'garnish', g: 2, w: 40, h: 32, side: { s: 'layer', h: 1, c: '#E8506A' }, draw: function (P, rnd) { return P.scatter(rnd, 80, 20, 16, function (x, y, i, q) { var c = ['#E8506A', '#F2C94C', '#5EB04A', '#4A8AD8', '#FFFFFF', '#F28A2A', '#B05AC8'][i % 7]; return P.circle(x, y, 0.85, c, ed(c, -0.25), 0.25); }); } },
     { id: 'mini-marshmallows', name: 'Mini marshmallows', sub: 'Sweet garnish', kw: 'mini marshmallows marshmallow pastel', form: 'scatter', cook: 'fresh', role: 'garnish', n: 12, w: 35, h: 27, side: { s: 'pile', h: 7, c: '#F8C8D8' }, draw: function (P, rnd) { return heap(rnd, 12, 14, 10, function (x, y, i, q) { return marshmallowAt(q, x, y, ['#FFFFFF', '#F8C8D8', '#F8EDB0', '#CDEBC4'][i % 4]); }); } },
-    { id: 'pomegranate-seeds', name: 'Pomegranate seeds', sub: 'Sweet garnish', kw: 'pomegranate seeds arils jewels', form: 'scatter', cook: 'fresh', role: 'garnish', g: 10, w: 35, h: 28, side: { s: 'layer', h: 3, c: '#B5203A' }, draw: function (P, rnd) { return P.scatter(rnd, 22, 18, 13, function (x, y, i, q) { return arilAt(q, x, y, 1 + q() * 0.25); }); } }
+    { id: 'pomegranate-seeds', name: 'Pomegranate seeds', sub: 'Sweet garnish', kw: 'pomegranate seeds arils jewels', form: 'scatter', cook: 'fresh', role: 'garnish', g: 10, w: 35, h: 28, side: { s: 'layer', h: 3, c: '#B5203A' }, draw: function (P, rnd) { return P.scatter(rnd, 22, 18, 13, function (x, y, i, q) { return arilAt(q, x, y, 1 + q() * 0.25); }); } },
+    { id: 'cacao-nibs', name: 'Cacao nibs', sub: 'Sweet garnish', kw: 'cacao nibs cocoa nibs chocolate crunch', form: 'scatter', cook: 'roasted', role: 'garnish', g: 3, w: 42, h: 30, side: { s: 'layer', h: 2, c: '#4E2A1A' }, draw: function (P, rnd) { return P.scatter(rnd, 26, 19, 14, function (x, y, i, q) { return nibAt(q, x, y, 1.4 + q() * 1); }); } }
   ]);
   // salt flakes: little pyramids seen from above (green rosemary bits when herb is set)
   function saltFlakes(col, edgeCol, herb) {

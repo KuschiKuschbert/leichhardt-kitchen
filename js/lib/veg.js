@@ -655,6 +655,265 @@
     return out;
   }
 
+  /* ---------- stems, bulbs, squash, roots and greens (21 Oct 2026) ---------- */
+  // the highlight is a lighter tint of the piece's own colour (the book's sit at 0.7 to 0.85)
+  function tint(c, f) { return P.shade(c, f === undefined ? 0.45 : f); }
+  function gloss(x, y, rx, ry, col, a) { return P.hl(x, y, rx, ry, tint(col, 0.5), 0.75, a); }
+  // a filled shape with its outline in its own colour, darker (the book: about 0.74 of the fill's lightness)
+  function fill(d, col, sw, x) { return P.path(d, col, ed(col), sw || 0.8, x); }
+  // a stalk along x with blunt cut ends: ridges down its length, the pale groove of its inside (celery, rhubarb); o.tip a blush at one end
+  function stalkAt(q, x, y, a, len, w, col, o) {
+    o = o || {};
+    var h = len / 2, b = o.bend === undefined ? w * 0.25 : o.bend, d = stripD(len, w, b), tf = P.at(x, y, a), out = fill(d, col, 0.8);
+    var along = function (k) { var yy = k * w / 2; return 'M' + n(-h + 1.2) + ' ' + n(yy) + ' Q0 ' + n(yy - 2 * b) + ' ' + n(h - 1.2) + ' ' + n(yy); };
+    if (o.tip) out += P.path(stripD(len * 0.3, w * 0.8, 0), o.tip, null, 0, { transform: tr(h * 0.64, -b * 0.4), opacity: '0.75' });
+    out += P.path(along(0.12), 'none', o.groove || tint(col, 0.32), w * 0.32, { 'stroke-linecap': 'round' });
+    [-0.66, -0.34, 0.5, 0.76].forEach(function (k) { out += P.path(along(k), 'none', ed(col, -0.14), 0.5, { 'stroke-linecap': 'round', opacity: '0.8' }); });
+    return sh(d, tf, 1.6, 2) + P.g(tf, out + gloss(-h * 0.1, -b - w * 0.28, h * 0.5, w * 0.08, col));
+  }
+  // a slice of celery: the U of the stalk, its green back with the strings in it, the pale flesh inside
+  function celeryBit(q, x, y, a, s) {
+    var tf = P.at(x, y, a, s), d = 'M-5 -0.6 Q-5.4 4.4 0 4.6 Q5.4 4.4 5 -0.6 Q4.4 -1.6 3.2 -0.8 Q2.4 1.8 0 1.9 Q-2.4 1.8 -3.2 -0.8 Q-4.4 -1.6 -5 -0.6 Z';
+    var b = fill(d, '#D2E5A2', 0.6) + P.path('M-4.3 0.2 Q-4.4 3.8 0 3.9 Q4.4 3.8 4.3 0.2', 'none', '#8DB255', 1.1, { 'stroke-linecap': 'round' });
+    return sh(d, tf, 0.8, 1) + P.g(tf, b + P.circle(-2.6, 2.2, 0.45, '#B9D47E') + P.circle(0, 3, 0.45, '#B9D47E') + P.circle(2.6, 2.2, 0.45, '#B9D47E'));
+  }
+  // a diced cube from above, with a strip of skin on one edge (o.skin) and a browned spot (o.tan)
+  function dice(q, x, y, s, col, a, o) {
+    o = o || {};
+    var h = s / 2, rr = s * 0.2, b = P.rect(-h, -h, s, s, rr, col, ed(col), 0.6);
+    if (o.skin) b += P.rect(-h + 0.5, -h + 0.5, s - 1, s * 0.22, rr * 0.6, o.skin);
+    if (o.tan) b += P.path(P.blob(q, s * (0.14 + q() * 0.1), s * 0.11, 0.3, 6, (q() - 0.5) * s * 0.4, s * 0.16), o.tan, null, 0, { opacity: '0.55' });
+    b += P.rect(-h + s * 0.14, -h + s * (o.skin ? 0.3 : 0.14), s * 0.36, s * 0.13, s * 0.06, tint(col, 0.5), null, 0, { opacity: '0.75' });
+    return P.g(P.at(x + 1.2, y + 1.5, a), P.rect(-h, -h, s, s, rr, '#000000', null, 0, { opacity: '0.12' })) + P.g(P.at(x, y, a), b);
+  }
+  // a round slice from above (o: skin, flesh, rim, oval, ring, rings, core, seeds and seedCol round the middle, tan)
+  function discAt(q, x, y, r, a, o) {
+    var ov = o.oval || 0.96, k = o.rim || 0.88, tf = P.at(x, y, a), d = P.blob(q, r, r * ov, 0.03, 12);
+    var b = fill(d, o.skin, 0.7) + P.path(P.blob(q, r * k, r * k * ov, 0.02, 12), o.flesh, null, 0);
+    (o.rings || []).forEach(function (f) { b += P.ellipse(0, 0, r * f, r * f * ov, 'none', o.ring, 0.6, { opacity: '0.85' }); });
+    for (var i = 0; i < (o.seeds || 0); i++) { var t = (i / o.seeds + q() * 0.04) * 2 * PI, sx = Math.cos(t) * r * 0.36, sy = Math.sin(t) * r * 0.36 * ov; b += P.ellipse(sx, sy, r * 0.09, r * 0.05, o.seedCol, ed(o.seedCol), 0.4, { transform: rot(t * 180 / PI, sx, sy) }); }
+    if (o.core) b += P.ellipse(0, 0, r * 0.13, r * 0.13 * ov, o.core);
+    if (o.tan) b += P.path(P.blob(q, r * (0.25 + q() * 0.15), r * 0.16, 0.3, 7, (q() - 0.5) * r * 0.6, (q() - 0.5) * r * 0.5), o.tan, null, 0, { opacity: '0.45' });
+    return sh(d, tf, 1.2, 1.5) + P.g(tf, b + gloss(-r * 0.3, -r * 0.4 * ov, r * 0.3, r * 0.1, o.flesh, -30));
+  }
+  // a wedge of a round root, its point at the middle: o.flesh, o.rings (parts of R) in o.ring, o.skin along the round side, o.skin2 its lower half, o.tan
+  function rootWedge(q, x, y, a, R, deg, o) {
+    var tf = P.at(x, y, a) + ' ' + tr(-R * 0.55, 0), d = wedgeD(R, deg), b = fill(d, o.flesh, 0.8), R2 = R - 1.1, t = (deg - 0.5) * PI / 180;
+    (o.rings || []).forEach(function (f) { b += P.path(arcD(R * f, deg - 2), 'none', o.ring, 0.8, { opacity: '0.85' }); });
+    b += P.path(arcD(R2, deg - 0.5), 'none', o.skin, 2);
+    if (o.skin2) b += P.path('M' + n(R2) + ' 0 A' + n(R2) + ' ' + n(R2) + ' 0 0 1 ' + n(Math.cos(t) * R2) + ' ' + n(Math.sin(t) * R2), 'none', o.skin2, 2);
+    if (o.tan) b += P.path(P.blob(q, R * 0.18, R * 0.08, 0.3, 6, R * 0.6, (q() - 0.5) * R * 0.2), o.tan, null, 0, { opacity: '0.5' });
+    return sh(d, tf, 1.6, 2) + P.g(tf, b + gloss(R * 0.5, -R * 0.08, R * 0.14, R * 0.04, o.flesh));
+  }
+  // a knob of ginger or galangal: plump lobes [x, y, rx, ry, angle] with rings across them; the last lobe cut to show the flesh
+  function knobAt(q, lobes, o) {
+    var ds = lobes.map(function (l) { return P.blob(q, l[2], l[3], 0.06, 10, l[0], l[1], l[4]); });
+    var out = P.path(ds.join(' '), '#000000', null, 0, { opacity: '0.12', transform: tr(2, 2.5) });
+    lobes.forEach(function (l, i) {
+      var b = '';
+      for (var xx = -l[2] + 4 + q() * 2; xx < l[2] - 3; xx += o.gap * (0.8 + q() * 0.4)) { var hh = l[3] * Math.sqrt(Math.max(0, 1 - xx * xx / (l[2] * l[2]))) * 0.8; b += P.path('M' + n(xx) + ' ' + n(-hh) + ' Q' + n(xx + 1.4) + ' 0 ' + n(xx) + ' ' + n(hh), 'none', o.ring, 0.6, { opacity: '0.8' }); }
+      b += gloss(-l[2] * 0.1, -l[3] * 0.45, l[2] * 0.42, l[3] * 0.12, o.skin);
+      if (o.shoot && i === 1) b += P.ellipse(l[2] - 1.2, 0, 2.4, l[3] * 0.42, o.shoot, ed(o.shoot), 0.6);
+      if (i === lobes.length - 1) b += P.ellipse(l[2] - 1.6, 0, l[3] * 0.3, l[3] * 0.6, o.flesh, ed(o.flesh), 0.6) + P.ellipse(l[2] - 1.6, 0, l[3] * 0.12, l[3] * 0.3, 'none', P.shade(o.flesh, -0.1), 0.5);
+      out += fill(ds[i], o.skin, 0.9) + P.g(P.at(l[0], l[1], l[4]), b);
+    });
+    return out;
+  }
+  // a tomatillo from above: the green fruit in its papery husk, peeled back into five points (open) or still closed over it
+  function tomatilloAt(q, x, y, r, a, open) {
+    var tf = P.at(x, y, a), husk = '#D9D49C', vein = ed(husk, -0.12), fruit = '#8DB648', out = '';
+    if (open) {
+      var pet = P.leafD(r * 1.5, r * 0.95), vd = 'M' + n(-r * 0.6) + ' 0 L' + n(r * 0.66) + ' 0 M' + n(-r * 0.2) + ' 0 L' + n(r * 0.3) + ' ' + n(-r * 0.24) + ' M' + n(-r * 0.2) + ' 0 L' + n(r * 0.3) + ' ' + n(r * 0.24);
+      for (var i = 0; i < 5; i++) { var t = tf + ' ' + P.at(0, 0, i * 72 + q() * 12) + ' ' + tr(r * 0.95, 0); out += sh(pet, t, 1, 1.3) + P.g(t, fill(pet, husk, 0.6) + P.path(vd, 'none', vein, 0.45, { 'stroke-linecap': 'round' })); }
+      return out + sh(circD(r), tf, 1.2, 1.5) + P.g(tf, fill(circD(r), fruit, 0.8) + P.circle(r * 0.08, r * 0.06, r * 0.1, ed(fruit, -0.1)) + gloss(-r * 0.32, -r * 0.4, r * 0.34, r * 0.14, fruit, -30));
+    }
+    var pts = [];
+    for (var j = 0; j < 10; j++) { var tt = j / 10 * 2 * PI, k = j % 2 ? 0.98 : 1.22; pts.push([Math.cos(tt) * r * k, Math.sin(tt) * r * k]); }
+    var d = P.smooth(pts), b = fill(d, husk, 0.7);
+    for (var m = 0; m < 5; m++) { var ta = m / 5 * 2 * PI; b += P.line(Math.cos(ta) * r * 0.2, Math.sin(ta) * r * 0.2, Math.cos(ta) * r * 1.02, Math.sin(ta) * r * 1.02, vein, 0.5); }
+    b += P.ellipse(r * 0.42, r * 0.36, r * 0.3, r * 0.2, fruit, ed(fruit), 0.6, { transform: rot(40, r * 0.42, r * 0.36) }) + P.circle(0, 0, r * 0.18, '#A89A62', ed('#A89A62'), 0.5);
+    return sh(d, tf, 1.2, 1.5) + P.g(tf, b + gloss(-r * 0.36, -r * 0.42, r * 0.36, r * 0.12, husk, -30));
+  }
+  // a sprig of watercress: a pale stem with round leaflets in pairs, the end one biggest
+  function cressSprig(q, x, y, a, s) {
+    var tf = P.at(x, y, a, s), col = '#3F7E2E', st = '#8DB255', stem = 'M-17 0.4 Q-4 1.6 11 -0.2', lv = [[-10, -4.2, 2.8], [-9.4, 4.4, 2.6], [-2.6, -4.6, 3.3], [-2, 4.8, 3.1], [4.6, -4.4, 3.6], [5.2, 4.6, 3.4], [13, 0, 5]];
+    var b = P.path(stem, 'none', ed(st), 1.7, { 'stroke-linecap': 'round' }) + P.path(stem, 'none', st, 1, { 'stroke-linecap': 'round' });
+    lv.forEach(function (l) { b += P.line(l[0] * 0.9, l[1] * 0.15, l[0], l[1], st, 0.7); });
+    lv.forEach(function (l) { b += P.ellipse(l[0], l[1], l[2], l[2] * 0.86, col, ed(col), 0.6) + gloss(l[0] - l[2] * 0.25, l[1] - l[2] * 0.4, l[2] * 0.4, l[2] * 0.16, col); });
+    return sh(lv.map(function (l) { return circD(l[2], l[0], l[1]); }).join(' '), tf, 1, 1.3) + P.g(tf, b);
+  }
+  // a silverbeet or chard leaf along x: the puckered blade, the broad stalk running up it as the midrib (stem: its colour)
+  function chardLeaf(q, x, y, a, len, wid, stem) {
+    var tf = P.at(x, y, a), h = len / 2, col = '#2F6A2A', d = ruffleD(q, len, wid, 0.05, 26), sl = len * 0.3, ws = wid * 0.1;
+    var rib = 'M' + n(-h - sl) + ' ' + n(-ws) + ' L' + n(-h) + ' ' + n(-ws * 1.1) + ' Q' + n(-h * 0.1) + ' ' + n(-ws * 0.7) + ' ' + n(h * 0.62) + ' 0 Q' + n(-h * 0.1) + ' ' + n(ws * 0.7) + ' ' + n(-h) + ' ' + n(ws * 1.1) + ' L' + n(-h - sl) + ' ' + n(ws) + ' Q' + n(-h - sl - 1.2) + ' 0 ' + n(-h - sl) + ' ' + n(-ws) + ' Z';
+    var b = fill(d, col, 0.8) + P.path(ruffleD(q, len * 0.74, wid * 0.66, 0.04), '#3F7E34', null, 0, { transform: tr(len * 0.08, 0), opacity: '0.85' });
+    b += P.scatter(q, 12, h * 0.7, wid * 0.28, function (sx, sy, i, qq) { return P.path(P.blob(qq, 2.6 + qq() * 1.6, 1.8 + qq(), 0.3, 6, sx + h * 0.1, sy), '#4A8A3A', null, 0, { opacity: '0.7' }); });
+    for (var i = 1; i <= 3; i++) { var vx = -h + len * i / 4.2; b += P.path('M' + n(vx) + ' 0 Q' + n(vx + len * 0.06) + ' ' + n(-wid * 0.18) + ' ' + n(vx + len * 0.14) + ' ' + n(-wid * 0.32) + ' M' + n(vx) + ' 0 Q' + n(vx + len * 0.06) + ' ' + n(wid * 0.18) + ' ' + n(vx + len * 0.14) + ' ' + n(wid * 0.32), 'none', tint(stem, 0.2), 0.7, { 'stroke-linecap': 'round', opacity: '0.85' }); }
+    b += fill(rib, stem, 0.7) + P.line(-h - sl + 2, -ws * 0.3, h * 0.2, -ws * 0.2, tint(stem, 0.4), 0.7, { opacity: '0.8' }) + gloss(h * 0.15, -wid * 0.24, h * 0.3, wid * 0.05, col, -6);
+    return sh(d, tf, 2, 2.5) + sh(rib, tf, 2, 2.5) + P.g(tf, b);
+  }
+  // a witlof leaf, a little boat: pale, its tip yellow green
+  function witlofLeaf(q, x, y, a, len, wid) {
+    var tf = P.at(x, y, a), h = len / 2, w = wid, col = '#F2F0D6';
+    var d = P.smooth([[-h, 0], [-h * 0.8, -w * 0.26], [0, -w * 0.46], [h * 0.7, -w * 0.5], [h, -w * 0.2], [h * 1.04, 0], [h, w * 0.2], [h * 0.7, w * 0.5], [0, w * 0.46], [-h * 0.8, w * 0.26]]);
+    var b = fill(d, col, 0.7) + P.path(P.smooth([[-h * 0.7, 0], [-h * 0.5, -w * 0.16], [h * 0.2, -w * 0.3], [h * 0.75, -w * 0.26], [h * 0.86, 0], [h * 0.75, w * 0.26], [h * 0.2, w * 0.3], [-h * 0.5, w * 0.16]]), '#FAF9EC', null, 0);
+    b += P.path(P.smooth([[h * 0.44, -w * 0.38], [h * 0.72, -w * 0.43], [h * 0.93, -w * 0.17], [h * 0.97, 0], [h * 0.93, w * 0.17], [h * 0.72, w * 0.43], [h * 0.44, w * 0.38], [h * 0.62, 0]]), '#DCE592', null, 0, { opacity: '0.9' });
+    b += P.path('M' + n(-h + 2) + ' 0 Q0 0.5 ' + n(h * 0.62) + ' 0', 'none', '#E4E4C2', 1.2, { 'stroke-linecap': 'round' }) + gloss(-h * 0.1, -w * 0.28, h * 0.32, w * 0.05, col, -4);
+    return sh(d, tf, 1.6, 2) + P.g(tf, b);
+  }
+  // an okra pod: broad at the cap, tapering to a point, ridges down it
+  function okraAt(q, x, y, a, len, w) {
+    var tf = P.at(x, y, a), h = len / 2, col = '#5E9A3A', top = [], bot = [];
+    for (var i = 0; i <= 10; i++) { var t = i / 10, hw = w / 2 * (t < 0.1 ? 0.82 : Math.pow((1 - t) / 0.9, 0.7)); top.push([-h + t * len, -hw]); if (i < 10) bot.unshift([-h + t * len, hw]); }
+    var d = P.smooth(top.concat(bot)), b = fill(d, col, 0.8);
+    [-0.55, 0, 0.55].forEach(function (k) { b += P.path('M' + n(-h + 4) + ' ' + n(k * w * 0.4) + ' Q' + n(h * 0.1) + ' ' + n(k * w * 0.36) + ' ' + n(h - 1.5) + ' 0', 'none', ed(col, -0.12), 0.6, { opacity: '0.85' }); });
+    b += gloss(-h * 0.15, -w * 0.24, h * 0.45, w * 0.07, col, 1.5) + fill('M' + n(-h - 7) + ' -1.6 L' + n(-h + 1) + ' -2 L' + n(-h + 1) + ' 2 L' + n(-h - 7) + ' 1.6 Z', '#8A9A4A', 0.6);
+    b += fill('M' + n(-h - 1) + ' ' + n(-w * 0.42) + ' Q' + n(-h + 4.5) + ' ' + n(-w * 0.3) + ' ' + n(-h + 5.5) + ' 0 Q' + n(-h + 4.5) + ' ' + n(w * 0.3) + ' ' + n(-h - 1) + ' ' + n(w * 0.42) + ' Q' + n(-h - 2) + ' 0 ' + n(-h - 1) + ' ' + n(-w * 0.42) + ' Z', '#7EA453', 0.6);
+    return sh(d, tf, 1.4, 1.8) + P.g(tf, b);
+  }
+  // a round of okra: five ridges round the edge, the seeds in their chambers
+  function okraRound(q, x, y, r, a) {
+    var pts = [], tf = P.at(x, y, a);
+    for (var i = 0; i < 10; i++) { var t = i / 10 * 2 * PI, k = i % 2 ? 0.86 : 1; pts.push([Math.cos(t) * r * k, Math.sin(t) * r * k]); }
+    var d = P.smooth(pts), b = fill(d, '#5E9A3A', 0.6) + P.path(P.smooth(scalePts(pts, 0.8, 0, 0)), '#D9E8A8', null, 0);
+    for (var j = 0; j < 5; j++) { var tt = (j + 0.5) / 5 * 2 * PI; b += P.circle(Math.cos(tt) * r * 0.46, Math.sin(tt) * r * 0.46, r * 0.18, '#F4F7E2', ed('#F4F7E2'), 0.4); }
+    return sh(d, tf, 0.9, 1.1) + P.g(tf, b + P.circle(0, 0, r * 0.16, '#C9DC92') + gloss(-r * 0.3, -r * 0.5, r * 0.3, r * 0.1, '#D9E8A8', -30));
+  }
+  // a quarter of an artichoke heart: the dense base, the tender inner leaves fanning up from it
+  function heartQuarter(q, x, y, a, s) {
+    var tf = P.at(x, y, a, s), col = '#D6D08A', d = P.smooth([[0, 9], [-6.5, 6.5], [-9.4, 0], [-9, -6.5], [-6.6, -10], [-4, -8], [-1.6, -11], [1.2, -8.4], [3.8, -11.2], [6, -8.6], [8.8, -9.6], [9.6, -2], [7, 6]]);
+    var b = fill(d, col, 0.7) + P.path(P.blob(q, 5.6, 3.2, 0.06, 8, 0, 5), '#EEE8C0', null, 0);
+    b += P.path(P.smooth([[-8.2, 1.5], [-8, -6], [-6.2, -8.6]], true), 'none', '#A8AE5E', 1.4, { 'stroke-linecap': 'round' }) + P.path(P.smooth([[8.6, -0.5], [8.6, -6.5], [7.6, -8.6]], true), 'none', '#A8AE5E', 1.4, { 'stroke-linecap': 'round' });
+    ['M-0.6 3 Q-5 -1 -5.6 -8', 'M0 3 Q-1.4 -2 -1 -9', 'M0.4 3 Q2.4 -2 3.2 -9.4', 'M0.8 3 Q5.6 -1 6.6 -7.8'].forEach(function (p) { b += P.path(p, 'none', '#B5B068', 0.6, { 'stroke-linecap': 'round' }); });
+    return sh(d, tf, 1, 1.3) + P.g(tf, b + gloss(-3.6, -4, 2.6, 1, col, -60));
+  }
+  // a clove of garlic, peeled: the curved back, the flat inside edge, the root end
+  function cloveAt(q, x, y, a, s) {
+    var tf = P.at(x, y, a, s), col = '#F4ECCF', d = 'M-7.6 2.8 Q-8.6 -3 -2.4 -5.6 Q3.8 -7 8 -2 Q9 0 7.4 1.4 Q1 4 -7.6 2.8 Z';
+    var b = fill(d, col, 0.7) + P.path('M-6.6 1.6 Q0.4 2.6 6.6 0.2', 'none', ed(col, -0.1), 0.5) + P.ellipse(-7.2, 1.6, 1.4, 1.6, '#DCC89A', ed('#DCC89A'), 0.5);
+    return sh(d, tf, 1, 1.3) + P.g(tf, b + gloss(-1.4, -3.2, 3.6, 0.9, col, -12));
+  }
+  // a baton cut square (jicama): flat ends, a highlight down one side, a faint fibre line
+  function batonBar(q, x, y, a, len, w, col) {
+    var h = len / 2, r = w / 2;
+    return P.g(P.at(x + 1.2, y + 1.5, a), P.rect(-h, -r, len, w, 1.4, '#000000', null, 0, { opacity: '0.12' })) + P.g(P.at(x, y, a), P.rect(-h, -r, len, w, 1.4, col, ed(col), 0.6) + P.line(-h * 0.8, r * 0.25, h * 0.7, r * 0.2, ed(col, -0.08), 0.5) + P.rect(-h * 0.7, -r * 0.6, len * 0.6, w * 0.2, 0.6, tint(col, 0.6), null, 0, { opacity: '0.75' }));
+  }
+  // a cabbage leaf along x (wombok, savoy): o.col the blade, o.inner its lighter middle, o.rib the midrib, o.blister puckers
+  function cabbageLeaf(q, x, y, a, len, wid, o) {
+    var tf = P.at(x, y, a), d = ruffleD(q, len, wid, o.frill || 0.06, 28), b = fill(d, o.col, 0.8);
+    b += P.path(ruffleD(q, len * 0.74, wid * 0.66, 0.05, 22), o.inner, null, 0, { transform: tr(len * 0.08, 0) });
+    if (o.blister) b += P.scatter(q, 22, len * 0.36, wid * 0.3, function (sx, sy, i, qq) { return P.path(P.blob(qq, 2.2 + qq() * 1.4, 1.5 + qq(), 0.3, 6, sx + len * 0.05, sy), o.blister, null, 0, { opacity: '0.75' }); });
+    var rib = 'M' + n(-len / 2 - 2) + ' ' + n(-wid * o.rw) + ' Q' + n(-len * 0.1) + ' ' + n(-wid * o.rw * 0.8) + ' ' + n(len * o.re) + ' 0 Q' + n(-len * 0.1) + ' ' + n(wid * o.rw * 0.8) + ' ' + n(-len / 2 - 2) + ' ' + n(wid * o.rw) + ' Z';
+    b += veins(len, wid, o.vein, o.veins || 3, 0.9) + fill(rib, o.rib, 0.7);
+    return sh(d, tf, 2, 2.5) + P.g(tf, b + gloss(len * 0.1, -wid * 0.26, len * 0.14, wid * 0.04, o.inner, -8));
+  }
+  // a cavolo nero leaf: a long dark strap with a wavy edge, blistered either side of the pale rib
+  function cavoloLeaf(q, x, y, a, len, wid) {
+    var tf = P.at(x, y, a), col = '#2F4F3A', h = len / 2, top = [], bot = [], env = function (t) { return Math.pow(Math.sin(PI * (0.06 + 0.9 * t)), 0.6); };
+    for (var i = 0; i <= 16; i++) { var t = i / 16, xx = -h + t * len, hw = wid / 2 * env(t) * (i % 2 ? 1.08 : 0.92); top.push([xx, -hw]); if (i > 0 && i < 16) bot.unshift([xx + 1, hw]); }
+    var d = P.smooth(top.concat(bot)), stem = 'M' + n(-h - 9) + ' 0.4 Q0 0.8 ' + n(h * 0.8) + ' 0', b = fill(d, col, 0.8);
+    for (var k = 1; k < 13; k++) { var tk = k / 13, bx = -h + tk * len, hh = wid / 2 * env(tk); b += P.ellipse(bx, -hh * 0.48, len * 0.026, hh * 0.24, '#456B54', null, 0, { opacity: '0.85' }) + P.ellipse(bx + 1, hh * 0.48, len * 0.026, hh * 0.24, '#456B54', null, 0, { opacity: '0.85' }); }
+    b += P.path(stem, 'none', ed('#8FA88A'), 2.4, { 'stroke-linecap': 'round' }) + P.path(stem, 'none', '#8FA88A', 1.4, { 'stroke-linecap': 'round' });
+    return sh(d, tf, 2, 2.5) + P.path(stem, 'none', '#000000', 2, { opacity: '0.12', transform: tr(2, 2.5) + ' ' + tf, 'stroke-linecap': 'round' }) + P.g(tf, b + gloss(-h * 0.2, -wid * 0.3, h * 0.36, wid * 0.05, col, -3));
+  }
+  // a torn piece of curly kale: a tightly frilled edge round a darker heart, a pale rib through it
+  function kaleBit(q, x, y, s) {
+    var tf = P.at(x, y, q() * 360), pts = [], col = '#3F7230';
+    for (var i = 0; i < 30; i++) { var t = i / 30 * 2 * PI, k = (i % 2 ? 0.74 : 1) * (0.88 + q() * 0.24); pts.push([Math.cos(t) * 11 * s * k, Math.sin(t) * 8 * s * k]); }
+    var d = P.smooth(pts), b = fill(d, col, 0.7) + P.path(P.smooth(scalePts(pts, 0.64, 0, 0)), '#5A9040', null, 0, { opacity: '0.9' }) + P.path(P.smooth(scalePts(pts, 0.3, 0, 0)), '#3A6A2C', null, 0);
+    b += P.path('M' + n(-12 * s) + ' ' + n(s) + ' Q' + n(-3 * s) + ' ' + n(-0.6 * s) + ' ' + n(5 * s) + ' ' + n(-1.5 * s), 'none', '#A9C77A', 1.1 * s, { 'stroke-linecap': 'round' });
+    return sh(d, tf, 1.2, 1.6) + P.g(tf, b + gloss(-3 * s, -4 * s, 3.4 * s, s, '#5A9040', -15));
+  }
+  // a stem of broccoli rabe: a thin stalk, two lobed leaves off it, a loose head of buds with a few yellow flowers
+  function rabeAt(q, x, y, a, len) {
+    var tf = P.at(x, y, a), st = '#7EA453', lf = '#4A8436', bud = '#4F8A34', stem = 'M0 0 Q' + n(len * 0.5) + ' ' + n((q() - 0.5) * 4) + ' ' + n(len) + ' 0', shd = '', b = '';
+    shd += P.path(stem, 'none', '#000000', 2.4, { opacity: '0.12', transform: tr(1, 1.3) + ' ' + tf, 'stroke-linecap': 'round' });
+    b += P.path(stem, 'none', ed(st), 3.2, { 'stroke-linecap': 'round' }) + P.path(stem, 'none', st, 2, { 'stroke-linecap': 'round' });
+    [[len * 0.28, -1, -38, 22], [len * 0.55, 1, 34, 19]].forEach(function (l) {
+      var ld = lobedD(q, l[3], l[3] * 0.42, 3, 0.35, 0.35), lt = P.at(l[0], l[1], l[2]) + ' ' + tr(l[3] / 2, 0);
+      shd += sh(ld, tf + ' ' + lt, 1, 1.3);
+      b += P.g(lt, fill(ld, lf, 0.6) + P.path('M' + n(-l[3] / 2) + ' 0 L' + n(l[3] * 0.36) + ' 0', 'none', tint(lf, 0.35), 0.6));
+    });
+    shd += sh(circD(5.4, len + 3, 0), tf, 1, 1.3);
+    P.spots(q, 9, 4.4, 3.4).forEach(function (p) { b += P.circle(len + 3 + p[0], p[1], 1.7, bud, ed(bud), 0.5); });
+    b += P.circle(len + 4.5, -1.6, 0.9, '#F2D24C', ed('#F2D24C'), 0.4) + P.circle(len + 1.4, 2, 0.9, '#F2D24C', ed('#F2D24C'), 0.4);
+    return shd + P.g(tf, b);
+  }
+  // a fennel bulb cut in half: the stalks cut short, the layers nested down to the core at the base
+  function fennelHalf(q, x, y, a, s) {
+    var tf = P.at(x, y, a, s), col = '#EEF2D6', pts = [[0, -21], [8, -17.5], [16, -11], [22.5, -1], [24, 9], [19.5, 18.5], [10, 23.5], [0, 24.5], [-10, 23.5], [-19.5, 18.5], [-24, 9], [-22.5, -1], [-16, -11], [-8, -17.5]], d = P.smooth(pts), shd = '', b = '';
+    [[-7, -15, -24, 15], [0, -17, 0, 17], [7, -15, 24, 15]].forEach(function (k) {
+      var sd = 'M-3.6 0 L-3 ' + n(-k[3]) + ' Q0 ' + n(-k[3] - 1.4) + ' 3 ' + n(-k[3]) + ' L3.6 0 Z', st = P.at(k[0], k[1], k[2]);
+      shd += sh(sd, tf + ' ' + st, 2, 2.5);
+      b += P.g(st, fill(sd, '#A9C870', 0.7) + P.ellipse(0, -k[3], 3, 1.1, '#DCEAB4', ed('#DCEAB4'), 0.5) + P.line(-1.2, -2, -1, -k[3] + 2, tint('#A9C870', 0.4), 0.7, { opacity: '0.8' }));
+    });
+    b += fill(d, col, 0.9) + P.path(P.smooth(scalePts(pts, 0.93, 0, 24)), 'none', '#CFE29E', 2.2);
+    [0.76, 0.55, 0.34].forEach(function (k) { b += P.path(P.smooth(scalePts(pts, k, 0, 24)), 'none', '#D8E4B4', 0.8); });
+    b += fill('M-5 24 Q0 10 5 24 Z', '#E4EAC2', 0.6) + P.ellipse(0, 24.4, 6.5, 1.8, '#D6CCA0', ed('#D6CCA0'), 0.6);
+    return shd + sh(d, tf, 2, 2.5) + P.g(tf, b + gloss(-10, -5, 5, 1.8, col, -55));
+  }
+  // a shaving of fennel: a thin arch with its layer line, and a wisp of frond
+  function fennelShave(q, x, y, a, s) {
+    var tf = P.at(x, y, a, s), col = '#EEF3D8', d = 'M-12 2 Q-11 -8 0 -9 Q11 -8 12 2 Q11.4 4.6 9 3.4 Q8 -4.6 0 -5.2 Q-8 -4.6 -9 3.4 Q-11.4 4.6 -12 2 Z';
+    return sh(d, tf, 0.9, 1.1) + P.g(tf, fill(d, col, 0.6) + P.path('M-10.6 2.4 Q-9.8 -6.8 0 -7.2 Q9.8 -6.8 10.6 2.4', 'none', '#CFE09C', 0.8) + gloss(-4, -7.6, 3.4, 0.6, col, -10));
+  }
+  function frondAt(q, x, y, a, s) {
+    var col = '#5E9A3A', b = P.path('M-1 0 Q5 -0.8 11 0.4', 'none', col, 0.6, { 'stroke-linecap': 'round' });
+    for (var i = 0; i < 5; i++) { var px = 1.5 + i * 2.1, k = i % 2 ? 1 : -1; b += P.path('M' + n(px) + ' 0 q1.6 ' + n(k * 1.8) + ' 3.6 ' + n(k * 2.6) + ' M' + n(px + 0.4) + ' 0 q1.4 ' + n(-k * 1.4) + ' 3 ' + n(-k * 2.2), 'none', col, 0.5, { 'stroke-linecap': 'round' }); }
+    return P.g(P.at(x, y, a, s), b);
+  }
+  // a long roast wedge of butternut: the tan skin along its back, the scoop of the seed hollow on the pieces from the bulb (cav)
+  function butternutWedge(q, x, y, a, len, cav) {
+    var h = len / 2, tf = P.at(x, y, a), top = [[-h, -1.5], [-h * 0.62, -7.5], [0, -10], [h * 0.62, -7.5], [h, -2]];
+    var bot = cav ? [[h, 3], [h * 0.6, 6], [h * 0.3, 2.6], [0, 0.4], [-h * 0.3, 2.6], [-h * 0.6, 6], [-h, 3]] : [[h, 3], [h * 0.5, 6.4], [-h * 0.5, 6.4], [-h, 3]];
+    var pts = top.concat(bot), d = P.smooth(pts), b = fill(d, '#EE9A36', 0.9) + P.path(P.smooth(scalePts(pts, 0.8, 0, 0)), '#F3AC52', null, 0);
+    b += P.path(P.smooth(top.map(function (p) { return [p[0] * 0.92, p[1] + 1.4]; }), true), 'none', '#D9B47A', 2, { 'stroke-linecap': 'round' });
+    if (cav) b += P.path(P.smooth(bot.slice(1, -1).map(function (p) { return [p[0], p[1] - 1.2]; }), true), 'none', '#E07E22', 1.4, { 'stroke-linecap': 'round', opacity: '0.8' });
+    b += P.scatter(q, 3, h * 0.6, 2.5, function (sx, sy, i, qq) { return P.path(P.blob(qq, 3 + qq() * 3, 1.5, 0.3, 6, sx, sy + 1), '#B9661C', null, 0, { opacity: '0.5' }); });
+    return sh(d, tf, 2, 2.5) + P.g(tf, b + gloss(-h * 0.2, -5, h * 0.3, 1.2, '#F3AC52', -2));
+  }
+  // half an acorn squash, cut across: the ribbed dark green skin, the orange flesh, the hollow glazed with butter
+  function acornHalf(P, rnd) {
+    var pts = [];
+    for (var i = 0; i < 60; i++) { var t = i / 60 * 2 * PI, r = 1 - 0.07 * (1 - Math.pow(Math.abs(Math.sin(t * 5)), 0.6)); pts.push([Math.cos(t) * 37 * r, Math.sin(t) * 34 * r]); }
+    var d = P.smooth(pts), out = P.shadow(d) + fill(d, '#3A5A2E', 1) + P.path(P.smooth(scalePts(pts, 0.92, 0, 0)), '#E9A23C', null, 0) + P.path(P.smooth(scalePts(pts, 0.88, 0, 0)), '#F2B44C', null, 0);
+    for (var j = 0; j < 4; j++) { var ta = (j * 90 + 30) * PI / 180, fx = Math.cos(ta) * 35, fy = Math.sin(ta) * 32.2; out += P.ellipse(fx, fy, 2.4, 0.9, '#D98A2E', null, 0, { transform: rot(ta * 180 / PI + 90, fx, fy), opacity: '0.85' }); }
+    out += P.path(P.blob(rnd, 25, 23, 0.03, 12), '#F6C466', null, 0, { opacity: '0.8' });
+    for (var k = 0; k < 7; k++) { var tb = (k / 7 + rnd() * 0.05) * 2 * PI; out += P.path(P.blob(rnd, 3 + rnd() * 2, 1.6, 0.3, 6, Math.cos(tb) * 28, Math.sin(tb) * 26), '#C9762A', null, 0, { opacity: '0.45' }); }
+    out += fill(P.blob(rnd, 15, 13.5, 0.05, 10, 0, 0.5), '#E08A2C', 0.8) + P.path(P.blob(rnd, 10, 8.5, 0.1, 9, -1, 1), '#C9702A', null, 0, { opacity: '0.6' });
+    return out + gloss(-4, -4, 4, 1.4, '#E08A2C', -30) + gloss(-15, -17, 8, 2.2, '#F2B44C', -35);
+  }
+  // half a spaghetti squash, roasted: the pale yellow skin, the flesh raked into strands down the middle
+  function spaghettiHalf(P, rnd) {
+    var d = P.blob(rnd, 52, 31, 0.02, 14), out = P.shadow(d) + fill(d, '#E9C055', 1) + P.path(P.blob(rnd, 48, 27.5, 0.02, 14), '#F6DE98', null, 0);
+    out += P.path(P.blob(rnd, 38, 19, 0.05, 12, 1, 0), '#EDC866', null, 0, { opacity: '0.85' });
+    out += strands(rnd, 30, 33, 15, ['#F8E4A0', '#F2CE68', '#FBEFC2', '#F4D67E'], 15, 1.3, 4, { curl: true, edgeW: 0.5 });
+    return out + P.path(P.blob(rnd, 6, 3, 0.3, 7, 30, 12), '#C9902E', null, 0, { opacity: '0.45' }) + gloss(-26, -18, 12, 2.4, '#F6DE98', -8);
+  }
+  // a whole head of garlic lying on its side, neck up: the cloves bulge through the papery skin
+  function garlicHead(P, rnd) {
+    var col = '#F5F1E6', pts = [[0, -25], [2.6, -20.5], [8, -15.5], [12.6, -12.2], [17.5, -6.5], [20.2, -0.5], [19.2, 3.4], [20.2, 7.6], [16.5, 13], [10, 16.3], [6.5, 16.4], [0, 17.6], [-6.5, 16.4], [-10, 16.3], [-16.5, 13], [-20.2, 7.6], [-19.2, 3.4], [-20.2, -0.5], [-17.5, -6.5], [-12.6, -12.2], [-8, -15.5], [-2.6, -20.5]];
+    var d = P.smooth(pts), tf = 'rotate(-25)', b = fill(d, col, 0.9);
+    ['M-1 16 Q-19 2 -1.4 -20', 'M-0.5 16 Q-8 -1 -0.6 -20', 'M0.5 16 Q8 -1 0.6 -20', 'M1 16 Q19 2 1.4 -20'].forEach(function (p) { b += P.path(p, 'none', '#DDD3C3', 0.7); });
+    ['M-13 1 Q-11.6 -6 -7.4 -10.6', 'M-4.6 6 Q-5 -2 -3.4 -8', 'M10.6 4 Q11 -3 7.6 -9'].forEach(function (p) { b += P.path(p, 'none', '#B987AE', 0.7, { opacity: '0.6', 'stroke-linecap': 'round' }); });
+    [-4, -1.5, 1, 3.5].forEach(function (rx) { b += P.line(rx, 17.2, rx * 1.3, 20.6, '#C9B489', 0.6); });
+    b += P.ellipse(0, 16.6, 6.5, 1.8, '#D6C29C', ed('#D6C29C'), 0.6) + fill('M-1.6 -20 L0 -27.5 L1.6 -20 Z', '#E8DFCC', 0.6);
+    return sh(d, tf, 2, 2.5) + P.g(tf, b + gloss(-9, -5, 4.5, 1.8, col, -62));
+  }
+  // a globe artichoke lying on its side, stem to the left: rows of pointed scales, purple at their tips
+  function artichoke(P, rnd) {
+    var cx = 5, rx = 25, ry = 23, body = P.blob(rnd, rx, ry, 0.02, 12, cx, 0), stem = 'M-40 -3.4 L-17 -4.6 L-17 4.6 L-40 3.4 Q-41.4 0 -40 -3.4 Z', sc = 'M-7 -6 Q2 -7.4 7.4 0 Q2 7.4 -7 6 Q-8.6 0 -7 -6 Z';
+    var out = P.shadow(body) + P.shadow(stem) + fill(stem, '#9CAE68', 0.8) + P.line(-38, -1.2, -19, -1.6, tint('#9CAE68', 0.4), 0.8, { opacity: '0.75' }) + P.ellipse(-40, 0, 1.2, 3.2, '#DCE2B6', ed('#DCE2B6'), 0.5) + fill(body, '#5E7A44', 0.9);
+    [24, 15, 6, -3, -11].forEach(function (xx, c) {
+      var hh = ry * Math.sqrt(Math.max(0.05, 1 - Math.pow((xx - cx) / (rx * 1.02), 2))), rows = c % 2 ? 4 : 3, s = 0.62 + 0.38 * hh / ry;
+      for (var j = 0; j < rows; j++) {
+        var yy = -hh * 0.7 + j * hh * 1.4 / (rows - 1), col = (c + j) % 2 ? '#7E9A5A' : '#86A060', tf = P.at(xx, yy, yy / hh * 32, s);
+        out += sh(sc, tf, 0.8, 1) + P.g(tf, fill(sc, col, 0.7) + P.path(P.leafD(5, 4), '#8E5A7A', null, 0, { transform: tr(4, 0), opacity: '0.55' }) + P.path('M-5 0 L3 0', 'none', ed(col, -0.1), 0.5));
+      }
+    });
+    return out + gloss(10, -14, 5, 1.4, '#86A060', -20);
+  }
+
   L.add('veg', [
     // greens and salad leaves
     { id: 'cos-leaf', name: 'Cos lettuce leaf', sub: 'Greens and salad leaves', kw: 'cos romaine lettuce leaf baby cos salad', form: 'leaf', cook: 'fresh', role: 'salad', n: 1, w: 83, h: 29, side: { s: 'leafy', h: 6, c: '#77A845' }, draw: function (P, rnd) { var l = 82, w = 34, d = ruffleD(rnd, l, w, 0.05, 26); return P.shadow(d) + P.path(d, '#77A845', '#4F7F2F', 1) + P.path(ruffleD(rnd, l * 0.72, w * 0.55, 0.04), '#A9CC6A', null, 0, { transform: tr(-l * 0.12, 0) }) + P.path(ribD(l, 6, 0.4), '#E6F0C6', null, 0) + veins(l, w, '#E6F0C6', 4) + P.hl(10, -8, 14, 2.4, '#FFFFFF', 0.3, -6); } },
