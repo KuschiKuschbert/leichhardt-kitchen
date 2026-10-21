@@ -2,11 +2,12 @@
 // measured on the book's own dishes. In the browser, the head chef's Draw it for me picks the servingware and the plating
 // for a burger, steaks of two sizes, a Caesar, the grill board, a parmy, a batch recipe and a dessert; every part sits on
 // the servingware, sauce under and toppings on top; Try another layout and Tidy up; the Pass labels come from the parts;
-// a pick is remembered for the next recipe; the side view and the burger build are made from the recipe and save to
+// a pick is remembered for the next recipe; an ingredient with its own card (Cowboy candy, Cowboy butter) is drawn from
+// what that card makes, in the book's own look; the side view and the burger build are made from the recipe and save to
 // their slots. With SHOTS=1 each drawing is saved to tests/shots/ to look at by eye.
 const L = require('./lib');
 const { R, ok } = L.results();
-const M = require('./smart-match');
+const M = require('./smart-match'), CR = require('./compose-read'), SC = require('./style-check');
 const path = require('path'), fs = require('fs'), SHOTS = process.env.SHOTS ? path.join(__dirname, 'shots') : '';
 if (SHOTS) fs.mkdirSync(SHOTS, { recursive: true });
 const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
@@ -29,6 +30,11 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   // without a browser: the matcher on the book's own dishes
   const m = M.measure();
   ok(m.share >= 0.85, 'matcher: ' + Math.round(m.share * 100) + '% of the ' + m.shown + ' visible ingredients on ' + m.dishes + ' dishes matched with confidence (at least 85%); unsure: ' + m.unsure.length + ', none: ' + m.misses.join(', '));
+  // the recipe reader (js/compose.js) on the book's own cards, and the drawings it makes against the book's look
+  const cr = CR.check();
+  ok(!cr.errs.length && cr.formShare >= 0.95 && cr.share >= 0.9, 'reader: ' + Math.round(cr.formShare * 100) + '% of ' + cr.cards + ' cards read into what they make, ' + Math.round(cr.share * 100) + '% of their lines; expected readings ' + (cr.errs.join('; ') || 'all match'));
+  const sc = SC.check();
+  ok(!sc.errs.length && sc.palShare >= 0.9 && Math.abs(sc.ratio - 0.74) < 0.05, 'look: ' + sc.parts + ' parts drawn from their cards, outlines at ' + sc.ratio.toFixed(2) + ' of their fill (the book: 0.74), ' + Math.round(sc.palShare * 100) + '% of fills the book\'s own colours ' + sc.errs.slice(0, 5).join('; '));
   const X = m.S;
   ok(X.matchIng({ name: 'Fried shallots' }, { name: 'x' }).id === 'crispy-shallots' && X.matchIng({ name: 'Tartare sauce' }, { name: 'x' }).id === 'tartare-dollop', 'matcher: fried shallots are crispy shallots, tartare sauce a dollop of tartare');
   ok(X.matchIng({ name: 'Roasted honey pumpkin purée', note: 'big kitchen spoon swoop and smear' }, { name: 'x' }).id === 'pumpkin-puree-swoosh', 'matcher: the recipe\'s words for the shape (swoop and smear) pick the swoosh');
@@ -199,23 +205,69 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   ok(w.els.some(e => e.id === 'parmy-french' && /French parmi topper/.test(e.also || '')), 'French parmy: the topper card makes the schnitzel a French parmy');
   await p.context().close();
 
-  // a pick is remembered: the wings' Cowboy candy is unsure; the head chef picks it, saves, and the riblets get it right
+  // drawn from its own card (asked for by the head chef, 21 Oct 2026): the wings' Cowboy candy is what the Cowboy candy
+  // card makes, jalapeño rings in a turmeric syrup with mustard seed; nothing to pick
   p = await drawn('wings/plate');
   w = await S(p);
-  ok(w.unsure.indexOf('Cowboy candy') >= 0 && await p.$('.dw-un [data-dw="sm-pick"]') !== null, 'unsure: Cowboy candy asks which drawing, with guesses');
+  const cc = w.els.find(e => e.ing === 'Cowboy candy');
+  ok(!!cc && cc.t === 'raw' && cc.made === 'cowboy-candy' && w.unsure.indexOf('Cowboy candy') < 0, 'from its card: the wings\' Cowboy candy is drawn from the Cowboy candy card, nothing to pick');
+  const madeNote = (await L.txt(p, '.dw-made')) || '';
+  ok(/Cowboy candy/.test(madeNote) && /jalape/i.test(madeNote) && /turmeric/i.test(madeNote) && /mustard seed/i.test(madeNote), 'from its card: the note says what it is drawn from (' + madeNote + ')');
+  // the colours by hue: rings drawn as green strokes, the syrup a gold fill
+  const hues = !cc ? {} : await p.evaluate(k => {
+    const hue = h => { const c = [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255), mx = Math.max(...c), mn = Math.min(...c), d = mx - mn; if (!d) return -1; const x = mx === c[0] ? (c[1] - c[2]) / d % 6 : mx === c[1] ? (c[2] - c[0]) / d + 2 : (c[0] - c[1]) / d + 4; return (x * 60 + 360) % 360; };
+    const body = window.LK_DRAW.state().d.defs[k] || '', out = { ring: [], fill: [] };
+    body.replace(/<circle[^>]*fill="none"[^>]*stroke="(#[0-9A-Fa-f]{6})"/g, (m, c) => { out.ring.push(hue(c)); return m; });
+    body.replace(/<path[^>]*fill="(#[0-9A-Fa-f]{6})"/g, (m, c) => { out.fill.push(hue(c)); return m; });
+    return out;
+  }, cc.a);
+  ok((hues.ring || []).some(h => h >= 60 && h <= 110) && (hues.fill || []).some(h => h >= 30 && h <= 50), 'from its card: green jalapeño rings in a gold syrup (' + JSON.stringify(hues) + ')');
+  await p.click('[data-dw="save"]');
+  await wait(p, () => /Saved/.test((document.querySelector('.mg-toasts .p-toast') || {}).textContent || ''));
+  s = await store(p);
+  const wd = s[fsKey(['drawings', 'wings-plate'])] || {}, wpins = ((s[fsKey(['recipes', 'wings'])] || { r: {} }).r.pins || []);
+  ok(!!cc && !!JSON.parse(wd.defs || '{}')[cc.a] && wpins.some(x => x.label === 'Cowboy candy' && x.link === 'cowboy-candy'), 'from its card: saved with its drawing, and its Pass label links to the card');
+  ok(!errs(p).length, 'from its card: no page errors ' + errs(p).join(' | '));
+  await p.context().close();
+  // opened again: the same part, read back from the saved drawing
+  p = await L.open(b, '#/manage/draw/wings-plate', { who: 'ann', extra: Object.assign({}, s, cfg()), wait: 1200, width: 1280, height: 900 });
+  await wait(p, () => !!(window.LK_DRAW && window.LK_DRAW.state() && window.LK_DRAW.state().d && window.LK_DRAW.state().d.els.length), null, 20000);
+  w = await S(p);
+  ok(!!cc && w.els.some(e => e.made === 'cowboy-candy' && e.a === cc.a), 'from its card: the saved drawing opens with the same Cowboy candy');
+  await p.context().close();
+  // the flank's Cowboy butter is the butter with the bourbon BBQ rub through it; the steaks' mushroom sauce has its
+  // mushrooms in it
+  p = await drawn('flank/plate');
+  w = await S(p);
+  ok(w.els.some(e => e.ing === 'Cowboy butter' && e.made === 'cowboy-butter'), 'from its card: the flank\'s Cowboy butter is drawn from its card');
+  await p.context().close();
+  // added by hand: the chip for an ingredient with a card adds what its card makes
+  p = await L.open(b, '#/manage/draw/new/riblets/plate', { who: 'ann', extra: cfg(), wait: 1200, width: 1280, height: 900 });
+  await wait(p, () => !!document.querySelector('.dw-miss [data-dw="ing"][data-v="Cowboy candy"]'), null, 20000);
+  await p.click('.dw-miss [data-dw="ing"][data-v="Cowboy candy"]');
+  await wait(p, () => window.LK_DRAW.state().d.els.some(e => e.made === 'cowboy-candy'));
+  w = await S(p);
+  ok(w.els.some(e => e.ing === 'Cowboy candy' && e.made === 'cowboy-candy' && e.t === 'raw'), 'by hand: the Cowboy candy chip adds what its card makes');
+  await p.context().close();
+
+  // a pick is remembered: the donut fries are unsure; the head chef picks a drawing, saves, and the next drawing of them
+  // gets it right first time
+  p = await drawn('donut-fries/plate');
+  w = await S(p);
+  ok(w.unsure.indexOf('Donut fries') >= 0 && await p.$('.dw-un [data-dw="sm-pick"]') !== null, 'unsure: Donut fries asks which drawing, with guesses');
   const pick = await p.getAttribute('.dw-un [data-dw="sm-pick"]', 'data-v');
   await p.click('.dw-un [data-dw="sm-pick"]'); await L.settle(p, 300);
   w = await S(p);
-  ok(w.els.some(e => e.ing === 'Cowboy candy') && w.unsure.indexOf('Cowboy candy') < 0, 'pick: one tap puts it on the plate');
+  ok(w.els.some(e => e.ing === 'Donut fries') && w.unsure.indexOf('Donut fries') < 0, 'pick: one tap puts it on the plate');
   await p.click('[data-dw="save"]');
   await wait(p, () => /Saved/.test((document.querySelector('.mg-toasts .p-toast') || {}).textContent || ''));
   s = await store(p);
   const learnt = (s[fsKey(['book', 'matches'])] || {}).m || {};
-  ok(learnt['cowboy candy'] === pick.split('|')[1] && (s[fsKey(['book', 'matches'])] || {}).by === 'ann', 'pick: saved to book/matches with the drawing');
+  ok(learnt['donut fry'] === pick.split('|')[1] && (s[fsKey(['book', 'matches'])] || {}).by === 'ann', 'pick: saved to book/matches with the drawing (' + JSON.stringify(learnt) + ')');
   await p.context().close();
-  p = await drawn('riblets/plate', { extra: Object.assign({}, s, cfg()) });
+  p = await drawn('donut-fries/plate', { extra: Object.assign({}, s, cfg()) });
   w = await S(p);
-  ok(w.unsure.indexOf('Cowboy candy') < 0 && w.els.some(e => e.ing === 'Cowboy candy' && e.id === pick.split('|')[1]), 'pick: the next recipe with Cowboy candy gets it right first time');
+  ok(w.unsure.indexOf('Donut fries') < 0 && w.els.some(e => e.ing === 'Donut fries' && e.id === pick.split('|')[1]), 'pick: the next drawing of Donut fries gets it right first time');
   ok(!errs(p).length, 'pick: no page errors ' + errs(p).join(' | '));
   await p.context().close();
 

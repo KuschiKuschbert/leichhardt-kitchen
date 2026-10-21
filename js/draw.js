@@ -257,7 +257,7 @@
     }
     return best || [a.cx, a.cy];
   }
-  function layerOf(el) { if (el.t === 'raw') return 2; if (el.t !== 'item') return 5; var it = itemOf(el.a); return it ? (ROLE_LAYER[it.role] == null ? 2 : ROLE_LAYER[it.role]) : 2; }
+  function layerOf(el) { if (el.t === 'raw') return el.role && ROLE_LAYER[el.role] != null ? ROLE_LAYER[el.role] : 2; if (el.t !== 'item') return 5; var it = itemOf(el.a); return it ? (ROLE_LAYER[it.role] == null ? 2 : ROLE_LAYER[it.role]) : 2; }
   // sauce goes under the food, garnish and toppings over it: the index a new piece of this layer is put at
   function insertAt(layer) { var i = W.d.els.length; while (i > 0 && layerOf(W.d.els[i - 1]) > layer) i--; return i; }
   // how big to draw a piece for an amount like "150 g", "2 slices" or "100 ml" (its area follows the weight)
@@ -323,13 +323,24 @@
   }
   function addIng(name) {
     var i = ingOf(name); if (!i) return;
-    var id = matchIng(i);
+    var id = matchIng(i), S = window.LK_SMART;
+    // the ingredient has its own recipe card: drawn from what it is made of and how it is prepped (js/compose.js)
+    var mk = S && S.made ? S.made(i, W.d) : null;
+    if (mk) { W.sel = []; before(); addMade(mk, name, scaleFor(mk, i.q)); changed(); say(name + ' added, drawn from its recipe'); return; }
     if (!id) { W.panel = 'lib'; W.q = name; W.pendingIng = name; W.more = 0; draw(); say('No drawing found for ' + name + '. Pick one from the library.'); return; }
     var it = LIB.get(id);
     // each ingredient gets its own spot (a part added while another is picked would sit on it)
     W.sel = [];
     before(); addItem(id, { ing: name, scale: scaleFor(it, i.q), count: countFor(it, i.q) }); changed();
     say(name + ' added');
+  }
+  // a piece drawn from an ingredient's own recipe card (js/compose.js): a raw part with its drawing kept in defs
+  function addMade(mk, name, s) {
+    var key = mk.key, at = freeSpot(mk.w * s, mk.h * s);
+    W.d.defs[key] = mk.body;
+    var el = { t: 'raw', a: key, bx: mk.box.map(n1).join(' '), role: mk.role, made: mk.made, ms: mk.ms, x: n1(at[0]), y: n1(at[1]), sx: n1(s * 100) / 100, sy: n1(s * 100) / 100, r: 0, ing: name, ii: ingIndex(name) };
+    var k = insertAt(layerOf(el));
+    W.d.els.splice(k, 0, el); W.sel = [k];
   }
   // the Pass labels for a plate or pan drawing, one for each ingredient on it, where its parts are
   function autoPins(d, r, vb) {

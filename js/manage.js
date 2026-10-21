@@ -680,8 +680,8 @@
         // a category file that fails to load leaves its drawings out; the editor still opens
         return Promise.all(window.LK_LIB.files.map(function (f) { return A.load(f).catch(function () {}); }).concat([A.load('js/draw.js')]));
       }).then(function () {
-        // without the smart creator the editor still works by hand
-        return A.load('js/smart.js').catch(function () {});
+        // without the smart creator the editor still works by hand; the recipe reader (js/compose.js) needs it first
+        return A.load('js/smart.js').then(function () { return A.load('js/compose.js'); }).catch(function () {});
       }).catch(function (x) { drawLoad = null; throw x; });
     }
     return drawLoad;
