@@ -237,9 +237,10 @@
     });
   }
   function shavings(P, rnd) {
+    // thin angular sheets, a little see-through, one edge curled over
     return P.scatter(rnd, 8, 22, 15, function (x, y, i, q) {
-      var l = 6 + q() * 4, w = 3 + q() * 2.4, d = P.smooth([[-l, -w * 0.4], [-l * 0.3, -w], [l * 0.6, -w * 0.8], [l, w * 0.1], [l * 0.3, w], [-l * 0.6, w * 0.7]]);
-      return P.g(P.at(x, y, q() * 180), P.shadow(d, 0.8, 1.2) + P.path(d, '#F3E3B0', '#D2B878', 0.6, { opacity: '0.95' }) + P.path('M' + N(-l * 0.6) + ' ' + N(-w * 0.5) + ' Q0 ' + N(-w * 1.1) + ' ' + N(l * 0.7) + ' ' + N(-w * 0.4), 'none', '#FBF2D2', 1.2, { opacity: '0.85', 'stroke-linecap': 'round' }) + P.crumbs(q, 2, l * 0.5, w * 0.4, ['#FFFBEA'], 0.5));
+      var l = 7 + q() * 4, w = 5 + q() * 2.6, pts = [[-l, -w * (0.3 + q() * 0.4)], [-l * 0.1, -w], [l, -w * (0.5 + q() * 0.4)], [l * (0.7 + q() * 0.2), w * 0.8], [-l * 0.4, w], [-l * 0.9, w * 0.5]], d = poly(pts);
+      return P.g(P.at(x, y, q() * 180), P.shadow(d, 0.8, 1.2) + P.path(d, '#F5E8BE', '#D2B878', 0.6, { opacity: '0.95', 'stroke-linejoin': 'round' }) + P.path(poly(sc(pts, 0.6, 0.55, -1, 0.5)), '#FBF4DA', null, 0, { opacity: '0.7' }) + P.line(pts[1][0], pts[1][1] + 0.6, pts[2][0] - 0.6, pts[2][1] + 0.8, '#E2CC8E', 1.6, { opacity: '0.9' }));
     }, 9);
   }
   function fetaCubes(P, rnd) {
@@ -259,13 +260,12 @@
     var ball = P.blob(rnd, 28, 27, 0.04, 12), out = P.shadow(ball, 2, 3) + P.path(ball, '#F9F7F0', '#D6D0C0', 1);
     [[-20, -4], [-12, -16], [4, -21], [16, -12], [20, -2]].forEach(function (p) { out += P.path('M-2 -15 Q' + N(p[0] * 0.5) + ' ' + N(p[1] * 0.6 - 6) + ' ' + N(p[0]) + ' ' + N(p[1]), 'none', '#E8E2D4', 1.2, { 'stroke-linecap': 'round' }); });
     out += P.path(P.blob(rnd, 4, 3, 0.2, 7, -2, -15), '#F2EEE4', '#D6D0C0', 0.7);
-    var spill = P.blob(rnd, 22, 13, 0.22, 12, 8, 14);
-    out += P.path(spill, '#F3EAD0', '#DCCFAE', 0.8);
-    var tear = 'M-14 6';
-    for (var i = 1; i <= 8; i++) tear += ' L' + N(-14 + i * 4.5) + ' ' + N(6 + (i % 2 ? -2.5 : 1.5) + i * 0.4);
-    out += P.path(tear, 'none', '#D6D0C0', 1.1, ROUND);
-    out += P.scatter(rnd, 9, 16, 8, function (x, y, i, q) { return P.path('M' + N(x - 3) + ' ' + N(y) + ' Q' + N(x) + ' ' + N(y - 2.5) + ' ' + N(x + 3) + ' ' + N(y), 'none', i % 2 ? '#FFFFFF' : '#E3D6B4', 1.2, { 'stroke-linecap': 'round' }); }).replace(/^/, '');
-    out = out.replace(/$/, '');
+    // the opening, then the stracciatella spilling out of it, shreds of cream through it
+    out += P.path(P.blob(rnd, 16, 9, 0.12, 10, 5, 6), '#EADFBF', '#D6CCAE', 0.8);
+    var spill = P.blob(rnd, 21, 12, 0.2, 12, 9, 15);
+    out += P.path(spill, '#F4ECD3', '#DCCFAE', 0.8);
+    out += P.path('M-11 2 Q-4 -3 4 -1 Q12 -3 20 3', 'none', '#D2CAB8', 1.3, { 'stroke-linecap': 'round' });
+    out += P.scatter(rnd, 16, 17, 9, function (x, y, i, q) { var t = q() * Math.PI, l = 2.4 + q() * 2; return P.path('M' + N(x - Math.cos(t) * l) + ' ' + N(y + 13 - Math.sin(t) * l) + ' Q' + N(x + 1.5) + ' ' + N(y + 12) + ' ' + N(x + Math.cos(t) * l) + ' ' + N(y + 13 + Math.sin(t) * l), 'none', i % 2 ? '#FFFFFF' : '#E6DBBC', 1.3, { 'stroke-linecap': 'round' }); });
     out += P.g('translate(8 15)', P.scatter(rnd, 4, 18, 10, function (x, y, i, q) { return P.circle(x, y, 1.6 + q() * 1.6, '#C9B04A', null, 0, { opacity: '0.55' }); }) + P.crumbs(rnd, 8, 18, 10, ['#3A342E'], 0.5));
     return out + P.hl(-10, -10, 9, 4, '#FFFFFF', 0.7, -25);
   }

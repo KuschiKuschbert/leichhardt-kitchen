@@ -454,8 +454,9 @@
         out += P.hl(x - 3, -4.5, 3.4, 1.4, '#FFFFFF', 0.3, -20);
       }
       if (o.satay) {
-        out += P.path(P.smooth([[-48, -6], [-38, 5], [-26, -6], [-14, 6], [-2, -5], [10, 6], [22, -6], [34, 5], [46, -4]], true), 'none', '#B9772E', 3.4, { 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
-        out += P.crumbs(rnd, 14, 44, 8, ['#E2C08A', '#C99A5A'], 1);
+        var span = (k - 1) / 2 * gap + 6, sd = 'M' + P.n(-span) + ' -2 Q' + P.n(-span / 2) + ' 5 0 -1 T' + P.n(span) + ' 0';
+        out += P.path(sd, 'none', '#8A5420', 5.4, { 'stroke-linecap': 'round' }) + P.path(sd, 'none', '#C08A3E', 4, { 'stroke-linecap': 'round' });
+        out += P.crumbs(rnd, 16, span, 6, ['#E8CC98', '#B9864A'], 1);
       }
       return out;
     };
@@ -987,7 +988,7 @@
     { id: 'parmy-french', name: 'French parmy', sub: 'Parmy', kw: 'parmigiana french brie', form: 'piece', cook: 'crumbed', role: 'main', g: 360, w: 136, h: 96, of: 'parmy', side: { s: 'slab', h: 16, c: C.golden }, draw: parmy(['napoli', 'cheese', 'brie']) },
     { id: 'parmy-meat-lovers', name: 'Meat lovers parmy', sub: 'Parmy', kw: 'parmigiana meat lovers pepperoni sausage bacon bbq', form: 'piece', cook: 'crumbed', role: 'main', g: 400, w: 136, h: 96, of: 'parmy', side: { s: 'slab', h: 18, c: C.golden }, draw: parmy(['napoli', 'cheese', 'pepperoni', 'sausage', 'bacon', 'bbq']) },
     { id: 'pork-parmy', name: 'Pork parmy', sub: 'Parmy', kw: 'parmigiana pork schnitzel napoli cheese', form: 'piece', cook: 'crumbed', role: 'main', g: 320, w: 136, h: 96, of: 'parmy', side: { s: 'slab', h: 14, c: '#E2B266' }, draw: parmy(['napoli', 'cheese'], { col: '#E2B266' }) },
-    { id: 'eggplant-parmy', name: 'Eggplant parmy', sub: 'Parmy', kw: 'eggplant parmigiana aubergine vegetarian crumbed napoli cheese', form: 'piece', cook: 'crumbed', role: 'main', g: 300, w: 134, h: 66, side: { s: 'slab', h: 16, c: '#D9A050' }, draw: parmy(['napoli', 'cheese'], { base: eggplantBase }) },
+    { id: 'eggplant-parmy', name: 'Eggplant parmy', sub: 'Parmy', kw: 'eggplant parmigiana aubergine vegetarian crumbed napoli cheese', form: 'piece', cook: 'crumbed', role: 'main', g: 300, w: 134, h: 66, side: { s: 'slab', h: 16, c: '#D9A050' }, draw: eggplantParmy },
     // duck and game
     { id: 'duck-breast-fan', name: 'Duck breast, sliced', sub: 'Duck and game', kw: 'duck breast magret sliced pink crispy skin fan', form: 'fan', cook: 'roasted', role: 'main', g: 180, w: 94, h: 58, side: { s: 'slab', h: 12, c: '#C4505A' }, draw: function (P, rnd) { return P.fan(7, 64, 56, function (x, y, a) { return P.g(P.at(x, y - 4, a), slice(P, 12, 44, { crust: '#9A5A2A', top: [['#8A4A20', 3], [FAT, 4]], band: '#A84650', bw: 1.6, core: '#C4505A' }, rnd)); }); } },
     { id: 'confit-duck-leg', name: 'Confit duck leg', sub: 'Duck and game', kw: 'duck leg confit crispy skin', form: 'piece', cook: 'roasted', role: 'main', n: 1, w: 116, h: 60, side: { s: 'mound', h: 30, c: '#A8642A' }, draw: confitLeg },

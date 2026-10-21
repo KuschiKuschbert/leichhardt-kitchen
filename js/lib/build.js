@@ -223,7 +223,7 @@
     return P.path(layerD(rnd, 140, 12, { wob: 1.8, k: 26 }), '#7A3F1E', '#4A2711', 1) + strands(P, rnd, 34, 136, -9, ['#8A4A26', '#A8643A', '#5E2E14', '#B5703A'], 2) + P.line(-50, -11, 20, -12, '#FFFFFF', 1, { opacity: '0.25' });
   }
   function slaw(P, rnd) {
-    return P.path(layerD(rnd, 140, 10, { wob: 1.6, k: 26 }), '#F1EEDC', '#D9D2B8', 0.9) + strands(P, rnd, 36, 138, -8, ['#F7F5E8', '#8E3A66', '#E6E8CF', '#EE8A2E', '#B9D27A', '#F7F5E8'], 1.6);
+    return P.path(layerD(rnd, 140, 10, { wob: 1.6, k: 26 }), '#EFEAD2', '#D3CAA8', 0.9) + strands(P, rnd, 56, 136, -6, ['#FBF9EE', '#8E3A66', '#DDE3B8', '#EE8A2E', '#9CC067', '#A34A6A'], 1.7);
   }
 
   /* ---------- stack layers ---------- */
@@ -376,8 +376,8 @@
   }
   function saladPile(P, rnd) {
     var out = '', greens = ['#8DB255', '#6E9A3E', '#9CC067', '#5E8C3A', '#A34A6A'];
-    for (var i = 0; i < 18; i++) {
-      var x = (rnd() * 2 - 1) * 34, top = -36 * Math.sqrt(Math.max(0, 1 - (x / 44) * (x / 44))), y = top * (0.25 + rnd() * 0.6) - 5;
+    for (var i = 0; i < 22; i++) {
+      var x = (rnd() * 2 - 1) * 38, top = -34 * Math.sqrt(Math.max(0, 1 - (x / 48) * (x / 48))), y = Math.min(-6, top * (0.2 + rnd() * 0.65) - 4);
       out += P.leaf(24 + rnd() * 10, 9 + rnd() * 5, greens[i % greens.length], x, y, (rnd() - 0.5) * 100, { edge: L.P.shade(greens[i % greens.length], -0.25), ew: 0.6 });
     }
     [[-24, -6], [18, -14], [-4, -28]].forEach(function (c) { out += P.path('M' + N(c[0] - 6) + ' ' + N(c[1]) + ' A6 6 0 0 1 ' + N(c[0] + 6) + ' ' + N(c[1]) + ' Z', '#D9473B', '#A8302A', 0.7) + P.path('M' + N(c[0] - 4) + ' ' + N(c[1] - 0.5) + ' L' + N(c[0] + 4) + ' ' + N(c[1] - 0.5), 'none', '#F2D27A', 1); });
