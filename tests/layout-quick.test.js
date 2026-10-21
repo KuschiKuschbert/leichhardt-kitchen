@@ -50,7 +50,7 @@ const onTop = (p, sel) => p.evaluate(s => {
   await p.evaluate(() => window.scrollTo(0, 0)); await L.settle(p, 150);
   v = await onTop(p, '[data-p="a-save"]');
   ok(v === true, 'phone admin: Save changes can be tapped, not under the tab bar (' + v + ')');
-  ok(await p.evaluate(() => !document.querySelector('.a-tabs') || getComputedStyle(document.querySelector('.a-tabs')).position === 'static'), 'phone admin: the tabs scroll away with the page');
+  ok(await p.evaluate(() => getComputedStyle(document.querySelector('.a-nav')).position === 'sticky'), 'phone admin: the admin nav stays at the top (it tucks away while scrolling down, admin-nav.test.js)');
   await p.context().close();
 
   await b.close();
