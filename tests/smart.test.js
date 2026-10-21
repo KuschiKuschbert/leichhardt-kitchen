@@ -231,7 +231,7 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   const ft = w.els.find(e => e.ing === 'French parmi topper'), sch0 = w.els.find(e => e !== ft && /schnitzel/i.test(e.ing || ''));
   ok(!!ft && ft.t === 'raw' && ft.made === 'french-topper' && !!sch0 && inside(ft, sch0) && ft.k > sch0.k && !w.unsure.length, 'topper: the French topper, its card still to come, is drawn from its note on the schnitzel, nothing to pick');
   const ftNote = await L.txt(p, '.dw-made') || '';
-  ok(/brie/i.test(ftNote) && /avocado/i.test(ftNote) && /bacon/i.test(ftNote) && /b[ée]arnaise/i.test(ftNote), 'topper: the note says what it is drawn from (' + ftNote + ')');
+  ok(/from its note/i.test(ftNote) && /brie/i.test(ftNote) && /avocado/i.test(ftNote) && /bacon/i.test(ftNote) && /b[ée]arnaise/i.test(ftNote), 'topper: the note says it is drawn from the topper\'s note, and what (' + ftNote + ')');
   await p.context().close();
   // the last of the book's dishes (21 Oct 2026): the Snickers inside its spring roll, the B.B. whiting crumbed, the
   // calamari topper's strips filling their bowl

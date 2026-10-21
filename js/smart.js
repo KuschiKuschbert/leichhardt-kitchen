@@ -250,7 +250,7 @@
         // (js/compose.js topper()), on the schnitzel; else the schnitzel becomes that parmy, the topper drawn with it
         if (/topper/i.test(i.name)) {
           var tm = matchIng(i, r), tp = tm.why === 'learned' ? null : cardPart(i, r, tm);
-          if (tp) { made.push({ ing: R.ingName(i), from: tp.from }); out.push({ ing: R.ingName(i), i: i, id: tp.id, it: tp, scale: 1, count: 1, conf: 0.9, guesses: [] }); return; }
+          if (tp) { made.push({ ing: R.ingName(i), from: tp.from, note: !!tp.own }); out.push({ ing: R.ingName(i), i: i, id: tp.id, it: tp, scale: 1, count: 1, conf: 0.9, guesses: [] }); return; }
           var tk = rank(String(i.name).replace(/\btopper\b/i, ' ').replace(/\bparmi\b/i, ' ') + ' parmy', { cat: 'meat' })[0];
           if (tk && tk.s >= 0.6 && /parm/i.test(LIB.get(tk.id).name)) { toppers.push({ ing: R.ingName(i), id: tk.id }); return; }
         }
@@ -397,7 +397,7 @@
       var base = order.filter(function (p) { return /^(starch|salad|main)$/.test(p.it.role) && p.it.form === 'bowlful'; })[0] || order.filter(function (p) { return p.it.role === 'starch' || p.it.role === 'salad'; })[0];
       // one thing in the bowl (the calamari topper's strips): it fills the bowl, not a corner of it
       var solo = order.filter(function (p) { return !/^(sauce|dsauce|garnish)$/.test(p.it.role); });
-      if (!base && solo.length === 1) { base = solo[0]; base.scale = Math.min(Math.max(base.scale, 1), a.rx * 1.7 / Math.max(base.it.w, base.it.h)); place(base, [a.cx, a.cy], 0); }
+      if (!base && solo.length === 1) { base = solo[0]; base.scale = Math.min(a.rx * 1.7 / Math.max(base.it.w, base.it.h), 2.2); place(base, [a.cx, a.cy], 0); }
       else if (base) { base.scale = Math.max(base.scale, Math.min(a.rx * 1.7 / Math.max(base.it.w, base.it.h), 2.2)); place(base, [a.cx, a.cy], 0); }
       var ring = order.filter(function (p) { return p !== base && !/^(sauce|dsauce|garnish)$/.test(p.it.role); }), rr = Math.min(a.rx, a.ry) * 0.5;
       ring.forEach(function (p, k) {
@@ -717,7 +717,7 @@
             return '<div class="dw-un"><b>' + esc(u.ing) + '</b><div class="chips">' + u.guesses.map(function (id) { var it = LIB.get(id); return it ? btn('sm-pick', it.name, { v: u.ing + '|' + id, cls: 'chip' }) : ''; }).join('') + btn('sm-find', 'Find it in the library', { v: u.ing, cls: 'chip' }) + btn('sm-skip', 'Leave it off', { v: u.ing, cls: 'chip' }) + '</div></div>';
           }).join('') + '</section>';
       }
-      if (r && r.made && r.made.length) out = '<p class="hint dw-made">Drawn from ' + (r.made.length === 1 ? 'its recipe' : 'their recipes') + ': ' + r.made.map(function (m) { return '<b>' + esc(m.ing) + '</b> (' + esc(m.from.join(', ').toLowerCase()) + ')'; }).join('; ') + '.</p>' + out;
+      if (r && r.made && r.made.length) out = '<p class="hint dw-made">Drawn from ' + (r.made.length === 1 ? (r.made[0].note ? 'its note' : 'its recipe') : 'their recipes') + ': ' + r.made.map(function (m) { return '<b>' + esc(m.ing) + '</b> (' + (m.note && r.made.length > 1 ? 'its note: ' : '') + esc(m.from.join(', ').toLowerCase()) + ')'; }).join('; ') + '.</p>' + out;
       if (r && r.style && STYLES[r.style]) out = '<p class="hint dw-smart-note" role="status">Drawn by the book: ' + esc(STYLES[r.style].name.toLowerCase()) + (r.style === 'side' || r.style === 'build' ? '' : ' plating') + '. Move anything; Tidy up leaves what you moved where it is.</p>' + out;
       return out;
     },
