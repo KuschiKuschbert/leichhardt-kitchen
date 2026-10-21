@@ -1603,6 +1603,11 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav { top: var(--u
 .dw-selname { flex: 1 1 100%; font-weight: 700; }
 .dw-miss { display: flex; flex-direction: column; gap: 0.4rem; }
 .dw-check ul { margin: 0; padding-left: 1.1rem; }
+/* Draw it for me (js/smart.js): the note on what the book drew, and the ingredients it was not sure about */
+.dw-smart-note { margin: 0; padding: 0.55rem 0.7rem; border-left: 4px solid var(--accent); border-radius: 6px; background: var(--hit); color: var(--ink); }
+.dw-un { display: flex; flex-direction: column; gap: 0.35rem; padding-top: 0.5rem; border-top: 1px solid var(--edge); }
+.dw-un:first-of-type { border-top: 0; padding-top: 0; }
+.dw-un .chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
 .dw-link { padding: 0.25rem 0; min-height: 36px; border: 0; background: none; color: var(--ink); font: inherit; text-align: left; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .dw-link[aria-pressed="true"] { font-weight: 700; color: var(--accent-ink); }
 .dw-panel { display: flex; flex-direction: column; gap: 0.6rem; padding: 0.8rem; border: 1.5px solid var(--edge); border-radius: var(--radius); background: var(--paper); }

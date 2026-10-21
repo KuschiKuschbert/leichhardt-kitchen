@@ -276,6 +276,17 @@ await ok(W([['drawings/Bad_Id', dw()], ['book/index', { d: { Bad_Id: 1 } }, true
 await ok(ownerBatch([['drawings/new-one', dw()], ['book/index', { d: { 'new-one': 1 } }, true]]), true, 'drawings: the head chef\'s Google account saves a drawing');
 await ok(deleteDoc(doc(owner, K + 'drawings/new-one')), false, 'drawings: a drawing is never deleted');
 await ok(setDoc(doc(owner, K + 'drawings/burger-plate/hist/1'), { was: dw(), at: 2 }), false, 'drawings: an earlier version cannot be changed');
+// Draw it for me: the head chef's picks of a library drawing for an ingredient name, saved with the drawing
+await ok(W([['drawings/burger-plate', dw({ v: 3 })], ['drawings/burger-plate/hist/2', { was: dw({ v: 2 }), at: 1 }], ['book/index', { d: { 'burger-plate': 3 } }, true], ['book/matches', { m: { 'cowboy butter': 'butter-disc' }, upd: 1 }, true]], { id: 'hd' }), true, 'matches: the head chef saves a pick with the drawing');
+await ok(getDoc(doc(anon, K + 'book/matches')), true, 'matches: a PIN holder reads the picks');
+await ok(W([['book/matches', { m: { 'rum butterscotch': 'butterscotch-pool' }, upd: 2 }, true]], { id: 'hd' }), true, 'matches: the next pick is added (merge)');
+await ok(ownerBatch([['book/matches', { m: { cornbread: 'cornbread' }, upd: 3 }, true]]), true, 'matches: the head chef\'s Google account saves a pick');
+await ok(W([['book/matches', { m: { x: 'y' }, upd: 1 }, true]], { id: 'sam' }), false, 'matches: a sous chef cannot save a pick');
+await ok(W([['book/matches', { m: { x: 'y' }, upd: 1 }, true]], { id: 'ann' }), false, 'matches: staff cannot save a pick');
+await ok(W([['book/matches', { m: { x: 'y' }, upd: 1 }, true]], { id: 'ann', as: 'hd' }), false, 'matches: staff writing as the head chef is refused');
+await ok(W([['book/matches', { m: { x: 'y' }, upd: 1, cost: 2 }, true]], { id: 'hd' }), false, 'matches: no fields beyond the picks');
+await ok(W([['book/matches', { m: 'cornbread', upd: 1 }]], { id: 'hd' }), false, 'matches: the picks are a map');
+await ok(deleteDoc(doc(owner, K + 'book/matches')), false, 'matches: never deleted');
 // the owner probe
 await ok(getDoc(doc(owner, K + 'config/admins')), true, 'admins: the head chef may read the probe');
 await ok(getDoc(doc(anon, K + 'config/admins')), false, 'admins: nobody else may');

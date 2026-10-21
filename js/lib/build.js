@@ -501,6 +501,40 @@
     { id: 'side-ware-gn-pan', name: 'GN pan, side view', sub: 'Servingware profiles', kw: 'gn pan gastronorm hotel pan bain marie tray steel profile side view', form: 'piece', role: 'main', n: 1, w: 220, h: 44, side: { s: 'cup', h: 44, c: '#C4C9CF' }, draw: gnSide },
     { id: 'side-ware-ramekin', name: 'Ramekin, side view', sub: 'Servingware profiles', kw: 'ramekin fluted ramekin sauce pot profile side view', form: 'piece', role: 'main', n: 1, w: 63, h: 35, side: { s: 'cup', h: 35, c: '#FFFFFF' }, draw: ramekinSide }
   ]);
+  /* Plain shapes from the side, one for each side.s. "Draw it for me" uses one for a part with no side piece of its own
+     and swaps its colours for the part's (js/smart.js), so each is drawn in one tan with lighter and darker shades of it. */
+  var PC = '#C98A45', pDk = L.P.shade(PC, -0.22), pLt = L.P.shade(PC, 0.22);
+  function profile(kind) {
+    return function (P, rnd) {
+      var out = '';
+      if (kind === 'mound') return P.path('M-45 0 C-45 -18 -26 -32 0 -32 C26 -32 45 -18 45 0 Z', PC, pDk, 1.1) + P.hl(-14, -22, 10, 3, pLt, 0.8, -20);
+      if (kind === 'slab') return P.path(layerD(rnd, 96, 18, { re: 4, wob: 0.6 }), PC, pDk, 1.1) + P.path('M-40 -15 L36 -15', 'none', pLt, 1.4, { 'stroke-linecap': 'round', opacity: '0.8' });
+      if (kind === 'layer') return P.path(layerD(rnd, 100, 8, { re: 3, wob: 0.8 }), PC, pDk, 1) + P.path('M-42 -6 L40 -6', 'none', pLt, 1, { 'stroke-linecap': 'round', opacity: '0.8' });
+      if (kind === 'scoop') return P.path('M-21 -4 C-27 -14 -24 -40 0 -42 C24 -40 27 -14 21 -4 Q12 0 0 -1 Q-12 0 -21 -4 Z', PC, pDk, 1.1) + P.path('M-20 -5 Q-10 -9 0 -6 Q10 -9 20 -5', 'none', pDk, 1, { 'stroke-linecap': 'round' }) + P.hl(-8, -30, 6, 3, pLt, 0.8, -30);
+      if (kind === 'pile') {
+        for (var i = 0; i < 16; i++) { var x = -36 + 72 * ((i * 5) % 16) / 15, top = -32 * Math.sqrt(Math.max(0, 1 - (x / 44) * (x / 44))), y = Math.min(-6, top * (0.25 + rnd() * 0.6)); out += P.ellipse(N(x), N(y), 9 + rnd() * 4, 5 + rnd() * 2, L.P.shade(PC, (rnd() - 0.5) * 0.24), pDk, 0.8, { transform: 'rotate(' + N((rnd() - 0.5) * 70) + ' ' + N(x) + ' ' + N(y) + ')' }); }
+        return out;
+      }
+      if (kind === 'disc') return P.path(layerD(rnd, 100, 10, { re: 2 }), PC, pDk, 1) + P.path('M-46 -8 L44 -8', 'none', pLt, 1.2, { 'stroke-linecap': 'round', opacity: '0.8' });
+      if (kind === 'sauce') return P.path('M-56 0 Q-56 -4 -44 -4 L44 -4 Q56 -4 56 0 Z', PC, pDk, 0.8) + P.path('M-40 -3 L30 -3', 'none', pLt, 0.9, { 'stroke-linecap': 'round', opacity: '0.8' });
+      if (kind === 'stick') {
+        [[-18, -3, 8], [14, -3, -6], [-2, -8, 3]].forEach(function (s) { out += P.g(P.at(s[0], s[1], s[2]), P.rect(-22, -3, 44, 6, 2.4, PC, pDk, 0.9) + P.line(-18, -1.4, 14, -1.4, pLt, 0.9, { opacity: '0.8' })); });
+        return out;
+      }
+      if (kind === 'leafy') {
+        for (var k = 0; k < 9; k++) { var lx = -28 + k * 7, ly = -6 - 20 * Math.sqrt(Math.max(0, 1 - (lx / 36) * (lx / 36))) * (0.5 + rnd() * 0.5); out += P.leaf(22 + rnd() * 8, 9 + rnd() * 3, L.P.shade(PC, (rnd() - 0.5) * 0.24), lx, ly, (rnd() - 0.5) * 120, { edge: pDk, ew: 0.6 }); }
+        return out;
+      }
+      if (kind === 'ring') return P.path(layerD(rnd, 70, 14, { re: 7 }), PC, pDk, 1.1) + P.path('M-20 -7 L20 -7', 'none', pDk, 3, { 'stroke-linecap': 'round', opacity: '0.45' });
+      if (kind === 'cup') return P.path('M-30 -38 L30 -38 L25 -2 Q24 0 21 0 L-21 0 Q-24 0 -25 -2 Z', PC, pDk, 1.1) + P.ellipse(0, -38, 30, 3, pLt, pDk, 0.9);
+      return P.path('M-30 0 L-22 -28 Q-20 -31 -16 -29 L30 0 Z', PC, pDk, 1.1) + P.path('M-20 -24 L18 -3', 'none', pLt, 1.2, { 'stroke-linecap': 'round', opacity: '0.8' });
+    };
+  }
+  var PROF = { mound: [90, 32, 'mound heap dome pile'], slab: [96, 18, 'slab piece fillet steak portion'], layer: [100, 8, 'layer thin slice sheet'], scoop: [54, 42, 'scoop ball quenelle'], pile: [90, 34, 'pile heap scatter lumps'], disc: [100, 10, 'disc round flat base'], sauce: [112, 4, 'sauce pool puddle thin'], stick: [88, 14, 'sticks batons fingers'], leafy: [80, 32, 'leafy leaves greens herbs'], ring: [70, 14, 'ring rings'], cup: [60, 39, 'cup pot ramekin'], wedge: [60, 30, 'wedge triangle slice'] };
+  L.add('build', Object.keys(PROF).map(function (k) {
+    var p = PROF[k];
+    return { id: 'side-profile-' + k, name: k.charAt(0).toUpperCase() + k.slice(1) + ' shape, side view', sub: 'Shapes from the side', kw: p[2] + ' shape profile plain side view', form: 'piece', role: k === 'sauce' ? 'sauce' : 'veg', g: 60, w: p[0], h: p[1], side: { s: k, h: p[1], c: PC }, draw: profile(k) };
+  }));
   // the helpers, for the other category files (a bun from the side, a layer with drips, a whole stack)
   L.BUILD = { bunTop: bunTop, bunBase: bunBase, layerD: layerD, dripD: dripD, hatch: hatch, stack: stack, slices: slices, steakSide: steakSide, cakeSide: cakeSide, coneSide: coneSide };
 })();
