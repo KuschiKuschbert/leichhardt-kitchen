@@ -261,7 +261,8 @@
     check: '<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5 L6.5 12 L13 4.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     out: '<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M5 13 L13 5 M7 5 H13 V11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     zoom: '<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5.5 8.5 H11.5 M13 13 L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
-    plate: '<svg width="16" height="16" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7.5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="9" cy="9" r="3.5" fill="#E2602A"/></svg>'
+    plate: '<svg width="16" height="16" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7.5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="9" cy="9" r="3.5" fill="#E2602A"/></svg>',
+    pen: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="14" r="6.5" fill="none" stroke="currentColor" stroke-width="1.9"/><circle cx="9" cy="14" r="2.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M14.5 9.5 L20 4 L21.5 5.5 L16 11" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"/></svg>'
   };
 
   // A card flagged done: true in data.js is 100% finished: green frame on the card and its drawings, plus a Finished chip.
@@ -349,6 +350,13 @@
     var ml = mailOpen(), mt = ml ? ', ' + ml + ' open kitchen mail' : '';
     return '<button type="button" class="wtop-btn wtop-who' + (n ? ' on' : '') + (n && flip ? ' flip' : '') + '" data-who="menu" aria-haspopup="true" aria-expanded="false"' + here + (n ? ' title="Signed in as ' + esc(n) + mt + '" aria-label="Signed in as ' + esc(n) + ', menu and Settings' + mt + '"' : ' title="Menu and Settings' + mt + '" aria-label="Menu and Settings' + mt + '"') + '>' + ICON.chef + '<span class="wtop-lbl wtop-who-n">' + esc(n.split(' ')[0]) + '</span>' + mailBadge(ml) + '</button>';
   }
+  /* Manage Recipes & Drawings (21 Oct 2026): the head chef only (js/prep.js bookEdit: their PIN as Head chef, or their
+     Google device with nobody else signed in). Everyone else reads the recipes as before. */
+  function bookEdit() { return !!(window.LK_PREP && window.LK_PREP.bookEdit && window.LK_PREP.bookEdit()); }
+  function manageItem() {
+    var on = parseRoute().name === 'manage' ? ' aria-current="page"' : '';
+    return '<a class="wm-a wm-mg" href="#/manage" data-who="go"' + on + '>' + ICON.pen + '<span><b>Manage Recipes &amp; Drawings</b><small>Change and add recipes</small></span></a>';
+  }
   /* The chef mark's menu, appended to document.body (a top bar redraw does not remove it). Clicks use data-who. */
   var wmenu = null;
   function whoMenuClose(back) {
@@ -370,7 +378,7 @@
         '<a class="wm-a" href="#/drinks" data-who="go">' + ICON.cup + '<span><b>Drinks run</b><small>Everyone\'s usual coffee</small></span></a>' +
         (m.minutes ? '<a class="wm-a" href="#/minutes" data-who="go">' + ICON.doc + '<span><b>Meeting minutes</b><small>Read and sign</small></span></a>' : '') +
         (m.sec ? '<button type="button" class="wm-a" data-who="sec" data-v="section">' + ICON.chef + '<span><b>My section</b><small>' + esc(m.sec) + '</small></span></button>' : '') +
-        (m.chef || adm ? '<p class="wm-h wm-sh">Chef</p>' + adm : '') +
+        (m.chef || adm || m.book ? '<p class="wm-h wm-sh">Chef</p>' + adm : '') + (m.book ? manageItem() : '') +
         (m.chef ?
           '<button type="button" class="wm-a" data-who="open" data-v="pings">' + ICON.bell + '<span><b>Shift pings</b><small>Write to the whole team</small></span></button>' +
           '<button type="button" class="wm-a" data-who="open" data-v="register">' + ICON.doc + '<span><b>Minutes register</b><small>Who has signed</small></span></button>' +
@@ -378,7 +386,7 @@
         set +
         '<button type="button" class="wm-a wm-out" data-who="out">' + ICON.exit + '<span><b>Sign out</b><small>Hand the phone to someone else</small></span></button>'
       : '<p class="wm-h">Nobody signed in on this phone</p>' +
-        '<a class="wm-a wm-in" href="#/prep" data-who="signin">' + ICON.chef + '<span><b>Sign in</b><small>Your name and PIN, then back here</small></span></a>' + adm + set) + '</nav>';
+        '<a class="wm-a wm-in" href="#/prep" data-who="signin">' + ICON.chef + '<span><b>Sign in</b><small>Your name and PIN, then back here</small></span></a>' + adm + (bookEdit() ? manageItem() : '') + set) + '</nav>';
     document.body.appendChild(el); wmenu = el;
     btn.setAttribute('aria-expanded', 'true');
     var first = el.querySelector('.wm-a'); if (first) first.focus({ preventScroll: true });
@@ -587,8 +595,16 @@
     return '<nav class="jumps" aria-label="Jump to"><button type="button" class="chip" data-act="jump" data-val="r-allergens">Allergens</button>' +
       '<button type="button" class="chip" data-act="jump" data-val="r-ing">Ingredients</button><button type="button" class="chip" data-act="jump" data-val="r-steps">Method</button></nav>';
   }
+  /* "Change this recipe" for the head chef, in its own slot so a sign-in or sign-out can redraw it (lk-who, lk-admin, lk-cfg) */
+  function editSlot(r) {
+    return '<div class="mg-slot" id="r-edit">' + (bookEdit() ? '<a class="p-x mg-slot-a" href="#/manage/r/' + encodeURIComponent(r.id) + '">' + ICON.pen + '<span>Change this recipe</span></a>' : '') + '</div>';
+  }
+  function editSlotRedraw() {
+    var el = document.getElementById('r-edit'), route = parseRoute();
+    if (el && route.name === 'recipe') el.outerHTML = editSlot(byId[route.stack[route.stack.length - 1]]);
+  }
   function recipeCard(r, stack, withHome) {
-    return '<article class="card' + (r.done ? ' done' : '') + '">' + crumbs(stack, withHome) + cardHead(r) + jumps() + allergenBox(r) +
+    return '<article class="card' + (r.done ? ' done' : '') + '">' + crumbs(stack, withHome) + cardHead(r) + editSlot(r) + jumps() + allergenBox(r) +
       '<div class="cols"><div class="col"><h3 class="h3" id="r-ing">Ingredients</h3>' + ingTable(r, stack, false) + tipBox(r) + guideBox(r) + usedBox(r, stack) +
       (isDish(r) && r.art && ART.plates[r.art] ? '<div class="sec"><h3 class="h3">On the plate</h3>' + art(r, 'card-art') + '</div>' : '') + sideView(r) +
       (!isDish(r) && r.art && ART.pans[r.art] ? '<div class="sec"><h3 class="h3">In the pan</h3>' + art(r, 'card-art') + '</div>' : '') + '</div>' +
@@ -693,7 +709,7 @@
     var parent = stack.length > 1 ? byId[stack[stack.length - 2]].name : 'the pass';
     // phones: the name, yield and allergens come first, then the drawing, then the rest (order in app.css, .cols under 900px)
     return '<div class="page">' + trail + jumps() + lensFold() +
-      '<main id="main" class="cols"><div class="col">' + left + '</div><div class="col wide">' + cardHead(r) + allergenBox(r) +
+      '<main id="main" class="cols"><div class="col">' + left + '</div><div class="col wide">' + cardHead(r) + editSlot(r) + allergenBox(r) +
       '<div class="sec"><h3 class="h3" id="r-ing">' + (dish ? 'Everything on it' : 'Into the pan') + '</h3>' + ingTable(r, stack, true) + '</div>' +
       '<div id="r-steps" class="jump-at"></div>' + safetyBox(r) + diagram(r) + (dish ? guideBox(r) : '') + steps(r) +
       '</div></main>' + footer() +
@@ -763,6 +779,73 @@
         '<span class="vo-name">' + esc(v.name) + (on ? '<span class="vo-on">Opens with this</span>' : '') + '</span><span class="vo-desc">' + esc(v.desc) + '</span></button>';
     }).join('') + '</div>';
   }
+  /* ---------- Manage Recipes & Drawings (#/manage, the head chef only) ----------
+     The page is drawn by js/manage.js, loaded the first time it opens (staff phones never download it): fetched with
+     X-LK-Fresh, so the service worker goes to the network first and keeps a copy for no signal (sw.js), then run.
+     Without the head chef signed in, the page says so and nothing is loaded. The rules are the real lock. */
+  var MG_API = 1, mgLoad = null;
+  function viewManage() { return '<div class="page mg-page"><main id="main" class="mg"><div id="mg-root"></div></main>' + footer() + '</div>'; }
+  function mgScript(f) {
+    return fetch(f, { headers: { 'X-LK-Fresh': '1' } }).catch(function () {}).then(function () {
+      return new Promise(function (ok, no) { var el = document.createElement('script'); el.src = f; el.onload = ok; el.onerror = no; document.head.appendChild(el); });
+    });
+  }
+  function loadManage() {
+    if (!mgLoad) mgLoad = mgScript('js/manage.js').catch(function (e) { mgLoad = null; throw e; });
+    return mgLoad;
+  }
+  function mgNote(title, text, link) {
+    return '<section class="set-block mg-note"><h2 id="rtitle" tabindex="-1">' + esc(title) + '</h2><p>' + esc(text) + '</p>' + (link || '<div class="btn-row"><a class="btn" href="#/recipes">Back to the recipes</a></div>') + '</section>';
+  }
+  function mountManage(route) {
+    var root = document.getElementById('mg-root');
+    if (!root) return;
+    var st = window.LK_PREP && window.LK_PREP.bookState ? window.LK_PREP.bookState() : 'no';
+    if (st === 'wait') { root.innerHTML = mgNote('Manage Recipes & Drawings', 'Checking who is signed in on this device...', ' '); return; }
+    if (st === 'nopin') { root.innerHTML = mgNote('Manage Recipes & Drawings', 'This device has no kitchen PIN yet. Open the Prep list and enter it, then sign in as the head chef.', '<div class="btn-row"><a class="btn dark" href="#/prep">Open the Prep list</a></div>'); return; }
+    if (st !== 'yes') {
+      if (window.LK_MG) window.LK_MG.unmount();
+      root.innerHTML = mgNote('Only the head chef can change recipes', 'Everyone can read the recipes and their drawings on the recipe cards. To change one, the head chef signs in with their own PIN, or uses their own device with the Google sign-in.' +
+        (window.LK_MG && window.LK_MG.hasDraft() ? ' Changes not saved yet are kept on this device.' : ''));
+      return;
+    }
+    if (window.LK_MG) { if (window.LK_MG.api === MG_API) window.LK_MG.mount(root, route); else root.innerHTML = mgNote('Reload the book', 'The recipe editor on this device is a different version from the book. Reload the page to update it.', '<div class="btn-row"><button type="button" class="btn dark" data-act="reload">Reload</button></div>'); return; }
+    root.innerHTML = mgNote('Manage Recipes & Drawings', 'Opening the recipe editor...', ' ');
+    loadManage().then(function () {
+      if (parseRoute().name === 'manage') mountManage(parseRoute());
+    }, function () {
+      var el = document.getElementById('mg-root');
+      if (el) el.innerHTML = mgNote('Could not open the recipe editor', 'It needs the signal the first time it opens on a device. Check the signal and try again.', '<div class="btn-row"><button type="button" class="btn dark" data-act="mgretry">Try again</button></div>');
+    });
+  }
+  function redrawManage() { if (parseRoute().name === 'manage') mountManage(parseRoute()); }
+  /* What js/manage.js reads from the recipe book: the same index and drawings, so its previews match the cards. */
+  function rollFor(draft) {
+    var r = JSON.parse(JSON.stringify(draft));
+    r.ingredients = r.ingredients || [];
+    if (!r.contains && !r.check) fromTags(r);
+    r.contains = r.contains || []; r.check = r.check || [];
+    var keepR = rolled, had = byId[r.id], ro;
+    rolled = {}; byId[r.id] = r;
+    try { ro = roll(r.id, {}); } finally { if (had) byId[r.id] = had; else delete byId[r.id]; rolled = keepR; }
+    return { contains: Object.keys(ro.contains), check: Object.keys(ro.check).filter(function (a) { return !ro.contains[a]; }), missing: ro.missing };
+  }
+  window.LK_APP = {
+    mgApi: MG_API, KIND: KIND, isDish: isDish, esc: esc, art: art, rollFor: rollFor,
+    byId: function (id) { return byId[id] || null; },
+    recipes: function () { return D.recipes; },
+    tags: function (id) { return tags[id] || []; },
+    usedIn: function (id) { return (usedIn[id] || []).slice(); },
+    menuTitles: function () { return (D.menuOrder || []).map(function (s) { return s.title; }); },
+    sectionOf: function (id) { var s = (D.menuOrder || []).filter(function (x) { return x.ids.indexOf(id) >= 0; })[0]; return s ? s.title : ''; },
+    // links to cards not in the book yet: { id, by: [recipe names] }
+    toCome: function () {
+      var out = {};
+      D.recipes.forEach(function (r) { r.ingredients.forEach(function (i) { if (i.link && !byId[i.link]) (out[i.link] = out[i.link] || []).push(r.name); }); });
+      return Object.keys(out).sort().map(function (id) { return { id: id, by: out[id] }; });
+    },
+    artKeys: function () { return { plates: Object.keys(ART.plates).filter(function (k) { return k.charAt(0) !== '@'; }), pans: Object.keys(ART.pans).filter(function (k) { return k.charAt(0) !== '@'; }), diagrams: Object.keys(ART.diagrams).filter(function (k) { return k.charAt(0) !== '@'; }) }; }
+  };
   function viewPrep() {
     return '<div class="page">' + '<main id="main" class="prep"><div id="prep-root"></div></main></div>';
   }
@@ -837,6 +920,7 @@
     if (parts[0] === 'settings') return { name: 'settings', stack: [] };
     if (parts[0] === 'prep' || parts[0] === 'admin' || parts[0] === 'orders' || parts[0] === 'waste' || parts[0] === 'minutes' || parts[0] === 'mail' || parts[0] === 'drinks') return { name: parts[0], stack: [] };
     if (parts[0] === 'guides') return { name: 'guides', stack: [], gid: parts[1] || '' };
+    if (parts[0] === 'manage') return { name: 'manage', stack: [], sub: parts.slice(1) };
     if (parts[0] === 'r') {
       var stack = parts.slice(1).filter(function (id) { return byId[id]; });
       if (stack.length) return { name: 'recipe', stack: stack };
@@ -884,6 +968,7 @@
     if (route.name === 'landing') html = viewLanding();
     else if (route.name === 'settings') html = viewSettings();
     else if (PREP_PAGES[route.name]) html = viewPrep();
+    else if (route.name === 'manage') html = viewManage();
     else if (view === 'pass') html = viewPass(route);
     else html = viewTiles(route);
     // Swipeable chip rows keep their place when the page redraws (for example after tapping a chip at the far end).
@@ -892,11 +977,12 @@
     app.innerHTML = html;
     if (!changed) Array.prototype.forEach.call(app.querySelectorAll('.chips.scroll'), function (el, i) { if (rowsAt[i]) el.scrollLeft = rowsAt[i]; });
     fitPins();
+    if (route.name === 'manage') mountManage(route); else if (window.LK_MG) window.LK_MG.unmount();
     if (PREP_PAGES[route.name] && window.LK_PREP) window.LK_PREP.mount(route.name, document.getElementById('prep-root'), route.gid);
     // On any other page, connect to the prep book in the background so Prep, Orders and Wastage open straight away.
     else if (window.LK_PREP && window.LK_PREP.warm && !warmed) { warmed = true; setTimeout(function () { window.LK_PREP.warm(); }, 900); }
     var r = route.stack.length ? byId[route.stack[route.stack.length - 1]] : null;
-    document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'waste' ? 'Wastage · ' : route.name === 'minutes' ? 'Meeting minutes · ' : route.name === 'mail' ? 'Kitchen mail · ' : route.name === 'drinks' ? 'Drinks run · ' : route.name === 'guides' ? 'Guides · ' : route.name === 'landing' ? '' : route.name === 'home' ? 'Recipes · ' : route.name === 'admin' ? 'Admin panel · ' : '')) + 'Leichhardt Kitchen Book';
+    document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'waste' ? 'Wastage · ' : route.name === 'minutes' ? 'Meeting minutes · ' : route.name === 'mail' ? 'Kitchen mail · ' : route.name === 'drinks' ? 'Drinks run · ' : route.name === 'manage' ? 'Manage Recipes & Drawings · ' : route.name === 'guides' ? 'Guides · ' : route.name === 'landing' ? '' : route.name === 'home' ? 'Recipes · ' : route.name === 'admin' ? 'Admin panel · ' : '')) + 'Leichhardt Kitchen Book';
     var prevRoute = lastRoute; lastRoute = route.name;
     if (changed && route.name === 'recipe') noteView(route.stack[route.stack.length - 1]);
     // opening the recipes checks for the head chef's recipe changes when the last check is 30 minutes old (one read)
@@ -1108,6 +1194,8 @@
       render(); var fi = document.getElementById('find'); if (fi) fi.focus(); return;
     }
     if (act === 'jump') { var jt = document.getElementById(val); if (jt) jt.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    if (act === 'reload') { location.reload(); return; }
+    if (act === 'mgretry') { redrawManage(); return; }
     if (act === 'kind') { ui.kind = val; }
     else if (act === 'free') { ui.free = ui.free.indexOf(val) >= 0 ? ui.free.filter(function (x) { return x !== val; }) : ui.free.concat([val]); }
     else if (act === 'lens') { ui.lens = ui.lens === val ? null : val; }
@@ -1148,7 +1236,7 @@
   });
   // js/prep.js signed the head chef in or out on this phone (lk.admin changed): show or drop Admin in the chef hat's menu, and the head chef's Settings blocks
   window.addEventListener('lk-admin', function () {
-    whoMenuClose();
+    whoMenuClose(); editSlotRedraw(); redrawManage();
     if (parseRoute().name === 'settings') { render(); return; }
     var ic = app.querySelector('.wtop-icons');
     if (ic) ic.outerHTML = topIcons();
@@ -1159,7 +1247,7 @@
   window.addEventListener('lk-mail', function () { var ic = app.querySelector('.wtop-icons'); if (ic) ic.outerHTML = topIcons(); });
   // The Head chef's PIN also shows or drops Admin in the menu, so the whole icon group is redrawn.
   window.addEventListener('lk-who', function (e) {
-    whoMenuClose();
+    whoMenuClose(); editSlotRedraw(); redrawManage();
     var ic = app.querySelector('.wtop-icons'); if (ic) ic.outerHTML = topIcons();
     var el = app.querySelector('.wtop-who'); if (el) el.outerHTML = whoMark(!!(e.detail && e.detail.signedIn));
   });
@@ -1171,12 +1259,15 @@
     var m = document.getElementById('main');
     if (m) { if (!m.hasAttribute('tabindex')) m.setAttribute('tabindex', '-1'); m.focus(); }
   });
+  // the kitchen settings were read (who is Head chef): the head chef's link on a card and the manage page follow
+  window.addEventListener('lk-cfg', function () { editSlotRedraw(); if (parseRoute().name === 'manage' && !(window.LK_MG && window.LK_MG.open())) redrawManage(); });
   /* The head chef's recipe changes came in (js/prep.js read them, lk-rx): work the index out again and redraw.
      On the recipe list only the results are redrawn, so the page does not jump while someone is scrolling. */
   window.addEventListener('lk-rx', function () {
     reindex();
     var n = parseRoute().name;
     if (n === 'home' && document.getElementById(settings.view === 'tiles' ? 'results' : 'shelves')) updateResults();
+    else if (n === 'manage') { if (window.LK_MG) window.LK_MG.changed(); }
     else if (!PREP_PAGES[n]) render();
   });
   window.addEventListener('hashchange', function () { window.__lkNav = true; });

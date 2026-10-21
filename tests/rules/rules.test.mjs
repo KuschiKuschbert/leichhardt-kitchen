@@ -252,6 +252,8 @@ await ok(W([['recipes/Bad_Id', rec({}, { id: 'Bad_Id' })], ['book/index', { r: {
 await ok(W([['recipes/pie', rec({ v: 4 }, { id: 'pie', name: 'x'.repeat(81) })], ['book/index', { r: { pie: 4 } }, true]], { id: 'hd' }), false, 'book: a name over 80 characters is refused');
 await ok(W([['recipes/pie', rec({ v: 4 }, { id: 'pie', name: 'Pie', kind: 'drink' })], ['book/index', { r: { pie: 4 } }, true]], { id: 'hd' }), false, 'book: the kind must be one the book knows');
 await ok(W([['recipes/pie', rec({ v: 4, removed: true }, { id: 'pie', name: 'Pie' })], ['book/index', { r: { pie: 4 } }, true]], { id: 'hd' }), true, 'book: the head chef hides a recipe');
+await ok(W([['recipes/pie', rec({ v: 5, off: true }, { id: 'pie', name: 'Pie' })], ['book/index', { r: { pie: 5 } }, true]], { id: 'hd' }), true, 'book: the head chef goes back to the book file\'s copy (off)');
+await ok(W([['recipes/pie', rec({ v: 6, off: 'yes' }, { id: 'pie', name: 'Pie' })], ['book/index', { r: { pie: 6 } }, true]], { id: 'hd' }), false, 'book: off must be true or false');
 await ok(deleteDoc(doc(owner, K + 'recipes/pie')), false, 'book: a recipe is never deleted');
 await ok(setDoc(doc(owner, K + 'recipes/burger/hist/1'), { was: rec(), at: 2 }), false, 'book: an earlier version cannot be changed');
 await ok(deleteDoc(doc(owner, K + 'recipes/burger/hist/1')), false, 'book: an earlier version cannot be deleted');
