@@ -1,4 +1,4 @@
-// The Admin key button only shows on a phone or computer where the head chef has signed in and passed the owner check.
+// Admin in the chef hat's menu only shows on a phone or computer where the head chef has signed in and passed the owner check.
 // Staff never see it, and Settings says nothing about it. #/admin opens the Google sign-in card by its address.
 // Clear all ticks and the device type (Personal phone or Shared device) only show on Settings on that device.
 const L = require('./lib');
@@ -8,14 +8,14 @@ const { R, ok } = L.results(), { txt } = L;
   // staff: no key in the top bar on the landing page, the prep list or the recipes
   for (const h of ['#/', '#/prep', '#/recipes']) {
     const p = await L.open(b, h, { who: 'ann', wait: 1200 });
-    ok(await p.$('.wtop .adm') === null, 'staff ' + h + ': no Admin key in the top bar');
+    ok(await L.admItem(p) === 'none', 'staff ' + h + ': no Admin in the chef hat menu');
     ok(await p.$('.wtop .wtop-who') !== null, 'staff ' + h + ': the chef mark (with Settings) still there');
     ok(p.errors.length === 0, 'staff ' + h + ': no page errors ' + p.errors.join(' | '));
     await p.context().close();
   }
   // staff on Settings: no Admin panel block, no Clear all ticks, no device type; #/admin still opens the sign-in card
   let p = await L.open(b, '#/settings', { who: 'ann', wait: 1000 });
-  ok(await p.$('.wtop .adm') === null, 'staff settings: no Admin key');
+  ok(await L.admItem(p) === 'none', 'staff settings: no Admin in the menu');
   ok(await p.$('[aria-label="Admin panel"]') === null && await p.$('[data-k="adm-signin"]') === null, 'staff settings: no Admin panel block');
   ok(await p.$('[data-act="clearticks"]') === null, 'staff settings: no Clear all ticks');
   ok(await p.$('[data-act="setshared"]') === null, 'staff settings: no device type');
@@ -23,17 +23,20 @@ const { R, ok } = L.results(), { txt } = L;
   await p.goto(L.BASE + '#/admin');
   await p.waitForTimeout(1200);
   ok(/Sign in with Google/.test(await txt(p, '#prep-root') || ''), 'staff: #/admin opens the Google sign-in card');
-  ok(await p.$('.wtop .adm') === null, 'staff on #/admin: still no Admin key');
+  ok(await L.admItem(p) === 'none', 'staff on #/admin: still no Admin in the menu');
   ok(p.errors.length === 0, 'staff settings: no page errors ' + p.errors.join(' | '));
   await p.context().close();
   // the head chef's phone (a chef signed in, see shared-tablet-chef.test.js): nothing stored yet, the owner probe passes on the prep list and the key appears without a reload
   p = await L.open(b, '#/prep', { admin: true, who: 'sam', wait: 1800 });
   ok(await p.evaluate(() => localStorage.getItem('lk.admin')) === '1', 'head chef: lk.admin set by the owner probe');
-  ok(await p.$('.wtop .adm.is-signed[href="#/admin"]') !== null, 'head chef #/prep: Admin key filled in, drawn after the probe');
-  await p.click('.wtop .adm');
+  ok(await p.$('.wtop .adm') === null, 'head chef #/prep: no Admin key in the top bar any more');
+  ok(await L.admItem(p) === 'signed', 'head chef #/prep: Admin panel in the chef hat menu, after the probe');
+  await p.click('.wtop-who'); await p.waitForTimeout(150);
+  await p.click('.wm .wm-adm');
   await p.waitForTimeout(1500);
-  ok(await p.$('[data-p="a-tab"]') !== null, 'head chef: the key opens the admin panel');
-  ok(await p.$('.wtop .adm[aria-current="page"]') !== null, 'head chef #/admin: the key marks the page');
+  ok(await p.$('[data-p="a-tab"]') !== null, 'head chef: Admin panel in the menu opens the admin panel');
+  ok(await p.$('.wm-wrap') === null, 'head chef: the menu closes on the way');
+  ok(await p.$('.wtop-who[aria-current="page"]') !== null, 'head chef #/admin: the chef hat marks the page');
   ok(p.errors.length === 0, 'head chef: no page errors ' + p.errors.join(' | '));
   await p.context().close();
   // the head chef's Settings page: Clear all ticks and the device type, still no Admin panel block
@@ -41,7 +44,7 @@ const { R, ok } = L.results(), { txt } = L;
   ok(await p.$('[aria-label="Admin panel"]') === null, 'head chef settings: no Admin panel block');
   ok(await p.$('[data-act="clearticks"]') !== null, 'head chef settings: Clear all ticks');
   ok(await p.$('[data-act="setshared"][data-val="1"]') !== null, 'head chef settings: device type');
-  ok(await p.$('.wtop .adm.is-signed') !== null, 'head chef settings: Admin key in the top bar');
+  ok(await L.admItem(p) === 'signed', 'head chef settings: Admin in the chef hat menu');
   // signing out on that device drops them again without a reload, and the device type chosen stays
   await p.click('[data-act="setshared"][data-val="1"]');
   await p.evaluate(() => { localStorage.setItem('lk.admin', ''); window.dispatchEvent(new Event('lk-admin')); });

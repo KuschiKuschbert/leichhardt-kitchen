@@ -212,7 +212,7 @@
   var FEATS = [['guides', 'Guides'], ['pings', 'Shift pings'], ['minutes', 'Meeting minutes']];
   var featHave = (function () { try { return JSON.parse(lsGet('lk.feat') || 'null') || {}; } catch (e) { return {}; } })();
   /* Marks this phone or computer as the head chef's (lk.admin) once the owner probe has passed, and clears the mark on sign out
-     or when the probe fails. js/app.js listens for lk-admin to show or drop the key button in the top bar. */
+     or when the probe fails. js/app.js listens for lk-admin to show or drop Admin in the chef hat's menu. */
   function admMark(on) {
     var was = lsGet('lk.admin') === '1';
     lsSet('lk.admin', on ? '1' : '');
@@ -222,7 +222,7 @@
      head chef's does not count, so held-back pages stay held back and the admin links stay hidden on that phone. */
   function admDev() { return (S.level === 'owner' || (S.level !== 'none' && lsGet('lk.admin') === '1')) && ownerHere(); }
   /* The head chef's Google sign-in stays on a device, so on a shared kitchen tablet it opened the head chef's tools for
-     whoever picked it up (20 Oct 2026). The head chef's tools (Admin key and panel, reports, editing guides, minutes and
+     whoever picked it up (20 Oct 2026). The head chef's tools (Admin link and panel, reports, editing guides, minutes and
      pings, kitchen mail) now show only while a chef (head chef or sous chef) is the person signed in on this device, or,
      on a personal device (not ticked "Shared kitchen device"), while nobody is. Staff signed in get their own view. */
   function ownerHere() { var p = who(); return p ? isSousP(p) : !shared(); }
@@ -5153,7 +5153,7 @@
      sender's phone can show what happened to it without being able to read anyone's mail. The phone keeps its own copy
      of what was sent from it (lk.mail.sent), shown only to the person who sent it.
      On the head chef's device the open mail is read with one small query when the book opens and again only after
-     30 minutes away (no listener, no polling). It drives the count on the Admin key and the "Mail waiting" popup:
+     30 minutes away (no listener, no polling). It drives the count on the chef hat and the "Mail waiting" popup:
      open mail, the Mail tab not opened for 10 hours, between 10:00 and 22:00 kitchen time. "Later" holds it off 10 hours. */
   var ML_CATS = [['safety', 'Food safety'], ['equipment', 'Equipment'], ['stock', 'Stock or supplier'], ['recipe', 'Recipe or card'], ['roster', 'Roster request put in'], ['idea', 'Idea'], ['other', 'Other']];
   var ML_PRI = [['today', 'Today'], ['week', 'This week'], ['any', 'Whenever']];
