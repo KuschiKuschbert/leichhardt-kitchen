@@ -1,6 +1,7 @@
 /*
   Measures "Draw it for me"'s matcher (js/smart.js) on the book's own recipes, without a browser: the share of visible
-  ingredients on the dishes matched with confidence, and the ones it misses or is unsure of.
+  ingredients on the dishes matched with confidence, the ones drawn from their own recipe card instead, and the ones it
+  misses or is unsure of.
     node tests/smart-match.js          the summary and every miss
   smart.test.js runs the same measure (require('./smart-match').measure()).
 */
@@ -18,27 +19,30 @@ function load() {
   win.LK_RX = { pristine: id => byId[id] || null, arts: () => [] };
   win.LK_PREP = { book: () => ({ ready: () => Promise.reject(new Error('no book in this test')) }) };
   win.LK_DRAW = { render: { ingName: i => String(i.name || '').replace(/\s*\([^)]*\)/g, '').trim(), recipeOf: id => byId[id], bbox: () => [0, 0, 1, 1], tintMap: () => ({}) }, amount: () => null, scaleFor: () => 1, state: () => ({}) };
+  win.LK_DATA = D;
   run('js/smart.js');
   return { win, D };
 }
 function measure() {
   const { win, D } = load(), S = win.LK_SMART, dishes = D.recipes.filter(r => ['main', 'snack', 'side', 'dessert'].indexOf(r.kind) >= 0);
   let shown = 0, sure = 0;
-  const misses = [], unsure = [];
+  const misses = [], unsure = [], made = [];
   dishes.forEach(r => (r.ingredients || []).forEach(i0 => S.split(i0).forEach(i => {
     if (S.hidden(i)) return;
     shown++;
     const m = S.matchIng(i, r);
     if (m.id && m.conf >= 0.6) sure++;
+    else if (S.madeOf(i, r)) made.push(r.id + ': ' + i.name + ' (' + S.madeOf(i, r).from.join(', ') + ')');
     else if (m.id) unsure.push(r.id + ': ' + i.name + ' (best ' + m.id + ', ' + m.conf.toFixed(2) + ')');
     else misses.push(r.id + ': ' + i.name);
   })));
-  return { dishes: dishes.length, shown, sure, share: shown ? sure / shown : 0, misses, unsure, S, win };
+  return { dishes: dishes.length, shown, sure, share: shown ? sure / shown : 0, drawn: shown ? (sure + made.length) / shown : 0, made, misses, unsure, S, win };
 }
 module.exports = { measure, load };
 if (require.main === module) {
   const m = measure();
-  console.log(m.dishes + ' dishes, ' + m.shown + ' visible ingredients, ' + m.sure + ' matched with confidence (' + Math.round(m.share * 100) + '%)');
+  console.log(m.dishes + ' dishes, ' + m.shown + ' visible ingredients, ' + m.sure + ' matched with confidence (' + Math.round(m.share * 100) + '%), ' + m.made.length + ' more drawn from their recipe card (' + Math.round(m.drawn * 100) + '% drawn)');
+  if (m.made.length) console.log('\nDrawn from their recipe (' + m.made.length + '):\n' + m.made.join('\n'));
   if (m.unsure.length) console.log('\nUnsure (' + m.unsure.length + '):\n' + m.unsure.join('\n'));
   if (m.misses.length) console.log('\nNo match (' + m.misses.length + '):\n' + m.misses.join('\n'));
 }
