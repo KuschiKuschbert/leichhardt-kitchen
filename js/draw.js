@@ -1255,26 +1255,27 @@
     Object.keys(defs).forEach(function (k) { defs[k] = typeof defs[k] === 'string' ? X.clean(defs[k]) : ''; });
     return { id: id, isNew: false, rid: x.rid || '', slot: x.slot, name: x.name || '', surf: x.surf || { fam: 'none' }, els: Array.isArray(x.els) ? x.els : [], defs: defs, layout: x.layout || null, from: x.from || '', meta: { v: x.v || 0, removed: !!x.removed, by: x.by || '', upd: x.upd || 0 } };
   }
-  function save(force) {
-    var d = W.d, api = B();
-    if (!d || W.saving) return;
-    W.msg = '';
-    if (!P.bookEdit()) { W.msg = 'Not saved: only the head chef can change drawings. Sign in with your PIN as Head chef.'; draw(); return; }
-    keepNow();
-    W.saving = 'Saving...'; draw();
-    var slow = setTimeout(function () { if (W.d === d && W.saving) { W.saving = 'Waiting for the signal. Your drawing is kept on this device.'; var s = W.root && W.root.querySelector('.mg-state'); if (s) s.textContent = W.saving; } }, 4000);
-    var fs, r = recipeOf(d.rid), vb = viewBoxOf(d), used = {};
+  // the record a drawing is saved as: its parts, a copy of each piece it uses, the flat SVG the book shows (run with the
+  // drawing as W.d, see withDrawing)
+  function outOf(d) {
+    var r = recipeOf(d.rid), vb = viewBoxOf(d), used = {};
     d.els.forEach(function (el) { if (isPiece(el)) used[el.a] = bodyOf(el.a); });
     var out = { rid: d.rid, slot: d.slot, name: String(d.name || '').slice(0, 80), vb: vb, k: 1, surf: d.surf, els: clone(d.els), defs: JSON.stringify(used), svgS: svgS(d), svgF: svgF(d), alt: altText(d, r ? r.name : d.rid), from: d.from || '', upd: 0, v: 0, removed: false };
     if (d.layout) out.layout = d.layout;
     if (d.slot === 'build') out.title = 'How it is built';
-    if (out.defs.length > 300000 || out.svgF.length > 300000 || out.els.length > 600) { clearTimeout(slow); W.saving = ''; W.msg = 'Not saved: this drawing is too big for the book. Take some parts off.'; draw(); return; }
-    api.ready().then(function () {
+    return { out: out, vb: vb, big: out.defs.length > 300000 || out.svgF.length > 300000 || out.els.length > 600 };
+  }
+  /* One batch, as for every drawing: the drawing, its earlier version, the index, and the recipe's link and Pass labels.
+     The version is read from the server first; a version saved on another device meanwhile comes back as { conflict }
+     unless force. picks: the head chef's picks for the matcher ride along (the open drawing only). */
+  function commit(d, o, force, picks) {
+    var api = B(), fs, out = o.out, vb = o.vb;
+    return api.ready().then(function () {
       fs = api.fs();
       return fs.getDocFromServer(api.docRef('drawings', d.id)).then(function (sn) { return sn.exists() ? sn.data() : null; }, function () { return 'offline'; });
     }).then(function (server) {
       var sv = server === 'offline' ? d.meta.v : (server ? server.v : 0);
-      if (server !== 'offline' && sv !== d.meta.v && !force) { clearTimeout(slow); W.saving = ''; W.conflict = { v: sv, rec: server }; draw(); return null; }
+      if (server !== 'offline' && sv !== d.meta.v && !force) return { conflict: { v: sv, rec: server } };
       var v = sv + 1, prev = server === 'offline' ? null : server;
       out.v = v; out.upd = api.now();
       var ops = [['set', api.docRef('drawings', d.id), out]], idx = { d: {}, upd: api.now() };
@@ -1289,16 +1290,33 @@
         if (rp) { ops = ops.concat(rp.ops); idx.r = {}; idx.r[d.rid] = rp.v; }
         ops.push(['set', api.docRef('book', 'index'), idx, true]);
         // js/smart.js: the matches the head chef picked, kept for the next recipe (book/matches)
-        if (window.LK_SMART && window.LK_SMART.pendingOps) ops = ops.concat(window.LK_SMART.pendingOps());
-        return api.W(ops).then(function () { if (window.LK_SMART && window.LK_SMART.saved) window.LK_SMART.saved(); return { v: v, rp: rp, idx: idx }; });
+        if (picks && window.LK_SMART && window.LK_SMART.pendingOps) ops = ops.concat(window.LK_SMART.pendingOps());
+        return api.W(ops).then(function () { if (picks && window.LK_SMART && window.LK_SMART.saved) window.LK_SMART.saved(); return { v: v, rp: rp, idx: idx }; });
       });
     }).then(function (done) {
-      clearTimeout(slow);
-      if (!done) return;
+      if (!done || done.conflict) return done;
       X.putArt(api.pin(), d.id, out);
       if (done.rp) X.put(api.pin(), d.rid, done.rp.rec, { r: done.idx.r });
       api.changed();
-      W.saving = ''; W.conflict = null; d.meta.v = done.v; var wasNew = d.isNew, oldKey = draftKey(); d.isNew = false; d.saved = snapNow();
+      d.meta.v = done.v;
+      return done;
+    });
+  }
+  function save(force) {
+    var d = W.d;
+    if (!d || W.saving) return;
+    W.msg = '';
+    if (!P.bookEdit()) { W.msg = 'Not saved: only the head chef can change drawings. Sign in with your PIN as Head chef.'; draw(); return; }
+    keepNow();
+    W.saving = 'Saving...'; draw();
+    var slow = setTimeout(function () { if (W.d === d && W.saving) { W.saving = 'Waiting for the signal. Your drawing is kept on this device.'; var s = W.root && W.root.querySelector('.mg-state'); if (s) s.textContent = W.saving; } }, 4000);
+    var o = outOf(d);
+    if (o.big) { clearTimeout(slow); W.saving = ''; W.msg = 'Not saved: this drawing is too big for the book. Take some parts off.'; draw(); return; }
+    commit(d, o, force, true).then(function (done) {
+      clearTimeout(slow);
+      if (!done) return;
+      if (done.conflict) { W.saving = ''; W.conflict = done.conflict; draw(); return; }
+      W.saving = ''; W.conflict = null; var wasNew = d.isNew, oldKey = draftKey(); d.isNew = false; d.saved = snapNow();
       lsSet(oldKey, ''); lsSet(draftKey(), '');
       toast('Saved. Version ' + done.v + '.' + (done.rp ? ' The recipe shows it.' : ''));
       if (wasNew && W.d === d) { W.key = 'draw/' + d.id; history.replaceState(null, '', '#/manage/draw/' + encodeURIComponent(d.id)); }
@@ -1308,6 +1326,20 @@
       W.msg = err && err.code === 'permission-denied' ? 'Not saved: the book refused it. Only the head chef can change drawings, and it may have changed on another device. Try again.' : 'Not saved. Check the signal and try again. Your drawing is kept on this device.';
       if (W.d === d) draw();
     });
+  }
+  /* A drawing the book makes away from the editor (drawn when its recipe is saved, or drawn again when a card it is
+     drawn from changes, head chef 21 Oct 2026): fn runs with d as the drawing, so the editor's helpers work on it, and
+     the editor's own drawing is back after. persist() saves it the same way as the Save button, over the version on the
+     server. */
+  function withDrawing(d, fn) {
+    var keep = [W.d, W.sel, W.smart, W.styleChoice, W.seed];
+    W.d = d; W.sel = []; W.smart = null; W.styleChoice = null;
+    try { return fn(); } finally { W.d = keep[0]; W.sel = keep[1]; W.smart = keep[2]; W.styleChoice = keep[3]; W.seed = keep[4]; }
+  }
+  function persist(d) {
+    var o = withDrawing(d, function () { return outOf(d); });
+    if (o.big || !d.els.length) return Promise.resolve(null);
+    return commit(d, o, true, false).then(function (done) { if (done && !done.conflict) d.isNew = false; return done; });
   }
 
   /* ---------- opening a drawing ---------- */
@@ -1389,6 +1421,8 @@
     // reuse, for the tests: the book's own drawing as a starting point, and the head chef's templates and pieces
     bookSource: bookSource, mine: function () { return MINE; },
     render: { elSVG: elSVG, svgS: svgS, svgF: svgF, viewBoxOf: viewBoxOf, bbox: bbox, surface: surface, area: area, inArea: inArea, insertAt: insertAt, layerOf: layerOf, freeSpot: freeSpot, recipeOf: recipeOf, plateIngs: plateIngs, ingName: ingName, tintMap: tintMap },
-    changed: function () { if (W.d) { before(); changed(); } }
+    changed: function () { if (W.d) { before(); changed(); } },
+    // drawings made away from the editor (js/smart.js autoDraw): a blank one for a slot, one read from the book, and the save
+    withDrawing: withDrawing, persist: persist, blank: blank, fromDoc: fromDoc
   };
 })();
