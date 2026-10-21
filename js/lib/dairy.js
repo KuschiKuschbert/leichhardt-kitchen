@@ -335,6 +335,68 @@
     return out + P.hl(-10, -8, 12, 2, '#FFFFFF', 0.4, -4);
   }
 
+  /* ---------- more cheese, eggs, tofu and tempeh (21 Oct 2026) ---------- */
+  // a gouda wedge lying on its cut face: the yellow paste, a few small eyes, the red wax along the back
+  function goudaWedge(P, rnd) {
+    var face = '#F4D683', wax = '#C8392E', B = [30, -22], Cc = [30, 22], d = poly([[-32, 0], B, Cc]);
+    var out = P.shadow(d) + P.path(d, face, P.shade(face, -0.26), 1, ROUND) + P.path(poly([[-22, 0], [22, -15], [22, 15]]), P.shade(face, 0.2), null, 0, { opacity: '0.7' });
+    out += inTri(rnd, 7, [-22, 0], [20, -14], [20, 14], function (x, y, i, q) { var r = 0.9 + q() * 1.1; return P.ellipse(x, y, r * 1.2, r, P.shade(face, -0.1), P.shade(face, -0.26), 0.5); });
+    out += P.line(24.4, -17.6, 24.4, 17.6, '#E2B23E', 1.2) + P.path(poly([[25.4, -18.3], B, Cc, [25.4, 18.3]]), wax, P.shade(wax, -0.26), 0.8, ROUND) + P.line(27.4, -16, 27.4, 15, P.shade(wax, 0.45), 1, { opacity: '0.8' });
+    return out + P.hl(-6, -6, 12, 2, P.shade(face, 0.6), 0.8, -18);
+  }
+  // thin cheese slices laid over each other: rounded rectangles with a few small eyes
+  function cheeseSlices(col) {
+    return function (P, rnd) {
+      return [[-10, -10, -8], [0, 0, 2], [10, 10, -4]].map(function (p) {
+        var s = P.rect(-26, -17, 52, 34, 2, '#000000', null, 0, { opacity: '0.12', transform: 'translate(1 1.4)' }) + P.rect(-26, -17, 52, 34, 2, col, P.shade(col, -0.26), 0.8);
+        s += P.rect(-22, -13, 44, 26, 1.5, P.shade(col, 0.18), null, 0, { opacity: '0.7' });
+        s += P.scatter(rnd, 4, 18, 10, function (x, y, i, q) { var r = 0.8 + q(); return P.ellipse(x, y, r * 1.2, r, P.shade(col, -0.08), P.shade(col, -0.26), 0.4); });
+        return P.g(P.at(p[0], p[1], p[2]), s + P.hl(-10, -10, 10, 1.8, P.shade(col, 0.6), 0.8, -6));
+      }).join('');
+    };
+  }
+  // a raw yolk in half its shell: the broken brown rim, the pale inside, the yolk sitting up glossy
+  var RAW_YOLK = '#F4A22A';
+  function yolkInShell(P, rnd) {
+    var shell = '#D8A272', inside = '#F6EEDC', jag = [];
+    for (var i = 0; i < 24; i++) { var a = i / 24 * Math.PI * 2, k = (i % 2 ? 0.94 : 1) + (rnd() - 0.5) * 0.05; jag.push([Math.cos(a) * 22 * k, Math.sin(a) * 17 * k]); }
+    var out = P.shadow(poly(jag)) + P.path(poly(jag), shell, P.shade(shell, -0.26), 0.8, ROUND) + P.path(poly(sc(jag, 0.9)), inside, P.shade(inside, -0.26), 0.6, ROUND);
+    out += P.ellipse(2, 3, 15, 10, P.shade(inside, -0.05), null, 0, { opacity: '0.8' }) + P.path(P.blob(rnd, 12, 9, 0.1, 9, 1, 1.5), '#FBF6E6', null, 0, { opacity: '0.85' });
+    out += P.circle(1, 1, 9.5, RAW_YOLK, P.shade(RAW_YOLK, -0.26), 0.9) + P.circle(2, 2, 6.5, P.shade(RAW_YOLK, 0.14), null, 0, { opacity: '0.8' });
+    return out + P.hl(-2, -2.5, 3.6, 2, P.shade(RAW_YOLK, 0.55), 0.85, -25) + P.hl(-12, -8, 5, 1.4, P.shade(shell, 0.5), 0.75, -35);
+  }
+  // a raw yolk on its own, a thin film of white round it
+  function rawYolk(P, rnd) {
+    var w = P.blob(rnd, 15, 13.5, 0.12, 10), out = P.path(w, '#FBF6E6', P.shade('#FBF6E6', -0.26), 0.6, { opacity: '0.85' });
+    out += P.shadow(circD(10.5, 0.5, 0.5), 1, 1.5) + P.circle(0.5, 0.5, 10.5, RAW_YOLK, P.shade(RAW_YOLK, -0.26), 0.9) + P.circle(1.5, 1.5, 7, P.shade(RAW_YOLK, 0.14), null, 0, { opacity: '0.8' });
+    return out + P.hl(-2.5, -3, 4, 2.2, P.shade(RAW_YOLK, 0.55), 0.85, -25) + P.hl(4.5, 5, 1.6, 0.8, P.shade(RAW_YOLK, 0.55), 0.7, -25);
+  }
+  // firm tofu: a cube from above, its side showing, a few pores, cut sharp
+  function tofuCube(P, q, s) {
+    var top = '#F8F4E6', side = '#E8E0C8', h = s / 2, out = P.rect(-h, -h, s, s, 1.6, '#000000', null, 0, { opacity: '0.12', transform: 'translate(2.6 3.2)' });
+    out += P.rect(-h + 1.4, -h + 1.8, s, s, 1.6, side, P.shade(side, -0.26), 0.7) + P.rect(-h, -h, s, s, 1.6, top, P.shade(top, -0.26), 0.7);
+    var d = '';
+    for (var i = 0; i < 4; i++) d += 'M' + N((q() - 0.5) * s * 0.6) + ' ' + N((q() - 0.5) * s * 0.6) + 'h0.01';
+    return out + P.path(d, 'none', P.shade(top, -0.1), 0.9, ROUND) + P.hl(-s * 0.15, -s * 0.2, s * 0.22, s * 0.08, '#FFFFFF', 0.8);
+  }
+  // a slice of firm tofu seared golden in the pan, the white of the cut side showing under it
+  function tofuSlice(P, rnd) {
+    var col = '#E6BE72', d = P.slab(rnd, 20, 13, 0.85, 0.02, 12);
+    var out = P.shadow(d, 2.4, 3) + P.path(d, '#F3EAD2', P.shade('#F3EAD2', -0.26), 0.8, { transform: 'translate(1 1.4)' }) + P.path(d, col, P.shade(col, -0.26), 0.9);
+    out += P.path(P.slab(rnd, 16, 9.5, 0.8, 0.08, 12), P.shade(col, -0.1), null, 0, { opacity: '0.7' });
+    out += P.scatter(rnd, 5, 14, 8, function (x, y, i, q) { return P.path(P.blob(q, 2 + q() * 2.5, 1.4 + q() * 1.4, 0.3, 6, x, y), '#B8803A', null, 0, { opacity: '0.5' }); });
+    return out + P.hl(-6, -6, 7, 1.8, P.shade(col, 0.5), 0.8, -6);
+  }
+  // a slice of tempeh, pan fried: the pressed soy beans showing, some cut through
+  function tempehSlice(P, rnd) {
+    var col = '#D9B272', d = P.slab(rnd, 20, 9, 0.8, 0.03, 12), out = P.shadow(d, 1.5, 2) + P.path(d, col, P.shade(col, -0.26), 0.9);
+    out += P.path(P.slab(rnd, 17, 6.5, 0.75, 0.05, 12), '#E6C88E', null, 0, { opacity: '0.85' });
+    var b = '', c = '';
+    P.spots(rnd, 12, 15.5, 5.5).forEach(function (p, i) { var a = rnd() * Math.PI, l = 0.9, seg = 'M' + N(p[0] - Math.cos(a) * l) + ' ' + N(p[1] - Math.sin(a) * l) + 'l' + N(Math.cos(a) * l * 2) + ' ' + N(Math.sin(a) * l * 2); if (i % 3) b += seg; else c += seg; });
+    out += P.path(b, 'none', '#A87E44', 3.4, ROUND) + P.path(b, 'none', '#C99E5E', 2.6, ROUND) + P.path(c, 'none', '#B98E50', 3.4, ROUND) + P.path(c, 'none', '#F2DEB0', 2.6, ROUND);
+    return out + P.hl(-6, -4.5, 7, 1.4, P.shade(col, 0.5), 0.8, -4);
+  }
+
   /* ---------- the items ---------- */
   var poachedOne = function (P, rnd) { return poached(P, rnd, 1); };
   var jammy = eggHalf({ jammy: true }), hard = eggHalf({});
@@ -351,12 +413,14 @@
     { id: 'eggs-benedict', name: 'Eggs Benedict', sub: 'Eggs', kw: 'eggs benedict benny english muffin ham poached egg hollandaise brekkie', form: 'stack', cook: 'poached', role: 'main', n: 1, w: 62, h: 62, side: { s: 'mound', h: 34, c: '#F2D27A' }, draw: benny({}) },
     { id: 'eggs-florentine', name: 'Eggs Florentine', sub: 'Eggs', kw: 'eggs florentine spinach english muffin poached egg hollandaise brekkie', form: 'stack', cook: 'poached', role: 'main', n: 1, w: 62, h: 60, of: 'eggs-benedict', side: { s: 'mound', h: 34, c: '#F2D27A' }, draw: benny({ spinach: true }) },
     { id: 'frittata-wedge', name: 'Frittata wedge', sub: 'Eggs', kw: 'frittata wedge slice egg bake spanish tortilla vegetable', form: 'wedge', cook: 'baked', role: 'main', n: 1, w: 76, h: 62, side: { s: 'wedge', h: 22, c: '#EDC45E' }, draw: frittata },
+    { id: 'egg-yolk-shell', name: 'Egg yolk, raw, in the half shell', sub: 'Eggs', kw: 'egg yolk raw yolk half shell tartare yolk cured', form: 'half', cook: 'raw', role: 'topping', n: 1, w: 48, h: 38, side: { s: 'cup', h: 18, c: '#F4A22A' }, draw: yolkInShell },
+    { id: 'egg-yolk', name: 'Egg yolk, raw', sub: 'Eggs', kw: 'egg yolk raw yolk separated tartare carbonara', form: 'piece', cook: 'raw', role: 'topping', n: 1, w: 32, h: 30, side: { s: 'mound', h: 8, c: '#F4A22A' }, draw: rawYolk },
     // butter and cream
     { id: 'butter-pat', name: 'Butter pat', sub: 'Butter and cream', kw: 'butter pat square knob portion', form: 'piece', role: 'topping', n: 1, w: 22, h: 22, side: { s: 'slab', h: 6, c: BUTTER }, draw: butterPat },
     { id: 'butter-curl', name: 'Butter curl', sub: 'Butter and cream', kw: 'butter curl roll shaving bread and butter', form: 'piece', role: 'sidedish', n: 1, w: 34, h: 20, side: { s: 'stick', h: 10, c: BUTTER }, draw: butterCurl },
     { id: 'compound-butter', name: 'Herb butter disc', sub: 'Butter and cream', kw: 'compound butter herb butter garlic butter disc cafe de paris steak butter', form: 'piece', role: 'topping', n: 1, w: 26, h: 26, side: { s: 'disc', h: 6, c: '#F3D47E' }, draw: compoundButter },
     { id: 'smoked-butter', name: 'Smoked butter', sub: 'Butter and cream', kw: 'smoked butter quenelle smoked salt whipped butter bread', form: 'quenelle', cook: 'smoked', role: 'sidedish', n: 1, w: 38, h: 22, side: { s: 'scoop', h: 12, c: '#EFCD72' }, draw: quenelle({ len: 36, wid: 21, col: '#EFCD72', edge: -0.24, flakes: 7 }) },
-    { id: 'yoghurt-dollop', name: 'Yoghurt dollop', sub: 'Butter and cream', kw: 'yoghurt yogurt greek natural dollop spoonful', form: 'dollop', role: 'sauce', g: 40, w: 44, h: 40, side: { s: 'mound', h: 10, c: '#F6F4EC' }, draw: yoghurt },
+    { id: 'yoghurt-dollop', name: 'Yoghurt dollop', sub: 'Butter and cream', kw: 'yoghurt yogurt greek natural plain whole milk dollop spoonful', form: 'dollop', role: 'sauce', g: 40, w: 44, h: 40, side: { s: 'mound', h: 10, c: '#F6F4EC' }, draw: yoghurt },
     { id: 'sour-cream-dollop', name: 'Sour cream dollop', sub: 'Butter and cream', kw: 'sour cream dollop wedges nachos spud', form: 'dollop', role: 'sauce', g: 30, w: 38, h: 36, side: { s: 'mound', h: 12, c: '#F8F3E2' }, draw: sourCream },
     { id: 'creme-fraiche', name: 'Crème fraîche quenelle', sub: 'Butter and cream', kw: 'creme fraiche quenelle cream dessert', form: 'quenelle', role: 'dside', g: 30, w: 42, h: 26, side: { s: 'scoop', h: 14, c: '#F6EFD9' }, draw: quenelle({ len: 40, wid: 24, col: '#F6EFD9' }) },
     { id: 'mascarpone', name: 'Mascarpone quenelle', sub: 'Butter and cream', kw: 'mascarpone quenelle cream tiramisu dessert', form: 'quenelle', role: 'dside', g: 35, w: 44, h: 28, of: 'creme-fraiche', side: { s: 'scoop', h: 15, c: '#F8F3E4' }, draw: quenelle({ len: 42, wid: 25, col: '#F8F3E4' }) },
@@ -381,7 +445,14 @@
     { id: 'baked-camembert', name: 'Baked camembert', sub: 'Cheese', kw: 'baked camembert brie whole wheel box scored garlic rosemary sharing', form: 'whole', cook: 'baked', role: 'main', n: 1, w: 88, h: 88, side: { s: 'disc', h: 26, c: '#F3EEE0' }, draw: bakedCamembert },
     { id: 'blue-cheese-crumble', name: 'Blue cheese, crumbled', sub: 'Cheese', kw: 'blue cheese crumble crumbled gorgonzola danish blue', form: 'scatter', role: 'garnish', g: 20, w: 48, h: 36, side: { s: 'pile', h: 6, c: '#F1ECDD' }, draw: shift(2, -3, blueCrumble) },
     { id: 'provolone-slice', name: 'Provolone slice', sub: 'Cheese', kw: 'provolone slice round cheese sandwich sub', form: 'layer', role: 'topping', n: 1, w: 62, h: 62, side: { s: 'layer', h: 3, c: '#F4E2A8' }, draw: provolone },
-    { id: 'paneer-cubes', name: 'Paneer cubes', sub: 'Cheese', kw: 'paneer cubes indian cottage cheese seared tikka', form: 'scatter', cook: 'fried', role: 'main', g: 150, w: 72, h: 56, side: { s: 'pile', h: 16, c: '#F8F4E8' }, draw: shift(-5, 1, paneer) }
+    { id: 'gouda-wedge', name: 'Gouda wedge', sub: 'Cheese', kw: 'gouda wedge dutch cheese red wax edam cheese board', form: 'wedge', role: 'main', g: 100, w: 66, h: 48, side: { s: 'wedge', h: 26, c: '#F4D683' }, draw: goudaWedge },
+    { id: 'gouda-slices', name: 'Gouda, sliced', sub: 'Cheese', kw: 'gouda slices sliced dutch cheese sandwich', form: 'slices', role: 'topping', n: 3, w: 78, h: 62, side: { s: 'layer', h: 4, c: '#F4D683' }, draw: cheeseSlices('#F4D683') },
+    { id: 'monterey-jack-slices', name: 'Monterey jack, sliced', sub: 'Cheese', kw: 'monterey jack slices sliced pepper jack colby jack mild white cheese sandwich burger', form: 'slices', role: 'topping', n: 3, w: 78, h: 62, of: 'gouda-slices', side: { s: 'layer', h: 4, c: '#F6EDCC' }, draw: cheeseSlices('#F6EDCC') },
+    { id: 'paneer-cubes', name: 'Paneer cubes', sub: 'Cheese', kw: 'paneer cubes indian cottage cheese seared tikka', form: 'scatter', cook: 'fried', role: 'main', g: 150, w: 72, h: 56, side: { s: 'pile', h: 16, c: '#F8F4E8' }, draw: shift(-5, 1, paneer) },
+    // tofu and tempeh
+    { id: 'tofu-cubes', name: 'Firm tofu, cubes', sub: 'Tofu and tempeh', kw: 'firm tofu cubes diced bean curd extra firm silken soy', form: 'scatter', cook: 'fresh', role: 'main', g: 150, w: 76, h: 62, side: { s: 'pile', h: 14, c: '#F8F4E6' }, draw: function (P, rnd) { return P.scatter(rnd, 10, 28, 22, function (x, y, i, q) { return P.g(P.at(x, y, q() * 30 - 15), tofuCube(P, q, 14)); }, 15); } },
+    { id: 'tofu-seared', name: 'Firm tofu, seared slices', sub: 'Tofu and tempeh', kw: 'seared tofu slices pan fried tofu steaks golden crispy bean curd firm', form: 'slices', cook: 'fried', role: 'main', n: 3, w: 58, h: 64, side: { s: 'slab', h: 12, c: '#E6BE72' }, draw: group([[-6, -16, -8, 1, tofuSlice], [5, 0, 5, 1, tofuSlice], [-3, 16, -3, 1, tofuSlice]]) },
+    { id: 'tempeh-slices', name: 'Tempeh, sliced', sub: 'Tofu and tempeh', kw: 'tempeh slices sliced pan fried fermented soy bean cake', form: 'slices', cook: 'fried', role: 'main', n: 4, w: 52, h: 66, side: { s: 'slab', h: 8, c: '#D9B272' }, draw: group([[-4, -21, -6, 1, tempehSlice], [4, -7, 3, 1, tempehSlice], [-3, 7, -2, 1, tempehSlice], [3, 21, 4, 1, tempehSlice]]) }
   ]);
   L.DAIRY = { poached: poached, fried: fried, eggHalf: eggHalf, quenelle: quenelle, cube: cube, meltedSlice: meltedSlice, squareSlice: squareSlice, wedge: wedge, butterPat: butterPat };
 })();
