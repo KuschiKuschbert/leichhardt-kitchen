@@ -42,7 +42,8 @@
   // the ingredients that never show on the plate: they are cooked in, or under everything
   var STOP = /^(salt|table salt|pepper|black pepper|white pepper|cracked pepper|oil|olive oil|canola oil|vegetable oil|cooking oil|sesame oil|rice bran oil|oil spray|cooking spray|water|ice|stock|chicken stock|beef stock|flour|plain flour|self raising flour|wing flour|corn flour|cornflour|panko crumb|breadcrumb|sugar|caster sugar|brown sugar|icing sugar mix|seasoning|szechuan seasoning|white cooking wine|red cooking wine|cooking wine|wine|beer|baking powder|bicarb soda|butter for the pan|batter mix|eggwash|egg wash|garlic|ginger|onion powder|garlic powder|paprika|cumin|ground cinnamon|italian herb|dried oregano|vinegar|white vinegar|lemon juice|lime juice|cream for the sauce|milk|bay leaf|bay leaves|star anise|cinnamon stick|cinnamon sticks|cloves|sea salt|sea salt flakes|salt flakes|maldon salt|flaky salt)$/;
   function plain(name) { return words(String(name || '').replace(/\([^)]*\)|\[[^\]]*\]/g, ' ')).filter(function (w) { return !FILLER[w] && !/^\d+$/.test(w); }).join(' '); }
-  function hidden(i) { var p = plain(i.name); return !p || STOP.test(p) || STOP.test(p.replace(/s$/, '')); }
+  // "Corn ribs per serve": a note on how many, not an ingredient
+  function hidden(i) { var p = plain(i.name); return !p || STOP.test(p) || STOP.test(p.replace(/s$/, '')) || /\bper (serve|plate|portion)\b/.test(p); }
 
   /* ---------- learned matches (book/matches, the head chef's picks) ---------- */
   var learned = null, learnP = null;
@@ -285,6 +286,9 @@
         if (sideOne) keep.push(p); else { fold(p.ing, host); (p.also || []).forEach(function (x) { fold(x, host); }); }
       });
       host.id = bg.it.id; host.it = bg.it; host.scale = 1; host.count = 1;
+      // drawn from its own layers (js/compose.js): the bun on top, what is in it peeking out
+      var st = C() && C().stack ? C().stack(r, host.ing + ' ' + (host.i && host.i.note || ''), host.also || [], bg.it.id) : null;
+      if (st) { host.id = st.id; host.it = st; }
       out = keep;
     }
     return { parts: out, unsure: unsure, also: also, made: made };
@@ -431,6 +435,12 @@
     if (d.slot === 'build') return buildFrom();
     var pp = partsOf(r, d), surf = d.surf && d.els.length ? d.surf : ware(r, d.slot);
     d.surf = surf;
+    // a batch recipe's own pan: filled with what its card makes, every ingredient on it named (js/compose.js)
+    var pf = d.slot === 'pan' && C() && C().panPart ? C().panPart(r, areaOf(surf)) : null;
+    if (pf) {
+      var al = {}; pf.ings.slice(1).forEach(function (x) { al[x] = pf.ings[0]; });
+      pp = { parts: [{ ing: pf.ings[0], i: (r.ingredients || []).filter(function (i) { return R.ingName(i) === pf.ings[0]; })[0] || { name: pf.ings[0], q: '' }, id: pf.id, it: pf, scale: 1, count: 1, conf: 1, guesses: [], also: pf.ings.slice(1) }], unsure: [], also: al, made: [{ ing: r.name, from: pf.from }] };
+    }
     var style = W.styleChoice || pickStyle(r, d.slot, surf, pp.parts);
     var keep = d.els.filter(function (e) { return e.fixed || (e.t !== 'item' && !e.made && !e.dr); }), keepIng = {};
     keep.forEach(function (e) { if (e.ing) keepIng[e.ing] = 1; String(e.also || '').split('|').forEach(function (x) { if (x) keepIng[x] = 1; }); });

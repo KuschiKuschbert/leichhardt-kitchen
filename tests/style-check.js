@@ -1,6 +1,7 @@
 /*
   Checks that the drawings made from a recipe card (js/compose.js) look like the book's own (js/art.js), without a
-  browser. It draws every card's part, the way a dish gets it, and measures what the book's 184 drawings measure:
+  browser. It draws every card's part the way a dish gets it, every batch card's own GN pan and every burger from above,
+  and measures what the book's 184 drawings measure:
     outlines   the same hue as the fill, at 0.55 to 0.9 of its lightness (the book: 0.63 to 0.83, middle 0.74)
     shadows    black at 0.08 to 0.18 (the book: 0.10 to 0.16)
     strokes    no wider than 8 units
@@ -19,13 +20,18 @@ function hsl(h) {
   return [hh, s, l, (mx - mn) * 255];
 }
 function parts() {
-  const { D, C, S, L, byId } = load(), out = [];
+  const { D, C, S, L } = load(), out = [];
   D.recipes.forEach(r => (r.ingredients || []).forEach(i => {
     const m = S.matchIng(i, r), p = C.partFor(i, r, m);
     if (p) out.push({ where: r.id + ': ' + i.name, p });
   }));
-  // every card on its own too (a card no dish uses yet is still drawn when it is saved)
-  D.recipes.filter(r => /batch|component/.test(r.kind)).forEach(r => { const p = C.compose(C.read(r), {}); if (p) out.push({ where: r.id, p }); });
+  // every card on its own too (a card no dish uses yet is still drawn when it is saved), and in its own GN pan
+  D.recipes.filter(r => /batch|component/.test(r.kind)).forEach(r => {
+    const p = C.compose(C.read(r), {}); if (p) out.push({ where: r.id, p });
+    const pan = C.panPart(r, L.surface(S.ware(r, 'pan')).area); if (pan) out.push({ where: r.id + ' (pan)', p: pan });
+  });
+  // the burgers and sandwiches from above, from their own layers
+  D.recipes.forEach(r => { const st = S.partsOf(r, { slot: 'plate', rid: r.id, els: [], defs: {} }).parts.find(x => x.it && x.it.form === 'stack' && x.it.raw); if (st) out.push({ where: r.id + ' (from above)', p: st.it }); });
   return { out, C };
 }
 function check() {
