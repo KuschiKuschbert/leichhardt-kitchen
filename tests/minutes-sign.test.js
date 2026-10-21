@@ -17,6 +17,8 @@ const mins = (no, date, decisions, x) => Object.assign({ no, v: 1, status: 'publ
 
   // Ann signed the newest minutes but not last week's: the card opens last week's
   let p = await L.open(b, '#/', { who: 'ann', extra, wait: 1800 });
+  // the minutes are read after the settings and the sign-in, so wait for the card itself
+  await L.waitFor(p, () => /Minutes not signed yet/.test((document.querySelector('.wall-mn') || {}).textContent || ''), null, 5000).catch(() => {});
   ok(/Minutes not signed yet/.test(await txt(p, '.wall-mn') || ''), 'card: Minutes not signed yet shows');
   await p.click('.wall-mn .mn-nudge-btn');
   await L.settle(p, 900);

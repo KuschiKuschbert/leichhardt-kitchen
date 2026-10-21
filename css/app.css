@@ -137,6 +137,11 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(15.5rem, 1fr)); gap: 1rem; }
 .tile-groups { display: flex; flex-direction: column; gap: 1.6rem; }
 .tile-group { display: flex; flex-direction: column; gap: 0.6rem; }
+/* Shelves and tile groups off screen are not drawn until they scroll near (21 Oct 2026): Recipes opens about twice as
+   fast on a phone. The height is a guess until a group has been drawn once; coming back from a recipe puts the plate
+   back by itself (backHome() in js/app.js), not by the old scroll position. */
+.shelf, .tile-group { content-visibility: auto; contain-intrinsic-size: auto 600px; }
+.cv-all .shelf, .cv-all .tile-group { content-visibility: visible; }
 .tile { display: flex; flex-direction: column; gap: 0.6rem; min-height: 12rem; padding: 1.1rem; background: var(--paper); border: 1.5px solid var(--edge); border-radius: 12px; text-decoration: none; }
 .tile:hover { border-color: var(--ink); }
 .tile .t-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; }
@@ -1475,4 +1480,15 @@ button.wm-a { width: 100%; border: 0; background: none; font: inherit; text-alig
 @media (prefers-reduced-transparency: reduce) {
   .p-toast { background: var(--ink); border: 0; -webkit-backdrop-filter: none; backdrop-filter: none; }
   .wm { background: var(--paper); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+
+/* Tap feedback (21 Oct 2026): buttons, links and folds give way a little the moment a finger is on them, so a tap feels
+   answered before the next page is drawn. It uses scale, not transform, so pins and other parts placed with a transform
+   stay put, and :where() keeps it weaker than any rule of a part's own. Links inside a line of text are left as they
+   are. The chef mark has its own flip animation. With reduced motion, a press fades a little instead. */
+:where(button:not(:disabled):not(.wtop-who), a[href], summary) { transition: scale 0.08s ease-out; }
+:where(button:not(:disabled):not(.wtop-who), a[href], summary):active { scale: 0.97; }
+@media (prefers-reduced-motion: reduce) {
+  :where(button:not(:disabled):not(.wtop-who), a[href], summary) { transition: none; }
+  :where(button:not(:disabled):not(.wtop-who), a[href], summary):active { scale: none; opacity: 0.75; }
 }
