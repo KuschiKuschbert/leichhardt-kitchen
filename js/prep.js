@@ -277,7 +277,51 @@
   function toast(msg, act, ms) {
     liveSay(msg + (act && act.label ? '. ' + act.label + ' is on screen.' : ''));
     if (S.toast && S.toastAct && S.toastAct !== act) { S.toastOld = { msg: S.toast, act: S.toastAct }; clearTimeout(toastOldTimer); toastOldTimer = setTimeout(function () { S.toastOld = null; draw(); }, 6000); }
+    toastAt = Date.now(); toastScroll = document.scrollingElement ? { el: document.scrollingElement, y: document.scrollingElement.scrollTop } : null;
     S.toast = msg; S.toastAct = act || null; draw(); clearTimeout(toastTimer); toastTimer = setTimeout(function () { S.toast = ''; S.toastAct = null; draw(); }, ms || (act ? 9000 : 3500));
+  }
+  /* Small toasts (21 Oct 2026): the older Undo is a chip above the new toast ("Undo removed Pick coriander"). A swipe
+     down or a tap on the words puts a toast away early, and a toast without a button goes once the page is scrolled. */
+  var toastAt = 0, toastScroll = null, toastSwipe = null, toastSwiped = 0;
+  function toastChip(o) {
+    return o.act.label === 'Undo' ? 'Undo ' + (/^[A-Z][a-z]/.test(o.msg) ? o.msg.charAt(0).toLowerCase() + o.msg.slice(1) : o.msg) : o.act.label + ': ' + o.msg;
+  }
+  function toastHTML() {
+    if (!S.toast) return '';
+    var o = S.toastOld;
+    // the new toast comes first (screen readers and the tests meet it first); the stack shows the chip above it
+    return '<div class="p-toasts"><div class="p-toast' + (S.toastAct ? '' : ' p-toast-plain') + '" data-toast="new" data-p="toast-hide"><span class="p-toast-msg">' + esc(S.toast) + '</span>' +
+      (S.toastAct ? '<button type="button" class="p-toast-btn" data-p="toast-act">' + esc(S.toastAct.label) + '</button>' : '') + '</div>' +
+      (o ? '<div class="p-toast p-toast-old" data-toast="old"><button type="button" class="p-toast-btn p-toast-chip" data-p="toast-old">' + esc(toastChip(o)) + '</button></div>' : '') + '</div>';
+  }
+  function toastAway(which) {
+    clearTimeout(toastOldTimer); S.toastOld = null;
+    if (which !== 'old') { clearTimeout(toastTimer); S.toast = ''; S.toastAct = null; }
+    draw();
+  }
+  function toastDown(e) {
+    var t = e.target.closest && e.target.closest('[data-toast]');
+    toastSwipe = t && S.root && S.root.contains(t) ? { el: t, id: e.pointerId, y: e.clientY } : null;
+  }
+  function toastMove(e) {
+    var w = toastSwipe;
+    if (!w || w.id !== e.pointerId) return;
+    var dy = Math.max(0, e.clientY - w.y);
+    w.el.style.transform = dy ? 'translateY(' + dy + 'px)' : ''; w.el.style.opacity = dy ? String(Math.max(0.3, 1 - dy / 120)) : '';
+  }
+  function toastUp(e) {
+    var w = toastSwipe; toastSwipe = null;
+    if (!w || w.id !== e.pointerId) return;
+    if (e.type === 'pointerup' && e.clientY - w.y > 30) { toastSwiped = Date.now(); toastAway(w.el.getAttribute('data-toast')); return; }
+    w.el.style.transform = ''; w.el.style.opacity = '';
+  }
+  function toastScrolled(e) {
+    if (!S.toast || S.toastAct) return;
+    var el = e.target === document ? document.scrollingElement : e.target;
+    if (!el || typeof el.scrollTop !== 'number') return;
+    // the page moving to the box the toast is about (in its first moment) does not count
+    if (!toastScroll || toastScroll.el !== el || Date.now() - toastAt < 800) { toastScroll = { el: el, y: el.scrollTop }; return; }
+    if (Math.abs(el.scrollTop - toastScroll.y) > 60) { toastScroll = null; toastAway('new'); }
   }
   /* A write the server refused or could not take. Whatever was typed goes back in its box (restore). Refused
      (permission-denied) is one of two things: this phone's PIN no longer counts (the head chef reset it), so the
@@ -288,10 +332,10 @@
   function failed(e, restore) {
     if (typeof restore === 'function') restore();
     if (e && e.code === 'permission-denied' && S.authed && S.who && S.name !== 'admin') {
-      var p = who(), kept = typeof restore === 'function' ? ' What you wrote is still in the box.' : '';
+      var p = who(), kept = typeof restore === 'function' ? ' Your text is still in the box.' : '';
       toast('Not saved. Checking your PIN...', null, 12000);
       sset(docRef('activity', S.who), { name: p ? p.name : '', lastSeen: now() }, true).then(function () {
-        toast('Not saved: the book\'s rules did not allow that for you. Ask the head chef.' + kept, { label: 'OK', fn: function () {} }, 12000);
+        toast('Not saved. Ask the head chef.' + kept, { label: 'OK', fn: function () {} }, 12000);
       }, function () {
         pickName(S.who);
         toast('Not saved: sign in again with your PIN.' + kept, { label: 'OK', fn: function () {} }, 12000);
@@ -942,7 +986,7 @@
     if (data.station && data.station !== (tw.station || '') && (tw.also || []).indexOf(data.station) < 0) up.also = (tw.also || []).concat([data.station]).slice(0, 8);
     var prev = prevOf(tw, up), changed = Object.keys(up).length;
     if (changed) supd(itemRef(dte, tw.id), up).catch(failed);
-    toast(tw.text + ' is already on the list' + (tw.station ? ' under ' + tw.station : '') + (up.qty || tw.qty ? ', ' + (up.qty || tw.qty) : '') + '.', { label: 'Add anyway', fn: function () {
+    toast('On the list: ' + tw.text + (up.qty || tw.qty ? ', ' + (up.qty || tw.qty) : '') + '.', { label: 'Add anyway', fn: function () {
       if (changed) supd(itemRef(dte, tw.id), prev).catch(failed);
       var made = newItem(Object.assign({}, data, { dupOk: true }));
       made.catch(failed);
@@ -2606,7 +2650,7 @@
     var y = window.scrollY, dy = y - navY;
     if (redraw || Math.abs(dy) > 6) navY = y;
     if (!nav) return;
-    var mark = S.root.querySelector('.a-navtop'), stuck = !!mark && mark.getBoundingClientRect().top < -2;
+    var mark = S.root.querySelector('.a-navtop'), stuck = !!mark && mark.getBoundingClientRect().top < (parseFloat(getComputedStyle(nav).top) || 0) - 2;
     var hide = navHide(nav);
     nav.style.setProperty('--a-nav-hide', hide + 'px');
     var ae = document.activeElement, focusIn = !!ae && nav.contains(ae) && !(ae.closest && ae.closest('.a-onpage'));
@@ -2645,6 +2689,7 @@
     navJump = id; navJumpAt = Date.now();
     var top = tg.getBoundingClientRect().top, h = nav ? nav.offsetHeight : 0;
     if (nav && top > h) h -= navHide(nav);
+    if (nav) h += parseFloat(getComputedStyle(nav).top) || 0; // under the update strip when it shows
     window.scrollTo({ top: Math.max(0, window.scrollY + top - h - 10), behavior: 'smooth' });
   }
   /* a new page starts just under the panel's title: the nav stays where it was, nothing jumps back above it */
@@ -2718,7 +2763,7 @@
     if (key && ae.selectionStart != null) { try { start = ae.selectionStart; end = ae.selectionEnd; } catch (e) {} }
     var bodyEl = S.root.querySelector('.nb-body'), keepScroll = bodyEl ? S.root.querySelectorAll('.nb-body') : null, scrolls = [];
     if (keepScroll) Array.prototype.forEach.call(keepScroll, function (b) { scrolls.push(b.scrollTop); });
-    S.root.innerHTML = syncHTML() + bodyHTML() + (S.toast ? '<div class="p-toast">' + esc(S.toast) + (S.toastAct ? ' <button type="button" class="p-toast-btn" data-p="toast-act">' + esc(S.toastAct.label) + '</button>' : '') + '</div>' : '') + (S.toastOld && S.toast ? '<div class="p-toast p-toast-old">' + esc(S.toastOld.msg) + ' <button type="button" class="p-toast-btn" data-p="toast-old">' + esc(S.toastOld.act.label) + '</button></div>' : '');
+    S.root.innerHTML = syncHTML() + bodyHTML() + toastHTML();
     S.root.classList.toggle('is-book', S.name === 'prep' && !!S.root.querySelector('.nb'));
     document.documentElement.classList.toggle('sheet-open', !!S.root.querySelector('.sheet'));
     if (scrolls.length) Array.prototype.forEach.call(S.root.querySelectorAll('.nb-body'), function (b, i) { if (scrolls[i] != null) b.scrollTop = scrolls[i]; });
@@ -3168,7 +3213,7 @@
     /* Undo like the other lists. The rules let only the head chef or a sous chef change a wastage entry, so staff are told who can fix it. */
     var wmsg = 'Logged' + (wpr.changes.length ? ', corrected ' + wpr.changes.map(function (c) { return c[0] + ' to ' + c[1]; }).join(', ') : '') + (secInfo.from ? ' under ' + sec + ' (typed ' + secInfo.from + ')' : '');
     if (canBrowse()) toast(wmsg, { label: 'Undo', fn: function () { supd(ref, { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: now() }).catch(failed); } });
-    else toast(wmsg + '. Wrong? Ask the head chef or a sous chef to remove it.', null, 6000);
+    else toast(wmsg + '. Wrong? Ask the head chef or a sous chef.', null, 6000);
   }
   function focusK(k) { var el = S.root && S.root.querySelector('[data-k="' + k + '"]'); if (el) el.focus(); }
   function focusSel(sel) { var el = S.root && S.root.querySelector(sel); if (el && el.offsetParent !== null) el.focus(); }
@@ -3199,7 +3244,7 @@
         var v = sn.exists() ? sn.data() : {};
         if ((v.reviewAt || 0) > (r.reviewAt || 0) && v.reviewBy && v.reviewBy !== (p ? p.name : '')) {
           S.wReview = v; arm('wreview'); draw();
-          toast(v.reviewBy + ' saved a review at ' + clock(v.reviewAt) + ': "' + String(v.avoidable || v.change || '').slice(0, 60) + '". Tap Save again to replace it with yours.', null, 8000);
+          toast(v.reviewBy + ' saved a review at ' + clock(v.reviewAt) + '. Tap Save again to replace it with yours.', null, 8000);
           S.wrChecked = false; return;
         }
         saveReview(); S.wrChecked = false;
@@ -5214,6 +5259,8 @@
     if (a === 'restore') { removeItem(dt || S.date, id, true); return; }
     if (a === 'removed') { S.showRemoved = !S.showRemoved; draw(); return; }
     if (a === 'urgent') { toggleUrgent(id); return; }
+    if ((a === 'toast-old' || a === 'toast-act' || a === 'toast-hide') && Date.now() - toastSwiped < 500) return;
+    if (a === 'toast-hide') { toastAway('new'); return; }
     if (a === 'toast-old') { var to = S.toastOld; S.toastOld = null; clearTimeout(toastOldTimer); if (to && to.act && to.act.fn) to.act.fn(); draw(); return; }
     if (a === 'toast-act') { var ta = S.toastAct; S.toast = ''; S.toastAct = null; if (ta && ta.fn) ta.fn(); draw(); return; }
     if (a === 'export') { exportAll(); return; }
@@ -5409,6 +5456,11 @@
     if (wired) return; wired = true;
     var app = document.getElementById('app');
     app.addEventListener('click', onClick);
+    app.addEventListener('pointerdown', toastDown);
+    app.addEventListener('pointermove', toastMove);
+    app.addEventListener('pointerup', toastUp);
+    app.addEventListener('pointercancel', toastUp);
+    document.addEventListener('scroll', toastScrolled, { capture: true, passive: true });
     app.addEventListener('input', onInput);
     app.addEventListener('change', onChange);
     app.addEventListener('submit', onSubmit);

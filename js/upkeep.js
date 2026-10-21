@@ -52,16 +52,16 @@
     var go = function () { location.reload(); };
     try { Promise.all(files.map(function (f) { return fetch(f, { cache: 'reload', headers: { 'X-LK-Fresh': '1' } }); })).then(go, go); setTimeout(go, 8000); } catch (e) { go(); }
   }
+  /* A slim strip at the top of the screen (21 Oct 2026), styled in css/app.css (.upd-bar), so it never sits with the
+     toasts at the bottom. It sticks to the top while the page scrolls. */
   function showBar() {
     if (bar || !document.body) return;
     bar = document.createElement('div'); bar.setAttribute('role', 'status'); bar.className = 'upd-bar';
     document.documentElement.classList.add('has-upd');
-    bar.style.cssText = 'position:fixed;left:12px;right:12px;bottom:76px;z-index:9999;max-width:30rem;margin:0 auto;display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--ink);color:#fff;border-radius:10px;font:600 15px Barlow,system-ui,sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.3)';
-    var t = document.createElement('span'); t.textContent = 'New version available. It updates when you stop for a moment.';
+    var t = document.createElement('span'); t.textContent = 'New version available.';
     var b = document.createElement('button'); b.type = 'button'; b.textContent = 'Update now';
-    b.style.cssText = 'flex:none;min-height:44px;padding:0 14px;border:0;border-radius:8px;background:var(--accent);color:#fff;font:700 15px Barlow,system-ui,sans-serif;cursor:pointer';
     b.onclick = function () { try { localStorage.removeItem('lk.upd.last'); } catch (e) {} reloadNow(); };
-    bar.appendChild(t); bar.appendChild(b); document.body.appendChild(bar);
+    bar.appendChild(t); bar.appendChild(b); document.body.insertBefore(bar, document.getElementById('app') || document.body.firstChild);
   }
   function check(returned) {
     lastCheck = Date.now();
