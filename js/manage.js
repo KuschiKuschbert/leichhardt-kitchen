@@ -208,6 +208,8 @@
   }
   // what the save compares with: the recipe, the menu place, hidden and the go-back flag
   function snapOf(e) { return JSON.stringify([e.d, e.menu, e.meta.removed, e.meta.off]); }
+  // which saved copy of a recipe the form was opened from (none yet when the book was still on its way)
+  function stampOf(id) { var c = id && X.change(id); return c ? c.v + ':' + (c.upd || 0) + ':' + !!c.off + ':' + !!c.removed : ''; }
   function openEditor(sub) {
     var e;
     if (sub[0] === 'new') e = startNew(sub[1] ? slug(sub[1]) : '');
@@ -217,7 +219,7 @@
     e.handTags = !!(e.d.contains || e.d.check);
     e.key = e.isNew ? (sub[1] ? 'new-' + e.id : 'new') : e.id;
     e.snap = snapOf(e);
-    e.open = -1; e.pinOpen = -1; e.errs = []; e.warns = []; e.msg = ''; e.hist = null; e.ing0 = ingMap(e.d);
+    e.open = -1; e.pinOpen = -1; e.errs = []; e.warns = []; e.msg = ''; e.hist = null; e.ing0 = ingMap(e.d); e.stamp = stampOf(e.id);
     // a draft kept on this device from before: offered back
     try {
       var kept = JSON.parse(lsGet(draftKey(e.key)) || 'null');
@@ -870,7 +872,14 @@
     dirty: function () { return dirty() || !!(window.LK_DRAW && window.LK_DRAW.dirty()); },
     patchRecipe: patchRecipe,
     hasDraft: function () { return Object.keys(LS || {}).some(function (k) { return k.indexOf('lk.mg.draft.') === 0 || k.indexOf('lk.dw.draft.') === 0; }); },
-    // new recipe changes came in from another device: the list shows them; an open form keeps what is typed
-    changed: function () { if (M.root && !M.ed && !(window.LK_DRAW && window.LK_DRAW.open())) draw(); }
+    // new recipe changes came in from another device: the list shows them; an open form keeps what is typed. A form
+    // nobody has typed in yet opens again from the new copy (the book often arrives just after the form opened)
+    changed: function () {
+      if (!M.root || (window.LK_DRAW && window.LK_DRAW.open())) return;
+      var e = M.ed;
+      if (!e) { draw(); return; }
+      if (!e.d || e.isNew || e.kept || snapOf(e) !== e.snap || stampOf(e.id) === e.stamp) return;
+      var key = e.sub; openEditor(['r', e.id]); if (M.ed) M.ed.sub = key; draw();
+    }
   };
 })();
