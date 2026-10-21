@@ -177,6 +177,14 @@ async function chefItems(page) {
   await page.keyboard.press('Escape'); await page.waitForTimeout(100);
   return l;
 }
+/* Admin in the chef mark's menu (21 Oct 2026): 'signed' (Google sign-in done), 'outline' (Head chef PIN only) or 'none'. */
+async function admItem(page) {
+  await page.evaluate(() => { const g = document.querySelector('.nt-got'); if (g) g.click(); });
+  await page.click('.wtop-who'); await page.waitForTimeout(150);
+  const s = await page.evaluate(() => { const a = document.querySelector('.wm .wm-adm'); return a ? (a.classList.contains('is-signed') ? 'signed' : 'outline') : 'none'; });
+  await page.keyboard.press('Escape'); await page.waitForTimeout(100);
+  return s;
+}
 async function chef(page, v) {
   await page.evaluate(() => { const g = document.querySelector('.nt-got'); if (g) g.click(); });
   await page.click('.wtop-who'); await page.waitForTimeout(150);
@@ -214,4 +222,4 @@ async function adminTab(page, t) {
   }, t);
   await page.waitForTimeout(250);
 }
-module.exports = { waitFor, chefItems, chef, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
+module.exports = { waitFor, chefItems, admItem, chef, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };

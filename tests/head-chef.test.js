@@ -76,13 +76,14 @@ const cfg = (people, lists) => { const e = {}; e[CFG] = Object.assign({ people, 
   { const m = await L.chefItems(p); ok(!m.includes('staff') && !m.includes('pings') && m.includes('out'), 'staff PIN: no Chef group for Bo, Sign out is there (' + m + ')'); }
   await p.context().close();
 
-  // the Head chef's PIN on a phone without the Google sign-in: Admin shows in the top bar and leads to the sign-in.
+  // the Head chef's PIN on a phone without the Google sign-in: Admin shows in the chef hat menu and leads to the sign-in.
   // The PIN alone never opens the panel.
-  const admBtn = p => p.evaluate(() => { const a = document.querySelector('.wtop-icons .adm'); return a ? (a.classList.contains('is-signed') ? 'signed' : 'outline') : 'none'; });
+  const admBtn = L.admItem;
   p = await L.open(b, '#/', { who: 'ann', extra: demoted, wait: 1800 });
-  ok((await admBtn(p)) === 'outline', 'head chef PIN: Admin shows in the top bar (' + await admBtn(p) + ')');
+  ok((await admBtn(p)) === 'outline', 'head chef PIN: Admin shows in the menu, Sign in with Google (' + await admBtn(p) + ')');
   ok(!(await L.overflow(p)), 'head chef PIN: no sideways scroll with Admin (' + await L.overflow(p) + ')');
-  await p.click('.wtop-icons .adm');
+  await p.click('.wtop-who'); await p.waitForTimeout(150);
+  await p.click('.wm .wm-adm');
   await p.waitForTimeout(800);
   ok(/stays signed in/.test(await txt(p, '.a-headpin')) && await p.$('[data-p="signin"]') !== null, 'head chef PIN: Admin opens the page with Sign in with Google');
   ok(await p.$('[data-p="a-tab"]') === null, 'head chef PIN: the PIN alone does not open the admin panel');
@@ -95,7 +96,7 @@ const cfg = (people, lists) => { const e = {}; e[CFG] = Object.assign({ people, 
     await p.context().close();
   }
   p = await L.open(b, '#/', { who: 'bo', extra: demoted, wait: 1800 });
-  ok((await admBtn(p)) === 'none', 'staff PIN: no Admin in the top bar for Bo (' + await admBtn(p) + ')');
+  ok((await admBtn(p)) === 'none', 'staff PIN: no Admin in the menu for Bo (' + await admBtn(p) + ')');
   await p.context().close();
 
   await b.close();

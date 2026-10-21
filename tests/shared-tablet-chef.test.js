@@ -1,15 +1,15 @@
 // The head chef's Google sign-in stays on a device. On a shared kitchen tablet that opened the head chef's tools for
-// whoever picked it up (20 Oct 2026). Now staff signed in there get their own view: no Admin key, no admin panel, no
+// whoever picked it up (20 Oct 2026). Now staff signed in there get their own view: no Admin in the menu, no admin panel, no
 // reports, no guide or minutes editing. A chef (head or sous) signed in, or nobody on a personal device, keeps them.
 const L = require('./lib');
 const { R, ok } = L.results(), { txt } = L;
-const key = p => p.$('.wtop .adm');
+const key = async p => (await L.admItem(p)) === 'none' ? null : true;
 (async () => {
   const b = await L.start();
 
   // staff (Bo) signed in on the head chef's device: the staff view everywhere
   let p = await L.open(b, '#/', { admin: true, who: 'bo', wait: 1800 });
-  ok(await key(p) === null, 'staff on the head chef device: no Admin key in the top bar');
+  ok(await key(p) === null, 'staff on the head chef device: no Admin in the menu');
   await p.goto(L.BASE + '#/prep'); await p.waitForTimeout(1200);
   ok(await p.$('[data-p="staff-open"]') === null && await p.$('[data-p="mn-open"]') === null, 'staff on the head chef device: no Manage staff, no Minutes register');
   ok(await p.$('.nb-pace') === null && !/Pace/.test(await txt(p, '#prep-root') || ''), 'staff on the head chef device: no Pace box');
@@ -27,20 +27,20 @@ const key = p => p.$('.wtop .adm');
 
   // a sous chef (Sam) signed in on the same device: the chef tools stay
   p = await L.open(b, '#/', { admin: true, who: 'sam', wait: 1800 });
-  ok(await key(p) !== null, 'sous chef on the head chef device: the Admin key shows');
+  ok(await key(p) !== null, 'sous chef on the head chef device: Admin shows in the menu');
   await p.context().close();
 
   // nobody signed in: a personal device keeps the tools, a shared kitchen device does not
   p = await L.open(b, '#/', { admin: true, who: '', wait: 1800 });
-  ok(await key(p) !== null, 'nobody signed in, personal device: the Admin key shows');
+  ok(await key(p) !== null, 'nobody signed in, personal device: Admin shows in the menu');
   await p.context().close();
   p = await L.open(b, '#/', { admin: true, who: '', settings: { shared: true }, wait: 1800 });
-  ok(await key(p) === null, 'nobody signed in, shared device: no Admin key');
+  ok(await key(p) === null, 'nobody signed in, shared device: no Admin in the menu');
   await p.context().close();
 
   // staff signs out with "Not you?" and Sam signs in: the key comes back without a reload
   p = await L.open(b, '#/prep', { admin: true, who: 'bo', wait: 1800 });
-  ok(await key(p) === null, 'swap: no key while Bo is signed in');
+  ok(await key(p) === null, 'swap: no Admin while Bo is signed in');
   await p.click('[data-p="who-change"]'); await p.waitForTimeout(300);
   await p.click('.p-name[data-id="sam"]'); await p.waitForTimeout(500);
   await p.type('#pf1', '1111'); await p.waitForTimeout(1200);
