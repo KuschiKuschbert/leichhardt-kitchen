@@ -141,6 +141,7 @@ These hold for every file, old and new. When you touch code that breaks one, bri
 
 **Loading**
 - The book's start loads only what the landing page and the prep pages need. Anything big that only one page uses is loaded by that page (the loader `mountManage()` uses), and stays in `SHELL` if the book needs it with no signal.
+- `js/art.js` is the exception, measured on 22 Oct 2026: loading it later saved 9 ms at the start and cost 90 ms on Recipes (README, Bringing the code in line). Measure before moving anything else out of the start.
 
 ## Head chef decisions
 Dated decisions about how the book should work (who may do what, what moved where) are listed under "Head chef decisions" in `README.md`. Check there before changing who sees or writes something, and add a new decision there with its date.

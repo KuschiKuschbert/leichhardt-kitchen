@@ -14,7 +14,8 @@ const wait = (p, fn, arg, t) => L.waitFor(p, fn, arg, t || 8000).catch(() => fal
 const store = p => p.evaluate(() => window.__fake.dump());
 const S = p => p.evaluate(() => { const w = window.LK_DRAW.state(); return { surf: w.d.surf, from: w.d.from, els: JSON.parse(JSON.stringify(w.d.els)), sel: w.sel.slice(), msg: w.msg, panel: w.panel }; });
 const errs = p => p.errors.filter(e => !/Failed to load resource/.test(e));
-const saved = p => wait(p, () => /Saved/.test((document.querySelector('.mg-toasts .p-toast') || {}).textContent || ''), null, 10000);
+// a Saved toast not counted yet (the last one stays 4 s, and a fast computer saves again before it goes), then it is counted
+const saved = p => wait(p, () => { const t = document.querySelector('.mg-toasts .p-toast'); if (!t || t.dataset.read || !/Saved/.test(t.textContent)) return false; t.dataset.read = '1'; return true; }, null, 10000);
 const shot = async (p, name) => { if (SHOTS) await (await p.$('.dw-svg')).screenshot({ path: path.join(SHOTS, 'reuse-' + name + '.png') }); };
 const BAD_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><script>window.__bad=1</script><style>circle{fill:red}</style>' +
   '<rect x="0" y="0" width="100" height="50" rx="10" fill="#C99A62" onclick="window.__bad=2"/><image href="x.png" width="10" height="10"/><circle cx="50" cy="25" r="15" fill="url(#g)" stroke="#5E2010"/></svg>';
