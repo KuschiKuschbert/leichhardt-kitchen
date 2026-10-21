@@ -26,7 +26,7 @@
 
   /* ---------- the schedule maths (no page, no Firebase: node runs this part too) ---------- */
   var MIN = 60000, HOUR = 3600000, DAY = 86400000, ZONE = 10 * HOUR;
-  var MAX_LINES = 6, MAX_ROUNDS = 8, MAX_QTY = 300, MAX_PER = 300;
+  var MAX_LINES = 12, MAX_ROUNDS = 8, MAX_QTY = 300, MAX_PER = 300;
   var SHOW_AFTER_START = 2 * HOUR, SHOW_AFTER_LAST = 30 * MIN;
   function p2(n) { return (n < 10 ? '0' : '') + n; }
   // a moment as the kitchen's date, and a kitchen date and minutes after midnight as a moment (same as LK_TIME)
