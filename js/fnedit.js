@@ -242,7 +242,7 @@
     var err = (E.ed.shown || []).some(function (x) { return x.k === 'guests'; });
     return '<div class="field fe-f"><label class="label" for="fe-guests">Guests</label><div class="fe-gu"><input id="fe-guests" class="search fe-num" data-ff="guests" type="number" inputmode="numeric" min="1" step="1" value="' + esc(d.gu ? '' : d.guests) + '"' + (d.gu ? ' disabled' : '') +
       (err ? ' aria-invalid="true" aria-describedby="fe-e-guests"' : '') + '><label class="a-check"><input type="checkbox" data-ff="gu"' + (d.gu ? ' checked' : '') + '> Not known yet</label></div>' +
-      '<span class="hint">For the kitchen to know. It never changes the platter numbers.</span>' + fieldErr('guests') + '</div>';
+      fieldErr('guests') + '</div>';
   }
   function linesHTML(e) {
     var d = e.d, cat = FN.catalogue(), have = {}, q = (e.pq || '').trim().toLowerCase();
@@ -323,12 +323,13 @@
       '<div class="fe-row2">' + inp('date', 'Date', d.date, ' type="date"') + startHTML(d) + '</div>' +
       '<div class="fe-row2">' + guestsHTML(d) + inp('loc', 'Room, area or table (optional)', d.loc, ' maxlength="60" list="fe-locs" autocomplete="off"') + '</div>' +
       '<datalist id="fe-locs">' + locs().map(function (l) { return '<option value="' + esc(l) + '">'; }).join('') + '</datalist></section>' +
-      '<section class="set-block"><span class="label">Booking contact</span><span class="hint">Only function managers see these. They are never on the kitchen\'s screens.</span>' +
-      inp('cname', 'Contact name', d.cname, ' maxlength="80" autocomplete="off"') + '<div class="fe-row2">' + inp('phone', 'Phone (optional)', d.phone, ' type="tel" maxlength="30" autocomplete="off"') + inp('email', 'Email (optional)', d.email, ' type="email" maxlength="120" autocomplete="off"') + '</div></section>' +
-      '<section class="set-block"><span class="label">Platters</span><span class="hint">From the book\'s Functions platters. Numbers are platters, as booked: the book never adds any for the guests.</span>' + linesHTML(e) + '</section>' +
+      // the contact folds away once it is filled in (only function managers see it, never the kitchen)
+      '<details class="set-block fe-contact"' + (d.cname || d.phone || d.email ? '' : ' open') + ((e.shown || []).some(function (x) { return x.k === 'phone' || x.k === 'email'; }) ? ' open' : '') + '><summary><span class="label">Booking contact</span> <span class="fe-sum">' + esc([d.cname, d.phone].filter(Boolean).join(', ') || 'Only function managers see this') + '</span></summary>' +
+      inp('cname', 'Contact name', d.cname, ' maxlength="80" autocomplete="off"') + '<div class="fe-row2">' + inp('phone', 'Phone (optional)', d.phone, ' type="tel" maxlength="30" autocomplete="off"') + inp('email', 'Email (optional)', d.email, ' type="email" maxlength="120" autocomplete="off"') + '</div></details>' +
+      '<section class="set-block"><span class="label">Platters</span><span class="hint">Whole platters, as booked. Guests never change them.</span>' + linesHTML(e) + '</section>' +
       '<section class="set-block"><span class="label">When the platters go out</span>' + serviceHTML(e) + '</section>' +
       '<section class="set-block"><span class="label">Service and dietary notes</span><label class="visually-hidden" for="fe-notes">Service and dietary notes</label><textarea id="fe-notes" class="search fe-ta" data-ff="notes" maxlength="1000" rows="3" placeholder="Two guests coeliac: keep their platter apart.">' + esc(d.notes) + '</textarea></section>' +
-      '<section class="set-block fe-kcb"><span class="label">Kitchen comment</span><span class="hint">The kitchen reads this on the function sheet, with your name and the time. The band shows there is one. Plain text; no phone numbers or emails.</span>' +
+      '<section class="set-block fe-kcb"><span class="label">Kitchen comment</span><span class="hint">The kitchen reads this with your name and the time. No phone numbers or emails.</span>' +
       '<label class="visually-hidden" for="fe-kc">Kitchen comment</label><textarea id="fe-kc" class="search fe-ta" data-ff="kc" maxlength="2000" rows="4">' + esc(d.kc) + '</textarea>' +
       (s && s.kc ? '<span class="hint">Saved comment by ' + esc(FN.nameOf(s.kcBy)) + ', ' + esc(stamp(s.kcAt)) + '.</span>' : '') + '</section>' +
       '<div class="fe-bar" id="fe-live">' + liveHTML(e) + '</div>' + problemsHTML(e) + buttonsHTML(e) + (e.isNew ? '' : histHTML(e));
@@ -417,6 +418,10 @@
       if (prev && prev.status === 'confirmed' && next === 'confirmed' && (prev.from !== f.from || prev.until !== f.until) && prev.date !== f.date) f.was = { date: prev.date, start: prev.start, first: prev.first, from: prev.from, until: prev.until };
       else if (prev && prev.was && prev.was.until && next === 'confirmed' && prev.date !== prev.was.date) f.was = prev.was;
       M.derive(f);
+      // the order day: kept while the date stays, worked out again when it moves. A function confirmed before ordering
+      // came in (no od) and not moved gets none, so nothing old is ordered twice.
+      if (f.status === 'confirmed' && M.isYmd(f.date)) f.od = prev && prev.status === 'confirmed' && prev.date === f.date ? (prev.od || '') : M.orderOn(f.date, today());
+      else f.od = '';
       var what = M.changes(prev && prev.status ? prev : null, f).join('; ').slice(0, 300);
       f.chg = (prev && prev.chg || []).slice(0, 7);
       if (what && (f.status !== 'draft' || (prev && prev.status !== 'draft'))) f.chg.unshift({ at: t, by: me, what: what });
@@ -426,7 +431,7 @@
         ops.push(['set', api.fs().doc(api.db(), 'kitchens', api.pin(), 'functions', id, 'hist', String(prev.v)), { was: was, at: t, what: what }]);
       }
       ops.push(['set', api.docRef('fncontact', id), { cname: e.d.cname.trim().slice(0, 80), phone: e.d.phone.trim().slice(0, 30), email: e.d.email.trim().slice(0, 120), upd: t }]);
-      return api.W(ops.concat(prepOps(api, prev, f, id, t))).then(function () { return f; });
+      return api.W(ops.concat(prepOps(api, prev, f, id, t), orderOps(api, prev, f, id, t))).then(function () { return f; });
     }).then(function (f) {
       clearTimeout(slow);
       if (!f) return;
@@ -474,6 +479,28 @@
       if (h && h.text === w.text && h.qty === w.qty) return;   // the same as before: leave the kitchen's line alone
       ops.push(['set', ref(p[0], p[1]), Object.assign({}, w, { deleted: false, addedBy: who, addedById: api.who(), addedAt: t }), true]);
     });
+    return ops;
+  }
+  /* The order reminder (22 Oct 2026): a confirmed function puts one line on the order list on its order day (the latest
+     Sunday 4 days or more before it, or today when booked later): "Function stock: Smith 50th, Sat 31 Oct: 3 Antipasto,
+     4 Aussie, 5 Pizza", "12 platters". It rolls over until someone ticks it ordered, like any order line, and ordered is
+     never sent from here. A change before the order day changes the line; a move takes it off the old day; a change or a
+     cancel after the order day adds a line today, so whoever ordered can change the order. */
+  function orderOps(api, prev, f, id, t) {
+    var fs = api.fs(), ops = [], who = P.whoName() || 'Head chef', day = today();
+    function ref(d, suffix) { return fs.doc(api.db(), 'kitchens', api.pin(), 'orders', d, 'lines', ('fn-' + id + (suffix || '')).slice(0, 120)); }
+    function line(g, pre) {
+      var txt = (pre || 'Function stock') + ': ' + (g.name || 'function') + ', ' + M.dayName(g.date) + ': ' + (g.lines || []).map(function (l) { return l.qty + ' ' + M.short(l.name); }).join(', ');
+      return { text: txt.slice(0, 120), qty: (M.totalQty(g) + ' platters').slice(0, 40), recipes: (g.lines || []).map(function (l) { return l.rid; }), fn: id, dupOk: true };
+    }
+    var had = prev && prev.status === 'confirmed' && prev.od ? { day: prev.od, l: line(prev) } : null;
+    var want = f.od ? { day: f.od, l: line(f) } : null;
+    if (had && (!want || want.day !== had.day) && had.day >= day) ops.push(['set', ref(had.day), Object.assign({}, had.l, { deleted: true, deletedBy: who, deletedAt: t }), true]);
+    if (want && !(had && had.day === want.day && had.l.text === want.l.text && had.l.qty === want.l.qty)) {
+      var late = had && had.day < day;   // the first line is already in the past (maybe ordered): a new line today says what changed
+      ops.push(['set', late ? ref(day, '-' + day.replace(/-/g, '')) : ref(want.day), Object.assign({}, late ? line(f, 'Function stock changed') : want.l, { deleted: false, addedBy: who, addedById: api.who(), addedAt: t }), true]);
+    }
+    if (had && !want && had.day < day && prev.date >= day) ops.push(['set', ref(day, '-x' + day.replace(/-/g, '')), Object.assign({}, line(prev, 'Function cancelled, check the order'), { deleted: false, addedBy: who, addedById: api.who(), addedAt: t }), true]);
     return ops;
   }
   function goto(k) {
