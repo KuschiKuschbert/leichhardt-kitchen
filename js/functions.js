@@ -386,17 +386,18 @@
   function byId(id) { return F.list.filter(function (f) { return f.id === id; })[0] || null; }
 
   /* ---------- the function sheet: the popup from the band and the page #/fn/<id> ---------- */
-  function table(f) {
-    var n = (f.rounds || []).length, L = f.lines || [], t = now(), nx = nextOpen(f, function (i) { return !!sentRec(f, i); }), tick = f.status === 'confirmed' && f.first;
+  /* Every round as a list (22 Oct 2026): one row per round naming only what goes out ("2 Pizza, 1 Vege (3)"), with its
+     Sent tick. It fits any number of platters on any screen with no sideways scroll; the grid is only in the managers' form. */
+  function roundsList(f) {
+    var n = (f.rounds || []).length, L = f.lines || [], tick = f.status === 'confirmed' && !!f.first;
     if (!n || !L.length) return '';
-    var head = '<tr><th scope="col">Due</th>' + L.map(function (l) { return '<th scope="col">' + esc(short(l.name)) + '</th>'; }).join('') + '<th scope="col">Total</th>' + (tick ? '<th scope="col">Sent</th>' : '') + '</tr>';
-    var rows = f.rounds.map(function (r, i) {
-      var rc = roundCounts(f, i);
-      return '<tr' + (i === nx && f.status === 'confirmed' ? ' class="is-next"' : '') + '><th scope="row">' + esc(when(r.at, f.date)) + (i === nx && f.status === 'confirmed' ? ' <span class="fn-tag">Next</span>' : '') +
-        (r.note ? '<small>' + esc(r.note) + '</small>' : '') + '</th>' + rc.map(function (q) { return '<td>' + (q || '<span class="fn-zero">0</span>') + '</td>'; }).join('') + '<td><b>' + sum(rc) + '</b></td>' + (tick ? '<td class="fn-sent">' + sentCell(f, i) + '</td>' : '') + '</tr>';
-    }).join('');
-    var foot = '<tr class="fn-tot"><th scope="row">Total</th>' + L.map(function (l) { return '<td><b>' + l.qty + '</b></td>'; }).join('') + '<td><b>' + totalQty(f) + '</b></td>' + (tick ? '<td></td>' : '') + '</tr>';
-    return '<div class="fn-tw"><table class="fn-table"><caption class="visually-hidden">When each platter goes out</caption><thead>' + head + '</thead><tbody>' + rows + foot + '</tbody></table></div>';
+    var nx = nextOpen(f, function (i) { return tick && !!sentRec(f, i); });
+    return '<ol class="fn-rounds">' + f.rounds.map(function (r, i) {
+      var rc = roundCounts(f, i), q = sum(rc), next = i === nx && f.status === 'confirmed';
+      return '<li class="fn-round' + (next ? ' is-next' : '') + (tick && sentRec(f, i) ? ' is-sent' : '') + '"><span class="fn-round-t">' + esc(when(r.at, f.date)) + (next ? ' <span class="fn-tag">Next</span>' : '') + '</span>' +
+        '<span class="fn-round-w">' + (r.note ? '<i>' + esc(r.note) + '</i> ' : '') + esc(linesText(f, rc) || 'Nothing') + ' <b>(' + q + ')</b></span>' +
+        (tick ? '<span class="fn-sent">' + sentCell(f, i) + '</span>' : '') + '</li>';
+    }).join('') + '</ol><p class="fn-rounds-tot">Total ' + totalQty(f) + ' ' + (totalQty(f) === 1 ? 'platter' : 'platters') + '</p>';
   }
   // a round's Sent cell: a button to tick it, or who ticked it when, with Undo for a mis-tap (the same person within
   // 2 minutes, or a sous chef or the head chef: the rules say the same)
@@ -447,7 +448,7 @@
     // one quiet line for the day, the place and the event start; then what goes out next, every round, the comment
     var sub = [dayName(f.date), f.loc, 'event ' + when(f.start, f.date)].filter(Boolean).join(' · ');
     var out = status + '<p class="fn-sub">' + esc(sub) + '</p>' + nextHTML(f) +
-      ((f.rounds || []).length > 1 || f.status !== 'confirmed' ? '<h3 class="fn-h">Every round</h3>' + table(f) +
+      ((f.rounds || []).length > 1 || f.status !== 'confirmed' ? '<h3 class="fn-h">Every round</h3>' + roundsList(f) +
         (f.status === 'confirmed' && f.first ? '<p class="hint fn-note">Tick each round as it goes out.</p>' : '') : '');
     if (f.kc) out += '<section class="fn-kc" aria-labelledby="fn-kc-' + esc(f.id) + '"><h3 class="fn-h" id="fn-kc-' + esc(f.id) + '">Kitchen comment</h3><p class="fn-text">' + esc(f.kc) + '</p>' +
       '<p class="fn-by">' + esc(nameOf(f.kcBy)) + ', ' + esc(dayName(kday(f.kcAt)) + ' ' + kclock(f.kcAt)) + '</p></section>';

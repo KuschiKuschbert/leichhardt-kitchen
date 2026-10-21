@@ -220,8 +220,8 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   ok(/Round 1 due 18:30, not sent yet/.test(await txt(p, '#fn-band') || ''), 'sent: a round past its time and not ticked says "not sent yet" (' + (await txt(p, '#fn-band') || '').replace(/\s+/g, ' ').slice(0, 160) + ')');
   await tap(p, '#fn-band .fn-row'); await L.settle(p, 200);
   // the sheet leads with what goes out next: the date line, then the next round's time and platters, then every round
-  const order = await p.evaluate(() => [...document.querySelectorAll('.fn-sheet .fn-sub, .fn-sheet .fn-next, .fn-sheet .fn-table, .fn-sheet .fn-kc')].map(e => e.className.split(' ')[0]));
-  ok(JSON.stringify(order) === JSON.stringify(['fn-sub', 'fn-next', 'fn-table', 'fn-kc']), 'sheet: date line, next out, every round, then the kitchen comment (' + order.join(',') + ')');
+  const order = await p.evaluate(() => [...document.querySelectorAll('.fn-sheet .fn-sub, .fn-sheet .fn-next, .fn-sheet .fn-rounds, .fn-sheet .fn-kc')].map(e => e.className.split(' ')[0]));
+  ok(JSON.stringify(order) === JSON.stringify(['fn-sub', 'fn-next', 'fn-rounds', 'fn-kc']), 'sheet: date line, next out, every round, then the kitchen comment (' + order.join(',') + ')');
   ok(new RegExp(M.dayName(today) + ' · Beer garden · event 18:00').test(await txt(p, '.fn-sub') || ''), 'sheet: one line for the day, the place and the event start');
   const nx = (await txt(p, '.fn-next') || '').replace(/\s+/g, ' ');
   ok(/Next out 18:30 · round 1 of 3/.test(nx) && /Due 18:30, not sent yet/.test(nx) && /3 ?Antipasto Platter ?2 ?Aussie Platter/.test(nx), 'sheet: next out is round 1 at 18:30 with 3 Antipasto and 2 Aussie, late (' + nx.slice(0, 160) + ')');

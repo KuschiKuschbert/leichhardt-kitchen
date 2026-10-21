@@ -1691,7 +1691,6 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav { top: var(--u
 .fn-table tbody th small { display: block; font-weight: 400; color: var(--muted); white-space: normal; }
 .fn-table tr.is-next { background: #FFF6D9; }
 .fn-table .fn-tot th, .fn-table .fn-tot td { border-top: 2px solid var(--ink); }
-.fn-zero { color: var(--faint); }
 .fn-note { margin: 0.4rem 0 0; }
 .fn-plist, .fn-chg { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.3rem; }
 .fn-plist small { display: block; color: var(--muted); }
@@ -1797,3 +1796,12 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav { top: var(--u
 .nb-tab.nb-tab-fn { background: #FFF6D9; border-color: #E8C35A; color: #6A4A00; }
 .nb-tab.nb-tab-fn[aria-pressed="true"] { background: #E8C35A; border-color: #B8922A; color: var(--ink); }
 .nb-tab-n { display: inline-block; min-width: 1.3em; margin-left: 0.3em; padding: 0 0.3em; border-radius: 999px; background: var(--accent); color: #fff; font-size: 0.8em; text-align: center; }
+/* every round as a list in the function sheet: time, what goes out, Sent (22 Oct 2026) */
+.fn-rounds { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.fn-round { display: grid; grid-template-columns: 4.6rem minmax(0, 1fr) auto; align-items: center; gap: 0.3rem 0.6rem; padding: 0.45rem 0; border-bottom: 1px solid var(--line); }
+.fn-round.is-next { background: #FFF6D9; margin: 0 -0.5rem; padding-left: 0.5rem; padding-right: 0.5rem; }
+.fn-round.is-sent .fn-round-w { color: var(--muted); }
+.fn-round-t { font-weight: 700; font-variant-numeric: tabular-nums; }
+.fn-round-w { overflow-wrap: anywhere; }
+.fn-round-w i { display: block; font-style: normal; font-size: 0.85rem; color: var(--muted); }
+.fn-rounds-tot { margin: 0.4rem 0 0; font-weight: 700; }
