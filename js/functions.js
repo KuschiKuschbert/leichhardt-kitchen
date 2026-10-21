@@ -181,15 +181,44 @@
   }
   /* What the band shows at a moment: confirmed functions in their window, and notices for a function cancelled or
      moved while its old window is still on (so the change is not missed). Sorted by when food is next due. */
-  function showing(list, now) {
+  // isSent(f, i), when given, says round i of f was ticked as sent: the order then follows what is still to go out
+  function showing(list, now, isSent) {
     var out = [];
     list.forEach(function (f) {
       if (f.status === 'confirmed' && f.from <= now && now < f.until) out.push({ f: f, kind: 'on' });
       else if (f.status === 'cancelled' && f.confAt && f.from <= now && now < f.until) out.push({ f: f, kind: 'cancelled' });
       if (f.status === 'confirmed' && f.was && f.was.until && f.was.from <= now && now < f.was.until && !(f.from <= now && now < f.until)) out.push({ f: f, kind: 'moved' });
     });
-    function key(x) { var n = nextRound(x.f, now); return x.kind === 'on' ? (n >= 0 ? x.f.rounds[n].at : x.f.last) : x.kind === 'moved' ? x.f.was.first || 0 : x.f.first; }
+    function key(x) {
+      if (x.kind === 'moved') return x.f.was.first || 0;
+      if (x.kind !== 'on') return x.f.first;
+      if (!x.f.first) return 9e15;   // times TBC: after the ones with times
+      if (isSent) { var k = nextOpen(x.f, function (i) { return isSent(x.f, i); }); return k >= 0 ? x.f.rounds[k].at : 9e15 - 1; }   // all sent: last
+      var n = nextRound(x.f, now); return n >= 0 ? x.f.rounds[n].at : x.f.last;
+    }
     return out.sort(function (a, b) { return key(a) - key(b) || String(a.f.name).localeCompare(String(b.f.name)); });
+  }
+  /* The service view (22 Oct 2026): for every function on now, its next round not sent (rows: late ones first, then by
+     time); the platters of the rounds due within 15 minutes or late, added together across functions (plate: what the
+     pass plates now); and the rounds after those that are due within the hour (ahead). */
+  var DUE_SOON = 15 * MIN;
+  function service(list, now, isSent) {
+    var rows = [], ahead = [], plate = {};
+    showing(list, now, isSent).forEach(function (x) {
+      var f = x.f;
+      if (x.kind !== 'on' || !f.first) return;
+      var n = f.rounds.length, k = nextOpen(f, function (i) { return isSent(f, i); });
+      if (k < 0) return;
+      function at(j) { return (f.lines || []).map(function (l) { return counts(l, n)[j]; }); }
+      var r = { f: f, k: k, at: f.rounds[k].at, a: at(k) };
+      r.late = r.at < now; r.due = r.at <= now + DUE_SOON;
+      rows.push(r);
+      if (r.due) (f.lines || []).forEach(function (l, i) { if (r.a[i]) { var p = plate[l.rid] = plate[l.rid] || { rid: l.rid, name: l.name, qty: 0 }; p.qty += r.a[i]; } });
+      for (var j = k + 1; j < n; j++) if (f.rounds[j].at <= now + HOUR) ahead.push({ f: f, k: j, at: f.rounds[j].at, a: at(j) });
+    });
+    rows.sort(function (a, b) { return a.at - b.at; });
+    ahead.sort(function (a, b) { return a.at - b.at; });
+    return { rows: rows, ahead: ahead, plate: Object.keys(plate).map(function (k) { return plate[k]; }).sort(function (a, b) { return b.qty - a.qty || a.name.localeCompare(b.name); }) };
   }
   // the first round still to come (its time not passed yet), or -1 when every round's time has passed
   function nextRound(f, now) { var R = f.rounds || [], i; for (i = 0; i < R.length; i++) if (R[i].at >= now) return i; return -1; }
@@ -222,7 +251,7 @@
     kday: kday, kat: kat, kclock: kclock, dayStart: dayStart, addDays: addDays, isYmd: isYmd, hmMin: hmMin, dayName: dayName, when: when,
     even: even, toU: toU, fromU: fromU, sum: sum, roundTimes: roundTimes, windowOf: windowOf, derive: derive, counts: counts,
     short: short, unitOf: unitOf, totalQty: totalQty, guestsText: guestsText, problems: problems, changes: changes, dayTotals: dayTotals,
-    overlaps: overlaps, showing: showing, soon: soon, orderDay: orderDay, orderOn: orderOn, nextRound: nextRound, nextOpen: nextOpen, fingerprint: fingerprint
+    overlaps: overlaps, showing: showing, service: service, soon: soon, orderDay: orderDay, orderOn: orderOn, nextRound: nextRound, nextOpen: nextOpen, fingerprint: fingerprint
   };
   if (typeof module === 'object' && module.exports) { module.exports = M; return; }
 
@@ -309,29 +338,22 @@
       return out + '<span class="fn-r1"><span class="fn-tag fn-t-moved">Rescheduled</span><b>' + esc(f.name) + '</b></span>' +
         '<span class="fn-r2">Not today any more: now ' + esc(dayName(f.date)) + ', event ' + esc(kclock(f.start)) + ', food ' + esc(when(f.first, f.date)) + '.</span></button></li>';
     }
-    var c = recent(f);
-    var head = '<span class="fn-r1"><b>' + esc(f.name) + '</b>' + (f.loc ? ' · ' + esc(f.loc) : '') +
-      (f.mode === 'stag' ? ' <span class="fn-tag">Staggered</span>' : '') + (f.kc ? ' <span class="fn-tag fn-t-kc">Kitchen comment</span>' : '') +
-      (c ? ' <span class="fn-tag fn-t-new">Changed ' + esc(kclock(c.at)) + '</span>' : '') + '</span>';
-    return out + head + '<span class="fn-r2">' + foodHTML(f, t) + '</span></button></li>';
+    // two lines (22 Oct 2026): the time of the next round not sent, the name and place; then what goes in it
+    var c = recent(f), w = nowOf(f, t);
+    return out + '<span class="fn-r1"><span class="fn-due' + (w.late ? ' is-late' : '') + '">' + esc(w.time) + '</span> <b>' + esc(f.name) + '</b>' + (f.loc ? ' · ' + esc(f.loc) : '') +
+      (f.kc ? ' <span class="fn-tag fn-t-kc">Kitchen comment</span>' : '') + (c ? ' <span class="fn-tag fn-t-new">Changed ' + esc(kclock(c.at)) + '</span>' : '') + '</span>' +
+      '<span class="fn-r2">' + w.html + '</span></button></li>';
   }
-  // what goes out next, for the band and the strip: event start (when food is later), then the next round not sent
-  function foodHTML(f, t) {
-    var n = (f.rounds || []).length, tot = totalQty(f), food;
-    var ev = f.first !== f.start ? 'Event ' + esc(when(f.start, kday(t))) + ' · ' : '';
-    if (!f.first) food = 'Times TBC: <b>' + esc(linesText(f)) + '</b> (' + tot + ')';
-    else {
-      // the next round is the first one not ticked as sent; past its time it says so (never "served" by the clock alone)
-      var k = nextOpen(f, function (i) { return !!sentRec(f, i); }), last = k < 0 ? n - 1 : k - 1, done = last >= 0 ? sentRec(f, last) : null;
-      if (k < 0) food = (n > 1 ? 'All ' + n + ' rounds sent, last ' : 'All ' + tot + ' ') + esc(sentText(done)) + '. ' + tot + ' in all.';
-      else {
-        var rc = roundCounts(f, k), now_ = sum(rc), at = f.rounds[k].at, late = at < t;
-        food = (done && n > 1 ? 'Round ' + (last + 1) + ' ' + esc(sentText(done)) + ' · ' : '') +
-          (late ? '<span class="fn-late">' + (n > 1 ? 'Round ' + (k + 1) + ' ' : '') + 'due ' + esc(when(at, kday(t))) + ', not sent yet</span>: ' : (n > 1 ? 'Next ' + esc(when(at, kday(t))) + ' (round ' + (k + 1) + ' of ' + n + '): ' : 'All ' + tot + ' due ' + esc(when(at, kday(t))) + ': ')) +
-          '<b>' + esc(linesText(f, rc) || 'nothing') + '</b>' + (n > 1 ? ' <span class="fn-of">' + now_ + ' now, ' + tot + ' in all</span>' : '');
-      }
-    }
-    return ev + food;
+  function isSentK(f, i) { return !!sentRec(f, i); }
+  /* What goes out next for a function, for the band, the strip and the service view: the first round not ticked as
+     sent (late once its time has passed: the clock alone never marks anything sent). time: its time, or TBC, or Sent. */
+  function nowOf(f, t) {
+    var n = (f.rounds || []).length, tot = totalQty(f);
+    if (!f.first) return { time: 'TBC', late: false, html: 'Times TBC: <b>' + esc(linesText(f)) + '</b> <span class="fn-of">(' + tot + ')</span>' };
+    var k = nextOpen(f, function (i) { return isSentK(f, i); });
+    if (k < 0) { var x = sentRec(f, n - 1); return { time: 'Sent', late: false, done: true, html: (n > 1 ? 'All ' + n + ' rounds sent, last ' : 'All sent ') + esc(kclock(x.sentAt) + ', ' + nameOf(x.sentBy)) + ' <span class="fn-of">(' + tot + ')</span>' }; }
+    var at = f.rounds[k].at, late = at < t, rc = roundCounts(f, k), q = sum(rc), lead = n > 1 ? 'Round ' + (k + 1) + ' of ' + n : 'All';
+    return { time: when(at, kday(t)), late: late, k: k, html: (late ? '<span class="fn-late">' + lead + ' not sent yet</span>' : lead) + ': <b>' + esc(linesText(f, rc) || 'nothing') + '</b> <span class="fn-of">(' + q + (n > 1 ? ' of ' + tot : '') + ')</span>' };
   }
   // the order reminder and tomorrow's functions: one short line each
   function soonRow(x) {
@@ -340,7 +362,8 @@
     return out + '<span class="fn-tag fn-t-tom">Tomorrow</span> <b>' + esc(f.name) + '</b> · event ' + esc(when(f.start, f.date)) + ' · food ' + esc(when(f.first, f.date)) + ' · ' + esc(linesText(f)) + ' (' + tot + ')</span></button></li>';
   }
   function bandHTML() {
-    var t = now(), xs = showing(F.list, t), stale = '';
+    if (location.hash === '#/fn/now') return '';   // the service view shows the same rounds in full: no band above it
+    var t = now(), xs = showing(F.list, t, isSentK), stale = '';
     if (F.state === 'error' && F.at) stale = 'Could not load functions. Showing the copy from ' + when(F.at, kday(t)) + '.';
     else if (F.state === 'error') stale = !xs.length && /^\d{4,6}$/.test((P() && P().state && P().state.pin) || '') ? 'Could not load functions. Check the signal.' : '';
     else if ((F.offline || navigator.onLine === false) && F.at && xs.length) stale = 'No signal. Functions last updated ' + when(F.at, kday(t)) + '.';
@@ -348,8 +371,11 @@
     if (!xs.length && !ys.length && !stale) return '';
     // today's functions first (two, then "+1 more"), then up to two order reminders and tomorrow's functions
     var a = F.more ? xs : xs.slice(0, 2), b = F.more ? ys : ys.slice(0, 2), left = xs.length + ys.length - a.length - b.length;
+    var more = left > 0 ? '<button type="button" class="fn-more" data-fn="more" aria-expanded="false">+' + left + ' more</button>' : F.more && (xs.length > 2 || ys.length > 2) ? '<button type="button" class="fn-more" data-fn="more" aria-expanded="true">Show fewer</button>' : '';
+    // two or more functions on at once: one view of everything that goes out now
+    var svc = xs.filter(function (x) { return x.kind === 'on'; }).length >= 2 ? '<a class="fn-more fn-svc" href="#/fn/now">Service view</a>' : '';
     return '<h2 class="visually-hidden">Functions</h2>' + (a.length + b.length ? '<ul class="fn-list">' + a.map(bandRow).join('') + b.map(soonRow).join('') + '</ul>' : '') +
-      (left > 0 ? '<button type="button" class="fn-more" data-fn="more" aria-expanded="false">+' + left + ' more</button>' : F.more && (xs.length > 2 || ys.length > 2) ? '<button type="button" class="fn-more" data-fn="more" aria-expanded="true">Show fewer</button>' : '') +
+      (more || svc ? '<div class="fn-more-row">' + svc + more + '</div>' : '') +
       (stale ? '<p class="fn-stale" role="status">' + esc(stale) + '</p>' : '');
   }
   // js/app.js draws the empty slot under the top bar; this fills it, and refills it when anything changes
@@ -368,13 +394,16 @@
      height through --fn-stick. */
   var stripEl = null, stripH = 0;
   function strip() {
-    var band = document.getElementById('fn-band'), t = now(), xs = showing(F.list, t).filter(function (x) { return x.kind !== 'moved'; });
+    var band = document.getElementById('fn-band'), t = now(), xs = showing(F.list, t, isSentK).filter(function (x) { return x.kind !== 'moved'; });
     var off = !!band && !band.hidden && xs.length && band.getBoundingClientRect().bottom < 0 && !sheetEl;
     if (!off) { if (stripEl) { stripEl.hidden = true; } setStick(0); return; }
     if (!stripEl) { stripEl = document.createElement('div'); stripEl.className = 'fn-strip'; stripEl.setAttribute('role', 'region'); stripEl.setAttribute('aria-label', 'Functions'); document.body.appendChild(stripEl); }
-    var x = xs[0], f = x.f;
-    var h = '<button type="button" class="fn-strip-b" data-fn="open" data-id="' + esc(f.id) + '" aria-haspopup="dialog"><b>' + esc(f.name) + '</b> · ' +
-      (x.kind === 'cancelled' ? '<span class="fn-late">Cancelled, do not send</span>' : foodHTML(f, t).replace(/<span class="fn-of">[\s\S]*?<\/span>/, '')) + (xs.length > 1 ? ' <span class="fn-tag">+' + (xs.length - 1) + '</span>' : '') + '</button>';
+    // the most urgent first: its time, what goes out, then the name; "+2" sits apart so it is never cut off. With two or
+    // more functions on, a tap opens the service view; with one, its sheet.
+    var x = xs[0], f = x.f, w = x.kind === 'cancelled' ? null : nowOf(f, t), many = xs.filter(function (y) { return y.kind === 'on'; }).length >= 2;
+    var inner = '<span class="fn-strip-t">' + (w ? '<b class="fn-due' + (w.late ? ' is-late' : '') + '">' + esc(w.time) + '</b> ' + w.html.replace(/<span class="fn-of">[\s\S]*?<\/span>/, '') : '<span class="fn-late">Cancelled, do not send</span>') + ' · ' + esc(f.name) + '</span>' +
+      (xs.length > 1 ? '<span class="fn-tag fn-strip-n">+' + (xs.length - 1) + '</span>' : '');
+    var h = many ? '<a class="fn-strip-b" href="#/fn/now">' + inner + '</a>' : '<button type="button" class="fn-strip-b" data-fn="open" data-id="' + esc(f.id) + '" aria-haspopup="dialog">' + inner + '</button>';
     if (stripEl.innerHTML !== h) stripEl.innerHTML = h;
     stripEl.hidden = false;
     setStick(stripEl.offsetHeight);
@@ -505,21 +534,55 @@
     if (F.offline || navigator.onLine === false) return '<p class="hint" role="status">No signal. Last updated ' + esc(dayName(kday(F.at)) + ' ' + kclock(F.at)) + '.</p>';
     return '<p class="hint fn-fresh">Up to date, ' + esc(kclock(F.at)) + '. Changes show here by themselves.</p>';
   }
+  /* #/fn/now, the service view (22 Oct 2026): everything that goes out now across all functions, late first, each with
+     its Sent; what to plate for those, added together; and the rounds coming up in the next hour. It redraws itself as
+     rounds are ticked and as time passes (no reads: the same list and ticks as the band). */
+  function svcLine(f, a) {
+    return (f.lines || []).map(function (l, i) { return { l: l, q: a[i] }; }).filter(function (x) { return x.q > 0; })
+      .map(function (x) { return '<span class="fn-svc-q"><b>' + x.q + '</b> ' + esc(short(x.l.name)) + '</span>'; }).join('');
+  }
+  function serviceHTML(t) {
+    var sv = service(F.list, t, isSentK), q = sum(sv.plate.map(function (p) { return p.qty; }));
+    var just = F.list.filter(function (f) { return f.status === 'confirmed'; }).map(function (f) {
+      return (f.rounds || []).map(function (r, i) { var x = sentRec(f, i); return x && t - x.sentAt < 2 * MIN ? { f: f, i: i } : null; }).filter(Boolean);
+    }).reduce(function (a, b) { return a.concat(b); }, []);
+    var out = '<section class="set-block fn-page fn-svc-page"><h2 id="rtitle" tabindex="-1">Service</h2>' + (known() ? '' : '<p role="status">Loading functions...</p>');
+    if (known() && !sv.rows.length) out += '<p class="hint">Nothing to send: no function has a round still to go out.</p>';
+    if (sv.rows.length) out += '<h3 class="fn-h">Next out</h3><ul class="fn-svc-rows">' + sv.rows.map(function (r) {
+      var n = r.f.rounds.length;
+      return '<li class="fn-svc-row' + (r.late ? ' is-late' : r.due ? '' : ' is-later') + '"><p class="fn-svc-top"><b class="fn-due' + (r.late ? ' is-late' : '') + '">' + esc(when(r.at, kday(t))) + '</b>' +
+        (r.late ? ' <span class="fn-late">Late</span>' : r.due ? '' : ' <span class="fn-tag">Later</span>') + ' <button type="button" class="linkish fn-svc-name" data-fn="open" data-id="' + esc(r.f.id) + '" aria-haspopup="dialog">' + esc(r.f.name) + '</button>' +
+        (r.f.loc ? ' · ' + esc(r.f.loc) : '') + (n > 1 ? ' · round ' + (r.k + 1) + ' of ' + n : '') + '</p>' +
+        '<p class="fn-svc-what">' + svcLine(r.f, r.a) + ' <span class="fn-of">(' + sum(r.a) + ')</span></p>' +
+        (r.f.rounds[r.k].note ? '<p class="fn-svc-note">' + esc(r.f.rounds[r.k].note) + '</p>' : '') +
+        '<div class="fn-next-sent">' + sentCell(r.f, r.k) + '</div></li>';
+    }).join('') + '</ul>';
+    if (just.length) out += '<p class="fn-svc-just">' + just.map(function (j) { var x = sentRec(j.f, j.i); return esc(j.f.name) + (j.f.rounds.length > 1 ? ' round ' + (j.i + 1) : '') + ' sent ' + esc(kclock(x.sentAt) + ', ' + nameOf(x.sentBy)) + ' ' + sentCell(j.f, j.i).replace(/^<span class="fn-sent-ok">[\s\S]*?<\/small><\/span>/, ''); }).join('<br>') + '</p>';
+    if (sv.plate.length) out += '<section class="fn-next" aria-label="To plate now"><p class="fn-next-h"><span class="fn-next-l">To plate now</span> <b>' + q + ' ' + (q === 1 ? 'platter' : 'platters') + '</b></p>' +
+      '<p class="fn-next-s">Late and due in the next 15 minutes, all functions together.</p><ul class="fn-next-list">' + sv.plate.map(function (p) {
+        return '<li class="fn-next-row"><span class="fn-next-n">' + p.qty + '</span><span class="fn-next-name">' + esc(p.name) + '</span></li>';
+      }).join('') + '</ul></section>';
+    if (sv.ahead.length) out += '<h3 class="fn-h">Coming up in the next hour</h3><ol class="fn-rounds">' + sv.ahead.map(function (r) {
+      return '<li class="fn-round"><span class="fn-round-t">' + esc(when(r.at, kday(t))) + '</span><span class="fn-round-w"><i>' + esc(r.f.name) + (r.f.rounds.length > 1 ? ', round ' + (r.k + 1) : '') + '</i>' + esc(linesText(r.f, r.a)) + ' <b>(' + sum(r.a) + ')</b></span><span></span></li>';
+    }).join('') + '</ol>';
+    return out + stateNote() + '<div class="btn-row"><a class="btn" href="#/fn">All functions</a></div></section>';
+  }
   function known() { return F.state === 'ok' || F.state === 'offline' || !!F.at; }
   function pageHTML(id) {
     var t = now(), today = kday(t), prep = P();
     if (!prep || !/^\d{4,6}$/.test((prep.state && prep.state.pin) || '')) return '<section class="set-block"><h2 id="rtitle" tabindex="-1">Functions</h2><p>This device has no kitchen PIN yet. Open the Prep list and enter it first.</p><div class="btn-row"><a class="btn dark" href="#/prep">Open the Prep list</a></div></section>';
+    if (id === 'now') return serviceHTML(t);
     if (id) {
       var f = byId(id);
       if (!f) return '<section class="set-block"><h2 id="rtitle" tabindex="-1">Function</h2>' + (known() ? '<p>This function is not on the kitchen\'s list: it may be a draft, over, or cancelled a while ago.</p>' : '<p role="status">Loading...</p>') + stateNote() + '<div class="btn-row"><a class="btn" href="#/fn">All functions</a></div></section>';
       return '<section class="set-block fn-page"><h2 id="rtitle" tabindex="-1">' + esc(f.name) + '</h2>' + sheetHTML(f, false) + stateNote() + '<div class="btn-row"><a class="btn" href="#/fn">All functions</a></div></section>';
     }
-    var on = showing(F.list, t), up = [], totals = dayTotals(F.list), days = [], i;
+    var on = showing(F.list, t, isSentK), up = [], totals = dayTotals(F.list), days = [], i;
     for (i = 1; i <= pageDays; i++) days.push(addDays(today, i));
     var body = '';
     if (!known()) body = '<p role="status">Loading functions...</p>';
     else {
-      body += '<h3 class="fn-h">Today, ' + esc(dayName(today)) + '</h3>' + (on.length ? '<ul class="fn-cards">' + on.map(function (x) { return cardHTML(x.f); }).join('') + '</ul>' + totalsHTML(totals[today]) : '<p class="hint">No functions on now.</p>');
+      body += '<h3 class="fn-h">Today, ' + esc(dayName(today)) + '</h3>' + (on.length ? '<div class="btn-row"><a class="btn dark" href="#/fn/now">Service view</a></div>' : '') + (on.length ? '<ul class="fn-cards">' + on.map(function (x) { return cardHTML(x.f); }).join('') + '</ul>' + totalsHTML(totals[today]) : '<p class="hint">No functions on now.</p>');
       body += '<h3 class="fn-h">Upcoming functions</h3>';
       days.forEach(function (d) {
         var fs = F.list.filter(function (f) { return f.date === d && (f.status === 'confirmed' || f.status === 'cancelled'); }).sort(function (a, b) { return a.first - b.first; });
@@ -571,6 +634,7 @@
   setInterval(function () {
     if (T.day() !== lastDay) { lastDay = T.day(); stop(); watch(); }   // midnight: the query starts from the new day
     paint();
+    if (/^#\/fn\//.test(location.hash)) { try { window.dispatchEvent(new Event('lk-fn')); } catch (x) {} }   // a function page or the service view: late shows on time
   }, 20000);
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') { watch(); changed(); } });
   window.addEventListener('online', function () { watch(); changed(); });
