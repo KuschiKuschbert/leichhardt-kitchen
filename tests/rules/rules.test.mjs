@@ -341,6 +341,10 @@ await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', lines: [Object.ass
 await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', lines: [Object.assign({}, fnc().lines[0], { qty: 0, u: [] })] })]], { id: 'fay' }), false, 'functions: a confirmed line has at least one platter');
 await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', rounds: [{ at: T0 + 3600000 }, { at: T0 + 1800000 }, { at: T0 + 5400000 }], first: T0 + 3600000 })]], { id: 'fay' }), false, 'functions: rounds out of time order are refused');
 await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', guests: 0 })]], { id: 'fay' }), false, 'functions: confirmed needs a guest count');
+await ok(W([['functions/fg', fnc({ status: 'confirmed', guests: 0, gu: true })]], { id: 'fay' }), true, 'functions: or guests ticked Not known yet');
+await ok(W([['functions/ft', fnc({ status: 'confirmed', mode: 'all', start: 0, st: true, rounds: [{ at: 0, note: '' }], first: 0, last: 0, until: T0, lines: [Object.assign({}, fnc().lines[0], { u: [0, 0, 0] })] })]], { id: 'fay' }), true, 'functions: confirmed with the start time TBC');
+await ok(W([['functions/fu', fnc({ status: 'confirmed', start: 0 })]], { id: 'fay' }), false, 'functions: confirmed with no start needs TBC ticked');
+await ok(W([['functions/fh', fnc({ status: 'draft', gu: 'yes' })]], { id: 'fay' }), false, 'functions: Not known yet is a yes or no');
 await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', mode: 'all' })]], { id: 'fay' }), false, 'functions: all at once is one round');
 await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', price: 300 })]], { id: 'fay' }), false, 'functions: no fields beyond the function fields (no prices)');
 await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', phone: '0400' })]], { id: 'fay' }), false, 'functions: no phone on the kitchen copy');
