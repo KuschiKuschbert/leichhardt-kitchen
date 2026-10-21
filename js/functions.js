@@ -193,6 +193,21 @@
   }
   // the first round still to come (its time not passed yet), or -1 when every round's time has passed
   function nextRound(f, now) { var R = f.rounds || [], i; for (i = 0; i < R.length; i++) if (R[i].at >= now) return i; return -1; }
+  /* Ordering (22 Oct 2026): a function's stock is ordered on the Sunday before it, at least 4 days ahead so the stock
+     can arrive: the latest Sunday that is 4 days or more before the function. Booked later than that, it is ordered today. */
+  function orderDay(date) { var d = addDays(date, -4), dw = new Date(kat(d, 12 * 60) + ZONE).getUTCDay(); return addDays(d, -dw); }
+  function orderOn(date, today) { var o = orderDay(date); return o < today ? today : o; }
+  /* What the band shows besides today's functions: on its order day a reminder to order a function's stock, and the
+     day before, a short line for each function tomorrow. Confirmed functions only, by the time food first goes out. */
+  function soon(list, now) {
+    var today = kday(now), tom = addDays(today, 1), out = [];
+    list.forEach(function (f) {
+      if (f.status !== 'confirmed' || !isYmd(f.date)) return;
+      if (f.od === today && f.date > today) out.push({ f: f, kind: 'order', short: orderDay(f.date) < today });
+      if (f.date === tom) out.push({ f: f, kind: 'tomorrow' });
+    });
+    return out.sort(function (a, b) { return (a.kind === b.kind ? 0 : a.kind === 'order' ? -1 : 1) || (a.f.date < b.f.date ? -1 : a.f.date > b.f.date ? 1 : (a.f.first || 0) - (b.f.first || 0)); });
+  }
   // the first round not ticked as sent (22 Oct 2026), or -1 when every round is ticked. isSent(i) says whether round i is.
   function nextOpen(f, isSent) { var R = f.rounds || [], i; for (i = 0; i < R.length; i++) if (!isSent(i)) return i; return -1; }
   // a short text fingerprint of a platter recipe, so a later change in the book can be flagged on a booked line
@@ -207,7 +222,7 @@
     kday: kday, kat: kat, kclock: kclock, dayStart: dayStart, addDays: addDays, isYmd: isYmd, hmMin: hmMin, dayName: dayName, when: when,
     even: even, toU: toU, fromU: fromU, sum: sum, roundTimes: roundTimes, windowOf: windowOf, derive: derive, counts: counts,
     short: short, unitOf: unitOf, totalQty: totalQty, guestsText: guestsText, problems: problems, changes: changes, dayTotals: dayTotals,
-    overlaps: overlaps, showing: showing, nextRound: nextRound, nextOpen: nextOpen, fingerprint: fingerprint
+    overlaps: overlaps, showing: showing, soon: soon, orderDay: orderDay, orderOn: orderOn, nextRound: nextRound, nextOpen: nextOpen, fingerprint: fingerprint
   };
   if (typeof module === 'object' && module.exports) { module.exports = M; return; }
 
@@ -294,10 +309,15 @@
       return out + '<span class="fn-r1"><span class="fn-tag fn-t-moved">Rescheduled</span><b>' + esc(f.name) + '</b></span>' +
         '<span class="fn-r2">Not today any more: now ' + esc(dayName(f.date)) + ', event ' + esc(kclock(f.start)) + ', food ' + esc(when(f.first, f.date)) + '.</span></button></li>';
     }
-    var n = (f.rounds || []).length, nx = nextRound(f, t), c = recent(f), food;
+    var c = recent(f);
     var head = '<span class="fn-r1"><b>' + esc(f.name) + '</b>' + (f.loc ? ' · ' + esc(f.loc) : '') + ' · ' + guestsText(f) +
       (f.mode === 'stag' ? ' <span class="fn-tag">Staggered</span>' : '') + (f.kc ? ' <span class="fn-tag fn-t-kc">Kitchen comment</span>' : '') +
       (c ? ' <span class="fn-tag fn-t-new">Changed ' + esc(kclock(c.at)) + '</span>' : '') + '</span>';
+    return out + head + '<span class="fn-r2">' + foodHTML(f, t) + '</span></button></li>';
+  }
+  // what goes out next, for the band and the strip: event start (when food is later), then the next round not sent
+  function foodHTML(f, t) {
+    var n = (f.rounds || []).length, tot = totalQty(f), food;
     var ev = f.first !== f.start ? 'Event ' + esc(when(f.start, kday(t))) + ' · ' : '';
     if (!f.first) food = 'Times TBC: <b>' + esc(linesText(f)) + '</b> (' + tot + ')';
     else {
@@ -311,18 +331,25 @@
           '<b>' + esc(linesText(f, rc) || 'nothing') + '</b>' + (n > 1 ? ' <span class="fn-of">' + now_ + ' now, ' + tot + ' in all</span>' : '');
       }
     }
-    void nx;
-    return out + head + '<span class="fn-r2">' + ev + food + '</span></button></li>';
+    return ev + food;
+  }
+  // the order reminder and tomorrow's functions: one short line each
+  function soonRow(x) {
+    var f = x.f, tot = totalQty(f), out = '<li class="fn-li"><button type="button" class="fn-row is-soon" data-fn="open" data-id="' + esc(f.id) + '" aria-haspopup="dialog"><span class="fn-r2">';
+    if (x.kind === 'order') return out + '<span class="fn-tag fn-t-order">Order today</span>' + (x.short ? ' <span class="fn-tag fn-t-off">Short notice</span>' : '') + ' Stock for <b>' + esc(f.name) + '</b>, ' + esc(dayName(f.date)) + ': ' + esc(linesText(f)) + ' (' + tot + '). It is on the order list.</span></button></li>';
+    return out + '<span class="fn-tag fn-t-tom">Tomorrow</span> <b>' + esc(f.name) + '</b> · event ' + esc(when(f.start, f.date)) + ' · food ' + esc(when(f.first, f.date)) + ' · ' + esc(linesText(f)) + ' (' + tot + ')</span></button></li>';
   }
   function bandHTML() {
     var t = now(), xs = showing(F.list, t), stale = '';
     if (F.state === 'error' && F.at) stale = 'Could not load functions. Showing the copy from ' + when(F.at, kday(t)) + '.';
     else if (F.state === 'error') stale = !xs.length && /^\d{4,6}$/.test((P() && P().state && P().state.pin) || '') ? 'Could not load functions. Check the signal.' : '';
     else if ((F.offline || navigator.onLine === false) && F.at && xs.length) stale = 'No signal. Functions last updated ' + when(F.at, kday(t)) + '.';
-    if (!xs.length && !stale) return '';
-    var shown = F.more ? xs : xs.slice(0, 2), left = xs.length - shown.length;
-    return '<h2 class="visually-hidden">Functions</h2>' + (xs.length ? '<ul class="fn-list">' + shown.map(bandRow).join('') + '</ul>' : '') +
-      (left > 0 ? '<button type="button" class="fn-more" data-fn="more" aria-expanded="false">+' + left + ' more ' + (left === 1 ? 'function' : 'functions') + '</button>' : xs.length > 2 ? '<button type="button" class="fn-more" data-fn="more" aria-expanded="true">Show fewer</button>' : '') +
+    var ys = soon(F.list, t);
+    if (!xs.length && !ys.length && !stale) return '';
+    // today's functions first (two, then "+1 more"), then up to two order reminders and tomorrow's functions
+    var a = F.more ? xs : xs.slice(0, 2), b = F.more ? ys : ys.slice(0, 2), left = xs.length + ys.length - a.length - b.length;
+    return '<h2 class="visually-hidden">Functions</h2>' + (a.length + b.length ? '<ul class="fn-list">' + a.map(bandRow).join('') + b.map(soonRow).join('') + '</ul>' : '') +
+      (left > 0 ? '<button type="button" class="fn-more" data-fn="more" aria-expanded="false">+' + left + ' more</button>' : F.more && (xs.length > 2 || ys.length > 2) ? '<button type="button" class="fn-more" data-fn="more" aria-expanded="true">Show fewer</button>' : '') +
       (stale ? '<p class="fn-stale" role="status">' + esc(stale) + '</p>' : '');
   }
   // js/app.js draws the empty slot under the top bar; this fills it, and refills it when anything changes
@@ -330,10 +357,32 @@
   function paint() {
     var el = document.getElementById('fn-band');
     if (el) { var h = bandHTML(); if (h !== lastBand || el.innerHTML !== h) { el.innerHTML = h; lastBand = h; } el.hidden = !h; }
+    strip();
     var lc = document.getElementById('fn-land');
     if (lc) { var lh = landHTML(); if (lc.innerHTML !== lh) lc.innerHTML = lh; lc.hidden = !lh; }
     if (sheetId) { var f = byId(sheetId); var body = sheetEl && sheetEl.querySelector('.fn-sheet-body'); if (body && f) body.innerHTML = sheetHTML(f, true); }
   }
+  /* The strip (22 Oct 2026): once the band has scrolled off the top, one line stays pinned to the top of the screen
+     with today's next function and what goes out next; a tap opens its sheet. It is appended to document.body (a page
+     redraw does not remove it). Bars that already stick to the top (search, signal, update, admin nav) move down by its
+     height through --fn-stick. */
+  var stripEl = null, stripH = 0;
+  function strip() {
+    var band = document.getElementById('fn-band'), t = now(), xs = showing(F.list, t).filter(function (x) { return x.kind !== 'moved'; });
+    var off = !!band && !band.hidden && xs.length && band.getBoundingClientRect().bottom < 0 && !sheetEl;
+    if (!off) { if (stripEl) { stripEl.hidden = true; } setStick(0); return; }
+    if (!stripEl) { stripEl = document.createElement('div'); stripEl.className = 'fn-strip'; stripEl.setAttribute('role', 'region'); stripEl.setAttribute('aria-label', 'Functions'); document.body.appendChild(stripEl); }
+    var x = xs[0], f = x.f;
+    var h = '<button type="button" class="fn-strip-b" data-fn="open" data-id="' + esc(f.id) + '" aria-haspopup="dialog"><b>' + esc(f.name) + '</b> · ' +
+      (x.kind === 'cancelled' ? '<span class="fn-late">Cancelled, do not send</span>' : foodHTML(f, t).replace(/<span class="fn-of">[\s\S]*?<\/span>/, '')) + (xs.length > 1 ? ' <span class="fn-tag">+' + (xs.length - 1) + '</span>' : '') + '</button>';
+    if (stripEl.innerHTML !== h) stripEl.innerHTML = h;
+    stripEl.hidden = false;
+    setStick(stripEl.offsetHeight);
+  }
+  function setStick(px) { if (px === stripH) return; stripH = px; document.documentElement.style.setProperty('--fn-stick', px + 'px'); }
+  window.addEventListener('scroll', strip, { passive: true });
+  window.addEventListener('resize', strip);
+  window.addEventListener('hashchange', function () { setTimeout(strip, 0); });
   function byId(id) { return F.list.filter(function (f) { return f.id === id; })[0] || null; }
 
   /* ---------- the function sheet: the popup from the band and the page #/fn/<id> ---------- */
@@ -405,12 +454,14 @@
       '<header class="fn-sheet-top"><h2 id="fn-sh-h">' + esc(f.name) + '</h2><button type="button" class="btn" data-fn="close">Close</button></header><div class="fn-sheet-body">' + sheetHTML(f, true) + '</div></section>';
     document.body.appendChild(el); sheetEl = el;
     el.querySelector('.fn-sheet').focus({ preventScroll: true });
+    strip();
   }
   function sheetClose(back) {
     if (!sheetEl) return;
     sheetEl.parentNode.removeChild(sheetEl); sheetEl = null; sheetId = '';
     if (back && sheetBack && document.body.contains(sheetBack)) sheetBack.focus({ preventScroll: true });
     sheetBack = null;
+    strip();
   }
 
   /* ---------- #/fn: today, the next three days from tomorrow (or 14), and the platter totals per day ---------- */

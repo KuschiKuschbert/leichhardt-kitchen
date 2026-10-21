@@ -93,6 +93,12 @@ for (const tz of ['Australia/Brisbane', 'America/New_York', 'Asia/Kolkata']) {
   const allTwo = JSON.parse(JSON.stringify(good)); allTwo.mode = 'all';
   ok(M.problems(allTwo).some(p => /All at once is one round/.test(p.t)), tz + ': all at once is one round');
 
+  // ordering: the latest Sunday at least 4 days before, or today when that has passed
+  eq([M.orderDay('2026-10-31'), M.orderDay('2026-10-29'), M.orderDay('2026-10-28'), M.orderDay('2026-11-01')], ['2026-10-25', '2026-10-25', '2026-10-18', '2026-10-25'], tz + ': order day: Sat 31 and Thu 29 Oct on Sun 25, Wed 28 on Sun 18 (25 is only 3 days before), Sun 1 Nov on Sun 25');
+  eq(M.orderOn('2026-10-28', '2026-10-21'), '2026-10-21', tz + ': booked after its order day: order today');
+  const soonF = [Object.assign({}, good, { id: 'o', date: '2026-10-31', od: '2026-10-25' }), Object.assign({}, good, { id: 't', date: '2026-10-26', od: '2026-10-25' }), Object.assign({}, good, { id: 'd', status: 'draft', date: '2026-10-26' })];
+  eq(M.soon(soonF, at('2026-10-25', '09:00')).map(x => x.f.id + ':' + x.kind), ['t:order', 'o:order', 't:tomorrow'], tz + ': on Sun 25: order reminders first (soonest function first), then tomorrow\'s function (no drafts)');
+  ok(M.soon(soonF, at('2026-10-25', '09:00'))[0].short === true && M.soon(soonF, at('2026-10-25', '09:00'))[1].short === false, tz + ': an order day later than its Sunday is marked short notice, one on time is not');
   // day totals: each booked line once, confirmed only, guests never change them
   const g2 = JSON.parse(JSON.stringify(good)); g2.id = 'g2'; g2.guests = 300;
   const dr = JSON.parse(JSON.stringify(good)); dr.status = 'draft';
