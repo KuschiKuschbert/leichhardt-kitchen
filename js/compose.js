@@ -248,7 +248,7 @@
     if (/\bflour\b|cornflour|corn flour|\bcrumbs?\b|\bpanko\b|batter mix|tempura/.test(t)) { L.part = 'coat'; L.coat = L.coat || (/crumb|panko/.test(t) ? 'crumbed' : /batter|tempura/.test(t) ? 'battered' : 'dusted'); return L; }
     var lq = liqOf(t);
     // butter, cream and cheese are liquid in a sauce and solid in a mix; the card's form decides (decide below)
-    if (lq && !L.raw) { L.part = 'liquid'; L.lq = [lq[1], lq[2]]; L.col = lq[1]; return L; }
+    if (lq && (!L.raw || lq[2] >= 0.6)) { L.part = 'liquid'; L.lq = [lq[1], lq[2]]; L.col = lq[1]; return L; }
     if (lq) L.lq = [lq[1], lq[2]];
     if (S().hidden(i)) { L.part = 'hidden'; return L; }
     if (L.raw) { L.part = 'solid'; L.col = L.raw.c; return L; }
@@ -383,14 +383,20 @@
     }
   }
   function colourOf(mo) {
-    if (mo.form === 'liquid') return snap(LIB.sauceColour(mo.name) || mo.liq || (mo.base ? cooked(mo.base.col, mo.base.cook || mo.cook) : '#8A5A34'));
+    if (mo.form === 'liquid') {
+      // only a library sauce that shares the card's own word (butterscotch, not just "dressing")
+      var sm = S().rank(mo.name, { cat: 'sauce' })[0], sit = sm && sm.s >= 0.9 ? LIB.get(sm.id) : null, w0 = S().key(mo.name).split(' ')[0];
+      if (sit && S().key(sit.name + ' ' + sit.kw).split(' ').indexOf(w0) < 0) sit = null;
+      return snap((sit && sit.side && sit.side.c) || LIB.sauceColour(mo.name) || mo.liq || (mo.base ? cooked(mo.base.col, mo.base.cook || mo.cook) : '#8A5A34'));
+    }
     // a purée, a jam, a mash: what is blended in colours it, by weight (the spinach and the cream)
     if (mo.form === 'smooth') {
       var col = '', w = 0;
       mo.lines.forEach(function (L) {
-        var c = isSolid(L) && !/^(seed|speck|herb|fleck)$/.test(kindOf(L)) ? cooked(L.col, L.cook) : L.part === 'liquid' && L.lq && L.lq[0] ? L.lq[0] : L.part === 'tint' && !L.rub ? L.col : '';
+        // blended greens go deep green (the spinach purée), the way the book draws them
+        var c = isSolid(L) && !/^(seed|speck|herb|fleck)$/.test(kindOf(L)) ? (L.raw && L.raw.k === 'leaf' ? ST.sink(L.col, 0.3) : cooked(L.col, L.cook)) : L.part === 'liquid' && L.lq && L.lq[0] ? L.lq[0] : L.part === 'tint' && !L.rub ? L.col : '';
         if (!c) return;
-        var s = (L.g || 100) * (isSolid(L) ? 1.4 : L.part === 'tint' ? 3 : L.lq[1]);
+        var s = (L.g || 100) * (isSolid(L) ? 3 : L.part === 'tint' ? 3 : L.lq[1]);
         col = col ? mix(col, c, s / (w + s)) : c; w += s;
       });
       return snap(col || LIB.sauceColour(mo.name) || '#F3E6C2');
@@ -402,7 +408,8 @@
     return mo.base ? snap(cooked(mo.base.col, mo.base.cook || mo.cook)) : '#C9A46A';
   }
   function beds(mo) {
-    return mo.lines.filter(function (L) { return isSolid(L) && L.raw && L.raw.bed; }).sort(function (a, b) { return chroma(b.col) - chroma(a.col) || (b.g || 0) - (a.g || 0); });
+    var rank = function (L) { return /leaf|shred/.test(L.raw.k) ? 1 : 0; };
+    return mo.lines.filter(function (L) { return isSolid(L) && L.raw && L.raw.bed; }).sort(function (a, b) { return rank(b) - rank(a) || chroma(b.col) - chroma(a.col) || (b.g || 0) - (a.g || 0); });
   }
   function fromNames(mo) {
     var out = [];
@@ -558,6 +565,129 @@
     return { body: out, box: [-count * r * 1.05 - 1, -r * 1.4, count * r * 1.05 + 2.6, r * 1.4 + 1], w: count * r * 2.1 + 4, h: r * 2.8 + 2 };
   }
 
+  /* ---------- a whole dish from its parts ----------
+     A burger or a sandwich from above, the way js/art.js draws them: the bun on top, and what is in it peeking out under
+     it (a frilly ring of lettuce, a corner of cheese, the edge of a tomato slice, beetroot, bacon, an egg). The layers
+     are the dish's own, so a smash burger looks like a smash burger and a works burger shows its beetroot and egg. */
+  var PEEK = [
+    [/oak|lettuce|cos|iceberg|leaf|leaves|rocket|mesclun|spinach|slaw|cabbage/, 'leaf'], [/cheese|cheddar|swiss|mozzarella|american|brie|haloumi/, 'cheese'],
+    [/tomato(?! sauce| relish| ketchup)/, 'tomato'], [/beetroot/, 'beet'], [/bacon|ham\b/, 'bacon'], [/\begg\b/, 'egg'], [/pineapple/, 'pine'],
+    [/onion/, 'onion'], [/pickle|gherkin|cornichon/, 'pickle'], [/avocado|guac/, 'avo'], [/jalape/, 'jal']
+  ];
+  function peekOf(name) { var t = low(name); for (var k = 0; k < PEEK.length; k++) if (PEEK[k][0].test(t)) return PEEK[k][1]; return ''; }
+  function stack(dish, bun, fillings) {
+    var rnd = P.rng('stack:' + (dish && dish.id)), bn = low(bun || ''), roll = /turkish|baguette|sub\b|hot dog|roll\b(?!.*bun)|ciabatta|panini/.test(bn), R0 = 46, out = '', seen = {};
+    var kinds = (fillings || []).map(peekOf).filter(function (k) { if (!k || seen[k]) return false; seen[k] = 1; return true; });
+    var green = (fillings || []).some(function (f) { return /^(oak leaf|red oak( lettuce)?)$/.test(low(f).trim()); });
+    if (roll) {
+      // a Turkish roll: a long rounded loaf, turned a little, with the lettuce and tomato showing at its ends
+      var w = 132, h = 66, inner = '';
+      inner += P.rect(-w / 2 + 2, -h / 2 + 2, w - 4, h - 4, 26, '#000000', null, 0, { opacity: ST.shadow, transform: 'translate(3 4)' });
+      if (seen.leaf) inner += P.rect(-w / 2, -h / 2, w, h, 28, '#7EA453');
+      if (seen.tomato) inner += P.rect(w / 2 - 14, -5, 18, 10, 3, '#D9473B');
+      if (seen.cheese) inner += P.rect(-w / 2 - 4, 6, 16, 12, 2, '#F2C14E');
+      inner += P.rect(-w / 2 + 2, -h / 2 + 2, w - 4, h - 4, 26, '#D9A869', '#B9803A', 1.2) + P.rect(-w / 2 + 11, -h / 2 + 11, w - 22, h - 22, 20, '#E3B67A');
+      for (var k = 0; k < 28; k++) { var q = P.inEllipse(rnd, w * 0.4, h * 0.32); inner += P.circle(q[0], q[1], 0.7 + rnd() * 0.6, k % 2 ? '#C99A5E' : '#F6EBD3'); }
+      out = P.g('rotate(-14)', inner);
+      return { body: finish(out), box: [-74, -52, 74, 52], w: 148, h: 104 };
+    }
+    // a round bun: its shadow, then the layers under it peeking out, then the bun and its highlight
+    out += P.circle(3, 4, R0 + 4, '#000000', null, 0, { opacity: ST.shadow });
+    if (seen.leaf) out += green ? P.circle(0, 0, R0 + 6, '#7EA453') + P.circle(0, 0, R0 + 6, 'none', '#8C3B47', 5, { 'stroke-dasharray': '6 9' }) : P.circle(0, 0, R0 + 2, 'none', '#7EA453', 7, { 'stroke-dasharray': '7 5' });
+    if (seen.egg) out += P.path(P.blob(rnd, R0 + 9, R0 + 5, 0.08, 10), '#FFFFFF', ST.edge('#F6F1E4'), 1);
+    if (seen.cheese) out += P.rect(-R0 - 2, -R0 * 0.55, R0 * 0.65, R0 * 0.65, 0, '#F2C14E', null, 0, { transform: 'rotate(20 ' + n1(-R0 * 0.7) + ' ' + n1(-R0 * 0.22) + ')' });
+    if (seen.bacon) out += P.rect(R0 * 0.55, -R0 * 0.95, R0 * 0.7, 9, 3, '#B5503F', ST.edge('#B5503F'), 0.8, { transform: 'rotate(-35 ' + n1(R0 * 0.9) + ' ' + n1(-R0 * 0.9) + ')' });
+    if (seen.beet) out += P.rect(-R0 * 1.1, R0 * 0.1, 22, 16, 7, '#6E1F3A', null, 0, { transform: 'rotate(-25 ' + n1(-R0) + ' ' + n1(R0 * 0.35) + ')' });
+    if (seen.pine) out += P.path('M' + n1(R0 * 0.2) + ' ' + n1(R0 * 0.98) + ' A' + R0 * 0.5 + ' ' + R0 * 0.5 + ' 0 0 0 ' + n1(R0 * 0.95) + ' ' + n1(R0 * 0.35), 'none', '#F2CB55', 8, { 'stroke-linecap': 'round' });
+    if (seen.onion) out += P.path('M' + n1(-R0 * 0.85) + ' ' + n1(R0 * 0.6) + ' A' + R0 * 0.45 + ' ' + R0 * 0.45 + ' 0 0 0 ' + n1(-R0 * 0.2) + ' ' + n1(R0 * 1.02), 'none', '#9B4A86', 3, { 'stroke-linecap': 'round' });
+    if (seen.pickle) out += P.circle(R0 * 0.98, -R0 * 0.2, 6, '#6E8F2B', ST.edge('#6E8F2B'), 0.8) + P.circle(R0 * 0.98, -R0 * 0.2, 4, '#9CB45A');
+    if (seen.avo) out += P.path(P.blob(rnd, 12, 8, 0.12, 8, -R0 * 0.2, -R0 * 1.0), '#A6C45E', ST.edge('#A6C45E'), 0.8);
+    if (seen.jal) out += P.circle(R0 * 0.5, R0 * 0.9, 5, 'none', '#6E8F2B', 2.4);
+    if (seen.tomato) out += P.circle(R0 * 0.75, R0 * 0.6, 15, '#D9473B') + P.circle(R0 * 0.75, R0 * 0.6, 10, '#EC6A5C');
+    var col = /brioche/.test(bn) ? '#B9772E' : '#C98A45', top = /brioche/.test(bn) ? '#C98A45' : '#D99A50';
+    out += P.circle(0, 0, R0, col) + P.circle(-3, -3, R0 * 0.86, top) + P.ellipse(-11.5, -14.7, 19.3, 9.2, ST.lift(top, 0.35), null, 0, { opacity: '0.85' });
+    if (/sesame/.test(bn)) for (var s2 = 0; s2 < 14; s2++) { var p2 = P.inEllipse(rnd, R0 * 0.7, R0 * 0.62); out += P.ellipse(p2[0], p2[1], 2.2, 1.2, '#F7E9CC', null, 0, { transform: 'rotate(' + Math.round(rnd() * 180) + ' ' + n1(p2[0]) + ' ' + n1(p2[1]) + ')' }); }
+    return { body: finish(out), box: [-R0 - 12, -R0 - 12, R0 + 12, R0 + 12], w: R0 * 2 + 24, h: R0 * 2 + 24 };
+  }
+  // the burger or sandwich as a part: { raw, body, box, role main, form stack, dr the library piece it stands for }
+  function stackPart(dish, bun, fillings, libId) {
+    var got = stack(dish, bun, fillings), lib = LIB.get(libId) || {};
+    return { id: 'stack-' + (dish ? dish.id : 'x'), v: 1, raw: true, key: 'raw:stack-' + (dish ? dish.id : 'x') + '-' + P.hash(got.body).toString(36), dr: libId, name: lib.name || 'Burger',
+      cat: lib.cat || 'bread', role: 'main', form: 'stack', g: lib.g, n: lib.n || 1, w: n1(got.w), h: n1(got.h), side: lib.side || { s: 'mound', h: 30, c: '#C98A45' }, body: got.body, box: got.box.map(n1), from: [], cook: '', lib: 0 };
+  }
+
+  /* A batch recipe in its GN pan, the way js/art.js draws the book's pans: the pan filled to its edges with what the card
+     makes. A sauce is its colour with wide soft gloss and what shows in it; a mix is its bed with the pieces through it;
+     balls sit in rows on baking paper; a butter is rolled into logs. One piece (a brisket, the rice) stays the library's. */
+  function panFill(mo, rx, ry) {
+    var rnd = P.rng('pan:' + mo.id), out = '', w = rx * 2, h = ry * 2, k, bits = '';
+    var rectD = function (c) { return P.rect(-rx, -ry, w, h, 6, c); };
+    var waves = function (c, n) { var o = ''; for (var j = 0; j < n; j++) { var y = -ry + h * (j + 0.6) / (n + 0.2); o += P.path('M' + n1(-rx * 0.85) + ' ' + n1(y) + ' C' + n1(-rx * 0.5) + ' ' + n1(y - ry * 0.18) + ' ' + n1(-rx * 0.1) + ' ' + n1(y + ry * 0.2) + ' ' + n1(rx * 0.3) + ' ' + n1(y - ry * 0.05) + ' S' + n1(rx * 0.75) + ' ' + n1(y - ry * 0.12) + ' ' + n1(rx * 0.85) + ' ' + n1(y), 'none', ST.lift(c, 0.4), 5, { 'stroke-linecap': 'round', opacity: '0.65' }); } return o; };
+    var scatterLines = function (lines, n, s) {
+      var o = '', order = [], tot = sumG(lines) || lines.length;
+      lines.forEach(function (L, j) { var m = Math.max(3, Math.round(n * ((L.g || tot / lines.length) / tot))); for (var c = 0; c < m; c++) order.push(j); });
+      // each piece wholly inside the pan
+      P.spots(rnd, order.length, Math.max(4, rx * 0.92 - 5 * s), Math.max(4, ry * 0.9 - 5 * s), 6).forEach(function (p, j) { var L = lines[order[j]]; o += BIT[kindOf(L)](p[0], p[1], s, snap(lineCol(L, mo, rnd)), L, rnd); });
+      return o;
+    };
+    // pieces as big as the book draws them in a pan: about ten across, as many as fit
+    var big = Math.max(1.4, Math.min(5, w / 40)), count = Math.max(6, Math.min(40, Math.round(w * h / (big * big * 120))));
+    if (mo.form === 'liquid' || mo.form === 'smooth') {
+      var c0 = mo.col;
+      out = rectD(c0) + waves(c0, 2);
+      var sol = mo.lines.filter(function (L) { return isSolid(L) && !GONE.test(L.t) && !/^(seed|speck|herb|fleck)$/.test(kindOf(L)); });
+      if (mo.form === 'liquid' && sol.length) bits += scatterLines(sol, count, big * 0.4);
+      bits += bitsOn(mo, rnd, rx * 0.9, ry * 0.85);
+      return finish(out + bits);
+    }
+    if (mo.form === 'mixture') {
+      var bd = beds(mo), bed = bd[0], wet = mo.wet && mo.liq, lines = mo.lines.filter(function (L) { return isSolid(L) && L !== bed && !/^(seed|speck|herb|fleck)$/.test(kindOf(L)); });
+      var leafy = bed && /leaf/.test(kindOf(bed));
+      out = rectD(leafy ? '#ECEFF2' : bed ? snap(lineCol(bed, mo, rnd)) : wet ? mo.liq : '#F7F3EC');
+      if (wet) out += waves(mo.liq, 2);
+      out += scatterLines(lines.concat(bd.slice(1)), bed ? count * 2 : count, bed ? big * 0.55 : big);
+      if (bed) out += scatterLines([bed], leafy ? count * 3 : count * 2, big * 0.55);
+      out += bitsOn(mo, rnd, rx * 0.9, ry * 0.85);
+      return finish(out);
+    }
+    if (mo.form === 'balls') {
+      var col = snap(cooked(mo.dough || (mo.base ? mo.base.col : '#8A4B2D'), mo.cook || (mo.base && mo.base.cook))), r = 11, cols = Math.max(2, Math.floor(w / 30)), rows = Math.max(1, Math.floor(h / 26));
+      var inc = mo.lines.filter(function (L) { return isSolid(L) && (L !== mo.base || mo.dough) && !GONE.test(L.t); });
+      out = rectD('#F1E9D6') + P.line(-rx, ry - 6, rx, ry - 6, '#E3D8BC', 2);
+      for (var yy = 0; yy < rows; yy++) for (var xx = 0; xx < cols; xx++) {
+        var cx = -rx + w * (xx + 0.5) / cols, cy = -ry + h * (yy + 0.5) / rows;
+        out += P.circle(cx + 6, cy + 2, r, '#000000', null, 0, { opacity: '0.10' }) + P.circle(cx, cy, r, col) + P.circle(cx - 3, cy - 3, 4, ST.lift(col, 0.22), null, 0, { opacity: '0.8' });
+        inc.slice(0, 2).forEach(function (L, j) { out += P.circle(cx + (j ? -4 : 4), cy + 3, 1.2, snap(lineCol(L, mo, rnd))); });
+      }
+      return finish(out);
+    }
+    if (mo.form === 'pat') {
+      var bc = mo.base ? snap(mo.base.col) : '#F3D675', logs = Math.max(1, Math.floor(h / 42)), tint = mo.lines.filter(function (L) { return L.part === 'tint'; })[0];
+      out = rectD('#ECEFF2');
+      for (k = 0; k < logs; k++) {
+        var ly = -ry + h * (k + 0.5) / logs, lw = w * 0.78, lx = -rx + w * 0.06;
+        out += P.rect(lx, ly - 16, lw, 32, 15, bc, ST.edge(bc), 1.5) + P.ellipse(lx + lw, ly, 8, 15, ST.lift(bc, 0.35), ST.edge(bc), 1.5) + P.path('M' + n1(lx + 10) + ' ' + n1(ly - 8) + ' C' + n1(lx + lw * 0.35) + ' ' + n1(ly - 13) + ' ' + n1(lx + lw * 0.7) + ' ' + n1(ly - 13) + ' ' + n1(lx + lw * 0.9) + ' ' + n1(ly - 8), 'none', ST.lift(bc, 0.55), 3, { 'stroke-linecap': 'round', opacity: '0.7' });
+        if (tint) for (var f = 0; f < 18; f++) out += BIT.fleck(lx + 8 + rnd() * (lw - 16), ly - 11 + rnd() * 22, 1.2, tint.col, tint, rnd);
+      }
+      return finish(out);
+    }
+    return '';
+  }
+  // the pan part for a batch recipe's own drawing, or null (one piece: the library's piece fills the pan as before)
+  function panPart(r, area) {
+    var mo = read(r);
+    if (!mo || !mo.drawn || mo.bought || mo.form === 'piece' || !area) return null;
+    var rx = area.rx, ry = area.ry, body = panFill(mo, rx, ry);
+    if (!body) return null;
+    var names = mo.from.length ? mo.from : [mo.name], ings = [];
+    // the card's own ingredient names, what it mostly is first: each gets its Pass label on the pan
+    if (mo.base) ings.push(mo.base.ing);
+    mo.lines.forEach(function (L) { if (ings.indexOf(L.ing) < 0 && (isSolid(L) || L.part === 'tint' || L.part === 'bits' || (L.part === 'liquid' && L.lq && L.lq[1] >= 0.6))) ings.push(L.ing); });
+    if (!ings.length) return null;
+    return { ings: ings, id: 'pan-' + mo.id, v: 1, raw: true, made: mo.id, ms: mo.sig, key: 'raw:pan-' + mo.id + '-' + P.hash(body).toString(36), name: mo.name, cat: 'prepared', role: 'main', form: 'layer', g: 0, n: 1,
+      w: n1(rx * 2), h: n1(ry * 2), side: { s: 'layer', h: 20, c: mo.col }, body: body, box: [-rx, -ry, rx, ry].map(n1), from: names, cook: mo.cook || '', lib: 0 };
+  }
+
   var ROLE = { liquid: 'sauce', smooth: 'sauce', pat: 'topping', balls: 'main' };
   // the part for a card in a dish: a piece of its own, or null when the library piece the dish has already says it all
   function compose(mo, ctx) {
@@ -642,5 +772,5 @@
       g: it.g, n: it.n, w: it.w, h: it.h, side: { s: it.side.s, h: it.side.h, c: col }, body: out, box: bx.map(n1), from: [], cook: cook, lib: 0 };
   }
 
-  window.LK_COMPOSE = { read: read, compose: compose, partFor: partFor, dress: dress, cardOf: cardOf, ST: ST, snap: snap, palette: palette, cooked: cooked, BIT: BIT, kindOf: kindOf, RAW: RAW, COOK: COOK, CUT: CUT };
+  window.LK_COMPOSE = { read: read, compose: compose, partFor: partFor, dress: dress, stack: stackPart, panPart: panPart, cardOf: cardOf, ST: ST, snap: snap, palette: palette, cooked: cooked, BIT: BIT, kindOf: kindOf, RAW: RAW, COOK: COOK, CUT: CUT };
 })();
