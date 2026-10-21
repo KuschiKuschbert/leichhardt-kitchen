@@ -195,7 +195,9 @@
     return P.scatter(rnd, 16, 26, 18, function (x, y, i, q) {
       var rx = 5 + q() * 4, ry = 3.4 + q() * 2, rot = q() * 180, d = P.blob(q, rx, ry, 0.22, 7, 0, 0), smoked = i % 4 === 0, s = '';
       s += P.shadow(d, 1, 1.4) + P.path(d, ['#ECA888', '#F2BC9E', '#E39A78'][i % 3], smoked ? '#C98A52' : '#BF7A5C', smoked ? 1.2 : 0.7);
-      for (var k = -1; k <= 1; k++) s += P.line(k * rx * 0.42 - 0.8, -ry * 0.55, k * rx * 0.42 + 0.8, ry * 0.55, '#F8D6C2', 1, { opacity: '0.85' });
+      var ln = '';
+      for (var k = -1; k <= 1; k++) ln += 'M' + N(k * rx * 0.42 - 0.8) + ' ' + N(-ry * 0.55) + ' L' + N(k * rx * 0.42 + 0.8) + ' ' + N(ry * 0.55);
+      s += P.path(ln, 'none', '#F8D6C2', 1, { opacity: '0.85' });
       return P.g(P.at(x, y, rot), s);
     }, 8);
   }
@@ -235,10 +237,12 @@
     out += P.g(P.at(ex, ey, a1 + 90), P.path('M-1 -2.2 L7 -5.5 Q10 0 7 5.5 L-1 2.2 Z', TAIL, P.shade(TAIL, -0.3), 0.8) + P.line(0, 0, 8.5, 0, P.shade(TAIL, -0.3), 0.6));
     out += P.path(d, col, P.shade(PRAWN_RED, -0.15), 0.9);
     out += P.path(P.smooth(back, true), 'none', PRAWN_RED, 2.2, { opacity: '0.65', 'stroke-linecap': 'round' });
+    var st = '', ch = '';
     for (var m = 1; m <= 6; m++) {
-      var t2 = m / 7.4, a2 = (a0 + sw * t2) * Math.PI / 180, w2 = w0 + (w1 - w0) * t2, cs = Math.cos(a2), sn = Math.sin(a2);
-      out += P.line(cs * (Rc - w2 * 0.2), sn * (Rc - w2 * 0.2), cs * (Rc + w2 / 2 - 0.5), sn * (Rc + w2 / 2 - 0.5), o.char && m % 2 ? '#6B3A1E' : PRAWN_RED, o.char && m % 2 ? 2.4 : 1.6, { opacity: '0.85' });
+      var t2 = m / 7.4, a2 = (a0 + sw * t2) * Math.PI / 180, w2 = w0 + (w1 - w0) * t2, cs = Math.cos(a2), sn = Math.sin(a2), seg = 'M' + N(cs * (Rc - w2 * 0.2)) + ' ' + N(sn * (Rc - w2 * 0.2)) + ' L' + N(cs * (Rc + w2 / 2 - 0.5)) + ' ' + N(sn * (Rc + w2 / 2 - 0.5));
+      if (o.char && m % 2) ch += seg; else st += seg;
     }
+    out += P.path(st, 'none', PRAWN_RED, 1.6, { opacity: '0.85', 'stroke-linecap': 'round' }) + (ch ? P.path(ch, 'none', '#6B3A1E', 2.4, { opacity: '0.85', 'stroke-linecap': 'round' }) : '');
     return out + P.hl(Math.cos(4.4) * Rc, Math.sin(4.4) * Rc, 3.6, 1.3, '#FFFFFF', 0.5, 20);
   }
   // a whole cooked prawn, head on the left: feelers, legs, the shell bands and the tail fan
@@ -279,7 +283,7 @@
       if (o.tail) out += P.g(P.at(l - 3, 0), P.path('M0 -3 L13 -8 Q17 0 13 8 L0 3 Z', TAIL, P.shade(TAIL, -0.3), 0.8) + P.line(1, 0, 15, 0, P.shade(TAIL, -0.3), 0.6));
       var d = P.smooth(P.slabPts(rnd, l, w, 0.3, 0.08, 26));
       out += P.shadow(d) + P.path(d, col, P.shade(col, -0.28), 0.9);
-      for (var i = 0; i < 16; i++) { var a = i / 16 * Math.PI * 2 + rnd() * 0.3, x = Math.cos(a) * l * 0.98, y = Math.sin(a) * w * 1.04; if (o.tail && x > l * 0.8) continue; out += P.path(P.blob(rnd, 2 + rnd() * 1.6, 1.6 + rnd() * 1.2, 0.3, 6, x, y), P.shade(col, 0.2), P.shade(col, -0.22), 0.6); }
+      for (var i = 0; i < 16; i++) { var a = i / 16 * Math.PI * 2 + rnd() * 0.3, x = Math.cos(a) * l * 0.98, y = Math.sin(a) * w * 1.04; if (o.tail && x > l * 0.8) continue; out += P.circle(x, y, 1.6 + rnd() * 1.6, P.shade(col, 0.2), P.shade(col, -0.22), 0.6); }
       out += P.path(P.smooth(P.slabPts(rnd, l * 0.78, w * 0.62, 0.3, 0.12, 14)), '#F6E6B8', null, 0, { opacity: '0.85' });
       out += P.crumbs(rnd, Math.round(l * w / 30), l * 0.75, w * 0.6, [P.shade(col, -0.18), '#FFF6DC'], 0.9);
       return out + P.hl(-l * 0.2, -w * 0.4, l * 0.4, w * 0.14, '#FFFFFF', 0.4);
@@ -363,11 +367,11 @@
   function mussel(P) {
     var d = P.smooth(VALVE), out = '';
     [[-24, 1], [24, 0]].forEach(function (v) {
-      var s = P.shadow(d, 1.2, 1.6) + P.path(d, '#2C2A36', '#15141B', 1) + P.path(P.smooth(sc(VALVE, 0.84, 0.74, 3.5, 0.5)), '#A7B0C0', null, 0) + P.hl(19, -3, 8, 2, '#FFFFFF', 0.45);
-      if (v[1]) { var m = P.smooth(sc(VALVE, 0.66, 0.6, 6.5, 0.5)); s += P.path(m, '#EA9440', '#C46E2A', 0.8) + P.path(m, 'none', '#6A3E22', 0.9, { 'stroke-dasharray': '1.4 1.6', opacity: '0.7' }) + P.hl(17, -2, 5, 1.6, '#FFFFFF', 0.4); }
+      var s = P.path(d, '#2C2A36', '#15141B', 1) + P.path(P.smooth(sc(VALVE, 0.84, 0.74, 3.5, 0.5)), '#A7B0C0', null, 0) + P.hl(19, -3, 8, 2, '#FFFFFF', 0.45);
+      if (v[1]) s += P.path(P.smooth(sc(VALVE, 0.66, 0.6, 6.5, 0.5)), '#EA9440', '#9A5426', 1);
       out += P.g('rotate(' + v[0] + ')', s);
     });
-    return P.g('translate(-16 0)', out);
+    return P.g('translate(-16 0)', P.ellipse(20, 2, 18, 15, '#000000', null, 0, { opacity: '0.12' }) + out);
   }
   function mussels(count, rx, ry, broth) {
     return function (P, rnd) {
@@ -403,11 +407,11 @@
   function clam(P, q) {
     var d = P.smooth(CLAM), out = '';
     [-52, 52].forEach(function (r, i) {
-      var s = P.shadow(d, 1, 1.4) + P.path(d, '#C9A87A', '#8E7048', 0.8) + P.path(P.smooth(sc(CLAM, 0.8, 0.8, 0, -1.8)), '#F6EFE4', null, 0) + P.path(P.smooth(sc(CLAM, 0.42, 0.36, 0, -0.4)), '#B98AA6', null, 0, { opacity: '0.75' });
+      var s = P.path(d, '#C9A87A', '#8E7048', 0.8) + P.path(P.smooth(sc(CLAM, 0.8, 0.8, 0, -1.8)), '#F6EFE4', null, 0) + P.path(P.smooth(sc(CLAM, 0.42, 0.36, 0, -0.4)), '#B98AA6', null, 0, { opacity: '0.75' });
       if (i) s += P.path(P.blob(q, 5, 4, 0.2, 7, 0, -9.5), '#F0C890', '#C9965A', 0.6) + P.hl(-1, -11, 2, 0.8, '#FFFFFF', 0.5);
       out += P.g('rotate(' + r + ')', s);
     });
-    return out + P.circle(0, 0, 1.4, '#6A5034');
+    return P.ellipse(0, -7, 15, 10, '#000000', null, 0, { opacity: '0.1', transform: 'translate(1 1.4)' }) + out + P.circle(0, 0, 1.4, '#6A5034');
   }
   // a shut clam, the outside of the shell: growth rings and a darker band
   function shutClam(P) {
@@ -426,7 +430,7 @@
     var col = '#EBC781', d = P.ringD(q, 15 + q() * 2, 8.5 + q() * 1.5, 0.07), out = P.path(d, '#000000', null, 0, { opacity: '0.12', transform: 'translate(1.5 2)', 'fill-rule': 'evenodd' });
     out += P.path(d, col, P.shade(col, -0.3), 0.9, { 'fill-rule': 'evenodd' });
     out += P.circle(0, 0, 10.5, 'none', '#F6EFE0', 1.6, { opacity: '0.85' });
-    for (var i = 0; i < 9; i++) { var a = i / 9 * Math.PI * 2 + q() * 0.4, r = 13 + q() * 1.5; out += P.path(P.blob(q, 2 + q() * 1.5, 1.6 + q(), 0.3, 6, Math.cos(a) * r, Math.sin(a) * r), P.shade(col, 0.25), null, 0, { opacity: '0.8' }); }
+    for (var i = 0; i < 7; i++) { var a = i / 7 * Math.PI * 2 + q() * 0.5, r = 12.6 + q() * 1.5; out += P.circle(Math.cos(a) * r, Math.sin(a) * r, 1.6 + q() * 1.2, P.shade(col, 0.25), null, 0, { opacity: '0.8' }); }
     return out + P.crumbs(q, 5, 13, 13, [P.shade(col, -0.25)], 0.6);
   }
   // salt and pepper squid: curled scored pieces, white pepper dust and black pepper, chilli and shallot
@@ -434,7 +438,9 @@
     var l = 11 + q() * 4, w = 5 + q() * 2, c = (q() - 0.5) * 8, col = '#ECD196';
     var d = 'M' + N(-l) + ' ' + N(-w + c * 0.3) + ' Q0 ' + N(-w - c) + ' ' + N(l) + ' ' + N(-w + c * 0.3) + ' Q' + N(l + 3) + ' 0 ' + N(l) + ' ' + N(w + c * 0.3) + ' Q0 ' + N(w - c) + ' ' + N(-l) + ' ' + N(w + c * 0.3) + ' Q' + N(-l - 3) + ' 0 ' + N(-l) + ' ' + N(-w + c * 0.3) + ' Z';
     var out = P.shadow(d, 1.2, 1.6) + P.path(d, col, P.shade(col, -0.3), 0.9);
-    for (var x = -l + 4; x < l - 2; x += 5) out += P.line(x, -w * 0.5 - c * 0.3, x + 3, w * 0.5 - c * 0.3, P.shade(col, -0.14), 0.7, { opacity: '0.7' });
+    var sc2 = '';
+    for (var x = -l + 4; x < l - 2; x += 5) sc2 += 'M' + N(x) + ' ' + N(-w * 0.5 - c * 0.3) + ' L' + N(x + 3) + ' ' + N(w * 0.5 - c * 0.3);
+    out += P.path(sc2, 'none', P.shade(col, -0.14), 0.7, { opacity: '0.7' });
     return out + P.crumbs(q, 6, l * 0.8, w * 0.6, ['#2E2A26'], 0.5) + P.hl(-l * 0.2, -w * 0.4, l * 0.4, 1.2, '#FFFFFF', 0.35);
   }
   function tentacles(P, q) {
@@ -473,7 +479,9 @@
     return P.scatter(rnd, 8, 30, 20, function (x, y, i, q) {
       var l = 14 + q() * 4, w = 5, b = 3 + q() * 2.5, col = '#F3E6CC', s = '';
       var d = 'M' + N(-l) + ' ' + N(-w + b) + ' Q0 ' + N(-w - b) + ' ' + N(l) + ' ' + N(-w + b) + ' L' + N(l) + ' ' + N(w + b) + ' Q0 ' + N(w - b) + ' ' + N(-l) + ' ' + N(w + b) + ' Z';
-      for (var xx = -l + 3; xx < l - 1; xx += 3.6) { var yy = b * xx * xx / (l * l); s += P.line(xx - 2.4, yy - w + 1.2, xx + 2.4, yy + w - 1.2, P.shade(col, -0.16), 0.6, { opacity: '0.6' }) + P.line(xx + 2.4, yy - w + 1.2, xx - 2.4, yy + w - 1.2, P.shade(col, -0.16), 0.6, { opacity: '0.6' }); }
+      var hatch = '';
+      for (var xx = -l + 3; xx < l - 1; xx += 3.6) { var yy = b * xx * xx / (l * l); hatch += 'M' + N(xx - 2.4) + ' ' + N(yy - w + 1.2) + ' L' + N(xx + 2.4) + ' ' + N(yy + w - 1.2) + ' M' + N(xx + 2.4) + ' ' + N(yy - w + 1.2) + ' L' + N(xx - 2.4) + ' ' + N(yy + w - 1.2); }
+      s += P.path(hatch, 'none', P.shade(col, -0.16), 0.6, { opacity: '0.6' });
       s += P.path('M' + N(-l + 1) + ' ' + N(-w + b - 0.6) + ' Q0 ' + N(-w - b + 1.4) + ' ' + N(l - 1) + ' ' + N(-w + b - 0.6), 'none', '#C9893A', 1.6, { opacity: '0.7', 'stroke-linecap': 'round' });
       return P.g(P.at(x, y, q() * 180), P.shadow(d, 1.2, 1.6) + P.path(d, col, P.shade(col, -0.3), 0.8) + s + P.path('M' + N(-l + 1) + ' ' + N(w + b - 0.6) + ' Q' + N(-l * 0.5) + ' ' + N(w + b * 0.1) + ' ' + N(-l * 0.1) + ' ' + N(w - 0.4), 'none', '#C9893A', 1.4, { opacity: '0.55', 'stroke-linecap': 'round' }));
     }, 16);
@@ -737,7 +745,7 @@
     { id: 'oysters-mignonette', name: 'Oyster with mignonette', sub: 'Shellfish', kw: 'oyster mignonette red wine vinegar shallot half shell raw', form: 'half', cook: 'raw', role: 'main', n: 1, w: 64, h: 44, of: 'oysters-natural', side: { s: 'cup', h: 14, c: '#A39A87' }, draw: oyster({ top: 'mignonette' }) },
     { id: 'pippies', name: 'Pippies', sub: 'Shellfish', kw: 'pippies pipis vongole clams white wine chilli garlic', form: 'cluster', cook: 'steamed', role: 'main', g: 250, w: 118, h: 96, side: { s: 'pile', h: 14, c: '#E6D3AE' }, draw: pippies },
     // squid and octopus
-    { id: 'calamari-rings', name: 'Calamari rings', sub: 'Squid and octopus', kw: 'calamari rings squid rings battered fried', form: 'pile', cook: 'battered', role: 'main', g: 150, w: 86, h: 70, side: { s: 'pile', h: 20, c: '#EBC781' }, draw: function (P, rnd) { return P.pile(rnd, 10, 34, 27, function (x, y, i, q) { return P.g(P.at(x, y), calamariRing(P, q)); }); } },
+    { id: 'calamari-rings', name: 'Calamari rings', sub: 'Squid and octopus', kw: 'calamari rings squid rings battered fried', form: 'pile', cook: 'battered', role: 'main', g: 150, w: 72, h: 64, side: { s: 'pile', h: 20, c: '#EBC781' }, draw: function (P, rnd) { return P.pile(rnd, 10, 34, 27, function (x, y, i, q) { return P.g(P.at(x, y), calamariRing(P, q)); }); } },
     { id: 'salt-pepper-squid', name: 'Salt and pepper squid', sub: 'Squid and octopus', kw: 'salt and pepper squid calamari s and p chilli dusted fried tentacles', form: 'pile', cook: 'fried', role: 'main', g: 150, w: 80, h: 68, side: { s: 'pile', h: 18, c: '#ECD196' }, draw: saltPepperSquid },
     { id: 'octopus-tentacle', name: 'Octopus tentacle, chargrilled', sub: 'Squid and octopus', kw: 'octopus tentacle chargrilled grilled charred polpo', form: 'piece', cook: 'grilled', role: 'main', n: 1, w: 88, h: 56, side: { s: 'stick', h: 16, c: '#97463F' }, draw: shift(6, 11, tentacle) },
     { id: 'cuttlefish-strips', name: 'Cuttlefish strips', sub: 'Squid and octopus', kw: 'cuttlefish strips scored grilled chargrilled squid', form: 'pile', cook: 'grilled', role: 'main', g: 120, w: 82, h: 64, side: { s: 'pile', h: 12, c: '#F2EBDC' }, draw: cuttlefishStrips },

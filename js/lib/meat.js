@@ -246,11 +246,11 @@
   }
   // deli slices folded loosely into a heap (pastrami): deep pink, a peppered black edge, a streak of fat
   function pastrami(P, rnd) {
-    return P.pile(rnd, 7, 22, 15, function (x, y, i, q) {
-      var l = 16 + q() * 4, b = 3 + q() * 2, rb = ribbon(P, [[-l, b * 0.5], [-l / 2, -b], [0, b], [l / 2, -b], [l, b * 0.5]], 13 + q() * 3);
+    return P.pile(rnd, 6, 20, 15, function (x, y, i, q) {
+      var l = 19 + q() * 5, b = 3 + q() * 2, rb = ribbon(P, [[-l, b * 0.5], [-l / 2, -b], [0, b], [l / 2, -b], [l, b * 0.5]], 17 + q() * 4);
       var s = P.shadow(rb.d, 1.2, 1.8) + P.path(rb.d, i % 2 ? '#B0404A' : '#A33640', '#6E1E26', 0.9);
-      s += P.path(P.smooth(rb.r, true), 'none', '#E9B4B0', 1.6, { opacity: '0.8' }) + P.path(P.smooth(rb.l, true), 'none', '#2E1A12', 2.6, { 'stroke-linecap': 'round' });
-      s += P.crumbs(q, 6, l * 0.8, 3, ['#2E1A12', '#4A2A1E'], 0.6);
+      s += P.path(P.smooth(rb.r.map(function (p) { return [p[0], p[1] - 3]; }), true), 'none', '#EBC0BC', 1.8, { opacity: '0.8', 'stroke-linecap': 'round' }) + P.path(P.smooth(rb.l, true), 'none', '#3A2418', 1.8, { 'stroke-linecap': 'round', opacity: '0.9' });
+      s += P.crumbs(q, 8, l * 0.8, 4, ['#2E1A12', '#4A2A1E'], 0.6);
       return P.g(P.at(x, y, q() * 120 - 60), s);
     });
   }
@@ -454,10 +454,10 @@
         out += P.path(P.blob(rnd, 3 + rnd() * 2, 2 + rnd() * 1.5, 0.3, 6, x + 4, 4), o.char || C.charred, null, 0, { opacity: '0.6' }) + P.line(x - 5, -4, x + 2, 5, o.char || C.charred, 1.8, { opacity: '0.55' });
         out += P.hl(x - 3, -4.5, 3.4, 1.4, '#FFFFFF', 0.3, -20);
       }
-      if (o.satay) {
-        var span = (k - 1) / 2 * gap + 6, sd = 'M' + P.n(-span) + ' -2 Q' + P.n(-span / 2) + ' 5 0 -1 T' + P.n(span) + ' 0';
-        out += P.path(sd, 'none', '#8A5420', 5.4, { 'stroke-linecap': 'round' }) + P.path(sd, 'none', '#C08A3E', 4, { 'stroke-linecap': 'round' });
-        out += P.crumbs(rnd, 16, span, 6, ['#E8CC98', '#B9864A'], 1);
+      // satay: a spoon of peanut sauce over each piece, crushed peanuts on top
+      if (o.satay) for (i = 0; i < k; i++) {
+        var sx = (i - (k - 1) / 2) * gap;
+        out += P.path(P.blob(rnd, 7 + rnd() * 2, 4.5 + rnd() * 1.5, 0.25, 8, sx + 1, 1), '#C08A3E', '#8A5420', 0.7) + P.g(P.at(sx + 1, 1), P.crumbs(rnd, 4, 5, 3, ['#EAD2A2', '#B9864A'], 0.9));
       }
       return out;
     };
@@ -591,27 +591,25 @@
     return out + P.hl(-20, -12, 22, 4, '#FFFFFF', 0.25, -6);
   }
   // a grilled breast sliced on the bias and pushed over a little: each cut shows a strip of white meat
-  function slicedBreast(P, rnd) {
-    var out = '', cuts = [-38, -22, -6, 10, 26, 40];
+  function slicedBreast(P) {
+    // the breast's half height at x: thick end to the left
+    function H(x) { return Math.sqrt(Math.max(0, 1 - Math.pow(x / 62, 2))) * (28 - 6 * (x + 62) / 124); }
+    var cuts = [-40, -24, -8, 8, 24, 40], out = '';
     for (var i = 0; i <= cuts.length; i++) {
-      var x0 = i ? cuts[i - 1] : -70, x1 = i < cuts.length ? cuts[i] : 70, dx = i * 2.2;
-      // each piece: the breast outline kept between two slanted cuts, its cut face showing white on the right
-      var pts = [], k, t;
-      for (k = 0; k <= 8; k++) { t = k / 8; pts.push(edge(x0 + (x1 - x0) * t, -1)); }
-      for (k = 8; k >= 0; k--) { t = k / 8; pts.push(edge(x0 + (x1 - x0) * t + 0, 1)); }
-      var d = 'M' + pts.map(function (p) { return P.n(p[0] + dx) + ' ' + P.n(p[1]); }).join(' L') + ' Z';
-      var face = i < cuts.length ? P.path('M' + P.n(edge(x1, -1)[0] + dx - 0.6) + ' ' + P.n(edge(x1, -1)[1] + 0.8) + ' L' + P.n(edge(x1, 1)[0] + dx - 0.6) + ' ' + P.n(edge(x1, 1)[1] - 0.8), 'none', '#F4E6CC', 3.4, { 'stroke-linecap': 'round' }) : '';
-      out += P.shadow(d, 1.5, 2) + P.path(d, '#D9A050', '#9A6A2A', 1, { 'stroke-linejoin': 'round' }) + face;
+      var c0 = i ? cuts[i - 1] : null, c1 = i < cuts.length ? cuts[i] : null, k, x;
+      var xt0 = c0 === null ? -62 : c0 - 0.3 * H(c0), xb0 = c0 === null ? -62 : c0 + 0.3 * H(c0), xt1 = c1 === null ? 62 : c1 - 0.3 * H(c1), xb1 = c1 === null ? 62 : c1 + 0.3 * H(c1);
+      var pts = [];
+      for (k = 0; k <= 8; k++) { x = xt0 + (xt1 - xt0) * k / 8; pts.push([x, -H(x)]); }
+      for (k = 8; k >= 0; k--) { x = xb0 + (xb1 - xb0) * k / 8; pts.push([x, H(x)]); }
+      var d = 'M' + pts.map(function (p) { return P.n(p[0]) + ' ' + P.n(p[1]); }).join(' L') + ' Z', mx = (xt0 + xt1 + xb0 + xb1) / 4;
+      var s = P.shadow(d, 1.5, 2) + P.path(d, '#D9A050', '#9A6A2A', 1, { 'stroke-linejoin': 'round' }) + P.ellipse(mx, 0, Math.max(2, (xt1 - xt0) * 0.32), H(mx) * 0.6, '#E8BE78', null, 0, { opacity: '0.8' });
+      // the cut face of this slice, white, on its left side
+      if (c0 !== null) s += P.line(xt0 + 2, -H(xt0) + 2, xb0 + 2, H(xb0) - 2, '#F4E6CC', 3.6) + P.line(xt0 + 0.6, -H(xt0) + 2, xb0 + 0.6, H(xb0) - 2, '#B9824A', 0.8);
+      // the grill marks on its top
+      [-9, 7].forEach(function (y) { if (H(mx) > Math.abs(y) + 5) s += P.line(mx - 4.5, y - 4, mx + 3.5, y + 4, '#6B3E18', 2.6, { opacity: '0.8' }); });
+      out += P.g('translate(' + P.n(i * 2.4) + ' ' + P.n(Math.abs(i - 3) * 0.8) + ')', s);
     }
-    // the sear and grill marks over the top, then the shine
-    out += P.g('translate(6 0)', P.grill(52, 18, 40, 13, '#6B3E18', 2.8));
-    return P.g('translate(-6 0)', out + P.hl(-16, -12, 22, 3.4, '#FFFFFF', 0.25, -6));
-    // a point on the breast's edge at x (top when s is -1), the cuts slanted by 0.3
-    function edge(x, s) {
-      var y = s < 0 ? -27 : 26, xs = x + y * 0.3 * (s < 0 ? -1 : -1), r = Math.max(0, 1 - Math.pow(Math.max(-1, Math.min(1, (xs + 0) / 62)), 2));
-      var h = Math.sqrt(r) * (s < 0 ? (xs < 0 ? 28 : 24) : (xs < 0 ? 26 : 22));
-      return [xs, s * Math.max(2, h)];
-    }
+    return P.g('translate(-7 -1)', out + P.hl(-30, -14, 14, 3, '#FFFFFF', 0.25, -6));
   }
   function thigh(P, rnd) {
     var col = '#C98A3A', d = P.blob(rnd, 40, 30, 0.2, 9), out = P.shadow(d) + P.path(d, col, P.shade(col, -0.35), 1.2);
@@ -674,9 +672,9 @@
         return P.g('translate(-6 0)', out);
       }
       if (part === 'half') {
-        out += wingAt(-36, 42, 16, -1) + thighAt(30, 34, -10);
-        out += piece(P.smooth([[-62, -2], [-58, 30], [-30, 50], [10, 50], [40, 40], [58, 18], [60, -2]], true) + ' Z');
-        out += skin(46, 20, -6, 24) + P.line(-58, -0.6, 57, -0.6, '#F3E3C4', 2.6) + P.hl(-8, 14, 30, 7, '#FFFFFF', 0.22, 4);
+        out += wingAt(-38, 40, 22, -1) + thighAt(30, 34, -10);
+        out += piece(P.smooth([[-48, -3], [-62, -2], [-60, 28], [-32, 48], [10, 50], [40, 40], [58, 18], [58, -3], [30, -4], [-10, -4]]));
+        out += skin(46, 20, -6, 24) + P.line(-48, 0, 46, 0, '#F3E3C4', 2.4) + P.hl(-8, 14, 30, 7, '#FFFFFF', 0.22, 4);
         if (o.chop) [-34, -10, 14, 36].forEach(function (x) { var y2 = 46 - Math.abs(x) * 0.2; out += P.line(x + 1, 1.5, x + 4, y2, '#F3E3C4', 1.2, { opacity: '0.9' }) + P.line(x, 1.5, x + 3, y2, P.shade(sk, -0.45), 1.3, { opacity: '0.8' }); });
         out += drum(P, 56, 34, -6, 44, 28, sk, rnd);
         if (o.chop) out += P.line(54, 24, 57, 44, P.shade(sk, -0.45), 1.3, { opacity: '0.8' });
@@ -732,9 +730,9 @@
   function shavings(o) {
     return function (P, rnd) {
       var d = P.blob(rnd, o.rx * 0.78, o.ry * 0.72, 0.12, 11), out = P.shadow(d) + P.path(d, P.shade(o.col, -0.15), null, 0);
-      out += P.pile(rnd, o.count || 44, o.rx, o.ry, function (x, y, i, q) {
-        var len = 12 + q() * 9, wid = 4.5 + q() * 2.2, bend = (q() - 0.5) * 5, col = [o.col, P.shade(o.col, 0.16), P.shade(o.col, -0.1)][i % 3];
-        return P.g(P.at(x, y, q() * 180), P.path(P.leafD(len, wid, bend), col, P.shade(o.col, -0.3), 0.6) + P.path('M' + P.n(-len / 2 + 2) + ' ' + P.n(-wid * 0.3 + bend * 0.3) + ' Q0 ' + P.n(-wid * 0.75 + bend) + ' ' + P.n(len / 2 - 2) + ' ' + P.n(bend * 0.6), 'none', o.edge || '#5E3418', 1.2, { 'stroke-linecap': 'round', opacity: '0.8' }));
+      out += P.pile(rnd, o.count || 30, o.rx, o.ry, function (x, y, i, q) {
+        var l = 8 + q() * 5, b = 1.5 + q() * 2.5, rb = ribbon(P, [[-l, 0], [-l / 2, -b], [0, b * 0.6], [l / 2, -b], [l, 0]], 6 + q() * 2.5), col = [o.col, P.shade(o.col, 0.16), P.shade(o.col, -0.1)][i % 3];
+        return P.g(P.at(x, y, q() * 180), P.path(rb.d, col, P.shade(o.col, -0.3), 0.6) + P.path(P.smooth(rb.l, true), 'none', o.edge || '#5E3418', 1.4, { 'stroke-linecap': 'round', opacity: '0.85' }) + P.path(P.smooth(rb.r, true), 'none', P.shade(o.col, 0.3), 0.9, { opacity: '0.7' }));
       });
       return out;
     };
@@ -791,16 +789,15 @@
   }
 
   /* ---------- deli ---------- */
-  // prosciutto draped in loose folds: each slice a run of soft lobes, rose with its white fat along the edge
+  // prosciutto: thin slices draped loosely, rose with lighter patches where it is thin, the white fat along one edge, soft folds
   function prosciutto(P, rnd) {
     var out = '';
-    [[-24, -14, 10], [16, -12, -8], [-14, 12, -4], [24, 14, 8]].forEach(function (s0) {
-      var s = '';
-      for (var k = 0; k < 4; k++) {
-        var x = -15 + k * 10, y = k % 2 ? 2.5 : -2.5, a = (rnd() - 0.5) * 30, d = P.blob(rnd, 11, 9, 0.14, 9);
-        s += P.g(P.at(x, y, a), P.shadow(d, 1, 1.4) + P.path(d, k % 2 ? '#C9545C' : '#D66A71', '#9A3440', 0.8) +
-          P.path('M-10 -3 Q0 -12 10 -3', 'none', '#F6EAE2', 2.6, { 'stroke-linecap': 'round' }) + P.hl(-1, 2, 5, 2, '#F4C0C4', 0.5, 10));
-      }
+    [[-18, -10, -12], [20, -6, 10], [-2, 14, -2]].forEach(function (s0) {
+      var d = P.blob(rnd, 30, 17, 0.12, 12), s = P.shadow(d, 1.2, 1.8) + P.path(d, '#CF5C64', '#A23A44', 0.9);
+      s += P.path(P.blob(rnd, 12, 6, 0.3, 8, -8, 3), '#E2858C', null, 0, { opacity: '0.6' }) + P.path(P.blob(rnd, 9, 5, 0.3, 8, 12, -2), '#E2858C', null, 0, { opacity: '0.5' });
+      s += P.path('M-26 -6 Q-12 -19 4 -15 Q18 -13 27 -5', 'none', '#F7ECE6', 5, { 'stroke-linecap': 'round' }) + P.path('M-24 -3.6 Q-12 -15 4 -11.6 Q18 -10 25 -3', 'none', '#E8B8B8', 1, { opacity: '0.8' });
+      s += P.path('M-6 -13 Q-1 0 -8 14', 'none', '#A23A44', 1.1, { opacity: '0.6', 'stroke-linecap': 'round' }) + P.path('M-4 -12 Q1 0 -6 13', 'none', '#F4C0C4', 1.4, { opacity: '0.6', 'stroke-linecap': 'round' });
+      s += P.path('M12 -11 Q17 2 13 14', 'none', '#A23A44', 1.1, { opacity: '0.55', 'stroke-linecap': 'round' });
       out += P.g(P.at(s0[0], s0[1], s0[2]), s);
     });
     return out;
@@ -868,7 +865,7 @@
   }
   var BITS = {
     beef: chunk('#6B3A1E', 11, 9), lamb: chunk('#7A4026', 10.5, 9), chicken: chunk('#F0D6A6', 11, 9), tandoori: chunk('#C9622E', 11, 9.5), rendang: chunk('#4E2412', 13, 11),
-    beefslice: function (P, q, x, y, sc) { return P.g(P.at(x, y, q() * 180), P.path(P.blob(q, 11, 4, 0.18, 9), '#6B3A1E', '#40200C', 0.8) + P.path(P.blob(q, 7, 1.6, 0.2, 7), '#8E5432', null, 0)) + dip(P, x, y, 9, 4, sc); },
+    beefslice: function (P, q, x, y, sc) { return P.g(P.at(x, y, q() * 180), P.path(P.blob(q, 11, 3.4, 0.3, 10), '#7A4428', '#40200C', 0.8)) + dip(P, x, y, 8, 3, sc); },
     potato: function (P, q, x, y) { return P.g(P.at(x, y, q() * 90), P.path(rrD(P, -7, -6.5, 14, 13, 3.5), '#F2D27A', '#C9A04A', 0.8) + P.rect(-4, -4, 6, 5, 2, '#F8E4A8', null, 0, { opacity: '0.8' })); },
     peaegg: function (P, q, x, y) { return P.circle(x, y, 3.6, '#7EA453', '#4F7F2F', 0.7) + P.circle(x - 1, y - 1, 1.2, '#CFE3A0') + P.circle(x + 6, y + 2, 3.4, '#7EA453', '#4F7F2F', 0.7) + P.circle(x + 5, y + 1, 1.1, '#CFE3A0'); },
     bamboo: function (P, q, x, y) { return P.g(P.at(x, y, q() * 180), P.rect(-7, -2.2, 14, 4.4, 1.5, '#F2E6C4', '#D3C090', 0.6) + P.line(-5, 0, 5, 0, '#E0D0A0', 0.6)); },
