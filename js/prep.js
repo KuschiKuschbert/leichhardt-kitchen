@@ -43,6 +43,9 @@
     lead: { name: 'Lead', add: true, tick: true, del: true, ping: false },
     sous: { name: 'Sous chef', add: true, tick: true, del: true, ping: true },
     staff: { name: 'Staff', add: true, tick: true, del: false, ping: false },
+    /* Functions (21 Oct 2026): someone who books functions. The role only ticks Functions for them; what counts is the tick,
+       which only the head chef's Google account can save (config/main fnIds). It gives no other rights. */
+    fnc: { name: 'Functions coordinator', add: false, tick: false, del: false, ping: false, fn: true },
     view: { name: 'View only', add: false, tick: false, del: false, ping: false }
   };
 
@@ -562,7 +565,24 @@
      head chef and sous chefs Shift pings, the Minutes register and Manage staff. The head chef on their admin device gets
      the matching admin tab instead. */
   // Meeting minutes shows for staff only once there is something published to read (chefs always, for the register)
-  function chefMenu() { return { minutes: featOn('minutes') && (isSous() || mnPub().length > 0), chef: isSous(), sec: ksPicks(me()) ? (mySec() || 'Pick one for today') : '', book: bookEdit() }; }
+  function chefMenu() { return { minutes: featOn('minutes') && (isSous() || mnPub().length > 0), chef: isSous(), sec: ksPicks(me()) ? (mySec() || 'Pick one for today') : '', book: bookEdit(), fn: fnOK() }; }
+  /* Functions (21 Oct 2026): who may enter and change function bookings. The person signed in with their own PIN and
+     ticked for Functions (config/main fnIds, which only the head chef's Google account saves), or the head chef's Google
+     device with nobody signed in. Being Head chef or Functions coordinator is not enough without the tick. The rules
+     check the same on every save (fnBy() in firestore.rules), so this only decides what the page shows; the
+     config/main listener redraws the page the moment the tick is taken away. */
+  function fnOK() {
+    if (!S.pin || S.configState !== 'ok' || !S.config) return false;
+    var p = me();
+    if (p) return (S.config.fnIds || []).indexOf(p.id) >= 0;
+    return admDev() && !!S.user;
+  }
+  // 'yes', 'no', 'wait' while who is signed in is still being read, or 'nopin'
+  function fnState() {
+    if (fnOK()) return 'yes';
+    if (S.pin && (S.configState === 'idle' || S.configState === 'loading' || (S.configState === 'ok' && !resumed && !!S.who))) return 'wait';
+    return S.pin ? 'no' : 'nopin';
+  }
   function chefOpen(k) {
     if (!isSous()) return;
     if (admDev() && whoHead()) { S.atab = k === 'pings' ? 'notes' : k === 'register' ? 'minutes' : 'people'; lsSet('lk.prep.atab', S.atab); if (location.hash === '#/admin') draw(); else location.hash = '#/admin'; return; }
@@ -1278,6 +1298,8 @@
   function idsFor(people, fn) { return people.filter(function (p) { return p.active !== false && String(p.name).trim() && fn(p); }).map(function (p) { return p.id; }); }
   function isSousP(p) { return p.role === 'sous' || p.role === 'head'; }
   function canPingP(p) { return isSousP(p); }
+  /* Manage functions: the tick in the People tab, nothing else (not the role, not being head chef) */
+  function fnP(p) { return !!p.fn; }
   function isHeadP(p) { return !!p && p.role === 'head'; }
   /* The head chef's own name (headId, which only the head chef's Google account can write) is always Head chef, on the
      list and with every permission, even if a sous chef's save changed or removed the role. Run on every config read. */
@@ -1295,10 +1317,11 @@
   function saveConfig(cfg, hold) {
     var clean = {
       people: cfg.people.filter(function (p) { return String(p.name).trim(); }).map(function (p) {
-        return { id: p.id, name: String(p.name).trim().slice(0, 40), role: p.role || 'staff', add: !!p.add, tick: !!p.tick, del: !!p.del, ping: !!p.ping, active: p.active !== false };
+        return { id: p.id, name: String(p.name).trim().slice(0, 40), role: p.role || 'staff', add: !!p.add, tick: !!p.tick, del: !!p.del, ping: !!p.ping, fn: !!p.fn, active: p.active !== false };
       }),
       kitSecs: ksClean(cfg.kitSecs !== undefined ? cfg.kitSecs : ((S.config && S.config.kitSecs) || [])), showBadges: cfg.showBadges !== false, staffSee: staffSee(cfg),
       sousIds: hold ? (hold.sousIds || []) : idsFor(cfg.people, isSousP), pingIds: hold ? (hold.pingIds || []) : idsFor(cfg.people, canPingP),
+      fnIds: hold ? (hold.fnIds || []) : idsFor(cfg.people, fnP),
       staffIds: idsFor(cfg.people, anyP), headId: headIdOf(cfg.people),
       updated: now(), updatedBy: S.user ? 'Head chef' : (who() ? who().name : '')   // never the Google email: anyone with the kitchen PIN can read this record
     };
@@ -1400,20 +1423,25 @@
   function sameIds(c, have, fn) { return (have || []).slice().sort().join(',') === idsFor(c.people, fn).sort().join(','); }
   function idChanges(c) {
     var out = [];
-    if (!c || !c.people || !c.sousIds || !c.pingIds) return out;   // a list never seeded yet: nothing to ask about
+    if (!c || !c.people) return out;
     c.people.forEach(function (p) {
       if (p.active === false || !String(p.name).trim()) return;
-      var sous = c.sousIds.indexOf(p.id) >= 0;
-      if (isSousP(p) !== sous) out.push({ p: p, sous: isSousP(p), what: isSousP(p) ? 'is now marked Sous chef' : 'is no longer marked Sous chef' });
+      if (c.sousIds && c.pingIds) {   // a list never seeded yet: nothing to ask about
+        var sous = c.sousIds.indexOf(p.id) >= 0;
+        if (isSousP(p) !== sous) out.push({ p: p, sous: isSousP(p), what: isSousP(p) ? 'is now marked Sous chef' : 'is no longer marked Sous chef' });
+      }
+      // Manage functions is given only by the head chef's Google account: a tick changed anywhere else is asked about
+      var fn = (c.fnIds || []).indexOf(p.id) >= 0;
+      if (fnP(p) !== fn) out.push({ p: p, fn: fnP(p), what: fnP(p) ? 'is now ticked for Functions' : 'is no longer ticked for Functions' });
     });
     return out;
   }
   function seedIds() {
     var c = S.config; if (!c || !c.people) return;
-    if (sameIds(c, c.sousIds, isSousP) && sameIds(c, c.pingIds, canPingP) && sameIds(c, c.staffIds, anyP)) return;
+    if (sameIds(c, c.sousIds, isSousP) && sameIds(c, c.pingIds, canPingP) && sameIds(c, c.staffIds, anyP) && sameIds(c, c.fnIds, fnP)) return;
     var asking = idChanges(c).length > 0;
     if (asking && sameIds(c, c.staffIds, anyP)) return;
-    saveConfig({ people: c.people, showBadges: c.showBadges, staffSee: c.staffSee }, asking ? { sousIds: c.sousIds, pingIds: c.pingIds } : null).catch(function () {});
+    saveConfig({ people: c.people, showBadges: c.showBadges, staffSee: c.staffSee }, asking ? { sousIds: c.sousIds || [], pingIds: c.pingIds || [], fnIds: c.fnIds || [] } : null).catch(function () {});
   }
   function idCardHTML() {
     var c = S.config, ch = idChanges(c);
@@ -1429,6 +1457,7 @@
     var people = JSON.parse(JSON.stringify(c.people));
     if (!keep) ch.forEach(function (x) {
       var p = people.filter(function (q) { return q.id === x.p.id; })[0]; if (!p) return;
+      if ('fn' in x) { p.fn = !x.fn; return; }
       p.role = x.sous ? 'staff' : 'sous'; var r = ROLES[p.role]; p.add = r.add; p.tick = r.tick; p.del = r.del; p.ping = r.ping;
     });
     S.idBusy = true; S.idMsg = 'Saving...'; draw();
@@ -2534,7 +2563,7 @@
       find: function (o) { return o.p.name + ' ' + ((ROLES[o.p.role] || {}).name || ''); },
       rowCls: function (o) { return o.p.active === false ? 'is-off' : ''; },
       filters: [['all', 'Everyone'], ['on', 'On the list', function (o) { return o.p.active !== false; }], ['sous', 'Sous chefs', function (o) { return isSousP(o.p) || o.p.role === 'lead'; }],
-        ['staff', 'Staff', function (o) { return o.p.role === 'staff'; }], ['view', 'View only', function (o) { return o.p.role === 'view'; }], ['off', 'Off the list', function (o) { return o.p.active === false; }]],
+        ['staff', 'Staff', function (o) { return o.p.role === 'staff'; }], ['view', 'View only', function (o) { return o.p.role === 'view'; }], ['fn', 'Functions', function (o) { return !!o.p.fn; }], ['off', 'Off the list', function (o) { return o.p.active === false; }]],
       sorts: [['order', 'Order added', function (a, b) { return a.i - b.i; }],
         ['name', 'Name A to Z', function (a, b) { return (b.p.isNew ? 1 : 0) - (a.p.isNew ? 1 : 0) || nm(a).localeCompare(nm(b)); }],
         ['role', 'Role', function (a, b) { return Object.keys(ROLES).indexOf(a.p.role) - Object.keys(ROLES).indexOf(b.p.role) || nm(a).localeCompare(nm(b)); }]],
@@ -2544,6 +2573,7 @@
         { h: 'Write', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'add', o.p.add, 'Write', isHeadP(o.p)); } },
         { h: 'Tick', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'tick', o.p.tick, 'Tick', isHeadP(o.p)); } },
         { h: 'Remove', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'del', o.p.del, 'Remove', isHeadP(o.p)); } },
+        { h: 'Functions', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'fn', o.p.fn, 'Manage functions', false); } },
         { h: '', cls: 'a-act', html: function (o) { return '<button type="button" class="p-x" data-p="a-reset-pin" data-id="' + esc(o.p.id) + '">' + (armed('pin:' + o.p.id) ? 'Tap again to reset' : 'Reset PIN') + '</button>' + removePersonBtn(o.p, o.i); } }
       ]
     });
@@ -2600,7 +2630,7 @@
     if (at === 'minutes') loadMinutes();
     if (at === 'guides') loadGuides();
     var pane = at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'learning' ? (learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() : at === 'people' ? (
-      '<section class="set-block"><span class="label">People</span><span class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Pings lets that person write shift pings from the prep book (sous chefs always can). Reset PIN lets that person choose a new one. Removing someone from the list keeps their name on old lines. Head chef is for your own name: it always has every permission and the sous chef pages, and a sous chef cannot change or remove it.</span>' +
+      '<section class="set-block"><span class="label">People</span><span class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Pings lets that person write shift pings from the prep book (sous chefs always can). Functions lets that person enter and change function bookings (Functions coordinator ticks it for you); only your save here gives it or takes it away, and nothing else comes with it. Reset PIN lets that person choose a new one: do it with them there, as whoever signs in with that name next sets the PIN. Removing someone from the list keeps their name on old lines, and their PIN stops working for anything. Head chef is for your own name: it always has every permission and the sous chef pages, and a sous chef cannot change or remove it.</span>' +
       (headIdOf(d.people) ? '' : '<p class="hint a-nohead" role="note">No one is marked Head chef yet. Set your own name to Head chef and save, so your PIN has full rights on the kitchen devices.</p>') +
       peopleListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' + ksAdminHTML(d) +
       '<section class="set-block"><span class="label">Badges</span><label class="a-check"><input type="checkbox" data-a="badges"' + (d.showBadges !== false ? ' checked' : '') + '> Show the weekly top tickers to everyone on the prep book</label></section>' +
@@ -5495,7 +5525,7 @@
     if (a === 'role') {
       if (el.value === 'head' && S.level !== 'owner') { el.value = p.role; return; }
       if (el.value === 'head') S.draft.people.forEach(function (q) { if (q !== p && q.role === 'head') q.role = 'sous'; });   // one head chef
-      p.role = el.value; var r = ROLES[el.value]; p.add = r.add; p.tick = r.tick; p.del = r.del; p.ping = r.ping; draw();
+      p.role = el.value; var r = ROLES[el.value]; p.add = r.add; p.tick = r.tick; p.del = r.del; p.ping = r.ping; p.fn = !!r.fn || (p.fn && el.value !== 'view'); draw();
     }
     else if (a === 'perm') { p[el.getAttribute('data-perm')] = el.checked; }
     else if (a === 'active') { p.active = el.checked; draw(); }
@@ -5788,6 +5818,8 @@
     headPin: whoHead,
     bookEdit: bookEdit,
     bookState: bookState,
+    fnOK: fnOK,
+    fnState: fnState,
     book: bookApi,
     chefMenu: chefMenu,
     chefOpen: chefOpen,
