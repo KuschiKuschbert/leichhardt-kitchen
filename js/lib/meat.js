@@ -488,7 +488,7 @@
       var w = o.w || 64, h = o.h || 44, d = P.slab(rnd, w / 2, h / 2, 0.75, 0.02, 16), out = P.shadow(d);
       out += P.path(d, '#D9A04A', '#9A6424', 1.2) + P.path(P.slab(rnd, w / 2 - 3.5, h / 2 - 3.5, 0.75, 0.02, 14), '#E9C27A', null, 0);
       for (var x = -w / 2 + 9; x < w / 2 - 4; x += 9) out += P.line(x, -h / 2 + 4, x - 6, h / 2 - 4, '#C08A3E', 1, { opacity: '0.7' });
-      out += crackle(P, rnd, Math.round(w * h / 14), w / 2 - 5, h / 2 - 5);
+      out += crackle(P, rnd, Math.round(w * h / 26), w / 2 - 5, h / 2 - 5);
       return out + P.hl(-w * 0.2, -h * 0.28, w * 0.2, h * 0.07, '#FFFFFF', 0.3, -6);
     };
   }
@@ -729,7 +729,7 @@
       var d = P.blob(rnd, o.rx * 0.78, o.ry * 0.72, 0.12, 11), out = P.shadow(d) + P.path(d, P.shade(o.col, -0.15), null, 0);
       out += P.pile(rnd, o.count || 30, o.rx, o.ry, function (x, y, i, q) {
         var l = 8 + q() * 5, b = 1.5 + q() * 2.5, rb = ribbon(P, [[-l, 0], [-l / 2, -b], [0, b * 0.6], [l / 2, -b], [l, 0]], 6 + q() * 2.5), col = [o.col, P.shade(o.col, 0.16), P.shade(o.col, -0.1)][i % 3];
-        return P.g(P.at(x, y, q() * 180), P.path(rb.d, col, P.shade(o.col, -0.3), 0.6) + P.path(P.smooth(rb.l, true), 'none', o.edge || '#5E3418', 1.4, { 'stroke-linecap': 'round', opacity: '0.85' }) + P.path(P.smooth(rb.r, true), 'none', P.shade(o.col, 0.3), 0.9, { opacity: '0.7' }));
+        return P.g(P.at(x, y, q() * 180), P.path(rb.d, col, P.shade(o.col, -0.3), 0.6) + P.path(P.smooth(rb.l, true), 'none', o.edge || '#5E3418', 1, { 'stroke-linecap': 'round', opacity: '0.8' }) + P.path(P.smooth(rb.r, true), 'none', P.shade(o.col, 0.3), 0.9, { opacity: '0.7' }));
       });
       return out;
     };
@@ -976,7 +976,7 @@
     { id: 'crackling', name: 'Crackling shards', sub: 'Pork', kw: 'crackling crackle pork rind chicharron shards', form: 'shard', cook: 'roasted', role: 'topping', g: 40, w: 76, h: 52, side: { s: 'pile', h: 12, c: '#E3B262' }, draw: shards },
     // chicken
     { id: 'chicken-breast', name: 'Chicken breast, grilled', sub: 'Chicken', kw: 'chicken breast fillet grilled chargrilled', form: 'piece', cook: 'grilled', role: 'main', g: 200, w: 124, h: 58, side: { s: 'slab', h: 22, c: '#D9A050' }, draw: breast },
-    { id: 'chicken-breast-sliced', name: 'Chicken breast, sliced', sub: 'Chicken', kw: 'chicken breast sliced grilled', form: 'slices', cook: 'grilled', role: 'main', g: 200, w: 96, h: 56, side: { s: 'slab', h: 16, c: '#F4E6CC' }, draw: slicedBreast },
+    { id: 'chicken-breast-sliced', name: 'Chicken breast, sliced', sub: 'Chicken', kw: 'chicken breast sliced grilled', form: 'slices', cook: 'grilled', role: 'main', g: 200, w: 140, h: 60, side: { s: 'slab', h: 16, c: '#F4E6CC' }, draw: slicedBreast },
     { id: 'chicken-thigh', name: 'Chicken thigh, grilled', sub: 'Chicken', kw: 'chicken thigh fillet grilled chargrilled', form: 'piece', cook: 'grilled', role: 'main', n: 1, w: 84, h: 64, side: { s: 'slab', h: 14, c: '#C98A3A' }, draw: thigh },
     { id: 'crumbed-chicken-thigh', name: 'Crumbed chicken thigh', sub: 'Chicken', kw: 'crumbed chicken thigh panko katsu', form: 'piece', cook: 'crumbed', role: 'main', n: 1, w: 92, h: 68, side: { s: 'slab', h: 18, c: '#D9A04A' }, draw: crumbedThigh },
     { id: 'chicken-schnitzel', name: 'Chicken schnitzel', sub: 'Chicken', kw: 'schnitty schnitzel crumbed chicken breast', form: 'piece', cook: 'crumbed', role: 'main', g: 250, w: 136, h: 96, side: { s: 'slab', h: 9, c: C.golden }, draw: crumbed({ rx: 66, ry: 46 }) },
