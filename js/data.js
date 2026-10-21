@@ -2,6 +2,8 @@
   Leichhardt Kitchen Recipe Book: recipe data
   ===========================================
   This is the only file you need to edit to add or change a recipe.
+  The head chef can also change and add recipes in the book itself: those are kept in Firestore and laid over this file
+  (js/overlay.js), and the book's copy wins. See "Recipes changed in the book" in README.md.
 
   Each recipe has:
     id         short unique name, no spaces (used in links), e.g. "laksa"

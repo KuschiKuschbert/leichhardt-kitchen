@@ -14,11 +14,11 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const PIN = '000000', OWNER = 'headchef@test.local';
 const rules = readFileSync(process.env.RULES || path.join(here, '..', '..', 'firestore.rules'), 'utf8').replace(/KITCHEN_PIN/g, PIN).replace(/OWNER_EMAIL/g, OWNER);
 const sha = s => createHash('sha256').update(s).digest('hex');
-const pins = { sam: '1111', ann: '2222', bo: '3333' };
+const pins = { sam: '1111', ann: '2222', bo: '3333', hd: '4444' };
 const hash = (id, pin) => sha('lk:' + id + ':' + pin);
 const K = 'kitchens/' + PIN + '/';
 const mins = x => Object.assign({ no: 1, v: 1, status: 'draft', date: '2026-10-19', start: '14:00', loc: 'Kitchen', guests: '', chair: 'sam', taker: 'sam', next: '', decisions: 'Fryer oil every Monday', menu: '', safety: '', dates: '', other: '', att: [{ id: 'ann', st: 'present' }], acts: [], removed: false }, x || {});
-const PEOPLE = [{ id: 'sam', name: 'Sam', role: 'sous', active: true }, { id: 'ann', name: 'Ann', role: 'staff', active: true }, { id: 'bo', name: 'Bo', role: 'staff', ping: true, active: true }, { id: 'cal', name: 'Cal', role: 'staff', active: true }];
+const PEOPLE = [{ id: 'sam', name: 'Sam', role: 'sous', active: true }, { id: 'ann', name: 'Ann', role: 'staff', active: true }, { id: 'bo', name: 'Bo', role: 'staff', ping: true, active: true }, { id: 'cal', name: 'Cal', role: 'staff', active: true }, { id: 'hd', name: 'Hedy', role: 'head', active: true }];
 
 const env = await initializeTestEnvironment({ projectId: 'demo-test', firestore: { rules } });
 await env.clearFirestore();
@@ -26,7 +26,7 @@ await env.withSecurityRulesDisabled(async ctx => {
   const db = ctx.firestore();
   await setDoc(doc(db, K + 'config/main'), {
     people: PEOPLE,
-    sousIds: ['sam'], pingIds: ['sam', 'bo'], staffIds: ['sam', 'ann', 'bo', 'cal'], showBadges: true
+    sousIds: ['sam', 'hd'], pingIds: ['sam', 'bo', 'hd'], staffIds: ['sam', 'ann', 'bo', 'cal', 'hd'], headId: 'hd', showBadges: true
   });
   for (const id of Object.keys(pins)) await setDoc(doc(db, K + 'staffpins/' + id), { hash: hash(id, pins[id]) });
   await setDoc(doc(db, K + 'notes/n-sam'), { text: 'Sam ping', tag: 'none', start: '2026-10-19', until: '2026-10-19', dows: [], removed: false, by: 'sam' });
@@ -221,6 +221,43 @@ await ok(deleteDoc(doc(anon, K + 'shifts/2026-10-21_ann')), false, 'shifts: staf
 await ok(setDoc(doc(owner, K + 'shifts/2026-10-01_old-hand'), sh({ day: '2026-10-01', by: 'old-hand' })), true, 'shifts: the head chef copies one as it is (move to a new kitchen PIN)');
 await ok(W([['config/main', { kitSecs: [{ id: 'grill', name: 'Grill', off: false }] }, true]], { id: 'sam' }), false, 'config: a sous chef cannot change the kitchen sections');
 await ok(setDoc(doc(owner, K + 'config/main'), { kitSecs: [{ id: 'grill', name: 'Grill', off: false }] }, { merge: true }), true, 'config: the head chef sets the kitchen sections');
+// the head chef's book: recipes changed or added in the book (#/manage)
+const rec = (x, r) => Object.assign({ r: Object.assign({ id: 'burger', kind: 'main', no: '02', forLine: 'Plate', name: 'Chicken Burger', yield: 'Per plate', ingredients: [{ q: '1', name: 'Burger bun', tags: ['Gluten'] }], pins: [], sections: [{ title: 'Cooking', steps: ['Toast the bun.'] }] }, r || {}), v: 1, upd: Date.now(), src: 'book', base: 'abcd1234', removed: false }, x || {});
+const pie = x => rec(Object.assign({ src: 'new', base: '' }, x || {}), { id: 'pie', name: 'Pie' });
+// earlier checks replace config/main: the head chef's own name is set again here
+await env.withSecurityRulesDisabled(async ctx => { await setDoc(doc(ctx.firestore(), K + 'config/main'), { headId: 'hd', sousIds: ['sam', 'hd'] }, { merge: true }); });
+function ownerBatch(ops) { const b = writeBatch(owner); for (const [p, data, merge] of ops) b.set(doc(owner, K + p), data, merge ? { merge: true } : {}); return b.commit(); }
+await ok(getDoc(doc(anon, K + 'book/index')), true, 'book: a PIN holder reads the index');
+await ok(W([['recipes/burger', rec()], ['book/index', { r: { burger: 1 } }, true]], { id: 'hd' }), true, 'book: the head chef by PIN saves a changed recipe with the index');
+await ok(getDoc(doc(anon, K + 'recipes/burger')), true, 'book: a PIN holder reads a changed recipe');
+await ok(W([['recipes/burger', rec({ v: 2 })], ['book/index', { r: { burger: 2 } }, true], ['recipes/burger/hist/1', { was: rec(), at: 1 }]], { id: 'hd' }), true, 'book: the next version, its earlier version kept, the index in step (the largest batch)');
+await ok(W([['recipes/burger', rec({ v: 2 })], ['book/index', { r: { burger: 2 } }, true]], { id: 'hd' }), false, 'book: a save made from an old copy (the same version again) is refused');
+await ok(W([['recipes/burger', rec({ v: 3 })]], { id: 'hd' }), false, 'book: a save without the index in the same batch is refused');
+await ok(W([['recipes/burger', rec({ v: 3 })], ['book/index', { r: { burger: 4 } }, true]], { id: 'hd' }), false, 'book: the index and the recipe must say the same version');
+await ok(W([['recipes/pie', pie()], ['book/index', { r: { pie: 1 } }, true]], { id: 'sam' }), false, 'book: a sous chef cannot change recipes');
+await ok(W([['recipes/pie', pie()], ['book/index', { r: { pie: 1 } }, true]], { id: 'ann' }), false, 'book: staff cannot change recipes');
+await ok(W([['book/index', { r: { pie: 1 } }, true]], { id: 'ann' }), false, 'book: staff cannot change the index');
+await ok(W([['recipes/pie', pie()], ['book/index', { r: { pie: 1 } }, true]], { id: 'ann', as: 'hd' }), false, 'book: staff writing as the head chef (spoofed by) is refused');
+await ok(W([['recipes/pie', pie()], ['book/index', { r: { pie: 1 } }, true]], { id: 'hd', pin: '9999' }), false, 'book: the head chef with a wrong PIN is refused');
+await ok(setDoc(doc(anon, K + 'recipes/pie'), pie({ by: 'hd' })), false, 'book: no PIN proof is refused');
+await ok(W([['recipes/pie', pie()], ['book/index', { r: { pie: 1 } }, true]], { id: 'hd' }), true, 'book: the head chef adds a new recipe');
+await ok(ownerBatch([['recipes/pie', pie({ v: 2 })], ['book/index', { r: { pie: 2 } }, true]]), true, 'book: the head chef\'s Google account saves with nobody signed in');
+await ok(ownerBatch([['recipes/pie', pie({ v: 3, by: 'hd' })], ['book/index', { r: { pie: 3 } }, true]]), true, 'book: the Google account with the head chef signed in');
+await ok(ownerBatch([['recipes/pie', pie({ v: 4, by: 'sam' })], ['book/index', { r: { pie: 4 } }, true]]), false, 'book: the head chef\'s device with a sous chef signed in is refused');
+await ok(ownerBatch([['recipes/moved', rec({ v: 7 }, { id: 'moved' })]]), true, 'book: the Google account copies a recipe as it is (move to a new kitchen PIN)');
+await ok(W([['recipes/pie', pie({ v: 4, price: 12 })], ['book/index', { r: { pie: 4 } }, true]], { id: 'hd' }), false, 'book: no fields beyond the recipe record (no prices)');
+await ok(W([['recipes/pie', rec({ v: 4, src: 'new' }, { id: 'pie', name: 'Pie', cost: 3 })], ['book/index', { r: { pie: 4 } }, true]], { id: 'hd' }), false, 'book: no fields beyond the recipe fields');
+await ok(W([['recipes/pie', rec({ v: 4 }, { id: 'burger' })], ['book/index', { r: { pie: 4 } }, true]], { id: 'hd' }), false, 'book: the recipe id must match the record');
+await ok(W([['recipes/Bad_Id', rec({}, { id: 'Bad_Id' })], ['book/index', { r: { Bad_Id: 1 } }, true]], { id: 'hd' }), false, 'book: a recipe id must be lower case words joined by -');
+await ok(W([['recipes/pie', rec({ v: 4 }, { id: 'pie', name: 'x'.repeat(81) })], ['book/index', { r: { pie: 4 } }, true]], { id: 'hd' }), false, 'book: a name over 80 characters is refused');
+await ok(W([['recipes/pie', rec({ v: 4 }, { id: 'pie', name: 'Pie', kind: 'drink' })], ['book/index', { r: { pie: 4 } }, true]], { id: 'hd' }), false, 'book: the kind must be one the book knows');
+await ok(W([['recipes/pie', rec({ v: 4, removed: true }, { id: 'pie', name: 'Pie' })], ['book/index', { r: { pie: 4 } }, true]], { id: 'hd' }), true, 'book: the head chef hides a recipe');
+await ok(deleteDoc(doc(owner, K + 'recipes/pie')), false, 'book: a recipe is never deleted');
+await ok(setDoc(doc(owner, K + 'recipes/burger/hist/1'), { was: rec(), at: 2 }), false, 'book: an earlier version cannot be changed');
+await ok(deleteDoc(doc(owner, K + 'recipes/burger/hist/1')), false, 'book: an earlier version cannot be deleted');
+await ok(W([['recipes/burger/hist/9', { was: rec(), at: 1 }]], { id: 'ann' }), false, 'book: staff cannot write an earlier version');
+await ok(ownerBatch([['book/index', { cost: 1 }, true]]), false, 'book: no fields beyond the index fields');
+await ok(ownerBatch([['book/index', { menu: [{ title: 'Snacks', ids: ['pie'] }] }, true]]), true, 'book: the head chef sets the menu order');
 // the owner probe
 await ok(getDoc(doc(owner, K + 'config/admins')), true, 'admins: the head chef may read the probe');
 await ok(getDoc(doc(anon, K + 'config/admins')), false, 'admins: nobody else may');

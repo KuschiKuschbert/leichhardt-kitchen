@@ -20,6 +20,8 @@ export function probeChecks(fs, pin) {
     ['a prep line with a writer id and no PIN proof is refused', () => fs.patch(K + 'days/' + day + '/items/' + id, { text: str('probe'), station: str(''), qty: str(''), recipe: str(''), addedBy: str('Probe'), addedById: str('probe'), addedAt: num(Date.now()), done: bool(false), deleted: bool(false), by: str('probe') }), false],
     ['the config cannot be changed without the head chef account', () => fs.patch(K + 'config/main', { probe: num(1) }, ['probe']), false],
     ['a PIN hash cannot be planted', () => fs.patch(K + 'staffpins/' + id, { hash: str('a'.repeat(64)) }), false],
+    ['a recipe cannot be changed with only the kitchen PIN', () => fs.patch(K + 'recipes/' + id, { r: { mapValue: { fields: { id: str(id), kind: str('main'), name: str('Probe') } } }, v: num(1), upd: num(Date.now()), by: str('probe') }), false],
+    ['the head chef\'s recipe index cannot be changed with only the kitchen PIN', () => fs.patch(K + 'book/index', { probe: num(1) }, ['probe']), false],
     ['a proof cannot be read back', () => fs.get(K + 'proofs/' + id), false]
   ];
 }
