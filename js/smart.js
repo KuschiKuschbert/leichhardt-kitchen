@@ -24,7 +24,11 @@
   function n1(x) { return Math.round(x * 10) / 10; }
 
   /* ---------- words ---------- */
-  function words(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/&/g, ' and ').replace(/[^a-z0-9 ]+/g, ' ').split(/\s+/).filter(Boolean); }
+  function words(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/&/g, ' and ').replace(/[^a-z0-9 ]+/g, ' ').split(/\s+/).filter(Boolean).map(function (w, k, all) { return CHILLI_KIND[all[k - 1]] && /^peppers?$/.test(w) ? 'chilli' : ALIAS[w] || w; }); }
+  // "Habanero peppers" and "Poblano peppers" are chillies, not capsicum
+  var CHILLI_KIND = { serrano: 1, poblano: 1, habanero: 1, chipotle: 1, ancho: 1, guajillo: 1, pasilla: 1, anaheim: 1, fresno: 1, thai: 1, birdseye: 1, cayenne: 1, scotch: 1, padron: 1 };
+  // the same thing spelt another way (the recipe library's US spellings): read as the book's word
+  var ALIAS = { chile: 'chilli', chiles: 'chilli', chili: 'chilli', chilis: 'chilli', chilies: 'chilli', chillies: 'chilli', beet: 'beetroot', beets: 'beetroot', yogurt: 'yoghurt', yogurts: 'yoghurt', eggplants: 'eggplants', cilantro: 'coriander', scallion: 'spring', scallions: 'spring', arugula: 'rocket', zucchinis: 'zucchini', rutabaga: 'swede', cantaloupe: 'rockmelon', garbanzo: 'chickpea', garbanzos: 'chickpeas', shrimp: 'prawn', shrimps: 'prawns', ketchup: 'tomato' };
   // one form for plurals and cooked words: slices and sliced are slic, roasted and roast are roast
   function stem(w) {
     if (w.length <= 3) return w;
@@ -74,9 +78,11 @@
      sausage, "Shaved parmesan" is parmesan): a piece that has that word scores 0.62 and up, by how many of the other words
      it has too. Without it, at most 0.55, which counts as unsure. */
   // a last word that only says which part ("pie shell", "cob loaf mix", "cookie dough"): the word before it says what it is
-  var WEAK = { mix: 1, shell: 1, lid: 1, wrapper: 1, dough: 1, base: 1, filling: 1, topper: 1, batter: 0, portion: 1, serve: 1, selection: 1 };
+  var WEAK = { loin: 1, mix: 1, shell: 1, lid: 1, wrapper: 1, dough: 1, base: 1, filling: 1, topper: 1, batter: 0, portion: 1, serve: 1, selection: 1 };
   // words that say how it is cut, cooked or bought: a piece without them still fits
-  var DESC = {}; ['crispy', 'shortcut', 'light', 'oven', 'texas', 'smok', 'roast', 'toast', 'charr', 'season', 'kid', 'vegan', 'dairy', 'free', 'double', 'chunky', 'continental', 'julienn', 'shredd', 'grat', 'dic', 'slic', 'shav', 'baby', 'small', 'large', 'mini', 'american', 'korean', 'southern', 'style', 'hot', 'cold', 'warm', 'new', 'classic', 'plain', 'whole', 'half', 'thick', 'thin', 'red', 'green', 'white', 'king', 'vege', 'veg', 'vegetarian', 'gluten', 'gf'].forEach(function (w) { DESC[stem(w)] = 1; });
+  var DESC = {}; ['crispy', 'shortcut', 'light', 'oven', 'texas', 'smok', 'roast', 'toast', 'charr', 'season', 'kid', 'vegan', 'dairy', 'free', 'double', 'chunky', 'continental', 'julienn', 'shredd', 'grat', 'dic', 'slic', 'shav', 'baby', 'small', 'large', 'mini', 'american', 'korean', 'southern', 'style', 'hot', 'cold', 'warm', 'new', 'classic', 'plain', 'whole', 'half', 'thick', 'thin', 'red', 'green', 'white', 'king', 'vege', 'veg', 'vegetarian', 'gluten', 'gf',
+    // chillies by their kind, fish by where they swim: a sliced chilli or a fish fillet still fits
+    'serrano', 'poblano', 'habanero', 'thai', 'birdseye', 'bird', 'chipotle', 'ancho', 'guajillo', 'pasilla', 'anaheim', 'fresno', 'jalapeno', 'dried', 'skinless', 'boneless', 'skin', 'on', 'seedless', 'unsalted', 'salted', 'peeled', 'raw', 'cooked', 'curly', 'tuscan', 'golden', 'portobello'].forEach(function (w) { DESC[stem(w)] = 1; });
   // last words that say only the shape (bites, fillet, roll): with none of the other words, the match is a guess
   var GENERIC = {}; ['bite', 'fillet', 'sauce', 'stick', 'roll', 'ball', 'slice', 'piece', 'strip', 'chip', 'fry', 'fries', 'wedge', 'cake', 'patty', 'mix', 'salad', 'skewer', 'dip', 'cream', 'butter', 'candy', 'bowl'].forEach(function (w) { GENERIC[stem(w)] = 1; });
   function headOf(ws) { var k = ws.length - 1; while (k > 0 && WEAK[ws[k]]) k--; return k; }
@@ -112,7 +118,7 @@
     return out.slice(0, 4);
   }
   // names the book uses often that say something else than their words (garnish is micro herbs on the plate)
-  var SYN = { riblet: 'pork ribs', 'pork riblet': 'pork ribs', salad: 'garden salad', butter: 'butter pat', garnish: 'micro herbs', 'green garnish': 'micro herbs', 'side sauce': 'sauce ramekin', sauce: 'sauce ramekin', 'side salad': 'garden salad', mesclun: 'mixed leaves', 'green bowl': 'mixed leaves' };
+  var SYN = { 'roasted red peppers': 'capsicum strips', 'roasted red pepper': 'capsicum strips', 'red peppers': 'capsicum strips', 'roasted peppers': 'capsicum strips', 'unsalted butter': 'butter pat', 'salted butter': 'butter pat', 'bacon slices': 'bacon', 'bacon strips': 'bacon', 'bacon rashers': 'bacon', 'streaky bacon': 'bacon', 'jalapeno pepper': 'jalapeno slices', 'jalapeno peppers': 'jalapeno slices', 'banana peppers': 'banana pepper rings', 'portobello mushrooms': 'field mushroom', 'portobello caps': 'field mushroom', riblet: 'pork ribs', 'pork riblet': 'pork ribs', salad: 'garden salad', butter: 'butter pat', garnish: 'micro herbs', 'green garnish': 'micro herbs', 'side sauce': 'sauce ramekin', sauce: 'sauce ramekin', 'side salad': 'garden salad', mesclun: 'mixed leaves', 'green bowl': 'mixed leaves' };
   var SYN_K = {}; Object.keys(SYN).forEach(function (x) { SYN_K[key(x)] = SYN[x]; });
   // names that are one thing although they say "and"
   var ONE = /\b(bread and butter|salt and pepper|mac and cheese|fish and chips|sweet and sour|surf and turf|bangers and mash|pie and peas|shell and lid)\b/i;
@@ -238,10 +244,13 @@
         // its own card says what it is made of and how it is prepped: drawn from that (a pick the head chef made still wins)
         var mk = cardPart(i, r, m);
         if (mk) { made.push({ ing: name, from: mk.from }); out.push({ ing: name, i: i, id: mk.id, it: mk, scale: DR.scaleFor(mk, i.q), count: 1, conf: 0.9, guesses: m.guesses || [] }); return; }
+        // no card, but the dish cuts or cooks it its own way ("Broccolini (charred)"): the piece in that state
+        var dp = C() && C().dress(i, r, m);
+        if (dp) { m = { id: dp.id, conf: m.conf, guesses: m.guesses, it: dp }; }
         if (!m.id || m.conf < 0.6) { unsure.push({ ing: name, guesses: m.id ? m.guesses : [] }); return; }
         // two ingredients for the same piece (the pie mix and the pie case, smoked or oven brisket): one part, both named
         if (used[m.id]) { fold(name, used[m.id]); return; }
-        var it = LIB.get(m.id), part = { ing: name, i: i, id: m.id, it: it, scale: DR.scaleFor(it, i.q), count: countOf(it, i.q), conf: m.conf, guesses: m.guesses };
+        var it = m.it || LIB.get(m.id), part = { ing: name, i: i, id: m.id, it: it, scale: DR.scaleFor(it, i.q), count: countOf(it, i.q), conf: m.conf, guesses: m.guesses };
         // a garnish or topping given by weight gets more pieces, not one giant one; a sauce never floods the plate
         if (/^(garnish|topping)$/.test(it.role) && part.scale > 1.4) { part.count = Math.max(part.count, Math.min(3, Math.round(part.scale * part.scale / 1.6))); part.scale = 1.15; }
         if (/sauce/.test(it.role)) part.scale = Math.min(part.scale, 1.6);
@@ -334,13 +343,13 @@
       var it = p.it;
       // on a board a sauce comes in a ramekin
       if (STYLES[style].pack && /sauce/.test(it.role) && ramekin && it.id !== ramekin.id) it = ramekin;
-      var k2 = it.made ? it.key : it.id + '@' + it.v, col = !it.made && (/sauce/.test(p.it.role) || it === ramekin) ? LIB.sauceColour(p.ing) : '';
-      d.defs[k2] = it.made ? it.body : LIB.body(it.id);
+      var k2 = it.raw ? it.key : it.id + '@' + it.v, col = !it.raw && (/sauce/.test(p.it.role) || it === ramekin) ? LIB.sauceColour(p.ing) : '';
+      d.defs[k2] = it.raw ? it.body : LIB.body(it.id);
       for (var c = 0; c < p.count; c++) {
         var ang = p.count > 1 ? c / p.count * Math.PI * 2 + rnd() * 0.5 : 0, rr = p.count > 1 ? Math.max(it.w, it.h) * p.scale * 0.5 : 0;
         if (host && rr) { var hb = sizeEl(host); rr = Math.min(rr, Math.min(hb[0], hb[1]) * 0.28); }
         var el = { t: 'item', a: k2, x: n1(at[0] + Math.cos(ang) * rr), y: n1(at[1] + Math.sin(ang) * rr * 0.7), sx: n1(p.scale * 100) / 100, sy: n1(p.scale * 100) / 100, r: Math.round(rot + (p.count > 1 ? rnd() * 50 - 25 : 0)), ing: p.ing };
-        if (it.made) { el.t = 'raw'; el.bx = it.box.map(n1).join(' '); el.role = it.role; el.made = it.made; el.ms = it.ms; }
+        if (it.raw) { el.t = 'raw'; el.bx = it.box.map(n1).join(' '); el.role = it.role; if (it.made) { el.made = it.made; el.ms = it.ms; } if (it.dr) { el.dr = it.dr; el.ck = it.cook; } }
         var ii = idxIn(r, p.ing); if (ii < 0 && p.i && p.i.whole) ii = idxIn(r, R.ingName({ name: p.i.whole })); if (ii >= 0) el.ii = ii;
         // what is drawn inside the part, and where each is in the ingredient list (so a rename follows)
         if (p.also && p.also.length) { el.also = p.also.join('|').slice(0, 400); el.ai = p.also.map(function (x) { return idxIn(r, x); }).join('|'); }
@@ -470,8 +479,8 @@
       }
       var surfW = LIB.surface(pd.surf || { fam: 'plate', size: 30 }).w || 200;
       // in the plate's own order, bottom layer first (a sauce pool before its steak, the napoli after its schnitzel)
-      var parts = pd.els.filter(function (e) { return e.t === 'item' || (e.t === 'raw' && e.made); }).map(function (e) {
-        var it = e.t === 'item' ? LIB.get(e.a.split('@')[0]) : cardPart({ name: e.ing || '', link: e.made }, null, null); if (!it) return null;
+      var parts = pd.els.filter(function (e) { return e.t === 'item' || (e.t === 'raw' && (e.made || e.dr)); }).map(function (e) {
+        var it = e.t === 'item' ? LIB.get(e.a.split('@')[0]) : e.dr ? LIB.get(e.dr) : cardPart({ name: e.ing || '', link: e.made }, null, null); if (!it) return null;
         var b = R.bbox(e);
         return { it: it, ing: e.ing || it.name, x: e.x / surfW * 200, y: e.y / surfW * 200, w: (b[2] - b[0]) / surfW * 200, h: (b[3] - b[1]) / surfW * 200 };
       }).filter(Boolean);
@@ -624,7 +633,7 @@
     ui: ui,
     match: function (i, d) { var m = matchIng(i, d && R.recipeOf(d.rid)); return m.conf >= 0.6 ? m.id : ''; },
     // a piece drawn from the ingredient's own recipe card (js/draw.js adds it when nothing in the library is sure)
-    made: function (i, d) { var r = d && R.recipeOf(d.rid); return cardPart(i, r, matchIng(i, r)); },
+    made: function (i, d) { var r = d && R.recipeOf(d.rid), m = matchIng(i, r); return cardPart(i, r, m) || (C() ? C().dress(i, r, m) : null); },
     matchIng: matchIng, rank: rank, key: key, hidden: hidden, split: split, ware: ware, pickStyle: pickStyle, STYLES: STYLES,
     partsOf: partsOf, drawIt: drawIt, tidy: tidy, loadLearned: loadLearned, teach: teach, pendingOps: pendingOps, saved: saved,
     learned: function () { return learned || {}; }

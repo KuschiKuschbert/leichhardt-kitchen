@@ -113,6 +113,9 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   const cos = w.els.find(e => e.ing === 'Cos lettuce');
   ok(!!cos && cos.k === 0 && w.els.filter(e => e.t === 'item').every(e => e === cos || e.k > cos.k), 'Caesar: the cos is the base, everything else on it');
   ok(w.onWare && new Set(w.els.map(e => e.ing)).size === w.els.length, 'Caesar: every part in the bowl, none twice');
+  // cut and cooked the way the dish says (no card of its own): the toasted sourdough is the library's slice, toasted
+  const toast = w.els.find(e => e.ing === 'Toasted sourdough');
+  ok(!!toast && toast.t === 'raw' && toast.dr === 'sourdough-slice' && toast.ck === 'toasted' && cos.k < toast.k, 'Caesar: the toasted sourdough is drawn toasted');
   await p.context().close();
 
   // the grill board: a board, the sauces in ramekins
