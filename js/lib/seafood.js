@@ -469,11 +469,11 @@
   function cuttlefishStrips(P, rnd) {
     // scored strips that curl as they cook: a bent band, fine scoring across, golden char at the edges
     return P.scatter(rnd, 8, 30, 20, function (x, y, i, q) {
-      var l = 14 + q() * 4, w = 5, b = 5 + q() * 4, col = '#F3E6CC', s = '';
+      var l = 14 + q() * 4, w = 5, b = 3 + q() * 2.5, col = '#F3E6CC', s = '';
       var d = 'M' + N(-l) + ' ' + N(-w + b) + ' Q0 ' + N(-w - b) + ' ' + N(l) + ' ' + N(-w + b) + ' L' + N(l) + ' ' + N(w + b) + ' Q0 ' + N(w - b) + ' ' + N(-l) + ' ' + N(w + b) + ' Z';
-      for (var xx = -l + 3; xx < l - 1; xx += 3.4) { var yy = b * (xx * xx / (l * l)) * 2 - b; s += P.line(xx - 1, yy - w + 1.2, xx + 1, yy + w - 1.2, P.shade(col, -0.14), 0.6, { opacity: '0.8' }); }
+      for (var xx = -l + 3; xx < l - 1; xx += 3.4) { var yy = b * xx * xx / (l * l); s += P.line(xx - 1, yy - w + 1.2, xx + 1, yy + w - 1.2, P.shade(col, -0.14), 0.6, { opacity: '0.8' }); }
       s += P.path('M' + N(-l + 1) + ' ' + N(-w + b - 0.6) + ' Q0 ' + N(-w - b + 1.4) + ' ' + N(l - 1) + ' ' + N(-w + b - 0.6), 'none', '#C9893A', 1.6, { opacity: '0.7', 'stroke-linecap': 'round' });
-      return P.g(P.at(x, y, q() * 180), P.shadow(d, 1.2, 1.6) + P.path(d, col, P.shade(col, -0.3), 0.8) + s + P.circle(-l * 0.4, b * 0.3 - w * 0.2, 1.4, '#6B4420', null, 0, { opacity: '0.6' }));
+      return P.g(P.at(x, y, q() * 180), P.shadow(d, 1.2, 1.6) + P.path(d, col, P.shade(col, -0.3), 0.8) + s + P.circle(-l * 0.4, b * 0.16, 1.4, '#6B4420', null, 0, { opacity: '0.6' }));
     }, 16);
   }
 
