@@ -58,6 +58,21 @@ for (const tz of ['Australia/Brisbane', 'America/New_York', 'Asia/Kolkata']) {
   eq(show(at('2026-10-25', '09:00')), ['c:on'], tz + ': the moved function shows on its new day, once');
   eq(M.nextOpen({ rounds: [{}, {}, {}] }, i => i < 1), 1, tz + ': the next open round is the first not ticked as sent');
   eq(M.nextOpen({ rounds: [{}, {}] }, () => true), -1, tz + ': every round sent');
+  // the service view: two functions on at once, what is still to go out
+  const ln = (rid, a) => ({ rid, name: rid + ' Platter', qty: a.reduce((x, y) => x + y, 0), u: M.toU(a) });
+  const sA = base({ id: 'sA', name: 'A do', mode: 'stag', rounds: [{ at: at('2026-10-24', '18:30') }, { at: at('2026-10-24', '19:00') }, { at: at('2026-10-24', '20:00') }], lines: [ln('Hot', [3, 2, 0]), ln('Cold', [0, 1, 4])] });
+  const sB = base({ id: 'sB', name: 'B do', rounds: [{ at: at('2026-10-24', '18:40') }], lines: [ln('Hot', [2])] });
+  const sent = {}, isSent = (g, i) => !!sent[g.id + i], t1 = at('2026-10-24', '18:31');
+  let sv = M.service([sB, sA], t1, isSent);
+  eq(sv.rows.map(r => r.f.id + ':' + r.k + (r.late ? ' late' : r.due ? ' due' : '')), ['sA:0 late', 'sB:0 due'], tz + ': service: the late round first, then the one due within 15 minutes');
+  eq(sv.plate.map(p => p.rid + ' ' + p.qty), ['Hot 5'], tz + ': service: to plate now adds the functions together');
+  eq(sv.ahead.map(r => r.f.id + ':' + r.k), ['sA:1'], tz + ': service: the next hour holds round 2 at 19:00, not round 3 at 20:00');
+  sent.sA0 = true; sv = M.service([sB, sA], t1, isSent);
+  eq(sv.rows.map(r => r.f.id + ':' + r.k + (r.due ? ' due' : '')), ['sB:0 due', 'sA:1'], tz + ': service: once round 1 is sent, A moves on to round 2 (not due yet)');
+  eq(M.showing([sA, sB], t1, isSent).map(x => x.f.id), ['sB', 'sA'], tz + ': band order follows what is still to go out');
+  eq(M.showing([sA, sB], t1).map(x => x.f.id), ['sB', 'sA'], tz + ': without ticks the band goes by the clock');
+  sent.sB0 = sent.sA1 = sent.sA2 = true;
+  eq(M.service([sB, sA], t1, isSent).rows.length, 0, tz + ': service: nothing left when every round is sent');
   eq(M.nextRound(f, at('2026-10-23', '22:00')), 0, tz + ': the next round is the first while it is still to come');
   eq(M.nextRound(f, at('2026-10-23', '23:01')), -1, tz + ': once its time has passed there is no next round (nothing is marked served)');
 
