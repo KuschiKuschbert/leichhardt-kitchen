@@ -56,6 +56,8 @@ for (const tz of ['Australia/Brisbane', 'America/New_York', 'Asia/Kolkata']) {
   eq(show(at('2026-10-24', '00:00')).sort(), ['a:on', 'b:cancelled', 'c:moved'].sort(), tz + ': at 00:00 the function, the cancel notice and the moved notice all show');
   eq(show(at('2026-10-24', '20:00')), [], tz + ': at 20:00 all three are gone');
   eq(show(at('2026-10-25', '09:00')), ['c:on'], tz + ': the moved function shows on its new day, once');
+  eq(M.nextOpen({ rounds: [{}, {}, {}] }, i => i < 1), 1, tz + ': the next open round is the first not ticked as sent');
+  eq(M.nextOpen({ rounds: [{}, {}] }, () => true), -1, tz + ': every round sent');
   eq(M.nextRound(f, at('2026-10-23', '22:00')), 0, tz + ': the next round is the first while it is still to come');
   eq(M.nextRound(f, at('2026-10-23', '23:01')), -1, tz + ': once its time has passed there is no next round (nothing is marked served)');
 
