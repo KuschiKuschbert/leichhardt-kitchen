@@ -342,21 +342,27 @@
   }
 
   /* ---------- lamb ---------- */
-  // one lamb cutlet: the eye with its fat cap, the frenched bone out to the right
+  // one lamb cutlet: the eye with its fat cap on the outer side, the frenched bone out to the right
   function cutlet(P, rnd) {
     var out = bone(P, 4, 0, 56, 0, 7.5, false);
-    var fc = P.blob(rnd, 23, 18, 0.06, 11, -13, -1), tail = P.smooth([[-10, -13], [10, -8], [21, -3.6], [21, 3.6], [10, 8], [-10, 13]]), eye = P.blob(rnd, 18, 14, 0.06, 10, -10, 1);
-    out += P.shadow(fc) + P.path(fc, FATG, FATG_ED, 1) + P.path(tail, LAMB, P.shade(LAMB, -0.3), 1) + P.path(eye, LAMB, P.shade(LAMB, -0.3), 1);
-    out += P.path(P.blob(rnd, 14.5, 11, 0.07, 9, -10, 1), LAMB_SEAR, null, 0) + P.g(P.at(-10, 1), P.grill(13, 10, 35, 8, C.charred, 2.2));
-    return out + P.hl(-15, -5, 6, 2.2, '#FFFFFF', 0.25, -20);
+    var fc = P.blob(rnd, 20, 15.5, 0.06, 11, -15, -3.5), tail = P.smooth([[-10, -12], [10, -7.5], [21, -3.6], [21, 3.6], [10, 7.5], [-10, 12]]), eye = P.blob(rnd, 17.5, 14, 0.06, 10, -9, 1.5);
+    out += P.shadow(fc) + P.path(fc, '#E6C88E', FATG_ED, 1) + P.shadow(eye) + P.path(tail, LAMB, P.shade(LAMB, -0.3), 1) + P.path(eye, LAMB, P.shade(LAMB, -0.3), 1);
+    out += P.path(P.blob(rnd, 14, 11, 0.07, 9, -9, 1.5), LAMB_SEAR, null, 0) + P.g(P.at(-9, 1.5), P.grill(13, 10, 35, 8, C.charred, 2.2));
+    return out + P.hl(-14, -4, 6, 2.2, '#FFFFFF', 0.25, -20);
+  }
+  // a cutlet placed so its eye sits at ex, ey with the bone pointing at angle th
+  function cutletAt(P, rnd, ex, ey, th) {
+    var a = th * Math.PI / 180, c = Math.cos(a), s = Math.sin(a);
+    return P.g(P.at(ex - (c * -9 - s * 1.5), ey - (s * -9 + c * 1.5), th), cutlet(P, rnd));
   }
   function lambRack(P, rnd) {
     var out = '';
-    [-27, -9, 9, 27].forEach(function (x) { out += bone(P, x * 0.95, -6, x * 1.12, 52, 8, false); });
-    var d = P.slab(rnd, 46, 22, 0.55, 0.04, 14);
-    out += P.g(P.at(0, -18), P.shadow(d) + P.path(d, '#5E3A1C', '#3E2410', 1.2) + P.path(P.slab(rnd, 42, 18, 0.55, 0.05, 14), '#7A5228', null, 0) +
-      P.crumbs(rnd, 70, 41, 17, ['#5E8C3A', '#4F7F2F', '#C9A04A', '#8EA84A', '#3E2410'], 1.1) + P.hl(-14, -9, 16, 3, '#FFFFFF', 0.18));
-    return P.g('translate(0 -5)', out);
+    [-27, -9, 9, 27].forEach(function (x) { out += bone(P, x * 0.95, -6, x * 1.22, 42, 7.5, false); });
+    var d = P.slab(rnd, 45, 21, 0.4, 0.04, 14), s = P.shadow(d) + P.path(d, '#5E3A1C', '#3E2410', 1.2) + P.path(P.slab(rnd, 41, 17, 0.4, 0.05, 14), '#6E4A24', null, 0);
+    s += P.crumbs(rnd, 60, 40, 16, ['#5E8C3A', '#4F7F2F', '#6E9A3E', '#C9A04A', '#3E5A22'], 1.2);
+    [-18, 0, 18].forEach(function (x) { s += P.line(x, -17, x + 0.5, 17, '#3E2410', 1, { opacity: '0.45' }); });
+    out += P.g(P.at(0, -18), s + P.hl(-14, -9, 16, 3, '#FFFFFF', 0.18));
+    return P.g('translate(0 6)', out);
   }
   // a strand of slow-cooked meat (pulled pork, pulled lamb)
   function shred(P, x, y, q, col) {
@@ -373,7 +379,7 @@
     };
   }
   function lambShoulder(P, rnd) {
-    var col = '#6E3E1E', d = P.blob(rnd, 46, 34, 0.12, 12), out = bone(P, -30, -10, -62, -20, 11, true);
+    var col = '#6E3E1E', d = P.blob(rnd, 46, 34, 0.12, 12), out = '';
     out += P.shadow(d) + P.path(d, col, '#40220E', 1.2) + P.path(P.blob(rnd, 40, 28, 0.12, 11, -4, -3), '#8A5228', null, 0);
     out += P.g(P.at(14, 8), P.path(P.blob(rnd, 24, 17, 0.15, 10), '#A8684A', null, 0) + P.pile(rnd, 24, 21, 14, function (x, y, i, q) { return shred(P, x, y, q, ['#B97A58', '#C98A68', '#A8684A', '#D9A080'][i % 4]); }));
     out += P.scatter(rnd, 12, 34, 20, function (x, y, i, q) { var a = q() * Math.PI; return P.line(x - 14, y - 6, x - 14 + Math.cos(a) * 5, y - 6 + Math.sin(a) * 5, '#3E5A22', 1.1); });
