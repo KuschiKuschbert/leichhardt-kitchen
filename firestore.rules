@@ -264,6 +264,21 @@ service cloud.firestore {
         && dkStr('note', 40) && dkStr('other', 60) && request.resource.data.at is number);
       allow delete: if isAdmin();
     }
+    // Kitchen sections: the section a person works on for the day (picked after their PIN; the head chef and sous chefs
+    // get their role). One record per person and day, shifts/<day>_<id>, written only by that person (own PIN proof).
+    // The head chef may also create one when moving everything to a new kitchen PIN (an exact copy of the old record).
+    match /kitchens/KITCHEN_PIN/shifts/{sid} {
+      allow read: if true;
+      allow create, update: if isAdmin() || (staff()
+        && sid == request.resource.data.day + '_' + request.resource.data.by
+        && request.resource.data.keys().hasOnly(['by', 'day', 'sec', 'name', 'auto', 'at'])
+        && request.resource.data.day is string && request.resource.data.day.size() == 10
+        && request.resource.data.sec is string && request.resource.data.sec.size() <= 40
+        && request.resource.data.name is string && request.resource.data.name.size() <= 40
+        && request.resource.data.get('auto', false) is bool
+        && request.resource.data.at is number);
+      allow delete: if isAdmin();
+    }
     // Only a person on the list (config/main.staffIds, kept in step by the admin panel and a sous chef's staff page)
     // may set a PIN, once. So nobody with just the kitchen PIN can make up a new writer.
     // The head chef may also create one: the move to a new kitchen PIN copies every stored PIN as it is.

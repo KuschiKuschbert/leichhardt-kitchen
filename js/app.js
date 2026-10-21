@@ -304,7 +304,8 @@
      While a person is signed in the ring is solid, their name is in the title everywhere and next to the hat from 1400
      px, where there is room (at 1280 px it pushed "Kitchen Book" onto two lines). On the head chef's device it carries the
      count of open kitchen mail. A tap opens a small menu: Kitchen mail
-     (write to the head chef), the drinks run, Meeting minutes, a Chef group for the head chef and sous chefs (Shift
+     (write to the head chef), the drinks run, Meeting minutes, My section (staff and leads,
+     once the head chef has set up kitchen sections: today's section, a tap changes it), a Chef group for the head chef and sous chefs (Shift
      pings, Minutes register, Manage staff, 20 Oct 2026: moved here from Handy on the prep list; Admin panel first in it
      where adminItem() allows, 21 Oct 2026), Settings and Sign out,
      which hands the phone to the next person. With nobody signed in the ring is dashed and the menu has Sign in ("Who
@@ -336,6 +337,7 @@
         '<a class="wm-a" href="#/mail" data-who="go">' + ICON.mail + '<span><b>Kitchen mail</b><small>Write to Chef</small></span></a>' +
         '<a class="wm-a" href="#/drinks" data-who="go">' + ICON.cup + '<span><b>Drinks run</b><small>Everyone\'s usual coffee</small></span></a>' +
         (m.minutes ? '<a class="wm-a" href="#/minutes" data-who="go">' + ICON.doc + '<span><b>Meeting minutes</b><small>Read and sign</small></span></a>' : '') +
+        (m.sec ? '<button type="button" class="wm-a" data-who="sec" data-v="section">' + ICON.chef + '<span><b>My section</b><small>' + esc(m.sec) + '</small></span></button>' : '') +
         (m.chef || adm ? '<p class="wm-h wm-sh">Chef</p>' + adm : '') +
         (m.chef ?
           '<button type="button" class="wm-a" data-who="open" data-v="pings">' + ICON.bell + '<span><b>Shift pings</b><small>Write to the whole team</small></span></button>' +
@@ -358,6 +360,7 @@
     if (a === 'go') { whoMenuClose(); return; }
     if (a === 'signin') { e.preventDefault(); whoMenuClose(); if (window.LK_PREP && window.LK_PREP.signIn) window.LK_PREP.signIn(location.hash || '#/'); else location.hash = '#/prep'; return; }
     if (a === 'open') { whoMenuClose(); window.LK_PREP.chefOpen(el.getAttribute('data-v')); return; }
+    if (a === 'sec') { whoMenuClose(); window.LK_PREP.secOpen(); return; }
     if (a === 'out') {
       // something not saved yet: the first tap says so, the second signs out anyway
       if (!window.LK_PREP.signOut(el.classList.contains('is-armed'))) {
