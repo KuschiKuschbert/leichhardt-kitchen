@@ -92,7 +92,7 @@
     adminsFor: '', level: '', stats: null, statsRange: 14, week: null, weekAt: 0, weekBusy: false,
     user: null, authState: 'idle', draft: null, saveMsg: '', busy: false, toast: '', toastAct: null
   };
-  var fb = null, sdkP = null, unsubCfg = null, unsubItems = null, unsubSec = null, unsubAct = null, unsubLrn = null;
+  var fb = null, sdkP = null, unsubCfg = null, unsubItems = null, unsubSec = null, unsubAct = null;
   var itemsKey = '', cfgKey = '', toastTimer = null, resumed = false;
 
   /* ---------- Firebase (loaded only when the prep pages are opened) ---------- */
@@ -163,7 +163,7 @@
         S.config = snap.exists() ? snap.data() : { people: [] };
         S.config.people = S.config.people || [];
         headFix(S.config);
-        S.configState = 'ok'; featSync(); refreshDraft(); watchItems(); watchSections(); watchLearned(); if (S.name === 'orders') watchOrders(); if (S.name === 'waste') watchWaste(); resume(); if (S.authed) ksCheck(); loadAdmins(); loadNotes(); loadMinutes(); draw();
+        S.configState = 'ok'; featSync(); refreshDraft(); watchItems(); watchSections(); loadLearned(); if (S.name === 'orders') watchOrders(); if (S.name === 'waste') watchWaste(); resume(); if (S.authed) ksCheck(); loadAdmins(); loadNotes(); loadMinutes(); draw();
         if (whoHead() !== headSeen) whoSync();   // the Head chef role was given or taken while this person is signed in
         try { window.dispatchEvent(new Event('lk-cfg')); } catch (e) {}   // js/app.js: who may manage the recipes (bookEdit)
       }, function (err) {
@@ -177,8 +177,8 @@
   var unsubW = null, wKey = '';
   /* Stops every live listener (kitchen PIN forgotten or moved), so nothing keeps reading the old PIN. */
   function stopLive() {
-    [unsubCfg, unsubItems, unsubSec, unsubLrn, unsubAct, unsubOrd, unsubW].forEach(function (u) { if (u) u(); });
-    unsubCfg = unsubItems = unsubSec = unsubLrn = unsubAct = unsubOrd = unsubW = null; cfgKey = itemsKey = ordKey = wKey = '';
+    [unsubCfg, unsubItems, unsubSec, unsubAct, unsubOrd, unsubW].forEach(function (u) { if (u) u(); });
+    unsubCfg = unsubItems = unsubSec = unsubAct = unsubOrd = unsubW = null; cfgKey = itemsKey = ordKey = wKey = '';
   }
   function watchItems() {
     if (S.configState !== 'ok' || !fb) return;
@@ -192,16 +192,23 @@
     }, function () { S.itemsState = 'error'; draw(); });
   }
   /* What the prep list learned, for suggestions, Quick add and the Learning tab: the 500 most used items. The collection
-     gains a record for every distinct line ever written and nothing prunes it, so the listener is bounded here (the
-     order list's copy is bounded the same way, at 300). */
+     gains a record for every distinct line ever written and nothing prunes it, so the read is bounded here (the
+     order list's copy is bounded the same way, at 300). It only changes overnight (the server counts the day) and when
+     the head chef hides an item, so it is read once a day per phone (up to 500 reads) and kept in lk.learned until the
+     kitchen day changes; a hide is patched on the phone that made it (22 Oct 2026: it was a live listener, read again in
+     full on every reload and every 04:00 refresh). A failed read keeps nothing and tries again after 5 minutes. */
   var LEARN_N = 500;
-  function watchLearned() {
-    if (unsubLrn || !fb) return;
-    unsubLrn = fb.fs.onSnapshot(fb.fs.query(colRef('learned'), fb.fs.orderBy('uses', 'desc'), fb.fs.limit(LEARN_N)), function (snap) {
+  function loadLearned() {
+    var tag = S.pin + '|' + dayNow();
+    if (!fb || S.learnBusy || waiting('learned') || S.learnFor === tag) return;
+    try { var c = JSON.parse(lsGet('lk.learned') || 'null'); if (c && c.tag === tag && Array.isArray(c.list)) { S.learned = c.list; S.learnFor = tag; return; } } catch (e) {}
+    S.learnBusy = true;
+    fb.fs.getDocs(fb.fs.query(colRef('learned'), fb.fs.orderBy('uses', 'desc'), fb.fs.limit(LEARN_N))).then(function (snap) {
       S.learned = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; });
-      draw();
-    }, function () {});
+      S.learnFor = tag; S.learnBusy = false; learnSave(); draw();
+    }, function () { S.learnBusy = false; retryLater('learned'); });
   }
+  function learnSave() { lsSet('lk.learned', JSON.stringify({ tag: S.learnFor, list: S.learned })); }
   function watchSections() {
     if (unsubSec || !fb) return;
     unsubSec = fb.fs.onSnapshot(colRef('sections'), function (snap) {
@@ -1217,13 +1224,15 @@
       .then(function () {
         S.moving = false; S.moveMsg = 'Copied ' + n + ' records. This device now uses the new PIN. Everyone else enters the new PIN next time they open the book.' +
           (skipped ? ' ' + skipped + ' sign-offs and seen records were left on the old PIN: the published rules do not let the head chef copy them yet.' : '');
-        S.pin = np; lsSet('lk.prep.pin', np); S.items = []; S.learned = []; S.sections = []; S.activity = []; gForget();
+        S.pin = np; lsSet('lk.prep.pin', np); S.items = []; S.learned = []; S.learnFor = ''; S.sections = []; S.activity = []; gForget();
         stopLive(); S.rolledFor = ''; S.learnRan = false; S.weekAt = 0; S.stats = null;
         connect();
       }).catch(function (e) { S.moving = false; S.moveMsg = e && e.code === 'permission-denied' ? 'The rules do not allow the new PIN yet. Nothing was changed on the old PIN.' : 'Stopped part way. Nothing was changed on the old PIN, so it is safe to try again.'; draw(); });
   }
   function hideLearned(id, hidden) {
     sset(docRef('learned', id), { hidden: hidden }, true).catch(failed);
+    // the list is kept for the day, so this phone's copy is patched (other phones see it from tomorrow's read)
+    S.learned.forEach(function (x) { if (x.id === id) x.hidden = hidden; }); if (S.learnFor) learnSave(); draw();
   }
   var LEARN_DAYS = 90;   // how far back the nightly learning reads
   /* Tab and Shift+Tab stay inside an open popup: from the last control back to the first and the other way, and focus
@@ -1601,7 +1610,7 @@
     S.stats = { loading: true, days: {} };
     var today = dayNow(), dates = [], i;
     for (i = 0; i < 60; i++) dates.push(shift(today, -i));
-    Promise.all(dates.map(function (d) { return fb.fs.getDocs(itemsCol(d)).then(function (s) { return [d, s.docs.map(function (x) { return x.data(); })]; }, function () { return [d, []]; }); })).then(function (res) {
+    Promise.all(dates.map(function (d) { return pastRead(itemsCol(d), 'd/' + d, d, false, force).then(function (s) { return [d, s.docs.map(function (x) { return x.data(); })]; }, function () { return [d, []]; }); })).then(function (res) {
       var days = {}; res.forEach(function (r) { days[r[0]] = r[1]; });
       S.stats = { loading: false, days: days, at: Date.now() };
       draw();
@@ -2311,7 +2320,7 @@
   function listHTML() {
     var p = me(), today = dayNow();
     if (S.date !== today && !canBrowse() && !S.user) { S.date = today; S.tab = ''; watchItems(); }
-    if (S.authed && fb) { loadPast(); loadWSum(); }
+    if (S.authed && fb) { loadPast(); loadWSum(); loadLearned(); }
     S.week = S.past ? weekRanks() : null;
     maybeRoll(); mergeDups(); ordRoll(); loadOrdLearned(); loadWNote();
     // the day's own lines and a function's platter lines (their own tab) are counted apart
@@ -2400,7 +2409,7 @@
     S.ordStats = { loading: true, lines: [] };
     var today = dayNow(), dates = [], i;
     for (i = 0; i < 30; i++) dates.push(shift(today, -i));
-    Promise.all(dates.map(function (d) { return fb.fs.getDocs(ordCol(d)).then(function (s) { return s.docs.map(function (x) { var v = x.data(); v.id = x.id; v.date = d; return v; }); }, function () { return []; }); })).then(function (l) {
+    Promise.all(dates.map(function (d) { return pastRead(ordCol(d), 'o/' + d, d, false, force).then(function (s) { return s.docs.map(function (x) { var v = x.data(); v.id = x.id; v.date = d; return v; }); }, function () { return []; }); })).then(function (l) {
       S.ordStats = { loading: false, lines: ordNewest([].concat.apply([], l)) }; draw();
     });
   }
@@ -3225,6 +3234,24 @@
   /* Past days hardly change, so these reads are kept on the phone for the day (like lk.past): tag is kitchen PIN and day. */
   function dayCache(k, tag) { try { var c = JSON.parse(lsGet(k) || 'null'); return c && c.tag === tag ? c.v : null; } catch (e) { return null; } }
   function dayCacheSet(k, tag, v) { lsSet(k, JSON.stringify({ tag: tag, v: v })); }
+  /* The admin reports' past days (coding rules, 22 Oct 2026): a past day read from the server today is read again from
+     this device's own Firestore copy, which costs nothing, until the kitchen day changes. lk.st.got lists the days read
+     today and how many records came back, so a copy the browser has thrown away (fewer records) is read from the server
+     again. Today, and Refresh (force), always read the server. Changes made on other phones to a past day show tomorrow. */
+  var gotM = null;
+  function gotKeep() {
+    var tag = S.pin + '|' + dayNow();
+    if (!gotM || gotM.tag !== tag) { try { gotM = JSON.parse(lsGet('lk.st.got') || 'null'); } catch (e) { gotM = null; } if (!gotM || gotM.tag !== tag || !gotM.c) gotM = { tag: tag, c: {} }; }
+    return gotM;
+  }
+  function pastRead(ref, k, d, isDoc, force) {
+    var g = gotKeep(), n = g.c[k], live = d >= dayNow(), fs = fb.fs;
+    function count(sn) { return isDoc ? (sn.exists() ? 1 : 0) : sn.docs.length; }
+    function server() { return (isDoc ? fs.getDoc(ref) : fs.getDocs(ref)).then(function (sn) { if (!live) { g.c[k] = count(sn); lsSet('lk.st.got', JSON.stringify(g)); } return sn; }); }
+    var fromCache = isDoc ? fs.getDocFromCache : fs.getDocsFromCache;
+    if (live || force || n == null || !fromCache) return server();
+    return fromCache(ref).then(function (sn) { return count(sn) === n ? sn : server(); }, server);
+  }
   function sumDoc() { return fb.fs.doc.apply(null, [fb.db].concat(base(), ['summary', 'waste'])); }
   /* What was wasted in the last 14 days (summary/waste), worked out each night by the server (22 Oct 2026), so staff
      phones never read past wastage lines. One read once a day per phone (on opening the prep list, orders or wastage),
@@ -4135,8 +4162,8 @@
     for (i = 0; i < 60; i++) dates.push(shift(today, -i));
     Promise.all(dates.map(function (d) {
       return Promise.all([
-        fb.fs.getDocs(wCol(d)).then(function (sn) { return sn.docs.map(function (x) { var v = x.data(); v.id = x.id; v.date = d; return v; }); }, function () { return []; }),
-        fb.fs.getDoc(wDay(d)).then(function (sn) { return sn.exists() ? Object.assign({ date: d }, sn.data()) : null; }, function () { return null; })
+        pastRead(wCol(d), 'w/' + d, d, false, force).then(function (sn) { return sn.docs.map(function (x) { var v = x.data(); v.id = x.id; v.date = d; return v; }); }, function () { return []; }),
+        pastRead(wDay(d), 'r/' + d, d, true, force).then(function (sn) { return sn.exists() ? Object.assign({ date: d }, sn.data()) : null; }, function () { return null; })
       ]);
     })).then(function (res) {
       S.wStats = { loading: false, lines: [].concat.apply([], res.map(function (r) { return r[0]; })), reviews: res.map(function (r) { return r[1]; }).filter(Boolean) }; draw();

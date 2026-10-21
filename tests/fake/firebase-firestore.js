@@ -14,8 +14,16 @@ const held = [];
 // documents written while 'hold' (no signal): their snapshots say hasPendingWrites until release()
 const pendingKeys = new Set();
 window.__fake = window.__fake || { mode: 'ok', writes: [], reads: [] };
+// __fake.bill lists what each read would cost on the real Firestore (22 Oct 2026, tests/read-budget.test.js): a getDoc is
+// one read, a query one per document it returns (at least one, even when empty), a listener the documents it first
+// sends (at least one) and then one per document that changed. Reads from the phone's own cache cost nothing.
+window.__fake.bill = window.__fake.bill || [];
+function bill(kind, path, n) { window.__fake.bill.push({ kind, path, n: Math.max(1, n) }); }
 window.__fake.readLog = [];
-const seen = new Set();
+// the documents this tab has read (its "offline copy"): kept across a reload, like the real persistent cache
+const seen = new Set((() => { try { return JSON.parse(sessionStorage.getItem('fake.seen') || '[]'); } catch (e) { return []; } })());
+let seenSave = 0;
+function remember(k) { if (seen.has(k)) return; seen.add(k); if (!seenSave) seenSave = setTimeout(() => { seenSave = 0; try { sessionStorage.setItem('fake.seen', JSON.stringify([...seen])); } catch (e) {} }, 0); }
 window.__fake.release = function () { const h = held.splice(0); pendingKeys.clear(); h.forEach(f => f()); notify(); };
 window.__fake.dump = function () { return store; };
 // a write from another phone: the document changes under this page and its listeners hear about it
@@ -60,7 +68,7 @@ function listCol(path, c) {
 }
 function result(ref) {
   const r = ref.type === 'doc' ? snapDoc(ref.path) : listCol(ref.path, ref.c);
-  (ref.type === 'doc' ? [r] : r.docs).forEach(d => { if (d.exists()) { const k = key(d.ref.path); seen.add(k); window.__fake.readLog.push(k); } });
+  (ref.type === 'doc' ? [r] : r.docs).forEach(d => { const k = key(d.ref.path); if (d.exists()) { remember(k); window.__fake.readLog.push(k); } else if (ref.type === 'doc') remember(k); });
   return r;
 }
 function delay(v) { return new Promise(r => setTimeout(() => r(v), 5)); }
@@ -68,9 +76,10 @@ export function getDoc(ref) {
   if (/\/config\/admins$/.test(key(ref.path)) && !window.__fakeUser) return Promise.reject({ code: 'permission-denied' });
   window.__fake.reads.push(key(ref.path));
   if (readFails(ref)) return Promise.reject({ code: 'unavailable' });
+  bill('get', key(ref.path), 1);
   return delay(result(ref));
 }
-export function getDocs(ref) { window.__fake.reads.push(key(ref.path)); if (readFails(ref)) return Promise.reject({ code: 'unavailable' }); return delay(result(ref)); }
+export function getDocs(ref) { window.__fake.reads.push(key(ref.path)); if (readFails(ref)) return Promise.reject({ code: 'unavailable' }); const r = result(ref); bill('query', key(ref.path), r.docs.length); return delay(r); }
 function readFails(ref) { const f = window.__fake.failReads; return !!(f && f.test(key(ref.path))); }
 // a read that must come from the server: refused when there is no signal ('hold', 'fail'). __fake.server can hold a
 // newer copy of a document than this phone has (say a line ticked on another phone), keyed by path.
@@ -78,8 +87,15 @@ export function getDocFromServer(ref) {
   const k = key(ref.path), sv = window.__fake.server;
   window.__fake.reads.push(k);
   if (window.__fake.mode === 'hold' || window.__fake.mode === 'fail') return Promise.reject({ code: 'unavailable' });
+  bill('server', k, 1);
   if (sv && k in sv) { const v = sv[k]; return delay({ id: ref.path[ref.path.length - 1], ref, exists: () => v != null, data: () => (v == null ? undefined : JSON.parse(JSON.stringify(v))) }); }
   return delay(result(ref));
+}
+// a document from the offline copy: known (even known to be missing) once it was read, refused otherwise, like the SDK
+export function getDocFromCache(ref) {
+  const k = key(ref.path);
+  if (!seen.has(k)) return Promise.reject({ code: 'unavailable' });
+  return delay(snapDoc(ref.path));
 }
 export function getDocsFromCache(ref) {
   const r = listCol(ref.path, ref.c), docs = r.docs.filter(d => seen.has(key(d.ref.path)));
@@ -87,12 +103,21 @@ export function getDocsFromCache(ref) {
 }
 export function onSnapshot(ref, next, err) {
   if (next && typeof next === 'object') { next = err; err = arguments[3]; }   // onSnapshot(ref, options, next, error)
-  const s = { ref, next };
+  const s = { ref, next, last: null };
   subs.add(s);
-  setTimeout(() => { if (subs.has(s)) next(result(ref)); }, 5);
+  setTimeout(() => { if (subs.has(s)) deliver(s); }, 5);
   return () => subs.delete(s);
 }
-function notify() { subs.forEach(s => { try { s.next(result(s.ref)); } catch (e) { console.error(e); } }); }
+// a listener pays for what it first sends, then only for documents that changed since its last snapshot
+function deliver(s) {
+  const r = s.ref.type === 'doc' ? snapDoc(s.ref.path) : listCol(s.ref.path, s.ref.c), docs = s.ref.type === 'doc' ? [r] : r.docs;
+  const now = {}; docs.forEach(d => { now[key(d.ref.path)] = JSON.stringify(d.exists() ? d.data() : null); });
+  if (!s.last) bill('listen', key(s.ref.path), docs.length);
+  else { const ch = Object.keys(now).filter(k => s.last[k] !== now[k]).length; if (ch) window.__fake.bill.push({ kind: 'listen+', path: key(s.ref.path), n: ch }); }
+  s.last = now;
+  s.next(result(s.ref));
+}
+function notify() { subs.forEach(s => { try { deliver(s); } catch (e) { console.error(e); } }); }
 function resolveVal(v, old) {
   if (v && typeof v === 'object' && v.__inc != null) return (typeof old === 'number' ? old : 0) + v.__inc;
   if (v && typeof v === 'object' && v.__st) return Date.now();
