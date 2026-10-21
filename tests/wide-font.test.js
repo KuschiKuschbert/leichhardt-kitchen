@@ -7,7 +7,7 @@ const { R, ok } = L.results();
   for (const hash of ['#/', '#/prep', '#/recipes']) {
     const p = await L.open(b, hash, { width: 768, height: 1024, wait: 1200 });
     await p.addStyleTag({ content: '*, *::before, *::after { font-family: "DejaVu Sans", sans-serif !important; }' });
-    await p.waitForTimeout(400);
+    await L.settle(p, 400);
     const of = await L.overflow(p);
     ok(!of, '768 wide font ' + hash + (of ? ' sideways scroll: ' + of : ''));
     const right = await p.evaluate(() => { const e = document.querySelector('.wtop-icons'); return e ? Math.round(e.getBoundingClientRect().right) : 0; });

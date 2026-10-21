@@ -10,12 +10,12 @@ const boom = p => p.evaluate(() => { window.__mark = 1; window.dispatchEvent(new
   const loaded = p.waitForEvent('load', { timeout: 5000 }).then(() => true, () => false);
   await boom(p);
   ok(await loaded, 'a broken offline copy reloads the page');
-  await p.waitForTimeout(1200);
+  await L.settle(p, 1200);
   ok(await p.evaluate(() => !window.__mark && localStorage.getItem('firestore_targets_x') === null && !!localStorage.getItem('lk.fsheal')), 'the offline copy is gone and the day is noted');
   ok(await p.$('.p-name, .p-list, #p-text') !== null, 'the prep list opens again after the reload');
   ok(await p.evaluate(() => localStorage.getItem('lk.prep.pin')) === L.PIN, 'the kitchen PIN is kept');
   await boom(p);
-  await p.waitForTimeout(1500);
+  await L.settle(p, 1500);
   ok(await p.evaluate(() => window.__mark === 1), 'a second break the same day does not reload again');
   await p.context().close();
   await b.close();

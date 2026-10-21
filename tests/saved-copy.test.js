@@ -12,7 +12,7 @@ const newData = v => { over['/js/data.js'] = { lastModified: 'Tue, 2' + v + ' Oc
 // waits through the book reloading itself (L.waitFor stops at the first error, and a reload is one)
 async function until(p, fn, ms) {
   const end = Date.now() + ms;
-  while (Date.now() < end) { try { if (await p.evaluate(fn)) return true; } catch (e) {} await p.waitForTimeout(100); }
+  while (Date.now() < end) { try { if (await p.evaluate(fn)) return true; } catch (e) {} await L.sleep(100); }
   return false;
 }
 const controlled = p => L.waitFor(p, () => !!navigator.serviceWorker.controller, null, 10000).then(() => true, () => false);
@@ -23,7 +23,7 @@ const controlled = p => L.waitFor(p, () => !!navigator.serviceWorker.controller,
   const b = await L.start();
   const p = await L.open(b, '#/r/barra', { sw: true, wait: 800, base }), ctx = p.context();
   await p.evaluate(() => navigator.serviceWorker.ready);
-  await p.reload(); await p.waitForTimeout(500);
+  await p.reload(); await L.settle(p, 500);
   ok(await controlled(p), 'the service worker is in charge after the first visit');
 
   // slow wifi: every file takes 4 s from the server, the book opens from the saved copy anyway
@@ -33,7 +33,7 @@ const controlled = p => L.waitFor(p, () => !!navigator.serviceWorker.controller,
   await L.waitFor(p, () => !!document.querySelector('#rtitle'), null, 10000).catch(() => {});
   const took = Date.now() - t0;
   ok(took < 3000 && /Barramundi/i.test(await txt(p, '#rtitle') || ''), 'slow wifi: the recipe opens from the saved copy (' + took + ' ms)');
-  await p.waitForTimeout(4500);   // let the background round finish before the next step
+  await L.sleep(4500);   // let the worker's background round finish (the page cannot see it, so no settle)
   over.delay = 0;
 
 
@@ -52,12 +52,12 @@ const controlled = p => L.waitFor(p, () => !!navigator.serviceWorker.controller,
   await p.evaluate(() => localStorage.removeItem('lk.upd.last'));
   await p.reload({ waitUntil: 'load' });
   ok(await until(p, () => window.__v === 2, 10000), 'just opened: the book takes up the new version by itself');
-  await p.waitForTimeout(1500);
+  await L.sleep(1500);   // time for a reload loop to show, if there were one
   ok(await p.evaluate(() => window.__v === 2 && !document.querySelector('.upd-bar')), 'just opened: no loop and no bar once it is on the new version');
   // no signal: the book still opens
   await ctx.setOffline(true);
   await p.reload({ waitUntil: 'load' }).catch(() => {});
-  await p.waitForTimeout(800);
+  await L.settle(p, 800);
   ok(/Barramundi/i.test(await txt(p, '#rtitle') || ''), 'no signal: the recipe still opens');
     ok(p.errors.length === 0, 'no page errors ' + p.errors.join(' | '));
   await ctx.close();

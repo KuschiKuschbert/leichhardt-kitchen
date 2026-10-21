@@ -52,7 +52,7 @@ const side = page => page.evaluate(() => {
     if (w === 390) {
       // tap the due chip: it goes on with its section, says so, and leaves Quick add
       await p.evaluate(() => { const c = [...document.querySelectorAll('.nb-right [data-p="quick"]')].find(x => /Make aioli/.test(x.textContent)); c.scrollIntoView(); c.click(); });
-      await p.waitForTimeout(400);
+      await L.settle(p, 400);
       const t = await p.evaluate(() => { const e = document.querySelector('.p-toast'); return e ? e.textContent : ''; });
       ok(/^Added to Sauce/.test(t.trim()) && !/aioli/.test(t), 'tap: the due chip says Added to Sauce, without the line (' + t + ')');
       const s = await store(p);

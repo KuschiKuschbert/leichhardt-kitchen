@@ -26,7 +26,7 @@ const onTop = (p, sel) => p.evaluate(s => {
   await p.focus('a.skip');
   const sk = await p.evaluate(() => document.activeElement && document.activeElement.className);
   await p.keyboard.press('Enter');
-  await p.waitForTimeout(300);
+  await L.settle(p, 300);
   ok(sk === 'skip' && await p.evaluate(() => location.hash) === '#/r/poutine' && await p.evaluate(() => document.activeElement && document.activeElement.id) === 'main', 'skip link: focuses the content and the recipe stays open');
   await p.context().close();
 
@@ -37,7 +37,7 @@ const onTop = (p, sel) => p.evaluate(s => {
     ok(v === true, w + ' admin: the Settings group can be seen and tapped (' + v + ')');
     v = await onTop(p, '[data-p="a-group"][data-g="people"]');
     ok(v === true, w + ' admin: the People group can be seen and tapped (' + v + ')');
-    await L.adminTab(p, 'people'); await p.waitForTimeout(300);
+    await L.adminTab(p, 'people'); await L.settle(p, 300);
     const h = await p.evaluate(() => Math.max(...[...document.querySelectorAll('[data-p="a-reset-pin"]')].map(e => e.getBoundingClientRect().height)));
     ok(h > 0 && h <= 52, w + ' admin: Reset PIN fits on one line (' + Math.round(h) + ' px high)');
     ok(p.errors.length === 0, w + ' admin: no page errors ' + p.errors.join(' | '));
@@ -46,8 +46,8 @@ const onTop = (p, sel) => p.evaluate(s => {
 
   // phone admin: the Save bar sits above the tab bar
   p = await L.open(b, '#/admin', { admin: true, wait: 1800 });
-  await L.adminTab(p, 'people'); await p.waitForTimeout(300);
-  await p.evaluate(() => window.scrollTo(0, 0)); await p.waitForTimeout(150);
+  await L.adminTab(p, 'people'); await L.settle(p, 300);
+  await p.evaluate(() => window.scrollTo(0, 0)); await L.settle(p, 150);
   v = await onTop(p, '[data-p="a-save"]');
   ok(v === true, 'phone admin: Save changes can be tapped, not under the tab bar (' + v + ')');
   ok(await p.evaluate(() => getComputedStyle(document.querySelector('.a-nav')).position === 'sticky'), 'phone admin: the admin nav stays at the top (it tucks away while scrolling down, admin-nav.test.js)');
