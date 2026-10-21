@@ -111,7 +111,7 @@
   // how it is cooked; the higher the number, the more it shows (charred over steamed when a cob is steamed, then charred)
   var COOK = [
     ['charred', /\bchar(red|ring)?\b|chargrill|blacken/, 9], ['fried', /deep[- ]?fr(y|ied)|\bfryer\b|\bfr(y|ied)\b|golden brown|\bcrisp(y)?\b/, 8],
-    ['grilled', /\bgrill(ed)?\b|\bbbq\b|barbecue|griddle|plancha/, 8], ['smoked', /\bsmok(e|ed|er|ing)\b/, 7],
+    ['grilled', /\bgrill(ed)?\b|griddle|plancha/, 8], ['smoked', /\bsmok(e|ed|er|ing)\b/, 7],
     ['roasted', /\broast(ed|ing)?\b/, 6], ['caramelised', /carameli[sz]|brown(ed)? butter|noisette/, 6], ['seared', /\bsear(ed)?\b|pan[- ]?fr|\bsaute(ed)?\b/, 6],
     ['baked', /\bbak(e|ed|ing)\b|steam bake|\boven\b|\bcombi\b/, 5], ['toasted', /\btoast(ed)?\b/, 5], ['braised', /\bbrais(e|ed)\b|slow cook|\bstew(ed)?\b/, 4],
     ['melted', /\bmelt(ed)?\b|\bsoften(ed)?\b/, 3], ['pickled', /\bpickl(e|ed)\b|\bcur(e|ed)\b|\bcandied\b/, 3],
@@ -161,7 +161,30 @@
     [/\bpeas?\b|edamame/, { c: '#7EA453', k: 'kernel' }], [/pineapple/, { c: '#F2CB55', k: 'dice' }], [/beetroot/, { c: '#A8476B', k: 'dice' }],
     [/pumpkin|sweet potato|butternut/, { c: '#E2A93A', k: 'dice' }], [/potato/, { c: '#E8D9B5', k: 'dice' }], [/olive/, { c: '#3F3A2A', k: 'ring' }],
     [/chocolate|choc nib/, { c: '#5E2F1A', k: 'dice' }], [/butter/, { c: '#F3D675', k: 'dice' }], [/mozzarella|cheddar|parmesan|\bcheese\b/, { c: '#F6D27A', k: 'shred' }],
-    [/radish/, { c: '#D9473B', f: '#F4F1EA', k: 'slice' }], [/avocado/, { c: '#A6C45E', k: 'dice' }], [/apple|pear/, { c: '#F3EBD0', k: 'dice' }]
+    [/radish/, { c: '#D9473B', f: '#F4F1EA', k: 'slice' }], [/avocado/, { c: '#A6C45E', k: 'dice' }], [/apple|pear/, { c: '#F3EBD0', k: 'dice' }],
+    // more single ingredients, from the recipe library the head chef keeps (21 Oct 2026): the ones that come up most
+    [/celeriac|celery root/, { c: '#EDE6D2', k: 'dice' }], [/celery/, { c: '#9CC067', f: '#DCEBB8', k: 'slice' }], [/fennel/, { c: '#DCEBB8', k: 'shred' }],
+    [/leek/, { c: '#9CC46E', f: '#DCEBB8', k: 'ring', small: 1 }], [/zucchini|courgette|summer squash|yellow squash/, { c: '#5E8C3A', f: '#E8EFC8', k: 'slice' }],
+    [/eggplant|aubergine/, { c: '#4A2A4A', f: '#EFE3C4', k: 'dice' }], [/asparagus/, { c: '#6FA040', k: 'strip' }], [/green beans?|snow peas?|sugar snap/, { c: '#6FA83A', k: 'strip' }],
+    [/bean sprouts?|sprouts/, { c: '#F1ECD8', k: 'shred' }], [/brussels/, { c: '#6E9A3E', k: 'half' }], [/okra/, { c: '#6FA040', f: '#DCEBB8', k: 'slice' }],
+    [/tomatillo/, { c: '#9CC067', f: '#DCEBB8', k: 'half' }], [/ginger|galangal/, { c: '#E3C690', k: 'shred' }], [/rhubarb/, { c: '#C0392B', f: '#DCEBB8', k: 'chunk' }],
+    [/radicchio/, { c: '#8E3A66', k: 'leaf', bed: 1 }], [/endive|escarole|witlof/, { c: '#E8EFC8', k: 'leaf', bed: 1 }],
+    [/turnip|swede|parsnip|kohlrabi|jicama|daikon|hearts? of palm/, { c: '#F1EAD6', k: 'dice' }], [/artichoke/, { c: '#7EA453', f: '#E8EFC8', k: 'half' }],
+    [/cranberr|pomegranate|redcurrant/, { c: '#A8281E', k: 'kernel' }], [/raisin|sultana|currant/, { c: '#5E2F1A', k: 'kernel' }],
+    [/blueberr/, { c: '#3F3A6E', k: 'kernel' }], [/raspberr|strawberr/, { c: '#C0392B', k: 'kernel' }],
+    [/grapefruit|blood orange/, { c: '#E8806A', k: 'half' }], [/mandarin|clementine|tangerine|orange|kumquat/, { c: '#E8923A', k: 'half' }],
+    [/lemon/, { c: '#F2CB55', k: 'half' }], [/lime/, { c: '#8DB255', k: 'half' }],
+    [/nectarine|peach|apricot/, { c: '#E8923A', f: '#F3DDA0', k: 'chunk' }], [/prune|dates?|figs?/, { c: '#4E2A2A', k: 'chunk' }],
+    [/rockmelon|cantaloupe/, { c: '#F2A65E', k: 'chunk' }], [/honeydew|melon/, { c: '#DCEBB8', k: 'chunk' }], [/watermelon/, { c: '#EC6A5C', k: 'chunk' }],
+    [/mango/, { c: '#F2B13C', k: 'dice' }], [/banana/, { c: '#F3E3B8', k: 'slice' }], [/grapes?/, { c: '#9CB45A', k: 'kernel' }], [/coconut/, { c: '#F6F1E4', k: 'shred' }],
+    [/red lentil/, { c: '#E8923A', k: 'grain', bed: 1 }], [/lentil/, { c: '#8C6239', k: 'grain', bed: 1 }],
+    [/oats?|porridge/, { c: '#E3C690', k: 'grain', bed: 1 }], [/barley|farro|spelt|buckwheat|bulgur|freekeh/, { c: '#C9A46A', k: 'grain', bed: 1 }], [/millet|polenta|semolina|cornmeal|grits/, { c: '#F2D27A', k: 'grain', bed: 1 }],
+    [/chickpea/, { c: '#E3C690', k: 'kernel' }], [/black beans?/, { c: '#2E2A26', k: 'kernel' }], [/kidney beans?/, { c: '#8E2616', k: 'kernel' }], [/cannellini|butter beans?|lima|white beans?/, { c: '#F1E6D2', k: 'kernel' }],
+    [/tofu|paneer|haloumi|halloumi|feta/, { c: '#F6F1E4', k: 'dice' }], [/tempeh/, { c: '#D9B98A', k: 'dice' }],
+    [/turkey|chicken/, { c: '#EBC27A', k: 'dice' }], [/pork/, { c: '#E8D9B5', k: 'dice' }], [/beef|lamb|steak/, { c: '#8E5A22', k: 'dice' }],
+    [/prawn|shrimp/, { c: '#EE8A2E', k: 'half' }], [/salmon|trout/, { c: '#EE8A2E', k: 'chunk' }], [/anchov|sardine/, { c: '#8C9AA8', k: 'strip' }], [/fish|cod|barramundi/, { c: '#F3EBD0', k: 'chunk' }],
+    [/egg|eggs/, { c: '#FFFFFF', f: '#F2C94C', k: 'half' }], [/walnut|pecan|hazelnut|pistachio|chestnut/, { c: '#B9772E', k: 'nut' }],
+    [/star anise|cardamom|clove|allspice|peppercorn/, { c: '#5E2F1A', k: 'seed' }], [/cacao nib|cocoa nib/, { c: '#4E2A17', k: 'dice' }], [/nori|seaweed|wakame/, { c: '#2F4A2A', k: 'shred' }]
   ];
   function rawOf(t) { for (var k = 0; k < RAW.length; k++) if (RAW[k][0].test(t)) return RAW[k][1]; return null; }
   // the weight of one when the card counts them (2 red cabbages, 12 corn cobs, 1 large onion)
@@ -252,6 +275,7 @@
         on.forEach(function (L) {
           if (cut && named.length && !(cut === 'whole')) L.cut = cut;
           if (cook && (!L.cook || COOK_N[cook] >= COOK_N[L.cook])) L.cook = cook;
+          if (cook && named.length && (!L.ncook || COOK_N[cook] >= COOK_N[L.ncook])) L.ncook = cook;
           if (coat && L.part === 'solid') L.coat = coat;
         });
         if (!named.length) {
@@ -573,7 +597,7 @@
     if (dessert && /sauce/.test(role)) role = 'dsauce';
     var key = 'raw:made-' + mo.id + '-' + P.hash(got.body).toString(36);
     return {
-      id: 'made-' + mo.id, v: 1, made: mo.id, key: key, ms: mo.sig, lib: got.lib || 0, name: mo.name, cat: ctx.shape ? ctx.shape.cat : 'prepared', role: role || ROLE[mo.form] || 'veg', form: form,
+      id: 'made-' + mo.id, v: 1, raw: true, made: mo.id, key: key, ms: mo.sig, lib: got.lib || 0, name: mo.name, cat: ctx.shape ? ctx.shape.cat : 'prepared', role: role || ROLE[mo.form] || 'veg', form: form,
       g: mo.form === 'mixture' ? 60 : shape && shape.g ? shape.g : 40, n: undefined, w: n1(got.w), h: n1(got.h),
       side: { s: sideS, h: mo.form === 'mixture' ? 8 : 4, c: mo.col }, body: got.body, box: got.box.map(n1), from: mo.from, cook: mo.cook || ''
     };
@@ -594,5 +618,29 @@
     return compose(mo, { shape: sure, ing: R.ingName(i), dish: dish });
   }
 
-  window.LK_COMPOSE = { read: read, compose: compose, partFor: partFor, cardOf: cardOf, ST: ST, snap: snap, palette: palette, cooked: cooked, BIT: BIT, kindOf: kindOf, RAW: RAW, COOK: COOK, CUT: CUT };
+  /* ---------- an ingredient with no card, cut and cooked the way the dish says ----------
+     "Broccolini (charred)", "Charred corn", "Seared scallops": the library piece it matched, in that cook's colour, with
+     grill marks for a grill or char. Null when the piece already shows it (a grilled steak for "Grilled steak"), or the
+     dish does not say. Only what the name, the note or a step that names the ingredient says counts. */
+  var SHOWS = /^(charred|grilled|fried|roasted|smoked|toasted|caramelised|seared)$/;
+  function dress(i, dish, m) {
+    if (!m || !m.id || m.conf < 0.6 || m.why === 'learned') return null;
+    var it = LIB.get(m.id);
+    // a card of its own says how it is cooked; herbs, sauces, cheese and butter are not charred on a plate
+    if (!it || !it.side || !it.side.c || i.link || !/^(meat|seafood|veg|potato|bread|prepared|grains|sweet)$/.test(it.cat) || /^(garnish|sauce|dsauce)$/.test(it.role)) return null;
+    var name = R.ingName(i), t = low(name + ' ' + (i.note || '')).replace(NOT, ' '), mo = dish ? read(dish) : null;
+    var L = mo ? mo.lines.filter(function (x) { return x.i === i || x.ing === name; })[0] : null, cook = cookIn(t) || (L && L.ncook) || '';
+    if (!SHOWS.test(cook) || (L && L.sub)) return null;
+    // smoke shows on meat and fish, caramel on onions and fruit; a crumbed or battered piece is already fried golden
+    if ((cook === 'smoked' && !/meat|seafood/.test(it.cat)) || (cook === 'caramelised' && !/veg|sweet/.test(it.cat)) || (cook === 'fried' && /crumb|batter|fried/.test(it.cook || ''))) return null;
+    var has = low([it.name, it.kw, it.cook].join(' '));
+    if (it.cook === cook || has.indexOf(cook.slice(0, 4)) >= 0 || (cook === 'charred' && /grill|char|bbq/.test(has)) || (cook === 'seared' && /grill|sear|pan/.test(has))) return null;
+    var body = LIB.body(it.id), col = snap(cooked(it.side.c, cook)), out = recolour(body, R.tintMap(body, it.side.c, col)), bx = LIB.box(it);
+    // the bars of the grill, the way the book draws them on a steak
+    if (cook === 'charred' || cook === 'grilled') out += finish(P.grill((bx[2] - bx[0]) * 0.36, (bx[3] - bx[1]) * 0.3, -32, Math.max(4, (bx[2] - bx[0]) * 0.16), '#3F2812', Math.max(1, (bx[2] - bx[0]) * 0.035)));
+    return { id: it.id + '-' + cook, v: 1, raw: true, key: 'raw:dress-' + it.id + '-' + P.hash(out).toString(36), dr: it.id, name: cook.charAt(0).toUpperCase() + cook.slice(1) + ' ' + it.name.toLowerCase(), cat: it.cat, role: it.role, form: it.form,
+      g: it.g, n: it.n, w: it.w, h: it.h, side: { s: it.side.s, h: it.side.h, c: col }, body: out, box: bx.map(n1), from: [], cook: cook, lib: 0 };
+  }
+
+  window.LK_COMPOSE = { read: read, compose: compose, partFor: partFor, dress: dress, cardOf: cardOf, ST: ST, snap: snap, palette: palette, cooked: cooked, BIT: BIT, kindOf: kindOf, RAW: RAW, COOK: COOK, CUT: CUT };
 })();

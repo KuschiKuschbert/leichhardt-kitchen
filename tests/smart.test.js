@@ -39,6 +39,8 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   ok(X.matchIng({ name: 'Fried shallots' }, { name: 'x' }).id === 'crispy-shallots' && X.matchIng({ name: 'Tartare sauce' }, { name: 'x' }).id === 'tartare-dollop', 'matcher: fried shallots are crispy shallots, tartare sauce a dollop of tartare');
   ok(X.matchIng({ name: 'Roasted honey pumpkin purée', note: 'big kitchen spoon swoop and smear' }, { name: 'x' }).id === 'pumpkin-puree-swoosh', 'matcher: the recipe\'s words for the shape (swoop and smear) pick the swoosh');
   ok(X.hidden({ name: 'Sea salt flakes' }) && X.hidden({ name: 'Bay leaves' }) && X.hidden({ name: 'Wing flour' }) && !X.hidden({ name: 'Chips' }), 'matcher: what does not show on the plate is left off (salt, bay leaves, flour)');
+  // the recipe library's spellings: chillies by their kind, fish by their name, US words for the same thing
+  ok(X.matchIng({ name: 'Serrano chiles' }, { name: 'x' }).id === 'chilli-sliced' && X.matchIng({ name: 'Jalapeno pepper' }, { name: 'x' }).id === 'jalapeno-slices' && X.matchIng({ name: 'Cod fillets' }, { name: 'x' }).id === 'cod-fillet' && X.matchIng({ name: 'Habanero peppers' }, { name: 'x' }).id === 'chilli-sliced' && X.matchIng({ name: 'Sweet pepper' }, { name: 'x' }).id === 'capsicum-strips', 'matcher: serrano chiles and habanero peppers are chillies, cod fillets cod, sweet pepper capsicum');
   ok(X.split({ name: 'Chips and salad' }).map(i => i.name).join('|') === 'Chips|Salad' && X.split({ name: 'Bread and butter pickles' }).length === 1, 'matcher: Chips and salad is two parts, bread and butter pickles is one');
 
   const b = await L.start();
@@ -113,6 +115,14 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   const cos = w.els.find(e => e.ing === 'Cos lettuce');
   ok(!!cos && cos.k === 0 && w.els.filter(e => e.t === 'item').every(e => e === cos || e.k > cos.k), 'Caesar: the cos is the base, everything else on it');
   ok(w.onWare && new Set(w.els.map(e => e.ing)).size === w.els.length, 'Caesar: every part in the bowl, none twice');
+  // cut and cooked the way the dish says (no card of its own): the toasted sourdough is the library's slice, toasted
+  const toast = w.els.find(e => e.ing === 'Toasted sourdough');
+  ok(!!toast && toast.t === 'raw' && toast.dr === 'sourdough-slice' && toast.ck === 'toasted' && cos.k < toast.k, 'Caesar: the toasted sourdough is drawn toasted');
+  // Try another layout lays it out again (it is the book's part, not one added by hand)
+  await p.click('[data-dw="sm-again"]'); await L.settle(p, 300);
+  w = await S(p);
+  const toast2 = w.els.find(e => e.ing === 'Toasted sourdough');
+  ok(w.els.filter(e => e.ing === 'Toasted sourdough').length === 1 && !!toast2 && toast2.dr === 'sourdough-slice' && (toast2.x !== toast.x || toast2.y !== toast.y), 'Caesar: Try another layout moves the toasted sourdough with the rest (' + [toast.x, toast.y, toast2 && toast2.x, toast2 && toast2.y].join(' ') + ')');
   await p.context().close();
 
   // the grill board: a board, the sauces in ramekins
