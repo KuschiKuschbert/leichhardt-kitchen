@@ -932,7 +932,7 @@
     var open = live.filter(function (x) { return !x.done && !x.fn; }), picked = [], seen = {};
     function take(list, why) { list.forEach(function (x) { if (picked.length < 3 && !seen[x.id]) { seen[x.id] = 1; picked.push({ x: x, why: why(x) }); } }); }
     take(open.filter(function (x) { return x.urgent; }).sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }), function () { return 'Urgent'; });
-    take(open.filter(function (x) { return rolledN(x); }).sort(function (a, b) { return rolledN(b) - rolledN(a); }), function (x) { return 'Rolled over' + (x.rolled > 1 ? ' x' + x.rolled : ''); });
+    take(open.filter(function (x) { return rolledN(x); }).sort(function (a, b) { return rolledN(b) - rolledN(a); }), function (x) { return 'Rolled over' + (rolledN(x) > 1 ? ' x' + rolledN(x) : ''); });
     var slow = open.map(function (x) { return { x: x, m: ((S.hist || {})[lkey(x.text)] || {}).med || 0 }; }).filter(function (o) { return o.m >= 2 * 3600000; }).sort(function (a, b) { return b.m - a.m; }).map(function (o) { return o.x; });
     take(slow, function (x) { return 'Usually takes ' + dur(((S.hist || {})[lkey(x.text)] || {}).med); });
     take(open.slice().sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }), function (x) { return x.addedAt ? 'Waiting since ' + clock(x.addedAt) : 'Waiting longest'; });
@@ -1278,6 +1278,14 @@
   function rolledN(x) { return Math.max(0, (x.rolled || 0) - (x.ahead ? 1 : 0)); }
   /* when a line was first written: a rolled copy keeps it in origAt (0 if it rolled before origAt was kept) */
   function firstAt(x) { return x.rolled ? x.origAt || 0 : x.addedAt || 0; }
+  /* the day a rolled line was first written, short: "yesterday", "Mon" within the week, "12 Oct" before that.
+     Lines that rolled before origAt was kept only know it when they rolled once. */
+  function firstDay(x) {
+    var d = x.origAt ? T.day(x.origAt) : x.rolled === 1 ? x.rolledFrom || '' : '', t = dayNow();
+    if (!d || d >= t) return '';
+    if (d === shift(t, -1)) return 'yesterday';
+    return parseYmd(d).toLocaleDateString('en-AU', d >= shift(t, -6) ? { weekday: 'short' } : { day: 'numeric', month: 'short' });
+  }
   function sortItems(a, b) { return (urgOf(b) ? 1 : 0) - (urgOf(a) ? 1 : 0) || rolledN(b) - rolledN(a) || (a.addedAt || 0) - (b.addedAt || 0); }
 
   /* ---------- admin actions ---------- */
@@ -2217,7 +2225,7 @@
   var BOX = '<svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><rect x="2.5" y="2.5" width="21" height="21" rx="3" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
   function rowHTML(x, date, readonly, also) {
     var tickOk = can('tick') && !x.deleted && (!x.done || canUntick(x)), delOk = can('del');
-    var by = x.done && x.doneBy ? esc(x.doneBy) + (x.doneAt ? ' ' + clock(x.doneAt) : '') : (rolledN(x) ? (x.origBy ? 'from ' + esc(x.origBy) : '') : x.rolled ? esc(x.origBy || '') : (x.addedBy ? esc(x.addedBy) : ''));
+    var by = x.done && x.doneBy ? esc(x.doneBy) + (x.doneAt ? ' ' + clock(x.doneAt) : '') : (rolledN(x) ? (x.origBy ? 'from ' + esc(x.origBy) + (firstDay(x) ? ', ' + firstDay(x) : '') : '') : x.rolled ? esc(x.origBy || '') : (x.addedBy ? esc(x.addedBy) : ''));
     var marks = (x.urgent ? '<span class="nb-urg">Urgent</span>' : '') + (rolledN(x) ? '<span class="nb-roll" title="Not finished earlier, so it rolled over">Rolled' + (rolledN(x) > 1 ? ' x' + rolledN(x) : '') + '</span>' : '') +
       (x.deleted && x.mergedInto ? '<span class="nb-also">Double up</span>' : (also || ''));
     var star = can('add') && !x.deleted && !readonly ? '<button type="button" class="nb-star" data-p="urgent" data-id="' + esc(x.id) + '" aria-pressed="' + !!x.urgent + '" aria-label="' + esc((x.urgent ? 'Not urgent: ' : 'Mark urgent: ') + x.text) + '">!</button>' : '';
