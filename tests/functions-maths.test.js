@@ -80,6 +80,14 @@ for (const tz of ['Australia/Brisbane', 'America/New_York', 'Asia/Kolkata']) {
   ok(M.problems(half).some(p => /whole platters/.test(p.t)), tz + ': half a platter is refused');
   const nog = JSON.parse(JSON.stringify(good)); nog.guests = 0;
   ok(M.problems(nog).some(p => p.k === 'guests'), tz + ': guests needed');
+  nog.gu = true;
+  ok(!M.problems(nog).some(p => p.k === 'guests') && M.guestsText(nog) === 'guests not known yet', tz + ': guests ticked Not known yet is fine to confirm');
+  const tbc = M.derive({ status: 'confirmed', name: 'Tbc do', date: '2026-10-24', start: 0, st: true, guests: 0, gu: true, mode: 'all', rounds: [{ at: 0 }], lines: [L('Pizza', 4, [0, 0, 0, 0])] });
+  eq(M.problems(tbc), [], tz + ': start TBC and guests not known: still fine to confirm (all at once)');
+  eq([tbc.from, tbc.until], [at('2026-10-24', '00:00'), at('2026-10-25', '00:00')], tz + ': times TBC: the kitchen sees it all day, until midnight');
+  eq(M.when(0, '2026-10-24'), 'TBC', tz + ': a time not known yet reads TBC');
+  const tbcStag = JSON.parse(JSON.stringify(tbc)); tbcStag.mode = 'stag'; tbcStag.rounds = [{ at: 0 }, { at: 0 }];
+  ok(M.problems(tbcStag).some(p => /Staggered needs a time for the first round/.test(p.t)), tz + ': staggered with no times asks for the first round time');
   const allTwo = JSON.parse(JSON.stringify(good)); allTwo.mode = 'all';
   ok(M.problems(allTwo).some(p => /All at once is one round/.test(p.t)), tz + ': all at once is one round');
 

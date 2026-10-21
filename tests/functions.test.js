@@ -47,6 +47,9 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   await p.fill('[data-ff="name"]', 'Smith 50th');
   await setV(p, '[data-ff="date"]', today);
   await setV(p, '[data-ff="startT"]', '18:00');
+  await p.click('[data-ff="gu"]'); await L.settle(p, 150);
+  ok(await p.$eval('[data-ff="guests"]', e => e.disabled) && /guests not known yet/.test(await txt(p, '#fe-live') || ''), 'guests: Not known yet empties and locks the number');
+  await p.click('[data-ff="gu"]'); await L.settle(p, 150);
   await p.fill('[data-ff="guests"]', '60');
   await p.fill('[data-ff="loc"]', 'Beer garden');
   await p.fill('[data-ff="cname"]', 'Jo Smith');
@@ -152,6 +155,37 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   await p.goto(L.BASE + '#/fn'); await L.settle(p, 900);
   const pg = await txt(p, '#main') || '';
   ok(/Upcoming functions/.test(pg) && new RegExp(M.dayName(day2)).test(pg) && /Brown 21st/.test(pg) && !/Draft do/.test(pg), '#/fn: the next three days, without drafts');
+  await p.context().close();
+
+  // guests not known yet: confirmed, and the kitchen is told so
+  const unk = fn({ name: 'Mystery do', guests: 0 }); unk.gu = true; unk.guests = 0;
+  p = await L.open(b, '#/recipes', { who: 'ann', extra: extra({ unk }), wait: 1200 });
+  await L.waitFor(p, () => /Mystery do/.test((document.getElementById('fn-band') || {}).textContent || ''));
+  ok(/guests not known yet/.test(await txt(p, '#fn-band') || ''), 'guests: the band says guests are not known yet');
+  await tap(p, '#fn-band .fn-row'); await L.settle(p, 200);
+  ok(/Not known yet/.test(await txt(p, '.fn-facts') || ''), 'guests: the sheet says Not known yet');
+  await p.context().close();
+
+  // start time TBC: the coordinator confirms anyway, the kitchen sees TBC all day
+  p = await L.open(b, '#/functions/new', { who: 'fay', extra: base, wait: 1500 });
+  await L.waitFor(p, () => !!document.querySelector('[data-ff="st"]'));
+  await p.fill('[data-ff="name"]', 'Tbc party');
+  await setV(p, '[data-ff="date"]', today);
+  await p.click('[data-ff="st"]'); await L.settle(p, 150);
+  await p.click('[data-ff="gu"]'); await L.settle(p, 150);
+  ok(await p.$eval('[data-ff="startT"]', e => e.disabled), 'TBC: the start time box is locked');
+  await tap(p, '[data-fe="addline"][data-v="pizza-platter"]'); await L.settle(p, 100);
+  await setV(p, '[data-ff="qty0"]', '4');
+  await tap(p, '[data-fe="review"]'); await L.settle(p, 200);
+  ok(!!(await p.$('.fe-review')) && /TBC/.test(await txt(p, '.fe-review') || ''), 'TBC: confirming is allowed and the review says TBC');
+  await tap(p, '[data-fe="confirm"]');
+  await L.waitFor(p, () => /Confirmed/.test((document.querySelector('.fe-head') || {}).textContent || ''));
+  const tb = Object.values(await store(p)).filter(x => x && x.name === 'Tbc party')[0];
+  ok(!!tb && tb.status === 'confirmed' && tb.st === true && tb.start === 0 && tb.gu === true && tb.until === at(M.addDays(today, 1), '00:00'), 'TBC: saved confirmed, shown until midnight');
+  await p.goto(L.BASE + '#/recipes'); await L.settle(p, 900);
+  await L.waitFor(p, () => /Tbc party/.test((document.getElementById('fn-band') || {}).textContent || ''));
+  ok(/Times TBC: 4 Pizza/.test(await txt(p, '#fn-band') || ''), 'TBC: the band says Times TBC with the platters');
+  ok(p.errors.length === 0, 'TBC: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
   // 4. upcoming totals: each booked line once, confirmed only

@@ -1760,3 +1760,4 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav { top: var(--u
 .fe-ov { color: #6A4A00; font-size: 0.85rem; font-weight: 600; }
 .fe-dtot { margin: 0.35rem 0 0; color: var(--muted); font-size: 0.9rem; }
 @media print { .fn-band, .fn-pop { display: none !important; } }
+.fe-gu { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 1rem; }

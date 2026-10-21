@@ -48,13 +48,13 @@
 
   /* ---------- the form's model: what is typed (strings), and the saved shape worked out from it ---------- */
   function blank() {
-    return { name: '', date: '', startT: '', loc: '', guests: '', cname: '', phone: '', email: '', mode: 'all', foodDate: '', foodT: '', foodSet: false,
+    return { name: '', date: '', startT: '', loc: '', guests: '', gu: false, st: false, cname: '', phone: '', email: '', mode: 'all', foodDate: '', foodT: '', foodSet: false,
       n: '3', gap: '30', rounds: [], lines: [], notes: '', kc: '', custom: false };
   }
   // a saved function (and its contact) back into the form
   function fromDoc(f, c) {
     var d = blank(), n = (f.rounds || []).length;
-    d.name = f.name || ''; d.date = f.date || ''; d.startT = f.start ? M.kclock(f.start) : ''; d.loc = f.loc || ''; d.guests = f.guests ? String(f.guests) : '';
+    d.name = f.name || ''; d.date = f.date || ''; d.startT = f.start ? M.kclock(f.start) : ''; d.st = !!f.st; d.loc = f.loc || ''; d.guests = f.guests ? String(f.guests) : ''; d.gu = !!f.gu;
     d.cname = (c && c.cname) || ''; d.phone = (c && c.phone) || ''; d.email = (c && c.email) || '';
     d.mode = f.mode || 'all'; d.notes = f.notes || ''; d.kc = f.kc || '';
     d.rounds = (f.rounds || []).map(function (r) { return { d: M.kday(r.at), t: M.kclock(r.at), note: r.note || '' }; });
@@ -77,8 +77,8 @@
   function toDoc(e) {
     var d = e.d, n = d.rounds.length;
     var f = {
-      status: e.status, name: d.name.trim().slice(0, 80), date: M.isYmd(d.date) ? d.date : '', start: atOf(d.date, d.startT), loc: d.loc.trim().slice(0, 60),
-      guests: int(d.guests), mode: d.mode, notes: d.notes.trim().slice(0, 1000), kc: d.kc.replace(/\s+$/, '').slice(0, 2000),
+      status: e.status, name: d.name.trim().slice(0, 80), date: M.isYmd(d.date) ? d.date : '', start: d.st ? 0 : atOf(d.date, d.startT), st: !!d.st, loc: d.loc.trim().slice(0, 60),
+      guests: d.gu ? 0 : int(d.guests), gu: !!d.gu, mode: d.mode, notes: d.notes.trim().slice(0, 1000), kc: d.kc.replace(/\s+$/, '').slice(0, 2000),
       rounds: d.rounds.map(function (r) { return { at: atOf(r.d, r.t), note: String(r.note || '').trim().slice(0, 80) }; }),
       lines: d.lines.map(function (l) { return { rid: l.rid, name: l.name, unit: l.unit, spec: l.spec, fp: l.fp, qty: int(l.qty), u: M.toU(l.a.slice(0, n).map(function (x) { var v = int(x); return v >= 0 ? v : 0; })) }; })
     };
@@ -87,12 +87,12 @@
   // everything wrong for confirming: the schedule's problems, the typed numbers and the contact
   function check(e) {
     var d = e.d, f = toDoc(e), out = M.problems(f);
-    if (int(d.guests) !== int(d.guests) && String(d.guests).trim()) out.push({ k: 'guests', t: 'Guests: a whole number.' });
+    if (!d.gu && int(d.guests) !== int(d.guests) && String(d.guests).trim()) out.push({ k: 'guests', t: 'Guests: a whole number.' });
     d.lines.forEach(function (l, i) {
       if (int(l.qty) !== int(l.qty)) out.push({ k: 'qty' + i, t: M.short(l.name) + ': whole platters only.' });
       l.a.forEach(function (x, r) { var v = int(x); if (r < d.rounds.length && (v !== v || v < 0)) out.push({ k: 'a' + i + '_' + r, t: M.short(l.name) + ', round ' + (r + 1) + ': a whole number, 0 or more.' }); });
     });
-    d.rounds.forEach(function (r, i) { if (!atOf(r.d, r.t)) out.push({ k: 'round' + i, t: 'Round ' + (i + 1) + ': set its date and time.' }); });
+    d.rounds.forEach(function (r, i) { if (!atOf(r.d, r.t) && !(d.st && d.mode === 'all' && !String(r.t).trim())) out.push({ k: 'round' + i, t: 'Round ' + (i + 1) + ': set its date and time.' }); });
     if (d.mode === 'stag' && !(int(d.gap) >= 1)) out.push({ k: 'gap', t: 'The gap between rounds is 1 minute or more.' });
     return out.concat(contactProblems(d));
   }
@@ -174,7 +174,7 @@
         var st = f.status === 'draft' ? '<span class="fn-tag">Draft</span>' : f.status === 'cancelled' ? '<span class="fn-tag fn-t-off">Cancelled</span>' : '<span class="fn-tag fn-t-ok">Confirmed</span>';
         var o = (ov[f.id] || []).map(function (id) { return byName[id]; });
         return '<li><a class="fe-row" href="#/functions/' + encodeURIComponent(f.id) + '"><span class="fe-r1"><b>' + esc(f.name || 'No name yet') + '</b> ' + st + (lsGet(draftKey(f.id)) ? ' <span class="fn-tag">Not saved</span>' : '') + '</span>' +
-          '<span class="fe-r2">' + (f.start ? 'Event ' + esc(M.kclock(f.start)) + ' · food ' + esc(M.when(f.first, f.date)) : 'No times yet') + (f.loc ? ' · ' + esc(f.loc) : '') + (f.guests ? ' · ' + f.guests + ' guests' : '') + ' · ' + M.totalQty(f) + ' platters' + (f.mode === 'stag' ? ', ' + (f.rounds || []).length + ' rounds' : '') + '</span>' +
+          '<span class="fe-r2">' + (f.start || f.st ? 'Event ' + esc(M.when(f.start, f.date)) + ' · food ' + esc(M.when(f.first, f.date)) : 'No times yet') + (f.loc ? ' · ' + esc(f.loc) : '') + (f.gu || f.guests ? ' · ' + M.guestsText(f) : '') + ' · ' + M.totalQty(f) + ' platters' + (f.mode === 'stag' ? ', ' + (f.rounds || []).length + ' rounds' : '') + '</span>' +
           (o.length ? '<span class="fe-ov">Food times overlap with ' + esc(o.join(', ')) + '</span>' : '') + '</a></li>';
       }).join('') + '</ul>' + (tot.length ? '<p class="fe-dtot">Confirmed for the day: ' + tot.map(function (r) { return r.qty + ' ' + esc(M.short(r.name)); }).join(', ') + '</p>' : '') + '</section>';
     }).join('');
@@ -229,6 +229,20 @@
     var err = (E.ed.shown || []).some(function (x) { return x.k === k; });
     return '<div class="field fe-f"><label class="label" for="fe-' + k + '">' + label + '</label><input id="fe-' + k + '" class="search" data-ff="' + k + '" value="' + esc(val) + '"' + (attrs || '') +
       (err ? ' aria-invalid="true" aria-describedby="fe-e-' + k + '"' : '') + '>' + (hint ? '<span class="hint">' + hint + '</span>' : '') + fieldErr(k) + '</div>';
+  }
+  // guests: a number, or ticked Not known yet (the box empties and waits until it is unticked)
+  // the event start: a 24-hour time, or ticked TBC (the food times then wait too, unless one is typed)
+  function startHTML(d) {
+    var err = (E.ed.shown || []).some(function (x) { return x.k === 'startT' || x.k === 'start'; });
+    return '<div class="field fe-f"><label class="label" for="fe-startT">Event start (24-hour)</label><div class="fe-gu"><input id="fe-startT" class="search fe-time" data-ff="startT"' + T24 + ' value="' + esc(d.st ? '' : d.startT) + '"' + (d.st ? ' disabled' : '') +
+      (err ? ' aria-invalid="true" aria-describedby="fe-e-start"' : '') + '><label class="a-check"><input type="checkbox" data-ff="st"' + (d.st ? ' checked' : '') + '> TBC</label></div>' +
+      (d.st ? '<span class="hint">The kitchen sees "TBC" and the function shows all day. It can still be confirmed (all at once); fill the time in when it is known.</span>' : '') + fieldErr('start') + '</div>';
+  }
+  function guestsHTML(d) {
+    var err = (E.ed.shown || []).some(function (x) { return x.k === 'guests'; });
+    return '<div class="field fe-f"><label class="label" for="fe-guests">Guests</label><div class="fe-gu"><input id="fe-guests" class="search fe-num" data-ff="guests" type="number" inputmode="numeric" min="1" step="1" value="' + esc(d.gu ? '' : d.guests) + '"' + (d.gu ? ' disabled' : '') +
+      (err ? ' aria-invalid="true" aria-describedby="fe-e-guests"' : '') + '><label class="a-check"><input type="checkbox" data-ff="gu"' + (d.gu ? ' checked' : '') + '> Not known yet</label></div>' +
+      '<span class="hint">For the kitchen to know. It never changes the platter numbers.</span>' + fieldErr('guests') + '</div>';
   }
   function linesHTML(e) {
     var d = e.d, cat = FN.catalogue(), have = {}, q = (e.pq || '').trim().toLowerCase();
@@ -285,7 +299,7 @@
   function liveHTML(e) {
     var f = toDoc(e), probs = check(e), tot = M.totalQty(f);
     return '<div class="fe-bar-t"><b>' + tot + ' ' + (tot === 1 ? 'platter' : 'platters') + '</b>' + (f.rounds.length ? ' · ' + (f.mode === 'all' ? 'all at ' + esc(M.when(f.first, f.date)) : f.rounds.length + ' rounds from ' + esc(M.when(f.first, f.date))) : '') +
-      (f.guests ? ' · ' + f.guests + ' guests' : '') + (probs.length ? ' · <span class="fe-bad">' + probs.length + ' to fix before confirming</span>' : e.status !== 'confirmed' ? ' · <span class="fe-good">Ready to confirm</span>' : '') + '</div>';
+      (f.gu || f.guests ? ' · ' + M.guestsText(f) : '') + (probs.length ? ' · <span class="fe-bad">' + probs.length + ' to fix before confirming</span>' : e.status !== 'confirmed' ? ' · <span class="fe-good">Ready to confirm</span>' : '') + '</div>';
   }
   function reviewHTML(e) {
     var f = toDoc(e);
@@ -306,8 +320,8 @@
       (e.restored ? '<p class="fe-note">Changes not saved yet were kept on this device and are back in the form. <button type="button" class="linkish" data-fe="drop">' + (armed('drop') ? 'Tap again to drop them' : 'Drop them') + '</button></p>' : '') +
       (!e.isNew ? '<p class="hint">Last changed by ' + esc(FN.nameOf(s.by)) + ', ' + esc(stamp(s.upd)) + '. Version ' + s.v + '.</p>' : '') + msgHTML(e) +
       '<section class="set-block"><span class="label">The function</span>' + inp('name', 'Name or reference', d.name, ' maxlength="80" autocomplete="off" placeholder="Smith birthday"') +
-      '<div class="fe-row2">' + inp('date', 'Date', d.date, ' type="date"') + inp('startT', 'Event start (24-hour)', d.startT, T24) + '</div>' +
-      '<div class="fe-row2">' + inp('guests', 'Guests', d.guests, ' type="number" inputmode="numeric" min="1" step="1"', 'For the kitchen to know. It never changes the platter numbers.') + inp('loc', 'Room, area or table (optional)', d.loc, ' maxlength="60" list="fe-locs" autocomplete="off"') + '</div>' +
+      '<div class="fe-row2">' + inp('date', 'Date', d.date, ' type="date"') + startHTML(d) + '</div>' +
+      '<div class="fe-row2">' + guestsHTML(d) + inp('loc', 'Room, area or table (optional)', d.loc, ' maxlength="60" list="fe-locs" autocomplete="off"') + '</div>' +
       '<datalist id="fe-locs">' + locs().map(function (l) { return '<option value="' + esc(l) + '">'; }).join('') + '</datalist></section>' +
       '<section class="set-block"><span class="label">Booking contact</span><span class="hint">Only function managers see these. They are never on the kitchen\'s screens.</span>' +
       inp('cname', 'Contact name', d.cname, ' maxlength="80" autocomplete="off"') + '<div class="fe-row2">' + inp('phone', 'Phone (optional)', d.phone, ' type="tel" maxlength="30" autocomplete="off"') + inp('email', 'Email (optional)', d.email, ' type="email" maxlength="120" autocomplete="off"') + '</div></section>' +
@@ -468,6 +482,8 @@
     else if ((m = /^a(\d+)_(\d+)$/.exec(k))) { d.lines[+m[1]].a[+m[2]] = v; d.custom = true; }
     else if ((m = /^rt(\d+)$/.exec(k))) { d.rounds[+m[1]].t = v; if (+m[1] === 0) { d.foodT = v; d.foodSet = true; } }
     else if ((m = /^rn(\d+)$/.exec(k))) { d.rounds[+m[1]].note = v; }
+    else if (k === 'st') { d.st = !!v; if (v) d.startT = ''; retime(e); }
+    else if (k === 'gu') { d.gu = !!v; if (v) d.guests = ''; }
     else if (k in d) d[k] = v;
     if (e.shown && e.shown.length) e.shown = check({ d: d, status: 'confirmed' }).filter(function (p) { return e.shown.some(function (s) { return s.k === p.k; }); });
     keep();
@@ -477,6 +493,7 @@
     if (!E.root || !E.root.contains(ev.target)) return;
     var k = ev.target.getAttribute('data-ff'); if (!k) return;
     // a box that loses focus while the page redraws sends its change late: take it once the redraw is done
+    if (ev.target.type === 'checkbox') { if (ev.type === 'change') setField(k, ev.target.checked, true); return; }
     if (E.drawing) { var v = ev.target.value; setTimeout(function () { setField(k, v, true); }, 0); return; }
     // what changes the page's shape waits for the change event (so typing "12" does not redraw at "1")
     var shape = /^(date|startT|foodDate|foodT|n|gap|qty\d+|a\d+_\d+|rt\d+)$/.test(k);
