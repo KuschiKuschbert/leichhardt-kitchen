@@ -218,6 +218,8 @@
     return bodies[id];
   };
   L.key = function (it) { return it.id + '@' + it.v; };
+  // the box a piece covers around its own 0,0: side and build pieces stand on y = 0 and grow upwards
+  L.box = function (it) { return it.cat === 'build' ? [-it.w / 2, -it.h, it.w / 2, 0] : [-it.w / 2, -it.h / 2, it.w / 2, it.h / 2]; };
 
   /* ---------- search ---------- */
   function words(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9 ]+/g, ' ').split(/\s+/).filter(Boolean); }

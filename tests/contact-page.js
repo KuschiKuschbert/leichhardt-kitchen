@@ -12,7 +12,9 @@
   // one piece, framed so a 30 cm plate's worth of space (200 units) never shrinks a small piece to nothing
   function cell(it) {
     var b = L.body(it.id), w = Math.max(it.w || 60, 30), h = Math.max(it.h || 60, 30), m = 8, s = Math.max(w, h * 138 / 110);
-    var vb = (-s / 2 - m) + ' ' + (-s * 110 / 138 / 2 - m) + ' ' + (s + 2 * m) + ' ' + (s * 110 / 138 + 2 * m);
+    // side and build pieces stand on y = 0 and grow upwards; the others are drawn around 0,0
+    var cy = it.cat === 'build' ? -(it.h || 60) / 2 : 0;
+    var vb = (-s / 2 - m) + ' ' + (cy - s * 110 / 138 / 2 - m) + ' ' + (s + 2 * m) + ' ' + (s * 110 / 138 + 2 * m);
     return '<div class="cell"><svg viewBox="' + vb + '">' + b + '</svg><b>' + esc(it.name) + (it.of ? ' <i>(variant)</i>' : '') + '</b><i>' + esc(it.id) + ' · ' + esc(it.form || '') + ' · ' + esc(it.role || '') + (it.g ? ' · ' + it.g + ' g' : it.n ? ' · ' + it.n + ' pcs' : '') + '</i>' + (b ? '' : '<div class="err">did not draw</div>') + '</div>';
   }
   function draw() {

@@ -192,7 +192,7 @@
   function troutFlakes(P, rnd) {
     return P.scatter(rnd, 16, 26, 18, function (x, y, i, q) {
       var rx = 5 + q() * 4, ry = 3.4 + q() * 2, rot = q() * 180, d = P.blob(q, rx, ry, 0.22, 7, 0, 0), smoked = i % 4 === 0, s = '';
-      s += P.shadow(d, 1, 1.4) + P.path(d, ['#ECA888', '#F2BC9E', '#E39A78'][i % 3], smoked ? '#B9773F' : '#BF7A5C', smoked ? 1.6 : 0.7);
+      s += P.shadow(d, 1, 1.4) + P.path(d, ['#ECA888', '#F2BC9E', '#E39A78'][i % 3], smoked ? '#C98A52' : '#BF7A5C', smoked ? 1.2 : 0.7);
       for (var k = -1; k <= 1; k++) s += P.line(k * rx * 0.42 - 0.8, -ry * 0.55, k * rx * 0.42 + 0.8, ry * 0.55, '#F8D6C2', 1, { opacity: '0.85' });
       return P.g(P.at(x, y, rot), s);
     }, 8);
@@ -467,11 +467,14 @@
     return out;
   }
   function cuttlefishStrips(P, rnd) {
-    return P.pile(rnd, 9, 34, 24, function (x, y, i, q) {
-      var l = 15 + q() * 4, w = 5.4, col = '#F1E2C6', b = (q() - 0.5) * 6, d = 'M' + N(-l) + ' ' + N(-w) + ' Q0 ' + N(-w + b) + ' ' + N(l) + ' ' + N(-w) + ' Q' + N(l + 2) + ' 0 ' + N(l) + ' ' + N(w) + ' Q0 ' + N(w + b) + ' ' + N(-l) + ' ' + N(w) + ' Q' + N(-l - 2) + ' 0 ' + N(-l) + ' ' + N(-w) + ' Z', s = '';
-      for (var xx = -l + 3; xx < l; xx += 4) s += P.line(xx, -w + 1 + b * 0.5, xx + 3, w - 1 + b * 0.5, P.shade(col, -0.16), 0.6) + P.line(xx + 3, -w + 1 + b * 0.5, xx, w - 1 + b * 0.5, P.shade(col, -0.16), 0.6);
-      return P.g(P.at(x, y, q() * 180), P.shadow(d, 1.2, 1.6) + P.path(d, col, P.shade(col, -0.28), 0.8) + s + P.line(-l * 0.5, -w, -l * 0.3, w, '#6B4420', 2, { opacity: '0.6' }) + P.line(l * 0.2, -w, l * 0.4, w, '#6B4420', 2, { opacity: '0.6' }));
-    });
+    // scored strips that curl as they cook: a bent band, fine scoring across, golden char at the edges
+    return P.scatter(rnd, 8, 30, 20, function (x, y, i, q) {
+      var l = 14 + q() * 4, w = 5, b = 5 + q() * 4, col = '#F3E6CC', s = '';
+      var d = 'M' + N(-l) + ' ' + N(-w + b) + ' Q0 ' + N(-w - b) + ' ' + N(l) + ' ' + N(-w + b) + ' L' + N(l) + ' ' + N(w + b) + ' Q0 ' + N(w - b) + ' ' + N(-l) + ' ' + N(w + b) + ' Z';
+      for (var xx = -l + 3; xx < l - 1; xx += 3.4) { var yy = b * (xx * xx / (l * l)) * 2 - b; s += P.line(xx - 1, yy - w + 1.2, xx + 1, yy + w - 1.2, P.shade(col, -0.14), 0.6, { opacity: '0.8' }); }
+      s += P.path('M' + N(-l + 1) + ' ' + N(-w + b - 0.6) + ' Q0 ' + N(-w - b + 1.4) + ' ' + N(l - 1) + ' ' + N(-w + b - 0.6), 'none', '#C9893A', 1.6, { opacity: '0.7', 'stroke-linecap': 'round' });
+      return P.g(P.at(x, y, q() * 180), P.shadow(d, 1.2, 1.6) + P.path(d, col, P.shade(col, -0.3), 0.8) + s + P.circle(-l * 0.4, b * 0.3 - w * 0.2, 1.4, '#6B4420', null, 0, { opacity: '0.6' }));
+    }, 16);
   }
 
   /* ---------- crab and lobster ---------- */

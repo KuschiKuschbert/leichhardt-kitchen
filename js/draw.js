@@ -127,7 +127,12 @@
   // the box an element covers, in drawing units: [x0, y0, x1, y1]
   function bbox(el) {
     var w, h;
-    if (el.t === 'item') { var s = sizeOf(el.a); w = s[0] * Math.abs(el.sx || 1); h = s[1] * Math.abs(el.sy || 1); }
+    if (el.t === 'item') {
+      // the piece's own box (a side or build piece stands on its 0,0), scaled, flipped and turned with it
+      var it = itemOf(el.a), lb = it ? LIB.box(it) : [-20, -20, 20, 20], sx = (el.flip ? -1 : 1) * (el.sx || 1), sy = el.sy || 1, ra = (el.r || 0) * Math.PI / 180, ca = Math.cos(ra), sa = Math.sin(ra), xs = [], ys = [];
+      [[lb[0], lb[1]], [lb[2], lb[1]], [lb[2], lb[3]], [lb[0], lb[3]]].forEach(function (p) { var x = p[0] * sx, y = p[1] * sy; xs.push(el.x + x * ca - y * sa); ys.push(el.y + x * sa + y * ca); });
+      return [Math.min.apply(0, xs), Math.min.apply(0, ys), Math.max.apply(0, xs), Math.max.apply(0, ys)];
+    }
     else if (el.t === 'text') { var sz = el.size || 10, tw = String(el.s || '').length * sz * 0.52; var x0 = el.anchor === 'end' ? el.x - tw : el.anchor === 'middle' ? el.x - tw / 2 : el.x; return [x0, el.y - sz, x0 + tw, el.y + (el.sub ? sz : sz * 0.3)]; }
     else if (el.t === 'line') { var p = pts(el), xs = p.map(function (q) { return q[0]; }), ys = p.map(function (q) { return q[1]; }); return [Math.min.apply(0, xs) - 2, Math.min.apply(0, ys) - 2, Math.max.apply(0, xs) + 2, Math.max.apply(0, ys) + 2]; }
     else { w = el.w; h = el.h; }
@@ -437,8 +442,8 @@
 
   /* ---------- the panels under the canvas ---------- */
   function thumb(it) {
-    var w = Math.max(it.w, 24), h = Math.max(it.h, 24), s = Math.max(w, h) / 2 + 4;
-    return '<svg viewBox="' + f(-s) + ' ' + f(-s) + ' ' + f(2 * s) + ' ' + f(2 * s) + '" aria-hidden="true" focusable="false">' + LIB.body(it.id) + '</svg>';
+    var b = LIB.box(it), s = Math.max(b[2] - b[0], b[3] - b[1], 24) / 2 + 4, cx = (b[0] + b[2]) / 2, cy = (b[1] + b[3]) / 2;
+    return '<svg viewBox="' + f(cx - s) + ' ' + f(cy - s) + ' ' + f(2 * s) + ' ' + f(2 * s) + '" aria-hidden="true" focusable="false">' + LIB.body(it.id) + '</svg>';
   }
   function libHTML() {
     var cats = LIB.cats, o = {}, list;
