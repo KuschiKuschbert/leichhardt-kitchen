@@ -13,10 +13,10 @@ const top = (p, sel) => p.evaluate(s => { const e = document.querySelector(s); r
   ok(await p.$('details.nb-start-l:not([open])') !== null && /Portion rump/.test(await L.txt(p, 'details.nb-start-l summary') || ''), 'phone: Start here is one line naming the jobs');
   const first = await top(p, '.nb-rows li');
   ok(first > 0 && first < 560, 'phone: the first line starts higher up (' + first + ')');
-  await L.tap(p, 'details.nb-start-l summary'); await p.waitForTimeout(200);
+  await L.tap(p, 'details.nb-start-l summary'); await L.settle(p, 200);
   ok(await p.$('details.nb-start-l[open] .nb-sb') !== null, 'phone: a tap opens Start here');
   ok(await p.$('.nb-qadd [data-p="quick"]') !== null, 'phone: Quick add sits in the add box');
-  await L.tap(p, '[data-p="tick"][data-id="i1"]'); await p.waitForTimeout(400);
+  await L.tap(p, '[data-p="tick"][data-id="i1"]'); await L.settle(p, 400);
   ok(/Done today \(1\)/.test(await L.txt(p, '.nb-donejump') || ''), 'phone: a Done today (1) button shows by the count');
   ok(p.errors.length === 0, 'phone: no page errors ' + p.errors.join(' | '));
   await p.context().close();

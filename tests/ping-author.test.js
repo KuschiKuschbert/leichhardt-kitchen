@@ -12,15 +12,15 @@ const today = L.ymd(new Date(L.NOW));
   extra[fsKey(['notes', 'n1'])] = { text: 'Function in the garden at 18:00', tag: 'function', start: today, until: today, dows: [], removed: false, at: L.NOW - 3600000, upd: L.NOW - 1800000, author: 'bo', by: 'sam' };
   let p = await L.open(b, '#/prep', { extra, wait: 1500 });
   await L.chef(p, 'pings');
-  await p.waitForTimeout(400);
+  await L.settle(p, 400);
   ok(/Written by Bo/.test(await txt(p, '#prep-root') || ''), 'pings list: a ping Sam edited still says Written by Bo');
   ok(!/Written by Sam/.test(await txt(p, '#prep-root') || ''), 'pings list: not Written by Sam');
   // a new ping records its writer in author
   await tap(p, '[data-p="n-new"]');
-  await p.waitForTimeout(200);
+  await L.settle(p, 200);
   await p.fill('[data-k="n-text"]', 'Delivery at 07:00, check the cold room');
   await tap(p, '[data-p="n-save"]');
-  await p.waitForTimeout(600);
+  await L.settle(p, 600);
   const s = await store(p);
   const mine = Object.keys(s).filter(k => /\/notes\/[^/]+$/.test(k) && s[k].text === 'Delivery at 07:00, check the cold room').map(k => s[k])[0];
   ok(!!mine && mine.author === 'sam' && mine.by === 'sam', 'new ping: author and by are both the writer (' + (mine && mine.author) + ')');

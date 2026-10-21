@@ -33,7 +33,7 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
     p = await L.open(b, '#/prep', { who, width: w, height: w > 400 ? 900 : 844, wait: 1600 });
     const heads = await p.evaluate(() => [...document.querySelectorAll('.nb-side .nb-sh')].map(e => e.textContent.trim()));
     ok(heads.indexOf('Tools') < 0 && !(await p.$('.nb-tools')), who + ' ' + w + ' px: no Tools in Handy (' + heads.join(', ') + ')');
-    await p.click('.wtop-who'); await p.waitForTimeout(150);
+    await p.click('.wtop-who'); await L.settle(p, 150);
     const box = await p.evaluate(() => { const r = document.querySelector('.wm').getBoundingClientRect(); return { l: r.left, r: r.right, b: r.bottom, w: innerWidth, h: innerHeight }; });
     ok(box.l >= 0 && box.r <= box.w && box.b <= box.h, who + ' ' + w + ' px: the chef menu fits on the screen (' + JSON.stringify(box) + ')');
     ok(!(await L.overflow(p)), who + ' ' + w + ' px: no sideways scroll with the menu open (' + await L.overflow(p) + ')');
@@ -64,26 +64,26 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   m = await L.chefItems(p);
   ok(m.join(',') === 'mail,drinks,minutes,pings,register,staff,settings,out', 'sous chef: the Chef group has Shift pings, Minutes register and Manage staff (' + m + ')');
   await L.chef(p, 'register');
-  await p.waitForTimeout(500);
+  await L.settle(p, 500);
   ok(/#\/prep$/.test(p.url()) && await txt(p, '#rtitle') === 'Meeting minutes' && !!(await p.$('[data-p="mn-close"]')), 'sous chef: Minutes register opens from the recipes (' + p.url() + ')');
   await L.chef(p, 'staff');
   ok(!!(await p.$('[data-p="a-add-person"]')), 'sous chef: Manage staff opens from the menu over the register');
 
   // Sign out closes Manage staff, so the next person never lands in it
-  await p.click('.wtop-who'); await p.waitForTimeout(150);
-  await p.click('.wm [data-who="out"]'); await p.waitForTimeout(400);
+  await p.click('.wtop-who'); await L.settle(p, 150);
+  await p.click('.wm [data-who="out"]'); await L.settle(p, 400);
   ok(!(await signedIn(p)) && !!(await p.$('.p-name[data-id="sam"]')), 'sign out: back to Who are you? on the prep list');
   ok(!(await p.$('.wm')), 'sign out: the menu closes');
-  await p.click('.p-name[data-id="sam"]'); await p.waitForTimeout(400);
-  await p.type('#pf1', '1111'); await p.waitForTimeout(900);
+  await p.click('.p-name[data-id="sam"]'); await L.settle(p, 400);
+  await p.type('#pf1', '1111'); await L.settle(p, 900);
   ok(await signedIn(p) && !(await p.$('[data-p="a-add-person"]')) && !!(await p.$('.nb-left')), 'sign in again: the prep list, not the last Manage staff page');
   ok(p.errors.length === 0, 'sous chef menu: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
   // Sign out on the recipes stays on the recipes (the kitchen PIN stays)
   p = await L.open(b, '#/recipes', { who: 'ann', wait: 1800 });
-  await p.click('.wtop-who'); await p.waitForTimeout(150);
-  await p.click('.wm [data-who="out"]'); await p.waitForTimeout(400);
+  await p.click('.wtop-who'); await L.settle(p, 150);
+  await p.click('.wm [data-who="out"]'); await L.settle(p, 400);
   ok(!(await signedIn(p)) && /#\/recipes$/.test(p.url()) && await p.evaluate(() => !document.querySelector('.wtop-who').classList.contains('on') && document.querySelector('.wtop-who').getAttribute('title') === 'Menu and Settings'), 'recipes: signed out, still on the recipes, the chef mark is dashed (Menu and Settings)');
   ok(/Signed out/.test(await txt(p, '.p-toast') || ''), 'recipes: a toast says Signed out');
   ok(await p.evaluate(() => localStorage.getItem('lk.prep.pin')) === L.PIN, 'recipes: the kitchen PIN stays on the device');
@@ -92,10 +92,10 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   // something not saved: the first tap asks, the second signs out
   p = await L.open(b, '#/prep', { who: 'ann', wait: 1800 });
   await p.fill('#p-text', 'Pick parsley');
-  await p.click('.wtop-who'); await p.waitForTimeout(150);
-  await p.click('.wm [data-who="out"]'); await p.waitForTimeout(200);
+  await p.click('.wtop-who'); await L.settle(p, 150);
+  await p.click('.wm [data-who="out"]'); await L.settle(p, 200);
   ok(await signedIn(p) && /Tap again to sign out/.test(await txt(p, '.wm-out small') || ''), 'unsaved line: the first tap asks again (' + await txt(p, '.wm-out small') + ')');
-  await p.click('.wm [data-who="out"]'); await p.waitForTimeout(400);
+  await p.click('.wm [data-who="out"]'); await L.settle(p, 400);
   ok(!(await signedIn(p)), 'unsaved line: the second tap signs out');
   ok(p.errors.length === 0, 'sign out: no page errors ' + p.errors.join(' | '));
   await p.context().close();

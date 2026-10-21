@@ -22,9 +22,9 @@ const elsewhere = (page, change) => page.evaluate(([k, ch]) => {
   // head chef, People tab: a clean draft follows another phone's change
   let p = await L.open(b, '#/admin', { admin: true, wait: 1500 });
   await L.adminTab(p, 'people');
-  await p.waitForTimeout(300);
+  await L.settle(p, 300);
   await elsewhere(p, { add: 'Dee' });
-  await p.waitForTimeout(400);
+  await L.settle(p, 400);
   const names = page => page.evaluate(() => Array.from(document.querySelectorAll('#prep-root input')).map(i => i.value));
   ok((await names(p)).indexOf('Dee') >= 0, 'people: a person added on another phone shows up without saving');
   ok(await p.$('.a-stale') === null, 'people: no stale hint while nothing is changed here');
@@ -32,12 +32,12 @@ const elsewhere = (page, change) => page.evaluate(([k, ch]) => {
   // a draft with changes keeps them, and Save carries only those changes onto the latest list
   await p.fill('[data-k="a-bulk"]', 'Eve');
   await p.click('[data-p="a-bulk-add"]');
-  await p.waitForTimeout(200);
+  await L.settle(p, 200);
   await elsewhere(p, { rename: ['Ann', 'Annie'] });
-  await p.waitForTimeout(400);
+  await L.settle(p, 400);
   ok(await p.$('.a-stale') !== null, 'people: the stale hint shows once the list changed under a draft with changes');
   await p.click('[data-p="a-save"]');
-  await p.waitForTimeout(600);
+  await L.settle(p, 600);
   let s = await store(p);
   ok(!!byName(s, 'Eve'), 'people: the person added here is saved');
   ok(!!byName(s, 'Annie') && !byName(s, 'Ann'), 'people: the rename from the other phone is kept, not wiped');
@@ -50,14 +50,14 @@ const elsewhere = (page, change) => page.evaluate(([k, ch]) => {
   // sous chef, Manage staff: the head chef makes Bo a sous chef while Sam adds someone
   p = await L.open(b, '#/prep', { wait: 1500 });
   await L.chef(p, 'staff');
-  await p.waitForTimeout(300);
+  await L.settle(p, 300);
   await p.fill('[data-k="a-bulk"]', 'Fay');
   await p.click('[data-p="a-bulk-add"]');
-  await p.waitForTimeout(200);
+  await L.settle(p, 200);
   await elsewhere(p, { role: ['Bo', 'sous'] });
-  await p.waitForTimeout(400);
+  await L.settle(p, 400);
   await p.click('[data-p="a-save"]');
-  await p.waitForTimeout(600);
+  await L.settle(p, 600);
   s = await store(p);
   ok(!!byName(s, 'Fay'), 'staff: the person Sam added is saved');
   ok(byName(s, 'Bo').role === 'sous', 'staff: the role the head chef set meanwhile is kept, not reverted');

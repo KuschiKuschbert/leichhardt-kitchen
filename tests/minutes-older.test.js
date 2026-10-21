@@ -16,12 +16,12 @@ const minutes = (id, no, date) => ({ no, v: 1, status: 'published', date, start:
   let p = await L.open(b, '#/', { who: 'ann', extra, wait: 1800 });
   ok((await txt(p, '.wall-mn')) === '', 'older minutes: no "Minutes not signed yet" card after 30 days');
   await p.evaluate(() => { location.hash = '#/minutes'; });
-  await p.waitForTimeout(1200);
+  await L.settle(p, 1200);
   ok(/Fryer oil every Monday/.test(await txt(p, '.mn')), 'older minutes: the minutes open');
   ok(!/Checking your sign-off/.test(await txt(p, '.mn')), 'older minutes: the sign box is not stuck on "Checking your sign-off..."');
   ok(await p.$('#mn-pin') === null && await p.$('.mn-signbtn:not([disabled])') !== null, 'older minutes: one Sign button, no second PIN');
   await p.click('.mn-signbtn');
-  await p.waitForTimeout(800);
+  await L.settle(p, 800);
   const s = await store(p);
   ok(!!s[fsKey(['minutes', 'old1', 'signs', '1_ann'])], 'older minutes: Ann\'s sign-off is saved');
   ok(/signed on/.test(await txt(p, '.mn-sign')), 'older minutes: the box now says Signed');
@@ -33,7 +33,7 @@ const minutes = (id, no, date) => ({ no, v: 1, status: 'published', date, start:
   p = await L.open(b, '#/minutes', { who: 'ann', extra: extra2, wait: 1800 });
   await p.evaluate(() => { window.__fake.mode = 'deny'; });
   await p.click('.mn-signbtn');
-  await p.waitForTimeout(1000);
+  await L.settle(p, 1000);
   ok(/sign in again with your PIN/.test(await txt(p, '.p-toast') || ''), 'refused sign-off: "sign in again with your PIN" toast');
   ok(await p.$('#pf1') !== null, 'refused sign-off: back on the person\'s PIN screen');
   ok(!/Reload the page/.test(await txt(p, '#prep-root') || ''), 'refused sign-off: no "Reload the page" dead end');
