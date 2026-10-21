@@ -24,6 +24,8 @@ export function probeChecks(fs, pin) {
     ['a drawing cannot be changed with only the kitchen PIN', () => fs.patch(K + 'drawings/' + id, { slot: str('plate'), vb: str('0 0 10 10'), svgS: str(''), svgF: str(''), v: num(1), upd: num(Date.now()), by: str('probe') }), false],
     ['a template or library piece cannot be saved with only the kitchen PIN', () => fs.patch(K + 'drawlib/' + id, { type: str('item'), name: str('Probe'), body: str('<circle r="1"/>'), w: num(1), h: num(1), v: num(1), upd: num(Date.now()), by: str('probe') }), false],
     ['the head chef\'s recipe index cannot be changed with only the kitchen PIN', () => fs.patch(K + 'book/index', { probe: num(1) }, ['probe']), false],
+    ['a function booking cannot be saved with only the kitchen PIN', () => fs.patch(K + 'functions/' + id, { v: num(1), status: str('draft'), name: str('Probe'), upd: num(Date.now()), by: str('probe') }), false],
+    ['a function contact cannot be saved with only the kitchen PIN', () => fs.patch(K + 'fncontact/' + id, { cname: str('Probe'), upd: num(Date.now()), by: str('probe') }), false],
     ['a proof cannot be read back', () => fs.get(K + 'proofs/' + id), false]
   ];
 }
