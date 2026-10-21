@@ -15,7 +15,7 @@
     buildFrom(recipe)  the exploded build for a burger, sandwich or stack, top to bottom in the ingredient order
 
   The drawing parts carry the ingredient they show (ing), so the Pass labels are made from them (js/draw.js).
-  An ingredient with no drawing of its own but a recipe card in the book is drawn from what it is made of (madeOf).
+  An ingredient with a recipe card of its own is drawn from what that card is made of and how it is prepped (js/compose.js).
 */
 (function () {
   'use strict';
@@ -195,62 +195,10 @@
     return 'clock';
   }
 
-  /* ---------- drawn from its recipe (asked for by the head chef, 21 Oct 2026) ----------
-     An ingredient with no drawing of its own but a recipe card in the book is drawn from what that card says it is made
-     of. Cowboy candy (jalapeños, turmeric, mustard seed) is jalapeño slices turned gold by the turmeric, with mustard
-     seeds on them; Cowboy butter (butter, BBQ dry rub) is a butter pat browned by the rub, with flecks of it. The piece is
-     the heaviest solid ingredient, spices and sauces give the colour, seeds, herbs and flakes go on top, and what is
-     cooked in (vinegar, sugar, salt, oil) is left out. A pick the head chef made for the name still wins. */
-  var TINT = [[/turmeric|saffron/, '#E3A21A'], [/curry powder|garam masala|curry paste/, '#D49A2A'], [/smoked paprika/, '#9E3418'], [/paprika|cayenne|chilli powder|chili powder|gochugaru/, '#C0391E'],
-    [/gochujang|sriracha|harissa/, '#A3261C'], [/\brub\b|bbq spice|cajun|jerk|five spice|ras el hanout|baharat/, '#7A3A1C'], [/cinnamon|nutmeg|mixed spice|allspice/, '#8B4A22'],
-    [/cocoa|cacao/, '#4E2A17'], [/coffee|espresso/, '#4A2C1A'], [/matcha|spirulina/, '#6E9A3E'], [/squid ink|charcoal/, '#1E1E22'], [/\bsoy\b|kecap|tamari|worcestershire|fish sauce|oyster sauce/, '#5A3416'], [/beetroot (powder|juice)/, '#8E2A52']];
-  var INTO = /\b(vinegar|sugar|salt|water|oil|stock|wine|beer|syrup|juice|extract|essence|gelatine|yeast|flour|starch|cornflour|baking|bicarb|garlic|ginger)\b/;
-  function tintOf(name) { var p = plain(name); for (var k = 0; k < TINT.length; k++) if (TINT[k][0].test(p)) return TINT[k][1]; return ''; }
-  function grams(q) { var a = DR.amount(q); return a ? (a.g || (a.n || 0) * 50) : 0; }
-  // the recipe card an ingredient stands for: its link, or a card with the same name
-  function recipeFor(i, r) {
-    var id = i.link || '', sub = id ? (window.LK_APP.byId(id) || X.pristine(id)) : null, k = key(i.name);
-    if (!sub && k) sub = ((window.LK_DATA && window.LK_DATA.recipes) || []).filter(function (x) { return key(x.name) === k; })[0] || null;
-    return sub && (!r || sub.id !== r.id) ? sub : null;
-  }
-  function recolour(body, cm) { return cm ? body.replace(/#([0-9A-Fa-f]{6})/g, function (m, h) { return cm[h.toUpperCase()] || m; }) : body; }
-  var madeCache = {};
-  // a piece of its own for the ingredient, made from its recipe: { id, made, name, role, form, w, h, side, body, box, from }
-  function madeOf(i, r) {
-    var sub = recipeFor(i, r); if (!sub) return null;
-    var ck = sub.id + '|' + R.ingName(i);
-    if (madeCache[ck] !== undefined) return madeCache[ck];
-    var solids = [], bits = [], tints = [], used = [];
-    (sub.ingredients || []).forEach(function (si) {
-      var nm = R.ingName(si), p = plain(nm), t = tintOf(nm);
-      if (!p || hidden(si)) return;
-      if (t) { tints.push(t); used.push(nm); if (/\brub\b|spice|seasoning|cajun|jerk/.test(p)) bits.push({ id: 'spice-flecks', tint: t }); return; }
-      if (INTO.test(p)) return;
-      var m = rank(nm, { notCat: 'build' })[0], it = m && m.s >= 0.6 ? LIB.get(m.id) : null;
-      if (!it) return;
-      if (/sauce/.test(it.role)) { tints.push(LIB.sauceColour(nm) || it.side.c); used.push(nm); return; }
-      if (it.role === 'garnish') { bits.push({ id: it.id }); used.push(nm); return; }
-      solids.push({ it: it, g: grams(si.q), nm: nm });
-    });
-    // the piece: the heaviest solid (the first one when the amounts are not known)
-    var base = solids.reduce(function (b, x) { return !b || x.g > b.g ? x : b; }, null);
-    if (!base || !base.it.side) return (madeCache[ck] = null);
-    used.unshift(base.nm);
-    var it0 = base.it, tint = tints.reduce(function (c, t) { return c ? LIB.P.mix(c, t, 0.5) : t; }, ''), col = tint ? LIB.P.mix(it0.side.c, tint, 0.6) : it0.side.c;
-    var b0 = LIB.body(it0.id), bb = LIB.box(it0), rnd = LIB.P.rng('made:' + sub.id), out = recolour(b0, tint ? R.tintMap(b0, it0.side.c, col) : null);
-    // seeds, herbs and flakes on top: a few small scatters over the middle of the piece
-    bits.slice(0, 2).forEach(function (b) {
-      var bit = LIB.get(b.id); if (!bit) return;
-      var body = LIB.body(bit.id), s = Math.min(0.6, (bb[2] - bb[0]) * 0.4 / bit.w);
-      if (b.tint && bit.side && bit.side.c) body = recolour(body, R.tintMap(body, bit.side.c, b.tint));
-      for (var c = 0; c < 3; c++) {
-        var x = (bb[0] + bb[2]) / 2 + (rnd() - 0.5) * (bb[2] - bb[0]) * 0.5, y = (bb[1] + bb[3]) / 2 + (rnd() - 0.5) * (bb[3] - bb[1]) * 0.5;
-        out += '<g transform="translate(' + n1(x) + ' ' + n1(y) + ') rotate(' + Math.round(rnd() * 360) + ') scale(' + Math.round(s * 100) / 100 + ')">' + body + '</g>';
-      }
-    });
-    return (madeCache[ck] = { id: 'made-' + sub.id, v: 1, made: sub.id, name: R.ingName(i), cat: it0.cat, role: it0.role, form: it0.form, g: it0.g, n: it0.n, w: it0.w, h: it0.h, side: { s: it0.side.s, h: it0.side.h, c: col }, body: out, box: bb, from: used });
-  }
-  function hashStr(t) { var h = 5381; for (var k = 0; k < t.length; k++) h = ((h << 5) + h + t.charCodeAt(k)) | 0; return (h >>> 0).toString(36); }
+  /* ---------- drawn from its recipe card (js/compose.js) ---------- */
+  function C() { return window.LK_COMPOSE; }
+  // the part an ingredient's own card makes (the Cowboy candy, the slaw, the mushroom sauce), or null
+  function cardPart(i, r, m) { return C() ? C().partFor(i, r, m) : null; }
   // a part of the drawing as the layout sees it: the library piece, or a piece drawn from its recipe (its role kept on it)
   function itemOfEl(e) { return e.t === 'item' ? LIB.get(e.a.split('@')[0]) : e.t === 'raw' && e.role ? { role: e.role } : null; }
 
@@ -287,12 +235,10 @@
         }
         var c = coatOf(i); if (c) { coats.push({ ing: R.ingName(i), cook: c }); return; }
         var m = matchIng(i, r), name = R.ingName(i);
-        if (!m.id || m.conf < 0.6) {
-          // no sure drawing, but a recipe card: drawn from what it is made of
-          var mk = madeOf(i, r);
-          if (mk) { made.push({ ing: name, from: mk.from }); out.push({ ing: name, i: i, id: mk.id, it: mk, scale: DR.scaleFor(mk, i.q), count: 1, conf: 0.8, guesses: m.guesses || [] }); return; }
-          unsure.push({ ing: name, guesses: m.id ? m.guesses : [] }); return;
-        }
+        // its own card says what it is made of and how it is prepped: drawn from that (a pick the head chef made still wins)
+        var mk = cardPart(i, r, m);
+        if (mk) { made.push({ ing: name, from: mk.from }); out.push({ ing: name, i: i, id: mk.id, it: mk, scale: DR.scaleFor(mk, i.q), count: 1, conf: 0.9, guesses: m.guesses || [] }); return; }
+        if (!m.id || m.conf < 0.6) { unsure.push({ ing: name, guesses: m.id ? m.guesses : [] }); return; }
         // two ingredients for the same piece (the pie mix and the pie case, smoked or oven brisket): one part, both named
         if (used[m.id]) { fold(name, used[m.id]); return; }
         var it = LIB.get(m.id), part = { ing: name, i: i, id: m.id, it: it, scale: DR.scaleFor(it, i.q), count: countOf(it, i.q), conf: m.conf, guesses: m.guesses };
@@ -388,13 +334,13 @@
       var it = p.it;
       // on a board a sauce comes in a ramekin
       if (STYLES[style].pack && /sauce/.test(it.role) && ramekin && it.id !== ramekin.id) it = ramekin;
-      var k2 = it.made ? 'raw:made-' + it.made + '-' + hashStr(it.body) : it.id + '@' + it.v, col = !it.made && (/sauce/.test(p.it.role) || it === ramekin) ? LIB.sauceColour(p.ing) : '';
+      var k2 = it.made ? it.key : it.id + '@' + it.v, col = !it.made && (/sauce/.test(p.it.role) || it === ramekin) ? LIB.sauceColour(p.ing) : '';
       d.defs[k2] = it.made ? it.body : LIB.body(it.id);
       for (var c = 0; c < p.count; c++) {
         var ang = p.count > 1 ? c / p.count * Math.PI * 2 + rnd() * 0.5 : 0, rr = p.count > 1 ? Math.max(it.w, it.h) * p.scale * 0.5 : 0;
         if (host && rr) { var hb = sizeEl(host); rr = Math.min(rr, Math.min(hb[0], hb[1]) * 0.28); }
         var el = { t: 'item', a: k2, x: n1(at[0] + Math.cos(ang) * rr), y: n1(at[1] + Math.sin(ang) * rr * 0.7), sx: n1(p.scale * 100) / 100, sy: n1(p.scale * 100) / 100, r: Math.round(rot + (p.count > 1 ? rnd() * 50 - 25 : 0)), ing: p.ing };
-        if (it.made) { el.t = 'raw'; el.bx = it.box.map(n1).join(' '); el.role = it.role; el.made = it.made; }
+        if (it.made) { el.t = 'raw'; el.bx = it.box.map(n1).join(' '); el.role = it.role; el.made = it.made; el.ms = it.ms; }
         var ii = idxIn(r, p.ing); if (ii < 0 && p.i && p.i.whole) ii = idxIn(r, R.ingName({ name: p.i.whole })); if (ii >= 0) el.ii = ii;
         // what is drawn inside the part, and where each is in the ingredient list (so a rename follows)
         if (p.also && p.also.length) { el.also = p.also.join('|').slice(0, 400); el.ai = p.also.map(function (x) { return idxIn(r, x); }).join('|'); }
@@ -525,7 +471,7 @@
       var surfW = LIB.surface(pd.surf || { fam: 'plate', size: 30 }).w || 200;
       // in the plate's own order, bottom layer first (a sauce pool before its steak, the napoli after its schnitzel)
       var parts = pd.els.filter(function (e) { return e.t === 'item' || (e.t === 'raw' && e.made); }).map(function (e) {
-        var it = e.t === 'item' ? LIB.get(e.a.split('@')[0]) : madeOf({ name: e.ing || '', link: e.made }, null); if (!it) return null;
+        var it = e.t === 'item' ? LIB.get(e.a.split('@')[0]) : cardPart({ name: e.ing || '', link: e.made }, null, null); if (!it) return null;
         var b = R.bbox(e);
         return { it: it, ing: e.ing || it.name, x: e.x / surfW * 200, y: e.y / surfW * 200, w: (b[2] - b[0]) / surfW * 200, h: (b[3] - b[1]) / surfW * 200 };
       }).filter(Boolean);
@@ -678,7 +624,7 @@
     ui: ui,
     match: function (i, d) { var m = matchIng(i, d && R.recipeOf(d.rid)); return m.conf >= 0.6 ? m.id : ''; },
     // a piece drawn from the ingredient's own recipe card (js/draw.js adds it when nothing in the library is sure)
-    made: function (i, d) { return madeOf(i, d && R.recipeOf(d.rid)); }, madeOf: madeOf,
+    made: function (i, d) { var r = d && R.recipeOf(d.rid); return cardPart(i, r, matchIng(i, r)); },
     matchIng: matchIng, rank: rank, key: key, hidden: hidden, split: split, ware: ware, pickStyle: pickStyle, STYLES: STYLES,
     partsOf: partsOf, drawIt: drawIt, tidy: tidy, loadLearned: loadLearned, teach: teach, pendingOps: pendingOps, saved: saved,
     learned: function () { return learned || {}; }

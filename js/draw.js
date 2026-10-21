@@ -324,8 +324,8 @@
   function addIng(name) {
     var i = ingOf(name); if (!i) return;
     var id = matchIng(i), S = window.LK_SMART;
-    // nothing in the library is sure, but the ingredient has its own recipe card: drawn from what it is made of
-    var mk = !(S && S.match && S.match(i, W.d)) && S && S.made ? S.made(i, W.d) : null;
+    // the ingredient has its own recipe card: drawn from what it is made of and how it is prepped (js/compose.js)
+    var mk = S && S.made ? S.made(i, W.d) : null;
     if (mk) { W.sel = []; before(); addMade(mk, name, scaleFor(mk, i.q)); changed(); say(name + ' added, drawn from its recipe'); return; }
     if (!id) { W.panel = 'lib'; W.q = name; W.pendingIng = name; W.more = 0; draw(); say('No drawing found for ' + name + '. Pick one from the library.'); return; }
     var it = LIB.get(id);
@@ -334,11 +334,11 @@
     before(); addItem(id, { ing: name, scale: scaleFor(it, i.q), count: countFor(it, i.q) }); changed();
     say(name + ' added');
   }
-  // a piece drawn from an ingredient's own recipe (js/smart.js madeOf): a raw part with its drawing kept in defs
+  // a piece drawn from an ingredient's own recipe card (js/compose.js): a raw part with its drawing kept in defs
   function addMade(mk, name, s) {
-    var key = 'raw:made-' + mk.made + '-' + hash(mk.body), at = freeSpot(mk.w * s, mk.h * s);
+    var key = mk.key, at = freeSpot(mk.w * s, mk.h * s);
     W.d.defs[key] = mk.body;
-    var el = { t: 'raw', a: key, bx: mk.box.map(n1).join(' '), role: mk.role, made: mk.made, x: n1(at[0]), y: n1(at[1]), sx: n1(s * 100) / 100, sy: n1(s * 100) / 100, r: 0, ing: name, ii: ingIndex(name) };
+    var el = { t: 'raw', a: key, bx: mk.box.map(n1).join(' '), role: mk.role, made: mk.made, ms: mk.ms, x: n1(at[0]), y: n1(at[1]), sx: n1(s * 100) / 100, sy: n1(s * 100) / 100, r: 0, ing: name, ii: ingIndex(name) };
     var k = insertAt(layerOf(el));
     W.d.els.splice(k, 0, el); W.sel = [k];
   }
