@@ -225,9 +225,28 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   ok(!!fish && /batter/.test(fish.id) && /Beer batter/.test(fish.also || '') && !w.els.some(e => e.ing === 'Beer batter'), 'fish and chips: the beer batter makes the fish battered, not a part of its own');
   ok(w.els.some(e => e.ing === 'Tartare sauce' && e.k > fish.k) && w.els.some(e => e.ing === 'Lemon'), 'fish and chips: tartare beside the fish, a lemon wedge');
   await p.context().close();
+  // a topper whose card is still to come is drawn from its note (brie, avocado, bacon, béarnaise), on the schnitzel
   p = await drawn('schnitzel-french/plate');
   w = await S(p);
-  ok(w.els.some(e => e.id === 'parmy-french' && /French parmi topper/.test(e.also || '')), 'French parmy: the topper card makes the schnitzel a French parmy');
+  const ft = w.els.find(e => e.ing === 'French parmi topper'), sch0 = w.els.find(e => e !== ft && /schnitzel/i.test(e.ing || ''));
+  ok(!!ft && ft.t === 'raw' && ft.made === 'french-topper' && !!sch0 && inside(ft, sch0) && ft.k > sch0.k && !w.unsure.length, 'topper: the French topper, its card still to come, is drawn from its note on the schnitzel, nothing to pick');
+  const ftNote = await L.txt(p, '.dw-made') || '';
+  ok(/from its note/i.test(ftNote) && /brie/i.test(ftNote) && /avocado/i.test(ftNote) && /bacon/i.test(ftNote) && /b[ée]arnaise/i.test(ftNote), 'topper: the note says it is drawn from the topper\'s note, and what (' + ftNote + ')');
+  await p.context().close();
+  // the last of the book's dishes (21 Oct 2026): the Snickers inside its spring roll, the B.B. whiting crumbed, the
+  // calamari topper's strips filling their bowl
+  p = await drawn('snickers/plate');
+  w = await S(p);
+  ok(!w.els.some(e => /snickers/i.test(e.ing || '')) && w.els.some(e => e.ing === 'Spring roll wrappers') && !w.unsure.length, 'wrapped: the Snickers bars are inside the spring rolls, not drawn on the plate');
+  await p.context().close();
+  p = await drawn('seafood-platter/plate');
+  w = await S(p);
+  ok(w.els.some(e => e.ing === 'B.B. whiting' && e.id === 'whiting-crumbed') && !w.unsure.length, 'B.B. whiting: butterflied and crumbed, nothing to pick');
+  await p.context().close();
+  p = await drawn('calamari-topper/plate');
+  w = await S(p);
+  const strips = w.els.find(e => e.ing === 'Calamari strips');
+  ok(!!strips && strips.id === 'calamari-strips' && strips.sx >= 0.7 && w.onWare, 'calamari topper: the strips fill their bowl (' + (strips && strips.sx) + ')');
   await p.context().close();
 
   // drawn from its own card (asked for by the head chef, 21 Oct 2026): the wings' Cowboy candy is what the Cowboy candy
@@ -275,24 +294,26 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   ok(w.els.some(e => e.ing === 'Cowboy candy' && e.made === 'cowboy-candy' && e.t === 'raw'), 'by hand: the Cowboy candy chip adds what its card makes');
   await p.context().close();
 
-  // a pick is remembered: the donut fries are unsure; the head chef picks a drawing, saves, and the next drawing of them
-  // gets it right first time
-  p = await drawn('donut-fries/plate');
+  // a pick is remembered: a new recipe's pretzel fries are unsure (every dish in the book is drawn now); the head chef
+  // picks a drawing, saves, and the next drawing of them gets it right first time
+  const pretzel = { id: 'pretzel-fries', kind: 'dessert', name: 'Pretzel Fries', ingredients: [{ q: '110 g', name: 'Pretzel fries' }, { q: '50 ml', name: 'Maple syrup' }], sections: [] };
+  const seedPf = { [fsKey(['book', 'index'])]: { r: { 'pretzel-fries': 1 } }, [fsKey(['recipes', 'pretzel-fries'])]: { r: pretzel, v: 1, upd: L.NOW - 3600000, by: 'ann', src: 'new', base: '', removed: false } };
+  p = await drawn('pretzel-fries/plate', { extra: Object.assign({}, cfg(), seedPf) });
   w = await S(p);
-  ok(w.unsure.indexOf('Donut fries') >= 0 && await p.$('.dw-un [data-dw="sm-pick"]') !== null, 'unsure: Donut fries asks which drawing, with guesses');
+  ok(w.unsure.indexOf('Pretzel fries') >= 0 && await p.$('.dw-un [data-dw="sm-pick"]') !== null, 'unsure: Pretzel fries asks which drawing, with guesses');
   const pick = await p.getAttribute('.dw-un [data-dw="sm-pick"]', 'data-v');
   await p.click('.dw-un [data-dw="sm-pick"]'); await L.settle(p, 300);
   w = await S(p);
-  ok(w.els.some(e => e.ing === 'Donut fries') && w.unsure.indexOf('Donut fries') < 0, 'pick: one tap puts it on the plate');
+  ok(w.els.some(e => e.ing === 'Pretzel fries') && w.unsure.indexOf('Pretzel fries') < 0, 'pick: one tap puts it on the plate');
   await p.click('[data-dw="save"]');
   await wait(p, () => /Saved/.test((document.querySelector('.mg-toasts .p-toast') || {}).textContent || ''));
   s = await store(p);
   const learnt = (s[fsKey(['book', 'matches'])] || {}).m || {};
-  ok(learnt['donut fry'] === pick.split('|')[1] && (s[fsKey(['book', 'matches'])] || {}).by === 'ann', 'pick: saved to book/matches with the drawing (' + JSON.stringify(learnt) + ')');
+  ok(learnt['pretzel fry'] === pick.split('|')[1] && (s[fsKey(['book', 'matches'])] || {}).by === 'ann', 'pick: saved to book/matches with the drawing (' + JSON.stringify(learnt) + ')');
   await p.context().close();
-  p = await drawn('donut-fries/plate', { extra: Object.assign({}, s, cfg()) });
+  p = await drawn('pretzel-fries/plate', { extra: Object.assign({}, s, cfg()) });
   w = await S(p);
-  ok(w.unsure.indexOf('Donut fries') < 0 && w.els.some(e => e.ing === 'Donut fries' && e.id === pick.split('|')[1]), 'pick: the next drawing of Donut fries gets it right first time');
+  ok(w.unsure.indexOf('Pretzel fries') < 0 && w.els.some(e => e.ing === 'Pretzel fries' && e.id === pick.split('|')[1]), 'pick: the next drawing of Pretzel fries gets it right first time');
   ok(!errs(p).length, 'pick: no page errors ' + errs(p).join(' | '));
   await p.context().close();
 

@@ -954,6 +954,13 @@
       return out + P.hl(-8, -8, 8, 3, '#FFFFFF', 0.45, -20);
     } });
 
+  // donut fries (the book's own): golden fingers with a dashed crease, cinnamon sugar over them
+  function donutFry(P) { return P.rect(-27, -6.5, 54, 13, 6.5, '#D59E4C', '#B8822F', 1) + P.path('M-22 0 h44', 'none', '#B8822F', 1.2, { 'stroke-dasharray': '3 3' }); }
+  add({ id: 'donut-fries', name: 'Donut fries', sub: 'Small sweets', kw: 'donut fries doughnut fries funnel fries fried dough cinnamon sugar', form: 'pile', cook: 'fried', role: 'dessert', g: 110, w: 100, h: 88, side: side('pile', 16, '#D59E4C'),
+    draw: function (P, rnd) {
+      var out = P.pile(rnd, 13, 24, 20, function (x, y, i, q) { return P.g(P.at(x, y, q() * 180), donutFry(P)); }), cols = ['#FFFFFF', '#F6E7C8', '#8B5A2B'];
+      return out + P.scatter(rnd, 50, 30, 26, function (x, y, i) { return P.circle(x, y, 0.9, cols[i % 3]); });
+    } });
   L.add('sweet', sweetItems);
   // the helpers other files or "Draw it for me" may use
   L.SWEET = {

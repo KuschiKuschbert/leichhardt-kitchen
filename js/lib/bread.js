@@ -999,6 +999,14 @@
 
   var BUN = 'Buns and rolls', SL = 'Sliced bread and toast', FL = 'Flatbreads and wraps', PZA = 'Pizza', PIE = 'Pies and pastry', SW = 'Sandwiches', BK = 'Breakfast and baked';
   var BRIOCHE = { col: '#B8692A', top: '#CF8236', hi: '#E0A15A', gloss: true }, MILK = { col: '#D9A766', top: '#E8BE80', hi: '#F2D6A6' };
+
+  // a square of cornbread (the book's butchers board): golden, a lighter top, a few darker crumbs
+  function cornbread(P) {
+    var out = P.rect(-11, -9, 26, 24, 3, '#000000', null, 0, { opacity: '0.18' }) + P.rect(-13, -12, 26, 24, 3, '#E3A52C', '#B97E1E', 1.2) + P.rect(-10.5, -9.5, 21, 19, 2, '#EDB93E');
+    [[-5, -3], [4, 2], [-2, 6], [6, -6]].forEach(function (c) { out += P.circle(c[0], c[1], 1, '#C9801E', null, 0, { opacity: '0.8' }); });
+    return P.g(P.at(0, 0, -8, 1.6), out);
+  }
+
   L.add('bread', [
     { id: 'burger-bun-top', name: 'Burger bun top, sesame', sub: BUN, kw: 'bun top sesame seed burger bun lid crown', form: 'piece', cook: 'baked', role: 'bread', n: 1, w: 73, h: 70, side: { s: 'mound', h: 24, c: C.bunTop }, draw: bunTop({ r: 36, seeds: 26 }) },
     { id: 'burger-bun-base', name: 'Burger bun base, toasted', sub: BUN, kw: 'bun base bottom heel cut side toasted burger bun', form: 'piece', cook: 'baked', role: 'bread', n: 1, w: 73, h: 71, side: { s: 'disc', h: 12, c: C.bun }, draw: bunBase({ r: 36 }) },
@@ -1103,7 +1111,8 @@
     { id: 'yorkshire-pudding', name: 'Yorkshire pudding', sub: BK, kw: 'yorkshire pudding yorkie roast batter pudding', form: 'piece', cook: 'baked', role: 'starch', n: 1, w: 68, h: 64, side: { s: 'cup', h: 30, c: '#D9A050' }, draw: yorkshire },
     { id: 'english-muffin', name: 'English muffin, halved', sub: BK, kw: 'english muffin halved toasted eggs benedict', form: 'half', cook: 'grilled', role: 'bread', n: 1, w: 124, h: 60, side: { s: 'disc', h: 12, c: '#E6BE78' }, draw: muffinHalves },
     { id: 'crumpet', name: 'Crumpet', sub: BK, kw: 'crumpet holes toasted butter', form: 'piece', cook: 'grilled', role: 'bread', n: 1, w: 60, h: 60, side: { s: 'disc', h: 14, c: '#E6C484' }, draw: crumpet },
-    { id: 'banana-bread', name: 'Banana bread slice', sub: BK, kw: 'banana bread slice loaf cake toasted walnut', form: 'piece', cook: 'baked', role: 'dside', n: 1, w: 78, h: 58, side: { s: 'slab', h: 14, c: '#B9803F' }, draw: bananaBread }
+    { id: 'banana-bread', name: 'Banana bread slice', sub: BK, kw: 'banana bread slice loaf cake toasted walnut', form: 'piece', cook: 'baked', role: 'dside', n: 1, w: 78, h: 58, side: { s: 'slab', h: 14, c: '#B9803F' }, draw: bananaBread },
+    { id: 'cornbread', name: 'Cornbread', sub: BK, kw: 'cornbread corn bread square southern maple butter', form: 'piece', cook: 'baked', role: 'bread', n: 1, w: 48, h: 46, side: { s: 'slab', h: 18, c: '#E3A52C' }, draw: cornbread },
   ]);
 
   // the helpers, for the other category files and the build pieces (burgers, pizzas, pies, sandwiches)
