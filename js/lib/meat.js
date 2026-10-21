@@ -127,7 +127,7 @@
     return P.shadow(d, 1.4, 2) + P.path(d, o.crust, P.shade(o.crust, -0.3), 1) + P.ellipse(0, 0, rx - 2.2, ry - 2.2, o.band) + P.ellipse(0, 0, rx - 4, ry - 4, o.core) +
       P.ellipse(-0.5, -0.5, rx - 7, ry - 7, P.shade(o.core, 0.14), null, 0, { opacity: '0.7' }) + P.hl(-rx * 0.35, -ry * 0.45, rx * 0.3, ry * 0.12, '#FFFFFF', 0.25, -20);
   }
-  // a T-bone: the strip on the left, the fillet on the right, the T between (o.tail adds the curled fat tail of a loin chop)
+  // a T-bone: the strip on the left, the fillet on the right, the T between
   function tbone(o) {
     return function (P, rnd) {
       var s = o.s || 1, cr = o.crust || C.beefCrust, se = o.sear || C.beef, out = '';
@@ -137,14 +137,10 @@
         return P.g(P.at(cx * s, cy * s), P.shadow(d) + P.path(d, cr, P.shade(cr, -0.3), 1.2) + P.path(P.slab(rnd, rx * s * 0.82, ry * s * 0.8, 0.3, 0.06, 12), se, null, 0) +
           P.grill(rx * s * 0.8, ry * s * 0.76, 35, 13 * s, C.charred, 3 * s) + P.hl(-rx * s * 0.3, -ry * s * 0.35, rx * s * 0.28, ry * s * 0.1, '#FFFFFF', 0.16, -15));
       }
-      if (o.tail) {
-        var td = 'M' + S(-40) + ' ' + S(30) + ' Q' + S(-70) + ' ' + S(66) + ' ' + S(-34) + ' ' + S(76) + ' Q' + S(-6) + ' ' + S(80) + ' ' + S(2) + ' ' + S(54);
-        out += P.path(td, 'none', '#000000', 16 * s, { opacity: '0.12', transform: 'translate(2 2.5)', 'stroke-linecap': 'round' }) + P.path(td, 'none', cr, 16 * s, { 'stroke-linecap': 'round' }) + P.path(td, 'none', FATG, 8 * s, { 'stroke-linecap': 'round' });
-      }
       out += P.path('M' + S(-56) + ' ' + S(-36) + ' Q' + S(-88) + ' ' + S(4) + ' ' + S(-54) + ' ' + S(46), 'none', FATG, 10 * s, { 'stroke-linecap': 'round' });
       out += lobe(-26, 4, 44, 44) + lobe(40, 12, 28, 32);
       out += bone(P, 13 * s, -40 * s, 15 * s, 44 * s, 7 * s, false) + bone(P, -30 * s, -45 * s, 46 * s, -41 * s, 10 * s, false);
-      return P.g(P.at(4 * s, o.tail ? -12 * s : 0), out);
+      return P.g(P.at(4 * s, 0), out);
     };
   }
   function tomahawk(P, rnd) {
@@ -913,7 +909,7 @@
     { id: 'crumbed-steak', name: 'Crumbed steak', sub: 'Beef', kw: 'crumbed steak beef schnitzel cut', form: 'piece', cook: 'crumbed', role: 'main', g: 250, w: 122, h: 82, side: { s: 'slab', h: 10, c: '#C88A40' }, draw: crumbedSteak },
     { id: 'beef-schnitzel', name: 'Beef schnitzel', sub: 'Beef', kw: 'schnitty schnitzel crumbed beef veal wiener', form: 'piece', cook: 'crumbed', role: 'main', g: 250, w: 136, h: 96, of: 'chicken-schnitzel', side: { s: 'slab', h: 8, c: '#C88A40' }, draw: crumbed({ rx: 66, ry: 46, col: '#C88A40' }) },
     { id: 'beef-patty', name: 'Beef patty', sub: 'Beef', kw: 'burger patty hamburger mince beef pattie', form: 'piece', cook: 'grilled', role: 'main', g: 150, w: 74, h: 74, side: { s: 'disc', h: 12, c: '#6B4022' }, draw: patty({ r: 36 }) },
-    { id: 'smash-patty', name: 'Smash patty', sub: 'Beef', kw: 'smash burger smashed patty thin crispy lacy beef', form: 'piece', cook: 'grilled', role: 'main', g: 90, w: 82, h: 80, side: { s: 'disc', h: 5, c: '#5E3418' }, draw: patty({ r: 39, col: '#6B3A1A', wob: 0.1, k: 30, lace: true }) },
+    { id: 'smash-patty', name: 'Smash patty', sub: 'Beef', kw: 'smash burger smashed patty thin crispy lacy beef', form: 'piece', cook: 'grilled', role: 'main', g: 90, w: 82, h: 80, side: { s: 'disc', h: 5, c: '#5E3418' }, draw: patty({ r: 39, col: '#7A4626', wob: 0.1, k: 30, lace: true }) },
     { id: 'rissoles', name: 'Rissoles', sub: 'Beef', kw: 'rissole beef mince patties onion', form: 'piece', cook: 'fried', role: 'main', n: 2, w: 112, h: 56, side: { s: 'disc', h: 18, c: '#7A4A28' }, draw: function (P, rnd) { var r = patty({ r: 26, sq: 0.8, col: '#7A4A28', flecks: true }); return P.g(P.at(-27, -3), r(P, rnd)) + P.g(P.at(27, 4), r(P, rnd)); } },
     { id: 'meatballs', name: 'Meatballs', sub: 'Beef', kw: 'meatball polpette beef pork mince balls', form: 'pile', cook: 'baked', role: 'main', n: 5, w: 80, h: 62, side: { s: 'pile', h: 26, c: '#7A4224' }, draw: meatballs({ n: 5 }) },
     { id: 'braised-beef-cheek', name: 'Braised beef cheek', sub: 'Beef', kw: 'beef cheek braised slow cooked red wine glossy', form: 'piece', cook: 'braised', role: 'main', g: 200, w: 70, h: 54, side: { s: 'mound', h: 30, c: '#5A2814' }, draw: braise({ rx: 34, ry: 25 }) },
@@ -999,8 +995,8 @@
     { id: 'quail', name: 'Quail, spatchcocked', sub: 'Duck and game', kw: 'quail spatchcock butterflied grilled skewered', form: 'whole', cook: 'grilled', role: 'main', n: 1, w: 86, h: 72, side: { s: 'mound', h: 24, c: '#A85A2A' }, draw: flatBird({ skin: '#A85A2A', char: true, s: 0.48, skewers: true }) },
     { id: 'kangaroo-loin', name: 'Kangaroo loin, sliced', sub: 'Duck and game', kw: 'kangaroo roo loin fillet sliced rare game native', form: 'slices', cook: 'grilled', role: 'main', g: 180, w: 104, h: 42, side: { s: 'slab', h: 10, c: '#6E1620' }, draw: function (P) { return shingle(P, 7, 12.5, function (i) { return P.g(P.at(0, 0, i % 2 ? 6 : -4), medal(P, 13, 15.5, { crust: '#2A160E', band: '#4E1418', core: '#6E1620' })); }, { arc: 0.6 }); } },
     { id: 'lamb-backstrap', name: 'Lamb backstrap, sliced', sub: 'Lamb', kw: 'lamb backstrap loin sliced pink', form: 'slices', cook: 'grilled', role: 'main', g: 180, w: 104, h: 42, of: 'kangaroo-loin', side: { s: 'slab', h: 10, c: '#D27A6E' }, draw: function (P) { return shingle(P, 7, 12.5, function (i) { return P.g(P.at(0, 0, i % 2 ? 6 : -4), medal(P, 13, 15.5, { crust: '#6B4420', band: '#A0705E', core: '#D27A6E' })); }, { arc: 0.6 }); } },
-    { id: 'kangaroo-satay', name: 'Kangaroo satay skewer', sub: 'Duck and game', kw: 'kangaroo roo satay skewer peanut sauce', form: 'skewer', cook: 'grilled', role: 'main', n: 1, w: 144, h: 26, side: { s: 'stick', h: 18, c: '#4A1A16' }, draw: skewer({ len: 140, pieces: chunks({ k: 4, gap: 24, col: '#4A1A16', char: '#1E0C08', satay: true }) }) },
-    { id: 'chicken-satay', name: 'Chicken satay skewer', sub: 'Chicken', kw: 'chicken satay skewer peanut sauce sate', form: 'skewer', cook: 'grilled', role: 'main', n: 1, w: 144, h: 26, of: 'kangaroo-satay', side: { s: 'stick', h: 18, c: '#D9A050' }, draw: skewer({ len: 140, pieces: chunks({ k: 4, gap: 24, col: '#D9A050', char: '#7A4418', satay: true }) }) },
+    { id: 'kangaroo-satay', name: 'Kangaroo satay skewer', sub: 'Duck and game', kw: 'kangaroo roo satay skewer peanut sauce', form: 'skewer', cook: 'grilled', role: 'main', n: 1, w: 144, h: 26, side: { s: 'stick', h: 18, c: '#4A1A16' }, draw: skewer({ len: 140, pieces: chunks({ k: 5, gap: 19, col: '#4A1A16', char: '#1E0C08', satay: true }) }) },
+    { id: 'chicken-satay', name: 'Chicken satay skewer', sub: 'Chicken', kw: 'chicken satay skewer peanut sauce sate', form: 'skewer', cook: 'grilled', role: 'main', n: 1, w: 144, h: 26, of: 'kangaroo-satay', side: { s: 'stick', h: 18, c: '#D9A050' }, draw: skewer({ len: 140, pieces: chunks({ k: 5, gap: 19, col: '#D9A050', char: '#7A4418', satay: true }) }) },
     { id: 'crocodile-bites', name: 'Crocodile bites', sub: 'Duck and game', kw: 'crocodile croc bites game native pale grilled', form: 'pile', cook: 'grilled', role: 'main', n: 7, w: 80, h: 60, side: { s: 'pile', h: 18, c: '#EFE4CC' }, draw: crocBites },
     { id: 'venison-medallions', name: 'Venison medallions', sub: 'Duck and game', kw: 'venison deer medallions game seared rare', form: 'piece', cook: 'grilled', role: 'main', n: 3, w: 118, h: 50, side: { s: 'disc', h: 26, c: '#3A2216' }, draw: venison },
     // deli
