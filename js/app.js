@@ -262,6 +262,7 @@
     out: '<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M5 13 L13 5 M7 5 H13 V11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     zoom: '<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5.5 8.5 H11.5 M13 13 L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
     plate: '<svg width="16" height="16" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7.5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="9" cy="9" r="3.5" fill="#E2602A"/></svg>',
+    cal: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M3.5 10h17M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="12" cy="15" r="1.6" fill="currentColor"/></svg>',
     pen: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="14" r="6.5" fill="none" stroke="currentColor" stroke-width="1.9"/><circle cx="9" cy="14" r="2.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M14.5 9.5 L20 4 L21.5 5.5 L16 11" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"/></svg>'
   };
 
@@ -355,6 +356,12 @@
   /* Manage Recipes & Drawings (21 Oct 2026): the head chef only (js/prep.js bookEdit: their PIN as Head chef, or their
      Google device with nobody else signed in). Everyone else reads the recipes as before. */
   function bookEdit() { return !!(window.LK_PREP && window.LK_PREP.bookEdit && window.LK_PREP.bookEdit()); }
+  // Functions in the chef hat's menu: only for someone the head chef ticked for Functions (or the head chef's Google device)
+  function fnOK() { return !!(window.LK_PREP && window.LK_PREP.fnOK && window.LK_PREP.fnOK()); }
+  function fnItem() {
+    var on = parseRoute().name === 'functions' ? ' aria-current="page"' : '';
+    return '<a class="wm-a wm-fn" href="#/functions" data-who="go"' + on + '>' + ICON.cal + '<span><b>Functions</b><small>Book functions and their platters</small></span></a>';
+  }
   function manageItem() {
     var on = parseRoute().name === 'manage' ? ' aria-current="page"' : '';
     return '<a class="wm-a wm-mg" href="#/manage" data-who="go"' + on + '>' + ICON.pen + '<span><b>Manage Recipes &amp; Drawings</b><small>Change and add recipes</small></span></a>';
@@ -380,7 +387,7 @@
         '<a class="wm-a" href="#/drinks" data-who="go">' + ICON.cup + '<span><b>Drinks run</b><small>Everyone\'s usual coffee</small></span></a>' +
         (m.minutes ? '<a class="wm-a" href="#/minutes" data-who="go">' + ICON.doc + '<span><b>Meeting minutes</b><small>Read and sign</small></span></a>' : '') +
         (m.sec ? '<button type="button" class="wm-a" data-who="sec" data-v="section">' + ICON.chef + '<span><b>My section</b><small>' + esc(m.sec) + '</small></span></button>' : '') +
-        (m.chef || adm || m.book ? '<p class="wm-h wm-sh">Chef</p>' + adm : '') + (m.book ? manageItem() : '') +
+        (m.chef || adm || m.book || m.fn ? '<p class="wm-h wm-sh">Chef</p>' + adm : '') + (m.book ? manageItem() : '') + (m.fn ? fnItem() : '') +
         (m.chef ?
           '<button type="button" class="wm-a" data-who="open" data-v="pings">' + ICON.bell + '<span><b>Shift pings</b><small>Write to the whole team</small></span></button>' +
           '<button type="button" class="wm-a" data-who="open" data-v="register">' + ICON.doc + '<span><b>Minutes register</b><small>Who has signed</small></span></button>' +
@@ -388,7 +395,7 @@
         set +
         '<button type="button" class="wm-a wm-out" data-who="out">' + ICON.exit + '<span><b>Sign out</b><small>Hand the phone to someone else</small></span></button>'
       : '<p class="wm-h">Nobody signed in on this phone</p>' +
-        '<a class="wm-a wm-in" href="#/prep" data-who="signin">' + ICON.chef + '<span><b>Sign in</b><small>Your name and PIN, then back here</small></span></a>' + adm + (bookEdit() ? manageItem() : '') + set) + '</nav>';
+        '<a class="wm-a wm-in" href="#/prep" data-who="signin">' + ICON.chef + '<span><b>Sign in</b><small>Your name and PIN, then back here</small></span></a>' + adm + (bookEdit() ? manageItem() : '') + (fnOK() ? fnItem() : '') + set) + '</nav>';
     document.body.appendChild(el); wmenu = el;
     btn.setAttribute('aria-expanded', 'true');
     var first = el.querySelector('.wm-a'); if (first) first.focus({ preventScroll: true });
@@ -438,6 +445,9 @@
   function topBar() {
     return '<header class="wtop"><a class="wtop-brand" href="#/" aria-label="Kitchen Book, home">' + LOGO_MARK + '<span class="rb-text"><span class="rb-eb">Leichhardt Hotel Kitchen</span><b>Kitchen Book</b></span></a>' + pillNav() + topIcons() + '</header>';
   }
+  /* Functions (js/functions.js): the band of today's functions right under the top bar, on every page. This is the empty
+     slot; js/functions.js fills it and keeps it right as times pass and bookings change, without redrawing the page. */
+  function fnBand() { return window.LK_FN ? window.LK_FN.bandSlot() : ''; }
   /* Meeting minutes to sign show as a card on the landing page, above the dockets, not in the top bar.
      The prep book fills it in once it has read the minutes, and empties it once the person has signed. */
   function minCard() {
@@ -447,8 +457,8 @@
   var DOCKETS = [['01', 'Recipes', '#/recipes', 'recipes'], ['02', 'Prep list', '#/prep', 'prep'], ['03', 'Orders', '#/orders', 'orders'], ['04', 'Wastage', '#/waste', 'waste'], ['05', 'Guides', '#/guides', 'guides', 'How to work the equipment, clean it and find things']];
   function viewLanding() {
     var d = window.LK_TIME.day().split('-'), today = new Date(+d[0], d[1] - 1, +d[2], 12).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
-    return '<div class="wall">' + topBar() +
-      '<main id="main" class="wall-main"><h2 class="wall-h" id="rtitle" tabindex="-1">Pick a docket</h2><p class="wall-date">' + esc(today) + '</p>' + minCard() + installCard() +
+    return '<div class="wall">' + topBar() + fnBand() +
+      '<main id="main" class="wall-main"><h2 class="wall-h" id="rtitle" tabindex="-1">Pick a docket</h2><p class="wall-date">' + esc(today) + '</p>' + minCard() + (window.LK_FN ? window.LK_FN.landSlot() : '') + installCard() +
       '<div class="dockets">' + DOCKETS.filter(function (d) { return d[3] !== 'guides' || featOn('guides'); }).map(function (d) {
         // the Guides docket is the long one under the other four: reference, not a job for today
         return '<a class="docket' + (d[4] ? ' dk-wide' : '') + '" href="' + d[2] + '"><span class="dk-pin" aria-hidden="true"></span><span class="dk-top"><span class="dk-name">' + d[1] + '</span><span class="dk-no">No. ' + d[0] + '</span></span>' +
@@ -785,6 +795,35 @@
      The page is drawn by js/manage.js, loaded the first time it opens (staff phones never download it): fetched with
      X-LK-Fresh, so the service worker goes to the network first and keeps a copy for no signal (sw.js), then run.
      Without the head chef signed in, the page says so and nothing is loaded. The rules are the real lock. */
+  /* Functions: #/fn (everyone: today, the next days, a function's sheet) is drawn by js/functions.js; #/functions (the
+     function managers' list and form) by js/fnedit.js, loaded only when it opens, like js/manage.js. Bump FE_API here
+     and API in js/fnedit.js together when what LK_FN or LK_PREP.book() hands it changes. */
+  function viewFn(route) { return '<div class="page fn-pg"><main id="main" class="fn-main">' + (window.LK_FN ? window.LK_FN.page(route.fid) : '') + '</main>' + footer() + '</div>'; }
+  function viewFunctions() { return '<div class="page fe-page"><main id="main" class="fe"><div id="fe-root"></div></main></div>'; }
+  var FE_API = 1, feLoad = null;
+  function mountFunctions(route) {
+    var root = document.getElementById('fe-root');
+    if (!root) return;
+    var st = window.LK_PREP && window.LK_PREP.fnState ? window.LK_PREP.fnState() : 'no';
+    function note(t, x, link) { root.innerHTML = mgNote(t, x, link || '<div class="btn-row"><a class="btn" href="#/fn">See the functions</a></div>'); }
+    if (st === 'wait') { note('Functions', 'Checking who is signed in on this device...', ' '); return; }
+    if (st === 'nopin') { note('Functions', 'This device has no kitchen PIN yet. Open the Prep list and enter it, then sign in with your own PIN.', '<div class="btn-row"><a class="btn dark" href="#/prep">Open the Prep list</a></div>'); return; }
+    if (st !== 'yes') {
+      var keep = window.LK_FE && window.LK_FE.hasDraft();
+      if (window.LK_FE) window.LK_FE.unmount();
+      var signed = window.LK_PREP && window.LK_PREP.whoName && window.LK_PREP.whoName();
+      note('Only function managers change functions', 'Everyone can read the confirmed functions under Functions. To book or change one, the head chef ticks you for Functions in the admin panel, then you sign in with your own PIN.' +
+        (signed ? ' You are signed in as ' + signed + ', who is not ticked for Functions.' : '') + (keep ? ' Changes not saved yet are kept on this device.' : ''));
+      return;
+    }
+    if (window.LK_FE) { if (window.LK_FE.api === FE_API) window.LK_FE.mount(root, route); else root.innerHTML = mgNote('Reload the book', 'The functions page on this device is a different version from the book. Reload the page to update it.', '<div class="btn-row"><button type="button" class="btn dark" data-act="reload">Reload</button></div>'); return; }
+    root.innerHTML = mgNote('Functions', 'Opening functions...', ' ');
+    if (!feLoad) feLoad = mgScript('js/fnedit.js').catch(function (e) { feLoad = null; throw e; });
+    feLoad.then(function () { if (parseRoute().name === 'functions') mountFunctions(parseRoute()); }, function () {
+      var el = document.getElementById('fe-root');
+      if (el) el.innerHTML = mgNote('Could not open functions', 'It needs the signal the first time it opens on a device. Check the signal and try again.', '<div class="btn-row"><button type="button" class="btn dark" data-act="feretry">Try again</button></div>');
+    });
+  }
   var MG_API = 1, mgLoad = null;
   function viewManage() { return '<div class="page mg-page"><main id="main" class="mg"><div id="mg-root"></div></main>' + footer() + '</div>'; }
   function mgScript(f) {
@@ -923,6 +962,8 @@
     if (parts[0] === 'prep' || parts[0] === 'admin' || parts[0] === 'orders' || parts[0] === 'waste' || parts[0] === 'minutes' || parts[0] === 'mail' || parts[0] === 'drinks') return { name: parts[0], stack: [] };
     if (parts[0] === 'guides') return { name: 'guides', stack: [], gid: parts[1] || '' };
     if (parts[0] === 'manage') return { name: 'manage', stack: [], sub: parts.slice(1) };
+    if (parts[0] === 'fn') return { name: 'fn', stack: [], fid: parts[1] || '' };
+    if (parts[0] === 'functions') return { name: 'functions', stack: [], sub: parts.slice(1) };
     if (parts[0] === 'r') {
       var stack = parts.slice(1).filter(function (id) { return byId[id]; });
       if (stack.length) return { name: 'recipe', stack: stack };
@@ -971,20 +1012,23 @@
     else if (route.name === 'settings') html = viewSettings();
     else if (PREP_PAGES[route.name]) html = viewPrep();
     else if (route.name === 'manage') html = viewManage();
+    else if (route.name === 'fn') html = viewFn(route);
+    else if (route.name === 'functions') html = viewFunctions();
     else if (view === 'pass') html = viewPass(route);
     else html = viewTiles(route);
     // Swipeable chip rows keep their place when the page redraws (for example after tapping a chip at the far end).
     var rowsAt = Array.prototype.map.call(app.querySelectorAll('.chips.scroll'), function (el) { return el.scrollLeft; });
-    if (route.name !== 'landing') html = topBar() + html + tabBar();
+    if (route.name !== 'landing') html = topBar() + fnBand() + html + tabBar();
     app.innerHTML = html;
     if (!changed) Array.prototype.forEach.call(app.querySelectorAll('.chips.scroll'), function (el, i) { if (rowsAt[i]) el.scrollLeft = rowsAt[i]; });
     fitPins();
     if (route.name === 'manage') mountManage(route); else if (window.LK_MG) window.LK_MG.unmount();
+    if (route.name === 'functions') mountFunctions(route); else if (window.LK_FE) window.LK_FE.unmount();
     if (PREP_PAGES[route.name] && window.LK_PREP) window.LK_PREP.mount(route.name, document.getElementById('prep-root'), route.gid);
     // On any other page, connect to the prep book in the background so Prep, Orders and Wastage open straight away.
     else if (window.LK_PREP && window.LK_PREP.warm && !warmed) { warmed = true; setTimeout(function () { window.LK_PREP.warm(); }, 900); }
     var r = route.stack.length ? byId[route.stack[route.stack.length - 1]] : null;
-    document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'waste' ? 'Wastage · ' : route.name === 'minutes' ? 'Meeting minutes · ' : route.name === 'mail' ? 'Kitchen mail · ' : route.name === 'drinks' ? 'Drinks run · ' : route.name === 'manage' ? 'Manage Recipes & Drawings · ' : route.name === 'guides' ? 'Guides · ' : route.name === 'landing' ? '' : route.name === 'home' ? 'Recipes · ' : route.name === 'admin' ? 'Admin panel · ' : '')) + 'Leichhardt Kitchen Book';
+    document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'waste' ? 'Wastage · ' : route.name === 'minutes' ? 'Meeting minutes · ' : route.name === 'mail' ? 'Kitchen mail · ' : route.name === 'drinks' ? 'Drinks run · ' : route.name === 'manage' ? 'Manage Recipes & Drawings · ' : route.name === 'fn' ? 'Functions · ' : route.name === 'functions' ? 'Manage functions · ' : route.name === 'guides' ? 'Guides · ' : route.name === 'landing' ? '' : route.name === 'home' ? 'Recipes · ' : route.name === 'admin' ? 'Admin panel · ' : '')) + 'Leichhardt Kitchen Book';
     var prevRoute = lastRoute; lastRoute = route.name;
     if (changed && route.name === 'recipe') noteView(route.stack[route.stack.length - 1]);
     // opening the recipes checks for the head chef's recipe changes when the last check is 30 minutes old (one read)
@@ -1201,6 +1245,7 @@
     if (act === 'jump') { var jt = document.getElementById(val); if (jt) jt.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     if (act === 'reload') { location.reload(); return; }
     if (act === 'mgretry') { redrawManage(); return; }
+    if (act === 'feretry') { feRedraw(); return; }
     if (act === 'kind') { ui.kind = val; }
     else if (act === 'free') { ui.free = ui.free.indexOf(val) >= 0 ? ui.free.filter(function (x) { return x !== val; }) : ui.free.concat([val]); }
     else if (act === 'lens') { ui.lens = ui.lens === val ? null : val; }
@@ -1265,7 +1310,17 @@
     if (m) { if (!m.hasAttribute('tabindex')) m.setAttribute('tabindex', '-1'); m.focus(); }
   });
   // the kitchen settings were read (who is Head chef): the head chef's link on a card and the manage page follow
-  window.addEventListener('lk-cfg', function () { editSlotRedraw(); if (parseRoute().name === 'manage' && !(window.LK_MG && window.LK_MG.open())) redrawManage(); });
+  window.addEventListener('lk-cfg', function () { editSlotRedraw(); if (parseRoute().name === 'manage' && !(window.LK_MG && window.LK_MG.open())) redrawManage(); feRedraw(); });
+  /* Functions: who may change them follows the kitchen settings and who is signed in, straight away (a tick taken away
+     closes the form on an open page; what was typed stays on the device). #/fn redraws when the functions change. */
+  function feRedraw() { if (parseRoute().name === 'functions') mountFunctions(parseRoute()); }
+  window.addEventListener('lk-who', feRedraw);
+  window.addEventListener('lk-admin', feRedraw);
+  window.addEventListener('lk-fn', function () {
+    var r = parseRoute();
+    if (r.name === 'fn') { var m = document.getElementById('main'), y = window.scrollY; if (m) { m.innerHTML = window.LK_FN.page(r.fid); window.scrollTo(0, y); } }
+    else if (r.name === 'functions' && window.LK_FE) window.LK_FE.changed();
+  });
   /* The head chef's recipe changes came in (js/prep.js read them, lk-rx): work the index out again and redraw.
      On the recipe list only the results are redrawn, so the page does not jump while someone is scrolling. */
   window.addEventListener('lk-rx', function () {

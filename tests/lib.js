@@ -184,7 +184,7 @@ async function open(browser, hash, o) {
     if (!f.startsWith(PDFJS) || !fs.existsSync(f)) return r.fulfill({ status: 404, body: '' });
     return r.fulfill({ status: 200, headers: { 'Access-Control-Allow-Origin': '*' }, contentType: /\.m?js$/.test(f) ? 'text/javascript' : 'application/octet-stream', body: fs.readFileSync(f) });
   });
-  const who = o.who === undefined ? 'sam' : o.who, pins = { sam: '1111', ann: '2222', bo: '3333' };
+  const who = o.who === undefined ? 'sam' : o.who, pins = { sam: '1111', ann: '2222', bo: '3333', fay: '5151', finn: '5252' };
   const ls = {
     'fake.fs': JSON.stringify(seed(o.extra)),
     'lk.prep.pin': o.noPin ? '' : PIN,

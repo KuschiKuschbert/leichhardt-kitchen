@@ -23,8 +23,12 @@ service cloud.firestore {
       return request.resource.data.by is string
         && exists(pinDoc(request.resource.data.by))
         && getAfter(proofDoc(request.resource.data.by)).data.tok == get(pinDoc(request.resource.data.by)).data.hash
-        && getAfter(proofDoc(request.resource.data.by)).data.at == request.time;
+        && getAfter(proofDoc(request.resource.data.by)).data.at == request.time
+        && onList(request.resource.data.by);
     }
+    // Someone taken off the list (Stopped working here) cannot write any more, even with their old PIN. staffIds is the
+    // people on the list (config/main); a book that never had one keeps working as before.
+    function onList(id) { return !('staffIds' in cfg()) || id in cfg().staffIds; }
     function writer() { return isAdmin() || staff(); }
     function cfg() { return get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/config/main).data; }
     // The head chef or a sous chef, writing as themselves (own PIN proof).
@@ -348,6 +352,76 @@ service cloud.firestore {
       allow read: if true;
       allow create: if libOk(id) && bookBy() && (isAdmin() || nextVersion());
       allow update: if libOk(id) && bookBy() && nextVersion();
+      allow delete: if false;
+    }
+    // Functions (21 Oct 2026): function bookings with platters, for the kitchen. Everyone with the kitchen PIN reads the
+    // kitchen copy (functions/<id>: no phone or email). Only a function manager writes: the head chef's Google account, or
+    // a person ticked for Manage functions in the admin People tab (config/main fnIds, which only the Google account can
+    // change), writing as themselves with their own PIN. Taking the tick away refuses their very next save.
+    // A function's version goes up by one with every save, so a save made from an old copy is refused. Never deleted:
+    // a cancelled function stays, and every earlier version is kept in functions/<id>/hist/<v>, which nobody can change.
+    // A confirmed function must add up: every platter line's rounds sum to its booked number, rounds in time order.
+    // Rules cannot loop, so the checks are written out for up to 8 platter lines and 8 rounds.
+    function fnBy() { return isAdmin() || (staff() && request.resource.data.by in cfg().get('fnIds', [])); }
+    // A platter line: what was booked (qty, whole platters) and which round each platter goes out in (u, one round number
+    // per platter, 0 for the first round). So 5 platters over 3 rounds as 2, 2 and 1 is u [0, 0, 1, 1, 2]. A confirmed line
+    // has exactly as many entries as platters booked, and every entry is a round that exists: the rounds add up to the
+    // booking, with no half or minus platters, by construction. Rules cannot loop, so the 6 lines are written out.
+    function fnAdd(l, n) { return l.u.size() == l.qty && l.qty >= 1 && l.u.hasOnly([0, 1, 2, 3, 4, 5, 6, 7][0:n]); }
+    function fnAfter(R, i) { return R.size() <= i || R[i].at > R[i - 1].at; }
+    // a confirmed function: a name, date, start and guests, at least one platter line, one round for all at once or two
+    // or more for staggered, rounds in time order, first and last the same as the rounds say
+    function fnConfirmed(d) {
+      return d.name.size() > 0 && d.date.size() == 10 && d.start > 0 && d.guests >= 1
+        && d.lines.size() >= 1 && d.rounds.size() >= 1 && (d.mode == 'all' ? d.rounds.size() == 1 : d.rounds.size() >= 2)
+        && fnAdd(d.lines[0], d.rounds.size()) && (d.lines.size() < 2 || fnAdd(d.lines[1], d.rounds.size())) && (d.lines.size() < 3 || fnAdd(d.lines[2], d.rounds.size()))
+        && (d.lines.size() < 4 || fnAdd(d.lines[3], d.rounds.size())) && (d.lines.size() < 5 || fnAdd(d.lines[4], d.rounds.size())) && (d.lines.size() < 6 || fnAdd(d.lines[5], d.rounds.size()))
+        && d.rounds[0].at is int && fnAfter(d.rounds, 1) && fnAfter(d.rounds, 2) && fnAfter(d.rounds, 3) && fnAfter(d.rounds, 4) && fnAfter(d.rounds, 5) && fnAfter(d.rounds, 6) && fnAfter(d.rounds, 7)
+        && d.first == d.rounds[0].at && d.last == d.rounds[d.rounds.size() - 1].at && d.until > d.last;
+    }
+    function fnOk(id) { return fnCheck(id, request.resource.data, resource == null ? {} : resource.data); }
+    function fnCheck(id, d, was) {
+      return id.matches('[a-z0-9][a-z0-9-]{0,47}')
+        && d.keys().hasOnly(['v', 'status', 'name', 'date', 'start', 'loc', 'guests', 'mode', 'lines', 'rounds', 'notes', 'kc', 'kcBy', 'kcAt',
+          'first', 'last', 'from', 'until', 'kq', 'was', 'chg', 'cBy', 'cAt', 'confBy', 'confAt', 'canBy', 'canAt', 'by', 'upd'])
+        && d.v is int && d.upd is int
+        && d.status in ['draft', 'confirmed', 'cancelled']
+        && d.name is string && d.name.size() <= 80
+        && d.date is string && (d.date.size() == 0 || d.date.size() == 10)
+        && d.start is int && d.guests is int && d.guests >= 0 && d.guests <= 2000
+        && d.mode in ['all', 'stag']
+        && d.loc is string && d.loc.size() <= 60 && d.notes is string && d.notes.size() <= 1000 && d.kc is string && d.kc.size() <= 2000
+        // the kitchen comment's author is whoever changed it, never someone else's name
+        && (d.kc == was.get('kc', '') || d.kcBy == d.get('by', ''))
+        && d.chg is list && d.chg.size() <= 8 && d.was is map
+        && d.first is int && d.last is int && d.from is int && d.until is int && d.kq is int
+        && d.lines is list && d.lines.size() <= 6 && d.rounds is list && d.rounds.size() <= 8
+        && (d.status != 'confirmed' || fnConfirmed(d));
+    }
+    match /kitchens/KITCHEN_PIN/functions/{id} {
+      allow read: if true;
+      // the head chef's Google account may also copy one as it is (move to a new kitchen PIN)
+      allow create: if resource == null && (request.resource.data.v == 1 || isAdmin()) && fnBy() && fnOk(id);
+      allow update: if resource != null && nextVersion() && fnBy() && fnOk(id);
+      allow delete: if false;
+      match /hist/{v} {
+        allow read: if true;
+        allow create: if fnBy() && request.resource.data.keys().hasOnly(['was', 'at', 'by', 'what']) && request.resource.data.was is map && request.resource.data.at is int
+          && request.resource.data.get('what', '') is string && request.resource.data.get('what', '').size() <= 300;
+        allow update, delete: if false;
+      }
+    }
+    // The booking contact for a function, under the same id: name, phone and email. Only the function pages read it,
+    // one at a time by its id; it is never listed (except by the head chef's Google account, for the backup and a PIN move),
+    // and the kitchen's copy never holds it. Limit: anyone holding the kitchen PIN could read one by its id with a script.
+    match /kitchens/KITCHEN_PIN/fncontact/{id} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create, update: if fnBy() && request.resource.data.keys().hasOnly(['cname', 'phone', 'email', 'by', 'upd'])
+        && request.resource.data.get('cname', '') is string && request.resource.data.get('cname', '').size() <= 80
+        && request.resource.data.get('phone', '') is string && request.resource.data.get('phone', '').size() <= 30
+        && request.resource.data.get('email', '') is string && request.resource.data.get('email', '').size() <= 120
+        && request.resource.data.upd is int;
       allow delete: if false;
     }
     // Who has seen a shift ping: one small record per person, ping and day, written when they tap Got it.
