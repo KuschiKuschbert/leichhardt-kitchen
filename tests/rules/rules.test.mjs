@@ -392,6 +392,36 @@ await ok(W([[sid, sent({ sent: false, sentBy: 'bo' })]], { id: 'sam' }), true, '
 await ok(W([['fnsent/f1_' + (T0 + 5400000), sent({ at: T0 + 5400000, price: 1 })]], { id: 'ann' }), false, 'sent: no other fields');
 await ok(setDoc(doc(anon, K + 'fnsent/f1_' + (T0 + 5400000)), sent({ at: T0 + 5400000, by: 'ann' })), false, 'sent: no tick without a PIN');
 await ok(deleteDoc(doc(owner, K + sid)), false, 'sent: never deleted');
+// Wastage (22 Oct 2026): today's lines with the kitchen PIN, past days only for the head chef's Google account,
+// the review written by the head chef or a sous chef, the nightly summary read only
+const kday = ms => new Date(ms + 36000000).toISOString().slice(0, 10);
+const WT = kday(Date.now()), WY = kday(Date.now() - 86400000);
+const wline = x => Object.assign({ text: 'Chips', amount: 2, unit: 'kg', reason: 'excess', action: '', station: 'Fryer', addedBy: 'Ann', addedById: 'ann', addedAt: 1, deleted: false }, x || {});
+await env.withSecurityRulesDisabled(async ctx => {
+  const db = ctx.firestore();
+  await setDoc(doc(db, K + 'waste/' + WT + '/lines/t1'), wline());
+  await setDoc(doc(db, K + 'waste/' + WY + '/lines/y1'), wline({ text: 'Rice' }));
+  await setDoc(doc(db, K + 'waste/' + WY), { avoidable: 'Rice', change: 'Cook less rice', reviewBy: 'Sam', reviewAt: 1 });
+  await setDoc(doc(db, K + 'summary/waste'), { day: WT, items: [] });
+});
+await ok(getDoc(doc(anon, K + 'waste/' + WT + '/lines/t1')), true, 'waste: today\'s entry is read with the kitchen PIN');
+await ok(getDocs(collection(anon, K + 'waste/' + WT + '/lines')), true, 'waste: today\'s list is read with the kitchen PIN');
+await ok(getDoc(doc(anon, K + 'waste/' + WY + '/lines/y1')), false, 'waste: yesterday\'s entry is refused with only the kitchen PIN');
+await ok(getDocs(collection(anon, K + 'waste/' + WY + '/lines')), false, 'waste: yesterday\'s list is refused with only the kitchen PIN');
+await ok(getDocs(collection(anon, K + 'waste/' + kday(Date.now() + 86400000) + '/lines')), false, 'waste: tomorrow\'s list is refused too');
+await ok(getDocs(collection(anon, K + 'waste/nonsense/lines')), false, 'waste: a day that is not a date is refused');
+await ok(getDocs(collection(owner, K + 'waste/' + WY + '/lines')), true, 'waste: the head chef\'s Google account reads past days');
+await ok(W([['waste/' + WT + '/lines/t2', wline()]], { id: 'ann' }), true, 'waste: Ann logs an entry today');
+await ok(W([['waste/' + WT + '/lines/t1', wline({ deleted: true }), true]], { id: 'ann' }), false, 'waste: Ann cannot remove an entry');
+await ok(W([['waste/' + WT + '/lines/t1', wline({ deleted: true }), true]], { id: 'sam' }), true, 'waste: a sous chef removes today\'s entry');
+await ok(getDoc(doc(anon, K + 'waste/' + WY)), true, 'waste review: everyone reads it (the note on the prep list)');
+await ok(W([['waste/' + WT, { avoidable: 'Chips', change: '' }, true]], { id: 'ann' }), false, 'waste review: staff cannot write it');
+await ok(W([['waste/' + WT, { avoidable: 'Chips', change: 'Fewer chips' }, true]], { id: 'sam' }), true, 'waste review: a sous chef writes it');
+await ok(W([['waste/' + WT, { avoidable: 'Chips', change: '' }, true]], { id: 'ann', as: 'sam' }), false, 'waste review: Ann cannot write it as Sam');
+await ok(setDoc(doc(owner, K + 'waste/' + WY), { avoidable: 'Rice', change: 'Half a batch', reviewBy: 'Head chef', reviewAt: 2 }, { merge: true }), true, 'waste review: the head chef writes it from the admin panel');
+await ok(getDoc(doc(anon, K + 'summary/waste')), true, 'summary: the phones read the wastage summary');
+await ok(W([['summary/waste', { day: WT, items: [] }]], { id: 'sam' }), false, 'summary: no phone writes it, not even a sous chef');
+await ok(setDoc(doc(owner, K + 'summary/waste'), { day: WT, items: [] }), true, 'summary: the head chef may copy it (moving the kitchen PIN)');
 // the owner probe
 await ok(getDoc(doc(owner, K + 'config/admins')), true, 'admins: the head chef may read the probe');
 await ok(getDoc(doc(anon, K + 'config/admins')), false, 'admins: nobody else may');

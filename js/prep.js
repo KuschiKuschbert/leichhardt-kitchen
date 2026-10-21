@@ -17,7 +17,8 @@
     kitchens/<PIN>/activity/<personId>         { name, added, ticked, visits, lastSeen }   tallies shown in the admin panel
     kitchens/<PIN>/sections/<slug>             { name, uses, lastUsed }   sections people have written, offered as suggestions
     kitchens/<PIN>/orders/<date>/lines/<id>    one order line (rolls over until ordered)
-    kitchens/<PIN>/waste/<date>, .../lines/<id> the end-of-day waste review, and one wastage entry each
+    kitchens/<PIN>/waste/<date>, .../lines/<id> the end-of-day waste review, and one wastage entry each (past days: head chef's Google only)
+    kitchens/<PIN>/summary/waste               what was wasted in the last 14 days, written each night by the server
     kitchens/<PIN>/notes/<id>, .../seen/<id>   shift pings and who has seen them
     kitchens/<PIN>/minutes/<id>, .../hist, .../signs   meeting minutes, earlier versions and sign-offs
     kitchens/<PIN>/learned/<item>, ordlearned/<item>   what the prep and order lists have learned
@@ -85,7 +86,7 @@
     section: '', text: '', qty: '', recipeSearch: '', recipeOpen: false, recipeAll: false, tab: '',
     authed: false, tok: '', pinStep: '', pinData: null, pf1: '', pf2: '', pinMsg: '',
     sections: [], activity: [], hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false, exporting: '', moving: false, moveMsg: '', newPin: '', atab: lsGet('lk.prep.atab') || 'insights', ordDate: dayNow(), ordLines: [], ordState: 'idle', ordView: 'day', otext: '', oqty: '', ordAll: [], ordAllAt: 0, ordBusy: false, osugg: [],
-    retryAt: {}, wDate: dayNow(), wLines: [], wState: 'idle', wReview: null, wrA: null, wrC: null, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wRecent: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nMsg: '', nSaving: false,
+    retryAt: {}, wDate: dayNow(), wLines: [], wState: 'idle', rvDate: '', wrA: null, wrC: null, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wSum: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nMsg: '', nSaving: false,
     mins: null, minsFor: '', minsAt: 0, minsBusy: false, mmine: {}, msigns: {}, mSel: '', mf: null, mMsg: '', mSaving: false, mSigning: false, mpin: '', mpinOk: false, minOpen: false, mErr: '',
     guides: null, guidesFor: '', guidesAt: 0, gBusy: false, gRetry: 0, gq: '', gcat: 'all', gSel: '', gf: null, gfSnap: '', gMsg: '',
     adminsFor: '', level: '', stats: null, statsRange: 14, week: null, weekAt: 0, weekBusy: false,
@@ -1119,6 +1120,7 @@
       .then(function () { return all('learned'); }).then(function (r) { out.learned = r; })
       .then(function () { return all('ordlearned'); }).then(function (r) { out.ordlearned = r; })
       .then(function () { return all('learnlog'); }).then(function (r) { out.learnlog = r; })
+      .then(function () { return all('summary'); }).then(function (r) { out.summary = r; })
       .then(function () { return all('misses'); }).then(function (r) { out.misses = r; })
       .then(function () { return all('views'); }).then(function (r) { out.views = r; })
       .then(function () { return all('guides'); }).then(function (r) { out.guides = r; })
@@ -1189,7 +1191,7 @@
     for (k = 0; k < 400; k++) dates.push(shift(today, -k));
     f.getDoc(f.doc(fb.db, 'kitchens', old, 'config', 'main')).then(function (sn) { if (sn.exists()) { n++; return f.setDoc(f.doc(fb.db, 'kitchens', np, 'config', 'main'), sn.data()); } })
       .then(function () { return copyCol('pinset'); }).then(function () { return copyCol('staffpins'); }).then(function () { return copyCol('activity'); }).then(function () { return copyCol('sections'); })
-      .then(function () { return copyCol('learned'); }).then(function () { return copyCol('ordlearned'); }).then(function () { return copyCol('learnlog'); }).then(function () { return copyCol('misses'); }).then(function () { return copyCol('views'); })
+      .then(function () { return copyCol('learned'); }).then(function () { return copyCol('ordlearned'); }).then(function () { return copyCol('learnlog'); }).then(function () { return copyCol('summary'); }).then(function () { return copyCol('misses'); }).then(function () { return copyCol('views'); })
       .then(function () { return copyCol('notes'); }).then(function () { return copyCol('minutes'); }).then(function () { return copySub('minutes', 'hist'); })
       .then(function () { return copySub('minutes', 'signs', true); }).then(function () { return copySub('notes', 'seen', true); })
       .then(function () { return copyCol('guides'); }).then(function () { return copySub('guides', 'pages'); })
@@ -2247,10 +2249,14 @@
       '<input id="p-rs" class="search" type="search" data-k="p-rs" autocomplete="off" placeholder="Start typing..." value="' + esc(S.recipeSearch) + '">' + body +
       '<p class="hint">It goes under the section written in the add box.</p></div></div>';
   }
+  /* how often an item (or a longer line holding it) was wasted in the last 14 days, for the given reasons */
   function wasteFor(t, reasons) {
-    var k = okey(t); if (k.length < 3 || !S.wRecent) return null;
+    var k = okey(t); if (k.length < 3 || !S.wSum) return null;
     var n = 0, r = {};
-    S.wRecent.forEach(function (x) { var wk = okey(x.text); if (!wk || (reasons && reasons.indexOf(x.reason) < 0)) return; if (wk === k || (wk.length >= 4 && (' ' + k + ' ').indexOf(' ' + wk + ' ') >= 0)) { n++; r[x.reason] = (r[x.reason] || 0) + 1; } });
+    S.wSum.forEach(function (x) {
+      var wk = okey(x.t); if (!wk || !(wk === k || (wk.length >= 4 && (' ' + k + ' ').indexOf(' ' + wk + ' ') >= 0))) return;
+      Object.keys(x.r || {}).forEach(function (rs) { if (reasons && reasons.indexOf(rs) < 0) return; var c = +x.r[rs] || 0; n += c; r[rs] = (r[rs] || 0) + c; });
+    });
     if (!n) return null;
     var top = Object.keys(r).sort(function (a, b) { return r[b] - r[a]; })[0];
     return { n: n, top: top };
@@ -2297,7 +2303,7 @@
   function listHTML() {
     var p = me(), today = dayNow();
     if (S.date !== today && !canBrowse() && !S.user) { S.date = today; S.tab = ''; watchItems(); }
-    if (S.authed && fb) { loadPast(); loadWRecent(false); }
+    if (S.authed && fb) { loadPast(); loadWSum(); }
     S.week = S.past ? weekRanks() : null;
     maybeRoll(); mergeDups(); ordRoll(); loadOrdLearned(); loadWNote();
     // the day's own lines and a function's platter lines (their own tab) are counted apart
@@ -3143,7 +3149,7 @@
       '<div class="btn-row"><button type="button" class="btn" data-p="onudge-show">Show them</button><button type="button" class="btn" data-p="onudge-hide">Hide for today</button></div></div>';
   }
   function ordersHTML() {
-    if (can('add')) { loadOrdHist(); loadWRecent(false); loadOrdLearned(); }
+    if (can('add')) { loadOrdHist(); loadWSum(); loadOrdLearned(); }
     var p = me(), br = canBrowse(), view = br ? (S.ordView || 'day') : 'day', today = dayNow();
     if (!br && S.ordDate !== today) { S.ordDate = today; watchOrders(); }
     if (view === 'all') loadOrdAll(false);
@@ -3201,34 +3207,33 @@
     var key = S.pin + '|' + S.wDate;
     if (key === wKey && unsubW) return;
     if (unsubW) unsubW();
-    wKey = key; S.wState = 'loading'; S.wReview = null; S.wrA = null; S.wrC = null;
+    wKey = key; S.wState = 'loading';
     unsubW = fb.fs.onSnapshot(wCol(S.wDate), function (snap) {
       S.wLines = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; x.date = S.wDate; return x; });
       S.wState = 'ok'; draw();
     }, function () { S.wState = 'error'; draw(); });
-    var dd = S.wDate;
-    fb.fs.getDoc(wDay(dd)).then(function (sn) { if (S.wDate === dd) { S.wReview = sn.exists() ? sn.data() : {}; draw(); } }, function () { S.wReview = {}; });
-    loadWRecent(false);
+    loadWSum();
   }
   /* Past days hardly change, so these reads are kept on the phone for the day (like lk.past): tag is kitchen PIN and day. */
   function dayCache(k, tag) { try { var c = JSON.parse(lsGet(k) || 'null'); return c && c.tag === tag ? c.v : null; } catch (e) { return null; } }
   function dayCacheSet(k, tag, v) { lsSet(k, JSON.stringify({ tag: tag, v: v })); }
-  function loadWRecent(force) {
+  function sumDoc() { return fb.fs.doc.apply(null, [fb.db].concat(base(), ['summary', 'waste'])); }
+  /* What was wasted in the last 14 days (summary/waste), worked out each night by the server (22 Oct 2026), so staff
+     phones never read past wastage lines. One read once a day per phone (on opening the prep list, orders or wastage),
+     kept in lk.w.sum until the kitchen day changes. A summary made for an earlier day (the night job has not run yet)
+     is used but not kept, so the next page load reads again. A failed read keeps nothing and tries again after 5 minutes. */
+  function loadWSum() {
     var today = dayNow(), tag = S.pin + '|' + today;
-    if (!fb || S.wRecentBusy || waiting('wRecent') || (S.wRecent && S.wRecentFor === today && !force)) return;
-    var c = force ? null : dayCache('lk.w.recent', tag);
-    if (c) { S.wRecent = c; S.wRecentFor = today; return; }
-    S.wRecentBusy = true;
-    var dates = [], i;
-    for (i = 1; i <= 14; i++) dates.push(shift(today, -i));
-    // a day that cannot be read (bad signal) is not kept as an empty day: nothing is cached, and the book tries again later
-    var miss = [];
-    Promise.all(dates.map(function (d) { return fb.fs.getDocs(wCol(d)).then(function (sn) { return sn.docs.map(function (x) { var v = x.data(); v.id = x.id; v.date = d; return v; }); }, function () { miss.push(d); return []; }); })).then(function (l) {
-      S.wRecent = [].concat.apply([], l).filter(function (x) { return !x.deleted; }); S.wRecentMiss = miss; S.wRecentBusy = false;
-      if (miss.length) { S.wRecentFor = ''; retryLater('wRecent'); }
-      else { S.wRecentFor = today; dayCacheSet('lk.w.recent', tag, S.wRecent); }
+    if (!fb || S.wSumBusy || waiting('wSum') || (S.wSum && S.wSumFor === today)) return;
+    var c = dayCache('lk.w.sum', tag);
+    if (c) { S.wSum = c; S.wSumFor = today; return; }
+    S.wSumBusy = true;
+    fb.fs.getDoc(sumDoc()).then(function (sn) {
+      var v = sn.exists() ? sn.data() : null;
+      S.wSumBusy = false; S.wSum = v && Array.isArray(v.items) ? v.items : []; S.wSumFor = today;
+      if (v && v.day === today) dayCacheSet('lk.w.sum', tag, S.wSum);
       draw();
-    });
+    }, function () { S.wSumBusy = false; retryLater('wSum'); });
   }
   function wTotals(lines) {
     var t = { kg: 0, L: 0, portions: 0, pieces: 0 };
@@ -3245,7 +3250,7 @@
     var q = okey(S.wf.text); if (q.length < 2) return [];
     var seen = {}, out = [];
     function add(t) { var k = okey(t); if (k && !seen[k] && k !== q && (k.indexOf(q) === 0 || k.indexOf(' ' + q) >= 0)) { seen[k] = 1; out.push(t); } }
-    (S.wRecent || []).forEach(function (x) { add(x.text); });
+    (S.wSum || []).forEach(function (x) { add(x.t); });
     S.learned.forEach(function (x) { if (!x.hidden && x.text) add(x.text); });
     D.recipes.forEach(function (r) { add(r.short || r.name); });
     var idx = ingIndex(); Object.keys(idx).forEach(function (k) { add(idx[k].name); });
@@ -3256,18 +3261,14 @@
     return l.map(function (t, i) { return '<button type="button" class="chip sq nb-sg" data-p="wsugg" data-i="' + i + '">' + esc(t) + '</button>'; }).join('');
   }
   function wOften() {
-    var m = {};
-    (S.wRecent || []).forEach(function (x) {
-      var k = okey(x.text); if (!k) return;
-      var e = m[k] = m[k] || { text: x.text, n: 0, unit: {}, reason: {}, sec: {} };
-      e.n++; e.unit[x.unit] = (e.unit[x.unit] || 0) + 1; e.reason[x.reason] = (e.reason[x.reason] || 0) + 1; if (x.station) e.sec[x.station] = (e.sec[x.station] || 0) + 1;
-    });
-    function top(o) { return Object.keys(o).sort(function (a, b) { return o[b] - o[a]; })[0] || ''; }
-    return Object.keys(m).map(function (k) { var e = m[k]; return { text: e.text, n: e.n, unit: top(e.unit), reason: top(e.reason), sec: top(e.sec) }; })
-      .filter(function (e) { return e.n >= 2; }).sort(function (a, b) { return b.n - a.n; }).slice(0, 8);
+    return (S.wSum || []).filter(function (x) { return x.n >= 2 && x.t; }).sort(function (a, b) { return b.n - a.n; }).slice(0, 8)
+      .map(function (x) { return { text: x.t, n: x.n, unit: x.unit || '', reason: x.reason || '', sec: x.sec || '' }; });
   }
   /* the last time this item was logged (the last 14 days): a suggestion fills its unit, reason and section too */
-  function wLast(t) { var k = okey(t); return (S.wRecent || []).filter(function (x) { return okey(x.text) === k; }).sort(function (a, b) { return (b.addedAt || 0) - (a.addedAt || 0); })[0] || null; }
+  function wLast(t) {
+    var k = okey(t), x = (S.wSum || []).filter(function (e) { return okey(e.t) === k; })[0], l = x && x.last;
+    return l ? { unit: l.unit || '', reason: l.reason || '', station: l.sec || '' } : null;
+  }
   function addWaste() {
     var f = S.wf, p = me();
     if (!can('add')) return;
@@ -3291,33 +3292,34 @@
   }
   function focusK(k) { var el = S.root && S.root.querySelector('[data-k="' + k + '"]'); if (el) el.focus(); }
   function focusSel(sel) { var el = S.root && S.root.querySelector(sel); if (el && el.offsetParent !== null) el.focus(); }
-  var wGone = {};   // past entries removed on this phone, kept so Undo can put them back into the Last 7 days copy
+  /* Remove or put back a wastage entry: today's on the wastage page (head chef and sous chefs), any day in the admin log.
+     Today's lines come from the live list; the admin log's 60 days are patched here (no read), so the change shows at once. */
   function removeWaste(date, id, restore) {
-    if (!canBrowse() || !can('del')) return;
-    var today = dayNow(), it = (S.wLines || []).concat(S.wRecent || []).filter(function (x) { return x.id === id; })[0] || wGone[id];
-    // an older day changed: today's lines come from the live list, so only the copy of the last 14 days needs patching.
-    // It is kept in step here (no read), so Last 7 days shows the change at once and the day cache stays right.
-    if (date !== today) {
-      if (S.wRecent && S.wRecentFor === today) {
-        S.wRecent = S.wRecent.filter(function (x) { return x.id !== id; });
-        if (restore && it) S.wRecent.push(Object.assign({}, it, { date: date, deleted: false, deletedBy: '', deletedAt: 0 }));
-        dayCacheSet('lk.w.recent', S.pin + '|' + today, S.wRecent);
-      } else lsSet('lk.w.recent', '');
-      if (it) { if (restore) delete wGone[id]; else wGone[id] = Object.assign({}, it, { date: date }); }
-    }
-    supd(wRef(date, id), { deleted: !restore, deletedBy: restore ? '' : (me() || {}).name || '', deletedAt: restore ? 0 : now() }).catch(failed);
+    if (!wAll() && !(canBrowse() && can('del'))) return;
+    var mine = (S.wStats && S.wStats.lines) || [], it = (S.wLines || []).concat(mine).filter(function (x) { return x.id === id && x.date === date; })[0];
+    var by = restore ? '' : (me() || {}).name || '', at = restore ? 0 : now();
+    mine.forEach(function (x) { if (x.id === id && x.date === date) { x.deleted = !restore; x.deletedBy = by; x.deletedAt = at; } });
+    supd(wRef(date, id), { deleted: !restore, deletedBy: by, deletedAt: at }).catch(failed);
     if (!restore) toast('Removed ' + (it ? it.text : 'the entry') + ' from the wastage log', { label: 'Undo', fn: function () { removeWaste(date, id, true); } });
+    draw();
+  }
+  /* The end-of-day review lives in the admin panel's wastage log (22 Oct 2026): the head chef writes it for any day of
+     the last 60. The known review comes from the log's own reads (loadWStats), so opening it costs nothing more. */
+  function rvOf(d) { return ((S.wStats && S.wStats.reviews) || []).filter(function (r) { return r.date === d; })[0] || {}; }
+  function rvSet(d, v) {
+    if (!S.wStats || !S.wStats.reviews) return;
+    S.wStats.reviews = S.wStats.reviews.filter(function (r) { return r.date !== d; }).concat([Object.assign({ date: d }, v)]);
   }
   function saveReview() {
-    if (!can('add')) return;
-    var p = me(), r = S.wReview || {};
-    // someone else may have saved a review since this page read it: one small read on Save, and a second tap to replace it
+    if (!wAll()) return;
+    var d = S.rvDate || dayNow(), p = me(), name = p ? p.name : 'Head chef', r = rvOf(d);
+    // someone else may have saved a review since the log was read: one small read on Save, and a second tap to replace it
     if (!S.wrChecked && fb.fs.getDocFromServer) {
       S.wrChecked = true;
-      fb.fs.getDocFromServer(wDay(S.wDate)).then(function (sn) {
+      fb.fs.getDocFromServer(wDay(d)).then(function (sn) {
         var v = sn.exists() ? sn.data() : {};
-        if ((v.reviewAt || 0) > (r.reviewAt || 0) && v.reviewBy && v.reviewBy !== (p ? p.name : '')) {
-          S.wReview = v; arm('wreview'); draw();
+        if ((v.reviewAt || 0) > (r.reviewAt || 0) && v.reviewBy && v.reviewBy !== name) {
+          rvSet(d, v); arm('wreview'); draw();
           toast(v.reviewBy + ' saved a review at ' + clock(v.reviewAt) + '. Tap Save again to replace it with yours.', null, 8000);
           S.wrChecked = false; return;
         }
@@ -3327,10 +3329,11 @@
     }
     if (armKey === 'wreview') arm('wreview');
     var a = (S.wrA != null ? S.wrA : r.avoidable || '').trim().slice(0, 300), c = (S.wrC != null ? S.wrC : r.change || '').trim().slice(0, 300);
-    sset(wDay(S.wDate), { avoidable: a, change: c, reviewBy: p ? p.name : '', reviewAt: now() }, true).then(function () {
-      S.wReview = { avoidable: a, change: c, reviewBy: p ? p.name : '', reviewAt: now() }; S.wrA = S.wrC = null; toast('Review saved'); 
-    }, failed);
+    var v = { avoidable: a, change: c, reviewBy: name, reviewAt: now() };
+    sset(wDay(d), v, true).then(function () { rvSet(d, v); S.wrA = S.wrC = null; if (d >= shift(dayNow(), -3)) { S.wNoteFor = ''; lsSet('lk.w.note', ''); } toast('Review saved'); draw(); }, failed);
   }
+  /* the head chef's Google account: the only one the rules let read past wastage (22 Oct 2026) */
+  function wAll() { return S.level === 'owner' && ownerHere(); }
   function wRow(x) {
     var del = canBrowse() && can('del') && !x.deleted;
     return '<li class="nb-row w-row' + (x.deleted ? ' is-removed' : '') + '"><span class="w-time">' + (x.addedAt ? clock(x.addedAt) : '') + (x.station ? '<br><span class="w-sec">' + esc(x.station) + '</span>' : '') + '</span>' +
@@ -3347,17 +3350,15 @@
       REASONS.map(function (r) { return '<button type="button" class="sheet-o" role="radio" data-p="wreason" data-v="' + r[0] + '" aria-checked="' + (S.wf.reason === r[0]) + '"><strong>' + esc(r[1]) + '</strong><span>' + esc(REASON_HINT[r[0]] || '') + '</span></button>'; }).join('') +
       '</div><button type="button" class="btn sheet-x" data-p="sheet-close">Cancel</button></div>';
   }
+  /* The wastage page is for logging (head chef decision, 22 Oct 2026): the form and today's entries from the whole team.
+     Past days, the end-of-day review and corrections to past days are in the admin panel (Reports, Wastage). */
   function wasteHTML() {
     var p = me(), br = canBrowse(), today = dayNow();
-    if (!br && S.wDate !== today) { S.wDate = today; watchWaste(); }
+    if (S.wDate !== today) { S.wDate = today; watchWaste(); }
     var f = S.wf, live = (S.wLines || []).filter(function (x) { return !x.deleted; }).sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); });
     var shown = (S.wLines || []).filter(function (x) { return br || !x.deleted; }).sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); });
-    var view = br ? (S.wView || 'day') : 'day';
-    var nav = br ? '<div class="nb-nav o-nav"><button type="button" class="chip" data-p="wview" data-v="day" aria-pressed="' + (view === 'day') + '">By day</button><button type="button" class="chip" data-p="wview" data-v="week" aria-pressed="' + (view === 'week') + '">Last 7 days</button>' +
-      (view === 'day' ? '<span class="o-days"><button type="button" class="chip" data-p="wday" data-d="-1" aria-label="Back one day">&lsaquo;</button><button type="button" class="chip" data-p="wtoday" aria-pressed="' + (S.wDate === today) + '">Today</button><button type="button" class="chip" data-p="wday" data-d="1" aria-label="Forward one day">&rsaquo;</button></span>' : '') + '</div>' : '';
-    if (view === 'week') return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' : '') + '</span><span class="p-links"><a class="p-link" href="#/prep">Prep list</a></span></div>' + nav + wasteWeekHTML();
     var often = wOften();
-    var add = can('add') && S.wDate === today ?
+    var add = can('add') ?
       '<form class="nb-add w-add" data-p-form="wadd">' + (often.length ? '<div class="w-often"><span class="nb-ql">Logged often</span><div class="chiprow">' + often.map(function (e, i) { return '<button type="button" class="chip sq" data-p="woften" data-i="' + i + '">' + esc(e.text) + '</button>'; }).join('') + '</div></div>' : '') +
       '<datalist id="w-sections">' + suggestions().map(function (n) { return '<option value="' + esc(n) + '"></option>'; }).join('') + '</datalist>' +
       '<div class="nb-add-row"><label class="visually-hidden" for="w-sec">Section</label><input id="w-sec" class="nb-in nb-in-sec" data-k="w-sec" list="w-sections" enterkeyhint="next" autocomplete="off" placeholder="Section" maxlength="40" value="' + esc(f.sec || mySec()) + '">' +
@@ -3368,46 +3369,17 @@
       '<div class="w-pick"><span class="nb-ql" id="w-reason-l">Reason</span><div class="w-rchips" role="radiogroup" aria-labelledby="w-reason-l">' + REASONS.map(function (r) { return '<button type="button" class="chip" role="radio" data-p="wreason" data-v="' + r[0] + '" aria-checked="' + (f.reason === r[0]) + '">' + r[1] + '</button>'; }).join('') + '</div>' +
       '<button type="button" class="w-rbtn' + (f.reason ? '' : ' is-empty') + '" data-p="sheet" data-v="reason" aria-haspopup="dialog">' + (f.reason ? esc(reasonName(f.reason)) : 'Pick a reason') + '<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>' +
       '<div class="nb-add-row"><label class="visually-hidden" for="w-act">Action or how to stop it happening again</label><input id="w-act" class="nb-in nb-in-text" data-k="w-act" autocomplete="off" placeholder="Action or how to stop it happening again (optional)" maxlength="120" value="' + esc(f.act) + '">' +
-      '<button type="submit" class="nb-addbtn">Log it</button></div></form>' : (S.wDate === today ? '<p class="hint">You can read the wastage log but not write in it.</p>' : '');
-    var r = S.wReview || {}, ra = S.wrA != null ? S.wrA : (r.avoidable || ''), rc = S.wrC != null ? S.wrC : (r.change || '');
-    var review = '<section class="set-block w-review"><span class="label">End-of-day review</span>' +
-      (can('add') ? '<div class="field"><label class="label" for="w-ra">Main avoidable waste today</label><textarea id="w-ra" class="w-ta" data-k="w-ra" maxlength="300" rows="2">' + esc(ra) + '</textarea></div>' +
-        '<div class="field"><label class="label" for="w-rc">Prep or ordering change for the next shift</label><textarea id="w-rc" class="w-ta" data-k="w-rc" maxlength="300" rows="2">' + esc(rc) + '</textarea><span class="hint">This shows at the top of the next prep list.</span></div>' +
-        '<div class="btn-row"><button type="button" class="btn dark" data-p="wreview">Save the review</button></div>' :
-        '<p>' + esc(r.avoidable || 'Not written yet.') + '</p><p>' + esc(r.change || '') + '</p>') +
-      (r.reviewBy ? '<span class="hint">Last saved by ' + esc(r.reviewBy) + (r.reviewAt ? ' at ' + clock(r.reviewAt) : '') + '.</span>' : '') + '</section>';
+      '<button type="submit" class="nb-addbtn">Log it</button></div></form>' : '<p class="hint">You can read the wastage log but not write in it.</p>';
     var tot = totalsText(wTotals(live));
     var body = S.wState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' :
       (shown.length ? '<ul class="nb-rows">' + shown.map(wRow).join('') + '</ul>' : (S.wState !== 'ok' ? '<p class="nb-empty">Loading...</p>' : '<p class="nb-empty">Nothing logged for ' + esc(dayName(S.wDate).toLowerCase()) + ' yet. Log waste when it happens: prep waste, expired stock, cooking faults, returns and excess production.</p>'));
-    return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' + ksTagHTML() : '') + '</span><span class="p-links"><a class="p-link" href="#/prep">Prep list</a>' + '' + '</span></div>' + nav +
+    return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' + ksTagHTML() : '') + '</span><span class="p-links"><a class="p-link" href="#/prep">Prep list</a>' + '' + '</span></div>' +
       '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Wastage</h2><span class="nb-date">' + esc(longDate(S.wDate)) + (tot ? ' &middot; ' + esc(tot) : '') + '</span></div>' +
       '<div class="nb-prog">' + live.length + (live.length === 1 ? ' entry' : ' entries') + '</div></header>' +
       '<p class="w-rule">Write the actual amount and unit, not a dollar value. Unsafe food must never be reused to avoid logging waste.</p>' +
       // the form sits at the top, like the order list, so logging waste on a busy day never means scrolling past every entry
-      (add ? '<div class="nb-foot w-addtop">' + add + '</div>' : '') + '<div class="nb-body">' + body + '</div></section>' + review + sheetHTML();
-  }
-  /* The last 7 days on one page, grouped by day, for the head chef and sous chefs. */
-  function wasteWeekHTML() {
-    var today = dayNow(), from = shift(today, -6);
-    if (!S.wRecent && S.wRecentBusy) return '<p class="hint">Loading the last 7 days...</p>';
-    var todayL = S.wDate === today ? (S.wLines || []).filter(function (x) { return !x.deleted; }) : [];
-    var lines = todayL.concat((S.wRecent || []).filter(function (x) { return x.date >= from && x.date < today; }));
-    var m = {}, r = {};
-    lines.forEach(function (x) { var k = okey(x.text), e = m[k] = m[k] || { text: x.text, n: 0, l: [] }; e.n++; e.l.push(x); r[x.reason] = (r[x.reason] || 0) + 1; });
-    var top = Object.keys(m).sort(function (a, b) { return m[b].n - m[a].n; }).slice(0, 5);
-    var sum = '<div class="w-sum"><p><strong>' + lines.length + (lines.length === 1 ? ' entry' : ' entries') + '</strong>' + (lines.length ? ': ' + esc(totalsText(wTotals(lines))) : '') + '</p>' +
-      (top.length ? '<p><span class="nb-ql">Most often</span> ' + top.map(function (k) { return esc(m[k].text) + ' <span class="nb-us">x' + m[k].n + ', ' + esc(totalsText(wTotals(m[k].l))) + '</span>'; }).join(' &middot; ') + '</p>' : '') +
-      (lines.length ? '<p><span class="nb-ql">Reasons</span> ' + REASONS.filter(function (x) { return r[x[0]]; }).map(function (x) { return esc(x[1]) + ' ' + r[x[0]]; }).join(' &middot; ') + '</p>' : '') + '</div>';
-    var days = [], i;
-    for (i = 0; i < 7; i++) days.push(shift(today, -i));
-    var body = days.map(function (d) {
-      var l = lines.filter(function (x) { return x.date === d; }).sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); });
-      var lost = !l.length && (S.wRecentMiss || []).indexOf(d) >= 0;
-      return '<div class="nb-hd"><span>' + esc(d === today ? 'Today' : dayShort(d)) + '</span><span>' + (l.length ? l.length + ' &middot; ' + esc(totalsText(wTotals(l))) : lost ? 'could not load' : 'nothing logged') + '</span></div>' +
-        (l.length ? '<ul class="nb-rows">' + l.map(wRow).join('') + '</ul>' : '');
-    }).join('');
-    return '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Wastage</h2><span class="nb-date">Last 7 days</span></div><div class="nb-prog" role="status">' + lines.length + '</div></header>' +
-      '<div class="nb-body">' + ((S.wRecentMiss || []).length ? '<p class="hint o-miss" role="alert">' + MISS_TEXT + '</p>' : '') + sum + body + '</div></section>';
+      (add ? '<div class="nb-foot w-addtop">' + add + '</div>' : '') + '<div class="nb-body">' + body + '</div></section>' +
+      (wAll() ? '<p class="hint w-past">Past days and the end-of-day review are in the <a href="#/admin" data-p="a-go-waste">admin panel, Wastage</a>.</p>' : '') + sheetHTML();
   }
   /* Last night's "change for the next shift" note, shown on the prep list (the latest of the last 3 days). */
   function loadWNote() {
@@ -4132,7 +4104,7 @@
     for (i = 0; i < 60; i++) dates.push(shift(today, -i));
     Promise.all(dates.map(function (d) {
       return Promise.all([
-        fb.fs.getDocs(wCol(d)).then(function (sn) { return sn.docs.map(function (x) { var v = x.data(); v.date = d; return v; }); }, function () { return []; }),
+        fb.fs.getDocs(wCol(d)).then(function (sn) { return sn.docs.map(function (x) { var v = x.data(); v.id = x.id; v.date = d; return v; }); }, function () { return []; }),
         fb.fs.getDoc(wDay(d)).then(function (sn) { return sn.exists() ? Object.assign({ date: d }, sn.data()) : null; }, function () { return null; })
       ]);
     })).then(function (res) {
@@ -4200,7 +4172,8 @@
     var days = {}; lines.forEach(function (x) { days[x.date] = 1; });
     var t = wTotals(lines), pt = wTotals(plines), nd = afDates(n, 0).length;
     var tiles = [[lines.length, lines.length === 1 ? 'entry' : 'entries', delta(lines.length, plines.length, n, true)], [num(t.kg), 'kg', delta(t.kg, pt.kg, n, true)], [num(t.L), 'L', delta(t.L, pt.L, n, true)], [num(t.portions), 'portions', delta(t.portions, pt.portions, n, true)], [num(t.pieces), 'pieces', delta(t.pieces, pt.pieces, n, true)], [Object.keys(days).length + ' of ' + nd, 'days with something logged', '']];
-    if (!lines.length) return head + '<div class="a-tiles">' + tiles.map(tileHTML).join('') + '</div><p class="hint">Nothing logged in this time yet.</p></section>';
+    var log = wLogHTML(n, af) + wReviewFormHTML();
+    if (!lines.length) return head + '<div class="a-tiles">' + tiles.map(tileHTML).join('') + '</div><p class="hint">Nothing logged in this time yet.</p>' + log + '</section>';
     var byR = {}; lines.forEach(function (x) { var e = byR[x.reason] = byR[x.reason] || []; e.push(x); });
     var rRows = REASONS.filter(function (r) { return byR[r[0]]; }).sort(function (a, b) { return byR[b[0]].length - byR[a[0]].length; }).map(function (r) {
       var l = byR[r[0]]; return '<tr><th scope="row">' + esc(r[1]) + '</th><td>' + l.length + '</td><td>' + Math.round(l.length / lines.length * 100) + '%</td><td>' + esc(totalsText(wTotals(l))) + '</td></tr>';
@@ -4254,7 +4227,46 @@
       '<h3 class="a-ch-h">Each day</h3>' + dayList +
       '<h3 class="a-ch-h">By weekday</h3><div class="a-tablewrap"><table class="a-table a-plain sk-t"><thead><tr><th scope="col"></th>' + DOWN.map(function (x) { return '<th scope="col">' + x + '</th>'; }).join('') + '</tr></thead><tbody><tr><th scope="row">Entries a day</th>' + DOW.map(function (d) { return '<td>' + (occ[d] ? num((dw[d] || 0) / occ[d]) : '0') + '</td>'; }).join('') + '</tr></tbody></table></div>' +
       '<h3 class="a-ch-h">Who logs waste</h3><span class="hint">A record, not a score: someone who never logs may just not know about the log.</span>' + whoList +
-      '<h3 class="a-ch-h">End-of-day reviews</h3>' + revList + '</section>';
+      log + '<h3 class="a-ch-h">End-of-day reviews</h3>' + revList + '</section>';
+  }
+  /* Every wastage entry in the time picked, removed ones too, with Remove and Put back (22 Oct 2026: past days are
+     corrected here, not on the wastage page). Uses the 60 days loadWStats already read. */
+  function wLogHTML(n, af) {
+    var ds = {}; afDates(n, 0).forEach(function (d) { ds[d] = 1; });
+    var l = S.wStats.lines.filter(function (x) { return ds[x.date] && (!af.sec || (x.station || 'General') === af.sec) && (!af.reason || x.reason === af.reason); });
+    var del = wAll();
+    return '<h3 class="a-ch-h">Every entry</h3><span class="hint">Remove an entry that was logged by mistake. Removed entries stay here, so you can put them back.</span>' + lvHTML({
+      key: 'waste-log', items: l, step: 15, tools: 8, noun: ['entry', 'entries'], ph: 'Search entries', empty: 'Nothing logged in this time.',
+      find: function (x) { return x.text + ' ' + (x.station || '') + ' ' + (x.addedBy || '') + ' ' + reasonName(x.reason) + ' ' + (x.action || ''); },
+      filters: [['all', 'All'], ['live', 'Logged', function (x) { return !x.deleted; }], ['gone', 'Removed', function (x) { return !!x.deleted; }]],
+      sorts: [['new', 'Newest first', function (a, b) { return (b.addedAt || 0) - (a.addedAt || 0); }], ['old', 'Oldest first', function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }], ['az', 'A to Z', function (a, b) { return String(a.text).toLowerCase().localeCompare(String(b.text).toLowerCase()); }]],
+      cols: [
+        { h: 'Day', html: function (x) { return esc(dayShort(x.date)) + (x.addedAt ? ' ' + clock(x.addedAt) : ''); } },
+        { h: 'Item', th: true, html: function (x) { return esc(x.text) + (x.deleted ? ' <span class="o-who-i">Removed' + (x.deletedBy ? ' by ' + esc(x.deletedBy) : '') + '</span>' : ''); } },
+        { h: 'Amount', html: function (x) { return esc(num(+x.amount || 0) + ' ' + x.unit); } },
+        { h: 'Reason', html: function (x) { return esc(reasonName(x.reason)); } },
+        { h: 'Section', html: function (x) { return esc(x.station || ''); } },
+        { h: 'Who', html: function (x) { return esc(x.addedBy || ''); } },
+        { h: 'Action', wide: true, html: function (x) { return esc(x.action || ''); } },
+        { h: '', html: function (x) {
+          if (!del || !x.id) return '';
+          return x.deleted ? '<button type="button" class="p-x" data-p="wrestore" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Put back ' + x.text) + '">Put back</button>'
+            : '<button type="button" class="p-x" data-p="wdel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>';
+        } }
+      ]
+    });
+  }
+  /* The end-of-day review for one day (today by default, back up to 60 days): main avoidable waste and the change for the
+     next shift, which shows at the top of the next prep list for everyone. */
+  function wReviewFormHTML() {
+    var today = dayNow(), d = S.rvDate || today, r = rvOf(d), ra = S.wrA != null ? S.wrA : (r.avoidable || ''), rc = S.wrC != null ? S.wrC : (r.change || '');
+    return '<h3 class="a-ch-h">End-of-day review</h3><div class="w-review a-rvform"><div class="nb-nav o-nav"><span class="o-days">' +
+      '<button type="button" class="chip" data-p="rv-day" data-d="-1" aria-label="Back one day">&lsaquo;</button><span class="a-rvday">' + esc(d === today ? 'Today' : dayShort(d)) + '</span>' +
+      '<button type="button" class="chip" data-p="rv-day" data-d="1" aria-label="Forward one day"' + (d >= today ? ' disabled' : '') + '>&rsaquo;</button></span></div>' +
+      '<div class="field"><label class="label" for="w-ra">Main avoidable waste</label><textarea id="w-ra" class="w-ta" data-k="w-ra" maxlength="300" rows="2">' + esc(ra) + '</textarea></div>' +
+      '<div class="field"><label class="label" for="w-rc">Prep or ordering change for the next shift</label><textarea id="w-rc" class="w-ta" data-k="w-rc" maxlength="300" rows="2">' + esc(rc) + '</textarea><span class="hint">This shows at the top of the next prep list.</span></div>' +
+      '<div class="btn-row"><button type="button" class="btn dark" data-p="wreview">Save the review</button></div>' +
+      (r.reviewBy ? '<span class="hint">Last saved by ' + esc(r.reviewBy) + (r.reviewAt ? ' at ' + clock(r.reviewAt) : '') + '.</span>' : '') + '</div>';
   }
 
   /* ---------- recipe searches that found nothing (queued by the recipe book, sent once someone is signed in) ---------- */
@@ -5391,7 +5403,6 @@
     if (a === 'close-hide') { lsSet('lk.closeout', dayNow()); draw(); return; }
     if (a === 'oreg') { var orr = (S.oregs || [])[i]; if (orr) { S.otext = orr.text; S.oqty = orr.q || ''; addOrder(true); } return; }
     // Last 7 days always counts today from the live list, whatever day was being browsed; the past days come from the day cache
-    if (a === 'wview') { S.wView = el.getAttribute('data-v'); if (S.wView === 'week') { if (S.wDate !== dayNow()) { S.wDate = dayNow(); watchWaste(); } loadWRecent(false); } draw(); return; }
     if (a === 'wunit') { S.wf.unit = el.getAttribute('data-v'); draw(); return; }
     if (a === 'wreason') { S.wf.reason = el.getAttribute('data-v'); var fromSheet = S.sheet === 'reason'; S.sheet = ''; draw(); if (fromSheet) { var rb = S.root.querySelector('.w-rbtn'); if (rb) rb.focus(); } return; }
     if (a === 'sheet') { S.sheet = el.getAttribute('data-v'); draw(); var so = S.root.querySelector('.sheet-o[aria-checked="true"]') || S.root.querySelector('.sheet-o'); if (so) so.focus(); return; }
@@ -5400,8 +5411,8 @@
     if (a === 'woften') { var wo = wOften()[i]; if (wo) { S.wf.text = wo.text; if (wo.unit) S.wf.unit = wo.unit; if (wo.reason) S.wf.reason = wo.reason; if (wo.sec && !S.wf.sec && !mySec()) S.wf.sec = wo.sec; draw(); var wa2 = S.root.querySelector('[data-k="w-amt"]'); if (wa2) wa2.focus(); } return; }
     if (a === 'wdel') { removeWaste(dt, id); return; }
     if (a === 'wrestore') { removeWaste(dt, id, true); return; }
-    if (a === 'wday') { S.wDate = shift(S.wDate, +el.getAttribute('data-d')); watchWaste(); draw(); return; }
-    if (a === 'wtoday') { S.wDate = dayNow(); watchWaste(); draw(); return; }
+    if (a === 'rv-day') { var rd = shift(S.rvDate || dayNow(), +el.getAttribute('data-d')); if (rd <= dayNow() && rd > shift(dayNow(), -60)) { S.rvDate = rd; S.wrA = S.wrC = null; } draw(); return; }
+    if (a === 'a-go-waste') { S.atab = 'waste'; lsSet('lk.prep.atab', 'waste'); return; }
     if (a === 'wreview') { saveReview(); return; }
     if (a === 'w-refresh') { loadWStats(true); loadStats(true); draw(); return; }
     if (a === 'miss-hide') { sset(docRef('misses', id), { hidden: true, q: ((S.misses || []).filter(function (x) { return x.id === id; })[0] || {}).q || id }, true).then(function () { loadMisses(true); }, failed); return; }
@@ -5808,7 +5819,7 @@
     warm: function () { if (S.pin && S.configState !== 'ok' && S.configState !== 'loading') connect(); notesInit(); },
     unsaved: function () {
       return pending > 0 || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!mlf.text.trim() || mfDirty() || nfDirty() || gfDirty() || draftDirty() || !!String(S.bulk || '').trim() || !!S.sheet || !!S.recipeOpen ||
-        !!(S.text.trim() || S.qty.trim() || S.otext.trim() || S.oqty.trim() || S.wf.text.trim() || String(S.wf.amt).trim() || S.wf.act.trim() || (S.wrA != null && S.wrA !== ((S.wReview || {}).avoidable || '')) || (S.wrC != null && S.wrC !== ((S.wReview || {}).change || '')) || S.mpin);
+        !!(S.text.trim() || S.qty.trim() || S.otext.trim() || S.oqty.trim() || S.wf.text.trim() || String(S.wf.amt).trim() || S.wf.act.trim() || (S.wrA != null && S.wrA !== (rvOf(S.rvDate || dayNow()).avoidable || '')) || (S.wrC != null && S.wrC !== (rvOf(S.rvDate || dayNow()).change || '')) || S.mpin);
     },
     noteInfo: noteInfo,
     noteOpen: noteOpen,

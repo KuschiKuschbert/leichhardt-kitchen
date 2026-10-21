@@ -20,6 +20,13 @@ await w(['days', today, 'items', 'g'], it('Slice onions'));
 await w(['orders', y, 'lines', 'o1'], { text: 'Flour', qty: '2 bags', addedBy: 'Sam', addedAt: Date.now() - 86400000, deleted: false });
 await w(['orders', y, 'lines', 'o2'], { text: 'Flour', qty: '2 bags', addedBy: 'Sam', addedAt: Date.now() - 86000000, deleted: false, rolled: 1 });
 await K.collection('learnlog').doc('o-' + y2).set({ at: 1, who: 'live' });  // already learned live on a phone
+// wastage for the nightly summary (22 Oct 2026): Rice twice (newest in Pans), Chips once, one removed, and today's left out
+const wl = (text, x) => Object.assign({ text, amount: 1, unit: 'portions', reason: 'expired', action: '', station: 'Larder', addedBy: 'Bo', addedAt: Date.now() - 2 * 86400000, deleted: false }, x || {});
+await w(['waste', y2, 'lines', 'w1'], wl('Rice'));
+await w(['waste', y, 'lines', 'w2'], wl('rice ', { amount: 2, station: 'Pans', addedAt: Date.now() - 86400000 }));
+await w(['waste', y, 'lines', 'w3'], wl('Chips', { unit: 'kg', reason: 'excess' }));
+await w(['waste', y, 'lines', 'w4'], wl('Gone', { deleted: true }));
+await w(['waste', today, 'lines', 'w5'], wl('Rice'));
 const run = () => execFileSync(process.execPath, ['nightly-learn.mjs'], { env: Object.assign({}, process.env, { KITCHEN_PIN: '000000', LEARN_DAYS: '5' }), encoding: 'utf8' });
 let fails = 0; const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++; };
 const out1 = run();
@@ -35,6 +42,13 @@ const fl = (await K.collection('ordlearned').doc('flour').get()).data();
 ok(fl.uses === 1 && fl.qtys['2-bags'].n === 1, 'orders: counted once (rolled copy left out)');
 ok((await K.collection('learnlog').doc(y).get()).exists && (await K.collection('learnlog').doc('o-' + y).get()).exists, 'days claimed');
 ok(!(await K.collection('learnlog').doc(today).get()).exists, 'today is not learned yet');
+const ws = (await K.collection('summary').doc('waste').get()).data() || {};
+const rice = (ws.items || []).find(x => x.t.trim().toLowerCase() === 'rice') || {};
+ok(ws.day === today && ws.to === y, 'summary: made today, up to yesterday (' + ws.day + ', ' + ws.to + ')');
+ok(rice.n === 2 && rice.r.expired === 2 && rice.unit === 'portions', 'summary: Rice twice as expired stock, today not counted (' + JSON.stringify(rice) + ')');
+ok(rice.last && rice.last.sec === 'Pans' && rice.last.amt === 2, 'summary: the last time is the newest entry');
+ok((ws.items || []).some(x => x.t === 'Chips' && x.r.excess === 1) && !(ws.items || []).some(x => x.t === 'Gone'), 'summary: Chips once, the removed entry left out');
+ok(/Wastage summary: 2 items/.test(out1), 'summary: the run says how many items');
 run();
 const on2 = (await K.collection('learned').doc('slice-onions').get()).data();
 ok(on2.uses === 3, 'second run counts nothing twice (' + on2.uses + ')');

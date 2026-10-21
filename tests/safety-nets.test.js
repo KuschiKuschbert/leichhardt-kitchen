@@ -42,7 +42,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   ok(p.errors.length === 0, 'orders: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // waste: remove, Undo, put back
+  // waste: a sous chef removes today's entry, Undo, put back (past days are corrected in the admin panel)
   p = await L.open(b, '#/waste', { wait: 1500 });
   await p.click('[data-p="wdel"][data-id="w1"]');
   await L.settle(p, 300);
@@ -52,10 +52,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   await L.settle(p, 300);
   s = await store(p);
   ok(s[fsKey(['waste', today, 'lines', 'w1'])].deleted === false, 'waste: Undo restores the entry');
-  await p.click('[data-p="wview"][data-v="week"]');
-  await L.settle(p, 600);
-  const wid = await p.evaluate(() => { const b = document.querySelector('[data-p="wdel"]'); return b && b.getAttribute('data-id'); });
-  ok(wid && wid !== 'undefined', 'waste: Last 7 days rows carry their ids (' + wid + ')');
+  ok(!(await p.$('[data-p="wview"]')) && !(await p.$('[data-p="wday"]')), 'waste: no past days on the wastage page, for a sous chef too');
   ok(p.errors.length === 0, 'waste: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
