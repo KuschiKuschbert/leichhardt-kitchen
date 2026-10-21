@@ -208,6 +208,8 @@
   }
   // what the save compares with: the recipe, the menu place, hidden and the go-back flag
   function snapOf(e) { return JSON.stringify([e.d, e.menu, e.meta.removed, e.meta.off]); }
+  // which saved copy of a recipe the form was opened from (none yet when the book was still on its way)
+  function stampOf(id) { var c = id && X.change(id); return c ? c.v + ':' + (c.upd || 0) + ':' + !!c.off + ':' + !!c.removed : ''; }
   function openEditor(sub) {
     var e;
     if (sub[0] === 'new') e = startNew(sub[1] ? slug(sub[1]) : '');
@@ -217,7 +219,7 @@
     e.handTags = !!(e.d.contains || e.d.check);
     e.key = e.isNew ? (sub[1] ? 'new-' + e.id : 'new') : e.id;
     e.snap = snapOf(e);
-    e.open = -1; e.pinOpen = -1; e.errs = []; e.warns = []; e.msg = ''; e.hist = null; e.ing0 = ingMap(e.d);
+    e.open = -1; e.pinOpen = -1; e.errs = []; e.warns = []; e.msg = ''; e.hist = null; e.ing0 = ingMap(e.d); e.stamp = stampOf(e.id);
     // a draft kept on this device from before: offered back
     try {
       var kept = JSON.parse(lsGet(draftKey(e.key)) || 'null');
@@ -286,16 +288,32 @@
   }
 
   /* ---------- the editor page ---------- */
-  function linkOptions(sel) {
+  /* The recipe a line or a label links to: 119 recipes are too many for a dropdown (coding rules, 22 Oct 2026), so it is
+     a box that finds them as you type, from one list for the whole form (linkList()). Each choice reads "Name (number)";
+     the box keeps the recipe's id in data-id, and a name that is not on the list goes back to what it was. */
+  function linkChoices() {
     var prep = [], dish = [], seen = {};
     D.recipes.forEach(function (r) { if (M.ed && r.id === M.ed.id) return; seen[r.id] = 1; (DISH[r.kind] ? dish : prep).push(r); });
-    var opt = function (id, label) { return '<option value="' + esc(id) + '"' + (id === sel ? ' selected' : '') + '>' + esc(label) + '</option>'; };
-    var come = A.toCome().filter(function (t) { return !seen[t.id]; });
-    if (sel && !seen[sel] && !come.some(function (t) { return t.id === sel; })) come.push({ id: sel });
-    return opt('', 'No link') +
-      '<optgroup label="Batch recipes and components">' + prep.map(function (r) { return opt(r.id, r.name + ' (' + r.no + ')'); }).join('') + '</optgroup>' +
-      '<optgroup label="Dishes">' + dish.map(function (r) { return opt(r.id, r.name + ' (' + r.no + ')'); }).join('') + '</optgroup>' +
-      (come.length ? '<optgroup label="Cards to come">' + come.map(function (t) { return opt(t.id, t.id + ' (card to come)'); }).join('') + '</optgroup>' : '');
+    var out = prep.concat(dish).map(function (r) { return { id: r.id, label: r.name + ' (' + r.no + ')' }; });
+    A.toCome().filter(function (t) { return !seen[t.id]; }).forEach(function (t) { out.push({ id: t.id, label: t.id + ' (card to come)' }); });
+    return out;
+  }
+  function linkLabel(id) {
+    if (!id) return '';
+    var c = linkChoices().filter(function (x) { return x.id === id; })[0];
+    return c ? c.label : id + ' (card to come)';
+  }
+  function linkList() { return '<datalist id="mg-rx">' + linkChoices().map(function (c) { return '<option value="' + esc(c.label) + '"></option>'; }).join('') + '</datalist>'; }
+  function linkBox(f, sel, id, label) {
+    return '<input' + (id ? ' id="' + id + '"' : '') + ' class="search mg-link" type="search" list="mg-rx" data-fl="' + f + '" data-id="' + esc(sel || '') + '" value="' + esc(linkLabel(sel)) + '" placeholder="No link (type to find a recipe)" autocomplete="off" aria-label="' + esc(label) + '">';
+  }
+  function linkPicked(el) {
+    var t = el.value.trim(), f = el.getAttribute('data-fl');
+    if (!t) { el.setAttribute('data-id', ''); setField(f, ''); return true; }
+    var c = linkChoices().filter(function (x) { return x.label === t; })[0] || linkChoices().filter(function (x) { return x.label.toLowerCase().indexOf(t.toLowerCase() + ' (') === 0; })[0];
+    if (!c) return false;
+    el.value = c.label; el.setAttribute('data-id', c.id); setField(f, c.id);
+    return true;
   }
   function tagChips(list, where, i) {
     var tags = list || [];
@@ -336,7 +354,7 @@
           '<input class="search mg-q" data-f="ing.' + k + '.q" aria-label="Amount, ingredient ' + (k + 1) + '" placeholder="Amount" maxlength="40" value="' + esc(i.q || '') + '">' +
           '<input class="search" data-f="ing.' + k + '.name" aria-label="Ingredient ' + (k + 1) + '" placeholder="Ingredient" maxlength="120" value="' + esc(i.name || '') + '"></div>' +
           '<input class="search" data-f="ing.' + k + '.note" aria-label="Note, ingredient ' + (k + 1) + '" placeholder="Note (optional)" maxlength="200" value="' + esc(i.note || '') + '">' +
-          '<div class="mg-ing-row"><label class="visually-hidden" for="mg-link-' + k + '">Recipe link, ingredient ' + (k + 1) + '</label><select id="mg-link-' + k + '" class="search mg-link" data-f="ing.' + k + '.link">' + linkOptions(i.link || '') + '</select></div>' +
+          '<div class="mg-ing-row"><label class="visually-hidden" for="mg-link-' + k + '">Recipe link, ingredient ' + (k + 1) + '</label>' + linkBox('ing.' + k + '.link', i.link || '', 'mg-link-' + k, 'Recipe link, ingredient ' + (k + 1)) + '</div>' +
           '<div class="btn-row mg-mini"><button type="button" class="p-x" data-mg="ing-tags" data-i="' + k + '" aria-expanded="' + open + '">' + esc(i.link ? 'Allergens from its recipe' : tagSummary(i.tags)) + '</button>' +
           (k ? '<button type="button" class="p-x" data-mg="ing-up" data-i="' + k + '" aria-label="Move ingredient ' + (k + 1) + ' up">Up</button>' : '') +
           (k < n - 1 ? '<button type="button" class="p-x" data-mg="ing-down" data-i="' + k + '" aria-label="Move ingredient ' + (k + 1) + ' down">Down</button>' : '') +
@@ -430,7 +448,7 @@
           '<input class="search" data-f="pin.' + k + '.label" aria-label="Label ' + (k + 1) + '" placeholder="Label" maxlength="60" value="' + esc(p.label || '') + '">' +
           '<button type="button" class="p-x" data-mg="pin-pick" data-i="' + k + '" aria-expanded="' + open + '">' + (open ? 'Less' : 'More') + '</button></div>' +
           (open ? '<input class="search" data-f="pin.' + k + '.note" aria-label="Note, label ' + (k + 1) + '" placeholder="What staff read when they tap it" maxlength="400" value="' + esc(p.note || '') + '">' +
-            '<select class="search" data-f="pin.' + k + '.link" aria-label="Opens recipe, label ' + (k + 1) + '">' + linkOptions(p.link || '') + '</select>' +
+            linkBox('pin.' + k + '.link', p.link || '', '', 'Opens recipe, label ' + (k + 1)) +
             '<div class="mg-two"><label class="field"><span class="label">Across %</span><input class="search" inputmode="decimal" data-f="pin.' + k + '.x" value="' + esc(p.x) + '"></label>' +
             '<label class="field"><span class="label">Down %</span><input class="search" inputmode="decimal" data-f="pin.' + k + '.y" value="' + esc(p.y) + '"></label></div>' +
             '<div class="field"><label class="label" for="mg-pside-' + k + '">Label side</label><select id="mg-pside-' + k + '" class="search" data-f="pin.' + k + '.side"><option value=""' + (!p.side ? ' selected' : '') + '>Where it fits</option><option value="left"' + (p.side === 'left' ? ' selected' : '') + '>Left</option><option value="right"' + (p.side === 'right' ? ' selected' : '') + '>Right</option></select></div>' +
@@ -471,7 +489,7 @@
       '<div class="btn-row"><button type="button" class="btn" data-mg="theirs">Open theirs</button><button type="button" class="btn dark" data-mg="mine">Save mine over it</button></div></div>' : '';
     var errs = e.errs.length ? '<div class="warn" role="alert"><span class="label">Not saved yet</span><ul class="mg-errs">' + e.errs.map(function (x) { return '<li><a href="#' + esc(x.at) + '" data-mg="goto" data-v="' + esc(x.at) + '">' + esc(x.msg) + '</a></li>'; }).join('') + '</ul></div>' : '';
     var warns = e.warns.length ? '<div class="box beige" role="note">' + e.warns.map(function (w) { return '<div>' + esc(w) + '</div>'; }).join('') + '</div>' : '';
-    return '<div class="mg-wrap mg-ed">' + crumbs + head + kept + fileNote + conflict + errs + warns +
+    return '<div class="mg-wrap mg-ed">' + linkList() + crumbs + head + kept + fileNote + conflict + errs + warns +
       basicsHTML(e) + ingHTML(e) + methodHTML(e) + allergenHTML(e) + drawingHTML(e) + menuHTML(e) + boxesHTML(e) + histHTML(e) + moreHTML(e) +
       '<div class="mg-bar"><span class="mg-state" role="status">' + esc(stateText()) + '</span>' + (e.msg ? '<span class="p-err" role="alert">' + esc(e.msg) + '</span>' : '') +
       '<div class="btn-row"><button type="button" class="btn dark" data-mg="save"' + (e.saving ? ' disabled' : '') + '>' + (e.saving ? 'Saving...' : 'Save') + '</button>' +
@@ -825,6 +843,13 @@
     if (ev.type === 'change' && /^(kind|art|menu\.sec|hand\.|ing\.\d+\.link|pin\.\d+\.link|pin\.\d+\.(x|y)|done)/.test(f)) draw();
   }
   document.addEventListener('input', onField);
+  // the recipe link boxes: a pick from the list (or a whole name typed) links it; anything else goes back when the box is left
+  document.addEventListener('change', function (ev) {
+    var el = ev.target; if (!M.root || !M.root.contains(el) || !el.getAttribute('data-fl')) return;
+    if (!linkPicked(el)) { el.value = linkLabel(el.getAttribute('data-id')); toast('Pick a recipe from the list, or leave it empty for no link.'); return; }
+    if (M.ed) dirtyNote();
+    setTimeout(draw, 0);   // the change comes as the box loses focus: redraw after that, not in the middle of it
+  });
   document.addEventListener('change', function (ev) { if (ev.target.tagName === 'SELECT' || ev.target.type === 'checkbox' || /^pin\.\d+\.(x|y)$/.test(ev.target.getAttribute('data-f') || '')) onField(ev); });
   // ingredients and labels: Enter in the last box adds the next row
   document.addEventListener('keydown', function (ev) {
@@ -870,7 +895,14 @@
     dirty: function () { return dirty() || !!(window.LK_DRAW && window.LK_DRAW.dirty()); },
     patchRecipe: patchRecipe,
     hasDraft: function () { return Object.keys(LS || {}).some(function (k) { return k.indexOf('lk.mg.draft.') === 0 || k.indexOf('lk.dw.draft.') === 0; }); },
-    // new recipe changes came in from another device: the list shows them; an open form keeps what is typed
-    changed: function () { if (M.root && !M.ed && !(window.LK_DRAW && window.LK_DRAW.open())) draw(); }
+    // new recipe changes came in from another device: the list shows them; an open form keeps what is typed. A form
+    // nobody has typed in yet opens again from the new copy (the book often arrives just after the form opened)
+    changed: function () {
+      if (!M.root || (window.LK_DRAW && window.LK_DRAW.open())) return;
+      var e = M.ed;
+      if (!e) { draw(); return; }
+      if (!e.d || e.isNew || e.kept || snapOf(e) !== e.snap || stampOf(e.id) === e.stamp) return;
+      var key = e.sub; openEditor(['r', e.id]); if (M.ed) M.ed.sub = key; draw();
+    }
   };
 })();

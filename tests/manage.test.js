@@ -9,8 +9,9 @@ const P = (id, name, role) => ({ id, name, role, add: true, tick: true, del: rol
 const cfg = () => ({ [fsKey(['config', 'main'])]: { people: [P('sam', 'Sam', 'sous'), P('ann', 'Ann', 'head'), P('bo', 'Bo', 'staff')], headId: 'ann', sousIds: ['sam', 'ann'], pingIds: ['sam', 'ann'], showBadges: true } });
 const wait = (p, fn, arg, t) => L.waitFor(p, fn, arg, t || 6000).catch(() => false);
 const store = p => p.evaluate(() => window.__fake.dump());
-const toast = p => wait(p, () => { const t = document.querySelector('.mg-toasts .p-toast'); return t ? t.textContent : ''; });
-const toastText = p => txt(p, '.mg-toasts .p-toast');
+// a toast not read yet: the last one can still be on screen for 4 s, and on a fast computer the next check would read it
+const toast = p => wait(p, () => { const t = document.querySelector('.mg-toasts .p-toast'); return t && !t.dataset.read ? t.textContent : ''; }, null, 10000);
+const toastText = p => p.evaluate(() => { const t = document.querySelector('.mg-toasts .p-toast'); if (!t) return null; t.dataset.read = '1'; return t.textContent; });
 const editor = p => wait(p, () => !!document.getElementById('mg-name'));
 const mgFetched = p => p.urls.some(u => /js\/manage\.js/.test(u));
 async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash); await L.settle(p, 300); }
@@ -172,7 +173,8 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   await p.click('[data-mg="hist"]');
   await wait(p, () => document.querySelectorAll('.mg-hist li').length >= 1);
   ok(await p.evaluate(() => document.querySelectorAll('.mg-hist li').length) === 1 && /Version 2/.test(await txt(p, '.mg-hist') || ''), 'earlier versions: version 2 is listed');
-  await p.click('.mg-hist li:first-child [data-mg="hist-use"]'); await L.settle(p, 200);
+  // its own toast ("Version 2 is in the form") can come late on a busy computer: read it here, not after the save
+  await p.click('.mg-hist li:first-child [data-mg="hist-use"]'); await toast(p); await toastText(p);
   ok(await p.inputValue('#mg-name') === 'Chicken Burger Other', 'earlier versions: version 2 is in the form');
   await p.click('[data-mg="save"]'); await toast(p);
   ok(/Version 4/.test(await toastText(p) || ''), 'earlier versions: saved again as version 4');
