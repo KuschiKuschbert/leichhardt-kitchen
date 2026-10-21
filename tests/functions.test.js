@@ -285,6 +285,7 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   let f2 = s[fsKey(['functions', 'smith'])];
   ok(f2.v === 2 && f2.kcBy === 'finn' && f2.by === 'finn' && f2.cBy === 'fay' && f2.confBy === 'fay' && /Kitchen comment changed/.test(f2.chg[0].what) && f2.chg[0].by === 'finn', 'comment: Finn\'s change is his, Fay stays the one who made and confirmed it');
   ok(!!s[fsKey(['functions', 'smith', 'hist', '1'])], 'history: version 1 is kept');
+  ok(p.errors.length === 0, 'duplicate: no page errors ' + p.errors.join(' | '));
   await p.context().close();
   p = await L.open(b, '#/functions/smith', { who: 'fay', extra: extra({ smith }), wait: 1500 });
   await L.waitFor(p, () => !!document.querySelector('[data-ff="guests"]'));
@@ -312,12 +313,14 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   ok(await p.$eval('[data-ff="name"]', e => e.value) === 'Smith 50th (copy)' && await p.$eval('[data-ff="date"]', e => e.value) === '', 'duplicate: a new draft with the date left for you to pick');
   await setV(p, '[data-ff="date"]', day2);
   await tap(p, '[data-fe="save"]');
-  await L.waitFor(p, () => /Draft saved|Draft: the kitchen/.test((document.getElementById('fe-root') || {}).textContent || ''));
+  // the save itself: "Version 1" shows once it is saved (the draft tag is on the form before the save)
+  await L.waitFor(p, () => /Version 1\./.test((document.getElementById('fe-root') || {}).textContent || ''), null, 15000);
   s = await store(p);
   const copies = Object.keys(s).filter(k => /\/functions\/[^/]+$/.test(k) && !/\/smith$/.test(k)).map(k => s[k]);
   ok(copies.length === 1 && copies[0].status === 'draft' && copies[0].date === day2 && copies[0].rounds[0].at === at(day2, '18:30') && copies[0].kq === 0, 'duplicate: saved as a draft on the new date, times kept, never in the kitchen\'s list');
-  await p.goto(L.BASE + '#/functions/smith'); await L.settle(p, 1200);
-  await L.waitFor(p, () => !!document.querySelector('[data-fe="cancel"]'));
+  await p.context().close();
+  p = await L.open(b, '#/functions/smith', { who: 'fay', extra: extra({ smith }), wait: 1500 });
+  await L.waitFor(p, () => !!document.querySelector('[data-fe="cancel"]'), null, 15000);
   await tap(p, '[data-fe="cancel"]'); await L.settle(p, 100);
   ok(/Tap again to cancel/.test(await txt(p, '[data-fe="cancel"]') || ''), 'cancel: asks for a second tap');
   await tap(p, '[data-fe="cancel"]');
