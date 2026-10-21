@@ -87,6 +87,8 @@ async function start() {
    o.admin            the head chef's Google account is signed in
    o.settings         saved recipe book settings, for example { view: 'tiles' }
    o.extra            more seed documents (see seed)
+   o.base             the book's address for this page (BASE by default)
+   o.sw               let the service worker run (it is blocked otherwise, so each page loads the files fresh)
    o.touch            a touch screen
    o.ua               the browser's user agent string (Windows, Mac, Firefox and so on)
    o.clock            the phone's clock when the page opens (NOW by default)
@@ -98,11 +100,11 @@ async function start() {
    o.failReads        a regex source: getDoc and getDocs fail for the paths that match (say one past day of wastage) */
 async function open(browser, hash, o) {
   o = o || {};
-  const w = o.width || 390, h = o.height || 844;
-  const ctx = await browser.newContext(Object.assign({ viewport: { width: w, height: h }, serviceWorkers: 'block', hasTouch: !!o.touch, deviceScaleFactor: 1, timezoneId: o.tz || 'Australia/Brisbane' }, o.ua ? { userAgent: o.ua } : {}));
+  const w = o.width || 390, h = o.height || 844, base = o.base || BASE;
+  const ctx = await browser.newContext(Object.assign({ viewport: { width: w, height: h }, serviceWorkers: o.sw ? 'allow' : 'block', hasTouch: !!o.touch, deviceScaleFactor: 1, timezoneId: o.tz || 'Australia/Brisbane' }, o.ua ? { userAgent: o.ua } : {}));
   await ctx.clock.install({ time: o.clock || NOW });
   const opened = Date.now();
-  await ctx.route(u => u.href === BASE + 'index.html', async r => {
+  await ctx.route(u => u.href === base + 'index.html', async r => {
     if (r.request().method() !== 'HEAD') return r.continue();
     const res = await r.fetch(), hd = Object.assign({}, res.headers());
     delete hd.date;
@@ -143,7 +145,7 @@ async function open(browser, hash, o) {
   page.errors = [];
   page.on('pageerror', e => page.errors.push(String(e)));
   page.on('console', m => { if (m.type() === 'error') page.errors.push('console: ' + m.text()); });
-  await page.goto(BASE + (hash || ''), { waitUntil: 'load' });
+  await page.goto(base + (hash || ''), { waitUntil: 'load' });
   await page.waitForTimeout(o.wait || 600);
   return page;
 }
