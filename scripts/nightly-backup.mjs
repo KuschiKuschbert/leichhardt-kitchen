@@ -5,7 +5,8 @@
   same shape: config (people), prep lines, order lines, wastage and reviews for the last BACKUP_DAYS days (45), every
   shift ping with who has seen it, every meeting minutes with earlier versions and sign-offs, what the prep and order
   lists have learned, the learning log, tallies, sections, empty searches, card opens, the guides' words and small
-  pictures, and who has set a PIN. People's PIN fingerprints and the guides' page pictures are left out, like the button.
+  pictures, the recipes the head chef changed or added in the book with their earlier versions, and who has set a PIN.
+  People's PIN fingerprints and the guides' page pictures are left out, like the button.
   The workflow then encrypts the file with the BACKUP_KEY secret and keeps it as a GitHub artifact for 90 days.
 
   Needs FIREBASE_SA (a service account key, JSON) and KITCHEN_PIN. Nothing secret is printed: the log says how many
@@ -57,6 +58,9 @@ out.config = cfg.exists ? plain(cfg.data()) : null;
 for (const name of ['activity', 'sections', 'learned', 'ordlearned', 'learnlog', 'misses', 'views', 'guides', 'mail', 'mailstat', 'drinks', 'shifts']) { out[name] = await all(name); reads += out[name].length; }
 out.notes = await all('notes'); out.notesSeen = await subs(out.notes, 'notes', 'seen');
 out.minutes = await all('minutes'); out.minutesHist = await subs(out.minutes, 'minutes', 'hist'); out.minutesSigns = await subs(out.minutes, 'minutes', 'signs');
+// the head chef's book: the index and every recipe changed or added in the book, with its earlier versions
+out.book = await all('book'); out.recipes = await all('recipes'); out.recipesHist = await subs(out.recipes, 'recipes', 'hist');
+reads += out.book.length + out.recipes.length;
 out.pins = (await all('pinset')).map(x => ({ id: x.id, name: x.name, setAt: x.setAt }));
 reads += out.notes.length + out.minutes.length + out.pins.length;
 let lines = 0, dayN = 0;
@@ -73,5 +77,5 @@ for (let k = 0; k < DAYS; k++) {
   if (review.exists) out.wasteReviews[d] = plain(review.data());
 }
 writeFileSync(OUT, JSON.stringify(out, null, 1));
-console.log('Backed up ' + lines + ' prep lines from ' + dayN + ' of the last ' + DAYS + ' days, ' + out.notes.length + ' shift pings, minutes from ' + out.minutes.length + ' meetings, ' + out.learned.length + ' learned items and ' + out.guides.length + ' guides (' + reads + ' reads).');
+console.log('Backed up ' + lines + ' prep lines from ' + dayN + ' of the last ' + DAYS + ' days, ' + out.notes.length + ' shift pings, minutes from ' + out.minutes.length + ' meetings, ' + out.learned.length + ' learned items, ' + out.guides.length + ' guides and ' + out.recipes.length + ' recipes changed in the book (' + reads + ' reads).');
 process.exit(0);

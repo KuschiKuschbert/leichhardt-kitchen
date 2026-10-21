@@ -27,6 +27,17 @@ if (SHOTS) fs.mkdirSync(SHOTS, { recursive: true });
     }
     L.check(!p.errors.length, w + ' admin no page errors ' + p.errors.join(' | '), R);
     await p.context().close();
+    // Manage Recipes & Drawings, as the head chef (Ann here, by PIN)
+    const K = 'kitchens/' + L.PIN + '/config/main', P = (id, name, role) => ({ id, name, role, add: true, tick: true, del: role !== 'staff', active: true });
+    const head = { [K]: { people: [P('sam', 'Sam', 'sous'), P('ann', 'Ann', 'head'), P('bo', 'Bo', 'staff')], headId: 'ann', sousIds: ['sam', 'ann'], pingIds: ['sam', 'ann'], showBadges: true } };
+    for (const hash of ['#/manage', '#/manage/r/burger', '#/manage/r/aioli', '#/manage/new']) {
+      const pm = await L.open(b, hash, { width: w, height: h, touch, who: 'ann', wait: 1400, extra: head });
+      await L.waitFor(pm, () => !!document.querySelector('#mg-q, #mg-name'), null, 6000).catch(() => {});
+      const of = await L.overflow(pm);
+      L.check(!of && !pm.errors.length && !!(await pm.$('#mg-q, #mg-name')), w + ' ' + hash + (of ? ' sideways scroll: ' + of : '') + (pm.errors.length ? ' errors: ' + pm.errors.join(' | ') : ''), R);
+      if (SHOTS) await pm.screenshot({ path: path.join(SHOTS, w + '-' + hash.replace(/[#/]/g, '-').replace(/^-+/, '') + '.png'), fullPage: true });
+      await pm.context().close();
+    }
   }));
   R.push(...out[390], ...out[768], ...out[1280]);
   await b.close();

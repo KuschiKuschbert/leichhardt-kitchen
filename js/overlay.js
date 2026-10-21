@@ -3,7 +3,7 @@
   ==========================================================================================
   The head chef can change and add recipes in the book itself (#/manage). Those changes live in Firestore:
     book/index        { r: { recipeId: version }, menu: [...] }  one small record that says what changed
-    recipes/<id>      { r: the recipe, shaped like js/data.js, v, upd, by, src, base, removed }
+    recipes/<id>      { r: the recipe, shaped like js/data.js, v, upd, by, src, base, removed, off }
   js/prep.js reads them (rxSync, one read of book/index, then only the recipes that changed) and hands them to
   LK_RX.take, which keeps a copy on this phone (localStorage lk.rx, tied to the kitchen PIN).
 
@@ -126,7 +126,8 @@
     var fresh = JSON.parse(BASE_JSON).recipes;
     fresh.forEach(function (r) {
       var o = over[r.id];
-      if (!o) { list.push(r); return; }
+      // off: the head chef went back to the js/data.js copy of this recipe
+      if (!o || o.off) { list.push(r); return; }
       if (o.removed) return;
       var t = tidy(o.r, r.id);
       if (t) list.push(t); else { list.push(r); dropped.push(r.id); }
@@ -169,6 +170,7 @@
   }
 
   /* ---------- the changes js/prep.js read from Firestore ---------- */
+  function keepRec(d) { return { r: d.r, v: d.v, removed: !!d.removed, off: !!d.off, src: d.src || '', base: d.base || '', upd: d.upd || 0, by: d.by || '' }; }
   // idx: book/index; got: [[id, record or null], ...] for the recipes whose version changed. Returns true when the book changed.
   function take(pin, idx, got) {
     if (cache.pin !== pin) cache = emptyCache(pin);
@@ -176,7 +178,7 @@
     var ir = idx && idx.r && typeof idx.r === 'object' ? idx.r : {};
     (got || []).forEach(function (g) {
       var id = g[0], d = g[1];
-      if (d && d.r) cache.recipes[id] = { r: d.r, v: d.v, removed: !!d.removed, src: d.src || '', base: d.base || '', upd: d.upd || 0 };
+      if (d && d.r) cache.recipes[id] = keepRec(d);
     });
     // a recipe the index no longer lists is not a change any more
     Object.keys(cache.recipes).forEach(function (id) { if (!(id in ir)) delete cache.recipes[id]; });
@@ -196,7 +198,7 @@
   // a save on the head chef's own phone: the change shows at once, without waiting for the next read
   function put(pin, id, rec, idx) {
     if (cache.pin !== pin) cache = emptyCache(pin);
-    cache.recipes[id] = { r: rec.r, v: rec.v, removed: !!rec.removed, src: rec.src || '', base: rec.base || '', upd: rec.upd || 0 };
+    cache.recipes[id] = keepRec(rec);
     if (idx) cache.idx = { r: Object.assign({}, cache.idx.r, idx.r || {}), menu: idx.menu !== undefined ? tidyMenu(idx.menu) : cache.idx.menu };
     else cache.idx.r[id] = rec.v;
     keep();
@@ -218,7 +220,7 @@
     // the recipe as js/data.js has it (a copy), or null for a recipe made in the book
     pristine: function (id) { var r = baseData().byId[id]; return r ? clone(r) : null; },
     baseMenu: function () { return clone(baseData().menu); },
-    // the change kept on this phone for a recipe ({ r, v, removed, src, base }), or null
+    // the change kept on this phone for a recipe ({ r, v, removed, off, src, base, upd, by }), or null
     change: function (id) { var o = cache.recipes[id]; return o ? clone(o) : null; },
     changes: function () { return clone(cache.recipes); },
     menu: function () { return cache.idx.menu ? clone(cache.idx.menu) : null; },

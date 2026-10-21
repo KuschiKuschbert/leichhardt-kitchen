@@ -161,6 +161,7 @@
         headFix(S.config);
         S.configState = 'ok'; featSync(); refreshDraft(); watchItems(); watchSections(); watchLearned(); if (S.name === 'orders') watchOrders(); if (S.name === 'waste') watchWaste(); resume(); if (S.authed) ksCheck(); loadAdmins(); loadNotes(); loadMinutes(); draw();
         if (whoHead() !== headSeen) whoSync();   // the Head chef role was given or taken while this person is signed in
+        try { window.dispatchEvent(new Event('lk-cfg')); } catch (e) {}   // js/app.js: who may manage the recipes (bookEdit)
       }, function (err) {
         S.configState = err && err.code === 'permission-denied' ? 'badpin' : 'error';
         if (S.configState === 'badpin') { S.pinError = 'That PIN is not right.'; S.pin = ''; lsSet('lk.prep.pin', ''); cfgKey = ''; unsubCfg = null; gForget(); }
@@ -561,7 +562,7 @@
      head chef and sous chefs Shift pings, the Minutes register and Manage staff. The head chef on their admin device gets
      the matching admin tab instead. */
   // Meeting minutes shows for staff only once there is something published to read (chefs always, for the register)
-  function chefMenu() { return { minutes: featOn('minutes') && (isSous() || mnPub().length > 0), chef: isSous(), sec: ksPicks(me()) ? (mySec() || 'Pick one for today') : '' }; }
+  function chefMenu() { return { minutes: featOn('minutes') && (isSous() || mnPub().length > 0), chef: isSous(), sec: ksPicks(me()) ? (mySec() || 'Pick one for today') : '', book: bookEdit() }; }
   function chefOpen(k) {
     if (!isSous()) return;
     if (admDev() && whoHead()) { S.atab = k === 'pings' ? 'notes' : k === 'register' ? 'minutes' : 'people'; lsSet('lk.prep.atab', S.atab); if (location.hash === '#/admin') draw(); else location.hash = '#/admin'; return; }
@@ -578,6 +579,30 @@
     if (!force && window.LK_PREP.unsaved()) return false;
     S.picking = shared(); S.pending = null; leave(); toast('Signed out. Hand the phone over.');
     return true;
+  }
+  /* Manage Recipes & Drawings (#/manage, 21 Oct 2026): the head chef only. With their own PIN as Head chef on any device,
+     or on the head chef's Google device while nobody else is signed in with a PIN. The rules check the same on the
+     server (bookBy() in firestore.rules), so this only decides what the page shows. */
+  function bookEdit() { return !!S.pin && (whoHead() || (admDev() && !(S.authed && who()))); }
+  // 'yes', 'no', or 'wait' while the kitchen settings (who is Head chef) are still being read
+  function bookState() {
+    if (bookEdit()) return 'yes';
+    if (S.pin && (S.configState === 'idle' || S.configState === 'loading' || (S.configState === 'ok' && !resumed && !!S.who))) return 'wait';
+    return S.pin ? 'no' : 'nopin';
+  }
+  /* What js/manage.js needs to read and write the head chef's book: the same write path (W, with the PIN proof) and
+     helpers as the prep pages, so the rules and the "Not sent" handling are the same. */
+  function bookApi() {
+    return {
+      ready: function () { return sdk().then(function () { return fb; }); },
+      W: W, docRef: docRef, colRef: colRef,
+      fs: function () { return fb.fs; }, db: function () { return fb.db; },
+      now: now, dayShort: function (t) { return dayShort(T.day(t)); }, clock: function (t) { return T.clock(t); },
+      say: liveSay, trapTab: trapTab, ovPush: ovPush, ovDone: ovDone,
+      pin: function () { return S.pin; }, who: function () { var p = S.authed ? who() : null; return p ? p.id : ''; },
+      nameOf: function (id) { var p = (S.config && S.config.people || []).filter(function (x) { return x.id === id; })[0]; return p ? p.name : ''; },
+      edit: bookEdit, changed: rxChanged
+    };
   }
   /* The top bar shows a small chef mark while a person is signed in on this phone (js/app.js draws it from whoName()). */
   function whoName() { var p = S.authed ? who() : null; return p ? p.name : ''; }
@@ -1054,7 +1079,7 @@
   function exportAll() {
     if (!fb || S.exporting) return;
     S.exporting = 'Reading the data...'; draw();
-    var f = fb.fs, out = { exportedAt: new Date(now()).toISOString(), config: null, days: {}, orders: {}, waste: {}, wasteReviews: {}, activity: [], sections: [], learned: [], ordlearned: [], learnlog: [], misses: [], notes: [], notesSeen: {}, minutes: [], minutesHist: {}, minutesSigns: {}, pins: [] };
+    var f = fb.fs, out = { exportedAt: new Date(now()).toISOString(), config: null, days: {}, orders: {}, waste: {}, wasteReviews: {}, activity: [], sections: [], learned: [], ordlearned: [], learnlog: [], misses: [], notes: [], notesSeen: {}, minutes: [], minutesHist: {}, minutesSigns: {}, pins: [], book: [], recipes: [], recipesHist: {} };
     function grab(sn) { return sn.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }); }
     function all(name) { return f.getDocs(colRef(name)).then(grab); }
     /* the records under each note (who has seen it) and each minutes (earlier versions, sign-offs): one small query each, kept by the note's or the minutes' id */
@@ -1077,6 +1102,7 @@
       .then(function () { return all('mail'); }).then(function (r) { out.mail = r; return all('mailstat'); }).then(function (r) { out.mailstat = r; })
       .then(function () { return all('drinks'); }).then(function (r) { out.drinks = r; })
       .then(function () { return all('shifts'); }).then(function (r) { out.shifts = r; })
+      .then(function () { return all('book'); }).then(function (r) { out.book = r; return all('recipes'); }).then(function (r) { out.recipes = r; return subs(r, 'recipes', 'hist', out.recipesHist); })
       .then(function () { S.exporting = 'Reading shift pings and minutes...'; draw(); return all('notes'); }).then(function (r) { out.notes = r; return subs(r, 'notes', 'seen', out.notesSeen); })
       .then(function () { return all('minutes'); }).then(function (r) { out.minutes = r; return Promise.all([subs(r, 'minutes', 'hist', out.minutesHist), subs(r, 'minutes', 'signs', out.minutesSigns)]); })
       .then(function () { return all('pinset'); }).then(function (r) { out.pins = r.map(function (x) { return { id: x.id, name: x.name, setAt: x.setAt }; }); })
@@ -1141,6 +1167,7 @@
       .then(function () { return copySub('minutes', 'signs', true); }).then(function () { return copySub('notes', 'seen', true); })
       .then(function () { return copyCol('guides'); }).then(function () { return copySub('guides', 'pages'); })
       .then(function () { return copyCol('mail'); }).then(function () { return copyCol('mailstat'); }).then(function () { return copyCol('drinks'); }).then(function () { return copyCol('shifts'); })
+      .then(function () { return copyCol('book'); }).then(function () { return copyCol('recipes'); }).then(function () { return copySub('recipes', 'hist'); })
       .then(function () {
         var i = 0;
         function next() {
@@ -5728,7 +5755,7 @@
     },
     warm: function () { if (S.pin && S.configState !== 'ok' && S.configState !== 'loading') connect(); notesInit(); },
     unsaved: function () {
-      return pending > 0 || !!mlf.text.trim() || mfDirty() || nfDirty() || gfDirty() || draftDirty() || !!String(S.bulk || '').trim() || !!S.sheet || !!S.recipeOpen ||
+      return pending > 0 || !!(window.LK_MG && window.LK_MG.dirty()) || !!mlf.text.trim() || mfDirty() || nfDirty() || gfDirty() || draftDirty() || !!String(S.bulk || '').trim() || !!S.sheet || !!S.recipeOpen ||
         !!(S.text.trim() || S.qty.trim() || S.otext.trim() || S.oqty.trim() || S.wf.text.trim() || String(S.wf.amt).trim() || S.wf.act.trim() || (S.wrA != null && S.wrA !== ((S.wReview || {}).avoidable || '')) || (S.wrC != null && S.wrC !== ((S.wReview || {}).change || '')) || S.mpin);
     },
     noteInfo: noteInfo,
@@ -5749,6 +5776,9 @@
       window.scrollTo(0, 0);
     },
     headPin: whoHead,
+    bookEdit: bookEdit,
+    bookState: bookState,
+    book: bookApi,
     chefMenu: chefMenu,
     chefOpen: chefOpen,
     secOpen: function () { ksOpen(true); },
