@@ -2648,7 +2648,8 @@
   function adminScroll(redraw) {
     var nav = S.name === 'admin' && S.root && S.root.querySelector('.a-nav');
     var y = window.scrollY, dy = y - navY;
-    if (redraw || Math.abs(dy) > 6) navY = y;
+    // a redraw starts the count again, unless a scroll is still waiting for its frame: that scroll is real and counts
+    if (redraw ? !navTick : Math.abs(dy) > 6) navY = y;
     if (!nav) return;
     var mark = S.root.querySelector('.a-navtop'), stuck = !!mark && mark.getBoundingClientRect().top < (parseFloat(getComputedStyle(nav).top) || 0) - 2;
     var hide = navHide(nav);
