@@ -26,6 +26,9 @@ const at = (day, h, m) => { const p = day.split('-'); return new Date(+p[0], +p[
   // and one written in the afternoon: it really did roll over
   extra[fsKey(['days', yday, 'items', 'day2'])] = item('Peel garlic', at(yday, 15, 0));
   extra[fsKey(['days', today, 'items', rid('day2')])] = item('Peel garlic', at(today, 6, 0), { addedBy: 'Rolled over', addedById: '', rolled: 1, root: 'day2', from: 'day2', rolledFrom: yday, origBy: 'Ann' });
+  // written three days ago and still open: rolled x3, labelled with the day it was first written
+  const ago3 = L.ymd(new Date(L.NOW - 3 * 86400000));
+  extra[fsKey(['days', today, 'items', rid('old3')])] = item('Cure salmon', at(today, 6, 0), { addedBy: 'Rolled over', addedById: '', rolled: 3, root: 'old3', from: 'old3', rolledFrom: yday, origBy: 'Ann', origAt: at(ago3, 10, 0) });
   extra[fsKey(['orders', yday, 'lines', 'ol'])] = { text: 'Flour', qty: '', recipes: [], addedBy: 'Ann', addedById: 'ann', addedAt: at(yday, 22, 15), ordered: false, deleted: false };
 
   p = await L.open(b, '#/prep', { who: 'ann', wait: 2500, extra });
@@ -45,6 +48,11 @@ const at = (day, h, m) => { const p = day.split('-'); return new Date(+p[0], +p[
   ok(!kept.ahead, 'repair: a line written in the afternoon stays rolled');
   ok(!/Rolled|last night/.test(await row(p, rid('old2'))), 'repair: the repaired line looks like a normal line');
   ok(/Rolled/.test(await row(p, rid('day2'))), 'repair: the afternoon line still shows Rolled');
+  ok(/from Ann, yesterday/.test(tDay), 'rolled once: says who wrote it and that it was yesterday (' + tDay.trim().slice(0, 80) + ')');
+  const wd3 = new Date(at(ago3, 10, 0)).toLocaleDateString('en-AU', { weekday: 'short' }), t3 = await row(p, rid('old3'));
+  ok(/Rolled x3/.test(t3) && t3.includes('from Ann, ' + wd3), 'rolled x3: says the weekday it was first written (' + t3.trim().slice(0, 80) + ')');
+  const start = await p.evaluate(() => [...document.querySelectorAll('.nb-start')].map(e => e.textContent).join(' '));
+  ok(/Rolled over x3/.test(start) && !/Rolled over x2/.test(start), 'Start here: counts rolls like the line does (written ahead is not a roll)');
   ok(late.origAt === at(yday, 21, 30), 'new copies carry the time the original was written');
   ok(p.errors.length === 0, 'prep: no page errors ' + p.errors.join(' | '));
   await p.context().close();

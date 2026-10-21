@@ -107,9 +107,9 @@ These hold for every file, old and new. When you touch code that breaks one, bri
 - No reads in a loop. Read many records in one query (`in` with up to 30 ids, a date range, or `collectionGroup`), never one `getDoc` per item or one `getDocs` per day. An empty collection still costs a read.
 - A listener (`onSnapshot`) is only for today's live data that other phones change during service (today's prep, orders and wastage lines, `config/main`, the function list). Anything that changes overnight or rarely is read once a day and kept with `dayCache()`.
 - A once-a-day job keeps its "done today" flag on the phone (`lk.*`), not only in memory, so the 04:00 refresh and updates do not run it again.
-- Admin reports keep past days on the phone for the day and read only today fresh. Refresh is a tap, never a timer.
+- Admin reports keep past days on the phone for the day and read only today fresh (`pastRead()` in `js/prep.js`). Refresh is a tap, never a timer.
 - Totals that every phone needs from many past days (what is usual, what is wasted often) are worked out by the nightly job into one small record that phones read once a day.
-- `tests/read-budget.test.js` (coming with item 1 of "Bringing the code in line") sets a read budget for each page open, a reload and the admin panel. A change that goes over it either reads less or raises the budget in the same pull request with the reason.
+- `tests/read-budget.test.js` sets a read budget for a staff phone's first open of the day, a reload, the admin panel and the admin panel again the same day (the stand-in in `tests/fake/` bills reads like Firestore: `__fake.bill`). A change that goes over it either reads less or raises the budget in the same pull request with the reason.
 
 **Saved copies on the phone**
 - Every saved copy (`lk.*`, IndexedDB) says in a comment what makes it out of date.
@@ -126,7 +126,7 @@ These hold for every file, old and new. When you touch code that breaks one, bri
 - A value from Firestore placed in a `style`, an SVG attribute or a URL is checked by type first: a number in range, a colour (`#rgb`, `#rrggbb` or a named colour), or one of a fixed list. Never put it in as it came.
 - SVG from Firestore or IndexedDB goes through `LK_RX.clean()` every time it is drawn, including copies kept on the phone.
 - Links are fixed `#/` routes or use `encodeURIComponent`. No `eval`, `new Function` or string timers.
-- `tests/safe-text.test.js` (coming with item 3) types a booby-trapped line into every field that others see. A new field that others see gets a line there.
+- `tests/safe-text.test.js` (coming with item 2 of "Bringing the code in line") types a booby-trapped line into every field that others see. A new field that others see gets a line there.
 
 **Forms**
 - Fill in what the book already knows (section, unit, reason, the usual amount), and keep it easy to change: the filled box is selected on tap, so typing replaces it.
