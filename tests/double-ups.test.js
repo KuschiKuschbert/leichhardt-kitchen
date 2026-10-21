@@ -76,7 +76,7 @@ const serverReads = page => page.evaluate(() => window.__fake.reads.filter(r => 
   const lines = (st, re) => Object.keys(st).filter(k => k.indexOf('/days/' + today + '/items/') > 0 && re.test(st[k].text));
   await add('Grill', 'pick coriander', '1 bunch');
   s = await store(p);
-  ok(/Pick coriander is already on the list under Larder, 1 bunch/.test(await toast(p)), 'write: says it is already on the list (' + await toast(p) + ')');
+  ok(/On the list: Pick coriander, 1 bunch/.test(await toast(p)), 'write: says it is already on the list (' + await toast(p) + ')');
   ok(lines(s, /coriander/i).length === 1, 'write: no second line');
   ok(s[ik('i2')].qty === '1 bunch' && JSON.stringify(s[ik('i2')].also) === '["Grill"]', 'write: the open line takes the amount and the section');
   await p.click('.p-toast-btn');
@@ -88,7 +88,7 @@ const serverReads = page => page.evaluate(() => window.__fake.reads.filter(r => 
 
   await add('Larder', 'Slice onion', '');
   s = await store(p);
-  ok(/Slice onions is already on the list under Larder, 2 tubs/.test(await toast(p)) && lines(s, /onion/i).length === 1, 'write: singular and plural are the same item');
+  ok(/On the list: Slice onions, 2 tubs/.test(await toast(p)) && lines(s, /onion/i).length === 1, 'write: singular and plural are the same item');
 
   await add('Sauce', 'Laksa', '2 batches');
   s = await store(p);

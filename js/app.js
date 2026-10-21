@@ -369,7 +369,7 @@
       whoMenuClose();
       // the prep pages show their own toast; on the recipes and guides one is shown here for a moment
       if (!document.getElementById('prep-root')) {
-        var t = document.createElement('div'); t.className = 'p-toast'; t.setAttribute('role', 'status'); t.textContent = 'Signed out. Hand the phone over.';
+        var t = document.createElement('div'); t.className = 'p-toast p-toast-plain'; t.setAttribute('role', 'status'); t.textContent = 'Signed out. Hand the phone over.';
         document.body.appendChild(t); setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 3500);
       }
     }
