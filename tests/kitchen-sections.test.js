@@ -18,7 +18,7 @@ const lineOf = (s, text) => { const k = Object.keys(s).filter(k => k.indexOf('/d
 const addLine = async (p, text, sec) => {
   await p.fill('[data-k="p-text"]', text);
   if (sec !== undefined) { await p.fill('[data-k="p-section"]', sec); }
-  await p.press('[data-k="p-text"]', 'Enter'); await p.waitForTimeout(500);
+  await p.press('[data-k="p-text"]', 'Enter'); await L.settle(p, 500);
 };
 
 (async () => {
@@ -33,7 +33,7 @@ const addLine = async (p, text, sec) => {
   ok(!(await L.overflow(p)), 'staff: the picker fits a phone');
   ok(await p.$eval('.ks', e => Math.abs(e.getBoundingClientRect().bottom - window.innerHeight) < 2), 'staff: the picker is a sheet at the bottom of the screen');
   ok(await p.$eval('.ks-b', e => e.getBoundingClientRect().height) >= 44, 'staff: the section buttons are big enough to tap');
-  await p.click('.ks-b[data-v="grill"]'); await p.waitForTimeout(500);
+  await p.click('.ks-b[data-v="grill"]'); await L.settle(p, 500);
   s = await store(p);
   const rec = s[fsKey(['shifts', today + '_ann'])];
   ok(!!rec && rec.sec === 'grill' && rec.name === 'Grill' && rec.by === 'ann' && rec.day === today && rec.auto === false, 'staff: the pick is saved under Ann\'s id for today');
@@ -50,9 +50,9 @@ const addLine = async (p, text, sec) => {
 
   // changing it later: the tag opens the picker with Close
   await p.fill('[data-k="p-section"]', '');
-  await tap(p, '.ks-tag'); await p.waitForTimeout(300);
+  await tap(p, '.ks-tag'); await L.settle(p, 300);
   ok(!!(await p.$('.ks-wrap [data-ks="close"]')) && await p.$eval('.ks-b[data-v="grill"]', e => e.getAttribute('aria-pressed')) === 'true', 'change: the picker opens with Grill marked');
-  await p.click('.ks-b[data-v="pass"]'); await p.waitForTimeout(500);
+  await p.click('.ks-b[data-v="pass"]'); await L.settle(p, 500);
   s = await store(p);
   ok(s[fsKey(['shifts', today + '_ann'])].sec === 'pass', 'change: Pass is saved for today');
   await addLine(p, 'Wipe the pass');
@@ -61,33 +61,33 @@ const addLine = async (p, text, sec) => {
   ok(p.errors.length === 0, 'staff: no page errors ' + p.errors.join(' | '));
 
   // the same day again: not asked twice
-  await p.reload(); await p.waitForTimeout(1500);
+  await p.reload(); await L.settle(p, 1500);
   ok(!(await p.$('.ks-wrap')), 'reload: not asked again today');
 
   // the chef hat menu has My section
   const items = await L.chefItems(p);
   ok(items.indexOf('section') >= 0, 'menu: My section is in the chef hat menu (' + items.join(',') + ')');
-  await p.click('.wtop-who'); await p.waitForTimeout(150);
+  await p.click('.wtop-who'); await L.settle(p, 150);
   ok(/Pass/.test(await txt(p, '.wm [data-who="sec"]') || ''), 'menu: it says Pass');
-  await p.click('.wm [data-who="sec"]'); await p.waitForTimeout(300);
+  await p.click('.wm [data-who="sec"]'); await L.settle(p, 300);
   ok(!!(await p.$('.ks-wrap')), 'menu: a tap opens the picker');
-  await p.keyboard.press('Escape'); await p.waitForTimeout(200);
+  await p.keyboard.press('Escape'); await L.settle(p, 200);
   ok(!(await p.$('.ks-wrap')), 'menu: Escape closes it');
 
   // wastage: the section box starts on the person's section
-  await p.evaluate(() => { location.hash = '#/waste'; }); await p.waitForTimeout(900);
+  await p.evaluate(() => { location.hash = '#/waste'; }); await L.settle(p, 900);
   ok(await p.$eval('[data-k="w-sec"]', e => e.value) === 'Pass', 'waste: the section box starts on Pass');
   await p.context().close();
 
   // a fresh PIN: the picker comes straight after it
   p = await L.open(b, '#/prep', { who: 'bo', noTok: true, extra: withSecs(), wait: 1200 });
   ok(!(await p.$('.ks-wrap')), 'PIN: not asked before the PIN');
-  await p.keyboard.type('3333'); await p.waitForTimeout(1200);
+  await p.keyboard.type('3333'); await L.settle(p, 1200);
   ok(!!(await p.$('.ks-wrap')), 'PIN: asked straight after the PIN');
-  await p.click('.ks-out'); await p.waitForTimeout(300);
+  await p.click('.ks-out'); await L.settle(p, 300);
   ok(!(await p.$('.ks-wrap')) && /Pick a section/.test(await txt(p, '.ks-tag') || ''), 'skip: closed, and the tag offers to pick one');
   ok(await p.$eval('[data-k="p-section"]', e => e.value) === '', 'skip: the section box stays empty');
-  await p.reload(); await p.waitForTimeout(1500);
+  await p.reload(); await L.settle(p, 1500);
   ok(!(await p.$('.ks-wrap')), 'skip: not asked again today');
   await p.context().close();
 
@@ -101,9 +101,9 @@ const addLine = async (p, text, sec) => {
   const yday = L.ymd(new Date(L.NOW - 86400000));
   p = await L.open(b, '#/prep', { who: 'bo', extra: withSecs({ [fsKey(['shifts', yday + '_bo'])]: { day: yday, sec: 'grill', name: 'Grill', auto: false, at: L.NOW - 86400000, by: 'bo' } }), wait: 300 });
   await p.evaluate(d => { localStorage.setItem('lk.sec.bo', JSON.stringify({ d, sec: 'grill', name: 'Grill' })); }, yday);
-  await p.reload(); await p.waitForTimeout(1500);
+  await p.reload(); await L.settle(p, 1500);
   ok(!!(await p.$('.ks-wrap')) && await p.$eval('.ks-b[data-v="grill"]', e => e.getAttribute('aria-pressed')) === 'false', 'next day: yesterday\'s Grill is gone and Bo is asked again');
-  await p.click('.ks-out'); await p.waitForTimeout(300);
+  await p.click('.ks-out'); await L.settle(p, 300);
   ok(await p.$eval('[data-k="p-section"]', e => e.value) === '', 'next day: no section until Bo picks one');
   await p.context().close();
 
@@ -126,16 +126,16 @@ const addLine = async (p, text, sec) => {
 
   // the head chef sets them up in the admin People tab
   p = await L.open(b, '#/admin', { admin: true, wait: 1800 });
-  await L.adminTab(p, 'people'); await p.waitForTimeout(300);
+  await L.adminTab(p, 'people'); await L.settle(p, 300);
   ok(/Kitchen sections/.test(await txt(p, '.a-ks') || ''), 'admin: the People tab has Kitchen sections');
-  await tap(p, '[data-p="ks-usual"]'); await p.waitForTimeout(200);
+  await tap(p, '[data-p="ks-usual"]'); await L.settle(p, 200);
   ok(await p.evaluate(() => document.querySelectorAll('.a-ks-row').length) === 7, 'admin: the usual seven are added');
   await p.fill('[data-k="a-ks6"]', 'Prep and butchery');
-  await tap(p, '[data-p="ks-add"]'); await p.waitForTimeout(200);
+  await tap(p, '[data-p="ks-add"]'); await L.settle(p, 200);
   await p.fill('[data-k="a-ks7"]', 'Breakfast');
-  await tap(p, '[data-p="ks-rm"][data-i="4"]'); await p.waitForTimeout(150);
+  await tap(p, '[data-p="ks-rm"][data-i="4"]'); await L.settle(p, 150);
   ok(!(await L.overflow(p)), 'admin: the section list fits a phone');
-  await tap(p, '[data-p="a-save"]'); await p.waitForTimeout(700);
+  await tap(p, '[data-p="a-save"]'); await L.settle(p, 700);
   s = await store(p);
   const ks = s[CFG].kitSecs || [];
   ok(ks.map(x => x.name).join(',') === 'Grill,Pass,Pans,Fryers,Hot larder,Salads and dessert,Prep and butchery,Breakfast', 'admin: saved in order, with the rename and the new one (' + ks.map(x => x.name).join(',') + ')');
@@ -152,7 +152,7 @@ const addLine = async (p, text, sec) => {
     [fsKey(['shifts', L.ymd(new Date(L.NOW - 86400000)) + '_ann'])]: { day: L.ymd(new Date(L.NOW - 86400000)), sec: 'pass', name: 'Pass', auto: false, at: L.NOW - 86400000, by: 'ann' }
   };
   p = await L.open(b, '#/admin', { admin: true, extra: withSecs(shifts), wait: 1800 });
-  await L.adminTab(p, 'people'); await p.waitForTimeout(600);
+  await L.adminTab(p, 'people'); await L.settle(p, 600);
   const board = await txt(p, '.a-ks-today') || '';
   ok(/Grill\s*Ann/.test(board) && /Sous chef\s*Sam/.test(board) && /Pass\s*Nobody yet/.test(board), 'admin: On today shows Ann on Grill and Sam as Sous chef (' + board + ')');
   const days = await txt(p, '[data-lvb="ks-days"]') || '';
