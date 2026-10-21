@@ -102,6 +102,8 @@ const tab = p => p.evaluate(() => Array.prototype.some.call(document.querySelect
   p = await L.open(b, '#/', { who: 'ann', extra: world({ guides: false, pings: true, minutes: true }), wait: 2500 });
   ok(!(await docket(p)), 'guides only: no Guides docket for staff');
   ok(await p.$('.nt') !== null, 'guides only: the pings popup opens for staff');
+  // the minutes are read from Firestore: wait for the card itself (under load the page goes still before the read)
+  await L.waitFor(p, () => !!document.querySelector('.wall-mn .mn-nudge'), null, 8000).catch(() => false);
   ok(await p.$('.wall-mn .mn-nudge') !== null, 'guides only: the minutes card shows for staff');
   await p.context().close();
 
@@ -125,13 +127,14 @@ const tab = p => p.evaluate(() => Array.prototype.some.call(document.querySelect
   await L.chef(p, 'staff');
   await L.settle(p, 300);
   await p.click('[data-p="a-add-person"]');
-  await L.settle(p, 150);
+  // the new row is drawn after the tap: wait for its name box, not a fixed time (under load it comes later)
+  await L.waitFor(p, () => !!document.querySelector('[data-k="a-n3"]'), null, 5000).catch(() => {});
   await p.fill('[data-k="a-n3"]', 'Cy');
   await p.click('[data-p="a-save"]');
   // the save reads the list first, then writes: wait for the write itself
   await L.waitFor(p, k => (window.__fake.dump()[k].people || []).length === 4, CFG, 5000).catch(() => {});
   s = await store(p);
-  ok(s[CFG].people.length === 4 && JSON.stringify(s[CFG].staffSee) === JSON.stringify(HIDE), 'sous: staff list saved, staffSee kept');
+  ok(s[CFG].people.length === 4 && JSON.stringify(s[CFG].staffSee) === JSON.stringify(HIDE), 'sous: staff list saved, staffSee kept (' + s[CFG].people.length + ' people, ' + JSON.stringify(s[CFG].staffSee) + ')');
   ok(p.errors.length === 0, 'sous: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
