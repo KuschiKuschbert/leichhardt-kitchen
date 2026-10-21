@@ -2022,8 +2022,7 @@
     ];
     var tbl = '<details class="a-details"><summary>Show the daily numbers as a table</summary><div class="a-scroll"><table class="a-table"><thead><tr><th scope="col">Day</th><th scope="col">Written</th><th scope="col">Ticked</th><th scope="col">Rolled over</th></tr></thead><tbody>' +
       agg.dates.slice().reverse().map(function (d) { return '<tr><th scope="row">' + esc(dayShort(d)) + '</th><td>' + agg.perDay[d].w + '</td><td>' + agg.perDay[d].t + '</td><td>' + agg.perDay[d].r + '</td></tr>'; }).join('') + '</tbody></table></div></details>';
-    var jump = '<nav class="a-jump" aria-label="Jump to">' + INS_SECS.map(function (x, i) { return '<button type="button" class="chip" data-p="jump" data-v="' + x[0] + '"><span class="a-sn">' + (i < 9 ? '0' : '') + (i + 1) + '</span>' + esc(x[1]) + '</button>'; }).join('') + '</nav>';
-    return head + jump +
+    return head +
       '<section class="a-sec">' + secHead(0) + '<div class="a-grid">' + smartHTML(agg, prev, n) + '</div><div class="a-tiles">' + tiles.filter(function (x) { return !(x[0] === 'n/a' || ((x[0] === 0 || x[0] === '0' || x[0] === dur(0)) && !x[2])); }).map(tileHTML).join('') + '</div></section>' +
       '<section class="a-sec">' + secHead(1) + '<div class="a-grid">' + card(calHTML(n), 'full') + card('<h3 class="a-ch-h">Lines each day</h3>' + legend([['Written', CW], ['Ticked off', CT]]) + dailyChart(agg) + tbl, 'full') + '</div></section>' +
       '<section class="a-sec">' + secHead(2) + '<div class="a-grid">' + card(hourHTML(n), 'full') + card(tickBySectionHTML(n)) + card('<h3 class="a-ch-h">Time of day</h3>' + legend([['Written', CW], ['Ticked off', CT]]) + hoursChart(agg)) + '</div></section>' +
@@ -2501,11 +2500,13 @@
     // Head chef decision D4 (20 Oct 2026): five groups on top, the pages of the open group underneath (the page ids
     // stay the same, so lk.prep.atab and every link into a page still work)
     var mlN = mlInfo().n, ag = adminGroupOf(at);
-    var tabsBar = '<nav class="a-groups" aria-label="Admin sections">' + A_GROUPS.map(function (g) {
+    // 21 Oct 2026: groups, pages and "On this page" sit in one nav that stays at the top of the screen (adminJumps() fills
+    // the last row from the page's headings after each draw, adminScroll() tucks it up while scrolling down)
+    var tabsBar = '<div class="a-navtop"></div><div class="a-nav' + (S.anavMin ? ' is-min' : '') + '"><nav class="a-groups" aria-label="Admin sections">' + A_GROUPS.map(function (g) {
       return '<button type="button" class="a-group" data-p="a-group" data-g="' + g[0] + '" aria-current="' + (ag[0] === g[0] ? 'page' : 'false') + '">' + g[1] + (g[0] === 'today' && mlN ? ' (' + mlN + ')' : '') + '</button>';
     }).join('') + '</nav>' + (ag[2].length > 1 ? '<nav class="a-tabs" aria-label="' + esc(ag[1]) + ' pages">' + ag[2].map(function (t) {
       return '<button type="button" class="a-tab" data-p="a-tab" data-t="' + t + '" aria-pressed="' + (at === t) + '">' + A_TAB_NAMES[t] + (t === 'mail' && mlN ? ' (' + mlN + ')' : '') + '</button>';
-    }).join('') + '</nav>' : '');
+    }).join('') + '</nav>' : '') + '<nav class="a-onpage" aria-label="On this page" hidden></nav></div>';
     if (at === 'notes') loadNotes();
     if (at === 'minutes') loadMinutes();
     if (at === 'guides') loadGuides();
@@ -2558,6 +2559,89 @@
   var A_TAB_NAMES = { mail: 'Kitchen mail', notes: 'Shift pings', insights: 'Insights', team: 'Team', waste: 'Wastage', learning: 'Learning', people: 'People', minutes: 'Minutes', guides: 'Guides', tools: 'Backup and PIN' };
   var A_GROUPS = [['today', 'Today', ['mail', 'notes']], ['reports', 'Reports', ['insights', 'team', 'waste', 'learning']], ['people', 'People', ['people']], ['content', 'Content', ['minutes', 'guides']], ['settings', 'Settings', ['tools']]];
   function adminGroupOf(t) { return A_GROUPS.filter(function (g) { return g[2].indexOf(t) >= 0; })[0] || A_GROUPS[1]; }
+  /* "On this page": one chip per heading of the open page (the numbered Insights sections, otherwise each block's label
+     and the chart headings in it), so a long page is one tap from any part. Built from the page after each draw, so a
+     new block on any admin page gets its chip by itself. Hidden when a page has fewer than two parts. */
+  function adminHeads() {
+    var pane = S.root && S.root.querySelector('.a-pane');
+    if (!pane) return [];
+    var hs = pane.querySelectorAll('.a-sh');
+    if (!hs.length) hs = pane.querySelectorAll(':scope > .set-block > .label:first-child, :scope > .set-block > h3.a-ch-h');
+    return Array.prototype.filter.call(hs, function (h) { return h.offsetParent && h.textContent.trim(); });
+  }
+  function adminJumps() {
+    var nav = S.root && S.root.querySelector('.a-nav'), row = nav && nav.querySelector('.a-onpage');
+    if (!row) return;
+    var hs = adminHeads();
+    if (hs.length < 2) { row.hidden = true; row.innerHTML = ''; } else {
+      row.innerHTML = '<span class="a-op-l" aria-hidden="true">On this page</span>' + hs.map(function (h, i) {
+        if (!h.id) h.id = 'aj-' + i;
+        var sn = h.querySelector('.a-sn'), t = h.textContent.trim();
+        if (sn) t = t.slice(sn.textContent.length).trim();
+        return '<button type="button" class="chip" data-p="jump" data-v="' + esc(h.id) + '">' + (sn ? '<span class="a-sn">' + esc(sn.textContent) + '</span>' : '') + esc(t) + '</button>';
+      }).join('');
+      row.hidden = false;
+    }
+    adminScroll(true);
+  }
+  /* how far the nav moves up when tucked away: everything above its last row */
+  function navHide(nav) { var rows = Array.prototype.filter.call(nav.children, function (x) { return !x.hidden; }); return rows.length > 1 ? rows[rows.length - 1].offsetTop - 4 : 0; }
+  var navY = 0, navTick = false, navOn = '', navJump = '', navJumpAt = 0;
+  function adminScroll(redraw) {
+    var nav = S.name === 'admin' && S.root && S.root.querySelector('.a-nav');
+    var y = window.scrollY, dy = y - navY;
+    if (redraw || Math.abs(dy) > 6) navY = y;
+    if (!nav) return;
+    var mark = S.root.querySelector('.a-navtop'), stuck = !!mark && mark.getBoundingClientRect().top < -2;
+    var hide = navHide(nav);
+    nav.style.setProperty('--a-nav-hide', hide + 'px');
+    var ae = document.activeElement, focusIn = !!ae && nav.contains(ae) && !(ae.closest && ae.closest('.a-onpage'));
+    if (!stuck || !hide || focusIn || (!redraw && dy < -6)) S.anavMin = false;
+    else if (!redraw && dy > 6) S.anavMin = true;
+    nav.classList.toggle('is-min', !!S.anavMin);
+    // the part of the page on screen: the last heading that has reached the bottom of the nav
+    var row = nav.querySelector('.a-onpage');
+    if (!row || row.hidden) return;
+    var edge = nav.getBoundingClientRect().bottom + 24, on = '';
+    adminHeads().forEach(function (h) { if (h.getBoundingClientRect().top <= edge) on = h.id; });
+    // near the end of a page the last parts cannot reach the nav: a part just jumped to stays marked while it is on screen
+    var jt = navJump && document.getElementById(navJump), jr = jt && jt.getBoundingClientRect();
+    var jOn = jr && jr.top >= nav.getBoundingClientRect().bottom - 4 && jr.top < window.innerHeight;
+    if (jOn) on = navJump; else if (Date.now() - navJumpAt > 1500) navJump = '';
+    if (!on && row.querySelector('.chip')) on = row.querySelector('.chip').getAttribute('data-v');
+    // the row follows only when the part on screen changes, so a swipe along the row is not undone by the next scroll
+    var moved = redraw || on !== navOn;
+    navOn = on;
+    Array.prototype.forEach.call(row.querySelectorAll('.chip'), function (c) {
+      var cur = c.getAttribute('data-v') === on;
+      if (cur) { c.setAttribute('aria-current', 'true'); if (moved && (c.offsetLeft < row.scrollLeft || c.offsetLeft + c.offsetWidth > row.scrollLeft + row.clientWidth)) row.scrollLeft = c.offsetLeft - 40; }
+      else c.removeAttribute('aria-current');
+    });
+  }
+  window.addEventListener('scroll', function () {
+    if (navTick || S.name !== 'admin') return;
+    navTick = true;
+    requestAnimationFrame(function () { navTick = false; adminScroll(false); });
+  }, { passive: true });
+  document.addEventListener('focusin', function (e) { if (S.name === 'admin' && e.target.closest && e.target.closest('.a-nav')) adminScroll(false); });
+  /* a jump lands the heading just under the nav (only its last row stays when the page moves down) */
+  function adminJumpTo(id) {
+    var tg = document.getElementById(id), nav = S.root && S.root.querySelector('.a-nav');
+    if (!tg) return;
+    navJump = id; navJumpAt = Date.now();
+    var top = tg.getBoundingClientRect().top, h = nav ? nav.offsetHeight : 0;
+    if (nav && top > h) h -= navHide(nav);
+    window.scrollTo({ top: Math.max(0, window.scrollY + top - h - 10), behavior: 'smooth' });
+  }
+  /* a new page starts just under the panel's title: the nav stays where it was, nothing jumps back above it */
+  function adminToTop() {
+    var mark = S.root && S.root.querySelector('.a-navtop');
+    S.anavMin = false;
+    if (!mark) { window.scrollTo(0, 0); return; }
+    var y = mark.getBoundingClientRect().top + window.scrollY;
+    if (window.scrollY > y) window.scrollTo(0, y);
+    adminScroll(true);
+  }
   function draftDirty() { return !!S.draft && JSON.stringify(S.draft) !== S.draftSnap; }
   window.addEventListener('beforeunload', function (e) { if ((S.name === 'admin' || S.staffOpen) && draftDirty()) { e.preventDefault(); e.returnValue = ''; } });
   function staffHTML() {
@@ -2631,6 +2715,7 @@
       if (back) back.focus({ preventScroll: true }); else focusPin();
     }
     else focusPin();
+    if (S.name === 'admin') adminJumps();
     rendering = false;
   }
 
@@ -5123,7 +5208,7 @@
     if (a === 'quick') { quickAdd(i); return; }
     if (a === 'heat') { S.heat = el.getAttribute('data-v'); draw(); return; }
     if (a === 'calm') { S.calM = el.getAttribute('data-v'); draw(); return; }
-    if (a === 'jump') { var tg = document.getElementById(el.getAttribute('data-v')); if (tg) tg.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    if (a === 'jump') { adminJumpTo(el.getAttribute('data-v')); return; }
     if (a === 'csv') { exportCSV(el.getAttribute('data-v')); return; }
     if (a === 'hrm') { S.hrM = el.getAttribute('data-v'); draw(); return; }
     if (a === 'af-reset') { S.af = { sec: '', who: '', dow: '', reason: '' }; afSave(); draw(); return; }
@@ -5155,8 +5240,8 @@
     if (a === 'donejump') { var dj = S.root.querySelector('#nb-donebox'); if (dj) dj.scrollIntoView({ block: 'start', behavior: 'smooth' }); return; }
     if (a === 'write') { var wt = S.root.querySelector('[data-k="p-text"]'); if (wt) { wt.scrollIntoView({ block: 'center', behavior: 'smooth' }); wt.focus({ preventScroll: true }); } return; }
     if (a === 'learn-hide') { hideLearned(id, el.getAttribute('data-hide') === '1'); return; }
-    if (a === 'a-group') { var gg = A_GROUPS.filter(function (g) { return g[0] === el.getAttribute('data-g'); })[0]; if (gg) { S.atab = (S.agLast || {})[gg[0]] || gg[2][0]; lsSet('lk.prep.atab', S.atab); draw(); window.scrollTo(0, 0); } return; }
-    if (a === 'a-tab') { S.atab = el.getAttribute('data-t'); S.agLast = S.agLast || {}; S.agLast[adminGroupOf(S.atab)[0]] = S.atab; lsSet('lk.prep.atab', S.atab); draw(); window.scrollTo(0, 0); return; }
+    if (a === 'a-group') { var gg = A_GROUPS.filter(function (g) { return g[0] === el.getAttribute('data-g'); })[0]; if (gg) { S.atab = (S.agLast || {})[gg[0]] || gg[2][0]; lsSet('lk.prep.atab', S.atab); draw(); adminToTop(); } return; }
+    if (a === 'a-tab') { S.atab = el.getAttribute('data-t'); S.agLast = S.agLast || {}; S.agLast[adminGroupOf(S.atab)[0]] = S.atab; lsSet('lk.prep.atab', S.atab); draw(); adminToTop(); return; }
     if (a === 'staff-open') { if (isSous()) { startDraft(); S.staffOpen = true; draw(); } return; }
     if (a === 'staff-close') { if (draftDirty() && !arm('staff-close')) return; S.staffOpen = false; S.draft = null; draw(); return; }
     if (a === 'add-recipe') { addRecipe(id); return; }
