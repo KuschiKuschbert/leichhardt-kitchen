@@ -796,6 +796,14 @@
     S.rolledFor = today;
     var dates = [], k;
     for (k = 1; k <= 7; k++) dates.push(shift(today, -k));
+    // the past days already on the phone say which day was written last, so only that day is read from the server (for
+    // its ticks as they are now), with today: one day of lines instead of seven (22 Oct 2026). A day missing from the
+    // copy (a read that failed) means all seven are read, as before.
+    if (dates.every(function (d) { return S.past && S.past[d]; })) {
+      var last = dates.filter(function (d) { return S.past[d].some(function (x) { return !x.deleted; }); })[0];
+      if (!last) return;
+      dates = [last];
+    }
     Promise.all([fb.fs.getDocs(itemsCol(today))].concat(dates.map(function (d) { return fb.fs.getDocs(itemsCol(d)); }))).then(function (res) {
       var have = {};
       res[0].docs.forEach(function (d) { have[d.id] = true; });
