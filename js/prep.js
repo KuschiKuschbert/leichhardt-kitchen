@@ -163,7 +163,7 @@
         S.config = snap.exists() ? snap.data() : { people: [] };
         S.config.people = S.config.people || [];
         headFix(S.config);
-        S.configState = 'ok'; featSync(); refreshDraft(); watchItems(); watchSections(); loadLearned(); if (S.name === 'orders') watchOrders(); if (S.name === 'waste') watchWaste(); resume(); if (S.authed) ksCheck(); loadAdmins(); loadNotes(); loadMinutes(); draw();
+        S.configState = 'ok'; pastCheck(); featSync(); refreshDraft(); watchItems(); watchSections(); loadLearned(); if (S.name === 'orders') watchOrders(); if (S.name === 'waste') watchWaste(); resume(); if (S.authed) ksCheck(); loadAdmins(); loadNotes(); loadMinutes(); draw();
         if (whoHead() !== headSeen) whoSync();   // the Head chef role was given or taken while this person is signed in
         try { window.dispatchEvent(new Event('lk-cfg')); } catch (e) {}   // js/app.js: who may manage the recipes (bookEdit)
       }, function (err) {
@@ -769,7 +769,7 @@
     if (!it || !can('tick')) return;
     var done = !it.done;
     if (!done && !canUntick(it)) { toast('Ticked lines stay ticked. Ask the head chef or sous chef to undo it.'); return; }
-    supd(itemRef(date, id), { done: done, doneBy: done ? p.name : '', doneById: done ? p.id : '', doneAt: done ? now() : 0 }).catch(failed);
+    supd(itemRef(date, id), { done: done, doneBy: done ? p.name : '', doneById: done ? p.id : '', doneAt: done ? now() : 0 }).then(function () { markPast('p', date); }, failed);
     if (done) { bump({ ticked: 1 }); toast('Ticked', { label: 'Undo', fn: function () { tick(date, id); } }); setTimeout(draw, LINGER + 100); }
     else if (it.doneById && fb) sset(docRef('activity', it.doneById), { name: it.doneBy || '', ticked: fb.fs.increment(-1) }, true).catch(function () {});
   }
@@ -777,7 +777,7 @@
     var p = me(), it = S.items.filter(function (x) { return x.id === id; })[0];
     if (!can('del')) return;
     // a merged double up that is put back is kept apart, so it is not merged again
-    supd(itemRef(date, id), Object.assign({ deleted: !restore, deletedBy: restore ? '' : p.name, deletedAt: restore ? 0 : now() }, restore && it && it.mergedInto ? { mergedInto: '', dupOk: true } : {})).catch(failed);
+    supd(itemRef(date, id), Object.assign({ deleted: !restore, deletedBy: restore ? '' : p.name, deletedAt: restore ? 0 : now() }, restore && it && it.mergedInto ? { mergedInto: '', dupOk: true } : {})).then(function () { markPast('p', date); }, failed);
     if (!restore) toast('Removed ' + (it ? it.text : 'the line'), { label: 'Undo', fn: function () { removeItem(date, id, true); } });
   }
   /* Anything not ticked on the last written day rolls onto today by itself, once the clock has been checked (see LK_TIME).
@@ -1502,18 +1502,36 @@
      The weekly badges, usual amounts, Start here, Due today, the pace card and the close-out nudge all work from this. */
   var PAST_DAYS = 14, PAST_KEYS = ['text', 'station', 'qty', 'addedBy', 'addedById', 'addedAt', 'done', 'doneBy', 'doneById', 'doneAt', 'rolled', 'ahead', 'deleted', 'urgent'];
   function pastTag() { return S.pin + '|' + dayNow() + '|2'; }
+  /* A change to a past day reaches the other phones (coding rules, 22 Oct 2026). Past days are kept on each phone for the
+     day (lk.past, lk.ord.hist, the admin's lk.st.got). When the head chef or a sous chef ticks, unticks, removes or puts
+     back a line on a past day, the book stamps config/main.pastEdit (p for prep, o for orders) with the time. Every phone
+     already listens to config/main, so this costs no new reads; a phone whose copy is older than the stamp reads the past
+     days again when it next needs them (prep: up to 14 days of lines). */
+  var pastMarkAt = {};
+  function markPast(kind, date) {
+    if (!fb || date >= dayNow() || !canBrowse() || Date.now() - (pastMarkAt[kind] || 0) < 5000) return;
+    pastMarkAt[kind] = Date.now();
+    var v = {}; v[kind] = now();
+    sset(cfgDoc(), { pastEdit: v }, true).catch(function () {});   // before the rules allow it (or no signal) it is only a hint lost
+  }
+  function pastStamp(kind) { var pe = (S.config && S.config.pastEdit) || {}; return +pe[kind] || 0; }
+  function pastCheck() {
+    if (S.pastFor && pastStamp('p') > (S.pastAt || 0)) { S.pastFor = ''; lsSet('lk.past', ''); draw(); }
+    if (S.ordHistFor && pastStamp('o') > (S.ordHistAt || 0)) { S.ordHistFor = ''; lsSet('lk.ord.hist', ''); draw(); }
+  }
   function loadPast() {
     var today = dayNow(), tag = pastTag();
     if (!fb || S.pastBusy || S.pastFor === tag) return;
-    try { var c = JSON.parse(lsGet('lk.past') || 'null'); if (c && c.tag === tag && c.days) { S.past = c.days; S.pastFor = tag; pastDerive(); return; } } catch (e) {}
+    try { var c = JSON.parse(lsGet('lk.past') || 'null'); if (c && c.tag === tag && c.days && (c.at || 0) >= pastStamp('p')) { S.past = c.days; S.pastFor = tag; S.pastAt = c.at || 0; pastDerive(); return; } } catch (e) {}
     S.pastBusy = true;
+    var at = now();
     var dates = [], i;
     for (i = 1; i <= PAST_DAYS; i++) dates.push(shift(today, -i));
     Promise.all(dates.map(function (d) { return fb.fs.getDocs(itemsCol(d)).then(function (sn) { return [d, sn.docs.map(function (x) { var v = x.data(), o = { id: x.id }; PAST_KEYS.forEach(function (k) { if (v[k] != null && v[k] !== '' && v[k] !== false && v[k] !== 0) o[k] = v[k]; }); return o; })]; }, function () { return [d, null]; }); })).then(function (res) {
       var days = {}, ok = true;
       res.forEach(function (r) { if (r[1] === null) ok = false; else days[r[0]] = r[1]; });
-      S.past = days; S.pastFor = tag; S.pastBusy = false;
-      if (ok) lsSet('lk.past', JSON.stringify({ tag: tag, days: days }));
+      S.past = days; S.pastFor = tag; S.pastAt = at; S.pastBusy = false;
+      if (ok) lsSet('lk.past', JSON.stringify({ tag: tag, days: days, at: at }));
       pastDerive(); draw();
     });
   }
@@ -3059,7 +3077,7 @@
   function removeOrderLine(date, id, restore) {
     if (!canBrowse() || !can('del')) return;
     var it = (S.ordLines || []).concat(S.ordAll || []).filter(function (x) { return x.id === id; })[0];
-    supd(ordRef(date, id), { deleted: !restore, deletedBy: restore ? '' : (me() || {}).name || '', deletedAt: restore ? 0 : now() }).then(function () { ordPatch(date, id, { deleted: !restore }); }, failed);
+    supd(ordRef(date, id), { deleted: !restore, deletedBy: restore ? '' : (me() || {}).name || '', deletedAt: restore ? 0 : now() }).then(function () { ordPatch(date, id, { deleted: !restore }); markPast('o', date); }, failed);
     if (!restore) toast('Removed ' + (it ? it.text : 'the line') + ' from the order list', { label: 'Undo', fn: function () { removeOrderLine(date, id, true); } });
   }
   function ordSuggest() {
@@ -3118,15 +3136,16 @@
     var today = dayNow();
     if (!fb || S.ordHistBusy || waiting('ordHist') || S.ordHistFor === today) return;
     var tag = S.pin + '|' + today, c = dayCache('lk.ord.hist', tag);
-    if (c) { S.ordHist = c; S.ordHistFor = today; return; }
+    if (c && (+lsGet('lk.ord.hist.at') || 0) >= pastStamp('o')) { S.ordHist = c; S.ordHistFor = today; S.ordHistAt = +lsGet('lk.ord.hist.at') || 0; return; }
     S.ordHistBusy = true;
+    var at = now();
     var dates = [], i; for (i = 1; i <= 14; i++) dates.push(shift(today, -i));
     var miss = 0;
     Promise.all(dates.map(function (d) { return fb.fs.getDocs(ordCol(d)).then(function (sn) { return sn.docs.map(function (x) { var v = x.data(); v.date = d; return v; }); }, function () { miss++; return []; }); })).then(function (l) {
       S.ordHist = [].concat.apply([], l).filter(function (x) { return !x.deleted && !x.rolled; }).map(function (x) { return { text: x.text, qty: x.qty || '', date: x.date }; });
       S.ordHistBusy = false;
       // a day that could not be read is not cached as empty: the hints use what came in, and the book tries again later
-      if (miss) retryLater('ordHist'); else { S.ordHistFor = today; dayCacheSet('lk.ord.hist', tag, S.ordHist); }
+      if (miss) retryLater('ordHist'); else { S.ordHistFor = today; S.ordHistAt = at; dayCacheSet('lk.ord.hist', tag, S.ordHist); lsSet('lk.ord.hist.at', String(at)); }
       draw();
     });
   }
@@ -3245,7 +3264,8 @@
   /* The admin reports' past days (coding rules, 22 Oct 2026): a past day read from the server today is read again from
      this device's own Firestore copy, which costs nothing, until the kitchen day changes. lk.st.got lists the days read
      today and how many records came back, so a copy the browser has thrown away (fewer records) is read from the server
-     again. Today, and Refresh (force), always read the server. Changes made on other phones to a past day show tomorrow. */
+     again. Today, and Refresh (force), always read the server, and so does a past prep or order day read before another phone
+     changed one (config/main.pastEdit, see markPast). */
   var gotM = null;
   function gotKeep() {
     var tag = S.pin + '|' + dayNow();
@@ -3255,10 +3275,13 @@
   function pastRead(ref, k, d, isDoc, force) {
     var g = gotKeep(), n = g.c[k], live = d >= dayNow(), fs = fb.fs;
     function count(sn) { return isDoc ? (sn.exists() ? 1 : 0) : sn.docs.length; }
-    function server() { return (isDoc ? fs.getDoc(ref) : fs.getDocs(ref)).then(function (sn) { if (!live) { g.c[k] = count(sn); lsSet('lk.st.got', JSON.stringify(g)); } return sn; }); }
+    var at = now();
+    function server() { return (isDoc ? fs.getDoc(ref) : fs.getDocs(ref)).then(function (sn) { if (!live) { g.c[k] = [count(sn), at]; lsSet('lk.st.got', JSON.stringify(g)); } return sn; }); }
     var fromCache = isDoc ? fs.getDocFromCache : fs.getDocsFromCache;
-    if (live || force || n == null || !fromCache) return server();
-    return fromCache(ref).then(function (sn) { return count(sn) === n ? sn : server(); }, server);
+    // a past prep or order day changed on another phone since this copy was read (config/main.pastEdit): read it again
+    var stale = !Array.isArray(n) || n[1] < pastStamp(k.charAt(0) === 'o' ? 'o' : k.charAt(0) === 'd' ? 'p' : '');
+    if (live || force || stale || !fromCache) return server();
+    return fromCache(ref).then(function (sn) { return count(sn) === n[0] ? sn : server(); }, server);
   }
   function sumDoc() { return fb.fs.doc.apply(null, [fb.db].concat(base(), ['summary', 'waste'])); }
   /* What was wasted in the last 14 days (summary/waste), worked out each night by the server (22 Oct 2026), so staff
