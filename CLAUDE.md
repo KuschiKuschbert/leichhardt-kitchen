@@ -98,6 +98,49 @@ These hold for every session, every message and every change, however small. A h
 - Functions (`js/functions.js`, `js/fnedit.js`, 21 Oct 2026): only people in `config/main.fnIds` (the People tab's Functions tick, saved only by the Google account) or the Google device write `functions`, `functions/<id>/hist` and `fncontact` (`fnBy()` in the rules; `fnOK()` in `js/prep.js` decides what the page shows). The band is an empty slot after `topBar()` (`fnBand()` in `js/app.js`) filled by `paint()`, never by a full redraw; the sheet is appended to `document.body` with `data-fn` clicks; the form uses `data-fe` clicks, `data-ff` typing and `fe-` classes. Kitchen reads are one live listener on `kq` from 00:00 today; the managers' list is one query when it opens. A platter line's rounds are `u` (one round number per platter): the rules check a confirmed line adds up in a few steps, because Firestore rules stop at about 1000 steps per save; keep new checks on `functions` cheap and test the largest booking (6 lines, 8 rounds) on the emulator. Guests never change platter numbers. Phone and email live only in `fncontact`, never in `functions`. `first`, `last`, `from`, `until` and `kq` come from `derive()`, never from the form. Bump `FE_API` in `js/app.js` and `API` in `js/fnedit.js` together.
 - One clock: anything saved, or compared with a saved time, uses `now()` in `js/prep.js` (`LK_TIME.now()` elsewhere), and today's date, hours and weekdays use `dayNow()` and `T.day`, `T.hour`, `T.mins`, `T.dow`, `T.clock`, `T.at` (kitchen time, Queensland). Never `new Date()` or `Date.now()` for those: the phone's clock and zone can be wrong. `Date.now()` is only for time passing on the phone (timers, the PIN lock, the idle sign-out). Do not name a local variable `now` or `dayNow`, it hides the helper.
 
+## Coding rules (21 Oct 2026)
+These hold for every file, old and new. When you touch code that breaks one, bring that code in line in the same branch if it is small, otherwise add it to "Bringing the code in line" in `README.md`. Older code that breaks a rule is listed there, so do not copy it as a pattern. One helper per job: use the one that exists (`esc()`, `W()`, `dayCache()`, `lvHTML()`, `now()`, `dayNow()`, `LK_RX.clean()`), never write a second.
+
+**Reads (the free plan stops the book for the day at 50,000 reads)**
+- Every new read says in a comment when it runs and what it costs: on open, once a day, after 30 minutes, or on a tap, and how many reads.
+- No reads in a loop. Read many records in one query (`in` with up to 30 ids, a date range, or `collectionGroup`), never one `getDoc` per item or one `getDocs` per day. An empty collection still costs a read.
+- A listener (`onSnapshot`) is only for today's live data that other phones change during service (today's prep, orders and wastage lines, `config/main`, the function list). Anything that changes overnight or rarely is read once a day and kept with `dayCache()`.
+- A once-a-day job keeps its "done today" flag on the phone (`lk.*`), not only in memory, so the 04:00 refresh and updates do not run it again.
+- Admin reports keep past days on the phone for the day and read only today fresh. Refresh is a tap, never a timer.
+- Totals that every phone needs from many past days (what is usual, what is wasted often) are worked out by the nightly job into one small record that phones read once a day.
+- `tests/read-budget.test.js` (coming with item 2 of "Bringing the code in line") sets a read budget for each page open, a reload and the admin panel. A change that goes over it either reads less or raises the budget in the same pull request with the reason.
+
+**Saved copies on the phone**
+- Every saved copy (`lk.*`, IndexedDB) says in a comment what makes it out of date.
+- A change to a past day must reach the saved copies on other phones too, not only the phone that made it.
+- A copy is saved only when every part came in. A failed read is never saved as "nothing there".
+
+**Who sees what**
+- Anything staff must not see is locked in `firestore.rules`, not only hidden on screen. Hidden-only is a bug.
+- Staff pages show today. Past days, totals and corrections live in the admin panel for the head chef and sous chefs.
+- Staff phones do not read past lines just to build hints: the hints come from the nightly summaries.
+
+**Text on screen**
+- Everything typed by a person or read from Firestore goes through `esc()` before it goes into HTML, attributes included.
+- A value from Firestore placed in a `style`, an SVG attribute or a URL is checked by type first: a number in range, a colour (`#rgb`, `#rrggbb` or a named colour), or one of a fixed list. Never put it in as it came.
+- SVG from Firestore or IndexedDB goes through `LK_RX.clean()` every time it is drawn, including copies kept on the phone.
+- Links are fixed `#/` routes or use `encodeURIComponent`. No `eval`, `new Function` or string timers.
+- `tests/safe-text.test.js` (coming with item 4) types a booby-trapped line into every field that others see. A new field that others see gets a line there.
+
+**Forms**
+- Fill in what the book already knows (section, unit, reason, the usual amount), and keep it easy to change: the filled box is selected on tap, so typing replaces it.
+- A suggestion chip fills every field it knows, not just the name.
+
+**Screens**
+- Every popup or sheet dims the page behind it, closes on the backdrop, Cancel and Escape, and is appended to `document.body`.
+- A choice of more than about 12 things gets a type-to-find box with the likely few first, not a long dropdown.
+- A row that scrolls sideways fades at its edge so people can see there is more.
+- Group with space and headings first. A box or a fill is for something that needs attention, not for every group.
+- Pages work at 390, 768 and 1280 px with no sideways scroll (the click tests check it).
+
+**Loading**
+- The book's start loads only what the landing page and the prep pages need. Anything big that only one page uses is loaded by that page (the loader `mountManage()` uses), and stays in `SHELL` if the book needs it with no signal.
+
 ## Head chef decisions
 Dated decisions about how the book should work (who may do what, what moved where) are listed under "Head chef decisions" in `README.md`. Check there before changing who sees or writes something, and add a new decision there with its date.
 
@@ -105,4 +148,4 @@ Dated decisions about how the book should work (who may do what, what moved wher
 The `leichhardt-recipe-book` and `leichhardt-kitchen-book-backend` skills summarise this repo. When they and this file or `README.md` disagree, this file and `README.md` win; mention the difference so the skill can be updated.
 
 ## Open items
-README, "Open items" under Prep book and admin panel, lists what is still to do with the head chef (App Check debug token and Enforce, the Browser key restriction). Read it when the head chef asks what is left, keep it in step, and remove items as they are done.
+README, "Open items" under Prep book and admin panel, lists what is still to do with the head chef (App Check debug token and Enforce, the Browser key restriction). Read it when the head chef asks what is left, keep it in step, and remove items as they are done. "Bringing the code in line" in the same part of the README lists the older code that does not meet the coding rules yet, in the order to fix it; each item is its own branch and pull request.
