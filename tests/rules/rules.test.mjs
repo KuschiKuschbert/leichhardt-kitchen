@@ -334,22 +334,22 @@ await ok(W([['functions/f1', fnc({ v: 2, status: 'confirmed', confBy: 'fay', con
 await ok(W([['functions/f1', fnc({ v: 3, status: 'confirmed', kc: 'Cake at 20:00', kcBy: 'finn', kcAt: 3 })]], { id: 'finn' }), true, 'functions: a second coordinator adds the kitchen comment as themselves');
 await ok(W([['functions/f1', fnc({ v: 3, status: 'confirmed' })]], { id: 'fay' }), false, 'functions: a save from an old copy is refused (someone saved first)');
 await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', kc: 'Cake at 20:30', kcBy: 'finn', kcAt: 4 })]], { id: 'fay' }), false, 'functions: the kitchen comment cannot be put under someone else\'s name');
-await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', lines: [Object.assign({}, fnc().lines[0], { u: [0, 0] })] })]], { id: 'fay' }), false, 'functions: confirmed rounds that do not add up to the booked number are refused');
-await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', lines: [Object.assign({}, fnc().lines[0], { u: [0, 0, 3] })] })]], { id: 'fay' }), false, 'functions: a platter in a round that does not exist is refused');
-await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', lines: [Object.assign({}, fnc().lines[0], { u: [0, 0, -1] })] })]], { id: 'fay' }), false, 'functions: a minus round is refused');
-await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', lines: [Object.assign({}, fnc().lines[0], { qty: 2.5, u: [0, 0, 0] })] })]], { id: 'fay' }), false, 'functions: half a platter is refused');
-await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', lines: [Object.assign({}, fnc().lines[0], { qty: 0, u: [] })] })]], { id: 'fay' }), false, 'functions: a confirmed line has at least one platter');
-await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', rounds: [{ at: T0 + 3600000 }, { at: T0 + 1800000 }, { at: T0 + 5400000 }], first: T0 + 3600000 })]], { id: 'fay' }), false, 'functions: rounds out of time order are refused');
-await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', guests: 0 })]], { id: 'fay' }), false, 'functions: confirmed needs a guest count');
+await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', kc: 'Cake at 20:00', kcBy: 'finn', kcAt: 3, lines: [Object.assign({}, fnc().lines[0], { u: [0, 0] })] })]], { id: 'fay' }), false, 'functions: confirmed rounds that do not add up to the booked number are refused');
+await ok(W([['functions/fr1', fnc({ status: 'confirmed', lines: [Object.assign({}, fnc().lines[0], { u: [0, 0, 3] })] })]], { id: 'fay' }), true, 'functions: a platter in a round that does not exist is the page\'s check (the rules check every line adds up; 12 lines leave no room for more)');
+await ok(W([['functions/fr2', fnc({ status: 'confirmed', lines: [Object.assign({}, fnc().lines[0], { u: [0, 0, -1] })] })]], { id: 'fay' }), true, 'functions: a minus round is the page\'s check too');
+await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', kc: 'Cake at 20:00', kcBy: 'finn', kcAt: 3, lines: [Object.assign({}, fnc().lines[0], { qty: 2.5, u: [0, 0, 0] })] })]], { id: 'fay' }), false, 'functions: half a platter is refused');
+await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', kc: 'Cake at 20:00', kcBy: 'finn', kcAt: 3, lines: [Object.assign({}, fnc().lines[0], { qty: 0, u: [] })] })]], { id: 'fay' }), false, 'functions: a confirmed line has at least one platter');
+await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', kc: 'Cake at 20:00', kcBy: 'finn', kcAt: 3, rounds: [{ at: T0 + 5400000 }, { at: T0 + 3600000 }, { at: T0 + 1800000 }], first: T0 + 5400000, last: T0 + 1800000 })]], { id: 'fay' }), false, 'functions: a first round later than the last is refused');
+await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', kc: 'Cake at 20:00', kcBy: 'finn', kcAt: 3, guests: 0 })]], { id: 'fay' }), false, 'functions: confirmed needs a guest count');
 await ok(W([['functions/fg', fnc({ status: 'confirmed', guests: 0, gu: true })]], { id: 'fay' }), true, 'functions: or guests ticked Not known yet');
 await ok(W([['functions/ft', fnc({ status: 'confirmed', mode: 'all', start: 0, st: true, rounds: [{ at: 0, note: '' }], first: 0, last: 0, until: T0, lines: [Object.assign({}, fnc().lines[0], { u: [0, 0, 0] })] })]], { id: 'fay' }), true, 'functions: confirmed with the start time TBC');
 await ok(W([['functions/fu', fnc({ status: 'confirmed', start: 0 })]], { id: 'fay' }), false, 'functions: confirmed with no start needs TBC ticked');
 await ok(W([['functions/fo', fnc({ od: '2026-10-18' })]], { id: 'fay' }), true, 'functions: the order day is kept on the function');
 await ok(W([['functions/fp', fnc({ od: 'x'.repeat(11) })]], { id: 'fay' }), false, 'functions: the order day is a date');
 await ok(W([['functions/fh', fnc({ status: 'draft', gu: 'yes' })]], { id: 'fay' }), false, 'functions: Not known yet is a yes or no');
-await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', mode: 'all' })]], { id: 'fay' }), false, 'functions: all at once is one round');
-await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', price: 300 })]], { id: 'fay' }), false, 'functions: no fields beyond the function fields (no prices)');
-await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', phone: '0400' })]], { id: 'fay' }), false, 'functions: no phone on the kitchen copy');
+await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', kc: 'Cake at 20:00', kcBy: 'finn', kcAt: 3, mode: 'all' })]], { id: 'fay' }), false, 'functions: all at once is one round');
+await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', kc: 'Cake at 20:00', kcBy: 'finn', kcAt: 3, price: 300 })]], { id: 'fay' }), false, 'functions: no fields beyond the function fields (no prices)');
+await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', kc: 'Cake at 20:00', kcBy: 'finn', kcAt: 3, phone: '0400' })]], { id: 'fay' }), false, 'functions: no phone on the kitchen copy');
 await ok(W([['functions/f2', fnc()]], { id: 'fox' }), false, 'functions: a coordinator without the tick cannot save');
 await ok(W([['functions/f2', fnc()]], { id: 'ann' }), false, 'functions: staff cannot save');
 await ok(W([['functions/f2', fnc()]], { id: 'hd' }), false, 'functions: the head chef by PIN needs the tick too');
@@ -363,16 +363,16 @@ await ok(getDoc(doc(anon, K + 'fncontact/f1')), true, 'functions: the function p
 await ok(getDocs(collection(anon, K + 'fncontact')), false, 'functions: nobody lists the contacts with only the kitchen PIN');
 await ok(getDocs(collection(owner, K + 'fncontact')), true, 'functions: the Google account lists them (backup, PIN move)');
 {
-  const L6 = Array.from({ length: 6 }, (_, i) => ({ rid: 'p' + i, name: 'Platter ' + i, unit: 'platter', spec: 'Per platter.', fp: 'abcdef', qty: 40, u: Array.from({ length: 40 }, (_, k) => k % 8) }));
+  const L6 = Array.from({ length: 12 }, (_, i) => ({ rid: 'p' + i, name: 'Platter ' + i, unit: 'platter', spec: 'Per platter.', fp: 'abcdef', qty: 40, u: Array.from({ length: 40 }, (_, k) => k % 8) }));
   const R8 = Array.from({ length: 8 }, (_, i) => ({ at: T0 + i * 600000, note: 'Round note' }));
   const big = fnc({ status: 'confirmed', lines: L6, rounds: R8, first: T0, last: T0 + 7 * 600000, kc: 'x'.repeat(2000), kcBy: 'fay', kcAt: 1, notes: 'n'.repeat(1000) });
-  await ok(W([['functions/f8', big], ['fncontact/f8', { cname: 'Jo', phone: '0400 000 000', email: 'jo@example.com', upd: 1 }]], { id: 'fay' }), true, 'functions: the largest booking (6 platter lines over 8 rounds, 240 platters) is checked in full');
+  await ok(W([['functions/f8', big], ['fncontact/f8', { cname: 'Jo', phone: '0400 000 000', email: 'jo@example.com', upd: 1 }]], { id: 'fay' }), true, 'functions: the largest booking (12 platter lines over 8 rounds, 480 platters) is checked in full');
   await ok(W([['functions/f8', Object.assign({}, big, { v: 2 })], ['functions/f8/hist/1', { was: big, at: 2, what: 'Changed' }], ['fncontact/f8', { cname: 'Jo', phone: '0400 000 001', email: 'jo@example.com', upd: 2 }]], { id: 'fay' }), true, 'functions: the largest booking saved again with its earlier version and contact (the largest batch)');
-  await ok(W([['functions/f9', fnc({ status: 'draft', lines: L6.concat([L6[0]]) })]], { id: 'fay' }), false, 'functions: at most 6 platter lines');
+  await ok(W([['functions/f9', fnc({ status: 'draft', lines: L6.concat([L6[0]]) })]], { id: 'fay' }), false, 'functions: at most 12 platter lines');
 }
 // a coordinator's tick taken away (owner save): the next save is refused; someone taken off the list cannot write at all
 await env.withSecurityRulesDisabled(async ctx => { await setDoc(doc(ctx.firestore(), K + 'config/main'), { fnIds: ['finn'] }, { merge: true }); });
-await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed' })]], { id: 'fay' }), false, 'functions: tick taken away: the next save is refused');
+await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', kc: 'Cake at 20:00', kcBy: 'finn', kcAt: 3 })]], { id: 'fay' }), false, 'functions: tick taken away: the next save is refused');
 await ok(W([['days/2026-10-19/items/fay1', line()]], { id: 'fay' }), true, 'functions: tick taken away: still on the list, so still writes the prep list');
 await ok(W([['functions/f1', fnc({ v: 4, status: 'cancelled', kc: 'Cake at 20:00', kcBy: 'finn', kcAt: 3, canBy: 'finn', canAt: 5 })]], { id: 'finn' }), true, 'functions: the other coordinator cancels it');
 await ok(W([['days/2026-10-19/items/gone1', line()]], { id: 'gone' }), false, 'staff lock: someone taken off the list cannot write with their old PIN');
