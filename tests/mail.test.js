@@ -58,6 +58,8 @@ const badge = p => txt(p, '.wtop-who .adm-n');
   // the head chef: 3 open mails, the Mail tab last opened 11 hours ago, 14:00: popup and count
   const extra = Object.assign(L.mail(), { [fsKey(['config', 'admins'])]: { x: 1, mailOpened: L.NOW - 11 * 3600000 } });
   p = await L.open(b, '#/', { admin: true, extra, wait: 1800 });
+  // the mail is read after the Google sign-in and the admin list, so wait for the count itself
+  await L.waitFor(p, () => !!document.querySelector('.wtop-who .adm-n'), null, 5000).catch(() => {});
   ok(await badge(p) === '3', 'chef hat: shows 3 open mails (' + await badge(p) + ')');
   ok(/3 messages waiting/.test(await pop(p)), 'nudge: the popup says 3 messages waiting');
   ok(/1 is food safety or for today|2 are food safety or for today/.test(await pop(p)), 'nudge: it counts the urgent ones');
@@ -71,6 +73,7 @@ const badge = p => txt(p, '.wtop-who .adm-n');
   // opened recently: no popup, the count still shows
   const recent = Object.assign(L.mail(), { [fsKey(['config', 'admins'])]: { x: 1, mailOpened: L.NOW - 3600000 } });
   p = await L.open(b, '#/', { admin: true, extra: recent, wait: 1800 });
+  await L.waitFor(p, () => !!document.querySelector('.wtop-who .adm-n'), null, 5000).catch(() => {});   // the mail is in (see above)
   ok(!(await pop(p)), 'nudge: no popup when the Mail tab was opened an hour ago');
   ok(await badge(p) === '3', 'chef hat: the count shows anyway');
   await p.click('.wtop-who'); await L.settle(p, 150);
