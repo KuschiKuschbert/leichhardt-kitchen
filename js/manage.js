@@ -870,7 +870,13 @@
     dirty: function () { return dirty() || !!(window.LK_DRAW && window.LK_DRAW.dirty()); },
     patchRecipe: patchRecipe,
     hasDraft: function () { return Object.keys(LS || {}).some(function (k) { return k.indexOf('lk.mg.draft.') === 0 || k.indexOf('lk.dw.draft.') === 0; }); },
-    // new recipe changes came in from another device: the list shows them; an open form keeps what is typed
-    changed: function () { if (M.root && !M.ed && !(window.LK_DRAW && window.LK_DRAW.open())) draw(); }
+    // new recipe changes came in from another device: the list shows them; an open form keeps what is typed. A form not
+    // touched yet takes the newer copy: it can open before the book's changes are laid over js/data.js
+    changed: function () {
+      if (!M.root || (window.LK_DRAW && window.LK_DRAW.open())) return;
+      var e = M.ed, c = e && !e.isNew && !e.missing && e.id ? X.change(e.id) : null;
+      if (c && c.v > (e.meta.v || 0) && !e.kept && !e.saving && snapOf(e) === e.snap) { openEditor(['r', e.id]); draw(); return; }
+      if (!M.ed) draw();
+    }
   };
 })();

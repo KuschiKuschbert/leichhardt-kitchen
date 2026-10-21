@@ -187,6 +187,8 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   // an ingredient renamed in the recipe form: its Pass label and its parts on the plate follow it
   p = await L.open(b, '#/manage/r/burger', { who: 'ann', extra: Object.assign(cfg(), { [fsKey(['book', 'index'])]: saved[fsKey(['book', 'index'])], [fsKey(['recipes', 'burger'])]: saved[fsKey(['recipes', 'burger'])], [fsKey(['drawings', 'burger-plate'])]: saved[fsKey(['drawings', 'burger-plate'])] }), wait: 1400 });
   await wait(p, () => !!document.getElementById('mg-name'), null, 10000);
+  // the drawing comes in from the book after the form is drawn: wait for its link itself
+  await wait(p, () => !!document.querySelector('[data-mg="draw"][data-v="burger-plate"]'), null, 10000);
   ok(await p.$('[data-mg="draw"][data-v="burger-plate"]') !== null && await p.$('[data-mg="draw"][data-v="new:side"]') !== null, 'recipe form: Change this drawing and Draw the side view in the book');
   const k = await p.evaluate(() => [...document.querySelectorAll('[data-f$=".name"][data-f^="ing."]')].findIndex(x => x.value === 'Crumbed chicken thigh'));
   await p.fill('[data-f="ing.' + k + '.name"]', 'Crumbed thigh'); await L.settle(p, 500);

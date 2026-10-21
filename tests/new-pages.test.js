@@ -102,6 +102,8 @@ const tab = p => p.evaluate(() => Array.prototype.some.call(document.querySelect
   p = await L.open(b, '#/', { who: 'ann', extra: world({ guides: false, pings: true, minutes: true }), wait: 2500 });
   ok(!(await docket(p)), 'guides only: no Guides docket for staff');
   ok(await p.$('.nt') !== null, 'guides only: the pings popup opens for staff');
+  // the minutes are read from Firestore: wait for the card itself (under load the page goes still before the read)
+  await L.waitFor(p, () => !!document.querySelector('.wall-mn .mn-nudge'), null, 8000).catch(() => false);
   ok(await p.$('.wall-mn .mn-nudge') !== null, 'guides only: the minutes card shows for staff');
   await p.context().close();
 
