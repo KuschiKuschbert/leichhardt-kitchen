@@ -1,6 +1,7 @@
 // Wastage is for logging (head chef decision, 22 Oct 2026): the wastage page shows the form and today's entries from the
-// whole team, for everyone, sous chefs included. Past days live in the admin panel's wastage log (the head chef's Google
-// account, the only one the rules let read them): every entry, Remove and Put back without reading again, and the review.
+// whole team, for everyone, sous chefs included; sous chefs also write today's end-of-day review there. Remove and Put
+// back, past days and past reviews live in the admin panel's wastage log (the head chef's Google account, the only one
+// the rules let read past days): every entry, Remove and Put back without reading again, and the review for any day.
 const L = require('./lib');
 const { R, ok } = L.results(), { txt } = L;
 const today = L.ymd(new Date(L.NOW)), yest = L.ymd(new Date(L.NOW - 86400000));
@@ -12,13 +13,22 @@ extra[fsKey(['waste', yest, 'lines', 'y1'])] = { text: 'Mash', amount: 1.5, unit
 (async () => {
   const b = await L.start();
 
-  // staff and a sous chef: today only, no day buttons, no Last 7 days, no review, no past lines read
+  // staff and a sous chef: today only, no day buttons, no Last 7 days, no Remove, no past lines read; the review for the sous chef only
   for (const who of ['ann', 'sam']) {
     const p = await L.open(b, '#/waste', { extra, who, wait: 1500 });
     const body = await txt(p, '.o-page') || '';
     ok(/Chips/.test(body) && !/Mash/.test(body), who + ': the wastage page shows today\'s Chips and not yesterday\'s Mash');
     ok(!(await p.$('[data-p="wday"]')) && !(await p.$('[data-p="wview"]')), who + ': no day buttons and no Last 7 days');
-    ok(!(await p.$('#w-ra')) && !(await p.$('[data-p="wreview"]')), who + ': no end-of-day review on the wastage page');
+    ok(!(await p.$('[data-p="wdel"]')) && !(await p.$('[data-p="wrestore"]')), who + ': no Remove or Put back on the wastage page');
+    if (who === 'ann') ok(!(await p.$('#w-ra')) && !(await p.$('[data-p="wreview"]')), 'ann: no end-of-day review for staff');
+    else {
+      await L.waitFor(p, () => !!document.querySelector('[data-p="wreview"][data-v="page"]'));
+      await p.fill('#w-ra', 'Chips cooked too early');
+      await p.fill('#w-rc', 'Drop chips to order after 21:00');
+      await p.click('[data-p="wreview"][data-v="page"]'); await L.settle(p, 700);
+      const tr = (await store(p))[fsKey(['waste', today])] || {};
+      ok(tr.avoidable === 'Chips cooked too early' && tr.change === 'Drop chips to order after 21:00' && tr.reviewBy === 'Sam', 'sam: the sous chef saves today\'s review on the wastage page (' + JSON.stringify(tr) + ')');
+    }
     ok(!(await p.$('.w-past')), who + ': no admin link (the log is the head chef\'s)');
     ok((await lineReads(p)).length === 0, who + ': no past wastage lines are read (' + (await lineReads(p)).join(' | ') + ')');
     ok(p.errors.length === 0, who + ': no page errors ' + p.errors.join(' | '));
