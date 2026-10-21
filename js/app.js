@@ -1325,7 +1325,15 @@
   window.addEventListener('lk-admin', feRedraw);
   window.addEventListener('lk-fn', function () {
     var r = parseRoute();
-    if (r.name === 'fn') { var m = document.getElementById('main'), y = window.scrollY; if (m) { m.innerHTML = window.LK_FN.page(r.fid); window.scrollTo(0, y); } }
+    if (r.name === 'fn') {
+      // drawn again only when something shows differently, and the button in use keeps the focus
+      var m = document.getElementById('main'), y = window.scrollY, h = window.LK_FN.page(r.fid), a = document.activeElement, k = a && a.getAttribute && a.getAttribute('data-fn');
+      if (!m || m.lkFn === h) return;
+      k = k ? '[data-fn="' + k + '"][data-id="' + a.getAttribute('data-id') + '"]' + (a.hasAttribute('data-r') ? '[data-r="' + a.getAttribute('data-r') + '"]' : '') : '';
+      var had = k && m.contains(a);
+      m.innerHTML = h; m.lkFn = h; window.scrollTo(0, y);
+      var b = had && m.querySelector(k); if (b) b.focus({ preventScroll: true });
+    }
     else if (r.name === 'functions' && window.LK_FE) window.LK_FE.changed();
   });
   /* The head chef's recipe changes came in (js/prep.js read them, lk-rx): work the index out again and redraw.
