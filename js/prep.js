@@ -1079,7 +1079,7 @@
   function exportAll() {
     if (!fb || S.exporting) return;
     S.exporting = 'Reading the data...'; draw();
-    var f = fb.fs, out = { exportedAt: new Date(now()).toISOString(), config: null, days: {}, orders: {}, waste: {}, wasteReviews: {}, activity: [], sections: [], learned: [], ordlearned: [], learnlog: [], misses: [], notes: [], notesSeen: {}, minutes: [], minutesHist: {}, minutesSigns: {}, pins: [], book: [], recipes: [], recipesHist: {} };
+    var f = fb.fs, out = { exportedAt: new Date(now()).toISOString(), config: null, days: {}, orders: {}, waste: {}, wasteReviews: {}, activity: [], sections: [], learned: [], ordlearned: [], learnlog: [], misses: [], notes: [], notesSeen: {}, minutes: [], minutesHist: {}, minutesSigns: {}, pins: [], book: [], recipes: [], recipesHist: {}, drawings: [], drawingsHist: {} };
     function grab(sn) { return sn.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }); }
     function all(name) { return f.getDocs(colRef(name)).then(grab); }
     /* the records under each note (who has seen it) and each minutes (earlier versions, sign-offs): one small query each, kept by the note's or the minutes' id */
@@ -1103,6 +1103,7 @@
       .then(function () { return all('drinks'); }).then(function (r) { out.drinks = r; })
       .then(function () { return all('shifts'); }).then(function (r) { out.shifts = r; })
       .then(function () { return all('book'); }).then(function (r) { out.book = r; return all('recipes'); }).then(function (r) { out.recipes = r; return subs(r, 'recipes', 'hist', out.recipesHist); })
+      .then(function () { return all('drawings'); }).then(function (r) { out.drawings = r; return subs(r, 'drawings', 'hist', out.drawingsHist); })
       .then(function () { S.exporting = 'Reading shift pings and minutes...'; draw(); return all('notes'); }).then(function (r) { out.notes = r; return subs(r, 'notes', 'seen', out.notesSeen); })
       .then(function () { return all('minutes'); }).then(function (r) { out.minutes = r; return Promise.all([subs(r, 'minutes', 'hist', out.minutesHist), subs(r, 'minutes', 'signs', out.minutesSigns)]); })
       .then(function () { return all('pinset'); }).then(function (r) { out.pins = r.map(function (x) { return { id: x.id, name: x.name, setAt: x.setAt }; }); })
@@ -1168,6 +1169,7 @@
       .then(function () { return copyCol('guides'); }).then(function () { return copySub('guides', 'pages'); })
       .then(function () { return copyCol('mail'); }).then(function () { return copyCol('mailstat'); }).then(function () { return copyCol('drinks'); }).then(function () { return copyCol('shifts'); })
       .then(function () { return copyCol('book'); }).then(function () { return copyCol('recipes'); }).then(function () { return copySub('recipes', 'hist'); })
+      .then(function () { return copyCol('drawings'); }).then(function () { return copySub('drawings', 'hist'); })
       .then(function () {
         var i = 0;
         function next() {
@@ -4364,17 +4366,23 @@
   function rxSync(force) {
     var X = window.LK_RX;
     if (!X || !fb || !/^\d{4,6}$/.test(S.pin) || rxBusy || Date.now() < rxRetry || !(force || rxDue())) return Promise.resolve(false);
-    var pin = S.pin, have = X.pin() === pin ? X.versions() : {};
+    var pin = S.pin, have = X.pin() === pin ? X.versions() : {}, haveArt = {};
     rxBusy = true;
-    return fb.fs.getDoc(docRef('book', 'index')).then(function (sn) {
-      var idx = sn.exists() ? sn.data() : {}, ir = idx.r && typeof idx.r === 'object' ? idx.r : {};
+    // the drawings kept on this phone are read from IndexedDB first, so only the ones that changed are read
+    return X.artReady().then(function () { haveArt = X.pin() === pin ? X.artVersions() : {}; return fb.fs.getDoc(docRef('book', 'index')); }).then(function (sn) {
+      var idx = sn.exists() ? sn.data() : {}, ir = idx.r && typeof idx.r === 'object' ? idx.r : {}, id2 = idx.d && typeof idx.d === 'object' ? idx.d : {};
       var need = Object.keys(ir).filter(function (id) { return have[id] !== ir[id]; });
+      var needArt = Object.keys(id2).filter(function (id) { return haveArt[id] !== id2[id]; });
       return Promise.all(need.map(function (id) {
         return fb.fs.getDoc(docRef('recipes', id)).then(function (d) { return [id, d.exists() ? d.data() : null]; });
-      })).then(function (got) {
+      }).concat(needArt.map(function (id) {
+        return fb.fs.getDoc(docRef('drawings', id)).then(function (d) { return ['@' + id, d.exists() ? d.data() : null]; });
+      }))).then(function (got) {
         rxBusy = false;
         if (pin !== S.pin) return false;
-        var changed = X.take(pin, idx, got);
+        var recs = got.filter(function (g) { return g[0].charAt(0) !== '@'; }), arts = got.filter(function (g) { return g[0].charAt(0) === '@'; }).map(function (g) { return [g[0].slice(1), g[1]]; });
+        var changed = X.take(pin, idx, recs);
+        X.takeArt(pin, id2, arts);
         if (changed) rxChanged();
         return changed;
       });

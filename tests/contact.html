@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Library contact sheet</title>
+<!-- The drawing library on one page, for checking the drawings by eye (tests/contact.js screenshots it per category).
+     ?cat=meat shows one category, ?ware=1 the servingware, ?q=steak a search. Not part of the book. -->
+<style>
+  body { margin: 0; padding: 12px; background: #FBFAF7; font: 12px/1.3 system-ui, sans-serif; color: #1C1D1F; }
+  h1 { font-size: 18px; margin: 4px 0 10px; }
+  h2 { font-size: 14px; margin: 16px 0 6px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, 150px); gap: 8px; }
+  .cell { background: #fff; border: 1px solid #E0DBCF; border-radius: 8px; padding: 6px; }
+  .cell svg { display: block; width: 138px; height: 110px; background: #FFFFFF; }
+  .cell b { display: block; font-size: 11px; margin-top: 4px; }
+  .cell i { color: #6B7077; font-style: normal; font-size: 10px; }
+  .ware .cell svg { height: 138px; }
+  .err { color: #B83F15; font-weight: 700; }
+</style>
+</head>
+<body>
+<h1 id="h">Library</h1>
+<div id="out"></div>
+<script src="../js/library.js"></script>
+<script src="contact-page.js"></script>
+</body>
+</html>

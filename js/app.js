@@ -268,9 +268,11 @@
   // A card flagged done: true in data.js is 100% finished: green frame on the card and its drawings, plus a Finished chip.
   var DONE_TAG = '<span class="tag done-tag">Finished</span>';
 
+  // a drawing made in the book ('@<id>', js/overlay.js) has its own frame (LK_ART.vb); the book's own use the plate and pan frames
   function art(r, cls) {
-    if (r.art && ART.plates[r.art]) return '<svg class="' + cls + '" viewBox="2 16 212 212" aria-hidden="true" focusable="false">' + ART.plates[r.art] + '</svg>';
-    if (r.art && ART.pans[r.art]) return '<svg class="' + cls + '" viewBox="0 0 200 140" aria-hidden="true" focusable="false">' + ART.pans[r.art] + '</svg>';
+    var vb = ART.vb && r.art ? ART.vb[r.art] : '';
+    if (r.art && ART.plates[r.art]) return '<svg class="' + cls + '" viewBox="' + (vb || '2 16 212 212') + '" aria-hidden="true" focusable="false">' + ART.plates[r.art] + '</svg>';
+    if (r.art && ART.pans[r.art]) return '<svg class="' + cls + '" viewBox="' + (vb || '0 0 200 140') + '" aria-hidden="true" focusable="false">' + ART.pans[r.art] + '</svg>';
     if (isDish(r)) return '<svg class="' + cls + '" viewBox="2 16 212 212" aria-hidden="true" focusable="false"><circle cx="106" cy="120" r="100" fill="#FFFFFF" stroke="#D3CEC4" stroke-width="2"/><circle cx="106" cy="120" r="60" fill="none" stroke="#C9C3B6" stroke-width="2" stroke-dasharray="6 6"/></svg>';
     return '<svg class="' + cls + '" viewBox="0 0 200 140" aria-hidden="true" focusable="false"><rect x="4" y="6" width="192" height="128" rx="14" fill="#DADDE1" stroke="#A9AFB6" stroke-width="2"/><rect x="20" y="22" width="160" height="96" rx="6" fill="none" stroke="#A9AFB6" stroke-width="2" stroke-dasharray="6 6"/></svg>';
   }
@@ -566,9 +568,9 @@
     return '<div class="sec"><h3 class="h3">' + esc(d.title || 'How to cut') + '</h3><svg class="diagram" viewBox="' + esc(d.viewBox) + '"' + (d.maxWidth ? ' style="max-width: ' + esc(d.maxWidth) + '"' : '') + ' role="img" aria-label="' + esc(d.label) + '">' + d.body + '</svg></div>';
   }
   function sideView(r) {
-    var v = ART.sides && ART.sides[r.id];
+    var v = ART.sides && (r.side && r.side.charAt(0) === '@' ? ART.sides[r.side] : ART.sides[r.id]);
     if (!v) return '';
-    return '<div class="sec"><h3 class="h3">From the side</h3><div class="side-art"><svg viewBox="' + esc(v.viewBox) + '" role="img" aria-label="Side view of ' + esc(r.name) + ' with each part labelled">' + v.body + '</svg></div></div>';
+    return '<div class="sec"><h3 class="h3">From the side</h3><div class="side-art"><svg viewBox="' + esc(v.viewBox) + '" role="img" aria-label="' + esc(v.label || 'Side view of ' + r.name + ' with each part labelled') + '">' + v.body + '</svg></div></div>';
   }
   function steps(r) {
     if (!r.sections.length) return '<div class="box beige"><span class="label">Method</span><div>Not written up yet. Ask the head chef or sous chef.</div></div>';
@@ -831,7 +833,7 @@
     return { contains: Object.keys(ro.contains), check: Object.keys(ro.check).filter(function (a) { return !ro.contains[a]; }), missing: ro.missing };
   }
   window.LK_APP = {
-    mgApi: MG_API, KIND: KIND, isDish: isDish, esc: esc, art: art, rollFor: rollFor,
+    mgApi: MG_API, KIND: KIND, isDish: isDish, esc: esc, art: art, rollFor: rollFor, load: mgScript,
     byId: function (id) { return byId[id] || null; },
     recipes: function () { return D.recipes; },
     tags: function (id) { return tags[id] || []; },
@@ -1015,6 +1017,9 @@
     if (maskCache[key]) return cb(maskCache[key]);
     try {
       var c = svg.cloneNode(true);
+      // a drawing made in the book marks its servingware (data-surf): that part is left out and every drawn pixel left is food
+      var surf = c.querySelector('[data-surf]'), any = !!surf;
+      if (surf) surf.parentNode.removeChild(surf);
       c.setAttribute('width', w); c.setAttribute('height', h); c.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
       var img = new Image();
       img.onload = function () {
@@ -1030,7 +1035,7 @@
               if (d[i + 3] > 128) {
                 var r = d[i], g = d[i + 1], b = d[i + 2], mx = Math.max(r, g, b), mn = Math.min(r, g, b);
                 var sat = mx ? (mx - mn) / mx : 0, lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-                f = (sat >= 0.14 || lum < 0.7) ? 1 : 0;   // plate, rim and shadow are pale greys; food is not
+                f = any || sat >= 0.14 || lum < 0.7 ? 1 : 0;   // plate, rim and shadow are pale greys; food is not
               }
               row += f;
               integ[(y + 1) * W1 + x + 1] = integ[y * W1 + x + 1] + row;
@@ -1265,6 +1270,14 @@
      On the recipe list only the results are redrawn, so the page does not jump while someone is scrolling. */
   window.addEventListener('lk-rx', function () {
     reindex();
+    var n = parseRoute().name;
+    if (n === 'home' && document.getElementById(settings.view === 'tiles' ? 'results' : 'shelves')) updateResults();
+    else if (n === 'manage') { if (window.LK_MG) window.LK_MG.changed(); }
+    else if (!PREP_PAGES[n]) render();
+  });
+  /* The head chef's drawings came in or were saved (js/overlay.js, lk-art): the pages that show them draw again. */
+  window.addEventListener('lk-art', function () {
+    maskCache = {};
     var n = parseRoute().name;
     if (n === 'home' && document.getElementById(settings.view === 'tiles' ? 'results' : 'shelves')) updateResults();
     else if (n === 'manage') { if (window.LK_MG) window.LK_MG.changed(); }

@@ -21,6 +21,7 @@ export function probeChecks(fs, pin) {
     ['the config cannot be changed without the head chef account', () => fs.patch(K + 'config/main', { probe: num(1) }, ['probe']), false],
     ['a PIN hash cannot be planted', () => fs.patch(K + 'staffpins/' + id, { hash: str('a'.repeat(64)) }), false],
     ['a recipe cannot be changed with only the kitchen PIN', () => fs.patch(K + 'recipes/' + id, { r: { mapValue: { fields: { id: str(id), kind: str('main'), name: str('Probe') } } }, v: num(1), upd: num(Date.now()), by: str('probe') }), false],
+    ['a drawing cannot be changed with only the kitchen PIN', () => fs.patch(K + 'drawings/' + id, { slot: str('plate'), vb: str('0 0 10 10'), svgS: str(''), svgF: str(''), v: num(1), upd: num(Date.now()), by: str('probe') }), false],
     ['the head chef\'s recipe index cannot be changed with only the kitchen PIN', () => fs.patch(K + 'book/index', { probe: num(1) }, ['probe']), false],
     ['a proof cannot be read back', () => fs.get(K + 'proofs/' + id), false]
   ];

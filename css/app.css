@@ -1576,3 +1576,54 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav { top: var(--u
   .mg-hand-row input { grid-column: 1 / -1; }
 }
 @media print { .mg-slot, .mg-bar, .mg-toasts, .mg-pin { display: none !important; } }
+
+/* The drawing editor (#/manage/draw, js/draw.js, 21 Oct 2026): classes dw-, clicks data-dw. On a phone the canvas sticks
+   to the top while the tools and the library scroll under it; from 900 px the canvas is on the left and the panels on
+   the right. The picked part has a dashed box, an orange square to size it and a round handle above it to turn it. */
+.dw { display: flex; flex-direction: column; gap: 0.9rem; width: 100%; }
+.dw h2 { margin: 0; font-family: var(--display); font-weight: 700; font-size: 2rem; line-height: 1.05; }
+.dw-main { display: flex; flex-direction: column; gap: 0.9rem; min-width: 0; }
+.dw-left, .dw-right { display: flex; flex-direction: column; gap: 0.7rem; min-width: 0; }
+.dw-stage { position: sticky; top: 0; z-index: 8; background: var(--bg); padding: 0.3rem 0; }
+.dw-svg { display: block; width: 100%; height: auto; max-height: 44vh; background: #F4F1EA; border: 1.5px solid var(--edge); border-radius: var(--radius); touch-action: none; user-select: none; -webkit-user-select: none; }
+.dw-svg:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.dw-el { cursor: move; }
+.dw-box { fill: none; stroke: var(--accent-ink); stroke-width: 1; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; pointer-events: none; }
+.dw-stem { stroke: var(--accent-ink); stroke-width: 1; vector-effect: non-scaling-stroke; pointer-events: none; }
+.dw-h { fill: #FFFFFF; stroke: var(--accent-ink); stroke-width: 2; vector-effect: non-scaling-stroke; cursor: pointer; }
+.dw-size { cursor: nwse-resize; fill: var(--accent); }
+.dw-turn { cursor: grab; }
+.dw-guide { stroke: #2E7DD7; stroke-width: 1; stroke-dasharray: 5 4; vector-effect: non-scaling-stroke; pointer-events: none; }
+.dw-zoom { position: absolute; right: 0.5rem; bottom: 0.8rem; display: flex; gap: 0.3rem; }
+.dw-zoom .p-x { min-width: 44px; background: rgba(255, 255, 255, 0.92); }
+.dw-tools, .dw-selbar { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+.dw-tools .p-x[aria-pressed="true"], .dw-selbar .p-x[aria-pressed="true"] { background: var(--ink); color: #fff; }
+.dw-add { background: var(--accent-ink); border-color: var(--accent-ink); color: #fff; }
+.dw-selbar { padding: 0.5rem; border: 1.5px solid var(--accent); border-radius: var(--radius); background: var(--hit); }
+.dw-selname { flex: 1 1 100%; font-weight: 700; }
+.dw-miss { display: flex; flex-direction: column; gap: 0.4rem; }
+.dw-check ul { margin: 0; padding-left: 1.1rem; }
+.dw-link { padding: 0.25rem 0; min-height: 36px; border: 0; background: none; color: var(--ink); font: inherit; text-align: left; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.dw-link[aria-pressed="true"] { font-weight: 700; color: var(--accent-ink); }
+.dw-panel { display: flex; flex-direction: column; gap: 0.6rem; padding: 0.8rem; border: 1.5px solid var(--edge); border-radius: var(--radius); background: var(--paper); }
+.dw-lib { display: grid; grid-template-columns: repeat(auto-fill, minmax(5.6rem, 1fr)); gap: 0.4rem; }
+.dw-tile { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; min-height: 44px; padding: 0.35rem; border: 1.5px solid var(--edge); border-radius: 8px; background: #FFFFFF; font: 600 0.75rem/1.15 var(--body); color: var(--ink); text-align: center; cursor: pointer; content-visibility: auto; contain-intrinsic-size: 90px 110px; }
+.dw-tile svg { width: 100%; height: 4.2rem; }
+.dw-tile.on { border-color: var(--accent-ink); box-shadow: 0 0 0 2px var(--accent); }
+.dw-ware { grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr)); }
+.dw-opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr)); gap: 0.5rem; }
+.dw-opts .search { height: 2.75rem; font-size: 1rem; }
+.dw-cols { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.dw-col { position: relative; width: 44px; height: 44px; }
+.dw-col input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.dw-sw { display: block; width: 44px; height: 44px; border-radius: 50%; border: 1.5px solid var(--ink); }
+.dw-swb { width: 36px; height: 36px; min-height: 36px; border-radius: 50%; border: 1.5px solid var(--ink); cursor: pointer; }
+.dw-parts { margin: 0; padding-left: 1.4rem; display: flex; flex-direction: column; }
+@media (min-width: 900px) {
+  .dw-main { display: grid; grid-template-columns: minmax(0, 3fr) minmax(18rem, 2fr); align-items: start; }
+  .dw-left { position: sticky; top: 0.5rem; }
+  .dw-stage { position: relative; }
+  .dw-svg { max-height: 70vh; }
+}
+@media (max-width: 599px) { .dw h2 { font-size: 1.6rem; } .dw-stage { margin: 0 -0.25rem; } }
+@media print { .dw-tools, .dw-selbar, .dw-zoom, .dw-right, .dw-ovl, .dw-bar { display: none !important; } }

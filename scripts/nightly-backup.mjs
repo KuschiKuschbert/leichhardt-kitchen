@@ -58,9 +58,10 @@ out.config = cfg.exists ? plain(cfg.data()) : null;
 for (const name of ['activity', 'sections', 'learned', 'ordlearned', 'learnlog', 'misses', 'views', 'guides', 'mail', 'mailstat', 'drinks', 'shifts']) { out[name] = await all(name); reads += out[name].length; }
 out.notes = await all('notes'); out.notesSeen = await subs(out.notes, 'notes', 'seen');
 out.minutes = await all('minutes'); out.minutesHist = await subs(out.minutes, 'minutes', 'hist'); out.minutesSigns = await subs(out.minutes, 'minutes', 'signs');
-// the head chef's book: the index and every recipe changed or added in the book, with its earlier versions
+// the head chef's book: the index, every recipe changed or added in the book and every drawing, with their earlier versions
 out.book = await all('book'); out.recipes = await all('recipes'); out.recipesHist = await subs(out.recipes, 'recipes', 'hist');
-reads += out.book.length + out.recipes.length;
+out.drawings = await all('drawings'); out.drawingsHist = await subs(out.drawings, 'drawings', 'hist');
+reads += out.book.length + out.recipes.length + out.drawings.length;
 out.pins = (await all('pinset')).map(x => ({ id: x.id, name: x.name, setAt: x.setAt }));
 reads += out.notes.length + out.minutes.length + out.pins.length;
 let lines = 0, dayN = 0;
