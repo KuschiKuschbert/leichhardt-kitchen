@@ -824,6 +824,24 @@
   var warmed = false;
   var lastHash = null, lastRoute = '', homeY = 0;
   window.addEventListener('scroll', function () { if (lastRoute === 'home') homeY = window.scrollY; }, { passive: true });
+  // The shelves and tile groups off screen are not drawn until they scroll near (content-visibility in app.css), so
+  // their height is a guess and an old scroll position can land on the wrong shelf. Coming back, the recipe that was
+  // opened is put back at the same height on the screen instead (homeAt), and homeY is only the fallback.
+  var homeAt = null;
+  document.addEventListener('click', function (e) {
+    var a = lastRoute === 'home' && e.target.closest && e.target.closest('a[href^="#/r/"]');
+    // a recipe can sit on more than one shelf: keep which one was tapped
+    if (a) homeAt = { href: a.getAttribute('href'), n: Array.prototype.indexOf.call(app.querySelectorAll('a[href="' + a.getAttribute('href') + '"]'), a), top: a.getBoundingClientRect().top };
+  }, true);
+  function backHome() {
+    var a = homeAt && app.querySelectorAll('a[href="' + homeAt.href + '"]')[homeAt.n];
+    if (!a) { window.scrollTo(0, homeY); return; }
+    // a plate in a group not drawn yet has no true position: draw every group once (as before this change), place the
+    // plate, then go back to drawing only what is near; each group keeps the height it was drawn at, so nothing jumps
+    app.classList.add('cv-all');
+    window.scrollTo(0, a.getBoundingClientRect().top + window.scrollY - homeAt.top);
+    requestAnimationFrame(function () { requestAnimationFrame(function () { app.classList.remove('cv-all'); }); });
+  }
   function render() {
     var route = parseRoute();
     var changed = location.hash !== lastHash;
@@ -852,7 +870,7 @@
     if (changed) {
       lastHash = location.hash;
       // Coming back to the recipe list from a recipe puts you where you were.
-      window.scrollTo(0, route.name === 'home' && prevRoute === 'recipe' ? homeY : 0);
+      if (route.name === 'home' && prevRoute === 'recipe') backHome(); else { if (route.name !== 'recipe') homeAt = null; window.scrollTo(0, 0); }
       // the heading takes focus on a new page, unless a PIN box took it (the PIN screens open the keyboard by themselves)
       var title = document.getElementById('rtitle'), ae = document.activeElement;
       if (title && route.name !== 'home' && !(ae && ae.classList && ae.classList.contains('pin-auto'))) title.focus({ preventScroll: true });
