@@ -595,7 +595,8 @@ Done: the wastage log, the read budget (what stays as it is, and why, is under R
 
 1. **Fill in what the book knows.** A Logged often chip also fills the usual amount (`amt` in `summary/waste`). An order chip fills the amount box from `ordlearned`. Head chef to decide: filled in outright, or greyed until tapped.
 2. **Screens, what is left.** A trial of fewer boxes on the admin panel, with before and after screenshots for the head chef first (the dimmed chef menu, the tab fades and the type-to-find recipe links were done on 22 Oct 2026).
-3. **Plate drawings load when Recipes opens.** `js/art.js` (1.3 MB) loads at start on every page, though only Recipes and the recipe cards use it. Load it with the page loader, keep it in `SHELL` for no signal, read `LK_ART` at draw time in `js/app.js`, and let `js/overlay.js` merge into it.
+
+Measured and kept as it is: `js/art.js` (1.3 MB, 164 kB zipped) still loads at start (22 Oct 2026). Loading it only when Recipes opens was built and measured on a phone six times slower than a laptop: the start was 9 ms sooner (284 to 275 ms until the scripts had run, 71 to 65 ms at full speed), nothing less was downloaded (it stays in `SHELL`), and the first Recipes after each start was about 90 ms slower (944 to 1036 ms). Recipes is the page the book opens most, so the change was not merged.
 
 ### Changing the kitchen PIN
 
