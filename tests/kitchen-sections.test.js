@@ -31,6 +31,7 @@ const addLine = async (p, text, sec) => {
   const offered = await p.evaluate(() => [...document.querySelectorAll('.ks-b')].map(e => e.textContent));
   ok(offered.join(',') === 'Grill,Pass,Pans', 'staff: the sections on the list are offered, a removed one is not (' + offered.join(',') + ')');
   ok(!(await L.overflow(p)), 'staff: the picker fits a phone');
+  ok(await p.$eval('.ks', e => Math.abs(e.getBoundingClientRect().bottom - window.innerHeight) < 2), 'staff: the picker is a sheet at the bottom of the screen');
   ok(await p.$eval('.ks-b', e => e.getBoundingClientRect().height) >= 44, 'staff: the section buttons are big enough to tap');
   await p.click('.ks-b[data-v="grill"]'); await p.waitForTimeout(500);
   s = await store(p);
@@ -94,6 +95,16 @@ const addLine = async (p, text, sec) => {
   p = await L.open(b, '#/prep', { who: 'bo', extra: withSecs({ [fsKey(['shifts', today + '_bo'])]: { day: today, sec: 'pans', name: 'Pans', auto: false, at: L.NOW - 3600000, by: 'bo' } }), wait: 1500 });
   ok(!(await p.$('.ks-wrap')), 'other phone: not asked again');
   ok(await p.$eval('[data-k="p-section"]', e => e.value) === 'Pans', 'other phone: the section box starts on Pans');
+  await p.context().close();
+
+  // the end of the day: yesterday's pick no longer counts, the next day asks again
+  const yday = L.ymd(new Date(L.NOW - 86400000));
+  p = await L.open(b, '#/prep', { who: 'bo', extra: withSecs({ [fsKey(['shifts', yday + '_bo'])]: { day: yday, sec: 'grill', name: 'Grill', auto: false, at: L.NOW - 86400000, by: 'bo' } }), wait: 300 });
+  await p.evaluate(d => { localStorage.setItem('lk.sec.bo', JSON.stringify({ d, sec: 'grill', name: 'Grill' })); }, yday);
+  await p.reload(); await p.waitForTimeout(1500);
+  ok(!!(await p.$('.ks-wrap')) && await p.$eval('.ks-b[data-v="grill"]', e => e.getAttribute('aria-pressed')) === 'false', 'next day: yesterday\'s Grill is gone and Bo is asked again');
+  await p.click('.ks-out'); await p.waitForTimeout(300);
+  ok(await p.$eval('[data-k="p-section"]', e => e.value) === '', 'next day: no section until Bo picks one');
   await p.context().close();
 
   // a sous chef is not asked: their section is their role

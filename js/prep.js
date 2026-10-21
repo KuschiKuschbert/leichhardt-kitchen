@@ -4837,7 +4837,7 @@
 
   /* ---------- kitchen sections: where each person works today (21 Oct 2026) ----------
      The head chef sets the kitchen's sections in the admin panel's People tab (config/main kitSecs: id, name, off).
-     Staff and leads pick one straight after their PIN, once a day, in a popup appended to document.body (clicks use
+     Staff and leads pick one straight after their PIN, once a day, in a bottom sheet appended to document.body (clicks use
      data-ks, classes ks-). That is their default section for the day: a prep line, a Quick add or a wastage entry with
      the section box left alone goes under it. The head chef and sous chefs are not asked: their section is their role.
      Each pick is one small record, shifts/<day>_<person id> { day, sec, name, auto, at }, so the admin panel can show
@@ -4890,7 +4890,7 @@
     var el = document.createElement('div');
     el.className = 'ks-wrap';
     el.innerHTML = '<div class="ks-bg" data-ks="' + out + '"></div><section class="ks" role="dialog" aria-modal="true" aria-labelledby="ks-h" tabindex="-1">' +
-      '<header class="ks-head"><span class="ks-eb">' + esc(p.name) + '</span><h2 class="ks-h" id="ks-h">Your section today</h2></header>' +
+      '<div class="ks-grip" aria-hidden="true"></div><header class="ks-head"><span class="ks-eb">' + esc(p.name) + '</span><h2 class="ks-h" id="ks-h">Your section today</h2></header>' +
       '<p class="ks-hint">Your prep lines and wastage go under it, unless you write another section.</p>' +
       '<div class="ks-grid" role="group" aria-labelledby="ks-h">' + kitSecs().map(function (s) {
         return '<button type="button" class="ks-b" data-ks="pick" data-v="' + esc(s.id) + '" aria-pressed="' + (!!cur && cur.sec === s.id) + '">' + esc(s.name) + '</button>';
