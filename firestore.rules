@@ -369,10 +369,10 @@ service cloud.firestore {
     // booking, with no half or minus platters, by construction. Rules cannot loop, so the 6 lines are written out.
     function fnAdd(l, n) { return l.u.size() == l.qty && l.qty >= 1 && l.u.hasOnly([0, 1, 2, 3, 4, 5, 6, 7][0:n]); }
     function fnAfter(R, i) { return R.size() <= i || R[i].at > R[i - 1].at; }
-    // a confirmed function: a name, date, start and guests, at least one platter line, one round for all at once or two
+    // a confirmed function: a name, date, start and guests (or guests ticked Not known yet, gu; the start may be TBC, st), at least one platter line, one round for all at once or two
     // or more for staggered, rounds in time order, first and last the same as the rounds say
     function fnConfirmed(d) {
-      return d.name.size() > 0 && d.date.size() == 10 && d.start > 0 && d.guests >= 1
+      return d.name.size() > 0 && d.date.size() == 10 && (d.start > 0 || d.get('st', false) == true) && (d.guests >= 1 || d.get('gu', false) == true)
         && d.lines.size() >= 1 && d.rounds.size() >= 1 && (d.mode == 'all' ? d.rounds.size() == 1 : d.rounds.size() >= 2)
         && fnAdd(d.lines[0], d.rounds.size()) && (d.lines.size() < 2 || fnAdd(d.lines[1], d.rounds.size())) && (d.lines.size() < 3 || fnAdd(d.lines[2], d.rounds.size()))
         && (d.lines.size() < 4 || fnAdd(d.lines[3], d.rounds.size())) && (d.lines.size() < 5 || fnAdd(d.lines[4], d.rounds.size())) && (d.lines.size() < 6 || fnAdd(d.lines[5], d.rounds.size()))
@@ -382,13 +382,13 @@ service cloud.firestore {
     function fnOk(id) { return fnCheck(id, request.resource.data, resource == null ? {} : resource.data); }
     function fnCheck(id, d, was) {
       return id.matches('[a-z0-9][a-z0-9-]{0,47}')
-        && d.keys().hasOnly(['v', 'status', 'name', 'date', 'start', 'loc', 'guests', 'mode', 'lines', 'rounds', 'notes', 'kc', 'kcBy', 'kcAt',
+        && d.keys().hasOnly(['v', 'status', 'name', 'date', 'start', 'st', 'loc', 'guests', 'gu', 'mode', 'lines', 'rounds', 'notes', 'kc', 'kcBy', 'kcAt',
           'first', 'last', 'from', 'until', 'kq', 'was', 'chg', 'cBy', 'cAt', 'confBy', 'confAt', 'canBy', 'canAt', 'by', 'upd'])
         && d.v is int && d.upd is int
         && d.status in ['draft', 'confirmed', 'cancelled']
         && d.name is string && d.name.size() <= 80
         && d.date is string && (d.date.size() == 0 || d.date.size() == 10)
-        && d.start is int && d.guests is int && d.guests >= 0 && d.guests <= 2000
+        && d.start is int && d.guests is int && d.guests >= 0 && d.guests <= 2000 && d.get('gu', false) is bool && d.get('st', false) is bool
         && d.mode in ['all', 'stag']
         && d.loc is string && d.loc.size() <= 60 && d.notes is string && d.notes.size() <= 1000 && d.kc is string && d.kc.size() <= 2000
         // the kitchen comment's author is whoever changed it, never someone else's name

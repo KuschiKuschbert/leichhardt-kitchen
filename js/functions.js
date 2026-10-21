@@ -9,7 +9,7 @@
   tests/fn-schedule.js, and which js/fnedit.js uses to check a booking before it is saved.
 
   Data (kitchens/<PIN>/...):
-    functions/<id>          the kitchen's copy (no phone or email): name, date, start, loc, guests, mode (all or stag),
+    functions/<id>          the kitchen's copy (no phone or email): name, date, start, loc, guests (gu: not known yet), mode (all or stag),
                             lines [{ rid, name, unit, spec, fp, qty, u }], rounds [{ at, note }], notes, kc (kitchen comment),
                             kcBy, kcAt, first, last, from, until, kq, was, chg, cBy, cAt, confBy, confAt, canBy, canAt, by, upd, v
     functions/<id>/hist/<v> every earlier version, never changed
@@ -42,7 +42,7 @@
   function dayName(ymd) { var a = String(ymd).split('-'), d = new Date(Date.UTC(+a[0], a[1] - 1, +a[2])); return isYmd(ymd) ? DOW[d.getUTCDay()] + ' ' + (+a[2]) + ' ' + MON[a[1] - 1] : ''; }
   // a time on the function's day reads "18:30"; on another day it carries that day: "Sun 25 Oct 00:30 (next day)"
   function when(ms, ymd) {
-    if (!ms) return '';
+    if (!ms) return 'TBC';   // a time still to be confirmed (event start TBC)
     var d = kday(ms);
     if (!ymd || d === ymd) return kclock(ms);
     return dayName(d) + ' ' + kclock(ms) + (d === addDays(ymd, 1) ? ' (next day)' : d === addDays(ymd, -1) ? ' (day before)' : '');
@@ -64,9 +64,12 @@
      until the later of 2 hours after the event start and 30 minutes after the last round. The 30 minutes are so the
      last round stays on screen while it is sent and plated. */
   function windowOf(date, start, first, last) {
-    var from = kat(date, 0);
+    var from = kat(date, 0), ends = [];
     if (first && first < from) from = dayStart(first);
-    return { from: from, until: Math.max(start + SHOW_AFTER_START, (last || start) + SHOW_AFTER_LAST) };
+    if (start) ends.push(start + SHOW_AFTER_START);
+    if (last || start) ends.push((last || start) + SHOW_AFTER_LAST);
+    // times still TBC: the kitchen sees it all day, until midnight
+    return { from: from, until: ends.length ? Math.max.apply(null, ends) : kat(addDays(date, 1), 0) };
   }
   /* first, last, from, until and kq worked out from what is saved (never typed), so nothing can go stale.
      kq is what the kitchen's one query sorts on: the last moment the kitchen needs to see this record (0 never). */
@@ -74,7 +77,7 @@
     var ats = (f.rounds || []).map(function (r) { return r.at; }), w;
     f.first = ats.length ? ats[0] : (f.start || 0);
     f.last = ats.length ? ats[ats.length - 1] : f.first;
-    if (isYmd(f.date) && f.start) { w = windowOf(f.date, f.start, f.first, f.last); f.from = w.from; f.until = w.until; }
+    if (isYmd(f.date) && (f.start || f.st)) { w = windowOf(f.date, f.start, f.first, f.last); f.from = w.from; f.until = w.until; }
     else { f.from = 0; f.until = 0; }
     var moved = f.was && f.was.until ? f.was.until : 0;
     if (f.status === 'confirmed') f.kq = Math.max(f.until, moved);
@@ -85,6 +88,8 @@
   function counts(line, n) { return fromU(line.u, n); }
   function short(name) { return String(name || '').replace(/\s+platters?$/i, '').trim() || String(name || ''); }
   function unitOf(line, q) { var u = line.unit || 'platter'; return q === 1 ? u : u + 's'; }
+  // guests are for the kitchen to know; a manager may not know them yet (gu)
+  function guestsText(f) { return f.gu ? 'guests not known yet' : (f.guests || 0) + ' guests'; }
   function totalQty(f) { return sum((f.lines || []).map(function (l) { return +l.qty || 0; })); }
 
   /* What stops a function being confirmed, in plain words. f is the saved shape (lines with u, rounds with at).
@@ -94,8 +99,9 @@
     function add(k, t) { out.push({ k: k, t: t }); }
     if (!String(f.name || '').trim()) add('name', 'Give the function a name, like "Smith birthday".');
     if (!isYmd(f.date)) add('date', 'Pick the date.');
-    if (!f.start) add('start', 'Set the event start time.');
-    if (!(f.guests >= 1 && Math.floor(f.guests) === f.guests)) add('guests', 'Guests: a whole number, 1 or more.');
+    if (!f.start && !f.st) add('start', 'Set the event start time, or tick TBC.');
+    if (f.mode === 'stag' && !(f.rounds || []).length || (f.mode === 'stag' && !f.rounds[0].at)) add('rounds', 'Staggered needs a time for the first round. Use All at once until the times are known.');
+    if (!f.gu && !(f.guests >= 1 && Math.floor(f.guests) === f.guests)) add('guests', 'Guests: a whole number, 1 or more, or tick Not known yet.');
     if (!L.length) add('lines', 'Add at least one platter.');
     if (L.length > MAX_LINES) add('lines', 'At most ' + MAX_LINES + ' kinds of platter on one function.');
     L.forEach(function (l, i) {
@@ -133,7 +139,7 @@
     if (a.date !== b.date) out.push('Moved to ' + dayName(b.date));
     if (a.start !== b.start) out.push('Event start ' + when(a.start, a.date) + ' to ' + when(b.start, b.date));
     if (a.loc !== b.loc) out.push('Place now ' + (b.loc || 'not set'));
-    if (a.guests !== b.guests) out.push('Guests ' + a.guests + ' to ' + b.guests);
+    if (a.guests !== b.guests || !a.gu !== !b.gu) out.push('Guests ' + (a.gu ? 'not known' : a.guests) + ' to ' + (b.gu ? 'not known' : b.guests));
     var al = {}, bl = {};
     (a.lines || []).forEach(function (l) { al[l.rid] = l; });
     (b.lines || []).forEach(function (l) { bl[l.rid] = l; });
@@ -198,7 +204,7 @@
     MIN: MIN, HOUR: HOUR, DAY: DAY, MAX_LINES: MAX_LINES, MAX_ROUNDS: MAX_ROUNDS, MAX_QTY: MAX_QTY, MAX_PER: MAX_PER,
     kday: kday, kat: kat, kclock: kclock, dayStart: dayStart, addDays: addDays, isYmd: isYmd, hmMin: hmMin, dayName: dayName, when: when,
     even: even, toU: toU, fromU: fromU, sum: sum, roundTimes: roundTimes, windowOf: windowOf, derive: derive, counts: counts,
-    short: short, unitOf: unitOf, totalQty: totalQty, problems: problems, changes: changes, dayTotals: dayTotals,
+    short: short, unitOf: unitOf, totalQty: totalQty, guestsText: guestsText, problems: problems, changes: changes, dayTotals: dayTotals,
     overlaps: overlaps, showing: showing, nextRound: nextRound, fingerprint: fingerprint
   };
   if (typeof module === 'object' && module.exports) { module.exports = M; return; }
@@ -275,11 +281,12 @@
         '<span class="fn-r2">Not today any more: now ' + esc(dayName(f.date)) + ', event ' + esc(kclock(f.start)) + ', food ' + esc(when(f.first, f.date)) + '.</span></button></li>';
     }
     var n = (f.rounds || []).length, nx = nextRound(f, t), c = recent(f), food;
-    var head = '<span class="fn-r1"><b>' + esc(f.name) + '</b>' + (f.loc ? ' · ' + esc(f.loc) : '') + ' · ' + f.guests + ' guests' +
+    var head = '<span class="fn-r1"><b>' + esc(f.name) + '</b>' + (f.loc ? ' · ' + esc(f.loc) : '') + ' · ' + guestsText(f) +
       (f.mode === 'stag' ? ' <span class="fn-tag">Staggered</span>' : '') + (f.kc ? ' <span class="fn-tag fn-t-kc">Kitchen comment</span>' : '') +
       (c ? ' <span class="fn-tag fn-t-new">Changed ' + esc(kclock(c.at)) + '</span>' : '') + '</span>';
     var ev = f.first !== f.start ? 'Event ' + esc(when(f.start, kday(t))) + ' · ' : '';
-    if (f.mode === 'all') food = (nx < 0 ? 'Was due ' : 'All ' + tot + ' due ') + esc(when(f.first, kday(t))) + ': <b>' + esc(linesText(f)) + '</b>';
+    if (!f.first) food = 'Times TBC: <b>' + esc(linesText(f)) + '</b> (' + tot + ')';
+    else if (f.mode === 'all') food = (nx < 0 ? 'Was due ' : 'All ' + tot + ' due ') + esc(when(f.first, kday(t))) + ': <b>' + esc(linesText(f)) + '</b>';
     else if (nx < 0) food = 'Last round was due ' + esc(when(f.last, kday(t))) + '. ' + tot + ' in all.';
     else {
       var rc = roundCounts(f, nx), now_ = sum(rc);
@@ -330,7 +337,7 @@
       f.status === 'draft' ? '<p class="fn-banner" role="note"><b>Draft.</b> Not confirmed yet: the kitchen does not see it.</p>' : '';
     var food = f.mode === 'all' ? 'All at once, ' + esc(when(f.first, f.date)) : 'Staggered, ' + n + ' rounds from ' + esc(when(f.first, f.date)) + ' to ' + esc(when(f.last, f.date));
     var out = status + facts([
-      ['Date', esc(dayName(f.date))], ['Place', esc(f.loc || '')], ['Guests', esc(f.guests)],
+      ['Date', esc(dayName(f.date))], ['Place', esc(f.loc || '')], ['Guests', f.gu ? 'Not known yet' : esc(f.guests)],
       ['Event start', esc(when(f.start, f.date))], ['Food', food], ['Platters', tot + ' in all (the booked numbers, not worked out from guests)']
     ]) + '<h3 class="fn-h">When each round goes out</h3>' + table(f) +
       '<p class="hint fn-note">These are the times each round is due. The book does not track what has gone out.</p>' +
@@ -373,7 +380,7 @@
     var n = (f.rounds || []).length, tot = totalQty(f);
     return '<li class="fn-card' + (f.status === 'cancelled' ? ' is-off' : '') + '"><a href="#/fn/' + encodeURIComponent(f.id) + '"><span class="fn-c1"><b>' + esc(f.name) + '</b>' +
       (f.status === 'cancelled' ? ' <span class="fn-tag fn-t-off">Cancelled</span>' : f.mode === 'stag' ? ' <span class="fn-tag">Staggered, ' + n + ' rounds</span>' : '') + (f.kc ? ' <span class="fn-tag fn-t-kc">Kitchen comment</span>' : '') + '</span>' +
-      '<span class="fn-c2">Event ' + esc(when(f.start, f.date)) + ' · food from ' + esc(when(f.first, f.date)) + (f.loc ? ' · ' + esc(f.loc) : '') + ' · ' + f.guests + ' guests</span>' +
+      '<span class="fn-c2">Event ' + esc(when(f.start, f.date)) + ' · food from ' + esc(when(f.first, f.date)) + (f.loc ? ' · ' + esc(f.loc) : '') + ' · ' + guestsText(f) + '</span>' +
       '<span class="fn-c3">' + esc(linesText(f)) + ' (' + tot + ')</span></a></li>';
   }
   function totalsHTML(rows) {
