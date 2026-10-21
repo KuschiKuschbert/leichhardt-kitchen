@@ -287,6 +287,31 @@ await ok(W([['book/matches', { m: { x: 'y' }, upd: 1 }, true]], { id: 'ann', as:
 await ok(W([['book/matches', { m: { x: 'y' }, upd: 1, cost: 2 }, true]], { id: 'hd' }), false, 'matches: no fields beyond the picks');
 await ok(W([['book/matches', { m: 'cornbread', upd: 1 }]], { id: 'hd' }), false, 'matches: the picks are a map');
 await ok(deleteDoc(doc(owner, K + 'book/matches')), false, 'matches: never deleted');
+// reuse: the head chef's templates (drawtpl) and own library pieces and servingware (drawlib)
+const tpl = x => Object.assign({ name: 'Pub split', slot: 'plate', surf: { fam: 'plate', size: 30 }, els: [{ t: 'item', a: 'rump@1', x: 0, y: 30, sx: 1, sy: 1, r: 0 }], defs: '{}', vb: '-110 -110 220 220', svgS: '<circle cx="0" cy="0" r="100" fill="#FFFFFF"/>', svgF: '', v: 1, upd: 1, removed: false }, x || {});
+const lib = x => Object.assign({ type: 'item', name: 'House slaw', cat: 'veg', kw: 'slaw', role: 'salad', form: 'piece', n: 1, w: 40, h: 30, body: '<circle cx="0" cy="0" r="15" fill="#F1EEDC"/>', side: { s: 'mound', h: 9, c: '#F1EEDC' }, v: 1, upd: 1, removed: false }, x || {});
+await ok(W([['drawtpl/pub-split-1', tpl()]], { id: 'hd' }), true, 'templates: the head chef saves a template');
+await ok(getDoc(doc(anon, K + 'drawtpl/pub-split-1')), true, 'templates: a PIN holder reads a template');
+await ok(W([['drawtpl/pub-split-1', tpl({ v: 2, removed: true })]], { id: 'hd' }), true, 'templates: the next version (hidden)');
+await ok(W([['drawtpl/pub-split-1', tpl({ v: 2 })]], { id: 'hd' }), false, 'templates: a save from an old copy is refused');
+await ok(W([['drawtpl/other-1', tpl()]], { id: 'sam' }), false, 'templates: a sous chef cannot save a template');
+await ok(W([['drawtpl/other-1', tpl()]], { id: 'ann' }), false, 'templates: staff cannot save a template');
+await ok(W([['drawtpl/other-1', tpl({ slot: 'poster' })]], { id: 'hd' }), false, 'templates: the slot must be plate, pan, side or build');
+await ok(W([['drawtpl/other-1', tpl({ svgF: 'x'.repeat(300001) })]], { id: 'hd' }), false, 'templates: the drawing is capped at 300 000 characters');
+await ok(W([['drawtpl/other-1', tpl({ rid: 'burger' })]], { id: 'hd' }), false, 'templates: no fields beyond the template fields');
+await ok(ownerBatch([['drawtpl/moved-1', tpl({ v: 4 })]]), true, 'templates: the Google account copies one as it is (move to a new kitchen PIN)');
+await ok(deleteDoc(doc(owner, K + 'drawtpl/pub-split-1')), false, 'templates: never deleted');
+await ok(W([['drawlib/house-slaw-1', lib()]], { id: 'hd' }), true, 'own library: the head chef saves a piece');
+await ok(W([['drawlib/pub-oval-1', { type: 'surf', name: 'Pub oval', p: { fam: 'plate', shape: 'oval', size: 34 }, v: 1, upd: 1, removed: false }]], { id: 'hd' }), true, 'own library: the head chef saves servingware');
+await ok(getDoc(doc(anon, K + 'drawlib/house-slaw-1')), true, 'own library: a PIN holder reads a piece');
+await ok(W([['drawlib/house-slaw-1', lib({ v: 2, name: 'House slaw, red' })]], { id: 'hd' }), true, 'own library: the next version of a piece');
+await ok(W([['drawlib/other-1', lib()]], { id: 'sam' }), false, 'own library: a sous chef cannot save a piece');
+await ok(W([['drawlib/other-1', lib()]], { id: 'ann', as: 'hd' }), false, 'own library: staff writing as the head chef is refused');
+await ok(W([['drawlib/other-1', lib({ type: 'picture' })]], { id: 'hd' }), false, 'own library: a piece or servingware only');
+await ok(W([['drawlib/other-1', lib({ body: '' })]], { id: 'hd' }), false, 'own library: a piece needs its drawing');
+await ok(W([['drawlib/other-1', lib({ body: 'x'.repeat(100001) })]], { id: 'hd' }), false, 'own library: a piece is capped at 100 000 characters');
+await ok(W([['drawlib/other-1', lib({ price: 4 })]], { id: 'hd' }), false, 'own library: no fields beyond the library fields');
+await ok(deleteDoc(doc(owner, K + 'drawlib/house-slaw-1')), false, 'own library: never deleted');
 // the owner probe
 await ok(getDoc(doc(owner, K + 'config/admins')), true, 'admins: the head chef may read the probe');
 await ok(getDoc(doc(anon, K + 'config/admins')), false, 'admins: nobody else may');

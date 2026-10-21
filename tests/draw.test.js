@@ -204,7 +204,7 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   p = await L.open(b, '#/manage/draw/new/burger/plate', { who: 'ann', extra: cfg(), wait: 1400, touch: true });
   await wait(p, () => !!document.querySelector('.dw-svg'), null, 15000);
   ok(!(await L.overflow(p)), 'phone: no sideways scroll');
-  await p.click('.dw-tile >> nth=0'); await L.settle(p, 200);
+  await p.click('.dw-tile[data-dw="add"] >> nth=0'); await L.settle(p, 200);
   ok((await W(p)).n === 1, 'phone: a tap on a library drawing puts it on the plate');
   await p.context().close();
 

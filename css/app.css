@@ -1608,6 +1608,16 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav { top: var(--u
 .dw-un { display: flex; flex-direction: column; gap: 0.35rem; padding-top: 0.5rem; border-top: 1px solid var(--edge); }
 .dw-un:first-of-type { border-top: 0; padding-top: 0; }
 .dw-un .chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+/* Reuse (js/draw.js): Start from, a new library piece, an SVG file, saved servingware */
+.dw-start { display: block; border-color: var(--accent); }
+.dw-start summary { display: flex; align-items: center; min-height: 44px; font-weight: 700; cursor: pointer; }
+.dw-start[open] summary { margin-bottom: 0.4rem; }
+.dw-start > * + * { margin-top: 0.6rem; }
+.dw-imp { position: relative; overflow: hidden; }
+.dw-file { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.dw-pc-prev { display: flex; justify-content: center; padding: 0.5rem; border: 1.5px solid var(--edge); border-radius: 8px; background: #FFFFFF; }
+.dw-pc-prev svg { width: 8rem; height: 8rem; }
+.dw-wsave { display: flex; flex-direction: column; gap: 0.4rem; }
 .dw-link { padding: 0.25rem 0; min-height: 36px; border: 0; background: none; color: var(--ink); font: inherit; text-align: left; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .dw-link[aria-pressed="true"] { font-weight: 700; color: var(--accent-ink); }
 .dw-panel { display: flex; flex-direction: column; gap: 0.6rem; padding: 0.8rem; border: 1.5px solid var(--edge); border-radius: var(--radius); background: var(--paper); }

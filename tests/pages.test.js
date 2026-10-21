@@ -30,7 +30,7 @@ if (SHOTS) fs.mkdirSync(SHOTS, { recursive: true });
     // Manage Recipes & Drawings, as the head chef (Ann here, by PIN)
     const K = 'kitchens/' + L.PIN + '/config/main', P = (id, name, role) => ({ id, name, role, add: true, tick: true, del: role !== 'staff', active: true });
     const head = { [K]: { people: [P('sam', 'Sam', 'sous'), P('ann', 'Ann', 'head'), P('bo', 'Bo', 'staff')], headId: 'ann', sousIds: ['sam', 'ann'], pingIds: ['sam', 'ann'], showBadges: true } };
-    for (const hash of ['#/manage', '#/manage/r/burger', '#/manage/r/aioli', '#/manage/new', '#/manage/draw/new/burger/plate', '#/manage/draw/new/rice/pan', '#/manage/draw/new/burger/build']) {
+    for (const hash of ['#/manage', '#/manage/r/burger', '#/manage/r/aioli', '#/manage/new', '#/manage/draw/new/burger/plate', '#/manage/draw/new/rice/pan', '#/manage/draw/new/burger/build', '#/manage/draw/new/burger/plate/book:burger']) {
       const pm = await L.open(b, hash, { width: w, height: h, touch, who: 'ann', wait: 1400, extra: head });
       await L.waitFor(pm, () => !!document.querySelector('#mg-q, #mg-name, .dw-svg'), null, 15000).catch(() => {});
       const of = await L.overflow(pm);

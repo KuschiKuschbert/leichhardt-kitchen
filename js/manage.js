@@ -61,7 +61,7 @@
   function hasDraft(id) { return !!lsGet(draftKey(id)); }
 
   /* ---------- the recipe list (#/manage) ---------- */
-  var CHIPS = [['all', 'All'], ['dish', 'Dishes'], ['prep', 'Batch and components'], ['changed', 'Changed here'], ['new', 'New'], ['hidden', 'Hidden'], ['tocome', 'Cards to come'], ['filechanged', 'Book file changed'], ['drafts', 'Not saved yet'], ['drawings', 'Drawings']];
+  var CHIPS = [['all', 'All'], ['dish', 'Dishes'], ['prep', 'Batch and components'], ['changed', 'Changed here'], ['new', 'New'], ['hidden', 'Hidden'], ['tocome', 'Cards to come'], ['filechanged', 'Book file changed'], ['drafts', 'Not saved yet'], ['drawings', 'Drawings'], ['templates', 'Templates'], ['mylib', 'Made in the book']];
   // what the book says about a recipe: from js/data.js, changed here, new, hidden, and whether the file changed since
   function status(id) {
     var c = X.change(id), base = X.pristine(id);
@@ -90,6 +90,46 @@
     if (c === 'drafts') return st.draft;
     return false;
   }
+  /* The head chef's templates (drawtpl) and own pieces and servingware (drawlib): one query each, the first time their
+     list opens. Hide takes one out of the editor (a new version with removed); drawings made from it keep their copy. */
+  var MINE = { tpl: null, lib: null, busy: false };
+  function loadMine(force) {
+    if (MINE.busy || (!force && MINE.tpl && MINE.lib)) return;
+    MINE.busy = true;
+    var api = B(), grab = function (sn) { return sn.docs.map(function (x) { var o = x.data(); o.id = x.id; return o; }); };
+    api.ready().then(function () { var fs = api.fs(); return Promise.all([fs.getDocs(api.colRef('drawtpl')), fs.getDocs(api.colRef('drawlib'))]); }).then(function (r) {
+      MINE.tpl = grab(r[0]); MINE.lib = grab(r[1]); MINE.busy = false; draw();
+    }, function () { MINE.busy = false; MINE.tpl = MINE.tpl || []; MINE.lib = MINE.lib || []; draw(); });
+  }
+  function mineHTML(kind, words) {
+    loadMine();
+    var list = kind === 'templates' ? MINE.tpl : MINE.lib;
+    if (!list) return '<p class="hint">Reading them from the book...</p>';
+    list = list.filter(function (x) { return !words.length || words.every(function (w) { return (x.name + ' ' + (x.kw || '') + ' ' + (x.slot || '') + ' ' + (x.cat || '')).toLowerCase().indexOf(w) >= 0; }); });
+    var pic = function (x) {
+      if (kind === 'templates') return '<svg class="mg-thumb" viewBox="' + esc(/^-?[\d.]+ -?[\d.]+ [\d.]+ [\d.]+$/.test(x.vb || '') ? x.vb : '-110 -110 220 220') + '" aria-hidden="true" focusable="false"><g data-surf="1">' + X.clean(x.svgS) + '</g>' + X.clean(x.svgF) + '</svg>';
+      if (x.type !== 'item' || !(x.w > 0 && x.h > 0)) return '';
+      var top = x.cat === 'build' ? -x.h : -x.h / 2;
+      return '<svg class="mg-thumb" viewBox="' + (-x.w / 2 - 4) + ' ' + (top - 4) + ' ' + (x.w + 8) + ' ' + (x.h + 8) + '" aria-hidden="true" focusable="false">' + X.clean(x.body) + '</svg>';
+    };
+    var what = function (x) { return kind === 'templates' ? { plate: 'Plate', pan: 'Pan', side: 'From the side', build: 'Build' }[x.slot] || x.slot : x.type === 'surf' ? 'Servingware' : 'Library piece'; };
+    var none = kind === 'templates' ? 'No templates yet. In the drawing editor, Save as a template keeps a plating for any recipe to start from.' : 'Nothing made in the book yet. In the drawing editor, Save as a library piece, Import a drawing (SVG) and Save this servingware add to the library.';
+    return list.length ? '<p class="hint" role="status">' + list.length + (kind === 'templates' ? (list.length === 1 ? ' template' : ' templates') : (list.length === 1 ? ' piece or servingware' : ' pieces and servingware')) + '. Drawings made from them keep their own copy.</p><ul class="mg-list">' + list.map(function (x) {
+      var k = (kind === 'templates' ? 'tpl:' : 'lib:') + x.id;
+      return '<li class="mg-row">' + pic(x) + '<span class="mg-rt"><b>' + esc(x.name || x.id) + '</b><span class="hint">' + esc(what(x)) + ' · version ' + esc(x.v || 1) + (x.removed ? ' · hidden' : '') + '</span></span>' +
+        '<button type="button" class="p-x" data-mg="mine-hide" data-v="' + esc(k) + '">' + (armed('mine-hide:' + k) ? 'Tap again to ' + (x.removed ? 'show it' : 'hide it') : x.removed ? 'Show it again' : 'Hide') + '</button></li>';
+    }).join('') + '</ul>' : '<p class="hint">' + none + '</p>';
+  }
+  function mineHide(k) {
+    var api = B(), m = /^(tpl|lib):(.+)$/.exec(k || ''); if (!m) return;
+    var list = m[1] === 'tpl' ? MINE.tpl : MINE.lib, x = (list || []).filter(function (o) { return o.id === m[2]; })[0];
+    if (!x || !arm('mine-hide:' + k)) return;
+    var out = {}; Object.keys(x).forEach(function (f) { if (f !== 'id' && f !== 'by') out[f] = x[f]; });
+    out.removed = !x.removed; out.v = (x.v || 1) + 1; out.upd = api.now();
+    api.ready().then(function () { return api.W([['set', api.docRef(m[1] === 'tpl' ? 'drawtpl' : 'drawlib', x.id), out]]); }).then(function () {
+      x.removed = out.removed; x.v = out.v; toast(out.removed ? 'Hidden: the drawing editor no longer offers it.' : 'Shown again in the drawing editor.'); draw();
+    }, function (e) { toast(e && e.code === 'permission-denied' ? 'Not changed: only the head chef can change these.' : 'Not changed. Check the signal and try again.'); });
+  }
   function listHTML() {
     var q = M.q.trim().toLowerCase(), words = q ? q.split(/\s+/) : [];
     var toCome = A.toCome();
@@ -101,7 +141,8 @@
     }).join('') + '</div>';
     var find = '<div class="field"><label class="label" for="mg-q">Find a recipe</label><input id="mg-q" class="search" type="search" data-f="q" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Name, card number or ingredient" value="' + esc(M.q) + '"></div>';
     var body;
-    if (M.chip === 'drawings') {
+    if (M.chip === 'templates' || M.chip === 'mylib') body = mineHTML(M.chip, words);
+    else if (M.chip === 'drawings') {
       var ART = window.LK_ART || {}, dl = X.arts().filter(function (x) { return !words.length || words.every(function (w) { return (x.name + ' ' + x.id + ' ' + nameOf(x.rid)).toLowerCase().indexOf(w) >= 0; }); });
       var thumbOf = function (x) {
         var k = '@' + x.id, v = x.slot === 'side' ? ART.sides[k] : x.slot === 'build' ? ART.diagrams[k] : null;
@@ -696,6 +737,7 @@
     if (!el) return;
     var a = el.getAttribute('data-mg'), i = +el.getAttribute('data-i'), v = el.getAttribute('data-v'), e = M.ed, d = e && e.d;
     if (a === 'chip') { M.chip = v; M.more = false; draw(); return; }
+    if (a === 'mine-hide') { mineHide(v); return; }
     if (a === 'more') { M.more = true; draw(); return; }
     if (!e || !d) return;
     if (a === 'goto') { ev.preventDefault(); focusId(v); return; }

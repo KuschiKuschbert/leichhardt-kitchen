@@ -61,6 +61,7 @@ out.minutes = await all('minutes'); out.minutesHist = await subs(out.minutes, 'm
 // the head chef's book: the index, every recipe changed or added in the book and every drawing, with their earlier versions
 out.book = await all('book'); out.recipes = await all('recipes'); out.recipesHist = await subs(out.recipes, 'recipes', 'hist');
 out.drawings = await all('drawings'); out.drawingsHist = await subs(out.drawings, 'drawings', 'hist');
+out.drawtpl = await all('drawtpl'); out.drawlib = await all('drawlib');
 reads += out.book.length + out.recipes.length + out.drawings.length;
 out.pins = (await all('pinset')).map(x => ({ id: x.id, name: x.name, setAt: x.setAt }));
 reads += out.notes.length + out.minutes.length + out.pins.length;
