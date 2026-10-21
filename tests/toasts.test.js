@@ -44,12 +44,16 @@ const seeThrough = bg => { const m = /rgba\([^)]*,\s*([\d.]+)\)/.exec(bg || '');
   await p.context().close();
 
   // a toast without a button goes once the page is scrolled
-  p = await L.open(b, '#/waste', { wait: 1500 });
+  // a busy day, so the page is long enough to scroll
+  const busy = {}, td = L.ymd(new Date(L.NOW));
+  for (let i = 0; i < 12; i++) busy[['kitchens', L.PIN, 'waste', td, 'lines', 'b' + i].join('/')] = { text: 'Item ' + i, amount: 1, unit: 'kg', reason: 'prep', action: '', station: 'Larder', addedBy: 'Bo', addedById: 'bo', addedAt: L.NOW - (i + 2) * 600000, deleted: false };
+  p = await L.open(b, '#/waste', { wait: 1500, extra: busy });
   await p.click('.nb-addbtn'); await L.settle(p, 300);
   ok(/Write what was wasted/.test(await txt(p, '.p-toast') || ''), 'waste: an empty entry says what is missing');
   await p.clock.runFor(1000); // past the first moment, when the page moving to the box does not count
-  await p.evaluate(() => window.scrollTo(0, 0)); await L.settle(p, 300);
-  ok(await p.$('.p-toast') === null, 'waste: the message goes when the page scrolls');
+  // scroll the other way from where the box left the page (the page is shorter since the review moved to the admin panel)
+  const sy = await p.evaluate(() => { window.scrollTo(0, scrollY > 0 ? 0 : document.documentElement.scrollHeight); return scrollY; }); await L.settle(p, 300);
+  ok(await p.$('.p-toast') === null, 'waste: the message goes when the page scrolls (to ' + sy + ')');
   ok(p.errors.length === 0, 'waste: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 

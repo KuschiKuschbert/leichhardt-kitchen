@@ -8,6 +8,10 @@
   A day is claimed in learnlog/<date> (prep) and learnlog/o-<date> (orders) in the same batch as its counts, so a day is
   never counted twice and never half counted. Removed lines and rolled-over copies are not counted.
 
+  It also writes summary/waste (22 Oct 2026): what was wasted in the last 14 finished days, one small record. The phones
+  read it once a day for the Logged often chips, the suggestions and the waste hints on the prep and order lists, so a
+  staff phone never reads past wastage lines (the rules let only the head chef's Google account read them).
+
   Needs two secrets: FIREBASE_SA (a service account key, JSON) and KITCHEN_PIN. Nothing secret is ever printed.
   For a test run against the Firestore emulator: FIRESTORE_EMULATOR_HOST=127.0.0.1:8089 KITCHEN_PIN=000000 node nightly-learn.mjs
 */
@@ -91,7 +95,38 @@ async function learnDay(day, kind) {
   return { day, kind, lines: sn.size, items: keys.length };
 }
 
+/* What was wasted in the last 14 finished days, by item: how often, the reasons, the usual unit, reason, section and
+   amount, and what was used the last time. The same key as okey() in js/prep.js. */
+const okey = t => String(t || '').toLowerCase().replace(/\s+/g, ' ').trim();
+const top = o => Object.keys(o).sort((a, b) => o[b] - o[a])[0] || '';
+const WASTE_DAYS = 14, WASTE_ITEMS = 300;
+async function wasteSummary(today) {
+  const days = [];
+  for (let i = 1; i <= WASTE_DAYS; i++) days.push(shift(today, -i));
+  const snaps = await Promise.all(days.map(d => K.collection('waste').doc(d).collection('lines').get()));
+  const m = {};
+  snaps.forEach(sn => sn.docs.forEach(doc => {
+    const x = doc.data(); if (!x || x.deleted || !x.text) return;
+    const text = String(x.text).trim().slice(0, 80), k = okey(text); if (!k) return;
+    const e = m[k] = m[k] || { t: text, n: 0, r: {}, u: {}, s: {}, a: {}, at: -1, last: null };
+    const amt = +x.amount || 0, sec = String(x.station || '').slice(0, 40);
+    e.n++; e.r[x.reason] = (e.r[x.reason] || 0) + 1; e.u[x.unit] = (e.u[x.unit] || 0) + 1;
+    if (sec) e.s[sec] = (e.s[sec] || 0) + 1;
+    if (amt > 0) { const ak = amt + ' ' + x.unit; e.a[ak] = (e.a[ak] || 0) + 1; }
+    if ((x.addedAt || 0) > e.at) { e.at = x.addedAt || 0; e.t = text; e.last = { unit: x.unit || '', reason: x.reason || '', sec, amt }; }
+  }));
+  const items = Object.keys(m).map(k => {
+    const e = m[k], ta = top(e.a);
+    return { t: e.t, n: e.n, r: e.r, unit: top(e.u), reason: top(e.r), sec: top(e.s), amt: ta ? +ta.split(' ')[0] : 0, last: e.last, at: e.at };
+  }).sort((a, b) => b.n - a.n || b.at - a.at).slice(0, WASTE_ITEMS);
+  await K.collection('summary').doc('waste').set({ day: today, from: days[days.length - 1], to: days[0], items, at: Date.now() });
+  return items.length;
+}
+
 const today = kitchenDay(Date.now());
+// first, so a problem with one day's learning never leaves the phones without a fresh wastage summary
+const wItems = await wasteSummary(today);
+console.log('Wastage summary: ' + wItems + ' items from the last ' + WASTE_DAYS + ' days.');
 const claimed = new Set((await K.collection('learnlog').select().get()).docs.map(d => d.id));
 const todo = [];
 for (let i = 1; i <= DAYS; i++) {

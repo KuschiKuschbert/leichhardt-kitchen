@@ -629,6 +629,9 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .w-pick .chip[aria-pressed="true"] { background: var(--ink); color: #fff; }
 .w-ta { width: 100%; min-height: 3.2rem; padding: 0.5rem 0.6rem; border: 1.5px solid var(--ink); border-radius: 8px; font: inherit; background: var(--paper); resize: vertical; }
 .w-review { margin-top: 1rem; }
+/* the admin wastage log's review form (22 Oct 2026): the day it is for, between back and forward */
+.a-rvday { align-self: center; min-width: 6.5rem; text-align: center; font: 700 0.9375rem var(--body); }
+.w-past { margin: 0.75rem 0 0; }
 
 /* four dockets on the landing wall */
 @media (min-width: 720px) and (max-width: 1099px) { .dockets { grid-template-columns: repeat(2, minmax(0, 1fr)); } .docket { min-height: 19rem; } }
@@ -670,7 +673,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 /* Wastage, last 7 days */
 .w-sum { margin: 0 0 10px; padding: 8px 10px; border: 2px solid var(--ink); border-radius: 8px; background: #FFFEFA; }
 .w-sum p { margin: 3px 0; }
-.o-nav .chip[data-p="wview"], .o-nav .chip[data-p="oview"] { min-width: 0; padding: 0 1rem; font: 700 0.9375rem var(--body); }
+.o-nav .chip[data-p="oview"] { min-width: 0; padding: 0 1rem; font: 700 0.9375rem var(--body); }
 .nb-close .btn, .nb-stuck .p-x { font-family: var(--body); font-size: 0.9375rem; }
 @media (max-width: 399px) { .vsw button { padding: 0 0.5rem; } .brand h1 { font-size: 1.5rem; } }
 .wtop-lbl { display: none; }

@@ -42,8 +42,9 @@ const store = page => page.evaluate(() => window.__fake.dump());
   ok(p.errors.length === 0, 'orders: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // waste: remove, Undo, put back
-  p = await L.open(b, '#/waste', { wait: 1500 });
+  // waste: the head chef (Google device, signed in as a chef) removes today's entry, Undo, put back
+  p = await L.open(b, '#/waste', { wait: 1500, admin: true });
+  await L.waitFor(p, () => !!document.querySelector('[data-p="wdel"][data-id="w1"]'));
   await p.click('[data-p="wdel"][data-id="w1"]');
   await L.settle(p, 300);
   ok(/Removed Chips from the wastage log/.test(await txt(p, '.p-toast')), 'waste: remove shows toast with Undo');
@@ -52,10 +53,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   await L.settle(p, 300);
   s = await store(p);
   ok(s[fsKey(['waste', today, 'lines', 'w1'])].deleted === false, 'waste: Undo restores the entry');
-  await p.click('[data-p="wview"][data-v="week"]');
-  await L.settle(p, 600);
-  const wid = await p.evaluate(() => { const b = document.querySelector('[data-p="wdel"]'); return b && b.getAttribute('data-id'); });
-  ok(wid && wid !== 'undefined', 'waste: Last 7 days rows carry their ids (' + wid + ')');
+  ok(!(await p.$('[data-p="wview"]')) && !(await p.$('[data-p="wday"]')), 'waste: no past days on the wastage page, for a sous chef too');
   ok(p.errors.length === 0, 'waste: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -180,7 +178,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   await p.evaluate(() => { const b = document.querySelector('.w-rchips [data-v="excess"]') || document.querySelector('[data-p="wreason"][data-v="excess"]'); b.click(); });
   await p.click('.w-add .nb-addbtn');
   await L.settle(p, 300);
-  ok(/Ask the head chef or a sous chef/.test(await txt(p, '.p-toast')), 'waste: staff are told who can remove an entry');
+  ok(/Wrong\? Ask the head chef\./.test(await txt(p, '.p-toast')), 'waste: staff are told who can remove an entry (' + await txt(p, '.p-toast') + ')');
   await p.context().close();
 
   p = await L.open(b, '#/orders', { wait: 1500 });

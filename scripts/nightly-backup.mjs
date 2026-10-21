@@ -55,7 +55,7 @@ const out = { exportedAt: new Date().toISOString(), by: 'nightly backup', days: 
 let reads = 0;
 const cfg = await K.collection('config').doc('main').get(); reads++;
 out.config = cfg.exists ? plain(cfg.data()) : null;
-for (const name of ['activity', 'sections', 'learned', 'ordlearned', 'learnlog', 'misses', 'views', 'guides', 'mail', 'mailstat', 'drinks', 'shifts']) { out[name] = await all(name); reads += out[name].length; }
+for (const name of ['activity', 'sections', 'learned', 'ordlearned', 'learnlog', 'summary', 'misses', 'views', 'guides', 'mail', 'mailstat', 'drinks', 'shifts']) { out[name] = await all(name); reads += out[name].length; }
 out.notes = await all('notes'); out.notesSeen = await subs(out.notes, 'notes', 'seen');
 out.minutes = await all('minutes'); out.minutesHist = await subs(out.minutes, 'minutes', 'hist'); out.minutesSigns = await subs(out.minutes, 'minutes', 'signs');
 // the head chef's book: the index, every recipe changed or added in the book and every drawing, with their earlier versions
