@@ -734,6 +734,26 @@
   /* ---------- the items ---------- */
   var thai = function (P, rnd) { return thaiCake(P, rnd); };
   var pakora = function (P, rnd) { return P.scatter(rnd, 7, 26, 20, function (x, y, i, q) { return P.g(P.at(x, y, q() * 180), pakoraPiece(P, q)) + (i % 3 === 0 ? P.leaf(6, 3, '#3E6A2A', x + 4, y - 3, q() * 360, { vein: false }) : ''); }); };
+
+  /* ---------- copied from the book's own drawings (js/art.js) ---------- */
+  // a crumbed calamari strip (the calamari topper): golden, a lighter crease, two crumbs
+  function calamariStrip(P) {
+    return P.ellipse(3, 4, 17, 5, '#000000', null, 0, { opacity: '0.12' }) + P.rect(-17, -4.5, 34, 9, 4.5, '#E3B262', '#B9802F', 2) +
+      P.path('M-11 -1.5 Q0 -3 11 -1', 'none', '#F1CC8A', 1.6, ROUND) + P.circle(-6, 1.5, 0.9, '#B9802F') + P.circle(5, 1, 0.9, '#B9802F');
+  }
+  // eight strips in two rows, the way the book lays them
+  function calamariStrips(P, rnd) {
+    var out = '';
+    for (var r = 0; r < 4; r++) for (var c = 0; c < 2; c++) out += P.g(P.at((c ? 23 : -23) + (rnd() - 0.5) * 5, -33 + r * 22 + (rnd() - 0.5) * 3, (rnd() - 0.5) * 22, 1.6), calamariStrip(P));
+    return out;
+  }
+  // a butterflied, breaded whiting (the seafood platter): golden, a darker tail, the eye, a few crumbs
+  var BB_BODY = 'M-12 0 Q-6 -5 4 -4 Q9 -3 11 0 Q9 3 4 4 Q-6 5 -12 0 Z', BB_TAIL = 'M11 0 L16 -4 L16 4 Z';
+  function bbWhiting(P) {
+    return P.path(BB_BODY + ' ' + BB_TAIL, '#000000', null, 0, { opacity: '0.16', transform: 'translate(1 1.8)' }) + P.path(BB_BODY, '#D9A04A', '#A8702A', 1) + P.path(BB_TAIL, '#C98A3A', '#A8702A', 1) +
+      P.circle(-7, -1, 0.9, '#4A2A12') + P.circle(-2, 1, 1, '#E0AA58') + P.circle(3, -1, 1, '#E0AA58');
+  }
+
   L.add('seafood', [
     // fish
     { id: 'fish-fillet-grilled', name: 'Grilled fish fillet', sub: 'Fish', kw: 'fish fillet grilled white fish snapper barra hake dory market fish catch of the day', form: 'piece', cook: 'grilled', role: 'main', g: 180, w: 110, h: 50, side: { s: 'slab', h: 16, c: FLESH }, draw: grilledFillet({ len: 108, wid: 50 }) },
@@ -813,7 +833,10 @@
     { id: 'anchovy-fillets', name: 'Anchovy fillets', sub: 'Raw and cured', kw: 'anchovy anchovies fillets cured salted in oil white anchovies boquerones', form: 'piece', cook: 'cured', role: 'garnish', n: 4, w: 52, h: 30, side: { s: 'layer', h: 2, c: '#9A5040' }, draw: function (P) { return [[-1, -9, -5, 0.6], [2, -3, 2, -0.4], [-2, 3, -2, 0.5], [1, 9, 4, -0.6]].map(function (p) { return P.g(P.at(p[0], p[1], p[2]), anchovy(P, p[3])); }).join(''); } },
     { id: 'seafood-stick', name: 'Seafood stick', sub: 'Raw and cured', kw: 'seafood stick crab stick seafood extender surimi kani', form: 'stick', role: 'main', n: 3, w: 72, h: 44, side: { s: 'stick', h: 12, c: '#E0502E' }, draw: group([[-2, -14, -4, 1, seafoodStick], [2, 0, 2, 1, seafoodStick], [0, 14, -2, 1, seafoodStick]]) },
     // bowls
-    { id: 'seafood-chowder', name: 'Seafood chowder', sub: 'Bowls', kw: 'seafood chowder creamy soup potato bacon fish prawns mussels bowl', form: 'bowlful', cook: 'braised', role: 'main', g: 350, w: 122, h: 116, side: { s: 'sauce', h: 30, c: '#F0E2C0' }, draw: chowder }
+    { id: 'seafood-chowder', name: 'Seafood chowder', sub: 'Bowls', kw: 'seafood chowder creamy soup potato bacon fish prawns mussels bowl', form: 'bowlful', cook: 'braised', role: 'main', g: 350, w: 122, h: 116, side: { s: 'sauce', h: 30, c: '#F0E2C0' }, draw: chowder },
+    // copied from the book's own drawings: the calamari topper's strips, the seafood platter's B.B. whiting
+    { id: 'calamari-strips', name: 'Calamari strips, crumbed', sub: 'Squid and octopus', kw: 'calamari strips squid strips crumbed fried calamari topper', form: 'pile', cook: 'crumbed', role: 'main', n: 8, w: 104, h: 86, side: { s: 'pile', h: 12, c: '#E3B262' }, draw: calamariStrips },
+    { id: 'whiting-crumbed', name: 'Whiting, butterflied and crumbed', sub: 'Fried', kw: 'bb whiting butterflied breaded crumbed whiting kids fish fried', form: 'piece', cook: 'crumbed', role: 'main', n: 3, w: 68, h: 58, side: { s: 'slab', h: 8, c: '#D9A04A' }, draw: group([[-4, -16, -8, 2.1, bbWhiting], [4, 0, 4, 2.1, bbWhiting], [-2, 16, -3, 2.1, bbWhiting]]) },
   ]);
   // a butterflied whiting fillet: two lobes from the tail, pan fried golden
   function whitingFillet(P, rnd) {

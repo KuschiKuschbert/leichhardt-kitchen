@@ -24,7 +24,7 @@
   function n1(x) { return Math.round(x * 10) / 10; }
 
   /* ---------- words ---------- */
-  function words(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/&/g, ' and ').replace(/[^a-z0-9 ]+/g, ' ').split(/\s+/).filter(Boolean).map(function (w, k, all) { return CHILLI_KIND[all[k - 1]] && /^peppers?$/.test(w) ? 'chilli' : ALIAS[w] || w; }); }
+  function words(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\b([a-z])\.\s?([a-z])\.(?![a-z])/g, '$1$2').replace(/&/g, ' and ').replace(/[^a-z0-9 ]+/g, ' ').split(/\s+/).filter(Boolean).map(function (w, k, all) { return CHILLI_KIND[all[k - 1]] && /^peppers?$/.test(w) ? 'chilli' : ALIAS[w] || w; }); }
   // "Habanero peppers" and "Poblano peppers" are chillies, not capsicum
   var CHILLI_KIND = { serrano: 1, poblano: 1, habanero: 1, chipotle: 1, ancho: 1, guajillo: 1, pasilla: 1, anaheim: 1, fresno: 1, thai: 1, birdseye: 1, cayenne: 1, scotch: 1, padron: 1 };
   // the same thing spelt another way (the recipe library's US spellings): read as the book's word
@@ -40,10 +40,21 @@
   var FILLER = { bought: 1, in: 1, house: 1, made: 1, homemade: 1, fresh: 1, frozen: 1, cooked: 1, of: 1, the: 1, a: 1, an: 1, and: 1, with: 1, on: 1, for: 1, style: 1, our: 1, choice: 1, side: 0, light: 1, chunky: 1, double: 1, smoked: 0, seasonal: 0, mix: 0, x: 1, g: 1, kg: 1, ml: 1, l: 1, pcs: 1, piece: 1, pieces: 1 };
   function key(name) { return words(String(name || '').replace(/\([^)]*\)|\[[^\]]*\]/g, ' ')).filter(function (w) { return !FILLER[w] && !/^\d+$/.test(w); }).map(stem).join(' '); }
   // the ingredients that never show on the plate: they are cooked in, or under everything
-  var STOP = /^(salt|table salt|pepper|black pepper|white pepper|cracked pepper|oil|olive oil|canola oil|vegetable oil|cooking oil|sesame oil|rice bran oil|oil spray|cooking spray|water|ice|stock|chicken stock|beef stock|flour|plain flour|self raising flour|wing flour|corn flour|cornflour|panko crumb|breadcrumb|sugar|caster sugar|brown sugar|icing sugar mix|seasoning|szechuan seasoning|white cooking wine|red cooking wine|cooking wine|wine|beer|baking powder|bicarb soda|butter for the pan|batter mix|eggwash|egg wash|garlic|ginger|onion powder|garlic powder|paprika|cumin|ground cinnamon|italian herb|dried oregano|vinegar|white vinegar|lemon juice|lime juice|cream for the sauce|milk|bay leaf|bay leaves|star anise|cinnamon stick|cinnamon sticks|cloves|sea salt|sea salt flakes|salt flakes|maldon salt|flaky salt)$/;
+  var STOP = /^(salt|table salt|pepper|black pepper|white pepper|cracked pepper|oil|olive oil|canola oil|vegetable oil|cooking oil|sesame oil|rice bran oil|oil spray|cooking spray|water|ice|stock|chicken stock|beef stock|flour|plain flour|self raising flour|wing flour|corn flour|cornflour|panko crumb|breadcrumb|sugar|caster sugar|brown sugar|icing sugar mix|seasoning|szechuan seasoning|white cooking wine|red cooking wine|cooking wine|wine|beer|baking powder|bicarb soda|butter for the pan|batter mix|eggwash|egg wash|garlic|ginger|onion powder|garlic powder|paprika|cumin|ground cinnamon|italian herb|dried oregano|vinegar|white vinegar|lemon juice|lime juice|cream for the sauce|milk|bay leaf|bay leaves|star anise|cinnamon stick|cinnamon sticks|cloves|sea salt|sea salt flakes|salt flakes|maldon salt|flaky salt|cooking salt)$/;
   function plain(name) { return words(String(name || '').replace(/\([^)]*\)|\[[^\]]*\]/g, ' ')).filter(function (w) { return !FILLER[w] && !/^\d+$/.test(w); }).join(' '); }
   // "Corn ribs per serve": a note on how many, not an ingredient
   function hidden(i) { var p = plain(i.name); return !p || STOP.test(p) || STOP.test(p.replace(/s$/, '')) || /\bper (serve|plate|portion)\b/.test(p); }
+  // on a dish's plate a rub, a paste or a stock is cooked into the meat or the sauce ("Brisket rub", "Tomato paste")
+  // (a card read for what it makes still counts them: the rub through the Cowboy butter)
+  function cookedIn(i) { return /\b(rub|paste|stock)$/.test(plain(i.name)); }
+  // "Wrap each Snickers": what a step wraps in the recipe's wrappers or pastry is inside them, out of sight
+  var WRAPPER = /wrapper|pastry|filo|phyllo|tortilla|rice paper|wonton|gyoza/i;
+  function wrapped(i, r) {
+    if (WRAPPER.test(i.name || '') || !(r.ingredients || []).some(function (x) { return WRAPPER.test(x.name || ''); })) return false;
+    var mine = key(i.name).split(' '), t = (r.sections || []).map(function (sc) { return (sc.steps || []).join(' '); }).join(' ').toLowerCase(), m, re = /\bwrap(?:s|ped)?\s+(?:each|every|all|the|a|an)?\s*([a-z]+)/g;
+    while ((m = re.exec(t))) if (mine.indexOf(stem(m[1])) >= 0) return true;
+    return false;
+  }
 
   /* ---------- learned matches (book/matches, the head chef's picks) ---------- */
   var learned = null, learnP = null;
@@ -234,9 +245,12 @@
     var fold = function (name, into) { also[name] = into.ing; (into.also = into.also || []).push(name); };
     (r.ingredients || []).forEach(function (i0) {
       split(i0).forEach(function (i) {
-        if (hidden(i)) return;
-        // a parmy topper ("French parmi topper"): the schnitzel becomes that parmy, the topper is drawn with it
+        if (hidden(i) || cookedIn(i) || wrapped(i, r)) return;
+        // a parmy topper ("French parmi topper"): drawn from its card, or from its note while the card is to come
+        // (js/compose.js topper()), on the schnitzel; else the schnitzel becomes that parmy, the topper drawn with it
         if (/topper/i.test(i.name)) {
+          var tm = matchIng(i, r), tp = tm.why === 'learned' ? null : cardPart(i, r, tm);
+          if (tp) { made.push({ ing: R.ingName(i), from: tp.from }); out.push({ ing: R.ingName(i), i: i, id: tp.id, it: tp, scale: 1, count: 1, conf: 0.9, guesses: [] }); return; }
           var tk = rank(String(i.name).replace(/\btopper\b/i, ' ').replace(/\bparmi\b/i, ' ') + ' parmy', { cat: 'meat' })[0];
           if (tk && tk.s >= 0.6 && /parm/i.test(LIB.get(tk.id).name)) { toppers.push({ ing: R.ingName(i), id: tk.id }); return; }
         }
@@ -381,7 +395,10 @@
     } else if (STYLES[style].bowl) {
       // a bowl: the base in the middle, the toppings in sectors round it, garnish on top
       var base = order.filter(function (p) { return /^(starch|salad|main)$/.test(p.it.role) && p.it.form === 'bowlful'; })[0] || order.filter(function (p) { return p.it.role === 'starch' || p.it.role === 'salad'; })[0];
-      if (base) { base.scale = Math.max(base.scale, Math.min(a.rx * 1.7 / Math.max(base.it.w, base.it.h), 2.2)); place(base, [a.cx, a.cy], 0); }
+      // one thing in the bowl (the calamari topper's strips): it fills the bowl, not a corner of it
+      var solo = order.filter(function (p) { return !/^(sauce|dsauce|garnish)$/.test(p.it.role); });
+      if (!base && solo.length === 1) { base = solo[0]; base.scale = Math.min(Math.max(base.scale, 1), a.rx * 1.7 / Math.max(base.it.w, base.it.h)); place(base, [a.cx, a.cy], 0); }
+      else if (base) { base.scale = Math.max(base.scale, Math.min(a.rx * 1.7 / Math.max(base.it.w, base.it.h), 2.2)); place(base, [a.cx, a.cy], 0); }
       var ring = order.filter(function (p) { return p !== base && !/^(sauce|dsauce|garnish)$/.test(p.it.role); }), rr = Math.min(a.rx, a.ry) * 0.5;
       ring.forEach(function (p, k) {
         var ang = -Math.PI / 2 + k / Math.max(1, ring.length) * Math.PI * 2, room = rr * (ring.length > 3 ? 1 : 1.3);
@@ -407,6 +424,8 @@
       var hs = sizeEl(h), off = (k % 3 - 1) * 4;
       if (role === 'topping') place(p, [h.x + off, h.y + off * 0.5], h.r || 0, h);
       else if (role === 'garnish') place(p, [h.x + hs[0] * 0.18, h.y - hs[1] * 0.18], rnd() * 60 - 30, h);
+      // a zigzag drizzle goes over the main, no wider than it, the way the book drizzles the butterscotch
+      else if (p.it.form === 'drizzle') { p.scale = Math.min(p.scale, hs[0] * 0.9 / p.it.w); p.on = true; place(p, [h.x, h.y], -8, h); }
       else if (style === 'dessert') place(p, [h.x - hs[0] * 0.06, h.y + hs[1] * 0.14], -12, h);
       // a dollop or a quenelle (tartare, aioli) sits beside the main, towards the middle of the plate
       else if (/^(dollop|quenelle|scoop|bowlful)$/.test(p.it.form)) { var sgn = h.x > a.cx + 10 ? -1 : 1; p.on = true; place(p, [h.x + sgn * hs[0] * 0.42, h.y - hs[1] * 0.3], 0, h); }
@@ -728,7 +747,7 @@
     match: function (i, d) { var m = matchIng(i, d && R.recipeOf(d.rid)); return m.conf >= 0.6 ? m.id : ''; },
     // a piece drawn from the ingredient's own recipe card (js/draw.js adds it when nothing in the library is sure)
     made: function (i, d) { var r = d && R.recipeOf(d.rid), m = matchIng(i, r); return cardPart(i, r, m) || (C() ? C().dress(i, r, m) : null); },
-    matchIng: matchIng, rank: rank, key: key, hidden: hidden, split: split, ware: ware, pickStyle: pickStyle, STYLES: STYLES,
+    matchIng: matchIng, rank: rank, key: key, hidden: hidden, cookedIn: cookedIn, wrapped: wrapped, split: split, ware: ware, pickStyle: pickStyle, STYLES: STYLES,
     partsOf: partsOf, drawIt: drawIt, tidy: tidy, drawFresh: drawFresh, autoDraw: autoDraw, slotsToDraw: slotsToDraw, loadLearned: loadLearned, teach: teach, pendingOps: pendingOps, saved: saved,
     learned: function () { return learned || {}; }
   };
