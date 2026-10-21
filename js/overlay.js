@@ -284,7 +284,8 @@
   // at start: the drawings kept on this phone for this kitchen PIN
   var artReady = (cache.pin ? idbDo('readonly', function (s) { return s.getAll(); }) : Promise.resolve([])).then(function (list) {
     var n = 0;
-    (list || []).forEach(function (rec) { if (rec.pin !== cache.pin) return; art.v[rec.id] = rec.v; art.recs[rec.id] = rec; artShow(rec); n++; });
+    // the copy on this phone is cleaned again as it is shown (coding rules, 22 Oct 2026): IndexedDB can be changed outside the book
+    (list || []).forEach(function (rec) { if (!rec || rec.pin !== cache.pin) return; rec = artRec(rec.pin, rec.id, rec); art.v[rec.id] = rec.v; art.recs[rec.id] = rec; artShow(rec); n++; });
     if (n) artEvent();
   }, function () {});
   function artStore(recs, gone) {
