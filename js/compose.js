@@ -340,7 +340,9 @@
     if (/\b(aioli|mayo|mayonnaise|hummus|puree|dip|whip|mousse|mash|jam|chutney|pesto|spread|relish)\b/.test(nm)) return 'smooth';
     if (/\bbutter\b/.test(nm)) return 'pat';
     if (mo.shape === 'balls') return 'balls';
-    if (/\b(salad|slaw|salsa|pickles?|candy|kimchi|greens|vegetables|veg|cucumber|granola|mix)\b/.test(nm) && solids.length) return 'mixture';
+    if (/\b(salad|slaw|salsa|pickles?|pickled|candy|candied|kimchi|greens|vegetables|veg|cucumber|granola|mix)\b/.test(nm) && solids.length) return 'mixture';
+    // pieces sitting in a syrup, a brine or a dressing are a mix, however much of one thing there is
+    if (mo.wet && solids.length && liq.some(function (L) { return L.lq && (L.lq[0] || L.lq[1] >= 0.4); })) return 'mixture';
     if (mo.mixed && solids.length >= 2) return 'mixture';
     if (sumG(liq) > sumG(solids) * 1.2 && liq.some(function (L) { return L.lq && L.lq[1] >= 0.4; })) return 'liquid';
     if (solids.length === 1) return 'piece';
