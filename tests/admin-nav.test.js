@@ -72,6 +72,19 @@ const groupsShown = p => p.evaluate(() => { const r = document.querySelector('.a
   ok(!v.min, 'phone admin nav: focus on a group brings the nav back');
   await p.context().close();
 
+  // a redraw between a scroll and the nav's next look (a read coming in) does not swallow the scroll: it still tucks
+  p = await L.open(b, '#/admin', { admin: true, width: 390, height: 844, wait: 1800 });
+  await L.adminTab(p, 'insights'); await L.settle(p, 1500);
+  await p.evaluate(() => new Promise(res => {
+    addEventListener('scroll', function f() { removeEventListener('scroll', f); LK_PREP.mount('admin', LK_PREP.state.root); res(); });
+    scrollBy(0, 1600);
+  }));
+  await L.settle(p, 700);
+  v = await nav(p);
+  ok(v.min && v.bottom < 80, 'phone admin nav: a redraw while scrolling down still tucks the nav (' + v.bottom + ' px)');
+  ok(p.errors.length === 0, 'phone admin nav, redraw: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   await b.close();
   L.report(R);
 })();
