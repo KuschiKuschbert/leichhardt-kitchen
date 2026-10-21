@@ -1,5 +1,5 @@
 // The top bar at tablet width (768 px) with a wide fallback font, as on a machine without the kitchen font (the GitHub
-// runner): the pills wrap inside the bar instead of pushing Pings, Admin and Settings off the right edge.
+// runner): the pills wrap inside the bar instead of pushing Pings and the chef hat off the right edge.
 const L = require('./lib');
 const { R, ok } = L.results();
 (async () => {
