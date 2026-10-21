@@ -118,6 +118,11 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   // cut and cooked the way the dish says (no card of its own): the toasted sourdough is the library's slice, toasted
   const toast = w.els.find(e => e.ing === 'Toasted sourdough');
   ok(!!toast && toast.t === 'raw' && toast.dr === 'sourdough-slice' && toast.ck === 'toasted' && cos.k < toast.k, 'Caesar: the toasted sourdough is drawn toasted');
+  // Try another layout lays it out again (it is the book's part, not one added by hand)
+  await p.click('[data-dw="sm-again"]'); await L.settle(p, 300);
+  w = await S(p);
+  const toast2 = w.els.find(e => e.ing === 'Toasted sourdough');
+  ok(w.els.filter(e => e.ing === 'Toasted sourdough').length === 1 && !!toast2 && toast2.dr === 'sourdough-slice' && (toast2.x !== toast.x || toast2.y !== toast.y), 'Caesar: Try another layout moves the toasted sourdough with the rest (' + [toast.x, toast.y, toast2 && toast2.x, toast2 && toast2.y].join(' ') + ')');
   await p.context().close();
 
   // the grill board: a board, the sauces in ramekins

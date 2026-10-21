@@ -432,7 +432,7 @@
     var pp = partsOf(r, d), surf = d.surf && d.els.length ? d.surf : ware(r, d.slot);
     d.surf = surf;
     var style = W.styleChoice || pickStyle(r, d.slot, surf, pp.parts);
-    var keep = d.els.filter(function (e) { return e.fixed || (e.t !== 'item' && !e.made); }), keepIng = {};
+    var keep = d.els.filter(function (e) { return e.fixed || (e.t !== 'item' && !e.made && !e.dr); }), keepIng = {};
     keep.forEach(function (e) { if (e.ing) keepIng[e.ing] = 1; String(e.also || '').split('|').forEach(function (x) { if (x) keepIng[x] = 1; }); });
     var els = layout(d, r, pp.parts.filter(function (p) { return !keepIng[p.ing]; }), style, seed);
     d.els = keep.concat(els);
