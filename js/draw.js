@@ -106,11 +106,16 @@
       var sz = el.size || 10, anc = el.anchor || 'start', lead = '';
       if (el.lx != null && el.ly != null) {
         // the leader line starts at the label's near side and ends in a dot on the part
-        var sx0 = anc === 'end' ? el.x + 3 : anc === 'middle' ? el.x : el.x - 3, sy0 = anc === 'middle' ? el.y + 3 : el.y - sz * 0.35;
+        // a label above its part (anchor middle): the line leaves from under the amount line
+        var sx0 = anc === 'end' ? el.x + 3 : anc === 'middle' ? el.x : el.x - 3, sy0 = anc === 'middle' ? el.y + (el.sub ? sz * 1.05 : 0) + 3 : el.y - sz * 0.35;
         lead = '<path d="M' + f(sx0) + ' ' + f(sy0) + ' L' + f(el.lx) + ' ' + f(el.ly) + '" fill="none" stroke="' + LABEL.ink + '" stroke-width="0.9"/><circle cx="' + f(el.lx) + '" cy="' + f(el.ly) + '" r="1.6" fill="' + LABEL.ink + '"/>';
       }
-      return lead + '<text x="' + f(el.x) + '" y="' + f(el.y) + '" font-family="' + LABEL.font + '" font-weight="700" font-size="' + f(sz) + '" fill="' + (el.col || LABEL.ink) + '" text-anchor="' + anc + '">' + escT(el.s) + '</text>' +
-        (el.sub ? '<text x="' + f(el.x) + '" y="' + f(el.y + sz * 1.05) + '" font-family="' + LABEL.font + '" font-weight="500" font-size="' + f(sz * 0.85) + '" fill="' + LABEL.sub + '" text-anchor="' + anc + '">' + escT(el.sub) + '</text>' : '');
+      // a white edge under the words, drawn as its own text (no paint-order), so a label reads over food
+      var line = function (t, y, size, wt, col) {
+        var at = ' x="' + f(el.x) + '" y="' + f(y) + '" font-family="' + LABEL.font + '" font-weight="' + wt + '" font-size="' + f(size) + '" text-anchor="' + anc + '"';
+        return (el.lx != null ? '<text' + at + ' fill="#FFFFFF" stroke="#FFFFFF" stroke-width="3" stroke-linejoin="round">' + escT(t) + '</text>' : '') + '<text' + at + ' fill="' + col + '">' + escT(t) + '</text>';
+      };
+      return lead + line(el.s, el.y, sz, 700, el.col || LABEL.ink) + (el.sub ? line(el.sub, el.y + sz * 1.05, sz * 0.85, 500, LABEL.sub) : '');
     }
     if (el.t === 'line') {
       var p = pts(el); if (p.length < 2) return '';
@@ -169,8 +174,8 @@
     var s = surface(d), parts = [], seen = {};
     d.els.forEach(function (el) {
       if (el.t !== 'item') return;
-      var nm = (el.ing || nameOfEl(el)).toLowerCase(); if (seen[nm]) return; seen[nm] = 1;
-      parts.push(nm + ' ' + placeWords(el, s && s.area));
+      var nm = (el.ing || nameOfEl(el)).toLowerCase(), more = ingsOf(el).slice(1); if (seen[nm]) return; seen[nm] = 1;
+      parts.push(nm + (more.length ? ' (with ' + more.join(', ').toLowerCase() + ')' : '') + ' ' + placeWords(el, s && s.area));
     });
     var what = d.slot === 'side' ? 'Side view' : d.slot === 'build' ? 'Build drawing' : 'Top-down drawing';
     var on = d.slot === 'plate' || d.slot === 'pan' ? ' on a ' + wareName(d) : '';
@@ -292,10 +297,18 @@
 
   /* ---------- the recipe's ingredients and the parts on the plate ---------- */
   function rec() { return recipeOf(W.d.rid); }
-  function ingIndex(name) { var r = rec(); return (r && r.ingredients || []).map(ingName).indexOf(name); }
-  function ingOf(name) { var r = rec(); return (r && r.ingredients || []).filter(function (i) { return ingName(i) === name; })[0] || null; }
-  function onPlate() { var s = {}; W.d.els.forEach(function (el) { if (el.ing) s[el.ing] = 1; }); return s; }
-  function missingIngs() { if (W.d.slot === 'side' || W.d.slot === 'build') return []; var have = onPlate(); return plateIngs(rec()).filter(function (i) { return !have[ingName(i)]; }); }
+  // "Chips and salad" is drawn as two parts, Chips and Salad: each half finds its ingredient
+  function halves(name) { return String(name || '').toLowerCase().split(/\s+(?:and|&|with)\s+/); }
+  function ingIndex(name) { var r = rec(), ns = (r && r.ingredients || []).map(ingName), k = ns.indexOf(name); return k >= 0 ? k : ns.map(halves).findIndex(function (h) { return h.length > 1 && h.indexOf(String(name).toLowerCase()) >= 0; }); }
+  function ingOf(name) { var r = rec(), k = ingIndex(name); return k >= 0 ? (r.ingredients || [])[k] : null; }
+  // the ingredients a part shows: its own (ing) and any drawn inside it (also, "Sliced cheese|Ranch" under a burger bun)
+  function ingsOf(el) { return (el.ing ? [el.ing] : []).concat(el.also ? String(el.also).split('|').filter(Boolean) : []); }
+  function onPlate() { var s = {}; W.d.els.forEach(function (el) { ingsOf(el).forEach(function (k) { s[k] = 1; }); }); return s; }
+  function missingIngs() {
+    if (W.d.slot === 'side' || W.d.slot === 'build') return [];
+    var have = onPlate(), low = {}; Object.keys(have).forEach(function (k) { low[k.toLowerCase()] = 1; });
+    return plateIngs(rec()).filter(function (i) { var h = halves(ingName(i)); return !have[ingName(i)] && !(h.length > 1 && h.every(function (x) { return low[x]; })); });
+  }
   // the library piece for an ingredient: what the head chef picked before, else the best search match (js/smart.js makes this smarter)
   function matchIng(i) {
     if (window.LK_SMART && window.LK_SMART.match) { var m = window.LK_SMART.match(i, W.d); if (m) return m; }
@@ -316,13 +329,22 @@
   // the Pass labels for a plate or pan drawing, one for each ingredient on it, where its parts are
   function autoPins(d, r, vb) {
     var v = vb.split(' ').map(Number), groups = {}, order = [];
-    d.els.forEach(function (el) { if (el.t !== 'item' || !el.ing) return; if (!groups[el.ing]) { groups[el.ing] = []; order.push(el.ing); } groups[el.ing].push(el); });
+    d.els.forEach(function (el) {
+      if (el.t !== 'item') return;
+      // what is drawn inside a part gets its own label, spread over the part so the lines do not meet in one point
+      var b = el.also ? bbox(el) : null, more = ingsOf(el);
+      more.forEach(function (k, j) {
+        var at = { x: el.x, y: el.y };
+        if (j) { var ang = -Math.PI / 2 + (j - 1) / (more.length - 1) * Math.PI * 2; at = { x: el.x + Math.cos(ang) * (b[2] - b[0]) * 0.22, y: el.y + Math.sin(ang) * (b[3] - b[1]) * 0.22 }; }
+        if (!groups[k]) { groups[k] = []; order.push(k); } groups[k].push(at);
+      });
+    });
     var own = (r.pins || []).filter(function (p) { return p.own; }), ownIng = {};
     own.forEach(function (p) { if (p.ing) ownIng[p.ing] = 1; });
     return own.concat(order.filter(function (k) { return !ownIng[k]; }).map(function (k) {
       var g = groups[k], cx = 0, cy = 0;
       g.forEach(function (el) { cx += el.x; cy += el.y; }); cx /= g.length; cy /= g.length;
-      var i = (r.ingredients || []).filter(function (x) { return ingName(x) === k; })[0] || {}, p = { label: k.slice(0, 60), x: n1((cx - v[0]) / v[2] * 100), y: n1((cy - v[1]) / v[3] * 100), ing: k };
+      var i = (r.ingredients || []).filter(function (x) { return ingName(x) === k; })[0] || (r.ingredients || []).filter(function (x) { var h = halves(ingName(x)); return h.length > 1 && h.indexOf(k.toLowerCase()) >= 0; })[0] || {}, p = { label: k.slice(0, 60), x: n1((cx - v[0]) / v[2] * 100), y: n1((cy - v[1]) / v[3] * 100), ing: k };
       if (i.link) p.link = i.link; else p.tags = (i.tags || []).slice();
       var note = [i.q, i.note].filter(Boolean).join(', '); if (note) p.note = note.slice(0, 400);
       return p;
@@ -350,23 +372,65 @@
      to bottom so the leader lines do not cross. Earlier labels made this way go first. */
   function labelAll() {
     var d = W.d, v = viewBoxOf(d).split(' ').map(Number), parts = {}, list = [];
+    if (d.slot === 'side') return labelAbove();
     d.els = d.els.filter(function (el) { return !(el.t === 'text' && el.auto); });
     d.els.forEach(function (el) {
-      if (el.t !== 'item') return;
+      // the servingware from the side needs no label
+      if (el.t !== 'item' || (!el.ing && /^side-ware-/.test(el.a))) return;
       var k = el.ing || nameOfEl(el), b = bbox(el);
       if (!parts[k]) { parts[k] = { k: k, x: el.x, y: (b[1] + b[3]) / 2, n: 1 }; list.push(parts[k]); } else { parts[k].x += el.x; parts[k].n++; }
     });
     list.forEach(function (p) { p.x /= p.n; });
     var mid = v[0] + v[2] / 2, left = list.filter(function (p) { return p.x < mid; }).sort(function (a, b) { return a.y - b.y; }), right = list.filter(function (p) { return p.x >= mid; }).sort(function (a, b) { return a.y - b.y; });
+    // one column of labels: in the order of the parts from top to bottom (so no two lines cross), each far enough below
+    // the one above for its amount line, and the whole column moved up when it would run off the bottom
     function col(ps, x, anchor) {
-      var gap = 16, y0 = Math.max(v[1] + 14, Math.min.apply(0, ps.map(function (p) { return p.y; }).concat([Infinity])) - 4), last = -Infinity;
+      var top = v[1] + 14, bottom = v[1] + v[3] - 14, last = -Infinity, ys = [];
       ps.forEach(function (p) {
-        var y = Math.max(p.y + 3, last + gap, y0); last = y;
         var i = ingOf(p.k), sub = i && i.q ? i.q : '';
-        d.els.push({ t: 'text', s: p.k, sub: sub, x: n1(x), y: n1(Math.min(y, v[1] + v[3] - 8)), size: 10, anchor: anchor, lx: n1(p.x + (anchor === 'end' ? -6 : 6)), ly: n1(p.y), auto: true });
+        var y = Math.max(p.y + 3, last + (ys.length && ys[ys.length - 1].sub ? 24 : 15), top); last = y;
+        ys.push({ p: p, y: y, sub: sub });
       });
+      var over = ys.length ? ys[ys.length - 1].y - bottom : 0;
+      if (over > 0) ys.forEach(function (o) { o.y = Math.max(top, o.y - over); });
+      ys.forEach(function (o) { d.els.push({ t: 'text', s: o.p.k, sub: o.sub, x: n1(x), y: n1(o.y), size: 10, anchor: anchor, lx: n1(o.p.x + (anchor === 'end' ? -6 : 6)), ly: n1(o.p.y), auto: true }); });
     }
     col(left, v[0] + 4, 'start'); col(right, v[0] + v[2] - 4, 'end');
+  }
+
+  /* The side view's labels, like the book's own: each above its part, centred on it, in rows that step up so no two
+     labels meet, with a short line down to the part. */
+  function labelAbove() {
+    var d = W.d, v = viewBoxOf(d).split(' ').map(Number), parts = {}, list = [];
+    d.els = d.els.filter(function (el) { return !(el.t === 'text' && el.auto); });
+    d.els.forEach(function (el) {
+      if (el.t !== 'item' || (!el.ing && /^side-ware-/.test(el.a))) return;
+      var k = el.ing || nameOfEl(el), b = bbox(el);
+      if (!parts[k]) { parts[k] = { k: k, x: el.x, top: b[1] }; list.push(parts[k]); } else parts[k].top = Math.min(parts[k].top, b[1]);
+    });
+    var lo = v[0] + 2, hi = v[0] + v[2] - 2, top = v[1] + 13, rows = [], nRows = Math.max(1, Math.floor((v[3] - 30) / 25));
+    // the nearest free place in a row for a label w wide that wants to be at x
+    function free(row, x, w) {
+      var c = [x].concat(row.reduce(function (m, o) { return m.concat([o[0] - (o[1] + w) / 2 - 6, o[0] + (o[1] + w) / 2 + 6]); }, []));
+      return c.map(function (cx) { return Math.max(lo + w / 2, Math.min(hi - w / 2, cx)); })
+        .filter(function (cx) { return !row.some(function (o) { return Math.abs(o[0] - cx) < (o[1] + w) / 2 + 5; }); })
+        .sort(function (a, b) { return Math.abs(a - x) - Math.abs(b - x); })[0];
+    }
+    // the parts nearest the middle first; each label in the lowest row still above its own part, near it, sliding
+    // along the row when it is taken
+    list.sort(function (a, b) { return Math.abs(a.x) - Math.abs(b.x); }).forEach(function (p) {
+      var i = ingOf(p.k), sub = i && i.q ? i.q : '', w = Math.max(p.k.length * 5.8, sub.length * 4.9) + 6, best = null;
+      var low = Math.max(0, Math.min(nRows - 1, Math.floor((p.top - 8 - (sub ? 12 : 3) - top) / 25)));
+      for (var r = 0; r < nRows; r++) {
+        var x = free(rows[r] = rows[r] || [], p.x, w);
+        if (x == null) continue;
+        var cost = Math.abs(low - r) * 34 + (r > low ? 200 : 0) + Math.abs(x - p.x);
+        if (!best || cost < best.cost) best = { r: r, x: x, cost: cost };
+      }
+      if (!best) best = { r: 0, x: Math.max(lo + w / 2, Math.min(hi - w / 2, p.x)) };
+      rows[best.r].push([best.x, w]);
+      d.els.push({ t: 'text', s: p.k, sub: sub, x: n1(best.x), y: n1(top + best.r * 25), size: 10, anchor: 'middle', lx: n1(p.x), ly: n1(p.top + 3), auto: true });
+    });
   }
 
   /* ---------- the page ---------- */
@@ -931,11 +995,16 @@
   function followRenames() {
     var r = rec(); if (!r) return;
     var names = (r.ingredients || []).map(ingName), have = {};
-    W.d.els.forEach(function (el) { if (el.ing) have[el.ing] = 1; });
+    W.d.els.forEach(function (el) { ingsOf(el).forEach(function (k) { have[k] = 1; }); });
     W.d.els.forEach(function (el) {
-      if (!el.ing || names.indexOf(el.ing) >= 0 || el.ii == null) return;
+      if (!el.ing || names.indexOf(el.ing) >= 0 || el.ii == null || ingIndex(el.ing) >= 0) return;
       var nw = names[el.ii];
       if (nw && !have[nw]) { var old = el.ing; W.d.els.forEach(function (e2) { if (e2.ing === old) e2.ing = nw; }); have[nw] = 1; }
+    });
+    W.d.els.forEach(function (el) {
+      if (!el.also || el.ai == null) return;
+      var ai = String(el.ai).split('|');
+      el.also = String(el.also).split('|').map(function (k, j) { var nw = names[+ai[j]]; return names.indexOf(k) < 0 && ingIndex(k) < 0 && nw && !have[nw] ? (have[nw] = 1, nw) : k; }).join('|');
     });
   }
   function finishOpen() {

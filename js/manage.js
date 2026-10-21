@@ -629,7 +629,8 @@
       if (el && el.focus) el.focus({ preventScroll: true });
     }
   }
-  /* The drawing editor (js/draw.js) and the library (js/library.js, js/lib/) load the first time a drawing opens. */
+  /* The drawing editor (js/draw.js), the library (js/library.js, js/lib/) and the smart creator (js/smart.js) load the
+     first time a drawing opens. */
   var drawLoad = null;
   function loadDraw() {
     if (window.LK_DRAW && window.LK_LIB && window.LK_LIB.items.length) return Promise.resolve();
@@ -637,6 +638,9 @@
       drawLoad = A.load('js/library.js').then(function () {
         // a category file that fails to load leaves its drawings out; the editor still opens
         return Promise.all(window.LK_LIB.files.map(function (f) { return A.load(f).catch(function () {}); }).concat([A.load('js/draw.js')]));
+      }).then(function () {
+        // without the smart creator the editor still works by hand
+        return A.load('js/smart.js').catch(function () {});
       }).catch(function (x) { drawLoad = null; throw x; });
     }
     return drawLoad;

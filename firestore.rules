@@ -249,6 +249,16 @@ service cloud.firestore {
         && request.resource.data.get('menu', []) is list && request.resource.data.get('menu', []).size() <= 40;
       allow delete: if false;
     }
+    // Draw it for me (21 Oct 2026): the library drawing the head chef picked for an ingredient name (m, name to drawing id),
+    // so the next recipe gets it right first time. Saved with merge, in the same batch as the drawing. Never deleted.
+    match /kitchens/KITCHEN_PIN/book/matches {
+      allow read: if true;
+      allow create, update: if bookBy()
+        && request.resource.data.keys().hasOnly(['m', 'upd', 'by'])
+        && request.resource.data.m is map && request.resource.data.m.size() <= 3000
+        && request.resource.data.get('upd', 0) is int;
+      allow delete: if false;
+    }
     match /kitchens/KITCHEN_PIN/recipes/{id} {
       allow read: if true;
       // the head chef's Google account may also copy a recipe as it is (move to a new kitchen PIN)

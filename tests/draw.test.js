@@ -24,7 +24,7 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   p = await L.open(b, '#/manage/draw/new/burger/plate', { who: 'bo', extra: cfg(), wait: 1400 });
   await L.settle(p, 400);
   ok(/Only the head chef/.test(await txt(p, '#rtitle') || ''), 'staff: #/manage/draw says only the head chef can change recipes');
-  ok(!p.urls.some(u => /js\/(draw|library)\.js|js\/lib\//.test(u)), 'staff: the drawing editor and library are never downloaded');
+  ok(!p.urls.some(u => /js\/(draw|library|smart)\.js|js\/lib\//.test(u)), 'staff: the drawing editor, the library and the smart creator are never downloaded');
   await p.context().close();
 
   // the head chef draws the burger's plate (a computer, so the canvas and the library sit side by side)
