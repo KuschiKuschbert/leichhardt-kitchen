@@ -166,6 +166,8 @@ How the book should work, as the head chef decided it. Newest first. Add new one
 - **22 Oct 2026.** The kitchen ticks each function round as sent; the band moves on to the next round.
 - **22 Oct 2026.** A confirmed function's platters go on the prep list for its day, under Functions.
 - **22 Oct 2026.** Functions can be confirmed with the guests Not known yet and the event start TBC.
+- **22 Oct 2026.** Wastage is for logging. Everyone sees the form and today's entries from the whole team, nothing older. The past days, the 7-day summary, Remove and Put back and the end-of-day review move to the admin panel (Reports, Wastage), for the head chef and sous chefs only; "Change for the next shift" still shows on the prep list for everyone. The rules lock it: staff phones may read only today's wastage lines, and only the head chef and sous chefs write the review. To be built: item 1 of "Bringing the code in line".
+- **22 Oct 2026.** Coding rules for the whole book (reads, saved copies, who sees what, text on screen, forms, screens, loading) are in `CLAUDE.md`. Older code is brought in line one item at a time ("Bringing the code in line", under Prep book and admin panel).
 - **21 Oct 2026.** Functions: a function manager enters each function once and the kitchen sees it in a band under the top bar. Only people the head chef ticks for Functions in the admin People tab (each with their own name and PIN; the Functions coordinator role ticks it) may book or change functions; the tick is given and taken only by the head chef's Google account. Layout A (one line per function under the top bar, tap for the sheet). The booking contact's phone and email are typed in by the manager and kept off the kitchen's screens. The kitchen's function list is one small live listener (changes show in seconds), unlike pings and minutes. The function sheet is on screen only: nothing prints (20 Oct decision stands).
 - **21 Oct 2026.** Someone taken off the staff list (Stopped working here) can no longer write anything with their old PIN: the rules check `staffIds` on every write.
 - **21 Oct 2026.** Every recipe is drawn from its own ingredients and its prep, dish or component: an ingredient with a card of its own is drawn from what that card makes. Recipes draw themselves when saved, and a changed component redraws the book-made drawings of the dishes that use it, keeping parts moved by hand. The book's own hand drawings stay; new drawings must look like them.
@@ -572,6 +574,38 @@ Done on 19 Oct 2026: the lock is proved on the live book after every publish and
 5. The remote branch `ccr-c40e44af-ixs9p5` is level with main and can be deleted under Branches on GitHub.
 
 Remove each item here once it is done.
+
+### Bringing the code in line (22 Oct 2026)
+
+The coding rules in `CLAUDE.md` came from a check of the whole book on 21 Oct 2026. This is the older code that does not meet them yet, in the order to fix it. Each item is its own branch and pull request, with its tests. Remove an item once it is merged.
+
+1. **Wastage log to the admin panel** (head chef decision, 22 Oct 2026).
+   - **Wastage page:** the form and today's entries for everyone, with no By day, no Last 7 days and no review.
+   - **Admin panel, Reports, Wastage gets a Log page** (`lvHTML()`): every entry with search, day range, section, reason and person filters, Remove and Put back, the 7-day summary, and the review written there by the head chef or a sous chef. The Wastage report uses the same reads instead of its own 120.
+   - **Nightly summary:** the nightly learning job writes one `wasteoften` record (items logged often, with their usual unit, reason, section and amount, and the ones often wasted as excess or expired). Staff phones read that once a day instead of 14 days of lines (`loadWRecent`) for the Logged often chips and the waste hints on prep and order lines.
+   - **Rules:** staff read only today's `waste/<date>/lines`. `waste/<date>` stays readable (the next-shift note) but only the head chef and sous chefs write it. `wasteoften` is read only. Emulator checks first; publish after the code is live.
+   - **Backup:** the admin Backup and the nightly backup include `wasteoften`.
+2. **Read budget.**
+   - Add listener counts to the stand-in, then `tests/read-budget.test.js`.
+   - The `learned` list (up to 500 records, a listener read again in full on every reload) is read once a day and patched on the phone.
+   - `maybeRoll()` keeps its done flag on the phone (8 reads on every reload now).
+   - The admin reports (`loadStats` 60 days, `loadWStats` 120, `loadOrdStats` 30) keep past days for the day.
+   - The owner's `activity` listener becomes one read when the panel opens.
+   - Minutes `loadMine` and mail `mlStatLoad` read in one `in` query, not one `getDoc` each.
+   - The 14-day loops (`loadPast`, `loadOrdHist`, `loadOrdAll`) become one query where the records allow it; `loadOrdAll` is kept for the day.
+3. **Past-day changes reach every phone.** A tick or removal on a past prep or order day writes a small `lastEdit` time to `config/main` (already watched, no new reads), and phones with an older saved copy read it again. May need a rules change for the field.
+4. **Text on screen.**
+   - The drawing editor puts colours and anchors from Firestore straight into the drawing (`elSVG()` and `recolour()` in `js/draw.js`, read by `fromDoc()` and the template reader). Check them by type when a drawing loads.
+   - Drawings kept in IndexedDB are cleaned again when drawn.
+   - Add `tests/safe-text.test.js`.
+   - Narrow `cdn.jsdelivr.net` in the security header to the paths the book uses, if every browser accepts it.
+5. **Fill in what the book knows.** A Logged often chip also fills the usual amount (from `wasteoften`). An order chip fills the amount box from `ordlearned`. Head chef to decide: filled in outright, or greyed until tapped.
+6. **Screens.**
+   - The chef mark's menu (`.wm-bg`) dims the page like the other popups.
+   - The 119-recipe dropdowns in Manage Recipes (`linkOptions` in `js/manage.js`) become type-to-find.
+   - `.a-tabs` and `.nb-tabs` fade at the edge.
+   - A trial of fewer boxes on the admin panel, with before and after screenshots for the head chef first.
+7. **Plate drawings load when Recipes opens.** `js/art.js` (1.3 MB) loads at start on every page, though only Recipes and the recipe cards use it. Load it with the page loader, keep it in `SHELL` for no signal, read `LK_ART` at draw time in `js/app.js`, and let `js/overlay.js` merge into it.
 
 ### Changing the kitchen PIN
 
