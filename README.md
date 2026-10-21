@@ -541,6 +541,8 @@ A function manager enters a function once; the kitchen sees exactly what goes ou
 
 - `index.html` carries a Content Security Policy: scripts only from this site, Firebase and Google sign-in (www.gstatic.com, apis.google.com, the reCAPTCHA bot check on www.google.com) and pdf.js (cdn.jsdelivr.net); styles from Google Fonts (inline styles allowed); fonts from Google Fonts and jsDelivr (pdf.js); data from Google's APIs and Firebase; frames only for Google sign-in and reCAPTCHA; no plugins; forms and `<base>` only to this site. A script from anywhere else, or one slipped into the page, does not run.
 - The six inline scripts moved into `js/boot.js` (head, before anything draws) and `js/upkeep.js` (end of body, before the deferred app scripts), in the same order. Both are in the update and refresh file lists, and the service worker cache is `lk-book-v6`.
+- **Only the pdf.js the book uses (22 Oct 2026).** jsDelivr is allowed only for `https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/`, not the whole site, so nothing else hosted there can run. Moving pdf.js to another version means changing `PDFJS` in `js/prep.js` and the four places in the header together.
+- **Text on screen (22 Oct 2026).** Everything typed or read from Firestore goes through `esc()`; the drawing editor also checks colours and text anchors from a saved drawing by type (`okCol()`, `okAnchor()` in `js/draw.js`), and drawings kept on the phone are cleaned again when shown (`artRec()` in `js/overlay.js`). `tests/safe-text.test.js` seeds a booby-trapped line in prep, orders, wastage, pings, mail, drinks, guides, sections, the wastage summary and a drawing, and checks every page shows the words and adds no markup.
 - **A new outside service has to be added to the header**, or the browser blocks it (the console says "violates the following Content Security Policy directive"). The click tests fail on any such message, so a blocked load shows up before merging. Tests that wait in the page use `L.waitFor`, because `page.waitForFunction` runs through eval, which the header blocks.
 
 ### Checking the rules
@@ -585,20 +587,15 @@ Remove each item here once it is done.
 
 The coding rules in `CLAUDE.md` came from a check of the whole book on 21 Oct 2026. This is the older code that does not meet them yet, in the order to fix it. Each item is its own branch and pull request, with its tests. Remove an item once it is merged.
 
-Done: the wastage log, the read budget (what stays as it is, and why, is under Reads kept small) and past-day changes reaching every phone (all 22 Oct 2026).
+Done: the wastage log, the read budget (what stays as it is, and why, is under Reads kept small), past-day changes reaching every phone, and text on screen (all 22 Oct 2026).
 
-1. **Text on screen.**
-   - The drawing editor puts colours and anchors from Firestore straight into the drawing (`elSVG()` and `recolour()` in `js/draw.js`, read by `fromDoc()` and the template reader). Check them by type when a drawing loads.
-   - Drawings kept in IndexedDB are cleaned again when drawn.
-   - Add `tests/safe-text.test.js`.
-   - Narrow `cdn.jsdelivr.net` in the security header to the paths the book uses, if every browser accepts it.
-2. **Fill in what the book knows.** A Logged often chip also fills the usual amount (`amt` in `summary/waste`). An order chip fills the amount box from `ordlearned`. Head chef to decide: filled in outright, or greyed until tapped.
-3. **Screens.**
+1. **Fill in what the book knows.** A Logged often chip also fills the usual amount (`amt` in `summary/waste`). An order chip fills the amount box from `ordlearned`. Head chef to decide: filled in outright, or greyed until tapped.
+2. **Screens.**
    - The chef mark's menu (`.wm-bg`) dims the page like the other popups.
    - The 119-recipe dropdowns in Manage Recipes (`linkOptions` in `js/manage.js`) become type-to-find.
    - `.a-tabs` and `.nb-tabs` fade at the edge.
    - A trial of fewer boxes on the admin panel, with before and after screenshots for the head chef first.
-4. **Plate drawings load when Recipes opens.** `js/art.js` (1.3 MB) loads at start on every page, though only Recipes and the recipe cards use it. Load it with the page loader, keep it in `SHELL` for no signal, read `LK_ART` at draw time in `js/app.js`, and let `js/overlay.js` merge into it.
+3. **Plate drawings load when Recipes opens.** `js/art.js` (1.3 MB) loads at start on every page, though only Recipes and the recipe cards use it. Load it with the page loader, keep it in `SHELL` for no signal, read `LK_ART` at draw time in `js/app.js`, and let `js/overlay.js` merge into it.
 
 ### Changing the kitchen PIN
 

@@ -4453,7 +4453,7 @@
      phone; after that they come from the phone's own copy (Firestore's offline cache), so they open with no signal too. No listener, no polling. */
   var G_CATS = [['equipment', 'Equipment'], ['cleaning', 'Cleaning'], ['safety', 'Food safety'], ['prep', 'Prep and cooking'], ['stock', 'Orders and stock'], ['shift', 'Opening and closing'], ['other', 'Other']];
   var G_MAXP = 20, G_IMG = 950000, G_LONG = 2000, G_TEXT = 6000, G_STALE = 30 * 60000, G_NEW = 14 * 86400000;
-  var PDFJS = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/';
+  var PDFJS = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/';   // the security header in index.html allows only this folder: change both together
   var G_RANK = {}; G_CATS.forEach(function (c, i) { G_RANK[c[0]] = i; });
   var G_ICON = '<svg viewBox="0 0 64 64" width="40" height="40" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M32 16c-6-4-14-6-24-6v38c10 0 18 2 24 6 6-4 14-6 24-6V10c-10 0-18 2-24 6z"/><path d="M32 16v38"/><path d="M14 20c4 0 8 1 12 3M14 30c4 0 8 1 12 3M38 23c4-2 8-3 12-3M38 33c4-2 8-3 12-3"/></svg>';
   function gCatName(c) { return (G_CATS.filter(function (k) { return k[0] === c; })[0] || [0, 'Other'])[1]; }
