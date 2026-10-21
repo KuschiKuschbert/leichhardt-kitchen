@@ -1,13 +1,14 @@
 // Wastage and order entry (usability U5): a big amount for its unit asks once, the unit shows in the amount box,
 // Log waste jumps to the form, suggestions fill what is usual, Next moves on, the day buttons stay together,
-// the order tick keeps its name, and a newer waste review is not replaced without a second tap.
+// the order tick keeps its name, and a newer waste review is not replaced without a second tap (in the admin panel's
+// wastage log since 22 Oct 2026).
 const L = require('./lib');
 const { R, ok } = L.results(), { txt } = L;
 const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
 const day = n => L.ymd(new Date(L.NOW - n * 86400000));
 const today = day(0);
 const extra = {};
-extra[fsKey(['waste', day(1), 'lines', 'r1'])] = { text: 'Rice', amount: 1, unit: 'portions', reason: 'expired', action: '', station: 'Pans', addedBy: 'Bo', addedById: 'bo', addedAt: L.NOW - 86400000, deleted: false };
+Object.assign(extra, L.wasteSum([{ t: 'Rice', n: 1, r: { expired: 1 }, unit: 'portions', reason: 'expired', sec: 'Pans', amt: 1, last: { unit: 'portions', reason: 'expired', sec: 'Pans', amt: 1 } }]));
 extra[fsKey(['ordlearned', 'duck-fat'])] = { text: 'Duck fat', uses: 6, dow: {}, qtys: { '2-tubs': { q: '2 tubs', n: 5 } } };
 const saved = (p, text) => p.evaluate(a => Object.keys(window.__fake.dump()).filter(k => k.indexOf('/waste/' + a.d + '/lines/') > 0 && window.__fake.dump()[k].text === a.t).map(k => window.__fake.dump()[k]), { d: today, t: text });
 async function log(p, text, amt, unit) {
@@ -47,15 +48,21 @@ async function log(p, text, amt, unit) {
   if (sg) { await sg.click(); await L.settle(p, 250); }
   ok(await p.evaluate(() => (document.querySelector('[data-p="wunit"][aria-checked="true"]') || {}).textContent) === 'portions' && await p.inputValue('#w-sec') === 'Pans', 'waste: the suggestion fills the unit and section used last time');
 
-  // review: someone else saved since this page read it
+  ok(p.errors.length === 0, 'waste: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // review, in the admin panel's wastage log: someone else saved since the log was read
+  p = await L.open(b, '#/admin', { wait: 1500, extra, admin: true, who: '' });
+  await L.adminTab(p, 'waste');
+  await L.waitFor(p, () => !!document.querySelector('[data-p="wreview"]'));
   await p.fill('#w-ra', 'Too much rice cooked');
   await p.evaluate(a => window.__fake.write(a.k, { avoidable: 'Over-portioned chips', change: '', reviewBy: 'Bo', reviewAt: a.t }), { k: fsKey(['waste', today]), t: Date.now() + 60000 });
   await p.click('[data-p="wreview"]'); await L.settle(p, 500);
   const rv = () => p.evaluate(k => window.__fake.dump()[k] || {}, fsKey(['waste', today]));
   ok((await rv()).reviewBy === 'Bo' && /Bo saved a review/.test(await txt(p, '.p-toast') || ''), 'review: a newer review by Bo is not replaced on the first tap');
   await p.click('[data-p="wreview"]'); await L.settle(p, 600);
-  ok((await rv()).reviewBy === 'Sam', 'review: a second tap saves Sam\'s review');
-  ok(p.errors.length === 0, 'waste: no page errors ' + p.errors.join(' | '));
+  ok((await rv()).reviewBy === 'Head chef', 'review: a second tap saves the head chef\'s review (' + (await rv()).reviewBy + ')');
+  ok(p.errors.length === 0, 'review: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
   // orders: a suggestion fills the usual amount; the tick keeps its name; the day buttons stay on one row

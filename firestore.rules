@@ -81,9 +81,18 @@ service cloud.firestore {
       allow create, update: if writer() && lineOk(120);
       allow delete: if false;
     }
+    // Today in kitchen time (Queensland, UTC+10, no daylight saving), with 15 minutes either side for a phone's clock.
+    // day is the path's YYYY-MM-DD: its kitchen midnight is 10 hours before UTC midnight of that date.
+    function isToday(day) {
+      return day.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
+        && request.time >= timestamp.date(int(day.split('-')[0]), int(day.split('-')[1]), int(day.split('-')[2])) - duration.value(615, 'm')
+        && request.time < timestamp.date(int(day.split('-')[0]), int(day.split('-')[1]), int(day.split('-')[2])) + duration.value(855, 'm');
+    }
     // Wastage log: anyone signed in adds a line; only the head chef or a sous chef may change one (to remove it).
+    // Head chef decision (22 Oct 2026): with the kitchen PIN only today's lines can be read. Past days are for the
+    // head chef's Google account (the admin panel's wastage log). The phones get what they need from summary/waste.
     match /kitchens/KITCHEN_PIN/waste/{day}/lines/{line} {
-      allow read: if true;
+      allow read: if isAdmin() || isToday(day);
       allow create: if writer()
         && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 80
         && request.resource.data.amount is number && request.resource.data.amount > 0 && request.resource.data.amount < 100000
@@ -94,13 +103,20 @@ service cloud.firestore {
       allow update: if writer() && (isAdmin() || sousBy()) && request.resource.data.text is string && request.resource.data.text.size() <= 80;
       allow delete: if false;
     }
-    // End-of-day waste review, one per day.
+    // End-of-day waste review, one per day. Everyone reads it (the change for the next shift shows on the prep list);
+    // only the head chef or a sous chef writes it (22 Oct 2026: it is written in the admin panel's wastage log).
     match /kitchens/KITCHEN_PIN/waste/{day} {
       allow read: if true;
-      allow create, update: if writer()
+      allow create, update: if writer() && lead()
         && request.resource.data.get('avoidable', '') is string && request.resource.data.get('avoidable', '').size() <= 300
         && request.resource.data.get('change', '') is string && request.resource.data.get('change', '').size() <= 300;
       allow delete: if false;
+    }
+    // What was wasted in the last 14 days, written each night by the server (scripts/nightly-learn.mjs, service account).
+    // The phones only read it; the head chef's Google account may copy it when the kitchen PIN moves.
+    match /kitchens/KITCHEN_PIN/summary/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
     // Recipe book searches that found nothing.
     match /kitchens/KITCHEN_PIN/misses/{id} {

@@ -3,12 +3,9 @@
 // the reason sheet closes with Escape, and a read lost to a bad signal does not break the wastage page.
 const L = require('./lib');
 const { R, ok } = L.results();
-const day = n => L.ymd(new Date(L.NOW - n * 86400000));
-const wKey = (d, id) => ['kitchens', L.PIN, 'waste', d, 'lines', id].join('/');
+// Rice logged as expired stock on two of the last 14 days, as the nightly wastage summary has it (22 Oct 2026)
 function riceTwice() {
-  const x = {};
-  [1, 2].forEach(n => { x[wKey(day(n), 'r' + n)] = { text: 'Rice', amount: 1, unit: 'portions', reason: 'expired', action: '', station: 'Pans', addedBy: 'Bo', addedById: 'bo', addedAt: L.NOW - n * 86400000, deleted: false }; });
-  return x;
+  return L.wasteSum([{ t: 'Rice', n: 2, r: { expired: 2 }, unit: 'portions', reason: 'expired', sec: 'Pans', amt: 1, last: { unit: 'portions', reason: 'expired', sec: 'Pans', amt: 1 } }]);
 }
 (async () => {
   const b = await L.start();
@@ -41,11 +38,21 @@ function riceTwice() {
   ok(p.errors.length === 0, 'waste: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // wastage: a past day that cannot be read (bad signal) does not break the page or the form
-  p = await L.open(b, '#/waste', { wait: 1500, extra: riceTwice(), failReads: '/waste/' + day(1) + '/lines$' });
-  ok(await p.$('#w-text') !== null && await p.$('.w-row') !== null, 'waste: with one day unreadable the form and today\'s entries still show');
-  ok(await p.evaluate(() => window.__fake.reads.some(r => r.indexOf('/waste/') > 0)), 'waste: the past days were asked for');
-  ok(p.errors.length === 0, 'waste, one day unreadable: no page errors ' + p.errors.join(' | '));
+  // the waste hints on the prep and order lists come from the summary too
+  p = await L.open(b, '#/prep', { wait: 1500, extra: riceTwice() });
+  await p.fill('#p-text', 'Rice'); await L.settle(p, 250);
+  ok(/Logged as waste 2 times in 14 days \(mostly expired stock\)/.test(await L.txt(p, '#p-hint') || ''), 'prep: Rice says it was logged as waste twice (' + await L.txt(p, '#p-hint') + ')');
+  await p.evaluate(() => { location.hash = '#/orders'; }); await L.settle(p, 900);
+  await p.fill('#o-text', 'Rice'); await L.settle(p, 250);
+  ok(/Expired stock logged 2 times in 14 days\. Order a little less\?/.test(await L.txt(p, '#o-hint') || ''), 'orders: Rice says order a little less (' + await L.txt(p, '#o-hint') + ')');
+  ok(p.errors.length === 0, 'waste hints: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // wastage: the summary cannot be read (bad signal): it does not break the page or the form
+  p = await L.open(b, '#/waste', { wait: 1500, extra: riceTwice(), failReads: '/summary/waste$' });
+  ok(await p.$('#w-text') !== null && await p.$('.w-row') !== null, 'waste: with the summary unreadable the form and today\'s entries still show');
+  ok(await p.evaluate(() => window.__fake.reads.some(r => /\/summary\/waste$/.test(r))), 'waste: the summary was asked for');
+  ok(p.errors.length === 0, 'waste, summary unreadable: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
   // recipes: into a sub-recipe and Back out again, with the trail linking up

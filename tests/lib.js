@@ -48,6 +48,10 @@ function seed(extra) {
   return Object.assign(s, extra || {});
 }
 
+/* The nightly wastage summary (summary/waste, 22 Oct 2026) as the server writes it: one entry per item, for "extra".
+   items: [{ t, n, r: { reason: count }, unit, reason, sec, amt, last: { unit, reason, sec, amt } }], made for today. */
+function wasteSum(items) { const x = {}; x[K.concat(['summary', 'waste']).join('/')] = { day: ymd(new Date(NOW)), items, at: NOW - 3600000 }; return x; }
+
 /* A tiny picture (4 x 6 px, orange over black) for guide pages, and two made-up guides: "combi" (Equipment, two pages,
    the search word iCombi and the words "Pork Belly" read from its PDF) and "fryer" (Cleaning, written steps only),
    plus a removed one that must never show. */
@@ -292,4 +296,4 @@ async function adminTab(page, t) {
   }, t);
   await settle(page, 250);
 }
-module.exports = { chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
+module.exports = { wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
