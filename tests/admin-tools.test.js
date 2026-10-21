@@ -22,6 +22,9 @@ const store = page => page.evaluate(() => window.__fake.dump());
   extra[fsKey(['book', 'index'])] = { r: { burger: 2 } };
   extra[fsKey(['recipes', 'burger'])] = { r: { id: 'burger', kind: 'main', name: 'Chicken Burger Deluxe', ingredients: [], sections: [] }, v: 2, upd: 1, src: 'book', base: 'abcd1234', removed: false };
   extra[fsKey(['recipes', 'burger', 'hist', '1'])] = { was: { r: { id: 'burger', kind: 'main', name: 'Chicken Burger', ingredients: [], sections: [] }, v: 1 }, at: 1 };
+  // a plating template and a piece the head chef made (reuse)
+  extra[fsKey(['drawtpl', 'pub-split-1'])] = { name: 'Pub split', slot: 'plate', surf: { fam: 'plate', size: 30 }, els: [], defs: '{}', vb: '-110 -110 220 220', svgS: '', svgF: '', v: 1, upd: 1, removed: false };
+  extra[fsKey(['drawlib', 'house-slaw-1'])] = { type: 'item', name: 'House slaw', cat: 'veg', kw: '', role: 'salad', form: 'piece', n: 1, w: 40, h: 30, body: '<circle cx="0" cy="0" r="15" fill="#F1EEDC"/>', side: { s: 'mound', h: 9, c: '#F1EEDC' }, v: 1, upd: 1, removed: false };
   p = await L.open(b, '#/admin', { admin: true, wait: 1800, extra });
   await L.adminTab(p, 'tools');
   await L.settle(p, 200);
@@ -44,6 +47,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   ok(!!s[newKey(['orders', today, 'lines', 'o1'])], 'move PIN: order lines copied');
   ok(!!s[newKey(['ordlearned', 'milk'])], 'move PIN: what the order list learned copied');
   ok(!!s[newKey(['book', 'index'])] && (s[newKey(['recipes', 'burger'])] || {}).v === 2 && !!s[newKey(['recipes', 'burger', 'hist', '1'])], 'move PIN: the head chef\'s recipe changes and their earlier versions copied');
+  ok(!!s[newKey(['drawtpl', 'pub-split-1'])] && !!s[newKey(['drawlib', 'house-slaw-1'])], 'move PIN: the head chef\'s templates and own library pieces copied');
   ok(p.errors.length === 0, 'move PIN: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -64,6 +68,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   ok((bk.minutesSigns.m1 || []).some(x => x.id === '2_ann' && x.st === 'present'), 'backup: minutes sign-offs included');
   ok(bk.ordlearned.length === 1 && bk.ordlearned[0].text === 'Milk' && bk.ordlearned[0].uses === 6, 'backup: what the order list learned included');
   ok(bk.book.some(x => x.id === 'index') && bk.recipes.length === 1 && bk.recipes[0].v === 2 && (bk.recipesHist.burger || []).some(x => x.id === '1'), 'backup: the head chef\'s recipe changes and their earlier versions included');
+  ok(bk.drawtpl.length === 1 && bk.drawtpl[0].name === 'Pub split' && bk.drawlib.length === 1 && bk.drawlib[0].name === 'House slaw', 'backup: the head chef\'s templates and own library pieces included');
   ok(Object.keys(bk.days).length === 1 && bk.days[today].length === 6 && Array.isArray(bk.pins) && !bk.pins.some(x => x.hash), 'backup: prep lines still in, PIN fingerprints still left out');
   await L.settle(p, 200);
   ok(/6 lines from 1 day, 1 shift ping and minutes from 1 meeting/.test(await p.evaluate(() => window.LK_PREP.state.toast)), 'backup: the message counts shift pings and minutes');

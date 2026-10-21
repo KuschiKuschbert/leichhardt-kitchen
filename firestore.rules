@@ -307,6 +307,49 @@ service cloud.firestore {
         allow update, delete: if false;
       }
     }
+    // Reuse (21 Oct 2026): the head chef's plating templates (drawtpl) and own library pieces and servingware (drawlib).
+    // Read by the drawing editor only. Only the head chef writes them; each change is the next version; never deleted
+    // (removed hides one). The head chef's Google account may also copy one as it is (move to a new kitchen PIN).
+    function tplOk(id) {
+      let d = request.resource.data;
+      return id.matches('[a-z0-9][a-z0-9-]{0,63}')
+        && d.keys().hasOnly(['name', 'slot', 'surf', 'els', 'defs', 'vb', 'svgS', 'svgF', 'v', 'upd', 'by', 'removed'])
+        && d.v is int && d.v >= 1 && d.upd is int
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 80
+        && d.slot in ['plate', 'pan', 'side', 'build']
+        && d.get('surf', {}) is map
+        && d.els is list && d.els.size() <= 600
+        && d.get('defs', '') is string && d.get('defs', '').size() <= 300000
+        && d.get('vb', '') is string && d.get('vb', '').size() <= 60
+        && d.get('svgS', '') is string && d.get('svgS', '').size() <= 200000
+        && d.get('svgF', '') is string && d.get('svgF', '').size() <= 300000
+        && d.get('removed', false) is bool;
+    }
+    function libOk(id) {
+      let d = request.resource.data;
+      return id.matches('[a-z0-9][a-z0-9-]{0,63}')
+        && d.keys().hasOnly(['type', 'name', 'cat', 'kw', 'role', 'form', 'g', 'n', 'w', 'h', 'body', 'side', 'p', 'v', 'upd', 'by', 'removed'])
+        && d.v is int && d.v >= 1 && d.upd is int
+        && d.type in ['item', 'surf']
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 60
+        && d.get('kw', '') is string && d.get('kw', '').size() <= 300
+        && d.get('body', '') is string && d.get('body', '').size() <= 100000
+        && d.get('side', {}) is map && d.get('p', {}) is map
+        && (d.type == 'surf' || (d.body.size() > 0 && d.w is number && d.h is number && d.w > 0 && d.h > 0))
+        && d.get('removed', false) is bool;
+    }
+    match /kitchens/KITCHEN_PIN/drawtpl/{id} {
+      allow read: if true;
+      allow create: if tplOk(id) && bookBy() && (isAdmin() || nextVersion());
+      allow update: if tplOk(id) && bookBy() && nextVersion();
+      allow delete: if false;
+    }
+    match /kitchens/KITCHEN_PIN/drawlib/{id} {
+      allow read: if true;
+      allow create: if libOk(id) && bookBy() && (isAdmin() || nextVersion());
+      allow update: if libOk(id) && bookBy() && nextVersion();
+      allow delete: if false;
+    }
     // Who has seen a shift ping: one small record per person, ping and day, written when they tap Got it.
     // The record id is the day, an underscore and the writer's id. Records are never changed or deleted.
     match /kitchens/KITCHEN_PIN/notes/{id}/seen/{sid} {

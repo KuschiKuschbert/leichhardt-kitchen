@@ -273,6 +273,23 @@
     out.sort(function (a, b) { return b.s - a.s || a.it.name.localeCompare(b.it.name); });
     return out.map(function (x) { return x.it; });
   };
+  /* The head chef's own pieces and servingware (drawlib in the book; js/draw.js reads them when the editor opens): each
+     piece is filed under its category with the kind "Made in the book" and draws exactly as it was saved; saved
+     servingware is the family "Saved". Called again with the whole list after every change. */
+  L.MINE = 'Made in the book';
+  L.mine = function (list, ware) {
+    L.items = L.items.filter(function (it) { if (!it.mine) return true; delete byId[it.id]; delete bodies[it.id]; return false; });
+    (list || []).forEach(function (x) {
+      if (byId[x.id]) return;
+      var it = { id: x.id, v: x.v || 1, name: x.name, sub: L.MINE, kw: (x.kw || '') + ' made in the book mine', form: x.form || 'piece', role: ROLES[x.role] ? x.role : 'main', g: x.g || 0, n: x.n || 0, w: x.w, h: x.h, side: x.side, mine: true, draw: function () { return x.body; } };
+      it.cat = L.cats.some(function (c) { return c.id === x.cat; }) ? x.cat : 'prepared';
+      if (!(it.g > 0) && !(it.n > 0)) it.n = 1;
+      byId[it.id] = it; L.items.push(it);
+    });
+    hayCache = null;
+    L.WARE = L.WARE.filter(function (f) { return f.fam !== 'saved'; });
+    if (ware && ware.length) L.WARE.push({ fam: 'saved', name: 'Saved', list: ware });
+  };
   L.subs = function (cat) { var s = {}; L.items.forEach(function (it) { if (it.cat === cat && it.sub) s[it.sub] = (s[it.sub] || 0) + 1; }); return Object.keys(s); };
   L.distinct = function (cat) { return L.items.filter(function (it) { return (!cat || it.cat === cat) && !it.of; }).length; };
 

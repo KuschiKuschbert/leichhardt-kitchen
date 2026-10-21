@@ -10,6 +10,8 @@
   1.5 mm, a 30 cm plate is 200 units across):
     item   a library piece: a (id@version), x, y, sx, sy, r (degrees), flip, cm (colour swaps), op, ing (the
            ingredient it shows), fixed (moved by hand, so Tidy up leaves it)
+    raw    a picture that is not in the library (a book drawing, or a piece of one after Split into pieces): a
+           (raw:<key>, its drawing in defs), bx (its box, "x0 y0 x1 y1"), and the rest as for an item
     text   a label: s, sub, x, y, size, anchor, lx, ly (where its leader line points), ing
     line   pts ("x,y x,y"), col, w, arrow
     rect, ellipse   x, y, w, h, r, fill, stroke
@@ -54,8 +56,10 @@
     return it && it.id + '@' + it.v === a ? LIB.body(it.id) : '';
   }
   function sizeOf(a) { var it = itemOf(a); return it ? [it.w, it.h] : [40, 40]; }
+  function isPiece(el) { return !!el && (el.t === 'item' || el.t === 'raw'); }
   function nameOfEl(el) {
     if (el.t === 'item') { var it = itemOf(el.a); return el.ing || (it ? it.name : 'Piece'); }
+    if (el.t === 'raw') return el.ing || 'Part of a drawing';
     if (el.t === 'text') return 'Label: ' + (el.s || '');
     return { line: 'Line', rect: 'Box', ellipse: 'Oval' }[el.t] || 'Part';
   }
@@ -101,7 +105,7 @@
   }
   function pts(el) { return String(el.pts || '').split(' ').map(function (p) { var q = p.split(','); return [+q[0], +q[1]]; }).filter(function (p) { return isFinite(p[0]) && isFinite(p[1]); }); }
   function elSVG(el) {
-    if (el.t === 'item') return '<g transform="' + tf(el) + '"' + (el.op != null && el.op < 1 ? ' opacity="' + f(el.op) + '"' : '') + '>' + recolour(bodyOf(el.a), el.cm) + '</g>';
+    if (isPiece(el)) return '<g transform="' + tf(el) + '"' + (el.op != null && el.op < 1 ? ' opacity="' + f(el.op) + '"' : '') + '>' + recolour(bodyOf(el.a), el.cm) + '</g>';
     if (el.t === 'text') {
       var sz = el.size || 10, anc = el.anchor || 'start', lead = '';
       if (el.lx != null && el.ly != null) {
@@ -127,14 +131,15 @@
     if (el.t === 'ellipse') return '<ellipse cx="0" cy="0" rx="' + f(el.w / 2) + '" ry="' + f(el.h / 2) + '" fill="' + (el.fill || 'none') + '" stroke="' + (el.stroke || LABEL.ink) + '" stroke-width="' + f(el.sw == null ? 1.2 : el.sw) + '" transform="translate(' + f(el.x) + ' ' + f(el.y) + ')' + (el.r ? ' rotate(' + f(el.r) + ')' : '') + '"/>';
     return '';
   }
+  function rawBox(el) { var b = String(el.bx || '').split(' ').map(Number); return b.length === 4 && b.every(isFinite) ? b : [-20, -20, 20, 20]; }
   // the servingware (none for side and build drawings)
   function surface(d) { return d.surf && d.surf.fam && d.surf.fam !== 'none' ? LIB.surface(d.surf) : null; }
   // the box an element covers, in drawing units: [x0, y0, x1, y1]
   function bbox(el) {
     var w, h;
-    if (el.t === 'item') {
+    if (isPiece(el)) {
       // the piece's own box (a side or build piece stands on its 0,0), scaled, flipped and turned with it
-      var it = itemOf(el.a), lb = it ? LIB.box(it) : [-20, -20, 20, 20], sx = (el.flip ? -1 : 1) * (el.sx || 1), sy = el.sy || 1, ra = (el.r || 0) * Math.PI / 180, ca = Math.cos(ra), sa = Math.sin(ra), xs = [], ys = [];
+      var it = el.t === 'item' ? itemOf(el.a) : null, lb = el.t === 'raw' ? rawBox(el) : it ? LIB.box(it) : [-20, -20, 20, 20], sx = (el.flip ? -1 : 1) * (el.sx || 1), sy = el.sy || 1, ra = (el.r || 0) * Math.PI / 180, ca = Math.cos(ra), sa = Math.sin(ra), xs = [], ys = [];
       [[lb[0], lb[1]], [lb[2], lb[1]], [lb[2], lb[3]], [lb[0], lb[3]]].forEach(function (p) { var x = p[0] * sx, y = p[1] * sy; xs.push(el.x + x * ca - y * sa); ys.push(el.y + x * sa + y * ca); });
       return [Math.min.apply(0, xs), Math.min.apply(0, ys), Math.max.apply(0, xs), Math.max.apply(0, ys)];
     }
@@ -173,7 +178,7 @@
   function altText(d, rname) {
     var s = surface(d), parts = [], seen = {};
     d.els.forEach(function (el) {
-      if (el.t !== 'item') return;
+      if (el.t !== 'item' && !(el.t === 'raw' && el.ing)) return;
       var nm = (el.ing || nameOfEl(el)).toLowerCase(), more = ingsOf(el).slice(1); if (seen[nm]) return; seen[nm] = 1;
       parts.push(nm + (more.length ? ' (with ' + more.join(', ').toLowerCase() + ')' : '') + ' ' + placeWords(el, s && s.area));
     });
@@ -226,7 +231,7 @@
     clearTimeout(keepT);
     if (!W.d || W.d.kept) return;
     if (!dirty()) { lsSet(draftKey(), ''); return; }
-    var used = {}; W.d.els.forEach(function (el) { if (el.t === 'item') used[el.a] = W.d.defs[el.a] !== undefined ? W.d.defs[el.a] : bodyOf(el.a); });
+    var used = {}; W.d.els.forEach(function (el) { if (isPiece(el)) used[el.a] = W.d.defs[el.a] !== undefined ? W.d.defs[el.a] : bodyOf(el.a); });
     lsSet(draftKey(), JSON.stringify({ at: B().now(), surf: W.d.surf, els: W.d.els, name: W.d.name, defs: used }));
   }
   // every change: kept on this device, the page drawn again (soft: only the canvas, so a tap that is half done on a
@@ -252,7 +257,7 @@
     }
     return best || [a.cx, a.cy];
   }
-  function layerOf(el) { if (el.t !== 'item') return 5; var it = itemOf(el.a); return it ? (ROLE_LAYER[it.role] == null ? 2 : ROLE_LAYER[it.role]) : 2; }
+  function layerOf(el) { if (el.t === 'raw') return 2; if (el.t !== 'item') return 5; var it = itemOf(el.a); return it ? (ROLE_LAYER[it.role] == null ? 2 : ROLE_LAYER[it.role]) : 2; }
   // sauce goes under the food, garnish and toppings over it: the index a new piece of this layer is put at
   function insertAt(layer) { var i = W.d.els.length; while (i > 0 && layerOf(W.d.els[i - 1]) > layer) i--; return i; }
   // how big to draw a piece for an amount like "150 g", "2 slices" or "100 ml" (its area follows the weight)
@@ -330,7 +335,7 @@
   function autoPins(d, r, vb) {
     var v = vb.split(' ').map(Number), groups = {}, order = [];
     d.els.forEach(function (el) {
-      if (el.t !== 'item') return;
+      if (!isPiece(el)) return;
       // what is drawn inside a part gets its own label, spread over the part so the lines do not meet in one point
       var b = el.also ? bbox(el) : null, more = ingsOf(el);
       more.forEach(function (k, j) {
@@ -356,12 +361,12 @@
     var out = [], a = area(), d = W.d;
     missingIngs().forEach(function (i) { out.push({ msg: ingName(i) + ' is in the recipe but not on the ' + (d.slot === 'pan' ? 'pan' : 'plate') + '.', ing: ingName(i) }); });
     d.els.forEach(function (el, k) {
-      if (el.t !== 'item') return;
+      if (!isPiece(el)) return;
       if ((d.slot === 'plate' || d.slot === 'pan') && !el.ing) out.push({ msg: nameOfEl(el) + ' has no label (which ingredient it is).', i: k });
       if (surface(d) && !inArea(el.x, el.y, a)) out.push({ msg: nameOfEl(el) + ' is off the ' + (d.slot === 'pan' ? 'pan' : 'servingware') + '.', i: k });
       var b = bbox(el);
       for (var j = k + 1; j < d.els.length; j++) {
-        var o = d.els[j]; if (o.t !== 'item' || layerOf(o) === 0) continue;
+        var o = d.els[j]; if (!isPiece(o) || layerOf(o) === 0) continue;
         var c = bbox(o);
         if (c[0] <= b[0] && c[1] <= b[1] && c[2] >= b[2] && c[3] >= b[3]) { out.push({ msg: nameOfEl(el) + ' is hidden under ' + nameOfEl(o) + '.', i: k }); break; }
       }
@@ -376,7 +381,7 @@
     d.els = d.els.filter(function (el) { return !(el.t === 'text' && el.auto); });
     d.els.forEach(function (el) {
       // the servingware from the side needs no label
-      if (el.t !== 'item' || (!el.ing && /^side-ware-/.test(el.a))) return;
+      if (el.t !== 'item' && !(el.t === 'raw' && el.ing) || (!el.ing && /^side-ware-/.test(el.a))) return;
       var k = el.ing || nameOfEl(el), b = bbox(el);
       if (!parts[k]) { parts[k] = { k: k, x: el.x, y: (b[1] + b[3]) / 2, n: 1 }; list.push(parts[k]); } else { parts[k].x += el.x; parts[k].n++; }
     });
@@ -404,7 +409,7 @@
     var d = W.d, v = viewBoxOf(d).split(' ').map(Number), parts = {}, list = [];
     d.els = d.els.filter(function (el) { return !(el.t === 'text' && el.auto); });
     d.els.forEach(function (el) {
-      if (el.t !== 'item' || (!el.ing && /^side-ware-/.test(el.a))) return;
+      if (el.t !== 'item' && !(el.t === 'raw' && el.ing) || (!el.ing && /^side-ware-/.test(el.a))) return;
       var k = el.ing || nameOfEl(el), b = bbox(el);
       if (!parts[k]) { parts[k] = { k: k, x: el.x, top: b[1] }; list.push(parts[k]); } else parts[k].top = Math.min(parts[k].top, b[1]);
     });
@@ -478,15 +483,18 @@
       (side ? '' : btn('panel', 'Servingware', { v: 'ware', on: W.panel === 'ware' })) + btn('panel', 'Parts', { v: 'parts', on: W.panel === 'parts' }) +
       btn('undo', 'Undo', { dis: !W.undo.length }) + btn('redo', 'Redo', { dis: !W.redo.length }) +
       btn('many', 'Pick several', { on: W.many }) + btn('snap', 'Snap to centre', { on: W.snap !== false }) +
-      (side ? btn('labels', 'Label everything') : '') + btn('check', 'Check the drawing') + smart('tools') + '</div>';
+      (side ? btn('labels', 'Label everything') : '') + btn('check', 'Check the drawing') + smart('tools') +
+      btn('panel', 'Save as a template', { v: 'tpl', on: W.panel === 'tpl' }) + (W.d.isNew ? '' : btn('panel', 'Use for another recipe', { v: 'reuse', on: W.panel === 'reuse' })) + '</div>';
   }
   function selHTML() {
     if (!W.sel.length) return '';
     var one = W.sel.length === 1 ? W.d.els[W.sel[0]] : null;
     return '<div class="dw-selbar" role="toolbar" aria-label="The picked part"><span class="dw-selname">' + esc(one ? nameOfEl(one) : W.sel.length + ' parts picked') + '</span>' +
       btn('dup', 'Duplicate') + btn('del', 'Delete') + btn('front', 'Front') + btn('fwd', 'Forward') + btn('bwd', 'Backward') + btn('back', 'Back') +
-      (one && one.t === 'item' ? btn('flip', 'Flip') + btn('panel', 'Colours', { v: 'colour', on: W.panel === 'colour' }) + btn('stretch', 'Stretch', { on: W.stretch }) : '') +
-      (one && one.t === 'item' && (W.d.slot === 'plate' || W.d.slot === 'pan' || W.d.slot === 'side' || W.d.slot === 'build') ? btn('panel', one.ing ? 'Label: ' + one.ing : 'Which ingredient?', { v: 'label', on: W.panel === 'label' }) : '') +
+      (isPiece(one) ? btn('flip', 'Flip') + btn('panel', 'Colours', { v: 'colour', on: W.panel === 'colour' }) + btn('stretch', 'Stretch', { on: W.stretch }) : '') +
+      (one && one.t === 'raw' ? btn('split', 'Split into pieces') : '') +
+      (W.sel.some(function (i) { return isPiece(W.d.els[i]); }) ? btn('piece', 'Save as a library piece') : '') +
+      (isPiece(one) && (W.d.slot === 'plate' || W.d.slot === 'pan' || W.d.slot === 'side' || W.d.slot === 'build') ? btn('panel', one.ing ? 'Label: ' + one.ing : 'Which ingredient?', { v: 'label', on: W.panel === 'label' }) : '') +
       (one && one.t !== 'item' ? btn('panel', 'Change it', { v: 'edit', on: W.panel === 'edit' }) : '') +
       btn('none', 'Done') + '</div>';
   }
@@ -521,6 +529,7 @@
       '<div class="field"><label class="label" for="dw-q">Find a drawing</label><input id="dw-q" class="search" type="search" data-dwf="q" autocomplete="off" spellcheck="false" placeholder="For example: chips, pepper sauce, lemon wedge" value="' + esc(W.q) + '"></div>' +
       '<div class="chips scroll" role="group" aria-label="Category">' + btn('cat', 'All', { v: '', on: !W.cat, cls: 'chip' }) + cats.map(function (c) { return btn('cat', c.name, { v: c.id, on: W.cat === c.id, cls: 'chip' }); }).join('') + '</div>' +
       (W.cat ? '<div class="chips scroll" role="group" aria-label="Kind">' + btn('sub', 'All ' + (cats.filter(function (c) { return c.id === W.cat; })[0] || {}).name.toLowerCase(), { v: '', on: !W.sub, cls: 'chip' }) + LIB.subs(W.cat).map(function (s) { return btn('sub', s, { v: s, on: W.sub === s, cls: 'chip' }); }).join('') + '</div>' : '') +
+      '<div class="btn-row"><label class="btn dw-imp">Import a drawing (SVG)<input type="file" class="dw-file" accept=".svg,image/svg+xml" data-dwf="svgfile"></label></div>' +
       '<p class="hint" role="status">' + list.length + (list.length === 1 ? ' drawing' : ' drawings') + '. Tap one to put it on the ' + (W.d.slot === 'pan' ? 'pan' : W.d.slot === 'plate' ? 'plate' : 'drawing') + ', or drag it there.</p>' +
       '<div class="dw-lib">' + shown.map(function (it) {
         return '<button type="button" class="dw-tile" data-dw="add" data-v="' + esc(it.id) + '" aria-label="' + esc(it.name) + '">' + thumb(it) + '<span>' + esc(it.name) + '</span></button>';
@@ -539,10 +548,12 @@
         var nm = { shape: 'Shape', size: 'Size (cm)', rim: 'Rim', finish: k === 'finish' && s.fam === 'board' ? 'Grain' : 'Finish', col: 'Colour', depth: 'Depth', tone: 'Wood', edge: 'Edge' }[k] || k;
         return '<label class="field"><span class="label">' + nm + '</span><select class="search" data-dwf="surf.' + k + '">' + opts[k].map(function (v) { return '<option value="' + esc(v) + '"' + (String(s[k]) === String(v) ? ' selected' : '') + '>' + esc(v) + '</option>'; }).join('') + '</select></label>';
       }).join('') + '</div>' : '') +
-      '<label class="mg-check"><input type="checkbox" data-dwf="fitfood"' + (W.fitFood !== false ? ' checked' : '') + '> Fit the food to a new size</label></section>';
+      '<label class="mg-check"><input type="checkbox" data-dwf="fitfood"' + (W.fitFood !== false ? ' checked' : '') + '> Fit the food to a new size</label>' +
+      (W.wsave ? '<div class="dw-wsave"><label class="field"><span class="label">Name for this servingware</span><input class="search" data-dwf="wname" maxlength="60" value="' + esc(W.wname || '') + '" placeholder="For example: Pub oval, wide rim"></label><div class="btn-row">' + btn('ware-save-go', 'Save it', { cls: 'btn dark', dis: !!W.busy }) + btn('ware-save-no', 'Cancel', { cls: 'btn' }) + '</div></div>'
+        : '<div class="btn-row">' + btn('ware-save', 'Save this servingware', { cls: 'btn' }) + '</div>') + '</section>';
   }
   function colourHTML() {
-    var el = W.d.els[W.sel[0]]; if (!el || el.t !== 'item') return '';
+    var el = W.d.els[W.sel[0]]; if (!isPiece(el)) return '';
     var body = bodyOf(el.a), cols = coloursIn(body).filter(function (h) { return h !== '#000000'; }).slice(0, 10), cm = el.cm || {};
     var quick = ['#C0392B', '#E2A93A', '#F2C14E', '#7EA453', '#4F7F2F', '#7E4726', '#5E2010', '#F3E6C2', '#FFFFFF', '#3F2812', '#A3304F', '#E8964A'];
     return '<section class="dw-panel" aria-labelledby="dw-h-col"><h3 class="h3" id="dw-h-col">Colours</h3><p class="hint">Change any colour in this piece. A sauce can take its colour from its name.</p>' +
@@ -589,6 +600,7 @@
     var p = W.panel;
     if (p === 'lib') return libHTML(); if (p === 'ware') return wareHTML(); if (p === 'colour') return colourHTML();
     if (p === 'label') return labelHTML(); if (p === 'parts') return partsHTML(); if (p === 'edit') return editHTML();
+    if (p === 'piece') return pieceHTML(); if (p === 'tpl') return tplHTML(); if (p === 'reuse') return reuseHTML();
     return '';
   }
   function pageHTML() {
@@ -599,7 +611,7 @@
     var newer = d.els.some(function (el) { var it = el.t === 'item' && itemOf(el.a); return it && it.id + '@' + it.v !== el.a; }) ? '<div class="box beige" role="note"><span class="label">Newer library drawings</span><div>Some pieces have a newer drawing in the library. This drawing keeps its own copy until you ask.</div><div class="btn-row">' + btn('newer', 'Use the newer drawings', { cls: 'btn' }) + '</div></div>' : '';
     var state = W.saving || (dirty() ? 'Not saved yet. Kept on this device.' : d.isNew ? 'New drawing.' : 'Saved. Version ' + d.meta.v + '.');
     return '<div class="dw">' + crumbs + '<div class="mg-head"><h2 id="rtitle" tabindex="-1">' + esc((r ? r.name : d.rid) + ': ' + SLOT_NAME[d.slot].toLowerCase()) + '</h2></div>' + kept + conflict + newer +
-      '<div class="dw-main"><div class="dw-left">' + canvasHTML() + toolsHTML() + selHTML() + '</div><div class="dw-right">' + smart('panel') + missingHTML() + checkHTML() + panelHTML() + '</div></div>' +
+      '<div class="dw-main"><div class="dw-left">' + canvasHTML() + toolsHTML() + selHTML() + '</div><div class="dw-right">' + smart('panel') + startHTML() + missingHTML() + checkHTML() + panelHTML() + '</div></div>' +
       '<div class="mg-bar dw-bar"><span class="mg-state" role="status">' + esc(state) + '</span>' + (W.msg ? '<span class="p-err" role="alert">' + esc(W.msg) + '</span>' : '') +
       '<div class="btn-row"><button type="button" class="btn dark" data-dw="save"' + (W.saving ? ' disabled' : '') + '>' + (W.saving ? 'Saving...' : 'Save') + '</button><a class="btn" href="#/manage/r/' + encodeURIComponent(d.rid) + '">Back to the recipe</a></div></div></div>';
   }
@@ -671,6 +683,18 @@
       case 'ing': addIng(v); return;
       case 'wfam': W.wareFam = v; draw(); return;
       case 'ware': setSurf(clone((LIB.WARE.filter(function (x) { return x.fam === (W.wareFam || famOf(d.surf)); })[0] || LIB.WARE[0]).list[+v].p)); return;
+      case 'start-open': W.startOpen = !W.startOpen; return;
+      case 'from': startFrom(v); return;
+      case 'from-sel': if (W.fromSel) startFrom(W.fromSel); else { W.msg = 'Pick a drawing first.'; draw(); } return;
+      case 'split': if (one) splitRaw(W.sel[0]); return;
+      case 'piece': pieceFromSel(); return;
+      case 'pc-save': savePiece(); return;
+      case 'pc-cancel': W.piece = null; W.panel = ''; W.msg = ''; draw(); return;
+      case 'tpl-save': saveTemplate(); return;
+      case 'reuse-go': reuseGo(); return;
+      case 'ware-save': W.wsave = true; draw(); var wn = W.root.querySelector('[data-dwf="wname"]'); if (wn) wn.focus(); return;
+      case 'ware-save-no': W.wsave = false; draw(); return;
+      case 'ware-save-go': saveWare(); return;
       case 'pick': {
         var i = +v;
         if (W.many) { var k = W.sel.indexOf(i); if (k >= 0) W.sel.splice(k, 1); else W.sel.push(i); } else W.sel = [i];
@@ -684,7 +708,7 @@
     else if (a === 'del') { d.els = d.els.filter(function (x, i) { return W.sel.indexOf(i) < 0; }); W.sel = []; if (/colour|label|edit/.test(W.panel)) W.panel = ''; }
     else if (/^(front|back|fwd|bwd)$/.test(a)) reorder(a);
     else if (a === 'flip') W.sel.forEach(function (i) { d.els[i].flip = !d.els[i].flip; });
-    else if (a === 'tintc' && one && one.t === 'item') { var it = itemOf(one.a); one.cm = tintMap(bodyOf(one.a), (it && it.side && it.side.c) || coloursIn(bodyOf(one.a))[0], v); }
+    else if (a === 'tintc' && isPiece(one)) { var it = itemOf(one.a); one.cm = tintMap(bodyOf(one.a), (it && it.side && it.side.c) || coloursIn(bodyOf(one.a))[0], v); }
     else if (a === 'cmreset' && one) delete one.cm;
     else if (a === 'setIng' && one) {
       var si0 = itemOf(one.a);
@@ -717,6 +741,12 @@
     var d = W.d, one = W.sel.length === 1 ? d.els[W.sel[0]] : null;
     if (k === 'q') { W.q = val; W.more = 0; draw(); return; }
     if (k === 'fitfood') { W.fitFood = !!val; return; }
+    // reuse: the boxes keep what is typed, without drawing the page again
+    if (k === 'fromsel') { W.fromSel = val; return; }
+    if (k === 'tplname') { W.tplName = val; return; }
+    if (k === 'reuse') { W.reuse = val; return; }
+    if (k === 'wname') { W.wname = val; return; }
+    if (k.indexOf('pc.') === 0) { if (W.piece) W.piece[k.slice(3)] = val; return; }
     if (k.indexOf('surf.') === 0) { var p = clone(d.surf), kk = k.slice(5); p[kk] = kk === 'size' ? Number(val) : val; setSurf(p); return; }
     if (!one) return;
     if (k.indexOf('col.') === 0) { if (ev.type !== 'change') return; before(); one.cm = one.cm || {}; one.cm[k.slice(4)] = String(val).toUpperCase(); changed(); return; }
@@ -905,6 +935,7 @@
   function onInput(ev) {
     if (!W.root || !W.d || !W.root.contains(ev.target)) return;
     var k = ev.target.getAttribute('data-dwf'); if (!k) return;
+    if (k === 'svgfile') { if (ev.type === 'change') { importSvg(ev.target.files && ev.target.files[0]); ev.target.value = ''; } return; }
     var val = ev.target.type === 'checkbox' ? ev.target.checked : ev.target.value;
     if (ev.type === 'input' && (ev.target.tagName === 'SELECT' || ev.target.type === 'checkbox' || ev.target.type === 'color')) return;
     setField(k, val, ev);
@@ -929,9 +960,288 @@
   });
   window.addEventListener('beforeunload', function (ev) { if (W.root && dirty()) { ev.preventDefault(); ev.returnValue = ''; } });
 
+  /* ---------- reuse (21 Oct 2026): start from a copy, templates, the head chef's own pieces and servingware ----------
+     A new drawing can start from a copy of a template, another drawing or the book's own drawing; the original never
+     changes. Templates (drawtpl) and the head chef's own pieces and servingware (drawlib) are read with one query each
+     when the editor opens. Everything read from the book is cleaned like the book's own drawings. */
+  var SVGNS = 'http://www.w3.org/2000/svg';
+  var MINE = { tpl: [], lib: [], loaded: false, p: null };
+  function vbOk(v) { return typeof v === 'string' && /^-?[\d.]+ -?[\d.]+ [\d.]+ [\d.]+$/.test(v) ? v : ''; }
+  function tplRec(id, x) {
+    if (!x || !Array.isArray(x.els) || !SLOT_NAME[x.slot]) return null;
+    var defs = {}; try { defs = JSON.parse(x.defs || '{}') || {}; } catch (e) {}
+    Object.keys(defs).forEach(function (k) { defs[k] = typeof defs[k] === 'string' ? X.clean(defs[k]) : ''; });
+    return { id: id, name: String(x.name || '').slice(0, 80), slot: x.slot, surf: x.surf || { fam: 'none' }, els: x.els, defs: defs, vb: vbOk(x.vb), svgS: X.clean(x.svgS), svgF: X.clean(x.svgF), v: x.v || 1, removed: !!x.removed };
+  }
+  // the head chef's pieces and saved servingware, into the library (js/library.js LK_LIB.mine)
+  function mineToLib() {
+    LIB.mine(MINE.lib.filter(function (x) { return x.type === 'item' && typeof x.body === 'string' && x.w > 0 && x.h > 0; }).map(function (x) {
+      return { id: 'my-' + x.id, v: x.v, name: String(x.name || '').slice(0, 60), cat: x.cat, kw: x.kw, role: x.role, form: x.form, g: x.g, n: x.n, w: x.w, h: x.h, side: x.side, body: X.clean(x.body) };
+    }), MINE.lib.filter(function (x) { return x.type === 'surf' && x.p && x.p.fam; }).map(function (x) { return { name: String(x.name || '').slice(0, 60), p: x.p }; }));
+  }
+  function loadMine(force) {
+    if (MINE.p && !force) return MINE.p;
+    var api = B();
+    MINE.p = api.ready().then(function () {
+      var fs = api.fs();
+      return Promise.all([fs.getDocs(api.colRef('drawtpl')), fs.getDocs(api.colRef('drawlib'))]);
+    }).then(function (r) {
+      MINE.tpl = r[0].docs.map(function (sn) { return tplRec(sn.id, sn.data()); }).filter(function (t) { return t && !t.removed; });
+      MINE.lib = r[1].docs.map(function (sn) { var x = sn.data(); x.id = sn.id; return x; }).filter(function (x) { return !x.removed; });
+      mineToLib(); MINE.loaded = true;
+      if (W.d) draw();
+    }, function () { MINE.p = null; MINE.loaded = true; if (W.d) draw(); });
+    return MINE.p;
+  }
+  function slug(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 36) || 'piece'; }
+  function freshId(name) { return slug(name) + '-' + Math.floor(B().now()).toString(36); }
+  function hash(s) { var h = 5381; for (var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36) + s.length.toString(36); }
+  function refused(err, what) { return err && err.code === 'permission-denied' ? 'Not saved: the book refused it. Only the head chef can save ' + what + '.' : 'Not saved. Check the signal and try again.'; }
+
+  // the book's own drawing for a slot, as one picture. Where the book's standard plate or GN pan is under the food, that
+  // part becomes real servingware (it can be swapped) and the food stays a picture on it.
+  var BOOK_VB = { plate: '2 16 212 212', pan: '0 0 200 140' };
+  function bookSource(slot, key) {
+    var ART = window.LK_ART || {}, pl = (ART.plates || {})[key], pn = (ART.pans || {})[key], svg = '', vb = '';
+    if (!key || key.charAt(0) === '@') return null;
+    if ((slot === 'plate' || slot === 'pan') && (pl || pn)) { svg = pl || pn; vb = pl ? BOOK_VB.plate : BOOK_VB.pan; }
+    else if (slot === 'side' && ART.sides && ART.sides[key]) { svg = ART.sides[key].body; vb = ART.sides[key].viewBox; }
+    else if (slot === 'build' && ART.diagrams && ART.diagrams[key]) { svg = ART.diagrams[key].body; vb = ART.diagrams[key].viewBox; }
+    var v = String(vb).split(' ').map(Number);
+    if (!svg || v.length !== 4) return null;
+    var doc = new DOMParser().parseFromString('<svg xmlns="' + SVGNS + '">' + svg + '</svg>', 'image/svg+xml'), kids = Array.prototype.slice.call(doc.documentElement.children);
+    var at = function (el, k, n) { return Math.abs(Number(el.getAttribute(k)) - n) < 0.5; };
+    var surf = { fam: 'none' }, tx = -(v[0] + v[2] / 2), ty = -(v[1] + v[3] / 2), k = 1, y0 = 0;
+    if (pl && kids.length > 3 && kids[1].localName === 'circle' && at(kids[1], 'cx', 106) && at(kids[1], 'cy', 120) && at(kids[1], 'r', 100) && kids[2].localName === 'circle' && at(kids[2], 'r', 82)) {
+      // the book's 30 cm dinner plate (shadow, plate, rim) is the editor's own: the same size and scale
+      kids.splice(0, 3); surf = { fam: 'plate', shape: 'round', size: 30, rim: 'wide', finish: 'gloss', col: 'white' }; tx = -106; ty = -120;
+    } else if (pn && kids.length > 2 && kids[0].localName === 'rect' && at(kids[0], 'width', 192) && kids[1].localName === 'rect' && at(kids[1], 'width', 168)) {
+      // the book's GN pan: its food is fitted into a real GN 1/2
+      kids.splice(0, 2); surf = { fam: 'other', shape: 'gn', gn: '1/2' }; tx = -100; ty = -70;
+      var a = LIB.surface(surf).area; k = Math.round(Math.min(a.rx * 2 / 160, a.ry * 2 / 96) * 100) / 100;
+    } else if (slot === 'side') { k = Math.round(Math.min(1, 236 / v[2], 166 / v[3]) * 100) / 100; y0 = -55; }
+    else if (slot === 'build') k = Math.round(Math.min(1, 340 / v[2], 242 / v[3]) * 100) / 100;
+    var inner = X.clean(kids.map(function (c) { return new XMLSerializer().serializeToString(c); }).join(''));
+    if (!inner) return null;
+    var body = '<g transform="translate(' + f(tx) + ' ' + f(ty) + ')">' + inner + '</g>', a2 = 'raw:' + hash(body), defs = {};
+    defs[a2] = body;
+    return { surf: surf, defs: defs, els: [{ t: 'raw', a: a2, x: 0, y: y0, sx: k, sy: k, r: 0, bx: f(v[0] + tx) + ' ' + f(v[1] + ty) + ' ' + f(v[0] + v[2] + tx) + ' ' + f(v[1] + v[3] + ty) }] };
+  }
+  // parts copied from another drawing keep their label only where this recipe has that ingredient; labels written on a
+  // side or build drawing are left to Label everything
+  function adaptEls(els) {
+    return els.filter(function (el) { return !(el.t === 'text' && el.auto); }).map(function (el) {
+      delete el.fixed;
+      if (el.ing && ingIndex(el.ing) < 0) { delete el.ing; delete el.ii; } else if (el.ing) el.ii = ingIndex(el.ing);
+      if (el.also) {
+        var keep = String(el.also).split('|').filter(function (k) { return ingIndex(k) >= 0; });
+        if (keep.length) { el.also = keep.join('|'); el.ai = keep.map(ingIndex).join('|'); } else { delete el.also; delete el.ai; }
+      }
+      return el;
+    });
+  }
+  // tpl:<id>, d:<drawing id> or book:<key>: the drawing to start from, as a promise of { surf, els, defs } (or null)
+  function sourceOf(code) {
+    var d = W.d, m = /^(tpl|d|book):(.+)$/.exec(code || ''), api = B();
+    if (!m) return Promise.resolve(null);
+    if (m[1] === 'book') return Promise.resolve(bookSource(d.slot, m[2]));
+    if (m[1] === 'tpl') return loadMine().then(function () { var t = MINE.tpl.filter(function (x) { return x.id === m[2]; })[0]; return t ? { surf: t.surf, els: clone(t.els), defs: t.defs } : null; });
+    return api.ready().then(function () { return api.fs().getDoc(api.docRef('drawings', m[2])); }).then(function (sn) {
+      if (!sn.exists()) return null;
+      var o = fromDoc(m[2], sn.data());
+      return { surf: o.surf, els: o.els, defs: o.defs };
+    });
+  }
+  function startFrom(code) {
+    var d = W.d;
+    return sourceOf(code).then(function (src) {
+      if (W.d !== d) return false;
+      if (!src) { W.msg = 'Could not open that drawing. Check the signal and try again.'; draw(); return false; }
+      before();
+      d.surf = clone(src.surf || d.surf);
+      d.els = adaptEls(clone(src.els || []));
+      Object.keys(src.defs || {}).forEach(function (k) { d.defs[k] = src.defs[k]; });
+      d.from = code.slice(0, 80); W.started = true; W.sel = []; W.panel = ''; W.msg = '';
+      changed(); say('Started from a copy. The original stays as it is.');
+      return true;
+    }, function () { if (W.d === d) { W.msg = 'Could not open that drawing. Check the signal and try again.'; draw(); } return false; });
+  }
+  function bookKeys(slot) {
+    var ART = window.LK_ART || {}, m = slot === 'plate' ? ART.plates : slot === 'pan' ? ART.pans : slot === 'side' ? ART.sides : ART.diagrams;
+    return Object.keys(m || {}).filter(function (k) { return k.charAt(0) !== '@'; });
+  }
+  function bookThumb(slot, key) {
+    var ART = window.LK_ART || {};
+    if (slot === 'plate' || slot === 'pan') { var pl = (ART.plates || {})[key]; return '<svg viewBox="' + (pl ? BOOK_VB.plate : BOOK_VB.pan) + '" aria-hidden="true" focusable="false">' + (pl || (ART.pans || {})[key] || '') + '</svg>'; }
+    var o = (slot === 'side' ? ART.sides : ART.diagrams || {})[key];
+    return o ? '<svg viewBox="' + esc(o.viewBox) + '" aria-hidden="true" focusable="false">' + o.body + '</svg>' : '';
+  }
+  function tplThumb(t) { return '<svg viewBox="' + esc(t.vb || '-110 -110 220 220') + '" aria-hidden="true" focusable="false"><g data-surf="1">' + t.svgS + '</g>' + t.svgF + '</svg>'; }
+  // a new, empty drawing: start blank (the library is below), or from a copy
+  function startHTML() {
+    var d = W.d, r = rec();
+    if (!d.isNew || d.els.length || W.started) return '';
+    var own = d.slot === 'side' ? (bookKeys('side').indexOf(d.rid) >= 0 ? d.rid : '') : d.slot === 'build' ? (r && r.diagram && r.diagram.charAt(0) !== '@' ? r.diagram : '') : (r && r.art && r.art.charAt(0) !== '@' ? r.art : '');
+    var tpls = MINE.tpl.filter(function (t) { return t.slot === d.slot; }), others = X.arts().filter(function (x) { return x.slot === d.slot && !x.removed; });
+    var tile = function (code, label, pic) { return '<button type="button" class="dw-tile" data-dw="from" data-v="' + esc(code) + '">' + pic + '<span>' + esc(label) + '</span></button>'; };
+    // one line until it is opened, so the library stays where it is
+    return '<details class="dw-panel dw-start"' + (W.startOpen ? ' open' : '') + '><summary data-dw="start-open">Start from a copy' + (own ? ' of the book\'s drawing' : '') + (tpls.length ? ', a template' : '') + ' or another drawing</summary><p class="hint">Draw from blank with the library below, or start from a copy. What you start from stays as it is.</p>' +
+      (own || tpls.length ? '<div class="dw-lib">' + (own ? tile('book:' + own, 'The book\'s drawing of ' + (r ? r.name : d.rid), bookThumb(d.slot, own)) : '') + tpls.map(function (t) { return tile('tpl:' + t.id, 'Template: ' + t.name, tplThumb(t)); }).join('') + '</div>' : '') +
+      (!MINE.loaded ? '<p class="hint">Looking for templates...</p>' : '') +
+      '<div class="field"><label class="label" for="dw-from">Or a copy of another drawing</label><select id="dw-from" class="search" data-dwf="fromsel"><option value="">Pick a drawing</option>' +
+      (others.length ? '<optgroup label="Drawn in the book">' + others.map(function (x) { return '<option value="d:' + esc(x.id) + '"' + (W.fromSel === 'd:' + x.id ? ' selected' : '') + '>' + esc(x.name || x.id) + '</option>'; }).join('') + '</optgroup>' : '') +
+      '<optgroup label="The book\'s own">' + bookKeys(d.slot).map(function (k) { var rr = A.byId(k); return '<option value="book:' + esc(k) + '"' + (W.fromSel === 'book:' + k ? ' selected' : '') + '>' + esc(rr ? rr.name : k) + '</option>'; }).join('') + '</optgroup></select></div>' +
+      '<div class="btn-row">' + btn('from-sel', 'Start from a copy of it', { cls: 'btn' }) + '</div></details>';
+  }
+
+  // Split into pieces: each shape of a picture becomes a part of its own (shapes, not named ingredients)
+  function splitRaw(i) {
+    var el = W.d.els[i]; if (!el || el.t !== 'raw') return;
+    var host = document.createElementNS(SVGNS, 'svg');
+    host.setAttribute('style', 'position:absolute;left:-10000px;top:0;width:10px;height:10px;overflow:hidden');
+    host.innerHTML = bodyOf(el.a);
+    document.body.appendChild(host);
+    var top = host, tx = 0, ty = 0, g = host.firstElementChild, m;
+    // the picture's own offset: one group that only moves it
+    if (host.children.length === 1 && g.localName === 'g' && (m = /^translate\(\s*(-?[\d.]+)[ ,]+(-?[\d.]+)\s*\)$/.exec(String(g.getAttribute('transform') || '').trim()))) { tx = +m[1]; ty = +m[2]; top = g; }
+    while (top.children.length === 1 && top.firstElementChild.localName === 'g' && !top.firstElementChild.getAttribute('transform')) top = top.firstElementChild;
+    var kids = Array.prototype.slice.call(top.children);
+    if (kids.length < 2 || W.d.els.length + kids.length > 600) { document.body.removeChild(host); say(kids.length < 2 ? 'This part is one shape already.' : 'Too many shapes to split here.'); return; }
+    var fx = (el.flip ? -1 : 1) * (el.sx || 1), sy = el.sy || 1, ra = (el.r || 0) * Math.PI / 180, ca = Math.cos(ra), sa = Math.sin(ra);
+    var pieces = kids.map(function (c) {
+      var wrap = document.createElementNS(SVGNS, 'g'); top.insertBefore(wrap, c); wrap.appendChild(c);
+      var bb = wrap.getBBox(), cx = bb.x + bb.width / 2, cy = bb.y + bb.height / 2;
+      var body = X.clean('<g transform="translate(' + f(-cx) + ' ' + f(-cy) + ')">' + new XMLSerializer().serializeToString(c) + '</g>'), key = 'raw:' + hash(body);
+      W.d.defs[key] = body;
+      var px = fx * (cx + tx), py = sy * (cy + ty), w2 = Math.max(1, bb.width) / 2, h2 = Math.max(1, bb.height) / 2;
+      var p = { t: 'raw', a: key, x: n1(el.x + px * ca - py * sa), y: n1(el.y + px * sa + py * ca), sx: el.sx || 1, sy: sy, r: el.r || 0, bx: f(-w2) + ' ' + f(-h2) + ' ' + f(w2) + ' ' + f(h2) };
+      if (el.flip) p.flip = true; if (el.cm) p.cm = clone(el.cm); if (el.op != null) p.op = el.op;
+      return p;
+    });
+    document.body.removeChild(host);
+    before(); W.d.els.splice.apply(W.d.els, [i, 1].concat(pieces)); W.sel = []; changed();
+    say('Split into ' + pieces.length + ' pieces');
+  }
+
+  // a new library piece: from the parts picked on the drawing (a recoloured piece, a piece of a book drawing, several
+  // parts together), or from an SVG file
+  var PIECE_ROLE = { meat: 'main', seafood: 'main', veg: 'veg', potato: 'starch', grains: 'starch', bread: 'bread', prepared: 'main', sauce: 'sauce', garnish: 'garnish', sweet: 'dessert', dairy: 'topping', build: 'main' };
+  function pieceFromSel() {
+    var els = W.sel.map(function (i) { return W.d.els[i]; }).filter(function (el) { return el && el.t !== 'text'; });
+    if (!els.length) return;
+    var b = els.map(bbox).reduce(function (m, e) { return [Math.min(m[0], e[0]), Math.min(m[1], e[1]), Math.max(m[2], e[2]), Math.max(m[3], e[3])]; }), cx = (b[0] + b[2]) / 2, cy = (b[1] + b[3]) / 2;
+    var first = els.filter(function (el) { return el.t === 'item'; })[0], it = first && itemOf(first.a);
+    W.piece = { inner: '<g transform="translate(' + f(-cx) + ' ' + f(-cy) + ')">' + els.map(elSVG).join('') + '</g>', w: Math.max(1, n1(b[2] - b[0])), h: Math.max(1, n1(b[3] - b[1])), name: els.length === 1 ? (first && (first.ing || (it && it.name)) || '') : '', cat: W.d.slot === 'side' || W.d.slot === 'build' ? 'build' : it ? it.cat : 'prepared', kw: '', from: 'sel' };
+    W.panel = 'piece'; W.msg = ''; draw();
+  }
+  function svgPiece(text) {
+    var doc = new DOMParser().parseFromString(text, 'image/svg+xml'), root = doc.documentElement;
+    if (!root || root.localName !== 'svg' || doc.getElementsByTagName('parsererror').length) return null;
+    var v = String(root.getAttribute('viewBox') || '').trim().split(/[\s,]+/).map(Number);
+    if (v.length !== 4 || !v.every(isFinite) || v[2] <= 0 || v[3] <= 0) { var w = parseFloat(root.getAttribute('width')), h = parseFloat(root.getAttribute('height')); v = [0, 0, w > 0 ? w : 100, h > 0 ? h : 100]; }
+    var inner = X.clean(Array.prototype.map.call(root.childNodes, function (c) { return c.nodeType === 1 ? new XMLSerializer().serializeToString(c) : ''; }).join(''));
+    if (!inner || !/<(path|circle|ellipse|rect|line|polyline|polygon)\b/.test(inner)) return null;
+    // about 9 cm across to start with; it can be sized on the drawing
+    var k = 60 / Math.max(v[2], v[3]);
+    return { inner: '<g transform="translate(' + f(-(v[0] + v[2] / 2) * k) + ' ' + f(-(v[1] + v[3] / 2) * k) + ') scale(' + Math.round(k * 10000) / 10000 + ')">' + inner + '</g>', w: n1(v[2] * k), h: n1(v[3] * k), cat: W.d.slot === 'side' || W.d.slot === 'build' ? 'build' : 'prepared', kw: '', from: 'svg' };
+  }
+  function importSvg(file) {
+    if (!file) return;
+    if (file.size > 100000) { W.msg = 'That file is too big: 100 kB at most.'; draw(); return; }
+    var rd = new FileReader();
+    rd.onload = function () {
+      var pc = svgPiece(String(rd.result || ''));
+      if (!pc) { W.msg = 'Nothing in that file could be used. Only plain shapes are kept: no pictures, styles or effects.'; draw(); return; }
+      pc.name = String(file.name || '').replace(/\.svg$/i, '').replace(/[-_]+/g, ' ').trim().slice(0, 60);
+      W.piece = pc; W.panel = 'piece'; W.msg = ''; draw();
+    };
+    rd.onerror = function () { W.msg = 'That file could not be read.'; draw(); };
+    rd.readAsText(file);
+  }
+  function pieceHTML() {
+    var pc = W.piece; if (!pc) return '';
+    var m = 4, vb = f(-pc.w / 2 - m) + ' ' + f(-pc.h / 2 - m) + ' ' + f(pc.w + 2 * m) + ' ' + f(pc.h + 2 * m);
+    return '<section class="dw-panel" aria-labelledby="dw-h-pc"><h3 class="h3" id="dw-h-pc">New library piece</h3><p class="hint">It goes in the library under its category, as ' + esc(LIB.MINE) + '. Drawings that use it keep their own copy, so changing the library never changes them.</p>' +
+      '<div class="dw-pc-prev"><svg viewBox="' + vb + '" aria-hidden="true" focusable="false">' + pc.inner + '</svg></div>' +
+      '<label class="field"><span class="label">Name</span><input class="search" data-dwf="pc.name" maxlength="60" value="' + esc(pc.name) + '" placeholder="For example: Leichhardt slaw, house side"></label>' +
+      '<label class="field"><span class="label">Category</span><select class="search" data-dwf="pc.cat">' + LIB.cats.map(function (c) { return '<option value="' + c.id + '"' + (pc.cat === c.id ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select></label>' +
+      '<label class="field"><span class="label">Other words to find it by</span><input class="search" data-dwf="pc.kw" maxlength="300" value="' + esc(pc.kw) + '"></label>' +
+      '<div class="btn-row">' + btn('pc-save', 'Save to the library', { cls: 'btn dark', dis: !!W.busy }) + btn('pc-cancel', 'Cancel', { cls: 'btn' }) + '</div></section>';
+  }
+  function savePiece() {
+    var pc = W.piece, api = B();
+    if (!pc || W.busy) return;
+    var name = String(pc.name || '').replace(/\s+/g, ' ').trim().slice(0, 60);
+    if (!name) { W.msg = 'Give the piece a name.'; draw(); return; }
+    // a side or build piece stands on its base (y = 0), every other piece sits around its middle
+    var body = pc.cat === 'build' ? '<g transform="translate(0 ' + f(-pc.h / 2) + ')">' + pc.inner + '</g>' : pc.inner;
+    if (body.length > 100000) { W.msg = 'Not saved: this piece is too big for the library (100 kB at most). Pick fewer parts.'; draw(); return; }
+    var col = coloursIn(body).filter(function (h) { return h !== '#FFFFFF' && h !== '#000000'; })[0] || '#C98A45';
+    var id = freshId(name), out = { type: 'item', name: name, cat: pc.cat, kw: String(pc.kw || '').slice(0, 300), role: PIECE_ROLE[pc.cat] || 'main', form: 'piece', n: 1, w: pc.w, h: pc.h, body: body, side: { s: 'mound', h: Math.max(4, n1(pc.h * 0.3)), c: col }, v: 1, upd: api.now(), removed: false };
+    W.busy = true; W.msg = ''; draw();
+    api.ready().then(function () { return api.W([['set', api.docRef('drawlib', id), out]]); }).then(function () {
+      W.busy = false; out.id = id; MINE.lib.push(out); mineToLib();
+      if (pc.from === 'svg' && W.d) { before(); addItem('my-' + id, {}); changed(); }
+      W.piece = null; W.panel = 'lib'; W.q = name; W.cat = ''; W.sub = '';
+      toast('Saved to the library: ' + name + '.'); draw();
+    }, function (err) { W.busy = false; W.msg = refused(err, 'library pieces'); draw(); });
+  }
+
+  // the servingware on this drawing, kept as a preset (the family Saved)
+  function saveWare() {
+    var api = B(), name = String(W.wname || '').replace(/\s+/g, ' ').trim().slice(0, 60);
+    if (W.busy) return;
+    if (!name) { W.msg = 'Give the servingware a name.'; draw(); return; }
+    var id = freshId(name), out = { type: 'surf', name: name, p: clone(W.d.surf), v: 1, upd: api.now(), removed: false };
+    W.busy = true; W.msg = ''; draw();
+    api.ready().then(function () { return api.W([['set', api.docRef('drawlib', id), out]]); }).then(function () {
+      W.busy = false; out.id = id; MINE.lib.push(out); mineToLib(); W.wsave = false; W.wname = ''; W.wareFam = 'saved';
+      toast('Servingware saved: ' + name + '.'); draw();
+    }, function (err) { W.busy = false; W.msg = refused(err, 'servingware'); draw(); });
+  }
+
+  // Save as a template: the plating without its labels, for any recipe to start from
+  function tplHTML() {
+    return '<section class="dw-panel" aria-labelledby="dw-h-tpl"><h3 class="h3" id="dw-h-tpl">Save as a template</h3><p class="hint">New drawings can start from a copy of it. The ingredient labels are left off, so it fits any recipe. This drawing stays as it is.</p>' +
+      '<label class="field"><span class="label">Template name</span><input class="search" data-dwf="tplname" maxlength="80" value="' + esc(W.tplName == null ? W.d.name : W.tplName) + '"></label>' +
+      '<div class="btn-row">' + btn('tpl-save', 'Save the template', { cls: 'btn dark', dis: !!W.busy }) + '</div></section>';
+  }
+  function saveTemplate() {
+    var d = W.d, api = B(), name = String(W.tplName == null ? d.name : W.tplName).replace(/\s+/g, ' ').trim().slice(0, 80);
+    if (W.busy) return;
+    if (!name) { W.msg = 'Give the template a name.'; draw(); return; }
+    if (!d.els.length) { W.msg = 'Put something on the drawing first.'; draw(); return; }
+    var els = clone(d.els).filter(function (el) { return !(el.t === 'text' && el.auto); }).map(function (el) { delete el.ing; delete el.ii; delete el.also; delete el.ai; delete el.fixed; return el; }), used = {};
+    els.forEach(function (el) { if (isPiece(el)) used[el.a] = bodyOf(el.a); });
+    var out = { name: name, slot: d.slot, surf: clone(d.surf), els: els, defs: JSON.stringify(used), vb: viewBoxOf({ slot: d.slot, surf: d.surf, els: els }), svgS: svgS(d), svgF: els.map(elSVG).join(''), v: 1, upd: api.now(), removed: false };
+    if (out.defs.length > 300000 || out.svgF.length > 300000) { W.msg = 'Not saved: this drawing is too big for a template.'; draw(); return; }
+    var id = freshId(name);
+    W.busy = true; W.msg = ''; draw();
+    api.ready().then(function () { return api.W([['set', api.docRef('drawtpl', id), out]]); }).then(function () {
+      W.busy = false; MINE.tpl.push(tplRec(id, out)); W.panel = ''; W.tplName = null;
+      toast('Saved as a template: ' + name + '. New drawings can start from it.'); draw();
+    }, function (err) { W.busy = false; W.msg = refused(err, 'templates'); draw(); });
+  }
+
+  // Use for another recipe: a copy of this drawing opens for the recipe picked
+  function reuseHTML() {
+    var d = W.d, dish = /^(main|snack|side|dessert)$/, list = (D.recipes || []).filter(function (r) { return r.id !== d.rid && (d.slot === 'pan' ? !dish.test(r.kind) : dish.test(r.kind)); }).sort(function (a, b) { return a.name.localeCompare(b.name); });
+    return '<section class="dw-panel" aria-labelledby="dw-h-re"><h3 class="h3" id="dw-h-re">Use for another recipe</h3><p class="hint">A copy of this drawing opens for the recipe you pick. This drawing stays as it is. Parts keep their label where the other recipe has that ingredient.</p>' +
+      '<label class="field"><span class="label">Recipe</span><select class="search" data-dwf="reuse"><option value="">Pick a recipe</option>' + list.map(function (r) { return '<option value="' + esc(r.id) + '"' + (W.reuse === r.id ? ' selected' : '') + '>' + esc(r.name) + '</option>'; }).join('') + '</select></label>' +
+      '<div class="btn-row">' + btn('reuse-go', 'Make the copy', { cls: 'btn dark' }) + '</div></section>';
+  }
+  function reuseGo() {
+    var d = W.d;
+    if (d.isNew || dirty()) { W.msg = 'Save this drawing first, then use it for another recipe.'; draw(); return; }
+    if (!W.reuse) { W.msg = 'Pick the recipe first.'; draw(); return; }
+    location.hash = '#/manage/draw/new/' + encodeURIComponent(W.reuse) + '/' + d.slot + '/d:' + d.id;
+  }
+
   /* ---------- saving ---------- */
   function fromDoc(id, x) {
     var defs = {}; try { defs = JSON.parse(x.defs || '{}') || {}; } catch (e) {}
+    // every piece's drawing read from the book is cleaned like the book's own (plain shapes and text only)
+    Object.keys(defs).forEach(function (k) { defs[k] = typeof defs[k] === 'string' ? X.clean(defs[k]) : ''; });
     return { id: id, isNew: false, rid: x.rid || '', slot: x.slot, name: x.name || '', surf: x.surf || { fam: 'none' }, els: Array.isArray(x.els) ? x.els : [], defs: defs, layout: x.layout || null, from: x.from || '', meta: { v: x.v || 0, removed: !!x.removed, by: x.by || '', upd: x.upd || 0 } };
   }
   function save(force) {
@@ -943,7 +1253,7 @@
     W.saving = 'Saving...'; draw();
     var slow = setTimeout(function () { if (W.d === d && W.saving) { W.saving = 'Waiting for the signal. Your drawing is kept on this device.'; var s = W.root && W.root.querySelector('.mg-state'); if (s) s.textContent = W.saving; } }, 4000);
     var fs, r = recipeOf(d.rid), vb = viewBoxOf(d), used = {};
-    d.els.forEach(function (el) { if (el.t === 'item') used[el.a] = bodyOf(el.a); });
+    d.els.forEach(function (el) { if (isPiece(el)) used[el.a] = bodyOf(el.a); });
     var out = { rid: d.rid, slot: d.slot, name: String(d.name || '').slice(0, 80), vb: vb, k: 1, surf: d.surf, els: clone(d.els), defs: JSON.stringify(used), svgS: svgS(d), svgF: svgF(d), alt: altText(d, r ? r.name : d.rid), from: d.from || '', upd: 0, v: 0, removed: false };
     if (d.layout) out.layout = d.layout;
     if (d.slot === 'build') out.title = 'How it is built';
@@ -1027,10 +1337,16 @@
     W.root = root;
     if (W.key === key && W.d) { draw(); return; }
     W.key = key; W.d = null; W.sel = []; W.undo = []; W.redo = []; W.view = { z: 1, x: 0, y: 0 }; W.panel = ''; W.msg = ''; W.saving = ''; W.check = null; W.conflict = null; W.q = ''; W.cat = ''; W.sub = ''; W.more = 0; W.pendingIng = ''; W.wareFam = '';
+    W.started = false; W.startOpen = false; W.piece = null; W.fromSel = ''; W.tplName = null; W.reuse = ''; W.wsave = false; W.wname = ''; W.busy = false;
+    // read again each time a drawing opens, so a template hidden on the manage page is not offered
+    loadMine(true);
     if (sub[1] === 'new') {
       var rid = sub[2] || '', slot = sub[3] || '';
       if (!recipeOf(rid) || !SLOT_NAME[slot]) { root.innerHTML = note('Drawing not found', 'There is no recipe "' + rid + '" or no drawing slot "' + slot + '".'); return; }
-      W.d = blank(rid, slot); finishOpen(); return;
+      // #/manage/draw/new/<recipe>/<slot>/<from>: a copy of a template, a drawing or the book's own drawing
+      W.d = blank(rid, slot); finishOpen();
+      if (sub[4]) startFrom(sub.slice(4).join('/'));
+      return;
     }
     var id = sub[1] || '', api = B();
     root.innerHTML = note('Opening the drawing', 'Reading it from the book...');
@@ -1059,6 +1375,8 @@
     redraw: function () { changed(); },
     say: say,
     autoPins: autoPins, altText: altText, check: check, labelAll: labelAll, amount: amount, scaleFor: scaleFor,
+    // reuse, for the tests: the book's own drawing as a starting point, and the head chef's templates and pieces
+    bookSource: bookSource, mine: function () { return MINE; },
     render: { elSVG: elSVG, svgS: svgS, svgF: svgF, viewBoxOf: viewBoxOf, bbox: bbox, surface: surface, area: area, inArea: inArea, insertAt: insertAt, layerOf: layerOf, freeSpot: freeSpot, recipeOf: recipeOf, plateIngs: plateIngs, ingName: ingName, tintMap: tintMap },
     changed: function () { if (W.d) { before(); changed(); } }
   };
