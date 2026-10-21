@@ -8,10 +8,11 @@
     // Something half written in the prep pages (a line, a shift ping, minutes, the staff list): try again in 10 minutes.
     try { if (window.LK_PREP && window.LK_PREP.unsaved && window.LK_PREP.unsaved()) { clearTimeout(timer); timer = setTimeout(refresh, 600000); return; } } catch (e) {}
     // Re-fetch the data files past the browser cache first, so the reload shows the newest cards. The page stays on the same card.
-    var files = ['js/data.js', 'js/art.js', 'js/app.js', 'js/prep.js', 'js/firebase-config.js', 'js/boot.js', 'js/upkeep.js', 'css/app.css'];
+    // X-LK-Fresh tells the service worker to fetch these from the network and save them (sw.js).
+    var files = ['index.html', 'js/data.js', 'js/art.js', 'js/app.js', 'js/prep.js', 'js/firebase-config.js', 'js/boot.js', 'js/upkeep.js', 'css/app.css'];
     var go = function () { location.reload(); };
     try {
-      Promise.all(files.map(function (f) { return fetch(f, { cache: 'reload' }); })).then(go, go);
+      Promise.all(files.map(function (f) { return fetch(f, { cache: 'reload', headers: { 'X-LK-Fresh': '1' } }); })).then(go, go);
       setTimeout(go, 8000);
     } catch (e) { go(); }
   }
@@ -49,7 +50,7 @@
     try { var last = +localStorage.getItem('lk.upd.last') || 0; if (Date.now() - last < 600000) return; localStorage.setItem('lk.upd.last', String(Date.now())); } catch (e) {}
     var files = ['index.html', 'js/data.js', 'js/art.js', 'js/app.js', 'js/prep.js', 'js/firebase-config.js', 'js/boot.js', 'js/upkeep.js', 'css/app.css'];
     var go = function () { location.reload(); };
-    try { Promise.all(files.map(function (f) { return fetch(f, { cache: 'reload' }); })).then(go, go); setTimeout(go, 8000); } catch (e) { go(); }
+    try { Promise.all(files.map(function (f) { return fetch(f, { cache: 'reload', headers: { 'X-LK-Fresh': '1' } }); })).then(go, go); setTimeout(go, 8000); } catch (e) { go(); }
   }
   function showBar() {
     if (bar || !document.body) return;
@@ -84,6 +85,19 @@
     else if (Date.now() - lastCheck > 15 * 60000) check(false);
   }, 20000);
   window.addEventListener('load', function () { check(false); });
+  // The service worker opens the book from the copy saved on the phone and fetches the newest files behind it
+  // (sw.js, 21 Oct 2026). When it has saved a new version it says 'lk-new': in the first seconds after opening, before
+  // anyone has touched the screen, the book reloads straight into it (the files are already on the phone); otherwise
+  // it is the same as a new version found by the check above.
+  var opened = Date.now();
+  if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', function (e) {
+    if (e.data !== 'lk-new') return;
+    found = true;
+    if (Date.now() - opened < 8000 && lastTouch <= opened && !typing()) {
+      try { var last = +localStorage.getItem('lk.upd.last') || 0; if (Date.now() - last < 600000) { showBar(); return; } localStorage.setItem('lk.upd.last', String(Date.now())); } catch (err) {}
+      location.reload();
+    } else showBar();
+  });
 })();
-// Installable: the service worker keeps the last copy of the book so it opens with no signal.
+// Installable: the service worker keeps the last copy of the book, so it opens at once and with no signal.
 if ('serviceWorker' in navigator) window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
