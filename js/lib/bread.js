@@ -990,5 +990,57 @@
     return out + P.hl(-14, -18, 12, 2.5, '#FFFFFF', 0.25, -5);
   }
 
-  /* @@ITEMS@@ */
+  var BUN = 'Buns and rolls', SL = 'Sliced bread and toast', FL = 'Flatbreads and wraps', PZA = 'Pizza', PIE = 'Pies and pastry', SW = 'Sandwiches', BK = 'Breakfast and baked';
+  var BRIOCHE = { col: '#B8692A', top: '#CF8236', hi: '#E0A15A', gloss: true }, MILK = { col: '#D9A766', top: '#E8BE80', hi: '#F2D6A6' };
+  L.add('bread', [
+    { id: 'burger-bun-top', name: 'Burger bun top, sesame', sub: BUN, kw: 'bun top sesame seed burger bun lid crown', form: 'piece', cook: 'baked', role: 'bread', n: 1, w: 73, h: 70, side: { s: 'mound', h: 24, c: C.bunTop }, draw: bunTop({ r: 36, seeds: 26 }) },
+    { id: 'burger-bun-base', name: 'Burger bun base, toasted', sub: BUN, kw: 'bun base bottom heel cut side toasted burger bun', form: 'piece', cook: 'baked', role: 'bread', n: 1, w: 73, h: 71, side: { s: 'disc', h: 12, c: C.bun }, draw: bunBase({ r: 36 }) },
+    { id: 'milk-bun', name: 'Milk bun', sub: BUN, kw: 'milk bun soft white bun potato bun burger', form: 'piece', cook: 'baked', role: 'bread', n: 1, w: 68, h: 65, side: { s: 'mound', h: 26, c: MILK.top }, draw: bunTop(Object.assign({ r: 34 }, MILK)) },
+    { id: 'brioche-bun', name: 'Brioche bun', sub: BUN, kw: 'brioche bun glossy glazed butter bun burger', form: 'piece', cook: 'baked', role: 'bread', n: 1, w: 73, h: 70, side: { s: 'mound', h: 28, c: BRIOCHE.top }, draw: bunTop(Object.assign({ r: 36 }, BRIOCHE)) },
+    { id: 'slider-bun', name: 'Slider bun', sub: BUN, kw: 'slider mini bun small brioche', form: 'piece', cook: 'baked', role: 'bread', n: 1, w: 44, h: 42, of: 'brioche-bun', side: { s: 'mound', h: 18, c: BRIOCHE.top }, draw: bunTop(Object.assign({ r: 22 }, BRIOCHE)) },
+    { id: 'hot-cross-bun', name: 'Hot cross bun', sub: BUN, kw: 'hot cross bun easter fruit bun spiced currant', form: 'piece', cook: 'baked', role: 'bread', n: 1, w: 56, h: 54, side: { s: 'mound', h: 26, c: '#C0703A' }, draw: bunTop({ r: 28, col: '#A8582A', top: '#C0703A', hi: '#D9904E', gloss: true, cross: 8, currants: 10 }) },
+    { id: 'hot-dog-bun', name: 'Hot dog bun', sub: BUN, kw: 'hot dog bun roll finger roll long roll split', form: 'piece', cook: 'baked', role: 'bread', n: 1, w: 120, h: 40, side: { s: 'mound', h: 26, c: C.bunTop }, draw: hotDog({}) },
+    { id: 'turkish-roll', name: 'Turkish roll', sub: BUN, kw: 'turkish bread roll pide sesame nigella square roll', form: 'piece', cook: 'baked', role: 'bread', n: 1, w: 88, h: 80, side: { s: 'slab', h: 24, c: '#DCA458' }, draw: function (P, rnd) { return turkTop(P, rnd, [[-44, -40], [44, -40], [44, 40], [-44, 40]], 15, { seeds: 26 }); } },
+    { id: 'bread-roll', name: 'Bread roll, crusty', sub: BUN, kw: 'bread roll dinner roll crusty roll bun', form: 'piece', cook: 'baked', role: 'bread', n: 1, w: 62, h: 56, side: { s: 'mound', h: 30, c: '#D9A35E' }, draw: roll({ flour: 14 }) },
+    { id: 'ciabatta', name: 'Ciabatta', sub: BUN, kw: 'ciabatta roll floury italian bread', form: 'piece', cook: 'baked', role: 'bread', n: 1, w: 100, h: 60, side: { s: 'slab', h: 26, c: '#DDB47A' }, draw: ciabatta },
+    { id: 'bagel-halved', name: 'Bagel, halved', sub: BUN, kw: 'bagel halved sesame cut toasted', form: 'half', cook: 'baked', role: 'bread', n: 1, w: 106, h: 70, side: { s: 'ring', h: 16, c: '#B5753A' }, draw: bagel },
+    { id: 'pretzel', name: 'Pretzel', sub: BUN, kw: 'pretzel salted soft pretzel brezel bretzel', form: 'piece', cook: 'baked', role: 'bread', n: 1, w: 96, h: 70, side: { s: 'ring', h: 16, c: '#94501F' }, draw: pretzel },
+    { id: 'beef-burger', name: 'Beef burger', sub: BUN, kw: 'burger cheeseburger hamburger beef patty bun lettuce cheese', form: 'stack', cook: 'grilled', role: 'main', n: 1, w: 90, h: 88, side: { s: 'layer', h: 62, c: C.bun }, draw: burger({}) },
+    { id: 'chicken-burger', name: 'Chicken schnitzel burger', sub: BUN, kw: 'chicken burger schnitty burger crumbed chicken bun', form: 'stack', cook: 'crumbed', role: 'main', n: 1, w: 96, h: 86, of: 'beef-burger', side: { s: 'layer', h: 60, c: C.bun }, draw: burger({ layers: [['schnitzel'], ['lettuce'], ['tomato', 140]] }) },
+    { id: 'slider-burger', name: 'Slider burger', sub: BUN, kw: 'slider mini burger small burger', form: 'stack', cook: 'grilled', role: 'main', n: 1, w: 56, h: 54, of: 'beef-burger', side: { s: 'layer', h: 40, c: BRIOCHE.top }, draw: burger(Object.assign({ r: 22, seeds: 0, layers: [['lettuce'], ['patty'], ['cheese', 25]] }, BRIOCHE)) },
+    { id: 'works-burger', name: 'Burger with the lot', sub: BUN, kw: 'works burger the lot aussie burger beetroot egg pineapple bacon', form: 'stack', cook: 'grilled', role: 'main', n: 1, w: 94, h: 92, side: { s: 'layer', h: 80, c: C.bun }, draw: burger({ layers: [['lettuce'], ['patty'], ['bacon', 15], ['beet', 135], ['pineapple', 40], ['egg', 250], ['cheese', 20]] }) },
+    { id: 'burger-halved', name: 'Burger, cut in half', sub: BUN, kw: 'burger cut half halved layers cross section inside', form: 'half', cook: 'grilled', role: 'main', n: 1, w: 86, h: 100, side: { s: 'layer', h: 62, c: C.bun }, draw: burgerHalved({}) },
+    { id: 'gua-bao', name: 'Steamed bao, filled', sub: BUN, kw: 'bao gua bao steamed bun pork belly folded bun', form: 'piece', cook: 'steamed', role: 'main', n: 1, w: 70, h: 42, side: { s: 'mound', h: 22, c: '#F8F3E6' }, draw: guaBao },
+
+    { id: 'sourdough-slice', name: 'Sourdough slice', sub: SL, kw: 'sourdough slice bread loaf crusty sour dough', form: 'piece', cook: 'baked', role: 'bread', n: 1, w: 108, h: 72, side: { s: 'slab', h: 10, c: '#EFE2C2' }, draw: sourdough({}) },
+    { id: 'sourdough-toast', name: 'Sourdough toast, grilled', sub: SL, kw: 'sourdough toast grilled char toast', form: 'piece', cook: 'grilled', role: 'bread', n: 1, w: 108, h: 72, of: 'sourdough-slice', side: { s: 'slab', h: 10, c: '#DDAE68' }, draw: sourdough({ crumb: '#E9C78A', toast: '#D29A4E', grill: true }) },
+    { id: 'toast-slice', name: 'Toast', sub: SL, kw: 'toast slice white toast toasted bread', form: 'piece', cook: 'grilled', role: 'bread', n: 1, w: 74, h: 74, side: { s: 'slab', h: 9, c: B.toast }, draw: slice({ light: B.toastLight, patches: 5 }) },
+    { id: 'white-bread-slice', name: 'White bread slice', sub: SL, kw: 'white bread slice sandwich bread plain', form: 'piece', cook: 'baked', role: 'bread', n: 1, w: 74, h: 74, of: 'toast-slice', side: { s: 'slab', h: 9, c: '#F6EEDA' }, draw: slice({ crust: '#C9965A', crumb: '#F6EEDA' }) },
+    { id: 'multigrain-slice', name: 'Multigrain slice', sub: SL, kw: 'multigrain grain bread seeded wholemeal brown bread slice', form: 'piece', cook: 'baked', role: 'bread', n: 1, w: 74, h: 74, of: 'toast-slice', side: { s: 'slab', h: 10, c: '#E3CFA4' }, draw: slice({ crust: '#8E5E30', crumb: '#E3CFA4', seeds: 26 }) },
+    { id: 'garlic-bread', name: 'Garlic bread', sub: SL, kw: 'garlic bread baguette butter parsley herb bread', form: 'slices', cook: 'baked', role: 'bread', n: 4, w: 120, h: 50, side: { s: 'slab', h: 14, c: '#F2CF6A' }, draw: stickSlices({ rx: 29, ry: 17, crumb: '#F0D898', toast: '#E3B860', butter: true, at: [[-34, -3, -8], [-11, 2, 4], [12, -2, -6], [34, 3, 6]] }) },
+    { id: 'baguette-slices', name: 'Baguette slices', sub: SL, kw: 'baguette slices french stick bread sliced', form: 'slices', cook: 'baked', role: 'bread', n: 5, w: 104, h: 40, side: { s: 'slab', h: 10, c: B.crumb }, draw: stickSlices({ rx: 20, ry: 17, crust: '#C99050', at: [[-34, 0, 0], [-17, 2, 10], [0, -1, -6], [17, 2, 8], [34, 0, -4]] }) },
+    { id: 'crostini', name: 'Crostini', sub: SL, kw: 'crostini toasts croutons toasted baguette', form: 'slices', cook: 'baked', role: 'bread', n: 4, w: 76, h: 62, of: 'baguette-slices', side: { s: 'slab', h: 6, c: '#E3B860' }, draw: stickSlices({ rx: 17, ry: 14, crust: '#B07436', crumb: '#EDCF8E', toast: '#D9A04E', at: [[-18, -14, 10], [18, -14, -8], [-18, 14, -6], [18, 14, 12]] }) },
+    { id: 'focaccia', name: 'Focaccia square', sub: SL, kw: 'focaccia rosemary olive oil salt italian bread square', form: 'piece', cook: 'baked', role: 'bread', n: 1, w: 62, h: 60, side: { s: 'slab', h: 22, c: '#E0AE5C' }, draw: focaccia },
+    { id: 'cob-loaf', name: 'Cob loaf', sub: SL, kw: 'cob loaf round loaf cottage loaf crusty', form: 'whole', cook: 'baked', role: 'bread', n: 1, w: 116, h: 112, side: { s: 'mound', h: 70, c: '#C08040' }, draw: cob({}) },
+    { id: 'damper', name: 'Damper', sub: SL, kw: 'damper bush bread camp bread soda bread scored', form: 'whole', cook: 'baked', role: 'bread', n: 1, w: 108, h: 104, side: { s: 'mound', h: 40, c: '#D9AE6E' }, draw: cob({ r: 54, col: '#C08A4E', top: '#D9AE6E', wedges: 3, flour: 40 }) },
+    { id: 'bread-bowl', name: 'Bread bowl', sub: SL, kw: 'bread bowl cob bowl hollowed loaf soup bowl', form: 'whole', cook: 'baked', role: 'bread', n: 1, w: 100, h: 100, side: { s: 'cup', h: 60, c: '#C08040' }, draw: breadBowl },
+    { id: 'toast-soldiers', name: 'Toast soldiers', sub: SL, kw: 'soldiers toast fingers dippy egg strips', form: 'slices', cook: 'grilled', role: 'bread', n: 5, w: 84, h: 70, side: { s: 'stick', h: 9, c: B.toast }, draw: soldiers },
+    { id: 'bruschetta', name: 'Bruschetta', sub: SL, kw: 'bruschetta tomato basil toast balsamic', form: 'slices', cook: 'grilled', role: 'main', n: 3, w: 124, h: 72, side: { s: 'slab', h: 16, c: C.tomato }, draw: stickSlices({ rx: 29, ry: 18, crumb: '#EDCF8E', toast: '#D9A04E', top: 'tomato', at: [[-31, -15, -10], [31, -15, 10], [0, 17, 0]] }) },
+    { id: 'turkish-fingers', name: 'Turkish bread fingers', sub: SL, kw: 'turkish bread fingers strips toasted dips pide', form: 'slices', cook: 'grilled', role: 'bread', n: 4, w: 84, h: 70, side: { s: 'stick', h: 16, c: '#DCA458' }, draw: function (P, rnd) { return [-24, -8, 8, 24].map(function (y, i) { return turkTop(P, rnd, shift([[-40, -6.5], [40, -6.5], [40, 6.5], [-40, 6.5]], (i % 2 ? 3 : -2), y, i % 2 ? 3 : -2), [2, 2, 2, 2], { seeds: 7 }); }).join(''); } },
+    { id: 'toastie', name: 'Toastie, cut corner to corner', sub: SL, kw: 'toastie toasted sandwich jaffle ham cheese melt', form: 'half', cook: 'grilled', role: 'main', n: 1, w: 84, h: 84, side: { s: 'slab', h: 18, c: '#D9963E' }, draw: toastie },
+    { id: 'croque-monsieur', name: 'Croque monsieur', sub: SL, kw: 'croque monsieur cheese grilled bechamel ham toast', form: 'piece', cook: 'grilled', role: 'main', n: 1, w: 74, h: 74, side: { s: 'slab', h: 20, c: '#F2D27A' }, draw: croque },
+    { id: 'panini', name: 'Panini, pressed', sub: SL, kw: 'panini pressed grilled sandwich focaccia toasted', form: 'half', cook: 'grilled', role: 'main', n: 1, w: 122, h: 56, side: { s: 'slab', h: 20, c: '#D9A456' }, draw: panini },
+
+    /* @@ITEMS2@@ */
+  ]);
+
+  // the helpers, for the other category files and the build pieces (burgers, pizzas, pies, sandwiches)
+  L.BREAD = {
+    bunTop: bunTop, bunBase: bunBase, burger: burger, under: under, burgerSection: burgerSection, burgerHalved: burgerHalved, hotDog: hotDog,
+    turkTop: turkTop, roll: roll, slice: slice, sliceD: sliceD, sourdough: sourdough, stickSlice: stickSlice, stickSlices: stickSlices, breadPoly: breadPoly,
+    rolled: rolled, halfMoon: halfMoon, flatRound: flatRound, naan: naan,
+    pizza: pizza, pizzaSlice: pizzaSlice, pizzaBit: function (P, rnd, kind, x, y) { return PZ[kind] ? PZ[kind](P, rnd, x, y) : ''; },
+    pieTop: pieTop, pastie: pastie, sausageRoll: sausageRoll, tartCase: tartCase, sandPiece: sandPiece, sandwich: sandwich, croissant: croissant,
+    roundPoly: roundPoly, inset: inset, hatch: hatch, peek: peek
+  };
 })();

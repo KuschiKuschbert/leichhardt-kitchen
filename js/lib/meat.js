@@ -148,22 +148,20 @@
     };
   }
   function tomahawk(P, rnd) {
-    var eye = steak({ rx: 50, ry: 43, sq: 0.2, ang: 30, gap: 14, under: cap(53, 45, -5, -4), over: kernel(50, 43) });
-    var out = bone(P, -40, 4, 104, -4, 17, false);
-    out += P.g(P.at(12, 1, -3), P.line(-8, -5, 0, -5, C.charred, 2, { opacity: '0.45' }) + P.line(2, 3, 10, 3, C.charred, 2, { opacity: '0.35' }));
-    return out + P.g(P.at(-56, 0), eye(P, rnd));
+    var eye = steak({ rx: 54, ry: 46, sq: 0.2, ang: 30, gap: 15, under: cap(57, 48, -5, -4), over: kernel(54, 46) });
+    var out = bone(P, -40, 4, 94, -3, 20, false);
+    out += P.g(P.at(14, 1, -3), P.line(-8, -6, 0, -6, C.charred, 2.4, { opacity: '0.45' }) + P.line(2, 4, 12, 4, C.charred, 2.4, { opacity: '0.35' }));
+    return P.g('translate(6 0)', out + P.g(P.at(-60, 0), eye(P, rnd)));
   }
-  // a burger patty, a smash patty, a rissole: a round with a textured crust
+  // a burger patty, a smash patty, a rissole: a round with a seared crust (o.lace: the thin crisp edge of a smash patty)
   function patty(o) {
     return function (P, rnd) {
-      var r = o.r || 36, col = o.col || '#6B4022', d = P.blob(rnd, r, r * (o.sq || 0.97), o.wob || 0.04, o.k || 16), out = P.shadow(d) + P.path(d, P.shade(col, -0.15), P.shade(col, -0.42), 1.2);
-      out += P.path(P.blob(rnd, r * 0.86, r * (o.sq || 0.97) * 0.84, (o.wob || 0.04) * 1.2, 14), col, null, 0);
-      if (o.lace) {
-        for (var i = 0; i < 26; i++) { var a = i / 26 * Math.PI * 2 + rnd() * 0.2, rr = r * (0.8 + rnd() * 0.14); out += P.path(P.blob(rnd, 3 + rnd() * 3, 2 + rnd() * 2, 0.3, 6, Math.cos(a) * rr, Math.sin(a) * rr), '#3F2412', null, 0, { opacity: '0.7' }); }
-        out += P.scatter(rnd, 6, r * 0.55, r * 0.55, function (x, y, j, q) { return P.path(P.blob(q, 6 + q() * 5, 4 + q() * 4, 0.3, 7, x, y), '#4A2A14', null, 0, { opacity: '0.5' }); });
-      }
-      out += P.crumbs(rnd, Math.round(r * r / 20), r * 0.8, r * (o.sq || 0.97) * 0.78, [P.shade(col, 0.24), P.shade(col, -0.32), P.shade(col, 0.1)], 1.1);
-      if (o.flecks) out += P.crumbs(rnd, 14, r * 0.72, r * (o.sq || 0.97) * 0.7, ['#EFE3C6', '#4F7F2F', '#EFE3C6'], 1);
+      var r = o.r || 36, sq = o.sq || 0.97, col = o.col || '#6B4022', d = P.blob(rnd, r, r * sq, o.wob || 0.04, o.k || 16), out = P.shadow(d);
+      out += P.path(d, o.lace ? '#3F2412' : P.shade(col, -0.2), P.shade(col, -0.45), 1.2);
+      out += P.path(P.blob(rnd, r * (o.lace ? 0.8 : 0.88), r * sq * (o.lace ? 0.78 : 0.86), o.lace ? 0.09 : 0.05, o.lace ? 16 : 14), col, null, 0);
+      out += P.scatter(rnd, o.lace ? 7 : 5, r * 0.62, r * sq * 0.6, function (x, y, j, q) { return P.path(P.blob(q, 5 + q() * 6, 4 + q() * 4, 0.3, 7, x, y), P.shade(col, -0.3), null, 0, { opacity: '0.45' }); });
+      out += P.crumbs(rnd, Math.round(r * r / 40), r * 0.78, r * sq * 0.76, [P.shade(col, 0.16), P.shade(col, -0.26)], 0.9);
+      if (o.flecks) out += P.crumbs(rnd, 7, r * 0.7, r * sq * 0.68, ['#E8D9B8', '#4F7F2F'], 1);
       if (o.grill) out += P.grill(r * 0.8, r * 0.78, 30, 13, C.charred, 3);
       return out + P.hl(-r * 0.3, -r * 0.38, r * 0.3, r * 0.1, '#FFFFFF', 0.2, -20);
     };
@@ -252,11 +250,11 @@
   }
   // folded deli slices in a heap (pastrami): each a half moon with a peppered rim
   function pastrami(P, rnd) {
-    return P.pile(rnd, 7, 26, 16, function (x, y, i, q) {
-      var r = 17 + q() * 4, d = 'M' + P.n(-r) + ' 0 A' + P.n(r) + ' ' + P.n(r * 0.62) + ' 0 0 1 ' + P.n(r) + ' 0 Q0 3 ' + P.n(-r) + ' 0 Z';
+    return P.pile(rnd, 7, 30, 18, function (x, y, i, q) {
+      var r = 18 + q() * 5, d = 'M' + P.n(-r) + ' 0 A' + P.n(r) + ' ' + P.n(r * 0.62) + ' 0 0 1 ' + P.n(r) + ' 0 Q0 3 ' + P.n(-r) + ' 0 Z';
       var s = P.shadow(d, 1.2, 1.8) + P.path(d, '#A8343E', '#2E1A12', 2.4) + P.path('M' + P.n(-r * 0.7) + ' -2 A' + P.n(r * 0.7) + ' ' + P.n(r * 0.4) + ' 0 0 1 ' + P.n(r * 0.7) + ' -2', 'none', '#E7A6A6', 1.1, { opacity: '0.6' });
       s += P.path('M' + P.n(-r + 2) + ' 0.6 Q0 2.6 ' + P.n(r - 2) + ' 0.6', 'none', '#C9545E', 1.6) + P.crumbs(q, 5, r * 0.8, r * 0.3, ['#2E1A12'], 0.6);
-      return P.g(P.at(x, y + 4, q() * 70 - 35), s);
+      return P.g(P.at(x, y + 7, q() * 70 - 35), s);
     });
   }
 
@@ -315,9 +313,10 @@
   function craggy(P, rnd, rx, ry, col, k) {
     var d = P.blob(rnd, rx, ry, 0.1, k || 20), out = P.shadow(d) + P.path(d, col, P.shade(col, -0.32), 1.1);
     out += P.path(P.blob(rnd, rx * 0.8, ry * 0.72, 0.12, 12), P.shade(col, 0.1), null, 0, { opacity: '0.8' });
-    out += P.scatter(rnd, Math.max(5, Math.round(rx * ry / 24)), rx * 0.86, ry * 0.8, function (x, y, i, q) {
-      var r = 1.5 + q() * Math.min(2.8, ry * 0.2), dark = i % 3 === 0;
-      return P.path(P.blob(q, r * 1.3, r, 0.35, 6, x, y), dark ? P.shade(col, -0.2) : P.shade(col, 0.22), dark ? null : P.shade(col, -0.14), 0.4);
+    // the lumps of coating: each a lighter bump with a soft shade under it
+    out += P.scatter(rnd, Math.max(5, Math.round(rx * ry / 22)), rx * 0.86, ry * 0.8, function (x, y, i, q) {
+      var r = 1.4 + q() * Math.min(2.6, ry * 0.2), b = P.blob(q, r * 1.3, r, 0.35, 6, x, y);
+      return P.path(b, P.shade(col, -0.2), null, 0, { opacity: '0.55', transform: 'translate(0.7 0.9)' }) + P.path(b, P.shade(col, i % 4 ? 0.16 : 0.06), null, 0);
     });
     return out + P.hl(-rx * 0.3, -ry * 0.4, rx * 0.28, ry * 0.12, '#FFFFFF', 0.22, -12);
   }

@@ -203,7 +203,7 @@
   L.add = function (cat, list) {
     list.forEach(function (it) {
       it.cat = cat; it.v = it.v || 1;
-      if (byId[it.id]) { if (window.console) console.warn('LK_LIB: the id ' + it.id + ' is used twice'); return; }
+      if (byId[it.id]) { (L.dupes = L.dupes || []).push(cat + '/' + it.id + ' (also in ' + byId[it.id].cat + ')'); if (window.console) console.warn('LK_LIB: the id ' + it.id + ' is used twice'); return; }
       byId[it.id] = it; L.items.push(it);
     });
   };

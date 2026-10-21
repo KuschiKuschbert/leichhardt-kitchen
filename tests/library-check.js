@@ -14,7 +14,7 @@ const TAGS = ['g', 'path', 'circle', 'ellipse', 'rect', 'line', 'polyline', 'pol
 const ATTRS = ['d', 'cx', 'cy', 'r', 'rx', 'ry', 'x', 'y', 'x1', 'y1', 'x2', 'y2', 'width', 'height', 'points', 'fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'stroke-dasharray', 'stroke-opacity', 'fill-opacity', 'fill-rule', 'opacity', 'transform'];
 
 function load() {
-  const win = {}; win.window = win; win.console = console;
+  const win = {}; win.window = win; win.console = { log: console.log, warn: () => {}, error: console.error };
   const ctx = vm.createContext(win);
   const run = f => vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), ctx, { filename: f });
   run('js/library.js');
@@ -59,6 +59,7 @@ function check(only) {
       svgProblems(b).forEach(p => e(p));
     }
   });
+  (L.dupes || []).forEach(d => { if (!only || d.indexOf(only + '/') === 0) errs.push(d + ': id used twice, the second one is left out'); });
   const counts = {};
   L.cats.forEach(c => { counts[c.id] = { items: L.items.filter(it => it.cat === c.id).length, distinct: L.distinct(c.id) }; });
   return { L, errs, counts, missing };
