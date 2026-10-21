@@ -1125,6 +1125,8 @@
       .then(function () { return all('book'); }).then(function (r) { out.book = r; return all('recipes'); }).then(function (r) { out.recipes = r; return subs(r, 'recipes', 'hist', out.recipesHist); })
       .then(function () { return all('drawings'); }).then(function (r) { out.drawings = r; return subs(r, 'drawings', 'hist', out.drawingsHist); })
       .then(function () { return all('drawtpl'); }).then(function (r) { out.drawtpl = r; return all('drawlib'); }).then(function (r) { out.drawlib = r; })
+      .then(function () { out.functionsHist = {}; return all('functions'); }).then(function (r) { out.functions = r; return subs(r, 'functions', 'hist', out.functionsHist); })
+      .then(function () { return all('fncontact'); }).then(function (r) { out.fncontact = r; })
       .then(function () { S.exporting = 'Reading shift pings and minutes...'; draw(); return all('notes'); }).then(function (r) { out.notes = r; return subs(r, 'notes', 'seen', out.notesSeen); })
       .then(function () { return all('minutes'); }).then(function (r) { out.minutes = r; return Promise.all([subs(r, 'minutes', 'hist', out.minutesHist), subs(r, 'minutes', 'signs', out.minutesSigns)]); })
       .then(function () { return all('pinset'); }).then(function (r) { out.pins = r.map(function (x) { return { id: x.id, name: x.name, setAt: x.setAt }; }); })
@@ -1192,6 +1194,7 @@
       .then(function () { return copyCol('book'); }).then(function () { return copyCol('recipes'); }).then(function () { return copySub('recipes', 'hist'); })
       .then(function () { return copyCol('drawings'); }).then(function () { return copySub('drawings', 'hist'); })
       .then(function () { return copyCol('drawtpl'); }).then(function () { return copyCol('drawlib'); })
+      .then(function () { return copyCol('functions'); }).then(function () { return copySub('functions', 'hist'); }).then(function () { return copyCol('fncontact'); })
       .then(function () {
         var i = 0;
         function next() {
@@ -2637,7 +2640,7 @@
       '<section class="set-block a-feats"><span class="label">New pages</span><span class="hint">You, sous chefs and leads always see these. Untick one to hide it from Staff and View only until the team is ready.</span>' +
       FEATS.map(function (f) { return '<label class="a-check"><input type="checkbox" data-a="staffsee" data-f="' + f[0] + '"' + (d.staffSee[f[0]] ? ' checked' : '') + '> Staff see ' + f[1] + '</label>'; }).join('') + '</section>' + saveBlock
     ) : (
-      '<section class="set-block"><span class="label">Backup</span><span class="hint">Saves everything the prep book holds (people, prep lines, orders and wastage from the last 400 days, shift pings and who has seen them, meeting minutes with earlier versions and sign-offs, what the prep and order lists have learned, tallies and the guides\' words) as one file on this device. People\'s PIN fingerprints and the guides\' page pictures are left out (keep the original files). The book is also backed up on the server every night at 03:30; download one here when you want a copy on this computer.</span><div class="btn-row"><button type="button" class="btn" data-p="export"' + (S.exporting ? ' disabled' : '') + '>' + (S.exporting ? esc(S.exporting) : 'Download a backup') + '</button></div></section>' +
+      '<section class="set-block"><span class="label">Backup</span><span class="hint">Saves everything the prep book holds (people, prep lines, orders and wastage from the last 400 days, shift pings and who has seen them, meeting minutes with earlier versions and sign-offs, function bookings with their contacts and earlier versions, what the prep and order lists have learned, tallies and the guides\' words) as one file on this device. People\'s PIN fingerprints and the guides\' page pictures are left out (keep the original files). The book is also backed up on the server every night at 03:30; download one here when you want a copy on this computer.</span><div class="btn-row"><button type="button" class="btn" data-p="export"' + (S.exporting ? ' disabled' : '') + '>' + (S.exporting ? esc(S.exporting) : 'Download a backup') + '</button></div></section>' +
       '<section class="set-block"><span class="label">Kitchen PIN</span><span class="hint">The kitchen PIN is the lock on the whole book, so keep it to staff only. Writing needs a person\'s own PIN as well.</span>' +
       '<p class="hint a-step"><strong>Step 1.</strong> Ask for the new PIN to be added to the security rules. <strong>Step 2.</strong> Type it twice below and copy everything to it. The old PIN keeps working until its rules are removed.</p>' +
       '<div class="field"><label class="label" for="a-newpin">New 4 digit kitchen PIN</label><input id="a-newpin" class="search" inputmode="numeric" maxlength="4" autocomplete="off" data-k="a-newpin" placeholder="4 digits" value="' + esc(S.newPin) + '"></div>' +
@@ -5795,7 +5798,7 @@
     },
     warm: function () { if (S.pin && S.configState !== 'ok' && S.configState !== 'loading') connect(); notesInit(); },
     unsaved: function () {
-      return pending > 0 || !!(window.LK_MG && window.LK_MG.dirty()) || !!mlf.text.trim() || mfDirty() || nfDirty() || gfDirty() || draftDirty() || !!String(S.bulk || '').trim() || !!S.sheet || !!S.recipeOpen ||
+      return pending > 0 || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!mlf.text.trim() || mfDirty() || nfDirty() || gfDirty() || draftDirty() || !!String(S.bulk || '').trim() || !!S.sheet || !!S.recipeOpen ||
         !!(S.text.trim() || S.qty.trim() || S.otext.trim() || S.oqty.trim() || S.wf.text.trim() || String(S.wf.amt).trim() || S.wf.act.trim() || (S.wrA != null && S.wrA !== ((S.wReview || {}).avoidable || '')) || (S.wrC != null && S.wrC !== ((S.wReview || {}).change || '')) || S.mpin);
     },
     noteInfo: noteInfo,

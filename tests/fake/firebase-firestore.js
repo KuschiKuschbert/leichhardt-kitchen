@@ -135,6 +135,25 @@ function commitOps(ops) {
     const asOwner = !!window.__fakeUser && by.every(b => !b || b === head);
     if (!asHead && !asOwner) return Promise.reject({ code: 'permission-denied' });
   }
+  // functions (21 Oct 2026): only the Google account or someone in config/main fnIds writes them, each save the next
+  // version (so a double tap or a save from an old copy is refused), and a confirmed line's rounds add up, like the rules
+  const fnOps = ops.filter(o => /^kitchens\/[^/]+\/(functions|fncontact)\//.test(key(o.ref.path)));
+  if (fnOps.length) {
+    const c = store[key(fnOps[0].ref.path).split('/').slice(0, 2).join('/') + '/config/main'] || {};
+    const pid = proof ? proof.ref.path[proof.ref.path.length - 1] : '';
+    const asFn = !!pid && (c.fnIds || []).indexOf(pid) >= 0 && fnOps.every(o => (o.data && o.data.by) === pid);
+    if (!asFn && !window.__fakeUser) return Promise.reject({ code: 'permission-denied' });
+    const bad = fnOps.some(o => {
+      const k = key(o.ref.path);
+      if (/\/hist\//.test(k)) return store[k] !== undefined;
+      if (!/\/functions\/[^/]+$/.test(k)) return false;
+      const old = store[k], d = o.data;
+      if (d.v !== (old ? old.v + 1 : 1)) return true;
+      if (d.status === 'confirmed') return (d.lines || []).some(l => (l.u || []).length !== l.qty || l.u.some(r => !(r >= 0 && r < d.rounds.length)));
+      return false;
+    });
+    if (bad) return Promise.reject({ code: 'permission-denied' });
+  }
   if (window.__fake.mode === 'deny') return Promise.reject({ code: 'permission-denied' });
   // __fake.deny = /regex/ refuses only the writes whose path matches (a right the rules do not give), the rest go through
   if (window.__fake.deny && ops.some(o => window.__fake.deny.test(key(o.ref.path)))) return Promise.reject({ code: 'permission-denied' });
