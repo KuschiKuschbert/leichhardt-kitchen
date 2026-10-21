@@ -600,6 +600,7 @@
       toast(e.meta.removed ? 'Hidden from the book. Version ' + done.v + '.' : e.meta.off ? 'Back to the book file\'s copy. Version ' + done.v + '.' : 'Saved. Version ' + done.v + '.');
       if (wasNew && M.ed === e) { history.replaceState(null, '', '#/manage/r/' + encodeURIComponent(id)); M.sub = ['r', id]; }
       if (M.ed === e) draw();
+      if (!e.meta.removed && !e.meta.off) autoDraw(id, e);
     }).catch(function (err) {
       clearTimeout(slow);
       e.saving = '';
@@ -607,6 +608,32 @@
       e.msg = code === 'permission-denied' ? 'Not saved: the book refused it. Only the head chef can change recipes, and the recipe may have changed on another device. Try again.' : 'Not saved. Check the signal and try again. Your changes are kept on this device.';
       if (M.ed === e) draw();
     });
+  }
+  /* Drawn on save (head chef, 21 Oct 2026): after the recipe is saved, its empty drawing slots are drawn and the
+     book-made drawings of the dishes that use it are drawn again (js/smart.js autoDraw, with the drawing editor's files),
+     and a second note says what was drawn. Those drawings link to the recipe and make its Pass labels, so the open form
+     takes the new version and links (an edit made meanwhile stays). */
+  var SLOT_WORD = { plate: 'plate', pan: 'GN pan', side: 'side view', build: 'build' };
+  function autoDraw(id, e) {
+    if (!P.bookEdit()) return;
+    loadDraw().then(function () {
+      var S = window.LK_SMART;
+      return S && S.autoDraw ? S.autoDraw(id) : null;
+    }).then(function (res) {
+      if (!res) return;
+      var cur = X.change(id);
+      if (e && M.ed === e && cur && cur.v > e.meta.v) {
+        var clean = snapOf(e) === e.snap;
+        e.meta.v = cur.v;
+        ['art', 'side', 'diagram', 'pins'].forEach(function (k) { if (cur.r && cur.r[k] !== undefined) e.d[k] = cur.r[k]; });
+        if (clean) e.snap = snapOf(e);
+        draw();
+      }
+      var say = [];
+      if (res.drawn.length) say.push('Drawn: ' + res.drawn.map(function (s) { return SLOT_WORD[s] || s; }).join(' and ').replace(/ and (?=.* and )/g, ', ') + '.');
+      if (res.redrawn.length) say.push('Redrawn: ' + res.redrawn.join(', ') + '.');
+      if (say.length) toast(say.join(' '));
+    }).catch(function () {});
   }
   function focusId(id) {
     var el = M.root && M.root.querySelector('#' + id);

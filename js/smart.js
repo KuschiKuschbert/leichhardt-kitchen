@@ -446,9 +446,90 @@
     keep.forEach(function (e) { if (e.ing) keepIng[e.ing] = 1; String(e.also || '').split('|').forEach(function (x) { if (x) keepIng[x] = 1; }); });
     var els = layout(d, r, pp.parts.filter(function (p) { return !keepIng[p.ing]; }), style, seed);
     d.els = keep.concat(els);
-    d.layout = { style: style, seed: seed, also: pp.also };
+    d.layout = { style: style, seed: seed, also: pp.also, auto: true, uses: usesOf(d) };
     return { style: style, unsure: pp.unsure, parts: pp.parts.length, made: pp.made };
   }
+  // the cards a drawing is drawn from, with their signature when it was drawn: { card id: signature }
+  function usesOf(d) { var u = {}; (d.els || []).forEach(function (e) { if (e.made && e.ms) u[e.made] = e.ms; }); return u; }
+
+  /* ---------- drawn on save, and drawn again when a card changes (head chef, 21 Oct 2026) ----------
+     A recipe saved with an empty drawing slot gets that slot drawn by itself: the plate (or the GN pan for a batch
+     recipe), the side view, and the build for a burger or sandwich. A saved card's own book-made drawings, and those of
+     every dish that uses it, are drawn again so they show the change; parts the head chef moved by hand stay, and a
+     side view or build with a part moved by hand is left alone. The book's own drawings (js/art.js) and drawings made
+     by hand (no layout) are never touched. Everything runs on the head chef's device, after the recipe's own save. */
+  function drawFresh(d, plate) {
+    var r = R.recipeOf(d.rid);
+    if (!r) return d;
+    var seed = d.layout && d.layout.seed || 0;
+    DR.withDrawing(d, function () {
+      if (d.slot === 'side') sideOf(d, r, plate, seed);
+      else if (d.slot === 'build') buildFrom();
+      else drawIt(seed);
+    });
+    return d;
+  }
+  function slotsToDraw(r) {
+    var A = window.LK_ART || {}, arts = X.arts();
+    var has = function (k, g) { if (!k) return false; if (String(k).charAt(0) === '@') return arts.some(function (x) { return '@' + x.id === k && !x.removed; }); return g.some(function (n) { return !!(A[n] && A[n][k]); }); };
+    var batch = /^(batch|component)$/.test(r.kind || ''), out = [];
+    if (!has(r.art, ['plates', 'pans'])) out.push(batch ? 'pan' : 'plate');
+    if (!batch) {
+      // the book's own way: a burger or sandwich has its build instead of a side view, and a share board, a platter or a
+      // topper has neither
+      var stack = /burger|slider|sandwich|sanga/i.test(r.name || ''), flat = /platter|board/i.test(r.name || '') || r.kind === 'side';
+      if (!stack && !flat && !(r.side ? has(r.side, []) : A.sides && A.sides[r.id])) out.push('side');
+      if (stack && !has(r.diagram, ['diagrams'])) out.push('build');
+    }
+    return out;
+  }
+  function autoDraw(rid) {
+    var r = R.recipeOf(rid), res = { drawn: [], redrawn: [] }, made = {}, chain = Promise.resolve(), plate = null;
+    if (!r) return Promise.resolve(res);
+    slotsToDraw(r).forEach(function (slot) {
+      chain = chain.then(function () {
+        var d = drawFresh(DR.blank(rid, slot), plate);
+        if (!d.els.length) return null;
+        return DR.persist(d).then(function (done) { if (done && !done.conflict) { res.drawn.push(slot); made[d.id] = 1; if (slot === 'plate' || slot === 'pan') plate = d; } });
+      });
+    });
+    return chain.then(function () { return redrawFrom(rid, res, made); }).then(function () { return res; });
+  }
+  function redrawFrom(rid, res, skip) {
+    var A = window.LK_APP, ids = [], todo = [rid], seen = {}, api = B(), chain = Promise.resolve(), plateDone = {};
+    // the card and every dish that uses it, through the cards between (a dish using the slaw that uses the aioli)
+    while (todo.length) { var x = todo.shift(); if (seen[x]) continue; seen[x] = 1; ids.push(x); ((A && A.usedIn && A.usedIn(x)) || []).forEach(function (u) { if (!seen[u]) todo.push(u); }); }
+    var order = { plate: 0, pan: 0, side: 1, build: 2 };
+    X.arts().filter(function (a) { return ids.indexOf(a.rid) >= 0 && !a.removed && !skip[a.id]; }).sort(function (p, q) { return (order[p.slot] || 0) - (order[q.slot] || 0); }).forEach(function (a) {
+      chain = chain.then(function () {
+        return api.ready().then(function () { return api.fs().getDocFromServer(api.docRef('drawings', a.id)); }).then(function (sn) {
+          var x = sn.exists() ? sn.data() : null;
+          if (!x || !x.layout || !x.layout.auto || x.removed) return null;
+          var d = DR.fromDoc(a.id, x);
+          // only a drawing of the card itself, one with a part drawn from one of these cards, or the side view and build
+          // of a dish whose plate was just drawn again
+          var flat = d.slot === 'side' || d.slot === 'build';
+          if (a.rid !== rid && !(flat ? plateDone[a.rid] : d.els.some(function (e) { return e.made && ids.indexOf(e.made) >= 0; }))) return null;
+          if ((d.slot === 'side' || d.slot === 'build') && d.els.some(function (e) { return e.fixed; })) return null;
+          // a side view stands on the dish's plate drawing as it is now (drawn again just before)
+          var pl = d.slot === 'side' ? X.arts().filter(function (y) { return y.rid === a.rid && (y.slot === 'plate' || y.slot === 'pan') && !y.removed; })[0] : null;
+          return (pl ? api.fs().getDocFromServer(api.docRef('drawings', pl.id)).then(function (ps) { return ps.exists() ? ps.data() : null; }, function () { return null; }) : Promise.resolve(null)).then(function (plate) {
+            var was = JSON.stringify(d.els);
+            drawFresh(d, plate);
+            // drawn again exactly as it was (the change was to the method or the yield): nothing to save
+            return JSON.stringify(d.els) === was ? null : DR.persist(d);
+          }).then(function (done) {
+            var rr = R.recipeOf(a.rid), nm = rr ? rr.name : a.rid;
+            if (!done || done.conflict) return;
+            if (!flat) plateDone[a.rid] = 1;
+            if (res.redrawn.indexOf(nm) < 0) res.redrawn.push(nm);
+          });
+        }, function () { return null; });
+      });
+    });
+    return chain;
+  }
+
   // the same solver over what is there: overlaps pushed apart, everything back on the servingware, hand-placed parts stay
   function tidy() {
     var d = DR.state().d, a = areaOf(d.surf), roleOf = function (e) { var it = itemOfEl(e); return it ? it.role : ''; };
@@ -482,22 +563,25 @@
     var W = DR.state(), d = W.d, api = B(), r = R.recipeOf(d.rid);
     var plate = (X.arts().filter(function (x) { return x.rid === d.rid && (x.slot === 'plate' || x.slot === 'pan') && !x.removed; })[0]);
     return (plate ? api.ready().then(function () { return api.fs().getDoc(api.docRef('drawings', plate.id)); }).then(function (sn) { return sn.exists() ? sn.data() : null; }, function () { return null; }) : Promise.resolve(null)).then(function (pd) {
-      // no plate drawn yet: the one Draw it for me would make, so the side view matches it
-      if (!pd || !Array.isArray(pd.els)) {
-        var tmp = { rid: d.rid, slot: 'plate', surf: ware(r, 'plate'), defs: {}, els: [] }, pp = partsOf(r, tmp).parts;
-        pd = { surf: tmp.surf, els: layout(tmp, r, pp, pickStyle(r, 'plate', tmp.surf, pp), seed || 0) };
-      }
-      var surfW = LIB.surface(pd.surf || { fam: 'plate', size: 30 }).w || 200;
-      // in the plate's own order, bottom layer first (a sauce pool before its steak, the napoli after its schnitzel)
-      var parts = pd.els.filter(function (e) { return e.t === 'item' || (e.t === 'raw' && (e.made || e.dr)); }).map(function (e) {
-        var it = e.t === 'item' ? LIB.get(e.a.split('@')[0]) : e.dr ? LIB.get(e.dr) : cardPart({ name: e.ing || '', link: e.made }, null, null); if (!it) return null;
-        var b = R.bbox(e);
-        return { it: it, ing: e.ing || it.name, x: e.x / surfW * 200, y: e.y / surfW * 200, w: (b[2] - b[0]) / surfW * 200, h: (b[3] - b[1]) / surfW * 200 };
-      }).filter(Boolean);
-      // pieces of the same part (three honeycomb shards): one from the side
-      var seen = {}; parts = parts.filter(function (p) { var k2 = p.ing + '|' + p.it.id; if (seen[k2]) return false; seen[k2] = 1; return true; });
-      return layoutSide(d, parts, seed, pd.surf || ware(r, 'plate'));
+      return DR.withDrawing(d, function () { return sideOf(d, r, pd, seed); });
     });
+  }
+  function sideOf(d, r, pd, seed) {
+    // no plate drawn yet: the one Draw it for me would make, so the side view matches it
+    if (!pd || !Array.isArray(pd.els)) {
+      var tmp = { rid: d.rid, slot: 'plate', surf: ware(r, 'plate'), defs: {}, els: [] }, pp = partsOf(r, tmp).parts;
+      pd = { surf: tmp.surf, els: layout(tmp, r, pp, pickStyle(r, 'plate', tmp.surf, pp), seed || 0) };
+    }
+    var surfW = LIB.surface(pd.surf || { fam: 'plate', size: 30 }).w || 200;
+    // in the plate's own order, bottom layer first (a sauce pool before its steak, the napoli after its schnitzel)
+    var parts = pd.els.filter(function (e) { return e.t === 'item' || (e.t === 'raw' && (e.made || e.dr)); }).map(function (e) {
+      var it = e.t === 'item' ? LIB.get(e.a.split('@')[0]) : e.dr ? LIB.get(e.dr) : cardPart({ name: e.ing || '', link: e.made }, null, null); if (!it) return null;
+      var b = R.bbox(e);
+      return { it: it, ing: e.ing || it.name, x: e.x / surfW * 200, y: e.y / surfW * 200, w: (b[2] - b[0]) / surfW * 200, h: (b[3] - b[1]) / surfW * 200 };
+    }).filter(Boolean);
+    // pieces of the same part (three honeycomb shards): one from the side
+    var seen = {}; parts = parts.filter(function (p) { var k2 = p.ing + '|' + p.it.id; if (seen[k2]) return false; seen[k2] = 1; return true; });
+    return layoutSide(d, parts, seed, pd.surf || ware(r, 'plate'));
   }
   // the servingware from the side, for the plate's own servingware
   function wareSide(surf) {
@@ -530,7 +614,7 @@
     });
     // back to front, and on each spot from the bottom up
     placed.sort(function (q1, q2) { return (q1.root.y - q2.root.y) || (q1.lvl - q2.lvl); }).forEach(function (q) { els.push(q.el); });
-    d.els = els; d.layout = { style: 'side', seed: seed || 0 };
+    d.els = els; d.layout = { style: 'side', seed: seed || 0, auto: true };
     DR.labelAll();
     return { style: 'side', parts: els.length };
   }
@@ -584,7 +668,7 @@
     if (over > 0) labs.forEach(function (lb) { lb.y = Math.max(-104, lb.y - over); });
     labs.forEach(function (lb) { els.push({ t: 'text', s: lb.s, sub: lb.sub, x: 40, y: n1(lb.y), size: 10, anchor: 'start', lx: 18, ly: n1(lb.at), auto: true }); });
     els.push({ t: 'text', s: 'BOTTOM', x: -160, y: n1(Math.min(118, y + 12)), size: 9, col: '#C2451A', anchor: 'start' });
-    d.els = els; d.layout = { style: 'build', seed: 0 };
+    d.els = els; d.layout = { style: 'build', seed: 0, auto: true };
     return { style: 'build', parts: pcs.length };
   }
 
@@ -645,7 +729,7 @@
     // a piece drawn from the ingredient's own recipe card (js/draw.js adds it when nothing in the library is sure)
     made: function (i, d) { var r = d && R.recipeOf(d.rid), m = matchIng(i, r); return cardPart(i, r, m) || (C() ? C().dress(i, r, m) : null); },
     matchIng: matchIng, rank: rank, key: key, hidden: hidden, split: split, ware: ware, pickStyle: pickStyle, STYLES: STYLES,
-    partsOf: partsOf, drawIt: drawIt, tidy: tidy, loadLearned: loadLearned, teach: teach, pendingOps: pendingOps, saved: saved,
+    partsOf: partsOf, drawIt: drawIt, tidy: tidy, drawFresh: drawFresh, autoDraw: autoDraw, slotsToDraw: slotsToDraw, loadLearned: loadLearned, teach: teach, pendingOps: pendingOps, saved: saved,
     learned: function () { return learned || {}; }
   };
 })();
