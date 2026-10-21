@@ -339,13 +339,15 @@
   }
   // a steamed bao folded over its filling, the open edge at the top
   function guaBao(P, rnd) {
-    var out = P.g(P.at(-3, -9, -5), P.rect(-21, -5, 42, 10, 3, '#8A4A22', '#5E2E14', 0.8) + P.rect(-20, -1.8, 40, 2.6, 1, '#F0D8B0', null, 0));
-    [[-18, -14], [-6, -16], [8, -15], [20, -12]].forEach(function (p, i) { out += i % 2 ? P.leaf(9, 6, C.herb, p[0], p[1], -60 + i * 30, { edge: '#3A6A22' }) : P.ellipse(p[0], p[1], 5, 3.2, '#8DB255', '#5E8C3A', 0.6, { transform: 'rotate(-10 ' + p[0] + ' ' + p[1] + ')' }) + P.ellipse(p[0], p[1], 3, 1.6, '#DCEBB8', null, 0); });
-    out += P.g(P.at(0, -9), P.crumbs(rnd, 8, 20, 3, ['#C99A5A', '#E3C08A'], 1.1));
-    var d = 'M-35 -6 C-35 30 35 30 35 -6 Q0 -2 -35 -6 Z';
-    out += P.shadow(d, 2, 2.5) + P.path(d, '#F8F3E6', '#DDD3BE', 1) + P.path('M-31 -3 Q0 1.5 31 -3', 'none', '#E9E0CC', 1.2) + P.hl(-10, 8, 14, 3.5, '#FFFFFF', 0.8, -5);
+    var back = 'M-32 -2 C-30 -21 30 -21 32 -2 Q0 -6 -32 -2 Z', out = P.shadow(back, 2, 2.5) + P.path(back, '#F4EDDC', '#DCD0B6', 1);
+    out += P.g(P.at(-2, -7, -4), P.rect(-24, -5.5, 48, 11, 3, '#8A4A22', '#5E2E14', 0.8) + P.rect(-23, -1.6, 46, 2.8, 1, '#F0D8B0', null, 0) + P.rect(-22, -4.5, 44, 1.6, 0.8, '#B5652A', null, 0));
+    [[-20, -11], [-9, -13], [3, -12], [14, -13], [23, -9]].forEach(function (p, i) { out += i % 2 ? P.leaf(10, 6.5, C.herb, p[0], p[1], -70 + i * 35, { edge: '#3A6A22' }) : P.ellipse(p[0], p[1], 5, 3.2, '#8DB255', '#5E8C3A', 0.6, { transform: 'rotate(-10 ' + p[0] + ' ' + p[1] + ')' }) + P.ellipse(p[0], p[1], 3, 1.6, '#DCEBB8', null, 0); });
+    out += P.path('M-22 -6 Q-12 -10 -4 -5 T12 -6 T24 -5', 'none', '#4A2416', 1.6, { 'stroke-linecap': 'round' }) + P.g(P.at(0, -5), P.crumbs(rnd, 9, 20, 3, ['#C99A5A', '#E3C08A'], 1.1));
+    var d = 'M-35 -4 C-35 22 35 22 35 -4 Q0 2 -35 -4 Z';
+    out += P.shadow(d, 2, 2.5) + P.path(d, '#F8F3E6', '#DCD0B6', 1) + P.path('M-30 6 C-24 16 24 16 30 6', 'none', '#EAE0CA', 2.4, { opacity: '0.8' }) + P.path('M-31 -1 Q0 4.5 31 -1', 'none', '#E6DCC6', 1.2) + P.hl(-8, 5, 13, 2.6, '#FFFFFF', 0.9, -4);
     return out;
   }
+
 
   /* ---------- sliced bread and toast ---------- */
   // a sandwich loaf slice: straight sides and base, the crown a little wider with two soft shoulders
@@ -717,12 +719,16 @@
       out += P.path(P.smooth(ch), '#F4CF6E', null, 0);
       for (i = 0; i < 5; i++) { var s = inSector(rnd, 16, R - 24, a0 + 6, a1 - 6, 0, cy); out += P.path(P.blob(rnd, 2 + rnd() * 3, 1.5 + rnd() * 2.5, 0.3, 7, s[0], s[1]), '#D29A46', null, 0, { opacity: '0.6' }); }
       var pts = [];
-      for (i = 0; i < count(o.bits); i++) { var rr = 18 + (i + rnd() * 0.8) / count(o.bits) * (R - 40), m = 9 / rr * 180 / Math.PI; pts.push(polar(rr, a0 + m + rnd() * Math.max(0, a1 - a0 - 2 * m), 0, cy)); }
+      for (i = 0; i < count(o.bits); i++) { var rr = 30 + (i + rnd() * 0.8) / count(o.bits) * (R - 54), m = 10 / rr * 180 / Math.PI; pts.push(polar(rr, a0 + m + rnd() * Math.max(0, a1 - a0 - 2 * m), 0, cy)); }
       return out + pizzaBits(P, rnd, o.bits || [], pts.sort(function (p, q) { return p[1] - q[1]; }));
     };
   }
 
   /* ---------- pies and pastry ---------- */
+  // syrup or gravy running from a pool in the middle out over the edge: each [angle, how far from the middle]
+  function runs(P, list, col, dk) {
+    return list.map(function (r) { var e = r[1]; return P.g(P.at(0, 0, r[0]), P.path('M' + P.n(e * 0.45) + ' -5 Q' + P.n(e * 0.85) + ' -6 ' + P.n(e - 1.5) + ' -2.5 Q' + P.n(e + 1.5) + ' 1 ' + P.n(e - 1.5) + ' 4.5 Q' + P.n(e * 0.85) + ' 6 ' + P.n(e * 0.45) + ' 5 Z', col, dk ? P.shade(col, -0.25) : P.shade(col, -0.25), 0.8)); }).join('');
+  }
   function slit(P, l) { return P.path(lensD(P, l, l * 0.2), '#6B3A14', '#F0C98A', 0.9); }
   // a pie top: a crimped rim (fork, rope or flute), a domed egg-washed lid, steam vents (slits, hole, cross)
   function pieTop(o) {
@@ -771,11 +777,10 @@
     return function (P, rnd) {
       var out = P.path(P.blob(rnd, 60, 55, 0.07, 14), '#7EA453', '#5E8C3A', 1) + P.path(P.blob(rnd, 52, 47, 0.1, 12), '#8DB255', null, 0, { opacity: '0.6' }) + P.crumbs(rnd, 50, 56, 50, ['#6E9A3E', '#9CC067', '#5E8C3A'], 1.6);
       out += P.g(P.at(-3, -2), o.pastie ? pastie({})(P, rnd) : pieTop({ r: 38, edge: 'fork', vents: 'hole' })(P, rnd));
-      var gd = o.pastie ? P.blob(rnd, 20, 30, 0.22, 12, 2, 0) : P.blob(rnd, 25, 22, 0.25, 12, 3, 0);
-      out += P.path(gd, C.gravy, P.shade(C.gravy, -0.25), 0.8);
-      (o.pastie ? [[30, 18], [-150, 22]] : [[40, 34], [165, 33], [100, 32]]).forEach(function (dr) { var c = polar(dr[1], dr[0], 3, 0); out += P.path(P.blob(rnd, 5, 11, 0.15, 8, c[0], c[1], dr[0] + 90), C.gravy, P.shade(C.gravy, -0.25), 0.8); });
-      out += P.path(gd, C.gravy, null, 0) + P.hl(-4, -8, 9, 3, '#FFFFFF', 0.35, -20) + P.hl(10, 6, 4, 1.5, '#FFFFFF', 0.25, -20);
-      if (o.sauce) out += P.path('M-12 -4 Q-4 -12 4 -4 T20 -4', 'none', C.sauceRed, 3, { 'stroke-linecap': 'round' });
+      var gd = o.pastie ? P.g(P.at(0, 0, 78), P.path(bandD(P, rnd, -36, 36, -12, 12, 1.6, 7), C.gravy, P.shade(C.gravy, -0.25), 0.8)) : P.path(P.blob(rnd, 26, 23, 0.16, 12, 2, 1), C.gravy, P.shade(C.gravy, -0.25), 0.8);
+      out += gd + (o.pastie ? '' : runs(P, [[30, 44], [150, 43]], C.gravy, 1) + P.path(P.blob(rnd, 24, 21, 0.16, 12, 2, 1), C.gravy, null, 0));
+      out += P.hl(-4, -8, 8, 2.5, '#FFFFFF', 0.35, -20) + P.hl(8, 8, 4, 1.4, '#FFFFFF', 0.25, -20);
+      if (o.sauce) out += P.path('M-26 -14 Q-18 -22 -10 -14 T6 -14', 'none', C.sauceRed, 3, { 'stroke-linecap': 'round' });
       return out;
     };
   }
@@ -884,17 +889,19 @@
   function croissant(o) {
     o = o || {};
     return function (P, rnd) {
-      var R = o.R || 40, cy = o.cy || 30, k = 7, segs = [], out = '';
-      for (var i = 0; i < k; i++) {
-        var t = i / (k - 1), m = 1 - Math.abs(t - 0.5) * 2, p = polar(R, -90 + (t - 0.5) * 128, 0, cy);
-        segs.push({ x: p[0], y: p[1], rot: (t - 0.5) * 128, rx: 8 + m * 4.5, ry: 7.5 + m * 13, m: m });
-      }
-      segs.forEach(function (s) { out += P.ellipse(s.x + 2, s.y + 2.5, s.rx + 1, s.ry, '#000000', null, 0, { opacity: '0.1', transform: 'rotate(' + P.n(s.rot) + ' ' + P.n(s.x + 2) + ' ' + P.n(s.y + 2.5) + ')' }); });
-      segs.slice().sort(function (a, b) { return a.m - b.m; }).forEach(function (s) {
-        var col = P.mix('#A8582A', '#D9963E', s.m), tr = 'rotate(' + P.n(s.rot) + ' ' + P.n(s.x) + ' ' + P.n(s.y) + ')';
-        out += P.ellipse(s.x, s.y, s.rx, s.ry, col, P.shade(col, -0.32), 1, { transform: tr }) + P.ellipse(s.x - s.rx * 0.2, s.y - s.ry * 0.15, s.rx * 0.5, s.ry * 0.62, P.shade(col, 0.25), null, 0, { transform: tr, opacity: '0.6' });
+      var R = o.R || 36, cy = o.cy || 24, span = 140, k = 7, i;
+      var hw = function (t) { return 2.5 + 19 * Math.pow(Math.max(0, Math.sin(Math.PI * t)), 1.3); };
+      var pt = function (t, side) { return polar(R + side * hw(t), -90 + (t - 0.5) * span, 0, cy); };
+      var outer = [], inner = [], segs = [];
+      for (i = 0; i <= 20; i++) { outer.push(pt(i / 20, 1)); inner.push(pt(i / 20, -1)); }
+      var body = P.smooth(outer.concat(inner.reverse())), out = P.shadow(body, 2.5, 3) + P.path(body, '#9E5226', '#74381A', 1.1);
+      for (i = 0; i < k; i++) segs.push({ a: i / k, b: (i + 1) / k, m: 1 - Math.abs((i + 0.5) / k - 0.5) * 2 });
+      segs.sort(function (x, y) { return x.m - y.m; }).forEach(function (sg) {
+        var a = sg.a - 0.015, b = sg.b + 0.015, mid = (a + b) / 2, col = P.mix('#B5652A', '#DE9E46', sg.m);
+        var pts = [pt(a, 0.9), pt(mid, 1.05), pt(b, 0.9), pt(b, -0.85), pt(mid, -0.98), pt(a, -0.85)];
+        out += P.path(P.smooth(pts), col, P.shade(col, -0.3), 0.9) + P.path(P.smooth(grow(pts, 0.5).map(function (p) { return [p[0] - 1, p[1] - 1.5]; })), P.shade(col, 0.28), null, 0, { opacity: '0.55' });
       });
-      return out + P.hl(-6, -18, 6, 2.2, '#FFFFFF', 0.5, -10);
+      return out + P.hl(-5, cy - R - 10, 5, 2, '#FFFFFF', 0.5, -10);
     };
   }
   function painChoc(P, rnd) {
@@ -926,9 +933,8 @@
     var r = 42, d0 = P.blob(rnd, r, r * 0.98, 0.04, 14), out = P.shadow(d0, 3, 4);
     out += P.path(P.blob(rnd, r, r * 0.98, 0.05, 14, 3, 5), '#B9772E', '#8A5527', 1) + P.path(P.blob(rnd, r, r * 0.98, 0.05, 14, 1.5, 2.5), '#C98A3A', '#8A5527', 1);
     out += P.path(d0, '#E3B46A', '#8A5527', 1.1) + P.path(P.blob(rnd, r - 5, r - 5, 0.05, 14), '#C98838', null, 0) + P.path(P.blob(rnd, r * 0.5, r * 0.45, 0.1, 10, -8, -10), '#D9A050', null, 0, { opacity: '0.6' });
-    var sy = P.blob(rnd, 27, 23, 0.22, 12, 5, 4);
-    out += P.path(P.blob(rnd, 6, 13, 0.15, 8, 30, 26, -45), '#A8601E', '#7E4414', 0.8) + P.path(P.blob(rnd, 5, 11, 0.15, 8, -12, 37, 10), '#A8601E', '#7E4414', 0.8);
-    out += P.path(sy, '#A8601E', '#7E4414', 0.8, { opacity: '0.9' }) + P.hl(10, 10, 8, 2.5, '#FFFFFF', 0.35, -30);
+    var sy = P.blob(rnd, 28, 25, 0.18, 12, 6, 5);
+    out += P.path(sy, '#A8601E', '#7E4414', 0.8) + runs(P, [[38, 47], [118, 45]], '#A8601E') + P.path(sy, '#A8601E', null, 0) + P.hl(10, 10, 8, 2.5, '#FFFFFF', 0.35, -30);
     out += P.path(P.blob(rnd, 11, 10, 0.2, 9, -3, -5), '#F2D27A', null, 0, { opacity: '0.7' }) + P.g(P.at(-4, -6, 18), P.rect(-7.5, -6.5, 15, 13, 2, '#F6E08A', '#D9BF5A', 0.8) + P.rect(-5.5, -4.5, 7, 3, 1, '#FFF4C2', null, 0));
     return out;
   }

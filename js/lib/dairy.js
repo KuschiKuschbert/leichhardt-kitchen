@@ -239,10 +239,9 @@
   function shavings(P, rnd) {
     // thin angular sheets, a little see-through, one edge curled over
     return P.scatter(rnd, 8, 22, 15, function (x, y, i, q) {
-      var l = 8 + q() * 4, w = 4 + q() * 1.6, c = 0.8 + q() * 1.2;
-      // a curled ribbon: the far edge rolls over, so it shows as a darker band along one side
-      var d = 'M' + N(-l) + ' ' + N(-w + c) + ' Q0 ' + N(-w - c) + ' ' + N(l) + ' ' + N(-w + c * 0.6) + ' L' + N(l - 1.5) + ' ' + N(w + c * 0.4) + ' Q0 ' + N(w - c * 1.2) + ' ' + N(-l + 1) + ' ' + N(w + c) + ' Z';
-      return P.g(P.at(x, y, q() * 180), P.path(d, '#F5E8BE', '#D2B878', 0.6, { opacity: '0.92' }) + P.path('M' + N(-l + 1) + ' ' + N(-w + c + 0.4) + ' Q0 ' + N(-w - c + 1.2) + ' ' + N(l - 1) + ' ' + N(-w + c * 0.6 + 0.6), 'none', '#E2CC8E', 1.8, { opacity: '0.9', 'stroke-linecap': 'round' }) + P.crumbs(q, 2, l * 0.5, w * 0.4, ['#FFFBEA'], 0.5));
+      var l = 7 + q() * 4, w = 4 + q() * 2, pts = [[-l, -w * (0.3 + q() * 0.4)], [-l * 0.1, -w], [l, -w * (0.5 + q() * 0.4)], [l * (0.7 + q() * 0.2), w * 0.8], [-l * 0.4, w], [-l * 0.9, w * 0.5]], d = poly(pts);
+      // a thin see-through sheet, one long edge curled over into a darker band
+      return P.g(P.at(x, y, q() * 180), P.path(d, '#F5E8BE', '#D2B878', 0.6, { opacity: '0.9', 'stroke-linejoin': 'round' }) + P.path('M' + N(pts[0][0] + 0.8) + ' ' + N(pts[0][1] + 0.9) + ' L' + N(pts[1][0]) + ' ' + N(pts[1][1] + 1) + ' L' + N(pts[2][0] - 1) + ' ' + N(pts[2][1] + 1), 'none', '#E2CC8E', 1.8, { opacity: '0.9', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }) + P.crumbs(q, 2, l * 0.5, w * 0.4, ['#FFFBEA'], 0.5));
     }, 9);
   }
   function fetaCubes(P, rnd) {
