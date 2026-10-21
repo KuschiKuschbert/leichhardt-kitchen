@@ -5,7 +5,7 @@ const { R, ok } = L.results();
 (async () => {
   const b = await L.start();
   const p = await L.open(b, '#/admin', { admin: true, width: 1280, height: 900, wait: 1800 });
-  if (L.adminTab) await L.adminTab(p, 'people'); else { await p.click('[data-p="a-tab"][data-t="people"]'); await p.waitForTimeout(300); }
+  if (L.adminTab) await L.adminTab(p, 'people'); else { await p.click('[data-p="a-tab"][data-t="people"]'); await L.settle(p, 300); }
   const m = await p.evaluate(() => {
     const h = s => { const e = document.querySelector(s); return e ? Math.round(e.getBoundingClientRect().height) : -1; };
     return { name: h('.a-table .a-name'), sel: h('.a-table .p-select'), cb: h('.a-table input[type=checkbox]'), faint: getComputedStyle(document.documentElement).getPropertyValue('--faint').trim() };

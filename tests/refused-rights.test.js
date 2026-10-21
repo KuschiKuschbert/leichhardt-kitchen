@@ -10,7 +10,7 @@ const { R, ok } = L.results(), { txt } = L;
   await p.evaluate(() => { window.__fake.deny = /\/days\//; });
   await p.fill('#p-text', 'Crumb schnitzels');
   await p.press('#p-text', 'Enter');
-  await p.waitForTimeout(700);
+  await L.settle(p, 700);
   const t1 = await txt(p, '.p-toast') || '';
   ok(/rules did not allow that for you\. Ask the head chef/.test(t1), 'rights refused: the message blames the rules, not the PIN (' + t1.trim() + ')');
   ok(/still in the box/.test(t1) && await p.inputValue('#p-text') === 'Crumb schnitzels', 'rights refused: the line is back in the box');
@@ -18,7 +18,7 @@ const { R, ok } = L.results(), { txt } = L;
   // a PIN that no longer counts: everything is refused, so the page asks for the PIN again
   await p.evaluate(() => { window.__fake.deny = null; window.__fake.mode = 'deny'; });
   await p.press('#p-text', 'Enter');
-  await p.waitForTimeout(700);
+  await L.settle(p, 700);
   ok(/sign in again with your PIN/.test(await txt(p, '.p-toast') || ''), 'stale PIN: still asks to sign in again');
   ok(await p.$('#pf1') !== null, 'stale PIN: the own PIN screen shows');
   ok(p.errors.length === 0, 'refused rights: no page errors ' + p.errors.join(' | '));

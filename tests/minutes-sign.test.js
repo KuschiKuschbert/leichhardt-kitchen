@@ -19,14 +19,14 @@ const mins = (no, date, decisions, x) => Object.assign({ no, v: 1, status: 'publ
   let p = await L.open(b, '#/', { who: 'ann', extra, wait: 1800 });
   ok(/Minutes not signed yet/.test(await txt(p, '.wall-mn') || ''), 'card: Minutes not signed yet shows');
   await p.click('.wall-mn .mn-nudge-btn');
-  await p.waitForTimeout(900);
+  await L.settle(p, 900);
   ok(/Deep clean on Sunday/.test(await txt(p, '.mn') || ''), 'Read and sign opens the unsigned minutes, not the newest');
   ok(await p.$('.mn-signbtn:not([disabled])') !== null && await p.$('#mn-pin') === null, 'one Sign button, no second PIN');
   ok(/Sign as Ann/.test(await txt(p, '.mn-signbtn') || ''), 'the button says who signs');
   ok(await p.evaluate(() => document.querySelectorAll('.mn-tbl tr.is-mine').length) === 2, 'Ann\'s own and everyone\'s actions are marked Yours');
   ok(/Your actions: 2/.test(await txt(p, '.mn-sign') || ''), 'the sign box counts her actions');
   await p.click('.mn-signbtn');
-  await p.waitForTimeout(800);
+  await L.settle(p, 800);
   ok(!!(await p.evaluate(k => window.__fake.dump()[k], fsKey(['minutes', 'mold', 'signs', '1_ann']))), 'one tap signs them');
   await p.context().close();
 

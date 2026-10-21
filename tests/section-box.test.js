@@ -8,7 +8,7 @@ extra[fsKey(['learned', 'pick-mint'])] = { text: 'Pick mint', uses: 3, typed: 3,
 extra[fsKey(['learned', 'make-aioli'])] = { text: 'Make aioli', uses: 5, typed: 5, secs: { sauce: { name: 'Sauce', n: 5 } }, dow: {} };
 const today = L.ymd(new Date(L.NOW));
 const stationOf = (p, text) => p.evaluate(a => { const s = window.__fake.dump(), k = Object.keys(s).filter(k => k.indexOf('/days/' + a.d + '/items/') > 0 && s[k].text === a.t && !s[k].deleted)[0]; return k ? s[k].station : null; }, { d: today, t: text });
-async function add(p, text) { await p.fill('#p-text', text); await p.press('#p-text', 'Enter'); await p.waitForTimeout(350); }
+async function add(p, text) { await p.fill('#p-text', text); await p.press('#p-text', 'Enter'); await L.settle(p, 350); }
 const box = p => p.inputValue('#p-section');
 (async () => {
   const b = await L.start();

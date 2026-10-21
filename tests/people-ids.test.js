@@ -26,10 +26,10 @@ const same = (a, b) => (a || []).slice().sort().join(',') === b.slice().sort().j
   ok(same(s[CFG].sousIds, ['sam']) && same(s[CFG].pingIds, ['sam']), 'admin: sousIds and pingIds were not published quietly');
   ok(same(s[CFG].staffIds, ['sam', 'ann', 'bo']), 'admin: staffIds was added by itself');
   await L.adminTab(p, 'people');
-  await p.waitForTimeout(300);
+  await L.settle(p, 300);
   ok(await p.$('.a-ids') !== null, 'admin: the card is on every tab');
   await p.click('[data-p="a-ids-undo"]');
-  await p.waitForTimeout(400);
+  await L.settle(p, 400);
   s = await store(p);
   const bo = s[CFG].people.filter(x => x.id === 'bo')[0];
   ok(bo.role === 'staff' && bo.del === false && same(s[CFG].sousIds, ['sam']), 'admin: Undo puts Bo back to Staff with Staff permissions');
@@ -54,11 +54,11 @@ const same = (a, b) => (a || []).slice().sort().join(',') === b.slice().sort().j
   // admin: a save from the People tab writes all three lists from the roles
   p = await L.open(b, '#/admin', { admin: true, extra: cfg(), wait: 1800 });
   await L.adminTab(p, 'people');
-  await p.waitForTimeout(300);
+  await L.settle(p, 300);
   await p.selectOption('#a-r2', 'sous');
-  await p.waitForTimeout(200);
+  await L.settle(p, 200);
   await p.click('[data-p="a-save"]');
-  await p.waitForTimeout(400);
+  await L.settle(p, 400);
   s = await store(p);
   ok(same(s[CFG].sousIds, ['sam', 'bo']) && same(s[CFG].pingIds, ['sam', 'bo']) && same(s[CFG].staffIds, ['sam', 'ann', 'bo']), 'admin: Save writes sousIds, pingIds and staffIds from the roles');
   ok(await p.$('.a-ids') === null, 'admin: no card after the head chef saves');
@@ -67,13 +67,13 @@ const same = (a, b) => (a || []).slice().sort().join(',') === b.slice().sort().j
   // sous chef's staff page: adding a person sends people and staffIds, nothing else
   p = await L.open(b, '#/prep', { extra: cfg(), wait: 1500 });
   await L.chef(p, 'staff');
-  await p.waitForTimeout(200);
+  await L.settle(p, 200);
   await p.fill('#a-bulk', 'Dee');
   await p.click('[data-p="a-bulk-add"]');
-  await p.waitForTimeout(200);
+  await L.settle(p, 200);
   await p.evaluate(() => { window.__fake.writes.length = 0; });
   await p.click('[data-p="a-save"]');
-  await p.waitForTimeout(500);
+  await L.settle(p, 500);
   const w = await p.evaluate(() => window.__fake.writes.map(ops => ops.filter(o => /config\/main$/.test(o.path))).filter(x => x.length)[0]);
   const keys = w ? Object.keys(w[0].data).sort().join(',') : '';
   ok(keys === 'by,people,staffIds,updated,updatedBy', 'staff: the save sends people and staffIds only (' + keys + ')');

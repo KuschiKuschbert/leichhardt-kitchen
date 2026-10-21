@@ -2,12 +2,12 @@
 const L = require('./lib');
 const { R, ok } = L.results();
 const names = p => p.evaluate(() => [...document.querySelectorAll('#shelves a.dish:not(.faded), #results a.tile')].map(a => a.getAttribute('aria-label') || a.querySelector('.t-name').textContent));
-async function find(p, v) { await p.fill('#find', v); await p.waitForTimeout(250); }
+async function find(p, v) { await p.fill('#find', v); await L.settle(p, 250); }
 (async () => {
   const b = await L.start();
   let p = await L.open(b, '#/recipes', { wait: 1200 });
   // sticky search
-  await p.evaluate(() => window.scrollTo(0, 3000)); await p.waitForTimeout(200);
+  await p.evaluate(() => window.scrollTo(0, 3000)); await L.settle(p, 200);
   const top = await p.evaluate(() => document.getElementById('find').getBoundingClientRect().top);
   ok(top >= 0 && top < 80, 'list: search box stays in view while scrolling (' + Math.round(top) + ')');
   const sw = await p.evaluate(() => [...document.querySelectorAll('.vsw button')].map(b => Math.round(b.getBoundingClientRect().width)));
@@ -28,7 +28,7 @@ async function find(p, v) { await p.fill('#find', v); await p.waitForTimeout(250
   const gf = await p.evaluate(() => [...document.querySelectorAll('#shelves a.dish:not(.faded)')].map(a => a.getAttribute('href').slice(4)));
   ok(gf.length > 0, 'search: "gluten free" finds ' + gf.length + ' recipes');
   ok(/Free from gluten/.test(await p.evaluate(() => (document.querySelector('.s-note') || {}).textContent || '')), 'search: free-from note shows');
-  await p.click('[data-act="topview"][data-val="tiles"]'); await p.waitForTimeout(300);
+  await p.click('[data-act="topview"][data-val="tiles"]'); await L.settle(p, 300);
   const tagsBad = await p.evaluate(() => [...document.querySelectorAll('#results a.tile')].filter(t => [...t.querySelectorAll('.tag')].some(g => /^Gluten\??$|Allergens incomplete/.test(g.textContent))).length);
   const tileN = await p.evaluate(() => document.querySelectorAll('#results a.tile').length);
   ok(tileN === gf.length && tagsBad === 0, 'search: Tiles shows the same ' + tileN + ' with no gluten tag');
@@ -40,12 +40,12 @@ async function find(p, v) { await p.fill('#find', v); await p.waitForTimeout(250
   ok(/Free from milk/.test(await p.evaluate(() => (document.querySelector('.s-note') || {}).textContent || '')), 'search: "no dairy" reads as free from milk');
   await find(p, 'zzqq');
   ok(/No recipes match/.test(await p.evaluate(() => document.getElementById('results').textContent)), 'search: real misses still say no match');
-  await p.waitForTimeout(2700);
+  await L.settle(p, 2700);
   ok(await p.evaluate(() => /zzqq/.test(localStorage.getItem('lk.miss') || '')), 'search: real misses are still queued for the admin');
   await find(p, '');
   // switching views starts at the top
-  await p.evaluate(() => window.scrollTo(0, 2500)); await p.waitForTimeout(150);
-  await p.click('[data-act="topview"][data-val="pass"]'); await p.waitForTimeout(300);
+  await p.evaluate(() => window.scrollTo(0, 2500)); await L.settle(p, 150);
+  await p.click('[data-act="topview"][data-val="pass"]'); await L.settle(p, 300);
   ok(await p.evaluate(() => window.scrollY) === 0, 'list: switching Tiles to Pass starts at the top');
   ok(!(await L.overflow(p)), 'list: no sideways scroll');
   ok(p.errors.length === 0, 'list: no page errors ' + p.errors.join(' | '));
@@ -55,12 +55,12 @@ async function find(p, v) { await p.fill('#find', v); await p.waitForTimeout(250
   for (const view of ['pass', 'tiles']) {
     p = await L.open(b, '#/r/barra', { wait: 1200, settings: { view } });
     ok(await p.$('.jumps') !== null, view + ' card: jump row on a phone');
-    await p.click('[data-act="jump"][data-val="r-steps"]'); await p.waitForTimeout(900);
+    await p.click('[data-act="jump"][data-val="r-steps"]'); await L.settle(p, 900);
     const st = await p.evaluate(() => document.getElementById('r-steps').getBoundingClientRect().top);
     ok(st >= -2 && st < 60, view + ' card: Method jumps to the method (' + Math.round(st) + ')');
-    await p.click('[data-act="jump"][data-val="r-allergens"]').catch(() => {});
+    await p.click('[data-act="jump"][data-val="r-allergens"]', { timeout: 2000 }).catch(() => {});
     await p.evaluate(() => window.scrollTo(0, 0));
-    await p.click('[data-act="jump"][data-val="r-ing"]'); await p.waitForTimeout(900);
+    await p.click('[data-act="jump"][data-val="r-ing"]'); await L.settle(p, 900);
     const innerHeight = 844; const it = await p.evaluate(() => document.getElementById('r-ing').getBoundingClientRect().top);
     const atEnd = await p.evaluate(() => Math.abs(window.scrollY + innerHeight - document.documentElement.scrollHeight) < 4);
     ok((it >= -2 && it < 60) || (atEnd && it < innerHeight), view + ' card: Ingredients jumps to the ingredients (' + Math.round(it) + ')');

@@ -6,8 +6,8 @@ const { R, ok } = L.results(), { txt } = L;
 const today = L.ymd(new Date(L.NOW));
 const item = (p, id) => p.evaluate(a => window.__fake.dump()[['kitchens', a.pin, 'days', a.d, 'items', a.id].join('/')], { pin: L.PIN, d: today, id });
 const lineBy = (p, text) => p.evaluate(a => { const s = window.__fake.dump(); const k = Object.keys(s).filter(k => k.indexOf('/days/' + a.d + '/items/') > 0 && s[k].text === a.t)[0]; return k ? s[k] : null; }, { d: today, t: text });
-async function pin(p, name, digits) { await p.click('.p-name[data-id="' + name + '"]'); await p.waitForTimeout(250); await p.keyboard.type(digits); await p.waitForTimeout(900); }
-async function idle(p) { await p.clock.runFor(11 * 60000); await p.waitForTimeout(300); }
+async function pin(p, name, digits) { await p.click('.p-name[data-id="' + name + '"]'); await L.settle(p, 250); await p.keyboard.type(digits); await L.settle(p, 900); }
+async function idle(p) { await p.clock.runFor(11 * 60000); await L.settle(p, 300); }
 (async () => {
   const b = await L.start();
   let p = await L.open(b, '#/prep', { who: 'sam', touch: true, settings: { shared: true }, wait: 1200 });
@@ -19,7 +19,7 @@ async function idle(p) { await p.clock.runFor(11 * 60000); await p.waitForTimeou
 
   // a tick asks who you are, then ticks
   await p.click('[data-p="tick"][data-id="i1"]');
-  await p.waitForTimeout(300);
+  await L.settle(p, 300);
   ok(await p.$('.p-name') !== null && /Then it is done for you/.test(await txt(p, '.p-card') || ''), 'a tick asks who you are first');
   ok(await p.evaluate(() => [...document.querySelectorAll('.p-names')][0].querySelector('.p-name').getAttribute('data-id')) === 'sam', 'Sam, signed in here today, is listed first');
   ok(/Here today/.test(await txt(p, '.p-card') || ''), 'the list says Here today');
@@ -31,7 +31,7 @@ async function idle(p) { await p.clock.runFor(11 * 60000); await p.waitForTimeou
   // Enter in the add box asks who you are, then adds the typed line under that person
   await idle(p);
   await p.press('#p-text', 'Enter');
-  await p.waitForTimeout(300);
+  await L.settle(p, 300);
   ok(await p.$('.p-name') !== null, 'Enter with a typed line asks who you are');
   await pin(p, 'ann', '2222');
   const ht = await lineBy(p, 'Half typed');
@@ -40,17 +40,17 @@ async function idle(p) { await p.clock.runFor(11 * 60000); await p.waitForTimeou
   // Back to the list puts the list back with nothing done
   await idle(p);
   await p.click('[data-p="guest-who"]');
-  await p.waitForTimeout(200);
+  await L.settle(p, 200);
   await p.click('[data-p="who-back"]');
-  await p.waitForTimeout(200);
+  await L.settle(p, 200);
   ok(await p.$('.nb-guest') !== null, 'Back to the list returns to the list');
 
   // wrong PINs make only that person wait
-  await p.click('[data-p="guest-who"]'); await p.waitForTimeout(200);
-  await p.click('.p-name[data-id="bo"]'); await p.waitForTimeout(250);
-  for (let k = 0; k < 3; k++) { await p.keyboard.type('9999'); await p.waitForTimeout(600); }
+  await p.click('[data-p="guest-who"]'); await L.settle(p, 200);
+  await p.click('.p-name[data-id="bo"]'); await L.settle(p, 250);
+  for (let k = 0; k < 3; k++) { await p.keyboard.type('9999'); await L.settle(p, 600); }
   ok(/Too many wrong tries/.test(await txt(p, '.p-card') || ''), 'three wrong PINs make Bo wait');
-  await p.click('[data-p="who-change"]'); await p.waitForTimeout(200);
+  await p.click('[data-p="who-change"]'); await L.settle(p, 200);
   await pin(p, 'ann', '2222');
   ok(/Writing as\s*Ann/.test(await txt(p, '.nb-top') || ''), 'Ann can still sign in straight after');
   ok(p.errors.length === 0, 'shared tablet: no page errors ' + p.errors.join(' | '));
@@ -59,11 +59,11 @@ async function idle(p) { await p.clock.runFor(11 * 60000); await p.waitForTimeou
   // the old shared wait goes to the first person who types a PIN, once
   p = await L.open(b, '#/prep', { who: '', touch: true, settings: { shared: true }, wait: 1200 });
   await p.evaluate(n => localStorage.setItem('lk.prep.lock', JSON.stringify({ n: 0, f: 1, until: n + 600000 })), L.NOW);
-  await p.click('[data-p="guest-who"]'); await p.waitForTimeout(200);
+  await p.click('[data-p="guest-who"]'); await L.settle(p, 200);
   await pin(p, 'bo', '3333');
   ok(/Too many wrong tries/.test(await txt(p, '.p-card') || ''), 'old shared wait: still applies to the first person');
   ok(await p.evaluate(() => !localStorage.getItem('lk.prep.lock') && !!localStorage.getItem('lk.prep.lock.bo')), 'old shared wait: moved to that person');
-  await p.click('[data-p="who-change"]'); await p.waitForTimeout(200);
+  await p.click('[data-p="who-change"]'); await L.settle(p, 200);
   await pin(p, 'ann', '2222');
   ok(/Writing as\s*Ann/.test(await txt(p, '.nb-top') || ''), 'old shared wait: the next person is not held up');
   await p.context().close();
@@ -78,7 +78,7 @@ async function idle(p) { await p.clock.runFor(11 * 60000); await p.waitForTimeou
   ok(await p.$('.nb-guest') !== null && /Milk/.test(await txt(p, '.o-page') || ''), 'orders: the list and sign-in bar show');
   await p.fill('#o-text', 'Eggs');
   await p.press('#o-text', 'Enter');
-  await p.waitForTimeout(300);
+  await L.settle(p, 300);
   ok(await p.$('.p-name') !== null, 'orders: Add asks who you are');
   await pin(p, 'ann', '2222');
   ok(await p.evaluate(() => Object.values(window.__fake.dump()).some(v => v && v.text === 'Eggs' && v.addedById === 'ann')), 'orders: after the PIN Eggs is added by Ann');
