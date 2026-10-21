@@ -261,6 +261,42 @@ service cloud.firestore {
         allow update, delete: if false;
       }
     }
+    // The head chef's drawings (Manage Recipes & Drawings, 21 Oct 2026): what the editor needs to open a drawing again
+    // (servingware, elements, a copy of each library piece used) and the flat SVG the book shows. Same lock and versions
+    // as the recipes: book/index d says each drawing's version in the same batch. Never deleted; earlier versions kept.
+    function drawingOk(id) {
+      let d = request.resource.data;
+      return id.matches('[a-z0-9][a-z0-9-]{0,63}')
+        && d.keys().hasOnly(['rid', 'slot', 'name', 'vb', 'k', 'surf', 'els', 'layout', 'defs', 'svgS', 'svgF', 'alt', 'title', 'from', 'v', 'upd', 'by', 'removed'])
+        && d.v is int && d.v >= 1 && d.upd is int
+        && d.slot in ['plate', 'pan', 'side', 'build']
+        && d.get('rid', '') is string && d.get('rid', '').size() <= 48
+        && d.get('name', '') is string && d.get('name', '').size() <= 80
+        && d.vb is string && d.vb.size() <= 60
+        && d.get('k', 1) is number
+        && d.get('surf', {}) is map
+        && d.get('els', []) is list && d.get('els', []).size() <= 600
+        && d.get('layout', {}) is map
+        && d.get('defs', '') is string && d.get('defs', '').size() <= 300000
+        && d.svgS is string && d.svgS.size() <= 200000
+        && d.svgF is string && d.svgF.size() <= 300000
+        && d.get('alt', '') is string && d.get('alt', '').size() <= 600
+        && d.get('title', '') is string && d.get('title', '').size() <= 60
+        && d.get('from', '') is string && d.get('from', '').size() <= 80
+        && d.get('removed', false) is bool;
+    }
+    match /kitchens/KITCHEN_PIN/drawings/{id} {
+      allow read: if true;
+      // the head chef's Google account may also copy a drawing as it is (move to a new kitchen PIN)
+      allow create: if drawingOk(id) && bookBy() && (isAdmin() || (nextVersion() && bookIndex().get('d', {}).get(id, 0) == request.resource.data.v));
+      allow update: if drawingOk(id) && bookBy() && nextVersion() && bookIndex().get('d', {}).get(id, 0) == request.resource.data.v;
+      allow delete: if false;
+      match /hist/{v} {
+        allow read: if true;
+        allow create: if bookBy() && request.resource.data.keys().hasOnly(['was', 'at', 'by']) && request.resource.data.was is map && request.resource.data.at is int;
+        allow update, delete: if false;
+      }
+    }
     // Who has seen a shift ping: one small record per person, ping and day, written when they tap Got it.
     // The record id is the day, an underscore and the writer's id. Records are never changed or deleted.
     match /kitchens/KITCHEN_PIN/notes/{id}/seen/{sid} {

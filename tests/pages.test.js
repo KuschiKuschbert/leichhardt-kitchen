@@ -30,11 +30,11 @@ if (SHOTS) fs.mkdirSync(SHOTS, { recursive: true });
     // Manage Recipes & Drawings, as the head chef (Ann here, by PIN)
     const K = 'kitchens/' + L.PIN + '/config/main', P = (id, name, role) => ({ id, name, role, add: true, tick: true, del: role !== 'staff', active: true });
     const head = { [K]: { people: [P('sam', 'Sam', 'sous'), P('ann', 'Ann', 'head'), P('bo', 'Bo', 'staff')], headId: 'ann', sousIds: ['sam', 'ann'], pingIds: ['sam', 'ann'], showBadges: true } };
-    for (const hash of ['#/manage', '#/manage/r/burger', '#/manage/r/aioli', '#/manage/new']) {
+    for (const hash of ['#/manage', '#/manage/r/burger', '#/manage/r/aioli', '#/manage/new', '#/manage/draw/new/burger/plate', '#/manage/draw/new/rice/pan', '#/manage/draw/new/burger/build']) {
       const pm = await L.open(b, hash, { width: w, height: h, touch, who: 'ann', wait: 1400, extra: head });
-      await L.waitFor(pm, () => !!document.querySelector('#mg-q, #mg-name'), null, 6000).catch(() => {});
+      await L.waitFor(pm, () => !!document.querySelector('#mg-q, #mg-name, .dw-svg'), null, 15000).catch(() => {});
       const of = await L.overflow(pm);
-      L.check(!of && !pm.errors.length && !!(await pm.$('#mg-q, #mg-name')), w + ' ' + hash + (of ? ' sideways scroll: ' + of : '') + (pm.errors.length ? ' errors: ' + pm.errors.join(' | ') : ''), R);
+      L.check(!of && !pm.errors.length && !!(await pm.$('#mg-q, #mg-name, .dw-svg')), w + ' ' + hash + (of ? ' sideways scroll: ' + of : '') + (pm.errors.length ? ' errors: ' + pm.errors.join(' | ') : ''), R);
       if (SHOTS) await pm.screenshot({ path: path.join(SHOTS, w + '-' + hash.replace(/[#/]/g, '-').replace(/^-+/, '') + '.png'), fullPage: true });
       await pm.context().close();
     }

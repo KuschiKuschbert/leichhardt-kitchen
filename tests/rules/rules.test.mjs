@@ -260,6 +260,22 @@ await ok(deleteDoc(doc(owner, K + 'recipes/burger/hist/1')), false, 'book: an ea
 await ok(W([['recipes/burger/hist/9', { was: rec(), at: 1 }]], { id: 'ann' }), false, 'book: staff cannot write an earlier version');
 await ok(ownerBatch([['book/index', { cost: 1 }, true]]), false, 'book: no fields beyond the index fields');
 await ok(ownerBatch([['book/index', { menu: [{ title: 'Snacks', ids: ['pie'] }] }, true]]), true, 'book: the head chef sets the menu order');
+// the head chef's drawings: same lock and versions as the recipes, the index d in step
+const dw = x => Object.assign({ rid: 'burger', slot: 'plate', name: 'Burger plate', vb: '-110 -110 220 220', k: 1, surf: { fam: 'plate', size: 30 }, els: [{ t: 'item', a: 'rump@1', x: 0, y: 0, sx: 1, sy: 1, r: 0 }], defs: '{}', svgS: '<circle cx="0" cy="0" r="100" fill="#FFFFFF"/>', svgF: '<circle cx="0" cy="0" r="20" fill="#8E5A22"/>', alt: 'Top-down drawing', v: 1, upd: Date.now(), removed: false }, x || {});
+await ok(W([['drawings/burger-plate', dw()], ['recipes/burger', rec({ v: 3 }, { art: '@burger-plate' })], ['recipes/burger/hist/2', { was: rec({ v: 2 }), at: 1 }], ['book/index', { d: { 'burger-plate': 1 }, r: { burger: 3 } }, true]], { id: 'hd' }), true, 'drawings: the head chef saves a drawing and links it on the recipe in one batch (the largest batch)');
+await ok(getDoc(doc(anon, K + 'drawings/burger-plate')), true, 'drawings: a PIN holder reads a drawing');
+await ok(W([['drawings/burger-plate', dw({ v: 2 })], ['drawings/burger-plate/hist/1', { was: dw(), at: 1 }], ['book/index', { d: { 'burger-plate': 2 } }, true]], { id: 'hd' }), true, 'drawings: the next version with the earlier one kept');
+await ok(W([['drawings/burger-plate', dw({ v: 2 })], ['book/index', { d: { 'burger-plate': 2 } }, true]], { id: 'hd' }), false, 'drawings: a save made from an old copy is refused');
+await ok(W([['drawings/burger-plate', dw({ v: 3 })]], { id: 'hd' }), false, 'drawings: a save without the index is refused');
+await ok(W([['drawings/new-one', dw()], ['book/index', { d: { 'new-one': 1 } }, true]], { id: 'sam' }), false, 'drawings: a sous chef cannot save a drawing');
+await ok(W([['drawings/new-one', dw()], ['book/index', { d: { 'new-one': 1 } }, true]], { id: 'ann' }), false, 'drawings: staff cannot save a drawing');
+await ok(W([['drawings/new-one', dw({ script: 'x' })], ['book/index', { d: { 'new-one': 1 } }, true]], { id: 'hd' }), false, 'drawings: no fields beyond the drawing fields');
+await ok(W([['drawings/new-one', dw({ slot: 'poster' })], ['book/index', { d: { 'new-one': 1 } }, true]], { id: 'hd' }), false, 'drawings: the slot must be plate, pan, side or build');
+await ok(W([['drawings/new-one', dw({ svgF: 'x'.repeat(300001) })], ['book/index', { d: { 'new-one': 1 } }, true]], { id: 'hd' }), false, 'drawings: the food layer is capped at 300 000 characters');
+await ok(W([['drawings/Bad_Id', dw()], ['book/index', { d: { Bad_Id: 1 } }, true]], { id: 'hd' }), false, 'drawings: an id must be lower case words joined by -');
+await ok(ownerBatch([['drawings/new-one', dw()], ['book/index', { d: { 'new-one': 1 } }, true]]), true, 'drawings: the head chef\'s Google account saves a drawing');
+await ok(deleteDoc(doc(owner, K + 'drawings/new-one')), false, 'drawings: a drawing is never deleted');
+await ok(setDoc(doc(owner, K + 'drawings/burger-plate/hist/1'), { was: dw(), at: 2 }), false, 'drawings: an earlier version cannot be changed');
 // the owner probe
 await ok(getDoc(doc(owner, K + 'config/admins')), true, 'admins: the head chef may read the probe');
 await ok(getDoc(doc(anon, K + 'config/admins')), false, 'admins: nobody else may');

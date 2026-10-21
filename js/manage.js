@@ -61,7 +61,7 @@
   function hasDraft(id) { return !!lsGet(draftKey(id)); }
 
   /* ---------- the recipe list (#/manage) ---------- */
-  var CHIPS = [['all', 'All'], ['dish', 'Dishes'], ['prep', 'Batch and components'], ['changed', 'Changed here'], ['new', 'New'], ['hidden', 'Hidden'], ['tocome', 'Cards to come'], ['filechanged', 'Book file changed'], ['drafts', 'Not saved yet']];
+  var CHIPS = [['all', 'All'], ['dish', 'Dishes'], ['prep', 'Batch and components'], ['changed', 'Changed here'], ['new', 'New'], ['hidden', 'Hidden'], ['tocome', 'Cards to come'], ['filechanged', 'Book file changed'], ['drafts', 'Not saved yet'], ['drawings', 'Drawings']];
   // what the book says about a recipe: from js/data.js, changed here, new, hidden, and whether the file changed since
   function status(id) {
     var c = X.change(id), base = X.pristine(id);
@@ -101,7 +101,17 @@
     }).join('') + '</div>';
     var find = '<div class="field"><label class="label" for="mg-q">Find a recipe</label><input id="mg-q" class="search" type="search" data-f="q" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Name, card number or ingredient" value="' + esc(M.q) + '"></div>';
     var body;
-    if (M.chip === 'tocome') {
+    if (M.chip === 'drawings') {
+      var ART = window.LK_ART || {}, dl = X.arts().filter(function (x) { return !words.length || words.every(function (w) { return (x.name + ' ' + x.id + ' ' + nameOf(x.rid)).toLowerCase().indexOf(w) >= 0; }); });
+      var thumbOf = function (x) {
+        var k = '@' + x.id, v = x.slot === 'side' ? ART.sides[k] : x.slot === 'build' ? ART.diagrams[k] : null;
+        if (v) return '<svg class="mg-thumb" viewBox="' + esc(v.viewBox) + '" aria-hidden="true" focusable="false">' + v.body + '</svg>';
+        return A.art({ art: k, kind: x.slot === 'pan' ? 'batch' : 'main' }, 'mg-thumb');
+      };
+      body = dl.length ? '<p class="hint" role="status">' + dl.length + (dl.length === 1 ? ' drawing' : ' drawings') + ' drawn in the book</p><ul class="mg-list">' + dl.map(function (x) {
+        return '<li class="mg-row"><a class="mg-rlink" href="#/manage/draw/' + encodeURIComponent(x.id) + '">' + thumbOf(x) + '<span class="mg-rt"><b>' + esc(x.name || x.id) + '</b><span class="hint">' + esc(nameOf(x.rid)) + ' · version ' + esc(x.v) + (x.removed ? ' · hidden' : '') + '</span></span></a></li>';
+      }).join('') + '</ul>' : '<p class="hint">No drawings made in the book yet. Open a recipe and use Draw the plate in the book.</p>';
+    } else if (M.chip === 'tocome') {
       var tc = toCome.filter(function (t) { return !words.length || words.every(function (w) { return (t.id + ' ' + t.by.join(' ')).toLowerCase().indexOf(w) >= 0; }); });
       body = tc.length ? '<ul class="mg-list">' + tc.map(function (t) {
         return '<li class="mg-row"><div class="mg-rt"><b>' + esc(t.id) + '</b><span class="hint">Linked from ' + esc(t.by.join(', ')) + '</span></div>' +
@@ -166,7 +176,7 @@
     e.handTags = !!(e.d.contains || e.d.check);
     e.key = e.isNew ? (sub[1] ? 'new-' + e.id : 'new') : e.id;
     e.snap = snapOf(e);
-    e.open = -1; e.pinOpen = -1; e.errs = []; e.warns = []; e.msg = ''; e.hist = null;
+    e.open = -1; e.pinOpen = -1; e.errs = []; e.warns = []; e.msg = ''; e.hist = null; e.ing0 = ingMap(e.d);
     // a draft kept on this device from before: offered back
     try {
       var kept = JSON.parse(lsGet(draftKey(e.key)) || 'null');
@@ -209,6 +219,7 @@
     }
     else if (p[0] === 'pin') {
       var pn = d.pins[+p[1]];
+      pn.own = true;   // written by hand: a drawing saved later keeps it as it is
       if (p[2] === 'x' || p[2] === 'y') pn[p[2]] = Math.max(0, Math.min(100, Number(val) || 0));
       else if (p[2] === 'side') { if (val) pn.side = val; else delete pn.side; }
       else if (p[2] === 'link') { if (val) pn.link = val; else delete pn.link; }
@@ -343,14 +354,27 @@
         ids.map(function (id) { return '<option value="' + esc(id) + '"' + (e.menu.after === id ? ' selected' : '') + '>' + esc(nameOf(id)) + '</option>'; }).join('') +
         '<option value="$"' + (e.menu.after === '$' ? ' selected' : '') + '>Last in the section</option></select></div>' : '') + '</section>';
   }
+  // the head chef's own drawings ('@<id>') for a slot, from this device's copy of the book
+  function bookArts(slot) { return X.arts().filter(function (x) { return x.slot === slot && !x.removed; }).sort(function (a, b) { return (a.rid === M.ed.id ? 0 : 1) - (b.rid === M.ed.id ? 0 : 1) || a.name.localeCompare(b.name); }); }
+  function drawBtns(e, slot, cur) {
+    var mine = cur && cur.charAt(0) === '@';
+    return '<div class="btn-row mg-mini">' + (mine ? '<button type="button" class="p-x" data-mg="draw" data-v="' + esc(cur.slice(1)) + '">Change this drawing</button>' : '') +
+      '<button type="button" class="p-x" data-mg="draw" data-v="new:' + slot + '">Draw ' + (slot === 'plate' ? 'the plate' : slot === 'pan' ? 'the pan' : slot === 'side' ? 'the side view' : 'a build drawing') + ' in the book</button></div>';
+  }
   function drawingHTML(e) {
-    var d = e.d, dish = !!DISH[d.kind], keys = A.artKeys(), list = dish ? keys.plates : keys.pans, preview = cleanRecipe(e);
-    var opts = '<option value=""' + (!d.art ? ' selected' : '') + '>No drawing yet (a blank ' + (dish ? 'plate' : 'pan') + ')</option>' + list.map(function (k) { return '<option value="' + esc(k) + '"' + (d.art === k ? ' selected' : '') + '>' + esc(artName(k)) + '</option>'; }).join('');
-    var dopts = '<option value=""' + (!d.diagram ? ' selected' : '') + '>None</option>' + keys.diagrams.map(function (k) { return '<option value="' + esc(k) + '"' + (d.diagram === k ? ' selected' : '') + '>' + esc(artName(k)) + '</option>'; }).join('');
-    return '<section class="set-block mg-sec" aria-labelledby="mg-h-draw"><h3 class="h3" id="mg-h-draw">' + (dish ? 'On the plate' : 'In the pan') + '</h3>' +
-      '<div class="field"><label class="label" for="mg-art">Drawing</label><select id="mg-art" class="search" data-f="art" data-redraw="1">' + opts + '</select><span class="hint">Use a drawing from the book.</span></div>' +
+    var d = e.d, dish = !!DISH[d.kind], keys = A.artKeys(), list = dish ? keys.plates : keys.pans, preview = cleanRecipe(e), slot = dish ? 'plate' : 'pan';
+    var mineOpts = function (sl, cur) { var l = bookArts(sl); return l.length ? '<optgroup label="Drawn in the book">' + l.map(function (x) { return '<option value="@' + esc(x.id) + '"' + (cur === '@' + x.id ? ' selected' : '') + '>' + esc(x.name || x.id) + '</option>'; }).join('') + '</optgroup>' : ''; };
+    var opts = '<option value=""' + (!d.art ? ' selected' : '') + '>No drawing yet (a blank ' + (dish ? 'plate' : 'pan') + ')</option>' + mineOpts(slot, d.art) + '<optgroup label="The book\'s own">' + list.map(function (k) { return '<option value="' + esc(k) + '"' + (d.art === k ? ' selected' : '') + '>' + esc(artName(k)) + '</option>'; }).join('') + '</optgroup>';
+    var dopts = '<option value=""' + (!d.diagram ? ' selected' : '') + '>None</option>' + mineOpts('build', d.diagram) + '<optgroup label="The book\'s own">' + keys.diagrams.map(function (k) { return '<option value="' + esc(k) + '"' + (d.diagram === k ? ' selected' : '') + '>' + esc(artName(k)) + '</option>'; }).join('') + '</optgroup>';
+    var bookSide = !!(window.LK_ART && window.LK_ART.sides && window.LK_ART.sides[e.id]);
+    var sopts = '<option value=""' + (!d.side ? ' selected' : '') + '>' + (bookSide ? 'The book\'s own side view' : 'None') + '</option>' + mineOpts('side', d.side);
+    var first = e.isNew ? '<p class="hint">Save the recipe first, then draw it in the book.</p>' : '';
+    return '<section class="set-block mg-sec" aria-labelledby="mg-h-draw"><h3 class="h3" id="mg-h-draw">Drawings</h3>' + first +
+      '<div class="field"><label class="label" for="mg-art">' + (dish ? 'On the plate' : 'In the pan') + '</label><select id="mg-art" class="search" data-f="art" data-redraw="1">' + opts + '</select><span class="hint">A drawing from the book, or one drawn here.</span></div>' +
+      (e.isNew ? '' : drawBtns(e, slot, d.art)) +
       (dish ? pinsHTML(e, preview) : '<div class="mg-art-one">' + A.art(preview, 'mg-art') + '</div>') +
-      '<div class="field"><label class="label" for="mg-diag">Build or technique drawing</label><select id="mg-diag" class="search" data-f="diagram">' + dopts + '</select></div></section>';
+      '<div class="field"><label class="label" for="mg-side">From the side</label><select id="mg-side" class="search" data-f="side">' + sopts + '</select></div>' + (e.isNew ? '' : drawBtns(e, 'side', d.side)) +
+      '<div class="field"><label class="label" for="mg-diag">Build or technique drawing</label><select id="mg-diag" class="search" data-f="diagram">' + dopts + '</select></div>' + (e.isNew ? '' : drawBtns(e, 'build', d.diagram)) + '</section>';
   }
   function artName(k) { var r = A.byId(k); return r ? r.name + ' (' + k + ')' : k; }
   /* Plate labels on the Pass: drag a pin on the drawing, or type its place. */
@@ -416,6 +440,9 @@
   /* ---------- checking and saving ---------- */
   function trimStr(v) { return String(v == null ? '' : v).replace(/\s+/g, ' ').trim(); }
   // the recipe as it is saved: tidy text, empty rows dropped, and only the fields js/data.js uses
+  // the ingredients by the name they had when the form opened (the same objects stay in the list when moved or renamed)
+  function bare(n) { return String(n || '').replace(/\s*\([^)]*\)/g, '').trim(); }
+  function ingMap(d) { var m = {}; (d.ingredients || []).forEach(function (i) { m[bare(i.name)] = i; }); return m; }
   function cleanRecipe(e) {
     var d = e.d, out = { id: e.id, kind: d.kind, no: trimStr(d.no), forLine: trimStr(d.forLine), name: trimStr(d.name), yield: trimStr(d.yield) };
     ['short', 'avc', 'menu', 'labelNote', 'aka', 'art', 'diagram', 'side'].forEach(function (k) { var v = trimStr(d[k]); if (v) out[k] = v; });
@@ -431,6 +458,11 @@
       if (p.side) o.side = p.side;
       if (p.link) o.link = p.link; else o.tags = (p.tags || []).slice();
       if (trimStr(p.note)) o.note = trimStr(p.note);
+      if (p.ing) o.ing = p.ing;
+      // a label made from a drawing follows its ingredient's new name; one written by hand stays as it is
+      var ig = !p.own && p.ing && e.ing0 && e.ing0[p.ing];
+      if (ig && d.ingredients.indexOf(ig) >= 0 && bare(ig.name) && bare(ig.name) !== p.ing) { o.ing = bare(ig.name); o.label = o.ing.slice(0, 60); }
+      if (p.own) o.own = true;
       return o;
     });
     var secs = (d.sections || []).map(function (s) { return { title: trimStr(s.title) || 'Method', steps: (s.steps || []).map(trimStr).filter(Boolean) }; }).filter(function (s) { return s.steps.length; });
@@ -523,7 +555,7 @@
       lsSet(draftKey(e.key), '');
       var wasNew = e.isNew;
       if (wasNew) { e.isNew = false; e.key = id; e.meta.src = 'new'; }
-      e.menu = menuOf(id); e.snap = snapOf(e);
+      e.menu = menuOf(id); e.snap = snapOf(e); e.d.pins = clean.pins; e.ing0 = ingMap(e.d); e.snap = snapOf(e);
       toast(e.meta.removed ? 'Hidden from the book. Version ' + done.v + '.' : e.meta.off ? 'Back to the book file\'s copy. Version ' + done.v + '.' : 'Saved. Version ' + done.v + '.');
       if (wasNew && M.ed === e) { history.replaceState(null, '', '#/manage/r/' + encodeURIComponent(id)); M.sub = ['r', id]; }
       if (M.ed === e) draw();
@@ -557,9 +589,36 @@
     }, function () { if (M.ed === e) { e.hist = 'error'; draw(); } });
   }
 
+  /* A change to a recipe made from somewhere else (the drawing editor links its drawing and makes its Pass labels): the
+     newest copy on the server (or this device's, with no signal), changed by mutate, as the batch ops for W(). Null when
+     nothing changed. The recipe's own form, if open with changes, is not touched. */
+  function patchRecipe(id, mutate) {
+    var api = B(), fs;
+    return api.ready().then(function () {
+      fs = api.fs();
+      return fs.getDocFromServer(api.docRef('recipes', id)).then(function (sn) { return sn.exists() ? sn.data() : null; }, function () { return 'offline'; });
+    }).then(function (server) {
+      var cur = server === 'offline' ? X.change(id) : server, base = X.pristine(id);
+      var r = cur && cur.r && !cur.off ? clone(cur.r) : base;
+      if (!r) return null;
+      var was = JSON.stringify(r);
+      mutate(r);
+      if (JSON.stringify(r) === was && cur && !cur.off) return null;
+      var t = X.tidy(r, id); if (!t) return null;
+      var v = (cur ? cur.v : 0) + 1, rec = { r: t, v: v, upd: api.now(), src: cur && cur.src ? cur.src : (base ? 'book' : 'new'), base: base ? (cur && cur.base && !cur.off ? cur.base : X.fingerprint(id)) : '', removed: !!(cur && cur.removed) };
+      var ops = [['set', api.docRef('recipes', id), rec]];
+      if (cur && cur.v) {
+        var old = {}; ['r', 'v', 'upd', 'by', 'src', 'base', 'removed', 'off'].forEach(function (k) { if (cur[k] !== undefined) old[k] = cur[k]; });
+        ops.push(['set', fs.doc(api.db(), 'kitchens', api.pin(), 'recipes', id, 'hist', String(cur.v)), { was: old, at: api.now() }]);
+      }
+      return { ops: ops, rec: rec, v: v };
+    });
+  }
+
   /* ---------- drawing the page ---------- */
   var drawn = '';
   function draw() {
+    if (window.LK_DRAW && window.LK_DRAW.open()) return;
     if (!M.root || !document.body.contains(M.root)) return;
     var keep = document.activeElement && M.root.contains(document.activeElement) ? (document.activeElement.getAttribute('data-f') || document.activeElement.getAttribute('data-mg') + ':' + (document.activeElement.getAttribute('data-i') || '')) : '';
     var y = window.scrollY;
@@ -570,8 +629,34 @@
       if (el && el.focus) el.focus({ preventScroll: true });
     }
   }
+  /* The drawing editor (js/draw.js) and the library (js/library.js, js/lib/) load the first time a drawing opens. */
+  var drawLoad = null;
+  function loadDraw() {
+    if (window.LK_DRAW && window.LK_LIB && window.LK_LIB.items.length) return Promise.resolve();
+    if (!drawLoad) {
+      drawLoad = A.load('js/library.js').then(function () {
+        // a category file that fails to load leaves its drawings out; the editor still opens
+        return Promise.all(window.LK_LIB.files.map(function (f) { return A.load(f).catch(function () {}); }).concat([A.load('js/draw.js')]));
+      }).catch(function (x) { drawLoad = null; throw x; });
+    }
+    return drawLoad;
+  }
+  function mountDraw(root, sub) {
+    var key = sub.join('/');
+    M.root = root; M.ed = null; drawn = 'draw:' + key;
+    if (window.LK_DRAW) { window.LK_DRAW.mount(root, sub); return; }
+    root.innerHTML = '<div class="mg-wrap"><h2 id="rtitle" tabindex="-1">Opening the drawing editor</h2><p>Loading the library...</p></div>';
+    loadDraw().then(function () {
+      if (M.root === root && drawn === 'draw:' + key) window.LK_DRAW.mount(root, sub);
+    }, function () {
+      if (M.root === root) root.innerHTML = '<div class="mg-wrap"><h2 id="rtitle" tabindex="-1">Could not open the drawing editor</h2><p>It needs the signal the first time it opens on a device. Check the signal and try again.</p><div class="btn-row"><button type="button" class="btn dark" data-act="mgretry">Try again</button></div></div>';
+    });
+  }
   function mount(root, route) {
     var sub = route.sub || [], key = sub.join('/');
+    if (sub[0] === 'draw') { mountDraw(root, sub); return; }
+    if (window.LK_DRAW && window.LK_DRAW.open()) window.LK_DRAW.unmount();
+    if (drawn.indexOf('draw:') === 0) drawn = '';
     var fresh = M.root !== root;
     M.root = root;
     if (key !== drawn || !M.ed !== !sub.length) {
@@ -586,6 +671,7 @@
     if (fresh) draw();
   }
   function unmount() {
+    if (window.LK_DRAW && window.LK_DRAW.open()) window.LK_DRAW.unmount();
     if (M.ed && dirty() && M.root) { keepNow(); toast('Your changes are kept as a draft on this device.'); }
     M.root = null; drawn = ''; M.ed = null;
   }
@@ -609,6 +695,11 @@
     if (a === 'more') { M.more = true; draw(); return; }
     if (!e || !d) return;
     if (a === 'goto') { ev.preventDefault(); focusId(v); return; }
+    if (a === 'draw') {
+      if (e.isNew || dirty()) { e.msg = 'Save the recipe first, then draw it.'; draw(); return; }
+      location.hash = v.indexOf('new:') === 0 ? '#/manage/draw/new/' + encodeURIComponent(e.id) + '/' + v.slice(4) : '#/manage/draw/' + encodeURIComponent(v);
+      return;
+    }
     if (a === 'save') { save(false); return; }
     if (a === 'mine') { save(true); return; }
     if (a === 'theirs') {
@@ -638,7 +729,7 @@
       else { delete d.contains; delete d.check; }
       keepDraft(); draw(); return;
     }
-    if (a === 'pin-add') { d.pins = d.pins || []; d.pins.push({ label: '', x: 50, y: 50, tags: [] }); e.pinOpen = d.pins.length - 1; keepDraft(); draw(); return; }
+    if (a === 'pin-add') { d.pins = d.pins || []; d.pins.push({ label: '', x: 50, y: 50, tags: [], own: true }); e.pinOpen = d.pins.length - 1; keepDraft(); draw(); return; }
     if (a === 'pin-del') { d.pins.splice(i, 1); e.pinOpen = -1; keepDraft(); draw(); return; }
     if (a === 'pin-pick') { if (dragMoved) { dragMoved = false; return; } e.pinOpen = e.pinOpen === i ? -1 : i; draw(); return; }
     if (a === 'hist') { loadHist(); return; }
@@ -690,7 +781,7 @@
     if (!drag || ev.pointerId !== drag.id) return;
     var dd = drag; drag = null;
     if (!dragMoved || !M.ed) return;
-    var p = M.ed.d.pins[dd.i]; p.x = dd.x; p.y = dd.y; keepDraft();
+    var p = M.ed.d.pins[dd.i]; p.x = dd.x; p.y = dd.y; p.own = true; keepDraft();
     M.ed.pinOpen = dd.i; draw();
     setTimeout(function () { dragMoved = false; }, 0);
   }
@@ -702,10 +793,11 @@
     api: API,
     mount: mount,
     unmount: unmount,
-    open: function () { return !!(M.root && M.ed); },
-    dirty: dirty,
-    hasDraft: function () { return Object.keys(LS || {}).some(function (k) { return k.indexOf('lk.mg.draft.') === 0; }); },
+    open: function () { return !!(M.root && (M.ed || (window.LK_DRAW && window.LK_DRAW.open()))); },
+    dirty: function () { return dirty() || !!(window.LK_DRAW && window.LK_DRAW.dirty()); },
+    patchRecipe: patchRecipe,
+    hasDraft: function () { return Object.keys(LS || {}).some(function (k) { return k.indexOf('lk.mg.draft.') === 0 || k.indexOf('lk.dw.draft.') === 0; }); },
     // new recipe changes came in from another device: the list shows them; an open form keeps what is typed
-    changed: function () { if (M.root && !M.ed) draw(); }
+    changed: function () { if (M.root && !M.ed && !(window.LK_DRAW && window.LK_DRAW.open())) draw(); }
   };
 })();
