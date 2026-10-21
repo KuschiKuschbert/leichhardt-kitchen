@@ -39,6 +39,8 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   ok(X.matchIng({ name: 'Fried shallots' }, { name: 'x' }).id === 'crispy-shallots' && X.matchIng({ name: 'Tartare sauce' }, { name: 'x' }).id === 'tartare-dollop', 'matcher: fried shallots are crispy shallots, tartare sauce a dollop of tartare');
   ok(X.matchIng({ name: 'Roasted honey pumpkin purée', note: 'big kitchen spoon swoop and smear' }, { name: 'x' }).id === 'pumpkin-puree-swoosh', 'matcher: the recipe\'s words for the shape (swoop and smear) pick the swoosh');
   ok(X.hidden({ name: 'Sea salt flakes' }) && X.hidden({ name: 'Bay leaves' }) && X.hidden({ name: 'Wing flour' }) && !X.hidden({ name: 'Chips' }), 'matcher: what does not show on the plate is left off (salt, bay leaves, flour)');
+  // the recipe library's spellings: chillies by their kind, fish by their name, US words for the same thing
+  ok(X.matchIng({ name: 'Serrano chiles' }, { name: 'x' }).id === 'chilli-sliced' && X.matchIng({ name: 'Jalapeno pepper' }, { name: 'x' }).id === 'jalapeno-slices' && X.matchIng({ name: 'Cod fillets' }, { name: 'x' }).id === 'cod-fillet' && X.matchIng({ name: 'Habanero peppers' }, { name: 'x' }).id === 'chilli-sliced' && X.matchIng({ name: 'Sweet pepper' }, { name: 'x' }).id === 'capsicum-strips', 'matcher: serrano chiles and habanero peppers are chillies, cod fillets cod, sweet pepper capsicum');
   ok(X.split({ name: 'Chips and salad' }).map(i => i.name).join('|') === 'Chips|Salad' && X.split({ name: 'Bread and butter pickles' }).length === 1, 'matcher: Chips and salad is two parts, bread and butter pickles is one');
 
   const b = await L.start();

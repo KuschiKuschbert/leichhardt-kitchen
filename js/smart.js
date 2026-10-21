@@ -28,7 +28,7 @@
   // "Habanero peppers" and "Poblano peppers" are chillies, not capsicum
   var CHILLI_KIND = { serrano: 1, poblano: 1, habanero: 1, chipotle: 1, ancho: 1, guajillo: 1, pasilla: 1, anaheim: 1, fresno: 1, thai: 1, birdseye: 1, cayenne: 1, scotch: 1, padron: 1 };
   // the same thing spelt another way (the recipe library's US spellings): read as the book's word
-  var ALIAS = { chile: 'chilli', chiles: 'chilli', chili: 'chilli', chilis: 'chilli', chilies: 'chilli', chillies: 'chilli', beet: 'beetroot', beets: 'beetroot', yogurt: 'yoghurt', yogurts: 'yoghurt', eggplants: 'eggplants', cilantro: 'coriander', scallion: 'spring', scallions: 'spring', arugula: 'rocket', zucchinis: 'zucchini', rutabaga: 'swede', cantaloupe: 'rockmelon', garbanzo: 'chickpea', garbanzos: 'chickpeas', shrimp: 'prawn', shrimps: 'prawns', ketchup: 'tomato' };
+  var ALIAS = { romaine: 'cos', chile: 'chilli', chiles: 'chilli', chili: 'chilli', chilis: 'chilli', chilies: 'chilli', chillies: 'chilli', beet: 'beetroot', beets: 'beetroot', yogurt: 'yoghurt', yogurts: 'yoghurt', eggplants: 'eggplants', cilantro: 'coriander', scallion: 'spring', scallions: 'spring', arugula: 'rocket', zucchinis: 'zucchini', rutabaga: 'swede', cantaloupe: 'rockmelon', garbanzo: 'chickpea', garbanzos: 'chickpeas', shrimp: 'prawn', shrimps: 'prawns', ketchup: 'tomato' };
   // one form for plurals and cooked words: slices and sliced are slic, roasted and roast are roast
   function stem(w) {
     if (w.length <= 3) return w;
@@ -78,7 +78,7 @@
      sausage, "Shaved parmesan" is parmesan): a piece that has that word scores 0.62 and up, by how many of the other words
      it has too. Without it, at most 0.55, which counts as unsure. */
   // a last word that only says which part ("pie shell", "cob loaf mix", "cookie dough"): the word before it says what it is
-  var WEAK = { loin: 1, mix: 1, shell: 1, lid: 1, wrapper: 1, dough: 1, base: 1, filling: 1, topper: 1, batter: 0, portion: 1, serve: 1, selection: 1 };
+  var WEAK = { loin: 1, pod: 1, heart: 1, guajillo: 1, ancho: 1, serrano: 1, pasilla: 1, chipotl: 1, poblano: 1, habanero: 1, mix: 1, shell: 1, lid: 1, wrapper: 1, dough: 1, base: 1, filling: 1, topper: 1, batter: 0, portion: 1, serve: 1, selection: 1 };
   // words that say how it is cut, cooked or bought: a piece without them still fits
   var DESC = {}; ['crispy', 'shortcut', 'light', 'oven', 'texas', 'smok', 'roast', 'toast', 'charr', 'season', 'kid', 'vegan', 'dairy', 'free', 'double', 'chunky', 'continental', 'julienn', 'shredd', 'grat', 'dic', 'slic', 'shav', 'baby', 'small', 'large', 'mini', 'american', 'korean', 'southern', 'style', 'hot', 'cold', 'warm', 'new', 'classic', 'plain', 'whole', 'half', 'thick', 'thin', 'red', 'green', 'white', 'king', 'vege', 'veg', 'vegetarian', 'gluten', 'gf',
     // chillies by their kind, fish by where they swim: a sliced chilli or a fish fillet still fits
@@ -118,7 +118,7 @@
     return out.slice(0, 4);
   }
   // names the book uses often that say something else than their words (garnish is micro herbs on the plate)
-  var SYN = { 'roasted red peppers': 'capsicum strips', 'roasted red pepper': 'capsicum strips', 'red peppers': 'capsicum strips', 'roasted peppers': 'capsicum strips', 'unsalted butter': 'butter pat', 'salted butter': 'butter pat', 'bacon slices': 'bacon', 'bacon strips': 'bacon', 'bacon rashers': 'bacon', 'streaky bacon': 'bacon', 'jalapeno pepper': 'jalapeno slices', 'jalapeno peppers': 'jalapeno slices', 'banana peppers': 'banana pepper rings', 'portobello mushrooms': 'field mushroom', 'portobello caps': 'field mushroom', riblet: 'pork ribs', 'pork riblet': 'pork ribs', salad: 'garden salad', butter: 'butter pat', garnish: 'micro herbs', 'green garnish': 'micro herbs', 'side sauce': 'sauce ramekin', sauce: 'sauce ramekin', 'side salad': 'garden salad', mesclun: 'mixed leaves', 'green bowl': 'mixed leaves' };
+  var SYN = { 'sweet pepper': 'capsicum strips', 'sweet peppers': 'capsicum strips', 'bell pepper': 'capsicum strips', 'bell peppers': 'capsicum strips', 'peppadew peppers': 'capsicum strips', 'sweet paprika': 'cayenne dusting', 'hot paprika': 'cayenne dusting', 'roasted red peppers': 'capsicum strips', 'roasted red pepper': 'capsicum strips', 'red peppers': 'capsicum strips', 'roasted peppers': 'capsicum strips', 'unsalted butter': 'butter pat', 'salted butter': 'butter pat', 'bacon slices': 'bacon', 'bacon strips': 'bacon', 'bacon rashers': 'bacon', 'streaky bacon': 'bacon', 'jalapeno pepper': 'jalapeno slices', 'jalapeno peppers': 'jalapeno slices', 'banana peppers': 'banana pepper rings', 'portobello mushrooms': 'field mushroom', 'portobello caps': 'field mushroom', riblet: 'pork ribs', 'pork riblet': 'pork ribs', salad: 'garden salad', butter: 'butter pat', garnish: 'micro herbs', 'green garnish': 'micro herbs', 'side sauce': 'sauce ramekin', sauce: 'sauce ramekin', 'side salad': 'garden salad', mesclun: 'mixed leaves', 'green bowl': 'mixed leaves' };
   var SYN_K = {}; Object.keys(SYN).forEach(function (x) { SYN_K[key(x)] = SYN[x]; });
   // names that are one thing although they say "and"
   var ONE = /\b(bread and butter|salt and pepper|mac and cheese|fish and chips|sweet and sour|surf and turf|bangers and mash|pie and peas|shell and lid)\b/i;
