@@ -191,8 +191,8 @@
     for (var i = 0; i < 20; i++) {
       var t = i / 20 * 4, side = Math.floor(t), f = t - side, x, y, s = 27;
       if (side === 0) { x = -s + f * 2 * s; y = -s; } else if (side === 1) { x = s; y = -s + f * 2 * s; } else if (side === 2) { x = s - f * 2 * s; y = s; } else { x = -s; y = s - f * 2 * s; }
-      var r = Math.hypot(x, y), k = (drips.indexOf(i) >= 0 ? 1.22 + rnd() * 0.1 : f === 0 ? 1.07 : 0.97 + rnd() * 0.04);
-      pts.push([x / r * r * k, y / r * r * k]);
+      var k = drips.indexOf(i) >= 0 ? 1.22 + rnd() * 0.1 : f === 0 ? 1.07 : 0.97 + rnd() * 0.04;
+      pts.push([x * k, y * k]);
     }
     var d = P.smooth(pts), out = P.shadow(d, 1, 1.4) + P.path(d, col, P.shade(col, -0.26), 1);
     out += P.rect(-23, -23, 46, 46, 6, 'none', P.shade(col, -0.14), 1.2, { opacity: '0.6' });
@@ -296,8 +296,12 @@
   function bakedCamembert(P, rnd) {
     var out = P.shadow(circD(42), 2, 3) + P.circle(0, 0, 42, '#D9B98A', '#A88A5E', 1.2) + P.circle(0, 0, 39, '#E6CDA0', '#C9A97A', 0.8);
     out += P.circle(0, 0, 35, '#F3EEE0', '#D6CDB8', 1) + P.crumbs(rnd, 30, 32, 32, ['#E6DFCF', '#FFFFFF'], 0.9);
-    var cut = '';
-    [-14, 0, 14].forEach(function (o) { var h = Math.sqrt(26 * 26 - o * o) * 0.9; cut += 'M' + N(o - h * 0.5) + ' ' + N(-h * 0.85 + o * 0.3) + ' L' + N(o + h * 0.5) + ' ' + N(h * 0.85 + o * 0.3) + ' M' + N(-h * 0.85 - o * 0.3) + ' ' + N(o - h * 0.5) + ' L' + N(h * 0.85 - o * 0.3) + ' ' + N(o + h * 0.5) + ' '; });
+    // the top scored in a criss-cross: two sets of cuts at right angles, the soft middle showing in them
+    var cut = '', R = 26, s2 = Math.SQRT1_2;
+    [-13, 0, 13].forEach(function (o) {
+      var h = Math.sqrt(R * R - o * o);
+      [[s2, s2, -s2, s2], [s2, -s2, s2, s2]].forEach(function (v) { var cx = o * v[2], cy = o * v[3]; cut += 'M' + N(cx - v[0] * h) + ' ' + N(cy - v[1] * h) + ' L' + N(cx + v[0] * h) + ' ' + N(cy + v[1] * h) + ' '; });
+    });
     out += P.path(cut, 'none', '#E3BC56', 4, { 'stroke-linecap': 'round' }) + P.path(cut, 'none', '#F6DE8A', 1.8, { 'stroke-linecap': 'round' });
     out += P.scatter(rnd, 4, 22, 22, function (x, y, i, q) { var t = q() * 180; return P.leaf(7, 1.8, '#3E6A2A', x, y, t, { vein: false }) + P.leaf(6, 1.6, '#4F7F2F', x + 1.5, y + 1, t + 40, { vein: false }) + P.leaf(6, 1.6, '#3E6A2A', x - 1, y + 1.5, t - 40, { vein: false }); }, 14);
     out += P.scatter(rnd, 3, 20, 20, function (x, y, i, q) { return P.ellipse(x, y, 3, 1.8, '#F6EBCB', '#D9C9A0', 0.5, { transform: 'rotate(' + N(q() * 180) + ' ' + N(x) + ' ' + N(y) + ')' }); });
@@ -305,8 +309,9 @@
   }
   function blueCrumble(P, rnd) {
     return P.scatter(rnd, 10, 22, 15, function (x, y, i, q) {
-      var d = P.blob(q, 3.4 + q() * 2.4, 2.8 + q() * 1.6, 0.3, 7, x, y);
-      return P.shadow(d, 0.8, 1.2) + P.path(d, '#F1ECDD', '#CFC6AE', 0.6) + P.path(P.blob(q, 1.2, 0.9, 0.3, 6, x + q() * 2 - 1, y + q() * 2 - 1), '#5E7A8A', null, 0) + P.circle(x - 1.5, y + 1, 0.7, '#45606E');
+      var rx = 3.6 + q() * 2.4, ry = 3 + q() * 1.6, d = P.blob(q, rx, ry, 0.3, 7, x, y), out = P.shadow(d, 0.8, 1.2) + P.path(d, '#EEE8D6', '#BFB497', 0.7);
+      for (var k = 0; k < 3; k++) out += P.path(P.blob(q, 0.9 + q() * 0.9, 0.7 + q() * 0.6, 0.3, 6, x + (q() - 0.5) * rx, y + (q() - 0.5) * ry), ['#5E7A8A', '#3E5A6A', '#7C9AA0'][k], null, 0);
+      return out;
     }, 8);
   }
   function provolone(P, rnd) {

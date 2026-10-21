@@ -378,8 +378,8 @@
   }
   function pulled(o) {
     return function (P, rnd) {
-      var d = P.blob(rnd, o.rx, o.ry, 0.12, 12), out = P.shadow(d) + P.path(d, o.base, P.shade(o.base, -0.25), 0.8);
-      out += P.pile(rnd, o.count || 44, o.rx * 0.92, o.ry * 0.88, function (x, y, i, q) { return shred(P, x, y, q, o.cols[i % o.cols.length]); });
+      var d = P.blob(rnd, o.rx * 0.82, o.ry * 0.78, 0.12, 12), out = P.shadow(d) + P.path(d, o.base, P.shade(o.base, -0.25), 0.8);
+      out += P.pile(rnd, o.count || 44, o.rx * 0.95, o.ry * 0.9, function (x, y, i, q) { return shred(P, x, y, q, o.cols[i % o.cols.length]); });
       if (o.bark) out += P.scatter(rnd, 8, o.rx * 0.8, o.ry * 0.75, function (x, y, i, q) { return P.path(P.blob(q, 2.5 + q() * 2, 1.6 + q(), 0.3, 6, x, y), o.bark, null, 0); });
       return out + P.hl(-o.rx * 0.3, -o.ry * 0.4, o.rx * 0.3, o.ry * 0.1, '#FFFFFF', 0.25, -12);
     };
@@ -764,14 +764,17 @@
   }
 
   /* ---------- deli ---------- */
+  // prosciutto draped in loose folds: each slice a run of soft lobes, rose with its white fat along the edge
   function prosciutto(P, rnd) {
     var out = '';
-    [[[-42, -16], [-26, -25], [-10, -12], [6, -23], [22, -12], [40, -19]], [[-40, 4], [-24, -5], [-6, 8], [10, -3], [26, 8], [42, 0]], [[-36, 22], [-18, 13], [0, 26], [18, 15], [36, 24]]].forEach(function (pts) {
-      var rb = ribbon(P, pts, function (t) { return 14 + Math.sin(t * Math.PI) * 8; });
-      out += P.shadow(rb.d, 1.2, 1.8) + P.path(rb.d, '#C64F57', '#9A3440', 0.9);
-      out += P.path(P.smooth(pts.map(function (p) { return [p[0], p[1] + 2]; }), true), 'none', '#DB7A80', 5, { opacity: '0.5', 'stroke-linecap': 'round' });
-      out += P.path(P.smooth(rb.l, true), 'none', '#F6EAE2', 3.6, { 'stroke-linecap': 'round' });
-      for (var i = 1; i < pts.length - 1; i++) out += P.line(rb.l[i][0], rb.l[i][1], rb.r[i][0], rb.r[i][1], '#9A3440', 0.8, { opacity: '0.5' });
+    [[-24, -14, 10], [16, -12, -8], [-14, 12, -4], [24, 14, 8]].forEach(function (s0) {
+      var s = '';
+      for (var k = 0; k < 4; k++) {
+        var x = -15 + k * 10, y = k % 2 ? 2.5 : -2.5, a = (rnd() - 0.5) * 30, d = P.blob(rnd, 11, 9, 0.14, 9);
+        s += P.g(P.at(x, y, a), P.shadow(d, 1, 1.4) + P.path(d, k % 2 ? '#C9545C' : '#D66A71', '#9A3440', 0.8) +
+          P.path('M-10 -3 Q0 -12 10 -3', 'none', '#F6EAE2', 2.6, { 'stroke-linecap': 'round' }) + P.hl(-1, 2, 5, 2, '#F4C0C4', 0.5, 10));
+      }
+      out += P.g(P.at(s0[0], s0[1], s0[2]), s);
     });
     return out;
   }
@@ -838,7 +841,7 @@
   }
   var BITS = {
     beef: chunk('#6B3A1E', 11, 9), lamb: chunk('#7A4026', 10.5, 9), chicken: chunk('#F0D6A6', 11, 9), tandoori: chunk('#C9622E', 11, 9.5), rendang: chunk('#4E2412', 13, 11),
-    beefslice: function (P, q, x, y, sc) { return P.g(P.at(x, y, q() * 180), P.path(P.leafD(22, 7, 1), '#6B3A1E', '#40200C', 0.8) + P.path(P.leafD(15, 3, 0.6), '#8A5030', null, 0)) + dip(P, x, y, 9, 4, sc); },
+    beefslice: function (P, q, x, y, sc) { return P.g(P.at(x, y, q() * 180), P.path(P.blob(q, 11, 4, 0.18, 9), '#6B3A1E', '#40200C', 0.8) + P.path(P.blob(q, 7, 1.6, 0.2, 7), '#8E5432', null, 0)) + dip(P, x, y, 9, 4, sc); },
     potato: function (P, q, x, y) { return P.g(P.at(x, y, q() * 90), P.path(rrD(P, -7, -6.5, 14, 13, 3.5), '#F2D27A', '#C9A04A', 0.8) + P.rect(-4, -4, 6, 5, 2, '#F8E4A8', null, 0, { opacity: '0.8' })); },
     peaegg: function (P, q, x, y) { return P.circle(x, y, 3.6, '#7EA453', '#4F7F2F', 0.7) + P.circle(x - 1, y - 1, 1.2, '#CFE3A0') + P.circle(x + 6, y + 2, 3.4, '#7EA453', '#4F7F2F', 0.7) + P.circle(x + 5, y + 1, 1.1, '#CFE3A0'); },
     bamboo: function (P, q, x, y) { return P.g(P.at(x, y, q() * 180), P.rect(-7, -2.2, 14, 4.4, 1.5, '#F2E6C4', '#D3C090', 0.6) + P.line(-5, 0, 5, 0, '#E0D0A0', 0.6)); },
@@ -891,9 +894,8 @@
   }
 
   /* ---------- the items ---------- */
-  var cutlets3 = function (P, rnd) { return P.g(P.at(-32, 14, -58), cutlet(P, rnd)) + P.g(P.at(28, 14, -122), cutlet(P, rnd)) + P.g(P.at(-1, 18, -90), cutlet(P, rnd)); };
-  var loinChop = tbone({ s: 0.42, tail: true, crust: LAMB, sear: LAMB_SEAR });
-  var shredPork = { rx: 36, ry: 27, base: '#B97A3A', cols: ['#D9A86A', '#E8C08A', '#C98A4A', '#F0D4A4'], bark: '#5E3418' };
+  var cutlets3 = function (P, rnd) { return cutletAt(P, rnd, -27, 16, -40) + cutletAt(P, rnd, 27, 16, -140) + cutletAt(P, rnd, 2, 28, -78); };
+  var shredPork = { rx: 36, ry: 27, count: 64, base: '#A8683A', cols: ['#C98A5A', '#D9A070', '#B97A48', '#E6BC8E'], bark: '#5E3418' };
 
   L.add('meat', [
     // beef
@@ -902,7 +904,7 @@
     { id: 'eye-fillet', name: 'Eye fillet', sub: 'Beef', kw: 'steak beef tenderloin filet mignon medallion', form: 'piece', cook: 'grilled', role: 'main', g: 200, w: 62, h: 58, side: { s: 'slab', h: 26, c: C.beefCrust }, draw: steak({ rx: 30, ry: 28, sq: 0, ang: 40, gap: 12 }) },
     { id: 'scotch-fillet', name: 'Scotch fillet', sub: 'Beef', kw: 'rib fillet rib eye ribeye scotch steak beef marbled', form: 'piece', cook: 'grilled', role: 'main', g: 300, w: 88, h: 78, side: { s: 'slab', h: 18, c: C.beefCrust }, draw: steak({ rx: 40, ry: 34, sq: 0.2, ang: 30, gap: 12, under: cap(42, 35, -4, -4), over: kernel(40, 34) }) },
     { id: 'sirloin', name: 'Sirloin steak', sub: 'Beef', kw: 'porterhouse new york strip striploin sirloin steak beef fat cap', form: 'piece', cook: 'grilled', role: 'main', g: 300, w: 106, h: 70, side: { s: 'slab', h: 16, c: C.beefCrust }, draw: steak({ rx: 52, ry: 27, sq: 0.55, ang: 30, gap: 14, under: cap(50, 30, 0, -9, 0.6) }) },
-    { id: 'sirloin-sliced', name: 'Sirloin, sliced', sub: 'Beef', kw: 'porterhouse sliced steak strip fat cap medium rare', form: 'slices', cook: 'grilled', role: 'main', g: 250, w: 92, h: 62, side: { s: 'slab', h: 14, c: C.beefCrust }, draw: function (P, rnd) { return shingle(P, 6, 13, function () { return slice(P, 16, 52, { top: [[FATG, 2], [FAT, 6]], band: '#8E5A3A', core: C.beefPink }, rnd); }, { arc: 0.9, tilt: 3 }); } },
+    { id: 'sirloin-sliced', name: 'Sirloin, sliced', sub: 'Beef', kw: 'porterhouse sliced steak strip fat cap medium rare', form: 'slices', cook: 'grilled', role: 'main', g: 250, w: 92, h: 62, side: { s: 'slab', h: 14, c: C.beefCrust }, draw: function (P, rnd) { return shingle(P, 6, 13, function () { return slice(P, 16, 52, { top: [[FATG, 2], [FAT, 6]], band: '#8E5A3A', bw: 1.5, e: 1.7, core: C.beefPink }, rnd); }, { arc: 0.9, tilt: 3 }); } },
     { id: 't-bone', name: 'T-bone steak', sub: 'Beef', kw: 'tbone t bone steak beef bone in porterhouse', form: 'piece', cook: 'grilled', role: 'main', g: 500, w: 146, h: 100, side: { s: 'slab', h: 18, c: C.beefCrust }, draw: tbone({}) },
     { id: 'tomahawk', name: 'Tomahawk steak', sub: 'Beef', kw: 'tomahawk bone in rib eye ribeye cowboy steak beef share', form: 'piece', cook: 'grilled', role: 'main', g: 1200, w: 226, h: 96, side: { s: 'slab', h: 30, c: C.beefCrust }, draw: tomahawk },
     { id: 'sliced-steak', name: 'Sliced steak, fanned', sub: 'Beef', kw: 'steak beef sliced fan medium rare pink', form: 'slices', cook: 'grilled', role: 'main', g: 200, w: 76, h: 56, side: { s: 'slab', h: 12, c: C.beefCrust }, draw: slicedSteak({ n: 6 }) },
@@ -920,7 +922,7 @@
     { id: 'smoked-beef-ribs', name: 'Beef ribs, smoked', sub: 'Beef', kw: 'beef ribs dino rib smoked bark low and slow bbq', form: 'piece', cook: 'smoked', role: 'main', g: 700, w: 146, h: 84, side: { s: 'slab', h: 34, c: '#2E2016' }, draw: beefRibs },
     { id: 'brisket-slices', name: 'Brisket, sliced', sub: 'Beef', kw: 'brisket smoked bark smoke ring bbq low and slow', form: 'slices', cook: 'smoked', role: 'main', g: 200, w: 110, h: 70, side: { s: 'slab', h: 12, c: '#8E5E3E' }, draw: function (P, rnd) { var out = ''; for (var i = 0; i < 4; i++) out += P.g(P.at((i - 1.5) * 3, (i - 1.5) * 14), slice(P, 100, 26, { crust: '#2E2016', top: [['#241810', 3.5], ['#C0503B', 2.2]], bot: [[FAT, 4.5]], core: '#8E5E3E', fibre: 6, e: 2.6 }, rnd) + P.g('translate(0 -11)', P.crumbs(rnd, 8, 44, 1.2, ['#6B5038'], 0.6))); return out; } },
     { id: 'corned-beef', name: 'Corned beef, sliced', sub: 'Beef', kw: 'corned beef silverside sliced pink', form: 'slices', cook: 'poached', role: 'main', g: 200, w: 110, h: 70, of: 'brisket-slices', side: { s: 'slab', h: 12, c: '#D9837A' }, draw: function (P, rnd) { var out = ''; for (var i = 0; i < 4; i++) out += P.g(P.at((i - 1.5) * 3, (i - 1.5) * 14), slice(P, 100, 26, { crust: '#B5605A', top: [[FAT, 4]], core: '#D9837A', fibre: 7 }, rnd)); return out; } },
-    { id: 'pulled-beef', name: 'Pulled beef', sub: 'Beef', kw: 'pulled beef shredded brisket slow cooked', form: 'pile', cook: 'braised', role: 'main', g: 150, w: 74, h: 58, of: 'pulled-pork', side: { s: 'pile', h: 24, c: '#6B3A1E' }, draw: pulled({ rx: 36, ry: 27, base: '#4E2A14', cols: ['#7A4A2A', '#8E5A34', '#6B3A1E', '#A06A40'], bark: '#2E1A0E' }) },
+    { id: 'pulled-beef', name: 'Pulled beef', sub: 'Beef', kw: 'pulled beef shredded brisket slow cooked', form: 'pile', cook: 'braised', role: 'main', g: 150, w: 74, h: 58, of: 'pulled-pork', side: { s: 'pile', h: 24, c: '#6B3A1E' }, draw: pulled({ rx: 36, ry: 27, count: 64, base: '#4E2A14', cols: ['#7A4A2A', '#8E5A34', '#6B3A1E', '#A06A40'], bark: '#2E1A0E' }) },
     { id: 'roast-beef-slices', name: 'Roast beef, sliced', sub: 'Beef', kw: 'roast beef carvery sliced topside sirloin pink', form: 'slices', cook: 'roasted', role: 'main', g: 150, w: 96, h: 72, side: { s: 'layer', h: 6, c: '#C9655A' }, draw: function (P, rnd) { var o = { crust: '#7A4A2A', band: '#A8705A', core: '#C9655A' }; return P.g(P.at(-16, -10, -10), roastSlice(P, rnd, 32, 22, o)) + P.g(P.at(18, 0, 8), roastSlice(P, rnd, 30, 22, Object.assign({ fold: true }, o))) + P.g(P.at(-6, 14, 4), roastSlice(P, rnd, 30, 20, Object.assign({ fold: true }, o))); } },
     { id: 'beef-tartare', name: 'Beef tartare', sub: 'Beef', kw: 'steak tartare tartar raw beef yolk capers', form: 'portion', cook: 'raw', role: 'main', g: 120, w: 58, h: 58, side: { s: 'disc', h: 22, c: '#A8302E' }, draw: tartare },
     { id: 'pastrami', name: 'Pastrami, sliced', sub: 'Beef', kw: 'pastrami deli sliced peppered brisket reuben', form: 'pile', cook: 'smoked', role: 'main', g: 120, w: 84, h: 60, side: { s: 'pile', h: 16, c: '#A8343E' }, draw: pastrami },

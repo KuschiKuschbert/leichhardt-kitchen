@@ -377,7 +377,7 @@
   function saladPile(P, rnd) {
     var out = '', greens = ['#8DB255', '#6E9A3E', '#9CC067', '#5E8C3A', '#A34A6A'];
     for (var i = 0; i < 22; i++) {
-      var x = (rnd() * 2 - 1) * 38, top = -34 * Math.sqrt(Math.max(0, 1 - (x / 48) * (x / 48))), y = Math.min(-6, top * (0.2 + rnd() * 0.65) - 4);
+      var x = -36 + 72 * ((i * 7) % 22) / 21 + (rnd() - 0.5) * 6, top = -34 * Math.sqrt(Math.max(0, 1 - (x / 48) * (x / 48))), y = Math.min(-6, top * (0.2 + rnd() * 0.65) - 4);
       out += P.leaf(24 + rnd() * 10, 9 + rnd() * 5, greens[i % greens.length], x, y, (rnd() - 0.5) * 100, { edge: L.P.shade(greens[i % greens.length], -0.25), ew: 0.6 });
     }
     [[-24, -6], [18, -14], [-4, -28]].forEach(function (c) { out += P.path('M' + N(c[0] - 6) + ' ' + N(c[1]) + ' A6 6 0 0 1 ' + N(c[0] + 6) + ' ' + N(c[1]) + ' Z', '#D9473B', '#A8302A', 0.7) + P.path('M' + N(c[0] - 4) + ' ' + N(c[1] - 0.5) + ' L' + N(c[0] + 4) + ' ' + N(c[1] - 0.5), 'none', '#F2D27A', 1); });
