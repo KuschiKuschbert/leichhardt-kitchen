@@ -340,7 +340,10 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .nb-btn { background: var(--paper); color: var(--ink); }
 .nb-link { align-self: flex-start; min-height: 36px; background: none; border: 0; padding: 0; font: inherit; font-size: 0.875rem; font-weight: 600; text-decoration: underline; cursor: pointer; color: var(--ink); }
 .nb-spine { display: none; }
-.nb-tabs { display: flex; gap: 0.4rem; overflow-x: auto; padding-bottom: 2px; order: -1; }
+.nb-tabs { display: flex; gap: 0.4rem; overflow-x: auto; padding-bottom: 2px; order: -1;
+  /* a row that scrolls sideways fades at its edge, so there is clearly more (22 Oct 2026); the spacer lets the last tab clear the fade */
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 1.75rem), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 1.75rem), transparent); }
+.nb-tabs::after { content: ''; flex: 0 0 1.25rem; }
 .nb-tab { flex: 0 0 auto; min-height: 44px; padding: 0 0.9rem; border-radius: 20px; border: 1.5px solid var(--ink); background: var(--paper); font-family: var(--display); font-weight: 700; font-size: 0.9375rem; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; color: var(--ink); }
 .nb-tab[aria-pressed="true"] { background: var(--accent-ink); border-color: var(--accent-ink); color: #fff; }
 .a-scroll { overflow-x: auto; }
@@ -358,7 +361,8 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
   .nb-right { border-radius: 0 10px 10px 0; border-left: 0; box-shadow: inset 14px 0 14px -14px rgba(60,40,10,0.25); }
   .nb-left:before { content: ''; position: absolute; left: 1.2rem; top: 0; bottom: 0; width: 2px; background: #E7B7A6; }
   .nb-spine { display: block; flex: 0 0 26px; background: repeating-linear-gradient(to bottom, var(--bar) 0 10px, transparent 10px 54px); background-size: 46px 100%; background-position: center; background-repeat: repeat-y; background-color: #E8E1D0; border-top: 1.5px solid var(--ink); border-bottom: 1.5px solid var(--ink); }
-  .nb-tabs { order: 0; flex: 0 0 8.5rem; flex-direction: column; overflow: visible; gap: 6px; margin-left: -2px; padding: 3rem 0 0; }
+  .nb-tabs { order: 0; flex: 0 0 8.5rem; flex-direction: column; overflow: visible; gap: 6px; margin-left: -2px; padding: 3rem 0 0; -webkit-mask-image: none; mask-image: none; }
+  .nb-tabs::after { content: none; }
   .nb-tab { border-radius: 0 10px 10px 0; border-left: 0; text-align: left; box-shadow: 2px 2px 0 rgba(0,0,0,0.12); background: #EFE6D2; }
   .nb-tab[aria-pressed="true"] { background: var(--accent-ink); }
 }
@@ -1089,7 +1093,9 @@ details.nb-start-l[open] > summary::after { content: '\2212'; }
 .a-group { flex: 1 1 0; min-width: 0; min-height: 44px; padding: 0 0.3rem; border: 0; border-left: 1.5px solid var(--ink); background: var(--paper); font: 700 1rem var(--body); color: var(--ink); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .a-group:first-child { border-left: 0; }
 .a-group[aria-current="page"] { background: var(--ink); color: #fff; }
-.a-tabs, .a-onpage { display: flex; gap: 0.4rem; overflow-x: auto; scrollbar-width: none; }
+.a-tabs, .a-onpage { display: flex; gap: 0.4rem; overflow-x: auto; scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 1.75rem), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 1.75rem), transparent); }
+.a-tabs::after, .a-onpage::after { content: ''; flex: 0 0 1.25rem; }
 .a-tabs::-webkit-scrollbar, .a-onpage::-webkit-scrollbar { display: none; }
 .a-tab { flex: 1 0 auto; min-height: 44px; padding: 0 1rem; border: 1.5px solid var(--ink); border-radius: 999px; background: var(--paper); font: 700 0.9375rem var(--body); color: var(--ink); cursor: pointer; white-space: nowrap; }
 .a-tab[aria-pressed="true"] { background: var(--ink); color: #fff; }
@@ -1346,7 +1352,7 @@ html.gz-open, html.gz-open body { overflow: hidden; }
 .wtop-btn.wtop-who:not(.on) { border-style: dashed; }
 .wtop-btn.wtop-who[aria-current="page"] { background: var(--bar-text); color: var(--bar); }
 .wm-wrap { position: fixed; inset: 0; z-index: 85; }
-.wm-bg { position: absolute; inset: 0; }
+.wm-bg { position: absolute; inset: 0; background: rgba(28, 29, 31, 0.45); }   /* dims the page like the other popups (22 Oct 2026) */
 .wm { position: absolute; width: min(18rem, calc(100vw - 16px)); background: var(--paper); color: var(--ink); border: 2px solid var(--ink); border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); padding: 6px; font-family: var(--body); }
 .wm-h { margin: 6px 10px 8px; font-size: 0.875rem; color: var(--muted); }
 .wm-a { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 6px 10px; border-radius: 8px; color: var(--ink); text-decoration: none; }
