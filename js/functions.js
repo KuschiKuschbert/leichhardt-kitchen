@@ -310,7 +310,7 @@
         '<span class="fn-r2">Not today any more: now ' + esc(dayName(f.date)) + ', event ' + esc(kclock(f.start)) + ', food ' + esc(when(f.first, f.date)) + '.</span></button></li>';
     }
     var c = recent(f);
-    var head = '<span class="fn-r1"><b>' + esc(f.name) + '</b>' + (f.loc ? ' · ' + esc(f.loc) : '') + ' · ' + guestsText(f) +
+    var head = '<span class="fn-r1"><b>' + esc(f.name) + '</b>' + (f.loc ? ' · ' + esc(f.loc) : '') +
       (f.mode === 'stag' ? ' <span class="fn-tag">Staggered</span>' : '') + (f.kc ? ' <span class="fn-tag fn-t-kc">Kitchen comment</span>' : '') +
       (c ? ' <span class="fn-tag fn-t-new">Changed ' + esc(kclock(c.at)) + '</span>' : '') + '</span>';
     return out + head + '<span class="fn-r2">' + foodHTML(f, t) + '</span></button></li>';
@@ -386,18 +386,18 @@
   function byId(id) { return F.list.filter(function (f) { return f.id === id; })[0] || null; }
 
   /* ---------- the function sheet: the popup from the band and the page #/fn/<id> ---------- */
-  function facts(rows) { return '<dl class="fn-facts">' + rows.filter(function (r) { return r[1]; }).map(function (r) { return '<div><dt>' + r[0] + '</dt><dd>' + r[1] + '</dd></div>'; }).join('') + '</dl>'; }
-  function table(f) {
-    var n = (f.rounds || []).length, L = f.lines || [], t = now(), nx = nextOpen(f, function (i) { return !!sentRec(f, i); }), tick = f.status === 'confirmed' && f.first;
+  /* Every round as a list (22 Oct 2026): one row per round naming only what goes out ("2 Pizza, 1 Vege (3)"), with its
+     Sent tick. It fits any number of platters on any screen with no sideways scroll; the grid is only in the managers' form. */
+  function roundsList(f) {
+    var n = (f.rounds || []).length, L = f.lines || [], tick = f.status === 'confirmed' && !!f.first;
     if (!n || !L.length) return '';
-    var head = '<tr><th scope="col">Due</th>' + L.map(function (l) { return '<th scope="col">' + esc(short(l.name)) + '</th>'; }).join('') + '<th scope="col">Total</th>' + (tick ? '<th scope="col">Sent</th>' : '') + '</tr>';
-    var rows = f.rounds.map(function (r, i) {
-      var rc = roundCounts(f, i);
-      return '<tr' + (i === nx && f.status === 'confirmed' ? ' class="is-next"' : '') + '><th scope="row">' + esc(when(r.at, f.date)) + (i === nx && f.status === 'confirmed' ? ' <span class="fn-tag">Next</span>' : '') +
-        (r.note ? '<small>' + esc(r.note) + '</small>' : '') + '</th>' + rc.map(function (q) { return '<td>' + (q || '<span class="fn-zero">0</span>') + '</td>'; }).join('') + '<td><b>' + sum(rc) + '</b></td>' + (tick ? '<td class="fn-sent">' + sentCell(f, i) + '</td>' : '') + '</tr>';
-    }).join('');
-    var foot = '<tr class="fn-tot"><th scope="row">Booked</th>' + L.map(function (l) { return '<td><b>' + l.qty + '</b></td>'; }).join('') + '<td><b>' + totalQty(f) + '</b></td>' + (tick ? '<td></td>' : '') + '</tr>';
-    return '<div class="fn-tw"><table class="fn-table"><caption class="visually-hidden">When each platter goes out</caption><thead>' + head + '</thead><tbody>' + rows + foot + '</tbody></table></div>';
+    var nx = nextOpen(f, function (i) { return tick && !!sentRec(f, i); });
+    return '<ol class="fn-rounds">' + f.rounds.map(function (r, i) {
+      var rc = roundCounts(f, i), q = sum(rc), next = i === nx && f.status === 'confirmed';
+      return '<li class="fn-round' + (next ? ' is-next' : '') + (tick && sentRec(f, i) ? ' is-sent' : '') + '"><span class="fn-round-t">' + esc(when(r.at, f.date)) + (next ? ' <span class="fn-tag">Next</span>' : '') + '</span>' +
+        '<span class="fn-round-w">' + (r.note ? '<i>' + esc(r.note) + '</i> ' : '') + esc(linesText(f, rc) || 'Nothing') + ' <b>(' + q + ')</b></span>' +
+        (tick ? '<span class="fn-sent">' + sentCell(f, i) + '</span>' : '') + '</li>';
+    }).join('') + '</ol><p class="fn-rounds-tot">Total ' + totalQty(f) + ' ' + (totalQty(f) === 1 ? 'platter' : 'platters') + '</p>';
   }
   // a round's Sent cell: a button to tick it, or who ticked it when, with Undo for a mis-tap (the same person within
   // 2 minutes, or a sous chef or the head chef: the rules say the same)
@@ -418,25 +418,46 @@
       api.say((f.rounds.length > 1 ? 'Round ' + (i + 1) : 'The platters') + (on ? ' ticked as sent.' : ' not sent after all.'));
     }, function () { if (x) F.sent[f.id + '_' + r.at] = x; else delete F.sent[f.id + '_' + r.at]; changed(); api.say('Not saved. Only the person who ticked it, within 2 minutes, or a chef can take a tick back.'); });
   }
+  /* The sheet leads with what goes out next (22 Oct 2026): the first round not ticked as sent, its time, each platter with
+     a big number, and its Sent button. The kitchen does not need the guests here, only the platters and when. */
+  function nextBox(label, head, sub, body) {
+    return '<section class="fn-next" aria-label="' + esc(label) + '"><p class="fn-next-h"><span class="fn-next-l">' + esc(label) + '</span> <b>' + esc(head) + '</b></p>' +
+      (sub ? '<p class="fn-next-s">' + sub + '</p>' : '') + body + '</section>';
+  }
+  function nextHTML(f) {
+    var n = (f.rounds || []).length, L = f.lines || [], t = now(), tot = totalQty(f), tick = f.status === 'confirmed' && !!f.first;
+    if (!n || !L.length || f.status === 'cancelled') return '';
+    function rows(a) {
+      return '<ul class="fn-next-list">' + L.map(function (l, i) { return { l: l, q: a ? a[i] : l.qty }; }).filter(function (x) { return x.q > 0; }).map(function (x) {
+        return '<li class="fn-next-row"><span class="fn-next-n">' + x.q + '</span><span class="fn-next-name">' + esc(x.l.name) + '</span></li>';
+      }).join('') + '</ul>';
+    }
+    if (!f.first) return nextBox('Next out', 'Times TBC', tot + ' ' + (tot === 1 ? 'platter' : 'platters'), rows());
+    var k = nextOpen(f, function (i) { return tick && !!sentRec(f, i); });
+    if (k < 0) { var last = sentRec(f, n - 1); return nextBox('Done', 'All sent', esc(n > 1 ? 'All ' + n + ' rounds, the last ' + sentText(last) : sentText(last)), '<div class="fn-next-sent">' + sentCell(f, n - 1) + '</div>'); }
+    var r = f.rounds[k], late = tick && r.at < t, rc = roundCounts(f, k), q = sum(rc);
+    var head = (f.mode === 'all' ? 'All at ' : '') + when(r.at, f.date) + (n > 1 ? ' · round ' + (k + 1) + ' of ' + n : '');
+    var sub = (late ? '<span class="fn-late">Due ' + esc(when(r.at, f.date)) + ', not sent yet</span> · ' : '') + q + ' ' + (q === 1 ? 'platter' : 'platters') + (n > 1 ? ' of ' + tot : '') + (r.note ? ' · ' + esc(r.note) : '');
+    return nextBox('Next out', head, sub, rows(rc) + (tick ? '<div class="fn-next-sent">' + sentCell(f, k) + '</div>' : ''));
+  }
   function sheetHTML(f, inPop) {
-    var t = now(), n = (f.rounds || []).length, tot = totalQty(f), c = f.chg || [];
+    var t = now(), c = f.chg || [];
     var status = f.status === 'cancelled' ? '<p class="fn-banner is-off" role="note"><b>Cancelled.</b> Do not send these platters.' + (f.canAt ? ' Cancelled by ' + esc(nameOf(f.canBy)) + ', ' + esc(dayName(kday(f.canAt)) + ' ' + kclock(f.canAt)) + '.' : '') + '</p>' :
       f.was && f.was.until && f.was.from <= t && t < f.was.until && !(f.from <= t && t < f.until) ? '<p class="fn-banner is-moved" role="note"><b>Rescheduled.</b> Not on ' + esc(dayName(kday(f.was.start || f.was.first))) + ' any more: now ' + esc(dayName(f.date)) + '.</p>' :
       f.status === 'draft' ? '<p class="fn-banner" role="note"><b>Draft.</b> Not confirmed yet: the kitchen does not see it.</p>' : '';
-    var food = f.mode === 'all' ? 'All at once, ' + esc(when(f.first, f.date)) : 'Staggered, ' + n + ' rounds from ' + esc(when(f.first, f.date)) + ' to ' + esc(when(f.last, f.date));
-    var out = status + facts([
-      ['Date', esc(dayName(f.date))], ['Place', esc(f.loc || '')], ['Guests', f.gu ? 'Not known yet' : esc(f.guests)],
-      ['Event start', esc(when(f.start, f.date))], ['Food', food], ['Platters', tot + ' in all (the booked numbers, not worked out from guests)']
-    ]) + '<h3 class="fn-h">When each round goes out</h3>' + table(f) +
-      '<p class="hint fn-note">' + (f.status === 'confirmed' && f.first ? 'Tick each round as it goes out: the band moves on to the next one.' : 'These are the times each round is due.') + '</p>' +
-      '<h3 class="fn-h">The platters</h3><ul class="fn-plist">' + (f.lines || []).map(function (l) {
-        var r = recipeOf(l.rid);
-        return '<li><b>' + l.qty + ' ' + esc(unitOf(l, l.qty)) + '</b> ' + (r ? '<a href="#/r/' + encodeURIComponent(l.rid) + '">' + esc(l.name) + '</a>' : esc(l.name)) + (l.spec ? '<small>' + esc(l.spec) + '</small>' : '') + '</li>';
-      }).join('') + '</ul>';
-    if (f.notes) out += '<h3 class="fn-h">Service and dietary notes</h3><p class="fn-text">' + esc(f.notes) + '</p>';
-    if (c.length) out += '<h3 class="fn-h">Changes</h3><ul class="fn-chg">' + c.slice(0, 5).map(function (x) { return '<li><span>' + esc(dayName(kday(x.at)) + ' ' + kclock(x.at)) + ', ' + esc(nameOf(x.by)) + '</span> ' + esc(x.what) + '</li>'; }).join('') + '</ul>';
+    // one quiet line for the day, the place and the event start; then what goes out next, every round, the comment
+    var sub = [dayName(f.date), f.loc, 'event ' + when(f.start, f.date)].filter(Boolean).join(' · ');
+    var out = status + '<p class="fn-sub">' + esc(sub) + '</p>' + nextHTML(f) +
+      ((f.rounds || []).length > 1 || f.status !== 'confirmed' ? '<h3 class="fn-h">Every round</h3>' + roundsList(f) +
+        (f.status === 'confirmed' && f.first ? '<p class="hint fn-note">Tick each round as it goes out.</p>' : '') : '');
     if (f.kc) out += '<section class="fn-kc" aria-labelledby="fn-kc-' + esc(f.id) + '"><h3 class="fn-h" id="fn-kc-' + esc(f.id) + '">Kitchen comment</h3><p class="fn-text">' + esc(f.kc) + '</p>' +
       '<p class="fn-by">' + esc(nameOf(f.kcBy)) + ', ' + esc(dayName(kday(f.kcAt)) + ' ' + kclock(f.kcAt)) + '</p></section>';
+    if (f.notes) out += '<h3 class="fn-h">Service and dietary notes</h3><p class="fn-text">' + esc(f.notes) + '</p>';
+    out += '<h3 class="fn-h">Platters</h3><ul class="fn-plist">' + (f.lines || []).map(function (l) {
+      var r = recipeOf(l.rid);
+      return '<li><b>' + l.qty + '</b> ' + (r ? '<a href="#/r/' + encodeURIComponent(l.rid) + '">' + esc(l.name) + '</a>' : esc(l.name)) + '</li>';
+    }).join('') + '</ul>';
+    if (c.length) out += '<h3 class="fn-h">Changes</h3><ul class="fn-chg">' + c.slice(0, 5).map(function (x) { return '<li><span>' + esc(dayName(kday(x.at)) + ' ' + kclock(x.at)) + ', ' + esc(nameOf(x.by)) + '</span> ' + esc(x.what) + '</li>'; }).join('') + '</ul>';
     out += '<p class="fn-by fn-last">Last changed by ' + esc(nameOf(f.by)) + ', ' + esc(dayName(kday(f.upd)) + ' ' + kclock(f.upd)) + '.</p>';
     var can = P() && P().fnOK && P().fnOK();
     if (inPop) out += '<div class="btn-row"><a class="btn dark" href="#/fn/' + encodeURIComponent(f.id) + '" data-fn="go">Open the full sheet</a>' + (can ? '<a class="btn" href="#/functions/' + encodeURIComponent(f.id) + '" data-fn="go">Change this function</a>' : '') + '</div>';
@@ -470,7 +491,7 @@
     var n = (f.rounds || []).length, tot = totalQty(f);
     return '<li class="fn-card' + (f.status === 'cancelled' ? ' is-off' : '') + '"><a href="#/fn/' + encodeURIComponent(f.id) + '"><span class="fn-c1"><b>' + esc(f.name) + '</b>' +
       (f.status === 'cancelled' ? ' <span class="fn-tag fn-t-off">Cancelled</span>' : f.mode === 'stag' ? ' <span class="fn-tag">Staggered, ' + n + ' rounds</span>' : '') + (f.kc ? ' <span class="fn-tag fn-t-kc">Kitchen comment</span>' : '') + '</span>' +
-      '<span class="fn-c2">Event ' + esc(when(f.start, f.date)) + ' · food from ' + esc(when(f.first, f.date)) + (f.loc ? ' · ' + esc(f.loc) : '') + ' · ' + guestsText(f) + '</span>' +
+      '<span class="fn-c2">Event ' + esc(when(f.start, f.date)) + ' · food from ' + esc(when(f.first, f.date)) + (f.loc ? ' · ' + esc(f.loc) : '') + '</span>' +
       '<span class="fn-c3">' + esc(linesText(f)) + ' (' + tot + ')</span></a></li>';
   }
   function totalsHTML(rows) {
@@ -508,7 +529,7 @@
       body += '<div class="btn-row">' + (pageDays < 14 ? '<button type="button" class="btn" data-fn="days" data-v="14">Show the next 14 days</button>' : '<button type="button" class="btn" data-fn="days" data-v="3">Show the next 3 days</button>') + '</div>';
     }
     var can = prep.fnOK && prep.fnOK();
-    return '<section class="set-block fn-page"><h2 id="rtitle" tabindex="-1">Functions</h2><p class="hint">Confirmed functions and their platters. Platter numbers are what was booked: the book does not add any for the guests.</p>' +
+    return '<section class="set-block fn-page"><h2 id="rtitle" tabindex="-1">Functions</h2><p class="hint">Confirmed functions and their platters.</p>' +
       stateNote() + body + (can ? '<div class="btn-row"><a class="btn dark" href="#/functions">Manage functions</a></div>' : '') + '</section>';
   }
 
