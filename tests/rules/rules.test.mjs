@@ -377,6 +377,19 @@ await ok(W([['days/2026-10-19/items/gone1', line()]], { id: 'gone' }), false, 's
 await ok(W([['functions/f1', fnc({ v: 5, status: 'cancelled' })]], { id: 'fay', as: 'fay' }), false, 'functions: a coordinator cannot give themselves the tick back by writing anyway');
 await ok(W([['config/main', { fnIds: ['finn', 'fay'] }, true]], { id: 'sam' }), false, 'functions: a sous chef cannot change who manages functions');
 await ok(W([['config/main', { fnIds: ['finn', 'fay'] }, true]], { id: 'finn' }), false, 'functions: a coordinator cannot give anyone the tick');
+// Functions: rounds ticked as sent (22 Oct 2026)
+const sent = x => Object.assign({ fid: 'f1', at: T0 + 1800000, day: '2026-10-24', sent: true, sentAt: Date.now(), sentBy: 'ann' }, x || {});
+const sid = 'fnsent/f1_' + (T0 + 1800000);
+await ok(W([[sid, sent()]], { id: 'ann' }), true, 'sent: Ann ticks a round as sent, as herself');
+await ok(W([['fnsent/f1_123', sent()]], { id: 'ann' }), false, 'sent: the record id must be the function and the round time');
+await ok(W([['fnsent/f1_' + (T0 + 3600000), sent({ at: T0 + 3600000, sentBy: 'sam' })]], { id: 'ann' }), false, 'sent: Ann cannot tick in someone else\'s name');
+await ok(W([[sid, sent({ sent: false })]], { id: 'bo' }), false, 'sent: Bo cannot take back Ann\'s tick');
+await ok(W([[sid, sent({ sent: false })]], { id: 'ann' }), true, 'sent: Ann takes her own tick back within 2 minutes (a mis-tap)');
+await ok(W([[sid, sent({ sentBy: 'bo', sentAt: Date.now() })]], { id: 'bo' }), true, 'sent: Bo ticks it again');
+await ok(W([[sid, sent({ sent: false, sentBy: 'bo' })]], { id: 'sam' }), true, 'sent: a sous chef may take any tick back');
+await ok(W([['fnsent/f1_' + (T0 + 5400000), sent({ at: T0 + 5400000, price: 1 })]], { id: 'ann' }), false, 'sent: no other fields');
+await ok(setDoc(doc(anon, K + 'fnsent/f1_' + (T0 + 5400000)), sent({ at: T0 + 5400000, by: 'ann' })), false, 'sent: no tick without a PIN');
+await ok(deleteDoc(doc(owner, K + sid)), false, 'sent: never deleted');
 // the owner probe
 await ok(getDoc(doc(owner, K + 'config/admins')), true, 'admins: the head chef may read the probe');
 await ok(getDoc(doc(anon, K + 'config/admins')), false, 'admins: nobody else may');
