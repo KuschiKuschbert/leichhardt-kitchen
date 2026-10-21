@@ -37,6 +37,50 @@
     return out + P.hl(-rx * 0.3, -ry * 0.35, rx * 0.3, ry * 0.14, '#FFFFFF', 0.45, -20);
   }
   function riceMound(o) { return function (P, rnd) { return riceMoundSvg(P, rnd, o); }; }
+  // one layer of seeds spread evenly over an ellipse: short round-capped strokes, the outline under (o.crease: a line
+  // along each seed, pearl barley)
+  function seedLayer(P, rnd, count, rx, ry, col, len, wid, crease) {
+    var d = '', c2 = '';
+    P.spots(rnd, count, rx, ry).forEach(function (p) {
+      var a = rnd() * Math.PI, l = len * (0.8 + rnd() * 0.4) / 2, c = Math.cos(a) * l, s = Math.sin(a) * l;
+      d += 'M' + n(p[0] - c) + ' ' + n(p[1] - s) + 'l' + n(c * 2) + ' ' + n(s * 2);
+      if (crease) c2 += 'M' + n(p[0] - c * 0.9) + ' ' + n(p[1] - s * 0.9) + 'l' + n(c * 1.8) + ' ' + n(s * 1.8);
+    });
+    return P.path(d, 'none', P.shade(col, -0.26), wid + 0.9, rc()) + P.path(d, 'none', col, wid, rc()) + (crease ? P.path(c2, 'none', crease, 0.5, rc({ opacity: '0.85' })) : '');
+  }
+  // a mound of cooked pulses or whole grains: the outline, a shade low right, the seeds in layers (each layer's outline
+  // shows over the one under it), a tinted highlight. o: rx, ry, col (the mound between the seeds), seeds [[colour, count,
+  // len, wid, crease]], glint (light specks on the seeds), wob
+  function seedMoundSvg(P, rnd, o) {
+    var col = o.col, rx = o.rx || 31, ry = o.ry || 27, d = P.blob(rnd, rx, ry, o.wob || 0.08, 14);
+    var out = P.shadow(d) + P.path(d, col, P.shade(col, -0.26), 1);
+    out += P.path(P.blob(rnd, rx * 0.7, ry * 0.38, 0.1, 9, rx * 0.2, ry * 0.48), P.shade(col, -0.1), null, 0, { opacity: '0.8' });
+    (o.seeds || []).forEach(function (s, j) { out += seedLayer(P, rnd, s[1], rx * (0.86 - j * 0.06), ry * (0.84 - j * 0.06), s[0], s[2], s[3], s[4]); });
+    if (o.glint) out += dots(P, rnd, o.glint, rx * 0.8, ry * 0.78, P.shade(o.seeds[0][0], 0.5), 0.45);
+    return out + P.hl(-rx * 0.3, -ry * 0.38, rx * 0.26, ry * 0.11, P.shade(col, 0.45), 0.8, -20);
+  }
+  function seedMound(o) { return function (P, rnd) { return seedMoundSvg(P, rnd, o); }; }
+  // beans in layers, each a short bent stroke with its outline under and a highlight along its back.
+  // o: count, rx, ry, len (half length of the bend), wid, cols, layers
+  function beanTex(P, rnd, o) {
+    var out = '', k = o.layers || 3, per = Math.ceil(o.count / k);
+    for (var j = 0; j < k; j++) {
+      var col = o.cols[j % o.cols.length], d = '', h = '';
+      P.spots(rnd, per, o.rx * (1 - j * 0.12), o.ry * (1 - j * 0.12)).forEach(function (p) {
+        var a = rnd() * Math.PI, c = Math.cos(a), s = Math.sin(a), l = o.len * (0.85 + rnd() * 0.3), b = o.wid * (0.08 + rnd() * 0.12);
+        d += 'M' + n(p[0] - c * l) + ' ' + n(p[1] - s * l) + 'Q' + n(p[0] - s * b) + ' ' + n(p[1] + c * b) + ' ' + n(p[0] + c * l) + ' ' + n(p[1] + s * l);
+        h += 'M' + n(p[0] - c * l * 0.55 - o.wid * 0.12) + ' ' + n(p[1] - s * l * 0.55 - o.wid * 0.2) + 'l' + n(c * l * 1.1) + ' ' + n(s * l * 1.1);
+      });
+      out += P.path(d, 'none', P.shade(col, -0.26), o.wid + 1, rc()) + P.path(d, 'none', col, o.wid, rc()) + P.path(h, 'none', P.shade(col, 0.55), o.wid * 0.3, rc({ opacity: '0.8' }));
+    }
+    return out;
+  }
+  function beanPile(o) {
+    return function (P, rnd) {
+      var d = P.blob(rnd, o.rx, o.ry, 0.08, 12), col = o.cols[0];
+      return P.shadow(d) + P.path(d, P.shade(col, -0.12), P.shade(col, -0.32), 0.9) + beanTex(P, rnd, o);
+    };
+  }
 
   /* ---------- small things that go on top ---------- */
   function friedEgg(P, rnd, x, y, r, crisp) {
@@ -497,7 +541,7 @@
       out += P.scatter(rnd, 14, 30, 26, function (x, y) { return P.circle(x, y, 1.8, '#B8203A', '#7E1028', 0.5) + P.circle(x - 0.5, y - 0.5, 0.5, '#FFFFFF', null, 0, { opacity: '0.5' }); });
       return out + bits(P, rnd, 'herb', 12, 30, 26) + bits(P, rnd, 'mint', 4, 26, 22);
     } },
-    { id: 'polenta-soft', name: 'Soft polenta', sub: 'Grains', kw: 'polenta soft wet creamy cornmeal parmesan butter', form: 'mound', role: 'starch', g: 150, w: 70, h: 62, side: { s: 'mound', h: 16, c: '#F2CC58' }, draw: function (P, rnd) {
+    { id: 'polenta-soft', name: 'Soft polenta', sub: 'Grains', kw: 'polenta soft wet creamy cornmeal yellow cornmeal grits parmesan butter', form: 'mound', role: 'starch', g: 150, w: 70, h: 62, side: { s: 'mound', h: 16, c: '#F2CC58' }, draw: function (P, rnd) {
       var d = P.blob(rnd, 35, 31, 0.07, 14), out = P.shadow(d, 1.5, 2.2) + P.path(d, '#F0C850', '#C99A2A', 1);
       out += P.path(P.blob(rnd, 28, 24, 0.08, 12, -2, -1), '#F4D46A', null, 0) + P.path('M-20 6 Q-6 -8 10 -2 T24 4', 'none', '#E2B23E', 2, rc({ opacity: '0.7' }));
       out += P.path(P.blob(rnd, 9, 7, 0.15, 9, 6, 2), '#F8E08A', '#E2B23E', 0.7) + P.hl(4, 0, 4, 1.6, '#FFFFFF', 0.7);
@@ -518,6 +562,39 @@
       out += P.crumbs(rnd, 30, 24, 20, ['#A8702A', '#8E5A1E', '#C98A3A'], 0.9);
       return out + P.hl(-24, -28, 14, 4, '#FFFFFF', 0.4, -30);
     } },
+    { id: 'rolled-oats', name: 'Rolled oats', sub: 'Grains', kw: 'rolled oats old-fashioned oats quick oats steel-cut oats oat flakes raw porridge oats muesli topping', form: 'scatter', cook: 'raw', role: 'topping', g: 30, w: 54, h: 42, side: { s: 'pile', h: 6, c: '#E6D3A6' }, draw: function (P, rnd) {
+      return P.scatter(rnd, 34, 23, 17, function (x, y, i, q) {
+        var col = ['#EBDBB2', '#E2CC9C', '#F0E4C4'][i % 3], d = P.blob(q, 3 + q() * 1.2, 2.3 + q() * 0.8, 0.22, 6, x, y, q() * 180);
+        return P.path(d, col, P.shade(col, -0.26), 0.5) + (i % 3 ? '' : P.circle(x - 0.6, y - 0.5, 0.7, P.shade(col, 0.6), null, 0, { opacity: '0.8' }));
+      }, 5) + P.crumbs(rnd, 8, 22, 16, ['#C9A86E'], 0.5);
+    } },
+    { id: 'red-lentils', name: 'Red lentils, cooked', sub: 'Pulses', kw: 'red lentils split red lentils masoor dal dhal cooked boiled pulses legumes', form: 'mound', role: 'starch', g: 150, w: 64, h: 56, side: { s: 'mound', h: 16, c: '#E8A440' }, draw: seedMound({ rx: 30, ry: 26, col: '#E3A040', seeds: [['#EDB65A', 90, 0.5, 2.8], ['#F2C46E', 50, 0.5, 2.6], ['#E88E4A', 24, 0.5, 2.5]], glint: 20, wob: 0.06 }) },
+    { id: 'green-lentils', name: 'Green lentils, cooked', sub: 'Pulses', kw: 'green lentils puy lentils french lentils du puy cooked boiled pulses legumes', form: 'mound', role: 'starch', g: 150, w: 64, h: 56, side: { s: 'mound', h: 18, c: '#6E6848' }, draw: seedMound({ rx: 30, ry: 26, col: '#5A553A', seeds: [['#7A7452', 78, 0.6, 3.2], ['#625C3E', 46, 0.6, 3.1], ['#8E8A62', 34, 0.6, 3]], glint: 26 }) },
+    { id: 'brown-lentils', name: 'Brown lentils, cooked', sub: 'Pulses', kw: 'brown lentils cooked boiled pulses legumes', form: 'mound', role: 'starch', g: 150, w: 64, h: 56, of: 'green-lentils', side: { s: 'mound', h: 18, c: '#8E6640' }, draw: seedMound({ rx: 30, ry: 26, col: '#6E4C2E', seeds: [['#9A7048', 80, 0.7, 3.4], ['#84603C', 46, 0.7, 3.3], ['#B08458', 36, 0.7, 3.2]], glint: 26 }) },
+    { id: 'cannellini-beans', name: 'Cannellini beans', sub: 'Pulses', kw: 'cannellini beans white beans haricot navy beans great northern cooked tinned pulses legumes', form: 'mound', role: 'starch', g: 120, w: 62, h: 52, side: { s: 'pile', h: 14, c: '#F0E8D4' }, draw: beanPile({ rx: 28, ry: 23, count: 42, len: 2.8, wid: 5, cols: ['#EFE6D0', '#F5EEDC', '#E9DFC6'] }) },
+    { id: 'lima-beans', name: 'Lima beans', sub: 'Pulses', kw: 'lima beans butter beans large white beans gigantes cooked pulses legumes', form: 'mound', role: 'starch', g: 120, w: 66, h: 56, of: 'cannellini-beans', side: { s: 'pile', h: 14, c: '#E6E2BE' }, draw: beanPile({ rx: 29, ry: 24, count: 24, len: 3.6, wid: 8, cols: ['#E6E2BE', '#EEEACC', '#DCDCB0'] }) },
+    { id: 'farro', name: 'Farro, cooked', sub: 'Grains', kw: 'farro emmer spelt wheat berries ancient grain cooked boiled', form: 'mound', role: 'starch', g: 150, w: 66, h: 58, side: { s: 'mound', h: 20, c: '#B48858' }, draw: seedMound({ rx: 31, ry: 27, col: '#9A7046', seeds: [['#B88C5C', 70, 2.4, 2.5], ['#C9A070', 50, 2.4, 2.4], ['#D6B484', 32, 2.2, 2.3]], glint: 24 }) },
+    { id: 'pearl-barley', name: 'Pearl barley, cooked', sub: 'Grains', kw: 'pearl barley pearled barley cooked boiled grain', form: 'mound', role: 'starch', g: 150, w: 66, h: 58, side: { s: 'mound', h: 20, c: '#E2D4B2' }, draw: function (P, rnd) {
+      return seedMoundSvg(P, rnd, { rx: 31, ry: 27, col: '#C9B68C', seeds: [['#E2D5B4', 66, 1.4, 3, '#A88E62'], ['#EEE5CE', 44, 1.3, 2.9, '#B39A6E']], glint: 0 });
+    } },
+    { id: 'buckwheat', name: 'Buckwheat, cooked', sub: 'Grains', kw: 'buckwheat groats kasha toasted buckwheat cooked grain gluten free', form: 'mound', role: 'starch', g: 150, w: 64, h: 56, side: { s: 'mound', h: 18, c: '#A8784C' }, draw: function (P, rnd) {
+      var d = P.blob(rnd, 30, 26, 0.08, 14), col = '#9A7048', out = P.shadow(d) + P.path(d, col, P.shade(col, -0.26), 1);
+      // the groats: little rounded pyramids, seen as triangles
+      ['#A87A4C', '#BC8E5E', '#CCA272'].forEach(function (c, j) {
+        var t = '';
+        P.spots(rnd, [60, 44, 30][j], 26 - j * 2.5, 22 - j * 2.5).forEach(function (p) { var a = rnd() * Math.PI * 2, r = 2.5 + rnd() * 0.5; t += 'M' + n(p[0] + Math.cos(a) * r) + ' ' + n(p[1] + Math.sin(a) * r) + 'L' + n(p[0] + Math.cos(a + 2.1) * r) + ' ' + n(p[1] + Math.sin(a + 2.1) * r) + 'L' + n(p[0] + Math.cos(a + 4.2) * r) + ' ' + n(p[1] + Math.sin(a + 4.2) * r) + 'Z'; });
+        out += P.path(t, c, P.shade(c, -0.26), 0.6, rc());
+      });
+      return out + dots(P, rnd, 30, 24, 20, '#EAD2AE', 0.45) + P.hl(-9, -10, 8, 3, P.shade(col, 0.45), 0.8, -20);
+    } },
+    { id: 'millet', name: 'Millet, cooked', sub: 'Grains', kw: 'millet cooked fluffy grain gluten free', form: 'mound', role: 'starch', g: 150, w: 64, h: 56, side: { s: 'mound', h: 18, c: '#EED38A' }, draw: seedMound({ rx: 30, ry: 26, col: '#DCBC66', seeds: [['#F0D68A', 86, 0.2, 1.7], ['#F6E3A8', 58, 0.2, 1.6], ['#E6C470', 32, 0.2, 1.5]], glint: 0 }) },
+    { id: 'semolina', name: 'Semolina, cooked', sub: 'Grains', kw: 'semolina cooked soft semolina porridge farina sooji suji', form: 'mound', role: 'starch', g: 150, w: 68, h: 60, side: { s: 'mound', h: 14, c: '#F1E0A8' }, draw: function (P, rnd) {
+      var col = '#EFDCA2', d = P.blob(rnd, 33, 29, 0.06, 14), out = P.shadow(d) + P.path(d, col, P.shade(col, -0.26), 1);
+      out += P.path(P.blob(rnd, 26, 22, 0.08, 12, -2, -1), '#F5E8BE', null, 0) + P.path('M-20 6 Q-8 -10 8 -4 T22 2', 'none', P.shade(col, -0.12), 2, rc({ opacity: '0.8' }));
+      out += dots(P, rnd, 90, 28, 24, '#E2CC88', 0.45) + dots(P, rnd, 50, 26, 22, '#FBF3DA', 0.45);
+      return out + P.hl(-12, -12, 9, 3, '#FBF4DE', 0.8, -20);
+    } },
+    { id: 'bulgur', name: 'Bulgur, cooked', sub: 'Grains', kw: 'bulgur burghul bulgar bulghur cracked wheat cooked soaked pilaf', form: 'mound', role: 'starch', g: 150, w: 64, h: 56, side: { s: 'mound', h: 16, c: '#CFAA72' }, draw: seedMound({ rx: 30, ry: 26, col: '#B38E58', seeds: [['#D6B47E', 80, 1, 1.8], ['#C29C64', 55, 1, 1.7], ['#E2C696', 40, 0.9, 1.6]], glint: 0 }) },
 
     // bowls (contents only)
     { id: 'pho-bowlful', name: 'Pho, bowlful', sub: 'Bowls', kw: 'pho beef pho noodle soup vietnamese rare beef broth bean sprouts basil', form: 'bowlful', role: 'main', g: 600, w: 146, h: 146, side: { s: 'cup', h: 50, c: '#C99A5E' }, draw: function (P, rnd) {
@@ -590,5 +667,5 @@
     } }
   ]);
   // the helpers, for the other category files and "Draw it for me"
-  L.GRAINS = { grainD: grainD, grainTex: grainTex, dots: dots, riceMound: riceMound, riceMoundSvg: riceMoundSvg, nest: nest, nestSvg: nestSvg, ragu: ragu, shortPasta: shortPasta, pastaHeap: pastaHeap, tangle: tangle, vermicelli: vermicelli, friedEgg: friedEgg, eggHalf: eggHalf, prawn: prawn, mussel: mussel, citrus: citrus, bits: bits, veg: veg, sector: sector, broth: broth, pool: pool };
+  L.GRAINS = { grainD: grainD, grainTex: grainTex, dots: dots, riceMound: riceMound, riceMoundSvg: riceMoundSvg, seedMound: seedMound, beanTex: beanTex, nest: nest, nestSvg: nestSvg, ragu: ragu, shortPasta: shortPasta, pastaHeap: pastaHeap, tangle: tangle, vermicelli: vermicelli, friedEgg: friedEgg, eggHalf: eggHalf, prawn: prawn, mussel: mussel, citrus: citrus, bits: bits, veg: veg, sector: sector, broth: broth, pool: pool };
 })();

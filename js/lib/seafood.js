@@ -697,6 +697,40 @@
     return out + P.crumbs(rnd, 30, 50, 48, [C.herb, '#3E6A2A'], 1) + P.crumbs(rnd, 14, 48, 46, ['#3A342E'], 0.5);
   }
 
+  /* ---------- more fish (21 Oct 2026) ---------- */
+  // a whole sardine, grilled, head to the left: the silver body, the blue-green back, spots along the side, a forked tail
+  function sardine(P, rnd) {
+    var body = '#B4BEC6', fin = '#8E9AA4', back = '#4E6A80', out = '';
+    out += P.path('M41 -1.5 L55 -9 Q50.5 0 55 9 L41 1.5 Z', fin, P.shade(fin, -0.26), 0.7, ROUND) + P.path('M-4 -9 L6 -14 L12 -8.5 Z', fin, P.shade(fin, -0.26), 0.6, ROUND);
+    var d = P.smooth([[-44, 1], [-40, -6], [-27, -10], [0, -10.5], [24, -8], [38, -4], [44, -1.5], [44, 1.5], [38, 4], [24, 8], [0, 10.5], [-27, 10], [-40, 6]]);
+    out += P.shadow(d) + P.path(d, body, P.shade(body, -0.26), 0.9);
+    out += P.path(P.smooth([[-38, -5.5], [-26, -9], [0, -9.6], [24, -7], [40, -2.6], [24, -3], [0, -3.6], [-26, -3.4]]), back, null, 0, { opacity: '0.85' });
+    out += P.path(P.smooth([[-34, 5], [-20, 8.4], [0, 9], [22, 6.6], [36, 3], [20, 3.4], [0, 4], [-20, 3.6]]), '#E4E8EA', null, 0, { opacity: '0.9' });
+    out += P.path('M-18 -2.2h0.01M-6 -1.6h0.01M6 -2.2h0.01M16 -1.6h0.01', 'none', '#34404C', 1.8, { 'stroke-linecap': 'round', opacity: '0.8' });
+    out += P.g('translate(4 0)', P.grill(30, 8.5, 40, 9, C.charred, 2));
+    out += P.path('M-29 -9 Q-25 0 -29 9', 'none', P.shade(body, -0.26), 1, { 'stroke-linecap': 'round' }) + P.line(-44, 1.2, -39.5, 2.6, P.shade(body, -0.26), 0.8);
+    out += P.circle(-37, -2.4, 2.6, '#F4EEE2', P.shade('#F4EEE2', -0.26), 0.6) + P.circle(-36.8, -2.4, 1.3, TIP);
+    return out + P.hl(-6, -6.5, 16, 1.4, P.shade(body, 0.55), 0.8, -2);
+  }
+  // an anchovy fillet in oil: a thin reddish-brown ribbon, a silver edge, the line down the middle (bend: its curve)
+  function anchovy(P, b) {
+    var col = '#9A5040', d = P.smooth([[-23, 0], [-16, -2.8 + b], [0, -3.3 + b * 1.5], [16, -2.6 + b], [23, 0.2], [16, 2.6 + b], [0, 3.1 + b * 1.5], [-16, 2.8 + b]]);
+    var out = P.shadow(d, 1, 1.4) + P.path(d, col, P.shade(col, -0.26), 0.7);
+    out += P.path(P.smooth([[-20, 1.4], [-16, 2.1 + b], [0, 2.5 + b * 1.5], [16, 1.9 + b], [20, 0.8]], true), 'none', '#C2B6AC', 1, { opacity: '0.8', 'stroke-linecap': 'round' });
+    out += P.path(P.smooth([[-19, 0], [-12, b * 0.8], [0, b * 1.2], [12, b * 0.8], [19, 0.2]], true), 'none', P.shade(col, -0.26), 0.6, { opacity: '0.8' });
+    return out + P.path(P.smooth([[-14, -1.6 + b], [0, -2 + b * 1.5], [12, -1.4 + b]], true), 'none', P.shade(col, 0.45), 0.9, { opacity: '0.8', 'stroke-linecap': 'round' });
+  }
+  // lump crab meat: big white chunks, flecked with the orange of the shell
+  function lumpCrab(P, rnd) {
+    var base = '#F2EBDD', d = P.blob(rnd, 24, 18, 0.1, 11), out = P.shadow(d, 1.5, 2) + P.path(d, base, P.shade(base, -0.26), 0.8);
+    return out + P.scatter(rnd, 11, 18, 12, function (x, y, i, q) {
+      var rx = 6 + q() * 2.5, ry = 4 + q() * 1.5, col = i % 2 ? '#FBF7F0' : '#F4ECDE', s = P.path(P.blob(q, rx, ry, 0.22, 8), col, P.shade(col, -0.26), 0.6);
+      s += P.path('M' + N(-rx * 0.6) + ' ' + N(ry * 0.1) + ' Q0 ' + N(-ry * 0.3) + ' ' + N(rx * 0.6) + ' ' + N(ry * 0.2) + ' M' + N(-rx * 0.4) + ' ' + N(ry * 0.5) + ' Q0 ' + N(ry * 0.2) + ' ' + N(rx * 0.5) + ' ' + N(ry * 0.55), 'none', P.shade(col, -0.12), 0.6, { 'stroke-linecap': 'round' });
+      if (i % 3 === 0) s += P.path('M' + N(-rx * 0.7) + ' ' + N(-ry * 0.45) + ' Q0 ' + N(-ry * 1.05) + ' ' + N(rx * 0.7) + ' ' + N(-ry * 0.4), 'none', '#EE8F70', 1.6, { opacity: '0.85', 'stroke-linecap': 'round' });
+      return P.g(P.at(x, y, q() * 180), s + P.hl(-rx * 0.25, -ry * 0.3, rx * 0.3, ry * 0.15, '#FFFFFF', 0.8));
+    }, 8);
+  }
+
   /* ---------- the items ---------- */
   var thai = function (P, rnd) { return thaiCake(P, rnd); };
   var pakora = function (P, rnd) { return P.scatter(rnd, 7, 26, 20, function (x, y, i, q) { return P.g(P.at(x, y, q() * 180), pakoraPiece(P, q)) + (i % 3 === 0 ? P.leaf(6, 3, '#3E6A2A', x + 4, y - 3, q() * 360, { vein: false }) : ''); }); };
@@ -710,6 +744,11 @@
     { id: 'whiting-fillets', name: 'Whiting fillets, pan fried', sub: 'Fish', kw: 'whiting fillets butterflied king george sand whiting pan fried floured', form: 'piece', cook: 'fried', role: 'main', n: 3, w: 92, h: 72, side: { s: 'slab', h: 8, c: '#E6B866' }, draw: group([[-6, -18, -6, 1, whitingFillet], [8, 0, 4, 1, whitingFillet], [-2, 18, -2, 1, whitingFillet]]) },
     { id: 'coral-trout', name: 'Coral trout fillet', sub: 'Fish', kw: 'coral trout reef fish red skin skin on fillet', form: 'piece', cook: 'fried', role: 'main', g: 200, w: 100, h: 52, side: { s: 'slab', h: 18, c: '#D7473A' }, draw: skinFillet({ len: 100, wid: 52, flesh: WHITE_FISH, skin: '#D7473A', spots: 40, blister: 6 }) },
     { id: 'red-emperor', name: 'Red emperor fillet', sub: 'Fish', kw: 'red emperor reef fish fillet pan seared pink skin snapper', form: 'piece', cook: 'fried', role: 'main', g: 200, w: 102, h: 54, side: { s: 'slab', h: 18, c: WHITE_FISH }, draw: grilledFillet({ len: 102, wid: 54, col: WHITE_FISH, rim: '#E0606A', marks: false, sear: '#E2B872' }) },
+    { id: 'cod-fillet', name: 'Cod fillet, pan roasted', sub: 'Fish', kw: 'cod fillet pan roasted seared white fish atlantic cod blue eye cod thick flaky', form: 'piece', cook: 'roasted', role: 'main', g: 200, w: 102, h: 58, of: 'fish-fillet-grilled', side: { s: 'slab', h: 22, c: '#F7F1E4' }, draw: grilledFillet({ len: 100, wid: 56, col: '#F7F1E4', sear: '#E8B86A', marks: false, tail: 0.4 }) },
+    { id: 'halibut-fillet', name: 'Halibut fillet, seared', sub: 'Fish', kw: 'halibut fillet seared pan fried flatfish white fish thick portion turbot', form: 'piece', cook: 'fried', role: 'main', g: 200, w: 96, h: 62, of: 'fish-fillet-grilled', side: { s: 'slab', h: 22, c: '#FAF6EC' }, draw: grilledFillet({ len: 94, wid: 60, col: '#FAF6EC', sear: '#EFC98C', marks: false, tail: 0.28 }) },
+    { id: 'mahi-mahi-fillet', name: 'Mahi mahi fillet, grilled', sub: 'Fish', kw: 'mahi mahi dolphinfish dorado grilled fillet chargrilled', form: 'piece', cook: 'grilled', role: 'main', g: 180, w: 106, h: 52, of: 'fish-fillet-grilled', side: { s: 'slab', h: 18, c: '#F4E6D2' }, draw: grilledFillet({ len: 104, wid: 50, col: '#F4E6D2', sear: '#E2B880', gap: 12 }) },
+    { id: 'sea-bass-fillet', name: 'Sea bass fillet, crispy skin', sub: 'Fish', kw: 'sea bass seabass branzino fillet crispy skin pan fried skin on', form: 'piece', cook: 'fried', role: 'main', g: 160, w: 98, h: 48, of: 'barramundi-fillet', side: { s: 'slab', h: 14, c: '#A8A69A' }, draw: skinFillet({ len: 98, wid: 46, flesh: WHITE_FISH, skin: '#A8A69A', blister: 16, speck: 10, speckCol: '#5A5E64', scores: [-0.4, -0.1, 0.2, 0.45] }) },
+    { id: 'sardines-grilled', name: 'Sardines, whole, grilled', sub: 'Fish', kw: 'sardines whole grilled chargrilled pilchards small oily fish', form: 'whole', cook: 'grilled', role: 'main', n: 3, w: 112, h: 74, side: { s: 'slab', h: 12, c: '#B4BEC6' }, draw: group([[-3, -24, -4, 1, sardine], [3, 0, 2, 1, sardine], [-2, 24, -2, 1, sardine]]) },
     { id: 'mackerel-cutlet', name: 'Spanish mackerel cutlet', sub: 'Fish', kw: 'spanish mackerel cutlet steak macko narrow barred bone in grilled', form: 'piece', cook: 'grilled', role: 'main', g: 220, w: 70, h: 64, side: { s: 'slab', h: 20, c: '#ECD9BA' }, draw: cutlet },
     { id: 'smoked-salmon', name: 'Smoked salmon', sub: 'Fish', kw: 'smoked salmon lox ribbons slices cold smoked', form: 'slices', cook: 'smoked', role: 'topping', g: 50, w: 66, h: 50, side: { s: 'layer', h: 8, c: '#F28A64' }, draw: smokedSalmon },
     { id: 'smoked-trout', name: 'Smoked trout, flaked', sub: 'Fish', kw: 'smoked trout flakes flaked hot smoked', form: 'scatter', cook: 'smoked', role: 'topping', g: 40, w: 62, h: 48, side: { s: 'pile', h: 8, c: '#E9A585' }, draw: troutFlakes },
@@ -755,6 +794,7 @@
     { id: 'mud-crab', name: 'Mud crab, whole', sub: 'Crab and lobster', kw: 'mud crab muddie whole crab cooked steamed', form: 'whole', cook: 'steamed', role: 'main', n: 1, w: 174, h: 144, side: { s: 'mound', h: 50, c: '#D0502E' }, draw: shift(0, 17, mudCrab({})) },
     { id: 'chilli-mud-crab', name: 'Chilli mud crab', sub: 'Crab and lobster', kw: 'chilli mud crab singapore chilli sauce whole crab', form: 'whole', cook: 'braised', role: 'main', n: 1, w: 196, h: 146, of: 'mud-crab', side: { s: 'mound', h: 50, c: '#C33A26' }, draw: shift(0, 17, mudCrab({ chilli: true })) },
     { id: 'spanner-crab-meat', name: 'Spanner crab meat, picked', sub: 'Crab and lobster', kw: 'spanner crab meat picked crab blue swimmer crabmeat', form: 'mound', cook: 'steamed', role: 'topping', g: 60, w: 50, h: 38, side: { s: 'mound', h: 14, c: '#F1EADC' }, draw: crabMeat },
+    { id: 'crab-meat-lump', name: 'Lump crab meat', sub: 'Crab and lobster', kw: 'lump crab meat jumbo lump crabmeat blue swimmer mud crab picked chunks', form: 'mound', cook: 'steamed', role: 'topping', g: 60, w: 54, h: 42, of: 'spanner-crab-meat', side: { s: 'mound', h: 14, c: '#F4ECDE' }, draw: lumpCrab },
     { id: 'soft-shell-crab', name: 'Soft shell crab, fried', sub: 'Crab and lobster', kw: 'soft shell crab fried tempura crispy whole', form: 'whole', cook: 'fried', role: 'main', n: 1, w: 90, h: 70, side: { s: 'slab', h: 16, c: '#D9A050' }, draw: softShellCrab },
     { id: 'lobster-tail', name: 'Lobster tail, split', sub: 'Crab and lobster', kw: 'lobster tail crayfish cray split shell piggyback rock lobster', form: 'piece', cook: 'grilled', role: 'main', n: 1, w: 106, h: 46, side: { s: 'slab', h: 26, c: '#D2442A' }, draw: lobsterTail },
     { id: 'half-lobster', name: 'Half lobster, grilled', sub: 'Crab and lobster', kw: 'half lobster grilled crayfish cray rock lobster thermidor mornay garlic butter', form: 'half', cook: 'grilled', role: 'main', n: 1, w: 178, h: 56, side: { s: 'slab', h: 24, c: '#D2442A' }, draw: shift(13, -9, halfLobster({ butter: true })) },
@@ -770,6 +810,7 @@
     { id: 'sushi-maki', name: 'Sushi rolls, maki', sub: 'Raw and cured', kw: 'sushi roll maki hand roll pieces nori salmon tuna cucumber', form: 'piece', cook: 'raw', role: 'main', n: 6, w: 66, h: 44, side: { s: 'disc', h: 16, c: '#1F2A24' }, draw: makiSet },
     { id: 'roe-pearls', name: 'Salmon roe', sub: 'Raw and cured', kw: 'salmon roe ikura roe pearls fish eggs caviar trout roe', form: 'mound', cook: 'cured', role: 'garnish', g: 10, w: 22, h: 19, side: { s: 'mound', h: 8, c: '#F07A2A' }, draw: roe({ rx: 11, r: 1.9, count: 22, col: '#F07A2A' }) },
     { id: 'caviar', name: 'Caviar', sub: 'Raw and cured', kw: 'caviar black roe sturgeon lumpfish', form: 'mound', cook: 'cured', role: 'garnish', g: 10, w: 20, h: 17, of: 'roe-pearls', side: { s: 'mound', h: 6, c: '#2A2A2E' }, draw: roe({ rx: 10, r: 1.2, count: 40, col: '#2E2E34', hiOp: '0.45' }) },
+    { id: 'anchovy-fillets', name: 'Anchovy fillets', sub: 'Raw and cured', kw: 'anchovy anchovies fillets cured salted in oil white anchovies boquerones', form: 'piece', cook: 'cured', role: 'garnish', n: 4, w: 52, h: 30, side: { s: 'layer', h: 2, c: '#9A5040' }, draw: function (P) { return [[-1, -9, -5, 0.6], [2, -3, 2, -0.4], [-2, 3, -2, 0.5], [1, 9, 4, -0.6]].map(function (p) { return P.g(P.at(p[0], p[1], p[2]), anchovy(P, p[3])); }).join(''); } },
     { id: 'seafood-stick', name: 'Seafood stick', sub: 'Raw and cured', kw: 'seafood stick crab stick seafood extender surimi kani', form: 'stick', role: 'main', n: 3, w: 72, h: 44, side: { s: 'stick', h: 12, c: '#E0502E' }, draw: group([[-2, -14, -4, 1, seafoodStick], [2, 0, 2, 1, seafoodStick], [0, 14, -2, 1, seafoodStick]]) },
     // bowls
     { id: 'seafood-chowder', name: 'Seafood chowder', sub: 'Bowls', kw: 'seafood chowder creamy soup potato bacon fish prawns mussels bowl', form: 'bowlful', cook: 'braised', role: 'main', g: 350, w: 122, h: 116, side: { s: 'sauce', h: 30, c: '#F0E2C0' }, draw: chowder }

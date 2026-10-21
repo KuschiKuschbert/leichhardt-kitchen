@@ -95,6 +95,126 @@
     return out + P.rect(-1, -22, 2, 4, 1, '#6B5A2A') + P.hl(-6, -6, 3, 1.2, '#FFFFFF', 0.35, -50);
   }
   function grape(P, x, y, r, col) { return P.circle(x, y, r, col, edge(P, col), 0.5) + P.hl(x - r * 0.35, y - r * 0.4, r * 0.3, r * 0.18, '#FFFFFF', 0.55, -30); }
+
+  /* ---------- more fruit: berries, dried fruit, citrus, stone fruit, melon ---------- */
+  // the outline the book gives a fill (its own hue at 0.74 of its lightness) and a lighter tint of it for a shine
+  function ol(P, c) { return P.shade(c, -0.26); }
+  function tint(P, c, f) { return P.shade(c, f || 0.55); }
+  // a round or oval berry from above (cranberry, kumquat, grape): a lighter top, the blossom end (o.end) and a shine
+  function berry(P, q, x, y, rx, ry, col, o) {
+    o = o || {};
+    var a = o.a === undefined ? q() * 180 : o.a, tf = rot(P, a, x, y), r = Math.min(rx, ry), ar = a * Math.PI / 180;
+    var out = P.ellipse(x, y, rx, ry, '#000000', null, 0, { opacity: '0.12', transform: 'translate(' + P.n(r * 0.16) + ' ' + P.n(r * 0.22) + ') ' + tf });
+    out += P.ellipse(x, y, rx, ry, col, ol(P, col), Math.max(0.3, Math.min(0.8, r * 0.1)), { transform: tf }) + P.ellipse(x - rx * 0.1, y - ry * 0.14, rx * 0.74, ry * 0.68, P.shade(col, 0.12), null, 0, { transform: tf });
+    if (o.dimples) out += P.scatter(q, o.dimples, rx * 0.7, ry * 0.6, function (dx, dy) { return P.circle(x + dx, y + dy, 0.3, P.shade(col, 0.3), null, 0, { opacity: '0.8' }); });
+    if (o.end) out += P.circle(x + Math.cos(ar) * rx * 0.78, y + Math.sin(ar) * rx * 0.78, Math.max(0.4, r * 0.14), o.end, ol(P, o.end), 0.25);
+    return out + P.hl(x - r * 0.36, y - r * 0.42, r * 0.3, r * 0.15, tint(P, col, 0.6), 0.75, -35);
+  }
+  // a dried fruit (raisin, sultana, dried cranberry): a flat wrinkled blob with folds and a sugary shine
+  function driedBit(P, q, x, y, s, col, folds) {
+    var a = q() * 180, d = P.blob(q, s, s * (0.62 + q() * 0.2), 0.2, 7, x, y, a), dk = P.shade(col, -0.2);
+    var out = P.path(d, '#000000', null, 0, { opacity: '0.12', transform: 'translate(0.6 0.8)' }) + P.path(d, col, ol(P, col), 0.4) + P.path(P.blob(q, s * 0.58, s * 0.36, 0.2, 5, x - s * 0.14, y - s * 0.14, a), P.shade(col, 0.14), null, 0);
+    for (var i = 0; i < folds; i++) {
+      var b = (a + 90 + (q() - 0.5) * 70) * Math.PI / 180, ox = x + (q() - 0.5) * s * 0.7, oy = y + (q() - 0.5) * s * 0.5, l = s * (0.4 + q() * 0.3), c = Math.cos(b), sn = Math.sin(b);
+      out += P.path('M' + P.n(ox - c * l) + ' ' + P.n(oy - sn * l) + ' Q' + P.n(ox + sn * s * 0.3) + ' ' + P.n(oy - c * s * 0.3) + ' ' + P.n(ox + c * l) + ' ' + P.n(oy + sn * l), 'none', dk, 0.4, { 'stroke-linecap': 'round' });
+    }
+    return out + P.hl(x - s * 0.3, y - s * 0.32, s * 0.26, s * 0.11, tint(P, col, 0.55), 0.75, a);
+  }
+  // a citrus half from above, cut face up: rind, pith, the segments round a pale core (grapefruit)
+  function citrusHalf(P, q, r, k) {
+    var d = P.blob(q, r, r * 0.97, 0.015, 16), out = P.shadow(d, 2, 2.5) + P.path(d, k.rind, ol(P, k.rind), 1) + P.circle(0, 0, r * 0.9, k.pith) + P.circle(0, 0, r * 0.84, k.mem), a0 = q() * Math.PI, segs = 12;
+    for (var i = 0; i < segs; i++) {
+      var a1 = a0 + (i + 0.07) / segs * Math.PI * 2, a2 = a0 + (i + 0.93) / segs * Math.PI * 2, am = (a1 + a2) / 2, rr = r * 0.81, r0 = r * 0.15;
+      out += P.path('M' + P.n(Math.cos(am) * r0) + ' ' + P.n(Math.sin(am) * r0) + ' L' + P.n(Math.cos(a1) * rr) + ' ' + P.n(Math.sin(a1) * rr) + ' A' + P.n(rr) + ' ' + P.n(rr) + ' 0 0 1 ' + P.n(Math.cos(a2) * rr) + ' ' + P.n(Math.sin(a2) * rr) + ' Z', k.flesh, null, 0);
+      [-0.07, 0.07].forEach(function (o, j) { var b = am + o, r1 = r * (0.34 + j * 0.08), r2 = r * (0.62 + j * 0.08); out += P.line(Math.cos(b) * r1, Math.sin(b) * r1, Math.cos(b) * r2, Math.sin(b) * r2, k.ves, r * 0.035); });
+    }
+    out += P.circle(0, 0, r * 0.12, k.pith) + P.ellipse(r * 0.3, -r * 0.22, r * 0.06, r * 0.035, k.pith, ol(P, k.pith), 0.3, { transform: rot(P, -40, r * 0.3, -r * 0.22) });
+    return out + P.hl(-r * 0.38, -r * 0.5, r * 0.3, r * 0.08, tint(P, k.flesh, 0.6), 0.75, -32);
+  }
+  // one citrus segment lying on its side, the round back up (grapefruit supremes, mandarin segments; pith strands when pith is set)
+  function segment(P, q, l, w, col, pith) {
+    var h = l / 2, d = 'M' + P.n(-h) + ' 0 Q0 ' + P.n(-w * 1.35) + ' ' + P.n(h) + ' 0 Q0 ' + P.n(w * 0.5) + ' ' + P.n(-h) + ' 0 Z';
+    var out = P.shadow(d, 0.9, 1.2) + P.path(d, col, ol(P, col), 0.6) + P.path('M' + P.n(-h * 0.8) + ' ' + P.n(-w * 0.06) + ' Q0 ' + P.n(-w * 1.05) + ' ' + P.n(h * 0.8) + ' ' + P.n(-w * 0.06) + ' Q0 ' + P.n(-w * 0.3) + ' ' + P.n(-h * 0.8) + ' ' + P.n(-w * 0.06) + ' Z', P.shade(col, 0.12), null, 0);
+    for (var i = -3; i <= 3; i++) out += P.path('M' + P.n(i * h * 0.2) + ' ' + P.n(w * 0.1) + ' Q' + P.n(i * h * 0.24) + ' ' + P.n(-w * 0.2) + ' ' + P.n(i * h * 0.27) + ' ' + P.n(-w * 0.48 + Math.abs(i) * w * 0.05), 'none', P.shade(col, 0.28), 0.5, { 'stroke-linecap': 'round' });
+    if (pith) for (var j = 0; j < 2; j++) { var px = (q() - 0.5) * h; out += P.path('M' + P.n(px - 2) + ' ' + P.n(w * 0.15) + ' Q' + P.n(px + 2 + q() * 2) + ' ' + P.n(-w * 0.3) + ' ' + P.n(px + (q() - 0.3) * 4) + ' ' + P.n(-w * 0.62), 'none', '#FBF1DE', 0.5, { opacity: '0.85', 'stroke-linecap': 'round' }); }
+    return out + P.hl(-h * 0.2, -w * 0.48, h * 0.3, w * 0.08, tint(P, col, 0.6), 0.75, -4);
+  }
+  // a stone fruit half from above, cut face up: skin, flesh, the flush round the stone, and the stone or its hollow
+  function stoneHalf(P, q, r, k, stone) {
+    var d = P.blob(q, r, r * 0.95, 0.025, 12), out = P.shadow(d, 2, 2.5) + P.path(d, k.skin, ol(P, k.skin), 0.9);
+    out += P.path(P.blob(q, r * 0.92, r * 0.87, 0.025, 12), k.flesh, null, 0) + P.path(P.blob(q, r * 0.66, r * 0.68, 0.05, 10), k.light, null, 0) + P.ellipse(0, 0, r * 0.42, r * 0.5, k.flush, null, 0);
+    out += P.path('M0 ' + P.n(-r * 0.9) + ' Q' + P.n(r * 0.06) + ' ' + P.n(-r * 0.74) + ' 0 ' + P.n(-r * 0.56), 'none', ol(P, k.flesh), 0.6, { 'stroke-linecap': 'round' });
+    if (stone) {
+      out += P.ellipse(0, 0, r * 0.3, r * 0.38, k.stone, ol(P, k.stone), 0.6) + P.ellipse(-r * 0.04, -r * 0.05, r * 0.2, r * 0.27, P.shade(k.stone, 0.12), null, 0);
+      [-1, 0, 1].forEach(function (i) { out += P.path('M' + P.n(i * r * 0.12 - r * 0.05) + ' ' + P.n(-r * 0.24) + ' q' + P.n(r * 0.08) + ' ' + P.n(r * 0.12) + ' 0 ' + P.n(r * 0.24) + ' t0 ' + P.n(r * 0.2), 'none', ol(P, k.stone), 0.5, { 'stroke-linecap': 'round' }); });
+      out += P.hl(-r * 0.1, -r * 0.2, r * 0.08, r * 0.04, tint(P, k.stone, 0.5), 0.75, -40);
+    } else out += P.ellipse(0, 0, r * 0.3, r * 0.38, k.pit, ol(P, k.pit), 0.6) + P.ellipse(r * 0.03, r * 0.05, r * 0.21, r * 0.28, P.shade(k.pit, 0.12), null, 0);
+    return out + P.hl(-r * 0.4, -r * 0.44, r * 0.24, r * 0.08, tint(P, k.flesh, 0.6), 0.75, -40);
+  }
+  // a slice cut from round fruit lying flat: the skin along the curved back, the flesh, the flush on the inner edge (o.flush) and a pip (o.pip)
+  function moonSlice(P, l, t, k, o) {
+    o = o || {};
+    var h = l / 2, y0 = t * 0.58, top = y0 - t * 2.3, d = 'M' + P.n(-h) + ' ' + P.n(y0) + ' Q0 ' + P.n(top) + ' ' + P.n(h) + ' ' + P.n(y0) + ' Q0 ' + P.n(y0 - t * 0.35) + ' ' + P.n(-h) + ' ' + P.n(y0) + ' Z';
+    var out = P.shadow(d, 1, 1.4) + P.path(d, k.flesh, ol(P, k.flesh), 0.6);
+    out += P.path('M' + P.n(-h * 0.7) + ' ' + P.n(y0 - t * 0.2) + ' Q0 ' + P.n(top + t * 0.9) + ' ' + P.n(h * 0.7) + ' ' + P.n(y0 - t * 0.2) + ' Q0 ' + P.n(y0 - t * 0.38) + ' ' + P.n(-h * 0.7) + ' ' + P.n(y0 - t * 0.2) + ' Z', k.light, null, 0);
+    if (k.flush) out += P.path('M' + P.n(-h * 0.8) + ' ' + P.n(y0 - t * 0.08) + ' Q0 ' + P.n(y0 - t * 0.42) + ' ' + P.n(h * 0.8) + ' ' + P.n(y0 - t * 0.08), 'none', k.flush, t * 0.16, { 'stroke-linecap': 'round' });
+    out += P.path('M' + P.n(-h) + ' ' + P.n(y0) + ' Q0 ' + P.n(top) + ' ' + P.n(h) + ' ' + P.n(y0) + ' Q0 ' + P.n(top + t * 0.3) + ' ' + P.n(-h) + ' ' + P.n(y0) + ' Z', k.skin, ol(P, k.skin), 0.5);
+    if (k.dot) [-0.45, -0.15, 0.2, 0.5].forEach(function (f) { out += P.circle(f * h, y0 - t * 1.08 + Math.abs(f) * Math.abs(f) * t * 0.95, 0.35, k.dot); });
+    if (o.pip) out += P.ellipse(o.pip, y0 - t * 0.3, 1.5, 0.8, '#6E4422', ol(P, '#6E4422'), 0.3, { transform: rot(P, o.pip > 0 ? -12 : 12, o.pip, y0 - t * 0.3) });
+    return out + P.hl(-h * 0.25, y0 - t * 0.85, h * 0.22, t * 0.06, tint(P, k.flesh, 0.6), 0.75, -8);
+  }
+  // a melon wedge lying on its side: the skin round the back (netted for a rockmelon), the rind, the flesh, the scooped hollow along the top
+  function melonWedge(k) {
+    return function (P, rnd) {
+      var cr = function (e, yE, yB, yT) { return 'M' + P.n(-e) + ' ' + P.n(yE) + ' C' + P.n(-e * 0.86) + ' ' + P.n(yB) + ' ' + P.n(e * 0.86) + ' ' + P.n(yB) + ' ' + P.n(e) + ' ' + P.n(yE) + ' C' + P.n(e * 0.55) + ' ' + P.n(yT) + ' ' + P.n(-e * 0.55) + ' ' + P.n(yT) + ' ' + P.n(-e) + ' ' + P.n(yE) + ' Z'; };
+      // a point on the curved back between the skin and the rind, t from 0 to 1
+      var back = function (t, e, yE, yB) { var u = 1 - t; return [-e * u * u * u - e * 0.86 * 3 * u * u * t + e * 0.86 * 3 * u * t * t + e * t * t * t, yE * (u * u * u + t * t * t) + yB * 3 * u * t]; };
+      var skin = cr(45, -13, 28, -1), out = P.shadow(skin, 2, 2.5) + P.path(skin, k.skin, ol(P, k.skin), 0.9);
+      if (k.net) for (var i = 1; i < 18; i++) { var p = back(i / 18, 43.8, -12.8, 26.4), p2 = back((i + 0.5) / 18, 43.8, -12.8, 26.4); out += P.line(p[0], p[1], p2[0], p2[1] - 0.8, k.net, 0.7) + P.line(p[0], p[1] - 0.9, p2[0], p2[1] + 0.2, k.net, 0.5); }
+      out += P.path(cr(42.4, -12.3, 23.8, -1), k.rind, null, 0) + P.path(cr(41.4, -12, 22, -1), k.flesh, null, 0) + P.path(cr(37, -10.4, 9, -1), k.inner, null, 0);
+      out += P.path('M-40 -11.4 C-22 -2.6 22 -2.6 40 -11.4', 'none', ol(P, k.inner), 0.8, { 'stroke-linecap': 'round' });
+      for (var j = 0; j < 9; j++) { var x = -30 + j * 7.5, y = -3.4 + Math.abs(x) * Math.abs(x) * 0.0034; out += P.line(x, y + 1.2, x * 1.08, y + 7, tint(P, k.flesh, 0.25), 0.6, { 'stroke-linecap': 'round' }); }
+      return P.g('translate(-1 -3.5)', out + P.hl(-12, 3.5, 11, 1.3, tint(P, k.flesh, 0.6), 0.75, 3));
+    };
+  }
+  // a pineapple chunk from above: a wedge cut from a ring, narrow where the core was, its fibres running out to the golden outer edge
+  function pineChunk(P, q, x, y, a, s) {
+    var col = '#F2C74A', tf = P.at(x, y, a), ri = s * 0.35, ro = s * 1.25, sp = 0.36 + q() * 0.08, pt = function (r, t) { return [Math.cos(t) * r - (ri + ro) / 2, Math.sin(t) * r]; };
+    var d = P.smooth([pt(ri, -sp), pt((ri + ro) / 2, -sp * 1.02), pt(ro, -sp), pt(ro * 1.01, 0), pt(ro, sp), pt((ri + ro) / 2, sp * 1.02), pt(ri, sp), pt(ri * 0.96, 0)]);
+    var b = P.path(d, col, ol(P, col), 0.6) + P.path(P.smooth([pt(ri * 1.5, -sp * 0.7), pt(ro * 0.9, -sp * 0.8), pt(ro * 0.92, sp * 0.8), pt(ri * 1.5, sp * 0.7)]), '#F6D772', null, 0);
+    for (var i = -2; i <= 2; i++) { var p1 = pt(ri * 1.3, i * sp * 0.3), p2 = pt(ro * 0.92, i * sp * 0.36); b += P.line(p1[0], p1[1], p2[0], p2[1], '#E4B23A', 0.5, { opacity: '0.85' }); }
+    var o1 = pt(ro * 0.98, -sp * 0.86), o2 = pt(ro * 0.98, sp * 0.86);
+    b += P.path('M' + P.n(o1[0]) + ' ' + P.n(o1[1]) + ' Q' + P.n(ro * 1.04 - (ri + ro) / 2) + ' 0 ' + P.n(o2[0]) + ' ' + P.n(o2[1]), 'none', '#E2A630', 1.2, { 'stroke-linecap': 'round' });
+    if (q() < 0.4) { var e = pt(ro * 0.95, (q() - 0.5) * sp); b += P.circle(e[0], e[1], 0.6, '#A87A3A'); }
+    return P.path(d, '#000000', null, 0, { opacity: '0.12', transform: 'translate(0.9 1.2) ' + tf }) + P.g(tf, b + P.hl(-s * 0.1, -s * 0.12, s * 0.2, s * 0.06, tint(P, col, 0.6), 0.75, 0));
+  }
+  // a kumquat cut across, from above: rind, pith, five segments and a pip
+  function kumquatHalf(P, x, y, r) {
+    var col = '#F08A20', out = P.circle(x + 0.7, y + 0.9, r, '#000000', null, 0, { opacity: '0.12' }) + P.circle(x, y, r, col, ol(P, col), 0.5) + P.circle(x, y, r * 0.8, '#FBE6C2') + P.circle(x, y, r * 0.72, '#F6A84A');
+    for (var i = 0; i < 5; i++) { var a = i / 5 * Math.PI * 2 - 0.3; out += P.line(x, y, x + Math.cos(a) * r * 0.72, y + Math.sin(a) * r * 0.72, '#FBE6C2', 0.6); }
+    return out + P.ellipse(x + r * 0.28, y - r * 0.12, r * 0.12, r * 0.07, '#F6EAC8', ol(P, '#F6EAC8'), 0.25) + P.hl(x - r * 0.35, y - r * 0.42, r * 0.26, r * 0.1, tint(P, '#F6A84A', 0.6), 0.75, -35);
+  }
+  // a seedless grape cut in half, from above
+  function grapeHalf(P, q, x, y, rx, ry, col) {
+    var a = q() * 180, tf = rot(P, a, x, y);
+    return P.ellipse(x, y, rx, ry, '#000000', null, 0, { opacity: '0.12', transform: 'translate(0.8 1.1) ' + tf }) + P.ellipse(x, y, rx, ry, col, ol(P, col), 0.5, { transform: tf }) + P.ellipse(x, y, rx * 0.86, ry * 0.82, '#DCE6A4', null, 0, { transform: tf }) +
+      P.ellipse(x, y, rx * 0.5, ry * 0.42, '#E8EFC2', null, 0, { transform: tf }) + P.line(x - Math.cos(a * Math.PI / 180) * rx * 0.5, y - Math.sin(a * Math.PI / 180) * rx * 0.5, x + Math.cos(a * Math.PI / 180) * rx * 0.5, y + Math.sin(a * Math.PI / 180) * rx * 0.5, '#C8D88E', 0.5) +
+      P.hl(x - rx * 0.3, y - ry * 0.38, rx * 0.26, ry * 0.12, tint(P, '#DCE6A4', 0.6), 0.75, -30);
+  }
+  // a dried apricot: a flat round with the fold where the stone came out, and a few wrinkles
+  function driedApricot(P, q, x, y, a, r) {
+    var col = '#E27E26', tf = P.at(x, y, a), d = P.blob(q, r, r * 0.86, 0.07, 10);
+    var b = P.path(d, col, ol(P, col), 0.6) + P.path(P.blob(q, r * 0.7, r * 0.58, 0.08, 9, -r * 0.08, -r * 0.08), '#EC9638', null, 0);
+    b += P.path('M' + P.n(-r * 0.92) + ' ' + P.n(r * 0.1) + ' Q' + P.n(-r * 0.3) + ' ' + P.n(-r * 0.05) + ' ' + P.n(r * 0.1) + ' ' + P.n(r * 0.18), 'none', ol(P, col), 0.8, { 'stroke-linecap': 'round' });
+    for (var i = 0; i < 3; i++) { var b0 = q() * Math.PI * 2, rr = r * (0.45 + q() * 0.3); b += P.path('M' + P.n(Math.cos(b0) * rr) + ' ' + P.n(Math.sin(b0) * rr) + ' A' + P.n(rr) + ' ' + P.n(rr) + ' 0 0 1 ' + P.n(Math.cos(b0 + 0.7) * rr) + ' ' + P.n(Math.sin(b0 + 0.7) * rr), 'none', P.shade(col, -0.14), 0.5, { 'stroke-linecap': 'round' }); }
+    return P.path(d, '#000000', null, 0, { opacity: '0.12', transform: 'translate(1 1.3) ' + tf }) + P.g(tf, b + P.hl(-r * 0.3, -r * 0.4, r * 0.28, r * 0.1, tint(P, col, 0.55), 0.75, -25));
+  }
+  // a prune: a glossy dark oval, deeply wrinkled
+  function prune(P, q, x, y, a) {
+    var col = '#45222E', tf = P.at(x, y, a), d = P.blob(q, 11, 7.8, 0.08, 10), b = P.path(d, col, ol(P, col), 0.6) + P.path(P.blob(q, 8, 5.2, 0.1, 9, -1, -0.8), '#56303C', null, 0);
+    for (var i = 0; i < 4; i++) { var x0 = -7 + i * 4.4 + (q() - 0.5) * 1.5; b += P.path('M' + P.n(x0) + ' ' + P.n(-5.4 + q() * 1.5) + ' Q' + P.n(x0 + 2.2) + ' ' + P.n((q() - 0.5) * 2) + ' ' + P.n(x0 + 0.4) + ' ' + P.n(5 - q() * 1.5), 'none', '#2E1620', 0.6, { 'stroke-linecap': 'round' }); }
+    return P.path(d, '#000000', null, 0, { opacity: '0.12', transform: 'translate(1 1.3) ' + tf }) + P.g(tf, b + P.hl(-3, -3.4, 3.4, 1, tint(P, col, 0.45), 0.75, -10) + P.hl(3.6, -2, 1.2, 0.5, tint(P, col, 0.45), 0.75, -10));
+  }
   function meringuePeak(P, x, y, r, tip) {
     var out = P.circle(x + 0.7, y + 0.9, r, '#000000', null, 0, { opacity: '0.13' }) + P.circle(x, y, r, '#FBF5E6', '#D9CBA8', 0.6);
     if (tip) out += P.circle(x - r * 0.18, y - r * 0.2, r * 0.68, tip, null, 0, { opacity: '0.5' });
@@ -318,6 +438,40 @@
         return put(P, x, y, q() * 90, 1, cube(P, 10 + q() * 2, cols[k]));
       });
     } });
+  add({ id: 'cranberries-fresh', name: 'Cranberries, fresh', sub: 'Fruit', kw: 'cranberries cranberry fresh red berries', form: 'scatter', cook: 'fresh', role: 'dside', g: 15, w: 52, h: 36, side: side('pile', 8, '#B0202E'),
+    draw: function (P, rnd) { return P.scatter(rnd, 13, 22, 14, function (x, y, i, q) { var r = 4.3 + q() * 0.7; return berry(P, q, x, y, r * 1.08, r * 0.94, ['#B0202E', '#A01A2A', '#C02E36', '#B0202E'][i % 4], { end: '#5E1018' }); }, 9); } });
+  add({ id: 'cranberries-dried', name: 'Cranberries, dried', sub: 'Fruit', kw: 'dried cranberries craisins cranberry sweetened dried fruit', form: 'scatter', cook: 'cured', role: 'dside', g: 8, w: 40, h: 30, side: side('layer', 3, '#A21E34'),
+    draw: function (P, rnd) { return P.scatter(rnd, 16, 19, 14, function (x, y, i, q) { return driedBit(P, q, x, y, 3.2 + q() * 0.8, i % 3 ? '#A21E34' : '#B42A3E', 1); }, 6); } });
+  add({ id: 'raisins', name: 'Raisins', sub: 'Fruit', kw: 'raisins dried grapes currants dried fruit', form: 'scatter', cook: 'cured', role: 'dside', g: 8, w: 40, h: 30, side: side('layer', 3, '#4A2430'),
+    draw: function (P, rnd) { return P.scatter(rnd, 16, 19, 13, function (x, y, i, q) { return driedBit(P, q, x, y, 3 + q() * 0.7, i % 3 ? '#4A2430' : '#5A2C34', 2); }, 6); } });
+  add({ id: 'sultanas', name: 'Sultanas', sub: 'Fruit', kw: 'sultanas golden raisins dried grapes dried fruit', form: 'scatter', cook: 'cured', role: 'dside', g: 8, w: 40, h: 30, of: 'raisins', side: side('layer', 3, '#C0863A'),
+    draw: function (P, rnd) { return P.scatter(rnd, 16, 19, 13, function (x, y, i, q) { return driedBit(P, q, x, y, 3 + q() * 0.7, i % 3 ? '#C0863A' : '#B07432', 2); }, 6); } });
+  add({ id: 'grapefruit-half', name: 'Grapefruit half', sub: 'Fruit', kw: 'grapefruit half ruby pink grapefruit citrus breakfast bruleed', form: 'half', cook: 'fresh', role: 'dside', n: 1, w: 76, h: 74, side: side('mound', 30, '#F2C24E'),
+    draw: function (P, rnd) { return citrusHalf(P, rnd, 36, { rind: '#F2C24E', pith: '#FBEFD8', mem: '#F8D6C8', flesh: '#E8645A', ves: '#F28A7C' }); } });
+  add({ id: 'grapefruit-segments', name: 'Grapefruit segments', sub: 'Fruit', kw: 'grapefruit segments supremes ruby pink grapefruit citrus pieces', form: 'slices', cook: 'fresh', role: 'dside', n: 4, w: 54, h: 40, side: side('layer', 6, '#E8645A'),
+    draw: function (P, rnd) { return [[-6, -10, -14], [9, -3, 22], [-9, 4, 8], [6, 12, -6]].map(function (p, i) { return put(P, p[0], p[1], p[2], 1, segment(P, rnd, 33, 10.5, i % 2 ? '#E8645A' : '#EC6E60')); }).join(''); } });
+  add({ id: 'nectarine-halves', name: 'Nectarine halves', sub: 'Fruit', kw: 'nectarine halves halved stone fruit peach yellow nectarine', form: 'half', cook: 'fresh', role: 'dside', n: 2, w: 90, h: 48, side: side('mound', 16, '#F2B13E'),
+    draw: function (P, rnd) { var k = { skin: '#B82E3A', flesh: '#F2B13E', light: '#F5C35E', flush: '#E4844A', stone: '#9A5A3A', pit: '#D0603E' }; return put(P, -21, -1, -12, 1, stoneHalf(P, rnd, 20, k, true)) + put(P, 21, 1, 14, 1, stoneHalf(P, rnd, 19.5, k, false)); } });
+  add({ id: 'nectarine-slices', name: 'Nectarine slices', sub: 'Fruit', kw: 'nectarine slices wedges sliced stone fruit peach', form: 'fan', cook: 'fresh', role: 'dside', n: 5, w: 46, h: 52, side: side('layer', 6, '#F2B13E'),
+    draw: function (P) { var out = '', k = { skin: '#B82E3A', flesh: '#F2B13E', light: '#F5C35E', flush: '#E4844A' }; for (var i = 0; i < 5; i++) out += P.g(P.at(-17, 8.3, -50 + i * 16), P.g('translate(19 0)', moonSlice(P, 38, 12, k))); return out; } });
+  add({ id: 'dried-apricots', name: 'Dried apricots', sub: 'Fruit', kw: 'dried apricots apricot halves turkish apricots dried fruit', form: 'scatter', cook: 'cured', role: 'dside', n: 4, w: 46, h: 40, side: side('layer', 5, '#E27E26'),
+    draw: function (P, rnd) { return driedApricot(P, rnd, -10, -8, 20, 10) + driedApricot(P, rnd, 11, -7, -35, 9.5) + driedApricot(P, rnd, -9, 10, 160, 9.6) + driedApricot(P, rnd, 11, 10, 75, 10); } });
+  add({ id: 'prunes', name: 'Prunes', sub: 'Fruit', kw: 'prunes dried plums pitted prune dried fruit', form: 'scatter', cook: 'cured', role: 'dside', n: 4, w: 52, h: 38, side: side('layer', 7, '#45222E'),
+    draw: function (P, rnd) { return prune(P, rnd, -12, -8, 15) + prune(P, rnd, 12, -8, -20) + prune(P, rnd, -11, 9, -10) + prune(P, rnd, 13, 9, 30); } });
+  add({ id: 'rockmelon-wedge', name: 'Rockmelon wedge', sub: 'Fruit', kw: 'rockmelon cantaloupe melon wedge slice orange melon', form: 'wedge', cook: 'fresh', role: 'dside', n: 1, w: 92, h: 33, side: side('wedge', 20, '#F4A04E'),
+    draw: melonWedge({ skin: '#B4A87A', net: '#E4DCBC', rind: '#C8CE80', flesh: '#F4A04E', inner: '#EE8C3C' }) });
+  add({ id: 'honeydew-wedge', name: 'Honeydew wedge', sub: 'Fruit', kw: 'honeydew melon green melon wedge slice', form: 'wedge', cook: 'fresh', role: 'dside', n: 1, w: 92, h: 33, of: 'rockmelon-wedge', side: side('wedge', 20, '#CDE09A'),
+    draw: melonWedge({ skin: '#E2DCA0', rind: '#B4CE76', flesh: '#CDE09A', inner: '#DAE8B0' }) });
+  add({ id: 'kumquats', name: 'Kumquats', sub: 'Fruit', kw: 'kumquats cumquats kumquat whole halved citrus', form: 'cluster', cook: 'fresh', role: 'dside', n: 4, w: 48, h: 34, side: side('pile', 12, '#F08A20'),
+    draw: function (P, rnd) { return berry(P, rnd, -12, -6, 9.6, 6.8, '#F08A20', { a: 20, end: '#6E8A3A', dimples: 8 }) + berry(P, rnd, 9, -8, 9.2, 6.6, '#EE8218', { a: -15, end: '#6E8A3A', dimples: 8 }) + berry(P, rnd, -4, 8, 9.4, 6.8, '#F29226', { a: 170, end: '#6E8A3A', dimples: 8 }) + kumquatHalf(P, 15, 7, 6.6); } });
+  add({ id: 'mandarin-segments', name: 'Mandarin segments', sub: 'Fruit', kw: 'mandarin segments clementine tangerine imperial mandarin citrus pieces', form: 'slices', cook: 'fresh', role: 'dside', n: 5, w: 52, h: 42, side: side('layer', 8, '#F29A2E'),
+    draw: function (P, rnd) { return [[-12, -8, -30], [8, -10, 20], [-14, 7, 15], [3, 2, -8], [13, 11, 35]].map(function (p, i) { return put(P, p[0], p[1], p[2], 1, segment(P, rnd, 25, 11, i % 2 ? '#F29A2E' : '#F4A23A', true)); }).join(''); } });
+  add({ id: 'asian-pear-slices', name: 'Asian pear slices', sub: 'Fruit', kw: 'asian pear nashi pear slices sliced apple pear crisp', form: 'fan', cook: 'fresh', role: 'dside', n: 6, w: 46, h: 52, side: side('layer', 5, '#F6F1DC'),
+    draw: function (P) { var out = '', k = { skin: '#C9A050', flesh: '#F6F1DC', light: '#FBF8EC', dot: '#EAD6A4' }; for (var i = 0; i < 6; i++) out += P.g(P.at(-19, 9, -50 + i * 13), P.g('translate(20 0)', moonSlice(P, 40, 8.5, k, { pip: i % 2 ? 3 : 0 }))); return out; } });
+  add({ id: 'pineapple-chunks', name: 'Pineapple chunks', sub: 'Fruit', kw: 'pineapple chunks pieces diced fresh pineapple tidbits', form: 'pile', cook: 'fresh', role: 'dside', g: 80, w: 52, h: 50, side: side('pile', 12, '#F2C74A'),
+    draw: function (P, rnd) { return P.scatter(rnd, 8, 21, 15, function (x, y, i, q) { return pineChunk(P, q, x, y, q() * 360, 17 + q() * 2); }, 14); } });
+  add({ id: 'grapes-seedless', name: 'Grapes, seedless, loose', sub: 'Fruit', kw: 'seedless grapes green grapes white grapes loose halved thompson', form: 'scatter', cook: 'fresh', role: 'dside', n: 8, w: 46, h: 34, side: side('pile', 10, '#A4BC58'),
+    draw: function (P, rnd) { return P.g('translate(-2.6 -2.2)', P.scatter(rnd, 8, 17, 12, function (x, y, i, q) { return i % 3 === 1 ? grapeHalf(P, q, x, y, 6.2, 5, '#A4BC58') : berry(P, q, x, y, 6.4, 5.3, i % 2 ? '#A4BC58' : '#B0C464', { end: '#8A7A4A' }); }, 11)); } });
 
   /* Cakes and slices */
   add({ id: 'cake-slice', name: 'Cake slice, iced', sub: 'Cakes and slices', kw: 'cake slice sponge birthday cake vanilla cake layer cake gateau', form: 'wedge', cook: 'baked', role: 'dessert', n: 1, w: 80, h: 48, side: side('wedge', 50, B.icing),

@@ -655,6 +655,274 @@
     return out;
   }
 
+  /* ---------- stems, bulbs, squash, roots and greens (21 Oct 2026) ---------- */
+  // the highlight is a lighter tint of the piece's own colour (the book's sit at 0.7 to 0.85)
+  function tint(c, f) { return P.shade(c, f === undefined ? 0.45 : f); }
+  function gloss(x, y, rx, ry, col, a) { return P.hl(x, y, rx, ry, tint(col, 0.5), 0.75, a); }
+  // a filled shape with its outline in its own colour, darker (the book: about 0.74 of the fill's lightness)
+  function fill(d, col, sw, x) { return P.path(d, col, ed(col), sw || 0.8, x); }
+  // a stalk along x, cut square at both ends: ridges down its length, the pale groove of its inside (celery, rhubarb); o.tip a blush at one end
+  function stalkAt(q, x, y, a, len, w, col, o) {
+    o = o || {};
+    var h = len / 2, b = o.bend === undefined ? w * 0.2 : o.bend, top = [], bot = [], tf = P.at(x, y, a);
+    for (var i = 0; i <= 6; i++) { var t = i / 6, yy = -b * (1 - Math.pow(2 * t - 1, 2)); top.push([-h + t * len, yy - w / 2]); bot.unshift([-h + t * len, yy + w / 2]); }
+    var d = P.smooth(top, true) + ' L' + P.smooth(bot, true).slice(1) + ' Z', out = fill(d, col, 0.8);
+    var along = function (k) { var yy = k * w / 2; return 'M' + n(-h + 0.8) + ' ' + n(yy) + ' Q0 ' + n(yy - 2 * b) + ' ' + n(h - 0.8) + ' ' + n(yy); };
+    if (o.tip) out += P.path('M' + n(h * 0.3) + ' ' + n(-b * 0.91) + ' L' + n(h - 0.6) + ' ' + n(-b * 0.03), 'none', o.tip, w * 0.66, { opacity: '0.6' });
+    if (o.groove !== false) out += P.path(along(-0.22), 'none', tint(col, 0.32), w * 0.24, { 'stroke-linecap': 'round' });
+    [-0.7, -0.42, 0.18, 0.5, 0.76].forEach(function (k) { out += P.path(along(k), 'none', ed(col, -0.14), 0.5, { opacity: '0.8' }); });
+    return sh(d, tf, 1.6, 2) + P.g(tf, out + gloss(-h * 0.1, -b - w * 0.3, h * 0.5, w * 0.07, col));
+  }
+  // a slice of celery: a shallow U, its green back with the strings in it, the pale flesh inside
+  function celeryBit(q, x, y, a, s) {
+    var tf = P.at(x, y, a, s), d = 'M-5.4 -0.8 Q-5.4 0.6 -4.6 1.6 Q-2.8 3.8 0 3.9 Q2.8 3.8 4.6 1.6 Q5.4 0.6 5.4 -0.8 Q4.6 -1.6 3.6 -0.9 Q2 0.9 0 1 Q-2 0.9 -3.6 -0.9 Q-4.6 -1.6 -5.4 -0.8 Z';
+    var b = fill(d, '#D2E5A2', 0.6) + P.path('M-4.7 0.4 Q-3.6 2.9 0 3.1 Q3.6 2.9 4.7 0.4', 'none', '#8DB255', 1.1, { 'stroke-linecap': 'round' });
+    return sh(d, tf, 0.8, 1) + P.g(tf, b + P.circle(-2.2, 1.7, 0.45, '#B9D47E') + P.circle(0, 2.1, 0.45, '#B9D47E') + P.circle(2.2, 1.7, 0.45, '#B9D47E'));
+  }
+  // a diced cube from above, with a strip of skin on one edge (o.skin) and a browned spot (o.tan)
+  function dice(q, x, y, s, col, a, o) {
+    o = o || {};
+    var h = s / 2, rr = s * 0.2, b = P.rect(-h, -h, s, s, rr, col, ed(col), 0.6);
+    if (o.skin) b += P.rect(-h + 0.5, -h + 0.5, s - 1, s * 0.22, rr * 0.6, o.skin);
+    if (o.tan) b += P.path(P.blob(q, s * (0.14 + q() * 0.1), s * 0.11, 0.3, 6, (q() - 0.5) * s * 0.4, s * 0.16), o.tan, null, 0, { opacity: '0.55' });
+    b += P.rect(-h + s * 0.14, -h + s * (o.skin ? 0.3 : 0.14), s * 0.36, s * 0.13, s * 0.06, tint(col, 0.5), null, 0, { opacity: '0.75' });
+    return P.g(P.at(x + 1.2, y + 1.5, a), P.rect(-h, -h, s, s, rr, '#000000', null, 0, { opacity: '0.12' })) + P.g(P.at(x, y, a), b);
+  }
+  // a round slice from above (o: skin, flesh, rim, oval, ring, rings, core, seeds and seedCol round the middle, tan)
+  function discAt(q, x, y, r, a, o) {
+    var ov = o.oval || 0.96, k = o.rim || 0.88, tf = P.at(x, y, a), d = P.blob(q, r, r * ov, 0.03, 12);
+    var b = fill(d, o.skin, 0.7) + P.ellipse(0, 0, r * k, r * k * ov, o.flesh);
+    (o.rings || []).forEach(function (f) { b += P.ellipse(0, 0, r * f, r * f * ov, 'none', o.ring, 0.6, { opacity: '0.85' }); });
+    for (var i = 0; i < (o.seeds || 0); i++) { var t = (i / o.seeds + q() * 0.04) * 2 * PI, sx = Math.cos(t) * r * 0.36, sy = Math.sin(t) * r * 0.36 * ov; b += P.ellipse(sx, sy, r * 0.09, r * 0.05, o.seedCol, ed(o.seedCol), 0.4, { transform: rot(t * 180 / PI, sx, sy) }); }
+    if (o.core) b += P.ellipse(0, 0, r * 0.13, r * 0.13 * ov, o.core);
+    if (o.tan) b += P.path(P.blob(q, r * (0.25 + q() * 0.15), r * 0.16, 0.3, 7, (q() - 0.5) * r * 0.6, (q() - 0.5) * r * 0.5), o.tan, null, 0, { opacity: '0.45' });
+    return sh(d, tf, 1.2, 1.5) + P.g(tf, b + gloss(-r * 0.3, -r * 0.4 * ov, r * 0.3, r * 0.1, o.flesh, -30));
+  }
+  // a wedge of a round root, its point at the middle: o.flesh, o.rings (parts of R) in o.ring, o.skin along the round side, o.skin2 its lower half, o.tan
+  function rootWedge(q, x, y, a, R, deg, o) {
+    var tf = P.at(x, y, a) + ' ' + tr(-R * 0.55, 0), d = wedgeD(R, deg), b = fill(d, o.flesh, 0.8), R2 = R - 1.1, t = (deg - 0.5) * PI / 180;
+    (o.rings || []).forEach(function (f) { b += P.path(arcD(R * f, deg - 2), 'none', o.ring, 0.8, { opacity: '0.85' }); });
+    b += P.path(arcD(R2, deg - 0.5), 'none', o.skin, 2);
+    if (o.skin2) b += P.path('M' + n(R2) + ' 0 A' + n(R2) + ' ' + n(R2) + ' 0 0 1 ' + n(Math.cos(t) * R2) + ' ' + n(Math.sin(t) * R2), 'none', o.skin2, 2);
+    if (o.tan) b += P.path(P.blob(q, R * 0.18, R * 0.08, 0.3, 6, R * 0.6, (q() - 0.5) * R * 0.2), o.tan, null, 0, { opacity: '0.5' });
+    return sh(d, tf, 1.6, 2) + P.g(tf, b + gloss(R * 0.5, -R * 0.08, R * 0.14, R * 0.04, o.flesh));
+  }
+  // a knob of ginger or galangal: plump lobes [x, y, rx, ry, angle] with rings across them; the last lobe cut to show the flesh
+  function knobAt(q, lobes, o) {
+    var ds = lobes.map(function (l) { return P.blob(q, l[2], l[3], 0.06, 10, l[0], l[1], l[4]); });
+    var out = P.path(ds.join(' '), '#000000', null, 0, { opacity: '0.12', transform: tr(2, 2.5) });
+    lobes.forEach(function (l, i) {
+      var b = '';
+      for (var xx = -l[2] + 4 + q() * 2; xx < l[2] - 3; xx += o.gap * (0.8 + q() * 0.4)) { var hh = l[3] * Math.sqrt(Math.max(0, 1 - xx * xx / (l[2] * l[2]))) * 0.8; b += P.path('M' + n(xx) + ' ' + n(-hh) + ' Q' + n(xx + 1.4) + ' 0 ' + n(xx) + ' ' + n(hh), 'none', o.ring, 0.6, { opacity: '0.8' }); }
+      b += gloss(-l[2] * 0.1, -l[3] * 0.45, l[2] * 0.42, l[3] * 0.12, o.skin);
+      if (o.shoot && i === 1) b += P.ellipse(l[2] - 1.2, 0, 2.4, l[3] * 0.42, o.shoot, ed(o.shoot), 0.6);
+      if (i === lobes.length - 1) b += P.ellipse(l[2] - 1.6, 0, l[3] * 0.3, l[3] * 0.6, o.flesh, ed(o.flesh), 0.6) + P.ellipse(l[2] - 1.6, 0, l[3] * 0.12, l[3] * 0.3, 'none', P.shade(o.flesh, -0.1), 0.5);
+      out += fill(ds[i], o.skin, 0.9) + P.g(P.at(l[0], l[1], l[4]), b);
+    });
+    return out;
+  }
+  // a tomatillo from above: the green fruit in its papery husk, peeled back into five points (open) or still closed over it
+  function tomatilloAt(q, x, y, r, a, open) {
+    var tf = P.at(x, y, a), husk = '#D9D49C', vein = ed(husk, -0.12), fruit = '#8DB648', out = '';
+    if (open) {
+      var pet = P.leafD(r * 1.5, r * 0.95), vd = 'M' + n(-r * 0.6) + ' 0 L' + n(r * 0.66) + ' 0 M' + n(-r * 0.2) + ' 0 L' + n(r * 0.3) + ' ' + n(-r * 0.24) + ' M' + n(-r * 0.2) + ' 0 L' + n(r * 0.3) + ' ' + n(r * 0.24);
+      for (var i = 0; i < 5; i++) { var t = tf + ' ' + P.at(0, 0, i * 72 + q() * 12) + ' ' + tr(r * 0.95, 0); out += sh(pet, t, 1, 1.3) + P.g(t, fill(pet, husk, 0.6) + P.path(vd, 'none', vein, 0.45, { 'stroke-linecap': 'round' })); }
+      return out + sh(circD(r), tf, 1.2, 1.5) + P.g(tf, fill(circD(r), fruit, 0.8) + P.circle(r * 0.08, r * 0.06, r * 0.1, ed(fruit, -0.1)) + gloss(-r * 0.32, -r * 0.4, r * 0.34, r * 0.14, fruit, -30));
+    }
+    var pts = [];
+    for (var j = 0; j < 10; j++) { var tt = j / 10 * 2 * PI, k = j % 2 ? 0.98 : 1.22; pts.push([Math.cos(tt) * r * k, Math.sin(tt) * r * k]); }
+    var d = P.smooth(pts), b = fill(d, husk, 0.7);
+    for (var m = 0; m < 5; m++) { var ta = m / 5 * 2 * PI; b += P.line(Math.cos(ta) * r * 0.2, Math.sin(ta) * r * 0.2, Math.cos(ta) * r * 1.02, Math.sin(ta) * r * 1.02, vein, 0.5); }
+    b += P.ellipse(r * 0.42, r * 0.36, r * 0.3, r * 0.2, fruit, ed(fruit), 0.6, { transform: rot(40, r * 0.42, r * 0.36) }) + P.circle(0, 0, r * 0.18, '#A89A62', ed('#A89A62'), 0.5);
+    return sh(d, tf, 1.2, 1.5) + P.g(tf, b + gloss(-r * 0.36, -r * 0.42, r * 0.36, r * 0.12, husk, -30));
+  }
+  // a sprig of watercress: a pale stem with small round leaflets in pairs, the end one biggest
+  function cressSprig(q, x, y, a, s) {
+    var tf = P.at(x, y, a, s), col = q() < 0.5 ? '#3F7E2E' : '#4A8A34', st = '#8DB255', stem = 'M-12 0.4 Q-3 1.2 8 -0.2', lv = [[-6.4, -2.8, 2.5], [-5.6, 3, 2.4], [-0.8, -3.4, 3], [0, 3.5, 2.9], [4.6, -3, 3.2], [5.2, 3.2, 3.1], [10.4, 0, 4.2]];
+    var b = P.path(stem, 'none', ed(st), 1.6, { 'stroke-linecap': 'round' }) + P.path(stem, 'none', st, 0.9, { 'stroke-linecap': 'round' });
+    lv.forEach(function (l) { b += P.ellipse(l[0], l[1], l[2], l[2] * 0.8, col, ed(col), 0.6); });
+    return sh(lv.map(function (l) { return circD(l[2] * 0.9, l[0], l[1]); }).join(' '), tf, 1, 1.3) + P.g(tf, b + gloss(9.4, -1.4, 1.9, 0.7, col));
+  }
+  // a silverbeet or chard leaf along x: the puckered blade, the broad stalk running up it as the midrib (stem: its colour)
+  function chardLeaf(q, x, y, a, len, wid, stem) {
+    var tf = P.at(x, y, a), h = len / 2, col = '#2F6A2A', d = ruffleD(q, len, wid, 0.05, 26), sl = len * 0.22, ws = wid * 0.12;
+    var rib = 'M' + n(-h - sl) + ' ' + n(-ws) + ' L' + n(-h) + ' ' + n(-ws * 1.05) + ' Q' + n(-h * 0.2) + ' ' + n(-ws * 0.8) + ' ' + n(h * 0.5) + ' 0 Q' + n(-h * 0.2) + ' ' + n(ws * 0.8) + ' ' + n(-h) + ' ' + n(ws * 1.05) + ' L' + n(-h - sl) + ' ' + n(ws) + ' Q' + n(-h - sl - 1.2) + ' 0 ' + n(-h - sl) + ' ' + n(-ws) + ' Z';
+    var b = fill(d, col, 0.8) + P.path(ruffleD(q, len * 0.74, wid * 0.66, 0.04), '#3F7E34', null, 0, { transform: tr(len * 0.08, 0), opacity: '0.85' });
+    b += P.scatter(q, 7, h * 0.7, wid * 0.28, function (sx, sy, i, qq) { return P.path(P.blob(qq, 2.6 + qq() * 1.6, 1.8 + qq(), 0.3, 6, sx + h * 0.1, sy), '#4A8A3A', null, 0, { opacity: '0.7' }); });
+    for (var i = 1; i <= 3; i++) { var vx = -h + len * i / 4.2; b += P.path('M' + n(vx) + ' 0 Q' + n(vx + len * 0.06) + ' ' + n(-wid * 0.18) + ' ' + n(vx + len * 0.14) + ' ' + n(-wid * 0.32) + ' M' + n(vx) + ' 0 Q' + n(vx + len * 0.06) + ' ' + n(wid * 0.18) + ' ' + n(vx + len * 0.14) + ' ' + n(wid * 0.32), 'none', tint(stem, 0.2), 0.7, { 'stroke-linecap': 'round', opacity: '0.85' }); }
+    b += fill(rib, stem, 0.7) + P.line(-h - sl + 2, -ws * 0.35, h * 0.1, -ws * 0.2, tint(stem, 0.4), 0.8, { opacity: '0.8' }) + P.ellipse(-h - sl + 0.2, 0, 0.9, ws * 0.85, tint(stem, 0.3), ed(tint(stem, 0.3)), 0.5) + gloss(h * 0.15, -wid * 0.24, h * 0.3, wid * 0.05, col, -6);
+    return sh(d, tf, 2, 2.5) + sh(rib, tf, 2, 2.5) + P.g(tf, b);
+  }
+  // a witlof leaf, a little boat: pale, its tip yellow green
+  function witlofLeaf(q, x, y, a, len, wid) {
+    var tf = P.at(x, y, a), h = len / 2, w = wid, col = '#F2F0D6';
+    var d = P.smooth([[-h, 0], [-h * 0.8, -w * 0.26], [0, -w * 0.46], [h * 0.7, -w * 0.5], [h, -w * 0.2], [h * 1.04, 0], [h, w * 0.2], [h * 0.7, w * 0.5], [0, w * 0.46], [-h * 0.8, w * 0.26]]);
+    var b = fill(d, col, 0.7) + P.path(P.smooth([[-h * 0.7, 0], [-h * 0.5, -w * 0.16], [h * 0.2, -w * 0.3], [h * 0.75, -w * 0.26], [h * 0.86, 0], [h * 0.75, w * 0.26], [h * 0.2, w * 0.3], [-h * 0.5, w * 0.16]]), '#FAF9EC', null, 0);
+    b += P.path(P.smooth([[h * 0.44, -w * 0.38], [h * 0.72, -w * 0.43], [h * 0.93, -w * 0.17], [h * 0.97, 0], [h * 0.93, w * 0.17], [h * 0.72, w * 0.43], [h * 0.44, w * 0.38], [h * 0.62, 0]]), '#DCE592', null, 0, { opacity: '0.9' });
+    b += P.path('M' + n(-h + 2) + ' 0 Q0 0.5 ' + n(h * 0.62) + ' 0', 'none', '#E4E4C2', 1.2, { 'stroke-linecap': 'round' }) + gloss(-h * 0.1, -w * 0.28, h * 0.32, w * 0.05, col, -4);
+    return sh(d, tf, 1.6, 2) + P.g(tf, b);
+  }
+  // an okra pod: broad at the cap, tapering to a point, ridges down it
+  function okraAt(q, x, y, a, len, w) {
+    var tf = P.at(x, y, a), h = len / 2, col = '#5E9A3A', top = [], bot = [];
+    for (var i = 0; i <= 10; i++) { var t = i / 10, hw = w / 2 * (t < 0.1 ? 0.82 : Math.pow((1 - t) / 0.9, 0.7)); top.push([-h + t * len, -hw]); if (i < 10) bot.unshift([-h + t * len, hw]); }
+    var d = P.smooth(top.concat(bot)), b = fill(d, col, 0.8);
+    [-0.55, 0, 0.55].forEach(function (k) { b += P.path('M' + n(-h + 4) + ' ' + n(k * w * 0.4) + ' Q' + n(h * 0.1) + ' ' + n(k * w * 0.36) + ' ' + n(h - 1.5) + ' 0', 'none', ed(col, -0.12), 0.6, { opacity: '0.85' }); });
+    b += gloss(-h * 0.15, -w * 0.24, h * 0.45, w * 0.07, col, 1.5) + fill('M' + n(-h - 7) + ' -1.6 L' + n(-h + 1) + ' -2 L' + n(-h + 1) + ' 2 L' + n(-h - 7) + ' 1.6 Z', '#8A9A4A', 0.6);
+    b += fill('M' + n(-h - 1) + ' ' + n(-w * 0.42) + ' Q' + n(-h + 4.5) + ' ' + n(-w * 0.3) + ' ' + n(-h + 5.5) + ' 0 Q' + n(-h + 4.5) + ' ' + n(w * 0.3) + ' ' + n(-h - 1) + ' ' + n(w * 0.42) + ' Q' + n(-h - 2) + ' 0 ' + n(-h - 1) + ' ' + n(-w * 0.42) + ' Z', '#7EA453', 0.6);
+    return sh(d, tf, 1.4, 1.8) + P.g(tf, b);
+  }
+  // a round of okra: five ridges round the edge, the seeds in their chambers
+  function okraRound(q, x, y, r, a) {
+    var pts = [], tf = P.at(x, y, a);
+    for (var i = 0; i < 10; i++) { var t = i / 10 * 2 * PI, k = i % 2 ? 0.86 : 1; pts.push([Math.cos(t) * r * k, Math.sin(t) * r * k]); }
+    var d = P.smooth(pts), b = fill(d, '#5E9A3A', 0.6) + P.circle(0, 0, r * 0.74, '#D9E8A8');
+    for (var j = 0; j < 5; j++) { var tt = (j + 0.5) / 5 * 2 * PI; b += P.circle(Math.cos(tt) * r * 0.46, Math.sin(tt) * r * 0.46, r * 0.18, '#F4F7E2', ed('#F4F7E2'), 0.4); }
+    return sh(d, tf, 0.9, 1.1) + P.g(tf, b + P.circle(0, 0, r * 0.16, '#C9DC92') + gloss(-r * 0.3, -r * 0.5, r * 0.3, r * 0.1, '#D9E8A8', -30));
+  }
+  // a quarter of an artichoke heart, cut face up: the leaves layered up to a point, greener outside, the dense pale heart at the base
+  function heartQuarter(q, x, y, a, s) {
+    var tf = P.at(x, y, a, s), pts = [[0, -11.5], [4.6, -6.5], [8, 0], [7.4, 5.6], [3.6, 8.6], [0, 9.2], [-3.6, 8.6], [-7.4, 5.6], [-8, 0], [-4.6, -6.5]], d = P.smooth(pts);
+    var b = fill(d, '#B5B868', 0.7) + fill(P.smooth(scalePts(pts, 0.8, 0, 8)), '#CCC982', 0.5) + fill(P.smooth(scalePts(pts, 0.58, 0, 8)), '#E0DA9E', 0.5);
+    b += P.path(P.leafD(6, 3.2), '#8E5A7A', null, 0, { transform: 'translate(0 -8.4) rotate(90)', opacity: '0.3' }) + fill(P.blob(q, 5.4, 2.8, 0.05, 8, 0, 6), '#EEE8C2', 0.5);
+    return sh(d, tf, 1, 1.3) + P.g(tf, b + gloss(-3.4, -1.4, 0.9, 2.6, '#CCC982', 15));
+  }
+  // a clove of garlic, peeled: the curved back, the flat inside edge, the root end
+  function cloveAt(q, x, y, a, s) {
+    var tf = P.at(x, y, a, s), col = '#F4ECCF', d = 'M-7.6 2.8 Q-8.6 -3 -2.4 -5.6 Q3.8 -7 8 -2 Q9 0 7.4 1.4 Q1 4 -7.6 2.8 Z';
+    var b = fill(d, col, 0.7) + P.path('M-6.6 1.6 Q0.4 2.6 6.6 0.2', 'none', ed(col, -0.1), 0.5) + P.ellipse(-7.2, 1.6, 1.4, 1.6, '#DCC89A', ed('#DCC89A'), 0.5);
+    return sh(d, tf, 1, 1.3) + P.g(tf, b + gloss(-1.4, -3.2, 3.6, 0.9, col, -12));
+  }
+  // a baton cut square (jicama): flat ends, a highlight down one side, a faint fibre line
+  function batonBar(q, x, y, a, len, w, col) {
+    var h = len / 2, r = w / 2;
+    return P.g(P.at(x + 1.2, y + 1.5, a), P.rect(-h, -r, len, w, 1.4, '#000000', null, 0, { opacity: '0.12' })) + P.g(P.at(x, y, a), P.rect(-h, -r, len, w, 1.4, col, ed(col), 0.6) + P.line(-h * 0.8, r * 0.25, h * 0.7, r * 0.2, ed(col, -0.08), 0.5) + P.rect(-h * 0.7, -r * 0.6, len * 0.6, w * 0.2, 0.6, tint(col, 0.6), null, 0, { opacity: '0.75' }));
+  }
+  // a wombok leaf along x: the broad white rib from the base, crinkled across, the pale frilled green round its tip
+  function wombokLeaf(q, x, y, a, len, wid) {
+    var tf = P.at(x, y, a), h = len / 2, top = [], bot = [], rt = [], rb = [], col = '#CFE29A';
+    for (var i = 0; i <= 12; i++) { var t = i / 12, hw = wid / 2 * (0.55 + 0.45 * Math.sin(PI / 2 * Math.min(1, t / 0.6))) * (t > 0.3 ? (i % 2 ? 1.05 : 0.95) : 1); top.push([-h + t * len, -hw]); bot.unshift([-h + t * len, hw]); }
+    var pts = top.concat([[h + wid * 0.12, 0]], bot), d = P.smooth(pts), b = fill(d, col, 0.8) + P.path(P.smooth(scalePts(pts, 0.72, h * 0.35, 0)), '#DDEBB2', null, 0);
+    for (var j = 0; j <= 6; j++) { var tt = j / 6, rw = wid * 0.24 * (1 - tt) * (j % 2 ? 1.06 : 0.96) + 0.6; rt.push([-h - 0.5 + tt * len * 0.78, -rw]); rb.unshift([-h - 0.5 + tt * len * 0.78, rw]); }
+    for (var v = 1; v <= 4; v++) { var vx = -h + len * (0.16 + v * 0.15), vw = Math.max(0.6, wid * 0.24 * (1 - (vx + h) / (len * 0.78))); [-1, 1].forEach(function (k) { b += P.path('M' + n(vx) + ' ' + n(k * vw) + ' Q' + n(vx + len * 0.06) + ' ' + n(k * wid * 0.3) + ' ' + n(vx + len * 0.12) + ' ' + n(k * wid * 0.42), 'none', '#F2F6DC', 0.9, { 'stroke-linecap': 'round' }); }); }
+    b += fill(P.smooth(rt.concat(rb)), '#F6F6E6', 0.7);
+    for (var k = 1; k < 6; k++) { var kx = -h + k * len * 0.12, kw = wid * 0.24 * (1 - (kx + h) / (len * 0.78)) * 0.8; b += P.path('M' + n(kx) + ' ' + n(-kw) + ' Q' + n(kx + 1.6) + ' 0 ' + n(kx) + ' ' + n(kw), 'none', '#E2E4C8', 0.6); }
+    return sh(d, tf, 2, 2.5) + P.g(tf, b + gloss(h * 0.45, -wid * 0.28, len * 0.1, wid * 0.04, '#DDEBB2', -8));
+  }
+  // a savoy cabbage leaf along x: deep green, blistered between the pale veins
+  function savoyLeaf(q, x, y, a, len, wid) {
+    var tf = P.at(x, y, a), d = ruffleD(q, len, wid, 0.09, 28), b = fill(d, '#5E8E3A', 0.8) + P.path(ruffleD(q, len * 0.74, wid * 0.66, 0.05, 22), '#6E9E44', null, 0, { transform: tr(len * 0.08, 0) });
+    b += P.scatter(q, 14, len * 0.36, wid * 0.3, function (sx, sy, i, qq) { return P.path(P.blob(qq, 2.4 + qq() * 1.6, 1.6 + qq(), 0.3, 6, sx + len * 0.05, sy), '#8DB858', null, 0, { opacity: '0.75' }); });
+    b += veins(len, wid, '#CFE29C', 4, 0.9) + fill(ribD(len * 0.92, wid * 0.12, 0.42), '#D6E6A6', 0.6, { transform: tr(len * 0.04 + 1, 0) });
+    return sh(d, tf, 2, 2.5) + P.g(tf, b + gloss(len * 0.1, -wid * 0.26, len * 0.14, wid * 0.04, '#6E9E44', -8));
+  }
+  // a cavolo nero leaf: a long dark strap with a wavy edge, blistered either side of the pale rib
+  function cavoloLeaf(q, x, y, a, len, wid) {
+    var tf = P.at(x, y, a), col = '#2F4F3A', h = len / 2, top = [], bot = [], env = function (t) { return Math.pow(Math.sin(PI * (0.06 + 0.9 * t)), 0.6); };
+    for (var i = 0; i <= 16; i++) { var t = i / 16, xx = -h + t * len, hw = wid / 2 * env(t) * (i % 2 ? 1.08 : 0.92); top.push([xx, -hw]); if (i > 0 && i < 16) bot.unshift([xx + 1, hw]); }
+    var d = P.smooth(top.concat(bot)), stem = 'M' + n(-h - 9) + ' 0.4 Q0 0.8 ' + n(h * 0.8) + ' 0', b = fill(d, col, 0.8);
+    for (var k = 1; k < 13; k++) { var tk = k / 13, bx = -h + tk * len, hh = wid / 2 * env(tk); b += P.ellipse(bx, -hh * 0.48, len * 0.026, hh * 0.24, '#456B54', null, 0, { opacity: '0.85' }) + P.ellipse(bx + 1, hh * 0.48, len * 0.026, hh * 0.24, '#456B54', null, 0, { opacity: '0.85' }); }
+    b += P.path(stem, 'none', ed('#8FA88A'), 2.4, { 'stroke-linecap': 'round' }) + P.path(stem, 'none', '#8FA88A', 1.4, { 'stroke-linecap': 'round' });
+    return sh(d, tf, 2, 2.5) + P.path(stem, 'none', '#000000', 2, { opacity: '0.12', transform: tr(2, 2.5) + ' ' + tf, 'stroke-linecap': 'round' }) + P.g(tf, b + gloss(-h * 0.2, -wid * 0.3, h * 0.36, wid * 0.05, col, -3));
+  }
+  // a torn piece of curly kale: a tightly frilled edge round a darker heart, a pale rib through it
+  function kaleBit(q, x, y, s) {
+    var tf = P.at(x, y, q() * 360), pts = [], col = '#3F7230';
+    for (var i = 0; i < 28; i++) { var t = i / 28 * 2 * PI, k = (i % 2 ? 0.74 : 1) * (0.88 + q() * 0.24); pts.push([Math.cos(t) * 11 * s * k, Math.sin(t) * 8 * s * k]); }
+    var d = P.smooth(pts), b = fill(d, col, 0.7) + P.path(P.blob(q, 7 * s, 4.8 * s, 0.22, 9), '#5A9040', null, 0, { opacity: '0.9' }) + P.path(P.blob(q, 3.2 * s, 2.2 * s, 0.25, 7), '#3A6A2C', null, 0);
+    b += P.path('M' + n(-12 * s) + ' ' + n(s) + ' Q' + n(-3 * s) + ' ' + n(-0.6 * s) + ' ' + n(5 * s) + ' ' + n(-1.5 * s), 'none', '#A9C77A', 1.1 * s, { 'stroke-linecap': 'round' });
+    return sh(d, tf, 1.2, 1.6) + P.g(tf, b + gloss(-3 * s, -4 * s, 3.4 * s, s, '#5A9040', -15));
+  }
+  // a stem of broccoli rabe: a thin stalk, two lobed leaves off it, a loose head of buds with a few yellow flowers
+  function rabeAt(q, x, y, a, len) {
+    var tf = P.at(x, y, a), st = '#7EA453', lf = '#4A8436', bud = '#4F8A34', stem = 'M0 0 Q' + n(len * 0.5) + ' ' + n((q() - 0.5) * 4) + ' ' + n(len) + ' 0', shd = '', b = '';
+    shd += P.path(stem, 'none', '#000000', 2.4, { opacity: '0.12', transform: tr(1, 1.3) + ' ' + tf, 'stroke-linecap': 'round' });
+    b += P.path(stem, 'none', ed(st), 3.2, { 'stroke-linecap': 'round' }) + P.path(stem, 'none', st, 2, { 'stroke-linecap': 'round' });
+    [[len * (0.2 + q() * 0.12), -1, -32 - q() * 16, 24 + q() * 4], [len * (0.48 + q() * 0.12), 1, 30 + q() * 14, 20 + q() * 4]].forEach(function (l) {
+      var ld = lobedD(q, l[3], l[3] * 0.46, 4, 0.42, 0.35), lt = P.at(l[0], l[1], l[2]) + ' ' + tr(l[3] / 2, 0);
+      shd += sh(ld, tf + ' ' + lt, 1, 1.3);
+      b += P.g(lt, fill(ld, lf, 0.6) + P.path('M' + n(-l[3] / 2) + ' 0 L' + n(l[3] * 0.36) + ' 0', 'none', tint(lf, 0.35), 0.6));
+    });
+    shd += sh(circD(5.4, len + 3, 0), tf, 1, 1.3);
+    P.spots(q, 7, 4, 3.2).forEach(function (p) { b += P.circle(len + 3 + p[0], p[1], 1.7, bud, ed(bud), 0.5); });
+    b += P.circle(len + 4.5, -1.6, 0.9, '#F2D24C', ed('#F2D24C'), 0.4) + P.circle(len + 1.4, 2, 0.9, '#F2D24C', ed('#F2D24C'), 0.4);
+    return shd + P.g(tf, b);
+  }
+  // a fennel bulb cut in half: the stalks cut short, the layers nested down to the core at the base
+  function fennelHalf(q, x, y, a, s) {
+    var tf = P.at(x, y, a, s), col = '#EEF2D6', pts = [[0, -21], [8, -17.5], [16, -11], [22.5, -1], [24, 9], [19.5, 18.5], [10, 23.5], [0, 24.5], [-10, 23.5], [-19.5, 18.5], [-24, 9], [-22.5, -1], [-16, -11], [-8, -17.5]], d = P.smooth(pts), shd = '', b = '';
+    [[-7, -15, -24, 15], [0, -17, 0, 17], [7, -15, 24, 15]].forEach(function (k) {
+      var sd = 'M-3.6 0 L-3 ' + n(-k[3]) + ' Q0 ' + n(-k[3] - 1.4) + ' 3 ' + n(-k[3]) + ' L3.6 0 Z', st = P.at(k[0], k[1], k[2]);
+      shd += sh(sd, tf + ' ' + st, 2, 2.5);
+      b += P.g(st, fill(sd, '#A9C870', 0.7) + P.ellipse(0, -k[3], 3, 1.1, '#DCEAB4', ed('#DCEAB4'), 0.5) + P.line(-1.2, -2, -1, -k[3] + 2, tint('#A9C870', 0.4), 0.7, { opacity: '0.8' }));
+    });
+    b += fill(d, col, 0.9) + P.path(P.smooth(scalePts(pts, 0.93, 0, 24)), 'none', '#CFE29E', 2.2);
+    [0.76, 0.55, 0.34].forEach(function (k) { b += P.path(P.smooth(scalePts(pts, k, 0, 24)), 'none', '#D8E4B4', 0.8); });
+    b += fill('M-5 24 Q0 10 5 24 Z', '#E4EAC2', 0.6) + P.ellipse(0, 24.4, 6.5, 1.8, '#D6CCA0', ed('#D6CCA0'), 0.6);
+    return shd + sh(d, tf, 2, 2.5) + P.g(tf, b + gloss(-10, -5, 5, 1.8, col, -55));
+  }
+  // a shaving of fennel: two thin nested arches joined at the core, and a wisp of frond
+  function fennelShave(q, x, y, a, s) {
+    var tf = P.at(x, y, a, s), col = '#EEF3D8', d = 'M-13 3 Q-12 -6 0 -7 Q12 -6 13 3 L11.2 3 Q10.4 -4.2 0 -5 Q-10.4 -4.2 -11.2 3 Z', d2 = 'M-7.6 3 Q-7 -2.6 0 -3.2 Q7 -2.6 7.6 3 L6 3 Q5.4 -1.2 0 -1.6 Q-5.4 -1.2 -6 3 Z';
+    return sh(d, tf, 0.9, 1.1) + P.g(tf, fill(d, col, 0.5) + fill(d2, '#E4EEC4', 0.5) + fill('M-2.4 3 Q0 -1 2.4 3 Z', '#DCE8B4', 0.5) + gloss(-5, -5.6, 3, 0.5, col, -14));
+  }
+  function frondAt(q, x, y, a, s) {
+    var col = '#5E9A3A', b = P.path('M-1 0 Q5 -0.8 11 0.4', 'none', col, 0.6, { 'stroke-linecap': 'round' });
+    for (var i = 0; i < 5; i++) { var px = 1.5 + i * 2.1, k = i % 2 ? 1 : -1; b += P.path('M' + n(px) + ' 0 q1.6 ' + n(k * 1.8) + ' 3.6 ' + n(k * 2.6) + ' M' + n(px + 0.4) + ' 0 q1.4 ' + n(-k * 1.4) + ' 3 ' + n(-k * 2.2), 'none', col, 0.5, { 'stroke-linecap': 'round' }); }
+    return P.g(P.at(x, y, a, s), b);
+  }
+  // a long roast wedge of butternut: the tan skin along its back, the scoop of the seed hollow on the pieces from the bulb (cav)
+  function butternutWedge(q, x, y, a, len, cav) {
+    var h = len / 2, tf = P.at(x, y, a), top = [[-h, -1.5], [-h * 0.62, -7.5], [0, -10], [h * 0.62, -7.5], [h, -2]];
+    var bot = cav ? [[h, 3], [h * 0.6, 6], [h * 0.3, 2.6], [0, 0.4], [-h * 0.3, 2.6], [-h * 0.6, 6], [-h, 3]] : [[h, 3], [h * 0.5, 6.4], [-h * 0.5, 6.4], [-h, 3]];
+    var pts = top.concat(bot), d = P.smooth(pts), b = fill(d, '#EE9A36', 0.9) + P.path(P.smooth(scalePts(pts, 0.8, 0, 0)), '#F3AC52', null, 0);
+    b += P.path(P.smooth(top.map(function (p) { return [p[0] * 0.92, p[1] + 1.6]; }), true), 'none', '#E6C892', 2.8, { 'stroke-linecap': 'round' });
+    if (cav) b += P.path(P.smooth(bot.slice(1, -1).map(function (p) { return [p[0], p[1] - 1.2]; }), true), 'none', '#E07E22', 1.4, { 'stroke-linecap': 'round', opacity: '0.8' });
+    b += P.scatter(q, 3, h * 0.6, 2.5, function (sx, sy, i, qq) { return P.path(P.blob(qq, 3 + qq() * 3, 1.5, 0.3, 6, sx, sy + 1), '#B9661C', null, 0, { opacity: '0.5' }); });
+    return sh(d, tf, 2, 2.5) + P.g(tf, b + gloss(-h * 0.2, -5, h * 0.3, 1.2, '#F3AC52', -2));
+  }
+  // half an acorn squash, cut across: the ribbed dark green skin, the orange flesh, the hollow glazed with butter
+  function acornHalf(P, rnd) {
+    var pts = [];
+    for (var i = 0; i < 60; i++) { var t = i / 60 * 2 * PI, r = 1 - 0.07 * (1 - Math.pow(Math.abs(Math.sin(t * 5)), 0.6)); pts.push([Math.cos(t) * 37 * r, Math.sin(t) * 34 * r]); }
+    var d = P.smooth(pts), out = P.shadow(d) + fill(d, '#3A5A2E', 1) + P.path(P.smooth(scalePts(pts, 0.92, 0, 0)), '#E9A23C', null, 0) + P.path(P.smooth(scalePts(pts, 0.88, 0, 0)), '#F2B44C', null, 0);
+    for (var j = 0; j < 4; j++) { var ta = (j * 90 + 30) * PI / 180, fx = Math.cos(ta) * 35, fy = Math.sin(ta) * 32.2; out += P.ellipse(fx, fy, 2.4, 0.9, '#D98A2E', null, 0, { transform: rot(ta * 180 / PI + 90, fx, fy), opacity: '0.85' }); }
+    out += P.path(P.blob(rnd, 25, 23, 0.03, 12), '#F6C466', null, 0, { opacity: '0.8' });
+    for (var k = 0; k < 7; k++) { var tb = (k / 7 + rnd() * 0.05) * 2 * PI; out += P.path(P.blob(rnd, 3 + rnd() * 2, 1.6, 0.3, 6, Math.cos(tb) * 28, Math.sin(tb) * 26), '#C9762A', null, 0, { opacity: '0.45' }); }
+    out += fill(P.blob(rnd, 15, 13.5, 0.05, 10, 0, 0.5), '#E08A2C', 0.8) + P.path(P.blob(rnd, 10, 8.5, 0.1, 9, -1, 1), '#C9702A', null, 0, { opacity: '0.6' });
+    return out + gloss(-4, -4, 4, 1.4, '#E08A2C', -30) + gloss(-15, -17, 8, 2.2, '#F2B44C', -35);
+  }
+  // half a spaghetti squash, roasted: the pale yellow skin, the flesh raked into strands down the middle
+  function spaghettiHalf(P, rnd) {
+    var d = P.blob(rnd, 52, 31, 0.02, 14), out = P.shadow(d) + fill(d, '#E9C055', 1) + P.path(P.blob(rnd, 48, 27.5, 0.02, 14), '#F6DE98', null, 0);
+    out += P.path(P.blob(rnd, 38, 19, 0.05, 12, 1, 0), '#EDC866', null, 0, { opacity: '0.85' });
+    out += strands(rnd, 30, 33, 15, ['#F8E4A0', '#F2CE68', '#FBEFC2', '#F4D67E'], 15, 1.3, 4, { curl: true, edgeW: 0.5 });
+    return out + P.path(P.blob(rnd, 6, 3, 0.3, 7, 30, 12), '#C9902E', null, 0, { opacity: '0.45' }) + gloss(-26, -18, 12, 2.4, '#F6DE98', -8);
+  }
+  // a whole head of garlic lying on its side, neck up: the cloves bulge through the papery skin
+  function garlicHead(P, rnd) {
+    var col = '#F5F1E6', pts = [[0, -25], [2.6, -20.5], [8, -15.5], [12.6, -12.2], [17.5, -6.5], [20.2, -0.5], [19.2, 3.4], [20.2, 7.6], [16.5, 13], [10, 16.3], [6.5, 16.4], [0, 17.6], [-6.5, 16.4], [-10, 16.3], [-16.5, 13], [-20.2, 7.6], [-19.2, 3.4], [-20.2, -0.5], [-17.5, -6.5], [-12.6, -12.2], [-8, -15.5], [-2.6, -20.5]];
+    var d = P.smooth(pts), tf = 'rotate(-25)', b = fill(d, col, 0.9);
+    ['M-1 16 Q-19 2 -1.4 -20', 'M-0.5 16 Q-8 -1 -0.6 -20', 'M0.5 16 Q8 -1 0.6 -20', 'M1 16 Q19 2 1.4 -20'].forEach(function (p) { b += P.path(p, 'none', '#DDD3C3', 0.7); });
+    ['M-13 1 Q-11.6 -6 -7.4 -10.6', 'M-4.6 6 Q-5 -2 -3.4 -8', 'M10.6 4 Q11 -3 7.6 -9'].forEach(function (p) { b += P.path(p, 'none', '#B987AE', 0.7, { opacity: '0.6', 'stroke-linecap': 'round' }); });
+    [-4, -1.5, 1, 3.5].forEach(function (rx) { b += P.line(rx, 17.2, rx * 1.3, 20.6, '#C9B489', 0.6); });
+    b += P.ellipse(0, 16.6, 6.5, 1.8, '#D6C29C', ed('#D6C29C'), 0.6) + fill('M-1.6 -20 L0 -27.5 L1.6 -20 Z', '#E8DFCC', 0.6);
+    return sh(d, tf, 2, 2.5) + P.g(tf, b + gloss(-9, -5, 4.5, 1.8, col, -62));
+  }
+  // a globe artichoke lying on its side, stem to the left: rows of pointed scales, purple at their tips
+  function artichoke(P, rnd) {
+    var cx = 5, rx = 25, ry = 23, body = P.blob(rnd, rx, ry, 0.02, 12, cx, 0), stem = 'M-40 -3.4 L-17 -4.6 L-17 4.6 L-40 3.4 Q-41.4 0 -40 -3.4 Z', sc = 'M-7 -6 Q2 -7.4 7.4 0 Q2 7.4 -7 6 Q-8.6 0 -7 -6 Z';
+    var out = P.shadow(body) + P.shadow(stem) + fill(stem, '#9CAE68', 0.8) + P.line(-38, -1.2, -19, -1.6, tint('#9CAE68', 0.4), 0.8, { opacity: '0.75' }) + P.ellipse(-40, 0, 1.2, 3.2, '#DCE2B6', ed('#DCE2B6'), 0.5) + fill(body, '#5E7A44', 0.9);
+    [24, 15, 6, -3, -11].forEach(function (xx, c) {
+      var hh = ry * Math.sqrt(Math.max(0.05, 1 - Math.pow((xx - cx) / (rx * 1.02), 2))), rows = c % 2 ? 4 : 3, s = 0.62 + 0.38 * hh / ry;
+      for (var j = 0; j < rows; j++) {
+        var yy = -hh * 0.7 + j * hh * 1.4 / (rows - 1), col = (c + j) % 2 ? '#7E9A5A' : '#86A060', tf = P.at(xx, yy, yy / hh * 32, s);
+        out += sh(sc, tf, 0.8, 1) + P.g(tf, fill(sc, col, 0.7) + P.path(P.leafD(5, 4), '#8E5A7A', null, 0, { transform: tr(4, 0), opacity: '0.55' }) + P.path('M-5 0 L3 0', 'none', ed(col, -0.1), 0.5));
+      }
+    });
+    return out + gloss(10, -14, 5, 1.4, '#86A060', -20);
+  }
+
   L.add('veg', [
     // greens and salad leaves
     { id: 'cos-leaf', name: 'Cos lettuce leaf', sub: 'Greens and salad leaves', kw: 'cos romaine lettuce leaf baby cos salad', form: 'leaf', cook: 'fresh', role: 'salad', n: 1, w: 83, h: 29, side: { s: 'leafy', h: 6, c: '#77A845' }, draw: function (P, rnd) { var l = 82, w = 34, d = ruffleD(rnd, l, w, 0.05, 26); return P.shadow(d) + P.path(d, '#77A845', '#4F7F2F', 1) + P.path(ruffleD(rnd, l * 0.72, w * 0.55, 0.04), '#A9CC6A', null, 0, { transform: tr(-l * 0.12, 0) }) + P.path(ribD(l, 6, 0.4), '#E6F0C6', null, 0) + veins(l, w, '#E6F0C6', 4) + P.hl(10, -8, 14, 2.4, '#FFFFFF', 0.3, -6); } },
@@ -663,6 +931,11 @@
     { id: 'rocket', name: 'Rocket', sub: 'Greens and salad leaves', kw: 'rocket arugula roquette wild rocket leaves', form: 'pile', cook: 'fresh', role: 'salad', g: 20, w: 48, h: 40, side: { s: 'leafy', h: 12, c: '#5E8C3A' }, draw: leafy({ mix: ['rocket'], count: 16, rx: 13, ry: 10 }) },
     { id: 'baby-spinach', name: 'Baby spinach', sub: 'Greens and salad leaves', kw: 'spinach baby leaves english spinach', form: 'pile', cook: 'fresh', role: 'salad', g: 20, w: 50, h: 48, side: { s: 'leafy', h: 12, c: '#3F7A2E' }, draw: leafy({ mix: ['spinach'], count: 12, rx: 13, ry: 10 }) },
     { id: 'lettuce-cups', name: 'Lettuce cups', sub: 'Greens and salad leaves', kw: 'lettuce cups san choy bau butter lettuce baby gem wraps', form: 'cluster', cook: 'fresh', role: 'salad', n: 3, w: 131, h: 42, side: { s: 'cup', h: 14, c: '#9CC463' }, draw: function (P, rnd) { return cupAt(rnd, -42, -2, 22, 186) + cupAt(rnd, 0, 2, 23, 176) + cupAt(rnd, 42, -1, 22, 182); } },
+    { id: 'watercress', name: 'Watercress', sub: 'Greens and salad leaves', kw: 'watercress cress sprigs peppery greens', form: 'sprig', cook: 'fresh', role: 'garnish', g: 10, w: 47, h: 51, side: { s: 'leafy', h: 8, c: '#3F7E2E' }, draw: function (P, rnd) { return heap(rnd, 7, 11, 9, function (x, y, i, q) { return cressSprig(q, x, y, q() * 360, 1 + q() * 0.2); }); } },
+    { id: 'silverbeet-leaves', name: 'Silverbeet leaves', sub: 'Greens and salad leaves', kw: 'silverbeet silver beet swiss chard chard spinach beet leaves', form: 'leaf', cook: 'steamed', role: 'veg', n: 2, w: 78, h: 59, side: { s: 'leafy', h: 8, c: '#2F6A2A' }, draw: function (P, rnd) { return chardLeaf(rnd, 7, -9, -8, 60, 38, '#F0F0DE') + chardLeaf(rnd, -5, 10, 172, 56, 36, '#F0F0DE'); } },
+    { id: 'rainbow-chard-leaves', name: 'Rainbow chard leaves', sub: 'Greens and salad leaves', kw: 'rainbow chard swiss chard rainbow silverbeet coloured stems', form: 'leaf', cook: 'steamed', role: 'veg', n: 3, w: 78, h: 66, of: 'silverbeet-leaves', side: { s: 'leafy', h: 10, c: '#2F6A2A' }, draw: function (P, rnd) { return chardLeaf(rnd, 6, -14, -10, 54, 32, '#C8304A') + chardLeaf(rnd, 0, 0, 3, 56, 34, '#EDBE2E') + chardLeaf(rnd, 7, 14, 13, 52, 32, '#D8508A'); } },
+    { id: 'radicchio-leaves', name: 'Radicchio leaves', sub: 'Greens and salad leaves', kw: 'radicchio red chicory treviso chioggia bitter leaves', form: 'pile', cook: 'fresh', role: 'salad', g: 20, w: 52, h: 44, side: { s: 'leafy', h: 10, c: '#8E2A4A' }, draw: leafy({ mix: ['radicchio'], count: 6, rx: 12, ry: 9, s: 1.25 }) },
+    { id: 'endive-leaves', name: 'Endive leaves, witlof', sub: 'Greens and salad leaves', kw: 'endive witlof witloof belgian endive chicory escarole leaves boats', form: 'leaf', cook: 'fresh', role: 'salad', n: 4, w: 62, h: 71, side: { s: 'leafy', h: 8, c: '#F2F0D6' }, draw: function (P, rnd) { var out = ''; [-27, -9, 9, 27].forEach(function (a) { var r = a * PI / 180; out += witlofLeaf(rnd, -27 + Math.cos(r) * 29, Math.sin(r) * 29, a, 58, 20); }); return out; } },
     // roots
     { id: 'baby-carrots', name: 'Baby carrots with tops', sub: 'Roots', kw: 'dutch carrots baby carrots roasted glazed tops', form: 'piece', cook: 'roasted', role: 'veg', n: 3, w: 86, h: 37, side: { s: 'stick', h: 10, c: '#EE8A2E' }, draw: function (P, rnd) { return babyCarrot(rnd, 4, -13, -5) + babyCarrot(rnd, 7, 0, 2) + babyCarrot(rnd, 3, 13, 7); } },
     { id: 'carrot-coins', name: 'Carrot coins', sub: 'Roots', kw: 'carrot rounds sliced carrots steamed buttered', form: 'pile', cook: 'steamed', role: 'veg', g: 80, w: 56, h: 44, side: { s: 'pile', h: 12, c: '#EE8A2E' }, draw: slicePile('carrot', 15, 20, 15, 8.5) },
@@ -674,6 +947,19 @@
     { id: 'pumpkin-cubes', name: 'Pumpkin cubes, roasted', sub: 'Roots', kw: 'roast pumpkin diced cubes butternut', form: 'pile', cook: 'roasted', role: 'veg', g: 120, w: 52, h: 45, side: { s: 'pile', h: 16, c: '#E8A33A' }, draw: function (P, rnd) { return heap(rnd, 11, 22, 17, function (x, y, i, q) { return cubeAt(x, y, 12 + q() * 2, '#E8A23A', q() * 90, { skin: i % 3 ? '' : '#6E7A4A' }) + P.path(P.blob(q, 2 + q() * 2, 1.4, 0.3, 6, x + 2, y + 1), '#B9681A', null, 0, { opacity: '0.6' }); }); } },
     { id: 'radish-halves', name: 'Radish halves', sub: 'Roots', kw: 'radish halved red radishes breakfast radish', form: 'half', cook: 'fresh', role: 'salad', n: 4, w: 51, h: 37, side: { s: 'mound', h: 10, c: '#C8304A' }, draw: function (P, rnd) { return radishHalf(rnd, -11, -9, 9, -10) + radishHalf(rnd, 12, -8, 8.5, 20) + radishHalf(rnd, -12, 10, 8.5, 170) + radishHalf(rnd, 11, 10, 9, 200); } },
     { id: 'radish-slices', name: 'Radish slices', sub: 'Roots', kw: 'radish sliced thin shaved radish', form: 'scatter', cook: 'fresh', role: 'salad', g: 15, w: 41, h: 35, side: { s: 'disc', h: 2, c: '#C8304A' }, draw: slicePile('radish', 10, 15, 11, 7.5) },
+    { id: 'butternut-wedges', name: 'Butternut pumpkin wedges, roasted', sub: 'Roots', kw: 'butternut pumpkin butternut squash wedges roast skin on', form: 'wedge', cook: 'roasted', role: 'veg', g: 150, w: 75, h: 55, side: { s: 'wedge', h: 18, c: '#EE9A36' }, draw: function (P, rnd) { return butternutWedge(rnd, -2, -15, -6, 70, false) + butternutWedge(rnd, 3, 0, 3, 68, true) + butternutWedge(rnd, -1, 15, 9, 64, false); } },
+    { id: 'butternut-cubes', name: 'Butternut pumpkin cubes, roasted', sub: 'Roots', kw: 'butternut pumpkin butternut squash diced cubes roast', form: 'pile', cook: 'roasted', role: 'veg', g: 120, w: 55, h: 46, of: 'pumpkin-cubes', side: { s: 'pile', h: 14, c: '#F0A040' }, draw: function (P, rnd) { return heap(rnd, 11, 22, 17, function (x, y, i, q) { return dice(q, x, y, 12 + q() * 2, '#F0A040', q() * 90, { skin: i % 3 ? '' : '#D9B47A', tan: '#B9661C' }); }); } },
+    { id: 'acorn-squash-half', name: 'Acorn squash half, roasted', sub: 'Roots', kw: 'acorn squash halved roast winter squash pepper squash', form: 'half', cook: 'roasted', role: 'veg', n: 1, w: 72, h: 68, side: { s: 'mound', h: 24, c: '#F2B44C' }, draw: acornHalf },
+    { id: 'spaghetti-squash-half', name: 'Spaghetti squash half, roasted', sub: 'Roots', kw: 'spaghetti squash halved roast vegetable spaghetti noodle squash', form: 'half', cook: 'roasted', role: 'veg', n: 1, w: 102, h: 61, side: { s: 'slab', h: 22, c: '#F6DE98' }, draw: spaghettiHalf },
+    { id: 'spaghetti-squash-strands', name: 'Spaghetti squash strands', sub: 'Roots', kw: 'spaghetti squash strands noodles shredded squash zoodles', form: 'pile', cook: 'roasted', role: 'veg', g: 120, w: 45, h: 38, side: { s: 'pile', h: 12, c: '#F4D67E' }, draw: function (P, rnd) { var d = P.blob(rnd, 22, 16, 0.12, 11); return P.shadow(d) + fill(d, '#F2D47C', 0.9) + strands(rnd, 40, 22, 16, ['#F8E4A0', '#F2CE68', '#FBEFC2', '#F4D67E'], 16, 1.4, 5, { curl: true, edgeW: 0.5 }) + gloss(-7, -7, 8, 2, '#F8E4A0', -15); } },
+    { id: 'golden-beetroot-wedges', name: 'Golden beetroot wedges, roasted', sub: 'Roots', kw: 'golden beetroot golden beets yellow beetroot wedges roast', form: 'pile', cook: 'roasted', role: 'veg', g: 80, w: 48, h: 37, of: 'beetroot-wedges', side: { s: 'wedge', h: 14, c: '#F0AE36' }, draw: function (P, rnd) { return heap(rnd, 6, 16, 13, function (x, y, i, q) { return rootWedge(q, x, y, q() * 360, 22, 24, { flesh: '#F0AE36', rings: [0.38, 0.62, 0.84], ring: '#F7CC6E', skin: '#B9782A' }); }); } },
+    { id: 'turnip-wedges', name: 'Turnip wedges, roasted', sub: 'Roots', kw: 'turnip wedges roast purple top turnips baby turnips', form: 'wedge', cook: 'roasted', role: 'veg', g: 100, w: 42, h: 44, side: { s: 'wedge', h: 14, c: '#F4EFDC' }, draw: function (P, rnd) { return heap(rnd, 5, 15, 12, function (x, y, i, q) { return rootWedge(q, x, y, q() * 360, 21, 26, { flesh: '#F4EFDC', rings: [0.55], ring: '#E6DEC4', skin: '#9B4A86', skin2: '#E6DEC2', tan: '#D6A85A' }); }); } },
+    { id: 'swede-cubes', name: 'Swede cubes, roasted', sub: 'Roots', kw: 'swede rutabaga diced cubes roast neeps', form: 'pile', cook: 'roasted', role: 'veg', g: 100, w: 48, h: 38, side: { s: 'pile', h: 14, c: '#F2C060' }, draw: function (P, rnd) { return heap(rnd, 10, 20, 15, function (x, y, i, q) { return dice(q, x, y, 11.5 + q() * 1.5, '#F2C060', q() * 90, { skin: i % 3 ? '' : '#9A6A8C', tan: '#C98A3A' }); }); } },
+    { id: 'celeriac-cubes', name: 'Celeriac cubes, roasted', sub: 'Roots', kw: 'celeriac celery root diced cubes roast', form: 'pile', cook: 'roasted', role: 'veg', g: 100, w: 49, h: 43, side: { s: 'pile', h: 14, c: '#EEE5C6' }, draw: function (P, rnd) { return heap(rnd, 10, 20, 15, function (x, y, i, q) { return dice(q, x, y, 11.5 + q() * 1.5, '#EEE5C6', q() * 90, { skin: i % 4 ? '' : '#B9A684', tan: '#CFA45E' }); }); } },
+    { id: 'jicama-batons', name: 'Jicama batons', sub: 'Roots', kw: 'jicama yam bean mexican turnip batons sticks julienne', form: 'pile', cook: 'fresh', role: 'salad', g: 60, w: 59, h: 45, side: { s: 'pile', h: 10, c: '#F5F2E2' }, draw: function (P, rnd) { return heap(rnd, 12, 11, 10, function (x, y, i, q) { return batonBar(q, x, y, 25 + (q() - 0.5) * 60, 38 + q() * 6, 6.4, '#F5F2E2'); }); } },
+    { id: 'ginger-root', name: 'Ginger root', sub: 'Roots', kw: 'ginger root fresh ginger knob hand rhizome', form: 'piece', cook: 'fresh', role: 'garnish', g: 50, w: 46, h: 31, side: { s: 'mound', h: 14, c: '#D6B07A' }, draw: function (P, rnd) { return knobAt(rnd, [[-13, -8, 10, 6.5, -30], [12, -9, 9, 6, 35], [0, 1, 17, 10, 4], [-15, 8, 9, 6.5, 150]], { skin: '#D6B07A', ring: '#A87E4A', flesh: '#F2E0A0', gap: 4.5 }); } },
+    { id: 'galangal', name: 'Galangal', sub: 'Roots', kw: 'galangal root knob thai ginger blue ginger rhizome laos', form: 'piece', cook: 'fresh', role: 'garnish', g: 60, w: 47, h: 31, side: { s: 'mound', h: 16, c: '#E8D3AC' }, draw: function (P, rnd) { return knobAt(rnd, [[-13, -5, 12, 8.5, -18], [11, -7, 11, 8, 24], [-1, 6, 17, 9.5, -6]], { skin: '#E8D3AC', ring: '#C47F66', flesh: '#F6EED8', shoot: '#E2A0A0', gap: 3.6 }); } },
+    { id: 'galangal-slices', name: 'Galangal slices', sub: 'Roots', kw: 'galangal sliced thai ginger tom yum tom kha', form: 'scatter', cook: 'fresh', role: 'garnish', g: 10, w: 42, h: 26, side: { s: 'disc', h: 2, c: '#F4ECD4' }, draw: function (P, rnd) { return heap(rnd, 6, 12, 9, function (x, y, i, q) { return discAt(q, x, y, 8 + q(), q() * 360, { skin: '#DDBF96', flesh: '#F4ECD4', rim: 0.86, oval: 0.78, rings: [0.55], ring: '#E2D2B0' }); }); } },
     // brassicas
     { id: 'broccoli-florets', name: 'Broccoli florets', sub: 'Brassicas', kw: 'broccoli florets steamed brocolli brocoli green veg', form: 'pile', cook: 'steamed', role: 'veg', g: 80, w: 49, h: 47, side: { s: 'pile', h: 22, c: '#3F7A2E' }, draw: function (P, rnd) { return heap(rnd, 5, 16, 12, function (x, y, i, q) { return floretAt(q, x, y, 11 + q() * 2, q() * 360, 'broc'); }); } },
     { id: 'broccolini', name: 'Broccolini', sub: 'Brassicas', kw: 'broccolini baby broccoli tenderstem grilled', form: 'stick', cook: 'grilled', role: 'veg', n: 4, w: 81, h: 51, side: { s: 'stick', h: 8, c: '#5E9A3A' }, draw: function (P, rnd) {
@@ -690,6 +976,12 @@
     { id: 'red-cabbage-shredded', name: 'Red cabbage, shredded', sub: 'Brassicas', kw: 'red cabbage purple cabbage shredded slaw', form: 'pile', cook: 'raw', role: 'salad', g: 40, w: 51, h: 46, side: { s: 'pile', h: 12, c: '#7A2E6A' }, draw: slaw({ rx: 22, ry: 17, base: '#5E1E50', count: 54, cols: ['#7A2E6A', '#8E3A7E', '#6A2460', '#B36AA4', '#F0E4EE', '#7A2E6A'] }) },
     { id: 'pak-choy', name: 'Pak choy, halved', sub: 'Brassicas', kw: 'pak choy bok choy baby bok choi asian greens halved', form: 'half', cook: 'steamed', role: 'veg', n: 2, w: 88, h: 57, side: { s: 'leafy', h: 10, c: '#3F7A2E' }, draw: function (P, rnd) { return pakChoyHalf(rnd, -2, -13, -4) + pakChoyHalf(rnd, 2, 13, 184); } },
     { id: 'brussels-sprouts', name: 'Brussels sprouts, roasted halves', sub: 'Brassicas', kw: 'brussels sprouts brussel sprouts halved roasted', form: 'half', cook: 'roasted', role: 'veg', g: 100, w: 46, h: 37, side: { s: 'pile', h: 14, c: '#5E8C3A' }, draw: function (P, rnd) { return heap(rnd, 7, 16, 12, function (x, y, i, q) { return sproutHalf(q, x, y, 9.5 + q() * 1.5, q() * 360); }); } },
+    { id: 'wombok-leaves', name: 'Wombok leaves', sub: 'Brassicas', kw: 'wombok wong bok napa cabbage chinese cabbage leaves', form: 'leaf', cook: 'fresh', role: 'salad', n: 2, w: 84, h: 69, side: { s: 'leafy', h: 8, c: '#D2E39A' }, draw: function (P, rnd) { return wombokLeaf(rnd, -3, -11, -6, 76, 40) + wombokLeaf(rnd, 3, 11, 176, 72, 38); } },
+    { id: 'savoy-cabbage-leaves', name: 'Savoy cabbage leaves', sub: 'Brassicas', kw: 'savoy cabbage leaves crinkly cabbage rolls', form: 'leaf', cook: 'steamed', role: 'veg', n: 2, w: 88, h: 66, side: { s: 'leafy', h: 10, c: '#5E8E3A' }, draw: function (P, rnd) { return savoyLeaf(rnd, -12, -4, -20, 54, 48) + savoyLeaf(rnd, 13, 5, 160, 52, 46); } },
+    { id: 'cavolo-nero', name: 'Cavolo nero leaves', sub: 'Brassicas', kw: 'cavolo nero tuscan kale lacinato black kale dinosaur kale', form: 'leaf', cook: 'fresh', role: 'veg', n: 3, w: 85, h: 50, side: { s: 'leafy', h: 8, c: '#2F4F3A' }, draw: function (P, rnd) { return cavoloLeaf(rnd, 4, -12, -6, 70, 17) + cavoloLeaf(rnd, 0, 0, 2, 74, 18) + cavoloLeaf(rnd, 5, 12, 8, 68, 16); } },
+    { id: 'curly-kale', name: 'Curly kale', sub: 'Brassicas', kw: 'curly kale leaves torn fried kale crispy kale kale chips', form: 'pile', cook: 'fresh', role: 'veg', g: 30, w: 43, h: 42, side: { s: 'leafy', h: 12, c: '#3F7230' }, draw: function (P, rnd) { return heap(rnd, 7, 15, 11, function (x, y, i, q) { return kaleBit(q, x, y, 1 + q() * 0.2); }); } },
+    { id: 'broccoli-rabe', name: 'Broccoli rabe', sub: 'Brassicas', kw: 'broccoli rabe rapini cime di rapa turnip tops broccoli raab', form: 'stick', cook: 'steamed', role: 'veg', n: 4, w: 71, h: 80, side: { s: 'stick', h: 8, c: '#4A8436' }, draw: function (P, rnd) { var out = ''; for (var i = 0; i < 4; i++) out += rabeAt(rnd, -36, (i - 1.5) * 9, (i - 1.5) * 6, 60 - (i % 2) * 6); return out; } },
+    { id: 'kohlrabi-slices', name: 'Kohlrabi slices', sub: 'Brassicas', kw: 'kohlrabi sliced rounds german turnip', form: 'slices', cook: 'fresh', role: 'salad', n: 4, w: 101, h: 47, side: { s: 'disc', h: 3, c: '#E9F0CA' }, draw: function (P, rnd) { var out = ''; for (var i = 0; i < 4; i++) { var c = i - 1.5; out += discAt(rnd, c * 19, 0.6 * c * c + Math.sin(i * 2.3) * 1.5, 17 + rnd(), rnd() * 360, { skin: '#8DB255', flesh: '#E9F0CA', rim: 0.9, rings: [0.76, 0.42], ring: '#D6E2AE' }); } return out; } },
     // fruiting veg
     { id: 'cherry-tomatoes', name: 'Cherry tomatoes', sub: 'Fruiting veg', kw: 'cherry tomatoes whole truss grape tomatoes', form: 'whole', cook: 'fresh', role: 'salad', n: 5, w: 41, h: 40, side: { s: 'mound', h: 17, c: '#D9473B' }, draw: function (P, rnd) { return cherryAt(rnd, -6, -10, 8.5, true) + cherryAt(rnd, 11, -8, 8.2) + cherryAt(rnd, -13, 5, 8.4) + cherryAt(rnd, 4, 6, 8.6, true) + cherryAt(rnd, -3, 13, 8, true); } },
     { id: 'cherry-tomato-halves', name: 'Cherry tomatoes, halved', sub: 'Fruiting veg', kw: 'cherry tomatoes halved cut grape tomatoes', form: 'half', cook: 'fresh', role: 'salad', n: 6, w: 35, h: 35, side: { s: 'disc', h: 8, c: '#D9473B' }, draw: function (P, rnd) { return heap(rnd, 6, 16, 12, function (x, y, i, q) { return cherryHalf(q, x, y, 8, q() * 360); }); } },
@@ -726,6 +1018,10 @@
     { id: 'corn-kernels', name: 'Corn kernels', sub: 'Fruiting veg', kw: 'corn kernels sweetcorn niblets charred corn', form: 'scatter', cook: 'steamed', role: 'veg', g: 40, w: 47, h: 37, side: { s: 'pile', h: 6, c: '#F2C94C' }, draw: function (P, rnd) { return heap(rnd, 40, 22, 17, function (x, y, i, q) { return kernelAt(x, y, q() * 360, 1, q() < 0.12 ? '#D9A030' : '#F2C94C'); }); } },
     { id: 'pineapple-ring', name: 'Pineapple ring, grilled', sub: 'Fruiting veg', kw: 'pineapple ring slice grilled burger the lot hawaiian', form: 'ring', cook: 'grilled', role: 'topping', n: 1, w: 59, h: 59, side: { s: 'ring', h: 8, c: '#F2CB55' }, draw: pineappleRing },
     { id: 'ratatouille', name: 'Ratatouille', sub: 'Fruiting veg', kw: 'ratatouille provencal vegetable stew eggplant zucchini capsicum', form: 'mound', cook: 'braised', role: 'veg', g: 150, w: 70, h: 56, side: { s: 'mound', h: 16, c: '#B5301F' }, draw: ratatouille },
+    { id: 'tomatillos', name: 'Tomatillos', sub: 'Fruiting veg', kw: 'tomatillo tomatillos husk mexican green tomato salsa verde', form: 'whole', cook: 'fresh', role: 'salad', n: 3, w: 65, h: 60, side: { s: 'mound', h: 20, c: '#8DB648' }, draw: function (P, rnd) { return tomatilloAt(rnd, -16, -10, 12, 20, false) + tomatilloAt(rnd, 15, -7, 11.5, 0, true) + tomatilloAt(rnd, -3, 14, 12, 40, true); } },
+    { id: 'okra', name: 'Okra', sub: 'Fruiting veg', kw: 'okra ladies fingers bhindi gumbo whole pods', form: 'whole', cook: 'fresh', role: 'veg', n: 4, w: 64, h: 50, side: { s: 'stick', h: 12, c: '#5E9A3A' }, draw: function (P, rnd) { var out = ''; [[-2, -14, -10], [3, -4, 4], [-3, 6, -4], [2, 15, 10]].forEach(function (p) { out += okraAt(rnd, p[0], p[1], p[2], 52, 13); }); return out; } },
+    { id: 'okra-sliced', name: 'Okra, sliced', sub: 'Fruiting veg', kw: 'okra sliced rounds ladies fingers bhindi gumbo', form: 'scatter', cook: 'fresh', role: 'veg', g: 40, w: 37, h: 34, side: { s: 'pile', h: 6, c: '#5E9A3A' }, draw: function (P, rnd) { return heap(rnd, 10, 15, 11, function (x, y, i, q) { return okraRound(q, x, y, 6.2 + q() * 0.8, q() * 72); }); } },
+    { id: 'yellow-squash-slices', name: 'Yellow squash slices', sub: 'Fruiting veg', kw: 'yellow squash summer squash yellow zucchini golden zucchini crookneck sliced rounds sauteed', form: 'pile', cook: 'fried', role: 'veg', g: 60, w: 54, h: 43, side: { s: 'disc', h: 5, c: '#E6B42A' }, draw: function (P, rnd) { return heap(rnd, 7, 16, 12, function (x, y, i, q) { return discAt(q, x, y, 10 + q(), q() * 360, { skin: '#E6B42A', flesh: '#F6ECBE', rim: 0.86, rings: [0.52], ring: '#EEDFA2', seeds: 6, seedCol: '#FBF7E4', tan: '#D9A048' }); }); } },
     // beans, peas and shoots
     { id: 'peas', name: 'Peas', sub: 'Beans, peas and shoots', kw: 'green peas garden peas minted peas baby peas', form: 'pile', cook: 'steamed', role: 'veg', g: 60, w: 48, h: 41, side: { s: 'pile', h: 10, c: '#7EA453' }, draw: function (P, rnd) { return heap(rnd, 62, 22, 18, function (x, y, i, q) { return peaAt(x, y, 2.6); }); } },
     { id: 'green-beans', name: 'Green beans', sub: 'Beans, peas and shoots', kw: 'green beans french beans string beans steamed', form: 'stick', cook: 'steamed', role: 'veg', g: 60, w: 80, h: 40, side: { s: 'stick', h: 7, c: '#5E9A3A' }, draw: function (P, rnd) { var out = ''; for (var i = 0; i < 8; i++) out += podAt(rnd, (rnd() - 0.5) * 8, (i - 3.5) * 4.4, (rnd() - 0.5) * 10, { len: 70, wid: 6, col: '#5E9A3A', bend: 1.5 + rnd() * 2, cap: '#7EA453' }); return out; } },
@@ -748,6 +1044,17 @@
     { id: 'fried-onions', name: 'Crispy fried onions', sub: 'Onions', kw: 'crispy onions fried onion strings shoestring onions crunchy', form: 'pile', cook: 'fried', role: 'topping', g: 20, w: 48, h: 46, side: { s: 'pile', h: 10, c: '#B9772E' }, draw: function (P, rnd) { return strands(rnd, 34, 21, 17, ['#B9772E', '#D99A4A', '#8A5420', '#C98A3A'], 18, 1.3, 7, { curl: true, edgeW: 0.7 }) + P.crumbs(rnd, 10, 16, 12, ['#6E3A14', '#E8B860'], 0.9); } },
     { id: 'spring-onion-slices', name: 'Spring onion, sliced', sub: 'Onions', kw: 'spring onion shallots scallions green onion sliced', form: 'scatter', cook: 'fresh', role: 'garnish', g: 5, w: 41, h: 33, side: { s: 'layer', h: 2, c: '#5E9A3A' }, draw: function (P, rnd) { return P.scatter(rnd, 30, 19, 16, function (x, y, i, q) { var g = i % 4 !== 0; return P.circle(x, y, 1.6 + q() * 0.8, g ? '#C9E09A' : '#F4F6E6', g ? '#4F8F2F' : '#C9D8A8', 0.9); }); } },
     { id: 'charred-leek', name: 'Charred leek', sub: 'Onions', kw: 'leek halved charred grilled baby leeks', form: 'half', cook: 'grilled', role: 'veg', n: 2, w: 103, h: 44, side: { s: 'stick', h: 14, c: '#E6EDC6' }, draw: function (P, rnd) { return leekHalf(rnd, -2, -11, -3, 100, 20) + leekHalf(rnd, 2, 11, 2, 96, 19); } },
+    { id: 'garlic-head', name: 'Garlic, whole head', sub: 'Onions', kw: 'garlic head bulb whole garlic', form: 'whole', cook: 'fresh', role: 'garnish', n: 1, w: 42, h: 47, side: { s: 'mound', h: 30, c: '#F5F1E6' }, draw: garlicHead },
+    { id: 'garlic-cloves', name: 'Garlic cloves, peeled', sub: 'Onions', kw: 'garlic cloves peeled whole cloves', form: 'scatter', cook: 'fresh', role: 'garnish', n: 7, w: 36, h: 33, side: { s: 'pile', h: 8, c: '#F4ECCF' }, draw: function (P, rnd) { return heap(rnd, 7, 14, 10, function (x, y, i, q) { return cloveAt(q, x, y, q() * 360, 0.95 + q() * 0.15); }); } },
+    // stems and bulbs
+    { id: 'celery-sticks', name: 'Celery sticks', sub: 'Stems and bulbs', kw: 'celery sticks stalks ribs batons crudites wings', form: 'stick', cook: 'fresh', role: 'salad', n: 3, w: 66, h: 36, side: { s: 'stick', h: 8, c: '#A6C564' }, draw: function (P, rnd) { return stalkAt(rnd, 0, -10, -4, 64, 9.5, '#A6C564') + stalkAt(rnd, 2, 0, 1, 62, 9, '#A6C564') + stalkAt(rnd, -1, 10, 5, 64, 9.5, '#A6C564'); } },
+    { id: 'celery-sliced', name: 'Celery, sliced', sub: 'Stems and bulbs', kw: 'celery sliced chopped diced celery mirepoix', form: 'scatter', cook: 'fresh', role: 'salad', g: 30, w: 39, h: 30, side: { s: 'pile', h: 6, c: '#B9D47E' }, draw: function (P, rnd) { return heap(rnd, 15, 16, 12, function (x, y, i, q) { return celeryBit(q, x, y, q() * 360, 0.95 + q() * 0.2); }); } },
+    { id: 'fennel-halves', name: 'Fennel bulb, halved', sub: 'Stems and bulbs', kw: 'fennel bulb halved baby fennel finocchio', form: 'half', cook: 'fresh', role: 'veg', n: 2, w: 88, h: 58, side: { s: 'mound', h: 22, c: '#EEF2D6' }, draw: function (P, rnd) { return fennelHalf(rnd, -20, 3, -14, 0.82) + fennelHalf(rnd, 21, 0, 12, 0.8); } },
+    { id: 'fennel-shaved', name: 'Fennel, shaved', sub: 'Stems and bulbs', kw: 'shaved fennel thin sliced fennel salad fronds finocchio', form: 'pile', cook: 'raw', role: 'salad', g: 30, w: 52, h: 41, side: { s: 'leafy', h: 6, c: '#EEF3D8' }, draw: function (P, rnd) { return heap(rnd, 9, 14, 11, function (x, y, i, q) { return fennelShave(q, x, y, (q() - 0.5) * 70 + (i % 2) * 180, 0.95 + q() * 0.3); }) + P.scatter(rnd, 3, 12, 9, function (x, y, i, q) { return frondAt(q, x, y, q() * 360, 1); }); } },
+    { id: 'rhubarb-stalks', name: 'Rhubarb stalks, roasted', sub: 'Stems and bulbs', kw: 'rhubarb stalks batons roasted poached forced rhubarb', form: 'stick', cook: 'roasted', role: 'dside', n: 4, w: 58, h: 54, side: { s: 'stick', h: 9, c: '#B8304A' }, draw: function (P, rnd) { var out = ''; [[-2, -16, -8], [3, -5, -2], [-3, 6, 4], [2, 17, 9]].forEach(function (p, i) { out += stalkAt(rnd, p[0], p[1], p[2], 52, 11, i % 2 ? '#C8405A' : '#B8304A', { groove: false }); }); return out; } },
+    { id: 'globe-artichoke', name: 'Globe artichoke', sub: 'Stems and bulbs', kw: 'globe artichoke whole artichokes steamed', form: 'whole', cook: 'steamed', role: 'veg', n: 1, w: 72, h: 48, side: { s: 'mound', h: 40, c: '#7E9A5A' }, draw: artichoke },
+    { id: 'artichoke-hearts', name: 'Artichoke hearts, quartered', sub: 'Stems and bulbs', kw: 'artichoke hearts quartered marinated antipasto', form: 'pile', cook: 'cured', role: 'veg', g: 60, w: 46, h: 39, side: { s: 'pile', h: 10, c: '#D6D08A' }, draw: function (P, rnd) { return heap(rnd, 6, 14, 11, function (x, y, i, q) { return heartQuarter(q, x, y, q() * 360, 1 + q() * 0.15); }); } },
+    { id: 'hearts-of-palm', name: 'Hearts of palm, sliced', sub: 'Stems and bulbs', kw: 'hearts of palm palm hearts heart of palm sliced rounds palmito', form: 'scatter', cook: 'fresh', role: 'salad', g: 50, w: 52, h: 42, side: { s: 'disc', h: 6, c: '#F6F2E2' }, draw: function (P, rnd) { return heap(rnd, 8, 15, 12, function (x, y, i, q) { return discAt(q, x, y, 9 + q(), q() * 360, { skin: '#E9E2C4', flesh: '#F6F2E2', rim: 0.9, rings: [0.66, 0.4], ring: '#E4DCC0', core: '#ECE4C8' }); }); } },
     // mushrooms
     { id: 'button-mushrooms', name: 'Button mushrooms, sautéed', sub: 'Mushrooms', kw: 'button mushrooms sauteed garlic mushrooms whole champignons', form: 'pile', cook: 'fried', role: 'veg', g: 80, w: 48, h: 35, side: { s: 'pile', h: 16, c: '#D9B98A' }, draw: function (P, rnd) { return heap(rnd, 6, 15, 11, function (x, y, i, q) { return i % 3 === 1 ? mushSlice(q, x, y, q() * 360, 20, 0.5) : buttonCap(q, x, y, 10 + q() * 2); }); } },
     { id: 'sliced-mushrooms', name: 'Sliced mushrooms', sub: 'Mushrooms', kw: 'sliced mushrooms sauteed mushroom slices', form: 'pile', cook: 'fried', role: 'veg', g: 60, w: 50, h: 44, side: { s: 'pile', h: 8, c: '#D9B98A' }, draw: function (P, rnd) { return heap(rnd, 10, 17, 13, function (x, y, i, q) { return mushSlice(q, x, y, q() * 360, 16 + q() * 4, 0.3 + q() * 0.5); }); } },

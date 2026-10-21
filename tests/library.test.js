@@ -22,6 +22,10 @@ const BRANDS = /\b(nutella|biscoff|chiko|pluto pup|paddle pop|oreo|kewpie|xxxx|c
   ok(lost.length <= 5, 'search finds each item by its own name in the first 8 (' + lost.length + ' do not: ' + lost.slice(0, 10).join(', ') + ')');
   const none = SURVEY.filter(w => !r.L.search(w).length);
   ok(!none.length, 'search finds the menu survey\'s words' + (none.length ? ' (nothing for: ' + none.join(', ') + ')' : ''));
+  // single ingredients that come up most in the head chef's recipe library (21 Oct 2026): each finds its own drawing
+  const SINGLE = { celery: 'celery-sticks', lentils: 'red-lentils', 'star anise': 'star-anise', cashews: 'cashews', turkey: 'roast-turkey-breast', tofu: 'tofu-cubes', cranberries: 'cranberries-fresh', 'rolled oats': 'rolled-oats', 'butternut': 'butternut-wedges', 'egg yolk': 'egg-yolk', rhubarb: 'rhubarb-stalks', okra: 'okra', radicchio: 'radicchio-leaves', 'cardamom': 'cardamom-pods', sardines: 'sardines-grilled', 'cod': 'cod-fillet' };
+  const missed = Object.keys(SINGLE).filter(w => r.L.search(w).slice(0, 6).map(it => it.id).indexOf(SINGLE[w]) < 0);
+  ok(!missed.length, 'search finds the recipe library\'s single ingredients' + (missed.length ? ' (not for: ' + missed.join(', ') + ')' : ''));
   const branded = r.L.items.filter(it => BRANDS.test(it.name)).map(it => it.id);
   ok(!branded.length, 'brand names are search words only, never in a name' + (branded.length ? ' (' + branded.join(', ') + ')' : ''));
   const roles = {}; r.L.items.forEach(it => { roles[it.role] = (roles[it.role] || 0) + 1; });
