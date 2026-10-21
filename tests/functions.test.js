@@ -110,8 +110,8 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   await p.goto(L.BASE + '#/recipes'); await L.settle(p, 900);
   await L.waitFor(p, () => /Smith 50th/.test((document.getElementById('fn-band') || {}).textContent || ''));
   const band = await txt(p, '#fn-band') || '';
-  ok(/Smith 50th/.test(band) && /Beer garden/.test(band) && !/guests/.test(band) && /Event 18:00/.test(band) && /Next 18:30 \(round 1 of 3\): 3 Antipasto, 2 Aussie/.test(band) && /5 now, 12 in all/.test(band), 'band: event start, next round and "now" against "in all" (' + band.replace(/\s+/g, ' ').slice(0, 200) + ')');
-  ok(/Kitchen comment/.test(band) && /Staggered/.test(band), 'band: staggered and kitchen comment marked');
+  ok(/Smith 50th/.test(band) && /Beer garden/.test(band) && !/guests/.test(band) && /18:30 Smith 50th/.test(band) && /Round 1 of 3: 3 Antipasto, 2 Aussie \(5 of 12\)/.test(band), 'band: the next round\'s time leads, then what goes in it against the total (' + band.replace(/\s+/g, ' ').slice(0, 200) + ')');
+  ok(/Kitchen comment/.test(band), 'band: kitchen comment marked');
   ok(p.errors.length === 0, 'coordinator: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -142,7 +142,7 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   const late = fn({ name: 'Late one', rounds: ['18:30', '19:30', '20:30'] });   // gone at 21:00
   p = await L.open(b, '#/recipes', { who: 'ann', extra: extra({ late }), clock: at(today, '20:58'), wait: 1200 });
   await L.waitFor(p, () => /Late one/.test((document.getElementById('fn-band') || {}).textContent || ''));
-  ok(/Round 1 due 18:30, not sent yet/.test(await txt(p, '#fn-band') || ''), 'timing: at 20:58 with nothing ticked, the band says round 1 is not sent yet (time alone never marks it served)');
+  ok(/18:30 Late one[\s\S]*Round 1 of 3 not sent yet/.test(await txt(p, '#fn-band') || ''), 'timing: at 20:58 with nothing ticked, the band says round 1 is not sent yet (time alone never marks it served)');
   await p.clock.fastForward(3 * 60000);
   await L.waitFor(p, () => { const el = document.getElementById('fn-band'); return !el || el.hidden; }, null, 30000).catch(() => {});
   ok(await p.$eval('#fn-band', e => e.hidden), 'timing: gone by itself at 21:00 (30 minutes after the last round), page left open');
@@ -154,7 +154,7 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   await p.context().close();
   p = await L.open(b, '#/recipes', { who: 'ann', extra: extra({ smith }), clock: at(today, '00:00') + 1000, tz: 'America/New_York', wait: 1200 });
   await L.waitFor(p, () => /Smith 50th/.test((document.getElementById('fn-band') || {}).textContent || ''));
-  ok(/Next 18:30/.test(await txt(p, '#fn-band') || ''), 'time zone: a phone set to New York shows it from 00:00 kitchen time, at 18:30 kitchen time');
+  ok(/18:30 Smith 50th/.test(await txt(p, '#fn-band') || ''), 'time zone: a phone set to New York shows it from 00:00 kitchen time, at 18:30 kitchen time');
   await p.context().close();
   const gone = fn({ name: 'Jones wake', status: 'cancelled', start: '15:00', rounds: ['15:00'] });
   const moved = fn({ name: 'Brown 21st', date: day2, was: { date: today, start: at(today, '17:00'), first: at(today, '17:00'), from: at(today, '00:00'), until: at(today, '19:00') } });
@@ -217,7 +217,7 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   // sent ticks: Ann ticks round 1 in the sheet, the band moves on; she can undo a mis-tap; a missed round says so
   p = await L.open(b, '#/recipes', { who: 'ann', extra: extra({ smith }), clock: at(today, '18:31'), wait: 1200 });
   await L.waitFor(p, () => /Smith 50th/.test((document.getElementById('fn-band') || {}).textContent || ''));
-  ok(/Round 1 due 18:30, not sent yet/.test(await txt(p, '#fn-band') || ''), 'sent: a round past its time and not ticked says "not sent yet" (' + (await txt(p, '#fn-band') || '').replace(/\s+/g, ' ').slice(0, 160) + ')');
+  ok(/Round 1 of 3 not sent yet: 3 Antipasto, 2 Aussie/.test(await txt(p, '#fn-band') || ''), 'sent: a round past its time and not ticked says "not sent yet" (' + (await txt(p, '#fn-band') || '').replace(/\s+/g, ' ').slice(0, 160) + ')');
   await tap(p, '#fn-band .fn-row'); await L.settle(p, 200);
   // the sheet leads with what goes out next: the date line, then the next round's time and platters, then every round
   const order = await p.evaluate(() => [...document.querySelectorAll('.fn-sheet .fn-sub, .fn-sheet .fn-next, .fn-sheet .fn-rounds, .fn-sheet .fn-kc')].map(e => e.className.split(' ')[0]));
@@ -233,7 +233,7 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   ok(/Ann/.test(await txt(p, '.fn-sheet .fn-sent') || '') && !!(await p.$('.fn-sheet [data-fn="unsent"]')), 'sent: the sheet shows who ticked it, with Undo');
   await p.keyboard.press('Escape'); await L.settle(p, 100);
   const bs = await txt(p, '#fn-band') || '';
-  ok(/Round 1 sent 18:3\d, Ann/.test(bs) && /Next 19:00 \(round 2 of 3\): 2 Aussie, 2 Pizza/.test(bs), 'sent: the band moves on to round 2 (' + bs.replace(/\s+/g, ' ').slice(0, 200) + ')');
+  ok(/19:00 Smith 50th/.test(bs) && /Round 2 of 3: 2 Aussie, 2 Pizza \(4 of 12\)/.test(bs), 'sent: the band moves on to round 2 (' + bs.replace(/\s+/g, ' ').slice(0, 200) + ')');
   await tap(p, '#fn-band .fn-row'); await L.settle(p, 200);
   await tap(p, '.fn-sheet [data-fn="unsent"]'); await L.settle(p, 400);
   ok((await store(p))[fsKey(['fnsent', 'smith_' + at(today, '18:30')])].sent === false, 'sent: Undo takes the tick back');
@@ -244,6 +244,31 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   await tap(p, '#fn-band .fn-row'); await L.settle(p, 200);
   await tap(p, '.fn-sheet [data-fn="sent"][data-r="0"]'); await L.settle(p, 500);
   ok(/#\/prep/.test(p.url()) && !(await store(p))[fsKey(['fnsent', 'smith_' + at(today, '18:30')])], 'sent: with nobody signed in, Sent asks who you are first and saves nothing');
+  await p.context().close();
+
+  // the service view (22 Oct 2026): two functions on at once, everything due in one list, late first, platters added up
+  const jones = fn({ name: 'Jones 40th', loc: 'Function room', rounds: ['18:40'], lines: [['pizza-platter', 'Pizza Platter', [2]], ['antipasto-platter', 'Antipasto Platter', [1]]] });
+  p = await L.open(b, '#/recipes', { who: 'ann', extra: extra({ smith, jones }), clock: at(today, '18:31'), wait: 1200 });
+  await L.waitFor(p, () => /Jones 40th/.test((document.getElementById('fn-band') || {}).textContent || ''));
+  ok(!!(await p.$('#fn-band a.fn-svc[href="#/fn/now"]')), 'service: with two functions on, the band offers the service view');
+  await tap(p, '#fn-band a.fn-svc'); await L.settle(p, 500);
+  await L.waitFor(p, () => document.querySelectorAll('.fn-svc-row').length === 2);
+  let sv = await p.$$eval('.fn-svc-row', els => els.map(e => e.textContent.replace(/\s+/g, ' ')));
+  ok(/18:30 Late Smith 50th · Beer garden · round 1 of 3/.test(sv[0]) && /3 Antipasto/.test(sv[0]) && /18:40 Jones 40th · Function room/.test(sv[1]) && /2 Pizza/.test(sv[1]), 'service: the late round first, then the one due at 18:40 (' + sv.join(' / ').slice(0, 260) + ')');
+  const tp = (await txt(p, '.fn-svc-page .fn-next') || '').replace(/\s+/g, ' ');
+  ok(/To plate now 8 platters/.test(tp) && /4 ?Antipasto Platter ?2 ?Aussie Platter ?2 ?Pizza Platter/.test(tp), 'service: to plate now adds both functions up, most first (' + tp.slice(0, 200) + ')');
+  await tap(p, '.fn-svc-row [data-fn="sent"][data-id="smith"]'); await L.settle(p, 400);
+  sv = await p.$$eval('.fn-svc-row', els => els.map(e => e.textContent.replace(/\s+/g, ' ')));
+  ok(/18:40 Jones 40th/.test(sv[0]) && /19:00 Later Smith 50th · Beer garden · round 2 of 3/.test(sv[1]), 'service: Sent moves Smith on to round 2, after Jones (' + sv.join(' / ').slice(0, 200) + ')');
+  ok(/Smith 50th round 1 sent 18:3\d, Ann/.test(await txt(p, '.fn-svc-just') || '') && !!(await p.$('.fn-svc-just [data-fn="unsent"]')), 'service: just sent shows who, with Undo');
+  ok(await p.$eval('#fn-band', e => e.hidden), 'service: no band above the service view (it shows the same rounds)');
+  await p.goto(L.BASE + '#/recipes'); await L.settle(p, 600);
+  await L.waitFor(p, () => /Jones 40th/.test((document.getElementById('fn-band') || {}).textContent || ''));
+  const bj = (await txt(p, '#fn-band') || '').replace(/\s+/g, ' ');
+  ok(bj.indexOf('Jones 40th') >= 0 && bj.indexOf('Jones 40th') < bj.indexOf('Smith 50th'), 'band: sorted by what is still to go out, so Jones comes before Smith once Smith round 1 is sent');
+  await p.evaluate(() => { document.body.style.minHeight = '4000px'; window.scrollTo(0, 1500); }); await L.settle(p, 300);
+  ok(await p.$eval('.fn-strip', e => !e.hidden && /^18:40/.test(e.textContent.trim()) && /\+1/.test(e.textContent)) && !!(await p.$('.fn-strip a.fn-strip-b[href="#/fn/now"]')), 'strip: the most urgent leads, +1 apart, and a tap opens the service view');
+  ok(p.errors.length === 0, 'service: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
   // the band the day before: an order reminder on the order day, and tomorrow's function; and the strip while scrolling
@@ -358,10 +383,10 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   ok(c.fnIds.indexOf('bo') < 0, 'admin: and Bo cannot book functions until the head chef keeps it');
   await p.context().close();
 
-  // 7. layout: the band, #/fn and the form at three widths, no sideways scroll, no errors
+  // 7. layout: the band, #/fn, the service view and the form at three widths, no sideways scroll, no errors
   for (const w of [390, 768, 1280]) {
-    for (const [hash, who] of [['#/', 'ann'], ['#/fn/smith', 'ann'], ['#/functions', 'fay'], ['#/functions/smith', 'fay']]) {
-      p = await L.open(b, hash, { who, width: w, extra: extra({ smith, gone, t1 }), wait: 1500 });
+    for (const [hash, who] of [['#/', 'ann'], ['#/fn/smith', 'ann'], ['#/fn/now', 'ann'], ['#/functions', 'fay'], ['#/functions/smith', 'fay']]) {
+      p = await L.open(b, hash, { who, width: w, extra: extra({ smith, gone, t1, jones }), wait: 1500 });
       await L.settle(p, 600);
       const of = await L.overflow(p);
       ok(!of, w + ' px ' + hash + ': no sideways scroll ' + (of || ''));

@@ -392,6 +392,13 @@ await ok(W([[sid, sent({ sent: false, sentBy: 'bo' })]], { id: 'sam' }), true, '
 await ok(W([['fnsent/f1_' + (T0 + 5400000), sent({ at: T0 + 5400000, price: 1 })]], { id: 'ann' }), false, 'sent: no other fields');
 await ok(setDoc(doc(anon, K + 'fnsent/f1_' + (T0 + 5400000)), sent({ at: T0 + 5400000, by: 'ann' })), false, 'sent: no tick without a PIN');
 await ok(deleteDoc(doc(owner, K + sid)), false, 'sent: never deleted');
+// A change to a past day stamps config/main.pastEdit (22 Oct 2026), so other phones read their saved past days again
+await ok(W([['config/main', { pastEdit: { p: Date.now() } }, true]], { id: 'sam' }), true, 'pastEdit: a sous chef stamps a past prep change');
+await ok(W([['config/main', { pastEdit: { p: Date.now(), o: Date.now() } }, true]], { id: 'hd' }), true, 'pastEdit: the head chef with their PIN stamps prep and orders');
+await ok(W([['config/main', { pastEdit: { p: Date.now() } }, true]], { id: 'ann' }), false, 'pastEdit: staff cannot stamp it');
+await ok(W([['config/main', { pastEdit: { p: Date.now() }, pingIds: ['ann'] }, true]], { id: 'sam' }), false, 'pastEdit: nothing else may change in the same write');
+await ok(W([['config/main', { pastEdit: { x: 1 } }, true]], { id: 'sam' }), false, 'pastEdit: only p and o');
+await ok(W([['config/main', { pastEdit: { p: 'soon' } }, true]], { id: 'sam' }), false, 'pastEdit: times are numbers');
 // Wastage (22 Oct 2026): today's lines with the kitchen PIN, past days only for the head chef's Google account,
 // the review written by the head chef or a sous chef, the nightly summary read only
 const kday = ms => new Date(ms + 36000000).toISOString().slice(0, 10);

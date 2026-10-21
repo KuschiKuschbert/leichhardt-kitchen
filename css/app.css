@@ -1783,7 +1783,27 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav { top: var(--u
 .fn-t-tom { background: #EEF0F3; border-color: var(--steel-dark); }
 .fn-strip { position: fixed; top: 0; left: 0; right: 0; z-index: 44; background: #FFF6D9; border-bottom: 2px solid #E8C35A; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12); }
 .fn-strip[hidden] { display: none; }
-.fn-strip-b { display: block; width: 100%; max-width: 1240px; margin: 0 auto; min-height: 44px; padding: 0.45rem 0.9rem; border: 0; background: none; text-align: left; font-size: 0.95rem; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+.fn-strip-b { display: flex; align-items: center; gap: 0.5rem; width: 100%; max-width: 1240px; margin: 0 auto; min-height: 44px; padding: 0.45rem 0.9rem; border: 0; background: none; color: inherit; text-decoration: none; text-align: left; font-size: 0.95rem; line-height: 1.3; cursor: pointer; }
+.fn-strip-t { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fn-strip-n { flex: 0 0 auto; }
+/* the band's two lines (22 Oct 2026): the time of the next round not sent leads */
+.fn-due { font-weight: 700; font-variant-numeric: tabular-nums; }
+.fn-due.is-late { color: #A3230F; }
+.fn-more-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4rem; }
+.fn-more-row .fn-more { margin: 0 0 0.35rem; }
+a.fn-svc { display: inline-flex; align-items: center; color: inherit; text-decoration: none; background: #FFF6D9; }
+/* #/fn/now, the service view */
+.fn-svc-rows { list-style: none; margin: 0 0 1rem; padding: 0; display: grid; gap: 0.6rem; }
+.fn-svc-row { padding: 0.7rem 0.8rem; border: 1px solid #E8C35A; border-left-width: 6px; border-radius: 8px; background: var(--paper); }
+.fn-svc-row.is-late { border-color: #D9A196; border-left-color: #A3230F; background: #FBEDEA; }
+.fn-svc-row.is-later { border-color: var(--line, #ddd); background: transparent; }
+.fn-svc-top { margin: 0; font-size: 1rem; overflow-wrap: anywhere; }
+.fn-svc-top .fn-due { font-size: 1.25rem; margin-right: 0.2rem; }
+.fn-svc-name { font-weight: 700; font-size: 1rem; }
+.fn-svc-what { margin: 0.45rem 0 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.35rem 0.9rem; font-size: 1.05rem; }
+.fn-svc-q b { font-size: 1.5rem; font-variant-numeric: tabular-nums; margin-right: 0.15rem; }
+.fn-svc-note { margin: 0.35rem 0 0; color: #3b3a36; font-style: italic; }
+.fn-svc-just { margin: 0 0 1rem; color: var(--muted); }
 /* the function managers' form, tighter (22 Oct 2026): more of it fits on one phone screen */
 .fe-wrap { gap: 0.6rem; }
 .fe .set-block { gap: 0.4rem; padding-bottom: 0.75rem; }

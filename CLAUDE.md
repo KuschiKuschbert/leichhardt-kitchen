@@ -47,7 +47,7 @@ The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the
 | `scripts/nightly-backup.mjs`, `.github/workflows/nightly-backup.yml` | Nightly backup (03:30 kitchen time): reads the book like the admin Backup button, encrypts it with the `BACKUP_KEY` secret (openssl, AES-256) and keeps it as a GitHub artifact for 90 days. Reads only |
 
 ## Routes
-`#/` landing (five dockets), `#/recipes` (Pass or Tiles), `#/r/<id>[/<id>...]` a recipe and the trail to it, `#/prep`, `#/orders`, `#/waste`, `#/guides`, `#/guides/<id>`, `#/minutes`, `#/mail`, `#/drinks`, `#/admin`, `#/settings`, `#/manage` (head chef only: the recipe list), `#/manage/r/<id>`, `#/manage/new`, `#/manage/new/<id>`, `#/manage/draw/<drawing id>`, `#/manage/draw/new/<recipe id>/<plate|pan|side|build>`, `#/fn` (functions: today and the next days), `#/fn/<id>`, `#/functions` (function managers only), `#/functions/new`, `#/functions/<id>`.
+`#/` landing (five dockets), `#/recipes` (Pass or Tiles), `#/r/<id>[/<id>...]` a recipe and the trail to it, `#/prep`, `#/orders`, `#/waste`, `#/guides`, `#/guides/<id>`, `#/minutes`, `#/mail`, `#/drinks`, `#/admin`, `#/settings`, `#/manage` (head chef only: the recipe list), `#/manage/r/<id>`, `#/manage/new`, `#/manage/new/<id>`, `#/manage/draw/<drawing id>`, `#/manage/draw/new/<recipe id>/<plate|pan|side|build>`, `#/fn` (functions: today and the next days), `#/fn/now` (the service view), `#/fn/<id>`, `#/functions` (function managers only), `#/functions/new`, `#/functions/<id>`.
 
 ## Ground rules (no exceptions)
 These hold for every session, every message and every change, however small. A hook in `.claude/settings.json` (`scripts/guard-main.mjs`) refuses edits and commits on `main`, so a session that skips them is stopped.
@@ -113,7 +113,7 @@ These hold for every file, old and new. When you touch code that breaks one, bri
 
 **Saved copies on the phone**
 - Every saved copy (`lk.*`, IndexedDB) says in a comment what makes it out of date.
-- A change to a past day must reach the saved copies on other phones too, not only the phone that made it.
+- A change to a past day must reach the saved copies on other phones too, not only the phone that made it: call `markPast('p' | 'o', date)` after the write, and have the saved copy check `pastStamp()` before it is used.
 - A copy is saved only when every part came in. A failed read is never saved as "nothing there".
 
 **Who sees what**
@@ -126,7 +126,7 @@ These hold for every file, old and new. When you touch code that breaks one, bri
 - A value from Firestore placed in a `style`, an SVG attribute or a URL is checked by type first: a number in range, a colour (`#rgb`, `#rrggbb` or a named colour), or one of a fixed list. Never put it in as it came.
 - SVG from Firestore or IndexedDB goes through `LK_RX.clean()` every time it is drawn, including copies kept on the phone.
 - Links are fixed `#/` routes or use `encodeURIComponent`. No `eval`, `new Function` or string timers.
-- `tests/safe-text.test.js` (coming with item 2 of "Bringing the code in line") types a booby-trapped line into every field that others see. A new field that others see gets a line there.
+- `tests/safe-text.test.js` (coming with item 1 of "Bringing the code in line") types a booby-trapped line into every field that others see. A new field that others see gets a line there.
 
 **Forms**
 - Fill in what the book already knows (section, unit, reason, the usual amount), and keep it easy to change: the filled box is selected on tap, so typing replaces it.
