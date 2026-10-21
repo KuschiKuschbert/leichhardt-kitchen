@@ -426,7 +426,7 @@
         ops.push(['set', api.fs().doc(api.db(), 'kitchens', api.pin(), 'functions', id, 'hist', String(prev.v)), { was: was, at: t, what: what }]);
       }
       ops.push(['set', api.docRef('fncontact', id), { cname: e.d.cname.trim().slice(0, 80), phone: e.d.phone.trim().slice(0, 30), email: e.d.email.trim().slice(0, 120), upd: t }]);
-      return api.W(ops).then(function () { return f; });
+      return api.W(ops.concat(prepOps(api, prev, f, id, t))).then(function () { return f; });
     }).then(function (f) {
       clearTimeout(slow);
       if (!f) return;
@@ -445,6 +445,36 @@
       e.msg = code === 'permission-denied' ? 'Not saved: the book refused it. You may not be ticked for Functions any more, or someone saved it just now. Your changes are kept on this device.' : 'Not saved. Check the signal and try again. Your changes are kept on this device.';
       if (E.ed === e) draw();
     });
+  }
+  /* The platters on the prep list (22 Oct 2026): a confirmed function puts one prep line per platter on its day, under the
+     section Functions, linked to the recipe card: "Pizza Platter: Smith 50th, from 18:30", "5 platters". The line id is
+     fn-<function>-<platter>, so a second save changes the same line instead of adding another. Only a line that is new or
+     changed is written, so a line the kitchen removed stays removed until the booking changes. A cancelled function, a
+     platter taken off, or a function moved to another day removes its old lines. Ticks are never touched (done is never
+     sent), lines never roll over and never merge with the kitchen's own lines (fn, dupOk). */
+  function prepText(f, l) {
+    var n = (f.rounds || []).length, a = M.counts(l, n), i = a.findIndex(function (x) { return x > 0; }), r = i >= 0 ? f.rounds[i] : f.rounds[0];
+    var at = r && r.at ? (f.mode === 'stag' ? 'from ' : 'at ') + M.when(r.at, f.date) : 'times TBC';
+    return (l.name + ': ' + (f.name || 'function') + ', ' + at).slice(0, 160);
+  }
+  function prepOps(api, prev, f, id, t) {
+    var fs = api.fs(), ops = [], who = P.whoName() || 'Head chef';
+    function ref(day, rid) { return fs.doc(api.db(), 'kitchens', api.pin(), 'days', day, 'items', ('fn-' + id + '-' + rid).slice(0, 120)); }
+    function line(g, l) { return { text: prepText(g, l), qty: (l.qty + ' ' + M.unitOf(l, l.qty)).slice(0, 40), station: 'Functions', recipe: l.rid, fn: id, dupOk: true }; }
+    var had = {}, want = {};
+    if (prev && prev.status === 'confirmed' && M.isYmd(prev.date)) (prev.lines || []).forEach(function (l) { had[prev.date + '|' + l.rid] = line(prev, l); });
+    if (f.status === 'confirmed' && M.isYmd(f.date)) f.lines.forEach(function (l) { want[f.date + '|' + l.rid] = line(f, l); });
+    Object.keys(had).forEach(function (k) {
+      if (want[k]) return;
+      var p = k.split('|');
+      ops.push(['set', ref(p[0], p[1]), Object.assign({}, had[k], { deleted: true, deletedBy: who, deletedAt: t }), true]);
+    });
+    Object.keys(want).forEach(function (k) {
+      var w = want[k], h = had[k], p = k.split('|');
+      if (h && h.text === w.text && h.qty === w.qty) return;   // the same as before: leave the kitchen's line alone
+      ops.push(['set', ref(p[0], p[1]), Object.assign({}, w, { deleted: false, addedBy: who, addedById: api.who(), addedAt: t }), true]);
+    });
+    return ops;
   }
   function goto(k) {
     var el = E.root && (E.root.querySelector('[data-ff="' + k + '"]') || E.root.querySelector('#fe-e-' + k));

@@ -41,7 +41,7 @@ function dowOf(day) { const [y, m, d] = day.split('-').map(Number); return Strin
 function tally(lines, day, kind) {
   const map = {}, dw = dowOf(day);
   lines.forEach(x => {
-    if (!x || x.deleted || x.rolled || !x.text) return;
+    if (!x || x.deleted || x.rolled || x.fn || !x.text) return;   // fn: a function's platters, not a usual job
     const text = String(x.text).trim().slice(0, kind === 'prep' ? 160 : 120), k = lkey(text);
     if (!k) return;
     const m = map[k] = map[k] || { text, n: 0, typed: 0, picked: 0, dow: {}, secs: {}, q: {}, last: 0, by: '' };
