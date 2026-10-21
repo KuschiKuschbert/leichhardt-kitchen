@@ -209,6 +209,58 @@ service cloud.firestore {
         allow delete: if isAdmin();
       }
     }
+    // The head chef's book (#/manage, 21 Oct 2026): recipes changed or added in the book itself, laid over js/data.js.
+    // Everyone with the kitchen PIN reads them. Only the head chef writes them: with their Google account while nobody
+    // else is signed in with a PIN on that device, or with their own PIN as the person in config/main headId (which only
+    // the Google account can set). Sous chefs and staff only read.
+    // book/index lists each changed recipe and its version (r) and the guest menu order (menu), so a phone reads one
+    // record to know what is new. A recipe's version goes up by one with every save and the index must say the same
+    // version in the same batch, so a save made from an old copy is refused. Recipes are never deleted (removed hides
+    // one); every earlier version is kept in recipes/<id>/hist/<v>, which nobody can change.
+    function headWrite() { return cfg().get('headId', '') != '' && staff() && request.resource.data.by == cfg().get('headId', ''); }
+    function bookBy() { return (isAdmin() && request.resource.data.get('by', '') in ['', cfg().get('headId', '')]) || headWrite(); }
+    function bookIndex() { return getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/book/index).data; }
+    function nextVersion() { return request.resource.data.v is int && request.resource.data.v == (resource == null ? 1 : resource.data.v + 1); }
+    function recipeOk(id) {
+      let d = request.resource.data;
+      let r = d.r;
+      return id.matches('[a-z0-9][a-z0-9-]{0,47}')
+        && d.keys().hasOnly(['r', 'v', 'upd', 'by', 'src', 'base', 'removed'])
+        && d.v is int && d.v >= 1 && d.upd is int
+        && d.get('src', 'book') in ['book', 'new'] && d.get('base', '') is string && d.get('base', '').size() <= 16
+        && d.get('removed', false) is bool
+        && r is map && r.id == id
+        && r.keys().hasOnly(['id', 'no', 'kind', 'forLine', 'name', 'short', 'avc', 'menu', 'yield', 'art', 'side', 'diagram', 'ingredients', 'pins', 'sections', 'contains', 'check', 'labelNote', 'tip', 'safety', 'done', 'aka'])
+        && r.name is string && r.name.size() > 0 && r.name.size() <= 80
+        && r.kind in ['main', 'snack', 'side', 'dessert', 'batch', 'component']
+        && r.get('no', '') is string && r.get('no', '').size() <= 8
+        && r.get('yield', '') is string && r.get('yield', '').size() <= 300
+        && r.get('menu', '') is string && r.get('menu', '').size() <= 400
+        && r.get('ingredients', []) is list && r.get('ingredients', []).size() <= 100
+        && r.get('pins', []) is list && r.get('pins', []).size() <= 60
+        && r.get('sections', []) is list && r.get('sections', []).size() <= 30;
+    }
+    match /kitchens/KITCHEN_PIN/book/index {
+      allow read: if true;
+      allow create, update: if (isAdmin() || headWrite())
+        && request.resource.data.keys().hasOnly(['r', 'd', 'menu', 'by', 'upd'])
+        && request.resource.data.get('r', {}) is map && request.resource.data.get('r', {}).size() <= 1000
+        && request.resource.data.get('d', {}) is map && request.resource.data.get('d', {}).size() <= 3000
+        && request.resource.data.get('menu', []) is list && request.resource.data.get('menu', []).size() <= 40;
+      allow delete: if false;
+    }
+    match /kitchens/KITCHEN_PIN/recipes/{id} {
+      allow read: if true;
+      // the head chef's Google account may also copy a recipe as it is (move to a new kitchen PIN)
+      allow create: if recipeOk(id) && bookBy() && (isAdmin() || (nextVersion() && bookIndex().get('r', {}).get(id, 0) == request.resource.data.v));
+      allow update: if recipeOk(id) && bookBy() && nextVersion() && bookIndex().get('r', {}).get(id, 0) == request.resource.data.v;
+      allow delete: if false;
+      match /hist/{v} {
+        allow read: if true;
+        allow create: if bookBy() && request.resource.data.keys().hasOnly(['was', 'at', 'by']) && request.resource.data.was is map && request.resource.data.at is int;
+        allow update, delete: if false;
+      }
+    }
     // Who has seen a shift ping: one small record per person, ping and day, written when they tap Got it.
     // The record id is the day, an underscore and the writer's id. Records are never changed or deleted.
     match /kitchens/KITCHEN_PIN/notes/{id}/seen/{sid} {

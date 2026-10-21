@@ -23,8 +23,10 @@
   ];
   var TEXT = [['normal', 'Normal'], ['large', 'Large'], ['xlarge', 'Extra large']];
 
-  /* ---------- index: worked out once when the page loads ---------- */
-  var byId = {}, usedIn = {}, rolled = {}, rows = {}, tags = {}, hay = {}, missing = {};
+  /* ---------- index: worked out when the page loads, and again when the head chef's recipe changes come in ----------
+     (js/overlay.js lays them over js/data.js; js/prep.js says when new ones arrived: lk-rx) */
+  var byId, usedIn, rolled, rows, tags, hay, missing;
+  var MENU, PREP, placed, memb, GROUPS, SHELVES;
   // A recipe with no contains or check list gets them worked out from its ingredient tags.
   function fromTags(r) {
     r.contains = []; r.check = [];
@@ -37,35 +39,78 @@
       });
     });
   }
-  D.recipes.forEach(function (r) {
-    r.ingredients = r.ingredients || []; r.sections = r.sections || []; r.pins = r.pins || [];
-    if (!r.contains && !r.check) fromTags(r);
-    r.contains = r.contains || []; r.check = r.check || [];
-    byId[r.id] = r;
-  });
-  D.recipes.forEach(function (r) {
-    r.ingredients.forEach(function (i) { if (i.link && byId[i.link]) { (usedIn[i.link] = usedIn[i.link] || []).push(r.id); } });
-  });
+  function index() {
+    byId = {}; usedIn = {}; rolled = {}; rows = {}; tags = {}; hay = {}; missing = {};
+    D.recipes.forEach(function (r) {
+      r.ingredients = r.ingredients || []; r.sections = r.sections || []; r.pins = r.pins || [];
+      if (!r.contains && !r.check) fromTags(r);
+      r.contains = r.contains || []; r.check = r.check || [];
+      byId[r.id] = r;
+    });
+    D.recipes.forEach(function (r) {
+      r.ingredients.forEach(function (i) { if (i.link && byId[i.link]) { (usedIn[i.link] = usedIn[i.link] || []).push(r.id); } });
+    });
 
-  /* ---------- menu sections: the guest menu in its printed order, then the prep recipes ---------- */
-  // Each group is { key, title, list }. All three views (Tiles, List, The Pass) use these.
-  var MENU = [], PREP = [], placed = {}, memb = {};
-  (D.menuOrder || []).forEach(function (s, i) {
-    var list = (s.ids || []).filter(function (id) { return byId[id] && !placed[id]; });
-    list.forEach(function (id) { placed[id] = true; byId[id].sec = s.title; });
-    if (list.length) MENU.push({ key: 'm' + i, title: s.title, list: list.map(function (id) { return byId[id]; }) });
-  });
-  // A dish that is in no menu section still shows, so nothing goes missing.
-  var other = D.recipes.filter(function (r) { return !placed[r.id] && (r.kind === 'main' || r.kind === 'snack' || r.kind === 'side' || r.kind === 'dessert'); });
-  other.forEach(function (r) { r.sec = 'Other dishes'; });
-  if (other.length) MENU.push({ key: 'mx', title: 'Other dishes', list: other });
-  [['batch', 'Batch recipes'], ['component', 'Components']].forEach(function (k) {
-    var list = D.recipes.filter(function (r) { return r.kind === k[0]; });
-    if (list.length) PREP.push({ key: k[0], title: k[1], list: list });
-  });
-  var GROUPS = MENU.concat(PREP);
-  GROUPS.forEach(function (g) { memb[g.key] = {}; g.list.forEach(function (r) { memb[g.key][r.id] = true; }); });
-  var SHELVES = MENU.concat([{ key: 'prep', title: 'Bains and prep', list: PREP.reduce(function (all, g) { return all.concat(g.list); }, []) }]);
+    /* ---------- menu sections: the guest menu in its printed order, then the prep recipes ---------- */
+    // Each group is { key, title, list }. All three views (Tiles, List, The Pass) use these.
+    MENU = []; PREP = []; placed = {}; memb = {};
+    (D.menuOrder || []).forEach(function (s, i) {
+      var list = (s.ids || []).filter(function (id) { return byId[id] && !placed[id]; });
+      list.forEach(function (id) { placed[id] = true; byId[id].sec = s.title; });
+      if (list.length) MENU.push({ key: 'm' + i, title: s.title, list: list.map(function (id) { return byId[id]; }) });
+    });
+    // A dish that is in no menu section still shows, so nothing goes missing.
+    var other = D.recipes.filter(function (r) { return !placed[r.id] && (r.kind === 'main' || r.kind === 'snack' || r.kind === 'side' || r.kind === 'dessert'); });
+    other.forEach(function (r) { r.sec = 'Other dishes'; });
+    if (other.length) MENU.push({ key: 'mx', title: 'Other dishes', list: other });
+    [['batch', 'Batch recipes'], ['component', 'Components']].forEach(function (k) {
+      var list = D.recipes.filter(function (r) { return r.kind === k[0]; });
+      if (list.length) PREP.push({ key: k[0], title: k[1], list: list });
+    });
+    GROUPS = MENU.concat(PREP);
+    GROUPS.forEach(function (g) { memb[g.key] = {}; g.list.forEach(function (r) { memb[g.key][r.id] = true; }); });
+    SHELVES = MENU.concat([{ key: 'prep', title: 'Bains and prep', list: PREP.reduce(function (all, g) { return all.concat(g.list); }, []) }]);
+
+    D.recipes.forEach(function (r) {
+      var ro = roll(r.id, {}), list = [], t = [];
+      Object.keys(ro.contains).forEach(function (a) { list.push({ label: a, from: ro.contains[a].join(', '), maybe: false }); t.push(a); });
+      Object.keys(ro.check).forEach(function (a) {
+        if (ro.contains[a]) return;
+        list.push({ label: a + '?', from: 'check: ' + ro.check[a].join(', '), maybe: true });
+        t.push(a + '?');
+      });
+      rows[r.id] = list;
+      tags[r.id] = t;
+      missing[r.id] = ro.missing;
+      hay[r.id] = [r.name, r.avc || '', r.menu || '', r.yield, KIND[r.kind], r.sec || '', r.forLine, r.aka || ''].concat(r.ingredients.map(function (i) { return i.name; }), t).join(' ').toLowerCase();
+    });
+  }
+  // A recipe change that breaks the book's own index is dropped: the book falls back to js/data.js alone
+  // (js/overlay.js then skips the changes at the next start too, until new ones come in).
+  function indexSafe() {
+    try { index(); } catch (e) {
+      if (!window.LK_RX) throw e;
+      if (window.console) console.warn('Kitchen Book: the recipe changes could not be drawn, showing js/data.js only.', e);
+      window.LK_RX.apply(true); index();
+    }
+  }
+  indexSafe();
+  /* New recipe changes came in (js/prep.js, lk-rx): lay them over js/data.js again and work the index out again.
+     Ticks on a recipe whose steps changed are cleared, a kind chip that no longer exists goes back to All. */
+  function reindex() {
+    var was = {};
+    D.recipes.forEach(function (r) { was[r.id] = JSON.stringify(r.sections); });
+    if (window.LK_RX) window.LK_RX.apply();
+    indexSafe();
+    sq = { key: null }; vocab = null; maskCache = {};
+    if (ui.kind !== 'all' && !memb[ui.kind]) ui.kind = 'all';
+    var cut = false;
+    Object.keys(ticks).forEach(function (k) {
+      var id = k.split(':')[0];
+      if (!byId[id] || JSON.stringify(byId[id].sections) !== was[id]) { delete ticks[k]; cut = true; }
+    });
+    if (cut) saveTicks();
+  }
 
   function addTo(bucket, a, src) { if (!bucket[a]) bucket[a] = []; if (bucket[a].indexOf(src) < 0) bucket[a].push(src); }
   function roll(id, seen) {
@@ -88,19 +133,6 @@
     rolled[id] = out;
     return out;
   }
-  D.recipes.forEach(function (r) {
-    var ro = roll(r.id, {}), list = [], t = [];
-    Object.keys(ro.contains).forEach(function (a) { list.push({ label: a, from: ro.contains[a].join(', '), maybe: false }); t.push(a); });
-    Object.keys(ro.check).forEach(function (a) {
-      if (ro.contains[a]) return;
-      list.push({ label: a + '?', from: 'check: ' + ro.check[a].join(', '), maybe: true });
-      t.push(a + '?');
-    });
-    rows[r.id] = list;
-    tags[r.id] = t;
-    missing[r.id] = ro.missing;
-    hay[r.id] = [r.name, r.avc || '', r.menu || '', r.yield, KIND[r.kind], r.sec || '', r.forLine, r.aka || ''].concat(r.ingredients.map(function (i) { return i.name; }), t).join(' ').toLowerCase();
-  });
 
   /* ---------- settings (saved on this device) and ticked steps (this visit) ---------- */
   var SKEY = 'lk.settings.v1', TKEY = 'lk.ticks.v1';
@@ -867,6 +899,8 @@
     document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'waste' ? 'Wastage · ' : route.name === 'minutes' ? 'Meeting minutes · ' : route.name === 'mail' ? 'Kitchen mail · ' : route.name === 'drinks' ? 'Drinks run · ' : route.name === 'guides' ? 'Guides · ' : route.name === 'landing' ? '' : route.name === 'home' ? 'Recipes · ' : route.name === 'admin' ? 'Admin panel · ' : '')) + 'Leichhardt Kitchen Book';
     var prevRoute = lastRoute; lastRoute = route.name;
     if (changed && route.name === 'recipe') noteView(route.stack[route.stack.length - 1]);
+    // opening the recipes checks for the head chef's recipe changes when the last check is 30 minutes old (one read)
+    if (changed && (route.name === 'home' || route.name === 'recipe') && window.LK_PREP && window.LK_PREP.rxCheck) window.LK_PREP.rxCheck();
     if (changed) {
       lastHash = location.hash;
       // Coming back to the recipe list from a recipe puts you where you were.
@@ -1137,7 +1171,17 @@
     var m = document.getElementById('main');
     if (m) { if (!m.hasAttribute('tabindex')) m.setAttribute('tabindex', '-1'); m.focus(); }
   });
+  /* The head chef's recipe changes came in (js/prep.js read them, lk-rx): work the index out again and redraw.
+     On the recipe list only the results are redrawn, so the page does not jump while someone is scrolling. */
+  window.addEventListener('lk-rx', function () {
+    reindex();
+    var n = parseRoute().name;
+    if (n === 'home' && document.getElementById(settings.view === 'tiles' ? 'results' : 'shelves')) updateResults();
+    else if (!PREP_PAGES[n]) render();
+  });
   window.addEventListener('hashchange', function () { window.__lkNav = true; });
   window.addEventListener('hashchange', render);
   render();
+  // the book drew with the recipe changes laid over it, so they are safe to use at the next start too
+  if (window.LK_RX) window.LK_RX.drawn();
 })();

@@ -3390,7 +3390,7 @@
   }
   function notesInit() {
     if (!/^\d{4,6}$/.test(S.pin)) return;
-    sdk().then(function () { loadNotes(); loadMinutes(); loadGuides(); startNoteTick(); }, function () {});
+    sdk().then(function () { loadNotes(); loadMinutes(); loadGuides(); rxSync(); startNoteTick(); }, function () {});
   }
   function loadNotes(force) {
     var today = dayNow();
@@ -3511,7 +3511,7 @@
       noteMaybePop(); mlMaybePop();
     }, 60000);
   }
-  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && /^\d{4,6}$/.test(S.pin) && fb) { loadNotes(); noteMaybePop(); } });
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && /^\d{4,6}$/.test(S.pin) && fb) { loadNotes(); noteMaybePop(); rxSync(); } });
   window.addEventListener('lk-clock', function () { draw(); });
   document.addEventListener('click', function (e) {
     var el = e.target.closest && e.target.closest('[data-note]');
@@ -4309,7 +4309,8 @@
     if (t.length > 1500000) t = JSON.stringify(Object.assign(c, { list: c.list.map(function (g) { return Object.assign({}, g, { thumb: '', text: String(g.text || '').slice(0, 600) }); }) }));
     lsSet('lk.guides', t);
   }
-  function gForget() { S.guides = null; S.guidesFor = ''; S.guidesAt = 0; S.gRetry = 0; lsSet('lk.guides', ''); }
+  // the guides (and the recipe changes, below) kept on this phone belong to the kitchen PIN: a new or wrong PIN drops them
+  function gForget() { S.guides = null; S.guidesFor = ''; S.guidesAt = 0; S.gRetry = 0; lsSet('lk.guides', ''); rxForget(); }
   function loadGuides(force) {
     if (!fb || !/^\d{4,6}$/.test(S.pin) || S.gBusy || Date.now() < S.gRetry || !featOn('guides')) return;
     var today = dayNow(), pin = S.pin;
@@ -4326,6 +4327,39 @@
       S.gBusy = false; S.gRetry = Date.now() + 60000; if (!S.guides) S.guides = []; draw();
     });
   }
+
+  /* ---------- the head chef's recipe changes (#/manage), laid over js/data.js by js/overlay.js (21 Oct 2026) ----------
+     book/index lists every changed recipe with its version, so one read says what is new; then only the recipes whose
+     version changed are read. It runs when the book connects, when someone comes back after 30 minutes away and when
+     the recipes are opened, each time only if the last check is 30 minutes old. No listener, no polling. */
+  var RX_STALE = 30 * 60000, rxBusy = false, rxRetry = 0;
+  function rxDue() { return !!window.LK_RX && Date.now() - window.LK_RX.syncedAt() > RX_STALE; }
+  function rxSync(force) {
+    var X = window.LK_RX;
+    if (!X || !fb || !/^\d{4,6}$/.test(S.pin) || rxBusy || Date.now() < rxRetry || !(force || rxDue())) return Promise.resolve(false);
+    var pin = S.pin, have = X.pin() === pin ? X.versions() : {};
+    rxBusy = true;
+    return fb.fs.getDoc(docRef('book', 'index')).then(function (sn) {
+      var idx = sn.exists() ? sn.data() : {}, ir = idx.r && typeof idx.r === 'object' ? idx.r : {};
+      var need = Object.keys(ir).filter(function (id) { return have[id] !== ir[id]; });
+      return Promise.all(need.map(function (id) {
+        return fb.fs.getDoc(docRef('recipes', id)).then(function (d) { return [id, d.exists() ? d.data() : null]; });
+      })).then(function (got) {
+        rxBusy = false;
+        if (pin !== S.pin) return false;
+        var changed = X.take(pin, idx, got);
+        if (changed) rxChanged();
+        return changed;
+      });
+    }).catch(function () {
+      // no signal, or rules not published yet: keep the changes on this phone and try again in a minute
+      rxBusy = false; rxRetry = Date.now() + 60000; return false;
+    });
+  }
+  // the recipe lists this file works out from js/data.js (spelling, recipe links, guides on cards) are worked out again
+  function rxReset() { baseCache = null; vocabCache = null; RIDX = null; RCACHE = {}; ingIdx = null; NOTE_RN = null; gCardsText = null; gIdx = null; }
+  function rxChanged() { rxReset(); try { window.dispatchEvent(new Event('lk-rx')); } catch (e) {} if (S.root && document.body.contains(S.root)) draw(); }
+  function rxForget() { if (!window.LK_RX) return; var had = Object.keys(window.LK_RX.changes()).length || window.LK_RX.menu(); window.LK_RX.forget(); if (had) rxChanged(); }
 
   /* search: every word must be in the guide (title, what it is for, steps, search words, category or the words in the PDF); titles first */
   function gHay(g) { return [g.title, g.sum, g.steps, g.kw, gCatName(g.cat), g.text].join(' ').toLowerCase(); }
@@ -5699,6 +5733,9 @@
     },
     noteInfo: noteInfo,
     noteOpen: noteOpen,
+    // the recipes were opened: look for the head chef's recipe changes when the last look is 30 minutes old
+    rxCheck: function () { rxSync(); },
+    rxSync: rxSync,
     guidesFor: function (rid) { try { return guidesFor(rid); } catch (e) { return []; } },
     guideSearch: function (q) { try { return guideSearch(q); } catch (e) { return []; } },
     featOn: featOn,

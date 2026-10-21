@@ -125,6 +125,16 @@ function commitOps(ops) {
     return /\/learnlog\/[^/]+$/.test(k) && store[k] !== undefined;
   });
   if (refused) return Promise.reject({ code: 'permission-denied' });
+  // the head chef's book (book/index, recipes, drawings and the library): only the head chef writes it, with the
+  // Google account (nobody else signed in) or with their own PIN as config/main headId, like the real rules
+  const book = ops.filter(o => /^kitchens\/[^/]+\/(book|recipes|drawings|drawtpl|drawlib)\//.test(key(o.ref.path)));
+  if (book.length) {
+    const head = (store[key(book[0].ref.path).split('/').slice(0, 2).join('/') + '/config/main'] || {}).headId || '';
+    const by = book.map(o => (o.data && o.data.by) || '');
+    const asHead = !!head && !!proof && by.every(b => b === head);
+    const asOwner = !!window.__fakeUser && by.every(b => !b || b === head);
+    if (!asHead && !asOwner) return Promise.reject({ code: 'permission-denied' });
+  }
   if (window.__fake.mode === 'deny') return Promise.reject({ code: 'permission-denied' });
   // __fake.deny = /regex/ refuses only the writes whose path matches (a right the rules do not give), the rest go through
   if (window.__fake.deny && ops.some(o => window.__fake.deny.test(key(o.ref.path)))) return Promise.reject({ code: 'permission-denied' });
