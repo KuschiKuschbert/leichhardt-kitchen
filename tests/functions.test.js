@@ -1,0 +1,259 @@
+// Functions (21 Oct 2026): a Functions coordinator books a function once, the kitchen sees it in the band under the top
+// bar on the day with the right numbers and times, staff only read, and taking the tick away stops the next save.
+const L = require('./lib');
+const M = require('../js/functions.js');
+const { R, ok } = L.results(), { txt, tap } = L;
+const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
+const store = page => page.evaluate(() => window.__fake.dump());
+const today = L.ymd(new Date(L.NOW)), tomorrow = M.addDays(today, 1), day2 = M.addDays(today, 2), yesterday = M.addDays(today, -1);
+const at = (ymd, hm) => M.kat(ymd, M.hmMin(hm));
+const PEOPLE = [
+  { id: 'sam', name: 'Sam', role: 'sous', add: true, tick: true, del: true, active: true },
+  { id: 'ann', name: 'Ann', role: 'staff', add: true, tick: true, del: false, active: true },
+  { id: 'bo', name: 'Bo', role: 'staff', add: true, tick: true, del: false, active: true },
+  { id: 'fay', name: 'Fay', role: 'fnc', add: false, tick: false, del: false, fn: true, active: true },
+  { id: 'finn', name: 'Finn', role: 'fnc', add: false, tick: false, del: false, fn: true, active: true }
+];
+const CFG = { people: PEOPLE, sousIds: ['sam'], pingIds: ['sam'], staffIds: ['sam', 'ann', 'bo', 'fay', 'finn'], fnIds: ['fay', 'finn'], showBadges: true };
+const base = {
+  [fsKey(['config', 'main'])]: CFG,
+  [fsKey(['staffpins', 'fay'])]: { hash: L.sha('lk:fay:5151') }, [fsKey(['pinset', 'fay'])]: { at: 1 },
+  [fsKey(['staffpins', 'finn'])]: { hash: L.sha('lk:finn:5252') }, [fsKey(['pinset', 'finn'])]: { at: 1 },
+  [fsKey(['drinks', 'fay'])]: { kind: 'flat', at: 1, by: 'fay' }, [fsKey(['drinks', 'finn'])]: { kind: 'flat', at: 1, by: 'finn' }
+};
+// a saved function the way the book writes it
+function fn(o) {
+  const date = o.date || today, R = (o.rounds || ['18:30']).map(x => Array.isArray(x) ? { at: at(x[0], x[1]), note: '' } : { at: at(date, x), note: '' });
+  const f = { v: o.v || 1, status: o.status || 'confirmed', name: o.name || 'Smith 50th', date, start: at(date, o.start || '18:00'), loc: o.loc === undefined ? 'Beer garden' : o.loc, guests: o.guests || 60,
+    mode: R.length > 1 ? 'stag' : 'all', notes: o.notes || '', kc: o.kc || '', kcBy: o.kcBy || '', kcAt: o.kc ? L.NOW - 3600000 : 0, rounds: R,
+    lines: (o.lines || [['antipasto-platter', 'Antipasto Platter', [3]]]).map(([rid, name, a]) => ({ rid, name, unit: 'platter', spec: 'Per platter.', fp: '', qty: a.reduce((s, x) => s + x, 0), u: M.toU(a) })),
+    was: o.was || {}, chg: o.chg || [], cBy: 'fay', cAt: L.NOW - 86400000, confBy: 'fay', confAt: L.NOW - 86400000, by: o.by || 'fay', upd: L.NOW - 3600000 };
+  if (o.status === 'cancelled') { f.canBy = 'finn'; f.canAt = L.NOW - 1800000; }
+  return M.derive(f);
+}
+const extra = docs => Object.assign({}, base, ...Object.keys(docs).map(id => ({ [fsKey(['functions', id])]: docs[id] })));
+const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e => e.dispatchEvent(new Event('change', { bubbles: true }))); await L.settle(p, 80); };
+
+(async () => {
+  const b = await L.start();
+
+  // 1. a coordinator books a function: menu, form, platters, staggered rounds by hand, kitchen comment, review, confirm
+  let p = await L.open(b, '#/', { who: 'fay', extra: base, wait: 1200 });
+  const items = await L.chefItems(p);
+  ok(items.indexOf('functions') >= 0, 'menu: a coordinator ticked for Functions sees Functions in the chef hat (' + items.join(' | ') + ')');
+  await p.keyboard.press('Escape');
+  await p.goto(L.BASE + '#/functions/new'); await L.settle(p, 900);
+  ok(/New function/.test(await txt(p, '#fe-root') || ''), 'form: New function opens');
+  await p.fill('[data-ff="name"]', 'Smith 50th');
+  await setV(p, '[data-ff="date"]', today);
+  await setV(p, '[data-ff="startT"]', '18:00');
+  await p.fill('[data-ff="guests"]', '60');
+  await p.fill('[data-ff="loc"]', 'Beer garden');
+  await p.fill('[data-ff="cname"]', 'Jo Smith');
+  await p.fill('[data-ff="phone"]', '0400 111 222');
+  await p.fill('[data-ff="email"]', 'jo@example.com');
+  await p.fill('[data-ff="pq"]', 'anti'); await L.settle(p, 100);
+  ok((await p.$$('[data-fe="addline"]')).length === 1, 'platters: the search narrows the book\'s Functions platters');
+  await tap(p, '[data-fe="addline"][data-v="antipasto-platter"]'); await L.settle(p, 100);
+  await tap(p, '[data-fe="addline"][data-v="aussie-platter"]'); await L.settle(p, 100);
+  await tap(p, '[data-fe="addline"][data-v="pizza-platter"]'); await L.settle(p, 100);
+  await setV(p, '[data-ff="qty0"]', '3'); await setV(p, '[data-ff="qty1"]', '4'); await setV(p, '[data-ff="qty2"]', '5');
+  ok(/12 platters/.test(await txt(p, '#fe-live') || ''), 'platters: the bar adds up 12 platters (no guest multiplying)');
+  await tap(p, '[data-fe="mode"][data-v="stag"]'); await L.settle(p, 100);
+  await setV(p, '[data-ff="foodT"]', '1830');
+  ok(await p.$eval('[data-ff="foodT"]', e => e.value) === '18:30', 'times: 1830 is read as 18:30 (24-hour)');
+  ok(await p.$eval('[data-ff="a2_0"]', e => e.value) === '2' && await p.$eval('[data-ff="a2_1"]', e => e.value) === '2' && await p.$eval('[data-ff="a2_2"]', e => e.value) === '1', 'staggered: 5 pizza platters over 3 rounds start as 2, 2, 1');
+  ok(await p.$eval('[data-ff="rt1"]', e => e.value) === '19:00' && await p.$eval('[data-ff="rt2"]', e => e.value) === '19:30', 'staggered: rounds every 30 minutes from 18:30');
+  // the brief's example: antipasto first, aussie in the first two rounds, pizza later
+  for (const [k, v] of [['a0_0', '3'], ['a0_1', '0'], ['a0_2', '0'], ['a1_0', '2'], ['a1_1', '2'], ['a1_2', '0'], ['a2_0', '0'], ['a2_1', '2'], ['a2_2', '2']]) await setV(p, '[data-ff="' + k + '"]', v);
+  ok(/4 of 5/.test(await txt(p, '.fe-grid .fn-tot') || ''), 'grid: under-allocation shows "4 of 5"');
+  await tap(p, '[data-fe="review"]'); await L.settle(p, 200);
+  ok(/Pizza: 4 of 5 placed\. Place 1 more/.test(await txt(p, '.fe-probs') || ''), 'confirm: refused while a line does not add up, and says what to fix');
+  await setV(p, '[data-ff="a2_2"]', '4');
+  ok(/6 placed but 5 booked/.test(await txt(p, '.fe-probs') || '') || /1 too many/.test(await txt(p, '.fe-grid') || ''), 'grid: over-allocation is flagged');
+  await setV(p, '[data-ff="a2_2"]', '3');
+  await p.fill('[data-ff="notes"]', 'Two vegetarians.');
+  await p.fill('[data-ff="kc"]', 'Cake comes out at 20:00.\nKeep the pass clear.');
+  await tap(p, '[data-fe="review"]'); await L.settle(p, 200);
+  const rv = await txt(p, '.fe-review') || '';
+  ok(/Check before confirming/.test(rv) && /18:30/.test(rv) && /Event start/.test(rv) && /Kitchen comment/.test(rv) && !/0400/.test(rv), 'review: the summary shows times, platters and the comment, never the phone');
+  await p.click('[data-fe="confirm"]'); await p.click('[data-fe="confirm"]').catch(() => {});
+  await L.waitFor(p, () => /Confirmed/.test((document.querySelector('.fe-head') || {}).textContent || ''));
+  let s = await store(p);
+  const ids = Object.keys(s).filter(k => /\/functions\/[^/]+$/.test(k));
+  ok(ids.length === 1, 'save: one function, even with two taps on Confirm (' + ids.length + ')');
+  const saved = s[ids[0]], id = ids[0].split('/').pop(), contact = s[fsKey(['fncontact', id])];
+  ok(saved.status === 'confirmed' && saved.by === 'fay' && saved.confBy === 'fay' && saved.kcBy === 'fay' && saved.guests === 60, 'save: confirmed, written by Fay with her own id');
+  ok(JSON.stringify(saved.lines.map(l => [l.rid, l.qty, M.fromU(l.u, 3)])) === JSON.stringify([['antipasto-platter', 3, [3, 0, 0]], ['aussie-platter', 4, [2, 2, 0]], ['pizza-platter', 5, [0, 2, 3]]]), 'save: every line keeps its platter id and adds up across the rounds');
+  ok(saved.first === at(today, '18:30') && saved.last === at(today, '19:30') && saved.start === at(today, '18:00') && saved.until === at(today, '20:00'), 'save: first, last and the end of the band come from the saved rounds');
+  ok(!!contact && contact.phone === '0400 111 222' && contact.email === 'jo@example.com' && !JSON.stringify(saved).match(/0400|example\.com/), 'save: phone and email only in the contact record, not the kitchen\'s copy');
+  // the band on the same phone
+  await p.goto(L.BASE + '#/recipes'); await L.settle(p, 900);
+  await L.waitFor(p, () => /Smith 50th/.test((document.getElementById('fn-band') || {}).textContent || ''));
+  const band = await txt(p, '#fn-band') || '';
+  ok(/Smith 50th/.test(band) && /Beer garden/.test(band) && /60 guests/.test(band) && /Event 18:00/.test(band) && /Next 18:30 \(round 1 of 3\): 3 Antipasto, 2 Aussie/.test(band) && /5 now, 12 in all/.test(band), 'band: event start, next round and "now" against "in all" (' + band.replace(/\s+/g, ' ').slice(0, 200) + ')');
+  ok(/Kitchen comment/.test(band) && /Staggered/.test(band), 'band: staggered and kitchen comment marked');
+  ok(p.errors.length === 0, 'coordinator: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // 2. staff on another phone: read only, the sheet has the full comment and its author, no contact, no saving
+  const smith = fn({ rounds: ['18:30', '19:00', '19:30'], lines: [['antipasto-platter', 'Antipasto Platter', [3, 0, 0]], ['aussie-platter', 'Aussie Platter', [2, 2, 0]], ['pizza-platter', 'Pizza Platter', [0, 2, 3]]], kc: 'Cake comes out at 20:00.\nKeep the pass clear.', kcBy: 'fay', notes: 'Two vegetarians.' });
+  p = await L.open(b, '#/', { who: 'ann', extra: Object.assign(extra({ smith }), { [fsKey(['fncontact', 'smith'])]: { cname: 'Jo', phone: '0400 111 222', email: 'jo@example.com', upd: 1 } }), wait: 1200 });
+  await L.waitFor(p, () => !!document.querySelector('#fn-band .fn-row'));
+  ok((await L.chefItems(p)).indexOf('functions') < 0, 'staff: no Functions in Ann\'s chef hat'); await p.keyboard.press('Escape');
+  ok(/Functions/.test(await txt(p, '#fn-land') || '') && /Smith 50th/.test(await txt(p, '#fn-land') || ''), 'landing: the Functions card lists today\'s function');
+  await tap(p, '#fn-band .fn-row'); await L.settle(p, 200);
+  const sh = await txt(p, '.fn-sheet') || '';
+  ok(/Cake comes out at 20:00\.\s*Keep the pass clear\./.test(sh) && /Fay,/.test(sh), 'sheet: the whole kitchen comment with its author');
+  ok(await p.$eval('.fn-kc .fn-text', e => getComputedStyle(e).whiteSpace) === 'pre-wrap', 'sheet: the comment keeps its lines');
+  ok(/Two vegetarians/.test(sh) && /The book does not track what has gone out/.test(sh), 'sheet: notes, and it says times are due times, not served');
+  ok(!/0400|jo@example|Jo Smith/.test(await p.content()), 'staff: no phone, email or contact name anywhere on the page');
+  ok(!(await p.$('.fn-sheet a[href^="#/functions/"]')), 'staff: no Change this function');
+  await p.keyboard.press('Escape'); await L.settle(p, 100);
+  ok(!(await p.$('.fn-pop')), 'sheet: Escape closes it');
+  const refused = await p.evaluate(() => { const a = window.LK_PREP.book(); return a.W([['set', a.docRef('functions', 'smith'), { v: 2, status: 'cancelled', kc: '' }]]).then(() => 'saved', e => e && e.code); });
+  ok(refused === 'permission-denied', 'staff: a direct save to a function is refused (' + refused + ')');
+  await p.goto(L.BASE + '#/functions'); await L.settle(p, 900);
+  ok(/Only function managers change functions/.test(await txt(p, '#fe-root') || ''), 'staff: #/functions says only function managers change them');
+  ok(!(await p.$('script[src*="fnedit"]')), 'staff: the managers\' form is never downloaded');
+  ok(p.errors.length === 0, 'staff: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // 3. the band's timing: on at 00:00, gone at the end, an overnight function past midnight, a cancel and a move noticed
+  const late = fn({ name: 'Late one', rounds: ['18:30', '19:30', '20:30'] });   // gone at 21:00
+  p = await L.open(b, '#/recipes', { who: 'ann', extra: extra({ late }), clock: at(today, '20:58'), wait: 1200 });
+  await L.waitFor(p, () => /Late one/.test((document.getElementById('fn-band') || {}).textContent || ''));
+  ok(/Next 20:30|Last round was due 20:30/.test(await txt(p, '#fn-band') || ''), 'timing: at 20:58 the last round still shows (nothing marked served)');
+  await p.clock.fastForward(3 * 60000);
+  await L.waitFor(p, () => { const el = document.getElementById('fn-band'); return !el || el.hidden; }, null, 30000).catch(() => {});
+  ok(await p.$eval('#fn-band', e => e.hidden), 'timing: gone by itself at 21:00 (30 minutes after the last round), page left open');
+  await p.context().close();
+  const night = fn({ name: 'Night owls', date: yesterday, start: '22:00', rounds: [[yesterday, '23:30'], [today, '00:30']] });
+  p = await L.open(b, '#/recipes', { who: 'ann', extra: extra({ night }), clock: at(today, '00:45'), wait: 1200 });
+  await L.waitFor(p, () => /Night owls/.test((document.getElementById('fn-band') || {}).textContent || ''));
+  ok(/Night owls/.test(await txt(p, '#fn-band') || ''), 'overnight: yesterday\'s late function still shows at 00:45 (until 01:00)');
+  await p.context().close();
+  p = await L.open(b, '#/recipes', { who: 'ann', extra: extra({ smith }), clock: at(today, '00:00') + 1000, tz: 'America/New_York', wait: 1200 });
+  await L.waitFor(p, () => /Smith 50th/.test((document.getElementById('fn-band') || {}).textContent || ''));
+  ok(/Next 18:30/.test(await txt(p, '#fn-band') || ''), 'time zone: a phone set to New York shows it from 00:00 kitchen time, at 18:30 kitchen time');
+  await p.context().close();
+  const gone = fn({ name: 'Jones wake', status: 'cancelled', start: '15:00', rounds: ['15:00'] });
+  const moved = fn({ name: 'Brown 21st', date: day2, was: { date: today, start: at(today, '17:00'), first: at(today, '17:00'), from: at(today, '00:00'), until: at(today, '19:00') } });
+  const draft = fn({ name: 'Draft do', status: 'draft' });
+  p = await L.open(b, '#/prep', { who: 'ann', extra: extra({ smith, gone, moved, draft }), wait: 1200 });
+  await L.waitFor(p, () => document.querySelectorAll('#fn-band .fn-row').length >= 2);
+  let bt = await txt(p, '#fn-band') || '';
+  ok(/\+1 more function/.test(bt) && (await p.$$('#fn-band .fn-row')).length === 2, 'several: two show, then "+1 more function"');
+  await tap(p, '#fn-band [data-fn="more"]'); await L.settle(p, 100);
+  bt = await txt(p, '#fn-band') || '';
+  ok(/Cancelled/.test(bt) && /Jones wake/.test(bt) && /Do not send/.test(bt), 'cancel: a cancelled function shows as a notice in its old window');
+  ok(/Rescheduled/.test(bt) && /Brown 21st/.test(bt) && new RegExp('now ' + M.dayName(day2)).test(bt), 'move: a moved function says where it went');
+  ok(!/Draft do/.test(bt), 'draft: a draft never shows to the kitchen');
+  await p.goto(L.BASE + '#/fn'); await L.settle(p, 900);
+  const pg = await txt(p, '#main') || '';
+  ok(/Upcoming functions/.test(pg) && new RegExp(M.dayName(day2)).test(pg) && /Brown 21st/.test(pg) && !/Draft do/.test(pg), '#/fn: the next three days, without drafts');
+  await p.context().close();
+
+  // 4. upcoming totals: each booked line once, confirmed only
+  const t1 = fn({ name: 'Tomorrow A', date: tomorrow, rounds: ['12:00', '12:30'], lines: [['pizza-platter', 'Pizza Platter', [2, 3]]] });
+  const t2 = fn({ name: 'Tomorrow B', date: tomorrow, guests: 200, lines: [['pizza-platter', 'Pizza Platter', [4]], ['vege-platter', 'Vege Platter', [2]]] });
+  const t3 = fn({ name: 'Tomorrow C', date: tomorrow, status: 'cancelled', lines: [['pizza-platter', 'Pizza Platter', [9]]] });
+  p = await L.open(b, '#/fn', { who: 'ann', extra: extra({ t1, t2, t3 }), wait: 1200 });
+  await L.waitFor(p, () => /Tomorrow A/.test((document.getElementById('main') || {}).textContent || ''));
+  const day = await p.$$eval('.fn-day', els => els.map(e => e.textContent.replace(/\s+/g, ' ')));
+  ok(/To make for the day ?9 Pizza Platter ?2 Vege Platter/.test(day[0] || ''), 'totals: tomorrow is 9 pizza (5 + 4, rounds not counted twice, cancelled and guests left out) and 2 vege (' + (day[0] || '').slice(0, 220) + ')');
+  await p.context().close();
+
+  // 5. two coordinators: Finn changes the comment, both names stay; Fay's open form meets Finn's save; then her tick goes
+  p = await L.open(b, '#/functions/smith', { who: 'finn', extra: extra({ smith }), wait: 1500 });
+  await L.waitFor(p, () => !!document.querySelector('[data-ff="kc"]'));
+  ok(/Saved comment by Fay/.test(await txt(p, '.fe-kcb') || ''), 'comment: the saved comment shows its author');
+  await p.fill('[data-ff="kc"]', 'Cake at 20:30 now.');
+  await tap(p, '[data-fe="save"]');
+  await L.waitFor(p, () => /Version 2/.test((document.getElementById('fe-root') || {}).textContent || ''));
+  s = await store(p);
+  let f2 = s[fsKey(['functions', 'smith'])];
+  ok(f2.v === 2 && f2.kcBy === 'finn' && f2.by === 'finn' && f2.cBy === 'fay' && f2.confBy === 'fay' && /Kitchen comment changed/.test(f2.chg[0].what) && f2.chg[0].by === 'finn', 'comment: Finn\'s change is his, Fay stays the one who made and confirmed it');
+  ok(!!s[fsKey(['functions', 'smith', 'hist', '1'])], 'history: version 1 is kept');
+  await p.context().close();
+  p = await L.open(b, '#/functions/smith', { who: 'fay', extra: extra({ smith }), wait: 1500 });
+  await L.waitFor(p, () => !!document.querySelector('[data-ff="guests"]'));
+  await p.evaluate(f => window.__fake.write('kitchens/000000/functions/smith', f), Object.assign({}, smith, { v: 2, by: 'finn', guests: 70, upd: L.NOW }));
+  await p.evaluate(f => { window.__fake.server = { 'kitchens/000000/functions/smith': f }; }, Object.assign({}, smith, { v: 2, by: 'finn', guests: 70, upd: L.NOW }));
+  await p.fill('[data-ff="guests"]', '65');
+  await tap(p, '[data-fe="save"]');
+  await L.waitFor(p, () => !!document.querySelector('.fe-conflict'));
+  ok(/Someone else saved this function/.test(await txt(p, '.fe-conflict') || '') && /Finn/.test(await txt(p, '.fe-conflict') || ''), 'conflict: Fay is told Finn saved first, nothing is overwritten');
+  ok((await store(p))[fsKey(['functions', 'smith'])].guests === 70, 'conflict: Finn\'s version stays until Fay chooses');
+  // the head chef takes Fay's tick away (on the admin device): her open form closes at once and nothing more is saved
+  await p.evaluate(c => window.__fake.write('kitchens/000000/config/main', c), Object.assign({}, CFG, { fnIds: ['finn'], people: PEOPLE.map(x => x.id === 'fay' ? Object.assign({}, x, { fn: false }) : x) }));
+  await L.waitFor(p, () => /Only function managers/.test((document.getElementById('fe-root') || {}).textContent || ''));
+  ok(/kept on this device/.test(await txt(p, '#fe-root') || ''), 'revoked: the form closes straight away and says her changes are kept on the device');
+  const after = await p.evaluate(() => { const a = window.LK_PREP.book(); return a.W([['set', a.docRef('functions', 'smith'), { v: 3, status: 'confirmed', guests: 65 }]]).then(() => 'saved', e => e && e.code); });
+  ok(after === 'permission-denied', 'revoked: her next save is refused (' + after + ')');
+  ok((await L.chefItems(p)).indexOf('functions') < 0, 'revoked: Functions leaves her chef hat'); await p.keyboard.press('Escape');
+  ok(p.errors.length === 0, 'two coordinators: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // 6. duplicate makes a new draft with its own id and no date; cancel tells the kitchen
+  p = await L.open(b, '#/functions/smith', { who: 'fay', extra: extra({ smith }), wait: 1500 });
+  await L.waitFor(p, () => !!document.querySelector('[data-fe="dup"]'));
+  await tap(p, '[data-fe="dup"]'); await L.settle(p, 300);
+  ok(await p.$eval('[data-ff="name"]', e => e.value) === 'Smith 50th (copy)' && await p.$eval('[data-ff="date"]', e => e.value) === '', 'duplicate: a new draft with the date left for you to pick');
+  await setV(p, '[data-ff="date"]', day2);
+  await tap(p, '[data-fe="save"]');
+  await L.waitFor(p, () => /Draft saved|Draft: the kitchen/.test((document.getElementById('fe-root') || {}).textContent || ''));
+  s = await store(p);
+  const copies = Object.keys(s).filter(k => /\/functions\/[^/]+$/.test(k) && !/\/smith$/.test(k)).map(k => s[k]);
+  ok(copies.length === 1 && copies[0].status === 'draft' && copies[0].date === day2 && copies[0].rounds[0].at === at(day2, '18:30') && copies[0].kq === 0, 'duplicate: saved as a draft on the new date, times kept, never in the kitchen\'s list');
+  await p.goto(L.BASE + '#/functions/smith'); await L.settle(p, 1200);
+  await L.waitFor(p, () => !!document.querySelector('[data-fe="cancel"]'));
+  await tap(p, '[data-fe="cancel"]'); await L.settle(p, 100);
+  ok(/Tap again to cancel/.test(await txt(p, '[data-fe="cancel"]') || ''), 'cancel: asks for a second tap');
+  await tap(p, '[data-fe="cancel"]');
+  await L.waitFor(p, () => /Cancelled/.test((document.querySelector('.fe-head') || {}).textContent || ''));
+  s = await store(p);
+  f2 = s[fsKey(['functions', 'smith'])];
+  ok(f2.status === 'cancelled' && f2.canBy === 'fay' && f2.kq === f2.until && /Cancelled/.test(f2.chg[0].what), 'cancel: kept, marked cancelled by Fay, still in the kitchen\'s list for its notice');
+  ok(p.errors.length === 0, 'duplicate and cancel: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // 8. the admin People tab: only the head chef's save gives Functions; the role ticks it, the tick is what counts
+  p = await L.open(b, '#/admin', { admin: true, who: '', extra: base, wait: 1800 });
+  await L.adminTab(p, 'people'); await L.settle(p, 300);
+  ok(await p.evaluate(() => [...document.querySelectorAll('#a-r1 option')].some(o => o.value === 'fnc' && /Functions coordinator/.test(o.textContent))), 'admin: Functions coordinator is a role');
+  await p.selectOption('#a-r1', 'fnc'); await L.settle(p, 200);
+  await p.click('input[data-perm="fn"][data-i="2"]'); await L.settle(p, 100);
+  await p.click('[data-p="a-save"]'); await L.settle(p, 600);
+  s = await store(p);
+  let c = s[fsKey(['config', 'main'])];
+  ok(['ann', 'bo', 'fay', 'finn'].every(x => c.fnIds.indexOf(x) >= 0) && c.fnIds.indexOf('sam') < 0, 'admin: picking the role and ticking Bo give both Functions (' + c.fnIds.join(',') + ')');
+  ok(c.people.filter(x => x.id === 'ann')[0].add === false && c.sousIds.indexOf('ann') < 0, 'admin: the coordinator role gives no other rights');
+  await p.click('input[data-perm="fn"][data-i="3"]'); await L.settle(p, 100);
+  await p.click('[data-p="a-save"]'); await L.settle(p, 600);
+  c = (await store(p))[fsKey(['config', 'main'])];
+  ok(c.fnIds.indexOf('fay') < 0 && c.people.filter(x => x.id === 'fay')[0].active !== false, 'admin: untick takes Functions away, Fay stays on the list');
+  await p.context().close();
+  // a tick changed outside the admin panel (a sous chef's save sends the whole people list) does not count until the head chef keeps it
+  const sneaky = Object.assign({}, base, { [fsKey(['config', 'main'])]: Object.assign({}, CFG, { people: PEOPLE.map(x => x.id === 'bo' ? Object.assign({}, x, { fn: true }) : x) }) });
+  p = await L.open(b, '#/admin', { admin: true, who: '', extra: sneaky, wait: 1800 });
+  await L.settle(p, 600);
+  ok(/Bo\s*is now ticked for Functions/.test(await txt(p, '.a-ids') || ''), 'admin: a Functions tick changed elsewhere is shown to the head chef to keep or undo');
+  c = (await store(p))[fsKey(['config', 'main'])];
+  ok(c.fnIds.indexOf('bo') < 0, 'admin: and Bo cannot book functions until the head chef keeps it');
+  await p.context().close();
+
+  // 7. layout: the band, #/fn and the form at three widths, no sideways scroll, no errors
+  for (const w of [390, 768, 1280]) {
+    for (const [hash, who] of [['#/', 'ann'], ['#/fn/smith', 'ann'], ['#/functions', 'fay'], ['#/functions/smith', 'fay']]) {
+      p = await L.open(b, hash, { who, width: w, extra: extra({ smith, gone, t1 }), wait: 1500 });
+      await L.settle(p, 600);
+      const of = await L.overflow(p);
+      ok(!of, w + ' px ' + hash + ': no sideways scroll ' + (of || ''));
+      ok(p.errors.length === 0, w + ' px ' + hash + ': no page errors ' + p.errors.join(' | '));
+      await p.context().close();
+    }
+  }
+  await b.close();
+  L.report(R);
+})();

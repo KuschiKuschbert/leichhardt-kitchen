@@ -225,7 +225,7 @@ await ok(setDoc(doc(owner, K + 'config/main'), { kitSecs: [{ id: 'grill', name: 
 const rec = (x, r) => Object.assign({ r: Object.assign({ id: 'burger', kind: 'main', no: '02', forLine: 'Plate', name: 'Chicken Burger', yield: 'Per plate', ingredients: [{ q: '1', name: 'Burger bun', tags: ['Gluten'] }], pins: [], sections: [{ title: 'Cooking', steps: ['Toast the bun.'] }] }, r || {}), v: 1, upd: Date.now(), src: 'book', base: 'abcd1234', removed: false }, x || {});
 const pie = x => rec(Object.assign({ src: 'new', base: '' }, x || {}), { id: 'pie', name: 'Pie' });
 // earlier checks replace config/main: the head chef's own name is set again here
-await env.withSecurityRulesDisabled(async ctx => { await setDoc(doc(ctx.firestore(), K + 'config/main'), { headId: 'hd', sousIds: ['sam', 'hd'] }, { merge: true }); });
+await env.withSecurityRulesDisabled(async ctx => { await setDoc(doc(ctx.firestore(), K + 'config/main'), { headId: 'hd', sousIds: ['sam', 'hd'], staffIds: ['sam', 'ann', 'bo', 'cal', 'hd'] }, { merge: true }); });
 function ownerBatch(ops) { const b = writeBatch(owner); for (const [p, data, merge] of ops) b.set(doc(owner, K + p), data, merge ? { merge: true } : {}); return b.commit(); }
 await ok(getDoc(doc(anon, K + 'book/index')), true, 'book: a PIN holder reads the index');
 await ok(W([['recipes/burger', rec()], ['book/index', { r: { burger: 1 } }, true]], { id: 'hd' }), true, 'book: the head chef by PIN saves a changed recipe with the index');
@@ -312,6 +312,67 @@ await ok(W([['drawlib/other-1', lib({ body: '' })]], { id: 'hd' }), false, 'own 
 await ok(W([['drawlib/other-1', lib({ body: 'x'.repeat(100001) })]], { id: 'hd' }), false, 'own library: a piece is capped at 100 000 characters');
 await ok(W([['drawlib/other-1', lib({ price: 4 })]], { id: 'hd' }), false, 'own library: no fields beyond the library fields');
 await ok(deleteDoc(doc(owner, K + 'drawlib/house-slaw-1')), false, 'own library: never deleted');
+// Functions (21 Oct 2026): only people ticked for Manage functions (fnIds, owner only) or the Google account write
+const fpins = { fay: '5151', finn: '5252', fox: '5353', gone: '5454' };
+Object.assign(pins, fpins);
+await env.withSecurityRulesDisabled(async ctx => {
+  const db = ctx.firestore();
+  await setDoc(doc(db, K + 'config/main'), { fnIds: ['fay', 'finn'], staffIds: ['sam', 'ann', 'bo', 'cal', 'hd', 'fay', 'finn', 'fox'] }, { merge: true });
+  for (const id of Object.keys(fpins)) await setDoc(doc(db, K + 'staffpins/' + id), { hash: hash(id, fpins[id]) });
+});
+const T0 = Date.UTC(2026, 9, 24, 8, 0);   // 18:00 in Brisbane
+const fnc = x => Object.assign({ v: 1, status: 'draft', name: 'Smith 50th', date: '2026-10-24', start: T0, loc: 'Beer garden', guests: 60, mode: 'stag',
+  lines: [{ rid: 'antipasto-platter', name: 'Antipasto Platter', unit: 'platter', spec: 'Per platter.', fp: '', qty: 3, u: [0, 0, 0] },
+    { rid: 'aussie-platter', name: 'Aussie Platter', unit: 'platter', spec: 'Per platter.', fp: '', qty: 4, u: [0, 0, 1, 1] },
+    { rid: 'pizza-platter', name: 'Pizza Platter', unit: 'platter', spec: 'Per platter.', fp: '', qty: 5, u: [1, 1, 2, 2, 2] }],
+  rounds: [{ at: T0 + 1800000, note: '' }, { at: T0 + 3600000, note: '' }, { at: T0 + 5400000, note: '' }],
+  notes: '', kc: '', kcBy: '', kcAt: 0, first: T0 + 1800000, last: T0 + 5400000, from: T0 - 18 * 3600000, until: T0 + 7200000, kq: 0,
+  was: {}, chg: [], cBy: 'fay', cAt: 1, upd: 1 }, x || {});
+await ok(W([['functions/f1', fnc()]], { id: 'fay' }), true, 'functions: a coordinator ticked for Manage functions saves a draft');
+await ok(W([['functions/f1', fnc()]], { id: 'fay' }), false, 'functions: the same first save again (a double tap) is refused, no second copy');
+await ok(W([['functions/f1', fnc({ v: 2, status: 'confirmed', confBy: 'fay', confAt: 2 })], ['functions/f1/hist/1', { was: fnc(), at: 2, what: 'Confirmed' }], ['fncontact/f1', { cname: 'Jo Smith', phone: '0400 000 000', email: 'jo@example.com', upd: 2 }]], { id: 'fay' }), true, 'functions: confirmed with its earlier version and contact in one batch');
+await ok(W([['functions/f1', fnc({ v: 3, status: 'confirmed', kc: 'Cake at 20:00', kcBy: 'finn', kcAt: 3 })]], { id: 'finn' }), true, 'functions: a second coordinator adds the kitchen comment as themselves');
+await ok(W([['functions/f1', fnc({ v: 3, status: 'confirmed' })]], { id: 'fay' }), false, 'functions: a save from an old copy is refused (someone saved first)');
+await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', kc: 'Cake at 20:30', kcBy: 'finn', kcAt: 4 })]], { id: 'fay' }), false, 'functions: the kitchen comment cannot be put under someone else\'s name');
+await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', lines: [Object.assign({}, fnc().lines[0], { u: [0, 0] })] })]], { id: 'fay' }), false, 'functions: confirmed rounds that do not add up to the booked number are refused');
+await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', lines: [Object.assign({}, fnc().lines[0], { u: [0, 0, 3] })] })]], { id: 'fay' }), false, 'functions: a platter in a round that does not exist is refused');
+await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', lines: [Object.assign({}, fnc().lines[0], { u: [0, 0, -1] })] })]], { id: 'fay' }), false, 'functions: a minus round is refused');
+await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', lines: [Object.assign({}, fnc().lines[0], { qty: 2.5, u: [0, 0, 0] })] })]], { id: 'fay' }), false, 'functions: half a platter is refused');
+await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', lines: [Object.assign({}, fnc().lines[0], { qty: 0, u: [] })] })]], { id: 'fay' }), false, 'functions: a confirmed line has at least one platter');
+await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', rounds: [{ at: T0 + 3600000 }, { at: T0 + 1800000 }, { at: T0 + 5400000 }], first: T0 + 3600000 })]], { id: 'fay' }), false, 'functions: rounds out of time order are refused');
+await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', guests: 0 })]], { id: 'fay' }), false, 'functions: confirmed needs a guest count');
+await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', mode: 'all' })]], { id: 'fay' }), false, 'functions: all at once is one round');
+await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', price: 300 })]], { id: 'fay' }), false, 'functions: no fields beyond the function fields (no prices)');
+await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', phone: '0400' })]], { id: 'fay' }), false, 'functions: no phone on the kitchen copy');
+await ok(W([['functions/f2', fnc()]], { id: 'fox' }), false, 'functions: a coordinator without the tick cannot save');
+await ok(W([['functions/f2', fnc()]], { id: 'ann' }), false, 'functions: staff cannot save');
+await ok(W([['functions/f2', fnc()]], { id: 'hd' }), false, 'functions: the head chef by PIN needs the tick too');
+await ok(W([['functions/f2', fnc()]], { id: 'ann', as: 'fay' }), false, 'functions: staff writing as a coordinator is refused');
+await ok(W([['fncontact/f1', { cname: 'X', phone: '1', email: '', upd: 5 }]], { id: 'ann' }), false, 'functions: staff cannot change a contact');
+await ok(ownerBatch([['functions/f3', fnc()]]), true, 'functions: the Google account saves a function');
+await ok(deleteDoc(doc(owner, K + 'functions/f1')), false, 'functions: never deleted');
+await ok(W([['functions/f1/hist/1', { was: fnc(), at: 9, what: 'x' }]], { id: 'fay' }), false, 'functions: an earlier version cannot be changed');
+await ok(getDoc(doc(anon, K + 'functions/f1')), true, 'functions: a PIN holder reads the kitchen copy');
+await ok(getDoc(doc(anon, K + 'fncontact/f1')), true, 'functions: the function page reads one contact by its id');
+await ok(getDocs(collection(anon, K + 'fncontact')), false, 'functions: nobody lists the contacts with only the kitchen PIN');
+await ok(getDocs(collection(owner, K + 'fncontact')), true, 'functions: the Google account lists them (backup, PIN move)');
+{
+  const L6 = Array.from({ length: 6 }, (_, i) => ({ rid: 'p' + i, name: 'Platter ' + i, unit: 'platter', spec: 'Per platter.', fp: 'abcdef', qty: 40, u: Array.from({ length: 40 }, (_, k) => k % 8) }));
+  const R8 = Array.from({ length: 8 }, (_, i) => ({ at: T0 + i * 600000, note: 'Round note' }));
+  const big = fnc({ status: 'confirmed', lines: L6, rounds: R8, first: T0, last: T0 + 7 * 600000, kc: 'x'.repeat(2000), kcBy: 'fay', kcAt: 1, notes: 'n'.repeat(1000) });
+  await ok(W([['functions/f8', big], ['fncontact/f8', { cname: 'Jo', phone: '0400 000 000', email: 'jo@example.com', upd: 1 }]], { id: 'fay' }), true, 'functions: the largest booking (6 platter lines over 8 rounds, 240 platters) is checked in full');
+  await ok(W([['functions/f8', Object.assign({}, big, { v: 2 })], ['functions/f8/hist/1', { was: big, at: 2, what: 'Changed' }], ['fncontact/f8', { cname: 'Jo', phone: '0400 000 001', email: 'jo@example.com', upd: 2 }]], { id: 'fay' }), true, 'functions: the largest booking saved again with its earlier version and contact (the largest batch)');
+  await ok(W([['functions/f9', fnc({ status: 'draft', lines: L6.concat([L6[0]]) })]], { id: 'fay' }), false, 'functions: at most 6 platter lines');
+}
+// a coordinator's tick taken away (owner save): the next save is refused; someone taken off the list cannot write at all
+await env.withSecurityRulesDisabled(async ctx => { await setDoc(doc(ctx.firestore(), K + 'config/main'), { fnIds: ['finn'] }, { merge: true }); });
+await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed' })]], { id: 'fay' }), false, 'functions: tick taken away: the next save is refused');
+await ok(W([['days/2026-10-19/items/fay1', line()]], { id: 'fay' }), true, 'functions: tick taken away: still on the list, so still writes the prep list');
+await ok(W([['functions/f1', fnc({ v: 4, status: 'cancelled', kc: 'Cake at 20:00', kcBy: 'finn', kcAt: 3, canBy: 'finn', canAt: 5 })]], { id: 'finn' }), true, 'functions: the other coordinator cancels it');
+await ok(W([['days/2026-10-19/items/gone1', line()]], { id: 'gone' }), false, 'staff lock: someone taken off the list cannot write with their old PIN');
+await ok(W([['functions/f1', fnc({ v: 5, status: 'cancelled' })]], { id: 'fay', as: 'fay' }), false, 'functions: a coordinator cannot give themselves the tick back by writing anyway');
+await ok(W([['config/main', { fnIds: ['finn', 'fay'] }, true]], { id: 'sam' }), false, 'functions: a sous chef cannot change who manages functions');
+await ok(W([['config/main', { fnIds: ['finn', 'fay'] }, true]], { id: 'finn' }), false, 'functions: a coordinator cannot give anyone the tick');
 // the owner probe
 await ok(getDoc(doc(owner, K + 'config/admins')), true, 'admins: the head chef may read the probe');
 await ok(getDoc(doc(anon, K + 'config/admins')), false, 'admins: nobody else may');
