@@ -12,7 +12,8 @@ function measure() {
   let shown = 0, sure = 0, drawn = 0;
   const misses = [], unsure = [], made = [];
   dishes.forEach(r => (r.ingredients || []).forEach(i0 => S.split(i0).forEach(i => {
-    if (S.hidden(i)) return;
+    // not on the plate: cooked in, under everything, or wrapped inside another ingredient (as js/smart.js partsOf())
+    if (S.hidden(i) || S.cookedIn(i) || S.wrapped(i, r)) return;
     shown++;
     const m = S.matchIng(i, r), mk = C.partFor(i, r, m);
     if (mk) made.push(r.id + ': ' + i.name + ' (' + mk.from.join(', ') + ')');

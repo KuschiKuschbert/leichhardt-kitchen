@@ -619,11 +619,12 @@
   }
   function salsa(main) {
     return function (P, rnd) {
-      var d = P.blob(rnd, 22, 16, 0.12, 10), out = P.path(d, main === 'corn' ? '#EFD98A' : '#F2C98A', null, 0, { opacity: '0.4' });
-      var bag = main === 'corn' ? ['k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'c', 'c', 'c', 'c', 'c', 'o', 'o', 'o', 'o', 'b', 'b', 'b', 'b', 'b', 'h', 'h', 'h', 'h'] : ['m', 'm', 'm', 'm', 'm', 'm', 'm', 'm', 'm', 'm', 'm', 'm', 'm', 'm', 'c', 'c', 'c', 'c', 'c', 'o', 'o', 'o', 'o', 'o', 'h', 'h', 'h', 'h', 'h'];
+      var d = P.blob(rnd, 22, 16, 0.12, 10), out = P.path(d, { corn: '#EFD98A', tomato: '#F2B8A8' }[main] || '#F2C98A', null, 0, { opacity: '0.4' });
+      var bag = main === 'tomato' ? ['t', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 'o', 'o', 'o', 'o', 'o', 'h', 'h', 'h', 'h', 'h', 'h'] : main === 'corn' ? ['k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'c', 'c', 'c', 'c', 'c', 'o', 'o', 'o', 'o', 'b', 'b', 'b', 'b', 'b', 'h', 'h', 'h', 'h'] : ['m', 'm', 'm', 'm', 'm', 'm', 'm', 'm', 'm', 'm', 'm', 'm', 'm', 'm', 'c', 'c', 'c', 'c', 'c', 'o', 'o', 'o', 'o', 'o', 'h', 'h', 'h', 'h', 'h'];
       return out + tossed(rnd, bag, 22, 16, {
         k: function (q, x, y) { return kernelAt(x, y, q() * 360, 0.9); },
         m: function (q, x, y) { return cubeAt(x, y, 5 + q() * 1.4, '#F2A93A', q() * 90, { sw: 0.5 }); },
+        t: function (q, x, y) { return cubeAt(x, y, 5 + q() * 1.2, '#D9473B', q() * 90, { sw: 0.5 }); },
         c: function (q, x, y) { return cubeAt(x, y, 3.6, '#C9302A', q() * 90, { sw: 0.4 }); },
         o: function (q, x, y) { return cubeAt(x, y, 3.2, '#B76A9E', q() * 90, { sw: 0.4 }); },
         b: function (q, x, y) { return P.ellipse(x, y, 2.4, 1.6, '#2E2420', '#1A1410', 0.4, { transform: rot(q() * 180, x, y) }) + P.circle(x - 0.6, y - 0.5, 0.5, '#8A7A70'); },
@@ -1071,6 +1072,7 @@
     { id: 'coleslaw', name: 'Coleslaw', sub: 'Salads', kw: 'slaw coleslaw cabbage carrot creamy slaw', form: 'pile', cook: 'raw', role: 'salad', g: 80, w: 64, h: 51, side: { s: 'pile', h: 16, c: '#EEF2D8' }, draw: slaw() },
     { id: 'wakame', name: 'Seaweed salad', sub: 'Salads', kw: 'wakame seaweed salad goma japanese', form: 'pile', cook: 'fresh', role: 'salad', g: 40, w: 43, h: 40, side: { s: 'pile', h: 10, c: '#3F9A3A' }, draw: function (P, rnd) { return heap(rnd, 22, 14, 11, function (x, y, i, q) { return seaweedAt(q, x, y, q() * 180, 18 + q() * 8, pick(q, ['#3F9A3A', '#52AE44', '#6EC05A'])); }) + P.scatter(rnd, 14, 20, 16, function (x, y, i, q) { return P.ellipse(x, y, 1, 0.6, '#F4EBCF', '#C9B88A', 0.3, { transform: rot(q() * 180, x, y) }); }) + strands(rnd, 3, 14, 10, ['#C9302A'], 10, 0.5, 2, { edgeW: 0 }); } },
     { id: 'mango-salsa', name: 'Mango salsa', sub: 'Salads', kw: 'mango salsa diced mango red onion chilli coriander', form: 'pile', cook: 'fresh', role: 'garnish', g: 50, w: 44, h: 37, side: { s: 'pile', h: 8, c: '#F2A93A' }, draw: salsa('mango') },
+    { id: 'tomato-salsa', name: 'Tomato salsa', sub: 'Salads', kw: 'tomato salsa diced tomato red onion coriander fresh salsa mexican', form: 'pile', cook: 'fresh', role: 'garnish', g: 50, w: 44, h: 36, side: { s: 'pile', h: 8, c: '#D9473B' }, draw: salsa('tomato') },
     { id: 'corn-salsa', name: 'Corn salsa', sub: 'Salads', kw: 'corn salsa charred corn black beans pico', form: 'pile', cook: 'fresh', role: 'garnish', g: 50, w: 44, h: 35, side: { s: 'pile', h: 8, c: '#F2C94C' }, draw: salsa('corn') },
     // pickles and ferments
     { id: 'kimchi', name: 'Kimchi', sub: 'Pickles and ferments', kw: 'kimchi kim chi korean fermented cabbage', form: 'pile', cook: 'cured', role: 'sidedish', g: 50, w: 43, h: 33, side: { s: 'pile', h: 12, c: '#D9502E' }, draw: function (P, rnd) { var d = P.blob(rnd, 18, 13, 0.14, 10); return P.path(d, '#B5301F', null, 0, { opacity: '0.5' }) + heap(rnd, 10, 15, 11, function (x, y, i, q) { return kimchiAt(q, x, y, 1); }) + sprinkle(rnd, 8, 16, 12, ['#F4EBCF'], 0.6) + P.scatter(rnd, 5, 14, 10, function (x, y) { return P.circle(x, y, 1.5, '#9CC067', '#4F8F2F', 0.6); }); } },

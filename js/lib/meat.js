@@ -994,6 +994,17 @@
   var cutlets3 =function (P, rnd) { return cutletAt(P, rnd, -27, 16, -40) + cutletAt(P, rnd, 27, 16, -140) + cutletAt(P, rnd, 2, 28, -78); };
   var shredPork = { rx: 36, ry: 27, count: 64, base: '#A8683A', cols: ['#C98A5A', '#D9A070', '#B97A48', '#E6BC8E'], bark: '#5E3418' };
 
+
+  // pieces of pork crackling (the crackle off the pork skin): puffed golden shards, blistered
+  function crackling(P, rnd) {
+    var out = '';
+    [[-18, -8, 14, 9], [6, -12, 12, 8], [16, 6, 13, 9], [-6, 10, 12, 8]].forEach(function (c) {
+      var d = P.blob(rnd, c[2], c[3], 0.14, 9, c[0], c[1]);
+      out += P.shadow(d) + P.path(d, '#E3B262', '#B9802F', 1) + P.g(P.at(c[0], c[1]), crackle(P, rnd, 14, c[2] - 3, c[3] - 3));
+    });
+    return out;
+  }
+
   L.add('meat', [
     // beef
     { id: 'rump', name: 'Rump steak', sub: 'Beef', kw: 'steak beef grilled char rump', form: 'piece', cook: 'grilled', role: 'main', g: 250, w: 96, h: 70, side: { s: 'slab', h: 14, c: C.beefCrust }, draw: steak({ rx: 46, ry: 33, fat: true }) },
@@ -1124,7 +1135,8 @@
     { id: 'curry-lamb', name: 'Lamb curry', sub: 'Curries and braises', kw: 'lamb curry rogan josh korma indian', form: 'bowlful', cook: 'braised', role: 'main', g: 350, w: 140, h: 140, side: { s: 'sauce', h: 18, c: '#9E3B22' }, draw: curry({ sauce: '#9E3B22', oil: '#C9562E', bits: [['lamb', 10], ['onion', 3]], garnish: [['yoghurt', 1, 14, -10], ['coriander', 6]] }) },
     { id: 'curry-beef-rendang', name: 'Beef rendang', sub: 'Curries and braises', kw: 'rendang beef curry dry malaysian indonesian coconut', form: 'bowlful', cook: 'braised', role: 'main', g: 350, w: 140, h: 140, side: { s: 'mound', h: 24, c: '#5E2A12' }, draw: curry({ sauce: '#5A2A12', dry: true, r: 62, bits: [['rendang', 11]], garnish: [['coconut', 30], ['kaffir', 6], ['chilli', 3]] }) },
     { id: 'beef-bourguignon', name: 'Beef bourguignon', sub: 'Curries and braises', kw: 'beef bourguignon stew casserole red wine braise mushroom', form: 'bowlful', cook: 'braised', role: 'main', g: 380, w: 140, h: 140, side: { s: 'sauce', h: 20, c: '#5A2018' }, draw: curry({ sauce: '#5A2018', bits: [['beef', 7], ['carrot', 5], ['mushroom', 4], ['pearl', 4], ['bacon', 5]], garnish: [['parsley', 16]] }) },
-    { id: 'osso-buco', name: 'Osso buco', sub: 'Curries and braises', kw: 'osso buco veal shank braised marrow gremolata', form: 'piece', cook: 'braised', role: 'main', g: 400, w: 88, h: 80, side: { s: 'slab', h: 30, c: '#6B3418' }, draw: ossoBuco }
+    { id: 'osso-buco', name: 'Osso buco', sub: 'Curries and braises', kw: 'osso buco veal shank braised marrow gremolata', form: 'piece', cook: 'braised', role: 'main', g: 400, w: 88, h: 80, side: { s: 'slab', h: 30, c: '#6B3418' }, draw: ossoBuco },
+    { id: 'pork-crackling', name: 'Pork crackling', sub: 'Pork', kw: 'pork crackling crackle pork skin rind puffed crispy', form: 'pile', cook: 'roasted', role: 'topping', g: 40, w: 66, h: 48, side: { s: 'pile', h: 10, c: '#E3B262' }, draw: crackling },
   ]);
   // the helpers, for the other category files that draw meat on something (burgers, pizzas, skewers, bowls)
   L.MEAT = {
