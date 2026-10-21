@@ -394,19 +394,15 @@
     out += P.crumbs(rnd, 10, 30, 18, ['#F4F1EA'], 0.8);
     return out + P.hl(-18, -16, 16, 5, '#FFFFFF', 0.22, -15);
   }
-  // a lamb loin chop: the eye and the little fillet either side of the T, the fat tail curled under
+  // a lamb loin chop: one outline with the eye, the little fillet past the T-bone and the tail curling down, fat round the outside
   function loinChop(P, rnd) {
-    var out = '', tail = 'M-26 4 Q-34 30 -8 34 Q14 36 28 22 L20 15 Q10 26 -7 25 Q-20 24 -17 6 Z';
-    out += P.shadow(tail) + P.path(tail, LAMB, P.shade(LAMB, -0.3), 1) + P.path('M-24 10 Q-25 29 -7 30 Q10 31 23 19', 'none', FATG, 3, { 'stroke-linecap': 'round' });
-    var fat = P.blob(rnd, 21.5, 19.5, 0.05, 11, -10.5, -0.5);
-    out += P.shadow(fat) + P.path(fat, FATG, FATG_ED, 1);
-    function lobe(cx, cy, rx, ry) {
-      var d = P.blob(rnd, rx, ry, 0.05, 11, cx, cy);
-      return P.path(d, LAMB, P.shade(LAMB, -0.3), 1.1) + P.path(P.blob(rnd, rx * 0.8, ry * 0.78, 0.06, 10, cx, cy), LAMB_SEAR, null, 0) + P.g(P.at(cx, cy), P.grill(rx * 0.8, ry * 0.76, 35, 8, C.charred, 2.2));
-    }
-    out += lobe(-9, 1, 19.5, 17.5) + lobe(21, 3, 11, 14);
-    out += P.line(10.5, -14, 11, 16, '#B9A27E', 4, { opacity: '0.9' }) + P.line(10.5, -14, 11, 16, '#EADCC0', 2.6) + P.line(-2, -18, 24, -16.5, '#B9A27E', 4.6) + P.line(-2, -18, 24, -16.5, '#EADCC0', 3.2);
-    return out + P.hl(-14, -8, 7, 2.4, '#FFFFFF', 0.25, -20);
+    var d = P.smooth([[-28, -14], [-16, -22], [0, -21], [10, -20], [22, -19], [32, -9], [33, 7], [26, 16], [12, 18], [4, 24], [-4, 34], [-16, 38], [-23, 31], [-27, 18], [-32, 4]]);
+    var out = P.shadow(d) + P.path(d, LAMB, P.shade(LAMB, -0.3), 1.1);
+    out += P.path('M-15 -21 Q-34 -14 -31 4 Q-29 22 -18 36', 'none', FATG, 5, { 'stroke-linecap': 'round' }) + P.path('M-8 23 Q-12 32 -17 35', 'none', FATG, 3, { 'stroke-linecap': 'round' });
+    function lobe(cx, cy, rx, ry) { return P.path(P.blob(rnd, rx, ry, 0.06, 10, cx, cy), LAMB_SEAR, null, 0) + P.g(P.at(cx, cy), P.grill(rx * 0.9, ry * 0.86, 35, 8, C.charred, 2.2)); }
+    out += lobe(-9, 0, 16, 15) + lobe(21, 0, 8.5, 12);
+    out += P.line(10.5, -17, 11.5, 15, '#B9A27E', 4) + P.line(10.5, -17, 11.5, 15, '#EADCC0', 2.6) + P.line(0, -19.5, 22, -18, '#B9A27E', 4.4) + P.line(0, -19.5, 22, -18, '#EADCC0', 3);
+    return P.g('translate(0 -8)', out + P.hl(-14, -8, 7, 2.4, '#FFFFFF', 0.25, -20));
   }
   function shank(P, rnd) {
     var col = '#5A2A16', out = bone(P, 28, -3, 62, -8, 14, true);
@@ -482,8 +478,8 @@
   // blistered crackling over an ellipse: many small puffed bubbles, a few darker ones
   function crackle(P, rnd, count, rx, ry) {
     return P.scatter(rnd, count, rx, ry, function (x, y, i, q) {
-      var r = 0.7 + q() * 1.3;
-      return i % 5 ? P.circle(x, y, r, '#F0CC84', '#C98E40', 0.35) + (i % 3 ? '' : P.circle(x - r * 0.3, y - r * 0.3, r * 0.4, '#FFF4D6', null, 0, { opacity: '0.8' })) : P.circle(x, y, r * 0.8, '#B9782E', null, 0, { opacity: '0.6' });
+      var r = 0.8 + q() * 1.4;
+      return i % 5 ? P.circle(x, y, r, '#F4D894', null, 0, { opacity: '0.85' }) + (i % 3 ? '' : P.circle(x - r * 0.3, y - r * 0.3, r * 0.4, '#FFF8E4', null, 0, { opacity: '0.8' })) : P.circle(x, y, r * 0.7, '#B9782E', null, 0, { opacity: '0.5' });
     });
   }
   // pork belly from above: a slab with blistered, scored crackling
