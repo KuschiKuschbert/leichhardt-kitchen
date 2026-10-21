@@ -19,10 +19,12 @@ const item = (p, id) => p.evaluate(k => window.__fake.dump()[k] || {}, fsKey(['d
   ok(await p.evaluate(() => document.activeElement.id) === 'p-section', 'Tab from the line goes to Section, as it shows');
   ok(await p.getAttribute('#p-text', 'autocapitalize') === 'sentences', 'the line starts with a capital on a phone keyboard');
   await p.fill('#p-text', 'Mise onions'); await L.settle(p, 300);
-  const chip = await p.$('[data-p="qset"]');
-  ok(!!chip && /Add 2 tubs/.test(await chip.textContent()), 'the usual amount chip says Add 2 tubs');
+  // a locator, not a handle: the add box can redraw between finding the chip and tapping it
+  const chip = p.locator('[data-p="qset"]').first();
+  const has = await chip.count() > 0;
+  ok(has && /Add 2 tubs/.test(await chip.textContent()), 'the usual amount chip says Add 2 tubs');
   // the chip to the middle of the screen first, as a person would: a toast at the bottom takes the taps under it
-  if (chip) { await chip.evaluate(e => e.scrollIntoView({ block: 'center' })); await L.settle(p, 100); await chip.click(); await L.settle(p, 400); }
+  if (has) { await chip.evaluate(e => e.scrollIntoView({ block: 'center' })); await L.settle(p, 100); await chip.click(); await L.settle(p, 400); }
   ok(await p.evaluate(a => Object.values(window.__fake.dump()).some(v => v && v.text === 'Mise onions' && v.qty === '2 tubs'), today), 'one tap adds Mise onions, 2 tubs');
   // no signal: the line shows Not sent until the write goes through
   await p.evaluate(() => { window.__fake.mode = 'hold'; });

@@ -23,7 +23,7 @@ echo "== Open pull requests:"
 if command -v gh >/dev/null; then
   gh pr list --state open --json number,title,headRefName,isDraft,mergeStateStatus,updatedAt \
     --template '{{range .}}  #{{.number}}  {{.headRefName}}  {{if .isDraft}}draft{{else}}ready{{end}}  {{.mergeStateStatus}}  {{timeago .updatedAt}}  {{.title}}{{"\n"}}{{end}}'
-  echo "   A ready PR on another branch may be about to merge. Ask before merging over it, or wait, and let main settle in between."
+  echo "   A ready PR on another branch may be about to merge. Wait for it, bring the new main into this branch, run the tests again, then merge."
 else
   echo "   gh is not installed, check GitHub by hand."
 fi

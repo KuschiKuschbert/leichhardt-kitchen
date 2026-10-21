@@ -146,6 +146,18 @@ npm test
 - **Recipe search and allergens (20 Oct 2026).** The Pass list has one row of allergen chips with a switch: Show where (the lens, as before, the default) or Free from (the same filter as Tiles, so "what is gluten free" works in both views). The count above the search follows the search, Free from and the kind chip. The search box has no autocorrect or capitals (iOS would turn "parmy" into "party" before the book's own typo fix sees it), a Search key that drops the keyboard, and a 44 px Clear button while something is typed. When nothing matches, "Clear search and filters" puts everything back. `tests/recipe-filters.test.js`.
 - **Faster ticking (20 Oct 2026, head chef decision).** A tap on a prep line's words ticks it as well as the box (the box stays the button for keyboards and screen readers; !, recipe and Remove do not tick). The box is drawn at 33 px. The add box goes Line, Section, Amount in the page, the same as it shows, and capitalises the first letter on a phone keyboard. With a line typed, a usual amount chip says "Add 2 tubs" and adds the line in one tap. A line whose change has not reached the server yet says "Not sent" (from the listener's own `hasPendingWrites`, no reads), and the signal strip says "device", not "phone". `tests/prep-speed.test.js`.
 
+## Head chef decisions
+
+How the book should work, as the head chef decided it. Newest first. Add new ones here with the date; the details are in the sections below.
+
+- **21 Oct 2026.** Claude merges its own pull requests once the click tests are green, without asking (see `CLAUDE.md`, How changes ship).
+- **21 Oct 2026.** Kitchen sections: staff and leads pick their section after the PIN, once a day; the head chef and sous chefs get theirs from their role.
+- **21 Oct 2026.** Admin moved from the top bar's key button into the chef hat menu. The top bar keeps only Pings and the chef hat.
+- **20 Oct 2026.** Only the head chef and sous chefs write shift pings; there is no Pings tick for other staff.
+- **20 Oct 2026.** Handy tools moved into the chef hat menu, Sign out replaced Prep list there, and nothing in the book prints or shares.
+- **20 Oct 2026.** Minutes stay hidden from staff until they are published.
+- **20 Oct 2026.** On a shared tablet the head chef's tools show only while a chef is signed in.
+
 ## Prep book and admin panel
 
 - Staff only see today in `#/prep` (no back, forward or date picker); the head chef and sous chefs can still browse other days. Unfinished lines roll over to today by themselves. This is the page only: past days stay readable in the database to anyone with the kitchen PIN.
