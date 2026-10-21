@@ -37,6 +37,39 @@
     return out + P.hl(-rx * 0.3, -ry * 0.35, rx * 0.3, ry * 0.14, '#FFFFFF', 0.45, -20);
   }
   function riceMound(o) { return function (P, rnd) { return riceMoundSvg(P, rnd, o); }; }
+  // a mound of cooked pulses or whole grains: the outline, a shade low right, the seeds in layers (each layer's outline
+  // shows over the one under it), a tinted highlight. o: rx, ry, col (the mound between the seeds), seeds [[colour, count,
+  // len, wid]], glint (light specks on the seeds), wob
+  function seedMoundSvg(P, rnd, o) {
+    var col = o.col, rx = o.rx || 31, ry = o.ry || 27, d = P.blob(rnd, rx, ry, o.wob || 0.08, 14);
+    var out = P.shadow(d) + P.path(d, col, P.shade(col, -0.26), 1);
+    out += P.path(P.blob(rnd, rx * 0.7, ry * 0.38, 0.1, 9, rx * 0.2, ry * 0.48), P.shade(col, -0.1), null, 0, { opacity: '0.8' });
+    (o.seeds || []).forEach(function (s) { out += grainTex(P, rnd, { count: s[1], rx: rx * 0.88, ry: ry * 0.85, col: s[0], edge: P.shade(s[0], -0.26), len: s[2], wid: s[3] }); });
+    if (o.glint) out += dots(P, rnd, o.glint, rx * 0.8, ry * 0.78, P.shade(o.seeds[0][0], 0.5), 0.45);
+    return out + P.hl(-rx * 0.3, -ry * 0.38, rx * 0.26, ry * 0.11, P.shade(col, 0.6), 0.8, -20);
+  }
+  function seedMound(o) { return function (P, rnd) { return seedMoundSvg(P, rnd, o); }; }
+  // beans in layers, each a short bent stroke with its outline under and a highlight along its back.
+  // o: count, rx, ry, len (half length of the bend), wid, cols, layers
+  function beanTex(P, rnd, o) {
+    var out = '', k = o.layers || 3, per = Math.ceil(o.count / k);
+    for (var j = 0; j < k; j++) {
+      var col = o.cols[j % o.cols.length], d = '', h = '';
+      P.spots(rnd, per, o.rx * (1 - j * 0.12), o.ry * (1 - j * 0.12)).forEach(function (p) {
+        var a = rnd() * Math.PI, c = Math.cos(a), s = Math.sin(a), l = o.len * (0.85 + rnd() * 0.3), b = o.wid * (0.25 + rnd() * 0.2);
+        d += 'M' + n(p[0] - c * l) + ' ' + n(p[1] - s * l) + 'Q' + n(p[0] - s * b) + ' ' + n(p[1] + c * b) + ' ' + n(p[0] + c * l) + ' ' + n(p[1] + s * l);
+        h += 'M' + n(p[0] - c * l * 0.55 - o.wid * 0.12) + ' ' + n(p[1] - s * l * 0.55 - o.wid * 0.2) + 'l' + n(c * l * 1.1) + ' ' + n(s * l * 1.1);
+      });
+      out += P.path(d, 'none', P.shade(col, -0.26), o.wid + 1, rc()) + P.path(d, 'none', col, o.wid, rc()) + P.path(h, 'none', P.shade(col, 0.55), o.wid * 0.3, rc({ opacity: '0.8' }));
+    }
+    return out;
+  }
+  function beanPile(o) {
+    return function (P, rnd) {
+      var d = P.blob(rnd, o.rx, o.ry, 0.08, 12), col = o.cols[0];
+      return P.shadow(d) + P.path(d, P.shade(col, -0.12), P.shade(col, -0.32), 0.9) + beanTex(P, rnd, o);
+    };
+  }
 
   /* ---------- small things that go on top ---------- */
   function friedEgg(P, rnd, x, y, r, crisp) {
