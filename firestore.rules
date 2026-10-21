@@ -367,17 +367,18 @@ service cloud.firestore {
     // per platter, 0 for the first round). So 5 platters over 3 rounds as 2, 2 and 1 is u [0, 0, 1, 1, 2]. A confirmed line
     // has exactly as many entries as platters booked, and every entry is a round that exists: the rounds add up to the
     // booking, with no half or minus platters, by construction. Rules cannot loop, so the 6 lines are written out.
-    function fnAdd(l, n) { return l.u.size() == l.qty && l.qty >= 1 && l.u.hasOnly([0, 1, 2, 3, 4, 5, 6, 7][0:n]); }
-    function fnAfter(R, i) { return R.size() <= i || R[i].at > R[i - 1].at; }
+    // Up to 12 platter lines (22 Oct 2026). A line that is there has exactly as many entries as platters booked, and
+    // every entry is a round that exists. The page keeps the rounds in time order; the rules check the first and last.
+    function fnAdd(l, n) { return l.u.size() == l.qty && l.qty >= 1; }
     // a confirmed function: a name, date, start and guests (or guests ticked Not known yet, gu; the start may be TBC, st), at least one platter line, one round for all at once or two
-    // or more for staggered, rounds in time order, first and last the same as the rounds say
+    // or more for staggered, first and last the same as the rounds say (the page keeps the rounds in time order)
     function fnConfirmed(d) {
       return d.name.size() > 0 && d.date.size() == 10 && (d.start > 0 || d.get('st', false) == true) && (d.guests >= 1 || d.get('gu', false) == true)
         && d.lines.size() >= 1 && d.rounds.size() >= 1 && (d.mode == 'all' ? d.rounds.size() == 1 : d.rounds.size() >= 2)
-        && fnAdd(d.lines[0], d.rounds.size()) && (d.lines.size() < 2 || fnAdd(d.lines[1], d.rounds.size())) && (d.lines.size() < 3 || fnAdd(d.lines[2], d.rounds.size()))
-        && (d.lines.size() < 4 || fnAdd(d.lines[3], d.rounds.size())) && (d.lines.size() < 5 || fnAdd(d.lines[4], d.rounds.size())) && (d.lines.size() < 6 || fnAdd(d.lines[5], d.rounds.size()))
-        && d.rounds[0].at is int && fnAfter(d.rounds, 1) && fnAfter(d.rounds, 2) && fnAfter(d.rounds, 3) && fnAfter(d.rounds, 4) && fnAfter(d.rounds, 5) && fnAfter(d.rounds, 6) && fnAfter(d.rounds, 7)
-        && d.first == d.rounds[0].at && d.last == d.rounds[d.rounds.size() - 1].at && d.until > d.last;
+        && fnAdd(d.lines[0], d.rounds.size()) && (d.lines.size() < 2 || fnAdd(d.lines[1], d.rounds.size())) && (d.lines.size() < 3 || fnAdd(d.lines[2], d.rounds.size())) && (d.lines.size() < 4 || fnAdd(d.lines[3], d.rounds.size()))
+        && (d.lines.size() < 5 || fnAdd(d.lines[4], d.rounds.size())) && (d.lines.size() < 6 || fnAdd(d.lines[5], d.rounds.size())) && (d.lines.size() < 7 || fnAdd(d.lines[6], d.rounds.size())) && (d.lines.size() < 8 || fnAdd(d.lines[7], d.rounds.size()))
+        && (d.lines.size() < 9 || fnAdd(d.lines[8], d.rounds.size())) && (d.lines.size() < 10 || fnAdd(d.lines[9], d.rounds.size())) && (d.lines.size() < 11 || fnAdd(d.lines[10], d.rounds.size())) && (d.lines.size() < 12 || fnAdd(d.lines[11], d.rounds.size()))
+        && d.rounds[0].at is int && d.first == d.rounds[0].at && d.last == d.rounds[d.rounds.size() - 1].at && d.first <= d.last && d.until > d.last;
     }
     function fnOk(id) { return fnCheck(id, request.resource.data, resource == null ? {} : resource.data); }
     // (the version is checked by nextVersion; a field's size() also refuses a number in place of text)
@@ -394,7 +395,7 @@ service cloud.firestore {
         && (d.kc == was.get('kc', '') || d.kcBy == d.get('by', ''))
         && d.chg is list && d.chg.size() <= 8 && d.was is map
         && d.until is int && d.kq is int
-        && d.lines is list && d.lines.size() <= 6 && d.rounds is list && d.rounds.size() <= 8
+        && d.lines is list && d.lines.size() <= 12 && d.rounds is list && d.rounds.size() <= 8
         && (d.status != 'confirmed' || fnConfirmed(d));
     }
     match /kitchens/KITCHEN_PIN/functions/{id} {

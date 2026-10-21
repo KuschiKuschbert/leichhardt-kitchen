@@ -1784,3 +1784,7 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav { top: var(--u
 .fe .fe-num, .fe .fe-time { min-height: 40px; }
 .fe-row { padding: 0.4rem 0.6rem; }
 @media (min-width: 900px) { .fe .set-block .fe-row2 { grid-template-columns: repeat(2, minmax(0, 18rem)); } }
+/* the prep list's Functions tab: a function's platters, kept apart from the day's own prep (22 Oct 2026) */
+.nb-tab.nb-tab-fn { background: #FFF6D9; border-color: #E8C35A; color: #6A4A00; }
+.nb-tab.nb-tab-fn[aria-pressed="true"] { background: #E8C35A; border-color: #B8922A; color: var(--ink); }
+.nb-tab-n { display: inline-block; min-width: 1.3em; margin-left: 0.3em; padding: 0 0.3em; border-radius: 999px; background: var(--accent); color: #fff; font-size: 0.8em; text-align: center; }

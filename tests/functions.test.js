@@ -96,7 +96,13 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
     'prep list: each platter is a prep line under Functions (' + JSON.stringify(pl('antipasto-platter')) + ')');
   ok(!!pl('pizza-platter') && pl('pizza-platter').text === 'Pizza Platter: Smith 50th, from 19:00' && pl('pizza-platter').qty === '5 platters', 'prep list: the line says when that platter first goes out');
   await p.goto(L.BASE + '#/prep'); await L.settle(p, 1200);
-  ok(/Pizza Platter: Smith 50th, from 19:00/.test(await txt(p, '#prep-root') || ''), 'prep list: the kitchen sees the platter lines on the prep list');
+  ok(!/Pizza Platter: Smith 50th/.test(await txt(p, '.nb-left') || ''), 'prep list: the platters are not mixed into All');
+  ok(/Functions\s*3/.test(await txt(p, '.nb-tab-fn') || ''), 'prep list: a highlighted Functions tab with 3 to do');
+  await tap(p, '.nb-tab-fn'); await L.settle(p, 300);
+  ok(/Pizza Platter: Smith 50th, from 19:00/.test(await txt(p, '.nb-left') || '') && !/Slice onions/.test(await txt(p, '.nb-left') || ''), 'prep list: the Functions tab shows only the function platters');
+  ok(/0 of 3 done/.test(await txt(p, '.nb-prog') || ''), 'prep list: the Functions tab counts only its own lines');
+  await tap(p, '.nb-tab[data-v=""]'); await L.settle(p, 300);
+  ok(/0 of 6 done/.test(await txt(p, '.nb-prog') || ''), 'prep list: All counts only the day\'s own lines');
   // booked today: its stock goes on today's order list (short notice), once
   const ol = s[fsKey(['orders', today, 'lines', 'fn-' + id])];
   ok(!!ol && /^Function stock: Smith 50th, .*: 3 Antipasto, 4 Aussie, 5 Pizza$/.test(ol.text) && ol.qty === '12 platters' && ol.fn === id && !('ordered' in ol) && saved.od === today, 'order: the stock is on today\'s order list (' + (ol && ol.text) + ')');
