@@ -4730,7 +4730,7 @@
      drinks and when each person last opened the book are read once when the page opens, again only after 30 minutes,
      and kept on the phone (lk.drinks). Nobody ticks anyone: the page only shows. */
   // id, label, and what to ask: s size, m milk, e strength (espresso drinks)
-  var DK_KINDS = [['flat', 'Flat white', 'sme'], ['latte', 'Latte', 'sme'], ['cap', 'Cappuccino', 'sme'], ['long', 'Long black', 'se'], ['short', 'Short black', 'e'],
+  var DK_KINDS = [['flat', 'Flat white', 'sme'], ['latte', 'Latte', 'sme'], ['cap', 'Cappuccino', 'sme'], ['long', 'Long black', 'se'], ['short', 'Short black', 'e'], ['esp', 'Espresso', 'e'],
     ['picc', 'Piccolo', 'me'], ['mac', 'Macchiato', 'me'], ['mocha', 'Mocha', 'sme'], ['icedl', 'Iced latte', 'sme'], ['icedc', 'Iced coffee', 'sm'],
     ['chai', 'Chai latte', 'sm'], ['hotc', 'Hot chocolate', 'sm'], ['tea', 'Tea', 'sm'], ['none', 'No hot drink', '']];
   var DK_SIZE = [['small', 'Small'], ['reg', 'Regular'], ['large', 'Large']];

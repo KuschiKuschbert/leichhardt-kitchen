@@ -71,9 +71,17 @@ const val = (p, f) => txt(p, '.dr-fold[data-f="' + f + '"] .dr-val');
   await pick(p, 'milk', 'none'); await p.waitForTimeout(100);
   await tap(p, '[data-p="dk-save"]'); await p.waitForTimeout(800);
   ok(/Regular tea, no milk/.test(await txt(p, '.dr-mine') || ''), 'save: Your usual shows the new drink (' + await txt(p, '.dr-mine') + ')');
-  // a cold drink on its own is a usual too
+  // espresso: strength only, no size or milk
   await tap(p, '[data-p="dk-edit"]'); await p.waitForTimeout(150);
   await pick(p, 'kind', 'tea'); await p.waitForTimeout(100);
+  await pick(p, 'kind', 'esp'); await p.waitForTimeout(150);
+  ok(/Espresso/.test(await val(p, 'kind') || '') && !(await p.$('[data-f="milk"]')) && !(await p.$('[data-f="size"]')), 'form: espresso asks no size or milk');
+  await pick(p, 'shot', 'decaf'); await p.waitForTimeout(100);
+  await tap(p, '[data-p="dk-save"]'); await p.waitForTimeout(800);
+  ok(/Decaf espresso/.test(await txt(p, '.dr-mine') || ''), 'save: espresso reads back as Decaf espresso (' + await txt(p, '.dr-mine') + ')');
+  // a cold drink on its own is a usual too
+  await tap(p, '[data-p="dk-edit"]'); await p.waitForTimeout(150);
+  await pick(p, 'kind', 'esp'); await p.waitForTimeout(100);
   await pick(p, 'cold', 'sparkling'); await p.waitForTimeout(100);
   await pick(p, 'cold', 'cokens'); await p.waitForTimeout(100);
   ok(await val(p, 'cold') === 'Coke No Sugar', 'cold: one soft drink or water at a time (' + await val(p, 'cold') + ')');
