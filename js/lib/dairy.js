@@ -33,7 +33,7 @@
   function poached(P, rnd, r) {
     r = r || 1;
     var d = P.blob(rnd, 23 * r, 20 * r, 0.12, 11), out = '';
-    for (var i = 0; i < 6; i++) { var a = i / 6 * Math.PI * 2 + rnd() * 0.5; out += P.path(P.blob(rnd, 5 * r, 3 * r, 0.3, 7, Math.cos(a) * 21 * r, Math.sin(a) * 18 * r, a * 57.3), EGG_WHITE, WHITE_EDGE, 0.6); }
+    for (var i = 0; i < 6; i++) { var a = i / 6 * Math.PI * 2 + rnd() * 0.5; out += P.path(P.blob(rnd, 4.5 * r, 2.6 * r, 0.3, 7, Math.cos(a) * 19.5 * r, Math.sin(a) * 16.5 * r, a * 57.3), EGG_WHITE, WHITE_EDGE, 0.6); }
     out += P.shadow(d, 1.5, 2.2) + P.path(d, EGG_WHITE, WHITE_EDGE, 0.9);
     out += P.path(P.blob(rnd, 13 * r, 11 * r, 0.1, 9, r, -r), '#F7E2A0', null, 0, { opacity: '0.8' }) + P.path(P.blob(rnd, 8 * r, 7 * r, 0.12, 8, r, -r), '#F3CC66', null, 0, { opacity: '0.55' });
     out += P.path('M' + N(-16 * r) + ' ' + N(6 * r) + ' Q' + N(-8 * r) + ' ' + N(14 * r) + ' ' + N(6 * r) + ' ' + N(13 * r), 'none', '#E6DFCF', 1, { opacity: '0.8', 'stroke-linecap': 'round' });
@@ -58,7 +58,7 @@
     return function (P, rnd) {
       var d = P.blob(rnd, 18, 13, 0.03, 10), out = P.shadow(d, 1.2, 1.8) + P.path(d, '#FFFFFF', '#D2CBBA', 0.9) + P.path(P.blob(rnd, 15.5, 11, 0.03, 10), 'none', '#EFEAE0', 1.4);
       if (o.jammy) out += P.circle(1, 0, 8.5, '#F4BE4A', '#D99A2A', 0.8) + P.path(P.blob(rnd, 6, 5.5, 0.1, 8, 1.5, 0.5), '#EE8A22', null, 0) + P.hl(-0.5, -1.5, 2.6, 1.4, '#FFFFFF', 0.7, -20);
-      else out += P.circle(1, 0, 8, HARD_YOLK, '#E2B850', 0.8) + P.crumbs(rnd, 8, 5.5, 5.5, ['#FAE9A6', '#EBC65A'], 0.8).replace(/<circle cx="/g, '<circle cx="1+').replace(/cx="1\+(-?[\d.]+)"/g, function (m0, x) { return 'cx="' + N(+x + 1) + '"'; });
+      else out += P.circle(1, 0, 8, HARD_YOLK, '#E2B850', 0.8) + P.g('translate(1 0)', P.crumbs(rnd, 8, 5.5, 5.5, ['#FAE9A6', '#EBC65A'], 0.8));
       return out + P.hl(-9, -6, 5, 1.6, '#FFFFFF', 0.6, -20);
     };
   }
@@ -69,7 +69,7 @@
     var jag = [];
     for (var i = 0; i < 22; i++) { var a = i / 22 * Math.PI * 2, r = (i % 2 ? 12.6 : 14.2) + (rnd() - 0.5) * 0.8; jag.push([Math.cos(a) * r, Math.sin(a) * r]); }
     out += P.path(poly(jag), '#FFFFFF', '#F2E9D8', 0.8, ROUND) + P.path(poly(sc(jag, 0.99)), 'none', '#F6EEDD', 1.4);
-    out += P.path(P.blob(rnd, 8.5, 8, 0.08, 9, 0.5, 0.5), YOLK, YOLK_EDGE, 0.9) + P.path('M4 6 Q7 10 6.5 13', 'none', YOLK, 2.6, { 'stroke-linecap': 'round' });
+    out += P.path(P.blob(rnd, 8.5, 8, 0.08, 9, 0.5, 0.5), YOLK, YOLK_EDGE, 0.9) + P.path('M5 5.5 Q7.5 8 7.6 10.6', 'none', YOLK, 2.4, { 'stroke-linecap': 'round' });
     return out + P.hl(-2, -3, 3, 1.6, '#FFFFFF', 0.75, -25) + P.path('M-19 -8 A20 20 0 0 1 -8 -19', 'none', '#FFFFFF', 1.6, { opacity: '0.8' });
   }
   function slicedEgg(P, rnd) {
@@ -127,7 +127,7 @@
   function quenelle(o) {
     return function (P, rnd) {
       var l = o.len / 2, w = o.wid / 2, col = o.col;
-      var d = P.smooth([[-l, 0], [-l * 0.6, -w * 0.92], [0, -w], [l * 0.62, -w * 0.82], [l, 0], [l * 0.6, w * 0.9], [0, w], [-l * 0.62, w * 0.85]]), out = P.shadow(d, 1.5, 2) + P.path(d, col, P.shade(col, o.edge || -0.2), 0.9);
+      var d = P.smooth([[-l, 0], [-l * 0.8, -w * 0.6], [-l * 0.38, -w * 1.02], [l * 0.3, -w * 0.98], [l * 0.8, -w * 0.52], [l, 0], [l * 0.8, w * 0.56], [l * 0.32, w * 1.02], [-l * 0.36, w * 0.98], [-l * 0.8, w * 0.55]]), out = P.shadow(d, 1.5, 2) + P.path(d, col, P.shade(col, o.edge || -0.2), 0.9);
       out += P.path('M' + N(-l * 0.86) + ' ' + N(w * 0.2) + ' Q' + N(-l * 0.1) + ' ' + N(-w * 0.5) + ' ' + N(l * 0.88) + ' ' + N(-w * 0.05) + ' Q' + N(l * 0.1) + ' ' + N(w * 0.95) + ' ' + N(-l * 0.86) + ' ' + N(w * 0.2) + ' Z', P.shade(col, -0.06), null, 0, { opacity: '0.8' });
       out += P.path('M' + N(-l * 0.86) + ' ' + N(w * 0.2) + ' Q' + N(-l * 0.1) + ' ' + N(-w * 0.5) + ' ' + N(l * 0.88) + ' ' + N(-w * 0.05), 'none', P.shade(col, -0.15), 0.9, { 'stroke-linecap': 'round' });
       if (o.grain) out += P.crumbs(rnd, Math.round(l * w / 6), l * 0.8, w * 0.7, [P.shade(col, -0.1), '#FFFFFF'], 0.55);
@@ -186,10 +186,18 @@
   /* ---------- cheese ---------- */
   // a slice gone soft on top of something: corners drooping, a drip on the side, glossy
   function meltedSlice(P, rnd) {
-    var col = '#F2B33A', pts = [[-31, -31], [-12, -26], [8, -27], [31, -32], [27, -10], [33, 12], [27, 16], [33, 34], [8, 27], [-10, 28], [-30, 33], [-26, 10], [-28, -6]].map(function (p) { return [p[0] + (rnd() - 0.5) * 2, p[1] + (rnd() - 0.5) * 2]; });
+    // walk round the square; here and there the edge runs down in a drip
+    var col = '#F2B33A', pts = [], drips = [2, 7, 12, 16];
+    for (var i = 0; i < 20; i++) {
+      var t = i / 20 * 4, side = Math.floor(t), f = t - side, x, y, s = 27;
+      if (side === 0) { x = -s + f * 2 * s; y = -s; } else if (side === 1) { x = s; y = -s + f * 2 * s; } else if (side === 2) { x = s - f * 2 * s; y = s; } else { x = -s; y = s - f * 2 * s; }
+      var r = Math.hypot(x, y), k = (drips.indexOf(i) >= 0 ? 1.22 + rnd() * 0.1 : f === 0 ? 1.07 : 0.97 + rnd() * 0.04);
+      pts.push([x / r * r * k, y / r * r * k]);
+    }
     var d = P.smooth(pts), out = P.shadow(d, 1, 1.4) + P.path(d, col, P.shade(col, -0.26), 1);
-    out += P.path(P.smooth(sc(pts, 0.78, 0.76)), P.shade(col, 0.16), null, 0, { opacity: '0.8' });
-    out += P.path('M-18 -16 Q-4 -20 12 -15', 'none', '#FFFFFF', 2, { opacity: '0.35', 'stroke-linecap': 'round' }) + P.path('M-14 12 Q2 8 16 14', 'none', '#FFFFFF', 1.4, { opacity: '0.25', 'stroke-linecap': 'round' });
+    out += P.rect(-23, -23, 46, 46, 6, 'none', P.shade(col, -0.14), 1.2, { opacity: '0.6' });
+    out += P.path(P.smooth(sc(pts, 0.72, 0.72)), P.shade(col, 0.18), null, 0, { opacity: '0.75' });
+    out += P.path('M-16 -14 Q-4 -18 12 -13', 'none', '#FFFFFF', 2, { opacity: '0.4', 'stroke-linecap': 'round' }) + P.path('M-12 10 Q2 6 14 11', 'none', '#FFFFFF', 1.4, { opacity: '0.25', 'stroke-linecap': 'round' });
     return out;
   }
   function squareSlice(P) {
@@ -204,7 +212,7 @@
       var A = [-32, 0], B = [30, -22], Cc = [30, 22], out = '';
       if (o.kind === 'brie') {
         var fr = poly([[-32, 0], [30, 22], [30, 29], [-32, 7]]);
-        out += P.shadow(poly([A, B, [30, 29], [-32, 7]])) + P.path(fr, '#F2DFA2', '#C9B37A', 0.9, ROUND) + P.path('M-30 4 Q-6 18 26 26', 'none', '#F7EBC0', 1.6, { opacity: '0.8' }) + P.path(P.blob(rnd, 5, 3, 0.2, 7, 4, 17), '#F2DFA2', '#C9B37A', 0.6);
+        out += P.shadow(poly([A, B, [30, 29], [-32, 7]])) + P.path(fr, '#F2DFA2', '#C9B37A', 0.9, ROUND) + P.path('M-30 4 Q-6 18 26 26', 'none', '#F7EBC0', 1.6, { opacity: '0.8' });
         out += P.path(poly([A, B, Cc]), '#F8F5EC', '#D2CAB6', 1, ROUND);
         out += inTri(rnd, 26, [-26, 0], [27, -19], [27, 19], function (x, y, i, q) { return P.path(P.blob(q, 1.6 + q() * 2.2, 1.2 + q() * 1.4, 0.3, 6, x, y), i % 2 ? '#EFEADC' : '#FFFFFF', null, 0, { opacity: '0.9' }); });
         return out + P.hl(-4, -6, 12, 2, '#FFFFFF', 0.6, -18);
@@ -213,7 +221,7 @@
       out += P.shadow(d) + P.path(d, face, P.shade(rind, -0.15), 1, ROUND) + P.path(poly([[24, -18], B, Cc, [24, 18]]), rind, P.shade(rind, -0.25), 0.8, ROUND);
       if (o.kind === 'blue') {
         out += inTri(rnd, 18, [-26, 0], [22, -17], [22, 17], function (x, y, i, q) { return P.path(P.blob(q, 1.4 + q() * 2.4, 1 + q() * 1.4, 0.4, 6, x, y), i % 3 ? '#6E8A98' : '#45606E', null, 0, { opacity: '0.85' }); });
-        out += P.path('M-18 2 Q-6 -6 4 -2 T20 -8 M-6 8 Q4 4 18 10', 'none', '#7F98A4', 1, { opacity: '0.6', 'stroke-linecap': 'round' }) + P.crumbs(rnd, 8, 2.5, 18, ['#8A9A8A'], 0.7).replace(/^/, '');
+        out += P.path('M-18 2 Q-6 -6 4 -2 T20 -8 M-6 8 Q4 4 18 10', 'none', '#7F98A4', 1, { opacity: '0.6', 'stroke-linecap': 'round' }) + P.g('translate(27 0)', P.crumbs(rnd, 8, 2, 17, ['#8A9A8A'], 0.7));
       } else {
         out += inTri(rnd, 22, [-26, 0], [22, -17], [22, 17], function (x, y, i, q) { return P.circle(x, y, 0.5 + q() * 0.6, i % 2 ? '#FFF8E0' : '#E3C474', null, 0); });
         out += P.path('M27 -16 V16', 'none', P.shade(rind, -0.2), 0.8, { 'stroke-dasharray': '1.5 2.5' });
@@ -280,7 +288,7 @@
   function mozzarella(P, rnd) {
     var col = '#F7EEC9', d = P.blob(rnd, 48, 35, 0.12, 16), out = P.shadow(d, 1, 1.4) + P.path(d, col, '#DCCB96', 1);
     out += P.path(P.blob(rnd, 40, 28, 0.15, 13), '#FBF5DD', null, 0, { opacity: '0.7' });
-    out += P.scatter(rnd, 12, 40, 28, function (x, y, i, q) { var r = 1.6 + q() * 2.4; return P.circle(x, y, r, '#FFFBEA', '#E6D8A8', 0.6); });
+    out += P.scatter(rnd, 12, 40, 28, function (x, y, i, q) { var r = 1.6 + q() * 2.4; return P.circle(x, y, r, '#FFFCEE', null, 0, { opacity: '0.9' }) + P.path('M' + N(x - r * 0.6) + ' ' + N(y + r * 0.5) + ' Q' + N(x) + ' ' + N(y + r * 1.1) + ' ' + N(x + r * 0.6) + ' ' + N(y + r * 0.5), 'none', '#E6D8A8', 0.7); });
     out += P.scatter(rnd, 9, 38, 26, function (x, y, i, q) { return P.path(P.blob(q, 3 + q() * 4, 2.4 + q() * 3, 0.3, 7, x, y), '#D9A050', null, 0, { opacity: '0.75' }) + P.circle(x, y, 1 + q(), '#B97A36', null, 0, { opacity: '0.8' }); });
     return out + P.hl(-16, -14, 14, 3, '#FFFFFF', 0.45, -12);
   }
@@ -315,7 +323,7 @@
   function cheddarBlock(P, rnd) {
     var col = '#F2B940', out = P.rect(-27, -14, 54, 34, 2, '#000000', null, 0, { opacity: '0.12', transform: 'translate(2 2.5)' });
     out += P.rect(-27, 6, 54, 14, 2, '#D99A2A', '#B47E1E', 1) + P.rect(-27, -14, 54, 22, 2, col, '#C49020', 1);
-    out += P.path('M14 -14 L18 -9 L15 -4 L22 -1 L20 8', 'none', '#D9A030', 0.9) + P.path('M-20 -8 L-14 -10', 'none', '#D9A030', 0.8);
+    out += P.path('M16 -14 L19 -10 L17 -6', 'none', '#D9A030', 0.9) + P.crumbs(rnd, 6, 20, 7, ['#E8AA34'], 0.7);
     return out + P.hl(-10, -8, 12, 2, '#FFFFFF', 0.4, -4);
   }
 

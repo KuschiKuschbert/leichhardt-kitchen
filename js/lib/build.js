@@ -57,7 +57,7 @@
     for (var o = lo + gap / 2; o < hi; o += gap) {
       var bx = nx * o, by = ny * o, t0 = -1e4, t1 = 1e4, ok = true;
       for (var i = 0; i < poly.length && ok; i++) {
-        var A = poly[i], B = poly[(i + 1) % poly.length], ex = ey0(B, A), en = [ex[1], -ex[0]];
+        var A = poly[i], B = poly[(i + 1) % poly.length], ex = [B[0] - A[0], B[1] - A[1]], en = [ex[1], -ex[0]];
         if (en[0] * (cx - A[0]) + en[1] * (cy - A[1]) > 0) en = [-en[0], -en[1]];
         var num = en[0] * (bx - A[0]) + en[1] * (by - A[1]), den = en[0] * dx + en[1] * dy;
         if (Math.abs(den) < 1e-9) { if (num > 0) ok = false; continue; }
@@ -68,7 +68,6 @@
     }
     return out;
   }
-  function ey0(B, A) { return [B[0] - A[0], B[1] - A[1]]; }
 
   /* ---------- burger layers (the build drawing's scale: a bun about 150 across) ---------- */
   function bunTop(o) {
@@ -238,13 +237,13 @@
   }
   function turkishBase(P, rnd) {
     var d = 'M-84 -24 L84 -24 L85 -18 C86 -6 76 0 62 0 L-62 0 C-76 0 -86 -6 -85 -18 Z', out = P.path(d, '#DDAA5E', '#A8702A', 1.2);
-    out += P.path('M-82 -9 C-78 -3 -72 -1 -62 -1 L62 -1 C72 -1 78 -3 82 -9', 'none', '#B9802F', 3.5, { opacity: '0.45' }) + P.crumbs(rnd, 12, 70, 2, ['#FFFFFF'], 0.6).replace(/<circle/g, '<circle transform="translate(0 -4)"');
+    out += P.path('M-82 -9 C-78 -3 -72 -1 -62 -1 L62 -1 C72 -1 78 -3 82 -9', 'none', '#B9802F', 3.5, { opacity: '0.45' }) + P.g(P.at(0, -4), P.crumbs(rnd, 12, 70, 2, ['#FFFFFF'], 0.6));
     out += P.rect(-83, -24, 166, 7, 2, '#F6EAD0') + P.line(-80, -17, 80, -17, '#D9B27A', 0.8);
     for (var k = 0; k < 14; k++) out += P.ellipse(-76 + rnd() * 152, -20.5 + (rnd() - 0.5) * 3, 1.6, 0.8, '#E3D0A8');
     return out;
   }
   function caramelOnion(P, rnd) {
-    return P.path(layerD(rnd, 134, 5, { wob: 1, k: 24 }), '#8A4A22', '#5E2E14', 0.8) + strands(P, rnd, 26, 132, -5, ['#A8642A', '#6E3A1A', '#C98A4A'], 2) + P.g(P.at(0, -6), P.crumbs(rnd, 8, 60, 2, ['#FFFFFF'], 0.6)).replace('<g ', '<g opacity="0.5" ');
+    return P.path(layerD(rnd, 134, 5, { wob: 1, k: 24 }), '#8A4A22', '#5E2E14', 0.8) + strands(P, rnd, 26, 132, -5, ['#A8642A', '#6E3A1A', '#C98A4A'], 2) + P.g(P.at(0, -6), P.crumbs(rnd, 8, 60, 2, ['#FFFFFF'], 0.6), { opacity: '0.5' });
   }
   function minuteSteak(P, rnd) {
     var out = P.path(layerD(rnd, 150, 10, { wob: 0.8, k: 26, re: 4 }), '#7A4A26', '#3F2812', 1.1);
@@ -330,7 +329,6 @@
         if (l[2]) out += P.g(P.at(0, -y - l[0] / 2), P.crumbs(rnd, Math.round(l[0] * 2), a - 3, l[0] / 2 - 1.5, [P.shade(l[1], -0.18), P.shade(l[1], 0.15)], 0.6));
         y += l[0];
       });
-      out += P.rect(-a, -y, w, y, 2, 'none', '#00000000'.slice(0, 7), 0.01);
       // the icing over the top and down the outside (the right end)
       var t = o.icing;
       out += P.path('M' + N(-a - 1) + ' ' + N(-y + 1) + ' L' + N(-a - 1) + ' ' + N(-y - t + 1) + ' Q' + N(-a) + ' ' + N(-y - t - 1) + ' ' + N(-a + 4) + ' ' + N(-y - t - 1) + ' L' + N(a - 2) + ' ' + N(-y - t - 1) + ' Q' + N(a + 4) + ' ' + N(-y - t - 1) + ' ' + N(a + 4) + ' ' + N(-y) + ' L' + N(a + 4) + ' -1 Q' + N(a + 4) + ' 0 ' + N(a + 2) + ' 0 L' + N(a) + ' 0 L' + N(a) + ' ' + N(-y + 1) + ' Z', o.top, P.shade(o.top, -0.25), 0.8);

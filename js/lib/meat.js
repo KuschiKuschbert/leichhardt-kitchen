@@ -304,9 +304,15 @@
       return out;
     };
   }
-  function eggplantBase(P, rnd) {
+  // eggplant parmy: three crumbed rounds of eggplant (the purple skin at the rim), each with napoli and cheese
+  function eggplantParmy(P, rnd) {
     var cr = crumbed({ rx: 30, ry: 26, col: '#D9A050' }), out = '';
-    [[-36, 6], [36, 4], [0, -6]].forEach(function (p) { out += P.g(P.at(p[0], p[1]), P.path(circD(P, 1.6, 1.8, 30.5, 26.5), '#4A2A4A', '#2E1A2E', 0.8) + cr(P, rnd)); });
+    [[-36, 6], [36, 4], [0, -6]].forEach(function (p) {
+      var s = P.path(circD(P, 1.6, 1.8, 30.5, 26.5), '#4A2A4A', '#2E1A2E', 0.8) + cr(P, rnd);
+      s += P.path(P.blob(rnd, 22, 18, 0.15, 10), C.sauceRed, P.shade(C.sauceRed, -0.2), 0.8) + P.path(P.blob(rnd, 19, 15, 0.2, 11, 1, -1), C.cheeseLight, P.shade(C.cheese, -0.15), 0.8);
+      s += P.scatter(rnd, 4, 13, 9, function (x, y, i, q) { return P.path(P.blob(q, 2.5 + q() * 2.5, 2 + q() * 1.5, 0.3, 7, x, y), '#C98A3A', null, 0, { opacity: '0.75' }); });
+      out += P.g(P.at(p[0], p[1]), s);
+    });
     return out;
   }
   // a craggy fried piece (southern fried, tenders, karaage): a bumpy outline and lumps of coating
@@ -561,12 +567,12 @@
     return out + P.hl(-16, -18, 18, 4, '#FFFFFF', 0.3, -12);
   }
   function shards(P, rnd) {
-    return P.pile(rnd, 8, 26, 15, function (x, y, i, q) {
-      var k = 5 + Math.floor(q() * 2), pts = [], rx = 9 + q() * 6, ry = 6 + q() * 3;
+    return P.pile(rnd, 7, 30, 17, function (x, y, i, q) {
+      var k = 5 + Math.floor(q() * 2), pts = [], rx = 12 + q() * 6, ry = 7 + q() * 4;
       for (var j = 0; j < k; j++) { var a = j / k * Math.PI * 2 + q() * 0.5, r = 0.7 + q() * 0.45; pts.push([Math.cos(a) * rx * r, Math.sin(a) * ry * r]); }
       var d = 'M' + pts.map(function (p) { return P.n(p[0]) + ' ' + P.n(p[1]); }).join(' L') + ' Z';
       var s = P.shadow(d, 1.2, 1.6) + P.path(d, '#E3B262', '#A8702A', 1, { 'stroke-linejoin': 'round' });
-      for (var b = 0; b < 6; b++) s += P.circle((q() - 0.5) * rx, (q() - 0.5) * ry * 0.9, 0.8 + q() * 1.4, b % 3 ? '#F6E2A8' : '#C98A3A');
+      for (var b = 0; b < 10; b++) s += P.circle((q() - 0.5) * rx * 1.1, (q() - 0.5) * ry, 0.8 + q() * 1.4, b % 3 ? '#F6E2A8' : '#C98A3A');
       return P.g(P.at(x, y, q() * 360), s);
     });
   }
@@ -636,17 +642,17 @@
         out += piece(P.smooth([[-62, 0], [-56, -30], [-30, -46], [10, -46], [44, -34], [60, -12], [62, 12], [44, 34], [10, 46], [-30, 46], [-56, 30]]));
         out += skin(50, 36, -4, 0) + P.path('M-54 0 Q0 -2 44 0', 'none', P.shade(sk, -0.18), 1.2, { opacity: '0.6' });
         out += P.hl(-8, -18, 30, 9, '#FFFFFF', 0.25, -4) + P.hl(-8, 18, 30, 8, '#FFFFFF', 0.15, 4);
-        out += drum(P, 62, -16, 20, 44, 28, sk, rnd) + drum(P, 62, 16, -20, 44, 28, sk, rnd);
-        return P.g('translate(-8 0)', out);
+        out += drum(P, 50, -15, 22, 44, 28, sk, rnd) + drum(P, 50, 15, -22, 44, 28, sk, rnd);
+        return P.g('translate(-6 0)', out);
       }
       if (part === 'half') {
-        out += wingAt(-34, 38, 18, -1) + thighAt(24, 28, -18);
-        out += piece(P.smooth([[-62, -2], [-58, 26], [-30, 46], [10, 47], [44, 35], [62, 10], [60, -2]], true) + ' Z');
-        out += skin(46, 18, -6, 22) + P.line(-58, -0.6, 57, -0.6, '#F3E3C4', 2.6) + P.hl(-8, 14, 30, 7, '#FFFFFF', 0.22, 4);
-        out += drum(P, 62, 16, -20, 44, 28, sk, rnd);
-        if (o.chop) [-36, -12, 12, 34].forEach(function (x) { out += P.line(x, 1, x + 2, 44 - Math.abs(x) * 0.25, '#F3E3C4', 2.4) + P.line(x + 1.6, 2, x + 3.6, 43 - Math.abs(x) * 0.25, ed, 0.8, { opacity: '0.7' }); });
-        if (o.chop) out += P.line(66, 6, 74, 26, '#F3E3C4', 2.4);
-        return P.g('translate(-8 -26)', out);
+        out += wingAt(-36, 42, 16, -1) + thighAt(30, 34, -10);
+        out += piece(P.smooth([[-62, -2], [-58, 30], [-30, 50], [10, 50], [40, 40], [58, 18], [60, -2]], true) + ' Z');
+        out += skin(46, 20, -6, 24) + P.line(-58, -0.6, 57, -0.6, '#F3E3C4', 2.6) + P.hl(-8, 14, 30, 7, '#FFFFFF', 0.22, 4);
+        if (o.chop) [-34, -10, 14, 36].forEach(function (x) { var y2 = 46 - Math.abs(x) * 0.2; out += P.line(x + 1, 1.5, x + 4, y2, '#F3E3C4', 1.2, { opacity: '0.9' }) + P.line(x, 1.5, x + 3, y2, P.shade(sk, -0.45), 1.3, { opacity: '0.8' }); });
+        out += drum(P, 56, 34, -6, 44, 28, sk, rnd);
+        if (o.chop) out += P.line(54, 24, 57, 44, P.shade(sk, -0.45), 1.3, { opacity: '0.8' });
+        return P.g('translate(-12 -28)', out);
       }
       // the leg quarter: thigh with a piece of the back, the drumstick out to the right
       out += piece(P.smooth([[-56, -6], [-50, -24], [-28, -30], [-4, -26], [10, -12], [12, 8], [0, 24], [-26, 30], [-48, 22], [-58, 8]]));
@@ -697,10 +703,10 @@
   // thin shaved slices off the spit (yiros, souvlaki), each with a crisp edge
   function shavings(o) {
     return function (P, rnd) {
-      var d = P.blob(rnd, o.rx * 0.85, o.ry * 0.8, 0.12, 11), out = P.shadow(d) + P.path(d, P.shade(o.col, -0.15), null, 0);
-      out += P.pile(rnd, o.count || 26, o.rx, o.ry, function (x, y, i, q) {
-        var len = 18 + q() * 12, wid = 6 + q() * 4, bend = (q() - 0.5) * 8, col = i % 3 ? o.col : P.shade(o.col, 0.15);
-        return P.g(P.at(x, y, q() * 180), P.path(P.leafD(len, wid, bend), col, P.shade(o.col, -0.3), 0.7) + P.path('M' + P.n(-len / 2 + 2) + ' ' + P.n(-wid * 0.3 + bend * 0.3) + ' Q0 ' + P.n(-wid * 0.75 + bend) + ' ' + P.n(len / 2 - 2) + ' ' + P.n(bend * 0.6), 'none', o.edge || '#5E3418', 1.6, { 'stroke-linecap': 'round', opacity: '0.8' }));
+      var d = P.blob(rnd, o.rx * 0.78, o.ry * 0.72, 0.12, 11), out = P.shadow(d) + P.path(d, P.shade(o.col, -0.15), null, 0);
+      out += P.pile(rnd, o.count || 44, o.rx, o.ry, function (x, y, i, q) {
+        var len = 12 + q() * 9, wid = 4.5 + q() * 2.2, bend = (q() - 0.5) * 5, col = [o.col, P.shade(o.col, 0.16), P.shade(o.col, -0.1)][i % 3];
+        return P.g(P.at(x, y, q() * 180), P.path(P.leafD(len, wid, bend), col, P.shade(o.col, -0.3), 0.6) + P.path('M' + P.n(-len / 2 + 2) + ' ' + P.n(-wid * 0.3 + bend * 0.3) + ' Q0 ' + P.n(-wid * 0.75 + bend) + ' ' + P.n(len / 2 - 2) + ' ' + P.n(bend * 0.6), 'none', o.edge || '#5E3418', 1.2, { 'stroke-linecap': 'round', opacity: '0.8' }));
       });
       return out;
     };
