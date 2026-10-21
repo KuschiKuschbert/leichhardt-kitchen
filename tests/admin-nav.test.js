@@ -14,7 +14,9 @@ const groupsShown = p => p.evaluate(() => { const r = document.querySelector('.a
 
   for (const w of [390, 1280]) {
     p = await L.open(b, '#/admin', { admin: true, width: w, height: w === 390 ? 844 : 900, wait: 1800 });
-    await L.adminTab(p, 'insights'); await L.settle(p, 300);
+    // Insights redraws when its reads come in, and a redraw mid-scroll resets where the nav thinks the scroll began:
+    // let it finish first (settle stops as soon as the page is still)
+    await L.adminTab(p, 'insights'); await L.settle(p, 1500);
     v = await nav(p);
     ok(v.chips.length === 6 && /Overview/.test(v.chips[0]) && /Recipe book/.test(v.chips[5]), w + ' admin nav: Insights has its six sections on this page (' + v.chips.join(', ') + ')');
     ok(!v.min && await groupsShown(p), w + ' admin nav: at the top the groups show');
