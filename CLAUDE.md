@@ -47,7 +47,7 @@ The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the
 | `scripts/nightly-backup.mjs`, `.github/workflows/nightly-backup.yml` | Nightly backup (03:30 kitchen time): reads the book like the admin Backup button, encrypts it with the `BACKUP_KEY` secret (openssl, AES-256) and keeps it as a GitHub artifact for 90 days. Reads only |
 
 ## Routes
-`#/` landing (five dockets), `#/recipes` (Pass or Tiles), `#/r/<id>[/<id>...]` a recipe and the trail to it, `#/prep`, `#/orders`, `#/waste`, `#/guides`, `#/guides/<id>`, `#/minutes`, `#/mail`, `#/drinks`, `#/admin`, `#/settings`, `#/manage` (head chef only: the recipe list), `#/manage/r/<id>`, `#/manage/new`, `#/manage/new/<id>`, `#/manage/draw/<drawing id>`, `#/manage/draw/new/<recipe id>/<plate|pan|side|build>`, `#/fn` (functions: today and the next days), `#/fn/<id>`, `#/functions` (function managers only), `#/functions/new`, `#/functions/<id>`.
+`#/` landing (five dockets), `#/recipes` (Pass or Tiles), `#/r/<id>[/<id>...]` a recipe and the trail to it, `#/prep`, `#/orders`, `#/waste`, `#/guides`, `#/guides/<id>`, `#/minutes`, `#/mail`, `#/drinks`, `#/admin`, `#/settings`, `#/manage` (head chef only: the recipe list), `#/manage/r/<id>`, `#/manage/new`, `#/manage/new/<id>`, `#/manage/draw/<drawing id>`, `#/manage/draw/new/<recipe id>/<plate|pan|side|build>`, `#/fn` (functions: today and the next days), `#/fn/now` (the service view), `#/fn/<id>`, `#/functions` (function managers only), `#/functions/new`, `#/functions/<id>`.
 
 ## Ground rules (no exceptions)
 These hold for every session, every message and every change, however small. A hook in `.claude/settings.json` (`scripts/guard-main.mjs`) refuses edits and commits on `main`, so a session that skips them is stopped.
