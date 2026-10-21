@@ -590,6 +590,29 @@
     out += P.grill(50, 20, 40, 13, '#6B3E18', 3);
     return out + P.hl(-20, -12, 22, 4, '#FFFFFF', 0.25, -6);
   }
+  // a grilled breast sliced on the bias and pushed over a little: each cut shows a strip of white meat
+  function slicedBreast(P, rnd) {
+    var out = '', cuts = [-38, -22, -6, 10, 26, 40];
+    for (var i = 0; i <= cuts.length; i++) {
+      var x0 = i ? cuts[i - 1] : -70, x1 = i < cuts.length ? cuts[i] : 70, dx = i * 2.2;
+      // each piece: the breast outline kept between two slanted cuts, its cut face showing white on the right
+      var pts = [], k, t;
+      for (k = 0; k <= 8; k++) { t = k / 8; pts.push(edge(x0 + (x1 - x0) * t, -1)); }
+      for (k = 8; k >= 0; k--) { t = k / 8; pts.push(edge(x0 + (x1 - x0) * t + 0, 1)); }
+      var d = 'M' + pts.map(function (p) { return P.n(p[0] + dx) + ' ' + P.n(p[1]); }).join(' L') + ' Z';
+      var face = i < cuts.length ? P.path('M' + P.n(edge(x1, -1)[0] + dx - 0.6) + ' ' + P.n(edge(x1, -1)[1] + 0.8) + ' L' + P.n(edge(x1, 1)[0] + dx - 0.6) + ' ' + P.n(edge(x1, 1)[1] - 0.8), 'none', '#F4E6CC', 3.4, { 'stroke-linecap': 'round' }) : '';
+      out += P.shadow(d, 1.5, 2) + P.path(d, '#D9A050', '#9A6A2A', 1, { 'stroke-linejoin': 'round' }) + face;
+    }
+    // the sear and grill marks over the top, then the shine
+    out += P.g('translate(6 0)', P.grill(52, 18, 40, 13, '#6B3E18', 2.8));
+    return P.g('translate(-6 0)', out + P.hl(-16, -12, 22, 3.4, '#FFFFFF', 0.25, -6));
+    // a point on the breast's edge at x (top when s is -1), the cuts slanted by 0.3
+    function edge(x, s) {
+      var y = s < 0 ? -27 : 26, xs = x + y * 0.3 * (s < 0 ? -1 : -1), r = Math.max(0, 1 - Math.pow(Math.max(-1, Math.min(1, (xs + 0) / 62)), 2));
+      var h = Math.sqrt(r) * (s < 0 ? (xs < 0 ? 28 : 24) : (xs < 0 ? 26 : 22));
+      return [xs, s * Math.max(2, h)];
+    }
+  }
   function thigh(P, rnd) {
     var col = '#C98A3A', d = P.blob(rnd, 40, 30, 0.2, 9), out = P.shadow(d) + P.path(d, col, P.shade(col, -0.35), 1.2);
     out += P.path(P.blob(rnd, 32, 22, 0.2, 9, 0, -2), '#DDA458', null, 0, { opacity: '0.9' });
@@ -959,7 +982,7 @@
     { id: 'crackling', name: 'Crackling shards', sub: 'Pork', kw: 'crackling crackle pork rind chicharron shards', form: 'shard', cook: 'roasted', role: 'topping', g: 40, w: 76, h: 52, side: { s: 'pile', h: 12, c: '#E3B262' }, draw: shards },
     // chicken
     { id: 'chicken-breast', name: 'Chicken breast, grilled', sub: 'Chicken', kw: 'chicken breast fillet grilled chargrilled', form: 'piece', cook: 'grilled', role: 'main', g: 200, w: 124, h: 58, side: { s: 'slab', h: 22, c: '#D9A050' }, draw: breast },
-    { id: 'chicken-breast-sliced', name: 'Chicken breast, sliced', sub: 'Chicken', kw: 'chicken breast sliced grilled', form: 'slices', cook: 'grilled', role: 'main', g: 200, w: 96, h: 56, side: { s: 'slab', h: 16, c: '#F4E6CC' }, draw: function (P, rnd) { var L0 = [32, 42, 48, 50, 48, 42, 32]; return shingle(P, 7, 10.5, function (i) { return P.g('rotate(22)', slice(P, 13, L0[i], { crust: '#D9A050', top: [['#B9782E', 2.2]], bot: [['#D9A050', 1]], core: '#F3E3C6', e: 1.3 }, rnd) + P.line(-4.5, -L0[i] / 2 + 1.8, 4.5, -L0[i] / 2 + 1.8, '#5E3A18', 1.8, { opacity: '0.7' })); }, { arc: 0.5 }); } },
+    { id: 'chicken-breast-sliced', name: 'Chicken breast, sliced', sub: 'Chicken', kw: 'chicken breast sliced grilled', form: 'slices', cook: 'grilled', role: 'main', g: 200, w: 96, h: 56, side: { s: 'slab', h: 16, c: '#F4E6CC' }, draw: slicedBreast },
     { id: 'chicken-thigh', name: 'Chicken thigh, grilled', sub: 'Chicken', kw: 'chicken thigh fillet grilled chargrilled', form: 'piece', cook: 'grilled', role: 'main', n: 1, w: 84, h: 64, side: { s: 'slab', h: 14, c: '#C98A3A' }, draw: thigh },
     { id: 'crumbed-chicken-thigh', name: 'Crumbed chicken thigh', sub: 'Chicken', kw: 'crumbed chicken thigh panko katsu', form: 'piece', cook: 'crumbed', role: 'main', n: 1, w: 92, h: 68, side: { s: 'slab', h: 18, c: '#D9A04A' }, draw: crumbedThigh },
     { id: 'chicken-schnitzel', name: 'Chicken schnitzel', sub: 'Chicken', kw: 'schnitty schnitzel crumbed chicken breast', form: 'piece', cook: 'crumbed', role: 'main', g: 250, w: 136, h: 96, side: { s: 'slab', h: 9, c: C.golden }, draw: crumbed({ rx: 66, ry: 46 }) },

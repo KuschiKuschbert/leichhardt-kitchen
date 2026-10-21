@@ -10,6 +10,8 @@
   function sc(pts, sx, sy, dx, dy) { if (sy === undefined) sy = sx; return pts.map(function (p) { return [p[0] * sx + (dx || 0), p[1] * sy + (dy || 0)]; }); }
   function poly(pts) { return 'M' + pts.map(function (p) { return N(p[0]) + ' ' + N(p[1]); }).join(' L') + ' Z'; }
   function circD(r, cx, cy) { cx = cx || 0; cy = cy || 0; return 'M' + N(cx - r) + ' ' + N(cy) + ' A' + N(r) + ' ' + N(r) + ' 0 1 0 ' + N(cx + r) + ' ' + N(cy) + ' A' + N(r) + ' ' + N(r) + ' 0 1 0 ' + N(cx - r) + ' ' + N(cy) + ' Z'; }
+  // a drawing moved so it sits centred on 0,0
+  function shift(dx, dy, fn) { return function (P, rnd) { return P.g('translate(' + N(dx) + ' ' + N(dy) + ')', fn(P, rnd)); }; }
   // pieces placed one by one: [x, y, turn, size, draw(P, rnd)], drawn in the order given (back to front)
   function group(list) { return function (P, rnd) { return list.map(function (it) { return P.g(P.at(it[0], it[1], it[2] || 0, it[3] || 1), it[4](P, rnd)); }).join(''); }; }
   // count points inside a triangle a, b, c, back to front: fn(x, y, i, rnd)
@@ -322,7 +324,7 @@
     return out + P.hl(-10, -12, 10, 2.4, '#FFFFFF', 0.45, -30);
   }
   function paneer(P, rnd) {
-    return P.scatter(rnd, 9, 28, 22, function (x, y, i, q) {
+    return P.scatter(rnd, 9, 32, 25, function (x, y, i, q) {
       return P.g(P.at(x, y, q() * 40 - 20), cube(P, q, 15, '#F8F4E8', '#E3DCC8', { sear: '#E2B460', wob: 0.03 }) + P.crumbs(q, 2, 4, 4, ['#9A6A2A'], 0.8));
     }, 15);
   }
@@ -339,15 +341,15 @@
   L.add('dairy', [
     // eggs
     { id: 'egg-fried', name: 'Fried egg, sunny side up', sub: 'Eggs', kw: 'fried egg sunny side up crispy edge burger egg brekkie breakfast', form: 'piece', cook: 'fried', role: 'topping', n: 1, w: 84, h: 72, side: { s: 'layer', h: 8, c: '#F7F4EC' }, draw: fried },
-    { id: 'egg-poached', name: 'Poached egg', sub: 'Eggs', kw: 'poached egg soft runny brekkie breakfast benny', form: 'piece', cook: 'poached', role: 'topping', n: 1, w: 52, h: 46, side: { s: 'mound', h: 18, c: EGG_WHITE }, draw: poachedOne },
+    { id: 'egg-poached', name: 'Poached egg', sub: 'Eggs', kw: 'poached egg soft runny brekkie breakfast benny', form: 'piece', cook: 'poached', role: 'topping', n: 1, w: 48, h: 42, side: { s: 'mound', h: 18, c: EGG_WHITE }, draw: poachedOne },
     { id: 'egg-jammy-halves', name: 'Boiled egg halves, jammy', sub: 'Eggs', kw: 'jammy egg soft boiled halves ramen egg halved', form: 'half', cook: 'poached', role: 'topping', n: 2, w: 74, h: 34, side: { s: 'mound', h: 14, c: '#FFFFFF' }, draw: group([[-17, 0, -8, 1, jammy], [18, 2, 10, 1, jammy]]) },
     { id: 'egg-hard-halves', name: 'Boiled egg halves, hard', sub: 'Eggs', kw: 'hard boiled egg halves halved salad egg', form: 'half', cook: 'poached', role: 'topping', n: 2, w: 74, h: 34, of: 'egg-jammy-halves', side: { s: 'mound', h: 14, c: '#FFFFFF' }, draw: group([[-17, 0, -8, 1, hard], [18, 2, 10, 1, hard]]) },
     { id: 'egg-in-cup', name: 'Soft-boiled egg in a cup', sub: 'Eggs', kw: 'soft boiled egg cup dippy egg soldiers runny', form: 'piece', cook: 'poached', role: 'main', n: 1, w: 48, h: 48, side: { s: 'cup', h: 40, c: '#FFFFFF' }, draw: eggInCup },
     { id: 'egg-sliced', name: 'Sliced egg', sub: 'Eggs', kw: 'sliced boiled egg rounds salad egg nicoise', form: 'slices', cook: 'poached', role: 'topping', n: 1, w: 78, h: 30, side: { s: 'layer', h: 6, c: '#FFFFFF' }, draw: slicedEgg },
     { id: 'scrambled-eggs', name: 'Scrambled eggs', sub: 'Eggs', kw: 'scrambled eggs scrambled soft curds brekkie breakfast', form: 'mound', cook: 'fried', role: 'main', g: 150, w: 84, h: 64, side: { s: 'mound', h: 18, c: '#F6DC7A' }, draw: scrambled },
-    { id: 'omelette', name: 'Omelette, folded', sub: 'Eggs', kw: 'omelette omelet folded three egg cheese brekkie', form: 'piece', cook: 'fried', role: 'main', g: 180, w: 120, h: 58, side: { s: 'slab', h: 16, c: '#F4D36A' }, draw: omelette },
+    { id: 'omelette', name: 'Omelette, folded', sub: 'Eggs', kw: 'omelette omelet folded three egg cheese brekkie', form: 'piece', cook: 'fried', role: 'main', g: 180, w: 120, h: 58, side: { s: 'slab', h: 16, c: '#F4D36A' }, draw: shift(0, 6, omelette) },
     { id: 'eggs-benedict', name: 'Eggs Benedict', sub: 'Eggs', kw: 'eggs benedict benny english muffin ham poached egg hollandaise brekkie', form: 'stack', cook: 'poached', role: 'main', n: 1, w: 62, h: 62, side: { s: 'mound', h: 34, c: '#F2D27A' }, draw: benny({}) },
-    { id: 'eggs-florentine', name: 'Eggs Florentine', sub: 'Eggs', kw: 'eggs florentine spinach english muffin poached egg hollandaise brekkie', form: 'stack', cook: 'poached', role: 'main', n: 1, w: 66, h: 66, of: 'eggs-benedict', side: { s: 'mound', h: 34, c: '#F2D27A' }, draw: benny({ spinach: true }) },
+    { id: 'eggs-florentine', name: 'Eggs Florentine', sub: 'Eggs', kw: 'eggs florentine spinach english muffin poached egg hollandaise brekkie', form: 'stack', cook: 'poached', role: 'main', n: 1, w: 62, h: 60, of: 'eggs-benedict', side: { s: 'mound', h: 34, c: '#F2D27A' }, draw: benny({ spinach: true }) },
     { id: 'frittata-wedge', name: 'Frittata wedge', sub: 'Eggs', kw: 'frittata wedge slice egg bake spanish tortilla vegetable', form: 'wedge', cook: 'baked', role: 'main', n: 1, w: 76, h: 62, side: { s: 'wedge', h: 22, c: '#EDC45E' }, draw: frittata },
     // butter and cream
     { id: 'butter-pat', name: 'Butter pat', sub: 'Butter and cream', kw: 'butter pat square knob portion', form: 'piece', role: 'topping', n: 1, w: 22, h: 22, side: { s: 'slab', h: 6, c: BUTTER }, draw: butterPat },
@@ -359,25 +361,25 @@
     { id: 'creme-fraiche', name: 'Crème fraîche quenelle', sub: 'Butter and cream', kw: 'creme fraiche quenelle cream dessert', form: 'quenelle', role: 'dside', g: 30, w: 42, h: 26, side: { s: 'scoop', h: 14, c: '#F6EFD9' }, draw: quenelle({ len: 40, wid: 24, col: '#F6EFD9' }) },
     { id: 'mascarpone', name: 'Mascarpone quenelle', sub: 'Butter and cream', kw: 'mascarpone quenelle cream tiramisu dessert', form: 'quenelle', role: 'dside', g: 35, w: 44, h: 28, of: 'creme-fraiche', side: { s: 'scoop', h: 15, c: '#F8F3E4' }, draw: quenelle({ len: 42, wid: 25, col: '#F8F3E4' }) },
     { id: 'ricotta', name: 'Ricotta quenelle', sub: 'Butter and cream', kw: 'ricotta quenelle whipped ricotta fresh cheese hotcakes', form: 'quenelle', cook: 'fresh', role: 'topping', g: 50, w: 48, h: 30, side: { s: 'scoop', h: 16, c: '#FAF8F1' }, draw: quenelle({ len: 46, wid: 28, col: '#FAF8F1', edge: -0.16, grain: true }) },
-    { id: 'cream-cheese', name: 'Cream cheese, spread', sub: 'Butter and cream', kw: 'cream cheese philly philadelphia spread swoosh smear bagel', form: 'smear', role: 'sauce', g: 30, w: 64, h: 24, side: { s: 'sauce', h: 4, c: '#F8F5EC' }, draw: creamCheese },
-    { id: 'labneh-balls', name: 'Labneh balls', sub: 'Butter and cream', kw: 'labneh balls strained yoghurt zaatar olive oil', form: 'cluster', role: 'sidedish', n: 5, w: 62, h: 50, side: { s: 'pile', h: 18, c: CREAM }, draw: labneh },
+    { id: 'cream-cheese', name: 'Cream cheese, spread', sub: 'Butter and cream', kw: 'cream cheese philly philadelphia spread swoosh smear bagel', form: 'smear', role: 'sauce', g: 30, w: 62, h: 20, side: { s: 'sauce', h: 4, c: '#F8F5EC' }, draw: creamCheese },
+    { id: 'labneh-balls', name: 'Labneh balls', sub: 'Butter and cream', kw: 'labneh balls strained yoghurt zaatar olive oil', form: 'cluster', role: 'sidedish', n: 5, w: 60, h: 46, side: { s: 'pile', h: 18, c: CREAM }, draw: labneh },
     // cheese
     { id: 'cheese-slice-melted', name: 'Cheese slice, melted', sub: 'Cheese', kw: 'melted cheese slice burger cheese cheddar american processed kraft singles', form: 'layer', role: 'topping', n: 1, w: 68, h: 68, side: { s: 'layer', h: 3, c: '#F2B33A' }, draw: meltedSlice },
     { id: 'cheese-slice', name: 'Cheese slice', sub: 'Cheese', kw: 'cheese slice square tasty cheddar sandwich processed kraft singles', form: 'layer', role: 'topping', n: 1, w: 58, h: 58, side: { s: 'layer', h: 3, c: '#F4C24A' }, draw: squareSlice },
     { id: 'cheese-wedge', name: 'Hard cheese wedge', sub: 'Cheese', kw: 'cheese wedge parmesan parmigiano pecorino aged hard cheese block gruyere', form: 'wedge', role: 'main', g: 100, w: 66, h: 48, side: { s: 'wedge', h: 26, c: '#F2DC9A' }, draw: wedge({ kind: 'hard' }) },
-    { id: 'cheddar-block', name: 'Cheddar block', sub: 'Cheese', kw: 'cheddar block tasty cheese board vintage', form: 'piece', role: 'main', g: 100, w: 58, h: 38, side: { s: 'slab', h: 22, c: '#F2B940' }, draw: cheddarBlock },
-    { id: 'brie-wedge', name: 'Brie wedge', sub: 'Cheese', kw: 'brie wedge camembert soft cheese white mould cheese board triple cream', form: 'wedge', role: 'main', g: 80, w: 66, h: 52, side: { s: 'wedge', h: 18, c: '#F8F5EC' }, draw: wedge({ kind: 'brie' }) },
+    { id: 'cheddar-block', name: 'Cheddar block', sub: 'Cheese', kw: 'cheddar block tasty cheese board vintage', form: 'piece', role: 'main', g: 100, w: 58, h: 38, side: { s: 'slab', h: 22, c: '#F2B940' }, draw: shift(0, -4, cheddarBlock) },
+    { id: 'brie-wedge', name: 'Brie wedge', sub: 'Cheese', kw: 'brie wedge camembert soft cheese white mould cheese board triple cream', form: 'wedge', role: 'main', g: 80, w: 66, h: 52, side: { s: 'wedge', h: 18, c: '#F8F5EC' }, draw: shift(0, -4, wedge({ kind: 'brie' })) },
     { id: 'blue-cheese-wedge', name: 'Blue cheese wedge', sub: 'Cheese', kw: 'blue cheese wedge gorgonzola stilton roquefort cheese board', form: 'wedge', role: 'main', g: 80, w: 66, h: 48, side: { s: 'wedge', h: 22, c: '#EFEAD9' }, draw: wedge({ kind: 'blue' }) },
-    { id: 'grated-cheese', name: 'Grated cheese', sub: 'Cheese', kw: 'grated cheese shredded tasty cheddar mozzarella pizza cheese', form: 'pile', role: 'topping', g: 30, w: 62, h: 48, side: { s: 'pile', h: 8, c: '#F2C14E' }, draw: grated },
-    { id: 'parmesan-shavings', name: 'Parmesan shavings', sub: 'Cheese', kw: 'parmesan shavings shaved parmigiano grana padano pecorino', form: 'shard', role: 'garnish', g: 10, w: 52, h: 38, side: { s: 'layer', h: 4, c: '#F3E3B0' }, draw: shavings },
-    { id: 'feta-cubes', name: 'Feta cubes', sub: 'Cheese', kw: 'feta cubes diced persian feta greek salad goats cheese', form: 'scatter', cook: 'fresh', role: 'garnish', g: 40, w: 56, h: 42, side: { s: 'pile', h: 10, c: '#FBF9F1' }, draw: fetaCubes },
+    { id: 'grated-cheese', name: 'Grated cheese', sub: 'Cheese', kw: 'grated cheese shredded tasty cheddar mozzarella pizza cheese', form: 'pile', role: 'topping', g: 30, w: 52, h: 40, side: { s: 'pile', h: 8, c: '#F2C14E' }, draw: grated },
+    { id: 'parmesan-shavings', name: 'Parmesan shavings', sub: 'Cheese', kw: 'parmesan shavings shaved parmigiano grana padano pecorino', form: 'shard', role: 'garnish', g: 10, w: 60, h: 44, side: { s: 'layer', h: 4, c: '#F3E3B0' }, draw: shavings },
+    { id: 'feta-cubes', name: 'Feta cubes', sub: 'Cheese', kw: 'feta cubes diced persian feta greek salad goats cheese', form: 'scatter', cook: 'fresh', role: 'garnish', g: 40, w: 50, h: 40, side: { s: 'pile', h: 10, c: '#FBF9F1' }, draw: fetaCubes },
     { id: 'whipped-feta', name: 'Whipped feta', sub: 'Cheese', kw: 'whipped feta swirl spread dip olive oil', form: 'smear', role: 'sauce', g: 60, w: 82, h: 62, side: { s: 'sauce', h: 8, c: '#F7F5EE' }, draw: whippedFeta },
-    { id: 'burrata', name: 'Burrata, torn', sub: 'Cheese', kw: 'burrata torn stracciatella mozzarella fresh cheese', form: 'whole', cook: 'fresh', role: 'main', n: 1, w: 62, h: 64, side: { s: 'mound', h: 36, c: '#F9F7F0' }, draw: burrata },
+    { id: 'burrata', name: 'Burrata, torn', sub: 'Cheese', kw: 'burrata torn stracciatella mozzarella fresh cheese', form: 'whole', cook: 'fresh', role: 'main', n: 1, w: 66, h: 60, side: { s: 'mound', h: 36, c: '#F9F7F0' }, draw: shift(-5, -3, burrata) },
     { id: 'bocconcini', name: 'Bocconcini', sub: 'Cheese', kw: 'bocconcini baby mozzarella balls caprese fior di latte', form: 'cluster', cook: 'fresh', role: 'salad', n: 5, w: 60, h: 50, side: { s: 'pile', h: 18, c: '#FAF8F2' }, draw: bocconcini },
     { id: 'haloumi', name: 'Haloumi, grilled', sub: 'Cheese', kw: 'haloumi halloumi grilled slices squeaky cheese', form: 'slices', cook: 'grilled', role: 'main', n: 3, w: 70, h: 66, side: { s: 'slab', h: 10, c: '#F2E6C4' }, draw: group([[-6, -18, -8, 1, haloumiSlice], [5, 0, 5, 1, haloumiSlice], [-2, 18, -3, 1, haloumiSlice]]) },
     { id: 'mozzarella-melted', name: 'Mozzarella, melted', sub: 'Cheese', kw: 'melted mozzarella blanket pizza cheese bubbling browned parmy cheese', form: 'layer', cook: 'baked', role: 'topping', g: 60, w: 100, h: 74, side: { s: 'layer', h: 4, c: '#F7EEC9' }, draw: mozzarella },
     { id: 'baked-camembert', name: 'Baked camembert', sub: 'Cheese', kw: 'baked camembert brie whole wheel box scored garlic rosemary sharing', form: 'whole', cook: 'baked', role: 'main', n: 1, w: 88, h: 88, side: { s: 'disc', h: 26, c: '#F3EEE0' }, draw: bakedCamembert },
-    { id: 'blue-cheese-crumble', name: 'Blue cheese, crumbled', sub: 'Cheese', kw: 'blue cheese crumble crumbled gorgonzola danish blue', form: 'scatter', role: 'garnish', g: 20, w: 52, h: 38, side: { s: 'pile', h: 6, c: '#F1ECDD' }, draw: blueCrumble },
+    { id: 'blue-cheese-crumble', name: 'Blue cheese, crumbled', sub: 'Cheese', kw: 'blue cheese crumble crumbled gorgonzola danish blue', form: 'scatter', role: 'garnish', g: 20, w: 48, h: 36, side: { s: 'pile', h: 6, c: '#F1ECDD' }, draw: shift(2, -3, blueCrumble) },
     { id: 'provolone-slice', name: 'Provolone slice', sub: 'Cheese', kw: 'provolone slice round cheese sandwich sub', form: 'layer', role: 'topping', n: 1, w: 62, h: 62, side: { s: 'layer', h: 3, c: '#F4E2A8' }, draw: provolone },
     { id: 'paneer-cubes', name: 'Paneer cubes', sub: 'Cheese', kw: 'paneer cubes indian cottage cheese seared tikka', form: 'scatter', cook: 'fried', role: 'main', g: 150, w: 78, h: 64, side: { s: 'pile', h: 16, c: '#F8F4E8' }, draw: paneer }
   ]);
