@@ -21,7 +21,8 @@ const item = (p, id) => p.evaluate(k => window.__fake.dump()[k] || {}, fsKey(['d
   await p.fill('#p-text', 'Mise onions'); await L.settle(p, 300);
   const chip = await p.$('[data-p="qset"]');
   ok(!!chip && /Add 2 tubs/.test(await chip.textContent()), 'the usual amount chip says Add 2 tubs');
-  if (chip) { await chip.click(); await L.settle(p, 400); }
+  // the chip to the middle of the screen first, as a person would: a toast at the bottom takes the taps under it
+  if (chip) { await chip.evaluate(e => e.scrollIntoView({ block: 'center' })); await L.settle(p, 100); await chip.click(); await L.settle(p, 400); }
   ok(await p.evaluate(a => Object.values(window.__fake.dump()).some(v => v && v.text === 'Mise onions' && v.qty === '2 tubs'), today), 'one tap adds Mise onions, 2 tubs');
   // no signal: the line shows Not sent until the write goes through
   await p.evaluate(() => { window.__fake.mode = 'hold'; });
