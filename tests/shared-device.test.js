@@ -10,10 +10,10 @@ const state = p => p.evaluate(() => document.querySelector('#p-pin') ? 'kitchen-
   let p = await L.open(b, '#/prep', { who: 'sam', touch: true, settings: { shared: true }, wait: 1200 });
   ok(/^in:Writing as Sam/.test(await state(p)), 'shared: Sam is signed in to start (' + await state(p) + ')');
   await p.clock.runFor(11 * 60000);
-  await p.waitForTimeout(300);
+  await L.settle(p, 300);
   ok((await state(p)) === 'guest', 'shared: after 11 minutes idle nobody is signed in and the list still shows, no kitchen PIN asked (' + await state(p) + ')');
   ok(await p.evaluate(() => localStorage.getItem('lk.prep.pin')) !== '', 'shared: the kitchen PIN is still on the device');
-  await p.goto(L.BASE + '#/guides'); await p.waitForTimeout(800);
+  await p.goto(L.BASE + '#/guides'); await L.settle(p, 800);
   ok(await p.$('.p-name') === null && await p.$('#p-pin') === null, 'shared: guides still open without a name');
   ok(p.errors.length === 0, 'shared idle: no page errors ' + p.errors.join(' | '));
   await p.context().close();
@@ -21,19 +21,19 @@ const state = p => p.evaluate(() => document.querySelector('#p-pin') ? 'kitchen-
   // a personal phone: 11 minutes idle changes nothing
   p = await L.open(b, '#/prep', { who: 'sam', touch: true, wait: 1200 });
   await p.clock.runFor(11 * 60000);
-  await p.waitForTimeout(300);
+  await L.settle(p, 300);
   ok(/^in:Writing as Sam/.test(await state(p)), 'personal phone: still signed in after 11 minutes (' + await state(p) + ')');
   await p.context().close();
 
   // a new kitchen day on a shared device: the book opens on the names
   p = await L.open(b, '#/prep', { who: 'sam', touch: true, settings: { shared: true }, wait: 1200 });
   await p.evaluate(() => localStorage.setItem('lk.prep.day', '2020-01-01'));
-  await p.reload({ waitUntil: 'load' }); await p.waitForTimeout(1200);
+  await p.reload({ waitUntil: 'load' }); await L.settle(p, 1200);
   ok((await state(p)) === 'guest', 'shared, new day: the book opens with nobody signed in (' + await state(p) + ')');
   await p.context().close();
   p = await L.open(b, '#/prep', { who: 'sam', touch: true, wait: 1200 });
   await p.evaluate(() => localStorage.setItem('lk.prep.day', '2020-01-01'));
-  await p.reload({ waitUntil: 'load' }); await p.waitForTimeout(1200);
+  await p.reload({ waitUntil: 'load' }); await L.settle(p, 1200);
   ok(/^in:Writing as Sam/.test(await state(p)), 'personal phone, new day: still signed in (' + await state(p) + ')');
   await p.context().close();
 
@@ -42,7 +42,7 @@ const state = p => p.evaluate(() => document.querySelector('#p-pin') ? 'kitchen-
   ok(await p.$('[data-act="setshared"][data-val="1"]') !== null, 'settings: the Shared device choice is there');
   ok((await p.getAttribute('[data-act="setshared"][data-val="0"]', 'aria-pressed')) === 'true', 'settings: Personal phone is the default');
   await p.click('[data-act="setshared"][data-val="1"]');
-  await p.waitForTimeout(200);
+  await L.settle(p, 200);
   ok(await p.evaluate(() => JSON.parse(localStorage.getItem('lk.settings.v1') || '{}').shared === true), 'settings: Shared device is saved on the device');
   ok((await p.getAttribute('[data-act="setshared"][data-val="1"]', 'aria-pressed')) === 'true', 'settings: Shared device shows as chosen');
   ok(p.errors.length === 0, 'shared settings: no page errors ' + p.errors.join(' | '));

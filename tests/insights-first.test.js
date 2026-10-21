@@ -10,10 +10,10 @@ const { R, ok } = L.results();
   const order = await p.evaluate(() => { const sec = document.querySelector('.a-sec'); const g = sec.querySelector('.a-grid'), t = sec.querySelector('.a-tiles'); return g && t ? (g.compareDocumentPosition(t) & Node.DOCUMENT_POSITION_FOLLOWING ? 'grid-first' : 'tiles-first') : 'missing'; });
   ok(order === 'grid-first', 'Insights: What stands out comes before the tiles (' + order + ')');
   ok(!/n\/a|lines corrected by the proofreader/.test(await L.txt(p, '.a-tiles') || ''), 'Insights: tiles with nothing to say are left out');
-  if (L.adminTab) await L.adminTab(p, 'tools'); else { await p.click('[data-p="a-tab"][data-t="tools"]'); await p.waitForTimeout(300); }
+  if (L.adminTab) await L.adminTab(p, 'tools'); else { await p.click('[data-p="a-tab"][data-t="tools"]'); await L.settle(p, 300); }
   ok(/Step 1/.test(await L.txt(p, '.a-step') || '') && /03:30/.test(await p.evaluate(() => document.querySelector('.a-pane').textContent)), 'Backup and PIN: the steps come first and the nightly backup is named');
   await p.fill('#a-newpin', '4321'); await p.fill('#a-newpin2', '4312');
-  await p.click('[data-p="move-pin"]'); await p.waitForTimeout(200);
+  await p.click('[data-p="move-pin"]'); await L.settle(p, 200);
   ok(/do not match/.test(await p.evaluate(() => document.querySelector('.a-pane').textContent)), 'PIN move: two different PINs are caught');
   ok(p.errors.length === 0, 'no page errors ' + p.errors.join(' | '));
   await p.context().close();
