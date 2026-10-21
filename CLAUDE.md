@@ -126,7 +126,7 @@ These hold for every file, old and new. When you touch code that breaks one, bri
 - A value from Firestore placed in a `style`, an SVG attribute or a URL is checked by type first: a number in range, a colour (`#rgb`, `#rrggbb` or a named colour), or one of a fixed list. Never put it in as it came.
 - SVG from Firestore or IndexedDB goes through `LK_RX.clean()` every time it is drawn, including copies kept on the phone.
 - Links are fixed `#/` routes or use `encodeURIComponent`. No `eval`, `new Function` or string timers.
-- `tests/safe-text.test.js` (coming with item 3) types a booby-trapped line into every field that others see. A new field that others see gets a line there.
+- `tests/safe-text.test.js` (coming with item 2 of "Bringing the code in line") types a booby-trapped line into every field that others see. A new field that others see gets a line there.
 
 **Forms**
 - Fill in what the book already knows (section, unit, reason, the usual amount), and keep it easy to change: the filled box is selected on tap, so typing replaces it.
