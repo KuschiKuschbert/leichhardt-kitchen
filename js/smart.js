@@ -35,7 +35,7 @@
   var FILLER = { bought: 1, in: 1, house: 1, made: 1, homemade: 1, fresh: 1, frozen: 1, cooked: 1, of: 1, the: 1, a: 1, an: 1, and: 1, with: 1, on: 1, for: 1, style: 1, our: 1, choice: 1, side: 0, light: 1, chunky: 1, double: 1, smoked: 0, seasonal: 0, mix: 0, x: 1, g: 1, kg: 1, ml: 1, l: 1, pcs: 1, piece: 1, pieces: 1 };
   function key(name) { return words(String(name || '').replace(/\([^)]*\)|\[[^\]]*\]/g, ' ')).filter(function (w) { return !FILLER[w] && !/^\d+$/.test(w); }).map(stem).join(' '); }
   // the ingredients that never show on the plate: they are cooked in, or under everything
-  var STOP = /^(salt|table salt|pepper|black pepper|white pepper|cracked pepper|oil|olive oil|canola oil|vegetable oil|cooking oil|sesame oil|rice bran oil|oil spray|cooking spray|water|ice|stock|chicken stock|beef stock|flour|plain flour|self raising flour|wing flour|corn flour|cornflour|panko crumb|breadcrumb|sugar|caster sugar|brown sugar|icing sugar mix|seasoning|szechuan seasoning|white cooking wine|red cooking wine|cooking wine|wine|beer|baking powder|bicarb soda|butter for the pan|batter mix|eggwash|egg wash|garlic|ginger|onion powder|garlic powder|paprika|cumin|ground cinnamon|italian herb|dried oregano|vinegar|white vinegar|lemon juice|lime juice|cream for the sauce|milk)$/;
+  var STOP = /^(salt|table salt|pepper|black pepper|white pepper|cracked pepper|oil|olive oil|canola oil|vegetable oil|cooking oil|sesame oil|rice bran oil|oil spray|cooking spray|water|ice|stock|chicken stock|beef stock|flour|plain flour|self raising flour|wing flour|corn flour|cornflour|panko crumb|breadcrumb|sugar|caster sugar|brown sugar|icing sugar mix|seasoning|szechuan seasoning|white cooking wine|red cooking wine|cooking wine|wine|beer|baking powder|bicarb soda|butter for the pan|batter mix|eggwash|egg wash|garlic|ginger|onion powder|garlic powder|paprika|cumin|ground cinnamon|italian herb|dried oregano|vinegar|white vinegar|lemon juice|lime juice|cream for the sauce|milk|bay leaf|bay leaves|star anise|cinnamon stick|cinnamon sticks|cloves|sea salt|sea salt flakes|salt flakes|maldon salt|flaky salt)$/;
   function plain(name) { return words(String(name || '').replace(/\([^)]*\)|\[[^\]]*\]/g, ' ')).filter(function (w) { return !FILLER[w] && !/^\d+$/.test(w); }).join(' '); }
   function hidden(i) { var p = plain(i.name); return !p || STOP.test(p) || STOP.test(p.replace(/s$/, '')); }
 
@@ -101,7 +101,7 @@
     itemsHay().forEach(function (h) {
       if (o.cat && h.it.cat !== o.cat) return;
       if (o.notCat && h.it.cat === o.notCat) return;
-      var s = h.name === k ? 1 : (' ' + h.all.join(' ') + ' ').indexOf(' ' + k + ' ') >= 0 && ws.length > 1 ? 0.95 - Math.min(0.12, h.name.split(' ').filter(function (w) { return ws.indexOf(w) < 0; }).length * 0.03) + ((' ' + h.main.join(' ') + ' ').indexOf(' ' + k + ' ') >= 0 ? 0.03 : 0) : fit(ws, h, head);
+      var s = h.name === k ? 1 : (' ' + h.all.join(' ') + ' ').indexOf(' ' + k + ' ') >= 0 && ws.length > 1 ? 0.97 - Math.min(0.12, h.name.split(' ').filter(function (w) { return ws.indexOf(w) < 0; }).length * 0.02) + ((' ' + h.main.join(' ') + ' ').indexOf(' ' + k + ' ') >= 0 ? 0.03 : 0) : fit(ws, h, head);
       // the plain piece before its colour and size variants
       if (s && h.it.of) s -= 0.03;
       if (s) out.push({ id: h.it.id, s: s });
@@ -111,10 +111,11 @@
     return out.slice(0, 4);
   }
   // names the book uses often that say something else than their words (garnish is micro herbs on the plate)
-  var SYN = { riblet: 'pork ribs', 'pork riblet': 'pork ribs', garnish: 'micro herbs', 'green garnish': 'micro herbs', 'side sauce': 'sauce ramekin', sauce: 'sauce ramekin', 'side salad': 'garden salad', mesclun: 'mixed leaves', 'green bowl': 'mixed leaves' };
+  var SYN = { riblet: 'pork ribs', 'pork riblet': 'pork ribs', salad: 'garden salad', garnish: 'micro herbs', 'green garnish': 'micro herbs', 'side sauce': 'sauce ramekin', sauce: 'sauce ramekin', 'side salad': 'garden salad', mesclun: 'mixed leaves', 'green bowl': 'mixed leaves' };
   var SYN_K = {}; Object.keys(SYN).forEach(function (x) { SYN_K[key(x)] = SYN[x]; });
   // names that are one thing although they say "and"
   var ONE = /\b(bread and butter|salt and pepper|mac and cheese|fish and chips|sweet and sour|surf and turf|bangers and mash|pie and peas|shell and lid)\b/i;
+  var FORMW = [[/swoosh|swoop|swipe|smear/, ['swoosh', 'smear']], [/drizzl/, ['drizzle']], [/\bdots?\b/, ['dots']], [/quenelle/, ['quenelle']], [/\bpool|puddle|ladle/, ['pool']], [/scatter|sprinkl/, ['scatter']], [/ramekin|on the side|in a pot/, ['bowlful']]];
   /* The library piece for an ingredient of recipe r: { id, conf, guesses, why }. Linked recipes count by their own
      name too (a link to "gravy" gives the gravy pool); a pick the head chef made before always wins. */
   function matchIng(i, r) {
@@ -124,7 +125,10 @@
     var best = rank(i.name, { notCat: 'build' }), lk = i.link && (window.LK_APP.byId(i.link) || X.pristine(i.link));
     if (lk) rank(lk.name, { notCat: 'build' }).concat(rank(i.link.replace(/-/g, ' '), { notCat: 'build' })).forEach(function (x) { x.s = Math.min(1, x.s * 0.95); best.push(x); });
     // a sauce goes to the sauce shapes when its name says sauce, jus, gravy, aioli and the like
-    if (/\b(sauce|jus|gravy|aioli|mayo|dressing|relish|ketchup|chutney|salsa|pesto|glaze|syrup|butterscotch|coulis|puree|dip)\b/.test(plain(i.name))) best.forEach(function (x) { var it = LIB.get(x.id); if (it && (it.cat === 'sauce')) x.s += 0.06; });
+    if (/\b(sauce|jus|gravy|aioli|mayo|dressing|relish|ketchup|chutney|salsa|pesto|glaze|syrup|butterscotch|coulis|puree|dip)\b/.test(plain(i.name))) best.forEach(function (x) { var it = LIB.get(x.id); if (it && (it.cat === 'sauce')) x.s += 0.1; });
+    // the recipe's words for the shape ("swoop and smear", "drizzled", "dots") pick between pieces that fit as well
+    var how = (i.name + ' ' + (i.note || '')).toLowerCase();
+    FORMW.forEach(function (f) { if (f[0].test(how)) best.forEach(function (x) { var it = LIB.get(x.id); if (it && f[1].indexOf(it.form) >= 0) x.s += 0.05; }); });
     var seen = {}, uniq = [];
     best.sort(function (a, b) { return b.s - a.s; }).forEach(function (x) { if (!seen[x.id]) { seen[x.id] = 1; uniq.push(x); } });
     if (!uniq.length) return { id: '', conf: 0, guesses: [], why: 'none' };
@@ -190,9 +194,28 @@
   }
 
   /* ---------- the parts of a recipe ---------- */
-  // every visible ingredient, matched and sized: [{ ing, i, id, it, scale, count, conf, guesses }]
-  function partsOf(r, d) {
-    var out = [], unsure = [], also = {}, used = {}, parmy = /parm|schnit/i.test(r.name), toppers = [];
+  // a coating on the main ("Beer batter" with "Fish fillet"): the fish is drawn battered, the batter is not a part of its own
+  // only an ingredient that is the coating itself ("Beer batter", "Panko crumbs"), not something already coated ("Crumbed chicken thigh")
+  var COAT = [[/\b(batter|tempura)$/i, 'battered'], [/\b(crumbs?|breadcrumbs?|panko)$/i, 'crumbed']];
+  function coatOf(i) { var p = plain(i.name); if (/chip|salad|topping|scatter/.test(p)) return ''; for (var k = 0; k < COAT.length; k++) if (COAT[k][0].test(p) && p.split(' ').length <= 3) return COAT[k][1]; return ''; }
+  // a burger or a sandwich: one piece from above, its fillings inside it (each still labelled on the Pass)
+  function burgerOf(r, parts) {
+    if (!/burger|slider|sandwich|sanga/i.test(r.name)) return null;
+    var bun = parts.filter(function (p) { return p.it.role === 'bread' || /\b(bun|roll|brioche|turkish|bread)\b/i.test(p.ing); })[0];
+    if (!bun) return null;
+    var t = parts.map(function (p) { return p.ing; }).join(' ').toLowerCase(), id = 'beef-burger';
+    if (/steak sand|steak sanga/i.test(r.name)) id = 'steak-sandwich';
+    else if (/club/i.test(r.name)) id = 'club-sandwich';
+    else if (/turkish|sandwich/.test(r.name.toLowerCase() + ' ' + bun.ing.toLowerCase())) id = bun.id;
+    else if (/slider/i.test(r.name)) id = 'slider-burger';
+    else if (/beetroot/.test(t) && /egg|pineapple/.test(t)) id = 'works-burger';
+    else if (/chicken|schnit|fish|fillet|grenadier|barra|falafel/.test(t)) id = 'chicken-burger';
+    return { bun: bun, it: LIB.get(id) || bun.it };
+  }
+  // every visible ingredient, matched and sized: [{ ing, i, id, it, scale, count, conf, guesses, also }]
+  function partsOf(r, d, loose) {
+    var out = [], unsure = [], also = {}, used = {}, parmy = /parm|schnit/i.test(r.name), toppers = [], coats = [];
+    var fold = function (name, into) { also[name] = into.ing; (into.also = into.also || []).push(name); };
     (r.ingredients || []).forEach(function (i0) {
       split(i0).forEach(function (i) {
         if (hidden(i)) return;
@@ -201,24 +224,49 @@
           var tk = rank(String(i.name).replace(/\btopper\b/i, ' ').replace(/\bparmi\b/i, ' ') + ' parmy', { cat: 'meat' })[0];
           if (tk && tk.s >= 0.6 && /parm/i.test(LIB.get(tk.id).name)) { toppers.push({ ing: R.ingName(i), id: tk.id }); return; }
         }
+        var c = coatOf(i); if (c) { coats.push({ ing: R.ingName(i), cook: c }); return; }
         var m = matchIng(i, r), name = R.ingName(i);
         if (!m.id) { unsure.push({ ing: name, guesses: [] }); return; }
         if (m.conf < 0.6) { unsure.push({ ing: name, guesses: m.guesses }); return; }
-        // two ingredients for the same piece (the pie mix and the pie case): one part, both named
-        if (used[m.id]) { also[name] = used[m.id]; return; }
+        // two ingredients for the same piece (the pie mix and the pie case, smoked or oven brisket): one part, both named
+        if (used[m.id]) { fold(name, used[m.id]); return; }
         var it = LIB.get(m.id), part = { ing: name, i: i, id: m.id, it: it, scale: DR.scaleFor(it, i.q), count: countOf(it, i.q), conf: m.conf, guesses: m.guesses };
+        // a garnish or topping given by weight gets more pieces, not one giant one; a sauce never floods the plate
+        if (/^(garnish|topping)$/.test(it.role) && part.scale > 1.4) { part.count = Math.max(part.count, Math.min(3, Math.round(part.scale * part.scale / 1.6))); part.scale = 1.15; }
+        if (/sauce/.test(it.role)) part.scale = Math.min(part.scale, 1.6);
         // a parmy's own sauce, ham and cheese go on the schnitzel, in the recipe's order
         if (parmy && /^(sauce|topping)$/.test(it.role) && /napoli|pizza|tomato|ham|cheese|mozzarella|bacon|pineapple|egg|avocado|prawn|hollandaise|bearnaise|brie|jalape|salsa|guac|sour cream/i.test(name + ' ' + it.name)) part.on = true;
-        used[m.id] = name;
+        used[m.id] = part;
         out.push(part);
       });
     });
     // the parmy for a topper takes the schnitzel's place (one part, both ingredients named)
     toppers.forEach(function (t) {
       var sch = out.filter(function (p) { return /schnit/i.test(p.ing + ' ' + p.it.name); })[0], it = LIB.get(t.id);
-      if (sch) { also[t.ing] = sch.ing; sch.id = t.id; sch.it = it; }
-      else { out.push({ ing: t.ing, i: { name: t.ing, q: '' }, id: t.id, it: it, scale: 1, count: 1, conf: 0.9, guesses: [] }); }
+      if (sch) { fold(t.ing, sch); sch.id = t.id; sch.it = it; }
+      else out.push({ ing: t.ing, i: { name: t.ing, q: '' }, id: t.id, it: it, scale: 1, count: 1, conf: 0.9, guesses: [] });
     });
+    // a coating: the main fish or meat drawn that way
+    coats.forEach(function (c) {
+      var host = out.filter(function (p) { return p.it.role === 'main' && /^(seafood|meat|prepared)$/.test(p.it.cat); })[0];
+      if (!host) return;
+      fold(c.ing, host);
+      if (host.it.cook === c.cook) return;
+      var alt = rank(c.cook + ' ' + host.ing, { cat: host.it.cat }).filter(function (x) { var it = LIB.get(x.id); return it.role === 'main' && (it.cook === c.cook || new RegExp(c.cook).test(it.name.toLowerCase())); })[0];
+      if (alt && alt.s >= 0.5) { host.id = alt.id; host.it = LIB.get(alt.id); }
+    });
+    // a burger: the whole burger from above, what is inside it named with it; chips and side sauces stay on the plate
+    var bg = loose ? null : burgerOf(r, out);
+    if (bg) {
+      var host = bg.bun, keep = [];
+      out.forEach(function (p) {
+        if (p === host) return keep.push(p);
+        var sideOne = /^(starch|sidedish)$/.test(p.it.role) || /\bside\b|on the side|guest choose|choice/i.test(p.ing + ' ' + (p.i.note || ''));
+        if (sideOne) keep.push(p); else { fold(p.ing, host); (p.also || []).forEach(function (x) { fold(x, host); }); }
+      });
+      host.id = bg.it.id; host.it = bg.it; host.scale = 1; host.count = 1;
+      out = keep;
+    }
     return { parts: out, unsure: unsure, also: also };
   }
   function countOf(it, q) { var a = DR.amount(q); return a && a.n && it && it.n ? Math.max(1, Math.min(12, Math.round(a.n / it.n))) : 1; }
@@ -262,20 +310,28 @@
     return [a.cx + p[0] * a.rx + (k || 0) * 8, a.cy + p[1] * a.ry + (k || 0) * 6];
   }
   /* Lays the parts out: the biggest first in their zones, toppings stacked on the main (a parmy's ham, napoli and cheese
-     in the order of the recipe), sauces under or beside, garnish on top, then the solver pushes overlaps apart. */
+     in the order of the recipe), sauces under or beside, garnish on top, then the solver pushes overlaps apart. What sits
+     on the main moves with it. */
+  var LAYER = { sauce: 0, dsauce: 0, starch: 1, bread: 1, veg: 1, salad: 1, sidedish: 1, main: 2, dessert: 2, dside: 2, topping: 3, garnish: 4 };
   function layout(d, r, parts, style, seed) {
     var rnd = LIB.P.rng('layout:' + d.rid + ':' + seed), a = areaOf(d.surf), els = [], mirror = seed % 2 === 1 && style !== 'pan' && style !== 'bowl';
-    var key2 = function (p) { return p.it.id + '@' + p.it.v; };
-    var mains = parts.filter(function (p) { return /^(main|dessert)$/.test(p.it.role); });
     var order = parts.slice().sort(function (x, y) { return (y.it.w * y.it.h * y.scale * y.scale) - (x.it.w * x.it.h * x.scale * x.scale); });
-    var byRole = {};
-    var place = function (p, at, rot) {
-      d.defs[key2(p)] = LIB.body(p.it.id);
-      var col = (p.it.role === 'sauce' || p.it.role === 'dsauce') ? LIB.sauceColour(p.ing) : '';
+    var byRole = {}, ramekin = LIB.get('sauce-ramekin');
+    var place = function (p, at, rot, host) {
+      p.placed = true;
+      var it = p.it;
+      // on a board a sauce comes in a ramekin
+      if (STYLES[style].pack && /sauce/.test(it.role) && ramekin && it.id !== ramekin.id) it = ramekin;
+      var k2 = it.id + '@' + it.v, col = /sauce/.test(p.it.role) || it === ramekin ? LIB.sauceColour(p.ing) : '';
+      d.defs[k2] = LIB.body(it.id);
       for (var c = 0; c < p.count; c++) {
-        var ang = p.count > 1 ? c / p.count * Math.PI * 2 + rnd() * 0.5 : 0, rr = p.count > 1 ? Math.max(p.it.w, p.it.h) * p.scale * 0.5 : 0;
-        var el = { t: 'item', a: key2(p), x: n1(at[0] + Math.cos(ang) * rr), y: n1(at[1] + Math.sin(ang) * rr * 0.7), sx: n1(p.scale * 100) / 100, sy: n1(p.scale * 100) / 100, r: Math.round(rot + (p.count > 1 ? rnd() * 50 - 25 : 0)), ing: p.ing };
-        if (col && p.it.side && p.it.side.c) el.cm = R.tintMap(d.defs[key2(p)], p.it.side.c, col);
+        var ang = p.count > 1 ? c / p.count * Math.PI * 2 + rnd() * 0.5 : 0, rr = p.count > 1 ? Math.max(it.w, it.h) * p.scale * 0.5 : 0;
+        if (host && rr) { var hb = sizeEl(host); rr = Math.min(rr, Math.min(hb[0], hb[1]) * 0.28); }
+        var el = { t: 'item', a: k2, x: n1(at[0] + Math.cos(ang) * rr), y: n1(at[1] + Math.sin(ang) * rr * 0.7), sx: n1(p.scale * 100) / 100, sy: n1(p.scale * 100) / 100, r: Math.round(rot + (p.count > 1 ? rnd() * 50 - 25 : 0)), ing: p.ing };
+        if (p.also && p.also.length) el.also = p.also.join('|').slice(0, 400);
+        if (col && it.side && it.side.c) el.cm = R.tintMap(d.defs[k2], it.side.c, col);
+        if (host) { el._h = host; el._o = [el.x - host.x, el.y - host.y]; }
+        if (p.on) el._on = 1;
         els.push(el);
       }
     };
@@ -283,22 +339,27 @@
       // a batch recipe: the main thing fills the pan, the rest scattered over it
       var big = order[0];
       if (big) { var fit = Math.min(a.rx * 1.8 / big.it.w, a.ry * 1.8 / big.it.h, 2.6); big.scale = Math.max(big.scale, fit); place(big, [a.cx, a.cy], 0); }
-      order.slice(1).forEach(function (p, k) { var q = LIB.P.inEllipse(rnd, a.rx * 0.6, a.ry * 0.6); place(p, [a.cx + q[0], a.cy + q[1]], rnd() * 60 - 30); });
+      order.slice(1).forEach(function (p) { var q = LIB.P.inEllipse(rnd, a.rx * 0.6, a.ry * 0.6); place(p, [a.cx + q[0], a.cy + q[1]], rnd() * 60 - 30); });
     } else if (STYLES[style].pack) {
-      // a share board: the biggest first, in rows across the board
-      var x = a.cx - a.rx, y = a.cy - a.ry, rowH = 0;
-      order.forEach(function (p) {
+      // a share board: the biggest first, in rows across the board, the sauces in ramekins along the front
+      var x = a.cx - a.rx, y = a.cy - a.ry, rowH = 0, sauces = order.filter(function (p) { return /sauce/.test(p.it.role); });
+      order.filter(function (p) { return sauces.indexOf(p) < 0 && !/^(garnish|topping)$/.test(p.it.role); }).forEach(function (p) {
         var w = p.it.w * p.scale * (p.count > 1 ? 1.6 : 1), h = p.it.h * p.scale * (p.count > 1 ? 1.4 : 1);
-        if (x + w > a.cx + a.rx) { x = a.cx - a.rx; y += rowH + 4; rowH = 0; }
+        if (x + w > a.cx + a.rx && x > a.cx - a.rx) { x = a.cx - a.rx; y += rowH + 4; rowH = 0; }
         place(p, [x + w / 2, Math.min(a.cy + a.ry - h / 2, y + h / 2)], rnd() * 20 - 10);
         x += w + 4; rowH = Math.max(rowH, h);
       });
+      sauces.forEach(function (p, k) { place(p, [a.cx + a.rx - 26 - k * 50, a.cy + a.ry - 24], 0); });
     } else if (STYLES[style].bowl) {
       // a bowl: the base in the middle, the toppings in sectors round it, garnish on top
       var base = order.filter(function (p) { return /^(starch|salad|main)$/.test(p.it.role) && p.it.form === 'bowlful'; })[0] || order.filter(function (p) { return p.it.role === 'starch' || p.it.role === 'salad'; })[0];
-      if (base) { base.scale = Math.max(base.scale, Math.min(a.rx * 1.5 / base.it.w, 1.8)); place(base, [a.cx, a.cy], 0); }
-      var ring = order.filter(function (p) { return p !== base && !/^(sauce|dsauce|garnish)$/.test(p.it.role); });
-      ring.forEach(function (p, k) { var ang = -Math.PI / 2 + k / Math.max(1, ring.length) * Math.PI * 2, rr = Math.min(a.rx, a.ry) * 0.48; place(p, [a.cx + Math.cos(ang) * rr, a.cy + Math.sin(ang) * rr], ang * 57 + 90); });
+      if (base) { base.scale = Math.max(base.scale, Math.min(a.rx * 1.7 / Math.max(base.it.w, base.it.h), 2.2)); place(base, [a.cx, a.cy], 0); }
+      var ring = order.filter(function (p) { return p !== base && !/^(sauce|dsauce|garnish)$/.test(p.it.role); }), rr = Math.min(a.rx, a.ry) * 0.5;
+      ring.forEach(function (p, k) {
+        var ang = -Math.PI / 2 + k / Math.max(1, ring.length) * Math.PI * 2, room = rr * (ring.length > 3 ? 1 : 1.3);
+        p.scale = Math.min(p.scale, room / Math.max(p.it.w, p.it.h));
+        place(p, [a.cx + Math.cos(ang) * rr, a.cy + Math.sin(ang) * rr], Math.round(rnd() * 40 - 20));
+      });
     } else {
       order.forEach(function (p) {
         var role = p.it.role;
@@ -311,24 +372,28 @@
     // what sits on the main: toppings stacked in the recipe's order, then sauces under or beside it, garnish on top
     var host = function () { var m = els.filter(function (e) { var it = LIB.get(e.a.split('@')[0]); return it && /^(main|dessert)$/.test(it.role); })[0]; return m || els[0]; };
     parts.forEach(function (p, k) {
-      var role = p.it.role, h = host();
-      if (p.on) role = 'topping';
-      if (!/^(sauce|dsauce|topping|garnish)$/.test(role) || style === 'pan') return;
+      var role = p.on ? 'topping' : p.it.role, h = host();
+      if (p.placed || !/^(sauce|dsauce|topping|garnish)$/.test(role) || style === 'pan') return;
       if (!h) { place(p, [a.cx, a.cy], 0); return; }
       var hs = sizeEl(h), off = (k % 3 - 1) * 4;
-      if (role === 'topping') place(p, [h.x + off, h.y + off * 0.5], h.r || 0);
-      else if (role === 'garnish') place(p, [h.x + hs[0] * 0.18, h.y - hs[1] * 0.18], rnd() * 60 - 30);
-      else if (style === 'dessert') place(p, [h.x - hs[0] * 0.15, h.y + hs[1] * 0.35], -12);
-      // a pub plate's sauce: in a ramekin at the side when the recipe says side, else under the main
-      else if (/side|ramekin|on the side|choice/.test(p.ing.toLowerCase())) place(p, spot(style, 'sidedish', a, 0), 0);
-      else place(p, [h.x + hs[0] * 0.08, h.y + hs[1] * 0.12], 0);
+      if (role === 'topping') place(p, [h.x + off, h.y + off * 0.5], h.r || 0, h);
+      else if (role === 'garnish') place(p, [h.x + hs[0] * 0.18, h.y - hs[1] * 0.18], rnd() * 60 - 30, h);
+      else if (style === 'dessert') place(p, [h.x - hs[0] * 0.06, h.y + hs[1] * 0.14], -12, h);
+      // a dollop or a quenelle (tartare, aioli) sits beside the main, towards the middle of the plate
+      else if (/^(dollop|quenelle|scoop|bowlful)$/.test(p.it.form)) { var sgn = h.x > a.cx + 10 ? -1 : 1; place(p, [h.x + sgn * hs[0] * 0.42, h.y - hs[1] * 0.3], 0, h); }
+      else if (/^(swoosh|smear|line)$/.test(p.it.form)) place(p, [h.x - hs[0] * 0.18, h.y + hs[1] * 0.28], -8, h);
+      // a sauce: in a ramekin at the side when the recipe says side or choice, else under the main
+      else if (/\bside\b|ramekin|choice|choose/.test((p.ing + ' ' + (p.i.note || '')).toLowerCase())) place(p, spot(style, 'sidedish', a, 0), 0);
+      else place(p, [h.x + hs[0] * 0.08, h.y + hs[1] * 0.12], 0, h);
     });
     // layers: sauce, base pieces, mains, toppings, garnish (the order js/draw.js keeps when adding by hand)
-    var lay = function (e) { var it = LIB.get(e.a.split('@')[0]); return it ? (DR.render ? ({ sauce: 0, dsauce: 0, starch: 1, bread: 1, veg: 1, salad: 1, sidedish: 1, main: 2, dessert: 2, dside: 2, topping: 3, garnish: 4 })[it.role] : 2) : 2; };
+    var lay = function (e) { if (e._on) return 3; var it = LIB.get(e.a.split('@')[0]); return it ? LAYER[it.role] : 2; };
     els.forEach(function (e, k) { e._k = k; });
     els.sort(function (x, y) { return (lay(x) - lay(y)) || (x._k - y._k); });
-    els.forEach(function (e) { delete e._k; });
     solve(els, a, rnd, false);
+    // what sits on a part goes where that part went
+    els.forEach(function (e) { if (e._h) { e.x = n1(e._h.x + e._o[0]); e.y = n1(e._h.y + e._o[1]); } });
+    els.forEach(function (e) { delete e._k; delete e._h; delete e._o; delete e._on; });
     return els;
   }
 
@@ -343,7 +408,7 @@
     d.surf = surf;
     var style = W.styleChoice || pickStyle(r, d.slot, surf, pp.parts);
     var keep = d.els.filter(function (e) { return e.fixed || e.t !== 'item'; }), keepIng = {};
-    keep.forEach(function (e) { if (e.ing) keepIng[e.ing] = 1; });
+    keep.forEach(function (e) { if (e.ing) keepIng[e.ing] = 1; String(e.also || '').split('|').forEach(function (x) { if (x) keepIng[x] = 1; }); });
     var els = layout(d, r, pp.parts.filter(function (p) { return !keepIng[p.ing]; }), style, seed);
     d.els = keep.concat(els);
     d.layout = { style: style, seed: seed, also: pp.also };
@@ -351,15 +416,30 @@
   }
   // the same solver over what is there: overlaps pushed apart, everything back on the servingware, hand-placed parts stay
   function tidy() {
-    var d = DR.state().d, a = areaOf(d.surf);
+    var d = DR.state().d, a = areaOf(d.surf), roleOf = function (e) { var it = e.t === 'item' && LIB.get(e.a.split('@')[0]); return it ? it.role : ''; };
+    // a sauce, topping or garnish sitting on a part moves with that part
+    var ride = [];
+    d.els.forEach(function (e) {
+      if (!/^(sauce|dsauce|topping|garnish)$/.test(roleOf(e)) || e.fixed) return;
+      var best = null, bd = Infinity;
+      d.els.forEach(function (h) { if (h === e || !roleOf(h) || /^(sauce|dsauce|topping|garnish)$/.test(roleOf(h))) return; var b = R.bbox(h), dd = Math.hypot(h.x - e.x, h.y - e.y); if (e.x >= b[0] && e.x <= b[2] && e.y >= b[1] && e.y <= b[3] && dd < bd) { bd = dd; best = h; } });
+      if (best) ride.push([e, best, e.x - best.x, e.y - best.y]);
+    });
     solve(d.els, a, LIB.P.rng('tidy'), true);
+    ride.forEach(function (x) { x[0].x = n1(x[1].x + x[2]); x[0].y = n1(x[1].y + x[3]); });
   }
 
   /* ---------- the side view, from the plate ---------- */
   // a profile piece from the side: the build library's own one for the piece when there is one, else a shape for its role
   function sidePiece(it, ing) {
-    var hit = rank(ing || it.name, { cat: 'build' })[0] || rank(it.name, { cat: 'build' })[0];
-    if (hit && hit.s >= 0.6) return LIB.get(hit.id);
+    // a whole burger or sandwich: the assembled stack from the side
+    if (it.form === 'stack') { var st = rank(it.name, { cat: 'build' }).concat(rank(ing || '', { cat: 'build' })).filter(function (x) { return LIB.get(x.id).form === 'stack'; })[0]; return LIB.get(st ? st.id : 'side-cheeseburger'); }
+    // a piece that names its own holder (a cone, a cup) or a whole dish only when the part says so too
+    var own = (it.name + ' ' + (ing || '')).toLowerCase();
+    var notStack = function (x) { var pc = x && LIB.get(x.id); return pc && pc.form !== 'stack' && !(/\b(cone|cup|benedict)\b/.test(pc.name.toLowerCase()) && !/\b(cone|cup|benedict)\b/.test(own)); };
+    var hit = rank(it.name, { cat: 'build' }).filter(notStack)[0], h2 = ing ? rank(ing, { cat: 'build' }).filter(notStack)[0] : null;
+    if (h2 && (!hit || h2.s > hit.s)) hit = h2;
+    if (hit && hit.s >= 0.6 && !/^side-(ware|profile)-/.test(hit.id)) return LIB.get(hit.id);
     var prof = LIB.get('side-profile-' + ((it.side && it.side.s) || 'mound'));
     return prof || null;
   }
@@ -367,16 +447,21 @@
     var W = DR.state(), d = W.d, api = B(), r = R.recipeOf(d.rid);
     var plate = (X.arts().filter(function (x) { return x.rid === d.rid && (x.slot === 'plate' || x.slot === 'pan') && !x.removed; })[0]);
     return (plate ? api.ready().then(function () { return api.fs().getDoc(api.docRef('drawings', plate.id)); }).then(function (sn) { return sn.exists() ? sn.data() : null; }, function () { return null; }) : Promise.resolve(null)).then(function (pd) {
-      var src = pd && Array.isArray(pd.els) ? pd.els : null, parts;
-      if (src) {
-        var defs = {}; try { defs = JSON.parse(pd.defs || '{}'); } catch (e) {}
-        var surfW = LIB.surface(pd.surf || { fam: 'plate', size: 30 }).w || 200;
-        parts = src.filter(function (e) { return e.t === 'item'; }).map(function (e) { var it = LIB.get(e.a.split('@')[0]); return it ? { it: it, ing: e.ing || it.name, x: e.x / surfW * 200, w: it.w * Math.abs(e.sx || 1) / surfW * 200 } : null; }).filter(Boolean);
-      } else {
-        var pp = partsOf(r, d).parts;
-        parts = pp.map(function (p, k) { return { it: p.it, ing: p.ing, x: (k - (pp.length - 1) / 2) * 50, w: p.it.w * p.scale }; });
+      // no plate drawn yet: the one Draw it for me would make, so the side view matches it
+      if (!pd || !Array.isArray(pd.els)) {
+        var tmp = { rid: d.rid, slot: 'plate', surf: ware(r, 'plate'), defs: {}, els: [] }, pp = partsOf(r, tmp).parts;
+        pd = { surf: tmp.surf, els: layout(tmp, r, pp, pickStyle(r, 'plate', tmp.surf, pp), seed || 0) };
       }
-      return layoutSide(d, parts, seed, (pd && pd.surf) || ware(r, 'plate'));
+      var surfW = LIB.surface(pd.surf || { fam: 'plate', size: 30 }).w || 200;
+      // in the plate's own order, bottom layer first (a sauce pool before its steak, the napoli after its schnitzel)
+      var parts = pd.els.filter(function (e) { return e.t === 'item'; }).map(function (e) {
+        var it = LIB.get(e.a.split('@')[0]); if (!it) return null;
+        var b = R.bbox(e);
+        return { it: it, ing: e.ing || it.name, x: e.x / surfW * 200, y: e.y / surfW * 200, w: (b[2] - b[0]) / surfW * 200, h: (b[3] - b[1]) / surfW * 200 };
+      }).filter(Boolean);
+      // pieces of the same part (three honeycomb shards): one from the side
+      var seen = {}; parts = parts.filter(function (p) { var k2 = p.ing + '|' + p.it.id; if (seen[k2]) return false; seen[k2] = 1; return true; });
+      return layoutSide(d, parts, seed, pd.surf || ware(r, 'plate'));
     });
   }
   // the servingware from the side, for the plate's own servingware
@@ -388,22 +473,28 @@
     if (s.shape === 'skillet') return 'side-ware-skillet';
     return 'side-ware-dinner-plate';
   }
+  /* The plate seen from the front: each part where it is from left to right on the plate, standing on the plate or on the
+     part it sits on (a part on top of another from above: the napoli and cheese on the schnitzel, the main on its sauce).
+     Parts at the back are drawn first, so the ones in front stand before them. */
   function layoutSide(d, parts, seed, surf) {
-    var LAY = { sauce: 0, dsauce: 0, starch: 1, bread: 1, veg: 1, salad: 1, sidedish: 1, main: 2, dessert: 2, dside: 2, topping: 3, garnish: 4 };
-    var els = [], tops = [], base = 0, pit = LIB.get(wareSide(surf)), half = 70;
+    var els = [], placed = [], base = 0, pit = LIB.get(wareSide(surf)), half = 70, k = 0.85;
     // the servingware a little narrower than the frame, so the labels have room either side
-    if (pit) { var ps = Math.min(1, 170 / pit.w); d.defs[pit.id + '@' + pit.v] = LIB.body(pit.id); els.push({ t: 'item', a: pit.id + '@' + pit.v, x: 0, y: 0, sx: n1(ps * 100) / 100, sy: n1(ps * 100) / 100, r: 0 }); half = pit.w * ps * 0.4; base = -(pit.side.s === 'cup' ? pit.h * ps * 0.2 : pit.h * ps * 0.7); }
-    parts.filter(function (p) { return p.it.role !== 'garnish' || p.w > 20; }).sort(function (x, y) { return (LAY[x.it.role] || 2) - (LAY[y.it.role] || 2); }).forEach(function (p) {
+    if (pit) { var ps = Math.min(1, 170 / pit.w); d.defs[pit.id + '@' + pit.v] = LIB.body(pit.id); els.push({ t: 'item', a: pit.id + '@' + pit.v, x: 0, y: 0, sx: n1(ps * 100) / 100, sy: n1(ps * 100) / 100, r: 0 }); half = pit.w * ps * 0.4; k = pit.w * ps / 200; base = -(pit.side.s === 'cup' ? pit.h * ps * 0.2 : pit.h * ps * 0.7); }
+    parts.filter(function (p) { return p.it.role !== 'garnish' || p.w > 20; }).forEach(function (p) {
       var pc = sidePiece(p.it, p.ing); if (!pc) return;
-      var x = Math.max(-half, Math.min(half, p.x * half / 95)), w = Math.max(14, Math.min(half * 1.6, p.w * 0.8)), sx = w / (pc.w || 40), h = (p.it.side && p.it.side.h) || 12, sy = h / (pc.h || 20);
-      // stacked on whatever is already under this spot
-      var under = tops.filter(function (t) { return Math.abs(t.x - x) < (t.w + w) * 0.4; }).reduce(function (m, t) { return Math.min(m, t.top); }, base);
+      var prof = /^side-profile-/.test(pc.id), w = Math.max(14, Math.min(half * 1.6, p.w * k)), edge = Math.max(0, half * 1.25 - w / 2), x = Math.max(-edge, Math.min(edge, p.x * half / 70)), sx = w / (pc.w || 40);
+      var sy = prof ? ((p.it.side && p.it.side.h) || 12) * k / (pc.h || 20) : sx;
+      sy = Math.max(0.3, Math.min(3, sy));
+      // what it sits on: the highest part below it whose middle it sits in, seen from above
+      var on = placed.filter(function (q) { return Math.abs(q.p.x - p.x) < q.p.w * 0.38 && Math.abs(q.p.y - p.y) < q.p.h * 0.38; }).sort(function (q1, q2) { return q1.top - q2.top; })[0];
       var key2 = pc.id + '@' + pc.v; d.defs[key2] = LIB.body(pc.id);
-      var el = { t: 'item', a: key2, x: n1(x), y: n1(under), sx: n1(sx * 100) / 100, sy: n1(Math.max(0.4, Math.min(3, sy)) * 100) / 100, r: 0, ing: p.ing };
-      if (/^side-profile-/.test(pc.id) && p.it.side && p.it.side.c) el.cm = R.tintMap(d.defs[key2], pc.side.c, p.it.side.c);
-      els.push(el);
-      tops.push({ x: x, w: w, top: under - (pc.h || 20) * el.sy });
+      var el = { t: 'item', a: key2, x: n1(on ? on.el.x + (x - on.el.x) * 0.3 : x), y: n1(on ? on.top + 1 : base), sx: n1(sx * 100) / 100, sy: n1(sy * 100) / 100, r: 0, ing: p.ing };
+      if (prof && p.it.side && p.it.side.c) el.cm = R.tintMap(d.defs[key2], pc.side.c, p.it.side.c);
+      var q = { p: p, el: el, top: el.y - (pc.h || 20) * sy, root: on ? on.root : p, lvl: on ? on.lvl + 1 : 0 };
+      placed.push(q);
     });
+    // back to front, and on each spot from the bottom up
+    placed.sort(function (q1, q2) { return (q1.root.y - q2.root.y) || (q1.lvl - q2.lvl); }).forEach(function (q) { els.push(q.el); });
     d.els = els; d.layout = { style: 'side', seed: seed || 0 };
     DR.labelAll();
     return { style: 'side', parts: els.length };
@@ -411,29 +502,55 @@
 
   /* ---------- the build view (burgers, sandwiches, stacks) ---------- */
   function buildFrom() {
-    var W = DR.state(), d = W.d, r = R.recipeOf(d.rid), pp = partsOf(r, d).parts, layers = [];
-    pp.forEach(function (p) {
+    var W = DR.state(), d = W.d, r = R.recipeOf(d.rid), layers = [], bread = '';
+    partsOf(r, d, true).parts.forEach(function (p) {
       var nm = (p.ing + ' ' + p.it.name).toLowerCase();
-      if (/\bbun|roll|brioche|bread\b/.test(nm)) { layers.unshift({ ing: p.ing, q: p.i.q, find: 'bun top ' + p.ing, top: true }); layers.push({ ing: p.ing, q: '', find: 'bun base ' + p.ing, base: true }); return; }
-      layers.splice(layers.length && layers[layers.length - 1].base ? layers.length - 1 : layers.length, 0, { ing: p.ing, q: p.i.q, find: p.ing, it: p.it });
+      if (/^(starch|sidedish)$/.test(p.it.role) || /\bside\b|on the side|guest choose|choice/.test(nm + ' ' + (p.i.note || '').toLowerCase())) return;
+      if (!bread && (p.it.role === 'bread' || /\b(bun|roll|brioche|turkish|bread)\b/.test(nm))) { bread = p; return; }
+      layers.push({ ing: p.ing, q: p.i.q, find: p.ing, it: p.it });
     });
-    var y = -110, els = [], gap = 10;
-    els.push({ t: 'text', s: 'TOP', x: -160, y: -114, size: 9, col: '#C2451A', anchor: 'start' });
-    layers.forEach(function (l) {
-      var hit = rank(l.find, { cat: 'build' })[0], pc = hit && hit.s >= 0.5 ? LIB.get(hit.id) : sidePiece(l.it || { name: l.ing, side: { s: 'layer', h: 8, c: '#C98A45' } }, l.ing);
-      if (!pc) return;
-      var key2 = pc.id + '@' + pc.v, sx = 150 / (pc.w || 150), sy = Math.max(0.5, Math.min(2, sx));
-      d.defs[key2] = LIB.body(pc.id);
-      var h = (pc.h || 16) * sy;
-      y += h + gap;
-      var el = { t: 'item', a: key2, x: -60, y: n1(y), sx: n1(sx * 100) / 100, sy: n1(sy * 100) / 100, r: 0, ing: l.ing };
-      if (/^side-profile-/.test(pc.id) && l.it && l.it.side && l.it.side.c) el.cm = R.tintMap(d.defs[key2], pc.side.c, l.it.side.c);
+    if (bread) {
+      var tk = /turkish/.test(bread.ing.toLowerCase()) ? 'turkish' : '', top = tk ? 'side-turkish-top' : (rank('bun top ' + bread.ing, { cat: 'build' }).filter(function (x) { return /-top/.test(x.id); })[0] || { id: 'side-bun-top-sesame' }).id;
+      layers.unshift({ ing: bread.ing, q: bread.i.q, pc: LIB.get(top) });
+      layers.push({ ing: bread.ing, q: '', pc: LIB.get(tk ? 'side-turkish-base' : 'side-bun-base'), base: true });
+    }
+    // each layer's piece: its own from the build library, a sauce as a dripping layer in its colour, else a plain shape
+    var pcs = layers.map(function (l) {
+      if (l.pc) return { l: l, pc: l.pc, cm: null };
+      if (l.it && /sauce/.test(l.it.role)) { var sl = LIB.get('side-sauce-layer'); return { l: l, pc: sl, cm: R.tintMap(LIB.body(sl.id), sl.side.c, LIB.sauceColour(l.ing)) }; }
+      var hit = rank(l.find, { cat: 'build' })[0], pc = hit && hit.s >= 0.5 && !/^side-(ware|profile)-/.test(hit.id) ? LIB.get(hit.id) : sidePiece(l.it || { name: l.ing, side: { s: 'layer', h: 8, c: '#C98A45' } }, l.ing);
+      return pc ? { l: l, pc: pc, cm: /^side-profile-/.test(pc.id) && l.it && l.it.side && l.it.side.c ? 'tint' : null } : null;
+    }).filter(Boolean);
+    pcs.forEach(function (o) {
+      o.sx = 150 / (o.pc.w || 150);
+      // a plain shape keeps the part's own height; a drawn layer keeps its proportions
+      o.sy = /^side-profile-/.test(o.pc.id) ? Math.max(0.3, Math.min(1.5, ((o.l.it && o.l.it.side && o.l.it.side.h) || 8) / (o.pc.h || 16))) : Math.max(0.5, Math.min(2, o.sx));
+      o.h = (o.pc.h || 16) * o.sy;
+    });
+    // everything fits between TOP and BOTTOM: the gaps first, then the layers a little flatter
+    var avail = 206, sum = pcs.reduce(function (m, o) { return m + o.h; }, 0), gap = pcs.length > 1 ? Math.max(3, Math.min(12, (avail - sum) / (pcs.length - 1))) : 0;
+    if (sum + gap * (pcs.length - 1) > avail) { var f = (avail - gap * (pcs.length - 1)) / sum; pcs.forEach(function (o) { o.sy *= f; o.h *= f; }); }
+    var y = -104, els = [], labs = [];
+    els.push({ t: 'text', s: 'TOP', x: -160, y: -110, size: 9, col: '#C2451A', anchor: 'start' });
+    pcs.forEach(function (o, k) {
+      var key2 = o.pc.id + '@' + o.pc.v;
+      d.defs[key2] = LIB.body(o.pc.id);
+      y += o.h + (k ? gap : 0);
+      var el = { t: 'item', a: key2, x: -60, y: n1(y), sx: n1(o.sx * 100) / 100, sy: n1(o.sy * 100) / 100, r: 0, ing: o.l.ing };
+      if (o.cm === 'tint') el.cm = R.tintMap(d.defs[key2], o.pc.side.c, o.l.it.side.c); else if (o.cm) el.cm = o.cm;
       els.push(el);
-      els.push({ t: 'text', s: l.ing, sub: l.q || '', x: 40, y: n1(y - h / 2 + 3), size: 10, anchor: 'start', lx: 18, ly: n1(y - h / 2), auto: true });
+      // the bun base is the same ingredient as the top: one label at the top is enough
+      if (!o.l.base) labs.push({ s: o.l.ing, sub: o.l.q || '', at: y - o.h / 2 });
     });
-    els.push({ t: 'text', s: 'BOTTOM', x: -160, y: n1(Math.min(118, y + 16)), size: 9, col: '#C2451A', anchor: 'start' });
+    // the labels down the right, each clear of the one above, the lines to the middle of their layer
+    var last = -Infinity;
+    labs.forEach(function (lb) { lb.y = Math.max(lb.at + 3, last + (lb.sub ? 23 : 15)); last = lb.y; });
+    var over = labs.length ? labs[labs.length - 1].y - 112 : 0;
+    if (over > 0) labs.forEach(function (lb) { lb.y = Math.max(-104, lb.y - over); });
+    labs.forEach(function (lb) { els.push({ t: 'text', s: lb.s, sub: lb.sub, x: 40, y: n1(lb.y), size: 10, anchor: 'start', lx: 18, ly: n1(lb.at), auto: true }); });
+    els.push({ t: 'text', s: 'BOTTOM', x: -160, y: n1(Math.min(118, y + 12)), size: 9, col: '#C2451A', anchor: 'start' });
     d.els = els; d.layout = { style: 'build', seed: 0 };
-    return { style: 'build', parts: layers.length };
+    return { style: 'build', parts: pcs.length };
   }
 
   /* ---------- the buttons and the panel on the drawing page (js/draw.js asks for them) ---------- */
