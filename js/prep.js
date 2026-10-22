@@ -758,11 +758,16 @@
   function newItem(extra) {
     var p = me(), f = fb.fs, ref = f.doc(itemsCol(S.date));
     var data = Object.assign({ text: '', station: '', qty: '', recipe: '', addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: now(), done: false, deleted: false }, extra);
-    amtOn(data);
+    amtOn(data); practiceOn(data);
     var pr = sset(ref, data); pr.id = ref.id; return pr;
   }
   /* The amount read into a number and one unit (js/amounts.js), saved next to the typed text so amounts can be added up
      later (22 Oct 2026): qn and qu, or nothing when it cannot be read for sure. */
+  /* Practice on this device (22 Oct 2026, Settings, the head chef's device): lines written while it is on are marked tst,
+     so the nightly learning and the wastage summary leave them out. A strip on the prep pages says it is on. */
+  function practice() { try { return !!(JSON.parse(lsGet('lk.settings.v1') || '{}') || {}).practice; } catch (e) { return false; } }
+  function practiceOn(data) { if (practice()) data.tst = true; return data; }
+  function practiceHTML() { return practice() && S.pin ? '<div class="p-practice" role="status"><strong>Practice mode.</strong> What is written on this device is marked as practice and not learned. Turn it off in Settings.</div>' : ''; }
   function amtOn(data) {
     var a = window.LK_AMT && data.qty ? window.LK_AMT.parse(data.qty) : null;
     if (a) { data.qn = a.n; data.qu = a.u; }
@@ -3171,7 +3176,7 @@
     if (key && ae.selectionStart != null) { try { start = ae.selectionStart; end = ae.selectionEnd; } catch (e) {} }
     var bodyEl = S.root.querySelector('.nb-body'), keepScroll = bodyEl ? S.root.querySelectorAll('.nb-body') : null, scrolls = [];
     if (keepScroll) Array.prototype.forEach.call(keepScroll, function (b) { scrolls.push(b.scrollTop); });
-    S.root.innerHTML = syncHTML() + bodyHTML() + toastHTML();
+    S.root.innerHTML = syncHTML() + practiceHTML() + bodyHTML() + toastHTML();
     S.root.classList.toggle('is-book', S.name === 'prep' && !!S.root.querySelector('.nb'));
     document.documentElement.classList.toggle('sheet-open', !!S.root.querySelector('.sheet'));
     if (scrolls.length) Array.prototype.forEach.call(S.root.querySelectorAll('.nb-body'), function (b, i) { if (scrolls[i] != null) b.scrollTop = scrolls[i]; });
@@ -3334,7 +3339,7 @@
     var oFix = pr.changes.map(function (c) { return c[0] + ' to ' + c[1]; }).join(', ');
     S.otext = ''; var q = S.oqty.trim().slice(0, 40); S.oqty = ''; S.oqtyAuto = ''; draw();
     ordLearn(t, q);
-    sset(ref, amtOn({ text: t, qty: q, recipes: hit ? hit.ids : [], addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: now(), ordered: false, deleted: false, orig: t !== typed ? typed.slice(0, 120) : '' }))
+    sset(ref, practiceOn(amtOn({ text: t, qty: q, recipes: hit ? hit.ids : [], addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: now(), ordered: false, deleted: false, orig: t !== typed ? typed.slice(0, 120) : '' })))
       .then(ordReload, function (e) { failed(e, function () { if (!S.otext.trim()) { S.otext = typed; S.oqty = q; } }); });
     /* like the prep list: Undo takes the line back, or after a spelling fix puts back what was typed */
     if (oFix) toast('Added, corrected ' + oFix, { label: 'Undo', fn: function () { keepWords(pr.changes); supd(ref, { text: typed.slice(0, 120), orig: '' }).then(ordReload, failed); } });
@@ -3643,8 +3648,8 @@
     if (amt > (W_BIG[f.unit] || Infinity) && !arm('wbig:' + amt + f.unit)) { toast(amt + ' ' + f.unit + '? Check the unit. Tap Log it again if it is right.', null, 4000); focusSel('.seg-b[aria-checked="true"]'); return; }
     if (!REASONS.some(function (r) { return r[0] === f.reason; })) { toast('Pick a reason.'); focusSel(window.matchMedia && window.matchMedia('(max-width: 719px)').matches ? '.w-rbtn' : '.w-rchips .chip'); return; }
     var secInfo = {}, sec = cleanSection(f.sec, secInfo) || mySec(), rm = matchRecipe(t), ref = fb.fs.doc(wCol(S.wDate));
-    sset(ref, { text: t, amount: amt, unit: f.unit, reason: f.reason, action: f.act.trim().slice(0, 120), station: sec, recipe: rm ? rm.id : '',
-      addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: now(), deleted: false }).catch(function (e) { failed(e, function () { if (!S.wf.text.trim()) S.wf = f; }); });
+    sset(ref, practiceOn({ text: t, amount: amt, unit: f.unit, reason: f.reason, action: f.act.trim().slice(0, 120), station: sec, recipe: rm ? rm.id : '',
+      addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: now(), deleted: false })).catch(function (e) { failed(e, function () { if (!S.wf.text.trim()) S.wf = f; }); });
     if (sec) noteSection(sec);
     S.wf = { text: '', amt: '', unit: f.unit, reason: '', sec: sec, act: '' };
     draw(); focusK('w-text');
