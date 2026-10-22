@@ -379,9 +379,9 @@
     // a label says what the band holds: today's functions, the coming ones (order and tomorrow lines), or both
     var on = xs.filter(function (x) { return x.kind === 'on'; }).length;
     var lab = xs.length && ys.length ? 'Functions today and soon' : xs.length ? 'Functions today' : ys.length ? 'Functions coming up' : 'Functions';
-    // Hide folds the band to its label and one line, for the rest of the kitchen day on this phone (lk.fn.fold: the
+    // the round minus (Hide) folds the band to its label and one line; plus (Show) opens it, for the rest of the kitchen day on this phone (lk.fn.fold: the
     // kitchen day it was folded; out of date the next day, so the band opens again by itself)
-    var fold = (a.length + b.length) && lsGet('lk.fn.fold') === kday(t), btn = a.length + b.length ? '<button type="button" class="fn-fold" data-fn="fold" aria-expanded="' + !fold + '">' + (fold ? 'Show' : 'Hide') + '</button>' : '';
+    var fold = (a.length + b.length) && lsGet('lk.fn.fold') === kday(t), btn = a.length + b.length ? '<button type="button" class="fn-fold" data-fn="fold" aria-expanded="' + !fold + '" aria-label="' + (fold ? 'Show functions' : 'Hide functions') + '" title="' + (fold ? 'Show' : 'Hide') + '">' + (fold ? '+' : '\u2212') + '</button>' : '';
     if (fold) {
       // every function in a row, as many as fit across the screen (fitFold() hides the rest and counts them in "+N")
       var sum = xs.concat(ys).map(function (x) {

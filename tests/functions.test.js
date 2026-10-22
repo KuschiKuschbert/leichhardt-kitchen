@@ -289,8 +289,10 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   ok(/Order today\s*Short notice Stock for Tomorrow do/.test(bn) && /on the order list/.test(bn), 'order: the band reminds the kitchen to order on the order day (' + bn.slice(0, 260) + ')');
   ok(/Tomorrow\s*Tomorrow do · event 18:00 · food 12:00/.test(bn), 'tomorrow: a short line for tomorrow\'s function');
   ok(/^Functions today and soon/.test(bn), 'band: the label says today and soon (' + bn.slice(0, 60) + ')');
-  // Hide folds the band to one line for the rest of the day on this phone; Show opens it again
+  // the round minus folds the band to one line for the rest of the day on this phone; the plus opens it again
+  ok(await p.$eval('#fn-band [data-fn="fold"]', e => e.textContent === '\u2212' && e.getAttribute('aria-label') === 'Hide functions' && e.offsetWidth <= 40), 'fold: the button is a small round minus');
   await tap(p, '#fn-band [data-fn="fold"]'); await L.settle(p, 150);
+  ok(await p.$eval('#fn-band [data-fn="fold"]', e => e.textContent === '+' && e.getAttribute('aria-label') === 'Show functions'), 'fold: folded, the button is a plus');
   ok(!(await p.$('#fn-band .fn-row')) && /Smith 50th/.test(await txt(p, '#fn-band .fn-band-sum') || '') && await p.$eval('#fn-band .fn-sum-more', e => !e.hidden && e.textContent === '+2') && await p.evaluate(() => localStorage.getItem('lk.fn.fold')) === today, 'fold: on a phone Hide folds the band to one line, the next function and +2');
   await p.setViewportSize({ width: 1280, height: 800 }); await L.settle(p, 200);
   ok(await p.$$eval('#fn-band .fn-sum-i:not([hidden])', e => e.length) === 3 && await p.$eval('#fn-band .fn-sum-more', e => e.hidden), 'fold: on a wide screen the one line shows all three, with no +N');
