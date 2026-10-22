@@ -1991,7 +1991,7 @@
     var chips = '<div class="chips"><button type="button" class="chip" data-p="heat" data-v="w" aria-pressed="' + (mode === 'w') + '">Lines written</button><button type="button" class="chip" data-p="heat" data-v="r" aria-pressed="' + (mode === 'r') + '">Rolled over</button></div>';
     if (!secs.length) return chips + '<p class="hint">Nothing to show in this time.</p>';
     var busiest = DOW.slice().sort(function (a, b) { return avg(tot[b] || 0, b) - avg(tot[a] || 0, a); })[0];
-    return chips + '<div class="a-tablewrap"><table class="a-table a-plain sk-t"><thead><tr><th scope="col">Section</th>' + DOWN.map(function (x) { return '<th scope="col">' + x + '</th>'; }).join('') + '</tr></thead><tbody>' +
+    return chips + '<div class="a-tablewrap" tabindex="0" role="region" aria-label="Table, scrolls sideways"><table class="a-table a-plain sk-t"><thead><tr><th scope="col">Section</th>' + DOWN.map(function (x) { return '<th scope="col">' + x + '</th>'; }).join('') + '</tr></thead><tbody>' +
       secs.map(function (k) { return '<tr><th scope="row">' + esc(k) + '</th>' + DOW.map(function (dw) { return td((cell[k] || {})[dw], dw, k); }).join('') + '</tr>'; }).join('') +
       '<tr class="sk-tot"><th scope="row">All sections</th>' + DOW.map(function (dw) { var a = avg(tot[dw] || 0, dw); return '<td>' + (Math.round(a * 10) / 10) + '</td>'; }).join('') + '</tr></tbody></table></div>' +
       '<p class="hint">Average ' + (mode === 'w' ? 'lines written' : 'lines rolled over') + ' per day, by weekday. ' + (tot[busiest] ? 'Heaviest day: ' + DOWN[DOW.indexOf(busiest)] + '.' : '') + (n < 14 ? ' Pick 14 or 30 days for steadier averages.' : '') + '</p>';
@@ -2072,7 +2072,7 @@
     var lim = Math.max(step, s.shown), shown = rows.slice(0, lim), left = all - shown.length, body;
     if (c.card) body = '<ul class="lv-cards nt-rows">' + shown.map(c.card).join('') + '</ul>';
     else {
-      body = '<div class="a-tablewrap lv-wrap"><table class="a-table a-plain lv-table' + (c.table ? ' ' + esc(c.table) : '') + '"><thead><tr>' + c.cols.map(function (x) {
+      body = '<div class="a-tablewrap lv-wrap" tabindex="0" role="region" aria-label="Table, scrolls sideways"><table class="a-table a-plain lv-table' + (c.table ? ' ' + esc(c.table) : '') + '"><thead><tr>' + c.cols.map(function (x) {
         return '<th scope="col"' + (x.cls ? ' class="' + esc(x.cls) + '"' : '') + '>' + (x.h ? esc(x.h) : '<span class="visually-hidden">Actions</span>') + '</th>';
       }).join('') + '</tr></thead><tbody>' + shown.map(function (it) {
         return '<tr' + (c.rowCls && c.rowCls(it) ? ' class="' + esc(c.rowCls(it)) + '"' : '') + '>' + c.cols.map(function (x) {
@@ -2148,7 +2148,7 @@
     var chips = '<div class="chips">' + [['done', 'Share ticked'], ['w', 'Lines written'], ['r', 'Rolled over']].map(function (c) { return '<button type="button" class="chip" data-p="calm" data-v="' + c[0] + '" aria-pressed="' + (m === c[0]) + '"' + (c[0] === 'done' && a.who ? ' disabled' : '') + '>' + c[1] + '</button>'; }).join('') + '</div>';
     var key = '<div class="a-legend sk-key"><span>' + (m === 'done' ? 'Ticked:' : 'Fewer to more:') + '</span>' + (m === 'done' ? [['under 40%', 1], ['40 to 69%', 2], ['70 to 89%', 3], ['90% or more', 4]] : [['few', 1], ['', 2], ['', 3], ['most', 4]]).map(function (k) { return '<span><i style="background:' + ramp[k[1]] + '"></i>' + k[0] + '</span>'; }).join('') + '</div>';
     return '<h3 class="a-ch-h">Every day at a glance <span class="a-sub">' + (m === 'done' ? 'share ticked' : m === 'w' ? 'lines written' : 'rolled over') + '</span></h3><span class="hint">Tap a day to open it in the prep book.</span>' + chips + key +
-      '<div class="a-tablewrap cal-wrap"><table class="a-table a-plain cal"><thead><tr>' + DOWN.map(function (x) { return '<th scope="col">' + x + '</th>'; }).join('') + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+      '<div class="a-tablewrap cal-wrap" tabindex="0" role="region" aria-label="Table, scrolls sideways"><table class="a-table a-plain cal"><thead><tr>' + DOWN.map(function (x) { return '<th scope="col">' + x + '</th>'; }).join('') + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
   }
   /* When the work happens: weekday by hour, average per day. The busiest hour is outlined. */
   function hourHTML(n) {
@@ -2176,7 +2176,7 @@
       }).join('') + '</tr>';
     }).join('');
     var pk = peak ? peak.split(':') : null;
-    return head + '<div class="a-tablewrap"><table class="a-table a-plain hr"><thead><tr><th scope="col"></th>' + hrs.map(function (h) { return '<th scope="col">' + (h < 10 ? '0' : '') + h + '</th>'; }).join('') + '</tr></thead><tbody>' + body + '</tbody></table></div>' +
+    return head + '<div class="a-tablewrap" tabindex="0" role="region" aria-label="Table, scrolls sideways"><table class="a-table a-plain hr"><thead><tr><th scope="col"></th>' + hrs.map(function (h) { return '<th scope="col">' + (h < 10 ? '0' : '') + h + '</th>'; }).join('') + '</tr></thead><tbody>' + body + '</tbody></table></div>' +
       (pk ? '<p class="hint">Busiest: ' + DOWN[DOW.indexOf(+pk[0])] + ' ' + (+pk[1] < 10 ? '0' : '') + pk[1] + ':00 to ' + (+pk[1] + 1 < 10 ? '0' : '') + (+pk[1] + 1) + ':00, about ' + (Math.round(max * 10) / 10) + ' lines ' + (m === 't' ? 'ticked' : 'written') + '.</p>' : '');
   }
   /* A few plain sentences worked out from the same numbers. */
@@ -2261,7 +2261,7 @@
     }); });
     var rows = Object.keys(m).filter(function (k) { return m[k].length >= 2; }).map(function (k) { var v = m[k].sort(function (a, b) { return a - b; }); return { k: k, n: v.length, med: v[Math.floor(v.length / 2)], p90: v[Math.min(v.length - 1, Math.floor(v.length * 0.9))] }; }).sort(function (a, b) { return b.med - a.med; });
     if (!rows.length) return '<h3 class="a-ch-h">Time to tick by section</h3><p class="hint">Not enough ticked lines yet.</p>';
-    return '<h3 class="a-ch-h">Time to tick by section</h3><span class="hint">From writing a line to ticking it. "Slow days" is how long the slowest 1 in 10 took.</span><div class="a-tablewrap"><table class="a-table a-plain"><thead><tr><th scope="col">Section</th><th scope="col">Lines</th><th scope="col">Typical</th><th scope="col">Slow days</th></tr></thead><tbody>' +
+    return '<h3 class="a-ch-h">Time to tick by section</h3><span class="hint">From writing a line to ticking it. "Slow days" is how long the slowest 1 in 10 took.</span><div class="a-tablewrap" tabindex="0" role="region" aria-label="Table, scrolls sideways"><table class="a-table a-plain"><thead><tr><th scope="col">Section</th><th scope="col">Lines</th><th scope="col">Typical</th><th scope="col">Slow days</th></tr></thead><tbody>' +
       rows.map(function (r) { return '<tr><th scope="row">' + esc(r.k) + '</th><td>' + r.n + '</td><td>' + dur(r.med) + '</td><td>' + dur(r.p90) + '</td></tr>'; }).join('') + '</tbody></table></div>';
   }
   var INS_SECS = [['ins-overview', 'Overview'], ['ins-days', 'Days'], ['ins-timing', 'Timing'], ['ins-sections', 'Sections and people'], ['ins-problems', 'Problem lines'], ['ins-book', 'Recipe book']];
@@ -2346,8 +2346,48 @@
       '<button type="button" class="nb-box" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-pressed="' + !!x.done + '" aria-label="' + esc((x.done ? 'Untick ' : 'Tick ') + x.text) + '"' + (tickOk ? '' : ' disabled') + '>' + (x.done ? TICK : BOX) + '</button>' +
       // a tap on the words ticks too (the box is the button for keyboards and screen readers); Undo and the linger cover a slip
       '<span class="nb-t' + (tickOk && !readonly ? ' nb-tt' : '') + '"' + (tickOk && !readonly ? ' data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '"' : '') + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + (marks ? ' <span class="nb-marks">' + marks + '</span>' : '') + '</span>' +
-      '<span class="nb-by">' + (x._unsent ? '<span class="nb-unsent">Not sent</span> ' : '') + by + '</span>' + (star || link || del ? '<span class="nb-acts">' + star + link + del + '</span>' : '') + '</li>';
+      '<span class="nb-by">' + (x._unsent ? '<span class="nb-unsent">Not sent</span> ' : '') + '<span class="nb-wrote">' + by + '</span></span>' + (star || link || del ? '<span class="nb-acts">' + star + link + del + (del && !readonly ? moreBtn(x) : '') + '</span>' : '') + '</li>';
   }
+  /* The line menu (22 Oct 2026, Option B): on a phone, Remove (or Put back) and who wrote the line move behind a ⋯ on
+     the line, so the item and the amount lead. On a laptop everything stays in the line and the ⋯ is not shown. The sheet
+     is appended to document.body (redraws of #prep-root leave it alone), dims the page, and closes on the backdrop,
+     Cancel and Escape; its clicks use data-lm. Remove in the sheet taps the line's own Remove, so Undo works as before. */
+  function moreBtn(x) { return '<button type="button" class="nb-more" data-lm="open" data-id="' + esc(x.id) + '" aria-haspopup="dialog" aria-label="' + esc('More for ' + x.text) + '">⋯</button>'; }
+  var lmOpenFrom = null;
+  function lmClose() {
+    var s0 = document.getElementById('lm-sheet'); if (!s0) return;
+    s0.remove(); document.documentElement.classList.remove('sheet-open');
+    if (lmOpenFrom && document.body.contains(lmOpenFrom)) lmOpenFrom.focus(); lmOpenFrom = null;
+  }
+  function lmOpen(btn) {
+    lmClose();
+    var row = btn.closest('.nb-row'); if (!row) return;
+    var act = row.querySelector('.nb-x, .p-x[data-p="odel"], .p-x[data-p="orestore"]');
+    var who = (row.querySelector('.nb-wrote') || {}).textContent || '', t = row.querySelector('.nb-t'), name = t ? t.textContent.replace(/\s+/g, ' ').trim() : '';
+    var box = document.createElement('div');
+    box.id = 'lm-sheet';
+    box.innerHTML = '<div class="sheet-bg" data-lm="close"></div><div class="sheet lm-sheet" role="dialog" aria-modal="true" aria-labelledby="lm-h"><div class="sheet-grip" aria-hidden="true"></div>' +
+      '<h3 id="lm-h">' + esc(name) + '</h3>' + (who.trim() ? '<p class="lm-who">' + esc(/^(from|Ordered by) /.test(who.trim()) ? who.trim() : 'Written by ' + who.trim()) + '</p>' : '') +
+      (act ? '<button type="button" class="sheet-o lm-act" data-lm="act"><strong>' + esc(act.textContent.trim() === 'Remove' ? 'Remove line' : act.textContent.trim()) + '</strong></button>' : '') +
+      '<button type="button" class="btn sheet-x" data-lm="close">Cancel</button></div>';
+    lmOpenFrom = btn; box._act = act;
+    document.body.appendChild(box); document.documentElement.classList.add('sheet-open');
+    var f = box.querySelector('.lm-act') || box.querySelector('.sheet-x'); if (f) f.focus();
+  }
+  document.addEventListener('click', function (e) {
+    var el = e.target && e.target.closest ? e.target.closest('[data-lm]') : null; if (!el) return;
+    var a = el.getAttribute('data-lm');
+    if (a === 'open') { e.preventDefault(); lmOpen(el); return; }
+    var box = document.getElementById('lm-sheet');
+    if (a === 'act') { var act = box && box._act; lmOpenFrom = null; lmClose(); if (act && document.body.contains(act)) act.click(); return; }
+    if (a === 'close') lmClose();
+  });
+  document.addEventListener('keydown', function (e) {
+    var box = document.getElementById('lm-sheet'); if (!box) return;
+    if (e.key === 'Escape') { e.preventDefault(); lmClose(); return; }
+    if (e.key === 'Tab') trapTab(e, box.querySelector('.sheet'), 'button');
+  });
+  window.addEventListener('hashchange', lmClose);
   /* A line ticked on this phone stays where it is, struck through, for 3.5 seconds before it leaves the list. */
   var LINGER = 3500;
   function lingers(x) { return x.done && !x.deleted && x.doneById === S.who && now() - (x.doneAt || 0) < LINGER; }
@@ -2596,7 +2636,7 @@
       if (!never.length || !pros.length) return '';
       return '<li><strong>' + esc(k) + ':</strong> ' + esc(never.map(function (x) { return x.p.name; }).join(', ')) + (never.length === 1 ? ' has' : ' have') + ' not ticked a line here. Pair them with ' + esc(pros.map(function (x) { return x.p.name + ' (' + x.r.tsecs[k] + ')'; }).join(' or ')) + '.</li>';
     }).filter(Boolean).join('');
-    return key + '<div class="a-tablewrap"><table class="a-table a-plain sk-t"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>' +
+    return key + '<div class="a-tablewrap" tabindex="0" role="region" aria-label="Table, scrolls sideways"><table class="a-table a-plain sk-t"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>' +
       '<h3 class="a-ch-h">Cross-training chances</h3><span class="hint">Sections with at least 5 ticked lines, people with 5 or more ticks overall who have never ticked one there, and who has done that section most.</span>' +
       (gaps ? '<ul class="a-list">' + gaps + '</ul>' : '<p class="hint">No gaps worth flagging in this time.</p>');
   }
@@ -3198,7 +3238,8 @@
       '<button type="button" class="nb-box" data-p="otick" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-pressed="' + !!x.ordered + '" aria-label="' + esc('Ordered: ' + x.text) + '"' + (canTick ? '' : ' disabled') + '>' + (x.ordered ? TICK : BOX) + '</button>' +
       '<span class="nb-t"' + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') +
       (rolledN(x) ? ' <span class="nb-roll" title="Not ordered yet, so it rolled over">Since ' + esc(dayShort(x.since || x.rolledFrom || x.date)) + '</span>' : '') + recipeChips(x) + '</span>' +
-      '<span class="nb-by">' + by + '</span>' +
+      '<span class="nb-by"><span class="nb-wrote">' + by + '</span></span>' +
+      (canBrowse() && can('del') && (x.deleted || !x.ordered) ? moreBtn(x) : '') +
       (canBrowse() && can('del') && !x.deleted && !x.ordered ? '<button type="button" class="p-x" data-p="odel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') +
       (canBrowse() && can('del') && x.deleted ? '<button type="button" class="p-x" data-p="orestore" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Put back ' + x.text) + '">Put back</button>' : '') + '</li>';
   }
@@ -4339,7 +4380,7 @@
       rows += '</tr>';
     }
     return '<h3 class="a-ch-h">Every day at a glance</h3><span class="hint">Entries per day. A blank day means nothing was logged, which may mean nobody logged it.</span>' +
-      '<div class="a-tablewrap cal-wrap"><table class="a-table a-plain cal"><thead><tr>' + DOWN.map(function (x) { return '<th scope="col">' + x + '</th>'; }).join('') + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+      '<div class="a-tablewrap cal-wrap" tabindex="0" role="region" aria-label="Table, scrolls sideways"><table class="a-table a-plain cal"><thead><tr>' + DOWN.map(function (x) { return '<th scope="col">' + x + '</th>'; }).join('') + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
   }
   /* Reasons by weekday: which kind of waste happens on which day. */
   function reasonDowHTML(lines, n) {
@@ -4349,7 +4390,7 @@
     var rs = REASONS.filter(function (r) { return lines.some(function (x) { return x.reason === r[0]; }); });
     if (!rs.length) return '';
     rs.forEach(function (r) { DOW.forEach(function (d) { if (occ[d]) max = Math.max(max, (c[r[0] + ':' + d] || 0) / occ[d]); }); });
-    return '<h3 class="a-ch-h">Reasons by weekday</h3><span class="hint">Average entries per day. Darker is more.</span><div class="a-tablewrap"><table class="a-table a-plain sk-t"><thead><tr><th scope="col">Reason</th>' + DOWN.map(function (x) { return '<th scope="col">' + x + '</th>'; }).join('') + '</tr></thead><tbody>' +
+    return '<h3 class="a-ch-h">Reasons by weekday</h3><span class="hint">Average entries per day. Darker is more.</span><div class="a-tablewrap" tabindex="0" role="region" aria-label="Table, scrolls sideways"><table class="a-table a-plain sk-t"><thead><tr><th scope="col">Reason</th>' + DOWN.map(function (x) { return '<th scope="col">' + x + '</th>'; }).join('') + '</tr></thead><tbody>' +
       rs.map(function (r) { return '<tr><th scope="row">' + esc(r[1]) + '</th>' + DOW.map(function (d) { var v = occ[d] ? (c[r[0] + ':' + d] || 0) / occ[d] : 0, lv = !v ? 0 : Math.min(4, 1 + Math.floor(v / (max || 1) * 3.999)); return '<td class="sk-c" style="background:' + SK[lv] + '">' + (v ? Math.round(v * 10) / 10 : '<span class="sk-0">0</span>') + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>';
   }
   function wasteStatsHTML() {
@@ -4414,10 +4455,10 @@
     });
     var dayList = eachDayList(n, lines, ws.reviews);
     return head + '<div class="a-tiles">' + tiles.map(tileHTML).join('') + '</div>' + wasteCalHTML(n, lines) + reasonDowHTML(lines, n) +
-      '<h3 class="a-ch-h">By reason</h3><div class="a-tablewrap"><table class="a-table a-plain"><thead><tr><th scope="col">Reason</th><th scope="col">Entries</th><th scope="col">Share</th><th scope="col">Amount</th></tr></thead><tbody>' + rRows + '</tbody></table></div>' +
+      '<h3 class="a-ch-h">By reason</h3><div class="a-tablewrap" tabindex="0" role="region" aria-label="Table, scrolls sideways"><table class="a-table a-plain"><thead><tr><th scope="col">Reason</th><th scope="col">Entries</th><th scope="col">Share</th><th scope="col">Amount</th></tr></thead><tbody>' + rRows + '</tbody></table></div>' +
       '<h3 class="a-ch-h">Wasted most often</h3><span class="hint">"On the prep list" counts how many times the same item was written on the prep list in this time, so you can see over-prepping.</span>' + itemsList +
       '<h3 class="a-ch-h">Each day</h3>' + dayList +
-      '<h3 class="a-ch-h">By weekday</h3><div class="a-tablewrap"><table class="a-table a-plain sk-t"><thead><tr><th scope="col"></th>' + DOWN.map(function (x) { return '<th scope="col">' + x + '</th>'; }).join('') + '</tr></thead><tbody><tr><th scope="row">Entries a day</th>' + DOW.map(function (d) { return '<td>' + (occ[d] ? num((dw[d] || 0) / occ[d]) : '0') + '</td>'; }).join('') + '</tr></tbody></table></div>' +
+      '<h3 class="a-ch-h">By weekday</h3><div class="a-tablewrap" tabindex="0" role="region" aria-label="Table, scrolls sideways"><table class="a-table a-plain sk-t"><thead><tr><th scope="col"></th>' + DOWN.map(function (x) { return '<th scope="col">' + x + '</th>'; }).join('') + '</tr></thead><tbody><tr><th scope="row">Entries a day</th>' + DOW.map(function (d) { return '<td>' + (occ[d] ? num((dw[d] || 0) / occ[d]) : '0') + '</td>'; }).join('') + '</tr></tbody></table></div>' +
       '<h3 class="a-ch-h">Who logs waste</h3><span class="hint">A record, not a score: someone who never logs may just not know about the log.</span>' + whoList +
       log + '<h3 class="a-ch-h">End-of-day reviews</h3>' + revList + '</section>';
   }
