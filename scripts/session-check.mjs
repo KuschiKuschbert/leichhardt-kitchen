@@ -15,6 +15,7 @@
 */
 import { initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
+import { getAuth } from 'firebase-admin/auth';
 
 const PIN = process.env.KITCHEN_PIN || '';
 const SINCE = Date.parse(process.env.SINCE || '2026-10-22T10:15:00Z');   // phase 1 live on every phone that opened since
@@ -37,32 +38,40 @@ function when(t) {
 }
 const byId = snap => { const m = {}; snap.docs.forEach(d => { m[d.id] = d.data(); }); return m; };
 
-const [cfgSn, sessSn, setSn, proofSn, actSn] = await Promise.all([K.collection('config').doc('main').get(), K.collection('sessions').get(),
-  K.collection('pinset').get(), K.collection('proofs').get(), K.collection('activity').get()]);
-const cfg = cfgSn.exists ? cfgSn.data() : {}, pinset = byId(setSn), proofs = byId(proofSn), act = byId(actSn), t = Date.now();
+const [cfgSn, sessSn, setSn, proofSn, actSn, trySn] = await Promise.all([K.collection('config').doc('main').get(), K.collection('sessions').get(),
+  K.collection('pinset').get(), K.collection('proofs').get(), K.collection('activity').get(), K.collection('tries').get()]);
+const cfg = cfgSn.exists ? cfgSn.data() : {}, pinset = byId(setSn), proofs = byId(proofSn), act = byId(actSn), tries = byId(trySn), t = Date.now();
+// what kind of Firebase sign-in each session's phone has (anonymous, or a Google account: the head chef's device)
+const kind = {};
+try {
+  const ids = sessSn.docs.map(d => ({ uid: d.id }));
+  for (let i = 0; i < ids.length; i += 100) (await getAuth().getUsers(ids.slice(i, i + 100))).users.forEach(u => { kind[u.uid] = u.providerData.some(x => x.providerId === 'google.com') ? 'google' : 'anon'; });
+} catch (e) { /* no Auth read for this key: the kind shows as ? */ }
 const people = (cfg.people || []).filter(p => p && p.id && p.active !== false && (!cfg.staffIds || cfg.staffIds.indexOf(p.id) >= 0));
-// running sessions per person: not run out, and opened with the person's current PIN
-const sess = {};
+// running sessions per person: not run out, and opened with the person's current PIN; the others with the reason
+const sess = {}, bad = {}, onList = id => !cfg.staffIds || cfg.staffIds.indexOf(id) >= 0;
 sessSn.docs.forEach(d => {
-  const s = d.data(), ps = pinset[s.by];
-  if (!s.by || !(s.exp > t) || !ps || ps.at !== s.pinAt) return;
-  const x = sess[s.by] = sess[s.by] || { n: 0, at: 0 };
-  x.n++; x.at = Math.max(x.at, ms(s.at));
+  const s = d.data(), ps = pinset[s.by], k = kind[d.id] || '?';
+  const why = !s.by ? 'no person' : !(s.exp > t) ? 'ran out' : !ps ? 'no PIN record' : ps.at !== s.pinAt ? 'PIN changed since' : !onList(s.by) ? 'off the list' : '';
+  if (why) { (bad[s.by] = bad[s.by] || []).push(why + ' (' + k + ')'); return; }
+  const x = sess[s.by] = sess[s.by] || { n: 0, at: 0, kinds: [] };
+  x.n++; x.at = Math.max(x.at, ms(s.at)); x.kinds.push(k);
 });
 
 console.log('Phase 1 of PIN sessions went live before ' + when(SINCE) + ' (kitchen time). Now ' + when(t) + '.');
 console.log('Running sessions: ' + Object.values(sess).reduce((a, x) => a + x.n, 0) + ', for ' + Object.keys(sess).length + ' of ' + people.length + ' people on the list.');
 console.log('');
-console.log('  #  role    last seen     older-way write  newest session  sessions  note');
+console.log('  #  role    last seen     older-way write  newest session  sessions  last PIN try  note');
 let notSeen = 0, problems = 0;
 people.forEach((p, i) => {
-  const seen = +(act[p.id] && act[p.id].lastSeen) || 0, pf = ms(proofs[p.id] && proofs[p.id].at), s = sess[p.id] || { n: 0, at: 0 };
+  const seen = +(act[p.id] && act[p.id].lastSeen) || 0, pf = ms(proofs[p.id] && proofs[p.id].at), s = sess[p.id] || { n: 0, at: 0, kinds: [] }, tr = ms(tries[p.id] && tries[p.id].at);
   let note = '';
   if (!pinset[p.id]) note = 'no PIN yet';
   else if (seen >= SINCE && !s.n) { note = 'SEEN SINCE, NO SESSION'; problems++; }
   else if (pf >= SINCE && !(s.at && s.at >= pf - 120000)) { note = 'OLDER-WAY WRITE, NO SESSION AFTER IT'; problems++; }
   else if (seen < SINCE) { note = 'not seen since'; notSeen++; }
-  console.log(String(i + 1).padStart(3) + '  ' + String(p.role || '').padEnd(6) + '  ' + when(seen).padEnd(12) + '  ' + when(pf).padEnd(15) + '  ' + when(s.at).padEnd(14) + '  ' + String(s.n).padStart(8) + '  ' + note);
+  const extra = (s.n ? ' sign-in: ' + s.kinds.join(', ') + '.' : '') + (bad[p.id] ? ' Not running: ' + bad[p.id].join(', ') + '.' : '');
+  console.log(String(i + 1).padStart(3) + '  ' + String(p.role || '').padEnd(6) + '  ' + when(seen).padEnd(12) + '  ' + when(pf).padEnd(15) + '  ' + when(s.at).padEnd(14) + '  ' + String(s.n).padStart(8) + '  ' + when(tr).padEnd(11) + '  ' + note + extra);
 });
 console.log('');
 if (problems) console.log('NOT READY: ' + problems + ' ' + (problems === 1 ? 'person has' : 'people have') + ' a phone that saves without a session. Phase 2 would stop it saving. Find out why first (that phone\'s Firebase sign-in).');

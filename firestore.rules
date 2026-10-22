@@ -9,11 +9,9 @@
 // (the head chef's Google account). Writing needs a person's own PIN.
 // Since 22 Oct 2026 a phone signs in to Firebase anonymously and a right PIN opens a session for that phone and person
 // (sessions/<uid>, below): every write carries the writer's id (by) and the rules check that phone's session. PIN tries
-// are written first, one every 20 seconds per person (tries/<id>), so a PIN cannot be guessed by script.
-// The older way, still accepted while every phone updates (staffProof): a write-only proof (proofs/<id>.tok) in the same batch.
-// The rules compare the proof with the stored PIN hash (staffpins/<id>.hash), which nobody can read.
-// The proof also carries a server timestamp that must equal this request's time, so a proof left over
-// from an earlier write cannot be reused by someone who does not know the PIN.
+// are written first, one every 20 seconds per person (tries/<id>), and compared with the stored PIN hash
+// (staffpins/<id>.hash), which nobody can read, so a PIN cannot be guessed by script.
+// The older way (a write-only PIN proof in proofs/<id> with every write) was switched off in phase 2 (22 Oct 2026).
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -21,7 +19,6 @@ service cloud.firestore {
       return request.auth != null && request.auth.token.email == 'OWNER_EMAIL' && request.auth.token.email_verified == true;
     }
     function pinDoc(id) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/staffpins/$(id); }
-    function proofDoc(id) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/proofs/$(id); }
     function setDoc(id) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/pinset/$(id); }
     function sessDoc() { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/sessions/$(request.auth.uid); }
     function triesDoc(id) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/tries/$(id); }
@@ -39,21 +36,13 @@ service cloud.firestore {
     function session() { return request.resource.data.by is string && sessOk(request.resource.data.by); }
     // a read (22 Oct 2026, review S9): who this phone reads as, '' with no session. Use it with sessOk(reader()).
     function reader() { return request.auth != null && exists(sessDoc()) ? get(sessDoc()).data.by : ''; }
-    function staff() { return session() || staffProof(); }
-    // the older proof, accepted until every phone uses sessions (then removed in a second publish)
-    function staffProof() {
-      return request.resource.data.by is string
-        && exists(pinDoc(request.resource.data.by))
-        && getAfter(proofDoc(request.resource.data.by)).data.tok == get(pinDoc(request.resource.data.by)).data.hash
-        && getAfter(proofDoc(request.resource.data.by)).data.at == request.time
-        && onList(request.resource.data.by);
-    }
+    function staff() { return session(); }
     // Someone taken off the list (Stopped working here) cannot write any more, even with their old PIN. staffIds is the
     // people on the list (config/main); a book that never had one keeps working as before.
     function onList(id) { return !('staffIds' in cfg()) || id in cfg().staffIds; }
     function writer() { return isAdmin() || staff(); }
     function cfg() { return get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/config/main).data; }
-    // The head chef or a sous chef, writing as themselves (own PIN proof). staff() checks the proof: a sous chef's id
+    // The head chef or a sous chef, writing as themselves (own PIN session). staff() checks the session: a sous chef's id
     // on its own proves nothing (22 Oct 2026, a ping could be changed with no PIN at all).
     function lead() { return isAdmin() || (staff() && sousBy()); }
     // A picture the book made itself (a data URL), not a link to somewhere else.
@@ -228,7 +217,7 @@ service cloud.firestore {
     // Kitchen meeting minutes. Only the head chef (Google account) writes them (draft, then published). Sous chefs read the register. Everyone with the kitchen PIN reads the published ones.
     // Minutes are never deleted, only flagged as removed. "v" is the version: a change after publishing makes version 2 and everyone signs again.
     // Every earlier version is kept in minutes/<id>/hist/<v> and cannot be changed.
-    // A person signs once per version, as themselves (their own PIN proof): minutes/<id>/signs/<v>_<staffId>. A sign-off cannot be changed or deleted.
+    // A person signs once per version, as themselves (their own PIN session): minutes/<id>/signs/<v>_<staffId>. A sign-off cannot be changed or deleted.
     // Drafts are for the head chef's Google account only (22 Oct 2026, review S9). A draft never carries pubAt (the time it
     // was published), so the kitchen's list of minutes asks for pubAt from a date on, which the rules can check; reading
     // one record needs it published.
@@ -582,7 +571,7 @@ service cloud.firestore {
       allow delete: if false;
     }
     // The drinks run: each person's usual coffee or drink, one record per person (the record id is their id).
-    // Everyone with the kitchen PIN reads them; only that person writes their own (own PIN proof).
+    // Everyone with the kitchen PIN reads them; only that person writes their own (own PIN session).
     // The head chef may also create one when moving everything to a new kitchen PIN (an exact copy of the old record).
     function dkStr(k, n) { return request.resource.data.get(k, '') is string && request.resource.data.get(k, '').size() <= n; }
     match /kitchens/KITCHEN_PIN/drinks/{id} {
@@ -594,7 +583,7 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
     // Kitchen sections: the section a person works on for the day (picked after their PIN; the head chef and sous chefs
-    // get their role). One record per person and day, shifts/<day>_<id>, written only by that person (own PIN proof).
+    // get their role). One record per person and day, shifts/<day>_<id>, written only by that person (own PIN session).
     // The head chef may also create one when moving everything to a new kitchen PIN (an exact copy of the old record).
     match /kitchens/KITCHEN_PIN/shifts/{sid} {
       allow read: if true;
@@ -661,9 +650,10 @@ service cloud.firestore {
         );
       allow delete: if (request.auth != null && request.auth.uid == uid) || isAdmin();
     }
+    // The older PIN proof, switched off in phase 2 (22 Oct 2026): nothing writes it any more, and the head chef's Google
+    // account may clear the old records.
     match /kitchens/KITCHEN_PIN/proofs/{id} {
-      allow read: if false;
-      allow create, update: if request.resource.data.tok is string && request.resource.data.tok.size() == 64;
+      allow read, create, update: if false;
       allow delete: if isAdmin();
     }
     // A person's tally (visits, lines added, ticks): their own, or anyone's for the head chef and sous chefs (an untick).

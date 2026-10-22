@@ -30,7 +30,7 @@ await env.withSecurityRulesDisabled(async ctx => {
     people: PEOPLE,
     sousIds: ['sam', 'hd'], pingIds: ['sam', 'bo', 'hd'], staffIds: ['sam', 'ann', 'bo', 'cal', 'hd'], headId: 'hd', showBadges: true
   });
-  for (const id of Object.keys(pins)) await setDoc(doc(db, K + 'staffpins/' + id), { hash: hash(id, pins[id]) });
+  for (const id of Object.keys(pins)) { await setDoc(doc(db, K + 'staffpins/' + id), { hash: hash(id, pins[id]) }); await setDoc(doc(db, K + 'pinset/' + id), { at: 1 }); }
   await setDoc(doc(db, K + 'notes/n-sam'), { text: 'Sam ping', tag: 'none', start: '2026-10-19', until: '2026-10-19', dows: [], removed: false, by: 'sam' });
   await setDoc(doc(db, K + 'notes/n-bo'), { text: 'Bo ping', tag: 'none', start: '2026-10-19', until: '2026-10-19', dows: [], removed: false, by: 'bo' });
   await setDoc(doc(db, K + 'sections/larder'), { name: 'Larder', uses: 3, hidden: false, by: 'ann', old: 'a field the book no longer writes' });
@@ -46,12 +46,28 @@ await env.withSecurityRulesDisabled(async ctx => {
 const anon = env.unauthenticatedContext().firestore();
 const owner = env.authenticatedContext('owner', { email: OWNER, email_verified: true }).firestore();
 
-/* A staff write the way the book does it: the proof and the document in one batch, with "by" on the document.
-   pin: the PIN typed; as: the id written as "by" (normally the same person); at: the proof's time (normally the server's). */
-function W(ops, o) {
-  const b = writeBatch(anon), id = o.id, at = o.at || serverTimestamp();
-  b.set(doc(anon, K + 'proofs/' + id), { tok: hash(id, o.pin || pins[id]), at });
-  for (const [p, data, merge] of ops) b.set(doc(anon, K + p), Object.assign({ by: o.as || id }, data), merge ? { merge: true } : {});
+/* A staff write the way the book does it since PIN sessions (phase 2, 22 Oct 2026): the person's phone has a session
+   (opened with their PIN, at their current PIN time) and every document carries "by". pin: the PIN typed (a wrong one
+   opens no session); as: the id written as "by" (normally the same person). The test phones' sessions are planted with
+   the rules off (the try and the session themselves are checked in the sessions part below), and follow the person's
+   current pinset time, so a reset PIN in a check is honoured as it is on a real phone. */
+const wPhones = {};
+function wPhone(uid) { return wPhones[uid] || (wPhones[uid] = env.authenticatedContext(uid, { firebase: { sign_in_provider: 'anonymous' } }).firestore()); }
+async function W(ops, o) {
+  const id = o.id, right = !o.pin || o.pin === pins[id], uid = 'w-' + id + (right ? '' : '-wrong'), db = wPhone(uid);
+  if (right) await env.withSecurityRulesDisabled(async ctx => {
+    const c = ctx.firestore(), ps = await getDoc(doc(c, K + 'pinset/' + id));
+    if (ps.exists()) await setDoc(doc(c, K + 'sessions/' + uid), { by: id, pinAt: ps.data().at, exp: Date.now() + 86400000, at: 1 });
+  });
+  const b = writeBatch(db);
+  for (const [p, data, merge] of ops) b.set(doc(db, K + p), Object.assign({ by: o.as || id }, data), merge ? { merge: true } : {});
+  return b.commit();
+}
+/* The older way, switched off in phase 2: a write-only proof of the PIN in the same batch, from a phone with no session. */
+function Wproof(ops, o) {
+  const b = writeBatch(anon), id = o.id;
+  b.set(doc(anon, K + 'proofs/' + id), { tok: hash(id, o.pin || pins[id]), at: serverTimestamp() });
+  for (const [p, data] of ops) b.set(doc(anon, K + p), Object.assign({ by: id }, data));
   return b.commit();
 }
 const line = x => Object.assign({ text: 'Slice onions', station: 'Larder', qty: '2 tubs', recipe: '', addedBy: 'Ann', addedById: 'ann', addedAt: 1, done: false, deleted: false }, x || {});
@@ -73,9 +89,10 @@ await ok(W([['days/' + TODAY + '/items/a9', line({ addedById: 'bo' })]], { id: '
 await ok(W([['days/' + TODAY + '/items/a1', { done: true, doneBy: 'Bo', doneById: 'bo', doneAt: 5 }, true]], { id: 'ann' }), false, 'lines: a tick put on someone else is refused');
 await ok(W([['days/' + TODAY + '/items/a1', { done: true, doneBy: 'Ann', doneById: 'ann', doneAt: 5 }, true]], { id: 'ann' }), true, 'lines: Ann ticks as Ann');
 await ok(W([['days/2026-10-19/items/a2', line()]], { id: 'ann', pin: '9999' }), false, 'wrong PIN: refused');
-await ok(W([['days/2026-10-19/items/a3', line()]], { id: 'ann', as: 'sam' }), false, 'spoofed by: Ann\'s proof with by Sam is refused');
-await ok(W([['days/2026-10-19/items/a4', line()]], { id: 'ann', at: Timestamp.fromMillis(Date.now() - 60000) }), false, 'replayed proof: an old proof time is refused');
-await ok(setDoc(doc(anon, K + 'days/2026-10-19/items/a5'), line({ by: 'ann' })), false, 'no proof: refused');
+await ok(W([['days/2026-10-19/items/a3', line()]], { id: 'ann', as: 'sam' }), false, 'spoofed by: Ann\'s session with by Sam is refused');
+await ok(Wproof([['days/' + TODAY + '/items/a4', line()]], { id: 'ann' }), false, 'phase 2: the older PIN proof no longer writes, even with the right PIN');
+await ok(setDoc(doc(anon, K + 'proofs/ann'), { tok: hash('ann', '2222'), at: serverTimestamp() }), false, 'phase 2: a PIN proof cannot be written at all');
+await ok(setDoc(doc(anon, K + 'days/2026-10-19/items/a5'), line({ by: 'ann' })), false, 'no session: refused');
 
 // who may set a PIN: only people on the list (staffIds), once
 const setPin = id => { const b = writeBatch(anon); b.set(doc(anon, K + 'staffpins/' + id), { hash: hash(id, '4444') }); b.set(doc(anon, K + 'pinset/' + id), { at: 1 }); return b.commit(); };
@@ -115,9 +132,9 @@ await ok(W([['notes/n-bo2', { text: 'Changed', upd: 2 }, true]], { id: 'sam' }),
 await ok(W([['notes/n-bo2', { text: 'Changed back', upd: 3 }, true]], { id: 'bo' }), true, 'pings: the writer can still change it after a sous chef\'s edit (author is kept)');
 await ok(W([['notes/n-bo2', { text: 'Nope', upd: 4 }, true]], { id: 'ann' }), false, 'pings: someone else still cannot');
 await ok(setDoc(doc(owner, K + 'notes/n-bo2'), note({ text: 'Head chef edit' })), true, 'pings: the head chef edits anyone\'s ping');
-await ok(setDoc(doc(anon, K + 'notes/n-bo'), { by: 'sam', text: 'Allergen: none today', upd: 9 }, { merge: true }), false, 'pings: no proof, posing as a sous chef, refused');
+await ok(setDoc(doc(anon, K + 'notes/n-bo'), { by: 'sam', text: 'Allergen: none today', upd: 9 }, { merge: true }), false, 'pings: no session, posing as a sous chef, refused');
 await ok(W([['notes/n-bo', { text: 'Allergen: none today', upd: 9 }, true]], { id: 'sam', pin: '9999' }), false, 'pings: a sous chef\'s id with a wrong PIN, refused');
-await ok(W([['notes/n-bo', { text: 'Allergen: none today', upd: 9 }, true]], { id: 'bo', as: 'sam' }), false, 'pings: Bo\'s proof, written as Sam, refused');
+await ok(W([['notes/n-bo', { text: 'Allergen: none today', upd: 9 }, true]], { id: 'bo', as: 'sam' }), false, 'pings: Bo\'s session, written as Sam, refused');
 
 // sizes and shapes
 await ok(W([['days/2026-10-19/items/b1', line({ station: 'x'.repeat(41) })]], { id: 'ann' }), false, 'prep line: section over 40 characters refused');
@@ -218,7 +235,7 @@ await ok(W([['drinks/ann', drink()]], { id: 'ann' }), true, 'drinks: Ann saves h
 await ok(W([['drinks/ann', drink({ kind: 'long', milk: '' })]], { id: 'ann' }), true, 'drinks: Ann changes her usual');
 await ok(W([['drinks/bo', drink()]], { id: 'ann' }), false, 'drinks: Ann cannot set Bo\'s usual');
 await ok(W([['drinks/ann', drink()]], { id: 'ann', pin: '9999' }), false, 'drinks: wrong PIN refused');
-await ok(setDoc(doc(anon, K + 'drinks/ann'), drink({ by: 'ann' })), false, 'drinks: no proof refused');
+await ok(setDoc(doc(anon, K + 'drinks/ann'), drink({ by: 'ann' })), false, 'drinks: no session refused');
 await ok(W([['drinks/ann', drink({ note: 'x'.repeat(41) })]], { id: 'ann' }), false, 'drinks: a note over 40 characters is refused');
 await ok(W([['drinks/ann', drink({ other: 'x'.repeat(61) })]], { id: 'ann' }), false, 'drinks: something else over 60 characters is refused');
 await ok(W([['drinks/ann', drink({ kind: 7 })]], { id: 'ann' }), false, 'drinks: the drink must be words');
@@ -237,7 +254,7 @@ await ok(W([['shifts/2026-10-21_ann', sh({ sec: 'pass', name: 'Pass', at: 2 })]]
 await ok(W([['shifts/2026-10-21_bo', sh()]], { id: 'ann' }), false, 'shifts: Ann cannot pick for Bo');
 await ok(W([['shifts/2026-10-20_ann', sh()]], { id: 'ann' }), false, 'shifts: the record id must be the day and the writer');
 await ok(W([['shifts/2026-10-21_ann', sh()]], { id: 'ann', pin: '9999' }), false, 'shifts: wrong PIN refused');
-await ok(setDoc(doc(anon, K + 'shifts/2026-10-21_ann'), sh({ by: 'ann' })), false, 'shifts: no proof refused');
+await ok(setDoc(doc(anon, K + 'shifts/2026-10-21_ann'), sh({ by: 'ann' })), false, 'shifts: no session refused');
 await ok(W([['shifts/2026-10-21_ann', sh({ name: 'x'.repeat(41) })]], { id: 'ann' }), false, 'shifts: a section name over 40 characters is refused');
 await ok(W([['shifts/2026-10-21_ann', sh({ score: 5 })]], { id: 'ann' }), false, 'shifts: no fields beyond the section');
 await ok(W([['shifts/2026-10-21_ann', sh({ at: 'now' })]], { id: 'ann' }), false, 'shifts: the time must be a number');
@@ -265,7 +282,7 @@ await ok(W([['recipes/pie', pie()], ['book/index', { r: { pie: 1 } }, true]], { 
 await ok(W([['book/index', { r: { pie: 1 } }, true]], { id: 'ann' }), false, 'book: staff cannot change the index');
 await ok(W([['recipes/pie', pie()], ['book/index', { r: { pie: 1 } }, true]], { id: 'ann', as: 'hd' }), false, 'book: staff writing as the head chef (spoofed by) is refused');
 await ok(W([['recipes/pie', pie()], ['book/index', { r: { pie: 1 } }, true]], { id: 'hd', pin: '9999' }), false, 'book: the head chef with a wrong PIN is refused');
-await ok(setDoc(doc(anon, K + 'recipes/pie'), pie({ by: 'hd' })), false, 'book: no PIN proof is refused');
+await ok(setDoc(doc(anon, K + 'recipes/pie'), pie({ by: 'hd' })), false, 'book: no PIN session is refused');
 await ok(W([['recipes/pie', pie()], ['book/index', { r: { pie: 1 } }, true]], { id: 'hd' }), true, 'book: the head chef adds a new recipe');
 await ok(ownerBatch([['recipes/pie', pie({ v: 2 })], ['book/index', { r: { pie: 2 } }, true]]), true, 'book: the head chef\'s Google account saves with nobody signed in');
 await ok(ownerBatch([['recipes/pie', pie({ v: 3, by: 'hd' })], ['book/index', { r: { pie: 3 } }, true]]), true, 'book: the Google account with the head chef signed in');
@@ -344,7 +361,7 @@ Object.assign(pins, fpins);
 await env.withSecurityRulesDisabled(async ctx => {
   const db = ctx.firestore();
   await setDoc(doc(db, K + 'config/main'), { fnIds: ['fay', 'finn'], staffIds: ['sam', 'ann', 'bo', 'cal', 'hd', 'fay', 'finn', 'fox'] }, { merge: true });
-  for (const id of Object.keys(fpins)) await setDoc(doc(db, K + 'staffpins/' + id), { hash: hash(id, fpins[id]) });
+  for (const id of Object.keys(fpins)) { await setDoc(doc(db, K + 'staffpins/' + id), { hash: hash(id, fpins[id]) }); await setDoc(doc(db, K + 'pinset/' + id), { at: 1 }); }
 });
 const T0 = Date.UTC(2026, 9, 24, 8, 0);   // 18:00 in Brisbane
 const fnc = x => Object.assign({ v: 1, status: 'draft', name: 'Smith 50th', date: '2026-10-24', start: T0, loc: 'Beer garden', guests: 60, mode: 'stag',
@@ -463,7 +480,7 @@ await ok(getDoc(doc(anon, K + 'summary/waste')), true, 'summary: the phones read
 // usage counts (22 Oct 2026): one record a day per phone, counts only, written as the person, read only by the head chef
 const dly = x => Object.assign({ day: '2026-10-21', tag: 'abc123', sg: { quick: { s: 1, t: 2, d: 0 } }, pf: { lcp: [1, 0, 0, 0, 0] }, at: 5 }, x || {});
 await ok(W([['daily/2026-10-21_abc123', dly()]], { id: 'ann' }), true, 'daily: a phone sends its counts as the person signed in');
-await ok(setDoc(doc(anon, K + 'daily/2026-10-21_zzz'), dly({ tag: 'zzz' })), false, 'daily: no PIN proof, refused');
+await ok(setDoc(doc(anon, K + 'daily/2026-10-21_zzz'), dly({ tag: 'zzz' })), false, 'daily: no PIN session, refused');
 await ok(W([['daily/2026-10-21_other', dly()]], { id: 'ann' }), false, 'daily: the id must be the day and the tag');
 await ok(W([['daily/2026-10-21_abc124', dly({ tag: 'abc124', text: 'Slice onions' })]], { id: 'ann' }), false, 'daily: no other fields (no text)');
 await ok(getDoc(doc(anon, K + 'daily/2026-10-21_abc123')), false, 'daily: a PIN holder cannot read the counts');
@@ -471,7 +488,7 @@ await ok(getDoc(doc(owner, K + 'daily/2026-10-21_abc123')), true, 'daily: the he
 await ok(W([['summary/waste', { day: WT, items: [] }]], { id: 'sam' }), false, 'summary: no phone writes it, not even a sous chef');
 await ok(setDoc(doc(owner, K + 'summary/waste'), { day: WT, items: [] }), true, 'summary: the head chef may copy it (moving the kitchen PIN)');
 // PIN sessions (22 Oct 2026): a phone signed in anonymously writes a PIN try first (one per person every 20 s), then
-// opens a session if that try was right; writes then need no proof
+// opens a session if that try was right; writes go through the session
 const phone = id => env.authenticatedContext(id, { firebase: { sign_in_provider: 'anonymous' } }).firestore();
 const ph1 = phone('ph1'), ph2 = phone('ph2'), ph3 = phone('ph3');
 await env.withSecurityRulesDisabled(async ctx => { const db = ctx.firestore(); await setDoc(doc(db, K + 'pinset/ann'), { at: 111 }); await setDoc(doc(db, K + 'pinset/bo'), { at: 222 }); });
@@ -485,7 +502,7 @@ await ok(sess(ph2, 'ph2', 'ann'), false, 'sessions: another phone cannot use Ann
 await ok(sess(ph1, 'ph1', 'ann', { exp: Date.now() + 40 * 86400000 }), false, 'sessions: no session longer than 31 days');
 await ok(sess(ph1, 'ph1', 'ann', { pinAt: 5 }), false, 'sessions: the session must name Ann\'s PIN time');
 await ok(sess(ph1, 'ph1', 'ann'), true, 'sessions: the right try opens a session');
-await ok(setDoc(doc(ph1, K + 'days/' + TODAY + '/items/sx1'), line({ by: 'ann', addedById: 'ann' })), true, 'sessions: Ann writes a line with no proof, through her session');
+await ok(setDoc(doc(ph1, K + 'days/' + TODAY + '/items/sx1'), line({ by: 'ann', addedById: 'ann' })), true, 'sessions: Ann writes a line through her session');
 await ok(setDoc(doc(ph2, K + 'days/' + TODAY + '/items/sx2'), line({ by: 'ann', addedById: 'ann' })), false, 'sessions: another phone cannot write as Ann');
 await ok(setDoc(doc(ph1, K + 'days/' + TODAY + '/items/sx3'), line({ by: 'bo', addedById: 'bo' })), false, 'sessions: Ann\'s session cannot write as Bo');
 await ok(tryPin(ph3, 'bo', '9999', 'ph3'), true, 'sessions: a wrong try is written (and counts)');

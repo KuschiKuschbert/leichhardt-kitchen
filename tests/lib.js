@@ -147,6 +147,7 @@ async function start() {
    o.noTok            the person is picked but has to type their own PIN
    o.oldTok           the person signed in before PIN sessions (22 Oct 2026): the phone keeps their PIN proof
                       (lk.prep.tok) instead of a session, and moves to a session when it opens
+   o.noAnon           the phone's Firebase sign-in fails (no signal on a first start): no uid, so no session
    o.noPin            no kitchen PIN on this phone yet
    o.admin            the head chef's Google account is signed in
    o.settings         saved recipe book settings, for example { view: 'tiles' }
@@ -195,11 +196,11 @@ async function open(browser, hash, o) {
   // a person signed in on this phone has a running PIN session (sessions/<this phone's uid>), as every phone does once
   // it has moved from the older proof; the head chef's Google account is the phone's sign-in when o.admin is set
   const store = seed(o.extra), uid = o.admin ? 'owner' : 'anon-test', exp = (o.clock || NOW) + 30 * 86400000;
-  const pinAt = who && (store[K.concat(['pinset', who]).join('/')] || {}).at, sess = who && !o.noTok && !o.oldTok && typeof pinAt === 'number';
+  const pinAt = who && (store[K.concat(['pinset', who]).join('/')] || {}).at, sess = who && !o.noTok && !o.oldTok && !o.noAnon && typeof pinAt === 'number';
   if (sess) store[K.concat(['sessions', uid]).join('/')] = { by: who, pinAt, exp, at: o.clock || NOW };
   const ls = {
     'fake.fs': JSON.stringify(store),
-    'fake.anon': 'anon-test',
+    'fake.anon': o.noAnon ? '' : 'anon-test',
     'lk.prep.pin': o.noPin ? '' : PIN,
     'lk.prep.who': who || '',
     'lk.prep.tok': who && o.oldTok ? who + ':' + sha('lk:' + who + ':' + pins[who]) : '',
@@ -208,6 +209,7 @@ async function open(browser, hash, o) {
     'lk.settings.v1': JSON.stringify(Object.assign({ installNo: true }, o.settings || {}))
   };
   if (o.admin) ls['fake.user'] = '1';
+  if (o.noAnon) await ctx.addInitScript(() => { window.__fakeNoAnon = true; });
   if (o.fakeServer || o.fakeMode || o.failReads || o.denyReads) await ctx.addInitScript(f => { window.__fake = { mode: f.mode || 'ok', writes: [], reads: [], server: f.server, failReads: f.fail ? new RegExp(f.fail) : null, denyReads: f.deny ? new RegExp(f.deny) : null }; }, { mode: o.fakeMode, server: o.fakeServer, fail: o.failReads, deny: o.denyReads });
   // seed once per tab, so a reload keeps whatever the test did
   await ctx.addInitScript(ls => {
