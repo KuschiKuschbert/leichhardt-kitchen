@@ -816,6 +816,14 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .sheet-o span { font-size: 0.875rem; color: var(--muted); }
 .sheet-o[aria-checked="true"] { background: var(--hit); }
 .sheet-o[aria-checked="true"] strong::after { content: '  \2713'; color: var(--accent-ink); }
+/* the line menu (22 Oct 2026, Option B): on a phone Remove and who wrote the line sit behind the ⋯ */
+.nb-more { display: none; flex: 0 0 auto; width: 44px; min-height: 44px; padding: 0; border: 0; background: none; font: 700 1.25rem var(--body); letter-spacing: 0.05em; color: var(--muted); cursor: pointer; }
+.lm-who { margin: 0 0 6px; font-size: 0.9375rem; color: var(--muted); }
+.lm-act strong { color: var(--small-ink); }
+@media (max-width: 719px) {
+  .nb-more { display: inline-flex; align-items: center; justify-content: center; }
+  .nb-row:has(.nb-more) .nb-wrote, .nb-row:has(.nb-more) .nb-x, .nb-row:has(.nb-more) > .p-x { display: none; }
+}
 .sheet-x { width: 100%; margin-top: 12px; }
 html.sheet-open, html.sheet-open body { overflow: hidden; }
 @keyframes sheetUp { from { transform: translateY(40px); opacity: 0.6; } to { transform: none; opacity: 1; } }

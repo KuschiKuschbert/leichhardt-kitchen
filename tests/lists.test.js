@@ -11,11 +11,11 @@ function past(n) { const d = new Date(); d.setDate(d.getDate() - n); return L.ym
   const learned = {}; learned[fsKey(['learned', 'mise-onions'])] = { text: 'Mise onions', uses: 6, typed: 6, secs: { larder: { name: 'Larder', n: 6 } }, dow: {} };
   let p = await L.open(b, '#/prep', { extra: learned, wait: 1600 });
 
-  const sizes = await p.evaluate(() => { const m = s => [...document.querySelectorAll(s)].map(e => { const r = e.getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; }); return { box: m('.nb-row .nb-box'), star: m('.nb-star'), go: m('.nb-go'), x: m('.nb-x') }; });
+  const sizes = await p.evaluate(() => { const m = s => [...document.querySelectorAll(s)].map(e => { const r = e.getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; }); return { box: m('.nb-row .nb-box'), star: m('.nb-star'), go: m('.nb-go'), x: m('.nb-row .nb-more') }; });
   ok(sizes.box.every(s => s[0] >= 44 && s[1] >= 44), 'phone: tick boxes are 44x44 ' + JSON.stringify(sizes.box[0]));
   ok(sizes.star.every(s => s[0] >= 44 && s[1] >= 44), 'phone: urgent buttons are 44x44 ' + JSON.stringify(sizes.star[0]));
   ok(sizes.go.every(s => s[1] >= 44), 'phone: recipe links are 44 tall ' + JSON.stringify(sizes.go[0]));
-  ok(sizes.x.every(s => s[1] >= 44), 'phone: remove is 44 tall ' + JSON.stringify(sizes.x[0]));
+  ok(sizes.x.length > 0 && sizes.x.every(s => s[0] >= 44 && s[1] >= 44), 'phone: the line menu (Remove behind ⋯, 22 Oct 2026) is 44x44 ' + JSON.stringify(sizes.x[0]));
   ok(!(await L.overflow(p)), 'phone: no sideways scroll');
 
   // tick: the line stays in place, struck through, then leaves
