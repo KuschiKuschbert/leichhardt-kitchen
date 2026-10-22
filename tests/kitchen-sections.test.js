@@ -60,6 +60,27 @@ const addLine = async (p, text, sec) => {
   ok((lineOf(s, 'Wipe the pass') || {}).station === 'Pass', 'change: the next line goes under Pass');
   ok(p.errors.length === 0, 'staff: no page errors ' + p.errors.join(' | '));
 
+  // the pick on the landing page: its toast shows there, once, and does not come up again on the prep list (23 Oct 2026)
+  const p2 = await L.open(b, '#/', { who: 'bo', extra: withSecs(), wait: 1500 });
+  await L.waitFor(p2, () => !!document.querySelector('.ks-wrap'), null, 5000).catch(() => {});
+  await p2.click('.ks-b[data-v="grill"]'); await L.settle(p2, 300);
+  ok(/You are on Grill today/.test(await txt(p2, '.p-toast') || '') && !(await p2.$('#prep-root')), 'landing: the pick says You are on Grill today on the landing page (' + await txt(p2, '.p-toast') + ')');
+  await p2.evaluate(() => { location.hash = '#/prep'; }); await L.settle(p2, 900);
+  ok(await p2.evaluate(() => [...document.querySelectorAll('.p-toast')].filter(e => /You are on Grill/.test(e.textContent)).length) <= 1, 'landing: the prep list does not show the same words a second time');
+  // a tick while it is still up: the prep page's Undo takes its spot and the tap reaches Undo, not the old words
+  await p2.click('[data-p="tick"][data-id="i1"]'); await L.settle(p2, 300);
+  ok(await p2.evaluate(() => [...document.querySelectorAll('.p-toast')].filter(e => /You are on Grill/.test(e.textContent)).length) === 0, 'landing: once the prep page shows its own toast, the landing toast is gone');
+  const undoHit = await p2.evaluate(() => { const u = document.querySelector('#prep-root [data-p="toast-act"]'); if (!u) return 'no Undo'; const r = u.getBoundingClientRect(), h = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return h === u || u.contains(h) ? 'undo' : (h && h.textContent.slice(0, 40)); });
+  ok(undoHit === 'undo', 'landing: the Undo after a tick is on top, nothing covers it (' + undoHit + ')');
+  const i1 = async () => (await store(p2))[fsKey(['days', today, 'items', 'i1'])] || {};
+  ok((await i1()).done === true, 'landing: the tick is saved');
+  await p2.click('#prep-root [data-p="toast-act"]', { timeout: 3000 }).catch(() => {}); await L.settle(p2, 500);
+  ok(!(await i1()).done, 'landing: tapping Undo takes the tick back');
+  await p2.clock.runFor(10000); await L.settle(p2, 300);
+  ok(!(await p2.$('.p-toast')), 'landing: the toasts go by themselves');
+  ok(p2.errors.length === 0, 'landing pick: no page errors ' + p2.errors.join(' | '));
+  await p2.context().close();
+
   // the same day again: not asked twice
   await p.reload(); await L.settle(p, 1500);
   ok(!(await p.$('.ks-wrap')), 'reload: not asked again today');

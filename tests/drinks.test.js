@@ -53,6 +53,18 @@ const val = (p, f) => txt(p, '.dr-fold[data-f="' + f + '"] .dr-val');
   ok(p.errors.length === 0, 'first PIN: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // a first PIN set on the order list (23 Oct 2026): the drinks run card asks there, and Prep is the prep list after
+  p = await L.open(b, '#/orders', { who: '', extra: { [fsKey(['config', 'main'])]: cfg }, wait: 1200 });
+  await p.click('.p-name[data-id="kim"]');
+  await p.keyboard.type('4444'); await L.settle(p, 600);
+  await p.keyboard.type('4444'); await L.settle(p, 1000);
+  ok(/Writing as\s*Kim/.test(await txt(p, '.nb-top') || '') && /#\/orders$/.test(p.url()) && !/One more thing/.test(await txt(p, '#prep-root') || ''), 'first PIN on the order list: the order list, not One more thing');
+  ok(/New: the drinks run/.test(await txt(p, '.dr-nudge') || ''), 'first PIN on the order list: the drinks run card asks for a usual');
+  await p.evaluate(() => { location.hash = '#/prep'; }); await L.settle(p, 900);
+  ok(!/One more thing/.test(await txt(p, '#prep-root') || '') && !!(await p.$('.nb-left')) && !!(await p.$('.dr-nudge')), 'first PIN on the order list: Prep shows the list with the card, not One more thing');
+  ok(p.errors.length === 0, 'first PIN on the order list: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   // someone who signed up before: a card once, Not now keeps it away
   const noAnn = { [fsKey(['drinks', 'ann'])]: undefined };
   p = await L.open(b, '#/prep', { who: 'ann', extra: noAnn, wait: 1500 });

@@ -43,6 +43,14 @@ const key = async p => (await L.admItem(p)) === 'none' ? null : true;
   ok(p.errors.length === 0, 'shared device: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // "Not you?" hands over the same way (23 Oct 2026): what Sam left goes, the names show for the next person
+  p = await L.open(b, '#/orders', { who: 'sam', settings: { shared: true }, wait: 1800 });
+  await p.evaluate(() => localStorage.setItem('lk.fe.draft.new', JSON.stringify({ name: 'Smith 50th', phone: '0400 000 000' })));
+  await p.click('.nb-top [data-p="who-change"]'); await L.settle(p, 400);
+  ok(await p.evaluate(() => localStorage.getItem('lk.fe.draft.new')) === null && !!(await p.$('.p-name')), 'shared device, Not you?: the function draft is gone and the names show');
+  ok(p.errors.length === 0, 'shared device, Not you?: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   // a personal phone keeps them
   p = await L.open(b, '#/prep', { who: 'sam', wait: 1800 });
   await p.evaluate(() => localStorage.setItem('lk.fe.draft.new', '{"name":"x"}'));

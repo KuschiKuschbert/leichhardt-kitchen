@@ -277,6 +277,8 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .p-name { min-height: 52px; padding: 0 1.1rem; font-size: 1rem; }
 .p-bar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.4rem 1rem; font-size: 0.9375rem; }
 .p-links { display: flex; gap: 1rem; }
+/* a bar with only its links (Manage staff) keeps them on the right */
+.p-bar > .p-links:only-child { margin-left: auto; }
 .p-link { background: none; border: 0; padding: 0; font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; color: var(--ink); }
 .p-dateinput, .p-select { min-height: 44px; padding: 0 0.6rem; font: inherit; border: 1.5px solid var(--ink); border-radius: var(--radius); background: var(--paper); color: var(--ink); }
 .p-pick { position: static; }

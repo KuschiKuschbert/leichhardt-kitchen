@@ -142,6 +142,9 @@ function past(n) { const d = new Date(); d.setDate(d.getDate() - n); return L.ym
   const nl = await p.evaluate(() => { const r = document.querySelector('[data-p="who-change"]').getBoundingClientRect(); return r.height; });
   ok(nl >= 44, 'PIN: Not me / Not you are 44 tall');
   await p.context().close();
+  p = await L.open(b, '#/drinks', { who: 'ann', noTok: true, wait: 1500 });
+  ok(/Open the drinks run/.test(await txt(p, '.p-card button[type="submit"]') || ''), 'PIN: the drinks run names its own page (' + await txt(p, '.p-card button[type="submit"]') + ')');
+  await p.context().close();
 
   const mins = {}; mins[fsKey(['minutes', 'm1'])] = { no: 1, v: 1, status: 'published', date: today, start: '14:00', loc: 'Kitchen', chair: 'sam', taker: 'sam', att: [{ id: 'ann', st: 'present' }, { id: 'sam', st: 'present' }, { id: 'bo', st: 'apology' }], guests: '', decisions: 'Fryer oil every Monday', menu: '', safety: '', dates: '', other: '', acts: [], next: '', pubAt: L.NOW, removed: false, at: 1, upd: 1, by: 'sam' };
   // minutes to sign come up in the sheet at the start of the shift (23 Oct 2026), not as a second bell in the top bar
