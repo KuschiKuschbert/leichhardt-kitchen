@@ -1,5 +1,7 @@
 # The click tests on every pull request to main, before it can merge.
 # The job is called "Click tests": branch protection on main requires it, so nothing merges with a failing test.
+# Since 22 Oct 2026 the same job also checks firestore.rules on the Firestore emulator (tests/rules) and the nightly
+# learning counts (scripts/emulator-check.mjs), so a rules change cannot merge without its checks.
 # The runner serves the pull request's own copy of the book (tests/run.js, 127.0.0.1:8777) and clicks through it
 # in the runner's Google Chrome. Firebase is the stand-in from tests/fake, so no real PIN or data is needed.
 name: PR click tests
@@ -27,17 +29,30 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: tests/package-lock.json
+          cache-dependency-path: |
+            tests/package-lock.json
+            tests/rules/package-lock.json
+            scripts/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
       - name: Install
         working-directory: tests
         run: npm ci --no-audit --no-fund
       - name: Check the JavaScript parses
-        run: for f in js/*.js sw.js; do node --check "$f"; done
+        run: for f in js/*.js js/lib/*.js sw.js; do node --check "$f"; done
       - name: Click through this copy of the book
         working-directory: tests
         env:
           CHROME: /usr/bin/google-chrome
         run: npm test
+      - name: Check the rules on the Firestore emulator
+        working-directory: tests/rules
+        run: npm ci --no-audit --no-fund && npm test
+      - name: Check the nightly learning counts on the emulator
+        working-directory: scripts
+        run: npm ci --no-audit --no-fund && ../tests/rules/node_modules/.bin/firebase emulators:exec --only firestore --project demo-test "node emulator-check.mjs"
       - name: Keep the screenshots of a failed run
         if: failure()
         uses: actions/upload-artifact@v4
