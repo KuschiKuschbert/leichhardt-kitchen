@@ -1885,3 +1885,5 @@ details.a-how > p { margin: 0.2rem 0 0; max-width: 72ch; }
   .zoombar { display: flex; justify-content: flex-end; background: none; border-top: 0; padding: 0 1rem 0.75rem; pointer-events: none; }
   .zoombar a { pointer-events: auto; min-height: 44px; padding: 0 1.1rem; font-size: 0.9375rem; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25); }
 }
+/* Practice on this device (22 Oct 2026): a quiet strip, so nobody forgets it is on */
+.p-practice { margin: 0 0 0.75rem; padding: 0.5rem 0.75rem; border-left: 4px solid var(--stone); background: var(--beige); font-size: 0.875rem; }
