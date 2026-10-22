@@ -1844,7 +1844,21 @@
     sset(cfgDoc(), { pastEdit: v }, true).catch(function () {});   // before the rules allow it (or no signal) it is only a hint lost
   }
   function pastStamp(kind) { var pe = (S.config && S.config.pastEdit) || {}; return +pe[kind] || 0; }
+  /* A ping for today was saved, changed or removed (22 Oct 2026): the book stamps config/main.pastEdit.n, so the other
+     phones read the pings again now (one pings query each, on the config listener every phone already has) instead of
+     after 30 minutes away. A ping set at 13:00 for 15:00 then pops up on time on a tablet that read its pings at 06:00.
+     Only for today's pings, so a ping for next week costs nothing. */
+  var pingMarkAt = 0;
+  function markPings() {
+    if (!fb || Date.now() - pingMarkAt < 5000) return;
+    pingMarkAt = Date.now();
+    var v = { n: now() }; S.nMine = v.n;
+    sset(cfgDoc(), { pastEdit: v }, true).catch(function () {});   // before the rules allow it (or no signal) it is only a hint lost
+  }
   function pastCheck() {
+    // once per stamp, so a phone whose clock is a little behind never reads again on every config change
+    var ns = pastStamp('n');
+    if (S.notesFor && ns > (S.notesRead || 0) && ns !== S.nMine && ns !== S.nStampDone) { S.nStampDone = ns; loadNotes(true); }
     if (S.pastFor && pastStamp('p') > (S.pastAt || 0)) { S.pastFor = ''; lsSet('lk.past', ''); draw(); }
     if (S.ordHistFor && pastStamp('o') > (S.ordHistAt || 0)) { S.ordHistFor = ''; lsSet('lk.ord.hist', ''); draw(); }
   }
@@ -4049,10 +4063,13 @@
      The head chef or a sous chef writes short pings for the shift (Shift pings tab in the admin panel; Shift pings in
      the chef mark menu for sous chefs). Everyone else only reads them. In the code and the data they are still called notes.
      The first time the book is opened after 10:30 on a day with a ping, the pings show once as a popup. The bell in the top bar opens them again.
-     Data: kitchens/<PIN>/notes/<id> { text, tag, start, until, dows, removed, at, upd }. A note shows from start to until (YYYY-MM-DD),
+     A ping can have its own time of day instead (tm, 22 Oct 2026): it stays out of sight until then and pops up at that time,
+     from the local check once a minute (no reads).
+     Data: kitchens/<PIN>/notes/<id> { text, tag, start, until, dows, tm, removed, at, upd }. A note shows from start to until (YYYY-MM-DD),
      on the weekdays in dows when there are any (0 is Sunday). Notes are only flagged as removed, never deleted.
      Reads stay small: one query for notes that have not ended yet, once a phone opens each day (and again after 30 minutes away, or at 10:30
-     if the book was already open). No live listener, no polling. "Got it" is remembered on the phone only (lk.note.seen). */
+     if the book was already open, or when a ping for today was saved: config/main.pastEdit.n, see markPings). No live listener, no
+     polling. "Got it" is remembered on the phone only (lk.note.seen). */
   var NOTE_TAGS = [['none', 'Ping'], ['off', 'Off today'], ['special', 'Special'], ['function', 'Function'], ['delivery', 'Delivery'], ['safety', 'Safety'], ['allergen', 'Allergen alert']];
   var NOTE_RANK = { safety: 0, allergen: 1, off: 2, special: 3, function: 4, delivery: 5, none: 6 };
   var NOTE_MIN = 10 * 60 + 30, NOTE_FAR = '2099-12-31', NOTE_STALE = 30 * 60000;
@@ -4063,10 +4080,15 @@
     return !(n.dows && n.dows.length) || n.dows.indexOf(parseYmd(day).getDay()) >= 0;
   }
   function noteRank(n) { return NOTE_RANK[n.tag] == null ? 6 : NOTE_RANK[n.tag]; }
+  // a ping's own time of day: minutes after midnight in kitchen time, or null for the usual 10:30 popup (checked by type:
+  // it comes from Firestore)
+  function noteTm(n) { var m = n && n.tm; return typeof m === 'number' && m >= 0 && m < 1440 && Math.floor(m) === m ? m : null; }
+  function tmText(m) { return pad(Math.floor(m / 60)) + ':' + pad(m % 60); }
+  // today's pings that are showing: a ping with its own time only once that time has come
   function todaysNotes() {
-    var t = dayNow();
+    var t = dayNow(), mins = T.mins();
     if (!featOn('pings')) return [];
-    return (S.notes || []).filter(function (n) { return noteOn(n, t); }).sort(function (a, b) { return noteRank(a) - noteRank(b) || (a.at || 0) - (b.at || 0); });
+    return (S.notes || []).filter(function (n) { var tm = noteTm(n); return noteOn(n, t) && (tm == null || mins >= tm); }).sort(function (a, b) { return noteRank(a) - noteRank(b) || (a.at || 0) - (b.at || 0); });
   }
   function noteSig(list) { return list.map(function (n) { return n.id + ':' + (n.upd || n.at || 0); }).join('|'); }
   function noteSeen() { try { return JSON.parse(lsGet('lk.note.seen') || '{}') || {}; } catch (e) { return {}; } }
@@ -4089,9 +4111,10 @@
     if (!fb || !/^\d{4,6}$/.test(S.pin) || S.notesBusy || !featOn('pings')) return;
     if (!force && S.notes && S.notesFor === today && Date.now() - S.notesAt < NOTE_STALE) return;
     S.notesBusy = true;
+    var readAt = now();
     fb.fs.getDocs(fb.fs.query(colRef('notes'), fb.fs.where('until', '>=', today))).then(function (snap) {
       S.notes = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; });
-      S.notesFor = today; S.notesAt = Date.now(); S.notesBusy = false;
+      S.notesFor = today; S.notesAt = Date.now(); S.notesRead = readAt; S.notesBusy = false;
       noteBell(); noteMaybePop(); draw();
     }, function () {
       // no signal, or a wrong kitchen PIN: carry on with what is already here and try again in about 5 minutes
@@ -4146,19 +4169,21 @@
     var s = npop && npop.querySelector('#nt-sum');
     if (s) { var h = noteSummary(); if (s.innerHTML !== h) s.innerHTML = h; }
   }
-  function noteRowHTML(n) {
-    return '<li class="nt-i t-' + esc(n.tag || 'none') + '"><span class="nt-tag">' + esc(noteTagName(n.tag)) + '</span><p>' + linkNote(n.text) + '</p></li>';
+  // isNew: not in what was last seen on this phone today (a ping with its own time pops up again with the others)
+  function noteRowHTML(n, isNew) {
+    var tm = noteTm(n);
+    return '<li class="nt-i t-' + esc(n.tag || 'none') + '">' + (isNew ? '<span class="nt-tag nt-new">New</span> ' : '') + '<span class="nt-tag">' + esc(noteTagName(n.tag) + (tm != null ? ' ' + tmText(tm) : '')) + '</span><p>' + linkNote(n.text) + '</p></li>';
   }
   function noteOpen(pv) {
     var list = pv ? pv.list : todaysNotes();
     if (npop || !list.length) return;
-    var t = dayNow(), adm = admDev(), editor = adm ? '<a class="nt-edit" href="#/admin" data-note="edit">Write or edit pings</a>' : (canPing() ? '<a class="nt-edit" href="#/prep" data-note="edit-sous">Write or edit pings</a>' : '');
+    var t = dayNow(), adm = admDev(), sn = noteSeen(), was = !pv && sn.d === t && sn.sig ? String(sn.sig).split('|') : null, editor = adm ? '<a class="nt-edit" href="#/admin" data-note="edit">Write or edit pings</a>' : (canPing() ? '<a class="nt-edit" href="#/prep" data-note="edit-sous">Write or edit pings</a>' : '');
     nprev = document.activeElement;
     var el = document.createElement('div');
     el.className = 'nt-wrap';
     el.innerHTML = '<div class="nt-bg" data-note="dismiss"></div><section class="nt" role="dialog" aria-modal="true" aria-labelledby="nt-h" tabindex="-1">' +
       '<header class="nt-head"><span class="nt-eb">Leichhardt Hotel Kitchen</span><h2 class="nt-h" id="nt-h">' + (pv ? 'Preview' : 'Today\'s shift pings') + '</h2><span class="nt-date">' + esc(pv ? pv.label : parseYmd(t).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })) + '</span></header>' +
-      '<ul class="nt-list">' + list.map(noteRowHTML).join('') + '</ul>' +
+      '<ul class="nt-list">' + list.map(function (n) { return noteRowHTML(n, !!was && was.indexOf(n.id + ':' + (n.upd || n.at || 0)) < 0); }).join('') + '</ul>' +
       '<div class="nt-sum" id="nt-sum">' + (pv ? '' : noteSummary()) + '</div>' +
       '<footer class="nt-foot"><button type="button" class="nt-got" data-note="close">' + (pv ? 'Close preview' : 'Got it') + '</button>' + (pv ? '' : editor) + '</footer></section>';
     if (pv) el.setAttribute('data-pv', '1');
@@ -4183,15 +4208,17 @@
     nprev = null;
   }
   function noteMarkSeen() { lsSet('lk.note.seen', JSON.stringify({ d: dayNow(), sig: noteSig(todaysNotes()) })); noteBell(); }
-  /* pops up by itself: after 10:30, when today has a note that has not been seen on this phone, and nobody is typing */
+  /* pops up by itself: after 10:30 (or once a ping's own time has come), when today has a note that has not been seen on
+     this phone, and nobody is typing */
   function noteMaybePop() {
     if (npop || ksPop || !noteUnread() || document.visibilityState === 'hidden' || Date.now() - nSnooze < 15 * 60000) return;
     var ae = document.activeElement;
-    if (T.mins() < NOTE_MIN) return;
+    if (T.mins() < NOTE_MIN && !todaysNotes().some(function (n) { return noteTm(n) != null; })) return;
     if (ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) && ae.type !== 'button') return;
     noteOpen();
   }
-  /* A local check once a minute (no reads): pops the note when 10:30 arrives or typing stops, and fetches once at 10:30 and when a new day starts. */
+  /* A local check once a minute (no reads): pops the note when 10:30 or a ping's own time arrives or typing stops (the bell
+     counts a timed ping from its time), and fetches once at 10:30 and when a new day starts. */
   function startNoteTick() {
     if (nTick) return;
     if (T.mins() >= NOTE_MIN) n1030 = dayNow();
@@ -4200,7 +4227,7 @@
       if (S.guidesFor && S.guidesFor !== t) loadGuides();
       if (S.notesFor && S.notesFor !== t) { loadNotes(true); return; }
       if (n1030 !== t && T.mins() >= NOTE_MIN) { n1030 = t; loadNotes(true); return; }
-      noteMaybePop(); mlMaybePop();
+      noteBell(); noteMaybePop(); mlMaybePop();
     }, 60000);
   }
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && /^\d{4,6}$/.test(S.pin) && fb) { loadNotes(); noteMaybePop(); rxSync(); } });
@@ -4228,11 +4255,13 @@
   var NOTE_START = { off: 'Off today: ', special: 'Special: ', 'function': 'Function: ', delivery: 'Delivery: ', safety: 'Safety: ', allergen: 'Allergen alert: ' };
   /* a note being written counts as unsaved once it differs from what the editor opened with (or has any text, if that is unknown) */
   function nfDirty() { var f = S.nf; if (!f || !S.nOpen) return false; return S.nfSnap ? JSON.stringify(f) !== S.nfSnap : !!f.text.trim(); }
-  function nfNew() { return { id: '', text: '', tag: 'none', start: dayNow(), until: '', dows: [], run: false }; }
+  function nfNew() { return { id: '', text: '', tag: 'none', start: dayNow(), until: '', dows: [], run: false, tm: '' }; }
   function nfFrom(n) {
-    var rep = n.dows && n.dows.length, until = n.until === NOTE_FAR || (n.until === n.start && !rep) ? '' : n.until;
-    return { id: n.id, text: n.text, tag: n.tag || 'none', start: n.start, until: until, dows: (n.dows || []).slice(), run: !!until };
+    var rep = n.dows && n.dows.length, until = n.until === NOTE_FAR || (n.until === n.start && !rep) ? '' : n.until, tm = noteTm(n);
+    return { id: n.id, text: n.text, tag: n.tag || 'none', start: n.start, until: until, dows: (n.dows || []).slice(), run: !!until, tm: tm == null ? '' : tmText(tm) };
   }
+  // the editor's time box (HH:MM) as minutes after midnight, or null when empty or not a time
+  function nfTm(f) { var m = /^(\d{2}):(\d{2})$/.exec(f.tm || ''); return m && +m[1] < 24 && +m[2] < 60 ? +m[1] * 60 + +m[2] : null; }
   function noteDay(s, t) { return s === t ? 'today' : s === shift(t, 1) ? 'tomorrow' : dayShort(s); }
   function noteWhen(n) {
     var t = dayNow(), rep = n.dows && n.dows.length, out;
@@ -4240,10 +4269,11 @@
       var names = DOW.filter(function (d) { return n.dows.indexOf(d) >= 0; }).map(function (d) { return DOWN[DOW.indexOf(d)]; }).join(', ');
       out = 'Every ' + names + ' from ' + noteDay(n.start, t) + (n.until === NOTE_FAR ? '' : ' until ' + noteDay(n.until, t));
     } else out = n.until === n.start ? noteDay(n.start, t) : noteDay(n.start, t) + ' to ' + noteDay(n.until, t);
+    if (noteTm(n) != null) out += ', from ' + tmText(noteTm(n));
     return out.charAt(0).toUpperCase() + out.slice(1);
   }
   function nfUntil(f) { return f.until || (f.dows.length ? NOTE_FAR : f.start); }
-  function nfDraft(f) { return { id: 'draft', text: f.text.replace(/^\s+|\s+$/g, ''), tag: f.tag, start: f.start, until: nfUntil(f), dows: f.dows.slice() }; }
+  function nfDraft(f) { return { id: 'draft', text: f.text.replace(/^\s+|\s+$/g, ''), tag: f.tag, start: f.start, until: nfUntil(f), dows: f.dows.slice(), tm: nfTm(f) }; }
   function draftPreviewHTML(f) {
     var d = nfDraft(f);
     return d.text ? '<ul class="nt-list n-pl">' + noteRowHTML(d) + '</ul>' : '<p class="hint">Type the ping to see how it will look.</p>';
@@ -4308,10 +4338,10 @@
     var f = S.nf || (S.nf = nfNew()), t = dayNow(), until = nfUntil(f);
     var tags = NOTE_TAGS.map(function (x) { return '<button type="button" class="chip" data-p="n-tag" data-v="' + x[0] + '" aria-pressed="' + (f.tag === x[0]) + '">' + esc(x[1]) + '</button>'; }).join('');
     var dows = DOW.map(function (d, i) { return '<button type="button" class="chip sq" data-p="n-dow" data-v="' + d + '" aria-pressed="' + (f.dows.indexOf(d) >= 0) + '" aria-label="' + DOWN[i] + '">' + DOWN[i] + '</button>'; }).join('');
-    var when = f.start && until >= f.start ? 'Shows: ' + noteWhen({ start: f.start, until: until, dows: f.dows }) + '.' : 'The last day cannot be before the first day.';
+    var when = f.start && until >= f.start ? 'Shows: ' + noteWhen({ start: f.start, until: until, dows: f.dows, tm: nfTm(f) }) + '.' : 'The last day cannot be before the first day.';
     var single = !f.run && !f.until;
     return '<section class="set-block n-edit"><span class="label">' + (f.id ? 'Edit this ping' : 'Write a ping') + '</span>' +
-      '<span class="hint">Short and plain. It pops up the first time the book is opened after 10:30, and shows from the bell. No prices, PINs or staff names. A recipe name links to its card.</span>' +
+      '<span class="hint">Short and plain. It pops up the first time the book is opened after 10:30, or at the time you set below, and shows from the bell. No prices, PINs or staff names. A recipe name links to its card.</span>' +
       '<div class="field"><label class="label" for="n-text">Ping</label><textarea id="n-text" class="p-bulk" data-k="n-text" rows="4" maxlength="400" placeholder="For example: Barramundi is off until Thursday.">' + esc(f.text) + '</textarea><span class="hint" id="n-count">' + f.text.length + ' of 400. Ctrl+Enter saves.</span></div>' +
       '<div class="field"><span class="label">Tag (starts the ping for you)</span><div class="nt-chips" role="group" aria-label="Tag">' + tags + '</div></div>' +
       '<div class="field"><span class="label">How it will look</span><div id="n-prev" class="n-prev">' + draftPreviewHTML(f) + '</div></div>' +
@@ -4320,6 +4350,7 @@
       '<span class="hint">' + (f.run || f.until ? 'Tap the first day, then the last day. Tap the last day again to take it back.' : 'Tap a day to schedule the ping ahead of time.') + '</span>' + dayGridHTML(f) +
       '<details class="n-more"' + (f.start > shift(t, 34) || (f.until && f.until > shift(t, 34)) ? ' open' : '') + '><summary>A date further ahead</summary><div class="nt-dates"><label class="nt-dl">From<input type="date" class="p-dateinput" data-k="n-start" value="' + esc(f.start) + '"' + (f.id ? '' : ' min="' + t + '"') + '></label><label class="nt-dl">Until (optional)<input type="date" class="p-dateinput" data-k="n-until" value="' + esc(f.until) + '"' + (f.start ? ' min="' + esc(f.start) + '"' : '') + '></label></div></details></div>' +
       '<div class="field"><span class="label">Repeat every week on (optional)</span><div class="nt-chips" role="group" aria-label="Weekdays">' + dows + (f.dows.length ? '<button type="button" class="chip" data-p="n-dowclr">Clear weekdays</button>' : '') + '</div><span class="hint">With weekdays picked and no last day, the ping comes back every week until you remove it.</span></div>' +
+      '<div class="field"><label class="label" for="n-tm">Pop up at (optional)</label><div class="nt-chips"><input id="n-tm" type="time" class="p-dateinput" data-k="n-tm" value="' + esc(f.tm || '') + '">' + (f.tm ? '<button type="button" class="chip" data-p="n-tmclr">No set time</button>' : '') + '</div><span class="hint">Empty: it pops up at 10:30 with the day\'s other pings. With a time, it stays out of sight until then and pops up on every phone at that time.</span></div>' +
       '<p class="nt-whenline" role="status">' + esc(when) + '</p>' +
       '<div class="btn-row"><button type="button" class="btn dark" data-p="n-save"' + (S.nSaving ? ' disabled' : '') + '>' + (f.id ? 'Save changes' : 'Save ping') + '</button><button type="button" class="btn" data-p="n-preview">Preview the popup</button><button type="button" class="btn" data-p="n-reset">Reset days</button><button type="button" class="btn" data-p="n-cancel">' + (armed('n-cancel') ? 'Tap again to discard' : f.id ? 'Cancel' : 'Close') + '</button></div>' +
       '<span class="saved" role="status">' + esc(S.nMsg) + '</span></section>';
@@ -4340,12 +4371,16 @@
     if (!text) { S.nMsg = 'Write the ping first.'; draw(); return; }
     if (!re.test(start || '') || !re.test(until)) { S.nMsg = 'Pick the first day.'; draw(); return; }
     if (until < start) { S.nMsg = 'The last day cannot be before the first day.'; draw(); return; }
-    var data = { text: text.slice(0, 400), tag: f.tag, start: start, until: until, dows: f.dows.slice().sort(), removed: false, upd: now() };
+    if (f.tm && nfTm(f) == null) { S.nMsg = 'Pick a time, or tap No set time.'; draw(); return; }
+    // tm is always written (null for no set time), so an edit that takes the time away clears it
+    var data = { text: text.slice(0, 400), tag: f.tag, start: start, until: until, dows: f.dows.slice().sort(), tm: nfTm(f), removed: false, upd: now() };
     // author is who wrote the ping and never changes; by is who saved it last (the rules need by to be the writer)
     if (!f.id) { data.at = now(); data.author = S.who || ''; }
-    var ref = f.id ? docRef('notes', f.id) : fb.fs.doc(colRef('notes')), when = noteWhen({ start: start, until: until, dows: data.dows });
+    var ref = f.id ? docRef('notes', f.id) : fb.fs.doc(colRef('notes')), when = noteWhen({ start: start, until: until, dows: data.dows, tm: data.tm });
+    var was = f.id ? (S.notes || []).filter(function (x) { return x.id === f.id; })[0] : null, t = dayNow();
     S.nSaving = true; S.nMsg = ''; draw();
     sset(ref, data, !!f.id).then(function () {
+      if (noteOn(data, t) || (was && noteOn(was, t))) markPings();
       S.nSaving = false; S.nf = nfNew(); S.nOpen = false; S.nMsg = 'Saved. Shows: ' + when + '.'; loadNotes(true); draw();
     }, function (e) {
       S.nSaving = false; S.nMsg = e && e.code === 'permission-denied' ? 'Not allowed. Ask the head chef to tick Pings for you in the admin panel.' : 'Could not save. Check the connection and try again.'; draw();
@@ -4353,10 +4388,12 @@
   }
   function removeNote(id) {
     if (!arm('n-del:' + id)) return;
+    var was = (S.notes || []).filter(function (x) { return x.id === id; })[0], today = !!was && noteOn(was, dayNow());
     sset(docRef('notes', id), { removed: true, upd: now() }, true).then(function () {
+      if (today) markPings();
       if (S.nf && S.nf.id === id) { S.nf = nfNew(); S.nOpen = false; }
       S.nMsg = 'Removed.'; loadNotes(true); draw();
-      toast('Ping removed.', { label: 'Undo', fn: function () { sset(docRef('notes', id), { removed: false, upd: now() }, true).then(function () { S.nMsg = ''; loadNotes(true); draw(); }, failed); } });
+      toast('Ping removed.', { label: 'Undo', fn: function () { sset(docRef('notes', id), { removed: false, upd: now() }, true).then(function () { if (today) markPings(); S.nMsg = ''; loadNotes(true); draw(); }, failed); } });
     }, function () { S.nMsg = 'Could not remove. Check the connection and try again.'; draw(); });
   }
   /* finished pings: one query when asked for (30 at most) */
@@ -4377,7 +4414,8 @@
   function reuseNote(id) {
     var n = (S.notes || []).concat(Array.isArray(S.nPast) ? S.nPast : []).filter(function (x) { return x.id === id; })[0];
     if (!n) return;
-    S.nf = nfNew(); S.nf.text = n.text; S.nf.tag = n.tag || 'none'; S.nfSnap = ''; S.nOpen = true; S.nMsg = '';
+    var tm = noteTm(n);
+    S.nf = nfNew(); S.nf.text = n.text; S.nf.tag = n.tag || 'none'; S.nf.tm = tm == null ? '' : tmText(tm); S.nfSnap = ''; S.nOpen = true; S.nMsg = '';
     draw(); var tx = S.root.querySelector('[data-k="n-text"]'); if (tx) { focusNoteText(tx); }
   }
   /* who tapped Got it today for one note (one small query, only when asked) */
@@ -5949,6 +5987,7 @@
     }
     if (a === 'n-dow') { var dv = +el.getAttribute('data-v'), dx = S.nf.dows.indexOf(dv); if (dx >= 0) S.nf.dows.splice(dx, 1); else S.nf.dows.push(dv); draw(); return; }
     if (a === 'n-dowclr') { S.nf.dows = []; draw(); return; }
+    if (a === 'n-tmclr') { S.nf.tm = ''; draw(); return; }
     if (a === 'n-quick') { S.nf.start = shift(dayNow(), +el.getAttribute('data-v')); S.nf.until = ''; S.nf.run = false; S.nf.dows = []; draw(); return; }
     if (a === 'n-mode') { var nm = el.getAttribute('data-v'); S.nf.run = nm === 'run'; if (nm === 'one') S.nf.until = ''; draw(); return; }
     if (a === 'n-reset') { S.nf.start = dayNow(); S.nf.until = ''; S.nf.run = false; S.nf.dows = []; draw(); return; }
@@ -6179,6 +6218,7 @@
     if (k === 'p-day') { if (el.value) { S.date = el.value; S.tab = ''; watchItems(); draw(); } return; }
     if (k === 'n-start') { if (S.nf && el.value) { S.nf.start = el.value; if (S.nf.until && S.nf.until < el.value) S.nf.until = ''; draw(); } return; }
     if (k === 'n-until') { if (S.nf) { S.nf.until = el.value; S.nf.run = !!el.value; draw(); } return; }
+    if (k === 'n-tm') { if (S.nf) { S.nf.tm = el.value; draw(); } return; }
     if (k === 'p-section' || k === 'w-sec') { checkSectionBox(el, k); return; }
     if (k === 'af-sec' || k === 'af-who' || k === 'af-dow' || k === 'af-reason') { AF()[k.slice(3)] = el.value; afSave(); draw(); return; }
     var a = el.getAttribute && el.getAttribute('data-a');
