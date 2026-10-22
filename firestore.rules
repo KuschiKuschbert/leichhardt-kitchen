@@ -84,11 +84,13 @@ service cloud.firestore {
         && request.resource.data.get('pinOpen', {}) is map && request.resource.data.get('pinOpen', {}).size() <= 80
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['people', 'staffIds', 'pinOpen', 'updated', 'updatedBy', 'by']))
         // the head chef or a sous chef changed a line on a past day: they stamp pastEdit (p prep, o orders) with the time,
-        // so the other phones read their saved past days again (22 Oct 2026). Nothing else changes in that write.
+        // so the other phones read their saved past days again (22 Oct 2026). Or they saved a shift ping for today (n), so
+        // the other phones read the pings again. Nothing else changes in that write.
         || (staff() && request.resource.data.by in resource.data.get('sousIds', [])
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pastEdit', 'by'])
-          && request.resource.data.pastEdit is map && request.resource.data.pastEdit.keys().hasOnly(['p', 'o'])
-          && request.resource.data.pastEdit.get('p', 0) is number && request.resource.data.pastEdit.get('o', 0) is number);
+          && request.resource.data.pastEdit is map && request.resource.data.pastEdit.keys().hasOnly(['p', 'o', 'n'])
+          && request.resource.data.pastEdit.get('p', 0) is number && request.resource.data.pastEdit.get('o', 0) is number
+          && request.resource.data.pastEdit.get('n', 0) is number);
       allow delete: if isAdmin();
     }
     match /kitchens/KITCHEN_PIN/config/admins { allow read, write: if isAdmin(); }
@@ -204,6 +206,8 @@ service cloud.firestore {
         && request.resource.data.until is string && request.resource.data.until.size() == 10
         && request.resource.data.until >= request.resource.data.start
         && request.resource.data.get('dows', []) is list && request.resource.data.get('dows', []).size() <= 7
+        // its own time of day (22 Oct 2026): minutes after midnight, or null for the usual 10:30 popup
+        && (request.resource.data.get('tm', null) == null || (request.resource.data.tm is int && request.resource.data.tm >= 0 && request.resource.data.tm <= 1439))
         && request.resource.data.get('removed', false) is bool;
     }
     // A ping is changed or removed by the person who wrote it (author, kept from the first save; older pings have only by),
