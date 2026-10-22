@@ -46,6 +46,10 @@ const rid = id => 'r' + today.replace(/-/g, '') + '-' + id;
   await L.settle(p, 800);
   const groups = await p.evaluate(() => Array.prototype.map.call(document.querySelectorAll('.o-group .nb-t'), e => e.firstChild.textContent.trim() + (e.querySelector('.o-n') ? ' ' + e.querySelector('.o-n').textContent : '')));
   ok(groups.indexOf('Flour') >= 0 && groups.indexOf('Cream') >= 0 && !groups.some(g => / x\d/.test(g) && /Flour|Cream/.test(g)), 'everything to order: each rolled item shows once (' + groups.join(', ') + ')');
+  // who first wrote it and since when, as By day shows it, not "Rolled over" and today (23 Oct 2026)
+  const flourWho = await p.evaluate(() => { const g = document.querySelector('.o-group [data-k2="flour"]'); return g ? g.closest('.o-group').querySelector('.o-who').textContent : ''; });
+  const ago2Short = await p.evaluate(d => { const [y, m, dd] = d.split('-').map(Number); return new Date(y, m - 1, dd).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }); }, ago2);
+  ok(flourWho.indexOf('(Ann, ' + ago2Short + ')') >= 0 && !/Rolled over/.test(flourWho), 'everything to order: a rolled line says who wrote it and the day it was first written (' + flourWho + ')');
   const readsBefore = await p.evaluate(() => window.__fake.reads.length);
   await p.click('.o-group [data-k2="flour"]');
   await L.settle(p, 500);
