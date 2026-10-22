@@ -396,7 +396,7 @@
     var slow = setTimeout(function () { if (E.ed === e && e.saving) { e.saving = 'Waiting for the signal. Your changes are kept on this device.'; draw(); } }, 5000);
     api.ready().then(function () {
       var fs = api.fs();
-      return fs.getDocFromServer(api.docRef('functions', id)).then(function (sn) { return sn.exists() ? Object.assign({ id: id }, sn.data()) : null; }, function () { return 'offline'; });
+      return (api.fromServer ? api.fromServer(api.docRef('functions', id)) : fs.getDocFromServer(api.docRef('functions', id))).then(function (sn) { return sn.exists() ? Object.assign({ id: id }, sn.data()) : null; }, function () { return 'offline'; });
     }).then(function (server) {
       var sv = server === 'offline' ? e.v : (server ? server.v : 0);
       if (server !== 'offline' && sv !== e.v) {
