@@ -11,6 +11,9 @@
 */
 process.env.TZ = 'Australia/Brisbane';
 const { chromium } = require('playwright-core');
+// the service worker's own requests go through each page's routes too (the Firebase stand-in), where a test lets the
+// worker run (tests/saved-copy.test.js). Read by Playwright where Chrome is started: here, or in run.js, which loads this
+process.env.PW_EXPERIMENTAL_SERVICE_WORKER_NETWORK_EVENTS = '1';
 const crypto = require('crypto'), fs = require('fs'), path = require('path');
 const BASE = process.env.BASE || 'http://127.0.0.1:8777/';
 const FAKE = path.join(__dirname, 'fake');

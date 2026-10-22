@@ -1,7 +1,7 @@
 // The service worker opens the book from the copy saved on the phone (21 Oct 2026): fast on slow wifi, still there with
 // no signal, and a new version is fetched behind it and taken up by itself, or with Update now once someone has
-// touched the screen. Requests from the service worker do not pass through the test's routes, so this file starts its
-// own copy of the test server (also with BASE set), whose files and speed it can change.
+// touched the screen. This file starts its own copy of the test server (also with BASE set), whose files and speed it can
+// change; the worker's own requests go through the page's routes too (tests/lib.js), so Firebase is still the stand-in.
 const L = require('./lib');
 const fs = require('fs'), path = require('path');
 const { R, ok, txt } = Object.assign(L.results(), { txt: L.txt });
@@ -72,6 +72,26 @@ const controlled = p => L.waitFor(p, () => !!navigator.serviceWorker.controller,
   await p.reload({ waitUntil: 'load' }).catch(() => {});
   await L.settle(p, 800);
   ok(/Barramundi/i.test(await txt(p, '#rtitle') || ''), 'no signal: the recipe still opens');
+  // the Firebase files (22 Oct 2026, review P5): the worker keeps them once loaded, so with no signal and the browser's
+  // own cache cleared the prep list still opens
+  await ctx.setOffline(false);
+  await p.goto(base + '#/prep', { waitUntil: 'load' });
+  // how many Firebase files the worker holds, in any of its saved copies
+  const kept = min => caches.keys().then(ks => Promise.all(ks.map(k => caches.open(k).then(c => c.keys()))))
+    .then(a => [].concat(...a).filter(q => /\/firebasejs\//.test(q.url)).length).then(n => min ? n >= min : n);
+  await L.waitFor(p, kept, 4, 15000).catch(() => {});
+  const n = await p.evaluate(kept, 0);
+  ok(n >= 4, 'the worker keeps the Firebase files on the phone (' + n + ')');
+  const cdp = await ctx.newCDPSession(p); await cdp.send('Network.clearBrowserCache');
+  const errsBefore = p.errors.length;
+  await ctx.setOffline(true);
+  // with no signal the stand-in's Firebase files cannot come either (the newest route is asked first)
+  await ctx.route('https://www.gstatic.com/firebasejs/**', r => r.abort('internetdisconnected'));
+  await p.reload({ waitUntil: 'load' }).catch(() => {});
+  await L.waitFor(p, () => !!document.querySelector('.nb-row'), null, 10000).catch(() => {});
+  ok(!!(await p.$('.nb-row')), 'no signal and the browser cache cleared: the prep list still opens');
+  // with no signal the browser logs every request that cannot go out; those are expected here, anything else is not
+  p.errors.splice(errsBefore, p.errors.length - errsBefore, ...p.errors.slice(errsBefore).filter(e => !/Failed to load resource: net::ERR_(FAILED|INTERNET_DISCONNECTED)/.test(e)));
     ok(p.errors.length === 0, 'no page errors ' + p.errors.join(' | '));
   await ctx.close();
   await b.close();
