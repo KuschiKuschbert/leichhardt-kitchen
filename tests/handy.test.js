@@ -1,6 +1,7 @@
 // The Handy page beside the prep list shows only what the list does not already show. No "Do these first" box and no
 // "Progress by section" bars. Quick add is one row of one-tap chips: due today, then usual for this weekday, then
-// regulars, each line once and never one that is already on the list.
+// regulars, each line once and never one that is already on the list. On a phone or tablet the chips are in the add
+// box only; Handy's copy is for big screens, where the add box has none (23 Oct 2026).
 const L = require('./lib');
 const { R, ok } = L.results();
 const today = L.ymd(new Date(L.NOW));
@@ -9,16 +10,18 @@ const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
 const store = page => page.evaluate(() => window.__fake.dump());
 const dow = String(new Date(L.NOW).getDay());
 const dname = new Date(L.NOW).toLocaleDateString('en-AU', { weekday: 'long' });
-const side = page => page.evaluate(() => {
-  const r = document.querySelector('.nb-right');
+// where: the chips that show at this width, Handy's (big screens) or the add box's (phones and tablets)
+const side = (page, where) => page.evaluate(w => {
+  const r = document.querySelector('.nb-right'), q = r.querySelector('.nb-quick');
   return {
     heads: [...r.querySelectorAll('h3.nb-sh')].map(e => e.textContent.trim()),
     text: r.innerText,
-    sub: (r.querySelector('.nb-ph .nb-date') || {}).textContent,
-    chips: [...r.querySelectorAll('.nb-usual .chip')].map(e => ({ p: e.getAttribute('data-p'), t: e.textContent.trim() })),
+    sub: (r.querySelector('.nb-ph .nb-date') || {}).innerText,
+    handyQuick: !!q && q.getClientRects().length > 0,
+    chips: [...document.querySelectorAll(w + ' .nb-usual .chip')].map(e => ({ p: e.getAttribute('data-p'), t: e.textContent.trim() })),
     due: document.querySelectorAll('[data-p="due"]').length
   };
-});
+}, where);
 (async () => {
   const b = await L.start();
   const extra = {}, dw = {};
@@ -34,12 +37,18 @@ const side = page => page.evaluate(() => {
   for (const w of [390, 1280]) {
     const tag = w + ' px: ';
     const p = await L.open(b, '#/prep', { extra, width: w, height: w > 400 ? 900 : 844, wait: 1600 });
-    const h = await side(p);
-    ok(h.sub === 'Done today and quick add', tag + 'Handy says what is on it (' + h.sub + ')');
+    const wide = w >= 900, where = wide ? '.nb-right' : '.nb-qadd';
+    const h = await side(p, where);
+    ok(h.sub === (wide ? 'Done today and quick add' : 'Done today'), tag + 'Handy says what is on it (' + h.sub + ')');
     ok(!/Do these first/.test(h.text), tag + 'no Do these first box');
     ok(!h.heads.some(x => /Progress by section|^Due today$|^Regulars$|^Usual for/.test(x)), tag + 'no separate Progress, Due today, Usual or Regulars headings (' + h.heads.join(', ') + ')');
     ok(h.heads.indexOf('Quick add') > h.heads.indexOf('Done today (0)') && h.heads.indexOf('Done today (0)') >= 0 && h.heads.indexOf('Tools') < 0, tag + 'Done today, then Quick add, and no Tools (they moved to the chef menu)');
-    ok(new RegExp('Due today, usual for a ' + dname + ' and regulars\\. Tap to add\\.').test(h.text), tag + 'Quick add says what is in it');
+    if (wide) {
+      ok(h.handyQuick && new RegExp('Due today, usual for a ' + dname + ' and regulars\\. Tap to add\\.').test(h.text), tag + 'Quick add in Handy says what is in it');
+      ok(await p.evaluate(() => !document.querySelector('.nb-qadd') || !document.querySelector('.nb-qadd').getClientRects().length), tag + 'the add box has no second row of chips');
+    } else {
+      ok(!h.handyQuick && !/Tap to add/.test(h.text), tag + 'Handy shows no second copy of Quick add: the chips are in the add box');
+    }
     const names = h.chips.map(c => c.t.replace(/\s+/g, ' '));
     ok(names.length === 3 && /^Make aioli/.test(names[0]) && /^Pick mint/.test(names[1]) && /^Mise onions/.test(names[2]), tag + 'one row: due, then usual, then regular, each once (' + names.join(' | ') + ')');
     ok(!names.some(n => /Slice onions/.test(n)), tag + 'a line already on the list is not offered');
@@ -51,13 +60,13 @@ const side = page => page.evaluate(() => {
 
     if (w === 390) {
       // tap the due chip: it goes on with its section, says so, and leaves Quick add
-      await p.evaluate(() => { const c = [...document.querySelectorAll('.nb-right [data-p="quick"]')].find(x => /Make aioli/.test(x.textContent)); c.scrollIntoView(); c.click(); });
+      await p.evaluate(() => { const c = [...document.querySelectorAll('.nb-qadd [data-p="quick"]')].find(x => /Make aioli/.test(x.textContent)); c.scrollIntoView(); c.click(); });
       await L.settle(p, 400);
       const t = await p.evaluate(() => { const e = document.querySelector('.p-toast'); return e ? e.textContent : ''; });
       ok(/^Added to Sauce/.test(t.trim()) && !/aioli/.test(t), 'tap: the due chip says Added to Sauce, without the line (' + t + ')');
       const s = await store(p);
       ok(Object.keys(s).filter(k => k.indexOf('/days/' + today + '/items/') > 0 && s[k].text === 'Make aioli' && s[k].station === 'Sauce' && !s[k].deleted).length === 1, 'tap: one Make aioli line written for today');
-      const after = await side(p);
+      const after = await side(p, where);
       ok(!after.chips.some(c => /Make aioli/.test(c.t)), 'tap: the chip leaves Quick add once the line is on the list');
     }
     ok(p.errors.length === 0, tag + 'no page errors ' + p.errors.join(' | '));

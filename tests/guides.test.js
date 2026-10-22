@@ -44,12 +44,21 @@ async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, nul
   await p.click('[data-p="g-cat"][data-v="cleaning"]');
   ok(await p.locator('.g-card').count() === 1 && /Fryer/.test(await p.locator('.g-card').innerText()), 'guides: the Cleaning chip shows only the fryer guide');
   await p.click('[data-p="g-cat"][data-v="all"]');
+  // the same box as the recipe search (23 Oct 2026): no autocorrect, a Search key that drops the keyboard, a 44 px Clear
+  ok(await p.getAttribute('#g-q', 'autocorrect') === 'off' && await p.getAttribute('#g-q', 'spellcheck') === 'false' && await p.getAttribute('#g-q', 'autocapitalize') === 'off', 'guides search: no autocorrect, spell check or capitals');
+  ok(!(await p.locator('.g-qx').isVisible()), 'guides search: no Clear button while the box is empty');
   await p.fill('#g-q', 'pork belly');
   ok(await p.locator('.g-card').count() === 1 && /PORK BELLY/i.test(await p.locator('.g-snip').innerText()), 'guides: search finds words inside the PDF and shows them');
   ok(await S(p, () => document.activeElement && document.activeElement.id === 'g-q'), 'guides: the search box keeps the cursor while typing');
+  const gx = await p.locator('.g-qx').boundingBox();
+  ok(await p.locator('.g-qx').isVisible() && gx && gx.width >= 44 && gx.height >= 44, 'guides search: a 44 px Clear button shows while something is typed');
+  await p.press('#g-q', 'Enter'); await L.settle(p, 150);
+  ok(await S(p, () => document.activeElement.id) !== 'g-q' && await p.locator('.g-card').count() === 1, 'guides search: Enter drops the keyboard and keeps the results');
+  await p.click('.g-qx'); await L.settle(p, 200);
+  ok(await p.inputValue('#g-q') === '' && await S(p, () => document.activeElement.id) === 'g-q' && await p.locator('.g-card').count() === 2 && !(await p.locator('.g-qx').isVisible()), 'guides search: Clear empties the box, keeps the cursor there and shows every guide');
   await p.fill('#g-q', 'slicer');
-  ok(await p.locator('.g-card').count() === 0 && await p.locator('[data-p="g-clear"]').count() === 1, 'guides: a removed guide is not found, and Clear the search is offered');
-  await p.click('[data-p="g-clear"]');
+  ok(await p.locator('.g-card').count() === 0 && await p.locator('.p-empty [data-p="g-clear"]').count() === 1, 'guides: a removed guide is not found, and Clear the search is offered');
+  await p.click('.p-empty [data-p="g-clear"]');
   ok(await p.locator('.g-card').count() === 2, 'guides: Clear the search brings both back');
 
   // One guide: pages read once, then kept; steps; recipe cards it is on; a page opened big
@@ -60,6 +69,7 @@ async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, nul
   const pageReads = await S(p, n => window.__fake.readLog.slice(n).filter(k => /\/pages\//.test(k)).length, before);
   ok(pageReads === 2, 'guide: the two pages are read once (' + pageReads + ')');
   ok(await p.locator('.g-rchip[href="#/r/pork-belly"]').count() === 1 && await p.locator('.g-rchip[href="#/r/rice"]').count() === 1, 'guide: on the recipe cards it names (Pork Belly) and that mention its search word (Rice)');
+  ok(await p.locator('[data-p="g-change"]').count() === 0, 'guide: staff have no Change this guide');
   await p.click('.g-top a[href="#/guides"]');
   await p.click('.g-card[href="#/guides/combi"]');
   await L.settle(p, 400);
@@ -180,6 +190,13 @@ async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, nul
   await p.click('[data-p="g-cancel"]'); await L.settle(p, 100);
   if (await S(p, () => !!window.LK_PREP.state.gf)) { await p.click('[data-p="g-cancel"]'); await L.settle(p, 100); }
   ok(await S(p, () => !window.LK_PREP.state.gf), 'admin: the second tap on Close discards it');
+  // a guide's own page: Change this guide sits under the title (23 Oct 2026), not after every page picture
+  await p.evaluate(() => { location.hash = '#/guides/combi'; }); await L.settle(p, 600);
+  await L.waitFor(p, () => document.querySelectorAll('.g-pg').length === 2, null, 5000).catch(() => {});
+  const chg = await S(p, () => { const c = document.querySelector('[data-p="g-change"]'), pg = document.querySelector('.g-pg'); return c && pg ? { inHead: !!c.closest('.g-dh'), above: c.getBoundingClientRect().top < pg.getBoundingClientRect().top, n: document.querySelectorAll('[data-p="g-change"]').length } : null; });
+  ok(chg && chg.inHead && chg.above && chg.n === 1, 'guide page: the head chef has one Change this guide, under the title and above the pages ' + JSON.stringify(chg));
+  await p.click('[data-p="g-change"]'); await L.settle(p, 600);
+  ok(await S(p, () => location.hash) === '#/admin' && await S(p, () => { const f = window.LK_PREP.state.gf; return !!f && f.id === 'combi'; }), 'guide page: Change this guide opens it in the admin Guides tab');
   ok(p.errors.length === 0, 'admin guides: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 

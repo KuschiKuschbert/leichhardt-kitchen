@@ -1,4 +1,5 @@
-// The order list learns what is ordered (like the prep list) and nudges about lines waiting more than 3 days.
+// The order list learns what is ordered (like the prep list), and lines waiting more than 3 days sit together at the top
+// with one line on what to do (23 Oct 2026: no separate "Still not ordered" card, which said the same again).
 const L = require('./lib');
 const { R, ok } = L.results(), { txt } = L;
 const today = L.ymd(new Date(L.NOW));
@@ -59,19 +60,23 @@ const store = page => page.evaluate(() => window.__fake.dump());
   ok(p.errors.length === 0, 'background: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // lines waiting more than 3 days: grouped at the top, nudge when the list opens
+  // lines waiting more than 3 days: grouped at the top, with what to do
   const od = Object.assign({}, extra);
   od[fsKey(['orders', today, 'lines', 'r1'])] = { text: 'Vanilla pods', qty: '10', recipes: [], addedBy: 'Rolled over', addedById: '', addedAt: L.NOW - 3600000, ordered: false, deleted: false, rolled: 5, root: 'v1', from: 'v0', rolledFrom: back(1), since: back(5), origBy: 'Ann' };
   od[fsKey(['orders', today, 'lines', 'r2'])] = { text: 'Rice paper', qty: '', recipes: [], addedBy: 'Rolled over', addedById: '', addedAt: L.NOW - 3600000, ordered: false, deleted: false, rolled: 2, root: 'x1', from: 'x0', rolledFrom: back(1), since: back(2), origBy: 'Ann' };
   p = await L.open(b, '#/orders', { wait: 1500, extra: od });
   ok(/Vanilla pods/.test(await txt(p, '#o-overdue')) && /5 days ago/.test(await txt(p, '#o-overdue')), 'overdue: a line waiting 5 days sits in the overdue block with its day');
   ok(!/Rice paper/.test(await txt(p, '#o-overdue')) && /Rice paper/.test(await txt(p, '.o-main')), 'overdue: a line waiting 2 days stays in the normal list');
-  ok(/1 item has waited more than 3 days/.test(await txt(p, '.o-nudge')), 'overdue: the nudge shows when the list opens');
-  await p.click('[data-p="onudge-hide"]');
-  await L.settle(p, 150);
-  ok(await p.$('.o-nudge') === null, 'overdue: Hide for today hides the nudge');
+  ok(/Order them today, or remove what is not needed any more/.test(await txt(p, '#o-overdue')), 'overdue: the sous chef is told to order them or remove them');
+  ok(await p.$('.o-nudge') === null && await p.$('[data-p="onudge-show"]') === null, 'overdue: no separate Still not ordered card');
+  const since = await p.evaluate(() => [...document.querySelectorAll('.o-main .nb-roll')].map(e => (e.closest('#o-overdue') ? 'overdue ' : 'list ') + (e.getClientRects().length ? 'shown' : 'hidden')));
+  ok(since.indexOf('overdue hidden') >= 0 && since.indexOf('overdue shown') < 0 && since.indexOf('list shown') >= 0, 'overdue: the day heading says since when, so the row leaves out its Since badge; the normal list keeps it (' + since.join(', ') + ')');
   ok(!(await L.overflow(p)), 'overdue: no sideways scroll at 390 px');
   ok(p.errors.length === 0, 'overdue: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+  p = await L.open(b, '#/orders', { who: 'ann', wait: 1500, extra: od });
+  ok(/Vanilla pods/.test(await txt(p, '#o-overdue')) && /Tell the head chef or a sous chef/.test(await txt(p, '#o-overdue')), 'overdue: staff are told to tell the head chef or a sous chef');
+  ok(p.errors.length === 0, 'overdue, staff: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
   await b.close();

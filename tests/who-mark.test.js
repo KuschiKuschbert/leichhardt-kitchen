@@ -62,6 +62,8 @@ const mark = p => p.evaluate(() => { const e = document.querySelector('.wtop-who
   for (const pg of ['orders', 'waste']) {
     p = await L.open(b, '#/' + pg, { who: 'sam', wait: 1200 });
     ok(/Writing as\s*Sam/.test(await txt(p, '.nb-top') || '') && !!(await p.$('.nb-top [data-p="who-change"]')), pg + ': "Not you?" next to "Writing as Sam"');
+    // the tab bar or the pill menu always has Prep, so the line has no Prep list link of its own (23 Oct 2026)
+    ok(!(await p.$('.nb-top a[href="#/prep"]')), pg + ': no extra Prep list link next to "Not you?"');
     await p.click('.nb-top [data-p="who-change"]'); await L.settle(p, 300);
     ok(/Who are you\?/.test(await txt(p, '#prep-root') || '') && (await mark(p)) === 'on:Menu and Settings:', pg + ': "Not you?" asks who is writing and takes the name off the mark');
     await p.click('.p-name[data-id="ann"]'); await L.settle(p, 500);
