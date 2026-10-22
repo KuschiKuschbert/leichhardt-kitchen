@@ -91,6 +91,8 @@ function readFails(ref) { const f = window.__fake.failReads; return !!(f && f.te
 export function getDocFromServer(ref) {
   const k = key(ref.path), sv = window.__fake.server;
   window.__fake.reads.push(k);
+  // __fake.stall = /regex/: a read from the server that never answers, like a half-dropped connection
+  if (window.__fake.stall && window.__fake.stall.test(k)) return new Promise(() => {});
   if (window.__fake.mode === 'hold' || window.__fake.mode === 'fail') return Promise.reject({ code: 'unavailable' });
   bill('server', k, 1);
   if (sv && k in sv) { const v = sv[k]; return delay({ id: ref.path[ref.path.length - 1], ref, exists: () => v != null, data: () => (v == null ? undefined : JSON.parse(JSON.stringify(v))) }); }
