@@ -77,7 +77,8 @@ const badge = p => txt(p, '.wtop-who .adm-n');
   ok(!(await pop(p)), 'nudge: no popup when the Mail tab was opened an hour ago');
   ok(await badge(p) === '3', 'chef hat: the count shows anyway');
   await p.click('.wtop-who'); await L.settle(p, 150);
-  ok(await txt(p, '.wm .wm-adm .adm-n') === '3' && /3 open mail/.test(await txt(p, '.wm .wm-adm')), 'chef hat menu: Admin panel shows the 3 open mails');
+  ok(await txt(p, '.wm .wm-adm .adm-n') === '3' && !/open mail/.test(await txt(p, '.wm .wm-adm')) && await p.$eval('.wm .wm-adm', e => e.getAttribute('aria-label')) === 'Admin panel, 3 open kitchen mail', 'chef hat menu: Admin panel shows the 3 open mails once, as the orange count, and says so to a screen reader');
+  ok(!!(await p.$('.wm a[href="#/mail"]')), 'chef hat menu: a sous chef on the head chef\'s device still writes Kitchen mail (only the head chef has none)');
   await p.keyboard.press('Escape'); await L.settle(p, 100);
   await p.context().close();
   // 23:00: no popup outside 10:00 to 22:00

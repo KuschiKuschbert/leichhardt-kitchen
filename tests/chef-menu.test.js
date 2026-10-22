@@ -1,9 +1,22 @@
 // The chef mark menu and a quieter Handy (20 Oct 2026). Handy on the prep list has no Tools any more: Meeting minutes
-// and the drinks run are in the chef menu for everyone, Shift pings, the Minutes register and Manage staff are in its
-// Chef group for the head chef and sous chefs only, and Sign out hands the phone over (it asks again when something is
-// not saved). Print and share are gone from every page: the book is used on phones.
+// and the drinks run are in the chef menu for everyone, Shift pings and Manage staff are in its Chef group for the head
+// chef and sous chefs only, and Sign out hands the phone over (it asks again when something is not saved). Print and
+// share are gone from every page: the book is used on phones.
+// A shorter menu (22 Oct 2026): one line per item, a second line only when it changes; the Minutes register is "See
+// who has signed" at the top of Meeting minutes; no Kitchen mail for the head chef; on the head chef's own Google
+// device Manage staff is People in the admin panel.
 const L = require('./lib');
 const { R, ok } = L.results(), { txt } = L;
+const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
+const P = (id, name, role) => ({ id, name, role, add: true, tick: true, del: role !== 'staff', active: true });
+// Ann is the head chef here (headId) and ticked for Functions, Sam a sous chef, Bo staff
+const headCfg = () => ({ [fsKey(['config', 'main'])]: { people: [P('sam', 'Sam', 'sous'), P('ann', 'Ann', 'head'), P('bo', 'Bo', 'staff')], headId: 'ann', sousIds: ['sam', 'ann'], pingIds: ['sam', 'ann'], fnIds: ['ann'], showBadges: true } });
+// the open menu: each row's height, the second lines with words in them, Sign out's live line and the whole menu
+const menuBox = p => p.evaluate(() => {
+  const m = document.querySelector('.wm'), r = m.getBoundingClientRect(), o = document.querySelector('.wm-out small');
+  return { rows: [...m.querySelectorAll('.wm-a')].map(e => Math.round(e.getBoundingClientRect().height)), small: [...m.querySelectorAll('.wm-a small')].map(e => e.textContent.trim()).filter(Boolean),
+    live: o ? o.getAttribute('aria-live') : null, h: Math.round(r.height), b: Math.round(r.bottom), r: Math.round(r.right), w: innerWidth, vh: innerHeight };
+});
 const GONE = ['copy', 'print', 'ocopy', 'oprint', 'dk-share', 'mn-print', 'g-print', 'print-tab'];
 const noPrint = p => p.evaluate(g => {
   const hit = g.filter(a => document.querySelector('[data-p="' + a + '"]'));
@@ -62,10 +75,19 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   await p.context().close();
   p = await L.open(b, '#/recipes', { who: 'sam', wait: 1800 });
   m = await L.chefItems(p);
-  ok(m.join(',') === 'mail,drinks,minutes,fn,pings,register,staff,settings,out', 'sous chef: the Chef group has Shift pings, Minutes register and Manage staff (' + m + ')');
-  await L.chef(p, 'register');
-  await L.settle(p, 500);
-  ok(/#\/prep$/.test(p.url()) && await txt(p, '#rtitle') === 'Meeting minutes' && !!(await p.$('[data-p="mn-close"]')), 'sous chef: Minutes register opens from the recipes (' + p.url() + ')');
+  ok(m.join(',') === 'mail,drinks,minutes,fn,pings,staff,settings,out', 'sous chef: the Chef group has Shift pings and Manage staff, the register is in Meeting minutes (' + m + ')');
+  // the short menu: 48 px rows, no second line with nothing to say, Sign out's line read out when it changes
+  await p.click('.wtop-who'); await L.settle(p, 150);
+  let box = await menuBox(p);
+  ok(box.rows.every(h => h >= 48 && h <= 49), 'sous chef 390 px: every menu row is 48 px (' + box.rows + ')');
+  ok(!box.small.length, 'sous chef: no second lines in the menu (' + box.small.join(' | ') + ')');
+  ok(box.live === 'polite', 'sous chef: Sign out\'s second line is read out when it changes');
+  ok(box.h < 500, 'sous chef 390 px: the menu is under 500 px tall (' + box.h + ', 579 before)');
+  await p.click('.wm a[href="#/minutes"]'); await L.settle(p, 600);
+  await L.waitFor(p, () => !!document.querySelector('[data-p="mn-sous"]'), null, 5000).catch(() => {});
+  ok(!!(await p.$('[data-p="mn-sous"]')), 'sous chef: Meeting minutes has See who has signed');
+  await p.click('[data-p="mn-sous"]'); await L.settle(p, 500);
+  ok(/#\/prep$/.test(p.url()) && await txt(p, '#rtitle') === 'Meeting minutes' && !!(await p.$('[data-p="mn-close"]')), 'sous chef: See who has signed opens the Minutes register (' + p.url() + ')');
   await L.chef(p, 'staff');
   ok(!!(await p.$('[data-p="a-add-person"]')), 'sous chef: Manage staff opens from the menu over the register');
 
@@ -98,6 +120,71 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   await p.click('.wm [data-who="out"]'); await L.settle(p, 400);
   ok(!(await signedIn(p)), 'unsaved line: the second tap signs out');
   ok(p.errors.length === 0, 'sign out: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // the biggest text size: the short menu still fits on a phone, with no sideways scroll
+  p = await L.open(b, '#/recipes', { who: 'sam', settings: { text: 'xlarge' }, wait: 1800 });
+  await p.click('.wtop-who'); await L.settle(p, 150);
+  box = await menuBox(p);
+  ok(box.b <= box.vh && box.r <= box.w && box.rows.every(h => h >= 48), 'extra large text: the menu fits on the screen, rows at least 48 px (' + JSON.stringify(box) + ')');
+  ok(!(await L.overflow(p)), 'extra large text: no sideways scroll with the menu open (' + await L.overflow(p) + ')');
+  await p.context().close();
+
+  // the head chef by PIN: no Kitchen mail to herself, Admin panel says Sign in with Google, Manage staff stays
+  p = await L.open(b, '#/recipes', { who: 'ann', extra: headCfg(), wait: 1800 });
+  m = await L.chefItems(p);
+  ok(m.join(',') === 'drinks,minutes,functions,admin,manage,pings,staff,settings,out', 'head chef by PIN: no Kitchen mail, Functions in its one place, Shift pings and Manage staff (' + m + ')');
+  await p.click('.wtop-who'); await L.settle(p, 150);
+  box = await menuBox(p);
+  ok(box.small.join('|') === 'Sign in with Google', 'head chef by PIN: the only second line is Sign in with Google (' + box.small.join(' | ') + ')');
+  await p.context().close();
+
+  // the head chef on her own Google device: Manage staff is People in the admin panel, Shift pings opens the admin tab
+  p = await L.open(b, '#/recipes', { who: 'ann', admin: true, extra: headCfg(), wait: 1800 });
+  // Admin comes in after the owner check is read: wait for it, not for the page to be still
+  for (let i = 0; i < 20 && await L.admItem(p) !== 'signed'; i++) await L.settle(p, 250);
+  m = await L.chefItems(p);
+  ok(m.join(',') === 'drinks,minutes,functions,admin,manage,pings,settings,out', 'head chef on her Google device: no Kitchen mail, no Manage staff (' + m + ')');
+  await p.click('.wtop-who'); await L.settle(p, 150);
+  box = await menuBox(p);
+  ok(box.h < 563, 'head chef on her Google device, 390 px: the menu is under two thirds of the screen (' + box.h + ', 710 before)');
+  await p.keyboard.press('Escape'); await L.settle(p, 100);
+  await L.chef(p, 'pings'); await L.settle(p, 400);
+  ok(await p.evaluate(() => location.hash) === '#/admin' && !!(await p.$('[data-p="a-tab"][data-t="notes"][aria-pressed="true"]')), 'head chef on her Google device: Shift pings opens the admin Shift pings page');
+  ok(p.errors.length === 0, 'head chef menu: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // a function manager who is not a chef: Functions in the same place as everyone's, no Chef heading over it
+  const fay = headCfg(), fc = fay[fsKey(['config', 'main'])];
+  fc.people.push({ id: 'fay', name: 'Fay', role: 'fnc', add: false, tick: false, del: false, fn: true, active: true }); fc.fnIds = ['fay'];
+  fay[fsKey(['staffpins', 'fay'])] = { hash: L.sha('lk:fay:5151') }; fay[fsKey(['pinset', 'fay'])] = { at: 1 };
+  fay[fsKey(['drinks', 'fay'])] = { kind: 'flat', at: 1, by: 'fay' };
+  p = await L.open(b, '#/recipes', { who: 'fay', extra: fay, wait: 1800 });
+  m = await L.chefItems(p);
+  ok(m.join(',') === 'mail,drinks,functions,settings,out', 'function manager: Functions where everyone has it (' + m + ')');
+  await p.click('.wtop-who'); await L.settle(p, 150);
+  ok(!(await p.$('.wm .wm-sh')), 'function manager: no Chef heading over Functions');
+  await p.context().close();
+
+  // minutes published: See who has signed sits in the top bar of Meeting minutes, once, for a chef only
+  p = await L.open(b, '#/minutes', { who: 'sam', extra: pub, wait: 1800 });
+  await L.waitFor(p, () => !!document.querySelector('.mn'), null, 5000).catch(() => {});
+  ok(await p.evaluate(() => document.querySelectorAll('[data-p="mn-sous"]').length === 1 && !!document.querySelector('.nb-top [data-p="mn-sous"]')), 'minutes: one See who has signed, in the top bar');
+  ok(!(await L.overflow(p)), 'minutes: no sideways scroll with the link in the top bar (' + await L.overflow(p) + ')');
+  await p.click('[data-p="mn-sous"]'); await L.settle(p, 500);
+  ok(await txt(p, '#rtitle') === 'Meeting minutes' && !!(await p.$('[data-p="mn-close"]')), 'minutes: the link opens the register');
+  await p.click('[data-p="mn-close"]'); await L.settle(p, 300);
+  ok(!!(await p.$('.nb-left')) && !(await p.$('[data-p="mn-close"]')), 'minutes: closing the register goes back to the prep list');
+  ok(p.errors.length === 0, 'minutes register: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+  p = await L.open(b, '#/minutes', { who: 'ann', admin: true, extra: Object.assign(headCfg(), pub), wait: 1800 });
+  await L.waitFor(p, () => !!document.querySelector('.nb-top [data-p="mn-admin"]'), null, 5000).catch(() => {});
+  ok(await p.evaluate(() => { const e = document.querySelector('.nb-top [data-p="mn-admin"]'); return !!e && e.getBoundingClientRect().height >= 18 && !document.querySelector('.mn-wl'); }), 'minutes on the head chef\'s Google device: See who has signed in the top bar, nothing more at the end');
+  ok(!(await L.overflow(p)), 'minutes on the head chef\'s Google device: no sideways scroll (' + await L.overflow(p) + ')');
+  await p.context().close();
+  p = await L.open(b, '#/minutes', { who: 'ann', extra: pub, wait: 1800 });
+  await L.waitFor(p, () => !!document.querySelector('.mn'), null, 5000).catch(() => {});
+  ok(!(await p.$('[data-p="mn-sous"]')) && !(await p.$('[data-p="mn-admin"]')), 'minutes for staff: no register link');
   await p.context().close();
 
   await b.close();

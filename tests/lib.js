@@ -257,8 +257,8 @@ function results() { const R = []; return { R, ok: (c, m) => check(c, m, R) }; }
 const txt = (page, sel) => page.evaluate(s => { const e = document.querySelector(s); return e ? e.textContent.trim() : null; }, sel);
 const tap = (page, sel) => page.evaluate(s => { const e = document.querySelector(s); if (e) e.click(); return !!e; }, sel);
 const row = (page, id) => page.evaluate(i => { const e = document.getElementById('nbr-' + i); return e ? e.textContent : null; }, id);
-/* The chef mark's menu in the top bar (20 Oct 2026): chefItems lists what it offers (the links by their page, the Chef
-   group by name: pings, register, staff, and out for Sign out) and closes it again; chef taps one of the Chef group. */
+/* The chef mark's menu in the top bar (20 Oct 2026): chefItems lists what it offers (the links by their page, the
+   buttons by name: section, pings, staff, and out for Sign out) and closes it again; chef taps one of the Chef group. */
 async function chefItems(page) {
   await page.evaluate(() => { const g = document.querySelector('.nt-got'); if (g) g.click(); });   // today's pings popup first
   await page.click('.wtop-who'); await settle(page, 150);
