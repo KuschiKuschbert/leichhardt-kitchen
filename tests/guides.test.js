@@ -188,6 +188,54 @@ async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, nul
   ok(await p.locator('.g-card').count() === 3 && await p.locator('.g-new').count() === 2, 'guides: a guide added in the last 14 days is marked New');
   await p.context().close();
 
+  // Who sees it (23 Oct 2026): a chefs guide and a function managers guide. Staff see neither, a sous chef sees both,
+  // a function manager sees theirs, nobody signed in is the staff view, and the head chef's Google device sees all
+  const g0 = { sum: '', steps: 'Read it.', text: '', thumb: '', pages: 0, dims: [], v: 1, file: '', removed: false, at: L.NOW - 30 * 86400000, upd: L.NOW - 30 * 86400000 };
+  const whoX = Object.assign({}, extra, {
+    [G(['chefg'])]: Object.assign({ title: 'Sous chef guide', cat: 'other', who: 'chefs', kw: 'laksa' }, g0),
+    [G(['fng'])]: Object.assign({ title: 'Function manager guide', cat: 'other', who: 'fn', kw: '' }, g0),
+    ['kitchens/' + L.PIN + '/config/main']: { people: [
+      { id: 'sam', name: 'Sam', role: 'sous', add: true, tick: true, del: true, active: true },
+      { id: 'ann', name: 'Ann', role: 'staff', add: true, tick: true, del: false, active: true },
+      { id: 'bo', name: 'Bo', role: 'staff', add: true, tick: true, del: false, fn: true, active: true }
+    ], sousIds: ['sam'], pingIds: ['sam'], staffIds: ['sam', 'ann', 'bo'], fnIds: ['bo'], showBadges: true }
+  });
+  const titles = pg => pg.$$eval('.g-card .g-cn', els => els.map(e => e.textContent));
+  for (const [who, want, label] of [['ann', [], 'staff (Ann)'], ['', [], 'nobody signed in'], ['bo', ['Function manager guide'], 'a function manager (Bo)'], ['sam', ['Function manager guide', 'Sous chef guide'], 'a sous chef (Sam)']]) {
+    p = await L.open(b, '#/guides', { who, extra: whoX, wait: 1500 });
+    await L.waitFor(p, () => document.querySelectorAll('.g-card').length >= 2, null, 5000).catch(() => {});
+    await L.settle(p, 300);
+    const t = await titles(p), extraT = t.filter(x => /guide$/.test(x) && x !== 'iCombi: programme a new recipe').sort();
+    ok(t.length === 2 + want.length && JSON.stringify(extraT) === JSON.stringify(want), 'who sees it: ' + label + ' sees ' + (want.join(' and ') || 'only the guides for everyone') + ' (' + t.join(', ') + ')');
+    if (who === 'sam') ok(await p.locator('.g-who').count() === 2 && /For chefs/i.test(await p.locator('.g-who').first().innerText() + await p.locator('.g-who').last().innerText()), 'who sees it: the chef\'s list marks them For chefs and For function managers');
+    if (who === 'ann') {
+      await p.evaluate(() => { location.hash = '#/guides/chefg'; }); await L.settle(p, 400);
+      ok(/This guide is for chefs/.test(await p.locator('#rtitle').innerText()), 'who sees it: Ann opening the chefs guide by its link is told it is for chefs');
+      await p.evaluate(() => { location.hash = '#/r/laksa'; }); await L.settle(p, 600);
+      ok(await p.locator('#r-guides a[href="#/guides/chefg"]').count() === 0, 'who sees it: the laksa card shows Ann no link to the chefs guide');
+      ok(p.errors.length === 0, 'who sees it: no page errors for Ann ' + p.errors.join(' | '));
+    }
+    if (who === 'sam') {
+      await p.evaluate(() => { location.hash = '#/r/laksa'; });
+      await L.waitFor(p, () => !!document.querySelector('#r-guides a[href="#/guides/chefg"]'), null, 5000).catch(() => {});
+      ok(await p.locator('#r-guides a[href="#/guides/chefg"]').count() === 1, 'who sees it: the laksa card links Sam to the chefs guide');
+    }
+    await p.context().close();
+  }
+  // the head chef's Google device: every guide in the admin list, and Who sees it is saved
+  p = await L.open(b, '#/admin', { admin: true, who: '', width: 1280, height: 900, extra: whoX, wait: 1800 });
+  await L.adminTab(p, 'guides'); await L.settle(p, 300);
+  ok(await p.locator('.g-row').count() === 4, 'who sees it: the admin Guides tab lists all four guides');
+  await p.click('[data-p="g-edit"][data-id="fryer"]'); await L.settle(p, 200);
+  ok(await p.locator('[data-p="g-fwho"][data-v="all"][aria-pressed="true"]').count() === 1, 'who sees it: an older guide opens as Everyone');
+  await p.click('[data-p="g-fwho"][data-v="chefs"]');
+  await p.click('[data-p="g-save"]');
+  await saved(p);
+  s = await store(p);
+  ok((s[G(['fryer'])] || {}).who === 'chefs', 'who sees it: saving with Chefs picked writes who: chefs');
+  ok(p.errors.length === 0, 'who sees it: no admin page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   await b.close();
   L.report(R);
 })().catch(e => { console.error(e); process.exit(1); });

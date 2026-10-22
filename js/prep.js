@@ -5378,7 +5378,22 @@
   function gPagesCol(id) { return fb.fs.collection.apply(null, [fb.db].concat(base(), ['guides', id, 'pages'])); }
   function gById(id) { return (S.guides || []).filter(function (g) { return g.id === id; })[0] || null; }
   function gOrder(a, b) { return (G_RANK[a.cat] == null ? 99 : G_RANK[a.cat]) - (G_RANK[b.cat] == null ? 99 : G_RANK[b.cat]) || String(a.title).localeCompare(String(b.title)); }
-  function gLive() { return (S.guides || []).filter(function (g) { return !g.removed && g.title; }).sort(gOrder); }
+  /* Who sees a guide (23 Oct 2026, head chef): who is 'all' (or missing), 'chefs' (the head chef and sous chefs) or 'fn'
+     (function managers and chefs). The head chef's Google device sees every guide. Nobody signed in is the staff view.
+     Hidden on screen only: the rules cannot tell a sous chef from staff on a read (README, Head chef decisions). */
+  var G_WHO = [['all', 'Everyone'], ['chefs', 'Chefs'], ['fn', 'Function managers']];
+  function gWhoName(w) { return (G_WHO.filter(function (k) { return k[0] === (w || 'all'); })[0] || G_WHO[0])[1]; }
+  function gSees(g) {
+    var w = g.who || 'all';
+    if (w === 'all' || admDev()) return true;
+    var p = me();
+    if (p && chefP(p)) return true;
+    return w === 'fn' && fnOK();
+  }
+  function gViewer() { var p = me(); return (admDev() ? 'a' : '') + (p ? p.id + (chefP(p) ? 'c' : '') : '') + (fnOK() ? 'f' : ''); }
+  function gWhoTag(g) { return g.who === 'chefs' || g.who === 'fn' ? '<span class="g-who">For ' + esc(gWhoName(g.who).toLowerCase()) + '</span>' : ''; }
+  function gAll() { return (S.guides || []).filter(function (g) { return !g.removed && g.title; }).sort(gOrder); }
+  function gLive() { return gAll().filter(gSees); }
   function gSig(list) { return (list || []).map(function (g) { return g.id + ':' + (g.upd || 0) + (g.removed ? 'r' : ''); }).join('|'); }
   function gIsNew(g) { return now() - (g.at || 0) < G_NEW; }
   function gMeta(g) {
@@ -5505,7 +5520,7 @@
     return ids;
   }
   function gIndex() {
-    var sig = gSig(S.guides);
+    var sig = gSig(S.guides) + '#' + gViewer();
     if (gIdx && gIdx.sig === sig) return gIdx;
     var idx = { sig: sig, by: {}, of: {} };
     gLive().forEach(function (g) {
@@ -5564,7 +5579,7 @@
   function gThumbHTML(g) { return '<span class="g-thumb" aria-hidden="true">' + (g.thumb ? '<img src="' + esc(g.thumb) + '" alt="">' : G_ICON) + '</span>'; }
   function gCardHTML(g, q) {
     var snip = q ? gSnip(g, q) : '';
-    return '<li><a class="g-card" href="#/guides/' + encodeURIComponent(g.id) + '">' + gThumbHTML(g) + '<span class="g-cb"><span class="g-ct">' + esc(gCatName(g.cat)) + (gIsNew(g) ? '<span class="g-new">New</span>' : '') + '</span>' +
+    return '<li><a class="g-card" href="#/guides/' + encodeURIComponent(g.id) + '">' + gThumbHTML(g) + '<span class="g-cb"><span class="g-ct">' + esc(gCatName(g.cat)) + (gIsNew(g) ? '<span class="g-new">New</span>' : '') + gWhoTag(g) + '</span>' +
       '<b class="g-cn">' + esc(g.title) + '</b>' + (g.sum ? '<span class="g-cs">' + esc(g.sum) + '</span>' : '') + (snip ? '<span class="g-snip">' + esc(snip) + '</span>' : '') +
       '<span class="g-cm">' + esc(gMeta(g)) + '</span></span></a></li>';
   }
@@ -5599,6 +5614,7 @@
   }
   function guideDocHTML() {
     var g = gById(S.gSel), back = '<nav class="g-top g-noprint" aria-label="Back"><a class="p-link" href="#/guides">All guides</a></nav>';
+    if (g && !g.removed && !gSees(g)) return back + '<section class="g-page"><h2 class="g-title" id="rtitle" tabindex="-1">This guide is for ' + esc(gWhoName(g.who).toLowerCase()) + '</h2><p class="hint">Sign in with your PIN to open it, or ask the head chef.</p></section>';
     if (!g || g.removed) return back + '<section class="g-page"><h2 class="g-title" id="rtitle" tabindex="-1">Guide not found</h2><p class="hint">' + (S.guides == null || S.gBusy ? 'Loading...' : 'This guide was removed or the link is old. Look for it in the list.') + '</p></section>';
     var pv = gPagesFor(g), n = g.pages || 0, steps = mnLines(g.steps), cards = gCards(g), figs = '', i;
     for (i = 0; i < n; i++) {
@@ -5709,9 +5725,9 @@
 
   /* ---- adding and changing guides (admin panel, Guides tab, head chef only) ---- */
   var gSeq = 0;
-  function gfNew() { return { id: '', nid: '', title: '', cat: '', sum: '', steps: '', kw: '', pages: null, text: '', file: '', busy: '', msg: '', saving: false }; }
-  function gfFrom(g) { return { id: g.id, nid: '', title: g.title || '', cat: g.cat || 'other', sum: g.sum || '', steps: g.steps || '', kw: g.kw || '', pages: null, text: '', file: '', busy: '', msg: '', saving: false }; }
-  function gfSnap(f) { return f ? JSON.stringify([f.title, f.cat, f.sum, f.steps, f.kw, f.pages ? f.pages.map(function (p) { return p.k; }) : null]) : ''; }
+  function gfNew() { return { id: '', nid: '', title: '', cat: '', who: 'all', sum: '', steps: '', kw: '', pages: null, text: '', file: '', busy: '', msg: '', saving: false }; }
+  function gfFrom(g) { return { id: g.id, nid: '', title: g.title || '', cat: g.cat || 'other', who: g.who || 'all', sum: g.sum || '', steps: g.steps || '', kw: g.kw || '', pages: null, text: '', file: '', busy: '', msg: '', saving: false }; }
+  function gfSnap(f) { return f ? JSON.stringify([f.title, f.cat, f.who, f.sum, f.steps, f.kw, f.pages ? f.pages.map(function (p) { return p.k; }) : null]) : ''; }
   function gfDirty() { return !!S.gf && (!!S.gf.busy || !!S.gf.saving || gfSnap(S.gf) !== S.gfSnap); }
   function gOpenEditor(f) {
     S.gf = f; S.gfSnap = gfSnap(f); S.gMsg = ''; S.atab = 'guides'; lsSet('lk.prep.atab', 'guides'); draw();
@@ -5828,6 +5844,8 @@
       '<span class="hint">A PDF or photos, a clear title and a category. Staff search the title, the words in the PDF and the search words. No prices, PINs or staff names.</span>' +
       '<div class="field"><label class="label" for="g-title">Title</label><input id="g-title" class="search" data-k="g-title" maxlength="80" autocomplete="off" placeholder="For example: iCombi, programme a new recipe" value="' + esc(f.title) + '"></div>' +
       '<div class="field"><span class="label">Category</span><div class="nt-chips" role="group" aria-label="Category">' + cats + '</div></div>' +
+      '<div class="field"><span class="label">Who sees it</span><div class="nt-chips" role="group" aria-label="Who sees it">' + G_WHO.map(function (c) { return '<button type="button" class="chip" data-p="g-fwho" data-v="' + c[0] + '" aria-pressed="' + ((f.who || 'all') === c[0]) + '">' + esc(c[1]) + '</button>'; }).join('') + '</div>' +
+        '<span class="hint">Chefs: the head chef and sous chefs. Function managers: people ticked for Functions, and chefs. Hidden from the others on screen only, so keep anything private out of guides.</span></div>' +
       '<div class="field"><label class="label" for="g-sum">What it is for (one line)</label><input id="g-sum" class="search" data-k="g-sum" maxlength="200" autocomplete="off" placeholder="For example: set up any new dish as a programme" value="' + esc(f.sum) + '"></div>' +
       '<div class="field"><span class="label">File</span><label class="btn g-filebtn' + (f.busy || f.saving ? ' is-off' : '') + '">' + (pages && pages.length ? 'Add more pages' : old && old.pages ? 'Choose a new file' : 'Choose a PDF or photos') +
         '<input type="file" id="g-file" class="visually-hidden" data-k="g-file" accept="application/pdf,image/*" multiple' + (f.busy || f.saving ? ' disabled' : '') + '></label>' +
@@ -5847,13 +5865,13 @@
   }
   function gRowAdmin(g) {
     var cards = gCards(g).map(function (r) { return r.name; });
-    return '<li class="nt-row g-row"><div class="g-rt">' + gThumbHTML(g) + '<div class="g-rb"><span class="nt-tag">' + esc(gCatName(g.cat)) + '</span><b>' + esc(g.title) + '</b>' + (g.sum ? '<span>' + esc(g.sum) + '</span>' : '') +
+    return '<li class="nt-row g-row"><div class="g-rt">' + gThumbHTML(g) + '<div class="g-rb"><span class="nt-tag">' + esc(gCatName(g.cat)) + '</span>' + gWhoTag(g) + '<b>' + esc(g.title) + '</b>' + (g.sum ? '<span>' + esc(g.sum) + '</span>' : '') +
       '<span class="nt-by">' + esc(gMeta(g)) + (cards.length ? '. On ' + esc(cards.slice(0, 4).join(', ')) + (cards.length > 4 ? ' and ' + (cards.length - 4) + ' more' : '') : '') + '</span></div></div>' +
       '<div class="btn-row"><a class="p-x g-open" href="#/guides/' + encodeURIComponent(g.id) + '">Open</a><button type="button" class="p-x" data-p="g-edit" data-id="' + esc(g.id) + '">Change</button>' +
       '<button type="button" class="p-x" data-p="g-del" data-id="' + esc(g.id) + '">' + (armed('g-del:' + g.id) ? 'Tap again to remove' : 'Remove') + '</button></div></li>';
   }
   function guidesAdminHTML() {
-    var open = !!S.gf, live = gLive();
+    var open = !!S.gf, live = gAll();
     var list = S.guides == null ? '<p class="hint">Loading...</p>' : lvHTML({
       key: 'guides', items: live, step: 10, tools: 6, noun: ['guide', 'guides'], ph: 'Search guides', empty: 'No guides yet. Tap Add a guide to upload the first one.',
       find: gHay,
@@ -5887,7 +5905,7 @@
     });
     if (pages && oldN > pages.length) chain = chain.then(function () { var ops = [], n; for (n = pages.length; n < oldN; n++) ops.push(['del', gPageRef(id, n)]); return W(ops); });
     chain.then(function () {
-      var data = { title: title, cat: f.cat, sum: gClean(f.sum, 200).replace(/\s+/g, ' '), steps: gClean(f.steps, 3000), kw: gClean(f.kw, 200).replace(/\s+/g, ' '), v: v, removed: false, upd: now() };
+      var data = { title: title, cat: f.cat, who: f.who === 'chefs' || f.who === 'fn' ? f.who : 'all', sum: gClean(f.sum, 200).replace(/\s+/g, ' '), steps: gClean(f.steps, 3000), kw: gClean(f.kw, 200).replace(/\s+/g, ' '), v: v, removed: false, upd: now() };
       if (pages || !old) {
         pages = pages || [];
         data.pages = pages.length; data.dims = pages.map(function (p) { return { w: p.w, h: p.h }; });
@@ -5900,7 +5918,7 @@
       var mine = Object.assign({}, old || {}, data, { id: id });
       S.guides = (S.guides || []).filter(function (g) { return g.id !== id; }).concat([mine]); gKeep();
       try { window.dispatchEvent(new Event('lk-guides')); } catch (e) {}
-      S.gf = null; S.gfSnap = ''; S.gMsg = 'Saved "' + title + '". Staff see it under Guides.';
+      S.gf = null; S.gfSnap = ''; S.gMsg = 'Saved "' + title + '". ' + (data.who === 'all' ? 'Staff see' : gWhoName(data.who) + ' see') + ' it under Guides.';
       lvReveal('guides'); S.gRetry = 0; draw(); loadGuides(true);
     }, function (e) {
       f.saving = false; f.busy = '';
@@ -6387,6 +6405,7 @@
     if (a === 'g-save') { saveGuide(); return; }
     if (a === 'g-cancel') { if (gfDirty() && !arm('g-cancel')) return; S.gf = null; S.gfSnap = ''; draw(); return; }
     if (a === 'g-fcat') { if (S.gf) { S.gf.cat = el.getAttribute('data-v'); S.gf.msg = ''; draw(); } return; }
+    if (a === 'g-fwho') { if (S.gf) { S.gf.who = el.getAttribute('data-v'); S.gf.msg = ''; draw(); } return; }
     if (a === 'g-pup') { var gp = S.gf && S.gf.pages; if (gp && i > 0 && gp[i]) { gp.splice(i - 1, 0, gp.splice(i, 1)[0]); draw(); } return; }
     if (a === 'g-prm') { var gp2 = S.gf && S.gf.pages; if (gp2 && gp2[i]) { gp2.splice(i, 1); S.gf.msg = ''; draw(); } return; }
     if (a === 'otick') { tickOrderLine(el.getAttribute('data-d'), id, el.getAttribute('aria-pressed') !== 'true'); return; }
