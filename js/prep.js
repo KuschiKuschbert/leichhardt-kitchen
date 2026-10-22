@@ -771,7 +771,7 @@
     lsSet('lk.prep.seen', String(Date.now()));
   }
   /* the next person never lands in the last person's staff draft, minutes register or ping editor */
-  function leave() { sessDrop(); ksClose(); noteClose('shut'); S.guestIn = false; lsSet('lk.prep.guest', ''); S.drinkAsk = ''; S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); }
+  function leave() { sessDrop(); ksClose(); noteClose('shut'); S.nJust = null; S.guestIn = false; lsSet('lk.prep.guest', ''); S.drinkAsk = ''; S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); }
   /* The chef mark's menu (js/app.js) asks what to show: Meeting minutes for everyone (when the page is on), and for the
      head chef and sous chefs Shift pings and Manage staff (22 Oct 2026: the Minutes register is "See who has signed" at
      the top of Meeting minutes). head: no Kitchen mail, the head chef's mail is read in the admin panel. tab: the head
@@ -1894,9 +1894,12 @@
      phones read the pings again now (one pings query each, on the config listener every phone already has) instead of
      after 30 minutes away. A ping set at 13:00 for 15:00 then pops up on time on a tablet that read its pings at 06:00.
      Only for today's pings, so a ping for next week costs nothing. */
-  var pingMarkAt = 0;
+  var pingMarkAt = 0, pingMarkT = null;
   function markPings() {
-    if (!fb || Date.now() - pingMarkAt < 5000) return;
+    if (!fb) return;
+    // at most one stamp every 5 seconds; one asked for inside them (an Undo straight after a remove) goes at their end
+    var wait = 5000 - (Date.now() - pingMarkAt);
+    if (wait > 0) { if (!pingMarkT) pingMarkT = setTimeout(function () { pingMarkT = null; markPings(); }, wait); return; }
     pingMarkAt = Date.now();
     var v = { n: now() }; S.nMine = v.n;
     sset(cfgDoc(), { pastEdit: v }, true).catch(function () {});   // before the rules allow it (or no signal) it is only a hint lost
@@ -4184,6 +4187,8 @@
   /* Chefs get the pings like everyone (23 Oct 2026): the start of shift and the 10:30 call show them their own too, and
      their Got it counts. Only a ping just saved, changed or removed on this phone does not pop straight back up at the
      person who did it: once the list is read again, it counts as read for them if everything else on it already was. */
+  // S.nJust: { id, k } the ping just saved and whose read mark it is (noteSeenKey when tapped); only for that person
+  function noteJust(id, k) { if (noteSeenKey() === k) S.nJust = { id: id, k: k }; }
   function noteJustSaved(id) {
     var s = noteSeen(), was = s.d === dayNow() && s.sig ? String(s.sig).split('|') : [];
     if (todaysNotes().every(function (n) { return n.id === id || was.indexOf(n.id + ':' + (n.upd || n.at || 0)) >= 0; })) noteMarkSeen();
@@ -4216,7 +4221,7 @@
     fb.fs.getDocs(fb.fs.query(colRef('notes'), fb.fs.where('until', '>=', today))).then(function (snap) {
       S.notes = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; });
       S.notesFor = today; S.notesAt = Date.now(); S.notesRead = readAt; S.notesBusy = false;
-      if (S.nJust) { noteJustSaved(S.nJust); S.nJust = ''; }
+      if (S.nJust) { if (S.nJust.k === noteSeenKey()) noteJustSaved(S.nJust.id); S.nJust = null; }
       noteBell(); noteMaybePop(); draw();
     }, function () {
       // no signal, or a wrong kitchen PIN: carry on with what is already here and try again in about 5 minutes
@@ -4600,13 +4605,13 @@
     // author is who wrote the ping and never changes; by is who saved it last (the rules need by to be the writer)
     if (!f.id) { data.at = now(); data.author = S.who || ''; }
     var ref = f.id ? docRef('notes', f.id) : fb.fs.doc(colRef('notes')), when = noteWhen({ start: start, until: until, dows: data.dows, tm: data.tm });
-    var was = f.id ? (S.notes || []).filter(function (x) { return x.id === f.id; })[0] : null, t = dayNow();
+    var was = f.id ? (S.notes || []).filter(function (x) { return x.id === f.id; })[0] : null, t = dayNow(), nk = noteSeenKey();
     // the head chef's Google device with nobody signed in: saved by nobody, not by the ping's writer (W() adds no by
     // there, and a merge would keep theirs). An older ping with no author keeps its writer.
     if (!canW()) { data.by = ''; if (was && !was.author && was.by) data.author = was.by; }
     S.nSaving = true; S.nMsg = ''; draw();
     sset(ref, data, !!f.id).then(function () {
-      if (noteOn(data, t) || (was && noteOn(was, t))) { markPings(); S.nJust = ref.id; }
+      if (noteOn(data, t) || (was && noteOn(was, t))) { markPings(); noteJust(ref.id, nk); }
       S.nSaving = false; S.nf = nfNew(); S.nOpen = false; S.nMsg = 'Saved. Shows: ' + when + '.'; loadNotes(true); draw();
     }, function (e) {
       S.nSaving = false; S.nMsg = e && e.code === 'permission-denied' ? 'Not allowed. Ask the head chef to tick Pings for you in the admin panel.' : 'Could not save. Check the connection and try again.'; draw();
@@ -4614,12 +4619,12 @@
   }
   function removeNote(id) {
     if (!arm('n-del:' + id)) return;
-    var was = (S.notes || []).filter(function (x) { return x.id === id; })[0], today = !!was && noteOn(was, dayNow());
+    var was = (S.notes || []).filter(function (x) { return x.id === id; })[0], today = !!was && noteOn(was, dayNow()), nk = noteSeenKey();
     sset(docRef('notes', id), { removed: true, upd: now() }, true).then(function () {
-      if (today) { markPings(); S.nJust = id; }
+      if (today) { markPings(); noteJust(id, nk); }
       if (S.nf && S.nf.id === id) { S.nf = nfNew(); S.nOpen = false; }
       S.nMsg = 'Removed.'; loadNotes(true); draw();
-      toast('Ping removed.', { label: 'Undo', fn: function () { sset(docRef('notes', id), { removed: false, upd: now() }, true).then(function () { if (today) { markPings(); S.nJust = id; } S.nMsg = ''; loadNotes(true); draw(); }, failed); } });
+      toast('Ping removed.', { label: 'Undo', fn: function () { var uk = noteSeenKey(); sset(docRef('notes', id), { removed: false, upd: now() }, true).then(function () { if (today) { markPings(); noteJust(id, uk); } S.nMsg = ''; loadNotes(true); draw(); }, failed); } });
     }, function () { S.nMsg = 'Could not remove. Check the connection and try again.'; draw(); });
   }
   /* finished pings: one query when asked for (30 at most) */

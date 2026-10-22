@@ -116,6 +116,41 @@ async function pin(p, name, digits) { await p.click('.p-name[data-id="' + name +
   ok(/Bidfood at 15:00/.test(await txt(p, '.nt-list') || '') && /pork belly/.test(await txt(p, '.nt-list') || ''), 'sous chef: the bell lists both');
   await p.context().close();
 
+  // a save that lands after its writer handed the tablet over is not marked read for the next person (or nobody)
+  p = await L.open(b, '#/prep', { who: 'sam', touch: true, settings: { shared: true }, extra: Object.assign(cfg(), ping('n1', 'Special: pork belly', { by: 'ann' })), wait: 2000 });
+  await p.evaluate(d => { localStorage.setItem('lk.note.mig', '1'); localStorage.setItem('lk.note.seen', JSON.stringify({ d, sig: 'n1:1' })); }, today);
+  await L.waitFor(p, () => !!document.querySelector('.nt-got')).catch(() => {});
+  await p.click('.nt-got'); await L.settle(p, 300);
+  await L.chef(p, 'pings');
+  await p.click('[data-p="n-new"]'); await L.settle(p, 200);
+  await p.fill('[data-k="n-text"]', 'Allergen alert: no peanut oil in the fryer');
+  await p.evaluate(() => { window.__fake.mode = 'hold'; });
+  await p.click('[data-p="n-save"]'); await L.settle(p, 300);
+  await p.click('.wtop-who'); await L.settle(p, 200);
+  await p.click('[data-who="out"]'); await L.settle(p, 200);
+  await p.click('[data-who="out"]').catch(() => {}); await L.settle(p, 400);
+  await p.evaluate(() => { window.__fake.mode = 'ok'; window.__fake.release(); });
+  await L.settle(p, 600);
+  await p.clock.runFor(61000); await L.settle(p, 400);
+  ok(!/peanut/.test(await p.evaluate(() => localStorage.getItem('lk.note.seen') || '')) && /peanut/.test(await txt(p, '.nt-list') || ''), 'hand-over: the ping saved before signing out still comes up on the tablet');
+  await p.context().close();
+
+  // an Undo straight after a remove still tells the other phones (the stamp is sent at the end of the 5 seconds)
+  p = await L.open(b, '#/prep', { who: 'sam', extra: Object.assign(cfg(), ping('n1', 'Safety: fryer 2 is out', { tag: 'safety', by: 'ann' })), wait: 2000 });
+  await L.waitFor(p, () => !!document.querySelector('.nt-got')).catch(() => {});
+  await p.click('.nt-got'); await L.settle(p, 300);
+  await L.chef(p, 'pings');
+  await p.click('[data-p="n-del"][data-id="n1"]'); await L.settle(p, 100);
+  await p.click('[data-p="n-del"][data-id="n1"]'); await L.settle(p, 500);
+  const st1 = await p.evaluate(k => ((window.__fake.dump()[k] || {}).pastEdit || {}).n, fsKey(['config', 'main']));
+  await p.evaluate(() => { const b = [...document.querySelectorAll('button')].filter(x => /^Undo$/.test(x.textContent.trim()))[0]; if (b) b.click(); });
+  await L.settle(p, 500);
+  await p.clock.runFor(6000); await L.settle(p, 400);
+  const st2 = await p.evaluate(k => ((window.__fake.dump()[k] || {}).pastEdit || {}).n, fsKey(['config', 'main']));
+  s = await store(p);
+  ok(!!st1 && st2 > st1 && s[fsKey(['notes', 'n1'])].removed === false, 'Undo of a remove: put back, and a second stamp tells the other phones (' + st1 + ', ' + st2 + ')');
+  await p.context().close();
+
   // a shared tablet: Bo signs in only to tick. A Special waits on the bell; a Safety ping comes up, with no minutes
   p = await L.open(b, '#/prep', { who: '', touch: true, settings: { shared: true }, board: true, extra: Object.assign(cfg(), ping('n1', 'Special: pork belly', { tag: 'special' }), mins()), wait: 1500 });
   // the tablet's own 14:00 call with nobody signed in: read on the tablet (after the update, so the mark is not handed on)
