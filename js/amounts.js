@@ -20,6 +20,7 @@
     box: 'boxes', boxes: 'boxes', bag: 'bags', bags: 'bags', bottle: 'bottles', bottles: 'bottles',
     tin: 'tins', tins: 'tins', can: 'tins', cans: 'tins', jar: 'jars', jars: 'jars', bucket: 'buckets', buckets: 'buckets',
     platter: 'platters', platters: 'platters', pan: 'pans', pans: 'pans', container: 'containers', containers: 'containers',
+    slab: 'slabs', slabs: 'slabs', whole: 'whole', pkt: 'packs', pkts: 'packs', cob: 'cobs', cobs: 'cobs',
     doz: 'dozen', dozen: 'dozen', case: 'cases', cases: 'cases', carton: 'cartons', cartons: 'cartons', loaf: 'loaves', loaves: 'loaves'
   };
   var FRAC = { '½': 0.5, '¼': 0.25, '¾': 0.75, '⅓': 1 / 3, '⅔': 2 / 3 };
@@ -37,7 +38,8 @@
   }
   /* "2 L" -> { n: 2, u: 'L' }; "3" -> { n: 3, u: '' }; "half a tub", "2-3 kg", "1 kg + 500 g" -> null */
   function parse(text) {
-    var t = String(text == null ? '' : text).trim().toLowerCase().replace(/\s+/g, ' ');
+    // "300 g total" on a platter card is the same as "300 g"
+    var t = String(text == null ? '' : text).trim().toLowerCase().replace(/\s+/g, ' ').replace(/ total$/, '');
     if (!t || t.length > 40) return null;
     var m = t.match(/^(\d+(?:[.,]\d+)?(?:\s*\/\s*\d+)?|\d+\s+\d+\s*\/\s*\d+|\d*\s*[½¼¾⅓⅔])\s*([a-z]+)?\.?$/);
     if (!m) return null;
@@ -54,7 +56,14 @@
     if (a) return a.n + (a.u ? ' ' + a.u : '');
     return String(text == null ? '' : text).trim().toLowerCase().replace(/\s+/g, ' ');
   }
-  var A = { parse: parse, key: key, UNITS: UNITS };
+  /* An amount to show: grams over a kilo as kg, millilitres over a litre as L, no trailing zeros ("1.5 kg", "50 pieces"). */
+  function say(n, u) {
+    if (u === 'g' && n >= 1000) { n = n / 1000; u = 'kg'; }
+    if (u === 'ml' && n >= 1000) { n = n / 1000; u = 'L'; }
+    var v = String(Math.round(n * 100) / 100);
+    return u ? v + ' ' + u : v;
+  }
+  var A = { parse: parse, key: key, say: say, UNITS: UNITS };
   if (typeof module === 'object' && module.exports) { module.exports = A; return; }
   window.LK_AMT = A;
 })();
