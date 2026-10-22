@@ -70,6 +70,32 @@ async function find(p, v) { await p.fill('#find', v); await L.settle(p, 250); }
   p = await L.open(b, '#/r/barra', { width: 1280, height: 900, wait: 1200 });
   ok(await p.evaluate(() => getComputedStyle(document.querySelector('.jumps')).display === 'none'), 'desktop card: no jump row (columns side by side)');
   await p.context().close();
+
+  // a dish used on another dish (Side Salad on the Grill Maiden's Board): the Pass card links to it, as Tiles does (23 Oct 2026).
+  // No dish in js/data.js has a tip, so the Side Salad gets one as a head chef's recipe change (js/overlay.js), and the Pass shows it too.
+  global.window = {}; require('../js/data.js');
+  const salad = Object.assign(JSON.parse(JSON.stringify(global.window.LK_DATA.recipes.find(r => r.id === 'side-salad'))), { tip: { title: 'Test tip', text: 'A tip the head chef saved on this dish.' } });
+  const fsKey = k => ['kitchens', L.PIN].concat(k).join('/');
+  const tipped = { [fsKey(['book', 'index'])]: { r: { 'side-salad': 2 } }, [fsKey(['recipes', 'side-salad'])]: { r: salad, v: 2, upd: L.NOW - 3600000, by: 'hd', src: 'book', base: 'abcd1234', removed: false } };
+  const tipText = () => ([...document.querySelectorAll('main .box')].find(x => /Test tip/.test(x.textContent)) || {}).textContent || '';
+  for (const w of [1280, 390]) {
+    p = await L.open(b, '#/r/side-salad', { width: w, height: 900, wait: 1200, extra: tipped });
+    await L.waitFor(p, tipText, null, 8000).catch(() => false);   // the change comes in after the book connects
+    const tip = await p.evaluate(tipText);
+    ok(/Test tip/.test(tip) && /A tip the head chef saved on this dish/.test(tip), w + ' px Pass: Side Salad shows its tip box (' + JSON.stringify(tip) + ')');
+    const link = await p.evaluate(() => { const a = document.querySelector('main a[href*="grill-board"]'); return a ? { box: (a.closest('.box') || {}).textContent || '' } : null; });
+    ok(!!link && /Goes on/.test(link.box) && /Grill Maiden/.test(link.box), w + ' px Pass: Side Salad says it goes on the Grill Maiden\'s Board ' + JSON.stringify(link));
+    if (w === 390) {
+      const at = await p.evaluate(() => ['.stage', 'main a[href*="grill-board"]', '#r-ing'].map(s => Math.round(document.querySelector(s).getBoundingClientRect().top)));
+      ok(at[1] > at[0] && at[2] > at[1], 'phone Pass: Goes on comes after the plate and before Everything on it (' + at + ')');
+      const tAt = await p.evaluate(() => { const x = [...document.querySelectorAll('main .box')].find(e => /Test tip/.test(e.textContent)); return ['.stage', '#r-ing'].map(s => Math.round(document.querySelector(s).getBoundingClientRect().top)).concat(x ? Math.round(x.getBoundingClientRect().top) : -1); });
+      ok(tAt[2] > tAt[0] && tAt[2] < tAt[1], 'phone Pass: the tip box comes after the plate and before Everything on it (' + tAt + ')');
+    }
+    await p.click('main a[href*="grill-board"]'); await L.settle(p, 400);
+    ok(/grill-board/.test(await p.evaluate(() => location.hash)) && /Grill Maiden/.test(await p.evaluate(() => document.getElementById('rtitle').textContent)), w + ' px Pass: the link opens the board');
+    ok(p.errors.length === 0, w + ' px side salad: no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+  }
   await b.close();
   L.report(R);
 })().catch(e => { console.error(e); console.log(R.join('\n')); process.exit(1); });

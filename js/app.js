@@ -499,7 +499,8 @@
     return '<div class="field"><span class="label" id="free-label">Free from</span><div class="chips' + (scroll ? ' scroll' : '') + '" role="group" aria-labelledby="free-label">' +
       D.allergens.map(function (a) {
         var on = ui.free.indexOf(a) >= 0;
-        return '<button type="button" class="chip sq" data-act="free" data-val="' + esc(a) + '" data-k="free:' + esc(a) + '" aria-pressed="' + on + '">' + esc(a) + '</button>';
+        // round like every filter (22 Oct 2026 look rule) and like the same Free from row on the Pass
+        return '<button type="button" class="chip" data-act="free" data-val="' + esc(a) + '" data-k="free:' + esc(a) + '" aria-pressed="' + on + '">' + esc(a) + '</button>';
       }).join('') + '</div></div>';
   }
   /* On a recipe the lens folds into one line (open while a lens is on), so the name and allergens come sooner on a phone */
@@ -671,7 +672,12 @@
   }
 
   /* ---------- view C: the pass ---------- */
-  function passShelves() { return SHELVES.filter(function (sh) { return ui.kind === 'all' || sh.key === ui.kind || (sh.key === 'prep' && (ui.kind === 'batch' || ui.kind === 'component')); }); }
+  // Batch recipes and Components share the Bains and prep shelf: either chip shows only its own kind on it
+  function passShelves() {
+    var prepKind = ui.kind === 'batch' || ui.kind === 'component';
+    return SHELVES.filter(function (sh) { return ui.kind === 'all' || sh.key === ui.kind || (sh.key === 'prep' && prepKind); })
+      .map(function (sh) { return sh.key === 'prep' && prepKind ? { key: sh.key, title: sh.title, list: sh.list.filter(inKind) } : sh; });
+  }
   function passOk(r) { return matches(r.id) && freeOk(r.id); }
   function shelvesHTML() {
     var s = q() || ui.free.length, n = 0;
@@ -727,7 +733,9 @@
       left = '<div class="stage' + (ui.lens ? ' lensed' : '') + (r.done ? ' done' : '') + '" data-rid="' + esc(r.id) + '">' + art(r, 'art') + r.pins.map(function (p, k) { return pinHTML(p, k, stack); }).join('') + '</div>' +
         (pk ? '<div class="box outline" style="background: #fff"><span class="h3">' + esc(pk.label) + '</span>' + (pk.note ? '<div>' + esc(pk.note) + '</div>' : '') + '<div class="chips">' +
           ((pk.tags && pk.tags.length) ? pk.tags.map(function (t) { return '<span class="tag' + (t.slice(-1) === '?' ? ' maybe' : '') + '">' + esc(t) + '</span>'; }).join('') : '<span class="hint">No listed allergens</span>') + '</div></div>'
-          : '<div class="hint" style="text-align: center">' + (r.pins.length ? 'Tap anything on the plate. A pin with an arrow opens its own recipe.' : 'No pins on this plate yet.') + '</div>') + sideView(r);
+          : '<div class="hint" style="text-align: center">' + (r.pins.length ? 'Tap anything on the plate. A pin with an arrow opens its own recipe.' : 'No pins on this plate yet.') + '</div>') + sideView(r) +
+        // a dish used on another (Side Salad on the Grill Maiden's Board) and a dish's tip box, as on Tiles
+        usedBox(r, stack, 'Goes on') + tipBox(r);
     } else {
       left = '<div class="pan-art' + (r.done ? ' done' : '') + '">' + art(r, 'art') + '</div>' + usedBox(r, stack, 'Goes on') + tipBox(r) + guideBox(r);
     }
@@ -886,7 +894,7 @@
   }
   window.LK_APP = {
     mgApi: MG_API, KIND: KIND, isDish: isDish, esc: esc, art: art, rollFor: rollFor, load: mgScript,
-    icon: function (k) { return ICON[k] || ''; },   // the chef hat menu's icons, for the pings sheet's rows
+    icon: function (k) { return ICON[k] || ''; },   // the book's icons, for the pings sheet's rows and Change this guide
     byId: function (id) { return byId[id] || null; },
     recipes: function () { return D.recipes; },
     tags: function (id) { return tags[id] || []; },
