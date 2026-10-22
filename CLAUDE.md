@@ -86,7 +86,7 @@ These hold for every session, every message and every change, however small. A h
 ## What GitHub enforces (checked 22 Oct 2026)
 - `main` is protected: the **Click tests** check must pass and the branch must be up to date with `main`; force pushes and deleting `main` are refused.
 - Not enforced by GitHub: reviews (none required, Claude merges by the head chef's decision of 21 Oct 2026), and the protection does not apply to admins. The main-branch guard hook (`scripts/guard-main.mjs`) stops Claude Code sessions from working on `main`; a person with admin rights can still push to it.
-- The **Click tests** job checks `js/*.js` and `sw.js` parse, then runs the click tests; it does not check `js/lib/*.js` with `node --check` (the library check in `tests/` covers them only when run by hand).
+- The **Click tests** job checks `js/*.js`, `js/lib/*.js` and `sw.js` parse, runs the click tests, then the rules checks on the Firestore emulator (`tests/rules`) and the nightly learning check (`scripts/emulator-check.mjs`), since 22 Oct 2026.
 
 ## Things that are easy to break
 - `.rail` is the steel shelf rail on the Pass; the landing and top bar use `.wtop`. Do not reuse class names across features (check `css/app.css` first).
