@@ -642,19 +642,23 @@
       stateNote() + body + (can ? '<div class="btn-row"><a class="btn dark" href="#/functions">Manage functions</a></div>' : '') + '</section>';
   }
 
-  /* ---------- the landing card: what is on today and the next three days ---------- */
+  /* ---------- the landing card: the functions 2 and 3 days out ----------
+     Today's and tomorrow's are in the band right above it, so the card does not list them again (23 Oct 2026). By day,
+     then by when food first goes out, times TBC last in a day (as the band has them). Nothing to list: no card. */
   function landHTML() {
-    var t = now(), today = kday(t), list = F.list.filter(function (f) { return f.status === 'confirmed' && f.date >= today && f.date <= addDays(today, 3); })
-      .sort(function (a, b) { return a.first - b.first; });
+    var t = now(), today = kday(t), tom = addDays(today, 1), end = addDays(today, 3);
+    var list = F.list.filter(function (f) { return f.status === 'confirmed' && f.date > tom && f.date <= end; })
+      .sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : (a.first || 9e15) - (b.first || 9e15) || String(a.name).localeCompare(String(b.name)); });
     if (!list.length) return '';
     return '<div class="fn-land"><span class="fn-land-h">Functions</span><ul>' + list.slice(0, 4).map(function (f) {
-      return '<li><b>' + esc(f.date === today ? 'Today' : dayName(f.date)) + '</b> ' + esc(f.name) + ', food ' + esc(when(f.first, f.date)) + ', ' + totalQty(f) + ' platters</li>';
-    }).join('') + '</ul><a class="fn-land-go" href="#/fn">' + (list.length > 4 ? 'All ' + list.length + ' functions' : 'Open functions') + '</a></div>';
+      return '<li><b>' + esc(dayName(f.date)) + '</b> ' + esc(f.name) + ', food ' + esc(when(f.first, f.date)) + ', ' + totalQty(f) + ' platters</li>';
+    }).join('') + '</ul><a class="fn-land-go" href="#/fn">' + (list.length > 4 ? 'Open functions, ' + (list.length - 4) + ' more' : 'Open functions') + '</a></div>';
   }
 
   /* ---------- Things to check (22 Oct 2026, review F5) ----------
-     For the head chef and sous chefs on the landing page: what in the next 7 days' confirmed functions still needs a
-     hand before the day, worked out from what the book already has (no reads): times still TBC, a platter no longer in
+     For the head chef and sous chefs on the landing page, and the head chef's own Google device with nobody signed in
+     (23 Oct 2026, bookEdit(): the same as Manage Recipes, never a shared device): what in the next 7 days' confirmed
+     functions still needs a hand before the day, worked out from what the book already has (no reads): times still TBC, a platter no longer in
      the book, a platter whose card changed since the booking, a platter card with amounts to come ([square brackets]),
      and a platter whose allergens are incomplete. Each line links to the function or the card. Hide for today keeps it
      away until tomorrow (lk.fn.ckhide: the kitchen day it was hidden; out of date the next day). */
@@ -680,7 +684,7 @@
     return out;
   }
   function checkHTML() {
-    var P = window.LK_PREP, chef = !!(P && P.chefMenu && P.chefMenu().chef), hid = '';
+    var P = window.LK_PREP, chef = !!(P && ((P.chefMenu && P.chefMenu().chef) || (P.bookEdit && P.bookEdit()))), hid = '';
     if (!chef) return '';
     try { hid = localStorage.getItem('lk.fn.ckhide') || ''; } catch (e) {}
     if (hid === kday(now())) return '';
@@ -730,6 +734,8 @@
   window.addEventListener('lk-clock', changed);
   window.addEventListener('lk-cfg', function () { watch(); changed(); });
   window.addEventListener('lk-who', changed);
+  // the head chef's Google sign-in passed or failed on this device: To check before the functions follows
+  window.addEventListener('lk-admin', changed);
   // the head chef's recipe changes arrived: the platter names in the picker follow (bookings keep what was agreed)
   window.addEventListener('lk-rx', function () { D = window.LK_DATA || D; });
 

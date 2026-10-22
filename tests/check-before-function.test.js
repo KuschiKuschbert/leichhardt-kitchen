@@ -1,6 +1,7 @@
 // To check before the functions (22 Oct 2026, review F5): the head chef and sous chefs see, on the landing page, what in
 // the next 7 days' confirmed functions still needs a hand: times TBC, a platter gone from the book or changed since the
-// booking. Staff do not see it. Hide for today keeps it away until tomorrow. No reads of its own.
+// booking. So does the head chef's own Google device with nobody signed in (23 Oct 2026). Staff do not see it. Hide for
+// today keeps it away until tomorrow. No reads of its own.
 const L = require('./lib');
 const M = require('../js/functions.js');
 const { R, ok } = L.results();
@@ -40,6 +41,25 @@ function fn(o) {
   await L.settle(p, 800);
   ok(await p.evaluate(() => { const e = document.getElementById('fn-check'); return !e || e.hidden; }), 'staff: no checks card');
   ok(!(await L.overflow(p)), 'staff: no sideways scroll');
+  await p.context().close();
+
+  // the head chef's own Google device with nobody signed in sees it too (23 Oct 2026), like Manage Recipes; a staff
+  // member signed in on that device, or a shared kitchen device with nobody signed in, does not
+  const ckShown = pg => pg.evaluate(() => { const e = document.getElementById('fn-check'); return !!e && !e.hidden && !!e.querySelector('.fn-ck'); });
+  // the owner check is read and the functions are in before a "not shown" counts
+  const ready = pg => L.waitFor(pg, () => !!window.LK_PREP && window.LK_PREP.state.level === 'owner' && !!window.LK_FN && window.LK_FN.list().length === 3).then(() => true, () => false);
+  p = await L.open(b, '#/', { who: '', admin: true, extra, wait: 1800 });
+  await L.waitFor(p, () => !!document.querySelector('#fn-check .fn-ck')).catch(() => {});
+  ok(await ckShown(p) && /Jones wake.*times are still TBC/.test(await L.txt(p, '#fn-check') || ''), 'head chef\'s Google device, nobody signed in: the checks card shows');
+  ok(p.errors.length === 0, 'head chef\'s Google device: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+  p = await L.open(b, '#/', { who: 'ann', admin: true, extra, wait: 1800 });
+  let rd = await ready(p); await L.settle(p, 400);
+  ok(rd && !(await ckShown(p)), 'head chef\'s Google device, staff signed in: no checks card');
+  await p.context().close();
+  p = await L.open(b, '#/', { who: '', admin: true, settings: { shared: true }, extra, wait: 1800 });
+  rd = await ready(p); await L.settle(p, 400);
+  ok(rd && !(await ckShown(p)), 'shared kitchen device, nobody signed in: no checks card');
   await p.context().close();
 
   await b.close();
