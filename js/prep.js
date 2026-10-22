@@ -1114,15 +1114,26 @@
   function addedToast(sec, dte, mid) {
     toast('Added' + (sec ? ' to ' + sec : ''), { label: 'Undo', fn: function () { supd(itemRef(dte, mid), { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: now() }).catch(failed); } });
   }
+  /* The book's own records: book/index and book/matches. The rules allow them by name only, so a query on the whole
+     book collection is refused; read the two by name instead (2 reads, on a tap). Missing ones are left out. */
+  var BOOK_DOCS = ['index', 'matches'];
+  function bookDocs(pin) {
+    var f = fb.fs;
+    return Promise.all(BOOK_DOCS.map(function (id) { return f.getDoc(f.doc(fb.db, 'kitchens', pin, 'book', id)); }))
+      .then(function (l) { return l.filter(function (sn) { return sn.exists(); }); });
+  }
   /* Owner backup: everything the book holds, as one JSON file (PIN fingerprints left out). */
   function exportAll() {
     if (!fb || S.exporting) return;
     S.exporting = 'Reading the data...'; draw();
     var f = fb.fs, out = { exportedAt: new Date(now()).toISOString(), config: null, days: {}, orders: {}, waste: {}, wasteReviews: {}, activity: [], sections: [], learned: [], ordlearned: [], learnlog: [], misses: [], notes: [], notesSeen: {}, minutes: [], minutesHist: {}, minutesSigns: {}, pins: [], book: [], recipes: [], recipesHist: {}, drawings: [], drawingsHist: {}, drawtpl: [], drawlib: [] };
     function grab(sn) { return sn.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }); }
-    function all(name) { return f.getDocs(colRef(name)).then(grab); }
+    // a refused or failed read names its part, so the message says what could not be read
+    var part = '';
+    function all(name) { part = name; return f.getDocs(colRef(name)).then(grab); }
     /* the records under each note (who has seen it) and each minutes (earlier versions, sign-offs): one small query each, kept by the note's or the minutes' id */
     function subs(list, top, name, into) {
+      part = top + ' ' + name;
       return Promise.all(list.map(function (x) {
         return f.getDocs(f.collection.apply(null, [fb.db].concat(base(), [top, x.id, name]))).then(function (sn) { var r = grab(sn); if (r.length) into[x.id] = r; });
       }));
@@ -1142,7 +1153,7 @@
       .then(function () { return all('mail'); }).then(function (r) { out.mail = r; return all('mailstat'); }).then(function (r) { out.mailstat = r; })
       .then(function () { return all('drinks'); }).then(function (r) { out.drinks = r; })
       .then(function () { return all('shifts'); }).then(function (r) { out.shifts = r; })
-      .then(function () { return all('book'); }).then(function (r) { out.book = r; return all('recipes'); }).then(function (r) { out.recipes = r; return subs(r, 'recipes', 'hist', out.recipesHist); })
+      .then(function () { part = 'book'; return bookDocs(S.pin); }).then(function (l) { out.book = l.map(function (d) { var x = d.data(); x.id = d.id; return x; }); return all('recipes'); }).then(function (r) { out.recipes = r; return subs(r, 'recipes', 'hist', out.recipesHist); })
       .then(function () { return all('drawings'); }).then(function (r) { out.drawings = r; return subs(r, 'drawings', 'hist', out.drawingsHist); })
       .then(function () { return all('drawtpl'); }).then(function (r) { out.drawtpl = r; return all('drawlib'); }).then(function (r) { out.drawlib = r; })
       .then(function () { out.functionsHist = {}; return all('functions'); }).then(function (r) { out.functions = r; return subs(r, 'functions', 'hist', out.functionsHist); })
@@ -1155,7 +1166,7 @@
         function next() {
           if (i >= dates.length) return;
           var chunk = dates.slice(i, i + 20); i += 20;
-          S.exporting = 'Reading days ' + Math.min(i, dates.length) + ' of ' + dates.length + '...'; draw();
+          part = 'past days'; S.exporting = 'Reading days ' + Math.min(i, dates.length) + ' of ' + dates.length + '...'; draw();
           return Promise.all(chunk.map(function (d) { return Promise.all([
             f.getDocs(itemsCol(d)).then(function (sn) { if (sn.docs.length) { out.days[d] = grab(sn); n += sn.docs.length; } }),
             f.getDocs(ordCol(d)).then(function (sn) { if (sn.docs.length) out.orders[d] = grab(sn); }),
@@ -1172,7 +1183,7 @@
         setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
         var nn = out.notes.length, mn = out.minutes.length, dn = Object.keys(out.days).length;
         S.exporting = ''; toast('Backup saved: ' + n + (n === 1 ? ' line' : ' lines') + ' from ' + dn + (dn === 1 ? ' day, ' : ' days, ') + nn + (nn === 1 ? ' shift ping' : ' shift pings') + ' and minutes from ' + mn + (mn === 1 ? ' meeting.' : ' meetings.'));
-      }).catch(function () { S.exporting = ''; toast('Could not read everything. Check the connection.'); });
+      }).catch(function () { S.exporting = ''; toast('Could not read everything' + (part ? ' (stopped at ' + part + ')' : '') + '. Check the connection and try again.', null, 8000); });
   }
   /* Owner only: copy everything under the current kitchen PIN to a new one, then switch this device over.
      The security rules must already allow the new PIN (see firestore.rules) or the copy is refused. */
@@ -1211,7 +1222,7 @@
       .then(function () { return copySub('minutes', 'signs', true); }).then(function () { return copySub('notes', 'seen', true); })
       .then(function () { return copyCol('guides'); }).then(function () { return copySub('guides', 'pages'); })
       .then(function () { return copyCol('mail'); }).then(function () { return copyCol('mailstat'); }).then(function () { return copyCol('drinks'); }).then(function () { return copyCol('shifts'); })
-      .then(function () { return copyCol('book'); }).then(function () { return copyCol('recipes'); }).then(function () { return copySub('recipes', 'hist'); })
+      .then(function () { return bookDocs(old).then(function (l) { n += l.length; return Promise.all(l.map(function (d) { return f.setDoc(nd('book', d.id), d.data()); })); }); }).then(function () { return copyCol('recipes'); }).then(function () { return copySub('recipes', 'hist'); })
       .then(function () { return copyCol('drawings'); }).then(function () { return copySub('drawings', 'hist'); })
       .then(function () { return copyCol('drawtpl'); }).then(function () { return copyCol('drawlib'); })
       .then(function () { return copyCol('functions'); }).then(function () { return copySub('functions', 'hist'); }).then(function () { return copyCol('fncontact'); }).then(function () { return copyCol('fnsent'); })

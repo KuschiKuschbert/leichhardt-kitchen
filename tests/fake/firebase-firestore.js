@@ -79,7 +79,9 @@ export function getDoc(ref) {
   bill('get', key(ref.path), 1);
   return delay(result(ref));
 }
-export function getDocs(ref) { window.__fake.reads.push(key(ref.path)); if (readFails(ref)) return Promise.reject({ code: 'unavailable' }); const r = result(ref); bill('query', key(ref.path), r.docs.length); return delay(r); }
+// like the real rules: book/index and book/matches are allowed by name only, so a query on the whole book collection is refused
+function denied(ref) { return /^kitchens\/[^/]+\/book$/.test(key(ref.path)); }
+export function getDocs(ref) { window.__fake.reads.push(key(ref.path)); if (readFails(ref)) return Promise.reject({ code: 'unavailable' }); if (denied(ref)) return Promise.reject({ code: 'permission-denied' }); const r = result(ref); bill('query', key(ref.path), r.docs.length); return delay(r); }
 function readFails(ref) { const f = window.__fake.failReads; return !!(f && f.test(key(ref.path))); }
 // a read that must come from the server: refused when there is no signal ('hold', 'fail'). __fake.server can hold a
 // newer copy of a document than this phone has (say a line ticked on another phone), keyed by path.
