@@ -138,7 +138,13 @@
       catch (e) { db = fs.getFirestore(app); }
       var auth = au.getAuth(app);
       fb = { app: app, fs: fs, au: au, db: db, auth: auth };
-      au.onAuthStateChanged(auth, function (u) { S.user = u; S.authState = 'ready'; if (!u) admMark(false); featSync(); loadAdmins(); draw(); });
+      au.onAuthStateChanged(auth, function (u) {
+        // PIN sessions (22 Oct 2026): every phone signs in anonymously; only a Google account is the head chef's (S.user)
+        S.user = u && !u.isAnonymous ? u : null; S.uid = u ? u.uid : '';
+        if (!u) anonIn(); else S.authState = 'ready';
+        if (!S.user) admMark(false); featSync(); loadAdmins(); draw();
+        if (S.authState === 'ready' && S.configState === 'ok') resume();
+      });
       return fb;
     }, function (e) { sdkP = null; throw e; });
     return sdkP;
@@ -445,7 +451,7 @@
   /* Every write carries the writer's id (by) and, in the same batch, a write-only proof of their own PIN.
      The security rules compare that proof with the stored PIN, so only people who know a personal PIN can write. */
   function W(ops) {
-    var b = fb.fs.writeBatch(fb.db), pf = S.who && S.tok;
+    var b = fb.fs.writeBatch(fb.db), pf = S.who && S.tok && S.sessFor !== S.who;   // a session needs no proof
     if (pf) b.set(docRef('proofs', S.who), { tok: S.tok, at: fb.fs.serverTimestamp() });
     ops.forEach(function (o) {
       if (o[0] === 'del') { b.delete(o[1]); return; }
@@ -481,7 +487,56 @@
     Object.keys(patch).forEach(function (k) { data[k] = (k === 'lastSeen' || k === 'lastAdded') ? patch[k] : f.increment(patch[k]); });
     sset(docRef('activity', p.id), data, true).catch(function () {});
   }
+  /* ---------- PIN sessions (22 Oct 2026, review S8) ----------
+     The phone signs in to Firebase anonymously (its own uid). A PIN is checked by writing a try (tries/<id>: the PIN's
+     hash, the time, this phone's uid; the rules allow one per person every 20 seconds, so a PIN cannot be guessed by
+     script), then opening a session (sessions/<uid>: who, the PIN's time from pinset, an end 30 days on), which the
+     rules allow only after a right try from this phone. Writes then carry only who wrote them: no proof, and nothing
+     secret is kept on the phone. A running session moves its end forward once a day; Sign out and the idle lock end it;
+     Reset PIN and Stopped working here stop it in the rules. lk.prep.sess (who and the end, not a secret) lets a phone
+     with no signal open as before; it is out of date at that end. The older proof (lk.prep.tok) is used once to open a
+     session on a phone that signed in before this, then dropped. */
+  var SESS_DAYS = 30, sessRenewed = '';
+  function anonIn() {
+    if (!fb || !fb.au.signInAnonymously || S.anonBusy) { S.authState = 'ready'; return; }
+    S.anonBusy = true;
+    fb.au.signInAnonymously(fb.auth).then(function () { S.anonBusy = false; }, function () {
+      // no signal on a first start, or anonymous sign-in off in the console: the older proof keeps working for now
+      S.anonBusy = false; S.authState = 'ready'; if (S.configState === 'ok') resume();
+    });
+  }
+  function sessRef() { return docRef('sessions', S.uid); }
+  function sessKeep(id, exp) { S.sessFor = id; S.sessExp = exp; lsSet('lk.prep.sess', id + ':' + exp); lsSet('lk.prep.tok', ''); }
+  function sessDrop() {
+    if (S.uid && S.sessFor && fb) fb.fs.deleteDoc(sessRef()).catch(function () {});
+    S.sessFor = ''; S.sessExp = 0; lsSet('lk.prep.sess', '');
+  }
+  function pinAtOf(id) {
+    return fb.fs.getDoc(docRef('pinset', id)).then(function (sn) { var d = sn.exists() ? sn.data() : null; if (!d || typeof d.at !== 'number') throw { code: 'permission-denied' }; return d.at; });
+  }
+  // the PIN check: a try, then the session. Rejects { code: 'wait' } when the last try was under 20 seconds ago,
+  // { code: 'permission-denied' } for a wrong PIN, { code: 'no-session' } when this phone has no anonymous sign-in
+  function sessOpen(id, h, pinAt) {
+    if (!S.uid || !fb.fs.deleteDoc) return Promise.reject({ code: 'no-session' });
+    var f = fb.fs, exp = now() + SESS_DAYS * 86400000;
+    return (pinAt != null ? Promise.resolve(pinAt) : pinAtOf(id)).then(function (at) {
+      return track(f.setDoc(docRef('tries', id), { tok: h, at: f.serverTimestamp(), uid: S.uid })).then(function () {
+        return track(f.setDoc(sessRef(), { by: id, pinAt: at, exp: exp, at: f.serverTimestamp() })).then(function () { sessKeep(id, exp); });
+      }, function (e) { throw e && e.code === 'permission-denied' ? { code: 'wait' } : e; });
+    });
+  }
+  // once a day: a running session moves its end forward (one write); the rules allow it only while it still runs
+  function sessRenew() {
+    if (!S.uid || S.sessFor !== S.who || sessRenewed === dayNow() || S.sessExp - now() > (SESS_DAYS - 1) * 86400000) return;
+    sessRenewed = dayNow();
+    var exp = now() + SESS_DAYS * 86400000, id = S.who;
+    fb.fs.getDoc(docRef('pinset', id)).then(function (sn) {
+      var d = sn.exists() ? sn.data() : null; if (!d) return;
+      return fb.fs.setDoc(sessRef(), { by: id, pinAt: d.at, exp: exp, at: fb.fs.serverTimestamp() }).then(function () { sessKeep(id, exp); });
+    }).catch(function () {});
+  }
   function pickName(id) {
+    sessDrop();
     S.who = id; lsSet('lk.prep.who', id); lsSet('lk.prep.tok', ''); S.authed = false; S.tok = ''; S.pf1 = S.pf2 = ''; S.pinMsg = ''; S.pinStep = 'checking'; featSync(); draw(); whoSync();
     fb.fs.getDoc(docRef('pinset', id)).then(function (s) {
       S.pinStep = s.exists() ? 'enter' : 'set'; draw();
@@ -491,7 +546,7 @@
   function signedIn(id, hash) {
     setTimeout(dailyFlush, 3000);   // yesterday's counts, once someone is signed in (W needs their PIN proof)
     S.authed = true; S.tok = hash; S.pf1 = S.pf2 = ''; S.pinMsg = ''; S.pinStep = '';
-    lsSet('lk.prep.tok', id + ':' + hash); lsSet('lk.prep.seen', String(Date.now())); lsSet('lk.prep.day', dayNow()); lastAct = Date.now(); startIdle();
+    lsSet('lk.prep.tok', S.sessFor === id ? '' : id + ':' + hash); lsSet('lk.prep.seen', String(Date.now())); lsSet('lk.prep.day', dayNow()); lastAct = Date.now(); startIdle();
     hereAdd(id);
     var pend = S.pending; S.pending = null; S.picking = false;
     draw(); whoSync(true);   // a real sign-in: the chef mark flips in
@@ -555,8 +610,11 @@
       pinHash(id, S.pf1).then(function (h) {
         var b = fb.fs.writeBatch(fb.db);
         b.set(docRef('staffpins', id), { hash: h, setAt: now(), name: p.name });
-        b.set(docRef('pinset', id), { at: now(), name: p.name });
-        return track(b.commit()).then(function () { S.drinkAsk = 'first'; dkEdit(); signedIn(id, h); S.tok = h; bump({ visits: 1, lastSeen: now() }); });
+        var setAt = now();
+        b.set(docRef('pinset', id), { at: setAt, name: p.name });
+        return track(b.commit()).then(function () {
+          return sessOpen(id, h, setAt).catch(function () {});   // no anonymous sign-in: the older proof for now
+        }).then(function () { S.drinkAsk = 'first'; dkEdit(); signedIn(id, h); S.tok = h; bump({ visits: 1, lastSeen: now() }); });
       }).catch(function () { S.pinMsg = 'Could not save your PIN. If someone already set one for this name, pick the name again. Otherwise ask the head chef to reset your PIN, then set it within 30 minutes.'; draw(); });
       return;
     }
@@ -568,11 +626,14 @@
       var slow = setTimeout(function () { if (S.pinMsg === 'Checking your PIN...') { S.pinMsg = 'No signal. Your PIN cannot be checked until the phone is back online. Keep the book open: it signs you in by itself when the signal is back.'; draw(); } }, 8000);
       pinHash(id, S.pf1).then(function (h) {
         S.who = id; S.tok = h;
-        // a write only succeeds with the right PIN, so a visit count doubles as the PIN check
-        return sset(docRef('activity', id), { name: p.name, visits: fb.fs.increment(1), lastSeen: now() }, true).then(function () { clearTimeout(slow); lsSet(lockKey(), ''); signedIn(id, h); },
+        // the try and the session; with no anonymous sign-in, a write only succeeds with the right PIN, so a visit
+        // count doubles as the PIN check (the older way)
+        var check = S.uid ? sessOpen(id, h).then(function () { bump({ visits: 1, lastSeen: now() }); }) : sset(docRef('activity', id), { name: p.name, visits: fb.fs.increment(1), lastSeen: now() }, true);
+        return check.then(function () { clearTimeout(slow); lsSet(lockKey(), ''); signedIn(id, h); },
           function (e) {
             clearTimeout(slow); S.tok = '';
-            if (e && e.code === 'permission-denied') { lockFail(); S.pinMsg = lockLeft() > 0 ? lockWait(lockLeft()) : 'That PIN is not right.'; S.pf1 = ''; }
+            if (e && e.code === 'wait') { S.pinMsg = 'One try every 20 seconds. Wait a moment, then type it again.'; S.pf1 = ''; }
+            else if (e && e.code === 'permission-denied') { lockFail(); S.pinMsg = lockLeft() > 0 ? lockWait(lockLeft()) : 'That PIN is not right.'; S.pf1 = ''; }
             else S.pinMsg = 'Could not check your PIN. Check the connection.';
             draw();
           });
@@ -584,14 +645,20 @@
     // once per page load, also when nobody was signed in: run later (the config listener fires again on any change) it
     // would sign out a person who is halfway through typing their PIN
     if (resumed) return;
+    if (fb && S.authState !== 'ready') return;   // the phone's sign-in first (anonymous or Google): it calls resume() again
     resumed = true;
     if (!S.who) return;
-    var tok = (lsGet('lk.prep.tok') || '').split(':');
+    var tok = (lsGet('lk.prep.tok') || '').split(':'), sv = (lsGet('lk.prep.sess') || '').split(':');
+    var hasTok = tok[0] === S.who && !!tok[1], hasSess = sv[0] === S.who && +sv[1] > now();
     if (dayExpired()) { leave(); startIdle(); return; }
-    if (tok[0] !== S.who || !tok[1] || idleExpired()) { if (S.who) { if (shared()) leave(); else pickName(S.who); } startIdle(); return; }
+    if ((!hasTok && !hasSess) || idleExpired()) { if (S.who) { if (shared()) leave(); else pickName(S.who); } startIdle(); return; }
     startIdle();
-    S.authed = true; S.tok = tok[1]; hereAdd(S.who); draw(); whoSync(); dkCheck(); setTimeout(dailyFlush, 3000);
-    sset(docRef('activity', S.who), { name: (who() || {}).name || '', visits: fb.fs.increment(1), lastSeen: now() }, true).catch(function (e) {
+    if (hasSess) { S.sessFor = S.who; S.sessExp = +sv[1]; }
+    // a phone that signed in before sessions: its kept proof opens one session, once (then the proof is dropped)
+    else if (S.uid) sessOpen(S.who, tok[1]).then(function () { lsSet('lk.prep.tok', ''); }, function () {});
+    S.authed = true; S.tok = hasTok ? tok[1] : ''; hereAdd(S.who); draw(); whoSync(); dkCheck(); setTimeout(dailyFlush, 3000);
+    // the first write checks it on the server: a reset PIN, a session that ran out or someone off the list asks again
+    sset(docRef('activity', S.who), { name: (who() || {}).name || '', visits: fb.fs.increment(1), lastSeen: now() }, true).then(sessRenew, function (e) {
       if (e && e.code === 'permission-denied') { S.authed = false; S.tok = ''; pickName(S.who); }
     });
   }
@@ -625,7 +692,7 @@
     lsSet('lk.prep.seen', String(Date.now()));
   }
   /* the next person never lands in the last person's staff draft, minutes register or ping editor */
-  function leave() { ksClose(); S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); }
+  function leave() { sessDrop(); ksClose(); S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); }
   /* The chef mark's menu (js/app.js) asks what to show: Meeting minutes for everyone (when the page is on), and for the
      head chef and sous chefs Shift pings, the Minutes register and Manage staff. The head chef on their admin device gets
      the matching admin tab instead. */

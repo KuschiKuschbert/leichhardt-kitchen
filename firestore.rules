@@ -5,8 +5,11 @@
 // Moving to a new kitchen PIN (admin Tools): publish a second copy of every kitchens/KITCHEN_PIN/... block for the
 // new PIN first, move, then remove the old PIN's copy once every phone has the new one.
 //
-// Reading needs only the kitchen PIN (it is the path). Writing needs a person's own PIN:
-// every write carries the writer's id (by) and, in the same batch, a write-only proof (proofs/<id>.tok).
+// Reading needs only the kitchen PIN (it is the path). Writing needs a person's own PIN.
+// Since 22 Oct 2026 a phone signs in to Firebase anonymously and a right PIN opens a session for that phone and person
+// (sessions/<uid>, below): every write carries the writer's id (by) and the rules check that phone's session. PIN tries
+// are written first, one every 20 seconds per person (tries/<id>), so a PIN cannot be guessed by script.
+// The older way, still accepted while every phone updates (staffProof): a write-only proof (proofs/<id>.tok) in the same batch.
 // The rules compare the proof with the stored PIN hash (staffpins/<id>.hash), which nobody can read.
 // The proof also carries a server timestamp that must equal this request's time, so a proof left over
 // from an earlier write cannot be reused by someone who does not know the PIN.
@@ -19,7 +22,22 @@ service cloud.firestore {
     function pinDoc(id) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/staffpins/$(id); }
     function proofDoc(id) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/proofs/$(id); }
     function setDoc(id) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/pinset/$(id); }
-    function staff() {
+    function sessDoc() { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/sessions/$(request.auth.uid); }
+    function triesDoc(id) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/tries/$(id); }
+    // the writer has a session on this phone: opened with their PIN, not run out, and their PIN not reset since (pinAt is
+    // the pinset time it was opened with; Reset PIN deletes pinset and a new PIN gives a new time)
+    function session() {
+      return request.auth != null && request.resource.data.by is string
+        && exists(sessDoc())
+        && get(sessDoc()).data.by == request.resource.data.by
+        && get(sessDoc()).data.exp > request.time.toMillis()
+        && exists(setDoc(request.resource.data.by))
+        && get(sessDoc()).data.pinAt == get(setDoc(request.resource.data.by)).data.at
+        && onList(request.resource.data.by);
+    }
+    function staff() { return session() || staffProof(); }
+    // the older proof, accepted until every phone uses sessions (then removed in a second publish)
+    function staffProof() {
       return request.resource.data.by is string
         && exists(pinDoc(request.resource.data.by))
         && getAfter(proofDoc(request.resource.data.by)).data.tok == get(pinDoc(request.resource.data.by)).data.hash
@@ -598,6 +616,41 @@ service cloud.firestore {
       allow read: if true;
       allow create: if request.resource.data.at is number;
       allow update, delete: if isAdmin();
+    }
+    // A PIN try (22 Oct 2026): the phone writes the try first, on its own, so a wrong one still counts. One try per person
+    // every 20 seconds. Nobody reads it: only the session rule below compares it with the stored hash.
+    match /kitchens/KITCHEN_PIN/tries/{id} {
+      allow read: if false;
+      allow create, update: if request.auth != null
+        && request.resource.data.keys().hasOnly(['tok', 'at', 'uid'])
+        && request.resource.data.tok is string && request.resource.data.tok.size() == 64
+        && request.resource.data.at == request.time && request.resource.data.uid == request.auth.uid
+        && (resource == null || request.time > resource.data.at + duration.value(20, 's'));
+      allow delete: if isAdmin();
+    }
+    // A session: this phone (the anonymous or Google sign-in's uid) writes as this person. Opened only right after a
+    // right PIN try from this phone (within 2 minutes), for at most 31 days; a session still running may move its end
+    // forward; the phone deletes it on Sign out.
+    match /kitchens/KITCHEN_PIN/sessions/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['by', 'pinAt', 'exp', 'at'])
+        && request.resource.data.by is string && onList(request.resource.data.by)
+        && request.resource.data.exp is number && request.resource.data.exp <= request.time.toMillis() + 31 * 86400000
+        && request.resource.data.at == request.time
+        && exists(setDoc(request.resource.data.by)) && request.resource.data.pinAt == get(setDoc(request.resource.data.by)).data.at
+        && (
+          // a new session: the last try for this person was from this phone, in the last 2 minutes, and right
+          (exists(triesDoc(request.resource.data.by))
+            && get(triesDoc(request.resource.data.by)).data.uid == uid
+            && request.time < get(triesDoc(request.resource.data.by)).data.at + duration.value(2, 'm')
+            && exists(pinDoc(request.resource.data.by))
+            && get(triesDoc(request.resource.data.by)).data.tok == get(pinDoc(request.resource.data.by)).data.hash)
+          // or the same session moved forward while it is still running
+          || (resource != null && resource.data.by == request.resource.data.by && resource.data.pinAt == request.resource.data.pinAt
+            && resource.data.exp > request.time.toMillis())
+        );
+      allow delete: if (request.auth != null && request.auth.uid == uid) || isAdmin();
     }
     match /kitchens/KITCHEN_PIN/proofs/{id} {
       allow read: if false;
