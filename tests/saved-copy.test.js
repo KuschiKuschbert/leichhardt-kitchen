@@ -36,12 +36,25 @@ const controlled = p => L.waitFor(p, () => !!navigator.serviceWorker.controller,
   await L.sleep(4500);   // let the worker's background round finish (the page cannot see it, so no settle)
   over.delay = 0;
 
+  // nothing changed on the server: opening again writes nothing to the saved copy (22 Oct 2026; it used to write all
+  // the files, about 2.4 MB, on every opening). The saved file keeps the X-Served stamp it was first saved with.
+  const savedAt = () => p.evaluate(() => caches.keys().then(ks => caches.open(ks[0])).then(c => c.match('js/app.js')).then(r => r ? r.headers.get('x-served') : ''));
+  const d1 = await savedAt();
+  await L.sleep(1200);
+  await p.reload({ waitUntil: 'load' }); await L.sleep(6000);   // the worker's background round (the page cannot see it)
+  const d2 = await savedAt();
+  ok(!!d1 && d1 === d2, 'nothing new: opening again does not write the saved copy again (' + d1 + ' / ' + d2 + ')');
+
 
   // a new version while someone is using the book: the saved copy shows first, then the bar offers Update now
   newData(1);
   await p.evaluate(() => localStorage.setItem('lk.upd.last', String(Date.now())));   // updated a moment ago: no reload by itself
+  // the server answers slowly, like kitchen wifi, so the worker's background round is still out when the book opens
+  // (on this local server it can finish first and save the new file before the page asks: then the book simply opens new)
+  over.delay = 1500;
   await p.reload({ waitUntil: 'load' });
   ok(await p.evaluate(() => window.__v === undefined), 'new version: the book opens from the saved copy first');
+  over.delay = 0;
   await L.waitFor(p, () => !!document.querySelector('.upd-bar'), null, 8000).catch(() => {});
   ok(/New version available/.test(await txt(p, '.upd-bar') || ''), 'new version: the update bar shows');
   await p.click('.upd-bar button');
