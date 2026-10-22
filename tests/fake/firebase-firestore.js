@@ -178,12 +178,8 @@ function applyOp(o) {
 }
 function commitOps(ops) {
   window.__fake.writes.push(ops.map(o => ({ kind: o.kind, path: key(o.ref.path), data: o.data })));
-  // the staff lock: a proof in the batch must match the stored PIN hash
-  const proof = ops.find(o => /\/proofs\//.test(key(o.ref.path)));
-  if (proof) {
-    const id = proof.ref.path[proof.ref.path.length - 1], pin = store[key(proof.ref.path.slice(0, -2).concat(['staffpins', id]))];
-    if (!pin || pin.hash !== proof.data.tok) return Promise.reject({ code: 'permission-denied' });
-  }
+  // the older PIN proof was switched off in phase 2 of PIN sessions (22 Oct 2026): the rules refuse any proofs write
+  if (ops.some(o => /\/proofs\//.test(key(o.ref.path)))) return Promise.reject({ code: 'permission-denied' });
   // two of the real rules that order of writes depends on: a staff PIN hash is only created once its pinset record
   // exists (already stored or in the same batch), and a learnlog day is create only
   const has = p => store[p] !== undefined || ops.some(o => key(o.ref.path) === p && o.kind === 'set');
@@ -208,13 +204,13 @@ function commitOps(ops) {
     return !ps || ps.at !== d.pinAt || !(fresh || renew);
   });
   if (badSess) return Promise.reject({ code: 'permission-denied' });
-  // who is writing: the proof's person (the older way), or this phone's running session while that person's PIN is
-  // the one it was opened with (Reset PIN or a new PIN stops it)
+  // who is writing: this phone's running session, while that person's PIN is the one it was opened with (Reset PIN or a
+  // new PIN stops it)
   const sessNow = uid && ops.length ? store[rootOf(ops[0]) + '/sessions/' + uid] : null;
   const sessPin = sessNow ? store[rootOf(ops[0]) + '/pinset/' + sessNow.by] : null;
-  const actor = proof ? proof.ref.path[proof.ref.path.length - 1] : (sessNow && sessNow.exp > Date.now() && sessPin && sessPin.at === sessNow.pinAt ? sessNow.by : '');
+  const actor = sessNow && sessNow.exp > Date.now() && sessPin && sessPin.at === sessNow.pinAt ? sessNow.by : '';
   // like staff() in the rules: any other write from a phone (no Google account) names its writer (by), and that writer
-  // has the proof in this batch or this phone's running session
+  // has this phone's running session
   const free = /\/(staffpins|pinset|tries|sessions|proofs)\/[^/]+$/;
   if (!window.__fakeUser && ops.some(o => o.kind !== 'delete' && !free.test(key(o.ref.path)) && !(o.data && o.data.by && o.data.by === actor))) return Promise.reject({ code: 'permission-denied' });
   // the head chef's book (book/index, recipes, drawings and the library): only the head chef writes it, with the

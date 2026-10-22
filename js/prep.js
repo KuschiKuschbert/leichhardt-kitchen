@@ -147,9 +147,6 @@
         if (!S.user) admMark(false); featSync(); loadAdmins(); draw();
         if (S.authState === 'ready' && S.configState === 'ok') resume();
       });
-      // a first sign-in needs the network: on weak wifi the book opens after 3 seconds with the older proof (sessCatchUp
-      // opens the session once the sign-in is in)
-      setTimeout(function () { if (S.authState !== 'ready') { S.authState = 'ready'; draw(); if (S.configState === 'ok') resume(); } }, 3000);
       return fb;
     }, function (e) { sdkP = null; throw e; });
     return sdkP;
@@ -453,12 +450,12 @@
       return Array.prototype.map.call(new Uint8Array(b), function (x) { return ('0' + x.toString(16)).slice(-2); }).join('');
     });
   }
-  /* Every write carries the writer's id (by). The security rules check this phone's PIN session for that person (see PIN
-     sessions below), or, on a phone with no session yet, a write-only proof of their own PIN in the same batch, which the
-     rules compare with the stored PIN. Either way only people who know a personal PIN can write. */
+  /* Every write carries the writer's id (by), and the security rules check this phone's PIN session for that person (see
+     PIN sessions below), so only people who know a personal PIN can write. While a session is being opened (a PIN just
+     typed, a phone moving from the older proof), a write waits for it, so it reaches the server after the session. */
   function W(ops) {
-    var b = fb.fs.writeBatch(fb.db), as = canW(), pf = as && !sessOn();   // a session needs no proof
-    if (pf) b.set(docRef('proofs', S.who), { tok: S.tok, at: fb.fs.serverTimestamp() });
+    if (sessP) return track(sessP.then(function () { return W(ops); }, function () { return W(ops); }));
+    var b = fb.fs.writeBatch(fb.db), as = canW();
     ops.forEach(function (o) {
       if (o[0] === 'del') { b.delete(o[1]); return; }
       var data = as ? Object.assign({ by: S.who }, o[2]) : o[2];
@@ -467,7 +464,7 @@
     return track(b.commit());
   }
   /* A long list of writes (a rollover, a big merge) goes in batches of 400, one after the other, so nothing past the
-     first 400 is dropped (a Firestore batch holds 500 writes, and each W() adds its proof). */
+     first 400 is dropped (a Firestore batch holds 500 writes). */
   function Wall(ops) {
     var p = Promise.resolve(), k;
     for (k = 0; k < ops.length; k += 400) (function (part) { p = p.then(function () { return W(part); }); })(ops.slice(k, k + 400));
@@ -498,21 +495,25 @@
      hash, the time, this phone's uid; the rules allow one per person every 20 seconds, so a PIN cannot be guessed by
      script), then opening a session (sessions/<uid>: who, the PIN's time from pinset, an end 30 days on), which the
      rules allow only after a right try from this phone. Writes then carry only who wrote them: no proof, and nothing
-     secret is kept on the phone. A running session moves its end forward once a day; Sign out and the idle lock end it;
+     secret is kept on the phone. Since phase 2 (22 Oct 2026) the rules accept nothing else: a phone with no session cannot
+     write, and a phone with no Firebase sign-in cannot open one (the PIN screen says so and tries the sign-in again).
+     A running session moves its end forward once a day; Sign out and the idle lock end it;
      Reset PIN and Stopped working here stop it in the rules. lk.prep.sess (who, the end, this phone's uid and the PIN's
      time; nothing secret) lets a phone with no signal open as before; it is out of date at that end, when the phone's
      sign-in changes (the head chef signing in or out with Google) and when the PIN is reset (the first write is refused
-     and the PIN is asked again). The older proof (lk.prep.tok) is used once to open a session on a phone that signed in
-     before this, then dropped. */
-  var SESS_DAYS = 30, TRY_MS = 20000, sessRenewed = '', lastTry = {}, tryTimer = 0;
+     and the PIN is asked again). The older proof (lk.prep.tok, on a phone that signed in before sessions) is used once,
+     as a PIN try, to open a session, then dropped. */
+  var SESS_DAYS = 30, TRY_MS = 20000, sessRenewed = '', lastTry = {}, tryTimer = 0, sessP = null;
+  var NO_SIGNIN = 'This phone could not sign in to the book. Check the connection, then type your PIN again.';
   function sessOn() { return !!S.who && S.sessFor === S.who && !!S.uid && S.sessUid === S.uid; }
-  // this phone may write as the person signed in: their session, or the older proof on a phone with no session yet
-  function canW() { return !!S.who && (sessOn() || !!S.tok); }
+  // this phone may write as the person signed in: their session
+  function canW() { return sessOn(); }
   function anonIn() {
     if (!fb || !fb.au.signInAnonymously || S.anonBusy) { if (!S.anonBusy) S.authState = 'ready'; return; }
     S.anonBusy = true;
     fb.au.signInAnonymously(fb.auth).then(function () { S.anonBusy = false; }, function () {
-      // no signal on a first start, or anonymous sign-in off in the console: the older proof keeps working for now
+      // no signal on a first start, or anonymous sign-in off in the console: the PIN screen says so, and typing the PIN
+      // tries the sign-in again
       S.anonBusy = false; S.authState = 'ready'; if (S.configState === 'ok') resume();
     });
   }
@@ -524,10 +525,7 @@
     if (!S.uid || !S.authed || !S.who || sessOn()) return;
     if (S.sessFor) { S.sessFor = ''; S.sessUid = ''; lsSet('lk.prep.sess', ''); }
     var id = S.who, h = S.tok;
-    if (h) sessOpen(id, h).catch(function (e) {
-      // the PIN went in under 20 seconds ago: once more when the rules allow the next try
-      if (e && e.code === 'wait') setTimeout(function () { if (S.authed && S.who === id && !sessOn()) sessOpen(id, h).catch(function () {}); }, TRY_MS + 1000);
-    });
+    if (h) sessOpenRetry(id, h).catch(function () {});   // the PIN went in under 20 seconds ago: once more after the 20 seconds
   }
   function sessRef() { return docRef('sessions', S.uid); }
   function sessKeep(id, exp, at) { S.sessFor = id; S.sessExp = exp; S.sessUid = S.uid; S.sessPinAt = at; lsSet('lk.prep.sess', [id, exp, S.uid, at].join(':')); lsSet('lk.prep.tok', ''); }
@@ -542,15 +540,29 @@
   }
   // the PIN check: a try, then the session. Rejects { code: 'wait' } when the last try was under 20 seconds ago,
   // { code: 'permission-denied' } for a wrong PIN, { code: 'no-session' } when this phone has no anonymous sign-in
-  function sessOpen(id, h, pinAt) {
+  function sessTry(id, h, pinAt) {
     if (!S.uid) return Promise.reject({ code: 'no-session' });
     var f = fb.fs, exp = now() + SESS_DAYS * 86400000, uid = S.uid;
     return (typeof pinAt === 'number' ? Promise.resolve(pinAt) : pinAtOf(id)).then(function (at) {
       lastTry[id] = Date.now();
       return track(f.setDoc(docRef('tries', id), { tok: h, at: f.serverTimestamp(), uid: uid })).then(function () {
-        return track(f.setDoc(docRef('sessions', uid), { by: id, pinAt: at, exp: exp, at: f.serverTimestamp() })).then(function () { if (S.uid === uid) sessKeep(id, exp, at); });
+        return track(f.setDoc(docRef('sessions', uid), { by: id, pinAt: at, exp: exp, at: f.serverTimestamp() })).then(function () { if (S.uid === uid && S.who === id) sessKeep(id, exp, at); });
       }, function (e) { throw e && e.code === 'permission-denied' ? { code: 'wait' } : e; });
     });
+  }
+  // writes made while a session is being opened wait for it (W), so they reach the server after it
+  function sessHold(p) {
+    var mine = sessP = p.then(function (v) { if (sessP === mine) sessP = null; return v; }, function (e) { if (sessP === mine) sessP = null; throw e; });
+    return mine;
+  }
+  function sessOpen(id, h, pinAt) { return sessHold(sessTry(id, h, pinAt)); }
+  // the same, once more after the 20 seconds when the last try for this person was a moment ago (another phone, or this
+  // one just before): a phone moving from the older proof, or a first PIN, needs no second typing. Writes wait throughout.
+  function sessOpenRetry(id, h, pinAt) {
+    return sessHold(sessTry(id, h, pinAt).catch(function (e) {
+      if (!e || e.code !== 'wait') throw e;
+      return new Promise(function (ok) { setTimeout(ok, TRY_MS + 1000); }).then(function () { return sessTry(id, h, pinAt); });
+    }));
   }
   // once a day: a running session moves its end forward (one write, no read); the rules allow it only while it still
   // runs. The end kept in lk.prep.sess is what makes it once a day across reloads.
@@ -572,7 +584,7 @@
   function signedIn(id, hash) {
     setTimeout(dailyFlush, 3000);   // yesterday's counts, once someone is signed in (W writes as them)
     S.authed = true; S.tok = hash; S.pf1 = S.pf2 = ''; S.pinMsg = ''; S.pinStep = '';
-    lsSet('lk.prep.tok', sessOn() ? '' : id + ':' + hash); lsSet('lk.prep.seen', String(Date.now())); lsSet('lk.prep.day', dayNow()); lastAct = Date.now(); startIdle();
+    lsSet('lk.prep.tok', ''); lsSet('lk.prep.seen', String(Date.now())); lsSet('lk.prep.day', dayNow()); lastAct = Date.now(); startIdle();
     hereAdd(id);
     var pend = S.pending; S.pending = null; S.picking = false;
     draw(); whoSync(true);   // a real sign-in: the chef mark flips in
@@ -639,17 +651,25 @@
         var setAt = now();
         b.set(docRef('pinset', id), { at: setAt, name: p.name });
         return track(b.commit()).then(function () {
-          return sessOpen(id, h, setAt).catch(function () {});   // no anonymous sign-in: the older proof for now
-        }).then(function () { S.drinkAsk = 'first'; dkEdit(); signedIn(id, h); S.tok = h; bump({ visits: 1, lastSeen: now() }); });
+          return sessOpenRetry(id, h, setAt).then(function () { S.drinkAsk = 'first'; dkEdit(); signedIn(id, h); S.tok = h; bump({ visits: 1, lastSeen: now() }); }, function (e) {
+            // the PIN is saved, but this phone could not sign in yet (no Firebase sign-in, or no signal): type it again
+            S.pinStep = 'enter'; S.pinAt = { id: id, at: setAt }; S.pf1 = S.pf2 = '';
+            S.pinMsg = e && e.code === 'no-session' ? NO_SIGNIN : 'Your PIN is saved. Type it again to sign in.';
+            if (e && e.code === 'no-session') anonIn();
+            draw();
+          });
+        });
       }).catch(function () { S.pinMsg = 'Could not save your PIN. If someone already set one for this name, pick the name again. Otherwise ask the head chef to reset your PIN, then set it within 30 minutes.'; draw(); });
       return;
     }
     if (S.pinStep === 'enter') {
       if (lockLeft() > 0) { S.pinMsg = lockWait(lockLeft()); S.pf1 = ''; draw(); return; }
+      // no Firebase sign-in on this phone (no signal on its first start): it cannot open a session, so say so and try again
+      if (!S.uid) { S.pinMsg = NO_SIGNIN; S.pf1 = ''; anonIn(); draw(); return; }
       // one try every 20 seconds (the rules): a PIN typed again straight after a wrong one goes in by itself once it may
       var gap = TRY_MS + 1000 - (Date.now() - (lastTry[id] || 0));
       clearTimeout(tryTimer);
-      if (S.uid && gap > 0) {
+      if (gap > 0) {
         S.pinMsg = 'One try every 20 seconds. Your PIN goes in by itself in ' + Math.ceil(gap / 1000) + ' seconds.'; draw();
         tryTimer = setTimeout(function () { if (S.who === id && S.pinStep === 'enter' && !S.authed && /^\d{4}$/.test(S.pf1)) submitPin(); }, gap);
         return;
@@ -660,9 +680,8 @@
       var slow = setTimeout(function () { if (S.pinMsg === 'Checking your PIN...') { S.pinMsg = 'No signal. Your PIN cannot be checked until the phone is back online. Keep the book open: it signs you in by itself when the signal is back.'; draw(); } }, 8000);
       pinHash(id, S.pf1).then(function (h) {
         S.who = id; S.tok = h;
-        // the try and the session; with no anonymous sign-in, a write only succeeds with the right PIN, so a visit
-        // count doubles as the PIN check (the older way)
-        var check = S.uid ? sessOpen(id, h, S.pinAt && S.pinAt.id === id ? S.pinAt.at : null).then(function () { bump({ visits: 1, lastSeen: now() }); }) : sset(docRef('activity', id), { name: p.name, visits: fb.fs.increment(1), lastSeen: now() }, true);
+        // the try and the session: the rules compare the try with the stored PIN
+        var check = sessOpen(id, h, S.pinAt && S.pinAt.id === id ? S.pinAt.at : null).then(function () { bump({ visits: 1, lastSeen: now() }); });
         return check.then(function () { clearTimeout(slow); lsSet(lockKey(), ''); signedIn(id, h); },
           function (e) {
             clearTimeout(slow); S.tok = '';
@@ -685,11 +704,14 @@
     var tok = (lsGet('lk.prep.tok') || '').split(':'), sv = (lsGet('lk.prep.sess') || '').split(':');
     var hasTok = tok[0] === S.who && !!tok[1], hasSess = sv[0] === S.who && +sv[1] > now() && !!S.uid && sv[2] === S.uid;
     if (dayExpired()) { leave(); startIdle(); return; }
-    if ((!hasTok && !hasSess) || idleExpired()) { if (S.who) { if (shared()) leave(); else pickName(S.who); } startIdle(); return; }
+    // with no session, a phone that signed in before sessions opens one with its kept proof; with no Firebase sign-in it
+    // cannot, so the PIN is asked (and the PIN screen says why)
+    if ((!hasSess && !(hasTok && S.uid)) || idleExpired()) { if (S.who) { if (shared()) leave(); else pickName(S.who); } startIdle(); return; }
     startIdle();
     if (hasSess) { S.sessFor = S.who; S.sessExp = +sv[1]; S.sessUid = sv[2]; S.sessPinAt = +sv[3]; }
-    // a phone that signed in before sessions: its kept proof opens one session, once (then the proof is dropped)
-    else if (S.uid && hasTok) sessOpen(S.who, tok[1]).catch(function () {});
+    // a phone that signed in before sessions: its kept proof opens one session, once (then the proof is dropped). The
+    // writes below wait for it; if the PIN was reset since, the first write is refused and the PIN is asked
+    else sessOpenRetry(S.who, tok[1]).catch(function () {});
     S.authed = true; S.tok = hasTok ? tok[1] : ''; hereAdd(S.who); draw(); whoSync(); dkCheck(); setTimeout(dailyFlush, 3000);
     // the first write checks it on the server: a reset PIN, a session that ran out or someone off the list asks again
     sset(docRef('activity', S.who), { name: (who() || {}).name || '', visits: fb.fs.increment(1), lastSeen: now() }, true).then(sessRenew, function (e) {
