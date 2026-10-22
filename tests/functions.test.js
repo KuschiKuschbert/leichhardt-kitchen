@@ -124,7 +124,8 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   await p.click('.wtop-who'); await L.settle(p, 150); await p.click('.wm a[href="#/fn"]'); await L.settle(p, 500);
   { const pg = await txt(p, '#main') || ''; ok(/#\/fn$/.test(p.url()) && /Upcoming functions/.test(pg) && /Smith 50th/.test(pg) && !/Manage functions|New function/.test(pg), 'staff: Functions opens today and the next days, with no way to book or change one'); }
   await p.goto(L.BASE + '#/'); await L.settle(p, 600);
-  ok(/Functions/.test(await txt(p, '#fn-land') || '') && /Smith 50th/.test(await txt(p, '#fn-land') || ''), 'landing: the Functions card lists today\'s function');
+  // today's function is in the band right above, so the landing card does not list it again (23 Oct 2026)
+  ok(/Smith 50th/.test(await txt(p, '#fn-band') || '') && await p.evaluate(() => { const e = document.getElementById('fn-land'); return !!e && e.hidden && !/Smith 50th/.test(e.textContent); }), 'landing: today\'s function is in the band, not again in a Functions card');
   await tap(p, '#fn-band .fn-row'); await L.settle(p, 200);
   const sh = await txt(p, '.fn-sheet') || '';
   ok(/Cake comes out at 20:00\.\s*Keep the pass clear\./.test(sh) && /Fay,/.test(sh), 'sheet: the whole kitchen comment with its author');
@@ -311,6 +312,44 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   await p.keyboard.press('Escape'); await p.evaluate(() => window.scrollTo(0, 0)); await L.settle(p, 300);
   ok(await p.$eval('.fn-strip', e => e.hidden), 'strip: gone again back at the top');
   ok(p.errors.length === 0, 'strip: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // the landing card (23 Oct 2026): the band has its own rows for today's and tomorrow's functions, so the card leaves
+  // those out and lists the rest up to 3 days out, by day, then by when food goes out, times TBC last in a day; with
+  // nothing left there is no card
+  p = await L.open(b, '#/', { who: 'ann', extra: extra({ smith, tm }), wait: 1500 });
+  await L.waitFor(p, () => /Tomorrow do/.test((document.getElementById('fn-band') || {}).textContent || ''));
+  ok(await p.evaluate(() => { const e = document.getElementById('fn-land'); return !!e && e.hidden && !/Smith 50th|Tomorrow do/.test(e.textContent); }), 'landing: only today and tomorrow booked, no Functions card (the band has both)');
+  await p.context().close();
+  // names against the alphabet, so only a sort by time passes: Zed at 12:00, Brown at 18:30, Adams with times TBC
+  const zed = fn({ name: 'Zed lunch', date: day2, start: '11:30', rounds: ['12:00'] });
+  const brown = fn({ name: 'Brown 21st', date: day2, rounds: ['18:30'] });
+  const wake = M.derive(Object.assign(fn({ name: 'Adams wake', date: day2 }), { start: 0, st: true, rounds: [], mode: 'all' }));
+  const green = fn({ name: 'Green 30th', date: M.addDays(today, 3), start: '11:00', rounds: ['11:30'] });
+  const far = fn({ name: 'Far off', date: M.addDays(today, 4) });
+  p = await L.open(b, '#/', { who: 'ann', extra: extra({ smith, tm, wake, brown, zed, green, far }), wait: 1500 });
+  await L.waitFor(p, () => /Green 30th/.test((document.getElementById('fn-land') || {}).textContent || ''));
+  let land = (await txt(p, '#fn-land') || '').replace(/\s+/g, ' ');
+  ok(/Smith 50th/.test(await txt(p, '#fn-band') || '') && !/Smith 50th|Tomorrow do|Far off/.test(land), 'landing: the card leaves out today\'s and tomorrow\'s functions (in the band) and the ones further off (' + land + ')');
+  ok(new RegExp(M.dayName(day2) + ' Zed lunch, food 12:00.*' + M.dayName(day2) + ' Brown 21st, food 18:30.*' + M.dayName(day2) + ' Adams wake, food TBC.*Green 30th, food 11:30').test(land), 'landing: 2 and 3 days out, by day, then by food time, times TBC last in a day (' + land + ')');
+  ok(/Open functions$/.test(land) && await p.$eval('#fn-land .fn-land-go', e => e.getAttribute('href')) === '#/fn', 'landing: the card opens Functions');
+  ok(!(await L.overflow(p)) && p.errors.length === 0, 'landing: no sideways scroll, no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+  // a busy Sunday: three functions today and two order reminders push a function today and tomorrow's behind the
+  // band's "+2 more", so the card names them; one already over today is left out; with the band opened, no card
+  const ward = fn({ name: 'Ward 60th', start: '16:30', rounds: ['17:00'] }), lee = fn({ name: 'Lee 18th', start: '17:30', rounds: ['18:00'] });
+  const abbott = fn({ name: 'Abbott do', start: '18:30', rounds: ['19:00'] }), brekky = fn({ name: 'Brekky do', start: '07:00', rounds: ['07:30'] });
+  const kerr = fn({ name: 'Kerr lunch', date: tomorrow, start: '11:30', rounds: ['12:00'] });
+  const o5 = fn({ name: 'Order five', date: M.addDays(today, 5) }), o6 = fn({ name: 'Order six', date: M.addDays(today, 6) }); o5.od = today; o6.od = today;
+  p = await L.open(b, '#/', { who: 'ann', extra: extra({ ward, lee, abbott, brekky, kerr, o5, o6 }), wait: 1500 });
+  await L.waitFor(p, () => /Kerr lunch/.test((document.getElementById('fn-land') || {}).textContent || ''));
+  const bnd = (await txt(p, '#fn-band') || '').replace(/\s+/g, ' ');
+  land = (await txt(p, '#fn-land') || '').replace(/\s+/g, ' ');
+  ok(/Ward 60th/.test(bnd) && /Lee 18th/.test(bnd) && /Order five/.test(bnd) && /Order six/.test(bnd) && !/Abbott do|Kerr lunch/.test(bnd) && /\+2 more/.test(bnd), 'landing: the band shows two of today\'s and the two order reminders, then +2 more (' + bnd.slice(0, 200) + ')');
+  ok(/Today Abbott do, food 19:00.*Tomorrow Kerr lunch, food 12:00/.test(land) && !/Ward 60th|Lee 18th|Brekky do|Order five|Order six/.test(land), 'landing: the card names today\'s and tomorrow\'s functions behind +2 more, and not one already over (' + land + ')');
+  await tap(p, '#fn-band [data-fn="more"]'); await L.settle(p, 200);
+  ok(/Abbott do/.test(await txt(p, '#fn-band') || '') && /Kerr lunch/.test(await txt(p, '#fn-band') || '') && await p.$eval('#fn-land', e => e.hidden), 'landing: +2 more opens them in the band, and the card goes (nothing left to list)');
+  ok(!(await L.overflow(p)) && p.errors.length === 0, 'landing busy day: no sideways scroll, no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
   // 4. upcoming totals: each booked line once, confirmed only
