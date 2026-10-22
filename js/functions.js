@@ -386,6 +386,8 @@
     strip();
     var lc = document.getElementById('fn-land');
     if (lc) { var lh = landHTML(); if (lc.innerHTML !== lh) lc.innerHTML = lh; lc.hidden = !lh; }
+    var ck = document.getElementById('fn-check');
+    if (ck) { var ch = checkHTML(); if (ck.innerHTML !== ch) ck.innerHTML = ch; ck.hidden = !ch; }
     if (sheetId) { var f = byId(sheetId); var body = sheetEl && sheetEl.querySelector('.fn-sheet-body'); if (body && f) body.innerHTML = sheetHTML(f, true); }
   }
   /* The strip (22 Oct 2026): once the band has scrolled off the top, one line stays pinned to the top of the screen
@@ -606,6 +608,44 @@
     }).join('') + '</ul><a class="fn-land-go" href="#/fn">' + (list.length > 4 ? 'All ' + list.length + ' functions' : 'Open functions') + '</a></div>';
   }
 
+  /* ---------- Things to check (22 Oct 2026, review F5) ----------
+     For the head chef and sous chefs on the landing page: what in the next 7 days' confirmed functions still needs a
+     hand before the day, worked out from what the book already has (no reads): times still TBC, a platter no longer in
+     the book, a platter whose card changed since the booking, a platter card with amounts to come ([square brackets]),
+     and a platter whose allergens are incomplete. Each line links to the function or the card. Hide for today keeps it
+     away until tomorrow (lk.fn.ckhide: the kitchen day it was hidden; out of date the next day). */
+  var CK_DAYS = 7;
+  function checks() {
+    var t = now(), today = kday(t), last = addDays(today, CK_DAYS), out = [], seen = {};
+    var D = window.LK_DATA || { recipes: [] }, app = window.LK_APP, rec = {};
+    (D.recipes || []).forEach(function (r) { rec[r.id] = r; });
+    F.list.filter(function (f) { return f.status === 'confirmed' && f.date >= today && f.date <= last; })
+      .sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : (a.first || 0) - (b.first || 0); })
+      .forEach(function (f) {
+        var when = f.date === today ? 'today' : dayName(f.date);
+        function add(k, html, href) { if (seen[k]) return; seen[k] = 1; out.push({ html: html, href: href }); }
+        if (!f.first) add('tbc:' + f.id, '<b>' + esc(f.name) + '</b>, ' + esc(when) + ': the times are still TBC', '#/fn/' + encodeURIComponent(f.id));
+        (f.lines || []).forEach(function (l) {
+          var r = rec[l.rid], nm = esc(l.name || l.rid), fnHref = '#/fn/' + encodeURIComponent(f.id), rHref = '#/r/' + encodeURIComponent(l.rid);
+          if (!r) { add('gone:' + l.rid + ':' + f.id, nm + ' is no longer in the book (<b>' + esc(f.name) + '</b>, ' + esc(when) + ')', fnHref); return; }
+          if (l.fp && fingerprint(r) !== l.fp) add('chg:' + l.rid + ':' + f.id, nm + ' changed in the book since <b>' + esc(f.name) + '</b> was booked', fnHref);
+          if ((r.ingredients || []).some(function (i) { return /\[/.test(String(i.q || '')); })) add('qty:' + l.rid, nm + ': amounts to come on the card', rHref);
+          if (app && app.missing && app.missing(l.rid).length) add('alg:' + l.rid, nm + ': allergens incomplete', rHref);
+        });
+      });
+    return out;
+  }
+  function checkHTML() {
+    var P = window.LK_PREP, chef = !!(P && P.chefMenu && P.chefMenu().chef), hid = '';
+    if (!chef) return '';
+    try { hid = localStorage.getItem('lk.fn.ckhide') || ''; } catch (e) {}
+    if (hid === kday(now())) return '';
+    var xs = checks();
+    if (!xs.length) return '';
+    return '<div class="fn-ck"><span class="fn-ck-h">To check before the functions</span><ul>' + xs.slice(0, 6).map(function (x) { return '<li><a href="' + x.href + '">' + x.html + '</a></li>'; }).join('') + '</ul>' +
+      (xs.length > 6 ? '<p class="fn-ck-more">and ' + (xs.length - 6) + ' more</p>' : '') + '<button type="button" class="linkish" data-fn="ckhide">Hide for today</button></div>';
+  }
+
   /* ---------- clicks, and keeping it right while the screen stays open ---------- */
   document.addEventListener('click', function (e) {
     var el = e.target.closest && e.target.closest('[data-fn]');
@@ -615,6 +655,7 @@
     if (a === 'close') { sheetClose(true); return; }
     if (a === 'sent' || a === 'unsent') { tickSent(el.getAttribute('data-id'), +el.getAttribute('data-r'), a === 'sent'); return; }
     if (a === 'go') { sheetClose(); return; }
+    if (a === 'ckhide') { try { localStorage.setItem('lk.fn.ckhide', kday(now())); } catch (x) {} paint(); return; }
     if (a === 'more') { F.more = !F.more; lastBand = null; paint(); var mb = document.querySelector('#fn-band [data-fn="more"]'); if (mb) mb.focus({ preventScroll: true }); return; }
     if (a === 'days') { pageDays = +el.getAttribute('data-v') || 3; try { window.dispatchEvent(new Event('lk-fn')); } catch (x) {} }
   });
@@ -649,6 +690,7 @@
     M: M, list: function () { return F.list.slice(); }, state: function () { return F; },
     bandSlot: function () { var h = bandHTML(); lastBand = h; return '<div class="fn-band" id="fn-band" role="region" aria-label="Functions"' + (h ? '' : ' hidden') + '>' + h + '</div>'; },
     landSlot: function () { var h = landHTML(); return '<div id="fn-land"' + (h ? '' : ' hidden') + '>' + h + '</div>'; },
+    checkSlot: function () { var h = checkHTML(); return '<div id="fn-check"' + (h ? '' : ' hidden') + '>' + h + '</div>'; },
     page: pageHTML, watch: watch, paint: paint, catalogue: catalogue, recipeOf: recipeOf, nameOf: nameOf, sheetHTML: sheetHTML, esc: esc
   };
   watch();
