@@ -33,6 +33,8 @@ const groupsShown = p => p.evaluate(() => { const r = document.querySelector('.a
 
     // scrolling down tucks the nav up to its last row, the groups go off screen, the section on screen is marked
     await p.mouse.wheel(0, 1600); await L.settle(p, 700);
+    // a redraw that lands during the first scroll starts the count again (adminScroll); a person keeps scrolling
+    if (!(await nav(p)).min) { await p.mouse.wheel(0, 400); await L.settle(p, 700); }
     v = await nav(p);
     ok(v.min && v.bottom > 30 && v.bottom < 80 && !(await groupsShown(p)), w + ' admin nav: scrolling down leaves only the On this page row (' + v.bottom + ' px)');
     ok(!!v.on && !/Overview/.test(v.on), w + ' admin nav: the section on screen is marked (' + v.on + ')');
