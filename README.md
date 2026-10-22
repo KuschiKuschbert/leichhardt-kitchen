@@ -161,6 +161,7 @@ npm test
 
 How the book should work, as the head chef decided it. Newest first. Add new ones here with the date; the details are in the sections below.
 
+- **22 Oct 2026.** Fewer boxes on the admin panel, from before and after screenshots: each block is set apart by space, its heading and a thin rule, not a card. The totals are big numbers in a row, the filters a plain row, the report sections open. Tables keep their lines, and the save bar keeps its card because it sticks over the page.
 - **22 Oct 2026.** Everyone signed in has Functions in the chef hat menu. Staff read today's and the next days' functions (`#/fn`); only function managers can book or change one.
 - **22 Oct 2026.** Service view (`#/fn/now`): one screen with what goes out now across all functions, late first, with the platters to plate added up. The band and the strip go by the next round not sent, most urgent first.
 - **22 Oct 2026.** The kitchen's function views show no guest count; the function sheet leads with what goes out next.
@@ -251,6 +252,7 @@ How the book should work, as the head chef decided it. Newest first. Add new one
 
 ### Lists and buttons (October 2026)
 
+- **Fewer boxes on the admin panel (22 Oct 2026, head chef decision).** Each admin block is set apart by space, its heading and a thin rule above it, not a card (`.a-pane .set-block` in `css/app.css`). The totals (`.a-tile`) are big numbers in a row, the filters (`.a-filters`) a plain row, and the report sections (`.a-card`) open. Tables keep their lines. The save bar keeps its card because it sticks over the page. `tests/screens.test.js` checks it.
 - **Popups and sideways rows (22 Oct 2026).** The chef hat menu dims the page behind it like every other popup (a tap on the dimmed page closes it). The section tabs on a phone and the admin page and On this page rows fade at their right edge when they scroll sideways, so it is clear there is more. `tests/screens.test.js`.
 - **Full-size targets.** Every small Remove, Put back, Urgent and Reset PIN button, the section tabs, the Pass / Tiles switch, Update now, and every button on a prep line (tick box, !, recipe, remove), the tick boxes on the order list, Show removed, Undo, Not you? and the admin permission tick boxes are at least 44 px, with the same look as before. On a prep line the three buttons sit together on the right in the same place on every line, and Urgent and Rolled flow with the text.
 - **Lists do not jump.** A line ticked on this phone stays where it is, struck through, for 3.5 seconds before it moves to Done today, so a second tap cannot hit the next line. On the order list an ordered line keeps its place for its 10 minutes instead of jumping to the bottom.
@@ -592,9 +594,15 @@ Remove each item here once it is done.
 
 The coding rules in `CLAUDE.md` came from a check of the whole book on 21 Oct 2026. This is the older code that does not meet them yet, in the order to fix it. Each item is its own branch and pull request, with its tests. Remove an item once it is merged.
 
-Done: the wastage log, the read budget (what stays as it is, and why, is under Reads kept small), past-day changes reaching every phone, text on screen, and filling in what the book knows (all 22 Oct 2026).
+Done, all on 22 Oct 2026:
+- the wastage log
+- the read budget (what stays as it is, and why, is under Reads kept small)
+- past-day changes reaching every phone
+- text on screen
+- filling in what the book knows
+- the screens: the dimmed chef menu, the tab fades, the type-to-find recipe links and fewer boxes on the admin panel
 
-1. **Screens, what is left.** A trial of fewer boxes on the admin panel, with before and after screenshots for the head chef first (the dimmed chef menu, the tab fades and the type-to-find recipe links were done on 22 Oct 2026).
+Nothing is left on this list. Code that breaks a coding rule from now on is fixed in the same branch, or added here.
 
 Measured and kept as it is: `js/art.js` (1.3 MB, 164 kB zipped) still loads at start (22 Oct 2026). Loading it only when Recipes opens was built and measured on a phone six times slower than a laptop: the start was 9 ms sooner (284 to 275 ms until the scripts had run, 71 to 65 ms at full speed), nothing less was downloaded (it stays in `SHELL`), and the first Recipes after each start was about 90 ms slower (944 to 1036 ms). Recipes is the page the book opens most, so the change was not merged.
 
