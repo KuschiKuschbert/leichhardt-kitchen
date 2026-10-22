@@ -1021,6 +1021,7 @@ details.nb-start-l[open] > summary::after { content: '\2212'; }
 .mn-safety { display: flex; flex-direction: column; gap: 0.3rem; padding: 0.8rem 0.9rem; border-radius: 8px; background: var(--accent-ink); color: #fff; font-weight: 500; }
 .mn-sl { font: 700 1.125rem var(--display); letter-spacing: 0.1em; text-transform: uppercase; }
 .mn-safety .mn-ul { margin: 0; }
+.mn-sh { font: 600 1rem var(--display); letter-spacing: 0.04em; margin-top: 0.2rem; }
 .mn-safety a { color: #fff; }
 .mn-box { display: flex; flex-direction: column; gap: 0.6rem; padding: 0.85rem 0.9rem; border: 1.5px solid var(--ink); border-radius: 8px; }
 .mn-bh { margin: 0; display: flex; align-items: baseline; gap: 0.6rem; font: 700 1.5rem var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
