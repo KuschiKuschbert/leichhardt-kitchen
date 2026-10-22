@@ -36,6 +36,7 @@ The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the
 | `firestore.rules` | Rules template (see above) |
 | `.claude/settings.json`, `scripts/guard-main.mjs` | The main-branch guard: a Claude Code hook that refuses edits and commits on `main` |
 | `scripts/pre-merge.sh` | Run from the worktree before merging: open pull requests, worktrees, and whether `main` moved |
+| `.github/pull_request_template.md` | The pull request sections (see Commits and pull requests) |
 | `scripts/publish-rules.sh` | Publishes the rules from your own computer: asks for the PIN and email, deploys a filled-in copy from a temporary folder |
 | `.github/workflows/pr-tests.yml` | Runs the click tests on every pull request to `main` (the **Click tests** check that branch protection requires) |
 | `.github/workflows/publish-rules.yml`, `.github/workflows/live-tests.yml`, `.github/workflows/lock-probe.yml` | Publish the rules from GitHub (secrets `FIREBASE_SA`, `KITCHEN_PIN`, `OWNER_EMAIL`) and prove the lock on the live book straight after (`tests/rules/probe.mjs`, also weekly), and run the click tests against the live site after each Pages deploy |
@@ -71,6 +72,21 @@ These hold for every session, every message and every change, however small. A h
 - The title says what changes for the team, in plain words: "Recipes opens faster and taps answer at once", not "Refactor backHome".
 - The body says why first, with measured numbers when there are any (times, sizes, counts), then one line per file or part changed, then the tests added or changed.
 - Same writing style as everything else: no em dashes, short sentences.
+- `.github/pull_request_template.md` holds the sections every pull request fills in (why, what changes for the team, files, tests, reads and rules, rollback). Open work in progress as a draft.
+- Branch names: `feat/`, `fix/`, `docs/`, `ci/`, `ux/` plus a short name, or the `claude/...` name the app gives a session. One owner per worktree: a session works only in the worktree it made or was given.
+
+## Rollback, dependencies and secrets
+- **Undo a bad merge** with `git revert <merge commit>` on a new branch and its own pull request, never a force push to `main`. Pages redeploys in about a minute and every phone picks the old code up through the update check (README, Good to know). Saved data is not rolled back by a revert: if the change wrote new fields, say in the pull request whether old code ignores them.
+- **Rules roll back** by publishing the previous `firestore.rules` from `main` with the **Publish rules** workflow, then running the **Lock probe**.
+- **Big look changes** keep a baseline first: a git tag on `main` (like `usability-baseline-2026-10-20`) and `tests/shots-baseline*/` (ignored by git), so the old look can be compared and restored.
+- **Dependencies:** the book itself has none to install. Only `tests/` and `tests/rules/` have a `package.json`; change a version there in its own pull request with the full test run. A new outside script, font or service also needs the security header in `index.html` and is a head chef decision.
+- **Secrets** (`FIREBASE_SA`, `KITCHEN_PIN`, `OWNER_EMAIL`, `BACKUP_KEY`) live only in GitHub Actions secrets and the Firebase console. Never print them in a workflow log, a test, a screenshot or a pull request.
+- **Audit notes with security findings** stay out of this public repo: keep them untracked in their worktree or in a private artifact, and put only the fixes in pull requests.
+
+## What GitHub enforces (checked 22 Oct 2026)
+- `main` is protected: the **Click tests** check must pass and the branch must be up to date with `main`; force pushes and deleting `main` are refused.
+- Not enforced by GitHub: reviews (none required, Claude merges by the head chef's decision of 21 Oct 2026), and the protection does not apply to admins. The main-branch guard hook (`scripts/guard-main.mjs`) stops Claude Code sessions from working on `main`; a person with admin rights can still push to it.
+- The **Click tests** job checks `js/*.js`, `js/lib/*.js` and `sw.js` parse, runs the click tests, then the rules checks on the Firestore emulator (`tests/rules`) and the nightly learning check (`scripts/emulator-check.mjs`), since 22 Oct 2026.
 
 ## Things that are easy to break
 - `.rail` is the steel shelf rail on the Pass; the landing and top bar use `.wtop`. Do not reuse class names across features (check `css/app.css` first).
