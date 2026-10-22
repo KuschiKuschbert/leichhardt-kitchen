@@ -72,6 +72,17 @@ const controlled = p => L.waitFor(p, () => !!navigator.serviceWorker.controller,
   await p.reload({ waitUntil: 'load' }).catch(() => {});
   await L.settle(p, 800);
   ok(/Barramundi/i.test(await txt(p, '#rtitle') || ''), 'no signal: the recipe still opens');
+  // the Firebase files kept by the page (22 Oct 2026): with no signal and the browser's own cache cleared, the prep list
+  // still opens (the worker hands them out from lk-fb-<version>)
+  await ctx.setOffline(false);
+  await p.goto(base + '#/prep', { waitUntil: 'load' }); await L.settle(p, 1500);
+  await L.waitFor(p, () => caches.keys().then(ks => { const k = ks.find(x => x.indexOf('lk-fb-') === 0); return k ? caches.open(k).then(c => c.keys()).then(r => r.length >= 3) : false; }), null, 8000).catch(() => {});
+  ok(await p.evaluate(() => caches.keys().then(ks => ks.some(k => k.indexOf('lk-fb-') === 0))), 'the page keeps the Firebase files on the phone');
+  const cdp = await ctx.newCDPSession(p); await cdp.send('Network.clearBrowserCache');
+  await ctx.setOffline(true);
+  await p.reload({ waitUntil: 'load' }).catch(() => {});
+  await L.waitFor(p, () => !!document.querySelector('.nb-row'), null, 10000).catch(() => {});
+  ok(!!(await p.$('.nb-row')), 'no signal and the browser cache cleared: the prep list still opens');
     ok(p.errors.length === 0, 'no page errors ' + p.errors.join(' | '));
   await ctx.close();
   await b.close();

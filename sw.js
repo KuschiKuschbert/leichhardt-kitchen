@@ -13,7 +13,7 @@ self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(SHELL); }).then(function () { return self.skipWaiting(); }));
 });
 self.addEventListener('activate', function (e) {
-  e.waitUntil(caches.keys().then(function (ks) { return Promise.all(ks.filter(function (k) { return k !== CACHE; }).map(function (k) { return caches.delete(k); })); }).then(function () { return self.clients.claim(); }));
+  e.waitUntil(caches.keys().then(function (ks) { return Promise.all(ks.filter(function (k) { return k !== CACHE && k.indexOf('lk-fb-') !== 0; }).map(function (k) { return caches.delete(k); })); }).then(function () { return self.clients.claim(); }));
 });
 function stamp(res) { return res ? (res.headers.get('etag') || '') + '|' + (res.headers.get('last-modified') || '') : ''; }
 /* Fetches every saved file again (the browser asks the server whether it changed). All or nothing: one failure keeps the
@@ -53,6 +53,12 @@ self.addEventListener('fetch', function (e) {
     e.respondWith(caches.match(r).then(function (m) {
       return m || fetch(r).then(function (res) { if (res.ok || res.type === 'opaque') { var c = res.clone(); caches.open(CACHE).then(function (ca) { ca.put(r, c); }); } return res; });
     }));
+    return;
+  }
+  // the Firebase files the page saved for itself (js/prep.js keepSdk): handed out only when the phone is offline. Online
+  // the worker leaves them alone, so the browser loads them as usual (22 Oct 2026)
+  if (u.hostname === 'www.gstatic.com' && /^\/firebasejs\//.test(u.pathname)) {
+    if (self.navigator && self.navigator.onLine === false) e.respondWith(caches.match(r).then(function (m) { return m || fetch(r); }));
     return;
   }
   if (u.origin !== self.location.origin) return;

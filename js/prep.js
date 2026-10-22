@@ -115,6 +115,22 @@
   window.addEventListener('unhandledrejection', function (e) { if (brokenCache(e.reason)) healCache(); });
   // App Check: Fraud Defense (reCAPTCHA Enterprise, appCheckEnterpriseKey) or the older reCAPTCHA v3 (appCheckKey)
   function sdkNames() { return ['firebase-app.js', 'firebase-firestore.js', 'firebase-auth.js'].concat(FB.appCheckEnterpriseKey || FB.appCheckKey ? ['firebase-app-check.js'] : []); }
+  /* The Firebase files kept on the phone (22 Oct 2026, review P5): once they have loaded, the page saves them in their own
+     saved copy (lk-fb-<version>), and the service worker hands them out when the phone is offline. So a phone whose
+     browser cache was cleared still opens the prep list with no signal. Saved by the page, not by the worker, so they come
+     the same way the page loads them. Out of date when SDK changes version: a new name, and the worker drops the old one. */
+  function keepSdk() {
+    try {
+      if (!window.caches || !navigator.onLine) return;
+      var name = 'lk-fb-' + SDK.split('/').filter(Boolean).pop(), urls = sdkNames().map(function (n) { return SDK + n; });
+      caches.open(name).then(function (c) {
+        return Promise.all(urls.map(function (u) { return c.match(u); })).then(function (have) {
+          var need = urls.filter(function (u, i) { return !have[i]; });
+          return need.length ? c.addAll(need) : null;
+        });
+      }).catch(function () {});
+    } catch (e) {}
+  }
   function sdkFiles() {
     var n = sdkNames();
     return Promise.all([import(SDK + n[0]), import(SDK + n[1]), import(SDK + n[2]), n[3] ? import(SDK + n[3]) : Promise.resolve(null)]);
@@ -138,6 +154,7 @@
       catch (e) { db = fs.getFirestore(app); }
       var auth = au.getAuth(app);
       fb = { app: app, fs: fs, au: au, db: db, auth: auth };
+      keepSdk();
       au.onAuthStateChanged(auth, function (u) { S.user = u; S.authState = 'ready'; if (!u) admMark(false); featSync(); loadAdmins(); draw(); });
       return fb;
     }, function (e) { sdkP = null; throw e; });
