@@ -140,7 +140,7 @@ service cloud.firestore {
       allow delete: if false;
     }
     // End-of-day waste review, one per day. Everyone reads it (the change for the next shift shows on the prep list);
-    // only the head chef or a sous chef writes it (22 Oct 2026: it is written in the admin panel's wastage log).
+    // only the head chef or a sous chef writes it: today's on the wastage page, past days in the admin panel's wastage log.
     match /kitchens/KITCHEN_PIN/waste/{day} {
       allow read: if true;
       allow create, update: if writer() && lead()
