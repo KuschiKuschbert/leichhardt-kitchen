@@ -440,7 +440,13 @@ await ok(getDocs(collection(anon, K + 'waste/nonsense/lines')), false, 'waste: a
 await ok(getDocs(collection(owner, K + 'waste/' + WY + '/lines')), true, 'waste: the head chef\'s Google account reads past days');
 await ok(W([['waste/' + WT + '/lines/t2', wline()]], { id: 'ann' }), true, 'waste: Ann logs an entry today');
 await ok(W([['waste/' + WT + '/lines/t1', wline({ deleted: true }), true]], { id: 'ann' }), false, 'waste: Ann cannot remove an entry');
-await ok(W([['waste/' + WT + '/lines/t1', wline({ deleted: true }), true]], { id: 'sam' }), true, 'waste: a sous chef removes today\'s entry');
+await ok(W([['waste/' + WT + '/lines/t1', { deleted: true, deletedBy: 'Sam', deletedAt: 5 }, true]], { id: 'sam' }), false, 'waste: a sous chef cannot remove Ann\'s entry (head chef decision, 22 Oct 2026)');
+await ok(W([['waste/' + WT + '/lines/s1', wline({ addedBy: 'Sam', addedById: 'sam', addedAt: Date.now() })]], { id: 'sam' }), true, 'waste: Sam logs an entry');
+await ok(W([['waste/' + WT + '/lines/s1', { deleted: true, deletedBy: 'Sam', deletedAt: Date.now() }, true]], { id: 'sam' }), true, 'waste: Sam undoes his own entry straight after');
+await ok(W([['waste/' + WT + '/lines/s1', { amount: 9 }, true]], { id: 'sam' }), false, 'waste: Sam cannot change the amount');
+await ok(W([['waste/' + WT + '/lines/s2', wline({ addedBy: 'Sam', addedById: 'sam', addedAt: Date.now() - 600000 })]], { id: 'sam' }), true, 'waste: an entry Sam logged 10 minutes ago');
+await ok(W([['waste/' + WT + '/lines/s2', { deleted: true, deletedBy: 'Sam', deletedAt: Date.now() }, true]], { id: 'sam' }), false, 'waste: Sam cannot undo it 10 minutes later');
+await ok(updateDoc(doc(owner, K + 'waste/' + WY + '/lines/y1'), { deleted: true, deletedBy: 'Head chef', deletedAt: 5 }), true, 'waste: the head chef\'s Google account removes a past entry');
 await ok(getDoc(doc(anon, K + 'waste/' + WY)), true, 'waste review: everyone reads it (the note on the prep list)');
 await ok(W([['waste/' + WT, { avoidable: 'Chips', change: '' }, true]], { id: 'ann' }), false, 'waste review: staff cannot write it');
 await ok(W([['waste/' + WT, { avoidable: 'Chips', change: 'Fewer chips' }, true]], { id: 'sam' }), true, 'waste review: a sous chef writes it');

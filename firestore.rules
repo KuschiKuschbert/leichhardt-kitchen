@@ -119,7 +119,7 @@ service cloud.firestore {
         && request.time >= timestamp.date(int(day.split('-')[0]), int(day.split('-')[1]), int(day.split('-')[2])) - duration.value(615, 'm')
         && request.time < timestamp.date(int(day.split('-')[0]), int(day.split('-')[1]), int(day.split('-')[2])) + duration.value(855, 'm');
     }
-    // Wastage log: anyone signed in adds a line; only the head chef or a sous chef may change one (to remove it).
+    // Wastage log: anyone signed in adds a line; only the head chef's Google account removes or puts one back.
     // Head chef decision (22 Oct 2026): with the kitchen PIN only today's lines can be read. Past days are for the
     // head chef's Google account (the admin panel's wastage log). The phones get what they need from summary/waste.
     match /kitchens/KITCHEN_PIN/waste/{day}/lines/{line} {
@@ -131,7 +131,12 @@ service cloud.firestore {
         && request.resource.data.reason in ['prep', 'expired', 'fault', 'returned', 'excess']
         && request.resource.data.get('action', '') is string && request.resource.data.get('action', '').size() <= 120
         && request.resource.data.get('station', '') is string && request.resource.data.get('station', '').size() <= 40;
-      allow update: if writer() && (isAdmin() || sousBy()) && request.resource.data.text is string && request.resource.data.text.size() <= 80;
+      // Head chef decision (22 Oct 2026): only the head chef's Google account removes or puts back an entry. A sous chef
+      // may Undo their own entry straight after logging it (2 minutes on the server's time), and only the removed fields.
+      allow update: if (isAdmin() && request.resource.data.text is string && request.resource.data.text.size() <= 80)
+        || (staff() && sousBy() && resource.data.get('addedById', '') == request.resource.data.by
+          && request.time.toMillis() - resource.data.get('addedAt', 0) < 120000
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deleted', 'deletedBy', 'deletedAt', 'by']));
       allow delete: if false;
     }
     // End-of-day waste review, one per day. Everyone reads it (the change for the next shift shows on the prep list);
