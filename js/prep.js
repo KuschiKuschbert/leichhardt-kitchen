@@ -773,10 +773,14 @@
   /* the next person never lands in the last person's staff draft, minutes register or ping editor */
   function leave() { sessDrop(); ksClose(); noteClose('shut'); S.guestIn = false; lsSet('lk.prep.guest', ''); S.drinkAsk = ''; S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); }
   /* The chef mark's menu (js/app.js) asks what to show: Meeting minutes for everyone (when the page is on), and for the
-     head chef and sous chefs Shift pings, the Minutes register and Manage staff. The head chef on their admin device gets
-     the matching admin tab instead. */
+     head chef and sous chefs Shift pings and Manage staff (22 Oct 2026: the Minutes register is "See who has signed" at
+     the top of Meeting minutes). head: no Kitchen mail, the head chef's mail is read in the admin panel. tab: the head
+     chef on their own Google device, where Shift pings opens the admin tab and Manage staff is People in the admin
+     panel, so the menu leaves Manage staff out. A key that is missing shows the row. */
+  // the head chef on their own Google device: the chef hat's chef items open the matching admin tab
+  function adminTabs() { return admDev() && whoHead(); }
   // Meeting minutes shows for staff only once there is something published to read (chefs always, for the register)
-  function chefMenu() { return { minutes: featOn('minutes') && (isSous() || mnPub().length > 0), toSign: featOn('minutes') ? mnUnsigned().length : 0, chef: isSous(), sec: ksPicks(me()) ? (mySec() || 'Pick one for today') : '', book: bookEdit(), fn: fnOK() }; }
+  function chefMenu() { return { minutes: featOn('minutes') && (isSous() || mnPub().length > 0), toSign: featOn('minutes') ? mnUnsigned().length : 0, chef: isSous(), head: whoHead(), tab: adminTabs(), sec: ksPicks(me()) ? (mySec() || 'Pick one for today') : '', book: bookEdit(), fn: fnOK() }; }
   /* Functions (21 Oct 2026): who may enter and change function bookings. The person signed in with their own PIN and
      ticked for Functions (config/main fnIds, which only the head chef's Google account saves), or the head chef's Google
      device with nobody signed in. Being Head chef or Functions coordinator is not enough without the tick. The rules
@@ -796,8 +800,9 @@
   }
   function chefOpen(k) {
     if (!isSous()) return;
-    if (admDev() && whoHead()) { S.atab = k === 'pings' ? 'notes' : k === 'register' ? 'minutes' : 'people'; lsSet('lk.prep.atab', S.atab); if (location.hash === '#/admin') draw(); else location.hash = '#/admin'; return; }
-    S.minOpen = false; S.notesOpen = false; if (S.staffOpen && !draftDirty()) { S.staffOpen = false; S.draft = null; }
+    if (adminTabs()) { S.atab = k === 'pings' ? 'notes' : k === 'register' ? 'minutes' : 'people'; lsSet('lk.prep.atab', S.atab); if (location.hash === '#/admin') draw(); else location.hash = '#/admin'; return; }
+    // a ping with words not saved yet stays open behind the register (drawn first), like a staff draft, so Back finds it
+    S.minOpen = false; if (!(k === 'register' && nfDirty())) S.notesOpen = false; if (S.staffOpen && !draftDirty()) { S.staffOpen = false; S.draft = null; }
     if (k === 'pings') { S.notesOpen = true; S.nf = null; S.nOpen = false; S.nMsg = ''; loadNotes(); }
     else if (k === 'register') { S.minOpen = true; S.mMsg = ''; S.mf = null; loadMinutes(true); }
     else { if (!S.staffOpen) startDraft(); S.staffOpen = true; seedPinOpen(); }
@@ -4658,8 +4663,8 @@
   }
 
   /* ---------- kitchen meeting minutes ----------
-     The head chef (admin panel, Minutes tab) writes the minutes after a meeting and publishes them. Sous chefs (Handy, "Minutes register") only see the register.
-     Staff read them at #/minutes in one fixed layout and sign with their own PIN. A card on the landing page and a nudge on the prep list show until a person has signed; Meeting minutes in Handy opens them any time.
+     The head chef (admin panel, Minutes tab) writes the minutes after a meeting and publishes them. Sous chefs only see the register ("See who has signed" at the top of #/minutes).
+     Staff read them at #/minutes in one fixed layout and sign with their own PIN. A card on the landing page and a nudge on the prep list show until a person has signed; Meeting minutes in the chef hat menu opens them any time.
      Data: kitchens/<PIN>/minutes/<id> { no, v, status draft|published, date, start, loc, chair, taker, guests, next, decisions, menu, safety, dates, other,
        att: [{ id, st present|apology|absent }], acts: [{ what, who, by, st open|done|dropped, carried }], pubAt, removed, at, upd }.
      A change after publishing makes version v+1 and everyone signs again. Each earlier version is kept in minutes/<id>/hist/<v>.
@@ -4790,14 +4795,20 @@
       '<button type="button" class="btn dark mn-signbtn" data-p="mn-sign" data-id="' + esc(m.id) + '"' + (S.mSigning ? ' disabled' : '') + '>Sign as ' + esc(p.name) + '</button>' +
       '<span class="mn-err" role="status" id="mn-pinmsg">' + esc(S.mErr) + '</span><p class="hint">Your name, the version and the time are recorded. Apology and absent staff sign too.</p></section>';
   }
+  /* the way to the register for a chef: the admin Minutes tab on the head chef's Google device (where minutes are
+     written too), the sous chef page elsewhere. short: the top bar's words, which fit beside "Not you?" on a phone */
+  function mnRegLink(short) {
+    return admDev() ? '<button type="button" class="p-link" data-p="mn-admin">' + (short ? 'See who has signed' : 'Write minutes and see who has signed') + '</button>' : (isSous() ? '<button type="button" class="p-link" data-p="mn-sous">See who has signed</button>' : '');
+  }
   function mnWriteLink() {
-    var l = admDev() ? '<button type="button" class="p-link" data-p="mn-admin">Write minutes and see who has signed</button>' : (isSous() ? '<button type="button" class="p-link" data-p="mn-sous">See who has signed</button>' : '');
+    var l = mnRegLink();
     return l ? '<p class="mn-noprint mn-wl">' + l + '</p>' : '';
   }
   function minutesPageHTML() {
     loadMinutes();
     var p = me(), list = mnPub();
-    var top = '<div class="nb-top mn-noprint"><span>' + (p ? 'Signing as <strong>' + esc(p.name) + '</strong>' : '') + '</span><span class="p-links"><button type="button" class="p-link" data-p="who-change">Not you?</button></span></div>';
+    // with minutes to read, the register link sits in the top bar (22 Oct 2026: it replaced the Minutes register in the chef hat menu)
+    var top = '<div class="nb-top mn-noprint"><span>' + (p ? 'Signing as <strong>' + esc(p.name) + '</strong>' : '') + '</span><span class="p-links">' + (list.length ? mnRegLink(true) : '') + '<button type="button" class="p-link" data-p="who-change">Not you?</button></span></div>';
     // loading and nothing published yet: the same notebook card as the order list and wastage
     function card(msg) {
       return top + '<section class="nb-page o-page mn-empty"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Meeting minutes</h2><span class="nb-date">Last ' + MN_DAYS + ' days</span></div></header>' +
@@ -4811,7 +4822,7 @@
     older = older.filter(toSign).concat(older.filter(function (x) { return !toSign(x); }));
     return top + '<section class="mn">' + mnDocHTML(m, true) +
       '<div class="mn-noprint">' +
-      (older.length ? '<h3 class="mn-eh">Earlier minutes (last ' + MN_DAYS + ' days)</h3><div class="mn-earlier">' + older.map(function (x) { return '<button type="button" class="chip' + (toSign(x) ? ' mn-tosign' : '') + '" data-p="mn-pickdoc" data-id="' + esc(x.id) + '">' + pad(x.no || 0) + ' &middot; ' + esc(dayShort(x.date)) + (toSign(x) ? ' &middot; <b>To sign</b>' : '') + '</button>'; }).join('') + '</div>' : '') + '</div>' + mnWriteLink() + '</section>';
+      (older.length ? '<h3 class="mn-eh">Earlier minutes (last ' + MN_DAYS + ' days)</h3><div class="mn-earlier">' + older.map(function (x) { return '<button type="button" class="chip' + (toSign(x) ? ' mn-tosign' : '') + '" data-p="mn-pickdoc" data-id="' + esc(x.id) + '">' + pad(x.no || 0) + ' &middot; ' + esc(dayShort(x.date)) + (toSign(x) ? ' &middot; <b>To sign</b>' : '') + '</button>'; }).join('') + '</div>' : '') + '</div></section>';
   }
   function signMinutes(id) {
     var m = mnById(id), p = who();
@@ -6259,7 +6270,8 @@
     if (a === 'mn-open') { if (isSous()) { S.minOpen = true; S.mMsg = ''; S.mf = null; loadMinutes(true); draw(); window.scrollTo(0, 0); } return; }
     if (a === 'mn-close') { S.minOpen = false; S.mf = null; draw(); return; }
     if (a === 'mn-admin') { S.atab = 'minutes'; lsSet('lk.prep.atab', 'minutes'); location.hash = '#/admin'; return; }
-    if (a === 'mn-sous') { S.minOpen = true; S.mf = null; location.hash = '#/prep'; return; }
+    // the register from #/minutes, the same as the old Minutes register in the chef hat menu: on a tap, one small minutes query
+    if (a === 'mn-sous') { chefOpen('register'); return; }
     if (a === 'mn-pickdoc') { S.mSel = id; S.mErr = ''; draw(); window.scrollTo(0, 0); return; }
     if (a === 'mn-sign') { signMinutes(id); return; }
     if (a === 'mn-csv') { csvMinutes(id); return; }
