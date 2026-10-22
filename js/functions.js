@@ -642,12 +642,14 @@
     if (hid === kday(now())) return '';
     var xs = checks();
     if (!xs.length) return '';
+    if (P.sg) P.sg('checks', 's');
     return '<div class="fn-ck"><span class="fn-ck-h">To check before the functions</span><ul>' + xs.slice(0, 6).map(function (x) { return '<li><a href="' + x.href + '">' + x.html + '</a></li>'; }).join('') + '</ul>' +
       (xs.length > 6 ? '<p class="fn-ck-more">and ' + (xs.length - 6) + ' more</p>' : '') + '<button type="button" class="linkish" data-fn="ckhide">Hide for today</button></div>';
   }
 
   /* ---------- clicks, and keeping it right while the screen stays open ---------- */
   document.addEventListener('click', function (e) {
+    if (e.target.closest && e.target.closest('.fn-ck a') && window.LK_PREP && window.LK_PREP.sg) window.LK_PREP.sg('checks', 't');
     var el = e.target.closest && e.target.closest('[data-fn]');
     if (!el) return;
     var a = el.getAttribute('data-fn');
@@ -655,7 +657,7 @@
     if (a === 'close') { sheetClose(true); return; }
     if (a === 'sent' || a === 'unsent') { tickSent(el.getAttribute('data-id'), +el.getAttribute('data-r'), a === 'sent'); return; }
     if (a === 'go') { sheetClose(); return; }
-    if (a === 'ckhide') { try { localStorage.setItem('lk.fn.ckhide', kday(now())); } catch (x) {} paint(); return; }
+    if (a === 'ckhide') { try { localStorage.setItem('lk.fn.ckhide', kday(now())); } catch (x) {} if (window.LK_PREP && window.LK_PREP.sg) window.LK_PREP.sg('checks', 'd'); paint(); return; }
     if (a === 'more') { F.more = !F.more; lastBand = null; paint(); var mb = document.querySelector('#fn-band [data-fn="more"]'); if (mb) mb.focus({ preventScroll: true }); return; }
     if (a === 'days') { pageDays = +el.getAttribute('data-v') || 3; try { window.dispatchEvent(new Event('lk-fn')); } catch (x) {} }
   });

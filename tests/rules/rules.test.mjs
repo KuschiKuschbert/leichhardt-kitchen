@@ -453,6 +453,14 @@ await ok(W([['waste/' + WT, { avoidable: 'Chips', change: 'Fewer chips' }, true]
 await ok(W([['waste/' + WT, { avoidable: 'Chips', change: '' }, true]], { id: 'ann', as: 'sam' }), false, 'waste review: Ann cannot write it as Sam');
 await ok(setDoc(doc(owner, K + 'waste/' + WY), { avoidable: 'Rice', change: 'Half a batch', reviewBy: 'Head chef', reviewAt: 2 }, { merge: true }), true, 'waste review: the head chef writes it from the admin panel');
 await ok(getDoc(doc(anon, K + 'summary/waste')), true, 'summary: the phones read the wastage summary');
+// usage counts (22 Oct 2026): one record a day per phone, counts only, written as the person, read only by the head chef
+const dly = x => Object.assign({ day: '2026-10-21', tag: 'abc123', sg: { quick: { s: 1, t: 2, d: 0 } }, pf: { lcp: [1, 0, 0, 0, 0] }, at: 5 }, x || {});
+await ok(W([['daily/2026-10-21_abc123', dly()]], { id: 'ann' }), true, 'daily: a phone sends its counts as the person signed in');
+await ok(setDoc(doc(anon, K + 'daily/2026-10-21_zzz'), dly({ tag: 'zzz' })), false, 'daily: no PIN proof, refused');
+await ok(W([['daily/2026-10-21_other', dly()]], { id: 'ann' }), false, 'daily: the id must be the day and the tag');
+await ok(W([['daily/2026-10-21_abc124', dly({ tag: 'abc124', text: 'Slice onions' })]], { id: 'ann' }), false, 'daily: no other fields (no text)');
+await ok(getDoc(doc(anon, K + 'daily/2026-10-21_abc123')), false, 'daily: a PIN holder cannot read the counts');
+await ok(getDoc(doc(owner, K + 'daily/2026-10-21_abc123')), true, 'daily: the head chef\'s Google account reads them');
 await ok(W([['summary/waste', { day: WT, items: [] }]], { id: 'sam' }), false, 'summary: no phone writes it, not even a sous chef');
 await ok(setDoc(doc(owner, K + 'summary/waste'), { day: WT, items: [] }), true, 'summary: the head chef may copy it (moving the kitchen PIN)');
 // the owner probe

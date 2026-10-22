@@ -459,6 +459,7 @@
     }, function () { S.pinStep = 'error'; draw(); });
   }
   function signedIn(id, hash) {
+    setTimeout(dailyFlush, 3000);   // yesterday's counts, once someone is signed in (W needs their PIN proof)
     S.authed = true; S.tok = hash; S.pf1 = S.pf2 = ''; S.pinMsg = ''; S.pinStep = '';
     lsSet('lk.prep.tok', id + ':' + hash); lsSet('lk.prep.seen', String(Date.now())); lsSet('lk.prep.day', dayNow()); lastAct = Date.now(); startIdle();
     hereAdd(id);
@@ -559,7 +560,7 @@
     if (dayExpired()) { leave(); startIdle(); return; }
     if (tok[0] !== S.who || !tok[1] || idleExpired()) { if (S.who) { if (shared()) leave(); else pickName(S.who); } startIdle(); return; }
     startIdle();
-    S.authed = true; S.tok = tok[1]; hereAdd(S.who); draw(); whoSync(); dkCheck();
+    S.authed = true; S.tok = tok[1]; hereAdd(S.who); draw(); whoSync(); dkCheck(); setTimeout(dailyFlush, 3000);
     sset(docRef('activity', S.who), { name: (who() || {}).name || '', visits: fb.fs.increment(1), lastSeen: now() }, true).catch(function (e) {
       if (e && e.code === 'permission-denied') { S.authed = false; S.tok = ''; pickName(S.who); }
     });
@@ -986,6 +987,7 @@
     if (S.qty.trim() || S.text.trim().length < 3) return '';
     var l = qtyList(S.text).slice(0, 3);
     if (!l.length) return '';
+    sg('usual', 's');
     return '<span class="nb-ql">Usual amount</span>' + l.map(function (x) { return '<button type="button" class="chip sq nb-qc" data-p="qset" data-v="' + esc(x.q) + '" aria-label="' + esc('Add ' + S.text.trim() + ', ' + x.q) + '">Add ' + esc(x.q) + '</button>'; }).join('');
   }
   /* Start here: up to three open lines to do first, across all sections. */
@@ -1161,9 +1163,57 @@
     draw();
     var el = S.root && S.root.querySelector('[data-k="p-text"]'); if (el) { el.focus(); try { el.setSelectionRange(el.value.length, el.value.length); } catch (e) {} }
   }
+  /* ---------- usage and speed counts (22 Oct 2026, review: measure whether the smart features help) ----------
+     Each phone counts, for today only: per smart feature, whether it had something to show (s: 0 or 1), how often it was
+     taken (t) and how often it was put away (d, Not needed or Hide); and the speed of this phone (pf: how long the first
+     page took, and the slowest tap of each visit, in buckets). No names, no text, no screens: counts only. Kept in
+     lk.daily (out of date at the next kitchen day: then it is sent as one record daily/<day>_<phone tag> through W(),
+     and started again). The nightly job adds the records into summary/usage and deletes them after 7 days.
+     A count that cannot be sent waits on the phone for the next open (at most 7 days, then it is dropped). */
+  var DAILY_FEATS = ['quick', 'usual', 'ordfill', 'fnneed', 'checks'];
+  var LCP_B = [500, 1000, 2500, 4000], TAP_B = [50, 100, 200, 500];   // the third edge is Google's target: 2.5 s, 200 ms
+  var dailyMem = null;
+  function dailyGet() {
+    if (dailyMem && dailyMem.day === dayNow()) return dailyMem;
+    var d = null; try { d = JSON.parse(lsGet('lk.daily') || 'null'); } catch (e) {}
+    if (!d || typeof d !== 'object' || !d.tag) d = { tag: Math.random().toString(36).slice(2, 10), day: dayNow(), sg: {}, pf: {} };
+    if (d.day !== dayNow()) { if (d.day >= shift(dayNow(), -7) && (Object.keys(d.sg || {}).length || Object.keys(d.pf || {}).length)) { try { lsSet('lk.daily.out', JSON.stringify(d)); } catch (e) {} } d = { tag: d.tag, day: dayNow(), sg: {}, pf: {} }; lsSet('lk.daily', JSON.stringify(d)); }
+    dailyMem = d; return d;
+  }
+  function dailySave() { if (dailyMem) lsSet('lk.daily', JSON.stringify(dailyMem)); }
+  // s: had something to show today (once a day), t: taken, d: put away
+  function sg(f, k) {
+    if (DAILY_FEATS.indexOf(f) < 0) return;
+    var d = dailyGet(), e = d.sg[f] = d.sg[f] || { s: 0, t: 0, d: 0 };
+    if (k === 's') { if (e.s) return; e.s = 1; } else e[k] = (e[k] || 0) + 1;
+    dailySave();
+  }
+  function bucket(v, edges) { var i = 0; while (i < edges.length && v >= edges[i]) i++; return i; }
+  function pfAdd(name, v, edges) {
+    var d = dailyGet(), a = d.pf[name] = d.pf[name] || edges.concat([0]).map(function () { return 0; });
+    a[bucket(v, edges)]++; dailySave();
+  }
+  // yesterday's (or older, up to 7 days) counts go out once, through W(), when someone is signed in
+  function dailyFlush() {
+    var out = null; try { out = JSON.parse(lsGet('lk.daily.out') || 'null'); } catch (e) {}
+    if (!out || !S.authed || !fb || !/^\d{4}-\d{2}-\d{2}$/.test(out.day || '') || waiting('daily')) return;
+    if (out.day < shift(dayNow(), -7)) { lsSet('lk.daily.out', ''); return; }
+    var id = out.day + '_' + String(out.tag).replace(/[^a-z0-9]/g, '').slice(0, 12);
+    W([['set', docRef('daily', id), { day: out.day, tag: String(out.tag).slice(0, 12), sg: out.sg || {}, pf: out.pf || {}, at: now() }]])
+      .then(function () { lsSet('lk.daily.out', ''); }, function () { retryLater('daily'); });
+  }
+  // the speed of this phone: the first page's largest paint, and the slowest tap of each visit (Event Timing)
+  (function () {
+    if (!window.PerformanceObserver) return;
+    var worst = 0, sent = false;
+    try { new PerformanceObserver(function (l) { var es = l.getEntries(), e = es[es.length - 1]; if (e && !sent) { sent = true; pfAdd('lcp', e.startTime, LCP_B); } }).observe({ type: 'largest-contentful-paint', buffered: true }); } catch (e) {}
+    try { new PerformanceObserver(function (l) { l.getEntries().forEach(function (e) { if (e.interactionId && e.duration > worst) worst = e.duration; }); }).observe({ type: 'event', durationThreshold: 16, buffered: true }); } catch (e) {}
+    document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden' && worst) { pfAdd('tap', worst, TAP_B); worst = 0; } });
+  })();
   function quickAdd(i) {
     var x = (S.quick || [])[i];
     if (!x || !can('add')) return;
+    sg('quick', 't');
     oneTap(x.text, mySec() || x.section);
   }
   /* One-tap adds (Quick add in Handy): the line goes on with its usual amount, and the toast says where, with Undo. */
@@ -1218,6 +1268,7 @@
       .then(function () { return all('ordlearned'); }).then(function (r) { out.ordlearned = r; })
       .then(function () { return all('learnlog'); }).then(function (r) { out.learnlog = r; })
       .then(function () { return all('summary'); }).then(function (r) { out.summary = r; })
+      .then(function () { return all('daily'); }).then(function (r) { out.daily = r; })
       .then(function () { return all('misses'); }).then(function (r) { out.misses = r; })
       .then(function () { return all('views'); }).then(function (r) { out.views = r; })
       .then(function () { return all('guides'); }).then(function (r) { out.guides = r; })
@@ -1288,7 +1339,7 @@
     for (k = 0; k < 400; k++) dates.push(shift(today, -k));
     f.getDoc(f.doc(fb.db, 'kitchens', old, 'config', 'main')).then(function (sn) { if (sn.exists()) { n++; return f.setDoc(f.doc(fb.db, 'kitchens', np, 'config', 'main'), sn.data()); } })
       .then(function () { return copyCol('pinset'); }).then(function () { return copyCol('staffpins'); }).then(function () { return copyCol('activity'); }).then(function () { return copyCol('sections'); })
-      .then(function () { return copyCol('learned'); }).then(function () { return copyCol('ordlearned'); }).then(function () { return copyCol('learnlog'); }).then(function () { return copyCol('summary'); }).then(function () { return copyCol('misses'); }).then(function () { return copyCol('views'); })
+      .then(function () { return copyCol('learned'); }).then(function () { return copyCol('ordlearned'); }).then(function () { return copyCol('learnlog'); }).then(function () { return copyCol('summary'); }).then(function () { return copyCol('daily'); }).then(function () { return copyCol('misses'); }).then(function () { return copyCol('views'); })
       .then(function () { return copyCol('notes'); }).then(function () { return copyCol('minutes'); }).then(function () { return copySub('minutes', 'hist'); })
       .then(function () { return copySub('minutes', 'signs', true); }).then(function () { return copySub('notes', 'seen', true); })
       .then(function () { return copyCol('guides'); }).then(function () { return copySub('guides', 'pages'); })
@@ -2264,7 +2315,7 @@
     return '<h3 class="a-ch-h">Time to tick by section</h3><span class="hint">From writing a line to ticking it. "Slow days" is how long the slowest 1 in 10 took.</span><div class="a-tablewrap" tabindex="0" role="region" aria-label="Table, scrolls sideways"><table class="a-table a-plain"><thead><tr><th scope="col">Section</th><th scope="col">Lines</th><th scope="col">Typical</th><th scope="col">Slow days</th></tr></thead><tbody>' +
       rows.map(function (r) { return '<tr><th scope="row">' + esc(r.k) + '</th><td>' + r.n + '</td><td>' + dur(r.med) + '</td><td>' + dur(r.p90) + '</td></tr>'; }).join('') + '</tbody></table></div>';
   }
-  var INS_SECS = [['ins-overview', 'Overview'], ['ins-days', 'Days'], ['ins-timing', 'Timing'], ['ins-sections', 'Sections and people'], ['ins-problems', 'Problem lines'], ['ins-book', 'Recipe book']];
+  var INS_SECS = [['ins-overview', 'Overview'], ['ins-days', 'Days'], ['ins-timing', 'Timing'], ['ins-sections', 'Sections and people'], ['ins-problems', 'Problem lines'], ['ins-book', 'Recipe book'], ['ins-usage', 'Smart features and speed']];
   function secHead(i) { return '<h3 class="a-sh" id="' + INS_SECS[i][0] + '"><span class="a-sn">' + (i < 9 ? '0' : '') + (i + 1) + '</span>' + esc(INS_SECS[i][1]) + '</h3>'; }
   function insightsHTML() {
     var st = S.stats, n = S.statsRange, a = AF();
@@ -2291,7 +2342,38 @@
         card('<h3 class="a-ch-h">Sections</h3>' + sectionsChart(agg)) + card('<h3 class="a-ch-h">By person</h3>' + legend([['Written', CW], ['Ticked off', CT]]) + peopleChart(agg) + '<p class="hint">More on people in the Team tab.</p>') + '</div></section>' +
       '<section class="a-sec">' + secHead(4) + '<div class="a-grid">' + card('<h3 class="a-ch-h">Slow and sticky lines</h3><span class="hint">Roll over 3 or more times, usually take 4 hours or more to tick, or keep being removed.</span>' + stickyHTML(n), 'full') +
         card('<h3 class="a-ch-h">Rolled over most often</h3><span class="hint">Lines that were not finished and moved onto the next day.</span>' + rollChart(agg)) + card(fixesHTML(agg)) + '</div></section>' +
-      '<section class="a-sec">' + secHead(5) + '<p class="hint a-fnote">Recipe book counts are for everyone and every day: the filters above do not apply here.</p><div class="a-grid">' + card(missesHTML()) + card(viewsHTML()) + '</div></section></section>';
+      '<section class="a-sec">' + secHead(5) + '<p class="hint a-fnote">Recipe book counts are for everyone and every day: the filters above do not apply here.</p><div class="a-grid">' + card(missesHTML()) + card(viewsHTML()) + '</div></section>' +
+      '<section class="a-sec">' + secHead(6) + '<p class="hint a-fnote">From all phones, the last 28 days (summed each night). The filters above do not apply here.</p><div class="a-grid">' + card(usageHTML(), 'full') + '</div></section></section>';
+  }
+  /* summary/usage (scripts/nightly-learn.mjs): one read when Insights opens, kept for the day in lk.use (out of date at
+     the next kitchen day; the head chef's Google account only). */
+  var USE_NAMES = { quick: 'Quick add chips', usual: 'Usual amount chips', ordfill: 'Usual order amount filled in', fnneed: 'For the functions (Handy)', checks: 'To check before the functions' };
+  function loadUsage() {
+    if (S.useFor === dayNow() || S.useBusy || !fb || S.level !== 'owner') return;
+    try { var c = JSON.parse(lsGet('lk.use') || 'null'); if (c && c.day === dayNow() && c.data) { S.use = c.data; S.useFor = c.day; return; } } catch (e) {}
+    S.useBusy = true;
+    fb.fs.getDoc(docRef('summary', 'usage')).then(function (sn) {
+      S.use = sn.exists() ? sn.data() : { days: {} }; S.useFor = dayNow(); S.useBusy = false;
+      lsSet('lk.use', JSON.stringify({ day: dayNow(), data: S.use })); draw();
+    }, function () { S.useBusy = false; });
+  }
+  function usageHTML() {
+    loadUsage();
+    var u = S.use, days = u && u.days ? Object.keys(u.days) : [];
+    if (!u) return '<p class="hint">Loading...</p>';
+    if (!days.length) return '<p class="hint">Nothing counted yet. Phones send their counts once a day, and the nightly job adds them up.</p>';
+    var f = {}, lcp = null, tap = null;
+    days.forEach(function (d) {
+      var x = u.days[d] || {};
+      Object.keys(x.sg || {}).forEach(function (k) { var e = x.sg[k] || {}, o = f[k] = f[k] || { s: 0, t: 0, d: 0 }; o.s += +e.s || 0; o.t += +e.t || 0; o.d += +e.d || 0; });
+      ['lcp', 'tap'].forEach(function (k) { var a = (x.pf || {})[k]; if (!Array.isArray(a)) return; var o = k === 'lcp' ? (lcp = lcp || a.map(function () { return 0; })) : (tap = tap || a.map(function () { return 0; })); a.forEach(function (v, i) { if (i < o.length) o[i] += +v || 0; }); });
+    });
+    function share(a, upto) { if (!a) return ''; var t = 0, g = 0; a.forEach(function (v, i) { t += v; if (i < upto) g += v; }); return t ? Math.round(100 * g / t) + '% of ' + t : ''; }
+    var rows = Object.keys(USE_NAMES).filter(function (k) { return f[k]; }).map(function (k) { return '<tr><th scope="row">' + esc(USE_NAMES[k]) + '</th><td>' + f[k].s + '</td><td>' + f[k].t + '</td><td>' + f[k].d + '</td></tr>'; }).join('');
+    return '<h3 class="a-ch-h">Smart features</h3><span class="hint">Phone-days it had something to show, times it was taken, times it was put away.</span>' +
+      (rows ? '<div class="a-tablewrap" tabindex="0" role="region" aria-label="Table, scrolls sideways"><table class="a-table a-plain"><thead><tr><th scope="col">Feature</th><th scope="col">Shown on</th><th scope="col">Taken</th><th scope="col">Put away</th></tr></thead><tbody>' + rows + '</tbody></table></div>' : '<p class="hint">No smart feature had anything to show yet.</p>') +
+      '<h3 class="a-ch-h">Speed on the phones</h3><span class="hint">Field numbers: the first page on screen within 2.5 s, and the slowest tap of a visit within 200 ms (Google\'s targets).</span>' +
+      '<p>' + (share(lcp, 3) ? 'First page within 2.5 s: <strong>' + esc(share(lcp, 3)) + '</strong> opens.' : 'No page speeds yet.') + ' ' + (share(tap, 3) ? 'Slowest tap within 200 ms: <strong>' + esc(share(tap, 3)) + '</strong> visits.' : '') + '</p>';
   }
 
 
@@ -2462,6 +2544,7 @@
       .concat(today2.map(function (x) { return chip(x.text, bestSection(x), ((x.dow || {})[dn] || 0) + ' ' + dname + 's'); }))
       .concat(regs.map(function (x) { return chip(x.text, bestSection(x), x.uses + 'x'); })).join('') : '';
     S.quickChips = chips;
+    if (chips) sg('quick', 's');
     var quick = chips ? '<h3 class="nb-sh">Quick add</h3><p class="nb-sd">Due today, usual for a ' + esc(dname) + ' and regulars. Tap to add.</p><div class="nb-usual">' + chips + '</div>' : '';
     var pc = canBrowse() && S.date === dayNow() && S.past ? pace() : null;
     var paceHTML = pc ? '<div class="nb-pace' + (pc.today + 0.1 < pc.usual ? ' is-behind' : '') + '"><span class="nb-sl">Pace</span><p><strong>' + Math.round(pc.today * 100) + '%</strong> ticked now (' + pc.done + ' of ' + pc.n + '). By ' + clock(now()) + ' it is usually <strong>' + Math.round(pc.usual * 100) + '%</strong>' + (pc.sameDay ? ' on a ' + esc(dname) : '') + '.</p><span class="nb-sw">' + (pc.today + 0.1 < pc.usual ? 'Behind the usual pace. Check who needs a hand.' : 'On pace.') + ' Only the head chef and sous chefs see this.</span></div>' : '';
@@ -3195,6 +3278,7 @@
     if (S.oqty.trim() || S.otext.trim().length < 3) return '';
     var l = ordQtyList(S.otext).slice(0, 3);
     if (!l.length) return '';
+    sg('usual', 's');
     return '<span class="nb-ql">Usual amount</span>' + l.map(function (x) { return '<button type="button" class="chip sq nb-qc" data-p="oqset" data-v="' + esc(x.q) + '">' + esc(x.q) + '</button>'; }).join('');
   }
   /* a line that rolled onto a later day is shown once, as its newest copy */
@@ -5686,6 +5770,7 @@
     if (a === 'onudge-show') { var od = document.getElementById('o-overdue'); if (od) { od.scrollIntoView({ block: 'start' }); var ob = od.querySelector('.nb-box'); if (ob) ob.focus({ preventScroll: true }); } return; }
     if (a === 'oqset') { S.oqty = el.getAttribute('data-v') || ''; draw(); var to = S.root.querySelector('[data-k="o-text"]'); if (to) to.focus(); return; }
     // "Add 5 L": the usual amount goes in and the line is added in the same tap
+    if (a === 'qset' || a === 'oqset') sg('usual', 't');
     if (a === 'qset') { S.qty = el.getAttribute('data-v') || ''; if (S.text.trim()) addTyped(); else { draw(); var tq = S.root.querySelector('[data-k="p-text"]'); if (tq) tq.focus(); } return; }
     if (a === 'goto') { gotoRow(id); return; }
     if (a === 'start-toggle') { e.preventDefault(); S.startOpen = !S.startOpen; draw(); return; }
@@ -6075,6 +6160,7 @@
 
   /* ---------- public bits used by app.js ---------- */
   window.LK_PREP = {
+    sg: sg,
     mount: function (name, root, sel) {
       wire();
       S.name = name; S.root = root;

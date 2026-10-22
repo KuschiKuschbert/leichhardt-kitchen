@@ -28,6 +28,9 @@ await w(['waste', y, 'lines', 'w3'], wl('Chips', { unit: 'kg', reason: 'excess' 
 await w(['waste', y, 'lines', 'w4'], wl('Gone', { deleted: true }));
 await w(['waste', today, 'lines', 'w5'], wl('Rice'));
 const run = () => execFileSync(process.execPath, ['nightly-learn.mjs'], { env: Object.assign({}, process.env, { KITCHEN_PIN: '000000', LEARN_DAYS: '5' }), encoding: 'utf8' });
+await K.collection('daily').doc(y + '_aa').set({ day: y, tag: 'aa', sg: { quick: { s: 1, t: 3, d: 0 } }, pf: { lcp: [1, 2, 0, 0, 0] }, at: 1 });
+await K.collection('daily').doc(y + '_bb').set({ day: y, tag: 'bb', sg: { quick: { s: 1, t: 1, d: 1 } }, pf: { lcp: [0, 1, 0, 0, 1] }, at: 1 });
+await K.collection('daily').doc(day(9) + '_cc').set({ day: day(9), tag: 'cc', sg: {}, pf: {}, at: 1 });
 let fails = 0; const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++; };
 const out1 = run();
 ok(/Learned \d+ kitchen days/.test(out1) && !/000000/.test(out1), 'runs and prints no PIN: ' + out1.trim());
@@ -49,6 +52,9 @@ ok(rice.n === 2 && rice.r.expired === 2 && rice.unit === 'portions', 'summary: R
 ok(rice.last && rice.last.sec === 'Pans' && rice.last.amt === 2, 'summary: the last time is the newest entry');
 ok((ws.items || []).some(x => x.t === 'Chips' && x.r.excess === 1) && !(ws.items || []).some(x => x.t === 'Gone'), 'summary: Chips once, the removed entry left out');
 ok(/Wastage summary: 2 items/.test(out1), 'summary: the run says how many items');
+const us = (await K.collection('summary').doc('usage').get()).data() || {}, uy = (us.days || {})[y] || {};
+ok(uy.phones === 2 && uy.sg && uy.sg.quick && uy.sg.quick.t === 4 && uy.sg.quick.d === 1 && uy.pf.lcp.join() === '1,3,0,0,1', 'usage: yesterday added up from two phones (' + JSON.stringify(uy) + ')');
+ok(!(await K.collection('daily').doc(day(9) + '_cc').get()).exists && (await K.collection('daily').doc(y + '_aa').get()).exists, 'usage: records older than 7 days deleted, yesterday kept');
 run();
 const on2 = (await K.collection('learned').doc('slice-onions').get()).data();
 ok(on2.uses === 3, 'second run counts nothing twice (' + on2.uses + ')');

@@ -24,7 +24,7 @@ const groupsShown = p => p.evaluate(() => { const r = document.querySelector('.a
     // let it finish first (settle stops as soon as the page is still)
     await L.adminTab(p, 'insights'); await L.settle(p, 1500);
     v = await nav(p);
-    ok(v.chips.length === 6 && /Overview/.test(v.chips[0]) && /Recipe book/.test(v.chips[5]), w + ' admin nav: Insights has its six sections on this page (' + v.chips.join(', ') + ')');
+    ok(v.chips.length === 7 && /Overview/.test(v.chips[0]) && /Recipe book/.test(v.chips[5]) && /Smart features/.test(v.chips[6]), w + ' admin nav: Insights has its seven sections on this page (' + v.chips.join(', ') + ')');
     ok(!v.min && await groupsShown(p), w + ' admin nav: at the top the groups show');
 
     // scrolling down tucks the nav up to its last row, the groups go off screen, the section on screen is marked
@@ -42,7 +42,7 @@ const groupsShown = p => p.evaluate(() => { const r = document.querySelector('.a
     if (w === 390) {
       ok(/On this page: \S/.test(await L.txt(p, '.a-jumpbtn') || '') && !(await p.evaluate(() => [...document.querySelectorAll('.a-onpage .chip')].some(c => c.getClientRects().length))), 'phone admin nav: On this page is one button naming the part on screen (' + await L.txt(p, '.a-jumpbtn') + ')');
       await p.click('.a-onpage .a-jumpbtn'); await L.settle(p, 200);
-      ok(await p.evaluate(() => { const s = document.getElementById('aj-sheet'); return !!s && s.parentNode === document.body && s.querySelectorAll('[data-aj="go"]').length === 6; }), 'phone admin nav: it opens a sheet with the six parts');
+      ok(await p.evaluate(() => { const s = document.getElementById('aj-sheet'); return !!s && s.parentNode === document.body && s.querySelectorAll('[data-aj="go"]').length === 7; }), 'phone admin nav: it opens a sheet with the seven parts');
       await p.keyboard.press('Escape'); await L.settle(p, 150);
       ok(!(await p.$('#aj-sheet')), 'phone admin nav: Escape closes the sheet');
     }
