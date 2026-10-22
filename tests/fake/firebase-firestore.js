@@ -3,6 +3,7 @@
 //   __fake.mode = 'ok' | 'deny' (every write refused, permission-denied) | 'hold' (writes wait, like no signal)
 //   __fake.deny = /regex/ refuses only the writes whose path matches
 //   __fake.failReads = /regex/ makes getDoc and getDocs fail (unavailable) for the paths that match, like a read lost to a bad signal
+//   __fake.denyReads = /regex/ makes getDocs refuse (permission-denied) the collections that match, like rules not published yet
 // __fake.reads lists the paths asked for (getDoc, getDocs, getDocFromServer) and __fake.readLog every document read from the "server";
 // getDocsFromCache only returns documents this page has read before.
 const KEY = 'fake.fs';
@@ -80,7 +81,7 @@ export function getDoc(ref) {
   return delay(result(ref));
 }
 // like the real rules: book/index and book/matches are allowed by name only, so a query on the whole book collection is refused
-function denied(ref) { return /^kitchens\/[^/]+\/book$/.test(key(ref.path)); }
+function denied(ref) { const d = window.__fake.denyReads; return /^kitchens\/[^/]+\/book$/.test(key(ref.path)) || !!(d && d.test(key(ref.path))); }
 export function getDocs(ref) { window.__fake.reads.push(key(ref.path)); if (readFails(ref)) return Promise.reject({ code: 'unavailable' }); if (denied(ref)) return Promise.reject({ code: 'permission-denied' }); const r = result(ref); bill('query', key(ref.path), r.docs.length); return delay(r); }
 function readFails(ref) { const f = window.__fake.failReads; return !!(f && f.test(key(ref.path))); }
 // a read that must come from the server: refused when there is no signal ('hold', 'fail'). __fake.server can hold a

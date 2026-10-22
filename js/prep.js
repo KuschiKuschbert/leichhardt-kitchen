@@ -1129,8 +1129,13 @@
     var f = fb.fs, out = { exportedAt: new Date(now()).toISOString(), config: null, days: {}, orders: {}, waste: {}, wasteReviews: {}, activity: [], sections: [], learned: [], ordlearned: [], learnlog: [], misses: [], notes: [], notesSeen: {}, minutes: [], minutesHist: {}, minutesSigns: {}, pins: [], book: [], recipes: [], recipesHist: {}, drawings: [], drawingsHist: {}, drawtpl: [], drawlib: [] };
     function grab(sn) { return sn.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }); }
     // a refused or failed read names its part, so the message says what could not be read
-    var part = '';
-    function all(name) { part = name; return f.getDocs(colRef(name)).then(grab); }
+    var part = '', left = [];
+    /* A part the rules refuse (permission denied) is left out and named in the message, so one part that is not
+       published yet (summary, 22 Oct 2026) does not stop the whole backup. Any other failure (no signal) still stops it. */
+    function all(name) {
+      part = name;
+      return f.getDocs(colRef(name)).then(grab, function (e) { if (e && e.code === 'permission-denied') { left.push(name); return []; } throw e; });
+    }
     /* the records under each note (who has seen it) and each minutes (earlier versions, sign-offs): one small query each, kept by the note's or the minutes' id */
     function subs(list, top, name, into) {
       part = top + ' ' + name;
@@ -1182,7 +1187,7 @@
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
         setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
         var nn = out.notes.length, mn = out.minutes.length, dn = Object.keys(out.days).length;
-        S.exporting = ''; toast('Backup saved: ' + n + (n === 1 ? ' line' : ' lines') + ' from ' + dn + (dn === 1 ? ' day, ' : ' days, ') + nn + (nn === 1 ? ' shift ping' : ' shift pings') + ' and minutes from ' + mn + (mn === 1 ? ' meeting.' : ' meetings.'));
+        S.exporting = ''; toast('Backup saved: ' + n + (n === 1 ? ' line' : ' lines') + ' from ' + dn + (dn === 1 ? ' day, ' : ' days, ') + nn + (nn === 1 ? ' shift ping' : ' shift pings') + ' and minutes from ' + mn + (mn === 1 ? ' meeting.' : ' meetings.') + (left.length ? ' Left out, the rules do not allow it yet: ' + left.join(', ') + '.' : ''), null, left.length ? 10000 : undefined);
       }).catch(function () { S.exporting = ''; toast('Could not read everything' + (part ? ' (stopped at ' + part + ')' : '') + '. Check the connection and try again.', null, 8000); });
   }
   /* Owner only: copy everything under the current kitchen PIN to a new one, then switch this device over.

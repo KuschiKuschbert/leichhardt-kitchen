@@ -79,6 +79,20 @@ const store = page => page.evaluate(() => window.__fake.dump());
   ok(p.errors.length === 0, 'backup: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // a part the published rules do not allow yet (summary, 22 Oct 2026) is left out and named, not the end of the backup
+  p = await L.open(b, '#/admin', { admin: true, wait: 1800, extra, denyReads: '/summary$' });
+  await L.adminTab(p, 'tools');
+  await L.settle(p, 200);
+  const dl2 = p.waitForEvent('download', { timeout: 15000 }).catch(() => null);
+  await p.click('[data-p="export"]');
+  const file2 = await dl2;
+  ok(!!file2, 'backup with a refused part: the file still downloads');
+  await L.waitFor(p, () => /Backup saved/.test(window.LK_PREP.state.toast || ''), null, 5000).catch(() => {});
+  const msg2 = await p.evaluate(() => window.LK_PREP.state.toast || '');
+  ok(/Left out, the rules do not allow it yet: summary\./.test(msg2), 'backup with a refused part: the message names it (' + msg2.slice(-70) + ')');
+  ok(p.errors.length === 0, 'backup with a refused part: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   // Missed recipe searches: a search queued while the queue is being sent is kept for next time
   p = await L.open(b, '#/prep', { wait: 1500 });
   await p.evaluate(() => {

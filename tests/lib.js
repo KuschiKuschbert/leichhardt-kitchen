@@ -159,7 +159,8 @@ async function start() {
                       so the book keeps the phone's clock (LK_TIME in index.html)
    o.fakeServer       documents the "server" holds newer copies of than the phone (path: data), for getDocFromServer
    o.fakeMode         the stand-in's mode from the first request: 'fail' (every read and write fails, like no signal) or 'deny'
-   o.failReads        a regex source: getDoc and getDocs fail for the paths that match (say one past day of wastage) */
+   o.failReads        a regex source: getDoc and getDocs fail for the paths that match (say one past day of wastage)
+   o.denyReads        a regex source: getDocs is refused (permission-denied) for the collections that match */
 async function open(browser, hash, o) {
   o = o || {};
   const w = o.width || 390, h = o.height || 844, base = o.base || BASE;
@@ -198,7 +199,7 @@ async function open(browser, hash, o) {
     'lk.settings.v1': JSON.stringify(Object.assign({ installNo: true }, o.settings || {}))
   };
   if (o.admin) ls['fake.user'] = '1';
-  if (o.fakeServer || o.fakeMode || o.failReads) await ctx.addInitScript(f => { window.__fake = { mode: f.mode || 'ok', writes: [], reads: [], server: f.server, failReads: f.fail ? new RegExp(f.fail) : null }; }, { mode: o.fakeMode, server: o.fakeServer, fail: o.failReads });
+  if (o.fakeServer || o.fakeMode || o.failReads || o.denyReads) await ctx.addInitScript(f => { window.__fake = { mode: f.mode || 'ok', writes: [], reads: [], server: f.server, failReads: f.fail ? new RegExp(f.fail) : null, denyReads: f.deny ? new RegExp(f.deny) : null }; }, { mode: o.fakeMode, server: o.fakeServer, fail: o.failReads, deny: o.denyReads });
   // seed once per tab, so a reload keeps whatever the test did
   await ctx.addInitScript(ls => {
     if (sessionStorage.getItem('seeded')) return;
