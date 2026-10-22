@@ -1137,6 +1137,7 @@ details.nb-start-l[open] > summary::after { content: '\2212'; }
   .lv-table th, .lv-table td { display: block; min-width: 0; padding: 0; border: 0; }
   .lv-table th[scope="row"] { grid-column: 1 / -1; font-size: 1.0625rem; }
   .lv-table td[data-l]::before { content: attr(data-l); display: block; font: 700 0.6875rem var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .lv-people td[data-l]::before { white-space: nowrap; letter-spacing: 0.02em; }   /* "FUNCTIONS" broke as "FUNCTION S" */
   .a-table.lv-table td.lv-wide, .a-table.lv-table td.a-act { grid-column: 1 / -1; text-align: left; }
   .a-table.lv-table td.a-act { display: flex; flex-wrap: wrap; gap: 0.4rem; padding-top: 0.2rem; }
   .a-table.lv-table td.a-act .p-x { margin: 0; }
