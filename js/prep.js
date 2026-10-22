@@ -368,7 +368,13 @@
   function plainToast(msg, ms) {
     if (!plainEl || !document.body.contains(plainEl)) { plainEl = document.createElement('div'); plainEl.className = 'p-toasts'; document.body.appendChild(plainEl); }
     plainEl.innerHTML = '<div class="p-toast p-toast-plain" role="presentation"><span class="p-toast-msg">' + esc(msg) + '</span></div>';
-    clearTimeout(plainTimer); plainTimer = setTimeout(function () { if (plainEl && plainEl.parentNode) plainEl.parentNode.removeChild(plainEl); plainEl = null; }, ms || 3500);
+    clearTimeout(plainTimer); plainTimer = setTimeout(plainAway, ms || 3500);
+  }
+  // the prep page's own toast takes the same spot, so a plain one still up goes first (it would cover the Undo)
+  function plainAway() {
+    clearTimeout(plainTimer);
+    if (plainEl && plainEl.parentNode) plainEl.parentNode.removeChild(plainEl);
+    plainEl = null;
   }
   function toast(msg, act, ms) {
     liveSay(msg + (act && act.label ? '. ' + act.label + ' is on screen.' : ''));
@@ -3548,6 +3554,7 @@
     var bodyEl = S.root.querySelector('.nb-body'), keepScroll = bodyEl ? S.root.querySelectorAll('.nb-body') : null, scrolls = [];
     if (keepScroll) Array.prototype.forEach.call(keepScroll, function (b) { scrolls.push(b.scrollTop); });
     S.root.innerHTML = syncHTML() + practiceHTML() + bodyHTML() + toastHTML();
+    if (S.toast) plainAway();
     S.root.classList.toggle('is-book', S.name === 'prep' && !!S.root.querySelector('.nb'));
     document.documentElement.classList.toggle('sheet-open', !!S.root.querySelector('.sheet'));
     if (scrolls.length) Array.prototype.forEach.call(S.root.querySelectorAll('.nb-body'), function (b, i) { if (scrolls[i] != null) b.scrollTop = scrolls[i]; });
