@@ -1871,3 +1871,22 @@ a.fn-svc { display: inline-flex; align-items: center; color: inherit; text-decor
 .fnn-w { flex-basis: 100%; font-size: 0.8125rem; color: var(--muted); }
 .fnn-on { font-size: 0.875rem; font-weight: 600; color: var(--done); }
 .fnn-add { min-height: 44px; }
+
+/* Option B (22 Oct 2026): the admin jump list is one button on a phone, the People how-to folds, the wastage action folds */
+.a-jumpbtn { display: none; flex: 0 0 auto; align-self: flex-start; min-height: 40px; padding: 0 0.9rem; border: 1px solid var(--line); border-radius: var(--r-pick); background: var(--paper); font: 600 0.875rem var(--body); color: var(--ink); cursor: pointer; }
+.a-jumpbtn b { color: var(--small-ink); }
+@media (max-width: 719px) {
+  .a-onpage .chip, .a-onpage .a-op-l { display: none; }
+  .a-onpage .a-jumpbtn { display: inline-flex; align-items: center; gap: 0.3rem; }
+  .a-onpage { -webkit-mask-image: none; mask-image: none; }
+}
+.sheet-o[aria-current="true"] { background: var(--hit); }
+details.a-how { margin: 0.2rem 0 0.6rem; }
+details.a-how > summary { display: flex; align-items: center; min-height: 44px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+details.a-how > p { margin: 0.2rem 0 0; max-width: 72ch; }
+.w-actbtn { flex: 1 1 auto; min-height: 44px; padding: 0; border: 0; background: none; font: 600 0.9375rem var(--body); color: var(--ink); text-align: left; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+/* the recipe card on a phone: Zoom out is a small button in the corner, not a bar across the card */
+@media (max-width: 719px) {
+  .zoombar { display: flex; justify-content: flex-end; background: none; border-top: 0; padding: 0 1rem 0.75rem; pointer-events: none; }
+  .zoombar a { pointer-events: auto; min-height: 44px; padding: 0 1.1rem; font-size: 0.9375rem; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25); }
+}
