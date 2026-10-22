@@ -49,7 +49,8 @@ export function restClient(base, headers) {
     catch (e) { throw { code: ctl.signal.aborted ? 'no answer after ' + PROBE_WAIT / 1000 + ' seconds' : 'error: ' + String(e && e.message || e) }; }
     finally { clearTimeout(t); }
     if (res.ok) return res.json();
-    let msg = ''; try { msg = (await res.json()).error.status; } catch (e) {}
+    // a refused query (runQuery) answers with a list holding the error; the other calls with the error itself
+    let msg = ''; try { const j = await res.json(); msg = (Array.isArray(j) ? j[0] : j).error.status; } catch (e) {}
     if (res.status === 403 && msg === 'PERMISSION_DENIED') throw { code: 'permission-denied' };
     if (res.status === 401 || res.status === 403) throw { code: 'refused ' + res.status + (msg ? ' ' + msg : '') };
     throw { code: 'http ' + res.status + (msg ? ' ' + msg : '') };
