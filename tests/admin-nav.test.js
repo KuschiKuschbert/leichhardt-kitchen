@@ -7,6 +7,12 @@ const nav = p => p.evaluate(() => {
   const n = document.querySelector('.a-nav'), r = n.getBoundingClientRect();
   return { min: n.classList.contains('is-min'), bottom: Math.round(r.bottom), chips: [...n.querySelectorAll('.a-onpage .chip')].map(c => c.textContent), on: (n.querySelector('.a-onpage [aria-current="true"]') || {}).textContent || '', hidden: n.querySelector('.a-onpage').hidden };
 });
+// a jump: the chip on a laptop; on a phone the On this page button and its sheet (22 Oct 2026, Option B)
+async function jump(p, w, id) {
+  if (w > 719) return p.click('.a-onpage [data-v="' + id + '"]');
+  await p.click('.a-onpage .a-jumpbtn'); await L.settle(p, 200);
+  return p.click('#aj-sheet [data-aj="go"][data-v="' + id + '"]');
+}
 const groupsShown = p => p.evaluate(() => { const r = document.querySelector('.a-groups').getBoundingClientRect(); return r.top >= -1 && r.bottom <= innerHeight; });
 (async () => {
   const b = await L.start();
@@ -33,12 +39,19 @@ const groupsShown = p => p.evaluate(() => { const r = document.querySelector('.a
     ok(!v.min && await groupsShown(p) && await p.evaluate(() => scrollY > 500), w + ' admin nav: scrolling up brings the groups back');
 
     // a jump lands the heading just under the nav, both ways
-    await p.click('.a-onpage [data-v="ins-problems"]'); await L.settle(p, 1500);
+    if (w === 390) {
+      ok(/On this page: \S/.test(await L.txt(p, '.a-jumpbtn') || '') && !(await p.evaluate(() => [...document.querySelectorAll('.a-onpage .chip')].some(c => c.getClientRects().length))), 'phone admin nav: On this page is one button naming the part on screen (' + await L.txt(p, '.a-jumpbtn') + ')');
+      await p.click('.a-onpage .a-jumpbtn'); await L.settle(p, 200);
+      ok(await p.evaluate(() => { const s = document.getElementById('aj-sheet'); return !!s && s.parentNode === document.body && s.querySelectorAll('[data-aj="go"]').length === 6; }), 'phone admin nav: it opens a sheet with the six parts');
+      await p.keyboard.press('Escape'); await L.settle(p, 150);
+      ok(!(await p.$('#aj-sheet')), 'phone admin nav: Escape closes the sheet');
+    }
+    await jump(p, w, 'ins-problems'); await L.settle(p, 1500);
     v = await nav(p);
     let top = await p.evaluate(() => Math.round(document.getElementById('ins-problems').getBoundingClientRect().top));
     const end = await p.evaluate(() => scrollY + innerHeight >= document.documentElement.scrollHeight - 2);
     ok(top >= v.bottom && (top < v.bottom + 40 || end) && /Problem lines/.test(v.on), w + ' admin nav: Problem lines lands under the nav, or the page ends, and is marked (heading ' + top + ', nav ' + v.bottom + ', on ' + v.on + ')');
-    await p.click('.a-onpage [data-v="ins-days"]'); await L.settle(p, 1500);
+    await jump(p, w, 'ins-days'); await L.settle(p, 1500);
     v = await nav(p);
     top = await p.evaluate(() => Math.round(document.getElementById('ins-days').getBoundingClientRect().top));
     ok(top >= v.bottom && top < v.bottom + 40 && !v.min, w + ' admin nav: back up to Days, under the whole nav (heading ' + top + ', nav ' + v.bottom + ')');

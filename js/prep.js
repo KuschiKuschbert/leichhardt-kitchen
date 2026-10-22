@@ -2707,7 +2707,7 @@
     if (at === 'minutes') loadMinutes();
     if (at === 'guides') loadGuides();
     var pane = at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'learning' ? (learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() : at === 'people' ? (
-      '<section class="set-block"><span class="label">People</span><span class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Pings lets that person write shift pings from the prep book (sous chefs always can). Functions lets that person enter and change function bookings (Functions coordinator ticks it for you); only your save here gives it or takes it away, and nothing else comes with it. Reset PIN lets that person choose a new one: do it with them there, as whoever signs in with that name next sets the PIN. Removing someone from the list keeps their name on old lines, and their PIN stops working for anything. Head chef is for your own name: it always has every permission and the sous chef pages, and a sous chef cannot change or remove it.</span>' +
+      '<section class="set-block"><span class="label">People</span><details class="a-how"><summary>How roles and ticks work</summary><p class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Pings lets that person write shift pings from the prep book (sous chefs always can). Functions lets that person enter and change function bookings (Functions coordinator ticks it for you); only your save here gives it or takes it away, and nothing else comes with it. Reset PIN lets that person choose a new one: do it with them there, as whoever signs in with that name next sets the PIN. Removing someone from the list keeps their name on old lines, and their PIN stops working for anything. Head chef is for your own name: it always has every permission and the sous chef pages, and a sous chef cannot change or remove it.</p></details>' +
       (headIdOf(d.people) ? '' : '<p class="hint a-nohead" role="note">No one is marked Head chef yet. Set your own name to Head chef and save, so your PIN has full rights on the kitchen devices.</p>') +
       peopleListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' + ksAdminHTML(d) +
       '<section class="set-block"><span class="label">Badges</span><label class="a-check"><input type="checkbox" data-a="badges"' + (d.showBadges !== false ? ' checked' : '') + '> Show the weekly top tickers to everyone on the prep book</label></section>' +
@@ -2775,7 +2775,9 @@
         var sn = h.querySelector('.a-sn'), t = h.textContent.trim();
         if (sn) t = t.slice(sn.textContent.length).trim();
         return '<button type="button" class="chip" data-p="jump" data-v="' + esc(h.id) + '">' + (sn ? '<span class="a-sn">' + esc(sn.textContent) + '</span>' : '') + esc(t) + '</button>';
-      }).join('');
+      }).join('') +
+        // on a phone the row is one button that lists the parts (22 Oct 2026, Option B); a laptop keeps the row
+        '<button type="button" class="a-jumpbtn" data-p="aj-open" aria-haspopup="dialog">On this page: <b class="a-jumpcur"></b> <span aria-hidden="true">▾</span></button>';
       row.hidden = false;
     }
     adminScroll(true);
@@ -2811,7 +2813,7 @@
     navOn = on;
     Array.prototype.forEach.call(row.querySelectorAll('.chip'), function (c) {
       var cur = c.getAttribute('data-v') === on;
-      if (cur) { c.setAttribute('aria-current', 'true'); if (moved && (c.offsetLeft < row.scrollLeft || c.offsetLeft + c.offsetWidth > row.scrollLeft + row.clientWidth)) row.scrollLeft = c.offsetLeft - 40; }
+      if (cur) { var jc = row.querySelector('.a-jumpcur'); if (jc) jc.textContent = c.textContent.replace(/^\d+\s*/, ''); c.setAttribute('aria-current', 'true'); if (moved && (c.offsetLeft < row.scrollLeft || c.offsetLeft + c.offsetWidth > row.scrollLeft + row.clientWidth)) row.scrollLeft = c.offsetLeft - 40; }
       else c.removeAttribute('aria-current');
     });
   }
@@ -2822,6 +2824,33 @@
   }, { passive: true });
   document.addEventListener('focusin', function (e) { if (S.name === 'admin' && e.target.closest && e.target.closest('.a-nav')) adminScroll(false); });
   /* a jump lands the heading just under the nav (only its last row stays when the page moves down) */
+  /* The jump list on a phone: a sheet on document.body (dims, closes on the backdrop, Cancel and Escape), clicks data-aj. */
+  function ajOpen(from) {
+    ajClose();
+    var row = S.root && S.root.querySelector('.a-onpage'); if (!row) return;
+    var box = document.createElement('div'); box.id = 'aj-sheet';
+    box.innerHTML = '<div class="sheet-bg" data-aj="close"></div><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="aj-h"><div class="sheet-grip" aria-hidden="true"></div><h3 id="aj-h">On this page</h3><div class="sheet-list">' +
+      Array.prototype.map.call(row.querySelectorAll('.chip[data-p="jump"]'), function (c) { return '<button type="button" class="sheet-o" data-aj="go" data-v="' + esc(c.getAttribute('data-v')) + '"' + (c.getAttribute('aria-current') === 'true' ? ' aria-current="true"' : '') + '><strong>' + esc(c.textContent.replace(/^\d+\s*/, '')) + '</strong></button>'; }).join('') +
+      '</div><button type="button" class="btn sheet-x" data-aj="close">Cancel</button></div>';
+    box._from = from; document.body.appendChild(box); document.documentElement.classList.add('sheet-open');
+    var f = box.querySelector('[aria-current="true"]') || box.querySelector('.sheet-o'); if (f) f.focus();
+  }
+  function ajClose(keep) {
+    var box = document.getElementById('aj-sheet'); if (!box) return;
+    box.remove(); document.documentElement.classList.remove('sheet-open');
+    if (!keep && box._from && document.body.contains(box._from)) box._from.focus();
+  }
+  document.addEventListener('click', function (e) {
+    var el = e.target && e.target.closest ? e.target.closest('[data-aj]') : null; if (!el) return;
+    if (el.getAttribute('data-aj') === 'go') { var id = el.getAttribute('data-v'); ajClose(true); adminJumpTo(id); return; }
+    ajClose();
+  });
+  document.addEventListener('keydown', function (e) {
+    var box = document.getElementById('aj-sheet'); if (!box) return;
+    if (e.key === 'Escape') { e.preventDefault(); ajClose(); return; }
+    if (e.key === 'Tab') trapTab(e, box.querySelector('.sheet'), 'button');
+  });
+  window.addEventListener('hashchange', function () { ajClose(true); });
   function adminJumpTo(id) {
     var tg = document.getElementById(id), nav = S.root && S.root.querySelector('.a-nav');
     if (!tg) return;
@@ -3472,7 +3501,9 @@
       '<div class="w-pick"><span class="nb-ql" id="w-unit-l">Unit</span><div class="seg" role="radiogroup" aria-labelledby="w-unit-l">' + UNITS.map(function (u) { return '<button type="button" class="seg-b" role="radio" data-p="wunit" data-v="' + u + '" aria-checked="' + (f.unit === u) + '">' + u + '</button>'; }).join('') + '</div></div>' +
       '<div class="w-pick"><span class="nb-ql" id="w-reason-l">Reason</span><div class="w-rchips" role="radiogroup" aria-labelledby="w-reason-l">' + REASONS.map(function (r) { return '<button type="button" class="chip" role="radio" data-p="wreason" data-v="' + r[0] + '" aria-checked="' + (f.reason === r[0]) + '">' + r[1] + '</button>'; }).join('') + '</div>' +
       '<button type="button" class="w-rbtn' + (f.reason ? '' : ' is-empty') + '" data-p="sheet" data-v="reason" aria-haspopup="dialog">' + (f.reason ? esc(reasonName(f.reason)) : 'Pick a reason') + '<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>' +
-      '<div class="nb-add-row"><label class="visually-hidden" for="w-act">Action or how to stop it happening again</label><input id="w-act" class="nb-in nb-in-text" data-k="w-act" autocomplete="off" placeholder="Action or how to stop it happening again (optional)" maxlength="120" value="' + esc(f.act) + '">' +
+      // the action is optional, so it folds until wanted (22 Oct 2026, Option B); a chip that fills it opens it
+      '<div class="nb-add-row">' + (f.act || f.actOpen ? '<label class="visually-hidden" for="w-act">Action or how to stop it happening again</label><input id="w-act" class="nb-in nb-in-text" data-k="w-act" autocomplete="off" placeholder="Action or how to stop it happening again (optional)" maxlength="120" value="' + esc(f.act) + '">'
+        : '<button type="button" class="w-actbtn" data-p="w-act-open">+ Add an action (optional)</button>') +
       '<button type="submit" class="nb-addbtn">Log it</button></div></form>' : '<p class="hint">You can read the wastage log but not write in it.</p>';
     var tot = totalsText(wTotals(live));
     var body = S.wState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' :
@@ -5511,6 +5542,7 @@
     if (a === 'heat') { S.heat = el.getAttribute('data-v'); draw(); return; }
     if (a === 'calm') { S.calM = el.getAttribute('data-v'); draw(); return; }
     if (a === 'jump') { adminJumpTo(el.getAttribute('data-v')); return; }
+    if (a === 'aj-open') { ajOpen(el); return; }
     if (a === 'csv') { exportCSV(el.getAttribute('data-v')); return; }
     if (a === 'hrm') { S.hrM = el.getAttribute('data-v'); draw(); return; }
     if (a === 'af-reset') { S.af = { sec: '', who: '', dow: '', reason: '' }; afSave(); draw(); return; }
@@ -5519,6 +5551,7 @@
     if (a === 'oreg') { var orr = (S.oregs || [])[i]; if (orr) { S.otext = orr.text; S.oqty = orr.q || ''; addOrder(true); } return; }
     // Last 7 days always counts today from the live list, whatever day was being browsed; the past days come from the day cache
     if (a === 'wunit') { S.wf.unit = el.getAttribute('data-v'); draw(); return; }
+    if (a === 'w-act-open') { S.wf.actOpen = true; draw(); focusSel('#w-act'); return; }
     if (a === 'wreason') { S.wf.reason = el.getAttribute('data-v'); var fromSheet = S.sheet === 'reason'; S.sheet = ''; draw(); if (fromSheet) { var rb = S.root.querySelector('.w-rbtn'); if (rb) rb.focus(); } return; }
     if (a === 'sheet') { S.sheet = el.getAttribute('data-v'); draw(); var so = S.root.querySelector('.sheet-o[aria-checked="true"]') || S.root.querySelector('.sheet-o'); if (so) so.focus(); return; }
     if (a === 'sheet-close') { S.sheet = ''; draw(); var rb2 = S.root.querySelector('.w-rbtn'); if (rb2) rb2.focus(); return; }
