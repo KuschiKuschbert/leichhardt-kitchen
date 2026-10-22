@@ -1193,7 +1193,9 @@
       foodMask(stage, function (m) { if (m && document.body.contains(stage)) layoutStage(stage, m); });
     });
   }
-  window.addEventListener('resize', function () { fitPins(); });
+  // once per frame at most: a tablet turned on a recipe fires many resizes, and each fit redraws the food masks (22 Oct 2026)
+  var pinFrame = 0;
+  window.addEventListener('resize', function () { if (pinFrame) return; pinFrame = requestAnimationFrame(function () { pinFrame = 0; fitPins(); }); });
 
   // Search redraws only the results, so typing stays fast and the keyboard stays open.
   var timer = null;
