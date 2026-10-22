@@ -201,14 +201,33 @@
   function loadLearned() {
     var tag = S.pin + '|' + dayNow();
     if (!fb || S.learnBusy || waiting('learned') || S.learnFor === tag) return;
-    try { var c = JSON.parse(lsGet('lk.learned') || 'null'); if (c && c.tag === tag && Array.isArray(c.list)) { S.learned = c.list; S.learnFor = tag; return; } } catch (e) {}
+    try { var c = JSON.parse(lsGet('lk.learned') || 'null'); if (c && c.tag === tag && Array.isArray(c.list)) { S.learned = foldLearned(c.list); S.learnFor = tag; return; } } catch (e) {}
     S.learnBusy = true;
     fb.fs.getDocs(fb.fs.query(colRef('learned'), fb.fs.orderBy('uses', 'desc'), fb.fs.limit(LEARN_N))).then(function (snap) {
-      S.learned = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; });
+      S.learned = foldLearned(snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }));
       S.learnFor = tag; S.learnBusy = false; learnSave(); draw();
     }, function () { S.learnBusy = false; retryLater('learned'); });
   }
   function learnSave() { lsSet('lk.learned', JSON.stringify({ tag: S.learnFor, list: S.learned })); }
+  /* "Slice onion" and "Slice onions" are learned as two records (their ids are the typed words), but they are one item
+     (22 Oct 2026). The phone shows them as one: counts, weekdays, amounts and sections added up, the most used
+     spelling as the name, every record id in ids (Hide writes to each). Nothing in Firestore changes. */
+  function foldLearned(list) {
+    var by = {}, out = [];
+    (list || []).forEach(function (x) {
+      var k = dupKey(x.text) || x.id, e = by[k];
+      if (!e) { e = by[k] = Object.assign({}, x, { ids: (x.ids || [x.id]).slice(), dow: Object.assign({}, x.dow || {}), qtys: Object.assign({}, x.qtys || {}), secs: Object.assign({}, x.secs || {}) }); out.push(e); return; }
+      if ((x.uses || 0) > (e.uses || 0)) { e.id = x.id; e.text = x.text; }
+      e.ids = e.ids.concat(x.ids || [x.id]);
+      ['uses', 'typed', 'picked'].forEach(function (f) { if (x[f] != null) e[f] = (e[f] || 0) + x[f]; });
+      Object.keys(x.dow || {}).forEach(function (d) { e.dow[d] = (e.dow[d] || 0) + x.dow[d]; });
+      Object.keys(x.qtys || {}).forEach(function (q) { var v = x.qtys[q]; if (!v) return; var w = e.qtys[q]; e.qtys[q] = w ? { q: w.n >= v.n ? w.q : v.q, n: (w.n || 0) + (v.n || 0) } : v; });
+      Object.keys(x.secs || {}).forEach(function (q) { var v = x.secs[q]; if (!v) return; var w = e.secs[q]; e.secs[q] = w ? { name: w.name || v.name, n: (w.n || 0) + (v.n || 0) } : v; });
+      e.lastUsed = Math.max(e.lastUsed || 0, x.lastUsed || 0);
+      e.hidden = !!(e.hidden && x.hidden);
+    });
+    return out.sort(function (a, b) { return (b.uses || 0) - (a.uses || 0); });
+  }
   function watchSections() {
     if (unsubSec || !fb) return;
     unsubSec = fb.fs.onSnapshot(colRef('sections'), function (snap) {
@@ -719,7 +738,15 @@
   function newItem(extra) {
     var p = me(), f = fb.fs, ref = f.doc(itemsCol(S.date));
     var data = Object.assign({ text: '', station: '', qty: '', recipe: '', addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: now(), done: false, deleted: false }, extra);
+    amtOn(data);
     var pr = sset(ref, data); pr.id = ref.id; return pr;
+  }
+  /* The amount read into a number and one unit (js/amounts.js), saved next to the typed text so amounts can be added up
+     later (22 Oct 2026): qn and qu, or nothing when it cannot be read for sure. */
+  function amtOn(data) {
+    var a = window.LK_AMT && data.qty ? window.LK_AMT.parse(data.qty) : null;
+    if (a) { data.qn = a.n; data.qu = a.u; }
+    return data;
   }
   function noteSection(name) {
     if (!name || !fb) return;
@@ -926,7 +953,7 @@
      apart from the head chef hiding an item. */
   var REGULAR = 4;   // typed or picked this many times and it becomes a regular
   function lkey(t) { return slug(String(t).toLowerCase()).slice(0, 80); }
-  function learnedFor(text) { var k = lkey(text); return S.learned.filter(function (x) { return x.id === k; })[0] || null; }
+  function learnedFor(text) { var k = lkey(text), d = dupKey(text); return S.learned.filter(function (x) { return x.id === k || (x.ids || []).indexOf(k) >= 0 || (d && dupKey(x.text) === d); })[0] || null; }
   function bestSection(x) {
     var best = '', n = 0;
     Object.keys(x.secs || {}).forEach(function (k) { var v = x.secs[k]; if (v && v.name && v.n > n) { n = v.n; best = v.name; } });
@@ -934,11 +961,21 @@
   }
   /* Amounts written for a line before: the learned record (kept for good) and the last 7 days, most used first. */
   function qtyList(text) {
-    var k = lkey(String(text || '').trim()), out = {}, lx = S.learned.filter(function (x) { return x.id === k; })[0], h = (S.hist || {})[k];
+    var k = lkey(String(text || '').trim()), out = {}, lx = learnedFor(text);
     if (!k) return [];
-    Object.keys((lx && lx.qtys) || {}).forEach(function (q) { var v = lx.qtys[q]; if (v && v.q) out[q] = { q: v.q, n: v.n || 0 }; });
-    Object.keys((h && h.q) || {}).forEach(function (q) { var v = h.q[q]; if (!out[q] || out[q].n < v.n) out[q] = { q: v.q, n: v.n }; });
+    Object.keys((lx && lx.qtys) || {}).forEach(function (q) { var v = lx.qtys[q]; if (v && v.q) amtAdd(out, v.q, v.n || 0); });
+    // the last days: a count of its own, the larger of the two wins (the learned record already holds the older days)
+    var recent = {};
+    ((lx && lx.ids) || []).concat([k]).forEach(function (hk) { var h = (S.hist || {})[hk]; Object.keys((h && h.q) || {}).forEach(function (q) { var v = h.q[q]; if (v && v.q) amtAdd(recent, v.q, v.n || 0); }); });
+    Object.keys(recent).forEach(function (g) { if (!out[g] || out[g].n < recent[g].n) out[g] = recent[g]; });
     return Object.keys(out).map(function (q) { return out[q]; }).sort(function (a, b) { return b.n - a.n; });
+  }
+  // adds n uses of an amount, grouped by the amount as read (js/amounts.js): the most used spelling is the one shown
+  function amtAdd(out, q, n) {
+    var g = window.LK_AMT ? window.LK_AMT.key(q) : String(q).toLowerCase(), e = out[g];
+    if (!e) { out[g] = { q: q, n: n, top: n }; return; }
+    if (n > e.top) { e.q = q; e.top = n; }
+    e.n += n;
   }
   function usualQty(text) {
     var l = qtyList(text), tot = 0;
@@ -1283,7 +1320,8 @@
       }).catch(function (e) { S.moving = false; S.moveMsg = e && e.code === 'permission-denied' ? 'The rules do not allow the new PIN yet. Nothing was changed on the old PIN.' : 'Stopped part way. Nothing was changed on the old PIN, so it is safe to try again.'; draw(); });
   }
   function hideLearned(id, hidden) {
-    sset(docRef('learned', id), { hidden: hidden }, true).catch(failed);
+    var e = S.learned.filter(function (x) { return x.id === id; })[0], ids = (e && e.ids) || [id];
+    W(ids.map(function (i) { return ['set', docRef('learned', i), { hidden: hidden }, true]; })).catch(failed);
     // the list is kept for the day, so this phone's copy is patched (other phones see it from tomorrow's read)
     S.learned.forEach(function (x) { if (x.id === id) x.hidden = hidden; }); if (S.learnFor) learnSave(); draw();
   }
@@ -3089,10 +3127,10 @@
   function loadOrdLearned() {
     var tag = S.pin + '|' + dayNow();
     if (!fb || S.ordLearnBusy || S.ordLearnFor === tag) return;
-    try { var c = JSON.parse(lsGet('lk.ord.learned') || 'null'); if (c && c.tag === tag && c.list) { S.ordLearned = c.list; S.ordLearnFor = tag; S.ordLearnOk = true; return; } } catch (e) {}
+    try { var c = JSON.parse(lsGet('lk.ord.learned') || 'null'); if (c && c.tag === tag && c.list) { S.ordLearned = foldLearned(c.list); S.ordLearnFor = tag; S.ordLearnOk = true; return; } } catch (e) {}
     S.ordLearnBusy = true;
     fb.fs.getDocs(fb.fs.query(colRef('ordlearned'), fb.fs.orderBy('uses', 'desc'), fb.fs.limit(ORD_LEARN_N))).then(function (sn) {
-      S.ordLearned = sn.docs.map(function (d) { var x = d.data(); return { id: d.id, text: x.text || '', uses: x.uses || 0, dow: x.dow || {}, qtys: x.qtys || {}, hidden: !!x.hidden }; });
+      S.ordLearned = foldLearned(sn.docs.map(function (d) { var x = d.data(); return { id: d.id, text: x.text || '', uses: x.uses || 0, dow: x.dow || {}, qtys: x.qtys || {}, hidden: !!x.hidden }; }));
       S.ordLearnFor = tag; S.ordLearnOk = true; S.ordLearnBusy = false; ordLearnSave(); draw();
     }, function () {
       // no signal, or rules without ordlearned (a new kitchen PIN): suggest from the last 14 days only, try again tomorrow
@@ -3100,7 +3138,7 @@
     });
   }
   function ordLearnSave() { lsSet('lk.ord.learned', JSON.stringify({ tag: S.ordLearnFor, list: S.ordLearned || [] })); }
-  function ordLearnedFor(text) { var k = lkey(text); return (S.ordLearned || []).filter(function (x) { return x.id === k; })[0] || null; }
+  function ordLearnedFor(text) { var k = lkey(text), d = dupKey(text); return (S.ordLearned || []).filter(function (x) { return x.id === k || (x.ids || []).indexOf(k) >= 0 || (d && dupKey(x.text) === d); })[0] || null; }
   /* The server counts order lines every night (scripts/nightly-learn.mjs). This only keeps this phone's copy in step,
      so the next suggestion already knows; nothing is written. */
   function ordLearn(text, qty) {
@@ -3119,8 +3157,9 @@
   function ordQtyList(text) {
     var k = lkey(String(text || '').trim()), out = {}, lx = ordLearnedFor(text);
     if (!k) return [];
-    Object.keys((lx && lx.qtys) || {}).forEach(function (q) { var v = lx.qtys[q]; if (v && v.q) out[q] = { q: v.q, n: v.n || 0 }; });
-    (S.ordHist || []).forEach(function (x) { if (lkey(x.text) === k && x.qty) { var q = lkey(x.qty).slice(0, 40); out[q] = out[q] || { q: x.qty, n: 0 }; if (!lx) out[q].n++; } });
+    Object.keys((lx && lx.qtys) || {}).forEach(function (q) { var v = lx.qtys[q]; if (v && v.q) amtAdd(out, v.q, v.n || 0); });
+    var d = dupKey(text);
+    (S.ordHist || []).forEach(function (x) { if ((lkey(x.text) === k || (d && dupKey(x.text) === d)) && x.qty) amtAdd(out, x.qty, lx ? 0 : 1); });
     return Object.keys(out).map(function (q) { return out[q]; }).sort(function (a, b) { return b.n - a.n; });
   }
   function oQtyChipsHTML() {
@@ -3142,7 +3181,7 @@
     var oFix = pr.changes.map(function (c) { return c[0] + ' to ' + c[1]; }).join(', ');
     S.otext = ''; var q = S.oqty.trim().slice(0, 40); S.oqty = ''; draw();
     ordLearn(t, q);
-    sset(ref, { text: t, qty: q, recipes: hit ? hit.ids : [], addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: now(), ordered: false, deleted: false, orig: t !== typed ? typed.slice(0, 120) : '' })
+    sset(ref, amtOn({ text: t, qty: q, recipes: hit ? hit.ids : [], addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: now(), ordered: false, deleted: false, orig: t !== typed ? typed.slice(0, 120) : '' }))
       .then(ordReload, function (e) { failed(e, function () { if (!S.otext.trim()) { S.otext = typed; S.oqty = q; } }); });
     /* like the prep list: Undo takes the line back, or after a spelling fix puts back what was typed */
     if (oFix) toast('Added, corrected ' + oFix, { label: 'Undo', fn: function () { keepWords(pr.changes); supd(ref, { text: typed.slice(0, 120), orig: '' }).then(ordReload, failed); } });

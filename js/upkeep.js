@@ -9,7 +9,7 @@
     try { if (window.LK_PREP && window.LK_PREP.unsaved && window.LK_PREP.unsaved()) { clearTimeout(timer); timer = setTimeout(refresh, 600000); return; } } catch (e) {}
     // Re-fetch the data files past the browser cache first, so the reload shows the newest cards. The page stays on the same card.
     // X-LK-Fresh tells the service worker to fetch these from the network and save them (sw.js).
-    var files = ['index.html', 'js/data.js', 'js/art.js', 'js/overlay.js', 'js/app.js', 'js/prep.js', 'js/functions.js', 'js/firebase-config.js', 'js/boot.js', 'js/upkeep.js', 'css/app.css'];
+    var files = ['index.html', 'js/data.js', 'js/art.js', 'js/overlay.js', 'js/app.js', 'js/amounts.js', 'js/prep.js', 'js/functions.js', 'js/firebase-config.js', 'js/boot.js', 'js/upkeep.js', 'css/app.css'];
     var go = function () { location.reload(); };
     try {
       // 'no-cache' asks the server whether each file changed (a small answer when it did not), instead of downloading all
@@ -50,7 +50,7 @@
   function reloadNow() {
     // Once per 10 minutes at most, so a flapping header can never cause a reload loop.
     try { var last = +localStorage.getItem('lk.upd.last') || 0; if (Date.now() - last < 600000) return; localStorage.setItem('lk.upd.last', String(Date.now())); } catch (e) {}
-    var files = ['index.html', 'js/data.js', 'js/art.js', 'js/overlay.js', 'js/app.js', 'js/prep.js', 'js/functions.js', 'js/firebase-config.js', 'js/boot.js', 'js/upkeep.js', 'css/app.css'];
+    var files = ['index.html', 'js/data.js', 'js/art.js', 'js/overlay.js', 'js/app.js', 'js/amounts.js', 'js/prep.js', 'js/functions.js', 'js/firebase-config.js', 'js/boot.js', 'js/upkeep.js', 'css/app.css'];
     var go = function () { location.reload(); };
     try { Promise.all(files.map(function (f) { return fetch(f, { cache: 'reload', headers: { 'X-LK-Fresh': '1' } }); })).then(go, go); setTimeout(go, 8000); } catch (e) { go(); }
   }
