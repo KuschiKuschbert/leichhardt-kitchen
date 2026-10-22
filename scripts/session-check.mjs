@@ -3,11 +3,12 @@
   accepting the older PIN proof? Run by .github/workflows/session-check.yml from the Actions tab. Reads only.
 
   For each person on the staff list it shows when they were last seen in the book (activity lastSeen), when a phone
-  last wrote as them the older way (proofs/<id> at) and their newest PIN session (sessions/<uid>). A phone that opened
-  the book since phase 1 went live (SINCE) opens a session within seconds, so:
-    - someone seen since SINCE with no running session, or
-    - an older-way write after SINCE with no session opened within 2 minutes of it
-  means a phone that cannot open a session (its Firebase sign-in fails). Phase 2 would stop that phone saving.
+  last wrote as them the older way (proofs/<id> at), their newest PIN session (sessions/<uid>) and their last PIN try
+  (tries/<id>, which carries the phone's Firebase sign-in). A phone that opened the book since phase 1 went live (SINCE)
+  tries its PIN and opens a session within seconds, so an older-way write after SINCE with no session or PIN try within
+  2 minutes after it means a phone that cannot open a session (its Firebase sign-in fails): phase 2 would stop that
+  phone saving. Someone seen since with no session now is fine when nothing was written the older way since: their
+  phone saved through a session, which Sign out or the idle lock has ended since.
 
   The log of a public repository is public: no names, ids, PINs or PIN fingerprints are printed. People are shown by
   their place on the staff list (as in the admin People tab) and their role.
@@ -65,16 +66,18 @@ console.log('  #  role    last seen     older-way write  newest session  session
 let notSeen = 0, problems = 0;
 people.forEach((p, i) => {
   const seen = +(act[p.id] && act[p.id].lastSeen) || 0, pf = ms(proofs[p.id] && proofs[p.id].at), s = sess[p.id] || { n: 0, at: 0, kinds: [] }, tr = ms(tries[p.id] && tries[p.id].at);
+  // the newest session or PIN try: either shows a phone of theirs has its own Firebase sign-in
+  const signedIn = Math.max(s.at, tr);
   let note = '';
   if (!pinset[p.id]) note = 'no PIN yet';
-  else if (seen >= SINCE && !s.n) { note = 'SEEN SINCE, NO SESSION'; problems++; }
-  else if (pf >= SINCE && !(s.at && s.at >= pf - 120000)) { note = 'OLDER-WAY WRITE, NO SESSION AFTER IT'; problems++; }
+  else if (pf >= SINCE && !(signedIn >= pf - 120000)) { note = 'OLDER-WAY WRITE, NO SIGN-IN AFTER IT'; problems++; }
+  else if (seen >= SINCE && !s.n) note = 'seen since, no session now (signed out?)';
   else if (seen < SINCE) { note = 'not seen since'; notSeen++; }
   const extra = (s.n ? ' sign-in: ' + s.kinds.join(', ') + '.' : '') + (bad[p.id] ? ' Not running: ' + bad[p.id].join(', ') + '.' : '');
   console.log(String(i + 1).padStart(3) + '  ' + String(p.role || '').padEnd(6) + '  ' + when(seen).padEnd(12) + '  ' + when(pf).padEnd(15) + '  ' + when(s.at).padEnd(14) + '  ' + String(s.n).padStart(8) + '  ' + when(tr).padEnd(11) + '  ' + note + extra);
 });
 console.log('');
 if (problems) console.log('NOT READY: ' + problems + ' ' + (problems === 1 ? 'person has' : 'people have') + ' a phone that saves without a session. Phase 2 would stop it saving. Find out why first (that phone\'s Firebase sign-in).');
-else console.log('Ready for phase 2: everyone seen since phase 1 has a running session, and no phone saves the older way.' +
-  (notSeen ? ' ' + notSeen + ' ' + (notSeen === 1 ? 'person has' : 'people have') + ' not opened the book since: their phone moves over by itself when it opens (they may be asked for their PIN once).' : ''));
+else console.log('Ready for phase 2: no phone saves the older way without its own sign-in.' +
+  (notSeen ? ' ' + notSeen + ' ' + (notSeen === 1 ? 'person has' : 'people have') + ' not opened the book since phase 1: a phone of theirs moves over by itself when it opens, but if it opens after the phase 2 publish while still on the older book, it asks for the PIN once.' : ''));
 process.exit(0);
