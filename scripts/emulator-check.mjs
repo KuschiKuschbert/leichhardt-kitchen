@@ -28,6 +28,7 @@ await w(['waste', y, 'lines', 'w3'], wl('Chips', { unit: 'kg', reason: 'excess' 
 await w(['waste', y, 'lines', 'w4'], wl('Gone', { deleted: true }));
 await w(['waste', today, 'lines', 'w5'], wl('Rice'));
 const run = () => execFileSync(process.execPath, ['nightly-learn.mjs'], { env: Object.assign({}, process.env, { KITCHEN_PIN: '000000', LEARN_DAYS: '5' }), encoding: 'utf8' });
+await w(['days', y, 'items', 'tst1'], it('Practice thing', { tst: true }));
 let fails = 0; const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++; };
 const out1 = run();
 ok(/Learned \d+ kitchen days/.test(out1) && !/000000/.test(out1), 'runs and prints no PIN: ' + out1.trim());
@@ -54,6 +55,7 @@ const slo = (sl.items || []).find(x => x.id === 'slice-onions') || {};
 ok(sl.day === today && slo.uses === 3 && slo.qtys && slo.qtys['2-tubs'].n === 2 && !('by' in slo), 'summary/learned: the prep items with their counts, fields the phones use only (' + JSON.stringify(slo) + ')');
 ok(so.day === today && (so.items || []).some(x => x.id === 'flour' && x.uses === 1), 'summary/ordlearned: the order items');
 ok(/Summaries for the phones: \d+ prep items, \d+ order items/.test(out1), 'the run says how many summary items');
+ok(!(await K.collection('learned').doc('practice-thing').get()).exists, 'practice lines (tst) are not learned');
 run();
 const on2 = (await K.collection('learned').doc('slice-onions').get()).data();
 ok(on2.uses === 3, 'second run counts nothing twice (' + on2.uses + ')');
