@@ -461,7 +461,8 @@
       pp = { parts: [{ ing: pf.ings[0], i: (r.ingredients || []).filter(function (i) { return R.ingName(i) === pf.ings[0]; })[0] || { name: pf.ings[0], q: '' }, id: pf.id, it: pf, scale: 1, count: 1, conf: 1, guesses: [], also: pf.ings.slice(1) }], unsure: [], also: al, made: [{ ing: r.name, from: pf.from }] };
     }
     var style = W.styleChoice || pickStyle(r, d.slot, surf, pp.parts);
-    var keep = d.els.filter(function (e) { return e.fixed || (e.t !== 'item' && !e.made && !e.dr); }), keepIng = {};
+    // kept as they are: parts moved by hand, pieces the head chef picked or swapped in, and drawn shapes
+    var keep = d.els.filter(function (e) { return e.fixed || e.pick || (e.t !== 'item' && !e.made && !e.dr); }), keepIng = {};
     keep.forEach(function (e) { if (e.ing) keepIng[e.ing] = 1; String(e.also || '').split('|').forEach(function (x) { if (x) keepIng[x] = 1; }); });
     var els = layout(d, r, pp.parts.filter(function (p) { return !keepIng[p.ing]; }), style, seed);
     d.els = keep.concat(els);
@@ -549,7 +550,7 @@
           // of a dish whose plate was just drawn again
           var flat = d.slot === 'side' || d.slot === 'build';
           if (a.rid !== rid && !(flat ? plateDone[a.rid] : d.els.some(function (e) { return e.made && ids.indexOf(e.made) >= 0; }))) return null;
-          if ((d.slot === 'side' || d.slot === 'build') && d.els.some(function (e) { return e.fixed; })) return null;
+          if ((d.slot === 'side' || d.slot === 'build') && d.els.some(function (e) { return e.fixed || e.pick; })) return null;
           // a side view stands on the dish's plate drawing as it is now (drawn again just before)
           var pl = d.slot === 'side' ? X.arts().filter(function (y) { return y.rid === a.rid && (y.slot === 'plate' || y.slot === 'pan') && !y.removed; })[0] : null;
           return (pl ? api.fs().getDocFromServer(api.docRef('drawings', pl.id)).then(function (ps) { return ps.exists() ? ps.data() : null; }, function () { return null; }) : Promise.resolve(null)).then(function (plate) {
@@ -751,7 +752,7 @@
         teach(ing, id);
         if (W.smart) W.smart.unsure = W.smart.unsure.filter(function (u) { return u.ing !== ing; });
         W.sel = [];
-        DR.addItem(id, { ing: ing, scale: DR.scaleFor(it, i.q) });
+        (DR.addItem(id, { ing: ing, scale: DR.scaleFor(it, i.q) }) || []).forEach(function (n) { W.d.els[n].pick = true; });
         DR.say(ing + ': ' + it.name);
         return true;
       }

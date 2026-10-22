@@ -9,7 +9,8 @@
   A drawing is one servingware surface and a list of elements, drawn around 0,0 at real size (1 unit is about
   1.5 mm, a 30 cm plate is 200 units across):
     item   a library piece: a (id@version), x, y, sx, sy, r (degrees), flip, cm (colour swaps), op, ing (the
-           ingredient it shows), fixed (moved by hand, so Tidy up leaves it)
+           ingredient it shows), fixed (moved by hand, so Tidy up leaves it), pick (the piece
+           the head chef picked for its ingredient, so the book keeps it when it draws the plate again)
     raw    a picture that is not in the library (a book drawing, or a piece of one after Split into pieces): a
            (raw:<key>, its drawing in defs), bx (its box, "x0 y0 x1 y1"), and the rest as for an item
     text   a label: s, sub, x, y, size, anchor, lx, ly (where its leader line points), ing
@@ -304,6 +305,37 @@
     W.sel = added;
     return added;
   }
+  // a piece the head chef picked for an ingredient (from the library or Swap): the book keeps it when it draws the plate
+  // again (js/smart.js drawIt), and Tidy up may still move it
+  function picked(added) { (added || []).forEach(function (i) { var e = W.d.els[i]; if (e && e.ing) e.pick = true; }); return added; }
+  // Swap: the new piece goes where the old part was, about as wide, with its ingredient, layer, turn and flip; a part
+  // moved by hand stays marked as moved
+  // the search Swap starts with: the ingredient's name, or its last word that finds drawings ("Double-smoked BBQ sauce"
+  // finds nothing, "sauce" does)
+  function swapWords(name) {
+    if (LIB.search(name).length) return name;
+    var w = String(name).split(/\s+/).filter(function (x) { return x.length > 3; });
+    for (var k = w.length - 1; k >= 0; k--) if (LIB.search(w[k]).length) return w[k];
+    return '';
+  }
+  function swapTo(id) {
+    var old = W.swap, it = LIB.get(id); W.swap = null; W.pendingIng = ''; W.q = ''; W.panel = '';
+    var k = W.d.els.indexOf(old);
+    if (k < 0 || !it) { W.sel = []; return; }
+    var b = bbox(old), s = Math.max(0.3, Math.min(3, ((b[2] - b[0]) || it.w) / it.w));
+    W.sel = [];
+    var added = addItem(id, { x: old.x, y: old.y, ing: old.ing, scale: s });
+    if (!added || !added.length) return;
+    var nw = W.d.els.splice(added[0], 1)[0];
+    k = W.d.els.indexOf(old);
+    ['r', 'flip', 'fixed'].forEach(function (f) { if (old[f] != null) nw[f] = old[f]; });
+    // the new piece takes over every name the old part carried (a part drawn for two ingredients)
+    if (old.also) { nw.also = old.also; if (old.ai != null) nw.ai = old.ai; }
+    nw.pick = true;
+    W.d.els.splice(k, 1, nw);
+    W.sel = [k];
+    say(old.ing + ': swapped for ' + it.name);
+  }
 
   /* ---------- the recipe's ingredients and the parts on the plate ---------- */
   function rec() { return recipeOf(W.d.rid); }
@@ -507,6 +539,7 @@
     var one = W.sel.length === 1 ? W.d.els[W.sel[0]] : null;
     return '<div class="dw-selbar" role="toolbar" aria-label="The picked part"><span class="dw-selname">' + esc(one ? nameOfEl(one) : W.sel.length + ' parts picked') + '</span>' +
       btn('dup', 'Duplicate') + btn('del', 'Delete') + btn('front', 'Front') + btn('fwd', 'Forward') + btn('bwd', 'Backward') + btn('back', 'Back') +
+      (isPiece(one) && one.ing && (W.d.slot === 'plate' || W.d.slot === 'pan') ? btn('swap', 'Swap') : '') +
       (isPiece(one) ? btn('flip', 'Flip') + btn('panel', 'Colours', { v: 'colour', on: W.panel === 'colour' }) + btn('stretch', 'Stretch', { on: W.stretch }) : '') +
       (one && one.t === 'raw' ? btn('split', 'Split into pieces') : '') +
       (W.sel.some(function (i) { return isPiece(W.d.els[i]); }) ? btn('piece', 'Save as a library piece') : '') +
@@ -541,7 +574,7 @@
     if (!W.q.trim() && !W.cat) list = list.filter(function (it) { return !it.of; });
     var shown = list.slice(0, 36 + W.more);
     return '<section class="dw-panel" aria-labelledby="dw-h-lib"><h3 class="h3" id="dw-h-lib">Library</h3>' +
-      (W.pendingIng ? '<p class="hint">Pick the drawing for <b>' + esc(W.pendingIng) + '</b>. It is labelled with that ingredient.</p>' : '') +
+      (W.swap ? '<p class="hint">Pick the drawing to swap in for <b>' + esc(W.pendingIng) + '</b>. It takes the part\'s place and stays when the book draws the plate again.</p>' : W.pendingIng ? '<p class="hint">Pick the drawing for <b>' + esc(W.pendingIng) + '</b>. It is labelled with that ingredient.</p>' : '') +
       '<div class="field"><label class="label" for="dw-q">Find a drawing</label><input id="dw-q" class="search" type="search" data-dwf="q" autocomplete="off" spellcheck="false" placeholder="For example: chips, pepper sauce, lemon wedge" value="' + esc(W.q) + '"></div>' +
       '<div class="chips scroll" role="group" aria-label="Category">' + btn('cat', 'All', { v: '', on: !W.cat, cls: 'chip' }) + cats.map(function (c) { return btn('cat', c.name, { v: c.id, on: W.cat === c.id, cls: 'chip' }); }).join('') + '</div>' +
       (W.cat ? '<div class="chips scroll" role="group" aria-label="Kind">' + btn('sub', 'All ' + (cats.filter(function (c) { return c.id === W.cat; })[0] || {}).name.toLowerCase(), { v: '', on: !W.sub, cls: 'chip' }) + LIB.subs(W.cat).map(function (s) { return btn('sub', s, { v: s, on: W.sub === s, cls: 'chip' }); }).join('') + '</div>' : '') +
@@ -671,7 +704,7 @@
   function cmd(a, v, el0) {
     var d = W.d, one = W.sel.length === 1 ? d.els[W.sel[0]] : null, c = centre();
     switch (a) {
-      case 'panel': W.panel = W.panel === v ? '' : v; if (v !== 'lib') W.pendingIng = ''; draw(); return;
+      case 'panel': W.panel = W.panel === v ? '' : v; if (v !== 'lib' || !W.panel) { W.pendingIng = ''; W.swap = null; } draw(); return;
       case 'undo': undo(); return;
       case 'redo': redo(); return;
       case 'many': W.many = !W.many; draw(); return;
@@ -694,8 +727,16 @@
       case 'add':
         // a drawing picked for an ingredient is remembered for the next recipe (js/smart.js, book/matches)
         if (W.pendingIng && window.LK_SMART && window.LK_SMART.teach) window.LK_SMART.teach(W.pendingIng, v);
-        before(); addItem(v, { ing: W.pendingIng || '' }); if (W.pendingIng) { W.pendingIng = ''; W.q = ''; }
+        before();
+        if (W.swap) { swapTo(v); changed(); return; }
+        picked(addItem(v, { ing: W.pendingIng || '' })); if (W.pendingIng) { W.pendingIng = ''; W.q = ''; }
         changed(); say(LIB.get(v).name + ' added'); return;
+      case 'swap': {
+        // Swap: the library opens on the part's ingredient, and the piece tapped there takes the part's place
+        var sw = W.sel.length === 1 ? d.els[W.sel[0]] : null;
+        if (!sw || !sw.ing) return;
+        W.swap = sw; W.panel = 'lib'; W.q = swapWords(sw.ing); W.pendingIng = sw.ing; W.cat = ''; W.sub = ''; W.more = 0; draw(); return;
+      }
       case 'ing': addIng(v); return;
       case 'wfam': W.wareFam = v; draw(); return;
       case 'ware': setSurf(clone((LIB.WARE.filter(function (x) { return x.fam === (W.wareFam || famOf(d.surf)); })[0] || LIB.WARE[0]).list[+v].p)); return;
@@ -728,7 +769,7 @@
     else if (a === 'cmreset' && one) delete one.cm;
     else if (a === 'setIng' && one) {
       var si0 = itemOf(one.a);
-      if (v) { one.ing = v; one.ii = ingIndex(v); } else { delete one.ing; delete one.ii; }
+      if (v) { one.ing = v; one.ii = ingIndex(v); one.pick = true; } else { delete one.ing; delete one.ii; delete one.pick; }
       if (v && si0 && window.LK_SMART && window.LK_SMART.teach) window.LK_SMART.teach(v, si0.id);
       // a sauce labelled with its name takes that sauce's colour (pepper, mushroom, hollandaise...)
       var si = itemOf(one.a), sc = v && si && (si.role === 'sauce' || si.role === 'dsauce') ? LIB.sauceColour(v) : '';
@@ -928,7 +969,7 @@
     var svg = W.root.querySelector('.dw-svg'), r = svg && svg.getBoundingClientRect();
     if (!r || ev.clientX < r.left || ev.clientX > r.right || ev.clientY < r.top || ev.clientY > r.bottom) return;
     var p = toSvg(svg, ev.clientX, ev.clientY);
-    before(); addItem(c.id, { x: p[0], y: p[1], ing: W.pendingIng || '' }); W.pendingIng = ''; changed();
+    before(); picked(addItem(c.id, { x: p[0], y: p[1], ing: W.pendingIng || '' })); W.pendingIng = ''; W.swap = null; changed();
     suppressClick = true; setTimeout(function () { suppressClick = false; }, 0);
   });
   var suppressClick = false;
@@ -1047,7 +1088,7 @@
   // side or build drawing are left to Label everything
   function adaptEls(els) {
     return els.filter(function (el) { return !(el.t === 'text' && el.auto); }).map(function (el) {
-      delete el.fixed;
+      delete el.fixed; delete el.pick;
       if (el.ing && ingIndex(el.ing) < 0) { delete el.ing; delete el.ii; } else if (el.ing) el.ii = ingIndex(el.ing);
       if (el.also) {
         var keep = String(el.also).split('|').filter(function (k) { return ingIndex(k) >= 0; });
@@ -1227,7 +1268,7 @@
     if (W.busy) return;
     if (!name) { W.msg = 'Give the template a name.'; draw(); return; }
     if (!d.els.length) { W.msg = 'Put something on the drawing first.'; draw(); return; }
-    var els = clone(d.els).filter(function (el) { return !(el.t === 'text' && el.auto); }).map(function (el) { delete el.ing; delete el.ii; delete el.also; delete el.ai; delete el.fixed; return el; }), used = {};
+    var els = clone(d.els).filter(function (el) { return !(el.t === 'text' && el.auto); }).map(function (el) { delete el.ing; delete el.ii; delete el.also; delete el.ai; delete el.fixed; delete el.pick; return el; }), used = {};
     els.forEach(function (el) { if (isPiece(el)) used[el.a] = bodyOf(el.a); });
     var out = { name: name, slot: d.slot, surf: clone(d.surf), els: els, defs: JSON.stringify(used), vb: viewBoxOf({ slot: d.slot, surf: d.surf, els: els }), svgS: svgS(d), svgF: els.map(elSVG).join(''), v: 1, upd: api.now(), removed: false };
     if (out.defs.length > 300000 || out.svgF.length > 300000) { W.msg = 'Not saved: this drawing is too big for a template.'; draw(); return; }
@@ -1384,7 +1425,7 @@
     var key = sub.join('/');
     W.root = root;
     if (W.key === key && W.d) { draw(); return; }
-    W.key = key; W.d = null; W.sel = []; W.undo = []; W.redo = []; W.view = { z: 1, x: 0, y: 0 }; W.panel = ''; W.msg = ''; W.saving = ''; W.check = null; W.conflict = null; W.q = ''; W.cat = ''; W.sub = ''; W.more = 0; W.pendingIng = ''; W.wareFam = '';
+    W.key = key; W.d = null; W.sel = []; W.undo = []; W.redo = []; W.view = { z: 1, x: 0, y: 0 }; W.panel = ''; W.msg = ''; W.saving = ''; W.check = null; W.conflict = null; W.q = ''; W.cat = ''; W.sub = ''; W.more = 0; W.pendingIng = ''; W.swap = null; W.wareFam = '';
     W.started = false; W.startOpen = false; W.piece = null; W.fromSel = ''; W.tplName = null; W.reuse = ''; W.wsave = false; W.wname = ''; W.busy = false;
     // read again each time a drawing opens, so a template hidden on the manage page is not offered
     loadMine(true);
