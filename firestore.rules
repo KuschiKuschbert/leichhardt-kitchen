@@ -52,6 +52,13 @@ service cloud.firestore {
             && request.time.toMillis() - resource.data.get('doneAt', 0) < 120000);
     }
 
+    // A sous chef's save keeps the head chef, every sous chef and every function manager on staffIds, so nobody can
+    // stop the other chefs' PINs from working (22 Oct 2026). Only the head chef's Google account takes a chef off.
+    function keepsChefs() {
+      return request.resource.data.get('staffIds', []).hasAll(resource.data.get('sousIds', []))
+        && request.resource.data.get('staffIds', []).hasAll(resource.data.get('fnIds', []))
+        && (resource.data.get('headId', '') == '' || resource.data.get('headId', '') in request.resource.data.get('staffIds', []));
+    }
     match /kitchens/KITCHEN_PIN/config/main {
       allow read: if true;
       allow create: if isAdmin();
@@ -62,6 +69,7 @@ service cloud.firestore {
         && request.resource.data.by in resource.data.get('sousIds', [])
         && request.resource.data.people is list && request.resource.data.people.size() <= 80
         && request.resource.data.get('staffIds', []) is list && request.resource.data.get('staffIds', []).size() <= 80
+        && keepsChefs()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['people', 'staffIds', 'updated', 'updatedBy', 'by']))
         // the head chef or a sous chef changed a line on a past day: they stamp pastEdit (p prep, o orders) with the time,
         // so the other phones read their saved past days again (22 Oct 2026). Nothing else changes in that write.
@@ -77,15 +85,31 @@ service cloud.firestore {
         && request.resource.data.get('qty', '') is string && request.resource.data.get('qty', '').size() <= 40
         && request.resource.data.get('station', '') is string && request.resource.data.get('station', '').size() <= 40;
     }
+    // Who writes a line, and when (22 Oct 2026). A new line is written as its writer (addedById is the writer, or ''
+    // for a rolled copy). A tick is the ticker's own (doneById). Staff write yesterday's, today's and tomorrow's lists;
+    // the head chef, sous chefs and function managers (a function's lines go on its day) write any day. A line holds at
+    // most 60 fields. Rights per person (add, tick, remove) are still decided by the page.
+    function nearDay(day) {
+      return day.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
+        && request.time >= timestamp.date(int(day.split('-')[0]), int(day.split('-')[1]), int(day.split('-')[2])) - duration.value(2055, 'm')
+        && request.time < timestamp.date(int(day.split('-')[0]), int(day.split('-')[1]), int(day.split('-')[2])) + duration.value(2295, 'm');
+    }
+    function lineWho(day) {
+      return isAdmin() || ((nearDay(day) || sousBy() || request.resource.data.by in cfg().get('fnIds', [])) && request.resource.data.size() <= 60
+        && (resource != null || request.resource.data.get('addedById', '') in ['', request.resource.data.by])
+        && (request.resource.data.get('done', false) != true || resource.data.get('done', false) == true || request.resource.data.get('doneById', '') == request.resource.data.by));
+    }
     match /kitchens/KITCHEN_PIN/days/{day}/items/{item} {
       allow read: if true;
-      allow create: if writer() && lineOk(160);
-      allow update: if writer() && lineOk(160) && tickKept();
+      allow create: if writer() && lineOk(160) && lineWho(day);
+      allow update: if writer() && lineOk(160) && tickKept() && lineWho(day);
       allow delete: if false;
     }
+    // An order line is ticked as ordered (or not) only by the head chef or a sous chef, as the page shows (22 Oct 2026).
     match /kitchens/KITCHEN_PIN/orders/{day}/lines/{line} {
       allow read: if true;
-      allow create, update: if writer() && lineOk(120);
+      allow create: if writer() && lineOk(120) && lineWho(day) && (request.resource.data.get('ordered', false) == false || lead());
+      allow update: if writer() && lineOk(120) && lineWho(day) && (request.resource.data.get('ordered', false) == resource.data.get('ordered', false) || lead());
       allow delete: if false;
     }
     // Today in kitchen time (Queensland, UTC+10, no daylight saving), with 15 minutes either side for a phone's clock.
@@ -95,7 +119,7 @@ service cloud.firestore {
         && request.time >= timestamp.date(int(day.split('-')[0]), int(day.split('-')[1]), int(day.split('-')[2])) - duration.value(615, 'm')
         && request.time < timestamp.date(int(day.split('-')[0]), int(day.split('-')[1]), int(day.split('-')[2])) + duration.value(855, 'm');
     }
-    // Wastage log: anyone signed in adds a line; only the head chef or a sous chef may change one (to remove it).
+    // Wastage log: anyone signed in adds a line; only the head chef's Google account removes or puts one back.
     // Head chef decision (22 Oct 2026): with the kitchen PIN only today's lines can be read. Past days are for the
     // head chef's Google account (the admin panel's wastage log). The phones get what they need from summary/waste.
     match /kitchens/KITCHEN_PIN/waste/{day}/lines/{line} {
@@ -107,7 +131,12 @@ service cloud.firestore {
         && request.resource.data.reason in ['prep', 'expired', 'fault', 'returned', 'excess']
         && request.resource.data.get('action', '') is string && request.resource.data.get('action', '').size() <= 120
         && request.resource.data.get('station', '') is string && request.resource.data.get('station', '').size() <= 40;
-      allow update: if writer() && (isAdmin() || sousBy()) && request.resource.data.text is string && request.resource.data.text.size() <= 80;
+      // Head chef decision (22 Oct 2026): only the head chef's Google account removes or puts back an entry. A sous chef
+      // may Undo their own entry straight after logging it (2 minutes on the server's time), and only the removed fields.
+      allow update: if (isAdmin() && request.resource.data.text is string && request.resource.data.text.size() <= 80)
+        || (staff() && sousBy() && resource.data.get('addedById', '') == request.resource.data.by
+          && request.time.toMillis() - resource.data.get('addedAt', 0) < 120000
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deleted', 'deletedBy', 'deletedAt', 'by']));
       allow delete: if false;
     }
     // End-of-day waste review, one per day. Everyone reads it (the change for the next shift shows on the prep list);
@@ -294,7 +323,8 @@ service cloud.firestore {
       allow delete: if false;
       match /hist/{v} {
         allow read: if true;
-        allow create: if bookBy() && request.resource.data.keys().hasOnly(['was', 'at', 'by']) && request.resource.data.was is map && request.resource.data.at is int;
+        allow create: if bookBy() && request.resource.data.keys().hasOnly(['was', 'at', 'by']) && request.resource.data.was is map && request.resource.data.at is int
+          && (isAdmin() || getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/recipes/$(id)).data.v == int(v) + 1);
         allow update, delete: if false;
       }
     }
@@ -330,7 +360,8 @@ service cloud.firestore {
       allow delete: if false;
       match /hist/{v} {
         allow read: if true;
-        allow create: if bookBy() && request.resource.data.keys().hasOnly(['was', 'at', 'by']) && request.resource.data.was is map && request.resource.data.at is int;
+        allow create: if bookBy() && request.resource.data.keys().hasOnly(['was', 'at', 'by']) && request.resource.data.was is map && request.resource.data.at is int
+          && (isAdmin() || getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/drawings/$(id)).data.v == int(v) + 1);
         allow update, delete: if false;
       }
     }
@@ -430,7 +461,8 @@ service cloud.firestore {
       match /hist/{v} {
         allow read: if true;
         allow create: if fnBy() && request.resource.data.keys().hasOnly(['was', 'at', 'by', 'what']) && request.resource.data.was is map && request.resource.data.at is int
-          && request.resource.data.get('what', '') is string && request.resource.data.get('what', '').size() <= 300;
+          && request.resource.data.get('what', '') is string && request.resource.data.get('what', '').size() <= 300
+          && (isAdmin() || getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/functions/$(id)).data.v == int(v) + 1);
         allow update, delete: if false;
       }
     }
@@ -575,20 +607,22 @@ service cloud.firestore {
     }
     match /kitchens/KITCHEN_PIN/learned/{id} {
       allow read: if true;
-      allow create: if isAdmin() || (staff() && request.resource.data.text is string && request.resource.data.text.size() <= 160 && (sousBy() || request.resource.data.get('hidden', false) == false));
-      allow update: if isAdmin() || (staff() && request.resource.data.text is string && request.resource.data.text.size() <= 160 && hideOk());
+      // the counts come only from the nightly job (service account); a sous chef hides or shows an item (22 Oct 2026)
+      allow create: if isAdmin();
+      allow update: if isAdmin() || (staff() && sousBy() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hidden', 'by']) && request.resource.data.get('hidden', false) is bool);
       allow delete: if isAdmin();
     }
-    // What the order list has learned: one record per item ordered (text, uses, weekdays, usual amounts). Anyone with a PIN adds to it.
+    // What the order list has learned: one record per item ordered (text, uses, weekdays, usual amounts). Written by the
+    // nightly job only (service account); the phones read it (22 Oct 2026).
     match /kitchens/KITCHEN_PIN/ordlearned/{id} {
       allow read: if true;
-      allow create, update: if writer() && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 120
-        && request.resource.data.get('hidden', false) is bool;
+      allow create: if isAdmin();
+      allow update: if isAdmin() || (staff() && sousBy() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hidden', 'by']) && request.resource.data.get('hidden', false) is bool);
       allow delete: if isAdmin();
     }
     match /kitchens/KITCHEN_PIN/learnlog/{id} {
       allow read: if true;
-      allow create: if writer() && request.resource.data.at is number;
+      allow create: if isAdmin();   // the nightly job's claim that a day was counted (service account), never a phone
       allow update: if false;
       allow delete: if isAdmin();
     }
