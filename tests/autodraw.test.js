@@ -94,6 +94,15 @@ const errs = p => p.errors.filter(e => !/Failed to load resource/.test(e));
   ok(await p.evaluate(() => !window.LK_DRAW.state().d.els.find(e => e.ing === 'Cowboy candy').fixed), 'wings: Undo (once per nudge) puts the Cowboy candy back where the book drew it');
   const wg = await nudge('Chicken wings'), moved = wg.el;
   ok(wg.ok, 'wings: the wings moved by hand are marked to stay');
+  // Swap: the BBQ sauce picked, Swap opens the library on it, and the piece tapped there takes its place
+  const sw0 = await p.evaluate(() => { const W = window.LK_DRAW.state(), i = W.d.els.findIndex(e => e.ing === 'Double-smoked BBQ sauce'); W.sel = [i]; window.LK_DRAW.redraw(); const e = W.d.els[i]; return { i, a: e.a, t: e.t, x: e.x, y: e.y }; });
+  await p.click('[data-dw="swap"]');
+  await wait(p, () => !!document.querySelector('.dw-tile'));
+  const swapHint = await txt(p, '.dw-panel .hint');
+  const newId = await p.evaluate(was => { const t = Array.from(document.querySelectorAll('.dw-tile')).find(x => (was || '').split('@')[0] !== x.getAttribute('data-v')); return t ? t.getAttribute('data-v') : ''; }, sw0.a);
+  await p.click('.dw-tile[data-v="' + newId + '"]'); await L.settle(p, 300);
+  const sw1 = await p.evaluate(i => { const e = window.LK_DRAW.state().d.els[i]; return { a: e.a, ing: e.ing, x: e.x, y: e.y, pick: e.pick, n: window.LK_DRAW.state().d.els.filter(x => x.ing === 'Double-smoked BBQ sauce').length }; }, sw0.i);
+  ok(/swap in for/.test(swapHint || '') && !!newId && sw1.a.split('@')[0] === newId && sw1.ing === 'Double-smoked BBQ sauce' && sw1.x === sw0.x && sw1.y === sw0.y && sw1.pick && sw1.n === 1, 'wings: Swap puts the new piece in the BBQ sauce\'s place, labelled and marked as picked (' + JSON.stringify({ sw0, sw1, newId }) + ')');
   await p.click('[data-dw="save"]');
   await wait(p, () => /Saved/.test((document.querySelector('.mg-toasts .p-toast') || {}).textContent || ''));
   s = await store(p);
@@ -114,6 +123,8 @@ const errs = p => p.errors.filter(e => !/Failed to load resource/.test(e));
   s = await store(p);
   const w2 = s[fsKey(['drawings', 'wings-plate'])] || {}, cc2 = (w2.els || []).find(e => e.made === 'cowboy-candy') || {}, wing = (w2.els || []).find(e => e.ing === 'Chicken wings') || {};
   ok(w2.v === 2 && cc2.ms && cc2.ms !== cc1.ms && (s[fsKey(['drawings', 'wings-plate', 'hist', '1'])] || {}).was, 'changed card: a new version of the wings with the new Cowboy candy, the old one kept');
+  const bbq = (w2.els || []).filter(e => e.ing === 'Double-smoked BBQ sauce');
+  ok(bbq.length === 1 && bbq[0].a === sw1.a && bbq[0].x === sw1.x && bbq[0].y === sw1.y, 'changed card: the piece swapped in for the BBQ sauce stays as it was');
   ok(wing.fixed && wing.x === moved.x && wing.y === moved.y, 'changed card: the wings moved by hand stay where they were put');
   // the book's own drawings are never touched: the riblets use the same card and have no drawing of their own
   ok(!Object.keys(s).some(k2 => /\/drawings\/riblets/.test(k2)) && !Object.keys(s).some(k2 => /\/drawings\/cowboy-candy/.test(k2)), 'changed card: the riblets and the card itself keep the book\'s own drawings');
