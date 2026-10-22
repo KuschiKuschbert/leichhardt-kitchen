@@ -24,7 +24,7 @@ function answer(req, res, over) {
   fs.readFile(f, (e, b) => {
     if (e) { res.writeHead(404); return res.end('not found'); }
     // a fixed Last-Modified, so the book's self-update check never sees a "new version" during a test
-    res.writeHead(200, { 'Content-Type': types[path.extname(f)] || 'application/octet-stream', 'Cache-Control': 'no-store', 'Last-Modified': 'Sun, 18 Oct 2026 00:00:00 GMT' });
+    res.writeHead(200, { 'Content-Type': types[path.extname(f)] || 'application/octet-stream', 'Cache-Control': 'no-store', 'Last-Modified': 'Sun, 18 Oct 2026 00:00:00 GMT', 'X-Served': String(Date.now()) });   // X-Served: when this copy left the server (saved-copy.test.js)
     res.end(b);
   });
 }
