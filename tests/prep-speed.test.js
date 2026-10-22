@@ -35,6 +35,18 @@ const item = (p, id) => p.evaluate(k => window.__fake.dump()[k] || {}, fsKey(['d
   await p.evaluate(() => window.__fake.release()); await L.settle(p, 400);
   ok(!/Not sent/.test(await p.evaluate(() => [...document.querySelectorAll('.nb-unsent')].map(e => e.textContent).join(''))), 'Not sent goes once it is sent');
   ok(p.errors.length === 0, 'no page errors ' + p.errors.join(' | '));
+  // one redraw for a tick (22 Oct 2026): the change and its toast used to draw the whole list twice inside the tap
+  await L.settle(p, 3800);
+  const draws = await p.evaluate(() => {
+    const root = document.getElementById('prep-root');
+    const mo = new MutationObserver(() => {});
+    mo.observe(root, { childList: true });
+    document.querySelector('.nb-row:not(.is-done) [data-p="tick"]').click();
+    // each full redraw replaces the page's contents: one childList record on the root per redraw, read before the tap ends
+    const n = mo.takeRecords().filter(r => r.target === root && r.removedNodes.length).length; mo.disconnect();
+    return n;
+  });
+  ok(draws <= 1, 'a tick redraws the list once inside the tap (' + draws + ')');
   await p.context().close();
   await b.close();
   L.report(R);
