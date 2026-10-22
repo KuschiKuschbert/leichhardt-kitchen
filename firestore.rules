@@ -31,8 +31,9 @@ service cloud.firestore {
     function onList(id) { return !('staffIds' in cfg()) || id in cfg().staffIds; }
     function writer() { return isAdmin() || staff(); }
     function cfg() { return get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/config/main).data; }
-    // The head chef or a sous chef, writing as themselves (own PIN proof).
-    function lead() { return isAdmin() || sousBy(); }
+    // The head chef or a sous chef, writing as themselves (own PIN proof). staff() checks the proof: a sous chef's id
+    // on its own proves nothing (22 Oct 2026, a ping could be changed with no PIN at all).
+    function lead() { return isAdmin() || (staff() && sousBy()); }
     // A picture the book made itself (a data URL), not a link to somewhere else.
     function picture(s) { return s is string && (s.size() == 0 || s.matches('data:image/(png|jpeg|webp);base64,.*')); }
     // The fields a write may set: all of them on a new record, only the changed ones on an old one (so an older
