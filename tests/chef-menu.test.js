@@ -177,6 +177,18 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   ok(!!(await p.$('.nb-left')) && !(await p.$('[data-p="mn-close"]')), 'minutes: closing the register goes back to the prep list');
   ok(p.errors.length === 0, 'minutes register: no page errors ' + p.errors.join(' | '));
   await p.context().close();
+  // a ping half written stays behind the register: Back to the prep book finds it with its words
+  p = await L.open(b, '#/prep', { who: 'sam', extra: pub, wait: 1800 });
+  await L.chef(p, 'pings'); await L.settle(p, 300);
+  await L.tap(p, '[data-p="n-new"]'); await L.settle(p, 200);
+  await p.fill('[data-k="n-text"]', 'Special: pork belly tonight');
+  await p.evaluate(() => { location.hash = '#/minutes'; }); await L.settle(p, 600);
+  await L.waitFor(p, () => !!document.querySelector('[data-p="mn-sous"]'), null, 5000).catch(() => {});
+  await p.click('[data-p="mn-sous"]'); await L.settle(p, 500);
+  ok(await txt(p, '#rtitle') === 'Meeting minutes', 'ping half written: See who has signed still opens the register');
+  await p.click('[data-p="mn-close"]'); await L.settle(p, 300);
+  ok(await p.evaluate(() => { const t = document.querySelector('[data-k="n-text"]'); return !!t && t.value === 'Special: pork belly tonight'; }), 'ping half written: Back to the prep book brings the ping back with its words');
+  await p.context().close();
   p = await L.open(b, '#/minutes', { who: 'ann', admin: true, extra: Object.assign(headCfg(), pub), wait: 1800 });
   await L.waitFor(p, () => !!document.querySelector('.nb-top [data-p="mn-admin"]'), null, 5000).catch(() => {});
   ok(await p.evaluate(() => { const e = document.querySelector('.nb-top [data-p="mn-admin"]'); return !!e && e.getBoundingClientRect().height >= 18 && !document.querySelector('.mn-wl'); }), 'minutes on the head chef\'s Google device: See who has signed in the top bar, nothing more at the end');

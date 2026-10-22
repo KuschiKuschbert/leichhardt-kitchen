@@ -795,7 +795,8 @@
   function chefOpen(k) {
     if (!isSous()) return;
     if (adminTabs()) { S.atab = k === 'pings' ? 'notes' : k === 'register' ? 'minutes' : 'people'; lsSet('lk.prep.atab', S.atab); if (location.hash === '#/admin') draw(); else location.hash = '#/admin'; return; }
-    S.minOpen = false; S.notesOpen = false; if (S.staffOpen && !draftDirty()) { S.staffOpen = false; S.draft = null; }
+    // a ping with words not saved yet stays open behind the register (drawn first), like a staff draft, so Back finds it
+    S.minOpen = false; if (!(k === 'register' && nfDirty())) S.notesOpen = false; if (S.staffOpen && !draftDirty()) { S.staffOpen = false; S.draft = null; }
     if (k === 'pings') { S.notesOpen = true; S.nf = null; S.nOpen = false; S.nMsg = ''; loadNotes(); }
     else if (k === 'register') { S.minOpen = true; S.mMsg = ''; S.mf = null; loadMinutes(true); }
     else { if (!S.staffOpen) startDraft(); S.staffOpen = true; seedPinOpen(); }
