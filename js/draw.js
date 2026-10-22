@@ -1318,7 +1318,7 @@
     var api = B(), fs, out = o.out, vb = o.vb;
     return api.ready().then(function () {
       fs = api.fs();
-      return fs.getDocFromServer(api.docRef('drawings', d.id)).then(function (sn) { return sn.exists() ? sn.data() : null; }, function () { return 'offline'; });
+      return (api.fromServer ? api.fromServer(api.docRef('drawings', d.id)) : fs.getDocFromServer(api.docRef('drawings', d.id))).then(function (sn) { return sn.exists() ? sn.data() : null; }, function () { return 'offline'; });
     }).then(function (server) {
       var sv = server === 'offline' ? d.meta.v : (server ? server.v : 0);
       if (server !== 'offline' && sv !== d.meta.v && !force) return { conflict: { v: sv, rec: server } };

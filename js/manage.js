@@ -584,7 +584,7 @@
     var fs, prev;
     api.ready().then(function () {
       fs = api.fs();
-      return fs.getDocFromServer(api.docRef('recipes', id)).then(function (sn) { return sn.exists() ? sn.data() : null; }, function () { return 'offline'; });
+      return (api.fromServer ? api.fromServer(api.docRef('recipes', id)) : fs.getDocFromServer(api.docRef('recipes', id))).then(function (sn) { return sn.exists() ? sn.data() : null; }, function () { return 'offline'; });
     }).then(function (server) {
       var sv = server === 'offline' ? e.meta.v : (server ? server.v : 0);
       if (server !== 'offline' && sv !== e.meta.v && !force) {
@@ -682,7 +682,7 @@
     var api = B(), fs;
     return api.ready().then(function () {
       fs = api.fs();
-      return fs.getDocFromServer(api.docRef('recipes', id)).then(function (sn) { return sn.exists() ? sn.data() : null; }, function () { return 'offline'; });
+      return (api.fromServer ? api.fromServer(api.docRef('recipes', id)) : fs.getDocFromServer(api.docRef('recipes', id))).then(function (sn) { return sn.exists() ? sn.data() : null; }, function () { return 'offline'; });
     }).then(function (server) {
       var cur = server === 'offline' ? X.change(id) : server, base = X.pristine(id);
       var r = cur && cur.r && !cur.off ? clone(cur.r) : base;

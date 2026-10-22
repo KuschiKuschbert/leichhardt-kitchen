@@ -695,8 +695,15 @@
       say: liveSay, trapTab: trapTab, ovPush: ovPush, ovDone: ovDone,
       pin: function () { return S.pin; }, who: function () { var p = S.authed ? who() : null; return p ? p.id : ''; },
       nameOf: function (id) { var p = (S.config && S.config.people || []).filter(function (x) { return x.id === id; })[0]; return p ? p.name : ''; },
-      edit: bookEdit, changed: rxChanged
+      edit: bookEdit, changed: rxChanged, fromServer: fromServer
     };
+  }
+  /* A read that must come from the server (the version check before a recipe, drawing or function save). On a slow or
+     half-dropped connection getDocFromServer can wait a long time without failing, and the save never even went into the
+     queue although the page said it would (22 Oct 2026). After 6 s it gives up like a read with no signal, so the caller
+     takes its no-signal path: the save goes into Firestore's queue and is sent when the signal is back. */
+  function fromServer(ref, ms) {
+    return Promise.race([fb.fs.getDocFromServer(ref), new Promise(function (res, rej) { setTimeout(function () { rej({ code: 'slow' }); }, ms || 6000); })]);
   }
   /* The top bar shows a small chef mark while a person is signed in on this phone (js/app.js draws it from whoName()). */
   function whoName() { var p = S.authed ? who() : null; return p ? p.name : ''; }
