@@ -3328,12 +3328,22 @@
   }
   function wOften() {
     return (S.wSum || []).filter(function (x) { return x.n >= 2 && x.t; }).sort(function (a, b) { return b.n - a.n; }).slice(0, 8)
-      .map(function (x) { return { text: x.t, n: x.n, unit: x.unit || '', reason: x.reason || '', sec: x.sec || '' }; });
+      .map(function (x) { return { text: x.t, n: x.n, unit: x.unit || '', reason: x.reason || '', sec: x.sec || '', amt: wAmt(x.amt) }; });
   }
-  /* the last time this item was logged (the last 14 days): a suggestion fills its unit, reason and section too */
+  // an amount read from summary/waste goes into the box only as a plain number in range (coding rules, text on screen)
+  function wAmt(v) { return typeof v === 'number' && v > 0 && v < 100000 ? String(Math.round(v * 100) / 100) : ''; }
+  /* A box the book filled in (the usual amount, the section) is selected on the first tap, so typing replaces it
+     (coding rules, forms). Only a tap selects: draw() gives focus back after a live change, and that must keep the
+     cursor where it was. */
+  var FILLED = { 'w-amt': 1, 'w-sec': 1, 'o-qty': 1, 'p-qty': 1, 'p-section': 1 };
+  function fillTapDown(e) { var el = e.target; if (el && el.getAttribute && FILLED[el.getAttribute('data-k')] && document.activeElement !== el && el.value) el.setAttribute('data-sel', '1'); }
+  function fillTap(e) { var el = e.target; if (el && el.getAttribute && el.getAttribute('data-sel')) { el.removeAttribute('data-sel'); try { el.select(); } catch (x) {} } }
+  function focusFilled(k) { var el = S.root && S.root.querySelector('[data-k="' + k + '"]'); if (!el) return; el.focus(); try { el.select(); } catch (x) {} }
+  /* the last time this item was logged (the last 14 days): a suggestion fills its unit, reason and section too, and
+     the usual amount (the one logged most, else the last one) */
   function wLast(t) {
     var k = okey(t), x = (S.wSum || []).filter(function (e) { return okey(e.t) === k; })[0], l = x && x.last;
-    return l ? { unit: l.unit || '', reason: l.reason || '', station: l.sec || '' } : null;
+    return l ? { unit: l.unit || '', reason: l.reason || '', station: l.sec || '', amt: wAmt(x.amt) || wAmt(l.amt) } : null;
   }
   function addWaste() {
     var f = S.wf, p = me();
@@ -5496,8 +5506,8 @@
     if (a === 'wreason') { S.wf.reason = el.getAttribute('data-v'); var fromSheet = S.sheet === 'reason'; S.sheet = ''; draw(); if (fromSheet) { var rb = S.root.querySelector('.w-rbtn'); if (rb) rb.focus(); } return; }
     if (a === 'sheet') { S.sheet = el.getAttribute('data-v'); draw(); var so = S.root.querySelector('.sheet-o[aria-checked="true"]') || S.root.querySelector('.sheet-o'); if (so) so.focus(); return; }
     if (a === 'sheet-close') { S.sheet = ''; draw(); var rb2 = S.root.querySelector('.w-rbtn'); if (rb2) rb2.focus(); return; }
-    if (a === 'wsugg') { var wt = (S.wsugg || [])[i]; if (wt) { S.wf.text = wt; var wl = wLast(wt); if (wl) { if (wl.unit) S.wf.unit = wl.unit; if (wl.reason && !S.wf.reason) S.wf.reason = wl.reason; if (wl.station && !S.wf.sec && !mySec()) S.wf.sec = wl.station; } draw(); var wa = S.root.querySelector('[data-k="w-amt"]'); if (wa) wa.focus(); } return; }
-    if (a === 'woften') { var wo = wOften()[i]; if (wo) { S.wf.text = wo.text; if (wo.unit) S.wf.unit = wo.unit; if (wo.reason) S.wf.reason = wo.reason; if (wo.sec && !S.wf.sec && !mySec()) S.wf.sec = wo.sec; draw(); var wa2 = S.root.querySelector('[data-k="w-amt"]'); if (wa2) wa2.focus(); } return; }
+    if (a === 'wsugg') { var wt = (S.wsugg || [])[i]; if (wt) { S.wf.text = wt; var wl = wLast(wt); if (wl) { if (wl.unit) S.wf.unit = wl.unit; if (wl.reason && !S.wf.reason) S.wf.reason = wl.reason; if (wl.station && !S.wf.sec && !mySec()) S.wf.sec = wl.station; if (wl.amt && (S.wf.amtAuto || !String(S.wf.amt).trim())) { S.wf.amt = wl.amt; S.wf.amtAuto = true; } } draw(); focusFilled('w-amt'); } return; }
+    if (a === 'woften') { var wo = wOften()[i]; if (wo) { S.wf.text = wo.text; if (wo.unit) S.wf.unit = wo.unit; if (wo.reason) S.wf.reason = wo.reason; if (wo.sec && !S.wf.sec && !mySec()) S.wf.sec = wo.sec; if (wo.amt && (S.wf.amtAuto || !String(S.wf.amt).trim())) { S.wf.amt = wo.amt; S.wf.amtAuto = true; } draw(); focusFilled('w-amt'); } return; }
     if (a === 'wdel') { removeWaste(dt, id); return; }
     if (a === 'wrestore') { removeWaste(dt, id, true); return; }
     if (a === 'rv-day') { var rd = shift(S.rvDate || dayNow(), +el.getAttribute('data-d')); if (rd <= dayNow() && rd > shift(dayNow(), -60)) { S.rvDate = rd; S.wrA = S.wrC = null; } draw(); return; }
@@ -5602,7 +5612,7 @@
     }
     if (k === 'n-text') { if (S.nf) S.nf.text = el.value; var nc = S.root.querySelector('#n-count'); if (nc) nc.textContent = el.value.length + ' of 400. Ctrl+Enter saves.'; var npv = S.root.querySelector('#n-prev'); if (npv && S.nf) npv.innerHTML = draftPreviewHTML(S.nf); return; }
     if (k === 'w-text') { S.wf.text = el.value; var wg = S.root.querySelector('#w-sugg'); if (wg) wg.innerHTML = wSuggHTML(); return; }
-    if (k === 'w-amt') { S.wf.amt = el.value.replace(/[^0-9.,]/g, ''); if (el.value !== S.wf.amt) el.value = S.wf.amt; return; }
+    if (k === 'w-amt') { S.wf.amt = el.value.replace(/[^0-9.,]/g, ''); S.wf.amtAuto = false; if (el.value !== S.wf.amt) el.value = S.wf.amt; return; }
     if (k === 'w-sec') { S.wf.sec = el.value; return; }
     if (k === 'w-act') { S.wf.act = el.value; return; }
     if (k === 'w-ra' || k === 'w-rc') { S.wrWhere = el.closest('.a-rvform') ? 'admin' : 'page'; if (k === 'w-ra') S.wrA = el.value; else S.wrC = el.value; return; }
@@ -5670,6 +5680,8 @@
     var app = document.getElementById('app');
     app.addEventListener('click', onClick);
     app.addEventListener('pointerdown', toastDown);
+    app.addEventListener('pointerdown', fillTapDown, true);
+    app.addEventListener('click', fillTap, true);
     app.addEventListener('pointermove', toastMove);
     app.addEventListener('pointerup', toastUp);
     app.addEventListener('pointercancel', toastUp);
