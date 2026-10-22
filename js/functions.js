@@ -322,9 +322,11 @@
   function changed() { paint(); try { window.dispatchEvent(new Event('lk-fn')); } catch (e) {} }
 
   /* ---------- the band under the top bar ---------- */
+  // amounts read "2 × Pizza" in every function view (22 Oct 2026); the prep and order lines keep their own words
+  function qx(q, name) { return q + ' \u00d7 ' + name; }
   function linesText(f, a) {
     return (f.lines || []).map(function (l, i) { return { l: l, q: a ? a[i] : l.qty }; }).filter(function (x) { return x.q > 0; })
-      .map(function (x) { return x.q + ' ' + short(x.l.name); }).join(', ');
+      .map(function (x) { return qx(x.q, short(x.l.name)); }).join(', ');
   }
   function roundCounts(f, r) { var n = (f.rounds || []).length; return (f.lines || []).map(function (l) { return counts(l, n)[r]; }); }
   function recent(f) { var c = (f.chg || [])[0]; return c && f.status === 'confirmed' && now() - c.at < 3 * HOUR ? c : null; }
@@ -374,7 +376,22 @@
     var more = left > 0 ? '<button type="button" class="fn-more" data-fn="more" aria-expanded="false">+' + left + ' more</button>' : F.more && (xs.length > 2 || ys.length > 2) ? '<button type="button" class="fn-more" data-fn="more" aria-expanded="true">Show fewer</button>' : '';
     // two or more functions on at once: one view of everything that goes out now
     var svc = xs.filter(function (x) { return x.kind === 'on'; }).length >= 2 ? '<a class="fn-more fn-svc" href="#/fn/now">Service view</a>' : '';
-    return '<h2 class="visually-hidden">Functions</h2>' + (a.length + b.length ? '<ul class="fn-list">' + a.map(bandRow).join('') + b.map(soonRow).join('') + '</ul>' : '') +
+    // a label says what the band holds: today's functions, the coming ones (order and tomorrow lines), or both
+    var on = xs.filter(function (x) { return x.kind === 'on'; }).length;
+    var lab = xs.length && ys.length ? 'Functions today and soon' : xs.length ? 'Functions today' : ys.length ? 'Functions coming up' : 'Functions';
+    // Hide folds the band to its label and one line, for the rest of the kitchen day on this phone (lk.fn.fold: the
+    // kitchen day it was folded; out of date the next day, so the band opens again by itself)
+    var fold = (a.length + b.length) && lsGet('lk.fn.fold') === kday(t), btn = a.length + b.length ? '<button type="button" class="fn-fold" data-fn="fold" aria-expanded="' + !fold + '">' + (fold ? 'Show' : 'Hide') + '</button>' : '';
+    if (fold) {
+      // every function in a row, as many as fit across the screen (fitFold() hides the rest and counts them in "+N")
+      var sum = xs.concat(ys).map(function (x) {
+        var w = x.kind === 'on' ? nowOf(x.f, t) : null;
+        return '<span class="fn-sum-i">' + (w ? '<b class="fn-due' + (w.late ? ' is-late' : '') + '">' + esc(w.time) + '</b> ' : x.kind === 'cancelled' ? '<span class="fn-late">Cancelled</span> ' :
+          x.kind === 'moved' ? '<span class="fn-tag fn-t-moved">Rescheduled</span> ' : x.kind === 'order' ? '<span class="fn-tag fn-t-order">Order</span> ' : x.kind === 'tomorrow' ? '<span class="fn-tag fn-t-tom">Tomorrow</span> ' : '') + esc(x.f.name) + '</span>';
+      }).join('');
+      return '<div class="fn-band-top is-fold"><h2 class="fn-band-h">Functions</h2><span class="fn-band-sum">' + sum + '</span><span class="fn-tag fn-sum-more" hidden></span>' + btn + '</div>' + (stale ? '<p class="fn-stale" role="status">' + esc(stale) + '</p>' : '');
+    }
+    return '<div class="fn-band-top"><h2 class="fn-band-h">' + lab + '</h2>' + (on ? '<span class="fn-band-n">' + on + ' on today</span>' : '') + btn + '</div>' + (a.length + b.length ? '<ul class="fn-list">' + a.map(bandRow).join('') + b.map(soonRow).join('') + '</ul>' : '') +
       (more || svc ? '<div class="fn-more-row">' + svc + more + '</div>' : '') +
       (stale ? '<p class="fn-stale" role="status">' + esc(stale) + '</p>' : '');
   }
@@ -382,7 +399,7 @@
   var lastBand = null;
   function paint() {
     var el = document.getElementById('fn-band');
-    if (el) { var h = bandHTML(); if (h !== lastBand || el.innerHTML !== h) { el.innerHTML = h; lastBand = h; } el.hidden = !h; }
+    if (el) { var h = bandHTML(); if (h !== lastBand || el.innerHTML !== h) { el.innerHTML = h; lastBand = h; } el.hidden = !h; fitFold(); }
     strip();
     var lc = document.getElementById('fn-land');
     if (lc) { var lh = landHTML(); if (lc.innerHTML !== lh) lc.innerHTML = lh; lc.hidden = !lh; }
@@ -413,6 +430,17 @@
   function setStick(px) { if (px === stripH) return; stripH = px; document.documentElement.style.setProperty('--fn-stick', px + 'px'); }
   window.addEventListener('scroll', strip, { passive: true });
   window.addEventListener('resize', strip);
+  window.addEventListener('resize', fitFold);
+  // the folded band: show every function that fits on the line, the rest as "+N" (the first always shows)
+  function fitFold() {
+    var box = document.querySelector('#fn-band .fn-band-sum'), more = document.querySelector('#fn-band .fn-sum-more');
+    if (!box || !more) return;
+    var it = box.querySelectorAll('.fn-sum-i'), n = it.length, i;
+    for (i = 0; i < n; i++) it[i].hidden = false;
+    more.hidden = true;
+    while (n > 1 && box.scrollWidth > box.clientWidth + 1) { it[--n].hidden = true; more.hidden = false; more.textContent = '+' + (it.length - n); }
+    box.classList.toggle('is-one', n === 1);
+  }
   window.addEventListener('hashchange', function () { setTimeout(strip, 0); });
   function byId(id) { return F.list.filter(function (f) { return f.id === id; })[0] || null; }
 
@@ -428,7 +456,7 @@
       return '<li class="fn-round' + (next ? ' is-next' : '') + (tick && sentRec(f, i) ? ' is-sent' : '') + '"><span class="fn-round-t">' + esc(when(r.at, f.date)) + (next ? ' <span class="fn-tag">Next</span>' : '') + '</span>' +
         '<span class="fn-round-w">' + (r.note ? '<i>' + esc(r.note) + '</i> ' : '') + esc(linesText(f, rc) || 'Nothing') + ' <b>(' + q + ')</b></span>' +
         (tick ? '<span class="fn-sent">' + sentCell(f, i) + '</span>' : '') + '</li>';
-    }).join('') + '</ol><p class="fn-rounds-tot">Total ' + totalQty(f) + ' ' + (totalQty(f) === 1 ? 'platter' : 'platters') + '</p>';
+    }).join('') + '</ol>';
   }
   // a round's Sent cell: a button to tick it, or who ticked it when, with Undo for a mis-tap (the same person within
   // 2 minutes, or a sous chef or the head chef: the rules say the same)
@@ -455,12 +483,18 @@
     return '<section class="fn-next" aria-label="' + esc(label) + '"><p class="fn-next-h"><span class="fn-next-l">' + esc(label) + '</span> <b>' + esc(head) + '</b></p>' +
       (sub ? '<p class="fn-next-s">' + sub + '</p>' : '') + body + '</section>';
   }
+  // one platter with a big "3 ×", its name linked to the recipe card when the book has it
+  function bigRow(q, name, rid) {
+    var nm = esc(name), r = rid ? recipeOf(rid) : null;
+    return '<li class="fn-next-row"><span class="fn-next-n">' + q + '<span class="fn-x">\u00d7</span></span><span class="fn-next-name">' +
+      (r ? '<a href="#/r/' + encodeURIComponent(rid) + '">' + nm + '</a>' : nm) + '</span></li>';
+  }
   function nextHTML(f) {
     var n = (f.rounds || []).length, L = f.lines || [], t = now(), tot = totalQty(f), tick = f.status === 'confirmed' && !!f.first;
     if (!n || !L.length || f.status === 'cancelled') return '';
     function rows(a) {
       return '<ul class="fn-next-list">' + L.map(function (l, i) { return { l: l, q: a ? a[i] : l.qty }; }).filter(function (x) { return x.q > 0; }).map(function (x) {
-        return '<li class="fn-next-row"><span class="fn-next-n">' + x.q + '</span><span class="fn-next-name">' + esc(x.l.name) + '</span></li>';
+        return bigRow(x.q, x.l.name, x.l.rid);
       }).join('') + '</ul>';
     }
     if (!f.first) return nextBox('Next out', 'Times TBC', tot + ' ' + (tot === 1 ? 'platter' : 'platters'), rows());
@@ -471,6 +505,20 @@
     var sub = (late ? '<span class="fn-late">Due ' + esc(when(r.at, f.date)) + ', not sent yet</span> · ' : '') + q + ' ' + (q === 1 ? 'platter' : 'platters') + (n > 1 ? ' of ' + tot : '') + (r.note ? ' · ' + esc(r.note) : '');
     return nextBox('Next out', head, sub, rows(rc) + (tick ? '<div class="fn-next-sent">' + sentCell(f, k) + '</div>' : ''));
   }
+  /* The whole function, straight under Next out (22 Oct 2026): every platter booked, added up over all its rounds, each
+     linked to its card. One round still to go out is the whole function already, so it says so in one line instead of
+     listing the same platters twice. */
+  function wholeHTML(f) {
+    var L = f.lines || [], n = (f.rounds || []).length, tot = totalQty(f), tick = f.status === 'confirmed' && !!f.first;
+    if (!L.length) return '';
+    var pl = tot + ' ' + (tot === 1 ? 'platter' : 'platters');
+    if (n <= 1 && f.status !== 'cancelled' && !(tick && sentRec(f, 0))) return '<p class="fn-whole fn-whole-one">One round: this is the whole function, <b>' + pl + '</b>.</p>';
+    return '<section class="fn-whole" aria-label="Whole function"><h3 class="fn-whole-h">Whole function <b>' + pl + '</b></h3>' +
+      (n > 1 ? '<p class="fn-whole-s">All ' + n + ' rounds added up.</p>' : '') + '<ul class="fn-whole-list">' + L.map(function (l) {
+        var r = recipeOf(l.rid);
+        return '<li><b>' + l.qty + '</b> \u00d7 ' + (r ? '<a href="#/r/' + encodeURIComponent(l.rid) + '">' + esc(l.name) + '</a>' : esc(l.name)) + '</li>';
+      }).join('') + '</ul></section>';
+  }
   function sheetHTML(f, inPop) {
     var t = now(), c = f.chg || [];
     var status = f.status === 'cancelled' ? '<p class="fn-banner is-off" role="note"><b>Cancelled.</b> Do not send these platters.' + (f.canAt ? ' Cancelled by ' + esc(nameOf(f.canBy)) + ', ' + esc(dayName(kday(f.canAt)) + ' ' + kclock(f.canAt)) + '.' : '') + '</p>' :
@@ -478,16 +526,12 @@
       f.status === 'draft' ? '<p class="fn-banner" role="note"><b>Draft.</b> Not confirmed yet: the kitchen does not see it.</p>' : '';
     // one quiet line for the day, the place and the event start; then what goes out next, every round, the comment
     var sub = [dayName(f.date), f.loc, 'event ' + when(f.start, f.date)].filter(Boolean).join(' · ');
-    var out = status + '<p class="fn-sub">' + esc(sub) + '</p>' + nextHTML(f) +
+    var out = status + '<p class="fn-sub">' + esc(sub) + '</p>' + nextHTML(f) + wholeHTML(f) +
       ((f.rounds || []).length > 1 || f.status !== 'confirmed' ? '<h3 class="fn-h">Every round</h3>' + roundsList(f) +
         (f.status === 'confirmed' && f.first ? '<p class="hint fn-note">Tick each round as it goes out.</p>' : '') : '');
     if (f.kc) out += '<section class="fn-kc" aria-labelledby="fn-kc-' + esc(f.id) + '"><h3 class="fn-h" id="fn-kc-' + esc(f.id) + '">Kitchen comment</h3><p class="fn-text">' + esc(f.kc) + '</p>' +
       '<p class="fn-by">' + esc(nameOf(f.kcBy)) + ', ' + esc(dayName(kday(f.kcAt)) + ' ' + kclock(f.kcAt)) + '</p></section>';
     if (f.notes) out += '<h3 class="fn-h">Service and dietary notes</h3><p class="fn-text">' + esc(f.notes) + '</p>';
-    out += '<h3 class="fn-h">Platters</h3><ul class="fn-plist">' + (f.lines || []).map(function (l) {
-      var r = recipeOf(l.rid);
-      return '<li><b>' + l.qty + '</b> ' + (r ? '<a href="#/r/' + encodeURIComponent(l.rid) + '">' + esc(l.name) + '</a>' : esc(l.name)) + '</li>';
-    }).join('') + '</ul>';
     if (c.length) out += '<h3 class="fn-h">Changes</h3><ul class="fn-chg">' + c.slice(0, 5).map(function (x) { return '<li><span>' + esc(dayName(kday(x.at)) + ' ' + kclock(x.at)) + ', ' + esc(nameOf(x.by)) + '</span> ' + esc(x.what) + '</li>'; }).join('') + '</ul>';
     out += '<p class="fn-by fn-last">Last changed by ' + esc(nameOf(f.by)) + ', ' + esc(dayName(kday(f.upd)) + ' ' + kclock(f.upd)) + '.</p>';
     var can = P() && P().fnOK && P().fnOK();
@@ -503,7 +547,7 @@
     var el = document.createElement('div');
     el.className = 'fn-pop';
     el.innerHTML = '<div class="fn-pop-bg" data-fn="close"></div><section class="fn-sheet" role="dialog" aria-modal="true" aria-labelledby="fn-sh-h" tabindex="-1">' +
-      '<header class="fn-sheet-top"><h2 id="fn-sh-h">' + esc(f.name) + '</h2><button type="button" class="btn" data-fn="close">Close</button></header><div class="fn-sheet-body">' + sheetHTML(f, true) + '</div></section>';
+      '<div class="fn-grip" aria-hidden="true"></div><header class="fn-sheet-top"><div class="fn-sheet-t"><span class="fn-eb">Function</span><h2 id="fn-sh-h">' + esc(f.name) + '</h2></div><button type="button" class="fn-close" data-fn="close">Close</button></header><div class="fn-sheet-body">' + sheetHTML(f, true) + '</div></section>';
     document.body.appendChild(el); sheetEl = el;
     el.querySelector('.fn-sheet').focus({ preventScroll: true });
     strip();
@@ -527,7 +571,7 @@
   }
   function totalsHTML(rows) {
     if (!rows || !rows.length) return '';
-    return '<div class="fn-dtot"><span class="label">To make for the day</span><ul>' + rows.map(function (r) { return '<li><b>' + r.qty + '</b> ' + esc(r.name) + '</li>'; }).join('') + '</ul></div>';
+    return '<div class="fn-dtot"><span class="label">To make for the day</span><ul>' + rows.map(function (r) { return '<li><b>' + r.qty + '</b> \u00d7 ' + esc(r.name) + '</li>'; }).join('') + '</ul></div>';
   }
   function stateNote() {
     var t = now();
@@ -541,7 +585,7 @@
      rounds are ticked and as time passes (no reads: the same list and ticks as the band). */
   function svcLine(f, a) {
     return (f.lines || []).map(function (l, i) { return { l: l, q: a[i] }; }).filter(function (x) { return x.q > 0; })
-      .map(function (x) { return '<span class="fn-svc-q"><b>' + x.q + '</b> ' + esc(short(x.l.name)) + '</span>'; }).join('');
+      .map(function (x) { return '<span class="fn-svc-q"><b>' + x.q + '</b> <span class="fn-x">\u00d7</span> ' + esc(short(x.l.name)) + '</span>'; }).join('');
   }
   function serviceHTML(t) {
     var sv = service(F.list, t, isSentK), q = sum(sv.plate.map(function (p) { return p.qty; }));
@@ -562,7 +606,7 @@
     if (just.length) out += '<p class="fn-svc-just">' + just.map(function (j) { var x = sentRec(j.f, j.i); return esc(j.f.name) + (j.f.rounds.length > 1 ? ' round ' + (j.i + 1) : '') + ' sent ' + esc(kclock(x.sentAt) + ', ' + nameOf(x.sentBy)) + ' ' + sentCell(j.f, j.i).replace(/^<span class="fn-sent-ok">[\s\S]*?<\/small><\/span>/, ''); }).join('<br>') + '</p>';
     if (sv.plate.length) out += '<section class="fn-next" aria-label="To plate now"><p class="fn-next-h"><span class="fn-next-l">To plate now</span> <b>' + q + ' ' + (q === 1 ? 'platter' : 'platters') + '</b></p>' +
       '<p class="fn-next-s">Late and due in the next 15 minutes, all functions together.</p><ul class="fn-next-list">' + sv.plate.map(function (p) {
-        return '<li class="fn-next-row"><span class="fn-next-n">' + p.qty + '</span><span class="fn-next-name">' + esc(p.name) + '</span></li>';
+        return bigRow(p.qty, p.name, p.rid);
       }).join('') + '</ul></section>';
     if (sv.ahead.length) out += '<h3 class="fn-h">Coming up in the next hour</h3><ol class="fn-rounds">' + sv.ahead.map(function (r) {
       return '<li class="fn-round"><span class="fn-round-t">' + esc(when(r.at, kday(t))) + '</span><span class="fn-round-w"><i>' + esc(r.f.name) + (r.f.rounds.length > 1 ? ', round ' + (r.k + 1) : '') + '</i>' + esc(linesText(r.f, r.a)) + ' <b>(' + sum(r.a) + ')</b></span><span></span></li>';
@@ -658,6 +702,7 @@
     if (a === 'sent' || a === 'unsent') { tickSent(el.getAttribute('data-id'), +el.getAttribute('data-r'), a === 'sent'); return; }
     if (a === 'go') { sheetClose(); return; }
     if (a === 'ckhide') { try { localStorage.setItem('lk.fn.ckhide', kday(now())); } catch (x) {} if (window.LK_PREP && window.LK_PREP.sg) window.LK_PREP.sg('checks', 'd'); paint(); return; }
+    if (a === 'fold') { lsSet('lk.fn.fold', lsGet('lk.fn.fold') === kday(now()) ? null : kday(now())); lastBand = null; paint(); var fb = document.querySelector('#fn-band [data-fn="fold"]'); if (fb) fb.focus({ preventScroll: true }); return; }
     if (a === 'more') { F.more = !F.more; lastBand = null; paint(); var mb = document.querySelector('#fn-band [data-fn="more"]'); if (mb) mb.focus({ preventScroll: true }); return; }
     if (a === 'days') { pageDays = +el.getAttribute('data-v') || 3; try { window.dispatchEvent(new Event('lk-fn')); } catch (x) {} }
   });

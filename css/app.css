@@ -1679,13 +1679,28 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav { top: var(--u
 
 /* ---------- Functions (21 Oct 2026): the band under the top bar, the function sheet, #/fn, the landing card (js/functions.js)
    and the function managers' list and form (js/fnedit.js). Kitchen classes are fn-, the managers' form fe-. ---------- */
-.fn-band { background: #FFF6D9; border-bottom: 2px solid #E8C35A; color: var(--ink); }
+.fn-band { background: var(--beige); border-bottom: 1.5px solid var(--ink); color: var(--ink); }
+.fn-band-top { display: flex; align-items: baseline; justify-content: space-between; gap: 0.6rem; max-width: 1240px; margin: 0 auto; padding: 0.5rem 0.75rem 0; }
+.fn-band-h { margin: 0; font: 700 0.8125rem var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--small-ink); }
+.fn-band-n { margin-left: auto; font: 700 0.8125rem var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+/* Hide / Show on the band's label row, and the one line the band folds to (22 Oct 2026) */
+.fn-band-top:has(.fn-fold) { align-items: center; }
+.fn-fold { flex: 0 0 auto; margin-left: auto; min-height: 36px; padding: 0 0.9rem; border: 1.5px solid var(--ink); border-radius: var(--r-pick); background: var(--paper); color: var(--ink); font-weight: 600; cursor: pointer; }
+.fn-band-n + .fn-fold { margin-left: 0; }
+.fn-band-top.is-fold { padding-bottom: 0.4rem; }
+.fn-band-top.is-fold .fn-band-h { flex: 0 0 auto; }
+.fn-band-sum { flex: 1 1 auto; min-width: 0; display: flex; gap: 1.1rem; white-space: nowrap; overflow: hidden; font-size: 0.95rem; }
+.fn-sum-i { flex: 0 0 auto; }
+.fn-band-sum.is-one .fn-sum-i:first-child { flex-shrink: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.fn-sum-i[hidden], .fn-sum-more[hidden] { display: none; }
+.fn-sum-more { flex: 0 0 auto; }
+@media (max-width: 419px) { .fn-band-n { display: none; } }
 .fn-band[hidden] { display: none; }
 .fn-list { list-style: none; margin: 0 auto; padding: 0.35rem 0.75rem; max-width: 1240px; display: flex; flex-direction: column; gap: 0.3rem; }
-.fn-row { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; min-height: 44px; padding: 0.35rem 0.6rem; border: 1px solid #E8C35A; border-radius: 8px; background: var(--paper); text-align: left; cursor: pointer; line-height: 1.3; overflow-wrap: anywhere; }
-.fn-row:hover { background: #FFFBEE; }
-.fn-row.is-cancelled { background: #FBEDEA; border-color: #D9A196; }
-.fn-row.is-moved { background: #EEF2FB; border-color: #9DB1DA; }
+.fn-row { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; min-height: 44px; padding: 0.4rem 0.7rem; border: 1.5px solid var(--ink); border-left: 5px solid var(--accent-ink); border-radius: var(--r-act); background: var(--paper); color: var(--ink); text-align: left; cursor: pointer; line-height: 1.3; overflow-wrap: anywhere; }
+.fn-row:hover { background: var(--hit); }
+.fn-row.is-cancelled { background: #FBEDEA; border-left-color: #A3230F; }
+.fn-row.is-moved { background: #EEF2FB; border-left-color: #5A73A8; }
 .fn-r1 { font-size: 0.95rem; }
 .fn-r2 { font-size: 0.95rem; color: #3b3a36; }
 .fn-of { color: var(--muted); font-size: 0.85rem; white-space: nowrap; }
@@ -1695,24 +1710,42 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav { top: var(--u
 .fn-t-off { background: #FBE1DC; border-color: #D9A196; color: #8A2414; }
 .fn-t-moved { background: #E6EDFB; border-color: #9DB1DA; }
 .fn-t-ok { background: var(--done-tint); border-color: #9CCDB0; color: #1D5E39; }
-.fn-more { display: block; margin: 0 auto 0.35rem; min-height: 36px; padding: 0 0.9rem; border: 1px solid #E8C35A; border-radius: 999px; background: var(--paper); font-weight: 600; cursor: pointer; }
-.fn-stale { margin: 0 auto; padding: 0.25rem 0.9rem 0.4rem; max-width: 1240px; font-size: 0.85rem; color: #6A4A00; }
+.fn-more { display: block; margin: 0 auto 0.35rem; min-height: 36px; padding: 0 0.9rem; border: 1.5px solid var(--ink); border-radius: var(--r-pick); background: var(--paper); color: var(--ink); font-weight: 600; cursor: pointer; }
+.fn-stale { margin: 0 auto; padding: 0.25rem 0.9rem 0.4rem; max-width: 1240px; font-size: 0.85rem; color: var(--small-ink); }
 .fn-pop { position: fixed; inset: 0; z-index: 86; display: flex; align-items: flex-end; justify-content: center; }
 .fn-pop-bg { position: absolute; inset: 0; background: rgba(28, 29, 31, 0.5); }
-.fn-sheet { position: relative; box-sizing: border-box; width: 100%; max-width: 44rem; max-height: 88vh; max-height: 88dvh; overflow: auto; padding: 0 1rem calc(1rem + env(safe-area-inset-bottom)); background: var(--paper); border-radius: 16px 16px 0 0; box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.2); animation: sheetUp 0.18s ease-out; }
+.fn-sheet { position: relative; box-sizing: border-box; width: 100%; max-width: 44rem; max-height: 88vh; max-height: 88dvh; overflow: auto; padding: 0 18px calc(1rem + env(safe-area-inset-bottom)); background: var(--paper); color: var(--ink); font-family: var(--body); border-radius: 16px 16px 0 0; box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.2); animation: sheetUp 0.18s ease-out; }
 .fn-sheet:focus { outline: none; }
-.fn-sheet-top { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.8rem 0 0.6rem; background: var(--paper); border-bottom: 1px solid var(--line); }
-.fn-sheet-top h2 { margin: 0; font: 700 1.6rem var(--display); overflow-wrap: anywhere; }
+.fn-sheet-top { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 4px 0 0.6rem; background: var(--paper); border-bottom: 3px solid var(--ink); }
+.fn-grip { width: 44px; height: 5px; margin: 10px auto 4px; border-radius: 3px; background: var(--edge); }
+.fn-sheet-t { flex: 1 1 0; min-width: 0; }
+.fn-eb { display: block; font: 700 0.75rem var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--small-ink); }
+.fn-sheet-top h2 { margin: 2px 0 0; font: 700 1.75rem/1.1 var(--display); text-transform: uppercase; letter-spacing: 0.02em; overflow-wrap: anywhere; }
+.fn-close { flex: 0 0 auto; min-height: 44px; padding: 0 18px; border: 2px solid var(--ink); border-radius: 24px; background: transparent; color: var(--ink); font: 700 1rem var(--body); cursor: pointer; }
+.fn-close:hover { background: var(--ink); color: var(--paper); }
 .fn-sub { margin: 0.4rem 0 0; color: var(--muted); font-weight: 600; overflow-wrap: anywhere; }
 /* what goes out next: the one box on the sheet, because it is what the kitchen acts on */
-.fn-next { margin: 0.8rem 0 0.4rem; padding: 0.7rem 0.9rem 0.8rem; border: 2px solid var(--ink); border-radius: 12px; background: #FFF6D9; }
+.fn-next { margin: 0.8rem 0 0.4rem; padding: 0.7rem 0.9rem 0.8rem; border: 2px solid var(--ink); border-radius: 12px; background: var(--paper); box-shadow: 0 4px 0 rgba(28, 29, 31, 0.12); }
 .fn-next-h { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.2rem 0.6rem; }
-.fn-next-l { font: 700 0.75rem var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: #6A4A00; }
+.fn-next-l { font: 700 0.75rem var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--small-ink); }
 .fn-next-h b { font: 700 1.9rem var(--display); line-height: 1.1; }
 .fn-next-s { margin: 0.15rem 0 0; color: #3b3a36; }
 .fn-next-list { list-style: none; margin: 0.5rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.25rem; }
 .fn-next-row { display: flex; align-items: baseline; gap: 0.7rem; }
-.fn-next-n { min-width: 2.2rem; font: 700 2rem var(--display); line-height: 1; text-align: right; font-variant-numeric: tabular-nums; }
+.fn-next-n { min-width: 3.2rem; font: 700 2rem var(--display); line-height: 1; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.fn-next-n .fn-x { margin-left: 0.15em; font-size: 0.6em; color: var(--muted); }
+.fn-next-name a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.fn-x { color: var(--muted); }
+/* the whole function under Next out (22 Oct 2026): every platter booked, all rounds added up */
+.fn-whole { margin: 0.9rem 0 0; }
+.fn-whole-one { color: var(--muted); }
+.fn-whole-one b { color: var(--ink); }
+.fn-whole-h { margin: 0; font: 700 1.2rem var(--display); }
+.fn-whole-h b { margin-left: 0.3rem; color: var(--small-ink); }
+.fn-whole-s { margin: 0.1rem 0 0; font-size: 0.9rem; color: var(--muted); }
+.fn-whole-list { list-style: none; margin: 0.35rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.fn-whole-list li { padding: 0.25rem 0.7rem; border: 1px solid var(--edge); border-radius: var(--r-pick); background: var(--beige); overflow-wrap: anywhere; }
+.fn-whole-list a { color: var(--ink); }
 .fn-next-name { font-size: 1.1rem; font-weight: 600; overflow-wrap: anywhere; }
 .fn-next-sent { margin-top: 0.6rem; display: flex; align-items: center; gap: 0.4rem; }
 .fn-next-sent .fn-sent-b { min-height: 48px; padding: 0 1.4rem; font-size: 1.05rem; }
@@ -1747,13 +1780,13 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav { top: var(--u
 .fn-dtot { margin-top: 0.5rem; padding: 0.5rem 0.75rem; border-radius: 8px; background: var(--beige); }
 .fn-dtot ul { margin: 0.25rem 0 0; padding-left: 1.1rem; }
 .fn-fresh { color: var(--muted); }
-.fn-land { margin: 0 0 1.4rem; padding: 0.75rem 1rem; border: 2px solid #E8C35A; border-radius: 12px; background: #FFF6D9; }
-.fn-land-h { font: 700 0.8rem var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: #6A4A00; }
+.fn-land { margin: 0 0 1.4rem; padding: 0.75rem 1rem; border: 1.5px solid var(--ink); border-left: 5px solid var(--accent-ink); border-radius: 12px; background: var(--paper); }
+.fn-land-h { font: 700 0.8rem var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--small-ink); }
 .fn-land ul { margin: 0.3rem 0 0.4rem; padding-left: 1.1rem; }
 .fn-land-go { font-weight: 700; }
 /* To check before the functions (chefs, 22 Oct 2026): the same yellow as the functions card, a plain list of links */
-.fn-ck { margin: 0 0 1rem; padding: 0.75rem 1rem; border: 2px solid #E8C35A; border-radius: 12px; background: #FFF6D9; }
-.fn-ck-h { font: 700 0.8rem var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: #6A4A00; }
+.fn-ck { margin: 0 0 1rem; padding: 0.75rem 1rem; border: 1.5px solid var(--ink); border-left: 5px solid var(--accent-ink); border-radius: 12px; background: var(--paper); }
+.fn-ck-h { font: 700 0.8rem var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--small-ink); }
 .fn-ck ul { margin: 0.3rem 0 0.2rem; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.2rem; }
 .fn-ck a { color: var(--ink); }
 .fn-ck-more { margin: 0; font-size: 0.875rem; color: var(--muted); }
@@ -1816,10 +1849,10 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav { top: var(--u
 .fn-sent-ok { display: inline-flex; flex-direction: column; align-items: center; font-weight: 700; color: #1D5E39; line-height: 1.2; margin-right: 0.4rem; }
 .fn-sent-ok small { font-weight: 400; color: var(--muted); }
 /* the order reminder and tomorrow's functions in the band, and the strip pinned to the top once the band scrolls away */
-.fn-row.is-soon { min-height: 40px; background: #FFFBEE; }
+.fn-row.is-soon { min-height: 40px; border-left-color: var(--steel-dark); }
 .fn-t-order { background: #FFE0CC; border-color: var(--accent); color: var(--accent-ink); }
 .fn-t-tom { background: #EEF0F3; border-color: var(--steel-dark); }
-.fn-strip { position: fixed; top: 0; left: 0; right: 0; z-index: 44; background: #FFF6D9; border-bottom: 2px solid #E8C35A; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12); }
+.fn-strip { position: fixed; top: 0; left: 0; right: 0; z-index: 44; background: var(--beige); border-bottom: 1.5px solid var(--ink); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12); }
 .fn-strip[hidden] { display: none; }
 .fn-strip-b { display: flex; align-items: center; gap: 0.5rem; width: 100%; max-width: 1240px; margin: 0 auto; min-height: 44px; padding: 0.45rem 0.9rem; border: 0; background: none; color: inherit; text-decoration: none; text-align: left; font-size: 0.95rem; line-height: 1.3; cursor: pointer; }
 .fn-strip-t { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1827,14 +1860,15 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav { top: var(--u
 /* the band's two lines (22 Oct 2026): the time of the next round not sent leads */
 .fn-due { font-weight: 700; font-variant-numeric: tabular-nums; }
 .fn-due.is-late { color: #A3230F; }
+.fn-r1 .fn-due { font: 700 1.2rem/1 var(--display); letter-spacing: 0.02em; margin-right: 0.15rem; }
 .fn-more-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4rem; }
 .fn-more-row .fn-more { margin: 0 0 0.35rem; }
-a.fn-svc { display: inline-flex; align-items: center; color: inherit; text-decoration: none; background: #FFF6D9; }
+a.fn-svc { display: inline-flex; align-items: center; color: var(--bar-text); text-decoration: none; background: var(--ink); }
 /* #/fn/now, the service view */
 .fn-svc-rows { list-style: none; margin: 0 0 1rem; padding: 0; display: grid; gap: 0.6rem; }
-.fn-svc-row { padding: 0.7rem 0.8rem; border: 1px solid #E8C35A; border-left-width: 6px; border-radius: 8px; background: var(--paper); }
-.fn-svc-row.is-late { border-color: #D9A196; border-left-color: #A3230F; background: #FBEDEA; }
-.fn-svc-row.is-later { border-color: var(--line, #ddd); background: transparent; }
+.fn-svc-row { padding: 0.7rem 0.8rem; border: 1.5px solid var(--ink); border-left: 6px solid var(--accent-ink); border-radius: 8px; background: var(--paper); }
+.fn-svc-row.is-late { border-left-color: #A3230F; background: #FBEDEA; }
+.fn-svc-row.is-later { border-color: var(--line); border-left-color: var(--steel-dark); background: transparent; }
 .fn-svc-top { margin: 0; font-size: 1rem; overflow-wrap: anywhere; }
 .fn-svc-top .fn-due { font-size: 1.25rem; margin-right: 0.2rem; }
 .fn-svc-name { font-weight: 700; font-size: 1rem; }
@@ -1860,12 +1894,11 @@ a.fn-svc { display: inline-flex; align-items: center; color: inherit; text-decor
 /* every round as a list in the function sheet: time, what goes out, Sent (22 Oct 2026) */
 .fn-rounds { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
 .fn-round { display: grid; grid-template-columns: 4.6rem minmax(0, 1fr) auto; align-items: center; gap: 0.3rem 0.6rem; padding: 0.45rem 0; border-bottom: 1px solid var(--line); }
-.fn-round.is-next { background: #FFF6D9; margin: 0 -0.5rem; padding-left: 0.5rem; padding-right: 0.5rem; }
+.fn-round.is-next { background: var(--hit); margin: 0 -0.5rem; padding-left: 0.5rem; padding-right: 0.5rem; box-shadow: inset 4px 0 0 var(--accent-ink); }
 .fn-round.is-sent .fn-round-w { color: var(--muted); }
 .fn-round-t { font-weight: 700; font-variant-numeric: tabular-nums; }
 .fn-round-w { overflow-wrap: anywhere; }
 .fn-round-w i { display: block; font-style: normal; font-size: 0.85rem; color: var(--muted); }
-.fn-rounds-tot { margin: 0.4rem 0 0; font-weight: 700; }
 /* For the functions in Handy (22 Oct 2026): what today's and tomorrow's platters need, added up */
 .fnn-day { margin: 0.6rem 0 0.2rem; font: 700 0.8125rem var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
 .fnn { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
