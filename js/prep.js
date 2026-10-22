@@ -183,14 +183,27 @@
     [unsubCfg, unsubItems, unsubSec, unsubAct, unsubOrd, unsubW].forEach(function (u) { if (u) u(); });
     unsubCfg = unsubItems = unsubSec = unsubAct = unsubOrd = unsubW = null; cfgKey = itemsKey = ordKey = wKey = '';
   }
+  var itemsSig = '';
+  function patchUnsent() {
+    S.items.forEach(function (x) {
+      var row = document.getElementById('nbr-' + x.id), by = row && row.querySelector('.nb-by'), mark = by && by.querySelector('.nb-unsent');
+      if (!by) return;
+      if (x._unsent && !mark) by.insertAdjacentHTML('afterbegin', '<span class="nb-unsent">Not sent</span> ');
+      if (!x._unsent && mark) { var sp = mark.nextSibling; mark.remove(); if (sp && sp.nodeType === 3 && sp.nodeValue === ' ') sp.remove(); }
+    });
+  }
   function watchItems() {
     if (S.configState !== 'ok' || !fb) return;
     var key = S.pin + '|' + S.date;
     if (key === itemsKey && unsubItems) return;
     if (unsubItems) unsubItems();
-    itemsKey = key; S.itemsState = 'loading';
+    itemsKey = key; S.itemsState = 'loading'; itemsSig = '';
     unsubItems = fb.fs.onSnapshot(itemsCol(S.date), { includeMetadataChanges: true }, function (snap) {
+      // when the server confirms a change only the "Not sent" marks differ: those are patched, not the whole page drawn
+      var sig = JSON.stringify(snap.docs.map(function (d) { return [d.id, d.data()]; })), same = sig === itemsSig && S.itemsState === 'ok';
+      itemsSig = sig;
       S.items = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; x._unsent = !!(d.metadata && d.metadata.hasPendingWrites); return x; });
+      if (same && S.root && document.body.contains(S.root) && !holdDraw) { patchUnsent(); return; }
       S.itemsState = 'ok'; draw();
     }, function () { S.itemsState = 'error'; draw(); });
   }
@@ -811,7 +824,8 @@
   function canUntick(x) {
     return canBrowse() || (!!x.doneById && x.doneById === S.who && now() - (x.doneAt || 0) < 110000);
   }
-  function tick(date, id) {
+  function tick(date, id) { batch(function () { tickNow(date, id); }); }
+  function tickNow(date, id) {
     var it = S.items.filter(function (x) { return x.id === id; })[0], p = me();
     if (!it || !can('tick')) return;
     var done = !it.done;
@@ -3157,7 +3171,12 @@
   }
   function kbShow() { try { if (navigator.virtualKeyboard && navigator.virtualKeyboard.show) navigator.virtualKeyboard.show(); } catch (e) {} }
   var rendering = false;
+  /* One redraw for a tap that changes several things (22 Oct 2026): tick() draws once at the end instead of once for
+     the change and once for its toast. Measured on an 80-line day, a phone 4 times slower: 136 ms in the tap before. */
+  var holdDraw = 0, heldDraw = false;
+  function batch(fn) { holdDraw++; try { fn(); } finally { if (--holdDraw === 0 && heldDraw) { heldDraw = false; draw(); } } }
   function draw() {
+    if (holdDraw) { heldDraw = true; return; }
     noteSummaryRefresh();
     if (S.mins) { loadMine(); minCard(); }
     if (!S.root || !document.body.contains(S.root) || rendering) return;
