@@ -2628,6 +2628,7 @@
     S.fnNeed = [];
     if (!ds.length) return '';
     var count = ds.map(function (d) { return d.items.length + ' ' + (d.day === dayNow() ? 'today' : 'tomorrow'); }).join(', ');
+    sg('fnneed', 's');
     // folded under one line (the list can be long), open while someone works through it (S.fnnOpen)
     return '<h3 class="nb-sh">For the functions</h3><button type="button" class="fnn-sum" data-p="fnneed-fold" aria-expanded="' + !!S.fnnOpen + '">What the platters need: ' + esc(count) + ' <span aria-hidden="true">' + (S.fnnOpen ? '▴' : '▾') + '</span></button>' +
       (S.fnnOpen ? '<div class="fnn-box">' + ds.map(function (d) {
@@ -2644,6 +2645,7 @@
   function fnNeedAdd(i) {
     var x = (S.fnNeed || [])[i];
     if (!x || !can('add')) return;
+    sg('fnneed', 't');
     var sec = mySec() || 'Functions', dte = S.date, tw = openTwin(x.text, x.qty);
     if (tw) { addToTwin(tw, { text: x.text.slice(0, 160), station: sec, recipe: x.recipe, qty: x.qty }, function () { noteSection(sec); bump({ added: 1, lastAdded: now() }); }); return; }
     var made = newItem({ text: x.text.slice(0, 160), station: sec, recipe: x.recipe || (matchRecipe(x.text) || {}).id || '', qty: x.qty });
@@ -2653,6 +2655,7 @@
   }
   function fnNeedHide(i) {
     var x = (S.fnNeed || [])[i]; if (!x) return;
+    sg('fnneed', 'd');
     var h = fnNeedHidden(); h[x.day] = (h[x.day] || []).concat([x.k]).slice(-200);
     lsSet('lk.fnneed', JSON.stringify(h)); draw();
   }
