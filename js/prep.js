@@ -127,7 +127,8 @@
         return Promise.all(urls.map(function (u) { return c.match(u); })).then(function (have) {
           var need = urls.filter(function (u, i) { return !have[i]; });
           // one plain fetch each (the same way as any other request from the page), then kept
-          return Promise.all(need.map(function (u) { return fetch(u, { mode: 'cors' }).then(function (r) { return r.ok ? c.put(u, r) : null; }); }));
+          return Promise.all(need.map(function (u) { return fetch(u, { mode: 'cors' }).then(function (r) { return r.ok ? c.put(u, r) : null; }); }))
+            .then(function () { var w = navigator.serviceWorker && navigator.serviceWorker.controller; if (w) w.postMessage('lk-fb-kept'); });
         });
       }).catch(function () {});
     } catch (e) {}

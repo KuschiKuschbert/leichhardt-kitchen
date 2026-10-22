@@ -15,6 +15,12 @@ self.addEventListener('install', function (e) {
 self.addEventListener('activate', function (e) {
   e.waitUntil(caches.keys().then(function (ks) { return Promise.all(ks.filter(function (k) { return k !== CACHE && k.indexOf('lk-fb-') !== 0; }).map(function (k) { return caches.delete(k); })); }).then(function () { return self.clients.claim(); }));
 });
+// which Firebase files the page has kept (lk-fb-<version>): read when the worker starts, and told by the page after it
+// saves them, so the worker steps in only for a file it really holds
+var fbKept = {};
+function fbList() { return caches.keys().then(function (ks) { return Promise.all(ks.filter(function (k) { return k.indexOf('lk-fb-') === 0; }).map(function (k) { return caches.open(k).then(function (c) { return c.keys(); }).then(function (rs) { rs.forEach(function (q) { fbKept[q.url] = true; }); }); })); }).catch(function () {}); }
+fbList();
+self.addEventListener('message', function (e) { if (e.data === 'lk-fb-kept') e.waitUntil(fbList()); });
 function stamp(res) { return res ? (res.headers.get('etag') || '') + '|' + (res.headers.get('last-modified') || '') : ''; }
 /* Fetches every saved file again (the browser asks the server whether it changed). All or nothing: one failure keeps the
    old copy. Then, if any file is new, every open book is told. One round at a time, 30 s at most. */
@@ -58,7 +64,7 @@ self.addEventListener('fetch', function (e) {
   // the Firebase files the page saved for itself (js/prep.js keepSdk): handed out only when the phone is offline. Online
   // the worker leaves them alone, so the browser loads them as usual (22 Oct 2026)
   if (u.hostname === 'www.gstatic.com' && /^\/firebasejs\//.test(u.pathname)) {
-    if (self.navigator && self.navigator.onLine === false) e.respondWith(caches.match(r).then(function (m) { return m || Response.error(); }));
+    if (self.navigator && self.navigator.onLine === false && fbKept[r.url]) e.respondWith(caches.match(r).then(function (m) { return m || fetch(r); }));
     return;
   }
   if (u.origin !== self.location.origin) return;
