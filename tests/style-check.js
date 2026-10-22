@@ -41,9 +41,10 @@ function check() {
   out.forEach(({ where, p }) => {
     const e = m => errs.push(where + ': ' + m);
     svgProblems(p.body).forEach(e);
-    if (p.body.length > 16000) e('drawing over 16 kB (' + p.body.length + ')');
-    // what was drawn here, after the library's own shape it sits on (a sauce pool, a butter pat)
-    const b = p.body.slice(p.lib || 0);
+    // what was drawn here: after the library's own shape it sits on (a sauce pool, a butter pat), or apart from the
+    // library pieces it lays out (a topper's cheese and sauce, js/compose.js topper())
+    const b = p.own != null ? p.own : p.body.slice(p.lib || 0);
+    if (b.length > 16000) e('drawing over 16 kB (' + b.length + ')');
     for (const m of b.matchAll(/<(\w+)([^>]*)>/g)) {
       const a = m[2], f = (a.match(/fill="(#[0-9A-Fa-f]{6})"/) || [])[1], st = (a.match(/stroke="(#[0-9A-Fa-f]{6})"/) || [])[1], w = +(a.match(/stroke-width="([\d.]+)"/) || [])[1] || 0, op = (a.match(/opacity="([\d.]+)"/) || [])[1];
       if (w > 8) e('a stroke ' + w + ' wide');

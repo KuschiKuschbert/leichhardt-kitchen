@@ -340,7 +340,8 @@
      While a person is signed in the ring is solid, their name is in the title everywhere and next to the hat from 1400
      px, where there is room (at 1280 px it pushed "Kitchen Book" onto two lines). On the head chef's device it carries the
      count of open kitchen mail. A tap opens a small menu: Kitchen mail
-     (write to the head chef), the drinks run, Meeting minutes, My section (staff and leads,
+     (write to the head chef), the drinks run, Meeting minutes, Functions (22 Oct 2026: everyone who is not a function
+     manager reads today's and the next days' functions; managers have Functions in the Chef group instead), My section (staff and leads,
      once the head chef has set up kitchen sections: today's section, a tap changes it), a Chef group for the head chef and sous chefs (Shift
      pings, Minutes register, Manage staff, 20 Oct 2026: moved here from Handy on the prep list; Admin panel first in it
      where adminItem() allows, 21 Oct 2026), Settings and Sign out,
@@ -361,6 +362,11 @@
   function fnItem() {
     var on = parseRoute().name === 'functions' ? ' aria-current="page"' : '';
     return '<a class="wm-a wm-fn" href="#/functions" data-who="go"' + on + '>' + ICON.cal + '<span><b>Functions</b><small>Book functions and their platters</small></span></a>';
+  }
+  // Everyone else signed in reads the confirmed functions, today and the next days (#/fn); booking stays with the managers
+  function fnViewItem() {
+    var on = parseRoute().name === 'fn' ? ' aria-current="page"' : '';
+    return '<a class="wm-a wm-fv" href="#/fn" data-who="go"' + on + '>' + ICON.cal + '<span><b>Functions</b><small>Today and the next days</small></span></a>';
   }
   function manageItem() {
     var on = parseRoute().name === 'manage' ? ' aria-current="page"' : '';
@@ -386,6 +392,7 @@
         '<a class="wm-a" href="#/mail" data-who="go">' + ICON.mail + '<span><b>Kitchen mail</b><small>Write to Chef</small></span></a>' +
         '<a class="wm-a" href="#/drinks" data-who="go">' + ICON.cup + '<span><b>Drinks run</b><small>Everyone\'s usual coffee</small></span></a>' +
         (m.minutes ? '<a class="wm-a" href="#/minutes" data-who="go">' + ICON.doc + '<span><b>Meeting minutes</b><small>Read and sign</small></span></a>' : '') +
+        (m.fn ? '' : fnViewItem()) +
         (m.sec ? '<button type="button" class="wm-a" data-who="sec" data-v="section">' + ICON.chef + '<span><b>My section</b><small>' + esc(m.sec) + '</small></span></button>' : '') +
         (m.chef || adm || m.book || m.fn ? '<p class="wm-h wm-sh">Chef</p>' + adm : '') + (m.book ? manageItem() : '') + (m.fn ? fnItem() : '') +
         (m.chef ?

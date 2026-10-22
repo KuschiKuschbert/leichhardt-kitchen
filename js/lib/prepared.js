@@ -638,6 +638,16 @@
     return out + P.hl(-14, -18, 12, 3, '#FFFFFF', 0.3, -15);
   }
 
+
+  // a crispy beetroot bite (the book's beetroot bites): deep purple, a red glow, a pink highlight
+  function beetBite(P) {
+    return P.ellipse(1.5, 2.5, 11, 9.5, '#000000', null, 0, { opacity: '0.15' }) + P.path('M-11 0 Q-10 -9 0 -9.5 Q10 -9 11 0 Q10 9 0 9.5 Q-10 9 -11 0 Z', '#7A1F45', '#561230', 1) +
+      P.path('M-9 0 Q-8 -7 0 -7.5 Q8 -7 9 0 Q8 7 0 7.5 Q-8 7 -9 0 Z', '#B02A1E', null, 0, { opacity: '0.62' }) + P.ellipse(-3, -3.5, 3.6, 1.5, '#F0907A', null, 0, { opacity: '0.7' }) + P.circle(4, 2, 1, '#F0907A', null, 0, { opacity: '0.6' });
+  }
+  function beetBites(P, rnd) {
+    return [[-16, -9], [16, -7], [0, 13]].map(function (c) { return P.g(P.at(c[0], c[1], (rnd() - 0.5) * 30, 1.4), beetBite(P)); }).join('');
+  }
+
   L.add('prepared', [
     // fried bites
     { id: 'arancini', name: 'Arancini ball', sub: 'Fried bites', kw: 'arancini arancino rice ball risotto ball crumbed fried', form: 'piece', cook: 'crumbed', role: 'main', n: 1, w: 31, h: 31, side: { s: 'scoop', h: 28, c: '#D39A4C' }, draw: ball({ r: 15, col: '#D39A4C', count: 16 }) },
@@ -712,7 +722,8 @@
     { id: 'guacamole-molcajete', name: 'Guacamole in a stone bowl', sub: 'Mexican', kw: 'guacamole guac avocado dip molcajete stone bowl', form: 'bowlful', cook: 'fresh', role: 'sidedish', g: 120, w: 86, h: 86, side: { s: 'cup', h: 30, c: '#8DB255' }, draw: dip({ R: 41, col: '#8DB255', ware: '#55534F', stone: true, top: DIPS.guac }) },
     // other
     { id: 'baked-camembert-box', name: 'Baked camembert in its box', sub: 'Other', kw: 'baked camembert brie whole cheese box scored garlic rosemary honey sharing', form: 'whole', cook: 'baked', role: 'main', n: 1, w: 86, h: 86, side: { s: 'disc', h: 24, c: '#F4EEDC' }, draw: camembert },
-    { id: 'shepherds-pie-portion', name: 'Shepherd\'s pie portion', sub: 'Other', kw: 'shepherds pie cottage pie mince mash top browned portion square tray bake', form: 'portion', cook: 'baked', role: 'main', g: 350, w: 72, h: 70, side: { s: 'slab', h: 40, c: '#EFDDB0' }, draw: shepherds }
+    { id: 'shepherds-pie-portion', name: 'Shepherd\'s pie portion', sub: 'Other', kw: 'shepherds pie cottage pie mince mash top browned portion square tray bake', form: 'portion', cook: 'baked', role: 'main', g: 350, w: 72, h: 70, side: { s: 'slab', h: 40, c: '#EFDDB0' }, draw: shepherds },
+    { id: 'beetroot-bites', name: 'Beetroot bites, crispy', sub: 'Fried bites', kw: 'beetroot bites crispy beetroot balls beet bites plant based vegan rissoles crumbed', form: 'pile', cook: 'fried', role: 'main', n: 3, w: 66, h: 56, side: { s: 'pile', h: 22, c: '#7A1F45' }, draw: beetBites },
   ]);
   // the helpers, for the other category files (a skewer of anything, a dip in a dish, a coated log)
   L.PREPARED = { logD: logD, lumpyLog: lumpyLog, roundPoly: roundPoly, coat: coat, ball: ball, crumbedLog: crumbedLog, skewer: skewer, cube: cube, dip: dip, dips: DIPS, swirl: swirl, cornChip: cornChip, dollop: dollop, jalapeno: jalapeno, herbs: herbs, patty: patty, fritter: fritter };

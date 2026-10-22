@@ -734,11 +734,47 @@
       side: { s: sideS, h: mo.form === 'mixture' ? 8 : 4, c: mo.col }, body: got.body, box: got.box.map(n1), from: mo.from, cook: mo.cook || ''
     };
   }
+  /* ---------- a topper whose card is still to come, drawn from its note ----------
+     "French parmi topper: brie, avocado, bacon, béarnaise": what the note names, laid on the schnitzel the way the book
+     draws its toppers. A melting cheese goes under everything, the pieces sit side by side, a sauce is piped over them
+     in a wave, as the book draws the béarnaise. Once the card is written, the dish is drawn from the card instead.
+     own: what the topper draws itself (the cheese and the sauce), apart from the library's pieces it lays out. */
+  var DOLLOP = /^(dollop|quenelle)$/;
+  function topper(i, dish) {
+    if (!/topper/i.test(i.name || '') || !i.note) return null;
+    var names = String(i.note).split(/\s*,\s*/).map(function (x) { return x.trim(); }).filter(Boolean);
+    var got = names.map(function (nm) { var m = S().matchIng({ name: nm }, dish); return m && m.id && m.conf >= 0.6 && LIB.get(m.id) ? { nm: nm, it: LIB.get(m.id) } : null; }).filter(Boolean);
+    if (got.length < 2 || got.length < names.length * 0.6) return null;
+    var rnd = P.rng('topper:' + (dish ? dish.id : '') + ':' + i.name), W0 = 84, H0 = 48, out = '', drawn = '';
+    var melt = got.filter(function (g) { return g.it.form === 'layer'; });
+    // a sauce is piped over in a wave, whatever its library piece (the béarnaise comes as a ramekin); a dollop stays a dollop
+    var wave = got.filter(function (g) { return g.it.cat === 'sauce' && !DOLLOP.test(g.it.form) && melt.indexOf(g) < 0; });
+    var pieces = got.filter(function (g) { return melt.indexOf(g) < 0 && wave.indexOf(g) < 0; }), cell = W0 / Math.max(1, pieces.length);
+    melt.forEach(function (g) { drawn += fill(P.blob(rnd, W0 * 0.56, H0 * 0.6, 0.08, 12), snap(g.it.side.c), 1); });
+    out += finish(drawn);
+    var own = out, wavy = '';
+    pieces.forEach(function (g, k) {
+      var bx = LIB.box(g.it), bw = bx[2] - bx[0], bh = bx[3] - bx[1], s = Math.min(cell * 1.6 / bw, H0 * 0.95 / bh, 0.85);
+      var x = -W0 / 2 + cell * (k + 0.5), y = pieces.length > 2 ? (k % 2 ? 5 : -5) : 0;
+      out += P.g(P.at(x, y, Math.round(rnd() * 24 - 12), s), P.g('translate(' + n1(-(bx[0] + bx[2]) / 2) + ' ' + n1(-(bx[1] + bx[3]) / 2) + ')', LIB.body(g.it.id)));
+    });
+    wave.forEach(function (g, k) {
+      var c = snap(LIB.sauceColour(g.nm) || g.it.side.c), y = -4 + k * 9, x0 = -W0 / 2 + 6, st = (W0 - 12) / 6;
+      var d = 'M' + n1(x0) + ' ' + n1(y) + ' Q' + n1(x0 + st / 2) + ' ' + n1(y - 6) + ' ' + n1(x0 + st) + ' ' + n1(y);
+      for (var t = 2; t <= 6; t++) d += ' T' + n1(x0 + st * t) + ' ' + n1(y);
+      wavy += P.path(d, 'none', ST.edge(c), 4.6, { 'stroke-linecap': 'round' }) + P.path(d, 'none', c, 3, { 'stroke-linecap': 'round' });
+    });
+    out += wavy; own += wavy;
+    var first = (pieces[0] || got[0]).it, slug = String(i.link || S().key(i.name)).replace(/[^a-z0-9]+/g, '-');
+    return { id: 'topper-' + slug, v: 1, raw: true, key: 'raw:topper-' + slug + '-' + P.hash(out).toString(36), dr: first.id, made: i.link || undefined, ms: i.link ? 'note:' + P.hash(i.note).toString(36) : undefined,
+      name: i.name, cat: 'prepared', role: 'topping', form: 'pile', g: 80, w: W0 + 10, h: H0 + 10, side: { s: 'layer', h: 10, c: snap(first.side.c) }, body: out, box: [-W0 / 2 - 5, -H0 / 2 - 5, W0 / 2 + 5, H0 / 2 + 5], from: names, cook: '', lib: 0, own: own };
+  }
+
   // the part for an ingredient of a dish that has a card of its own: { ...piece } or null (the library piece stays)
   function partFor(i, dish, m) {
     if (m && m.why === 'learned') return null;
     var card = cardOf(i, dish);
-    if (!card) return null;
+    if (!card) return topper(i, dish);
     var mo = read(card);
     if (!mo || !mo.drawn || mo.bought) return null;
     // the dish takes one thing from the card ("Pak choy", prepped as on the Asian greens card): that thing, as the library has it
@@ -774,5 +810,5 @@
       g: it.g, n: it.n, w: it.w, h: it.h, side: { s: it.side.s, h: it.side.h, c: col }, body: out, box: bx.map(n1), from: [], cook: cook, lib: 0 };
   }
 
-  window.LK_COMPOSE = { read: read, compose: compose, partFor: partFor, dress: dress, stack: stackPart, panPart: panPart, cardOf: cardOf, ST: ST, snap: snap, palette: palette, cooked: cooked, BIT: BIT, kindOf: kindOf, RAW: RAW, COOK: COOK, CUT: CUT };
+  window.LK_COMPOSE = { read: read, compose: compose, partFor: partFor, topper: topper, dress: dress, stack: stackPart, panPart: panPart, cardOf: cardOf, ST: ST, snap: snap, palette: palette, cooked: cooked, BIT: BIT, kindOf: kindOf, RAW: RAW, COOK: COOK, CUT: CUT };
 })();
