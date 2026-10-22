@@ -474,7 +474,7 @@
      After the 10 minute lock, the prep list, orders and wastage still show. A tap that writes (tick, add, urgent, order,
      log waste) asks "Who are you?" first, then does that same thing once the PIN is right, so nobody taps twice. What was
      typed in the add boxes stays. Reading needs only the kitchen PIN, as before; every write still needs a person's PIN. */
-  var GUEST_WRITES = { oreg: 1, tick: 1, urgent: 1, del: 1, restore: 1, 'add-recipe': 1, quick: 1, 'toast-act': 1, ogroup: 1, otick: 1, odel: 1, orestore: 1, wdel: 1, wrestore: 1, wreview: 1 };
+  var GUEST_WRITES = { oreg: 1, tick: 1, urgent: 1, del: 1, restore: 1, 'add-recipe': 1, quick: 1, fnneed: 1, 'toast-act': 1, ogroup: 1, otick: 1, odel: 1, orestore: 1, wdel: 1, wrestore: 1, wreview: 1 };
   function guest() { return shared() && !S.authed && !S.picking && !S.who && (S.name === 'prep' || S.name === 'orders' || S.name === 'waste'); }
   function guestAsk(pend) { S.pending = pend; S.picking = true; S.who = ''; draw(); window.scrollTo(0, 0); }
   function guestSel(el) {
@@ -2494,7 +2494,84 @@
     var donebox = '<h3 class="nb-sh" id="nb-donebox">' + (onToday ? 'Done today' : 'Done on ' + esc(dayShort(S.date))) + ' (' + dl.length + ')</h3>' + (dl.length ? '<ul class="nb-done">' + dl.map(function (x) {
       return '<li><span class="nb-dt">' + (x.doneAt ? clock(x.doneAt) : '') + '</span><span class="nb-dx">' + esc(x.text) + (x.qty ? ' <em>' + esc(x.qty) + '</em>' : '') + '</span><span class="nb-dw">' + esc(x.doneBy || '') + '</span>' + (can('tick') && canUntick(x) ? '<button type="button" class="p-x nb-undo" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(S.date) + '" aria-label="' + esc('Undo the tick on ' + x.text) + '">Undo</button>' : '') + '</li>';
     }).join('') + '</ul>' : '<p class="nb-sd">' + (onToday ? 'Nothing ticked yet.' : 'Nothing was ticked.') + '</p>');
-    return startHTML(live, true) + paceHTML + stuckHTML + donebox + quick;
+    return startHTML(live, true) + paceHTML + stuckHTML + fnNeedsHTML() + donebox + quick;
+  }
+  /* For the functions (22 Oct 2026, review F1): what today's and tomorrow's confirmed function platters need, every item
+     on the platter cards added up across the platters (5 Aussie platters at 10 party pies each: Party pies 50 pieces).
+     An amount the card does not give for sure ([Qty], "handful") shows as "amount to come". Add puts it on the prep list
+     as a normal line with that amount (Undo as usual); a line already open for it shows "On the list". Not needed hides
+     it for that day on this phone (lk.fnneed: { day: [keys] }, out of date the next day). No reads: today's platter lines
+     are on the list already, tomorrow's come from the functions listener (js/functions.js). */
+  function fnNeeds() {
+    var today = dayNow(), tmr = shift(today, 1), A = window.LK_AMT, days = {}, hid = fnNeedHidden();
+    if (!A) return [];
+    function addPlatter(day, fname, rid, plat) {
+      var r = recipeById(rid); if (!r || !(plat > 0)) return;
+      var d = days[day] = days[day] || { day: day, items: {} };
+      (r.ingredients || []).forEach(function (i) {
+        if (!i || !i.name) return;
+        var a = A.parse(i.q), k = dupKey(i.name) + '|' + (a ? a.u : '?');
+        if (hid[day] && hid[day].indexOf(k) >= 0) return;
+        var e = d.items[k] = d.items[k] || { k: k, name: i.name, link: i.link || '', u: a ? a.u : '', n: 0, read: !!a, fns: {} };
+        if (a) e.n += a.n * plat;
+        e.fns[fname] = (e.fns[fname] || 0) + plat;
+      });
+    }
+    S.items.filter(function (x) { return x.fn && !x.deleted && x.recipe; }).forEach(function (x) {
+      var a = A.parse(x.qty), f = window.LK_FN ? (window.LK_FN.list() || []).filter(function (y) { return y.id === x.fn; })[0] : null;
+      addPlatter(today, f ? f.name : 'Function', x.recipe, a ? a.n : 0);
+    });
+    if (window.LK_FN) (window.LK_FN.list() || []).filter(function (f) { return f.status === 'confirmed' && f.date === tmr; }).forEach(function (f) {
+      (f.lines || []).forEach(function (l) { addPlatter(tmr, f.name, l.rid, +l.qty || 0); });
+    });
+    return [today, tmr].filter(function (d) { return days[d]; }).map(function (d) {
+      var xs = Object.keys(days[d].items).map(function (k) { return days[d].items[k]; }).sort(function (a, b) { return a.name < b.name ? -1 : 1; });
+      return { day: d, items: xs };
+    });
+  }
+  // the functions listener (js/functions.js) can answer after the prep list is drawn: draw again only when this block
+  // would show something different, so a new booking or tomorrow's functions appear without a reload
+  var fnNeedSig = '';
+  window.addEventListener('lk-fn', function () {
+    if (S.name !== 'prep' || !S.root || !document.body.contains(S.root)) return;
+    var sig = JSON.stringify(fnNeeds());
+    if (sig !== fnNeedSig) { fnNeedSig = sig; draw(); }
+  });
+  function fnNeedHidden() { try { var h = JSON.parse(lsGet('lk.fnneed') || '{}'), out = {}, t = dayNow(); Object.keys(h).forEach(function (d) { if (d >= t && Array.isArray(h[d])) out[d] = h[d]; }); return out; } catch (e) { return {}; } }
+  function fnNeedsHTML() {
+    if (!can('add') || S.date !== dayNow()) return '';
+    var ds = fnNeeds();
+    fnNeedSig = JSON.stringify(ds);
+    S.fnNeed = [];
+    if (!ds.length) return '';
+    var count = ds.map(function (d) { return d.items.length + ' ' + (d.day === dayNow() ? 'today' : 'tomorrow'); }).join(', ');
+    // folded under one line (the list can be long), open while someone works through it (S.fnnOpen)
+    return '<h3 class="nb-sh">For the functions</h3><button type="button" class="fnn-sum" data-p="fnneed-fold" aria-expanded="' + !!S.fnnOpen + '">What the platters need: ' + esc(count) + ' <span aria-hidden="true">' + (S.fnnOpen ? '▴' : '▾') + '</span></button>' +
+      (S.fnnOpen ? '<div class="fnn-box">' + ds.map(function (d) {
+      return '<p class="fnn-day">' + (d.day === dayNow() ? 'Today' : 'Tomorrow') + '</p><ul class="fnn">' + d.items.map(function (e) {
+        var qty = e.read ? window.LK_AMT.say(e.n, e.u) : '', i = S.fnNeed.push({ text: e.name, qty: qty, recipe: e.link, k: e.k, day: d.day }) - 1;
+        var who = Object.keys(e.fns).map(function (f) { return f + ': ' + e.fns[f] + (e.fns[f] === 1 ? ' platter' : ' platters'); }).join(', ');
+        var on = openTwin(e.name, qty);
+        return '<li><span class="fnn-t"><strong>' + esc(e.name) + '</strong> ' + (qty ? '<span class="fnn-q">' + esc(qty) + '</span>' : '<span class="fnn-tc">amount to come</span>') + '<span class="fnn-w">' + esc(who) + '</span></span>' +
+          (on ? '<span class="fnn-on">On the list</span>' : '<button type="button" class="nb-btn fnn-add" data-p="fnneed" data-i="' + i + '" aria-label="' + esc('Add ' + e.name + (qty ? ', ' + qty : '')) + '">Add</button>') +
+          '<button type="button" class="p-x" data-p="fnneed-hide" data-i="' + i + '" aria-label="' + esc('Not needed: ' + e.name) + '">Not needed</button></li>';
+      }).join('') + '</ul>';
+    }).join('') + '</div>' : '');
+  }
+  function fnNeedAdd(i) {
+    var x = (S.fnNeed || [])[i];
+    if (!x || !can('add')) return;
+    var sec = mySec() || 'Functions', dte = S.date, tw = openTwin(x.text, x.qty);
+    if (tw) { addToTwin(tw, { text: x.text.slice(0, 160), station: sec, recipe: x.recipe, qty: x.qty }, function () { noteSection(sec); bump({ added: 1, lastAdded: now() }); }); return; }
+    var made = newItem({ text: x.text.slice(0, 160), station: sec, recipe: x.recipe || (matchRecipe(x.text) || {}).id || '', qty: x.qty });
+    made.catch(failed);
+    noteSection(sec); bump({ added: 1, lastAdded: now() });
+    addedToast(sec, dte, made.id);
+  }
+  function fnNeedHide(i) {
+    var x = (S.fnNeed || [])[i]; if (!x) return;
+    var h = fnNeedHidden(); h[x.day] = (h[x.day] || []).concat([x.k]).slice(-200);
+    lsSet('lk.fnneed', JSON.stringify(h)); draw();
   }
   function listHTML() {
     var p = me(), today = dayNow();
@@ -5678,6 +5755,9 @@
     if (a === 'move-pin') { movePin(); return; }
     if (a === 'sugg') { pickSugg(i); return; }
     if (a === 'quick') { quickAdd(i); return; }
+    if (a === 'fnneed') { fnNeedAdd(i); return; }
+    if (a === 'fnneed-hide') { fnNeedHide(i); return; }
+    if (a === 'fnneed-fold') { S.fnnOpen = !S.fnnOpen; draw(); focusSel('[data-p="fnneed-fold"]'); return; }
     if (a === 'heat') { S.heat = el.getAttribute('data-v'); draw(); return; }
     if (a === 'calm') { S.calM = el.getAttribute('data-v'); draw(); return; }
     if (a === 'jump') { adminJumpTo(el.getAttribute('data-v')); return; }
