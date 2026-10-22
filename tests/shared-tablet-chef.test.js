@@ -27,6 +27,8 @@ const key = async p => (await L.admItem(p)) === 'none' ? null : true;
 
   // a sous chef (Sam) signed in on the same device: the chef tools stay
   p = await L.open(b, '#/', { admin: true, who: 'sam', wait: 1800 });
+  // Admin comes in after the owner check is read: wait for it, not for the page to be still (it flaked under load)
+  for (let i = 0; i < 20 && await key(p) === null; i++) await L.settle(p, 250);
   ok(await key(p) !== null, 'sous chef on the head chef device: Admin shows in the menu');
   await p.context().close();
 
