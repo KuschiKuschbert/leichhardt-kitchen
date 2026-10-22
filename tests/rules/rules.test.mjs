@@ -470,6 +470,55 @@ await ok(getDoc(doc(anon, K + 'daily/2026-10-21_abc123')), false, 'daily: a PIN 
 await ok(getDoc(doc(owner, K + 'daily/2026-10-21_abc123')), true, 'daily: the head chef\'s Google account reads them');
 await ok(W([['summary/waste', { day: WT, items: [] }]], { id: 'sam' }), false, 'summary: no phone writes it, not even a sous chef');
 await ok(setDoc(doc(owner, K + 'summary/waste'), { day: WT, items: [] }), true, 'summary: the head chef may copy it (moving the kitchen PIN)');
+// PIN sessions (22 Oct 2026): a phone signed in anonymously writes a PIN try first (one per person every 20 s), then
+// opens a session if that try was right; writes then need no proof
+const phone = id => env.authenticatedContext(id, { firebase: { sign_in_provider: 'anonymous' } }).firestore();
+const ph1 = phone('ph1'), ph2 = phone('ph2'), ph3 = phone('ph3');
+await env.withSecurityRulesDisabled(async ctx => { const db = ctx.firestore(); await setDoc(doc(db, K + 'pinset/ann'), { at: 111 }); await setDoc(doc(db, K + 'pinset/bo'), { at: 222 }); });
+const tryPin = (db, id, pin, uid) => setDoc(doc(db, K + 'tries/' + id), { tok: hash(id, pin), at: serverTimestamp(), uid });
+const sess = (db, uid, id, x) => setDoc(doc(db, K + 'sessions/' + uid), Object.assign({ by: id, pinAt: id === 'ann' ? 111 : 222, exp: Date.now() + 86400000, at: serverTimestamp() }, x || {}));
+await ok(tryPin(anon, 'ann', '2222', 'ph1'), false, 'sessions: a try needs a signed-in phone');
+await ok(tryPin(ph1, 'ann', '2222', 'ph2'), false, 'sessions: a try is written as the phone itself');
+await ok(tryPin(ph1, 'ann', '2222', 'ph1'), true, 'sessions: Ann\'s phone writes a PIN try');
+await ok(tryPin(ph1, 'ann', '2222', 'ph1'), false, 'sessions: a second try within 20 seconds is refused');
+await ok(sess(ph2, 'ph2', 'ann'), false, 'sessions: another phone cannot use Ann\'s try');
+await ok(sess(ph1, 'ph1', 'ann', { exp: Date.now() + 40 * 86400000 }), false, 'sessions: no session longer than 31 days');
+await ok(sess(ph1, 'ph1', 'ann', { pinAt: 5 }), false, 'sessions: the session must name Ann\'s PIN time');
+await ok(sess(ph1, 'ph1', 'ann'), true, 'sessions: the right try opens a session');
+await ok(setDoc(doc(ph1, K + 'days/' + TODAY + '/items/sx1'), line({ by: 'ann', addedById: 'ann' })), true, 'sessions: Ann writes a line with no proof, through her session');
+await ok(setDoc(doc(ph2, K + 'days/' + TODAY + '/items/sx2'), line({ by: 'ann', addedById: 'ann' })), false, 'sessions: another phone cannot write as Ann');
+await ok(setDoc(doc(ph1, K + 'days/' + TODAY + '/items/sx3'), line({ by: 'bo', addedById: 'bo' })), false, 'sessions: Ann\'s session cannot write as Bo');
+await ok(tryPin(ph3, 'bo', '9999', 'ph3'), true, 'sessions: a wrong try is written (and counts)');
+await ok(sess(ph3, 'ph3', 'bo'), false, 'sessions: a wrong try opens no session');
+await ok(tryPin(ph3, 'bo', '3333', 'ph3'), false, 'sessions: and the next try waits 20 seconds');
+await ok(getDoc(doc(ph2, K + 'sessions/ph1')), false, 'sessions: a phone cannot read another phone\'s session');
+await ok(getDoc(doc(ph1, K + 'tries/ann')), false, 'sessions: nobody reads a try');
+await ok(sess(ph1, 'ph1', 'ann', { exp: Date.now() + 20 * 86400000 }), true, 'sessions: a running session moves its end forward');
+await env.withSecurityRulesDisabled(async ctx => { await deleteDoc(doc(ctx.firestore(), K + 'pinset/ann')); });
+await ok(setDoc(doc(ph1, K + 'days/' + TODAY + '/items/sx4'), line({ by: 'ann', addedById: 'ann' })), false, 'sessions: after Reset PIN the session writes nothing');
+await env.withSecurityRulesDisabled(async ctx => { const db = ctx.firestore(); await setDoc(doc(db, K + 'pinset/ann'), { at: 333 }); await setDoc(doc(db, K + 'staffpins/ann'), { hash: hash('ann', '7777') }); });
+await ok(setDoc(doc(ph1, K + 'days/' + TODAY + '/items/sx5'), line({ by: 'ann', addedById: 'ann' })), false, 'sessions: nor after a new PIN (a new PIN time)');
+await ok(sess(ph1, 'ph1', 'ann', { pinAt: 333, exp: Date.now() + 20 * 86400000 }), false, 'sessions: and cannot move on to the new PIN without a try');
+await ok(deleteDoc(doc(ph1, K + 'sessions/ph1')), true, 'sessions: the phone ends its own session (Sign out)');
+await ok(deleteDoc(doc(ph2, K + 'sessions/ph3')), false, 'sessions: not another phone\'s');
+await env.withSecurityRulesDisabled(async ctx => { await setDoc(doc(ctx.firestore(), K + 'staffpins/ann'), { hash: hash('ann', '2222') }); });
+await ok(setDoc(doc(ph2, K + 'tries/cal'), { tok: 'short', at: serverTimestamp(), uid: 'ph2' }), false, 'sessions: a try must carry a full PIN fingerprint');
+await ok(setDoc(doc(ph2, K + 'tries/cal'), { tok: hash('cal', '1234'), at: serverTimestamp(), uid: 'ph2', pin: '1234' }), false, 'sessions: a try takes no other fields');
+await ok(setDoc(doc(ph2, K + 'tries/cal'), { tok: hash('cal', '1234'), at: Timestamp.fromMillis(Date.now() - 60000), uid: 'ph2' }), false, 'sessions: a try is stamped with the server\'s time');
+// a session that ran out, and one for someone taken off the list, write nothing (planted with the rules off)
+const ph4 = phone('ph4'), ph5 = phone('ph5');
+await env.withSecurityRulesDisabled(async ctx => {
+  const db = ctx.firestore();
+  await setDoc(doc(db, K + 'sessions/ph4'), { by: 'bo', pinAt: 222, exp: Date.now() - 1000, at: 1 });
+  await setDoc(doc(db, K + 'pinset/zed'), { at: 444 }); await setDoc(doc(db, K + 'staffpins/zed'), { hash: hash('zed', '5555') });
+  await setDoc(doc(db, K + 'sessions/ph5'), { by: 'zed', pinAt: 444, exp: Date.now() + 86400000, at: 1 });
+});
+await ok(setDoc(doc(ph4, K + 'days/' + TODAY + '/items/sx6'), line({ by: 'bo', addedById: 'bo' })), false, 'sessions: a session that ran out writes nothing');
+await ok(sess(ph4, 'ph4', 'bo', { exp: Date.now() + 86400000 }), false, 'sessions: and cannot be moved forward');
+await ok(setDoc(doc(ph5, K + 'days/' + TODAY + '/items/sx7'), line({ by: 'zed', addedById: 'zed' })), false, 'sessions: someone off the list (Stopped working here) writes nothing with a session');
+await ok(tryPin(ph5, 'zed', '5555', 'ph5'), true, 'sessions: their try may be written');
+await ok(setDoc(doc(ph5, K + 'sessions/ph5'), { by: 'zed', pinAt: 444, exp: Date.now() + 86400000, at: serverTimestamp() }), false, 'sessions: but opens no session, even with the right PIN');
+await ok(getDoc(doc(ph1, K + 'sessions/ph1')), true, 'sessions: a phone reads its own session');
 // the owner probe
 await ok(getDoc(doc(owner, K + 'config/admins')), true, 'admins: the head chef may read the probe');
 await ok(getDoc(doc(anon, K + 'config/admins')), false, 'admins: nobody else may');

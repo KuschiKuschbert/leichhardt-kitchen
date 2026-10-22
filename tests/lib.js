@@ -145,6 +145,8 @@ async function start() {
    o.width, o.height  viewport (390 x 844 by default, a phone)
    o.who              who is signed in on this phone: 'sam' (default), 'ann', 'bo', or '' for the name screen
    o.noTok            the person is picked but has to type their own PIN
+   o.oldTok           the person signed in before PIN sessions (22 Oct 2026): the phone keeps their PIN proof
+                      (lk.prep.tok) instead of a session, and moves to a session when it opens
    o.noPin            no kitchen PIN on this phone yet
    o.admin            the head chef's Google account is signed in
    o.settings         saved recipe book settings, for example { view: 'tiles' }
@@ -190,11 +192,18 @@ async function open(browser, hash, o) {
     return r.fulfill({ status: 200, headers: { 'Access-Control-Allow-Origin': '*' }, contentType: /\.m?js$/.test(f) ? 'text/javascript' : 'application/octet-stream', body: fs.readFileSync(f) });
   });
   const who = o.who === undefined ? 'sam' : o.who, pins = { sam: '1111', ann: '2222', bo: '3333', fay: '5151', finn: '5252' };
+  // a person signed in on this phone has a running PIN session (sessions/<this phone's uid>), as every phone does once
+  // it has moved from the older proof; the head chef's Google account is the phone's sign-in when o.admin is set
+  const store = seed(o.extra), uid = o.admin ? 'owner' : 'anon-test', exp = (o.clock || NOW) + 30 * 86400000;
+  const pinAt = who && (store[K.concat(['pinset', who]).join('/')] || {}).at, sess = who && !o.noTok && !o.oldTok && typeof pinAt === 'number';
+  if (sess) store[K.concat(['sessions', uid]).join('/')] = { by: who, pinAt, exp, at: o.clock || NOW };
   const ls = {
-    'fake.fs': JSON.stringify(seed(o.extra)),
+    'fake.fs': JSON.stringify(store),
+    'fake.anon': 'anon-test',
     'lk.prep.pin': o.noPin ? '' : PIN,
     'lk.prep.who': who || '',
-    'lk.prep.tok': who && !o.noTok ? who + ':' + sha('lk:' + who + ':' + pins[who]) : '',
+    'lk.prep.tok': who && o.oldTok ? who + ':' + sha('lk:' + who + ':' + pins[who]) : '',
+    'lk.prep.sess': sess ? [who, exp, uid, pinAt].join(':') : '',
     'lk.prep.seen': String(o.clock || NOW),   // on the phone's clock, like the idle check
     'lk.settings.v1': JSON.stringify(Object.assign({ installNo: true }, o.settings || {}))
   };

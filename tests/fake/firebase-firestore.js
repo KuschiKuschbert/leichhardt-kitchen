@@ -173,13 +173,37 @@ function commitOps(ops) {
     return /\/learnlog\/[^/]+$/.test(k) && store[k] !== undefined;
   });
   if (refused) return Promise.reject({ code: 'permission-denied' });
+  // PIN sessions (22 Oct 2026), like the real rules: a try is written as this phone, one per person every 20 s; a session
+  // opens only after a right try from this phone in the last 2 minutes, or moves forward while it runs
+  const uid = window.__fakeUid ? window.__fakeUid() : '', rootOf = o => key(o.ref.path).split('/').slice(0, 2).join('/');
+  const badSess = ops.some(o => {
+    const k = key(o.ref.path), t = k.match(/\/tries\/([^/]+)$/), m = k.match(/\/sessions\/([^/]+)$/);
+    if (t) { const old = store[k]; return !uid || o.data.uid !== uid || (old && Date.now() - old.at < 20000); }
+    if (!m) return false;
+    if (m[1] !== uid) return true;
+    if (o.kind === 'delete') return false;
+    const d = o.data, r = rootOf(o), tr = store[r + '/tries/' + d.by], pin = store[r + '/staffpins/' + d.by], ps = store[r + '/pinset/' + d.by], old = store[k];
+    const fresh = !!tr && tr.uid === uid && Date.now() - tr.at < 120000 && !!pin && pin.hash === tr.tok;
+    const renew = !!old && old.by === d.by && old.pinAt === d.pinAt && old.exp > Date.now();
+    return !ps || ps.at !== d.pinAt || !(fresh || renew);
+  });
+  if (badSess) return Promise.reject({ code: 'permission-denied' });
+  // who is writing: the proof's person (the older way), or this phone's running session while that person's PIN is
+  // the one it was opened with (Reset PIN or a new PIN stops it)
+  const sessNow = uid && ops.length ? store[rootOf(ops[0]) + '/sessions/' + uid] : null;
+  const sessPin = sessNow ? store[rootOf(ops[0]) + '/pinset/' + sessNow.by] : null;
+  const actor = proof ? proof.ref.path[proof.ref.path.length - 1] : (sessNow && sessNow.exp > Date.now() && sessPin && sessPin.at === sessNow.pinAt ? sessNow.by : '');
+  // like staff() in the rules: any other write from a phone (no Google account) names its writer (by), and that writer
+  // has the proof in this batch or this phone's running session
+  const free = /\/(staffpins|pinset|tries|sessions|proofs)\/[^/]+$/;
+  if (!window.__fakeUser && ops.some(o => o.kind !== 'delete' && !free.test(key(o.ref.path)) && !(o.data && o.data.by && o.data.by === actor))) return Promise.reject({ code: 'permission-denied' });
   // the head chef's book (book/index, recipes, drawings and the library): only the head chef writes it, with the
   // Google account (nobody else signed in) or with their own PIN as config/main headId, like the real rules
   const book = ops.filter(o => /^kitchens\/[^/]+\/(book|recipes|drawings|drawtpl|drawlib)\//.test(key(o.ref.path)));
   if (book.length) {
     const head = (store[key(book[0].ref.path).split('/').slice(0, 2).join('/') + '/config/main'] || {}).headId || '';
     const by = book.map(o => (o.data && o.data.by) || '');
-    const asHead = !!head && !!proof && by.every(b => b === head);
+    const asHead = !!head && actor === head && by.every(b => b === head);
     const asOwner = !!window.__fakeUser && by.every(b => !b || b === head);
     if (!asHead && !asOwner) return Promise.reject({ code: 'permission-denied' });
   }
@@ -188,7 +212,7 @@ function commitOps(ops) {
   const fnOps = ops.filter(o => /^kitchens\/[^/]+\/(functions|fncontact)\//.test(key(o.ref.path)));
   if (fnOps.length) {
     const c = store[key(fnOps[0].ref.path).split('/').slice(0, 2).join('/') + '/config/main'] || {};
-    const pid = proof ? proof.ref.path[proof.ref.path.length - 1] : '';
+    const pid = actor;
     const asFn = !!pid && (c.fnIds || []).indexOf(pid) >= 0 && fnOps.every(o => (o.data && o.data.by) === pid);
     if (!asFn && !window.__fakeUser) return Promise.reject({ code: 'permission-denied' });
     const bad = fnOps.some(o => {
@@ -226,4 +250,5 @@ export function writeBatch() {
   };
 }
 export function setDoc(ref, data, opt) { return commitOps([{ kind: 'set', ref, data, merge: !!(opt && opt.merge) }]); }
+export function deleteDoc(ref) { return commitOps([{ kind: 'delete', ref }]); }
 export function updateDoc(ref, data) { return commitOps([{ kind: 'update', ref, data }]); }

@@ -76,12 +76,11 @@ const reads = p => p.evaluate(() => (window.__fake ? window.__fake.reads.slice()
   ok(!(await reads(p)).some(r => /book\/index/.test(r)), 'no kitchen PIN: nothing read');
   await p.context().close();
 
-  // staff cannot write the head chef's book, even straight to Firestore
+  // staff cannot write the head chef's book, even straight to Firestore through their own PIN session
   p = await L.open(b, '#/prep', { who: 'ann', extra: changes(), wait: 1500 });
   const res = await p.evaluate(async k => {
     const fs = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js');
-    const db = fs.getFirestore(), bt = fs.writeBatch(db), tok = (localStorage.getItem('lk.prep.tok') || '').split(':')[1];
-    bt.set(fs.doc(db, 'kitchens', k, 'proofs', 'ann'), { tok, at: fs.serverTimestamp() });
+    const db = fs.getFirestore(), bt = fs.writeBatch(db);
     bt.set(fs.doc(db, 'kitchens', k, 'recipes', 'burger'), { r: { id: 'burger', kind: 'main', name: 'Hacked' }, v: 4, upd: 1, by: 'ann' });
     try { await bt.commit(); return 'saved'; } catch (e) { return e.code; }
   }, L.PIN);
