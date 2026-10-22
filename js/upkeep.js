@@ -12,7 +12,9 @@
     var files = ['index.html', 'js/data.js', 'js/art.js', 'js/overlay.js', 'js/app.js', 'js/amounts.js', 'js/prep.js', 'js/functions.js', 'js/firebase-config.js', 'js/boot.js', 'js/upkeep.js', 'css/app.css'];
     var go = function () { location.reload(); };
     try {
-      Promise.all(files.map(function (f) { return fetch(f, { cache: 'reload', headers: { 'X-LK-Fresh': '1' } }); })).then(go, go);
+      // 'no-cache' asks the server whether each file changed (a small answer when it did not), instead of downloading all
+      // of them again every morning (about 435 kB a phone, 22 Oct 2026). An update found by the stamp check still uses 'reload'.
+      Promise.all(files.map(function (f) { return fetch(f, { cache: 'no-cache', headers: { 'X-LK-Fresh': '1' } }); })).then(go, go);
       setTimeout(go, 8000);
     } catch (e) { go(); }
   }
