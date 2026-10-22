@@ -2270,8 +2270,48 @@
       '<button type="button" class="nb-box" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-pressed="' + !!x.done + '" aria-label="' + esc((x.done ? 'Untick ' : 'Tick ') + x.text) + '"' + (tickOk ? '' : ' disabled') + '>' + (x.done ? TICK : BOX) + '</button>' +
       // a tap on the words ticks too (the box is the button for keyboards and screen readers); Undo and the linger cover a slip
       '<span class="nb-t' + (tickOk && !readonly ? ' nb-tt' : '') + '"' + (tickOk && !readonly ? ' data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '"' : '') + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + (marks ? ' <span class="nb-marks">' + marks + '</span>' : '') + '</span>' +
-      '<span class="nb-by">' + (x._unsent ? '<span class="nb-unsent">Not sent</span> ' : '') + by + '</span>' + (star || link || del ? '<span class="nb-acts">' + star + link + del + '</span>' : '') + '</li>';
+      '<span class="nb-by">' + (x._unsent ? '<span class="nb-unsent">Not sent</span> ' : '') + '<span class="nb-wrote">' + by + '</span></span>' + (star || link || del ? '<span class="nb-acts">' + star + link + del + (del && !readonly ? moreBtn(x) : '') + '</span>' : '') + '</li>';
   }
+  /* The line menu (22 Oct 2026, Option B): on a phone, Remove (or Put back) and who wrote the line move behind a ⋯ on
+     the line, so the item and the amount lead. On a laptop everything stays in the line and the ⋯ is not shown. The sheet
+     is appended to document.body (redraws of #prep-root leave it alone), dims the page, and closes on the backdrop,
+     Cancel and Escape; its clicks use data-lm. Remove in the sheet taps the line's own Remove, so Undo works as before. */
+  function moreBtn(x) { return '<button type="button" class="nb-more" data-lm="open" data-id="' + esc(x.id) + '" aria-haspopup="dialog" aria-label="' + esc('More for ' + x.text) + '">⋯</button>'; }
+  var lmOpenFrom = null;
+  function lmClose() {
+    var s0 = document.getElementById('lm-sheet'); if (!s0) return;
+    s0.remove(); document.documentElement.classList.remove('sheet-open');
+    if (lmOpenFrom && document.body.contains(lmOpenFrom)) lmOpenFrom.focus(); lmOpenFrom = null;
+  }
+  function lmOpen(btn) {
+    lmClose();
+    var row = btn.closest('.nb-row'); if (!row) return;
+    var act = row.querySelector('.nb-x, .p-x[data-p="odel"], .p-x[data-p="orestore"]');
+    var who = (row.querySelector('.nb-wrote') || {}).textContent || '', t = row.querySelector('.nb-t'), name = t ? t.textContent.replace(/\s+/g, ' ').trim() : '';
+    var box = document.createElement('div');
+    box.id = 'lm-sheet';
+    box.innerHTML = '<div class="sheet-bg" data-lm="close"></div><div class="sheet lm-sheet" role="dialog" aria-modal="true" aria-labelledby="lm-h"><div class="sheet-grip" aria-hidden="true"></div>' +
+      '<h3 id="lm-h">' + esc(name) + '</h3>' + (who.trim() ? '<p class="lm-who">' + esc(/^(from|Ordered by) /.test(who.trim()) ? who.trim() : 'Written by ' + who.trim()) + '</p>' : '') +
+      (act ? '<button type="button" class="sheet-o lm-act" data-lm="act"><strong>' + esc(act.textContent.trim() === 'Remove' ? 'Remove line' : act.textContent.trim()) + '</strong></button>' : '') +
+      '<button type="button" class="btn sheet-x" data-lm="close">Cancel</button></div>';
+    lmOpenFrom = btn; box._act = act;
+    document.body.appendChild(box); document.documentElement.classList.add('sheet-open');
+    var f = box.querySelector('.lm-act') || box.querySelector('.sheet-x'); if (f) f.focus();
+  }
+  document.addEventListener('click', function (e) {
+    var el = e.target && e.target.closest ? e.target.closest('[data-lm]') : null; if (!el) return;
+    var a = el.getAttribute('data-lm');
+    if (a === 'open') { e.preventDefault(); lmOpen(el); return; }
+    var box = document.getElementById('lm-sheet');
+    if (a === 'act') { var act = box && box._act; lmOpenFrom = null; lmClose(); if (act && document.body.contains(act)) act.click(); return; }
+    if (a === 'close') lmClose();
+  });
+  document.addEventListener('keydown', function (e) {
+    var box = document.getElementById('lm-sheet'); if (!box) return;
+    if (e.key === 'Escape') { e.preventDefault(); lmClose(); return; }
+    if (e.key === 'Tab') trapTab(e, box.querySelector('.sheet'), 'button');
+  });
+  window.addEventListener('hashchange', lmClose);
   /* A line ticked on this phone stays where it is, struck through, for 3.5 seconds before it leaves the list. */
   var LINGER = 3500;
   function lingers(x) { return x.done && !x.deleted && x.doneById === S.who && now() - (x.doneAt || 0) < LINGER; }
@@ -3121,7 +3161,8 @@
       '<button type="button" class="nb-box" data-p="otick" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-pressed="' + !!x.ordered + '" aria-label="' + esc('Ordered: ' + x.text) + '"' + (canTick ? '' : ' disabled') + '>' + (x.ordered ? TICK : BOX) + '</button>' +
       '<span class="nb-t"' + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') +
       (rolledN(x) ? ' <span class="nb-roll" title="Not ordered yet, so it rolled over">Since ' + esc(dayShort(x.since || x.rolledFrom || x.date)) + '</span>' : '') + recipeChips(x) + '</span>' +
-      '<span class="nb-by">' + by + '</span>' +
+      '<span class="nb-by"><span class="nb-wrote">' + by + '</span></span>' +
+      (canBrowse() && can('del') && (x.deleted || !x.ordered) ? moreBtn(x) : '') +
       (canBrowse() && can('del') && !x.deleted && !x.ordered ? '<button type="button" class="p-x" data-p="odel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') +
       (canBrowse() && can('del') && x.deleted ? '<button type="button" class="p-x" data-p="orestore" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Put back ' + x.text) + '">Put back</button>' : '') + '</li>';
   }

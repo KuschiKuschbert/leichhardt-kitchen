@@ -47,7 +47,7 @@ const pastReads = p => p.evaluate(d => window.__fake.reads.filter(k => k.indexOf
   p = await L.open(b, '#/prep', { who: 'sam', extra, wait: 2500 });
   await p.click('[data-p="day"][data-d="-1"]'); await L.settle(p, 700);
   await L.waitFor(p, () => !!document.querySelector('[data-p="del"][data-id="y1"]'));
-  await p.click('[data-p="del"][data-id="y1"]');
+  await L.lineAct(p, '[data-p="del"][data-id="y1"]');
   await L.waitFor(p, k => !!((window.__fake.dump()[k] || {}).pastEdit || {}).p, CFG);
   const s = await p.evaluate(() => window.__fake.dump());
   ok(s[fsKey(['days', yday, 'items', 'y1'])].deleted === true && s[CFG].pastEdit.p > 0, 'sam: removing yesterday\'s line stamps pastEdit.p (' + JSON.stringify(s[CFG].pastEdit) + ')');
