@@ -239,6 +239,12 @@ async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, nul
     }
     await p.context().close();
   }
+  // the head chef signed in with their own PIN (headId) sees every guide too
+  const headX = Object.assign({}, whoX, { ['kitchens/' + L.PIN + '/config/main']: Object.assign({}, whoX['kitchens/' + L.PIN + '/config/main'], { headId: 'ann' }) });
+  p = await L.open(b, '#/guides', { who: 'ann', extra: headX, wait: 1500 });
+  await L.waitFor(p, () => document.querySelectorAll('.g-card').length >= 4, null, 5000).catch(() => {});
+  ok((await titles(p)).length === 4, 'who sees it: the head chef signed in with their PIN sees all four guides (' + (await titles(p)).join(', ') + ')');
+  await p.context().close();
   // the head chef's Google device: every guide in the admin list, and Who sees it is saved
   p = await L.open(b, '#/admin', { admin: true, who: '', width: 1280, height: 900, extra: whoX, wait: 1800 });
   await L.adminTab(p, 'guides'); await L.settle(p, 300);
