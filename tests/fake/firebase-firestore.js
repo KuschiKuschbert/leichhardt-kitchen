@@ -2,7 +2,7 @@
 // Data lives in localStorage ('fake.fs') so reloads keep it. window.__fake controls failures:
 //   __fake.mode = 'ok' | 'deny' (every write refused, permission-denied) | 'hold' (writes wait, like no signal)
 //   __fake.deny = /regex/ refuses only the writes whose path matches
-//   __fake.failReads = /regex/ makes getDoc and getDocs fail (unavailable) for the paths that match, like a read lost to a bad signal
+//   __fake.failReads = /regex/ makes getDoc, getDocs and getDocFromServer fail (unavailable) for the paths that match, like a read lost to a bad signal
 //   __fake.denyReads = /regex/ makes getDocs refuse (permission-denied) the collections that match, like rules not published yet
 // __fake.reads lists the paths asked for (getDoc, getDocs, getDocFromServer) and __fake.readLog every document read from the "server";
 // getDocsFromCache only returns documents this page has read before.
@@ -75,15 +75,34 @@ function result(ref) {
   return r;
 }
 function delay(v) { return new Promise(r => setTimeout(() => r(v), 5)); }
+// like the real rules (22 Oct 2026, review S9): a function contact is read by the head chef's Google account or through
+// a PIN session of someone ticked for Functions; one minutes record only when it is published
+function readRefused(ref) {
+  if (window.__fakeUser) return false;
+  const k = key(ref.path), root = ref.path.slice(0, 2).join('/');
+  if (/\/fncontact\/[^/]+$/.test(k)) {
+    const uid = window.__fakeUid ? window.__fakeUid() : '', ss = uid ? store[root + '/sessions/' + uid] : null, ps = ss ? store[root + '/pinset/' + ss.by] : null;
+    const fnIds = (store[root + '/config/main'] || {}).fnIds || [];
+    return !(ss && ss.exp > Date.now() && ps && ps.at === ss.pinAt && fnIds.indexOf(ss.by) >= 0);
+  }
+  if (/\/minutes\/[^/]+$/.test(k)) return store[k] !== undefined && store[k].status !== 'published';
+  return false;
+}
 export function getDoc(ref) {
   if (/\/config\/admins$/.test(key(ref.path)) && !window.__fakeUser) return Promise.reject({ code: 'permission-denied' });
+  if (readRefused(ref)) return Promise.reject({ code: 'permission-denied' });
   window.__fake.reads.push(key(ref.path));
   if (readFails(ref)) return Promise.reject({ code: 'unavailable' });
   bill('get', key(ref.path), 1);
   return delay(result(ref));
 }
-// like the real rules: book/index and book/matches are allowed by name only, so a query on the whole book collection is refused
-function denied(ref) { const d = window.__fake.denyReads; return /^kitchens\/[^/]+\/book$/.test(key(ref.path)) || !!(d && d.test(key(ref.path))); }
+// like the real rules: book/index and book/matches are allowed by name only, so a query on the whole book collection is
+// refused; the minutes are listed by pubAt (published only) except by the head chef's Google account (22 Oct 2026, S9)
+function denied(ref) {
+  const d = window.__fake.denyReads, k = key(ref.path);
+  if (/^kitchens\/[^/]+\/minutes$/.test(k) && !window.__fakeUser && !(ref.c || []).some(x => x.k === 'where' && x.f === 'pubAt' && (x.op === '>=' || x.op === '>') && x.v >= 1)) return true;
+  return /^kitchens\/[^/]+\/book$/.test(k) || !!(d && d.test(k));
+}
 export function getDocs(ref) { window.__fake.reads.push(key(ref.path)); if (readFails(ref)) return Promise.reject({ code: 'unavailable' }); if (denied(ref)) return Promise.reject({ code: 'permission-denied' }); const r = result(ref); bill('query', key(ref.path), r.docs.length); return delay(r); }
 function readFails(ref) { const f = window.__fake.failReads; return !!(f && f.test(key(ref.path))); }
 // a read that must come from the server: refused when there is no signal ('hold', 'fail'). __fake.server can hold a
@@ -93,7 +112,8 @@ export function getDocFromServer(ref) {
   window.__fake.reads.push(k);
   // __fake.stall = /regex/: a read from the server that never answers, like a half-dropped connection
   if (window.__fake.stall && window.__fake.stall.test(k)) return new Promise(() => {});
-  if (window.__fake.mode === 'hold' || window.__fake.mode === 'fail') return Promise.reject({ code: 'unavailable' });
+  if (window.__fake.mode === 'hold' || window.__fake.mode === 'fail' || readFails(ref)) return Promise.reject({ code: 'unavailable' });
+  if (readRefused(ref)) return Promise.reject({ code: 'permission-denied' });
   bill('server', k, 1);
   if (sv && k in sv) { const v = sv[k]; return delay({ id: ref.path[ref.path.length - 1], ref, exists: () => v != null, data: () => (v == null ? undefined : JSON.parse(JSON.stringify(v))) }); }
   return delay(result(ref));

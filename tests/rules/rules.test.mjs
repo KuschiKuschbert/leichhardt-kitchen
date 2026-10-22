@@ -4,7 +4,7 @@
   Nothing here touches the real book. Every check is a write the rules must allow or refuse.
 */
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
-import { doc, setDoc, getDoc, getDocs, collection, updateDoc, deleteDoc, writeBatch, serverTimestamp, Timestamp, increment } from 'firebase/firestore';
+import { doc, setDoc, getDoc, getDocs, collection, query, where, updateDoc, deleteDoc, writeBatch, serverTimestamp, Timestamp, increment } from 'firebase/firestore';
 import { createHash } from 'crypto';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
@@ -386,7 +386,7 @@ await ok(deleteDoc(doc(owner, K + 'functions/f1')), false, 'functions: never del
 await ok(W([['functions/f1/hist/1', { was: fnc(), at: 9, what: 'x' }]], { id: 'fay' }), false, 'functions: an earlier version cannot be changed');
 await ok(W([['functions/f1/hist/7', { was: fnc(), at: 9, what: 'x' }]], { id: 'fay' }), false, 'functions: a history copy for a later version cannot be planted early');
 await ok(getDoc(doc(anon, K + 'functions/f1')), true, 'functions: a PIN holder reads the kitchen copy');
-await ok(getDoc(doc(anon, K + 'fncontact/f1')), true, 'functions: the function page reads one contact by its id');
+await ok(getDoc(doc(anon, K + 'fncontact/f1')), false, 'functions: nobody reads a contact with only the kitchen PIN (22 Oct 2026, S9)');
 await ok(getDocs(collection(anon, K + 'fncontact')), false, 'functions: nobody lists the contacts with only the kitchen PIN');
 await ok(getDocs(collection(owner, K + 'fncontact')), true, 'functions: the Google account lists them (backup, PIN move)');
 {
@@ -519,6 +519,37 @@ await ok(setDoc(doc(ph5, K + 'days/' + TODAY + '/items/sx7'), line({ by: 'zed', 
 await ok(tryPin(ph5, 'zed', '5555', 'ph5'), true, 'sessions: their try may be written');
 await ok(setDoc(doc(ph5, K + 'sessions/ph5'), { by: 'zed', pinAt: 444, exp: Date.now() + 86400000, at: serverTimestamp() }), false, 'sessions: but opens no session, even with the right PIN');
 await ok(getDoc(doc(ph1, K + 'sessions/ph1')), true, 'sessions: a phone reads its own session');
+// Function contacts and minutes drafts (22 Oct 2026, review S9): a contact is read only through a function manager's PIN
+// session or by the Google account; a minutes draft only by the Google account
+const ph6 = phone('ph6'), ph7 = phone('ph7'), ph8 = phone('ph8'), ph9 = phone('ph9');
+await env.withSecurityRulesDisabled(async ctx => {
+  const db = ctx.firestore();
+  await setDoc(doc(db, K + 'config/main'), { fnIds: ['finn'] }, { merge: true });
+  await setDoc(doc(db, K + 'pinset/finn'), { at: 555 });
+  await setDoc(doc(db, K + 'sessions/ph6'), { by: 'finn', pinAt: 555, exp: Date.now() + 86400000, at: 1 });
+  await setDoc(doc(db, K + 'sessions/ph7'), { by: 'ann', pinAt: 333, exp: Date.now() + 86400000, at: 1 });
+  await setDoc(doc(db, K + 'sessions/ph8'), { by: 'finn', pinAt: 555, exp: Date.now() - 1000, at: 1 });
+});
+await ok(getDoc(doc(ph6, K + 'fncontact/f1')), true, 'contacts: a function manager reads one through their PIN session');
+await ok(getDoc(doc(owner, K + 'fncontact/f1')), true, 'contacts: the Google account reads one');
+await ok(getDoc(doc(ph7, K + 'fncontact/f1')), false, 'contacts: staff with a session cannot');
+await ok(getDoc(doc(ph8, K + 'fncontact/f1')), false, 'contacts: nor a manager whose session ran out');
+await ok(getDoc(doc(ph9, K + 'fncontact/f1')), false, 'contacts: nor a phone with no session');
+await ok(getDocs(collection(ph6, K + 'fncontact')), false, 'contacts: a manager still cannot list them');
+await env.withSecurityRulesDisabled(async ctx => { await setDoc(doc(ctx.firestore(), K + 'config/main'), { fnIds: [] }, { merge: true }); });
+await ok(getDoc(doc(ph6, K + 'fncontact/f1')), false, 'contacts: once the Functions tick is taken away, not even the manager');
+await env.withSecurityRulesDisabled(async ctx => { const db = ctx.firestore(); await setDoc(doc(db, K + 'config/main'), { fnIds: ['finn'] }, { merge: true }); await setDoc(doc(db, K + 'pinset/finn'), { at: 556 }); });
+await ok(getDoc(doc(ph6, K + 'fncontact/f1')), false, 'contacts: nor after their PIN is reset');
+const minQ = (db, f, op, v) => getDocs(query(collection(db, K + 'minutes'), where(f, op, v)));
+await ok(getDoc(doc(anon, K + 'minutes/d1')), false, 'minutes: a draft cannot be read with only the kitchen PIN');
+await ok(getDoc(doc(ph7, K + 'minutes/d1')), false, 'minutes: nor through a PIN session');
+await ok(getDoc(doc(anon, K + 'minutes/m1')), true, 'minutes: published minutes can be');
+await ok(minQ(anon, 'pubAt', '>=', 1), true, 'minutes: the kitchen lists the published minutes, asking by pubAt');
+await ok(minQ(anon, 'date', '>=', '2026-01-01'), false, 'minutes: a list by date could hold drafts, so it is refused');
+await ok(getDocs(collection(anon, K + 'minutes')), false, 'minutes: so is the whole collection');
+await ok(minQ(owner, 'date', '>=', '2026-01-01'), true, 'minutes: the Google account lists them all, drafts too');
+await ok(setDoc(doc(owner, K + 'minutes/m9'), mins({ no: 9, status: 'draft', pubAt: 5 })), false, 'minutes: a draft never carries pubAt');
+await ok(getDocs(collection(anon, K + 'minutes/m1/signs')), true, 'minutes: the sign-offs of published minutes are still read with the kitchen PIN');
 // the owner probe
 await ok(getDoc(doc(owner, K + 'config/admins')), true, 'admins: the head chef may read the probe');
 await ok(getDoc(doc(anon, K + 'config/admins')), false, 'admins: nobody else may');
