@@ -70,6 +70,21 @@ async function find(p, v) { await p.fill('#find', v); await L.settle(p, 250); }
   p = await L.open(b, '#/r/barra', { width: 1280, height: 900, wait: 1200 });
   ok(await p.evaluate(() => getComputedStyle(document.querySelector('.jumps')).display === 'none'), 'desktop card: no jump row (columns side by side)');
   await p.context().close();
+
+  // a dish used on another dish (Side Salad on the Grill Maiden's Board): the Pass card links to it, as Tiles does (23 Oct 2026)
+  for (const w of [1280, 390]) {
+    p = await L.open(b, '#/r/side-salad', { width: w, height: 900, wait: 1200 });
+    const link = await p.evaluate(() => { const a = document.querySelector('main a[href*="grill-board"]'); return a ? { box: (a.closest('.box') || {}).textContent || '' } : null; });
+    ok(!!link && /Goes on/.test(link.box) && /Grill Maiden/.test(link.box), w + ' px Pass: Side Salad says it goes on the Grill Maiden\'s Board ' + JSON.stringify(link));
+    if (w === 390) {
+      const at = await p.evaluate(() => ['.stage', 'main a[href*="grill-board"]', '#r-ing'].map(s => Math.round(document.querySelector(s).getBoundingClientRect().top)));
+      ok(at[1] > at[0] && at[2] > at[1], 'phone Pass: Goes on comes after the plate and before Everything on it (' + at + ')');
+    }
+    await p.click('main a[href*="grill-board"]'); await L.settle(p, 400);
+    ok(/grill-board/.test(await p.evaluate(() => location.hash)) && /Grill Maiden/.test(await p.evaluate(() => document.getElementById('rtitle').textContent)), w + ' px Pass: the link opens the board');
+    ok(p.errors.length === 0, w + ' px side salad: no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+  }
   await b.close();
   L.report(R);
 })().catch(e => { console.error(e); console.log(R.join('\n')); process.exit(1); });
