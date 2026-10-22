@@ -17,6 +17,8 @@ const sha = s => createHash('sha256').update(s).digest('hex');
 const pins = { sam: '1111', ann: '2222', bo: '3333', hd: '4444' };
 const hash = (id, pin) => sha('lk:' + id + ':' + pin);
 const K = 'kitchens/' + PIN + '/';
+// today in kitchen time (UTC+10): staff write only yesterday's, today's and tomorrow's lists (22 Oct 2026)
+const TODAY = new Date(Date.now() + 10 * 3600000).toISOString().slice(0, 10), OLD = '2026-01-05';
 const mins = x => Object.assign({ no: 1, v: 1, status: 'draft', date: '2026-10-19', start: '14:00', loc: 'Kitchen', guests: '', chair: 'sam', taker: 'sam', next: '', decisions: 'Fryer oil every Monday', menu: '', safety: '', dates: '', other: '', att: [{ id: 'ann', st: 'present' }], acts: [], removed: false }, x || {});
 const PEOPLE = [{ id: 'sam', name: 'Sam', role: 'sous', active: true }, { id: 'ann', name: 'Ann', role: 'staff', active: true }, { id: 'bo', name: 'Bo', role: 'staff', ping: true, active: true }, { id: 'cal', name: 'Cal', role: 'staff', active: true }, { id: 'hd', name: 'Hedy', role: 'head', active: true }];
 
@@ -64,7 +66,12 @@ async function ok(p, allowed, msg) {
 }
 
 // the staff lock
-await ok(W([['days/2026-10-19/items/a1', line()]], { id: 'ann' }), true, 'right PIN: a prep line is saved');
+await ok(W([['days/' + TODAY + '/items/a1', line()]], { id: 'ann' }), true, 'right PIN: a prep line is saved');
+await ok(W([['days/' + OLD + '/items/a1', line()]], { id: 'ann' }), false, 'lines: staff cannot write a list long past');
+await ok(W([['days/' + OLD + '/items/s1', line({ addedById: 'sam' })]], { id: 'sam' }), true, 'lines: a sous chef writes any day');
+await ok(W([['days/' + TODAY + '/items/a9', line({ addedById: 'bo' })]], { id: 'ann' }), false, 'lines: a new line written as someone else is refused');
+await ok(W([['days/' + TODAY + '/items/a1', { done: true, doneBy: 'Bo', doneById: 'bo', doneAt: 5 }, true]], { id: 'ann' }), false, 'lines: a tick put on someone else is refused');
+await ok(W([['days/' + TODAY + '/items/a1', { done: true, doneBy: 'Ann', doneById: 'ann', doneAt: 5 }, true]], { id: 'ann' }), true, 'lines: Ann ticks as Ann');
 await ok(W([['days/2026-10-19/items/a2', line()]], { id: 'ann', pin: '9999' }), false, 'wrong PIN: refused');
 await ok(W([['days/2026-10-19/items/a3', line()]], { id: 'ann', as: 'sam' }), false, 'spoofed by: Ann\'s proof with by Sam is refused');
 await ok(W([['days/2026-10-19/items/a4', line()]], { id: 'ann', at: Timestamp.fromMillis(Date.now() - 60000) }), false, 'replayed proof: an old proof time is refused');
@@ -79,7 +86,8 @@ await ok(W([['days/2026-10-19/items/a6', line()]], { id: 'zed', pin: '4444' }), 
 await ok(setDoc(doc(owner, K + 'staffpins/old-hand'), { hash: hash('old-hand', '5555'), setAt: 1, name: 'Old Hand' }), true, 'PIN set: the head chef copies a stored PIN as it is (move to a new kitchen PIN), even for an id no longer on the list');
 
 // config: a sous chef may change the people list and staffIds, never sousIds or pingIds
-await ok(W([['config/main', { people: [{ id: 'sam', name: 'Sam', role: 'sous', active: true }, { id: 'ann', name: 'Ann', role: 'staff', active: true }, { id: 'dee', name: 'Dee', role: 'staff', active: true }], staffIds: ['sam', 'ann', 'dee'], updated: 1, updatedBy: 'Sam' }, true]], { id: 'sam' }), true, 'config: a sous chef adds a person and their id to staffIds');
+await ok(W([['config/main', { people: [{ id: 'sam', name: 'Sam', role: 'sous', active: true }, { id: 'ann', name: 'Ann', role: 'staff', active: true }, { id: 'dee', name: 'Dee', role: 'staff', active: true }], staffIds: ['sam', 'ann', 'dee', 'hd'], updated: 1, updatedBy: 'Sam' }, true]], { id: 'sam' }), true, 'config: a sous chef adds a person and their id to staffIds');
+await ok(W([['config/main', { people: [{ id: 'sam', name: 'Sam', role: 'sous', active: true }, { id: 'ann', name: 'Ann', role: 'staff', active: true }], staffIds: ['sam', 'ann'], updated: 2, updatedBy: 'Sam' }, true]], { id: 'sam' }), false, 'config: a sous chef cannot take the head chef off staffIds');
 await ok(W([['config/main', { sousIds: ['sam', 'ann'], updated: 1, updatedBy: 'Sam' }, true]], { id: 'sam' }), false, 'config: a sous chef cannot change sousIds');
 await ok(W([['config/main', { pingIds: ['sam', 'ann'], updated: 1, updatedBy: 'Sam' }, true]], { id: 'sam' }), false, 'config: a sous chef cannot change pingIds');
 await ok(W([['config/main', { people: [{ id: 'ann', name: 'Ann', role: 'staff', active: true }], updated: 1, updatedBy: 'Ann' }, true]], { id: 'ann' }), false, 'config: staff cannot change the people list');
@@ -107,7 +115,10 @@ await ok(W([['notes/n-bo', { text: 'Allergen: none today', upd: 9 }, true]], { i
 // sizes and shapes
 await ok(W([['days/2026-10-19/items/b1', line({ station: 'x'.repeat(41) })]], { id: 'ann' }), false, 'prep line: section over 40 characters refused');
 await ok(W([['days/2026-10-19/items/b2', line({ qty: 'x'.repeat(41) })]], { id: 'ann' }), false, 'prep line: amount over 40 characters refused');
-await ok(W([['orders/2026-10-19/lines/o1', { text: 'Milk', qty: '6 L', recipes: [], addedBy: 'Ann', addedById: 'ann', addedAt: 1, ordered: false, deleted: false }]], { id: 'ann' }), true, 'order line: saved');
+await ok(W([['orders/' + TODAY + '/lines/o1', { text: 'Milk', qty: '6 L', recipes: [], addedBy: 'Ann', addedById: 'ann', addedAt: 1, ordered: false, deleted: false }]], { id: 'ann' }), true, 'order line: saved');
+await ok(W([['orders/' + TODAY + '/lines/o1', { ordered: true, orderedBy: 'Ann', orderedAt: 5 }, true]], { id: 'ann' }), false, 'order line: staff cannot tick it as ordered');
+await ok(W([['orders/' + TODAY + '/lines/o1', { ordered: true, orderedBy: 'Sam', orderedAt: 5 }, true]], { id: 'sam' }), true, 'order line: a sous chef ticks it as ordered');
+await ok(W([['orders/' + TODAY + '/lines/o1', { ordered: false, orderedBy: '', orderedAt: 0 }, true]], { id: 'ann' }), false, 'order line: staff cannot untick it');
 await ok(W([['orders/2026-10-19/lines/o2', { text: 'Milk', qty: 'x'.repeat(41), recipes: [], addedBy: 'Ann', addedById: 'ann', addedAt: 1, ordered: false, deleted: false }]], { id: 'ann' }), false, 'order line: amount over 40 characters refused');
 await ok(W([['sections/fryer', { name: 'Fryer', uses: increment(1), lastUsed: 1, lastBy: 'Ann' }, true]], { id: 'ann' }), true, 'sections: a new section is counted');
 await ok(W([['sections/fryer', { name: 'Fryer', bogus: 1 }, true]], { id: 'ann' }), false, 'sections: only the known fields');
@@ -115,6 +126,9 @@ await ok(W([['sections/larder', { uses: increment(1), lastUsed: 2, lastBy: 'Ann'
 await ok(W([['sections/larder', { hidden: true }, true]], { id: 'ann' }), false, 'sections: staff cannot hide one');
 await ok(W([['sections/larder', { hidden: true }, true]], { id: 'sam' }), true, 'sections: a sous chef can');
 await ok(W([['learned/slice-onions', { hidden: true }, true]], { id: 'ann' }), false, 'learned: staff cannot hide an item');
+await ok(W([['learned/slice-onions', { hidden: true }, true]], { id: 'sam' }), true, 'learned: a sous chef hides an item');
+await ok(W([['learned/slice-onions', { uses: 99 }, true]], { id: 'sam' }), false, 'learned: a sous chef cannot change the counts');
+await ok(W([['learned/new-item', { text: 'New', uses: 1 }]], { id: 'sam' }), false, 'learned: a phone cannot add an item');
 await ok(setDoc(doc(owner, K + 'learned/slice-onions'), { hidden: true }, { merge: true }), true, 'learned: the head chef can');
 await ok(W([['misses/laksa', { q: 'laksa', n: increment(1), last: 1, lastBy: 'Ann' }, true]], { id: 'ann' }), true, 'misses: an empty search is counted');
 await ok(W([['misses/laksa', { q: 'laksa', junk: 'x' }, true]], { id: 'ann' }), false, 'misses: only the known fields');
@@ -152,12 +166,14 @@ await ok(W([['notes/n-sam/seen/2026-10-19_bo', { day: '2026-10-19', at: 5 }]], {
 await ok(W([['notes/n-sam/seen/2026-10-20_ann', { day: '2026-10-19', at: 5 }]], { id: 'ann' }), false, 'seen: the id must carry the day in the record');
 await ok(setDoc(doc(owner, K + 'notes/n-sam/seen/2026-10-19_sam'), { day: '2026-10-19', at: 5, by: 'sam' }), true, 'seen: the head chef copies one as it is (move to a new kitchen PIN)');
 // what the order list learned, and the learning log
-await ok(W([['ordlearned/cream', { text: 'Cream', uses: 1, hidden: false }]], { id: 'ann' }), true, 'ordlearned: a PIN holder adds an item');
+await ok(W([['ordlearned/cream', { text: 'Cream', uses: 1, hidden: false }]], { id: 'ann' }), false, 'ordlearned: a phone cannot add an item (the nightly job writes it)');
+await ok(W([['ordlearned/milk', { uses: 99 }, true]], { id: 'sam' }), false, 'ordlearned: a sous chef cannot change the counts');
 await ok(W([['ordlearned/blank', { text: '', uses: 1, hidden: false }]], { id: 'ann' }), false, 'ordlearned: an empty text is refused');
 await ok(W([['ordlearned/milk', { hidden: 'yes' }, true]], { id: 'sam' }), false, 'ordlearned: hidden must be true or false');
 await ok(W([['ordlearned/milk', { hidden: true }, true]], { id: 'sam' }), true, 'ordlearned: a sous chef hides an item');
 await ok(deleteDoc(doc(anon, K + 'ordlearned/milk')), false, 'ordlearned: not deleted from a phone');
-await ok(W([['learnlog/2026-10-19', { at: 5, who: 'ann', kind: 'phone' }]], { id: 'ann' }), true, 'learnlog: a day is claimed once');
+await ok(W([['learnlog/2026-10-19', { at: 5, who: 'ann', kind: 'phone' }]], { id: 'ann' }), false, 'learnlog: a phone cannot claim a day (the nightly job does)');
+await ok(setDoc(doc(owner, K + 'learnlog/2026-10-19'), { at: 5, who: 'owner', kind: 'copy' }), true, 'learnlog: the head chef account can (move to a new kitchen PIN)');
 await ok(W([['learnlog/2026-10-18', { at: 6 }, true]], { id: 'ann' }), false, 'learnlog: a claimed day cannot be changed');
 await ok(W([['learnlog/2026-10-21', { who: 'ann' }]], { id: 'ann' }), false, 'learnlog: at must be a number');
 // kitchen mail: a person writes to the head chef; only the head chef reads it, ticks it done or marks it seen
@@ -361,6 +377,7 @@ await ok(W([['fncontact/f1', { cname: 'X', phone: '1', email: '', upd: 5 }]], { 
 await ok(ownerBatch([['functions/f3', fnc()]]), true, 'functions: the Google account saves a function');
 await ok(deleteDoc(doc(owner, K + 'functions/f1')), false, 'functions: never deleted');
 await ok(W([['functions/f1/hist/1', { was: fnc(), at: 9, what: 'x' }]], { id: 'fay' }), false, 'functions: an earlier version cannot be changed');
+await ok(W([['functions/f1/hist/7', { was: fnc(), at: 9, what: 'x' }]], { id: 'fay' }), false, 'functions: a history copy for a later version cannot be planted early');
 await ok(getDoc(doc(anon, K + 'functions/f1')), true, 'functions: a PIN holder reads the kitchen copy');
 await ok(getDoc(doc(anon, K + 'fncontact/f1')), true, 'functions: the function page reads one contact by its id');
 await ok(getDocs(collection(anon, K + 'fncontact')), false, 'functions: nobody lists the contacts with only the kitchen PIN');
@@ -376,7 +393,7 @@ await ok(getDocs(collection(owner, K + 'fncontact')), true, 'functions: the Goog
 // a coordinator's tick taken away (owner save): the next save is refused; someone taken off the list cannot write at all
 await env.withSecurityRulesDisabled(async ctx => { await setDoc(doc(ctx.firestore(), K + 'config/main'), { fnIds: ['finn'] }, { merge: true }); });
 await ok(W([['functions/f1', fnc({ v: 4, status: 'confirmed', kc: 'Cake at 20:00', kcBy: 'finn', kcAt: 3 })]], { id: 'fay' }), false, 'functions: tick taken away: the next save is refused');
-await ok(W([['days/2026-10-19/items/fay1', line()]], { id: 'fay' }), true, 'functions: tick taken away: still on the list, so still writes the prep list');
+await ok(W([['days/' + TODAY + '/items/fay1', line({ addedById: 'fay' })]], { id: 'fay' }), true, 'functions: tick taken away: still on the list, so still writes the prep list');
 await ok(W([['functions/f1', fnc({ v: 4, status: 'cancelled', kc: 'Cake at 20:00', kcBy: 'finn', kcAt: 3, canBy: 'finn', canAt: 5 })]], { id: 'finn' }), true, 'functions: the other coordinator cancels it');
 await ok(W([['days/2026-10-19/items/gone1', line()]], { id: 'gone' }), false, 'staff lock: someone taken off the list cannot write with their old PIN');
 await ok(W([['functions/f1', fnc({ v: 5, status: 'cancelled' })]], { id: 'fay', as: 'fay' }), false, 'functions: a coordinator cannot give themselves the tick back by writing anyway');
