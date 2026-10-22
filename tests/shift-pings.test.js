@@ -76,7 +76,7 @@ function withAnn() {
   await L.waitFor(p, k => [].concat.apply([], window.__fake.writes).some(o => o.path === k), CFG, 10000);
   await L.settle(p, 300);
   const w =await p.evaluate(k => { const all = [].concat.apply([], window.__fake.writes); return all.filter(o => o.path === k).map(o => Object.keys(o.data).sort().join(',')); }, CFG);
-  ok(w.length === 1 && w[0] === 'by,people,staffIds,updated,updatedBy', 'staff: a sous chef sends only people and staffIds (' + w.join(' | ') + ')');
+  ok(w.length === 1 && w[0] === 'by,people,pinOpen,staffIds,updated,updatedBy', 'staff: a sous chef sends only people, staffIds and the PIN set-up windows (' + w.join(' | ') + ')');
   s = await store(p);
   ok(JSON.stringify(s[CFG].sousIds) === '["sam"]' && s[CFG].people.length === 4, 'staff: new person added, sousIds kept');
   ok(p.errors.length === 0, 'sous: no page errors ' + p.errors.join(' | '));

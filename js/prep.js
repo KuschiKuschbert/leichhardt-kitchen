@@ -163,7 +163,10 @@
         S.config = snap.exists() ? snap.data() : { people: [] };
         S.config.people = S.config.people || [];
         headFix(S.config);
-        S.configState = 'ok'; pastCheck(); featSync(); refreshDraft(); watchItems(); watchSections(); loadLearned(); if (S.name === 'orders') watchOrders(); if (S.name === 'waste') watchWaste(); resume(); if (S.authed) ksCheck(); loadAdmins(); loadNotes(); loadMinutes(); draw();
+        S.configState = 'ok'; pastCheck(); featSync(); refreshDraft(); watchItems(); watchSections(); loadLearned();
+        // the first PIN windows, once the settings are in (does nothing once everyone has one)
+        if (S.level === 'owner') seedPinOpen();
+        if (S.name === 'orders') watchOrders(); if (S.name === 'waste') watchWaste(); resume(); if (S.authed) ksCheck(); loadAdmins(); loadNotes(); loadMinutes(); draw();
         if (whoHead() !== headSeen) whoSync();   // the Head chef role was given or taken while this person is signed in
         try { window.dispatchEvent(new Event('lk-cfg')); } catch (e) {}   // js/app.js: who may manage the recipes (bookEdit)
       }, function (err) {
@@ -554,7 +557,7 @@
         b.set(docRef('staffpins', id), { hash: h, setAt: now(), name: p.name });
         b.set(docRef('pinset', id), { at: now(), name: p.name });
         return track(b.commit()).then(function () { S.drinkAsk = 'first'; dkEdit(); signedIn(id, h); S.tok = h; bump({ visits: 1, lastSeen: now() }); });
-      }).catch(function () { S.pinMsg = 'Could not save your PIN. If someone already set one for this name, pick the name again.'; draw(); });
+      }).catch(function () { S.pinMsg = 'Could not save your PIN. If someone already set one for this name, pick the name again. Otherwise ask the head chef to reset your PIN, then set it within 30 minutes.'; draw(); });
       return;
     }
     if (S.pinStep === 'enter') {
@@ -651,7 +654,7 @@
     S.minOpen = false; S.notesOpen = false; if (S.staffOpen && !draftDirty()) { S.staffOpen = false; S.draft = null; }
     if (k === 'pings') { S.notesOpen = true; S.nf = null; S.nOpen = false; S.nMsg = ''; loadNotes(); }
     else if (k === 'register') { S.minOpen = true; S.mMsg = ''; S.mf = null; loadMinutes(true); }
-    else { if (!S.staffOpen) startDraft(); S.staffOpen = true; }
+    else { if (!S.staffOpen) startDraft(); S.staffOpen = true; seedPinOpen(); }
     if (location.hash === '#/prep') { draw(); window.scrollTo(0, 0); } else location.hash = '#/prep';
   }
   /* Sign out from the chef mark: back to Who are you? on this device (the kitchen PIN stays, so recipes and guides stay
@@ -1530,6 +1533,24 @@
   function anyP() { return true; }
   function staffSee(c) { var o = {}; FEATS.forEach(function (f) { o[f[0]] = ((c && c.staffSee) || {})[f[0]] !== false; }); return o; }
   /* hold: keep these sousIds and pingIds as they are instead of working them out from the roles (see seedIds) */
+  /* When a person may set their first PIN (22 Oct 2026, config/main pinOpen: { id: until, kitchen clock ms }). The rules
+     let a PIN be set only before that time, so nobody can take a new person's name by setting a PIN first. A person on
+     the list with no entry yet (someone just added, or everyone already on the list when this came in) gets 7 days, so a
+     new starter sets theirs on their first shift. An entry is never given again by itself once it has run out: Reset PIN
+     (30 minutes) opens it again. Entries for people taken off the list are dropped. */
+  var PIN_OPEN_DAYS = 7, PIN_RESET_MIN = 30;
+  function pinOpenFor(ids) {
+    var old = (S.config && S.config.pinOpen) || {}, out = {};
+    ids.forEach(function (id) { out[id] = typeof old[id] === 'number' ? old[id] : now() + PIN_OPEN_DAYS * 86400000; });
+    return out;
+  }
+  // a chef opening the admin panel or Manage staff writes the windows of anyone on the list without one (one small write)
+  function seedPinOpen() {
+    var c = S.config, ids = (c && c.staffIds) || [];
+    if (!c || !ids.length || !(S.user || isSous()) || ids.every(function (id) { return typeof (c.pinOpen || {})[id] === 'number'; })) return;
+    var po = pinOpenFor(ids);
+    (S.user ? track(fb.fs.setDoc(cfgDoc(), { pinOpen: po }, { merge: true })) : sset(cfgDoc(), { pinOpen: po }, true)).catch(function () {});
+  }
   function saveConfig(cfg, hold) {
     var clean = {
       people: cfg.people.filter(function (p) { return String(p.name).trim(); }).map(function (p) {
@@ -1538,11 +1559,11 @@
       kitSecs: ksClean(cfg.kitSecs !== undefined ? cfg.kitSecs : ((S.config && S.config.kitSecs) || [])), showBadges: cfg.showBadges !== false, staffSee: staffSee(cfg),
       sousIds: hold ? (hold.sousIds || []) : idsFor(cfg.people, isSousP), pingIds: hold ? (hold.pingIds || []) : idsFor(cfg.people, canPingP),
       fnIds: hold ? (hold.fnIds || []) : idsFor(cfg.people, fnP),
-      staffIds: idsFor(cfg.people, anyP), headId: headIdOf(cfg.people),
+      staffIds: idsFor(cfg.people, anyP), headId: headIdOf(cfg.people), pinOpen: pinOpenFor(idsFor(cfg.people, anyP)),
       updated: now(), updatedBy: S.user ? 'Head chef' : (who() ? who().name : '')   // never the Google email: anyone with the kitchen PIN can read this record
     };
     /* a sous chef may only change the people list and who may set a PIN, so only those are sent (merged): the rules refuse any other field */
-    return sdk().then(function () { return S.user ? track(fb.fs.setDoc(cfgDoc(), clean)) : sset(cfgDoc(), { people: clean.people, staffIds: clean.staffIds, updated: clean.updated, updatedBy: clean.updatedBy }, true); }).then(function () { return clean; });
+    return sdk().then(function () { return S.user ? track(fb.fs.setDoc(cfgDoc(), clean)) : sset(cfgDoc(), { people: clean.people, staffIds: clean.staffIds, pinOpen: clean.pinOpen, updated: clean.updated, updatedBy: clean.updatedBy }, true); }).then(function () { return clean; });
   }
   function adminSave() {
     S.busy = true; S.saveMsg = 'Saving...'; draw();
@@ -1552,6 +1573,7 @@
   function resetPin(id) {
     if (!arm('pin:' + id)) return;
     var rb = fb.fs.writeBatch(fb.db); rb.delete(docRef('staffpins', id)); rb.delete(docRef('pinset', id));
+    var po = {}; po[id] = now() + PIN_RESET_MIN * 60000; rb.set(cfgDoc(), { pinOpen: po }, { merge: true });   // they may set a new one for 30 minutes
     var who2 = (people().filter(function (x) { return x.id === id; })[0] || {}).name || 'Their';
     track(rb.commit()).then(function () { toast(who2 + (who2 === 'Their' ? ' PIN is reset.' : '\'s PIN is reset.') + ' They set a new one next time they sign in.'); }, function (e) { toast(e && e.code === 'permission-denied' ? 'Could not reset. Sign in as the admin.' : 'Could not reset. Check the connection and try again.', { label: 'OK', fn: function () {} }, 12000); });
   }
@@ -1654,6 +1676,7 @@
   }
   function seedIds() {
     var c = S.config; if (!c || !c.people) return;
+    seedPinOpen();
     if (sameIds(c, c.sousIds, isSousP) && sameIds(c, c.pingIds, canPingP) && sameIds(c, c.staffIds, anyP) && sameIds(c, c.fnIds, fnP)) return;
     var asking = idChanges(c).length > 0;
     if (asking && sameIds(c, c.staffIds, anyP)) return;
@@ -5934,7 +5957,7 @@
     if (a === 'learn-hide') { hideLearned(id, el.getAttribute('data-hide') === '1'); return; }
     if (a === 'a-group') { var gg = A_GROUPS.filter(function (g) { return g[0] === el.getAttribute('data-g'); })[0]; if (gg) { S.atab = (S.agLast || {})[gg[0]] || gg[2][0]; lsSet('lk.prep.atab', S.atab); draw(); adminToTop(); } return; }
     if (a === 'a-tab') { S.atab = el.getAttribute('data-t'); S.agLast = S.agLast || {}; S.agLast[adminGroupOf(S.atab)[0]] = S.atab; lsSet('lk.prep.atab', S.atab); draw(); adminToTop(); return; }
-    if (a === 'staff-open') { if (isSous()) { startDraft(); S.staffOpen = true; draw(); } return; }
+    if (a === 'staff-open') { if (isSous()) { startDraft(); S.staffOpen = true; draw(); seedPinOpen(); } return; }
     if (a === 'staff-close') { if (draftDirty() && !arm('staff-close')) return; S.staffOpen = false; S.draft = null; draw(); return; }
     if (a === 'add-recipe') { addRecipe(id); return; }
     if (a === 'signin') { signIn(); return; }
