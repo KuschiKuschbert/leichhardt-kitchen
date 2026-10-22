@@ -5160,7 +5160,7 @@
   }
   /* Reasons by weekday: which kind of waste happens on which day. The All reasons row counts every entry, an unknown
      reason too, so it is the weekday total (23 Oct 2026: it replaced a By weekday table further down with the same
-     numbers). */
+     numbers). Every cell is rounded to one decimal, so a total never reads lower than the one entry above it. */
   function reasonDowHTML(lines, n) {
     var occ = {}, c = {}, all = {}, max = 0;
     afDates(n, 0).forEach(function (d) { var dw = parseYmd(d).getDay(); occ[dw] = (occ[dw] || 0) + 1; });
@@ -5170,7 +5170,7 @@
     rs.forEach(function (r) { DOW.forEach(function (d) { if (occ[d]) max = Math.max(max, (c[r[0] + ':' + d] || 0) / occ[d]); }); });
     return '<h3 class="a-ch-h">Reasons by weekday</h3><span class="hint">Average entries per day. Darker is more.</span><div class="a-tablewrap" tabindex="0" role="region" aria-label="Table, scrolls sideways"><table class="a-table a-plain sk-t"><thead><tr><th scope="col">Reason</th>' + DOWN.map(function (x) { return '<th scope="col">' + x + '</th>'; }).join('') + '</tr></thead><tbody>' +
       rs.map(function (r) { return '<tr><th scope="row">' + esc(r[1]) + '</th>' + DOW.map(function (d) { var v = occ[d] ? (c[r[0] + ':' + d] || 0) / occ[d] : 0, lv = !v ? 0 : Math.min(4, 1 + Math.floor(v / (max || 1) * 3.999)); return '<td class="sk-c" style="background:' + SK[lv] + '">' + (v ? Math.round(v * 10) / 10 : '<span class="sk-0">0</span>') + '</td>'; }).join('') + '</tr>'; }).join('') +
-      '<tr class="sk-tot"><th scope="row">All reasons</th>' + DOW.map(function (d) { return '<td>' + (occ[d] ? num((all[d] || 0) / occ[d]) : '0') + '</td>'; }).join('') + '</tr></tbody></table></div>';
+      '<tr class="sk-tot"><th scope="row">All reasons</th>' + DOW.map(function (d) { return '<td>' + (occ[d] ? Math.round((all[d] || 0) / occ[d] * 10) / 10 : '0') + '</td>'; }).join('') + '</tr></tbody></table></div>';
   }
   function wasteStatsHTML() {
     loadWStats(false); loadStats(false);

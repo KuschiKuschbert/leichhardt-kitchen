@@ -71,6 +71,9 @@ extra[fsKey(['waste', yest, 'lines', 'y1'])] = { text: 'Mash', amount: 1.5, unit
   // with nothing to compare (0 portions, 0 pieces) is left out
   const extra2 = Object.assign({}, extra);
   extra2[fsKey(['waste', yest, 'lines', 'y2'])] = { text: 'Old oil', amount: 2, unit: 'L', reason: 'spill', action: '', station: 'Fryer', addedBy: 'Bo', addedById: 'bo', addedAt: L.NOW - 86400000 - 3600000, deleted: false };
+  // two days back, alone on its weekday: over 30 days that weekday comes round 4 times, so 0.25 a day (shown as 0.3)
+  const d2 = L.ymd(new Date(L.NOW - 2 * 86400000));
+  extra2[fsKey(['waste', d2, 'lines', 'z2'])] = { text: 'Cream', amount: 1, unit: 'L', reason: 'expired', action: '', station: 'Larder', addedBy: 'Ann', addedById: 'ann', addedAt: L.NOW - 2 * 86400000 - 3600000, deleted: false };
   p = await L.open(b, '#/admin', { extra: extra2, admin: true, who: '', wait: 1500 });
   await L.adminTab(p, 'waste');
   await L.waitFor(p, () => !!document.querySelector('.sk-tot'), null, 6000).catch(() => {});
@@ -81,9 +84,20 @@ extra[fsKey(['waste', yest, 'lines', 'y1'])] = { text: 'Mash', amount: 1.5, unit
       byWeekday: [...document.querySelectorAll('.a-pane h3')].some(h => h.textContent.trim() === 'By weekday'),
       tiles: [...document.querySelectorAll('.a-pane .a-tiles .a-tile')].map(t => ({ n: t.querySelector('strong').textContent, u: t.querySelector('span').textContent, d: !!t.querySelector('.a-d') })) };
   });
-  ok(wk.head === 'All reasons' && wk.all === 1.5 && wk.rs === 1, 'admin Wastage: Reasons by weekday ends with All reasons, which counts the entry with an unknown reason too (' + JSON.stringify(wk) + ')');
+  ok(wk.head === 'All reasons' && wk.all === 2 && wk.rs === 1.5, 'admin Wastage: Reasons by weekday ends with All reasons, which counts the entry with an unknown reason too (' + JSON.stringify(wk) + ')');
   ok(!wk.byWeekday, 'admin Wastage: no separate By weekday table');
   ok(wk.tiles.length && wk.tiles.every(t => t.n !== '0' || t.d) && !wk.tiles.some(t => /portions|pieces/.test(t.u)) && wk.tiles.some(t => /days with something logged/.test(t.u)), 'admin Wastage: no zero tile with nothing to compare, the days tile stays (' + JSON.stringify(wk.tiles) + ')');
+  // 30 days: the lone Expired entry reads the same in its own row and in All reasons, both to one decimal
+  await p.click('[data-p="range"][data-v="30"]');
+  await L.waitFor(p, () => { const r = [...document.querySelectorAll('.sk-t tbody tr')].find(x => /Expired/.test(x.textContent)); return !!r && [...r.querySelectorAll('td')].some(td => td.textContent === '0.3'); }, null, 6000).catch(() => {});
+  const w30 = await p.evaluate(() => {
+    const t = document.querySelector('.sk-tot') && document.querySelector('.sk-tot').closest('table');
+    if (!t) return null;
+    const ex = [...t.querySelectorAll('tbody tr')].find(x => /Expired/.test(x.querySelector('th').textContent)), cells = ex ? [...ex.querySelectorAll('td')].map(td => td.textContent) : [];
+    const i = cells.findIndex(c => c !== '0'), tot = [...t.querySelectorAll('.sk-tot td')].map(td => td.textContent);
+    return { exp: cells[i], all: tot[i], tot };
+  });
+  ok(w30 && w30.exp === '0.3' && w30.all === '0.3' && w30.tot.every(c => !/\.\d\d/.test(c)), 'admin Wastage, 30 days: a lone entry reads 0.3 in its reason row and in All reasons, never 0.25 (' + JSON.stringify(w30) + ')');
   ok(p.errors.length === 0, 'admin Wastage: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
