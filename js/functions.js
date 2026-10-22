@@ -363,16 +363,21 @@
     if (x.kind === 'order') return out + '<span class="fn-tag fn-t-order">Order today</span>' + (x.short ? ' <span class="fn-tag fn-t-off">Short notice</span>' : '') + ' Stock for <b>' + esc(f.name) + '</b>, ' + esc(dayName(f.date)) + ': ' + esc(linesText(f)) + ' (' + tot + '). It is on the order list.</span></button></li>';
     return out + '<span class="fn-tag fn-t-tom">Tomorrow</span> <b>' + esc(f.name) + '</b> · event ' + esc(when(f.start, f.date)) + ' · food ' + esc(when(f.first, f.date)) + ' · ' + esc(linesText(f)) + ' (' + tot + ')</span></button></li>';
   }
+  /* The band's own rows: today's functions (two, then "+1 more"), then up to two order reminders and tomorrow's
+     functions; all of them once "+N more" is open. The landing card leaves out the functions drawn here (landHTML()). */
+  function bandRows(t) {
+    var xs = showing(F.list, t, isSentK), ys = soon(F.list, t);
+    return { xs: xs, ys: ys, a: F.more ? xs : xs.slice(0, 2), b: F.more ? ys : ys.slice(0, 2) };
+  }
   function bandHTML() {
     if (location.hash === '#/fn/now') return '';   // the service view shows the same rounds in full: no band above it
-    var t = now(), xs = showing(F.list, t, isSentK), stale = '';
+    var t = now(), R = bandRows(t), xs = R.xs, stale = '';
     if (F.state === 'error' && F.at) stale = 'Could not load functions. Showing the copy from ' + when(F.at, kday(t)) + '.';
     else if (F.state === 'error') stale = !xs.length && /^\d{4,6}$/.test((P() && P().state && P().state.pin) || '') ? 'Could not load functions. Check the signal.' : '';
     else if ((F.offline || navigator.onLine === false) && F.at && xs.length) stale = 'No signal. Functions last updated ' + when(F.at, kday(t)) + '.';
-    var ys = soon(F.list, t);
+    var ys = R.ys;
     if (!xs.length && !ys.length && !stale) return '';
-    // today's functions first (two, then "+1 more"), then up to two order reminders and tomorrow's functions
-    var a = F.more ? xs : xs.slice(0, 2), b = F.more ? ys : ys.slice(0, 2), left = xs.length + ys.length - a.length - b.length;
+    var a = R.a, b = R.b, left = xs.length + ys.length - a.length - b.length;
     var more = left > 0 ? '<button type="button" class="fn-more" data-fn="more" aria-expanded="false">+' + left + ' more</button>' : F.more && (xs.length > 2 || ys.length > 2) ? '<button type="button" class="fn-more" data-fn="more" aria-expanded="true">Show fewer</button>' : '';
     // two or more functions on at once: one view of everything that goes out now
     var svc = xs.filter(function (x) { return x.kind === 'on'; }).length >= 2 ? '<a class="fn-more fn-svc" href="#/fn/now">Service view</a>' : '';
@@ -642,16 +647,20 @@
       stateNote() + body + (can ? '<div class="btn-row"><a class="btn dark" href="#/functions">Manage functions</a></div>' : '') + '</section>';
   }
 
-  /* ---------- the landing card: the functions 2 and 3 days out ----------
-     Today's and tomorrow's are in the band right above it, so the card does not list them again (23 Oct 2026). By day,
-     then by when food first goes out, times TBC last in a day (as the band has them). Nothing to list: no card. */
+  /* ---------- the landing card: today and the next three days, less what the band shows ----------
+     The band right above it has its own rows for today's functions and tomorrow's (bandRows()), so the card leaves
+     those out and lists the rest (23 Oct 2026): a function behind the band's "+N more", one tomorrow pushed out by two
+     order reminders, and the ones 2 and 3 days out. A function today that is over is left out. By day, then by when
+     food first goes out, times TBC last in a day. Nothing to list: no card. */
   function landHTML() {
-    var t = now(), today = kday(t), tom = addDays(today, 1), end = addDays(today, 3);
-    var list = F.list.filter(function (f) { return f.status === 'confirmed' && f.date > tom && f.date <= end; })
+    var t = now(), today = kday(t), tom = addDays(today, 1), end = addDays(today, 3), R = bandRows(t), inBand = {};
+    R.a.forEach(function (x) { if (x.kind === 'on') inBand[x.f.id] = 1; });
+    R.b.forEach(function (x) { if (x.kind === 'tomorrow') inBand[x.f.id] = 1; });
+    var list = F.list.filter(function (f) { return f.status === 'confirmed' && f.date >= today && f.date <= end && (f.date > today || t < f.until) && !inBand[f.id]; })
       .sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : (a.first || 9e15) - (b.first || 9e15) || String(a.name).localeCompare(String(b.name)); });
     if (!list.length) return '';
     return '<div class="fn-land"><span class="fn-land-h">Functions</span><ul>' + list.slice(0, 4).map(function (f) {
-      return '<li><b>' + esc(dayName(f.date)) + '</b> ' + esc(f.name) + ', food ' + esc(when(f.first, f.date)) + ', ' + totalQty(f) + ' platters</li>';
+      return '<li><b>' + esc(f.date === today ? 'Today' : f.date === tom ? 'Tomorrow' : dayName(f.date)) + '</b> ' + esc(f.name) + ', food ' + esc(when(f.first, f.date)) + ', ' + totalQty(f) + ' platters</li>';
     }).join('') + '</ul><a class="fn-land-go" href="#/fn">' + (list.length > 4 ? 'Open functions, ' + (list.length - 4) + ' more' : 'Open functions') + '</a></div>';
   }
 
