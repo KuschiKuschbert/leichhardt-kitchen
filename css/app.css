@@ -1751,6 +1751,13 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav { top: var(--u
 .fn-land-h { font: 700 0.8rem var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: #6A4A00; }
 .fn-land ul { margin: 0.3rem 0 0.4rem; padding-left: 1.1rem; }
 .fn-land-go { font-weight: 700; }
+/* To check before the functions (chefs, 22 Oct 2026): the same yellow as the functions card, a plain list of links */
+.fn-ck { margin: 0 0 1rem; padding: 0.75rem 1rem; border: 2px solid #E8C35A; border-radius: 12px; background: #FFF6D9; }
+.fn-ck-h { font: 700 0.8rem var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: #6A4A00; }
+.fn-ck ul { margin: 0.3rem 0 0.2rem; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.2rem; }
+.fn-ck a { color: var(--ink); }
+.fn-ck-more { margin: 0; font-size: 0.875rem; color: var(--muted); }
+.fn-ck .linkish { min-height: 44px; }
 .linkish { padding: 0; border: 0; background: none; color: var(--accent-ink); font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; min-height: 24px; }
 .fe-page .fe { display: flex; flex-direction: column; gap: 1rem; }
 .fe-wrap { display: flex; flex-direction: column; gap: 1rem; }
