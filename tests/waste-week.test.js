@@ -66,6 +66,27 @@ extra[fsKey(['waste', yest, 'lines', 'y1'])] = { text: 'Mash', amount: 1.5, unit
   ok(p.errors.length === 0, 'log: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // the admin Wastage report says each thing once (23 Oct 2026): the weekday totals are the All reasons row of Reasons by
+  // weekday (an entry with a reason the book does not know counts too), no separate By weekday table, and a zero total
+  // with nothing to compare (0 portions, 0 pieces) is left out
+  const extra2 = Object.assign({}, extra);
+  extra2[fsKey(['waste', yest, 'lines', 'y2'])] = { text: 'Old oil', amount: 2, unit: 'L', reason: 'spill', action: '', station: 'Fryer', addedBy: 'Bo', addedById: 'bo', addedAt: L.NOW - 86400000 - 3600000, deleted: false };
+  p = await L.open(b, '#/admin', { extra: extra2, admin: true, who: '', wait: 1500 });
+  await L.adminTab(p, 'waste');
+  await L.waitFor(p, () => !!document.querySelector('.sk-tot'), null, 6000).catch(() => {});
+  const wk = await p.evaluate(() => {
+    const row = document.querySelector('.sk-tot'), sum = r => [...r.querySelectorAll('td')].reduce((a, td) => a + (+td.textContent || 0), 0);
+    const reasons = [...document.querySelectorAll('.sk-t tbody tr:not(.sk-tot)')].filter(r => r.closest('table').querySelector('.sk-tot'));
+    return { head: row ? row.querySelector('th').textContent : '', all: row ? Math.round(sum(row) * 100) / 100 : -1, rs: Math.round(reasons.reduce((a, r) => a + sum(r), 0) * 100) / 100,
+      byWeekday: [...document.querySelectorAll('.a-pane h3')].some(h => h.textContent.trim() === 'By weekday'),
+      tiles: [...document.querySelectorAll('.a-pane .a-tiles .a-tile')].map(t => ({ n: t.querySelector('strong').textContent, u: t.querySelector('span').textContent, d: !!t.querySelector('.a-d') })) };
+  });
+  ok(wk.head === 'All reasons' && wk.all === 1.5 && wk.rs === 1, 'admin Wastage: Reasons by weekday ends with All reasons, which counts the entry with an unknown reason too (' + JSON.stringify(wk) + ')');
+  ok(!wk.byWeekday, 'admin Wastage: no separate By weekday table');
+  ok(wk.tiles.length && wk.tiles.every(t => t.n !== '0' || t.d) && !wk.tiles.some(t => /portions|pieces/.test(t.u)) && wk.tiles.some(t => /days with something logged/.test(t.u)), 'admin Wastage: no zero tile with nothing to compare, the days tile stays (' + JSON.stringify(wk.tiles) + ')');
+  ok(p.errors.length === 0, 'admin Wastage: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   // the wastage page on the head chef's Google device links to the log (a chef signed in, as on the line)
   p = await L.open(b, '#/waste', { extra, admin: true, who: 'sam', wait: 1500 });
   await L.waitFor(p, () => !!document.querySelector('.w-past'));

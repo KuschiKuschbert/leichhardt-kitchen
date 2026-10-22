@@ -81,6 +81,42 @@ const badge = p => txt(p, '.wtop-who .adm-n');
   ok(!!(await p.$('.wm a[href="#/mail"]')), 'chef hat menu: a sous chef on the head chef\'s device still writes Kitchen mail (only the head chef has none)');
   await p.keyboard.press('Escape'); await L.settle(p, 100);
   await p.context().close();
+  // new mail and the head chef on the device (nobody signed in, or their own PIN): Admin panel in the chef hat menu opens
+  // Kitchen mail (23 Oct 2026). A sous chef on the same tablet still lands on the last page and marks nothing seen.
+  const P = (id, name, role) => ({ id, name, role, add: true, tick: true, del: role !== 'staff', active: true });
+  const headCfg = { [fsKey(['config', 'main'])]: { people: [P('sam', 'Sam', 'sous'), P('ann', 'Ann', 'head'), P('bo', 'Bo', 'staff')], headId: 'ann', sousIds: ['sam', 'ann'], pingIds: ['sam', 'ann'], showBadges: true } };
+  const atab = q => q.evaluate(() => (window.LK_PREP.state.atab || 'insights'));
+  async function hatAdmin(q) {
+    await L.waitFor(q, () => !!document.querySelector('.wtop-who .adm-n'), null, 5000).catch(() => {});
+    await q.click('.wtop-who'); await L.settle(q, 150);
+    await q.click('.wm .wm-adm');
+    await L.waitFor(q, () => /#\/admin$/.test(location.hash) && !!document.querySelector('.a-nav'), null, 6000).catch(() => {});
+    await L.settle(q, 400);
+  }
+  for (const who of ['', 'ann']) {
+    const name = who ? 'head chef by PIN' : 'nobody signed in';
+    p = await L.open(b, '#/', { admin: true, who, extra: Object.assign({}, recent, headCfg), wait: 1800 });
+    await hatAdmin(p);
+    await L.waitFor(p, () => !!document.querySelector('.ml-admin [data-lv="mail"]'), null, 6000).catch(() => {});
+    ok(await atab(p) === 'mail' && !!(await p.$('.ml-admin')), name + ': Admin panel opens Kitchen mail while new mail waits (' + await atab(p) + ')');
+    await L.settle(p, 600);
+    s = await store(p);
+    ok(['m1', 'm2', 'm3'].every(i => s[fsKey(['mail', i])].seen === true), name + ': the mail is seen once Kitchen mail is open');
+    // read now: Admin panel goes back to the last page, with the count still on it
+    await L.adminTab(p, 'insights');
+    await p.evaluate(() => { location.hash = '#/'; }); await L.settle(p, 500);
+    await hatAdmin(p);
+    ok(await atab(p) === 'insights' && !(await p.$('.ml-admin')), name + ': with nothing new, Admin panel opens the last page (' + await atab(p) + ')');
+    ok(p.errors.length === 0, name + ' Admin panel: no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+  }
+  p = await L.open(b, '#/', { admin: true, who: 'sam', extra: Object.assign({}, recent, headCfg), wait: 1800 });
+  await hatAdmin(p);
+  ok(await atab(p) !== 'mail' && !(await p.$('.ml-admin')), 'sous chef on the head chef\'s device: Admin panel opens the last page (' + await atab(p) + ')');
+  s = await store(p);
+  ok(['m1', 'm2', 'm3'].every(i => s[fsKey(['mail', i])].seen === false), 'sous chef on the head chef\'s device: no mail is marked seen');
+  ok(p.errors.length === 0, 'sous chef Admin panel: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
   // 23:00: no popup outside 10:00 to 22:00
   p = await L.open(b, '#/', { admin: true, extra, clock: L.NOW + 9 * 3600000, wait: 1800 });
   ok(!(await pop(p)), 'nudge: no popup at 23:00');

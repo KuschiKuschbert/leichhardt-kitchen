@@ -1,5 +1,6 @@
 // The Insights first screen and the PIN move (usability U13c): Export is one menu, the time the numbers were read shows,
-// What stands out comes before the tiles, empty tiles are left out, and the new kitchen PIN is typed twice.
+// What stands out comes before the tiles, empty tiles are left out, and the new kitchen PIN is typed twice. On a phone
+// (23 Oct 2026) the report pages do not repeat the page name and Export is a small button; Learning says its time once.
 const L = require('./lib');
 const { R, ok } = L.results();
 (async () => {
@@ -15,7 +16,29 @@ const { R, ok } = L.results();
   await p.fill('#a-newpin', '4321'); await p.fill('#a-newpin2', '4312');
   await p.click('[data-p="move-pin"]'); await L.settle(p, 200);
   ok(/do not match/.test(await p.evaluate(() => document.querySelector('.a-pane').textContent)), 'PIN move: two different PINs are caught');
+  // Learning, nothing learned yet or not: when the book learns is said once (23 Oct 2026, it was said twice)
+  await L.adminTab(p, 'learning'); await L.settle(p, 300);
+  const learns = await p.evaluate(() => (document.querySelector('.a-pane').textContent.match(/learns every night at 03:00/g) || []).length);
+  ok(learns === 1, 'Learning: "learns every night at 03:00" is said once (' + learns + ')');
   ok(p.errors.length === 0, 'no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // on a phone (23 Oct 2026): the page name is not shown again under the page buttons, and Export is a small button
+  // next to the dates, not a bar across the screen; the heading stays for screen readers
+  p = await L.open(b, '#/admin', { admin: true, width: 390, height: 900, wait: 2500 });
+  for (const t of ['insights', 'team', 'waste']) {
+    await L.adminTab(p, t); await L.settle(p, 300);
+    const m = await p.evaluate(() => {
+      const box = s => { const e = document.querySelector(s); return e ? e.getBoundingClientRect() : null; };
+      const h = box('.a-tools .a-title'), x = box('.a-export > summary'), d = box('.a-tools .hint');
+      return { title: document.querySelector('.a-tools .a-title') ? document.querySelector('.a-tools .a-title').textContent : '', hw: h && Math.round(h.width), xw: x && Math.round(x.width), sameRow: !!(x && d && x.top < d.bottom && x.bottom > d.top) };
+    });
+    ok(m.title && m.hw <= 1, t + ' on a phone: the page name is for screen readers only (' + JSON.stringify(m) + ')');
+    ok(m.xw && m.xw < 195 && m.sameRow, t + ' on a phone: Export is a small button next to the dates (' + JSON.stringify(m) + ')');
+  }
+  await p.click('.a-export > summary'); await L.settle(p, 200);
+  ok(await p.$('[data-p="csv"]:visible') !== null && !(await L.overflow(p)), 'phone: Export opens Download CSV with no sideways scroll');
+  ok(p.errors.length === 0, 'phone: no page errors ' + p.errors.join(' | '));
   await p.context().close();
   await b.close();
   L.report(R);

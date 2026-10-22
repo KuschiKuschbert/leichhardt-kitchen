@@ -769,7 +769,15 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .a-sh .a-sn { font-size: 1.5rem; margin-right: 0.6rem; }
 .a-sec > .a-grid { margin-top: 0.8rem; }
 .a-sub { font: 600 0.8125rem var(--body); color: var(--muted); text-transform: none; letter-spacing: 0; margin-left: 0.3rem; }
-@media (max-width: 599px) { .a-tbtns { width: 100%; } .a-tbtns .btn { flex: 1 1 auto; } .a-title { font-size: 1.6rem; } }
+/* phones (23 Oct 2026): the page name is already the open page button above, so its heading is for screen readers only,
+   and Export stays a small button next to the dates instead of a bar across the screen */
+@media (max-width: 599px) {
+  .a-tools { flex-wrap: nowrap; }
+  .a-tools > div { flex: 1 1 auto; min-width: 0; }
+  .a-tools .a-title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .a-export { flex-direction: column; align-items: flex-end; }
+  .a-export .btn { white-space: nowrap; }
+}
 
 /* Settings: the QR code to open the book on a phone. Shown on computers and wide tablets only, not on phones. */
 .set-qr { display: none; }
