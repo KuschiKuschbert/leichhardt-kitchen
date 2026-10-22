@@ -22,6 +22,7 @@ const yday = L.ymd(new Date(L.NOW - 86400000));
   await L.waitFor(p, k => Object.keys(window.__fake.dump()).some(x => x.indexOf(k) === 0), fsKey(['daily', yday + '_']), 8000).catch(() => {});
   const sent = await p.evaluate(k => { const st = window.__fake.dump(); const id = Object.keys(st).filter(x => x.indexOf(k) === 0)[0]; return id ? st[id] : null; }, fsKey(['daily', yday + '_']));
   ok(sent && sent.day === yday && sent.sg.quick.t === 1 && sent.by === 'sam' && Object.keys(sent).sort().join() === 'at,by,day,pf,sg,tag', 'the next day: yesterday\'s counts are sent once, counts only (' + JSON.stringify(sent) + ')');
+  await L.waitFor(p, () => !localStorage.getItem('lk.daily.out'), null, 5000).catch(() => {});
   ok(await p.evaluate(() => !localStorage.getItem('lk.daily.out')), 'and are not kept on the phone after');
   ok(p.errors.length === 0, 'no page errors ' + p.errors.join(' | '));
   await p.context().close();
