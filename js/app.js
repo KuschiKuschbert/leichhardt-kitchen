@@ -958,7 +958,9 @@
         '<section class="set-block" aria-label="Ticked steps"><span class="label">Ticked steps</span><span class="hint">' + esc(plural(nTicks, 'step is', 'steps are')) + ' ticked. Ticks clear when you close the page.</span>' +
         '<div class="btn-row"><button type="button" class="btn" data-act="clearticks" data-k="clearticks">Clear all ticks</button></div></section>' +
         '<section class="set-block" aria-label="Shared kitchen device"><span class="label">Shared kitchen device</span><span class="hint">For a tablet or phone everyone picks up. After 10 minutes with no touch, and each new day, the prep pages ask who you are again, so nobody writes under the last person\'s name. Recipes and guides stay open and the kitchen PIN stays. A personal phone keeps you signed in.</span>' +
-        '<div class="chips"><button type="button" class="chip" data-act="setshared" data-val="0" data-k="setshared:0" aria-pressed="' + !settings.shared + '">Personal phone</button><button type="button" class="chip" data-act="setshared" data-val="1" data-k="setshared:1" aria-pressed="' + !!settings.shared + '">Shared device</button></div></section>' : '') +
+        '<div class="chips"><button type="button" class="chip" data-act="setshared" data-val="0" data-k="setshared:0" aria-pressed="' + !settings.shared + '">Personal phone</button><button type="button" class="chip" data-act="setshared" data-val="1" data-k="setshared:1" aria-pressed="' + !!settings.shared + '">Shared device</button></div></section>' +
+        '<section class="set-block" aria-label="Practice on this device"><span class="label">Practice on this device</span><span class="hint">For trying the book out or showing someone how it works. Lines written here while it is on are marked as practice: the book does not learn from them and the wastage summary leaves them out. A strip on the prep pages says it is on.</span>' +
+        '<div class="chips"><button type="button" class="chip" data-act="setpractice" data-val="0" data-k="setpractice:0" aria-pressed="' + !settings.practice + '">Off</button><button type="button" class="chip" data-act="setpractice" data-val="1" data-k="setpractice:1" aria-pressed="' + !!settings.practice + '">On</button></div></section>' : '') +
       '<section class="set-block" aria-label="About"><span class="label">About</span><span class="saved">' + esc(plural(D.recipes.length, 'recipe', 'recipes')) + ', updated ' + esc(D.updated) +
       '. Settings are saved on this phone or tablet only.</span></section></main>' + footer() + '</div>';
   }
@@ -1264,6 +1266,7 @@
     else if (act === 'settext') { settings.text = val; saveSettings(); document.documentElement.setAttribute('data-text', val); }
     else if (act === 'clearticks') { ticks = {}; saveTicks(); }
     else if (act === 'setshared') { settings.shared = val === '1'; saveSettings(); }
+    else if (act === 'setpractice') { settings.practice = val === '1'; saveSettings(); }
     else if (act === 'installno') { settings.installNo = true; saveSettings(); }
     else if (act === 'install') {
       if (installEvt) {
