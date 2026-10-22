@@ -79,10 +79,13 @@ const controlled = p => L.waitFor(p, () => !!navigator.serviceWorker.controller,
   await L.waitFor(p, () => caches.keys().then(ks => { const k = ks.find(x => x.indexOf('lk-fb-') === 0); return k ? caches.open(k).then(c => c.keys()).then(r => r.length >= 4) : false; }), null, 15000).catch(() => {});
   ok(await p.evaluate(() => caches.keys().then(ks => { const k = ks.find(x => x.indexOf('lk-fb-') === 0); return k ? caches.open(k).then(c => c.keys()).then(r => r.length >= 4) : false; })), 'the page keeps the four Firebase files on the phone');
   const cdp = await ctx.newCDPSession(p); await cdp.send('Network.clearBrowserCache');
+  const errsBefore = p.errors.length;
   await ctx.setOffline(true);
   await p.reload({ waitUntil: 'load' }).catch(() => {});
   await L.waitFor(p, () => !!document.querySelector('.nb-row'), null, 10000).catch(() => {});
   ok(!!(await p.$('.nb-row')), 'no signal and the browser cache cleared: the prep list still opens');
+  // with no signal the browser logs every request that cannot go out; those are expected here, anything else is not
+  p.errors.splice(errsBefore, p.errors.length - errsBefore, ...p.errors.slice(errsBefore).filter(e => !/Failed to load resource: net::ERR_(FAILED|INTERNET_DISCONNECTED)/.test(e)));
     ok(p.errors.length === 0, 'no page errors ' + p.errors.join(' | '));
   await ctx.close();
   await b.close();
