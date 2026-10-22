@@ -47,6 +47,9 @@ const onTop = (p, sel) => p.evaluate(s => {
   // phone admin: the Save bar sits above the tab bar
   p = await L.open(b, '#/admin', { admin: true, wait: 1800 });
   await L.adminTab(p, 'people'); await L.settle(p, 300);
+  // nothing changed yet: no Save bar over the list (22 Oct 2026, Option B)
+  ok(await p.evaluate(() => { const e = document.querySelector('[data-p="a-save"]'); return !e || !e.getClientRects().length; }), 'phone admin: no Save bar while nothing has changed');
+  await p.fill('#a-n0', 'Sam B'); await p.$eval('#a-n0', e => e.dispatchEvent(new Event('input', { bubbles: true }))); await L.settle(p, 300);
   await p.evaluate(() => window.scrollTo(0, 0)); await L.settle(p, 150);
   v = await onTop(p, '[data-p="a-save"]');
   ok(v === true, 'phone admin: Save changes can be tapped, not under the tab bar (' + v + ')');
