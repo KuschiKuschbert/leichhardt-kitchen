@@ -1,7 +1,7 @@
 // The start of a shift (23 Oct 2026): once a day per person, one sheet comes up after the section picker with today's
-// pings and then the minutes still to sign. Never two sheets at once. Got it counts for each person, a chef's own ping
-// does not pop up at them, and on a shared tablet a sign-in just to tick only brings up a Safety, Allergen alert or Off
-// today ping. The mail nudge waits for the other sheets and never opens over a recipe.
+// pings and then the minutes still to sign. Never two sheets at once. Got it counts for each person, chefs get the
+// pings too (only a ping they have just saved does not pop straight back up at them), and on a shared tablet a sign-in
+// just to tick only brings up a Safety, Allergen alert or Off today ping. The mail nudge waits for the other sheets and never opens over a recipe.
 const L = require('./lib');
 const { R, ok } = L.results(), { txt } = L;
 const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
@@ -98,12 +98,57 @@ async function pin(p, name, digits) { await p.click('.p-name[data-id="' + name +
   ok(await p.evaluate(() => !!localStorage.getItem('lk.note.seen.ann') && localStorage.getItem('lk.note.mig') === '1'), 'update: the old mark is now Ann\'s, once');
   await p.context().close();
 
-  // a chef's own ping does not pop up at them; the bell lists it with no dot
-  p = await L.open(b, '#/prep', { who: 'sam', extra: Object.assign(cfg(), ping('n1', 'Special: pork belly')), wait: 2000 });
-  await p.clock.runFor(61000); await L.settle(p, 300);
-  ok(await p.$('.nt-wrap') === null && !(await dot(p)), 'own ping: no sheet and no dot for the chef who saved it');
+  // the sous chef gets the pings too, their own included, and their Got it counts
+  p = await L.open(b, '#/prep', { who: 'sam', board: true, extra: Object.assign(cfg(), ping('n1', 'Special: pork belly')), wait: 2000 });
+  await L.waitFor(p, () => !!document.querySelector('.nt-got')).catch(() => {});
+  ok(/pork belly/.test(await txt(p, '.nt-list') || '') && await txt(p, '.nt-eb') === 'Sam', 'sous chef: the start of shift sheet shows the pings, their own too');
+  await p.click('.nt-got'); await L.settle(p, 400);
+  s = await store(p);
+  ok(!!s[fsKey(['notes', 'n1', 'seen', today + '_sam'])], 'sous chef: Got it counts in Who has seen it');
+  // a ping the sous chef has just saved for today does not pop straight back up at them
+  await L.chef(p, 'pings');
+  await p.click('[data-p="n-new"]'); await L.settle(p, 200);
+  await p.fill('[data-k="n-text"]', 'Delivery: Bidfood at 15:00');
+  await p.click('[data-p="n-save"]'); await L.settle(p, 800);
+  await p.clock.runFor(61000); await L.settle(p, 400);
+  ok(await p.$('.nt-wrap') === null && !(await dot(p)), 'sous chef: no sheet and no dot for the ping they just saved');
   await p.click('.nbell'); await L.settle(p, 300);
-  ok(/pork belly/.test(await txt(p, '.nt-list') || '') && await p.$('.nt-new') === null && await p.$('.nt-got') === null, 'own ping: the bell shows it, not as new');
+  ok(/Bidfood at 15:00/.test(await txt(p, '.nt-list') || '') && /pork belly/.test(await txt(p, '.nt-list') || ''), 'sous chef: the bell lists both');
+  await p.context().close();
+
+  // a save that lands after its writer handed the tablet over is not marked read for the next person (or nobody)
+  p = await L.open(b, '#/prep', { who: 'sam', touch: true, settings: { shared: true }, extra: Object.assign(cfg(), ping('n1', 'Special: pork belly', { by: 'ann' })), wait: 2000 });
+  await p.evaluate(d => { localStorage.setItem('lk.note.mig', '1'); localStorage.setItem('lk.note.seen', JSON.stringify({ d, sig: 'n1:1' })); }, today);
+  await L.waitFor(p, () => !!document.querySelector('.nt-got')).catch(() => {});
+  await p.click('.nt-got'); await L.settle(p, 300);
+  await L.chef(p, 'pings');
+  await p.click('[data-p="n-new"]'); await L.settle(p, 200);
+  await p.fill('[data-k="n-text"]', 'Allergen alert: no peanut oil in the fryer');
+  await p.evaluate(() => { window.__fake.mode = 'hold'; });
+  await p.click('[data-p="n-save"]'); await L.settle(p, 300);
+  await p.click('.wtop-who'); await L.settle(p, 200);
+  await p.click('[data-who="out"]'); await L.settle(p, 200);
+  await p.click('[data-who="out"]').catch(() => {}); await L.settle(p, 400);
+  await p.evaluate(() => { window.__fake.mode = 'ok'; window.__fake.release(); });
+  await L.settle(p, 600);
+  await p.clock.runFor(61000); await L.settle(p, 400);
+  ok(!/peanut/.test(await p.evaluate(() => localStorage.getItem('lk.note.seen') || '')) && /peanut/.test(await txt(p, '.nt-list') || ''), 'hand-over: the ping saved before signing out still comes up on the tablet');
+  await p.context().close();
+
+  // an Undo straight after a remove still tells the other phones (the stamp is sent at the end of the 5 seconds)
+  p = await L.open(b, '#/prep', { who: 'sam', extra: Object.assign(cfg(), ping('n1', 'Safety: fryer 2 is out', { tag: 'safety', by: 'ann' })), wait: 2000 });
+  await L.waitFor(p, () => !!document.querySelector('.nt-got')).catch(() => {});
+  await p.click('.nt-got'); await L.settle(p, 300);
+  await L.chef(p, 'pings');
+  await p.click('[data-p="n-del"][data-id="n1"]'); await L.settle(p, 100);
+  await p.click('[data-p="n-del"][data-id="n1"]'); await L.settle(p, 500);
+  const st1 = await p.evaluate(k => ((window.__fake.dump()[k] || {}).pastEdit || {}).n, fsKey(['config', 'main']));
+  await p.evaluate(() => { const b = [...document.querySelectorAll('button')].filter(x => /^Undo$/.test(x.textContent.trim()))[0]; if (b) b.click(); });
+  await L.settle(p, 500);
+  await p.clock.runFor(6000); await L.settle(p, 400);
+  const st2 = await p.evaluate(k => ((window.__fake.dump()[k] || {}).pastEdit || {}).n, fsKey(['config', 'main']));
+  s = await store(p);
+  ok(!!st1 && st2 > st1 && s[fsKey(['notes', 'n1'])].removed === false, 'Undo of a remove: put back, and a second stamp tells the other phones (' + st1 + ', ' + st2 + ')');
   await p.context().close();
 
   // a shared tablet: Bo signs in only to tick. A Special waits on the bell; a Safety ping comes up, with no minutes
@@ -234,7 +279,7 @@ async function pin(p, name, digits) { await p.click('.p-name[data-id="' + name +
   ok(/^#\/r\//.test(await p.evaluate(() => location.hash)) && !(await p.$('.mlp-wrap')), 'mail: no nudge over the recipe a ping links to (' + await p.evaluate(() => location.hash) + ')');
   await p.context().close();
 
-  // the head chef's edit from the Google device is saved by nobody, so it is new to the ping's writer
+  // the head chef's edit from the Google device is saved by nobody, not by the ping's writer
   p = await L.open(b, '#/admin', { admin: true, who: '', extra: Object.assign({}, head, ping('n1', 'Delivery: Bidfood 09:00', { by: 'ann', author: 'ann' })), wait: 2200 });
   await L.waitFor(p, () => !!document.querySelector('.nt-got')).catch(() => {});
   await p.click('.nt-got'); await L.settle(p, 300);
