@@ -10,7 +10,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
 
   // prep remove with Undo, toast above the tab bar
   p = await L.open(b, '#/prep', { wait: 1500 });
-  await p.click('[data-p="del"][data-id="i2"]');
+  await L.lineAct(p, '[data-p="del"][data-id="i2"]');
   await L.settle(p, 200);
   ok(/Removed Pick coriander/.test(await txt(p, '.p-toast')), 'prep: remove shows "Removed ..." toast');
   let s = await store(p);
@@ -28,14 +28,14 @@ const store = page => page.evaluate(() => window.__fake.dump());
 
   // orders: remove, Undo, show removed, put back
   p = await L.open(b, '#/orders', { wait: 1500 });
-  await p.click('[data-p="odel"][data-id="o1"]');
+  await L.lineAct(p, '[data-p="odel"][data-id="o1"]');
   await L.settle(p, 300);
   ok(/Removed Milk from the order list/.test(await txt(p, '.p-toast')), 'orders: remove shows toast with Undo');
   ok(await p.$('[data-p="oremoved"]') !== null, 'orders: Show removed (1) appears');
   await p.click('[data-p="oremoved"]');
   await L.settle(p, 200);
   ok(await p.$('[data-p="orestore"][data-id="o1"]') !== null, 'orders: removed line has Put back');
-  await p.click('[data-p="orestore"][data-id="o1"]');
+  await L.lineAct(p, '[data-p="orestore"][data-id="o1"]');
   await L.settle(p, 300);
   s = await store(p);
   ok(s[fsKey(['orders', today, 'lines', 'o1'])].deleted === false, 'orders: Put back restores the line');

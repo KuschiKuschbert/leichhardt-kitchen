@@ -297,4 +297,13 @@ async function adminTab(page, t) {
   }, t);
   await settle(page, 250);
 }
-module.exports = { wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
+/* Remove (or Put back) a prep or order line the way the page offers it: on a phone through the line's ⋯ menu (22 Oct
+   2026, Option B), on a laptop with the button in the line. sel is the line's own button, e.g. '[data-p="del"][data-id="i2"]'. */
+async function lineAct(page, sel) {
+  const more = await page.evaluate(s => { const b = document.querySelector(s), r = b && b.closest('.nb-row'), m = r && r.querySelector('.nb-more'); return !!(m && m.getClientRects().length); }, sel);
+  if (!more) return page.click(sel);
+  await page.evaluate(s => document.querySelector(s).closest('.nb-row').querySelector('.nb-more').click(), sel);
+  await settle(page, 120);
+  return page.click('#lm-sheet .lm-act');
+}
+module.exports = { lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
