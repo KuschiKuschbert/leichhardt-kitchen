@@ -125,6 +125,11 @@ await ok(W([['activity/ann', { name: 'Ann', extra: 'x' }, true]], { id: 'ann' })
 
 // shift pings: write your own, change your own; the head chef and sous chefs change anyone's
 await ok(W([['notes/n-bo2', note({ author: 'bo' })]], { id: 'bo' }), true, 'pings: a person ticked for Pings writes one');
+await ok(W([['notes/n-tm1', note({ author: 'sam', tm: 900 })]], { id: 'sam' }), true, 'pings: one with its own time of day (15:00, 22 Oct 2026)');
+await ok(W([['notes/n-tm1', { tm: null, upd: 3 }, true]], { id: 'sam' }), true, 'pings: its time taken away again (null)');
+await ok(W([['notes/n-tm2', note({ author: 'sam', tm: 1440 })]], { id: 'sam' }), false, 'pings: a time past 23:59 is refused');
+await ok(W([['notes/n-tm3', note({ author: 'sam', tm: '15:00' })]], { id: 'sam' }), false, 'pings: a time that is not a number is refused');
+await ok(W([['notes/n-tm4', note({ author: 'sam', tm: 90.5 })]], { id: 'sam' }), false, 'pings: a time must be whole minutes');
 await ok(W([['notes/n-ann', note()]], { id: 'ann' }), false, 'pings: someone not ticked cannot');
 await ok(W([['notes/n-bo', { removed: true, upd: 2 }, true]], { id: 'bo' }), true, 'pings: Bo removes Bo\'s ping');
 await ok(W([['notes/n-sam', { removed: true, upd: 2 }, true]], { id: 'bo' }), false, 'pings: Bo cannot remove Sam\'s ping');
@@ -441,7 +446,10 @@ await ok(W([['config/main', { pastEdit: { p: Date.now() } }, true]], { id: 'sam'
 await ok(W([['config/main', { pastEdit: { p: Date.now(), o: Date.now() } }, true]], { id: 'hd' }), true, 'pastEdit: the head chef with their PIN stamps prep and orders');
 await ok(W([['config/main', { pastEdit: { p: Date.now() } }, true]], { id: 'ann' }), false, 'pastEdit: staff cannot stamp it');
 await ok(W([['config/main', { pastEdit: { p: Date.now() }, pingIds: ['ann'] }, true]], { id: 'sam' }), false, 'pastEdit: nothing else may change in the same write');
-await ok(W([['config/main', { pastEdit: { x: 1 } }, true]], { id: 'sam' }), false, 'pastEdit: only p and o');
+await ok(W([['config/main', { pastEdit: { x: 1 } }, true]], { id: 'sam' }), false, 'pastEdit: only p, o and n');
+await ok(W([['config/main', { pastEdit: { n: Date.now() } }, true]], { id: 'sam' }), true, 'pastEdit: a sous chef stamps a change to today\'s shift pings (n)');
+await ok(W([['config/main', { pastEdit: { n: 'now' } }, true]], { id: 'sam' }), false, 'pastEdit: the pings stamp is a number');
+await ok(W([['config/main', { pastEdit: { n: Date.now() } }, true]], { id: 'ann' }), false, 'pastEdit: staff cannot stamp the pings');
 await ok(W([['config/main', { pastEdit: { p: 'soon' } }, true]], { id: 'sam' }), false, 'pastEdit: times are numbers');
 // Wastage (22 Oct 2026): today's lines with the kitchen PIN, past days only for the head chef's Google account,
 // the review written by the head chef or a sous chef, the nightly summary read only
