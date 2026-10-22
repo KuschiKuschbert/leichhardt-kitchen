@@ -37,6 +37,28 @@ function fn(o) {
   ok(!(await L.overflow(p)), 'phone: no sideways scroll');
   await p.context().close();
 
+  // Pace counts the day's own lines, like the header: a function's platter line is not one of them (23 Oct 2026).
+  // Each past day has 5 lines ticked before now and 5 platter lines never ticked: the usual is 100% without the
+  // platter lines and 50% with them, so the check fails if either half of the filter goes.
+  const pc = Object.assign({}, extra);
+  [1, 2, 3].forEach(n => {
+    const d = L.ymd(new Date(L.NOW - n * 86400000));
+    for (let k = 0; k < 5; k++) {
+      pc[fsKey(['days', d, 'items', 'p' + n + k])] = { text: 'Past job ' + n + k, station: 'Larder', qty: '', recipe: '', addedBy: 'Sam', addedById: 'sam', addedAt: L.NOW - n * 86400000 - 7200000, done: true, doneBy: 'Sam', doneById: 'sam', doneAt: L.NOW - n * 86400000 - 3600000 * (k + 1), deleted: false };
+      pc[fsKey(['days', d, 'items', 'f' + n + k])] = { text: 'Past platter ' + n + k, station: 'Functions', qty: '2 platters', recipe: 'aussie-platter', fn: 'old' + n + k, dupOk: true, addedBy: 'Fay', addedById: 'fay', addedAt: L.NOW - n * 86400000 - 7200000, done: false, deleted: false };
+    }
+  });
+  pc[fsKey(['days', today, 'items', 'i1'])] = Object.assign({}, { text: 'Slice onions', station: 'Larder', qty: '2 tubs', recipe: '', addedBy: 'Sam', addedById: 'sam', addedAt: L.NOW - 3600000, deleted: false }, { done: true, doneBy: 'Sam', doneById: 'sam', doneAt: L.NOW - 600000 });
+  const q = await L.open(b, '#/prep', { extra: pc, width: 1280, height: 900, wait: 1800 });
+  await L.waitFor(q, () => !!document.querySelector('.nb-pace'), null, 6000).catch(() => {});
+  const prog = await L.txt(q, '.nb-prog') || '', paceT = await L.txt(q, '.nb-pace') || '';
+  const pn = (paceT.match(/\((\d+) of (\d+)\)/) || []).slice(1).join(' of '), hn = (prog.match(/(\d+) of (\d+) done/) || []).slice(1).join(' of ');
+  ok(!!pn && pn === hn && hn === '1 of 6', 'Pace says the same count as the header, without the platter line (Pace ' + pn + ', header ' + hn + ')');
+  const usual = (paceT.match(/usually (\d+)%/) || [])[1];
+  ok(usual === '100', 'Pace: the usual share leaves the past days\' platter lines out too (usually ' + usual + '%, 50% if they counted)');
+  ok(q.errors.length === 0, 'pace: no page errors ' + q.errors.join(' | '));
+  await q.context().close();
+
   await b.close();
   R.forEach(r => console.log(r));
   const bad = R.filter(r => r.startsWith('FAIL')).length;

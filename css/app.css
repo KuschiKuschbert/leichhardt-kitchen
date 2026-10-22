@@ -979,8 +979,8 @@ html.ks-open, html.ks-open body { overflow: hidden; }
 .o-page .nb-body { overflow: visible; min-height: 0; }
 .w-review { max-width: 46rem; }
 
-/* Prep list on big screens: show more lines. The notebook page uses the screen height (no 780 px cap), Start here moves to the Handy page, the add row is one line, and lines are a little tighter for a mouse or a keyboard. Phones and tablets keep the big touch rows. */
-.nb-start-r { display: none; }
+/* Prep list on big screens: show more lines. The notebook page uses the screen height (no 780 px cap), Start here, Closing soon and the waste review note move to the Handy page (.nb-start-r, .nb-rc), the add row is one line, and lines are a little tighter for a mouse or a keyboard. Phones and tablets keep the big touch rows, with the Quick add chips in the add box only (Handy's copy, .nb-quick, is for big screens). */
+.nb-start-r, .nb-rc { display: none; }
 details.nb-start-l > summary .nb-sl { white-space: nowrap; flex: 0 0 auto; }
 details.nb-start-l > summary { display: flex; align-items: center; gap: 0.6rem; min-height: 44px; cursor: pointer; list-style: none; }
 details.nb-start-l > summary::-webkit-details-marker { display: none; }
@@ -988,11 +988,11 @@ details.nb-start-l > summary::after { content: '+'; margin-left: auto; font: 700
 details.nb-start-l[open] > summary::after { content: '\2212'; }
 .nb-sline { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
 .nb-donejump, .nb-qadd { display: none; }
-@media (max-width: 899px) { .nb-donejump { display: inline-flex; } .nb-qadd { display: block; margin-top: 0.6rem; } }
+@media (max-width: 899px) { .nb-donejump { display: inline-flex; } .nb-qadd { display: block; margin-top: 0.6rem; } .nb-side .nb-quick, .nb-qsub { display: none; } }
 .nb-hint:empty { display: none; }
 @media (min-width: 900px) {
-  .nb-start-l { display: none; }
-  .nb-start-r { display: block; }
+  .nb-start-l, .nb-lc { display: none; }
+  .nb-start-r, .nb-rc { display: block; }
   .nb-page { height: max(30rem, calc(100vh - 16.5rem)); }
   .nb-left { flex: 3 1 0; }
   .nb-right { flex: 2 1 0; }
@@ -1278,8 +1278,9 @@ details.nb-start-l[open] > summary::after { content: '\2212'; }
 /* order list: lines waiting more than 3 days, grouped by the day they were first written */
 .o-od { border-left: 4px solid var(--accent); padding-left: 0.6rem; margin: 0 0 1rem; }
 .o-od-h { margin: 0.6rem 0 0.2rem; font-size: 0.875rem; font-weight: 700; color: var(--muted); }
-.o-nudge { margin: 0 0 0.75rem; }
-.o-nudge p { font-family: var(--body); font-size: 0.9375rem; font-weight: 600; }
+.o-od-tip { margin: 0 0 0.2rem; font-size: 0.9375rem; }
+/* the day heading above already says since when, so the row's own Since badge is left out here */
+.o-od .nb-roll { display: none; }
 
 /* ---------- guides (#/guides, the admin Guides tab, and the guides box on recipe cards) ---------- */
 /* the fifth docket is the long one under the other four: reference, not a job for today */

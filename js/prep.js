@@ -1975,18 +1975,19 @@
       return { k: k, text: o.text, gap: g, last: last, since: since, sec: sec, over: since - g };
     }).filter(Boolean).sort(function (a, b) { return b.over - a.over || a.gap - b.gap; }).slice(0, 10);
   }
-  /* Pace: how much of the list is usually ticked by this time of day, against today. */
+  /* Pace: how much of the list is usually ticked by this time of day, against today. The day's own lines only, like the
+     header's "1 of 8 done": a function's platter lines are on their own tab. */
   function pace() {
     var mins = T.mins(), dn = T.dow(), all = [], same = [];
     pastDays(PAST_DAYS).forEach(function (e) {
-      var l = e[1].filter(function (x) { return !x.deleted; }); if (l.length < 5) return;
+      var l = e[1].filter(function (x) { return !x.deleted && !x.fn; }); if (l.length < 5) return;
       var by = l.filter(function (x) { if (!x.done || !x.doneAt) return false; return T.mins(x.doneAt) <= mins; }).length;
       var share = by / l.length; all.push(share); if (parseYmd(e[0]).getDay() === dn) same.push(share);
     });
     var src = same.length >= 2 ? same : all;
     if (src.length < 3 && !(same.length >= 2)) return null;
     src.sort(function (a, b) { return a - b; });
-    var usual = src[Math.floor(src.length / 2)], live = S.items.filter(function (x) { return !x.deleted; }), done = live.filter(function (x) { return x.done; }).length;
+    var usual = src[Math.floor(src.length / 2)], live = S.items.filter(function (x) { return !x.deleted && !x.fn; }), done = live.filter(function (x) { return x.done; }).length;
     if (live.length < 3) return null;
     return { usual: usual, today: done / live.length, done: done, n: live.length, sameDay: same.length >= 2 };
   }
@@ -2002,7 +2003,8 @@
   }
   /* Closing soon, on today's prep list and order list (head chef, 22 Oct 2026: Log waste comes up on both) from an hour
      before closingMin(). live: the prep list's lines, to say what will roll over; none on the order list. One Hide for
-     today (lk.closeout) hides it on both. */
+     today (lk.closeout) hides it on both. The prep list draws it twice, above the lines and at the top of Handy (listHTML(),
+     CSS shows one), so it has no id and every copy uses the same close-hide tap. */
   function closeoutHTML(live, date) {
     var today = dayNow(), at = closingMin();
     if (date !== today || !at || !can('add') || lsGet('lk.closeout') === today || T.mins() < at - 60) return '';
@@ -2019,17 +2021,16 @@
     return '<svg class="nb-medal" viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><circle cx="13" cy="13" r="12" fill="' + (MEDAL[rank] || '#8E959C') + '"/><circle cx="13" cy="13" r="9" fill="none" stroke="#fff" stroke-width="1.5" opacity=".8"/><text x="13" y="17.5" text-anchor="middle" font-size="13" font-weight="700" fill="#fff" font-family="Barlow Condensed, sans-serif">' + rank + '</text></svg>';
   }
   function badgesOn() { return !S.config || S.config.showBadges !== false; }
+  /* The top 3 for ticks over the last 7 days, and the person on the phone's own place when they are not among them
+     (23 Oct 2026: it was on the "Writing as" line as well, under another name). */
   function badgeStrip() {
     if (!badgesOn() || !S.week || !S.week.length) return '';
-    var top = S.week.filter(function (x) { return x.rank <= 3; }).slice(0, 5);
-    return '<div class="nb-badges" aria-label="Top tickers this week"><span class="nb-bl">Top tickers, last 7 days</span>' +
-      top.map(function (x) { return '<span class="nb-bd">' + medal(x.rank) + '<span><strong>' + esc(x.name) + '</strong> <span class="nb-bn">' + ordinal(x.rank) + ', ' + x.n + (x.n === 1 ? ' tick' : ' ticks') + '</span></span></span>'; }).join('') + '</div>';
-  }
-  function myRank() {
-    var p = who();
-    if (!p || !badgesOn() || !S.week) return '';
-    var r = S.week.filter(function (x) { return x.name === p.name; })[0];
-    return r ? ' · ' + ordinal(r.rank) + ' for ticks this week' : '';
+    var top = S.week.filter(function (x) { return x.rank <= 3; }).slice(0, 5), p = me();
+    var mine = p ? S.week.filter(function (x) { return x.name === p.name; })[0] : null;
+    function n(x) { return ordinal(x.rank) + ', ' + x.n + (x.n === 1 ? ' tick' : ' ticks'); }
+    return '<div class="nb-badges" aria-label="Top tickers, last 7 days"><span class="nb-bl">Top tickers, last 7 days</span>' +
+      top.map(function (x) { return '<span class="nb-bd">' + medal(x.rank) + '<span><strong>' + esc(x.name) + '</strong> <span class="nb-bn">' + n(x) + '</span></span></span>'; }).join('') +
+      (mine && top.indexOf(mine) < 0 ? '<span class="nb-bd nb-bme"><span><strong>You:</strong> <span class="nb-bn">' + n(mine) + '</span></span></span>' : '') + '</div>';
   }
 
   /* ---------- insights for the owner: numbers and charts from the last 30 days of lines ---------- */
@@ -2830,7 +2831,9 @@
     var w = t && t.trim().length > 2 ? wasteFor(t, ['expired']) : null;
     return w ? 'Expired stock logged ' + w.n + (w.n === 1 ? ' time' : ' times') + ' in 14 days. Order a little less?' : '';
   }
-  function sideHTML(today) {
+  /* flags: Closing soon and the waste review note, as listHTML() draws them above the lines; Handy draws them again at
+     its top for big screens (.nb-rc) */
+  function sideHTML(today, flags) {
     var live = S.items.filter(function (x) { return !x.deleted; });
     var have = onList(), dn = String(parseYmd(S.date).getDay()), dname = parseYmd(S.date).toLocaleDateString('en-AU', { weekday: 'long' });
     /* Quick add: due today first, then usual for this weekday, then regulars. A line shows once, in the first group it fits. */
@@ -2847,7 +2850,8 @@
       .concat(regs.map(function (x) { return chip(x.text, bestSection(x), x.uses + 'x'); })).join('') : '';
     S.quickChips = chips;
     if (chips) sg('quick', 's');
-    var quick = chips ? '<h3 class="nb-sh">Quick add</h3><p class="nb-sd">Due today, usual for a ' + esc(dname) + ' and regulars. Tap to add.</p><div class="nb-usual">' + chips + '</div>' : '';
+    // on phones and tablets the same chips are in the add box (.nb-qadd), so this copy shows on big screens only (.nb-quick)
+    var quick = chips ? '<div class="nb-quick"><h3 class="nb-sh">Quick add</h3><p class="nb-sd">Due today, usual for a ' + esc(dname) + ' and regulars. Tap to add.</p><div class="nb-usual">' + chips + '</div></div>' : '';
     var pc = canBrowse() && S.date === dayNow() && S.past ? pace() : null;
     var paceHTML = pc ? '<div class="nb-pace' + (pc.today + 0.1 < pc.usual ? ' is-behind' : '') + '"><span class="nb-sl">Pace</span><p><strong>' + Math.round(pc.today * 100) + '%</strong> ticked now (' + pc.done + ' of ' + pc.n + '). By ' + clock(now()) + ' it is usually <strong>' + Math.round(pc.usual * 100) + '%</strong>' + (pc.sameDay ? ' on a ' + esc(dname) : '') + '.</p><span class="nb-sw">' + (pc.today + 0.1 < pc.usual ? 'Behind the usual pace. Check who needs a hand.' : 'On pace.') + ' Only the head chef and sous chefs see this.</span></div>' : '';
     var stuck = canBrowse() && S.date === dayNow() ? live.filter(function (x) { return !x.done && rolledN(x) >= 3; }) : [];
@@ -2858,7 +2862,7 @@
     var donebox = '<h3 class="nb-sh" id="nb-donebox">' + (onToday ? 'Done today' : 'Done on ' + esc(dayShort(S.date))) + ' (' + dl.length + ')</h3>' + (dl.length ? '<ul class="nb-done">' + dl.map(function (x) {
       return '<li><span class="nb-dt">' + (x.doneAt ? clock(x.doneAt) : '') + '</span><span class="nb-dx">' + esc(x.text) + (x.qty ? ' <em>' + esc(x.qty) + '</em>' : '') + '</span><span class="nb-dw">' + esc(x.doneBy || '') + '</span>' + (can('tick') && canUntick(x) ? '<button type="button" class="p-x nb-undo" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(S.date) + '" aria-label="' + esc('Undo the tick on ' + x.text) + '">Undo</button>' : '') + '</li>';
     }).join('') + '</ul>' : '<p class="nb-sd">' + (onToday ? 'Nothing ticked yet.' : 'Nothing was ticked.') + '</p>');
-    return startHTML(live, true) + paceHTML + stuckHTML + fnNeedsHTML() + donebox + quick;
+    return (flags ? '<div class="nb-rc">' + flags + '</div>' : '') + startHTML(live, true) + paceHTML + stuckHTML + fnNeedsHTML() + donebox + quick;
   }
   /* For the functions (22 Oct 2026, review F1): what today's and tomorrow's confirmed function platters need, every item
      on the platter cards added up across the platters (5 Aussie platters at 10 party pies each: Party pies 50 pieces).
@@ -2940,8 +2944,15 @@
     var h = fnNeedHidden(); h[x.day] = (h[x.day] || []).concat([x.k]).slice(-200);
     lsSet('lk.fnneed', JSON.stringify(h)); draw();
   }
+  /* The line above the prep list, the order list and wastage: who is writing and "Not you?" (22 Oct 2026). One helper, so
+     the three pages say it the same way. tail: what follows the name on that page (HTML, already escaped). The tab bar
+     or the pill menu is always on screen, so the line has no link to the prep list (23 Oct 2026). */
+  function whoTopHTML(tail) {
+    var p = me();
+    return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' + (tail || '') : '') + '</span><span class="p-links"><button type="button" class="p-link" data-p="who-change">Not you?</button></span></div>';
+  }
   function listHTML() {
-    var p = me(), today = dayNow();
+    var today = dayNow();
     if (S.date !== today && !canBrowse() && !S.user) { S.date = today; S.tab = ''; watchItems(); }
     if (S.authed && fb) { loadPast(); loadWSum(); loadLearned(); }
     S.week = S.past ? weekRanks() : null;
@@ -2957,7 +2968,10 @@
     var fnTab = fnLive.length ? '<button type="button" class="nb-tab nb-tab-fn" data-p="tab" data-v="' + FN_TAB + '" aria-pressed="' + (S.tab === FN_TAB) + '">Functions' + (fnOpen ? ' <span class="nb-tab-n">' + fnOpen + '</span>' : '') + '</button>' : '';
     var tabHTML = tabs.length || fnTab ? '<nav class="nb-tabs" aria-label="Sections"><button type="button" class="nb-tab" data-p="tab" data-v="" aria-pressed="' + !S.tab + '">All</button>' +
       tabs.map(function (t) { return '<button type="button" class="nb-tab" data-p="tab" data-v="' + esc(t) + '" aria-pressed="' + (S.tab === t) + '">' + esc(t) + '</button>'; }).join('') + fnTab + '</nav>' : '';
-    var sug = suggestions(), sideH = sideHTML(today);
+    // Closing soon and the waste review note: above the lines on phones and tablets (.nb-lc), at the top of Handy on big
+    // screens (.nb-rc), so they do not push the lines down; CSS shows one of the two, like Start here
+    var flags = closeoutHTML(daily, S.date) + wNoteHTML();
+    var sug = suggestions(), sideH = sideHTML(today, flags);
     var add = can('add') && S.date === today ?
       '<form class="nb-add" data-p-form="add"><datalist id="p-sections">' + sug.map(function (n) { return '<option value="' + esc(n) + '"></option>'; }).join('') + '</datalist>' +
       '<div class="nb-add-row"><label class="visually-hidden" for="p-text">Prep item</label><input id="p-text" class="nb-in nb-in-text" data-k="p-text" enterkeyhint="done" autocomplete="off" autocapitalize="sentences" placeholder="Write a new line..." maxlength="160" value="' + esc(S.text) + '">' +
@@ -2971,12 +2985,12 @@
     var left = '<section class="nb-page nb-left"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + esc(dayName(S.date)) + '</h2><span class="nb-date">' + esc(longDate(S.date)) + '</span></div>' +
       '<div class="nb-prog">' + doneN + ' of ' + live.length + ' done</div>' + (can('add') ? '<button type="button" class="nb-jump" data-p="write">Write a line</button>' : '') + (doneN ? '<button type="button" class="nb-jump nb-donejump" data-p="donejump">Done today (' + doneN + ')</button>' : '') + '</header>' +
       (S.itemsState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' : '') +
-      '<div class="nb-body">' + closeoutHTML(daily, S.date) + wNoteHTML() + (S.tab === FN_TAB ? '' : startHTML(daily)) + pageBody(S.items, S.date) + todayEmpty + '</div>' +
+      '<div class="nb-body">' + (flags ? '<div class="nb-lc">' + flags + '</div>' : '') + (S.tab === FN_TAB ? '' : startHTML(daily)) + pageBody(S.items, S.date) + todayEmpty + '</div>' +
       '<div class="nb-foot">' + add + (add && !can('del') ? '<p class="hint nb-who">Wrote the wrong thing? Undo it straight away, or ask the head chef or a sous chef to remove it.</p>' : '') +
       (removed.length && can('del') ? '<button type="button" class="nb-link" data-p="removed">' + (S.showRemoved ? 'Hide' : 'Show') + ' removed (' + removed.length + ')</button>' : '') + '</div></section>';
-    var right = '<section class="nb-page nb-right"><header class="nb-ph"><div><h2 class="nb-title nb-dim">Handy</h2><span class="nb-date">' + (S.date === today ? 'Done today and quick add' : 'Done on ' + esc(dayShort(S.date))) + '</span></div></header>' +
+    var right = '<section class="nb-page nb-right"><header class="nb-ph"><div><h2 class="nb-title nb-dim">Handy</h2><span class="nb-date">' + (S.date === today ? 'Done today<span class="nb-qsub"> and quick add</span>' : 'Done on ' + esc(dayShort(S.date))) + '</span></div></header>' +
       '<div class="nb-body nb-side">' + sideH + '</div></section>';
-    return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' + ksTagHTML() + (can('tick') ? '' : ' (read only)') + esc(myRank()) : '') + '</span><span class="p-links"><button type="button" class="p-link" data-p="who-change">Not you?</button>' + '' + '</span></div>' +
+    return whoTopHTML(ksTagHTML() + (can('tick') ? '' : ' (read only)')) +
       (canBrowse() ? '<div class="nb-nav"><button type="button" class="chip" data-p="day" data-d="-1" aria-label="Back one day">&lsaquo;</button>' +
       '<button type="button" class="chip" data-p="today" aria-pressed="' + (S.date === today) + '">Today</button>' +
       '<label class="visually-hidden" for="p-day">Pick a date</label><input id="p-day" type="date" class="p-dateinput" data-k="p-day" value="' + esc(S.date) + '">' +
@@ -3771,7 +3785,12 @@
       var first = g.lines[0];
       return '<li class="nb-row o-group"><button type="button" class="nb-box" data-p="ogroup" data-k2="' + esc(g.key) + '" aria-label="' + esc('Ordered: ' + g.text) + '">' + BOX + '</button>' +
         '<span class="nb-t">' + esc(g.text) + (g.lines.length > 1 ? ' <span class="o-n">x' + g.lines.length + '</span>' : '') +
-        '<span class="o-who">' + g.lines.map(function (x) { return esc((x.qty ? x.qty + ' ' : '') + '(' + (x.addedBy || '?') + ', ' + dayShort(x.date) + ')'); }).join(' &middot; ') + '</span>' + recipeChips(first) + '</span></li>';
+        '<span class="o-who">' + g.lines.map(function (x) {
+          // a rolled copy: who first wrote it and the day it was first written, as By day shows it (23 Oct 2026; it said
+          // "Rolled over" and today). A very old copy with no origBy keeps "Rolled over".
+          var who = x.rolled ? (x.origBy || 'Rolled over') : (x.addedBy || '?'), day = x.rolled ? (x.since || x.rolledFrom || x.date) : x.date;
+          return esc((x.qty ? x.qty + ' ' : '') + '(' + who + ', ' + dayShort(day) + ')');
+        }).join(' &middot; ') + '</span>' + recipeChips(first) + '</span></li>';
     }).join('') + '</ul>';
   }
   function dayShort(s) { return parseYmd(s).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }); }
@@ -3816,7 +3835,8 @@
     return '<div class="w-often"><span class="nb-ql">Usually ordered on a ' + esc(dname) + ' or often. Tap to add</span><div class="chiprow">' + list.map(function (e, i) { return '<button type="button" class="chip sq" data-p="oreg" data-i="' + i + '">' + esc(e.text) + (e.q ? ' <span class="nb-uq">' + esc(e.q) + '</span>' : '') + '</button>'; }).join('') + '</div></div>';
   }
   /* Lines still not ordered after more than 3 days sit together at the top of today's list, under the day they were
-     first written, and a nudge shows when the order list opens (hidden for the day with Hide for today). */
+     first written, with one line on what to do. The block is the first thing under the add box, so there is no separate
+     nudge card any more (23 Oct 2026), and its rows leave out their own "Since" badge: the day heading says it. */
   var ORD_LATE = 3;
   function ordWait(x, today) { return Math.round((parseYmd(today) - parseYmd(x.since || x.date)) / 86400000); }
   function ordOverdueHTML(list, today) {
@@ -3824,21 +3844,16 @@
     var by = {}, days = [];
     list.forEach(function (x) { var d = x.since || x.date; if (!by[d]) { by[d] = []; days.push(d); } by[d].push(x); });
     days.sort();
-    return '<div class="o-od" id="o-overdue"><h3 class="nb-sh">Waiting more than ' + ORD_LATE + ' days (' + list.length + ')</h3>' + days.map(function (d) {
+    return '<div class="o-od" id="o-overdue"><h3 class="nb-sh">Waiting more than ' + ORD_LATE + ' days (' + list.length + ')</h3>' +
+      '<p class="hint o-od-tip">' + (canBrowse() ? 'Order them today, or remove what is not needed any more.' : 'Tell the head chef or a sous chef.') + '</p>' + days.map(function (d) {
       var n = ordWait(by[d][0], today);
       return '<h4 class="o-od-h">Written ' + esc(dayShort(d)) + ', ' + n + ' days ago</h4><ul class="nb-rows">' + by[d].map(ordRow).join('') + '</ul>';
     }).join('') + '</div>';
   }
-  function ordNudgeHTML(list, today) {
-    if (!list.length || lsGet('lk.ord.nudge') === today) return '';
-    return '<div class="nb-flag o-nudge" role="status"><span class="nb-sl">Still not ordered</span><p>' + list.length + (list.length === 1 ? ' item has' : ' items have') + ' waited more than ' + ORD_LATE + ' days. ' +
-      (canBrowse() ? 'Order them today, or remove what is not needed any more.' : 'Tell the head chef or a sous chef.') + '</p>' +
-      '<div class="btn-row"><button type="button" class="btn" data-p="onudge-show">Show them</button><button type="button" class="btn" data-p="onudge-hide">Hide for today</button></div></div>';
-  }
   function ordersHTML() {
     // loadLearned: the order rollover and Closing soon need when tomorrow's list is written (summary/learned, once a day)
     if (can('add')) { loadOrdHist(); loadWSum(); loadOrdLearned(); loadLearned(); }
-    var p = me(), br = canBrowse(), view = br ? (S.ordView || 'day') : 'day', today = dayNow();
+    var br = canBrowse(), view = br ? (S.ordView || 'day') : 'day', today = dayNow();
     if (!br && S.ordDate !== today) { S.ordDate = today; watchOrders(); }
     if (view === 'all') loadOrdAll(false);
     if (S.ordDate === today && S.ordState === 'ok') ordRoll();
@@ -3869,13 +3884,12 @@
     var body = view === 'all' ? ordAllHTML() :
       (S.ordState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' :
         ordOverdueHTML(overdue, today) + (shown.length ? '<ul class="nb-rows">' + shown.slice().sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }).map(ordRow).join('') + '</ul>' : (overdue.length ? '' : live.length ? '<p class="nb-empty">Everything on this list has been ordered. See Ordered today below.</p>' : S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : '<p class="nb-empty">Loading...</p>')));
-    return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' : '') + '</span><span class="p-links"><button type="button" class="p-link" data-p="who-change">Not you?</button><a class="p-link" href="#/prep">Prep list</a>' + '' + '</span></div>' + tabs +
+    return whoTopHTML('') + tabs +
       '<section class="nb-page o-page' + (view === 'all' ? ' o-all' : '') + '"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + (view === 'all' ? 'To order' : 'Order list') + '</h2><span class="nb-date">' + (view === 'all' ? 'Across the last ' + ORD_DAYS + ' days' : esc(longDate(S.ordDate))) + '</span></div>' +
       (view === 'day' ? '<div class="nb-prog">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') + '</header>' +
       /* the add box is at the top, so it is always in reach; on big screens the list and the ordered-today list sit side by side below it */
       (view === 'day' && add ? '<div class="nb-foot o-add">' + add + (canBrowse() ? '' : '<p class="hint nb-who">Only the head chef or a sous chef ticks a line as ordered or removes it. Wrote the wrong thing? Undo it straight away, or ask them.</p>') + '</div>' : '') +
       (view === 'day' ? closeoutHTML(null, S.ordDate) : '') +
-      (view === 'day' && S.ordDate === today ? ordNudgeHTML(overdue, today) : '') +
       '<div class="o-cols"><div class="nb-body o-main">' + body + removedBox + '</div>' + (orderedBox ? '<div class="o-ordered">' + orderedBox + '</div>' : '') + '</div></section>';
   }
 
@@ -4086,7 +4100,7 @@
   /* The wastage page is for logging (head chef decision, 22 Oct 2026): the form and today's entries from the whole team.
      Past days, the end-of-day review and corrections to past days are in the admin panel (Reports, Wastage). */
   function wasteHTML() {
-    var p = me(), today = dayNow();
+    var today = dayNow();
     if (S.wDate !== today) { S.wDate = today; watchWaste(); }
     var f = S.wf, live = (S.wLines || []).filter(function (x) { return !x.deleted; }).sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); });
     var shown = (S.wLines || []).filter(function (x) { return wAll() || !x.deleted; }).sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); });
@@ -4108,7 +4122,7 @@
     var tot = totalsText(wTotals(live));
     var body = S.wState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' :
       (shown.length ? '<ul class="nb-rows">' + shown.map(wRow).join('') + '</ul>' : (S.wState !== 'ok' ? '<p class="nb-empty">Loading...</p>' : '<p class="nb-empty">Nothing logged for ' + esc(dayName(S.wDate).toLowerCase()) + ' yet. Log waste when it happens: prep waste, expired stock, cooking faults, returns and excess production.</p>'));
-    return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' + ksTagHTML() : '') + '</span><span class="p-links"><button type="button" class="p-link" data-p="who-change">Not you?</button><a class="p-link" href="#/prep">Prep list</a>' + '' + '</span></div>' +
+    return whoTopHTML(ksTagHTML()) +
       '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Wastage</h2><span class="nb-date">' + esc(longDate(S.wDate)) + (tot ? ' &middot; ' + esc(tot) : '') + '</span></div>' +
       '<div class="nb-prog">' + live.length + (live.length === 1 ? ' entry' : ' entries') + '</div></header>' +
       '<p class="w-rule">Write the actual amount and unit, not a dollar value. Unsafe food must never be reused to avoid logging waste.</p>' +
@@ -6455,8 +6469,6 @@
     if (a === 'wreview') { saveReview(el.getAttribute('data-v')); return; }
     if (a === 'w-refresh') { loadWStats(true); loadStats(true); draw(); return; }
     if (a === 'miss-hide') { sset(docRef('misses', id), { hidden: true, q: ((S.misses || []).filter(function (x) { return x.id === id; })[0] || {}).q || id }, true).then(function () { loadMisses(true); }, failed); return; }
-    if (a === 'onudge-hide') { lsSet('lk.ord.nudge', dayNow()); draw(); return; }
-    if (a === 'onudge-show') { var od = document.getElementById('o-overdue'); if (od) { od.scrollIntoView({ block: 'start' }); var ob = od.querySelector('.nb-box'); if (ob) ob.focus({ preventScroll: true }); } return; }
     if (a === 'oqset') { S.oqty = el.getAttribute('data-v') || ''; draw(); var to = S.root.querySelector('[data-k="o-text"]'); if (to) to.focus(); return; }
     // "Add 5 L": the usual amount goes in and the line is added in the same tap
     if (a === 'qset' || a === 'oqset') sg('usual', 't');
