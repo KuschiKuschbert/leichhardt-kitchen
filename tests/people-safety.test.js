@@ -17,6 +17,9 @@ const cfg = p => p.evaluate(k => window.__fake.dump()[k], CFG);
   ok(await p.$('[data-p="a-save"]:not([disabled])') !== null, 'Save is on');
   await L.tap(p, '[data-p="signout"]'); await L.settle(p, 200);
   ok(/Unsaved staff changes/.test(await txt(p, '.p-toast') || '') && /headchef/.test(await txt(p, '.p-bar') || ''), 'Sign out with changes waiting asks again and stays signed in');
+  // the bar is about the Google account, not the person, and Prep is in the top bar (23 Oct 2026)
+  ok(await txt(p, '.p-bar [data-p="signout"]') === 'Sign out of Google' && /^Google account:/.test(await txt(p, '.p-bar') || '') && !(await p.$('.p-bar a[href="#/prep"]')), 'admin bar: Google account, Sign out of Google, no Prep list link (' + await txt(p, '.p-bar') + ')');
+  ok(/Sign out of Google again/.test(await txt(p, '.p-toast') || ''), 'admin bar: the toast names Sign out of Google');
   await L.tap(p, '[data-p="a-reset"]'); await L.settle(p, 150);
   ok(/Tap again to undo/.test(await txt(p, '[data-p="a-reset"]')), 'Undo unsaved changes asks again');
   await L.tap(p, '[data-p="a-save"]'); await L.settle(p, 600);

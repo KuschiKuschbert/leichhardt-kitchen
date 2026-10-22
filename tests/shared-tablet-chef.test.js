@@ -50,6 +50,26 @@ const key = async p => (await L.admItem(p)) === 'none' ? null : true;
   ok(p.errors.length === 0, 'swap: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // the admin card's "Not Bo? Change person" hands over like Not you? (23 Oct 2026): a line typed asks a second tap
+  // and the page stays put until then; on a shared device what Bo left goes
+  const whoNow = p => p.evaluate(() => window.LK_PREP.whoName());
+  for (const shared of [false, true]) {
+    const tag = shared ? 'change person, shared device' : 'change person';
+    p = await L.open(b, '#/prep', { admin: true, who: 'bo', settings: shared ? { shared: true } : {}, wait: 1800 });
+    if (shared) await p.evaluate(() => localStorage.setItem('lk.fe.draft.new', JSON.stringify({ name: 'Smith 50th' })));
+    await p.fill('#p-text', 'Pick parsley');
+    await p.evaluate(() => { location.hash = '#/admin'; }); await L.settle(p, 800);
+    const sel = '#prep-root a[data-p="who-change"]';
+    ok(/Not Bo\? Change person/.test(await txt(p, sel) || ''), tag + ': the admin card offers Not Bo? Change person (' + await txt(p, sel) + ')');
+    await p.click(sel); await L.settle(p, 300);
+    ok(/#\/admin$/.test(p.url()) && /Not saved\. Tap again/.test(await txt(p, sel) || '') && await whoNow(p) === 'Bo', tag + ': the first tap stays on the admin page and asks again (' + p.url() + ', ' + await txt(p, sel) + ')');
+    await p.click(sel, { timeout: 3000 }).catch(() => {}); await L.settle(p, 600);
+    ok(/#\/prep$/.test(p.url()) && await whoNow(p) === '' && !!(await p.$('.p-name')), tag + ': the second tap signs Bo out and asks who is writing (' + p.url() + ')');
+    if (shared) ok(await p.evaluate(() => localStorage.getItem('lk.fe.draft.new')) === null, tag + ': the function draft Bo left is gone');
+    ok(p.errors.length === 0, tag + ': no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+  }
+
   await b.close();
   R.forEach(r => console.log(r));
   const bad = R.filter(r => r.startsWith('FAIL')).length;

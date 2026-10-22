@@ -57,6 +57,25 @@ async function idle(p) { await p.clock.runFor(11 * 60000); await L.settle(p, 300
   ok(p.errors.length === 0, 'shared tablet: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // a new starter's first PIN on a shared tablet (23 Oct 2026): the tick that asked who they are is done under them, and
+  // the drinks run card asks for their usual instead of taking the prep list over
+  const kimCfg = { people: [
+    { id: 'sam', name: 'Sam', role: 'sous', add: true, tick: true, del: true, active: true },
+    { id: 'ann', name: 'Ann', role: 'staff', add: true, tick: true, del: false, active: true },
+    { id: 'bo', name: 'Bo', role: 'staff', add: true, tick: true, del: false, active: true },
+    { id: 'kim', name: 'Kim Lee', role: 'staff', add: true, tick: true, del: false, active: true }
+  ], sousIds: ['sam'], staffIds: ['sam', 'ann', 'bo', 'kim'], showBadges: true };
+  p = await L.open(b, '#/prep', { who: '', touch: true, settings: { shared: true }, extra: { [['kitchens', L.PIN, 'config', 'main'].join('/')]: kimCfg }, wait: 1200 });
+  await p.click('[data-p="tick"][data-id="i1"]'); await L.settle(p, 300);
+  await p.click('.p-name[data-id="kim"]'); await L.settle(p, 300);
+  await p.keyboard.type('4444'); await L.settle(p, 600);
+  await p.keyboard.type('4444'); await L.settle(p, 1200);
+  const k1 = await item(p, 'i1');
+  ok(k1 && k1.done === true && k1.doneById === 'kim', 'first PIN: the tick is done under Kim (' + JSON.stringify(k1 && { done: k1.done, by: k1.doneById }) + ')');
+  ok(!/That line has changed/.test(await txt(p, '#prep-root') || '') && !/One more thing/.test(await txt(p, '#prep-root') || '') && !!(await p.$('.dr-nudge')), 'first PIN: the list with the drinks run card, not One more thing');
+  ok(p.errors.length === 0, 'first PIN: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   // the old shared wait goes to the first person who types a PIN, once
   p = await L.open(b, '#/prep', { who: '', touch: true, settings: { shared: true }, wait: 1200 });
   await p.evaluate(n => localStorage.setItem('lk.prep.lock', JSON.stringify({ n: 0, f: 1, until: n + 600000 })), L.NOW);
