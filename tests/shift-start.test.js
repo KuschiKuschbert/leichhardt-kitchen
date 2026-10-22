@@ -119,8 +119,9 @@ async function pin(p, name, digits) { await p.click('.p-name[data-id="' + name +
   ok(await dot(p), 'tablet tick: the bell has its dot for Bo');
   await p.context().close();
   p = await L.open(b, '#/prep', { who: '', touch: true, settings: { shared: true }, board: true, extra: Object.assign(cfg(), ping('n1', 'Safety: fryer 2 is out', { tag: 'safety' }), mins()), wait: 1500 });
+  // nobody's Got it on a shared tablet is not handed on to the first cook after the update (no lk.note.mig set here)
   await L.waitFor(p, () => !!document.querySelector('.nt-got')).catch(() => {});
-  await p.evaluate(() => { localStorage.setItem('lk.note.mig', '1'); const n = document.querySelector('.nt-got'); if (n) n.click(); });
+  await p.evaluate(() => { const n = document.querySelector('.nt-got'); if (n) n.click(); });
   await L.settle(p, 300);
   await p.click('[data-p="tick"][data-id="i1"]'); await L.settle(p, 300);
   await pin(p, 'bo', '3333');
@@ -129,7 +130,75 @@ async function pin(p, name, digits) { await p.click('.p-name[data-id="' + name +
   ok(/fryer 2/.test(await txt(p, '.nt-list') || '') && await p.$('.nt .nt-a') === null && await p.$('.nt-next') === null, 'tablet tick: a Safety ping comes up for Bo, without the minutes');
   await p.click('.nt-got'); await L.settle(p, 300);
   ok(await p.evaluate(() => !!localStorage.getItem('lk.note.seen.bo') && !localStorage.getItem('lk.note.seen.ann')), 'tablet: Got it is Bo\'s, not the tablet\'s');
+  // a reload (the book updating itself) keeps Bo's sign-in as one just to tick: no start sheet for him
+  await p.evaluate(() => localStorage.removeItem('lk.note.seen.bo'));
+  await p.reload({ waitUntil: 'load' }); await L.settle(p, 1500);
+  await p.clock.runFor(61000); await L.settle(p, 300);
+  ok(await p.evaluate(() => localStorage.getItem('lk.board.bo') === null), 'tablet reload: still no start of shift for a sign-in just to tick');
   ok(p.errors.length === 0, 'tablet: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // one cook's Later does not hold the Safety ping back from the next cook on the tablet
+  p = await L.open(b, '#/prep', { who: 'ann', touch: true, settings: { shared: true }, extra: Object.assign(cfg(), ping('n1', 'Safety: fryer 2 is out', { tag: 'safety' })), wait: 1500 });
+  await L.waitFor(p, () => !!document.querySelector('.nt-later')).catch(() => {});
+  await p.click('.nt-later'); await L.settle(p, 300);
+  await p.click('.wtop-who'); await L.settle(p, 200);
+  await p.click('[data-who="out"]'); await L.settle(p, 400);
+  await p.click('[data-p="who-back"]').catch(() => {}); await L.settle(p, 300);
+  await p.click('[data-p="tick"][data-id="i2"]'); await L.settle(p, 300);
+  await pin(p, 'bo', '3333');
+  await p.clock.runFor(61000); await L.settle(p, 400);
+  await L.waitFor(p, () => !!document.querySelector('.nt-wrap')).catch(() => {});
+  ok(/fryer 2/.test(await txt(p, '.nt-list') || '') && await txt(p, '.nt-eb') === 'Bo', 'tablet Later: Ann\'s Later does not hold the Safety ping back from Bo');
+  await p.context().close();
+
+  // a first PIN set on the order list: One more thing is not on the screen there, so the pings still come up
+  const kim = { [CFG]: { people: people.concat([{ id: 'kim', name: 'Kim Lee', role: 'staff', add: true, tick: true, del: false, active: true }]), sousIds: ['sam'], pingIds: ['sam'], staffIds: ['sam', 'ann', 'bo', 'kim'], showBadges: true } };
+  p = await L.open(b, '#/orders', { who: '', board: true, extra: Object.assign(kim, ping('n1', 'Safety: walk-in door sticks', { tag: 'safety' })), wait: 1500 });
+  await L.waitFor(p, () => !!document.querySelector('.nt-later')).catch(() => {});
+  await p.click('.nt-later'); await L.settle(p, 300);   // the phone's own call with nobody signed in: Later is nobody's only
+  await p.click('.p-name[data-id="kim"]');
+  await p.keyboard.type('4444'); await L.settle(p, 600);
+  await p.keyboard.type('4444'); await L.settle(p, 1000);
+  await L.waitFor(p, () => !!document.querySelector('.nt-wrap')).catch(() => {});
+  ok(/walk-in/.test(await txt(p, '.nt-list') || '') && await p.evaluate(() => location.hash) === '#/orders', 'first PIN on the order list: the pings sheet still comes up');
+  await p.context().close();
+
+  // the sheet keeps its place while another phone ticks a line, and closes by itself when its ping is removed
+  const long = Object.assign(cfg(), ping('n1', 'Safety: ' + 'check the walk-in seal before service. '.repeat(14), { tag: 'safety' }), ping('n2', 'Special: ' + 'pork belly with apple and fennel. '.repeat(14), { tag: 'special' }));
+  p = await L.open(b, '#/prep', { who: 'ann', extra: long, wait: 2000 });
+  await L.waitFor(p, () => !!document.querySelector('.nt-body')).catch(() => {});
+  const sc = await p.evaluate(() => { const b = document.querySelector('.nt-body'); b.scrollTop = 200; return b.scrollTop; });
+  await p.evaluate(k => window.__fake.write(k, Object.assign({}, window.__fake.dump()[k], { done: true, doneBy: 'Bo', doneById: 'bo', doneAt: Date.now() })), ['kitchens', L.PIN, 'days', today, 'items', 'i2'].join('/'));
+  await L.settle(p, 500);
+  ok(sc > 0 && await p.evaluate(() => document.querySelector('.nt-body').scrollTop) === sc, 'a tick elsewhere: the sheet stays where it was scrolled');
+  await p.context().close();
+  p = await L.open(b, '#/prep', { who: 'ann', extra: Object.assign(cfg(), ping('n1', 'Special: pork belly', { tag: 'special' })), wait: 2000 });
+  await L.waitFor(p, () => !!document.querySelector('.nt-wrap')).catch(() => {});
+  await p.evaluate(() => { const S = window.LK_PREP.state; S.notes = []; window.dispatchEvent(new Event('lk-clock')); });
+  await L.settle(p, 300);
+  ok(await p.$('.nt-wrap') === null && await p.evaluate(() => !localStorage.getItem('lk.note.seen.ann')), 'a ping removed while its sheet is open: the sheet closes, nothing marked read');
+  await p.context().close();
+
+  // the bell's sheet closed with Later counts as today's start: the same minutes do not come straight back
+  p = await L.open(b, '#/prep', { who: 'ann', extra: Object.assign(cfg(), mins()), wait: 2000 });
+  await L.waitFor(p, () => document.querySelector('.nbell.has-new')).catch(() => {});
+  await p.evaluate(() => localStorage.removeItem('lk.board.ann'));   // as if the start was held back (someone typing)
+  await p.click('.nbell'); await L.settle(p, 300);
+  await p.click('.nt-later'); await L.settle(p, 500);
+  ok(await p.$('.nt-wrap') === null && await p.evaluate(d => localStorage.getItem('lk.board.ann') === d, today), 'the bell, then Later: no second sheet with the same minutes');
+  await p.context().close();
+
+  // a desktop idle lock takes the sheet away; after the PIN it is Ann's again, and her Got it is hers
+  p = await L.open(b, '#/prep', { who: 'ann', width: 1280, height: 800, board: true, extra: Object.assign(cfg(), ping('n1', 'Delivery: Bidfood 09:00')), wait: 2000 });
+  await L.waitFor(p, () => !!document.querySelector('.nt-wrap')).catch(() => {});
+  await p.clock.runFor(8 * 60000); await L.settle(p, 500);
+  ok(await p.$('.nt-wrap') === null && await p.evaluate(() => !localStorage.getItem('lk.note.seen')), 'idle lock: the sheet goes, nothing read for nobody');
+  await p.keyboard.type('2222'); await L.settle(p, 1200);
+  await L.waitFor(p, () => !!document.querySelector('.nt-got')).catch(() => {});
+  ok(await txt(p, '.nt-eb') === 'Ann', 'idle lock: after the PIN the sheet is Ann\'s');
+  await p.click('.nt-got'); await L.settle(p, 300);
+  ok(await p.evaluate(() => !!localStorage.getItem('lk.note.seen.ann')), 'idle lock: her Got it is hers');
   await p.context().close();
 
   // the sheet at tablet and laptop width: no sideways scroll, Got it in view, in the middle from 900 px
@@ -145,7 +214,7 @@ async function pin(p, name, digits) { await p.click('.p-name[data-id="' + name +
 
   // the head chef's mail nudge waits for the pings sheet, and never opens over a recipe
   const head = { [CFG]: { people: people.map(x => x.id === 'sam' ? Object.assign({}, x, { role: 'head' }) : x), headId: 'sam', sousIds: ['sam'], pingIds: ['sam'], staffIds: ['sam', 'ann', 'bo'], showBadges: true } };
-  p = await L.open(b, '#/', { admin: true, who: '', extra: Object.assign(head, L.mail(), ping('n1', 'Delivery: Bidfood 09:00', { by: 'ann' })), wait: 2200 });
+  p = await L.open(b, '#/', { admin: true, who: '', extra: Object.assign({}, head, L.mail(), ping('n1', 'Delivery: Bidfood 09:00', { by: 'ann' })), wait: 2200 });
   await L.waitFor(p, () => !!document.querySelector('.nt-wrap')).catch(() => {});
   ok(!!(await p.$('.nt-wrap')) && !(await p.$('.mlp-wrap')), 'mail: the pings sheet first, the mail nudge waits');
   // going to Recipes puts the pings off (a page change is Back for the sheet); the nudge does not take its place there
@@ -156,6 +225,25 @@ async function pin(p, name, digits) { await p.click('.p-name[data-id="' + name +
   await p.clock.runFor(61000); await L.settle(p, 300);
   await L.waitFor(p, () => !!document.querySelector('.mlp-wrap')).catch(() => {});
   ok(!!(await p.$('.mlp-wrap')) && !(await p.$('.nt-wrap')), 'mail: the nudge comes on the next page, on its own');
+  await p.context().close();
+
+  // a recipe link in a ping: the mail nudge does not land on the recipe it opened
+  p = await L.open(b, '#/', { admin: true, who: '', extra: Object.assign({}, head, L.mail(), ping('n1', 'Delivery: Barramundi in at 09:00', { by: 'ann' })), wait: 2200 });
+  await L.waitFor(p, () => !!document.querySelector('.nt-rl')).catch(() => {});
+  await p.click('.nt-rl'); await L.settle(p, 600);
+  ok(/^#\/r\//.test(await p.evaluate(() => location.hash)) && !(await p.$('.mlp-wrap')), 'mail: no nudge over the recipe a ping links to (' + await p.evaluate(() => location.hash) + ')');
+  await p.context().close();
+
+  // the head chef's edit from the Google device is saved by nobody, so it is new to the ping's writer
+  p = await L.open(b, '#/admin', { admin: true, who: '', extra: Object.assign({}, head, ping('n1', 'Delivery: Bidfood 09:00', { by: 'ann', author: 'ann' })), wait: 2200 });
+  await L.waitFor(p, () => !!document.querySelector('.nt-got')).catch(() => {});
+  await p.click('.nt-got'); await L.settle(p, 300);
+  await L.adminTab(p, 'notes');
+  await p.click('[data-p="n-edit"][data-id="n1"]'); await L.settle(p, 200);
+  await p.fill('[data-k="n-text"]', 'Delivery: Bidfood cancelled today');
+  await p.click('[data-p="n-save"]'); await L.settle(p, 700);
+  s = await store(p);
+  ok(s[fsKey(['notes', 'n1'])].by === '' && s[fsKey(['notes', 'n1'])].author === 'ann', 'Google device edit: saved by nobody, the writer kept');
   await p.context().close();
 
   await b.close();

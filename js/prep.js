@@ -590,7 +590,7 @@
     fb.fs.setDoc(sessRef(), { by: id, pinAt: at, exp: exp, at: fb.fs.serverTimestamp() }).then(function () { if (sessOn() && S.uid === uid) sessKeep(id, exp, at); }).catch(function () {});
   }
   function pickName(id) {
-    sessDrop();
+    noteClose('shut'); ksClose(); sessDrop();   // a sheet for the person before stays off the PIN screen
     S.who = id; lsSet('lk.prep.who', id); lsSet('lk.prep.tok', ''); S.authed = false; S.tok = ''; S.pf1 = S.pf2 = ''; S.pinMsg = ''; S.pinStep = 'checking'; featSync(); draw(); whoSync();
     fb.fs.getDoc(docRef('pinset', id)).then(function (s) {
       var d = s.exists() ? s.data() : null;
@@ -607,6 +607,7 @@
     // signed in on a shared device only to tick or add: no start of shift sheet (see noteMaybePop). Sign in from the
     // chef hat (back) is a real start
     S.guestIn = !!(pend && !pend.back);
+    lsSet('lk.prep.guest', S.guestIn ? id + ':' + dayNow() : '');   // kept for a reload; out of date for another person or day
     draw(); whoSync(true);   // a real sign-in: the chef mark flips in
     if (pend) guestReplay(pend);
     dkCheck(); ksCheck(); noteMaybePop();
@@ -732,7 +733,9 @@
     // a phone that signed in before sessions: its kept proof opens one session, once (then the proof is dropped). The
     // writes below wait for it; if the PIN was reset since, the first write is refused and the PIN is asked
     else sessOpenRetry(S.who, tok[1]).catch(function () {});
-    S.authed = true; S.tok = hasTok ? tok[1] : ''; hereAdd(S.who); draw(); whoSync(); dkCheck(); ksCheck(); noteMaybePop(); setTimeout(dailyFlush, 3000);   // the section first, then the pings
+    S.authed = true; S.tok = hasTok ? tok[1] : ''; hereAdd(S.who); draw(); whoSync(); dkCheck();
+    var gi = (lsGet('lk.prep.guest') || '').split(':'); S.guestIn = gi[0] === S.who && gi[1] === dayNow();   // signed in just to tick, before a reload
+    ksCheck(); noteMaybePop(); setTimeout(dailyFlush, 3000);   // the section first, then the pings
     // the first write checks it on the server: a reset PIN, a session that ran out or someone off the list asks again
     sset(docRef('activity', S.who), { name: (who() || {}).name || '', visits: fb.fs.increment(1), lastSeen: now() }, true).then(sessRenew, function (e) {
       if (e && e.code === 'permission-denied') { S.authed = false; S.tok = ''; pickName(S.who); }
@@ -768,7 +771,7 @@
     lsSet('lk.prep.seen', String(Date.now()));
   }
   /* the next person never lands in the last person's staff draft, minutes register or ping editor */
-  function leave() { sessDrop(); ksClose(); noteClose('shut'); S.guestIn = false; S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); }
+  function leave() { sessDrop(); ksClose(); noteClose('shut'); S.guestIn = false; lsSet('lk.prep.guest', ''); S.drinkAsk = ''; S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); }
   /* The chef mark's menu (js/app.js) asks what to show: Meeting minutes for everyone (when the page is on), and for the
      head chef and sous chefs Shift pings, the Minutes register and Manage staff. The head chef on their admin device gets
      the matching admin tab instead. */
@@ -4143,7 +4146,7 @@
   var NOTE_TAGS = [['none', 'Ping'], ['off', 'Off today'], ['special', 'Special'], ['function', 'Function'], ['delivery', 'Delivery'], ['safety', 'Safety'], ['allergen', 'Allergen alert']];
   var NOTE_RANK = { safety: 0, allergen: 1, off: 2, special: 3, function: 4, delivery: 5, none: 6 };
   var NOTE_MIN = 10 * 60 + 30, NOTE_FAR = '2099-12-31', NOTE_STALE = 30 * 60000;
-  var npop = null, nprev = null, nTick = null, n1030 = '', nSnooze = 0;
+  var npop = null, nprev = null, nTick = null, n1030 = '', nSnooze = null;   // nSnooze: { k: whose Later (noteSeenKey), at }
   function noteTagName(t) { var x = NOTE_TAGS.filter(function (n) { return n[0] === t; })[0]; return x ? x[1] : 'Ping'; }
   function noteOn(n, day) {
     if (!n || n.removed || !n.text || !n.start || !n.until || n.start > day || n.until < day) return false;
@@ -4163,12 +4166,13 @@
   function noteSig(list) { return list.map(function (n) { return n.id + ':' + (n.upd || n.at || 0); }).join('|'); }
   /* Got it is kept for each person (23 Oct 2026), so on a shared tablet the first cook's Got it no longer hides the pings
      from the cooks after them: lk.note.seen.<id> while someone is signed in, lk.note.seen with nobody. Out of date when the
-     kitchen day changes or today's pings change (d and sig). The first person signed in after the update takes over the
-     phone's old mark once (lk.note.mig), so nobody sees today's pings twice. */
+     kitchen day changes or today's pings change (d and sig). On a personal phone the first person signed in after the update
+     takes over the phone's old mark once (lk.note.mig), so nobody sees today's pings twice. */
   function noteSeenKey() { var p = me(); return p ? 'lk.note.seen.' + p.id : 'lk.note.seen'; }
   function noteSeen() {
     var k = noteSeenKey();
-    if (k !== 'lk.note.seen' && !lsGet(k) && !lsGet('lk.note.mig')) { var old = lsGet('lk.note.seen'); if (old) lsSet(k, old); lsSet('lk.note.mig', '1'); }
+    // not on a shared device: there the phone's mark may be a Got it from someone else, after the update
+    if (k !== 'lk.note.seen' && !lsGet('lk.note.mig')) { var old = lsGet('lk.note.seen'); if (old && !lsGet(k) && !shared()) lsSet(k, old); lsSet('lk.note.mig', '1'); }
     try { return JSON.parse(lsGet(k) || '{}') || {}; } catch (e) { return {}; }
   }
   /* a ping the person on this phone saved last (by) is never new to them, so a chef's own 15:00 ping does not pop up at them.
@@ -4181,7 +4185,7 @@
     var on = /^\d{4,6}$/.test(S.pin) && (featOn('pings') || featOn('minutes'));
     return { on: on, n: todaysNotes().length, unread: noteUnread(), sign: featOn('minutes') ? mnUnsigned().length : 0 };
   }
-  function noteBellLabel(i) { return i.n + ' shift ping' + (i.n === 1 ? '' : 's') + ' today' + (i.unread ? ', new' : '') + (i.sign ? '. ' + i.sign + ' minutes to sign' : ''); }
+  function noteBellLabel(i) { return i.n + ' shift ping' + (i.n === 1 ? '' : 's') + ' today' + (i.unread ? ', new' : '') + (i.sign ? '. Minutes to sign: ' + i.sign : ''); }
   /* The bell in the top bar (23 Oct 2026): there every day while pings or minutes are on, so the top bar keeps one shape.
      It has a dot while a ping is unread or minutes are waiting to be signed, and opens the same sheet at any time. */
   function noteBell() {
@@ -4290,9 +4294,9 @@
     var out = '<header class="nt-head"><span class="nt-eb">' + esc(p ? p.name : 'Leichhardt Hotel Kitchen') + '</span><h2 class="nt-h" id="nt-h">' + h + '</h2><span class="nt-date">' + esc(pv ? pv.label : parseYmd(t).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })) + '</span></header><div class="nt-body">';
     if (showPings && list.length) {
       out += '<ul class="nt-list">' + list.map(function (n) { return noteRowHTML(n, step === 'pings' && !pv && !!el.lkWas && el.lkWas.indexOf(n.id + ':' + (n.upd || n.at || 0)) < 0 && !noteMine(n)); }).join('') + '</ul>';
-      if (!pv) out += '<div class="nt-sum" id="nt-sum">' + noteSummary() + '</div>';
+      if (!pv) out += '<div class="nt-sum" id="nt-sum"></div>';   // filled in by noteDraw, so a tick elsewhere does not redraw the sheet
     } else if (showPings && !mins.length) out += '<p class="nt-none">No pings today.</p>';
-    if (step === 'pings' && mins.length) out += '<p class="nt-next">Next: ' + (mins.length === 1 ? 'minutes to sign' : mins.length + ' minutes to sign') + '</p>';
+    if (step === 'pings' && mins.length) out += '<p class="nt-next">Next: ' + (mins.length === 1 ? 'minutes to sign' : 'minutes from ' + mins.length + ' meetings to sign') + '</p>';
     else if (mins.length) out += '<h3 class="nt-sh">To sign</h3><div class="nt-mn">' + mins.map(mnRowHTML).join('') + '</div>';
     out += '</div><footer class="nt-foot">';
     if (pv) out += '<button type="button" class="nt-got" data-note="close">Close preview</button>';
@@ -4300,18 +4304,36 @@
     else out += '<button type="button" class="nt-later" data-note="dismiss">' + (mins.length ? 'Later' : 'Close') + '</button>';
     return out + editor + '</footer>';
   }
-  /* draws the sheet again when what it shows changed (a read came in, a ping was read on another tab), keeping the focus */
+  /* draws the sheet again when what it shows changed (a read came in, a ping was read on another tab), keeping the place
+     it was scrolled to and the focus. The prep line under the pings changes with every tick, so it is filled in on its own. */
   function noteDraw(focusFirst) {
     var box = npop && npop.querySelector('.nt-in');
     if (!box) return;
     var h = noteInHTML(npop);
-    if (box.lkH === h && !focusFirst) return;
-    var ae = document.activeElement, k = ae && box.contains(ae) ? ae.getAttribute('data-note') : '', kid = k && ae.getAttribute('data-id');
-    box.innerHTML = h; box.lkH = h;
-    var f = focusFirst ? box.querySelector('.nt-a, .nt-got, .nt-later') : k ? box.querySelector('[data-note="' + k + '"]' + (kid ? '[data-id="' + kid.replace(/["\\]/g, '\\$&') + '"]' : '')) : null;
-    if (f) { try { f.focus({ preventScroll: true }); } catch (e) {} }
+    if (box.lkH !== h || focusFirst) {
+      var ae = document.activeElement, all = box.querySelectorAll('[data-note]'), ix = ae && box.contains(ae) ? Array.prototype.indexOf.call(all, ae) : -1;
+      var k = ix >= 0 ? ae.getAttribute('data-note') + '|' + (ae.getAttribute('data-id') || '') : '', sb = box.querySelector('.nt-body'), st = sb ? sb.scrollTop : 0;
+      box.innerHTML = h; box.lkH = h;
+      var nb = box.querySelector('.nt-body'); if (nb && !focusFirst) nb.scrollTop = st;
+      var f = null;
+      if (focusFirst) f = box.querySelector('.nt-a, .nt-got, .nt-later');
+      else if (k) {
+        // the same control, by its place among the sheet's controls, else the first with the same click name
+        var now2 = box.querySelectorAll('[data-note]'), same = function (el) { return el && el.getAttribute('data-note') + '|' + (el.getAttribute('data-id') || '') === k; };
+        f = same(now2[ix]) ? now2[ix] : Array.prototype.filter.call(now2, same)[0] || null;
+      }
+      if (f) { try { f.focus({ preventScroll: true }); } catch (e) {} }
+    }
+    var sum = box.querySelector('#nt-sum');
+    if (sum) { var sh = noteSummary(); if (sum.lkH !== sh) { sum.innerHTML = sh; sum.lkH = sh; } }
   }
-  function noteRefresh() { if (npop) noteDraw(false); }
+  /* an open sheet that came up by itself and has nothing left to show (its ping removed, read on another tab, the page
+     held back) closes without marking anything */
+  function noteRefresh() {
+    if (!npop || npop.lkClosing) return;
+    if (!npop.lkPv && npop.lkWhy !== 'tap' && !(npop.lkStep === 'pings' && noteUnread()) && !(npop.lkWhy !== 'due' && noteMins().length)) { noteClose('shut'); return; }
+    noteDraw(false);
+  }
   // pv: the ping editor's Preview ({ list, label }); why: 'start', 'due' or 'tap' (see above)
   function noteOpen(pv, why) {
     if (npop) return;
@@ -4341,19 +4363,24 @@
      Write or edit pings: read, and close), 'later' (Later, Escape, a tap outside, Back: put off, the pings come back by
      themselves in 15 minutes) or 'shut' (signed out, or the page held back: neither). A stray tap never reads a safety ping. */
   function noteClose(how, noBack) {
-    if (!npop) return;
+    if (!npop || npop.lkClosing) return;
     var pv = npop.lkPv, why = npop.lkWhy, pings = npop.lkStep === 'pings';
-    if (!pv && pings && (how === 'got' || how === 'read')) {
+    if (!pv && pings && how === 'got' && why !== 'due' && noteMins().length) {
       noteMarkSeen(); noteWriteSeen(noteTheirs());
-      if (how === 'got' && why !== 'due' && noteMins().length) { npop.lkStep = 'rest'; noteDraw(true); liveSay('Pings read. Minutes to sign are below.'); return; }
+      npop.lkStep = 'rest'; noteDraw(true); liveSay('Pings read. Minutes to sign are below.'); return;
     }
-    if (!pv && pings && how === 'later' && noteUnread()) nSnooze = Date.now();
+    npop.lkClosing = true;   // the seen record below can redraw the page, which must not close the sheet a second time
+    if (!pv && pings && (how === 'got' || how === 'read')) { noteMarkSeen(); noteWriteSeen(noteTheirs()); }
+    if (!pv && pings && how === 'later' && noteUnread()) nSnooze = { k: noteSeenKey(), at: Date.now() };   // Later is that person's only
+    // the bell's sheet shows all the start would: closed with the reads in, it is today's start for that person
+    if (why === 'tap' && how !== 'shut') { var bp = me(); if (bp && !S.guestIn && noteReads() === 'in') lsSet('lk.board.' + bp.id, dayNow()); }
     ovDone('note', noBack);
     npop.parentNode.removeChild(npop); npop = null;
     document.documentElement.classList.remove('note-open');
     if (nprev && nprev.focus && document.body.contains(nprev)) { try { nprev.focus({ preventScroll: true }); } catch (e) {} }
     nprev = null;
-    sheetNext();
+    // closed by a link or by Back: hand on once the page has changed (the mail nudge never lands on a recipe it led to)
+    if (noBack) setTimeout(sheetNext, 0); else sheetNext();
   }
   function noteMarkSeen() { lsSet(noteSeenKey(), JSON.stringify({ d: dayNow(), sig: noteSig(noteTheirs()) })); noteBell(); }
   /* The start of a shift waits for the day's pings, minutes and this person's sign-offs, so the sheet opens once with
@@ -4368,7 +4395,9 @@
      unread. A person signed in on a shared device only to tick or add (S.guestIn) gets no start of shift, and only an
      unread Safety, Allergen alert or Off today ping pops up for them; the others wait on the bell. */
   function noteMaybePop() {
-    if (npop || sheetBusy() || (S.who && !S.authed && !resumed)) return;
+    // a person picked but not signed in yet (their PIN screen, a desktop idle lock) gets it after their PIN, as themselves
+    if (npop || sheetBusy() || (S.who && !S.authed)) return;
+    if (ksWant) { ksWant = false; ksOpen(); if (ksPop) return; }   // the section first, then the pings
     var p = me(), t = dayNow();
     if (p && !S.guestIn && lsGet('lk.board.' + p.id) !== t) {
       var r = noteReads();
@@ -4378,7 +4407,7 @@
         if ((noteUnread() && noteDueTime()) || noteMins().length) { noteOpen(null, 'start'); return; }
       }
     }
-    if (Date.now() - nSnooze < 15 * 60000 || !noteUnread() || !noteDueTime()) return;
+    if ((nSnooze && nSnooze.k === noteSeenKey() && Date.now() - nSnooze.at < 15 * 60000) || !noteUnread() || !noteDueTime()) return;
     if (S.guestIn && !noteNew().some(function (n) { return NOTE_URGENT[n.tag]; })) return;
     noteOpen(null, 'due');
   }
@@ -4420,13 +4449,16 @@
      open, while the page is hidden and while someone is typing, and the one that closes hands on with sheetNext(). A
      closing sheet takes its history entry off with Back (ovDone), so the next one waits for that Back to land first. */
   var ksWant = false, ksWait = false, nextWait = false;
-  function sheetOpen() { return !!(ksPop || npop || mlPop || gz || document.querySelector('.wm-wrap')); }
+  // every sheet or popup over the page: these, the function sheet, the wastage reason sheet and the other bottom sheets
+  function sheetOpen() { return !!(ksPop || npop || mlPop || gz || S.sheet || document.querySelector('.wm-wrap, .fn-pop, .sheet-bg')); }
   function typing() { var ae = document.activeElement; return !!(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) && ae.type !== 'button'); }
-  function sheetBusy() { return sheetOpen() || ksWait || ovBack || S.drinkAsk === 'first' || document.visibilityState === 'hidden' || typing(); }
+  // a first PIN's One more thing, while it is on the screen (it shows only on the prep list)
+  function dkFirstUp() { return S.drinkAsk === 'first' && S.name === 'prep' && !!(S.root && document.body.contains(S.root) && S.root.querySelector('.dr-first')); }
+  function sheetBusy() { return sheetOpen() || ksWait || ovBack || dkFirstUp() || document.visibilityState === 'hidden' || typing(); }
   function sheetNext() {
     if (ovBack) { nextWait = true; return; }
     nextWait = false;
-    if (ksWant && !sheetOpen() && S.drinkAsk !== 'first') { ksWant = false; ksOpen(); if (ksPop) return; }
+    if (ksWant && !sheetOpen() && !dkFirstUp()) { ksWant = false; ksOpen(); if (ksPop) return; }
     noteMaybePop();
     mlMaybePop();
   }
@@ -4560,6 +4592,9 @@
     if (!f.id) { data.at = now(); data.author = S.who || ''; }
     var ref = f.id ? docRef('notes', f.id) : fb.fs.doc(colRef('notes')), when = noteWhen({ start: start, until: until, dows: data.dows, tm: data.tm });
     var was = f.id ? (S.notes || []).filter(function (x) { return x.id === f.id; })[0] : null, t = dayNow();
+    // the head chef's Google device with nobody signed in: saved by nobody, so the change is new to the ping's writer
+    // (W() adds no by there, and a merge would keep theirs). An older ping with no author keeps its writer.
+    if (!canW()) { data.by = ''; if (was && !was.author && was.by) data.author = was.by; }
     S.nSaving = true; S.nMsg = ''; draw();
     sset(ref, data, !!f.id).then(function () {
       if (noteOn(data, t) || (was && noteOn(was, t))) markPings();
@@ -4668,7 +4703,7 @@
     var t = now(), u = featOn('minutes') ? mnUnsigned().filter(function (m) { return t >= mnLateAt(m); }) : [];
     if (!u.length) return '';
     var days = Math.max(1, Math.floor((t - mnLateAt(u[0])) / 86400000) + MN_LATE);
-    return '<div class="mn-nudge" role="status"><span><b>Minutes not signed yet</b> Kitchen meeting, ' + esc(dayShort(u[0].date)) + (u.length > 1 ? ' and ' + (u.length - 1) + ' more' : '') + ', ' + days + ' days ago</span><a class="mn-nudge-btn" href="#/minutes" data-mn="' + esc(u[0].id) + '">Read and sign</a></div>';
+    return '<div class="mn-nudge" role="status"><span><b>Minutes not signed yet</b> Kitchen meeting, ' + esc(dayShort(u[0].date)) + (u.length > 1 ? ' and ' + (u.length - 1) + ' more' : '') + ', ' + ((u[0].v || 1) > 1 ? 'changed ' : 'published ') + days + ' days ago</span><a class="mn-nudge-btn" href="#/minutes" data-mn="' + esc(u[0].id) + '">Read and sign</a></div>';
   }
   // "Read and sign" opens the minutes the card names, not just the newest published ones (the card sits outside the prep root)
   document.addEventListener('click', function (e) { var a = e.target.closest && e.target.closest('.mn-nudge-btn[data-mn]'); if (a) { S.mSel = a.getAttribute('data-mn'); S.mErr = ''; } }, true);
@@ -6686,7 +6721,11 @@
     if (!el) return;
     var a = el.getAttribute('data-ml');
     if (a === 'later') { lsSet('lk.mail.later', String(now() + ML_NUDGE)); mlPopClose(); return; }
-    if (a === 'open') { mlPopClose(); S.atab = 'mail'; lsSet('lk.prep.atab', 'mail'); if (location.hash === '#/admin') { draw(); mlSeenAll(); } else location.hash = '#/admin'; }
+    if (a === 'open') {
+      // the page changes first, so a pings sheet handed on by the close opens on the Mail tab (a hash change closes an open one)
+      S.atab = 'mail'; lsSet('lk.prep.atab', 'mail'); mlOpened = now();   // no nudge again before the Mail tab is drawn (mlSeenAll saves the real time)
+      if (location.hash === '#/admin') { mlPopClose(); draw(); mlSeenAll(); } else { location.hash = '#/admin'; mlPopClose(); }
+    }
   });
   document.addEventListener('keydown', function (e) {
     if (!mlPop) return;

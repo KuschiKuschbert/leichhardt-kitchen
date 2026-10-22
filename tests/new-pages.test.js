@@ -103,8 +103,8 @@ const tab = p => p.evaluate(() => Array.prototype.some.call(document.querySelect
   ok(!(await docket(p)), 'guides only: no Guides docket for staff');
   ok(await p.$('.nt') !== null, 'guides only: the pings popup opens for staff');
   // the minutes are read from Firestore: wait for the bell to say so (under load the page goes still before the read)
-  await L.waitFor(p, () => /1 minutes to sign/.test((document.querySelector('.nbell') || { getAttribute: () => '' }).getAttribute('aria-label') || ''), null, 8000).catch(() => false);
-  ok(/1 minutes to sign/.test(await p.evaluate(() => document.querySelector('.nbell').getAttribute('aria-label'))), 'guides only: the bell says there are minutes to sign');
+  await L.waitFor(p, () => /Minutes to sign: 1/.test((document.querySelector('.nbell') || { getAttribute: () => '' }).getAttribute('aria-label') || ''), null, 8000).catch(() => false);
+  ok(/Minutes to sign: 1/.test(await p.evaluate(() => document.querySelector('.nbell').getAttribute('aria-label'))), 'guides only: the bell says there are minutes to sign');
   await p.click('.nt-got'); await L.settle(p, 300);
   await p.click('.nbell'); await L.settle(p, 300);
   ok(/Kitchen meeting/.test(await txt(p, '.nt .nt-a') || ''), 'guides only: the bell shows the minutes to sign for staff');
