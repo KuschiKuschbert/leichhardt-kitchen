@@ -1,0 +1,38 @@
+# Session check (22 Oct 2026): are the phones ready for phase 2 of PIN sessions (the rules stop accepting the older
+# PIN proof)? Reads only, and prints no names, ids or PINs: people are shown by their place on the staff list.
+# See scripts/session-check.mjs. Needs the repository secrets FIREBASE_SA and KITCHEN_PIN.
+# Run it from the Actions tab with "Run workflow" (or let Claude trigger it).
+name: Session check
+
+on:
+  workflow_dispatch:
+    inputs:
+      since:
+        description: 'Phase 1 live from (UTC, ISO time)'
+        required: false
+        default: '2026-10-22T10:15:00Z'
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: scripts/package-lock.json
+      - name: Install
+        working-directory: scripts
+        run: npm ci --no-audit --no-fund
+      - name: Check
+        working-directory: scripts
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+          KITCHEN_PIN: ${{ secrets.KITCHEN_PIN }}
+          SINCE: ${{ inputs.since }}
+        run: node session-check.mjs
