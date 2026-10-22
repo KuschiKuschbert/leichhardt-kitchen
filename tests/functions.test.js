@@ -110,8 +110,9 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   await p.goto(L.BASE + '#/recipes'); await L.settle(p, 900);
   await L.waitFor(p, () => /Smith 50th/.test((document.getElementById('fn-band') || {}).textContent || ''));
   const band = await txt(p, '#fn-band') || '';
-  ok(/Smith 50th/.test(band) && /Beer garden/.test(band) && !/guests/.test(band) && /18:30 Smith 50th/.test(band) && /Round 1 of 3: 3 Antipasto, 2 Aussie \(5 of 12\)/.test(band), 'band: the next round\'s time leads, then what goes in it against the total (' + band.replace(/\s+/g, ' ').slice(0, 200) + ')');
+  ok(/Smith 50th/.test(band) && /Beer garden/.test(band) && !/guests/.test(band) && /18:30 Smith 50th/.test(band) && /Round 1 of 3: 3 × Antipasto, 2 × Aussie \(5 of 12\)/.test(band), 'band: the next round\'s time leads, then what goes in it against the total (' + band.replace(/\s+/g, ' ').slice(0, 200) + ')');
   ok(/Kitchen comment/.test(band), 'band: kitchen comment marked');
+  ok(/^Functions today/.test(await txt(p, '#fn-band .fn-band-h') || '') && /1 on today/.test(await txt(p, '#fn-band .fn-band-n') || ''), 'band: a label says what the band holds');
   ok(p.errors.length === 0, 'coordinator: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -183,6 +184,7 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   ok(!/guest/i.test(await txt(p, '#fn-band') || ''), 'guests: the band never mentions guests');
   await tap(p, '#fn-band .fn-row'); await L.settle(p, 200);
   ok(!/guest/i.test(await txt(p, '.fn-sheet') || ''), 'guests: the sheet never mentions guests');
+  ok(/One round: this is the whole function, 3 platters/.test(await txt(p, '.fn-sheet .fn-whole') || '') && !(await p.$('.fn-sheet .fn-whole-list')), 'sheet: one round says it is the whole function, with no second list of the same platters');
   await p.context().close();
 
   // start time TBC: the coordinator confirms anyway, the kitchen sees TBC all day
@@ -203,7 +205,7 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   ok(!!tb && tb.status === 'confirmed' && tb.st === true && tb.start === 0 && tb.gu === true && tb.until === at(M.addDays(today, 1), '00:00'), 'TBC: saved confirmed, shown until midnight');
   await p.goto(L.BASE + '#/recipes'); await L.settle(p, 900);
   await L.waitFor(p, () => /Tbc party/.test((document.getElementById('fn-band') || {}).textContent || ''));
-  ok(/Times TBC: 4 Pizza/.test(await txt(p, '#fn-band') || ''), 'TBC: the band says Times TBC with the platters');
+  ok(/Times TBC: 4 × Pizza/.test(await txt(p, '#fn-band') || ''), 'TBC: the band says Times TBC with the platters');
   ok(p.errors.length === 0, 'TBC: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -220,14 +222,19 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   // sent ticks: Ann ticks round 1 in the sheet, the band moves on; she can undo a mis-tap; a missed round says so
   p = await L.open(b, '#/recipes', { who: 'ann', extra: extra({ smith }), clock: at(today, '18:31'), wait: 1200 });
   await L.waitFor(p, () => /Smith 50th/.test((document.getElementById('fn-band') || {}).textContent || ''));
-  ok(/Round 1 of 3 not sent yet: 3 Antipasto, 2 Aussie/.test(await txt(p, '#fn-band') || ''), 'sent: a round past its time and not ticked says "not sent yet" (' + (await txt(p, '#fn-band') || '').replace(/\s+/g, ' ').slice(0, 160) + ')');
+  ok(/Round 1 of 3 not sent yet: 3 × Antipasto, 2 × Aussie/.test(await txt(p, '#fn-band') || ''), 'sent: a round past its time and not ticked says "not sent yet" (' + (await txt(p, '#fn-band') || '').replace(/\s+/g, ' ').slice(0, 160) + ')');
   await tap(p, '#fn-band .fn-row'); await L.settle(p, 200);
   // the sheet leads with what goes out next: the date line, then the next round's time and platters, then every round
-  const order = await p.evaluate(() => [...document.querySelectorAll('.fn-sheet .fn-sub, .fn-sheet .fn-next, .fn-sheet .fn-rounds, .fn-sheet .fn-kc')].map(e => e.className.split(' ')[0]));
-  ok(JSON.stringify(order) === JSON.stringify(['fn-sub', 'fn-next', 'fn-rounds', 'fn-kc']), 'sheet: date line, next out, every round, then the kitchen comment (' + order.join(',') + ')');
+  const order = await p.evaluate(() => [...document.querySelectorAll('.fn-sheet .fn-sub, .fn-sheet .fn-next, .fn-sheet .fn-whole, .fn-sheet .fn-rounds, .fn-sheet .fn-kc')].map(e => e.className.split(' ')[0]));
+  ok(JSON.stringify(order) === JSON.stringify(['fn-sub', 'fn-next', 'fn-whole', 'fn-rounds', 'fn-kc']), 'sheet: date line, next out, the whole function, every round, then the kitchen comment (' + order.join(',') + ')');
+  // under Next out, the whole function added up (22 Oct 2026), each platter linked to its card, and no second platter list
+  const wh = (await txt(p, '.fn-sheet .fn-whole') || '').replace(/\s+/g, ' ');
+  ok(/Whole function 12 platters/.test(wh) && /All 3 rounds added up/.test(wh) && /3 × Antipasto Platter/.test(wh) && /4 × Aussie Platter/.test(wh) && /5 × Pizza Platter/.test(wh), 'sheet: the whole function under Next out, 12 platters over 3 rounds (' + wh.slice(0, 160) + ')');
+  ok((await p.$$('.fn-sheet .fn-whole a[href^="#/r/"]')).length === 3 && (await p.$$('.fn-sheet .fn-next a[href^="#/r/"]')).length === 2, 'sheet: every platter links to its recipe card');
+  ok(/^Function/.test(await txt(p, '.fn-sheet .fn-eb') || '') && !!(await p.$('.fn-sheet .fn-grip')), 'sheet: the book\'s sheet top, a grip and the Function label');
   ok(new RegExp(M.dayName(today) + ' · Beer garden · event 18:00').test(await txt(p, '.fn-sub') || ''), 'sheet: one line for the day, the place and the event start');
   const nx = (await txt(p, '.fn-next') || '').replace(/\s+/g, ' ');
-  ok(/Next out 18:30 · round 1 of 3/.test(nx) && /Due 18:30, not sent yet/.test(nx) && /3 ?Antipasto Platter ?2 ?Aussie Platter/.test(nx), 'sheet: next out is round 1 at 18:30 with 3 Antipasto and 2 Aussie, late (' + nx.slice(0, 160) + ')');
+  ok(/Next out 18:30 · round 1 of 3/.test(nx) && /Due 18:30, not sent yet/.test(nx) && /3 ?× ?Antipasto Platter ?2 ?× ?Aussie Platter/.test(nx), 'sheet: next out is round 1 at 18:30 with 3 Antipasto and 2 Aussie, late (' + nx.slice(0, 160) + ')');
   await tap(p, '.fn-next [data-fn="sent"]'); await L.settle(p, 400);
   ok(/19:00 · round 2 of 3/.test(await txt(p, '.fn-next') || ''), 'sheet: Sent in the next box moves it on to round 2');
   s = await store(p);
@@ -236,7 +243,7 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   ok(/Ann/.test(await txt(p, '.fn-sheet .fn-sent') || '') && !!(await p.$('.fn-sheet [data-fn="unsent"]')), 'sent: the sheet shows who ticked it, with Undo');
   await p.keyboard.press('Escape'); await L.settle(p, 100);
   const bs = await txt(p, '#fn-band') || '';
-  ok(/19:00 Smith 50th/.test(bs) && /Round 2 of 3: 2 Aussie, 2 Pizza \(4 of 12\)/.test(bs), 'sent: the band moves on to round 2 (' + bs.replace(/\s+/g, ' ').slice(0, 200) + ')');
+  ok(/19:00 Smith 50th/.test(bs) && /Round 2 of 3: 2 × Aussie, 2 × Pizza \(4 of 12\)/.test(bs), 'sent: the band moves on to round 2 (' + bs.replace(/\s+/g, ' ').slice(0, 200) + ')');
   await tap(p, '#fn-band .fn-row'); await L.settle(p, 200);
   await tap(p, '.fn-sheet [data-fn="unsent"]'); await L.settle(p, 400);
   ok((await store(p))[fsKey(['fnsent', 'smith_' + at(today, '18:30')])].sent === false, 'sent: Undo takes the tick back');
@@ -257,9 +264,9 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   await tap(p, '#fn-band a.fn-svc'); await L.settle(p, 500);
   await L.waitFor(p, () => document.querySelectorAll('.fn-svc-row').length === 2);
   let sv = await p.$$eval('.fn-svc-row', els => els.map(e => e.textContent.replace(/\s+/g, ' ')));
-  ok(/18:30 Late Smith 50th · Beer garden · round 1 of 3/.test(sv[0]) && /3 Antipasto/.test(sv[0]) && /18:40 Jones 40th · Function room/.test(sv[1]) && /2 Pizza/.test(sv[1]), 'service: the late round first, then the one due at 18:40 (' + sv.join(' / ').slice(0, 260) + ')');
+  ok(/18:30 Late Smith 50th · Beer garden · round 1 of 3/.test(sv[0]) && /3 × Antipasto/.test(sv[0]) && /18:40 Jones 40th · Function room/.test(sv[1]) && /2 × Pizza/.test(sv[1]), 'service: the late round first, then the one due at 18:40 (' + sv.join(' / ').slice(0, 260) + ')');
   const tp = (await txt(p, '.fn-svc-page .fn-next') || '').replace(/\s+/g, ' ');
-  ok(/To plate now 8 platters/.test(tp) && /4 ?Antipasto Platter ?2 ?Aussie Platter ?2 ?Pizza Platter/.test(tp), 'service: to plate now adds both functions up, most first (' + tp.slice(0, 200) + ')');
+  ok(/To plate now 8 platters/.test(tp) && /4 ?× ?Antipasto Platter ?2 ?× ?Aussie Platter ?2 ?× ?Pizza Platter/.test(tp), 'service: to plate now adds both functions up, most first (' + tp.slice(0, 200) + ')');
   await tap(p, '.fn-svc-row [data-fn="sent"][data-id="smith"]'); await L.settle(p, 400);
   sv = await p.$$eval('.fn-svc-row', els => els.map(e => e.textContent.replace(/\s+/g, ' ')));
   ok(/18:40 Jones 40th/.test(sv[0]) && /19:00 Later Smith 50th · Beer garden · round 2 of 3/.test(sv[1]), 'service: Sent moves Smith on to round 2, after Jones (' + sv.join(' / ').slice(0, 200) + ')');
@@ -281,6 +288,18 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   const bn = (await txt(p, '#fn-band') || '').replace(/\s+/g, ' ');
   ok(/Order today\s*Short notice Stock for Tomorrow do/.test(bn) && /on the order list/.test(bn), 'order: the band reminds the kitchen to order on the order day (' + bn.slice(0, 260) + ')');
   ok(/Tomorrow\s*Tomorrow do · event 18:00 · food 12:00/.test(bn), 'tomorrow: a short line for tomorrow\'s function');
+  ok(/^Functions today and soon/.test(bn), 'band: the label says today and soon (' + bn.slice(0, 60) + ')');
+  // Hide folds the band to one line for the rest of the day on this phone; Show opens it again
+  await tap(p, '#fn-band [data-fn="fold"]'); await L.settle(p, 150);
+  ok(!(await p.$('#fn-band .fn-row')) && /Smith 50th/.test(await txt(p, '#fn-band .fn-band-sum') || '') && await p.$eval('#fn-band .fn-sum-more', e => !e.hidden && e.textContent === '+2') && await p.evaluate(() => localStorage.getItem('lk.fn.fold')) === today, 'fold: on a phone Hide folds the band to one line, the next function and +2');
+  await p.setViewportSize({ width: 1280, height: 800 }); await L.settle(p, 200);
+  ok(await p.$$eval('#fn-band .fn-sum-i:not([hidden])', e => e.length) === 3 && await p.$eval('#fn-band .fn-sum-more', e => e.hidden), 'fold: on a wide screen the one line shows all three, with no +N');
+  await p.setViewportSize({ width: 390, height: 844 }); await L.settle(p, 200);
+  await p.reload(); await L.settle(p, 1200);
+  await L.waitFor(p, () => /Smith 50th/.test((document.getElementById('fn-band') || {}).textContent || ''));
+  ok(!(await p.$('#fn-band .fn-row')) && !!(await p.$('#fn-band .is-fold')), 'fold: still folded after a reload the same day');
+  await tap(p, '#fn-band [data-fn="fold"]'); await L.settle(p, 150);
+  ok((await p.$$('#fn-band .fn-row')).length >= 2 && await p.evaluate(() => localStorage.getItem('lk.fn.fold')) === null, 'fold: Show opens the band again');
   ok(!(await p.$('.fn-strip:not([hidden])')), 'strip: not there while the band is on screen');
   await p.evaluate(() => { document.body.style.minHeight = '4000px'; window.scrollTo(0, 1500); }); await L.settle(p, 300);
   ok(/Smith 50th/.test(await txt(p, '.fn-strip') || '') && await p.$eval('.fn-strip', e => !e.hidden && e.getBoundingClientRect().top === 0), 'strip: scrolled down, today\'s function stays pinned to the top');
@@ -299,7 +318,7 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   p = await L.open(b, '#/fn', { who: 'ann', extra: extra({ t1, t2, t3 }), wait: 1200 });
   await L.waitFor(p, () => /Tomorrow A/.test((document.getElementById('main') || {}).textContent || ''));
   const day = await p.$$eval('.fn-day', els => els.map(e => e.textContent.replace(/\s+/g, ' ')));
-  ok(/To make for the day ?9 Pizza Platter ?2 Vege Platter/.test(day[0] || ''), 'totals: tomorrow is 9 pizza (5 + 4, rounds not counted twice, cancelled and guests left out) and 2 vege (' + (day[0] || '').slice(0, 220) + ')');
+  ok(/To make for the day ?9 × Pizza Platter ?2 × Vege Platter/.test(day[0] || ''), 'totals: tomorrow is 9 pizza (5 + 4, rounds not counted twice, cancelled and guests left out) and 2 vege (' + (day[0] || '').slice(0, 220) + ')');
   await p.context().close();
 
   // 5. two coordinators: Finn changes the comment, both names stay; Fay's open form meets Finn's save; then her tick goes
