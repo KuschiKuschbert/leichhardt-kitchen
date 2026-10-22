@@ -100,18 +100,18 @@ const store = page => page.evaluate(() => window.__fake.dump());
 
   // notes popup: tapping outside does not count as read
   const note = {}; note[fsKey(['notes', 'n1'])] = { text: 'Safety: fryer 2 is out', tag: 'safety', start: today, until: today, dows: [], removed: false, at: 1, by: 'sam' };
-  p = await L.open(b, '#/prep', { extra: note, wait: 2000 });
+  p = await L.open(b, '#/prep', { who: 'ann', extra: note, wait: 2000 });
   ok(await p.$('.nt') !== null, 'notes: popup opens');
   await p.mouse.click(5, 300);
   await L.settle(p, 200);
   ok(await p.$('.nt') === null, 'notes: tap outside closes it');
-  ok(!(await p.evaluate(() => localStorage.getItem('lk.note.seen'))), 'notes: tap outside does not mark it seen');
+  ok(!(await p.evaluate(() => localStorage.getItem('lk.note.seen.ann'))), 'notes: tap outside does not mark it seen');
   ok(await p.evaluate(() => !!document.querySelector('.nbell.has-new')), 'notes: bell keeps its dot');
   await p.click('.nbell');
   await L.settle(p, 200);
   await p.click('.nt-got');
   await L.settle(p, 200);
-  ok(!!(await p.evaluate(() => localStorage.getItem('lk.note.seen'))), 'notes: Got it marks it seen');
+  ok(!!(await p.evaluate(() => localStorage.getItem('lk.note.seen.ann'))), 'notes: Got it marks it seen');
   await p.context().close();
 
   // admin: reset PIN and remove person need a second tap; minutes cancel and publish need a second tap; note Close asks when unsaved

@@ -1,5 +1,7 @@
-// Minutes for staff (usability U4): "Read and sign" opens the minutes the card names, unsigned ones are marked To sign,
-// a cook's own actions stand out, a changed version says so, and signing is one tap (no second PIN).
+// Minutes for staff (usability U4): "Read and sign" opens the minutes the row names, unsigned ones are marked To sign,
+// a cook's own actions stand out, a changed version says so, and signing is one tap (no second PIN). Since 23 Oct 2026
+// minutes to sign come up in the sheet at the start of the shift; the landing page has a slim row only once they are late
+// (3 days after publishing), and the prep list has none.
 const L = require('./lib');
 const { R, ok } = L.results(), { txt } = L;
 const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
@@ -15,12 +17,14 @@ const mins = (no, date, decisions, x) => Object.assign({ no, v: 1, status: 'publ
   extra[fsKey(['minutes', 'mold'])] = mins(1, ago(8), 'Deep clean on Sunday', { acts: [
     { what: 'Clean the fryer', who: 'ann', by: '' }, { what: 'Order gloves', who: 'sam', by: '' }, { what: 'Team lunch', who: 'all', by: '' }] });
 
-  // Ann signed the newest minutes but not last week's: the card opens last week's
-  let p = await L.open(b, '#/', { who: 'ann', extra, wait: 1800 });
-  // the minutes are read after the settings and the sign-in, so wait for the card itself
-  await L.waitFor(p, () => /Minutes not signed yet/.test((document.querySelector('.wall-mn') || {}).textContent || ''), null, 5000).catch(() => {});
-  ok(/Minutes not signed yet/.test(await txt(p, '.wall-mn') || ''), 'card: Minutes not signed yet shows');
-  await p.click('.wall-mn .mn-nudge-btn');
+  // Ann signed the newest minutes but not last week's: the start of shift sheet lists last week's only
+  let p = await L.open(b, '#/', { who: 'ann', extra, wait: 1800, board: true });
+  // the minutes are read after the settings and the sign-in, so wait for the sheet itself
+  await L.waitFor(p, () => !!document.querySelector('.nt .nt-a'), null, 5000).catch(() => {});
+  const rows = await p.evaluate(() => [...document.querySelectorAll('.nt .nt-a')].map(a => a.getAttribute('data-id') + ':' + a.textContent));
+  ok(rows.length === 1 && /^mold:Kitchen meeting/.test(rows[0]) && /Your actions: 2/.test(rows[0]), 'sheet: one row to sign, last week\'s, with her actions (' + rows.join(' | ') + ')');
+  ok(await txt(p, '.wall-mn') === '', 'landing: no row while the minutes are not late');
+  await p.click('.nt .nt-a');
   await L.settle(p, 900);
   ok(/Deep clean on Sunday/.test(await txt(p, '.mn') || ''), 'Read and sign opens the unsigned minutes, not the newest');
   ok(await p.$('.mn-signbtn:not([disabled])') !== null && await p.$('#mn-pin') === null, 'one Sign button, no second PIN');
@@ -30,6 +34,22 @@ const mins = (no, date, decisions, x) => Object.assign({ no, v: 1, status: 'publ
   await p.click('.mn-signbtn');
   await L.settle(p, 800);
   ok(!!(await p.evaluate(k => window.__fake.dump()[k], fsKey(['minutes', 'mold', 'signs', '1_ann']))), 'one tap signs them');
+  await p.context().close();
+
+  // minutes 4 days old and not signed: the slim row on the landing page, never on the prep list
+  const late = {}; late[fsKey(['minutes', 'mlate'])] = mins(4, ago(4), 'Allergen folder moved', { pubAt: L.NOW - 4 * 86400000 });
+  p = await L.open(b, '#/', { who: 'bo', extra: late, wait: 1800 });
+  await L.waitFor(p, () => /Minutes not signed yet/.test((document.querySelector('.wall-mn') || {}).textContent || ''), null, 5000).catch(() => {});
+  ok(/Minutes not signed yet.*4 days ago/.test(await txt(p, '.wall-mn') || ''), 'late: the landing page has the slim row (' + await txt(p, '.wall-mn') + ')');
+  await p.evaluate(() => { location.hash = '#/prep'; }); await L.settle(p, 800);
+  ok(await p.$('#prep-root .mn-nudge') === null, 'late: nothing about minutes on the prep list');
+  await p.evaluate(() => { location.hash = '#/'; }); await L.settle(p, 600);
+  await p.click('.wall-mn .mn-nudge-btn'); await L.settle(p, 900);
+  ok(/Allergen folder moved/.test(await txt(p, '.mn') || ''), 'late: Read and sign opens those minutes');
+  await p.click('.mn-signbtn'); await L.settle(p, 800);
+  await p.evaluate(() => { location.hash = '#/'; }); await L.settle(p, 600);
+  ok(await txt(p, '.wall-mn') === '', 'late: the row goes once signed');
+  ok(p.errors.length === 0, 'late: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
   // on the newest minutes, the older unsigned ones are marked To sign

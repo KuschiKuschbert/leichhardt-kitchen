@@ -31,11 +31,11 @@ const big = p => p.locator('.gz-wrap').count();
 
   // pings: Back closes the popup and it stays unread
   const note = {}; note[fsKey(['notes', 'n1'])] = { text: 'Safety: fryer 2 is out', tag: 'safety', start: today, until: today, dows: [], removed: false, at: 1, by: 'sam' };
-  p = await L.open(b, '#/prep', { extra: note, wait: 2000 });
+  p = await L.open(b, '#/prep', { who: 'ann', extra: note, wait: 2000 });
   ok(await p.$('.nt') !== null, 'pings: the popup opens');
   await p.goBack(); await L.settle(p, 400);
   ok(await p.$('.nt') === null && await p.evaluate(() => location.hash) === '#/prep', 'pings: Back closes the popup and stays on the prep list');
-  ok(!(await p.evaluate(() => localStorage.getItem('lk.note.seen'))), 'pings: Back does not mark them read');
+  ok(!(await p.evaluate(() => localStorage.getItem('lk.note.seen.ann'))), 'pings: Back does not mark them read');
   ok(p.errors.length === 0, 'pings: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 

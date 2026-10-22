@@ -166,7 +166,9 @@ async function start() {
    o.fakeServer       documents the "server" holds newer copies of than the phone (path: data), for getDocFromServer
    o.fakeMode         the stand-in's mode from the first request: 'fail' (every read and write fails, like no signal) or 'deny'
    o.failReads        a regex source: getDoc and getDocs fail for the paths that match (say one past day of wastage)
-   o.denyReads        a regex source: getDocs is refused (permission-denied) for the collections that match */
+   o.denyReads        a regex source: getDocs is refused (permission-denied) for the collections that match
+   o.board            let the start of shift sheet come up (23 Oct 2026). Without it the phone has had today's start
+                      already (lk.board.<who>), the way everyone has a usual drink, so the sheet stays off the other tests */
 async function open(browser, hash, o) {
   o = o || {};
   const w = o.width || 390, h = o.height || 844, base = o.base || BASE;
@@ -211,6 +213,7 @@ async function open(browser, hash, o) {
     'lk.prep.seen': String(o.clock || NOW),   // on the phone's clock, like the idle check
     'lk.settings.v1': JSON.stringify(Object.assign({ installNo: true }, o.settings || {}))
   };
+  if (!o.board) ['sam', 'ann', 'bo', 'fay', 'finn'].concat(who ? [who] : []).forEach(id => { ls['lk.board.' + id] = ymd(new Date(o.clock || NOW)); });
   if (o.admin) ls['fake.user'] = '1';
   if (o.noAnon) await ctx.addInitScript(() => { window.__fakeNoAnon = true; });
   if (o.fakeServer || o.fakeMode || o.failReads || o.denyReads) await ctx.addInitScript(f => { window.__fake = { mode: f.mode || 'ok', writes: [], reads: [], server: f.server, failReads: f.fail ? new RegExp(f.fail) : null, denyReads: f.deny ? new RegExp(f.deny) : null }; }, { mode: o.fakeMode, server: o.fakeServer, fail: o.failReads, deny: o.denyReads });

@@ -837,17 +837,38 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
 .nbell.has-new::after { content: ''; position: absolute; top: -3px; right: -3px; width: 14px; height: 14px; border-radius: 50%; background: var(--accent); border: 2px solid var(--bar); }
 @media (min-width: 1100px) { .nbell { padding: 0 1rem; } .nbell.has-new::after { top: -2px; right: -2px; } }
 html.note-open, html.note-open body { overflow: hidden; }
-.nt-wrap { position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; padding: 12px; }
-.nt-bg { position: absolute; inset: 0; background: rgba(28, 29, 31, 0.6); }
-.nt { position: relative; display: flex; flex-direction: column; width: 100%; max-width: 34rem; max-height: calc(100vh - 24px); max-height: calc(100dvh - 24px); overflow: hidden; background: var(--bg); color: var(--ink); border: 2px solid var(--ink); border-radius: 14px; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35); font-family: var(--body); animation: ntIn 0.18s ease-out; }
+.nt-wrap { position: fixed; inset: 0; z-index: 80; display: flex; align-items: flex-end; justify-content: center; }
+.nt-bg { position: absolute; inset: 0; background: rgba(28, 29, 31, 0.55); }
+/* The pings sheet (23 Oct 2026): a sheet from the bottom on phones and tablets, like the section picker (thumb reach),
+   in the middle of the screen from 900 px (a laptop or the tablet on the pass) */
+.nt { position: relative; display: flex; flex-direction: column; box-sizing: border-box; width: 100%; max-width: 40rem; max-height: 88vh; max-height: 88dvh; overflow: hidden; padding-top: 10px; background: var(--bg); color: var(--ink); border-radius: 16px 16px 0 0; box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.2); font-family: var(--body); animation: sheetUp 0.18s ease-out; }
+@media (min-width: 900px) {
+  .nt-wrap { align-items: center; padding: 12px; }
+  .nt { max-width: 36rem; max-height: calc(100dvh - 24px); border: 2px solid var(--ink); border-radius: 14px; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35); }
+  .nt-grip { display: none; }
+}
 .nt:focus { outline: none; }
-.nt-head { flex: 0 0 auto; padding: 14px 18px 12px; background: var(--bar); color: var(--bar-text); border-bottom: 4px solid var(--accent); }
-.nt-eb { display: block; font: 700 0.75rem var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--bar-accent); }
-.nt-h { margin: 2px 0 0; font: 700 2.2rem/1.05 var(--display); letter-spacing: 0.01em; text-transform: uppercase; }
-.nt-date { display: block; margin-top: 2px; font-weight: 600; color: #E7E1D3; }
-.nt-list { flex: 1 1 auto; min-height: 0; list-style: none; margin: 0; padding: 14px 18px 4px; overflow: auto; display: flex; flex-direction: column; gap: 12px; }
+.nt-grip { flex: 0 0 auto; width: 44px; height: 5px; margin: 0 auto 8px; border-radius: 3px; background: var(--edge); }
+.nt-in { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.nt-head { flex: 0 0 auto; padding: 0 18px 4px; }
+.nt-eb { display: block; font: 700 0.75rem var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent-ink); }
+.nt-h { margin: 2px 0 0; font: 700 1.75rem/1.1 var(--display); }
+.nt-date { display: block; margin-top: 2px; font-weight: 600; color: var(--muted); }
+.nt-body { flex: 1 1 auto; min-height: 0; overflow: auto; padding-bottom: 4px; }
+.nt-list { list-style: none; margin: 0; padding: 12px 18px 4px; display: flex; flex-direction: column; gap: 12px; }
+.nt-none { margin: 12px 18px 0; font-size: 1.0625rem; color: var(--muted); }
+.nt-next { margin: 12px 18px 0; font-weight: 700; color: var(--accent-ink); }
+/* the minutes to sign: rows like the chef hat menu's */
+.nt-sh { margin: 14px 18px 4px; padding-top: 10px; border-top: 1.5px solid var(--line); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.nt-mn { padding: 0 8px; }
+.nt-a { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 6px 10px; border-radius: 8px; color: var(--ink); text-decoration: none; }
+.nt-a:hover, .nt-a:focus-visible { background: var(--hit); }
+.nt-a > svg { flex: 0 0 22px; width: 22px; height: 22px; }
+.nt-a span { display: flex; flex-direction: column; }
+.nt-a small { color: var(--accent-ink); font-size: 0.875rem; font-weight: 600; }
 .nt-i { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; padding: 10px 12px 12px; border: 2px solid var(--ink); border-radius: 10px; background: var(--paper); }
 .nt-i p, .nt-row p { margin: 0; font-size: 1.1875rem; font-weight: 600; line-height: 1.35; white-space: pre-line; overflow-wrap: anywhere; }
+.nt-tags { display: flex; flex-wrap: wrap; gap: 6px; }
 .nt-tag { display: inline-block; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 1px 8px; border-radius: 6px; border: 1.5px solid var(--ink); background: var(--paper); color: var(--ink); }
 .t-safety.nt-i, .t-allergen.nt-i, .t-safety.nt-row, .t-allergen.nt-row { border-color: var(--accent-ink); background: #FFF6EF; }
 .t-safety .nt-tag, .t-allergen .nt-tag { background: var(--accent-ink); border-color: var(--accent-ink); color: #fff; }
@@ -857,15 +878,15 @@ html.note-open, html.note-open body { overflow: hidden; }
 .nt-sum p { margin: 6px 0 0; }
 .nt-sl { font-weight: 700; color: var(--ink); }
 .nt-foot { flex: 0 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 14px 18px calc(14px + env(safe-area-inset-bottom)); }
-.nt-got { flex: 1 1 10rem; min-height: 52px; border: 2px solid var(--ink); border-radius: 26px; background: var(--ink); color: #fff; font-weight: 700; font-size: 1.125rem; cursor: pointer; }
+.nt-got { flex: 2 1 9rem; min-height: 52px; border: 2px solid var(--ink); border-radius: 26px; background: var(--ink); color: #fff; font-weight: 700; font-size: 1.125rem; cursor: pointer; }
+.nt-later { flex: 1 1 6rem; min-height: 52px; padding: 0 18px; border: 2px solid var(--ink); border-radius: 26px; background: transparent; color: var(--ink); font-weight: 700; font-size: 1.0625rem; cursor: pointer; }
 .nt-edit { font-weight: 600; display: inline-flex; align-items: center; min-height: 44px; }
 .mn-tbl tr.is-mine td { font-weight: 700; background: var(--hit); }
 .mn-yours { background: var(--accent); color: #fff; border-color: var(--accent); }
 .mn-tosign b { color: var(--accent-ink); }
 .mn-changed, .mn-mine { font-weight: 600; padding: 0.4rem 0.6rem; border-left: 4px solid var(--accent); background: var(--hit); }
-@keyframes ntIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .nt { animation: none; } }
-@media (max-width: 399px) { .nt-h { font-size: 1.9rem; } .nt-i p, .nt-row p { font-size: 1.0625rem; } }
+@media (max-width: 399px) { .nt-h { font-size: 1.6rem; } .nt-i p, .nt-row p { font-size: 1.0625rem; } }
 /* writing notes (admin Notes tab, sous chef Daily notes page) */
 .nt-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .nt-dates { display: flex; flex-wrap: wrap; gap: 0.6rem 1rem; margin-top: 0.5rem; }
@@ -1031,7 +1052,8 @@ details.nb-start-l[open] > summary::after { content: '\2212'; }
 .mn-nudge b { display: block; font: 700 1.125rem var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-ink); }
 .mn-nudge-btn { display: inline-flex; align-items: center; min-height: 44px; padding: 0 1rem; border-radius: 8px; background: var(--ink); color: #fff; font-weight: 700; text-decoration: none; }
 /* the same nudge on the landing page, above the dockets (the slot is drawn by js/app.js and filled in by js/prep.js) */
-.wall-mn .mn-nudge { margin: 0 0 1.6rem; border-radius: 8px; }
+.wall-mn .mn-nudge { margin: 0 0 1.6rem; padding: 0.4rem 0.4rem 0.4rem 0.8rem; border: 0; border-left: 5px solid var(--accent-ink); border-radius: 6px; background: var(--paper); }
+.wall-mn .mn-nudge b { display: inline; font: 700 1rem var(--body); letter-spacing: 0; text-transform: none; }
 @media (min-width: 720px) { .wall-mn .mn-nudge { max-width: 38rem; } }
 /* writing the minutes and the register */
 .mn-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.6rem 0.8rem; }
@@ -1386,6 +1408,7 @@ html.gz-open, html.gz-open body { overflow: hidden; }
 .wm-a:hover, .wm-a:focus-visible { background: var(--hit); }
 .wm-a span { display: flex; flex-direction: column; line-height: 1.25; }
 .wm-a small { color: var(--muted); font-size: 0.8125rem; }
+.wm-a small.wm-due { color: var(--accent-ink); font-weight: 700; }
 .wm-a.wm-in b { font-size: 1.125rem; }
 /* the menu items that are buttons (My section, Shift pings, Manage staff, Sign out) look like the links; a long menu
    scrolls inside the phone */

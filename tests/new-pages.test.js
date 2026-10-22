@@ -57,7 +57,7 @@ const tab = p => p.evaluate(() => Array.prototype.some.call(document.querySelect
   ok(!(await docket(p)), 'staff: no Guides docket on the landing page');
   ok(!(await tab(p)), 'staff: no Guides in the tab bar');
   ok(!(await shown(p, '.nbell')), 'staff: no Pings bell');
-  ok(await p.$('.nt') === null, 'staff: the shift pings popup does not open');
+  ok(await p.$('.nt') === null, 'staff: the shift pings sheet does not open');
   ok(await p.$('.wall-mn .mn-nudge') === null, 'staff: no Minutes not signed yet card');
   ok(await p.evaluate(() => localStorage.getItem('lk.feat')) === JSON.stringify(HIDE), 'staff: this phone remembers what it may see (lk.feat)');
   await p.reload({ waitUntil: 'load' });
@@ -102,9 +102,12 @@ const tab = p => p.evaluate(() => Array.prototype.some.call(document.querySelect
   p = await L.open(b, '#/', { who: 'ann', extra: world({ guides: false, pings: true, minutes: true }), wait: 2500 });
   ok(!(await docket(p)), 'guides only: no Guides docket for staff');
   ok(await p.$('.nt') !== null, 'guides only: the pings popup opens for staff');
-  // the minutes are read from Firestore: wait for the card itself (under load the page goes still before the read)
-  await L.waitFor(p, () => !!document.querySelector('.wall-mn .mn-nudge'), null, 8000).catch(() => false);
-  ok(await p.$('.wall-mn .mn-nudge') !== null, 'guides only: the minutes card shows for staff');
+  // the minutes are read from Firestore: wait for the bell to say so (under load the page goes still before the read)
+  await L.waitFor(p, () => /Minutes to sign: 1/.test((document.querySelector('.nbell') || { getAttribute: () => '' }).getAttribute('aria-label') || ''), null, 8000).catch(() => false);
+  ok(/Minutes to sign: 1/.test(await p.evaluate(() => document.querySelector('.nbell').getAttribute('aria-label'))), 'guides only: the bell says there are minutes to sign');
+  await p.click('.nt-got'); await L.settle(p, 300);
+  await p.click('.nbell'); await L.settle(p, 300);
+  ok(/Kitchen meeting/.test(await txt(p, '.nt .nt-a') || ''), 'guides only: the bell shows the minutes to sign for staff');
   await p.context().close();
 
   // nothing saved yet: staff see everything, as before
