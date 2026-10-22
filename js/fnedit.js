@@ -210,7 +210,8 @@
       if (!E.ed || E.ed.id !== id) return;
       if (!r[0].exists()) { E.ed = { id: id, missing: true }; draw(); return; }
       var f = M.derive(Object.assign({ id: id }, r[0].data())), c = r[1] && r[1].exists() ? r[1].data() : {};
-      var e = { id: id, isNew: false, v: f.v, status: f.status, saved: f, savedC: c, d: fromDoc(f, c) };
+      // cMiss: the contact could not be read on this phone (no PIN session for a function manager, or no signal)
+      var e = { id: id, isNew: false, v: f.v, status: f.status, saved: f, savedC: c, cMiss: r[1] === null, d: fromDoc(f, c) };
       if (kept) { try { var k = JSON.parse(kept); if (k && k.d) { e.d = k.d; e.status = k.status || e.status; e.restored = true; e.keptV = k.v; } } catch (x) {} }
       E.ed = e; draw();
     }, function () { if (E.ed && E.ed.id === id) { E.ed = { id: id, failed: true }; draw(); } });
@@ -325,6 +326,7 @@
       '<datalist id="fe-locs">' + locs().map(function (l) { return '<option value="' + esc(l) + '">'; }).join('') + '</datalist></section>' +
       // the contact folds away once it is filled in (only function managers see it, never the kitchen)
       '<details class="set-block fe-contact"' + (d.cname || d.phone || d.email ? '' : ' open') + ((e.shown || []).some(function (x) { return x.k === 'phone' || x.k === 'email'; }) ? ' open' : '') + '><summary><span class="label">Booking contact</span> <span class="fe-sum">' + esc([d.cname, d.phone].filter(Boolean).join(', ') || 'Only function managers see this') + '</span></summary>' +
+      (e.cMiss ? '<p class="hint fe-cmiss">The contact could not be read on this phone. It stays as it is unless you type a new one. Sign out and in again with your PIN to see it.</p>' : '') +
       inp('cname', 'Contact name', d.cname, ' maxlength="80" autocomplete="off"') + '<div class="fe-row2">' + inp('phone', 'Phone (optional)', d.phone, ' type="tel" maxlength="30" autocomplete="off"') + inp('email', 'Email (optional)', d.email, ' type="email" maxlength="120" autocomplete="off"') + '</div></details>' +
       '<section class="set-block"><span class="label">Platters</span><span class="hint">Whole platters, as booked. Guests never change them.</span>' + linesHTML(e) + '</section>' +
       '<section class="set-block"><span class="label">When the platters go out</span>' + serviceHTML(e) + '</section>' +
@@ -430,7 +432,10 @@
         var was = clone(prev); delete was.id;
         ops.push(['set', api.fs().doc(api.db(), 'kitchens', api.pin(), 'functions', id, 'hist', String(prev.v)), { was: was, at: t, what: what }]);
       }
-      ops.push(['set', api.docRef('fncontact', id), { cname: e.d.cname.trim().slice(0, 80), phone: e.d.phone.trim().slice(0, 30), email: e.d.email.trim().slice(0, 120), upd: t }]);
+      // the contact is written only when it changed (22 Oct 2026, review S9), so a phone that could not read it never
+      // saves blanks over it
+      var con = { cname: e.d.cname.trim().slice(0, 80), phone: e.d.phone.trim().slice(0, 30), email: e.d.email.trim().slice(0, 120) }, conWas = e.savedC || {};
+      if (con.cname !== (conWas.cname || '') || con.phone !== (conWas.phone || '') || con.email !== (conWas.email || '')) ops.push(['set', api.docRef('fncontact', id), Object.assign(con, { upd: t })]);
       return api.W(ops.concat(prepOps(api, prev, f, id, t), orderOps(api, prev, f, id, t))).then(function () { return f; });
     }).then(function (f) {
       clearTimeout(slow);

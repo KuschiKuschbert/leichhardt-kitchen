@@ -4425,13 +4425,17 @@
   // "Read and sign" opens the minutes the card names, not just the newest published ones (the card sits outside the prep root)
   document.addEventListener('click', function (e) { var a = e.target.closest && e.target.closest('.mn-nudge-btn[data-mn]'); if (a) { S.mSel = a.getAttribute('data-mn'); S.mErr = ''; } }, true);
   function loadMinutes(force) {
-    var today = dayNow();
+    var today = dayNow(), all = S.level === 'owner';
     if (!fb || !/^\d{4,6}$/.test(S.pin) || S.minsBusy || !featOn('minutes')) return;
-    if (!force && S.mins && S.minsFor === today && Date.now() - S.minsAt < MN_STALE) return;
+    if (!force && S.mins && S.minsFor === today && S.minsAll === all && Date.now() - S.minsAt < MN_STALE) return;
     S.minsBusy = true;
-    fb.fs.getDocs(fb.fs.query(colRef('minutes'), fb.fs.where('date', '>=', shift(today, -MN_DAYS)))).then(function (snap) {
+    // one query when the book opens, again after 30 minutes: one read per minutes in the last 90 days. The head chef's
+    // Google account lists them by meeting date, drafts too; everyone else asks only for published ones, by when they were
+    // published (pubAt, which a draft never has), because that is all the rules let them list (22 Oct 2026, review S9)
+    var q = all ? fb.fs.where('date', '>=', shift(today, -MN_DAYS)) : fb.fs.where('pubAt', '>=', now() - MN_DAYS * 86400000);
+    fb.fs.getDocs(fb.fs.query(colRef('minutes'), q)).then(function (snap) {
       S.mins = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; });
-      S.minsFor = today; S.minsAt = Date.now(); S.minsBusy = false;
+      S.minsFor = today; S.minsAll = all; S.minsAt = Date.now(); S.minsBusy = false;
       loadMine(); minCard(); draw();
     }, function () {
       // no signal, or the minutes rules are not published yet: carry on without them and try again in about 5 minutes

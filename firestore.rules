@@ -5,7 +5,8 @@
 // Moving to a new kitchen PIN (admin Tools): publish a second copy of every kitchens/KITCHEN_PIN/... block for the
 // new PIN first, move, then remove the old PIN's copy once every phone has the new one.
 //
-// Reading needs only the kitchen PIN (it is the path). Writing needs a person's own PIN.
+// Reading needs only the kitchen PIN (it is the path), except function contacts (function managers) and minutes drafts
+// (the head chef's Google account). Writing needs a person's own PIN.
 // Since 22 Oct 2026 a phone signs in to Firebase anonymously and a right PIN opens a session for that phone and person
 // (sessions/<uid>, below): every write carries the writer's id (by) and the rules check that phone's session. PIN tries
 // are written first, one every 20 seconds per person (tries/<id>), so a PIN cannot be guessed by script.
@@ -24,17 +25,20 @@ service cloud.firestore {
     function setDoc(id) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/pinset/$(id); }
     function sessDoc() { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/sessions/$(request.auth.uid); }
     function triesDoc(id) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/tries/$(id); }
-    // the writer has a session on this phone: opened with their PIN, not run out, and their PIN not reset since (pinAt is
-    // the pinset time it was opened with; Reset PIN deletes pinset and a new PIN gives a new time)
-    function session() {
-      return request.auth != null && request.resource.data.by is string
-        && exists(sessDoc())
-        && get(sessDoc()).data.by == request.resource.data.by
+    // this phone has a session for this person: opened with their PIN, not run out, and their PIN not reset since (pinAt
+    // is the pinset time it was opened with; Reset PIN deletes pinset and a new PIN gives a new time)
+    function sessOk(id) {
+      return request.auth != null && exists(sessDoc())
+        && get(sessDoc()).data.by == id
         && get(sessDoc()).data.exp > request.time.toMillis()
-        && exists(setDoc(request.resource.data.by))
-        && get(sessDoc()).data.pinAt == get(setDoc(request.resource.data.by)).data.at
-        && onList(request.resource.data.by);
+        && exists(setDoc(id))
+        && get(sessDoc()).data.pinAt == get(setDoc(id)).data.at
+        && onList(id);
     }
+    // a write: the writer (by) has a session on this phone
+    function session() { return request.resource.data.by is string && sessOk(request.resource.data.by); }
+    // a read (22 Oct 2026, review S9): who this phone reads as, '' with no session. Use it with sessOk(reader()).
+    function reader() { return request.auth != null && exists(sessDoc()) ? get(sessDoc()).data.by : ''; }
     function staff() { return session() || staffProof(); }
     // the older proof, accepted until every phone uses sessions (then removed in a second publish)
     function staffProof() {
@@ -221,13 +225,16 @@ service cloud.firestore {
       allow update: if (lead() || (staff() && pingBy() && resource.data.get('author', resource.data.get('by', '')) == request.resource.data.by)) && noteOk();
       allow delete: if false;
     }
-    // Kitchen meeting minutes. Only the head chef (Google account) writes them (draft, then published). Sous chefs read the register. Everyone with the kitchen PIN reads them.
+    // Kitchen meeting minutes. Only the head chef (Google account) writes them (draft, then published). Sous chefs read the register. Everyone with the kitchen PIN reads the published ones.
     // Minutes are never deleted, only flagged as removed. "v" is the version: a change after publishing makes version 2 and everyone signs again.
     // Every earlier version is kept in minutes/<id>/hist/<v> and cannot be changed.
     // A person signs once per version, as themselves (their own PIN proof): minutes/<id>/signs/<v>_<staffId>. A sign-off cannot be changed or deleted.
-    // Limit: drafts are hidden by the page only. Anyone holding the kitchen PIN could read one with a script.
+    // Drafts are for the head chef's Google account only (22 Oct 2026, review S9). A draft never carries pubAt (the time it
+    // was published), so the kitchen's list of minutes asks for pubAt from a date on, which the rules can check; reading
+    // one record needs it published.
     function minutesOk() {
       return request.resource.data.status in ['draft', 'published']
+        && (request.resource.data.status == 'published' || !('pubAt' in request.resource.data))
         && request.resource.data.v is int && request.resource.data.v >= 1 && request.resource.data.v <= 50
         && request.resource.data.no is int && request.resource.data.no >= 1
         && request.resource.data.date is string && request.resource.data.date.size() == 10
@@ -247,7 +254,8 @@ service cloud.firestore {
         && request.resource.data.get('removed', false) is bool;
     }
     match /kitchens/KITCHEN_PIN/minutes/{id} {
-      allow read: if true;
+      allow get: if isAdmin() || resource.data.status == 'published';
+      allow list: if isAdmin() || resource.data.pubAt >= 1;
       allow create, update: if isAdmin() && minutesOk();
       allow delete: if false;
       match /hist/{v} {
@@ -500,9 +508,10 @@ service cloud.firestore {
     }
     // The booking contact for a function, under the same id: name, phone and email. Only the function pages read it,
     // one at a time by its id; it is never listed (except by the head chef's Google account, for the backup and a PIN move),
-    // and the kitchen's copy never holds it. Limit: anyone holding the kitchen PIN could read one by its id with a script.
+    // and the kitchen's copy never holds it. Since 22 Oct 2026 (review S9) only a function manager reads it: the Google
+    // account, or a phone whose PIN session is for someone ticked for Functions (fnIds).
     match /kitchens/KITCHEN_PIN/fncontact/{id} {
-      allow get: if true;
+      allow get: if isAdmin() || (sessOk(reader()) && reader() in cfg().get('fnIds', []));
       allow list: if isAdmin();
       allow create, update: if fnBy() && request.resource.data.keys().hasOnly(['cname', 'phone', 'email', 'by', 'upd'])
         && request.resource.data.get('cname', '') is string && request.resource.data.get('cname', '').size() <= 80

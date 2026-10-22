@@ -31,11 +31,16 @@ export function probeChecks(fs, pin) {
     // kitchen PIN does not have, and nobody reads them
     ['a PIN try cannot be written without a phone sign-in', () => fs.patch(K + 'tries/' + id, { tok: str('a'.repeat(64)), at: { timestampValue: new Date().toISOString() }, uid: str('probe') }), false],
     ['a PIN session cannot be opened with only the kitchen PIN', () => fs.patch(K + 'sessions/' + id, { by: str('probe'), pinAt: num(1), exp: num(Date.now() + 86400000), at: { timestampValue: new Date().toISOString() } }), false],
-    ['a PIN session cannot be read', () => fs.get(K + 'sessions/' + id), false]
+    ['a PIN session cannot be read', () => fs.get(K + 'sessions/' + id), false],
+    // function contacts and minutes drafts (22 Oct 2026, review S9): a contact only for function managers, a draft only
+    // for the head chef's Google account (a list of minutes by date could hold drafts)
+    ['a function contact cannot be read with only the kitchen PIN', () => fs.get(K + 'fncontact/' + id), false],
+    ['minutes drafts cannot be listed with only the kitchen PIN', () => fs.query('kitchens/' + pin, 'minutes', 'date', 'GREATER_THAN_OR_EQUAL', str('2000-01-01')), false]
   ];
 }
 
-/* A tiny Firestore REST client: get(path) and patch(path, fields, updateMask). Refused calls throw { code: 'permission-denied' }. */
+/* A tiny Firestore REST client: get(path), patch(path, fields, updateMask) and query(parent, collection, field, op, value)
+   (one filter, at most one record back). Refused calls throw { code: 'permission-denied' }. */
 export function restClient(base, headers) {
   async function call(method, url, body) {
     const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), PROBE_WAIT);
@@ -51,7 +56,8 @@ export function restClient(base, headers) {
   }
   return {
     get: path => call('GET', base + '/' + path),
-    patch: (path, fields, mask) => call('PATCH', base + '/' + path + (mask ? '?' + mask.map(f => 'updateMask.fieldPaths=' + encodeURIComponent(f)).join('&') : ''), { fields })
+    patch: (path, fields, mask) => call('PATCH', base + '/' + path + (mask ? '?' + mask.map(f => 'updateMask.fieldPaths=' + encodeURIComponent(f)).join('&') : ''), { fields }),
+    query: (parent, col, field, op, value) => call('POST', base + '/' + parent + ':runQuery', { structuredQuery: { from: [{ collectionId: col }], where: { fieldFilter: { field: { fieldPath: field }, op, value } }, limit: 1 } })
   };
 }
 
