@@ -32,6 +32,14 @@ await K.collection('daily').doc(y + '_aa').set({ day: y, tag: 'aa', sg: { quick:
 await K.collection('daily').doc(y + '_bb').set({ day: y, tag: 'bb', sg: { quick: { s: 1, t: 1, d: 1 } }, pf: { lcp: [0, 1, 0, 0, 1] }, at: 1 });
 await K.collection('daily').doc(day(9) + '_cc').set({ day: day(9), tag: 'cc', sg: {}, pf: {}, at: 1 });
 await w(['days', y, 'items', 'tst1'], it('Practice thing', { tst: true }));
+// tomorrow's list (22 Oct 2026): 8 lines written in one go last night, at 21:00 kitchen time, or at 16:00 when this runs
+// in the evening (so the other seeded lines, written 24 hours ago, never join the batch). Three older nights are
+// already in last night's summary, so they are kept and not read again.
+const kMins = ms => { const d = new Date(ms + 10 * 3600000); return d.getUTCHours() * 60 + d.getUTCMinutes(); };
+const batchAt = kMins(Date.now()) >= 18 * 60 ? 16 * 60 : 21 * 60;
+const atK = (dd, m) => { const p = dd.split('-'); return Date.UTC(+p[0], p[1] - 1, +p[2]) - 10 * 3600000 + m * 60000; };
+for (let i = 0; i < 8; i++) await w(['days', y, 'items', 'n' + i], it('Night line ' + i, { addedAt: atK(y, batchAt + i) }));
+await K.collection('summary').doc('learned').set({ day: day(1), items: [], lists: { days: { [day(6)]: { m: 1250, n: 9 }, [day(7)]: { m: 1270, n: 9 }, [day(8)]: { m: 1290, n: 9 } } } });
 let fails = 0; const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++; };
 const out1 = run();
 ok(/Learned \d+ kitchen days/.test(out1) && !/000000/.test(out1), 'runs and prints no PIN: ' + out1.trim());
@@ -62,7 +70,14 @@ ok(sl.day === today && slo.uses === 3 && slo.qtys && slo.qtys['2-tubs'].n === 2 
 ok(so.day === today && (so.items || []).some(x => x.id === 'flour' && x.uses === 1), 'summary/ordlearned: the order items');
 ok(/Summaries for the phones: \d+ prep items, \d+ order items/.test(out1), 'the run says how many summary items');
 ok(!(await K.collection('learned').doc('practice-thing').get()).exists, 'practice lines (tst) are not learned');
-run();
+const ls = sl.lists || {}, ly = (ls.days || {})[y] || {};
+ok(ly.m === batchAt && ly.n === 8, "tomorrow's list: last night's batch clocked at " + batchAt + ' (' + JSON.stringify(ly) + ')');
+ok(Object.keys(ls.days || {}).length === 28 && ls.days[day(7)].m === 1270 && ls.days[day(2)].m === -1, "tomorrow's list: 28 nights, last night's summary kept, a night with no list is -1");
+ok(ls.usual === 1270 && ls.n === 4, "tomorrow's list: the usual time from 4 nights (" + ls.usual + ')');
+ok(/Tomorrow's list: usually from 21:10 \(4 of the last 28 nights\)/.test(out1) && / 20 nights read again/.test(out1), "tomorrow's list: the run prints the time, and reads only the nights it had not seen");
+const out2 = run();
 const on2 = (await K.collection('learned').doc('slice-onions').get()).data();
 ok(on2.uses === 3, 'second run counts nothing twice (' + on2.uses + ')');
+const ly2 = ((((await K.collection('summary').doc('learned').get()).data() || {}).lists || {}).days || {})[y] || {};
+ok(/ 0 nights read again/.test(out2) && ly2.m === batchAt, "tomorrow's list: a second run reads no night again and keeps last night (" + JSON.stringify(ly2) + ')');
 process.exit(fails ? 1 : 0);
