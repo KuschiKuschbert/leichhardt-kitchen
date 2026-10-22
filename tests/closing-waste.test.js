@@ -1,9 +1,11 @@
 // Closing soon with Log waste comes up on the prep list and the order list (head chef, 22 Oct 2026), from an hour before
 // tomorrow's list is usually written on this weekday (summary/learned lists, which every page reads). One Hide for
-// today hides it on both.
+// today hides it on both. On a laptop (900 px and wider) it sits at the top of Handy with the waste review note, so the
+// prep lines start at the top of the list (23 Oct 2026).
 const L = require('./lib');
 const { R, ok } = L.results();
 const today = L.ymd(new Date(L.NOW));
+const yday = L.ymd(new Date(L.NOW - 86400000));
 const dow = String(new Date(L.NOW).getDay());
 const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
 const at = (h, m) => { const d = new Date(L.NOW); d.setHours(h, m, 0, 0); return d.getTime(); };
@@ -52,6 +54,33 @@ const go = async (p, hash) => { await p.evaluate(h => { location.hash = h; }, ha
   ok(!(await card(p)), 'prep: no card more than an hour before');
   await go(p, '#/orders');
   ok(!(await card(p)), 'orders: no card more than an hour before');
+  await p.context().close();
+
+  // the waste review note from last night, for the next two checks
+  const note = Object.assign({}, lists);
+  note[fsKey(['waste', yday])] = { avoidable: '', change: 'Make half a batch of slaw', reviewBy: 'Sam', reviewAt: L.NOW - 86400000 };
+  const shown = p => p.evaluate(() => [...document.querySelectorAll('.nb-flag')].filter(e => e.getClientRects().length).map(e => (e.closest('.nb-right') ? 'Handy: ' : 'list: ') + e.querySelector('.nb-sl').textContent));
+  const both = () => { const f = [...document.querySelectorAll('.nb-flag')]; return f.some(e => /Closing soon/.test(e.textContent)) && f.some(e => /half a batch/.test(e.textContent)); };
+
+  // phone: both cards sit above the lines, as before
+  p = await L.open(b, '#/prep', { who: 'ann', wait: 2000, clock: at(20, 30), extra: note });
+  await L.waitFor(p, both, null, 6000).catch(() => {});
+  let s = await shown(p);
+  ok(s.length === 2 && s.every(x => /^list: /.test(x)), 'phone: Closing soon and the waste review note sit above the lines (' + s.join(', ') + ')');
+  await p.context().close();
+
+  // laptop: both cards at the top of Handy, and the first line near the top of the list
+  p = await L.open(b, '#/prep', { who: 'ann', wait: 2000, clock: at(20, 30), extra: note, width: 1280, height: 900 });
+  await L.waitFor(p, both, null, 6000).catch(() => {});
+  s = await shown(p);
+  ok(s.length === 2 && s.every(x => /^Handy: /.test(x)) && /Closing soon/.test(s[0]), 'laptop: Closing soon and the waste review note sit at the top of Handy (' + s.join(', ') + ')');
+  const gap = await p.evaluate(() => { const bd = document.querySelector('.nb-left .nb-body'), r = document.querySelector('.nb-left .nb-row'); return bd && r ? Math.round(r.getBoundingClientRect().top - bd.getBoundingClientRect().top) : -1; });
+  ok(gap >= 0 && gap < 120, 'laptop: the first prep line is near the top of the list (' + gap + ' px down)');
+  await p.click('.nb-right .nb-close [data-p="close-hide"]');
+  await L.settle(p, 300);
+  ok(!(await p.$('.nb-close')), 'laptop: Hide for today takes both copies away');
+  ok(!(await L.overflow(p)), 'laptop: no sideways scroll');
+  ok(p.errors.length === 0, 'laptop: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
   await b.close();
