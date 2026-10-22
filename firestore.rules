@@ -70,7 +70,8 @@ service cloud.firestore {
         && request.resource.data.people is list && request.resource.data.people.size() <= 80
         && request.resource.data.get('staffIds', []) is list && request.resource.data.get('staffIds', []).size() <= 80
         && keepsChefs()
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['people', 'staffIds', 'updated', 'updatedBy', 'by']))
+        && request.resource.data.get('pinOpen', {}) is map && request.resource.data.get('pinOpen', {}).size() <= 80
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['people', 'staffIds', 'pinOpen', 'updated', 'updatedBy', 'by']))
         // the head chef or a sous chef changed a line on a past day: they stamp pastEdit (p prep, o orders) with the time,
         // so the other phones read their saved past days again (22 Oct 2026). Nothing else changes in that write.
         || (staff() && request.resource.data.by in resource.data.get('sousIds', [])
@@ -572,8 +573,11 @@ service cloud.firestore {
     // The head chef may also create one: the move to a new kitchen PIN copies every stored PIN as it is.
     match /kitchens/KITCHEN_PIN/staffpins/{id} {
       allow read: if isAdmin();
+      // a first PIN only while that person's set-up window is open (config/main pinOpen, 22 Oct 2026): opened when they
+      // are added (7 days) or by Reset PIN (30 minutes), so nobody holding the kitchen PIN can take a name by setting it first
       allow create: if isAdmin() || (request.resource.data.hash is string && request.resource.data.hash.size() == 64
         && id in cfg().get('staffIds', [])
+        && request.time.toMillis() < cfg().get('pinOpen', {}).get(id, 0)
         && getAfter(setDoc(id)).data.at is number);
       allow update, delete: if isAdmin();
     }

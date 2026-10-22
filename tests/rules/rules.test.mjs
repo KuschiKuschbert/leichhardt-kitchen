@@ -79,7 +79,12 @@ await ok(setDoc(doc(anon, K + 'days/2026-10-19/items/a5'), line({ by: 'ann' })),
 
 // who may set a PIN: only people on the list (staffIds), once
 const setPin = id => { const b = writeBatch(anon); b.set(doc(anon, K + 'staffpins/' + id), { hash: hash(id, '4444') }); b.set(doc(anon, K + 'pinset/' + id), { at: 1 }); return b.commit(); };
-await ok(setPin('cal'), true, 'PIN set: a listed person without a PIN sets one');
+// the set-up window (22 Oct 2026): no window, or one that has run out, means no first PIN
+await ok(setPin('cal'), false, 'PIN set: no set-up window for Cal yet, refused');
+await env.withSecurityRulesDisabled(async ctx => { await setDoc(doc(ctx.firestore(), K + 'config/main'), { pinOpen: { cal: Date.now() - 60000 } }, { merge: true }); });
+await ok(setPin('cal'), false, 'PIN set: a window that ran out a minute ago, refused');
+await env.withSecurityRulesDisabled(async ctx => { await setDoc(doc(ctx.firestore(), K + 'config/main'), { pinOpen: { cal: Date.now() + 1800000 } }, { merge: true }); });
+await ok(setPin('cal'), true, 'PIN set: a listed person with an open window sets one');
 await ok(setPin('zed'), false, 'PIN set: an id that is not on the list is refused (no minting a writer)');
 await ok(setPin('ann'), false, 'PIN set: an existing PIN cannot be overwritten');
 await ok(W([['days/2026-10-19/items/a6', line()]], { id: 'zed', pin: '4444' }), false, 'minted id: cannot write');
@@ -88,6 +93,8 @@ await ok(setDoc(doc(owner, K + 'staffpins/old-hand'), { hash: hash('old-hand', '
 // config: a sous chef may change the people list and staffIds, never sousIds or pingIds
 await ok(W([['config/main', { people: [{ id: 'sam', name: 'Sam', role: 'sous', active: true }, { id: 'ann', name: 'Ann', role: 'staff', active: true }, { id: 'dee', name: 'Dee', role: 'staff', active: true }], staffIds: ['sam', 'ann', 'dee', 'hd'], updated: 1, updatedBy: 'Sam' }, true]], { id: 'sam' }), true, 'config: a sous chef adds a person and their id to staffIds');
 await ok(W([['config/main', { people: [{ id: 'sam', name: 'Sam', role: 'sous', active: true }, { id: 'ann', name: 'Ann', role: 'staff', active: true }], staffIds: ['sam', 'ann'], updated: 2, updatedBy: 'Sam' }, true]], { id: 'sam' }), false, 'config: a sous chef cannot take the head chef off staffIds');
+await ok(W([['config/main', { pinOpen: { dee: Date.now() + 86400000 } }, true]], { id: 'sam' }), true, 'config: a sous chef opens a new person\'s PIN set-up window');
+await ok(W([['config/main', { pinOpen: { dee: Date.now() + 86400000 } }, true]], { id: 'ann' }), false, 'config: staff cannot open a PIN set-up window');
 await ok(W([['config/main', { sousIds: ['sam', 'ann'], updated: 1, updatedBy: 'Sam' }, true]], { id: 'sam' }), false, 'config: a sous chef cannot change sousIds');
 await ok(W([['config/main', { pingIds: ['sam', 'ann'], updated: 1, updatedBy: 'Sam' }, true]], { id: 'sam' }), false, 'config: a sous chef cannot change pingIds');
 await ok(W([['config/main', { people: [{ id: 'ann', name: 'Ann', role: 'staff', active: true }], updated: 1, updatedBy: 'Ann' }, true]], { id: 'ann' }), false, 'config: staff cannot change the people list');

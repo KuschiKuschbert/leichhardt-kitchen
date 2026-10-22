@@ -76,7 +76,7 @@ const same = (a, b) => (a || []).slice().sort().join(',') === b.slice().sort().j
   await L.settle(p, 500);
   const w = await p.evaluate(() => window.__fake.writes.map(ops => ops.filter(o => /config\/main$/.test(o.path))).filter(x => x.length)[0]);
   const keys = w ? Object.keys(w[0].data).sort().join(',') : '';
-  ok(keys === 'by,people,staffIds,updated,updatedBy', 'staff: the save sends people and staffIds only (' + keys + ')');
+  ok(keys === 'by,people,pinOpen,staffIds,updated,updatedBy', 'staff: the save sends people, staffIds and the PIN set-up windows only (' + keys + ')');
   s = await store(p);
   const dee = s[CFG].people.filter(x => x.name === 'Dee')[0];
   ok(!!dee && dee.role === 'staff' && s[CFG].staffIds.indexOf(dee.id) >= 0, 'staff: Dee is on the list and may set a PIN');
