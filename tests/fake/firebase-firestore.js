@@ -46,6 +46,7 @@ export function doc(parent, ...p) {
   return { type: 'doc', path, id: path[path.length - 1] };
 }
 export function where(f, op, v) { return { k: 'where', f, op, v }; }
+export function documentId() { return '__name__'; }
 export function orderBy(f, dir) { return { k: 'order', f, dir: dir || 'asc' }; }
 export function limit(n) { return { k: 'limit', n }; }
 export function query(col, ...c) { return { type: 'query', path: col.path, c }; }
@@ -61,7 +62,8 @@ function listCol(path, c) {
   const pre = key(path) + '/', n = path.length + 1;
   let docs = Object.keys(store).filter(k => k.indexOf(pre) === 0 && k.split('/').length === n).map(k => snapDoc(k.split('/')));
   (c || []).forEach(x => {
-    if (x.k === 'where') docs = docs.filter(d => { const v = (d.data() || {})[x.f]; return x.op === '==' ? v === x.v : x.op === '>=' ? v >= x.v : x.op === '<' ? v < x.v : x.op === '<=' ? v <= x.v : x.op === '>' ? v > x.v : true; });
+    if (x.k === 'where' && x.f === '__name__') { docs = docs.filter(d => x.op === 'in' ? x.v.indexOf(d.id) >= 0 : d.id === x.v); return; }
+    if (x.k === 'where') docs = docs.filter(d => { const v = (d.data() || {})[x.f]; if (x.op === 'in') return x.v.indexOf(v) >= 0; return x.op === '==' ? v === x.v : x.op === '>=' ? v >= x.v : x.op === '<' ? v < x.v : x.op === '<=' ? v <= x.v : x.op === '>' ? v > x.v : true; });
     if (x.k === 'order') docs.sort((a, b) => { const A = a.data()[x.f], B = b.data()[x.f]; return (A > B ? 1 : A < B ? -1 : 0) * (x.dir === 'desc' ? -1 : 1); });
     if (x.k === 'limit') docs = docs.slice(0, x.n);
   });
@@ -93,6 +95,22 @@ export function getDocFromServer(ref) {
   bill('server', k, 1);
   if (sv && k in sv) { const v = sv[k]; return delay({ id: ref.path[ref.path.length - 1], ref, exists: () => v != null, data: () => (v == null ? undefined : JSON.parse(JSON.stringify(v))) }); }
   return delay(result(ref));
+}
+// a query that must come from the server, like getDocFromServer: refused with no signal, and __fake.server's newer copies
+// win. A query by document id ('in') answers from those ids, so a document only the server has is found too.
+export function getDocsFromServer(ref) {
+  const k = key(ref.path), sv = window.__fake.server || {};
+  const byId = (ref.c || []).filter(x => x.k === 'where' && x.f === '__name__')[0];
+  // a query by id asks for those documents by name, so each one is listed in reads, like getDocFromServer
+  if (byId) (byId.op === 'in' ? byId.v : [byId.v]).forEach(id => window.__fake.reads.push(k + '/' + id)); else window.__fake.reads.push(k);
+  if (window.__fake.mode === 'hold' || window.__fake.mode === 'fail') return Promise.reject({ code: 'unavailable' });
+  let docs;
+  if (byId) {
+    const ids = byId.op === 'in' ? byId.v : [byId.v];
+    docs = ids.map(id => { const p = ref.path.concat([id]), dk = key(p); if (dk in sv) { const v = sv[dk]; return { id, ref: { path: p }, exists: () => v != null, data: () => (v == null ? undefined : JSON.parse(JSON.stringify(v))) }; } return result({ type: 'doc', path: p }); }).filter(d => d.exists());
+  } else docs = listCol(ref.path, ref.c).docs;
+  bill('query', k, docs.length);
+  return delay({ docs, empty: !docs.length, size: docs.length, forEach: f => docs.forEach(f) });
 }
 // a document from the offline copy: known (even known to be missing) once it was read, refused otherwise, like the SDK
 export function getDocFromCache(ref) {

@@ -251,10 +251,10 @@
      whoever picked it up (20 Oct 2026). The head chef's tools (Admin link and panel, reports, editing guides, minutes and
      pings, kitchen mail) now show only while a chef (head chef or sous chef) is the person signed in on this device, or,
      on a personal device (not ticked "Shared kitchen device"), while nobody is. Staff signed in get their own view. */
-  function ownerHere() { var p = who(); return p ? isSousP(p) : !shared(); }
+  function ownerHere() { var p = who(); return p ? chefP(p) : !shared(); }
   function featCalc(k) {
     var p = who();
-    return admDev() || (S.config.staffSee || {})[k] !== false || !!(p && (isSousP(p) || p.role === 'lead' || (k === 'pings' && canPingP(p))));
+    return admDev() || (S.config.staffSee || {})[k] !== false || !!(p && (chefP(p) || p.role === 'lead' || (k === 'pings' && canPingP(p))));
   }
   function featOn(k) { return S.configState === 'ok' && S.config ? featCalc(k) : admDev() || featHave[k] !== false; }
   /* run when the staff list, the person on this phone or the Google sign-in changes */
@@ -404,6 +404,13 @@
       if (o[0] === 'upd') b.update(o[1], data); else if (o[3]) b.set(o[1], data, { merge: true }); else b.set(o[1], data);
     });
     return track(b.commit());
+  }
+  /* A long list of writes (a rollover, a big merge) goes in batches of 400, one after the other, so nothing past the
+     first 400 is dropped (a Firestore batch holds 500 writes, and each W() adds its proof). */
+  function Wall(ops) {
+    var p = Promise.resolve(), k;
+    for (k = 0; k < ops.length; k += 400) (function (part) { p = p.then(function () { return W(part); }); })(ops.slice(k, k + 400));
+    return p;
   }
   function sset(ref, data, merge) { return W([['set', ref, data, merge]]); }
   function supd(ref, data) { return W([['upd', ref, data]]); }
@@ -602,9 +609,19 @@
   }
   /* Sign out from the chef mark: back to Who are you? on this device (the kitchen PIN stays, so recipes and guides stay
      open). Something not saved yet: false, and the menu asks for a second tap first. */
+  /* Sign out on a shared kitchen device: what this person left on it goes (22 Oct 2026). Function drafts hold a
+     customer's phone and email, recipe and drawing drafts are the head chef's, and the mail they sent is theirs. Only on
+     Sign out: the idle lock keeps them, so nothing typed is lost to a pause. */
+  function forgetMine(id) {
+    try {
+      Object.keys(LS || {}).forEach(function (k) { if (/^lk\.(fe|mg|dw)\.draft\./.test(k)) lsSet(k, ''); });
+      var l = mlSentAll(); if (l.some(function (x) { return x && x.w === id; })) mlSentSave(l.filter(function (x) { return x && x.w !== id; }));
+    } catch (e) {}
+  }
   function signOutPerson(force) {
     if (!S.authed) return true;
     if (!force && window.LK_PREP.unsaved()) return false;
+    if (shared()) forgetMine(S.who);
     S.picking = shared(); S.pending = null; leave(); toast('Signed out. Hand the phone over.');
     return true;
   }
@@ -788,8 +805,13 @@
   var RETRY_WAIT = 5 * 60000;
   function waiting(k) { return Date.now() < (S.retryAt[k] || 0); }
   function retryLater(k) { S.retryAt[k] = Date.now() + RETRY_WAIT; }
+  // a line that makes its day the last written day: anything not removed, apart from a function's platter lines
+  function rollSource(x) { return !x.deleted && !x.fn; }
   function maybeRoll() {
     var today = dayNow();
+    // lk.prep.rolled: the kitchen day this phone last rolled the prep list over (22 Oct 2026; it was kept in memory only,
+    // so every reload read today and the last day again). Out of date at the next kitchen day.
+    if (lsGet('lk.prep.rolled') === today) S.rolledFor = today;
     if (!T.ready() || !S.authed || !fb || !can('add') || S.date !== today || S.itemsState !== 'ok' || S.rolledFor === today || waiting('roll')) return;
     if (S.pastFor !== pastTag()) return; // the usual close time comes from the past days, so wait for them
     repairAhead();
@@ -799,9 +821,11 @@
     // the past days already on the phone say which day was written last, so only that day is read from the server (for
     // its ticks as they are now), with today: one day of lines instead of seven (22 Oct 2026). A day missing from the
     // copy (a read that failed) means all seven are read, as before.
+    // A day that holds only a function's platter lines (written by the function's booking, js/fnedit.js) is not a
+    // written day: those lines never roll, so the day before it is the one to roll from (22 Oct 2026).
     if (dates.every(function (d) { return S.past && S.past[d]; })) {
-      var last = dates.filter(function (d) { return S.past[d].some(function (x) { return !x.deleted; }); })[0];
-      if (!last) return;
+      var last = dates.filter(function (d) { return S.past[d].some(rollSource); })[0];
+      if (!last) { lsSet('lk.prep.rolled', today); return; }
       dates = [last];
     }
     Promise.all([fb.fs.getDocs(itemsCol(today))].concat(dates.map(function (d) { return fb.fs.getDocs(itemsCol(d)); }))).then(function (res) {
@@ -810,9 +834,9 @@
       var src = null, j;
       for (j = 1; j < res.length && !src; j++) {
         var docs = res[j].docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }).filter(function (x) { return !x.deleted; });
-        if (docs.length) src = { date: dates[j - 1], items: docs };
+        if (docs.some(rollSource)) src = { date: dates[j - 1], items: docs };
       }
-      if (!src) return;
+      if (!src) { lsSet('lk.prep.rolled', today); return; }
       var jobs = [];
       src.items.forEach(function (x) {
         if (x.done || x.fn) return;   // a function's platters belong to its day (js/fnedit.js), they never roll over
@@ -826,8 +850,8 @@
           ahead: !!(x.ahead || writtenLate(x, src.date))
         }]);
       });
-      if (!jobs.length) return;
-      return W(jobs.slice(0, 400)).then(function () { toast(jobs.length + (jobs.length === 1 ? ' line' : ' lines') + ' rolled over from ' + dayName(src.date).toLowerCase()); });
+      if (!jobs.length) { lsSet('lk.prep.rolled', today); return; }
+      return Wall(jobs).then(function () { lsSet('lk.prep.rolled', today); toast(jobs.length + (jobs.length === 1 ? ' line' : ' lines') + ' rolled over from ' + dayName(src.date).toLowerCase()); });
     }).catch(function () { S.rolledFor = ''; retryLater('roll'); });
   }
   function toggleUrgent(id) {
@@ -1005,15 +1029,20 @@
   function dupSig(g) { return g.map(function (x) { return x.id; }).sort().join(','); }
   function dupTodo(items) { return obviousDups(items).filter(function (g) { return !dupTried[dupSig(g)]; }); }
   function mergeDups() {
-    if (dupTimer || !S.authed || !fb || !fb.fs.getDocFromServer || !can('add') || S.date !== dayNow() || S.itemsState !== 'ok' || !dupTodo(S.items).length) return;
+    if (dupTimer || !S.authed || !fb || !fb.fs.getDocsFromServer || !can('add') || S.date !== dayNow() || S.itemsState !== 'ok' || !dupTodo(S.items).length) return;
     dupTimer = setTimeout(function () {
       dupTimer = null;
       var dte = S.date, ids = [];
       if (dte !== dayNow() || !can('add')) return;
       dupTodo(S.items).forEach(function (g) { dupTried[dupSig(g)] = 1; g.forEach(function (x) { ids.push(x.id); }); });
       if (!ids.length) return;
-      Promise.all(ids.map(function (id) { return fb.fs.getDocFromServer(itemRef(dte, id)); })).then(function (snaps) {
-        var fresh = snaps.filter(function (d) { return d.exists(); }).map(function (d) { var x = d.data(); x.id = d.id; return x; });
+      // read the lines as the server has them now: one query per 30 lines (an "in" query takes up to 30 ids), on the
+      // first double up the page finds each load. Costs one read per line, as before, without a read per line in a loop.
+      var parts = [], k;
+      for (k = 0; k < ids.length; k += 30) parts.push(ids.slice(k, k + 30));
+      Promise.all(parts.map(function (part) { return fb.fs.getDocsFromServer(fb.fs.query(itemsCol(dte), fb.fs.where(fb.fs.documentId(), 'in', part))); })).then(function (res) {
+        var fresh = [];
+        res.forEach(function (r) { r.docs.forEach(function (d) { var x = d.data(); x.id = d.id; fresh.push(x); }); });
         var gs = obviousDups(fresh), ops = [], undo = [], p = me(), last = null;
         gs.forEach(function (g) {
           var f = foldDups(g);
@@ -1025,10 +1054,10 @@
           });
         });
         if (!ops.length) return;
-        return W(ops.slice(0, 400)).then(function () {
+        return Wall(ops).then(function () {
           var msg = gs.length === 1 ? last.keep.text + ' was on the list ' + (gs[0].length === 2 ? 'twice' : gs[0].length + ' times') + '. Now it is on once' + (last.sec ? ', under ' + last.sec : '') + '.'
             : gs.length + ' double ups merged: ' + gs.map(function (g) { return g[0].text; }).join(', ') + '.';
-          toast(msg, { label: 'Undo', fn: function () { W(undo.slice(0, 400)).catch(failed); } });
+          toast(msg, { label: 'Undo', fn: function () { Wall(undo).catch(failed); } });
         });
       }).catch(function () {});
     }, 600 + Math.random() * 1800);
@@ -1249,7 +1278,7 @@
         S.moving = false; S.moveMsg = 'Copied ' + n + ' records. This device now uses the new PIN. Everyone else enters the new PIN next time they open the book.' +
           (skipped ? ' ' + skipped + ' sign-offs and seen records were left on the old PIN: the published rules do not let the head chef copy them yet.' : '');
         S.pin = np; lsSet('lk.prep.pin', np); S.items = []; S.learned = []; S.learnFor = ''; S.sections = []; S.activity = []; gForget();
-        stopLive(); S.rolledFor = ''; S.learnRan = false; S.weekAt = 0; S.stats = null;
+        stopLive(); S.rolledFor = ''; lsSet('lk.prep.rolled', ''); S.learnRan = false; S.weekAt = 0; S.stats = null;
         connect();
       }).catch(function (e) { S.moving = false; S.moveMsg = e && e.code === 'permission-denied' ? 'The rules do not allow the new PIN yet. Nothing was changed on the old PIN.' : 'Stopped part way. Nothing was changed on the old PIN, so it is safe to try again.'; draw(); });
   }
@@ -1289,7 +1318,7 @@
       var src = ((S.past || {})[x.rolledFrom] || []).filter(function (y) { return y.id === x.from; })[0];
       if (src && writtenLate(src, x.rolledFrom)) ops.push(['upd', itemRef(today, x.id), { ahead: true, origAt: src.addedAt }]);
     });
-    if (ops.length) W(ops.slice(0, 400)).catch(function () { S.aheadFixed = ''; retryLater('ahead'); });
+    if (ops.length) Wall(ops).catch(function () { S.aheadFixed = ''; retryLater('ahead'); });
   }
   function rolledN(x) { return Math.max(0, (x.rolled || 0) - (x.ahead ? 1 : 0)); }
   /* when a line was first written: a rolled copy keeps it in origAt (0 if it rolled before origAt was kept) */
@@ -1346,6 +1375,15 @@
      Pings tick for other staff is gone), so pingIds is the same people as sousIds. Everyone else only reads them. */
   function idsFor(people, fn) { return people.filter(function (p) { return p.active !== false && String(p.name).trim() && fn(p); }).map(function (p) { return p.id; }); }
   function isSousP(p) { return p.role === 'sous' || p.role === 'head'; }
+  /* A chef for what the page lets this person do: the rules decide from sousIds and headId, so the page asks the same
+     lists. A role a sous chef changed that the head chef has not kept yet does not count (22 Oct 2026; before, it opened
+     the head chef's tools on the Google device). A book whose lists were never seeded goes by the role. */
+  function chefP(p) {
+    var c = S.config || {};
+    if (!p) return false;
+    if (c.headId && p.id === c.headId) return true;
+    return c.sousIds ? c.sousIds.indexOf(p.id) >= 0 : isSousP(p);
+  }
   function canPingP(p) { return isSousP(p); }
   /* Manage functions: the tick in the People tab, nothing else (not the role, not being head chef) */
   function fnP(p) { return !!p.fn; }
@@ -1516,8 +1554,8 @@
   /* ---------- the last 14 days, read once a day per phone ----------
      Past days hardly change, so they are read once a day and kept on the phone. Today comes from the live list.
      The weekly badges, usual amounts, Start here, Due today, the pace card and the close-out nudge all work from this. */
-  var PAST_DAYS = 14, PAST_KEYS = ['text', 'station', 'qty', 'addedBy', 'addedById', 'addedAt', 'done', 'doneBy', 'doneById', 'doneAt', 'rolled', 'ahead', 'deleted', 'urgent'];
-  function pastTag() { return S.pin + '|' + dayNow() + '|2'; }
+  var PAST_DAYS = 14, PAST_KEYS = ['text', 'station', 'qty', 'addedBy', 'addedById', 'addedAt', 'done', 'doneBy', 'doneById', 'doneAt', 'rolled', 'ahead', 'deleted', 'urgent', 'fn'];
+  function pastTag() { return S.pin + '|' + dayNow() + '|3'; }   // |3: copies keep fn (22 Oct 2026), so older copies are read again once
   /* A change to a past day reaches the other phones (coding rules, 22 Oct 2026). Past days are kept on each phone for the
      day (lk.past, lk.ord.hist, the admin's lk.st.got). When the head chef or a sous chef ticks, unticks, removes or puts
      back a line on a past day, the book stamps config/main.pastEdit (p for prep, o for orders) with the time. Every phone
@@ -1624,7 +1662,7 @@
       '<div class="btn-row"><a class="btn" href="#/waste">Log waste</a><button type="button" class="btn" data-p="close-hide">Hide for today</button></div></div>';
   }
   var MEDAL = { 1: '#C9971C', 2: '#8E959C', 3: '#A8693A' };
-  function isSous() { var p = me(); return !!(p && isSousP(p)); }
+  function isSous() { var p = me(); return !!(p && chefP(p)); }
   /* shift pings: the head chef and sous chefs write them, everyone else reads them (20 Oct 2026) */
   function canPing() { var p = me(); return !!(p && canPingP(p)); }
   function ordinal(n) { return n + (n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th'); }
@@ -2997,7 +3035,7 @@
         }]);
       });
       if (!jobs.length) { S.ordRolling = false; lsSet('lk.ord.rolled', today); return; }
-      return W(jobs.slice(0, 400)).then(function () {
+      return Wall(jobs).then(function () {
         S.ordRolling = false; lsSet('lk.ord.rolled', today); ordReload();
         if (S.name === 'orders') toast(jobs.length + (jobs.length === 1 ? ' line' : ' lines') + ' not ordered yet rolled over from ' + dayName(src.date).toLowerCase());
       });
