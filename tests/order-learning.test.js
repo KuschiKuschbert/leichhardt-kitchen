@@ -28,13 +28,19 @@ const store = page => page.evaluate(() => window.__fake.dump());
   await p.click('#o-text');
   await p.keyboard.type('Paper towels');
   await L.settle(p, 200);
-  ok(await p.$('[data-p="oqset"][data-v="6 rolls"]') !== null, 'typing the full name: a Usual amount chip shows');
-  await p.click('[data-p="oqset"][data-v="6 rolls"]');
-  await L.settle(p, 150);
-  ok(await p.inputValue('#o-qty') === '6 rolls', 'Usual amount chip fills the amount');
+  // the usual amount fills in by itself once the name is typed in full (22 Oct 2026, review F2), and the hint says so
+  ok(await p.inputValue('#o-qty') === '6 rolls' && /Usual amount filled in: 6 rolls/.test(await txt(p, '#o-hint') || ''), 'typing the full name: the usual amount fills in and the hint says so');
+  await p.keyboard.type(' XL'); await L.settle(p, 150);
+  ok(await p.inputValue('#o-qty') === '', 'a name that no longer matches takes the filled amount away');
+  await p.keyboard.press('Backspace'); await p.keyboard.press('Backspace'); await p.keyboard.press('Backspace'); await L.settle(p, 150);
+  ok(await p.inputValue('#o-qty') === '6 rolls', 'back to the name: it fills again');
   await p.press('#o-text', 'Enter');
   await L.settle(p, 400);
   // the server learns at night: the phone writes nothing to what was learned, but its own suggestions already know
+  // an amount a person typed is never changed by the fill
+  await p.fill('#o-qty', '3 rolls'); await p.click('#o-text'); await p.keyboard.press('End'); await p.keyboard.type(' '); await p.keyboard.press('Backspace'); await L.settle(p, 150);
+  ok(await p.inputValue('#o-qty') === '3 rolls', 'a typed amount stays as typed');
+  await p.fill('#o-text', ''); await p.fill('#o-qty', '');
   await p.fill('#o-text', 'Star anise');
   await p.fill('#o-qty', '100 g');
   await p.press('#o-text', 'Enter');
