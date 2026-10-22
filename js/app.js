@@ -465,7 +465,7 @@
   function viewLanding() {
     var d = window.LK_TIME.day().split('-'), today = new Date(+d[0], d[1] - 1, +d[2], 12).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
     return '<div class="wall">' + topBar() + fnBand() +
-      '<main id="main" class="wall-main"><h2 class="wall-h" id="rtitle" tabindex="-1">Pick a docket</h2><p class="wall-date">' + esc(today) + '</p>' + minCard() + (window.LK_FN ? window.LK_FN.landSlot() : '') + installCard() +
+      '<main id="main" class="wall-main"><h2 class="wall-h" id="rtitle" tabindex="-1">Pick a docket</h2><p class="wall-date">' + esc(today) + '</p>' + minCard() + (window.LK_FN && window.LK_FN.checkSlot ? window.LK_FN.checkSlot() : '') + (window.LK_FN ? window.LK_FN.landSlot() : '') + installCard() +
       '<div class="dockets">' + DOCKETS.filter(function (d) { return d[3] !== 'guides' || featOn('guides'); }).map(function (d) {
         // the Guides docket is the long one under the other four: reference, not a job for today
         return '<a class="docket' + (d[4] ? ' dk-wide' : '') + '" href="' + d[2] + '"><span class="dk-pin" aria-hidden="true"></span><span class="dk-top"><span class="dk-name">' + d[1] + '</span><span class="dk-no">No. ' + d[0] + '</span></span>' +
@@ -883,6 +883,7 @@
     byId: function (id) { return byId[id] || null; },
     recipes: function () { return D.recipes; },
     tags: function (id) { return tags[id] || []; },
+    missing: function (id) { return (missing[id] || []).slice(); },   // allergens incomplete: the ingredients with no allergen info yet
     usedIn: function (id) { return (usedIn[id] || []).slice(); },
     menuTitles: function () { return (D.menuOrder || []).map(function (s) { return s.title; }); },
     sectionOf: function (id) { var s = (D.menuOrder || []).filter(function (x) { return x.ids.indexOf(id) >= 0; })[0]; return s ? s.title : ''; },
