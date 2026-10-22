@@ -27,6 +27,7 @@ The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the
 | `js/smart.js` | Draw it for me: the plate, side view and build drawing from the recipe, the head chef's picks (`book/matches`). Loaded after `js/draw.js`, not in `SHELL`. `tests/smart-match.js` measures its matcher |
 | `js/compose.js` | The recipe reader: reads a card's ingredients, notes and method into what it makes and how each ingredient is cut and cooked, and draws it in the book's look. Loaded after `js/smart.js`, not in `SHELL`. `tests/compose-read.js` checks the reading, `tests/style-check.js` the look |
 | `menu-survey.md` | The 120 Queensland menus behind the library (inspiration only, no prices) |
+| `js/amounts.js` | Reads typed amounts into a number and a unit (`LK_AMT.parse`, `.key`), shared with node. Before `js/prep.js`, in `SHELL` and both `js/upkeep.js` lists |
 | `js/functions.js` | Functions: the schedule maths (also run by node), the kitchen band under the top bar, the function sheet, `#/fn`, the landing card. In `SHELL` |
 | `js/fnedit.js` | Manage functions (`#/functions`): the function managers' list and form, loaded by `js/app.js` only for someone ticked for Functions, not in `SHELL` |
 | `js/app.js` | Routing, top bar, recipe views (Pass, Tiles), recipe cards, settings, install, QR |
