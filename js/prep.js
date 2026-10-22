@@ -251,10 +251,10 @@
      whoever picked it up (20 Oct 2026). The head chef's tools (Admin link and panel, reports, editing guides, minutes and
      pings, kitchen mail) now show only while a chef (head chef or sous chef) is the person signed in on this device, or,
      on a personal device (not ticked "Shared kitchen device"), while nobody is. Staff signed in get their own view. */
-  function ownerHere() { var p = who(); return p ? isSousP(p) : !shared(); }
+  function ownerHere() { var p = who(); return p ? chefP(p) : !shared(); }
   function featCalc(k) {
     var p = who();
-    return admDev() || (S.config.staffSee || {})[k] !== false || !!(p && (isSousP(p) || p.role === 'lead' || (k === 'pings' && canPingP(p))));
+    return admDev() || (S.config.staffSee || {})[k] !== false || !!(p && (chefP(p) || p.role === 'lead' || (k === 'pings' && canPingP(p))));
   }
   function featOn(k) { return S.configState === 'ok' && S.config ? featCalc(k) : admDev() || featHave[k] !== false; }
   /* run when the staff list, the person on this phone or the Google sign-in changes */
@@ -609,9 +609,19 @@
   }
   /* Sign out from the chef mark: back to Who are you? on this device (the kitchen PIN stays, so recipes and guides stay
      open). Something not saved yet: false, and the menu asks for a second tap first. */
+  /* Sign out on a shared kitchen device: what this person left on it goes (22 Oct 2026). Function drafts hold a
+     customer's phone and email, recipe and drawing drafts are the head chef's, and the mail they sent is theirs. Only on
+     Sign out: the idle lock keeps them, so nothing typed is lost to a pause. */
+  function forgetMine(id) {
+    try {
+      Object.keys(LS || {}).forEach(function (k) { if (/^lk\.(fe|mg|dw)\.draft\./.test(k)) lsSet(k, ''); });
+      var l = mlSentAll(); if (l.some(function (x) { return x && x.w === id; })) mlSentSave(l.filter(function (x) { return x && x.w !== id; }));
+    } catch (e) {}
+  }
   function signOutPerson(force) {
     if (!S.authed) return true;
     if (!force && window.LK_PREP.unsaved()) return false;
+    if (shared()) forgetMine(S.who);
     S.picking = shared(); S.pending = null; leave(); toast('Signed out. Hand the phone over.');
     return true;
   }
@@ -1365,6 +1375,15 @@
      Pings tick for other staff is gone), so pingIds is the same people as sousIds. Everyone else only reads them. */
   function idsFor(people, fn) { return people.filter(function (p) { return p.active !== false && String(p.name).trim() && fn(p); }).map(function (p) { return p.id; }); }
   function isSousP(p) { return p.role === 'sous' || p.role === 'head'; }
+  /* A chef for what the page lets this person do: the rules decide from sousIds and headId, so the page asks the same
+     lists. A role a sous chef changed that the head chef has not kept yet does not count (22 Oct 2026; before, it opened
+     the head chef's tools on the Google device). A book whose lists were never seeded goes by the role. */
+  function chefP(p) {
+    var c = S.config || {};
+    if (!p) return false;
+    if (c.headId && p.id === c.headId) return true;
+    return c.sousIds ? c.sousIds.indexOf(p.id) >= 0 : isSousP(p);
+  }
   function canPingP(p) { return isSousP(p); }
   /* Manage functions: the tick in the People tab, nothing else (not the role, not being head chef) */
   function fnP(p) { return !!p.fn; }
@@ -1643,7 +1662,7 @@
       '<div class="btn-row"><a class="btn" href="#/waste">Log waste</a><button type="button" class="btn" data-p="close-hide">Hide for today</button></div></div>';
   }
   var MEDAL = { 1: '#C9971C', 2: '#8E959C', 3: '#A8693A' };
-  function isSous() { var p = me(); return !!(p && isSousP(p)); }
+  function isSous() { var p = me(); return !!(p && chefP(p)); }
   /* shift pings: the head chef and sous chefs write them, everyone else reads them (20 Oct 2026) */
   function canPing() { var p = me(); return !!(p && canPingP(p)); }
   function ordinal(n) { return n + (n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th'); }

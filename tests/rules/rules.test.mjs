@@ -100,6 +100,9 @@ await ok(W([['notes/n-bo2', { text: 'Changed', upd: 2 }, true]], { id: 'sam' }),
 await ok(W([['notes/n-bo2', { text: 'Changed back', upd: 3 }, true]], { id: 'bo' }), true, 'pings: the writer can still change it after a sous chef\'s edit (author is kept)');
 await ok(W([['notes/n-bo2', { text: 'Nope', upd: 4 }, true]], { id: 'ann' }), false, 'pings: someone else still cannot');
 await ok(setDoc(doc(owner, K + 'notes/n-bo2'), note({ text: 'Head chef edit' })), true, 'pings: the head chef edits anyone\'s ping');
+await ok(setDoc(doc(anon, K + 'notes/n-bo'), { by: 'sam', text: 'Allergen: none today', upd: 9 }, { merge: true }), false, 'pings: no proof, posing as a sous chef, refused');
+await ok(W([['notes/n-bo', { text: 'Allergen: none today', upd: 9 }, true]], { id: 'sam', pin: '9999' }), false, 'pings: a sous chef\'s id with a wrong PIN, refused');
+await ok(W([['notes/n-bo', { text: 'Allergen: none today', upd: 9 }, true]], { id: 'bo', as: 'sam' }), false, 'pings: Bo\'s proof, written as Sam, refused');
 
 // sizes and shapes
 await ok(W([['days/2026-10-19/items/b1', line({ station: 'x'.repeat(41) })]], { id: 'ann' }), false, 'prep line: section over 40 characters refused');
