@@ -147,6 +147,7 @@ function past(n) { const d = new Date(); d.setDate(d.getDate() - n); return L.ym
   // minutes to sign show as a card on the landing page, not as a second bell in the top bar
   p = await L.open(b, '#/', { who: 'ann', extra: mins, wait: 1800 });
   ok(await p.$('.wtop a[href="#/minutes"]') === null, 'minutes: no minutes button in the top bar');
+  await L.waitFor(p, () => /Minutes not signed yet/.test((document.querySelector('.wall-mn .mn-nudge') || {}).textContent || '')).catch(() => {});   // read from Firestore: wait for it, not the page
   ok(/Minutes not signed yet/.test(await txt(p, '.wall-mn .mn-nudge') || ''), 'minutes: card on the landing page');
   await p.click('.wall-mn .mn-nudge-btn');
   await L.settle(p, 800);
