@@ -1866,6 +1866,18 @@ a.fn-svc { display: inline-flex; align-items: center; color: inherit; text-decor
 .fn-round-w { overflow-wrap: anywhere; }
 .fn-round-w i { display: block; font-style: normal; font-size: 0.85rem; color: var(--muted); }
 .fn-rounds-tot { margin: 0.4rem 0 0; font-weight: 700; }
+/* For the functions in Handy (22 Oct 2026): what today's and tomorrow's platters need, added up */
+.fnn-day { margin: 0.6rem 0 0.2rem; font: 700 0.8125rem var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.fnn { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.fnn-sum { min-height: 44px; padding: 0; border: 0; background: none; font: 600 0.9375rem var(--body); color: var(--ink); text-align: left; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.fnn li { display: flex; align-items: center; gap: 0.2rem 0.4rem; padding: 0.3rem 0; border-bottom: 1px solid var(--line); }
+.fnn li > button, .fnn li > .fnn-on { flex: 0 0 auto; }
+.fnn-t { flex: 1 1 auto; min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 0.4rem; }
+.fnn-q { font-weight: 700; }
+.fnn-tc { font-size: 0.875rem; color: var(--muted); font-style: italic; }
+.fnn-w { flex-basis: 100%; font-size: 0.8125rem; color: var(--muted); }
+.fnn-on { font-size: 0.875rem; font-weight: 600; color: var(--done); }
+.fnn-add { min-height: 44px; }
 
 /* Option B (22 Oct 2026): the admin jump list is one button on a phone, the People how-to folds, the wastage action folds */
 .a-jumpbtn { display: none; flex: 0 0 auto; align-self: flex-start; min-height: 40px; padding: 0 0.9rem; border: 1px solid var(--line); border-radius: var(--r-pick); background: var(--paper); font: 600 0.875rem var(--body); color: var(--ink); cursor: pointer; }
