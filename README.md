@@ -601,7 +601,10 @@ Done on 19 Oct 2026: the lock is proved on the live book after every publish and
 
 Done on 22 Oct 2026 by the head chef: the Browser key works only from `kuschikuschbert.github.io/*`, the old branch `ccr-c40e44af-ixs9p5` is deleted, and the `APPCHECK_DEBUG_TOKEN` secret is saved: the Lock probe reads "App Check token in hand." and all 13 checks pass on the live book. The wastage lock, the past-day stamp and the `summary` rule were published on 22 Oct 2026 (a day early, so the Logged often chips and usual amounts work at once). App Check is enforced for Cloud Firestore since 22 Oct 2026: the Lock probe passes with the debug token, and a request without an App Check token is refused. If a phone cannot load the book, App Check, APIs, Cloud Firestore, Unenforce, then read the metrics for unverified requests.
 
-1. **Fold book changes back into `js/data.js`.** Recipes the head chef changes in the book live in Firestore, and phones without the kitchen PIN still show `js/data.js`. Now and then a session can copy the saved changes into `js/data.js` (from a Backup file), then use Go back to the book file's copy on each one. A button for this may come later.
+1. **Publish the first PIN set-up window rules (S5).** The code is live (22 Oct 2026). The head chef opens the admin panel once on the updated book (that writes everyone's 7-day window into `config/main.pinOpen`), then run Publish rules and the Lock probe. Publishing before that visit would stop anyone without a PIN from setting one.
+2. **PIN sessions with a try limit (S8), then function contacts locked (S9).** Needs Anonymous sign-in turned on in the Firebase console (Authentication, Sign-in method) first.
+3. **Firebase files kept for no signal (P5).** Draft pull request #338: works, but on the GitHub runner the service worker's Firebase requests skip the tests' stand-in. Needs the test harness to route service worker requests first.
+4. **Fold book changes back into `js/data.js`.** Recipes the head chef changes in the book live in Firestore, and phones without the kitchen PIN still show `js/data.js`. Now and then a session can copy the saved changes into `js/data.js` (from a Backup file), then use Go back to the book file's copy on each one. A button for this may come later.
 
 Remove each item here once it is done.
 
