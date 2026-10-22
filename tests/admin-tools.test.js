@@ -20,6 +20,8 @@ const store = page => page.evaluate(() => window.__fake.dump());
   extra[fsKey(['ordlearned', 'milk'])] = { text: 'Milk', uses: 6, dow: { 1: 3 }, qtys: { '6 L': 4 }, by: 'ann' };
   // the head chef's recipe changes (Manage Recipes & Drawings) and an earlier version
   extra[fsKey(['book', 'index'])] = { r: { burger: 2 } };
+  // the head chef's picks for Draw it for me; the rules allow book/index and book/matches by name only, never a query
+  extra[fsKey(['book', 'matches'])] = { m: { 'donut fry': 'fries-shoestring' } };
   extra[fsKey(['recipes', 'burger'])] = { r: { id: 'burger', kind: 'main', name: 'Chicken Burger Deluxe', ingredients: [], sections: [] }, v: 2, upd: 1, src: 'book', base: 'abcd1234', removed: false };
   extra[fsKey(['recipes', 'burger', 'hist', '1'])] = { was: { r: { id: 'burger', kind: 'main', name: 'Chicken Burger', ingredients: [], sections: [] }, v: 1 }, at: 1 };
   // a plating template and a piece the head chef made (reuse)
@@ -46,6 +48,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   ok(!!s[newKey(['minutes', 'm1', 'signs', '2_ann'])], 'move PIN: sign-offs copied');
   ok(!!s[newKey(['orders', today, 'lines', 'o1'])], 'move PIN: order lines copied');
   ok(!!s[newKey(['ordlearned', 'milk'])], 'move PIN: what the order list learned copied');
+  ok(!!s[newKey(['book', 'matches'])], 'move PIN: the head chef\'s Draw it for me picks copied');
   ok(!!s[newKey(['book', 'index'])] && (s[newKey(['recipes', 'burger'])] || {}).v === 2 && !!s[newKey(['recipes', 'burger', 'hist', '1'])], 'move PIN: the head chef\'s recipe changes and their earlier versions copied');
   ok(!!s[newKey(['drawtpl', 'pub-split-1'])] && !!s[newKey(['drawlib', 'house-slaw-1'])], 'move PIN: the head chef\'s templates and own library pieces copied');
   ok(p.errors.length === 0, 'move PIN: no page errors ' + p.errors.join(' | '));
@@ -67,6 +70,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   ok((bk.minutesHist.m1 || []).some(x => x.id === '1' && x.v === 1), 'backup: earlier versions of the minutes included');
   ok((bk.minutesSigns.m1 || []).some(x => x.id === '2_ann' && x.st === 'present'), 'backup: minutes sign-offs included');
   ok(bk.ordlearned.length === 1 && bk.ordlearned[0].text === 'Milk' && bk.ordlearned[0].uses === 6, 'backup: what the order list learned included');
+  ok(bk.book.some(x => x.id === 'matches' && x.m['donut fry'] === 'fries-shoestring'), 'backup: the Draw it for me picks included');
   ok(bk.book.some(x => x.id === 'index') && bk.recipes.length === 1 && bk.recipes[0].v === 2 && (bk.recipesHist.burger || []).some(x => x.id === '1'), 'backup: the head chef\'s recipe changes and their earlier versions included');
   ok(bk.drawtpl.length === 1 && bk.drawtpl[0].name === 'Pub split' && bk.drawlib.length === 1 && bk.drawlib[0].name === 'House slaw', 'backup: the head chef\'s templates and own library pieces included');
   ok(Object.keys(bk.days).length === 1 && bk.days[today].length === 6 && Array.isArray(bk.pins) && !bk.pins.some(x => x.hash), 'backup: prep lines still in, PIN fingerprints still left out');

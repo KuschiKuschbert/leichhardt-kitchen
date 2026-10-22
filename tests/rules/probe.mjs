@@ -24,14 +24,23 @@ if (!cfg.projectId || !cfg.apiKey) { console.log('Could not read js/firebase-con
 const emu = process.env.FIRESTORE_EMULATOR_HOST, project = emu ? (process.env.GCLOUD_PROJECT || 'demo-test') : cfg.projectId;
 const base = (emu ? 'http://' + emu : 'https://firestore.googleapis.com') + '/v1/projects/' + project + '/databases/(default)/documents';
 const headers = {};
+// the Browser key only works from the book's own address (Google Cloud, Credentials, Websites, 22 Oct 2026), so the
+// probe sends that address like the book does in a browser; without it every call is refused before the rules run
+const SITE = 'https://kuschikuschbert.github.io/leichhardt-kitchen/';
 if (!emu) {
   headers['x-goog-api-key'] = cfg.apiKey;
+  headers['Referer'] = SITE;
   const debug = process.env.APPCHECK_DEBUG_TOKEN || '';
   if (debug) {
     // the debug token becomes a short lived App Check token, the same exchange the SDK makes
     const r = await fetch('https://firebaseappcheck.googleapis.com/v1/projects/' + cfg.projectId + '/apps/' + cfg.appId + ':exchangeDebugToken?key=' + cfg.apiKey,
-      { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ debug_token: debug }) });
-    if (!r.ok) { console.log('The APPCHECK_DEBUG_TOKEN secret was not accepted by App Check (' + r.status + '). Make a new debug token in the Firebase console.'); process.exit(1); }
+      { method: 'POST', headers: { 'content-type': 'application/json', 'Referer': SITE }, body: JSON.stringify({ debug_token: debug }) });
+    if (!r.ok) {
+      // Google's reason says which: the key refused (its website list) or the token itself
+      const why = ((await r.json().catch(() => ({}))).error || {}).message || '';
+      console.log('App Check did not accept the APPCHECK_DEBUG_TOKEN secret (' + r.status + (why ? ': ' + why : '') + '). ' + (/referer/i.test(why) ? 'The Browser key refused the call: check its website list in Google Cloud, Credentials.' : 'Make a new debug token in the Firebase console and save it in the secret again.'));
+      process.exit(1);
+    }
     headers['X-Firebase-AppCheck'] = (await r.json()).token;
     console.log('App Check token in hand.');
   }
