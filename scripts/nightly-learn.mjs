@@ -45,7 +45,7 @@ function dowOf(day) { const [y, m, d] = day.split('-').map(Number); return Strin
 function tally(lines, day, kind) {
   const map = {}, dw = dowOf(day);
   lines.forEach(x => {
-    if (!x || x.deleted || x.rolled || x.fn || !x.text) return;   // fn: a function's platters, not a usual job
+    if (!x || x.deleted || x.rolled || x.fn || x.tst || !x.text) return;   // fn: a function's platters, not a usual job; tst: practice
     const text = String(x.text).trim().slice(0, kind === 'prep' ? 160 : 120), k = lkey(text);
     if (!k) return;
     const m = map[k] = map[k] || { text, n: 0, typed: 0, picked: 0, dow: {}, secs: {}, q: {}, last: 0, by: '' };
@@ -106,7 +106,7 @@ async function wasteSummary(today) {
   const snaps = await Promise.all(days.map(d => K.collection('waste').doc(d).collection('lines').get()));
   const m = {};
   snaps.forEach(sn => sn.docs.forEach(doc => {
-    const x = doc.data(); if (!x || x.deleted || !x.text) return;
+    const x = doc.data(); if (!x || x.deleted || x.tst || !x.text) return;   // tst: written in practice mode
     const text = String(x.text).trim().slice(0, 80), k = okey(text); if (!k) return;
     const e = m[k] = m[k] || { t: text, n: 0, r: {}, u: {}, s: {}, a: {}, at: -1, last: null };
     const amt = +x.amount || 0, sec = String(x.station || '').slice(0, 40);

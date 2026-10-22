@@ -31,6 +31,7 @@ const run = () => execFileSync(process.execPath, ['nightly-learn.mjs'], { env: O
 await K.collection('daily').doc(y + '_aa').set({ day: y, tag: 'aa', sg: { quick: { s: 1, t: 3, d: 0 } }, pf: { lcp: [1, 2, 0, 0, 0] }, at: 1 });
 await K.collection('daily').doc(y + '_bb').set({ day: y, tag: 'bb', sg: { quick: { s: 1, t: 1, d: 1 } }, pf: { lcp: [0, 1, 0, 0, 1] }, at: 1 });
 await K.collection('daily').doc(day(9) + '_cc').set({ day: day(9), tag: 'cc', sg: {}, pf: {}, at: 1 });
+await w(['days', y, 'items', 'tst1'], it('Practice thing', { tst: true }));
 let fails = 0; const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++; };
 const out1 = run();
 ok(/Learned \d+ kitchen days/.test(out1) && !/000000/.test(out1), 'runs and prints no PIN: ' + out1.trim());
@@ -55,6 +56,7 @@ ok(/Wastage summary: 2 items/.test(out1), 'summary: the run says how many items'
 const us = (await K.collection('summary').doc('usage').get()).data() || {}, uy = (us.days || {})[y] || {};
 ok(uy.phones === 2 && uy.sg && uy.sg.quick && uy.sg.quick.t === 4 && uy.sg.quick.d === 1 && uy.pf.lcp.join() === '1,3,0,0,1', 'usage: yesterday added up from two phones (' + JSON.stringify(uy) + ')');
 ok(!(await K.collection('daily').doc(day(9) + '_cc').get()).exists && (await K.collection('daily').doc(y + '_aa').get()).exists, 'usage: records older than 7 days deleted, yesterday kept');
+ok(!(await K.collection('learned').doc('practice-thing').get()).exists, 'practice lines (tst) are not learned');
 run();
 const on2 = (await K.collection('learned').doc('slice-onions').get()).data();
 ok(on2.uses === 3, 'second run counts nothing twice (' + on2.uses + ')');
