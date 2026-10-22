@@ -360,8 +360,19 @@
     if (!el) { el = document.createElement('div'); el.id = 'lk-live'; el.className = 'visually-hidden'; el.setAttribute('aria-live', 'polite'); el.setAttribute('role', 'status'); document.body.appendChild(el); }
     el.textContent = ''; setTimeout(function () { el.textContent = t; }, 60);
   }
+  /* Off the prep pages (the landing page, the recipes) there is no prep page for a toast to sit on, so a toast without a
+     button shows there by itself (the section pick, Signed out), for as long as it would on the prep page. It is not
+     kept for the prep page, so the same words never come up again later. A toast with a button (Undo, OK) still waits
+     for the prep page, where the button works. */
+  var plainEl = null, plainTimer = null;
+  function plainToast(msg, ms) {
+    if (!plainEl || !document.body.contains(plainEl)) { plainEl = document.createElement('div'); plainEl.className = 'p-toasts'; document.body.appendChild(plainEl); }
+    plainEl.innerHTML = '<div class="p-toast p-toast-plain" role="presentation"><span class="p-toast-msg">' + esc(msg) + '</span></div>';
+    clearTimeout(plainTimer); plainTimer = setTimeout(function () { if (plainEl && plainEl.parentNode) plainEl.parentNode.removeChild(plainEl); plainEl = null; }, ms || 3500);
+  }
   function toast(msg, act, ms) {
     liveSay(msg + (act && act.label ? '. ' + act.label + ' is on screen.' : ''));
+    if (!act && (!S.root || !document.body.contains(S.root))) { plainToast(msg, ms); return; }
     if (S.toast && S.toastAct && S.toastAct !== act) { S.toastOld = { msg: S.toast, act: S.toastAct }; clearTimeout(toastOldTimer); toastOldTimer = setTimeout(function () { S.toastOld = null; draw(); }, 6000); }
     toastAt = Date.now(); toastScroll = document.scrollingElement ? { el: document.scrollingElement, y: document.scrollingElement.scrollTop } : null;
     S.toast = msg; S.toastAct = act || null; draw(); clearTimeout(toastTimer); toastTimer = setTimeout(function () { S.toast = ''; S.toastAct = null; draw(); }, ms || (act ? 9000 : 3500));
@@ -672,7 +683,14 @@
         var setAt = now();
         b.set(docRef('pinset', id), { at: setAt, name: p.name });
         return track(b.commit()).then(function () {
-          return sessOpenRetry(id, h, setAt).then(function () { S.drinkAsk = 'first'; dkEdit(); signedIn(id, h); S.tok = h; bump({ visits: 1, lastSeen: now() }); }, function (e) {
+          return sessOpenRetry(id, h, setAt).then(function () {
+            // One more thing (the usual drink) takes the whole prep list, so it comes only when the PIN was set there with
+            // nothing waiting. Set on the order list or wastage, from the chef hat's Sign in or for a tap on a shared
+            // device (S.pending, which signedIn() replays), the drinks run card asks instead and the page stays put.
+            var ask = S.name === 'prep' && !S.pending;
+            S.drinkAsk = ask ? 'first' : 'again'; if (ask) dkEdit();
+            signedIn(id, h); S.tok = h; bump({ visits: 1, lastSeen: now() });
+          }, function (e) {
             // the PIN is saved, but this phone could not sign in yet (no Firebase sign-in, or no signal): type it again
             S.pinStep = 'enter'; S.pinAt = { id: id, at: setAt }; S.pf1 = S.pf2 = '';
             S.pinMsg = e && e.code === 'no-session' ? NO_SIGNIN : 'Your PIN is saved. Type it again to sign in.';
@@ -798,6 +816,16 @@
     if (S.pin && (S.configState === 'idle' || S.configState === 'loading' || (S.configState === 'ok' && !resumed && !!S.who))) return 'wait';
     return S.pin ? 'no' : 'nopin';
   }
+  /* Manage staff, the Minutes register and Shift pings are drawn on the prep list's address. Leaving it (Orders, the
+     recipes, the landing page) closes them, so Prep is the prep list again next time (23 Oct 2026). Something not saved
+     yet keeps its page open, as before. Runs before js/app.js draws the new page (this file loads first). chefOpen() and
+     See who has signed set their page before they go to #/prep, so they still open. */
+  function leftPrep() {
+    if (S.staffOpen && !draftDirty()) { S.staffOpen = false; S.draft = null; }
+    if (S.minOpen && !mfDirty()) { S.minOpen = false; S.mf = null; }
+    if (S.notesOpen && !nfDirty()) S.notesOpen = false;
+  }
+  window.addEventListener('hashchange', function () { if (location.hash !== '#/prep') leftPrep(); });
   function chefOpen(k) {
     if (!isSous()) return;
     if (adminTabs()) { S.atab = k === 'pings' ? 'notes' : k === 'register' ? 'minutes' : 'people'; lsSet('lk.prep.atab', S.atab); if (location.hash === '#/admin') draw(); else location.hash = '#/admin'; return; }
@@ -819,13 +847,17 @@
       var l = mlSentAll(); if (l.some(function (x) { return x && x.w === id; })) mlSentSave(l.filter(function (x) { return x && x.w !== id; }));
     } catch (e) {}
   }
-  function signOutPerson(force) {
+  function signOutPerson(force, quiet) {
     if (!S.authed) return true;
     if (!force && window.LK_PREP.unsaved()) return false;
     if (shared()) forgetMine(S.who);
-    S.picking = shared(); S.pending = null; leave(); toast('Signed out. Hand the phone over.');
+    S.picking = shared(); S.pending = null; leave(); if (!quiet) toast('Signed out. Hand the phone over.');
     return true;
   }
+  /* "Not you?" next to "Writing as" (and Change person on the admin card) hands the phone over the way Sign out does
+     (23 Oct 2026): something not saved asks a second tap, and on a shared device what this person left on it goes. The
+     lines typed in the add boxes stay for the person who signs in, as before. */
+  function notYouHTML() { return '<button type="button" class="p-link" data-p="who-change">' + (armed('who-change') ? 'Not saved. Tap again' : 'Not you?') + '</button>'; }
   /* Manage Recipes & Drawings (#/manage, 21 Oct 2026): the head chef only. With their own PIN as Head chef on any device,
      or on the head chef's Google device while nobody else is signed in with a PIN. The rules check the same on the
      server (bookBy() in firestore.rules), so this only decides what the page shows. */
@@ -2655,7 +2687,7 @@
   /* ---------- drawing ---------- */
   var TICK = '<svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><path d="M5 14 L11 20 L22 5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
-  function openLabel() { return { orders: 'Open the order list', waste: 'Open the wastage log', minutes: 'Open the minutes', guides: 'Open the guides', mail: 'Open kitchen mail', admin: 'Open the admin panel' }[S.name] || 'Open the prep list'; }
+  function openLabel() { return { orders: 'Open the order list', waste: 'Open the wastage log', minutes: 'Open the minutes', guides: 'Open the guides', mail: 'Open kitchen mail', drinks: 'Open the drinks run', admin: 'Open the admin panel' }[S.name] || 'Open the prep list'; }
   function gateHTML() {
     return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Kitchen PIN</h2><p class="hint">' + (S.name === 'admin' ? 'The admin panel needs the kitchen PIN on this device once, then the head chef\'s Google sign-in.' : 'Enter the kitchen PIN to open the prep list, orders, wastage, minutes and guides. This device remembers it.') + '</p>' +
       '<div class="field"><label class="label" for="p-pin">PIN</label>' + pinField('p-pin', 'p-pin', S.pinInput, true) + '</div>' +
@@ -2969,7 +3001,7 @@
       (removed.length && can('del') ? '<button type="button" class="nb-link" data-p="removed">' + (S.showRemoved ? 'Hide' : 'Show') + ' removed (' + removed.length + ')</button>' : '') + '</div></section>';
     var right = '<section class="nb-page nb-right"><header class="nb-ph"><div><h2 class="nb-title nb-dim">Handy</h2><span class="nb-date">' + (S.date === today ? 'Done today and quick add' : 'Done on ' + esc(dayShort(S.date))) + '</span></div></header>' +
       '<div class="nb-body nb-side">' + sideH + '</div></section>';
-    return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' + ksTagHTML() + (can('tick') ? '' : ' (read only)') + esc(myRank()) : '') + '</span><span class="p-links"><button type="button" class="p-link" data-p="who-change">Not you?</button>' + '' + '</span></div>' +
+    return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' + ksTagHTML() + (can('tick') ? '' : ' (read only)') + esc(myRank()) : '') + '</span><span class="p-links">' + notYouHTML() + '</span></div>' +
       (canBrowse() ? '<div class="nb-nav"><button type="button" class="chip" data-p="day" data-d="-1" aria-label="Back one day">&lsaquo;</button>' +
       '<button type="button" class="chip" data-p="today" aria-pressed="' + (S.date === today) + '">Today</button>' +
       '<label class="visually-hidden" for="p-day">Pick a date</label><input id="p-day" type="date" class="p-dateinput" data-k="p-day" value="' + esc(S.date) + '">' +
@@ -3258,12 +3290,13 @@
     if (!ownerHere()) {
       var op = who();
       return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2><p class="hint">' + (op ? esc(op.name) + ' is signed in on this device. ' : 'Nobody is signed in on this shared device. ') + 'The admin panel opens only while a chef is signed in with their PIN.</p>' +
-        '<div class="btn-row"><a class="btn dark" href="#/prep" data-p="who-change">' + (op ? 'Not ' + esc(op.name.split(' ')[0]) + '? Change person' : 'Sign in') + '</a><button type="button" class="btn" data-p="signout">Sign out of Google</button></div></section>';
+        '<div class="btn-row"><a class="btn dark" href="#/prep" data-p="who-change">' + (op ? (armed('who-change') ? 'Not saved. Tap again' : 'Not ' + esc(op.name.split(' ')[0]) + '? Change person') : 'Sign in') + '</a><button type="button" class="btn" data-p="signout">Sign out of Google</button></div></section>';
     }
     if (!S.draft) startDraft();
     var d = S.draft, owner = S.level === 'owner';
     if (owner) { watchActivity(); loadStats(false); }
-    var bar = '<div class="p-bar"><span>Signed in as <strong>' + esc(S.user.email) + '</strong> (' + 'head chef' + ')</span><span class="p-links"><button type="button" class="p-link" data-p="signout">Sign out</button><a class="p-link" href="#/prep">Prep list</a></span></div>';
+    // the Google account, not the person: the chef hat's Sign out is for the person (Prep is in the top bar and tab bar)
+    var bar = '<div class="p-bar"><span>Google account: <strong>' + esc(S.user.email) + '</strong></span><span class="p-links"><button type="button" class="p-link" data-p="signout">Sign out of Google</button></span></div>';
     var bulk = '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line">' + esc(S.bulk || '') + '</textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div>';
     var saveBlock = saveBarHTML();
     var at = S.atab || 'insights';
@@ -3448,7 +3481,7 @@
   function staffHTML() {
     var d = S.draft || (startDraft(), S.draft);
     var bulk = '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line">' + esc(S.bulk || '') + '</textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div>';
-    return '<div class="p-admin"><div class="p-bar"><span>Staff list</span><span class="p-links"><button type="button" class="p-link" data-p="staff-close">' + (armed('staff-close') ? 'Tap again to leave without saving' : 'Back to the prep book') + '</button></span></div><h2 class="p-h" id="rtitle" tabindex="-1">Staff</h2>' +
+    return '<div class="p-admin"><div class="p-bar"><span class="p-links"><button type="button" class="p-link" data-p="staff-close">' + (armed('staff-close') ? 'Tap again to leave without saving' : 'Back to the prep book') + '</button></span></div><h2 class="p-h" id="rtitle" tabindex="-1">Manage staff</h2>' +
       '<section class="set-block"><span class="hint">Add a person or remove one, then save. New people start as Staff. Removing someone keeps their name on old lines. Roles and PINs are looked after by the head chef.</span>' + staffListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' +
       saveBarHTML() + '</div>';
   }
@@ -3862,7 +3895,7 @@
     var body = view === 'all' ? ordAllHTML() :
       (S.ordState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' :
         ordOverdueHTML(overdue, today) + (shown.length ? '<ul class="nb-rows">' + shown.slice().sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }).map(ordRow).join('') + '</ul>' : (overdue.length ? '' : live.length ? '<p class="nb-empty">Everything on this list has been ordered. See Ordered today below.</p>' : S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : '<p class="nb-empty">Loading...</p>')));
-    return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' : '') + '</span><span class="p-links"><button type="button" class="p-link" data-p="who-change">Not you?</button><a class="p-link" href="#/prep">Prep list</a>' + '' + '</span></div>' + tabs +
+    return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' : '') + '</span><span class="p-links">' + notYouHTML() + '<a class="p-link" href="#/prep">Prep list</a></span></div>' + tabs +
       '<section class="nb-page o-page' + (view === 'all' ? ' o-all' : '') + '"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + (view === 'all' ? 'To order' : 'Order list') + '</h2><span class="nb-date">' + (view === 'all' ? 'Across the last ' + ORD_DAYS + ' days' : esc(longDate(S.ordDate))) + '</span></div>' +
       (view === 'day' ? '<div class="nb-prog">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') + '</header>' +
       /* the add box is at the top, so it is always in reach; on big screens the list and the ordered-today list sit side by side below it */
@@ -4101,7 +4134,7 @@
     var tot = totalsText(wTotals(live));
     var body = S.wState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' :
       (shown.length ? '<ul class="nb-rows">' + shown.map(wRow).join('') + '</ul>' : (S.wState !== 'ok' ? '<p class="nb-empty">Loading...</p>' : '<p class="nb-empty">Nothing logged for ' + esc(dayName(S.wDate).toLowerCase()) + ' yet. Log waste when it happens: prep waste, expired stock, cooking faults, returns and excess production.</p>'));
-    return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' + ksTagHTML() : '') + '</span><span class="p-links"><button type="button" class="p-link" data-p="who-change">Not you?</button><a class="p-link" href="#/prep">Prep list</a>' + '' + '</span></div>' +
+    return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' + ksTagHTML() : '') + '</span><span class="p-links">' + notYouHTML() + '<a class="p-link" href="#/prep">Prep list</a></span></div>' +
       '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Wastage</h2><span class="nb-date">' + esc(longDate(S.wDate)) + (tot ? ' &middot; ' + esc(tot) : '') + '</span></div>' +
       '<div class="nb-prog">' + live.length + (live.length === 1 ? ' entry' : ' entries') + '</div></header>' +
       '<p class="w-rule">Write the actual amount and unit, not a dollar value. Unsafe food must never be reused to avoid logging waste.</p>' +
@@ -4808,7 +4841,7 @@
     loadMinutes();
     var p = me(), list = mnPub();
     // with minutes to read, the register link sits in the top bar (22 Oct 2026: it replaced the Minutes register in the chef hat menu)
-    var top = '<div class="nb-top mn-noprint"><span>' + (p ? 'Signing as <strong>' + esc(p.name) + '</strong>' : '') + '</span><span class="p-links">' + (list.length ? mnRegLink(true) : '') + '<button type="button" class="p-link" data-p="who-change">Not you?</button></span></div>';
+    var top = '<div class="nb-top mn-noprint"><span>' + (p ? 'Signing as <strong>' + esc(p.name) + '</strong>' : '') + '</span><span class="p-links">' + (list.length ? mnRegLink(true) : '') + notYouHTML() + '</span></div>';
     // loading and nothing published yet: the same notebook card as the order list and wastage
     function card(msg) {
       return top + '<section class="nb-page o-page mn-empty"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Meeting minutes</h2><span class="nb-date">Last ' + MN_DAYS + ' days</span></div></header>' +
@@ -6317,7 +6350,13 @@
     if (a === 'otoday') { S.ordDate = dayNow(); watchOrders(); draw(); return; }
     if (a === 'osugg') { var st = (S.osugg || [])[i]; if (st) { S.otext = st; if (!S.oqty.trim()) S.oqty = (ordQtyList(st)[0] || {}).q || ''; draw(); var oe = S.root.querySelector('[data-k="o-text"]'); if (oe) { oe.focus(); try { oe.setSelectionRange(oe.value.length, oe.value.length); } catch (x) {} } } return; }
     if (a === 'who') { pickName(id); return; }
-    if (a === 'who-change') { S.picking = shared(); S.pending = null; leave(); return; }
+    if (a === 'who-change') {
+      // the PIN screens' Not me and the admin card's Sign in: nobody is signed in yet, so nothing to hand over
+      if (!S.authed) { S.picking = shared(); S.pending = null; leave(); return; }
+      // the admin card's Change person is a link to the prep list: it stays put until the second tap
+      if (window.LK_PREP.unsaved() && !arm('who-change')) { e.preventDefault(); return; }
+      signOutPerson(true, true); return;
+    }
     if (a === 'guest-who') { guestAsk(null); return; }
     if (a === 'who-back') { S.picking = false; S.pending = null; leave(); return; }
     if (a === 'day') { S.date = shift(S.date, +el.getAttribute('data-d')); S.tab = ''; watchItems(); draw(); return; }
@@ -6381,7 +6420,7 @@
     if (a === 'staff-close') { if (draftDirty() && !arm('staff-close')) return; S.staffOpen = false; S.draft = null; draw(); return; }
     if (a === 'add-recipe') { addRecipe(id); return; }
     if (a === 'signin') { signIn(); return; }
-    if (a === 'signout') { if (draftDirty() && !arm('signout')) { toast('Unsaved staff changes. Tap Sign out again to drop them.'); return; } signOut(); draw(); return; }
+    if (a === 'signout') { if (draftDirty() && !arm('signout')) { toast('Unsaved staff changes. Tap Sign out of Google again to drop them.'); return; } signOut(); draw(); return; }
     if (a === 'sec-hide') { hideSection(id, el.getAttribute('data-hide') === '1'); return; }
     if (a === 'a-reset-pin') { resetPin(id); return; }
     if (a === 'range') { S.statsRange = +el.getAttribute('data-v'); draw(); return; }

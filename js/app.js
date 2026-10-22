@@ -426,12 +426,8 @@
       if (!window.LK_PREP.signOut(el.classList.contains('is-armed'))) {
         el.classList.add('is-armed'); el.querySelector('small').textContent = 'Not saved yet. Tap again to sign out'; return;
       }
+      // "Signed out" is the prep toast, which shows by itself off the prep pages too (toast() in js/prep.js)
       whoMenuClose();
-      // the prep pages show their own toast; on the recipes and guides one is shown here for a moment
-      if (!document.getElementById('prep-root')) {
-        var t = document.createElement('div'); t.className = 'p-toast p-toast-plain'; t.setAttribute('role', 'status'); t.textContent = 'Signed out. Hand the phone over.';
-        document.body.appendChild(t); setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 3500);
-      }
     }
   });
   document.addEventListener('keydown', function (e) {

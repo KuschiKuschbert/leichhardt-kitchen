@@ -60,6 +60,18 @@ const addLine = async (p, text, sec) => {
   ok((lineOf(s, 'Wipe the pass') || {}).station === 'Pass', 'change: the next line goes under Pass');
   ok(p.errors.length === 0, 'staff: no page errors ' + p.errors.join(' | '));
 
+  // the pick on the landing page: its toast shows there, once, and does not come up again on the prep list (23 Oct 2026)
+  const p2 = await L.open(b, '#/', { who: 'bo', extra: withSecs(), wait: 1500 });
+  await L.waitFor(p2, () => !!document.querySelector('.ks-wrap'), null, 5000).catch(() => {});
+  await p2.click('.ks-b[data-v="grill"]'); await L.settle(p2, 300);
+  ok(/You are on Grill today/.test(await txt(p2, '.p-toast') || '') && !(await p2.$('#prep-root')), 'landing: the pick says You are on Grill today on the landing page (' + await txt(p2, '.p-toast') + ')');
+  await p2.evaluate(() => { location.hash = '#/prep'; }); await L.settle(p2, 900);
+  ok(await p2.evaluate(() => [...document.querySelectorAll('.p-toast')].filter(e => /You are on Grill/.test(e.textContent)).length) <= 1, 'landing: the prep list does not show the same words a second time');
+  await p2.clock.runFor(4000); await L.settle(p2, 300);
+  ok(!(await p2.$('.p-toast')), 'landing: the toast goes by itself');
+  ok(p2.errors.length === 0, 'landing pick: no page errors ' + p2.errors.join(' | '));
+  await p2.context().close();
+
   // the same day again: not asked twice
   await p.reload(); await L.settle(p, 1500);
   ok(!(await p.$('.ks-wrap')), 'reload: not asked again today');

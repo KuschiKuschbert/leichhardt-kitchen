@@ -90,6 +90,9 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   ok(/#\/prep$/.test(p.url()) && await txt(p, '#rtitle') === 'Meeting minutes' && !!(await p.$('[data-p="mn-close"]')), 'sous chef: See who has signed opens the Minutes register (' + p.url() + ')');
   await L.chef(p, 'staff');
   ok(!!(await p.$('[data-p="a-add-person"]')), 'sous chef: Manage staff opens from the menu over the register');
+  // one name for the page (23 Oct 2026): the menu's Manage staff, not Staff list and Staff
+  ok(await txt(p, '#rtitle') === 'Manage staff' && !/Staff list/.test(await txt(p, '.p-bar') || '') && /Back to the prep book/.test(await txt(p, '.p-bar') || ''), 'sous chef: the page is called Manage staff, with Back to the prep book (' + await txt(p, '#rtitle') + ')');
+  ok(await p.evaluate(() => { const l = document.querySelector('.p-bar .p-links'), r = l.getBoundingClientRect(); return innerWidth - r.right < 40; }), 'sous chef: Back to the prep book stays on the right');
 
   // Sign out closes Manage staff, so the next person never lands in it
   await p.click('.wtop-who'); await L.settle(p, 150);
@@ -120,6 +123,51 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   await p.click('.wm [data-who="out"]'); await L.settle(p, 400);
   ok(!(await signedIn(p)), 'unsaved line: the second tap signs out');
   ok(p.errors.length === 0, 'sign out: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // "Not you?" does what Sign out does (23 Oct 2026): a line typed asks a second tap, and the line stays for the next person
+  p = await L.open(b, '#/prep', { who: 'ann', wait: 1800 });
+  await p.fill('#p-text', 'Pick parsley');
+  await p.click('.nb-top [data-p="who-change"]'); await L.settle(p, 200);
+  ok(await signedIn(p) && /Not saved\. Tap again/.test(await txt(p, '.nb-top [data-p="who-change"]') || ''), 'Not you? with a line typed: the first tap asks again (' + await txt(p, '.nb-top [data-p="who-change"]') + ')');
+  await p.click('.nb-top [data-p="who-change"]'); await L.settle(p, 400);
+  ok(!(await signedIn(p)) && /Who are you\?/.test(await txt(p, '#prep-root') || ''), 'Not you?: the second tap asks who is writing');
+  await p.click('.p-name[data-id="bo"]'); await L.settle(p, 300);
+  await p.keyboard.type('3333'); await L.settle(p, 900);
+  ok(/Writing as\s*Bo/.test(await txt(p, '.nb-top') || '') && await p.inputValue('#p-text') === 'Pick parsley', 'Not you?: Bo signs in and the typed line is still in the box');
+  ok(p.errors.length === 0, 'Not you?: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // leaving the prep list closes Manage staff, the register and Shift pings (23 Oct 2026), so Prep is the prep list again
+  const go = async (p, h) => { await p.evaluate(h => { location.hash = h; }, h); await L.settle(p, 600); };
+  const onList = async p => !!(await p.$('.nb-left')) && !(await p.$('[data-p="a-add-person"]')) && !(await p.$('[data-p="mn-close"]')) && !(await p.$('[data-p="notes-close"]'));
+  p = await L.open(b, '#/recipes', { who: 'sam', extra: pub, wait: 1800 });
+  await L.chef(p, 'staff');
+  ok(!!(await p.$('[data-p="a-add-person"]')), 'leave: Manage staff opens from the recipes');
+  await go(p, '#/orders'); await go(p, '#/prep');
+  ok(await onList(p), 'leave: Manage staff, then Orders, then Prep shows the prep list');
+  await L.chef(p, 'staff');
+  await go(p, '#/recipes'); await go(p, '#/prep');
+  ok(await onList(p), 'leave: Manage staff, then Recipes, then Prep shows the prep list');
+  await L.chef(p, 'staff');
+  await go(p, '#/'); await go(p, '#/prep');
+  ok(await onList(p), 'leave: Manage staff, then the landing page, then Prep shows the prep list');
+  await L.chef(p, 'pings');
+  ok(!!(await p.$('[data-p="notes-close"]')), 'leave: Shift pings opens');
+  await go(p, '#/waste'); await go(p, '#/prep');
+  ok(await onList(p), 'leave: Shift pings, then Wastage, then Prep shows the prep list');
+  await go(p, '#/minutes');
+  await L.waitFor(p, () => !!document.querySelector('[data-p="mn-sous"]'), null, 5000).catch(() => {});
+  await p.click('[data-p="mn-sous"]'); await L.settle(p, 500);
+  ok(!!(await p.$('[data-p="mn-close"]')), 'leave: See who has signed still opens the register on the prep list');
+  await go(p, '#/orders'); await go(p, '#/prep');
+  ok(await onList(p), 'leave: the register, then Orders, then Prep shows the prep list');
+  // a staff list draft with a change keeps its page, as before
+  await L.chef(p, 'staff');
+  await p.fill('[data-k="a-bulk"]', 'Fay'); await p.click('[data-p="a-bulk-add"]'); await L.settle(p, 200);
+  await go(p, '#/orders'); await go(p, '#/prep');
+  ok(!!(await p.$('[data-p="a-add-person"]')) && /Fay/.test(await p.evaluate(() => JSON.stringify(window.LK_PREP.state.draft || {}))), 'leave: a staff list with a change not saved still comes back to Manage staff');
+  ok(p.errors.length === 0, 'leave: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
   // the biggest text size: the short menu still fits on a phone, with no sideways scroll
