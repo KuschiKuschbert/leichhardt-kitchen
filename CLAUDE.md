@@ -11,6 +11,7 @@ The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the
 - No em dashes anywhere. Australian English, metric units, 24-hour time, Celsius, Australian kitchen terms.
 - Plain, short sentences. Staff read this on the line.
 - Only recipes, quantities, temperatures and times the head chef confirmed. Anything else goes in `[square brackets]` and shows as "To come".
+- Times in messages to the head chef are Queensland time (Rockhampton, UTC+10, no daylight saving), 24-hour: "21:52", not "11:52 UTC". GitHub, workflow runs and tools report UTC, so add 10 hours before saying a time.
 
 ## Files
 | File | What it is |
