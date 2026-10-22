@@ -225,11 +225,13 @@
   function loadLearned() {
     var tag = S.pin + '|' + dayNow();
     if (!fb || S.learnBusy || waiting('learned') || S.learnFor === tag) return;
-    try { var c = JSON.parse(lsGet('lk.learned') || 'null'); if (c && c.tag === tag && Array.isArray(c.list)) { S.learned = foldLearned(c.list); S.learnFor = tag; return; } } catch (e) {}
+    try { var c = JSON.parse(lsGet('lk.learned') || 'null'); if (c && c.tag === tag && Array.isArray(c.list)) { S.learned = foldLearned(c.list); S.lists = listsOf(c.lists); S.learnFor = tag; return; } } catch (e) {}
     S.learnBusy = true;
-    // the nightly summary first: 1 read instead of up to 500 (22 Oct 2026); the old read when it is missing or old
-    sumList('learned').then(function (list) {
-      return list || fb.fs.getDocs(fb.fs.query(colRef('learned'), fb.fs.orderBy('uses', 'desc'), fb.fs.limit(LEARN_N))).then(function (snap) {
+    // the nightly summary first: 1 read instead of up to 500 (22 Oct 2026); the old read when it is missing or old.
+    // The same record holds when tomorrow's list is written (lists, see cutFor()), so that costs no read of its own.
+    sumList('learned').then(function (sum) {
+      S.lists = listsOf(sum && sum.lists);
+      return sum ? sum.items : fb.fs.getDocs(fb.fs.query(colRef('learned'), fb.fs.orderBy('uses', 'desc'), fb.fs.limit(LEARN_N))).then(function (snap) {
         return snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; });
       });
     }).then(function (list) {
@@ -237,16 +239,31 @@
       S.learnFor = tag; S.learnBusy = false; learnSave(); draw();
     }, function () { S.learnBusy = false; retryLater('learned'); });
   }
-  /* summary/learned and summary/ordlearned (scripts/nightly-learn.mjs, 03:00): one read each, once a day per phone. null
-     when the record is missing, unreadable or older than yesterday (a night the job did not run), so the caller reads the
-     collection as before; a failed read is never taken as "nothing learned". */
+  /* summary/learned and summary/ordlearned (scripts/nightly-learn.mjs, 03:00): one read each, once a day per phone. The
+     record, or null when it is missing, unreadable or older than yesterday (a night the job did not run), so the caller
+     reads the collection as before; a failed read is never taken as "nothing learned". */
   function sumList(name) {
     return fb.fs.getDoc(docRef('summary', name)).then(function (sn) {
       var d = sn.exists() ? sn.data() : null;
-      return d && Array.isArray(d.items) && d.day >= shift(dayNow(), -1) ? d.items : null;
+      return d && Array.isArray(d.items) && d.day >= shift(dayNow(), -1) ? d : null;
     }, function () { return null; });
   }
-  function learnSave() { lsSet('lk.learned', JSON.stringify({ tag: S.learnFor, list: S.learned })); }
+  // lk.learned also keeps lists, so it is out of date at the next kitchen day like the list itself
+  function learnSave() { lsSet('lk.learned', JSON.stringify({ tag: S.learnFor, list: S.learned, lists: S.lists })); }
+  /* When tomorrow's list was written (summary/learned lists, js/learn.js), checked by type before it is used: a night's
+     start and the usual times are whole minutes in the day or -1, line counts are small whole numbers. null when the
+     server has not clocked anything yet. */
+  function listsOf(v) {
+    if (!v || typeof v !== 'object') return null;
+    function min(m) { return typeof m === 'number' && m >= 0 && m < 1440 ? Math.floor(m) : -1; }
+    var out = { days: {}, dow: {}, usual: min(v.usual), n: typeof v.n === 'number' && v.n >= 0 && v.n <= 100 ? Math.floor(v.n) : 0 };
+    Object.keys(v.days || {}).forEach(function (d) {
+      var e = v.days[d];
+      if (/^\d{4}-\d\d-\d\d$/.test(d) && e && typeof e === 'object') out.days[d] = { m: min(e.m), n: typeof e.n === 'number' && e.n >= 0 && e.n < 1000 ? Math.floor(e.n) : 0 };
+    });
+    Object.keys(v.dow || {}).forEach(function (k) { if (/^[0-6]$/.test(k) && min(v.dow[k]) >= 0) out.dow[k] = min(v.dow[k]); });
+    return out;
+  }
   /* "Slice onion" and "Slice onions" are learned as two records (their ids are the typed words), but they are one item
      (22 Oct 2026). The phone shows them as one: counts, weekdays, amounts and sections added up, the most used
      spelling as the name, every record id in ids (Hide writes to each). Nothing in Firestore changes. */
@@ -1007,7 +1024,7 @@
     // so every reload read today and the last day again). Out of date at the next kitchen day.
     if (lsGet('lk.prep.rolled') === today) S.rolledFor = today;
     if (!T.ready() || !S.authed || !fb || !can('add') || S.date !== today || S.itemsState !== 'ok' || S.rolledFor === today || waiting('roll')) return;
-    if (S.pastFor !== pastTag()) return; // the usual close time comes from the past days, so wait for them
+    if (S.pastFor !== pastTag() || !learnedIn()) return; // the cut (cutFor) comes from the past days and summary/learned, so wait for them
     repairAhead();
     S.rolledFor = today;
     var dates = [], k;
@@ -1031,7 +1048,8 @@
         if (docs.some(rollSource)) src = { date: dates[j - 1], items: docs };
       }
       if (!src) { lsSet('lk.prep.rolled', today); return; }
-      var jobs = [];
+      // when that day's night list started, from its lines as they are on the server now
+      var jobs = [], cut = cutFor(src.date, src.items);
       src.items.forEach(function (x) {
         if (x.done || x.fn) return;   // a function's platters belong to its day (js/fnedit.js), they never roll over
         var root = x.root || x.id, id = 'r' + today.replace(/-/g, '') + '-' + root;
@@ -1041,7 +1059,7 @@
           text: x.text, station: x.station || '', qty: x.qty || '', recipe: x.recipe || '',
           addedBy: 'Rolled over', addedById: '', addedAt: now(), done: false, deleted: false,
           rolled: (x.rolled || 0) + 1, root: root, from: x.id, rolledFrom: src.date, origBy: x.origBy || x.addedBy || '', origAt: x.origAt || (x.rolled ? 0 : x.addedAt || 0), urgent: !!x.urgent,
-          ahead: !!(x.ahead || writtenLate(x, src.date))
+          ahead: !!(x.ahead || writtenLate(x, src.date, cut))
         }]);
       });
       if (!jobs.length) { lsSet('lk.prep.rolled', today); return; }
@@ -1531,7 +1549,7 @@
       .then(function () {
         S.moving = false; S.moveMsg = 'Copied ' + n + ' records. This device now uses the new PIN. Everyone else enters the new PIN next time they open the book.' +
           (skipped ? ' ' + skipped + ' sign-offs and seen records were left on the old PIN: the published rules do not let the head chef copy them yet.' : '');
-        S.pin = np; lsSet('lk.prep.pin', np); S.items = []; S.learned = []; S.learnFor = ''; S.sections = []; S.activity = []; gForget();
+        S.pin = np; lsSet('lk.prep.pin', np); S.items = []; S.learned = []; S.lists = null; S.learnFor = ''; S.sections = []; S.activity = []; gForget();
         stopLive(); S.rolledFor = ''; lsSet('lk.prep.rolled', ''); S.learnRan = false; S.weekAt = 0; S.stats = null;
         connect();
       }).catch(function (e) { S.moving = false; S.moveMsg = e && e.code === 'permission-denied' ? 'The rules do not allow the new PIN yet. Nothing was changed on the old PIN.' : 'Stopped part way. Nothing was changed on the old PIN, so it is safe to try again.'; draw(); });
@@ -1552,26 +1570,43 @@
     if (e.shiftKey && (document.activeElement === first || out)) { e.preventDefault(); last.focus(); }
     else if (!e.shiftKey && (document.activeElement === last || out)) { e.preventDefault(); first.focus(); }
   }
-  /* A line written after the usual close (the time of the last tick on most days, 20:00 until the book knows) is meant
-     for the next day. When it moves onto that day it is marked ahead and does not count as rolled; only if it is still
-     open after that day does it show as rolled. rolled stays the number of copies, so a copy is never counted twice. */
-  function lateMin() { return S.closeMin || 20 * 60; }
-  function writtenLate(x, day) {
-    if (x.rolled || !x.addedAt || T.day(x.addedAt) !== day) return false;
-    return T.mins(x.addedAt) >= lateMin();
+  /* A line written once tomorrow's list was being written is meant for the next day. When it moves onto that day it is
+     marked ahead and does not count as rolled; only if it is still open after that day does it show as rolled. rolled
+     stays the number of copies, so a copy is never counted twice.
+     The cut (head chef, 22 Oct 2026): when the night list started that day, the minute after midnight. Clocked from the
+     day's own lines when the caller has them (js/learn.js: the biggest batch of 6 or more lines from 15:00), else the
+     night the server clocked (summary/learned lists), else the usual time for that weekday, then for any night, else
+     the usual time of the last tick, else 20:00. */
+  function cutFor(day, lines) {
+    var own = lines && window.LK_LEARN ? window.LK_LEARN.listStart(lines, day, T) : null, L = S.lists;
+    if (own && own.m >= 0) return own.m;
+    if (L) {
+      var e = L.days[day], w = L.dow[String(parseYmd(day).getDay())];
+      if (e && e.m >= 0) return e.m;
+      if (typeof w === 'number') return w;
+      if (L.usual >= 0) return L.usual;
+    }
+    return S.closeMin || 20 * 60;
   }
+  function writtenLate(x, day, cut) {
+    if (x.rolled || !x.addedAt || T.day(x.addedAt) !== day) return false;
+    return T.mins(x.addedAt) >= cut;
+  }
+  // the rollovers wait for summary/learned (or for its read to fail), so they know when the night list was written
+  function learnedIn() { return S.learnFor === S.pin + '|' + dayNow() || waiting('learned'); }
   /* Lines that rolled over before the written-for-tomorrow rule (19 Oct 2026), or on a phone with older code: a copy
      that rolled once is checked against the time its original was written, and marked ahead for everyone if it was
-     written after the usual close. Once a day per phone, only today's list, no extra reads (the past days are cached). */
+     written after the cut. Once a day per phone, only today's list, no extra reads (the past days are cached). */
   function repairAhead() {
     var today = dayNow();
     if (S.aheadFixed === today || !S.authed || !fb || !can('add') || S.date !== today || S.itemsState !== 'ok' || S.pastFor !== pastTag() || waiting('ahead')) return;
     S.aheadFixed = today;
-    var ops = [];
+    var ops = [], cuts = {};
     S.items.forEach(function (x) {
       if (x.rolled !== 1 || x.ahead || x.deleted || !x.from || !x.rolledFrom) return;
-      var src = ((S.past || {})[x.rolledFrom] || []).filter(function (y) { return y.id === x.from; })[0];
-      if (src && writtenLate(src, x.rolledFrom)) ops.push(['upd', itemRef(today, x.id), { ahead: true, origAt: src.addedAt }]);
+      var day = (S.past || {})[x.rolledFrom] || [], src = day.filter(function (y) { return y.id === x.from; })[0];
+      if (!(x.rolledFrom in cuts)) cuts[x.rolledFrom] = cutFor(x.rolledFrom, day);
+      if (src && writtenLate(src, x.rolledFrom, cuts[x.rolledFrom])) ops.push(['upd', itemRef(today, x.id), { ahead: true, origAt: src.addedAt }]);
     });
     if (ops.length) Wall(ops).catch(function () { S.aheadFixed = ''; retryLater('ahead'); });
   }
@@ -1942,12 +1977,23 @@
     return { usual: usual, today: done / live.length, done: done, n: live.length, sameDay: same.length >= 2 };
   }
   function hhmm(m) { return (m < 600 ? '0' : '') + Math.floor(m / 60) + ':' + (m % 60 < 10 ? '0' : '') + (m % 60); }
-  function closeoutHTML(live) {
-    var today = dayNow();
-    if (S.date !== today || !S.closeMin || !can('add') || lsGet('lk.closeout') === today) return '';
-    var mins = T.mins(), open = live.filter(function (x) { return !x.done; }).length;
-    if (mins < S.closeMin - 60 || !open) return '';
-    return '<div class="nb-flag nb-close"><span class="nb-sl">Closing soon</span><p>The last tick is usually around ' + hhmm(S.closeMin) + '. ' + open + (open === 1 ? ' line is' : ' lines are') + ' still open and will roll to tomorrow. Mark what matters urgent, and log any waste before you go.</p>' +
+  /* When the kitchen usually closes, for Closing soon: when tomorrow's list is usually written on this weekday, then on
+     any night (summary/learned, which every page reads, so the order list has it too), else the usual time of the last
+     tick (the past days, read on the prep list), else 0: the book does not know yet. */
+  function closingMin() {
+    var L = S.lists, w = L ? L.dow[String(T.dow())] : null;
+    if (typeof w === 'number') return w;
+    if (L && L.usual >= 0) return L.usual;
+    return S.closeMin || 0;
+  }
+  /* Closing soon, on today's prep list and order list (head chef, 22 Oct 2026: Log waste comes up on both) from an hour
+     before closingMin(). live: the prep list's lines, to say what will roll over; none on the order list. One Hide for
+     today (lk.closeout) hides it on both. */
+  function closeoutHTML(live, date) {
+    var today = dayNow(), at = closingMin();
+    if (date !== today || !at || !can('add') || lsGet('lk.closeout') === today || T.mins() < at - 60) return '';
+    var open = live ? live.filter(function (x) { return !x.done; }).length : 0;
+    return '<div class="nb-flag nb-close"><span class="nb-sl">Closing soon</span><p>' + (open ? open + (open === 1 ? ' line is' : ' lines are') + ' still open and will roll to tomorrow. Mark what matters urgent, and log' : 'Log') + ' any waste before you go.</p>' +
       '<div class="btn-row"><a class="btn" href="#/waste">Log waste</a><button type="button" class="btn" data-p="close-hide">Hide for today</button></div></div>';
   }
   var MEDAL = { 1: '#C9971C', 2: '#8E959C', 3: '#A8693A' };
@@ -2199,6 +2245,23 @@
         { h: '', cls: 'a-act', html: function (x) { return '<button type="button" class="p-x" data-p="learn-hide" data-id="' + esc(x.id) + '" data-hide="' + (x.hidden ? '0' : '1') + '">' + (x.hidden ? 'Show in suggestions' : 'Hide from suggestions') + '</button>'; } }
       ]
     });
+  }
+  /* When tomorrow's list is written (head chef, 22 Oct 2026): what the server clocked (summary/learned lists, read with
+     the learned list, no read of its own), so the head chef can see the time the rollover goes by. */
+  function listTimesHTML() {
+    var L = S.lists, n = window.LK_LEARN || { MIN: 6, FROM: 900 };
+    var head = '<section class="set-block"><span class="label">When tomorrow\'s list is written</span><span class="hint">Every night at 03:00 the book clocks when the team wrote the next day\'s prep list: the biggest batch of ' + n.MIN + ' or more lines written close together, from ' + hhmm(n.FROM) + '. Lines written before it roll over and show Rolled. Lines written from then on are tomorrow\'s list and look like normal lines. The order list goes by the same time.</span>';
+    var fall = S.closeMin ? 'the usual last tick, ' + hhmm(S.closeMin) : '20:00';
+    if (!L || L.usual < 0) return head + '<p class="hint">Not clocked yet: it needs 3 nights with a list' + (L ? ' (' + L.n + ' so far)' : '') + '. Until then the book goes by the list it finds in each night\'s lines, or ' + fall + '.</p></section>';
+    var nights = Object.keys(L.days).sort().reverse().slice(0, 7).map(function (d) {
+      var e = L.days[d];
+      return '<tr><th scope="row">' + esc(dayShort(d)) + '</th><td>' + (e.m >= 0 ? esc(hhmm(e.m)) : 'No list found') + '</td><td>' + (e.m >= 0 ? e.n + (e.n === 1 ? ' line' : ' lines') : '') + '</td></tr>';
+    }).join('');
+    return head + '<div class="a-tiles"><div class="a-tile"><strong>' + esc(hhmm(L.usual)) + '</strong><span>usual start, ' + L.n + ' of the last ' + Object.keys(L.days).length + ' nights</span></div></div>' +
+      '<h3 class="a-ch-h">Each weekday</h3><span class="hint">The night the list is written on. A weekday shows once it has 2 nights with a list.</span>' +
+      '<div class="a-scroll"><table class="a-table"><thead><tr>' + DOWS.map(function (d) { return '<th scope="col">' + d[1] + '</th>'; }).join('') + '</tr></thead><tbody><tr>' +
+      DOWS.map(function (d) { var m = L.dow[String(d[0])]; return '<td>' + (typeof m === 'number' ? esc(hhmm(m)) : '') + '</td>'; }).join('') + '</tr></tbody></table></div>' +
+      (nights ? '<h3 class="a-ch-h">The last nights</h3><div class="a-scroll"><table class="a-table"><thead><tr><th scope="col">Night</th><th scope="col">List started</th><th scope="col">Lines in it</th></tr></thead><tbody>' + nights + '</tbody></table></div>' : '') + '</section>';
   }
   function learnedHTML() {
     var L = S.learned.filter(function (x) { return x.text; });
@@ -2890,7 +2953,7 @@
     var left = '<section class="nb-page nb-left"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + esc(dayName(S.date)) + '</h2><span class="nb-date">' + esc(longDate(S.date)) + '</span></div>' +
       '<div class="nb-prog">' + doneN + ' of ' + live.length + ' done</div>' + (can('add') ? '<button type="button" class="nb-jump" data-p="write">Write a line</button>' : '') + (doneN ? '<button type="button" class="nb-jump nb-donejump" data-p="donejump">Done today (' + doneN + ')</button>' : '') + '</header>' +
       (S.itemsState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' : '') +
-      '<div class="nb-body">' + minNudgeHTML() + closeoutHTML(daily) + wNoteHTML() + (S.tab === FN_TAB ? '' : startHTML(daily)) + pageBody(S.items, S.date) + todayEmpty + '</div>' +
+      '<div class="nb-body">' + minNudgeHTML() + closeoutHTML(daily, S.date) + wNoteHTML() + (S.tab === FN_TAB ? '' : startHTML(daily)) + pageBody(S.items, S.date) + todayEmpty + '</div>' +
       '<div class="nb-foot">' + add + (add && !can('del') ? '<p class="hint nb-who">Wrote the wrong thing? Undo it straight away, or ask the head chef or a sous chef to remove it.</p>' : '') +
       (removed.length && can('del') ? '<button type="button" class="nb-link" data-p="removed">' + (S.showRemoved ? 'Hide' : 'Show') + ' removed (' + removed.length + ')</button>' : '') + '</div></section>';
     var right = '<section class="nb-page nb-right"><header class="nb-ph"><div><h2 class="nb-title nb-dim">Handy</h2><span class="nb-date">' + (S.date === today ? 'Done today and quick add' : 'Done on ' + esc(dayShort(S.date))) + '</span></div></header>' +
@@ -3206,7 +3269,7 @@
     if (at === 'notes') loadNotes();
     if (at === 'minutes') loadMinutes();
     if (at === 'guides') loadGuides();
-    var pane = at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'learning' ? (learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() : at === 'people' ? (
+    var pane = at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() : at === 'people' ? (
       '<section class="set-block"><span class="label">People</span><details class="a-how"><summary>How roles and ticks work</summary><p class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Pings lets that person write shift pings from the prep book (sous chefs always can). Functions lets that person enter and change function bookings (Functions coordinator ticks it for you); only your save here gives it or takes it away, and nothing else comes with it. Reset PIN lets that person choose a new one: do it with them there, as whoever signs in with that name next sets the PIN. Removing someone from the list keeps their name on old lines, and their PIN stops working for anything. Head chef is for your own name: it always has every permission and the sous chef pages, and a sous chef cannot change or remove it.</p></details>' +
       (headIdOf(d.people) ? '' : '<p class="hint a-nohead" role="note">No one is marked Head chef yet. Set your own name to Head chef and save, so your PIN has full rights on the kitchen devices.</p>') +
       peopleListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' + ksAdminHTML(d) +
@@ -3507,7 +3570,7 @@
      write the same line once. Each phone tries once a day (lk.ord.rolled), so the reads stay small. */
   function ordRoll() {
     var today = dayNow();
-    if (!T.ready() || !S.authed || !fb || !can('add') || S.configState !== 'ok' || S.ordRolling || lsGet('lk.ord.rolled') === today || waiting('ordroll')) return;
+    if (!T.ready() || !S.authed || !fb || !can('add') || S.configState !== 'ok' || S.ordRolling || lsGet('lk.ord.rolled') === today || waiting('ordroll') || !learnedIn()) return;
     S.ordRolling = true;
     var dates = [], k;
     for (k = 1; k <= 7; k++) dates.push(shift(today, -k));
@@ -3519,7 +3582,9 @@
         var docs = res[j].docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }).filter(function (x) { return !x.deleted; });
         if (docs.length) src = { date: dates[j - 1], items: docs };
       }
-      var jobs = [];
+      // the order list goes by the prep list's night list (head chef, 22 Oct 2026): that day's prep lines when this phone
+      // has them (the past days on the phone), else the time the server clocked or the usual time
+      var jobs = [], cut = src ? cutFor(src.date, S.past && S.past[src.date]) : 0;
       (src ? src.items : []).forEach(function (x) {
         if (x.ordered) return;
         var root = x.root || x.id, id = 'r' + today.replace(/-/g, '') + '-' + root;
@@ -3528,7 +3593,7 @@
         jobs.push(['set', ordRef(today, id), {
           text: x.text, qty: x.qty || '', recipes: x.recipes || [], addedBy: 'Rolled over', addedById: '', addedAt: now(), ordered: false, deleted: false,
           rolled: (x.rolled || 0) + 1, root: root, from: x.id, rolledFrom: src.date, origBy: x.origBy || x.addedBy || '', origAt: x.origAt || (x.rolled ? 0 : x.addedAt || 0),
-          ahead: !!(x.ahead || writtenLate(x, src.date)), since: x.since || (writtenLate(x, src.date) ? today : src.date)
+          ahead: !!(x.ahead || writtenLate(x, src.date, cut)), since: x.since || (writtenLate(x, src.date, cut) ? today : src.date)
         }]);
       });
       if (!jobs.length) { S.ordRolling = false; lsSet('lk.ord.rolled', today); return; }
@@ -3549,8 +3614,8 @@
     try { var c = JSON.parse(lsGet('lk.ord.learned') || 'null'); if (c && c.tag === tag && c.list) { S.ordLearned = foldLearned(c.list); S.ordLearnFor = tag; S.ordLearnOk = true; return; } } catch (e) {}
     S.ordLearnBusy = true;
     // the nightly summary first: 1 read instead of up to 300 (22 Oct 2026); the old read when it is missing or old
-    sumList('ordlearned').then(function (list) {
-      return list || fb.fs.getDocs(fb.fs.query(colRef('ordlearned'), fb.fs.orderBy('uses', 'desc'), fb.fs.limit(ORD_LEARN_N))).then(function (sn) {
+    sumList('ordlearned').then(function (sum) {
+      return sum ? sum.items : fb.fs.getDocs(fb.fs.query(colRef('ordlearned'), fb.fs.orderBy('uses', 'desc'), fb.fs.limit(ORD_LEARN_N))).then(function (sn) {
         return sn.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; });
       });
     }).then(function (list) {
@@ -3753,7 +3818,8 @@
       '<div class="btn-row"><button type="button" class="btn" data-p="onudge-show">Show them</button><button type="button" class="btn" data-p="onudge-hide">Hide for today</button></div></div>';
   }
   function ordersHTML() {
-    if (can('add')) { loadOrdHist(); loadWSum(); loadOrdLearned(); }
+    // loadLearned: the order rollover and Closing soon need when tomorrow's list is written (summary/learned, once a day)
+    if (can('add')) { loadOrdHist(); loadWSum(); loadOrdLearned(); loadLearned(); }
     var p = me(), br = canBrowse(), view = br ? (S.ordView || 'day') : 'day', today = dayNow();
     if (!br && S.ordDate !== today) { S.ordDate = today; watchOrders(); }
     if (view === 'all') loadOrdAll(false);
@@ -3790,6 +3856,7 @@
       (view === 'day' ? '<div class="nb-prog">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') + '</header>' +
       /* the add box is at the top, so it is always in reach; on big screens the list and the ordered-today list sit side by side below it */
       (view === 'day' && add ? '<div class="nb-foot o-add">' + add + (canBrowse() ? '' : '<p class="hint nb-who">Only the head chef or a sous chef ticks a line as ordered or removes it. Wrote the wrong thing? Undo it straight away, or ask them.</p>') + '</div>' : '') +
+      (view === 'day' ? closeoutHTML(null, S.ordDate) : '') +
       (view === 'day' && S.ordDate === today ? ordNudgeHTML(overdue, today) : '') +
       '<div class="o-cols"><div class="nb-body o-main">' + body + removedBox + '</div>' + (orderedBox ? '<div class="o-ordered">' + orderedBox + '</div>' : '') + '</div></section>';
   }

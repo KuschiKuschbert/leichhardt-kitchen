@@ -16,11 +16,17 @@
   lists every phone used to read item by item (about 380 reads a phone a day), as one record each, so a phone reads 2.
   Written after the day's learning, so they hold last night's counts.
 
+  summary/learned also holds lists (22 Oct 2026): when tomorrow's prep list was written on each of the last 28 nights
+  and the usual time, worked out by js/learn.js (the same code the phones run). The phones roll over what was written
+  before it and treat what was written from then on as tomorrow's list. No new reads on the phones.
+
   Needs two secrets: FIREBASE_SA (a service account key, JSON) and KITCHEN_PIN. Nothing secret is ever printed.
   For a test run against the Firestore emulator: FIRESTORE_EMULATOR_HOST=127.0.0.1:8089 KITCHEN_PIN=000000 node nightly-learn.mjs
 */
 import { initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { createRequire } from 'module';
+const LEARN = createRequire(import.meta.url)('../js/learn.js');
 
 const PIN = process.env.KITCHEN_PIN || '';
 const DAYS = +(process.env.LEARN_DAYS || 90);
@@ -42,6 +48,8 @@ const slug = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^
 const lkey = t => slug(String(t).toLowerCase()).slice(0, 80);
 const pad = n => (n < 10 ? '0' : '') + n;
 function kitchenDay(ms) { const d = new Date(ms + ZONE); return d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate()); }
+function kitchenMins(ms) { const d = new Date(ms + ZONE); return d.getUTCHours() * 60 + d.getUTCMinutes(); }
+const hhmm = m => pad(Math.floor(m / 60)) + ':' + pad(m % 60);
 function shift(day, n) { const [y, m, d] = day.split('-').map(Number); const t = new Date(Date.UTC(y, m - 1, d + n)); return t.getUTCFullYear() + '-' + pad(t.getUTCMonth() + 1) + '-' + pad(t.getUTCDate()); }
 function dowOf(day) { const [y, m, d] = day.split('-').map(Number); return String(new Date(Date.UTC(y, m - 1, d)).getUTCDay()); }
 
@@ -82,11 +90,13 @@ function record(m, kind, known) {
   return data;
 }
 
+const seen = {};   // the prep days learnDay() read tonight: day -> its lines
 async function learnDay(day, kind) {
   const claimId = kind === 'prep' ? day : 'o-' + day;
   const col = kind === 'prep' ? K.collection('days').doc(day).collection('items') : K.collection('orders').doc(day).collection('lines');
   const target = kind === 'prep' ? 'learned' : 'ordlearned';
   const sn = await col.get();
+  if (kind === 'prep') seen[day] = sn.docs.map(d => d.data());   // for listTimes(), so the day is not read twice
   const map = tally(sn.docs.map(d => d.data()), day, kind), keys = Object.keys(map);
   const refs = keys.map(k => K.collection(target).doc(k));
   const known = refs.length ? await db.getAll(...refs) : [];
@@ -171,12 +181,32 @@ const [uN, uGone] = await usageSummary();
 console.log('Usage: ' + uN + ' phone records for yesterday, ' + uGone + ' older than ' + KEEP_DAILY + ' days deleted.');
 // the lists the phones read once a day, as one record each (fields the phones use only, so each stays well under 1 MB)
 const LEARN_TOP = 500, ORD_TOP = 300;
-async function listSummary(col, n, keep) {
+async function listSummary(col, n, keep, extra) {
   const sn = await K.collection(col).orderBy('uses', 'desc').limit(n).get();
   const items = sn.docs.map(d => { const x = d.data(), o = { id: d.id }; keep.forEach(k => { if (x[k] != null && x[k] !== '') o[k] = x[k]; }); return o; });
-  await K.collection('summary').doc(col).set({ day: today, n: items.length, items, at: Date.now() });
+  await K.collection('summary').doc(col).set(Object.assign({ day: today, n: items.length, items, at: Date.now() }, extra || {}));
   return items.length;
 }
-const nL = await listSummary('learned', LEARN_TOP, ['text', 'uses', 'typed', 'picked', 'dow', 'secs', 'qtys', 'lastUsed', 'hidden']);
+/* When tomorrow's list was written on each of the last 28 finished nights (js/learn.js), kept in summary/learned. A night
+   already in last night's summary is not read again; a night learnDay() read tonight is not read twice. So the first run
+   reads up to 28 days of prep lines once, and after that nothing extra. */
+const LIST_DAYS = 28;
+async function listTimes() {
+  const old = (((await K.collection('summary').doc('learned').get()).data() || {}).lists || {}).days || {};
+  const clock = { day: kitchenDay, mins: kitchenMins }, days = {};
+  let read = 0;
+  for (let i = 1; i <= LIST_DAYS; i++) {
+    const d = shift(today, -i), o = old[d];
+    if (seen[d]) days[d] = LEARN.listStart(seen[d], d, clock);
+    else if (o && typeof o.m === 'number') days[d] = { m: o.m, n: +o.n || 0 };
+    else { read++; days[d] = LEARN.listStart((await K.collection('days').doc(d).collection('items').get()).docs.map(x => x.data()), d, clock); }
+  }
+  const u = LEARN.usual(days);
+  return { lists: { days, usual: u.usual, dow: u.dow, n: u.n }, read };
+}
+const LT = await listTimes(), yl = LT.lists.days[shift(today, -1)];
+console.log("Tomorrow's list: " + (LT.lists.usual >= 0 ? 'usually from ' + hhmm(LT.lists.usual) : 'not clocked yet') + ' (' + LT.lists.n + ' of the last ' + LIST_DAYS + ' nights). ' +
+  'Last night: ' + (yl && yl.m >= 0 ? 'from ' + hhmm(yl.m) + ', ' + yl.n + ' lines' : 'no list found') + '. ' + LT.read + ' nights read again.');
+const nL = await listSummary('learned', LEARN_TOP, ['text', 'uses', 'typed', 'picked', 'dow', 'secs', 'qtys', 'lastUsed', 'hidden'], { lists: LT.lists });
 const nO = await listSummary('ordlearned', ORD_TOP, ['text', 'uses', 'dow', 'qtys', 'hidden']);
 console.log('Summaries for the phones: ' + nL + ' prep items, ' + nO + ' order items.');
