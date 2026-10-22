@@ -58,6 +58,18 @@ const mark = p => p.evaluate(() => { const e = document.querySelector('.wtop-who
   ok((await anim(p)) === 'flip:who-flip', 'prep list: the sign-in flips the mark in like a coin (' + await anim(p) + ')');
   ok(p.errors.length === 0, 'who mark: no page errors ' + p.errors.join(' | '));
   await p.context().close();
+  // "Not you?" sits next to "Writing as" on the order list and wastage too, and the next person signs in on that page
+  for (const pg of ['orders', 'waste']) {
+    p = await L.open(b, '#/' + pg, { who: 'sam', wait: 1200 });
+    ok(/Writing as\s*Sam/.test(await txt(p, '.nb-top') || '') && !!(await p.$('.nb-top [data-p="who-change"]')), pg + ': "Not you?" next to "Writing as Sam"');
+    await p.click('.nb-top [data-p="who-change"]'); await L.settle(p, 300);
+    ok(/Who are you\?/.test(await txt(p, '#prep-root') || '') && (await mark(p)) === 'on:Menu and Settings:', pg + ': "Not you?" asks who is writing and takes the name off the mark');
+    await p.click('.p-name[data-id="ann"]'); await L.settle(p, 500);
+    await p.type('#pf1', '2222'); await L.settle(p, 900);
+    ok(await p.evaluate(() => location.hash) === '#/' + pg && /Writing as\s*Ann/.test(await txt(p, '.nb-top') || ''), pg + ': Ann signs in and stays on the page');
+    ok(p.errors.length === 0, pg + ' "Not you?": no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+  }
   await b.close();
   R.forEach(r => console.log(r));
   const bad = R.filter(r => r.startsWith('FAIL')).length;
