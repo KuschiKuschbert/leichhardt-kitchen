@@ -26,7 +26,12 @@ export function probeChecks(fs, pin) {
     ['the head chef\'s recipe index cannot be changed with only the kitchen PIN', () => fs.patch(K + 'book/index', { probe: num(1) }, ['probe']), false],
     ['a function booking cannot be saved with only the kitchen PIN', () => fs.patch(K + 'functions/' + id, { v: num(1), status: str('draft'), name: str('Probe'), upd: num(Date.now()), by: str('probe') }), false],
     ['a function contact cannot be saved with only the kitchen PIN', () => fs.patch(K + 'fncontact/' + id, { cname: str('Probe'), upd: num(Date.now()), by: str('probe') }), false],
-    ['a proof cannot be read back', () => fs.get(K + 'proofs/' + id), false]
+    ['a proof cannot be read back', () => fs.get(K + 'proofs/' + id), false],
+    // PIN sessions (22 Oct 2026): a try and a session need the phone's own Firebase sign-in, which a script with only the
+    // kitchen PIN does not have, and nobody reads them
+    ['a PIN try cannot be written without a phone sign-in', () => fs.patch(K + 'tries/' + id, { tok: str('a'.repeat(64)), at: { timestampValue: new Date().toISOString() }, uid: str('probe') }), false],
+    ['a PIN session cannot be opened with only the kitchen PIN', () => fs.patch(K + 'sessions/' + id, { by: str('probe'), pinAt: num(1), exp: num(Date.now() + 86400000), at: { timestampValue: new Date().toISOString() } }), false],
+    ['a PIN session cannot be read', () => fs.get(K + 'sessions/' + id), false]
   ];
 }
 

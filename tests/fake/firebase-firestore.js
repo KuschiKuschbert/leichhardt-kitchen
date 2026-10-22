@@ -188,9 +188,15 @@ function commitOps(ops) {
     return !ps || ps.at !== d.pinAt || !(fresh || renew);
   });
   if (badSess) return Promise.reject({ code: 'permission-denied' });
-  // who is writing: the proof's person (the older way), or this phone's running session
+  // who is writing: the proof's person (the older way), or this phone's running session while that person's PIN is
+  // the one it was opened with (Reset PIN or a new PIN stops it)
   const sessNow = uid && ops.length ? store[rootOf(ops[0]) + '/sessions/' + uid] : null;
-  const actor = proof ? proof.ref.path[proof.ref.path.length - 1] : (sessNow && sessNow.exp > Date.now() ? sessNow.by : '');
+  const sessPin = sessNow ? store[rootOf(ops[0]) + '/pinset/' + sessNow.by] : null;
+  const actor = proof ? proof.ref.path[proof.ref.path.length - 1] : (sessNow && sessNow.exp > Date.now() && sessPin && sessPin.at === sessNow.pinAt ? sessNow.by : '');
+  // like staff() in the rules: any other write from a phone (no Google account) names its writer (by), and that writer
+  // has the proof in this batch or this phone's running session
+  const free = /\/(staffpins|pinset|tries|sessions|proofs)\/[^/]+$/;
+  if (!window.__fakeUser && ops.some(o => o.kind !== 'delete' && !free.test(key(o.ref.path)) && !(o.data && o.data.by && o.data.by === actor))) return Promise.reject({ code: 'permission-denied' });
   // the head chef's book (book/index, recipes, drawings and the library): only the head chef writes it, with the
   // Google account (nobody else signed in) or with their own PIN as config/main headId, like the real rules
   const book = ops.filter(o => /^kitchens\/[^/]+\/(book|recipes|drawings|drawtpl|drawlib)\//.test(key(o.ref.path)));

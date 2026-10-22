@@ -48,7 +48,8 @@ async function idle(p) { await p.clock.runFor(11 * 60000); await L.settle(p, 300
   // wrong PINs make only that person wait
   await p.click('[data-p="guest-who"]'); await L.settle(p, 200);
   await p.click('.p-name[data-id="bo"]'); await L.settle(p, 250);
-  for (let k = 0; k < 3; k++) { await p.keyboard.type('9999'); await L.settle(p, 600); }
+  // one try every 20 seconds per person (PIN sessions, 22 Oct 2026), so each wrong PIN is typed 21 seconds after the last
+  for (let k = 0; k < 3; k++) { if (k) await p.clock.runFor(21000); await p.keyboard.type('9999'); await L.settle(p, 600); }
   ok(/Too many wrong tries/.test(await txt(p, '.p-card') || ''), 'three wrong PINs make Bo wait');
   await p.click('[data-p="who-change"]'); await L.settle(p, 200);
   await pin(p, 'ann', '2222');
