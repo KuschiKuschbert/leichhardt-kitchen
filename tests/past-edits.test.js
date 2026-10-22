@@ -40,6 +40,9 @@ const pastReads = p => p.evaluate(d => window.__fake.reads.filter(k => k.indexOf
   const at2 = await p.evaluate(() => JSON.parse(localStorage.getItem('lk.past')).at || 0);
   await p.evaluate(a => { window.__fake.write(a.cfg, Object.assign({}, window.__fake.dump()[a.cfg], { pastEdit: { p: a.at + 1 } })); }, { cfg: CFG, at: at2 });
   await p.reload(); await L.settle(p, 2500);
+  // wait for the past days themselves: since the rollover keeps its day on the phone (lk.prep.rolled), a reload no
+  // longer reads days for the rollover, so only the past-day read is left to wait for
+  await L.waitFor(p, n => (JSON.parse(localStorage.getItem('lk.past') || '{}').at || 0) > n, at2 + 1).catch(() => {});
   ok(await p.evaluate(() => JSON.parse(localStorage.getItem('lk.past') || '{}').at || 0) > at2 + 1 && await pastReads(p) > 0, 'bo: after a reload the copy older than the stamp is not used, the past days are read again');
   await p.context().close();
 
