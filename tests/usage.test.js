@@ -26,6 +26,14 @@ const yday = L.ymd(new Date(L.NOW - 86400000));
   ok(p.errors.length === 0, 'no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // the usual order amount: filled in counts as shown, added as it was counts as taken
+  p = await L.open(b, '#/orders', { who: 'ann', extra: { [fsKey(['ordlearned', 'paper-towels'])]: { text: 'Paper towels', uses: 9, dow: {}, qtys: { '6-rolls': { q: '6 rolls', n: 5 } } } }, wait: 1800 });
+  await p.click('#o-text'); await p.keyboard.type('Paper towels'); await L.settle(p, 200);
+  await p.press('#o-text', 'Enter'); await L.settle(p, 400);
+  const od = await p.evaluate(() => JSON.parse(localStorage.getItem('lk.daily') || 'null'));
+  ok(od && od.sg.ordfill && od.sg.ordfill.s === 1 && od.sg.ordfill.t === 1, 'usual order amount: shown and taken counted (' + JSON.stringify(od && od.sg) + ')');
+  await p.context().close();
+
   // the admin panel: Insights shows the nightly sum
   const use = { [fsKey(['summary', 'usage'])]: { day: L.ymd(new Date(L.NOW)), days: { [yday]: { phones: 3, sg: { quick: { s: 3, t: 7, d: 1 }, checks: { s: 1, t: 0, d: 1 } }, pf: { lcp: [5, 3, 1, 1, 0], tap: [10, 5, 3, 2, 0] } } } } };
   p = await L.open(b, '#/admin', { admin: true, who: '', extra: use, wait: 2000 });

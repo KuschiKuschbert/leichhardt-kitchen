@@ -2539,7 +2539,7 @@
     // typed by a person: left alone
     if (!S.oqty.trim() || S.oqty === S.oqtyAuto) {
       var want = oUsual(S.otext) || '';
-      if (want !== S.oqty) { S.oqty = want; if (box) box.value = want; }
+      if (want !== S.oqty) { S.oqty = want; if (box) box.value = want; if (want) sg('ordfill', 's'); }
       S.oqtyAuto = want;
     }
     if (oh) oh.textContent = oHintFull();
@@ -3313,6 +3313,7 @@
     var typed = t, pr = proofread(t); t = (pr.text || t).slice(0, 120);
     var hit = ingredientFor(t), p = me(), ref = fb.fs.doc(ordCol(S.ordDate));
     var oFix = pr.changes.map(function (c) { return c[0] + ' to ' + c[1]; }).join(', ');
+    if (S.oqtyAuto && S.oqty === S.oqtyAuto) sg('ordfill', 't');   // added with the filled-in amount as it was
     S.otext = ''; var q = S.oqty.trim().slice(0, 40); S.oqty = ''; S.oqtyAuto = ''; draw();
     ordLearn(t, q);
     sset(ref, amtOn({ text: t, qty: q, recipes: hit ? hit.ids : [], addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: now(), ordered: false, deleted: false, orig: t !== typed ? typed.slice(0, 120) : '' }))
