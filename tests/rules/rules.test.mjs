@@ -454,7 +454,10 @@ await ok(W([['config/main', { pastEdit: { p: 'soon' } }, true]], { id: 'sam' }),
 // Wastage (22 Oct 2026): today's lines with the kitchen PIN, past days only for the head chef's Google account,
 // the review written by the head chef or a sous chef, the nightly summary read only
 const kday = ms => new Date(ms + 36000000).toISOString().slice(0, 10);
-const WT = kday(Date.now()), WY = kday(Date.now() - 86400000);
+// isToday() in the rules lets a day in from 23:45 the night before and keeps it until 00:15 after, so "yesterday"
+// and "tomorrow" are taken 24 hours and 30 minutes away: a run between 23:45 and 00:15 kitchen time still gets a day
+// outside that window (just after midnight that is the day before yesterday)
+const WT = kday(Date.now()), WY = kday(Date.now() - 88200000), WN = kday(Date.now() + 88200000);
 const wline = x => Object.assign({ text: 'Chips', amount: 2, unit: 'kg', reason: 'excess', action: '', station: 'Fryer', addedBy: 'Ann', addedById: 'ann', addedAt: 1, deleted: false }, x || {});
 await env.withSecurityRulesDisabled(async ctx => {
   const db = ctx.firestore();
@@ -467,7 +470,7 @@ await ok(getDoc(doc(anon, K + 'waste/' + WT + '/lines/t1')), true, 'waste: today
 await ok(getDocs(collection(anon, K + 'waste/' + WT + '/lines')), true, 'waste: today\'s list is read with the kitchen PIN');
 await ok(getDoc(doc(anon, K + 'waste/' + WY + '/lines/y1')), false, 'waste: yesterday\'s entry is refused with only the kitchen PIN');
 await ok(getDocs(collection(anon, K + 'waste/' + WY + '/lines')), false, 'waste: yesterday\'s list is refused with only the kitchen PIN');
-await ok(getDocs(collection(anon, K + 'waste/' + kday(Date.now() + 86400000) + '/lines')), false, 'waste: tomorrow\'s list is refused too');
+await ok(getDocs(collection(anon, K + 'waste/' + WN + '/lines')), false, 'waste: tomorrow\'s list is refused too');
 await ok(getDocs(collection(anon, K + 'waste/nonsense/lines')), false, 'waste: a day that is not a date is refused');
 await ok(getDocs(collection(owner, K + 'waste/' + WY + '/lines')), true, 'waste: the head chef\'s Google account reads past days');
 await ok(W([['waste/' + WT + '/lines/t2', wline()]], { id: 'ann' }), true, 'waste: Ann logs an entry today');
