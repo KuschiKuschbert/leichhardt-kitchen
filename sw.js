@@ -58,7 +58,7 @@ self.addEventListener('fetch', function (e) {
   // the Firebase files the page saved for itself (js/prep.js keepSdk): handed out only when the phone is offline. Online
   // the worker leaves them alone, so the browser loads them as usual (22 Oct 2026)
   if (u.hostname === 'www.gstatic.com' && /^\/firebasejs\//.test(u.pathname)) {
-    if (self.navigator && self.navigator.onLine === false) e.respondWith(caches.match(r).then(function (m) { return m || fetch(r); }));
+    if (self.navigator && self.navigator.onLine === false) e.respondWith(caches.match(r).then(function (m) { return m || Response.error(); }));
     return;
   }
   if (u.origin !== self.location.origin) return;

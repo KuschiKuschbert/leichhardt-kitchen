@@ -76,8 +76,8 @@ const controlled = p => L.waitFor(p, () => !!navigator.serviceWorker.controller,
   // still opens (the worker hands them out from lk-fb-<version>)
   await ctx.setOffline(false);
   await p.goto(base + '#/prep', { waitUntil: 'load' }); await L.settle(p, 1500);
-  await L.waitFor(p, () => caches.keys().then(ks => { const k = ks.find(x => x.indexOf('lk-fb-') === 0); return k ? caches.open(k).then(c => c.keys()).then(r => r.length >= 3) : false; }), null, 8000).catch(() => {});
-  ok(await p.evaluate(() => caches.keys().then(ks => ks.some(k => k.indexOf('lk-fb-') === 0))), 'the page keeps the Firebase files on the phone');
+  await L.waitFor(p, () => caches.keys().then(ks => { const k = ks.find(x => x.indexOf('lk-fb-') === 0); return k ? caches.open(k).then(c => c.keys()).then(r => r.length >= 4) : false; }), null, 15000).catch(() => {});
+  ok(await p.evaluate(() => caches.keys().then(ks => { const k = ks.find(x => x.indexOf('lk-fb-') === 0); return k ? caches.open(k).then(c => c.keys()).then(r => r.length >= 4) : false; })), 'the page keeps the four Firebase files on the phone');
   const cdp = await ctx.newCDPSession(p); await cdp.send('Network.clearBrowserCache');
   await ctx.setOffline(true);
   await p.reload({ waitUntil: 'load' }).catch(() => {});
