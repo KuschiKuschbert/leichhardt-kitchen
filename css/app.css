@@ -573,7 +573,11 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
   main.cols > .col > *, main.cols > .col.wide > * { order: 4; }
   main.cols > .col > * { order: 3; }
   main.cols > .col.wide > .card-head { order: 1; }
+  /* the head chef's Change this recipe sits right under the name, as on a laptop and in Tiles */
+  main.cols > .col.wide > #r-edit { order: 1; }
   main.cols > .col.wide > #r-allergens { order: 2; }
+  /* .r-guides is display: contents too, so its guide box takes the wrapper's place (it came above the name) */
+  main.cols .r-guides > * { order: inherit; }
 }
 .lens-fold > summary { display: flex; align-items: center; gap: 0.6rem; min-height: 44px; cursor: pointer; list-style: none; }
 .lens-fold > summary::-webkit-details-marker { display: none; }
@@ -706,11 +710,12 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .field-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
 .search-row { display: flex; align-items: stretch; gap: 0.5rem; }
 .search-row .search { flex: 1 1 auto; min-width: 0; }
-.find-wrap { position: relative; flex: 1 1 auto; min-width: 0; display: flex; }
-.find-wrap .search { padding-right: 3rem; }
-.find-wrap .search::-webkit-search-cancel-button { display: none; }
-.find-x { position: absolute; right: 0.2rem; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border: 0; border-radius: 50%; background: transparent; color: var(--ink); font: 700 1.6rem/1 var(--body); cursor: pointer; display: none; }
-.find-wrap.has-q .find-x { display: block; }
+/* the recipe search (find-) and the guide search (g-q) have the same 44 px Clear */
+.find-wrap, .g-qwrap { position: relative; flex: 1 1 auto; min-width: 0; display: flex; }
+.find-wrap .search, .g-qwrap .search { padding-right: 3rem; }
+.find-wrap .search::-webkit-search-cancel-button, .g-qwrap .search::-webkit-search-cancel-button { display: none; }
+.find-x, .g-qx { position: absolute; right: 0.2rem; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border: 0; border-radius: 50%; background: transparent; color: var(--ink); font: 700 1.6rem/1 var(--body); cursor: pointer; display: none; }
+.find-wrap.has-q .find-x, .g-qwrap.has-q .g-qx { display: block; }
 .empty .btn { margin-left: 0.4rem; }
 .amode { display: inline-flex; gap: 0.3rem; margin-left: 0.4rem; }
 .amode .chip { min-height: 44px; padding: 0 0.7rem; font-size: 0.875rem; }
@@ -769,7 +774,15 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .a-sh .a-sn { font-size: 1.5rem; margin-right: 0.6rem; }
 .a-sec > .a-grid { margin-top: 0.8rem; }
 .a-sub { font: 600 0.8125rem var(--body); color: var(--muted); text-transform: none; letter-spacing: 0; margin-left: 0.3rem; }
-@media (max-width: 599px) { .a-tbtns { width: 100%; } .a-tbtns .btn { flex: 1 1 auto; } .a-title { font-size: 1.6rem; } }
+/* phones (23 Oct 2026): the page name is already the open page button above, so its heading is for screen readers only,
+   and Export stays a small button next to the dates instead of a bar across the screen */
+@media (max-width: 599px) {
+  .a-tools { flex-wrap: nowrap; }
+  .a-tools > div { flex: 1 1 auto; min-width: 0; }
+  .a-tools .a-title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .a-export { flex-direction: column; align-items: flex-end; }
+  .a-export .btn { white-space: nowrap; }
+}
 
 /* Settings: the QR code to open the book on a phone. Shown on computers and wide tablets only, not on phones. */
 .set-qr { display: none; }
@@ -1304,7 +1317,7 @@ details.nb-start-l[open] > summary::after { content: '\2212'; }
 .g-title { margin: 0; font: 700 2.6rem/0.95 var(--display); overflow-wrap: anywhere; }   /* title case, like the recipe cards and Settings */
 .g-title:focus { outline: none; }
 .g-lead { margin: 0.3rem 0 0; font-size: 1.0625rem; font-weight: 600; }
-.g-find .search { max-width: 40rem; }
+.g-qwrap { max-width: 40rem; }
 .g-cats { margin: 0; }
 .g-list { display: flex; flex-direction: column; gap: 1.4rem; min-width: 0; }
 .g-grp { display: flex; flex-direction: column; gap: 0.6rem; }
@@ -1330,6 +1343,10 @@ details.nb-start-l[open] > summary::after { content: '\2212'; }
 .g-doc { display: flex; flex-direction: column; gap: 1.1rem; max-width: 60rem; padding: 1rem; background: #FBF8F1; border: 1.5px solid var(--ink); border-radius: 10px; box-shadow: 0 6px 0 rgba(28, 29, 31, 0.12); }
 .g-dh { display: flex; flex-direction: column; gap: 0.2rem; padding-bottom: 0.7rem; border-bottom: 3px solid var(--ink); }
 .g-meta { margin: 0.2rem 0 0; font-size: 0.875rem; color: var(--muted); }
+/* the head chef's Change this guide under the title, the same quiet link as Change this recipe */
+.g-chg { margin: 0; }
+.g-chg-a { display: inline-flex; align-items: center; gap: 0.4rem; padding-left: 0; text-decoration: none; color: var(--ink); }
+.g-chg-a svg { width: 18px; height: 18px; }
 .g-h3 { margin: 0 0 0.5rem; font: 700 1.4rem var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
 .g-steps { padding: 0.85rem 0.9rem; border: 2px solid var(--ink); background: var(--paper); }
 .g-ol { list-style: none; counter-reset: gst; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.7rem; }

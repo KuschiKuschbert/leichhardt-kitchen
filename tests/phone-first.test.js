@@ -3,6 +3,10 @@
 const L = require('./lib');
 const { R, ok } = L.results();
 const top = (p, sel) => p.evaluate(s => { const e = document.querySelector(s); return e ? Math.round(e.getBoundingClientRect().top) : -1; }, sel);
+const fsKey = k => ['kitchens', L.PIN].concat(k).join('/');
+const P = (id, name, role) => ({ id, name, role, add: true, tick: true, del: role !== 'staff', active: true });
+// Ann is the head chef here (headId), as in tests/manage.test.js
+const cfg = () => ({ [fsKey(['config', 'main'])]: { people: [P('sam', 'Sam', 'sous'), P('ann', 'Ann', 'head'), P('bo', 'Bo', 'staff')], headId: 'ann', sousIds: ['sam', 'ann'], pingIds: ['sam', 'ann'], showBadges: true } });
 (async () => {
   const b = await L.start();
   let p = await L.open(b, '#/r/barra', { wait: 1200 });
@@ -14,6 +18,27 @@ const top = (p, sel) => p.evaluate(s => { const e = document.querySelector(s); r
   ok(await p.evaluate(() => document.querySelector('.lens-fold').open && /Fish/.test(document.querySelector('.lens-fold summary').textContent)), 'phone recipe: a lens that is on keeps the fold open and names it');
   ok(p.errors.length === 0, 'recipe: no page errors ' + p.errors.join(' | '));
   await p.context().close();
+
+  // a card with a how-to guide (23 Oct 2026): the guide box came above the name on a phone, now it keeps its laptop place
+  p = await L.open(b, '#/r/rice', { who: 'bo', extra: L.guides(), wait: 1500 });
+  await L.waitFor(p, () => !!document.querySelector('#r-guides .box'), null, 5000).catch(() => {});
+  let g = [await top(p, '#rtitle'), await top(p, '#r-allergens'), await top(p, '.pan-art'), await top(p, '#r-guides .box')];
+  ok(g[0] > 0 && g[1] > g[0] && g[2] > g[1] && g[3] > g[2], 'phone pan with a guide: name, allergens, the drawing, then the guide box (' + g + ')');
+  await p.evaluate(() => { location.hash = '#/r/pork-belly'; }); await L.settle(p, 500);
+  await L.waitFor(p, () => !!document.querySelector('#r-guides .box'), null, 5000).catch(() => {});
+  g = [await top(p, '#rtitle'), await top(p, '#r-allergens'), await top(p, '#r-ing'), await top(p, '#r-guides .box'), await top(p, '.steps')];
+  ok(g[0] > 0 && g[1] > g[0] && g[2] > g[1] && g[3] > g[2] && g[4] > g[3], 'phone dish with a guide: name, allergens, Everything on it, the guide box, then the method (' + g + ')');
+  ok(p.errors.length === 0, 'guide on a card: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // the head chef's Change this recipe sits right under the name on a phone and a tablet, not under the drawing
+  for (const w of [390, 768]) {
+    p = await L.open(b, '#/r/burger', { who: 'ann', extra: cfg(), width: w, wait: 1400 });
+    await L.waitFor(p, () => !!document.querySelector('#r-edit a'), null, 5000).catch(() => {});
+    const e = [await top(p, '#rtitle'), await top(p, '#r-edit a'), await top(p, '#r-allergens'), await top(p, '.stage')];
+    ok(e[0] > 0 && e[1] > e[0] && e[2] > e[1] && e[3] > e[2], w + ' px head chef: name, Change this recipe, allergens, then the plate (' + e + ')');
+    await p.context().close();
+  }
 
   p = await L.open(b, '#/r/barra', { width: 1280, height: 900, wait: 1200 });
   const ing = await top(p, '#r-ing'), st = await top(p, '#r-steps');

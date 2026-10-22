@@ -18,6 +18,10 @@ const vis = (p, sel) => p.evaluate(s => { const e = document.querySelector(s); r
   ok(await p.evaluate(() => { const d = document.querySelector('details.a-how'); return !!d && !d.open && /How roles and ticks work/.test(d.querySelector('summary').textContent); }), 'admin People: the how-to is folded under "How roles and ticks work"');
   await p.click('details.a-how > summary'); await L.settle(p, 150);
   ok(/Pick a role/.test(await L.txt(p, 'details.a-how p') || '') && await vis(p, 'details.a-how p'), 'admin People: a tap shows it');
+  // there is no Pings tick (20 Oct 2026): the how-to says who writes shift pings instead (23 Oct 2026)
+  const how = await L.txt(p, 'details.a-how p') || '';
+  ok(!/Pings lets/.test(how) && /Shift pings are written by you and the sous chefs/.test(how), 'admin People: the how-to names no Pings tick');
+  ok(!(await p.evaluate(() => [...document.querySelectorAll('.a-pane input[disabled][title]')].some(e => /shift pings/.test(e.title)))), 'admin People: no locked tick says sous chefs can always write shift pings');
   ok(p.errors.length === 0, 'admin: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 

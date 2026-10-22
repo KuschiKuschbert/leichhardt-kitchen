@@ -2281,8 +2281,10 @@
   function learnedHTML() {
     var L = S.learned.filter(function (x) { return x.text; });
     var head = '<section class="set-block"><span class="label">What the prep list has learned</span><span class="hint">Every line written or picked is counted per item, weekday and section. An item becomes a regular after ' + REGULAR + ' uses.</span>';
-    var btn = '<p class="hint">The book learns every night at 03:00 from the day before (up to ' + LEARN_DAYS + ' days back), so new lines show here the next morning.</p>';
-    if (!L.length) return head + '<p class="hint">Nothing learned yet. The book learns every night at 03:00 from the day before.</p>' + btn + '</section>';
+    var when = 'The book learns every night at 03:00 from the day before (up to ' + LEARN_DAYS + ' days back), so new lines show here the next morning.';
+    // nothing learned yet: the same sentence once, after saying so (23 Oct 2026, it showed twice)
+    if (!L.length) return head + '<p class="hint">Nothing learned yet. ' + when + '</p></section>';
+    var btn = '<p class="hint">' + when + '</p>';
     var regs = L.filter(isRegular), picked = 0, typed = 0;
     L.forEach(function (x) { picked += x.picked || 0; typed += x.typed || 0; });
     var top = L.slice().sort(function (a, b) { return (b.uses || 0) - (a.uses || 0); });
@@ -2368,6 +2370,8 @@
     return '<em class="a-d' + (d && (d > 0) === !!lowIsGood ? ' is-worse' : '') + '">' + (d === 0 ? 'same as' : (d > 0 ? 'up ' : 'down ') + Math.abs(d) + '% on') + ' the ' + n + ' days before</em>';
   }
   function tileHTML(x) { return '<div class="a-tile"><strong>' + esc(String(x[0])) + '</strong><span>' + esc(x[1]) + '</span>' + (x[2] || '') + '</div>'; }
+  /* a report tile worth showing: not 'n/a', and not a zero with nothing to compare it with (Insights and Wastage) */
+  function tileKeep(x) { return !(x[0] === 'n/a' || ((x[0] === 0 || x[0] === '0' || x[0] === dur(0)) && !x[2])); }
   function card(inner, cls) { return '<div class="a-card' + (cls ? ' ' + cls : '') + '">' + inner + '</div>'; }
 
   /* ---------- big admin lists ----------
@@ -2613,7 +2617,7 @@
     var tbl = '<details class="a-details"><summary>Show the daily numbers as a table</summary><div class="a-scroll"><table class="a-table"><thead><tr><th scope="col">Day</th><th scope="col">Written</th><th scope="col">Ticked</th><th scope="col">Rolled over</th></tr></thead><tbody>' +
       agg.dates.slice().reverse().map(function (d) { return '<tr><th scope="row">' + esc(dayShort(d)) + '</th><td>' + agg.perDay[d].w + '</td><td>' + agg.perDay[d].t + '</td><td>' + agg.perDay[d].r + '</td></tr>'; }).join('') + '</tbody></table></div></details>';
     return head +
-      '<section class="a-sec">' + secHead(0) + '<div class="a-grid">' + smartHTML(agg, prev, n) + '</div><div class="a-tiles">' + tiles.filter(function (x) { return !(x[0] === 'n/a' || ((x[0] === 0 || x[0] === '0' || x[0] === dur(0)) && !x[2])); }).map(tileHTML).join('') + '</div></section>' +
+      '<section class="a-sec">' + secHead(0) + '<div class="a-grid">' + smartHTML(agg, prev, n) + '</div><div class="a-tiles">' + tiles.filter(tileKeep).map(tileHTML).join('') + '</div></section>' +
       '<section class="a-sec">' + secHead(1) + '<div class="a-grid">' + card(calHTML(n), 'full') + card('<h3 class="a-ch-h">Lines each day</h3>' + legend([['Written', CW], ['Ticked off', CT]]) + dailyChart(agg) + tbl, 'full') + '</div></section>' +
       '<section class="a-sec">' + secHead(2) + '<div class="a-grid">' + card(hourHTML(n), 'full') + card(tickBySectionHTML(n)) + card('<h3 class="a-ch-h">Time of day</h3>' + legend([['Written', CW], ['Ticked off', CT]]) + hoursChart(agg)) + '</div></section>' +
       '<section class="a-sec">' + secHead(3) + '<div class="a-grid">' + card('<h3 class="a-ch-h">Load by weekday and section</h3><span class="hint">Which sections are busy on which days. Useful for the roster.</span>' + heatHTML(n), 'full') +
@@ -3224,7 +3228,7 @@
   /* The People tab: every person with role, permissions and PIN reset. Search, filter chips and Show more once the list is long. */
   function peopleListHTML(d) {
     var items = d.people.map(function (p, i) { return { p: p, i: i }; });
-    function cb(o, kind, perm, on, label, off) { return '<label class="a-cl"><input type="checkbox" aria-label="' + label + ' for ' + esc(o.p.name) + '" data-a="' + kind + '"' + (perm ? ' data-perm="' + perm + '"' : '') + ' data-i="' + o.i + '"' + (on ? ' checked' : '') + (off ? ' disabled title="' + (isHeadP(o.p) ? 'The head chef can always do this' : 'Sous chefs can always write shift pings') + '"' : '') + '></label>'; }
+    function cb(o, kind, perm, on, label, off) { return '<label class="a-cl"><input type="checkbox" aria-label="' + label + ' for ' + esc(o.p.name) + '" data-a="' + kind + '"' + (perm ? ' data-perm="' + perm + '"' : '') + ' data-i="' + o.i + '"' + (on ? ' checked' : '') + (off ? ' disabled title="The head chef can always do this"' : '') + '></label>'; }
     function nm(o) { return String(o.p.name || '').toLowerCase(); }
     return lvHTML({
       key: 'people', items: items, step: 15, tools: 8, noun: ['person', 'people'], ph: 'Search names', table: 'lv-people', empty: 'No names yet.',
@@ -3298,7 +3302,7 @@
     if (at === 'minutes') loadMinutes();
     if (at === 'guides') loadGuides();
     var pane = at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() : at === 'people' ? (
-      '<section class="set-block"><span class="label">People</span><details class="a-how"><summary>How roles and ticks work</summary><p class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Pings lets that person write shift pings from the prep book (sous chefs always can). Functions lets that person enter and change function bookings (Functions coordinator ticks it for you); only your save here gives it or takes it away, and nothing else comes with it. Reset PIN lets that person choose a new one: do it with them there, as whoever signs in with that name next sets the PIN. Removing someone from the list keeps their name on old lines, and their PIN stops working for anything. Head chef is for your own name: it always has every permission and the sous chef pages, and a sous chef cannot change or remove it.</p></details>' +
+      '<section class="set-block"><span class="label">People</span><details class="a-how"><summary>How roles and ticks work</summary><p class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Shift pings are written by you and the sous chefs. Functions lets that person enter and change function bookings (Functions coordinator ticks it for you); only your save here gives it or takes it away, and nothing else comes with it. Reset PIN lets that person choose a new one: do it with them there, as whoever signs in with that name next sets the PIN. Removing someone from the list keeps their name on old lines, and their PIN stops working for anything. Head chef is for your own name: it always has every permission and the sous chef pages, and a sous chef cannot change or remove it.</p></details>' +
       (headIdOf(d.people) ? '' : '<p class="hint a-nohead" role="note">No one is marked Head chef yet. Set your own name to Head chef and save, so your PIN has full rights on the kitchen devices.</p>') +
       peopleListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' + ksAdminHTML(d) +
       '<section class="set-block"><span class="label">Badges</span><label class="a-check"><input type="checkbox" data-a="badges"' + (d.showBadges !== false ? ' checked' : '') + '> Show the weekly top tickers to everyone on the prep book</label></section>' +
@@ -5168,16 +5172,19 @@
     return '<h3 class="a-ch-h">Every day at a glance</h3><span class="hint">Entries per day. A blank day means nothing was logged, which may mean nobody logged it.</span>' +
       '<div class="a-tablewrap cal-wrap" tabindex="0" role="region" aria-label="Table, scrolls sideways"><table class="a-table a-plain cal"><thead><tr>' + DOWN.map(function (x) { return '<th scope="col">' + x + '</th>'; }).join('') + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
   }
-  /* Reasons by weekday: which kind of waste happens on which day. */
+  /* Reasons by weekday: which kind of waste happens on which day. The All reasons row counts every entry, an unknown
+     reason too, so it is the weekday total (23 Oct 2026: it replaced a By weekday table further down with the same
+     numbers). Every cell is rounded to one decimal, so a total never reads lower than the one entry above it. */
   function reasonDowHTML(lines, n) {
-    var occ = {}, c = {}, max = 0;
+    var occ = {}, c = {}, all = {}, max = 0;
     afDates(n, 0).forEach(function (d) { var dw = parseYmd(d).getDay(); occ[dw] = (occ[dw] || 0) + 1; });
-    lines.forEach(function (x) { var k = x.reason + ':' + parseYmd(x.date).getDay(); c[k] = (c[k] || 0) + 1; });
+    lines.forEach(function (x) { var dw = parseYmd(x.date).getDay(), k = x.reason + ':' + dw; c[k] = (c[k] || 0) + 1; all[dw] = (all[dw] || 0) + 1; });
+    if (!lines.length) return '';
     var rs = REASONS.filter(function (r) { return lines.some(function (x) { return x.reason === r[0]; }); });
-    if (!rs.length) return '';
     rs.forEach(function (r) { DOW.forEach(function (d) { if (occ[d]) max = Math.max(max, (c[r[0] + ':' + d] || 0) / occ[d]); }); });
     return '<h3 class="a-ch-h">Reasons by weekday</h3><span class="hint">Average entries per day. Darker is more.</span><div class="a-tablewrap" tabindex="0" role="region" aria-label="Table, scrolls sideways"><table class="a-table a-plain sk-t"><thead><tr><th scope="col">Reason</th>' + DOWN.map(function (x) { return '<th scope="col">' + x + '</th>'; }).join('') + '</tr></thead><tbody>' +
-      rs.map(function (r) { return '<tr><th scope="row">' + esc(r[1]) + '</th>' + DOW.map(function (d) { var v = occ[d] ? (c[r[0] + ':' + d] || 0) / occ[d] : 0, lv = !v ? 0 : Math.min(4, 1 + Math.floor(v / (max || 1) * 3.999)); return '<td class="sk-c" style="background:' + SK[lv] + '">' + (v ? Math.round(v * 10) / 10 : '<span class="sk-0">0</span>') + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>';
+      rs.map(function (r) { return '<tr><th scope="row">' + esc(r[1]) + '</th>' + DOW.map(function (d) { var v = occ[d] ? (c[r[0] + ':' + d] || 0) / occ[d] : 0, lv = !v ? 0 : Math.min(4, 1 + Math.floor(v / (max || 1) * 3.999)); return '<td class="sk-c" style="background:' + SK[lv] + '">' + (v ? Math.round(v * 10) / 10 : '<span class="sk-0">0</span>') + '</td>'; }).join('') + '</tr>'; }).join('') +
+      '<tr class="sk-tot"><th scope="row">All reasons</th>' + DOW.map(function (d) { return '<td>' + (occ[d] ? Math.round((all[d] || 0) / occ[d] * 10) / 10 : '0') + '</td>'; }).join('') + '</tr></tbody></table></div>';
   }
   function wasteStatsHTML() {
     loadWStats(false); loadStats(false);
@@ -5192,6 +5199,8 @@
     var t = wTotals(lines), pt = wTotals(plines), nd = afDates(n, 0).length;
     var tiles = [[lines.length, lines.length === 1 ? 'entry' : 'entries', delta(lines.length, plines.length, n, true)], [num(t.kg), 'kg', delta(t.kg, pt.kg, n, true)], [num(t.L), 'L', delta(t.L, pt.L, n, true)], [num(t.portions), 'portions', delta(t.portions, pt.portions, n, true)], [num(t.pieces), 'pieces', delta(t.pieces, pt.pieces, n, true)], [Object.keys(days).length + ' of ' + nd, 'days with something logged', '']];
     var log = wLogHTML(n, af) + wReviewFormHTML();
+    // a zero with nothing to compare (0 L, 0 portions) is left out, as on Insights; the days tile always stays
+    tiles = tiles.filter(tileKeep);
     if (!lines.length) return head + '<div class="a-tiles">' + tiles.map(tileHTML).join('') + '</div><p class="hint">Nothing logged in this time yet.</p>' + log + '</section>';
     var byR = {}; lines.forEach(function (x) { var e = byR[x.reason] = byR[x.reason] || []; e.push(x); });
     var rRows = REASONS.filter(function (r) { return byR[r[0]]; }).sort(function (a, b) { return byR[b[0]].length - byR[a[0]].length; }).map(function (r) {
@@ -5222,9 +5231,6 @@
         { h: 'Suggestion', wide: true, html: function (o) { return o.e.l.length >= 2 ? '<span class="a-flag">' + esc(o.tip) + '</span>' : '<span class="o-who-i">Once so far</span>'; } }
       ]
     });
-    var dw = {}, occ = {}, i;
-    for (i = 0; i < n; i++) { var dd = parseYmd(shift(dayNow(), -i)).getDay(); occ[dd] = (occ[dd] || 0) + 1; }
-    lines.forEach(function (x) { var d = parseYmd(x.date).getDay(); dw[d] = (dw[d] || 0) + 1; });
     var who = {}; lines.forEach(function (x) { var k = x.addedBy || 'Unknown'; who[k] = (who[k] || 0) + 1; });
     var whoList = lvHTML({
       key: 'waste-who', items: Object.keys(who).map(function (k) { return { k: k, n: who[k] }; }), step: 10, tools: 10, noun: ['person', 'people'], ph: 'Search names', empty: 'Nobody has logged anything.',
@@ -5244,7 +5250,6 @@
       '<h3 class="a-ch-h">By reason</h3><div class="a-tablewrap" tabindex="0" role="region" aria-label="Table, scrolls sideways"><table class="a-table a-plain"><thead><tr><th scope="col">Reason</th><th scope="col">Entries</th><th scope="col">Share</th><th scope="col">Amount</th></tr></thead><tbody>' + rRows + '</tbody></table></div>' +
       '<h3 class="a-ch-h">Wasted most often</h3><span class="hint">"On the prep list" counts how many times the same item was written on the prep list in this time, so you can see over-prepping.</span>' + itemsList +
       '<h3 class="a-ch-h">Each day</h3>' + dayList +
-      '<h3 class="a-ch-h">By weekday</h3><div class="a-tablewrap" tabindex="0" role="region" aria-label="Table, scrolls sideways"><table class="a-table a-plain sk-t"><thead><tr><th scope="col"></th>' + DOWN.map(function (x) { return '<th scope="col">' + x + '</th>'; }).join('') + '</tr></thead><tbody><tr><th scope="row">Entries a day</th>' + DOW.map(function (d) { return '<td>' + (occ[d] ? num((dw[d] || 0) / occ[d]) : '0') + '</td>'; }).join('') + '</tr></tbody></table></div>' +
       '<h3 class="a-ch-h">Who logs waste</h3><span class="hint">A record, not a score: someone who never logs may just not know about the log.</span>' + whoList +
       log + '<h3 class="a-ch-h">End-of-day reviews</h3>' + revList + '</section>';
   }
@@ -5608,7 +5613,10 @@
       return '<button type="button" class="chip" data-p="g-cat" data-v="' + c[0] + '" aria-pressed="' + (S.gcat === c[0]) + '">' + esc(c[1]) + ' <span class="lv-n">' + n + '</span></button>';
     }).join('') + '</div>' : '';
     return '<section class="g-page">' + head +
-      '<div class="g-find"><label class="visually-hidden" for="g-q">Search the guides</label><input id="g-q" type="search" class="search" data-k="g-q" placeholder="Search: oven, fryer, cleaning" value="' + esc(S.gq) + '" autocomplete="off" enterkeyhint="search"></div>' + chips +
+      // the same box as the recipe search: no autocorrect (iOS turns "icombi" into something else), the Search key
+      // drops the keyboard (onKey), and a 44 px Clear while something is typed (g-qx, toggled in onInput)
+      '<div class="g-find"><label class="visually-hidden" for="g-q">Search the guides</label><span class="g-qwrap' + (S.gq ? ' has-q' : '') + '"><input id="g-q" type="search" class="search" data-k="g-q" placeholder="Search: oven, fryer, cleaning" value="' + esc(S.gq) + '" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">' +
+      '<button type="button" class="g-qx" data-p="g-clear" aria-label="Clear the search">&times;</button></span></div>' + chips +
       '<div id="g-list" class="g-list">' + gListHTML() + '</div>' + gAdminLink() + '</section>';
   }
   function guideDocHTML() {
@@ -5621,15 +5629,16 @@
         '<div class="g-ph" style="aspect-ratio: ' + (+d.w || 1414) + ' / ' + (+d.h || 2000) + '">' + (pv.state === 'error' ? 'Could not load this page.' : 'Loading page ' + (i + 1) + '...') + '</div>') +
         (n > 1 ? '<figcaption>Page ' + (i + 1) + ' of ' + n + '</figcaption>' : '') + '</figure>';
     }
-    var admin = admDev();
+    var admin = admDev(), pen = admin && window.LK_APP && window.LK_APP.icon ? window.LK_APP.icon('pen') : '';
     return back + '<article class="g-doc"><header class="g-dh"><span class="g-eb">' + esc(gCatName(g.cat)) + ' guide</span><h2 class="g-title" id="rtitle" tabindex="-1">' + esc(g.title) + '</h2>' +
-      (g.sum ? '<p class="g-lead">' + esc(g.sum) + '</p>' : '') + '<p class="g-meta">' + esc(gMeta(g)) + '</p></header>' +
+      (g.sum ? '<p class="g-lead">' + esc(g.sum) + '</p>' : '') + '<p class="g-meta">' + esc(gMeta(g)) + '</p>' +
+      // the head chef's Change this guide sits under the title, like Change this recipe on a card (not after every page)
+      (admin ? '<p class="g-chg g-noprint"><button type="button" class="p-x g-chg-a" data-p="g-change" data-id="' + esc(g.id) + '">' + pen + '<span>Change this guide</span></button></p>' : '') + '</header>' +
       (steps.length ? '<section class="g-steps"><h3 class="g-h3">Steps</h3><ol class="g-ol">' + steps.map(function (t) { return '<li><span class="g-c" aria-hidden="true"></span><span>' + linkNote(t) + '</span></li>'; }).join('') + '</ol></section>' : '') +
       (n ? '<section class="g-pages" aria-label="Pages"><p class="hint g-noprint">' + (n > 1 ? n + ' pages. ' : '') + 'Tap a page to open it big.</p>' +
         (n > 2 ? '<div class="g-thumbs g-noprint">' + pv.urls.slice(0, n).map(function (u, k) { return u ? '<button type="button" class="g-thumb" data-p="g-zoom" data-i="' + k + '" aria-label="' + esc('Open page ' + (k + 1) + ' big') + '"><img src="' + esc(u) + '" alt=""><span>' + (k + 1) + '</span></button>' : ''; }).join('') + '</div>' : '') + figs +
         (pv.state === 'error' ? '<p class="p-err g-noprint">Could not load the pages. Check the connection. <button type="button" class="p-x" data-p="g-retry">Try again</button></p>' : '') + '</section>' : '') +
-      (cards.length ? '<section class="g-rec g-noprint"><h3 class="g-h3">On these recipe cards</h3><div class="g-rchips">' + cards.map(function (r) { return '<a class="g-rchip" href="#/r/' + esc(r.id) + '">' + esc(r.name) + '</a>'; }).join('') + '</div></section>' : '') +
-      (admin ? '<div class="btn-row g-noprint"><button type="button" class="btn" data-p="g-change" data-id="' + esc(g.id) + '">Change this guide</button></div>' : '') + '</article>';
+      (cards.length ? '<section class="g-rec g-noprint"><h3 class="g-h3">On these recipe cards</h3><div class="g-rchips">' + cards.map(function (r) { return '<a class="g-rchip" href="#/r/' + esc(r.id) + '">' + esc(r.name) + '</a>'; }).join('') + '</div></section>' : '') + '</article>';
   }
 
   /* A page opened big: over everything (appended to the body, so page redraws leave it alone), Previous and Next, Fit or Full size.
@@ -6532,7 +6541,7 @@
     if (k === 'p-text') { S.text = el.value; var hn = S.root.querySelector('#p-hint'); if (hn) hn.textContent = hintText(S.text); var sg = S.root.querySelector('#p-sugg'); if (sg) sg.innerHTML = suggestHTML(); var qs = S.root.querySelector('#p-qsugg'); if (qs) qs.innerHTML = qtyChipsHTML(); return; }
     if (k === 'o-text') { S.otext = el.value; var og = S.root.querySelector('#o-sugg'); if (og) og.innerHTML = ordSuggHTML(); oAutoQty(); return; }
     if (k === 'o-qty') { S.oqty = el.value; S.oqtyAuto = ''; return; }
-    if (k === 'g-q') { S.gq = el.value; var gl = S.root.querySelector('#g-list'); if (gl) gl.innerHTML = gListHTML(); return; }
+    if (k === 'g-q') { S.gq = el.value; var gl = S.root.querySelector('#g-list'); if (gl) gl.innerHTML = gListHTML(); if (el.parentNode && el.parentNode.classList) el.parentNode.classList.toggle('has-q', !!S.gq); return; }
     if (k === 'g-title' || k === 'g-sum' || k === 'g-steps' || k === 'g-kw') {
       if (!S.gf) return;
       S.gf[k.slice(2)] = el.value;
@@ -6601,6 +6610,8 @@
     }
     if (e.key === 'Escape' && S.recipeOpen) { S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; draw(); focusSel('.p-pickbtn'); return; }
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.target.getAttribute && e.target.getAttribute('data-k') === 'n-text') { e.preventDefault(); saveNote(); return; }
+    // the guide search: the Search key drops the keyboard so the results show (the list follows each letter already)
+    if (e.key === 'Enter' && e.target.getAttribute && e.target.getAttribute('data-k') === 'g-q') { e.preventDefault(); e.target.blur(); return; }
     if (e.key === 'Enter' && e.target.getAttribute && e.target.getAttribute('data-k') === 'p-pin') { e.preventDefault(); var b = S.root.querySelector('[data-p="pin-go"]'); if (b) b.click(); }
   }
   var wired = false;
@@ -6696,7 +6707,7 @@
     return '<section class="p-card ml-page"><h2 class="p-h" id="rtitle" tabindex="-1">Kitchen mail</h2>' +
       '<p class="hint">Anything Chef should know: broken equipment, stock, a recipe card that is wrong, or an idea. Only Chef reads it.</p>' +
       '<p class="ml-urgent"><b>Something urgent?</b> Please tell the chef on shift straight away, so it gets sorted quickly.</p>' +
-      (admDev() ? '<p class="hint">Chef: the mail sent to you is in the <a href="#/admin" data-p="ml-goadmin">admin panel, Mail tab</a>.</p>' : '') +
+      (admDev() ? '<p class="hint">Chef: the mail sent to you is in the <a href="#/admin" data-p="ml-goadmin">admin panel, Kitchen mail</a>.</p>' : '') +
       '<div class="field"><span class="label" id="ml-cl">What is it about?</span>' + cats + '</div>' +
       (mlf.cat === 'roster' ? '<p class="ml-roster" role="note">Roster and leave requests are made in Humanforce, ideally 2 weeks ahead, so the roster can be planned around you. Once yours is in, a quick note here lets Chef know to look for it. Thank you.</p>' : '') +
       '<div class="field"><span class="label" id="ml-pl">How soon does it matter?</span>' + pris + '</div>' +
@@ -6708,7 +6719,8 @@
 
   /* ---- the head chef's side ---- */
   function mlOwner() { return S.level === 'owner' && ownerHere() && !!fb && /^\d{4,6}$/.test(S.pin); }
-  function mlInfo() { return { n: mlOwner() && mlOpen ? mlOpen.length : 0 }; }
+  // n: open mail (the count on the chef hat), fresh: how many of them nobody has opened the Mail tab for yet
+  function mlInfo() { var l = mlOwner() && mlOpen ? mlOpen : []; return { n: l.length, fresh: l.filter(function (x) { return !x.seen; }).length }; }
   function mlTell() { var n = mlInfo().n; if (n !== mlLastN) { mlLastN = n; try { window.dispatchEvent(new Event('lk-mail')); } catch (e) {} } }
   function mlGrab(sn) { return sn.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }); }
   function loadMail(force) {
@@ -6827,12 +6839,15 @@
     if (!el) return;
     var a = el.getAttribute('data-ml');
     if (a === 'later') { lsSet('lk.mail.later', String(now() + ML_NUDGE)); mlPopClose(); return; }
-    if (a === 'open') {
-      // the page changes first, so a pings sheet handed on by the close opens on the Mail tab (a hash change closes an open one)
-      S.atab = 'mail'; lsSet('lk.prep.atab', 'mail'); mlOpened = now();   // no nudge again before the Mail tab is drawn (mlSeenAll saves the real time)
-      if (location.hash === '#/admin') { mlPopClose(); draw(); mlSeenAll(); } else { location.hash = '#/admin'; mlPopClose(); }
-    }
+    if (a === 'open') mailTab();
   });
+  /* Opens the admin panel on the Mail tab: the nudge's Open mail, and Admin panel in the chef hat's menu while new mail
+     waits for the head chef (js/app.js adminItem(), 23 Oct 2026) */
+  function mailTab() {
+    // the page changes first, so a pings sheet handed on by the close opens on the Mail tab (a hash change closes an open one)
+    S.atab = 'mail'; lsSet('lk.prep.atab', 'mail'); mlOpened = now();   // no nudge again before the Mail tab is drawn (mlSeenAll saves the real time)
+    if (location.hash === '#/admin') { mlPopClose(); draw(); mlSeenAll(); } else { location.hash = '#/admin'; mlPopClose(); }
+  }
   document.addEventListener('keydown', function (e) {
     if (!mlPop) return;
     if (e.key === 'Escape') { e.preventDefault(); lsSet('lk.mail.later', String(now() + ML_NUDGE)); mlPopClose(); return; }
@@ -6885,6 +6900,7 @@
     signOut: signOutPerson,
     minNudge: minNudgeHTML,
     mailInfo: mlInfo,
+    mailTab: mailTab,
     saveConfig: saveConfig,
     proofread: proofread,
     state: S
