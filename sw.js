@@ -5,8 +5,8 @@
    phone never mixes old and new files. If anything changed it tells the open book, which updates itself (js/upkeep.js).
    A file fetched with the X-LK-Fresh header (the update and the 04:00 refresh, js/upkeep.js) goes to the network first.
    With no saved copy yet, or a file that is not saved, it goes to the network and keeps what comes back.
-   Google Fonts are kept once loaded. The prep list, orders and wastage talk to Firebase directly (it has its own offline
-   copy), so those are not touched. */
+   Google Fonts and the Firebase files are kept once loaded. The prep list, orders and wastage talk to Firebase directly
+   (it has its own offline copy of the data), so those requests are not touched. */
 var CACHE = 'lk-book-v8';
 var SHELL = ['./', './index.html', 'css/app.css', 'js/data.js', 'js/art.js', 'js/overlay.js', 'js/app.js', 'js/amounts.js', 'js/prep.js', 'js/functions.js', 'js/firebase-config.js', 'js/boot.js', 'js/upkeep.js', 'icon.svg', 'manifest.webmanifest', 'icons/icon-192.png'];
 self.addEventListener('install', function (e) {
@@ -49,9 +49,14 @@ self.addEventListener('fetch', function (e) {
   var r = e.request;
   if (r.method !== 'GET') return;
   var u = new URL(r.url);
-  if (u.hostname === 'fonts.googleapis.com' || u.hostname === 'fonts.gstatic.com') {
+  // Google Fonts, and the Firebase files the prep pages load (22 Oct 2026, review P5): kept once loaded, then handed out
+  // from the saved copy. A Firebase file's address carries its version, so a kept file never goes out of date; a new
+  // version is a new address, and the old one goes when CACHE changes. Before, they were only in the browser's own cache,
+  // so a phone whose browser cache had been cleared could not open the prep list with no signal.
+  var fbFile = u.hostname === 'www.gstatic.com' && /^\/firebasejs\/[^/]+\/[^/]+\.js$/.test(u.pathname);
+  if (u.hostname === 'fonts.googleapis.com' || u.hostname === 'fonts.gstatic.com' || fbFile) {
     e.respondWith(caches.match(r).then(function (m) {
-      return m || fetch(r).then(function (res) { if (res.ok || res.type === 'opaque') { var c = res.clone(); caches.open(CACHE).then(function (ca) { ca.put(r, c); }); } return res; });
+      return m || fetch(r).then(function (res) { if (res.ok || (res.type === 'opaque' && !fbFile)) { var c = res.clone(); caches.open(CACHE).then(function (ca) { ca.put(r, c); }); } return res; });
     }));
     return;
   }
