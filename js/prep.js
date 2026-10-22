@@ -203,10 +203,24 @@
     if (!fb || S.learnBusy || waiting('learned') || S.learnFor === tag) return;
     try { var c = JSON.parse(lsGet('lk.learned') || 'null'); if (c && c.tag === tag && Array.isArray(c.list)) { S.learned = foldLearned(c.list); S.learnFor = tag; return; } } catch (e) {}
     S.learnBusy = true;
-    fb.fs.getDocs(fb.fs.query(colRef('learned'), fb.fs.orderBy('uses', 'desc'), fb.fs.limit(LEARN_N))).then(function (snap) {
-      S.learned = foldLearned(snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }));
+    // the nightly summary first: 1 read instead of up to 500 (22 Oct 2026); the old read when it is missing or old
+    sumList('learned').then(function (list) {
+      return list || fb.fs.getDocs(fb.fs.query(colRef('learned'), fb.fs.orderBy('uses', 'desc'), fb.fs.limit(LEARN_N))).then(function (snap) {
+        return snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; });
+      });
+    }).then(function (list) {
+      S.learned = foldLearned(list);
       S.learnFor = tag; S.learnBusy = false; learnSave(); draw();
     }, function () { S.learnBusy = false; retryLater('learned'); });
+  }
+  /* summary/learned and summary/ordlearned (scripts/nightly-learn.mjs, 03:00): one read each, once a day per phone. null
+     when the record is missing, unreadable or older than yesterday (a night the job did not run), so the caller reads the
+     collection as before; a failed read is never taken as "nothing learned". */
+  function sumList(name) {
+    return fb.fs.getDoc(docRef('summary', name)).then(function (sn) {
+      var d = sn.exists() ? sn.data() : null;
+      return d && Array.isArray(d.items) && d.day >= shift(dayNow(), -1) ? d.items : null;
+    }, function () { return null; });
   }
   function learnSave() { lsSet('lk.learned', JSON.stringify({ tag: S.learnFor, list: S.learned })); }
   /* "Slice onion" and "Slice onions" are learned as two records (their ids are the typed words), but they are one item
@@ -3129,8 +3143,13 @@
     if (!fb || S.ordLearnBusy || S.ordLearnFor === tag) return;
     try { var c = JSON.parse(lsGet('lk.ord.learned') || 'null'); if (c && c.tag === tag && c.list) { S.ordLearned = foldLearned(c.list); S.ordLearnFor = tag; S.ordLearnOk = true; return; } } catch (e) {}
     S.ordLearnBusy = true;
-    fb.fs.getDocs(fb.fs.query(colRef('ordlearned'), fb.fs.orderBy('uses', 'desc'), fb.fs.limit(ORD_LEARN_N))).then(function (sn) {
-      S.ordLearned = foldLearned(sn.docs.map(function (d) { var x = d.data(); return { id: d.id, text: x.text || '', uses: x.uses || 0, dow: x.dow || {}, qtys: x.qtys || {}, hidden: !!x.hidden }; }));
+    // the nightly summary first: 1 read instead of up to 300 (22 Oct 2026); the old read when it is missing or old
+    sumList('ordlearned').then(function (list) {
+      return list || fb.fs.getDocs(fb.fs.query(colRef('ordlearned'), fb.fs.orderBy('uses', 'desc'), fb.fs.limit(ORD_LEARN_N))).then(function (sn) {
+        return sn.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; });
+      });
+    }).then(function (list) {
+      S.ordLearned = foldLearned(list.map(function (x) { return { id: x.id, text: x.text || '', uses: x.uses || 0, dow: x.dow || {}, qtys: x.qtys || {}, hidden: !!x.hidden }; }));
       S.ordLearnFor = tag; S.ordLearnOk = true; S.ordLearnBusy = false; ordLearnSave(); draw();
     }, function () {
       // no signal, or rules without ordlearned (a new kitchen PIN): suggest from the last 14 days only, try again tomorrow
