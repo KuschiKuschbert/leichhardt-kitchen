@@ -503,8 +503,10 @@
     return out;
   }
   function autoDraw(rid) {
-    var r = R.recipeOf(rid), res = { drawn: [], redrawn: [] }, made = {}, chain = Promise.resolve(), plate = null;
+    var r = R.recipeOf(rid), res = { drawn: [], redrawn: [] }, made = {}, chain = Promise.resolve(), plate = null, cur = X.change(rid);
     if (!r) return Promise.resolve(res);
+    // worked out before its own slots are drawn, as drawing them saves the recipe again (version 2)
+    var first = !X.pristine(rid) && !!cur && cur.v === 1 && /\btopper\b/i.test(rid + ' ' + (r.name || ''));
     slotsToDraw(r).forEach(function (slot) {
       chain = chain.then(function () {
         var d = drawFresh(DR.blank(rid, slot), plate);
@@ -512,7 +514,25 @@
         return DR.persist(d).then(function (done) { if (done && !done.conflict) { res.drawn.push(slot); made[d.id] = 1; if (slot === 'plate' || slot === 'pan') plate = d; } });
       });
     });
-    return chain.then(function () { return redrawFrom(rid, res, made); }).then(function () { return res; });
+    return chain.then(function () { return first ? firstCard(rid, res, made) : null; }).then(function () { return redrawFrom(rid, res, made); }).then(function () { return res; });
+  }
+  /* A topper card to come written for the first time (the French, Mexican and Americana toppers, head chef 22 Oct 2026):
+     a topper is what the dish looks like, so the dishes that link to it and still show the book's own plate drawing
+     (js/art.js, drawn from the card's note) get a plate drawn from the new card, and the recipe links to it. Only toppers,
+     and only on the card's first save: after that the plate is book-made and redrawFrom() keeps it in step. Other cards to
+     come and the book's own side views leave the book's drawings as they are. */
+  function firstCard(rid, res, made) {
+    var A = window.LK_ART || {}, chain = Promise.resolve();
+    ((window.LK_DATA && window.LK_DATA.recipes) || []).filter(function (r) {
+      return r.id !== rid && (r.ingredients || []).some(function (i) { return i.link === rid; }) && r.art && String(r.art).charAt(0) !== '@' && !!(A.plates && A.plates[r.art]);
+    }).forEach(function (r) {
+      chain = chain.then(function () {
+        var d = drawFresh(DR.blank(r.id, /^(batch|component)$/.test(r.kind || '') ? 'pan' : 'plate'), null);
+        if (!d.els.length) return null;
+        return DR.persist(d).then(function (done) { if (done && !done.conflict) { made[d.id] = 1; if (res.redrawn.indexOf(r.name) < 0) res.redrawn.push(r.name); } });
+      }).catch(function () { return null; });
+    });
+    return chain;
   }
   function redrawFrom(rid, res, skip) {
     var A = window.LK_APP, ids = [], todo = [rid], seen = {}, api = B(), chain = Promise.resolve(), plateDone = {};

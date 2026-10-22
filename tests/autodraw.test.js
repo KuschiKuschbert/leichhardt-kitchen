@@ -77,7 +77,23 @@ const errs = p => p.errors.filter(e => !/Failed to load resource/.test(e));
   await wait(p, () => !!document.querySelector('[data-dw="sm-draw"]'), null, 20000);
   await p.click('[data-dw="sm-draw"]');
   await wait(p, () => window.LK_DRAW.state().d.els.length > 0 && !!document.querySelector('.dw-smart-note'), null, 10000);
-  await p.evaluate(() => { const d = window.LK_DRAW.state().d, w = d.els.find(e => e.ing === 'Chicken wings'); w.x = 33; w.y = 44; w.fixed = true; window.LK_DRAW.changed(); });
+  // moved by hand with the arrow keys, a library piece (the wings) and a part drawn from a card (the Cowboy candy) alike
+  const nudge = async ing => {
+    const at = await p.evaluate(ing => { const W = window.LK_DRAW.state(), i = W.d.els.findIndex(e => e.ing === ing); W.sel = [i]; window.LK_DRAW.redraw(); return { t: W.d.els[i].t, x: W.d.els[i].x, y: W.d.els[i].y }; }, ing);
+    await p.focus('.dw-svg');
+    for (let n = 0; n < 3; n++) await p.keyboard.press('Shift+ArrowRight');
+    await p.keyboard.press('Shift+ArrowDown');
+    await L.settle(p, 600);
+    const el = await p.evaluate(ing => window.LK_DRAW.state().d.els.find(e => e.ing === ing), ing);
+    return { at, el, ok: !!el.fixed && el.x === Math.round((at.x + 30) * 10) / 10 && el.y === Math.round((at.y + 10) * 10) / 10 };
+  };
+  const cc = await nudge('Cowboy candy');
+  ok(cc.at.t === 'raw' && cc.ok, 'wings: a part drawn from a card, moved by hand, is marked to stay (' + JSON.stringify({ at: cc.at, x: cc.el.x, y: cc.el.y, fixed: cc.el.fixed }) + ')');
+  for (let n = 0; n < 4; n++) await p.keyboard.press('Control+z');
+  await L.settle(p, 300);
+  ok(await p.evaluate(() => !window.LK_DRAW.state().d.els.find(e => e.ing === 'Cowboy candy').fixed), 'wings: Undo (once per nudge) puts the Cowboy candy back where the book drew it');
+  const wg = await nudge('Chicken wings'), moved = wg.el;
+  ok(wg.ok, 'wings: the wings moved by hand are marked to stay');
   await p.click('[data-dw="save"]');
   await wait(p, () => /Saved/.test((document.querySelector('.mg-toasts .p-toast') || {}).textContent || ''));
   s = await store(p);
@@ -98,10 +114,31 @@ const errs = p => p.errors.filter(e => !/Failed to load resource/.test(e));
   s = await store(p);
   const w2 = s[fsKey(['drawings', 'wings-plate'])] || {}, cc2 = (w2.els || []).find(e => e.made === 'cowboy-candy') || {}, wing = (w2.els || []).find(e => e.ing === 'Chicken wings') || {};
   ok(w2.v === 2 && cc2.ms && cc2.ms !== cc1.ms && (s[fsKey(['drawings', 'wings-plate', 'hist', '1'])] || {}).was, 'changed card: a new version of the wings with the new Cowboy candy, the old one kept');
-  ok(wing.fixed && wing.x === 33 && wing.y === 44, 'changed card: the wings moved by hand stay where they were put');
+  ok(wing.fixed && wing.x === moved.x && wing.y === moved.y, 'changed card: the wings moved by hand stay where they were put');
   // the book's own drawings are never touched: the riblets use the same card and have no drawing of their own
   ok(!Object.keys(s).some(k2 => /\/drawings\/riblets/.test(k2)) && !Object.keys(s).some(k2 => /\/drawings\/cowboy-candy/.test(k2)), 'changed card: the riblets and the card itself keep the book\'s own drawings');
   ok(!errs(p).length, 'changed card: no page errors ' + errs(p).join(' | '));
+  await p.context().close();
+
+  // a topper card to come written for the first time: the French schnitzel, until now the book's own drawing, is drawn
+  // from the new card and links to it
+  p = await L.open(b, '#/manage/new/french-topper', { who: 'ann', extra: cfg(), wait: 1400 });
+  await editor(p);
+  await p.fill('#mg-name', 'French Topper');
+  for (const [q, name] of [['40 g', 'Brie (sliced)'], ['¼', 'Avocado (sliced)'], ['2 rashers', 'Bacon'], ['40 ml', 'Béarnaise']]) {
+    await p.click('[data-mg="ing-add"]'); await L.settle(p, 150);
+    const k2 = await p.evaluate(() => document.querySelectorAll('.mg-ing').length - 1);
+    await p.fill('[data-f="ing.' + k2 + '.q"]', q); await p.fill('[data-f="ing.' + k2 + '.name"]', name);
+  }
+  await L.settle(p, 200);
+  await p.click('[data-mg="save"]');
+  await wait(p, () => /Redrawn:/.test(Array.from(document.querySelectorAll('.mg-toasts .p-toast')).map(t => t.textContent).join(' ')), null, 30000);
+  ok(/Redrawn: Chicken Schnitzel French/.test(await toasts(p)), 'topper card: the French schnitzel is drawn from it (' + await toasts(p) + ')');
+  s = await store(p);
+  const fr = (s[fsKey(['recipes', 'schnitzel-french'])] || { r: {} }).r, frd = s[fsKey(['drawings', 'schnitzel-french-plate'])] || {};
+  ok(fr.art === '@schnitzel-french-plate' && frd.v === 1 && frd.layout && frd.layout.auto && (frd.els || []).some(e => e.made === 'french-topper'), 'topper card: the schnitzel links to a book-made plate with a part drawn from the card');
+  ok(!Object.keys(s).some(k2 => /\/(recipes|drawings)\/schnitzel-(mexican|americana)/.test(k2)), 'topper card: the Mexican and Americana schnitzels, whose cards are still to come, keep the book\'s own drawings');
+  ok(!errs(p).length, 'topper card: no page errors ' + errs(p).join(' | '));
   await p.context().close();
 
   await b.close();

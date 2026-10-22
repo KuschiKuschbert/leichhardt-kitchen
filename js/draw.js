@@ -287,7 +287,7 @@
     var key = libKey(id), s = o.scale || 1, w = it.w * s, h = it.h * s, at, onto = W.sel.length === 1 ? W.d.els[W.sel[0]] : null;
     // a sauce, topping or garnish added while a part is picked goes on that part
     if (o.x != null) at = [o.x, o.y];
-    else if (onto && onto.t === 'item' && /^(sauce|dsauce|topping|garnish)$/.test(it.role)) at = [onto.x + (it.role === 'sauce' ? 6 : 0), onto.y + (it.role === 'sauce' ? 6 : 0)];
+    else if (isPiece(onto) && /^(sauce|dsauce|topping|garnish)$/.test(it.role)) at = [onto.x + (it.role === 'sauce' ? 6 : 0), onto.y + (it.role === 'sauce' ? 6 : 0)];
     else at = freeSpot(w, h);
     W.d.defs[key] = LIB.body(id);
     var el = { t: 'item', a: key, x: n1(at[0]), y: n1(at[1]), sx: n1(s * 100) / 100, sy: n1(s * 100) / 100, r: 0 };
@@ -898,7 +898,7 @@
     if (dd.snap) {
       W.undo.push(dd.snap); if (W.undo.length > 100) W.undo.shift(); W.redo = [];
       // a part moved by hand stays where it is when "Tidy up" lays the plate out again
-      if (dd.move) W.sel.forEach(function (i) { if (W.d.els[i].t === 'item') W.d.els[i].fixed = true; });
+      if (dd.move) W.sel.forEach(function (i) { if (isPiece(W.d.els[i])) W.d.els[i].fixed = true; });
       changed();
     } else drawCanvas();
   }
@@ -970,7 +970,7 @@
     var step = ev.shiftKey ? 10 : 1, mv = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[k];
     if (mv && W.sel.length) {
       ev.preventDefault(); before();
-      W.sel.forEach(function (i) { var e = W.d.els[i]; if (e.t === 'line') e.pts = pts(e).map(function (q) { return f(q[0] + mv[0]) + ',' + f(q[1] + mv[1]); }).join(' '); else { e.x = n1(e.x + mv[0]); e.y = n1(e.y + mv[1]); if (e.lx != null) { e.lx = n1(e.lx + mv[0]); e.ly = n1(e.ly + mv[1]); } } if (e.t === 'item') e.fixed = true; });
+      W.sel.forEach(function (i) { var e = W.d.els[i]; if (e.t === 'line') e.pts = pts(e).map(function (q) { return f(q[0] + mv[0]) + ',' + f(q[1] + mv[1]); }).join(' '); else { e.x = n1(e.x + mv[0]); e.y = n1(e.y + mv[1]); if (e.lx != null) { e.lx = n1(e.lx + mv[0]); e.ly = n1(e.ly + mv[1]); } } if (isPiece(e)) e.fixed = true; });
       clearTimeout(keepT); keepT = setTimeout(keepNow, 400); drawCanvas();
     }
   });
