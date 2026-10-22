@@ -2442,6 +2442,27 @@
     if (w && w.n >= 2) out += (out ? ' ' : '') + 'Logged as waste ' + w.n + ' times in 14 days (mostly ' + reasonName(w.top).toLowerCase() + '). Think about a smaller batch.';
     return out;
   }
+  /* The usual order amount (22 Oct 2026, review F2): when the name typed is an item the order list knows and its usual
+     amount is clear (the same amount at least twice, and half the times or more), the amount box fills with it and the
+     hint says so. Typing in the amount box, or a name that no longer matches, takes the filled amount away again; an
+     amount someone typed is never changed. The box is selected on tap (FILLED), so typing replaces it. */
+  function oUsual(t) {
+    if (!t || t.trim().length < 3 || !ordLearnedFor(t)) return '';
+    var l = ordQtyList(t), tot = 0;
+    l.forEach(function (x) { tot += x.n; });
+    return l.length && l[0].n >= 2 && l[0].n / tot >= 0.5 ? l[0].q : '';
+  }
+  function oAutoQty() {
+    var box = S.root && S.root.querySelector('[data-k="o-qty"]'), oh = S.root && S.root.querySelector('#o-hint');
+    // typed by a person: left alone
+    if (!S.oqty.trim() || S.oqty === S.oqtyAuto) {
+      var want = oUsual(S.otext) || '';
+      if (want !== S.oqty) { S.oqty = want; if (box) box.value = want; }
+      S.oqtyAuto = want;
+    }
+    if (oh) oh.textContent = oHintFull();
+  }
+  function oHintFull() { return (S.oqtyAuto && S.oqty === S.oqtyAuto ? 'Usual amount filled in: ' + S.oqtyAuto + '. ' : '') + oHintText(S.otext); }
   function oHintText(t) {
     var w = t && t.trim().length > 2 ? wasteFor(t, ['expired']) : null;
     return w ? 'Expired stock logged ' + w.n + (w.n === 1 ? ' time' : ' times') + ' in 14 days. Order a little less?' : '';
@@ -3179,7 +3200,7 @@
     var typed = t, pr = proofread(t); t = (pr.text || t).slice(0, 120);
     var hit = ingredientFor(t), p = me(), ref = fb.fs.doc(ordCol(S.ordDate));
     var oFix = pr.changes.map(function (c) { return c[0] + ' to ' + c[1]; }).join(', ');
-    S.otext = ''; var q = S.oqty.trim().slice(0, 40); S.oqty = ''; draw();
+    S.otext = ''; var q = S.oqty.trim().slice(0, 40); S.oqty = ''; S.oqtyAuto = ''; draw();
     ordLearn(t, q);
     sset(ref, amtOn({ text: t, qty: q, recipes: hit ? hit.ids : [], addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: now(), ordered: false, deleted: false, orig: t !== typed ? typed.slice(0, 120) : '' }))
       .then(ordReload, function (e) { failed(e, function () { if (!S.otext.trim()) { S.otext = typed; S.oqty = q; } }); });
@@ -3345,7 +3366,7 @@
     var add = can('add') && S.ordDate === today ?
       '<form class="nb-add" data-p-form="oadd"><div class="nb-add-row"><label class="visually-hidden" for="o-text">Item to order</label><input id="o-text" class="nb-in nb-in-text" data-k="o-text" enterkeyhint="done" autocomplete="off" placeholder="What do we need to order?" maxlength="120" value="' + esc(S.otext) + '">' +
       '<label class="visually-hidden" for="o-qty">Amount</label><input id="o-qty" class="nb-in nb-in-qty" data-k="o-qty" enterkeyhint="done" autocomplete="off" placeholder="Amount" maxlength="40" value="' + esc(S.oqty) + '"><button type="submit" class="nb-addbtn">Add</button></div>' +
-      '<div class="nb-sugg" id="o-sugg">' + ordSuggHTML() + '</div><p class="nb-hint" id="o-hint" aria-live="polite">' + esc(oHintText(S.otext)) + '</p>' + oRegsHTML() + '</form>' : (S.ordDate === today ? '<p class="hint">You can read the order list but not write in it.</p>' : '');
+      '<div class="nb-sugg" id="o-sugg">' + ordSuggHTML() + '</div><p class="nb-hint" id="o-hint" aria-live="polite">' + esc(oHintFull()) + '</p>' + oRegsHTML() + '</form>' : (S.ordDate === today ? '<p class="hint">You can read the order list but not write in it.</p>' : '');
     var overdue = view === 'day' && S.ordDate === today ? shown.filter(function (x) { return !x.ordered && ordWait(x, today) > ORD_LATE; }) : [];
     if (overdue.length) shown = shown.filter(function (x) { return overdue.indexOf(x) < 0; });
     var moved = live.filter(function (x) { return shown.indexOf(x) < 0 && overdue.indexOf(x) < 0; }).sort(function (a, b) { return (b.orderedAt || 0) - (a.orderedAt || 0); });
@@ -5735,8 +5756,8 @@
     }
     if (k === 'pf2') { var p2 = S.pf2.length; S.pf2 = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.pf2; pinCells(el); if (p2 < 4 && S.pf2.length === 4 && /^\d{4}$/.test(S.pf1)) submitPin(); return; }
     if (k === 'p-text') { S.text = el.value; var hn = S.root.querySelector('#p-hint'); if (hn) hn.textContent = hintText(S.text); var sg = S.root.querySelector('#p-sugg'); if (sg) sg.innerHTML = suggestHTML(); var qs = S.root.querySelector('#p-qsugg'); if (qs) qs.innerHTML = qtyChipsHTML(); return; }
-    if (k === 'o-text') { S.otext = el.value; var og = S.root.querySelector('#o-sugg'); if (og) og.innerHTML = ordSuggHTML(); var oh = S.root.querySelector('#o-hint'); if (oh) oh.textContent = oHintText(S.otext); return; }
-    if (k === 'o-qty') { S.oqty = el.value; return; }
+    if (k === 'o-text') { S.otext = el.value; var og = S.root.querySelector('#o-sugg'); if (og) og.innerHTML = ordSuggHTML(); oAutoQty(); return; }
+    if (k === 'o-qty') { S.oqty = el.value; S.oqtyAuto = ''; return; }
     if (k === 'g-q') { S.gq = el.value; var gl = S.root.querySelector('#g-list'); if (gl) gl.innerHTML = gListHTML(); return; }
     if (k === 'g-title' || k === 'g-sum' || k === 'g-steps' || k === 'g-kw') {
       if (!S.gf) return;
