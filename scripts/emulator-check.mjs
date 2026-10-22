@@ -50,6 +50,11 @@ ok(rice.n === 2 && rice.r.expired === 2 && rice.unit === 'portions', 'summary: R
 ok(rice.last && rice.last.sec === 'Pans' && rice.last.amt === 2, 'summary: the last time is the newest entry');
 ok((ws.items || []).some(x => x.t === 'Chips' && x.r.excess === 1) && !(ws.items || []).some(x => x.t === 'Gone'), 'summary: Chips once, the removed entry left out');
 ok(/Wastage summary: 2 items/.test(out1), 'summary: the run says how many items');
+const sl = (await K.collection('summary').doc('learned').get()).data() || {}, so = (await K.collection('summary').doc('ordlearned').get()).data() || {};
+const slo = (sl.items || []).find(x => x.id === 'slice-onions') || {};
+ok(sl.day === today && slo.uses === 3 && slo.qtys && slo.qtys['2-tubs'].n === 2 && !('by' in slo), 'summary/learned: the prep items with their counts, fields the phones use only (' + JSON.stringify(slo) + ')');
+ok(so.day === today && (so.items || []).some(x => x.id === 'flour' && x.uses === 1), 'summary/ordlearned: the order items');
+ok(/Summaries for the phones: \d+ prep items, \d+ order items/.test(out1), 'the run says how many summary items');
 ok(!(await K.collection('learned').doc('practice-thing').get()).exists, 'practice lines (tst) are not learned');
 run();
 const on2 = (await K.collection('learned').doc('slice-onions').get()).data();

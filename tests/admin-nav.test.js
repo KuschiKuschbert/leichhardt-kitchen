@@ -23,6 +23,10 @@ const groupsShown = p => p.evaluate(() => { const r = document.querySelector('.a
     // Insights redraws when its reads come in, and a redraw mid-scroll resets where the nav thinks the scroll began:
     // let it finish first (settle stops as soon as the page is still)
     await L.adminTab(p, 'insights'); await L.settle(p, 1500);
+    // and the learned list, read after the settings (summary first, then the items): its redraw must not land mid-scroll
+    await L.waitFor(p, () => !!(window.LK_PREP && window.LK_PREP.state.learnFor), null, 8000).catch(() => {});
+    // then until the page has not been drawn again for a second (on a busy runner the last reads come in late)
+    await p.evaluate(() => new Promise(res => { const root = document.getElementById('prep-root'); let last = Date.now(); const mo = new MutationObserver(() => { last = Date.now(); }); mo.observe(root, { childList: true }); const end = Date.now() + 8000; (function tick() { if (Date.now() - last > 1000 || Date.now() > end) { mo.disconnect(); res(); } else setTimeout(tick, 100); })(); }));
     v = await nav(p);
     ok(v.chips.length === 6 && /Overview/.test(v.chips[0]) && /Recipe book/.test(v.chips[5]), w + ' admin nav: Insights has its six sections on this page (' + v.chips.join(', ') + ')');
     ok(!v.min && await groupsShown(p), w + ' admin nav: at the top the groups show');
