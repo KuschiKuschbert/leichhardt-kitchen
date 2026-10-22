@@ -34,10 +34,12 @@ function freshRound() {
     return Promise.all(files.map(function (f) {
       return Promise.all([fetch(f, { cache: 'no-cache' }), c.match(f)]).then(function (x) {
         if (!x[0].ok) throw new Error('not ok');
-        return { f: f, res: x[0], changed: !!x[1] && stamp(x[0]) !== stamp(x[1]) };
+        return { f: f, res: x[0], changed: !!x[1] && stamp(x[0]) !== stamp(x[1]), missing: !x[1] };
       });
     })).then(function (got) {
-      return Promise.all(got.map(function (g) { return c.put(g.f, g.res); })).then(function () {
+      // only the files that changed (or were not saved yet) are written: before, all of them were written on every
+      // opening, about 2.4 MB each time (22 Oct 2026). Still all or nothing: nothing is written until every file came in.
+      return Promise.all(got.filter(function (g) { return g.changed || g.missing; }).map(function (g) { return c.put(g.f, g.res); })).then(function () {
         if (got.some(function (g) { return g.changed; })) return self.clients.matchAll({ type: 'window' }).then(function (cs) { cs.forEach(function (cl) { cl.postMessage('lk-new'); }); });
       });
     });
