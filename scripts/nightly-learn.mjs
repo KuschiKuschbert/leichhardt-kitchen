@@ -12,6 +12,10 @@
   read it once a day for the Logged often chips, the suggestions and the waste hints on the prep and order lists, so a
   staff phone never reads past wastage lines (the rules let only the head chef's Google account read them).
 
+  And summary/learned and summary/ordlearned (22 Oct 2026): the most used 500 prep items and 300 order items, the same
+  lists every phone used to read item by item (about 380 reads a phone a day), as one record each, so a phone reads 2.
+  Written after the day's learning, so they hold last night's counts.
+
   Needs two secrets: FIREBASE_SA (a service account key, JSON) and KITCHEN_PIN. Nothing secret is ever printed.
   For a test run against the Firestore emulator: FIRESTORE_EMULATOR_HOST=127.0.0.1:8089 KITCHEN_PIN=000000 node nightly-learn.mjs
 */
@@ -165,3 +169,14 @@ async function usageSummary() {
 }
 const [uN, uGone] = await usageSummary();
 console.log('Usage: ' + uN + ' phone records for yesterday, ' + uGone + ' older than ' + KEEP_DAILY + ' days deleted.');
+// the lists the phones read once a day, as one record each (fields the phones use only, so each stays well under 1 MB)
+const LEARN_TOP = 500, ORD_TOP = 300;
+async function listSummary(col, n, keep) {
+  const sn = await K.collection(col).orderBy('uses', 'desc').limit(n).get();
+  const items = sn.docs.map(d => { const x = d.data(), o = { id: d.id }; keep.forEach(k => { if (x[k] != null && x[k] !== '') o[k] = x[k]; }); return o; });
+  await K.collection('summary').doc(col).set({ day: today, n: items.length, items, at: Date.now() });
+  return items.length;
+}
+const nL = await listSummary('learned', LEARN_TOP, ['text', 'uses', 'typed', 'picked', 'dow', 'secs', 'qtys', 'lastUsed', 'hidden']);
+const nO = await listSummary('ordlearned', ORD_TOP, ['text', 'uses', 'dow', 'qtys', 'hidden']);
+console.log('Summaries for the phones: ' + nL + ' prep items, ' + nO + ' order items.');

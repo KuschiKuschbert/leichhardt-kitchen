@@ -31,10 +31,10 @@ async function measure(b, hash, o, settle) {
 }
 (async () => {
   const b = await L.start();
-  // measured 22 Oct 2026 with this seed: first open 655, reload 17, admin 699, admin again 27 (before: first open 775, the
+  // measured 22 Oct 2026 with this seed: first open 657 (277 once the nightly summaries exist), first open before them 655, reload 17, admin 699, admin again 27 (before: first open 775, the
   // rollover read seven past days the past-days list had just read; reload 317 and admin again 699, the learned list and
   // the admin's past days read again every time). RB_SHOW=1 prints what costs most.
-  const BUDGET = { first: 680, reload: 40, admin: 720, admin2: 60 };
+  const BUDGET = { first: 680, firstSum: 300, reload: 40, admin: 720, admin2: 60 };
   const show = !!process.env.RB_SHOW;
 
   // a staff phone opens the prep list for the first time today, then goes to orders and wastage
@@ -52,6 +52,22 @@ async function measure(b, hash, o, settle) {
   const reload = sum(bl);
   if (show) console.log('reload: ' + reload + ' (' + top(bl) + ')');
   ok(p.errors.length === 0, 'staff: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // the same kitchen once the nightly job has written summary/learned and summary/ordlearned (22 Oct 2026): the phone reads
+  // those two records instead of the 380 learned items
+  const withSum = Object.assign({}, extra);
+  withSum[fsKey(['summary', 'learned'])] = { day: day(0), items: Object.keys(extra).filter(k => /\/learned\//.test(k)).map(k => Object.assign({ id: k.split('/').pop() }, extra[k])) };
+  withSum[fsKey(['summary', 'ordlearned'])] = { day: day(0), items: Object.keys(extra).filter(k => /\/ordlearned\//.test(k)).map(k => Object.assign({ id: k.split('/').pop() }, extra[k])) };
+  p = await measure(b, '#/prep', { who: 'ann', extra: withSum });
+  await p.evaluate(() => { location.hash = '#/orders'; }); await L.settle(p, 1200);
+  await p.evaluate(() => { location.hash = '#/waste'; }); await L.settle(p, 1200);
+  bl = await billed(p);
+  const firstSum = sum(bl);
+  if (show) console.log('first open with the summaries: ' + firstSum + ' (' + top(bl) + ')');
+  const learnedN = await p.evaluate(() => (window.LK_PREP.state.learned || []).length);
+  ok(learnedN === 300, 'with the summaries: the phone still has all 300 learned items (' + learnedN + ')');
+  ok(p.errors.length === 0, 'with the summaries: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
   // the head chef opens the admin panel (Insights, then Wastage and Team)
@@ -73,6 +89,7 @@ async function measure(b, hash, o, settle) {
 
   {
     ok(first <= BUDGET.first, 'staff first open today: ' + first + ' reads (budget ' + BUDGET.first + ')');
+    ok(firstSum <= BUDGET.firstSum, 'staff first open today with the nightly summaries: ' + firstSum + ' reads (budget ' + BUDGET.firstSum + ')');
     ok(reload <= BUDGET.reload, 'staff reload the same day: ' + reload + ' reads (budget ' + BUDGET.reload + ')');
     ok(admin <= BUDGET.admin, 'admin panel open: ' + admin + ' reads (budget ' + BUDGET.admin + ')');
     ok(admin2 <= BUDGET.admin2, 'admin panel again the same day: ' + admin2 + ' reads (budget ' + BUDGET.admin2 + ')');

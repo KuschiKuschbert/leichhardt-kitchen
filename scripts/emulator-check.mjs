@@ -56,6 +56,11 @@ ok(/Wastage summary: 2 items/.test(out1), 'summary: the run says how many items'
 const us = (await K.collection('summary').doc('usage').get()).data() || {}, uy = (us.days || {})[y] || {};
 ok(uy.phones === 2 && uy.sg && uy.sg.quick && uy.sg.quick.t === 4 && uy.sg.quick.d === 1 && uy.pf.lcp.join() === '1,3,0,0,1', 'usage: yesterday added up from two phones (' + JSON.stringify(uy) + ')');
 ok(!(await K.collection('daily').doc(day(9) + '_cc').get()).exists && (await K.collection('daily').doc(y + '_aa').get()).exists, 'usage: records older than 7 days deleted, yesterday kept');
+const sl = (await K.collection('summary').doc('learned').get()).data() || {}, so = (await K.collection('summary').doc('ordlearned').get()).data() || {};
+const slo = (sl.items || []).find(x => x.id === 'slice-onions') || {};
+ok(sl.day === today && slo.uses === 3 && slo.qtys && slo.qtys['2-tubs'].n === 2 && !('by' in slo), 'summary/learned: the prep items with their counts, fields the phones use only (' + JSON.stringify(slo) + ')');
+ok(so.day === today && (so.items || []).some(x => x.id === 'flour' && x.uses === 1), 'summary/ordlearned: the order items');
+ok(/Summaries for the phones: \d+ prep items, \d+ order items/.test(out1), 'the run says how many summary items');
 ok(!(await K.collection('learned').doc('practice-thing').get()).exists, 'practice lines (tst) are not learned');
 run();
 const on2 = (await K.collection('learned').doc('slice-onions').get()).data();
