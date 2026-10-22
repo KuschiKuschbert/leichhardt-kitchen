@@ -771,7 +771,7 @@
     lsSet('lk.prep.seen', String(Date.now()));
   }
   /* the next person never lands in the last person's staff draft, minutes register or ping editor */
-  function leave() { sessDrop(); ksClose(); noteClose('shut'); S.guestIn = false; lsSet('lk.prep.guest', ''); S.drinkAsk = ''; S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); }
+  function leave() { sessDrop(); ksClose(); noteClose('shut'); S.nJust = null; S.guestIn = false; lsSet('lk.prep.guest', ''); S.drinkAsk = ''; S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); }
   /* The chef mark's menu (js/app.js) asks what to show: Meeting minutes for everyone (when the page is on), and for the
      head chef and sous chefs Shift pings and Manage staff (22 Oct 2026: the Minutes register is "See who has signed" at
      the top of Meeting minutes). head: no Kitchen mail, the head chef's mail is read in the admin panel. tab: the head
@@ -1894,9 +1894,12 @@
      phones read the pings again now (one pings query each, on the config listener every phone already has) instead of
      after 30 minutes away. A ping set at 13:00 for 15:00 then pops up on time on a tablet that read its pings at 06:00.
      Only for today's pings, so a ping for next week costs nothing. */
-  var pingMarkAt = 0;
+  var pingMarkAt = 0, pingMarkT = null;
   function markPings() {
-    if (!fb || Date.now() - pingMarkAt < 5000) return;
+    if (!fb) return;
+    // at most one stamp every 5 seconds; one asked for inside them (an Undo straight after a remove) goes at their end
+    var wait = 5000 - (Date.now() - pingMarkAt);
+    if (wait > 0) { if (!pingMarkT) pingMarkT = setTimeout(function () { pingMarkT = null; markPings(); }, wait); return; }
     pingMarkAt = Date.now();
     var v = { n: now() }; S.nMine = v.n;
     sset(cfgDoc(), { pastEdit: v }, true).catch(function () {});   // before the rules allow it (or no signal) it is only a hint lost
@@ -4180,11 +4183,16 @@
     if (k !== 'lk.note.seen' && !lsGet('lk.note.mig')) { var old = lsGet('lk.note.seen'); if (old && !lsGet(k) && !shared()) lsSet(k, old); lsSet('lk.note.mig', '1'); }
     try { return JSON.parse(lsGet(k) || '{}') || {}; } catch (e) { return {}; }
   }
-  /* a ping the person on this phone saved last (by) is never new to them, so a chef's own 15:00 ping does not pop up at them.
-     The head chef's Google device with nobody signed in saves with no by. */
-  function noteMine(n) { var p = me(); return p ? n.by === p.id : admDev() && !n.by; }
-  function noteTheirs() { return todaysNotes().filter(function (n) { return !noteMine(n); }); }
-  function noteUnread() { var l = noteTheirs(), s = noteSeen(); return !!l.length && !(s.d === dayNow() && s.sig === noteSig(l)); }
+  function noteUnread() { var l = todaysNotes(), s = noteSeen(); return !!l.length && !(s.d === dayNow() && s.sig === noteSig(l)); }
+  /* Chefs get the pings like everyone (23 Oct 2026): the start of shift and the 10:30 call show them their own too, and
+     their Got it counts. Only a ping just saved, changed or removed on this phone does not pop straight back up at the
+     person who did it: once the list is read again, it counts as read for them if everything else on it already was. */
+  // S.nJust: { id, k } the ping just saved and whose read mark it is (noteSeenKey when tapped); only for that person
+  function noteJust(id, k) { if (noteSeenKey() === k) S.nJust = { id: id, k: k }; }
+  function noteJustSaved(id) {
+    var s = noteSeen(), was = s.d === dayNow() && s.sig ? String(s.sig).split('|') : [];
+    if (todaysNotes().every(function (n) { return n.id === id || was.indexOf(n.id + ':' + (n.upd || n.at || 0)) >= 0; })) noteMarkSeen();
+  }
   /* what the bell shows: on (pings or minutes are on for this phone), today's pings, an unread one, minutes to sign */
   function noteInfo() {
     var on = /^\d{4,6}$/.test(S.pin) && (featOn('pings') || featOn('minutes'));
@@ -4213,6 +4221,7 @@
     fb.fs.getDocs(fb.fs.query(colRef('notes'), fb.fs.where('until', '>=', today))).then(function (snap) {
       S.notes = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; });
       S.notesFor = today; S.notesAt = Date.now(); S.notesRead = readAt; S.notesBusy = false;
+      if (S.nJust) { if (S.nJust.k === noteSeenKey()) noteJustSaved(S.nJust.id); S.nJust = null; }
       noteBell(); noteMaybePop(); draw();
     }, function () {
       // no signal, or a wrong kitchen PIN: carry on with what is already here and try again in about 5 minutes
@@ -4281,7 +4290,7 @@
   // the pings this person has not seen yet today (by id and version)
   function noteNew() {
     var s = noteSeen(), was = s.d === dayNow() && s.sig ? String(s.sig).split('|') : [];
-    return noteTheirs().filter(function (n) { return was.indexOf(n.id + ':' + (n.upd || n.at || 0)) < 0; });
+    return todaysNotes().filter(function (n) { return was.indexOf(n.id + ':' + (n.upd || n.at || 0)) < 0; });
   }
   function mnMineN(m) { return (m.acts || []).filter(function (a) { return a && a.what && (!a.st || a.st === 'open') && (a.who === S.who || a.who === 'all'); }).length; }
   function noteMins() { return featOn('minutes') ? mnUnsigned() : []; }
@@ -4298,7 +4307,7 @@
     var h = pv ? 'Preview' : showPings || !mins.length ? 'Today\'s shift pings' : 'Minutes to sign';
     var out = '<header class="nt-head"><span class="nt-eb">' + esc(p ? p.name : 'Leichhardt Hotel Kitchen') + '</span><h2 class="nt-h" id="nt-h">' + h + '</h2><span class="nt-date">' + esc(pv ? pv.label : parseYmd(t).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })) + '</span></header><div class="nt-body">';
     if (showPings && list.length) {
-      out += '<ul class="nt-list">' + list.map(function (n) { return noteRowHTML(n, step === 'pings' && !pv && !!el.lkWas && el.lkWas.indexOf(n.id + ':' + (n.upd || n.at || 0)) < 0 && !noteMine(n)); }).join('') + '</ul>';
+      out += '<ul class="nt-list">' + list.map(function (n) { return noteRowHTML(n, step === 'pings' && !pv && !!el.lkWas && el.lkWas.indexOf(n.id + ':' + (n.upd || n.at || 0)) < 0); }).join('') + '</ul>';
       if (!pv) out += '<div class="nt-sum" id="nt-sum"></div>';   // filled in by noteDraw, so a tick elsewhere does not redraw the sheet
     } else if (showPings && !mins.length) out += '<p class="nt-none">No pings today.</p>';
     if (step === 'pings' && mins.length) out += '<p class="nt-next">Next: ' + (mins.length === 1 ? 'minutes to sign' : 'minutes from ' + mins.length + ' meetings to sign') + '</p>';
@@ -4371,11 +4380,11 @@
     if (!npop || npop.lkClosing) return;
     var pv = npop.lkPv, why = npop.lkWhy, pings = npop.lkStep === 'pings';
     if (!pv && pings && how === 'got' && why !== 'due' && noteMins().length) {
-      noteMarkSeen(); noteWriteSeen(noteTheirs());
+      noteMarkSeen(); noteWriteSeen(todaysNotes());
       npop.lkStep = 'rest'; noteDraw(true); liveSay('Pings read. Minutes to sign are below.'); return;
     }
     npop.lkClosing = true;   // the seen record below can redraw the page, which must not close the sheet a second time
-    if (!pv && pings && (how === 'got' || how === 'read')) { noteMarkSeen(); noteWriteSeen(noteTheirs()); }
+    if (!pv && pings && (how === 'got' || how === 'read')) { noteMarkSeen(); noteWriteSeen(todaysNotes()); }
     if (!pv && pings && how === 'later' && noteUnread()) nSnooze = { k: noteSeenKey(), at: Date.now() };   // Later is that person's only
     // the bell's sheet shows all the start would: closed with the reads in, it is today's start for that person
     if (why === 'tap' && how !== 'shut') { var bp = me(); if (bp && !S.guestIn && noteReads() === 'in') lsSet('lk.board.' + bp.id, dayNow()); }
@@ -4387,7 +4396,7 @@
     // closed by a link or by Back: hand on once the page has changed (the mail nudge never lands on a recipe it led to)
     if (noBack) setTimeout(sheetNext, 0); else sheetNext();
   }
-  function noteMarkSeen() { lsSet(noteSeenKey(), JSON.stringify({ d: dayNow(), sig: noteSig(noteTheirs()) })); noteBell(); }
+  function noteMarkSeen() { lsSet(noteSeenKey(), JSON.stringify({ d: dayNow(), sig: noteSig(todaysNotes()) })); noteBell(); }
   /* The start of a shift waits for the day's pings, minutes and this person's sign-offs, so the sheet opens once with
      everything. A read that failed is not waited for (it tries again later; the 10:30 pings still pop up). */
   function noteReads() {
@@ -4596,13 +4605,13 @@
     // author is who wrote the ping and never changes; by is who saved it last (the rules need by to be the writer)
     if (!f.id) { data.at = now(); data.author = S.who || ''; }
     var ref = f.id ? docRef('notes', f.id) : fb.fs.doc(colRef('notes')), when = noteWhen({ start: start, until: until, dows: data.dows, tm: data.tm });
-    var was = f.id ? (S.notes || []).filter(function (x) { return x.id === f.id; })[0] : null, t = dayNow();
-    // the head chef's Google device with nobody signed in: saved by nobody, so the change is new to the ping's writer
-    // (W() adds no by there, and a merge would keep theirs). An older ping with no author keeps its writer.
+    var was = f.id ? (S.notes || []).filter(function (x) { return x.id === f.id; })[0] : null, t = dayNow(), nk = noteSeenKey();
+    // the head chef's Google device with nobody signed in: saved by nobody, not by the ping's writer (W() adds no by
+    // there, and a merge would keep theirs). An older ping with no author keeps its writer.
     if (!canW()) { data.by = ''; if (was && !was.author && was.by) data.author = was.by; }
     S.nSaving = true; S.nMsg = ''; draw();
     sset(ref, data, !!f.id).then(function () {
-      if (noteOn(data, t) || (was && noteOn(was, t))) markPings();
+      if (noteOn(data, t) || (was && noteOn(was, t))) { markPings(); noteJust(ref.id, nk); }
       S.nSaving = false; S.nf = nfNew(); S.nOpen = false; S.nMsg = 'Saved. Shows: ' + when + '.'; loadNotes(true); draw();
     }, function (e) {
       S.nSaving = false; S.nMsg = e && e.code === 'permission-denied' ? 'Not allowed. Ask the head chef to tick Pings for you in the admin panel.' : 'Could not save. Check the connection and try again.'; draw();
@@ -4610,12 +4619,12 @@
   }
   function removeNote(id) {
     if (!arm('n-del:' + id)) return;
-    var was = (S.notes || []).filter(function (x) { return x.id === id; })[0], today = !!was && noteOn(was, dayNow());
+    var was = (S.notes || []).filter(function (x) { return x.id === id; })[0], today = !!was && noteOn(was, dayNow()), nk = noteSeenKey();
     sset(docRef('notes', id), { removed: true, upd: now() }, true).then(function () {
-      if (today) markPings();
+      if (today) { markPings(); noteJust(id, nk); }
       if (S.nf && S.nf.id === id) { S.nf = nfNew(); S.nOpen = false; }
       S.nMsg = 'Removed.'; loadNotes(true); draw();
-      toast('Ping removed.', { label: 'Undo', fn: function () { sset(docRef('notes', id), { removed: false, upd: now() }, true).then(function () { if (today) markPings(); S.nMsg = ''; loadNotes(true); draw(); }, failed); } });
+      toast('Ping removed.', { label: 'Undo', fn: function () { var uk = noteSeenKey(); sset(docRef('notes', id), { removed: false, upd: now() }, true).then(function () { if (today) { markPings(); noteJust(id, uk); } S.nMsg = ''; loadNotes(true); draw(); }, failed); } });
     }, function () { S.nMsg = 'Could not remove. Check the connection and try again.'; draw(); });
   }
   /* finished pings: one query when asked for (30 at most) */
@@ -4757,7 +4766,19 @@
   function mnBox(num, title, inner, cls) {
     return '<section class="mn-box' + (cls ? ' ' + cls : '') + '"><h3 class="mn-bh">' + (num ? '<span class="mn-bn">' + num + '</span>' : '') + esc(title) + '</h3>' + inner + '</section>';
   }
-  function mnList(t, link) { return '<ul class="mn-ul">' + mnLines(t).map(function (l) { return '<li>' + (link ? linkNote(l) : esc(l)) + '</li>'; }).join('') + '</ul>'; }
+  function mnList(t, link) { return mnUl(mnLines(t), link); }
+  function mnUl(lines, link) { return '<ul class="mn-ul">' + lines.map(function (l) { return '<li>' + (link ? linkNote(l) : esc(l)) + '</li>'; }).join('') + '</ul>'; }
+  /* a section's lines in parts: a line starting with "# " is a heading and starts a new part (the team notes template uses them) */
+  function mnParts(t) {
+    var out = [], cur = null;
+    mnLines(t).forEach(function (l) {
+      var h = /^#\s+(.+)$/.exec(l);
+      if (h) { cur = { h: h[1], l: [] }; out.push(cur); return; }
+      if (!cur) { cur = { h: '', l: [] }; out.push(cur); }
+      cur.l.push(l);
+    });
+    return out.filter(function (x) { return x.l.length; });
+  }
   function mnDocHTML(m, sign) {
     var d = parseYmd(m.date || dayNow()), n = 0, att = m.att || [], by = { present: [], apology: [], absent: [] };
     function nx() { n++; return pad(n); }
@@ -4766,17 +4787,19 @@
     var counts = by.present.length + ' present' + (by.apology.length ? ', ' + by.apology.length + ' apology' : '') + (by.absent.length ? ', ' + by.absent.length + ' absent' : '');
     var out = '<article class="mn-doc"><header class="mn-head"><div><span class="mn-eb">Kitchen meeting &middot; Version ' + (m.v || 1) + '</span><h2 class="mn-title" id="rtitle" tabindex="-1">' + esc(d.toLocaleDateString('en-AU', { weekday: 'long' })) + '<br>' + esc(d.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })) + '</h2></div><div class="mn-no"><span>Minutes</span><b>' + pad(m.no || 0) + '</b></div></header>' +
       '<div class="mn-strip">' + cells + '<div class="mn-cell mn-wide"><span>Attendance</span><b>' + esc(counts) + '</b></div></div>';
-    if (mnLines(m.safety).length) out += '<div class="mn-safety" role="note"><span class="mn-sl">Safety</span>' + mnList(m.safety, true) + '</div>';
-    if (mnLines(m.decisions).length) out += mnBox(nx(), 'Decisions', '<ol class="mn-ol">' + mnLines(m.decisions).map(function (l) { return '<li><span class="mn-c">' + '</span><span>' + linkNote(l) + '</span></li>'; }).join('') + '</ol>');
+    function boxes(t, title, inner) { mnParts(t).forEach(function (x) { out += mnBox(nx(), x.h || title, inner(x.l)); }); }
+    var sp = mnParts(m.safety);
+    if (sp.length) out += '<div class="mn-safety" role="note"><span class="mn-sl">Safety</span>' + sp.map(function (x) { return (x.h ? '<b class="mn-sh">' + esc(x.h) + '</b>' : '') + mnUl(x.l, true); }).join('') + '</div>';
+    boxes(m.decisions, 'Decisions', function (l) { return '<ol class="mn-ol">' + l.map(function (x) { return '<li><span class="mn-c">' + '</span><span>' + linkNote(x) + '</span></li>'; }).join('') + '</ol>'; });
     var acts = (m.acts || []).filter(function (a) { return a && a.what; });
     if (acts.length) out += mnBox(nx(), 'Actions', '<div class="mn-tw"><table class="mn-tbl"><thead><tr><th scope="col">Action</th><th scope="col">Who</th><th scope="col">By</th></tr></thead><tbody>' + acts.map(function (a) {
       var tag = a.st === 'done' ? '<span class="mn-chip">Done</span>' : a.st === 'dropped' ? '<span class="mn-chip">Dropped</span>' : a.carried ? '<span class="mn-chip">Carried over</span>' : '';
       var mine = sign && S.who && (a.who === S.who || a.who === 'all');
       return '<tr class="' + (a.st && a.st !== 'open' ? 'is-closed' : '') + (mine ? ' is-mine' : '') + '"><td>' + (mine ? '<span class="mn-chip mn-yours">Yours</span> ' : '') + linkNote(a.what) + (tag ? '<br>' + tag : '') + '</td><td>' + esc(a.who === 'all' ? 'Everyone' : mnName(a.who)) + '</td><td>' + esc(a.by ? dayShort(a.by) : '') + '</td></tr>';
     }).join('') + '</tbody></table></div>');
-    if (mnLines(m.menu).length) out += mnBox(nx(), 'Menu changes', mnList(m.menu, true));
-    if (mnLines(m.dates).length) out += mnBox(nx(), 'Dates ahead', mnList(m.dates, true));
-    if (mnLines(m.other).length) out += mnBox(nx(), 'Other', mnList(m.other, true));
+    boxes(m.menu, 'Menu changes', function (l) { return mnUl(l, true); });
+    boxes(m.dates, 'Dates ahead', function (l) { return mnUl(l, true); });
+    boxes(m.other, 'Other', function (l) { return mnUl(l, true); });
     var who2 = MN_ATT.map(function (x) { return by[x[0]].length ? '<div class="mn-wr"><b>' + x[1] + '</b><span>' + esc(by[x[0]].join(', ')) + '</span></div>' : ''; }).join('') + (m.guests ? '<div class="mn-wr"><b>Guests</b><span>' + esc(m.guests) + '</span></div>' : '') + (m.next ? '<div class="mn-wr"><b>Next meeting</b><span>' + esc(dayShort(m.next)) + '</span></div>' : '');
     out += mnBox('', 'Who was there', who2, 'mn-who') + '</article>';
     return out + (sign ? mnSignHTML(m) : '');
@@ -4854,6 +4877,65 @@
     var carried = prev ? (prev.acts || []).filter(function (a) { return a.st === 'open'; }).map(function (a) { return { what: a.what, who: a.who || '', by: a.by || '', st: 'open', carried: true }; }) : [];
     return { id: '', no: (nos.length ? Math.max.apply(null, nos) : 0) + 1, v: 1, status: 'draft', date: dayNow(), start: '', loc: '', chair: S.who || '', taker: '', att: {}, guests: '', decisions: '', menu: '', safety: '', dates: '', other: '', acts: carried, next: '', orig: null, prev: false };
   }
+  /* The team notes template (head chef, 22 Oct 2026, from the shared kitchen notes): the kitchen's standing routines in eight
+     headed parts, spread over the sections so each stays under the 1200 characters the rules allow. Staff names are not in
+     this public repo: {sous} becomes the one sous chef's name from the staff list, or [sous chef] for the head chef to fill in. */
+  var MN_TPL = {
+    safety: ['# Food safety, coldroom and storage',
+      'Probe food before sending it to the pass. Our core temperature targets: chicken 75°C, pork belly 75°C, lamb 75°C and fish 63°C.',
+      'No cardboard boxes in the coldroom.',
+      'Move schnitzels coming out of the freezer into their containers before stacking them in the coldroom.',
+      'Put prefried fish into the coldroom straight away. Never leave it out at room temperature for more than two hours.',
+      'Keep the chemical store organised and put consumables away properly.',
+      'Take a photo to show the reading when you use the Testo oil probe.'],
+    decisions: ['# Working together and daily routines',
+      'Hold a five minute morning briefing to go over prep and the day\'s priorities.',
+      'The 10:00 starter sets up the bins and the dish pit.',
+      'The first person into the kitchen does the Operandio entry when management is not in.',
+      'Take breaks at your set times. Empty the bins before a break and hand over open prep and news to the next shift.',
+      'Clock in, record your breaks and clock out correctly.',
+      'Ask for help early if you are falling behind or running low on prep during service.',
+      'If {sous} or Chef needs to know something, write it in Kitchen mail in the Kitchen Book so it is not forgotten.',
+      '# Kitchen Book, recipes and portions',
+      'Use the Kitchen Book on the kitchen screens or on your own phone.',
+      'All recipes are in the Kitchen Book. Every entrée has its piece count or weight there. Follow the current recipe and portion for every serve.',
+      'Tick off prep as soon as it is done.',
+      'On your own phone, install the Kitchen Book and refresh or update it when needed.',
+      'Send feedback and ideas for the app through Kitchen mail.'],
+    menu: ['# Equipment and responsibilities',
+      '{sous} is our Smoke Master. Use smoked brisket across the dishes it suits to keep station prep simple.',
+      'The Rational overnight programs are already set. Written steps for programming the oven are in the Kitchen Book.',
+      '# Prep planning and service stock',
+      'Make other regular items in smaller batches, two to three times a week, to cut waste.',
+      'Only kids\' spaghetti is frozen. Do not freeze other pasta.',
+      'Wings and pork belly bites can be made in big batches, portioned into sandwich bags as the Kitchen Book says, and frozen as backup stock.',
+      'Keep the stock for the current service in the service fridge.',
+      'Make fresh fish batter for lunch and for dinner. Make the dinner batter before you throw out the lunch batter.'],
+    dates: ['# Service standards and timing',
+      'The pass runner sets the pace of service and when food goes out. Call table numbers and finished dishes straight to the pass runner.',
+      'Season steaks and patties well with salt and pepper before grilling.',
+      'Use a fresh pan for every dish on the pan section. Put used pans in the container above the station.',
+      'Gaming snacks: 15:00 and 21:00.',
+      'After 19:30 at dinner, do not precook extra schnitzels.'],
+    other: ['# Cleaning and closing',
+      'At 14:30 after lunch, send all pans, pizza trays, tongs and spoons to the dish pit.',
+      'Skim every fryer section well each night.',
+      'Scrub and clean the top pass at the end of service.',
+      'Give FOH two buckets of hot soapy water at the end of the day for cutlery and dishes.',
+      'Check with FOH that the sauces are topped up at the end of the night.',
+      '# Section stock, ordering and wastage',
+      'Top up your section\'s Chux, takeaway containers, baking paper and cling wrap. Do not take supplies from other sections.',
+      'If you cannot find something in the coldroom, ask {sous} or Chef first.',
+      'If something is missing or running low, add it to the order list in the Kitchen Book straight away. Do not wait until it runs out.',
+      'Record all wastage in the Kitchen Book.',
+      'Log schnitzel and fish wastage in the Kitchen Book every night.']
+  };
+  function mfTpl() {
+    var f = mfNew(), sous = people().filter(function (p) { return p.role === 'sous'; }), nm = sous.length === 1 ? sous[0].name : '[sous chef]';
+    Object.keys(MN_TPL).forEach(function (k) { f[k] = MN_TPL[k].join('\n').replace(/\{sous\}/g, nm).slice(0, 1200); });
+    f.loc = 'Kitchen';
+    return f;
+  }
   /* what the form held when it was opened, to tell whether Cancel would throw anything away */
   function mfSnap(f) { return f ? JSON.stringify(Object.assign({}, f, { prev: false, orig: null })) : ''; }
   function mfDirty() { return !!S.mf && mfSnap(S.mf) !== S.mfSnap; }
@@ -4905,7 +4987,7 @@
         '<div class="mn-act2">' + personSelect('mn-awho', a.who || '', i, true) + '<label class="visually-hidden" for="mn-aby' + i + '">By</label><input id="mn-aby' + i + '" type="date" class="p-dateinput" data-k="mn-aby" data-i="' + i + '" value="' + esc(a.by || '') + '"><button type="button" class="p-x" data-p="mn-arem" data-i="' + i + '">Remove</button></div></div>';
     }).join('');
     return '<section class="set-block mn-form"><span class="label">' + (isEdit ? 'Change these minutes (becomes version ' + (f.v + 1) + ')' : f.id ? 'Draft minutes ' + pad(f.no) : 'New minutes ' + pad(f.no)) + '</span>' +
-      (isEdit ? '<span class="hint">Everyone signs again after a change. The earlier version is kept.</span>' : '<span class="hint">Short lines, one per line. Spelling is yours to check. Recipe names link to their card. Leave out prices, PINs and private details. A draft is not shown to staff in the app.</span>') +
+      (isEdit ? '<span class="hint">Everyone signs again after a change. The earlier version is kept.</span>' : '<span class="hint">Short lines, one per line. Spelling is yours to check. Recipe names link to their card. Leave out prices, PINs and private details. A line starting with # is a heading. A draft is not shown to staff in the app.</span>') +
       '<div class="mn-grid"><div class="field"><label class="label" for="mn-date">Date</label><input id="mn-date" type="date" class="p-dateinput" data-k="mn-date" value="' + esc(f.date) + '"></div><div class="field"><label class="label" for="mn-start">Start time</label><input id="mn-start" type="time" class="p-dateinput" data-k="mn-start" value="' + esc(f.start) + '"></div>' +
       '<div class="field"><label class="label" for="mn-loc">Location</label><input id="mn-loc" class="search" data-k="mn-loc" maxlength="60" value="' + esc(f.loc) + '"></div><div class="field"><span class="label">Run by</span>' + personSelect('mn-chair', f.chair) + '</div><div class="field"><span class="label">Minutes taken by</span>' + personSelect('mn-taker', f.taker) + '</div></div>' +
       mfTextarea('mn-safety', 'Safety', 3, 'Shows first, in orange.') + mfTextarea('mn-decisions', 'Decisions', 4, 'One decision per line.') +
@@ -5004,7 +5086,7 @@
     if (S.mins == null) return '<p class="hint">Loading...</p>';
     var drafts = mnDrafts(), pub = mnPub();
     var intro = '<section class="set-block mn-noprint"><span class="label">Kitchen meeting minutes</span><span class="hint">Write the minutes after the meeting. Staff read them at Meeting minutes in the app and sign with their own PIN. A change after publishing makes a new version and everyone signs again.</span>' +
-      '<div class="btn-row"><button type="button" class="btn dark" data-p="mn-new">Write new minutes</button>' + drafts.map(function (d) { return '<button type="button" class="btn" data-p="mn-draft-open" data-id="' + esc(d.id) + '">Continue draft ' + pad(d.no || 0) + ' (' + esc(dayShort(d.date)) + ')</button>'; }).join('') + '</div><span class="saved" role="status">' + (S.mf ? '' : esc(S.mMsg)) + '</span></section>';
+      '<div class="btn-row"><button type="button" class="btn dark" data-p="mn-new">Write new minutes</button><button type="button" class="btn" data-p="mn-tpl">Start from the team notes</button>' + drafts.map(function (d) { return '<button type="button" class="btn" data-p="mn-draft-open" data-id="' + esc(d.id) + '">Continue draft ' + pad(d.no || 0) + ' (' + esc(dayShort(d.date)) + ')</button>'; }).join('') + '</div><span class="saved" role="status">' + (S.mf ? '' : esc(S.mMsg)) + '</span></section>';
     if (!mnCanWrite()) intro = '<section class="set-block mn-noprint"><span class="label">Kitchen meeting minutes</span><span class="hint">See who has signed the minutes and who still needs to. Only the head chef writes and publishes minutes.</span></section>';
     return intro + (S.mf && mnCanWrite() ? mfHTML() : '') + mnRegisterHTML(pub);
   }
@@ -6277,8 +6359,8 @@
     if (a === 'mn-csv') { csvMinutes(id); return; }
     if (a === 'mn-refresh') { loadMinutes(true); loadSigns(S.mSel || (mnPub()[0] || {}).id, true); draw(); return; }
     if (a === 'mn-sel') { S.mSel = id; loadSigns(id, true); draw(); return; }
-    if (/^mn-(new|draft-open|edit|draft|pub|remove)$/.test(a) && !mnCanWrite()) return;
-    if (a === 'mn-new') { S.mf = mfNew(); S.mfSnap = mfSnap(S.mf); S.mMsg = ''; draw(); var mfe = S.root.querySelector('.mn-form'); if (mfe) mfe.scrollIntoView({ block: 'start' }); return; }
+    if (/^mn-(new|tpl|draft-open|edit|draft|pub|remove)$/.test(a) && !mnCanWrite()) return;
+    if (a === 'mn-new' || a === 'mn-tpl') { S.mf = a === 'mn-tpl' ? mfTpl() : mfNew(); S.mfSnap = mfSnap(S.mf); S.mMsg = ''; draw(); var mfe = S.root.querySelector('.mn-form'); if (mfe) mfe.scrollIntoView({ block: 'start' }); return; }
     if (a === 'mn-draft-open' || a === 'mn-edit') { var mm = mnById(id); if (mm) { S.mf = mfFrom(mm); S.mfSnap = mfSnap(S.mf); S.mMsg = ''; draw(); var mfe2 = S.root.querySelector('.mn-form'); if (mfe2) mfe2.scrollIntoView({ block: 'start' }); } return; }
     if (a === 'mn-cancel') { if (mfDirty() && !arm('mn-cancel')) return; S.mf = null; S.mMsg = ''; draw(); return; }
     if (a === 'mn-prev') { if (S.mf) { S.mf.prev = !S.mf.prev; draw(); } return; }
