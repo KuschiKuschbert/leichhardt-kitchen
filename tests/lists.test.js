@@ -144,21 +144,22 @@ function past(n) { const d = new Date(); d.setDate(d.getDate() - n); return L.ym
   await p.context().close();
 
   const mins = {}; mins[fsKey(['minutes', 'm1'])] = { no: 1, v: 1, status: 'published', date: today, start: '14:00', loc: 'Kitchen', chair: 'sam', taker: 'sam', att: [{ id: 'ann', st: 'present' }, { id: 'sam', st: 'present' }, { id: 'bo', st: 'apology' }], guests: '', decisions: 'Fryer oil every Monday', menu: '', safety: '', dates: '', other: '', acts: [], next: '', pubAt: L.NOW, removed: false, at: 1, upd: 1, by: 'sam' };
-  // minutes to sign show as a card on the landing page, not as a second bell in the top bar
-  p = await L.open(b, '#/', { who: 'ann', extra: mins, wait: 1800 });
+  // minutes to sign come up in the sheet at the start of the shift (23 Oct 2026), not as a second bell in the top bar
+  p = await L.open(b, '#/', { who: 'ann', extra: mins, wait: 1800, board: true });
   ok(await p.$('.wtop a[href="#/minutes"]') === null, 'minutes: no minutes button in the top bar');
-  await L.waitFor(p, () => /Minutes not signed yet/.test((document.querySelector('.wall-mn .mn-nudge') || {}).textContent || '')).catch(() => {});   // read from Firestore: wait for it, not the page
-  ok(/Minutes not signed yet/.test(await txt(p, '.wall-mn .mn-nudge') || ''), 'minutes: card on the landing page');
-  await p.click('.wall-mn .mn-nudge-btn');
+  await L.waitFor(p, () => !!document.querySelector('.nt .nt-a')).catch(() => {});   // read from Firestore: wait for it, not the page
+  ok(/Kitchen meeting/.test(await txt(p, '.nt .nt-a') || '') && await txt(p, '#nt-h') === 'Minutes to sign', 'minutes: the start of shift sheet lists them');
+  ok(await txt(p, '.wall-mn') === '', 'minutes: no landing row while they are not late');
+  await p.click('.nt .nt-a');
   await L.settle(p, 800);
-  ok(await p.evaluate(() => location.hash) === '#/minutes', 'minutes: Read and sign on the landing card opens the minutes');
+  ok(await p.evaluate(() => location.hash) === '#/minutes' && await p.$('.nt') === null, 'minutes: Read and sign in the sheet opens the minutes');
   await p.click('.mn-signbtn');
   await L.settle(p, 600);
   s = await store(p);
   ok(!!s[fsKey(['minutes', 'm1', 'signs', '1_ann'])], 'minutes: one tap on Sign signs the minutes');
   await p.evaluate(() => { location.hash = '#/'; });
   await L.settle(p, 600);
-  ok(await txt(p, '.wall-mn') === '', 'minutes: landing card gone once signed');
+  ok(await txt(p, '.wall-mn') === '' && !(await p.evaluate(() => document.querySelector('.nbell').classList.contains('has-new'))), 'minutes: no row and no dot on the bell once signed');
   ok(p.errors.length === 0, 'minutes: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 

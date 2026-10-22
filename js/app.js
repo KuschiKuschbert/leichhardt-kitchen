@@ -391,7 +391,7 @@
       (n ? '<p class="wm-h">Signed in as <b>' + esc(n) + '</b></p>' +
         '<a class="wm-a" href="#/mail" data-who="go">' + ICON.mail + '<span><b>Kitchen mail</b><small>Write to Chef</small></span></a>' +
         '<a class="wm-a" href="#/drinks" data-who="go">' + ICON.cup + '<span><b>Drinks run</b><small>Everyone\'s usual coffee</small></span></a>' +
-        (m.minutes ? '<a class="wm-a" href="#/minutes" data-who="go">' + ICON.doc + '<span><b>Meeting minutes</b><small>Read and sign</small></span></a>' : '') +
+        (m.minutes ? '<a class="wm-a" href="#/minutes" data-who="go">' + ICON.doc + '<span><b>Meeting minutes</b>' + (m.toSign ? '<small class="wm-due">' + m.toSign + ' to sign</small>' : '<small>Read and sign</small>') + '</span></a>' : '') +
         (m.fn ? '' : fnViewItem()) +
         (m.sec ? '<button type="button" class="wm-a" data-who="sec" data-v="section">' + ICON.chef + '<span><b>My section</b><small>' + esc(m.sec) + '</small></span></button>' : '') +
         (m.chef || adm || m.book || m.fn ? '<p class="wm-h wm-sh">Chef</p>' + adm : '') + (m.book ? manageItem() : '') + (m.fn ? fnItem() : '') +
@@ -440,9 +440,11 @@
     }
   });
   window.addEventListener('hashchange', function () { whoMenuClose(); });
+  /* the Pings bell: there every day while pings or minutes are on for this phone, with a dot for an unread ping or minutes
+     to sign (js/prep.js noteBell() keeps it right after the page is drawn) */
   function noteBellHTML() {
-    var i = window.LK_PREP && window.LK_PREP.noteInfo ? window.LK_PREP.noteInfo() : { n: 0, unread: false };
-    return '<button type="button" class="wtop-btn nbell' + (i.unread ? ' has-new' : '') + '" data-note="open"' + (i.n ? '' : ' hidden') + ' aria-label="' + i.n + ' shift ping' + (i.n === 1 ? '' : 's') + ' today' + (i.unread ? ', new' : '') + '">' + BELL + '<span class="wtop-lbl">Pings</span></button>';
+    var P = window.LK_PREP, i = P && P.noteInfo ? P.noteInfo() : { on: false, n: 0, unread: false, sign: 0 };
+    return '<button type="button" class="wtop-btn nbell' + (i.unread || i.sign ? ' has-new' : '') + '" data-note="open"' + (i.on ? '' : ' hidden') + ' aria-label="' + esc(P && P.noteBellLabel ? P.noteBellLabel(i) : '') + '">' + BELL + '<span class="wtop-lbl">Pings</span></button>';
   }
   /* The same top bar on every page as on the landing page: brand (goes home), the menu, Pings and the chef hat
      (its menu holds Admin and Settings). */
@@ -880,6 +882,7 @@
   }
   window.LK_APP = {
     mgApi: MG_API, KIND: KIND, isDish: isDish, esc: esc, art: art, rollFor: rollFor, load: mgScript,
+    icon: function (k) { return ICON[k] || ''; },   // the chef hat menu's icons, for the pings sheet's rows
     byId: function (id) { return byId[id] || null; },
     recipes: function () { return D.recipes; },
     tags: function (id) { return tags[id] || []; },

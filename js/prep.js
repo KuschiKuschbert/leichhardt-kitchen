@@ -341,7 +341,7 @@
     if (got.guides && was.guides === false) loadGuides();
     if (got.pings && was.pings === false) loadNotes();
     if (got.minutes && was.minutes === false) loadMinutes();
-    if (!got.pings && npop && npop.getAttribute('data-pv') !== '1') noteClose(true);
+    if (!got.pings && !got.minutes && npop && npop.getAttribute('data-pv') !== '1') noteClose('shut'); else noteRefresh();
     noteBell(); minCard();
     try { window.dispatchEvent(new Event('lk-feat')); } catch (e) {}
   }
@@ -604,9 +604,12 @@
     lsSet('lk.prep.tok', ''); lsSet('lk.prep.seen', String(Date.now())); lsSet('lk.prep.day', dayNow()); lastAct = Date.now(); startIdle();
     hereAdd(id);
     var pend = S.pending; S.pending = null; S.picking = false;
+    // signed in on a shared device only to tick or add: no start of shift sheet (see noteMaybePop). Sign in from the
+    // chef hat (back) is a real start
+    S.guestIn = !!(pend && !pend.back);
     draw(); whoSync(true);   // a real sign-in: the chef mark flips in
     if (pend) guestReplay(pend);
-    dkCheck(); ksCheck();
+    dkCheck(); ksCheck(); noteMaybePop();
   }
   /* Who signed in on this device today, newest first: "Who are you?" lists them first (lk.prep.here). */
   function hereGet() { try { var h = JSON.parse(lsGet('lk.prep.here') || 'null'); return h && h.d === dayNow() ? h.ids : []; } catch (e) { return []; } }
@@ -729,7 +732,7 @@
     // a phone that signed in before sessions: its kept proof opens one session, once (then the proof is dropped). The
     // writes below wait for it; if the PIN was reset since, the first write is refused and the PIN is asked
     else sessOpenRetry(S.who, tok[1]).catch(function () {});
-    S.authed = true; S.tok = hasTok ? tok[1] : ''; hereAdd(S.who); draw(); whoSync(); dkCheck(); setTimeout(dailyFlush, 3000);
+    S.authed = true; S.tok = hasTok ? tok[1] : ''; hereAdd(S.who); draw(); whoSync(); dkCheck(); ksCheck(); noteMaybePop(); setTimeout(dailyFlush, 3000);   // the section first, then the pings
     // the first write checks it on the server: a reset PIN, a session that ran out or someone off the list asks again
     sset(docRef('activity', S.who), { name: (who() || {}).name || '', visits: fb.fs.increment(1), lastSeen: now() }, true).then(sessRenew, function (e) {
       if (e && e.code === 'permission-denied') { S.authed = false; S.tok = ''; pickName(S.who); }
@@ -765,12 +768,12 @@
     lsSet('lk.prep.seen', String(Date.now()));
   }
   /* the next person never lands in the last person's staff draft, minutes register or ping editor */
-  function leave() { sessDrop(); ksClose(); S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); }
+  function leave() { sessDrop(); ksClose(); noteClose('shut'); S.guestIn = false; S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); }
   /* The chef mark's menu (js/app.js) asks what to show: Meeting minutes for everyone (when the page is on), and for the
      head chef and sous chefs Shift pings, the Minutes register and Manage staff. The head chef on their admin device gets
      the matching admin tab instead. */
   // Meeting minutes shows for staff only once there is something published to read (chefs always, for the register)
-  function chefMenu() { return { minutes: featOn('minutes') && (isSous() || mnPub().length > 0), chef: isSous(), sec: ksPicks(me()) ? (mySec() || 'Pick one for today') : '', book: bookEdit(), fn: fnOK() }; }
+  function chefMenu() { return { minutes: featOn('minutes') && (isSous() || mnPub().length > 0), toSign: featOn('minutes') ? mnUnsigned().length : 0, chef: isSous(), sec: ksPicks(me()) ? (mySec() || 'Pick one for today') : '', book: bookEdit(), fn: fnOK() }; }
   /* Functions (21 Oct 2026): who may enter and change function bookings. The person signed in with their own PIN and
      ticked for Functions (config/main fnIds, which only the head chef's Google account saves), or the head chef's Google
      device with nobody signed in. Being Head chef or Functions coordinator is not enough without the tick. The rules
@@ -2953,7 +2956,7 @@
     var left = '<section class="nb-page nb-left"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + esc(dayName(S.date)) + '</h2><span class="nb-date">' + esc(longDate(S.date)) + '</span></div>' +
       '<div class="nb-prog">' + doneN + ' of ' + live.length + ' done</div>' + (can('add') ? '<button type="button" class="nb-jump" data-p="write">Write a line</button>' : '') + (doneN ? '<button type="button" class="nb-jump nb-donejump" data-p="donejump">Done today (' + doneN + ')</button>' : '') + '</header>' +
       (S.itemsState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' : '') +
-      '<div class="nb-body">' + minNudgeHTML() + closeoutHTML(daily, S.date) + wNoteHTML() + (S.tab === FN_TAB ? '' : startHTML(daily)) + pageBody(S.items, S.date) + todayEmpty + '</div>' +
+      '<div class="nb-body">' + closeoutHTML(daily, S.date) + wNoteHTML() + (S.tab === FN_TAB ? '' : startHTML(daily)) + pageBody(S.items, S.date) + todayEmpty + '</div>' +
       '<div class="nb-foot">' + add + (add && !can('del') ? '<p class="hint nb-who">Wrote the wrong thing? Undo it straight away, or ask the head chef or a sous chef to remove it.</p>' : '') +
       (removed.length && can('del') ? '<button type="button" class="nb-link" data-p="removed">' + (S.showRemoved ? 'Hide' : 'Show') + ' removed (' + removed.length + ')</button>' : '') + '</div></section>';
     var right = '<section class="nb-page nb-right"><header class="nb-ph"><div><h2 class="nb-title nb-dim">Handy</h2><span class="nb-date">' + (S.date === today ? 'Done today and quick add' : 'Done on ' + esc(dayShort(S.date))) + '</span></div></header>' +
@@ -3490,7 +3493,7 @@
   function batch(fn) { holdDraw++; try { fn(); } finally { if (--holdDraw === 0 && heldDraw) { heldDraw = false; draw(); } } }
   function draw() {
     if (holdDraw) { heldDraw = true; return; }
-    noteSummaryRefresh();
+    noteRefresh();
     if (S.mins) { loadMine(); minCard(); }
     if (!S.root || !document.body.contains(S.root) || rendering) return;
     rendering = true;
@@ -4158,15 +4161,34 @@
     return (S.notes || []).filter(function (n) { var tm = noteTm(n); return noteOn(n, t) && (tm == null || mins >= tm); }).sort(function (a, b) { return noteRank(a) - noteRank(b) || (a.at || 0) - (b.at || 0); });
   }
   function noteSig(list) { return list.map(function (n) { return n.id + ':' + (n.upd || n.at || 0); }).join('|'); }
-  function noteSeen() { try { return JSON.parse(lsGet('lk.note.seen') || '{}') || {}; } catch (e) { return {}; } }
-  function noteUnread() { var l = todaysNotes(), s = noteSeen(); return !!l.length && !(s.d === dayNow() && s.sig === noteSig(l)); }
-  function noteInfo() { var l = todaysNotes(); return { n: l.length, unread: noteUnread() }; }
-  /* the bell in the top bar: hidden until there is a ping for today, with a dot while it is unread */
+  /* Got it is kept for each person (23 Oct 2026), so on a shared tablet the first cook's Got it no longer hides the pings
+     from the cooks after them: lk.note.seen.<id> while someone is signed in, lk.note.seen with nobody. Out of date when the
+     kitchen day changes or today's pings change (d and sig). The first person signed in after the update takes over the
+     phone's old mark once (lk.note.mig), so nobody sees today's pings twice. */
+  function noteSeenKey() { var p = me(); return p ? 'lk.note.seen.' + p.id : 'lk.note.seen'; }
+  function noteSeen() {
+    var k = noteSeenKey();
+    if (k !== 'lk.note.seen' && !lsGet(k) && !lsGet('lk.note.mig')) { var old = lsGet('lk.note.seen'); if (old) lsSet(k, old); lsSet('lk.note.mig', '1'); }
+    try { return JSON.parse(lsGet(k) || '{}') || {}; } catch (e) { return {}; }
+  }
+  /* a ping the person on this phone saved last (by) is never new to them, so a chef's own 15:00 ping does not pop up at them.
+     The head chef's Google device with nobody signed in saves with no by. */
+  function noteMine(n) { var p = me(); return p ? n.by === p.id : admDev() && !n.by; }
+  function noteTheirs() { return todaysNotes().filter(function (n) { return !noteMine(n); }); }
+  function noteUnread() { var l = noteTheirs(), s = noteSeen(); return !!l.length && !(s.d === dayNow() && s.sig === noteSig(l)); }
+  /* what the bell shows: on (pings or minutes are on for this phone), today's pings, an unread one, minutes to sign */
+  function noteInfo() {
+    var on = /^\d{4,6}$/.test(S.pin) && (featOn('pings') || featOn('minutes'));
+    return { on: on, n: todaysNotes().length, unread: noteUnread(), sign: featOn('minutes') ? mnUnsigned().length : 0 };
+  }
+  function noteBellLabel(i) { return i.n + ' shift ping' + (i.n === 1 ? '' : 's') + ' today' + (i.unread ? ', new' : '') + (i.sign ? '. ' + i.sign + ' minutes to sign' : ''); }
+  /* The bell in the top bar (23 Oct 2026): there every day while pings or minutes are on, so the top bar keeps one shape.
+     It has a dot while a ping is unread or minutes are waiting to be signed, and opens the same sheet at any time. */
   function noteBell() {
     var i = noteInfo();
     Array.prototype.forEach.call(document.querySelectorAll('.nbell'), function (b) {
-      b.hidden = !i.n; b.classList.toggle('has-new', i.unread);
-      b.setAttribute('aria-label', i.n + ' shift ping' + (i.n === 1 ? '' : 's') + ' today' + (i.unread ? ', new' : ''));
+      b.hidden = !i.on; b.classList.toggle('has-new', i.unread || i.sign > 0);
+      b.setAttribute('aria-label', noteBellLabel(i));
     });
   }
   function notesInit() {
@@ -4232,57 +4254,133 @@
     }
     return out.join('');
   }
-  function noteSummaryRefresh() {
-    var s = npop && npop.querySelector('#nt-sum');
-    if (s) { var h = noteSummary(); if (s.innerHTML !== h) s.innerHTML = h; }
-  }
   // isNew: not in what was last seen on this phone today (a ping with its own time pops up again with the others)
   function noteRowHTML(n, isNew) {
     var tm = noteTm(n);
-    return '<li class="nt-i t-' + esc(n.tag || 'none') + '">' + (isNew ? '<span class="nt-tag nt-new">New</span> ' : '') + '<span class="nt-tag">' + esc(noteTagName(n.tag) + (tm != null ? ' ' + tmText(tm) : '')) + '</span><p>' + linkNote(n.text) + '</p></li>';
+    return '<li class="nt-i t-' + esc(n.tag || 'none') + '"><span class="nt-tags">' + (isNew ? '<span class="nt-tag nt-new">New</span> ' : '') + '<span class="nt-tag">' + esc(noteTagName(n.tag) + (tm != null ? ' ' + tmText(tm) : '')) + '</span></span><p>' + linkNote(n.text) + '</p></li>';
   }
-  function noteOpen(pv) {
-    var list = pv ? pv.list : todaysNotes();
-    if (npop || !list.length) return;
-    var t = dayNow(), adm = admDev(), sn = noteSeen(), was = !pv && sn.d === t && sn.sig ? String(sn.sig).split('|') : null, editor = adm ? '<a class="nt-edit" href="#/admin" data-note="edit">Write or edit pings</a>' : (canPing() ? '<a class="nt-edit" href="#/prep" data-note="edit-sous">Write or edit pings</a>' : '');
+  /* The pings sheet (23 Oct 2026). One sheet for what the team is told: today's pings, then the minutes this person still
+     has to sign. It slides up from the bottom on a phone and a tablet, and sits in the middle on a laptop. It opens:
+       'start'  once a day per person, at the start of their shift (their PIN, or the first open of the day): pings and minutes
+       'due'    at 10:30, at a ping's own time, or when a ping for today was saved: pings only
+       'tap'    from the bell, any time: everything, also "No pings today."
+     With unread pings it goes in two steps: the pings with Got it, then the minutes to sign, so Read and sign never skips
+     a ping. Only Got it (or a link in a ping) marks pings read; Later, Escape, a tap outside and Back put them off. */
+  var NOTE_URGENT = { safety: 1, allergen: 1, off: 1 };
+  // a ping is due to pop up: from 10:30, or once a ping's own time has come
+  function noteDueTime() { return T.mins() >= NOTE_MIN || todaysNotes().some(function (n) { return noteTm(n) != null; }); }
+  // the pings this person has not seen yet today (by id and version)
+  function noteNew() {
+    var s = noteSeen(), was = s.d === dayNow() && s.sig ? String(s.sig).split('|') : [];
+    return noteTheirs().filter(function (n) { return was.indexOf(n.id + ':' + (n.upd || n.at || 0)) < 0; });
+  }
+  function mnMineN(m) { return (m.acts || []).filter(function (a) { return a && a.what && (!a.st || a.st === 'open') && (a.who === S.who || a.who === 'all'); }).length; }
+  function noteMins() { return featOn('minutes') ? mnUnsigned() : []; }
+  function mnRowHTML(m) {
+    var n = mnMineN(m), icon = window.LK_APP && window.LK_APP.icon ? window.LK_APP.icon('doc') : '';
+    return '<a class="nt-a" href="#/minutes" data-note="mn" data-id="' + esc(m.id) + '">' + icon + '<span><b>Kitchen meeting, ' + esc(dayShort(m.date)) + '</b><small>Read and sign' + (n ? '. Your actions: ' + n : '') + ((m.v || 1) > 1 ? '. Changed, sign again' : '') + '</small></span></a>';
+  }
+  function noteInHTML(el) {
+    var pv = el.lkPv, why = el.lkWhy, p = me(), t = dayNow();
+    var list = pv ? pv.list : todaysNotes(), mins = pv || why === 'due' ? [] : noteMins();
+    if (!pv && el.lkStep === 'pings' && !noteUnread()) el.lkStep = 'rest';   // read on another tab, or the pings changed
+    var step = pv ? 'pings' : el.lkStep, showPings = step === 'pings' || why === 'tap';
+    var editor = pv ? '' : admDev() ? '<a class="nt-edit" href="#/admin" data-note="edit">Write or edit pings</a>' : (canPing() ? '<a class="nt-edit" href="#/prep" data-note="edit-sous">Write or edit pings</a>' : '');
+    var h = pv ? 'Preview' : showPings || !mins.length ? 'Today\'s shift pings' : 'Minutes to sign';
+    var out = '<header class="nt-head"><span class="nt-eb">' + esc(p ? p.name : 'Leichhardt Hotel Kitchen') + '</span><h2 class="nt-h" id="nt-h">' + h + '</h2><span class="nt-date">' + esc(pv ? pv.label : parseYmd(t).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })) + '</span></header><div class="nt-body">';
+    if (showPings && list.length) {
+      out += '<ul class="nt-list">' + list.map(function (n) { return noteRowHTML(n, step === 'pings' && !pv && !!el.lkWas && el.lkWas.indexOf(n.id + ':' + (n.upd || n.at || 0)) < 0 && !noteMine(n)); }).join('') + '</ul>';
+      if (!pv) out += '<div class="nt-sum" id="nt-sum">' + noteSummary() + '</div>';
+    } else if (showPings && !mins.length) out += '<p class="nt-none">No pings today.</p>';
+    if (step === 'pings' && mins.length) out += '<p class="nt-next">Next: ' + (mins.length === 1 ? 'minutes to sign' : mins.length + ' minutes to sign') + '</p>';
+    else if (mins.length) out += '<h3 class="nt-sh">To sign</h3><div class="nt-mn">' + mins.map(mnRowHTML).join('') + '</div>';
+    out += '</div><footer class="nt-foot">';
+    if (pv) out += '<button type="button" class="nt-got" data-note="close">Close preview</button>';
+    else if (step === 'pings') out += '<button type="button" class="nt-got" data-note="close">Got it</button><button type="button" class="nt-later" data-note="dismiss">Later</button>';
+    else out += '<button type="button" class="nt-later" data-note="dismiss">' + (mins.length ? 'Later' : 'Close') + '</button>';
+    return out + editor + '</footer>';
+  }
+  /* draws the sheet again when what it shows changed (a read came in, a ping was read on another tab), keeping the focus */
+  function noteDraw(focusFirst) {
+    var box = npop && npop.querySelector('.nt-in');
+    if (!box) return;
+    var h = noteInHTML(npop);
+    if (box.lkH === h && !focusFirst) return;
+    var ae = document.activeElement, k = ae && box.contains(ae) ? ae.getAttribute('data-note') : '', kid = k && ae.getAttribute('data-id');
+    box.innerHTML = h; box.lkH = h;
+    var f = focusFirst ? box.querySelector('.nt-a, .nt-got, .nt-later') : k ? box.querySelector('[data-note="' + k + '"]' + (kid ? '[data-id="' + kid.replace(/["\\]/g, '\\$&') + '"]' : '')) : null;
+    if (f) { try { f.focus({ preventScroll: true }); } catch (e) {} }
+  }
+  function noteRefresh() { if (npop) noteDraw(false); }
+  // pv: the ping editor's Preview ({ list, label }); why: 'start', 'due' or 'tap' (see above)
+  function noteOpen(pv, why) {
+    if (npop) return;
+    why = pv ? 'pv' : why || 'tap';
+    var unread = !pv && noteUnread();
+    if (why === 'due' && !unread) return;
+    if (why === 'start' && !(unread && noteDueTime()) && !noteMins().length) return;
+    if (pv && !pv.list.length) return;
+    var s = noteSeen();
     nprev = document.activeElement;
     var el = document.createElement('div');
     el.className = 'nt-wrap';
-    el.innerHTML = '<div class="nt-bg" data-note="dismiss"></div><section class="nt" role="dialog" aria-modal="true" aria-labelledby="nt-h" tabindex="-1">' +
-      '<header class="nt-head"><span class="nt-eb">Leichhardt Hotel Kitchen</span><h2 class="nt-h" id="nt-h">' + (pv ? 'Preview' : 'Today\'s shift pings') + '</h2><span class="nt-date">' + esc(pv ? pv.label : parseYmd(t).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })) + '</span></header>' +
-      '<ul class="nt-list">' + list.map(function (n) { return noteRowHTML(n, !!was && was.indexOf(n.id + ':' + (n.upd || n.at || 0)) < 0); }).join('') + '</ul>' +
-      '<div class="nt-sum" id="nt-sum">' + (pv ? '' : noteSummary()) + '</div>' +
-      '<footer class="nt-foot"><button type="button" class="nt-got" data-note="close">' + (pv ? 'Close preview' : 'Got it') + '</button>' + (pv ? '' : editor) + '</footer></section>';
+    el.lkPv = pv || null; el.lkWhy = why;
+    el.lkStep = pv || (unread && (why !== 'start' || noteDueTime())) ? 'pings' : 'rest';
+    el.lkWas = s.d === dayNow() && s.sig ? String(s.sig).split('|') : null;   // New marks only what came since the last Got it today
+    el.innerHTML = '<div class="nt-bg" data-note="dismiss"></div><section class="nt" role="dialog" aria-modal="true" aria-labelledby="nt-h" tabindex="-1"><div class="nt-grip" aria-hidden="true"></div><div class="nt-in"></div></section>';
     if (pv) el.setAttribute('data-pv', '1');
-    document.body.appendChild(el);
     npop = el;
+    noteDraw(false);
+    document.body.appendChild(el);
     ovPush('note');
     document.documentElement.classList.add('note-open');
     loadWNote();
-    var got = el.querySelector('.nt-got'); if (got) got.focus({ preventScroll: true });
+    var got = el.querySelector('.nt-got') || el.querySelector('.nt-a') || el.querySelector('.nt-later'); if (got) got.focus({ preventScroll: true });
   }
-  /* Only Got it (or opening a link in the note) counts as read. Tapping outside or Escape just closes it: the bell
-     keeps its dot and the popup comes back by itself after 15 minutes, so a stray tap cannot dismiss a safety note. */
-  function noteClose(dismiss, noBack) {
+  /* how: 'got' (Got it: the pings are read; with minutes to sign the sheet goes on to them), 'read' (a link in a ping or
+     Write or edit pings: read, and close), 'later' (Later, Escape, a tap outside, Back: put off, the pings come back by
+     themselves in 15 minutes) or 'shut' (signed out, or the page held back: neither). A stray tap never reads a safety ping. */
+  function noteClose(how, noBack) {
     if (!npop) return;
+    var pv = npop.lkPv, why = npop.lkWhy, pings = npop.lkStep === 'pings';
+    if (!pv && pings && (how === 'got' || how === 'read')) {
+      noteMarkSeen(); noteWriteSeen(noteTheirs());
+      if (how === 'got' && why !== 'due' && noteMins().length) { npop.lkStep = 'rest'; noteDraw(true); liveSay('Pings read. Minutes to sign are below.'); return; }
+    }
+    if (!pv && pings && how === 'later' && noteUnread()) nSnooze = Date.now();
     ovDone('note', noBack);
-    var wasPv = npop.getAttribute('data-pv') === '1';
     npop.parentNode.removeChild(npop); npop = null;
     document.documentElement.classList.remove('note-open');
-    if (!wasPv && dismiss) nSnooze = Date.now();
-    else if (!wasPv) { noteMarkSeen(); noteWriteSeen(todaysNotes()); }
     if (nprev && nprev.focus && document.body.contains(nprev)) { try { nprev.focus({ preventScroll: true }); } catch (e) {} }
     nprev = null;
+    sheetNext();
   }
-  function noteMarkSeen() { lsSet('lk.note.seen', JSON.stringify({ d: dayNow(), sig: noteSig(todaysNotes()) })); noteBell(); }
-  /* pops up by itself: after 10:30 (or once a ping's own time has come), when today has a note that has not been seen on
-     this phone, and nobody is typing */
+  function noteMarkSeen() { lsSet(noteSeenKey(), JSON.stringify({ d: dayNow(), sig: noteSig(noteTheirs()) })); noteBell(); }
+  /* The start of a shift waits for the day's pings, minutes and this person's sign-offs, so the sheet opens once with
+     everything. A read that failed is not waited for (it tries again later; the 10:30 pings still pop up). */
+  function noteReads() {
+    var t = dayNow(), pings = !featOn('pings') || S.notesFor === t, mins = !featOn('minutes') || (S.minsFor === t && mnOpenList().every(function (m) { var v = S.mmine[mnKey(m)]; return v !== undefined && v !== 'loading'; }));
+    var busy = S.notesBusy || S.minsBusy || mnOpenList().some(function (m) { return S.mmine[mnKey(m)] === 'loading'; });
+    return pings && mins ? 'in' : busy ? 'busy' : 'failed';
+  }
+  /* Pops up by itself, one sheet at a time (sheetBusy): at the start of a person's shift, once a day on this phone
+     (lk.board.<id>: out of date when the kitchen day changes), and after 10:30 or a ping's own time while a ping is
+     unread. A person signed in on a shared device only to tick or add (S.guestIn) gets no start of shift, and only an
+     unread Safety, Allergen alert or Off today ping pops up for them; the others wait on the bell. */
   function noteMaybePop() {
-    if (npop || ksPop || !noteUnread() || document.visibilityState === 'hidden' || Date.now() - nSnooze < 15 * 60000) return;
-    var ae = document.activeElement;
-    if (T.mins() < NOTE_MIN && !todaysNotes().some(function (n) { return noteTm(n) != null; })) return;
-    if (ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) && ae.type !== 'button') return;
-    noteOpen();
+    if (npop || sheetBusy() || (S.who && !S.authed && !resumed)) return;
+    var p = me(), t = dayNow();
+    if (p && !S.guestIn && lsGet('lk.board.' + p.id) !== t) {
+      var r = noteReads();
+      if (r === 'busy') return;
+      if (r === 'in') {
+        lsSet('lk.board.' + p.id, t);
+        if ((noteUnread() && noteDueTime()) || noteMins().length) { noteOpen(null, 'start'); return; }
+      }
+    }
+    if (Date.now() - nSnooze < 15 * 60000 || !noteUnread() || !noteDueTime()) return;
+    if (S.guestIn && !noteNew().some(function (n) { return NOTE_URGENT[n.tag]; })) return;
+    noteOpen(null, 'due');
   }
   /* A local check once a minute (no reads): pops the note when 10:30 or a ping's own time arrives or typing stops (the bell
      counts a timed ping from its time), and fetches once at 10:30 and when a new day starts. */
@@ -4294,7 +4392,7 @@
       if (S.guidesFor && S.guidesFor !== t) loadGuides();
       if (S.notesFor && S.notesFor !== t) { loadNotes(true); return; }
       if (n1030 !== t && T.mins() >= NOTE_MIN) { n1030 = t; loadNotes(true); return; }
-      noteBell(); noteMaybePop(); mlMaybePop();
+      noteBell(); sheetNext();
     }, 60000);
   }
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && /^\d{4,6}$/.test(S.pin) && fb) { loadNotes(); noteMaybePop(); rxSync(); } });
@@ -4303,18 +4401,35 @@
     var el = e.target.closest && e.target.closest('[data-note]');
     if (!el) return;
     var a = el.getAttribute('data-note');
-    if (a === 'open') { noteOpen(); return; }
-    if (a === 'close') { noteClose(); return; }
-    if (a === 'dismiss') { noteClose(true); return; }
-    if (a === 'link') { noteClose(false, true); return; }
-    if (a === 'edit') { S.atab = 'notes'; lsSet('lk.prep.atab', 'notes'); noteClose(false, true); if (location.hash === '#/admin') draw(); return; }
-    if (a === 'edit-sous') { S.notesOpen = true; S.nf = null; noteClose(false, true); if (location.hash === '#/prep') draw(); return; }
+    if (a === 'open') { noteOpen(null, 'tap'); return; }
+    if (a === 'close') { noteClose('got'); return; }
+    if (a === 'dismiss') { noteClose('later'); return; }
+    if (a === 'link') { noteClose('read', true); return; }
+    // Read and sign: the minutes the row names (the sheet sits outside the prep root), then on to #/minutes by its link
+    if (a === 'mn') { S.mSel = el.getAttribute('data-id'); S.mErr = ''; noteClose('later', true); if (location.hash === '#/minutes') draw(); return; }
+    if (a === 'edit') { S.atab = 'notes'; lsSet('lk.prep.atab', 'notes'); noteClose('read', true); if (location.hash === '#/admin') draw(); return; }
+    if (a === 'edit-sous') { S.notesOpen = true; S.nf = null; noteClose('read', true); if (location.hash === '#/prep') draw(); return; }
   });
   document.addEventListener('keydown', function (e) {
     if (!npop) return;
-    if (e.key === 'Escape') { e.preventDefault(); noteClose(true); return; }
+    if (e.key === 'Escape') { e.preventDefault(); noteClose('later'); return; }
     if (e.key === 'Tab') trapTab(e, npop);
   });
+  /* One sheet at a time (23 Oct 2026). The section picker, the pings sheet and the head chef's mail nudge open by
+     themselves; each waits while another sheet, the chef hat menu, a big guide page or a first PIN's One more thing is
+     open, while the page is hidden and while someone is typing, and the one that closes hands on with sheetNext(). A
+     closing sheet takes its history entry off with Back (ovDone), so the next one waits for that Back to land first. */
+  var ksWant = false, ksWait = false, nextWait = false;
+  function sheetOpen() { return !!(ksPop || npop || mlPop || gz || document.querySelector('.wm-wrap')); }
+  function typing() { var ae = document.activeElement; return !!(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) && ae.type !== 'button'); }
+  function sheetBusy() { return sheetOpen() || ksWait || ovBack || S.drinkAsk === 'first' || document.visibilityState === 'hidden' || typing(); }
+  function sheetNext() {
+    if (ovBack) { nextWait = true; return; }
+    nextWait = false;
+    if (ksWant && !sheetOpen() && S.drinkAsk !== 'first') { ksWant = false; ksOpen(); if (ksPop) return; }
+    noteMaybePop();
+    mlMaybePop();
+  }
 
   /* writing shift pings: the Shift pings tab of the admin panel (head chef) and Shift pings in the prep book (sous chefs, from the chef mark menu).
      The list comes first (showing today, coming up, past notes on request). The editor opens beside it on a
@@ -4539,15 +4654,21 @@
     if (!S.who || !S.mins || (S.config && !who())) return [];
     return mnOpenList().filter(function (m) { return S.mmine[mnKey(m)] === null; });
   }
-  /* the card on the landing page (js/app.js draws the empty slot): filled in while the person on this phone has minutes to sign */
+  /* Minutes to sign show in the pings sheet at the start of each shift, on the bell's dot and as "1 to sign" in the chef
+     hat menu (23 Oct 2026). The landing page (js/app.js draws the empty slot) adds a slim row only once they are late, more
+     than MN_LATE days after publishing (the register's late mark), until the person signs. Nothing on the prep list. */
   function minCard() {
     var h = minNudgeHTML();
     Array.prototype.forEach.call(document.querySelectorAll('.wall-mn'), function (el) { if (el.lkMn !== h) { el.innerHTML = h; el.lkMn = h; } });
+    noteBell();
   }
+  // when minutes count as late: MN_LATE days after they were published (pubAt, else saved; numbers only, from Firestore)
+  function mnLateAt(m) { var t = typeof m.pubAt === 'number' ? m.pubAt : typeof m.at === 'number' ? m.at : now(); return t + MN_LATE * 86400000; }
   function minNudgeHTML() {
-    var u = featOn('minutes') ? mnUnsigned() : [];
+    var t = now(), u = featOn('minutes') ? mnUnsigned().filter(function (m) { return t >= mnLateAt(m); }) : [];
     if (!u.length) return '';
-    return '<div class="mn-nudge" role="status"><span><b>Minutes not signed yet</b> Kitchen meeting, ' + esc(dayShort(u[0].date)) + (u.length > 1 ? ' and ' + (u.length - 1) + ' more' : '') + '</span><a class="mn-nudge-btn" href="#/minutes" data-mn="' + esc(u[0].id) + '">Read and sign</a></div>';
+    var days = Math.max(1, Math.floor((t - mnLateAt(u[0])) / 86400000) + MN_LATE);
+    return '<div class="mn-nudge" role="status"><span><b>Minutes not signed yet</b> Kitchen meeting, ' + esc(dayShort(u[0].date)) + (u.length > 1 ? ' and ' + (u.length - 1) + ' more' : '') + ', ' + days + ' days ago</span><a class="mn-nudge-btn" href="#/minutes" data-mn="' + esc(u[0].id) + '">Read and sign</a></div>';
   }
   // "Read and sign" opens the minutes the card names, not just the newest published ones (the card sits outside the prep root)
   document.addEventListener('click', function (e) { var a = e.target.closest && e.target.closest('.mn-nudge-btn[data-mn]'); if (a) { S.mSel = a.getAttribute('data-mn'); S.mErr = ''; } }, true);
@@ -4563,11 +4684,11 @@
     fb.fs.getDocs(fb.fs.query(colRef('minutes'), q)).then(function (snap) {
       S.mins = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; });
       S.minsFor = today; S.minsAll = all; S.minsAt = Date.now(); S.minsBusy = false;
-      loadMine(); minCard(); draw();
+      loadMine(); minCard(); draw(); noteMaybePop();
     }, function () {
       // no signal, or the minutes rules are not published yet: carry on without them and try again in about 5 minutes
       S.minsBusy = false; S.minsAt = Date.now() - MN_STALE + 5 * 60000; if (!S.mins) S.mins = [];
-      minCard(); draw();
+      minCard(); draw(); noteMaybePop();
     });
   }
   /* has this person signed the current version? one small read per open minutes, remembered for the day */
@@ -4580,7 +4701,7 @@
       S.mmine[k] = 'loading';
       jobs.push(fb.fs.getDoc(fb.fs.doc.apply(null, [fb.db].concat(base(), ['minutes', m.id, 'signs', m.v + '_' + w]))).then(function (sn) { S.mmine[k] = sn.exists() ? sn.data() : null; }, function () { delete S.mmine[k]; retryLater('mine:' + k); }));
     });
-    if (jobs.length) Promise.all(jobs).then(function () { minCard(); draw(); });
+    if (jobs.length) Promise.all(jobs).then(function () { minCard(); draw(); noteMaybePop(); });
   }
   function loadSigns(id, force) {
     if (!fb || !id) return;
@@ -4626,7 +4747,7 @@
     if (s && s !== 'loading') return '<section class="mn-sign is-done"><h3 class="mn-bh">Signed</h3><p>' + esc(p.name) + ' signed on ' + esc(dayShort(T.day(s.at))) + ' at ' + esc(clock(s.at)) + '. Version ' + m.v + '.</p></section>';
     if (s === undefined || s === 'loading') return '<section class="mn-sign mn-noprint"><p class="hint">Checking your sign-off...</p></section>';
     // one tap: the person already typed their own PIN to open this page (20 Oct 2026, no second PIN)
-    var mineN = (m.acts || []).filter(function (a) { return a && a.what && (!a.st || a.st === 'open') && (a.who === S.who || a.who === 'all'); }).length;
+    var mineN = mnMineN(m);
     return '<section class="mn-sign mn-noprint"><h3 class="mn-bh">Sign off</h3>' +
       ((m.v || 1) > 1 ? '<p class="mn-changed">These minutes were changed after they were first published (version ' + m.v + '). If you signed before, read them again and sign this version.</p>' : '') +
       (mineN ? '<p class="mn-mine">Your actions: ' + mineN + ', marked Yours above.</p>' : '') +
@@ -4788,7 +4909,7 @@
   function mnRegister(m) {
     var sg = S.msigns[m.id], list = sg && sg.list ? sg.list.filter(function (s) { return s.v === m.v; }) : null;
     if (!list) return null;
-    var t = now(), lateAt = (m.pubAt || m.at || t) + MN_LATE * 86400000, att = {}, rows = [];
+    var t = now(), lateAt = mnLateAt(m), att = {}, rows = [];
     (m.att || []).forEach(function (x) { att[x.id] = x.st; });
     people().forEach(function (p) {
       var s = list.filter(function (x) { return x.by === p.id; })[0], st = att[p.id] || 'absent';
@@ -5376,13 +5497,24 @@
      Opening the big guide page or the pings popup adds a history entry for the same address. Back closes it (pings count
      as put off, not read), and closing it any other way takes that entry off again, so Back never leaves the page by
      surprise. A close that comes with a move to another page (a link) leaves the entry. */
-  var ovOn = '';
+  var ovOn = '', ovBack = false, ovBackT = null;
   function ovPush(k) { ovOn = k; try { history.pushState({ lkOv: k }, '', location.href); } catch (e) {} }
-  function ovDone(k, noBack) { if (ovOn !== k) return; ovOn = ''; if (noBack) return; try { if (history.state && history.state.lkOv === k) history.back(); } catch (e) {} }
+  // ovBack: our own Back is on its way; the next sheet waits for it (sheetNext), or that Back would close the new sheet
+  function ovDone(k, noBack) {
+    if (ovOn !== k) return; ovOn = ''; if (noBack) return;
+    try {
+      if (history.state && history.state.lkOv === k) {
+        ovBack = true; history.back();
+        clearTimeout(ovBackT); ovBackT = setTimeout(ovLanded, 600);   // in case the Back never reports back
+      }
+    } catch (e) { ovBack = false; }
+  }
+  function ovLanded() { clearTimeout(ovBackT); var w = ovBack; ovBack = false; if (w && nextWait) sheetNext(); }
   window.addEventListener('popstate', function () {
+    if (ovBack) { ovLanded(); return; }
     var k = ovOn; ovOn = '';
     if (k === 'gz' && gz) gzClose(true);
-    else if (k === 'note' && npop) noteClose(true, true);
+    else if (k === 'note' && npop) noteClose('later', true);
     else if (k === 'ks' && ksPop) ksClose(true);
   });
   function gzOpen(id, i) {
@@ -5749,6 +5881,7 @@
       dkFlag('set'); dkEditing = false; dkf = null;
       var first = S.drinkAsk === 'first'; S.drinkAsk = '';
       toast(first ? 'Saved. Welcome to the Kitchen Book.' : 'Saved. That is your usual on the drinks run.');
+      if (first) sheetNext();   // the section, then the pings, once One more thing is done
     }, function (e) {
       dkBusy = false; if (dkList) { if (old) dkList[id] = old; else delete dkList[id]; }
       failed(e); draw();
@@ -5760,7 +5893,7 @@
     if (a === 'dk-save') { dkSave(); return; }
     if (a === 'dk-edit') { dkEdit(); draw(); focusSel('.dr-form'); return; }
     if (a === 'dk-cancel') { dkEditing = false; dkf = null; dkMsg = ''; draw(); return; }
-    if (a === 'dk-skip') { S.drinkAsk = ''; dkEditing = false; dkf = null; dkFlag('skip'); draw(); toast('No worries. Set it any time from the chef hat at the top.'); return; }
+    if (a === 'dk-skip') { S.drinkAsk = ''; dkEditing = false; dkf = null; dkFlag('skip'); draw(); toast('No worries. Set it any time from the chef hat at the top.'); sheetNext(); return; }
     if (a === 'dk-later') { S.drinkAsk = ''; dkFlag('later'); draw(); return; }
     if (a === 'dk-set') { S.drinkAsk = ''; dkFlag('later'); dkEdit(); return; }   // the link goes on to #/drinks with the form open
     if (a === 'dk-all') { dkAll = !dkAll; draw(); return; }
@@ -5901,16 +6034,21 @@
     }
     if (!ksPicks(p) || ksAsked[day + id]) return;
     ksAsked[day + id] = 1;
-    // picked on another device today: no need to ask again
+    // picked on another device today: no need to ask again. The pings sheet waits for the answer (ksWait), so the
+    // section comes first and the pings straight after it
+    ksWait = true;
+    var waitT = setTimeout(ksDone, 8000);
+    function ksDone() { clearTimeout(waitT); if (!ksWait) return; ksWait = false; sheetNext(); }
     fb.fs.getDoc(ref).then(function (s) {
       var x = s.exists() ? s.data() : null;
-      if (x && x.sec) { ksPut(id, x.sec, x.name || ''); draw(); return; }
-      if (S.who === id && S.authed) ksOpen();
-    }, function () { if (S.who === id && S.authed) ksOpen(); });
+      if (x && x.sec) { ksPut(id, x.sec, x.name || ''); draw(); }
+      else if (S.who === id && S.authed) ksWant = true;
+      ksDone();
+    }, function () { if (S.who === id && S.authed) ksWant = true; ksDone(); });
   }
   function ksOpen(change) {
     var p = me(); if (ksPop || !ksPicks(p)) return;
-    if (npop) noteClose(true, true);   // the pings come back by themselves in 15 minutes
+    if (!change && ksGet(p.id)) return;   // asked by itself: picked (or skipped) in the meantime
     var cur = ksGet(p.id), out = change ? 'close' : 'skip';
     ksPrev = document.activeElement;
     var el = document.createElement('div');
@@ -5935,6 +6073,7 @@
     document.documentElement.classList.remove('ks-open');
     if (ksPrev && ksPrev.focus && document.body.contains(ksPrev)) { try { ksPrev.focus({ preventScroll: true }); } catch (e) {} }
     ksPrev = null;
+    sheetNext();
   }
   /* Skip (or Escape, or a tap outside, on the first ask): no section today, and no asking again today on this phone */
   function ksSkip() { var p = me(); if (p && !ksGet(p.id)) ksPut(p.id, '', ''); ksClose(); draw(); }
@@ -6519,10 +6658,10 @@
     if (t - mlOpened < ML_NUDGE) return false;
     return t >= +(lsGet('lk.mail.later') || 0);
   }
+  /* not over a recipe or the service view: the head chef is cooking from it. It comes on the next page instead. */
+  function onService() { return /^#\/(recipes|r\/|fn\/now)/.test(location.hash || ''); }
   function mlMaybePop() {
-    if (mlPop || npop || !mlNudgeDue() || document.visibilityState === 'hidden') return;
-    var ae = document.activeElement;
-    if (ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) && ae.type !== 'button') return;
+    if (mlPop || sheetBusy() || onService() || !mlNudgeDue()) return;
     var l = mlOpen.slice().sort(function (a, b) { return (a.at || 0) - (b.at || 0); }), hot = l.filter(mlUrgent).length;
     var old = Math.max(1, Math.round((now() - (l[0].at || now())) / 3600000));
     mlPrev = document.activeElement;
@@ -6540,6 +6679,7 @@
     mlPop.parentNode.removeChild(mlPop); mlPop = null;
     if (mlPrev && mlPrev.focus && document.body.contains(mlPrev)) { try { mlPrev.focus({ preventScroll: true }); } catch (e) {} }
     mlPrev = null;
+    sheetNext();
   }
   document.addEventListener('click', function (e) {
     var el = e.target.closest && e.target.closest('[data-ml]');
@@ -6571,7 +6711,7 @@
       return pending > 0 || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!mlf.text.trim() || mfDirty() || nfDirty() || gfDirty() || draftDirty() || !!String(S.bulk || '').trim() || !!S.sheet || !!S.recipeOpen ||
         !!(S.text.trim() || S.qty.trim() || S.otext.trim() || S.oqty.trim() || S.wf.text.trim() || String(S.wf.amt).trim() || S.wf.act.trim() || (S.wrA != null && S.wrA !== (rvBase().avoidable || '')) || (S.wrC != null && S.wrC !== (rvBase().change || '')));
     },
-    noteInfo: noteInfo,
+    noteInfo: noteInfo, noteBellLabel: noteBellLabel,
     noteOpen: noteOpen,
     // the recipes were opened: look for the head chef's recipe changes when the last look is 30 minutes old
     rxCheck: function () { rxSync(); },
