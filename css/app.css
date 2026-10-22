@@ -1380,12 +1380,15 @@ html.gz-open, html.gz-open body { overflow: hidden; }
 .wm-bg { position: absolute; inset: 0; background: rgba(28, 29, 31, 0.45); }   /* dims the page like the other popups (22 Oct 2026) */
 .wm { position: absolute; width: min(18rem, calc(100vw - 16px)); background: var(--paper); color: var(--ink); border: 2px solid var(--ink); border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); padding: 6px; font-family: var(--body); }
 .wm-h { margin: 6px 10px 8px; font-size: 0.875rem; color: var(--muted); }
-.wm-a { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 6px 10px; border-radius: 8px; color: var(--ink); text-decoration: none; }
+/* one line per item, 48 px like .btn (22 Oct 2026); the few with a second line (My section, Sign in with Google, Sign
+   out's "Not saved yet") keep the same height */
+.wm-a { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 6px 10px; border-radius: 8px; color: var(--ink); text-decoration: none; }
 .wm-a:hover, .wm-a:focus-visible { background: var(--hit); }
-.wm-a span { display: flex; flex-direction: column; }
+.wm-a span { display: flex; flex-direction: column; line-height: 1.25; }
 .wm-a small { color: var(--muted); font-size: 0.8125rem; }
 .wm-a.wm-in b { font-size: 1.125rem; }
-/* the menu items that are buttons (Chef group, Sign out) look like the links; a long menu scrolls inside the phone */
+/* the menu items that are buttons (My section, Shift pings, Manage staff, Sign out) look like the links; a long menu
+   scrolls inside the phone */
 .wm { max-height: calc(100dvh - 90px); overflow-y: auto; }
 button.wm-a { width: 100%; border: 0; background: none; font: inherit; text-align: left; cursor: pointer; }
 .wm-sh { margin: 10px 10px 4px; padding-top: 8px; border-top: 1.5px solid var(--line); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.75rem; }
@@ -1394,7 +1397,7 @@ button.wm-a { width: 100%; border: 0; background: none; font: inherit; text-alig
 /* Admin panel in the chef hat's menu; the open mail count sits on the hat and on the menu item */
 .wm-a > svg { flex: 0 0 22px; width: 22px; height: 22px; }
 .wm-adm[aria-current="page"] { background: var(--hit); }
-.wm-adm .adm-n { position: static; margin-left: auto; flex: 0 0 auto; border-color: var(--paper); }
+.wm-adm .adm-n { position: static; margin-left: auto; flex: 0 0 auto; border-color: var(--paper); line-height: 16px; }   /* the count centred like on the hat, not the row's 1.25 */
 .wtop-btn.wtop-who { position: relative; }
 .adm-n { position: absolute; top: -5px; right: -5px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--accent); color: #fff; border: 2px solid var(--bar); font-size: 0.6875rem; font-weight: 700; line-height: 16px; text-align: center; box-sizing: border-box; }
 .ml-urgent { margin: 0 0 12px; padding: 10px 12px; border-left: 4px solid var(--accent); background: var(--hit); border-radius: 6px; }
