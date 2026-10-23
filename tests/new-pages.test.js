@@ -94,7 +94,7 @@ const tab = p => p.evaluate(() => Array.prototype.some.call(document.querySelect
   ok(await p.$('.g-card') !== null, 'lead: guide cards show');
   await p.goto(L.BASE + '#/prep');
   await L.settle(p, 1000);
-  ok((await L.chefItems(p)).includes('minutes'), 'lead: Meeting minutes in the chef menu');
+  { const lm = await L.chefItems(p); ok(lm.includes('minutes'), 'lead: Meeting minutes in the chef menu'); ok(!lm.includes('todo'), 'lead: no Chef to-do (leads are not chefs)'); }
   ok(p.errors.length === 0, 'lead: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 

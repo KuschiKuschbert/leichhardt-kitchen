@@ -75,14 +75,15 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   await p.context().close();
   p = await L.open(b, '#/recipes', { who: 'sam', wait: 1800 });
   m = await L.chefItems(p);
-  ok(m.join(',') === 'mail,drinks,minutes,fn,pings,staff,settings,out', 'sous chef: the Chef group has Shift pings and Manage staff, the register is in Meeting minutes (' + m + ')');
+  ok(m.join(',') === 'mail,drinks,minutes,fn,pings,todo,staff,settings,out', 'sous chef: the Chef group has Shift pings, Chef to-do and Manage staff, the register is in Meeting minutes (' + m + ')');
   // the short menu: 48 px rows, no second line with nothing to say, Sign out's line read out when it changes
   await p.click('.wtop-who'); await L.settle(p, 150);
   let box = await menuBox(p);
   ok(box.rows.every(h => h >= 48 && h <= 49), 'sous chef 390 px: every menu row is 48 px (' + box.rows + ')');
   ok(!box.small.length, 'sous chef: no second lines in the menu (' + box.small.join(' | ') + ')');
   ok(box.live === 'polite', 'sous chef: Sign out\'s second line is read out when it changes');
-  ok(box.h < 500, 'sous chef 390 px: the menu is under 500 px tall (' + box.h + ', 579 before)');
+  // 540: Chef to-do (23 Oct 2026) added one 48 px row to the 481 px menu
+  ok(box.h < 540, 'sous chef 390 px: the menu is under 540 px tall (' + box.h + ', 481 before Chef to-do, 579 before the short menu)');
   await p.click('.wm a[href="#/minutes"]'); await L.settle(p, 600);
   await L.waitFor(p, () => !!document.querySelector('[data-p="mn-sous"]'), null, 5000).catch(() => {});
   ok(!!(await p.$('[data-p="mn-sous"]')), 'sous chef: Meeting minutes has See who has signed');
@@ -181,7 +182,7 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   // the head chef by PIN: no Kitchen mail to herself, Admin panel says Sign in with Google, Manage staff stays
   p = await L.open(b, '#/recipes', { who: 'ann', extra: headCfg(), wait: 1800 });
   m = await L.chefItems(p);
-  ok(m.join(',') === 'drinks,minutes,functions,admin,manage,pings,staff,settings,out', 'head chef by PIN: no Kitchen mail, Functions in its one place, Shift pings and Manage staff (' + m + ')');
+  ok(m.join(',') === 'drinks,minutes,functions,admin,manage,pings,todo,staff,settings,out', 'head chef by PIN: no Kitchen mail, Functions in its one place, Shift pings, Chef to-do and Manage staff (' + m + ')');
   await p.click('.wtop-who'); await L.settle(p, 150);
   box = await menuBox(p);
   ok(box.small.join('|') === 'Sign in with Google', 'head chef by PIN: the only second line is Sign in with Google (' + box.small.join(' | ') + ')');
@@ -192,7 +193,7 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   // Admin comes in after the owner check is read: wait for it, not for the page to be still
   for (let i = 0; i < 20 && await L.admItem(p) !== 'signed'; i++) await L.settle(p, 250);
   m = await L.chefItems(p);
-  ok(m.join(',') === 'drinks,minutes,functions,admin,manage,pings,settings,out', 'head chef on her Google device: no Kitchen mail, no Manage staff (' + m + ')');
+  ok(m.join(',') === 'drinks,minutes,functions,admin,manage,pings,todo,settings,out', 'head chef on her Google device: no Kitchen mail, no Manage staff, Chef to-do (' + m + ')');
   await p.click('.wtop-who'); await L.settle(p, 150);
   box = await menuBox(p);
   ok(box.h < 563, 'head chef on her Google device, 390 px: the menu is under two thirds of the screen (' + box.h + ', 710 before)');

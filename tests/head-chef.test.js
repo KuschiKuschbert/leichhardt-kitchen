@@ -39,7 +39,7 @@ const cfg = (people, lists) => { const e = {}; e[CFG] = Object.assign({ people, 
   // a sous chef's save once demoted the head chef to Staff in the people list: every phone still reads Ann as Head chef
   const demoted = cfg([P('sam', 'Sam', 'sous'), P('ann', 'Ann', 'staff', { del: false, ping: false }), P('bo', 'Bo', 'staff')], { headId: 'ann', sousIds: ['sam', 'ann'], pingIds: ['sam', 'ann'] });
   p = await L.open(b, '#/prep', { who: 'ann', extra: demoted, wait: 1500 });
-  { const m = await L.chefItems(p); ok(m.join(',') === 'drinks,minutes,fn,admin,manage,pings,staff,settings,out', 'head chef PIN: the chef menu has Shift pings and Manage staff like a sous chef, and no Kitchen mail to herself (' + m + ')'); }
+  { const m = await L.chefItems(p); ok(m.join(',') === 'drinks,minutes,fn,admin,manage,pings,todo,staff,settings,out', 'head chef PIN: the chef menu has Shift pings, Chef to-do and Manage staff like a sous chef, and no Kitchen mail to herself (' + m + ')'); }
   ok(p.errors.length === 0, 'head chef PIN: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 

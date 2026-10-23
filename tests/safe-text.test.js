@@ -14,6 +14,9 @@ extra[fsKey(['waste', today])] = { avoidable: 'Avoid ' + P, change: 'Change ' + 
 extra[fsKey(['notes', 'x1'])] = { text: 'Ping ' + P, tag: 'none', start: today, until: today, dows: [], removed: false, by: 'sam', author: 'sam' };
 extra[fsKey(['mail', 'x1'])] = { from: 'ann', by: 'ann', cat: 'equipment', pri: 'today', text: 'Mail ' + P, at: L.NOW - 3600000, done: false, seen: false };
 extra[fsKey(['mailstat', 'x1'])] = { seen: false, done: false, by: 'ann' };
+// the chef to-do list (23 Oct 2026): the words, and a who-for and a due day as a damaged record could hold them
+extra[fsKey(['todos', 'x1'])] = { text: 'Todo ' + P, st: 'open', due: '2026-10-30" data-pwn="1', for: 'sam" data-pwn="1', from: 'sam', at: L.NOW - 3600000, doneAt: 0, doneBy: '', upd: L.NOW - 3600000, by: 'sam' };
+extra[fsKey(['todos', 'x2'])] = { text: 'Done ' + P, st: 'done', due: '', for: '', from: 'x" data-pwn="1', at: L.NOW - 7200000, doneAt: L.NOW - 3600000, doneBy: 'y" data-pwn="1', upd: L.NOW - 3600000, by: 'sam' };
 extra[fsKey(['drinks', 'ann'])] = { kind: 'flat', size: 'reg', milk: 'oat', shot: '', sugar: '1', note: 'Note ' + P, other: 'Other ' + P, at: L.NOW - 86400000, by: 'ann' };
 extra[fsKey(['guides', 'x1'])] = { title: 'Guide ' + P, cat: 'cleaning', sum: 'Sum ' + P, steps: 'Step ' + P, kw: '', text: '', thumb: '', pages: 0, dims: [], v: 1, file: '', removed: false, at: L.NOW - 86400000, upd: L.NOW - 86400000 };
 extra[fsKey(['sections', 'x1'])] = { name: 'Section ' + P, uses: 3, hidden: false };
@@ -38,6 +41,7 @@ async function check(b, hash, o, name, see, then) {
   await check(b, '#/orders', { who: 'ann' }, 'order list', 'Order');
   await check(b, '#/waste', { who: 'sam' }, 'wastage', 'Waste', async p => { await p.fill('#w-text', 'Of'); await L.settle(p, 300); });
   await check(b, '#/drinks', { who: 'sam' }, 'drinks run', null);
+  await check(b, '#/todo', { who: 'sam' }, 'chef to-do', 'Todo', async p => { await L.waitFor(p, () => !!document.querySelector('.todo-row'), null, 5000).catch(() => {}); await L.tap(p, '.todo-donebox summary'); await L.waitFor(p, () => !!document.querySelector('[data-lv="tododone"] .todo-row'), null, 5000).catch(() => {}); });
   await check(b, '#/guides', { who: 'ann' }, 'guides', 'Guide');
   await check(b, '#/guides/x1', { who: 'ann' }, 'a guide', 'Step');
   for (const t of ['waste', 'notes', 'mail', 'people', 'insights']) {
