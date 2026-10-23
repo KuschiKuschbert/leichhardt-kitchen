@@ -682,10 +682,11 @@ service cloud.firestore {
       allow create, update: if pushOk() && ((isAdmin() && request.resource.data.by == 'owner') || (staff() && chefId(request.resource.data.by)));
       allow delete: if isAdmin() || (sessOk(reader()) && chefId(reader()) && resource.data.by == reader());
     }
-    // Ordered on the cut-off bar (24 Oct 2026): cutdone/<cut-off day> { ids: { <supplier id>: true } }, so the server
-    // sends no more pushes for it. Written by a chef (own PIN session) or the Google account; read only by the server.
+    // Supplier orders (24 Oct 2026): cutdone/<cut-off day> { ids: { <supplier id>: { by, at }, or false } }, the chefs'
+    // shared tick list of supplier orders placed. The server sends no more pushes for a ticked one. Read and written by a
+    // chef (own PIN session) or the Google account; staff never see it.
     match /kitchens/KITCHEN_PIN/cutdone/{day} {
-      allow read: if false;
+      allow read: if isAdmin() || (sessOk(reader()) && chefId(reader()));
       allow create, update: if day.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
         && request.resource.data.keys().hasOnly(['ids', 'by']) && request.resource.data.ids is map && request.resource.data.ids.size() <= 40
         && (isAdmin() || (staff() && chefId(request.resource.data.by)));

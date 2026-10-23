@@ -115,7 +115,7 @@ ok(/Transfer summary: 3 items, 3 venues from 28 days/.test(out2) && !/Transfer s
 ok((ts2.venues || []).some(v => v.v === 'Constructor' && v.n === 1 && JSON.stringify(v.people) === '["constructor"]') && (ts2.items || []).some(x => x.t === '__proto__' && x.unit === 'packs' && x.venue === 'Constructor'), 'transfers: they are listed like any other venue, item and person');
 // phone pushes for order cut-offs (24 Oct 2026): scripts/cutoff-push.mjs at set times on Friday 23 Oct 2026. On the
 // emulator nothing is sent: it prints what it would send. Two Saturday deliveries close Friday 14:00 (one reminded 4
-// hours before, one 6), one closes Friday 14:00 but was marked Ordered, one closes Saturday 06:00 (8 hours before, so
+// hours before, one 6), one closes Friday 14:00 but was ticked off as ordered (Veg was ticked and taken off again, so it still goes), one closes Saturday 06:00 (8 hours before, so
 // Friday 22:00). Pushes go to the sous chef's and the Google account's phones, never staff's.
 await K.collection('config').doc('main').set({ sousIds: ['sam'], headId: 'hd', cutoffs: [
   { id: 'pfd', name: 'PFD', dd: [6], at: 840, pre: 1, lead: 240 },
@@ -123,7 +123,7 @@ await K.collection('config').doc('main').set({ sousIds: ['sam'], headId: 'hd', c
   { id: 'chk', name: 'Chicken', dd: [6], at: 840, pre: 1 },
   { id: 'bread', name: 'Bread', dd: [0], at: 360, pre: 1, lead: 480 }
 ] }, { merge: true });
-await K.collection('cutdone').doc('2026-10-23').set({ ids: { chk: true } });
+await K.collection('cutdone').doc('2026-10-23').set({ ids: { chk: { by: 'sam', at: 1 }, veg: false } });   // Chicken ticked, Veg ticked off again
 await K.collection('push').doc('p1').set({ tok: 'tok-sam', at: 1, ua: 'Android', by: 'sam' });
 await K.collection('push').doc('p2').set({ tok: 'tok-own', at: 1, ua: 'iPhone', by: 'owner' });
 await K.collection('push').doc('p3').set({ tok: 'tok-ann', at: 1, ua: 'Android', by: 'ann' });

@@ -9,7 +9,8 @@
   Each goes once, to every phone a chef turned pushes on for (push/<id> { tok, by }, by a sous chef, the head chef or
   'owner'), through Firebase Cloud Messaging. A run that comes late still sends, as long as the cut-off has not passed;
   only the newest push is sent if both are due. Sent pushes are kept in pushsent/<cut-off day> { sent: { <supplier
-  id>|<day>: start|now } }. A cut-off someone tapped Ordered for on the bar (cutdone/<day> ids) gets no more pushes.
+  id>|<day>: start|now } }. A cut-off a chef ticked off as ordered (the Supplier orders tick list or Ordered on the bar, cutdone/<day> ids) gets
+  no more pushes; one ticked off again (false) does.
   A phone address Firebase says is gone is removed.
 
   Reads: config/main every run (1); only when a push is due, pushsent and cutdone for that day (1 or 2 each) and the
@@ -67,7 +68,8 @@ days.forEach((d, i) => { sent[d] = (snaps[i].exists && snaps[i].data().sent) || 
 const go = due.filter(({ c, stage }) => {
   const was = sent[c.day][c.key];
   if (was === stage || (stage === 'start' && was === 'now')) return false;
-  return done[c.day][c.s.id] !== true;
+  const v = done[c.day][c.s.id];   // ticked: { by, at } (true from before 24 Oct 2026); false is ticked off again
+  return !(v === true || (v && typeof v === 'object'));
 });
 if (!go.length) { console.log('Nothing new to send.'); process.exit(0); }
 

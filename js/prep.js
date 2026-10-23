@@ -181,6 +181,7 @@
         if (S.level === 'owner') seedPinOpen();
         if (S.name === 'orders') watchOrders(); if (S.name === 'waste') watchWaste(); if (S.name === 'transfers') watchXfer(); resume(); if (S.authed) ksCheck(); loadAdmins(); loadNotes(); loadMinutes(); draw();
         if (whoHead() !== headSeen) whoSync();   // the Head chef role was given or taken while this person is signed in
+        cutWatch();   // the shared supplier order ticks (chefs only, while cut-offs are set)
         try { window.dispatchEvent(new Event('lk-cfg')); } catch (e) {}   // js/app.js: who may manage the recipes (bookEdit)
       }, function (err) {
         S.configState = err && err.code === 'permission-denied' ? 'badpin' : 'error';
@@ -195,6 +196,7 @@
   function stopLive() {
     [unsubCfg, unsubItems, unsubSec, unsubAct, unsubOrd, unsubW, unsubX].forEach(function (u) { if (u) u(); });
     unsubCfg = unsubItems = unsubSec = unsubAct = unsubOrd = unsubW = unsubX = null; cfgKey = itemsKey = ordKey = wKey = xKey = '';
+    Object.keys(cutSubs).forEach(function (d) { cutSubs[d](); delete cutSubs[d]; delete cutSeen[d]; });
   }
   var itemsSig = '';
   function patchUnsent() {
@@ -6631,8 +6633,12 @@
      page from that time until the cut-off passes, and today's cut-offs on the order list (24 Oct 2026: at least 4 hours,
      was 3). A reminder that starts before midnight (an early cut-off) starts the night before. In the last hour the line
      turns orange and says Order now. It all comes from config/main, which the book already listens to: no reads of its
-     own, and a local check every 30 seconds. Ordered hides that cut-off on this phone (lk.cut.done, one key per supplier
-     and cut-off day; keys for days gone are dropped). */
+     own, and a local check every 30 seconds.
+     Supplier orders (24 Oct 2026): the chefs tick off each cut-off once they have ordered, on the order list, on Chef
+     to-do or with Ordered on the bar. The ticks are shared: cutdone/<cut-off day> { ids: { <supplier id>: { by, at }, or
+     false when ticked off again } }. A tick takes the cut-off off the bar on every chef's phone and stops its pushes.
+     Chefs' phones listen to today's and tomorrow's record (2 reads when the book opens, then only what changes); staff
+     never read it (the rules). */
   var CUT_SOON = 60;
   var CUT_DOW = [[1, 'Mon'], [2, 'Tue'], [3, 'Wed'], [4, 'Thu'], [5, 'Fri'], [6, 'Sat'], [0, 'Sun']];
   var CUT_PRE = ['The same day', 'The day before', '2 days before', '3 days before'];
@@ -6673,11 +6679,43 @@
   function cutIn(m) { return m < 60 ? 'in ' + m + ' min' : 'in ' + Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : ''); }
   // who gets the bar: the head chef and sous chefs with their PIN, and the head chef's Google device
   function cutWho() { return !!S.config && (isSous() || admDev()); }
-  // what was marked Ordered: { '<supplier id>|<cut-off day>': 1 }, today's and tomorrow's only (an older copy had { d, ids })
-  function cutDone() {
-    try { var v = JSON.parse(lsGet('lk.cut.done') || 'null') || {}, t = dayNow(), out = {}; Object.keys(v).forEach(function (k) { var d = k.split('|')[1]; if (d && d >= t) out[k] = 1; }); return out; } catch (e) { return {}; }
+  /* The shared ticks: one live listener each on cutdone/<today> and cutdone/<tomorrow>, on a chef's phone (their PIN
+     session) or the head chef's Google account, only while cut-offs are set. Moved on to the next pair when the kitchen
+     day changes. A refused or failed read leaves nothing ticked (the bar and the pushes carry on). */
+  var cutSubs = {}, cutSeen = {};
+  function cutCanRead() { return !!fb && !!S.pin && cutWho() && (canW() || (S.user && S.level === 'owner')) && cutList().some(function (s) { return s.at >= 0 && s.dd.length; }); }
+  function cutWatch() {
+    var want = cutCanRead() ? [dayNow(), shift(dayNow(), 1)] : [];
+    Object.keys(cutSubs).forEach(function (d) { if (want.indexOf(d) < 0) { cutSubs[d](); delete cutSubs[d]; delete cutSeen[d]; } });
+    want.forEach(function (d) {
+      if (cutSubs[d]) return;
+      cutSubs[d] = fb.fs.onSnapshot(docRef('cutdone', d), function (sn) {
+        cutSeen[d] = sn.exists() && sn.data().ids && typeof sn.data().ids === 'object' ? sn.data().ids : {};
+        cutPaint(); if (S.name === 'orders' || S.name === 'todo') draw();
+      }, function () { if (cutSubs[d]) cutSubs[d](); delete cutSubs[d]; cutSeen[d] = {}; });
+    });
   }
-  function cutMark(key) { var v = cutDone(); v[key] = 1; lsSet('lk.cut.done', JSON.stringify(v)); }
+  // what is ticked: { '<supplier id>|<cut-off day>': { by, at } }, checked by type (a damaged record shows no name or time)
+  function cutDone() {
+    var out = {};
+    Object.keys(cutSeen).forEach(function (d) {
+      var ids = cutSeen[d] || {};
+      Object.keys(ids).forEach(function (sid) {
+        var v = ids[sid]; if (!v) return;
+        out[sid + '|' + d] = { by: v && typeof v.by === 'string' ? v.by : '', at: v && typeof v.at === 'number' ? v.at : 0 };
+      });
+    });
+    return out;
+  }
+  function cutByName(v) { return !v.by ? '' : v.by === 'owner' ? 'Head chef' : (ksName(v.by) || 'Former staff'); }
+  // tick or untick one cut-off for everyone: a chef through W() (their PIN session), the Google account as owner
+  function cutOrdered(key, on) {
+    var parts = key.split('|'), ids = {}, who = isSous() && canW() ? me().id : S.user ? 'owner' : '';
+    if (parts.length !== 2 || !fb || !who) return Promise.reject({ code: 'who' });
+    ids[parts[0]] = on ? { by: who, at: now() } : false;
+    var ref = docRef('cutdone', parts[1]);
+    return who === 'owner' ? track(fb.fs.setDoc(ref, { ids: ids }, { merge: true })) : W([['set', ref, { ids: ids }, true]]);
+  }
   function cutBandHTML() {
     if (!cutWho()) return '';
     var m = T.mins(), done = cutDone(), xs = cutOn(0).concat(cutOn(1)).filter(function (c) { return cutOnNow(c, m) && !done[c.key]; });
@@ -6705,29 +6743,48 @@
     var el = e.target.closest && e.target.closest('[data-cut]');
     if (!el || el.getAttribute('data-cut') !== 'done') return;
     var key = el.getAttribute('data-id') || '', s = cutList().filter(function (x) { return x.id === key.split('|')[0]; })[0];
-    cutMark(key); cutDoneTell(key); cutPaint(); if (S.name === 'orders') draw();
-    toast((s ? s.name : 'That supplier') + ' is off the reminder until the next cut-off. No more pushes for it.');
+    cutOrdered(key, true).then(function () {
+      toast((s ? s.name : 'That supplier') + ' is ticked off as ordered, for every chef. No more pushes for it.');
+    }, function () { toast('Not ticked. Sign in with your PIN and try again.', { label: 'OK', fn: function () {} }, 8000); });
   });
-  window.addEventListener('lk-who', cutPaint);
-  window.addEventListener('lk-cfg', cutPaint);
+  window.addEventListener('lk-who', function () { cutWatch(); cutPaint(); });
+  window.addEventListener('lk-cfg', function () { cutWatch(); cutPaint(); });
   window.addEventListener('lk-clock', cutPaint);
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') cutPaint(); });
-  // on the order list for the head chef and sous chefs: every cut-off today, the ones gone marked Closed
+  /* Supplier orders: the tick list on the order list and on Chef to-do, for the head chef and sous chefs. Today's
+     cut-offs, and tomorrow's whose reminder has already started (an early one, the night before), soonest first. Each
+     row is a tick box: ordered (by whom, when), the time left, or Closed and not ticked. */
+  function cutRowsHTML() {
+    var m = T.mins(), done = cutDone(), xs = cutToday().concat(cutOn(1).filter(function (c) { return cutOnNow(c, m); }));
+    if (!xs.length) return '<p class="hint">No cut-offs today.</p>';
+    return '<ul class="cut-tl">' + xs.map(function (c) {
+      var d = done[c.key], past = c.at <= m, who = d ? cutByName(d) : '';
+      var st = d ? 'Ordered' + (who ? ' by ' + who : '') + (d.at ? ', ' + clock(d.at) : '') : past ? 'Closed, not ticked' : cutIn(c.at - m);
+      var cls = d ? 'is-done' : past ? 'is-past' : c.at - m <= CUT_SOON ? 'is-soon' : '';
+      return '<li class="cut-o ' + cls + '"><button type="button" class="cut-box" data-p="cut-tick" data-id="' + esc(c.key) + '" aria-pressed="' + !!d + '" aria-label="' + esc((d ? 'Ordered from ' : 'Tick when ordered from ') + c.s.name) + '"' + (cutCanTick() ? '' : ' disabled') + '><span aria-hidden="true">' + (d ? '&#10003;' : '') + '</span></button>' +
+        '<span class="cut-n">' + esc(c.s.name) + '</span><span class="cut-t">by ' + (c.at >= 1440 ? 'tomorrow ' : '') + hhmm(c.at % 1440) + ' ' + esc(cutDel(c)) + '</span><span class="cut-st">' + esc(st) + '</span></li>';
+    }).join('') + '</ul>';
+  }
+  function cutCanTick() { return !!fb && ((isSous() && canW()) || !!S.user); }
+  function cutHas() { return cutWho() && cutList().some(function (s) { return s.at >= 0 && s.dd.length; }); }
   function cutOrdHTML() {
-    if (!cutWho() || !cutList().some(function (s) { return s.at >= 0 && s.dd.length; })) return '';
-    pushKeep();
-    var xs = cutToday(), m = T.mins(), done = cutDone();
-    return '<section class="cut-today" aria-label="Order cut-offs"><h3 class="nb-sh">Cut-offs today</h3>' + (xs.length ? '<ul class="cut-tl">' + xs.map(function (c) {
-      var st = c.at <= m ? 'Closed' : done[c.key] ? 'Ordered' : cutIn(c.at - m);
-      return '<li class="' + (c.at <= m ? 'is-past' : c.at - m <= CUT_SOON && !done[c.key] ? 'is-soon' : '') + '"><span class="cut-n">' + esc(c.s.name) + '</span><span class="cut-t">' + hhmm(c.at) + ' ' + esc(cutDel(c)) + '</span><span class="cut-st">' + esc(st) + '</span></li>';
-    }).join('') + '</ul>' : '<p class="hint">No cut-offs today.</p>') + pushHTML() + '</section>';
+    if (!cutHas()) return '';
+    pushKeep(); cutWatch();
+    return '<section class="cut-today" aria-label="Supplier orders"><h3 class="nb-sh">Supplier orders today</h3><p class="hint cut-how">Tick each supplier once the order is in. Every chef sees it, and its reminder and pushes stop.</p>' + cutRowsHTML() + pushHTML() + '</section>';
+  }
+  // the same tick list at the top of Chef to-do
+  function cutTodoHTML() {
+    if (!cutHas()) return '';
+    cutWatch();
+    return '<section class="cut-today todo-cut" aria-label="Supplier orders"><h3 class="nb-sh">Supplier orders today</h3>' + cutRowsHTML() + '<p class="hint"><a href="#/orders">Order list</a></p></section>';
   }
   /* ---------- phone pushes for order cut-offs (24 Oct 2026) ----------
      A chef turns them on for their own phone on the order list. The phone asks for the notification permission, gets a
      push address from Firebase Cloud Messaging (firebase-messaging.js, loaded only on that tap) through the book's own
      service worker, and keeps it in push/<hash of the address> { tok, at, ua, by }. Only the server reads those
      (scripts/cutoff-push.mjs, every 10 minutes on GitHub): it sends one push when a supplier's reminder starts and one an
-     hour before the cut-off, to every chef's phone that is turned on. sw.js shows it; a tap opens the order list.
+     hour before the cut-off, to every chef's phone that is turned on, unless a chef ticked the supplier off (Supplier
+     orders, cutdone). sw.js shows it; a tap opens the order list.
      The phone keeps lk.push { h, by, day } (out of date the next kitchen day: it gets its address again and writes it,
      one write a day, so a changed address or a moved kitchen PIN is picked up by itself). */
   function pushWhoId() { var p = me(); return p && isSous() && canW() ? p.id : (admDev() && S.user ? 'owner' : ''); }
@@ -6803,17 +6860,9 @@
   }
   function pushHTML() {
     var st = pushState(), on = st === 'on';
-    return '<div class="cut-push"><p class="cut-push-l">' + (on ? 'Pushes are on for this phone.' : 'Get a push on this phone when a reminder starts and an hour before each cut-off, even with the book closed.') + '</p>' +
+    return '<div class="cut-push"><p class="cut-push-l">' + (on ? 'Pushes are on for this phone.' : 'Get a push on this phone when a reminder starts and an hour before each cut-off, even with the book closed. Only for suppliers nobody has ticked off yet.') + '</p>' +
       '<button type="button" class="btn' + (on ? '' : ' dark') + '" data-p="' + (on ? 'cut-push-off' : 'cut-push-on') + '"' + (S.pushBusy ? ' disabled' : '') + '>' + (on ? 'Turn pushes off' : 'Turn pushes on') + '</button>' +
       (S.pushMsg ? '<p class="hint cut-push-msg" role="status">' + esc(S.pushMsg) + '</p>' : (st === 'ios' || st === 'denied' ? '<p class="hint cut-push-msg">' + esc(PUSH_SAY[st]) + '</p>' : '')) + '</div>';
-  }
-  /* Ordered on the bar also tells the server (cutdone/<cut-off day> { ids: { <supplier id>: true } }), so no more pushes
-     go out for that cut-off to anyone. One small write; nothing reads it but the server. */
-  function cutDoneTell(key) {
-    var parts = key.split('|'), ids = {}; if (parts.length !== 2 || !fb) return;
-    ids[parts[0]] = true;
-    var ref = docRef('cutdone', parts[1]);
-    (isSous() && canW() ? W([['set', ref, { ids: ids }, true]]) : S.user ? track(fb.fs.setDoc(ref, { ids: ids }, { merge: true })) : Promise.resolve()).catch(function () {});
   }
   /* the admin page: a draft kept on this phone until Save (the head chef's Google account only) */
   function cutStart() { S.cutDraft = cutList(); S.cutSnap = JSON.stringify(S.cutDraft); S.cutMsg = S.cutMsg || ''; }
@@ -7048,6 +7097,7 @@
     if (guest() && GUEST_WRITES[a]) { e.preventDefault(); guestAsk({ sel: guestSel(el) }); return; }
     if (a.indexOf('lv-') === 0) { lvClick(a, el); return; }
     if (a.indexOf('dk-') === 0) { dkClick(a, el); return; }
+    if (a === 'cut-tick') { var ck = el.getAttribute('data-id') || '', con = el.getAttribute('aria-pressed') !== 'true'; cutOrdered(ck, con).catch(function (er) { failed(er); }); return; }
     if (a === 'cut-push-on') { pushOn(); return; }
     if (a === 'cut-push-off') { pushOff(); return; }
     if (a.indexOf('cut-') === 0) { cutClick(a, el); return; }
@@ -7823,7 +7873,7 @@
     return '<section class="p-card todo-page"><h2 class="p-h" id="rtitle" tabindex="-1">Chef to-do</h2>' +
       '<p class="hint">Shared by the head chef and the sous chefs. Staff cannot see it. Tick a job when it is done.' +
       (tdAt && !tdErr && !tdCache ? ' <button type="button" class="p-link" data-p="todo-refresh">Refresh</button>' : '') + '</p>' +
-      todoFormHTML() + '<div class="todo-list">' + open + '</div>' +
+      cutTodoHTML() + todoFormHTML() + '<div class="todo-list">' + open + '</div>' +
       '<details class="todo-donebox"' + (tdDoneOpen ? ' open' : '') + '><summary data-p="todo-donebox">Done in the last 30 days' + (tdDone ? ' (' + done.length + ')' : '') + '</summary>' + doneIn + '</details></section>';
   }
   function todoNoHTML() {

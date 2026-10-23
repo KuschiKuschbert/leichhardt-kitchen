@@ -48,7 +48,7 @@ const withPerm = perm => '(' + init.toString().replace('PERM', JSON.stringify(pe
   await p.click('#cut-band [data-cut="done"]'); await L.settle(p, 500);
   s = await store(p);
   const cd = s[fsKey(['cutdone', today])];
-  ok(cd && cd.ids && cd.ids.pfd === true && cd.by === 'sam', 'Ordered: the server is told, so no more pushes for PFD today (' + JSON.stringify(cd) + ')');
+  ok(cd && cd.ids && cd.ids.pfd && cd.ids.pfd.by === 'sam' && typeof cd.ids.pfd.at === 'number' && cd.by === 'sam', 'Ordered: ticked for everyone, so no more pushes for PFD today (' + JSON.stringify(cd) + ')');
   // turn off
   await p.click('[data-p="cut-push-off"]');
   await L.waitFor(p, () => !!document.querySelector('[data-p="cut-push-on"]'), null, 10000);

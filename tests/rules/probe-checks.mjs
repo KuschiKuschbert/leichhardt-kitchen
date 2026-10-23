@@ -44,7 +44,9 @@ export function probeChecks(fs, pin) {
     ['past transfer lines cannot be read with only the kitchen PIN', () => fs.query(K + 'transfers/2000-01-01', 'lines', 'deleted', 'EQUAL', bool(false)), false],
     // phone pushes for order cut-offs (24 Oct 2026): only the server reads the push addresses
     ['a phone push address cannot be read with only the kitchen PIN', () => fs.get(K + 'push/' + id), false],
-    ['a phone push address cannot be saved with only the kitchen PIN', () => fs.patch(K + 'push/' + id, { tok: str('probe'), at: num(1), ua: str('Other'), by: str('owner') }), false]
+    ['a phone push address cannot be saved with only the kitchen PIN', () => fs.patch(K + 'push/' + id, { tok: str('probe'), at: num(1), ua: str('Other'), by: str('owner') }), false],
+    // the chefs' supplier order ticks (24 Oct 2026): only chefs and the Google account read them
+    ['the supplier order ticks cannot be read with only the kitchen PIN', () => fs.get(K + 'cutdone/' + day), false]
   ];
 }
 
