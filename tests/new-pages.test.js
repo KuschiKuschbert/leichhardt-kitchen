@@ -19,7 +19,7 @@ function world(see) {
     { id: 'bo', name: 'Bo', role: 'lead', add: true, tick: true, del: true, ping: false, active: true }
   ], sousIds: ['sam'], pingIds: ['sam'], showBadges: true };
   if (see) x[CFG].staffSee = see;
-  x[fsKey(['notes', 'n1'])] = { text: 'Delivery: Bidfood 09:00', tag: 'delivery', start: today, until: today, dows: [], removed: false, at: 1, by: 'sam' };
+  x[fsKey(['notes', 'n1'])] = { text: 'Delivery: Bidfood 09:00', tag: 'delivery', start: today, until: today, dows: [], tm: 835, removed: false, at: 1, by: 'sam' };
   x[fsKey(['minutes', 'm1'])] = { no: 1, v: 1, status: 'published', date: today, start: '14:00', loc: 'Kitchen', chair: 'sam', taker: 'sam', att: [{ id: 'ann', st: 'present' }], guests: '', decisions: 'Fryer oil every Monday', menu: '', safety: '', dates: '', other: '', acts: [], next: '', pubAt: L.NOW, removed: false, at: 1, upd: 1, by: 'sam' };
   return x;
 }

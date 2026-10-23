@@ -1,5 +1,6 @@
 // Shift pings at a set time of day (22 Oct 2026). A ping with its own time (tm, minutes after midnight) stays out of
-// sight until then and pops up at that time from the phone's own once-a-minute check: no reads. A ping saved for today
+// sight until then and pops up at that time from the phone's own once-a-minute check: no reads. It is on for 30 minutes,
+// then gone (24 Oct 2026). A ping saved for today
 // stamps config/main.pastEdit.n, so the other phones read the pings again at once (one query each) instead of after
 // 30 minutes away. Every page opens at 14:00 kitchen time; the clock then runs on. The phones are touch phones, so the
 // laptop idle lock (7.5 minutes) does not send them to the PIN screen while the clock runs an hour on.
@@ -17,18 +18,21 @@ const notesReads = p => p.evaluate(k => window.__fake.reads.filter(r => r === k)
 (async () => {
   const b = await L.start();
 
-  // 14:00: the usual ping pops up; the 15:00 one is out of sight until 15:00, then pops up marked New with its time
-  let p = await L.open(b, '#/prep', { who: 'ann', touch: true, extra: Object.assign(ping('n1', 'Delivery: Bidfood at the back door'), ping('n2', 'Fryer oil change before service', { tm: 900 })), wait: 2000 });
+  // 14:00: the 13:50 ping is on; the 15:00 one is out of sight until 15:00, then pops up marked New with its time. By
+  // then the 13:50 one has gone (14:20), and at 15:30 the 15:00 one goes too: the sheet closes by itself
+  let p = await L.open(b, '#/prep', { who: 'ann', touch: true, extra: Object.assign(ping('n1', 'Delivery: Bidfood at the back door', { tm: 830 }), ping('n2', 'Fryer oil change before service', { tm: 900 })), wait: 2000 });
   await L.waitFor(p, () => !!document.querySelector('.nt')).catch(() => {});
   let t = await popTexts(p);
-  ok(t.length === 1 && /Bidfood/.test(t[0]), 'at 14:00 the popup shows only the usual ping (' + t.join(' | ') + ')');
+  ok(t.length === 1 && /Bidfood/.test(t[0]), 'at 14:00 the popup shows only the 13:50 ping (' + t.join(' | ') + ')');
   ok(await bell(p) === 1, 'and the bell counts 1 (' + await bell(p) + ')');
   await p.click('.nt-got'); await L.settle(p, 200);
   await p.clock.runFor(61 * 60000); await L.settle(p, 400);
   await L.waitFor(p, () => !!document.querySelector('.nt')).catch(() => {});
   t = await popTexts(p);
-  ok(t.length === 2 && t.some(x => /^New Ping 15:00\s*Fryer oil/.test(x)) && t.some(x => /^Ping\s*Delivery: Bidfood/.test(x)), 'at 15:00 it pops up again: the 15:00 ping marked New with its time, the other one not (' + t.join(' | ') + ')');
-  ok(await bell(p) === 2, 'and the bell counts 2 (' + await bell(p) + ')');
+  ok(t.length === 1 && /^New Ping 15:00\s*Fryer oil/.test(t[0]), 'at 15:00 the 15:00 ping pops up marked New with its time; the 13:50 one has gone (' + t.join(' | ') + ')');
+  ok(await bell(p) === 1, 'and the bell counts 1 (' + await bell(p) + ')');
+  await p.clock.runFor(30 * 60000); await L.settle(p, 400);
+  ok(await p.$('.nt') === null && await bell(p) === 0 && await p.evaluate(() => !document.querySelector('.nbell.has-new')), 'at 15:30 it is gone: the sheet closed by itself, nothing on the bell, no dot');
   ok(p.errors.length === 0, 'timed: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -39,6 +43,8 @@ const notesReads = p => p.evaluate(k => window.__fake.reads.filter(r => r === k)
   await L.waitFor(p, () => !!document.querySelector('.nt')).catch(() => {});
   t = await popTexts(p);
   ok(t.length === 1 && /^Safety 08:00\s*Safety: walk-in/.test(t[0]), 'at 08:00 it pops up, before 10:30 (' + t.join(' | ') + ')');
+  await p.clock.runFor(30 * 60000); await L.settle(p, 400);
+  ok(await p.$('.nt') === null && await bell(p) === 0, 'at 08:30 a Safety ping is gone too (head chef, 24 Oct 2026: no exceptions)');
   await p.context().close();
 
   // a sous chef sets a time in the editor, then takes it away; a ping for today stamps pastEdit.n

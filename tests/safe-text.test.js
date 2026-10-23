@@ -15,7 +15,7 @@ extra[fsKey(['transfers', today, 'lines', 'x1'])] = { dir: 'out" data-pwn="1', v
 extra[fsKey(['summary', 'transfers'])] = { day: today, from: today, to: today, venues: [{ v: 'Venue ' + P, n: 3, out: 3, in: 0, people: ['Who ' + P, 'Pal ' + P] }],
   items: [{ t: 'Taken ' + P, n: 3, unit: 'kg" data-pwn="1', amt: '2" data-pwn="1', dir: 'out', venue: 'Venue ' + P }] };
 extra[fsKey(['waste', today])] = { avoidable: 'Avoid ' + P, change: 'Change ' + P, reviewBy: 'Sam' + P, reviewAt: L.NOW - 300000 };
-extra[fsKey(['notes', 'x1'])] = { text: 'Ping ' + P, tag: 'none', start: today, until: today, dows: [], removed: false, by: 'sam', author: 'sam' };
+extra[fsKey(['notes', 'x1'])] = { text: 'Ping ' + P, tag: 'none', start: today, until: today, dows: [], tm: 835, removed: false, by: 'sam', author: 'sam' };
 extra[fsKey(['mail', 'x1'])] = { from: 'ann', by: 'ann', cat: 'equipment', pri: 'today', text: 'Mail ' + P, at: L.NOW - 3600000, done: false, seen: false };
 extra[fsKey(['mailstat', 'x1'])] = { seen: false, done: false, by: 'ann' };
 // the chef to-do list (23 Oct 2026): the words, and a who-for and a due day as a damaged record could hold them

@@ -15,7 +15,8 @@ const people = [
   { id: 'bo', name: 'Bo', role: 'staff', add: true, tick: true, del: false, active: true }
 ];
 const cfg = secs => ({ [CFG]: Object.assign({ people, sousIds: ['sam'], pingIds: ['sam'], staffIds: ['sam', 'ann', 'bo'], showBadges: true }, secs ? { kitSecs: SECS } : {}) });
-const ping = (id, text, x) => ({ [fsKey(['notes', id])]: Object.assign({ text, tag: 'delivery', start: today, until: today, dows: [], tm: null, removed: false, at: 1, by: 'sam' }, x || {}) });
+// set for 13:55, so it is on screen when the pages open at 14:00 (a ping is on for 30 minutes from its time, 24 Oct 2026)
+const ping = (id, text, x) => ({ [fsKey(['notes', id])]: Object.assign({ text, tag: 'delivery', start: today, until: today, dows: [], tm: 835, removed: false, at: 1, by: 'sam' }, x || {}) });
 const mins = () => ({ [fsKey(['minutes', 'm1'])]: { no: 1, v: 1, status: 'published', date: today, start: '14:00', loc: 'Kitchen', chair: 'sam', taker: 'sam',
   att: [{ id: 'ann', st: 'present' }, { id: 'bo', st: 'present' }, { id: 'sam', st: 'present' }], guests: '', decisions: 'Fryer oil every Monday', menu: '', safety: '', dates: '', other: '',
   acts: [], next: '', pubAt: L.NOW - 3600000, removed: false, at: 1, upd: 1, by: 'sam' } });
@@ -38,7 +39,7 @@ async function pin(p, name, digits) { await p.click('.p-name[data-id="' + name +
   most = Math.max(most, await sheets(p));
   ok(await txt(p, '#nt-h') === 'Today\'s shift pings' && await txt(p, '.nt-eb') === 'Ann', 'start: Today\'s shift pings, with her name on top');
   ok(/Bidfood/.test(await txt(p, '.nt-list') || '') && /minutes to sign/.test(await txt(p, '.nt-next') || ''), 'start: the ping, and the minutes to sign come next');
-  ok(await p.$('.nt-got') !== null && await p.$('.nt-later') !== null && await p.$('.nt .nt-a') === null, 'start: Got it and Later, and no Read and sign before the pings are read');
+  ok(await p.$('.nt-got') !== null && await txt(p, '.nt-later') === 'Close' && await p.$('.nt .nt-a') === null, 'start: Got it and Close (no Later), and no Read and sign before the pings are read');
   ok(!(await L.overflow(p)), 'start: the sheet fits a phone');
   await p.evaluate(() => Promise.all(document.getAnimations().map(a => a.finished)));   // the sheet slides up first
   const bot = await p.$eval('.nt', e => [e.getBoundingClientRect().bottom, window.innerHeight, getComputedStyle(e).transform].join(' '));
@@ -57,28 +58,30 @@ async function pin(p, name, digits) { await p.click('.p-name[data-id="' + name +
   ok(p.errors.length === 0, 'start: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // Later (Escape) puts it off: nothing read, the dot stays; the 10:30 call later shows the pings only
+  // Close (Escape) puts it off: nothing read, the dot stays, and it never pops up again by itself, not even after a
+  // reload (24 Oct 2026: nothing piles up). The bell still has it until its 30 minutes are up.
   p = await L.open(b, '#/', { who: 'bo', board: true, extra: Object.assign(cfg(), ping('n1', 'Safety: walk-in door sticks', { tag: 'safety' }), mins()), wait: 2000 });
   await L.waitFor(p, () => !!document.querySelector('.nt-wrap')).catch(() => {});
   await p.keyboard.press('Escape'); await L.settle(p, 300);
   s = await store(p);
-  ok(await p.$('.nt-wrap') === null && !(await p.evaluate(() => localStorage.getItem('lk.note.seen.bo'))) && !s[fsKey(['notes', 'n1', 'seen', today + '_bo'])], 'Later: closed, nothing marked read');
-  ok(await dot(p), 'Later: the bell keeps its dot');
+  ok(await p.$('.nt-wrap') === null && !(await p.evaluate(() => localStorage.getItem('lk.note.seen.bo'))) && !s[fsKey(['notes', 'n1', 'seen', today + '_bo'])], 'Close: closed, nothing marked read');
+  ok(await dot(p), 'Close: the bell keeps its dot');
   await p.reload({ waitUntil: 'load' }); await L.settle(p, 1500);
-  await L.waitFor(p, () => !!document.querySelector('.nt-wrap')).catch(() => {});
-  ok(await txt(p, '#nt-h') === 'Today\'s shift pings' && await p.$('.nt .nt-a') === null && await p.$('.nt-next') === null, 'later in the day: the unread ping pops up again, pings only');
-  await p.click('.nt-got'); await L.settle(p, 300);
-  ok(await p.$('.nt-wrap') === null, 'later in the day: Got it closes it');
+  await p.clock.runFor(61000); await L.settle(p, 400);
+  ok(await p.$('.nt-wrap') === null && await dot(p), 'Close: it does not pop up again by itself, not even after a reload, and the dot stays');
   await p.click('.nbell'); await L.settle(p, 300);
-  ok(/Walk-in|walk-in/.test(await txt(p, '.nt-list') || '') && /Kitchen meeting/.test(await txt(p, '.nt .nt-a') || ''), 'the bell: today\'s pings and the minutes to sign, any time');
+  ok(/Walk-in|walk-in/.test(await txt(p, '.nt-list') || '') && /minutes to sign/.test(await txt(p, '.nt-next') || ''), 'the bell: the ping on now, then the minutes to sign');
+  await p.click('.nt-got'); await L.settle(p, 300);
+  ok(/Kitchen meeting/.test(await txt(p, '.nt .nt-a') || ''), 'the bell: after Got it, the minutes to sign');
   await p.click('.nt-later'); await L.settle(p, 300);
   await p.context().close();
 
-  // before 10:30: no sheet for an ordinary ping (the 10:30 call stays), but the day is marked once the reads are in
+  // before its time: no sheet and nothing on the bell yet (a ping is out of sight until it pops up), but the day is
+  // marked once the reads are in
   p = await L.open(b, '#/prep', { who: 'ann', board: true, clock: L.NOW - 7 * 3600000, extra: Object.assign(cfg(), ping('n1', 'Delivery: Bidfood 09:00')), wait: 2000 });
   await L.waitFor(p, () => localStorage.getItem('lk.board.ann') !== null).catch(() => {});
-  ok(await p.$('.nt-wrap') === null && await p.evaluate(d => localStorage.getItem('lk.board.ann') === d, today), 'before 10:30: no sheet, the start is marked for today');
-  ok(await p.evaluate(() => /^1 shift ping today, new/.test(document.querySelector('.nbell').getAttribute('aria-label'))), 'before 10:30: the bell counts the ping');
+  ok(await p.$('.nt-wrap') === null && await p.evaluate(d => localStorage.getItem('lk.board.ann') === d, today), 'before its time: no sheet, the start is marked for today');
+  ok(await p.evaluate(() => /^No shift pings on now/.test(document.querySelector('.nbell').getAttribute('aria-label'))) && !(await dot(p)), 'before its time: nothing on the bell yet');
   await p.context().close();
 
   // nothing for her: no sheet, and the bell is there with no dot
@@ -86,7 +89,7 @@ async function pin(p, name, digits) { await p.click('.p-name[data-id="' + name +
   await L.waitFor(p, () => localStorage.getItem('lk.board.ann') !== null).catch(() => {});
   ok(await p.$('.nt-wrap') === null && !(await dot(p)) && await p.evaluate(() => !document.querySelector('.nbell').hidden), 'nothing on: no sheet, the bell shows with no dot');
   await p.click('.nbell'); await L.settle(p, 300);
-  ok(/No pings today/.test(await txt(p, '.nt') || '') && await txt(p, '.nt-later') === 'Close', 'nothing on: the bell says No pings today, with Close');
+  ok(/No pings right now/.test(await txt(p, '.nt') || '') && await txt(p, '.nt-later') === 'Close', 'nothing on: the bell says No pings right now, with Close');
   await p.click('.nt-later'); await L.settle(p, 200);
   await p.context().close();
 
@@ -132,7 +135,10 @@ async function pin(p, name, digits) { await p.click('.p-name[data-id="' + name +
   await p.evaluate(() => { window.__fake.mode = 'ok'; window.__fake.release(); });
   await L.settle(p, 600);
   await p.clock.runFor(61000); await L.settle(p, 400);
-  ok(!/peanut/.test(await p.evaluate(() => localStorage.getItem('lk.note.seen') || '')) && /peanut/.test(await txt(p, '.nt-list') || ''), 'hand-over: the ping saved before signing out still comes up on the tablet');
+  ok(await p.$('.nt-wrap') === null, 'hand-over: nothing pops up over Who are you?');
+  await p.click('[data-p="who-back"]').catch(() => {}); await L.settle(p, 300);
+  await p.clock.runFor(61000); await L.settle(p, 400);
+  ok(!/peanut/.test(await p.evaluate(() => localStorage.getItem('lk.note.seen') || '')) && /peanut/.test(await txt(p, '.nt-list') || ''), 'hand-over: back on the list, the ping saved before signing out still comes up on the tablet');
   await p.context().close();
 
   // an Undo straight after a remove still tells the other phones (the stamp is sent at the end of the 5 seconds)
@@ -183,7 +189,7 @@ async function pin(p, name, digits) { await p.click('.p-name[data-id="' + name +
   ok(p.errors.length === 0, 'tablet: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // one cook's Later does not hold the Safety ping back from the next cook on the tablet
+  // one cook's Close does not hold the Safety ping back from the next cook on the tablet
   p = await L.open(b, '#/prep', { who: 'ann', touch: true, settings: { shared: true }, extra: Object.assign(cfg(), ping('n1', 'Safety: fryer 2 is out', { tag: 'safety' })), wait: 1500 });
   await L.waitFor(p, () => !!document.querySelector('.nt-later')).catch(() => {});
   await p.click('.nt-later'); await L.settle(p, 300);
@@ -194,14 +200,14 @@ async function pin(p, name, digits) { await p.click('.p-name[data-id="' + name +
   await pin(p, 'bo', '3333');
   await p.clock.runFor(61000); await L.settle(p, 400);
   await L.waitFor(p, () => !!document.querySelector('.nt-wrap')).catch(() => {});
-  ok(/fryer 2/.test(await txt(p, '.nt-list') || '') && await txt(p, '.nt-eb') === 'Bo', 'tablet Later: Ann\'s Later does not hold the Safety ping back from Bo');
+  ok(/fryer 2/.test(await txt(p, '.nt-list') || '') && await txt(p, '.nt-eb') === 'Bo', 'tablet Close: Ann\'s Close does not hold the Safety ping back from Bo');
   await p.context().close();
 
   // a first PIN set on the order list: One more thing is not on the screen there, so the pings still come up
   const kim = { [CFG]: { people: people.concat([{ id: 'kim', name: 'Kim Lee', role: 'staff', add: true, tick: true, del: false, active: true }]), sousIds: ['sam'], pingIds: ['sam'], staffIds: ['sam', 'ann', 'bo', 'kim'], showBadges: true } };
   p = await L.open(b, '#/orders', { who: '', board: true, extra: Object.assign(kim, ping('n1', 'Safety: walk-in door sticks', { tag: 'safety' })), wait: 1500 });
-  await L.waitFor(p, () => !!document.querySelector('.nt-later')).catch(() => {});
-  await p.click('.nt-later'); await L.settle(p, 300);   // the phone's own call with nobody signed in: Later is nobody's only
+  await L.settle(p, 600); await p.clock.runFor(61000); await L.settle(p, 300);
+  ok(await p.$('.nt-wrap') === null && !!(await p.$('.p-names')), 'Who are you?: no sheet over the names, the next person gets their own after their PIN');
   await p.click('.p-name[data-id="kim"]');
   await p.keyboard.type('4444'); await L.settle(p, 600);
   await p.keyboard.type('4444'); await L.settle(p, 1000);
@@ -225,13 +231,13 @@ async function pin(p, name, digits) { await p.click('.p-name[data-id="' + name +
   ok(await p.$('.nt-wrap') === null && await p.evaluate(() => !localStorage.getItem('lk.note.seen.ann')), 'a ping removed while its sheet is open: the sheet closes, nothing marked read');
   await p.context().close();
 
-  // the bell's sheet closed with Later counts as today's start: the same minutes do not come straight back
+  // the bell's sheet closed with Close counts as today's start: the same minutes do not come straight back
   p = await L.open(b, '#/prep', { who: 'ann', extra: Object.assign(cfg(), mins()), wait: 2000 });
   await L.waitFor(p, () => document.querySelector('.nbell.has-new')).catch(() => {});
   await p.evaluate(() => localStorage.removeItem('lk.board.ann'));   // as if the start was held back (someone typing)
   await p.click('.nbell'); await L.settle(p, 300);
   await p.click('.nt-later'); await L.settle(p, 500);
-  ok(await p.$('.nt-wrap') === null && await p.evaluate(d => localStorage.getItem('lk.board.ann') === d, today), 'the bell, then Later: no second sheet with the same minutes');
+  ok(await p.$('.nt-wrap') === null && await p.evaluate(d => localStorage.getItem('lk.board.ann') === d, today), 'the bell, then Close: no second sheet with the same minutes');
   await p.context().close();
 
   // a desktop idle lock takes the sheet away; after the PIN it is Ann's again, and her Got it is hers
