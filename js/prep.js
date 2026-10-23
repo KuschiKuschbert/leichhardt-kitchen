@@ -6633,10 +6633,8 @@
      turns orange and says Order now. It all comes from config/main, which the book already listens to: no reads of its
      own, and a local check every 30 seconds. Ordered hides that cut-off on this phone (lk.cut.done, one key per supplier
      and cut-off day; keys for days gone are dropped). */
-  var CUT_SOON = 60, CUT_MAX = 20;
-  var CUT_LEADS = [[240, '4 hours before'], [360, '6 hours before'], [480, '8 hours before'], [0, 'All day on the cut-off day']];
+  var CUT_SOON = 60;
   var CUT_DOW = [[1, 'Mon'], [2, 'Tue'], [3, 'Wed'], [4, 'Thu'], [5, 'Fri'], [6, 'Sat'], [0, 'Sun']];
-  var CUT_DAY = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   var CUT_PRE = ['The same day', 'The day before', '2 days before', '3 days before'];
   // the head chef's own list (23 Oct 2026); A La Carte Meats' days and time are still to come
   var CUT_USUAL = [
@@ -6646,15 +6644,7 @@
     { id: 'a-la-carte-meats', name: 'A La Carte Meats', dd: [], at: -1, pre: 1, lead: 240 }
   ];
   var cutTick = null, cutLast = null;
-  // checked by type before use: a damaged record never puts anything odd on screen
-  function cutClean(list) {
-    return (Array.isArray(list) ? list : []).filter(function (x) { return x && typeof x.name === 'string' && x.name.trim(); }).slice(0, CUT_MAX).map(function (x) {
-      var at = typeof x.at === 'number' && x.at >= 0 && x.at < 1440 ? Math.floor(x.at) : -1, pre = typeof x.pre === 'number' && x.pre >= 0 && x.pre <= 3 ? Math.floor(x.pre) : 1;
-      var dd = (Array.isArray(x.dd) ? x.dd : []).filter(function (n, i, a) { return typeof n === 'number' && n >= 0 && n <= 6 && n === Math.floor(n) && a.indexOf(n) === i; }).sort();
-      var lead = CUT_LEADS.some(function (l) { return l[0] === x.lead; }) ? x.lead : 240;   // saved before 24 Oct 2026: 4 hours
-      return { id: (typeof x.id === 'string' && /^[a-z0-9-]{1,40}$/.test(x.id)) ? x.id : slug(x.name).slice(0, 40), name: x.name.trim().slice(0, 40), dd: dd, at: at, pre: pre, lead: lead };
-    });
-  }
+  var CUT = window.LK_CUT, cutClean = CUT.clean;   // js/cutoffs.js: shared with the server's pushes
   function cutList() { return cutClean(S.config && S.config.cutoffs); }
   // the weekdays an order closes: each delivery day less the days before
   function cutDays(s) { return s.dd.map(function (d) { return (d - s.pre + 7) % 7; }); }
@@ -6673,17 +6663,13 @@
   // the cut-offs that fall today, soonest first, with the delivery each one is for
   // plus: days from today (1 is tomorrow), so at is minutes from today's midnight and day the cut-off's own date
   function cutOn(plus) {
-    var dow = (T.dow() + plus) % 7, out = [], day = shift(dayNow(), plus);
-    cutList().forEach(function (s) {
-      if (s.at < 0) return;
-      s.dd.forEach(function (d) { if ((d - s.pre + 7) % 7 === dow) out.push({ s: s, at: s.at + plus * 1440, del: d, day: day, key: s.id + '|' + day }); });
-    });
-    return out.sort(function (a, b) { return a.at - b.at || a.s.name.localeCompare(b.s.name); });
+    var day = shift(dayNow(), plus);
+    return CUT.on(cutList(), (T.dow() + plus) % 7).map(function (c) { c.at += plus * 1440; c.day = day; c.key = c.s.id + '|' + day; return c; });
   }
   function cutToday() { return cutOn(0); }
   // the reminder is on from its start until the cut-off: all day means from midnight on the cut-off day
   function cutOnNow(c, m) { var left = c.at - m; return left > 0 && left <= (c.s.lead || c.s.at); }
-  function cutDel(c) { return c.s.pre === 0 ? 'for today' : c.s.pre === 1 ? 'for ' + CUT_DAY[c.del] + (c.s.dd.length === 7 ? '' : '\'s delivery') : 'for ' + CUT_DAY[c.del]; }
+  var cutDel = CUT.forText;
   function cutIn(m) { return m < 60 ? 'in ' + m + ' min' : 'in ' + Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : ''); }
   // who gets the bar: the head chef and sous chefs with their PIN, and the head chef's Google device
   function cutWho() { return !!S.config && (isSous() || admDev()); }
@@ -6719,8 +6705,8 @@
     var el = e.target.closest && e.target.closest('[data-cut]');
     if (!el || el.getAttribute('data-cut') !== 'done') return;
     var key = el.getAttribute('data-id') || '', s = cutList().filter(function (x) { return x.id === key.split('|')[0]; })[0];
-    cutMark(key); cutPaint(); if (S.name === 'orders') draw();
-    toast((s ? s.name : 'That supplier') + ' is off the reminder until the next cut-off.');
+    cutMark(key); cutDoneTell(key); cutPaint(); if (S.name === 'orders') draw();
+    toast((s ? s.name : 'That supplier') + ' is off the reminder until the next cut-off. No more pushes for it.');
   });
   window.addEventListener('lk-who', cutPaint);
   window.addEventListener('lk-cfg', cutPaint);
@@ -6728,13 +6714,106 @@
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') cutPaint(); });
   // on the order list for the head chef and sous chefs: every cut-off today, the ones gone marked Closed
   function cutOrdHTML() {
-    if (!cutWho()) return '';
+    if (!cutWho() || !cutList().some(function (s) { return s.at >= 0 && s.dd.length; })) return '';
+    pushKeep();
     var xs = cutToday(), m = T.mins(), done = cutDone();
-    if (!xs.length) return '';
-    return '<section class="cut-today" aria-label="Order cut-offs today"><h3 class="nb-sh">Cut-offs today</h3><ul class="cut-tl">' + xs.map(function (c) {
+    return '<section class="cut-today" aria-label="Order cut-offs"><h3 class="nb-sh">Cut-offs today</h3>' + (xs.length ? '<ul class="cut-tl">' + xs.map(function (c) {
       var st = c.at <= m ? 'Closed' : done[c.key] ? 'Ordered' : cutIn(c.at - m);
       return '<li class="' + (c.at <= m ? 'is-past' : c.at - m <= CUT_SOON && !done[c.key] ? 'is-soon' : '') + '"><span class="cut-n">' + esc(c.s.name) + '</span><span class="cut-t">' + hhmm(c.at) + ' ' + esc(cutDel(c)) + '</span><span class="cut-st">' + esc(st) + '</span></li>';
-    }).join('') + '</ul></section>';
+    }).join('') + '</ul>' : '<p class="hint">No cut-offs today.</p>') + pushHTML() + '</section>';
+  }
+  /* ---------- phone pushes for order cut-offs (24 Oct 2026) ----------
+     A chef turns them on for their own phone on the order list. The phone asks for the notification permission, gets a
+     push address from Firebase Cloud Messaging (firebase-messaging.js, loaded only on that tap) through the book's own
+     service worker, and keeps it in push/<hash of the address> { tok, at, ua, by }. Only the server reads those
+     (scripts/cutoff-push.mjs, every 10 minutes on GitHub): it sends one push when a supplier's reminder starts and one an
+     hour before the cut-off, to every chef's phone that is turned on. sw.js shows it; a tap opens the order list.
+     The phone keeps lk.push { h, by, day } (out of date the next kitchen day: it gets its address again and writes it,
+     one write a day, so a changed address or a moved kitchen PIN is picked up by itself). */
+  function pushWhoId() { var p = me(); return p && isSous() && canW() ? p.id : (admDev() && S.user ? 'owner' : ''); }
+  function pushKept() { try { return JSON.parse(lsGet('lk.push') || 'null'); } catch (e) { return null; } }
+  function pushIOS() { return /iPhone|iPad|iPod/.test(navigator.userAgent || '') && !(window.navigator.standalone || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)); }
+  function pushCan() { return 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window; }
+  function pushState() {
+    var k = pushKept(), who = pushWhoId();
+    if (k && k.by === who && pushCan() && Notification.permission === 'granted') return 'on';
+    if (pushIOS()) return 'ios';
+    if (!pushCan()) return 'no';
+    if (Notification.permission === 'denied') return 'denied';
+    return 'off';
+  }
+  function pushUa() { var u = navigator.userAgent || ''; return /iPhone|iPad/.test(u) ? 'iPhone' : /Android/.test(u) ? 'Android' : /Mac/.test(u) ? 'Mac' : /Windows/.test(u) ? 'Windows' : 'Other'; }
+  // the book's service worker (sw.js shows the pushes); a phone where it never started gives up after 10 seconds
+  function pushReg() { return Promise.race([navigator.serviceWorker.ready, new Promise(function (r) { setTimeout(function () { r(null); }, 10000); })]).then(function (r) { if (!r) throw { code: 'nosw' }; return r; }); }
+  function pushToken() {
+    return Promise.all([sdk(), import(SDK + 'firebase-messaging.js'), pushReg()]).then(function (m) {
+      var fm = m[1];
+      return fm.isSupported().then(function (ok) {
+        if (!ok) throw { code: 'no' };
+        return fm.getToken(fm.getMessaging(fb.app), { serviceWorkerRegistration: m[2] });
+      });
+    }).then(function (tok) { if (!tok || typeof tok !== 'string') throw { code: 'notok' }; return tok; });
+  }
+  // one write: a chef through W() (their PIN session, by), the head chef's Google account as 'owner'
+  function pushSave(tok, who) {
+    return sha(tok).then(function (h) {
+      var data = { tok: tok, at: now(), ua: pushUa() };
+      return (who === 'owner' ? track(fb.fs.setDoc(docRef('push', h), Object.assign({ by: 'owner' }, data))) : W([['set', docRef('push', h), data]])).then(function () {
+        lsSet('lk.push', JSON.stringify({ h: h, by: who, day: dayNow() }));
+      });
+    });
+  }
+  var PUSH_SAY = {
+    ios: 'On an iPhone, add the book to the home screen first (Share, then Add to Home Screen). Open it from there and turn this on.',
+    no: 'This browser cannot get push notifications. Use Chrome on Android, or the book from an iPhone\'s home screen.',
+    denied: 'This phone said no to notifications for the book. Allow them in the phone\'s settings, then try again.',
+    nosw: 'The book is still setting up on this phone. Close it, open it again and try once more.',
+    fail: 'Could not turn it on. Check the connection and try again.'
+  };
+  function pushOn() {
+    var who = pushWhoId();
+    if (!who || S.pushBusy) return;
+    if (pushState() === 'ios' || pushState() === 'no') { S.pushMsg = PUSH_SAY[pushState()]; draw(); return; }
+    S.pushBusy = true; S.pushMsg = 'Turning on...'; draw();
+    Notification.requestPermission().then(function (p) { if (p !== 'granted') throw { code: 'denied' }; return pushToken(); }).then(function (tok) { return pushSave(tok, who); }).then(function () {
+      S.pushBusy = false; S.pushMsg = 'On. This phone gets a push when a cut-off reminder starts and an hour before.'; draw();
+    }, function (e) {
+      S.pushBusy = false; S.pushMsg = PUSH_SAY[e && e.code] || PUSH_SAY.fail; draw();
+      try { console.warn('push', e && (e.code || e.message)); } catch (x) {}
+    });
+  }
+  function pushOff() {
+    var k = pushKept();
+    if (!k || S.pushBusy) return;
+    S.pushBusy = true; S.pushMsg = 'Turning off...'; draw();
+    var ref = docRef('push', k.h);
+    (k.by === 'owner' ? track(fb.fs.deleteDoc(ref)) : W([['del', ref]])).then(function () {
+      lsSet('lk.push', '');
+      import(SDK + 'firebase-messaging.js').then(function (fm) { return fm.deleteToken(fm.getMessaging(fb.app)); }).catch(function () {});
+      S.pushBusy = false; S.pushMsg = 'Off. This phone gets no more pushes.'; draw();
+    }, function () { S.pushBusy = false; S.pushMsg = 'Could not turn it off. Check the connection and try again.'; draw(); });
+  }
+  // once a kitchen day, a phone that is turned on gets its address again and writes it (no read)
+  var pushKeepDone = '';
+  function pushKeep() {
+    var k = pushKept(), who = pushWhoId(), t = dayNow();
+    if (!k || k.day === t || k.by !== who || pushKeepDone === t || !pushCan() || Notification.permission !== 'granted' || !fb) return;
+    pushKeepDone = t;
+    pushToken().then(function (tok) { return pushSave(tok, who); }).catch(function () {});
+  }
+  function pushHTML() {
+    var st = pushState(), on = st === 'on';
+    return '<div class="cut-push"><p class="cut-push-l">' + (on ? 'Pushes are on for this phone.' : 'Get a push on this phone when a reminder starts and an hour before each cut-off, even with the book closed.') + '</p>' +
+      '<button type="button" class="btn' + (on ? '' : ' dark') + '" data-p="' + (on ? 'cut-push-off' : 'cut-push-on') + '"' + (S.pushBusy ? ' disabled' : '') + '>' + (on ? 'Turn pushes off' : 'Turn pushes on') + '</button>' +
+      (S.pushMsg ? '<p class="hint cut-push-msg" role="status">' + esc(S.pushMsg) + '</p>' : (st === 'ios' || st === 'denied' ? '<p class="hint cut-push-msg">' + esc(PUSH_SAY[st]) + '</p>' : '')) + '</div>';
+  }
+  /* Ordered on the bar also tells the server (cutdone/<cut-off day> { ids: { <supplier id>: true } }), so no more pushes
+     go out for that cut-off to anyone. One small write; nothing reads it but the server. */
+  function cutDoneTell(key) {
+    var parts = key.split('|'), ids = {}; if (parts.length !== 2 || !fb) return;
+    ids[parts[0]] = true;
+    var ref = docRef('cutdone', parts[1]);
+    (isSous() && canW() ? W([['set', ref, { ids: ids }, true]]) : S.user ? track(fb.fs.setDoc(ref, { ids: ids }, { merge: true })) : Promise.resolve()).catch(function () {});
   }
   /* the admin page: a draft kept on this phone until Save (the head chef's Google account only) */
   function cutStart() { S.cutDraft = cutList(); S.cutSnap = JSON.stringify(S.cutDraft); S.cutMsg = S.cutMsg || ''; }
@@ -6750,7 +6829,7 @@
         }).join('') + '</div></fieldset>' +
         '<div class="cut-two"><div class="field"><label class="label" for="cut-t' + i + '">Cut-off time</label><input id="cut-t' + i + '" class="search" type="time" step="300" data-k="cut-t' + i + '" value="' + (s.at >= 0 ? hhmm(s.at) : '') + '"></div>' +
         '<div class="field"><label class="label" for="cut-p' + i + '">Order closes</label><select id="cut-p' + i + '" class="search" data-k="cut-p' + i + '">' + CUT_PRE.map(function (t, n) { return '<option value="' + n + '"' + (s.pre === n ? ' selected' : '') + '>' + t + '</option>'; }).join('') + '</select></div>' +
-        '<div class="field"><label class="label" for="cut-r' + i + '">Remind us</label><select id="cut-r' + i + '" class="search" data-k="cut-r' + i + '">' + CUT_LEADS.map(function (l) { return '<option value="' + l[0] + '"' + (s.lead === l[0] ? ' selected' : '') + '>' + l[1] + '</option>'; }).join('') + '</select></div></div>' +
+        '<div class="field"><label class="label" for="cut-r' + i + '">Remind us</label><select id="cut-r' + i + '" class="search" data-k="cut-r' + i + '">' + CUT.LEADS.map(function (l) { return '<option value="' + l[0] + '"' + (s.lead === l[0] ? ' selected' : '') + '>' + l[1] + '</option>'; }).join('') + '</select></div></div>' +
         '<p class="hint cut-say">' + esc(cutSay(s)) + '</p>' +
         '<button type="button" class="p-x" data-p="cut-rm" data-i="' + i + '" aria-label="' + esc('Remove ' + (s.name || 'this supplier')) + '">' + (armed('cut-rm:' + i) ? 'Tap again to remove' : 'Remove') + '</button></li>';
     }).join('');
@@ -6758,7 +6837,7 @@
       (rows ? '<ul class="cut-eds">' + rows + '</ul>' : '<p class="hint">No suppliers yet, so nobody is reminded.</p>') +
       '<div class="btn-row"><button type="button" class="btn" data-p="cut-add">Add a supplier</button>' + (d.length ? '' : '<button type="button" class="btn" data-p="cut-usual">Add ' + esc(CUT_USUAL.map(function (x) { return x.name; }).join(', ')) + '</button>') + '</div>' +
       '<div class="btn-row"><button type="button" class="btn dark" data-p="cut-save"' + (owner && cutDirty() && !S.cutBusy ? '' : ' disabled') + '>Save cut-offs</button><button type="button" class="btn" data-p="cut-undo"' + (cutDirty() ? '' : ' disabled') + '>Undo unsaved changes</button></div>' +
-      '<span class="saved" role="status">' + esc(S.cutMsg || '') + '</span></section>';
+      '<span class="saved" role="status">' + esc(S.cutMsg || '') + '</span>' + (pushWhoId() ? '<h3 class="a-ch-h">Pushes on this device</h3>' + pushHTML() : '') + '</section>';
   }
   function cutSave() {
     if (S.level !== 'owner' || !cutDirty() || S.cutBusy) return;
@@ -6787,7 +6866,7 @@
     if (k.indexOf('cut-n') === 0) { s.name = el.value.slice(0, 40); return; }
     if (k.indexOf('cut-t') === 0) { var t = /^(\d{1,2}):(\d{2})/.exec(el.value || ''); s.at = t ? Math.min(1439, +t[1] * 60 + +t[2]) : -1; }
     if (k.indexOf('cut-p') === 0) s.pre = Math.max(0, Math.min(3, +el.value || 0));
-    if (k.indexOf('cut-r') === 0) s.lead = CUT_LEADS.some(function (l) { return l[0] === +el.value; }) ? +el.value : 240;
+    if (k.indexOf('cut-r') === 0) s.lead = CUT.LEADS.some(function (l) { return l[0] === +el.value; }) ? +el.value : 240;
     var say = el.closest('.cut-ed') && el.closest('.cut-ed').querySelector('.cut-say'); if (say) say.textContent = cutSay(s);
     var sv = S.root.querySelector('[data-p="cut-save"]'), un = S.root.querySelector('[data-p="cut-undo"]');
     if (sv) sv.disabled = !(S.level === 'owner' && cutDirty() && !S.cutBusy); if (un) un.disabled = !cutDirty();
@@ -6969,6 +7048,8 @@
     if (guest() && GUEST_WRITES[a]) { e.preventDefault(); guestAsk({ sel: guestSel(el) }); return; }
     if (a.indexOf('lv-') === 0) { lvClick(a, el); return; }
     if (a.indexOf('dk-') === 0) { dkClick(a, el); return; }
+    if (a === 'cut-push-on') { pushOn(); return; }
+    if (a === 'cut-push-off') { pushOff(); return; }
     if (a.indexOf('cut-') === 0) { cutClick(a, el); return; }
     if (a.indexOf('todo-') === 0) { todoClick(a, el); return; }
     if (a.indexOf('tr-') === 0) { trClick(a, el); return; }

@@ -8,7 +8,7 @@
    Google Fonts and the Firebase files are kept once loaded. The prep list, orders and wastage talk to Firebase directly
    (it has its own offline copy of the data), so those requests are not touched. */
 var CACHE = 'lk-book-v8';
-var SHELL = ['./', './index.html', 'css/app.css', 'js/data.js', 'js/art.js', 'js/overlay.js', 'js/app.js', 'js/amounts.js', 'js/learn.js', 'js/prep.js', 'js/functions.js', 'js/firebase-config.js', 'js/boot.js', 'js/upkeep.js', 'icon.svg', 'manifest.webmanifest', 'icons/icon-192.png'];
+var SHELL = ['./', './index.html', 'css/app.css', 'js/data.js', 'js/art.js', 'js/overlay.js', 'js/app.js', 'js/amounts.js', 'js/learn.js', 'js/cutoffs.js', 'js/prep.js', 'js/functions.js', 'js/firebase-config.js', 'js/boot.js', 'js/upkeep.js', 'icon.svg', 'manifest.webmanifest', 'icons/icon-192.png'];
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(SHELL); }).then(function () { return self.skipWaiting(); }));
 });
@@ -79,4 +79,22 @@ self.addEventListener('fetch', function (e) {
   }
   if (nav) e.waitUntil(freshen());
   e.respondWith(saved().then(function (m) { return m || net(); }));
+});
+/* Phone pushes for order cut-offs (24 Oct 2026): scripts/cutoff-push.mjs sends them through Firebase Cloud Messaging
+   with data only (title, body, tag), and the worker shows them. Every push shows a notification (iPhones stop pushes to
+   a book that does not). A tap opens the order list: a fixed route, never an address from the push. */
+self.addEventListener('push', function (e) {
+  var d = {};
+  try { var j = e.data ? e.data.json() : {}; d = (j && (j.data || j.notification)) || {}; } catch (x) {}
+  var title = String(d.title || 'Kitchen Book').slice(0, 80), body = String(d.body || '').slice(0, 200), tag = String(d.tag || 'lk-cut').slice(0, 60);
+  e.waitUntil(self.registration.showNotification(title, { body: body, tag: tag, renotify: true, icon: 'icons/icon-192.png', badge: 'icons/icon-192.png' }));
+});
+self.addEventListener('notificationclick', function (e) {
+  e.notification.close();
+  var url = new URL('./#/orders', self.registration.scope).href;
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (cs) {
+    var c = cs[0];
+    if (c && c.focus) return c.focus().then(function (w) { return w && w.navigate ? w.navigate(url) : w; });
+    return self.clients.openWindow(url);
+  }));
 });

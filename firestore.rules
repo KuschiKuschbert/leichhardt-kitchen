@@ -668,6 +668,30 @@ service cloud.firestore {
         && request.resource.data.get('from', '') == resource.data.get('from', '') && request.resource.data.get('at', 0) == resource.data.get('at', 0);
       allow delete: if false;
     }
+    // Phone pushes for order cut-offs (24 Oct 2026): a chef's phone keeps its push address in push/<hash of it>
+    // { tok, at, ua, by }. Only the server reads them (scripts/cutoff-push.mjs, with the service account, which these
+    // rules do not cover), so no phone can read anyone's address. A chef writes their own phone's, and removes only one
+    // of their own; the head chef's Google account writes as 'owner' and removes any.
+    function pushOk() {
+      return request.resource.data.keys().hasOnly(['tok', 'at', 'ua', 'by'])
+        && request.resource.data.tok is string && request.resource.data.tok.size() > 0 && request.resource.data.tok.size() <= 500
+        && request.resource.data.at is number && request.resource.data.get('ua', '') is string && request.resource.data.get('ua', '').size() <= 20;
+    }
+    match /kitchens/KITCHEN_PIN/push/{id} {
+      allow read: if false;
+      allow create, update: if pushOk() && ((isAdmin() && request.resource.data.by == 'owner') || (staff() && chefId(request.resource.data.by)));
+      allow delete: if isAdmin() || (sessOk(reader()) && chefId(reader()) && resource.data.by == reader());
+    }
+    // Ordered on the cut-off bar (24 Oct 2026): cutdone/<cut-off day> { ids: { <supplier id>: true } }, so the server
+    // sends no more pushes for it. Written by a chef (own PIN session) or the Google account; read only by the server.
+    match /kitchens/KITCHEN_PIN/cutdone/{day} {
+      allow read: if false;
+      allow create, update: if day.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
+        && request.resource.data.keys().hasOnly(['ids', 'by']) && request.resource.data.ids is map && request.resource.data.ids.size() <= 40
+        && (isAdmin() || (staff() && chefId(request.resource.data.by)));
+      allow delete: if false;
+    }
+    // pushsent (what the server has sent) has no rule: only the server reads and writes it.
     // The drinks run: each person's usual coffee or drink, one record per person (the record id is their id).
     // Everyone with the kitchen PIN reads them; only that person writes their own (own PIN session).
     // The head chef may also create one when moving everything to a new kitchen PIN (an exact copy of the old record).

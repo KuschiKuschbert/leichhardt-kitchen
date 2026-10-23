@@ -113,4 +113,36 @@ ok(/ 0 nights read again/.test(out2) && ly2.m === batchAt, "tomorrow's list: a s
 const ts2 = (await K.collection('summary').doc('transfers').get()).data() || {};
 ok(/Transfer summary: 3 items, 3 venues from 28 days/.test(out2) && !/Transfer summary failed/.test(out2), 'transfers: a venue "Constructor" and an item "__proto__" do not stop the summary (' + (out2.match(/Transfer summary[^\n]*/) || [''])[0] + ')');
 ok((ts2.venues || []).some(v => v.v === 'Constructor' && v.n === 1 && JSON.stringify(v.people) === '["constructor"]') && (ts2.items || []).some(x => x.t === '__proto__' && x.unit === 'packs' && x.venue === 'Constructor'), 'transfers: they are listed like any other venue, item and person');
+// phone pushes for order cut-offs (24 Oct 2026): scripts/cutoff-push.mjs at set times on Friday 23 Oct 2026. On the
+// emulator nothing is sent: it prints what it would send. Two Saturday deliveries close Friday 14:00 (one reminded 4
+// hours before, one 6), one closes Friday 14:00 but was marked Ordered, one closes Saturday 06:00 (8 hours before, so
+// Friday 22:00). Pushes go to the sous chef's and the Google account's phones, never staff's.
+await K.collection('config').doc('main').set({ sousIds: ['sam'], headId: 'hd', cutoffs: [
+  { id: 'pfd', name: 'PFD', dd: [6], at: 840, pre: 1, lead: 240 },
+  { id: 'veg', name: 'Veg', dd: [6], at: 840, pre: 1, lead: 360 },
+  { id: 'chk', name: 'Chicken', dd: [6], at: 840, pre: 1 },
+  { id: 'bread', name: 'Bread', dd: [0], at: 360, pre: 1, lead: 480 }
+] }, { merge: true });
+await K.collection('cutdone').doc('2026-10-23').set({ ids: { chk: true } });
+await K.collection('push').doc('p1').set({ tok: 'tok-sam', at: 1, ua: 'Android', by: 'sam' });
+await K.collection('push').doc('p2').set({ tok: 'tok-own', at: 1, ua: 'iPhone', by: 'owner' });
+await K.collection('push').doc('p3').set({ tok: 'tok-ann', at: 1, ua: 'Android', by: 'ann' });
+const at = (h, mi) => String(Date.UTC(2026, 9, 23, h - 10, mi));   // Friday 23 Oct 2026, kitchen time
+const push = t => execFileSync(process.execPath, ['cutoff-push.mjs'], { env: Object.assign({}, process.env, { KITCHEN_PIN: '000000', PUSH_NOW: t }), encoding: 'utf8' });
+const would = out => { const l = out.split('\n').filter(x => x.indexOf('{"would"') === 0)[0]; return l ? JSON.parse(l).would : []; };
+let p1 = push(at(7, 0));
+ok(/Nothing due/.test(p1), 'pushes: nothing due at 07:00');
+p1 = push(at(8, 5));
+let wd = would(p1);
+ok(wd.length === 2 && wd.every(x => x.data.title === 'Veg: order by 14:00' && x.data.body === "For Saturday's delivery. 5 h 55 min to go.") && wd.map(x => x.by).sort().join() === 'owner,sam', 'pushes: 08:05, Veg (6 hours) goes to the sous chef and the Google account, not staff (' + JSON.stringify(wd) + ')');
+wd = would(push(at(10, 3)));
+ok(wd.length === 2 && wd.every(x => x.data.title === 'PFD: order by 14:00'), 'pushes: 10:03, PFD (4 hours); Veg is not sent again, Chicken was ordered');
+ok(/Nothing new to send/.test(push(at(10, 13))), 'pushes: the next run sends nothing');
+wd = would(push(at(13, 2)));
+ok(wd.length === 4 && wd.filter(x => x.data.title === 'Order now: PFD' && /^Closes at 14:00 for Saturday's delivery\. 58 min to go\.$/.test(x.data.body)).length === 2 && wd.filter(x => x.data.tag === 'cut-veg').length === 2, 'pushes: 13:02, Order now for PFD and Veg');
+ok(/Nothing due/.test(push(at(14, 5))), 'pushes: nothing once the cut-off has passed');
+wd = would(push(at(22, 4)));
+ok(wd.length === 2 && wd.every(x => x.data.title === 'Bread: order by tomorrow 06:00'), 'pushes: 22:04, an early cut-off is pushed the night before');
+const ps = ((await K.collection('pushsent').doc('2026-10-23').get()).data() || {}).sent || {};
+ok(ps['pfd|2026-10-23'] === 'now' && ps['veg|2026-10-23'] === 'now' && !ps['chk|2026-10-23'], 'pushes: what was sent is kept per cut-off day');
 process.exit(fails ? 1 : 0);
