@@ -633,11 +633,15 @@ await ok(W([['todos/t13', todo({ st: 'done', doneAt: 6, doneBy: '' })]], { id: '
 await ok(W([['todos/t14', todo()]], { id: 'sam' }), true, 'todos: (Sam adds another job)');
 await ok(W([['todos/t14', { doneBy: 'hd', upd: 7 }, true]], { id: 'sam' }), false, 'todos: an open job cannot be given someone\'s tick');
 await ok(W([['todos/t14', { st: 'done', doneAt: 7, doneBy: '', upd: 7 }, true]], { id: 'sam' }), false, 'todos: nor be ticked with no one named');
+await ok(W([['todos/t2', { st: 'open', upd: 8 }, true]], { id: 'sam' }), false, 'todos: a done job cannot be reopened still naming who ticked it');
+await ok(W([['todos/t2', { text: 'Changed while done', upd: 8 }, true]], { id: 'sam' }), true, 'todos: the words of a done job can be changed (a change saved from an older copy), keeping its tick');
 await ok(W([['todos/t2', { st: 'open', doneAt: 0, doneBy: '', upd: 8 }, true]], { id: 'sam' }), true, 'todos: a sous chef unticks the head chef\'s tick');
 await ok(W([['todos/t1', { text: 'Book the hood clean for Monday', upd: 8 }, true]], { id: 'hd' }), true, 'todos: any chef changes the words');
 await ok(W([['todos/t1', { from: 'hd', upd: 8 }, true]], { id: 'hd' }), false, 'todos: who wrote it never changes');
 await ok(W([['todos/t1', { at: 1, upd: 8 }, true]], { id: 'sam' }), false, 'todos: nor when');
-await ok(W([['todos/t1', { st: 'gone', doneAt: 0, upd: 9 }, true]], { id: 'hd' }), true, 'todos: the head chef removes a job Sam ticked (kept as gone)');
+await ok(W([['todos/t1', { st: 'gone', upd: 9 }, true]], { id: 'hd' }), true, 'todos: the head chef removes a job Sam ticked (kept as gone, with who ticked it and when)');
+await ok(W([['todos/t1', { doneAt: 99, upd: 9 }, true]], { id: 'hd' }), false, 'todos: a removed job keeps its tick time');
+await ok(W([['todos/t1', { st: 'done', doneAt: 99, upd: 10 }, true]], { id: 'hd' }), false, 'todos: Undo cannot bring it back done at another time');
 await ok(W([['todos/t1', { st: 'done', doneAt: 7, upd: 10 }, true]], { id: 'hd' }), true, 'todos: Undo puts it back as done, still named as Sam\'s tick');
 await ok(W([['todos/t1', { st: 'open', doneAt: 0, doneBy: '', upd: 11 }, true]], { id: 'ann' }), false, 'todos: staff cannot untick');
 await ok(deleteDoc(doc(owner, K + 'todos/t1')), false, 'todos: never deleted, not even by the head chef');

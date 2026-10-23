@@ -157,6 +157,17 @@ const T = (id, x) => ({ [fsKey(['todos', id])]: Object.assign({ text: 'Job ' + i
   ok(/Could not load/.test(await txt(p, '.todo-donebox') || '') && !(await p.$('[data-lv="tododone"]')), 'done: a failed read says Could not load, not a list of one');
   await p.context().close();
 
+  // Change a job, then tick that same job before saving (Done never opened): Save still keeps the new words
+  p = await L.open(b, '#/todo', { who: 'sam', extra: seed, wait: 1500 });
+  await L.waitFor(p, () => document.querySelectorAll('[data-lv="todo"] .todo-row').length === 2, null, 6000).catch(() => {});
+  await tap(p, '[data-p="todo-edit"][data-id="t2"]'); await L.settle(p, 200);
+  await p.fill('[data-k="todo-text"]', 'Order new tongs, call Dave');
+  await tap(p, '[data-p="todo-tick"][data-id="t2"]'); await L.settle(p, 400);
+  await tap(p, '[data-p="todo-save"]'); await L.settle(p, 600);
+  s = await store(p);
+  ok(s[fsKey(['todos', 't2'])].text === 'Order new tongs, call Dave' && s[fsKey(['todos', 't2'])].st === 'done', 'change then tick: the new words are saved on the ticked job');
+  await p.context().close();
+
   // a date typed on a keyboard, digit by digit: the box keeps it and keeps the focus
   p = await L.open(b, '#/todo', { who: 'sam', extra: seed, wait: 1500 });
   await L.waitFor(p, () => !!document.querySelector('[data-k="todo-due"]'), null, 6000).catch(() => {});
@@ -177,6 +188,14 @@ const T = (id, x) => ({ [fsKey(['todos', id])]: Object.assign({ text: 'Job ' + i
   ok((await rows(p)).length === 3, 'filters: For me shows the 3 jobs for Sam (' + (await rows(p)).length + ')');
   await tap(p, '[data-p="todo-tick"][data-id="m0"]'); await L.settle(p, 500);
   ok((await rows(p)).length === 7, 'filters: with 7 jobs left (no chips), every job shows again (' + (await rows(p)).length + ')');
+  // with Done open, the keyboard stays on the open list after a tick (it does not follow the job into Done)
+  await tap(p, '.todo-donebox summary');
+  await L.waitFor(p, () => !!document.querySelector('[data-lv="tododone"] .todo-row'), null, 6000).catch(() => {});
+  const first = await p.$eval('[data-lv="todo"] [data-p="todo-tick"]', e => e.getAttribute('data-id'));
+  await p.focus('[data-lv="todo"] [data-p="todo-tick"]');
+  await p.keyboard.press('Enter'); await L.settle(p, 500);
+  const fx = await p.evaluate(() => { const a = document.activeElement; return a ? (a.closest('[data-lv]') || { getAttribute: () => '' }).getAttribute('data-lv') + ':' + a.getAttribute('data-id') : ''; });
+  ok((await rows(p)).length === 6 && fx.indexOf('todo:') === 0 && fx !== 'todo:' + first, 'keyboard: after a tick the focus is on the next tick of the open list (' + fx + ')');
   await p.context().close();
 
   // a failed read says so, never "nothing on the list"
