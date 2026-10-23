@@ -5052,19 +5052,26 @@
       '<div class="field"><span class="label">Actions</span>' + (actRows || '<p class="hint">No actions yet.</p>') + '<div class="btn-row"><button type="button" class="btn" data-p="mn-aadd">Add an action</button></div></div>' +
       mfTextarea('mn-menu', 'Menu changes', 3, 'What changes, and for which dish.') + mfTextarea('mn-dates', 'Dates ahead', 3, 'Deliveries, functions, events.') + mfTextarea('mn-other', 'Other', 3, '') + attBlock +
       '<div class="field"><label class="label" for="mn-next">Next meeting (optional)</label><input id="mn-next" type="date" class="p-dateinput" data-k="mn-next" value="' + esc(f.next) + '"></div>' +
-      '<div class="btn-row"><button type="button" class="btn dark" data-p="mn-pub"' + (S.mSaving ? ' disabled' : '') + '>' + (armed('mn-pub') ? 'Tap again to publish to ' + people().length + ' staff' : isEdit ? 'Publish as version ' + (f.v + 1) : 'Publish and start sign-off') + '</button>' + (isEdit ? '' : '<button type="button" class="btn" data-p="mn-draft"' + (S.mSaving ? ' disabled' : '') + '>Save draft</button>') + '<button type="button" class="btn" data-p="mn-prev">Preview</button><button type="button" class="btn" data-p="mn-cancel">' + (armed('mn-cancel') ? 'Tap again to discard' : 'Cancel') + '</button></div><span class="saved" role="status">' + esc(S.mMsg) + '</span></section>';
+      '<div class="btn-row"><button type="button" class="btn dark" data-p="mn-pub"' + (S.mSaving ? ' disabled' : '') + '>' + (S.mSaving === 'pub' ? 'Publishing...' : armed('mn-pub') ? 'Tap again to publish to ' + people().length + ' staff' : isEdit ? 'Publish as version ' + (f.v + 1) : 'Publish and start sign-off') + '</button>' + (isEdit ? '' : '<button type="button" class="btn" data-p="mn-draft"' + (S.mSaving ? ' disabled' : '') + '>' + (S.mSaving === 'draft' ? 'Saving...' : 'Save draft') + '</button>') + '<button type="button" class="btn" data-p="mn-prev">Preview</button><button type="button" class="btn" data-p="mn-cancel">' + (armed('mn-cancel') ? 'Tap again to discard' : 'Cancel') + '</button></div><span class="saved mn-say" role="status">' + esc(S.mMsg) + '</span></section>';
+  }
+  /* the minutes' message after a redraw: the form is long, and it closes on a save, so the page jumps. The message is
+     brought on screen (block: how), whichever of the two boxes holds it (the form's, or the one above the register) */
+  function mnSay(msg, how) {
+    S.mMsg = msg; draw();
+    var el = S.root && S.root.querySelector('.mn-say:not(:empty)');
+    if (el) el.scrollIntoView({ block: how || 'nearest' });
   }
   function saveMinutes(publish) {
     var f = S.mf; if (!f || S.mSaving || !fb) return;
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(f.date || '')) { S.mMsg = 'Pick the meeting date.'; draw(); return; }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(f.date || '')) { mnSay('Pick the meeting date.'); return; }
     var data = mfData(f, publish), wasPub = f.status === 'published';
     if (publish) {
       var missing = people().filter(function (p) { return !f.att[p.id]; });
-      if (missing.length) { S.mAttOpen = true; S.mMsg = 'Set attendance for ' + missing.slice(0, 4).map(function (p) { return p.name; }).join(', ') + (missing.length > 4 ? ' and ' + (missing.length - 4) + ' more' : '') + ' (Present, Apology or Absent).'; draw(); return; }
-      if (!data.decisions && !data.menu && !data.safety && !data.dates && !data.other && !data.acts.length) { S.mMsg = 'Write something in at least one section first.'; draw(); return; }
+      if (missing.length) { S.mAttOpen = true; mnSay('Set attendance for ' + missing.slice(0, 4).map(function (p) { return p.name; }).join(', ') + (missing.length > 4 ? ' and ' + (missing.length - 4) + ' more' : '') + ' (Present, Apology or Absent).'); return; }
+      if (!data.decisions && !data.menu && !data.safety && !data.dates && !data.other && !data.acts.length) { mnSay('Write something in at least one section first.'); return; }
       data.pubAt = now();
       if (wasPub) data.v = f.v + 1;
-    } else if (!data.decisions && !data.menu && !data.safety && !data.dates && !data.other && !data.acts.length && !data.guests) { S.mMsg = 'Nothing to save yet.'; draw(); return; }
+    } else if (!data.decisions && !data.menu && !data.safety && !data.dates && !data.other && !data.acts.length && !data.guests) { mnSay('Nothing to save yet.'); return; }
     // publishing starts sign-off for everyone (and a change means everyone signs again), so it takes a second tap
     if (publish && !arm('mn-pub')) return;
     if (!f.id) data.at = now();
@@ -5074,13 +5081,24 @@
       ops.push(['set', fb.fs.doc.apply(null, [fb.db].concat(base(), ['minutes', f.id, 'hist', String(f.orig.v)])), snap, false]);
     }
     ops.push(['set', ref, data, !!f.id]);
-    S.mSaving = true; S.mMsg = ''; draw();
+    S.mSaving = publish ? 'pub' : 'draft'; S.mMsg = publish ? 'Publishing...' : 'Saving...'; draw();
+    // a half-dropped signal can leave the save with no answer for a long time: say so, rather than a grey button and
+    // no words (23 Oct 2026, the head chef could not tell whether minutes were published). Firestore keeps the write on
+    // this device and sends it with the signal
+    var slow = setTimeout(function () { if (S.mf === f && S.mSaving) { S.mMsg = 'Waiting for the signal. The minutes are kept on this device and ' + (publish ? 'go to the team' : 'are saved') + ' when the signal is back. Keep the book open.'; draw(); } }, 4000);
     W(ops).then(function () {
+      clearTimeout(slow);
       S.mSaving = false; S.mf = null; if (publish) { S.mSel = ref.id; delete S.mmine[ref.id + '_' + data.v + '_' + S.who]; }
-      S.mMsg = publish ? 'Published. Staff can read and sign it now.' : 'Draft saved.';
-      loadMinutes(true); if (publish) loadSigns(ref.id, true); draw();
+      // the register and the drafts show what was saved at once, before the list is read again
+      var rec = Object.assign({}, mnById(ref.id) || {}, data, { id: ref.id });
+      S.mins = (S.mins || []).filter(function (m) { return m.id !== ref.id; }).concat([rec]);
+      loadMinutes(true); if (publish) loadSigns(ref.id, true);
+      if (publish) toast('Minutes ' + pad(data.no) + ' published.');
+      mnSay(publish ? 'Minutes ' + pad(data.no) + (data.v > 1 ? ' version ' + data.v : '') + ' published at ' + clock(data.pubAt) + '. Staff can read and sign them now.' : 'Draft saved at ' + clock(data.upd) + '. Staff do not see drafts.', 'center');
     }, function (e) {
-      S.mSaving = false; S.mMsg = e && e.code === 'permission-denied' ? 'Not allowed. Only the head chef can write minutes, and the minutes rules must be published.' : 'Could not save. Check the connection and try again.'; draw();
+      clearTimeout(slow);
+      S.mSaving = false;
+      mnSay('Not ' + (publish ? 'published' : 'saved') + '. ' + (e && e.code === 'permission-denied' ? 'Only the head chef can write minutes, and the minutes rules must be published.' : 'Check the connection and try again.'));
     });
   }
   function mnRef(id) { return docRef('minutes', id); }
@@ -5136,7 +5154,7 @@
         '<h3 class="a-ch-h">Actions overdue</h3>' + (od.length ? '<ul class="mn-chase">' + od.map(function (a) { return '<li>' + esc(a.what) + ' <b>' + esc(a.who === 'all' ? 'Everyone' : mnName(a.who)) + '</b> was ' + esc(dayShort(a.by)) + '</li>'; }).join('') + '</ul>' : '<p class="hint">None. Seen by the head chef and sous chefs only.</p>') + '</div>';
       body = tiles + '<div class="mn-regrid">' + chase + '<div class="mn-regall"><button type="button" class="btn mn-noprint" data-p="mn-regall" aria-expanded="' + !!S.mRegAll + '">' + (S.mRegAll ? 'Hide the full list' : 'Show everyone (' + reg.rows.length + ')') + '</button>' + table + '</div></div>';
     }
-    return '<section class="set-block mn-print"><span class="label">Sign-off register</span><span class="hint">Minutes ' + pad(m.no || 0) + ', ' + esc(longDate(m.date)) + ', version ' + m.v + (m.v > 1 ? '. Earlier versions are kept' : '') + '. Staff who have not signed within ' + MN_LATE + ' days are marked late. Everyone on the staff list signs, including apology and absent.</span>' + chips + body +
+    return '<section class="set-block mn-print"><span class="label">Sign-off register</span><span class="hint">Minutes ' + pad(m.no || 0) + ', ' + esc(longDate(m.date)) + ', version ' + m.v + (typeof m.pubAt === 'number' ? ', published ' + esc(dayShort(T.day(m.pubAt))) + ' at ' + esc(clock(m.pubAt)) : '') + (m.v > 1 ? '. Earlier versions are kept' : '') + '. Staff who have not signed within ' + MN_LATE + ' days are marked late. Everyone on the staff list signs, including apology and absent.</span>' + chips + body +
       '<div class="btn-row mn-noprint"><button type="button" class="btn" data-p="mn-csv" data-id="' + esc(m.id) + '">Download CSV</button><button type="button" class="btn" data-p="mn-refresh">Refresh</button>' + (mnCanWrite() ? '<button type="button" class="btn" data-p="mn-edit" data-id="' + esc(m.id) + '">Change as a new version</button><button type="button" class="btn" data-p="mn-remove" data-id="' + esc(m.id) + '">' + (armed('mn-del:' + m.id) ? 'Tap again to remove' : 'Remove') + '</button>' : '') + '</div></section>';
   }
   function minAdminHTML() {
@@ -5144,7 +5162,7 @@
     if (S.mins == null) return '<p class="hint">Loading...</p>';
     var drafts = mnDrafts(), pub = mnPub();
     var intro = '<section class="set-block mn-noprint"><span class="label">Kitchen meeting minutes</span><span class="hint">Write the minutes after the meeting. Staff read them at Meeting minutes in the app and sign with their own PIN. A change after publishing makes a new version and everyone signs again.</span>' +
-      '<div class="btn-row"><button type="button" class="btn dark" data-p="mn-new">Write new minutes</button><button type="button" class="btn" data-p="mn-tpl">Start from the team notes</button>' + drafts.map(function (d) { return '<button type="button" class="btn" data-p="mn-draft-open" data-id="' + esc(d.id) + '">Continue draft ' + pad(d.no || 0) + ' (' + esc(dayShort(d.date)) + ')</button>'; }).join('') + '</div><span class="saved" role="status">' + (S.mf ? '' : esc(S.mMsg)) + '</span></section>';
+      '<div class="btn-row"><button type="button" class="btn dark" data-p="mn-new">Write new minutes</button><button type="button" class="btn" data-p="mn-tpl">Start from the team notes</button>' + drafts.map(function (d) { return '<button type="button" class="btn" data-p="mn-draft-open" data-id="' + esc(d.id) + '">Continue draft ' + pad(d.no || 0) + ' (' + esc(dayShort(d.date)) + ')</button>'; }).join('') + '</div><span class="saved mn-say" role="status">' + (S.mf ? '' : esc(S.mMsg)) + '</span></section>';
     if (!mnCanWrite()) intro = '<section class="set-block mn-noprint"><span class="label">Kitchen meeting minutes</span><span class="hint">See who has signed the minutes and who still needs to. Only the head chef writes and publishes minutes.</span></section>';
     return intro + (S.mf && mnCanWrite() ? mfHTML() : '') + mnRegisterHTML(pub);
   }

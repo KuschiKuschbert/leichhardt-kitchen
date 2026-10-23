@@ -34,7 +34,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   ok(s[key] && s[key].v === 2 && s[key].status === 'published' && /Thursday/.test(s[key].decisions), 'new version: the minutes are version 2 with the new words');
   const hist = s[key.replace(/\/minutes\/[^/]+$/, '/minutes/' + id + '/hist/1')];
   ok(!!hist && hist.v === 1 && /Monday$/.test(hist.decisions) && !/Thursday/.test(hist.decisions), 'new version: version 1 is kept as it was under hist (' + (hist ? hist.decisions : 'missing') + ')');
-  ok(/Published/.test(await txt(p, '#prep-root') || ''), 'new version: the page says it was published');
+  ok(/Minutes 01 version 2 published at \d\d:\d\d\./.test(await txt(p, '#prep-root') || ''), 'new version: the page says version 2 was published, and when');
   ok(p.errors.length === 0, 'minutes version: no page errors ' + p.errors.join(' | '));
   await p.context().close();
   await b.close();
