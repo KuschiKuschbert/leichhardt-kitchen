@@ -622,6 +622,17 @@ await ok(getDocs(collection(env.authenticatedContext('other', { email: 'someone@
 await ok(W([['todos/t1', { st: 'done', doneAt: 7, doneBy: 'sam', upd: 7 }, true]], { id: 'sam' }), true, 'todos: a sous chef ticks a job, named as the one who did it');
 await ok(W([['todos/t2', { st: 'done', doneAt: 7, doneBy: 'hd', upd: 7 }, true]], { id: 'sam' }), false, 'todos: a sous chef cannot tick one in someone else\'s name');
 await ok(W([['todos/t2', { st: 'done', doneAt: 7, doneBy: 'hd', upd: 7 }, true]], { id: 'hd' }), true, 'todos: the head chef by PIN ticks one');
+// who ticked is only ever the writer or left as it was (review, 23 Oct 2026): no two-step way round it
+await ok(W([['todos/t2', { doneBy: 'cal', upd: 7 }, true]], { id: 'sam' }), false, 'todos: a sous chef cannot name someone else as who ticked a done job');
+await ok(W([['todos/t2', { doneBy: '', upd: 7 }, true]], { id: 'sam' }), false, 'todos: nor blank it');
+await ok(W([['todos/t2', { doneAt: 99, upd: 7 }, true]], { id: 'sam' }), false, 'todos: nor change when it was ticked');
+await ok(W([['todos/t2', { st: 'done', doneAt: 98, doneBy: 'sam', upd: 7 }, true]], { id: 'sam' }), true, 'todos: ticking it again as himself (two phones at once) names him');
+await ok(W([['todos/t2', { st: 'done', doneAt: 7, doneBy: 'hd', upd: 7 }, true]], { id: 'hd' }), true, 'todos: (the head chef ticks it again)');
+await ok(W([['todos/t13', todo({ doneBy: 'hd' })]], { id: 'sam' }), false, 'todos: a new open job cannot carry someone\'s tick');
+await ok(W([['todos/t13', todo({ st: 'done', doneAt: 6, doneBy: '' })]], { id: 'sam' }), false, 'todos: nor arrive done with no one named');
+await ok(W([['todos/t14', todo()]], { id: 'sam' }), true, 'todos: (Sam adds another job)');
+await ok(W([['todos/t14', { doneBy: 'hd', upd: 7 }, true]], { id: 'sam' }), false, 'todos: an open job cannot be given someone\'s tick');
+await ok(W([['todos/t14', { st: 'done', doneAt: 7, doneBy: '', upd: 7 }, true]], { id: 'sam' }), false, 'todos: nor be ticked with no one named');
 await ok(W([['todos/t2', { st: 'open', doneAt: 0, doneBy: '', upd: 8 }, true]], { id: 'sam' }), true, 'todos: a sous chef unticks the head chef\'s tick');
 await ok(W([['todos/t1', { text: 'Book the hood clean for Monday', upd: 8 }, true]], { id: 'hd' }), true, 'todos: any chef changes the words');
 await ok(W([['todos/t1', { from: 'hd', upd: 8 }, true]], { id: 'hd' }), false, 'todos: who wrote it never changes');

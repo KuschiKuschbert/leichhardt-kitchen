@@ -1480,10 +1480,11 @@ button.wm-a { width: 100%; border: 0; background: none; font: inherit; text-alig
 .ml-sous { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
 .ml-donebox > summary { cursor: pointer; font-weight: 700; min-height: 44px; display: flex; align-items: center; }
 /* The chef to-do list (#/todo, 23 Oct 2026): the add form, then tick-off rows like kitchen mail's, Done folded away */
-.todo-add { margin: 4px 0 18px; padding: 14px; border: 1.5px solid var(--ink); border-radius: var(--radius); background: var(--paper); }
+.todo-add { display: flex; flex-direction: column; gap: 0.8rem; margin: 4px 0 18px; padding: 14px; border: 1.5px solid var(--ink); border-radius: var(--radius); background: var(--paper); }
 .todo-add.is-edit { border-color: var(--accent); box-shadow: inset 4px 0 0 var(--accent); }
 .todo-ta { width: 100%; box-sizing: border-box; min-height: 4.5rem; padding: 10px 12px; border: 1.5px solid var(--ink); border-radius: var(--radius); font: inherit; font-size: 1rem; resize: vertical; background: var(--paper); color: var(--ink); }
 .todo-dues { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.todo-dues .chip[hidden] { display: none; }
 .todo-for { flex-wrap: wrap; gap: 8px; }
 .todo-stale { margin: 0 0 8px; }
 .todo-page .lv-cards { list-style: none; margin: 0; padding: 0; gap: 0; }

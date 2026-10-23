@@ -66,6 +66,7 @@ const T = (id, x) => ({ [fsKey(['todos', id])]: Object.assign({ text: 'Job ' + i
   // change the words
   await tap(p, '[data-p="todo-edit"][data-id="t2"]'); await L.settle(p, 200);
   ok(await p.$eval('[data-k="todo-text"]', e => e.value) === 'Order new tongs' && /Save changes/.test(await txt(p, '[data-p="todo-save"]') || ''), 'change: the job fills the box');
+  ok(await p.evaluate(() => window.LK_PREP.unsaved()) === false, 'change: opening a job with Change is not "not saved yet" until something changes');
   await p.fill('[data-k="todo-text"]', 'Order 6 new tongs');
   await tap(p, '[data-p="todo-save"]'); await L.settle(p, 600);
   s = await store(p);
@@ -120,7 +121,62 @@ const T = (id, x) => ({ [fsKey(['todos', id])]: Object.assign({ text: 'Job ' + i
   // a long word and every extra on a job: still no sideways scroll on a phone
   p = await L.open(b, '#/todo', { who: 'sam', extra: Object.assign({}, seed, T('t9', { text: 'Restock-the-' + 'x'.repeat(70), due: '2026-10-24', for: 'sam' })), wait: 1500 });
   await L.waitFor(p, () => document.querySelectorAll('[data-lv="todo"] .todo-row').length === 3, null, 6000).catch(() => {});
+  ok((await rows(p)).some(t => /^Restock-the-x+$/.test(t)), 'phone: the long job is on the list');
   ok(!(await L.overflow(p)), 'phone: no sideways scroll with a long job (' + (await L.overflow(p)) + ')');
+  // Due first: overdue, then the next day due, then jobs with no day (oldest first); not the order they were written
+  const d3 = L.ymd(new Date(L.NOW + 3 * 86400000));
+  await p.context().close();
+  p = await L.open(b, '#/todo', { who: 'sam', extra: Object.assign({}, T('a1', { text: 'No day', at: L.NOW - 9e6 }), T('a2', { text: 'Overdue', due: '2020-01-01', at: L.NOW - 5e6 }), T('a3', { text: 'Later', due: d3, at: L.NOW - 1e6 })), wait: 1500 });
+  await L.waitFor(p, () => document.querySelectorAll('[data-lv="todo"] .todo-row').length === 3, null, 6000).catch(() => {});
+  ok((await rows(p)).join(',') === 'Overdue,Later,No day', 'sort: due first, then no day (' + (await rows(p)).join(',') + ')');
+  ok(p.errors.length === 0, 'phone: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // another phone ticks a job while this one has the list open: once Done is read, the job is in Done only, and its
+  // box there unticks it (it does not tick it again)
+  p = await L.open(b, '#/todo', { who: 'sam', extra: seed, wait: 1500 });
+  await L.waitFor(p, () => document.querySelectorAll('[data-lv="todo"] .todo-row').length === 2, null, 6000).catch(() => {});
+  await p.evaluate(k => { const d = JSON.parse(localStorage.getItem('fake.fs'))[k]; window.__fake.write(k, Object.assign(d, { st: 'done', doneAt: Date.now(), doneBy: 'ann' })); }, fsKey(['todos', 't2']));
+  await L.settle(p, 300);
+  await tap(p, '.todo-donebox summary');
+  await L.waitFor(p, () => !!document.querySelector('[data-lv="tododone"] [data-id="t2"]'), null, 6000).catch(() => {});
+  ok(!(await p.$('[data-lv="todo"] [data-id="t2"]')) && !!(await p.$('[data-lv="tododone"] [data-id="t2"]')), 'two phones: a job ticked elsewhere shows under Done only');
+  await tap(p, '[data-lv="tododone"] [data-p="todo-tick"][data-id="t2"]'); await L.settle(p, 600);
+  s = await store(p);
+  ok(s[fsKey(['todos', 't2'])].st === 'open' && s[fsKey(['todos', 't2'])].doneBy === '', 'two phones: its box under Done unticks it');
+  await p.context().close();
+
+  // a tick before Done was ever opened does not make a one-job Done list; a Done read that fails says so
+  p = await L.open(b, '#/todo', { who: 'sam', extra: seed, wait: 1500 });
+  await L.waitFor(p, () => document.querySelectorAll('[data-lv="todo"] .todo-row').length === 2, null, 6000).catch(() => {});
+  await tap(p, '[data-p="todo-tick"][data-id="t2"]'); await L.settle(p, 500);
+  ok(/^Done in the last 30 days$/.test(await txt(p, '.todo-donebox summary') || ''), 'done: no count before Done is read (' + await txt(p, '.todo-donebox summary') + ')');
+  await p.evaluate(() => { window.__fake.failReads = /todos$/; });
+  await tap(p, '.todo-donebox summary');
+  await L.waitFor(p, () => /Could not load/.test((document.querySelector('.todo-donebox') || {}).textContent || ''), null, 5000).catch(() => {});
+  ok(/Could not load/.test(await txt(p, '.todo-donebox') || '') && !(await p.$('[data-lv="tododone"]')), 'done: a failed read says Could not load, not a list of one');
+  await p.context().close();
+
+  // a date typed on a keyboard, digit by digit: the box keeps it and keeps the focus
+  p = await L.open(b, '#/todo', { who: 'sam', extra: seed, wait: 1500 });
+  await L.waitFor(p, () => !!document.querySelector('[data-k="todo-due"]'), null, 6000).catch(() => {});
+  await p.focus('[data-k="todo-due"]');
+  // the date box takes the parts in the browser's own order (month first in the test browser, day first in Australia)
+  await p.keyboard.type(/^en-US/.test(await p.evaluate(() => navigator.language)) ? '10302026' : '30102026'); await L.settle(p, 300);
+  { const dv = await p.$eval('[data-k="todo-due"]', e => e.value), fk = await p.evaluate(() => document.activeElement && document.activeElement.getAttribute('data-k')), lang = await p.evaluate(() => navigator.language); ok(dv === '2026-10-30' && fk === 'todo-due', 'date: typed on a keyboard, it stays and keeps the focus (' + dv + ', ' + fk + ', ' + lang + ')'); }
+  ok(await p.$eval('[data-p="todo-nodue"]', e => !e.hidden), 'date: No date shows once a day is set');
+  await p.context().close();
+
+  // 8 jobs: the chips show; For me filters; once the list is short again every job shows
+  const many = Object.assign({}, seed);
+  for (let i = 0; i < 6; i++) Object.assign(many, T('m' + i, { text: 'Many ' + i, for: i < 2 ? 'sam' : '' }));
+  p = await L.open(b, '#/todo', { who: 'sam', extra: many, wait: 1500 });
+  await L.waitFor(p, () => document.querySelectorAll('[data-lv="todo"] .todo-row').length === 8, null, 6000).catch(() => {});
+  ok(!!(await p.$('[data-p="lv-f"][data-lv="todo"][data-v="me"]')), 'filters: For me shows with 8 jobs');
+  await tap(p, '[data-p="lv-f"][data-lv="todo"][data-v="me"]'); await L.settle(p, 300);
+  ok((await rows(p)).length === 3, 'filters: For me shows the 3 jobs for Sam (' + (await rows(p)).length + ')');
+  await tap(p, '[data-p="todo-tick"][data-id="m0"]'); await L.settle(p, 500);
+  ok((await rows(p)).length === 7, 'filters: with 7 jobs left (no chips), every job shows again (' + (await rows(p)).length + ')');
   await p.context().close();
 
   // a failed read says so, never "nothing on the list"

@@ -600,15 +600,22 @@ service cloud.firestore {
         && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 300
         && request.resource.data.st in ['open', 'done', 'gone']
         && todoStr('due', 10) && (request.resource.data.get('due', '') == '' || request.resource.data.get('due', '').matches('[0-9]{4}-[0-9]{2}-[0-9]{2}'))
-        && todoStr('for', 40) && todoStr('from', 40) && todoStr('doneBy', 40)
+        && todoStr('for', 80) && todoStr('from', 80) && todoStr('doneBy', 80)
         && request.resource.data.get('at', 0) is number && request.resource.data.get('doneAt', 0) is number && request.resource.data.get('upd', 0) is number;
     }
-    // a chef ticking it names themselves; the head chef's Google account (no PIN session) may name the head chef. Undo of a
-    // removed job that was done puts it back as it was, keeping who ticked it.
+    // Who ticked a job is only ever the writer, or left as it was (review, 23 Oct 2026): a tick names the chef who wrote
+    // it; any other write keeps doneBy (Undo puts a removed job back as it was) or, while not done, clears it (untick).
+    // A done job keeps its tick time unless the writer ticks it again as themselves (two phones ticking at once).
+    // The head chef's Google account (no PIN session) may name the head chef.
     function todoTickOk() {
-      return isAdmin() || request.resource.data.st != 'done' || (resource != null && resource.data.get('st', '') == 'done')
-        || request.resource.data.get('doneBy', '') == request.resource.data.by
-        || (resource != null && request.resource.data.get('doneBy', '') != '' && request.resource.data.get('doneBy', '') == resource.data.get('doneBy', ''));
+      let nb = request.resource.data.get('doneBy', '');
+      let ob = resource == null ? '' : resource.data.get('doneBy', '');
+      let keep = resource != null && resource.data.get('st', '') == 'done' && request.resource.data.st == 'done';
+      return isAdmin()
+        || (request.resource.data.st == 'done' && nb == request.resource.data.by)
+        || (resource != null && nb == ob && (request.resource.data.st != 'done' || nb != '')
+          && (!keep || request.resource.data.get('doneAt', 0) == resource.data.get('doneAt', 0)))
+        || (request.resource.data.st != 'done' && nb == '');
     }
     match /kitchens/KITCHEN_PIN/todos/{id} {
       allow read: if isAdmin() || (sessOk(reader()) && chefId(reader()));
