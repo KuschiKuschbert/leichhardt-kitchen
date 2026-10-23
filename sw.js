@@ -92,12 +92,14 @@ self.addEventListener('push', function (e) {
 self.addEventListener('notificationclick', function (e) {
   e.notification.close();
   var url = new URL('./#/orders', self.registration.scope).href;
-  // only a window of the book itself (other pages share the origin on GitHub Pages), moved to the order list first and
-  // then brought forward; one this worker does not run cannot be moved, so a new window opens there instead (the tap
-  // allows one window action, so focus comes last)
-  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (cs) {
+  // a window of the book this worker runs (other pages share the origin on GitHub Pages, and only such a window can be
+  // moved): brought forward, then moved to the order list (Chrome lets navigate run after focus; Firefox may never answer a
+  // move within the page, so it is not waited on past 3 seconds). No such window: a new one opens on the order list.
+  e.waitUntil(self.clients.matchAll({ type: 'window' }).then(function (cs) {
     var c = cs.filter(function (x) { return x.url.indexOf(self.registration.scope) === 0; })[0];
     if (!c) return self.clients.openWindow(url);
-    return c.navigate(url).then(function (n) { return (n || c).focus(); }, function () { return self.clients.openWindow(url); });
+    return c.focus().then(function (w) {
+      return Promise.race([(w || c).navigate(url), new Promise(function (r) { setTimeout(r, 3000); })]);
+    }).catch(function () {});
   }));
 });

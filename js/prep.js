@@ -1776,7 +1776,7 @@
       }),
       kitSecs: ksClean(cfg.kitSecs !== undefined ? cfg.kitSecs : ((S.config && S.config.kitSecs) || [])), showBadges: cfg.showBadges !== false, staffSee: staffSee(cfg),
       sousMail: !!(S.config && S.config.sousMail === true),   // set only from the Kitchen mail tab (mlSousSet)
-      cutoffs: cutClean(S.config && S.config.cutoffs),   // set only from the Order cut-offs page (cutSave)
+      cutoffs: (function (l) { return CUT_OK ? cutClean(l) : (Array.isArray(l) ? l : []); })(S.config && S.config.cutoffs),   // set only from the Order cut-offs page (cutSave); kept as stored if js/cutoffs.js did not load
       sousIds: hold ? (hold.sousIds || []) : idsFor(cfg.people, isSousP), pingIds: hold ? (hold.pingIds || []) : idsFor(cfg.people, canPingP),
       fnIds: hold ? (hold.fnIds || []) : idsFor(cfg.people, fnP),
       staffIds: idsFor(cfg.people, anyP), headId: headIdOf(cfg.people), pinOpen: pinOpenFor(idsFor(cfg.people, anyP)),
@@ -6651,10 +6651,10 @@
   ];
   var cutTick = null, cutLast = null;
   /* js/cutoffs.js: shared with the server's pushes. Should it not have loaded, no cut-offs show, the rest of the book
-     works, and the cut-offs saved in config/main are kept as they are (clean hands them back untouched, so the head
+     works, and the cut-offs saved in config/main are kept as they are (saveConfig writes them back untouched, so the head
      chef's People save cannot wipe them; the Order cut-offs page says it cannot load and saves nothing). */
   var CUT_OK = !!window.LK_CUT;
-  var CUT = window.LK_CUT || { clean: function (l) { return Array.isArray(l) ? l : []; }, on: function () { return []; }, forText: function () { return ''; }, startAt: function () { return 0; }, LEADS: [] }, cutClean = CUT.clean;
+  var CUT = window.LK_CUT || { clean: function () { return []; }, on: function () { return []; }, forText: function () { return ''; }, startAt: function () { return 0; }, LEADS: [] }, cutClean = CUT.clean;
   function cutList() { return cutClean(S.config && S.config.cutoffs); }
   // the weekdays an order closes: each delivery day less the days before
   function cutDays(s) { return s.dd.map(function (d) { return (d - s.pre + 7) % 7; }); }
@@ -6688,15 +6688,18 @@
      chef's phone (their PIN session) or the head chef's Google account, only while cut-offs are set: one read per record of
      those two days (ticks and taken-off ticks, one when there are none) when the book opens, then only what changes. It moves on when the kitchen day changes, and starts as soon as
      this phone may read (cutWatch() runs on every paint, so a Google account checked or a PIN session opened late is
-     caught). A refused or failed read leaves nothing ticked (the bar and the pushes carry on). */
+     caught). A refused or failed read keeps what this phone last saw (the bar and the pushes carry on). */
   var cutSub = null, cutSubKey = '', cutSeen = {};
   function cutHas() { return cutWho() && cutList().some(function (s) { return s.at >= 0 && s.dd.length; }); }
   function cutCanRead() { return !!fb && !!S.pin && cutHas() && (canW() || (!!S.user && S.level === 'owner')); }
   var cutErr = { key: '', at: 0 };
+  // who reads: a refused read is tried again after 5 minutes, or at once when the person, their PIN session or the
+  // Google account check changes
+  function cutReader() { return [S.who, S.sessFor, S.sessExp, S.level].join(','); }
   function cutWatch() {
     var want = cutCanRead() ? S.pin + '|' + dayNow() : '';
     if (want === cutSubKey) return;
-    if (want && cutErr.key === want && Date.now() - cutErr.at < 300000) return;   // a refused or failed read: again after 5 minutes
+    if (want && cutErr.key === want + '|' + cutReader() && Date.now() - cutErr.at < 300000) return;
     if (cutSub) cutSub();
     if (cutSubKey) cutSeen = {};   // another kitchen PIN, day or person: a tick just made on this phone (before the first read) stays
     cutSub = null; cutSubKey = want;
@@ -6707,7 +6710,7 @@
       sn.docs.forEach(function (d) { var x = d.data(); if (x && x.on === true && typeof x.sid === 'string' && days.indexOf(x.day) >= 0) seen[x.sid + '|' + x.day] = { by: typeof x.by === 'string' ? x.by : '', at: typeof x.at === 'number' ? x.at : 0 }; });
       cutSeen = seen;
       cutPaint(); if (S.name === 'orders' || S.name === 'todo') draw();
-    }, function () { if (cutSub) cutSub(); cutSub = null; cutErr = { key: cutSubKey, at: Date.now() }; cutSubKey = ''; });
+    }, function () { if (cutSub) cutSub(); cutSub = null; cutErr = { key: cutSubKey + '|' + cutReader(), at: Date.now() }; cutSubKey = ''; });
   }
   function cutStop() { if (cutSub) cutSub(); cutSub = null; cutSubKey = ''; cutSeen = {}; }
   // what is ticked: { '<supplier id>|<cut-off day>': { by, at } }
@@ -6717,19 +6720,17 @@
   function cutTicker() { return isSous() && canW() ? me().id : (S.user && S.level === 'owner' && !who()) ? 'owner' : ''; }
   function cutCanTick() { return !!fb && !!cutTicker(); }
   /* tick or untick one cut-off for everyone: a chef through W(), the Google account as owner. Shown at once on this
-     phone, and put back if the save is refused. */
+     phone, and put back if the save is refused. A tick already there (another chef's) is left as it is, with their name
+     and time. Ticks and unticks go straight into Firestore's queue, in the order they were tapped, so a quick untick
+     after a mis-tap wins, and a tick made with no signal is kept and sent later. */
   function cutOrdered(key, on) {
     var parts = key.split('|'), by = cutTicker();
     if (parts.length !== 2 || !fb || !by) return Promise.reject({ code: 'who' });
     var data = { day: parts[1], sid: parts[0], on: !!on, at: now() }, ref = docRef('cutdone', parts[1] + '_' + parts[0]), was = cutSeen[key];
+    if (on && was) return Promise.resolve();
     if (on) cutSeen[key] = { by: by, at: data.at }; else delete cutSeen[key];
     cutPaint(); if (S.name === 'orders' || S.name === 'todo') draw();
-    // ticking: one read first, so a tick another chef already made keeps their name and time (a bar not read yet)
-    var first = on ? fb.fs.getDoc(ref).then(function (sn) { var x = sn.exists() ? sn.data() : null; return x && x.on === true ? x : null; }, function () { return null; }) : Promise.resolve(null);
-    return first.then(function (x) {
-      if (x) { cutSeen[key] = { by: typeof x.by === 'string' ? x.by : '', at: typeof x.at === 'number' ? x.at : 0 }; cutPaint(); if (S.name === 'orders' || S.name === 'todo') draw(); return; }
-      return by === 'owner' ? track(fb.fs.setDoc(ref, Object.assign({ by: 'owner' }, data))) : W([['set', ref, data]]);
-    }).catch(function (e) {
+    return (by === 'owner' ? track(fb.fs.setDoc(ref, Object.assign({ by: 'owner' }, data))) : W([['set', ref, data]])).catch(function (e) {
       if (was) cutSeen[key] = was; else delete cutSeen[key];
       cutPaint(); if (S.name === 'orders' || S.name === 'todo') draw();
       throw e;
@@ -6806,7 +6807,9 @@
      The phone keeps lk.push { h, by, day, pin } (out of date the next kitchen day or under another kitchen PIN: it gets
      its address again and writes it, one write a day, so a changed address or a moved kitchen PIN is picked up by
      itself). */
-  function pushWhoId() { var p = me(); return p && isSous() && canW() ? p.id : (admDev() && S.user ? 'owner' : ''); }
+  // whose phone: the head chef's Google device is always 'owner' (it writes with the Google account, which also works
+  // under a new kitchen PIN before anyone's PIN session opens there); otherwise the chef signed in with their PIN session
+  function pushWhoId() { var p = me(); return S.user && S.level === 'owner' && ownerHere() ? 'owner' : (p && isSous() && canW() ? p.id : ''); }
   function pushKept() { try { return JSON.parse(lsGet('lk.push') || 'null'); } catch (e) { return null; } }
   function pushIOS() { return /iPhone|iPad|iPod/.test(navigator.userAgent || '') && !(window.navigator.standalone || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)); }
   function pushCan() { return 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window; }

@@ -55,6 +55,11 @@ const rows = p => p.evaluate(() => [...document.querySelectorAll('.cut-tl li')].
   ok(s[CD('pfd')].on === false && s[CD('chk')].on === true, 'untick: PFD\'s tick is taken off, Chicken stays');
   await L.waitFor(p, () => [...document.querySelectorAll('#cut-band .cut-n')].map(e => e.textContent).join() === 'PFD,Veg', null, 10000);
   ok(true, 'untick: PFD is back on the bar');
+  // a mis-tap: tick and untick Veg straight after each other; the untick wins, in the order tapped (review, 24 Oct 2026)
+  await p.evaluate(() => { const b = document.querySelector('.cut-tl li:nth-child(3) .cut-box'); b.click(); document.querySelector('.cut-tl li:nth-child(3) .cut-box').click(); });
+  await L.settle(p, 800);
+  s = await store(p);
+  ok(s[CD('veg')] && s[CD('veg')].on === false && await p.$eval('.cut-tl li:nth-child(3) .cut-box', e => e.getAttribute('aria-pressed') === 'false'), 'quick tick and untick: Veg ends up not ticked (' + JSON.stringify(s[CD('veg')]) + ')');
   // another chef's phone ticks Veg: this phone follows straight away (the live listener)
   await p.evaluate(([k, day]) => { window.__fake.write(k, { day, sid: 'veg', on: true, at: Date.now(), by: 'sam' }); }, [CD('veg'), today]);
   await L.waitFor(p, () => { const e = document.querySelector('.cut-tl li:nth-child(3) .cut-box'); return e && e.getAttribute('aria-pressed') === 'true'; }, null, 10000);
@@ -146,6 +151,11 @@ const rows = p => p.evaluate(() => [...document.querySelectorAll('.cut-tl li')].
   s = await store(p);
   ok(s[CFG].people[2].name === 'Bo B' && JSON.stringify(s[CFG].cutoffs) === JSON.stringify(CUTS), 'no js/cutoffs.js: the People save keeps the cut-offs exactly as they were');
   ok(p.errors.filter(e => !/cutoffs\.js|ERR_FAILED|net::/.test(e)).length === 0, 'no js/cutoffs.js: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+  p = await L.open(b, '#/orders', { who: 'sam', extra: extra(), wait: 2000, block: 'js/cutoffs\\.js' });
+  await L.settle(p, 800);
+  ok(!(await p.$('.cut-today')) && !(await p.$('#cut-band:not([hidden])')) && await p.evaluate(() => !window.__fake.bill.some(x => /\/cutdone/.test(x.path))), 'no js/cutoffs.js: the order list shows no Supplier orders and reads no ticks');
+  ok(await p.$('.nb-page') !== null, 'no js/cutoffs.js: the order list itself still works');
   await p.context().close();
 
   await b.close();
