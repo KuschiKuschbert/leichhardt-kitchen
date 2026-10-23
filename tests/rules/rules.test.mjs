@@ -634,6 +634,10 @@ await ok(W([['todos/t14', todo()]], { id: 'sam' }), true, 'todos: (Sam adds anot
 await ok(W([['todos/t14', { doneBy: 'hd', upd: 7 }, true]], { id: 'sam' }), false, 'todos: an open job cannot be given someone\'s tick');
 await ok(W([['todos/t14', { st: 'done', doneAt: 7, doneBy: '', upd: 7 }, true]], { id: 'sam' }), false, 'todos: nor be ticked with no one named');
 await ok(W([['todos/t2', { st: 'open', upd: 8 }, true]], { id: 'sam' }), false, 'todos: a done job cannot be reopened still naming who ticked it');
+await ok(W([['todos/t15', todo()]], { id: 'sam' }), true, 'todos: (Sam adds a job)');
+await ok(W([['todos/t15', { st: 'done', doneAt: 20, doneBy: 'hd', upd: 20 }, true]], { id: 'hd' }), true, 'todos: (the head chef ticks it on her phone)');
+await ok(W([['todos/t15', { st: 'gone', upd: 21 }, true]], { id: 'sam' }), true, 'todos: Sam, still seeing it open, removes it');
+await ok(W([['todos/t15', { st: 'open', doneAt: 0, doneBy: '', upd: 22 }, true]], { id: 'sam' }), true, 'todos: and his Undo puts it back open, naming no one');
 await ok(W([['todos/t2', { text: 'Changed while done', upd: 8 }, true]], { id: 'sam' }), true, 'todos: the words of a done job can be changed (a change saved from an older copy), keeping its tick');
 await ok(W([['todos/t2', { st: 'open', doneAt: 0, doneBy: '', upd: 8 }, true]], { id: 'sam' }), true, 'todos: a sous chef unticks the head chef\'s tick');
 await ok(W([['todos/t1', { text: 'Book the hood clean for Monday', upd: 8 }, true]], { id: 'hd' }), true, 'todos: any chef changes the words');

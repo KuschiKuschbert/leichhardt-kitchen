@@ -7069,7 +7069,8 @@
     fb.fs.getDocs(fb.fs.query(colRef('todos'), fb.fs.where('doneAt', '>=', now() - TD_DONE_DAYS * 86400000))).then(function (sn) {
       var l = mlGrab(sn).filter(function (x) { return x.st === 'done'; }), cache = !!(sn.metadata && sn.metadata.fromCache);
       tdDoneBusy = false; tdDoneAt = cache ? Date.now() - TD_STALE + TD_RETRY : Date.now();
-      if (cache && !tdKept(sn)) { tdDoneErr = true; draw(); return; }
+      // the copy on the phone counts only once Done has been read from the server here (it may hold only this phone's ticks)
+      if (cache && (!tdDone || !tdKept(sn))) { tdDoneErr = true; draw(); return; }
       tdDone = l; tdDoneErr = false; tdDoneCache = cache; if (!cache) tdOpen = tdDrop(l, tdOpen); draw();
     }, function () { tdDoneBusy = false; tdDoneErr = true; tdDoneAt = Date.now() - TD_STALE + TD_RETRY; draw(); });
   }
@@ -7078,13 +7079,14 @@
     var t = tdf.text.replace(/^\s+|\s+$/g, '').slice(0, TD_MAX), due = tdDue(tdf.due), fr = tdForOk(tdf.fr) ? tdf.fr : '', at = now(), keep = tdf;
     if (!t) { tdMsg = 'Write the job first.'; draw(); focusK('todo-text'); return; }
     if (tdf.id) {
-      // the job being changed, even once it left both lists on this phone (ticked before Done was read)
-      var x = tdFind(tdf.id) || (tdEditX && tdEditX.id === tdf.id && tdEditX.st !== 'gone' ? tdEditX : null);
+      // the job being changed, even once it left both lists because it was ticked on this phone before Done was read
+      // (a job a read dropped, removed or ticked elsewhere, is not on the list any more)
+      var x = tdFind(tdf.id) || (tdEditX && tdEditX.id === tdf.id && tdEditX.st === 'done' ? tdEditX : null), ex = tdEditX;
       if (!x) { tdMsg = 'That job is not on the list any more.'; draw(); return; }
       var was = { text: x.text, due: x.due, for: x.for, upd: x.upd };
       x.text = t; x.due = due; x.for = fr; x.upd = at; tdf = tdBlank(); tdSnap = ''; tdEditX = null; tdMsg = ''; draw();
       W([['upd', docRef('todos', x.id), { text: t, due: due, for: fr, upd: at }]]).then(function () { toast('Job saved.'); }, function (e) {
-        x.text = was.text; x.due = was.due; x.for = was.for; x.upd = was.upd; failed(e, function () { tdf = keep; }); draw();
+        x.text = was.text; x.due = was.due; x.for = was.for; x.upd = was.upd; failed(e, function () { tdf = keep; tdEditX = ex; }); draw();
       });
       return;
     }
@@ -7100,6 +7102,7 @@
     if (!x || !todoOK()) return;
     var on = x.st !== 'done', t = now(), was = { st: x.st, doneAt: x.doneAt, doneBy: x.doneBy, upd: x.upd };
     var p = on ? { st: 'done', doneAt: t, doneBy: tdMe(), upd: t } : { st: 'open', doneAt: 0, doneBy: '', upd: t };
+    if (tdf.id === id) tdEditX = x;   // a job open in the box follows its tick
     Object.assign(x, p); tdPlace(x); if (!on) lvReveal('todo'); draw();
     W([['upd', docRef('todos', id), p]]).catch(function (e) { Object.assign(x, was); tdPlace(x); failed(e); draw(); });
   }
@@ -7120,9 +7123,10 @@
       toast('Removed from the to-do list.', { label: 'Undo', fn: function () {
         // only the person who removed it, still allowed to: after a hand-over the next person cannot put it back
         if (S.who !== by || !todoOK()) return;
-        var u = now();
-        x.st = was.st; x.upd = u; tdPlace(x); draw();
-        W([['upd', docRef('todos', id), { st: was.st, upd: u }]]).catch(function (e) { x.st = 'gone'; tdPlace(x); failed(e); draw(); });
+        // back to open names no one (the rules), even if another chef ticked it since this phone read the list
+        var u = now(), back = was.st === 'open' ? { st: 'open', doneAt: 0, doneBy: '', upd: u } : { st: was.st, upd: u };
+        Object.assign(x, back); tdPlace(x); draw();
+        W([['upd', docRef('todos', id), back]]).catch(function (e) { x.st = 'gone'; tdPlace(x); failed(e); draw(); });
       } });
     }, function (e) { x.st = was.st; x.upd = was.upd; tdPlace(x); failed(e); draw(); });
   }
