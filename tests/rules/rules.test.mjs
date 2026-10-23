@@ -464,7 +464,11 @@ await ok(W([['config/main', { pastEdit: { p: Date.now() } }, true]], { id: 'sam'
 await ok(W([['config/main', { pastEdit: { p: Date.now(), o: Date.now() } }, true]], { id: 'hd' }), true, 'pastEdit: the head chef with their PIN stamps prep and orders');
 await ok(W([['config/main', { pastEdit: { p: Date.now() } }, true]], { id: 'ann' }), false, 'pastEdit: staff cannot stamp it');
 await ok(W([['config/main', { pastEdit: { p: Date.now() }, pingIds: ['ann'] }, true]], { id: 'sam' }), false, 'pastEdit: nothing else may change in the same write');
-await ok(W([['config/main', { pastEdit: { x: 1 } }, true]], { id: 'sam' }), false, 'pastEdit: only p, o and n');
+await ok(W([['config/main', { pastEdit: { z: 1 } }, true]], { id: 'sam' }), false, 'pastEdit: only p, o, n and x');
+// the head chef's Google account stamps a past transfer change (x, 23 Oct 2026); a sous chef's next stamp keeps it in the map
+await ok(setDoc(doc(owner, K + 'config/main'), { pastEdit: { x: Date.now() } }, { merge: true }), true, 'pastEdit: the Google account stamps a past transfer change (x)');
+await ok(W([['config/main', { pastEdit: { p: Date.now() } }, true]], { id: 'sam' }), true, 'pastEdit: a sous chef still stamps prep with x in the map');
+await ok(W([['config/main', { pastEdit: { x: 'now' } }, true]], { id: 'sam' }), false, 'pastEdit: the transfers stamp is a number');
 await ok(W([['config/main', { pastEdit: { n: Date.now() } }, true]], { id: 'sam' }), true, 'pastEdit: a sous chef stamps a change to today\'s shift pings (n)');
 await ok(W([['config/main', { pastEdit: { n: 'now' } }, true]], { id: 'sam' }), false, 'pastEdit: the pings stamp is a number');
 await ok(W([['config/main', { pastEdit: { n: Date.now() } }, true]], { id: 'ann' }), false, 'pastEdit: staff cannot stamp the pings');
@@ -516,6 +520,73 @@ await ok(getDoc(doc(anon, K + 'daily/2026-10-21_abc123')), false, 'daily: a PIN 
 await ok(getDoc(doc(owner, K + 'daily/2026-10-21_abc123')), true, 'daily: the head chef\'s Google account reads them');
 await ok(W([['summary/waste', { day: WT, items: [] }]], { id: 'sam' }), false, 'summary: no phone writes it, not even a sous chef');
 await ok(setDoc(doc(owner, K + 'summary/waste'), { day: WT, items: [] }), true, 'summary: the head chef may copy it (moving the kitchen PIN)');
+// Transfers between venues (23 Oct 2026): like wastage, today's lines with the kitchen PIN and past days only for the
+// head chef's Google account. Tighter than wastage: only the known fields, a day near today, the writer's own id, no
+// time ahead, and Remove, Put back and Undo change only the removed fields
+const xline = x => Object.assign({ dir: 'out', venue: 'Riviera', person: 'Jo', text: 'Butter', amount: 2, unit: 'kg', note: '', addedBy: 'Ann', addedById: 'ann', addedAt: 1, deleted: false }, x || {});
+const XT = 'transfers/' + WT + '/lines/', XY = 'transfers/' + WY + '/lines/';
+await env.withSecurityRulesDisabled(async ctx => {
+  const db = ctx.firestore();
+  await setDoc(doc(db, K + XT + 't1'), xline());
+  await setDoc(doc(db, K + XY + 'y1'), xline({ dir: 'in', text: 'Eggs', amount: 30, unit: 'pieces' }));
+});
+await ok(getDoc(doc(anon, K + XT + 't1')), true, 'transfers: today\'s line is read with the kitchen PIN');
+await ok(getDocs(collection(anon, K + 'transfers/' + WT + '/lines')), true, 'transfers: today\'s list is read with the kitchen PIN');
+await ok(getDoc(doc(anon, K + XY + 'y1')), false, 'transfers: yesterday\'s line is refused with only the kitchen PIN');
+await ok(getDocs(collection(anon, K + 'transfers/' + WY + '/lines')), false, 'transfers: yesterday\'s list is refused with only the kitchen PIN');
+await ok(getDocs(collection(anon, K + 'transfers/' + WN + '/lines')), false, 'transfers: tomorrow\'s list is refused too');
+await ok(getDocs(collection(anon, K + 'transfers/nonsense/lines')), false, 'transfers: a day that is not a date is refused');
+await ok(getDocs(collection(wPhone('w-sam'), K + 'transfers/' + WY + '/lines')), false, 'transfers: a sous chef\'s phone cannot read past days either');
+await ok(getDocs(collection(owner, K + 'transfers/' + WY + '/lines')), true, 'transfers: the head chef\'s Google account reads past days');
+await ok(W([[XT + 't2', xline({ addedAt: Date.now() })]], { id: 'ann' }), true, 'transfers: Ann logs one another venue took from us');
+await ok(W([[XT + 't3', xline({ dir: 'in', person: '', addedAt: Date.now() })]], { id: 'ann' }), true, 'transfers: and one we took from them (who gave it may be left blank)');
+await ok(W([[XT + 't4', xline({ tst: true })]], { id: 'ann' }), true, 'transfers: practice mode marks it (tst)');
+await ok(W([['transfers/' + kday(Date.now() - 86400000) + '/lines/t5', xline()]], { id: 'ann' }), true, 'transfers: a line for yesterday, sent after midnight (no signal), still lands');
+await ok(W([[XT + 't6', xline({ venue: 'x'.repeat(40), person: 'x'.repeat(40), text: 'x'.repeat(80), note: 'x'.repeat(120), addedBy: 'x'.repeat(80), amount: 99999.5, unit: 'boxes' })]], { id: 'ann' }), true, 'transfers: every box filled to its cap is fine');
+await ok(W([[XT + 't7', xline({ unit: 'packs', addedAt: Date.now() + 600000 })]], { id: 'ann' }), true, 'transfers: a phone clock 10 minutes fast is fine');
+await ok(setDoc(doc(anon, K + XT + 'n1'), xline({ by: 'ann' })), false, 'transfers: no PIN session, refused');
+await ok(W([[XT + 'n2', xline()]], { id: 'ann', pin: '9999' }), false, 'transfers: wrong PIN, refused');
+await ok(W([[XT + 'n3', xline({ addedBy: 'Sam', addedById: 'sam' })]], { id: 'ann', as: 'sam' }), false, 'transfers: spoofed by: Ann\'s session with by Sam is refused');
+await ok(W([[XT + 'n4', xline({ addedBy: 'Bo', addedById: 'bo' })]], { id: 'ann' }), false, 'transfers: a line written as someone else is refused');
+await ok(W([['transfers/' + OLD + '/lines/n5', xline()]], { id: 'ann' }), false, 'transfers: staff cannot log on a day long past');
+await ok(W([['transfers/' + OLD + '/lines/n6', xline({ addedBy: 'Sam', addedById: 'sam' })]], { id: 'sam' }), false, 'transfers: nor can a sous chef');
+await ok(W([[XT + 'n7', xline({ venue: 'x'.repeat(41) })]], { id: 'ann' }), false, 'transfers: a venue over 40 characters is refused');
+await ok(W([[XT + 'n8', xline({ venue: '' })]], { id: 'ann' }), false, 'transfers: so is no venue');
+await ok(W([[XT + 'n9', xline({ person: 'x'.repeat(41) })]], { id: 'ann' }), false, 'transfers: who came for it, over 40 characters');
+await ok(W([[XT + 'n10', xline({ text: '' })]], { id: 'ann' }), false, 'transfers: an empty item is refused');
+await ok(W([[XT + 'n11', xline({ text: 'x'.repeat(81) })]], { id: 'ann' }), false, 'transfers: an item over 80 characters');
+await ok(W([[XT + 'n12', xline({ note: 'x'.repeat(121) })]], { id: 'ann' }), false, 'transfers: a note over 120 characters');
+await ok(W([[XT + 'n13', xline({ addedBy: 'x'.repeat(81) })]], { id: 'ann' }), false, 'transfers: a name over 80 characters');
+await ok(W([[XT + 'n14', xline({ amount: '2' })]], { id: 'ann' }), false, 'transfers: the amount is a number, not text');
+await ok(W([[XT + 'n15', xline({ amount: 0 })]], { id: 'ann' }), false, 'transfers: the amount is more than 0');
+await ok(W([[XT + 'n16', xline({ amount: 100000 })]], { id: 'ann' }), false, 'transfers: and under 100000');
+await ok(W([[XT + 'n17', xline({ unit: 'portions' })]], { id: 'ann' }), false, 'transfers: a unit off the list (portions is for wastage)');
+await ok(W([[XT + 'n18', xline({ dir: 'lent' })]], { id: 'ann' }), false, 'transfers: out or in only');
+await ok(W([[XT + 'n19', xline({ price: 3.5 })]], { id: 'ann' }), false, 'transfers: no other fields (never a price)');
+await ok(W([[XT + 'n20', xline({ deleted: true })]], { id: 'ann' }), false, 'transfers: a new line is not removed');
+await ok(W([[XT + 'n21', xline({ addedAt: Date.now() + 3600000 })]], { id: 'ann' }), false, 'transfers: a time an hour ahead is refused (it would stretch the Undo)');
+await ok(W([[XT + 'n22', xline({ tst: 'yes' })]], { id: 'ann' }), false, 'transfers: practice mode is true or false');
+await ok(W([[XT + 't2', { deleted: true, deletedBy: 'Ann', deletedAt: Date.now() }, true]], { id: 'ann' }), false, 'transfers: Ann cannot remove one, not even her own straight after');
+await ok(W([[XT + 't2', { deleted: true, deletedBy: 'Sam', deletedAt: Date.now() }, true]], { id: 'sam' }), false, 'transfers: a sous chef cannot remove Ann\'s');
+await ok(W([[XT + 's1', xline({ addedBy: 'Sam', addedById: 'sam', addedAt: Date.now() })]], { id: 'sam' }), true, 'transfers: Sam logs one');
+await ok(W([[XT + 's1', { deleted: true, deletedBy: 'S'.repeat(81), deletedAt: Date.now() }, true]], { id: 'sam' }), false, 'transfers: Sam\'s Undo names him in 80 characters or fewer');
+await ok(W([[XT + 's1', { deleted: true, deletedBy: 'Sam', deletedAt: 'now' }, true]], { id: 'sam' }), false, 'transfers: Sam\'s Undo time is a number');
+await ok(W([[XT + 's1', { deleted: true, deletedBy: 'Sam', deletedAt: Date.now() }, true]], { id: 'sam' }), true, 'transfers: Sam undoes his own straight after');
+await ok(W([[XT + 's1', { amount: 9 }, true]], { id: 'sam' }), false, 'transfers: Sam cannot change the amount');
+await ok(W([[XT + 's2', xline({ addedBy: 'Sam', addedById: 'sam', addedAt: Date.now() - 600000 })]], { id: 'sam' }), true, 'transfers: one Sam logged 10 minutes ago');
+await ok(W([[XT + 's2', { deleted: true, deletedBy: 'Sam', deletedAt: Date.now() }, true]], { id: 'sam' }), false, 'transfers: Sam cannot undo it 10 minutes later');
+await ok(updateDoc(doc(owner, K + XY + 'y1'), { deleted: true, deletedBy: 'Head chef', deletedAt: 5 }), true, 'transfers: the head chef\'s Google account removes a past line');
+await ok(updateDoc(doc(owner, K + XY + 'y1'), { deleted: false, deletedBy: '', deletedAt: 0 }), true, 'transfers: and puts it back');
+await ok(updateDoc(doc(owner, K + XY + 'y1'), { deleted: true, deletedBy: 'Hedy', deletedAt: 6, by: 'hd' }), true, 'transfers: also with a PIN signed in on that device (by)');
+await ok(updateDoc(doc(owner, K + XY + 'y1'), { amount: 9 }), false, 'transfers: the Google account cannot change the amount');
+await ok(updateDoc(doc(owner, K + XY + 'y1'), { deleted: 'yes' }), false, 'transfers: removed is true or false');
+await ok(updateDoc(doc(owner, K + XY + 'y1'), { deleted: true, deletedBy: 'H'.repeat(81), deletedAt: 7 }), false, 'transfers: who removed it is 80 characters or fewer');
+await ok(updateDoc(doc(owner, K + XY + 'y1'), { deleted: true, deletedBy: 'Head chef', deletedAt: 'now' }), false, 'transfers: when it was removed is a number');
+await ok(setDoc(doc(owner, K + 'transfers/' + OLD + '/lines/c1'), xline({ by: 'ann', station: 'Larder', old: 1 })), true, 'transfers: the head chef copies a line as it is (moving the kitchen PIN), older fields too');
+const xgone = xline({ by: 'sam', deleted: true, deletedBy: 'Head chef', deletedAt: 5, old: 1 });
+await ok(setDoc(doc(owner, K + 'transfers/' + OLD + '/lines/c2'), xgone), true, 'transfers: and a removed one, with who removed it and when');
+await ok(setDoc(doc(owner, K + 'transfers/' + OLD + '/lines/c2'), xgone), true, 'transfers: a move tried again copies it over itself');
+await ok(deleteDoc(doc(owner, K + XY + 'y1')), false, 'transfers: never deleted, not even by the head chef');
 // PIN sessions (22 Oct 2026): a phone signed in anonymously writes a PIN try first (one per person every 20 s), then
 // opens a session if that try was right; writes go through the session
 const phone = id => env.authenticatedContext(id, { firebase: { sign_in_provider: 'anonymous' } }).firestore();

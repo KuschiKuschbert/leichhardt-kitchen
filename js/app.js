@@ -3,10 +3,10 @@
   Plain JavaScript, no build step. Recipes live in js/data.js, drawings in js/art.js.
 
   Pages (hash links, so the phone's back button works):
-    #/                 landing page: four dockets (Recipes, Prep, Orders, Wastage)
+    #/                 landing page: six dockets (Recipes, Prep, Orders, Wastage, Transfers, Guides)
     #/recipes          the recipes, as The Pass or Tiles
     #/r/barra/laksa    a recipe; the path is the trail you took to get there
-    #/prep, #/orders, #/waste, #/minutes, #/mail, #/drinks, #/todo, #/admin   the prep book (js/prep.js)
+    #/prep, #/orders, #/waste, #/transfers, #/minutes, #/mail, #/drinks, #/todo, #/admin   the prep book (js/prep.js)
     #/settings         settings
 */
 (function () {
@@ -286,15 +286,17 @@
     prep: '<svg width="26" height="26" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="12" y="10" width="40" height="48" rx="5"/><path d="M24 10V7h16v3"/><path d="M20 24l3 3 5-6M20 38l3 3 5-6"/><path d="M34 25h12M34 39h12"/></svg>',
     orders: '<svg width="26" height="26" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 20l24-12 24 12v26L32 58 8 46z"/><path d="M8 20l24 12 24-12M32 32v26"/><path d="M20 14l24 12"/></svg>',
     waste: '<svg width="26" height="26" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 18h44"/><path d="M25 18v-6h14v6"/><path d="M15 18l3 38h28l3-38"/><path d="M27 28v18M37 28v18"/></svg>',
+    // two arrows, one each way: stock that goes out to the other venues and comes in from them
+    transfers: '<svg width="26" height="26" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 22h40"/><path d="M42 14l8 8-8 8"/><path d="M54 42H14"/><path d="M22 34l-8 8 8 8"/></svg>',
     guides: '<svg width="26" height="26" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M32 16c-6-4-14-6-24-6v38c10 0 18 2 24 6 6-4 14-6 24-6V10c-10 0-18 2-24 6z"/><path d="M32 16v38"/><path d="M14 21c4 0 8 1 12 3M14 31c4 0 8 1 12 3M38 24c4-2 8-3 12-3M38 34c4-2 8-3 12-3"/></svg>'
   };
-  var NAV = [['recipes', 'Recipes', '#/recipes'], ['prep', 'Prep', '#/prep'], ['orders', 'Orders', '#/orders'], ['waste', 'Wastage', '#/waste'], ['guides', 'Guides', '#/guides']];
+  var NAV = [['recipes', 'Recipes', '#/recipes'], ['prep', 'Prep', '#/prep'], ['orders', 'Orders', '#/orders'], ['waste', 'Wastage', '#/waste'], ['transfers', 'Transfers', '#/transfers'], ['guides', 'Guides', '#/guides']];
   /* The head chef can hold Guides back from staff for now (People tab in the admin panel); js/prep.js knows who is on this phone */
   function featOn(k) { return !window.LK_PREP || !window.LK_PREP.featOn || window.LK_PREP.featOn(k); }
   function navList() { return NAV.filter(function (t) { return t[0] !== 'guides' || featOn('guides'); }); }
   function navActive() {
     var n = parseRoute().name;
-    return n === 'landing' ? 'home' : (n === 'home' || n === 'recipe') ? 'recipes' : n === 'prep' ? 'prep' : n === 'orders' ? 'orders' : n === 'waste' ? 'waste' : n === 'guides' ? 'guides' : '';
+    return n === 'landing' ? 'home' : (n === 'home' || n === 'recipe') ? 'recipes' : n === 'prep' ? 'prep' : n === 'orders' ? 'orders' : n === 'waste' ? 'waste' : n === 'transfers' ? 'transfers' : n === 'guides' ? 'guides' : '';
   }
   function pillNav() {
     var a = navActive();
@@ -480,13 +482,13 @@
     return '<div class="wall-mn">' + (window.LK_PREP && window.LK_PREP.minNudge ? window.LK_PREP.minNudge() : '') + '</div>';
   }
   /* Under the top bar, the recipe pages get their own tools row: how many recipes, and the Pass / Tiles switch. */
-  var DOCKETS = [['01', 'Recipes', '#/recipes', 'recipes'], ['02', 'Prep list', '#/prep', 'prep'], ['03', 'Orders', '#/orders', 'orders'], ['04', 'Wastage', '#/waste', 'waste'], ['05', 'Guides', '#/guides', 'guides', 'How to work the equipment, clean it and find things']];
+  var DOCKETS = [['01', 'Recipes', '#/recipes', 'recipes'], ['02', 'Prep list', '#/prep', 'prep'], ['03', 'Orders', '#/orders', 'orders'], ['04', 'Wastage', '#/waste', 'waste'], ['05', 'Transfers', '#/transfers', 'transfers', 'What other venues took from us, and what we took from them'], ['06', 'Guides', '#/guides', 'guides', 'How to work the equipment, clean it and find things']];
   function viewLanding() {
     var d = window.LK_TIME.day().split('-'), today = new Date(+d[0], d[1] - 1, +d[2], 12).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
     return '<div class="wall">' + topBar() + fnBand() +
       '<main id="main" class="wall-main"><h2 class="wall-h" id="rtitle" tabindex="-1">Pick a docket</h2><p class="wall-date">' + esc(today) + '</p>' + minCard() + (window.LK_FN && window.LK_FN.checkSlot ? window.LK_FN.checkSlot() : '') + (window.LK_FN ? window.LK_FN.landSlot() : '') + installCard() +
       '<div class="dockets">' + DOCKETS.filter(function (d) { return d[3] !== 'guides' || featOn('guides'); }).map(function (d) {
-        // the Guides docket is the long one under the other four: reference, not a job for today
+        // Transfers and Guides are the long ones under the other four (a docket with a line under its name)
         return '<a class="docket' + (d[4] ? ' dk-wide' : '') + '" href="' + d[2] + '"><span class="dk-pin" aria-hidden="true"></span><span class="dk-top"><span class="dk-name">' + d[1] + '</span><span class="dk-no">No. ' + d[0] + '</span></span>' +
           (d[4] ? '<span class="dk-sub">' + esc(d[4]) + '</span>' : '') +
           '<span class="dk-icon">' + NAV_ICON[d[3]].replace(/width="26" height="26"/, 'width="72" height="72"') + '</span><span class="dk-go">Open</span></a>';
@@ -997,7 +999,7 @@
   function parseRoute() {
     var parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
     if (parts[0] === 'settings') return { name: 'settings', stack: [] };
-    if (parts[0] === 'prep' || parts[0] === 'admin' || parts[0] === 'orders' || parts[0] === 'waste' || parts[0] === 'minutes' || parts[0] === 'mail' || parts[0] === 'drinks' || parts[0] === 'todo') return { name: parts[0], stack: [] };
+    if (parts[0] === 'prep' || parts[0] === 'admin' || parts[0] === 'orders' || parts[0] === 'waste' || parts[0] === 'transfers' || parts[0] === 'minutes' || parts[0] === 'mail' || parts[0] === 'drinks' || parts[0] === 'todo') return { name: parts[0], stack: [] };
     if (parts[0] === 'guides') return { name: 'guides', stack: [], gid: parts[1] || '' };
     if (parts[0] === 'manage') return { name: 'manage', stack: [], sub: parts.slice(1) };
     if (parts[0] === 'fn') return { name: 'fn', stack: [], fid: parts[1] || '' };
@@ -1017,7 +1019,7 @@
     writeJSON(LS, 'lk.views', v);
   }
   // the pages drawn by js/prep.js (Firebase): prep book, orders, wastage, minutes, guides, kitchen mail and the admin panel
-  var PREP_PAGES = { prep: 1, admin: 1, orders: 1, waste: 1, minutes: 1, guides: 1, mail: 1, drinks: 1, todo: 1 };
+  var PREP_PAGES = { prep: 1, admin: 1, orders: 1, waste: 1, transfers: 1, minutes: 1, guides: 1, mail: 1, drinks: 1, todo: 1 };
   var warmed = false;
   var lastHash = null, lastRoute = '', homeY = 0;
   window.addEventListener('scroll', function () { if (lastRoute === 'home') homeY = window.scrollY; }, { passive: true });
@@ -1066,7 +1068,7 @@
     // On any other page, connect to the prep book in the background so Prep, Orders and Wastage open straight away.
     else if (window.LK_PREP && window.LK_PREP.warm && !warmed) { warmed = true; setTimeout(function () { window.LK_PREP.warm(); }, 900); }
     var r = route.stack.length ? byId[route.stack[route.stack.length - 1]] : null;
-    document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'waste' ? 'Wastage · ' : route.name === 'minutes' ? 'Meeting minutes · ' : route.name === 'mail' ? 'Kitchen mail · ' : route.name === 'drinks' ? 'Drinks run · ' : route.name === 'todo' ? 'Chef to-do · ' : route.name === 'manage' ? 'Manage Recipes & Drawings · ' : route.name === 'fn' ? 'Functions · ' : route.name === 'functions' ? 'Manage functions · ' : route.name === 'guides' ? 'Guides · ' : route.name === 'landing' ? '' : route.name === 'home' ? 'Recipes · ' : route.name === 'admin' ? 'Admin panel · ' : '')) + 'Leichhardt Kitchen Book';
+    document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'waste' ? 'Wastage · ' : route.name === 'transfers' ? 'Transfers · ' : route.name === 'minutes' ? 'Meeting minutes · ' : route.name === 'mail' ? 'Kitchen mail · ' : route.name === 'drinks' ? 'Drinks run · ' : route.name === 'todo' ? 'Chef to-do · ' : route.name === 'manage' ? 'Manage Recipes & Drawings · ' : route.name === 'fn' ? 'Functions · ' : route.name === 'functions' ? 'Manage functions · ' : route.name === 'guides' ? 'Guides · ' : route.name === 'landing' ? '' : route.name === 'home' ? 'Recipes · ' : route.name === 'admin' ? 'Admin panel · ' : '')) + 'Leichhardt Kitchen Book';
     var prevRoute = lastRoute; lastRoute = route.name;
     if (changed && route.name === 'recipe') noteView(route.stack[route.stack.length - 1]);
     // opening the recipes checks for the head chef's recipe changes when the last check is 30 minutes old (one read)

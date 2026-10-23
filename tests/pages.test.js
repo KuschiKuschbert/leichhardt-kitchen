@@ -8,7 +8,7 @@ if (SHOTS) fs.mkdirSync(SHOTS, { recursive: true });
   const b = await L.start(), R = [];
   // the three sizes run side by side (each page has its own profile); their results are listed in size order
   const out = { 390: [], 768: [], 1280: [] };
-  const pages = ['#/', '#/recipes', '#/r/barra', '#/r/laksa', '#/r/rice', '#/settings', '#/prep', '#/orders', '#/waste', '#/minutes', '#/mail', '#/drinks', '#/todo', '#/guides', '#/guides/combi', '#/guides/fryer'];
+  const pages = ['#/', '#/recipes', '#/r/barra', '#/r/laksa', '#/r/rice', '#/settings', '#/prep', '#/orders', '#/waste', '#/transfers', '#/minutes', '#/mail', '#/drinks', '#/todo', '#/guides', '#/guides/combi', '#/guides/fryer'];
   await Promise.all([[390, 844, true], [768, 1024, true], [1280, 900, false]].map(async ([w, h, touch]) => {
     const R = out[w];
     for (const hash of pages) {
@@ -19,7 +19,7 @@ if (SHOTS) fs.mkdirSync(SHOTS, { recursive: true });
       await p.context().close();
     }
     const p = await L.open(b, '#/admin', { width: w, height: h, touch, admin: true, wait: 1600, extra: Object.assign(L.guides(), L.mail(), { ['kitchens/' + L.PIN + '/config/admins']: { x: 1, mailOpened: L.NOW } }) });   // Mail opened just now: no nudge popup over the tabs
-    for (const t of ['insights', 'team', 'waste', 'learning', 'notes', 'minutes', 'guides', 'mail', 'people', 'tools']) {
+    for (const t of ['insights', 'team', 'waste', 'transfers', 'learning', 'notes', 'minutes', 'guides', 'mail', 'people', 'tools']) {
       await L.adminTab(p, t); await L.settle(p, 300);
       const ofa = await L.overflow(p);
       L.check(!ofa, w + ' admin ' + t + ' no sideways scroll' + (ofa ? ': ' + ofa : ''), R);

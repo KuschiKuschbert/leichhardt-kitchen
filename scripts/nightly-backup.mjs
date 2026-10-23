@@ -2,10 +2,11 @@
   Nightly backup for the Kitchen Book. Run by .github/workflows/nightly-backup.yml at 03:30 kitchen time.
 
   Reads what the Backup button in the admin panel reads (js/prep.js, exportAll) and writes it as one JSON file in the
-  same shape: config (people), prep lines, order lines, wastage and reviews for the last BACKUP_DAYS days (45), every
-  shift ping with who has seen it, every meeting minutes with earlier versions and sign-offs, what the prep and order
-  lists have learned, the learning log, the chef to-do list, tallies, sections, empty searches, card opens, the guides' words and small
-  pictures, the recipes the head chef changed or added in the book with their earlier versions, and who has set a PIN.
+  same shape: config (people), prep lines, order lines, wastage and reviews, and transfers between venues (23 Oct 2026)
+  for the last BACKUP_DAYS days (45), every shift ping with who has seen it, every meeting minutes with earlier versions
+  and sign-offs, what the prep and order lists have learned, the learning log, the chef to-do list, tallies, sections,
+  empty searches, card opens, the guides' words and small pictures, the recipes the head chef changed or added in the
+  book with their earlier versions, and who has set a PIN.
   People's PIN fingerprints and the guides' page pictures are left out, like the button.
   The workflow then encrypts the file with the BACKUP_KEY secret and keeps it as a GitHub artifact for 90 days.
 
@@ -51,7 +52,7 @@ async function subs(list, top, name) {
 }
 
 const today = kitchenDay(Date.now());
-const out = { exportedAt: new Date().toISOString(), by: 'nightly backup', days: {}, orders: {}, waste: {}, wasteReviews: {} };
+const out = { exportedAt: new Date().toISOString(), by: 'nightly backup', days: {}, orders: {}, waste: {}, wasteReviews: {}, transfers: {} };
 let reads = 0;
 const cfg = await K.collection('config').doc('main').get(); reads++;
 out.config = cfg.exists ? plain(cfg.data()) : null;
@@ -71,15 +72,17 @@ reads += out.notes.length + out.minutes.length + out.pins.length;
 let lines = 0, dayN = 0;
 for (let k = 0; k < DAYS; k++) {
   const d = shift(today, -k);
-  const [items, ords, waste, review] = await Promise.all([
+  const [items, ords, waste, review, trans] = await Promise.all([
     K.collection('days').doc(d).collection('items').get(), K.collection('orders').doc(d).collection('lines').get(),
-    K.collection('waste').doc(d).collection('lines').get(), K.collection('waste').doc(d).get()
+    K.collection('waste').doc(d).collection('lines').get(), K.collection('waste').doc(d).get(),
+    K.collection('transfers').doc(d).collection('lines').get()
   ]);
-  reads += items.size + ords.size + waste.size + 1;
+  reads += items.size + ords.size + waste.size + trans.size + 1;
   if (items.size) { out.days[d] = grab(items); lines += items.size; dayN++; }
   if (ords.size) out.orders[d] = grab(ords);
   if (waste.size) out.waste[d] = grab(waste);
   if (review.exists) out.wasteReviews[d] = plain(review.data());
+  if (trans.size) out.transfers[d] = grab(trans);
 }
 writeFileSync(OUT, JSON.stringify(out, null, 1));
 console.log('Backed up ' + lines + ' prep lines from ' + dayN + ' of the last ' + DAYS + ' days, ' + out.notes.length + ' shift pings, minutes from ' + out.minutes.length + ' meetings, ' + out.learned.length + ' learned items, ' + out.guides.length + ' guides and ' + out.recipes.length + ' recipes changed in the book (' + reads + ' reads).');

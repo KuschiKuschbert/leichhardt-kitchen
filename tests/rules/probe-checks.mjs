@@ -38,7 +38,10 @@ export function probeChecks(fs, pin) {
     ['minutes drafts cannot be listed with only the kitchen PIN', () => fs.query('kitchens/' + pin, 'minutes', 'date', 'GREATER_THAN_OR_EQUAL', str('2000-01-01')), false],
     // the chef to-do list (23 Oct 2026): only the head chef and the sous chefs read or write it
     ['the chef to-do list cannot be listed with only the kitchen PIN', () => fs.query('kitchens/' + pin, 'todos', 'st', 'EQUAL', str('open')), false],
-    ['a chef to-do cannot be saved with only the kitchen PIN', () => fs.patch(K + 'todos/' + id, { text: str('Probe'), st: str('open'), at: num(1), doneAt: num(0), upd: num(1), by: str('probe') }), false]
+    ['a chef to-do cannot be saved with only the kitchen PIN', () => fs.patch(K + 'todos/' + id, { text: str('Probe'), st: str('open'), at: num(1), doneAt: num(0), upd: num(1), by: str('probe') }), false],
+    // transfers between venues (23 Oct 2026): a line needs a PIN session; past days are for the head chef's Google account
+    ['a transfer line with a writer id and no PIN session is refused', () => fs.patch(K + 'transfers/' + day + '/lines/' + id, { dir: str('out'), venue: str('Probe'), person: str(''), text: str('probe'), amount: num(1), unit: str('kg'), note: str(''), addedBy: str('Probe'), addedById: str('probe'), addedAt: num(Date.now()), deleted: bool(false), by: str('probe') }), false],
+    ['past transfer lines cannot be read with only the kitchen PIN', () => fs.query(K + 'transfers/2000-01-01', 'lines', 'deleted', 'EQUAL', bool(false)), false]
   ];
 }
 

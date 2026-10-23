@@ -10,6 +10,10 @@ const extra = {};
 extra[fsKey(['days', today, 'items', 'x1'])] = { text: 'Line ' + P, station: 'Larder' + P, qty: '2' + P, recipe: '', addedBy: 'Ann' + P, addedById: 'ann', addedAt: L.NOW - 600000, done: false, deleted: false };
 extra[fsKey(['orders', today, 'lines', 'x1'])] = { text: 'Order ' + P, qty: '1' + P, recipes: [], addedBy: 'Ann' + P, addedById: 'ann', addedAt: L.NOW - 600000, ordered: false, deleted: false };
 extra[fsKey(['waste', today, 'lines', 'x1'])] = { text: 'Waste ' + P, amount: 1, unit: 'kg', reason: 'prep', action: 'Act ' + P, station: 'Sec' + P, addedBy: 'Bo' + P, addedById: 'bo', addedAt: L.NOW - 600000, deleted: false };
+// transfers between venues (23 Oct 2026): every word, and a way and a unit as a damaged record could hold them; the nightly summary too
+extra[fsKey(['transfers', today, 'lines', 'x1'])] = { dir: 'out" data-pwn="1', venue: 'Venue ' + P, person: 'Who ' + P, text: 'Transfer ' + P, amount: 1, unit: 'kg' + P, note: 'Note ' + P, addedBy: 'Bo' + P, addedById: 'bo', addedAt: L.NOW - 600000, deleted: false };
+extra[fsKey(['summary', 'transfers'])] = { day: today, from: today, to: today, venues: [{ v: 'Venue ' + P, n: 3, out: 3, in: 0, people: ['Who ' + P, 'Pal ' + P] }],
+  items: [{ t: 'Taken ' + P, n: 3, unit: 'kg" data-pwn="1', amt: '2" data-pwn="1', dir: 'out', venue: 'Venue ' + P }] };
 extra[fsKey(['waste', today])] = { avoidable: 'Avoid ' + P, change: 'Change ' + P, reviewBy: 'Sam' + P, reviewAt: L.NOW - 300000 };
 extra[fsKey(['notes', 'x1'])] = { text: 'Ping ' + P, tag: 'none', start: today, until: today, dows: [], removed: false, by: 'sam', author: 'sam' };
 extra[fsKey(['mail', 'x1'])] = { from: 'ann', by: 'ann', cat: 'equipment', pri: 'today', text: 'Mail ' + P, at: L.NOW - 3600000, done: false, seen: false };
@@ -40,12 +44,20 @@ async function check(b, hash, o, name, see, then) {
   await check(b, '#/prep', { who: 'ann' }, 'prep list', 'Line');
   await check(b, '#/orders', { who: 'ann' }, 'order list', 'Order');
   await check(b, '#/waste', { who: 'sam' }, 'wastage', 'Waste', async p => { await p.fill('#w-text', 'Of'); await L.settle(p, 300); });
+  await check(b, '#/transfers', { who: 'sam' }, 'transfers', 'Transfer', async p => {
+    // the venue chip (from the line and the summary), then who came for it and what they often take, then a suggestion while typing
+    await L.waitFor(p, () => !!document.querySelector('[data-p="tr-vpick"]'), null, 5000).catch(() => {});
+    // a click in the page, not a pointer tap: today's booby-trapped ping pops up over it
+    await p.evaluate(() => document.querySelector('[data-p="tr-vpick"]').click()); await L.settle(p, 300);
+    await p.evaluate(() => { const o = document.querySelector('[data-p="tr-often"]'); if (o) o.click(); }); await L.settle(p, 300);
+    await p.fill('#tr-text', 'Ta'); await L.settle(p, 300);
+  });
   await check(b, '#/drinks', { who: 'sam' }, 'drinks run', null);
   await check(b, '#/todo', { who: 'sam' }, 'chef to-do', 'Todo', async p => { await L.waitFor(p, () => !!document.querySelector('.todo-row'), null, 5000).catch(() => {}); await L.tap(p, '.todo-donebox summary'); await L.waitFor(p, () => !!document.querySelector('[data-lv="tododone"] .todo-row'), null, 5000).catch(() => {}); });
   await check(b, '#/guides', { who: 'ann' }, 'guides', 'Guide');
   await check(b, '#/guides/x1', { who: 'ann' }, 'a guide', 'Step');
-  for (const t of ['waste', 'notes', 'mail', 'people', 'insights']) {
-    await check(b, '#/admin', { admin: true, who: '' }, 'admin ' + t, t === 'waste' ? 'Waste' : t === 'notes' ? 'Ping' : t === 'mail' ? 'Mail' : null, async p => { await L.adminTab(p, t); });
+  for (const t of ['waste', 'transfers', 'notes', 'mail', 'people', 'insights']) {
+    await check(b, '#/admin', { admin: true, who: '' }, 'admin ' + t, t === 'waste' ? 'Waste' : t === 'transfers' ? 'Transfer' : t === 'notes' ? 'Ping' : t === 'mail' ? 'Mail' : null, async p => { await L.adminTab(p, t); });
   }
   // the drawing editor: a damaged drawing record with markup in its colours and anchors (the head chef's own drawing)
   const P2 = (id, name, role) => ({ id, name, role, add: true, tick: true, del: role !== 'staff', active: true });
