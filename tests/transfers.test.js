@@ -16,7 +16,7 @@ const extra = {};
 extra[fsKey(['transfers', today, 'lines', 't1'])] = { dir: 'out', venue: 'Riviera', person: 'Jess', text: 'Brioche buns', amount: 2, unit: 'packs', note: '', addedBy: 'Bo', addedById: 'bo', addedAt: L.NOW - 1800000, deleted: false };
 extra[fsKey(['transfers', yest, 'lines', 'y1'])] = { dir: 'in', venue: 'Riviera', person: 'Kim', text: 'Milk', amount: 6, unit: 'L', note: '', addedBy: 'Ann', addedById: 'ann', addedAt: L.NOW - 86400000 - 7200000, deleted: false };
 extra[fsKey(['summary', 'transfers'])] = { day: today, from: yest, to: yest, at: L.NOW - 3600000,
-  venues: [{ v: 'Riviera', n: 5, out: 4, in: 1, people: ['Jess', 'Tom'] }, { v: 'Grand Hotel', n: 2, out: 0, in: 2, people: ['Lee'] }],
+  venues: [{ v: 'Riviera', n: 5, out: 4, in: 1, people: ['Jess', 'Tom'] }, { v: 'Grand Hotel', n: 2, out: 0, in: 2, people: ['Lee'] }, { v: 'Constructor', n: 1, out: 1, in: 0, people: ['__proto__'] }],
   items: [{ t: 'Butter', n: 3, unit: 'kg', amt: 2, dir: 'out', venue: 'Riviera' }, { t: 'Lemons', n: 2, unit: 'pieces', amt: 12, dir: 'in', venue: 'Grand Hotel' }] };
 (async () => {
   const b = await L.start();
@@ -36,7 +36,7 @@ extra[fsKey(['summary', 'transfers'])] = { day: today, from: yest, to: yest, at:
     ok(/Write which venue took it/.test(await txt(p, '.p-toast') || ''), who + ': no venue asks for one');
     await L.waitFor(p, () => !!document.querySelector('[data-p="tr-vpick"]'));
     const vchips = await p.$$eval('[data-p="tr-vpick"]', l => l.map(e => e.textContent));
-    ok(vchips[0] === 'Riviera' && vchips.indexOf('Grand Hotel') > 0, who + ': venue chips from today and the summary (' + vchips.join(', ') + ')');
+    ok(vchips[0] === 'Riviera' && vchips.indexOf('Grand Hotel') > 0 && vchips.indexOf('Constructor') > 0, who + ': venue chips from today and the summary, a venue called Constructor too (' + vchips.join(', ') + ')');
     await p.click('[data-p="tr-vpick"][data-v="Riviera"]'); await L.settle(p, 200);
     ok(await p.inputValue('#tr-venue') === 'Riviera' && await p.evaluate(() => document.activeElement && document.activeElement.id) === 'tr-person', who + ': the venue chip fills the box and moves on to who came');
     const pchips = await p.$$eval('[data-p="tr-ppick"]', l => l.map(e => e.textContent));
@@ -130,6 +130,8 @@ extra[fsKey(['summary', 'transfers'])] = { day: today, from: yest, to: yest, at:
   // the head chef's admin panel: past days, the totals per venue, Remove and Put back with no new read
   {
     const ea = Object.assign({}, extra);
+    // words that are also built-in object names are words like any other (review, 23 Oct 2026)
+    ea[fsKey(['transfers', yest, 'lines', 'y3'])] = { dir: 'out', venue: 'constructor', person: '__proto__', text: '__proto__', amount: 1, unit: 'packs', note: '', addedBy: 'Ann', addedById: 'ann', addedAt: L.NOW - 86400000 - 1800000, deleted: false };
     ea[fsKey(['transfers', yest, 'lines', 'y2'])] = { dir: 'in', venue: 'grand hotel', person: 'Lee', text: 'Lemons', amount: 12, unit: 'pieces', note: '', addedBy: 'Ann', addedById: 'ann', addedAt: L.NOW - 86400000 - 3600000, deleted: false };
     const p = await L.open(b, '#/admin', { extra: ea, admin: true, who: '', wait: 1500 });
     await L.adminTab(p, 'transfers');
@@ -139,6 +141,7 @@ extra[fsKey(['summary', 'transfers'])] = { day: today, from: yest, to: yest, at:
     const rv = await txt(p, '[data-lv="xfer-venues"]') || '';
     ok(/Riviera/.test(rv) && /1 \(2 packs\)/.test(rv) && /1 \(6 L\)/.test(rv), 'admin: By venue adds up what Riviera took and what we took (' + rv.replace(/\s+/g, ' ').slice(0, 160) + ')');
     ok(/By item/.test(page) && /Every transfer/.test(page), 'admin: By item and Every transfer are on the page');
+    ok(/constructor\s*1 \(1 packs\)/.test(rv) && /__proto__/.test(await txt(p, '[data-lv="xfer-items"]') || ''), 'admin: a venue "constructor" and an item "__proto__" are listed like any other');
     const reads = (await lineReads(p)).length;
     ok(reads >= 30 && reads <= 31, 'admin: the first open reads the last 30 days once (' + reads + ')');
     await p.click('[data-lv="xfer-log"] [data-p="tr-del"][data-id="y1"]'); await L.settle(p, 400);

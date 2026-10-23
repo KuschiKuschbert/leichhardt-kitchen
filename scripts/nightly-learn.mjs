@@ -145,12 +145,15 @@ async function wasteSummary(today) {
 /* What was shared with other venues in the last 28 finished days (23 Oct 2026). By venue: how many lines, how many each
    way and who came for it or gave it. By item: how many lines and the usual unit, amount, way and venue. Venues, items
    and people are grouped by okey(), and each shows the spelling used most (an item's venue the same as the venue list).
-   A tie goes to the most recent. */
+   A tie goes to the most recent. Reads, every night: 28 queries (one per day, an empty day still costs 1) plus one read
+   per transfer line in those days. Every map is keyed by typed words, so none has inherited keys (map()): an item,
+   venue or person typed as "constructor" or "__proto__" counts like any other word. */
+const map = () => Object.create(null);
 const TR_DAYS = 28, TR_VENUES = 30, TR_ITEMS = 200, TR_PEOPLE = 6;
 const tidy = (s, n) => String(s || '').replace(/\s+/g, ' ').trim().slice(0, n);
 // one more of the words s in o, under okey(s) with each spelling, and when each was last seen (more: the group's own fields)
 function tick(o, s, at, more) {
-  const k = okey(s), c = o[k] = o[k] || Object.assign({ n: 0, at: -1, s: {} }, more), w = c.s[s] = c.s[s] || { n: 0, at: -1 };
+  const k = okey(s), c = o[k] = o[k] || Object.assign({ n: 0, at: -1, s: map() }, more), w = c.s[s] = c.s[s] || { n: 0, at: -1 };
   c.n++; w.n++; c.at = Math.max(c.at, at); w.at = Math.max(w.at, at);
   return c;
 }
@@ -160,15 +163,15 @@ async function transferSummary(today) {
   const days = [];
   for (let i = 1; i <= TR_DAYS; i++) days.push(shift(today, -i));
   const snaps = await Promise.all(days.map(d => K.collection('transfers').doc(d).collection('lines').get()));
-  const vs = {}, its = {};
+  const vs = map(), its = map();
   snaps.forEach(sn => sn.docs.forEach(doc => {
     const x = doc.data(); if (!x || x.deleted || x.tst) return;   // tst: written in practice mode
     const text = tidy(x.text, 80), venue = tidy(x.venue, 40); if (!okey(text) || !okey(venue)) return;
     const at = +x.addedAt || 0, dir = x.dir === 'in' ? 'in' : 'out', unit = tidy(x.unit, 10), amt = +x.amount || 0, who = tidy(x.person, 40);
-    const v = tick(vs, venue, at, { out: 0, in: 0, p: {} }), e = tick(its, text, at, { u: {}, a: {}, d: {}, v: {} });
+    const v = tick(vs, venue, at, { out: 0, in: 0, p: map() }), e = tick(its, text, at, { u: map(), a: map(), d: map(), v: map() });
     v[dir]++; if (who) tick(v.p, who, at);
     tick(e.d, dir, at); tick(e.v, venue, at);
-    if (unit) { tick(e.u, unit, at); if (amt > 0) tick(e.a[okey(unit)] = e.a[okey(unit)] || {}, String(amt), at); }
+    if (unit) { tick(e.u, unit, at); if (amt > 0) tick(e.a[okey(unit)] = e.a[okey(unit)] || map(), String(amt), at); }
   }));
   const venues = most(vs).slice(0, TR_VENUES).map(k => {
     const v = vs[k];
@@ -190,7 +193,7 @@ console.log('Wastage summary: ' + wItems + ' items from the last ' + WASTE_DAYS 
 try {
   const [tItems, tVenues] = await transferSummary(today);
   console.log('Transfer summary: ' + tItems + ' items, ' + tVenues + ' venues from ' + TR_DAYS + ' days.');
-} catch (e) { console.error('Transfer summary failed: ' + String((e && e.message) || e).split(PIN).join('******')); process.exitCode = 1; }
+} catch (e) { console.error('Transfer summary failed (' + String((e && (e.code || e.name)) || 'error') + '). The log leaves out the message: it can hold a typed name.'); process.exitCode = 1; }
 const claimed = new Set((await K.collection('learnlog').select().get()).docs.map(d => d.id));
 const todo = [];
 for (let i = 1; i <= DAYS; i++) {

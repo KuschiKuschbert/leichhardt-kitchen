@@ -86,12 +86,14 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['people', 'staffIds', 'pinOpen', 'updated', 'updatedBy', 'by']))
         // the head chef or a sous chef changed a line on a past day: they stamp pastEdit (p prep, o orders) with the time,
         // so the other phones read their saved past days again (22 Oct 2026). Or they saved a shift ping for today (n), so
-        // the other phones read the pings again. Nothing else changes in that write.
+        // the other phones read the pings again. x is the head chef's Google account removing or putting back a past
+        // transfer (23 Oct 2026, written under isAdmin()); it is allowed here too because the stamp is merged into the
+        // same map, so a sous chef's next stamp carries it along. Nothing else changes in that write.
         || (staff() && request.resource.data.by in resource.data.get('sousIds', [])
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pastEdit', 'by'])
-          && request.resource.data.pastEdit is map && request.resource.data.pastEdit.keys().hasOnly(['p', 'o', 'n'])
+          && request.resource.data.pastEdit is map && request.resource.data.pastEdit.keys().hasOnly(['p', 'o', 'n', 'x'])
           && request.resource.data.pastEdit.get('p', 0) is number && request.resource.data.pastEdit.get('o', 0) is number
-          && request.resource.data.pastEdit.get('n', 0) is number);
+          && request.resource.data.pastEdit.get('n', 0) is number && request.resource.data.pastEdit.get('x', 0) is number);
       allow delete: if isAdmin();
     }
     match /kitchens/KITCHEN_PIN/config/admins { allow read, write: if isAdmin(); }

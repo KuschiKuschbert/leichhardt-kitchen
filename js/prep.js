@@ -4005,8 +4005,8 @@
     var at = now();
     function server() { return (isDoc ? fs.getDoc(ref) : fs.getDocs(ref)).then(function (sn) { if (!live) { g.c[k] = [count(sn), at]; lsSet('lk.st.got', JSON.stringify(g)); } return sn; }); }
     var fromCache = isDoc ? fs.getDocFromCache : fs.getDocsFromCache;
-    // a past prep or order day changed on another phone since this copy was read (config/main.pastEdit): read it again
-    var stale = !Array.isArray(n) || n[1] < pastStamp(k.charAt(0) === 'o' ? 'o' : k.charAt(0) === 'd' ? 'p' : '');
+    // a past prep, order or transfer day changed on another phone since this copy was read (config/main.pastEdit): read it again
+    var stale = !Array.isArray(n) || n[1] < pastStamp(k.charAt(0) === 'o' ? 'o' : k.charAt(0) === 'd' ? 'p' : k.charAt(0) === 'x' ? 'x' : '');
     if (live || force || stale || !fromCache) return server();
     return fromCache(ref).then(function (sn) { return count(sn) === n[0] ? sn : server(); }, server);
   }
@@ -4280,9 +4280,11 @@
   function xNewest(a, b) { return xNum(b.addedAt) - xNum(a.addedAt); }
   function xLive() { return (S.xLines || []).filter(function (x) { return !x.deleted; }); }
   /* the venues the book knows, one per spelling (case and spaces do not count): today's first, newest first, then the
-     summary's, most used first. The first spelling the book met is the one shown and saved. */
+     summary's, most used first. The first spelling the book met is the one shown and saved. Every map keyed by typed
+     words here and in the admin report has no inherited keys (Object.create(null)), so a venue or item typed as
+     "constructor" is a word like any other. */
   function xVenues() {
-    var seen = {}, out = [];
+    var seen = Object.create(null), out = [];
     function add(v) { v = xStr(v, 40); var k = okey(v); if (k && !seen[k]) { seen[k] = 1; out.push(v); } }
     xLive().sort(xNewest).forEach(function (x) { add(x.venue); });
     ((S.xSum && S.xSum.venues) || []).forEach(function (x) { add(x && x.v); });
@@ -4291,7 +4293,7 @@
   function xVenueOf(t) { var k = okey(t); return k ? xVenues().filter(function (v) { return okey(v) === k; })[0] || '' : ''; }
   // who came from (or gave for) a venue: today's first, then the ones the summary has for it, most often first
   function xPeople(venue) {
-    var k = okey(venue), seen = {}, out = [];
+    var k = okey(venue), seen = Object.create(null), out = [];
     if (!k) return out;
     function add(p) { p = xStr(p, 40); var pk = okey(p); if (pk && !seen[pk]) { seen[pk] = 1; out.push(p); } }
     xLive().filter(function (x) { return okey(x.venue) === k; }).sort(xNewest).forEach(function (x) { add(x.person); });
@@ -4300,7 +4302,7 @@
   }
   function xSuggest() {
     var q = okey(S.xf.text); if (q.length < 2) return [];
-    var seen = {}, out = [];
+    var seen = Object.create(null), out = [];
     function add(t) { t = xStr(t, 80); var k = okey(t); if (k && !seen[k] && k !== q && (k.indexOf(q) === 0 || k.indexOf(' ' + q) >= 0)) { seen[k] = 1; out.push(t); } }
     ((S.xSum && S.xSum.items) || []).forEach(function (x) { add(x && x.t); });
     xLive().forEach(function (x) { add(x.text); });
@@ -4357,6 +4359,8 @@
     if (X_UNITS.indexOf(f.unit) < 0) { toast('Pick a unit.'); focusSel('.tr-units .seg-b'); return; }
     // a big number for its unit is often grams typed with kg still picked: ask once (second tap on Log it)
     if (amt > (X_BIG[f.unit] || Infinity) && !arm('xbig:' + amt + f.unit)) { toast(amt + ' ' + f.unit + '? Check the unit. Tap Log it again if it is right.', null, 4000); focusSel('.tr-units .seg-b[aria-checked="true"]'); return; }
+    // the page may still be on yesterday's list just after midnight (typing does not redraw): the line goes on today's
+    if (S.xDate !== dayNow()) { S.xDate = dayNow(); watchXfer(); }
     var ref = fb.fs.doc(xCol(S.xDate)), unit = f.unit;
     sset(ref, practiceOn({ dir: dir, venue: venue, person: person, text: t, amount: amt, unit: unit, note: xStr(f.note, 120),
       addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: now(), deleted: false })).catch(function (e) { failed(e, function () { if (!S.xf.text.trim()) S.xf = f; }); });
@@ -4376,7 +4380,8 @@
     var mine = (S.xStats && S.xStats.lines) || [], it = (S.xLines || []).concat(mine).filter(function (x) { return x.id === id && x.date === date; })[0];
     var by = restore ? '' : (me() || {}).name || 'Head chef', at = restore ? 0 : now();
     mine.forEach(function (x) { if (x.id === id && x.date === date) { x.deleted = !restore; x.deletedBy = by; x.deletedAt = at; } });
-    supd(xRef(date, id), { deleted: !restore, deletedBy: by, deletedAt: at }).catch(failed);
+    // a past day's change reaches the head chef's other devices: their saved copy of that day is read again (pastRead)
+    supd(xRef(date, id), { deleted: !restore, deletedBy: by, deletedAt: at }).then(function () { markPast('x', date); }, failed);
     if (!restore) toast('Removed ' + (it ? it.text : 'the transfer') + ' from the transfer list', { label: 'Undo', fn: function () { removeXfer(date, id, true); } });
     draw();
   }
@@ -5639,8 +5644,9 @@
   /* ---------- transfers between venues (admin, 23 Oct 2026) ----------
      The head chef's Google account only: the rules refuse past transfer lines to anyone else. Reads the last 30 days, one
      query per day, when the page opens: the first open of a kitchen day costs 30 reads plus one per line, later opens
-     about 1 (today; past days come from this device's own copy through pastRead). Refresh reads them all again. A day
-     that could not be read is counted and said, never shown as nothing moved. Older days are in the backups. */
+     about 1 (today; past days come from this device's own copy through pastRead, unless a past day was changed on another
+     device since: config/main.pastEdit.x, stamped by removeXfer). Refresh reads them all again. A day that could not be
+     read is counted and said, never shown as nothing moved. Older days are in the backups. */
   function xDays(n) { var t = dayNow(), out = [], i; for (i = n - 1; i >= 0; i--) out.push(shift(t, -i)); return out; }
   function loadXStats(force) {
     if (!fb || S.configState !== 'ok' || !wAll()) return;
@@ -5655,8 +5661,8 @@
   }
   // the venues in the 30 days read, one per spelling key, each in the spelling used most
   function xSpell() {
-    var m = {}, out = {};
-    ((S.xStats && S.xStats.lines) || []).forEach(function (x) { var v = xStr(x.venue, 40), k = okey(v); if (!k) return; var e = m[k] = m[k] || {}; e[v] = (e[v] || 0) + 1; });
+    var m = Object.create(null), out = Object.create(null);
+    ((S.xStats && S.xStats.lines) || []).forEach(function (x) { var v = xStr(x.venue, 40), k = okey(v); if (!k) return; var e = m[k] = m[k] || Object.create(null); e[v] = (e[v] || 0) + 1; });
     Object.keys(m).forEach(function (k) { var e = m[k]; out[k] = Object.keys(e).sort(function (a, b) { return e[b] - e[a]; })[0]; });
     return out;
   }
@@ -5681,12 +5687,12 @@
     var all = xs.lines.filter(function (x) { return ds[x.date] && (!vk || okey(x.venue) === vk); }), lines = all.filter(function (x) { return !x.deleted; });
     var outs = lines.filter(function (x) { return x.dir !== 'in'; }), ins = lines.filter(function (x) { return x.dir === 'in'; });
     var miss = xs.miss ? '<p class="p-err" role="alert">Could not read ' + xs.miss + (xs.miss === 1 ? ' day' : ' days') + ', so some transfers may be missing. Check the signal and tap Refresh.</p>' : '';
-    var vm = {}, im = {}, sp = xSpell();
+    var vm = Object.create(null), im = Object.create(null), sp = xSpell();
     lines.forEach(function (x) {
-      var vkey = okey(x.venue) || '-', ve = vm[vkey] = vm[vkey] || { v: sp[vkey] || 'No venue', out: [], in: [], last: '', ppl: {} };
+      var vkey = okey(x.venue) || '-', ve = vm[vkey] = vm[vkey] || { v: sp[vkey] || 'No venue', out: [], in: [], last: '', ppl: Object.create(null) };
       (x.dir === 'in' ? ve.in : ve.out).push(x); if (x.date > ve.last) ve.last = x.date;
       var pp = xStr(x.person, 40); if (pp) ve.ppl[pp] = (ve.ppl[pp] || 0) + 1;
-      var ikey = okey(x.text), ie = im[ikey] = im[ikey] || { t: x.text, out: [], in: [], vs: {} };
+      var ikey = okey(x.text), ie = im[ikey] = im[ikey] || { t: x.text, out: [], in: [], vs: Object.create(null) };
       (x.dir === 'in' ? ie.in : ie.out).push(x); if (ve.v) ie.vs[ve.v] = 1;
     });
     var venues = Object.keys(vm).map(function (k) { return vm[k]; }), items = Object.keys(im).map(function (k) { return im[k]; });

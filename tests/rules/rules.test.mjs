@@ -464,7 +464,11 @@ await ok(W([['config/main', { pastEdit: { p: Date.now() } }, true]], { id: 'sam'
 await ok(W([['config/main', { pastEdit: { p: Date.now(), o: Date.now() } }, true]], { id: 'hd' }), true, 'pastEdit: the head chef with their PIN stamps prep and orders');
 await ok(W([['config/main', { pastEdit: { p: Date.now() } }, true]], { id: 'ann' }), false, 'pastEdit: staff cannot stamp it');
 await ok(W([['config/main', { pastEdit: { p: Date.now() }, pingIds: ['ann'] }, true]], { id: 'sam' }), false, 'pastEdit: nothing else may change in the same write');
-await ok(W([['config/main', { pastEdit: { x: 1 } }, true]], { id: 'sam' }), false, 'pastEdit: only p, o and n');
+await ok(W([['config/main', { pastEdit: { z: 1 } }, true]], { id: 'sam' }), false, 'pastEdit: only p, o, n and x');
+// the head chef's Google account stamps a past transfer change (x, 23 Oct 2026); a sous chef's next stamp keeps it in the map
+await ok(setDoc(doc(owner, K + 'config/main'), { pastEdit: { x: Date.now() } }, { merge: true }), true, 'pastEdit: the Google account stamps a past transfer change (x)');
+await ok(W([['config/main', { pastEdit: { p: Date.now() } }, true]], { id: 'sam' }), true, 'pastEdit: a sous chef still stamps prep with x in the map');
+await ok(W([['config/main', { pastEdit: { x: 'now' } }, true]], { id: 'sam' }), false, 'pastEdit: the transfers stamp is a number');
 await ok(W([['config/main', { pastEdit: { n: Date.now() } }, true]], { id: 'sam' }), true, 'pastEdit: a sous chef stamps a change to today\'s shift pings (n)');
 await ok(W([['config/main', { pastEdit: { n: 'now' } }, true]], { id: 'sam' }), false, 'pastEdit: the pings stamp is a number');
 await ok(W([['config/main', { pastEdit: { n: Date.now() } }, true]], { id: 'ann' }), false, 'pastEdit: staff cannot stamp the pings');
@@ -565,6 +569,8 @@ await ok(W([[XT + 'n22', xline({ tst: 'yes' })]], { id: 'ann' }), false, 'transf
 await ok(W([[XT + 't2', { deleted: true, deletedBy: 'Ann', deletedAt: Date.now() }, true]], { id: 'ann' }), false, 'transfers: Ann cannot remove one, not even her own straight after');
 await ok(W([[XT + 't2', { deleted: true, deletedBy: 'Sam', deletedAt: Date.now() }, true]], { id: 'sam' }), false, 'transfers: a sous chef cannot remove Ann\'s');
 await ok(W([[XT + 's1', xline({ addedBy: 'Sam', addedById: 'sam', addedAt: Date.now() })]], { id: 'sam' }), true, 'transfers: Sam logs one');
+await ok(W([[XT + 's1', { deleted: true, deletedBy: 'S'.repeat(81), deletedAt: Date.now() }, true]], { id: 'sam' }), false, 'transfers: Sam\'s Undo names him in 80 characters or fewer');
+await ok(W([[XT + 's1', { deleted: true, deletedBy: 'Sam', deletedAt: 'now' }, true]], { id: 'sam' }), false, 'transfers: Sam\'s Undo time is a number');
 await ok(W([[XT + 's1', { deleted: true, deletedBy: 'Sam', deletedAt: Date.now() }, true]], { id: 'sam' }), true, 'transfers: Sam undoes his own straight after');
 await ok(W([[XT + 's1', { amount: 9 }, true]], { id: 'sam' }), false, 'transfers: Sam cannot change the amount');
 await ok(W([[XT + 's2', xline({ addedBy: 'Sam', addedById: 'sam', addedAt: Date.now() - 600000 })]], { id: 'sam' }), true, 'transfers: one Sam logged 10 minutes ago');
@@ -574,6 +580,8 @@ await ok(updateDoc(doc(owner, K + XY + 'y1'), { deleted: false, deletedBy: '', d
 await ok(updateDoc(doc(owner, K + XY + 'y1'), { deleted: true, deletedBy: 'Hedy', deletedAt: 6, by: 'hd' }), true, 'transfers: also with a PIN signed in on that device (by)');
 await ok(updateDoc(doc(owner, K + XY + 'y1'), { amount: 9 }), false, 'transfers: the Google account cannot change the amount');
 await ok(updateDoc(doc(owner, K + XY + 'y1'), { deleted: 'yes' }), false, 'transfers: removed is true or false');
+await ok(updateDoc(doc(owner, K + XY + 'y1'), { deleted: true, deletedBy: 'H'.repeat(81), deletedAt: 7 }), false, 'transfers: who removed it is 80 characters or fewer');
+await ok(updateDoc(doc(owner, K + XY + 'y1'), { deleted: true, deletedBy: 'Head chef', deletedAt: 'now' }), false, 'transfers: when it was removed is a number');
 await ok(setDoc(doc(owner, K + 'transfers/' + OLD + '/lines/c1'), xline({ by: 'ann', station: 'Larder', old: 1 })), true, 'transfers: the head chef copies a line as it is (moving the kitchen PIN), older fields too');
 const xgone = xline({ by: 'sam', deleted: true, deletedBy: 'Head chef', deletedAt: 5, old: 1 });
 await ok(setDoc(doc(owner, K + 'transfers/' + OLD + '/lines/c2'), xgone), true, 'transfers: and a removed one, with who removed it and when');

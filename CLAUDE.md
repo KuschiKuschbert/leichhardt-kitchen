@@ -136,7 +136,7 @@ These hold for every file, old and new. When you touch code that breaks one, bri
 
 **Saved copies on the phone**
 - Every saved copy (`lk.*`, IndexedDB) says in a comment what makes it out of date.
-- A change to a past day must reach the saved copies on other phones too, not only the phone that made it: call `markPast('p' | 'o', date)` after the write, and have the saved copy check `pastStamp()` before it is used.
+- A change to a past day must reach the saved copies on other phones too, not only the phone that made it: call `markPast('p' | 'o' | 'x', date)` after the write (x: a past transfer, from the head chef's Google account), and have the saved copy check `pastStamp()` before it is used.
 - A copy is saved only when every part came in. A failed read is never saved as "nothing there".
 
 **Who sees what**

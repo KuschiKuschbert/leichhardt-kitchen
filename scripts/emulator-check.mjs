@@ -102,9 +102,15 @@ ok(ly.m === batchAt && ly.n === 8, "tomorrow's list: last night's batch clocked 
 ok(Object.keys(ls.days || {}).length === 28 && ls.days[day(7)].m === 1270 && ls.days[day(2)].m === -1, "tomorrow's list: 28 nights, last night's summary kept, a night with no list is -1");
 ok(ls.usual === 1270 && ls.n === 4, "tomorrow's list: the usual time from 4 nights (" + ls.usual + ')');
 ok(/Tomorrow's list: usually from 21:10 \(4 of the last 28 nights\)/.test(out1) && / 20 nights read again/.test(out1), "tomorrow's list: the run prints the time, and reads only the nights it had not seen");
+// words that are also built-in object names count like any other word (23 Oct 2026): a venue "Constructor", an item
+// "__proto__" and a person "constructor", logged yesterday, are in the second run's transfer summary
+await w(['transfers', y, 'lines', 't11'], tl(1, '__proto__', { venue: 'Constructor', person: 'constructor', amount: 1, unit: 'packs' }));
 const out2 = run();
 const on2 = (await K.collection('learned').doc('slice-onions').get()).data();
 ok(on2.uses === 3, 'second run counts nothing twice (' + on2.uses + ')');
 const ly2 = ((((await K.collection('summary').doc('learned').get()).data() || {}).lists || {}).days || {})[y] || {};
 ok(/ 0 nights read again/.test(out2) && ly2.m === batchAt, "tomorrow's list: a second run reads no night again and keeps last night (" + JSON.stringify(ly2) + ')');
+const ts2 = (await K.collection('summary').doc('transfers').get()).data() || {};
+ok(/Transfer summary: 3 items, 3 venues from 28 days/.test(out2) && !/Transfer summary failed/.test(out2), 'transfers: a venue "Constructor" and an item "__proto__" do not stop the summary (' + (out2.match(/Transfer summary[^\n]*/) || [''])[0] + ')');
+ok((ts2.venues || []).some(v => v.v === 'Constructor' && v.n === 1 && JSON.stringify(v.people) === '["constructor"]') && (ts2.items || []).some(x => x.t === '__proto__' && x.unit === 'packs' && x.venue === 'Constructor'), 'transfers: they are listed like any other venue, item and person');
 process.exit(fails ? 1 : 0);
