@@ -180,7 +180,7 @@ const mailReads = p => p.evaluate(() => (window.__fake.reads || []).filter(k => 
   await p.context().close();
 
   // a sous chef's own phone: no mail list while it is off
-  const cfgMain = (await (async () => { const q = await L.open(b, '#/', { who: 'sam', wait: 800 }); const d = (await store(q))[fsKey(['config', 'main'])]; await q.context().close(); return d; })());
+  const cfgMain = (await (async () => { const q = await L.open(b, '#/', { who: 'sam', wait: 800 }); await L.waitFor(q, () => !!window.__fake, null, 5000); const d = (await store(q))[fsKey(['config', 'main'])]; await q.context().close(); return d; })());
   p = await L.open(b, '#/mail', { who: 'sam', extra: L.mail(), wait: 1500 });
   ok(!/Mail to Chef/.test(await txt(p, '#prep-root') || '') && /Only Chef reads it/.test(await txt(p, '#prep-root') || ''), 'sous chef, switch off: no mail list, only Chef reads it');
   ok(!(await mailReads(p)), 'sous chef, switch off: the phone never reads the mail');

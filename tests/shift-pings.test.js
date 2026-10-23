@@ -22,7 +22,8 @@ function withAnn() {
 
   // admin: the tab is called Shift pings, the People tab has no Pings tick any more (20 Oct 2026: only the head chef
   // and sous chefs write pings), and an old pingIds with Ann in it is put back to the sous chefs when the panel opens
-  p = await L.open(b, '#/admin', { admin: true, extra: withAnn(), wait: 1800 });
+  // the head chef's own view (nobody signed in): a sous chef there has only Shift pings under Today, so no page row
+  p = await L.open(b, '#/admin', { admin: true, who: '', extra: withAnn(), wait: 1800 });
   await L.adminTab(p, 'notes');
   ok(await txt(p, '[data-p="a-tab"][data-t="notes"]') === 'Shift pings', 'admin: the Notes tab is called Shift pings');
   s = await store(p);
