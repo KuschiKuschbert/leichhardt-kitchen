@@ -41,7 +41,12 @@ export function probeChecks(fs, pin) {
     ['a chef to-do cannot be saved with only the kitchen PIN', () => fs.patch(K + 'todos/' + id, { text: str('Probe'), st: str('open'), at: num(1), doneAt: num(0), upd: num(1), by: str('probe') }), false],
     // transfers between venues (23 Oct 2026): a line needs a PIN session; past days are for the head chef's Google account
     ['a transfer line with a writer id and no PIN session is refused', () => fs.patch(K + 'transfers/' + day + '/lines/' + id, { dir: str('out'), venue: str('Probe'), person: str(''), text: str('probe'), amount: num(1), unit: str('kg'), note: str(''), addedBy: str('Probe'), addedById: str('probe'), addedAt: num(Date.now()), deleted: bool(false), by: str('probe') }), false],
-    ['past transfer lines cannot be read with only the kitchen PIN', () => fs.query(K + 'transfers/2000-01-01', 'lines', 'deleted', 'EQUAL', bool(false)), false]
+    ['past transfer lines cannot be read with only the kitchen PIN', () => fs.query(K + 'transfers/2000-01-01', 'lines', 'deleted', 'EQUAL', bool(false)), false],
+    // phone pushes for order cut-offs (24 Oct 2026): only the server reads the push addresses
+    ['a phone push address cannot be read with only the kitchen PIN', () => fs.get(K + 'push/' + id), false],
+    ['a phone push address cannot be saved with only the kitchen PIN', () => fs.patch(K + 'push/' + id, { tok: str('probe'), at: num(1), ua: str('Other'), by: str('owner') }), false],
+    // the chefs' supplier order ticks (24 Oct 2026): only chefs and the Google account read them
+    ['the supplier order ticks cannot be read with only the kitchen PIN', () => fs.query('kitchens/' + pin, 'cutdone', 'day', 'EQUAL', str(day)), false]
   ];
 }
 

@@ -46,11 +46,12 @@ const names = p => p.evaluate(() => [...document.querySelectorAll('#cut-band .cu
   await p.click('#cut-band [data-cut="done"][data-id^="pfd|"]'); await L.settle(p, 300);
   n = await names(p);
   ok(n.length === 2 && n[0].indexOf('Veg') === 0, 'Ordered: PFD leaves the bar');
-  // the order list: every cut-off today, the one at 13:00 Closed, the ordered one marked
+  // the order list: every cut-off today as a tick list, the one at 13:00 Closed, the ordered one ticked by Sam
   await p.evaluate(() => { location.hash = '#/orders'; });
   await L.waitFor(p, () => !!document.querySelector('.cut-tl'), null, 10000);
   const tl = await p.evaluate(() => [...document.querySelectorAll('.cut-tl li')].map(e => e.textContent));
-  ok(tl.length === 5 && /^Chicken13:00.*Closed$/.test(tl[0]) && /^PFD15:00.*Ordered$/.test(tl[1]) && /Late Meats20:00/.test(tl[4]), 'order list: today\'s cut-offs in time order (' + tl.join(' | ') + ')');
+  ok(tl.length === 5 && /^Chickenby 13:00.*Closed, not ticked$/.test(tl[0]) && /^✓PFDby 15:00.*Ordered by Sam, \d\d:\d\d$/.test(tl[1]) && /Late Meatsby 20:00/.test(tl[4]), 'order list: today\'s cut-offs in time order, as a tick list (' + tl.join(' | ') + ')');
+  ok(await p.$eval('.cut-tl li:nth-child(2) .cut-box', e => e.getAttribute('aria-pressed') === 'true'), 'order list: PFD\'s box is ticked');
   ok(!tl.some(t => /Other Day|To Come/.test(t)), 'order list: another day\'s and a to-come cut-off are left off');
   ok(!!(await p.$('#cut-band:not([hidden])')), 'order list: the bar is there too');
   await p.context().close();

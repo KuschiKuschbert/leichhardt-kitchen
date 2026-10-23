@@ -167,6 +167,9 @@ async function start() {
    o.fakeMode         the stand-in's mode from the first request: 'fail' (every read and write fails, like no signal) or 'deny'
    o.failReads        a regex source: getDoc and getDocs fail for the paths that match (say one past day of wastage)
    o.denyReads        a regex source: getDocs is refused (permission-denied) for the collections that match
+   o.init             a function run in the page before the book starts, on every load (after the seed), to stand in
+                      for what the test browser lacks (the notification permission, a running service worker)
+   o.block            a regex source: the book's own files whose address matches fail to load (say js/cutoffs.js)
    o.board            let the start of shift sheet come up (23 Oct 2026). Without it the phone has had today's start
                       already (lk.board.<who>), the way everyone has a usual drink, so the sheet stays off the other tests */
 async function open(browser, hash, o) {
@@ -224,6 +227,8 @@ async function open(browser, hash, o) {
     localStorage.clear();
     Object.keys(ls).forEach(k => { if (ls[k]) localStorage.setItem(k, ls[k]); });
   }, ls);
+  if (o.init) await ctx.addInitScript(o.init);
+  if (o.block) await ctx.route(new RegExp(o.block), r => r.abort());
   const page = await ctx.newPage();
   page.errors = [];
   page.loading = 0;   // requests still out, for settle()
