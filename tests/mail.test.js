@@ -6,6 +6,7 @@ const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
 const store = page => page.evaluate(() => window.__fake.dump());
 const pop = p => p.evaluate(() => { const e = document.querySelector('.mlp'); return e ? e.textContent : ''; });
 const badge = p => txt(p, '.wtop-who .adm-n');
+const mailReads = p => p.evaluate(() => (window.__fake.reads || []).filter(k => /\/mail$/.test(k)).length);
 (async () => {
   const b = await L.start();
 
@@ -57,7 +58,7 @@ const badge = p => txt(p, '.wtop-who .adm-n');
 
   // the head chef: 3 open mails, the Mail tab last opened 11 hours ago, 14:00: popup and count
   const extra = Object.assign(L.mail(), { [fsKey(['config', 'admins'])]: { x: 1, mailOpened: L.NOW - 11 * 3600000 } });
-  p = await L.open(b, '#/', { admin: true, extra, wait: 1800 });
+  p = await L.open(b, '#/', { admin: true, who: '', extra, wait: 1800 });
   // the mail is read after the Google sign-in and the admin list, so wait for the count itself
   await L.waitFor(p, () => !!document.querySelector('.wtop-who .adm-n'), null, 5000).catch(() => {});
   ok(await badge(p) === '3', 'chef hat: shows 3 open mails (' + await badge(p) + ')');
@@ -72,13 +73,12 @@ const badge = p => txt(p, '.wtop-who .adm-n');
 
   // opened recently: no popup, the count still shows
   const recent = Object.assign(L.mail(), { [fsKey(['config', 'admins'])]: { x: 1, mailOpened: L.NOW - 3600000 } });
-  p = await L.open(b, '#/', { admin: true, extra: recent, wait: 1800 });
+  p = await L.open(b, '#/', { admin: true, who: '', extra: recent, wait: 1800 });
   await L.waitFor(p, () => !!document.querySelector('.wtop-who .adm-n'), null, 5000).catch(() => {});   // the mail is in (see above)
   ok(!(await pop(p)), 'nudge: no popup when the Mail tab was opened an hour ago');
   ok(await badge(p) === '3', 'chef hat: the count shows anyway');
   await p.click('.wtop-who'); await L.settle(p, 150);
   ok(await txt(p, '.wm .wm-adm .adm-n') === '3' && !/open mail/.test(await txt(p, '.wm .wm-adm')) && await p.$eval('.wm .wm-adm', e => e.getAttribute('aria-label')) === 'Admin panel, 3 open kitchen mail', 'chef hat menu: Admin panel shows the 3 open mails once, as the orange count, and says so to a screen reader');
-  ok(!!(await p.$('.wm a[href="#/mail"]')), 'chef hat menu: a sous chef on the head chef\'s device still writes Kitchen mail (only the head chef has none)');
   await p.keyboard.press('Escape'); await L.settle(p, 100);
   await p.context().close();
   // new mail and the head chef on the device (nobody signed in, or their own PIN): Admin panel in the chef hat menu opens
@@ -115,10 +115,24 @@ const badge = p => txt(p, '.wtop-who .adm-n');
   ok(await atab(p) !== 'mail' && !(await p.$('.ml-admin')), 'sous chef on the head chef\'s device: Admin panel opens the last page (' + await atab(p) + ')');
   s = await store(p);
   ok(['m1', 'm2', 'm3'].every(i => s[fsKey(['mail', i])].seen === false), 'sous chef on the head chef\'s device: no mail is marked seen');
+  ok(!(await p.$('.a-tab[data-t="mail"]')) && !(await p.$('.wtop-who .adm-n')), 'sous chef on the head chef\'s device, switch off: no Kitchen mail page and no mail count');
+  await p.click('.wtop-who'); await L.settle(p, 150);
+  ok(!!(await p.$('.wm a[href="#/mail"]')), 'chef hat menu: a sous chef on the head chef\'s device still writes Kitchen mail (only the head chef has none)');
+  await p.keyboard.press('Escape'); await L.settle(p, 100);
+  await p.context().close();
+  // switched on: the sous chef on that device gets the Mail page, but not the switch, and still marks nothing seen
+  const headOn = { [fsKey(['config', 'main'])]: Object.assign({}, headCfg[fsKey(['config', 'main'])], { sousMail: true }) };
+  p = await L.open(b, '#/admin', { admin: true, who: 'sam', extra: Object.assign({}, recent, headOn), wait: 1800 });
+  await L.adminTab(p, 'mail');
+  await L.waitFor(p, () => document.querySelectorAll('.ml-admin [data-lv="mail"] .ml-row').length === 3, null, 6000).catch(() => {});
+  ok((await p.$$('.ml-admin [data-lv="mail"] .ml-row')).length === 3 && !(await p.$('[data-k="ml-sous"]')), 'sous chef on the head chef\'s device, switch on: reads the mail, no switch');
+  await L.settle(p, 600);
+  s = await store(p);
+  ok(['m1', 'm2', 'm3'].every(i => s[fsKey(['mail', i])].seen === false), 'sous chef on the head chef\'s device, switch on: nothing marked seen');
   ok(p.errors.length === 0, 'sous chef Admin panel: no page errors ' + p.errors.join(' | '));
   await p.context().close();
   // 23:00: no popup outside 10:00 to 22:00
-  p = await L.open(b, '#/', { admin: true, extra, clock: L.NOW + 9 * 3600000, wait: 1800 });
+  p = await L.open(b, '#/', { admin: true, who: '', extra, clock: L.NOW + 9 * 3600000, wait: 1800 });
   ok(!(await pop(p)), 'nudge: no popup at 23:00');
   await p.context().close();
   // a staff phone never gets the count or the popup
@@ -127,7 +141,7 @@ const badge = p => txt(p, '.wtop-who .adm-n');
   await p.context().close();
 
   // the Mail tab: most urgent first, opening it marks all seen, a tick moves a line to Done
-  p = await L.open(b, '#/', { admin: true, extra, wait: 1800 });
+  p = await L.open(b, '#/', { admin: true, who: '', extra, wait: 1800 });
   // the popup and the Mail tab come after the mail is read: wait for each itself (a slow read missed a fixed pause)
   await L.waitFor(p, () => !!document.querySelector('[data-ml="open"]'), null, 8000).catch(() => {});
   await tap(p, '[data-ml="open"]');
@@ -157,7 +171,38 @@ const badge = p => txt(p, '.wtop-who .adm-n');
   s = await store(p);
   ok(s[fsKey(['mail', 'm2'])].done === false && s[fsKey(['mailstat', 'm2'])].done === false, 'untick: back to open');
   ok(await badge(p) === '3', 'untick: the count is 3 again');
+  // the switch for sous chefs, off by default (23 Oct 2026): the head chef turns it on in the Mail tab
+  ok(!!(await p.$('[data-k="ml-sous"]')) && !(await p.$eval('[data-k="ml-sous"]', e => e.checked)), 'sous chef switch: on the Mail tab, off by default');
+  await p.click('[data-k="ml-sous"]'); await L.settle(p, 500);
+  s = await store(p);
+  ok(s[fsKey(['config', 'main'])].sousMail === true, 'sous chef switch: ticking it saves sousMail on config/main');
   ok(p.errors.length === 0, 'admin mail: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // a sous chef's own phone: no mail list while it is off
+  const cfgMain = (await (async () => { const q = await L.open(b, '#/', { who: 'sam', wait: 800 }); await L.waitFor(q, () => !!window.__fake, null, 5000); const d = (await store(q))[fsKey(['config', 'main'])]; await q.context().close(); return d; })());
+  p = await L.open(b, '#/mail', { who: 'sam', extra: L.mail(), wait: 1500 });
+  ok(!/Mail to Chef/.test(await txt(p, '#prep-root') || '') && /Only Chef reads it/.test(await txt(p, '#prep-root') || ''), 'sous chef, switch off: no mail list, only Chef reads it');
+  ok(!(await mailReads(p)), 'sous chef, switch off: the phone never reads the mail');
+  await p.context().close();
+  // switched on: Sam reads the open mail on #/mail and ticks one off; seen stays for the head chef
+  const on = Object.assign(L.mail(), { [fsKey(['config', 'main'])]: Object.assign({}, cfgMain, { sousMail: true }) });
+  p = await L.open(b, '#/mail', { who: 'sam', extra: on, wait: 1500 });
+  await L.waitFor(p, () => document.querySelectorAll('[data-lv="mail"] .ml-row').length === 3, null, 6000).catch(() => {});
+  ok(/Mail to Chef/.test(await txt(p, '#prep-root') || '') && (await p.$$('[data-lv="mail"] .ml-row')).length === 3, 'sous chef, switch on: the 3 open mails show on Kitchen mail');
+  ok(/Only Chef and the sous chefs read it/.test(await txt(p, '#prep-root') || ''), 'sous chef, switch on: the page says the sous chefs read it too');
+  await tap(p, '[data-p="ml-tick"][data-id="m2"]'); await L.settle(p, 700);
+  s = await store(p);
+  ok(s[fsKey(['mail', 'm2'])].done === true && s[fsKey(['mail', 'm2'])].by === 'sam' && s[fsKey(['mailstat', 'm2'])].done === true, 'sous chef: a tick saves the mail and its status as done');
+  ok(s[fsKey(['mail', 'm2'])].seen === false && s[fsKey(['mailstat', 'm2'])].seen === false && ['m1', 'm3'].every(i => s[fsKey(['mail', i])].seen === false), 'sous chef: nothing is marked seen');
+  ok(!(await p.$('[data-k="ml-sous"]')), 'sous chef: no switch on their phone');
+  ok(p.errors.length === 0, 'sous chef mail: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+  // staff never get the list, switch on or off
+  p = await L.open(b, '#/mail', { who: 'bo', extra: on, wait: 1500 });
+  ok(!/Mail to Chef/.test(await txt(p, '#prep-root') || '') && !(await p.$('[data-lv="mail"]')), 'staff, switch on: no mail list');
+  ok(/Only Chef and the sous chefs read it/.test(await txt(p, '#prep-root') || ''), 'staff, switch on: the page says the sous chefs read it too');
+  ok(!(await mailReads(p)), 'staff, switch on: the phone never reads the mail');
   await p.context().close();
 
   await b.close();

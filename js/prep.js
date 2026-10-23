@@ -1764,6 +1764,7 @@
         return { id: p.id, name: String(p.name).trim().slice(0, 40), role: p.role || 'staff', add: !!p.add, tick: !!p.tick, del: !!p.del, ping: !!p.ping, fn: !!p.fn, active: p.active !== false };
       }),
       kitSecs: ksClean(cfg.kitSecs !== undefined ? cfg.kitSecs : ((S.config && S.config.kitSecs) || [])), showBadges: cfg.showBadges !== false, staffSee: staffSee(cfg),
+      sousMail: !!(S.config && S.config.sousMail === true),   // set only from the Kitchen mail tab (mlSousSet)
       sousIds: hold ? (hold.sousIds || []) : idsFor(cfg.people, isSousP), pingIds: hold ? (hold.pingIds || []) : idsFor(cfg.people, canPingP),
       fnIds: hold ? (hold.fnIds || []) : idsFor(cfg.people, fnP),
       staffIds: idsFor(cfg.people, anyP), headId: headIdOf(cfg.people), pinOpen: pinOpenFor(idsFor(cfg.people, anyP)),
@@ -3327,14 +3328,16 @@
     var bulk = '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line">' + esc(S.bulk || '') + '</textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div>';
     var saveBlock = saveBarHTML();
     var at = S.atab || 'insights';
+    // a sous chef on the head chef's device has no Kitchen mail page until the head chef switches it on (23 Oct 2026)
+    if (at === 'mail' && !mlOwner()) at = S.atab = 'notes';
     // Head chef decision D4 (20 Oct 2026): five groups on top, the pages of the open group underneath (the page ids
     // stay the same, so lk.prep.atab and every link into a page still work)
-    var mlN = mlInfo().n, ag = adminGroupOf(at);
+    var mlN = mlInfo().n, ag = adminGroupOf(at), agTabs = ag[2].filter(function (t) { return t !== 'mail' || mlOwner(); });
     // 21 Oct 2026: groups, pages and "On this page" sit in one nav that stays at the top of the screen (adminJumps() fills
     // the last row from the page's headings after each draw, adminScroll() tucks it up while scrolling down)
     var tabsBar = '<div class="a-navtop"></div><div class="a-nav' + (S.anavMin ? ' is-min' : '') + '"><nav class="a-groups" aria-label="Admin sections">' + A_GROUPS.map(function (g) {
       return '<button type="button" class="a-group" data-p="a-group" data-g="' + g[0] + '" aria-current="' + (ag[0] === g[0] ? 'page' : 'false') + '">' + g[1] + (g[0] === 'today' && mlN ? ' (' + mlN + ')' : '') + '</button>';
-    }).join('') + '</nav>' + (ag[2].length > 1 ? '<nav class="a-tabs" aria-label="' + esc(ag[1]) + ' pages">' + ag[2].map(function (t) {
+    }).join('') + '</nav>' + (agTabs.length > 1 ? '<nav class="a-tabs" aria-label="' + esc(ag[1]) + ' pages">' + agTabs.map(function (t) {
       return '<button type="button" class="a-tab" data-p="a-tab" data-t="' + t + '" aria-pressed="' + (at === t) + '">' + A_TAB_NAMES[t] + (t === 'mail' && mlN ? ' (' + mlN + ')' : '') + '</button>';
     }).join('') + '</nav>' : '') + '<nav class="a-onpage" aria-label="On this page" hidden></nav></div>';
     if (at === 'notes') loadNotes();
@@ -6567,7 +6570,7 @@
     if (a === 'donejump') { var dj = S.root.querySelector('#nb-donebox'); if (dj) dj.scrollIntoView({ block: 'start', behavior: 'smooth' }); return; }
     if (a === 'write') { var wt = S.root.querySelector('[data-k="p-text"]'); if (wt) { wt.scrollIntoView({ block: 'center', behavior: 'smooth' }); wt.focus({ preventScroll: true }); } return; }
     if (a === 'learn-hide') { hideLearned(id, el.getAttribute('data-hide') === '1'); return; }
-    if (a === 'a-group') { var gg = A_GROUPS.filter(function (g) { return g[0] === el.getAttribute('data-g'); })[0]; if (gg) { S.atab = (S.agLast || {})[gg[0]] || gg[2][0]; lsSet('lk.prep.atab', S.atab); draw(); adminToTop(); } return; }
+    if (a === 'a-group') { var gg = A_GROUPS.filter(function (g) { return g[0] === el.getAttribute('data-g'); })[0]; if (gg) { S.atab = (S.agLast || {})[gg[0]] || gg[2].filter(function (t) { return t !== 'mail' || mlOwner(); })[0]; lsSet('lk.prep.atab', S.atab); draw(); adminToTop(); } return; }
     if (a === 'a-tab') { S.atab = el.getAttribute('data-t'); S.agLast = S.agLast || {}; S.agLast[adminGroupOf(S.atab)[0]] = S.atab; lsSet('lk.prep.atab', S.atab); draw(); adminToTop(); return; }
     if (a === 'staff-open') { if (isSous()) { startDraft(); S.staffOpen = true; draw(); seedPinOpen(); } return; }
     if (a === 'staff-close') { if (draftDirty() && !arm('staff-close')) return; S.staffOpen = false; S.draft = null; draw(); return; }
@@ -6657,6 +6660,7 @@
     if (!S.root || !S.root.contains(el)) return;
     if (k && k.indexOf('lv-s:') === 0) { var sk = k.slice(5), sc = LVR[sk]; if (sc) { var ss = lvState(sc); ss.sort = el.value; ss.shown = sc.step || 15; lvRefresh(sk); } return; }
     if (k && k.indexOf('ml-pri:') === 0) { mlSetPri(k.slice(7), el.value); return; }
+    if (k === 'ml-sous') { mlSousSet(el.checked); return; }
     if (k === 'g-file') { var gfl = el.files; gReadFiles(gfl); try { el.value = ''; } catch (x) {} return; }
     if (k === 'mn-older') { S.mSel = el.value; loadSigns(el.value, true); draw(); return; }
     if (k && k.indexOf('mn-') === 0) { mfSet(k, el); return; }
@@ -6727,6 +6731,9 @@
      panel's Mail tab, as a tick-off list. mail/<id> holds the message; mailstat/<id> holds only seen and done, so the
      sender's phone can show what happened to it without being able to read anyone's mail. The phone keeps its own copy
      of what was sent from it (lk.mail.sent), shown only to the person who sent it.
+     Sous chefs (23 Oct 2026): while the head chef has it switched on (config/main sousMail, off by default, the switch is
+     on the Mail tab), a sous chef signed in with their PIN reads the mail and ticks it off on #/mail. The rules check the
+     switch and their PIN session. Their phone reads it only while #/mail is open (mlSous()); seen stays for the head chef.
      On the head chef's device the open mail is read with one small query when the book opens and again only after
      30 minutes away (no listener, no polling). It drives the count on the chef hat and the "Mail waiting" popup:
      open mail, the Mail tab not opened for 10 hours, between 10:00 and 22:00 kitchen time. "Later" holds it off 10 hours. */
@@ -6734,7 +6741,7 @@
   var ML_PRI = [['today', 'Today'], ['week', 'This week'], ['any', 'Whenever']];
   var ML_MAX = 600, ML_STALE = 30 * 60000, ML_NUDGE = 10 * 3600000, ML_DONE_DAYS = 30, ML_KEEP = 60 * 86400000, ML_SENT_MAX = 40;
   var mlf = { cat: '', pri: 'week', text: '' }, mlMsg = '', mlBusy = false, mlStatAt = 0, mlStatBusy = false;
-  var mlOpen = null, mlDone = null, mlAt = 0, mlBusyR = false, mlDoneAt = 0, mlOpened = +(lsGet('lk.mail.opened') || 0), mlOpenedW = 0, mlPop = null, mlPrev = null, mlLastN = -1;
+  var mlOpen = null, mlErr = false, mlDone = null, mlAt = 0, mlBusyR = false, mlDoneAt = 0, mlOpened = +(lsGet('lk.mail.opened') || 0), mlOpenedW = 0, mlPop = null, mlPrev = null, mlLastN = -1;
   function mlCat(id) { var c = ML_CATS.filter(function (x) { return x[0] === id; })[0]; return c ? c[1] : 'Other'; }
   function mlPri(id) { var c = ML_PRI.filter(function (x) { return x[0] === id; })[0]; return c ? c[1] : 'Whenever'; }
   function mlWhen(ms) { return dayShort(T.day(ms)) + ', ' + clock(ms); }
@@ -6794,7 +6801,7 @@
       return '<button type="button" class="ml-sb" data-p="ml-pri" data-v="' + c[0] + '" aria-pressed="' + (mlf.pri === c[0]) + '">' + esc(c[1]) + '</button>';
     }).join('') + '</div>';
     return '<section class="p-card ml-page"><h2 class="p-h" id="rtitle" tabindex="-1">Kitchen mail</h2>' +
-      '<p class="hint">Anything Chef should know: broken equipment, stock, a recipe card that is wrong, or an idea. Only Chef reads it.</p>' +
+      '<p class="hint">Anything Chef should know: broken equipment, stock, a recipe card that is wrong, or an idea. ' + (mlSousOn() ? 'Only Chef and the sous chefs read it.' : 'Only Chef reads it.') + '</p>' +
       '<p class="ml-urgent"><b>Something urgent?</b> Please tell the chef on shift straight away, so it gets sorted quickly.</p>' +
       (admDev() ? '<p class="hint">Chef: the mail sent to you is in the <a href="#/admin" data-p="ml-goadmin">admin panel, Kitchen mail</a>.</p>' : '') +
       '<div class="field"><span class="label" id="ml-cl">What is it about?</span>' + cats + '</div>' +
@@ -6803,30 +6810,47 @@
       '<div class="field"><label class="label" for="ml-text">Message</label><textarea id="ml-text" class="ml-ta" data-k="ml-text" rows="4" maxlength="' + ML_MAX + '" placeholder="' + esc(mlf.cat === 'roster' ? 'For example: I put in a leave request for 3 to 7 November.' : 'Keep it short: what, where, since when.') + '">' + esc(mlf.text) + '</textarea>' +
       '<span class="hint ml-left" id="ml-left">' + (left < 100 ? left + ' characters left' : '') + '</span></div>' +
       (mlMsg ? '<p class="p-err" role="alert">' + esc(mlMsg) + '</p>' : '') +
-      '<div class="btn-row"><button type="button" class="btn dark" data-p="ml-send"' + (mlBusy ? ' disabled' : '') + '>' + (mlBusy ? 'Sending...' : 'Send to Chef') + '</button></div></section>' + mlSentHTML();
+      '<div class="btn-row"><button type="button" class="btn dark" data-p="ml-send"' + (mlBusy ? ' disabled' : '') + '>' + (mlBusy ? 'Sending...' : 'Send to Chef') + '</button></div></section>' + mlSentHTML() +
+      (mlSous() ? '<section class="p-card">' + mlListHTML('Mail to Chef', 'What the team wrote to Chef, most urgent first. Chef has let the sous chefs read it. Tick a line when it is dealt with. Seen is still for Chef.') + '</section>' : '');
   }
 
   /* ---- the head chef's side ---- */
-  function mlOwner() { return S.level === 'owner' && ownerHere() && !!fb && /^\d{4,6}$/.test(S.pin); }
+  // the head chef's device: the head chef on it (their PIN, or nobody signed in), or a sous chef once mail is switched on for them
+  function mlOwner() { return S.level === 'owner' && ownerHere() && !!fb && /^\d{4,6}$/.test(S.pin) && (mlHead() || mlSousOn()); }
+  // the head chef is the one on the device: only they mark mail seen and see the switch
+  function mlHead() { var p = who(); return !p || isHeadP(p); }
+  /* ---- sous chefs, while the head chef has it switched on ---- */
+  function mlSousOn() { return !!(S.config && S.config.sousMail === true); }
+  // a sous chef signed in with their PIN on #/mail, away from the head chef's admin panel (the rules check the same)
+  function mlSous() { return mlSousOn() && !admDev() && isSous() && canW() && !!fb && /^\d{4,6}$/.test(S.pin); }
+  function mlReader() { return mlOwner() || (mlSous() && S.name === 'mail' && !!S.root && document.body.contains(S.root)); }
+  function mlSousSet(on) {
+    if (S.level !== 'owner' || !mlHead()) return;
+    track(fb.fs.setDoc(cfgDoc(), { sousMail: on }, { merge: true })).then(function () {
+      toast(on ? 'Sous chefs can read and tick off kitchen mail now.' : 'Only you read kitchen mail now.');
+    }, function (e) { failed(e); draw(); });
+  }
   // n: open mail (the count on the chef hat), fresh: how many of them nobody has opened the Mail tab for yet
   function mlInfo() { var l = mlOwner() && mlOpen ? mlOpen : []; return { n: l.length, fresh: l.filter(function (x) { return !x.seen; }).length }; }
   function mlTell() { var n = mlInfo().n; if (n !== mlLastN) { mlLastN = n; try { window.dispatchEvent(new Event('lk-mail')); } catch (e) {} } }
   function mlGrab(sn) { return sn.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }); }
+  /* open mail: one query (one read per open message), on the head chef's device when the book opens and after 30 minutes
+     away; on a sous chef's phone only while #/mail is open, again after 30 minutes */
   function loadMail(force) {
-    if (!mlOwner() || mlBusyR || (!force && mlOpen && Date.now() - mlAt < ML_STALE)) return;
+    if (!mlReader() || mlBusyR || (!force && mlOpen && Date.now() - mlAt < ML_STALE)) return;
     mlBusyR = true;
     fb.fs.getDocs(fb.fs.query(colRef('mail'), fb.fs.where('done', '==', false))).then(function (sn) {
-      mlOpen = mlGrab(sn); mlAt = Date.now(); mlBusyR = false;
+      mlOpen = mlGrab(sn); mlAt = Date.now(); mlBusyR = false; mlErr = false;
       mlTell(); mlSeenAll(); mlMaybePop(); draw();
     }, function () {
       // no signal, or the mail rules are not published yet: try again in about 5 minutes
-      mlBusyR = false; mlAt = Date.now() - ML_STALE + 5 * 60000; if (!mlOpen) mlOpen = [];
+      mlBusyR = false; mlAt = Date.now() - ML_STALE + 5 * 60000; if (!mlOpen) { mlOpen = []; mlErr = true; }
       mlTell(); draw();
     });
   }
   /* the ticked mail of the last 30 days, read once when the Mail tab opens */
   function loadMailDone(force) {
-    if (!mlOwner() || (!force && mlDone && Date.now() - mlDoneAt < ML_STALE)) return;
+    if (!mlReader() || (!force && mlDone && Date.now() - mlDoneAt < ML_STALE)) return;
     mlDoneAt = Date.now(); if (!mlDone) mlDone = [];
     fb.fs.getDocs(fb.fs.query(colRef('mail'), fb.fs.where('doneAt', '>=', now() - ML_DONE_DAYS * 86400000))).then(function (sn) {
       mlDone = mlGrab(sn).filter(function (x) { return x.done; }); draw();
@@ -6836,7 +6860,7 @@
   /* the Mail tab is open: everything on it counts as seen, and the nudge clock starts again (saved with the head chef's
      account, config/admins, so reading mail on the laptop also stops the nudge on the phone) */
   function mlSeenAll() {
-    if (!mlOnTab() || !mlOpen) return;
+    if (!mlOwner() || !mlHead() || !mlOnTab() || !mlOpen) return;
     var t = now();
     mlOpened = t; lsSet('lk.mail.opened', String(t)); mlPopClose();
     if (t - mlOpenedW > 10 * 60000) { mlOpenedW = t; sset(docRef('config', 'admins'), { mailOpened: t }, true).catch(function () { mlOpenedW = 0; }); }
@@ -6860,15 +6884,21 @@
   function mlFind(x) { return x.text + ' ' + mnName(x.from) + ' ' + mlCat(x.cat) + ' ' + mlPri(x.pri); }
   function mlFilters() { return [['all', 'All']].concat(ML_CATS.map(function (c) { return [c[0], c[1], function (x) { return x.cat === c[0]; }]; })); }
   function mailAdminHTML() {
+    if (!mlHead()) return mlListHTML('Kitchen mail', 'What the team wrote to Chef, most urgent first. Chef has let the sous chefs read it. Tick a line when it is dealt with. Seen is still for Chef.');
+    return mlListHTML('Kitchen mail', 'What the team wrote to you, most urgent first: food safety, then Today, This week and Whenever, oldest first. Opening this list marks everything on it as seen, so the sender knows you have read it. Tick a line when it is dealt with.',
+      '<div class="ml-sous"><label class="a-check"><input type="checkbox" data-k="ml-sous"' + (mlSousOn() ? ' checked' : '') + '> Sous chefs can read kitchen mail and tick it off</label>' +
+      '<span class="hint">Off: only you read it. On: a sous chef signed in with their PIN reads it under Kitchen mail in the chef hat menu, ticks lines off and changes how soon they matter. Seen still means you have read it.</span></div>');
+  }
+  function mlListHTML(title, hint, foot) {
     loadMail(); loadMailDone();
-    if (!mlOpen) return '<section class="set-block"><span class="label">Kitchen mail</span><p class="hint">Loading...</p></section>';
+    if (!mlOpen || mlErr) return '<section class="set-block"><span class="label">' + title + '</span><p class="hint">' + (mlErr ? 'Could not load the mail. Check the signal. The book tries again in a few minutes.' : 'Loading...') + '</p></section>';
     var done = (mlDone || []).slice().sort(function (a, b) { return (b.doneAt || 0) - (a.doneAt || 0); });
-    return '<section class="set-block ml-admin"><span class="label">Kitchen mail</span><span class="hint">What the team wrote to you, most urgent first: food safety, then Today, This week and Whenever, oldest first. Opening this list marks everything on it as seen, so the sender knows you have read it. Tick a line when it is dealt with.</span>' +
+    return '<section class="set-block ml-admin"><span class="label">' + title + '</span><span class="hint">' + hint + '</span>' +
       lvHTML({ key: 'mail', items: mlOpen, step: 20, noun: ['open message', 'open messages'], ph: 'Search mail', find: mlFind, filters: mlFilters(),
         sorts: [['pri', 'Most urgent first', function (a, b) { return mlRank(a) - mlRank(b) || (a.at || 0) - (b.at || 0); }], ['new', 'Newest first', function (a, b) { return (b.at || 0) - (a.at || 0); }], ['old', 'Oldest first', function (a, b) { return (a.at || 0) - (b.at || 0); }]],
         card: mlRow, empty: 'No open mail. Everything is dealt with.' }) + mlSeenSoon() +
       '<details class="ml-donebox"' + (S.mlDoneOpen ? ' open' : '') + '><summary data-p="ml-donebox">Done in the last 30 days (' + done.length + ')</summary>' +
-      lvHTML({ key: 'maildone', items: done, step: 15, noun: ['message', 'messages'], ph: 'Search done mail', find: mlFind, filters: mlFilters(), card: mlRow, empty: 'Nothing ticked off in the last 30 days.' }) + '</details></section>';
+      lvHTML({ key: 'maildone', items: done, step: 15, noun: ['message', 'messages'], ph: 'Search done mail', find: mlFind, filters: mlFilters(), card: mlRow, empty: 'Nothing ticked off in the last 30 days.' }) + '</details>' + (foot || '') + '</section>';
   }
   function mlTick(id) {
     var x = (mlOpen || []).concat(mlDone || []).filter(function (m) { return m.id === id; })[0];
@@ -6879,7 +6909,9 @@
     (on ? mlDone : mlOpen).push(x);
     if (!on) lvReveal('mail');
     mlTell(); draw();
-    W([['upd', mlRef(id), { done: on, doneAt: x.doneAt, seen: true, seenAt: x.seenAt || t }], ['upd', mlStatRef(id), { seen: true, done: on }]]).catch(function (e) {
+    // a sous chef's tick leaves seen alone: it stays for the head chef
+    var own = mlOwner() && mlHead(), mp = own ? { done: on, doneAt: x.doneAt, seen: true, seenAt: x.seenAt || t } : { done: on, doneAt: x.doneAt }, sp = own ? { seen: true, done: on } : { done: on };
+    W([['upd', mlRef(id), mp], ['upd', mlStatRef(id), sp]]).catch(function (e) {
       x.done = was.done; x.doneAt = was.doneAt;
       mlOpen = mlOpen.filter(function (m) { return m.id !== id; }); mlDone = mlDone.filter(function (m) { return m.id !== id; });
       (x.done ? mlDone : mlOpen).push(x); mlTell(); failed(e); draw();

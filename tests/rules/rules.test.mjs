@@ -234,6 +234,24 @@ await ok(updateDoc(doc(owner, K + 'mailstat/k1'), { seen: true, done: true }), t
 await ok(updateDoc(doc(owner, K + 'mailstat/k1'), { note: 'x' }), false, 'mailstat: holds nothing but seen and done');
 await ok(deleteDoc(doc(owner, K + 'mail/k1')), false, 'mail: never deleted');
 await ok(setDoc(doc(owner, K + 'mail/k20'), mail({ from: 'bo', by: 'bo', done: true, doneAt: 9, seen: true, seenAt: 8 })), true, 'mail: the head chef copies one as it is (move to a new kitchen PIN)');
+// sous chefs read and tick off mail only while the head chef has it switched on (config/main sousMail, 23 Oct 2026)
+await ok(W([['mail/k30', mail()], ['mailstat/k30', stat]], { id: 'ann' }), true, 'mail: Ann sends another mail');
+await ok(W([['mail/k30', { done: true, doneAt: 6 }, true], ['mailstat/k30', { done: true }, true]], { id: 'sam' }), false, 'sous mail off: a sous chef cannot tick it');
+await ok(getDocs(query(collection(wPhone('w-sam'), K + 'mail'), where('done', '==', false))), false, 'sous mail off: a sous chef cannot list the mail');
+await ok(W([['config/main', { sousMail: true }, true]], { id: 'sam' }), false, 'sous mail: a sous chef cannot switch it on');
+await ok(setDoc(doc(owner, K + 'config/main'), { sousMail: true }, { merge: true }), true, 'sous mail: the head chef switches it on');
+await ok(getDocs(query(collection(wPhone('w-sam'), K + 'mail'), where('done', '==', false))), true, 'sous mail on: a sous chef with a PIN session lists the open mail');
+await ok(getDoc(doc(wPhone('w-sam'), K + 'mail/k30')), true, 'sous mail on: and reads one');
+await ok(getDocs(collection(wPhone('w-ann'), K + 'mail')), false, 'sous mail on: staff with a session still cannot list it');
+await ok(getDoc(doc(anon, K + 'mail/k30')), false, 'sous mail on: the kitchen PIN alone still reads nothing');
+await ok(W([['mail/k30', { done: true, doneAt: 6, pri: 'week' }, true], ['mailstat/k30', { done: true }, true]], { id: 'sam' }), true, 'sous mail on: a sous chef ticks it done and changes the priority');
+await ok(W([['mail/k30', { seen: true, seenAt: 7 }, true]], { id: 'sam' }), false, 'sous mail on: seen stays for the head chef');
+await ok(W([['mailstat/k30', { seen: true }, true]], { id: 'sam' }), false, 'sous mail on: nor the seen on its status');
+await ok(W([['mail/k30', { text: 'Changed' }, true]], { id: 'sam' }), false, 'sous mail on: the message cannot be changed');
+await ok(W([['mail/k30', { done: false, doneAt: 0 }, true]], { id: 'ann' }), false, 'sous mail on: staff still cannot tick it');
+await ok(W([['mail/k30', { done: false, doneAt: 0 }, true]], { id: 'sam', pin: '9999' }), false, 'sous mail on: a wrong PIN cannot tick it');
+await ok(setDoc(doc(owner, K + 'config/main'), { sousMail: false }, { merge: true }), true, 'sous mail: the head chef switches it off');
+await ok(getDoc(doc(wPhone('w-sam'), K + 'mail/k30')), false, 'sous mail off again: the sous chef reads nothing');
 // the drinks run: each person writes only their own usual drink; everyone with the kitchen PIN reads them
 const drink = x => Object.assign({ kind: 'flat', size: 'reg', milk: 'oat', shot: '', sugar: '1', note: 'Extra hot', other: 'Coke No Sugar', at: 5 }, x || {});
 await ok(W([['drinks/ann', drink()]], { id: 'ann' }), true, 'drinks: Ann saves her usual');
