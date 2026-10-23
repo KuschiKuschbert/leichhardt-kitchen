@@ -416,9 +416,11 @@
      with today's next function and what goes out next; a tap opens its sheet. It is appended to document.body (a page
      redraw does not remove it). Bars that already stick to the top (search, signal, update, admin nav) move down by its
      height through --fn-stick. */
-  var stripEl = null, stripH = 0;
+  var stripEl = null, stripH = 0, padH = -1;
   function strip() {
     var band = document.getElementById('fn-band'), t = now(), xs = showing(F.list, t, isSentK).filter(function (x) { return x.kind !== 'moved'; });
+    // --fn-pad: room at the top for the strip while it could show, so a jump (a recipe's Ingredients chip) lands below it
+    setPad(!!band && !band.hidden && xs.length ? stripH || 46 : 0);
     var off = !!band && !band.hidden && xs.length && band.getBoundingClientRect().bottom < 0 && !sheetEl;
     if (!off) { if (stripEl) { stripEl.hidden = true; } setStick(0); return; }
     if (!stripEl) { stripEl = document.createElement('div'); stripEl.className = 'fn-strip'; stripEl.setAttribute('role', 'region'); stripEl.setAttribute('aria-label', 'Functions'); document.body.appendChild(stripEl); }
@@ -433,6 +435,7 @@
     setStick(stripEl.offsetHeight);
   }
   function setStick(px) { if (px === stripH) return; stripH = px; document.documentElement.style.setProperty('--fn-stick', px + 'px'); }
+  function setPad(px) { if (px === padH) return; padH = px; document.documentElement.style.setProperty('--fn-pad', px + 'px'); }
   window.addEventListener('scroll', strip, { passive: true });
   window.addEventListener('resize', strip);
   window.addEventListener('resize', fitFold);

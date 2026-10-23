@@ -283,7 +283,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .p-dateinput, .p-select { min-height: 44px; padding: 0 0.6rem; font: inherit; border: 1.5px solid var(--ink); border-radius: var(--radius); background: var(--paper); color: var(--ink); }
 .p-pick { position: static; }
 .p-pickbtn { min-height: 44px; }
-.p-pick-panel { position: absolute; left: 0; right: 0; bottom: calc(100% - 1px); z-index: 20; display: flex; flex-direction: column; gap: 0.5rem; padding: 0.8rem 0.9rem; max-height: min(24rem, 62vh); overflow-y: auto; background: var(--bar-text); border: 2px solid var(--ink); border-radius: 10px; box-shadow: 0 -6px 18px rgba(28, 29, 31, 0.22); }
+.p-pick-panel { position: absolute; left: 0; right: 0; bottom: calc(100% - 1px); z-index: 20; display: flex; flex-direction: column; gap: 0.5rem; padding: 0.8rem 0.9rem; max-height: min(24rem, 62vh); max-height: min(24rem, 62dvh); overflow-y: auto; background: var(--bar-text); border: 2px solid var(--ink); border-radius: 10px; box-shadow: 0 -6px 18px rgba(28, 29, 31, 0.22); }
 .p-pick-h { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; }
 .p-recipes { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .a-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
@@ -365,7 +365,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 @media (min-width: 900px) {
   .nb-wrap { flex-direction: row; align-items: flex-start; }
   .nb { flex: 1 1 auto; flex-direction: row; gap: 0; min-width: 0; filter: drop-shadow(0 14px 22px rgba(60,40,10,0.22)); }
-  .nb-page { flex: 1 1 0; height: min(780px, calc(100vh - 15rem)); min-height: 30rem; border-radius: 0; box-shadow: none; padding: 0 2rem 0 2.2rem; border-width: 1.5px; }
+  .nb-page { flex: 1 1 0; height: min(780px, calc(100vh - 15rem)); height: min(780px, calc(100dvh - 15rem)); min-height: 30rem; border-radius: 0; box-shadow: none; padding: 0 2rem 0 2.2rem; border-width: 1.5px; }
   .nb-left { border-radius: 10px 0 0 10px; border-right: 0; box-shadow: inset -14px 0 14px -14px rgba(60,40,10,0.25); }
   .nb-right { border-radius: 0 10px 10px 0; border-left: 0; box-shadow: inset 14px 0 14px -14px rgba(60,40,10,0.25); }
   .nb-left:before { content: ''; position: absolute; left: 1.2rem; top: 0; bottom: 0; width: 2px; background: #E7B7A6; }
@@ -837,7 +837,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 }
 /* bottom sheet */
 .sheet-bg { position: fixed; inset: 0; z-index: 60; background: rgba(28, 29, 31, 0.45); }
-.sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 61; max-height: 80vh; overflow: auto; box-sizing: border-box; padding: 10px 16px calc(16px + env(safe-area-inset-bottom)); background: var(--paper); color: var(--ink); border-radius: 16px 16px 0 0; box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.2); font-family: var(--body); animation: sheetUp 0.18s ease-out; }
+.sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 61; max-height: 80vh; max-height: 80dvh; overflow: auto; box-sizing: border-box; padding: 10px 16px calc(16px + env(safe-area-inset-bottom)); background: var(--paper); color: var(--ink); border-radius: 16px 16px 0 0; box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.2); font-family: var(--body); animation: sheetUp 0.18s ease-out; }
 .sheet-grip { width: 44px; height: 5px; margin: 0 auto 10px; border-radius: 3px; background: var(--edge); }
 .sheet h3 { margin: 0 0 6px; font: 700 1.35rem var(--display); }
 .sheet-list { display: flex; flex-direction: column; }
@@ -1010,7 +1010,7 @@ details.nb-start-l[open] > summary::after { content: '\2212'; }
 @media (min-width: 900px) {
   .nb-start-l, .nb-lc { display: none; }
   .nb-start-r, .nb-rc { display: block; }
-  .nb-page { height: max(30rem, calc(100vh - 16.5rem)); }
+  .nb-page { height: max(30rem, calc(100vh - 16.5rem)); height: max(30rem, calc(100dvh - 16.5rem)); }
   .nb-left { flex: 3 1 0; }
   .nb-right { flex: 2 1 0; }
   .nb-left .nb-in-text { flex: 4 1 11rem; }
@@ -1610,8 +1610,14 @@ button.wm-a { width: 100%; border: 0; background: none; font: inherit; text-alig
    it shows, the bars that stick to the top of a page stick just under it. */
 .upd-bar { position: sticky; top: var(--fn-stick, 0px); z-index: 45; box-sizing: border-box; height: 48px; display: flex; align-items: center; justify-content: center; gap: 0.75rem; padding: 2px 0.5rem 2px 1rem; background: var(--ink); color: #fff; font: 600 0.95rem var(--body); }
 .upd-bar button { flex: none; min-height: 44px; padding: 0 1rem; border: 0; border-radius: 22px; background: var(--accent); color: #fff; font: 700 0.95rem var(--body); cursor: pointer; }
-html.has-upd { --upd-h: 48px; scroll-padding-top: 48px; }
-html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav { top: var(--upd-h); }
+/* With the update strip and the function strip both up, the bars that stick to the top sit under both of them, and a
+   jump lands below both (24 Oct 2026: they slid 46 px under the update strip). --fn-pad is the strip's height while
+   today has a function it could show (js/functions.js strip()). */
+html.has-upd { --upd-h: 48px; }
+html { scroll-padding-top: calc(var(--fn-pad, 0px) + var(--upd-h, 0px)); }
+html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd .dw-stage { top: calc(var(--fn-stick, 0px) + var(--upd-h)); }
+/* on the admin panel the sticky nav is the bar at the top: the no-signal note scrolls with the page, not over the nav */
+#prep-root:has(.a-nav) > .p-sync { position: static; }
 @media print { .upd-bar { display: none; } }
 
 /* Frosted toasts and chef hat menu (20 Oct 2026, see-through toasts 21 Oct 2026): the toasts and the update strip are
@@ -1964,7 +1970,7 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav { top: var(--u
 .fe-mode { margin-bottom: 0.5rem; }
 .fe-allline { margin: 0.4rem 0 0; font-weight: 600; }
 .fe-bar { position: sticky; bottom: calc(var(--tabbar-h) + 6px); z-index: 5; padding: 0.55rem 0.8rem; border: 2px solid var(--ink); border-radius: 10px; background: var(--paper); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12); }
-@media (min-width: 900px) { .fe-bar { bottom: 8px; } }
+@media (min-width: 720px) { .fe-bar { bottom: 8px; } }   /* no tab bar from 720 px */
 .fe-bad { color: #A3230F; font-weight: 700; }
 .fe-good { color: #1D5E39; font-weight: 700; }
 .fe-probs { padding: 0.6rem 0.8rem; border: 2px solid #D9A196; border-radius: 10px; background: #FBEDEA; }
@@ -2066,8 +2072,8 @@ details.a-how { margin: 0.2rem 0 0.6rem; }
 details.a-how > summary { display: flex; align-items: center; min-height: 44px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 details.a-how > p { margin: 0.2rem 0 0; max-width: 72ch; }
 .w-actbtn { flex: 1 1 auto; min-height: 44px; padding: 0; border: 0; background: none; font: 600 0.9375rem var(--body); color: var(--ink); text-align: left; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
-/* the recipe card on a phone: Zoom out is a small button in the corner, not a bar across the card */
-@media (max-width: 719px) {
+/* the recipe card on a phone or tablet: Zoom out is a small button in the corner, not a bar across the card */
+@media (max-width: 899px) {
   .zoombar { display: flex; justify-content: flex-end; background: none; border-top: 0; padding: 0 1rem 0.75rem; pointer-events: none; }
   .zoombar a { pointer-events: auto; min-height: 44px; padding: 0 1.1rem; font-size: 0.9375rem; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25); }
 }
