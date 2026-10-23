@@ -470,7 +470,10 @@
   }
   /* Functions (js/functions.js): the band of today's functions right under the top bar, on every page. This is the empty
      slot; js/functions.js fills it and keeps it right as times pass and bookings change, without redrawing the page. */
-  function fnBand() { return window.LK_FN ? window.LK_FN.bandSlot() : ''; }
+  function fnBand() { return (window.LK_FN ? window.LK_FN.bandSlot() : '') + cutBand(); }
+  /* Order cut-offs (js/prep.js): a bar for the head chef and sous chefs when a supplier's order closes within 3 hours.
+     The empty slot; js/prep.js fills it from the kitchen settings and keeps it right as time passes. */
+  function cutBand() { return window.LK_PREP && window.LK_PREP.cutSlot ? window.LK_PREP.cutSlot() : ''; }
   /* Meeting minutes to sign show as a card on the landing page, above the dockets, not in the top bar.
      The prep book fills it in once it has read the minutes, and empties it once the person has signed. */
   function minCard() {
