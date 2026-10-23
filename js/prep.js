@@ -7,6 +7,7 @@
            #/guides   how-to guides (the head chef uploads them in the admin panel's Guides tab)
            #/mail     kitchen mail: write to the head chef (from the chef mark in the top bar)
            #/drinks   the drinks run: everyone's usual coffee or drink (from the chef mark in the top bar)
+           #/todo     the chef to-do list: the head chef and the sous chefs only (from the chef mark in the top bar)
 
   Data (the kitchen PIN is part of the path, so only people who know it can reach the data):
     kitchens/<PIN>/config/main                 { people: [...] }                    read by staff, written by the admin only
@@ -29,6 +30,7 @@
     kitchens/<PIN>/guides/<id>, .../pages/<n>   how-to guides, and each page as a picture (see the guides section)
     kitchens/<PIN>/mail/<id>, mailstat/<id>    kitchen mail to the head chef (only the head chef reads it), and its seen and done
     kitchens/<PIN>/drinks/<personId>           each person's usual coffee or drink, for the drinks run (written only by that person)
+    kitchens/<PIN>/todos/<id>                  the chef to-do list (read and written only by the head chef and the sous chefs)
 
   Who is allowed to add, tick or remove is set in the admin panel. Those permissions guide the page. The security
   rules in the Firebase console are what really lock the data: the kitchen PIN to read, a person's own PIN to write,
@@ -795,7 +797,7 @@
     lsSet('lk.prep.seen', String(Date.now()));
   }
   /* the next person never lands in the last person's staff draft, minutes register or ping editor */
-  function leave() { sessDrop(); ksClose(); noteClose('shut'); S.nJust = null; S.guestIn = false; lsSet('lk.prep.guest', ''); S.drinkAsk = ''; S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); }
+  function leave() { sessDrop(); ksClose(); noteClose('shut'); S.nJust = null; S.guestIn = false; lsSet('lk.prep.guest', ''); S.drinkAsk = ''; S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; tdReset(); lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); }
   /* The chef mark's menu (js/app.js) asks what to show: Meeting minutes for everyone (when the page is on), and for the
      head chef and sous chefs Shift pings and Manage staff (22 Oct 2026: the Minutes register is "See who has signed" at
      the top of Meeting minutes). head: no Kitchen mail, the head chef's mail is read in the admin panel. tab: the head
@@ -804,7 +806,7 @@
   // the head chef on their own Google device: the chef hat's chef items open the matching admin tab
   function adminTabs() { return admDev() && whoHead(); }
   // Meeting minutes shows for staff only once there is something published to read (chefs always, for the register)
-  function chefMenu() { return { minutes: featOn('minutes') && (isSous() || mnPub().length > 0), toSign: featOn('minutes') ? mnUnsigned().length : 0, chef: isSous(), head: whoHead(), tab: adminTabs(), sec: ksPicks(me()) ? (mySec() || 'Pick one for today') : '', book: bookEdit(), fn: fnOK() }; }
+  function chefMenu() { return { minutes: featOn('minutes') && (isSous() || mnPub().length > 0), toSign: featOn('minutes') ? mnUnsigned().length : 0, chef: isSous(), head: whoHead(), tab: adminTabs(), sec: ksPicks(me()) ? (mySec() || 'Pick one for today') : '', book: bookEdit(), fn: fnOK(), todo: todoOK() }; }
   /* Functions (21 Oct 2026): who may enter and change function bookings. The person signed in with their own PIN and
      ticked for Functions (config/main fnIds, which only the head chef's Google account saves), or the head chef's Google
      device with nobody signed in. Being Head chef or Functions coordinator is not enough without the tick. The rules
@@ -1507,6 +1509,7 @@
       .then(function () { return all('guides'); }).then(function (r) { out.guides = r; })
       .then(function () { return all('mail'); }).then(function (r) { out.mail = r; return all('mailstat'); }).then(function (r) { out.mailstat = r; })
       .then(function () { return all('drinks'); }).then(function (r) { out.drinks = r; })
+      .then(function () { return all('todos'); }).then(function (r) { out.todos = r; })
       .then(function () { return all('shifts'); }).then(function (r) { out.shifts = r; })
       .then(function () { part = 'book'; return bookDocs(S.pin); }).then(function (l) { out.book = l.map(function (d) { var x = d.data(); x.id = d.id; return x; }); return all('recipes'); }).then(function (r) { out.recipes = r; return subs(r, 'recipes', 'hist', out.recipesHist); })
       .then(function () { return all('drawings'); }).then(function (r) { out.drawings = r; return subs(r, 'drawings', 'hist', out.drawingsHist); })
@@ -1576,7 +1579,7 @@
       .then(function () { return copyCol('notes'); }).then(function () { return copyCol('minutes'); }).then(function () { return copySub('minutes', 'hist'); })
       .then(function () { return copySub('minutes', 'signs', true); }).then(function () { return copySub('notes', 'seen', true); })
       .then(function () { return copyCol('guides'); }).then(function () { return copySub('guides', 'pages'); })
-      .then(function () { return copyCol('mail'); }).then(function () { return copyCol('mailstat'); }).then(function () { return copyCol('drinks'); }).then(function () { return copyCol('shifts'); })
+      .then(function () { return copyCol('mail'); }).then(function () { return copyCol('mailstat'); }).then(function () { return copyCol('drinks'); }).then(function () { return copyCol('shifts'); }).then(function () { return copyCol('todos'); })
       .then(function () { return bookDocs(old).then(function (l) { n += l.length; return Promise.all(l.map(function (d) { return f.setDoc(nd('book', d.id), d.data()); })); }); }).then(function () { return copyCol('recipes'); }).then(function () { return copySub('recipes', 'hist'); })
       .then(function () { return copyCol('drawings'); }).then(function () { return copySub('drawings', 'hist'); })
       .then(function () { return copyCol('drawtpl'); }).then(function () { return copyCol('drawlib'); })
@@ -2430,7 +2433,11 @@
     return s;
   }
   function lvRows(c) {
-    var s = lvState(c), q = s.q.replace(/^\s+|\s+$/g, '').toLowerCase(), l = c.items, f, so, words;
+    var s = lvState(c), l = c.items, f, so, words;
+    // a list too short for the tools (no search, chips or sort shown) is plain: a chip or search left on from when it was
+    // longer would hide rows with no way to clear it
+    if (l.length < (c.tools == null ? 8 : c.tools)) s = { q: '', f: c.filters && c.filters.length ? c.filters[0][0] : '', sort: c.sorts && c.sorts.length ? c.sorts[0][0] : '' };
+    var q = s.q.replace(/^\s+|\s+$/g, '').toLowerCase();
     f = (c.filters || []).filter(function (x) { return x[0] === s.f; })[0];
     if (f && f[2]) l = l.filter(f[2]);
     if (q && c.find) { words = q.split(/\s+/); l = l.filter(function (it) { var t = String(c.find(it)).toLowerCase(); return words.every(function (w) { return t.indexOf(w) >= 0; }); }); }
@@ -3352,7 +3359,7 @@
       '<section class="set-block a-feats"><span class="label">New pages</span><span class="hint">You, sous chefs and leads always see these. Untick one to hide it from Staff and View only until the team is ready.</span>' +
       FEATS.map(function (f) { return '<label class="a-check"><input type="checkbox" data-a="staffsee" data-f="' + f[0] + '"' + (d.staffSee[f[0]] ? ' checked' : '') + '> Staff see ' + f[1] + '</label>'; }).join('') + '</section>' + saveBlock
     ) : (
-      '<section class="set-block"><span class="label">Backup</span><span class="hint">Saves everything the prep book holds (people, prep lines, orders and wastage from the last 400 days, shift pings and who has seen them, meeting minutes with earlier versions and sign-offs, function bookings with their contacts and earlier versions, what the prep and order lists have learned, tallies and the guides\' words) as one file on this device. People\'s PIN fingerprints and the guides\' page pictures are left out (keep the original files). The book is also backed up on the server every night at 03:30; download one here when you want a copy on this computer.</span><div class="btn-row"><button type="button" class="btn" data-p="export"' + (S.exporting ? ' disabled' : '') + '>' + (S.exporting ? esc(S.exporting) : 'Download a backup') + '</button></div></section>' +
+      '<section class="set-block"><span class="label">Backup</span><span class="hint">Saves everything the prep book holds (people, prep lines, orders and wastage from the last 400 days, shift pings and who has seen them, meeting minutes with earlier versions and sign-offs, function bookings with their contacts and earlier versions, the chef to-do list, what the prep and order lists have learned, tallies and the guides\' words) as one file on this device. People\'s PIN fingerprints and the guides\' page pictures are left out (keep the original files). The book is also backed up on the server every night at 03:30; download one here when you want a copy on this computer.</span><div class="btn-row"><button type="button" class="btn" data-p="export"' + (S.exporting ? ' disabled' : '') + '>' + (S.exporting ? esc(S.exporting) : 'Download a backup') + '</button></div></section>' +
       '<section class="set-block"><span class="label">Kitchen PIN</span><span class="hint">The kitchen PIN is the lock on the whole book, so keep it to staff only. Writing needs a person\'s own PIN as well.</span>' +
       '<p class="hint a-step"><strong>Step 1.</strong> Ask for the new PIN to be added to the security rules. <strong>Step 2.</strong> Type it twice below and copy everything to it. The old PIN keeps working until its rules are removed.</p>' +
       '<div class="field"><label class="label" for="a-newpin">New 4 digit kitchen PIN</label><input id="a-newpin" class="search" inputmode="numeric" maxlength="4" autocomplete="off" data-k="a-newpin" placeholder="4 digits" value="' + esc(S.newPin) + '"></div>' +
@@ -3517,7 +3524,7 @@
       saveBarHTML() + '</div>';
   }
   /* While connecting, show the page that is opening (not a generic prep book card), so nothing flashes. */
-  var PAGE_NAME = { prep: 'Prep list', orders: 'Order list', waste: 'Wastage', admin: 'Admin panel', minutes: 'Meeting minutes', guides: 'Guides', mail: 'Kitchen mail', drinks: 'Drinks run' };
+  var PAGE_NAME = { prep: 'Prep list', orders: 'Order list', waste: 'Wastage', admin: 'Admin panel', minutes: 'Meeting minutes', guides: 'Guides', mail: 'Kitchen mail', drinks: 'Drinks run', todo: 'Chef to-do' };
   function loadingHTML() {
     var t = PAGE_NAME[S.name] || 'Prep book';
     if (S.name === 'admin') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">' + t + '</h2><p class="hint">Loading...</p></section>';
@@ -3534,11 +3541,15 @@
     if (S.configState === 'error') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Prep book</h2><p class="p-err">Could not connect. Check the connection and try again.</p><div class="btn-row"><button type="button" class="btn dark" data-p="retry">Try again</button></div></section>';
     if (S.configState !== 'ok') return loadingHTML();
     if (S.name === 'admin') return adminHTML();
+    // the chef to-do list: a chef with their PIN, or the head chef's Google device with nobody signed in
+    if (S.name === 'todo' && todoOK()) return todoPageHTML();
+    if (S.name === 'todo' && guest()) return todoNoHTML();
     if (guest()) return '<div class="is-guest">' + guestBarHTML() + (S.name === 'orders' ? ordersHTML() : S.name === 'waste' ? wasteHTML() : listHTML()) + '</div>';
     if (!who()) return whoHTML();
     if (!S.authed && !resumed) return loadingHTML();   // still finding out whether this phone is signed in (resume)
     if (!S.authed) return ownPinHTML();
     flushMisses(); flushViews();
+    if (S.name === 'todo') return todoNoHTML();
     if (S.name === 'orders') return drinkNudgeHTML() + ordersHTML();
     if (S.name === 'waste') return drinkNudgeHTML() + wasteHTML();
     if (S.name === 'minutes') return minutesPageHTML();
@@ -6560,6 +6571,7 @@
     if (a.indexOf('lv-') === 0) { lvClick(a, el); return; }
     if (a.indexOf('dk-') === 0) { dkClick(a, el); return; }
     if (a.indexOf('cut-') === 0) { cutClick(a, el); return; }
+    if (a.indexOf('todo-') === 0) { todoClick(a, el); return; }
     if (a === 'ml-cat') { mlf.cat = el.getAttribute('data-v'); mlMsg = ''; draw(); return; }
     if (a === 'ml-pri') { mlf.pri = el.getAttribute('data-v'); draw(); return; }
     if (a === 'ml-send') { mlSend(); return; }
@@ -6772,6 +6784,7 @@
     if (k === 'a-bulk') { S.bulk = el.value; return; }
     if (k && /^cut-[ntp]\d/.test(k)) { cutField(k, el); return; }
     if (k === 'dk-note' || k === 'dk-other') { dkf[k.slice(3)] = el.value.slice(0, k === 'dk-note' ? DK_NOTE : DK_OTHER); return; }
+    if (k === 'todo-text') { tdf.text = el.value.slice(0, TD_MAX); tdMsg = ''; return; }
     if (k === 'ml-text') { mlf.text = el.value.slice(0, ML_MAX); mlMsg = ''; var mll = S.root.querySelector('#ml-left'), mln = ML_MAX - mlf.text.length; if (mll) mll.textContent = mln < 100 ? mln + ' characters left' : ''; return; }
     if (k === 'a-newpin') { S.newPin = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.newPin; return; }
     if (k === 'a-newpin2') { S.newPin2 = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.newPin2; return; }
@@ -6817,6 +6830,8 @@
     if (k && k.indexOf('ml-pri:') === 0) { mlSetPri(k.slice(7), el.value); return; }
     if (k === 'ml-sous') { mlSousSet(el.checked); return; }
     if (k && /^cut-[tp]\d/.test(k)) { cutField(k, el); return; }
+    // no redraw: typing a date on a keyboard changes it digit by digit, and a redraw would put the box back each time
+    if (k === 'todo-due') { tdf.due = tdDue(el.value); var nd = S.root.querySelector('[data-p="todo-nodue"]'); if (nd) nd.hidden = !tdf.due; return; }
     if (k === 'g-file') { var gfl = el.files; gReadFiles(gfl); try { el.value = ''; } catch (x) {} return; }
     if (k === 'mn-older') { S.mSel = el.value; loadSigns(el.value, true); draw(); return; }
     if (k && k.indexOf('mn-') === 0) { mfSet(k, el); return; }
@@ -7132,6 +7147,232 @@
   });
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') { loadMail(); mlMaybePop(); } });
 
+  /* ---------- the chef to-do list (#/todo, 23 Oct 2026) ----------
+     One list shared by the head chef (their Google device, or their PIN) and the sous chefs (their PIN), from Chef to-do
+     in the chef hat menu. Staff never see it: the rules let only those people read todos/<id> (chefId() in
+     firestore.rules), and this page reads nothing on anyone else's phone, the head chef's Google tablet included. A job
+     has its words, an optional day it is due by and an optional chef it is for. A tick names who did it. Remove keeps
+     the record (st 'gone', out of every query) so Undo works; nothing is deleted. Nothing is kept in lk.*, so chef words
+     do not sit in the phone's own storage (Firestore's offline copy still holds what was read, as for kitchen mail).
+     Reads: the open jobs are one query, one read per open job, when the page opens (unless read in the last minute),
+     again after 30 minutes away, and on a tap of Refresh. The ticked jobs of the last 30 days are one query the first
+     time Done is opened (one read per job ticked in those 30 days, removed ones included, one read if there are none),
+     again after 30 minutes or on Refresh. No listener: a change on another phone shows the next time the page
+     opens or on Refresh. Everything typed lives in tdf, so the redraws during service (prep lines, config) keep it. */
+  var TD_MAX = 300, TD_STALE = 30 * 60000, TD_FRESH = 60000, TD_RETRY = 5 * 60000, TD_DONE_DAYS = 30;
+  var tdf = tdBlank(), tdOpen = null, tdDone = null, tdAt = 0, tdBusy = false, tdErr = false, tdCache = false;
+  var tdWait = null, tdEditX = null, tdDoneAt = 0, tdDoneBusy = false, tdDoneErr = false, tdDoneCache = false, tdDoneOpen = false, tdMsg = '', tdSnap = '';
+  function tdBlank() { return { id: '', text: '', due: '', fr: '' }; }
+  /* who may use it: a chef signed in with their own PIN (sousIds or headId, the same lists the rules check), or the head
+     chef's Google device with nobody signed in. Staff, leads and a name on a locked phone get nothing. */
+  function todoOK() {
+    if (!S.pin || !fb || S.configState !== 'ok') return false;
+    if (who()) return isSous();
+    return S.level === 'owner' && admDev();
+  }
+  // a read needs this phone's PIN session for a chef, or the Google account (the rules let it read whoever is signed in)
+  function tdCanRead() { return todoOK() && (!who() || canW() || S.level === 'owner'); }
+  // a chef whose PIN session was dropped (a Google sign-in or sign-out on the phone): the list asks for the PIN again
+  function tdNeedPin() { return todoOK() && !tdCanRead() && !sessP; }
+  // who writes it: the chef signed in, or on the Google device the head chef (headId; '' before a head chef is set)
+  function tdMe() { var p = me(); return p ? p.id : ((S.config && S.config.headId) || ''); }
+  function tdName(id) { return id ? mnName(id) : 'Head chef'; }
+  function tdChefs() { return people().filter(function (p) { return chefP(p) && String(p.name).trim(); }); }
+  function tdForOk(id) { return !!id && tdChefs().some(function (p) { return p.id === id; }); }
+  function tdDue(v) { return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : ''; }
+  function tdNum(v) { return typeof v === 'number' && isFinite(v) ? v : 0; }
+  // the next person on the phone starts with nothing of the last chef's: no jobs, no search or filter
+  function tdReset() { tdf = tdBlank(); tdSnap = ''; tdEditX = null; tdOpen = null; tdDone = null; tdAt = 0; tdErr = false; tdCache = false; tdDoneAt = 0; tdDoneErr = false; tdDoneCache = false; tdDoneOpen = false; tdMsg = ''; delete LV.todo; delete LV.tododone; }
+  // a new job with words in the box, or a job opened with Change and then changed
+  function tdDirty() { return todoOK() && (tdf.id ? JSON.stringify(tdf) !== tdSnap : !!tdf.text.replace(/\s/g, '')); }
+  function tdFind(id) { return (tdOpen || []).concat(tdDone || []).filter(function (x) { return x.id === id; })[0] || null; }
+  /* a job goes to the list its state belongs to (a removed one to neither). Only a list that came from a read is
+     changed, so a tick or an add before a list is in never shows one job as the whole list; the read picks it up
+     (Firestore adds this phone's writes to what a query returns). */
+  function tdPlace(x) {
+    if (tdOpen) { tdOpen = tdOpen.filter(function (m) { return m.id !== x.id; }); if (x.st === 'open') tdOpen.push(x); }
+    if (tdDone) { tdDone = tdDone.filter(function (m) { return m.id !== x.id; }); if (x.st === 'done') tdDone.push(x); }
+  }
+  /* an answer from the copy on this phone (no signal) counts only if it holds something read from the server once,
+     not just this phone's own changes waiting to be sent (an empty copy is never "nothing to do") */
+  function tdKept(sn) { return sn.docs.some(function (d) { return !(d.metadata && d.metadata.hasPendingWrites); }); }
+  // a read of one list is newer than the other list's copy of the same jobs (ticked or unticked on another phone)
+  function tdDrop(l, from) { var ids = {}; l.forEach(function (x) { ids[x.id] = 1; }); return from ? from.filter(function (m) { return !ids[m.id]; }) : from; }
+  /* the open jobs. maxAge: how old the last read may be (30 minutes by default, 1 minute when the page opens, 0 for
+     Refresh). A failed read, or no signal (Firestore then answers from the copy on this phone, fromCache), tries the
+     server again after 5 minutes; an empty copy from the phone is never shown as "nothing to do". */
+  function todoLoad(maxAge) {
+    // the PIN session is still opening: draw once more when it is in, which reads the list
+    if (todoOK() && !tdCanRead() && sessP) { if (tdWait !== sessP) { tdWait = sessP; sessP.then(function () { draw(); }, function () { draw(); }); } return; }
+    if (!tdCanRead() || tdBusy) return;
+    if (tdAt && Date.now() - tdAt < (maxAge == null ? TD_STALE : maxAge)) return;
+    tdBusy = true;
+    fb.fs.getDocs(fb.fs.query(colRef('todos'), fb.fs.where('st', '==', 'open'))).then(function (sn) {
+      var l = mlGrab(sn), cache = !!(sn.metadata && sn.metadata.fromCache);
+      tdBusy = false; tdAt = cache ? Date.now() - TD_STALE + TD_RETRY : Date.now();
+      if (cache && !tdKept(sn)) { tdErr = true; draw(); return; }
+      tdOpen = l; tdErr = false; tdCache = cache; if (!cache) tdDone = tdDrop(l, tdDone); draw();
+    }, function () {
+      tdBusy = false; tdErr = true; tdAt = Date.now() - TD_STALE + TD_RETRY; draw();
+    });
+  }
+  /* the jobs ticked in the last 30 days (doneAt is 0 while open, so open jobs are not read; a removed job that was done
+     keeps its doneAt and is read, then left out): one read per job ticked in those days, one read if there are none.
+     No signal is handled as for the open jobs. */
+  function todoLoadDone(force) {
+    if (!tdCanRead() || tdDoneBusy || (!force && tdDoneAt && Date.now() - tdDoneAt < TD_STALE)) return;
+    tdDoneBusy = true;
+    fb.fs.getDocs(fb.fs.query(colRef('todos'), fb.fs.where('doneAt', '>=', now() - TD_DONE_DAYS * 86400000))).then(function (sn) {
+      var l = mlGrab(sn).filter(function (x) { return x.st === 'done'; }), cache = !!(sn.metadata && sn.metadata.fromCache);
+      tdDoneBusy = false; tdDoneAt = cache ? Date.now() - TD_STALE + TD_RETRY : Date.now();
+      // the copy on the phone counts only once Done has been read from the server here (it may hold only this phone's ticks)
+      if (cache && (!tdDone || !tdKept(sn))) { tdDoneErr = true; draw(); return; }
+      tdDone = l; tdDoneErr = false; tdDoneCache = cache; if (!cache) tdOpen = tdDrop(l, tdOpen); draw();
+    }, function () { tdDoneBusy = false; tdDoneErr = true; tdDoneAt = Date.now() - TD_STALE + TD_RETRY; draw(); });
+  }
+  function todoSave() {
+    if (!todoOK()) return;
+    var t = tdf.text.replace(/^\s+|\s+$/g, '').slice(0, TD_MAX), due = tdDue(tdf.due), fr = tdForOk(tdf.fr) ? tdf.fr : '', at = now(), keep = tdf;
+    if (!t) { tdMsg = 'Write the job first.'; draw(); focusK('todo-text'); return; }
+    if (tdf.id) {
+      // the job being changed, even once it left both lists because it was ticked on this phone before Done was read
+      // (a job a read dropped, removed or ticked elsewhere, is not on the list any more)
+      var x = tdFind(tdf.id) || (tdEditX && tdEditX.id === tdf.id && tdEditX.st === 'done' ? tdEditX : null), ex = tdEditX;
+      if (!x) { tdMsg = 'That job is not on the list any more.'; draw(); return; }
+      var was = { text: x.text, due: x.due, for: x.for, upd: x.upd };
+      x.text = t; x.due = due; x.for = fr; x.upd = at; tdf = tdBlank(); tdSnap = ''; tdEditX = null; tdMsg = ''; draw();
+      W([['upd', docRef('todos', x.id), { text: t, due: due, for: fr, upd: at }]]).then(function () { toast('Job saved.'); }, function (e) {
+        x.text = was.text; x.due = was.due; x.for = was.for; x.upd = was.upd; failed(e, function () { tdf = keep; tdEditX = ex; }); draw();
+      });
+      return;
+    }
+    var ref = fb.fs.doc(colRef('todos')), d = { text: t, st: 'open', due: due, for: fr, from: tdMe(), at: at, doneAt: 0, doneBy: '', upd: at };
+    var y = Object.assign({ id: ref.id }, d);
+    tdPlace(y); lvReveal('todo'); tdf = tdBlank(); tdMsg = ''; draw();
+    W([['set', ref, d]]).then(function () { toast('Added to the list.'); }, function (e) {
+      if (tdOpen) tdOpen = tdOpen.filter(function (m) { return m.id !== y.id; }); failed(e, function () { tdf = keep; }); draw();
+    });
+  }
+  function todoTick(id) {
+    var x = tdFind(id);
+    if (!x || !todoOK()) return;
+    var on = x.st !== 'done', t = now(), was = { st: x.st, doneAt: x.doneAt, doneBy: x.doneBy, upd: x.upd };
+    var p = on ? { st: 'done', doneAt: t, doneBy: tdMe(), upd: t } : { st: 'open', doneAt: 0, doneBy: '', upd: t };
+    if (tdf.id === id) tdEditX = x;   // a job open in the box follows its tick
+    Object.assign(x, p); tdPlace(x); if (!on) lvReveal('todo'); draw();
+    W([['upd', docRef('todos', id), p]]).catch(function (e) { Object.assign(x, was); tdPlace(x); failed(e); draw(); });
+  }
+  function todoEdit(id) {
+    var x = tdFind(id);
+    if (!x || x.st !== 'open') return;
+    tdf = { id: x.id, text: String(x.text || ''), due: tdDue(x.due), fr: tdForOk(x.for) ? x.for : '' }; tdSnap = JSON.stringify(tdf); tdEditX = x; tdMsg = ''; draw();
+    focusK('todo-text'); window.scrollTo(0, 0);
+  }
+  // the toast says only "Removed": no chef words in a toast that can outlast a hand-over (the older Undo chip)
+  function todoRemove(id) {
+    var x = tdFind(id);
+    if (!x || !todoOK()) return;
+    // a removed job keeps who ticked it and when (the rules), so Undo puts it back exactly as it was
+    var t = now(), was = { st: x.st, upd: x.upd }, by = S.who;
+    x.st = 'gone'; x.upd = t; tdPlace(x); if (tdf.id === id) { tdf = tdBlank(); tdSnap = ''; tdEditX = null; } draw();
+    W([['upd', docRef('todos', id), { st: 'gone', upd: t }]]).then(function () {
+      toast('Removed from the to-do list.', { label: 'Undo', fn: function () {
+        // only the person who removed it, still allowed to: after a hand-over the next person cannot put it back
+        if (S.who !== by || !todoOK()) return;
+        // back to open names no one (the rules), even if another chef ticked it since this phone read the list
+        var u = now(), back = was.st === 'open' ? { st: 'open', doneAt: 0, doneBy: '', upd: u } : { st: was.st, upd: u };
+        Object.assign(x, back); tdPlace(x); draw();
+        W([['upd', docRef('todos', id), back]]).catch(function (e) { x.st = 'gone'; tdPlace(x); failed(e); draw(); });
+      } });
+    }, function (e) { x.st = was.st; x.upd = was.upd; tdPlace(x); failed(e); draw(); });
+  }
+  function tdLate(x) { var d = tdDue(x.due); return x.st === 'open' && !!d && d < dayNow(); }
+  function tdSoon(x) { var d = tdDue(x.due); return x.st === 'open' && !!d && d <= dayNow(); }
+  function todoRow(x) {
+    var done = x.st === 'done', due = tdDue(x.due), late = tdLate(x), today = !done && due === dayNow(), id = esc(x.id), meta = [];
+    if (tdForOk(x.for)) meta.push('<span class="todo-tag">For ' + esc(mnName(x.for)) + '</span>');
+    if (due && !done) meta.push('<span class="todo-due' + (late ? ' is-late' : today ? ' is-today' : '') + '">' + (late ? 'Was due ' + esc(dayShort(due)) : today ? 'Due today' : 'Due ' + esc(dayShort(due))) + '</span>');
+    meta.push(done ? '<span class="todo-by">Done by <b>' + esc(tdName(x.doneBy)) + '</b> ' + esc(mlWhen(tdNum(x.doneAt))) + '</span>'
+      : '<span class="todo-by">Added by <b>' + esc(tdName(x.from)) + '</b> ' + esc(ago(tdNum(x.at))) + '</span>');
+    return '<li class="todo-row' + (done ? ' is-done' : '') + (late ? ' is-late' : '') + '">' +
+      '<button type="button" class="todo-tick" data-p="todo-tick" data-id="' + id + '" aria-pressed="' + done + '" aria-label="' + esc((done ? 'Untick: ' : 'Tick off: ') + String(x.text || '').slice(0, 40)) + '">' + TICK + '</button>' +
+      '<div class="todo-body"><p class="todo-text">' + esc(x.text) + '</p><div class="todo-meta">' + meta.join('') + '</div>' +
+      '<div class="todo-acts">' + (done ? '' : '<button type="button" class="p-link" data-p="todo-edit" data-id="' + id + '">Change</button>') +
+      '<button type="button" class="p-link" data-p="todo-del" data-id="' + id + '">Remove</button></div></div></li>';
+  }
+  function tdFindText(x) { return x.text + ' ' + (tdForOk(x.for) ? mnName(x.for) : '') + ' ' + tdName(x.from); }
+  function tdFilters() {
+    var f = [['all', 'All'], ['soon', 'Due today or late', tdSoon]];
+    if (who()) f.splice(1, 0, ['me', 'For me', function (x) { return x.for === S.who; }]);
+    return f;
+  }
+  // due first (the earliest day on top), then the rest oldest first
+  function tdByDue(a, b) { var da = tdDue(a.due) || '9999', db = tdDue(b.due) || '9999'; return da < db ? -1 : da > db ? 1 : tdNum(a.at) - tdNum(b.at); }
+  function todoFormHTML() {
+    var chefs = tdChefs(), editing = !!tdf.id, due = tdDue(tdf.due);
+    var fr = chefs.length ? '<div class="field"><span class="label" id="todo-fl">For (optional)</span><div class="chips todo-for" role="group" aria-labelledby="todo-fl">' +
+      '<button type="button" class="chip" data-p="todo-for" data-v="" aria-pressed="' + !tdf.fr + '">Anyone</button>' + chefs.map(function (p) {
+        return '<button type="button" class="chip" data-p="todo-for" data-v="' + esc(p.id) + '" aria-pressed="' + (tdf.fr === p.id) + '">' + esc(p.name) + '</button>';
+      }).join('') + '</div></div>' : '';
+    return '<section class="todo-add' + (editing ? ' is-edit' : '') + '" aria-label="' + (editing ? 'Change a job' : 'Add a job') + '">' +
+      '<div class="field"><label class="label" for="todo-text">' + (editing ? 'Change the job' : 'New job') + '</label><textarea id="todo-text" class="todo-ta" data-k="todo-text" rows="2" maxlength="' + TD_MAX + '" placeholder="For example: book the hood clean">' + esc(tdf.text) + '</textarea></div>' +
+      '<div class="field"><label class="label" for="todo-due">Due by (optional)</label><div class="todo-dues"><input id="todo-due" type="date" class="p-dateinput" data-k="todo-due" value="' + esc(due) + '">' +
+      '<button type="button" class="chip" data-p="todo-nodue"' + (due ? '' : ' hidden') + '>No date</button></div></div>' + fr +
+      (tdMsg ? '<p class="p-err" role="alert">' + esc(tdMsg) + '</p>' : '') +
+      '<div class="btn-row"><button type="button" class="btn dark" data-p="todo-save">' + (editing ? 'Save changes' : 'Add to the list') + '</button>' +
+      (editing ? '<button type="button" class="btn" data-p="todo-cancel">Cancel</button>' : '') + '</div></section>';
+  }
+  function todoPageHTML() {
+    todoLoad();
+    if (tdDoneOpen) todoLoadDone();
+    var again = ' <button type="button" class="p-link" data-p="todo-refresh">Try again</button>';
+    var open = tdNeedPin() ? '<p class="hint">Type your PIN again to see the list.</p><div class="btn-row"><button type="button" class="btn dark" data-p="todo-pin">Type my PIN</button></div>'
+      : !tdOpen ? (tdErr ? '<p class="p-err">Could not load the to-do list. Check the signal.</p><div class="btn-row"><button type="button" class="btn" data-p="todo-refresh">Try again</button></div>' : '<p class="hint">Loading...</p>')
+      : (tdErr || tdCache ? '<p class="hint todo-stale" role="status">No signal. This is the list as this device last read it.' + again + '</p>' : '') +
+        lvHTML({ key: 'todo', items: tdOpen, step: 20, noun: ['job', 'jobs'], ph: 'Search the list', find: tdFindText, filters: tdFilters(),
+          sorts: [['due', 'Due first', tdByDue], ['new', 'Newest first', function (a, b) { return tdNum(b.at) - tdNum(a.at); }], ['old', 'Oldest first', function (a, b) { return tdNum(a.at) - tdNum(b.at); }]],
+          card: todoRow, empty: 'Nothing on the list. Add the first job above.' });
+    var done = (tdDone || []).slice().sort(function (a, b) { return tdNum(b.doneAt) - tdNum(a.doneAt); });
+    var doneIn = tdDone ? (tdDoneErr || tdDoneCache ? '<p class="hint todo-stale" role="status">No signal. This is what this device last read.' + again + '</p>' : '') +
+        lvHTML({ key: 'tododone', items: done, step: 15, noun: ['job', 'jobs'], ph: 'Search done jobs', find: tdFindText, card: todoRow, empty: 'Nothing ticked off in the last 30 days.' })
+      : tdDoneErr ? '<p class="p-err">Could not load. Check the signal.' + again + '</p>' : '<p class="hint">Loading...</p>';
+    return '<section class="p-card todo-page"><h2 class="p-h" id="rtitle" tabindex="-1">Chef to-do</h2>' +
+      '<p class="hint">Shared by the head chef and the sous chefs. Staff cannot see it. Tick a job when it is done.' +
+      (tdAt && !tdErr && !tdCache ? ' <button type="button" class="p-link" data-p="todo-refresh">Refresh</button>' : '') + '</p>' +
+      todoFormHTML() + '<div class="todo-list">' + open + '</div>' +
+      '<details class="todo-donebox"' + (tdDoneOpen ? ' open' : '') + '><summary data-p="todo-donebox">Done in the last 30 days' + (tdDone ? ' (' + done.length + ')' : '') + '</summary>' + doneIn + '</details></section>';
+  }
+  function todoNoHTML() {
+    return '<section class="p-card todo-page"><h2 class="p-h" id="rtitle" tabindex="-1">Chef to-do</h2><p class="hint">This list is for the head chef and the sous chefs.</p>' +
+      '<div class="btn-row"><a class="btn" href="#/prep">Back to the prep list</a></div></section>';
+  }
+  function todoClick(a, el) {
+    var id = el.getAttribute('data-id');
+    if (a === 'todo-save') { todoSave(); return; }
+    if (a === 'todo-cancel') { tdf = tdBlank(); tdSnap = ''; tdEditX = null; tdMsg = ''; draw(); return; }
+    if (a === 'todo-for') { tdf.fr = el.getAttribute('data-v') || ''; draw(); return; }
+    if (a === 'todo-nodue') { tdf.due = ''; draw(); focusK('todo-due'); return; }
+    if (a === 'todo-pin') { if (S.who) pickName(S.who); return; }
+    if (a === 'todo-tick') {
+      // the ticked job leaves this list: keep the keyboard on the list, on the tick that took its place
+      var lv = el.closest('[data-lv]'), key = lv ? lv.getAttribute('data-lv') : '', at = lv ? Array.prototype.indexOf.call(lv.querySelectorAll('[data-p="todo-tick"]'), el) : -1;
+      todoTick(id);
+      // draw() may have followed the job into Done: bring the keyboard back to the list it left
+      var ae = document.activeElement;
+      if (at >= 0 && !(ae && ae.closest && ae.closest('[data-lv="' + key + '"]'))) {
+        var ts = S.root.querySelectorAll('[data-lv="' + key + '"] [data-p="todo-tick"]');
+        if (ts.length) ts[Math.min(at, ts.length - 1)].focus({ preventScroll: true });
+      }
+      return;
+    }
+    if (a === 'todo-edit') { todoEdit(id); return; }
+    if (a === 'todo-del') { todoRemove(id); return; }
+    if (a === 'todo-refresh') { todoLoad(0); if (tdDoneOpen) todoLoadDone(true); else tdDoneAt = 0; draw(); return; }
+    if (a === 'todo-donebox') { tdDoneOpen = !el.parentNode.open; if (tdDoneOpen) todoLoadDone(); }
+  }
+  // back on the page after 30 minutes away: read the open jobs again
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && S.name === 'todo' && S.root && document.body.contains(S.root)) todoLoad(); });
+
   /* ---------- public bits used by app.js ---------- */
   window.LK_PREP = {
     sg: sg,
@@ -7141,11 +7382,12 @@
       if (name === 'guides') { if ((sel || '') !== S.gSel) S.gSel = sel || ''; }
       if (name === 'admin') S.draft = S.draft || null;
       draw();
+      if (name === 'todo') todoLoad(TD_FRESH);
       if (S.pin) { connect(); if (name === 'admin') sdk(); if (name === 'orders') { S.ordDate = dayNow(); watchOrders(); } if (name === 'waste') { S.wDate = dayNow(); watchWaste(); } notesInit(); }
     },
     warm: function () { if (S.pin && S.configState !== 'ok' && S.configState !== 'loading') connect(); notesInit(); },
     unsaved: function () {
-      return pending > 0 || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!mlf.text.trim() || mfDirty() || nfDirty() || gfDirty() || draftDirty() || cutDirty() || !!String(S.bulk || '').trim() || !!S.sheet || !!S.recipeOpen ||
+      return pending > 0 || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!mlf.text.trim() || tdDirty() || mfDirty() || nfDirty() || gfDirty() || draftDirty() || cutDirty() || !!String(S.bulk || '').trim() || !!S.sheet || !!S.recipeOpen ||
         !!(S.text.trim() || S.qty.trim() || S.otext.trim() || S.oqty.trim() || S.wf.text.trim() || String(S.wf.amt).trim() || S.wf.act.trim() || (S.wrA != null && S.wrA !== (rvBase().avoidable || '')) || (S.wrC != null && S.wrC !== (rvBase().change || '')));
     },
     noteInfo: noteInfo, noteBellLabel: noteBellLabel,
@@ -7170,6 +7412,7 @@
     bookState: bookState,
     fnOK: fnOK,
     fnState: fnState,
+    todoOK: todoOK,
     book: bookApi,
     chefMenu: chefMenu,
     chefOpen: chefOpen,

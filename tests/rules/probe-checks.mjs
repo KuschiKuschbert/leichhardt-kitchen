@@ -35,7 +35,10 @@ export function probeChecks(fs, pin) {
     // function contacts and minutes drafts (22 Oct 2026, review S9): a contact only for function managers, a draft only
     // for the head chef's Google account (a list of minutes by date could hold drafts)
     ['a function contact cannot be read with only the kitchen PIN', () => fs.get(K + 'fncontact/' + id), false],
-    ['minutes drafts cannot be listed with only the kitchen PIN', () => fs.query('kitchens/' + pin, 'minutes', 'date', 'GREATER_THAN_OR_EQUAL', str('2000-01-01')), false]
+    ['minutes drafts cannot be listed with only the kitchen PIN', () => fs.query('kitchens/' + pin, 'minutes', 'date', 'GREATER_THAN_OR_EQUAL', str('2000-01-01')), false],
+    // the chef to-do list (23 Oct 2026): only the head chef and the sous chefs read or write it
+    ['the chef to-do list cannot be listed with only the kitchen PIN', () => fs.query('kitchens/' + pin, 'todos', 'st', 'EQUAL', str('open')), false],
+    ['a chef to-do cannot be saved with only the kitchen PIN', () => fs.patch(K + 'todos/' + id, { text: str('Probe'), st: str('open'), at: num(1), doneAt: num(0), upd: num(1), by: str('probe') }), false]
   ];
 }
 

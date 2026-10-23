@@ -261,7 +261,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .p-card { display: flex; flex-direction: column; gap: 0.8rem; max-width: 26rem; padding: 1.1rem; border: 1.5px solid var(--ink); border-radius: var(--radius); background: var(--paper); }
 .p-h { margin: 0; font-family: var(--display); font-weight: 700; font-size: 1.7rem; line-height: 1.1; }
 /* Kitchen mail and the drinks run are workbook pages like the prep list: the handwritten title */
-.ml-page > .p-h, .dr-page > .p-h { font-family: 'Caveat', cursive; font-size: 2.8rem; line-height: 0.95; }
+.ml-page > .p-h, .dr-page > .p-h, .todo-page > .p-h { font-family: 'Caveat', cursive; font-size: 2.8rem; line-height: 0.95; }
 .pinbox { position: relative; width: max-content; max-width: 100%; }
 .pin-cells { display: flex; gap: 0.6rem; }
 .pin-cell { display: flex; align-items: center; justify-content: center; width: 3.4rem; height: 4rem; border: 2px solid var(--ink); border-radius: 8px; background: var(--bg); font-size: 1.5rem; line-height: 1; color: var(--ink); box-shadow: 0 3px 0 rgba(0, 0, 0, 0.14); transition: border-color 0.12s, background 0.12s; }
@@ -1479,6 +1479,32 @@ button.wm-a { width: 100%; border: 0; background: none; font: inherit; text-alig
 .ml-donebox { margin-top: 18px; }
 .ml-sous { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
 .ml-donebox > summary { cursor: pointer; font-weight: 700; min-height: 44px; display: flex; align-items: center; }
+/* The chef to-do list (#/todo, 23 Oct 2026): the add form, then tick-off rows like kitchen mail's, Done folded away */
+.todo-add { display: flex; flex-direction: column; gap: 0.8rem; margin: 4px 0 18px; padding: 14px; border: 1.5px solid var(--ink); border-radius: var(--radius); background: var(--paper); }
+.todo-add.is-edit { border-color: var(--accent); box-shadow: inset 4px 0 0 var(--accent); }
+.todo-ta { width: 100%; box-sizing: border-box; min-height: 4.5rem; padding: 10px 12px; border: 1.5px solid var(--ink); border-radius: var(--radius); font: inherit; font-size: 1rem; resize: vertical; background: var(--paper); color: var(--ink); }
+.todo-dues { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.todo-dues .chip[hidden] { display: none; }
+.todo-for { flex-wrap: wrap; gap: 8px; }
+.todo-stale { margin: 0 0 8px; }
+.todo-page .lv-cards { list-style: none; margin: 0; padding: 0; gap: 0; }
+.todo-row { display: flex; gap: 12px; align-items: flex-start; padding: 12px 0; border-top: 1px solid var(--line); }
+.todo-row.is-late { border-left: 4px solid var(--accent); padding-left: 10px; }
+.todo-tick { flex: 0 0 44px; width: 44px; height: 44px; border: 2px solid var(--ink); border-radius: 50%; background: var(--paper); color: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
+.todo-tick:hover { color: var(--faint); }
+.todo-tick[aria-pressed="true"] { background: var(--done); border-color: var(--done); color: #fff; }
+.todo-body { flex: 1 1 auto; min-width: 0; }
+.todo-text { margin: 0; font-size: 1.0625rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+.todo-row.is-done .todo-text { color: var(--muted); text-decoration: line-through; }
+.todo-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 4px; font-size: 0.875rem; color: var(--muted); }
+.todo-meta b { color: var(--ink); }
+.todo-tag { padding: 1px 8px; border-radius: 10px; background: var(--beige); border: 1px solid var(--edge); color: var(--ink); font-weight: 600; }
+.todo-due { font-weight: 600; color: var(--ink); }
+.todo-due.is-today { color: var(--small-ink); }
+.todo-due.is-late { color: var(--small-ink); font-weight: 700; }
+.todo-acts { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 2px; }
+.todo-donebox { margin-top: 18px; }
+.todo-donebox > summary { cursor: pointer; font-weight: 700; min-height: 44px; display: flex; align-items: center; }
 .mlp-wrap { position: fixed; inset: 0; z-index: 81; display: flex; align-items: center; justify-content: center; padding: 12px; }
 .mlp-bg { position: absolute; inset: 0; background: rgba(28, 29, 31, 0.6); }
 .mlp { position: relative; width: 100%; max-width: 26rem; background: var(--bg); color: var(--ink); border: 2px solid var(--ink); border-radius: 14px; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35); padding: 18px; font-family: var(--body); }

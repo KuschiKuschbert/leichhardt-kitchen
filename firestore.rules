@@ -5,8 +5,9 @@
 // Moving to a new kitchen PIN (admin Tools): publish a second copy of every kitchens/KITCHEN_PIN/... block for the
 // new PIN first, move, then remove the old PIN's copy once every phone has the new one.
 //
-// Reading needs only the kitchen PIN (it is the path), except function contacts (function managers) and minutes drafts
-// (the head chef's Google account). Writing needs a person's own PIN.
+// Reading needs only the kitchen PIN (it is the path), except function contacts (function managers), minutes drafts and
+// kitchen mail (the head chef's Google account) and the chef to-do list (the head chef and sous chefs). Writing needs a
+// person's own PIN.
 // Since 22 Oct 2026 a phone signs in to Firebase anonymously and a right PIN opens a session for that phone and person
 // (sessions/<uid>, below): every write carries the writer's id (by) and the rules check that phone's session. PIN tries
 // are written first, one every 20 seconds per person (tries/<id>), and compared with the stored PIN hash
@@ -584,6 +585,42 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['seen', 'done', 'by'])
         || sousMailBy() && request.resource.data.done is bool
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['done', 'by']);
+      allow delete: if false;
+    }
+    // The chef to-do list (#/todo, 23 Oct 2026): shared by the head chef and the sous chefs, never read by staff. Read by
+    // the head chef's Google account or a phone whose PIN session is a chef's (sousIds or headId); written the same way.
+    // st is open, done or gone (removed, kept so Undo works); the page reads only st == 'open', and done with doneAt in
+    // the last 30 days. from (who wrote it) and at never change; a tick names the chef who ticked (doneBy == by).
+    // Nothing is deleted. The head chef's Google account may also copy one as it is (the move to a new kitchen PIN).
+    function chefId(id) { return id is string && id != '' && (id in cfg().get('sousIds', []) || id == cfg().get('headId', '')); }
+    function todoBy() { return isAdmin() || (staff() && chefId(request.resource.data.by)); }
+    function todoStr(k, n) { return request.resource.data.get(k, '') is string && request.resource.data.get(k, '').size() <= n; }
+    function todoOk() {
+      return request.resource.data.keys().hasOnly(['text', 'st', 'due', 'for', 'from', 'at', 'doneAt', 'doneBy', 'upd', 'by'])
+        && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 300
+        && request.resource.data.st in ['open', 'done', 'gone']
+        && todoStr('due', 10) && (request.resource.data.get('due', '') == '' || request.resource.data.get('due', '').matches('[0-9]{4}-[0-9]{2}-[0-9]{2}'))
+        && todoStr('for', 80) && todoStr('from', 80) && todoStr('doneBy', 80)
+        && request.resource.data.get('at', 0) is number && request.resource.data.get('doneAt', 0) is number && request.resource.data.get('upd', 0) is number;
+    }
+    // Who ticked a job is only ever the writer, or left as it was (review, 23 Oct 2026). A tick names the writer. An open
+    // job names no one (an untick clears it). Removed, or done and changed, a job keeps who ticked it and when, so Undo
+    // puts it back exactly as it was. The head chef's Google account (no PIN session) may name the head chef.
+    function todoTickOk() {
+      let st = request.resource.data.st;
+      let nb = request.resource.data.get('doneBy', '');
+      let ob = resource == null ? '' : resource.data.get('doneBy', '');
+      return isAdmin()
+        || (st == 'done' && nb == request.resource.data.by)
+        || (st != 'done' && nb == '')
+        || (st != 'open' && resource != null && nb != '' && nb == ob
+          && request.resource.data.get('doneAt', 0) == resource.data.get('doneAt', 0));
+    }
+    match /kitchens/KITCHEN_PIN/todos/{id} {
+      allow read: if isAdmin() || (sessOk(reader()) && chefId(reader()));
+      allow create: if todoBy() && todoOk() && todoTickOk() && (isAdmin() || request.resource.data.get('from', '') == request.resource.data.by);
+      allow update: if todoBy() && todoOk() && todoTickOk()
+        && request.resource.data.get('from', '') == resource.data.get('from', '') && request.resource.data.get('at', 0) == resource.data.get('at', 0);
       allow delete: if false;
     }
     // The drinks run: each person's usual coffee or drink, one record per person (the record id is their id).

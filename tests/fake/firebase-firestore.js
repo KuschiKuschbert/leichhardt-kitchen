@@ -86,6 +86,7 @@ function readRefused(ref) {
     return !(ss && ss.exp > Date.now() && ps && ps.at === ss.pinAt && fnIds.indexOf(ss.by) >= 0);
   }
   if (/\/minutes\/[^/]+$/.test(k)) return store[k] !== undefined && store[k].status !== 'published';
+  if (/\/todos\/[^/]+$/.test(k)) return !chefReader(ref);
   return false;
 }
 export function getDoc(ref) {
@@ -98,8 +99,17 @@ export function getDoc(ref) {
 }
 // like the real rules: book/index and book/matches are allowed by name only, so a query on the whole book collection is
 // refused; the minutes are listed by pubAt (published only) except by the head chef's Google account (22 Oct 2026, S9)
+/* the chef to-do list (23 Oct 2026): like the rules, only the head chef's Google account or a phone whose PIN session is a
+   chef's (sousIds or headId in config/main) reads it */
+function chefReader(ref) {
+  if (window.__fakeUser) return true;
+  const root = ref.path.slice(0, 2).join('/'), uid = window.__fakeUid ? window.__fakeUid() : '', ss = uid ? store[root + '/sessions/' + uid] : null;
+  const ps = ss ? store[root + '/pinset/' + ss.by] : null, c = store[root + '/config/main'] || {};
+  return !!(ss && ss.exp > Date.now() && ps && ps.at === ss.pinAt && ((c.sousIds || []).indexOf(ss.by) >= 0 || (c.headId && c.headId === ss.by)));
+}
 function denied(ref) {
   const d = window.__fake.denyReads, k = key(ref.path);
+  if (/^kitchens\/[^/]+\/todos$/.test(k) && !chefReader(ref)) return true;
   if (/^kitchens\/[^/]+\/minutes$/.test(k) && !window.__fakeUser && !(ref.c || []).some(x => x.k === 'where' && x.f === 'pubAt' && (x.op === '>=' || x.op === '>') && x.v >= 1)) return true;
   return /^kitchens\/[^/]+\/book$/.test(k) || !!(d && d.test(k));
 }

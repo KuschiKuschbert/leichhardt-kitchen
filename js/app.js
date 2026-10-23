@@ -6,7 +6,7 @@
     #/                 landing page: four dockets (Recipes, Prep, Orders, Wastage)
     #/recipes          the recipes, as The Pass or Tiles
     #/r/barra/laksa    a recipe; the path is the trail you took to get there
-    #/prep, #/orders, #/waste, #/minutes, #/mail, #/drinks, #/admin   the prep book (js/prep.js)
+    #/prep, #/orders, #/waste, #/minutes, #/mail, #/drinks, #/todo, #/admin   the prep book (js/prep.js)
     #/settings         settings
 */
 (function () {
@@ -247,6 +247,7 @@
   function plural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }
 
   var ICON = {
+    todo: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4.5H7a1.5 1.5 0 0 0-1.5 1.5v13A1.5 1.5 0 0 0 7 20.5h10a1.5 1.5 0 0 0 1.5-1.5V6A1.5 1.5 0 0 0 17 4.5h-2" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><rect x="9" y="3" width="6" height="3" rx="1" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M9 13l2 2 4-4.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     chef: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 14.2A3.6 3.6 0 1 1 8.6 7.4a4.6 4.6 0 0 1 6.8 0A3.6 3.6 0 1 1 17 14.2V20H7Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M7 16.8h10" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>',
     cup: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h11v5.5A4.5 4.5 0 0 1 11.5 19h-2A4.5 4.5 0 0 1 5 14.5Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M16 10.5h1.5a2.5 2.5 0 0 1 0 5H16" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M8.5 3.5c-.8 1 .8 2 0 3M12 3.5c-.8 1 .8 2 0 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
     exit: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M14 8l4 4-4 4M18 12H9" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>',
@@ -348,8 +349,9 @@
      (chefs open the register from its top bar), Functions in one place for everyone (22 Oct 2026: function managers
      book them, everyone else reads today's and the next days'), My section (staff and leads,
      once the head chef has set up kitchen sections: today's section, a tap changes it), a Chef group (Admin panel where
-     adminItem() allows, Manage Recipes & Drawings, then for the head chef and sous chefs Shift pings and Manage staff;
-     not Manage staff on the head chef's own Google device, where it is People in the admin panel), Settings and Sign out,
+     adminItem() allows, Manage Recipes & Drawings, then for the head chef and sous chefs Shift pings, Chef to-do and
+     Manage staff; not Manage staff on the head chef's own Google device, where it is People in the admin panel), Settings
+     and Sign out,
      which hands the phone to the next person. With nobody signed in the ring is dashed and the menu has Sign in ("Who
      are you?", then back to the same page), Admin panel on the head chef's personal device, and Settings.
      Each item is one line (shortened 22 Oct 2026); a second line shows only when it changes: today's section, Sign in
@@ -374,6 +376,13 @@
   function fnViewItem() {
     var on = parseRoute().name === 'fn' ? ' aria-current="page"' : '';
     return '<a class="wm-a wm-fv" href="#/fn" data-who="go"' + on + '>' + ICON.cal + '<span><b>Functions</b></span></a>';
+  }
+  /* Chef to-do (#/todo, 23 Oct 2026): the head chef and the sous chefs with their PIN, or the head chef's Google device
+     with nobody signed in (js/prep.js todoOK). Staff never get the row, and the rules keep the list from them. */
+  function todoOK() { return !!(window.LK_PREP && window.LK_PREP.todoOK && window.LK_PREP.todoOK()); }
+  function todoItem() {
+    var on = parseRoute().name === 'todo' ? ' aria-current="page"' : '';
+    return '<a class="wm-a wm-todo" href="#/todo" data-who="go"' + on + '>' + ICON.todo + '<span><b>Chef to-do</b></span></a>';
   }
   function manageItem() {
     var on = parseRoute().name === 'manage' ? ' aria-current="page"' : '';
@@ -404,12 +413,13 @@
         (m.sec ? '<button type="button" class="wm-a" data-who="sec" data-v="section">' + ICON.chef + '<span><b>My section</b><small>' + esc(m.sec) + '</small></span></button>' : '') +
         (m.chef || adm || m.book ? '<p class="wm-h wm-sh">Chef</p>' + adm : '') + (m.book ? manageItem() : '') +
         (m.chef ? '<button type="button" class="wm-a" data-who="open" data-v="pings">' + ICON.bell + '<span><b>Shift pings</b></span></button>' : '') +
+        (m.todo ? todoItem() : '') +
         (m.chef && !m.tab ? '<button type="button" class="wm-a" data-who="open" data-v="staff">' + ICON.team + '<span><b>Manage staff</b></span></button>' : '') +
         set +
         // the empty line is where the first tap says "Not saved yet" (the click handler below)
         '<button type="button" class="wm-a wm-out" data-who="out">' + ICON.exit + '<span><b>Sign out</b><small aria-live="polite"></small></span></button>'
       : '<p class="wm-h">Nobody signed in on this phone</p>' +
-        '<a class="wm-a wm-in" href="#/prep" data-who="signin">' + ICON.chef + '<span><b>Sign in</b></span></a>' + adm + (bookEdit() ? manageItem() : '') + (fnOK() ? fnItem() : '') + set) + '</nav>';
+        '<a class="wm-a wm-in" href="#/prep" data-who="signin">' + ICON.chef + '<span><b>Sign in</b></span></a>' + adm + (bookEdit() ? manageItem() : '') + (todoOK() ? todoItem() : '') + (fnOK() ? fnItem() : '') + set) + '</nav>';
     document.body.appendChild(el); wmenu = el;
     btn.setAttribute('aria-expanded', 'true');
     var first = el.querySelector('.wm-a'); if (first) first.focus({ preventScroll: true });
@@ -987,7 +997,7 @@
   function parseRoute() {
     var parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
     if (parts[0] === 'settings') return { name: 'settings', stack: [] };
-    if (parts[0] === 'prep' || parts[0] === 'admin' || parts[0] === 'orders' || parts[0] === 'waste' || parts[0] === 'minutes' || parts[0] === 'mail' || parts[0] === 'drinks') return { name: parts[0], stack: [] };
+    if (parts[0] === 'prep' || parts[0] === 'admin' || parts[0] === 'orders' || parts[0] === 'waste' || parts[0] === 'minutes' || parts[0] === 'mail' || parts[0] === 'drinks' || parts[0] === 'todo') return { name: parts[0], stack: [] };
     if (parts[0] === 'guides') return { name: 'guides', stack: [], gid: parts[1] || '' };
     if (parts[0] === 'manage') return { name: 'manage', stack: [], sub: parts.slice(1) };
     if (parts[0] === 'fn') return { name: 'fn', stack: [], fid: parts[1] || '' };
@@ -1007,7 +1017,7 @@
     writeJSON(LS, 'lk.views', v);
   }
   // the pages drawn by js/prep.js (Firebase): prep book, orders, wastage, minutes, guides, kitchen mail and the admin panel
-  var PREP_PAGES = { prep: 1, admin: 1, orders: 1, waste: 1, minutes: 1, guides: 1, mail: 1, drinks: 1 };
+  var PREP_PAGES = { prep: 1, admin: 1, orders: 1, waste: 1, minutes: 1, guides: 1, mail: 1, drinks: 1, todo: 1 };
   var warmed = false;
   var lastHash = null, lastRoute = '', homeY = 0;
   window.addEventListener('scroll', function () { if (lastRoute === 'home') homeY = window.scrollY; }, { passive: true });
@@ -1056,7 +1066,7 @@
     // On any other page, connect to the prep book in the background so Prep, Orders and Wastage open straight away.
     else if (window.LK_PREP && window.LK_PREP.warm && !warmed) { warmed = true; setTimeout(function () { window.LK_PREP.warm(); }, 900); }
     var r = route.stack.length ? byId[route.stack[route.stack.length - 1]] : null;
-    document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'waste' ? 'Wastage · ' : route.name === 'minutes' ? 'Meeting minutes · ' : route.name === 'mail' ? 'Kitchen mail · ' : route.name === 'drinks' ? 'Drinks run · ' : route.name === 'manage' ? 'Manage Recipes & Drawings · ' : route.name === 'fn' ? 'Functions · ' : route.name === 'functions' ? 'Manage functions · ' : route.name === 'guides' ? 'Guides · ' : route.name === 'landing' ? '' : route.name === 'home' ? 'Recipes · ' : route.name === 'admin' ? 'Admin panel · ' : '')) + 'Leichhardt Kitchen Book';
+    document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'waste' ? 'Wastage · ' : route.name === 'minutes' ? 'Meeting minutes · ' : route.name === 'mail' ? 'Kitchen mail · ' : route.name === 'drinks' ? 'Drinks run · ' : route.name === 'todo' ? 'Chef to-do · ' : route.name === 'manage' ? 'Manage Recipes & Drawings · ' : route.name === 'fn' ? 'Functions · ' : route.name === 'functions' ? 'Manage functions · ' : route.name === 'guides' ? 'Guides · ' : route.name === 'landing' ? '' : route.name === 'home' ? 'Recipes · ' : route.name === 'admin' ? 'Admin panel · ' : '')) + 'Leichhardt Kitchen Book';
     var prevRoute = lastRoute; lastRoute = route.name;
     if (changed && route.name === 'recipe') noteView(route.stack[route.stack.length - 1]);
     // opening the recipes checks for the head chef's recipe changes when the last check is 30 minutes old (one read)
