@@ -6278,7 +6278,7 @@
     });
     return out.sort(function (a, b) { return a.at - b.at || a.s.name.localeCompare(b.s.name); });
   }
-  function cutFor(c) { return c.s.pre === 0 ? 'for today' : c.s.pre === 1 ? 'for ' + CUT_DAY[c.del] + (c.s.dd.length === 7 ? '' : '\'s delivery') : 'for ' + CUT_DAY[c.del]; }
+  function cutDel(c) { return c.s.pre === 0 ? 'for today' : c.s.pre === 1 ? 'for ' + CUT_DAY[c.del] + (c.s.dd.length === 7 ? '' : '\'s delivery') : 'for ' + CUT_DAY[c.del]; }
   function cutIn(m) { return m < 60 ? 'in ' + m + ' min' : 'in ' + Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : ''); }
   // who gets the bar: the head chef and sous chefs with their PIN, and the head chef's Google device
   function cutWho() { return !!S.config && (isSous() || admDev()); }
@@ -6290,7 +6290,7 @@
     if (!xs.length) return '';
     return '<div class="cut-top"><h2 class="cut-h">Order cut-off' + (xs.length > 1 ? 's' : '') + '</h2><a class="cut-go" href="#/orders">Order list</a></div><ul class="cut-list">' + xs.map(function (c) {
       var left = c.at - m;
-      return '<li class="cut-row' + (left <= CUT_SOON ? ' is-soon' : '') + '"><span class="cut-n">' + esc(c.s.name) + '</span><span class="cut-t">by ' + hhmm(c.at) + ' <b>' + cutIn(left) + '</b> <span class="cut-for">' + esc(cutFor(c)) + '</span></span>' +
+      return '<li class="cut-row' + (left <= CUT_SOON ? ' is-soon' : '') + '"><span class="cut-n">' + esc(c.s.name) + '</span><span class="cut-t">by ' + hhmm(c.at) + ' <b>' + cutIn(left) + '</b> <span class="cut-for">' + esc(cutDel(c)) + '</span></span>' +
         '<button type="button" class="cut-done" data-cut="done" data-id="' + esc(c.s.id) + '" aria-label="' + esc('Ordered from ' + c.s.name + ': hide it for today') + '">Ordered</button></li>';
     }).join('') + '</ul>';
   }
@@ -6325,7 +6325,7 @@
     if (!xs.length) return '';
     return '<section class="cut-today" aria-label="Order cut-offs today"><h3 class="nb-sh">Cut-offs today</h3><ul class="cut-tl">' + xs.map(function (c) {
       var st = c.at <= m ? 'Closed' : done[c.s.id] ? 'Ordered' : cutIn(c.at - m);
-      return '<li class="' + (c.at <= m ? 'is-past' : c.at - m <= CUT_SOON && !done[c.s.id] ? 'is-soon' : '') + '"><span class="cut-n">' + esc(c.s.name) + '</span><span class="cut-t">' + hhmm(c.at) + ' ' + esc(cutFor(c)) + '</span><span class="cut-st">' + esc(st) + '</span></li>';
+      return '<li class="' + (c.at <= m ? 'is-past' : c.at - m <= CUT_SOON && !done[c.s.id] ? 'is-soon' : '') + '"><span class="cut-n">' + esc(c.s.name) + '</span><span class="cut-t">' + hhmm(c.at) + ' ' + esc(cutDel(c)) + '</span><span class="cut-st">' + esc(st) + '</span></li>';
     }).join('') + '</ul></section>';
   }
   /* the admin page: a draft kept on this phone until Save (the head chef's Google account only) */
