@@ -47,8 +47,8 @@ const withPerm = perm => '(' + init.toString().replace('PERM', JSON.stringify(pe
   await L.waitFor(p, () => !!document.querySelector('#cut-band [data-cut="done"]'), null, 10000);
   await p.click('#cut-band [data-cut="done"]'); await L.settle(p, 500);
   s = await store(p);
-  const cd = s[fsKey(['cutdone', today])];
-  ok(cd && cd.ids && cd.ids.pfd && cd.ids.pfd.by === 'sam' && typeof cd.ids.pfd.at === 'number' && cd.by === 'sam', 'Ordered: ticked for everyone, so no more pushes for PFD today (' + JSON.stringify(cd) + ')');
+  const cd = s[fsKey(['cutdone', today + '_pfd'])];
+  ok(cd && cd.on === true && cd.by === 'sam' && cd.sid === 'pfd' && cd.day === today && typeof cd.at === 'number', 'Ordered: ticked for everyone, so no more pushes for PFD today (' + JSON.stringify(cd) + ')');
   // turn off
   await p.click('[data-p="cut-push-off"]');
   await L.waitFor(p, () => !!document.querySelector('[data-p="cut-push-on"]'), null, 10000);

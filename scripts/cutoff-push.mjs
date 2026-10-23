@@ -9,12 +9,13 @@
   Each goes once, to every phone a chef turned pushes on for (push/<id> { tok, by }, by a sous chef, the head chef or
   'owner'), through Firebase Cloud Messaging. A run that comes late still sends, as long as the cut-off has not passed;
   only the newest push is sent if both are due. Sent pushes are kept in pushsent/<cut-off day> { sent: { <supplier
-  id>|<day>: start|now } }. A cut-off a chef ticked off as ordered (the Supplier orders tick list or Ordered on the bar, cutdone/<day> ids) gets
-  no more pushes; one ticked off again (false) does.
+  id>|<day>: start|now } }; a push no phone got because Firebase failed is tried again on the next run.
+  A cut-off a chef ticked off as ordered (the Supplier orders tick list or Ordered on the bar: cutdone/<day>_<supplier
+  id> with on true) gets no more pushes; one whose tick was taken off again (on false) does.
   A phone address Firebase says is gone is removed.
 
-  Reads: config/main every run (1); only when a push is due, pushsent and cutdone for that day (1 or 2 each) and the
-  push addresses (1 per phone). About 150 to 200 reads a day.
+  Reads: config/main every run (1); only when a push is due, pushsent for that day and the tick of each cut-off due
+  (1 each) and the push addresses (1 per phone). About 150 to 200 reads a day.
 
   Needs two secrets: FIREBASE_SA (a service account key, JSON) and KITCHEN_PIN. Nothing secret is printed, and no names:
   the log is public, so it says only how many pushes went.
@@ -61,15 +62,15 @@ const due = occ.map(c => {
 }).filter(Boolean);
 if (!due.length) { console.log('Nothing due.'); process.exit(0); }
 
+// what was sent (pushsent/<day>) and what the chefs ticked (cutdone/<day>_<supplier id>, on true), in one read
 const days = [...new Set(due.map(d => d.c.day))];
-const snaps = await db.getAll(...days.map(d => K.collection('pushsent').doc(d)), ...days.map(d => K.collection('cutdone').doc(d)));
-const sent = {}, done = {};
-days.forEach((d, i) => { sent[d] = (snaps[i].exists && snaps[i].data().sent) || {}; done[d] = (snaps[i + days.length].exists && snaps[i + days.length].data().ids) || {}; });
-const go = due.filter(({ c, stage }) => {
-  const was = sent[c.day][c.key];
+const snaps = await db.getAll(...days.map(d => K.collection('pushsent').doc(d)), ...due.map(d => K.collection('cutdone').doc(d.c.day + '_' + d.c.s.id)));
+const sent = {};
+days.forEach((d, i) => { sent[d] = (snaps[i].exists && snaps[i].data().sent) || {}; });
+const go = due.filter(({ c, stage }, i) => {
+  const was = sent[c.day][c.key], tick = snaps[days.length + i];
   if (was === stage || (stage === 'start' && was === 'now')) return false;
-  const v = done[c.day][c.s.id];   // ticked: { by, at } (true from before 24 Oct 2026); false is ticked off again
-  return !(v === true || (v && typeof v === 'object'));
+  return !(tick.exists && tick.data().on === true);
 });
 if (!go.length) { console.log('Nothing new to send.'); process.exit(0); }
 
@@ -88,24 +89,34 @@ const pushes = go.map(({ c, stage }) => {
   };
 });
 const msgs = [];
-pushes.forEach(p => phones.forEach(ph => msgs.push({ ph, msg: { token: ph.x.tok, data: p.data, webpush: { headers: { Urgency: 'high', TTL: String(p.ttl) } } } })));
+pushes.forEach((p, pi) => phones.forEach(ph => msgs.push({ pi, ph, msg: { token: ph.x.tok, data: p.data, webpush: { headers: { Urgency: 'high', TTL: String(p.ttl) } } } })));
 
+// an address Firebase says is gone: not registered any more, or not a valid address (the message itself is fixed, so
+// an invalid-argument answer that names the token is the address, not the message)
+const isGone = e => !!e && (e.code === 'messaging/registration-token-not-registered' || e.code === 'messaging/invalid-registration-token' || (e.code === 'messaging/invalid-argument' && /token/i.test(e.message || '')));
 let ok = 0, gone = 0, failed = 0;
-if (DRY) { console.log(JSON.stringify({ would: msgs.map(x => ({ by: x.ph.x.by, data: x.msg.data })) })); ok = msgs.length; }
+const tried = pushes.map(() => ({ ok: 0, failed: 0 }));
+if (DRY) { console.log(JSON.stringify({ would: msgs.map(x => ({ by: x.ph.x.by, data: x.msg.data })) })); ok = msgs.length; msgs.forEach(x => tried[x.pi].ok++); }
 else {
   for (let i = 0; i < msgs.length; i += 500) {
     const part = msgs.slice(i, i + 500), res = await getMessaging().sendEach(part.map(x => x.msg));
     res.responses.forEach((r, j) => {
-      if (r.success) { ok++; return; }
-      const code = r.error && r.error.code;
-      if (code === 'messaging/registration-token-not-registered' || code === 'messaging/invalid-registration-token') { gone++; K.collection('push').doc(part[j].ph.id).delete().catch(() => {}); }
-      else failed++;
+      if (r.success) { ok++; tried[part[j].pi].ok++; return; }
+      if (isGone(r.error)) { gone++; K.collection('push').doc(part[j].ph.id).delete().catch(() => {}); return; }
+      failed++; tried[part[j].pi].failed++;
     });
   }
 }
-// marked as sent even with no phone turned on, so a phone turned on later does not get an old reminder
+/* A cut-off is marked as sent once a phone got it, or when no phone could (none turned on, or only gone addresses), so a
+   phone turned on later does not get an old reminder. One where every send failed for another reason (Firebase busy, a
+   network fault) is not marked, so the next run tries again while the cut-off is still ahead. */
 const b = db.batch();
-go.forEach(({ c, stage }) => b.set(K.collection('pushsent').doc(c.day), { sent: { [c.key]: stage }, at: FieldValue.serverTimestamp() }, { merge: true }));
-await b.commit();
+let marked = 0;
+go.forEach(({ c, stage }, i) => {
+  if (tried[i].failed && !tried[i].ok) return;
+  marked++;
+  b.set(K.collection('pushsent').doc(c.day), { sent: { [c.key]: stage }, at: FieldValue.serverTimestamp() }, { merge: true });
+});
+if (marked) await b.commit();
 console.log('Sent ' + ok + ' push' + (ok === 1 ? '' : 'es') + ' for ' + go.length + ' cut-off' + (go.length === 1 ? '' : 's') + ' to ' + phones.length + ' phone' + (phones.length === 1 ? '' : 's') + '.' + (gone ? ' ' + gone + ' old phone address' + (gone === 1 ? '' : 'es') + ' removed.' : '') + (failed ? ' ' + failed + ' failed.' : ''));
 if (failed && !ok) process.exit(1);

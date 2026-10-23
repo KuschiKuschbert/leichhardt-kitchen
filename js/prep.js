@@ -196,7 +196,7 @@
   function stopLive() {
     [unsubCfg, unsubItems, unsubSec, unsubAct, unsubOrd, unsubW, unsubX].forEach(function (u) { if (u) u(); });
     unsubCfg = unsubItems = unsubSec = unsubAct = unsubOrd = unsubW = unsubX = null; cfgKey = itemsKey = ordKey = wKey = xKey = '';
-    Object.keys(cutSubs).forEach(function (d) { cutSubs[d](); delete cutSubs[d]; delete cutSeen[d]; });
+    cutStop();
   }
   var itemsSig = '';
   function patchUnsent() {
@@ -1516,6 +1516,7 @@
       .then(function () { return all('mail'); }).then(function (r) { out.mail = r; return all('mailstat'); }).then(function (r) { out.mailstat = r; })
       .then(function () { return all('drinks'); }).then(function (r) { out.drinks = r; })
       .then(function () { return all('todos'); }).then(function (r) { out.todos = r; })
+      .then(function () { return all('cutdone'); }).then(function (r) { out.cutdone = r; })
       .then(function () { return all('shifts'); }).then(function (r) { out.shifts = r; })
       .then(function () { part = 'book'; return bookDocs(S.pin); }).then(function (l) { out.book = l.map(function (d) { var x = d.data(); x.id = d.id; return x; }); return all('recipes'); }).then(function (r) { out.recipes = r; return subs(r, 'recipes', 'hist', out.recipesHist); })
       .then(function () { return all('drawings'); }).then(function (r) { out.drawings = r; return subs(r, 'drawings', 'hist', out.drawingsHist); })
@@ -1586,7 +1587,7 @@
       .then(function () { return copyCol('notes'); }).then(function () { return copyCol('minutes'); }).then(function () { return copySub('minutes', 'hist'); })
       .then(function () { return copySub('minutes', 'signs', true); }).then(function () { return copySub('notes', 'seen', true); })
       .then(function () { return copyCol('guides'); }).then(function () { return copySub('guides', 'pages'); })
-      .then(function () { return copyCol('mail'); }).then(function () { return copyCol('mailstat'); }).then(function () { return copyCol('drinks'); }).then(function () { return copyCol('shifts'); }).then(function () { return copyCol('todos'); })
+      .then(function () { return copyCol('mail'); }).then(function () { return copyCol('mailstat'); }).then(function () { return copyCol('drinks'); }).then(function () { return copyCol('shifts'); }).then(function () { return copyCol('todos'); }).then(function () { return copyCol('cutdone'); })
       .then(function () { return bookDocs(old).then(function (l) { n += l.length; return Promise.all(l.map(function (d) { return f.setDoc(nd('book', d.id), d.data()); })); }); }).then(function () { return copyCol('recipes'); }).then(function () { return copySub('recipes', 'hist'); })
       .then(function () { return copyCol('drawings'); }).then(function () { return copySub('drawings', 'hist'); })
       .then(function () { return copyCol('drawtpl'); }).then(function () { return copyCol('drawlib'); })
@@ -6650,7 +6651,8 @@
     { id: 'a-la-carte-meats', name: 'A La Carte Meats', dd: [], at: -1, pre: 1, lead: 240 }
   ];
   var cutTick = null, cutLast = null;
-  var CUT = window.LK_CUT, cutClean = CUT.clean;   // js/cutoffs.js: shared with the server's pushes
+  // js/cutoffs.js: shared with the server's pushes. Should it not have loaded, no cut-offs show and the rest of the book works.
+  var CUT = window.LK_CUT || { clean: function () { return []; }, on: function () { return []; }, forText: function () { return ''; }, startAt: function () { return 0; }, LEADS: [] }, cutClean = CUT.clean;
   function cutList() { return cutClean(S.config && S.config.cutoffs); }
   // the weekdays an order closes: each delivery day less the days before
   function cutDays(s) { return s.dd.map(function (d) { return (d - s.pre + 7) % 7; }); }
@@ -6662,8 +6664,8 @@
   }
   // when the reminder starts, from the cut-off time and how long before
   function cutFrom(s) {
-    if (!s.lead) return 'Reminder all day.';
-    var st = s.at - s.lead;
+    var st = CUT.startAt(s);
+    if (!s.lead && st >= 0) return 'Reminder all day.';
     return 'Reminder from ' + hhmm((st + 1440) % 1440) + (st < 0 ? ' the night before.' : '.');
   }
   // the cut-offs that fall today, soonest first, with the delivery each one is for
@@ -6673,48 +6675,55 @@
     return CUT.on(cutList(), (T.dow() + plus) % 7).map(function (c) { c.at += plus * 1440; c.day = day; c.key = c.s.id + '|' + day; return c; });
   }
   function cutToday() { return cutOn(0); }
-  // the reminder is on from its start until the cut-off: all day means from midnight on the cut-off day
-  function cutOnNow(c, m) { var left = c.at - m; return left > 0 && left <= (c.s.lead || c.s.at); }
+  // the reminder is on from its start until the cut-off (js/cutoffs.js startAt, the same as the first push)
+  function cutOnNow(c, m) { var left = c.at - m; return left > 0 && left <= c.s.at - CUT.startAt(c.s); }
   var cutDel = CUT.forText;
   function cutIn(m) { return m < 60 ? 'in ' + m + ' min' : 'in ' + Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : ''); }
   // who gets the bar: the head chef and sous chefs with their PIN, and the head chef's Google device
   function cutWho() { return !!S.config && (isSous() || admDev()); }
-  /* The shared ticks: one live listener each on cutdone/<today> and cutdone/<tomorrow>, on a chef's phone (their PIN
-     session) or the head chef's Google account, only while cut-offs are set. Moved on to the next pair when the kitchen
-     day changes. A refused or failed read leaves nothing ticked (the bar and the pushes carry on). */
-  var cutSubs = {}, cutSeen = {};
-  function cutCanRead() { return !!fb && !!S.pin && cutWho() && (canW() || (S.user && S.level === 'owner')) && cutList().some(function (s) { return s.at >= 0 && s.dd.length; }); }
+  /* The shared ticks: one record per supplier and cut-off day, cutdone/<day>_<supplier id> { day, sid, on, at, by }, so
+     the rules check every tick (who, when, which). One live listener on today's and tomorrow's (a query on day), on a
+     chef's phone (their PIN session) or the head chef's Google account, only while cut-offs are set: as many reads as
+     ticks when the book opens, then only what changes. It moves on when the kitchen day changes, and starts as soon as
+     this phone may read (cutWatch() runs on every paint, so a Google account checked or a PIN session opened late is
+     caught). A refused or failed read leaves nothing ticked (the bar and the pushes carry on). */
+  var cutSub = null, cutSubKey = '', cutSeen = {};
+  function cutHas() { return cutWho() && cutList().some(function (s) { return s.at >= 0 && s.dd.length; }); }
+  function cutCanRead() { return !!fb && !!S.pin && cutHas() && (canW() || (!!S.user && S.level === 'owner')); }
   function cutWatch() {
-    var want = cutCanRead() ? [dayNow(), shift(dayNow(), 1)] : [];
-    Object.keys(cutSubs).forEach(function (d) { if (want.indexOf(d) < 0) { cutSubs[d](); delete cutSubs[d]; delete cutSeen[d]; } });
-    want.forEach(function (d) {
-      if (cutSubs[d]) return;
-      cutSubs[d] = fb.fs.onSnapshot(docRef('cutdone', d), function (sn) {
-        cutSeen[d] = sn.exists() && sn.data().ids && typeof sn.data().ids === 'object' ? sn.data().ids : {};
-        cutPaint(); if (S.name === 'orders' || S.name === 'todo') draw();
-      }, function () { if (cutSubs[d]) cutSubs[d](); delete cutSubs[d]; cutSeen[d] = {}; });
-    });
+    var want = cutCanRead() ? S.pin + '|' + dayNow() : '';
+    if (want === cutSubKey) return;
+    if (cutSub) cutSub();
+    cutSub = null; cutSubKey = want; cutSeen = {};
+    if (!want) return;
+    var days = [dayNow(), shift(dayNow(), 1)];
+    cutSub = fb.fs.onSnapshot(fb.fs.query(colRef('cutdone'), fb.fs.where('day', 'in', days)), function (sn) {
+      var seen = {};
+      sn.docs.forEach(function (d) { var x = d.data(); if (x && x.on === true && typeof x.sid === 'string' && days.indexOf(x.day) >= 0) seen[x.sid + '|' + x.day] = { by: typeof x.by === 'string' ? x.by : '', at: typeof x.at === 'number' ? x.at : 0 }; });
+      cutSeen = seen;
+      cutPaint(); if (S.name === 'orders' || S.name === 'todo') draw();
+    }, function () { if (cutSub) cutSub(); cutSub = null; cutSeen = {}; });
   }
-  // what is ticked: { '<supplier id>|<cut-off day>': { by, at } }, checked by type (a damaged record shows no name or time)
-  function cutDone() {
-    var out = {};
-    Object.keys(cutSeen).forEach(function (d) {
-      var ids = cutSeen[d] || {};
-      Object.keys(ids).forEach(function (sid) {
-        var v = ids[sid]; if (!v) return;
-        out[sid + '|' + d] = { by: v && typeof v.by === 'string' ? v.by : '', at: v && typeof v.at === 'number' ? v.at : 0 };
-      });
-    });
-    return out;
-  }
+  function cutStop() { if (cutSub) cutSub(); cutSub = null; cutSubKey = ''; cutSeen = {}; }
+  // what is ticked: { '<supplier id>|<cut-off day>': { by, at } }
+  function cutDone() { return cutSeen; }
   function cutByName(v) { return !v.by ? '' : v.by === 'owner' ? 'Head chef' : (ksName(v.by) || 'Former staff'); }
-  // tick or untick one cut-off for everyone: a chef through W() (their PIN session), the Google account as owner
+  // who ticks on this phone: a chef with their PIN session, or the Google account with nobody signed in (as the head chef)
+  function cutTicker() { return isSous() && canW() ? me().id : (S.user && S.level === 'owner' && !who()) ? 'owner' : ''; }
+  function cutCanTick() { return !!fb && !!cutTicker(); }
+  /* tick or untick one cut-off for everyone: a chef through W(), the Google account as owner. Shown at once on this
+     phone, and put back if the save is refused. */
   function cutOrdered(key, on) {
-    var parts = key.split('|'), ids = {}, who = isSous() && canW() ? me().id : S.user ? 'owner' : '';
-    if (parts.length !== 2 || !fb || !who) return Promise.reject({ code: 'who' });
-    ids[parts[0]] = on ? { by: who, at: now() } : false;
-    var ref = docRef('cutdone', parts[1]);
-    return who === 'owner' ? track(fb.fs.setDoc(ref, { ids: ids }, { merge: true })) : W([['set', ref, { ids: ids }, true]]);
+    var parts = key.split('|'), by = cutTicker();
+    if (parts.length !== 2 || !fb || !by) return Promise.reject({ code: 'who' });
+    var data = { day: parts[1], sid: parts[0], on: !!on, at: now() }, ref = docRef('cutdone', parts[1] + '_' + parts[0]), was = cutSeen[key];
+    if (on) cutSeen[key] = { by: by, at: data.at }; else delete cutSeen[key];
+    cutPaint(); if (S.name === 'orders' || S.name === 'todo') draw();
+    return (by === 'owner' ? track(fb.fs.setDoc(ref, Object.assign({ by: 'owner' }, data))) : W([['set', ref, data]])).catch(function (e) {
+      if (was) cutSeen[key] = was; else delete cutSeen[key];
+      cutPaint(); if (S.name === 'orders' || S.name === 'todo') draw();
+      throw e;
+    });
   }
   function cutBandHTML() {
     if (!cutWho()) return '';
@@ -6728,6 +6737,7 @@
   }
   // js/app.js draws the empty slot under the top bar (and the Functions band); this fills it and keeps it right as time passes
   function cutPaint() {
+    cutWatch(); pushKeep();
     var el = document.getElementById('cut-band');
     if (!el) return;
     var h = cutBandHTML();
@@ -6765,11 +6775,9 @@
         '<span class="cut-n">' + esc(c.s.name) + '</span><span class="cut-t">by ' + (c.at >= 1440 ? 'tomorrow ' : '') + hhmm(c.at % 1440) + ' ' + esc(cutDel(c)) + '</span><span class="cut-st">' + esc(st) + '</span></li>';
     }).join('') + '</ul>';
   }
-  function cutCanTick() { return !!fb && ((isSous() && canW()) || !!S.user); }
-  function cutHas() { return cutWho() && cutList().some(function (s) { return s.at >= 0 && s.dd.length; }); }
   function cutOrdHTML() {
     if (!cutHas()) return '';
-    pushKeep(); cutWatch();
+    cutWatch(); pushKeep();
     return '<section class="cut-today" aria-label="Supplier orders"><h3 class="nb-sh">Supplier orders today</h3><p class="hint cut-how">Tick each supplier once the order is in. Every chef sees it, and its reminder and pushes stop.</p>' + cutRowsHTML() + pushHTML() + '</section>';
   }
   // the same tick list at the top of Chef to-do
@@ -6816,7 +6824,7 @@
     return sha(tok).then(function (h) {
       var data = { tok: tok, at: now(), ua: pushUa() };
       return (who === 'owner' ? track(fb.fs.setDoc(docRef('push', h), Object.assign({ by: 'owner' }, data))) : W([['set', docRef('push', h), data]])).then(function () {
-        lsSet('lk.push', JSON.stringify({ h: h, by: who, day: dayNow() }));
+        lsSet('lk.push', JSON.stringify({ h: h, by: who, day: dayNow(), pin: S.pin }));
       });
     });
   }
@@ -6850,11 +6858,12 @@
       S.pushBusy = false; S.pushMsg = 'Off. This phone gets no more pushes.'; draw();
     }, function () { S.pushBusy = false; S.pushMsg = 'Could not turn it off. Check the connection and try again.'; draw(); });
   }
-  // once a kitchen day, a phone that is turned on gets its address again and writes it (no read)
+  /* once a kitchen day, and straight away when the kitchen PIN changed, a phone that is turned on gets its address again
+     and writes it (no read; one try per day and PIN on each page load) */
   var pushKeepDone = '';
   function pushKeep() {
-    var k = pushKept(), who = pushWhoId(), t = dayNow();
-    if (!k || k.day === t || k.by !== who || pushKeepDone === t || !pushCan() || Notification.permission !== 'granted' || !fb) return;
+    var k = pushKept(), who = pushWhoId(), t = dayNow() + '|' + S.pin;
+    if (!k || (k.day === dayNow() && k.pin === S.pin) || k.by !== who || pushKeepDone === t || !pushCan() || Notification.permission !== 'granted' || !fb) return;
     pushKeepDone = t;
     pushToken().then(function (tok) { return pushSave(tok, who); }).catch(function () {});
   }

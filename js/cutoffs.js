@@ -37,7 +37,11 @@
      The second goes 1 hour before (NOW). */
   var NOW = 60;
   function pushAt(s) { return s.lead ? s.at - s.lead : Math.min(s.at - 240, 480); }
-  var C = { clean: clean, on: on, forText: forText, pushAt: pushAt, LEADS: LEADS, DAY: DAY, MAX: MAX, NOW: NOW };
+  /* When the bar and the tick list show a cut-off, in the same minutes: from the reminder's start, all day from midnight,
+     and never later than the first push (an all-day cut-off before 04:00 is pushed the night before, so it shows from
+     then too and can be ticked off). */
+  function startAt(s) { return s.lead ? s.at - s.lead : Math.min(0, s.at - 240); }
+  var C = { clean: clean, on: on, forText: forText, pushAt: pushAt, startAt: startAt, LEADS: LEADS, DAY: DAY, MAX: MAX, NOW: NOW };
   if (typeof module === 'object' && module.exports) { module.exports = C; return; }
   window.LK_CUT = C;
 })();

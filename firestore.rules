@@ -671,7 +671,8 @@ service cloud.firestore {
     // Phone pushes for order cut-offs (24 Oct 2026): a chef's phone keeps its push address in push/<hash of it>
     // { tok, at, ua, by }. Only the server reads them (scripts/cutoff-push.mjs, with the service account, which these
     // rules do not cover), so no phone can read anyone's address. A chef writes their own phone's, and removes only one
-    // of their own; the head chef's Google account writes as 'owner' and removes any.
+    // of their own (or one already gone: the server removes an address Firebase says is dead, and Turn pushes off still
+    // has to work); the head chef's Google account writes as 'owner' and removes any.
     function pushOk() {
       return request.resource.data.keys().hasOnly(['tok', 'at', 'ua', 'by'])
         && request.resource.data.tok is string && request.resource.data.tok.size() > 0 && request.resource.data.tok.size() <= 500
@@ -680,16 +681,22 @@ service cloud.firestore {
     match /kitchens/KITCHEN_PIN/push/{id} {
       allow read: if false;
       allow create, update: if pushOk() && ((isAdmin() && request.resource.data.by == 'owner') || (staff() && chefId(request.resource.data.by)));
-      allow delete: if isAdmin() || (sessOk(reader()) && chefId(reader()) && resource.data.by == reader());
+      allow delete: if isAdmin() || (sessOk(reader()) && chefId(reader()) && (resource == null || resource.data.by == reader()));
     }
-    // Supplier orders (24 Oct 2026): cutdone/<cut-off day> { ids: { <supplier id>: { by, at }, or false } }, the chefs'
-    // shared tick list of supplier orders placed. The server sends no more pushes for a ticked one. Read and written by a
-    // chef (own PIN session) or the Google account; staff never see it.
-    match /kitchens/KITCHEN_PIN/cutdone/{day} {
+    // Supplier orders (24 Oct 2026): the chefs' shared tick list of supplier orders placed, one record per supplier and
+    // cut-off day: cutdone/<day>_<supplier id> { day, sid, on, at, by }. The server sends no more pushes for one that is on.
+    // Read by a chef (own PIN session) or the Google account; staff never see it. A chef's tick names that chef (their
+    // PIN session); the Google account writes as 'owner', or copies ticks as they are (the move to a new kitchen PIN).
+    function cutDoneOk(id) {
+      return request.resource.data.keys().hasOnly(['day', 'sid', 'on', 'at', 'by'])
+        && request.resource.data.day is string && request.resource.data.day.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
+        && request.resource.data.sid is string && request.resource.data.sid.matches('[a-z0-9-]{1,40}')
+        && id == request.resource.data.day + '_' + request.resource.data.sid
+        && request.resource.data.on is bool && request.resource.data.at is number;
+    }
+    match /kitchens/KITCHEN_PIN/cutdone/{id} {
       allow read: if isAdmin() || (sessOk(reader()) && chefId(reader()));
-      allow create, update: if day.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
-        && request.resource.data.keys().hasOnly(['ids', 'by']) && request.resource.data.ids is map && request.resource.data.ids.size() <= 40
-        && (isAdmin() || (staff() && chefId(request.resource.data.by)));
+      allow create, update: if cutDoneOk(id) && (isAdmin() || (staff() && chefId(request.resource.data.by)));
       allow delete: if false;
     }
     // pushsent (what the server has sent) has no rule: only the server reads and writes it.

@@ -92,9 +92,11 @@ self.addEventListener('push', function (e) {
 self.addEventListener('notificationclick', function (e) {
   e.notification.close();
   var url = new URL('./#/orders', self.registration.scope).href;
+  // only a window of the book itself (other pages share the origin on GitHub Pages); if it cannot be moved to the order
+  // list (a window this worker does not run), a new window opens there
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (cs) {
-    var c = cs[0];
-    if (c && c.focus) return c.focus().then(function (w) { return w && w.navigate ? w.navigate(url) : w; });
-    return self.clients.openWindow(url);
+    var c = cs.filter(function (x) { return x.url.indexOf(self.registration.scope) === 0; })[0];
+    if (!c) return self.clients.openWindow(url);
+    return c.focus().then(function (w) { return (w || c).navigate(url); }).catch(function () { return self.clients.openWindow(url); });
   }));
 });

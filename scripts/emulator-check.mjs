@@ -123,7 +123,8 @@ await K.collection('config').doc('main').set({ sousIds: ['sam'], headId: 'hd', c
   { id: 'chk', name: 'Chicken', dd: [6], at: 840, pre: 1 },
   { id: 'bread', name: 'Bread', dd: [0], at: 360, pre: 1, lead: 480 }
 ] }, { merge: true });
-await K.collection('cutdone').doc('2026-10-23').set({ ids: { chk: { by: 'sam', at: 1 }, veg: false } });   // Chicken ticked, Veg ticked off again
+await K.collection('cutdone').doc('2026-10-23_chk').set({ day: '2026-10-23', sid: 'chk', on: true, at: 1, by: 'sam' });   // Chicken ticked
+await K.collection('cutdone').doc('2026-10-23_veg').set({ day: '2026-10-23', sid: 'veg', on: false, at: 2, by: 'sam' });   // Veg ticked, then taken off
 await K.collection('push').doc('p1').set({ tok: 'tok-sam', at: 1, ua: 'Android', by: 'sam' });
 await K.collection('push').doc('p2').set({ tok: 'tok-own', at: 1, ua: 'iPhone', by: 'owner' });
 await K.collection('push').doc('p3').set({ tok: 'tok-ann', at: 1, ua: 'Android', by: 'ann' });
