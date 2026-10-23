@@ -68,6 +68,8 @@ async function pin(p, name, digits) { await p.click('.p-name[data-id="' + name +
   ok(await dot(p), 'Close: the bell keeps its dot');
   await p.reload({ waitUntil: 'load' }); await L.settle(p, 1500);
   await p.clock.runFor(61000); await L.settle(p, 400);
+  // the pings are read again after the reload before anything is judged (a slow runner reads them late)
+  await L.waitFor(p, () => /^1 shift ping on now/.test((document.querySelector('.nbell') || { getAttribute: () => '' }).getAttribute('aria-label') || ''), null, 10000).catch(() => {});
   ok(await p.$('.nt-wrap') === null && await dot(p), 'Close: it does not pop up again by itself, not even after a reload, and the dot stays');
   await p.click('.nbell'); await L.settle(p, 300);
   ok(/Walk-in|walk-in/.test(await txt(p, '.nt-list') || '') && /minutes to sign/.test(await txt(p, '.nt-next') || ''), 'the bell: the ping on now, then the minutes to sign');
