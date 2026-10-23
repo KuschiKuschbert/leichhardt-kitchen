@@ -1477,6 +1477,7 @@ button.wm-a { width: 100%; border: 0; background: none; font: inherit; text-alig
 .ml-body { flex: 1 1 auto; min-width: 0; }
 .ml-psel { min-height: 32px; border: 1px solid var(--ink); border-radius: 8px; background: var(--paper); color: var(--ink); font: inherit; font-size: 0.875rem; }
 .ml-donebox { margin-top: 18px; }
+.ml-sous { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
 .ml-donebox > summary { cursor: pointer; font-weight: 700; min-height: 44px; display: flex; align-items: center; }
 .mlp-wrap { position: fixed; inset: 0; z-index: 81; display: flex; align-items: center; justify-content: center; padding: 12px; }
 .mlp-bg { position: absolute; inset: 0; background: rgba(28, 29, 31, 0.6); }

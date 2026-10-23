@@ -3328,14 +3328,16 @@
     var bulk = '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line">' + esc(S.bulk || '') + '</textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div>';
     var saveBlock = saveBarHTML();
     var at = S.atab || 'insights';
+    // a sous chef on the head chef's device has no Kitchen mail page until the head chef switches it on (23 Oct 2026)
+    if (at === 'mail' && !mlOwner()) at = 'notes';
     // Head chef decision D4 (20 Oct 2026): five groups on top, the pages of the open group underneath (the page ids
     // stay the same, so lk.prep.atab and every link into a page still work)
-    var mlN = mlInfo().n, ag = adminGroupOf(at);
+    var mlN = mlInfo().n, ag = adminGroupOf(at), agTabs = ag[2].filter(function (t) { return t !== 'mail' || mlOwner(); });
     // 21 Oct 2026: groups, pages and "On this page" sit in one nav that stays at the top of the screen (adminJumps() fills
     // the last row from the page's headings after each draw, adminScroll() tucks it up while scrolling down)
     var tabsBar = '<div class="a-navtop"></div><div class="a-nav' + (S.anavMin ? ' is-min' : '') + '"><nav class="a-groups" aria-label="Admin sections">' + A_GROUPS.map(function (g) {
       return '<button type="button" class="a-group" data-p="a-group" data-g="' + g[0] + '" aria-current="' + (ag[0] === g[0] ? 'page' : 'false') + '">' + g[1] + (g[0] === 'today' && mlN ? ' (' + mlN + ')' : '') + '</button>';
-    }).join('') + '</nav>' + (ag[2].length > 1 ? '<nav class="a-tabs" aria-label="' + esc(ag[1]) + ' pages">' + ag[2].map(function (t) {
+    }).join('') + '</nav>' + (agTabs.length > 1 ? '<nav class="a-tabs" aria-label="' + esc(ag[1]) + ' pages">' + agTabs.map(function (t) {
       return '<button type="button" class="a-tab" data-p="a-tab" data-t="' + t + '" aria-pressed="' + (at === t) + '">' + A_TAB_NAMES[t] + (t === 'mail' && mlN ? ' (' + mlN + ')' : '') + '</button>';
     }).join('') + '</nav>' : '') + '<nav class="a-onpage" aria-label="On this page" hidden></nav></div>';
     if (at === 'notes') loadNotes();
@@ -6813,14 +6815,17 @@
   }
 
   /* ---- the head chef's side ---- */
-  function mlOwner() { return S.level === 'owner' && ownerHere() && !!fb && /^\d{4,6}$/.test(S.pin); }
+  // the head chef's device: the head chef on it (their PIN, or nobody signed in), or a sous chef once mail is switched on for them
+  function mlOwner() { return S.level === 'owner' && ownerHere() && !!fb && /^\d{4,6}$/.test(S.pin) && (mlHead() || mlSousOn()); }
+  // the head chef is the one on the device: only they mark mail seen and see the switch
+  function mlHead() { var p = who(); return !p || isHeadP(p); }
   /* ---- sous chefs, while the head chef has it switched on ---- */
   function mlSousOn() { return !!(S.config && S.config.sousMail === true); }
   // a sous chef signed in with their PIN on #/mail, away from the head chef's admin panel (the rules check the same)
   function mlSous() { return mlSousOn() && !admDev() && isSous() && canW() && !!fb && /^\d{4,6}$/.test(S.pin); }
   function mlReader() { return mlOwner() || (mlSous() && S.name === 'mail' && !!S.root && document.body.contains(S.root)); }
   function mlSousSet(on) {
-    if (S.level !== 'owner') return;
+    if (S.level !== 'owner' || !mlHead()) return;
     track(fb.fs.setDoc(cfgDoc(), { sousMail: on }, { merge: true })).then(function () {
       toast(on ? 'Sous chefs can read and tick off kitchen mail now.' : 'Only you read kitchen mail now.');
     }, function (e) { failed(e); draw(); });
@@ -6855,7 +6860,7 @@
   /* the Mail tab is open: everything on it counts as seen, and the nudge clock starts again (saved with the head chef's
      account, config/admins, so reading mail on the laptop also stops the nudge on the phone) */
   function mlSeenAll() {
-    if (!mlOwner() || !mlOnTab() || !mlOpen) return;
+    if (!mlOwner() || !mlHead() || !mlOnTab() || !mlOpen) return;
     var t = now();
     mlOpened = t; lsSet('lk.mail.opened', String(t)); mlPopClose();
     if (t - mlOpenedW > 10 * 60000) { mlOpenedW = t; sset(docRef('config', 'admins'), { mailOpened: t }, true).catch(function () { mlOpenedW = 0; }); }
@@ -6879,11 +6884,12 @@
   function mlFind(x) { return x.text + ' ' + mnName(x.from) + ' ' + mlCat(x.cat) + ' ' + mlPri(x.pri); }
   function mlFilters() { return [['all', 'All']].concat(ML_CATS.map(function (c) { return [c[0], c[1], function (x) { return x.cat === c[0]; }]; })); }
   function mailAdminHTML() {
-    return mlListHTML('Kitchen mail', 'What the team wrote to you, most urgent first: food safety, then Today, This week and Whenever, oldest first. Opening this list marks everything on it as seen, so the sender knows you have read it. Tick a line when it is dealt with.') +
-      '<section class="set-block"><span class="label">Sous chefs</span><label class="a-check"><input type="checkbox" data-k="ml-sous"' + (mlSousOn() ? ' checked' : '') + '> Sous chefs can read kitchen mail and tick it off</label>' +
-      '<span class="hint">Off: only you read it. On: a sous chef signed in with their PIN reads it under Kitchen mail in the chef hat menu, ticks lines off and changes how soon they matter. Seen still means you have read it.</span></section>';
+    if (!mlHead()) return mlListHTML('Kitchen mail', 'What the team wrote to Chef, most urgent first. Chef has let the sous chefs read it. Tick a line when it is dealt with. Seen is still for Chef.');
+    return mlListHTML('Kitchen mail', 'What the team wrote to you, most urgent first: food safety, then Today, This week and Whenever, oldest first. Opening this list marks everything on it as seen, so the sender knows you have read it. Tick a line when it is dealt with.',
+      '<div class="ml-sous"><label class="a-check"><input type="checkbox" data-k="ml-sous"' + (mlSousOn() ? ' checked' : '') + '> Sous chefs can read kitchen mail and tick it off</label>' +
+      '<span class="hint">Off: only you read it. On: a sous chef signed in with their PIN reads it under Kitchen mail in the chef hat menu, ticks lines off and changes how soon they matter. Seen still means you have read it.</span></div>');
   }
-  function mlListHTML(title, hint) {
+  function mlListHTML(title, hint, foot) {
     loadMail(); loadMailDone();
     if (!mlOpen || mlErr) return '<section class="set-block"><span class="label">' + title + '</span><p class="hint">' + (mlErr ? 'Could not load the mail. Check the signal. The book tries again in a few minutes.' : 'Loading...') + '</p></section>';
     var done = (mlDone || []).slice().sort(function (a, b) { return (b.doneAt || 0) - (a.doneAt || 0); });
@@ -6892,7 +6898,7 @@
         sorts: [['pri', 'Most urgent first', function (a, b) { return mlRank(a) - mlRank(b) || (a.at || 0) - (b.at || 0); }], ['new', 'Newest first', function (a, b) { return (b.at || 0) - (a.at || 0); }], ['old', 'Oldest first', function (a, b) { return (a.at || 0) - (b.at || 0); }]],
         card: mlRow, empty: 'No open mail. Everything is dealt with.' }) + mlSeenSoon() +
       '<details class="ml-donebox"' + (S.mlDoneOpen ? ' open' : '') + '><summary data-p="ml-donebox">Done in the last 30 days (' + done.length + ')</summary>' +
-      lvHTML({ key: 'maildone', items: done, step: 15, noun: ['message', 'messages'], ph: 'Search done mail', find: mlFind, filters: mlFilters(), card: mlRow, empty: 'Nothing ticked off in the last 30 days.' }) + '</details></section>';
+      lvHTML({ key: 'maildone', items: done, step: 15, noun: ['message', 'messages'], ph: 'Search done mail', find: mlFind, filters: mlFilters(), card: mlRow, empty: 'Nothing ticked off in the last 30 days.' }) + '</details>' + (foot || '') + '</section>';
   }
   function mlTick(id) {
     var x = (mlOpen || []).concat(mlDone || []).filter(function (m) { return m.id === id; })[0];
@@ -6904,7 +6910,7 @@
     if (!on) lvReveal('mail');
     mlTell(); draw();
     // a sous chef's tick leaves seen alone: it stays for the head chef
-    var own = mlOwner(), mp = own ? { done: on, doneAt: x.doneAt, seen: true, seenAt: x.seenAt || t } : { done: on, doneAt: x.doneAt }, sp = own ? { seen: true, done: on } : { done: on };
+    var own = mlOwner() && mlHead(), mp = own ? { done: on, doneAt: x.doneAt, seen: true, seenAt: x.seenAt || t } : { done: on, doneAt: x.doneAt }, sp = own ? { seen: true, done: on } : { done: on };
     W([['upd', mlRef(id), mp], ['upd', mlStatRef(id), sp]]).catch(function (e) {
       x.done = was.done; x.doneAt = was.doneAt;
       mlOpen = mlOpen.filter(function (m) { return m.id !== id; }); mlDone = mlDone.filter(function (m) { return m.id !== id; });
