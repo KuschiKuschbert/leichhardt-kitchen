@@ -4,7 +4,7 @@
   Reads what the Backup button in the admin panel reads (js/prep.js, exportAll) and writes it as one JSON file in the
   same shape: config (people), prep lines, order lines, wastage and reviews for the last BACKUP_DAYS days (45), every
   shift ping with who has seen it, every meeting minutes with earlier versions and sign-offs, what the prep and order
-  lists have learned, the learning log, tallies, sections, empty searches, card opens, the guides' words and small
+  lists have learned, the learning log, the chef to-do list, tallies, sections, empty searches, card opens, the guides' words and small
   pictures, the recipes the head chef changed or added in the book with their earlier versions, and who has set a PIN.
   People's PIN fingerprints and the guides' page pictures are left out, like the button.
   The workflow then encrypts the file with the BACKUP_KEY secret and keeps it as a GitHub artifact for 90 days.
@@ -55,7 +55,7 @@ const out = { exportedAt: new Date().toISOString(), by: 'nightly backup', days: 
 let reads = 0;
 const cfg = await K.collection('config').doc('main').get(); reads++;
 out.config = cfg.exists ? plain(cfg.data()) : null;
-for (const name of ['activity', 'sections', 'learned', 'ordlearned', 'learnlog', 'summary', 'misses', 'views', 'guides', 'mail', 'mailstat', 'drinks', 'shifts', 'daily']) { out[name] = await all(name); reads += out[name].length; }
+for (const name of ['activity', 'sections', 'learned', 'ordlearned', 'learnlog', 'summary', 'misses', 'views', 'guides', 'mail', 'mailstat', 'drinks', 'shifts', 'daily', 'todos']) { out[name] = await all(name); reads += out[name].length; }
 out.notes = await all('notes'); out.notesSeen = await subs(out.notes, 'notes', 'seen');
 out.minutes = await all('minutes'); out.minutesHist = await subs(out.minutes, 'minutes', 'hist'); out.minutesSigns = await subs(out.minutes, 'minutes', 'signs');
 // the head chef's book: the index, every recipe changed or added in the book and every drawing, with their earlier versions
