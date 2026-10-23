@@ -95,6 +95,7 @@ pushes.forEach((p, pi) => phones.forEach(ph => msgs.push({ pi, ph, msg: { token:
 // an invalid-argument answer that names the token is the address, not the message)
 const isGone = e => !!e && (e.code === 'messaging/registration-token-not-registered' || e.code === 'messaging/invalid-registration-token' || (e.code === 'messaging/invalid-argument' && /token/i.test(e.message || '')));
 let ok = 0, gone = 0, failed = 0;
+const dels = [];
 const tried = pushes.map(() => ({ ok: 0, failed: 0 }));
 if (DRY) { console.log(JSON.stringify({ would: msgs.map(x => ({ by: x.ph.x.by, data: x.msg.data })) })); ok = msgs.length; msgs.forEach(x => tried[x.pi].ok++); }
 else {
@@ -102,7 +103,7 @@ else {
     const part = msgs.slice(i, i + 500), res = await getMessaging().sendEach(part.map(x => x.msg));
     res.responses.forEach((r, j) => {
       if (r.success) { ok++; tried[part[j].pi].ok++; return; }
-      if (isGone(r.error)) { gone++; K.collection('push').doc(part[j].ph.id).delete().catch(() => {}); return; }
+      if (isGone(r.error)) { gone++; dels.push(K.collection('push').doc(part[j].ph.id).delete()); return; }
       failed++; tried[part[j].pi].failed++;
     });
   }
@@ -118,5 +119,6 @@ go.forEach(({ c, stage }, i) => {
   b.set(K.collection('pushsent').doc(c.day), { sent: { [c.key]: stage }, at: FieldValue.serverTimestamp() }, { merge: true });
 });
 if (marked) await b.commit();
+await Promise.allSettled(dels);   // gone addresses are removed even on a run that ends in failure
 console.log('Sent ' + ok + ' push' + (ok === 1 ? '' : 'es') + ' for ' + go.length + ' cut-off' + (go.length === 1 ? '' : 's') + ' to ' + phones.length + ' phone' + (phones.length === 1 ? '' : 's') + '.' + (gone ? ' ' + gone + ' old phone address' + (gone === 1 ? '' : 'es') + ' removed.' : '') + (failed ? ' ' + failed + ' failed.' : ''));
 if (failed && !ok) process.exit(1);

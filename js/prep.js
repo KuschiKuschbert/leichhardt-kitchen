@@ -569,7 +569,7 @@
     if (h) sessOpenRetry(id, h).catch(function () {});   // the PIN went in under 20 seconds ago: once more after the 20 seconds
   }
   function sessRef() { return docRef('sessions', S.uid); }
-  function sessKeep(id, exp, at) { S.sessFor = id; S.sessExp = exp; S.sessUid = S.uid; S.sessPinAt = at; lsSet('lk.prep.sess', [id, exp, S.uid, at].join(':')); lsSet('lk.prep.tok', ''); }
+  function sessKeep(id, exp, at) { S.sessFor = id; S.sessExp = exp; S.sessUid = S.uid; S.sessPinAt = at; lsSet('lk.prep.sess', [id, exp, S.uid, at].join(':')); lsSet('lk.prep.tok', ''); setTimeout(cutPaint, 0); }   // the supplier ticks and the push address wait for a session
   // also a session only kept on the phone (a shared device asking who it is at the start of a new day)
   function sessDrop() {
     if (fb && S.uid && (S.sessUid === S.uid || (lsGet('lk.prep.sess') || '').split(':')[2] === S.uid)) fb.fs.deleteDoc(sessRef()).catch(function () {});
@@ -1870,7 +1870,7 @@
     var em = S.user.email || '';
     if (S.adminsFor === em) return;
     S.adminsFor = em; S.level = '';
-    fb.fs.getDoc(adminsRef()).then(function (sn) { S.level = 'owner'; var mo = sn && sn.exists() ? +(sn.data().mailOpened || 0) : 0; if (mo > mlOpened) { mlOpened = mo; lsSet('lk.mail.opened', String(mo)); } admMark(true); featSync(); seedIds(); loadMail(); draw(); }, function () { S.level = 'none'; admMark(false); featSync(); draw(); });
+    fb.fs.getDoc(adminsRef()).then(function (sn) { S.level = 'owner'; var mo = sn && sn.exists() ? +(sn.data().mailOpened || 0) : 0; if (mo > mlOpened) { mlOpened = mo; lsSet('lk.mail.opened', String(mo)); } admMark(true); featSync(); seedIds(); loadMail(); draw(); cutPaint(); }, function () { S.level = 'none'; admMark(false); featSync(); draw(); cutPaint(); });
   }
   /* The rules read three lists next to the people list: sousIds (who may edit the staff list), pingIds (who may write
      shift pings) and staffIds (who may set a PIN). Only the head chef can write sousIds and pingIds, so the owner keeps
@@ -6634,12 +6634,11 @@
      page from that time until the cut-off passes, and today's cut-offs on the order list (24 Oct 2026: at least 4 hours,
      was 3). A reminder that starts before midnight (an early cut-off) starts the night before. In the last hour the line
      turns orange and says Order now. It all comes from config/main, which the book already listens to: no reads of its
-     own, and a local check every 30 seconds.
+     own for the bar itself, and a local check every 30 seconds.
      Supplier orders (24 Oct 2026): the chefs tick off each cut-off once they have ordered, on the order list, on Chef
-     to-do or with Ordered on the bar. The ticks are shared: cutdone/<cut-off day> { ids: { <supplier id>: { by, at }, or
-     false when ticked off again } }. A tick takes the cut-off off the bar on every chef's phone and stops its pushes.
-     Chefs' phones listen to today's and tomorrow's record (2 reads when the book opens, then only what changes); staff
-     never read it (the rules). */
+     to-do or with Ordered on the bar. The ticks are shared: cutdone/<day>_<supplier id> { day, sid, on, at, by } (see
+     cutWatch for the reads). A tick takes the cut-off off the bar on every chef's phone and stops its pushes. Staff
+     never read them (the rules). */
   var CUT_SOON = 60;
   var CUT_DOW = [[1, 'Mon'], [2, 'Tue'], [3, 'Wed'], [4, 'Thu'], [5, 'Fri'], [6, 'Sat'], [0, 'Sun']];
   var CUT_PRE = ['The same day', 'The day before', '2 days before', '3 days before'];
@@ -6651,8 +6650,11 @@
     { id: 'a-la-carte-meats', name: 'A La Carte Meats', dd: [], at: -1, pre: 1, lead: 240 }
   ];
   var cutTick = null, cutLast = null;
-  // js/cutoffs.js: shared with the server's pushes. Should it not have loaded, no cut-offs show and the rest of the book works.
-  var CUT = window.LK_CUT || { clean: function () { return []; }, on: function () { return []; }, forText: function () { return ''; }, startAt: function () { return 0; }, LEADS: [] }, cutClean = CUT.clean;
+  /* js/cutoffs.js: shared with the server's pushes. Should it not have loaded, no cut-offs show, the rest of the book
+     works, and the cut-offs saved in config/main are kept as they are (clean hands them back untouched, so the head
+     chef's People save cannot wipe them; the Order cut-offs page says it cannot load and saves nothing). */
+  var CUT_OK = !!window.LK_CUT;
+  var CUT = window.LK_CUT || { clean: function (l) { return Array.isArray(l) ? l : []; }, on: function () { return []; }, forText: function () { return ''; }, startAt: function () { return 0; }, LEADS: [] }, cutClean = CUT.clean;
   function cutList() { return cutClean(S.config && S.config.cutoffs); }
   // the weekdays an order closes: each delivery day less the days before
   function cutDays(s) { return s.dd.map(function (d) { return (d - s.pre + 7) % 7; }); }
@@ -6683,26 +6685,29 @@
   function cutWho() { return !!S.config && (isSous() || admDev()); }
   /* The shared ticks: one record per supplier and cut-off day, cutdone/<day>_<supplier id> { day, sid, on, at, by }, so
      the rules check every tick (who, when, which). One live listener on today's and tomorrow's (a query on day), on a
-     chef's phone (their PIN session) or the head chef's Google account, only while cut-offs are set: as many reads as
-     ticks when the book opens, then only what changes. It moves on when the kitchen day changes, and starts as soon as
+     chef's phone (their PIN session) or the head chef's Google account, only while cut-offs are set: one read per record of
+     those two days (ticks and taken-off ticks, one when there are none) when the book opens, then only what changes. It moves on when the kitchen day changes, and starts as soon as
      this phone may read (cutWatch() runs on every paint, so a Google account checked or a PIN session opened late is
      caught). A refused or failed read leaves nothing ticked (the bar and the pushes carry on). */
   var cutSub = null, cutSubKey = '', cutSeen = {};
   function cutHas() { return cutWho() && cutList().some(function (s) { return s.at >= 0 && s.dd.length; }); }
   function cutCanRead() { return !!fb && !!S.pin && cutHas() && (canW() || (!!S.user && S.level === 'owner')); }
+  var cutErr = { key: '', at: 0 };
   function cutWatch() {
     var want = cutCanRead() ? S.pin + '|' + dayNow() : '';
     if (want === cutSubKey) return;
+    if (want && cutErr.key === want && Date.now() - cutErr.at < 300000) return;   // a refused or failed read: again after 5 minutes
     if (cutSub) cutSub();
-    cutSub = null; cutSubKey = want; cutSeen = {};
-    if (!want) return;
+    if (cutSubKey) cutSeen = {};   // another kitchen PIN, day or person: a tick just made on this phone (before the first read) stays
+    cutSub = null; cutSubKey = want;
+    if (!want) { cutSeen = {}; return; }
     var days = [dayNow(), shift(dayNow(), 1)];
     cutSub = fb.fs.onSnapshot(fb.fs.query(colRef('cutdone'), fb.fs.where('day', 'in', days)), function (sn) {
       var seen = {};
       sn.docs.forEach(function (d) { var x = d.data(); if (x && x.on === true && typeof x.sid === 'string' && days.indexOf(x.day) >= 0) seen[x.sid + '|' + x.day] = { by: typeof x.by === 'string' ? x.by : '', at: typeof x.at === 'number' ? x.at : 0 }; });
       cutSeen = seen;
       cutPaint(); if (S.name === 'orders' || S.name === 'todo') draw();
-    }, function () { if (cutSub) cutSub(); cutSub = null; cutSeen = {}; });
+    }, function () { if (cutSub) cutSub(); cutSub = null; cutErr = { key: cutSubKey, at: Date.now() }; cutSubKey = ''; });
   }
   function cutStop() { if (cutSub) cutSub(); cutSub = null; cutSubKey = ''; cutSeen = {}; }
   // what is ticked: { '<supplier id>|<cut-off day>': { by, at } }
@@ -6719,7 +6724,12 @@
     var data = { day: parts[1], sid: parts[0], on: !!on, at: now() }, ref = docRef('cutdone', parts[1] + '_' + parts[0]), was = cutSeen[key];
     if (on) cutSeen[key] = { by: by, at: data.at }; else delete cutSeen[key];
     cutPaint(); if (S.name === 'orders' || S.name === 'todo') draw();
-    return (by === 'owner' ? track(fb.fs.setDoc(ref, Object.assign({ by: 'owner' }, data))) : W([['set', ref, data]])).catch(function (e) {
+    // ticking: one read first, so a tick another chef already made keeps their name and time (a bar not read yet)
+    var first = on ? fb.fs.getDoc(ref).then(function (sn) { var x = sn.exists() ? sn.data() : null; return x && x.on === true ? x : null; }, function () { return null; }) : Promise.resolve(null);
+    return first.then(function (x) {
+      if (x) { cutSeen[key] = { by: typeof x.by === 'string' ? x.by : '', at: typeof x.at === 'number' ? x.at : 0 }; cutPaint(); if (S.name === 'orders' || S.name === 'todo') draw(); return; }
+      return by === 'owner' ? track(fb.fs.setDoc(ref, Object.assign({ by: 'owner' }, data))) : W([['set', ref, data]]);
+    }).catch(function (e) {
       if (was) cutSeen[key] = was; else delete cutSeen[key];
       cutPaint(); if (S.name === 'orders' || S.name === 'todo') draw();
       throw e;
@@ -6793,8 +6803,9 @@
      (scripts/cutoff-push.mjs, every 10 minutes on GitHub): it sends one push when a supplier's reminder starts and one an
      hour before the cut-off, to every chef's phone that is turned on, unless a chef ticked the supplier off (Supplier
      orders, cutdone). sw.js shows it; a tap opens the order list.
-     The phone keeps lk.push { h, by, day } (out of date the next kitchen day: it gets its address again and writes it,
-     one write a day, so a changed address or a moved kitchen PIN is picked up by itself). */
+     The phone keeps lk.push { h, by, day, pin } (out of date the next kitchen day or under another kitchen PIN: it gets
+     its address again and writes it, one write a day, so a changed address or a moved kitchen PIN is picked up by
+     itself). */
   function pushWhoId() { var p = me(); return p && isSous() && canW() ? p.id : (admDev() && S.user ? 'owner' : ''); }
   function pushKept() { try { return JSON.parse(lsGet('lk.push') || 'null'); } catch (e) { return null; } }
   function pushIOS() { return /iPhone|iPad|iPod/.test(navigator.userAgent || '') && !(window.navigator.standalone || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)); }
@@ -6859,10 +6870,11 @@
     }, function () { S.pushBusy = false; S.pushMsg = 'Could not turn it off. Check the connection and try again.'; draw(); });
   }
   /* once a kitchen day, and straight away when the kitchen PIN changed, a phone that is turned on gets its address again
-     and writes it (no read; one try per day and PIN on each page load) */
+     and writes it (no read; one try per day, kitchen PIN and PIN session on each page load, so a write refused before the
+     person's session opened under a new kitchen PIN is tried again once it has) */
   var pushKeepDone = '';
   function pushKeep() {
-    var k = pushKept(), who = pushWhoId(), t = dayNow() + '|' + S.pin;
+    var k = pushKept(), who = pushWhoId(), t = [dayNow(), S.pin, S.sessFor, S.sessExp].join('|');
     if (!k || (k.day === dayNow() && k.pin === S.pin) || k.by !== who || pushKeepDone === t || !pushCan() || Notification.permission !== 'granted' || !fb) return;
     pushKeepDone = t;
     pushToken().then(function (tok) { return pushSave(tok, who); }).catch(function () {});
@@ -6877,6 +6889,7 @@
   function cutStart() { S.cutDraft = cutList(); S.cutSnap = JSON.stringify(S.cutDraft); S.cutMsg = S.cutMsg || ''; }
   function cutDirty() { return !!S.cutDraft && JSON.stringify(S.cutDraft) !== S.cutSnap; }
   function cutAdminHTML() {
+    if (!CUT_OK) return '<section class="set-block a-cut"><span class="label">Order cut-offs</span><p class="p-err">The cut-offs could not load on this device. Reload the book and try again. Nothing here is changed.</p></section>';
     if (!S.cutDraft || (!cutDirty() && S.cutSnap !== JSON.stringify(cutList()))) cutStart();
     var d = S.cutDraft, owner = S.level === 'owner';
     var rows = d.map(function (s, i) {
@@ -6898,7 +6911,7 @@
       '<span class="saved" role="status">' + esc(S.cutMsg || '') + '</span>' + (pushWhoId() ? '<h3 class="a-ch-h">Pushes on this device</h3>' + pushHTML() : '') + '</section>';
   }
   function cutSave() {
-    if (S.level !== 'owner' || !cutDirty() || S.cutBusy) return;
+    if (!CUT_OK || S.level !== 'owner' || !cutDirty() || S.cutBusy) return;
     var clean = cutClean(S.cutDraft);
     S.cutBusy = true; S.cutMsg = 'Saving...'; draw();
     // merge: only cutoffs changes (the People tab's full save carries it over, saveConfig)

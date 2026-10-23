@@ -106,11 +106,14 @@ const rows = p => p.evaluate(() => [...document.querySelectorAll('.cut-tl li')].
   ok(s[CD('pfd')] && s[CD('pfd')].by === 'owner' && /Ordered by Head chef/.test(await txt(p, '.todo-cut li:nth-child(2) .cut-st')), 'Google account: ticks as the head chef');
   await p.context().close();
 
-  // the Google account on the landing page, nobody signed in: the ticks are read once the account is checked, so a
-  // supplier a sous chef ticked is not on its bar (review, 24 Oct 2026)
-  p = await L.open(b, '#/', { admin: true, who: '', extra: extra(tickOf('pfd', 'sam', L.NOW - 3600000)), wait: 2000 });
-  await L.waitFor(p, () => { const e = document.getElementById('cut-band'); return e && !e.hidden && e.textContent.indexOf('Veg') >= 0 && e.textContent.indexOf('PFD') < 0; }, null, 12000);
+  // the Google account on the landing page, nobody signed in: the ticks are read as soon as the account is checked, so a
+  // supplier a sous chef ticked is not on its bar (review, 24 Oct 2026). The kitchen settings are in step (every PIN
+  // window set, fnIds), so nothing writes config/main and its listener does not fire again: the real path.
+  const settled = { [CFG]: { people, sousIds: ['sam'], pingIds: ['sam'], staffIds: ['sam', 'ann', 'bo'], fnIds: [], showBadges: true, cutoffs: CUTS, pinOpen: { sam: L.NOW + 86400000 * 5, ann: L.NOW + 86400000 * 5, bo: L.NOW + 86400000 * 5 } } };
+  p = await L.open(b, '#/', { admin: true, who: '', extra: Object.assign(settled, tickOf('pfd', 'sam', L.NOW - 3600000)), wait: 2000 });
+  await L.waitFor(p, () => { const e = document.getElementById('cut-band'); return e && !e.hidden && e.textContent.indexOf('Veg') >= 0 && e.textContent.indexOf('PFD') < 0; }, null, 8000);
   ok((await band(p)).join() === 'Veg', 'Google account, landing page: PFD, ticked by a sous chef, is not on the bar');
+  ok(await p.evaluate(() => !window.__fake.writes.some(ops => ops.some(o => /config\/main$/.test(o.path)))), 'Google account, landing page: nothing wrote the kitchen settings on the way (the real path)');
   await p.click('#cut-band [data-cut="done"]');
   await L.waitFor(p, () => { const e = document.getElementById('cut-band'); return e && e.hidden; }, null, 10000);
   ok(true, 'Google account, landing page: Ordered on the bar clears it at once');
@@ -129,6 +132,20 @@ const rows = p => p.evaluate(() => [...document.querySelectorAll('.cut-tl li')].
   s = await store(p);
   const tmr = L.ymd(new Date(L.NOW + 86400000));
   ok(s[fsKey(['cutdone', tmr + '_night'])] && s[fsKey(['cutdone', tmr + '_night'])].day === tmr, 'all day, 01:00 tomorrow: ticked under tomorrow, the cut-off\'s own day');
+  await p.context().close();
+
+  // js/cutoffs.js does not load: the book still works, the admin page says so and saves nothing, and the head chef's
+  // People save keeps the cut-offs as they are (review, 24 Oct 2026)
+  p = await L.open(b, '#/admin', { admin: true, who: '', extra: extra(), wait: 2000, block: 'js/cutoffs\\.js' });
+  await L.adminTab(p, 'cutoffs');
+  await L.waitFor(p, () => /could not load/.test((document.querySelector('.a-cut') || {}).textContent || ''), null, 10000);
+  ok(!(await p.$('[data-p="cut-save"]')), 'no js/cutoffs.js: the Order cut-offs page says it could not load, with no Save');
+  await L.adminTab(p, 'people');
+  await p.fill('[data-a="name"][data-i="2"]', 'Bo B'); await L.settle(p, 200);
+  await p.click('[data-p="a-save"]'); await L.settle(p, 800);
+  s = await store(p);
+  ok(s[CFG].people[2].name === 'Bo B' && JSON.stringify(s[CFG].cutoffs) === JSON.stringify(CUTS), 'no js/cutoffs.js: the People save keeps the cut-offs exactly as they were');
+  ok(p.errors.filter(e => !/cutoffs\.js|ERR_FAILED|net::/.test(e)).length === 0, 'no js/cutoffs.js: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
   await b.close();
