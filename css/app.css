@@ -1789,6 +1789,37 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav { top: var(--u
 .fn-sum-more { flex: 0 0 auto; }
 @media (max-width: 419px) { .fn-band-n { display: none; } }
 .fn-band[hidden] { display: none; }
+/* Order cut-offs (23 Oct 2026): the bar under the top bar for the head chef and sous chefs (js/prep.js cutBandHTML),
+   today's cut-offs on the order list and the admin page. Classes cut-, clicks data-cut (the bar) and data-p (the rest). */
+.cut-band { background: var(--hit); border-bottom: 1.5px solid var(--ink); color: var(--ink); }
+.cut-band[hidden] { display: none; }
+.cut-top { display: flex; align-items: baseline; justify-content: space-between; gap: 0.6rem; max-width: 1240px; margin: 0 auto; padding: 0.45rem 0.75rem 0; }
+.cut-h { margin: 0; font: 700 0.8125rem var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--small-ink); }
+.cut-go { font-weight: 600; font-size: 0.95rem; }
+.cut-list { list-style: none; max-width: 1240px; margin: 0 auto; padding: 0.15rem 0.75rem 0.45rem; }
+.cut-row { display: flex; align-items: center; flex-wrap: wrap; gap: 0.15rem 0.6rem; padding: 0.2rem 0; }
+.cut-row + .cut-row { border-top: 1px solid var(--line); }
+.cut-n { font-weight: 700; min-width: 0; overflow-wrap: anywhere; }
+.cut-t { flex: 1 1 12rem; min-width: 0; color: var(--muted); }
+.cut-t b { color: var(--ink); }
+.cut-row.is-soon .cut-t b { color: var(--tag); }
+.cut-row.is-soon .cut-n::before { content: ''; display: inline-block; width: 0.55rem; height: 0.55rem; margin-right: 0.4rem; border-radius: 50%; background: var(--accent); vertical-align: 0.1em; }
+.cut-done { flex: 0 0 auto; min-height: 36px; padding: 0 0.8rem; border: 1.5px solid var(--ink); border-radius: var(--r-act); background: var(--paper); color: var(--ink); font: 600 0.95rem var(--body); cursor: pointer; }
+.cut-today { margin: 0 0 0.75rem; }
+.cut-tl { list-style: none; margin: 0; padding: 0; }
+.cut-tl li { display: flex; flex-wrap: wrap; gap: 0.1rem 0.6rem; padding: 0.3rem 0; border-bottom: 1px solid var(--line); }
+.cut-tl .cut-t { flex: 1 1 10rem; }
+.cut-st { margin-left: auto; font-weight: 600; white-space: nowrap; }
+.cut-tl li.is-past { color: var(--faint); }
+.cut-tl li.is-past .cut-t, .cut-tl li.is-past .cut-st { color: var(--faint); }
+.cut-tl li.is-soon .cut-st { color: var(--tag); }
+.cut-eds { list-style: none; margin: 0.5rem 0; padding: 0; }
+.cut-ed { padding: 0.75rem 0; border-top: 1px solid var(--line); }
+.cut-dd { border: 0; margin: 0.4rem 0; padding: 0; min-width: 0; }
+.cut-dd .chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.cut-two { display: flex; flex-wrap: wrap; gap: 0 0.75rem; }
+.cut-two .field { flex: 1 1 9rem; min-width: 0; }
+.cut-say { margin: 0.2rem 0 0.4rem; }
 .fn-list { list-style: none; margin: 0 auto; padding: 0.35rem 0.75rem; max-width: 1240px; display: flex; flex-direction: column; gap: 0.3rem; }
 .fn-row { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; min-height: 44px; padding: 0.4rem 0.7rem; border: 1.5px solid var(--ink); border-left: 5px solid var(--accent-ink); border-radius: var(--r-act); background: var(--paper); color: var(--ink); text-align: left; cursor: pointer; line-height: 1.3; overflow-wrap: anywhere; }
 .fn-row:hover { background: var(--hit); }

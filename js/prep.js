@@ -1773,6 +1773,7 @@
       }),
       kitSecs: ksClean(cfg.kitSecs !== undefined ? cfg.kitSecs : ((S.config && S.config.kitSecs) || [])), showBadges: cfg.showBadges !== false, staffSee: staffSee(cfg),
       sousMail: !!(S.config && S.config.sousMail === true),   // set only from the Kitchen mail tab (mlSousSet)
+      cutoffs: cutClean(S.config && S.config.cutoffs),   // set only from the Order cut-offs page (cutSave)
       sousIds: hold ? (hold.sousIds || []) : idsFor(cfg.people, isSousP), pingIds: hold ? (hold.pingIds || []) : idsFor(cfg.people, canPingP),
       fnIds: hold ? (hold.fnIds || []) : idsFor(cfg.people, fnP),
       staffIds: idsFor(cfg.people, anyP), headId: headIdOf(cfg.people), pinOpen: pinOpenFor(idsFor(cfg.people, anyP)),
@@ -3363,7 +3364,7 @@
     if (at === 'notes') loadNotes();
     if (at === 'minutes') loadMinutes();
     if (at === 'guides') loadGuides();
-    var pane = at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'transfers' ? xferStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() : at === 'people' ? (
+    var pane = at === 'cutoffs' ? cutAdminHTML() : at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'transfers' ? xferStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() : at === 'people' ? (
       '<section class="set-block"><span class="label">People</span><details class="a-how"><summary>How roles and ticks work</summary><p class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Shift pings are written by you and the sous chefs. Functions lets that person enter and change function bookings (Functions coordinator ticks it for you); only your save here gives it or takes it away, and nothing else comes with it. Reset PIN lets that person choose a new one: do it with them there, as whoever signs in with that name next sets the PIN. Removing someone from the list keeps their name on old lines, and their PIN stops working for anything. Head chef is for your own name: it always has every permission and the sous chef pages, and a sous chef cannot change or remove it.</p></details>' +
       (headIdOf(d.people) ? '' : '<p class="hint a-nohead" role="note">No one is marked Head chef yet. Set your own name to Head chef and save, so your PIN has full rights on the kitchen devices.</p>') +
       peopleListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' + ksAdminHTML(d) +
@@ -3409,8 +3410,8 @@
       '<button type="button" class="btn" data-p="a-reset"' + (n ? '' : ' disabled') + '>' + (armed('a-reset') ? 'Tap again to undo ' + (n === 1 ? 'it' : 'all ' + n) : 'Undo unsaved changes') + '</button>' +
       (n ? '<span class="a-unsaved">' + n + ' unsaved change' + (n === 1 ? '' : 's') + '</span>' : '') + '</div><span class="saved" role="status">' + esc(S.saveMsg) + '</span></section>';
   }
-  var A_TAB_NAMES = { mail: 'Kitchen mail', notes: 'Shift pings', insights: 'Insights', team: 'Team', waste: 'Wastage', transfers: 'Transfers', learning: 'Learning', people: 'People', minutes: 'Minutes', guides: 'Guides', tools: 'Backup and PIN' };
-  var A_GROUPS = [['today', 'Today', ['mail', 'notes']], ['reports', 'Reports', ['insights', 'team', 'waste', 'transfers', 'learning']], ['people', 'People', ['people']], ['content', 'Content', ['minutes', 'guides']], ['settings', 'Settings', ['tools']]];
+  var A_TAB_NAMES = { mail: 'Kitchen mail', notes: 'Shift pings', insights: 'Insights', team: 'Team', waste: 'Wastage', transfers: 'Transfers', learning: 'Learning', people: 'People', minutes: 'Minutes', guides: 'Guides', tools: 'Backup and PIN', cutoffs: 'Order cut-offs' };
+  var A_GROUPS = [['today', 'Today', ['mail', 'notes']], ['reports', 'Reports', ['insights', 'team', 'waste', 'transfers', 'learning']], ['people', 'People', ['people']], ['content', 'Content', ['minutes', 'guides']], ['settings', 'Settings', ['tools', 'cutoffs']]];
   function adminGroupOf(t) { return A_GROUPS.filter(function (g) { return g[2].indexOf(t) >= 0; })[0] || A_GROUPS[1]; }
   /* "On this page": one chip per heading of the open page (the numbered Insights sections, otherwise each block's label
      and the chart headings in it), so a long page is one tap from any part. Built from the page after each draw, so a
@@ -3955,6 +3956,7 @@
     return whoTopHTML('') + tabs +
       '<section class="nb-page o-page' + (view === 'all' ? ' o-all' : '') + '"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + (view === 'all' ? 'To order' : 'Order list') + '</h2><span class="nb-date">' + (view === 'all' ? 'Across the last ' + ORD_DAYS + ' days' : esc(longDate(S.ordDate))) + '</span></div>' +
       (view === 'day' ? '<div class="nb-prog">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') + '</header>' +
+      (view === 'day' && S.ordDate === today ? cutOrdHTML() : '') +
       /* the add box is at the top, so it is always in reach; on big screens the list and the ordered-today list sit side by side below it */
       (view === 'day' && add ? '<div class="nb-foot o-add">' + add + (canBrowse() ? '' : '<p class="hint nb-who">Only the head chef or a sous chef ticks a line as ordered or removes it. Wrote the wrong thing? Undo it straight away, or ask them.</p>') + '</div>' : '') +
       (view === 'day' ? closeoutHTML(null, S.ordDate) : '') +
@@ -6620,6 +6622,157 @@
     return '<section class="p-card dr-page"><h2 class="p-h" id="rtitle" tabindex="-1">Drinks run</h2>' + top + (dkEditing ? '' : team) + '</section>';
   }
 
+  /* ---------- order cut-offs (23 Oct 2026) ----------
+     The head chef sets each supplier's order cut-off in the admin panel (Settings, Order cut-offs). They live in
+     config/main cutoffs: [{ id, name, dd: delivery weekdays (0 Sunday to 6 Saturday), at: cut-off time in minutes after
+     midnight (-1 to come), pre: how many days before the delivery the order closes (0 to 3) }]. Only the head chef's
+     Google account writes them (the rules: isAdmin). The head chef and sous chefs get a bar under the top bar on every
+     page from 3 hours before a cut-off until it passes, and today's cut-offs on the order list. It all comes from
+     config/main, which the book already listens to: no reads of its own, and a local check once a minute. Ordered hides
+     one supplier for the rest of the day on this phone (lk.cut.done, out of date when the kitchen day changes). */
+  var CUT_LEAD = 180, CUT_SOON = 30, CUT_MAX = 20;
+  var CUT_DOW = [[1, 'Mon'], [2, 'Tue'], [3, 'Wed'], [4, 'Thu'], [5, 'Fri'], [6, 'Sat'], [0, 'Sun']];
+  var CUT_DAY = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  var CUT_PRE = ['The same day', 'The day before', '2 days before', '3 days before'];
+  // the head chef's own list (23 Oct 2026); A La Carte Meats' days and time are still to come
+  var CUT_USUAL = [
+    { id: 'be-chicken', name: 'B&E Chicken', dd: [1, 2, 4, 5], at: 840, pre: 1 },
+    { id: 'pfd', name: 'PFD', dd: [0, 1, 2, 3, 4, 5, 6], at: 840, pre: 1 },
+    { id: 'simon-george', name: 'Simon George Fruit and Veg', dd: [1, 4], at: 840, pre: 1 },
+    { id: 'a-la-carte-meats', name: 'A La Carte Meats', dd: [], at: -1, pre: 1 }
+  ];
+  var cutTick = null, cutLast = null;
+  // checked by type before use: a damaged record never puts anything odd on screen
+  function cutClean(list) {
+    return (Array.isArray(list) ? list : []).filter(function (x) { return x && typeof x.name === 'string' && x.name.trim(); }).slice(0, CUT_MAX).map(function (x) {
+      var at = typeof x.at === 'number' && x.at >= 0 && x.at < 1440 ? Math.floor(x.at) : -1, pre = typeof x.pre === 'number' && x.pre >= 0 && x.pre <= 3 ? Math.floor(x.pre) : 1;
+      var dd = (Array.isArray(x.dd) ? x.dd : []).filter(function (n, i, a) { return typeof n === 'number' && n >= 0 && n <= 6 && n === Math.floor(n) && a.indexOf(n) === i; }).sort();
+      return { id: (typeof x.id === 'string' && /^[a-z0-9-]{1,40}$/.test(x.id)) ? x.id : slug(x.name).slice(0, 40), name: x.name.trim().slice(0, 40), dd: dd, at: at, pre: pre };
+    });
+  }
+  function cutList() { return cutClean(S.config && S.config.cutoffs); }
+  // the weekdays an order closes: each delivery day less the days before
+  function cutDays(s) { return s.dd.map(function (d) { return (d - s.pre + 7) % 7; }); }
+  function cutSay(s) {
+    if (s.at < 0 || !s.dd.length) return 'Cut-off to come';
+    var cd = cutDays(s);
+    var days = s.dd.length === 7 ? 'every day' : CUT_DOW.filter(function (d) { return cd.indexOf(d[0]) >= 0; }).map(function (d) { return d[1]; }).join(', ');
+    return 'Order by ' + hhmm(s.at) + ' ' + days + (s.pre === 0 ? ' for the same day' : s.pre === 1 ? ' for the next day' : ' for ' + s.pre + ' days later');
+  }
+  // the cut-offs that fall today, soonest first, with the delivery each one is for
+  function cutToday() {
+    var dow = T.dow(), out = [];
+    cutList().forEach(function (s) {
+      if (s.at < 0) return;
+      s.dd.forEach(function (d) { if ((d - s.pre + 7) % 7 === dow) out.push({ s: s, at: s.at, del: d }); });
+    });
+    return out.sort(function (a, b) { return a.at - b.at || a.s.name.localeCompare(b.s.name); });
+  }
+  function cutDel(c) { return c.s.pre === 0 ? 'for today' : c.s.pre === 1 ? 'for ' + CUT_DAY[c.del] + (c.s.dd.length === 7 ? '' : '\'s delivery') : 'for ' + CUT_DAY[c.del]; }
+  function cutIn(m) { return m < 60 ? 'in ' + m + ' min' : 'in ' + Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : ''); }
+  // who gets the bar: the head chef and sous chefs with their PIN, and the head chef's Google device
+  function cutWho() { return !!S.config && (isSous() || admDev()); }
+  function cutDone() { try { var v = JSON.parse(lsGet('lk.cut.done') || 'null'); return v && v.d === dayNow() ? v.ids || {} : {}; } catch (e) { return {}; } }
+  function cutMark(id) { var ids = cutDone(); ids[id] = 1; lsSet('lk.cut.done', JSON.stringify({ d: dayNow(), ids: ids })); }
+  function cutBandHTML() {
+    if (!cutWho()) return '';
+    var m = T.mins(), done = cutDone(), xs = cutToday().filter(function (c) { return c.at > m && c.at - m <= CUT_LEAD && !done[c.s.id]; });
+    if (!xs.length) return '';
+    return '<div class="cut-top"><h2 class="cut-h">Order cut-off' + (xs.length > 1 ? 's' : '') + '</h2><a class="cut-go" href="#/orders">Order list</a></div><ul class="cut-list">' + xs.map(function (c) {
+      var left = c.at - m;
+      return '<li class="cut-row' + (left <= CUT_SOON ? ' is-soon' : '') + '"><span class="cut-n">' + esc(c.s.name) + '</span><span class="cut-t">by ' + hhmm(c.at) + ' <b>' + cutIn(left) + '</b> <span class="cut-for">' + esc(cutDel(c)) + '</span></span>' +
+        '<button type="button" class="cut-done" data-cut="done" data-id="' + esc(c.s.id) + '" aria-label="' + esc('Ordered from ' + c.s.name + ': hide it for today') + '">Ordered</button></li>';
+    }).join('') + '</ul>';
+  }
+  // js/app.js draws the empty slot under the top bar (and the Functions band); this fills it and keeps it right as time passes
+  function cutPaint() {
+    var el = document.getElementById('cut-band');
+    if (!el) return;
+    var h = cutBandHTML();
+    if (h !== cutLast || el.innerHTML !== h) { el.innerHTML = h; cutLast = h; }
+    el.hidden = !h;
+  }
+  function cutSlot() {
+    if (!cutTick) cutTick = setInterval(cutPaint, 30000);   // the minutes left, and the bar comes and goes (no reads)
+    var h = cutBandHTML(); cutLast = h;
+    return '<div class="cut-band" id="cut-band" role="region" aria-label="Order cut-offs"' + (h ? '' : ' hidden') + '>' + h + '</div>';
+  }
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest && e.target.closest('[data-cut]');
+    if (!el || el.getAttribute('data-cut') !== 'done') return;
+    var id = el.getAttribute('data-id'), s = cutList().filter(function (x) { return x.id === id; })[0];
+    cutMark(id); cutPaint(); if (S.name === 'orders') draw();
+    toast((s ? s.name : 'That supplier') + ' is off the reminder for today.');
+  });
+  window.addEventListener('lk-who', cutPaint);
+  window.addEventListener('lk-cfg', cutPaint);
+  window.addEventListener('lk-clock', cutPaint);
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') cutPaint(); });
+  // on the order list for the head chef and sous chefs: every cut-off today, the ones gone marked Closed
+  function cutOrdHTML() {
+    if (!cutWho()) return '';
+    var xs = cutToday(), m = T.mins(), done = cutDone();
+    if (!xs.length) return '';
+    return '<section class="cut-today" aria-label="Order cut-offs today"><h3 class="nb-sh">Cut-offs today</h3><ul class="cut-tl">' + xs.map(function (c) {
+      var st = c.at <= m ? 'Closed' : done[c.s.id] ? 'Ordered' : cutIn(c.at - m);
+      return '<li class="' + (c.at <= m ? 'is-past' : c.at - m <= CUT_SOON && !done[c.s.id] ? 'is-soon' : '') + '"><span class="cut-n">' + esc(c.s.name) + '</span><span class="cut-t">' + hhmm(c.at) + ' ' + esc(cutDel(c)) + '</span><span class="cut-st">' + esc(st) + '</span></li>';
+    }).join('') + '</ul></section>';
+  }
+  /* the admin page: a draft kept on this phone until Save (the head chef's Google account only) */
+  function cutStart() { S.cutDraft = cutList(); S.cutSnap = JSON.stringify(S.cutDraft); S.cutMsg = S.cutMsg || ''; }
+  function cutDirty() { return !!S.cutDraft && JSON.stringify(S.cutDraft) !== S.cutSnap; }
+  function cutAdminHTML() {
+    if (!S.cutDraft || (!cutDirty() && S.cutSnap !== JSON.stringify(cutList()))) cutStart();
+    var d = S.cutDraft, owner = S.level === 'owner';
+    var rows = d.map(function (s, i) {
+      return '<li class="cut-ed">' +
+        '<div class="field"><label class="label" for="cut-n' + i + '">Supplier</label><input id="cut-n' + i + '" class="search" data-k="cut-n' + i + '" maxlength="40" autocomplete="off" placeholder="Supplier name" value="' + esc(s.name) + '"></div>' +
+        '<fieldset class="cut-dd"><legend class="label">Delivery days</legend><div class="chips">' + CUT_DOW.map(function (w) {
+          return '<button type="button" class="chip" data-p="cut-day" data-i="' + i + '" data-v="' + w[0] + '" aria-pressed="' + (s.dd.indexOf(w[0]) >= 0) + '">' + w[1] + '</button>';
+        }).join('') + '</div></fieldset>' +
+        '<div class="cut-two"><div class="field"><label class="label" for="cut-t' + i + '">Cut-off time</label><input id="cut-t' + i + '" class="search" type="time" step="300" data-k="cut-t' + i + '" value="' + (s.at >= 0 ? hhmm(s.at) : '') + '"></div>' +
+        '<div class="field"><label class="label" for="cut-p' + i + '">Order closes</label><select id="cut-p' + i + '" class="search" data-k="cut-p' + i + '">' + CUT_PRE.map(function (t, n) { return '<option value="' + n + '"' + (s.pre === n ? ' selected' : '') + '>' + t + '</option>'; }).join('') + '</select></div></div>' +
+        '<p class="hint cut-say">' + esc(cutSay(s)) + '</p>' +
+        '<button type="button" class="p-x" data-p="cut-rm" data-i="' + i + '" aria-label="' + esc('Remove ' + (s.name || 'this supplier')) + '">' + (armed('cut-rm:' + i) ? 'Tap again to remove' : 'Remove') + '</button></li>';
+    }).join('');
+    return '<section class="set-block a-cut"><span class="label">Order cut-offs</span><span class="hint">You and the sous chefs get a bar at the top of every page from 3 hours before a supplier\'s cut-off until it passes, and today\'s cut-offs show on the order list. Tick the days the supplier delivers, then when the order has to be in.</span>' +
+      (rows ? '<ul class="cut-eds">' + rows + '</ul>' : '<p class="hint">No suppliers yet, so nobody is reminded.</p>') +
+      '<div class="btn-row"><button type="button" class="btn" data-p="cut-add">Add a supplier</button>' + (d.length ? '' : '<button type="button" class="btn" data-p="cut-usual">Add ' + esc(CUT_USUAL.map(function (x) { return x.name; }).join(', ')) + '</button>') + '</div>' +
+      '<div class="btn-row"><button type="button" class="btn dark" data-p="cut-save"' + (owner && cutDirty() && !S.cutBusy ? '' : ' disabled') + '>Save cut-offs</button><button type="button" class="btn" data-p="cut-undo"' + (cutDirty() ? '' : ' disabled') + '>Undo unsaved changes</button></div>' +
+      '<span class="saved" role="status">' + esc(S.cutMsg || '') + '</span></section>';
+  }
+  function cutSave() {
+    if (S.level !== 'owner' || !cutDirty() || S.cutBusy) return;
+    var clean = cutClean(S.cutDraft);
+    S.cutBusy = true; S.cutMsg = 'Saving...'; draw();
+    // merge: only cutoffs changes (the People tab's full save carries it over, saveConfig)
+    track(fb.fs.setDoc(cfgDoc(), { cutoffs: clean }, { merge: true })).then(function () {
+      S.cutBusy = false; S.cutDraft = clean; S.cutSnap = JSON.stringify(clean); S.cutMsg = 'Saved. The sous chefs see the new cut-offs now.'; draw(); cutPaint();
+    }, function (e) { S.cutBusy = false; S.cutMsg = e && e.code === 'permission-denied' ? 'Only the head chef\'s Google account can change the cut-offs.' : 'Could not save. Check the connection.'; draw(); });
+  }
+  function cutClick(a, el) {
+    var d = S.cutDraft, i = +el.getAttribute('data-i');
+    if (!d) return;
+    S.cutMsg = '';
+    if (a === 'cut-add') { d.push({ id: 'cut-' + Date.now().toString(36), name: '', dd: [], at: -1, pre: 1 }); draw(); var n = S.root.querySelector('[data-k="cut-n' + (d.length - 1) + '"]'); if (n) n.focus(); return; }
+    if (a === 'cut-usual') { S.cutDraft = JSON.parse(JSON.stringify(CUT_USUAL)); draw(); return; }
+    if (a === 'cut-rm') { if (!d[i] || !arm('cut-rm:' + i)) return; d.splice(i, 1); draw(); return; }
+    if (a === 'cut-day') { var v = +el.getAttribute('data-v'), s = d[i]; if (!s) return; var k = s.dd.indexOf(v); if (k >= 0) s.dd.splice(k, 1); else { s.dd.push(v); s.dd.sort(); } draw(); return; }
+    if (a === 'cut-undo') { cutStart(); S.cutMsg = ''; draw(); return; }
+    if (a === 'cut-save') { cutSave(); return; }
+  }
+  // typing a name keeps the cursor (no redraw); a time or the days before redraw the line that says when orders close
+  function cutField(k, el) {
+    var d = S.cutDraft, i = +k.slice(5), s = d && d[i];
+    if (!s) return;
+    if (k.indexOf('cut-n') === 0) { s.name = el.value.slice(0, 40); return; }
+    if (k.indexOf('cut-t') === 0) { var t = /^(\d{1,2}):(\d{2})/.exec(el.value || ''); s.at = t ? Math.min(1439, +t[1] * 60 + +t[2]) : -1; }
+    if (k.indexOf('cut-p') === 0) s.pre = Math.max(0, Math.min(3, +el.value || 0));
+    var say = el.closest('.cut-ed') && el.closest('.cut-ed').querySelector('.cut-say'); if (say) say.textContent = cutSay(s);
+    var sv = S.root.querySelector('[data-p="cut-save"]'), un = S.root.querySelector('[data-p="cut-undo"]');
+    if (sv) sv.disabled = !(S.level === 'owner' && cutDirty() && !S.cutBusy); if (un) un.disabled = !cutDirty();
+  }
+
   /* ---------- kitchen sections: where each person works today (21 Oct 2026) ----------
      The head chef sets the kitchen's sections in the admin panel's People tab (config/main kitSecs: id, name, off).
      Staff and leads pick one straight after their PIN, once a day, in a bottom sheet appended to document.body (clicks use
@@ -6796,6 +6949,7 @@
     if (guest() && GUEST_WRITES[a]) { e.preventDefault(); guestAsk({ sel: guestSel(el) }); return; }
     if (a.indexOf('lv-') === 0) { lvClick(a, el); return; }
     if (a.indexOf('dk-') === 0) { dkClick(a, el); return; }
+    if (a.indexOf('cut-') === 0) { cutClick(a, el); return; }
     if (a.indexOf('todo-') === 0) { todoClick(a, el); return; }
     if (a.indexOf('tr-') === 0) { trClick(a, el); return; }
     if (a === 'ml-cat') { mlf.cat = el.getAttribute('data-v'); mlMsg = ''; draw(); return; }
@@ -7008,6 +7162,7 @@
     // a PIN goes in by itself the moment the fourth digit is typed (only when it reaches four, so it cannot send twice)
     if (k === 'p-pin') { var pp = S.pinInput.length; S.pinInput = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.pinInput; pinCells(el); if (pp < 4 && S.pinInput.length === 4) submitKitchenPin(); return; }
     if (k === 'a-bulk') { S.bulk = el.value; return; }
+    if (k && /^cut-[ntp]\d/.test(k)) { cutField(k, el); return; }
     if (k === 'dk-note' || k === 'dk-other') { dkf[k.slice(3)] = el.value.slice(0, k === 'dk-note' ? DK_NOTE : DK_OTHER); return; }
     if (k === 'todo-text') { tdf.text = el.value.slice(0, TD_MAX); tdMsg = ''; return; }
     if (k === 'ml-text') { mlf.text = el.value.slice(0, ML_MAX); mlMsg = ''; var mll = S.root.querySelector('#ml-left'), mln = ML_MAX - mlf.text.length; if (mll) mll.textContent = mln < 100 ? mln + ' characters left' : ''; return; }
@@ -7055,6 +7210,7 @@
     if (k && k.indexOf('lv-s:') === 0) { var sk = k.slice(5), sc = LVR[sk]; if (sc) { var ss = lvState(sc); ss.sort = el.value; ss.shown = sc.step || 15; lvRefresh(sk); } return; }
     if (k && k.indexOf('ml-pri:') === 0) { mlSetPri(k.slice(7), el.value); return; }
     if (k === 'ml-sous') { mlSousSet(el.checked); return; }
+    if (k && /^cut-[tp]\d/.test(k)) { cutField(k, el); return; }
     // no redraw: typing a date on a keyboard changes it digit by digit, and a redraw would put the box back each time
     if (k === 'todo-due') { tdf.due = tdDue(el.value); var nd = S.root.querySelector('[data-p="todo-nodue"]'); if (nd) nd.hidden = !tdf.due; return; }
     if (k === 'g-file') { var gfl = el.files; gReadFiles(gfl); try { el.value = ''; } catch (x) {} return; }
@@ -7614,7 +7770,7 @@
     },
     warm: function () { if (S.pin && S.configState !== 'ok' && S.configState !== 'loading') connect(); notesInit(); },
     unsaved: function () {
-      return pending > 0 || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!mlf.text.trim() || tdDirty() || mfDirty() || nfDirty() || gfDirty() || draftDirty() || !!String(S.bulk || '').trim() || !!S.sheet || !!S.recipeOpen ||
+      return pending > 0 || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!mlf.text.trim() || tdDirty() || mfDirty() || nfDirty() || gfDirty() || draftDirty() || cutDirty() || !!String(S.bulk || '').trim() || !!S.sheet || !!S.recipeOpen ||
         !!(S.text.trim() || S.qty.trim() || S.otext.trim() || S.oqty.trim() || S.wf.text.trim() || String(S.wf.amt).trim() || S.wf.act.trim() || S.xf.text.trim() || String(S.xf.amt).trim() || S.xf.note.trim() || (S.wrA != null && S.wrA !== (rvBase().avoidable || '')) || (S.wrC != null && S.wrC !== (rvBase().change || '')));
     },
     noteInfo: noteInfo, noteBellLabel: noteBellLabel,
@@ -7646,6 +7802,7 @@
     secOpen: function () { ksOpen(true); },
     signOut: signOutPerson,
     minNudge: minNudgeHTML,
+    cutSlot: cutSlot,
     mailInfo: mlInfo,
     mailTab: mailTab,
     saveConfig: saveConfig,
