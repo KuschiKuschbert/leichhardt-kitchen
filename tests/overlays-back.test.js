@@ -30,7 +30,7 @@ const big = p => p.locator('.gz-wrap').count();
   await p.context().close();
 
   // pings: Back closes the popup and it stays unread
-  const note = {}; note[fsKey(['notes', 'n1'])] = { text: 'Safety: fryer 2 is out', tag: 'safety', start: today, until: today, dows: [], removed: false, at: 1, by: 'sam' };
+  const note = {}; note[fsKey(['notes', 'n1'])] = { text: 'Safety: fryer 2 is out', tag: 'safety', start: today, until: today, dows: [], tm: 835, removed: false, at: 1, by: 'sam' };
   p = await L.open(b, '#/prep', { who: 'ann', extra: note, wait: 2000 });
   ok(await p.$('.nt') !== null, 'pings: the popup opens');
   await p.goBack(); await L.settle(p, 400);

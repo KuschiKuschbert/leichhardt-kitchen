@@ -8,7 +8,7 @@ const today = L.ymd(new Date(L.NOW));
   const b = await L.start();
   let p;
   // pings popup: Tab from the last control goes to the first, Shift+Tab from the first to the last
-  const note = {}; note[fsKey(['notes', 'n1'])] = { text: 'Safety: fryer 2 is out', tag: 'safety', start: today, until: today, dows: [], removed: false, at: 1, by: 'sam' };
+  const note = {}; note[fsKey(['notes', 'n1'])] = { text: 'Safety: fryer 2 is out', tag: 'safety', start: today, until: today, dows: [], tm: 835, removed: false, at: 1, by: 'sam' };
   p = await L.open(b, '#/prep', { who: 'ann', extra: note, wait: 2000 });
   const ids = await p.evaluate(() => { const f = [...document.querySelectorAll('.nt button, .nt a[href]')].filter(x => x.offsetParent !== null); f[f.length - 1].focus(); return f.length; });
   await p.keyboard.press('Tab');

@@ -4490,18 +4490,18 @@
   /* ---------- shift pings (stored as notes) ----------
      The head chef or a sous chef writes short pings for the shift (Shift pings tab in the admin panel; Shift pings in
      the chef mark menu for sous chefs). Everyone else only reads them. In the code and the data they are still called notes.
-     The first time the book is opened after 10:30 on a day with a ping, the pings show once as a popup. The bell in the top bar opens them again.
-     A ping can have its own time of day instead (tm, 22 Oct 2026): it stays out of sight until then and pops up at that time,
-     from the local check once a minute (no reads).
+     A ping pops up at 10:30, or at its own time of day (tm, 22 Oct 2026), and is on screen for 30 minutes, then gone for
+     everyone (24 Oct 2026, head chef: Safety and Allergen alert too, no erase button): see noteFrom(). The bell in the top
+     bar opens what is on now. The local check once a minute (no reads) pops a ping up and takes it away again.
      Data: kitchens/<PIN>/notes/<id> { text, tag, start, until, dows, tm, removed, at, upd }. A note shows from start to until (YYYY-MM-DD),
      on the weekdays in dows when there are any (0 is Sunday). Notes are only flagged as removed, never deleted.
      Reads stay small: one query for notes that have not ended yet, once a phone opens each day (and again after 30 minutes away, or at 10:30
      if the book was already open, or when a ping for today was saved: config/main.pastEdit.n, see markPings). No live listener, no
-     polling. "Got it" is remembered on the phone only (lk.note.seen). */
+     polling. Got it is kept on the phone for each person (lk.note.seen.<id>), and Close for each person too (lk.note.off.<id>). */
   var NOTE_TAGS = [['none', 'Ping'], ['off', 'Off today'], ['special', 'Special'], ['function', 'Function'], ['delivery', 'Delivery'], ['safety', 'Safety'], ['allergen', 'Allergen alert']];
   var NOTE_RANK = { safety: 0, allergen: 1, off: 2, special: 3, function: 4, delivery: 5, none: 6 };
-  var NOTE_MIN = 10 * 60 + 30, NOTE_FAR = '2099-12-31', NOTE_STALE = 30 * 60000;
-  var npop = null, nprev = null, nTick = null, n1030 = '', nSnooze = null;   // nSnooze: { k: whose Later (noteSeenKey), at }
+  var NOTE_MIN = 10 * 60 + 30, NOTE_FAR = '2099-12-31', NOTE_STALE = 30 * 60000, NOTE_LIFE = 30;   // NOTE_LIFE: minutes on screen
+  var npop = null, nprev = null, nTick = null, n1030 = '';
   function noteTagName(t) { var x = NOTE_TAGS.filter(function (n) { return n[0] === t; })[0]; return x ? x[1] : 'Ping'; }
   function noteOn(n, day) {
     if (!n || n.removed || !n.text || !n.start || !n.until || n.start > day || n.until < day) return false;
@@ -4511,12 +4511,21 @@
   // a ping's own time of day: minutes after midnight in kitchen time, or null for the usual 10:30 popup (checked by type:
   // it comes from Firestore)
   function noteTm(n) { var m = n && n.tm; return typeof m === 'number' && m >= 0 && m < 1440 && Math.floor(m) === m ? m : null; }
-  function tmText(m) { return pad(Math.floor(m / 60)) + ':' + pad(m % 60); }
-  // today's pings that are showing: a ping with its own time only once that time has come
+  function tmText(m) { m = ((m % 1440) + 1440) % 1440; return pad(Math.floor(m / 60)) + ':' + pad(m % 60); }
+  /* When a ping pops up on a day, in minutes after midnight kitchen time: its own time, or 10:30. A ping saved or changed
+     that day after that time pops up when it was saved (upd or at, stamped with now()), so a ping written at 13:00 is on
+     until 13:30. The same answer on every phone, worked out from the ping itself: no reads, nothing kept. */
+  function noteFrom(n, day) {
+    var m = noteTm(n), u = n.upd || n.at;
+    if (m == null) m = NOTE_MIN;
+    if (typeof u === 'number' && u > 0 && T.day(u) === day) m = Math.max(m, T.mins(u));
+    return m;
+  }
+  // today's pings on screen now: from their pop-up time for 30 minutes (head chef, 24 Oct 2026)
   function todaysNotes() {
     var t = dayNow(), mins = T.mins();
     if (!featOn('pings')) return [];
-    return (S.notes || []).filter(function (n) { var tm = noteTm(n); return noteOn(n, t) && (tm == null || mins >= tm); }).sort(function (a, b) { return noteRank(a) - noteRank(b) || (a.at || 0) - (b.at || 0); });
+    return (S.notes || []).filter(function (n) { if (!noteOn(n, t)) return false; var f = noteFrom(n, t); return mins >= f && mins < f + NOTE_LIFE; }).sort(function (a, b) { return noteRank(a) - noteRank(b) || (a.at || 0) - (b.at || 0); });
   }
   function noteSig(list) { return list.map(function (n) { return n.id + ':' + (n.upd || n.at || 0); }).join('|'); }
   /* Got it is kept for each person (23 Oct 2026), so on a shared tablet the first cook's Got it no longer hides the pings
@@ -4530,7 +4539,23 @@
     if (k !== 'lk.note.seen' && !lsGet('lk.note.mig')) { var old = lsGet('lk.note.seen'); if (old && !lsGet(k) && !shared()) lsSet(k, old); lsSet('lk.note.mig', '1'); }
     try { return JSON.parse(lsGet(k) || '{}') || {}; } catch (e) { return {}; }
   }
-  function noteUnread() { var l = todaysNotes(), s = noteSeen(); return !!l.length && !(s.d === dayNow() && s.sig === noteSig(l)); }
+  // a ping on now that this person has not read yet (a ping removed from the list does not make the rest unread again)
+  function noteUnread() { return noteNew().length > 0; }
+  /* Close (Escape, Back, a tap outside) puts the pings on screen off for that person: they never pop up again by
+     themselves (head chef, 24 Oct 2026: nothing piles up), and the bell keeps its dot until each one's 30 minutes are
+     up. Kept on the phone so a reload or an update does not pop them straight back: lk.note.off.<id> (lk.note.off with
+     nobody signed in), out of date when the kitchen day changes. A new or changed ping pops up as usual. */
+  function noteOffKey() { var p = me(); return p ? 'lk.note.off.' + p.id : 'lk.note.off'; }
+  function noteOff() {
+    try { var o = JSON.parse(lsGet(noteOffKey()) || '{}') || {}; return o.d === dayNow() && Array.isArray(o.v) ? o.v : []; } catch (e) { return []; }
+  }
+  function noteOffSet(list) {
+    var v = noteOff();
+    list.forEach(function (n) { var k = n.id + ':' + (n.upd || n.at || 0); if (v.indexOf(k) < 0) v.push(k); });
+    lsSet(noteOffKey(), JSON.stringify({ d: dayNow(), v: v }));
+  }
+  // unread pings that may still pop up by themselves (not put off with Close)
+  function notePopNew() { var off = noteOff(); return noteNew().filter(function (n) { return off.indexOf(n.id + ':' + (n.upd || n.at || 0)) < 0; }); }
   /* Chefs get the pings like everyone (23 Oct 2026): the start of shift and the 10:30 call show them their own too, and
      their Got it counts. Only a ping just saved, changed or removed on this phone does not pop straight back up at the
      person who did it: once the list is read again, it counts as read for them if everything else on it already was. */
@@ -4545,7 +4570,7 @@
     var on = /^\d{4,6}$/.test(S.pin) && (featOn('pings') || featOn('minutes'));
     return { on: on, n: todaysNotes().length, unread: noteUnread(), sign: featOn('minutes') ? mnUnsigned().length : 0 };
   }
-  function noteBellLabel(i) { return i.n + ' shift ping' + (i.n === 1 ? '' : 's') + ' today' + (i.unread ? ', new' : '') + (i.sign ? '. Minutes to sign: ' + i.sign : ''); }
+  function noteBellLabel(i) { return (i.n ? i.n + ' shift ping' + (i.n === 1 ? '' : 's') + ' on now' : 'No shift pings on now') + (i.unread ? ', new' : '') + (i.sign ? '. Minutes to sign: ' + i.sign : ''); }
   /* The bell in the top bar (23 Oct 2026): there every day while pings or minutes are on, so the top bar keeps one shape.
      It has a dot while a ping is unread or minutes are waiting to be signed, and opens the same sheet at any time. */
   function noteBell() {
@@ -4624,17 +4649,17 @@
     var tm = noteTm(n);
     return '<li class="nt-i t-' + esc(n.tag || 'none') + '"><span class="nt-tags">' + (isNew ? '<span class="nt-tag nt-new">New</span> ' : '') + '<span class="nt-tag">' + esc(noteTagName(n.tag) + (tm != null ? ' ' + tmText(tm) : '')) + '</span></span><p>' + linkNote(n.text) + '</p></li>';
   }
-  /* The pings sheet (23 Oct 2026). One sheet for what the team is told: today's pings, then the minutes this person still
-     has to sign. It slides up from the bottom on a phone and a tablet, and sits in the middle on a laptop. It opens:
+  /* The pings sheet (23 Oct 2026). One sheet for what the team is told: the pings on now, then the minutes this person
+     still has to sign. It slides up from the bottom on a phone and a tablet, and sits in the middle on a laptop. It opens:
        'start'  once a day per person, at the start of their shift (their PIN, or the first open of the day): pings and minutes
-       'due'    at 10:30, at a ping's own time, or when a ping for today was saved: pings only
-       'tap'    from the bell, any time: everything, also "No pings today."
+       'due'    when a ping pops up (10:30, its own time, or saved for today): pings only
+       'tap'    from the bell, any time: everything, also "No pings right now."
      With unread pings it goes in two steps: the pings with Got it, then the minutes to sign, so Read and sign never skips
-     a ping. Only Got it (or a link in a ping) marks pings read; Later, Escape, a tap outside and Back put them off. */
+     a ping. Only Got it (or a link in a ping) marks pings read; Close, Escape, a tap outside and Back put them off, and
+     they never pop up again by themselves (24 Oct 2026). A sheet goes by itself once nothing on it is on any more, and any
+     sheet left untouched for 30 minutes goes too (noteRefresh). */
   var NOTE_URGENT = { safety: 1, allergen: 1, off: 1 };
-  // a ping is due to pop up: from 10:30, or once a ping's own time has come
-  function noteDueTime() { return T.mins() >= NOTE_MIN || todaysNotes().some(function (n) { return noteTm(n) != null; }); }
-  // the pings this person has not seen yet today (by id and version)
+  // the pings on now this person has not seen yet today (by id and version)
   function noteNew() {
     var s = noteSeen(), was = s.d === dayNow() && s.sig ? String(s.sig).split('|') : [];
     return todaysNotes().filter(function (n) { return was.indexOf(n.id + ':' + (n.upd || n.at || 0)) < 0; });
@@ -4656,13 +4681,13 @@
     if (showPings && list.length) {
       out += '<ul class="nt-list">' + list.map(function (n) { return noteRowHTML(n, step === 'pings' && !pv && !!el.lkWas && el.lkWas.indexOf(n.id + ':' + (n.upd || n.at || 0)) < 0); }).join('') + '</ul>';
       if (!pv) out += '<div class="nt-sum" id="nt-sum"></div>';   // filled in by noteDraw, so a tick elsewhere does not redraw the sheet
-    } else if (showPings && !mins.length) out += '<p class="nt-none">No pings today.</p>';
+    } else if (showPings && !mins.length) out += '<p class="nt-none">No pings right now. Each ping is on for 30 minutes, then it is gone.</p>';
     if (step === 'pings' && mins.length) out += '<p class="nt-next">Next: ' + (mins.length === 1 ? 'minutes to sign' : 'minutes from ' + mins.length + ' meetings to sign') + '</p>';
     else if (mins.length) out += '<h3 class="nt-sh">To sign</h3><div class="nt-mn">' + mins.map(mnRowHTML).join('') + '</div>';
     out += '</div><footer class="nt-foot">';
     if (pv) out += '<button type="button" class="nt-got" data-note="close">Close preview</button>';
-    else if (step === 'pings') out += '<button type="button" class="nt-got" data-note="close">Got it</button><button type="button" class="nt-later" data-note="dismiss">Later</button>';
-    else out += '<button type="button" class="nt-later" data-note="dismiss">' + (mins.length ? 'Later' : 'Close') + '</button>';
+    else if (step === 'pings') out += '<button type="button" class="nt-got" data-note="close">Got it</button><button type="button" class="nt-later" data-note="dismiss">Close</button>';
+    else out += '<button type="button" class="nt-later" data-note="dismiss">Close</button>';
     return out + editor + '</footer>';
   }
   /* draws the sheet again when what it shows changed (a read came in, a ping was read on another tab), keeping the place
@@ -4688,11 +4713,13 @@
     var sum = box.querySelector('#nt-sum');
     if (sum) { var sh = noteSummary(); if (sum.lkH !== sh) { sum.innerHTML = sh; sum.lkH = sh; } }
   }
-  /* an open sheet that came up by itself and has nothing left to show (its ping removed, read on another tab, the page
-     held back) closes without marking anything */
+  /* an open sheet that came up by itself and has nothing left to show (its pings' 30 minutes up, removed, read on another
+     tab, the page held back) closes without marking anything, and so does any sheet nobody has touched for 30 minutes
+     (lkAt, moved on by every touch or key in it), so a tablet on the pass is never left dimmed. Run by the minute tick. */
   function noteRefresh() {
     if (!npop || npop.lkClosing) return;
     if (!npop.lkPv && npop.lkWhy !== 'tap' && !(npop.lkStep === 'pings' && noteUnread()) && !(npop.lkWhy !== 'due' && noteMins().length)) { noteClose('shut'); return; }
+    if (!npop.lkPv && Date.now() - npop.lkAt >= NOTE_LIFE * 60000) { noteClose('shut'); return; }
     noteDraw(false);
   }
   // pv: the ping editor's Preview ({ list, label }); why: 'start', 'due' or 'tap' (see above)
@@ -4701,14 +4728,18 @@
     why = pv ? 'pv' : why || 'tap';
     var unread = !pv && noteUnread();
     if (why === 'due' && !unread) return;
-    if (why === 'start' && !(unread && noteDueTime()) && !noteMins().length) return;
+    if (why === 'start' && !unread && !noteMins().length) return;
     if (pv && !pv.list.length) return;
     var s = noteSeen();
     nprev = document.activeElement;
     var el = document.createElement('div');
     el.className = 'nt-wrap';
     el.lkPv = pv || null; el.lkWhy = why;
-    el.lkStep = pv || (unread && (why !== 'start' || noteDueTime())) ? 'pings' : 'rest';
+    el.lkStep = pv || unread ? 'pings' : 'rest';
+    // when it was last touched (time passing on the phone): noteRefresh closes a sheet left alone for 30 minutes
+    el.lkAt = Date.now();
+    el.addEventListener('pointerdown', function () { el.lkAt = Date.now(); });
+    el.addEventListener('keydown', function () { el.lkAt = Date.now(); });
     el.lkWas = s.d === dayNow() && s.sig ? String(s.sig).split('|') : null;   // New marks only what came since the last Got it today
     el.innerHTML = '<div class="nt-bg" data-note="dismiss"></div><section class="nt" role="dialog" aria-modal="true" aria-labelledby="nt-h" tabindex="-1"><div class="nt-grip" aria-hidden="true"></div><div class="nt-in"></div></section>';
     if (pv) el.setAttribute('data-pv', '1');
@@ -4721,8 +4752,9 @@
     var got = el.querySelector('.nt-got') || el.querySelector('.nt-a') || el.querySelector('.nt-later'); if (got) got.focus({ preventScroll: true });
   }
   /* how: 'got' (Got it: the pings are read; with minutes to sign the sheet goes on to them), 'read' (a link in a ping or
-     Write or edit pings: read, and close), 'later' (Later, Escape, a tap outside, Back: put off, the pings come back by
-     themselves in 15 minutes) or 'shut' (signed out, or the page held back: neither). A stray tap never reads a safety ping. */
+     Write or edit pings: read, and close), 'later' (Close, Escape, a tap outside, Back: put off for this person, they do
+     not pop up again by themselves; the dot stays until their 30 minutes are up) or 'shut' (signed out, the page held
+     back, nothing left on, or 30 minutes untouched: neither). A stray tap never reads a safety ping. */
   function noteClose(how, noBack) {
     if (!npop || npop.lkClosing) return;
     var pv = npop.lkPv, why = npop.lkWhy, pings = npop.lkStep === 'pings';
@@ -4732,7 +4764,7 @@
     }
     npop.lkClosing = true;   // the seen record below can redraw the page, which must not close the sheet a second time
     if (!pv && pings && (how === 'got' || how === 'read')) { noteMarkSeen(); noteWriteSeen(todaysNotes()); }
-    if (!pv && pings && how === 'later' && noteUnread()) nSnooze = { k: noteSeenKey(), at: Date.now() };   // Later is that person's only
+    if (!pv && pings && how === 'later') noteOffSet(todaysNotes());   // that person's only
     // the bell's sheet shows all the start would: closed with the reads in, it is today's start for that person
     if (why === 'tap' && how !== 'shut') { var bp = me(); if (bp && !S.guestIn && noteReads() === 'in') lsSet('lk.board.' + bp.id, dayNow()); }
     ovDone('note', noBack);
@@ -4752,12 +4784,13 @@
     return pings && mins ? 'in' : busy ? 'busy' : 'failed';
   }
   /* Pops up by itself, one sheet at a time (sheetBusy): at the start of a person's shift, once a day on this phone
-     (lk.board.<id>: out of date when the kitchen day changes), and after 10:30 or a ping's own time while a ping is
-     unread. A person signed in on a shared device only to tick or add (S.guestIn) gets no start of shift, and only an
-     unread Safety, Allergen alert or Off today ping pops up for them; the others wait on the bell. */
+     (lk.board.<id>: out of date when the kitchen day changes), and when a ping pops up that this person has neither read
+     nor put off with Close. A person signed in on a shared device only to tick or add (S.guestIn) gets no start of shift,
+     and only a Safety, Allergen alert or Off today ping pops up for them; the others wait on the bell. Nothing pops up over
+     "Who are you?": the next person picks their name first and gets their own sheet. */
   function noteMaybePop() {
     // a person picked but not signed in yet (their PIN screen, a desktop idle lock) gets it after their PIN, as themselves
-    if (npop || sheetBusy() || (S.who && !S.authed)) return;
+    if (npop || sheetBusy() || (S.who && !S.authed) || namesUp()) return;
     if (ksWant) { ksWant = false; ksOpen(); if (ksPop) return; }   // the section first, then the pings
     var p = me(), t = dayNow();
     if (p && !S.guestIn && lsGet('lk.board.' + p.id) !== t) {
@@ -4765,15 +4798,16 @@
       if (r === 'busy') return;
       if (r === 'in') {
         lsSet('lk.board.' + p.id, t);
-        if ((noteUnread() && noteDueTime()) || noteMins().length) { noteOpen(null, 'start'); return; }
+        if (noteUnread() || noteMins().length) { noteOpen(null, 'start'); return; }
       }
     }
-    if ((nSnooze && nSnooze.k === noteSeenKey() && Date.now() - nSnooze.at < 15 * 60000) || !noteUnread() || !noteDueTime()) return;
-    if (S.guestIn && !noteNew().some(function (n) { return NOTE_URGENT[n.tag]; })) return;
+    var pop = notePopNew();
+    if (!pop.length) return;
+    if (S.guestIn && !pop.some(function (n) { return NOTE_URGENT[n.tag]; })) return;
     noteOpen(null, 'due');
   }
-  /* A local check once a minute (no reads): pops the note when 10:30 or a ping's own time arrives or typing stops (the bell
-     counts a timed ping from its time), and fetches once at 10:30 and when a new day starts. */
+  /* A local check once a minute (no reads): pops a ping up when its time comes or typing stops, takes a sheet away once
+     its pings' 30 minutes are up (noteRefresh), and fetches once at 10:30 and when a new day starts. */
   function startNoteTick() {
     if (nTick) return;
     if (T.mins() >= NOTE_MIN) n1030 = dayNow();
@@ -4782,10 +4816,11 @@
       if (S.guidesFor && S.guidesFor !== t) loadGuides();
       if (S.notesFor && S.notesFor !== t) { loadNotes(true); return; }
       if (n1030 !== t && T.mins() >= NOTE_MIN) { n1030 = t; loadNotes(true); return; }
-      noteBell(); sheetNext();
+      noteBell(); noteRefresh(); sheetNext();
     }, 60000);
   }
-  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && /^\d{4,6}$/.test(S.pin) && fb) { loadNotes(); noteMaybePop(); rxSync(); } });
+  // back on the screen: a sheet whose pings ran out while the screen was off goes before anyone sees it
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && /^\d{4,6}$/.test(S.pin) && fb) { noteRefresh(); noteBell(); loadNotes(); noteMaybePop(); rxSync(); } });
   window.addEventListener('lk-clock', function () { draw(); });
   document.addEventListener('click', function (e) {
     var el = e.target.closest && e.target.closest('[data-note]');
@@ -4815,7 +4850,10 @@
   function typing() { var ae = document.activeElement; return !!(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) && ae.type !== 'button'); }
   // a first PIN's One more thing, while it is on the screen (it shows only on the prep list)
   function dkFirstUp() { return S.drinkAsk === 'first' && S.name === 'prep' && !!(S.root && document.body.contains(S.root) && S.root.querySelector('.dr-first')); }
-  function sheetBusy() { return sheetOpen() || ksWait || ovBack || dkFirstUp() || document.visibilityState === 'hidden' || typing(); }
+  // "Who are you?" is on the screen (after a sign-out or the idle sign-out on a shared tablet)
+  function namesUp() { return !!(S.root && document.body.contains(S.root) && S.root.querySelector('.p-names')); }
+  // also while an Undo or OK toast is up, so nothing covers the Undo (the minute tick opens what waited)
+  function sheetBusy() { return sheetOpen() || ksWait || ovBack || dkFirstUp() || !!S.toastAct || document.visibilityState === 'hidden' || typing(); }
   function sheetNext() {
     if (ovBack) { nextWait = true; return; }
     nextWait = false;
@@ -4860,7 +4898,10 @@
       else if (sn && sn.state === 'loading') seen = '<span class="nt-by n-seen">Checking who has seen it...</span>';
       else seen = '<span class="nt-by n-seen"><button type="button" class="p-x" data-p="n-seen" data-id="' + esc(n.id) + '">Who has seen it today</button></span>';
     }
-    return '<li class="nt-row t-' + esc(n.tag || 'none') + '"><div class="nt-rt"><span class="nt-tag">' + esc(noteTagName(n.tag)) + '</span><span class="nt-when">' + esc(noteWhen(n)) + '</span></div><p>' + esc(n.text) + '</p>' +
+    // today: when it is on screen (30 minutes from its pop-up time), so the writer can see it has gone
+    var life = '';
+    if (today) { var f = noteFrom(n, t), m = T.mins(); life = m < f ? 'Pops up at ' + tmText(f) : m < f + NOTE_LIFE ? 'On screen until ' + tmText(f + NOTE_LIFE) : 'Gone for today at ' + tmText(f + NOTE_LIFE); }
+    return '<li class="nt-row t-' + esc(n.tag || 'none') + '"><div class="nt-rt"><span class="nt-tag">' + esc(noteTagName(n.tag)) + '</span><span class="nt-when">' + esc(noteWhen(n)) + (life ? '. ' + esc(life) : '') + '</span></div><p>' + esc(n.text) + '</p>' +
       (who ? '<span class="nt-by">Written by ' + esc(who) + '</span>' : '') + seen +
       '<div class="btn-row">' + (past ? '' : '<button type="button" class="p-x" data-p="n-edit" data-id="' + esc(n.id) + '">Edit</button>') +
       '<button type="button" class="p-x" data-p="n-reuse" data-id="' + esc(n.id) + '">Use again</button>' +
@@ -4916,7 +4957,7 @@
     var when = f.start && until >= f.start ? 'Shows: ' + noteWhen({ start: f.start, until: until, dows: f.dows, tm: nfTm(f) }) + '.' : 'The last day cannot be before the first day.';
     var single = !f.run && !f.until;
     return '<section class="set-block n-edit"><span class="label">' + (f.id ? 'Edit this ping' : 'Write a ping') + '</span>' +
-      '<span class="hint">Short and plain. It pops up the first time the book is opened after 10:30, or at the time you set below, and shows from the bell. No prices, PINs or staff names. A recipe name links to its card.</span>' +
+      '<span class="hint">Short and plain. It pops up at 10:30, or at the time you set below, and is gone for everyone 30 minutes later. No prices, PINs or staff names. A recipe name links to its card.</span>' +
       '<div class="field"><label class="label" for="n-text">Ping</label><textarea id="n-text" class="p-bulk" data-k="n-text" rows="4" maxlength="400" placeholder="For example: Barramundi is off until Thursday.">' + esc(f.text) + '</textarea><span class="hint" id="n-count">' + f.text.length + ' of 400. Ctrl+Enter saves.</span></div>' +
       '<div class="field"><span class="label">Tag (starts the ping for you)</span><div class="nt-chips" role="group" aria-label="Tag">' + tags + '</div></div>' +
       '<div class="field"><span class="label">How it will look</span><div id="n-prev" class="n-prev">' + draftPreviewHTML(f) + '</div></div>' +
@@ -4925,7 +4966,7 @@
       '<span class="hint">' + (f.run || f.until ? 'Tap the first day, then the last day. Tap the last day again to take it back.' : 'Tap a day to schedule the ping ahead of time.') + '</span>' + dayGridHTML(f) +
       '<details class="n-more"' + (f.start > shift(t, 34) || (f.until && f.until > shift(t, 34)) ? ' open' : '') + '><summary>A date further ahead</summary><div class="nt-dates"><label class="nt-dl">From<input type="date" class="p-dateinput" data-k="n-start" value="' + esc(f.start) + '"' + (f.id ? '' : ' min="' + t + '"') + '></label><label class="nt-dl">Until (optional)<input type="date" class="p-dateinput" data-k="n-until" value="' + esc(f.until) + '"' + (f.start ? ' min="' + esc(f.start) + '"' : '') + '></label></div></details></div>' +
       '<div class="field"><span class="label">Repeat every week on (optional)</span><div class="nt-chips" role="group" aria-label="Weekdays">' + dows + (f.dows.length ? '<button type="button" class="chip" data-p="n-dowclr">Clear weekdays</button>' : '') + '</div><span class="hint">With weekdays picked and no last day, the ping comes back every week until you remove it.</span></div>' +
-      '<div class="field"><label class="label" for="n-tm">Pop up at (optional)</label><div class="nt-chips"><input id="n-tm" type="time" class="p-dateinput" data-k="n-tm" value="' + esc(f.tm || '') + '">' + (f.tm ? '<button type="button" class="chip" data-p="n-tmclr">No set time</button>' : '') + '</div><span class="hint">Empty: it pops up at 10:30 with the day\'s other pings. With a time, it stays out of sight until then and pops up on every phone at that time.</span></div>' +
+      '<div class="field"><label class="label" for="n-tm">Pop up at (optional)</label><div class="nt-chips"><input id="n-tm" type="time" class="p-dateinput" data-k="n-tm" value="' + esc(f.tm || '') + '">' + (f.tm ? '<button type="button" class="chip" data-p="n-tmclr">No set time</button>' : '') + '</div><span class="hint">Empty: it pops up at 10:30. With a time, it pops up then on every phone. Either way it is gone 30 minutes later, so for a later shift set its time. Saved for today after its time, it pops up straight away.</span></div>' +
       '<p class="nt-whenline" role="status">' + esc(when) + '</p>' +
       '<div class="btn-row"><button type="button" class="btn dark" data-p="n-save"' + (S.nSaving ? ' disabled' : '') + '>' + (f.id ? 'Save changes' : 'Save ping') + '</button><button type="button" class="btn" data-p="n-preview">Preview the popup</button><button type="button" class="btn" data-p="n-reset">Reset days</button><button type="button" class="btn" data-p="n-cancel">' + (armed('n-cancel') ? 'Tap again to discard' : f.id ? 'Cancel' : 'Close') + '</button></div>' +
       '<span class="saved" role="status">' + esc(S.nMsg) + '</span></section>';
@@ -4961,7 +5002,7 @@
       if (noteOn(data, t) || (was && noteOn(was, t))) { markPings(); noteJust(ref.id, nk); }
       S.nSaving = false; S.nf = nfNew(); S.nOpen = false; S.nMsg = 'Saved. Shows: ' + when + '.'; loadNotes(true); draw();
     }, function (e) {
-      S.nSaving = false; S.nMsg = e && e.code === 'permission-denied' ? 'Not allowed. Ask the head chef to tick Pings for you in the admin panel.' : 'Could not save. Check the connection and try again.'; draw();
+      S.nSaving = false; S.nMsg = e && e.code === 'permission-denied' ? 'Not saved. Only the head chef and the sous chefs write pings. If you are one, sign in again with your PIN.' : 'Could not save. Check the connection and try again.'; draw();
     });
   }
   function removeNote(id) {
@@ -4971,7 +5012,8 @@
       if (today) { markPings(); noteJust(id, nk); }
       if (S.nf && S.nf.id === id) { S.nf = nfNew(); S.nOpen = false; }
       S.nMsg = 'Removed.'; loadNotes(true); draw();
-      toast('Ping removed.', { label: 'Undo', fn: function () { var uk = noteSeenKey(); sset(docRef('notes', id), { removed: false, upd: now() }, true).then(function () { if (today) { markPings(); noteJust(id, uk); } S.nMsg = ''; loadNotes(true); draw(); }, failed); } });
+      // Undo puts back the same version (its old upd), so it does not pop up again for those who read it, or start its 30 minutes again
+      toast('Ping removed.', { label: 'Undo', fn: function () { var uk = noteSeenKey(); sset(docRef('notes', id), { removed: false, upd: (was && (was.upd || was.at)) || now() }, true).then(function () { if (today) { markPings(); noteJust(id, uk); } S.nMsg = ''; loadNotes(true); draw(); }, failed); } });
     }, function () { S.nMsg = 'Could not remove. Check the connection and try again.'; draw(); });
   }
   /* finished pings: one query when asked for (30 at most) */

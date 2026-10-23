@@ -38,7 +38,7 @@ function withAnn() {
 
   // Ann (staff, ticked for Pings before) only reads them now: no Write link, no Shift pings in the chef menu
   const ping = withAnn();
-  ping[fsKey(['notes', 'n1'])] = { text: 'Delivery: Bidfood 09:00', tag: 'delivery', start: today, until: today, dows: [], removed: false, at: 1, by: 'sam' };
+  ping[fsKey(['notes', 'n1'])] = { text: 'Delivery: Bidfood 09:00', tag: 'delivery', start: today, until: today, dows: [], tm: 835, removed: false, at: 1, by: 'sam' };
   p = await L.open(b, '#/prep', { who: 'ann', extra: ping, wait: 2000 });
   ok(/Today's shift pings/.test(await txt(p, '#nt-h') || ''), 'popup: called Today\'s shift pings');
   ok(await p.$('.nt') !== null && await p.$('.nt-edit') === null, 'popup: Ann sees the ping but no Write or edit link');
