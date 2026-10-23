@@ -6625,21 +6625,25 @@
   /* ---------- order cut-offs (23 Oct 2026) ----------
      The head chef sets each supplier's order cut-off in the admin panel (Settings, Order cut-offs). They live in
      config/main cutoffs: [{ id, name, dd: delivery weekdays (0 Sunday to 6 Saturday), at: cut-off time in minutes after
-     midnight (-1 to come), pre: how many days before the delivery the order closes (0 to 3) }]. Only the head chef's
+     midnight (-1 to come), pre: how many days before the delivery the order closes (0 to 3), lead: how long before the
+     cut-off the reminder starts, in minutes (240, 360 or 480; 0 all day on the cut-off day) }]. Only the head chef's
      Google account writes them (the rules: isAdmin). The head chef and sous chefs get a bar under the top bar on every
-     page from 3 hours before a cut-off until it passes, and today's cut-offs on the order list. It all comes from
-     config/main, which the book already listens to: no reads of its own, and a local check once a minute. Ordered hides
-     one supplier for the rest of the day on this phone (lk.cut.done, out of date when the kitchen day changes). */
-  var CUT_LEAD = 180, CUT_SOON = 30, CUT_MAX = 20;
+     page from that time until the cut-off passes, and today's cut-offs on the order list (24 Oct 2026: at least 4 hours,
+     was 3). A reminder that starts before midnight (an early cut-off) starts the night before. In the last hour the line
+     turns orange and says Order now. It all comes from config/main, which the book already listens to: no reads of its
+     own, and a local check every 30 seconds. Ordered hides that cut-off on this phone (lk.cut.done, one key per supplier
+     and cut-off day; keys for days gone are dropped). */
+  var CUT_SOON = 60, CUT_MAX = 20;
+  var CUT_LEADS = [[240, '4 hours before'], [360, '6 hours before'], [480, '8 hours before'], [0, 'All day on the cut-off day']];
   var CUT_DOW = [[1, 'Mon'], [2, 'Tue'], [3, 'Wed'], [4, 'Thu'], [5, 'Fri'], [6, 'Sat'], [0, 'Sun']];
   var CUT_DAY = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   var CUT_PRE = ['The same day', 'The day before', '2 days before', '3 days before'];
   // the head chef's own list (23 Oct 2026); A La Carte Meats' days and time are still to come
   var CUT_USUAL = [
-    { id: 'be-chicken', name: 'B&E Chicken', dd: [1, 2, 4, 5], at: 840, pre: 1 },
-    { id: 'pfd', name: 'PFD', dd: [0, 1, 2, 3, 4, 5, 6], at: 840, pre: 1 },
-    { id: 'simon-george', name: 'Simon George Fruit and Veg', dd: [1, 4], at: 840, pre: 1 },
-    { id: 'a-la-carte-meats', name: 'A La Carte Meats', dd: [], at: -1, pre: 1 }
+    { id: 'be-chicken', name: 'B&E Chicken', dd: [1, 2, 4, 5], at: 840, pre: 1, lead: 240 },
+    { id: 'pfd', name: 'PFD', dd: [0, 1, 2, 3, 4, 5, 6], at: 840, pre: 1, lead: 240 },
+    { id: 'simon-george', name: 'Simon George Fruit and Veg', dd: [1, 4], at: 840, pre: 1, lead: 240 },
+    { id: 'a-la-carte-meats', name: 'A La Carte Meats', dd: [], at: -1, pre: 1, lead: 240 }
   ];
   var cutTick = null, cutLast = null;
   // checked by type before use: a damaged record never puts anything odd on screen
@@ -6647,7 +6651,8 @@
     return (Array.isArray(list) ? list : []).filter(function (x) { return x && typeof x.name === 'string' && x.name.trim(); }).slice(0, CUT_MAX).map(function (x) {
       var at = typeof x.at === 'number' && x.at >= 0 && x.at < 1440 ? Math.floor(x.at) : -1, pre = typeof x.pre === 'number' && x.pre >= 0 && x.pre <= 3 ? Math.floor(x.pre) : 1;
       var dd = (Array.isArray(x.dd) ? x.dd : []).filter(function (n, i, a) { return typeof n === 'number' && n >= 0 && n <= 6 && n === Math.floor(n) && a.indexOf(n) === i; }).sort();
-      return { id: (typeof x.id === 'string' && /^[a-z0-9-]{1,40}$/.test(x.id)) ? x.id : slug(x.name).slice(0, 40), name: x.name.trim().slice(0, 40), dd: dd, at: at, pre: pre };
+      var lead = CUT_LEADS.some(function (l) { return l[0] === x.lead; }) ? x.lead : 240;   // saved before 24 Oct 2026: 4 hours
+      return { id: (typeof x.id === 'string' && /^[a-z0-9-]{1,40}$/.test(x.id)) ? x.id : slug(x.name).slice(0, 40), name: x.name.trim().slice(0, 40), dd: dd, at: at, pre: pre, lead: lead };
     });
   }
   function cutList() { return cutClean(S.config && S.config.cutoffs); }
@@ -6657,31 +6662,44 @@
     if (s.at < 0 || !s.dd.length) return 'Cut-off to come';
     var cd = cutDays(s);
     var days = s.dd.length === 7 ? 'every day' : CUT_DOW.filter(function (d) { return cd.indexOf(d[0]) >= 0; }).map(function (d) { return d[1]; }).join(', ');
-    return 'Order by ' + hhmm(s.at) + ' ' + days + (s.pre === 0 ? ' for the same day' : s.pre === 1 ? ' for the next day' : ' for ' + s.pre + ' days later');
+    return 'Order by ' + hhmm(s.at) + ' ' + days + (s.pre === 0 ? ' for the same day' : s.pre === 1 ? ' for the next day' : ' for ' + s.pre + ' days later') + '. ' + cutFrom(s);
+  }
+  // when the reminder starts, from the cut-off time and how long before
+  function cutFrom(s) {
+    if (!s.lead) return 'Reminder all day.';
+    var st = s.at - s.lead;
+    return 'Reminder from ' + hhmm((st + 1440) % 1440) + (st < 0 ? ' the night before.' : '.');
   }
   // the cut-offs that fall today, soonest first, with the delivery each one is for
-  function cutToday() {
-    var dow = T.dow(), out = [];
+  // plus: days from today (1 is tomorrow), so at is minutes from today's midnight and day the cut-off's own date
+  function cutOn(plus) {
+    var dow = (T.dow() + plus) % 7, out = [], day = shift(dayNow(), plus);
     cutList().forEach(function (s) {
       if (s.at < 0) return;
-      s.dd.forEach(function (d) { if ((d - s.pre + 7) % 7 === dow) out.push({ s: s, at: s.at, del: d }); });
+      s.dd.forEach(function (d) { if ((d - s.pre + 7) % 7 === dow) out.push({ s: s, at: s.at + plus * 1440, del: d, day: day, key: s.id + '|' + day }); });
     });
     return out.sort(function (a, b) { return a.at - b.at || a.s.name.localeCompare(b.s.name); });
   }
+  function cutToday() { return cutOn(0); }
+  // the reminder is on from its start until the cut-off: all day means from midnight on the cut-off day
+  function cutOnNow(c, m) { var left = c.at - m; return left > 0 && left <= (c.s.lead || c.s.at); }
   function cutDel(c) { return c.s.pre === 0 ? 'for today' : c.s.pre === 1 ? 'for ' + CUT_DAY[c.del] + (c.s.dd.length === 7 ? '' : '\'s delivery') : 'for ' + CUT_DAY[c.del]; }
   function cutIn(m) { return m < 60 ? 'in ' + m + ' min' : 'in ' + Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : ''); }
   // who gets the bar: the head chef and sous chefs with their PIN, and the head chef's Google device
   function cutWho() { return !!S.config && (isSous() || admDev()); }
-  function cutDone() { try { var v = JSON.parse(lsGet('lk.cut.done') || 'null'); return v && v.d === dayNow() ? v.ids || {} : {}; } catch (e) { return {}; } }
-  function cutMark(id) { var ids = cutDone(); ids[id] = 1; lsSet('lk.cut.done', JSON.stringify({ d: dayNow(), ids: ids })); }
+  // what was marked Ordered: { '<supplier id>|<cut-off day>': 1 }, today's and tomorrow's only (an older copy had { d, ids })
+  function cutDone() {
+    try { var v = JSON.parse(lsGet('lk.cut.done') || 'null') || {}, t = dayNow(), out = {}; Object.keys(v).forEach(function (k) { var d = k.split('|')[1]; if (d && d >= t) out[k] = 1; }); return out; } catch (e) { return {}; }
+  }
+  function cutMark(key) { var v = cutDone(); v[key] = 1; lsSet('lk.cut.done', JSON.stringify(v)); }
   function cutBandHTML() {
     if (!cutWho()) return '';
-    var m = T.mins(), done = cutDone(), xs = cutToday().filter(function (c) { return c.at > m && c.at - m <= CUT_LEAD && !done[c.s.id]; });
+    var m = T.mins(), done = cutDone(), xs = cutOn(0).concat(cutOn(1)).filter(function (c) { return cutOnNow(c, m) && !done[c.key]; });
     if (!xs.length) return '';
     return '<div class="cut-top"><h2 class="cut-h">Order cut-off' + (xs.length > 1 ? 's' : '') + '</h2><a class="cut-go" href="#/orders">Order list</a></div><ul class="cut-list">' + xs.map(function (c) {
-      var left = c.at - m;
-      return '<li class="cut-row' + (left <= CUT_SOON ? ' is-soon' : '') + '"><span class="cut-n">' + esc(c.s.name) + '</span><span class="cut-t">by ' + hhmm(c.at) + ' <b>' + cutIn(left) + '</b> <span class="cut-for">' + esc(cutDel(c)) + '</span></span>' +
-        '<button type="button" class="cut-done" data-cut="done" data-id="' + esc(c.s.id) + '" aria-label="' + esc('Ordered from ' + c.s.name + ': hide it for today') + '">Ordered</button></li>';
+      var left = c.at - m, soon = left <= CUT_SOON;
+      return '<li class="cut-row' + (soon ? ' is-soon' : '') + '"><span class="cut-n">' + esc(c.s.name) + '</span><span class="cut-t">' + (soon ? '<b class="cut-now">Order now</b> ' : '') + 'by ' + (c.at >= 1440 ? 'tomorrow ' : '') + hhmm(c.at % 1440) + ' <b>' + cutIn(left) + '</b> <span class="cut-for">' + esc(cutDel(c)) + '</span></span>' +
+        '<button type="button" class="cut-done" data-cut="done" data-id="' + esc(c.key) + '" aria-label="' + esc('Ordered from ' + c.s.name + ': hide this reminder') + '">Ordered</button></li>';
     }).join('') + '</ul>';
   }
   // js/app.js draws the empty slot under the top bar (and the Functions band); this fills it and keeps it right as time passes
@@ -6700,9 +6718,9 @@
   document.addEventListener('click', function (e) {
     var el = e.target.closest && e.target.closest('[data-cut]');
     if (!el || el.getAttribute('data-cut') !== 'done') return;
-    var id = el.getAttribute('data-id'), s = cutList().filter(function (x) { return x.id === id; })[0];
-    cutMark(id); cutPaint(); if (S.name === 'orders') draw();
-    toast((s ? s.name : 'That supplier') + ' is off the reminder for today.');
+    var key = el.getAttribute('data-id') || '', s = cutList().filter(function (x) { return x.id === key.split('|')[0]; })[0];
+    cutMark(key); cutPaint(); if (S.name === 'orders') draw();
+    toast((s ? s.name : 'That supplier') + ' is off the reminder until the next cut-off.');
   });
   window.addEventListener('lk-who', cutPaint);
   window.addEventListener('lk-cfg', cutPaint);
@@ -6714,8 +6732,8 @@
     var xs = cutToday(), m = T.mins(), done = cutDone();
     if (!xs.length) return '';
     return '<section class="cut-today" aria-label="Order cut-offs today"><h3 class="nb-sh">Cut-offs today</h3><ul class="cut-tl">' + xs.map(function (c) {
-      var st = c.at <= m ? 'Closed' : done[c.s.id] ? 'Ordered' : cutIn(c.at - m);
-      return '<li class="' + (c.at <= m ? 'is-past' : c.at - m <= CUT_SOON && !done[c.s.id] ? 'is-soon' : '') + '"><span class="cut-n">' + esc(c.s.name) + '</span><span class="cut-t">' + hhmm(c.at) + ' ' + esc(cutDel(c)) + '</span><span class="cut-st">' + esc(st) + '</span></li>';
+      var st = c.at <= m ? 'Closed' : done[c.key] ? 'Ordered' : cutIn(c.at - m);
+      return '<li class="' + (c.at <= m ? 'is-past' : c.at - m <= CUT_SOON && !done[c.key] ? 'is-soon' : '') + '"><span class="cut-n">' + esc(c.s.name) + '</span><span class="cut-t">' + hhmm(c.at) + ' ' + esc(cutDel(c)) + '</span><span class="cut-st">' + esc(st) + '</span></li>';
     }).join('') + '</ul></section>';
   }
   /* the admin page: a draft kept on this phone until Save (the head chef's Google account only) */
@@ -6731,11 +6749,12 @@
           return '<button type="button" class="chip" data-p="cut-day" data-i="' + i + '" data-v="' + w[0] + '" aria-pressed="' + (s.dd.indexOf(w[0]) >= 0) + '">' + w[1] + '</button>';
         }).join('') + '</div></fieldset>' +
         '<div class="cut-two"><div class="field"><label class="label" for="cut-t' + i + '">Cut-off time</label><input id="cut-t' + i + '" class="search" type="time" step="300" data-k="cut-t' + i + '" value="' + (s.at >= 0 ? hhmm(s.at) : '') + '"></div>' +
-        '<div class="field"><label class="label" for="cut-p' + i + '">Order closes</label><select id="cut-p' + i + '" class="search" data-k="cut-p' + i + '">' + CUT_PRE.map(function (t, n) { return '<option value="' + n + '"' + (s.pre === n ? ' selected' : '') + '>' + t + '</option>'; }).join('') + '</select></div></div>' +
+        '<div class="field"><label class="label" for="cut-p' + i + '">Order closes</label><select id="cut-p' + i + '" class="search" data-k="cut-p' + i + '">' + CUT_PRE.map(function (t, n) { return '<option value="' + n + '"' + (s.pre === n ? ' selected' : '') + '>' + t + '</option>'; }).join('') + '</select></div>' +
+        '<div class="field"><label class="label" for="cut-r' + i + '">Remind us</label><select id="cut-r' + i + '" class="search" data-k="cut-r' + i + '">' + CUT_LEADS.map(function (l) { return '<option value="' + l[0] + '"' + (s.lead === l[0] ? ' selected' : '') + '>' + l[1] + '</option>'; }).join('') + '</select></div></div>' +
         '<p class="hint cut-say">' + esc(cutSay(s)) + '</p>' +
         '<button type="button" class="p-x" data-p="cut-rm" data-i="' + i + '" aria-label="' + esc('Remove ' + (s.name || 'this supplier')) + '">' + (armed('cut-rm:' + i) ? 'Tap again to remove' : 'Remove') + '</button></li>';
     }).join('');
-    return '<section class="set-block a-cut"><span class="label">Order cut-offs</span><span class="hint">You and the sous chefs get a bar at the top of every page from 3 hours before a supplier\'s cut-off until it passes, and today\'s cut-offs show on the order list. Tick the days the supplier delivers, then when the order has to be in.</span>' +
+    return '<section class="set-block a-cut"><span class="label">Order cut-offs</span><span class="hint">You and the sous chefs get a bar at the top of every page from the time you pick under Remind us (4 hours before unless you change it) until the cut-off passes. It turns orange in the last hour. An early cut-off is reminded from the night before. Today\'s cut-offs show on the order list. Tick the days the supplier delivers, then when the order has to be in.</span>' +
       (rows ? '<ul class="cut-eds">' + rows + '</ul>' : '<p class="hint">No suppliers yet, so nobody is reminded.</p>') +
       '<div class="btn-row"><button type="button" class="btn" data-p="cut-add">Add a supplier</button>' + (d.length ? '' : '<button type="button" class="btn" data-p="cut-usual">Add ' + esc(CUT_USUAL.map(function (x) { return x.name; }).join(', ')) + '</button>') + '</div>' +
       '<div class="btn-row"><button type="button" class="btn dark" data-p="cut-save"' + (owner && cutDirty() && !S.cutBusy ? '' : ' disabled') + '>Save cut-offs</button><button type="button" class="btn" data-p="cut-undo"' + (cutDirty() ? '' : ' disabled') + '>Undo unsaved changes</button></div>' +
@@ -6754,7 +6773,7 @@
     var d = S.cutDraft, i = +el.getAttribute('data-i');
     if (!d) return;
     S.cutMsg = '';
-    if (a === 'cut-add') { d.push({ id: 'cut-' + Date.now().toString(36), name: '', dd: [], at: -1, pre: 1 }); draw(); var n = S.root.querySelector('[data-k="cut-n' + (d.length - 1) + '"]'); if (n) n.focus(); return; }
+    if (a === 'cut-add') { d.push({ id: 'cut-' + Date.now().toString(36), name: '', dd: [], at: -1, pre: 1, lead: 240 }); draw(); var n = S.root.querySelector('[data-k="cut-n' + (d.length - 1) + '"]'); if (n) n.focus(); return; }
     if (a === 'cut-usual') { S.cutDraft = JSON.parse(JSON.stringify(CUT_USUAL)); draw(); return; }
     if (a === 'cut-rm') { if (!d[i] || !arm('cut-rm:' + i)) return; d.splice(i, 1); draw(); return; }
     if (a === 'cut-day') { var v = +el.getAttribute('data-v'), s = d[i]; if (!s) return; var k = s.dd.indexOf(v); if (k >= 0) s.dd.splice(k, 1); else { s.dd.push(v); s.dd.sort(); } draw(); return; }
@@ -6768,6 +6787,7 @@
     if (k.indexOf('cut-n') === 0) { s.name = el.value.slice(0, 40); return; }
     if (k.indexOf('cut-t') === 0) { var t = /^(\d{1,2}):(\d{2})/.exec(el.value || ''); s.at = t ? Math.min(1439, +t[1] * 60 + +t[2]) : -1; }
     if (k.indexOf('cut-p') === 0) s.pre = Math.max(0, Math.min(3, +el.value || 0));
+    if (k.indexOf('cut-r') === 0) s.lead = CUT_LEADS.some(function (l) { return l[0] === +el.value; }) ? +el.value : 240;
     var say = el.closest('.cut-ed') && el.closest('.cut-ed').querySelector('.cut-say'); if (say) say.textContent = cutSay(s);
     var sv = S.root.querySelector('[data-p="cut-save"]'), un = S.root.querySelector('[data-p="cut-undo"]');
     if (sv) sv.disabled = !(S.level === 'owner' && cutDirty() && !S.cutBusy); if (un) un.disabled = !cutDirty();
@@ -7162,7 +7182,7 @@
     // a PIN goes in by itself the moment the fourth digit is typed (only when it reaches four, so it cannot send twice)
     if (k === 'p-pin') { var pp = S.pinInput.length; S.pinInput = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.pinInput; pinCells(el); if (pp < 4 && S.pinInput.length === 4) submitKitchenPin(); return; }
     if (k === 'a-bulk') { S.bulk = el.value; return; }
-    if (k && /^cut-[ntp]\d/.test(k)) { cutField(k, el); return; }
+    if (k && /^cut-[ntpr]\d/.test(k)) { cutField(k, el); return; }
     if (k === 'dk-note' || k === 'dk-other') { dkf[k.slice(3)] = el.value.slice(0, k === 'dk-note' ? DK_NOTE : DK_OTHER); return; }
     if (k === 'todo-text') { tdf.text = el.value.slice(0, TD_MAX); tdMsg = ''; return; }
     if (k === 'ml-text') { mlf.text = el.value.slice(0, ML_MAX); mlMsg = ''; var mll = S.root.querySelector('#ml-left'), mln = ML_MAX - mlf.text.length; if (mll) mll.textContent = mln < 100 ? mln + ' characters left' : ''; return; }
@@ -7210,7 +7230,7 @@
     if (k && k.indexOf('lv-s:') === 0) { var sk = k.slice(5), sc = LVR[sk]; if (sc) { var ss = lvState(sc); ss.sort = el.value; ss.shown = sc.step || 15; lvRefresh(sk); } return; }
     if (k && k.indexOf('ml-pri:') === 0) { mlSetPri(k.slice(7), el.value); return; }
     if (k === 'ml-sous') { mlSousSet(el.checked); return; }
-    if (k && /^cut-[tp]\d/.test(k)) { cutField(k, el); return; }
+    if (k && /^cut-[tpr]\d/.test(k)) { cutField(k, el); return; }
     // no redraw: typing a date on a keyboard changes it digit by digit, and a redraw would put the box back each time
     if (k === 'todo-due') { tdf.due = tdDue(el.value); var nd = S.root.querySelector('[data-p="todo-nodue"]'); if (nd) nd.hidden = !tdf.due; return; }
     if (k === 'g-file') { var gfl = el.files; gReadFiles(gfl); try { el.value = ''; } catch (x) {} return; }

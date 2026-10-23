@@ -1803,6 +1803,7 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav { top: var(--u
 .cut-t { flex: 1 1 12rem; min-width: 0; color: var(--muted); }
 .cut-t b { color: var(--ink); }
 .cut-row.is-soon .cut-t b { color: var(--tag); }
+.cut-now { text-transform: uppercase; letter-spacing: 0.04em; }
 .cut-row.is-soon .cut-n::before { content: ''; display: inline-block; width: 0.55rem; height: 0.55rem; margin-right: 0.4rem; border-radius: 50%; background: var(--accent); vertical-align: 0.1em; }
 .cut-done { flex: 0 0 auto; min-height: 36px; padding: 0 0.8rem; border: 1.5px solid var(--ink); border-radius: var(--r-act); background: var(--paper); color: var(--ink); font: 600 0.95rem var(--body); cursor: pointer; }
 .cut-today { margin: 0 0 0.75rem; }
