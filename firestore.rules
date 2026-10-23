@@ -540,7 +540,8 @@ service cloud.firestore {
         && sid == request.resource.data.day + '_' + request.resource.data.by;
       allow update, delete: if false;
     }
-    // Kitchen mail: a person writes to the head chef from their name chip (#/mail). Only the head chef reads it.
+    // Kitchen mail: a person writes to the head chef from their name chip (#/mail). Only the head chef reads it (and the
+    // sous chefs, while switched on: sousMail below).
     // "from" is the sender, kept from the first save ("by" changes when the head chef ticks one on a phone where a person
     // is signed in). The head chef ticks it done, marks it seen and may change how soon it matters. Never deleted.
     function mailOk() {
@@ -549,8 +550,14 @@ service cloud.firestore {
         && request.resource.data.pri in ['today', 'week', 'any']
         && request.resource.data.seen is bool && request.resource.data.done is bool;
     }
+    // Sous chefs may read and tick off kitchen mail while the head chef has it switched on (config/main sousMail, off
+    // until then; only the head chef's Google account writes it, 23 Oct 2026). Read: this phone's PIN session is a sous
+    // chef's. Write: the writer is a sous chef with a session on this phone.
+    function sousMail() { return cfg().get('sousMail', false) == true; }
+    function sousMailRead() { return sousMail() && sessOk(reader()) && reader() in cfg().get('sousIds', []); }
+    function sousMailBy() { return sousMail() && staff() && sousBy(); }
     match /kitchens/KITCHEN_PIN/mail/{id} {
-      allow read: if isAdmin();
+      allow read: if isAdmin() || sousMailRead();
       // The head chef may also create one when moving everything to a new kitchen PIN (an exact copy of the old record).
       allow create: if isAdmin() || (staff() && mailOk()
         && request.resource.data.from == request.resource.data.by
@@ -558,7 +565,10 @@ service cloud.firestore {
         && request.resource.data.done == false && request.resource.data.seen == false
         && request.resource.data.keys().hasOnly(['from', 'by', 'cat', 'pri', 'text', 'at', 'done', 'seen']));
       allow update: if isAdmin() && mailOk()
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pri', 'seen', 'seenAt', 'done', 'doneAt', 'by']);
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pri', 'seen', 'seenAt', 'done', 'doneAt', 'by'])
+        // a sous chef ticks it done or changes how soon it matters; seen stays for the head chef
+        || sousMailBy() && mailOk()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pri', 'done', 'doneAt', 'by']);
       allow delete: if false;
     }
     // What happened to a mail (seen, done), under the same id, so the sender's phone can show it without reading the
@@ -571,7 +581,9 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['by', 'seen', 'done'])
         && getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/mail/$(id)).data.from == request.resource.data.by);
       allow update: if isAdmin() && request.resource.data.seen is bool && request.resource.data.done is bool
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['seen', 'done', 'by']);
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['seen', 'done', 'by'])
+        || sousMailBy() && request.resource.data.done is bool
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['done', 'by']);
       allow delete: if false;
     }
     // The drinks run: each person's usual coffee or drink, one record per person (the record id is their id).
