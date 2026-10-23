@@ -5055,11 +5055,17 @@
       '<div class="btn-row"><button type="button" class="btn dark" data-p="mn-pub"' + (S.mSaving ? ' disabled' : '') + '>' + (S.mSaving === 'pub' ? 'Publishing...' : armed('mn-pub') ? 'Tap again to publish to ' + people().length + ' staff' : isEdit ? 'Publish as version ' + (f.v + 1) : 'Publish and start sign-off') + '</button>' + (isEdit ? '' : '<button type="button" class="btn" data-p="mn-draft"' + (S.mSaving ? ' disabled' : '') + '>' + (S.mSaving === 'draft' ? 'Saving...' : 'Save draft') + '</button>') + '<button type="button" class="btn" data-p="mn-prev">Preview</button><button type="button" class="btn" data-p="mn-cancel">' + (armed('mn-cancel') ? 'Tap again to discard' : 'Cancel') + '</button></div><span class="saved mn-say" role="status">' + esc(S.mMsg) + '</span></section>';
   }
   /* the minutes' message after a redraw: the form is long, and it closes on a save, so the page jumps. The message is
-     brought on screen (block: how), whichever of the two boxes holds it (the form's, or the one above the register) */
-  function mnSay(msg, how) {
+     brought on screen between the sticky admin bar and the phone's tab bar (which covers the foot of the screen),
+     whichever of the two boxes holds it (the form's, or the one above the register). mid: in the middle, else only
+     as far as it takes. Measured, not scrollIntoView: that leaves a message behind the tab bar */
+  function mnSay(msg, mid) {
     S.mMsg = msg; draw();
-    var el = S.root && S.root.querySelector('.mn-say:not(:empty)');
-    if (el) el.scrollIntoView({ block: how || 'nearest' });
+    var el = S.root && S.root.querySelector('.mn-say:not(:empty)'); if (!el) return;
+    var r = el.getBoundingClientRect(), nav = S.root.querySelector('.a-nav'), tb = document.querySelector('.tabbar');
+    var top = nav ? nav.getBoundingClientRect().bottom : 0, foot = tb && tb.getClientRects().length ? tb.getBoundingClientRect().top : window.innerHeight;
+    if (mid) window.scrollBy(0, r.top - (top + foot - r.height) / 2);
+    else if (r.bottom > foot - 8) window.scrollBy(0, r.bottom - foot + 16);
+    else if (r.top < top + 8) window.scrollBy(0, r.top - top - 16);
   }
   function saveMinutes(publish) {
     var f = S.mf; if (!f || S.mSaving || !fb) return;
@@ -5081,11 +5087,11 @@
       ops.push(['set', fb.fs.doc.apply(null, [fb.db].concat(base(), ['minutes', f.id, 'hist', String(f.orig.v)])), snap, false]);
     }
     ops.push(['set', ref, data, !!f.id]);
-    S.mSaving = publish ? 'pub' : 'draft'; S.mMsg = publish ? 'Publishing...' : 'Saving...'; draw();
+    S.mSaving = publish ? 'pub' : 'draft'; mnSay(publish ? 'Publishing...' : 'Saving...');
     // a half-dropped signal can leave the save with no answer for a long time: say so, rather than a grey button and
     // no words (23 Oct 2026, the head chef could not tell whether minutes were published). Firestore keeps the write on
     // this device and sends it with the signal
-    var slow = setTimeout(function () { if (S.mf === f && S.mSaving) { S.mMsg = 'Waiting for the signal. The minutes are kept on this device and ' + (publish ? 'go to the team' : 'are saved') + ' when the signal is back. Keep the book open.'; draw(); } }, 4000);
+    var slow = setTimeout(function () { if (S.mf === f && S.mSaving) mnSay('Waiting for the signal. The minutes are kept on this device and ' + (publish ? 'go to the team' : 'are saved') + ' when the signal is back. Keep the book open.'); }, 4000);
     W(ops).then(function () {
       clearTimeout(slow);
       S.mSaving = false; S.mf = null; if (publish) { S.mSel = ref.id; delete S.mmine[ref.id + '_' + data.v + '_' + S.who]; }
@@ -5094,7 +5100,7 @@
       S.mins = (S.mins || []).filter(function (m) { return m.id !== ref.id; }).concat([rec]);
       loadMinutes(true); if (publish) loadSigns(ref.id, true);
       if (publish) toast('Minutes ' + pad(data.no) + ' published.');
-      mnSay(publish ? 'Minutes ' + pad(data.no) + (data.v > 1 ? ' version ' + data.v : '') + ' published at ' + clock(data.pubAt) + '. Staff can read and sign them now.' : 'Draft saved at ' + clock(data.upd) + '. Staff do not see drafts.', 'center');
+      mnSay(publish ? 'Minutes ' + pad(data.no) + (data.v > 1 ? ' version ' + data.v : '') + ' published at ' + clock(data.pubAt) + '. Staff can read and sign them now.' : 'Draft saved at ' + clock(data.upd) + '. Staff do not see drafts.', true);
     }, function (e) {
       clearTimeout(slow);
       S.mSaving = false;

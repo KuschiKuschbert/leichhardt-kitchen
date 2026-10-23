@@ -14,8 +14,14 @@ const extra = {
   [fsKey(['config', 'main'])]: { people, sousIds: ['sam'], showBadges: true },
   [fsKey(['minutes', 'm1'])]: { no: 1, v: 1, status: 'published', date: L.ymd(new Date(week)), decisions: 'Old decision', att: people.map(p => ({ id: p.id, st: 'present' })), acts: [], pubAt: week, at: week, upd: week, removed: false }
 };
-// the message box the minutes write into, and whether all of it is on screen (under the sticky admin bar)
-const say = p => p.evaluate(() => { const e = document.querySelector('.mn-say:not(:empty)'); if (!e) return null; const r = e.getBoundingClientRect(), bar = document.querySelector('.a-nav'), top = bar ? bar.getBoundingClientRect().bottom : 0; return { t: e.textContent, seen: r.top >= top - 1 && r.bottom <= innerHeight - 40 }; });
+// the message box the minutes write into, and whether all of it is on screen: under the sticky admin bar and above the
+// tab bar at the foot of a phone screen (which covers the bottom 68 px)
+const say = p => p.evaluate(() => {
+  const e = document.querySelector('.mn-say:not(:empty)'); if (!e) return null;
+  const r = e.getBoundingClientRect(), bar = document.querySelector('.a-nav'), tb = document.querySelector('.tabbar');
+  const top = bar ? bar.getBoundingClientRect().bottom : 0, foot = tb && tb.getClientRects().length ? tb.getBoundingClientRect().top : innerHeight;
+  return { t: e.textContent, seen: r.top >= top - 1 && r.bottom <= foot + 1, top: Math.round(r.top), bottom: Math.round(r.bottom), bar: Math.round(top), foot: Math.round(foot) };
+});
 const store = p => p.evaluate(() => window.__fake.dump());
 (async () => {
   const b = await L.start();
@@ -25,7 +31,10 @@ const store = p => p.evaluate(() => window.__fake.dump());
   await p.click('[data-p="mn-tpl"]');
   await L.settle(p, 300);
 
-  // attendance not set: the message shows where the head chef is looking, not under the 18 names that just opened
+  // attendance not set: the message shows where the head chef is looking, not under the 18 names that just opened.
+  // Safari on an iPhone does not hold the page still while a box above grows (Chrome's scroll anchoring), so neither
+  // does this page: the message has to be brought on screen by the book itself
+  await p.addStyleTag({ content: '* { overflow-anchor: none !important; }' });
   await p.$eval('[data-p="mn-pub"]', e => e.scrollIntoView({ block: 'end' }));
   await p.click('[data-p="mn-pub"]'); await L.settle(p, 300);
   let s = await say(p);
