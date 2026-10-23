@@ -58,8 +58,8 @@ const mark = p => p.evaluate(() => { const e = document.querySelector('.wtop-who
   ok((await anim(p)) === 'flip:who-flip', 'prep list: the sign-in flips the mark in like a coin (' + await anim(p) + ')');
   ok(p.errors.length === 0, 'who mark: no page errors ' + p.errors.join(' | '));
   await p.context().close();
-  // "Not you?" sits next to "Writing as" on the order list and wastage too, and the next person signs in on that page
-  for (const pg of ['orders', 'waste']) {
+  // "Not you?" sits next to "Writing as" on the order list, wastage and transfers too, and the next person signs in on that page
+  for (const pg of ['orders', 'waste', 'transfers']) {
     p = await L.open(b, '#/' + pg, { who: 'sam', wait: 1200 });
     ok(/Writing as\s*Sam/.test(await txt(p, '.nb-top') || '') && !!(await p.$('.nb-top [data-p="who-change"]')), pg + ': "Not you?" next to "Writing as Sam"');
     // the tab bar or the pill menu always has Prep, so the line has no Prep list link of its own (23 Oct 2026)

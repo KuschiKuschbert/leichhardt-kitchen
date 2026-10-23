@@ -47,7 +47,7 @@ const cfg = () => ({ [fsKey(['config', 'main'])]: { people: [P('sam', 'Sam', 'so
 
   p = await L.open(b, '#/', { wait: 1200 });
   const bottoms = await p.evaluate(() => [...document.querySelectorAll('.docket')].map(e => Math.round(e.getBoundingClientRect().bottom)));
-  ok(bottoms.length === 5 && bottoms.every(x => x <= 844 - 68), 'landing: all five dockets fit above the tab bar (' + bottoms + ')');
+  ok(bottoms.length === 6 && bottoms.every(x => x <= 844 - 68), 'landing: all six dockets fit above the tab bar (' + bottoms + ')');
   await p.click('.docket[href="#/settings"]', { timeout: 2000 }).catch(() => {});
   await p.evaluate(() => { location.hash = '#/r/laksa'; }); await L.settle(p, 300);
   await p.evaluate(() => { location.hash = '#/settings'; }); await L.settle(p, 400);

@@ -5,9 +5,9 @@
 // Moving to a new kitchen PIN (admin Tools): publish a second copy of every kitchens/KITCHEN_PIN/... block for the
 // new PIN first, move, then remove the old PIN's copy once every phone has the new one.
 //
-// Reading needs only the kitchen PIN (it is the path), except function contacts (function managers), minutes drafts and
-// kitchen mail (the head chef's Google account) and the chef to-do list (the head chef and sous chefs). Writing needs a
-// person's own PIN.
+// Reading needs only the kitchen PIN (it is the path), except function contacts (function managers), minutes drafts,
+// kitchen mail and past days of the wastage log and transfers (the head chef's Google account) and the chef to-do list
+// (the head chef and sous chefs). Writing needs a person's own PIN.
 // Since 22 Oct 2026 a phone signs in to Firebase anonymously and a right PIN opens a session for that phone and person
 // (sessions/<uid>, below): every write carries the writer's id (by) and the rules check that phone's session. PIN tries
 // are written first, one every 20 seconds per person (tries/<id>), and compared with the stored PIN hash
@@ -161,6 +161,49 @@ service cloud.firestore {
       allow create, update: if writer() && lead()
         && request.resource.data.get('avoidable', '') is string && request.resource.data.get('avoidable', '').size() <= 300
         && request.resource.data.get('change', '') is string && request.resource.data.get('change', '').size() <= 300;
+      allow delete: if false;
+    }
+    // Stock transfers between venues (#/transfers, 23 Oct 2026): one record per transfer, transfers/<day>/lines/<id>.
+    // dir is out (another venue took it from us) or in (we took it from them), then the venue, who came for it or gave
+    // it, the item, the amount and unit, and a note. Names and amounts only, never a price.
+    // Like the wastage log: anyone signed in logs a line, as themselves (addedById is the writer), on yesterday's, today's
+    // or tomorrow's list, so a line saved with no signal near midnight still lands. addedAt is at most 15 minutes ahead
+    // of the server's time, so nobody can stretch the 2 minute Undo.
+    // With the kitchen PIN only today's lines can be read. Past days are for the head chef's Google account (the admin
+    // panel's Transfers report); the phones get venue and item names from summary/transfers.
+    // Only that account removes or puts one back. A sous chef may Undo their own line straight after logging it
+    // (2 minutes on the server's time). Either way only the removed fields change. Never deleted.
+    // The head chef may also create one when moving everything to a new kitchen PIN (an exact copy of the old record).
+    function xferOk() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['dir', 'venue', 'person', 'text', 'amount', 'unit', 'note', 'addedBy', 'addedById', 'addedAt', 'deleted', 'tst', 'by'])
+        && d.dir in ['out', 'in']
+        && d.venue is string && d.venue.size() > 0 && d.venue.size() <= 40
+        && d.get('person', '') is string && d.get('person', '').size() <= 40
+        && d.text is string && d.text.size() > 0 && d.text.size() <= 80
+        && d.amount is number && d.amount > 0 && d.amount < 100000
+        && d.unit in ['g', 'kg', 'L', 'pieces', 'packs', 'boxes']
+        && d.get('note', '') is string && d.get('note', '').size() <= 120
+        && d.get('addedBy', '') is string && d.get('addedBy', '').size() <= 80
+        && d.addedById == d.by
+        && d.addedAt is number && d.addedAt <= request.time.toMillis() + 900000
+        && d.deleted == false
+        && d.get('tst', false) is bool;
+    }
+    // Remove, Put back and Undo: only the removed fields (and the writer), each of the right type.
+    function xferDel() {
+      let d = request.resource.data;
+      return onlyKeys(['deleted', 'deletedBy', 'deletedAt', 'by'])
+        && d.deleted is bool
+        && d.get('deletedBy', '') is string && d.get('deletedBy', '').size() <= 80
+        && d.get('deletedAt', 0) is number;
+    }
+    match /kitchens/KITCHEN_PIN/transfers/{day}/lines/{line} {
+      allow read: if isAdmin() || isToday(day);
+      allow create: if isAdmin() || (staff() && nearDay(day) && xferOk());
+      allow update: if (isAdmin() && xferDel())
+        || (staff() && sousBy() && resource.data.get('addedById', '') == request.resource.data.by
+          && request.time.toMillis() - resource.data.get('addedAt', 0) < 120000 && xferDel());
       allow delete: if false;
     }
     // What was wasted in the last 14 days, written each night by the server (scripts/nightly-learn.mjs, service account).

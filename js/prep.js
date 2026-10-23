@@ -8,6 +8,7 @@
            #/mail     kitchen mail: write to the head chef (from the chef mark in the top bar)
            #/drinks   the drinks run: everyone's usual coffee or drink (from the chef mark in the top bar)
            #/todo     the chef to-do list: the head chef and the sous chefs only (from the chef mark in the top bar)
+           #/transfers stock shared with the other venues: what they took from us and what we took from them
 
   Data (the kitchen PIN is part of the path, so only people who know it can reach the data):
     kitchens/<PIN>/config/main                 { people: [...] }                    read by staff, written by the admin only
@@ -21,7 +22,9 @@
     kitchens/<PIN>/sections/<slug>             { name, uses, lastUsed }   sections people have written, offered as suggestions
     kitchens/<PIN>/orders/<date>/lines/<id>    one order line (rolls over until ordered)
     kitchens/<PIN>/waste/<date>, .../lines/<id> the end-of-day waste review, and one wastage entry each (past days: head chef's Google only)
+    kitchens/<PIN>/transfers/<date>/lines/<id> one stock transfer between venues each (past days: head chef's Google only)
     kitchens/<PIN>/summary/waste               what was wasted in the last 14 days, written each night by the server
+    kitchens/<PIN>/summary/transfers           the venues, people and items of the last 28 days' transfers, written each night by the server
     kitchens/<PIN>/notes/<id>, .../seen/<id>   shift pings and who has seen them
     kitchens/<PIN>/minutes/<id>, .../hist, .../signs   meeting minutes, earlier versions and sign-offs
     kitchens/<PIN>/learned/<item>, ordlearned/<item>   what the prep and order lists have learned
@@ -90,7 +93,7 @@
     section: '', text: '', qty: '', recipeSearch: '', recipeOpen: false, recipeAll: false, tab: '',
     authed: false, tok: '', pinStep: '', pinData: null, pf1: '', pf2: '', pinMsg: '',
     sections: [], activity: [], hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false, exporting: '', moving: false, moveMsg: '', newPin: '', atab: lsGet('lk.prep.atab') || 'insights', ordDate: dayNow(), ordLines: [], ordState: 'idle', ordView: 'day', otext: '', oqty: '', ordAll: [], ordAllAt: 0, ordBusy: false, osugg: [],
-    retryAt: {}, wDate: dayNow(), wLines: [], wState: 'idle', rvDate: '', wReview: null, wReviewFor: '', wrA: null, wrC: null, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wSum: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nMsg: '', nSaving: false,
+    retryAt: {}, wDate: dayNow(), wLines: [], wState: 'idle', rvDate: '', wReview: null, wReviewFor: '', wrA: null, wrC: null, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wSum: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, xDate: dayNow(), xLines: [], xState: 'idle', xf: xBlank(), xSum: null, xsugg: [], xStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nMsg: '', nSaving: false,
     mins: null, minsFor: '', minsAt: 0, minsBusy: false, mmine: {}, msigns: {}, mSel: '', mf: null, mMsg: '', mSaving: false, mSigning: false, minOpen: false, mErr: '',
     guides: null, guidesFor: '', guidesAt: 0, gBusy: false, gRetry: 0, gq: '', gcat: 'all', gSel: '', gf: null, gfSnap: '', gMsg: '',
     adminsFor: '', level: '', stats: null, statsRange: 14, week: null, weekAt: 0, weekBusy: false,
@@ -176,7 +179,7 @@
         S.configState = 'ok'; pastCheck(); featSync(); refreshDraft(); watchItems(); watchSections(); loadLearned();
         // the first PIN windows, once the settings are in (does nothing once everyone has one)
         if (S.level === 'owner') seedPinOpen();
-        if (S.name === 'orders') watchOrders(); if (S.name === 'waste') watchWaste(); resume(); if (S.authed) ksCheck(); loadAdmins(); loadNotes(); loadMinutes(); draw();
+        if (S.name === 'orders') watchOrders(); if (S.name === 'waste') watchWaste(); if (S.name === 'transfers') watchXfer(); resume(); if (S.authed) ksCheck(); loadAdmins(); loadNotes(); loadMinutes(); draw();
         if (whoHead() !== headSeen) whoSync();   // the Head chef role was given or taken while this person is signed in
         try { window.dispatchEvent(new Event('lk-cfg')); } catch (e) {}   // js/app.js: who may manage the recipes (bookEdit)
       }, function (err) {
@@ -187,11 +190,11 @@
     }, function () { S.configState = 'error'; draw(); });
   }
   var unsubOrd = null, ordKey = '';
-  var unsubW = null, wKey = '';
+  var unsubW = null, wKey = '', unsubX = null, xKey = '';
   /* Stops every live listener (kitchen PIN forgotten or moved), so nothing keeps reading the old PIN. */
   function stopLive() {
-    [unsubCfg, unsubItems, unsubSec, unsubAct, unsubOrd, unsubW].forEach(function (u) { if (u) u(); });
-    unsubCfg = unsubItems = unsubSec = unsubAct = unsubOrd = unsubW = null; cfgKey = itemsKey = ordKey = wKey = '';
+    [unsubCfg, unsubItems, unsubSec, unsubAct, unsubOrd, unsubW, unsubX].forEach(function (u) { if (u) u(); });
+    unsubCfg = unsubItems = unsubSec = unsubAct = unsubOrd = unsubW = unsubX = null; cfgKey = itemsKey = ordKey = wKey = xKey = '';
   }
   var itemsSig = '';
   function patchUnsent() {
@@ -638,8 +641,8 @@
      After the 10 minute lock, the prep list, orders and wastage still show. A tap that writes (tick, add, urgent, order,
      log waste) asks "Who are you?" first, then does that same thing once the PIN is right, so nobody taps twice. What was
      typed in the add boxes stays. Reading needs only the kitchen PIN, as before; every write still needs a person's PIN. */
-  var GUEST_WRITES = { oreg: 1, tick: 1, urgent: 1, del: 1, restore: 1, 'add-recipe': 1, quick: 1, fnneed: 1, 'toast-act': 1, ogroup: 1, otick: 1, odel: 1, orestore: 1, wdel: 1, wrestore: 1, wreview: 1 };
-  function guest() { return shared() && !S.authed && !S.picking && !S.who && (S.name === 'prep' || S.name === 'orders' || S.name === 'waste'); }
+  var GUEST_WRITES = { oreg: 1, tick: 1, urgent: 1, del: 1, restore: 1, 'add-recipe': 1, quick: 1, fnneed: 1, 'toast-act': 1, ogroup: 1, otick: 1, odel: 1, orestore: 1, wdel: 1, wrestore: 1, wreview: 1, 'tr-del': 1, 'tr-restore': 1 };
+  function guest() { return shared() && !S.authed && !S.picking && !S.who && (S.name === 'prep' || S.name === 'orders' || S.name === 'waste' || S.name === 'transfers'); }
   function guestAsk(pend) { S.pending = pend; S.picking = true; S.who = ''; draw(); window.scrollTo(0, 0); }
   function guestSel(el) {
     return ['data-p', 'data-id', 'data-d', 'data-i', 'data-v', 'data-k2'].filter(function (k) { return el.hasAttribute(k); })
@@ -650,6 +653,7 @@
     if (pend.form === 'add') { if (S.text.trim()) addTyped(); return; }
     if (pend.form === 'oadd') { addOrder(); return; }
     if (pend.form === 'wadd') { addWaste(); return; }
+    if (pend.form === 'tradd') { addXfer(); return; }
     var el = pend.sel && S.root && S.root.querySelector(pend.sel);
     if (el) el.click(); else toast('That line has changed. Try again.');
   }
@@ -1477,7 +1481,7 @@
   function exportAll() {
     if (!fb || S.exporting) return;
     S.exporting = 'Reading the data...'; draw();
-    var f = fb.fs, out = { exportedAt: new Date(now()).toISOString(), config: null, days: {}, orders: {}, waste: {}, wasteReviews: {}, activity: [], sections: [], learned: [], ordlearned: [], learnlog: [], misses: [], notes: [], notesSeen: {}, minutes: [], minutesHist: {}, minutesSigns: {}, pins: [], book: [], recipes: [], recipesHist: {}, drawings: [], drawingsHist: {}, drawtpl: [], drawlib: [] };
+    var f = fb.fs, out = { exportedAt: new Date(now()).toISOString(), config: null, days: {}, orders: {}, waste: {}, wasteReviews: {}, transfers: {}, activity: [], sections: [], learned: [], ordlearned: [], learnlog: [], misses: [], notes: [], notesSeen: {}, minutes: [], minutesHist: {}, minutesSigns: {}, pins: [], book: [], recipes: [], recipesHist: {}, drawings: [], drawingsHist: {}, drawtpl: [], drawlib: [] };
     function grab(sn) { return sn.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }); }
     // a refused or failed read names its part, so the message says what could not be read
     var part = '', left = [];
@@ -1529,7 +1533,8 @@
             f.getDocs(itemsCol(d)).then(function (sn) { if (sn.docs.length) { out.days[d] = grab(sn); n += sn.docs.length; } }),
             f.getDocs(ordCol(d)).then(function (sn) { if (sn.docs.length) out.orders[d] = grab(sn); }),
             f.getDocs(wCol(d)).then(function (sn) { if (sn.docs.length) out.waste[d] = grab(sn); }),
-            f.getDoc(wDay(d)).then(function (sn) { if (sn.exists()) out.wasteReviews[d] = sn.data(); })
+            f.getDoc(wDay(d)).then(function (sn) { if (sn.exists()) out.wasteReviews[d] = sn.data(); }),
+            f.getDocs(xCol(d)).then(function (sn) { if (sn.docs.length) out.transfers[d] = grab(sn); }, function (e) { if (e && e.code === 'permission-denied') { if (left.indexOf('transfers') < 0) left.push('transfers'); return; } throw e; })
           ]); })).then(next);
         }
         return next().then(function () { return n; });
@@ -1592,7 +1597,7 @@
           S.moveMsg = 'Copying days ' + Math.min(i, dates.length) + ' of ' + dates.length + '...'; draw();
           return Promise.all(chunk.map(function (d) {
             function sub(top, col) { return f.getDocs(f.collection(fb.db, 'kitchens', old, top, d, col)).then(function (sn) { n += sn.docs.length; return Promise.all(sn.docs.map(function (x) { return f.setDoc(f.doc(fb.db, 'kitchens', np, top, d, col, x.id), x.data()); })); }); }
-            return Promise.all([sub('days', 'items'), sub('orders', 'lines'), sub('waste', 'lines'),
+            return Promise.all([sub('days', 'items'), sub('orders', 'lines'), sub('waste', 'lines'), sub('transfers', 'lines'),
               f.getDoc(f.doc(fb.db, 'kitchens', old, 'waste', d)).then(function (sn) { if (sn.exists()) { n++; return f.setDoc(f.doc(fb.db, 'kitchens', np, 'waste', d), sn.data()); } })]);
           })).then(next);
         }
@@ -1602,7 +1607,7 @@
         S.moving = false; S.moveMsg = 'Copied ' + n + ' records. This device now uses the new PIN. Everyone else enters the new PIN next time they open the book.' +
           (skipped ? ' ' + skipped + ' sign-offs and seen records were left on the old PIN: the published rules do not let the head chef copy them yet.' : '');
         S.pin = np; lsSet('lk.prep.pin', np); S.items = []; S.learned = []; S.lists = null; S.learnFor = ''; S.sections = []; S.activity = []; gForget();
-        stopLive(); S.rolledFor = ''; lsSet('lk.prep.rolled', ''); S.learnRan = false; S.weekAt = 0; S.stats = null;
+        stopLive(); S.rolledFor = ''; lsSet('lk.prep.rolled', ''); S.learnRan = false; S.weekAt = 0; S.stats = null; S.xStats = null; S.xLines = [];
         connect();
       }).catch(function (e) { S.moving = false; S.moveMsg = e && e.code === 'permission-denied' ? 'The rules do not allow the new PIN yet. Nothing was changed on the old PIN.' : 'Stopped part way. Nothing was changed on the old PIN, so it is safe to try again.'; draw(); });
   }
@@ -2090,7 +2095,7 @@
   }
   /* ---------- admin filters: time range, section, person, weekday (reason on the Waste tab) ---------- */
   function AF() {
-    if (!S.af) { try { var a = JSON.parse(lsGet('lk.prep.af') || '{}'); S.af = { sec: a.sec || '', who: a.who || '', dow: a.dow || '', reason: a.reason || '' }; } catch (e) { S.af = { sec: '', who: '', dow: '', reason: '' }; } }
+    if (!S.af) { try { var a = JSON.parse(lsGet('lk.prep.af') || '{}'); S.af = { sec: a.sec || '', who: a.who || '', dow: a.dow || '', reason: a.reason || '', venue: a.venue || '' }; } catch (e) { S.af = { sec: '', who: '', dow: '', reason: '', venue: '' }; } }
     return S.af;
   }
   function afSave() { lsSet('lk.prep.af', JSON.stringify(AF())); }
@@ -2591,12 +2596,13 @@
   }
   /* ---------- export (Insights, Team, Waste) ---------- */
   function rangeText(n) { var t = dayNow(); return n + ' days, ' + dayShort(shift(t, -(n - 1))) + ' to ' + dayShort(t); }
-  function toolsHTML(kind, title) {
-    var n = S.statsRange;
-    return '<div class="a-tools"><div><h3 class="a-title">' + esc(title) + '</h3><span class="hint">' + esc(rangeText(n)) + ', compared with the ' + n + ' days before.</span></div>' +
+  // o: { at } for a page that compares nothing and has its own read time (Transfers)
+  function toolsHTML(kind, title, o) {
+    var n = S.statsRange, at = o ? o.at : S.stats && S.stats.at;
+    return '<div class="a-tools"><div><h3 class="a-title">' + esc(title) + '</h3><span class="hint">' + esc(rangeText(n)) + (o ? '.' : ', compared with the ' + n + ' days before.') + '</span></div>' +
       // the export buttons fold into one Export menu, so the first screen is the numbers, not the buttons
       '<details class="a-tbtns a-export"><summary class="btn">Export</summary><div class="btn-row"><button type="button" class="btn" data-p="csv" data-v="' + kind + '">Download CSV</button></div></details></div>' +
-      (S.stats && S.stats.at ? '<p class="hint a-upd">Updated ' + esc(clock(S.stats.at)) + '. Refresh reads the newest.</p>' : '');
+      (at ? '<p class="hint a-upd">Updated ' + esc(clock(at)) + '. Refresh reads the newest.</p>' : '');
   }
   function csvCell(v) { v = v == null ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
   function downloadCSV(name, rows) {
@@ -2622,6 +2628,13 @@
         .sort(function (p, q) { return (p.date + hm(p.addedAt)) < (q.date + hm(q.addedAt)) ? -1 : 1; })
         .forEach(function (x) { w.push([x.date, DOWN[DOW.indexOf(parseYmd(x.date).getDay())], hm(x.addedAt), x.station || '', x.text, x.amount, x.unit, reasonName(x.reason), x.action || '', x.addedBy || '']); });
       downloadCSV('leichhardt-wastage-' + tag + '.csv', w);
+    } else if (kind === 'transfers' && S.xStats && !S.xStats.loading) {
+      var xd = {}, xv = okey(a.venue); xDays(n).forEach(function (d) { xd[d] = 1; });
+      var xr = [['Date', 'Weekday', 'Time', 'Way', 'Venue', 'Who came for it or gave it', 'Item', 'Amount', 'Unit', 'Note', 'Logged by']];
+      S.xStats.lines.filter(function (x) { return !x.deleted && xd[x.date] && (!xv || okey(x.venue) === xv); })
+        .sort(function (p, q) { return (p.date + hm(p.addedAt)) < (q.date + hm(q.addedAt)) ? -1 : 1; })
+        .forEach(function (x) { xr.push([x.date, DOWN[DOW.indexOf(parseYmd(x.date).getDay())], hm(x.addedAt), x.dir === 'in' ? 'We took' : 'They took', x.venue || '', x.person || '', x.text, x.amount, x.unit, x.note || '', x.addedBy || '']); });
+      downloadCSV('leichhardt-transfers-' + tag + '.csv', xr);
     } else if (kind === 'team' && S.stats && !S.stats.loading) {
       var td = teamData(n), t = [['Person', 'Lines written', 'Days written', 'Lines ticked', 'Days ticked', 'Main section', 'Share in main section', 'Days in a row', 'Based on', 'Rotation', 'Last wrote']];
       ((S.config && S.config.people) || []).filter(function (p) { return p.active !== false; }).forEach(function (p) {
@@ -2709,9 +2722,9 @@
   /* ---------- drawing ---------- */
   var TICK = '<svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><path d="M5 14 L11 20 L22 5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
-  function openLabel() { return { orders: 'Open the order list', waste: 'Open the wastage log', minutes: 'Open the minutes', guides: 'Open the guides', mail: 'Open kitchen mail', drinks: 'Open the drinks run', admin: 'Open the admin panel' }[S.name] || 'Open the prep list'; }
+  function openLabel() { return { orders: 'Open the order list', waste: 'Open the wastage log', transfers: 'Open the transfer list', minutes: 'Open the minutes', guides: 'Open the guides', mail: 'Open kitchen mail', drinks: 'Open the drinks run', admin: 'Open the admin panel' }[S.name] || 'Open the prep list'; }
   function gateHTML() {
-    return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Kitchen PIN</h2><p class="hint">' + (S.name === 'admin' ? 'The admin panel needs the kitchen PIN on this device once, then the head chef\'s Google sign-in.' : 'Enter the kitchen PIN to open the prep list, orders, wastage, minutes and guides. This device remembers it.') + '</p>' +
+    return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Kitchen PIN</h2><p class="hint">' + (S.name === 'admin' ? 'The admin panel needs the kitchen PIN on this device once, then the head chef\'s Google sign-in.' : 'Enter the kitchen PIN to open the prep list, orders, wastage, transfers, minutes and guides. This device remembers it.') + '</p>' +
       '<div class="field"><label class="label" for="p-pin">PIN</label>' + pinField('p-pin', 'p-pin', S.pinInput, true) + '</div>' +
       (S.pinError ? '<p class="p-err" role="alert">' + esc(S.pinError) + '</p>' : '') +
       '<div class="btn-row"><button type="button" class="btn dark" data-p="pin-go">' + openLabel() + '</button></div></section>';
@@ -3350,7 +3363,7 @@
     if (at === 'notes') loadNotes();
     if (at === 'minutes') loadMinutes();
     if (at === 'guides') loadGuides();
-    var pane = at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() : at === 'people' ? (
+    var pane = at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'transfers' ? xferStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() : at === 'people' ? (
       '<section class="set-block"><span class="label">People</span><details class="a-how"><summary>How roles and ticks work</summary><p class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Shift pings are written by you and the sous chefs. Functions lets that person enter and change function bookings (Functions coordinator ticks it for you); only your save here gives it or takes it away, and nothing else comes with it. Reset PIN lets that person choose a new one: do it with them there, as whoever signs in with that name next sets the PIN. Removing someone from the list keeps their name on old lines, and their PIN stops working for anything. Head chef is for your own name: it always has every permission and the sous chef pages, and a sous chef cannot change or remove it.</p></details>' +
       (headIdOf(d.people) ? '' : '<p class="hint a-nohead" role="note">No one is marked Head chef yet. Set your own name to Head chef and save, so your PIN has full rights on the kitchen devices.</p>') +
       peopleListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' + ksAdminHTML(d) +
@@ -3358,7 +3371,7 @@
       '<section class="set-block a-feats"><span class="label">New pages</span><span class="hint">You, sous chefs and leads always see these. Untick one to hide it from Staff and View only until the team is ready.</span>' +
       FEATS.map(function (f) { return '<label class="a-check"><input type="checkbox" data-a="staffsee" data-f="' + f[0] + '"' + (d.staffSee[f[0]] ? ' checked' : '') + '> Staff see ' + f[1] + '</label>'; }).join('') + '</section>' + saveBlock
     ) : (
-      '<section class="set-block"><span class="label">Backup</span><span class="hint">Saves everything the prep book holds (people, prep lines, orders and wastage from the last 400 days, shift pings and who has seen them, meeting minutes with earlier versions and sign-offs, function bookings with their contacts and earlier versions, the chef to-do list, what the prep and order lists have learned, tallies and the guides\' words) as one file on this device. People\'s PIN fingerprints and the guides\' page pictures are left out (keep the original files). The book is also backed up on the server every night at 03:30; download one here when you want a copy on this computer.</span><div class="btn-row"><button type="button" class="btn" data-p="export"' + (S.exporting ? ' disabled' : '') + '>' + (S.exporting ? esc(S.exporting) : 'Download a backup') + '</button></div></section>' +
+      '<section class="set-block"><span class="label">Backup</span><span class="hint">Saves everything the prep book holds (people, prep lines, orders, wastage and transfers between venues from the last 400 days, shift pings and who has seen them, meeting minutes with earlier versions and sign-offs, function bookings with their contacts and earlier versions, the chef to-do list, what the prep and order lists have learned, tallies and the guides\' words) as one file on this device. People\'s PIN fingerprints and the guides\' page pictures are left out (keep the original files). The book is also backed up on the server every night at 03:30; download one here when you want a copy on this computer.</span><div class="btn-row"><button type="button" class="btn" data-p="export"' + (S.exporting ? ' disabled' : '') + '>' + (S.exporting ? esc(S.exporting) : 'Download a backup') + '</button></div></section>' +
       '<section class="set-block"><span class="label">Kitchen PIN</span><span class="hint">The kitchen PIN is the lock on the whole book, so keep it to staff only. Writing needs a person\'s own PIN as well.</span>' +
       '<p class="hint a-step"><strong>Step 1.</strong> Ask for the new PIN to be added to the security rules. <strong>Step 2.</strong> Type it twice below and copy everything to it. The old PIN keeps working until its rules are removed.</p>' +
       '<div class="field"><label class="label" for="a-newpin">New 4 digit kitchen PIN</label><input id="a-newpin" class="search" inputmode="numeric" maxlength="4" autocomplete="off" data-k="a-newpin" placeholder="4 digits" value="' + esc(S.newPin) + '"></div>' +
@@ -3396,8 +3409,8 @@
       '<button type="button" class="btn" data-p="a-reset"' + (n ? '' : ' disabled') + '>' + (armed('a-reset') ? 'Tap again to undo ' + (n === 1 ? 'it' : 'all ' + n) : 'Undo unsaved changes') + '</button>' +
       (n ? '<span class="a-unsaved">' + n + ' unsaved change' + (n === 1 ? '' : 's') + '</span>' : '') + '</div><span class="saved" role="status">' + esc(S.saveMsg) + '</span></section>';
   }
-  var A_TAB_NAMES = { mail: 'Kitchen mail', notes: 'Shift pings', insights: 'Insights', team: 'Team', waste: 'Wastage', learning: 'Learning', people: 'People', minutes: 'Minutes', guides: 'Guides', tools: 'Backup and PIN' };
-  var A_GROUPS = [['today', 'Today', ['mail', 'notes']], ['reports', 'Reports', ['insights', 'team', 'waste', 'learning']], ['people', 'People', ['people']], ['content', 'Content', ['minutes', 'guides']], ['settings', 'Settings', ['tools']]];
+  var A_TAB_NAMES = { mail: 'Kitchen mail', notes: 'Shift pings', insights: 'Insights', team: 'Team', waste: 'Wastage', transfers: 'Transfers', learning: 'Learning', people: 'People', minutes: 'Minutes', guides: 'Guides', tools: 'Backup and PIN' };
+  var A_GROUPS = [['today', 'Today', ['mail', 'notes']], ['reports', 'Reports', ['insights', 'team', 'waste', 'transfers', 'learning']], ['people', 'People', ['people']], ['content', 'Content', ['minutes', 'guides']], ['settings', 'Settings', ['tools']]];
   function adminGroupOf(t) { return A_GROUPS.filter(function (g) { return g[2].indexOf(t) >= 0; })[0] || A_GROUPS[1]; }
   /* "On this page": one chip per heading of the open page (the numbered Insights sections, otherwise each block's label
      and the chart headings in it), so a long page is one tap from any part. Built from the page after each draw, so a
@@ -3523,7 +3536,7 @@
       saveBarHTML() + '</div>';
   }
   /* While connecting, show the page that is opening (not a generic prep book card), so nothing flashes. */
-  var PAGE_NAME = { prep: 'Prep list', orders: 'Order list', waste: 'Wastage', admin: 'Admin panel', minutes: 'Meeting minutes', guides: 'Guides', mail: 'Kitchen mail', drinks: 'Drinks run', todo: 'Chef to-do' };
+  var PAGE_NAME = { prep: 'Prep list', orders: 'Order list', waste: 'Wastage', transfers: 'Transfers', admin: 'Admin panel', minutes: 'Meeting minutes', guides: 'Guides', mail: 'Kitchen mail', drinks: 'Drinks run', todo: 'Chef to-do' };
   function loadingHTML() {
     var t = PAGE_NAME[S.name] || 'Prep book';
     if (S.name === 'admin') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">' + t + '</h2><p class="hint">Loading...</p></section>';
@@ -3543,7 +3556,7 @@
     // the chef to-do list: a chef with their PIN, or the head chef's Google device with nobody signed in
     if (S.name === 'todo' && todoOK()) return todoPageHTML();
     if (S.name === 'todo' && guest()) return todoNoHTML();
-    if (guest()) return '<div class="is-guest">' + guestBarHTML() + (S.name === 'orders' ? ordersHTML() : S.name === 'waste' ? wasteHTML() : listHTML()) + '</div>';
+    if (guest()) return '<div class="is-guest">' + guestBarHTML() + (S.name === 'orders' ? ordersHTML() : S.name === 'waste' ? wasteHTML() : S.name === 'transfers' ? xferHTML() : listHTML()) + '</div>';
     if (!who()) return whoHTML();
     if (!S.authed && !resumed) return loadingHTML();   // still finding out whether this phone is signed in (resume)
     if (!S.authed) return ownPinHTML();
@@ -3551,6 +3564,7 @@
     if (S.name === 'todo') return todoNoHTML();
     if (S.name === 'orders') return drinkNudgeHTML() + ordersHTML();
     if (S.name === 'waste') return drinkNudgeHTML() + wasteHTML();
+    if (S.name === 'transfers') return drinkNudgeHTML() + xferHTML();
     if (S.name === 'minutes') return minutesPageHTML();
     if (S.name === 'mail') return mailPageHTML();
     if (S.name === 'drinks') return drinksPageHTML();
@@ -4048,7 +4062,7 @@
   /* A box the book filled in (the usual amount, the section) is selected on the first tap, so typing replaces it
      (coding rules, forms). Only a tap selects: draw() gives focus back after a live change, and that must keep the
      cursor where it was. */
-  var FILLED = { 'w-amt': 1, 'w-sec': 1, 'o-qty': 1, 'p-qty': 1, 'p-section': 1 };
+  var FILLED = { 'w-amt': 1, 'w-sec': 1, 'tr-amt': 1, 'o-qty': 1, 'p-qty': 1, 'p-section': 1 };
   function fillTapDown(e) { var el = e.target; if (el && el.getAttribute && FILLED[el.getAttribute('data-k')] && document.activeElement !== el && el.value) el.setAttribute('data-sel', '1'); }
   function fillTap(e) { var el = e.target; if (el && el.getAttribute && el.getAttribute('data-sel')) { el.removeAttribute('data-sel'); try { el.select(); } catch (x) {} } }
   function focusFilled(k) { var el = S.root && S.root.querySelector('[data-k="' + k + '"]'); if (!el) return; el.focus(); try { el.select(); } catch (x) {} }
@@ -4210,6 +4224,257 @@
   function wNoteHTML() {
     var n = S.wNote; if (!n || S.date !== dayNow()) return '';
     return '<div class="nb-flag"><span class="nb-sl">' + (n.date === shift(dayNow(), -1) ? 'From yesterday\'s waste review' : 'From the ' + esc(parseYmd(n.date).toLocaleDateString('en-AU', { weekday: 'long' })) + ' waste review') + '</span><p>' + esc(n.change) + '</p>' + (n.reviewBy ? '<span class="nb-sw">' + esc(n.reviewBy) + '</span>' : '') + '</div>';
+  }
+
+  /* ---------- transfers between venues (#/transfers, 23 Oct 2026) ----------
+     Stock shared with the other venues, both ways (head chef decision, 23 Oct 2026): what another venue took from us
+     (dir 'out') and what we took from one (dir 'in'), the venue, who came for it (or who gave it), the item, the amount
+     and unit, a note, and who logged it and when (added by themselves). Like the wastage log: everyone signed in logs and
+     sees today's transfers; past days, the totals per venue and item and the CSV are in the admin panel (Reports,
+     Transfers), which is the head chef's Google account. The rules lock it: with the kitchen PIN only today's lines can
+     be read. Venues are typed each time: the book offers the venues and people of today's lines and of the nightly
+     summary (summary/transfers), and a venue typed in another case or spacing is saved the way the book knows it.
+     Reads: today's lines are one live listener (one read per line when it starts, then one per change), started when
+     the page opens and kept while the book is open, like wastage, since other phones log during service. The summary
+     is one read once a day per phone (loadXSum), the order list's learned items one more (loadOrdLearned). */
+  var X_UNITS = ['g', 'kg', 'L', 'pieces', 'packs', 'boxes'];
+  var X_BIG = { g: 5000, kg: 50, L: 50, pieces: 500, packs: 50, boxes: 30 };
+  var X_DAYS = 30;
+  function xBlank(keep) { keep = keep || {}; return { dir: keep.dir || 'out', venue: keep.venue || '', person: keep.person || '', text: '', amt: '', unit: keep.unit || 'kg', note: '', noteOpen: false, amtAuto: false }; }
+  function xCol(date) { return fb.fs.collection.apply(null, [fb.db].concat(base(), ['transfers', date, 'lines'])); }
+  function xRef(date, id) { return fb.fs.doc.apply(null, [fb.db].concat(base(), ['transfers', date, 'lines', id])); }
+  function watchXfer() {
+    if (S.configState !== 'ok' || !fb) return;
+    var key = S.pin + '|' + S.xDate;
+    if (key === xKey && unsubX) return;
+    if (unsubX) unsubX();
+    // a new day starts empty, so yesterday's lines never show under today's date while the read comes in
+    xKey = key; S.xState = 'loading'; S.xLines = [];
+    unsubX = fb.fs.onSnapshot(xCol(S.xDate), function (snap) {
+      S.xLines = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; x.date = S.xDate; return x; });
+      S.xState = 'ok'; draw();
+    }, function () { S.xState = 'error'; draw(); });
+    loadXSum();
+  }
+  function xSumDoc() { return fb.fs.doc.apply(null, [fb.db].concat(base(), ['summary', 'transfers'])); }
+  /* The venues, the people who came and the items of the last 28 days (summary/transfers), worked out each night by the
+     server, so no phone reads past transfer lines. One read once a day per phone (on opening the transfer list), kept in
+     lk.x.sum until the kitchen day changes. A summary made for an earlier day (the night job has not run yet) is used but
+     not kept, so the next page load reads again. A failed read keeps nothing and tries again after 5 minutes. */
+  function loadXSum() {
+    var today = dayNow(), tag = S.pin + '|' + today;
+    if (!fb || S.xSumBusy || waiting('xSum') || (S.xSum && S.xSumFor === today)) return;
+    var c = dayCache('lk.x.sum', tag);
+    if (c) { S.xSum = c; S.xSumFor = today; return; }
+    S.xSumBusy = true;
+    fb.fs.getDoc(xSumDoc()).then(function (sn) {
+      var v = sn.exists() ? sn.data() : null;
+      S.xSumBusy = false; S.xSum = { venues: v && Array.isArray(v.venues) ? v.venues : [], items: v && Array.isArray(v.items) ? v.items : [] }; S.xSumFor = today;
+      if (v && v.day === today) dayCacheSet('lk.x.sum', tag, S.xSum);
+      draw();
+    }, function () { S.xSumBusy = false; retryLater('xSum'); });
+  }
+  // a word from Firestore or a box: a string, spaces tidied, cut to its length (anything else is nothing)
+  function xStr(v, n) { return typeof v === 'string' ? v.replace(/\s+/g, ' ').trim().slice(0, n) : ''; }
+  function xNum(v) { return typeof v === 'number' && isFinite(v) ? v : 0; }
+  function xNewest(a, b) { return xNum(b.addedAt) - xNum(a.addedAt); }
+  function xLive() { return (S.xLines || []).filter(function (x) { return !x.deleted; }); }
+  /* the venues the book knows, one per spelling (case and spaces do not count): today's first, newest first, then the
+     summary's, most used first. The first spelling the book met is the one shown and saved. */
+  function xVenues() {
+    var seen = {}, out = [];
+    function add(v) { v = xStr(v, 40); var k = okey(v); if (k && !seen[k]) { seen[k] = 1; out.push(v); } }
+    xLive().sort(xNewest).forEach(function (x) { add(x.venue); });
+    ((S.xSum && S.xSum.venues) || []).forEach(function (x) { add(x && x.v); });
+    return out;
+  }
+  function xVenueOf(t) { var k = okey(t); return k ? xVenues().filter(function (v) { return okey(v) === k; })[0] || '' : ''; }
+  // who came from (or gave for) a venue: today's first, then the ones the summary has for it, most often first
+  function xPeople(venue) {
+    var k = okey(venue), seen = {}, out = [];
+    if (!k) return out;
+    function add(p) { p = xStr(p, 40); var pk = okey(p); if (pk && !seen[pk]) { seen[pk] = 1; out.push(p); } }
+    xLive().filter(function (x) { return okey(x.venue) === k; }).sort(xNewest).forEach(function (x) { add(x.person); });
+    ((S.xSum && S.xSum.venues) || []).forEach(function (v) { if (v && okey(v.v) === k && Array.isArray(v.people)) v.people.forEach(add); });
+    return out.slice(0, 6);
+  }
+  function xSuggest() {
+    var q = okey(S.xf.text); if (q.length < 2) return [];
+    var seen = {}, out = [];
+    function add(t) { t = xStr(t, 80); var k = okey(t); if (k && !seen[k] && k !== q && (k.indexOf(q) === 0 || k.indexOf(' ' + q) >= 0)) { seen[k] = 1; out.push(t); } }
+    ((S.xSum && S.xSum.items) || []).forEach(function (x) { add(x && x.t); });
+    xLive().forEach(function (x) { add(x.text); });
+    (S.ordLearned || []).forEach(function (x) { if (!x.hidden && x.text) add(x.text); });
+    var idx = ingIndex(); Object.keys(idx).forEach(function (k) { add(idx[k].name); });
+    return out.slice(0, 6);
+  }
+  function xSuggHTML() {
+    var l = xSuggest(); S.xsugg = l;
+    return l.map(function (t, i) { return '<button type="button" class="chip sq nb-sg" data-p="tr-sugg" data-i="' + i + '">' + esc(t) + '</button>'; }).join('');
+  }
+  /* what the venue picked usually takes (or gives), else what is moved most this way: from the summary, twice or more.
+     The unit and amount are checked by type before they go into a box (coding rules, text on screen). */
+  function xOften() {
+    var f = S.xf, vk = okey(f.venue);
+    var l = ((S.xSum && S.xSum.items) || []).filter(function (x) { return x && xStr(x.t, 80) && xNum(x.n) >= 2 && (x.dir === 'in' ? 'in' : 'out') === f.dir; });
+    if (vk) { var mine = l.filter(function (x) { return okey(x.venue) === vk; }); if (mine.length) l = mine; }
+    return l.slice().sort(function (a, b) { return xNum(b.n) - xNum(a.n); }).slice(0, 8).map(function (x) { return { text: xStr(x.t, 80), unit: X_UNITS.indexOf(x.unit) >= 0 ? x.unit : '', amt: wAmt(x.amt) }; });
+  }
+  // the unit and usual amount of an item: today's last line of it first, then the summary
+  function xLast(t) {
+    var k = okey(t), d = xLive().filter(function (x) { return okey(x.text) === k; }).sort(xNewest)[0];
+    if (d && X_UNITS.indexOf(d.unit) >= 0) return { unit: d.unit, amt: wAmt(d.amount) };
+    var x = ((S.xSum && S.xSum.items) || []).filter(function (e) { return e && okey(e.t) === k; })[0];
+    return x ? { unit: X_UNITS.indexOf(x.unit) >= 0 ? x.unit : '', amt: wAmt(x.amt) } : null;
+  }
+  function xFill(o) {
+    var f = S.xf;
+    if (!o) return;
+    if (o.unit) f.unit = o.unit;
+    // a typed amount is never changed by a chip; an amount a chip filled follows the next chip
+    if (o.amt && (f.amtAuto || !String(f.amt).trim())) { f.amt = o.amt; f.amtAuto = true; }
+  }
+  function xTot(lines) {
+    var t = {};
+    lines.forEach(function (x) { var a = +x.amount || 0, u = x.unit === 'g' ? 'kg' : x.unit; if (x.unit === 'g') a = a / 1000; if (X_UNITS.indexOf(u) >= 0) t[u] = (t[u] || 0) + a; });
+    return t;
+  }
+  function xTotText(lines) { var t = xTot(lines); return ['kg', 'L', 'pieces', 'packs', 'boxes'].filter(function (u) { return t[u]; }).map(function (u) { return num(t[u]) + ' ' + u; }).join(', '); }
+  // "To Riviera, Jess came for it" or "From Riviera, Tom gave it"
+  function xWho(x) {
+    var v = xStr(x.venue, 40), p = xStr(x.person, 40);
+    return x.dir === 'in' ? 'From ' + v + (p ? ', ' + p + ' gave it' : '') : 'To ' + v + (p ? ', ' + p + ' came for it' : '');
+  }
+  function addXfer() {
+    var f = S.xf, p = me();
+    if (!can('add')) return;
+    var dir = f.dir === 'in' ? 'in' : 'out', venue = xVenueOf(f.venue) || xStr(f.venue, 40), person = xStr(f.person, 40);
+    var pr = proofread(f.text.trim()), t = (pr.text || '').slice(0, 80), amt = parseFloat(String(f.amt).replace(',', '.'));
+    if (!venue) { toast(dir === 'out' ? 'Write which venue took it.' : 'Write which venue it came from.'); focusK('tr-venue'); return; }
+    if (dir === 'out' && !person) { toast('Write who came for it.'); focusK('tr-person'); return; }
+    if (!t) { toast(dir === 'out' ? 'Write what they took.' : 'Write what we took.'); focusK('tr-text'); return; }
+    if (!(amt > 0) || amt >= 100000) { toast('Write the amount as a number.'); focusK('tr-amt'); return; }
+    if (X_UNITS.indexOf(f.unit) < 0) { toast('Pick a unit.'); focusSel('.tr-units .seg-b'); return; }
+    // a big number for its unit is often grams typed with kg still picked: ask once (second tap on Log it)
+    if (amt > (X_BIG[f.unit] || Infinity) && !arm('xbig:' + amt + f.unit)) { toast(amt + ' ' + f.unit + '? Check the unit. Tap Log it again if it is right.', null, 4000); focusSel('.tr-units .seg-b[aria-checked="true"]'); return; }
+    var ref = fb.fs.doc(xCol(S.xDate)), unit = f.unit;
+    sset(ref, practiceOn({ dir: dir, venue: venue, person: person, text: t, amount: amt, unit: unit, note: xStr(f.note, 120),
+      addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: now(), deleted: false })).catch(function (e) { failed(e, function () { if (!S.xf.text.trim()) S.xf = f; }); });
+    // the next item of the same pick-up keeps the way, the venue, the person and the unit
+    S.xf = xBlank({ dir: dir, venue: venue, person: person, unit: unit });
+    draw(); focusK('tr-text');
+    var msg = 'Logged: ' + (dir === 'out' ? venue + ' took ' + num(amt) + ' ' + unit + ' ' + t : 'we took ' + num(amt) + ' ' + unit + ' ' + t + ' from ' + venue) +
+      (pr.changes.length ? '. Corrected ' + pr.changes.map(function (c) { return c[0] + ' to ' + c[1]; }).join(', ') : '');
+    // Undo like the wastage log: the rules let only the head chef or a sous chef take a line back, so staff are told who can
+    if (canBrowse()) toast(msg, { label: 'Undo', fn: function () { supd(ref, { deleted: true, deletedBy: (me() || {}).name || 'Head chef', deletedAt: now() }).catch(failed); } });
+    else toast(msg + '. Wrong? Ask the head chef.', null, 6000);
+  }
+  /* Remove or put back a transfer: the head chef's Google account only (the admin log, or this page on that device).
+     The admin log's 30 days are patched here (no read), so the change shows at once; today's lines come back through the listener. */
+  function removeXfer(date, id, restore) {
+    if (!wAll()) return;
+    var mine = (S.xStats && S.xStats.lines) || [], it = (S.xLines || []).concat(mine).filter(function (x) { return x.id === id && x.date === date; })[0];
+    var by = restore ? '' : (me() || {}).name || 'Head chef', at = restore ? 0 : now();
+    mine.forEach(function (x) { if (x.id === id && x.date === date) { x.deleted = !restore; x.deletedBy = by; x.deletedAt = at; } });
+    supd(xRef(date, id), { deleted: !restore, deletedBy: by, deletedAt: at }).catch(failed);
+    if (!restore) toast('Removed ' + (it ? it.text : 'the transfer') + ' from the transfer list', { label: 'Undo', fn: function () { removeXfer(date, id, true); } });
+    draw();
+  }
+  function xBtn(x) {
+    if (!wAll() || !x.id) return '';
+    var what = x.deleted ? 'Put back' : 'Remove';
+    return '<button type="button" class="p-x" data-p="' + (x.deleted ? 'tr-restore' : 'tr-del') + '" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc(what + ' ' + x.text) + '">' + what + '</button>';
+  }
+  function xRow(x) {
+    var out = x.dir !== 'in';
+    return '<li class="nb-row tr-row' + (x.deleted ? ' is-removed' : '') + '"><span class="w-time">' + (x.addedAt ? clock(x.addedAt) : '') + '</span>' +
+      '<span class="nb-t"><span class="tr-way tr-way-' + (out ? 'out' : 'in') + '">' + (out ? 'Out' : 'In') + '</span> <strong>' + esc(x.text) + '</strong> <span class="w-amt">' + esc(num(+x.amount || 0) + ' ' + x.unit) + '</span>' +
+      '<span class="tr-who">' + esc(xWho(x)) + '</span>' + (x.note ? '<span class="w-act">' + esc(x.note) + '</span>' : '') + '</span><span class="nb-by">' + esc(x.addedBy || '') + '</span>' + xBtn(x) + '</li>';
+  }
+  // the venue and person chips, and the often taken chips that follow the venue (redrawn while the venue is typed)
+  function xVenueChips() {
+    var f = S.xf, l = xVenues().slice(0, 8);
+    return l.length ? '<div class="chiprow tr-chips" role="group" aria-label="Venues">' + l.map(function (v) { return '<button type="button" class="chip sq" data-p="tr-vpick" data-v="' + esc(v) + '" aria-pressed="' + (okey(v) === okey(f.venue)) + '">' + esc(v) + '</button>'; }).join('') + '</div>' : '';
+  }
+  function xPeopleChips() {
+    var f = S.xf, l = xPeople(f.venue);
+    return l.length ? '<div class="chiprow tr-chips" role="group" aria-label="' + (f.dir === 'in' ? 'Who gave it before' : 'Who came before') + '">' + l.map(function (v) { return '<button type="button" class="chip sq" data-p="tr-ppick" data-v="' + esc(v) + '" aria-pressed="' + (okey(v) === okey(f.person)) + '">' + esc(v) + '</button>'; }).join('') + '</div>' : '';
+  }
+  function xOftenHTML() {
+    var l = xOften();
+    return l.length ? '<div class="w-often"><span class="nb-ql">' + (S.xf.dir === 'in' ? 'We often take' : 'Often taken') + '</span><div class="chiprow">' + l.map(function (e, i) { return '<button type="button" class="chip sq" data-p="tr-often" data-i="' + i + '">' + esc(e.text) + '</button>'; }).join('') + '</div></div>' : '';
+  }
+  function xChipsSync() {
+    var r = S.root; if (!r) return;
+    var a = r.querySelector('#tr-vchips'), b = r.querySelector('#tr-pchips'), c = r.querySelector('#tr-often');
+    if (a) a.innerHTML = xVenueChips(); if (b) b.innerHTML = xPeopleChips(); if (c) c.innerHTML = xOftenHTML();
+  }
+  function xFormHTML() {
+    var f = S.xf, out = f.dir !== 'in';
+    return '<form class="nb-add tr-add" data-p-form="tradd">' +
+      '<div class="w-pick tr-dirs"><span class="nb-ql" id="tr-dir-l">Which way</span><div class="seg" role="radiogroup" aria-labelledby="tr-dir-l">' + [['out', 'They took from us'], ['in', 'We took from them']].map(function (d) {
+        return '<button type="button" class="seg-b" role="radio" data-p="tr-dir" data-v="' + d[0] + '" aria-checked="' + (f.dir === d[0]) + '">' + d[1] + '</button>'; }).join('') + '</div></div>' +
+      '<div class="tr-two"><div class="tr-field"><label class="visually-hidden" for="tr-venue">Venue</label><input id="tr-venue" class="nb-in tr-box" data-k="tr-venue" enterkeyhint="next" autocomplete="off" autocapitalize="words" placeholder="' + (out ? 'Which venue took it?' : 'Which venue did it come from?') + '" maxlength="40" value="' + esc(f.venue) + '"><div id="tr-vchips">' + xVenueChips() + '</div></div>' +
+      '<div class="tr-field"><label class="visually-hidden" for="tr-person">' + (out ? 'Who came for it' : 'Who gave it') + '</label><input id="tr-person" class="nb-in tr-box" data-k="tr-person" enterkeyhint="next" autocomplete="off" autocapitalize="words" placeholder="' + (out ? 'Who came for it?' : 'Who gave it? (optional)') + '" maxlength="40" value="' + esc(f.person) + '"><div id="tr-pchips">' + xPeopleChips() + '</div></div></div>' +
+      '<div id="tr-often">' + xOftenHTML() + '</div>' +
+      '<div class="nb-add-row"><label class="visually-hidden" for="tr-text">Item</label><input id="tr-text" class="nb-in nb-in-text" data-k="tr-text" enterkeyhint="next" autocomplete="off" placeholder="' + (out ? 'What did they take?' : 'What did we take?') + '" maxlength="80" value="' + esc(f.text) + '">' +
+      '<label class="visually-hidden" for="tr-amt">Amount</label><input id="tr-amt" class="nb-in nb-in-qty" data-k="tr-amt" inputmode="decimal" enterkeyhint="next" autocomplete="off" placeholder="Amount (' + esc(f.unit) + ')" maxlength="8" value="' + esc(f.amt) + '"></div>' +
+      '<div class="nb-sugg" id="tr-sugg">' + xSuggHTML() + '</div>' +
+      '<div class="w-pick tr-units"><span class="nb-ql" id="tr-unit-l">Unit</span><div class="seg" role="radiogroup" aria-labelledby="tr-unit-l">' + X_UNITS.map(function (u) { return '<button type="button" class="seg-b" role="radio" data-p="tr-unit" data-v="' + u + '" aria-checked="' + (f.unit === u) + '">' + u + '</button>'; }).join('') + '</div></div>' +
+      // the note is optional, so it folds until wanted, like the wastage action
+      '<div class="nb-add-row">' + (f.note || f.noteOpen ? '<label class="visually-hidden" for="tr-note">Note</label><input id="tr-note" class="nb-in nb-in-text tr-note" data-k="tr-note" autocomplete="off" placeholder="Note, for example: giving it back Friday (optional)" maxlength="120" value="' + esc(f.note) + '">'
+        : '<button type="button" class="w-actbtn" data-p="tr-note-open">+ Add a note (optional)</button>') +
+      '<button type="submit" class="nb-addbtn">Log it</button></div></form>';
+  }
+  /* The transfer list is for logging, like wastage (head chef decision, 23 Oct 2026): the form and today's transfers from
+     the whole team. Past days, totals and corrections are in the admin panel (Reports, Transfers). */
+  function xferHTML() {
+    var today = dayNow();
+    if (S.xDate !== today) { S.xDate = today; watchXfer(); }
+    if (S.authed && fb) { loadXSum(); loadOrdLearned(); }
+    var byTime = function (a, b) { return xNum(a.addedAt) - xNum(b.addedAt); };
+    var live = xLive().sort(byTime), shown = (S.xLines || []).filter(function (x) { return wAll() || !x.deleted; }).sort(byTime);
+    var nOut = live.filter(function (x) { return x.dir !== 'in'; }).length, nIn = live.length - nOut;
+    var sub = [nOut ? nOut + ' out' : '', nIn ? nIn + ' in' : ''].filter(Boolean).join(', ');
+    var add = can('add') ? xFormHTML() : '<p class="hint">You can read the transfer list but not write in it.</p>';
+    var body = S.xState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' :
+      (shown.length ? '<ul class="nb-rows">' + shown.map(xRow).join('') + '</ul>' : (S.xState !== 'ok' ? '<p class="nb-empty">Loading...</p>' : '<p class="nb-empty">No transfers for ' + esc(dayName(S.xDate).toLowerCase()) + ' yet. When another venue takes stock, or we take some from them, log it here.</p>'));
+    return whoTopHTML(ksTagHTML()) +
+      '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Transfers</h2><span class="nb-date">' + esc(longDate(S.xDate)) + (sub ? ' &middot; ' + esc(sub) : '') + '</span></div>' +
+      '<div class="nb-prog">' + live.length + (live.length === 1 ? ' transfer' : ' transfers') + '</div></header>' +
+      '<p class="w-rule">Stock shared with the other venues, both ways. Write the amount and unit, not a price.</p>' +
+      '<div class="nb-foot w-addtop">' + add + '</div><div class="nb-body">' + body + '</div></section>' +
+      (wAll() ? '<p class="hint w-past">Past days and the totals per venue are in the <a href="#/admin" data-p="tr-go-admin">admin panel, Transfers</a>.</p>' : '');
+  }
+  // Next on the venue, the person or the item goes to the next empty box instead of sending the form half filled
+  function trNext(k) {
+    var f = S.xf;
+    if (k === 'tr-venue') { focusK('tr-person'); return true; }
+    if (k === 'tr-person') { focusK(f.text.trim() ? 'tr-amt' : 'tr-text'); return true; }
+    if (k === 'tr-text' && f.text.trim() && !String(f.amt).trim()) { focusK('tr-amt'); return true; }
+    return false;
+  }
+  function trInput(k, el) {
+    var f = S.xf;
+    if (k === 'tr-text') { f.text = el.value; var g = S.root.querySelector('#tr-sugg'); if (g) g.innerHTML = xSuggHTML(); return; }
+    if (k === 'tr-amt') { f.amt = el.value.replace(/[^0-9.,]/g, ''); f.amtAuto = false; if (el.value !== f.amt) el.value = f.amt; return; }
+    if (k === 'tr-venue') { f.venue = el.value; xChipsSync(); return; }
+    if (k === 'tr-person') { f.person = el.value; var pc = S.root.querySelector('#tr-pchips'); if (pc) pc.innerHTML = xPeopleChips(); return; }
+    if (k === 'tr-note') { f.note = el.value; }
+  }
+  function trClick(a, el) {
+    var f = S.xf, id = el.getAttribute('data-id'), dt = el.getAttribute('data-d'), v = el.getAttribute('data-v') || '', i = +el.getAttribute('data-i');
+    if (a === 'tr-dir') { f.dir = v === 'in' ? 'in' : 'out'; draw(); return; }
+    if (a === 'tr-unit') { if (X_UNITS.indexOf(v) >= 0) f.unit = v; draw(); return; }
+    if (a === 'tr-vpick') { f.venue = xStr(v, 40); draw(); focusK(f.person.trim() ? (f.text.trim() ? 'tr-amt' : 'tr-text') : 'tr-person'); return; }
+    if (a === 'tr-ppick') { f.person = xStr(v, 40); draw(); focusK(f.text.trim() ? 'tr-amt' : 'tr-text'); return; }
+    if (a === 'tr-sugg') { var t = (S.xsugg || [])[i]; if (t) { f.text = t; xFill(xLast(t)); draw(); focusFilled('tr-amt'); } return; }
+    if (a === 'tr-often') { var o = xOften()[i]; if (o) { f.text = o.text; xFill(o); draw(); focusFilled('tr-amt'); } return; }
+    if (a === 'tr-note-open') { f.noteOpen = true; draw(); focusSel('#tr-note'); return; }
+    if (a === 'tr-del') { removeXfer(dt, id); return; }
+    if (a === 'tr-restore') { removeXfer(dt, id, true); return; }
+    if (a === 'tr-go-admin') { S.atab = 'transfers'; lsSet('lk.prep.atab', 'transfers'); return; }
+    if (a === 'tr-refresh') { loadXStats(true); draw(); }
   }
 
   /* ---------- shift pings (stored as notes) ----------
@@ -5371,6 +5636,114 @@
       (r.reviewBy ? '<span class="hint">Last saved by ' + esc(r.reviewBy) + (r.reviewAt ? ' at ' + clock(r.reviewAt) : '') + '.</span>' : '') + '</div>';
   }
 
+  /* ---------- transfers between venues (admin, 23 Oct 2026) ----------
+     The head chef's Google account only: the rules refuse past transfer lines to anyone else. Reads the last 30 days, one
+     query per day, when the page opens: the first open of a kitchen day costs 30 reads plus one per line, later opens
+     about 1 (today; past days come from this device's own copy through pastRead). Refresh reads them all again. A day
+     that could not be read is counted and said, never shown as nothing moved. Older days are in the backups. */
+  function xDays(n) { var t = dayNow(), out = [], i; for (i = n - 1; i >= 0; i--) out.push(shift(t, -i)); return out; }
+  function loadXStats(force) {
+    if (!fb || S.configState !== 'ok' || !wAll()) return;
+    if (S.xStats && (S.xStats.loading || !force)) return;
+    S.xStats = { loading: true, lines: [], miss: 0 };
+    var dates = xDays(X_DAYS);
+    Promise.all(dates.map(function (d) {
+      return pastRead(xCol(d), 'x/' + d, d, false, force).then(function (sn) { return sn.docs.map(function (x) { var v = x.data(); v.id = x.id; v.date = d; return v; }); }, function () { return null; });
+    })).then(function (res) {
+      S.xStats = { loading: false, at: now(), lines: [].concat.apply([], res.filter(Boolean)), miss: res.filter(function (r) { return !r; }).length }; draw();
+    });
+  }
+  // the venues in the 30 days read, one per spelling key, each in the spelling used most
+  function xSpell() {
+    var m = {}, out = {};
+    ((S.xStats && S.xStats.lines) || []).forEach(function (x) { var v = xStr(x.venue, 40), k = okey(v); if (!k) return; var e = m[k] = m[k] || {}; e[v] = (e[v] || 0) + 1; });
+    Object.keys(m).forEach(function (k) { var e = m[k]; out[k] = Object.keys(e).sort(function (a, b) { return e[b] - e[a]; })[0]; });
+    return out;
+  }
+  function xStatVenues() { var m = xSpell(); return Object.keys(m).map(function (k) { return m[k]; }).sort(function (a, b) { return a.toLowerCase().localeCompare(b.toLowerCase()); }); }
+  function xFiltersHTML() {
+    var a = AF(), n = S.statsRange, vs = xStatVenues();
+    if (a.venue && !vs.some(function (v) { return okey(v) === okey(a.venue); })) vs.unshift(a.venue);
+    var out = '<div class="a-filters" role="group" aria-label="Filters"><div class="a-range">' + [7, 14, 30].map(function (k) { return '<button type="button" class="chip" data-p="range" data-v="' + k + '" aria-pressed="' + (n === k) + '">' + k + ' days</button>'; }).join('') +
+      '<button type="button" class="chip" data-p="tr-refresh">Refresh</button></div>';
+    if (vs.length > 1 || a.venue) out += '<label class="a-f"><span>Venue</span><select data-k="af-venue">' + [['', 'All venues']].concat(vs.map(function (v) { return [v, v]; })).map(function (o) { return '<option value="' + esc(o[0]) + '"' + (okey(o[0]) === okey(a.venue) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select></label>';
+    if (a.venue) out += '<button type="button" class="chip a-reset" data-p="af-reset">Clear filters</button>';
+    return out + '</div>' + (a.venue ? '<p class="a-fnote">Showing: ' + esc(a.venue) + '.</p>' : '');
+  }
+  function xAz(a, b) { return String(a).toLowerCase().localeCompare(String(b).toLowerCase()); }
+  function xferStatsHTML() {
+    loadXStats(false);
+    var xs = S.xStats, n = S.statsRange, vk = okey(AF().venue);
+    var head = '<section class="set-block">' + toolsHTML('transfers', 'Transfers', { at: xs && !xs.loading ? xs.at : 0 }) +
+      '<span class="hint">From the transfer list on the phones: what other venues took from us and what we took from them. Amounts are what people wrote (grams are counted as kg). Days older than 30 are in the backups. <a href="#/transfers">Open the transfer list</a></span>' + xFiltersHTML();
+    if (!xs || xs.loading) return head + '<p class="hint">Loading the last ' + X_DAYS + ' days...</p></section>';
+    var ds = {}; xDays(n).forEach(function (d) { ds[d] = 1; });
+    var all = xs.lines.filter(function (x) { return ds[x.date] && (!vk || okey(x.venue) === vk); }), lines = all.filter(function (x) { return !x.deleted; });
+    var outs = lines.filter(function (x) { return x.dir !== 'in'; }), ins = lines.filter(function (x) { return x.dir === 'in'; });
+    var miss = xs.miss ? '<p class="p-err" role="alert">Could not read ' + xs.miss + (xs.miss === 1 ? ' day' : ' days') + ', so some transfers may be missing. Check the signal and tap Refresh.</p>' : '';
+    var vm = {}, im = {}, sp = xSpell();
+    lines.forEach(function (x) {
+      var vkey = okey(x.venue) || '-', ve = vm[vkey] = vm[vkey] || { v: sp[vkey] || 'No venue', out: [], in: [], last: '', ppl: {} };
+      (x.dir === 'in' ? ve.in : ve.out).push(x); if (x.date > ve.last) ve.last = x.date;
+      var pp = xStr(x.person, 40); if (pp) ve.ppl[pp] = (ve.ppl[pp] || 0) + 1;
+      var ikey = okey(x.text), ie = im[ikey] = im[ikey] || { t: x.text, out: [], in: [], vs: {} };
+      (x.dir === 'in' ? ie.in : ie.out).push(x); if (ve.v) ie.vs[ve.v] = 1;
+    });
+    var venues = Object.keys(vm).map(function (k) { return vm[k]; }), items = Object.keys(im).map(function (k) { return im[k]; });
+    var tiles = [[lines.length, lines.length === 1 ? 'transfer' : 'transfers', ''], [outs.length, 'taken from us', ''], [ins.length, 'we took', ''], [venues.length, venues.length === 1 ? 'venue' : 'venues', '']].filter(tileKeep);
+    var log = xLogHTML(all);
+    if (!lines.length) return head + miss + '<div class="a-tiles">' + tiles.map(tileHTML).join('') + '</div><p class="hint">No transfers in this time yet.</p>' + log + '</section>';
+    function amounts(l) { return l.length ? esc(l.length + ' (' + xTotText(l) + ')') : '<span class="o-who-i">none</span>'; }
+    var venueList = lvHTML({
+      key: 'xfer-venues', items: venues, step: 10, tools: 8, noun: ['venue', 'venues'], ph: 'Search venues', empty: 'No transfers in this time.',
+      find: function (e) { return e.v + ' ' + Object.keys(e.ppl).join(' '); },
+      sorts: [['most', 'Most transfers', function (a, b) { return (b.out.length + b.in.length) - (a.out.length + a.in.length) || xAz(a.v, b.v); }], ['az', 'A to Z', function (a, b) { return xAz(a.v, b.v); }], ['last', 'Latest first', function (a, b) { return a.last < b.last ? 1 : a.last > b.last ? -1 : 0; }]],
+      cols: [
+        { h: 'Venue', th: true, html: function (e) { return esc(e.v); } },
+        { h: 'They took', html: function (e) { return amounts(e.out); } },
+        { h: 'We took', html: function (e) { return amounts(e.in); } },
+        { h: 'Last', html: function (e) { return e.last ? esc(dayShort(e.last)) : ''; } },
+        { h: 'People', wide: true, html: function (e) { var p = e.ppl; return esc(Object.keys(p).sort(function (a, b) { return p[b] - p[a]; }).slice(0, 6).join(', ')); } }
+      ]
+    });
+    var itemList = lvHTML({
+      key: 'xfer-items', items: items, step: 10, tools: 8, noun: ['item', 'items'], ph: 'Search items', empty: 'No transfers in this time.',
+      find: function (e) { return e.t + ' ' + Object.keys(e.vs).join(' '); },
+      filters: [['all', 'All items'], ['out', 'They took', function (e) { return e.out.length > 0; }], ['in', 'We took', function (e) { return e.in.length > 0; }], ['rep', 'More than once', function (e) { return e.out.length + e.in.length >= 2; }]],
+      sorts: [['most', 'Most transfers', function (a, b) { return (b.out.length + b.in.length) - (a.out.length + a.in.length) || xAz(a.t, b.t); }], ['az', 'A to Z', function (a, b) { return xAz(a.t, b.t); }]],
+      cols: [
+        { h: 'Item', th: true, html: function (e) { return esc(e.t); } },
+        { h: 'They took', html: function (e) { return amounts(e.out); } },
+        { h: 'We took', html: function (e) { return amounts(e.in); } },
+        { h: 'Venues', wide: true, html: function (e) { return esc(Object.keys(e.vs).sort(xAz).join(', ')); } }
+      ]
+    });
+    return head + miss + '<div class="a-tiles">' + tiles.map(tileHTML).join('') + '</div>' +
+      '<h3 class="a-ch-h">By venue</h3><span class="hint">How many transfers each way, with the amounts added up per unit.</span>' + venueList +
+      '<h3 class="a-ch-h">By item</h3>' + itemList + log + '</section>';
+  }
+  /* Every transfer in the time picked, removed ones too, with Remove and Put back for the head chef (past days are
+     corrected here, not on the transfer list). Uses the 30 days loadXStats already read. */
+  function xLogHTML(l) {
+    return '<h3 class="a-ch-h">Every transfer</h3><span class="hint">Remove a transfer that was logged by mistake. Removed ones stay here, so you can put them back.</span>' + lvHTML({
+      key: 'xfer-log', items: l, step: 15, tools: 8, noun: ['transfer', 'transfers'], ph: 'Search transfers', empty: 'No transfers in this time.',
+      find: function (x) { return x.text + ' ' + (x.venue || '') + ' ' + (x.person || '') + ' ' + (x.addedBy || '') + ' ' + (x.note || ''); },
+      filters: [['all', 'All'], ['out', 'They took', function (x) { return !x.deleted && x.dir !== 'in'; }], ['in', 'We took', function (x) { return !x.deleted && x.dir === 'in'; }], ['gone', 'Removed', function (x) { return !!x.deleted; }]],
+      sorts: [['new', 'Newest first', function (a, b) { return xNum(b.addedAt) - xNum(a.addedAt); }], ['old', 'Oldest first', function (a, b) { return xNum(a.addedAt) - xNum(b.addedAt); }], ['az', 'A to Z', function (a, b) { return xAz(a.text, b.text); }]],
+      cols: [
+        { h: 'Day', html: function (x) { return esc(dayShort(x.date)) + (x.addedAt ? ' ' + clock(x.addedAt) : ''); } },
+        { h: 'Item', th: true, html: function (x) { return esc(x.text) + (x.deleted ? ' <span class="o-who-i">Removed' + (x.deletedBy ? ' by ' + esc(x.deletedBy) : '') + '</span>' : ''); } },
+        { h: 'Amount', html: function (x) { return esc(num(+x.amount || 0) + ' ' + x.unit); } },
+        { h: 'Way', html: function (x) { return x.dir === 'in' ? 'We took' : 'They took'; } },
+        { h: 'Venue', html: function (x) { return esc(x.venue || ''); } },
+        { h: 'Came or gave', html: function (x) { return esc(x.person || ''); } },
+        { h: 'Logged by', html: function (x) { return esc(x.addedBy || ''); } },
+        { h: 'Note', wide: true, html: function (x) { return esc(x.note || ''); } },
+        { h: '', html: xBtn }
+      ]
+    });
+  }
+
   /* ---------- recipe searches that found nothing (queued by the recipe book, sent once someone is signed in) ---------- */
   var flushing = false;
   function flushMisses() {
@@ -6418,6 +6791,7 @@
     if (a.indexOf('lv-') === 0) { lvClick(a, el); return; }
     if (a.indexOf('dk-') === 0) { dkClick(a, el); return; }
     if (a.indexOf('todo-') === 0) { todoClick(a, el); return; }
+    if (a.indexOf('tr-') === 0) { trClick(a, el); return; }
     if (a === 'ml-cat') { mlf.cat = el.getAttribute('data-v'); mlMsg = ''; draw(); return; }
     if (a === 'ml-pri') { mlf.pri = el.getAttribute('data-v'); draw(); return; }
     if (a === 'ml-send') { mlSend(); return; }
@@ -6554,7 +6928,7 @@
     if (a === 'aj-open') { ajOpen(el); return; }
     if (a === 'csv') { exportCSV(el.getAttribute('data-v')); return; }
     if (a === 'hrm') { S.hrM = el.getAttribute('data-v'); draw(); return; }
-    if (a === 'af-reset') { S.af = { sec: '', who: '', dow: '', reason: '' }; afSave(); draw(); return; }
+    if (a === 'af-reset') { S.af = { sec: '', who: '', dow: '', reason: '', venue: '' }; afSave(); draw(); return; }
     if (a === 'cal-day') { S.date = el.getAttribute('data-d'); S.tab = ''; watchItems(); location.hash = '#/prep'; return; }
     if (a === 'close-hide') { lsSet('lk.closeout', dayNow()); draw(); return; }
     if (a === 'oreg') { var orr = (S.oregs || [])[i]; if (orr) { S.otext = orr.text; S.oqty = orr.q || ''; addOrder(true); } return; }
@@ -6654,6 +7028,7 @@
       return;
     }
     if (k === 'n-text') { if (S.nf) S.nf.text = el.value; var nc = S.root.querySelector('#n-count'); if (nc) nc.textContent = el.value.length + ' of 400. Ctrl+Enter saves.'; var npv = S.root.querySelector('#n-prev'); if (npv && S.nf) npv.innerHTML = draftPreviewHTML(S.nf); return; }
+    if (k && k.indexOf('tr-') === 0) { trInput(k, el); return; }
     if (k === 'w-text') { S.wf.text = el.value; var wg = S.root.querySelector('#w-sugg'); if (wg) wg.innerHTML = wSuggHTML(); return; }
     if (k === 'w-amt') { S.wf.amt = el.value.replace(/[^0-9.,]/g, ''); S.wf.amtAuto = false; if (el.value !== S.wf.amt) el.value = S.wf.amt; return; }
     if (k === 'w-sec') { S.wf.sec = el.value; return; }
@@ -6684,7 +7059,7 @@
     if (k === 'n-until') { if (S.nf) { S.nf.until = el.value; S.nf.run = !!el.value; draw(); } return; }
     if (k === 'n-tm') { if (S.nf) { S.nf.tm = el.value; draw(); } return; }
     if (k === 'p-section' || k === 'w-sec') { checkSectionBox(el, k); return; }
-    if (k === 'af-sec' || k === 'af-who' || k === 'af-dow' || k === 'af-reason') { AF()[k.slice(3)] = el.value; afSave(); draw(); return; }
+    if (k === 'af-sec' || k === 'af-who' || k === 'af-dow' || k === 'af-reason' || k === 'af-venue') { AF()[k.slice(3)] = el.value; afSave(); draw(); return; }
     var a = el.getAttribute && el.getAttribute('data-a');
     if (!a || !S.draft) return;
     if (a === 'badges') { S.draft.showBadges = el.checked; return; }
@@ -6700,10 +7075,11 @@
   }
   function onSubmit(e) {
     var f = e.target.getAttribute && e.target.getAttribute('data-p-form');
-    if (guest() && (f === 'add' || f === 'oadd' || f === 'wadd')) { e.preventDefault(); if (f !== 'add' || S.text.trim()) guestAsk({ form: f }); return; }
+    if (guest() && (f === 'add' || f === 'oadd' || f === 'wadd' || f === 'tradd')) { e.preventDefault(); if (f !== 'add' || S.text.trim()) guestAsk({ form: f }); return; }
     if (f === 'add') { e.preventDefault(); if (!S.text.trim()) { var pt = S.root.querySelector('[data-k="p-text"]'); if (pt) pt.focus(); return; } addTyped(); }
     else if (f === 'oadd') { e.preventDefault(); addOrder(); }
     else if (f === 'wadd') { e.preventDefault(); addWaste(); }
+    else if (f === 'tradd') { e.preventDefault(); addXfer(); }
     else if (f === 'pin') { e.preventDefault(); submitPin(); }
   }
   function onKey(e) {
@@ -6712,6 +7088,7 @@
     if (e.key === 'Enter' && e.target && e.target.getAttribute && e.target.getAttribute('data-k') === 'w-text' && S.wf.text.trim()) {
       if (!String(S.wf.amt).trim()) { e.preventDefault(); focusK('w-amt'); return; }
     }
+    if (e.key === 'Enter' && e.target && e.target.getAttribute && /^tr-(venue|person|text)$/.test(e.target.getAttribute('data-k') || '') && trNext(e.target.getAttribute('data-k'))) { e.preventDefault(); return; }
     if (e.key === 'Tab' && S.sheet) {
       var sh = S.root.querySelector('.sheet'); if (sh) trapTab(e, sh, 'button');
       return;
@@ -7227,12 +7604,12 @@
       if (name === 'admin') S.draft = S.draft || null;
       draw();
       if (name === 'todo') todoLoad(TD_FRESH);
-      if (S.pin) { connect(); if (name === 'admin') sdk(); if (name === 'orders') { S.ordDate = dayNow(); watchOrders(); } if (name === 'waste') { S.wDate = dayNow(); watchWaste(); } notesInit(); }
+      if (S.pin) { connect(); if (name === 'admin') sdk(); if (name === 'orders') { S.ordDate = dayNow(); watchOrders(); } if (name === 'waste') { S.wDate = dayNow(); watchWaste(); } if (name === 'transfers') { S.xDate = dayNow(); watchXfer(); } notesInit(); }
     },
     warm: function () { if (S.pin && S.configState !== 'ok' && S.configState !== 'loading') connect(); notesInit(); },
     unsaved: function () {
       return pending > 0 || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!mlf.text.trim() || tdDirty() || mfDirty() || nfDirty() || gfDirty() || draftDirty() || !!String(S.bulk || '').trim() || !!S.sheet || !!S.recipeOpen ||
-        !!(S.text.trim() || S.qty.trim() || S.otext.trim() || S.oqty.trim() || S.wf.text.trim() || String(S.wf.amt).trim() || S.wf.act.trim() || (S.wrA != null && S.wrA !== (rvBase().avoidable || '')) || (S.wrC != null && S.wrC !== (rvBase().change || '')));
+        !!(S.text.trim() || S.qty.trim() || S.otext.trim() || S.oqty.trim() || S.wf.text.trim() || String(S.wf.amt).trim() || S.wf.act.trim() || S.xf.text.trim() || String(S.xf.amt).trim() || S.xf.note.trim() || (S.wrA != null && S.wrA !== (rvBase().avoidable || '')) || (S.wrC != null && S.wrC !== (rvBase().change || '')));
     },
     noteInfo: noteInfo, noteBellLabel: noteBellLabel,
     noteOpen: noteOpen,

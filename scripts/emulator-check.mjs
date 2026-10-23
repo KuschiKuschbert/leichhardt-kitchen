@@ -1,4 +1,5 @@
-// Checks nightly-learn.mjs against the Firestore emulator: seeds two days, runs it twice, compares the counts.
+// Checks nightly-learn.mjs against the Firestore emulator: seeds two days, runs it twice, compares the counts and the
+// summaries (wastage, transfers, usage, the learned lists).
 // Run from scripts/: FIRESTORE_EMULATOR_HOST=127.0.0.1:8089 node emulator-check.mjs (inside "firebase emulators:exec")
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
@@ -27,6 +28,20 @@ await w(['waste', y, 'lines', 'w2'], wl('rice ', { amount: 2, station: 'Pans', a
 await w(['waste', y, 'lines', 'w3'], wl('Chips', { unit: 'kg', reason: 'excess' }));
 await w(['waste', y, 'lines', 'w4'], wl('Gone', { deleted: true }));
 await w(['waste', today, 'lines', 'w5'], wl('Rice'));
+// transfers for the nightly summary (23 Oct 2026): Riviera three times in two spellings (Butter twice out, once in), the
+// Bowls Club twice (Lemons in, the second on the oldest day kept); one removed, one practice, one with no venue, today's
+// and one from 29 days ago left out. The two kg amounts of Butter tie, so the newer one (3) is the usual amount.
+const tl = (n, text, x) => Object.assign({ dir: 'out', venue: 'Riviera', person: '', text, amount: 2, unit: 'kg', note: '', addedBy: 'Bo', addedById: 'bo', addedAt: Date.now() - n * 86400000, deleted: false, by: 'bo' }, x || {});
+await w(['transfers', y2, 'lines', 't1'], tl(2, 'Butter', { person: 'Jess' }));
+await w(['transfers', y, 'lines', 't2'], tl(1, 'butter ', { venue: ' riviera  ', person: 'Tom', amount: 3 }));
+await w(['transfers', day(5), 'lines', 't3'], tl(5, 'Butter', { dir: 'in', person: 'jess', amount: 500, unit: 'g' }));
+await w(['transfers', y, 'lines', 't4'], tl(1, 'Lemons', { dir: 'in', venue: 'Bowls Club', amount: 2, unit: 'boxes' }));
+await w(['transfers', day(28), 'lines', 't5'], tl(28, 'Lemons', { dir: 'in', venue: 'Bowls Club', amount: 1, unit: 'boxes' }));
+await w(['transfers', y, 'lines', 't6'], tl(1, 'Gone', { deleted: true, deletedBy: 'boss', deletedAt: 1 }));
+await w(['transfers', y, 'lines', 't7'], tl(1, 'Practice', { tst: true }));
+await w(['transfers', y, 'lines', 't8'], tl(1, 'Mystery', { venue: '  ' }));
+await w(['transfers', today, 'lines', 't9'], tl(0, 'Butter'));
+await w(['transfers', day(29), 'lines', 't10'], tl(29, 'Old stock', { venue: 'Old Pub' }));
 const run = () => execFileSync(process.execPath, ['nightly-learn.mjs'], { env: Object.assign({}, process.env, { KITCHEN_PIN: '000000', LEARN_DAYS: '5' }), encoding: 'utf8' });
 await K.collection('daily').doc(y + '_aa').set({ day: y, tag: 'aa', sg: { quick: { s: 1, t: 3, d: 0 } }, pf: { lcp: [1, 2, 0, 0, 0] }, at: 1 });
 await K.collection('daily').doc(y + '_bb').set({ day: y, tag: 'bb', sg: { quick: { s: 1, t: 1, d: 1 } }, pf: { lcp: [0, 1, 0, 0, 1] }, at: 1 });
@@ -61,6 +76,18 @@ ok(rice.n === 2 && rice.r.expired === 2 && rice.unit === 'portions', 'summary: R
 ok(rice.last && rice.last.sec === 'Pans' && rice.last.amt === 2, 'summary: the last time is the newest entry');
 ok((ws.items || []).some(x => x.t === 'Chips' && x.r.excess === 1) && !(ws.items || []).some(x => x.t === 'Gone'), 'summary: Chips once, the removed entry left out');
 ok(/Wastage summary: 2 items/.test(out1), 'summary: the run says how many items');
+const ts = (await K.collection('summary').doc('transfers').get()).data() || {};
+const tv = ts.venues || [], ti = ts.items || [], tj = o => JSON.stringify(o);
+ok(ts.day === today && ts.from === day(28) && ts.to === y && typeof ts.at === 'number', 'transfers: made today, the 28 days up to yesterday (' + ts.day + ', ' + ts.from + ', ' + ts.to + ')');
+ok(Object.keys(ts).sort().join() === 'at,day,from,items,to,venues' && tv.every(v => Object.keys(v).sort().join() === 'in,n,out,people,v') && ti.every(x => Object.keys(x).sort().join() === 'amt,dir,n,t,unit,venue'), 'transfers: only the fields the spec lists');
+ok(tv.length === 2 && tv[0].v === 'Riviera' && tv[0].n === 3 && tv[0].out === 2 && tv[0].in === 1, 'transfers: Riviera and " riviera  " are one venue, most used spelling, out and in counted (' + tj(tv[0]) + ')');
+ok(tj(tv[0].people) === '["Jess","Tom"]', 'transfers: people most often first, Jess and jess together (' + tj(tv[0].people) + ')');
+ok(tv[1].v === 'Bowls Club' && tv[1].n === 2 && tv[1].out === 0 && tv[1].in === 2 && tv[1].people.length === 0, 'transfers: Bowls Club second, the oldest day kept, nobody named (' + tj(tv[1]) + ')');
+ok(ti.length === 2 && tj(ti[0]) === tj({ t: 'Butter', n: 3, unit: 'kg', amt: 3, dir: 'out', venue: 'Riviera' }), 'transfers: Butter 3 times (today\'s line left out), kg, the newer of two tied amounts, out to Riviera (' + tj(ti[0]) + ')');
+ok(tj(ti[1]) === tj({ t: 'Lemons', n: 2, unit: 'boxes', amt: 2, dir: 'in', venue: 'Bowls Club' }) && typeof ti[1].amt === 'number', 'transfers: Lemons twice, in from the Bowls Club, amt a plain number (' + tj(ti[1]) + ')');
+ok(!ti.some(x => /gone|practice|mystery|old stock/i.test(x.t)) && !tv.some(v => /old pub/i.test(v.v)), 'transfers: removed, practice, no venue and older than 28 days left out');
+ok(/Transfer summary: \d+ items, \d+ venues/.test(out1) && /Transfer summary: 2 items, 2 venues from 28 days/.test(out1), 'transfers: the run says how many items and venues');
+ok(!/\b(riviera|bowls|butter|lemons|jess|tom)\b/i.test(out1), 'transfers: the run prints no venue, item or name');
 const us = (await K.collection('summary').doc('usage').get()).data() || {}, uy = (us.days || {})[y] || {};
 ok(uy.phones === 2 && uy.sg && uy.sg.quick && uy.sg.quick.t === 4 && uy.sg.quick.d === 1 && uy.pf.lcp.join() === '1,3,0,0,1', 'usage: yesterday added up from two phones (' + JSON.stringify(uy) + ')');
 ok(!(await K.collection('daily').doc(day(9) + '_cc').get()).exists && (await K.collection('daily').doc(y + '_aa').get()).exists, 'usage: records older than 7 days deleted, yesterday kept');

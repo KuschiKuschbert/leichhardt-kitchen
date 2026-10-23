@@ -34,13 +34,17 @@ async function measure(b, hash, o, settle) {
   // measured 22 Oct 2026 with this seed: first open 657 (277 once the nightly summaries exist), first open before them 655, reload 17, admin 699, admin again 27 (before: first open 775, the
   // rollover read seven past days the past-days list had just read; reload 317 and admin again 699, the learned list and
   // the admin's past days read again every time). RB_SHOW=1 prints what costs most.
-  const BUDGET = { first: 680, firstSum: 300, reload: 40, admin: 720, admin2: 60 };
+  // Transfers (23 Oct 2026): first open 659, with the summaries 279, reload 19 (today's transfer list and its summary,
+  // one read each), admin 732 (the Transfers page reads its 30 days once a day, one query per day, empty days included),
+  // admin again 28. The admin budget went from 720 to 760 for those 30.
+  const BUDGET = { first: 680, firstSum: 300, reload: 40, admin: 760, admin2: 60 };
   const show = !!process.env.RB_SHOW;
 
-  // a staff phone opens the prep list for the first time today, then goes to orders and wastage
+  // a staff phone opens the prep list for the first time today, then goes to orders, wastage and transfers
   let p = await measure(b, '#/prep', { who: 'ann' });
   await p.evaluate(() => { location.hash = '#/orders'; }); await L.settle(p, 1200);
   await p.evaluate(() => { location.hash = '#/waste'; }); await L.settle(p, 1200);
+  await p.evaluate(() => { location.hash = '#/transfers'; }); await L.settle(p, 1200);
   let bl = await billed(p);
   const first = sum(bl);
   if (show) console.log('first open: ' + first + ' (' + top(bl) + ')');
@@ -48,6 +52,7 @@ async function measure(b, hash, o, settle) {
   await p.reload(); await L.settle(p, 2500);
   await p.evaluate(() => { location.hash = '#/orders'; }); await L.settle(p, 1200);
   await p.evaluate(() => { location.hash = '#/waste'; }); await L.settle(p, 1200);
+  await p.evaluate(() => { location.hash = '#/transfers'; }); await L.settle(p, 1200);
   bl = await billed(p);
   const reload = sum(bl);
   if (show) console.log('reload: ' + reload + ' (' + top(bl) + ')');
@@ -62,6 +67,7 @@ async function measure(b, hash, o, settle) {
   p = await measure(b, '#/prep', { who: 'ann', extra: withSum });
   await p.evaluate(() => { location.hash = '#/orders'; }); await L.settle(p, 1200);
   await p.evaluate(() => { location.hash = '#/waste'; }); await L.settle(p, 1200);
+  await p.evaluate(() => { location.hash = '#/transfers'; }); await L.settle(p, 1200);
   bl = await billed(p);
   const firstSum = sum(bl);
   if (show) console.log('first open with the summaries: ' + firstSum + ' (' + top(bl) + ')');
@@ -70,9 +76,10 @@ async function measure(b, hash, o, settle) {
   ok(p.errors.length === 0, 'with the summaries: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // the head chef opens the admin panel (Insights, then Wastage and Team)
+  // the head chef opens the admin panel (Insights, then Wastage, Transfers and Team)
   p = await measure(b, '#/admin', { admin: true, who: '' }, 2500);
   await L.adminTab(p, 'waste'); await L.settle(p, 1500);
+  await L.adminTab(p, 'transfers'); await L.settle(p, 1500);
   await L.adminTab(p, 'team'); await L.settle(p, 1500);
   bl = await billed(p);
   const admin = sum(bl);
@@ -80,6 +87,7 @@ async function measure(b, hash, o, settle) {
   // later the same day: the past days come from the device's own copy
   await p.reload(); await L.settle(p, 2500);
   await L.adminTab(p, 'waste'); await L.settle(p, 1500);
+  await L.adminTab(p, 'transfers'); await L.settle(p, 1500);
   await L.adminTab(p, 'team'); await L.settle(p, 1500);
   bl = await billed(p);
   const admin2 = sum(bl);
