@@ -5,6 +5,8 @@ const { R, ok } = L.results();
 (async () => {
   const b = await L.start();
   let p = await L.open(b, '#/settings', { admin: true, who: '', wait: 1800 });
+  // The owner-only control appears after the Google account check, just as the following click waits for it.
+  await L.waitFor(p, () => !!document.querySelector('[data-act="setpractice"][data-val="1"]'), null, 8000);
   ok(!!(await p.$('[data-act="setpractice"][data-val="1"]')), 'head chef device: Settings has Practice on this device');
   await p.click('[data-act="setpractice"][data-val="1"]'); await L.settle(p, 200);
   ok(await p.evaluate(() => JSON.parse(localStorage.getItem('lk.settings.v1')).practice === true), 'On is kept on this device');

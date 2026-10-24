@@ -729,7 +729,7 @@ Measured and kept as it is: `js/art.js` (1.3 MB, 164 kB zipped) still loads at s
 
 ### Staff save presses
 
-Manage staff and the People panel update their save feedback in place. The Save and Undo buttons stay in place while a name field loses focus, so a held press is not cancelled by the input-change redraw. The New pages regression uses a held Save press after editing a name and checks the saved staff list and retained visibility settings.
+Manage staff and the People panel update their save feedback in place. The Save and Undo buttons stay in place while a name field loses focus, so a held press is not cancelled by the input-change redraw. The New pages regression uses a held Save press after editing a name and checks the saved staff list and retained visibility settings. The Practice settings test waits for its owner-only control before checking it, matching the account check that the next click already waits for.
 
 ### Supplier quantity entry
 
