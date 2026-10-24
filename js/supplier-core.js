@@ -48,10 +48,17 @@
     return t.length <= 40 && /^[a-z]+(?:[ -][a-z]+)*$/.test(t) ? t : '';
   }
   // Reuse the book's amount parser. A carton abbreviation does not imply how much the carton contains.
-  function quantity(v, zero) {
+  function quantity(v, zero, confirmedUnit) {
     if (!A || typeof v !== 'string') return null;
     var raw = v.trim(), parsed = A.parse(raw), unit = parsed && parsed.u, amount = parsed && parsed.n;
     if (!raw || raw.length > 40) return null;
+    // A bare count may use the unit the chef already confirmed for this field. Never infer one from the pack or name.
+    var confirmed = normaliseUnit(confirmedUnit);
+    if (confirmed && /^[\d\s.,/½¼¾⅓⅔]+$/.test(raw) && ((parsed && !unit) || /^0+(?:[.,]0+)?$/.test(raw))) {
+      raw += ' ' + confirmed;
+      if (raw.length > 40) return null;
+      parsed = A.parse(raw); unit = parsed && parsed.u; amount = parsed && parsed.n;
+    }
     if (!parsed || !unit) {
       // A custom unit still requires one unambiguous decimal amount. The book reads the number.
       var m = raw.match(/^(\d+(?:[.,]\d+)?)\s*([a-z]+(?:[ -][a-z]+)*)\.?$/i);
@@ -65,8 +72,8 @@
     }
     return isFinite(amount) && amount >= (zero ? 0 : 0.000001) && amount < MAX_AMOUNT ? { qty: raw, amount: amount, unit: unit } : null;
   }
-  function parseQuantity(v) { return quantity(v, false); }
-  function parseStock(v) { return quantity(v, true); }
+  function parseQuantity(v, confirmedUnit) { return quantity(v, false, confirmedUnit); }
+  function parseStock(v, confirmedUnit) { return quantity(v, true, confirmedUnit); }
   function cleanUnit(v, field) {
     if (v == null || v === '') return '';
     var n = normaliseUnit(text(v, 40, field, false));
@@ -173,13 +180,14 @@
       var raw = own(map, item.id) ? map[item.id] : '';
       if (raw == null || (typeof raw === 'string' && !raw.trim())) return;
       if (item.archived) fail('archived', item.id, 'An archived item cannot be ordered.');
-      var q = parseQuantity(raw);
-      if (!q) fail('quantity', item.id, 'Enter a positive quantity and a unit for ' + item.name + '.');
+      var q = parseQuantity(raw, item.orderUnit);
+      if (!q) fail('quantity', item.id, 'To order for ' + item.name + ': enter a positive quantity' + (item.orderUnit ? ' in ' + item.orderUnit + ', or type the quantity and unit.' : ' with its unit, e.g. 2 kg or 2 cartons.'));
       var stock = stockMap && own(stockMap, item.id) ? stockMap[item.id] : '';
-      if (stock && !parseStock(stock)) fail('stock', item.id, 'Check the stock count and its unit.');
+      var counted = stock ? parseStock(stock, item.parUnit) : null;
+      if (stock && !counted) fail('stock', item.id, 'Stock count for ' + item.name + ': enter zero or more' + (item.parUnit ? ' in ' + item.parUnit + ', or type the count and unit.' : ' with its unit, e.g. 0 kg or 2 cartons.'));
       var suggestion = suggestions && own(suggestions, item.id) ? suggestions[item.id] : null;
       if (suggestion && typeof suggestion !== 'string') suggestion = suggestion.reason;
-      lines.push({ itemId: item.id, name: item.name, pack: item.pack, qty: q.qty, amount: q.amount, unit: q.unit, par: item.par, parUnit: item.parUnit, source: copy(item.source), suggestion: text(suggestion, 500, 'suggestion'), stock: text(stock, 40, 'stock') });
+      lines.push({ itemId: item.id, name: item.name, pack: item.pack, qty: q.qty, amount: q.amount, unit: q.unit, par: item.par, parUnit: item.parUnit, source: copy(item.source), suggestion: text(suggestion, 500, 'suggestion'), stock: text(counted ? counted.qty : stock, 40, 'stock') });
     });
     Object.keys(map).forEach(function (key) { if (!own(seen, key) && map[key] != null && String(map[key]).trim()) fail('item', key, 'An order item is no longer in this catalogue.'); });
     if (!lines.length) fail('empty', 'lines', 'Enter at least one order quantity.');
@@ -191,7 +199,7 @@
     var item = cleanItem(value);
     if (item.archived) return null;
     if (stockText != null && String(stockText).trim()) {
-      var stock = parseStock(stockText), target = cleanPar(item.par), counted = stock && convert(stock.amount, stock.unit, item.parUnit);
+      var stock = parseStock(stockText, item.parUnit), target = cleanPar(item.par), counted = stock && convert(stock.amount, stock.unit, item.parUnit);
       var factor = item.factor > 0 ? item.factor : convert(1, item.orderUnit, item.parUnit);
       if (!stock || target === '' || target === null || counted === null || !(factor > 0) || !item.orderUnit) return null;
       var needed = Math.max(0, Number(target.replace(',', '.')) - counted), amount = needed / factor;
@@ -219,5 +227,5 @@
     if (!old && !changes.length) changes.push({ itemId: '', action: 'add_supplier', before: null, after: { name: next.name, cutoffId: next.cutoffId } });
     return changes;
   }
-  return { MAX_ITEMS: MAX_ITEMS, MAX_ORDER_LINES: MAX_ORDER_LINES, cleanPar: cleanPar, normaliseUnit: normaliseUnit, parseQuantity: parseQuantity, parseStock: parseStock, convert: convert, cleanItem: cleanItem, cleanSupplier: cleanSupplier, validateCatalogue: validateCatalogue, normaliseName: normaliseName, duplicateItems: duplicateItems, matchRequests: matchRequests, snapshotLines: snapshotLines, suggestQuantity: suggestQuantity, catalogueDiff: catalogueDiff };
+  return { API: 2, MAX_ITEMS: MAX_ITEMS, MAX_ORDER_LINES: MAX_ORDER_LINES, cleanPar: cleanPar, normaliseUnit: normaliseUnit, parseQuantity: parseQuantity, parseStock: parseStock, convert: convert, cleanItem: cleanItem, cleanSupplier: cleanSupplier, validateCatalogue: validateCatalogue, normaliseName: normaliseName, duplicateItems: duplicateItems, matchRequests: matchRequests, snapshotLines: snapshotLines, suggestQuantity: suggestQuantity, catalogueDiff: catalogueDiff };
 });

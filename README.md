@@ -727,6 +727,10 @@ Code that breaks a coding rule from now on is fixed in the same branch, or added
 
 Measured and kept as it is: `js/art.js` (1.3 MB, 164 kB zipped) still loads at start (22 Oct 2026). Loading it only when Recipes opens was built and measured on a phone six times slower than a laptop: the start was 9 ms sooner (284 to 275 ms until the scripts had run, 71 to 65 ms at full speed), nothing less was downloaded (it stays in `SHELL`), and the first Recipes after each start was about 90 ms slower (944 to 1036 ms). Recipes is the page the book opens most, so the change was not merged.
 
+### Supplier quantity entry
+
+Supplier order accepts a plain number when the item has a confirmed order unit. Stock counts can use the confirmed par unit. Review includes those units in the saved quantities and stock counts. For items without confirmed units, enter the unit with the amount, such as `2 cartons` or `5 kg`. A validation error reveals and focuses the exact field, including items hidden by a filter or another page, while keeping all draft quantities. Supplier page/core revision 2 uses versioned loading and rejects older mixed modules.
+
 ### Changing the kitchen PIN
 
 1. Add a second copy of the `kitchens/<pin>/...` rules for the new 4 digit PIN to the live rules (see `firestore.rules`).

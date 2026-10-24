@@ -974,9 +974,9 @@
   function supplierTools() {
     if (!supplierToolsPromise) supplierToolsPromise = Promise.resolve().then(function () {
       if (!window.LK_APP || !window.LK_APP.load) throw { code: 'unavailable' };
-      return window.LK_SUP_CORE ? null : window.LK_APP.load('js/supplier-core.js');
+      return window.LK_SUP_CORE && window.LK_SUP_CORE.API === 2 ? null : window.LK_APP.load('js/supplier-core.js?v=2');
     }).then(function () { return window.LK_SUP_STORE ? null : window.LK_APP.load('js/supplier-store.js'); }).then(function () {
-      if (!window.LK_SUP_STORE || window.LK_SUP_STORE.API !== 1) throw { code: 'version' };
+      if (!window.LK_SUP_CORE || window.LK_SUP_CORE.API !== 2 || !window.LK_SUP_STORE || window.LK_SUP_STORE.API !== 1) throw { code: 'version' };
       supplierService = window.LK_SUP_STORE.create(supplierApi()); return supplierService;
     }).catch(function (e) { supplierToolsPromise = null; throw e; });
     return supplierToolsPromise;
