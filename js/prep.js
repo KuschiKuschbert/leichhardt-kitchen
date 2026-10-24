@@ -839,14 +839,14 @@
     if (S.minOpen && !mfDirty()) { S.minOpen = false; S.mf = null; }
     if (S.notesOpen && !nfDirty()) S.notesOpen = false;
   }
-  window.addEventListener('hashchange', function () { if (location.hash !== '#/prep') leftPrep(); });
+  window.addEventListener('hashchange', function () { if (location.hash !== '#/prep') leftPrep(); if (S.sheet) wasteSheetClose(true); });
   function chefOpen(k) {
     if (!isSous()) return;
     if (adminTabs()) { S.atab = k === 'pings' ? 'notes' : k === 'register' ? 'minutes' : 'people'; lsSet('lk.prep.atab', S.atab); if (location.hash === '#/admin') draw(); else location.hash = '#/admin'; return; }
     // a ping with words not saved yet stays open behind the register (drawn first), like a staff draft, so Back finds it
     S.minOpen = false; if (!(k === 'register' && nfDirty())) S.notesOpen = false; if (S.staffOpen && !draftDirty()) { S.staffOpen = false; S.draft = null; }
-    if (k === 'pings') { S.notesOpen = true; S.nf = null; S.nOpen = false; S.nMsg = ''; loadNotes(); }
-    else if (k === 'register') { S.minOpen = true; S.mMsg = ''; S.mf = null; loadMinutes(true); }
+    if (k === 'pings') { S.notesOpen = true; if (!nfDirty()) { S.nf = null; S.nOpen = false; } S.nMsg = ''; loadNotes(); }
+    else if (k === 'register') { S.minOpen = true; S.mMsg = ''; if (!mfDirty()) S.mf = null; loadMinutes(true); }
     else { if (!S.staffOpen) startDraft(); S.staffOpen = true; seedPinOpen(); }
     if (location.hash === '#/prep') { draw(); window.scrollTo(0, 0); } else location.hash = '#/prep';
   }
@@ -2891,8 +2891,9 @@
      Cancel and Escape; its clicks use data-lm. Remove in the sheet taps the line's own Remove, so Undo works as before. */
   function moreBtn(x) { return '<button type="button" class="nb-more" data-lm="open" data-id="' + esc(x.id) + '" aria-haspopup="dialog" aria-label="' + esc('More for ' + x.text) + '">⋯</button>'; }
   var lmOpenFrom = null;
-  function lmClose() {
+  function lmClose(noBack) {
     var s0 = document.getElementById('lm-sheet'); if (!s0) return;
+    ovDone('lm', noBack);
     s0.remove(); document.documentElement.classList.remove('sheet-open');
     if (lmOpenFrom && document.body.contains(lmOpenFrom)) lmOpenFrom.focus(); lmOpenFrom = null;
   }
@@ -2909,6 +2910,7 @@
       '<button type="button" class="btn sheet-x" data-lm="close">Cancel</button></div>';
     lmOpenFrom = btn; box._act = act;
     document.body.appendChild(box); document.documentElement.classList.add('sheet-open');
+    ovPush('lm', function () { lmClose(true); });
     var f = box.querySelector('.lm-act') || box.querySelector('.sheet-x'); if (f) f.focus();
   }
   document.addEventListener('click', function (e) {
@@ -2924,7 +2926,7 @@
     if (e.key === 'Escape') { e.preventDefault(); lmClose(); return; }
     if (e.key === 'Tab') trapTab(e, box.querySelector('.sheet'), 'button');
   });
-  window.addEventListener('hashchange', lmClose);
+  window.addEventListener('hashchange', function () { lmClose(true); });
   /* A line ticked on this phone stays where it is, struck through, for 3.5 seconds before it leaves the list. */
   var LINGER = 3500;
   function lingers(x) { return x.done && !x.deleted && x.doneById === S.who && now() - (x.doneAt || 0) < LINGER; }
@@ -3626,16 +3628,18 @@
       Array.prototype.map.call(row.querySelectorAll('.chip[data-p="jump"]'), function (c) { return '<button type="button" class="sheet-o" data-aj="go" data-v="' + esc(c.getAttribute('data-v')) + '"' + (c.getAttribute('aria-current') === 'true' ? ' aria-current="true"' : '') + '><strong>' + esc(c.textContent.replace(/^\d+\s*/, '')) + '</strong></button>'; }).join('') +
       '</div><button type="button" class="btn sheet-x" data-aj="close">Cancel</button></div>';
     box._from = from; document.body.appendChild(box); document.documentElement.classList.add('sheet-open');
+    ovPush('aj', function () { ajClose(false, true); });
     var f = box.querySelector('[aria-current="true"]') || box.querySelector('.sheet-o'); if (f) f.focus();
   }
-  function ajClose(keep) {
+  function ajClose(keep, noBack) {
     var box = document.getElementById('aj-sheet'); if (!box) return;
+    ovDone('aj', noBack);
     box.remove(); document.documentElement.classList.remove('sheet-open');
     if (!keep && box._from && document.body.contains(box._from)) box._from.focus();
   }
   document.addEventListener('click', function (e) {
     var el = e.target && e.target.closest ? e.target.closest('[data-aj]') : null; if (!el) return;
-    if (el.getAttribute('data-aj') === 'go') { var id = el.getAttribute('data-v'); ajClose(true); adminJumpTo(id); return; }
+    if (el.getAttribute('data-aj') === 'go') { var id = el.getAttribute('data-v'); ajClose(true); ovAfterBack(function () { adminJumpTo(id); }); return; }
     ajClose();
   });
   document.addEventListener('keydown', function (e) {
@@ -3643,7 +3647,7 @@
     if (e.key === 'Escape') { e.preventDefault(); ajClose(); return; }
     if (e.key === 'Tab') trapTab(e, box.querySelector('.sheet'), 'button');
   });
-  window.addEventListener('hashchange', function () { ajClose(true); });
+  window.addEventListener('hashchange', function () { ajClose(true, true); });
   function adminJumpTo(id) {
     var tg = document.getElementById(id), nav = S.root && S.root.querySelector('.a-nav');
     if (!tg) return;
@@ -3749,6 +3753,7 @@
     else focusPin();
     if (S.name === 'admin') adminJumps();
     rendering = false;
+    window.dispatchEvent(new Event('lk-back'));
   }
 
   /* ---------- the order list ----------
@@ -4296,6 +4301,10 @@
   }
   /* Bottom sheet for picking one thing on a phone (the waste reason). Big rows, a hint under each, Cancel or tap outside to close. */
   var REASON_HINT = { prep: 'Trim, peel and offcuts', expired: 'Past its date or gone off', fault: 'Burnt, dropped or done wrong', returned: 'Sent back by a guest', excess: 'Made more than was needed' };
+  function wasteSheetClose(noBack) {
+    if (!S.sheet) return;
+    S.sheet = ''; ovDone('reason', noBack); draw(); focusSel('.w-rbtn');
+  }
   function sheetHTML() {
     if (S.sheet !== 'reason') return '';
     return '<div class="sheet-bg" data-p="sheet-close"></div><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-h"><div class="sheet-grip" aria-hidden="true"></div><h3 id="sheet-h">Why was it wasted?</h3><div class="sheet-list" role="radiogroup" aria-labelledby="sheet-h">' +
@@ -6300,11 +6309,14 @@
      Opening the big guide page or the pings popup adds a history entry for the same address. Back closes it (pings count
      as put off, not read), and closing it any other way takes that entry off again, so Back never leaves the page by
      surprise. A close that comes with a move to another page (a link) leaves the entry. */
-  var ovOn = '', ovBack = false, ovBackT = null;
-  function ovPush(k) { ovOn = k; try { history.pushState({ lkOv: k }, '', location.href); } catch (e) {} }
+  var ovOn = '', ovClose = null, ovBack = false, ovBackT = null, ovAfter = [];
+  function ovPush(k, close) {
+    ovOn = k; ovClose = typeof close === 'function' ? close : null;
+    try { history.pushState(Object.assign({}, history.state || {}, { lkOv: k }), '', location.href); } catch (e) {}
+  }
   // ovBack: our own Back is on its way; the next sheet waits for it (sheetNext), or that Back would close the new sheet
   function ovDone(k, noBack) {
-    if (ovOn !== k) return; ovOn = ''; if (noBack) return;
+    if (ovOn !== k) return; ovOn = ''; ovClose = null; if (noBack) return;
     try {
       if (history.state && history.state.lkOv === k) {
         ovBack = true; history.back();
@@ -6312,11 +6324,18 @@
       }
     } catch (e) { ovBack = false; }
   }
-  function ovLanded() { clearTimeout(ovBackT); var w = ovBack; ovBack = false; if (w && nextWait) sheetNext(); }
+  // A jump waits until Back has restored the sheet's opening scroll position, then moves to its heading.
+  function ovAfterBack(fn) { if (ovBack) ovAfter.push(fn); else fn(); }
+  function ovLanded() {
+    clearTimeout(ovBackT); var w = ovBack, after = ovAfter.splice(0); ovBack = false;
+    if (after.length) setTimeout(function () { after.forEach(function (fn) { fn(); }); }, 0);
+    if (w && nextWait) sheetNext();
+  }
   window.addEventListener('popstate', function () {
     if (ovBack) { ovLanded(); return; }
-    var k = ovOn; ovOn = '';
-    if (k === 'gz' && gz) gzClose(true);
+    var k = ovOn, close = ovClose; ovOn = ''; ovClose = null;
+    if (close) close();
+    else if (k === 'gz' && gz) gzClose(true);
     else if (k === 'note' && npop) noteClose('later', true);
     else if (k === 'ks' && ksPop) ksClose(true);
   });
@@ -7316,7 +7335,7 @@
     // head chef only (admin Tools tab): this device forgets the kitchen PIN and goes to the PIN screen of the prep book
     if (a === 'pin-forget') { if (!arm('pin-forget')) return; S.pin = ''; lsSet('lk.prep.pin', ''); S.config = null; S.configState = 'idle'; stopLive(); gForget(); if (location.hash === '#/admin') { location.hash = '#/prep'; return; } draw(); return; }
     if (a === 'retry') { cfgKey = ''; connect(); return; }
-    if (a === 'notes-open') { if (canPing()) { S.notesOpen = true; S.nf = null; S.nOpen = false; S.nMsg = ''; loadNotes(); draw(); window.scrollTo(0, 0); } return; }
+    if (a === 'notes-open') { if (canPing()) { S.notesOpen = true; if (!nfDirty()) { S.nf = null; S.nOpen = false; } S.nMsg = ''; loadNotes(); draw(); window.scrollTo(0, 0); } return; }
     if (a === 'notes-close') { S.notesOpen = false; draw(); return; }
     if (a === 'n-new') { S.nf = nfNew(); S.nfSnap = JSON.stringify(S.nf); S.nOpen = true; S.nMsg = ''; draw(); var ntx = S.root.querySelector('[data-k="n-text"]'); if (ntx) { focusNoteText(ntx); } return; }
     if (a === 'n-tag') {
@@ -7354,8 +7373,8 @@
       else if (todaysNotes().length) noteOpen(); else toast('Write a ping first, or no ping is set for today yet.');
       return;
     }
-    if (a === 'mn-open') { if (isSous()) { S.minOpen = true; S.mMsg = ''; S.mf = null; loadMinutes(true); draw(); window.scrollTo(0, 0); } return; }
-    if (a === 'mn-close') { S.minOpen = false; S.mf = null; draw(); return; }
+    if (a === 'mn-open') { if (isSous()) { S.minOpen = true; S.mMsg = ''; if (!mfDirty()) S.mf = null; loadMinutes(true); draw(); window.scrollTo(0, 0); } return; }
+    if (a === 'mn-close') { S.minOpen = false; if (!mfDirty()) S.mf = null; draw(); return; }
     if (a === 'mn-admin') { S.atab = 'minutes'; lsSet('lk.prep.atab', 'minutes'); location.hash = '#/admin'; return; }
     // the register from #/minutes, the same as the old Minutes register in the chef hat menu: on a tap, one small minutes query
     if (a === 'mn-sous') { chefOpen('register'); return; }
@@ -7446,9 +7465,9 @@
     // Last 7 days always counts today from the live list, whatever day was being browsed; the past days come from the day cache
     if (a === 'wunit') { S.wf.unit = el.getAttribute('data-v'); draw(); return; }
     if (a === 'w-act-open') { S.wf.actOpen = true; draw(); focusSel('#w-act'); return; }
-    if (a === 'wreason') { S.wf.reason = el.getAttribute('data-v'); var fromSheet = S.sheet === 'reason'; S.sheet = ''; draw(); if (fromSheet) { var rb = S.root.querySelector('.w-rbtn'); if (rb) rb.focus(); } return; }
-    if (a === 'sheet') { S.sheet = el.getAttribute('data-v'); draw(); var so = S.root.querySelector('.sheet-o[aria-checked="true"]') || S.root.querySelector('.sheet-o'); if (so) so.focus(); return; }
-    if (a === 'sheet-close') { S.sheet = ''; draw(); var rb2 = S.root.querySelector('.w-rbtn'); if (rb2) rb2.focus(); return; }
+    if (a === 'wreason') { S.wf.reason = el.getAttribute('data-v'); if (S.sheet) wasteSheetClose(); else draw(); return; }
+    if (a === 'sheet') { S.sheet = el.getAttribute('data-v'); ovPush('reason', function () { wasteSheetClose(true); }); draw(); var so = S.root.querySelector('.sheet-o[aria-checked="true"]') || S.root.querySelector('.sheet-o'); if (so) so.focus(); return; }
+    if (a === 'sheet-close') { wasteSheetClose(); return; }
     if (a === 'wsugg') { var wt = (S.wsugg || [])[i]; if (wt) { S.wf.text = wt; var wl = wLast(wt); if (wl) { if (wl.unit) S.wf.unit = wl.unit; if (wl.reason && !S.wf.reason) S.wf.reason = wl.reason; if (wl.station && !S.wf.sec && !mySec()) S.wf.sec = wl.station; if (wl.amt && (S.wf.amtAuto || !String(S.wf.amt).trim())) { S.wf.amt = wl.amt; S.wf.amtAuto = true; } } draw(); focusFilled('w-amt'); } return; }
     if (a === 'woften') { var wo = wOften()[i]; if (wo) { S.wf.text = wo.text; if (wo.unit) S.wf.unit = wo.unit; if (wo.reason) S.wf.reason = wo.reason; if (wo.sec && !S.wf.sec && !mySec()) S.wf.sec = wo.sec; if (wo.amt && (S.wf.amtAuto || !String(S.wf.amt).trim())) { S.wf.amt = wo.amt; S.wf.amtAuto = true; } draw(); focusFilled('w-amt'); } return; }
     if (a === 'wdel') { removeWaste(dt, id); return; }
@@ -7596,7 +7615,7 @@
     else if (f === 'pin') { e.preventDefault(); submitPin(); }
   }
   function onKey(e) {
-    if (e.key === 'Escape' && S.sheet) { S.sheet = ''; draw(); focusSel('.w-rbtn'); return; }
+    if (e.key === 'Escape' && S.sheet) { wasteSheetClose(); return; }
     // Next on "What was wasted?" goes to the next empty box instead of sending the form half filled
     if (e.key === 'Enter' && e.target && e.target.getAttribute && e.target.getAttribute('data-k') === 'w-text' && S.wf.text.trim()) {
       if (!String(S.wf.amt).trim()) { e.preventDefault(); focusK('w-amt'); return; }
@@ -7851,10 +7870,12 @@
       '<p class="mlp-p">The oldest is ' + old + ' h old' + (hot ? '. ' + hot + ' ' + (hot === 1 ? 'is' : 'are') + ' food safety or for today.' : '.') + '</p>' +
       '<footer class="mlp-foot"><button type="button" class="mlp-go" data-ml="open">Open mail</button><button type="button" class="mlp-later" data-ml="later">Later</button></footer></section>';
     document.body.appendChild(el); mlPop = el;
+    ovPush('mail', function () { lsSet('lk.mail.later', String(now() + ML_NUDGE)); mlPopClose(true); });
     var go = el.querySelector('.mlp-go'); if (go) go.focus({ preventScroll: true });
   }
-  function mlPopClose() {
+  function mlPopClose(noBack) {
     if (!mlPop) return;
+    ovDone('mail', noBack);
     mlPop.parentNode.removeChild(mlPop); mlPop = null;
     if (mlPrev && mlPrev.focus && document.body.contains(mlPrev)) { try { mlPrev.focus({ preventScroll: true }); } catch (e) {} }
     mlPrev = null;
@@ -7872,7 +7893,7 @@
   function mailTab() {
     // the page changes first, so a pings sheet handed on by the close opens on the Mail tab (a hash change closes an open one)
     S.atab = 'mail'; lsSet('lk.prep.atab', 'mail'); mlOpened = now();   // no nudge again before the Mail tab is drawn (mlSeenAll saves the real time)
-    if (location.hash === '#/admin') { mlPopClose(); draw(); mlSeenAll(); } else { location.hash = '#/admin'; mlPopClose(); }
+    if (location.hash === '#/admin') { mlPopClose(); draw(); mlSeenAll(); } else { location.hash = '#/admin'; mlPopClose(true); }
   }
   document.addEventListener('keydown', function (e) {
     if (!mlPop) return;
@@ -8108,8 +8129,32 @@
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && S.name === 'todo' && S.root && document.body.contains(S.root)) todoLoad(); });
 
   /* ---------- public bits used by app.js ---------- */
+  /* The page Back closes the nearest local task first. Cancelling an edited form uses its existing two-tap
+     discard check; returning from a panel keeps any other unfinished form in memory for the same person. */
+  function localBackAction() {
+    if (!S.root || !document.body.contains(S.root)) return null;
+    var pick = function (a, label) { var el = S.root.querySelector('[data-p="' + a + '"]'); return el ? { el: el, label: label } : null; };
+    if (S.sheet) return pick('sheet-close', 'Back to wastage');
+    if (S.root.querySelector('.g-edit')) return pick('g-cancel', armed('g-cancel') ? 'Tap again to discard' : 'Back to guides');
+    if (S.root.querySelector('.n-edit')) return pick('n-cancel', armed('n-cancel') ? 'Tap again to discard' : 'Back to pings');
+    if (S.mf && S.mf.prev && (S.name === 'admin' && S.atab === 'minutes' || S.name === 'prep' && S.minOpen)) return pick('mn-prev', 'Back to writing');
+    if (S.root.querySelector('.mn-form')) return pick('mn-cancel', armed('mn-cancel') ? 'Tap again to discard' : 'Back to minutes');
+    if (S.name === 'prep') {
+      if (S.root.querySelector('[data-p="mn-close"]')) return pick('mn-close', 'Back to prep list');
+      if (S.root.querySelector('[data-p="notes-close"]')) return pick('notes-close', 'Back to prep list');
+      if (S.root.querySelector('[data-p="staff-close"]')) return pick('staff-close', armed('staff-close') ? 'Tap again to leave without saving' : 'Back to prep list');
+      if (S.recipeOpen) return pick('recipe-close', 'Back to prep list');
+    }
+    return null;
+  }
+  function localBackBusy() {
+    return !!(S.root && document.body.contains(S.root) && (S.busy || S.nSaving || S.mSaving || S.gf && (S.gf.busy || S.gf.saving)));
+  }
   window.LK_PREP = {
     sg: sg,
+    back: function () { if (localBackBusy()) return true; var a = localBackAction(); if (!a) return false; a.el.click(); return true; },
+    backLabel: function () { var a = localBackAction(); return a ? a.label : ''; },
+    backDisabled: localBackBusy,
     mount: function (name, root, sel) {
       wire();
       S.name = name; S.root = root;

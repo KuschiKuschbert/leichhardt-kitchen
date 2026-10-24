@@ -16,7 +16,7 @@
 (function () {
   'use strict';
 
-  var API = 1;
+  var API = 2;
   var D = window.LK_DATA, X = window.LK_RX, A = window.LK_APP, P = window.LK_PREP;
   var esc = A.esc, KIND = A.KIND, ALLERGENS = D.allergens;
   var LS = (function () { try { localStorage.getItem('x'); return localStorage; } catch (e) { return null; } })();
@@ -489,11 +489,11 @@
       '<div class="btn-row"><button type="button" class="btn" data-mg="theirs">Open theirs</button><button type="button" class="btn dark" data-mg="mine">Save mine over it</button></div></div>' : '';
     var errs = e.errs.length ? '<div class="warn" role="alert"><span class="label">Not saved yet</span><ul class="mg-errs">' + e.errs.map(function (x) { return '<li><a href="#' + esc(x.at) + '" data-mg="goto" data-v="' + esc(x.at) + '">' + esc(x.msg) + '</a></li>'; }).join('') + '</ul></div>' : '';
     var warns = e.warns.length ? '<div class="box beige" role="note">' + e.warns.map(function (w) { return '<div>' + esc(w) + '</div>'; }).join('') + '</div>' : '';
-    return '<div class="mg-wrap mg-ed">' + linkList() + crumbs + head + kept + fileNote + conflict + errs + warns +
+    return '<div class="mg-wrap mg-ed">' + linkList() + '<div class="btn-row"><a class="btn" data-mg-back="1" href="#/manage">Back to all recipes</a></div>' + crumbs + head + kept + fileNote + conflict + errs + warns +
       basicsHTML(e) + ingHTML(e) + methodHTML(e) + allergenHTML(e) + drawingHTML(e) + menuHTML(e) + boxesHTML(e) + histHTML(e) + moreHTML(e) +
       '<div class="mg-bar"><span class="mg-state" role="status">' + esc(stateText()) + '</span>' + (e.msg ? '<span class="p-err" role="alert">' + esc(e.msg) + '</span>' : '') +
       '<div class="btn-row"><button type="button" class="btn dark" data-mg="save"' + (e.saving ? ' disabled' : '') + '>' + (e.saving ? 'Saving...' : 'Save') + '</button>' +
-      (dirty() ? '<button type="button" class="btn" data-mg="undo-all">' + (armed('undo-all') ? 'Tap again to undo all' : 'Undo all changes') + '</button>' : '<a class="btn" href="#/manage">Done</a>') + '</div></div></div>';
+      (dirty() ? '<button type="button" class="btn" data-mg="undo-all">' + (armed('undo-all') ? 'Tap again to undo all' : 'Undo all changes') + '</button>' : '') + '<a class="btn" href="#/manage">Back to all recipes</a></div></div></div>';
   }
 
   /* ---------- checking and saving ---------- */
@@ -616,7 +616,7 @@
       if (wasNew) { e.isNew = false; e.key = id; e.meta.src = 'new'; }
       e.menu = menuOf(id); e.snap = snapOf(e); e.d.pins = clean.pins; e.ing0 = ingMap(e.d); e.snap = snapOf(e);
       toast(e.meta.removed ? 'Hidden from the book. Version ' + done.v + '.' : e.meta.off ? 'Back to the book file\'s copy. Version ' + done.v + '.' : 'Saved. Version ' + done.v + '.');
-      if (wasNew && M.ed === e) { history.replaceState(null, '', '#/manage/r/' + encodeURIComponent(id)); M.sub = ['r', id]; }
+      if (wasNew && M.ed === e) { history.replaceState(history.state, '', '#/manage/r/' + encodeURIComponent(id)); if (A.noteRoute) A.noteRoute(true); M.sub = ['r', id]; }
       if (M.ed === e) draw();
       if (!e.meta.removed && !e.meta.off) autoDraw(id, e);
     }).catch(function (err) {
@@ -723,7 +723,7 @@
     if (!drawLoad) {
       drawLoad = A.load('js/library.js').then(function () {
         // a category file that fails to load leaves its drawings out; the editor still opens
-        return Promise.all(window.LK_LIB.files.map(function (f) { return A.load(f).catch(function () {}); }).concat([A.load('js/draw.js')]));
+        return Promise.all(window.LK_LIB.files.map(function (f) { return A.load(f).catch(function () {}); }).concat([A.load('js/draw.js?v=2')]));
       }).then(function () {
         // without the smart creator the editor still works by hand; the recipe reader (js/compose.js) needs it first
         return A.load('js/smart.js').then(function () { return A.load('js/compose.js'); }).catch(function () {});
@@ -734,16 +734,22 @@
   function mountDraw(root, sub) {
     var key = sub.join('/');
     M.root = root; M.ed = null; drawn = 'draw:' + key;
-    if (window.LK_DRAW) { window.LK_DRAW.mount(root, sub); return; }
+    if (window.LK_DRAW) {
+      if (window.LK_DRAW.api === 2) window.LK_DRAW.mount(root, sub);
+      else root.innerHTML = '<div class="mg-wrap"><h2 id="rtitle" tabindex="-1">Reload the book</h2><p>The drawing editor on this device needs the current book. Your saved drawings stay.</p><div class="btn-row"><button type="button" class="btn dark" data-act="reload">Reload</button><a class="btn" href="#/manage">All recipes</a></div></div>';
+      return;
+    }
     root.innerHTML = '<div class="mg-wrap"><h2 id="rtitle" tabindex="-1">Opening the drawing editor</h2><p>Loading the library...</p></div>';
     loadDraw().then(function () {
-      if (M.root === root && drawn === 'draw:' + key) window.LK_DRAW.mount(root, sub);
+      if (M.root === root && drawn === 'draw:' + key) mountDraw(root, sub);
     }, function () {
       if (M.root === root) root.innerHTML = '<div class="mg-wrap"><h2 id="rtitle" tabindex="-1">Could not open the drawing editor</h2><p>It needs the signal the first time it opens on a device. Check the signal and try again.</p><div class="btn-row"><button type="button" class="btn dark" data-act="mgretry">Try again</button></div></div>';
     });
   }
   function mount(root, route) {
     var sub = route.sub || [], key = sub.join('/');
+    // Keep the last keystroke before a quick Back or another editor clears the current form.
+    if (M.ed && M.ed.sub !== key && dirty()) keepNow();
     if (sub[0] === 'draw') { mountDraw(root, sub); return; }
     if (window.LK_DRAW && window.LK_DRAW.open()) window.LK_DRAW.unmount();
     if (drawn.indexOf('draw:') === 0) drawn = '';

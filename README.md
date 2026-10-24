@@ -4,6 +4,7 @@ The Leichhardt Hotel kitchen's app: the recipe book, the prep list, the order li
 
 ## What it does
 
+- **Clear ways back (24 Oct 2026).** A destination-labelled Back button returns to the previous page opened in this run of the book, or a safe parent when opened by a direct link. Settings Done follows the same trail. Supplier review and catalogue forms, chef panels and previews step back within their task first; edited forms use their existing discard check. Recipe, drawing and function forms have parent buttons at the top, with draft recovery preserved even after a quick Back. The phone's Back closes open sheets before leaving their page. See `docs/navigation.md`.
 - **Two ways to look at the recipes.** The Pass opens first. The Pass / Tiles switch next to the search box changes it any time (and **Settings** sets which one opens):
   - **Tiles:** every recipe as a card with its small drawn dish, with search, recipe type and "Free from" filters on top.
   - **The Pass:** dishes drawn as plates and batch recipes as GN pans. Tap a plate to zoom in, then tap the laksa on the barramundi to open the laksa. The allergen lens shows where an allergen is at every level.
@@ -200,6 +201,7 @@ npm test
 
 How the book should work, as the head chef decided it. Newest first. Add new ones here with the date; the details are in the sections below.
 
+- **24 Oct 2026.** Add intuitive Back actions throughout the book where they help, using the existing buttons and fonts. Back names its destination, unwinds a local task first and keeps unfinished work or asks before discarding it. Direct links have a local fallback. Ordinary date, filter and admin tab changes do not add extra history steps.
 - **24 Oct 2026.** A shift ping is on screen for 30 minutes from when it pops up, then gone for everyone: off the sheet, out of the bell, no dot. Safety and Allergen alert pings too, no exceptions, and no erase button. Close no longer brings the sheet back after 15 minutes: nothing pops up twice. The head chef also picked design B of the declutter review (the Now line at the bottom of a phone, thumb buttons, the chef hat menu from the bottom), which comes in later pull requests. See Shift pings.
 - **24 Oct 2026.** Supplier orders: the head chef and the sous chefs tick off each supplier's order once it is in, on a shared tick list (Supplier orders today on the order list and at the top of Chef to-do; Ordered on the bar ticks it too). A ticked supplier leaves the bar on every chef's phone and gets no more pushes; one not ticked keeps its reminders. A tick can be taken off again. Staff never see it (the rules).
 - **24 Oct 2026.** Order cut-offs come as a proper phone push too, for the head chef and the sous chefs who turn it on for their own phone (on the order list, or on the admin Order cut-offs page on the Google device). One push when the supplier's reminder starts, one an hour before. Ordered on the bar stops the pushes for that cut-off for everyone. Staff never get them. iPhones need the book added to the home screen first. See Order cut-offs.

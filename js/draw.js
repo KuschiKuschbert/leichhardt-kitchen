@@ -25,7 +25,7 @@
 (function () {
   'use strict';
 
-  var API = 1;
+  var API = 2;
   var D = window.LK_DATA, X = window.LK_RX, A = window.LK_APP, P = window.LK_PREP, LIB = window.LK_LIB;
   var esc = A.esc;
   function B() { return P.book(); }
@@ -659,7 +659,7 @@
     var conflict = W.conflict ? '<div class="warn" role="alert"><span class="label">Changed on another device</span><span>Version ' + esc(W.conflict.v) + ' of this drawing was saved after you opened it.</span><div class="btn-row">' + btn('theirs', 'Open theirs', { cls: 'btn' }) + btn('mine', 'Save mine over it', { cls: 'btn dark' }) + '</div></div>' : '';
     var newer = d.els.some(function (el) { var it = el.t === 'item' && itemOf(el.a); return it && it.id + '@' + it.v !== el.a; }) ? '<div class="box beige" role="note"><span class="label">Newer library drawings</span><div>Some pieces have a newer drawing in the library. This drawing keeps its own copy until you ask.</div><div class="btn-row">' + btn('newer', 'Use the newer drawings', { cls: 'btn' }) + '</div></div>' : '';
     var state = W.saving || (dirty() ? 'Not saved yet. Kept on this device.' : d.isNew ? 'New drawing.' : 'Saved. Version ' + d.meta.v + '.');
-    return '<div class="dw">' + crumbs + '<div class="mg-head"><h2 id="rtitle" tabindex="-1">' + esc((r ? r.name : d.rid) + ': ' + SLOT_NAME[d.slot].toLowerCase()) + '</h2></div>' + kept + conflict + newer +
+    return '<div class="dw"><div class="btn-row"><a class="btn" data-dw-back="1" href="#/manage/r/' + encodeURIComponent(d.rid) + '">Back to the recipe</a></div>' + crumbs + '<div class="mg-head"><h2 id="rtitle" tabindex="-1">' + esc((r ? r.name : d.rid) + ': ' + SLOT_NAME[d.slot].toLowerCase()) + '</h2></div>' + kept + conflict + newer +
       '<div class="dw-main"><div class="dw-left">' + canvasHTML() + toolsHTML() + selHTML() + '</div><div class="dw-right">' + smart('panel') + startHTML() + missingHTML() + checkHTML() + panelHTML() + '</div></div>' +
       '<div class="mg-bar dw-bar"><span class="mg-state" role="status">' + esc(state) + '</span>' + (W.msg ? '<span class="p-err" role="alert">' + esc(W.msg) + '</span>' : '') +
       '<div class="btn-row"><button type="button" class="btn dark" data-dw="save"' + (W.saving ? ' disabled' : '') + '>' + (W.saving ? 'Saving...' : 'Save') + '</button><a class="btn" href="#/manage/r/' + encodeURIComponent(d.rid) + '">Back to the recipe</a></div></div></div>';
@@ -1365,7 +1365,7 @@
       W.saving = ''; W.conflict = null; var wasNew = d.isNew, oldKey = draftKey(); d.isNew = false; d.saved = snapNow();
       lsSet(oldKey, ''); lsSet(draftKey(), '');
       toast('Saved. Version ' + done.v + '.' + (done.rp ? ' The recipe shows it.' : ''));
-      if (wasNew && W.d === d) { W.key = 'draw/' + d.id; history.replaceState(null, '', '#/manage/draw/' + encodeURIComponent(d.id)); }
+      if (wasNew && W.d === d) { W.key = 'draw/' + d.id; history.replaceState(history.state, '', '#/manage/draw/' + encodeURIComponent(d.id)); if (A.noteRoute) A.noteRoute(true); }
       if (W.d === d) draw();
     }).catch(function (err) {
       clearTimeout(slow); W.saving = '';
@@ -1423,6 +1423,7 @@
   function note(title, text) { return '<div class="mg-wrap"><h2 id="rtitle" tabindex="-1">' + esc(title) + '</h2><p>' + esc(text) + '</p><div class="btn-row"><a class="btn" href="#/manage">All recipes</a></div></div>'; }
   function mount(root, sub) {
     var key = sub.join('/');
+    if (W.d && W.key !== key && dirty()) keepNow();
     W.root = root;
     if (W.key === key && W.d) { draw(); return; }
     W.key = key; W.d = null; W.sel = []; W.undo = []; W.redo = []; W.view = { z: 1, x: 0, y: 0 }; W.panel = ''; W.msg = ''; W.saving = ''; W.check = null; W.conflict = null; W.q = ''; W.cat = ''; W.sub = ''; W.more = 0; W.pendingIng = ''; W.swap = null; W.wareFam = '';
