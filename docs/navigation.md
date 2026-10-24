@@ -9,6 +9,8 @@ The top of each main page has a 48 px Back button that names its destination. It
 in this run of the book. Opening or reloading a direct link starts a fresh trail: a nested recipe returns to its
 parent, a guide to Guides, a function to Functions, a supplier to Supplier order and a primary page to Kitchen Book.
 Settings Done follows the same rule. Existing All recipes, All guides, breadcrumbs and navigation tabs still work.
+The recipe Back sits in its existing trail. On the prep list, a compact Back fits beside Writing as, with the full
+destination in its accessible label and title. These keep recipe headings and the first prep line high on a phone.
 
 The route trail and scroll positions live only in memory. Browser history holds an opaque entry key, alongside
 the existing sheet marker. It holds no form values, catalogue items or staff details. A contextual page return

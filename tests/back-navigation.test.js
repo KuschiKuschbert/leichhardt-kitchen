@@ -76,7 +76,7 @@ async function returned(p, h) {
   await p.click('.nt [data-note="link"]'); await returned(p, '#/r/burger');
   ok(await back(p).innerText() === 'Back to prep list', 'a recipe link in a ping retains the page underneath as its return');
   await back(p).click(); await returned(p, '#/prep');
-  ok(!await p.$('.nt') && await back(p).innerText() === 'Back to order list', 'Back from a ping link returns to Prep with the sheet closed');
+  ok(!await p.$('.nt') && await back(p).getAttribute('aria-label') === 'Back to order list', 'Back from a ping link returns to Prep with the sheet closed and names the return destination');
   await back(p).click(); await returned(p, '#/orders');
   ok(await hash(p) === '#/orders', 'next contextual Back skips the closed sheet entry and reaches Orders in one tap');
   ok(p.errors.length === 0, 'ping link return trail: no page errors ' + p.errors.join(' | '));

@@ -1106,14 +1106,20 @@
   function pageBack(route) {
     // Nested editors have their own parent buttons beside their form's title.
     if (route.name === 'landing' || ((route.name === 'manage' || route.name === 'functions') && route.sub.length)) return '';
-    var info = backInfo();
-    return '<nav class="page-return" aria-label="Return"><button type="button" class="btn" data-act="back"' + (info.disabled ? ' disabled' : '') + '>' + ICON.left + '<span>' + esc(info.label) + '</span></button></nav>';
+    var info = backInfo(), tag = route.name === 'recipe' ? 'span' : 'nav';
+    return '<' + tag + ' class="page-return' + (tag === 'span' ? ' is-trail' : '') + '"' + (tag === 'nav' ? ' aria-label="Return"' : '') + '><button type="button" class="btn" data-act="back" aria-label="' + esc(info.label) + '" title="' + esc(info.label) + '"' + (info.disabled ? ' disabled' : '') + '>' + ICON.left + '<span class="page-back-full">' + esc(info.label) + '</span><span class="page-back-short" aria-hidden="true">Back</span></button></' + tag + '>';
   }
   function backSync() {
     var el = app.querySelector('.page-return [data-act="back"]'); if (!el) return;
-    var info = backInfo(), label = el.querySelector('span');
+    var info = backInfo(), label = el.querySelector('.page-back-full');
     if (label.textContent !== info.label) label.textContent = info.label;
+    el.setAttribute('aria-label', info.label); el.title = info.label;
     el.disabled = info.disabled;
+    // Service lists keep their first line high on a phone. Fit Back beside Writing as instead of adding a row.
+    var root = document.getElementById('prep-root'), top = root && root.firstElementChild;
+    var inline = parseRoute().name === 'prep' && top && top.classList.contains('nb-top');
+    el.parentNode.classList.toggle('is-inline', !!inline);
+    if (root) { if (inline) root.style.setProperty('--return-width', el.offsetWidth + 'px'); else root.style.removeProperty('--return-width'); }
   }
   function goBack() {
     if (navBack) return;
@@ -1177,7 +1183,11 @@
     else html = viewTiles(route);
     // Swipeable chip rows keep their place when the page redraws (for example after tapping a chip at the far end).
     var rowsAt = Array.prototype.map.call(app.querySelectorAll('.chips.scroll'), function (el) { return el.scrollLeft; });
-    if (route.name !== 'landing') html = topBar() + fnBand() + html.replace(/(<main id="main"[^>]*>)/, '$1' + pageBack(route)) + tabBar();
+    if (route.name !== 'landing') {
+      if (route.name === 'recipe') html = html.replace(/(<nav class="(?:trail|crumbs)"[^>]*>)/, '$1' + pageBack(route));
+      else html = html.replace(/(<main id="main"[^>]*>)/, '$1' + pageBack(route));
+      html = topBar() + fnBand() + html + tabBar();
+    }
     app.innerHTML = html;
     if (!changed) Array.prototype.forEach.call(app.querySelectorAll('.chips.scroll'), function (el, i) { if (rowsAt[i]) el.scrollLeft = rowsAt[i]; });
     fitPins();
