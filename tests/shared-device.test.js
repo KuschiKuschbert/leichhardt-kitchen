@@ -39,6 +39,9 @@ const state = p => p.evaluate(() => document.querySelector('#p-pin') ? 'kitchen-
 
   // the switch lives in Settings on the head chef's signed-in device and is kept on the device
   p = await L.open(b, '#/settings', { admin: true, wait: 1800 });
+  // Settings draws the owner-only block after the Google account check finishes. Wait for that actual UI, as the
+  // following getAttribute and click already do, rather than assuming open() means the owner check is complete.
+  await L.waitFor(p, () => !!document.querySelector('[data-act="setshared"][data-val="1"]'), null, 8000);
   ok(await p.$('[data-act="setshared"][data-val="1"]') !== null, 'settings: the Shared device choice is there');
   ok((await p.getAttribute('[data-act="setshared"][data-val="0"]', 'aria-pressed')) === 'true', 'settings: Personal phone is the default');
   await p.click('[data-act="setshared"][data-val="1"]');
