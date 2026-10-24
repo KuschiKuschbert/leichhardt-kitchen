@@ -17,7 +17,7 @@
 (function () {
   'use strict';
 
-  var API = 2;
+  var API = 3;
   var FN = window.LK_FN, M = FN.M, P = window.LK_PREP, esc = FN.esc, T = window.LK_TIME;
   function B() { return P.book(); }
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -307,18 +307,17 @@
     f.id = e.id; f.kcBy = B().who(); f.kcAt = now(); f.by = B().who(); f.upd = now(); f.chg = [];
     return '<section class="set-block fe-review" aria-labelledby="fe-rv-h"><h3 id="fe-rv-h" tabindex="-1">Check before confirming</h3><p class="hint">This is what the kitchen will see. Confirming puts it in the band under the top bar from 00:00 on ' + esc(M.dayName(f.date)) + '.</p>' +
       FN.sheetHTML(f, false).replace(/<div class="btn-row">[\s\S]*?<\/div>$/, '') +
-      '<div class="btn-row"><button type="button" class="btn dark" data-fe="confirm"' + (e.saving ? ' disabled' : '') + '>' + (e.status === 'cancelled' ? 'Put it back on' : 'Confirm function') + '</button><button type="button" class="btn" data-fe="review-x">Back to the form</button></div></section>';
+      '<div class="btn-row"><button type="button" class="btn dark" data-fe="confirm"' + (e.saving ? ' disabled' : '') + '>' + (e.status === 'cancelled' ? 'Put it back on' : 'Confirm function') + '</button></div></section>';
   }
   function editHTML() {
     var e = E.ed;
-    var back = '<div class="btn-row"><a class="btn" data-fe-back="1" href="#/functions">Back to all functions</a></div>';
-    if (e.loading) return back + '<p role="status">Opening the function...</p>';
-    if (e.missing) return '<section class="set-block"><h2 id="rtitle" tabindex="-1">Function not found</h2><p>It may have a different link.</p><div class="btn-row"><a class="btn" href="#/functions">All functions</a></div></section>';
-    if (e.failed) return '<section class="set-block"><h2 id="rtitle" tabindex="-1">Could not open the function</h2><p>Check the signal and try again.</p><div class="btn-row"><button type="button" class="btn dark" data-fe="reopen">Try again</button><a class="btn" href="#/functions">All functions</a></div></section>';
+    if (e.loading) return '<p role="status">Opening the function...</p>';
+    if (e.missing) return '<section class="set-block"><h2 id="rtitle" tabindex="-1">Function not found</h2><p>It may have a different link.</p></section>';
+    if (e.failed) return '<section class="set-block"><h2 id="rtitle" tabindex="-1">Could not open the function</h2><p>Check the signal and try again.</p><div class="btn-row"><button type="button" class="btn dark" data-fe="reopen">Try again</button></div></section>';
     var d = e.d, s = e.saved, st = e.status;
-    if (e.review) return '<div class="btn-row"><button type="button" class="btn" data-fe="review-x">Back to the form</button></div><div class="fe-head"><h2 id="rtitle" tabindex="-1">' + esc(d.name || 'New function') + '</h2></div>' + msgHTML(e) + reviewHTML(e);
+    if (e.review) return '<div class="fe-head"><h2 id="rtitle" tabindex="-1">' + esc(d.name || 'New function') + '</h2></div>' + msgHTML(e) + reviewHTML(e);
     var stTag = st === 'draft' ? '<span class="fn-tag">Draft: the kitchen does not see it</span>' : st === 'cancelled' ? '<span class="fn-tag fn-t-off">Cancelled</span>' : '<span class="fn-tag fn-t-ok">Confirmed: in the kitchen\'s band on the day</span>';
-    var out = back + '<div class="fe-head"><h2 id="rtitle" tabindex="-1">' + esc(e.isNew ? 'New function' : (s.name || 'Function')) + '</h2>' + stTag + '</div>' +
+    var out = '<div class="fe-head"><h2 id="rtitle" tabindex="-1">' + esc(e.isNew ? 'New function' : (s.name || 'Function')) + '</h2>' + stTag + '</div>' +
       (e.restored ? '<p class="fe-note">Changes not saved yet were kept on this device and are back in the form. <button type="button" class="linkish" data-fe="drop">' + (armed('drop') ? 'Tap again to drop them' : 'Drop them') + '</button></p>' : '') +
       (!e.isNew ? '<p class="hint">Last changed by ' + esc(FN.nameOf(s.by)) + ', ' + esc(stamp(s.upd)) + '. Version ' + s.v + '.</p>' : '') + msgHTML(e) +
       '<section class="set-block"><span class="label">The function</span>' + inp('name', 'Name or reference', d.name, ' maxlength="80" autocomplete="off" placeholder="Smith birthday"') +
@@ -362,8 +361,7 @@
     if (!e.isNew) more.push('<button type="button" class="btn" data-fe="dup">Duplicate</button>');
     if (st === 'confirmed') more.push('<button type="button" class="btn fe-cancel" data-fe="cancel"' + dis + '>' + (armed('cancel') ? 'Tap again to cancel the function' : 'Cancel the function') + '</button>');
     if (dirty()) more.push('<button type="button" class="btn" data-fe="drop">' + (armed('drop') ? 'Tap again to drop your changes' : 'Drop my changes') + '</button>');
-    more.push('<a class="btn" href="#/functions">All functions</a>');
-    return '<div class="btn-row fe-btns">' + b.join('') + '</div><div class="btn-row">' + more.join('') + '</div>';
+    return '<div class="btn-row fe-btns">' + b.join('') + '</div>' + (more.length ? '<div class="btn-row">' + more.join('') + '</div>' : '');
   }
   function histHTML(e) {
     var h = e.hist;
@@ -528,6 +526,7 @@
     var a = document.activeElement, k = a && E.root.contains(a) && a.getAttribute('data-ff'), ss = k && a.selectionStart, se = k && a.selectionEnd;
     var html = E.sub.length ? (E.ed ? editHTML() : '') : listHTML();
     E.root.innerHTML = '<div class="fe-wrap">' + html + '</div>';
+    window.dispatchEvent(new Event('lk-nav'));
     if (k) { var el = E.root.querySelector('[data-ff="' + k + '"]'); if (el) { el.focus({ preventScroll: true }); try { if (ss != null) el.setSelectionRange(ss, se); } catch (x) {} } }
   }
   function live() { var el = E.root && E.root.querySelector('#fe-live'); if (el && E.ed && E.ed.d) el.innerHTML = liveHTML(E.ed); }
@@ -592,11 +591,11 @@
     if (a === 'goto') { goto(v); return; }
     if (a === 'save') { save('save'); return; }
     if (a === 'review') {
+      flushPending();
       var probs = check({ d: d, status: 'confirmed' });
       if (probs.length) { e.shown = probs; draw(); goto(probs[0].k); return; }
-      e.review = true; e.shown = []; draw(); var h = E.root.querySelector('#fe-rv-h'); if (h) { h.focus({ preventScroll: true }); h.scrollIntoView({ block: 'start' }); } return;
+      e.reviewY = window.scrollY; e.review = true; e.shown = []; draw(); var h = E.root.querySelector('#fe-rv-h'); if (h) { h.focus({ preventScroll: true }); h.scrollIntoView({ block: 'start' }); } return;
     }
-    if (a === 'review-x') { e.review = false; draw(); return; }
     if (a === 'confirm') { save('confirm'); return; }
     if (a === 'cancel') { if (!arm('cancel')) return; save('cancel'); return; }
     if (a === 'dup') { var src = clone(d); history.pushState(null, '', '#/functions/new'); if (window.LK_APP && window.LK_APP.noteRoute) window.LK_APP.noteRoute(false); E.sub = ['new']; openNew(src); return; }
@@ -618,9 +617,25 @@
     if (!Array.isArray(E.list)) loadList();
     if (sub[0] === 'new') openNew(); else openId(sub[0]);
   }
-  function unmount() { flushPending(); E.root = null; E.sub = []; E.ed = null; }
+  function unmount() { var hadRoot = !!E.root; flushPending(); E.root = null; E.sub = []; E.ed = null; if (hadRoot) window.dispatchEvent(new Event('lk-nav')); }
+  function back() {
+    if (!E.root || !document.body.contains(E.root) || !E.sub.length) return false;
+    var e = E.ed;
+    if (e && e.saving) return true;
+    flushPending();
+    if (e && e.review) {
+      e.review = false; draw(); window.scrollTo(0, e.reviewY || 0);
+      var el = E.root.querySelector('[data-fe="review"]'); if (el) el.focus({ preventScroll: true });
+      return true;
+    }
+    location.hash = '#/functions'; return true;
+  }
   window.LK_FE = {
-    api: API, mount: mount, unmount: unmount, dirty: function () { return !!E.root && dirty(); },
+    api: API, mount: mount, unmount: unmount,
+    back: back,
+    backLabel: function () { return !E.root || !document.body.contains(E.root) || !E.sub.length ? '' : E.ed && E.ed.review ? 'Back to the form' : 'Back to all functions'; },
+    backDisabled: function () { return !!(E.root && document.body.contains(E.root) && E.ed && E.ed.saving); },
+    dirty: function () { return !!E.root && dirty(); },
     hasDraft: function () { return Object.keys(localStorage || {}).some(function (k) { return k.indexOf('lk.fe.draft.') === 0; }); },
     // the kitchen's functions changed (another manager saved): the list follows; an open form keeps what is typed
     changed: function () { if (E.root && !E.sub.length) loadList(); }

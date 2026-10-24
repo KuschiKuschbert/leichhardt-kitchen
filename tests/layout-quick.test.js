@@ -1,4 +1,4 @@
-// Quick layout fixes (usability U3): the phone tab bar no longer covers Zoom out or the admin Save bar, the skip link
+// Quick layout fixes (usability U3): the phone tab bar cannot cover the recipe return or the admin Save bar, the skip link
 // keeps the page, every admin tab can be seen on a laptop and a tablet, and Reset PIN fits on one line.
 const L = require('./lib');
 const { R, ok } = L.results();
@@ -14,10 +14,10 @@ const onTop = (p, sel) => p.evaluate(s => {
   const b = await L.start();
   let p, v;
 
-  // phone: Zoom out on a sub-recipe sits above the tab bar
+  // phone: the sub-recipe return sits in the header, away from the tab bar
   p = await L.open(b, '#/r/poutine/american-cheese-sauce', { wait: 1000 });
-  v = await onTop(p, '.zoombar a');
-  ok(v === true, 'phone recipe: Zoom out can be tapped, not under the tab bar (' + v + ')');
+  v = await onTop(p, '.wtop [data-act="back"]');
+  ok(v === true && await p.locator('.zoombar').count() === 0, 'phone recipe: header Back can be tapped with no overlay above the tab bar (' + v + ')');
   ok(p.errors.length === 0, 'phone recipe: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 

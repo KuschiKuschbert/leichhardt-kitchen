@@ -2,11 +2,11 @@
 // filters survive the return, and Back/Forward and Settings Done share the same route trail.
 const L = require('./lib');
 const { R, ok } = L.results();
-const back = p => p.locator('.page-return [data-act="back"]');
+const back = p => p.locator('.wtop [data-act="back"]');
 const hash = p => p.evaluate(() => location.hash);
 async function go(p, h) {
   await p.evaluate(v => { location.hash = v; }, h);
-  await L.waitFor(p, v => location.hash === v && !!document.querySelector('.page-return'), h, 6000);
+  await L.waitFor(p, v => location.hash === v && !!document.querySelector('.wtop [data-act="back"]'), h, 6000);
   await L.settle(p, 200);
 }
 async function returned(p, h) {
@@ -16,14 +16,30 @@ async function returned(p, h) {
 (async () => {
   const b = await L.start();
   let p;
-  for (const width of [390, 768, 1280]) {
-    p = await L.open(b, '#/orders', { width, wait: 1600 });
-    ok(await back(p).innerText() === 'Back to Kitchen Book', width + ': a direct page has a named local fallback');
-    const box = await back(p).boundingBox();
-    ok(box && box.height >= 48 && box.width >= 48, width + ': Back is a full-size touch target');
-    await back(p).click(); await returned(p, '#/');
-    ok(await p.locator('.page-return').count() === 0 && await p.locator('.dockets').count() === 1, width + ': direct-page Back reaches the landing page without leaving the book');
-    ok(!(await L.overflow(p)) && p.errors.length === 0, width + ': no overflow or page errors');
+  // The arrow replaces the logo, so returning never adds a row or makes the header taller.
+  for (const width of [390, 768, 1280]) for (const text of ['normal', 'xlarge']) {
+    const screen = width + ' ' + text;
+    p = await L.open(b, '#/orders', { width, settings: { text }, wait: 1600 });
+    ok(await back(p).getAttribute('aria-label') === 'Back to Kitchen Book', screen + ': a direct page has a named local fallback');
+    const box = await back(p).boundingBox(), icon = await back(p).locator('svg').boundingBox();
+    const header = await p.locator('.wtop').boundingBox();
+    ok(box && Math.abs(box.height - 44) <= 1 && Math.abs(box.width - 44) <= 1 && icon && icon.width >= 18 && icon.width <= 20.5 && icon.height <= 20.5, screen + ': compact arrow keeps a 44 px tap target with an 18 to 20 px icon');
+    ok(await back(p).count() === 1 && await p.locator('.page-return').count() === 0 && (await back(p).innerText()).trim() === '', screen + ': one icon-only return control uses the existing header');
+    ok(await p.evaluate(() => {
+      const arrow = document.querySelector('.wtop [data-act="back"]'), brand = document.querySelector('.wtop-brand'), who = document.querySelector('.wtop-who');
+      if (!arrow || !brand || !who) return false;
+      const a = arrow.getBoundingClientRect(), b = brand.getBoundingClientRect(), w = who.getBoundingClientRect(), nav = document.querySelector('.wtop .pnav');
+      const n = nav && nav.getBoundingClientRect(), brandFits = !b.width || a.right <= b.left + 1 && b.right <= w.left + 1;
+      return brandFits && (!n || !n.width || a.right <= n.left + 1) && a.right <= w.left && a.top >= 0 && getComputedStyle(arrow).borderTopWidth === '0px';
+    }), screen + ': arrow, title and chef menu fit without overlap or a button outline');
+    ok(!(await L.overflow(p)), screen + ': the order page fits with enlarged text');
+    if (width === 1280 && text === 'xlarge') { await back(p).focus(); await p.keyboard.press('Enter'); }
+    else await back(p).click();
+    await returned(p, '#/');
+    const landingHeader = await p.locator('.wtop').boundingBox();
+    ok(header && landingHeader && header.height <= landingHeader.height + 1, screen + ': Back does not increase the header height');
+    ok(await back(p).count() === 0 && await p.locator('.dockets').count() === 1, screen + ': direct-page Back reaches the landing page without leaving the book');
+    ok(!(await L.overflow(p)) && p.errors.length === 0, screen + ': no overflow or page errors');
     await p.context().close();
   }
 
@@ -31,20 +47,20 @@ async function returned(p, h) {
   await p.fill('#p-text', 'Keep this prep draft');
   await p.fill('#p-qty', '2 tubs');
   await go(p, '#/r/pork-belly');
-  ok(await back(p).innerText() === 'Back to prep list', 'recipe opened from Prep names the actual return destination');
+  ok(await back(p).getAttribute('aria-label') === 'Back to prep list', 'recipe opened from Prep names the actual return destination');
   await go(p, '#/guides/combi');
-  ok(await back(p).innerText() === 'Back to recipe' && await p.locator('.g-top a[href="#/guides"]').count() === 1, 'guide offers contextual return and its separate All guides action');
+  ok(await back(p).getAttribute('aria-label') === 'Back to recipe' && await p.locator('.g-top a[href="#/guides"]').count() === 1, 'guide offers contextual return and its separate All guides action');
   await back(p).click(); await returned(p, '#/r/pork-belly');
-  ok(await back(p).innerText() === 'Back to prep list', 'Back from a guide restores the recipe return trail');
+  ok(await back(p).getAttribute('aria-label') === 'Back to prep list', 'Back from a guide restores the recipe return trail');
   await back(p).click(); await returned(p, '#/prep');
   ok(await p.inputValue('#p-text') === 'Keep this prep draft' && await p.inputValue('#p-qty') === '2 tubs', 'Back restores typed prep work without saving it');
   ok(!(await p.evaluate(() => Object.values(window.__fake.dump()).some(x => x && x.text === 'Keep this prep draft'))), 'return navigation does not write the typed line');
   await p.goForward(); await returned(p, '#/r/pork-belly');
-  ok(await back(p).innerText() === 'Back to prep list', 'browser Forward restores the same bounded return path');
+  ok(await back(p).getAttribute('aria-label') === 'Back to prep list', 'browser Forward restores the same bounded return path');
   await go(p, '#/settings');
   await p.click('[data-act="settext"][data-val="large"]');
   await p.click('[data-act="done"]'); await returned(p, '#/r/pork-belly');
-  ok(await back(p).innerText() === 'Back to prep list', 'Settings Done returns to its origin after a settings redraw');
+  ok(await back(p).getAttribute('aria-label') === 'Back to prep list', 'Settings Done returns to its origin after a settings redraw');
   ok(p.errors.length === 0, 'contextual paths: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -74,7 +90,7 @@ async function returned(p, h) {
   await go(p, '#/prep');
   await p.click('[data-note="open"]');
   await p.click('.nt [data-note="link"]'); await returned(p, '#/r/burger');
-  ok(await back(p).innerText() === 'Back to prep list', 'a recipe link in a ping retains the page underneath as its return');
+  ok(await back(p).getAttribute('aria-label') === 'Back to prep list', 'a recipe link in a ping retains the page underneath as its return');
   await back(p).click(); await returned(p, '#/prep');
   ok(!await p.$('.nt') && await back(p).getAttribute('aria-label') === 'Back to order list', 'Back from a ping link returns to Prep with the sheet closed and names the return destination');
   await back(p).click(); await returned(p, '#/orders');

@@ -3671,7 +3671,7 @@
   function staffHTML() {
     var d = S.draft || (startDraft(), S.draft);
     var bulk = '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line">' + esc(S.bulk || '') + '</textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div>';
-    return '<div class="p-admin"><div class="p-bar"><span class="p-links"><button type="button" class="p-link" data-p="staff-close">' + (armed('staff-close') ? 'Tap again to leave without saving' : 'Back to the prep book') + '</button></span></div><h2 class="p-h" id="rtitle" tabindex="-1">Manage staff</h2>' +
+    return '<div class="p-admin p-staff-page"><h2 class="p-h" id="rtitle" tabindex="-1">Manage staff</h2>' + prepLeaveHTML('staff-close') +
       '<section class="set-block"><span class="hint">Add a person or remove one, then save. New people start as Staff. Removing someone keeps their name on old lines. Roles and PINs are looked after by the head chef.</span>' + staffListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' +
       saveBarHTML() + '</div>';
   }
@@ -5097,7 +5097,7 @@
     var dows = DOW.map(function (d, i) { return '<button type="button" class="chip sq" data-p="n-dow" data-v="' + d + '" aria-pressed="' + (f.dows.indexOf(d) >= 0) + '" aria-label="' + DOWN[i] + '">' + DOWN[i] + '</button>'; }).join('');
     var when = f.start && until >= f.start ? 'Shows: ' + noteWhen({ start: f.start, until: until, dows: f.dows, tm: nfTm(f) }) + '.' : 'The last day cannot be before the first day.';
     var single = !f.run && !f.until;
-    return '<section class="set-block n-edit"><span class="label">' + (f.id ? 'Edit this ping' : 'Write a ping') + '</span>' +
+    return '<section class="set-block n-edit"><span class="label">' + (f.id ? 'Edit this ping' : 'Write a ping') + '</span>' + prepLeaveHTML('n-cancel') +
       '<span class="hint">Short and plain. It pops up at 10:30, or at the time you set below, and is gone for everyone 30 minutes later. No prices, PINs or staff names. A recipe name links to its card.</span>' +
       '<div class="field"><label class="label" for="n-text">Ping</label><textarea id="n-text" class="p-bulk" data-k="n-text" rows="4" maxlength="400" placeholder="For example: Barramundi is off until Thursday.">' + esc(f.text) + '</textarea><span class="hint" id="n-count">' + f.text.length + ' of 400. Ctrl+Enter saves.</span></div>' +
       '<div class="field"><span class="label">Tag (starts the ping for you)</span><div class="nt-chips" role="group" aria-label="Tag">' + tags + '</div></div>' +
@@ -5119,7 +5119,7 @@
       (open ? '' : '<span class="saved" role="status">' + esc(S.nMsg) + '</span>') + notesListHTML() + '</section></div>';
   }
   function notesPageHTML() {
-    return '<div class="p-admin"><div class="p-bar"><span>Shift pings</span><span class="p-links"><button type="button" class="p-link" data-p="notes-close">Back to the prep book</button></span></div><h2 class="p-h" id="rtitle" tabindex="-1">Shift pings</h2>' + notesEditorHTML() + '</div>';
+    return '<div class="p-admin p-notes-page"><h2 class="p-h" id="rtitle" tabindex="-1">Shift pings</h2>' + notesEditorHTML() + '</div>';
   }
   function saveNote() {
     var f = S.nf;
@@ -5499,7 +5499,7 @@
     var f = S.mf, isEdit = f.status === 'published';
     if (f.prev) {
       var d = mfData(f, true); d.id = 'preview'; d.v = isEdit ? f.v + 1 : f.v;
-      return '<section class="set-block"><span class="label">Preview</span><div class="mn">' + mnDocHTML(d, false) + '</div><div class="btn-row"><button type="button" class="btn" data-p="mn-prev">Back to writing</button></div></section>';
+      return '<section class="set-block"><span class="label">Preview</span><div class="mn">' + mnDocHTML(d, false) + '</div></section>';
     }
     var ppl = people(), nSet = ppl.filter(function (p) { return f.att[p.id]; }).length, cnt = { present: 0, apology: 0, absent: 0 };
     ppl.forEach(function (p) { if (cnt[f.att[p.id]] != null) cnt[f.att[p.id]]++; });
@@ -5516,7 +5516,7 @@
       return '<div class="mn-act"><label class="visually-hidden" for="mn-aw' + i + '">Action</label><input id="mn-aw' + i + '" class="search" data-k="mn-aw" data-i="' + i + '" maxlength="160" placeholder="What needs doing" value="' + esc(a.what) + '">' +
         '<div class="mn-act2">' + personSelect('mn-awho', a.who || '', i, true) + '<label class="visually-hidden" for="mn-aby' + i + '">By</label><input id="mn-aby' + i + '" type="date" class="p-dateinput" data-k="mn-aby" data-i="' + i + '" value="' + esc(a.by || '') + '"><button type="button" class="p-x" data-p="mn-arem" data-i="' + i + '">Remove</button></div></div>';
     }).join('');
-    return '<section class="set-block mn-form"><span class="label">' + (isEdit ? 'Change these minutes (becomes version ' + (f.v + 1) + ')' : f.id ? 'Draft minutes ' + pad(f.no) : 'New minutes ' + pad(f.no)) + '</span>' +
+    return '<section class="set-block mn-form"><span class="label">' + (isEdit ? 'Change these minutes (becomes version ' + (f.v + 1) + ')' : f.id ? 'Draft minutes ' + pad(f.no) : 'New minutes ' + pad(f.no)) + '</span>' + prepLeaveHTML('mn-cancel') +
       (isEdit ? '<span class="hint">Everyone signs again after a change. The earlier version is kept.</span>' : '<span class="hint">Short lines, one per line. Spelling is yours to check. Recipe names link to their card. Leave out prices, PINs and private details. A line starting with # is a heading. A draft is not shown to staff in the app.</span>') +
       '<div class="mn-grid"><div class="field"><label class="label" for="mn-date">Date</label><input id="mn-date" type="date" class="p-dateinput" data-k="mn-date" value="' + esc(f.date) + '"></div><div class="field"><label class="label" for="mn-start">Start time</label><input id="mn-start" type="time" class="p-dateinput" data-k="mn-start" value="' + esc(f.start) + '"></div>' +
       '<div class="field"><label class="label" for="mn-loc">Location</label><input id="mn-loc" class="search" data-k="mn-loc" maxlength="60" value="' + esc(f.loc) + '"></div><div class="field"><span class="label">Run by</span>' + personSelect('mn-chair', f.chair) + '</div><div class="field"><span class="label">Minutes taken by</span>' + personSelect('mn-taker', f.taker) + '</div></div>' +
@@ -5645,7 +5645,7 @@
     return intro + (S.mf && mnCanWrite() ? mfHTML() : '') + mnRegisterHTML(pub);
   }
   function minSousPageHTML() {
-    return '<div class="p-admin"><div class="p-bar"><span>Meeting minutes</span><span class="p-links"><button type="button" class="p-link" data-p="mn-close">Back to the prep book</button></span></div><h2 class="p-h" id="rtitle" tabindex="-1">Meeting minutes</h2>' + minAdminHTML() + '</div>';
+    return '<div class="p-admin p-minutes-page"><h2 class="p-h" id="rtitle" tabindex="-1">Meeting minutes</h2>' + minAdminHTML() + '</div>';
   }
   function csvMinutes(id) {
     var m = mnById(id), reg = m && mnRegister(m); if (!reg) return;
@@ -6523,7 +6523,7 @@
     }
     var pagesMsg = pages ? (pages.length ? pages.length + (pages.length === 1 ? ' page' : ' pages') + ' ready to save.' + (old && old.pages ? ' They replace the ' + old.pages + ' saved now.' : '') : 'No pages chosen.' + (old && old.pages ? ' Saving removes the ' + old.pages + ' saved now.' : '')) :
       (old && old.pages ? 'Saved now: ' + old.pages + (old.pages === 1 ? ' page' : ' pages') + (old.file ? ' from "' + old.file + '"' : '') + '. Choose a new file to replace them.' : 'No file yet.');
-    return '<section class="set-block g-edit"><span class="label">' + (f.id ? 'Change this guide' : 'Add a guide') + '</span>' +
+    return '<section class="set-block g-edit"><span class="label">' + (f.id ? 'Change this guide' : 'Add a guide') + '</span>' + prepLeaveHTML('g-cancel') +
       '<span class="hint">A PDF or photos, a clear title and a category. Staff search the title, the words in the PDF and the search words. No prices, PINs or staff names.</span>' +
       '<div class="field"><label class="label" for="g-title">Title</label><input id="g-title" class="search" data-k="g-title" maxlength="80" autocomplete="off" placeholder="For example: iCombi, programme a new recipe" value="' + esc(f.title) + '"></div>' +
       '<div class="field"><span class="label">Category</span><div class="nt-chips" role="group" aria-label="Category">' + cats + '</div></div>' +
@@ -7319,6 +7319,8 @@
     if (!el || !S.root || !S.root.contains(el)) return;
     var a = el.getAttribute('data-p'), id = el.getAttribute('data-id'), i = +el.getAttribute('data-i'), dt = el.getAttribute('data-d');
     if (guest() && GUEST_WRITES[a]) { e.preventDefault(); guestAsk({ sel: guestSel(el) }); return; }
+    if (a !== armKey) clearReturnArm();
+    if (localReturn(a)) return;
     if (a.indexOf('lv-') === 0) { lvClick(a, el); return; }
     if (a.indexOf('dk-') === 0) { dkClick(a, el); return; }
     if (a === 'cut-tick') { var ck = el.getAttribute('data-id') || '', con = supplierPending[ck] ? !supplierPending[ck].on : el.getAttribute('aria-pressed') !== 'true'; supplierComplete(ck, con).catch(function (er) { failed(er); }); return; }
@@ -7334,14 +7336,12 @@
     if (a === 'ml-donebox') { S.mlDoneOpen = !el.parentNode.open; return; }
     if (a === 'ml-goadmin') { S.atab = 'mail'; lsSet('lk.prep.atab', 'mail'); return; }
     if (a === 'recipe-toggle') { S.recipeOpen = !S.recipeOpen; if (!S.recipeOpen) { S.recipeSearch = ''; S.recipeAll = false; } draw(); if (S.recipeOpen) { var rse = S.root.querySelector('#p-rs'); if (rse) rse.focus({ preventScroll: true }); } return; }
-    if (a === 'recipe-close') { S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; draw(); focusSel('.p-pickbtn'); return; }
     if (a === 'recipe-all') { S.recipeAll = true; draw(); var rse2 = S.root.querySelector('#p-rs'); if (rse2) rse2.focus({ preventScroll: true }); return; }
     if (a === 'pin-go') { submitKitchenPin(); return; }
     // head chef only (admin Tools tab): this device forgets the kitchen PIN and goes to the PIN screen of the prep book
     if (a === 'pin-forget') { if (!arm('pin-forget')) return; S.pin = ''; lsSet('lk.prep.pin', ''); S.config = null; S.configState = 'idle'; stopLive(); gForget(); if (location.hash === '#/admin') { location.hash = '#/prep'; return; } draw(); return; }
     if (a === 'retry') { cfgKey = ''; connect(); return; }
     if (a === 'notes-open') { if (canPing()) { S.notesOpen = true; if (!nfDirty()) { S.nf = null; S.nOpen = false; } S.nMsg = ''; loadNotes(); draw(); window.scrollTo(0, 0); } return; }
-    if (a === 'notes-close') { S.notesOpen = false; draw(); return; }
     if (a === 'n-new') { S.nf = nfNew(); S.nfSnap = JSON.stringify(S.nf); S.nOpen = true; S.nMsg = ''; draw(); var ntx = S.root.querySelector('[data-k="n-text"]'); if (ntx) { focusNoteText(ntx); } return; }
     if (a === 'n-tag') {
       var tg = el.getAttribute('data-v'), ft = S.nf, old = NOTE_START[ft.tag] || '', cur = ft.text.replace(/^\s+/, '');
@@ -7365,7 +7365,6 @@
       draw(); return;
     }
     if (a === 'n-save') { saveNote(); return; }
-    if (a === 'n-cancel') { if (nfDirty() && !arm('n-cancel')) return; S.nf = nfNew(); S.nOpen = false; S.nMsg = ''; draw(); return; }
     if (a === 'n-edit') { var nn = (S.notes || []).filter(function (x) { return x.id === id; })[0]; if (nn) { S.nf = nfFrom(nn); S.nfSnap = JSON.stringify(S.nf); S.nOpen = true; S.nMsg = ''; draw(); var tx = S.root.querySelector('[data-k="n-text"]'); if (tx) { focusNoteText(tx); } } return; }
     if (a === 'n-reuse') { reuseNote(id); return; }
     if (a === 'n-past-more') { loadPastNotes(true); return; }
@@ -7379,7 +7378,6 @@
       return;
     }
     if (a === 'mn-open') { if (isSous()) { S.minOpen = true; S.mMsg = ''; if (!mfDirty()) S.mf = null; loadMinutes(true); draw(); window.scrollTo(0, 0); } return; }
-    if (a === 'mn-close') { S.minOpen = false; if (!mfDirty()) S.mf = null; draw(); return; }
     if (a === 'mn-admin') { S.atab = 'minutes'; lsSet('lk.prep.atab', 'minutes'); location.hash = '#/admin'; return; }
     // the register from #/minutes, the same as the old Minutes register in the chef hat menu: on a tap, one small minutes query
     if (a === 'mn-sous') { chefOpen('register'); return; }
@@ -7391,8 +7389,6 @@
     if (/^mn-(new|tpl|draft-open|edit|draft|pub|remove)$/.test(a) && !mnCanWrite()) return;
     if (a === 'mn-new' || a === 'mn-tpl') { S.mf = a === 'mn-tpl' ? mfTpl() : mfNew(); S.mfSnap = mfSnap(S.mf); S.mMsg = ''; draw(); var mfe = S.root.querySelector('.mn-form'); if (mfe) mfe.scrollIntoView({ block: 'start' }); return; }
     if (a === 'mn-draft-open' || a === 'mn-edit') { var mm = mnById(id); if (mm) { S.mf = mfFrom(mm); S.mfSnap = mfSnap(S.mf); S.mMsg = ''; draw(); var mfe2 = S.root.querySelector('.mn-form'); if (mfe2) mfe2.scrollIntoView({ block: 'start' }); } return; }
-    if (a === 'mn-cancel') { if (mfDirty() && !arm('mn-cancel')) return; S.mf = null; S.mMsg = ''; draw(); return; }
-    if (a === 'mn-prev') { if (S.mf) { S.mf.prev = !S.mf.prev; draw(); } return; }
     if (a === 'mn-attopen') { S.mAttOpen = !S.mAttOpen; draw(); return; }
     if (a === 'mn-attc') { if (S.mf) { var cur = S.mf.att[id]; S.mf.att[id] = cur === 'present' ? 'apology' : cur === 'apology' ? 'absent' : 'present'; draw(); } return; }
     if (a === 'mn-regall') { S.mRegAll = !S.mRegAll; draw(); return; }
@@ -7414,7 +7410,6 @@
     if (a === 'g-edit') { var geg = gById(id); if (geg) gOpenEditor(gfFrom(geg)); return; }
     if (a === 'g-del') { removeGuide(id); return; }
     if (a === 'g-save') { saveGuide(); return; }
-    if (a === 'g-cancel') { if (gfDirty() && !arm('g-cancel')) return; S.gf = null; S.gfSnap = ''; draw(); return; }
     if (a === 'g-fcat') { if (S.gf) { S.gf.cat = el.getAttribute('data-v'); S.gf.msg = ''; draw(); } return; }
     if (a === 'g-fwho') { if (S.gf) { S.gf.who = el.getAttribute('data-v'); S.gf.msg = ''; draw(); } return; }
     if (a === 'g-pup') { var gp = S.gf && S.gf.pages; if (gp && i > 0 && gp[i]) { gp.splice(i - 1, 0, gp.splice(i, 1)[0]); draw(); } return; }
@@ -7472,7 +7467,6 @@
     if (a === 'w-act-open') { S.wf.actOpen = true; draw(); focusSel('#w-act'); return; }
     if (a === 'wreason') { S.wf.reason = el.getAttribute('data-v'); if (S.sheet) wasteSheetClose(); else draw(); return; }
     if (a === 'sheet') { S.sheet = el.getAttribute('data-v'); ovPush('reason', function () { wasteSheetClose(true); }); draw(); var so = S.root.querySelector('.sheet-o[aria-checked="true"]') || S.root.querySelector('.sheet-o'); if (so) so.focus(); return; }
-    if (a === 'sheet-close') { wasteSheetClose(); return; }
     if (a === 'wsugg') { var wt = (S.wsugg || [])[i]; if (wt) { S.wf.text = wt; var wl = wLast(wt); if (wl) { if (wl.unit) S.wf.unit = wl.unit; if (wl.reason && !S.wf.reason) S.wf.reason = wl.reason; if (wl.station && !S.wf.sec && !mySec()) S.wf.sec = wl.station; if (wl.amt && (S.wf.amtAuto || !String(S.wf.amt).trim())) { S.wf.amt = wl.amt; S.wf.amtAuto = true; } } draw(); focusFilled('w-amt'); } return; }
     if (a === 'woften') { var wo = wOften()[i]; if (wo) { S.wf.text = wo.text; if (wo.unit) S.wf.unit = wo.unit; if (wo.reason) S.wf.reason = wo.reason; if (wo.sec && !S.wf.sec && !mySec()) S.wf.sec = wo.sec; if (wo.amt && (S.wf.amtAuto || !String(S.wf.amt).trim())) { S.wf.amt = wo.amt; S.wf.amtAuto = true; } draw(); focusFilled('w-amt'); } return; }
     if (a === 'wdel') { removeWaste(dt, id); return; }
@@ -7494,7 +7488,6 @@
     if (a === 'a-group') { var gg = A_GROUPS.filter(function (g) { return g[0] === el.getAttribute('data-g'); })[0]; if (gg) { S.atab = (S.agLast || {})[gg[0]] || gg[2].filter(function (t) { return t !== 'mail' || mlOwner(); })[0]; lsSet('lk.prep.atab', S.atab); draw(); adminToTop(); } return; }
     if (a === 'a-tab') { S.atab = el.getAttribute('data-t'); S.agLast = S.agLast || {}; S.agLast[adminGroupOf(S.atab)[0]] = S.atab; lsSet('lk.prep.atab', S.atab); draw(); adminToTop(); return; }
     if (a === 'staff-open') { if (isSous()) { startDraft(); S.staffOpen = true; draw(); seedPinOpen(); } return; }
-    if (a === 'staff-close') { if (draftDirty() && !arm('staff-close')) return; S.staffOpen = false; S.draft = null; draw(); return; }
     if (a === 'add-recipe') { addRecipe(id); return; }
     if (a === 'signin') { signIn(); return; }
     if (a === 'signout') { if (draftDirty() && !arm('signout')) { toast('Unsaved staff changes. Tap Sign out of Google again to drop them.'); return; } signOut(); draw(); return; }
@@ -7533,6 +7526,7 @@
   function onInput(e) {
     var el = e.target, k = el.getAttribute && el.getAttribute('data-k');
     if (!S.root || !S.root.contains(el)) return;
+    clearReturnArm();
     if (k && k.indexOf('lv-q:') === 0) { var lk = k.slice(5), lc = LVR[lk]; if (lc) { var ls0 = lvState(lc); ls0.q = el.value; ls0.shown = lc.step || 15; lvRefresh(lk); } return; }
     // a PIN goes in by itself the moment the fourth digit is typed (only when it reaches four, so it cannot send twice)
     if (k === 'p-pin') { var pp = S.pinInput.length; S.pinInput = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.pinInput; pinCells(el); if (pp < 4 && S.pinInput.length === 4) submitKitchenPin(); return; }
@@ -7582,6 +7576,7 @@
   function onChange(e) {
     var el = e.target, k = el.getAttribute && el.getAttribute('data-k');
     if (!S.root || !S.root.contains(el)) return;
+    clearReturnArm();
     if (k && k.indexOf('lv-s:') === 0) { var sk = k.slice(5), sc = LVR[sk]; if (sc) { var ss = lvState(sc); ss.sort = el.value; ss.shown = sc.step || 15; lvRefresh(sk); } return; }
     if (k && k.indexOf('ml-pri:') === 0) { mlSetPri(k.slice(7), el.value); return; }
     if (k === 'ml-sous') { mlSousSet(el.checked); return; }
@@ -8136,18 +8131,43 @@
   /* ---------- public bits used by app.js ---------- */
   /* The page Back closes the nearest local task first. Cancelling an edited form uses its existing two-tap
      discard check; returning from a panel keeps any other unfinished form in memory for the same person. */
+  function prepLeaveHTML(action) {
+    if (!armed(action)) return '';
+    return '<p class="hint" id="prep-leave-note" role="status">Unsaved changes. Tap Back again to discard them.</p>';
+  }
+  function clearReturnArm() {
+    if (!/^(staff-close|n-cancel|mn-cancel|g-cancel)$/.test(armKey)) return;
+    clearTimeout(armTimer); armKey = '';
+    if (!S.root) return;
+    var note = S.root.querySelector('#prep-leave-note'); if (note) note.remove();
+    var cancel = S.root.querySelector('[data-p="n-cancel"], [data-p="mn-cancel"], [data-p="g-cancel"]');
+    if (cancel) { var a = cancel.getAttribute('data-p'); cancel.textContent = a === 'mn-cancel' ? 'Cancel' : a === 'n-cancel' ? S.nf && S.nf.id ? 'Cancel' : 'Close' : S.gf && S.gf.id ? 'Cancel' : 'Close'; }
+    window.dispatchEvent(new Event('lk-back'));
+  }
+  function localReturn(a) {
+    if (a === 'recipe-close') { S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; draw(); focusSel('.p-pickbtn'); return true; }
+    if (a === 'notes-close') { S.notesOpen = false; draw(); return true; }
+    if (a === 'n-cancel') { if (nfDirty() && !arm('n-cancel')) return true; S.nf = nfNew(); S.nOpen = false; S.nMsg = ''; draw(); return true; }
+    if (a === 'mn-close') { S.minOpen = false; if (!mfDirty()) S.mf = null; draw(); return true; }
+    if (a === 'mn-cancel') { if (mfDirty() && !arm('mn-cancel')) return true; S.mf = null; S.mMsg = ''; draw(); return true; }
+    if (a === 'mn-prev') { if (S.mf) { S.mf.prev = !S.mf.prev; draw(); } return true; }
+    if (a === 'g-cancel') { if (gfDirty() && !arm('g-cancel')) return true; S.gf = null; S.gfSnap = ''; draw(); return true; }
+    if (a === 'sheet-close') { wasteSheetClose(); return true; }
+    if (a === 'staff-close') { if (draftDirty() && !arm('staff-close')) return true; S.staffOpen = false; S.draft = null; draw(); return true; }
+    return false;
+  }
   function localBackAction() {
     if (!S.root || !document.body.contains(S.root)) return null;
-    var pick = function (a, label) { var el = S.root.querySelector('[data-p="' + a + '"]'); return el ? { el: el, label: label } : null; };
+    var pick = function (a, label) { return { action: a, label: label }; };
     if (S.sheet) return pick('sheet-close', 'Back to wastage');
-    if (S.root.querySelector('.g-edit')) return pick('g-cancel', armed('g-cancel') ? 'Tap again to discard' : 'Back to guides');
-    if (S.root.querySelector('.n-edit')) return pick('n-cancel', armed('n-cancel') ? 'Tap again to discard' : 'Back to pings');
+    if (S.root.querySelector('.g-edit')) return pick('g-cancel', 'Back to guides');
+    if (S.root.querySelector('.n-edit')) return pick('n-cancel', 'Back to pings');
     if (S.mf && S.mf.prev && (S.name === 'admin' && S.atab === 'minutes' || S.name === 'prep' && S.minOpen)) return pick('mn-prev', 'Back to writing');
-    if (S.root.querySelector('.mn-form')) return pick('mn-cancel', armed('mn-cancel') ? 'Tap again to discard' : 'Back to minutes');
+    if (S.root.querySelector('.mn-form')) return pick('mn-cancel', 'Back to minutes');
     if (S.name === 'prep') {
-      if (S.root.querySelector('[data-p="mn-close"]')) return pick('mn-close', 'Back to prep list');
-      if (S.root.querySelector('[data-p="notes-close"]')) return pick('notes-close', 'Back to prep list');
-      if (S.root.querySelector('[data-p="staff-close"]')) return pick('staff-close', armed('staff-close') ? 'Tap again to leave without saving' : 'Back to prep list');
+      if (S.root.querySelector('.p-minutes-page')) return pick('mn-close', 'Back to prep list');
+      if (S.root.querySelector('.p-notes-page')) return pick('notes-close', 'Back to prep list');
+      if (S.root.querySelector('.p-staff-page')) return pick('staff-close', 'Back to prep list');
       if (S.recipeOpen) return pick('recipe-close', 'Back to prep list');
     }
     return null;
@@ -8157,9 +8177,10 @@
   }
   window.LK_PREP = {
     sg: sg,
-    back: function () { if (localBackBusy()) return true; var a = localBackAction(); if (!a) return false; a.el.click(); return true; },
+    back: function () { if (localBackBusy()) return true; var a = localBackAction(); return !!a && localReturn(a.action); },
     backLabel: function () { var a = localBackAction(); return a ? a.label : ''; },
     backDisabled: localBackBusy,
+    backDescription: function () { return S.root && document.body.contains(S.root) && S.root.querySelector('#prep-leave-note') ? 'prep-leave-note' : ''; },
     mount: function (name, root, sel) {
       wire();
       S.name = name; S.root = root;
