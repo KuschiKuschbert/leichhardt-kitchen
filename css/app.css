@@ -230,6 +230,18 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .btn.dark:hover, .nb-addbtn:hover { background: var(--ink); border-color: var(--ink); }
 .btn.dark[disabled], .nb-addbtn[disabled] { background: #b9b3a8; border-color: #b9b3a8; }
 .btn-row { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.page-return { display: flex; margin-bottom: 1rem; }
+.page-return .btn { max-width: 100%; padding: 0.5rem 1rem; text-align: left; }
+.page-return .btn svg { flex: 0 0 16px; }
+.page-return .btn span { overflow-wrap: anywhere; }
+.page-back-short { display: none; }
+.page-return.is-trail { display: inline-flex; margin: 0; }
+.prep { position: relative; }
+.prep > .page-return.is-inline { position: absolute; left: 0; top: 0; z-index: 1; margin: 0; }
+.page-return.is-inline .page-back-full { display: none; }
+.page-return.is-inline .page-back-short { display: inline; }
+.page-return.is-inline + #prep-root > .nb-top { min-height: 48px; align-items: center; padding-left: calc(var(--return-width, 96px) + 0.75rem); gap: 0.4rem 0.75rem; }
+@media print { .page-return { display: none; } }
 .saved { font-size: 0.875rem; color: var(--muted); }
 
 @media (max-width: 599px) {

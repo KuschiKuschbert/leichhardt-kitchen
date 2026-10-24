@@ -17,7 +17,7 @@
 (function () {
   'use strict';
 
-  var API = 1;
+  var API = 2;
   var FN = window.LK_FN, M = FN.M, P = window.LK_PREP, esc = FN.esc, T = window.LK_TIME;
   function B() { return P.book(); }
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -25,7 +25,7 @@
   function clone(x) { return JSON.parse(JSON.stringify(x)); }
   function now() { return T.now(); }
   function today() { return T.day(); }
-  var E = { root: null, sub: [], list: null, listErr: false, q: '', chip: 'up', ed: null, armed: '', armTimer: null };
+  var E = { root: null, sub: [], list: null, listErr: false, q: '', chip: 'up', ed: null, pending: {}, armed: '', armTimer: null };
   function arm(k) {
     if (E.armed === k) { E.armed = ''; clearTimeout(E.armTimer); return true; }
     E.armed = k; clearTimeout(E.armTimer); E.armTimer = setTimeout(function () { E.armed = ''; draw(); }, 4000);
@@ -311,13 +311,14 @@
   }
   function editHTML() {
     var e = E.ed;
-    if (e.loading) return '<p role="status">Opening the function...</p>';
+    var back = '<div class="btn-row"><a class="btn" data-fe-back="1" href="#/functions">Back to all functions</a></div>';
+    if (e.loading) return back + '<p role="status">Opening the function...</p>';
     if (e.missing) return '<section class="set-block"><h2 id="rtitle" tabindex="-1">Function not found</h2><p>It may have a different link.</p><div class="btn-row"><a class="btn" href="#/functions">All functions</a></div></section>';
     if (e.failed) return '<section class="set-block"><h2 id="rtitle" tabindex="-1">Could not open the function</h2><p>Check the signal and try again.</p><div class="btn-row"><button type="button" class="btn dark" data-fe="reopen">Try again</button><a class="btn" href="#/functions">All functions</a></div></section>';
     var d = e.d, s = e.saved, st = e.status;
-    if (e.review) return '<div class="fe-head"><h2 id="rtitle" tabindex="-1">' + esc(d.name || 'New function') + '</h2></div>' + msgHTML(e) + reviewHTML(e);
+    if (e.review) return '<div class="btn-row"><button type="button" class="btn" data-fe="review-x">Back to the form</button></div><div class="fe-head"><h2 id="rtitle" tabindex="-1">' + esc(d.name || 'New function') + '</h2></div>' + msgHTML(e) + reviewHTML(e);
     var stTag = st === 'draft' ? '<span class="fn-tag">Draft: the kitchen does not see it</span>' : st === 'cancelled' ? '<span class="fn-tag fn-t-off">Cancelled</span>' : '<span class="fn-tag fn-t-ok">Confirmed: in the kitchen\'s band on the day</span>';
-    var out = '<div class="fe-head"><h2 id="rtitle" tabindex="-1">' + esc(e.isNew ? 'New function' : (s.name || 'Function')) + '</h2>' + stTag + '</div>' +
+    var out = back + '<div class="fe-head"><h2 id="rtitle" tabindex="-1">' + esc(e.isNew ? 'New function' : (s.name || 'Function')) + '</h2>' + stTag + '</div>' +
       (e.restored ? '<p class="fe-note">Changes not saved yet were kept on this device and are back in the form. <button type="button" class="linkish" data-fe="drop">' + (armed('drop') ? 'Tap again to drop them' : 'Drop them') + '</button></p>' : '') +
       (!e.isNew ? '<p class="hint">Last changed by ' + esc(FN.nameOf(s.by)) + ', ' + esc(stamp(s.upd)) + '. Version ' + s.v + '.</p>' : '') + msgHTML(e) +
       '<section class="set-block"><span class="label">The function</span>' + inp('name', 'Name or reference', d.name, ' maxlength="80" autocomplete="off" placeholder="Smith birthday"') +
@@ -447,7 +448,7 @@
       e.saving = ''; e.conflict = null; e.review = false; e.restored = false; e.hist = null;
       if (Array.isArray(E.list)) { E.list = E.list.filter(function (x) { return x.id !== id; }).concat([f]); }
       toast(kind === 'confirm' ? 'Confirmed. The kitchen sees it on the day.' : kind === 'cancel' ? 'Cancelled. The kitchen is told.' : f.status === 'confirmed' ? 'Saved. The kitchen sees the change now.' : 'Draft saved. The kitchen does not see it yet.');
-      if (wasNew) { history.replaceState(null, '', '#/functions/' + encodeURIComponent(id)); E.sub = [id]; }
+      if (wasNew) { history.replaceState(history.state, '', '#/functions/' + encodeURIComponent(id)); if (window.LK_APP && window.LK_APP.noteRoute) window.LK_APP.noteRoute(true); E.sub = [id]; }
       if (E.ed === e) { draw(); var h = E.root && E.root.querySelector('#rtitle'); if (h) h.focus({ preventScroll: true }); window.scrollTo(0, 0); }
     }).catch(function (err) {
       clearTimeout(slow); e.saving = '';
@@ -530,7 +531,7 @@
     if (k) { var el = E.root.querySelector('[data-ff="' + k + '"]'); if (el) { el.focus({ preventScroll: true }); try { if (ss != null) el.setSelectionRange(ss, se); } catch (x) {} } }
   }
   function live() { var el = E.root && E.root.querySelector('#fe-live'); if (el && E.ed && E.ed.d) el.innerHTML = liveHTML(E.ed); }
-  function setField(k, v, structural) {
+  function setField(k, v, structural, quiet) {
     if (k === 'q') { E.q = v; draw(); return; }
     var e = E.ed; if (!e || !e.d) return;
     var d = e.d, m;
@@ -549,7 +550,7 @@
     else if (k in d) d[k] = v;
     if (e.shown && e.shown.length) e.shown = check({ d: d, status: 'confirmed' }).filter(function (p) { return e.shown.some(function (s) { return s.k === p.k; }); });
     keep();
-    if (structural) draw(); else live();
+    if (!quiet) { if (structural) draw(); else live(); }
   }
   function onInput(ev) {
     if (!E.root || !E.root.contains(ev.target)) return;
@@ -559,8 +560,14 @@
     if (E.drawing) { var v = ev.target.value; setTimeout(function () { setField(k, v, true); }, 0); return; }
     // what changes the page's shape waits for the change event (so typing "12" does not redraw at "1")
     var shape = /^(date|startT|foodDate|foodT|n|gap|qty\d+|a\d+_\d+|rt\d+)$/.test(k);
-    if (ev.type === 'input' && shape) { if (/^(a\d+_\d+|qty\d+)$/.test(k)) { setField(k, ev.target.value, false); } return; }
+    if (ev.type === 'input' && shape) { if (/^(a\d+_\d+|qty\d+)$/.test(k)) { setField(k, ev.target.value, false); } else E.pending[k] = ev.target.value; return; }
+    delete E.pending[k];
     setField(k, ev.target.value, ev.type === 'change' && shape);
+  }
+  // Browser Back can leave a date or time box before its change event. Keep that last entry too.
+  function flushPending() {
+    var pending = E.pending; E.pending = {};
+    Object.keys(pending).forEach(function (k) { setField(k, pending[k], true, true); });
   }
   document.addEventListener('input', onInput);
   document.addEventListener('change', onInput);
@@ -592,17 +599,18 @@
     if (a === 'review-x') { e.review = false; draw(); return; }
     if (a === 'confirm') { save('confirm'); return; }
     if (a === 'cancel') { if (!arm('cancel')) return; save('cancel'); return; }
-    if (a === 'dup') { var src = clone(d); history.pushState(null, '', '#/functions/new'); E.sub = ['new']; openNew(src); return; }
+    if (a === 'dup') { var src = clone(d); history.pushState(null, '', '#/functions/new'); if (window.LK_APP && window.LK_APP.noteRoute) window.LK_APP.noteRoute(false); E.sub = ['new']; openNew(src); return; }
     if (a === 'drop') { if (!arm('drop')) return; forget(e); if (e.isNew) { E.ed = null; location.hash = '#/functions'; return; } e.d = fromDoc(e.saved, e.savedC); e.status = e.saved.status; e.restored = false; e.shown = []; draw(); return; }
     if (a === 'theirs') { forget(e); E.ed = null; openId(e.id); return; }
     if (a === 'mine') { e.v = e.conflict.v; e.saved = e.conflict.doc; e.conflict = null; save(e.status === 'confirmed' ? 'save' : 'save'); return; }
     if (a === 'hist') { loadHist(); return; }
   });
   function focusF(k) { var el = E.root && E.root.querySelector('[data-ff="' + k + '"]'); if (el) el.focus({ preventScroll: true }); }
-  window.addEventListener('beforeunload', function (ev) { if (dirty()) { ev.preventDefault(); ev.returnValue = ''; } });
+  window.addEventListener('beforeunload', function (ev) { flushPending(); if (dirty()) { ev.preventDefault(); ev.returnValue = ''; } });
 
   function mount(root, route) {
     var sub = route.sub || [], same = E.root === root && JSON.stringify(sub) === JSON.stringify(E.sub);
+    if (!same) flushPending();
     E.root = root;
     if (same && (E.ed || !sub.length)) { draw(); return; }
     E.sub = sub;
@@ -610,7 +618,7 @@
     if (!Array.isArray(E.list)) loadList();
     if (sub[0] === 'new') openNew(); else openId(sub[0]);
   }
-  function unmount() { E.root = null; E.sub = []; E.ed = null; }
+  function unmount() { flushPending(); E.root = null; E.sub = []; E.ed = null; }
   window.LK_FE = {
     api: API, mount: mount, unmount: unmount, dirty: function () { return !!E.root && dirty(); },
     hasDraft: function () { return Object.keys(localStorage || {}).some(function (k) { return k.indexOf('lk.fe.draft.') === 0; }); },

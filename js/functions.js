@@ -478,7 +478,7 @@
   function tickSent(id, i, on) {
     var f = byId(id), prep = P(); if (!f || !prep) return;
     var r = f.rounds[i], api = prep.book(), me = api.who();
-    if (!me && !(prep.state && prep.state.user)) { sheetClose(); prep.signIn(location.hash || '#/'); return; }   // who is ticking: sign in first
+    if (!me && !(prep.state && prep.state.user)) { sheetClose(false, true); prep.signIn(location.hash || '#/'); return; }   // who is ticking: sign in first
     var x = F.sent[f.id + '_' + r.at], rec = on ? { fid: f.id, at: r.at, day: kday(r.at), sent: true, sentAt: now(), sentBy: me } : { fid: f.id, at: r.at, day: kday(r.at), sent: false, sentAt: x.sentAt, sentBy: x.sentBy };
     F.sent[f.id + '_' + r.at] = rec; changed();   // shows at once; the listener brings the saved copy
     api.ready().then(function () { return api.W([['set', api.docRef('fnsent', f.id + '_' + r.at), rec, true]]); }).then(function () {
@@ -557,11 +557,15 @@
     el.innerHTML = '<div class="fn-pop-bg" data-fn="close"></div><section class="fn-sheet" role="dialog" aria-modal="true" aria-labelledby="fn-sh-h" tabindex="-1">' +
       '<div class="fn-grip" aria-hidden="true"></div><header class="fn-sheet-top"><div class="fn-sheet-t"><span class="fn-eb">Function</span><h2 id="fn-sh-h">' + esc(f.name) + '</h2></div><button type="button" class="fn-close" data-fn="close">Close</button></header><div class="fn-sheet-body">' + sheetHTML(f, true) + '</div></section>';
     document.body.appendChild(el); sheetEl = el;
+    var api = P() && P().book && P().book();
+    if (api && api.ovPush) api.ovPush('fn', function () { sheetClose(true, true); });
     el.querySelector('.fn-sheet').focus({ preventScroll: true });
     strip();
   }
-  function sheetClose(back) {
+  function sheetClose(back, noBack) {
     if (!sheetEl) return;
+    var api = P() && P().book && P().book();
+    if (api && api.ovDone) api.ovDone('fn', noBack);
     sheetEl.parentNode.removeChild(sheetEl); sheetEl = null; sheetId = '';
     if (back && sheetBack && document.body.contains(sheetBack)) sheetBack.focus({ preventScroll: true });
     sheetBack = null;
@@ -716,7 +720,7 @@
     if (a === 'open') { sheetOpen(el.getAttribute('data-id'), el); return; }
     if (a === 'close') { sheetClose(true); return; }
     if (a === 'sent' || a === 'unsent') { tickSent(el.getAttribute('data-id'), +el.getAttribute('data-r'), a === 'sent'); return; }
-    if (a === 'go') { sheetClose(); return; }
+    if (a === 'go') { sheetClose(false, true); return; }
     if (a === 'ckhide') { try { localStorage.setItem('lk.fn.ckhide', kday(now())); } catch (x) {} if (window.LK_PREP && window.LK_PREP.sg) window.LK_PREP.sg('checks', 'd'); paint(); return; }
     if (a === 'fold') { lsSet('lk.fn.fold', lsGet('lk.fn.fold') === kday(now()) ? null : kday(now())); lastBand = null; paint(); var fb = document.querySelector('#fn-band [data-fn="fold"]'); if (fb) fb.focus({ preventScroll: true }); return; }
     if (a === 'more') { F.more = !F.more; lastBand = null; paint(); var mb = document.querySelector('#fn-band [data-fn="more"]'); if (mb) mb.focus({ preventScroll: true }); return; }
@@ -732,7 +736,7 @@
       else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
     }
   });
-  window.addEventListener('hashchange', function () { sheetClose(); });
+  window.addEventListener('hashchange', function () { sheetClose(false, true); });
   // the band comes and goes on time with the screen left open: every 20 seconds it is worked out again (no reads)
   var lastDay = T.day();
   setInterval(function () {
