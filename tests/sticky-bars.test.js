@@ -1,6 +1,6 @@
 // The bars that stick to the top of the screen (24 Oct 2026). With the update strip and the function strip both up,
 // the recipe search sits under both of them, not 46 px under the update strip; a jump on a recipe card lands below the
-// function strip; on a tablet Zoom out is the small corner button, not a bar across the card.
+// function strip; on a tablet return uses the existing header, with no fixed Zoom out overlay.
 const L = require('./lib');
 const M = require('../js/functions.js');
 const { R, ok } = L.results();
@@ -45,10 +45,10 @@ const box = (p, sel) => p.evaluate(s => { const e = document.querySelector(s); i
   ok(!!chip && tgt != null && (!st2 || tgt >= st2.bottom - 1), 'recipe card: the jump lands below the function strip (' + tgt + ' against ' + (st2 && st2.bottom) + ')');
   await p.context().close();
 
-  // a tablet: Zoom out is the small button in the corner
+  // a tablet: return occupies the existing header instead of overlaying the recipe
   p = await L.open(b, '#/r/barra', { wait: 1500, width: 768, height: 1024, touch: true });
-  const z = await box(p, '.zoombar a');
-  ok(z && z.w < 260 && z.h >= 44, '768: Zoom out is a small button, not a bar across the card (' + JSON.stringify(z) + ')');
+  const z = await box(p, '.wtop [data-act="back"]');
+  ok(z && z.w === 44 && z.h === 44 && await p.locator('.zoombar').count() === 0, '768: a compact header arrow replaces the floating Zoom out control (' + JSON.stringify(z) + ')');
   ok(!(await L.overflow(p)), '768: no sideways scroll');
   await p.context().close();
 

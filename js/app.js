@@ -472,7 +472,8 @@
     return '<span class="wtop-icons">' + noteBellHTML() + whoMark() + '</span>';
   }
   function topBar() {
-    return '<header class="wtop"><a class="wtop-brand" href="#/" aria-label="Kitchen Book, home">' + LOGO_MARK + '<span class="rb-text"><span class="rb-eb">Leichhardt Hotel Kitchen</span><b>Kitchen Book</b></span></a>' + pillNav() + topIcons() + '</header>';
+    var returning = parseRoute().name !== 'landing';
+    return '<header class="wtop' + (returning ? ' has-back' : '') + '"><div class="wtop-start">' + (returning ? pageBack() : '') + '<a class="wtop-brand" href="#/" aria-label="Kitchen Book, home">' + (returning ? '' : LOGO_MARK) + '<span class="rb-text"><span class="rb-eb">Leichhardt Hotel Kitchen</span><b>Kitchen Book</b></span></a></div>' + pillNav() + topIcons() + '</header>';
   }
   /* Functions (js/functions.js): the band of today's functions right under the top bar, on every page. This is the empty
      slot; js/functions.js fills it and keeps it right as times pass and bookings change, without redrawing the page. */
@@ -742,9 +743,9 @@
         searchField('Dish, ingredient or allergen', passCount()) + kindChips() + allergenRow() + '<div id="shelves" class="shelves">' + shelvesHTML() + '</div></main>' + footer() + '</div>';
     }
     var r = byId[stack[stack.length - 1]], dish = isDish(r);
-    var trail = '<nav class="trail" aria-label="Zoom level"><a class="pill-link" href="#/recipes">' + ICON.left + 'The pass</a>' + stack.map(function (id, i) {
+    var trail = '<nav class="trail crumbs" aria-label="Breadcrumb"><a href="#/recipes">The pass</a>' + stack.map(function (id, i) {
       var last = i === stack.length - 1;
-      return '<span class="sep" aria-hidden="true">/</span>' + (last ? '<span class="here" aria-current="page">' + esc(byId[id].name) + '</span>' : '<a class="pill-link" href="' + href(stack.slice(0, i + 1)) + '">' + esc(byId[id].name) + '</a>');
+      return '<span class="sep" aria-hidden="true">/</span>' + (last ? '<span aria-current="page">' + esc(byId[id].name) + '</span>' : '<a href="' + href(stack.slice(0, i + 1)) + '">' + esc(byId[id].name) + '</a>');
     }).join('') + '</nav>';
     var left;
     if (dish) {
@@ -758,14 +759,12 @@
     } else {
       left = '<div class="pan-art' + (r.done ? ' done' : '') + '">' + art(r, 'art') + '</div>' + usedBox(r, stack, 'Goes on') + tipBox(r) + guideBox(r);
     }
-    var parent = stack.length > 1 ? byId[stack[stack.length - 2]].name : 'the pass';
     // phones: the name, yield and allergens come first, then the drawing, then the rest (order in app.css, .cols under 900px)
     return '<div class="page">' + trail + jumps() + lensFold() +
       '<main id="main" class="cols"><div class="col">' + left + '</div><div class="col wide">' + cardHead(r) + editSlot(r) + allergenBox(r) +
       '<div class="sec"><h3 class="h3" id="r-ing">' + (dish ? 'Everything on it' : 'Into the pan') + '</h3>' + ingTable(r, stack, true) + '</div>' +
       '<div id="r-steps" class="jump-at"></div>' + safetyBox(r) + diagram(r) + (dish ? guideBox(r) : '') + steps(r) +
-      '</div></main>' + footer() +
-      '<div class="zoombar"><a href="' + href(stack.slice(0, -1)) + '">' + ICON.zoom + 'Zoom out to ' + esc(parent) + '</a></div></div>';
+      '</div></main>' + footer() + '</div>';
   }
 
   /* ---------- welcome and settings ---------- */
@@ -840,7 +839,7 @@
      and API in js/fnedit.js together when what LK_FN or LK_PREP.book() hands it changes. */
   function viewFn(route) { return '<div class="page fn-pg"><main id="main" class="fn-main">' + (window.LK_FN ? window.LK_FN.page(route.fid) : '') + '</main>' + footer() + '</div>'; }
   function viewFunctions() { return '<div class="page fe-page"><main id="main" class="fe"><div id="fe-root"></div></main></div>'; }
-  var FE_API = 2, feLoad = null;
+  var FE_API = 3, feLoad = null;
   function mountFunctions(route) {
     var root = document.getElementById('fe-root');
     if (!root) return;
@@ -858,13 +857,13 @@
     }
     if (window.LK_FE) { if (window.LK_FE.api === FE_API) window.LK_FE.mount(root, route); else root.innerHTML = mgNote('Reload the book', 'The functions page on this device is a different version from the book. Reload the page to update it.', '<div class="btn-row"><button type="button" class="btn dark" data-act="reload">Reload</button></div>'); return; }
     root.innerHTML = mgNote('Functions', 'Opening functions...', ' ');
-    if (!feLoad) feLoad = mgScript('js/fnedit.js?v=2').catch(function (e) { feLoad = null; throw e; });
+    if (!feLoad) feLoad = mgScript('js/fnedit.js?v=3').catch(function (e) { feLoad = null; throw e; });
     feLoad.then(function () { if (parseRoute().name === 'functions') mountFunctions(parseRoute()); }, function () {
       var el = document.getElementById('fe-root');
       if (el) el.innerHTML = mgNote('Could not open functions', 'It needs the signal the first time it opens on a device. Check the signal and try again.', '<div class="btn-row"><button type="button" class="btn dark" data-act="feretry">Try again</button></div>');
     });
   }
-  var MG_API = 2, mgLoad = null;
+  var MG_API = 3, mgLoad = null;
   function viewManage() { return '<div class="page mg-page"><main id="main" class="mg"><div id="mg-root"></div></main>' + footer() + '</div>'; }
   function mgScript(f) {
     return fetch(f, { headers: { 'X-LK-Fresh': '1' } }).catch(function () {}).then(function () {
@@ -872,7 +871,7 @@
     });
   }
   function loadManage() {
-    if (!mgLoad) mgLoad = mgScript('js/manage.js?v=2').catch(function (e) { mgLoad = null; throw e; });
+    if (!mgLoad) mgLoad = mgScript('js/manage.js?v=3').catch(function (e) { mgLoad = null; throw e; });
     return mgLoad;
   }
   function mgNote(title, text, link) {
@@ -902,7 +901,7 @@
   function redrawManage() { if (parseRoute().name === 'manage') mountManage(parseRoute()); }
   /* Supplier tools are lazy, like the recipe editor. A failed download leaves a Retry action and never affects
      recipes, prep or orders. Protected data is fetched only after the current chef's session has been checked. */
-  var SUP_API = 3, supLoad = null;
+  var SUP_API = 4, supLoad = null;
   function viewSuppliers() { return '<div class="page sup-page"><main id="main"><div id="supplier-root"></div></main>' + footer() + '</div>'; }
   function mountSuppliers(route) {
     var root = document.getElementById('supplier-root'), P = window.LK_PREP, B = P && P.supplier ? P.supplier() : null;
@@ -919,7 +918,7 @@
       return;
     }
     root.innerHTML = mgNote('Supplier order', 'Opening supplier tools...', ' ');
-    if (!supLoad) supLoad = mgScript('js/suppliers.js?v=3').catch(function (e) { supLoad = null; throw e; });
+    if (!supLoad) supLoad = mgScript('js/suppliers.js?v=4').catch(function (e) { supLoad = null; throw e; });
     supLoad.then(function () { if (parseRoute().name === 'suppliers') mountSuppliers(parseRoute()); }, function () {
       if (parseRoute().name === 'suppliers') root.innerHTML = mgNote('Could not open supplier tools', 'Check the connection and try again. The other kitchen pages still work.', '<div class="btn-row"><button type="button" class="btn dark" data-sup-retry>Try again</button><a class="btn" href="#/orders">Order list</a></div>');
     });
@@ -1081,6 +1080,8 @@
   }
   function backFallback(route) {
     if (route.name === 'recipe') return route.stack.length > 1 ? '#/r/' + route.stack.slice(0, -1).map(encodeURIComponent).join('/') : '#/recipes';
+    if (route.name === 'manage' && route.sub.length) return '#/manage';
+    if (route.name === 'functions' && route.sub.length) return '#/functions';
     if (route.name === 'guides' && route.gid) return '#/guides';
     if (route.name === 'fn' && route.fid) return '#/fn';
     if (route.name === 'suppliers') {
@@ -1097,29 +1098,22 @@
   }
   function localBack() {
     var r = parseRoute();
-    return r.name === 'suppliers' ? window.LK_SUP : PREP_PAGES[r.name] ? window.LK_PREP : null;
+    return r.name === 'suppliers' ? window.LK_SUP : r.name === 'manage' ? window.LK_MG : r.name === 'functions' ? window.LK_FE : PREP_PAGES[r.name] ? window.LK_PREP : null;
   }
   function backInfo() {
     var local = localBack(), label = local && local.backLabel && local.backLabel(), here = navPages[navHere], prev = here && navPages[here.prev], to = prev ? prev.hash : backFallback(parseRoute());
     return { label: label || 'Back to ' + backTitle(to), disabled: !!navBack || !!(local && local.backDisabled && local.backDisabled()), to: to, prev: !!prev };
   }
-  function pageBack(route) {
-    // Nested editors have their own parent buttons beside their form's title.
-    if (route.name === 'landing' || ((route.name === 'manage' || route.name === 'functions') && route.sub.length)) return '';
-    var info = backInfo(), tag = route.name === 'recipe' ? 'span' : 'nav';
-    return '<' + tag + ' class="page-return' + (tag === 'span' ? ' is-trail' : '') + '"' + (tag === 'nav' ? ' aria-label="Return"' : '') + '><button type="button" class="btn" data-act="back" aria-label="' + esc(info.label) + '" title="' + esc(info.label) + '"' + (info.disabled ? ' disabled' : '') + '>' + ICON.left + '<span class="page-back-full">' + esc(info.label) + '</span><span class="page-back-short" aria-hidden="true">Back</span></button></' + tag + '>';
+  function pageBack() {
+    var info = backInfo();
+    return '<button type="button" class="wtop-back" data-act="back" aria-label="' + esc(info.label) + '" title="' + esc(info.label) + '"' + (info.disabled ? ' disabled' : '') + '>' + ICON.left + '</button>';
   }
   function backSync() {
-    var el = app.querySelector('.page-return [data-act="back"]'); if (!el) return;
-    var info = backInfo(), label = el.querySelector('.page-back-full');
-    if (label.textContent !== info.label) label.textContent = info.label;
+    var el = app.querySelector('.wtop-back'); if (!el) return;
+    var info = backInfo(), local = localBack(), desc = local && local.backDescription && local.backDescription();
     el.setAttribute('aria-label', info.label); el.title = info.label;
     el.disabled = info.disabled;
-    // Service lists keep their first line high on a phone. Fit Back beside Writing as instead of adding a row.
-    var root = document.getElementById('prep-root'), top = root && root.firstElementChild;
-    var inline = parseRoute().name === 'prep' && top && top.classList.contains('nb-top');
-    el.parentNode.classList.toggle('is-inline', !!inline);
-    if (root) { if (inline) root.style.setProperty('--return-width', el.offsetWidth + 'px'); else root.style.removeProperty('--return-width'); }
+    if (desc && document.getElementById(desc)) el.setAttribute('aria-describedby', desc); else el.removeAttribute('aria-describedby');
   }
   function goBack() {
     if (navBack) return;
@@ -1184,8 +1178,6 @@
     // Swipeable chip rows keep their place when the page redraws (for example after tapping a chip at the far end).
     var rowsAt = Array.prototype.map.call(app.querySelectorAll('.chips.scroll'), function (el) { return el.scrollLeft; });
     if (route.name !== 'landing') {
-      if (route.name === 'recipe') html = html.replace(/(<nav class="(?:trail|crumbs)"[^>]*>)/, '$1' + pageBack(route));
-      else html = html.replace(/(<main id="main"[^>]*>)/, '$1' + pageBack(route));
       html = topBar() + fnBand() + html + tabBar();
     }
     app.innerHTML = html;

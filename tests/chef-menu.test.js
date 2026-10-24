@@ -7,6 +7,7 @@
 // device Manage staff is People in the admin panel.
 const L = require('./lib');
 const { R, ok } = L.results(), { txt } = L;
+const back = '.wtop [data-act="back"]';
 const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
 const P = (id, name, role) => ({ id, name, role, add: true, tick: true, del: role !== 'staff', active: true });
 // Ann is the head chef here (headId) and ticked for Functions, Sam a sous chef, Bo staff
@@ -88,12 +89,12 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   await L.waitFor(p, () => !!document.querySelector('[data-p="mn-sous"]'), null, 5000).catch(() => {});
   ok(!!(await p.$('[data-p="mn-sous"]')), 'sous chef: Meeting minutes has See who has signed');
   await p.click('[data-p="mn-sous"]'); await L.settle(p, 500);
-  ok(/#\/prep$/.test(p.url()) && await txt(p, '#rtitle') === 'Meeting minutes' && !!(await p.$('[data-p="mn-close"]')), 'sous chef: See who has signed opens the Minutes register (' + p.url() + ')');
+  ok(/#\/prep$/.test(p.url()) && await txt(p, '#rtitle') === 'Meeting minutes' && !!(await p.$('.p-minutes-page')), 'sous chef: See who has signed opens the Minutes register (' + p.url() + ')');
   await L.chef(p, 'staff');
   ok(!!(await p.$('[data-p="a-add-person"]')), 'sous chef: Manage staff opens from the menu over the register');
   // one name for the page (23 Oct 2026): the menu's Manage staff, not Staff list and Staff
-  ok(await txt(p, '#rtitle') === 'Manage staff' && !/Staff list/.test(await txt(p, '.p-bar') || '') && /Back to the prep book/.test(await txt(p, '.p-bar') || ''), 'sous chef: the page is called Manage staff, with Back to the prep book (' + await txt(p, '#rtitle') + ')');
-  ok(await p.evaluate(() => { const l = document.querySelector('.p-bar .p-links'), r = l.getBoundingClientRect(); return innerWidth - r.right < 40; }), 'sous chef: Back to the prep book stays on the right');
+  ok(await txt(p, '#rtitle') === 'Manage staff' && await p.locator(back).getAttribute('aria-label') === 'Back to prep list', 'sous chef: the page is called Manage staff, with a contextual header return');
+  ok(await p.locator('.p-staff-page .p-bar, .p-staff-page [data-p="staff-close"]').count() === 0 && await p.locator(back).count() === 1, 'sous chef: one header return replaces the extra Back row');
 
   // Sign out closes Manage staff, so the next person never lands in it
   await p.click('.wtop-who'); await L.settle(p, 150);
@@ -141,7 +142,7 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
 
   // leaving the prep list closes Manage staff, the register and Shift pings (23 Oct 2026), so Prep is the prep list again
   const go = async (p, h) => { await p.evaluate(h => { location.hash = h; }, h); await L.settle(p, 600); };
-  const onList = async p => !!(await p.$('.nb-left')) && !(await p.$('[data-p="a-add-person"]')) && !(await p.$('[data-p="mn-close"]')) && !(await p.$('[data-p="notes-close"]'));
+  const onList = async p => !!(await p.$('.nb-left')) && !(await p.$('[data-p="a-add-person"]')) && !(await p.$('.p-minutes-page')) && !(await p.$('.p-notes-page'));
   p = await L.open(b, '#/recipes', { who: 'sam', extra: pub, wait: 1800 });
   await L.chef(p, 'staff');
   ok(!!(await p.$('[data-p="a-add-person"]')), 'leave: Manage staff opens from the recipes');
@@ -154,13 +155,13 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   await go(p, '#/'); await go(p, '#/prep');
   ok(await onList(p), 'leave: Manage staff, then the landing page, then Prep shows the prep list');
   await L.chef(p, 'pings');
-  ok(!!(await p.$('[data-p="notes-close"]')), 'leave: Shift pings opens');
+  ok(!!(await p.$('.p-notes-page')), 'leave: Shift pings opens');
   await go(p, '#/waste'); await go(p, '#/prep');
   ok(await onList(p), 'leave: Shift pings, then Wastage, then Prep shows the prep list');
   await go(p, '#/minutes');
   await L.waitFor(p, () => !!document.querySelector('[data-p="mn-sous"]'), null, 5000).catch(() => {});
   await p.click('[data-p="mn-sous"]'); await L.settle(p, 500);
-  ok(!!(await p.$('[data-p="mn-close"]')), 'leave: See who has signed still opens the register on the prep list');
+  ok(!!(await p.$('.p-minutes-page')), 'leave: See who has signed still opens the register on the prep list');
   await go(p, '#/orders'); await go(p, '#/prep');
   ok(await onList(p), 'leave: the register, then Orders, then Prep shows the prep list');
   // a staff list draft with a change keeps its page, as before
@@ -221,12 +222,12 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   ok(await p.evaluate(() => document.querySelectorAll('[data-p="mn-sous"]').length === 1 && !!document.querySelector('.nb-top [data-p="mn-sous"]')), 'minutes: one See who has signed, in the top bar');
   ok(!(await L.overflow(p)), 'minutes: no sideways scroll with the link in the top bar (' + await L.overflow(p) + ')');
   await p.click('[data-p="mn-sous"]'); await L.settle(p, 500);
-  ok(await txt(p, '#rtitle') === 'Meeting minutes' && !!(await p.$('[data-p="mn-close"]')), 'minutes: the link opens the register');
-  await p.click('[data-p="mn-close"]'); await L.settle(p, 300);
-  ok(!!(await p.$('.nb-left')) && !(await p.$('[data-p="mn-close"]')), 'minutes: closing the register goes back to the prep list');
+  ok(await txt(p, '#rtitle') === 'Meeting minutes' && !!(await p.$('.p-minutes-page')), 'minutes: the link opens the register');
+  await p.click(back); await L.settle(p, 300);
+  ok(!!(await p.$('.nb-left')) && !(await p.$('.p-minutes-page')), 'minutes: closing the register goes back to the prep list');
   ok(p.errors.length === 0, 'minutes register: no page errors ' + p.errors.join(' | '));
   await p.context().close();
-  // a ping half written stays behind the register: Back to the prep book finds it with its words
+  // a ping half written stays behind the register: the header return finds it with its words
   p = await L.open(b, '#/prep', { who: 'sam', extra: pub, wait: 1800 });
   await L.chef(p, 'pings'); await L.settle(p, 300);
   await L.tap(p, '[data-p="n-new"]'); await L.settle(p, 200);
@@ -235,8 +236,8 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   await L.waitFor(p, () => !!document.querySelector('[data-p="mn-sous"]'), null, 5000).catch(() => {});
   await p.click('[data-p="mn-sous"]'); await L.settle(p, 500);
   ok(await txt(p, '#rtitle') === 'Meeting minutes', 'ping half written: See who has signed still opens the register');
-  await p.click('[data-p="mn-close"]'); await L.settle(p, 300);
-  ok(await p.evaluate(() => { const t = document.querySelector('[data-k="n-text"]'); return !!t && t.value === 'Special: pork belly tonight'; }), 'ping half written: Back to the prep book brings the ping back with its words');
+  await p.click(back); await L.settle(p, 300);
+  ok(await p.evaluate(() => { const t = document.querySelector('[data-k="n-text"]'); return !!t && t.value === 'Special: pork belly tonight'; }), 'ping half written: the header return brings the ping back with its words');
   await p.context().close();
   p = await L.open(b, '#/minutes', { who: 'ann', admin: true, extra: Object.assign(headCfg(), pub), wait: 1800 });
   await L.waitFor(p, () => !!document.querySelector('.nb-top [data-p="mn-admin"]'), null, 5000).catch(() => {});

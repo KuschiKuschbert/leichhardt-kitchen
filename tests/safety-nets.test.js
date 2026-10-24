@@ -1,6 +1,7 @@
 // Undo on every remove, the second tap for anything hard to take back, the notes popup and the toast (pull request 153).
 const L = require('./lib');
 const { R, ok } = L.results(), { txt } = L;
+const back = '.wtop [data-act="back"]';
 const today = L.ymd(new Date());
 const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
 const store = page => page.evaluate(() => window.__fake.dump());
@@ -89,10 +90,10 @@ const store = page => page.evaluate(() => window.__fake.dump());
   await p.click('[data-p="a-remove-person"][data-i="2"]');
   await L.settle(p, 100);
   ok(/Put back/.test(await txt(p, '[data-p="a-remove-person"][data-i="2"]')), 'staff: second tap takes them off the list, with Put back');
-  await p.click('[data-p="staff-close"]');
+  await p.click(back);
   await L.settle(p, 100);
-  ok(/Tap again to leave without saving/.test(await txt(p, '[data-p="staff-close"]')), 'staff: leaving with unsaved changes asks again');
-  await p.click('[data-p="staff-close"]');
+  ok(/Unsaved changes.*Tap Back again to discard/.test(await txt(p, '#prep-leave-note')) && await p.locator(back).getAttribute('aria-label') === 'Back to prep list', 'staff: a separate message confirms discard while Back keeps its destination');
+  await p.click(back);
   await L.settle(p, 150);
   ok(await p.$('.nb') !== null, 'staff: second tap goes back to the prep book');
   ok(p.errors.length === 0, 'staff: no page errors ' + p.errors.join(' | '));

@@ -111,7 +111,7 @@ async function clearForm(p, par) { await p.fill('[data-sf="par"]', par); await a
   await action(p, 'edit', '[data-i="t-stock"]'); await p.fill('[data-sf="par"]', '11');
   await p.evaluate(() => { window.__fake.liteCommitDelay = 800; });
   await action(p, 'save-item');
-  ok(await p.$eval('[data-sf="par"]', e => e.disabled) && await p.$eval('[data-su="editor-close"]', e => e.disabled), 'pending catalogue save disables edits and leaving the form');
+  ok(await p.$eval('[data-sf="par"]', e => e.disabled) && await p.$eval('.wtop [data-act="back"]', e => e.disabled), 'pending catalogue save disables edits and leaving the form');
   await p.evaluate(() => { const input = document.querySelector('[data-sf="par"]'); input.value = '77'; input.dispatchEvent(new Event('input', { bubbles: true })); });
   await L.waitFor(p, k => window.__fake.dump()[k].items.find(i => i.id === 't-stock').par === '11', F.key(['suppliers', 'northside']), 5000);
   await L.waitFor(p, () => !document.querySelector('[data-sf="par"]'), null, 5000);
@@ -191,7 +191,7 @@ async function clearForm(p, par) { await p.fill('[data-sf="par"]', par); await a
   await p.evaluate(() => { window.__fake.deny = /\/suppliers\/northside\/orders\//; }); await action(p, 'record'); await L.settle(p, 700);
   s = await dump(p);
   ok(ordersOf(s, 'northside').length === 2 && !s[F.key(['cutdone', F.today + '_northside'])], 'failed save creates neither history nor cut-off completion');
-  if (await p.$('[data-su="review-close"]')) await action(p, 'review-close');
+  if (await p.$('.su-review')) await p.click('.wtop [data-act="back"]');
   ok(await p.$eval(qtySel('t-stock'), e => e.value) === '2 kg', 'failed save preserves the typed quantity');
   await p.evaluate(() => { window.__fake.deny = null; });
   if (!(await p.$('[data-su="record"]'))) await action(p, 'review');

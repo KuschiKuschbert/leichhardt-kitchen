@@ -3,7 +3,7 @@
    read at most 20 records on a tap. No polling, per-item reads, public goods file or second persistent cache. */
 (function () {
   'use strict';
-  var API = 3, A = window.LK_APP, P = window.LK_PREP, T = window.LK_TIME, esc = A.esc;
+  var API = 4, A = window.LK_APP, P = window.LK_PREP, T = window.LK_TIME, esc = A.esc;
   var C, store, loadingCode = null, contextKey = '', generation = 0;
   var M = blank();
   function blank() {
@@ -38,6 +38,14 @@
   function formDirty() { return !!(M.ed && JSON.stringify(M.ed.value) !== M.ed.start) || !!(M.supplierEd && JSON.stringify(M.supplierEd.value) !== M.supplierEd.start); }
   function editorHere() { return !!(M.ed && M.ed.sid === M.sid); }
   function supplierEditorHere() { return !!(M.supplierEd && M.supplierEd.originSid === M.sid); }
+  // Retained tasks belong to their supplier and mode. Hidden work never controls the current page's Back action.
+  function activeTask() {
+    if (!canRead()) return '';
+    if (M.mode === 'manage') return canEdit() ? editorHere() ? 'editor' : supplierEditorHere() ? 'supplier' : M.importing ? 'import' : 'catalogue' : '';
+    if (M.mode !== 'order') return '';
+    if (M.review && M.review.sid === M.sid) return 'review';
+    return M.historyOpen ? M.reuse ? 'reuse' : 'history' : '';
+  }
   function dirty() { return formDirty() || hasDraft() || !!M.importing || M.saving; }
   function items(all) { var s = supplier(); return s ? s.items.filter(function (i) { return all || !i.archived; }) : []; }
   function item(id) { return items(true).filter(function (i) { return i.id === id; })[0] || null; }
@@ -126,14 +134,17 @@
     store.audit(sid, 20).then(function (r) { if (g === generation) { a.rows = r.rows; a.busy = false; draw(); } }, function (e) { if (g === generation) { a.busy = false; a.err = errorText(e); draw(); } });
   }
   function button(cmd, text, extra, primary) { return '<button type="button" class="btn' + (primary ? ' dark' : '') + '" data-su="' + cmd + '"' + (extra || '') + '>' + text + '</button>'; }
-  function closeText(cmd, text) { return M.armedLeave === cmd ? 'Tap again to discard changes' : text; }
   function smallButton(cmd, text, extra) { return '<button type="button" class="p-x" data-su="' + cmd + '"' + (extra || '') + '>' + text + '</button>'; }
   function field(name, label, value, options) {
     options = options || {}; var iid = 'su-' + name;
     return '<label class="field" for="' + iid + '"><span class="label">' + label + '</span><input class="search" id="' + iid + '" data-sf="' + name + '" value="' + esc(value == null ? '' : value) + '"' + (options.readonly ? ' readonly' : '') + (options.type ? ' type="' + options.type + '"' : '') + (options.placeholder ? ' placeholder="' + esc(options.placeholder) + '"' : '') + (options.max ? ' maxlength="' + options.max + '"' : '') + (options.decimal ? ' inputmode="decimal"' : '') + '></label>';
   }
   function supplierSelect() { return '<label class="field su-mobile-pick"><span class="label">Supplier</span><select class="search" data-sf="supplier">' + (M.suppliers || []).map(function (s) { return '<option value="' + esc(s.id) + '"' + (s.id === M.sid ? ' selected' : '') + '>' + esc(s.name) + '</option>'; }).join('') + '</select></label>'; }
-  function statusHTML() { return (M.err ? '<div id="su-order-error" class="su-error" role="alert">' + esc(M.err) + (M.validation ? '' : '<div class="btn-row">' + button('retry', 'Try again') + '</div>') + '</div>' : '') + (M.msg ? '<p class="su-status" role="status">' + esc(M.msg) + '</p>' : '') + (navigator.onLine === false ? '<p class="su-error" role="status">No signal. Supplier reads and saves need a connection. Do not close a draft you still need.</p>' : ''); }
+  function statusHTML() {
+    var task = activeTask(), note = M.armedLeave && (task === 'editor' || task === 'supplier' || task === 'import'), msg = M.armedLeave && !note ? '' : M.msg;
+    var pending = M.review && task !== 'review' && (M.saving || M.review.uncertain) ? '<p id="su-recording-status" class="su-status" role="status">Recording for ' + esc(M.review.supplierName) + (M.saving ? ' is still in progress. ' : ' needs confirmation. ') + '<a href="#/suppliers/' + encodeURIComponent(M.review.sid) + '" data-su-recovery>Return to review</a>' + (M.saving ? ' to check its outcome.' : ' to retry safely.') + '</p>' : '';
+    return (M.err ? '<div id="su-order-error" class="su-error" role="alert">' + esc(M.err) + (M.validation || pending ? '' : '<div class="btn-row">' + button('retry', 'Try again') + '</div>') + '</div>' : '') + pending + (msg ? '<p class="su-status' + (note ? ' su-leave-note' : '') + '"' + (note ? ' id="su-leave-note"' : '') + ' role="status">' + esc(msg) + '</p>' : '') + (navigator.onLine === false ? '<p class="su-error" role="status">No signal. Supplier reads and saves need a connection. Do not close a draft you still need.</p>' : '');
+  }
   function headerHTML() {
     return '<div class="su-head"><div><span class="eyebrow">Chef tools</span><h2 id="rtitle" tabindex="-1">' + (M.mode === 'manage' ? 'Suppliers &amp; pars' : 'Supplier order') + '</h2><p class="hint">' + (M.mode === 'manage' ? 'Current pars and manual items. Original PDF records and past orders stay unchanged.' : 'Choose a supplier, check its last order and build the next one.') + '</p></div><div class="btn-row">' + button('refresh', 'Refresh', M.busy ? ' disabled' : '') + '</div></div>' +
       (canEdit() ? '<nav class="chips su-tools" aria-label="Supplier tools"><button type="button" class="chip" data-su="order-mode" aria-pressed="' + (M.mode === 'order') + '">Supplier order</button><button type="button" class="chip" data-su="manage" aria-pressed="' + (M.mode === 'manage') + '">Manage catalogue</button></nav>' : '');
@@ -217,8 +228,8 @@
   }
   function linesHTML(lines) { return '<div class="su-lines">' + lines.map(function (l) { return '<div><span><b>' + esc(l.name) + '</b><small class="hint">Pack: ' + esc(l.pack || 'Not set') + '</small></span><strong>' + esc(l.qty) + '</strong></div>'; }).join('') + '</div>'; }
   function reviewHTML() {
-    var r = M.review, back = button('review-close', 'Back to draft', M.saving || r.uncertain ? ' disabled' : '');
-    return '<section class="su-review"><div class="su-supplier-title"><h3 class="h3">Review order</h3>' + back + '</div><p>' + esc(r.supplierName) + ' · ' + r.lines.length + ' items</p>' + linesHTML(r.lines) + '<p>Record this only after you have placed the supplier order. This page sends nothing to the supplier.</p>' + (r.occurrence ? '<p class="hint">' + (r.additional ? 'Additional order for ' : 'Completes only ') + esc(r.occurrence.label || r.occurrence.day) + '.</p>' : '<p class="hint">No reminder linked. This records the supplier history only.</p>') + '<div class="btn-row">' + button('record', M.saving ? 'Recording...' : r.checking ? 'Checking cut-off...' : r.uncertain ? 'Confirm recording again' : 'Record order placed', M.saving || r.checking || r.recorded ? ' disabled' : '', true) + (r.recorded ? button('new-draft', 'Start new draft', M.saving ? ' disabled' : '') : '') + button('copy-review', 'Copy order text', M.saving ? ' disabled' : '') + back + '</div></section>';
+    var r = M.review;
+    return '<section class="su-review"><h2 id="rtitle" tabindex="-1">Review order</h2>' + statusHTML() + '<p>' + esc(r.supplierName) + ' · ' + r.lines.length + ' items</p>' + linesHTML(r.lines) + '<p>Record this only after you have placed the supplier order. This page sends nothing to the supplier.</p>' + (r.occurrence ? '<p class="hint">' + (r.additional ? 'Additional order for ' : 'Completes only ') + esc(r.occurrence.label || r.occurrence.day) + '.</p>' : '<p class="hint">No reminder linked. This records the supplier history only.</p>') + '<div class="btn-row">' + button('record', M.saving ? 'Recording...' : r.checking ? 'Checking cut-off...' : r.uncertain ? 'Confirm recording again' : 'Record order placed', M.saving || r.checking || r.recorded ? ' disabled' : '', true) + (r.recorded ? button('new-draft', 'Start new draft', M.saving ? ' disabled' : '') : '') + button('copy-review', 'Copy order text', M.saving ? ' disabled' : '') + '</div></section>';
   }
   function historyHTML() {
     var h = hist(), rows = h.rows || [], selected = rows.filter(function (o) { return o.id === M.historyId; })[0] || rows[0];
@@ -228,12 +239,12 @@
       body += field('historyQ', 'Find an order', M.historyQ, { type: 'search', placeholder: 'Date or item name' }) + '<div class="su-history-dates">' + rows.filter(function (o) { return (dateText(o.at) + ' ' + o.lines.map(function (l) { return l.name; }).join(' ')).toLowerCase().indexOf(M.historyQ.toLowerCase()) >= 0; }).map(function (o) { return '<button type="button" class="chip" data-su="history-order" data-id="' + esc(o.id) + '" aria-pressed="' + (o.id === selected.id) + '">' + esc(dateText(o.at)) + '</button>'; }).join('') + '</div><h4>' + esc(dateText(selected.at)) + '</h4><p class="hint">' + selected.lines.length + ' items · Recorded by ' + esc(B().name(selected.by) || 'Chef') + '</p>' + linesHTML(selected.lines) + '<div class="btn-row">' + button('reuse', 'Use quantities again', ' data-id="' + esc(selected.id) + '"') + button('copy-history', 'Copy this order', ' data-id="' + esc(selected.id) + '"') + '</div>';
     } else if (!h.busy && !h.err) body += '<p class="hint">No orders recorded for this supplier.</p>';
     if (M.reuse) body += '<div class="su-confirm"><p>Replace the quantities in this supplier draft with the selected order? Other supplier drafts stay as they are.</p><div class="btn-row">' + button('reuse-confirm', 'Replace draft quantities', ' data-id="' + esc(M.reuse) + '"', true) + button('reuse-cancel', 'Cancel') + '</div></div>';
-    body += '<div class="btn-row">' + (h.more ? button('history-more', 'Older orders', h.busy ? ' disabled' : '') : '') + button('history-close', 'Back to draft') + '</div>';
+    if (h.more) body += '<div class="btn-row">' + button('history-more', 'Older orders', h.busy ? ' disabled' : '') + '</div>';
     return '<section class="su-disclosure"><button type="button" class="su-disclosure-button" data-su="history" aria-expanded="' + M.historyOpen + '">Order history <span class="hint">' + (M.historyOpen ? 'Hide' : 'Show') + '</span></button>' + (M.historyOpen ? '<div class="su-disclosure-body">' + body + '</div>' : '') + '</section>';
   }
   function orderHTML() {
     var s = supplier(), list = filterItems(false), last = '', d = draft(); M.page = Math.max(0, Math.min(M.page, Math.ceil(list.length / 20) - 1));
-    if (M.review) return reviewHTML();
+    if (activeTask() === 'review') return reviewHTML();
     var table = list.slice(M.page * 20, M.page * 20 + 20).map(function (i) { var title = i.category !== last ? '<div class="su-category">' + esc(i.category || 'Other items') + '</div>' : ''; last = i.category; return title + rowHTML(i); }).join('');
     return toolbarHTML() + '<div class="su-supplier-title"><h3 class="h3">' + esc(s.name) + '</h3><span class="hint">' + items().length + ' items</span></div>' + cutoffHTML() + latestHTML() + suggestionsHTML() + '<p class="hint">Current par from the catalogue. Blank is Not set; 0 stays 0. Enter a number when the order unit is shown, or include its unit, e.g. 2 kg or 2 cartons.</p><div class="su-table-head"><span>Item / pack</span><span>Par</span><span>Last order</span><span>To order</span></div>' + (table || '<p class="empty">No items match.</p>') + pager(list) + '<div class="su-order-actions"><span class="hint">' + Object.keys(d.qty).filter(function (k) { return String(d.qty[k]).trim(); }).length + ' items in this supplier draft</span>' + button('review', 'Review order', Object.keys(d.qty).some(function (k) { return String(d.qty[k]).trim(); }) ? '' : ' disabled', true) + '</div>' + historyHTML();
   }
@@ -241,7 +252,7 @@
   function unitField(k, label, value) { return '<label class="field"><span class="label">' + label + '</span><input class="search" data-sf="' + k + '" value="' + esc(value || '') + '" list="su-unit-list" maxlength="40" placeholder="Unconfirmed"></label>'; }
   function editorHTML() {
     var e = M.ed, i = e.value, old = e.original, manual = !old || old.manual;
-    return '<div class="su-editor"><div class="su-supplier-title"><h3 class="h3">' + (old ? manual ? 'Edit item' : 'Edit par' : 'Add item') + '</h3>' + button('editor-close', closeText('editor-close', 'Back to catalogue'), M.saving ? ' disabled' : '') + '</div><p class="hint">' + (manual ? 'Item name is required. A par is optional.' : 'Imported names and original PDF records stay unchanged.') + '</p><div class="su-form-grid">' + field('name', 'Item name', i.name, { readonly: !manual, max: 180 }) + field('par', 'Current par', i.par, { placeholder: 'Not set', decimal: true, max: 40 }) + '</div><p class="hint">Leave par blank for Not set. Save 0 to keep an explicit zero.</p><details class="su-more"' + (e.more ? ' open' : '') + '><summary>More item details</summary><div class="su-form-grid">' + field('pack', 'Pack description', i.pack, { max: 120 }) + field('category', 'Category', i.category, { max: 80 }) + field('group', 'Source group', i.group, { max: 80 }) + unitField('parUnit', 'Par unit', i.parUnit) + unitField('orderUnit', 'Order unit', i.orderUnit) + field('factor', 'Par units in one order unit', i.factor || '', { placeholder: 'Unconfirmed', decimal: true, max: 30 }) + '</div><p class="hint">Only enter a conversion after verifying it. For example, 5 kg per carton means 5, with kg as the par unit and carton as the order unit. Blank leaves stock-based conversions off.</p>' + field('aliases', 'Other names used on staff requests', (i.aliases || []).join(', '), { placeholder: 'Separate exact aliases with commas', max: 1500 }) + '<p class="hint">Aliases help match staff requests. Matching never uses a spelling guess.</p></details>' + (old ? sourceHTML(old) : '') + (M.archive ? archiveHTML() : '') + '<div class="btn-row su-editor-actions">' + button('save-item', M.saving ? 'Saving...' : 'Save changes', M.saving ? ' disabled' : '', true) + button('editor-close', closeText('editor-close', 'Cancel'), M.saving ? ' disabled' : '') + (old ? old.archived ? smallButton('restore', 'Restore item', ' data-i="' + esc(old.id) + '"') : smallButton('archive', 'Archive item', ' data-i="' + esc(old.id) + '"') : '') + '</div>' + (e.stale ? '<div class="btn-row">' + button('reload-form', 'Load latest catalogue and keep these edits') + '</div>' : '') + '<datalist id="su-unit-list">' + ['kg', 'g', 'L', 'mL', 'each', 'pack', 'bag', 'carton', 'case', 'bunch', 'dozen', 'tray', 'tub'].map(function (u) { return '<option value="' + u + '"></option>'; }).join('') + '</datalist></div>';
+    return '<div class="su-editor"><h2 id="rtitle" tabindex="-1">' + (old ? manual ? 'Edit item' : 'Edit par' : 'Add item') + '</h2><p class="hint">' + esc(supplier().name) + '</p>' + statusHTML() + '<p class="hint">' + (manual ? 'Item name is required. A par is optional.' : 'Imported names and original PDF records stay unchanged.') + '</p><div class="su-form-grid">' + field('name', 'Item name', i.name, { readonly: !manual, max: 180 }) + field('par', 'Current par', i.par, { placeholder: 'Not set', decimal: true, max: 40 }) + '</div><p class="hint">Leave par blank for Not set. Save 0 to keep an explicit zero.</p><details class="su-more"' + (e.more ? ' open' : '') + '><summary>More item details</summary><div class="su-form-grid">' + field('pack', 'Pack description', i.pack, { max: 120 }) + field('category', 'Category', i.category, { max: 80 }) + field('group', 'Source group', i.group, { max: 80 }) + unitField('parUnit', 'Par unit', i.parUnit) + unitField('orderUnit', 'Order unit', i.orderUnit) + field('factor', 'Par units in one order unit', i.factor || '', { placeholder: 'Unconfirmed', decimal: true, max: 30 }) + '</div><p class="hint">Only enter a conversion after verifying it. For example, 5 kg per carton means 5, with kg as the par unit and carton as the order unit. Blank leaves stock-based conversions off.</p>' + field('aliases', 'Other names used on staff requests', (i.aliases || []).join(', '), { placeholder: 'Separate exact aliases with commas', max: 1500 }) + '<p class="hint">Aliases help match staff requests. Matching never uses a spelling guess.</p></details>' + (old ? sourceHTML(old) : '') + (M.archive ? archiveHTML() : '') + '<div class="btn-row su-editor-actions">' + button('save-item', M.saving ? 'Saving...' : 'Save changes', M.saving ? ' disabled' : '', true) + (old ? old.archived ? smallButton('restore', 'Restore item', ' data-i="' + esc(old.id) + '"') : smallButton('archive', 'Archive item', ' data-i="' + esc(old.id) + '"') : '') + '</div>' + (e.stale ? '<div class="btn-row">' + button('reload-form', 'Load latest catalogue and keep these edits') + '</div>' : '') + '<datalist id="su-unit-list">' + ['kg', 'g', 'L', 'mL', 'each', 'pack', 'bag', 'carton', 'case', 'bunch', 'dozen', 'tray', 'tub'].map(function (u) { return '<option value="' + u + '"></option>'; }).join('') + '</datalist></div>';
   }
   function archiveHTML() { var i = item(M.archive); return i ? '<div class="su-confirm"><h4>Archive ' + esc(i.name) + '?</h4><p>It leaves new order sheets. Its original record and past orders stay.' + (String(draft().qty[i.id] || '').trim() ? ' This also removes its quantity from the current draft.' : '') + '</p><div class="btn-row">' + button('archive-confirm', 'Archive item', ' data-i="' + esc(i.id) + '"', true) + button('archive-cancel', 'Cancel') + '</div></div>' : ''; }
   function auditHTML() {
@@ -250,27 +261,31 @@
   }
   function manageHTML() {
     if (!canEdit()) return '<p class="empty">Only the head chef or verified owner manages the supplier catalogue. You can use Supplier order and history.</p>';
-    if (editorHere()) return editorHTML();
-    if (supplierEditorHere()) return supplierEditorHTML();
-    if (M.importing) return importHTML();
+    var task = activeTask();
+    if (task === 'editor') return editorHTML();
+    if (task === 'supplier') return supplierEditorHTML();
+    if (task === 'import') return importHTML();
     var list = filterItems(true); M.page = Math.max(0, Math.min(M.page, Math.ceil(list.length / 20) - 1));
     return '<p class="hint su-breadcrumb">Content / Suppliers &amp; pars</p><div class="su-manage-links"><div class="btn-row">' + button('import', 'Import catalogue') + smallButton('supplier-settings', 'Supplier settings') + '</div><button type="button" class="p-x" data-su="cutoff-settings">Order cut-offs in Admin settings</button></div>' + toolbarHTML() + '<div class="su-catalogue-options"><span class="hint">' + esc(supplier().name) + ' · revision ' + supplier().v + '</span><label><input type="checkbox" data-sf="includeArchived"' + (M.includeArchived ? ' checked' : '') + '> Include archived</label></div>' + (M.archive ? archiveHTML() : '') + '<div class="su-catalogue-head"><span>Item / source</span><span>Current par</span><span>PDF par</span><span></span></div>' + list.slice(M.page * 20, M.page * 20 + 20).map(function (i) { return '<div class="su-catalogue-row' + (i.archived ? ' is-archived' : '') + '"><div><b>' + esc(i.name) + '</b><span class="hint">Pack: ' + esc(i.pack || 'Not set') + ' · ' + (i.manual ? 'Manual item' : esc(i.source.file) + ' · page ' + esc(i.source.page)) + (i.archived ? ' · Archived' : '') + '</span></div><div><span class="su-mobile-label">Current par</span><b>' + esc(currentPar(i)) + '</b></div><div><span class="su-mobile-label">PDF par</span>' + esc(i.manual ? 'Manual' : i.source.par === '' ? 'Not set' : i.source.par) + '</div><div class="btn-row">' + button('edit', i.manual ? 'Edit item' : 'Edit par', ' data-i="' + esc(i.id) + '"') + (i.archived ? smallButton('restore', 'Restore', ' data-i="' + esc(i.id) + '"') : '') + '</div></div>'; }).join('') + (!list.length ? '<p class="empty">No items match.</p>' : '') + pager(list) + auditHTML();
   }
   function supplierEditorHTML() {
     var e = M.supplierEd, allCuts = B().cuts(), cuts = allCuts.filter(function (c) { return !M.cutQ || c.name.toLowerCase().indexOf(M.cutQ.toLowerCase()) >= 0 || c.id === e.value.cutoffId; }).filter(function (c, i) { return i < 12 || c.id === e.value.cutoffId; });
-    return '<section class="su-editor"><div class="su-supplier-title"><h3 class="h3">' + (e.existing ? 'Supplier settings' : 'Add supplier') + '</h3>' + button('supplier-close', closeText('supplier-close', 'Back to catalogue'), M.saving ? ' disabled' : '') + '</div>' + (allCuts.length > 12 ? field('cutQ', 'Find an existing reminder', M.cutQ, { type: 'search', placeholder: 'Reminder name' }) : '') + '<div class="su-form-grid">' + field('supplierName', 'Supplier name', e.value.name, { max: 80 }) + '<label class="field"><span class="label">Existing order reminder</span><select class="search" data-sf="supplierCutoff"><option value="">No reminder linked</option>' + cuts.map(function (c) { return '<option value="' + esc(c.id) + '"' + (e.value.cutoffId === c.id ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select></label></div><p class="hint">This links the existing reminder. Delivery days and cut-off times stay in Admin settings.</p><div class="btn-row">' + button('save-supplier', M.saving ? 'Saving...' : 'Save supplier', M.saving ? ' disabled' : '', true) + button('supplier-close', closeText('supplier-close', 'Cancel'), M.saving ? ' disabled' : '') + '</div></section>';
+    return '<section class="su-editor"><h2 id="rtitle" tabindex="-1">' + (e.existing ? 'Supplier settings' : 'Add supplier') + '</h2>' + statusHTML() + (allCuts.length > 12 ? field('cutQ', 'Find an existing reminder', M.cutQ, { type: 'search', placeholder: 'Reminder name' }) : '') + '<div class="su-form-grid">' + field('supplierName', 'Supplier name', e.value.name, { max: 80 }) + '<label class="field"><span class="label">Existing order reminder</span><select class="search" data-sf="supplierCutoff"><option value="">No reminder linked</option>' + cuts.map(function (c) { return '<option value="' + esc(c.id) + '"' + (e.value.cutoffId === c.id ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select></label></div><p class="hint">This links the existing reminder. Delivery days and cut-off times stay in Admin settings.</p><div class="btn-row">' + button('save-supplier', M.saving ? 'Saving...' : 'Save supplier', M.saving ? ' disabled' : '', true) + '</div></section>';
   }
   function importHTML() {
     var n = M.importing.suppliers.reduce(function (a, s) { return a + s.items.length; }, 0), words = M.importQ.toLowerCase(), cuts = B().cuts().filter(function (c) { return !words || c.name.toLowerCase().indexOf(words) >= 0; });
-    return '<section class="su-editor"><div class="su-supplier-title"><h3 class="h3">Review catalogue import</h3>' + button('import-cancel', closeText('import-cancel', 'Back to catalogue'), M.saving ? ' disabled' : '') + '</div><p>' + M.importing.suppliers.length + ' suppliers · ' + n + ' items. Check each existing reminder link before importing.</p>' + field('importQ', 'Find an existing reminder', M.importQ, { type: 'search', placeholder: 'Reminder name' }) + M.importing.suppliers.map(function (s) { var selected = M.importMap[s.id] || '', options = cuts.slice(0, 12), keep = B().cuts().filter(function (c) { return c.id === selected; })[0]; if (keep && !options.some(function (c) { return c.id === selected; })) options.push(keep); return '<div class="su-import-row"><b>' + esc(s.name) + '</b><span class="hint">' + s.items.length + ' items</span><label class="field"><span class="label">Existing reminder</span><select class="search" data-sf="import-cutoff" data-sid="' + esc(s.id) + '"><option value="">No reminder linked</option>' + options.map(function (c) { return '<option value="' + esc(c.id) + '"' + (c.id === selected ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select></label></div>'; }).join('') + '<p class="hint">Names, original pars and source records are kept. Import data goes to the private kitchen catalogue.</p><div class="btn-row">' + button('import-apply', M.saving ? 'Importing...' : 'Import catalogue', M.saving ? ' disabled' : '', true) + button('import-cancel', closeText('import-cancel', 'Cancel'), M.saving ? ' disabled' : '') + '</div></section>';
+    return '<section class="su-editor"><h2 id="rtitle" tabindex="-1">Review catalogue import</h2>' + statusHTML() + '<p>' + M.importing.suppliers.length + ' suppliers · ' + n + ' items. Check each existing reminder link before importing.</p>' + field('importQ', 'Find an existing reminder', M.importQ, { type: 'search', placeholder: 'Reminder name' }) + M.importing.suppliers.map(function (s) { var selected = M.importMap[s.id] || '', options = cuts.slice(0, 12), keep = B().cuts().filter(function (c) { return c.id === selected; })[0]; if (keep && !options.some(function (c) { return c.id === selected; })) options.push(keep); return '<div class="su-import-row"><b>' + esc(s.name) + '</b><span class="hint">' + s.items.length + ' items</span><label class="field"><span class="label">Existing reminder</span><select class="search" data-sf="import-cutoff" data-sid="' + esc(s.id) + '"><option value="">No reminder linked</option>' + options.map(function (c) { return '<option value="' + esc(c.id) + '"' + (c.id === selected ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select></label></div>'; }).join('') + '<p class="hint">Names, original pars and source records are kept. Import data goes to the private kitchen catalogue.</p><div class="btn-row">' + button('import-apply', M.saving ? 'Importing...' : 'Import catalogue', M.saving ? ' disabled' : '', true) + '</div></section>';
   }
   function mainHTML() {
     if (!canRead()) return '<section class="su-wrap"><h2 id="rtitle" tabindex="-1">Supplier order</h2><p class="empty">Sign in as the head chef, a sous chef or the verified owner to open supplier orders.</p></section>';
+    // Focused tasks replace the workspace heading and tools. One header arrow returns to their parent.
+    var task = activeTask();
+    // Until a recording is confirmed, another route offers recovery only. Workspace edits must not replace its ID.
+    if (M.review && (M.saving || M.review.uncertain) && task !== 'review') return '<section class="su-wrap"><h2 id="rtitle" tabindex="-1">Confirm order recording</h2>' + statusHTML() + '</section>';
+    if (M.suppliers && (task === 'editor' || task === 'supplier' || task === 'import' || task === 'review')) return '<section class="su-wrap">' + (task === 'editor' ? editorHTML() : task === 'supplier' ? supplierEditorHTML() : task === 'import' ? importHTML() : reviewHTML()) + '</section>';
     var html = headerHTML() + statusHTML();
     if (M.busy && !M.suppliers) return '<section class="su-wrap">' + html + '<p class="hint" role="status">Reading the supplier catalogue...</p></section>';
     if (!M.suppliers) return '<section class="su-wrap">' + html + '</section>';
-    if (supplierEditorHere() && !M.sid) return '<section class="su-wrap">' + html + supplierEditorHTML() + '</section>';
-    if (M.importing && !M.sid) return '<section class="su-wrap">' + html + importHTML() + '</section>';
     if (!M.suppliers.length) return '<section class="su-wrap">' + html + emptyHTML() + importInputHTML() + '</section>';
     return '<section class="su-wrap">' + html + '<div class="su-workspace-tools">' + button('collapse', M.sidebar ? 'Hide suppliers' : 'Show suppliers', ' aria-expanded="' + M.sidebar + '"') + '</div><div class="su-layout' + (M.sidebar ? '' : ' is-collapsed') + '">' + sidebarHTML() + '<div class="su-content">' + (M.mode === 'manage' ? manageHTML() : orderHTML()) + '</div></div>' + importInputHTML() + '</section>';
   }
@@ -285,15 +300,16 @@
     }
     window.dispatchEvent(new Event('lk-nav'));
   }
-  function leaveForm(key) { if (!formDirty() || M.armedLeave === key) { M.ed = null; M.supplierEd = null; M.armedLeave = ''; return true; } M.armedLeave = key; message('These item changes are not saved. Save them, or tap the same control again to discard them.'); return false; }
+  function leaveForm(key) { if (!formDirty() || M.armedLeave === key) { M.ed = null; M.supplierEd = null; M.armedLeave = ''; return true; } M.armedLeave = key; message('These changes are not saved. Save them, or press Back again to discard them.'); return false; }
   function disarmLeave() {
     if (!M.armedLeave) return;
     M.armedLeave = ''; M.msg = '';
-    ['editor-close', 'supplier-close', 'import-cancel'].forEach(function (cmd) {
-      Array.prototype.forEach.call(M.root.querySelectorAll('[data-su="' + cmd + '"]'), function (el) { el.textContent = el.closest('.su-supplier-title') ? 'Back to catalogue' : 'Cancel'; });
-    });
     var status = M.root.querySelector('.su-status'); if (status) status.remove();
     window.dispatchEvent(new Event('lk-nav'));
+  }
+  function focusTask() {
+    window.scrollTo(0, 0);
+    var el = M.root && M.root.querySelector('#rtitle'); if (el) el.focus({ preventScroll: true });
   }
   function focusBack(selector) {
     var el = M.root && M.root.querySelector(selector);
@@ -306,7 +322,7 @@
     focusBack(cmd === 'supplier-close' ? '[data-su="supplier-settings"]' : id ? '[data-su="edit"][data-i="' + id + '"]' : '[data-su="add"]');
   }
   function closeImport() {
-    if (M.importing && M.armedLeave !== 'import-cancel') { M.armedLeave = 'import-cancel'; message('This import is not saved. Tap the same control again to discard it, or import the catalogue.'); return; }
+    if (M.importing && M.armedLeave !== 'import-cancel') { M.armedLeave = 'import-cancel'; message('This import is not saved. Import the catalogue, or press Back again to discard it.'); return; }
     M.importing = null; M.armedLeave = ''; M.err = ''; M.msg = ''; draw(); focusBack('[data-su="import"]');
   }
   function closeReview() {
@@ -316,27 +332,27 @@
   function closeHistory() { M.historyOpen = false; M.reuse = ''; draw(); focusBack('[data-su="review"]'); }
   function backLabel() {
     if (!M.root) return '';
-    if (M.archive) return 'Back to item details';
-    if (editorHere()) return closeText('editor-close', 'Back to catalogue');
-    if (supplierEditorHere()) return closeText('supplier-close', 'Back to catalogue');
-    if (M.importing) return closeText('import-cancel', 'Back to catalogue');
-    if (M.review) return 'Back to draft';
-    if (M.reuse) return 'Back to order history';
-    if (M.historyOpen && M.mode === 'order') return 'Back to draft';
-    if (M.auditOpen && M.mode === 'manage') return 'Back to catalogue';
+    var task = activeTask();
+    if ((task === 'editor' || task === 'catalogue') && M.archive && item(M.archive)) return 'Back to item details';
+    if (task === 'editor' || task === 'supplier' || task === 'import') return 'Back to catalogue';
+    if (task === 'review' || task === 'history') return 'Back to draft';
+    if (task === 'reuse') return 'Back to order history';
+    if (task === 'catalogue' && M.auditOpen) return 'Back to catalogue';
     return M.mode === 'manage' ? 'Back to supplier order' : '';
   }
-  // The shared Back control unwinds this page before changing its address. Draft quantities stay in memory.
+  // The shared Back control unwinds the visible task before changing its address. Draft quantities stay in memory.
   function back() {
-    if (!M.root || !canRead()) return false;
+    if (!M.root) return false;
     if (M.saving || M.review && M.review.uncertain) return true;
-    if (M.archive) { M.archive = ''; draw(); return true; }
-    if (editorHere() || supplierEditorHere()) { closeEditor(editorHere() ? 'editor-close' : 'supplier-close'); return true; }
-    if (M.importing) { closeImport(); return true; }
-    if (M.review) { closeReview(); return true; }
-    if (M.reuse) { M.reuse = ''; draw(); return true; }
-    if (M.historyOpen && M.mode === 'order') { closeHistory(); return true; }
-    if (M.auditOpen && M.mode === 'manage') { M.auditOpen = false; draw(); focusBack('[data-su="audit"]'); return true; }
+    if (!canRead()) return false;
+    var task = activeTask();
+    if ((task === 'editor' || task === 'catalogue') && M.archive && item(M.archive)) { M.archive = ''; draw(); return true; }
+    if (task === 'editor' || task === 'supplier') { closeEditor(task === 'editor' ? 'editor-close' : 'supplier-close'); return true; }
+    if (task === 'import') { closeImport(); return true; }
+    if (task === 'review') { closeReview(); return true; }
+    if (task === 'reuse') { M.reuse = ''; draw(); return true; }
+    if (task === 'history') { closeHistory(); return true; }
+    if (task === 'catalogue' && M.auditOpen) { M.auditOpen = false; draw(); focusBack('[data-su="audit"]'); return true; }
     if (M.mode === 'manage') { M.mode = 'order'; M.q = ''; M.group = ''; M.page = 0; draw(); return true; }
     return false;
   }
@@ -351,7 +367,7 @@
     try { lines = C.snapshotLines(s.items, d.qty, d.stock, d.suggestions); } catch (e) { reviewError(e); return; }
     var o = occurrence(), key = occurrenceKey(o);
     if (o && o.done && M.additional !== key) { M.err = 'An order is already marked for this cut-off. Check history, or choose Additional order before recording another.'; draw(); return; }
-    M.err = ''; M.review = { id: d.id, sid: s.id, supplierName: s.name, catalogueV: s.v, lines: lines, occurrence: o, linkV: 0, checking: !!o, additional: !!(o && M.additional === key) }; draw();
+    M.err = ''; M.review = { id: d.id, sid: s.id, supplierName: s.name, catalogueV: s.v, lines: lines, occurrence: o, linkV: 0, checking: !!o, additional: !!(o && M.additional === key) }; draw(); focusTask();
     if (o) {
       var r = M.review, g = generation;
       store.link({ day: o.day, cutoffId: o.cutoffId }).then(function (link) { if (g !== generation || M.review !== r) return; r.checking = false; r.linkV = link ? link.v : 0; if (link && !r.additional) { M.review = null; M.err = 'Another order is recorded for this cut-off. Check history and choose Additional order if needed.'; } draw(); }, function (e) { if (g === generation && M.review === r) { M.review = null; M.err = errorText(e); draw(); } });
@@ -370,7 +386,7 @@
     if (!canEdit() || !leaveForm('edit:' + id)) return;
     var i = id ? item(id) : null, s = supplier();
     var value = i ? clone(i) : { id: uuid('i'), name: '', pack: '', group: 'Manual items', category: 'Manual items', par: '', parUnit: '', orderUnit: '', factor: 0, aliases: [], archived: false, manual: true, source: { file: '', page: 0, row: 0, name: '', par: '' } };
-    M.ed = { sid: s.id, routeKey: M.routeKey, original: i ? clone(i) : null, value: value, start: JSON.stringify(value), baseV: s.v, more: false, stale: false }; M.err = ''; M.msg = ''; M.archive = ''; draw();
+    M.ed = { sid: s.id, routeKey: M.routeKey, original: i ? clone(i) : null, value: value, start: JSON.stringify(value), baseV: s.v, more: false, stale: false }; M.err = ''; M.msg = ''; M.archive = ''; draw(); focusTask();
   }
   function saveItem() {
     if (!editorHere() || M.saving || !canEdit()) return;
@@ -381,7 +397,7 @@
       if (dup.length) throw { code: 'invalid', message: 'This item name and pack already exist for this supplier. Edit the existing item, or give a distinct pack variant its correct pack description.' };
     } catch (e) { M.err = e.message || 'Check the item details.'; draw(); return; }
     var list = s.items.filter(function (i) { return i.id !== value.id; }); if (ed.original) list = s.items.map(function (i) { return i.id === value.id ? value : i; }); else list.push(value);
-    M.saving = true; M.err = ''; draw(); var g = generation;
+    M.saving = true; M.err = ''; M.msg = ''; M.armedLeave = ''; draw(); var g = generation;
     store.saveCatalogue(s.id, ed.baseV, { items: list }, { itemId: value.id, action: ed.original ? 'edit' : 'add' }).then(function (saved) {
       if (g !== generation) return; rememberSupplier(saved); M.ed = null; M.saving = false; M.msg = 'Catalogue saved. Current pars are updated; past order sheets are unchanged.'; M.page = 0; draw();
     }, function (e) { if (g === generation) { M.saving = false; if (e.code === 'stale') ed.stale = true; M.err = errorText(e); draw(); } });
@@ -390,7 +406,7 @@
     if (!canEdit() || M.saving) return;
     var s = supplier(), i = item(id); if (!i) return;
     var next = s.items.map(function (x) { return x.id === id ? Object.assign({}, x, { archived: !restore }) : x; });
-    M.saving = true; M.err = ''; draw(); var g = generation;
+    M.saving = true; M.err = ''; M.msg = ''; M.armedLeave = ''; draw(); var g = generation;
     store.saveCatalogue(s.id, s.v, { items: next }, { itemId: id, action: restore ? 'restore' : 'archive' }).then(function (saved) {
       if (g !== generation) return; rememberSupplier(saved); if (!restore) { var d = draft(); delete d.qty[id]; delete d.stock[id]; delete d.suggestions[id]; } M.ed = null; M.archive = ''; M.saving = false; M.msg = restore ? 'Item restored.' : 'Item archived. Past orders are unchanged.'; draw();
     }, function (e) { if (g === generation) { M.saving = false; M.err = errorText(e); draw(); } });
@@ -409,7 +425,7 @@
   function openSupplierEditor(existing) {
     if (!canEdit() || !leaveForm('supplier-settings')) return;
     var s = existing ? supplier() : null, value = { name: s ? s.name : '', cutoffId: s ? s.cutoffId : '' };
-    M.mode = 'manage'; M.supplierEd = { id: s ? s.id : uuid('s'), originSid: M.sid, routeKey: M.routeKey, existing: !!s, v: s ? s.v : 0, value: value, start: JSON.stringify(value) }; M.err = ''; draw();
+    M.mode = 'manage'; M.supplierEd = { id: s ? s.id : uuid('s'), originSid: M.sid, routeKey: M.routeKey, existing: !!s, v: s ? s.v : 0, value: value, start: JSON.stringify(value) }; M.err = ''; M.msg = ''; draw(); focusTask();
   }
   function saveSupplier() {
     if (!supplierEditorHere() || M.saving || !canEdit()) return;
@@ -417,7 +433,7 @@
     var duplicate = (M.suppliers || []).some(function (s) { return s.id !== e.id && C.normaliseName(s.name) === C.normaliseName(e.value.name); });
     if (duplicate) { message('That supplier already exists. Open its supplier settings.'); return; }
     if (e.value.cutoffId && (M.suppliers || []).some(function (s) { return s.id !== e.id && s.cutoffId === e.value.cutoffId; })) { message('That reminder is already linked to another supplier. Keep one catalogue supplier per reminder.'); return; }
-    M.saving = true; M.err = ''; draw(); var g = generation, patch = { name: e.value.name.trim(), cutoffId: e.value.cutoffId };
+    M.saving = true; M.err = ''; M.msg = ''; M.armedLeave = ''; draw(); var g = generation, patch = { name: e.value.name.trim(), cutoffId: e.value.cutoffId };
     if (!e.existing) patch.items = [];
     store.saveCatalogue(e.id, e.v, patch, { itemId: '', action: e.existing ? 'settings' : 'add-supplier' }).then(function (saved) { if (g === generation) { rememberSupplier(saved); M.sid = saved.id; M.supplierEd = null; M.saving = false; M.msg = 'Supplier saved.'; draw(); } }, function (x) { if (g === generation) { M.saving = false; M.err = errorText(x); draw(); } });
   }
@@ -425,7 +441,7 @@
     if (!canEdit() || !file) return;
     if (file.size > 3000000) { message('This catalogue file is too large. Use a JSON catalogue under 3 MB.'); return; }
     var g = generation;
-    file.text().then(function (text) { if (g !== generation || !canEdit()) return; var payload = C.validateCatalogue(JSON.parse(text)); M.importing = payload; M.importMap = Object.create(null); payload.suppliers.forEach(function (s) { var current = (M.suppliers || []).filter(function (x) { return x.id === s.id; })[0], cut = current ? current.cutoffId : s.cutoffId; M.importMap[s.id] = B().cuts().some(function (c) { return c.id === cut; }) ? cut : ''; }); M.mode = 'manage'; M.err = ''; M.ed = null; draw(); }).catch(function (e) { if (g === generation) { M.err = e.message || 'Could not read this catalogue. Use the checked JSON import file.'; draw(); } });
+    file.text().then(function (text) { if (g !== generation || !canEdit()) return; var payload = C.validateCatalogue(JSON.parse(text)); M.importing = payload; M.importMap = Object.create(null); payload.suppliers.forEach(function (s) { var current = (M.suppliers || []).filter(function (x) { return x.id === s.id; })[0], cut = current ? current.cutoffId : s.cutoffId; M.importMap[s.id] = B().cuts().some(function (c) { return c.id === cut; }) ? cut : ''; }); M.mode = 'manage'; M.err = ''; M.msg = ''; M.ed = null; draw(); focusTask(); }).catch(function (e) { if (g === generation) { M.err = e.message || 'Could not read this catalogue. Use the checked JSON import file.'; draw(); } });
   }
   function applyImport() {
     if (!M.importing || M.saving || !canEdit()) return;
@@ -433,7 +449,7 @@
     (M.suppliers || []).filter(function (s) { return imported.indexOf(s.id) < 0; }).forEach(function (s) { if (s.cutoffId) used[s.cutoffId] = s.id; });
     M.importing.suppliers.forEach(function (s) { var cid = M.importMap[s.id]; if (cid && used[cid] && used[cid] !== s.id) conflict = true; if (cid) used[cid] = s.id; });
     if (conflict) { message('Each order reminder can link to only one catalogue supplier. Check the selected links before importing.'); return; }
-    M.saving = true; M.err = ''; draw(); var payload = M.importing, map = clone(M.importMap), g = generation;
+    M.saving = true; M.err = ''; M.msg = ''; M.armedLeave = ''; draw(); var payload = M.importing, map = clone(M.importMap), g = generation;
     store.importCatalogue(payload, map).then(function (saved) { if (g !== generation) return; saved.forEach(rememberSupplier); M.importing = null; M.saving = false; if (!supplier()) M.sid = saved.length ? saved[0].id : ''; M.msg = 'Private catalogue imported. Check each supplier before the first order.'; draw(); if (M.sid) loadHistory(false, false); }, function (e) { if (g === generation) { M.saving = false; M.err = errorText(e); if (e.saved && e.saved.length) { e.saved.forEach(rememberSupplier); M.msg = e.saved.length + ' suppliers were saved before the import stopped. The remaining import is kept. Check the connection, then retry.'; draw(); store.loadSuppliers().then(function (list) { if (g === generation) { M.suppliers = list.sort(function (a, b) { return a.name.localeCompare(b.name); }); draw(); } }, function () { if (g === generation) draw(); }); } else draw(); } });
   }
   function reset() { var root = M.root; generation++; if (store) store.reset(); store = null; contextKey = ''; M = blank(); M.root = root; }
@@ -506,5 +522,5 @@
   });
   ['lk-who', 'lk-admin', 'lk-cfg'].forEach(function (event) { window.addEventListener(event, function () { if (contextKey && contextKey !== ctx() || !canRead()) { reset(); draw(); } else if (M.root) draw(); }); });
   window.addEventListener('online', function () { if (M.root) draw(); }); window.addEventListener('offline', function () { if (M.root) draw(); });
-  window.LK_SUP = { api: API, mount: mount, unmount: unmount, dirty: dirty, reset: reset, hasDraft: hasDraft, back: back, backLabel: backLabel, backDisabled: function () { return M.saving || !!(M.review && M.review.uncertain); }, open: function () { return !!M.root; } };
+  window.LK_SUP = { api: API, mount: mount, unmount: unmount, dirty: dirty, reset: reset, hasDraft: hasDraft, back: back, backLabel: backLabel, backDescription: function () { return M.root && M.root.querySelector('#su-leave-note') ? 'su-leave-note' : M.root && M.root.querySelector('#su-recording-status') ? 'su-recording-status' : ''; }, backDisabled: function () { return M.saving || !!(M.review && M.review.uncertain); }, open: function () { return !!M.root; } };
 })();

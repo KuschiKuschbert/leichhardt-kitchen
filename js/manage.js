@@ -16,7 +16,7 @@
 (function () {
   'use strict';
 
-  var API = 2;
+  var API = 3;
   var D = window.LK_DATA, X = window.LK_RX, A = window.LK_APP, P = window.LK_PREP;
   var esc = A.esc, KIND = A.KIND, ALLERGENS = D.allergens;
   var LS = (function () { try { localStorage.getItem('x'); return localStorage; } catch (e) { return null; } })();
@@ -477,9 +477,8 @@
   }
   function editorHTML() {
     var e = M.ed;
-    if (e.missing !== undefined) return '<div class="mg-wrap"><h2 id="rtitle" tabindex="-1">Recipe not found</h2><p>There is no recipe "' + esc(e.missing) + '" in the book.</p><div class="btn-row"><a class="btn" href="#/manage">All recipes</a></div></div>';
+    if (e.missing !== undefined) return '<div class="mg-wrap"><h2 id="rtitle" tabindex="-1">Recipe not found</h2><p>There is no recipe "' + esc(e.missing) + '" in the book.</p></div>';
     var d = e.d, st = e.isNew ? null : status(e.id);
-    var crumbs = '<nav class="crumbs" aria-label="Breadcrumb"><a href="#/manage">Manage Recipes &amp; Drawings</a><span class="sep" aria-hidden="true">/</span><span aria-current="page">' + esc(d.name || 'New recipe') + '</span></nav>';
     var head = '<div class="mg-head"><h2 id="rtitle" tabindex="-1">' + esc(e.isNew ? (d.name ? 'New: ' + d.name : 'New recipe') : 'Change ' + d.name) + '</h2>' +
       (st && !e.isNew && A.byId(e.id) ? '<a class="p-x" href="#/r/' + encodeURIComponent(e.id) + '">Open the card</a>' : '') + '</div>';
     var kept = e.kept ? '<div class="box beige mg-kept" role="note"><span class="label">Changes not saved yet</span><div>This device kept changes to this recipe from ' + esc(B().dayShort(e.kept.at) + ' ' + B().clock(e.kept.at)) + '.</div>' +
@@ -489,11 +488,11 @@
       '<div class="btn-row"><button type="button" class="btn" data-mg="theirs">Open theirs</button><button type="button" class="btn dark" data-mg="mine">Save mine over it</button></div></div>' : '';
     var errs = e.errs.length ? '<div class="warn" role="alert"><span class="label">Not saved yet</span><ul class="mg-errs">' + e.errs.map(function (x) { return '<li><a href="#' + esc(x.at) + '" data-mg="goto" data-v="' + esc(x.at) + '">' + esc(x.msg) + '</a></li>'; }).join('') + '</ul></div>' : '';
     var warns = e.warns.length ? '<div class="box beige" role="note">' + e.warns.map(function (w) { return '<div>' + esc(w) + '</div>'; }).join('') + '</div>' : '';
-    return '<div class="mg-wrap mg-ed">' + linkList() + '<div class="btn-row"><a class="btn" data-mg-back="1" href="#/manage">Back to all recipes</a></div>' + crumbs + head + kept + fileNote + conflict + errs + warns +
+    return '<div class="mg-wrap mg-ed">' + linkList() + head + kept + fileNote + conflict + errs + warns +
       basicsHTML(e) + ingHTML(e) + methodHTML(e) + allergenHTML(e) + drawingHTML(e) + menuHTML(e) + boxesHTML(e) + histHTML(e) + moreHTML(e) +
       '<div class="mg-bar"><span class="mg-state" role="status">' + esc(stateText()) + '</span>' + (e.msg ? '<span class="p-err" role="alert">' + esc(e.msg) + '</span>' : '') +
       '<div class="btn-row"><button type="button" class="btn dark" data-mg="save"' + (e.saving ? ' disabled' : '') + '>' + (e.saving ? 'Saving...' : 'Save') + '</button>' +
-      (dirty() ? '<button type="button" class="btn" data-mg="undo-all">' + (armed('undo-all') ? 'Tap again to undo all' : 'Undo all changes') + '</button>' : '') + '<a class="btn" href="#/manage">Back to all recipes</a></div></div></div>';
+      (dirty() ? '<button type="button" class="btn" data-mg="undo-all">' + (armed('undo-all') ? 'Tap again to undo all' : 'Undo all changes') + '</button>' : '') + '</div></div></div>';
   }
 
   /* ---------- checking and saving ---------- */
@@ -710,6 +709,7 @@
     var y = window.scrollY;
     M.root.innerHTML = M.ed ? editorHTML() : listHTML();
     window.scrollTo(0, y);
+    window.dispatchEvent(new Event('lk-nav'));
     if (keep) {
       var el = M.root.querySelector('[data-f="' + keep + '"]') || (keep.indexOf(':') > 0 ? M.root.querySelector('[data-mg="' + keep.split(':')[0] + '"]' + (keep.split(':')[1] ? '[data-i="' + keep.split(':')[1] + '"]' : '')) : null);
       if (el && el.focus) el.focus({ preventScroll: true });
@@ -723,7 +723,7 @@
     if (!drawLoad) {
       drawLoad = A.load('js/library.js').then(function () {
         // a category file that fails to load leaves its drawings out; the editor still opens
-        return Promise.all(window.LK_LIB.files.map(function (f) { return A.load(f).catch(function () {}); }).concat([A.load('js/draw.js?v=2')]));
+        return Promise.all(window.LK_LIB.files.map(function (f) { return A.load(f).catch(function () {}); }).concat([A.load('js/draw.js?v=3')]));
       }).then(function () {
         // without the smart creator the editor still works by hand; the recipe reader (js/compose.js) needs it first
         return A.load('js/smart.js').then(function () { return A.load('js/compose.js'); }).catch(function () {});
@@ -735,8 +735,8 @@
     var key = sub.join('/');
     M.root = root; M.ed = null; drawn = 'draw:' + key;
     if (window.LK_DRAW) {
-      if (window.LK_DRAW.api === 2) window.LK_DRAW.mount(root, sub);
-      else root.innerHTML = '<div class="mg-wrap"><h2 id="rtitle" tabindex="-1">Reload the book</h2><p>The drawing editor on this device needs the current book. Your saved drawings stay.</p><div class="btn-row"><button type="button" class="btn dark" data-act="reload">Reload</button><a class="btn" href="#/manage">All recipes</a></div></div>';
+      if (window.LK_DRAW.api === 3) window.LK_DRAW.mount(root, sub);
+      else root.innerHTML = '<div class="mg-wrap"><h2 id="rtitle" tabindex="-1">Reload the book</h2><p>The drawing editor on this device needs the current book. Your saved drawings stay.</p><div class="btn-row"><button type="button" class="btn dark" data-act="reload">Reload</button></div></div>';
       return;
     }
     root.innerHTML = '<div class="mg-wrap"><h2 id="rtitle" tabindex="-1">Opening the drawing editor</h2><p>Loading the library...</p></div>';
@@ -748,6 +748,7 @@
   }
   function mount(root, route) {
     var sub = route.sub || [], key = sub.join('/');
+    M.sub = sub.slice();
     // Keep the last keystroke before a quick Back or another editor clears the current form.
     if (M.ed && M.ed.sub !== key && dirty()) keepNow();
     if (sub[0] === 'draw') { mountDraw(root, sub); return; }
@@ -767,9 +768,11 @@
     if (fresh) draw();
   }
   function unmount() {
+    var hadRoot = !!M.root;
     if (window.LK_DRAW && window.LK_DRAW.open()) window.LK_DRAW.unmount();
     if (M.ed && dirty() && M.root) { keepNow(); toast('Your changes are kept as a draft on this device.'); }
-    M.root = null; drawn = ''; M.ed = null;
+    M.root = null; M.sub = []; drawn = ''; M.ed = null;
+    if (hadRoot) window.dispatchEvent(new Event('lk-nav'));
   }
 
   /* ---------- clicks, typing and dragging ---------- */
@@ -893,10 +896,21 @@
   document.addEventListener('pointercancel', dragEnd);
   window.addEventListener('beforeunload', function (ev) { if (dirty()) { ev.preventDefault(); ev.returnValue = ''; } });
 
+  // The shared header returns through the task without repeating large controls in the form.
+  function back() {
+    if (!M.root || !document.body.contains(M.root) || !M.sub.length) return false;
+    if (window.LK_DRAW && window.LK_DRAW.open()) return window.LK_DRAW.back();
+    if (M.ed && M.ed.saving) return true;
+    if (M.ed && dirty()) keepNow();
+    location.hash = '#/manage'; return true;
+  }
   window.LK_MG = {
     api: API,
     mount: mount,
     unmount: unmount,
+    back: back,
+    backLabel: function () { return !M.root || !document.body.contains(M.root) || !M.sub.length ? '' : window.LK_DRAW && window.LK_DRAW.open() ? window.LK_DRAW.backLabel() : 'Back to all recipes'; },
+    backDisabled: function () { return !!(M.root && document.body.contains(M.root) && ((M.ed && M.ed.saving) || (window.LK_DRAW && window.LK_DRAW.open() && window.LK_DRAW.backDisabled()))); },
     open: function () { return !!(M.root && (M.ed || (window.LK_DRAW && window.LK_DRAW.open()))); },
     dirty: function () { return dirty() || !!(window.LK_DRAW && window.LK_DRAW.dirty()); },
     patchRecipe: patchRecipe,

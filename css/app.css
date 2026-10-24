@@ -83,7 +83,6 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .crumbs a { display: inline-flex; align-items: center; min-height: 44px; font-weight: 600; text-underline-offset: 4px; }
 .crumbs .sep { color: var(--faint); }
 .crumbs [aria-current] { font-weight: 700; }
-.pill-link { display: inline-flex; align-items: center; gap: 0.4rem; min-height: 44px; padding: 0 0.9rem 0 0.6rem; border-radius: 22px; border: 1.5px solid var(--ink); background: var(--paper); font-weight: 600; text-decoration: none; }
 .card { display: flex; flex-direction: column; gap: 1.4rem; padding: 1.6rem; background: var(--paper); border: 1.5px solid var(--edge); border-radius: 14px; min-width: 0; }
 .card-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; border-bottom: 3px solid var(--ink); padding-bottom: 0.75rem; }
 .card-head > div { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
@@ -177,7 +176,6 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .dish .d-sub { font-size: 0.8125rem; line-height: 1.3; color: var(--muted); }
 .trail { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
 .trail .sep { color: var(--faint); }
-.trail .here { display: inline-flex; align-items: center; min-height: 44px; padding: 0 0.9rem; border-radius: 22px; background: var(--ink); color: #fff; font-weight: 700; }
 .stage { position: relative; width: 100%; max-width: 30rem; margin: 0 auto; }
 .stage .art { transition: opacity 0.15s; }
 .stage.lensed .art { opacity: 0.45; }
@@ -192,11 +190,6 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .pin.lit .plabel { background: var(--ink); color: #fff; }
 .pin.on .plabel { box-shadow: 0 0 0 3px var(--accent); }
 .pan-art { width: 100%; max-width: 27rem; margin: 0 auto; }
-.zoombar { display: none; }
-@media (max-width: 899px) {
-  .zoombar { display: block; position: sticky; bottom: 0; z-index: 5; margin: 0 -1.25rem -2.5rem; padding: 0.6rem 1rem 0.9rem; background: var(--bg); border-top: 3px solid var(--ink); }
-  .zoombar a { display: flex; align-items: center; justify-content: center; gap: 0.6rem; min-height: 3.4rem; border-radius: 1.7rem; background: var(--ink); color: #fff; font-weight: 700; font-size: 1.0625rem; text-decoration: none; }
-}
 
 /* ---------- welcome and settings ---------- */
 .welcome { display: flex; flex-direction: column; gap: 1.25rem; padding-top: 0.5rem; }
@@ -230,18 +223,6 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .btn.dark:hover, .nb-addbtn:hover { background: var(--ink); border-color: var(--ink); }
 .btn.dark[disabled], .nb-addbtn[disabled] { background: #b9b3a8; border-color: #b9b3a8; }
 .btn-row { display: flex; flex-wrap: wrap; gap: 0.6rem; }
-.page-return { display: flex; margin-bottom: 1rem; }
-.page-return .btn { max-width: 100%; padding: 0.5rem 1rem; text-align: left; }
-.page-return .btn svg { flex: 0 0 16px; }
-.page-return .btn span { overflow-wrap: anywhere; }
-.page-back-short { display: none; }
-.page-return.is-trail { display: inline-flex; margin: 0; }
-.prep { position: relative; }
-.prep > .page-return.is-inline { position: absolute; left: 0; top: 0; z-index: 1; margin: 0; }
-.page-return.is-inline .page-back-full { display: none; }
-.page-return.is-inline .page-back-short { display: inline; }
-.page-return.is-inline + #prep-root > .nb-top { min-height: 48px; align-items: center; padding-left: calc(var(--return-width, 96px) + 0.75rem); gap: 0.4rem 0.75rem; }
-@media print { .page-return { display: none; } }
 .saved { font-size: 0.875rem; color: var(--muted); }
 
 @media (max-width: 599px) {
@@ -253,7 +234,6 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
   .card-head h2 { font-size: 2.3rem; }
   .num { font-size: 3rem; }
   .dish { flex-basis: calc(50% - 0.6rem); }
-  .zoombar { margin: 0 -1rem -1.5rem; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 
@@ -435,7 +415,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .nb-us { font-size: 0.75rem; color: var(--muted); margin-left: 0.3rem; }
 .nb-side { padding-bottom: 1rem; }
 @media print {
-  .zoombar, .tabbar, .skip { display: none !important; }
+  .wtop-back, .tabbar, .skip { display: none !important; }
 }
 @media (max-width: 599px) {
   .nb-row { flex-wrap: wrap; row-gap: 2px; }
@@ -523,8 +503,8 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .tabbar a svg { width: 24px; height: 24px; }
 .tabbar a[aria-current="page"] { color: var(--accent-ink); box-shadow: inset 0 3px 0 var(--accent); }
 @media (max-width: 719px) { #app { padding-bottom: 76px; } }
-/* sticky bottom bars sit above the phone tab bar (68px), not under it: Zoom out on a recipe and the admin Save bar */
-@media (max-width: 719px) { .zoombar, .a-pane .set-block:has([data-p="a-save"]) { bottom: var(--tabbar-h); } }
+/* The admin Save bar sits above the phone tab bar (68px). */
+@media (max-width: 719px) { .a-pane .set-block:has([data-p="a-save"]) { bottom: var(--tabbar-h); } }
 @media (min-width: 720px) { .pnav { display: flex; gap: 0.5rem; } .tabbar { display: none; } }
 
 /* ---------- landing page: the docket wall ---------- */
@@ -2084,11 +2064,6 @@ details.a-how { margin: 0.2rem 0 0.6rem; }
 details.a-how > summary { display: flex; align-items: center; min-height: 44px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 details.a-how > p { margin: 0.2rem 0 0; max-width: 72ch; }
 .w-actbtn { flex: 1 1 auto; min-height: 44px; padding: 0; border: 0; background: none; font: 600 0.9375rem var(--body); color: var(--ink); text-align: left; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
-/* the recipe card on a phone or tablet: Zoom out is a small button in the corner, not a bar across the card */
-@media (max-width: 899px) {
-  .zoombar { display: flex; justify-content: flex-end; background: none; border-top: 0; padding: 0 1rem 0.75rem; pointer-events: none; }
-  .zoombar a { pointer-events: auto; min-height: 44px; padding: 0 1.1rem; font-size: 0.9375rem; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25); }
-}
 /* Practice on this device (22 Oct 2026): a quiet strip, so nobody forgets it is on */
 .p-practice { margin: 0 0 0.75rem; padding: 0.5rem 0.75rem; border-left: 4px solid var(--stone); background: var(--beige); font-size: 0.875rem; }
 
@@ -2098,8 +2073,33 @@ details.a-how > p { margin: 0.2rem 0 0; max-width: 72ch; }
   .wtop .pnav { flex: 1 1 auto; min-width: 0; flex-wrap: wrap; justify-content: center; }
 }
 
+/* Enlarged text and a wider fallback font must fit the landing dockets after returning home. */
+.docket, .dk-top { min-width: 0; }
+.dk-top { flex-wrap: wrap; }
+.dk-name { overflow-wrap: anywhere; }
+html[data-text="xlarge"] .dk-name { white-space: normal; }
+@media (max-width: 719px) {
+  .dockets { grid-template-columns: minmax(0, 1fr); }
+  .docket { grid-template-columns: auto minmax(0, 1fr); }
+}
+
+/* Back takes the mark's place inside the existing bar. Its small arrow keeps a full 44 px tap area. */
+.wtop-start { display: flex; align-items: center; gap: 0.7rem; min-width: 0; }
+.wtop-start .wtop-brand, .wtop-start .rb-text { min-width: 0; }
+.wtop-back { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 44px; width: 44px; height: 44px; padding: 0; border: 0; border-radius: var(--r-act); background: transparent; color: var(--bar-text); cursor: pointer; }
+.wtop-back svg { width: 20px; height: 20px; }
+.wtop-back:hover { background: rgba(255, 255, 255, 0.08); }
+.wtop-back:disabled { opacity: 0.45; cursor: default; }
+@media (max-width: 719px) {
+  .wtop-start { flex: 1 1 auto; gap: 0.5rem; }
+  .wtop-start .wtop-brand { flex: 1 1 auto; }
+  .wtop-brand b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+}
+@media (min-width: 720px) and (max-width: 899px) { .wtop-start { flex: none; } }
+@media (min-width: 720px) and (max-width: 979px) { .wtop.has-back:has(.nbell:not([hidden])) .wtop-brand { display: none; } }
 /* Supplier workspace. Shared controls keep the book's action/choice shapes and text-size settings. */
 .su-wrap { display: flex; flex-direction: column; gap: 1.1rem; min-width: 0; }
+.su-wrap > .su-editor > h2, .su-wrap > .su-review > h2 { margin: 0 0 0.75rem; font: 700 2.2rem/1.05 var(--display); overflow-wrap: anywhere; }
 .su-head { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 1rem; padding-bottom: 1rem; border-bottom: 3px solid var(--ink); }
 .su-head h2 { margin: 0.25rem 0 0.4rem; font: 700 2.6rem/1 var(--display); }
 .su-head .hint { margin: 0; max-width: 70ch; }

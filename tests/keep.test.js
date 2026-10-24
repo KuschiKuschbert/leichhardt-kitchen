@@ -72,7 +72,7 @@ function riceTwice() {
     await L.settle(p, 300);
     ok(await p.evaluate(() => location.hash) === sub, 'recipes: the sub-recipe opens on its own address');
     ok(await p.$('.trail a[href="' + dish + '"], .crumbs a[href="' + dish + '"]') !== null, 'recipes: the trail links back to the dish');
-    ok(await p.$('.zoombar a[href="' + dish + '"]') !== null, 'recipes: Zoom out links back to the dish');
+    ok(await p.locator('.wtop [data-act="back"]').getAttribute('aria-label') === 'Back to recipe' && await p.locator('.zoombar').count() === 0, 'recipes: the header arrow names the parent return without a floating duplicate');
     await p.goBack();
     await L.settle(p, 300);
     ok(await p.evaluate(() => location.hash) === dish && await p.evaluate(() => document.querySelector('.card-head h2').textContent) === dishName, 'recipes: Back returns to the dish');
