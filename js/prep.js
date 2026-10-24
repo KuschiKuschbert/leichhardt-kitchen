@@ -6327,8 +6327,13 @@
   // A jump waits until Back has restored the sheet's opening scroll position, then moves to its heading.
   function ovAfterBack(fn) { if (ovBack) ovAfter.push(fn); else fn(); }
   function ovLanded() {
-    clearTimeout(ovBackT); var w = ovBack, after = ovAfter.splice(0); ovBack = false;
-    if (after.length) setTimeout(function () { after.forEach(function (fn) { fn(); }); }, 0);
+    clearTimeout(ovBackT); var w = ovBack, after = ovAfter.splice(0), x = window.scrollX, y = window.scrollY, url = location.href; ovBack = false;
+    // Our close stays on this page. Keep the latest scroll, including a scroll made just after Close; the browser
+    // otherwise restores the position from when the sheet opened. Native Back keeps its normal restoration.
+    if (w || after.length) setTimeout(function () {
+      if (w && location.href === url) window.scrollTo(x, y);
+      after.forEach(function (fn) { fn(); });
+    }, 0);
     if (w && nextWait) sheetNext();
   }
   window.addEventListener('popstate', function () {

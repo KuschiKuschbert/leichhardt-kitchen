@@ -139,6 +139,29 @@ const configWrites = p => p.evaluate(() => __fake.writes.flat().filter(w => /\/c
   noErrors(p, 'function sheet history');
   await p.context().close();
 
+  // An explicit sheet close must not undo a later scroll while its same-address Back is still in flight.
+  for (const restoration of ['auto', 'manual']) {
+    p = await L.open(b, '#/recipes', { extra: { [key(['functions', 'test'])]: booking }, wait: 1500 });
+    await L.waitFor(p, () => !!document.querySelector('#fn-band [data-fn="open"]'));
+    await p.evaluate(mode => { history.scrollRestoration = mode; document.body.style.minHeight = '4000px'; scrollTo(0, 1500); }, restoration);
+    await L.settle(p, 200);
+    await p.click('.fn-strip-b'); await L.settle(p, 150);
+    await p.evaluate(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      scrollTo(0, 0);
+    });
+    await L.settle(p, 300);
+    ok(await p.evaluate(() => scrollY === 0 && document.querySelector('.fn-strip').hidden), restoration + ' restoration: an immediate scroll after Escape stays at the top');
+    ok(await p.evaluate(() => history.scrollRestoration) === restoration, restoration + ' restoration: closing a sheet keeps the caller\'s scroll restoration mode');
+    await p.evaluate(() => scrollTo(0, 1500)); await L.settle(p, 150);
+    await p.click('.fn-strip-b'); await L.settle(p, 150);
+    await p.evaluate(() => scrollTo(0, 0));
+    await p.goBack(); await L.settle(p, 300);
+    ok(await p.evaluate(() => scrollY) === (restoration === 'auto' ? 1500 : 0), restoration + ' restoration: native Back keeps its usual scroll behaviour');
+    noErrors(p, restoration + ' restoration');
+    await p.context().close();
+  }
+
   p = await L.open(b, '#/recipes', { wait: 1500 });
   await go(p, '#/waste'); await p.fill('#w-text', 'Chips'); await p.fill('#w-amt', '2');
   await p.click('[data-p="sheet"][data-v="reason"]'); await p.goBack(); await L.settle(p, 250);
