@@ -46,3 +46,7 @@ Include new data in manual backup, nightly backup and kitchen PIN migration. Pub
 - Nightly learning and push checks, JavaScript syntax and diff whitespace checks pass.
 
 The release gate is a successful Publish rules run **from the feature branch**, followed by green PR checks, Pages and live click checks. The negative live lock probe also passes the previous rules, so it is not sufficient evidence of an updated rules deployment. Confirm the deployment step and authenticated catalogue access separately. No new composite index is required.
+
+### Quantity entry correction, 24 October 2026
+
+A bare positive number uses only the item's confirmed order unit; a bare stock count uses only its confirmed par unit. Review and history store the unit with the amount. Explicit units take precedence. Unknown units still require explicit entry and are never inferred from a product name, pack description or par value. Errors identify and focus the exact quantity or stock field, clear obstructing filters, select the correct page and keep the rest of the draft. Supplier UI/core revision 2 uses versioned lazy URLs and checks module versions; the private catalogue and order data format stays version 1.

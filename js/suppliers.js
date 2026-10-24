@@ -3,12 +3,12 @@
    read at most 20 records on a tap. No polling, per-item reads, public goods file or second persistent cache. */
 (function () {
   'use strict';
-  var API = 1, A = window.LK_APP, P = window.LK_PREP, T = window.LK_TIME, esc = A.esc;
+  var API = 2, A = window.LK_APP, P = window.LK_PREP, T = window.LK_TIME, esc = A.esc;
   var C, store, loadingCode = null, contextKey = '', generation = 0;
   var M = blank();
   function blank() {
     var collapsed = false; try { collapsed = localStorage.getItem('lk.sup.sidebar') === 'hide'; } catch (e) {}
-    return { root: null, route: {}, routeKey: '', openItems: Object.create(null), suppliers: null, sid: '', mode: 'order', busy: false, err: '', msg: '',
+    return { root: null, route: {}, routeKey: '', openItems: Object.create(null), suppliers: null, sid: '', mode: 'order', busy: false, err: '', msg: '', validation: null,
       sidebar: !collapsed, q: '', group: '', page: 0, drafts: Object.create(null), history: Object.create(null),
       audit: Object.create(null), historyOpen: false, historyId: '', historyQ: '', smart: false, requests: null,
       requestsBusy: false, requestsError: '', requestsDay: '', cutQ: '', ed: null, supplierEd: null, review: null, additional: '',
@@ -64,6 +64,7 @@
     if (code === 'concurrent') return 'Another chef recorded an order for this cut-off. Refresh, check its history, then choose Additional order if one is still needed.';
     if (code === 'permission' || code === 'permission-denied' || code === 'context') return 'This save was refused. Sign in as an authorised chef and check that the supplier rules have been published. Your draft is kept.';
     if (code === 'unavailable' || code === 'offline' || navigator.onLine === false) return 'No signal. Supplier data needs a connection. Your current draft is kept while this page stays open.';
+    if (code === 'version') return 'The supplier tools on this device need an update. Connect, reload the book and open Supplier order again.';
     if (code === 'invalid') return e.message || 'Check the item names, quantities and units before saving.';
     return 'Could not finish. Check the connection and try again. Your draft is kept.';
   }
@@ -74,14 +75,19 @@
     if (M.drafts[s.id]) M.drafts[s.id].suggestions = Object.create(null);
   }
   function deps() {
-    if (window.LK_SUP_CORE && window.LK_SUP_STORE) return Promise.resolve();
-    if (!loadingCode) loadingCode = Promise.all([A.load('js/supplier-core.js'), A.load('js/supplier-store.js')]).catch(function (e) { loadingCode = null; throw e; });
+    if (window.LK_SUP_CORE && window.LK_SUP_CORE.API === 2 && window.LK_SUP_STORE && window.LK_SUP_STORE.API === 1) return Promise.resolve();
+    if (!loadingCode) loadingCode = Promise.all([
+      window.LK_SUP_CORE && window.LK_SUP_CORE.API === 2 ? null : A.load('js/supplier-core.js?v=2'),
+      window.LK_SUP_STORE && window.LK_SUP_STORE.API === 1 ? null : A.load('js/supplier-store.js')
+    ]).then(function () {
+      if (!window.LK_SUP_CORE || window.LK_SUP_CORE.API !== 2 || !window.LK_SUP_STORE || window.LK_SUP_STORE.API !== 1) throw { code: 'version' };
+    }).catch(function (e) { loadingCode = null; throw e; });
     return loadingCode;
   }
   function load(force) {
     if (M.busy || (!force && M.suppliers)) return Promise.resolve();
     if (!canRead()) { draw(); return Promise.resolve(); }
-    var g = generation, key = ctx(); M.busy = true; M.err = ''; draw();
+    var g = generation, key = ctx(); M.busy = true; M.err = ''; M.validation = null; draw();
     return deps().then(function () { return B().ready(); }).then(function () {
       if (g !== generation || key !== ctx() || !canRead()) throw { code: 'context' };
       C = window.LK_SUP_CORE; if (!store) store = window.LK_SUP_STORE.create(B());
@@ -124,7 +130,7 @@
     return '<label class="field" for="' + iid + '"><span class="label">' + label + '</span><input class="search" id="' + iid + '" data-sf="' + name + '" value="' + esc(value == null ? '' : value) + '"' + (options.readonly ? ' readonly' : '') + (options.type ? ' type="' + options.type + '"' : '') + (options.placeholder ? ' placeholder="' + esc(options.placeholder) + '"' : '') + (options.max ? ' maxlength="' + options.max + '"' : '') + (options.decimal ? ' inputmode="decimal"' : '') + '></label>';
   }
   function supplierSelect() { return '<label class="field su-mobile-pick"><span class="label">Supplier</span><select class="search" data-sf="supplier">' + (M.suppliers || []).map(function (s) { return '<option value="' + esc(s.id) + '"' + (s.id === M.sid ? ' selected' : '') + '>' + esc(s.name) + '</option>'; }).join('') + '</select></label>'; }
-  function statusHTML() { return (M.err ? '<div class="su-error" role="alert">' + esc(M.err) + '<div class="btn-row">' + button('retry', 'Try again') + '</div></div>' : '') + (M.msg ? '<p class="su-status" role="status">' + esc(M.msg) + '</p>' : '') + (navigator.onLine === false ? '<p class="su-error" role="status">No signal. Supplier reads and saves need a connection. Do not close a draft you still need.</p>' : ''); }
+  function statusHTML() { return (M.err ? '<div id="su-order-error" class="su-error" role="alert">' + esc(M.err) + (M.validation ? '' : '<div class="btn-row">' + button('retry', 'Try again') + '</div>') + '</div>' : '') + (M.msg ? '<p class="su-status" role="status">' + esc(M.msg) + '</p>' : '') + (navigator.onLine === false ? '<p class="su-error" role="status">No signal. Supplier reads and saves need a connection. Do not close a draft you still need.</p>' : ''); }
   function headerHTML() {
     return '<div class="su-head"><div><span class="eyebrow">Chef tools</span><h2 id="rtitle" tabindex="-1">' + (M.mode === 'manage' ? 'Suppliers &amp; pars' : 'Supplier order') + '</h2><p class="hint">' + (M.mode === 'manage' ? 'Current pars and manual items. Original PDF records and past orders stay unchanged.' : 'Choose a supplier, check its last order and build the next one.') + '</p></div><div class="btn-row">' + button('refresh', 'Refresh', M.busy ? ' disabled' : '') + '</div></div>' +
       (canEdit() ? '<nav class="chips su-tools" aria-label="Supplier tools"><button type="button" class="chip" data-su="order-mode" aria-pressed="' + (M.mode === 'order') + '">Supplier order</button><button type="button" class="chip" data-su="manage" aria-pressed="' + (M.mode === 'manage') + '">Manage catalogue</button></nav>' : '');
@@ -146,9 +152,42 @@
     return '<div class="su-latest"><b>' + (o ? 'Last order: ' + esc(dateText(o.at)) : 'No order recorded for this supplier yet') + '</b><span class="hint">' + (o ? o.lines.length + ' items. The Last order column refers to this one order.' : 'Last order quantities appear after an order is recorded here.') + '</span></div>';
   }
   function matchInfo() { try { return C.matchRequests(items(), M.requests || []); } catch (e) { return { matches: [], unmatched: [] }; } }
+  function validationAttrs(field, id) {
+    return M.validation && M.validation.field === field && M.validation.id === id ? ' aria-invalid="true" aria-describedby="su-order-error"' : '';
+  }
+  function entryError(field, i) {
+    if (!validationAttrs(field, i.id)) return '';
+    var unit = (field === 'qty' ? i.orderUnit : i.parUnit) || 'kg';
+    return '<small class="su-entry-error" data-su-entry-error>' + esc(field === 'qty' ? (i.orderUnit ? 'Use a quantity above 0, e.g. 2 ' + unit + '.' : 'Enter a positive quantity with a unit, e.g. 2 kg.') : (i.parUnit ? 'Use zero or more, e.g. 0 ' + unit + '.' : 'Enter zero or more with a unit, e.g. 0 kg.')) + '</small>';
+  }
+  function entryInput(field, id) {
+    return M.root && Array.prototype.filter.call(M.root.querySelectorAll('[data-sf="' + field + '"]'), function (el) { return el.getAttribute('data-i') === id; })[0];
+  }
+  function clearEntryError(field, id, value) {
+    if (M.validation) {
+      if (M.validation.field !== field || M.validation.id !== id) return;
+      var i = item(id), valid = !String(value).trim() || (i && (field === 'qty' ? C.parseQuantity(value, i.orderUnit) : C.parseStock(value, i.parUnit)));
+      if (!valid) return;
+    }
+    M.err = ''; M.validation = null;
+    var alert = M.root.querySelector('#su-order-error'); if (alert) alert.remove();
+    Array.prototype.forEach.call(M.root.querySelectorAll('[data-su-entry-error]'), function (el) { el.remove(); });
+    Array.prototype.forEach.call(M.root.querySelectorAll('[data-sf][aria-invalid="true"]'), function (el) { el.removeAttribute('aria-invalid'); el.removeAttribute('aria-describedby'); });
+  }
+  function reviewError(e) {
+    M.err = e.message || 'Check each order quantity and unit.';
+    var all = items(), index = all.findIndex(function (i) { return i.id === e.field; });
+    if ((e.code === 'quantity' || e.code === 'stock') && index >= 0) {
+      M.validation = { id: e.field, field: e.code === 'stock' ? 'stock' : 'qty' };
+      M.q = ''; M.group = ''; M.page = Math.floor(index / 20);
+      if (e.code === 'stock') M.openItems[e.field] = true;
+    }
+    draw();
+    if (M.validation) { var el = entryInput(M.validation.field, M.validation.id); if (el) { el.scrollIntoView({ block: 'center' }); el.focus({ preventScroll: true }); } }
+  }
   function rowHTML(i) {
     var d = draft(), l = lastLine(i.id), h = hist(), source = i.source || {}, match = matchInfo().matches.filter(function (m) { return m.itemId === i.id; })[0];
-    return '<div class="su-row" data-item="' + esc(i.id) + '"><details class="su-item"' + (M.openItems[i.id] ? ' open' : '') + '><summary><b>' + esc(i.name) + '</b><span class="hint">Pack: ' + esc(i.pack || 'Not set') + ' · Details</span>' + (match ? '<span class="su-request">Staff request to check</span>' : '') + '</summary><div class="su-item-more"><dl><dt>Source</dt><dd>' + (i.manual ? 'Added manually' : esc(source.file) + ' · page ' + esc(source.page)) + '</dd><dt>Original PDF par</dt><dd>' + esc(i.manual ? 'Not applicable' : source.par === '' ? 'Not set' : source.par) + '</dd><dt>Par unit</dt><dd>' + esc(i.parUnit || 'Unconfirmed') + '</dd><dt>Order unit</dt><dd>' + esc(i.orderUnit || 'Unconfirmed') + '</dd></dl><label class="field"><span class="label">Stock counted for this order</span><input class="search" data-sf="stock" data-i="' + esc(i.id) + '" placeholder="e.g. 4 kg" value="' + esc(d.stock[i.id] || '') + '" maxlength="40"></label><p class="hint">Only compatible confirmed units or a verified pack conversion can produce a top-up.</p>' + (match ? '<p class="hint">Matched by the exact item name or an explicit alias. Check the staff order list before deciding the quantity.</p>' : '') + '</div></details><div class="su-par"><span class="su-mobile-label">Par</span><b>' + esc(currentPar(i)) + '</b><small>' + esc(i.parUnit || 'To confirm') + '</small></div><div class="su-last"><span class="su-mobile-label">Last order</span>' + esc(l ? l.qty : !h.rows ? 'Loading' : latest() ? 'Not ordered' : 'No order yet') + '</div><label class="su-qty"><span class="su-mobile-label">To order</span><input class="search" data-sf="qty" data-i="' + esc(i.id) + '" aria-label="To order: ' + esc(i.name) + '" placeholder="e.g. 2 bags" value="' + esc(d.qty[i.id] || '') + '" maxlength="40"></label></div>';
+    return '<div class="su-row" data-item="' + esc(i.id) + '"><details class="su-item"' + (M.openItems[i.id] ? ' open' : '') + '><summary><b>' + esc(i.name) + '</b><span class="hint">Pack: ' + esc(i.pack || 'Not set') + ' · Details</span>' + (match ? '<span class="su-request">Staff request to check</span>' : '') + '</summary><div class="su-item-more"><dl><dt>Source</dt><dd>' + (i.manual ? 'Added manually' : esc(source.file) + ' · page ' + esc(source.page)) + '</dd><dt>Original PDF par</dt><dd>' + esc(i.manual ? 'Not applicable' : source.par === '' ? 'Not set' : source.par) + '</dd><dt>Par unit</dt><dd>' + esc(i.parUnit || 'Unconfirmed') + '</dd><dt>Order unit</dt><dd>' + esc(i.orderUnit || 'Unconfirmed') + '</dd></dl><label class="field"><span class="label">Stock counted for this order' + (i.parUnit ? ' (' + esc(i.parUnit) + ')' : '') + '</span><input class="search" data-sf="stock" data-i="' + esc(i.id) + '" aria-label="Stock count: ' + esc(i.name) + '" placeholder="' + (i.parUnit ? 'e.g. 4' : 'e.g. 4 kg') + '" value="' + esc(d.stock[i.id] || '') + '" maxlength="40"' + validationAttrs('stock', i.id) + '>' + entryError('stock', i) + '</label><p class="hint">Only compatible confirmed units or a verified pack conversion can produce a top-up.</p>' + (match ? '<p class="hint">Matched by the exact item name or an explicit alias. Check the staff order list before deciding the quantity.</p>' : '') + '</div></details><div class="su-par"><span class="su-mobile-label">Par</span><b>' + esc(currentPar(i)) + '</b><small>' + esc(i.parUnit || 'To confirm') + '</small></div><div class="su-last"><span class="su-mobile-label">Last order</span>' + esc(l ? l.qty : !h.rows ? 'Loading' : latest() ? 'Not ordered' : 'No order yet') + '</div><label class="su-qty"><span class="su-mobile-label">To order</span><input class="search" data-sf="qty" data-i="' + esc(i.id) + '" aria-label="To order: ' + esc(i.name) + '" placeholder="' + (i.orderUnit ? 'e.g. 2' : 'e.g. 2 bags') + '" value="' + esc(d.qty[i.id] || '') + '" maxlength="40"' + validationAttrs('qty', i.id) + '><small class="hint">' + esc(i.orderUnit ? 'Order unit: ' + i.orderUnit : 'Include a unit, e.g. kg or cartons') + '</small>' + entryError('qty', i) + '</label></div>';
   }
   function suggestionsHTML() {
     var d = draft(), suggestions = items().map(function (i) { var p = C.suggestQuantity(i, latest(), d.stock[i.id] || ''); return p ? { item: i, pick: p } : null; }).filter(function (s) { return s && !d.dismissed[s.item.id] && !String(d.qty[s.item.id] || '').trim(); });
@@ -192,7 +231,7 @@
     var s = supplier(), list = filterItems(false), last = '', d = draft(); M.page = Math.max(0, Math.min(M.page, Math.ceil(list.length / 20) - 1));
     if (M.review) return reviewHTML();
     var table = list.slice(M.page * 20, M.page * 20 + 20).map(function (i) { var title = i.category !== last ? '<div class="su-category">' + esc(i.category || 'Other items') + '</div>' : ''; last = i.category; return title + rowHTML(i); }).join('');
-    return toolbarHTML() + '<div class="su-supplier-title"><h3 class="h3">' + esc(s.name) + '</h3><span class="hint">' + items().length + ' items</span></div>' + cutoffHTML() + latestHTML() + suggestionsHTML() + '<p class="hint">Current par from the catalogue. Blank is Not set; 0 stays 0. Enter an order quantity with its unit.</p><div class="su-table-head"><span>Item / pack</span><span>Par</span><span>Last order</span><span>To order</span></div>' + (table || '<p class="empty">No items match.</p>') + pager(list) + '<div class="su-order-actions"><span class="hint">' + Object.keys(d.qty).filter(function (k) { return String(d.qty[k]).trim(); }).length + ' items in this supplier draft</span>' + button('review', 'Review order', Object.keys(d.qty).some(function (k) { return String(d.qty[k]).trim(); }) ? '' : ' disabled', true) + '</div>' + historyHTML();
+    return toolbarHTML() + '<div class="su-supplier-title"><h3 class="h3">' + esc(s.name) + '</h3><span class="hint">' + items().length + ' items</span></div>' + cutoffHTML() + latestHTML() + suggestionsHTML() + '<p class="hint">Current par from the catalogue. Blank is Not set; 0 stays 0. Enter a number when the order unit is shown, or include its unit, e.g. 2 kg or 2 cartons.</p><div class="su-table-head"><span>Item / pack</span><span>Par</span><span>Last order</span><span>To order</span></div>' + (table || '<p class="empty">No items match.</p>') + pager(list) + '<div class="su-order-actions"><span class="hint">' + Object.keys(d.qty).filter(function (k) { return String(d.qty[k]).trim(); }).length + ' items in this supplier draft</span>' + button('review', 'Review order', Object.keys(d.qty).some(function (k) { return String(d.qty[k]).trim(); }) ? '' : ' disabled', true) + '</div>' + historyHTML();
   }
   function sourceHTML(i) { return '<details class="su-source"><summary>Original record</summary><dl><dt>Item name</dt><dd>' + esc(i.manual ? 'Added manually' : i.source.name) + '</dd><dt>PDF par</dt><dd>' + esc(i.manual ? 'Not applicable' : i.source.par === '' ? 'Not set' : i.source.par) + '</dd><dt>Source</dt><dd>' + esc(i.manual ? 'Manual item' : i.source.file + ', page ' + i.source.page) + '</dd></dl></details>'; }
   function unitField(k, label, value) { return '<label class="field"><span class="label">' + label + '</span><input class="search" data-sf="' + k + '" value="' + esc(value || '') + '" list="su-unit-list" maxlength="40" placeholder="Unconfirmed"></label>'; }
@@ -244,12 +283,13 @@
   function leaveForm(key) { if (!formDirty() || M.armedLeave === key) { M.ed = null; M.supplierEd = null; M.armedLeave = ''; return true; } M.armedLeave = key; message('These item changes are not saved. Save them, or tap the same control again to discard them.'); return false; }
   function pick(sid) {
     if (!leaveForm('pick:' + sid)) return;
-    M.sid = sid; M.route.cutoffId = ''; M.route.cutoffDay = ''; M.q = ''; M.group = ''; M.page = 0; M.review = null; M.additional = ''; M.historyOpen = false; M.auditOpen = false; M.historyId = ''; M.err = ''; M.msg = ''; M.archive = ''; M.reuse = ''; draw(); loadHistory(false, false);
+    M.sid = sid; M.route.cutoffId = ''; M.route.cutoffDay = ''; M.q = ''; M.group = ''; M.page = 0; M.review = null; M.additional = ''; M.historyOpen = false; M.auditOpen = false; M.historyId = ''; M.err = ''; M.msg = ''; M.validation = null; M.archive = ''; M.reuse = ''; draw(); loadHistory(false, false);
   }
   function beginReview() {
     if (!canRead() || M.saving) return;
     var s = supplier(), d = draft(), lines;
-    try { lines = C.snapshotLines(s.items, d.qty, d.stock, d.suggestions); } catch (e) { M.err = e.message || 'Enter a positive quantity and its unit for every item to order.'; draw(); return; }
+    M.validation = null;
+    try { lines = C.snapshotLines(s.items, d.qty, d.stock, d.suggestions); } catch (e) { reviewError(e); return; }
     var o = occurrence(), key = occurrenceKey(o);
     if (o && o.done && M.additional !== key) { M.err = 'An order is already marked for this cut-off. Check history, or choose Additional order before recording another.'; draw(); return; }
     M.err = ''; M.review = { id: d.id, sid: s.id, supplierName: s.name, catalogueV: s.v, lines: lines, occurrence: o, linkV: 0, checking: !!o, additional: !!(o && M.additional === key) }; draw();
@@ -390,7 +430,7 @@
     if (f === 'q') { M.q = el.value; M.page = 0; draw(); return; }
     if (f === 'cutQ') { M.cutQ = el.value; draw(); return; }
     if (f === 'historyQ') { M.historyQ = el.value; draw(); return; } if (f === 'importQ') { M.importQ = el.value; draw(); return; }
-    if (f === 'qty' || f === 'stock') { draft()[f][id] = el.value; if (f === 'qty') delete draft().suggestions[id]; M.review = null; M.err = ''; if (M.smart || f === 'stock') draw(); else { var count = M.root.querySelector('.su-order-actions > .hint'); if (count) count.textContent = Object.keys(draft().qty).filter(function (k) { return String(draft().qty[k]).trim(); }).length + ' items in this supplier draft'; var reviewButton = M.root.querySelector('[data-su="review"]'); if (reviewButton) reviewButton.disabled = !Object.keys(draft().qty).some(function (k) { return String(draft().qty[k]).trim(); }); } return; }
+    if (f === 'qty' || f === 'stock') { draft()[f][id] = el.value; if (f === 'qty') delete draft().suggestions[id]; M.review = null; clearEntryError(f, id, el.value); if (M.smart || f === 'stock') draw(); else { var count = M.root.querySelector('.su-order-actions > .hint'); if (count) count.textContent = Object.keys(draft().qty).filter(function (k) { return String(draft().qty[k]).trim(); }).length + ' items in this supplier draft'; var reviewButton = M.root.querySelector('[data-su="review"]'); if (reviewButton) reviewButton.disabled = !Object.keys(draft().qty).some(function (k) { return String(draft().qty[k]).trim(); }); } return; }
     if (M.ed && canEdit() && Object.prototype.hasOwnProperty.call(M.ed.value, f)) { M.ed.value[f] = f === 'aliases' ? el.value.split(',').map(function (x) { return x.trim(); }).filter(Boolean) : f === 'factor' ? (el.value.trim() === '' ? 0 : Number(el.value)) : el.value; M.ed.more = !!(M.root.querySelector('.su-more') && M.root.querySelector('.su-more').open); }
     if (M.supplierEd && canEdit() && f === 'supplierName') M.supplierEd.value.name = el.value;
   });
