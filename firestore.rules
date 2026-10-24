@@ -699,6 +699,118 @@ service cloud.firestore {
       allow create, update: if cutDoneOk(id) && (isAdmin() || (staff() && chefId(request.resource.data.by)));
       allow delete: if false;
     }
+    // Supplier catalogue and order history (24 Oct 2026). Goods and pars never live in the public shell or config/main.
+    // A chef's current PIN session may read; only the head chef or the verified owner changes the catalogue. The page
+    // validates each item and snapshot line, while these rules bound the arrays and enforce roles, revisions and the
+    // writes that must be together. The owner may copy valid records unchanged when moving the kitchen PIN.
+    function supRead() { return isAdmin() || (sessOk(reader()) && chefId(reader())); }
+    function supEdit() { return isAdmin() || headWrite(); }
+    function supChef() { return isAdmin() || (staff() && chefId(request.resource.data.by)); }
+    function supId(id) { return id is string && id.matches('[a-zA-Z0-9_-]{1,80}'); }
+    function supString(d, k, n) { return d.get(k, '') is string && d.get(k, '').size() <= n; }
+    function supDay(day) { return day is string && day.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}'); }
+    function supDoc(sid) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/suppliers/$(sid); }
+    function supAuditDoc(sid, v) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/suppliers/$(sid)/audit/$(string(v)); }
+    function supOrderDoc(sid, id) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/suppliers/$(sid)/orders/$(id); }
+    function supLinkDoc(day, cid) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/supplierlinks/$(day + '_' + cid); }
+    function supCutDoc(day, cid) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/cutdone/$(day + '_' + cid); }
+    function supCatalogueOk(sid) {
+      let d = request.resource.data;
+      return supId(sid) && d.keys().hasOnly(['name', 'cutoffId', 'v', 'items', 'at', 'by'])
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 80
+        && supString(d, 'cutoffId', 40) && (d.cutoffId == '' || d.cutoffId.matches('[a-z0-9-]{1,40}'))
+        && d.v is int && d.v > 0 && d.items is list && d.items.size() <= 600
+        && d.at is number && d.at >= 0 && d.by is string && d.by.size() > 0 && d.by.size() <= 80;
+    }
+    function supCatalogueAudit(sid) {
+      let d = request.resource.data;
+      let a = getAfter(supAuditDoc(sid, d.v)).data;
+      return !exists(supAuditDoc(sid, d.v)) && a.v == d.v && a.by == d.by && a.at == d.at;
+    }
+    function supAuditOk(revision) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['v', 'itemId', 'action', 'before', 'after', 'at', 'by'])
+        && d.v is int && d.v > 0 && revision == string(d.v)
+        && supString(d, 'itemId', 80) && d.action is string && d.action.size() > 0 && d.action.size() <= 80
+        && (d.before == null || d.before is map) && (d.after == null || d.after is map)
+        && d.at is number && d.at >= 0 && d.by is string && d.by.size() > 0 && d.by.size() <= 80;
+    }
+    function supAuditPair(sid) {
+      let d = request.resource.data;
+      let c = getAfter(supDoc(sid)).data;
+      return (!exists(supDoc(sid)) || get(supDoc(sid)).data.v < d.v)
+        && c.v == d.v && c.by == d.by && c.at == d.at;
+    }
+    function supOrderOk(sid, id) {
+      let d = request.resource.data;
+      return supId(sid) && id is string && id.matches('[a-zA-Z0-9_-]{1,100}')
+        && d.keys().hasOnly(['sid', 'supplierName', 'v', 'at', 'day', 'deliveryDay', 'cutoffDay', 'cutoffId', 'by', 'lines'])
+        && d.sid == sid && d.supplierName is string && d.supplierName.size() > 0 && d.supplierName.size() <= 80
+        && d.v is int && d.v > 0 && d.at is number && d.at >= 0 && supDay(d.day)
+        && d.deliveryDay is string && (d.deliveryDay == '' || supDay(d.deliveryDay))
+        && d.cutoffDay is string && (d.cutoffDay == '' || supDay(d.cutoffDay))
+        && d.cutoffId is string && (d.cutoffId == '' || d.cutoffId.matches('[a-z0-9-]{1,40}'))
+        && ((d.cutoffId == '' && d.cutoffDay == '') || (d.cutoffId != '' && d.cutoffDay != ''))
+        && d.by is string && d.by.size() > 0 && d.by.size() <= 80
+        && d.lines is list && d.lines.size() > 0 && d.lines.size() <= 300;
+    }
+    function supOrderCurrent(sid) {
+      let d = request.resource.data;
+      let c = get(supDoc(sid)).data;
+      return d.v == c.v && d.supplierName == c.name && (d.cutoffId == '' || d.cutoffId == c.cutoffId);
+    }
+    function supOrderPair(sid, id) {
+      let d = request.resource.data;
+      let l = getAfter(supLinkDoc(d.cutoffDay, d.cutoffId)).data;
+      let c = getAfter(supCutDoc(d.cutoffDay, d.cutoffId)).data;
+      return d.cutoffId == '' || (l.sid == sid && l.orderId == id && l.cutoffId == d.cutoffId
+        && l.day == d.cutoffDay && l.by == d.by && l.at == d.at
+        && c.sid == d.cutoffId && c.day == d.cutoffDay && c.on == true && c.by == d.by && c.at == d.at);
+    }
+    function supLinkOk(id) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['sid', 'cutoffId', 'day', 'v', 'orderId', 'at', 'by'])
+        && supId(d.sid) && d.cutoffId is string && d.cutoffId.matches('[a-z0-9-]{1,40}')
+        && supDay(d.day) && id == d.day + '_' + d.cutoffId
+        && d.v is int && d.v > 0 && d.orderId is string && d.orderId.matches('[a-zA-Z0-9_-]{1,100}')
+        && d.at is number && d.at >= 0 && d.by is string && d.by.size() > 0 && d.by.size() <= 80;
+    }
+    function supLinkPair() {
+      let d = request.resource.data;
+      let p = supOrderDoc(d.sid, d.orderId);
+      let o = getAfter(p).data;
+      let c = getAfter(supCutDoc(d.day, d.cutoffId)).data;
+      return !exists(p) && o.sid == d.sid && o.cutoffId == d.cutoffId && o.cutoffDay == d.day
+        && o.by == d.by && o.at == d.at
+        && c.sid == d.cutoffId && c.day == d.day && c.on == true && c.by == d.by && c.at == d.at;
+    }
+    match /kitchens/KITCHEN_PIN/suppliers/{sid} {
+      allow read: if supRead();
+      allow create: if supEdit() && supCatalogueOk(sid) && (isAdmin() || (request.resource.data.v == 1 && supCatalogueAudit(sid)));
+      allow update: if supEdit() && supCatalogueOk(sid) && ((isAdmin() && request.resource.data == resource.data)
+        || (request.resource.data.v == resource.data.v + 1 && supCatalogueAudit(sid)));
+      allow delete: if false;
+      match /audit/{revision} {
+        allow read: if supRead();
+        allow create: if supEdit() && supAuditOk(revision) && (isAdmin() || supAuditPair(sid));
+        allow update: if isAdmin() && request.resource.data == resource.data;
+        allow delete: if false;
+      }
+      match /orders/{orderId} {
+        allow read: if supRead();
+        allow create: if supChef() && supOrderOk(sid, orderId) && (isAdmin() || (supOrderCurrent(sid) && supOrderPair(sid, orderId)));
+        allow update: if isAdmin() && request.resource.data == resource.data;
+        allow delete: if false;
+      }
+    }
+    match /kitchens/KITCHEN_PIN/supplierlinks/{id} {
+      allow read: if supRead();
+      allow create: if supChef() && supLinkOk(id) && (isAdmin() || (request.resource.data.v == 1 && supLinkPair()));
+      allow update: if supChef() && supLinkOk(id) && ((isAdmin() && request.resource.data == resource.data)
+        || (request.resource.data.v == resource.data.v + 1 && request.resource.data.sid == resource.data.sid
+          && request.resource.data.day == resource.data.day && request.resource.data.cutoffId == resource.data.cutoffId && supLinkPair()));
+      allow delete: if false;
+    }
     // pushsent (what the server has sent) has no rule: only the server reads and writes it.
     // The drinks run: each person's usual coffee or drink, one record per person (the record id is their id).
     // Everyone with the kitchen PIN reads them; only that person writes their own (own PIN session).

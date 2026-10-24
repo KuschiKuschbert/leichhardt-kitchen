@@ -803,7 +803,7 @@
     lsSet('lk.prep.seen', String(Date.now()));
   }
   /* the next person never lands in the last person's staff draft, minutes register or ping editor */
-  function leave() { sessDrop(); ksClose(); noteClose('shut'); S.nJust = null; S.guestIn = false; lsSet('lk.prep.guest', ''); S.drinkAsk = ''; S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; tdReset(); lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); }
+  function leave() { if (window.LK_SUP) window.LK_SUP.reset(); if (supplierService) supplierService.reset(); sessDrop(); ksClose(); noteClose('shut'); S.nJust = null; S.guestIn = false; lsSet('lk.prep.guest', ''); S.drinkAsk = ''; S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; tdReset(); lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); }
   /* The chef mark's menu (js/app.js) asks what to show: Meeting minutes for everyone (when the page is on), and for the
      head chef and sous chefs Shift pings and Manage staff (22 Oct 2026: the Minutes register is "See who has signed" at
      the top of Meeting minutes). head: no Kitchen mail, the head chef's mail is read in the admin panel. tab: the head
@@ -895,6 +895,112 @@
       nameOf: function (id) { var p = (S.config && S.config.people || []).filter(function (x) { return x.id === id; })[0]; return p ? p.name : ''; },
       edit: bookEdit, changed: rxChanged, fromServer: fromServer
     };
+  }
+  /* Supplier workspace (24 Oct 2026). This bridge shares the kitchen's sign-in, writer, clock and pending-write
+     handling. Its separate Lite client has no offline catalogue cache. Nothing here reads supplier data on start. */
+  function supplierRead() {
+    if (!tdCanRead()) return false;
+    if (!who()) return !!(S.user && S.level === 'owner' && ownerHere());
+    return !!(S.authed && isSous() && canW() && S.sessExp > now() && S.config && (S.config.staffIds || []).indexOf(S.who) >= 0);
+  }
+  function supplierEdit() { return supplierRead() && bookEdit(); }
+  function supplierContext() {
+    var c = S.config || {};
+    return [S.pin, S.uid, S.who, S.authed ? 1 : 0, S.sessFor, S.sessExp, S.level, shared() ? 1 : 0, c.headId || '', (c.sousIds || []).join(','), (c.staffIds || []).join(',')].join('|');
+  }
+  function supplierState() {
+    if (!S.pin) return 'nopin';
+    if (S.configState === 'idle' || S.configState === 'loading' || sessP || (S.who && !resumed)) return 'wait';
+    return supplierRead() ? 'yes' : 'no';
+  }
+  function supplierOccurrences() {
+    var out = [], done = cutDone(), ms = now();
+    for (var k = 0; k < 8; k++) {
+      var date = shift(dayNow(), k);
+      CUT.on(cutList(), (T.dow() + k) % 7).forEach(function (c) {
+        var at = T.at(date) + c.at * 60000;
+        out.push({ day: date, cutoffId: c.s.id, at: at, deliveryDay: shift(date, c.s.pre), name: c.s.name,
+          label: dayShort(date) + ', ' + hhmm(c.at) + ' ' + CUT.forText(c), key: c.s.id + '|' + date,
+          done: !!done[c.s.id + '|' + date], past: at <= ms });
+      });
+    }
+    return out;
+  }
+  function supplierApi() {
+    return {
+      ready: function () { return sdk().then(function () { return fb; }); },
+      read: supplierRead, edit: supplierEdit, state: supplierState, context: supplierContext,
+      // Existing owner maintenance (backup and PIN move) retains its established admin-device gate. It grants no
+      // catalogue editor rights to a sous-chef persona: edit() remains the narrower check above.
+      owner: function () { return !!(S.user && S.level === 'owner' && ownerHere() && supplierRead()); },
+      base: base, writer: function () { return isSous() && canW() ? S.who : (supplierRead() && S.level === 'owner' ? 'owner' : ''); },
+      wait: function () { return Promise.resolve(sessP).then(function () { if (!supplierRead()) throw { code: 'permission' }; }); },
+      track: track, now: now, day: function (ms) { return T.day(ms == null ? now() : ms); },
+      name: function (id) { if (id == null) return whoName() || 'Head chef'; if (id === 'owner') return 'Head chef'; var p = people().filter(function (x) { return x.id === id; })[0]; return p ? p.name : 'Former chef'; },
+      nameOf: function (id) { if (id === 'owner') return 'Head chef'; var p = people().filter(function (x) { return x.id === id; })[0]; return p ? p.name : 'Former chef'; }, cuts: cutList, occurrences: supplierOccurrences,
+      requests: function () {
+        if (!supplierRead()) return Promise.reject({ code: 'permission' });
+        // On opening Supplier order only: one query of today's unfilled staff order lines, not a per-item read.
+        var key = supplierContext();
+        return fb.fs.getDocs(fb.fs.query(ordCol(dayNow()), fb.fs.where('ordered', '==', false))).then(function (sn) {
+          if (key !== supplierContext() || !supplierRead()) throw { code: 'context' };
+          return sn.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); }).filter(function (x) { return !x.deleted; });
+        });
+      },
+      transact: function (fs, db, fn, options) {
+        var key = supplierContext();
+        var preserve = !!(options && options.preserveWriter);
+        function check() { if (key !== supplierContext() || !supplierRead()) throw { code: 'context' }; if (preserve && !(S.user && S.level === 'owner' && ownerHere())) throw { code: 'permission' }; }
+        return track(Promise.resolve(sessP).then(function () {
+          check(); var by = isSous() && canW() ? S.who : (S.level === 'owner' ? 'owner' : '');
+          if (!by) throw { code: 'permission' };
+          return fs.runTransaction(db, function (tx) {
+            check();
+            var guarded = { get: function (ref) { check(); return tx.get(ref); },
+              set: function (ref, data, opts) { check(); var value = preserve ? data : Object.assign({}, data, { by: by }); return opts ? tx.set(ref, value, opts) : tx.set(ref, value); },
+              update: function (ref, data) { check(); return tx.update(ref, preserve ? data : Object.assign({}, data, { by: by })); },
+              delete: function (ref) { check(); return tx.delete(ref); } };
+            return fn(guarded, by);
+          });
+        }));
+      },
+      changed: function () { cutPaint(); try { window.dispatchEvent(new Event('lk-supplier')); } catch (e) {} },
+      completeReminder: function (key) { return cutOrdered(key, true); },
+      openCutoffs: function () { if (!supplierEdit()) return false; S.atab = 'cutoffs'; lsSet('lk.prep.atab', 'cutoffs'); if (location.hash === '#/admin') draw(); else location.hash = '#/admin'; return true; },
+      say: liveSay
+    };
+  }
+  var supplierToolsPromise = null, supplierService = null, supplierPending = Object.create(null);
+  function supplierTools() {
+    if (!supplierToolsPromise) supplierToolsPromise = Promise.resolve().then(function () {
+      if (!window.LK_APP || !window.LK_APP.load) throw { code: 'unavailable' };
+      return window.LK_SUP_CORE ? null : window.LK_APP.load('js/supplier-core.js');
+    }).then(function () { return window.LK_SUP_STORE ? null : window.LK_APP.load('js/supplier-store.js'); }).then(function () {
+      if (!window.LK_SUP_STORE || window.LK_SUP_STORE.API !== 1) throw { code: 'version' };
+      supplierService = window.LK_SUP_STORE.create(supplierApi()); return supplierService;
+    }).catch(function (e) { supplierToolsPromise = null; throw e; });
+    return supplierToolsPromise;
+  }
+  // A linked supplier goes through review; an older or unlinked supplier keeps the established reminder-only tick.
+  function supplierComplete(key, on) {
+    if (supplierPending[key]) { supplierPending[key].on = !!on; return supplierPending[key].promise; }
+    if (!on) return cutOrdered(key, false);
+    if (!supplierRead()) return Promise.reject({ code: 'permission' });
+    var context = supplierContext(), parts = key.split('|');
+    if (parts.length !== 2) return Promise.reject({ code: 'invalid' });
+    var pendingCut = { on: !!on, promise: null };
+    supplierPending[key] = pendingCut;
+    pendingCut.promise = supplierTools().then(function (store) { return store.loadSuppliers(); }).then(function (list) {
+      if (context !== supplierContext() || !supplierRead()) throw { code: 'context' };
+      var linked = list.some(function (x) { return x.cutoffId === parts[0]; });
+      if (linked && pendingCut.on) { location.hash = '#/suppliers/cutoff/' + encodeURIComponent(parts[0]) + '/' + encodeURIComponent(parts[1]); return false; }
+      return cutOrdered(key, pendingCut.on);
+    }).catch(function (e) {
+      // Before the additive rules are published, the old completion action still works. A lost read never implies no catalogue.
+      if (e && (e.code === 'permission-denied' || e.code === 'supplier-rules')) return cutOrdered(key, pendingCut.on);
+      throw e;
+    }).finally(function () { if (supplierPending[key] === pendingCut) delete supplierPending[key]; });
+    return pendingCut.promise;
   }
   /* A read that must come from the server (the version check before a recipe, drawing or function save). On a slow or
      half-dropped connection getDocFromServer can wait a long time without failing, and the save never even went into the
@@ -1517,6 +1623,7 @@
       .then(function () { return all('drinks'); }).then(function (r) { out.drinks = r; })
       .then(function () { return all('todos'); }).then(function (r) { out.todos = r; })
       .then(function () { return all('cutdone'); }).then(function (r) { out.cutdone = r; })
+      .then(function () { part = 'suppliers'; return supplierTools().then(function (store) { return store.exportAll(); }).then(function (r) { Object.assign(out, r); }, function (e) { if (e && (e.code === 'permission-denied' || e.code === 'permission')) { left.push('suppliers'); return; } throw e; }); })
       .then(function () { return all('shifts'); }).then(function (r) { out.shifts = r; })
       .then(function () { part = 'book'; return bookDocs(S.pin); }).then(function (l) { out.book = l.map(function (d) { var x = d.data(); x.id = d.id; return x; }); return all('recipes'); }).then(function (r) { out.recipes = r; return subs(r, 'recipes', 'hist', out.recipesHist); })
       .then(function () { return all('drawings'); }).then(function (r) { out.drawings = r; return subs(r, 'drawings', 'hist', out.drawingsHist); })
@@ -1592,6 +1699,7 @@
       .then(function () { return copyCol('drawings'); }).then(function () { return copySub('drawings', 'hist'); })
       .then(function () { return copyCol('drawtpl'); }).then(function () { return copyCol('drawlib'); })
       .then(function () { return copyCol('functions'); }).then(function () { return copySub('functions', 'hist'); }).then(function () { return copyCol('fncontact'); }).then(function () { return copyCol('fnsent'); })
+      .then(function () { return supplierTools().then(function (store) { return store.copyTo(np); }).then(function (r) { n += r.suppliers + r.orders + r.audits + r.links; }); })
       .then(function () {
         var i = 0;
         function next() {
@@ -3367,7 +3475,7 @@
     if (at === 'notes') loadNotes();
     if (at === 'minutes') loadMinutes();
     if (at === 'guides') loadGuides();
-    var pane = at === 'cutoffs' ? cutAdminHTML() : at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'transfers' ? xferStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() : at === 'people' ? (
+    var pane = at === 'suppliers' ? supplierAdminHTML() : at === 'cutoffs' ? cutAdminHTML() : at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'transfers' ? xferStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() : at === 'people' ? (
       '<section class="set-block"><span class="label">People</span><details class="a-how"><summary>How roles and ticks work</summary><p class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Shift pings are written by you and the sous chefs. Functions lets that person enter and change function bookings (Functions coordinator ticks it for you); only your save here gives it or takes it away, and nothing else comes with it. Reset PIN lets that person choose a new one: do it with them there, as whoever signs in with that name next sets the PIN. Removing someone from the list keeps their name on old lines, and their PIN stops working for anything. Head chef is for your own name: it always has every permission and the sous chef pages, and a sous chef cannot change or remove it.</p></details>' +
       (headIdOf(d.people) ? '' : '<p class="hint a-nohead" role="note">No one is marked Head chef yet. Set your own name to Head chef and save, so your PIN has full rights on the kitchen devices.</p>') +
       peopleListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' + ksAdminHTML(d) +
@@ -3413,8 +3521,12 @@
       '<button type="button" class="btn" data-p="a-reset"' + (n ? '' : ' disabled') + '>' + (armed('a-reset') ? 'Tap again to undo ' + (n === 1 ? 'it' : 'all ' + n) : 'Undo unsaved changes') + '</button>' +
       (n ? '<span class="a-unsaved">' + n + ' unsaved change' + (n === 1 ? '' : 's') + '</span>' : '') + '</div><span class="saved" role="status">' + esc(S.saveMsg) + '</span></section>';
   }
-  var A_TAB_NAMES = { mail: 'Kitchen mail', notes: 'Shift pings', insights: 'Insights', team: 'Team', waste: 'Wastage', transfers: 'Transfers', learning: 'Learning', people: 'People', minutes: 'Minutes', guides: 'Guides', tools: 'Backup and PIN', cutoffs: 'Order cut-offs' };
-  var A_GROUPS = [['today', 'Today', ['mail', 'notes']], ['reports', 'Reports', ['insights', 'team', 'waste', 'transfers', 'learning']], ['people', 'People', ['people']], ['content', 'Content', ['minutes', 'guides']], ['settings', 'Settings', ['tools', 'cutoffs']]];
+  function supplierAdminHTML() {
+    return '<section class="set-block"><h2 class="p-h">Suppliers &amp; pars</h2><p>Current pars, manual items and the original supplier records are kept in the catalogue.</p>' +
+      (supplierEdit() ? '<div class="btn-row"><a class="btn dark" href="#/suppliers/manage">Manage catalogue</a><a class="btn" href="#/suppliers">Supplier order</a></div>' : '<p class="hint">Only the head chef changes suppliers and pars. Sous chefs can use <a href="#/suppliers">Supplier order</a>.</p>') + '</section>';
+  }
+  var A_TAB_NAMES = { mail: 'Kitchen mail', notes: 'Shift pings', insights: 'Insights', team: 'Team', waste: 'Wastage', transfers: 'Transfers', learning: 'Learning', people: 'People', minutes: 'Minutes', guides: 'Guides', tools: 'Backup and PIN', cutoffs: 'Order cut-offs', suppliers: 'Suppliers & pars' };
+  var A_GROUPS = [['today', 'Today', ['mail', 'notes']], ['reports', 'Reports', ['insights', 'team', 'waste', 'transfers', 'learning']], ['people', 'People', ['people']], ['content', 'Content', ['minutes', 'guides', 'suppliers']], ['settings', 'Settings', ['tools', 'cutoffs']]];
   function adminGroupOf(t) { return A_GROUPS.filter(function (g) { return g[2].indexOf(t) >= 0; })[0] || A_GROUPS[1]; }
   /* "On this page": one chip per heading of the open page (the numbered Insights sections, otherwise each block's label
      and the chart headings in it), so a long page is one tap from any part. Built from the page after each draw, so a
@@ -6784,7 +6896,7 @@
     if (!xs.length) return '';
     return '<div class="cut-top"><h2 class="cut-h">Order cut-off' + (xs.length > 1 ? 's' : '') + '</h2><a class="cut-go" href="#/orders">Order list</a></div><ul class="cut-list">' + xs.map(function (c) {
       var left = c.at - m, soon = left <= CUT_SOON;
-      return '<li class="cut-row' + (soon ? ' is-soon' : '') + '"><span class="cut-n">' + esc(c.s.name) + '</span><span class="cut-t">' + (soon ? '<b class="cut-now">Order now</b> ' : '') + 'by ' + (c.at >= 1440 ? 'tomorrow ' : '') + hhmm(c.at % 1440) + ' <b>' + cutIn(left) + '</b> <span class="cut-for">' + esc(cutDel(c)) + '</span></span>' +
+      return '<li class="cut-row' + (soon ? ' is-soon' : '') + '"><a class="cut-n" href="#/suppliers/cutoff/' + encodeURIComponent(c.s.id) + '/' + encodeURIComponent(c.day) + '">' + esc(c.s.name) + '</a><span class="cut-t">' + (soon ? '<b class="cut-now">Order now</b> ' : '') + 'by ' + (c.at >= 1440 ? 'tomorrow ' : '') + hhmm(c.at % 1440) + ' <b>' + cutIn(left) + '</b> <span class="cut-for">' + esc(cutDel(c)) + '</span></span>' +
         '<button type="button" class="cut-done" data-cut="done" data-id="' + esc(c.key) + '" aria-label="' + esc('Ordered from ' + c.s.name + ': hide this reminder') + '">Ordered</button></li>';
     }).join('') + '</ul>';
   }
@@ -6806,9 +6918,10 @@
     var el = e.target.closest && e.target.closest('[data-cut]');
     if (!el || el.getAttribute('data-cut') !== 'done') return;
     var key = el.getAttribute('data-id') || '', s = cutList().filter(function (x) { return x.id === key.split('|')[0]; })[0];
-    cutOrdered(key, true).then(function () {
+    supplierComplete(key, true).then(function (saved) {
+      if (saved === false) return;
       toast((s ? s.name : 'That supplier') + ' is ticked off as ordered, for every chef. No more pushes for it.');
-    }, function () { toast('Not ticked. Sign in with your PIN and try again.', { label: 'OK', fn: function () {} }, 8000); });
+    }, function (e) { toast(e && (e.code === 'permission' || e.code === 'context') ? 'Not ticked. Sign in with your PIN and try again.' : 'Could not check supplier sheets. Check the connection and try again. This reminder is unchanged.', { label: 'OK', fn: function () {} }, 8000); });
   });
   window.addEventListener('lk-who', function () { cutWatch(); cutPaint(); });
   window.addEventListener('lk-cfg', function () { cutWatch(); cutPaint(); });
@@ -6825,7 +6938,7 @@
       var st = d ? 'Ordered' + (who ? ' by ' + who : '') + (d.at ? ', ' + clock(d.at) : '') : past ? 'Closed, not ticked' : cutIn(c.at - m);
       var cls = d ? 'is-done' : past ? 'is-past' : c.at - m <= CUT_SOON ? 'is-soon' : '';
       return '<li class="cut-o ' + cls + '"><button type="button" class="cut-box" data-p="cut-tick" data-id="' + esc(c.key) + '" aria-pressed="' + !!d + '" aria-label="' + esc((d ? 'Ordered from ' : 'Tick when ordered from ') + c.s.name) + '"' + (cutCanTick() ? '' : ' disabled') + '><span aria-hidden="true">' + (d ? '&#10003;' : '') + '</span></button>' +
-        '<span class="cut-n">' + esc(c.s.name) + '</span><span class="cut-t">by ' + (c.at >= 1440 ? 'tomorrow ' : '') + hhmm(c.at % 1440) + ' ' + esc(cutDel(c)) + '</span><span class="cut-st">' + esc(st) + '</span></li>';
+        '<a class="cut-n" href="#/suppliers/cutoff/' + encodeURIComponent(c.s.id) + '/' + encodeURIComponent(c.day) + '">' + esc(c.s.name) + '</a><span class="cut-t">by ' + (c.at >= 1440 ? 'tomorrow ' : '') + hhmm(c.at % 1440) + ' ' + esc(cutDel(c)) + '</span><span class="cut-st">' + esc(st) + '</span></li>';
     }).join('') + '</ul>';
   }
   function cutOrdHTML() {
@@ -7164,7 +7277,7 @@
     if (guest() && GUEST_WRITES[a]) { e.preventDefault(); guestAsk({ sel: guestSel(el) }); return; }
     if (a.indexOf('lv-') === 0) { lvClick(a, el); return; }
     if (a.indexOf('dk-') === 0) { dkClick(a, el); return; }
-    if (a === 'cut-tick') { var ck = el.getAttribute('data-id') || '', con = el.getAttribute('aria-pressed') !== 'true'; cutOrdered(ck, con).catch(function (er) { failed(er); }); return; }
+    if (a === 'cut-tick') { var ck = el.getAttribute('data-id') || '', con = supplierPending[ck] ? !supplierPending[ck].on : el.getAttribute('aria-pressed') !== 'true'; supplierComplete(ck, con).catch(function (er) { failed(er); }); return; }
     if (a === 'cut-push-on') { pushOn(); return; }
     if (a === 'cut-push-off') { pushOff(); return; }
     if (a.indexOf('cut-') === 0) { cutClick(a, el); return; }
@@ -7988,7 +8101,7 @@
     },
     warm: function () { if (S.pin && S.configState !== 'ok' && S.configState !== 'loading') connect(); notesInit(); },
     unsaved: function () {
-      return pending > 0 || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!mlf.text.trim() || tdDirty() || mfDirty() || nfDirty() || gfDirty() || draftDirty() || cutDirty() || !!String(S.bulk || '').trim() || !!S.sheet || !!S.recipeOpen ||
+      return pending > 0 || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!(window.LK_SUP && window.LK_SUP.dirty()) || !!mlf.text.trim() || tdDirty() || mfDirty() || nfDirty() || gfDirty() || draftDirty() || cutDirty() || !!String(S.bulk || '').trim() || !!S.sheet || !!S.recipeOpen ||
         !!(S.text.trim() || S.qty.trim() || S.otext.trim() || S.oqty.trim() || S.wf.text.trim() || String(S.wf.amt).trim() || S.wf.act.trim() || S.xf.text.trim() || String(S.xf.amt).trim() || S.xf.note.trim() || (S.wrA != null && S.wrA !== (rvBase().avoidable || '')) || (S.wrC != null && S.wrC !== (rvBase().change || '')));
     },
     noteInfo: noteInfo, noteBellLabel: noteBellLabel,
@@ -8015,6 +8128,7 @@
     fnState: fnState,
     todoOK: todoOK,
     book: bookApi,
+    supplier: supplierApi,
     chefMenu: chefMenu,
     chefOpen: chefOpen,
     secOpen: function () { ksOpen(true); },

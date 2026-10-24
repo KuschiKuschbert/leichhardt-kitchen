@@ -81,17 +81,21 @@ self.addEventListener('fetch', function (e) {
   e.respondWith(saved().then(function (m) { return m || net(); }));
 });
 /* Phone pushes for order cut-offs (24 Oct 2026): scripts/cutoff-push.mjs sends them through Firebase Cloud Messaging
-   with data only (title, body, tag), and the worker shows them. Every push shows a notification (iPhones stop pushes to
-   a book that does not). A tap opens the order list: a fixed route, never an address from the push. */
+   with data only, and the worker shows them. A validated cut-off ID and date open its supplier sheet. Older pushes
+   open the order list. No URL or arbitrary route from a push is ever followed. */
+function supplierPushData(d) {
+  return d && typeof d.sid === 'string' && /^[a-z0-9-]{1,40}$/.test(d.sid) && typeof d.day === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d.day) ? { sid: d.sid, day: d.day } : {};
+}
 self.addEventListener('push', function (e) {
   var d = {};
   try { var j = e.data ? e.data.json() : {}; d = (j && (j.data || j.notification)) || {}; } catch (x) {}
   var title = String(d.title || 'Kitchen Book').slice(0, 80), body = String(d.body || '').slice(0, 200), tag = String(d.tag || 'lk-cut').slice(0, 60);
-  e.waitUntil(self.registration.showNotification(title, { body: body, tag: tag, renotify: true, icon: 'icons/icon-192.png', badge: 'icons/icon-192.png' }));
+  e.waitUntil(self.registration.showNotification(title, { body: body, tag: tag, renotify: true, icon: 'icons/icon-192.png', badge: 'icons/icon-192.png', data: supplierPushData(d) }));
 });
 self.addEventListener('notificationclick', function (e) {
   e.notification.close();
-  var url = new URL('./#/orders', self.registration.scope).href;
+  var data = supplierPushData(e.notification.data), path = data.sid ? './#/suppliers/cutoff/' + encodeURIComponent(data.sid) + '/' + data.day : './#/orders';
+  var url = new URL(path, self.registration.scope).href;
   // a window of the book this worker runs (other pages share the origin on GitHub Pages, and only such a window can be
   // moved): brought forward, then moved to the order list (Chrome lets navigate run after focus; Firefox may never answer a
   // move within the page, so it is not waited on past 3 seconds). No such window: a new one opens on the order list.

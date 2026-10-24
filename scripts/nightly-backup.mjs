@@ -63,6 +63,10 @@ out.minutes = await all('minutes'); out.minutesHist = await subs(out.minutes, 'm
 out.book = await all('book'); out.recipes = await all('recipes'); out.recipesHist = await subs(out.recipes, 'recipes', 'hist');
 out.drawings = await all('drawings'); out.drawingsHist = await subs(out.drawings, 'drawings', 'hist');
 out.drawtpl = await all('drawtpl'); out.drawlib = await all('drawlib');
+// Private supplier catalogue, immutable order snapshots, catalogue audit and reminder occurrence links.
+out.suppliers = await all('suppliers'); out.supplierOrders = await subs(out.suppliers, 'suppliers', 'orders');
+out.supplierAudit = await subs(out.suppliers, 'suppliers', 'audit'); out.supplierlinks = await all('supplierlinks');
+reads += out.suppliers.length + out.supplierlinks.length;
 // function bookings (21 Oct 2026), their earlier versions and the booking contacts
 out.functions = await all('functions'); out.functionsHist = await subs(out.functions, 'functions', 'hist'); out.fncontact = await all('fncontact'); out.fnsent = await all('fnsent');
 reads += out.functions.length + out.fncontact.length;

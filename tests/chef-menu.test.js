@@ -193,7 +193,7 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   // Admin comes in after the owner check is read: wait for it, not for the page to be still
   for (let i = 0; i < 20 && await L.admItem(p) !== 'signed'; i++) await L.settle(p, 250);
   m = await L.chefItems(p);
-  ok(m.join(',') === 'drinks,minutes,functions,admin,manage,pings,todo,settings,out', 'head chef on her Google device: no Kitchen mail, no Manage staff, Chef to-do (' + m + ')');
+  ok(m.join(',') === 'drinks,minutes,functions,admin,manage,pings,todo,suppliers,settings,out', 'head chef on her Google device: no Kitchen mail, no Manage staff, Chef to-do and Supplier order (' + m + ')');
   await p.click('.wtop-who'); await L.settle(p, 150);
   box = await menuBox(p);
   ok(box.h < 563, 'head chef on her Google device, 390 px: the menu is under two thirds of the screen (' + box.h + ', 710 before)');

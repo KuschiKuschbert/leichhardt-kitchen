@@ -31,6 +31,28 @@ The Leichhardt Hotel kitchen's app: the recipe book, the prep list, the order li
 
   Settings are saved on each phone or tablet.
 
+## Supplier order and catalogue (24 Oct 2026)
+
+**Chef hat > Supplier order** (`#/suppliers`) is for the head chef, sous chefs and the verified Google owner. Staff, leads and function managers cannot open it or read its data. It is lazy-loaded, uses the current Kitchen Book fonts and controls, and has a collapsible supplier sidebar. The selected supplier shows current pars, exact source names, pack details and quantities from its last recorded order, with weekday and time in Queensland.
+
+**Catalogue:** Admin > Content > Suppliers & pars opens the same editor as Manage catalogue in Supplier order. Only the head chef (their own PIN) or the verified owner edits it. The full admin panel still needs Google. Edit current pars, add manual items, keep source records, set units and verified pack conversions, add confirmed matching names, archive or restore. Blank pars and zero are different. Saved changes have a revision and audit entry; a stale version never silently overwrites another device. Imported product names and original pars stay unchanged. Discontinued items are archived, not deleted.
+
+**Private import:** the editor accepts a checked version-1 JSON catalogue, previews its suppliers and item count, and asks which existing reminder each supplier belongs to. Supplier goods and source documents are never public assets. The private import file is supplied separately. New catalogue items are appended; reimporting preserves edited pars and manual additions. No-op imports do not create revisions. If an import stops part way, the page names how many suppliers were saved and keeps the remaining plan.
+
+**Orders:** enter quantities with units, review, then Record order placed after placing the actual order with the supplier. This sends nothing to a supplier. An immutable snapshot keeps names, quantities, packs, pars, source, writer and time. The same transaction saves its linked cut-off occurrence and the existing Ordered tick. A retry keeps its order ID; another chef's order asks for an explicit Additional order. Copy and Use quantities only fill a draft. An item absent from the last supplier order says Not ordered. History is loaded in pages, only when asked.
+
+**Existing reminders:** a supplier name on the cut-off bar or tick list opens its sheet; phone pushes include a validated local supplier/cut-off link. A linked supplier's Ordered action goes through review. An unlinked supplier or an older client still uses the established reminder-only completion; those ticks do not invent item quantities. Unticking reopens a reminder without deleting history. The staff free-text Order list and its item ticks continue as before.
+
+**Suggestions:** show why, then Apply. Repeat previous quantities, use a fresh counted-stock top-up with confirmed units/conversion, or flag an exact product name/confirmed alias from the staff Order list. Ambiguous requests stay unmatched; supplier orders do not tick staff requests automatically. No guessed consumption, automatic orders or automatic par changes. Suggestions never overwrite typed quantities.
+
+**Signal, privacy and saved work:** private catalogue/history use Firestore Lite on the existing Firebase app, without a persistent catalogue cache. They need a connection. Drafts are held in memory for the current signed-in session; signing out or changing the person clears them. Save errors retain inputs. A timed-out save is unconfirmed: check the latest history or catalogue before retrying. No signal or a refused read is never treated as an empty catalogue. Missing module, mismatched API and unpublished rules have retry/access messages. Other kitchen pages retain their current offline behaviour.
+
+**Reads and data:** catalogue is one query on entry or Refresh (one read per supplier); latest order is one read on supplier opening; history/audit are bounded pages, no per-item history reads or polling. Records are `suppliers/<id>`, its `orders` and `audit` subcollections, and `supplierlinks/<cut-off day>_<cut-off id>`. Existing `cutdone` keeps its old shape. The manual backup, nightly backup and PIN migration include the new records through the private client. Rules must be published before the client code.
+
+`js/supplier-core.js` contains the shared validation, quantity and suggestion maths; `js/supplier-store.js` the online-only client and transactions; `js/suppliers.js` the interface. None belongs in the app's start-up shell. `docs/supplier-workspace.md` is the accepted contract and verification record.
+
+A pre-existing fallback-font problem found by the baseline tests was corrected at the same time: wide top-bar navigation may wrap so Kitchen Book remains on one line at 1280 px when the web font has not loaded.
+
 ## Adding or changing a recipe
 
 All recipes are in **`js/data.js`**. The top of that file explains every field. Recipes the head chef changes or adds in the book itself are kept in Firestore and laid over this file, and the book's copy wins (see Recipes changed in the book below). To add one here:
@@ -172,6 +194,8 @@ npm test
 - **Faster ticking (20 Oct 2026, head chef decision).** A tap on a prep line's words ticks it as well as the box (the box stays the button for keyboards and screen readers; !, recipe and Remove do not tick). The box is drawn at 33 px. The add box goes Line, Section, Amount in the page, the same as it shows, and capitalises the first letter on a phone keyboard. With a line typed, a usual amount chip says "Add 2 tubs" and adds the line in one tap. A line whose change has not reached the server yet says "Not sent" (from the listener's own `hasPendingWrites`, no reads), and the signal strip says "device", not "phone". `tests/prep-speed.test.js`.
 
 ## Head chef decisions
+
+- **24 Oct 2026.** Supplier workspace, order history, linked reminders, explainable suggestions and the head-chef/owner catalogue editor approved after visual drafts. Sous chefs order and read history; catalogue editing stays with the head chef and verified owner. Exact source names and original pars are retained. All writes, fallbacks and existing flows must pass the browser and database rules tests before release.
 
 How the book should work, as the head chef decided it. Newest first. Add new ones here with the date; the details are in the sections below.
 

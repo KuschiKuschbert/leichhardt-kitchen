@@ -386,6 +386,10 @@
     var on = parseRoute().name === 'todo' ? ' aria-current="page"' : '';
     return '<a class="wm-a wm-todo" href="#/todo" data-who="go"' + on + '>' + ICON.todo + '<span><b>Chef to-do</b></span></a>';
   }
+  function supplierOK() { return !!(window.LK_PREP && window.LK_PREP.supplier && window.LK_PREP.supplier().read()); }
+  function supplierItem() {
+    return '<a class="wm-a wm-supplier" href="#/suppliers" data-who="go"' + (parseRoute().name === 'suppliers' ? ' aria-current="page"' : '') + '>' + ICON.todo + '<span><b>Supplier order</b></span></a>';
+  }
   function manageItem() {
     var on = parseRoute().name === 'manage' ? ' aria-current="page"' : '';
     return '<a class="wm-a wm-mg" href="#/manage" data-who="go"' + on + '>' + ICON.pen + '<span><b>Manage Recipes &amp; Drawings</b></span></a>';
@@ -415,13 +419,13 @@
         (m.sec ? '<button type="button" class="wm-a" data-who="sec" data-v="section">' + ICON.chef + '<span><b>My section</b><small>' + esc(m.sec) + '</small></span></button>' : '') +
         (m.chef || adm || m.book ? '<p class="wm-h wm-sh">Chef</p>' + adm : '') + (m.book ? manageItem() : '') +
         (m.chef ? '<button type="button" class="wm-a" data-who="open" data-v="pings">' + ICON.bell + '<span><b>Shift pings</b></span></button>' : '') +
-        (m.todo ? todoItem() : '') +
+        (m.todo ? todoItem() : '') + (supplierOK() ? supplierItem() : '') +
         (m.chef && !m.tab ? '<button type="button" class="wm-a" data-who="open" data-v="staff">' + ICON.team + '<span><b>Manage staff</b></span></button>' : '') +
         set +
         // the empty line is where the first tap says "Not saved yet" (the click handler below)
         '<button type="button" class="wm-a wm-out" data-who="out">' + ICON.exit + '<span><b>Sign out</b><small aria-live="polite"></small></span></button>'
       : '<p class="wm-h">Nobody signed in on this phone</p>' +
-        '<a class="wm-a wm-in" href="#/prep" data-who="signin">' + ICON.chef + '<span><b>Sign in</b></span></a>' + adm + (bookEdit() ? manageItem() : '') + (todoOK() ? todoItem() : '') + (fnOK() ? fnItem() : '') + set) + '</nav>';
+        '<a class="wm-a wm-in" href="#/prep" data-who="signin">' + ICON.chef + '<span><b>Sign in</b></span></a>' + adm + (bookEdit() ? manageItem() : '') + (todoOK() ? todoItem() : '') + (supplierOK() ? supplierItem() : '') + (fnOK() ? fnItem() : '') + set) + '</nav>';
     document.body.appendChild(el); wmenu = el;
     btn.setAttribute('aria-expanded', 'true');
     var first = el.querySelector('.wm-a'); if (first) first.focus({ preventScroll: true });
@@ -896,6 +900,33 @@
     });
   }
   function redrawManage() { if (parseRoute().name === 'manage') mountManage(parseRoute()); }
+  /* Supplier tools are lazy, like the recipe editor. A failed download leaves a Retry action and never affects
+     recipes, prep or orders. Protected data is fetched only after the current chef's session has been checked. */
+  var SUP_API = 1, supLoad = null;
+  function viewSuppliers() { return '<div class="page sup-page"><main id="main"><div id="supplier-root"></div></main>' + footer() + '</div>'; }
+  function mountSuppliers(route) {
+    var root = document.getElementById('supplier-root'), P = window.LK_PREP, B = P && P.supplier ? P.supplier() : null;
+    if (!root) return;
+    var st = B ? B.state() : 'no';
+    if (st === 'wait') { root.innerHTML = mgNote('Supplier order', 'Checking your kitchen sign-in...', ' '); if (P && P.warm) P.warm(); return; }
+    if (st !== 'yes' || (route.mode === 'manage' && !B.edit())) {
+      if (window.LK_SUP) window.LK_SUP.reset();
+      root.innerHTML = mgNote(st === 'nopin' ? 'Sign in to the kitchen' : 'Chef access needed', st === 'nopin' ? 'Open the Prep list, enter the kitchen PIN and sign in.' : route.mode === 'manage' ? 'Only the head chef or admin can change suppliers and pars.' : 'The head chef and sous chefs can open supplier orders with their own PIN.', '<div class="btn-row"><a class="btn dark" href="#/prep">Open the Prep list</a></div>'); return;
+    }
+    if (window.LK_SUP) {
+      if (window.LK_SUP.api === SUP_API) window.LK_SUP.mount(root, route);
+      else root.innerHTML = mgNote('Reload the book', 'The supplier tools on this device need the current book.', '<button type="button" class="btn dark" data-act="reload">Reload</button>');
+      return;
+    }
+    root.innerHTML = mgNote('Supplier order', 'Opening supplier tools...', ' ');
+    if (!supLoad) supLoad = mgScript('js/suppliers.js').catch(function (e) { supLoad = null; throw e; });
+    supLoad.then(function () { if (parseRoute().name === 'suppliers') mountSuppliers(parseRoute()); }, function () {
+      if (parseRoute().name === 'suppliers') root.innerHTML = mgNote('Could not open supplier tools', 'Check the connection and try again. The other kitchen pages still work.', '<div class="btn-row"><button type="button" class="btn dark" data-sup-retry>Try again</button><a class="btn" href="#/orders">Order list</a></div>');
+    });
+  }
+  document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-sup-retry]')) { supLoad = null; mountSuppliers(parseRoute()); } });
+  function redrawSuppliers() { if (parseRoute().name === 'suppliers') mountSuppliers(parseRoute()); }
+  ['lk-who', 'lk-admin', 'lk-cfg'].forEach(function (name) { window.addEventListener(name, redrawSuppliers); });
   /* What js/manage.js reads from the recipe book: the same index and drawings, so its previews match the cards. */
   function rollFor(draft) {
     var r = JSON.parse(JSON.stringify(draft));
@@ -998,6 +1029,11 @@
   /* ---------- routing and drawing ---------- */
   function parseRoute() {
     var parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
+    if (parts[0] === 'suppliers') {
+      var valid = function (v) { return /^[a-zA-Z0-9_-]{1,80}$/.test(v || '') ? v : ''; };
+      if (parts[1] === 'cutoff') return { name: 'suppliers', stack: [], sid: '', mode: 'order', cutoffId: valid(parts[2]), cutoffDay: /^\d{4}-\d{2}-\d{2}$/.test(parts[3] || '') ? parts[3] : '' };
+      return { name: 'suppliers', stack: [], sid: parts[1] === 'manage' ? '' : valid(parts[1]), mode: parts[1] === 'manage' || parts[2] === 'manage' ? 'manage' : 'order', cutoffId: '', cutoffDay: '' };
+    }
     if (parts[0] === 'settings') return { name: 'settings', stack: [] };
     if (parts[0] === 'prep' || parts[0] === 'admin' || parts[0] === 'orders' || parts[0] === 'waste' || parts[0] === 'transfers' || parts[0] === 'minutes' || parts[0] === 'mail' || parts[0] === 'drinks' || parts[0] === 'todo') return { name: parts[0], stack: [] };
     if (parts[0] === 'guides') return { name: 'guides', stack: [], gid: parts[1] || '' };
@@ -1052,6 +1088,7 @@
     else if (route.name === 'settings') html = viewSettings();
     else if (PREP_PAGES[route.name]) html = viewPrep();
     else if (route.name === 'manage') html = viewManage();
+    else if (route.name === 'suppliers') html = viewSuppliers();
     else if (route.name === 'fn') html = viewFn(route);
     else if (route.name === 'functions') html = viewFunctions();
     else if (view === 'pass') html = viewPass(route);
@@ -1063,12 +1100,13 @@
     if (!changed) Array.prototype.forEach.call(app.querySelectorAll('.chips.scroll'), function (el, i) { if (rowsAt[i]) el.scrollLeft = rowsAt[i]; });
     fitPins();
     if (route.name === 'manage') mountManage(route); else if (window.LK_MG) window.LK_MG.unmount();
+    if (route.name === 'suppliers') mountSuppliers(route); else if (window.LK_SUP) window.LK_SUP.unmount();
     if (route.name === 'functions') mountFunctions(route); else if (window.LK_FE) window.LK_FE.unmount();
     if (PREP_PAGES[route.name] && window.LK_PREP) window.LK_PREP.mount(route.name, document.getElementById('prep-root'), route.gid);
     // On any other page, connect to the prep book in the background so Prep, Orders and Wastage open straight away.
     else if (window.LK_PREP && window.LK_PREP.warm && !warmed) { warmed = true; setTimeout(function () { window.LK_PREP.warm(); }, 900); }
     var r = route.stack.length ? byId[route.stack[route.stack.length - 1]] : null;
-    document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'waste' ? 'Wastage · ' : route.name === 'transfers' ? 'Transfers · ' : route.name === 'minutes' ? 'Meeting minutes · ' : route.name === 'mail' ? 'Kitchen mail · ' : route.name === 'drinks' ? 'Drinks run · ' : route.name === 'todo' ? 'Chef to-do · ' : route.name === 'manage' ? 'Manage Recipes & Drawings · ' : route.name === 'fn' ? 'Functions · ' : route.name === 'functions' ? 'Manage functions · ' : route.name === 'guides' ? 'Guides · ' : route.name === 'landing' ? '' : route.name === 'home' ? 'Recipes · ' : route.name === 'admin' ? 'Admin panel · ' : '')) + 'Leichhardt Kitchen Book';
+    document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'waste' ? 'Wastage · ' : route.name === 'transfers' ? 'Transfers · ' : route.name === 'minutes' ? 'Meeting minutes · ' : route.name === 'mail' ? 'Kitchen mail · ' : route.name === 'drinks' ? 'Drinks run · ' : route.name === 'todo' ? 'Chef to-do · ' : route.name === 'suppliers' ? 'Supplier order · ' : route.name === 'manage' ? 'Manage Recipes & Drawings · ' : route.name === 'fn' ? 'Functions · ' : route.name === 'functions' ? 'Manage functions · ' : route.name === 'guides' ? 'Guides · ' : route.name === 'landing' ? '' : route.name === 'home' ? 'Recipes · ' : route.name === 'admin' ? 'Admin panel · ' : '')) + 'Leichhardt Kitchen Book';
     var prevRoute = lastRoute; lastRoute = route.name;
     if (changed && route.name === 'recipe') noteView(route.stack[route.stack.length - 1]);
     // opening the recipes checks for the head chef's recipe changes when the last check is 30 minutes old (one read)
