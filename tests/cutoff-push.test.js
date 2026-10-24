@@ -45,7 +45,8 @@ const withPerm = perm => '(' + init.toString().replace('PERM', JSON.stringify(pe
   ok(kept && kept.by === 'sam' && kept.day && /^[0-9a-f]{64}$/.test(kept.h), 'turn on: the phone remembers it (lk.push)');
   // Ordered on the bar tells the server
   await L.waitFor(p, () => !!document.querySelector('#cut-band [data-cut="done"]'), null, 10000);
-  await p.click('#cut-band [data-cut="done"]'); await L.settle(p, 500);
+  await p.click('#cut-band [data-cut="done"]');
+  await L.waitFor(p, k => { const d = window.__fake.dump()[k]; return d && d.on === true; }, fsKey(['cutdone', today + '_pfd']), 10000);
   s = await store(p);
   const cd = s[fsKey(['cutdone', today + '_pfd'])];
   ok(cd && cd.on === true && cd.by === 'sam' && cd.sid === 'pfd' && cd.day === today && typeof cd.at === 'number', 'Ordered: ticked for everyone, so no more pushes for PFD today (' + JSON.stringify(cd) + ')');
