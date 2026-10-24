@@ -74,6 +74,41 @@ async function open(b, linked, name) {
   ok(p.errors.length === 0, 'held lookup intent queue: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // A denied lookup started by one chef must not use its legacy fallback as the next chef on the same tablet.
+  p = await L.open(b, '#/orders', { who: 'bo', extra: fixture(false), wait: 1500, denyReads: '/suppliers$' });
+  await L.waitFor(p, () => !!document.querySelector('#cut-band [data-cut="done"]') && window.LK_PREP.supplier().read(), null, 10000);
+  release = await holdTools(p);
+  request = p.waitForRequest(/\/js\/supplier-core\.js(?:\?|$)/);
+  await p.click(button); await request;
+  await p.click('.nb-top [data-p="who-change"]');
+  await L.waitFor(p, () => !!document.querySelector('.p-name[data-id="sam"]'), null, 10000);
+  await p.click('.p-name[data-id="sam"]');
+  await p.type('#pf1', '1111');
+  await L.waitFor(p, () => window.LK_PREP.whoName() === 'Sam' && window.LK_PREP.supplier().read(), null, 10000);
+  ok(!(await dump(p))[completion], 'chef handover: the old Ordered intent is still pending while the next valid chef signs in');
+  release();
+  await L.waitFor(p, k => /Not ticked/.test(document.body.textContent) || !!window.__fake.dump()[k], completion, 10000);
+  ok(!(await dump(p))[completion] && (await completionWrites(p)).length === 0, 'chef handover: a denied old lookup cannot mark an order as the next chef');
+  ok(await p.evaluate(() => location.hash === '#/orders') && !!(await p.$(button)), 'chef handover: the next chef stays on their page with the reminder unchanged');
+  ok(p.errors.length === 0, 'denied lookup after chef handover: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // On the same chef's device, unpublished supplier rules still leave the established reminder-only action usable.
+  p = await L.open(b, '#/', { who: 'sam', extra: fixture(false), wait: 1500, denyReads: '/suppliers$' });
+  await L.waitFor(p, () => !!document.querySelector('#cut-band [data-cut="done"]'), null, 10000);
+  release = await holdTools(p);
+  request = p.waitForRequest(/\/js\/supplier-core\.js(?:\?|$)/);
+  await p.click(button); await request;
+  await L.settle(p, 500);
+  ok(!(await dump(p))[completion], 'same chef denied lookup: the pending action is not saved early');
+  release();
+  await L.waitFor(p, k => { const d = window.__fake.dump()[k]; return d && d.on === true; }, completion, 10000);
+  await L.waitFor(p, () => !document.querySelector('#cut-band [data-cut="done"][data-id^="northside|"]'), null, 10000);
+  ok((await dump(p))[completion].by === 'sam', 'same chef denied lookup: the legacy completion still saves under that chef');
+  ok((await completionWrites(p)).length === 1 && await p.evaluate(() => location.hash === '#/'), 'same chef denied lookup: one completion is saved without opening a supplier sheet');
+  ok(p.errors.length === 0, 'same chef denied lookup fallback: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   // A read failure is not an empty catalogue. Preserve the reminder rather than guessing the old path.
   p = await L.open(b, '#/', { who: 'sam', extra: fixture(false), wait: 1500, failReads: '/suppliers$' });
   await L.waitFor(p, () => !!document.querySelector('#cut-band [data-cut="done"]'), null, 10000);

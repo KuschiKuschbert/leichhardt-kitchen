@@ -996,6 +996,8 @@
       if (linked && pendingCut.on) { location.hash = '#/suppliers/cutoff/' + encodeURIComponent(parts[0]) + '/' + encodeURIComponent(parts[1]); return false; }
       return cutOrdered(key, pendingCut.on);
     }).catch(function (e) {
+      // A refused read must not replay the previous person's tap under the next chef's session.
+      if (context !== supplierContext() || !supplierRead()) throw { code: 'context' };
       // Before the additive rules are published, the old completion action still works. A lost read never implies no catalogue.
       if (e && (e.code === 'permission-denied' || e.code === 'supplier-rules')) return cutOrdered(key, pendingCut.on);
       throw e;
