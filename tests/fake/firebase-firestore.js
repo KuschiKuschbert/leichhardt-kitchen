@@ -49,6 +49,7 @@ export function where(f, op, v) { return { k: 'where', f, op, v }; }
 export function documentId() { return '__name__'; }
 export function orderBy(f, dir) { return { k: 'order', f, dir: dir || 'asc' }; }
 export function limit(n) { return { k: 'limit', n }; }
+export function startAfter(sn) { return { k: 'after', id: sn.id }; }
 export function query(col, ...c) { return { type: 'query', path: col.path, c }; }
 export function serverTimestamp() { return { __st: 1 }; }
 export function increment(n) { return { __inc: n }; }
@@ -65,13 +66,14 @@ function listCol(path, c) {
     if (x.k === 'where' && x.f === '__name__') { docs = docs.filter(d => x.op === 'in' ? x.v.indexOf(d.id) >= 0 : d.id === x.v); return; }
     if (x.k === 'where') docs = docs.filter(d => { const v = (d.data() || {})[x.f]; if (x.op === 'in') return x.v.indexOf(v) >= 0; return x.op === '==' ? v === x.v : x.op === '>=' ? v >= x.v : x.op === '<' ? v < x.v : x.op === '<=' ? v <= x.v : x.op === '>' ? v > x.v : true; });
     if (x.k === 'order') docs.sort((a, b) => { const A = a.data()[x.f], B = b.data()[x.f]; return (A > B ? 1 : A < B ? -1 : 0) * (x.dir === 'desc' ? -1 : 1); });
+    if (x.k === 'after') { const i = docs.findIndex(d => d.id === x.id); docs = i < 0 ? [] : docs.slice(i + 1); }
     if (x.k === 'limit') docs = docs.slice(0, x.n);
   });
   return { docs, empty: !docs.length, size: docs.length, forEach: f => docs.forEach(f) };
 }
-function result(ref) {
+function result(ref, keep = true) {
   const r = ref.type === 'doc' ? snapDoc(ref.path) : listCol(ref.path, ref.c);
-  (ref.type === 'doc' ? [r] : r.docs).forEach(d => { const k = key(d.ref.path); if (d.exists()) { remember(k); window.__fake.readLog.push(k); } else if (ref.type === 'doc') remember(k); });
+  (ref.type === 'doc' ? [r] : r.docs).forEach(d => { const k = key(d.ref.path); if (d.exists()) { if (keep) remember(k); window.__fake.readLog.push(k); } else if (keep && ref.type === 'doc') remember(k); });
   return r;
 }
 function delay(v) { return new Promise(r => setTimeout(() => r(v), 5)); }
@@ -87,6 +89,7 @@ function readRefused(ref) {
   }
   if (/\/minutes\/[^/]+$/.test(k)) return store[k] !== undefined && store[k].status !== 'published';
   if (/\/todos\/[^/]+$/.test(k)) return !chefReader(ref);
+  if (/^kitchens\/[^/]+\/(suppliers|supplierlinks)(\/|$)/.test(k)) return !chefReader(ref);
   return false;
 }
 export function getDoc(ref) {
@@ -105,11 +108,12 @@ function chefReader(ref) {
   if (window.__fakeUser) return true;
   const root = ref.path.slice(0, 2).join('/'), uid = window.__fakeUid ? window.__fakeUid() : '', ss = uid ? store[root + '/sessions/' + uid] : null;
   const ps = ss ? store[root + '/pinset/' + ss.by] : null, c = store[root + '/config/main'] || {};
-  return !!(ss && ss.exp > Date.now() && ps && ps.at === ss.pinAt && ((c.sousIds || []).indexOf(ss.by) >= 0 || (c.headId && c.headId === ss.by)));
+  return !!(ss && ss.exp > Date.now() && ps && ps.at === ss.pinAt && (!c.staffIds || c.staffIds.indexOf(ss.by) >= 0) && ((c.sousIds || []).indexOf(ss.by) >= 0 || (c.headId && c.headId === ss.by)));
 }
 function denied(ref) {
   const d = window.__fake.denyReads, k = key(ref.path);
   if (/^kitchens\/[^/]+\/todos$/.test(k) && !chefReader(ref)) return true;
+  if (/^kitchens\/[^/]+\/(suppliers|supplierlinks)(\/|$)/.test(k) && !chefReader(ref)) return true;
   if (/^kitchens\/[^/]+\/minutes$/.test(k) && !window.__fakeUser && !(ref.c || []).some(x => x.k === 'where' && x.f === 'pubAt' && (x.op === '>=' || x.op === '>') && x.v >= 1)) return true;
   return /^kitchens\/[^/]+\/book$/.test(k) || !!(d && d.test(k));
 }
@@ -278,3 +282,59 @@ export function writeBatch() {
 export function setDoc(ref, data, opt) { return commitOps([{ kind: 'set', ref, data, merge: !!(opt && opt.merge) }]); }
 export function deleteDoc(ref) { return commitOps([{ kind: 'delete', ref }]); }
 export function updateDoc(ref, data) { return commitOps([{ kind: 'update', ref, data }]); }
+
+// Supplier pages use Lite: requests go straight to the test server, never into the persistent offline copy.
+// Keep the same backend and failure controls as the full stand-in, without its offline write queue.
+export function liteGetDoc(ref) {
+  const k = key(ref.path);
+  window.__fake.reads.push(k);
+  if (window.__fake.stall && window.__fake.stall.test(k)) return new Promise(() => {});
+  if (window.__fake.mode === 'hold' || window.__fake.mode === 'fail' || readFails(ref)) return Promise.reject({ code: 'unavailable' });
+  if (readRefused(ref) || (window.__fake.denyReads && window.__fake.denyReads.test(k))) return Promise.reject({ code: 'permission-denied' });
+  bill('lite-get', k, 1);
+  return delay(result(ref, false));
+}
+export function liteGetDocs(ref) {
+  const k = key(ref.path);
+  window.__fake.reads.push(k);
+  if (window.__fake.stall && window.__fake.stall.test(k)) return new Promise(() => {});
+  if (window.__fake.mode === 'hold' || window.__fake.mode === 'fail' || readFails(ref)) return Promise.reject({ code: 'unavailable' });
+  if (denied(ref)) return Promise.reject({ code: 'permission-denied' });
+  const r = result(ref, false); bill('lite-query', k, r.docs.length); return delay(r);
+}
+async function liteCommit(ops, reads) {
+  // A test can delay server acknowledgement while the online-only Lite request remains in flight.
+  const ms = Math.max(0, Math.min(60000, +window.__fake.liteCommitDelay || 0));
+  if (ms) await new Promise(resolve => setTimeout(resolve, ms));
+  if (window.__fake.mode === 'hold' || window.__fake.mode === 'fail') throw { code: 'unavailable' };
+  if (reads && [...reads].some(([path, version]) => JSON.stringify(store[path]) !== version)) throw { code: 'aborted' };
+  return commitOps(ops);
+}
+let transactionChain = Promise.resolve();
+export function runTransaction(db, fn) {
+  // Transactions on the same test backend are serialised, and a concurrent external write retries the callback.
+  // Staged writes are applied together only after all reads and failure checks have succeeded.
+  async function run() {
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const reads = new Map(), ops = [];
+      const tx = {
+        async get(ref) {
+          if (ops.length) throw { code: 'invalid-argument', message: 'Transaction reads must come before writes.' };
+          const version = JSON.stringify(store[key(ref.path)]), sn = await liteGetDoc(ref); reads.set(key(ref.path), version); return sn;
+        },
+        set(ref, value, opt) { ops.push({ kind: 'set', ref, data: value, merge: !!(opt && opt.merge) }); return tx; },
+        update(ref, value) { ops.push({ kind: 'update', ref, data: value }); return tx; },
+        delete(ref) { ops.push({ kind: 'delete', ref }); return tx; }
+      };
+      const value = await fn(tx);
+      if ([...reads].some(([path, version]) => JSON.stringify(store[path]) !== version)) continue;
+      if (ops.length) {
+        try { await liteCommit(ops, reads); }
+        catch (e) { if (e && e.code === 'aborted') continue; throw e; }
+      }
+      return value;
+    }
+    throw { code: 'aborted', message: 'The record changed during the save.' };
+  }
+  const result = transactionChain.then(run, run); transactionChain = result.catch(() => {}); return result;
+}

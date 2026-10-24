@@ -83,8 +83,8 @@ const pushes = go.map(({ c, stage }) => {
   return {
     c,
     data: stage === 'now'
-      ? { title: 'Order now: ' + c.s.name, body: 'Closes at ' + when + ' ' + CUT.forText(c) + '. ' + to + ' to go.', tag: 'cut-' + c.s.id }
-      : { title: c.s.name + ': order by ' + when, body: CUT.forText(c).replace(/^f/, 'F') + '. ' + to + ' to go.', tag: 'cut-' + c.s.id },
+      ? { title: 'Order now: ' + c.s.name, body: 'Closes at ' + when + ' ' + CUT.forText(c) + '. ' + to + ' to go.', tag: 'cut-' + c.s.id, sid: c.s.id, day: c.day }
+      : { title: c.s.name + ': order by ' + when, body: CUT.forText(c).replace(/^f/, 'F') + '. ' + to + ' to go.', tag: 'cut-' + c.s.id, sid: c.s.id, day: c.day },
     ttl: Math.max(60, (c.at - m) * 60)
   };
 });
