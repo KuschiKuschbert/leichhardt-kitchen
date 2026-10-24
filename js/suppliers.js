@@ -158,7 +158,7 @@
   function entryError(field, i) {
     if (!validationAttrs(field, i.id)) return '';
     var unit = (field === 'qty' ? i.orderUnit : i.parUnit) || 'kg';
-    return '<small class="su-entry-error" data-su-entry-error>' + esc(field === 'qty' ? 'Use a quantity above 0, e.g. 2 ' + unit + '.' : 'Use zero or more, e.g. 0 ' + unit + '.') + '</small>';
+    return '<small class="su-entry-error" data-su-entry-error>' + esc(field === 'qty' ? (i.orderUnit ? 'Use a quantity above 0, e.g. 2 ' + unit + '.' : 'Enter a positive quantity with a unit, e.g. 2 kg.') : (i.parUnit ? 'Use zero or more, e.g. 0 ' + unit + '.' : 'Enter zero or more with a unit, e.g. 0 kg.')) + '</small>';
   }
   function entryInput(field, id) {
     return M.root && Array.prototype.filter.call(M.root.querySelectorAll('[data-sf="' + field + '"]'), function (el) { return el.getAttribute('data-i') === id; })[0];
