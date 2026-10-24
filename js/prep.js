@@ -3515,7 +3515,25 @@
     return n || (draftDirty() ? 1 : 0);
   }
   /* Ticks and names change the draft without a redraw (so the cursor stays put); the Save bar follows straight after. */
-  function saveBarRefresh() { var sb = S.root && S.root.querySelector('.a-savebar'); if (sb && S.draft) sb.outerHTML = saveBarHTML(); }
+  function saveBarRefresh() {
+    var sb = S.root && S.root.querySelector('.a-savebar'); if (!sb || !S.draft) return;
+    // A name field's blur fires change during a Save press. Keep the live buttons in place until the click completes.
+    var holder = document.createElement('div'); holder.innerHTML = saveBarHTML();
+    var next = holder.firstElementChild;
+    ['a-save', 'a-reset'].forEach(function (action) {
+      var selector = '[data-p="' + action + '"]', old = sb.querySelector(selector), fresh = next.querySelector(selector);
+      if (!old || !fresh) return;
+      if (old.disabled !== fresh.disabled) old.disabled = fresh.disabled;
+      if (old.textContent !== fresh.textContent) old.textContent = fresh.textContent;
+    });
+    ['.a-unsaved', '.saved', '.a-stale'].forEach(function (selector) {
+      var old = sb.querySelector(selector), fresh = next.querySelector(selector);
+      if (!fresh) { if (old) old.remove(); return; }
+      if (old) { if (old.textContent !== fresh.textContent) old.textContent = fresh.textContent; }
+      else if (selector === '.a-unsaved') sb.querySelector('.btn-row').appendChild(fresh);
+      else sb.insertBefore(fresh, sb.firstChild);
+    });
+  }
   ['change', 'input'].forEach(function (ev) { document.addEventListener(ev, function (e) { if (e.target && e.target.getAttribute && e.target.getAttribute('data-a')) setTimeout(saveBarRefresh, 0); }, true); });
   function saveBarHTML() {
     var n = draftChanges();
