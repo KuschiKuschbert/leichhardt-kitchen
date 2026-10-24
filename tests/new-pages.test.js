@@ -131,11 +131,19 @@ const tab = p => p.evaluate(() => Array.prototype.some.call(document.querySelect
   await L.settle(p, 300);
   await p.click('[data-p="a-add-person"]');
   // the new row is drawn after the tap: wait for its name box, not a fixed time (under load it comes later)
-  await L.waitFor(p, () => !!document.querySelector('[data-k="a-n3"]'), null, 5000).catch(() => {});
+  await L.waitFor(p, () => !!document.querySelector('[data-k="a-n3"]'), null, 5000);
   await p.fill('[data-k="a-n3"]', 'Cy');
-  await p.click('[data-p="a-save"]');
-  // the save reads the list first, then writes: wait for the write itself
-  await L.waitFor(p, k => (window.__fake.dump()[k].people || []).length === 4, CFG, 5000).catch(() => {});
+  // Moving from the name to Save fires change. Keep a normal held click alive while the save bar refreshes.
+  const save = p.locator('[data-p="a-save"]');
+  await save.scrollIntoViewIfNeeded();
+  const box = await save.boundingBox();
+  await p.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await p.mouse.down();
+  await L.settle(p, 60);
+  await p.mouse.up();
+  // Wait for the config write and the visible saved acknowledgement.
+  await L.waitFor(p, k => (window.__fake.dump()[k].people || []).length === 4, CFG, 5000);
+  await L.waitFor(p, () => /Saved\. Everyone sees/.test(document.querySelector('.a-savebar .saved')?.textContent || ''), null, 5000);
   s = await store(p);
   ok(s[CFG].people.length === 4 && JSON.stringify(s[CFG].staffSee) === JSON.stringify(HIDE), 'sous: staff list saved, staffSee kept (' + s[CFG].people.length + ' people, ' + JSON.stringify(s[CFG].staffSee) + ')');
   ok(p.errors.length === 0, 'sous: no page errors ' + p.errors.join(' | '));
