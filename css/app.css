@@ -2146,7 +2146,7 @@ details.a-how > p { margin: 0.2rem 0 0; max-width: 72ch; }
 .su-par small { display: block; font-size: 0.75rem; margin-top: 0.3rem; color: var(--muted); }
 .su-qty { min-width: 0; }
 .su-qty > .hint { display: block; margin-top: 0.25rem; overflow-wrap: anywhere; }
-.su-entry-error { display: block; margin-top: 0.25rem; color: var(--accent); font-size: 0.875rem; overflow-wrap: anywhere; }
+.su-entry-error { display: block; margin-top: 0.25rem; color: var(--small-ink); font-size: 0.875rem; overflow-wrap: anywhere; }
 .su-wrap input[aria-invalid="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 .su-qty .search { width: 100%; min-height: 44px; height: auto; padding: 0.65rem 0.55rem; font-size: 1rem; }
 .su-mobile-label { display: none; }
