@@ -54,6 +54,7 @@ async function log(p, text, amt, unit) {
   // review, in the admin panel's wastage log: someone else saved since the log was read
   p = await L.open(b, '#/admin', { wait: 1500, extra, admin: true, who: '' });
   await L.adminTab(p, 'waste');
+  await p.click('[data-p="wh-view"][data-v="reviews"]');
   await L.waitFor(p, () => !!document.querySelector('[data-p="wreview"]'));
   await p.fill('#w-ra', 'Too much rice cooked');
   await p.evaluate(a => window.__fake.write(a.k, { avoidable: 'Over-portioned chips', change: '', reviewBy: 'Bo', reviewAt: a.t }), { k: fsKey(['waste', today]), t: Date.now() + 60000 });

@@ -19,6 +19,12 @@ service cloud.firestore {
     function isAdmin() {
       return request.auth != null && request.auth.token.email == 'OWNER_EMAIL' && request.auth.token.email_verified == true;
     }
+    // Admin history queries existing dated lines by their full document paths. Collection-group queries need a
+    // recursive match. This adds list only for the same verified owner; individual reads and writes retain their
+    // existing rules. Staff, sous-chef sessions, other accounts and an unverified owner cannot use this rule.
+    match /{parent=**}/lines/{line} {
+      allow list: if isAdmin();
+    }
     function pinDoc(id) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/staffpins/$(id); }
     function setDoc(id) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/pinset/$(id); }
     function sessDoc() { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/sessions/$(request.auth.uid); }
@@ -91,9 +97,10 @@ service cloud.firestore {
         // same map, so a sous chef's next stamp carries it along. Nothing else changes in that write.
         || (staff() && request.resource.data.by in resource.data.get('sousIds', [])
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pastEdit', 'by'])
-          && request.resource.data.pastEdit is map && request.resource.data.pastEdit.keys().hasOnly(['p', 'o', 'n', 'x'])
+          && request.resource.data.pastEdit is map && request.resource.data.pastEdit.keys().hasOnly(['p', 'o', 'n', 'x', 'w'])
           && request.resource.data.pastEdit.get('p', 0) is number && request.resource.data.pastEdit.get('o', 0) is number
-          && request.resource.data.pastEdit.get('n', 0) is number && request.resource.data.pastEdit.get('x', 0) is number)
+          && request.resource.data.pastEdit.get('n', 0) is number && request.resource.data.pastEdit.get('x', 0) is number
+          && request.resource.data.pastEdit.get('w', 0) is number)
         // A returned past loan invalidates the head chef's saved transfer history.
         || (staff() && onlyKeys(['pastEdit', 'by'])
           && request.resource.data.pastEdit is map
