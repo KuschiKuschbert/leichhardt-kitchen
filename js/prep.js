@@ -191,11 +191,11 @@
     }, function () { S.configState = 'error'; draw(); });
   }
   var unsubOrd = null, ordKey = '';
-  var unsubW = null, wKey = '', unsubX = null, xKey = '';
+  var unsubW = null, wKey = '', unsubX = null, xKey = '', unsubXO = null;
   /* Stops every live listener (kitchen PIN forgotten or moved), so nothing keeps reading the old PIN. */
   function stopLive() {
-    [unsubCfg, unsubItems, unsubSec, unsubAct, unsubOrd, unsubW, unsubX].forEach(function (u) { if (u) u(); });
-    unsubCfg = unsubItems = unsubSec = unsubAct = unsubOrd = unsubW = unsubX = null; cfgKey = itemsKey = ordKey = wKey = xKey = '';
+    [unsubCfg, unsubItems, unsubSec, unsubAct, unsubOrd, unsubW, unsubX, unsubXO].forEach(function (u) { if (u) u(); });
+    unsubCfg = unsubItems = unsubSec = unsubAct = unsubOrd = unsubW = unsubX = unsubXO = null; S.xOpen = []; S.xOpenState = 'idle'; cfgKey = itemsKey = ordKey = wKey = xKey = '';
     cutStop();
   }
   var itemsSig = '';
@@ -644,7 +644,7 @@
      After the 10 minute lock, the prep list, orders and wastage still show. A tap that writes (tick, add, urgent, order,
      log waste) asks "Who are you?" first, then does that same thing once the PIN is right, so nobody taps twice. What was
      typed in the add boxes stays. Reading needs only the kitchen PIN, as before; every write still needs a person's PIN. */
-  var GUEST_WRITES = { oreg: 1, tick: 1, urgent: 1, del: 1, restore: 1, 'add-recipe': 1, quick: 1, fnneed: 1, 'toast-act': 1, ogroup: 1, otick: 1, odel: 1, orestore: 1, wdel: 1, wrestore: 1, wreview: 1, 'tr-del': 1, 'tr-restore': 1 };
+  var GUEST_WRITES = { oreg: 1, tick: 1, urgent: 1, del: 1, restore: 1, 'add-recipe': 1, quick: 1, fnneed: 1, 'toast-act': 1, ogroup: 1, otick: 1, odel: 1, orestore: 1, wdel: 1, wrestore: 1, wreview: 1, 'tr-del': 1, 'tr-restore': 1, 'tr-return': 1, 'tr-unreturn': 1 };
   function guest() { return shared() && !S.authed && !S.picking && !S.who && (S.name === 'prep' || S.name === 'orders' || S.name === 'waste' || S.name === 'transfers'); }
   function guestAsk(pend) { S.pending = pend; S.picking = true; S.who = ''; draw(); window.scrollTo(0, 0); }
   function guestSel(el) {
@@ -1626,6 +1626,7 @@
       .then(function () { return all('drinks'); }).then(function (r) { out.drinks = r; })
       .then(function () { return all('todos'); }).then(function (r) { out.todos = r; })
       .then(function () { return all('cutdone'); }).then(function (r) { out.cutdone = r; })
+      .then(function () { return all('transferOpen'); }).then(function (r) { out.transferOpen = r; })
       .then(function () { part = 'suppliers'; return supplierTools().then(function (store) { return store.exportAll(); }).then(function (r) { Object.assign(out, r); }, function (e) { if (e && (e.code === 'permission-denied' || e.code === 'permission')) { left.push('suppliers'); return; } throw e; }); })
       .then(function () { return all('shifts'); }).then(function (r) { out.shifts = r; })
       .then(function () { part = 'book'; return bookDocs(S.pin); }).then(function (l) { out.book = l.map(function (d) { var x = d.data(); x.id = d.id; return x; }); return all('recipes'); }).then(function (r) { out.recipes = r; return subs(r, 'recipes', 'hist', out.recipesHist); })
@@ -1717,6 +1718,12 @@
         }
         return next();
       })
+      .then(function () { return f.getDocs(f.collection(fb.db, 'kitchens', old, 'transferOpen')).then(function (sn) {
+        return Promise.all(sn.docs.map(function (d) { var v = d.data(), b = f.writeBatch(fb.db);
+          b.set(f.doc(fb.db, 'kitchens', np, 'transfers', v.date, 'lines', v.lineId), v.record);
+          b.set(f.doc(fb.db, 'kitchens', np, 'transferOpen', d.id), v); n += 2; return b.commit();
+        }));
+      }); })
       .then(function () {
         S.moving = false; S.moveMsg = 'Copied ' + n + ' records. This device now uses the new PIN. Everyone else enters the new PIN next time they open the book.' +
           (skipped ? ' ' + skipped + ' sign-offs and seen records were left on the old PIN: the published rules do not let the head chef copy them yet.' : '');
@@ -2745,10 +2752,10 @@
       downloadCSV('leichhardt-wastage-' + tag + '.csv', w);
     } else if (kind === 'transfers' && S.xStats && !S.xStats.loading) {
       var xd = {}, xv = okey(a.venue); xDays(n).forEach(function (d) { xd[d] = 1; });
-      var xr = [['Date', 'Weekday', 'Time', 'Way', 'Venue', 'Who came for it or gave it', 'Item', 'Amount', 'Unit', 'Note', 'Logged by']];
+      var xr = [['Date', 'Weekday', 'Time', 'Way', 'Venue', 'Who came for it or gave it', 'Item', 'Amount', 'Unit', 'Note', 'Logged by', 'Returned', 'Returned by', 'Returned at']];
       S.xStats.lines.filter(function (x) { return !x.deleted && xd[x.date] && (!xv || okey(x.venue) === xv); })
         .sort(function (p, q) { return (p.date + hm(p.addedAt)) < (q.date + hm(q.addedAt)) ? -1 : 1; })
-        .forEach(function (x) { xr.push([x.date, DOWN[DOW.indexOf(parseYmd(x.date).getDay())], hm(x.addedAt), x.dir === 'in' ? 'We took' : 'They took', x.venue || '', x.person || '', x.text, x.amount, x.unit, x.note || '', x.addedBy || '']); });
+        .forEach(function (x) { xr.push([x.date, DOWN[DOW.indexOf(parseYmd(x.date).getDay())], hm(x.addedAt), x.dir === 'in' ? 'We took' : 'They took', x.venue || '', x.person || '', x.text, x.amount, x.unit, x.note || '', x.addedBy || '', x.returned ? 'Yes' : 'No', x.returnedBy || '', x.returnedAt ? new Date(x.returnedAt).toISOString() : '']); });
       downloadCSV('leichhardt-transfers-' + tag + '.csv', xr);
     } else if (kind === 'team' && S.stats && !S.stats.loading) {
       var td = teamData(n), t = [['Person', 'Lines written', 'Days written', 'Lines ticked', 'Days ticked', 'Main section', 'Share in main section', 'Days in a row', 'Based on', 'Rotation', 'Last wrote']];
@@ -4390,6 +4397,48 @@
   function xBlank(keep) { keep = keep || {}; return { dir: keep.dir || 'out', venue: keep.venue || '', person: keep.person || '', text: '', amt: '', unit: keep.unit || 'kg', note: '', noteOpen: false, amtAuto: false }; }
   function xCol(date) { return fb.fs.collection.apply(null, [fb.db].concat(base(), ['transfers', date, 'lines'])); }
   function xRef(date, id) { return fb.fs.doc.apply(null, [fb.db].concat(base(), ['transfers', date, 'lines', id])); }
+  // A small index of open transfers, including old days. The dated line remains the history.
+  function xOpenRef(date, id) { return fb.fs.doc.apply(null, [fb.db].concat(base(), ['transferOpen', date + '_' + id])); }
+  function xFind(date, id) {
+    return (S.xLines || []).concat(S.xOpen || [], (S.xStats && S.xStats.lines) || []).filter(function (x) { return x.date === date && x.id === id; })[0];
+  }
+  function xWrite(date, id, data, original) {
+    if (sessP) return sessP.then(function () { return xWrite(date, id, data, original); }, function () { return xWrite(date, id, data, original); });
+    var record = Object.assign({}, original || {}, data);
+    delete record.id; delete record.date;
+    if (canW()) record.by = S.who;
+    var change = Object.assign({}, data);
+    var ops = [[original ? 'upd' : 'set', xRef(date, id), change], ['set', xOpenRef(date, id), {
+      date: date, lineId: id, record: record, open: !record.deleted && !record.returned
+    }]];
+    if (date < dayNow() && Object.prototype.hasOwnProperty.call(data, 'returned')) ops.push(['set', cfgDoc(), { pastEdit: { x: now() } }, true]);
+    return W(ops);
+  }
+  function watchXOpen() {
+    if (unsubXO || !fb) return;
+    S.xOpenState = 'loading';
+    var col = fb.fs.collection.apply(null, [fb.db].concat(base(), ['transferOpen']));
+    unsubXO = fb.fs.onSnapshot(fb.fs.query(col, fb.fs.where('open', '==', true)), function (snap) {
+      S.xOpen = snap.docs.map(function (d) { var v = d.data(); return Object.assign({}, v.record, { date: v.date, id: v.lineId }); });
+      S.xOpenState = 'ok'; draw();
+    }, function () { S.xOpenState = 'error'; draw(); });
+  }
+  function returnXfer(date, id, undo, original) {
+    if ((!can('tick') && !wAll()) || !fb) return;
+    var it = original || xFind(date, id), key = date + '_' + id;
+    if (!it || it.deleted || (S.xReturning && S.xReturning[key])) return;
+    if (!undo && it.returned) return;
+    S.xReturning = S.xReturning || {}; S.xReturning[key] = true; draw();
+    var p = me(), data = { returned: !undo, returnedBy: undo ? '' : (p ? p.name : 'Head chef'),
+      returnedById: undo ? '' : (p ? p.id : ''), returnedAt: undo ? 0 : now() };
+    xWrite(date, id, data, it).then(function () {
+      var updated = Object.assign({}, it, data);
+      if (S.xStats) { S.xStats.lines.forEach(function (x) { if (x.id === id && x.date === date) Object.assign(x, data); }); }
+      toast(undo ? 'Return undone. Still outstanding.' : 'Returned: ' + it.text, undo ? null : {
+        label: 'Undo', fn: function () { returnXfer(date, id, true, updated); }
+      });
+    }, function (e) { failed(e); }).then(function () { delete S.xReturning[key]; draw(); });
+  }
   function watchXfer() {
     if (S.configState !== 'ok' || !fb) return;
     var key = S.pin + '|' + S.xDate;
@@ -4401,7 +4450,7 @@
       S.xLines = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; x.date = S.xDate; return x; });
       S.xState = 'ok'; draw();
     }, function () { S.xState = 'error'; draw(); });
-    loadXSum();
+    watchXOpen(); loadXSum();
   }
   function xSumDoc() { return fb.fs.doc.apply(null, [fb.db].concat(base(), ['summary', 'transfers'])); }
   /* The venues, the people who came and the items of the last 28 days (summary/transfers), worked out each night by the
@@ -4508,16 +4557,17 @@
     if (amt > (X_BIG[f.unit] || Infinity) && !arm('xbig:' + amt + f.unit)) { toast(amt + ' ' + f.unit + '? Check the unit. Tap Log it again if it is right.', null, 4000); focusSel('.tr-units .seg-b[aria-checked="true"]'); return; }
     // the page may still be on yesterday's list just after midnight (typing does not redraw): the line goes on today's
     if (S.xDate !== dayNow()) { S.xDate = dayNow(); watchXfer(); }
-    var ref = fb.fs.doc(xCol(S.xDate)), unit = f.unit;
-    sset(ref, practiceOn({ dir: dir, venue: venue, person: person, text: t, amount: amt, unit: unit, note: xStr(f.note, 120),
-      addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: now(), deleted: false })).catch(function (e) { failed(e, function () { if (!S.xf.text.trim()) S.xf = f; }); });
+    var date = S.xDate, ref = fb.fs.doc(xCol(date)), unit = f.unit;
+    var record = practiceOn({ dir: dir, venue: venue, person: person, text: t, amount: amt, unit: unit, note: xStr(f.note, 120),
+      addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: now(), deleted: false });
+    xWrite(date, ref.id, record).catch(function (e) { failed(e, function () { if (!S.xf.text.trim()) S.xf = f; }); });
     // the next item of the same pick-up keeps the way, the venue, the person and the unit
     S.xf = xBlank({ dir: dir, venue: venue, person: person, unit: unit });
     draw(); focusK('tr-text');
     var msg = 'Logged: ' + (dir === 'out' ? venue + ' took ' + num(amt) + ' ' + unit + ' ' + t : 'we took ' + num(amt) + ' ' + unit + ' ' + t + ' from ' + venue) +
       (pr.changes.length ? '. Corrected ' + pr.changes.map(function (c) { return c[0] + ' to ' + c[1]; }).join(', ') : '');
     // Undo like the wastage log: the rules let only the head chef or a sous chef take a line back, so staff are told who can
-    if (canBrowse()) toast(msg, { label: 'Undo', fn: function () { supd(ref, { deleted: true, deletedBy: (me() || {}).name || 'Head chef', deletedAt: now() }).catch(failed); } });
+    if (canBrowse()) toast(msg, { label: 'Undo', fn: function () { xWrite(date, ref.id, { deleted: true, deletedBy: (me() || {}).name || 'Head chef', deletedAt: now() }, record).catch(failed); } });
     else toast(msg + '. Wrong? Ask the head chef.', null, 6000);
   }
   /* Remove or put back a transfer: the head chef's Google account only (the admin log, or this page on that device).
@@ -4525,10 +4575,12 @@
   function removeXfer(date, id, restore) {
     if (!wAll()) return;
     var mine = (S.xStats && S.xStats.lines) || [], it = (S.xLines || []).concat(mine).filter(function (x) { return x.id === id && x.date === date; })[0];
+    if (!it) return;
+    var original = Object.assign({}, it);
     var by = restore ? '' : (me() || {}).name || 'Head chef', at = restore ? 0 : now();
     mine.forEach(function (x) { if (x.id === id && x.date === date) { x.deleted = !restore; x.deletedBy = by; x.deletedAt = at; } });
     // a past day's change reaches the head chef's other devices: their saved copy of that day is read again (pastRead)
-    supd(xRef(date, id), { deleted: !restore, deletedBy: by, deletedAt: at }).then(function () { markPast('x', date); }, failed);
+    xWrite(date, id, { deleted: !restore, deletedBy: by, deletedAt: at }, original).then(function () { markPast('x', date); }, failed);
     if (!restore) toast('Removed ' + (it ? it.text : 'the transfer') + ' from the transfer list', { label: 'Undo', fn: function () { removeXfer(date, id, true); } });
     draw();
   }
@@ -4537,11 +4589,19 @@
     var what = x.deleted ? 'Put back' : 'Remove';
     return '<button type="button" class="p-x" data-p="' + (x.deleted ? 'tr-restore' : 'tr-del') + '" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc(what + ' ' + x.text) + '">' + what + '</button>';
   }
+  function xReturnBtn(x) {
+    var returning = S.xReturning && S.xReturning[x.date + '_' + x.id];
+    var tick = !x.deleted && !x.returned && (can('tick') || wAll()) ? '<button type="button" class="nb-box tr-return-box" title="Mark returned in full" data-p="tr-return" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="Confirm ' + esc(x.text) + ' returned in full"' + (returning ? ' disabled' : '') + '>' + (returning ? '...' : BOX) + '</button>' : '';
+    if (!x.deleted && x.returned && (wAll() || isSous() || (can('tick') && me() && me().id === x.returnedById && now() - x.returnedAt < 120000))) tick = '<button type="button" class="chip sq" data-p="tr-unreturn" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '"' + (returning ? ' disabled' : '') + '>Undo return</button>';
+    return tick;
+  }
   function xRow(x) {
     var out = x.dir !== 'in';
+    var ret = x.returned ? '<span class="w-act">Returned ' + esc(x.returnedBy || '') + (x.returnedAt ? ' · ' + esc(longDate(T.day(x.returnedAt))) + ' ' + clock(x.returnedAt) : '') + '</span>' : '';
+    var tick = xReturnBtn(x);
     return '<li class="nb-row tr-row' + (x.deleted ? ' is-removed' : '') + '"><span class="w-time">' + (x.addedAt ? clock(x.addedAt) : '') + '</span>' +
       '<span class="nb-t"><span class="tr-way tr-way-' + (out ? 'out' : 'in') + '">' + (out ? 'Out' : 'In') + '</span> <strong>' + esc(x.text) + '</strong> <span class="w-amt">' + esc(num(+x.amount || 0) + ' ' + x.unit) + '</span>' +
-      '<span class="tr-who">' + esc(xWho(x)) + '</span>' + (x.note ? '<span class="w-act">' + esc(x.note) + '</span>' : '') + '</span><span class="nb-by">' + esc(x.addedBy || '') + '</span>' + xBtn(x) + '</li>';
+      '<span class="tr-who">' + esc(xWho(x)) + '</span>' + (x.note ? '<span class="w-act">' + esc(x.note) + '</span>' : '') + ret + '</span><span class="nb-by">' + esc(x.addedBy || '') + '</span>' + tick + xBtn(x) + '</li>';
   }
   // the venue and person chips, and the often taken chips that follow the venue (redrawn while the venue is typed)
   function xVenueChips() {
@@ -4589,13 +4649,18 @@
     var nOut = live.filter(function (x) { return x.dir !== 'in'; }).length, nIn = live.length - nOut;
     var sub = [nOut ? nOut + ' out' : '', nIn ? nIn + ' in' : ''].filter(Boolean).join(', ');
     var add = can('add') ? xFormHTML() : '<p class="hint">You can read the transfer list but not write in it.</p>';
+    var outstanding = (S.xOpen || []).filter(function (x) { return x.date !== today && !x.deleted && !x.returned; }).sort(byTime);
+    var openBody = '<h3 class="a-ch-h">Still outstanding</h3><p class="hint">Tick the box only when the full amount has been returned. Items stay here across days.</p>' +
+      (S.xOpenState === 'error' ? '<p class="p-err">Could not load outstanding transfers. This list may be incomplete. Reload to try again.</p>' :
+      S.xOpenState !== 'ok' ? '<p class="nb-empty">Loading outstanding transfers...</p>' :
+      outstanding.length ? '<ul class="nb-rows tr-outstanding">' + outstanding.map(function (x) { return '<li class="hint">' + esc(longDate(x.date)) + '</li>' + xRow(x); }).join('') + '</ul>' : '<p class="hint">No outstanding transfers from earlier days.</p>');
     var body = S.xState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' :
       (shown.length ? '<ul class="nb-rows">' + shown.map(xRow).join('') + '</ul>' : (S.xState !== 'ok' ? '<p class="nb-empty">Loading...</p>' : '<p class="nb-empty">No transfers for ' + esc(dayName(S.xDate).toLowerCase()) + ' yet. When another venue takes stock, or we take some from them, log it here.</p>'));
     return whoTopHTML(ksTagHTML()) +
       '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Transfers</h2><span class="nb-date">' + esc(longDate(S.xDate)) + (sub ? ' &middot; ' + esc(sub) : '') + '</span></div>' +
       '<div class="nb-prog">' + live.length + (live.length === 1 ? ' transfer' : ' transfers') + '</div></header>' +
       '<p class="w-rule">Stock shared with the other venues, both ways. Write the amount and unit, not a price.</p>' +
-      '<div class="nb-foot w-addtop">' + add + '</div><div class="nb-body">' + body + '</div></section>' +
+      '<div class="nb-foot w-addtop">' + add + '</div><div class="nb-body">' + openBody + '<h3 class="a-ch-h">Today</h3>' + body + '</div></section>' +
       (wAll() ? '<p class="hint w-past">Past days and the totals per venue are in the <a href="#/admin" data-p="tr-go-admin">admin panel, Transfers</a>.</p>' : '');
   }
   // Next on the venue, the person or the item goes to the next empty box instead of sending the form half filled
@@ -4623,6 +4688,8 @@
     if (a === 'tr-sugg') { var t = (S.xsugg || [])[i]; if (t) { f.text = t; xFill(xLast(t)); draw(); focusFilled('tr-amt'); } return; }
     if (a === 'tr-often') { var o = xOften()[i]; if (o) { f.text = o.text; xFill(o); draw(); focusFilled('tr-amt'); } return; }
     if (a === 'tr-note-open') { f.noteOpen = true; draw(); focusSel('#tr-note'); return; }
+    if (a === 'tr-unreturn') { returnXfer(dt, id, true); return; }
+    if (a === 'tr-return') { returnXfer(dt, id); return; }
     if (a === 'tr-del') { removeXfer(dt, id); return; }
     if (a === 'tr-restore') { removeXfer(dt, id, true); return; }
     if (a === 'tr-go-admin') { S.atab = 'transfers'; lsSet('lk.prep.atab', 'transfers'); return; }
@@ -5934,6 +6001,7 @@
         { h: 'Came or gave', html: function (x) { return esc(x.person || ''); } },
         { h: 'Logged by', html: function (x) { return esc(x.addedBy || ''); } },
         { h: 'Note', wide: true, html: function (x) { return esc(x.note || ''); } },
+        { h: 'Return', html: function (x) { return (x.returned ? '<span class="hint">Returned ' + esc(x.returnedBy || '') + ' ' + esc(x.returnedAt ? longDate(T.day(x.returnedAt)) + ' ' + clock(x.returnedAt) : '') + '</span>' : '<span class="hint">Outstanding</span>') + xReturnBtn(x); } },
         { h: '', html: xBtn }
       ]
     });
