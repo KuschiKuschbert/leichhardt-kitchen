@@ -29,6 +29,15 @@ async function list(b, width = 390) {
       p = await list(b, width);
       ok(!!await p.$(button('draft')) && !await p.$(button('active')) && !!await p.$('[data-fe="status"][data-id="active"]'), width + ': draft has Delete and active booking has Cancel');
       ok(!await L.overflow(p), width + ': actions fit without sideways scrolling');
+      ok(await p.locator(button('draft')).evaluate(button => {
+        const bar = button.closest('li').getBoundingClientRect(), action = button.getBoundingClientRect();
+        const link = button.closest('li').querySelector('.fe-row').getBoundingClientRect();
+        return action.left >= link.right - 1 && action.top >= bar.top && action.bottom <= bar.bottom && Math.abs((action.top + action.bottom - bar.top - bar.bottom) / 2) < 2;
+      }), width + ': Delete is at the right end inside the same function bar');
+      ok(await p.locator('[data-fe="status"][data-id="active"]').evaluate(button => {
+        const bar = button.closest('li').getBoundingClientRect(), action = button.getBoundingClientRect();
+        return action.top >= bar.top && action.bottom <= bar.bottom && action.left > bar.left + bar.width / 2;
+      }), width + ': Cancel is inline at the right end of the function bar');
       if (process.env.LK_ACTION_SHOTS) await p.screenshot({ path: '/tmp/function-actions-' + width + '.png', fullPage: true });
       await p.click('[data-fe="chip"][data-v="cancelled"]');
       ok(!!await p.$(button('cancelled')), width + ': cancelled card has Delete');

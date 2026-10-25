@@ -199,6 +199,7 @@ npm test
 
 ## Head chef decisions
 
+- **26 Oct 2026, placement correction.** Cancel and Delete belong at the right-hand end inside the same function bar, not on a separate row underneath it. Keep compact text actions with 44 px tap targets. Booking details wrap on narrow screens without overlapping the actions. Permissions, confirmation and recovery behaviour stay as above.
 - **26 Oct 2026.** Put small actions at the bottom of each function card. Confirmed bookings have Cancel function; drafts and cancelled bookings have Delete function with a second tap to confirm. Delete removes the saved booking from normal lists and keeps its details, contact and immutable history. Function editors and the verified admin can recover it through Deleted, Restore function. Restored bookings stay cancelled until reviewed and confirmed. No new reads until an action is confirmed, then one latest-version read per action. Existing cancellation-only access stays separate. See `docs/function-cancellation.md` and `tests/function-list-actions.test.js`.
 - **25 Oct 2026.** Make admin wastage history easy to find: History first, Summary and Daily reviews beside it. Add one week, two weeks, 30 days, this month, last calendar month, three complete months and custom dates. Filters and CSV agree; missing reads never look like zero waste. Keep the existing verified admin and shared-device chef gates.
 

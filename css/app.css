@@ -2014,7 +2014,11 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd 
 .fe-review h3 { margin: 0; font: 700 1.5rem var(--display); }
 .fe-day h3 { margin: 0.6rem 0 0.35rem; font: 700 1.25rem var(--display); }
 .fe-rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+.fe-rows > li { display: flex; align-items: center; border: 1px solid var(--edge); border-radius: 10px; background: var(--paper); }
 .fe-row { display: flex; flex-direction: column; gap: 2px; padding: 0.55rem 0.75rem; border: 1px solid var(--edge); border-radius: 10px; background: var(--paper); text-decoration: none; overflow-wrap: anywhere; }
+.fe-rows .fe-row { flex: 1; min-width: 0; border: 0; background: transparent; }
+.fe-rows .fn-card-actions { flex: 0 0 auto; max-width: 8rem; padding: 0.25rem 0.5rem 0.25rem 0; gap: 0; }
+.fe-rows .fn-card-actions button { max-width: 100%; min-height: 44px; padding: 0.2rem 0.4rem; border: 0; background: transparent; text-decoration: underline; white-space: normal; }
 .fe-r2 { color: #3b3a36; font-size: 0.95rem; }
 .fe-ov { color: #6A4A00; font-size: 0.85rem; font-weight: 600; }
 .fe-dtot { margin: 0.35rem 0 0; color: var(--muted); font-size: 0.9rem; }
