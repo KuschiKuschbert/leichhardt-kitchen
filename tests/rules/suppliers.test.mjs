@@ -112,7 +112,7 @@ await ok(setDoc(doc(sous, K + 'suppliers/' + SID + '/orders/number-only'), order
 await ok(setDoc(doc(staff, K + 'suppliers/' + SID + '/orders/number-only-staff'), order({ v: 2, by: 'staff', lines: unqualifiedLines })), false, 'number-only quantities do not grant staff supplier writes');
 await ok(Promise.resolve().then(async () => {
   const row = (await snap(sous, 'suppliers/' + SID + '/orders/number-only')).data().lines[0];
-  if (row.amount !== 1.5 || row.unit !== 'unspecified' || row.qty !== '1.5 unspecified' || row.stock !== '0 unspecified') throw Error('Unqualified snapshot changed');
+  if (row.amount !== 1.5 || row.unit !== '' || row.qty !== '1,5' || row.stock !== '0') throw Error('Unqualified snapshot changed');
 }), true, 'unqualified quantities round trip without gaining a physical unit');
 await ok(updateDoc(doc(sous, K + 'suppliers/' + SID + '/orders/number-only'), { lines: [line({ qty: '1.5 kg', amount: 1.5, unit: 'kg' })] }), false, 'saved number-only quantities cannot be relabelled later');
 await ok(setDoc(doc(sous, K + 'suppliers/' + SID + '/orders/stale-catalogue'), order({ v: 1 })), false, 'order from stale catalogue revision refused');

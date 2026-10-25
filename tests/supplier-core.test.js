@@ -27,35 +27,35 @@ test('confirmed catalogue units let chefs enter ordinary numeric quantities with
   assert.deepStrictEqual(C.parseQuantity('2 bags', 'kg'), { qty: '2 bags', amount: 2, unit: 'bags' });
   assert.deepStrictEqual(C.parseQuantity('1/2 tub', 'kg'), { qty: '1/2 tub', amount: 0.5, unit: 'tubs' });
   ['', '0', '0.0', '-1', '1-2', 'about 3', '100000'].forEach(v => assert.strictEqual(C.parseQuantity(v, 'kg'), null));
-  ['5 kg bag', '<kg>'].forEach(unit => assert.strictEqual(C.parseQuantity('2', unit), null));
+  ['5 kg bag', '<kg>'].forEach(unit => assert.deepStrictEqual(C.parseQuantity('2', unit), { qty: '2', amount: 2, unit: '' }));
   assert.deepStrictEqual(C.parseStock('0', 'kg'), { qty: '0 kg', amount: 0, unit: 'kg' });
   assert.deepStrictEqual(C.parseStock('0 g', 'kg'), { qty: '0 g', amount: 0, unit: 'g' });
   assert.strictEqual(C.parseStock('-1', 'kg'), null);
-  assert.deepStrictEqual(C.parseStock('0'), { qty: '0 unspecified', amount: 0, unit: 'unspecified' });
+  assert.deepStrictEqual(C.parseStock('0'), { qty: '0', amount: 0, unit: '' });
 });
-test('number-only entries keep an unspecified unit until one is explicitly supplied or configured', () => {
-  for (const [input, amount] of [['2', 2], ['1,5', 1.5], ['1/2', 0.5], ['1 1/2', 1.5], ['½', 0.5], ['⅓', 0.333]]) {
-    const q = C.parseQuantity(input);
-    assert.deepStrictEqual(q, { qty: amount + ' unspecified', amount, unit: 'unspecified' });
-    assert.deepStrictEqual(C.parseQuantity(q.qty, 'kg'), q, 'an old unqualified quantity never becomes kilograms');
+test('number-only entries keep empty units and preserve the shipped decimal precision', () => {
+  for (const [input, amount, qty] of [['2', 2, '2'], ['1,5', 1.5, '1,5'], ['1.2345', 1.2345, '1.2345'], ['0.000001', 0.000001, '0.000001'], ['1/2', 0.5, '0.5'], ['1 1/2', 1.5, '1.5'], ['½', 0.5, '0.5'], ['⅓', 0.333, '0.333']]) {
+    assert.deepStrictEqual(C.parseQuantity(input), { qty, amount, unit: '' });
   }
-  ['', '0', '-2', '1-2', '1e2', '100000', '1/0', '0.000001', '2+3', '2 3', 'about 2'].forEach(v => assert.strictEqual(C.parseQuantity(v), null, v));
+  ['', '0', '-2', '1-2', '1e2', '100000', '1/0', '0.0000001', '2+3', '2 3', 'about 2'].forEach(v => assert.strictEqual(C.parseQuantity(v), null, v));
   assert.strictEqual(C.parseStock('-2'), null);
-  assert.strictEqual(C.convert(2, 'unspecified', 'unspecified'), null);
-  assert.strictEqual(C.convert(2, 'unspecified', 'kg'), null);
-  assert.strictEqual(C.cleanItem(item({ orderUnit: 'unspecified', factor: 0 })).orderUnit, '');
+  assert.strictEqual(C.convert(2, '', ''), null);
+  assert.strictEqual(C.convert(2, '', 'kg'), null);
 });
-test('unqualified snapshots preserve source and remain separate from unit-based suggestions', () => {
+test('unqualified snapshots preserve source and never acquire a later catalogue unit', () => {
   const entry = item({ orderUnit: '', parUnit: '', factor: 0 });
   const line = C.snapshotLines([entry], { 'i-test': '2' }, { 'i-test': '0' })[0];
-  assert.deepStrictEqual([line.qty, line.amount, line.unit, line.stock], ['2 unspecified', 2, 'unspecified', '0 unspecified']);
+  assert.deepStrictEqual([line.qty, line.amount, line.unit, line.stock], ['2', 2, '', '0']);
   assert.deepStrictEqual(line.source, entry.source);
   const last = { id: 'old', lines: [line] };
-  assert.strictEqual(C.suggestQuantity(entry, last).qty, '2 unspecified');
+  assert.strictEqual(C.suggestQuantity(entry, last).qty, '2');
   assert.strictEqual(C.suggestQuantity(item(), last), null);
   assert.strictEqual(C.suggestQuantity(entry, last, '0'), null);
-  assert.strictEqual(C.suggestQuantity(item(), last, '0 unspecified'), null);
-  throws('factor', () => C.cleanItem(item({ orderUnit: 'unspecified', parUnit: 'unspecified', factor: 1 })));
+  assert.strictEqual(C.suggestQuantity(item(), last, '0', ''), null);
+  const retained = C.snapshotLines([item()], { 'i-test': '1.2345' }, { 'i-test': '0' }, {}, { qty: { 'i-test': '' }, stock: { 'i-test': '' } })[0];
+  assert.deepStrictEqual([retained.qty, retained.amount, retained.unit, retained.stock], ['1.2345', 1.2345, '', '0']);
+  const changed = C.snapshotLines([item({ orderUnit: 'g', parUnit: 'g' })], { 'i-test': '2' }, { 'i-test': '4' }, {}, { qty: { 'i-test': 'kg' }, stock: { 'i-test': 'kg' } })[0];
+  assert.strictEqual(changed.qty, '2 kg'); assert.strictEqual(changed.stock, '4 kg');
 });
 test('an imported name, punctuation, source and original par survive current par edits', () => {
   const original = item({ name: '*TEST PRODUCT (6) 1KG', manual: false, source: { file: 'test-source.pdf', page: 2, row: 7, name: '*TEST PRODUCT (6) 1KG', par: '0' } });
@@ -100,7 +100,7 @@ test('review records numeric inputs with their confirmed units and only validate
   assert.deepStrictEqual([snapshot[0].qty, snapshot[0].amount, snapshot[0].unit, snapshot[0].stock], ['1.5 kg', 1.5, 'kg', '0 kg']);
   assert.strictEqual(values['i-test'], '1.5'); assert.strictEqual(stocks['i-test'], '0');
   assert.strictEqual(snapshot[0].par, '10');
-  assert.strictEqual(C.snapshotLines([unused], { 'i-unused': '2' })[0].unit, 'unspecified');
+  assert.strictEqual(C.snapshotLines([unused], { 'i-unused': '2' })[0].unit, '');
   throws('stock', () => C.snapshotLines([entry], { 'i-test': '2' }, { 'i-test': '-1' }));
 });
 test('recording refuses stale/archived items, invalid counts and empty drafts', () => {

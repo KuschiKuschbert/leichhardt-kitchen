@@ -3,7 +3,7 @@
    The page owns the returned data in memory and drops it when the person, kitchen or account changes. */
 (function () {
   'use strict';
-  var API = 1, SDK = 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-lite.js', READ_MS = 8000, SAVE_MS = 20000;
+  var API = 2, SDK = 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-lite.js', READ_MS = 8000, SAVE_MS = 20000;
   function copy(v) { return v == null ? v : JSON.parse(JSON.stringify(v)); }
   function error(code, message, extra) { var e = new Error(message); e.code = code; if (extra) Object.keys(extra).forEach(function (k) { e[k] = extra[k]; }); return e; }
   function idOk(v, n) { return typeof v === 'string' && new RegExp('^[a-z0-9][a-z0-9_-]{0,' + ((n || 80) - 1) + '}$', 'i').test(v); }
@@ -154,7 +154,7 @@
     }
     function linesFor(items, lines) {
       if (!Array.isArray(lines) || !lines.length || lines.length > 300) throw error('invalid', 'Enter between 1 and 300 item quantities.');
-      var used = new Set(), ix = new Map(items.map(function (i) { return [i.id, i]; })), quantities = Object.create(null), stocks = Object.create(null), suggestions = Object.create(null);
+      var used = new Set(), ix = new Map(items.map(function (i) { return [i.id, i]; })), quantities = Object.create(null), stocks = Object.create(null), suggestions = Object.create(null), units = { qty: Object.create(null), stock: Object.create(null) };
       lines.forEach(function (l) {
         var i = ix.get(l.itemId);
         if (!i || i.archived || used.has(i.id)) throw error('invalid', 'An ordered item is missing, repeated or archived. Refresh the catalogue.');
@@ -162,8 +162,10 @@
         var q = core().parseQuantity(l.qty);
         if (!q || q.amount !== l.amount || q.unit !== l.unit) throw error('invalid', 'Every ordered item needs a positive quantity and its unit.');
         quantities[i.id] = l.qty; stocks[i.id] = l.stock || ''; suggestions[i.id] = l.suggestion || '';
+        // Review has already resolved each field's unit. Never apply a different catalogue default at save time.
+        units.qty[i.id] = q.unit; units.stock[i.id] = '';
       });
-      return core().snapshotLines(items, quantities, stocks, suggestions);
+      return core().snapshotLines(items, quantities, stocks, suggestions, units);
     }
     function sameOrder(prior, lines, occ, delivery) {
       if (!Array.isArray(lines) || prior.cutoffDay !== (occ ? occ.day : '') || prior.cutoffId !== (occ ? occ.cutoffId : '') || prior.deliveryDay !== delivery) return false;

@@ -59,6 +59,7 @@ function pagedFixture() {
   await p.fill(qty('t-stock'), '2');
   ok(!(await fieldState(p, qty('t-stock'))).invalid, 'correcting a quantity clears its field error without needing a full page redraw');
   await p.fill(qty('t-case'), '2 kg');
+  ok(/Order unit: kg/.test(await p.textContent('[data-item="t-case"] .su-qty')), 'an explicit unit updates the field hint immediately');
   await p.click('[data-item="t-unset"] .su-item > summary'); await p.fill(stock('t-unset'), 'not counted');
   await action(p, 'review'); await reviewed(p);
   ok(!(await p.$('[role="alert"]')), 'confirmed numeric quantities review successfully and unused stock does not block another item');
@@ -88,7 +89,7 @@ function pagedFixture() {
   await action(p, 'review'); await reviewed(p);
   ok(/2 \(unit not set\)/.test(await p.textContent('.su-review')), 'review distinguishes a number without a unit from a confirmed physical quantity');
   saved = await record(p);
-  ok(saved.lines.some(line => line.itemId === 't-zero' && line.qty === '2 unspecified' && line.amount === 2 && line.unit === 'unspecified'), 'a bare number records safely without guessing pieces, packs or kilograms');
+  ok(saved.lines.some(line => line.itemId === 't-zero' && line.qty === '2' && line.amount === 2 && line.unit === ''), 'a bare number records safely without guessing pieces, packs or kilograms');
   ok(saved.lines.some(line => line.itemId === 't-unset' && line.qty === '2 bags' && line.unit === 'bags'), 'explicit units remain available for an otherwise unconfirmed item');
   ok(!(await L.overflow(p)), 'phone validation and recording fit without sideways scroll');
   ok(p.errors.length === 0, 'optional-unit quantity journey: no page errors ' + p.errors.join(' | '));
