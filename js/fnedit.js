@@ -193,10 +193,10 @@
     var busy = E.removing[f.id] || FN.statusBusy(f.id), restore = !!f.removed, confirm = armed('remove:' + f.id);
     return '<button type="button" class="linkish" data-fe="' + (restore ? 'restore-row' : form ? 'remove' : 'remove-row') + '" data-id="' + esc(f.id) + '"' +
       (busy ? ' disabled' : '') + ' aria-label="' + esc((restore ? 'Restore ' : confirm ? 'Tap again to delete ' : 'Delete ') + f.name) + '">' +
-      (busy ? 'Saving...' : restore ? 'Restore function' : confirm ? 'Tap again to delete function' : 'Delete function') + '</button>';
+      (busy ? 'Saving...' : restore ? (form ? 'Restore function' : 'Restore') : confirm ? 'Tap again to delete function' : form ? 'Delete function' : 'Delete') + '</button>';
   }
   function rowActions(f) {
-    var actions = (f.removed ? '' : FN.statusHTML(f, 'fe')) + removeHTML(f);
+    var actions = (f.removed ? '' : FN.statusHTML(f, 'fe', true)) + removeHTML(f);
     return actions ? '<div class="fn-card-actions">' + actions + '</div>' : '';
   }
   // One server read only on Delete/Restore. Preserve the saved record and contacts, never form edits.
