@@ -3,7 +3,7 @@ const L = require('./lib');
 const F = require('./supplier-fixtures');
 const { R, ok } = L.results();
 const supplierUrls = p => p.urls.filter(url => /\/js\/(suppliers|supplier-core)\.js(?:\?|$)/.test(url));
-const revision = (p, file) => supplierUrls(p).filter(url => new URL(url).pathname.endsWith('/js/' + file)).every(url => new URL(url).searchParams.get('v') === (file === 'suppliers.js' ? '5' : '2'));
+const revision = (p, file) => supplierUrls(p).filter(url => new URL(url).pathname.endsWith('/js/' + file)).every(url => new URL(url).searchParams.get('v') === (file === 'suppliers.js' ? '6' : '3'));
 const staleCore = () => { window.LK_SUP_CORE = { API: 1 }; };
 
 (async () => {
@@ -12,7 +12,7 @@ const staleCore = () => { window.LK_SUP_CORE = { API: 1 }; };
   await L.waitFor(p, () => !!document.querySelector('input[data-sf="qty"]'), null, 15000);
   ok(supplierUrls(p).some(url => new URL(url).pathname.endsWith('/js/suppliers.js')) && revision(p, 'suppliers.js'), 'supplier page requests the revised workspace address');
   ok(supplierUrls(p).some(url => new URL(url).pathname.endsWith('/js/supplier-core.js')) && revision(p, 'supplier-core.js'), 'supplier page replaces an older core through the revised address');
-  ok(await p.evaluate(() => window.LK_SUP.api === 5 && window.LK_SUP_CORE.API === 2), 'supplier page mounts only the matching workspace and core revision');
+  ok(await p.evaluate(() => window.LK_SUP.api === 6 && window.LK_SUP_CORE.API === 3), 'supplier page mounts only the matching workspace and core revision');
   ok(p.errors.length === 0, 'revised supplier page has no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -22,7 +22,7 @@ const staleCore = () => { window.LK_SUP_CORE = { API: 1 }; };
   ok(!supplierUrls(p).length, 'supplier code stays lazy before the detailed order-list action');
   await p.click('.cut-tl [data-p="cut-tick"][data-id^="northside|"]');
   await L.waitFor(p, () => !!document.querySelector('input[data-sf="qty"]'), null, 15000);
-  ok(revision(p, 'supplier-core.js') && await p.evaluate(() => window.LK_SUP_CORE.API === 2), 'reminder entry replaces an old core with the current revision');
+  ok(revision(p, 'supplier-core.js') && await p.evaluate(() => window.LK_SUP_CORE.API === 3), 'reminder entry replaces an old core with the current revision');
   ok(await p.evaluate(({ day, key }) => location.hash === '#/suppliers/cutoff/northside/' + day && !window.__fake.dump()[key], { day: F.today, key: F.key(['cutdone', F.today + '_northside']) }), 'revised reminder entry opens the linked sheet without recording an order');
   ok(p.errors.length === 0, 'revised reminder entry has no page errors ' + p.errors.join(' | '));
   await p.context().close();
@@ -53,7 +53,7 @@ const staleCore = () => { window.LK_SUP_CORE = { API: 1 }; };
   await p.context().route(/\/js\/supplier-core\.js(?:\?|$)/, route => route.fulfill({ status: 200, contentType: 'text/javascript', body: 'window.LK_SUP_CORE = { API: 1 };' }));
   await p.evaluate(() => { location.hash = '#/suppliers/northside'; });
   await L.waitFor(p, () => /need an update/i.test(document.querySelector('#supplier-root')?.textContent || ''), null, 10000);
-  ok(await p.evaluate(() => window.LK_SUP.api === 5 && window.LK_SUP_CORE.API === 1) && /reload the book/i.test(await p.textContent('#supplier-root')), 'current workspace explains how to update after an old core response is delivered');
+  ok(await p.evaluate(() => window.LK_SUP.api === 6 && window.LK_SUP_CORE.API === 1) && /reload the book/i.test(await p.textContent('#supplier-root')), 'current workspace explains how to update after an old core response is delivered');
   ok(!(await p.$('input[data-sf="qty"]')), 'an old delivered core cannot produce a partial order sheet');
   ok(await p.evaluate(() => !(window.__fake.reads || []).some(path => /\/suppliers(?:\/|$)/.test(path))), 'an old delivered core is rejected before any private catalogue read');
   ok(p.errors.length === 0, 'old delivered core rejection has no page errors ' + p.errors.join(' | '));

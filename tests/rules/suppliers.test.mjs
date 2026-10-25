@@ -7,6 +7,7 @@ import * as lite from 'firebase/firestore/lite';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import supplierCore from '../../js/supplier-core.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PIN = '000000', OWNER = 'headchef@test.local', K = 'kitchens/' + PIN + '/';
@@ -106,6 +107,14 @@ for (const [patch, label] of [
 await ok(setDoc(doc(sous, K + 'suppliers/' + SID + '/orders/unlinked-sous'), order({ v: 2 })), true, 'sous records order without a configured reminder occurrence');
 await ok(setDoc(doc(head, K + 'suppliers/' + SID + '/orders/unlinked-head'), order({ v: 2, by: 'head' })), true, 'head records order without a reminder');
 await ok(setDoc(doc(staff, K + 'suppliers/' + SID + '/orders/forged'), order({ v: 2, by: 'sous' })), false, 'staff cannot save as sous chef');
+const unqualifiedLines = supplierCore.snapshotLines([{ ...item, orderUnit: '' }], { [item.id]: '1,5' }, { [item.id]: '0' });
+await ok(setDoc(doc(sous, K + 'suppliers/' + SID + '/orders/number-only'), order({ v: 2, at: 68, lines: unqualifiedLines })), true, 'number-only order and stock save under the existing rules');
+await ok(setDoc(doc(staff, K + 'suppliers/' + SID + '/orders/number-only-staff'), order({ v: 2, by: 'staff', lines: unqualifiedLines })), false, 'number-only quantities do not grant staff supplier writes');
+await ok(Promise.resolve().then(async () => {
+  const row = (await snap(sous, 'suppliers/' + SID + '/orders/number-only')).data().lines[0];
+  if (row.amount !== 1.5 || row.unit !== 'unspecified' || row.qty !== '1.5 unspecified' || row.stock !== '0 unspecified') throw Error('Unqualified snapshot changed');
+}), true, 'unqualified quantities round trip without gaining a physical unit');
+await ok(updateDoc(doc(sous, K + 'suppliers/' + SID + '/orders/number-only'), { lines: [line({ qty: '1.5 kg', amount: 1.5, unit: 'kg' })] }), false, 'saved number-only quantities cannot be relabelled later');
 await ok(setDoc(doc(sous, K + 'suppliers/' + SID + '/orders/stale-catalogue'), order({ v: 1 })), false, 'order from stale catalogue revision refused');
 await ok(setDoc(doc(sous, K + 'suppliers/' + SID + '/orders/renamed'), order({ v: 2, supplierName: 'Different vendor' })), false, 'order supplier name must match current catalogue');
 await ok(linked(sous, 'missing-link', { v: 2 }, { noLink: true }), false, 'linked order without occurrence ledger refused');

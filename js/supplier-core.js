@@ -5,7 +5,7 @@
   else root.LK_SUP_CORE = make(root.LK_AMT);
 })(typeof window === 'object' ? window : this, function (A) {
   'use strict';
-  var MAX_ITEMS = 600, MAX_ORDER_LINES = 300, MAX_AMOUNT = 100000;
+  var MAX_ITEMS = 600, MAX_ORDER_LINES = 300, MAX_AMOUNT = 100000, UNSPECIFIED = 'unspecified';
   var own = function (o, k) { return Object.prototype.hasOwnProperty.call(o, k); };
   var EXTRA_UNITS = { ctn: 'cartons', ctns: 'cartons', roll: 'rolls', rolls: 'rolls', sleeve: 'sleeves', sleeves: 'sleeves', punnet: 'punnets', punnets: 'punnets', drum: 'drums', drums: 'drums', sheet: 'sheets', sheets: 'sheets', set: 'sets', sets: 'sets', unit: 'pieces', units: 'pieces' };
   var FRACTIONAL_UNITS = ['g', 'kg', 'ml', 'L'];
@@ -52,12 +52,20 @@
     if (!A || typeof v !== 'string') return null;
     var raw = v.trim(), parsed = A.parse(raw), unit = parsed && parsed.u, amount = parsed && parsed.n;
     if (!raw || raw.length > 40) return null;
-    // A bare count may use the unit the chef already confirmed for this field. Never infer one from the pack or name.
+    // A bare count uses a confirmed unit when available. Otherwise keep it explicitly unqualified. The literal
+    // marker keeps saved history readable by older clients; it never means pieces, a pack size or a conversion.
     var confirmed = normaliseUnit(confirmedUnit);
-    if (confirmed && /^[\d\s.,/½¼¾⅓⅔]+$/.test(raw) && ((parsed && !unit) || /^0+(?:[.,]0+)?$/.test(raw))) {
-      raw += ' ' + confirmed;
+    if (/^[\d\s.,/½¼¾⅓⅔]+$/.test(raw) && ((parsed && !unit) || /^0+(?:[.,]0+)?$/.test(raw))) {
+      if (confirmedUnit && !confirmed) return null;
+      if (!confirmed || confirmed === UNSPECIFIED) {
+        amount = parsed ? parsed.n : 0; unit = UNSPECIFIED;
+        // Decimal text also lets older custom-unit readers load fractional number-only entries.
+        raw = String(amount) + ' ' + unit; parsed = { n: amount, u: unit };
+      } else {
+        raw += ' ' + confirmed;
+        parsed = A.parse(raw); unit = parsed && parsed.u; amount = parsed && parsed.n;
+      }
       if (raw.length > 40) return null;
-      parsed = A.parse(raw); unit = parsed && parsed.u; amount = parsed && parsed.n;
     }
     if (!parsed || !unit) {
       // A custom unit still requires one unambiguous decimal amount. The book reads the number.
@@ -78,11 +86,11 @@
     if (v == null || v === '') return '';
     var n = normaliseUnit(text(v, 40, field, false));
     if (!n) fail('unit', field, 'Use a short unit name with letters, spaces or hyphens.');
-    return n;
+    return n === UNSPECIFIED ? '' : n;
   }
   function convert(amount, from, to) {
     from = normaliseUnit(from); to = normaliseUnit(to);
-    if (!from || !to || !isFinite(amount)) return null;
+    if (!from || !to || from === UNSPECIFIED || to === UNSPECIFIED || !isFinite(amount)) return null;
     if (from === to) return amount;
     var mass = { g: 1, kg: 1000 }, volume = { ml: 1, L: 1000 };
     if (own(mass, from) && own(mass, to)) return amount * mass[from] / mass[to];
@@ -181,10 +189,10 @@
       if (raw == null || (typeof raw === 'string' && !raw.trim())) return;
       if (item.archived) fail('archived', item.id, 'An archived item cannot be ordered.');
       var q = parseQuantity(raw, item.orderUnit);
-      if (!q) fail('quantity', item.id, 'To order for ' + item.name + ': enter a positive quantity' + (item.orderUnit ? ' in ' + item.orderUnit + ', or type the quantity and unit.' : ' with its unit, e.g. 2 kg or 2 cartons.'));
+      if (!q) fail('quantity', item.id, 'To order for ' + item.name + ': enter a positive quantity' + (item.orderUnit ? ' in ' + item.orderUnit + ', or type the quantity and unit.' : ', e.g. 2 or 2 kg.'));
       var stock = stockMap && own(stockMap, item.id) ? stockMap[item.id] : '';
       var counted = stock ? parseStock(stock, item.parUnit) : null;
-      if (stock && !counted) fail('stock', item.id, 'Stock count for ' + item.name + ': enter zero or more' + (item.parUnit ? ' in ' + item.parUnit + ', or type the count and unit.' : ' with its unit, e.g. 0 kg or 2 cartons.'));
+      if (stock && !counted) fail('stock', item.id, 'Stock count for ' + item.name + ': enter zero or more' + (item.parUnit ? ' in ' + item.parUnit + ', or type the count and unit.' : ', e.g. 0 or 2 kg.'));
       var suggestion = suggestions && own(suggestions, item.id) ? suggestions[item.id] : null;
       if (suggestion && typeof suggestion !== 'string') suggestion = suggestion.reason;
       lines.push({ itemId: item.id, name: item.name, pack: item.pack, qty: q.qty, amount: q.amount, unit: q.unit, par: item.par, parUnit: item.parUnit, source: copy(item.source), suggestion: text(suggestion, 500, 'suggestion'), stock: text(counted ? counted.qty : stock, 40, 'stock') });
@@ -227,5 +235,5 @@
     if (!old && !changes.length) changes.push({ itemId: '', action: 'add_supplier', before: null, after: { name: next.name, cutoffId: next.cutoffId } });
     return changes;
   }
-  return { API: 2, MAX_ITEMS: MAX_ITEMS, MAX_ORDER_LINES: MAX_ORDER_LINES, cleanPar: cleanPar, normaliseUnit: normaliseUnit, parseQuantity: parseQuantity, parseStock: parseStock, convert: convert, cleanItem: cleanItem, cleanSupplier: cleanSupplier, validateCatalogue: validateCatalogue, normaliseName: normaliseName, duplicateItems: duplicateItems, matchRequests: matchRequests, snapshotLines: snapshotLines, suggestQuantity: suggestQuantity, catalogueDiff: catalogueDiff };
+  return { API: 3, UNSPECIFIED: UNSPECIFIED, MAX_ITEMS: MAX_ITEMS, MAX_ORDER_LINES: MAX_ORDER_LINES, cleanPar: cleanPar, normaliseUnit: normaliseUnit, parseQuantity: parseQuantity, parseStock: parseStock, convert: convert, cleanItem: cleanItem, cleanSupplier: cleanSupplier, validateCatalogue: validateCatalogue, normaliseName: normaliseName, duplicateItems: duplicateItems, matchRequests: matchRequests, snapshotLines: snapshotLines, suggestQuantity: suggestQuantity, catalogueDiff: catalogueDiff };
 });
