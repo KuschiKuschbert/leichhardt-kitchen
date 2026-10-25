@@ -177,7 +177,8 @@ const configWrites = p => p.evaluate(() => __fake.writes.flat().filter(w => /\/c
     scrollTo(0, 0);
   });
   await L.settle(p, 400);
-  ok(await p.evaluate(() => scrollY === 0 && document.querySelector('.fn-strip').hidden), 'delayed history restoration cannot overwrite a scroll made immediately after closing');
+  const delayedState = await p.evaluate(() => ({ y: scrollY, hidden: document.querySelector('.fn-strip').hidden }));
+  ok(delayedState.y === 0 && delayedState.hidden, 'delayed history restoration cannot overwrite a scroll made immediately after closing ' + JSON.stringify(delayedState));
   noErrors(p, 'delayed function sheet close'); await p.context().close();
 
   p = await L.open(b, '#/recipes', { wait: 1500 });

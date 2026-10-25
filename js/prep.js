@@ -6628,10 +6628,11 @@
     clearTimeout(ovBackT); var w = ovBack, after = ovAfter.splice(0), pos = ovScroll || { x: window.scrollX, y: window.scrollY }, x = pos.x, y = pos.y, url = location.href; ovBack = false; ovScroll = null;
     // Our close stays on this page. Keep the latest scroll, including a scroll made just after Close; the browser
     // otherwise restores the position from when the sheet opened. Native Back keeps its normal restoration.
-    if (w || after.length) setTimeout(function () {
+    // A zero-delay timer can run before Chromium applies persisted history scroll. Wait through that frame first.
+    if (w || after.length) requestAnimationFrame(function () { requestAnimationFrame(function () {
       if (w && location.href === url) window.scrollTo(x, y);
       after.forEach(function (fn) { fn(); });
-    }, 0);
+    }); });
     if (w && nextWait) sheetNext();
   }
   window.addEventListener('popstate', function () {
