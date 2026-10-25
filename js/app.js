@@ -12,6 +12,25 @@
 (function () {
   'use strict';
 
+  // Touch browsers can defer :active until release; keep navigation feedback visible during the actual press.
+  var navPress = null;
+  function navRelease() { if (navPress) navPress.classList.remove('is-pressed'); navPress = null; }
+  document.addEventListener('pointerdown', function (e) {
+    if (!e.isPrimary || e.button !== 0) return;
+    navRelease();
+    var el = e.target.closest && e.target.closest('.wtop-btn, .pnav a, .tabbar a');
+    if (el && !el.matches(':disabled, [aria-disabled="true"]')) { navPress = el; el.classList.add('is-pressed'); }
+  }, { passive: true });
+  document.addEventListener('pointermove', function (e) {
+    if (!navPress || !e.isPrimary) return;
+    var r = navPress.getBoundingClientRect();
+    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) navRelease();
+  }, { passive: true });
+  document.addEventListener('pointerup', navRelease, { passive: true });
+  document.addEventListener('pointercancel', navRelease, { passive: true });
+  window.addEventListener('blur', navRelease);
+  document.addEventListener('visibilitychange', navRelease);
+
   var D = window.LK_DATA;
   var ART = window.LK_ART;
   var app = document.getElementById('app');

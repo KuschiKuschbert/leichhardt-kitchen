@@ -197,7 +197,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .welcome h2:focus, .settings h2:focus { outline: none; }
 .views { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1rem; }
 .view-opt { display: flex; flex-direction: column; gap: 0.6rem; padding: 1rem; text-align: left; background: var(--paper); border: 2px solid var(--edge); border-radius: 14px; cursor: pointer; }
-.view-opt:hover { border-color: var(--ink); }
+@media (hover: hover) and (pointer: fine) { .view-opt:hover { border-color: var(--ink); } }
 .view-opt[aria-checked="true"] { border-color: var(--ink); box-shadow: 0 0 0 3px var(--accent); }
 .view-opt .vo-name { font-family: var(--display); font-weight: 700; font-size: 1.5rem; line-height: 1; }
 .view-opt .vo-desc { font-size: 0.9375rem; color: var(--muted); }
@@ -220,7 +220,9 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
    Save, Sign, Add, Log it and the other main buttons are the same orange as the docket Open buttons. */
 .btn.dark, .nb-addbtn { background: var(--accent-ink); border-color: var(--accent-ink); color: #fff; }
 .nb-addbtn:focus-visible { outline-color: var(--ink); }
-.btn.dark:hover, .nb-addbtn:hover { background: var(--ink); border-color: var(--ink); }
+@media (hover: hover) and (pointer: fine) {
+  .btn.dark:not(:disabled):hover, .nb-addbtn:not(:disabled):hover { background: var(--ink); border-color: var(--ink); }
+}
 .btn.dark[disabled], .nb-addbtn[disabled] { background: #b9b3a8; border-color: #b9b3a8; }
 .btn-row { display: flex; flex-wrap: wrap; gap: 0.6rem; }
 .saved { font-size: 0.875rem; color: var(--muted); }
@@ -1474,7 +1476,7 @@ html.gz-open, html.gz-open body { overflow: hidden; }
 /* one line per item, 48 px like .btn (22 Oct 2026); the few with a second line (My section, Sign in with Google, Sign
    out's "Not saved yet") keep the same height */
 .wm-a { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 6px 10px; border-radius: 8px; color: var(--ink); text-decoration: none; }
-.wm-a:hover, .wm-a:focus-visible { background: var(--hit); }
+.wm-a:focus-visible { background: var(--hit); }
 .wm-a span { display: flex; flex-direction: column; line-height: 1.25; }
 .wm-a small { color: var(--muted); font-size: 0.8125rem; }
 .wm-a small.wm-due { color: var(--accent-ink); font-weight: 700; }
@@ -1664,15 +1666,62 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd 
   .wm { background: var(--paper); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 
-/* Tap feedback (21 Oct 2026): buttons, links and folds give way a little the moment a finger is on them, so a tap feels
-   answered before the next page is drawn. It uses scale, not transform, so pins and other parts placed with a transform
-   stay put, and :where() keeps it weaker than any rule of a part's own. Links inside a line of text are left as they
-   are. The chef mark has its own flip animation. With reduced motion, a press fades a little instead. */
-:where(button:not(:disabled):not(.wtop-who), a[href], summary) { transition: scale 0.08s ease-out; }
-:where(button:not(:disabled):not(.wtop-who), a[href], summary):active { scale: 0.97; }
+/* Warm, tactile controls (25 Oct 2026): a quick press, then a softer release. Independent scale and translate keep
+   positioned pins and the chef's sign-in flip intact. Low specificity leaves each control's own states in charge. */
+:where(button:not(:disabled), a[href], summary):not([aria-disabled="true"]) { transition: scale 0.18s ease-out, box-shadow 0.18s ease-out; }
+:where(button:not(:disabled), a[href], summary):not([aria-disabled="true"]):active { scale: 0.97; transition-duration: 0.07s; }
+:where(.btn, .nb-addbtn, .nb-btn, .chip, .nb-tab):not(:disabled):not([aria-disabled="true"]) {
+  transition: scale 0.18s ease-out, translate 0.18s ease-out, box-shadow 0.18s ease-out, background-color 0.18s ease-out, border-color 0.18s ease-out;
+}
+/* Menu rows and joined switches stay in place; their tint works over both selected and unselected colours. */
+:where(.wm-a, .a-tab, .seg-b, .vsw button, .p-x, .nb-x, summary):not(:disabled):not([aria-disabled="true"]) {
+  transition: scale 0.18s ease-out, box-shadow 0.18s ease-out;
+}
+:where(.wtop-btn, .pnav a, .tabbar a):not(:disabled):not([aria-disabled="true"]) {
+  scale: none;
+  transition: box-shadow 0.18s ease-out;
+}
+:where(.wtop-btn, .tabbar a) > svg { transform-origin: 50% 65%; transition: rotate 0.18s ease-out, scale 0.18s ease-out; }
+.wm-a > svg { transition: translate 0.18s ease-out; }
+@media (hover: hover) and (pointer: fine) {
+  :where(button:not(:disabled):not(.pin):not(.view-opt):not(.mg-pin)):not([aria-disabled="true"]):hover {
+    box-shadow: inset 0 0 0 100vmax rgb(226 96 42 / 0.07);
+  }
+  :where(.btn, .nb-addbtn, .nb-btn, .chip, .nb-tab):not(:disabled):not([aria-disabled="true"]):hover {
+    translate: 0 -1px;
+    box-shadow: inset 0 0 0 100vmax rgb(226 96 42 / 0.07), 0 3px 0 rgb(28 29 31 / 0.12);
+  }
+  :where(.wm-a, .a-tab, .seg-b, .vsw button, .p-x, .nb-x, summary):not(:disabled):not([aria-disabled="true"]):hover {
+    box-shadow: inset 0 0 0 100vmax rgb(226 96 42 / 0.09);
+  }
+  :where(.wtop-btn, .pnav a, .tabbar a):not(:disabled):not([aria-disabled="true"]):hover {
+    box-shadow: inset 0 0 0 100vmax rgb(240 138 75 / 0.16);
+  }
+  :where(.wtop-btn, .tabbar a):not(:disabled):not([aria-disabled="true"]):hover > svg { rotate: -8deg; }
+  .wm-a:not(:disabled):not([aria-disabled="true"]):hover > svg { translate: 2px 0; }
+}
+:where(.btn, .nb-addbtn, .nb-btn, .chip, .nb-tab):not(:disabled):not([aria-disabled="true"]):active {
+  translate: 0 1px;
+  box-shadow: inset 0 0 0 100vmax rgb(226 96 42 / 0.12);
+  transition-duration: 0.07s;
+}
+:where(.wm-a, .a-tab, .seg-b, .vsw button, .p-x, .nb-x, summary):not(:disabled):not([aria-disabled="true"]):active {
+  box-shadow: inset 0 0 0 100vmax rgb(226 96 42 / 0.15);
+}
+:where(.wtop-btn, .pnav a, .tabbar a):not(:disabled):not([aria-disabled="true"]):is(:active, .is-pressed) {
+  scale: none;
+  box-shadow: inset 0 0 0 100vmax rgb(240 138 75 / 0.25);
+}
+:where(.wtop-btn, .tabbar a):not(:disabled):not([aria-disabled="true"]):is(:active, .is-pressed) > svg { rotate: -12deg; scale: 0.94; transition-duration: 0.07s; }
+.wm-a:focus-visible > svg { translate: 2px 0; }
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes menu-in { from { opacity: 0; translate: 0 -4px; } to { opacity: 1; translate: 0 0; } }
+  .wm { animation: menu-in 0.14s ease-out; }
+}
 @media (prefers-reduced-motion: reduce) {
-  :where(button:not(:disabled):not(.wtop-who), a[href], summary) { transition: none; }
-  :where(button:not(:disabled):not(.wtop-who), a[href], summary):active { scale: none; opacity: 0.75; }
+  :where(button:not(:disabled), a[href], summary):not([aria-disabled="true"]) { scale: none !important; translate: none !important; }
+  :where(button:not(:disabled), a[href], summary):not([aria-disabled="true"]):active { opacity: 0.75; }
+  :where(.wtop-btn, .tabbar a, .wm-a) > svg { rotate: none !important; scale: none !important; translate: none !important; }
 }
 
 /* Manage Recipes & Drawings (#/manage, js/manage.js, 21 Oct 2026): the head chef's recipe list and recipe form. Classes
