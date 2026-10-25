@@ -63,6 +63,10 @@
       var count = Number(raw.replace(',', '.'));
       return isFinite(count) && count >= (zero ? 0 : 0.000001) && count < MAX_AMOUNT ? { qty: raw, amount: count, unit: '' } : null;
     }
+    // Canonical decimals keep a number-only fraction readable by the previous client too.
+    if (!confirmed && parsed && !unit && /^[\d\s/½¼¾⅓⅔]+$/.test(raw)) {
+      return amount >= (zero ? 0 : 0.000001) && amount < MAX_AMOUNT ? { qty: String(amount), amount: amount, unit: '' } : null;
+    }
     if (!parsed || !unit) {
       // A custom unit still requires one unambiguous decimal amount. The book reads the number.
       var m = raw.match(/^(\d+(?:[.,]\d+)?)\s*([a-z]+(?:[ -][a-z]+)*)\.?$/i);
@@ -175,8 +179,9 @@
     });
     return { matches: Object.keys(matches).map(function (key) { return matches[key]; }), unmatched: unmatched };
   }
-  function snapshotLines(items, qtyMap, stockMap, suggestions) {
+  function snapshotLines(items, qtyMap, stockMap, suggestions, units) {
     var lines = [], seen = Object.create(null), map = qtyMap || {};
+    function fieldUnit(field, item) { return units && units[field] && own(units[field], item.id) ? units[field][item.id] : field === 'qty' ? item.orderUnit : item.parUnit; }
     (items || []).forEach(function (value) {
       var item = cleanItem(value);
       if (own(seen, item.id)) fail('duplicate', item.id, 'Each ordered item needs its own ID.');
@@ -184,10 +189,10 @@
       var raw = own(map, item.id) ? map[item.id] : '';
       if (raw == null || (typeof raw === 'string' && !raw.trim())) return;
       if (item.archived) fail('archived', item.id, 'An archived item cannot be ordered.');
-      var q = parseQuantity(raw, item.orderUnit);
+      var q = parseQuantity(raw, fieldUnit('qty', item));
       if (!q) fail('quantity', item.id, 'To order for ' + item.name + ': enter a positive quantity' + (item.orderUnit ? ' in ' + item.orderUnit + ', or type the quantity and unit.' : ', e.g. 2 or 2 cartons.'));
       var stock = stockMap && own(stockMap, item.id) ? stockMap[item.id] : '';
-      var counted = stock ? parseStock(stock, item.parUnit) : null;
+      var counted = stock ? parseStock(stock, fieldUnit('stock', item)) : null;
       if (stock && !counted) fail('stock', item.id, 'Stock count for ' + item.name + ': enter zero or more' + (item.parUnit ? ' in ' + item.parUnit + ', or type the count and unit.' : ', e.g. 0 or 2 cartons.'));
       var suggestion = suggestions && own(suggestions, item.id) ? suggestions[item.id] : null;
       if (suggestion && typeof suggestion !== 'string') suggestion = suggestion.reason;
@@ -199,11 +204,11 @@
     return lines;
   }
   function say(n, u) { return String(Math.round(n * 1000) / 1000) + ' ' + u; }
-  function suggestQuantity(value, lastOrder, stockText) {
+  function suggestQuantity(value, lastOrder, stockText, stockUnit) {
     var item = cleanItem(value);
     if (item.archived) return null;
     if (stockText != null && String(stockText).trim()) {
-      var stock = parseStock(stockText, item.parUnit), target = cleanPar(item.par), counted = stock && convert(stock.amount, stock.unit, item.parUnit);
+      var stock = parseStock(stockText, typeof stockUnit === 'string' ? stockUnit : item.parUnit), target = cleanPar(item.par), counted = stock && convert(stock.amount, stock.unit, item.parUnit);
       var factor = item.factor > 0 ? item.factor : convert(1, item.orderUnit, item.parUnit);
       if (!stock || target === '' || target === null || counted === null || !(factor > 0) || !item.orderUnit) return null;
       var needed = Math.max(0, Number(target.replace(',', '.')) - counted), amount = needed / factor;
@@ -231,5 +236,5 @@
     if (!old && !changes.length) changes.push({ itemId: '', action: 'add_supplier', before: null, after: { name: next.name, cutoffId: next.cutoffId } });
     return changes;
   }
-  return { API: 3, MAX_ITEMS: MAX_ITEMS, MAX_ORDER_LINES: MAX_ORDER_LINES, cleanPar: cleanPar, normaliseUnit: normaliseUnit, parseQuantity: parseQuantity, parseStock: parseStock, convert: convert, cleanItem: cleanItem, cleanSupplier: cleanSupplier, validateCatalogue: validateCatalogue, normaliseName: normaliseName, duplicateItems: duplicateItems, matchRequests: matchRequests, snapshotLines: snapshotLines, suggestQuantity: suggestQuantity, catalogueDiff: catalogueDiff };
+  return { API: 4, MAX_ITEMS: MAX_ITEMS, MAX_ORDER_LINES: MAX_ORDER_LINES, cleanPar: cleanPar, normaliseUnit: normaliseUnit, parseQuantity: parseQuantity, parseStock: parseStock, convert: convert, cleanItem: cleanItem, cleanSupplier: cleanSupplier, validateCatalogue: validateCatalogue, normaliseName: normaliseName, duplicateItems: duplicateItems, matchRequests: matchRequests, snapshotLines: snapshotLines, suggestQuantity: suggestQuantity, catalogueDiff: catalogueDiff };
 });

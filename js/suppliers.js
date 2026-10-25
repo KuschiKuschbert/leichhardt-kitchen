@@ -3,7 +3,7 @@
    read at most 20 records on a tap. No polling, per-item reads, public goods file or second persistent cache. */
 (function () {
   'use strict';
-  var API = 6, A = window.LK_APP, P = window.LK_PREP, T = window.LK_TIME, esc = A.esc;
+  var API = 7, A = window.LK_APP, P = window.LK_PREP, T = window.LK_TIME, esc = A.esc;
   var C, store, loadingCode = null, contextKey = '', generation = 0;
   var M = blank();
   function blank() {
@@ -30,7 +30,7 @@
   function supplier() { return (M.suppliers || []).filter(function (x) { return x.id === M.sid; })[0] || null; }
   function draft(sid) {
     sid = sid || M.sid;
-    if (!M.drafts[sid]) M.drafts[sid] = { id: uuid('o'), qty: Object.create(null), stock: Object.create(null), suggestions: Object.create(null), dismissed: Object.create(null) };
+    if (!M.drafts[sid]) M.drafts[sid] = { id: uuid('o'), qty: Object.create(null), stock: Object.create(null), units: { qty: Object.create(null), stock: Object.create(null) }, suggestions: Object.create(null), dismissed: Object.create(null) };
     return M.drafts[sid];
   }
   function draftHas(d) { return !!d && [d.qty, d.stock].some(function (o) { return Object.keys(o).some(function (k) { return String(o[k]).trim(); }); }); }
@@ -78,6 +78,13 @@
     if (code === 'invalid') return e.message || 'Check the item names, quantities and units before saving.';
     return 'Could not finish. Check the connection and try again. Your draft is kept.';
   }
+  function fieldUnit(field, i, d) {
+    return Object.prototype.hasOwnProperty.call(d.units[field], i.id) ? d.units[field][i.id] : field === 'qty' ? i.orderUnit : i.parUnit;
+  }
+  function entryUnit(field, i, d) {
+    var unit = fieldUnit(field, i, d), q = field === 'qty' ? C.parseQuantity(d[field][i.id], unit) : C.parseStock(d[field][i.id], unit);
+    return q ? q.unit : unit;
+  }
   function rememberSupplier(s) {
     var at = (M.suppliers || []).findIndex(function (x) { return x.id === s.id; });
     if (at < 0) M.suppliers.push(s); else M.suppliers[at] = s;
@@ -85,12 +92,12 @@
     if (M.drafts[s.id]) M.drafts[s.id].suggestions = Object.create(null);
   }
   function deps() {
-    if (window.LK_SUP_CORE && window.LK_SUP_CORE.API === 3 && window.LK_SUP_STORE && window.LK_SUP_STORE.API === 1) return Promise.resolve();
+    if (window.LK_SUP_CORE && window.LK_SUP_CORE.API === 4 && window.LK_SUP_STORE && window.LK_SUP_STORE.API === 2) return Promise.resolve();
     if (!loadingCode) loadingCode = Promise.all([
-      window.LK_SUP_CORE && window.LK_SUP_CORE.API === 3 ? null : A.load('js/supplier-core.js?v=3'),
-      window.LK_SUP_STORE && window.LK_SUP_STORE.API === 1 ? null : A.load('js/supplier-store.js')
+      window.LK_SUP_CORE && window.LK_SUP_CORE.API === 4 ? null : A.load('js/supplier-core.js?v=4'),
+      window.LK_SUP_STORE && window.LK_SUP_STORE.API === 2 ? null : A.load('js/supplier-store.js?v=2')
     ]).then(function () {
-      if (!window.LK_SUP_CORE || window.LK_SUP_CORE.API !== 3 || !window.LK_SUP_STORE || window.LK_SUP_STORE.API !== 1) throw { code: 'version' };
+      if (!window.LK_SUP_CORE || window.LK_SUP_CORE.API !== 4 || !window.LK_SUP_STORE || window.LK_SUP_STORE.API !== 2) throw { code: 'version' };
     }).catch(function (e) { loadingCode = null; throw e; });
     return loadingCode;
   }
@@ -199,17 +206,19 @@
     draw();
     if (M.validation) { var el = entryInput(M.validation.field, M.validation.id); if (el) { el.scrollIntoView({ block: 'center' }); el.focus({ preventScroll: true }); } }
   }
+  function quantityText(q) { return !q.unit ? q.amount + ' (unit not set)' : q.qty; }
+  function orderUnitHint(i, d) { var unit = entryUnit('qty', i, d); return unit ? 'Order unit: ' + unit : String(d.qty[i.id] || '').trim() ? 'Unit not set' : 'Unit optional'; }
   function rowHTML(i) {
     var d = draft(), l = lastLine(i.id), h = hist(), source = i.source || {}, match = matchInfo().matches.filter(function (m) { return m.itemId === i.id; })[0];
-    return '<div class="su-row" data-item="' + esc(i.id) + '"><details class="su-item"' + (M.openItems[i.id] ? ' open' : '') + '><summary><b>' + esc(i.name) + '</b><span class="hint">Pack: ' + esc(i.pack || 'Not set') + ' · Details</span>' + (match ? '<span class="su-request">Staff request to check</span>' : '') + '</summary><div class="su-item-more"><dl><dt>Source</dt><dd>' + (i.manual ? 'Added manually' : esc(source.file) + ' · page ' + esc(source.page)) + '</dd><dt>Original PDF par</dt><dd>' + esc(i.manual ? 'Not applicable' : source.par === '' ? 'Not set' : source.par) + '</dd><dt>Par unit</dt><dd>' + esc(i.parUnit || 'Unconfirmed') + '</dd><dt>Order unit</dt><dd>' + esc(i.orderUnit || 'Unconfirmed') + '</dd></dl><label class="field"><span class="label">Stock counted for this order' + (i.parUnit ? ' (' + esc(i.parUnit) + ')' : '') + '</span><input class="search" data-sf="stock" data-i="' + esc(i.id) + '" aria-label="Stock count: ' + esc(i.name) + '" placeholder="' + (i.parUnit ? 'e.g. 4' : 'e.g. 4') + '" value="' + esc(d.stock[i.id] || '') + '" maxlength="40"' + validationAttrs('stock', i.id) + '>' + entryError('stock', i) + '</label><p class="hint">Only compatible confirmed units or a verified pack conversion can produce a top-up.</p>' + (match ? '<p class="hint">Matched by the exact item name or an explicit alias. Check the staff order list before deciding the quantity.</p>' : '') + '</div></details><div class="su-par"><span class="su-mobile-label">Par</span><b>' + esc(currentPar(i)) + '</b><small>' + esc(i.parUnit || 'To confirm') + '</small></div><div class="su-last"><span class="su-mobile-label">Last order</span>' + esc(l ? l.qty : !h.rows ? 'Loading' : latest() ? 'Not ordered' : 'No order yet') + '</div><label class="su-qty"><span class="su-mobile-label">To order</span><input class="search" data-sf="qty" data-i="' + esc(i.id) + '" aria-label="To order: ' + esc(i.name) + '" placeholder="' + (i.orderUnit ? 'e.g. 2' : 'e.g. 2') + '" value="' + esc(d.qty[i.id] || '') + '" maxlength="40"' + validationAttrs('qty', i.id) + '><small class="hint">' + esc(i.orderUnit ? 'Order unit: ' + i.orderUnit : 'Number only accepted. Add a unit if needed.') + '</small>' + entryError('qty', i) + '</label></div>';
+    return '<div class="su-row" data-item="' + esc(i.id) + '"><details class="su-item"' + (M.openItems[i.id] ? ' open' : '') + '><summary><b>' + esc(i.name) + '</b><span class="hint">Pack: ' + esc(i.pack || 'Not set') + ' · Details</span>' + (match ? '<span class="su-request">Staff request to check</span>' : '') + '</summary><div class="su-item-more"><dl><dt>Source</dt><dd>' + (i.manual ? 'Added manually' : esc(source.file) + ' · page ' + esc(source.page)) + '</dd><dt>Original PDF par</dt><dd>' + esc(i.manual ? 'Not applicable' : source.par === '' ? 'Not set' : source.par) + '</dd><dt>Par unit</dt><dd>' + esc(i.parUnit || 'Unconfirmed') + '</dd><dt>Order unit</dt><dd>' + esc(i.orderUnit || 'Unconfirmed') + '</dd></dl><label class="field"><span class="label">Stock counted for this order' + (entryUnit('stock', i, d) ? ' (' + esc(entryUnit('stock', i, d)) + ')' : String(d.stock[i.id] || '').trim() ? ' (unit not set)' : '') + '</span><input class="search" data-sf="stock" data-i="' + esc(i.id) + '" aria-label="Stock count: ' + esc(i.name) + '" placeholder="e.g. 4" value="' + esc(d.stock[i.id] || '') + '" maxlength="40"' + validationAttrs('stock', i.id) + '>' + entryError('stock', i) + '</label><p class="hint">Only compatible confirmed units or a verified pack conversion can produce a top-up.</p>' + (match ? '<p class="hint">Matched by the exact item name or an explicit alias. Check the staff order list before deciding the quantity.</p>' : '') + '</div></details><div class="su-par"><span class="su-mobile-label">Par</span><b>' + esc(currentPar(i)) + '</b><small>' + esc(i.parUnit || 'To confirm') + '</small></div><div class="su-last"><span class="su-mobile-label">Last order</span>' + esc(l ? quantityText(l) : !h.rows ? 'Loading' : latest() ? 'Not ordered' : 'No order yet') + '</div><label class="su-qty"><span class="su-mobile-label">To order</span><input class="search" data-sf="qty" data-i="' + esc(i.id) + '" aria-label="To order: ' + esc(i.name) + '" placeholder="e.g. 2" value="' + esc(d.qty[i.id] || '') + '" maxlength="40"' + validationAttrs('qty', i.id) + '><small class="hint">' + esc(orderUnitHint(i, d)) + '</small>' + entryError('qty', i) + '</label></div>';
   }
   function suggestionsHTML() {
-    var d = draft(), suggestions = items().map(function (i) { var p = C.suggestQuantity(i, latest(), d.stock[i.id] || ''); return p ? { item: i, pick: p } : null; }).filter(function (s) { return s && !d.dismissed[s.item.id] && !String(d.qty[s.item.id] || '').trim(); });
+    var d = draft(), suggestions = items().map(function (i) { var p = C.suggestQuantity(i, latest(), d.stock[i.id] || '', fieldUnit('stock', i, d)); return p ? { item: i, pick: p } : null; }).filter(function (s) { return s && !d.dismissed[s.item.id] && !String(d.qty[s.item.id] || '').trim(); });
     var body = '<p class="hint">Suggestions need Apply. Previous quantities are a reference, not a demand forecast.</p>';
     if (M.requestsBusy) body += '<p class="hint">Reading staff requests...</p>';
     if (M.requestsError) body += '<p class="hint">' + esc(M.requestsError) + ' ' + smallButton('requests-retry', 'Try again') + '</p>';
     if (!suggestions.length) body += '<p class="hint">' + (latest() ? 'No further suggestions. Review the quantities you need.' : 'Learning, no recommendation yet. Record an order or enter a stock count with compatible confirmed units.') + '</p>';
-    body += suggestions.slice(0, 12).map(function (s) { return '<div class="su-suggestion"><div><b>' + esc(s.pick.qty) + ' · ' + esc(s.item.name) + '</b><p class="hint">' + esc(s.pick.reason) + '</p></div><div class="btn-row">' + button('apply', 'Apply', ' data-i="' + esc(s.item.id) + '"') + smallButton('dismiss', 'Dismiss', ' data-i="' + esc(s.item.id) + '"') + '</div></div>'; }).join('');
+    body += suggestions.slice(0, 12).map(function (s) { return '<div class="su-suggestion"><div><b>' + esc(quantityText(s.pick)) + ' · ' + esc(s.item.name) + '</b><p class="hint">' + esc(s.pick.reason) + '</p></div><div class="btn-row">' + button('apply', 'Apply', ' data-i="' + esc(s.item.id) + '"') + smallButton('dismiss', 'Dismiss', ' data-i="' + esc(s.item.id) + '"') + '</div></div>'; }).join('');
     var matched = matchInfo();
     if (M.requests) body += '<p class="hint">' + matched.matches.length + ' catalogue items matched to outstanding staff requests. Unmatched requests stay on the staff order list. Nothing is ticked off here.</p>';
     if (hist().full) { var same = (hist().rows || []).filter(function (o) { return T.dow(o.at) === T.dow(epoch()); }); body += '<p class="hint">Loaded history includes ' + same.length + ' previous orders on this weekday. Open their dated sheets to compare quantities.</p>'; }
@@ -226,7 +235,7 @@
     var groups = []; items(M.mode === 'manage').forEach(function (i) { if (i.group && groups.indexOf(i.group) < 0) groups.push(i.group); });
     return '<div class="su-toolbar">' + supplierSelect() + field('q', 'Find an item', M.q, { type: 'search', placeholder: 'Item name or alias', max: 180 }) + (M.mode === 'manage' ? button('add', 'Add item', '', true) : '') + '</div>' + (groups.length > 1 ? '<div class="chips su-groups"><button type="button" class="chip" data-su="group" data-group="" aria-pressed="' + !M.group + '">All items</button>' + groups.map(function (g) { return '<button type="button" class="chip" data-su="group" data-group="' + esc(g) + '" aria-pressed="' + (M.group === g) + '">' + esc(g) + '</button>'; }).join('') + '</div>' : '');
   }
-  function linesHTML(lines) { return '<div class="su-lines">' + lines.map(function (l) { return '<div><span><b>' + esc(l.name) + '</b><small class="hint">Pack: ' + esc(l.pack || 'Not set') + '</small></span><strong>' + esc(l.qty) + '</strong></div>'; }).join('') + '</div>'; }
+  function linesHTML(lines) { return '<div class="su-lines">' + lines.map(function (l) { return '<div><span><b>' + esc(l.name) + '</b><small class="hint">Pack: ' + esc(l.pack || 'Not set') + '</small></span><strong>' + esc(quantityText(l)) + '</strong></div>'; }).join('') + '</div>'; }
   function reviewHTML() {
     var r = M.review;
     return '<section class="su-review"><h2 id="rtitle" tabindex="-1">Review order</h2>' + statusHTML() + '<p>' + esc(r.supplierName) + ' · ' + r.lines.length + ' items</p>' + linesHTML(r.lines) + '<p>Record this only after you have placed the supplier order. This page sends nothing to the supplier.</p>' + (r.occurrence ? '<p class="hint">' + (r.additional ? 'Additional order for ' : 'Completes only ') + esc(r.occurrence.label || r.occurrence.day) + '.</p>' : '<p class="hint">No reminder linked. This records the supplier history only.</p>') + '<div class="btn-row">' + button('record', M.saving ? 'Recording...' : r.checking ? 'Checking cut-off...' : r.uncertain ? 'Confirm recording again' : 'Record order placed', M.saving || r.checking || r.recorded ? ' disabled' : '', true) + (r.recorded ? button('new-draft', 'Start new draft', M.saving ? ' disabled' : '') : '') + button('copy-review', 'Copy order text', M.saving ? ' disabled' : '') + '</div></section>';
@@ -246,7 +255,7 @@
     var s = supplier(), list = filterItems(false), last = '', d = draft(); M.page = Math.max(0, Math.min(M.page, Math.ceil(list.length / 20) - 1));
     if (activeTask() === 'review') return reviewHTML();
     var table = list.slice(M.page * 20, M.page * 20 + 20).map(function (i) { var title = i.category !== last ? '<div class="su-category">' + esc(i.category || 'Other items') + '</div>' : ''; last = i.category; return title + rowHTML(i); }).join('');
-    return toolbarHTML() + '<div class="su-supplier-title"><h3 class="h3">' + esc(s.name) + '</h3><span class="hint">' + items().length + ' items</span></div>' + cutoffHTML() + latestHTML() + suggestionsHTML() + '<p class="hint">Current par from the catalogue. Blank is Not set; 0 stays 0. Enter a number when the order unit is shown, or include its unit, e.g. 2 kg or 2 cartons.</p><div class="su-table-head"><span>Item / pack</span><span>Par</span><span>Last order</span><span>To order</span></div>' + (table || '<p class="empty">No items match.</p>') + pager(list) + '<div class="su-order-actions"><span class="hint">' + Object.keys(d.qty).filter(function (k) { return String(d.qty[k]).trim(); }).length + ' items in this supplier draft</span>' + button('review', 'Review order', Object.keys(d.qty).some(function (k) { return String(d.qty[k]).trim(); }) ? '' : ' disabled', true) + '</div>' + historyHTML();
+    return toolbarHTML() + '<div class="su-supplier-title"><h3 class="h3">' + esc(s.name) + '</h3><span class="hint">' + items().length + ' items</span></div>' + cutoffHTML() + latestHTML() + suggestionsHTML() + '<p class="hint">Current par from the catalogue. Blank is Not set; 0 stays 0. Enter a number, or include a unit, e.g. 2 kg. Numbers use the shown order unit; otherwise the quantity is saved without a unit.</p><div class="su-table-head"><span>Item / pack</span><span>Par</span><span>Last order</span><span>To order</span></div>' + (table || '<p class="empty">No items match.</p>') + pager(list) + '<div class="su-order-actions"><span class="hint">' + Object.keys(d.qty).filter(function (k) { return String(d.qty[k]).trim(); }).length + ' items in this supplier draft</span>' + button('review', 'Review order', Object.keys(d.qty).some(function (k) { return String(d.qty[k]).trim(); }) ? '' : ' disabled', true) + '</div>' + historyHTML();
   }
   function sourceHTML(i) { return '<details class="su-source"><summary>Original record</summary><dl><dt>Item name</dt><dd>' + esc(i.manual ? 'Added manually' : i.source.name) + '</dd><dt>PDF par</dt><dd>' + esc(i.manual ? 'Not applicable' : i.source.par === '' ? 'Not set' : i.source.par) + '</dd><dt>Source</dt><dd>' + esc(i.manual ? 'Manual item' : i.source.file + ', page ' + i.source.page) + '</dd></dl></details>'; }
   function unitField(k, label, value) { return '<label class="field"><span class="label">' + label + '</span><input class="search" data-sf="' + k + '" value="' + esc(value || '') + '" list="su-unit-list" maxlength="40" placeholder="Unconfirmed"></label>'; }
@@ -369,7 +378,7 @@
     if (!canRead() || M.saving) return;
     var s = supplier(), d = draft(), lines;
     M.validation = null;
-    try { lines = C.snapshotLines(s.items, d.qty, d.stock, d.suggestions); } catch (e) { reviewError(e); return; }
+    try { lines = C.snapshotLines(s.items, d.qty, d.stock, d.suggestions, d.units); } catch (e) { reviewError(e); return; }
     var o = occurrence(), key = occurrenceKey(o);
     if (o && o.done && M.additional !== key) { M.err = 'An order is already marked for this cut-off. Check history, or choose Additional order before recording another.'; draw(); return; }
     M.err = ''; M.review = { id: d.id, sid: s.id, supplierName: s.name, catalogueV: s.v, lines: lines, occurrence: o, linkV: 0, checking: !!o, additional: !!(o && M.additional === key) }; draw(); focusTask();
@@ -413,17 +422,17 @@
     var next = s.items.map(function (x) { return x.id === id ? Object.assign({}, x, { archived: !restore }) : x; });
     M.saving = true; M.err = ''; M.msg = ''; M.armedLeave = ''; draw(); var g = generation;
     store.saveCatalogue(s.id, s.v, { items: next }, { itemId: id, action: restore ? 'restore' : 'archive' }).then(function (saved) {
-      if (g !== generation) return; rememberSupplier(saved); if (!restore) { var d = draft(); delete d.qty[id]; delete d.stock[id]; delete d.suggestions[id]; } M.ed = null; M.archive = ''; M.saving = false; M.msg = restore ? 'Item restored.' : 'Item archived. Past orders are unchanged.'; draw();
+      if (g !== generation) return; rememberSupplier(saved); if (!restore) { var d = draft(); delete d.qty[id]; delete d.stock[id]; delete d.units.qty[id]; delete d.units.stock[id]; delete d.suggestions[id]; } M.ed = null; M.archive = ''; M.saving = false; M.msg = restore ? 'Item restored.' : 'Item archived. Past orders are unchanged.'; draw();
     }, function (e) { if (g === generation) { M.saving = false; M.err = errorText(e); draw(); } });
   }
   function reuseOrder(id, confirmed) {
     var order = (hist().rows || []).filter(function (o) { return o.id === id; })[0]; if (!order) return;
     if (hasDraft(M.sid) && !confirmed) { M.reuse = id; draw(); return; }
-    var d = draft(); d.qty = Object.create(null); d.stock = Object.create(null); d.suggestions = Object.create(null);
-    order.lines.forEach(function (l) { var i = item(l.itemId); if (i && !i.archived) d.qty[i.id] = l.qty; }); M.reuse = ''; M.msg = 'Previous quantities copied into this draft. Review them before ordering.'; draw();
+    var d = draft(); d.qty = Object.create(null); d.stock = Object.create(null); d.units = { qty: Object.create(null), stock: Object.create(null) }; d.suggestions = Object.create(null);
+    order.lines.forEach(function (l) { var i = item(l.itemId); if (i && !i.archived) { d.qty[i.id] = l.qty; d.units.qty[i.id] = l.unit; } }); M.reuse = ''; M.msg = 'Previous quantities copied into this draft. Review them before ordering.'; draw();
   }
   function copyOrder(lines, name) {
-    var text = name + '\n' + lines.map(function (l) { return l.qty + ' | ' + l.name; }).join('\n');
+    var text = name + '\n' + lines.map(function (l) { return quantityText(l) + ' | ' + l.name; }).join('\n');
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function () { message('Order text copied. Nothing was sent.'); }, function () { copyFallback(text); }); else copyFallback(text);
   }
   function copyFallback(text) { M.msg = 'Copy is unavailable here. Select the order text below.'; draw(); var area = document.createElement('textarea'); area.className = 'search su-copy'; area.readOnly = true; area.value = text; area.setAttribute('aria-label', 'Order text to copy'); if (M.root) { M.root.appendChild(area); area.focus(); area.select(); } }
@@ -483,7 +492,7 @@
     if (cmd === 'order-mode' && leaveForm('order-mode')) orderMode();
     if (cmd === 'smart') { M.smart = !M.smart; draw(); if (M.smart) loadRequests(); }
     if (cmd === 'requests-retry') { M.requests = null; loadRequests(); }
-    if (cmd === 'apply') { var d = draft(), i = item(id), suggestion = i && C.suggestQuantity(i, latest(), d.stock[id] || ''); if (suggestion && !String(d.qty[id] || '').trim()) { d.qty[id] = suggestion.qty; d.suggestions[id] = suggestion; M.review = null; message('Suggestion added. Check its quantity and unit before ordering.'); } }
+    if (cmd === 'apply') { var d = draft(), i = item(id), suggestion = i && C.suggestQuantity(i, latest(), d.stock[id] || '', fieldUnit('stock', i, d)); if (suggestion && !String(d.qty[id] || '').trim()) { d.qty[id] = suggestion.qty; d.units.qty[id] = suggestion.unit; d.suggestions[id] = suggestion; M.review = null; message('Suggestion added. Check its quantity and unit before ordering.'); } }
     if (cmd === 'dismiss') { draft().dismissed[id] = true; draw(); }
     if (cmd === 'additional') { M.additional = occurrenceKey(occurrence()); M.review = null; message('An additional order will keep the same cut-off link. Previous orders stay in history.'); }
     if (cmd === 'new-draft' && M.review && M.review.recorded) { draft().id = uuid('o'); M.additional = occurrenceKey(M.review.occurrence); M.review = null; M.err = ''; message('New draft started. The earlier order stays in history. Review this as an additional order.'); }
@@ -512,7 +521,7 @@
     if (f === 'q') { M.q = el.value; M.page = 0; draw(); return; }
     if (f === 'cutQ') { M.cutQ = el.value; draw(); return; }
     if (f === 'historyQ') { M.historyQ = el.value; draw(); return; } if (f === 'importQ') { M.importQ = el.value; draw(); return; }
-    if (f === 'qty' || f === 'stock') { draft()[f][id] = el.value; if (f === 'qty') delete draft().suggestions[id]; M.review = null; clearEntryError(f, id, el.value); if (M.smart || f === 'stock') draw(); else { var count = M.root.querySelector('.su-order-actions > .hint'); if (count) count.textContent = Object.keys(draft().qty).filter(function (k) { return String(draft().qty[k]).trim(); }).length + ' items in this supplier draft'; var reviewButton = M.root.querySelector('[data-su="review"]'); if (reviewButton) reviewButton.disabled = !Object.keys(draft().qty).some(function (k) { return String(draft().qty[k]).trim(); }); } return; }
+    if (f === 'qty' || f === 'stock') { draft()[f][id] = el.value; var enteredItem = item(id); if (String(el.value).trim() && enteredItem) draft().units[f][id] = f === 'qty' ? enteredItem.orderUnit : enteredItem.parUnit; else delete draft().units[f][id]; if (f === 'qty') delete draft().suggestions[id]; M.review = null; clearEntryError(f, id, el.value); if (M.smart || f === 'stock') draw(); else { var hint = el.closest('.su-qty').querySelector('.hint'); if (hint) hint.textContent = orderUnitHint(item(id), draft()); var count = M.root.querySelector('.su-order-actions > .hint'); if (count) count.textContent = Object.keys(draft().qty).filter(function (k) { return String(draft().qty[k]).trim(); }).length + ' items in this supplier draft'; var reviewButton = M.root.querySelector('[data-su="review"]'); if (reviewButton) reviewButton.disabled = !Object.keys(draft().qty).some(function (k) { return String(draft().qty[k]).trim(); }); } return; }
     if (M.ed && canEdit() && Object.prototype.hasOwnProperty.call(M.ed.value, f)) { disarmLeave(); M.ed.value[f] = f === 'aliases' ? el.value.split(',').map(function (x) { return x.trim(); }).filter(Boolean) : f === 'factor' ? (el.value.trim() === '' ? 0 : Number(el.value)) : el.value; M.ed.more = !!(M.root.querySelector('.su-more') && M.root.querySelector('.su-more').open); }
     if (M.supplierEd && canEdit() && f === 'supplierName') { disarmLeave(); M.supplierEd.value.name = el.value; }
   });

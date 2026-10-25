@@ -1,4 +1,4 @@
-// Review order uses only confirmed catalogue units and shows the exact draft field that needs attention.
+// Review order accepts numbers with optional units and shows the exact draft field that needs attention.
 // Products and quantities here are synthetic. All saves go to the Firebase stand-in.
 const L = require('./lib');
 const F = require('./supplier-fixtures');
@@ -59,6 +59,7 @@ function pagedFixture() {
   await p.fill(qty('t-stock'), '2');
   ok(!(await fieldState(p, qty('t-stock'))).invalid, 'correcting a quantity clears its field error without needing a full page redraw');
   await p.fill(qty('t-case'), '2 kg');
+  ok(/Order unit: kg/.test(await p.textContent('[data-item="t-case"] .su-qty')), 'an explicit unit updates the field hint immediately');
   await p.click('[data-item="t-unset"] .su-item > summary'); await p.fill(stock('t-unset'), 'not counted');
   await action(p, 'review'); await reviewed(p);
   ok(!(await p.$('[role="alert"]')), 'confirmed numeric quantities review successfully and unused stock does not block another item');
@@ -71,14 +72,27 @@ function pagedFixture() {
   ok(p.errors.length === 0, 'confirmed-unit quantity journey: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // A missing catalogue unit never blocks a plain quantity or guesses a pack size.
+  // Unconfirmed order units accept positive numbers, while invalid amounts still identify their exact field.
   p = await open(b, null, 390);
-  await p.fill(qty('t-stock'), '4 kg'); await p.fill(qty('t-zero'), '2');
-  await action(p, 'review'); await reviewed(p); saved = await record(p);
-  ok(saved.lines.some(line => line.itemId === 't-zero' && line.qty === '2' && line.amount === 2 && line.unit === ''), 'unitless quantity reviews and records without inventing a unit');
-  ok(saved.lines.some(line => line.itemId === 't-stock' && line.qty === '4 kg'), 'explicit quantities remain intact beside unitless entries');
-  ok(!(await L.overflow(p)), 'phone numeric entry fits without sideways scroll');
-  ok(p.errors.length === 0, 'unitless entry has no page errors');
+  ok(await p.getAttribute(qty('t-zero'), 'placeholder') === 'e.g. 2' && /Unit optional/.test(await p.textContent('[data-item="t-zero"] .su-qty')), 'unconfirmed unit: the row clearly allows a number without a unit');
+  await p.fill(qty('t-stock'), '4 kg');
+  for (const value of ['0', '-2', 'some']) {
+    await p.fill(qty('t-zero'), value); await action(p, 'review');
+    await L.waitFor(p, selector => document.querySelector(selector)?.getAttribute('aria-invalid') === 'true', qty('t-zero'), 5000);
+    state = await fieldState(p, qty('t-zero'));
+    ok(state.invalid && state.focused && /TEST ZERO PAR ITEM/.test(state.message), 'optional unit: invalid amount ' + value + ' identifies and focuses its own item');
+    ok(await p.inputValue(qty('t-stock')) === '4 kg' && await p.inputValue(qty('t-zero')) === value, 'optional-unit validation preserves every typed quantity');
+    ok(!(await p.$('[data-su="record"]')) && newOrders(await dump(p)).length === 0, 'invalid optional-unit quantity never reaches recording');
+  }
+  await p.fill(qty('t-zero'), '2'); await p.fill(qty('t-unset'), '2 bags');
+  ok(!(await fieldState(p, qty('t-zero'))).invalid, 'a valid bare number clears the quantity error without requiring a unit');
+  await action(p, 'review'); await reviewed(p);
+  ok(/2 \(unit not set\)/.test(await p.textContent('.su-review')), 'review distinguishes a number without a unit from a confirmed physical quantity');
+  saved = await record(p);
+  ok(saved.lines.some(line => line.itemId === 't-zero' && line.qty === '2' && line.amount === 2 && line.unit === ''), 'a bare number records safely without guessing pieces, packs or kilograms');
+  ok(saved.lines.some(line => line.itemId === 't-unset' && line.qty === '2 bags' && line.unit === 'bags'), 'explicit units remain available for an otherwise unconfirmed item');
+  ok(!(await L.overflow(p)), 'phone validation and recording fit without sideways scroll');
+  ok(p.errors.length === 0, 'optional-unit quantity journey: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
   // Review must reveal an invalid item hidden by another page or search, then its stock field behind Details.
