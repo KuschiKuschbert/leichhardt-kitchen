@@ -754,3 +754,7 @@ Supplier order accepts a plain number when the item has a confirmed order unit. 
 ### Outstanding stock transfers and returns
 
 Transfers remain outstanding across days until someone confirms the full amount has been returned. The Returned tick records who and when, with a short Undo for mistakes. Original transfer quantities and history stay intact. Existing loans begin unconfirmed. See [Transfer returns](docs/transfer-returns.md) for permissions, atomic writes, migration, read costs, release order and rollback.
+
+### Number-only supplier quantities, 25 October 2026
+
+Items without a confirmed unit accept a positive decimal quantity and retain an empty unit in history. Confirmed units and explicit typed units keep their existing behaviour. Stock counts also accept zero. No units or pack sizes are guessed; top-ups still require confirmed compatible units. No new reads, rules, schema or dependencies. Rollback: revert this change through a fresh branch and PR. Saved quantities remain intact; older clients may require a unit when reusing these lines.

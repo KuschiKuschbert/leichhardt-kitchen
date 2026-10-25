@@ -3,7 +3,7 @@
    read at most 20 records on a tap. No polling, per-item reads, public goods file or second persistent cache. */
 (function () {
   'use strict';
-  var API = 5, A = window.LK_APP, P = window.LK_PREP, T = window.LK_TIME, esc = A.esc;
+  var API = 6, A = window.LK_APP, P = window.LK_PREP, T = window.LK_TIME, esc = A.esc;
   var C, store, loadingCode = null, contextKey = '', generation = 0;
   var M = blank();
   function blank() {
@@ -85,12 +85,12 @@
     if (M.drafts[s.id]) M.drafts[s.id].suggestions = Object.create(null);
   }
   function deps() {
-    if (window.LK_SUP_CORE && window.LK_SUP_CORE.API === 2 && window.LK_SUP_STORE && window.LK_SUP_STORE.API === 1) return Promise.resolve();
+    if (window.LK_SUP_CORE && window.LK_SUP_CORE.API === 3 && window.LK_SUP_STORE && window.LK_SUP_STORE.API === 1) return Promise.resolve();
     if (!loadingCode) loadingCode = Promise.all([
-      window.LK_SUP_CORE && window.LK_SUP_CORE.API === 2 ? null : A.load('js/supplier-core.js?v=2'),
+      window.LK_SUP_CORE && window.LK_SUP_CORE.API === 3 ? null : A.load('js/supplier-core.js?v=3'),
       window.LK_SUP_STORE && window.LK_SUP_STORE.API === 1 ? null : A.load('js/supplier-store.js')
     ]).then(function () {
-      if (!window.LK_SUP_CORE || window.LK_SUP_CORE.API !== 2 || !window.LK_SUP_STORE || window.LK_SUP_STORE.API !== 1) throw { code: 'version' };
+      if (!window.LK_SUP_CORE || window.LK_SUP_CORE.API !== 3 || !window.LK_SUP_STORE || window.LK_SUP_STORE.API !== 1) throw { code: 'version' };
     }).catch(function (e) { loadingCode = null; throw e; });
     return loadingCode;
   }
@@ -172,7 +172,7 @@
   function entryError(field, i) {
     if (!validationAttrs(field, i.id)) return '';
     var unit = (field === 'qty' ? i.orderUnit : i.parUnit) || 'kg';
-    return '<small class="su-entry-error" data-su-entry-error>' + esc(field === 'qty' ? (i.orderUnit ? 'Use a quantity above 0, e.g. 2 ' + unit + '.' : 'Enter a positive quantity with a unit, e.g. 2 kg.') : (i.parUnit ? 'Use zero or more, e.g. 0 ' + unit + '.' : 'Enter zero or more with a unit, e.g. 0 kg.')) + '</small>';
+    return '<small class="su-entry-error" data-su-entry-error>' + esc(field === 'qty' ? (i.orderUnit ? 'Use a quantity above 0, e.g. 2 ' + unit + '.' : 'Enter a positive quantity, e.g. 2 or 2 kg.') : (i.parUnit ? 'Use zero or more, e.g. 0 ' + unit + '.' : 'Enter zero or more, e.g. 0 or 2 kg.')) + '</small>';
   }
   function entryInput(field, id) {
     return M.root && Array.prototype.filter.call(M.root.querySelectorAll('[data-sf="' + field + '"]'), function (el) { return el.getAttribute('data-i') === id; })[0];
@@ -201,7 +201,7 @@
   }
   function rowHTML(i) {
     var d = draft(), l = lastLine(i.id), h = hist(), source = i.source || {}, match = matchInfo().matches.filter(function (m) { return m.itemId === i.id; })[0];
-    return '<div class="su-row" data-item="' + esc(i.id) + '"><details class="su-item"' + (M.openItems[i.id] ? ' open' : '') + '><summary><b>' + esc(i.name) + '</b><span class="hint">Pack: ' + esc(i.pack || 'Not set') + ' · Details</span>' + (match ? '<span class="su-request">Staff request to check</span>' : '') + '</summary><div class="su-item-more"><dl><dt>Source</dt><dd>' + (i.manual ? 'Added manually' : esc(source.file) + ' · page ' + esc(source.page)) + '</dd><dt>Original PDF par</dt><dd>' + esc(i.manual ? 'Not applicable' : source.par === '' ? 'Not set' : source.par) + '</dd><dt>Par unit</dt><dd>' + esc(i.parUnit || 'Unconfirmed') + '</dd><dt>Order unit</dt><dd>' + esc(i.orderUnit || 'Unconfirmed') + '</dd></dl><label class="field"><span class="label">Stock counted for this order' + (i.parUnit ? ' (' + esc(i.parUnit) + ')' : '') + '</span><input class="search" data-sf="stock" data-i="' + esc(i.id) + '" aria-label="Stock count: ' + esc(i.name) + '" placeholder="' + (i.parUnit ? 'e.g. 4' : 'e.g. 4 kg') + '" value="' + esc(d.stock[i.id] || '') + '" maxlength="40"' + validationAttrs('stock', i.id) + '>' + entryError('stock', i) + '</label><p class="hint">Only compatible confirmed units or a verified pack conversion can produce a top-up.</p>' + (match ? '<p class="hint">Matched by the exact item name or an explicit alias. Check the staff order list before deciding the quantity.</p>' : '') + '</div></details><div class="su-par"><span class="su-mobile-label">Par</span><b>' + esc(currentPar(i)) + '</b><small>' + esc(i.parUnit || 'To confirm') + '</small></div><div class="su-last"><span class="su-mobile-label">Last order</span>' + esc(l ? l.qty : !h.rows ? 'Loading' : latest() ? 'Not ordered' : 'No order yet') + '</div><label class="su-qty"><span class="su-mobile-label">To order</span><input class="search" data-sf="qty" data-i="' + esc(i.id) + '" aria-label="To order: ' + esc(i.name) + '" placeholder="' + (i.orderUnit ? 'e.g. 2' : 'e.g. 2 bags') + '" value="' + esc(d.qty[i.id] || '') + '" maxlength="40"' + validationAttrs('qty', i.id) + '><small class="hint">' + esc(i.orderUnit ? 'Order unit: ' + i.orderUnit : 'Include a unit, e.g. kg or cartons') + '</small>' + entryError('qty', i) + '</label></div>';
+    return '<div class="su-row" data-item="' + esc(i.id) + '"><details class="su-item"' + (M.openItems[i.id] ? ' open' : '') + '><summary><b>' + esc(i.name) + '</b><span class="hint">Pack: ' + esc(i.pack || 'Not set') + ' · Details</span>' + (match ? '<span class="su-request">Staff request to check</span>' : '') + '</summary><div class="su-item-more"><dl><dt>Source</dt><dd>' + (i.manual ? 'Added manually' : esc(source.file) + ' · page ' + esc(source.page)) + '</dd><dt>Original PDF par</dt><dd>' + esc(i.manual ? 'Not applicable' : source.par === '' ? 'Not set' : source.par) + '</dd><dt>Par unit</dt><dd>' + esc(i.parUnit || 'Unconfirmed') + '</dd><dt>Order unit</dt><dd>' + esc(i.orderUnit || 'Unconfirmed') + '</dd></dl><label class="field"><span class="label">Stock counted for this order' + (i.parUnit ? ' (' + esc(i.parUnit) + ')' : '') + '</span><input class="search" data-sf="stock" data-i="' + esc(i.id) + '" aria-label="Stock count: ' + esc(i.name) + '" placeholder="' + (i.parUnit ? 'e.g. 4' : 'e.g. 4') + '" value="' + esc(d.stock[i.id] || '') + '" maxlength="40"' + validationAttrs('stock', i.id) + '>' + entryError('stock', i) + '</label><p class="hint">Only compatible confirmed units or a verified pack conversion can produce a top-up.</p>' + (match ? '<p class="hint">Matched by the exact item name or an explicit alias. Check the staff order list before deciding the quantity.</p>' : '') + '</div></details><div class="su-par"><span class="su-mobile-label">Par</span><b>' + esc(currentPar(i)) + '</b><small>' + esc(i.parUnit || 'To confirm') + '</small></div><div class="su-last"><span class="su-mobile-label">Last order</span>' + esc(l ? l.qty : !h.rows ? 'Loading' : latest() ? 'Not ordered' : 'No order yet') + '</div><label class="su-qty"><span class="su-mobile-label">To order</span><input class="search" data-sf="qty" data-i="' + esc(i.id) + '" aria-label="To order: ' + esc(i.name) + '" placeholder="' + (i.orderUnit ? 'e.g. 2' : 'e.g. 2') + '" value="' + esc(d.qty[i.id] || '') + '" maxlength="40"' + validationAttrs('qty', i.id) + '><small class="hint">' + esc(i.orderUnit ? 'Order unit: ' + i.orderUnit : 'Number only accepted. Add a unit if needed.') + '</small>' + entryError('qty', i) + '</label></div>';
   }
   function suggestionsHTML() {
     var d = draft(), suggestions = items().map(function (i) { var p = C.suggestQuantity(i, latest(), d.stock[i.id] || ''); return p ? { item: i, pick: p } : null; }).filter(function (s) { return s && !d.dismissed[s.item.id] && !String(d.qty[s.item.id] || '').trim(); });

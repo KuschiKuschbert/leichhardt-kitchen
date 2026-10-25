@@ -71,20 +71,14 @@ function pagedFixture() {
   ok(p.errors.length === 0, 'confirmed-unit quantity journey: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // No unit is inferred from a name, pack description or par unit when the order unit is unconfirmed.
+  // A missing catalogue unit never blocks a plain quantity or guesses a pack size.
   p = await open(b, null, 390);
-  await p.fill(qty('t-stock'), '4 kg'); await p.fill(qty('t-zero'), '2'); await action(p, 'review');
-  await L.waitFor(p, selector => document.querySelector(selector)?.getAttribute('aria-invalid') === 'true', qty('t-zero'), 5000);
-  state = await fieldState(p, qty('t-zero'));
-  ok(state.invalid && state.focused && /TEST ZERO PAR ITEM/.test(state.message) && /unit|quantity/i.test(state.message), 'unconfirmed order unit: review names the item and focuses the quantity needing its unit');
-  ok(await p.$eval(qty('t-stock'), el => el.value) === '4 kg' && await p.$eval(qty('t-zero'), el => el.value) === '2', 'validation preserves every quantity already entered');
-  ok(!(await p.$('[data-su="record"]')) && newOrders(await dump(p)).length === 0, 'unconfirmed bare quantity is not recorded with a guessed unit');
-  await p.fill(qty('t-zero'), '2 bags');
-  ok(!(await fieldState(p, qty('t-zero'))).invalid, 'adding the explicit unit clears the quantity error');
+  await p.fill(qty('t-stock'), '4 kg'); await p.fill(qty('t-zero'), '2');
   await action(p, 'review'); await reviewed(p); saved = await record(p);
-  ok(saved.lines.some(line => line.itemId === 't-zero' && line.qty === '2 bags' && line.unit === 'bags'), 'an explicit unit completes review and records the previously blocked item');
-  ok(!(await L.overflow(p)), 'phone validation and recording fit without sideways scroll');
-  ok(p.errors.length === 0, 'unconfirmed-unit quantity journey: no page errors ' + p.errors.join(' | '));
+  ok(saved.lines.some(line => line.itemId === 't-zero' && line.qty === '2' && line.amount === 2 && line.unit === ''), 'unitless quantity reviews and records without inventing a unit');
+  ok(saved.lines.some(line => line.itemId === 't-stock' && line.qty === '4 kg'), 'explicit quantities remain intact beside unitless entries');
+  ok(!(await L.overflow(p)), 'phone numeric entry fits without sideways scroll');
+  ok(p.errors.length === 0, 'unitless entry has no page errors');
   await p.context().close();
 
   // Review must reveal an invalid item hidden by another page or search, then its stock field behind Details.

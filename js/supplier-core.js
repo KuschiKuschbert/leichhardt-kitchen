@@ -59,6 +59,10 @@
       if (raw.length > 40) return null;
       parsed = A.parse(raw); unit = parsed && parsed.u; amount = parsed && parsed.n;
     }
+    if (!confirmed && !unit && /^\d+(?:[.,]\d+)?$/.test(raw)) {
+      var count = Number(raw.replace(',', '.'));
+      return isFinite(count) && count >= (zero ? 0 : 0.000001) && count < MAX_AMOUNT ? { qty: raw, amount: count, unit: '' } : null;
+    }
     if (!parsed || !unit) {
       // A custom unit still requires one unambiguous decimal amount. The book reads the number.
       var m = raw.match(/^(\d+(?:[.,]\d+)?)\s*([a-z]+(?:[ -][a-z]+)*)\.?$/i);
@@ -181,10 +185,10 @@
       if (raw == null || (typeof raw === 'string' && !raw.trim())) return;
       if (item.archived) fail('archived', item.id, 'An archived item cannot be ordered.');
       var q = parseQuantity(raw, item.orderUnit);
-      if (!q) fail('quantity', item.id, 'To order for ' + item.name + ': enter a positive quantity' + (item.orderUnit ? ' in ' + item.orderUnit + ', or type the quantity and unit.' : ' with its unit, e.g. 2 kg or 2 cartons.'));
+      if (!q) fail('quantity', item.id, 'To order for ' + item.name + ': enter a positive quantity' + (item.orderUnit ? ' in ' + item.orderUnit + ', or type the quantity and unit.' : ', e.g. 2 or 2 cartons.'));
       var stock = stockMap && own(stockMap, item.id) ? stockMap[item.id] : '';
       var counted = stock ? parseStock(stock, item.parUnit) : null;
-      if (stock && !counted) fail('stock', item.id, 'Stock count for ' + item.name + ': enter zero or more' + (item.parUnit ? ' in ' + item.parUnit + ', or type the count and unit.' : ' with its unit, e.g. 0 kg or 2 cartons.'));
+      if (stock && !counted) fail('stock', item.id, 'Stock count for ' + item.name + ': enter zero or more' + (item.parUnit ? ' in ' + item.parUnit + ', or type the count and unit.' : ', e.g. 0 or 2 cartons.'));
       var suggestion = suggestions && own(suggestions, item.id) ? suggestions[item.id] : null;
       if (suggestion && typeof suggestion !== 'string') suggestion = suggestion.reason;
       lines.push({ itemId: item.id, name: item.name, pack: item.pack, qty: q.qty, amount: q.amount, unit: q.unit, par: item.par, parUnit: item.parUnit, source: copy(item.source), suggestion: text(suggestion, 500, 'suggestion'), stock: text(counted ? counted.qty : stock, 40, 'stock') });
@@ -227,5 +231,5 @@
     if (!old && !changes.length) changes.push({ itemId: '', action: 'add_supplier', before: null, after: { name: next.name, cutoffId: next.cutoffId } });
     return changes;
   }
-  return { API: 2, MAX_ITEMS: MAX_ITEMS, MAX_ORDER_LINES: MAX_ORDER_LINES, cleanPar: cleanPar, normaliseUnit: normaliseUnit, parseQuantity: parseQuantity, parseStock: parseStock, convert: convert, cleanItem: cleanItem, cleanSupplier: cleanSupplier, validateCatalogue: validateCatalogue, normaliseName: normaliseName, duplicateItems: duplicateItems, matchRequests: matchRequests, snapshotLines: snapshotLines, suggestQuantity: suggestQuantity, catalogueDiff: catalogueDiff };
+  return { API: 3, MAX_ITEMS: MAX_ITEMS, MAX_ORDER_LINES: MAX_ORDER_LINES, cleanPar: cleanPar, normaliseUnit: normaliseUnit, parseQuantity: parseQuantity, parseStock: parseStock, convert: convert, cleanItem: cleanItem, cleanSupplier: cleanSupplier, validateCatalogue: validateCatalogue, normaliseName: normaliseName, duplicateItems: duplicateItems, matchRequests: matchRequests, snapshotLines: snapshotLines, suggestQuantity: suggestQuantity, catalogueDiff: catalogueDiff };
 });

@@ -10,12 +10,12 @@ test('blank, zero and decimal pars are distinct; invalid pars cannot enter the c
   assert.strictEqual(C.cleanPar(''), ''); assert.strictEqual(C.cleanPar(null), ''); assert.strictEqual(C.cleanPar(0), '0'); assert.strictEqual(C.cleanPar(' 1.50 '), '1.50'); assert.strictEqual(C.cleanPar('1,5'), '1,5');
   [-1, Infinity, NaN, 100000, {}, '-1', '1e2', '1 kg', 'about 3'].forEach(v => assert.strictEqual(C.cleanPar(v), null));
 });
-test('unconfigured order amounts reuse the book parser and require an explicit unit', () => {
+test('unconfigured order amounts reuse the book parser and keep explicit units', () => {
   assert.deepStrictEqual(C.parseQuantity('1/2 tub'), { qty: '1/2 tub', amount: 0.5, unit: 'tubs' });
   assert.deepStrictEqual(C.parseQuantity('2 ctn'), { qty: '2 ctn', amount: 2, unit: 'cartons' });
   assert.deepStrictEqual(C.parseQuantity('3 rolls'), { qty: '3 rolls', amount: 3, unit: 'rolls' });
   assert.deepStrictEqual(C.parseQuantity('2 Litres'), { qty: '2 Litres', amount: 2, unit: 'L' });
-  ['', '3', '0 kg', '-1 kg', '1-2 kg', '1 kg + 2 bags', '2 <widgets>', '1/0 kg'].forEach(v => assert.strictEqual(C.parseQuantity(v), null));
+  ['', '0 kg', '-1 kg', '1-2 kg', '1 kg + 2 bags', '2 <widgets>', '1/0 kg'].forEach(v => assert.strictEqual(C.parseQuantity(v), null));
   assert.deepStrictEqual(C.parseStock('0 kg'), { qty: '0 kg', amount: 0, unit: 'kg' });
 });
 test('confirmed catalogue units let chefs enter ordinary numeric quantities without changing explicit units', () => {
@@ -27,11 +27,11 @@ test('confirmed catalogue units let chefs enter ordinary numeric quantities with
   assert.deepStrictEqual(C.parseQuantity('2 bags', 'kg'), { qty: '2 bags', amount: 2, unit: 'bags' });
   assert.deepStrictEqual(C.parseQuantity('1/2 tub', 'kg'), { qty: '1/2 tub', amount: 0.5, unit: 'tubs' });
   ['', '0', '0.0', '-1', '1-2', 'about 3', '100000'].forEach(v => assert.strictEqual(C.parseQuantity(v, 'kg'), null));
-  ['', undefined, '5 kg bag', '<kg>'].forEach(unit => assert.strictEqual(C.parseQuantity('2', unit), null));
+  ['', undefined, '5 kg bag', '<kg>'].forEach(unit => assert.deepStrictEqual(C.parseQuantity('2', unit), { qty: '2', amount: 2, unit: '' }));
   assert.deepStrictEqual(C.parseStock('0', 'kg'), { qty: '0 kg', amount: 0, unit: 'kg' });
   assert.deepStrictEqual(C.parseStock('0 g', 'kg'), { qty: '0 g', amount: 0, unit: 'g' });
   assert.strictEqual(C.parseStock('-1', 'kg'), null);
-  assert.strictEqual(C.parseStock('0'), null);
+  assert.deepStrictEqual(C.parseStock('0'), { qty: '0', amount: 0, unit: '' });
 });
 test('an imported name, punctuation, source and original par survive current par edits', () => {
   const original = item({ name: '*TEST PRODUCT (6) 1KG', manual: false, source: { file: 'test-source.pdf', page: 2, row: 7, name: '*TEST PRODUCT (6) 1KG', par: '0' } });
@@ -76,12 +76,12 @@ test('review records numeric inputs with their confirmed units and only validate
   assert.deepStrictEqual([snapshot[0].qty, snapshot[0].amount, snapshot[0].unit, snapshot[0].stock], ['1.5 kg', 1.5, 'kg', '0 kg']);
   assert.strictEqual(values['i-test'], '1.5'); assert.strictEqual(stocks['i-test'], '0');
   assert.strictEqual(snapshot[0].par, '10');
-  throws('quantity', () => C.snapshotLines([unused], { 'i-unused': '2' }));
+  assert.strictEqual(C.snapshotLines([unused], { 'i-unused': '2' })[0].unit, '');
   throws('stock', () => C.snapshotLines([entry], { 'i-test': '2' }, { 'i-test': '-1' }));
 });
-test('recording refuses stale/archived items, missing units, invalid counts and empty drafts', () => {
+test('recording refuses stale/archived items, invalid counts and empty drafts', () => {
   throws('archived', () => C.snapshotLines([item({ archived: true })], { 'i-test': '1 kg' }));
-  throws('quantity', () => C.snapshotLines([item({ orderUnit: '', factor: 0 })], { 'i-test': '2' }));
+  throws('quantity', () => C.snapshotLines([item({ orderUnit: '', factor: 0 })], { 'i-test': '-2' }));
   throws('stock', () => C.snapshotLines([item()], { 'i-test': '2 kg' }, { 'i-test': '-1 kg' }));
   throws('item', () => C.snapshotLines([item()], { 'i-test': '2 kg', 'removed-id': '1 bag' }));
   throws('empty', () => C.snapshotLines([item()], { 'i-test': ' ' }));
@@ -153,6 +153,12 @@ test('duplicate-name warnings retain pack variants and audit changes are isolate
   changed.par = '99'; assert.strictEqual(audit[0].after.par, '12');
   assert.strictEqual(C.catalogueDiff(supplier(), supplier([item({ archived: true })]))[0].action, 'archive_item');
 });
+test('unitless numbers preserve intent without enabling conversions', () => {
+  for (const raw of ['2', '1.5', '1,5']) assert.deepStrictEqual(C.parseQuantity(raw), { qty: raw, amount: Number(raw.replace(',', '.')), unit: '' });
+  for (const raw of ['0', '-2', '1e3', '1-2', '100000', 'NaN']) assert.strictEqual(C.parseQuantity(raw), null);
+  assert.strictEqual(C.convert(2, '', 'kg'), null);
+});
+
 results.forEach(r => console.log(r));
 const failed = results.filter(r => r.startsWith('FAIL')).length;
 console.log(failed + ' failed of ' + results.length);
