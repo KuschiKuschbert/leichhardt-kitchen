@@ -1982,6 +1982,57 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd 
 .fe-ov { color: #6A4A00; font-size: 0.85rem; font-weight: 600; }
 .fe-dtot { margin: 0.35rem 0 0; color: var(--muted); font-size: 0.9rem; }
 @media print { .fn-band, .fn-pop { display: none !important; } }
+/* Function printing, Layout 2 (25 Oct 2026): a separate snapshot of the booking. The app, overlays and contact
+   fields are never part of the print copy. Named pages keep A4 rules away from the book's other print views. */
+.fn-page-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.6rem; }
+.fn-page-head h2 { margin: 0; }
+.fn-print-error { flex-basis: 100%; }
+#fn-print { display: none; }
+@page fn-run-sheet { size: A4 portrait; margin: 12mm; }
+@media print {
+  body.fn-printing { margin: 0 !important; padding: 0 !important; background: #fff !important; }
+  body.fn-printing > :not(#fn-print) { display: none !important; }
+  body.fn-printing #fn-print { display: block !important; page: fn-run-sheet; padding-right: 0.5mm; color: #1C1D1F; font: 11.5pt/1.25 var(--body); }
+  #fn-print * { box-sizing: border-box; }
+  #fn-print h1, #fn-print h2, #fn-print h3, #fn-print p, #fn-print ul, #fn-print ol, #fn-print dl, #fn-print dd { margin: 0; }
+  #fn-print h1, #fn-print h2, #fn-print h3 { font-family: var(--display); font-weight: 700; line-height: 1.1; }
+  #fn-print h1 { font-size: 28pt; overflow-wrap: anywhere; }
+  #fn-print h2 { margin-bottom: 2mm; font-size: 13pt; text-transform: uppercase; break-after: avoid; }
+  #fn-print h3 { font-size: 12pt; text-transform: uppercase; }
+  #fn-print ul, #fn-print ol { padding: 0; list-style: none; }
+  #fn-print .fn-paper { break-before: page; }
+  #fn-print .fn-paper:first-child, #fn-print .fn-paper-day + .fn-paper { break-before: auto; }
+  #fn-print .fn-paper-day { padding-bottom: 5mm; margin-bottom: 5mm; border-bottom: 1pt solid #1C1D1F; break-after: avoid; }
+  #fn-print .fn-paper-day h1 { font-size: 16pt; }
+  #fn-print .fn-paper-day p { margin-top: 1.5mm; font-size: 10pt; }
+  #fn-print .fn-paper-head { margin-bottom: 4mm; break-inside: avoid; }
+  #fn-print .fn-paper-brand { margin-bottom: 2mm; color: #55585E; font-weight: 600; font-size: 10pt; text-transform: uppercase; }
+  #fn-print .fn-paper-sub { display: flex; align-items: center; justify-content: space-between; gap: 4mm; margin-top: 3mm; font-size: 10pt; text-transform: uppercase; }
+  #fn-print .fn-paper-sub strong { padding: 1mm 3mm; border: 0.7pt solid #1C1D1F; }
+  #fn-print .fn-paper-meta { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3mm 4mm; padding: 3mm 0; border-bottom: 0.6pt solid #aaa; }
+  #fn-print dt { margin-bottom: 1.5mm; font-size: 9pt; font-weight: 600; text-transform: uppercase; color: #55585E; }
+  #fn-print dd { font-weight: 600; overflow-wrap: anywhere; }
+  #fn-print .fn-paper-round { display: flex; gap: 4mm; align-items: flex-start; padding: 2mm 0 3mm; margin-bottom: 2mm; border-bottom: 0.6pt solid #aaa; break-inside: avoid; }
+  #fn-print .fn-paper-time { flex: 0 0 24mm; display: flex; flex-direction: column; gap: 2mm; overflow-wrap: anywhere; }
+  #fn-print .fn-paper-time > b { font: 700 28pt/1 var(--display); white-space: nowrap; }
+  #fn-print .fn-paper-time > span, #fn-print .fn-paper-time small { font-size: 9pt; }
+  #fn-print .fn-paper-send { flex: 1; min-width: 0; border-left: 1pt solid #1C1D1F; padding-left: 4mm; }
+  #fn-print .fn-paper-lines { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1mm 4mm; margin-top: 2mm; }
+  #fn-print .fn-paper-lines li { display: flex; align-items: baseline; gap: 3mm; min-width: 0; break-inside: avoid; }
+  #fn-print .fn-paper-lines b { flex: 0 0 auto; font: 700 15pt/1 var(--display); }
+  #fn-print .fn-paper-lines span { overflow-wrap: anywhere; }
+  #fn-print .fn-paper-sent { flex: 0 0 16mm; display: flex; align-items: center; gap: 2mm; font-size: 9pt; }
+  #fn-print .fn-paper-tick { flex: 0 0 3.5mm; height: 3.5mm; border: 0.8pt solid #1C1D1F; position: relative; }
+  #fn-print .fn-paper-tick.is-sent::after { content: ''; position: absolute; left: 0.7mm; top: 0.1mm; width: 1mm; height: 2mm; border: solid #1C1D1F; border-width: 0 0.6mm 0.6mm 0; transform: rotate(45deg); }
+  #fn-print .fn-paper-text { white-space: pre-wrap; overflow-wrap: anywhere; orphans: 3; widows: 3; }
+  #fn-print .fn-paper-round-note { margin-top: 2mm; font-size: 10.5pt; }
+  #fn-print .fn-paper-totals { padding: 2mm 0 3mm; break-inside: avoid; }
+  #fn-print .fn-paper-notes { margin: 2mm 0 3mm; }
+  #fn-print .fn-paper-by { margin-top: 2mm; font-size: 9pt; color: #55585E; }
+  #fn-print .fn-paper-warning { margin-bottom: 5mm; padding: 3mm; border: 1.2pt solid #1C1D1F; font-weight: 600; }
+  #fn-print .fn-paper-warning ul { list-style: disc; padding-left: 5mm; }
+  #fn-print .fn-paper-foot { display: flex; justify-content: space-between; gap: 4mm; padding-top: 3mm; margin-top: 4mm; border-top: 0.6pt solid #aaa; color: #55585E; font-size: 8.5pt; break-inside: avoid; }
+}
 .fe-gu { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 1rem; }
 .fn-late { color: #A3230F; font-weight: 700; }
 .fn-sent { white-space: nowrap; }

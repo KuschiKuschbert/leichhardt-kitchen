@@ -17,7 +17,7 @@
 (function () {
   'use strict';
 
-  var API = 4;
+  var API = 5;
   var FN = window.LK_FN, M = FN.M, P = window.LK_PREP, esc = FN.esc, T = window.LK_TIME;
   function B() { return P.book(); }
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -307,7 +307,7 @@
     f.id = e.id; f.kcBy = B().who(); f.kcAt = now(); f.by = B().who(); f.upd = now(); f.chg = [];
     return '<section class="set-block fe-review" aria-labelledby="fe-rv-h"><h3 id="fe-rv-h" tabindex="-1">Check before confirming</h3><p class="hint">This is what the kitchen will see. Confirming puts it in the band under the top bar from 00:00 on ' + esc(M.dayName(f.date)) + '.</p>' +
       FN.sheetHTML(f, false).replace(/<div class="btn-row">[\s\S]*?<\/div>$/, '') +
-      '<div class="btn-row"><button type="button" class="btn dark" data-fe="confirm"' + (e.saving ? ' disabled' : '') + '>' + (e.status === 'cancelled' ? 'Put it back on' : 'Confirm function') + '</button></div></section>';
+      '<div class="btn-row"><button type="button" class="btn dark" data-fe="confirm"' + (e.saving ? ' disabled' : '') + '>' + (e.status === 'cancelled' ? 'Put it back on' : 'Confirm function') + '</button><button type="button" class="btn" data-fe="print">Print function</button></div></section>';
   }
   function editHTML() {
     var e = E.ed;
@@ -317,7 +317,7 @@
     var d = e.d, s = e.saved, st = e.status;
     if (e.review) return '<div class="fe-head"><h2 id="rtitle" tabindex="-1">' + esc(d.name || 'New function') + '</h2></div>' + msgHTML(e) + reviewHTML(e);
     var stTag = st === 'draft' ? '<span class="fn-tag">Draft: the kitchen does not see it</span>' : st === 'cancelled' ? '<span class="fn-tag fn-t-off">Cancelled</span>' : '<span class="fn-tag fn-t-ok">Confirmed: in the kitchen\'s band on the day</span>';
-    var out = '<div class="fe-head"><h2 id="rtitle" tabindex="-1">' + esc(e.isNew ? 'New function' : (s.name || 'Function')) + '</h2>' + stTag + '</div>' +
+    var out = '<div class="fe-head"><h2 id="rtitle" tabindex="-1">' + esc(e.isNew ? 'New function' : (s.name || 'Function')) + '</h2><div class="btn-row">' + stTag + '<button type="button" class="btn" data-fe="print"' + (e.saving ? ' disabled' : '') + '>Print function</button></div></div>' +
       (e.restored ? '<p class="fe-note">Changes not saved yet were kept on this device and are back in the form. <button type="button" class="linkish" data-fe="drop">' + (armed('drop') ? 'Tap again to drop them' : 'Drop them') + '</button></p>' : '') +
       (!e.isNew ? '<p class="hint">Last changed by ' + esc(FN.nameOf(s.by)) + ', ' + esc(stamp(s.upd)) + '. Version ' + s.v + '.</p>' : '') + msgHTML(e) +
       '<section class="set-block"><span class="label">The function</span>' + inp('name', 'Name or reference', d.name, ' maxlength="80" autocomplete="off" placeholder="Smith birthday"') +
@@ -570,6 +570,12 @@
   }
   document.addEventListener('input', onInput);
   document.addEventListener('change', onInput);
+  // Keep focus in a typed time until Print reads it. A blur's structural redraw would replace this button before
+  // its click arrives. Keyboard activation still uses the same click handler and flushPending().
+  document.addEventListener('pointerdown', function (ev) {
+    var el = ev.target.closest && ev.target.closest('[data-fe="print"]');
+    if (el && E.root && E.root.contains(el)) ev.preventDefault();
+  });
   document.addEventListener('click', function (ev) {
     var el = ev.target.closest && ev.target.closest('[data-fe]');
     if (!el || !E.root || !E.root.contains(el)) return;
@@ -579,6 +585,13 @@
     if (a === 'reopen') { openId(e.id); return; }
     if (!e || !e.d) return;
     var d = e.d;
+    if (a === 'print') {
+      if (e.saving) return;
+      if (!FN.print) { toast('Reload the book to update function printing. Your changes are kept on this device.'); return; }
+      flushPending();
+      var f = Object.assign({}, e.saved || {}, toDoc(e), { id: e.id, v: e.v });
+      FN.print([f], { unsaved: e.isNew || dirty(), fromForm: true }, el); return;
+    }
     if (a === 'addline') {
       var c = FN.catalogue().filter(function (x) { return x.rid === v; })[0]; if (!c || d.lines.length >= M.MAX_LINES) return;
       d.lines.push({ rid: c.rid, name: c.name, unit: c.unit, spec: c.spec, fp: c.fp, qty: '1', a: [] }); e.pq = '';
