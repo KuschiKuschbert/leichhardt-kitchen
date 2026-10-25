@@ -7,7 +7,7 @@ const { R, ok } = L.results(), { txt } = L;
 const today = L.ymd(new Date(L.NOW)), yest = L.ymd(new Date(L.NOW - 86400000));
 const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
 const store = page => page.evaluate(() => window.__fake.dump());
-const lineReads = page => page.evaluate(() => window.__fake.reads.filter(k => /\/waste\/[^/]+\/lines$/.test(k)));
+const lineReads = page => page.evaluate(() => window.__fake.reads.filter(k => /\/waste\/[^/]+\/lines$/.test(k) || k === '**/lines'));
 const extra = {};
 extra[fsKey(['waste', yest, 'lines', 'y1'])] = { text: 'Mash', amount: 1.5, unit: 'kg', reason: 'prep', action: '', station: 'Larder', addedBy: 'Ann', addedById: 'ann', addedAt: L.NOW - 86400000 - 7200000, deleted: false };
 (async () => {
@@ -41,6 +41,8 @@ extra[fsKey(['waste', yest, 'lines', 'y1'])] = { text: 'Mash', amount: 1.5, unit
   await L.waitFor(p, () => /Mash/.test((document.querySelector('[data-lv="waste-log"]') || {}).textContent || ''));
   ok(/Chips/.test(await txt(p, '[data-lv="waste-log"]') || ''), 'log: today\'s Chips and yesterday\'s Mash are both listed');
   const before = (await lineReads(p)).length;
+  await p.locator('.wh-filters > summary').click();
+  await p.check('[data-k="wh-removed"]');
   await p.click('[data-lv="waste-log"] [data-p="wdel"][data-id="y1"]');
   await L.settle(p, 400);
   let s = await store(p);
@@ -53,6 +55,7 @@ extra[fsKey(['waste', yest, 'lines', 'y1'])] = { text: 'Mash', amount: 1.5, unit
   ok((await lineReads(p)).length === before, 'log: removing and putting back read nothing again');
 
   // the review for yesterday: back one day, write, save
+  await p.click('[data-p="wh-view"][data-v="reviews"]');
   await p.click('[data-p="rv-day"][data-d="-1"]'); await L.settle(p, 300);
   ok(/Yesterday|\w{3}/.test(await txt(p, '.a-rvday') || '') && (await txt(p, '.a-rvday')) !== 'Today', 'review: back one day (' + await txt(p, '.a-rvday') + ')');
   ok(await p.$eval('[data-p="rv-day"][data-d="1"]', e => !e.disabled), 'review: forward works again from yesterday');
@@ -76,6 +79,8 @@ extra[fsKey(['waste', yest, 'lines', 'y1'])] = { text: 'Mash', amount: 1.5, unit
   extra2[fsKey(['waste', d2, 'lines', 'z2'])] = { text: 'Cream', amount: 1, unit: 'L', reason: 'expired', action: '', station: 'Larder', addedBy: 'Ann', addedById: 'ann', addedAt: L.NOW - 2 * 86400000 - 3600000, deleted: false };
   p = await L.open(b, '#/admin', { extra: extra2, admin: true, who: '', wait: 1500 });
   await L.adminTab(p, 'waste');
+  await p.selectOption('[data-k="wh-period"]', '14');
+  await p.click('[data-p="wh-view"][data-v="summary"]');
   await L.waitFor(p, () => !!document.querySelector('.sk-tot'), null, 6000).catch(() => {});
   const wk = await p.evaluate(() => {
     const row = document.querySelector('.sk-tot'), sum = r => [...r.querySelectorAll('td')].reduce((a, td) => a + (+td.textContent || 0), 0);
@@ -88,7 +93,7 @@ extra[fsKey(['waste', yest, 'lines', 'y1'])] = { text: 'Mash', amount: 1.5, unit
   ok(!wk.byWeekday, 'admin Wastage: no separate By weekday table');
   ok(wk.tiles.length && wk.tiles.every(t => t.n !== '0' || t.d) && !wk.tiles.some(t => /portions|pieces/.test(t.u)) && wk.tiles.some(t => /days with something logged/.test(t.u)), 'admin Wastage: no zero tile with nothing to compare, the days tile stays (' + JSON.stringify(wk.tiles) + ')');
   // 30 days: the lone Expired entry reads the same in its own row and in All reasons, both to one decimal
-  await p.click('[data-p="range"][data-v="30"]');
+  await p.selectOption('[data-k="wh-period"]', '30');
   await L.waitFor(p, () => { const r = [...document.querySelectorAll('.sk-t tbody tr')].find(x => /Expired/.test(x.textContent)); return !!r && [...r.querySelectorAll('td')].some(td => td.textContent === '0.3'); }, null, 6000).catch(() => {});
   const w30 = await p.evaluate(() => {
     const t = document.querySelector('.sk-tot') && document.querySelector('.sk-tot').closest('table');
