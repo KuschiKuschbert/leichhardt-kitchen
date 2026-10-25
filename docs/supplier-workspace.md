@@ -26,7 +26,7 @@ Preserve all supplied PDF names and original pars. Group PFD dry goods and seafo
 
 The latest supplier order shows weekday, date, time and individual quantities. An item absent from that supplier order says Not ordered. History is fetched on demand in bounded pages; never query history for each row. Copying or using previous quantities only fills a draft. Recording confirms an externally placed order and sends nothing to suppliers. Preserve draft IDs across retries; never duplicate a save. A record failure neither clears quantities nor marks a reminder done.
 
-Reminder links select the supplier and occurrence. Supplier completion controls open the review flow when a catalogue is linked; old clients and unlinked suppliers retain reminder-only completion. Unticking a reminder never deletes history. Preserve the general staff order-line tick behaviour.
+Reminder links select the supplier and occurrence. The reminder bar's **Order done** confirms an externally placed order without quantities or units for any supplier, linked or unlinked. It writes only the existing cutdone record, with the writer and time, and offers Undo after the save is confirmed. It neither loads the private catalogue nor creates an empty supplier order. Typed quantities, stock counts, history and suggestions remain intact. The tick list's linked-supplier action still opens detailed review; old clients and unlinked suppliers retain their existing completion. Unticking a reminder never deletes history. Preserve the general staff order-line tick behaviour.
 
 Suggestions show their evidence and require Apply. Repeat previous quantities, show comparable order-day history, flag staff requests through explicit aliases/matches, warn on completed occurrences, and calculate top-ups only from current stock with confirmed compatible units/conversion. No inferred consumption, invented confidence or automatic orders. Catalogue revisions refresh suggestions but preserve typed quantities.
 
@@ -50,3 +50,11 @@ The release gate is a successful Publish rules run **from the feature branch**, 
 ### Quantity entry correction, 24 October 2026
 
 A bare positive number uses only the item's confirmed order unit; a bare stock count uses only its confirmed par unit. Review and history store the unit with the amount. Explicit units take precedence. Unknown units still require explicit entry and are never inferred from a product name, pack description or par value. Errors identify and focus the exact quantity or stock field, clear obstructing filters, select the correct page and keep the rest of the draft. Supplier UI/core revision 2 uses versioned lazy URLs and checks module versions; the private catalogue and order data format stays version 1.
+
+### Reminder-only confirmation, 25 October 2026
+
+The bar keeps its existing compact button and uses the label Order done. A saved confirmation offers Undo on the landing page, supplier workspace and prep pages. The Order list remains the later correction path. Only an existing chef session or the verified owner can confirm; an old Undo cannot run under the next person on a shared device. Repeated taps do not replace an existing completion. A failed save restores the reminder without overwriting a later tap or another chef's newer tick. No success is announced while the write is still queued. Tomorrow's early cut-off retains its own date.
+
+No schema, security rules, dependencies or persistent caches change. There are no additional reads. Detailed order validation and transactions remain unchanged. Roll back with a revert on a fresh branch and pull request, then verify Pages and live click tests. Existing completion records remain compatible with the previous client; saved orders and history need no migration or cleanup.
+
+Regression coverage is in tests/supplier-reminder-done.test.js. The existing supplier-cutoff-readiness tests continue to cover the detailed tick-list flow, and supplier order tests cover immutable recording, duplicates and additional orders.

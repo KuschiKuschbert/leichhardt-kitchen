@@ -367,25 +367,26 @@
     if (!el) { el = document.createElement('div'); el.id = 'lk-live'; el.className = 'visually-hidden'; el.setAttribute('aria-live', 'polite'); el.setAttribute('role', 'status'); document.body.appendChild(el); }
     el.textContent = ''; setTimeout(function () { el.textContent = t; }, 60);
   }
-  /* Off the prep pages (the landing page, the recipes) there is no prep page for a toast to sit on, so a toast without a
-     button shows there by itself (the section pick, Signed out), for as long as it would on the prep page. It is not
-     kept for the prep page, so the same words never come up again later. A toast with a button (Undo, OK) still waits
-     for the prep page, where the button works. */
-  var plainEl = null, plainTimer = null;
-  function plainToast(msg, ms) {
+  /* Off the prep pages there is no prep root for a toast, so it sits on the body. Its optional button handles its
+     own tap there. It is not kept for the prep page, so the same words never come up again later. */
+  var plainEl = null, plainTimer = null, plainAct = null;
+  function plainToast(msg, ms, act) {
+    plainAct = act || null;
     if (!plainEl || !document.body.contains(plainEl)) { plainEl = document.createElement('div'); plainEl.className = 'p-toasts'; document.body.appendChild(plainEl); }
-    plainEl.innerHTML = '<div class="p-toast p-toast-plain" role="presentation"><span class="p-toast-msg">' + esc(msg) + '</span></div>';
-    clearTimeout(plainTimer); plainTimer = setTimeout(plainAway, ms || 3500);
+    plainEl.innerHTML = '<div class="p-toast' + (act ? '' : ' p-toast-plain') + '" role="presentation"><span class="p-toast-msg">' + esc(msg) + '</span>' +
+      (act ? '<button type="button" class="p-toast-btn">' + esc(act.label) + '</button>' : '') + '</div>';
+    if (act) plainEl.querySelector('button').addEventListener('click', function () { plainAway(); act.fn(); });
+    clearTimeout(plainTimer); plainTimer = setTimeout(plainAway, ms || (act ? 9000 : 3500));
   }
   // the prep page's own toast takes the same spot, so a plain one still up goes first (it would cover the Undo)
   function plainAway() {
     clearTimeout(plainTimer);
     if (plainEl && plainEl.parentNode) plainEl.parentNode.removeChild(plainEl);
-    plainEl = null;
+    plainEl = null; plainAct = null;
   }
   function toast(msg, act, ms) {
     liveSay(msg + (act && act.label ? '. ' + act.label + ' is on screen.' : ''));
-    if (!act && (!S.root || !document.body.contains(S.root))) { plainToast(msg, ms); return; }
+    if (!S.root || !document.body.contains(S.root)) { plainToast(msg, ms, act); return; }
     if (S.toast && S.toastAct && S.toastAct !== act) { S.toastOld = { msg: S.toast, act: S.toastAct }; clearTimeout(toastOldTimer); toastOldTimer = setTimeout(function () { S.toastOld = null; draw(); }, 6000); }
     toastAt = Date.now(); toastScroll = document.scrollingElement ? { el: document.scrollingElement, y: document.scrollingElement.scrollTop } : null;
     S.toast = msg; S.toastAct = act || null; draw(); clearTimeout(toastTimer); toastTimer = setTimeout(function () { S.toast = ''; S.toastAct = null; draw(); }, ms || (act ? 9000 : 3500));
@@ -4994,7 +4995,7 @@
   // "Who are you?" is on the screen (after a sign-out or the idle sign-out on a shared tablet)
   function namesUp() { return !!(S.root && document.body.contains(S.root) && S.root.querySelector('.p-names')); }
   // also while an Undo or OK toast is up, so nothing covers the Undo (the minute tick opens what waited)
-  function sheetBusy() { return sheetOpen() || ksWait || ovBack || dkFirstUp() || !!S.toastAct || document.visibilityState === 'hidden' || typing(); }
+  function sheetBusy() { return sheetOpen() || ksWait || ovBack || dkFirstUp() || !!S.toastAct || !!plainAct || document.visibilityState === 'hidden' || typing(); }
   function sheetNext() {
     if (ovBack) { nextWait = true; return; }
     nextWait = false;
@@ -6887,7 +6888,7 @@
      those two days (ticks and taken-off ticks, one when there are none) when the book opens, then only what changes. It moves on when the kitchen day changes, and starts as soon as
      this phone may read (cutWatch() runs on every paint, so a Google account checked or a PIN session opened late is
      caught). A refused or failed read keeps what this phone last saw (the bar and the pushes carry on). */
-  var cutSub = null, cutSubKey = '', cutSeen = {};
+  var cutSub = null, cutSubKey = '', cutSeen = {}, cutWrites = Object.create(null);
   function cutHas() { return cutWho() && cutList().some(function (s) { return s.at >= 0 && s.dd.length; }); }
   function cutCanRead() { return !!fb && !!S.pin && cutHas() && (canW() || (!!S.user && S.level === 'owner')); }
   var cutErr = { key: '', at: 0 };
@@ -6922,17 +6923,29 @@
      and time. Ticks and unticks go straight into Firestore's queue, in the order they were tapped, so a quick untick
      after a mis-tap wins, and a tick made with no signal is kept and sent later. */
   function cutOrdered(key, on) {
-    var parts = key.split('|'), by = cutTicker();
+    var parts = key.split('|'), by = cutTicker(), context = supplierContext();
     if (parts.length !== 2 || !fb || !by) return Promise.reject({ code: 'who' });
-    var data = { day: parts[1], sid: parts[0], on: !!on, at: now() }, ref = docRef('cutdone', parts[1] + '_' + parts[0]), was = cutSeen[key];
-    if (on && was) return Promise.resolve();
-    if (on) cutSeen[key] = { by: by, at: data.at }; else delete cutSeen[key];
-    cutPaint(); if (S.name === 'orders' || S.name === 'todo') draw();
-    return (by === 'owner' ? track(fb.fs.setDoc(ref, Object.assign({ by: 'owner' }, data))) : W([['set', ref, data]])).catch(function (e) {
-      if (was) cutSeen[key] = was; else delete cutSeen[key];
+    function save() {
+      if (context !== supplierContext() || by !== cutTicker()) return Promise.reject({ code: 'context' });
+      var data = { day: parts[1], sid: parts[0], on: !!on, at: now(), by: by }, ref = docRef('cutdone', parts[1] + '_' + parts[0]), was = cutSeen[key];
+      if (on && was) return Promise.resolve(was);
+      var write = {}; cutWrites[key] = write;
+      if (on) cutSeen[key] = { by: by, at: data.at }; else delete cutSeen[key];
       cutPaint(); if (S.name === 'orders' || S.name === 'todo') draw();
-      throw e;
-    });
+      return (by === 'owner' ? track(fb.fs.setDoc(ref, data)) : W([['set', ref, data]])).then(function () {
+        return { by: by, at: data.at };
+      }).catch(function (e) {
+        var seen = cutSeen[key], ours = on ? seen && seen.by === by && seen.at === data.at : !seen;
+        // A late failure must not overwrite a later tap, another chef's tick or a different signed-in session.
+        if (context === supplierContext() && cutWrites[key] === write && ours) {
+          if (was) cutSeen[key] = was; else delete cutSeen[key];
+          cutPaint(); if (S.name === 'orders' || S.name === 'todo') draw();
+        }
+        throw e;
+      }).finally(function () { if (cutWrites[key] === write) delete cutWrites[key]; });
+    }
+    // Keep the initiating writer if a PIN session is still opening. No supplier catalogue read is needed.
+    return sessP ? track(Promise.resolve(sessP).then(save, save)) : save();
   }
   function cutBandHTML() {
     if (!cutWho()) return '';
@@ -6941,7 +6954,7 @@
     return '<div class="cut-top"><h2 class="cut-h">Order cut-off' + (xs.length > 1 ? 's' : '') + '</h2><a class="cut-go" href="#/orders">Order list</a></div><ul class="cut-list">' + xs.map(function (c) {
       var left = c.at - m, soon = left <= CUT_SOON;
       return '<li class="cut-row' + (soon ? ' is-soon' : '') + '"><a class="cut-n" href="#/suppliers/cutoff/' + encodeURIComponent(c.s.id) + '/' + encodeURIComponent(c.day) + '">' + esc(c.s.name) + '</a><span class="cut-t">' + (soon ? '<b class="cut-now">Order now</b> ' : '') + 'by ' + (c.at >= 1440 ? 'tomorrow ' : '') + hhmm(c.at % 1440) + ' <b>' + cutIn(left) + '</b> <span class="cut-for">' + esc(cutDel(c)) + '</span></span>' +
-        '<button type="button" class="cut-done" data-cut="done" data-id="' + esc(c.key) + '" aria-label="' + esc('Ordered from ' + c.s.name + ': hide this reminder') + '">Ordered</button></li>';
+        '<button type="button" class="cut-done" data-cut="done" data-id="' + esc(c.key) + '" aria-label="' + esc('Order done for ' + c.s.name + ': confirm without quantities') + '"' + (cutCanTick() ? '' : ' disabled') + '>Order done</button></li>';
     }).join('') + '</ul>';
   }
   // js/app.js draws the empty slot under the top bar (and the Functions band); this fills it and keeps it right as time passes
@@ -6961,11 +6974,23 @@
   document.addEventListener('click', function (e) {
     var el = e.target.closest && e.target.closest('[data-cut]');
     if (!el || el.getAttribute('data-cut') !== 'done') return;
-    var key = el.getAttribute('data-id') || '', s = cutList().filter(function (x) { return x.id === key.split('|')[0]; })[0];
-    supplierComplete(key, true).then(function (saved) {
-      if (saved === false) return;
-      toast((s ? s.name : 'That supplier') + ' is ticked off as ordered, for every chef. No more pushes for it.');
-    }, function (e) { toast(e && (e.code === 'permission' || e.code === 'context') ? 'Not ticked. Sign in with your PIN and try again.' : 'Could not check supplier sheets. Check the connection and try again. This reminder is unchanged.', { label: 'OK', fn: function () {} }, 8000); });
+    var key = el.getAttribute('data-id') || '', c = cutOn(0).concat(cutOn(1)).filter(function (x) { return x.key === key && cutOnNow(x, T.mins()); })[0];
+    if (!c || !cutCanTick() || cutSeen[key]) return;
+    var context = supplierContext(), by = cutTicker();
+    function fail(e) {
+      if (context !== supplierContext()) return;
+      toast(e && (e.code === 'who' || e.code === 'permission-denied' || e.code === 'context') ? 'Not saved. Sign in with your PIN and try again.' : 'Not saved. Check the connection and try again. The reminder is unchanged.', { label: 'OK', fn: function () {} }, 8000);
+    }
+    // This confirms an order placed elsewhere, without opening or changing any detailed supplier order.
+    cutOrdered(key, true).then(function (saved) {
+      var current = cutSeen[key];
+      if (context !== supplierContext() || !current || current.by !== saved.by || current.at !== saved.at) return;
+      toast(c.s.name + ': order done. No quantities recorded.', { label: 'Undo', fn: function () {
+        var current = cutSeen[key];
+        if (context !== supplierContext() || by !== cutTicker() || !current || current.by !== saved.by || current.at !== saved.at) return;
+        cutOrdered(key, false).then(function () { if (context === supplierContext()) toast('Order confirmation undone. Saved order history is unchanged.'); }, fail);
+      } });
+    }, fail);
   });
   window.addEventListener('lk-who', function () { cutWatch(); cutPaint(); });
   window.addEventListener('lk-cfg', function () { cutWatch(); cutPaint(); });
