@@ -4591,7 +4591,7 @@
   }
   function xReturnBtn(x) {
     var returning = S.xReturning && S.xReturning[x.date + '_' + x.id];
-    var tick = !x.deleted && !x.returned && (can('tick') || wAll()) ? '<button type="button" class="chip sq" data-p="tr-return" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="Confirm ' + esc(x.text) + ' returned in full"' + (returning ? ' disabled' : '') + '>' + (returning ? 'Saving...' : '✓ Returned') + '</button>' : '';
+    var tick = !x.deleted && !x.returned && (can('tick') || wAll()) ? '<button type="button" class="nb-box tr-return-box" title="Mark returned in full" data-p="tr-return" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="Confirm ' + esc(x.text) + ' returned in full"' + (returning ? ' disabled' : '') + '>' + (returning ? '...' : BOX) + '</button>' : '';
     if (!x.deleted && x.returned && (wAll() || isSous() || (can('tick') && me() && me().id === x.returnedById && now() - x.returnedAt < 120000))) tick = '<button type="button" class="chip sq" data-p="tr-unreturn" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '"' + (returning ? ' disabled' : '') + '>Undo return</button>';
     return tick;
   }
@@ -4650,7 +4650,7 @@
     var sub = [nOut ? nOut + ' out' : '', nIn ? nIn + ' in' : ''].filter(Boolean).join(', ');
     var add = can('add') ? xFormHTML() : '<p class="hint">You can read the transfer list but not write in it.</p>';
     var outstanding = (S.xOpen || []).filter(function (x) { return x.date !== today && !x.deleted && !x.returned; }).sort(byTime);
-    var openBody = '<h3 class="nb-title">Still outstanding</h3><p class="hint">Tick Returned only when the full amount has been returned. Items stay here across days.</p>' +
+    var openBody = '<h3 class="a-ch-h">Still outstanding</h3><p class="hint">Tick the box only when the full amount has been returned. Items stay here across days.</p>' +
       (S.xOpenState === 'error' ? '<p class="p-err">Could not load outstanding transfers. This list may be incomplete. Reload to try again.</p>' :
       S.xOpenState !== 'ok' ? '<p class="nb-empty">Loading outstanding transfers...</p>' :
       outstanding.length ? '<ul class="nb-rows tr-outstanding">' + outstanding.map(function (x) { return '<li class="hint">' + esc(longDate(x.date)) + '</li>' + xRow(x); }).join('') + '</ul>' : '<p class="hint">No outstanding transfers from earlier days.</p>');
@@ -4660,7 +4660,7 @@
       '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Transfers</h2><span class="nb-date">' + esc(longDate(S.xDate)) + (sub ? ' &middot; ' + esc(sub) : '') + '</span></div>' +
       '<div class="nb-prog">' + live.length + (live.length === 1 ? ' transfer' : ' transfers') + '</div></header>' +
       '<p class="w-rule">Stock shared with the other venues, both ways. Write the amount and unit, not a price.</p>' +
-      '<div class="nb-foot w-addtop">' + add + '</div><div class="nb-body">' + openBody + '<h3 class="nb-title">Today</h3>' + body + '</div></section>' +
+      '<div class="nb-foot w-addtop">' + add + '</div><div class="nb-body">' + openBody + '<h3 class="a-ch-h">Today</h3>' + body + '</div></section>' +
       (wAll() ? '<p class="hint w-past">Past days and the totals per venue are in the <a href="#/admin" data-p="tr-go-admin">admin panel, Transfers</a>.</p>' : '');
   }
   // Next on the venue, the person or the item goes to the next empty box instead of sending the form half filled
