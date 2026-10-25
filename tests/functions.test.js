@@ -5,6 +5,12 @@ const M = require('../js/functions.js');
 const { R, ok } = L.results(), { txt, tap } = L;
 const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
 const store = page => page.evaluate(() => window.__fake.dump());
+// Contact fields and text stay out of the kitchen record. Numeric timestamps may legitimately contain 0400.
+function leaksContact(value) {
+  if (typeof value === 'string') return /0400|example\.com/.test(value);
+  if (!value || typeof value !== 'object') return false;
+  return Object.entries(value).some(([key, child]) => /^(phone|email|cname)$/i.test(key) || leaksContact(child));
+}
 const today = L.ymd(new Date(L.NOW)), tomorrow = M.addDays(today, 1), day2 = M.addDays(today, 2), yesterday = M.addDays(today, -1);
 const at = (ymd, hm) => M.kat(ymd, M.hmMin(hm));
 const PEOPLE = [
@@ -35,6 +41,8 @@ const extra = docs => Object.assign({}, base, ...Object.keys(docs).map(id => ({ 
 const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e => e.dispatchEvent(new Event('change', { bubbles: true }))); await L.settle(p, 80); };
 
 (async () => {
+  ok(!leaksContact({ from: 1792850400000 }), 'contact privacy check: a numeric timestamp containing 0400 is not a phone number');
+  ok(leaksContact({ notes: '0400 111 222' }) && leaksContact({ rounds: [{ note: 'jo@example.com' }] }) && leaksContact({ nested: { phone: '' } }) && leaksContact({ nested: { cname: 'Jo Smith' } }), 'contact privacy check: contact text and nested contact fields are still rejected');
   const b = await L.start();
 
   // 1. a coordinator books a function: menu, form, platters, staggered rounds by hand, kitchen comment, review, confirm
@@ -89,7 +97,7 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   ok(saved.status === 'confirmed' && saved.by === 'fay' && saved.confBy === 'fay' && saved.kcBy === 'fay' && saved.guests === 60, 'save: confirmed, written by Fay with her own id');
   ok(JSON.stringify(saved.lines.map(l => [l.rid, l.qty, M.fromU(l.u, 3)])) === JSON.stringify([['antipasto-platter', 3, [3, 0, 0]], ['aussie-platter', 4, [2, 2, 0]], ['pizza-platter', 5, [0, 2, 3]]]), 'save: every line keeps its platter id and adds up across the rounds');
   ok(saved.first === at(today, '18:30') && saved.last === at(today, '19:30') && saved.start === at(today, '18:00') && saved.until === at(today, '20:00'), 'save: first, last and the end of the band come from the saved rounds');
-  ok(!!contact && contact.phone === '0400 111 222' && contact.email === 'jo@example.com' && !JSON.stringify(saved).match(/0400|example\.com/), 'save: phone and email only in the contact record, not the kitchen\'s copy');
+  ok(!!contact && contact.phone === '0400 111 222' && contact.email === 'jo@example.com' && !leaksContact(saved), 'save: phone and email only in the contact record, not the kitchen\'s copy');
   // the platters are on today's prep list, one line each, under Functions, linked to the recipe card
   const pl = rid => s[fsKey(['days', today, 'items', 'fn-' + id + '-' + rid])];
   ok(!!pl('antipasto-platter') && pl('antipasto-platter').text === 'Antipasto Platter: Smith 50th, from 18:30' && pl('antipasto-platter').qty === '3 platters' && pl('antipasto-platter').station === 'Functions' && pl('antipasto-platter').recipe === 'antipasto-platter' && pl('antipasto-platter').fn === id && pl('antipasto-platter').dupOk === true && !('done' in pl('antipasto-platter')),
