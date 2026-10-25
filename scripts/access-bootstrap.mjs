@@ -11,7 +11,16 @@ export async function bootstrapAccess(db, pin) {
   let count = 0;
   for (const [source, target] of [['book', 'publicBook'], ['recipes', 'publicRecipes'], ['drawings', 'publicDrawings']]) {
     const docs = source === 'book' ? await Promise.all(['index', 'matches'].map(id => kitchen.collection(source).doc(id).get())) : (await kitchen.collection(source).get()).docs;
-    for (const doc of docs) { if (!doc.exists) continue; await db.collection(target).doc(doc.id).set(doc.data()); count++; }
+    for (let doc of docs) {
+      // A kitchen that has never edited a recipe still needs a readable public index for the lock probe.
+      if (!doc.exists && source === 'book' && doc.id === 'index') {
+        const index = kitchen.collection('book').doc('index');
+        try { await index.create({ r: {}, d: {} }); } catch (e) { if (e.code !== 6 && e.code !== 'already-exists') throw e; }
+        doc = await index.get();
+      }
+      if (!doc.exists) continue;
+      await db.collection(target).doc(doc.id).set(doc.data()); count++;
+    }
   }
   return { roster: people.length, recipeAssets: count };
 }
