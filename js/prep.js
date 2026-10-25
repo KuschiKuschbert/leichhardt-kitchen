@@ -6604,7 +6604,7 @@
      Opening the big guide page or the pings popup adds a history entry for the same address. Back closes it (pings count
      as put off, not read), and closing it any other way takes that entry off again, so Back never leaves the page by
      surprise. A close that comes with a move to another page (a link) leaves the entry. */
-  var ovOn = '', ovClose = null, ovBack = false, ovBackT = null, ovAfter = [];
+  var ovOn = '', ovClose = null, ovBack = false, ovBackT = null, ovAfter = [], ovScroll = null;
   function ovPush(k, close) {
     ovOn = k; ovClose = typeof close === 'function' ? close : null;
     try { history.pushState(Object.assign({}, history.state || {}, { lkOv: k }), '', location.href); } catch (e) {}
@@ -6614,21 +6614,25 @@
     if (ovOn !== k) return; ovOn = ''; ovClose = null; if (noBack) return;
     try {
       if (history.state && history.state.lkOv === k) {
-        ovBack = true; history.back();
+        ovBack = true; ovScroll = { x: window.scrollX, y: window.scrollY };
+        // Read after the close caller finishes, before asynchronous history restoration can replace its scroll.
+        Promise.resolve().then(function () { if (ovBack) ovScroll = { x: window.scrollX, y: window.scrollY }; });
+        history.back();
         clearTimeout(ovBackT); ovBackT = setTimeout(ovLanded, 600);   // in case the Back never reports back
       }
-    } catch (e) { ovBack = false; }
+    } catch (e) { ovBack = false; ovScroll = null; }
   }
   // A jump waits until Back has restored the sheet's opening scroll position, then moves to its heading.
   function ovAfterBack(fn) { if (ovBack) ovAfter.push(fn); else fn(); }
   function ovLanded() {
-    clearTimeout(ovBackT); var w = ovBack, after = ovAfter.splice(0), x = window.scrollX, y = window.scrollY, url = location.href; ovBack = false;
+    clearTimeout(ovBackT); var w = ovBack, after = ovAfter.splice(0), pos = ovScroll || { x: window.scrollX, y: window.scrollY }, x = pos.x, y = pos.y, url = location.href; ovBack = false; ovScroll = null;
     // Our close stays on this page. Keep the latest scroll, including a scroll made just after Close; the browser
     // otherwise restores the position from when the sheet opened. Native Back keeps its normal restoration.
-    if (w || after.length) setTimeout(function () {
+    // A zero-delay timer can run before Chromium applies persisted history scroll. Wait through that frame first.
+    if (w || after.length) requestAnimationFrame(function () { requestAnimationFrame(function () {
       if (w && location.href === url) window.scrollTo(x, y);
       after.forEach(function (fn) { fn(); });
-    }, 0);
+    }); });
     if (w && nextWait) sheetNext();
   }
   window.addEventListener('popstate', function () {

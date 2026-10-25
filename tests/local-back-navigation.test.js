@@ -154,7 +154,8 @@ const configWrites = p => p.evaluate(() => __fake.writes.flat().filter(w => /\/c
       scrollTo(0, 0);
     });
     await L.settle(p, 300);
-    ok(await p.evaluate(() => scrollY === 0 && document.querySelector('.fn-strip').hidden), restoration + ' restoration: an immediate scroll after Escape stays at the top');
+    const closedState = await p.evaluate(() => ({ y: scrollY, hidden: document.querySelector('.fn-strip').hidden }));
+    ok(closedState.y === 0 && closedState.hidden, restoration + ' restoration: an immediate scroll after Escape stays at the top ' + JSON.stringify(closedState));
     ok(await p.evaluate(() => history.scrollRestoration) === restoration, restoration + ' restoration: closing a sheet keeps the caller\'s scroll restoration mode');
     await p.evaluate(() => scrollTo(0, 1500)); await L.settle(p, 150);
     await p.click('.fn-strip-b'); await L.settle(p, 150);
@@ -164,6 +165,21 @@ const configWrites = p => p.evaluate(() => __fake.writes.flat().filter(w => /\/c
     noErrors(p, restoration + ' restoration');
     await p.context().close();
   }
+
+  // A slow history traversal can restore the opening position before its popstate reaches the sheet closer.
+  p = await L.open(b, '#/recipes', { extra: { [key(['functions', 'test'])]: booking }, wait: 1500 });
+  await p.evaluate(() => { document.body.style.minHeight = '4000px'; scrollTo(0, 1500); });
+  await L.settle(p, 200); await p.click('.fn-strip-b'); await L.settle(p, 150);
+  await p.evaluate(() => {
+    const back = history.back.bind(history);
+    history.back = () => setTimeout(() => { scrollTo(0, 1500); back(); }, 50);
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    scrollTo(0, 0);
+  });
+  await L.settle(p, 400);
+  const delayedState = await p.evaluate(() => ({ y: scrollY, hidden: document.querySelector('.fn-strip').hidden }));
+  ok(delayedState.y === 0 && delayedState.hidden, 'delayed history restoration cannot overwrite a scroll made immediately after closing ' + JSON.stringify(delayedState));
+  noErrors(p, 'delayed function sheet close'); await p.context().close();
 
   p = await L.open(b, '#/recipes', { wait: 1500 });
   await go(p, '#/waste'); await p.fill('#w-text', 'Chips'); await p.fill('#w-amt', '2');

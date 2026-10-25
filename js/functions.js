@@ -623,12 +623,12 @@
     var api = P() && P().book && P().book(), age = now() - (f.canAt || 0);
     return statusOK() && f.status === 'cancelled' && api && f.canBy === api.who() && f.upd === f.canAt && age >= 0 && age < 2 * MIN;
   }
-  function statusHTML(f, scope) {
+  function statusHTML(f, scope, compact) {
     if (!f || !f.id || f.removed || !statusOK() || (f.status !== 'confirmed' && !undoOK(f))) return '';
     var undo = f.status === 'cancelled', busy = F.jobs[f.id], kind = scope === 'fe' ? 'fe' : 'fn';
     return '<button type="button" class="btn fn-cancel" data-' + kind + '="status" data-v="' + (undo ? 'undo' : 'cancel') + '" data-id="' + esc(f.id) + '"' +
       (busy ? ' disabled' : '') + ' aria-label="' + esc((undo ? 'Undo cancellation of ' : 'Cancel ') + f.name) + '">' +
-      (busy ? (busy.undo ? 'Restoring...' : 'Cancelling...') : undo ? 'Undo cancel' : 'Cancel function') + '</button>';
+      (busy ? (busy.undo ? 'Restoring...' : 'Cancelling...') : undo ? (compact ? 'Undo' : 'Undo cancel') : compact ? 'Cancel' : 'Cancel function') + '</button>';
   }
   function statusPaint(id, saved) {
     if (/^#\/functions(?:\/|$)/.test(location.hash) && window.LK_FE && window.LK_FE.statusChanged) { paint(); window.LK_FE.statusChanged(id, saved); }
