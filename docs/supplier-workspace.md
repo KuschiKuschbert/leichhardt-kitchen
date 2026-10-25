@@ -8,6 +8,8 @@ Chef-hat > Supplier order opens a collapsible supplier workspace for the head ch
 
 Reuse the current app shell, Barlow and Barlow Condensed fonts, action buttons, choice chips, text-size settings and focus rules. No new font or service. Keep the current staff free-text order list, recipe book, prep and wastage flows.
 
+Cut-off settings remain under Admin > Settings > Order cut-offs. Order closes supports the same day and every day up to 14 days before delivery, with 1 week and 2 weeks labelled in the existing dropdown. Reminders still start at the selected time before the cut-off. The linked occurrence and saved order retain the actual delivery date, including across a month or year. A missing or older cut-off helper disables these controls and preserves stored settings on a People save.
+
 ## Private data contract (version 1)
 
 All paths are below kitchens/<pin>. Never commit supplier goods, source PDFs, prices, product codes, account details, staff names or the owner email. The source catalogue is imported through the restricted editor as a private JSON file. Only the import format and synthetic examples belong in git.

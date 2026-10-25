@@ -6827,7 +6827,7 @@
   /* ---------- order cut-offs (23 Oct 2026) ----------
      The head chef sets each supplier's order cut-off in the admin panel (Settings, Order cut-offs). They live in
      config/main cutoffs: [{ id, name, dd: delivery weekdays (0 Sunday to 6 Saturday), at: cut-off time in minutes after
-     midnight (-1 to come), pre: how many days before the delivery the order closes (0 to 3), lead: how long before the
+     midnight (-1 to come), pre: how many days before the delivery the order closes (0 to 14), lead: how long before the
      cut-off the reminder starts, in minutes (240, 360 or 480; 0 all day on the cut-off day) }]. Only the head chef's
      Google account writes them (the rules: isAdmin). The head chef and sous chefs get a bar under the top bar on every
      page from that time until the cut-off passes, and today's cut-offs on the order list (24 Oct 2026: at least 4 hours,
@@ -6840,7 +6840,7 @@
      never read them (the rules). */
   var CUT_SOON = 60;
   var CUT_DOW = [[1, 'Mon'], [2, 'Tue'], [3, 'Wed'], [4, 'Thu'], [5, 'Fri'], [6, 'Sat'], [0, 'Sun']];
-  var CUT_PRE = ['The same day', 'The day before', '2 days before', '3 days before'];
+  var CUT_PRE = ['The same day', 'The day before', '2 days before', '3 days before', '4 days before', '5 days before', '6 days before', '1 week before', '8 days before', '9 days before', '10 days before', '11 days before', '12 days before', '13 days before', '2 weeks before'];
   // the head chef's own list (23 Oct 2026); A La Carte Meats' days and time are still to come
   var CUT_USUAL = [
     { id: 'be-chicken', name: 'B&E Chicken', dd: [1, 2, 4, 5], at: 840, pre: 1, lead: 240 },
@@ -6849,19 +6849,19 @@
     { id: 'a-la-carte-meats', name: 'A La Carte Meats', dd: [], at: -1, pre: 1, lead: 240 }
   ];
   var cutTick = null, cutLast = null;
-  /* js/cutoffs.js: shared with the server's pushes. Should it not have loaded, no cut-offs show, the rest of the book
-     works, and the cut-offs saved in config/main are kept as they are (saveConfig writes them back untouched, so the head
+  /* js/cutoffs.js: shared with the server's pushes. If missing, or an older copy lacks the 14-day range, no cut-offs
+     show. The rest of the book works, and the cut-offs saved in config/main are kept as they are (saveConfig writes them back untouched, so the head
      chef's People save cannot wipe them; the Order cut-offs page says it cannot load and saves nothing). */
-  var CUT_OK = !!window.LK_CUT;
-  var CUT = window.LK_CUT || { clean: function () { return []; }, on: function () { return []; }, forText: function () { return ''; }, startAt: function () { return 0; }, LEADS: [] }, cutClean = CUT.clean;
+  var CUT_OK = !!window.LK_CUT && window.LK_CUT.MAX_PRE === 14;
+  var CUT = CUT_OK ? window.LK_CUT : { clean: function () { return []; }, cutDays: function () { return []; }, on: function () { return []; }, forText: function () { return ''; }, startAt: function () { return 0; }, LEADS: [] }, cutClean = CUT.clean;
   function cutList() { return cutClean(S.config && S.config.cutoffs); }
   // the weekdays an order closes: each delivery day less the days before
-  function cutDays(s) { return s.dd.map(function (d) { return (d - s.pre + 7) % 7; }); }
+  var cutDays = CUT.cutDays;
   function cutSay(s) {
     if (s.at < 0 || !s.dd.length) return 'Cut-off to come';
     var cd = cutDays(s);
     var days = s.dd.length === 7 ? 'every day' : CUT_DOW.filter(function (d) { return cd.indexOf(d[0]) >= 0; }).map(function (d) { return d[1]; }).join(', ');
-    return 'Order by ' + hhmm(s.at) + ' ' + days + (s.pre === 0 ? ' for the same day' : s.pre === 1 ? ' for the next day' : ' for ' + s.pre + ' days later') + '. ' + cutFrom(s);
+    return 'Order by ' + hhmm(s.at) + ' ' + days + (s.pre === 0 ? ' for the same day' : s.pre === 1 ? ' for the next day' : ' for ' + (s.pre === 7 ? '1 week' : s.pre === 14 ? '2 weeks' : s.pre + ' days') + ' later') + '. ' + cutFrom(s);
   }
   // when the reminder starts, from the cut-off time and how long before
   function cutFrom(s) {
@@ -7163,7 +7163,7 @@
     if (!s) return;
     if (k.indexOf('cut-n') === 0) { s.name = el.value.slice(0, 40); return; }
     if (k.indexOf('cut-t') === 0) { var t = /^(\d{1,2}):(\d{2})/.exec(el.value || ''); s.at = t ? Math.min(1439, +t[1] * 60 + +t[2]) : -1; }
-    if (k.indexOf('cut-p') === 0) s.pre = Math.max(0, Math.min(3, +el.value || 0));
+    if (k.indexOf('cut-p') === 0) s.pre = Math.max(0, Math.min(CUT.MAX_PRE, Math.floor(+el.value) || 0));
     if (k.indexOf('cut-r') === 0) s.lead = CUT.LEADS.some(function (l) { return l[0] === +el.value; }) ? +el.value : 240;
     var say = el.closest('.cut-ed') && el.closest('.cut-ed').querySelector('.cut-say'); if (say) say.textContent = cutSay(s);
     var sv = S.root.querySelector('[data-p="cut-save"]'), un = S.root.querySelector('[data-p="cut-undo"]');
