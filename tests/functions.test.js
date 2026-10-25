@@ -322,7 +322,12 @@ function hasPrivateContact(value) {
   ok(await p.evaluate(() => parseInt(getComputedStyle(document.documentElement).getPropertyValue('--fn-stick'))) > 30, 'strip: the bars that stick to the top move down below it');
   await tap(p, '.fn-strip-b'); await L.settle(p, 200);
   ok(!!(await p.$('.fn-sheet')), 'strip: a tap opens the sheet');
-  await p.keyboard.press('Escape'); await p.evaluate(() => window.scrollTo(0, 0)); await L.settle(p, 300);
+  // Finish closing the sheet (including its history traversal) before testing a separate scroll back to the band.
+  await p.keyboard.press('Escape');
+  await L.waitFor(p, () => !document.querySelector('.fn-sheet') && !(history.state && history.state.lkOv));
+  await L.settle(p, 700);
+  await p.evaluate(() => window.scrollTo(0, 0));
+  await L.waitFor(p, () => window.scrollY === 0 && document.querySelector('.fn-strip').hidden);
   ok(await p.$eval('.fn-strip', e => e.hidden), 'strip: gone again back at the top');
   ok(p.errors.length === 0, 'strip: no page errors ' + p.errors.join(' | '));
   await p.context().close();
