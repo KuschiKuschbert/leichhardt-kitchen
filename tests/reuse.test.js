@@ -186,9 +186,9 @@ const BAD_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><s
   await p.context().close();
 
   // staff never reach any of it: the rules refuse a template or a piece from a sous chef
-  p = await L.open(b, '#/', { who: 'sam', extra: cfg(), wait: 1200 });
+  p = await L.open(b, '#/', { who: 'bo', extra: cfg(), wait: 1200 });
   const refused = await p.evaluate(() => { const api = window.LK_PREP.book(); return api.ready().then(() => api.W([['set', api.docRef('drawtpl', 'sneaky-1'), { name: 'x', slot: 'plate', surf: {}, els: [], defs: '{}', vb: '', svgS: '', svgF: '', v: 1, upd: 1, removed: false }]])).then(() => 'saved', e => e && e.code); });
-  ok(refused === 'permission-denied', 'a sous chef cannot save a template (' + refused + ')');
+  ok(refused === 'permission-denied', 'staff cannot save a template (' + refused + ')');
   await p.context().close();
 
   await b.close();

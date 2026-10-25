@@ -55,11 +55,11 @@ function fn(o) {
   await p.context().close();
   p = await L.open(b, '#/', { who: 'ann', admin: true, extra, wait: 1800 });
   let rd = await ready(p); await L.settle(p, 400);
-  ok(rd && !(await ckShown(p)), 'head chef\'s Google device, staff signed in: no checks card');
+  ok(!(await ckShown(p)) && await p.evaluate(() => !LK_PREP.state.user), 'staff identity signs out Google and has no checks card');
   await p.context().close();
   p = await L.open(b, '#/', { who: '', admin: true, settings: { shared: true }, extra, wait: 1800 });
   rd = await ready(p); await L.settle(p, 400);
-  ok(rd && !(await ckShown(p)), 'shared kitchen device, nobody signed in: no checks card');
+  ok(rd && await ckShown(p), 'explicit Google admin login can see function checks on a shared device');
   await p.context().close();
 
   await b.close();

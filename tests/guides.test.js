@@ -38,7 +38,7 @@ async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, nul
   let p, s;
 
   // Staff page: only the kitchen PIN is needed (no name or own PIN), removed guides never show
-  p = await L.open(b, '#/guides', { who: '', extra, wait: 1500 });
+  p = await L.open(b, '#/guides', { who: 'ann', extra, wait: 1500 });
   ok(await p.locator('.g-card').count() === 2, 'guides: two guides listed, the removed one left out, with no name or PIN screen');
   ok(await p.locator('[data-p="g-cat"]').count() === 3, 'guides: category chips All, Equipment and Cleaning');
   await p.click('[data-p="g-cat"][data-v="cleaning"]');
@@ -220,6 +220,7 @@ async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, nul
   const titles = pg => pg.$$eval('.g-card .g-cn', els => els.map(e => e.textContent));
   for (const [who, want, label] of [['ann', [], 'staff (Ann)'], ['', [], 'nobody signed in'], ['bo', ['Function manager guide'], 'a function manager (Bo)'], ['sam', ['Function manager guide', 'Sous chef guide'], 'a sous chef (Sam)']]) {
     p = await L.open(b, '#/guides', { who, extra: whoX, wait: 1500 });
+    if (!who) { ok(await p.locator('.p-name').count() > 0 && await p.locator('.g-card').count() === 0, 'signed out: all guide information is behind personal login'); await p.context().close(); continue; }
     await L.waitFor(p, () => document.querySelectorAll('.g-card').length >= 2, null, 5000).catch(() => {});
     await L.settle(p, 300);
     const t = await titles(p), extraT = t.filter(x => /guide$/.test(x) && x !== 'iCombi: programme a new recipe').sort();

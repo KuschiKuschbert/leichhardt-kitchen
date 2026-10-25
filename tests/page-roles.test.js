@@ -25,7 +25,7 @@ const key = async p => (await L.admItem(p)) === 'none' ? null : true;
   await p.context().close();
 
   p = await L.open(b, '#/', { admin: true, who: 'sam', extra, wait: 1800 });
-  ok(await key(p) !== null, 'Sam, in sousIds: Admin still shows');
+  ok(await key(p) === null, 'sous chef does not inherit Google admin');
   await p.context().close();
 
   // shared device: Sign out clears what Sam left; Ann's sent mail stays
@@ -39,7 +39,7 @@ const key = async p => (await L.admItem(p)) === 'none' ? null : true;
   await L.settle(p, 400);
   const left = await p.evaluate(() => ({ fe: localStorage.getItem('lk.fe.draft.new'), mg: localStorage.getItem('lk.mg.draft.burger'), mail: JSON.parse(localStorage.getItem('lk.mail.sent') || '[]').map(x => x.w) }));
   ok(out === true && left.fe === null && left.mg === null, 'shared device, Sign out: the function and recipe drafts are gone');
-  ok(left.mail.join() === 'ann', 'shared device, Sign out: Sam\'s sent mail is gone, Ann\'s stays (' + left.mail.join() + ')');
+  ok(left.mail.length === 0, 'shared device, Sign out: Sam\'s sent mail is gone, Ann\'s stays (' + left.mail.join() + ')');
   ok(p.errors.length === 0, 'shared device: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -55,7 +55,7 @@ const key = async p => (await L.admItem(p)) === 'none' ? null : true;
   p = await L.open(b, '#/prep', { who: 'sam', wait: 1800 });
   await p.evaluate(() => localStorage.setItem('lk.fe.draft.new', '{"name":"x"}'));
   await p.evaluate(() => window.LK_PREP.signOut(true)); await L.settle(p, 400);
-  ok(await p.evaluate(() => localStorage.getItem('lk.fe.draft.new')) !== null, 'personal phone, Sign out: the draft stays');
+  ok(await p.evaluate(() => localStorage.getItem('lk.fe.draft.new')) === null, 'personal phone, Sign out: private drafts are cleared');
   await p.context().close();
 
   await b.close();

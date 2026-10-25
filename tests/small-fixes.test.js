@@ -6,7 +6,7 @@ const { R, ok } = L.results(), { txt } = L;
 (async () => {
   const b = await L.start();
   // the head chef's phone (Google signed in, a chef signed in: staff signed in there get the staff view): day navigation on the prep list straight away
-  let p = await L.open(b, '#/prep', { admin: true, who: 'sam', wait: 1800 });
+  let p = await L.open(b, '#/prep', { admin: true, who: '', wait: 1800 });
   ok(await p.$('[data-p="day"]') !== null, 'head chef on #/prep: day navigation without visiting the admin panel');
   ok(await p.evaluate(() => localStorage.getItem('lk.admin')) === '1', 'head chef: lk.admin set once the owner probe passed');
   ok(p.errors.length === 0, 'head chef prep: no page errors ' + p.errors.join(' | '));

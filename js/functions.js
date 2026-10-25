@@ -74,6 +74,7 @@
   /* first, last, from, until and kq worked out from what is saved (never typed), so nothing can go stale.
      kq is what the kitchen's one query sorts on: the last moment the kitchen needs to see this record (0 never). */
   function derive(f) {
+    if (f.removed) { f.status = 'cancelled'; f.kq = 0; return f; }
     var ats = (f.rounds || []).map(function (r) { return r.at; }), w;
     f.first = ats.length ? ats[0] : (f.start || 0);
     f.last = ats.length ? ats[ats.length - 1] : f.first;
@@ -279,7 +280,7 @@
 
   /* state: the functions the kitchen may need (live), and how fresh they are */
   var F = { list: [], state: 'idle', at: 0, err: '', key: '', unsub: null, more: false, offline: false, jobs: {} };
-  (function () { try { var c = JSON.parse(lsGet('lk.fn') || 'null'); if (c && c.list) { F.list = c.list.map(derive); F.at = c.at || 0; F.cached = true; } } catch (e) {} })();
+  // Private bookings are loaded only after a verified login, never from a shared localStorage cache.
   function nameOf(id) {
     if (!id) return 'Head chef (admin)';
     var api = P() && P().book && P().book();
@@ -287,6 +288,7 @@
   }
   function watch() {
     var prep = P(); if (!prep || !prep.state) return;
+    if (!prep.privateAccess()) { stop(); sheetClose(false, true); var printed = document.getElementById('fn-print'); if (printed) printed.remove(); F.list = []; F.sent = {}; F.state = 'idle'; lsSet('lk.fn', null); changed(); return; }
     var st = prep.state;
     if (!/^\d{4,6}$/.test(st.pin || '') || st.configState !== 'ok') return;
     var key = st.pin + '|' + T.day();
@@ -298,13 +300,13 @@
       var fs = api.fs();
       watchSent(api, fs);
       F.unsub = fs.onSnapshot(fs.query(api.colRef('functions'), fs.where('kq', '>=', T.at(T.day(), 0)), fs.orderBy('kq'), fs.limit(150)), { includeMetadataChanges: true }, function (snap) {
-        F.list = snap.docs.map(function (d) {
+        F.list = snap.docs.filter(function (d) { return !d.data().removed; }).map(function (d) {
           var job = F.jobs[d.id];
           // A cancellation waiting for its server acknowledgement must not look finished on this phone.
           return job && d.metadata && d.metadata.hasPendingWrites ? job.before : derive(Object.assign({ id: d.id }, d.data()));
         });
         F.offline = !!(snap.metadata && snap.metadata.fromCache);
-        if (!F.offline) { F.at = now(); F.cached = false; F.state = 'ok'; lsSet('lk.fn', JSON.stringify({ at: F.at, list: F.list })); }
+        if (!F.offline) { F.at = now(); F.cached = false; F.state = 'ok';  }
         else if (F.state !== 'ok') F.state = navigator.onLine === false ? 'offline' : 'loading';
         changed();
       }, function (e) { F.state = 'error'; F.err = e && e.code || ''; F.unsub = null; F.key = ''; changed(); });
@@ -374,6 +376,7 @@
     return { xs: xs, ys: ys, a: F.more ? xs : xs.slice(0, 2), b: F.more ? ys : ys.slice(0, 2) };
   }
   function bandHTML() {
+    if (!window.LK_PREP || !window.LK_PREP.privateAccess()) return '';
     if (location.hash === '#/fn/now') return '';   // the service view shows the same rounds in full: no band above it
     var t = now(), R = bandRows(t), xs = R.xs, stale = '';
     if (F.state === 'error' && F.at) stale = 'Could not load functions. Showing the copy from ' + when(F.at, kday(t)) + '.';
@@ -849,6 +852,7 @@
   }
   function known() { return F.state === 'ok' || F.state === 'offline' || !!F.at; }
   function pageHTML(id) {
+    if (!window.LK_PREP || !window.LK_PREP.privateAccess()) return '';
     var t = now(), today = kday(t), prep = P();
     if (!prep || !/^\d{4,6}$/.test((prep.state && prep.state.pin) || '')) return '<section class="set-block"><h2 id="rtitle" tabindex="-1">Functions</h2><p>This device has no kitchen PIN yet. Open the Prep list and enter it first.</p><div class="btn-row"><a class="btn dark" href="#/prep">Open the Prep list</a></div></section>';
     if (id === 'now') return serviceHTML(t);
@@ -882,6 +886,7 @@
      order reminders, and the ones 2 and 3 days out. A function today that is over is left out. By day, then by when
      food first goes out, times TBC last in a day. Nothing to list: no card. */
   function landHTML() {
+    if (!window.LK_PREP || !window.LK_PREP.privateAccess()) return '';
     var t = now(), today = kday(t), tom = addDays(today, 1), end = addDays(today, 3), R = bandRows(t), inBand = {};
     R.a.forEach(function (x) { if (x.kind === 'on') inBand[x.f.id] = 1; });
     R.b.forEach(function (x) { if (x.kind === 'tomorrow') inBand[x.f.id] = 1; });
@@ -922,6 +927,7 @@
     return out;
   }
   function checkHTML() {
+    if (!window.LK_PREP || !window.LK_PREP.privateAccess()) return '';
     var P = window.LK_PREP, chef = !!(P && ((P.chefMenu && P.chefMenu().chef) || (P.bookEdit && P.bookEdit()))), hid = '';
     if (!chef) return '';
     try { hid = localStorage.getItem('lk.fn.ckhide') || ''; } catch (e) {}
@@ -974,7 +980,8 @@
   window.addEventListener('offline', changed);
   window.addEventListener('lk-clock', changed);
   window.addEventListener('lk-cfg', function () { watch(); changed(); });
-  window.addEventListener('lk-who', changed);
+  window.addEventListener('lk-who', function () { watch(); changed(); });
+  window.addEventListener('lk-access', function () { watch(); changed(); });
   // the head chef's Google sign-in passed or failed on this device: To check before the functions follows
   window.addEventListener('lk-admin', changed);
   // the head chef's recipe changes arrived: the platter names in the picker follow (bookings keep what was agreed)

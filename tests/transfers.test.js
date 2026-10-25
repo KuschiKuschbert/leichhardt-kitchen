@@ -115,12 +115,12 @@ extra[fsKey(['summary', 'transfers'])] = { day: today, from: yest, to: yest, at:
   {
     const p = await L.open(b, '#/transfers', { extra, who: 'sam', touch: true, settings: { shared: true }, wait: 1200 });
     await p.clock.runFor(11 * 60000); await L.settle(p, 300);
-    ok(!!(await p.$('.nb-guest')) && /Brioche buns/.test(await txt(p, '.o-page') || ''), 'shared tablet: after the lock the transfers still show, with the sign-in bar');
+    ok(!!await p.$('.p-name') && !await p.$('.tr-row'), 'shared tablet: transfers are hidden after idle lock');
+    await p.click('.p-name[data-id="ann"]'); await L.settle(p,250); await p.keyboard.type('2222'); await L.settle(p,1000);
     await p.fill('#tr-venue', 'Riviera'); await p.fill('#tr-person', 'Jess'); await p.fill('#tr-text', 'Cream'); await p.fill('#tr-amt', '2');
     await p.click('[data-p="tr-unit"][data-v="L"]');
     await p.click('.tr-add .nb-addbtn'); await L.settle(p, 300);
-    ok(!!(await p.$('.p-name')), 'shared tablet: Log it asks who you are first');
-    await p.click('.p-name[data-id="ann"]'); await L.settle(p, 250); await p.keyboard.type('2222'); await L.settle(p, 1200);
+    ok(!await p.$('.p-name'), 'shared tablet: authenticated staff can log a transfer');
     const cr = await saved(p, 'Cream');
     ok(cr.length === 1 && cr[0].addedById === 'ann' && cr[0].venue === 'Riviera' && cr[0].person === 'Jess' && cr[0].unit === 'L', 'shared tablet: after the PIN it is logged by Ann (' + JSON.stringify(cr[0]) + ')');
     ok(p.errors.length === 0, 'shared tablet: no page errors ' + p.errors.join(' | '));

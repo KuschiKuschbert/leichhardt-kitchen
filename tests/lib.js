@@ -21,7 +21,7 @@ const PDFJS = path.join(__dirname, 'node_modules', 'pdfjs-dist') + path.sep;
 const sha = s => crypto.createHash('sha256').update(s).digest('hex');
 const PIN = '000000';   // the stand-in kitchen PIN: 6 digits, so it can never be the real one (always 4)
 const K = ['kitchens', PIN];
-const NOW = (function () { const d = new Date(); d.setHours(14, 0, 0, 0); return d.getTime(); })();
+const NOW = Date.parse(new Date(Date.now() + 10 * 3600000).toISOString().slice(0, 10) + 'T04:00:00Z'); // 14:00 Brisbane, independent of the runner timezone
 function ymd(d) { const p = n => (n < 10 ? '0' : '') + n; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }
 
 /* Three made-up people: Sam (sous chef, PIN 1111), Ann and Bo (staff, 2222 and 3333), their usual drinks, today's prep
@@ -48,7 +48,11 @@ function seed(extra) {
   put(['orders', today, 'lines', 'o1'], { text: 'Milk', qty: '6 L', recipes: [], addedBy: 'Ann', addedById: 'ann', addedAt: NOW - 3600000, ordered: false, deleted: false });
   put(['orders', today, 'lines', 'o2'], { text: 'Brioche buns', qty: '4 packs', recipes: [], addedBy: 'Ann', addedById: 'ann', addedAt: NOW - 3000000, ordered: false, deleted: false });
   put(['waste', today, 'lines', 'w1'], { text: 'Chips', amount: 2, unit: 'kg', reason: 'excess', action: '', station: 'Fryer', addedBy: 'Bo', addedById: 'bo', addedAt: NOW - 1800000, deleted: false });
-  return Object.assign(s, extra || {});
+  Object.assign(s, extra || {});
+  const cfg = s[K.concat(['config', 'main']).join('/')];
+  cfg.fnOnlyIds = cfg.fnOnlyIds || (cfg.people || []).filter(p => p.active !== false && p.role === 'fnc').map(p => p.id);
+  s[K.concat(['login', 'roster']).join('/')] = Object.fromEntries(['people', 'staffIds', 'sousIds', 'headId', 'fnIds', 'fnOnlyIds'].filter(k => cfg[k] !== undefined).map(k => [k, cfg[k]]));
+  return s;
 }
 
 /* The nightly wastage summary (summary/waste, 22 Oct 2026) as the server writes it: one entry per item, for "extra".
@@ -200,7 +204,7 @@ async function open(browser, hash, o) {
     if (!f.startsWith(PDFJS) || !fs.existsSync(f)) return r.fulfill({ status: 404, body: '' });
     return r.fulfill({ status: 200, headers: { 'Access-Control-Allow-Origin': '*' }, contentType: /\.m?js$/.test(f) ? 'text/javascript' : 'application/octet-stream', body: fs.readFileSync(f) });
   });
-  const who = o.who === undefined ? 'sam' : o.who, pins = { sam: '1111', ann: '2222', bo: '3333', fay: '5151', finn: '5252' };
+  const who = o.who === undefined ? (o.admin ? '' : 'sam') : o.who, pins = { sam: '1111', ann: '2222', bo: '3333', fay: '5151', finn: '5252' };
   // a person signed in on this phone has a running PIN session (sessions/<this phone's uid>), as every phone does once
   // it has moved from the older proof; the head chef's Google account is the phone's sign-in when o.admin is set
   const store = seed(o.extra), uid = o.admin ? 'owner' : 'anon-test', exp = (o.clock || NOW) + 30 * 86400000;
@@ -242,6 +246,11 @@ async function open(browser, hash, o) {
   // the book starts up in steps (the Firebase stand-in loads, then the kitchen's settings, then the lists and the
   // sign-in), so a page that has just opened waits for the settings to be read (or to fail) and has to be still for longer
   await settle(page, o.wait || 600, 300, () => { const st = window.LK_PREP && window.LK_PREP.state; return !st || !st.pin || st.configState === 'ok' || st.configState === 'error'; });
+  const expectedLogin = !o.noPin && !o.noAnon && ((sess && !o.admin) || (o.admin && (!who || who === (store[K.concat(['config','main']).join('/')] || {}).headId)));
+  if (expectedLogin) {
+    await waitFor(page, () => { const p=window.LK_PREP; return p && p.privateAccess() && (p.functionOnly() || p.state.configFull); }, null, 5000).catch(() => {});
+    await settle(page, 800, 200);
+  }
   return page;
 }
 /* Sideways scroll: false when the page fits, otherwise a short note saying by how much, the scrollbar width and the

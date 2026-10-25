@@ -76,7 +76,7 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   await p.context().close();
   p = await L.open(b, '#/recipes', { who: 'sam', wait: 1800 });
   m = await L.chefItems(p);
-  ok(m.join(',') === 'mail,drinks,minutes,fn,pings,todo,staff,settings,out', 'sous chef: the Chef group has Shift pings, Chef to-do and Manage staff, the register is in Meeting minutes (' + m + ')');
+  ok(m.join(',') === 'mail,drinks,minutes,fn,manage,pings,todo,staff,settings,out', 'sous chef: the Chef group has Shift pings, Chef to-do and Manage staff, the register is in Meeting minutes (' + m + ')');
   // the short menu: 48 px rows, no second line with nothing to say, Sign out's line read out when it changes
   await p.click('.wtop-who'); await L.settle(p, 150);
   let box = await menuBox(p);
@@ -136,7 +136,7 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   ok(!(await signedIn(p)) && /Who are you\?/.test(await txt(p, '#prep-root') || ''), 'Not you?: the second tap asks who is writing');
   await p.click('.p-name[data-id="bo"]'); await L.settle(p, 300);
   await p.keyboard.type('3333'); await L.settle(p, 900);
-  ok(/Writing as\s*Bo/.test(await txt(p, '.nb-top') || '') && await p.inputValue('#p-text') === 'Pick parsley', 'Not you?: Bo signs in and the typed line is still in the box');
+  ok(/Writing as\s*Bo/.test(await txt(p, '.nb-top') || '') && await p.inputValue('#p-text') === '', 'Not you?: Bo signs in and the previous person typed line is cleared');
   ok(p.errors.length === 0, 'Not you?: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -211,7 +211,7 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   fay[fsKey(['drinks', 'fay'])] = { kind: 'flat', at: 1, by: 'fay' };
   p = await L.open(b, '#/recipes', { who: 'fay', extra: fay, wait: 1800 });
   m = await L.chefItems(p);
-  ok(m.join(',') === 'mail,drinks,functions,settings,out', 'function manager: Functions where everyone has it (' + m + ')');
+  ok(m.join(',') === 'functions,settings,out', 'function manager: Functions where everyone has it (' + m + ')');
   await p.click('.wtop-who'); await L.settle(p, 150);
   ok(!(await p.$('.wm .wm-sh')), 'function manager: no Chef heading over Functions');
   await p.context().close();
