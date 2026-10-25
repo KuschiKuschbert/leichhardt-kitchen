@@ -751,3 +751,7 @@ Supplier order accepts a plain number when the item has a confirmed order unit. 
 4. Change the `KITCHEN_PIN` secret in the GitHub repository settings to the new PIN, or the nightly learning keeps counting the old PIN's (now empty) days and nothing new is learned.
 
 `scripts/publish-rules.sh` fills in one PIN. For step 1 (two PINs live at once) and step 3, paste a hand-edited copy into the Firebase console instead, as described in the header of `firestore.rules`.
+
+### Number-only supplier quantities, 25 October 2026
+
+Items without a confirmed unit accept a positive decimal quantity and retain an empty unit in history. Confirmed units and explicit typed units keep their existing behaviour. Stock counts also accept zero. No units or pack sizes are guessed; top-ups still require confirmed compatible units. No new reads, rules, schema or dependencies. Rollback: revert this change through a fresh branch and PR. Saved quantities remain intact; older clients may require a unit when reusing these lines.

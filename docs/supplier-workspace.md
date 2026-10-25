@@ -51,7 +51,7 @@ The release gate is a successful Publish rules run **from the feature branch**, 
 
 ### Quantity entry correction, 24 October 2026
 
-A bare positive number uses only the item's confirmed order unit; a bare stock count uses only its confirmed par unit. Review and history store the unit with the amount. Explicit units take precedence. Unknown units still require explicit entry and are never inferred from a product name, pack description or par value. Errors identify and focus the exact quantity or stock field, clear obstructing filters, select the correct page and keep the rest of the draft. Supplier UI/core revision 2 uses versioned lazy URLs and checks module versions; the private catalogue and order data format stays version 1.
+A bare positive number uses only the item's confirmed order unit; a bare stock count uses only its confirmed par unit. Review and history store the unit with the amount. Explicit units take precedence. At this revision, unknown units required explicit entry. The 25 October correction below accepts a plain quantity without inferring a unit from a product name, pack description or par value. Errors identify and focus the exact quantity or stock field, clear obstructing filters, select the correct page and keep the rest of the draft. Supplier UI/core revision 2 uses versioned lazy URLs and checks module versions; the private catalogue and order data format stays version 1.
 
 ### Reminder-only confirmation, 25 October 2026
 
@@ -60,3 +60,7 @@ The bar keeps its existing compact button and uses the label Order done. A saved
 No schema, security rules, dependencies or persistent caches change. There are no additional reads. Detailed order validation and transactions remain unchanged. Roll back with a revert on a fresh branch and pull request, then verify Pages and live click tests. Existing completion records remain compatible with the previous client; saved orders and history need no migration or cleanup.
 
 Regression coverage is in tests/supplier-reminder-done.test.js. The existing supplier-cutoff-readiness tests continue to cover the detailed tick-list flow, and supplier order tests cover immutable recording, duplicates and additional orders.
+
+### Number-only supplier quantities, 25 October 2026
+
+Items without a confirmed unit accept a positive decimal quantity and retain an empty unit in history. Confirmed units and explicit typed units keep their existing behaviour. Stock counts also accept zero. No units or pack sizes are guessed; top-ups still require confirmed compatible units. No new reads, rules, schema or dependencies. Rollback: revert this change through a fresh branch and PR. Saved quantities remain intact; older clients may require a unit when reusing these lines.
