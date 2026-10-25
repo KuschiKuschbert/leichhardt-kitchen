@@ -103,16 +103,13 @@ async function signOut(p) {
   // phase 2 (22 Oct 2026): a phone whose Firebase sign-in failed cannot open a session, so it says so instead of
   // "That PIN is not right"; once the sign-in works, the PIN goes in
   p = await L.open(b, '#/prep', { who: 'ann', noAnon: true, wait: 1500 });
-  st = await state(p);
-  ok(!st.authed && st.step === 'enter', 'no sign-in: the phone asks for the PIN (it has no session to open with) (' + JSON.stringify(st) + ')');
-  await p.keyboard.type('2222'); await L.settle(p, 900);
-  st = await state(p);
-  ok(!st.authed && /could not sign in to the book/.test(st.msg), 'no sign-in: the PIN screen says the phone could not sign in (' + st.msg + ')');
+  ok(!await p.$('.nb-row') && /Could not connect/.test(await p.locator('body').innerText()), 'no sign-in: operational data stays locked when Firebase login fails');
   await p.evaluate(() => { window.__fakeNoAnon = false; });
-  await p.keyboard.type('2222'); await L.settle(p, 900);
-  if (!(await state(p)).authed) { await p.keyboard.type('2222'); await L.settle(p, 900); }   // the sign-in came in on the first try
+  await p.click('[data-p="retry"]'); await L.settle(p, 1200);
+  if (await p.$('.p-name[data-id="ann"]')) { await p.click('.p-name[data-id="ann"]'); await L.settle(p, 300); }
+  await p.fill('#pf1', '2222'); await L.settle(p, 1000);
   st = await state(p); s = await sessOf(p);
-  ok(st.authed && s && s.by === 'ann', 'no sign-in: once the sign-in works, the PIN opens a session (' + JSON.stringify(st) + ')');
+  ok(st.authed && s && s.by === 'ann', 'retry: recovered Firebase login opens only Ann personal session');
   ok(p.errors.length === 0, 'no sign-in: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 

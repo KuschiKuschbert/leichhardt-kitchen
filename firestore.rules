@@ -1,23 +1,47 @@
-// Firestore security rules for the prep book. The live copy is edited in the Firebase console
-// (Firestore Database > Rules). Keep this file in step with it after every change.
-// Replace KITCHEN_PIN with the kitchen PIN and OWNER_EMAIL with the head chef's Google account.
-// Never commit the real values: this repository is public.
-// Moving to a new kitchen PIN (admin Tools): publish a second copy of every kitchens/KITCHEN_PIN/... block for the
-// new PIN first, move, then remove the old PIN's copy once every phone has the new one.
-//
-// Reading needs only the kitchen PIN (it is the path), except function contacts (function managers), minutes drafts,
-// kitchen mail and past days of the wastage log and transfers (the head chef's Google account) and the chef to-do list
-// (the head chef and sous chefs). Writing needs a person's own PIN.
-// Since 22 Oct 2026 a phone signs in to Firebase anonymously and a right PIN opens a session for that phone and person
-// (sessions/<uid>, below): every write carries the writer's id (by) and the rules check that phone's session. PIN tries
-// are written first, one every 20 seconds per person (tries/<id>), and compared with the stored PIN hash
-// (staffpins/<id>.hash), which nobody can read, so a PIN cannot be guessed by script.
-// The older way (a write-only PIN proof in proofs/<id> with every write) was switched off in phase 2 (22 Oct 2026).
+// Private kitchen access, 25 October 2026. See docs/private-kitchen-access.md.
+// Template only: publish with KITCHEN_PIN and OWNER_EMAIL filled from existing deployment secrets.
+// Current recipe assets are public; operational data requires a personal session or verified admin.
+// login/roster contains only the metadata needed to select a name and enter its PIN.
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function isAdmin() {
       return request.auth != null && request.auth.token.email == 'OWNER_EMAIL' && request.auth.token.email_verified == true;
+    }
+    // Kitchen data needs a live personal session. Anonymous Firebase auth alone is not a staff login.
+    function functionOnly(id) { return id in cfg().get('fnOnlyIds', []); }
+    function kitchenRead() { return isAdmin() || (sessOk(reader()) && !functionOnly(reader())); }
+    function functionRead() { return isAdmin() || sessOk(reader()); }
+    match /kitchens/KITCHEN_PIN/login/roster {
+      // Minimal names and permission ids for the PIN screen, never kitchen settings or operational data.
+      allow get: if request.auth != null;
+      allow list: if false;
+      allow write: if isAdmin() || (staff() && sousBy()
+        && request.resource.data.keys().hasOnly(['people', 'staffIds', 'sousIds', 'headId', 'fnIds', 'fnOnlyIds', 'by'])
+        && request.resource.data.people == getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/config/main).data.people
+        && request.resource.data.staffIds == getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/config/main).data.staffIds
+        && request.resource.data.sousIds == cfg().get('sousIds', []) && request.resource.data.headId == cfg().get('headId', '')
+        && request.resource.data.fnIds == cfg().get('fnIds', []) && request.resource.data.fnOnlyIds == cfg().get('fnOnlyIds', []));
+    }
+    // Current recipe assets have a fixed public address, so new recipes also work without knowing the kitchen PIN.
+    match /publicBook/{id} {
+      allow get: if id in ['index', 'matches'];
+      allow list: if false;
+      allow create, update: if bookBy() && id in ['index', 'matches']
+        && request.resource.data == getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/book/$(id)).data;
+      allow delete: if false;
+    }
+    match /publicRecipes/{id} {
+      allow read: if true;
+      allow create, update: if bookBy()
+        && request.resource.data == getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/recipes/$(id)).data;
+      allow delete: if false;
+    }
+    match /publicDrawings/{id} {
+      allow read: if true;
+      allow create, update: if bookBy()
+        && request.resource.data == getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/drawings/$(id)).data;
+      allow delete: if false;
     }
     // Admin history queries existing dated lines by their full document paths. Collection-group queries need a
     // recursive match. This adds list only for the same verified owner; individual reads and writes retain their
@@ -43,7 +67,7 @@ service cloud.firestore {
     function session() { return request.resource.data.by is string && sessOk(request.resource.data.by); }
     // a read (22 Oct 2026, review S9): who this phone reads as, '' with no session. Use it with sessOk(reader()).
     function reader() { return request.auth != null && exists(sessDoc()) ? get(sessDoc()).data.by : ''; }
-    function staff() { return session(); }
+    function staff() { return session() && !functionOnly(request.resource.data.by); }
     // Someone taken off the list (Stopped working here) cannot write any more, even with their old PIN. staffIds is the
     // people on the list (config/main); a book that never had one keeps working as before.
     function onList(id) { return !('staffIds' in cfg()) || id in cfg().staffIds; }
@@ -78,7 +102,7 @@ service cloud.firestore {
         && (resource.data.get('headId', '') == '' || resource.data.get('headId', '') in request.resource.data.get('staffIds', []));
     }
     match /kitchens/KITCHEN_PIN/config/main {
-      allow read: if true;
+      allow read: if kitchenRead();
       allow create: if isAdmin();
       // A sous chef (own PIN, no Google sign-in) may only change the people list and staffIds (who may set a PIN),
       // and only if listed in sousIds. sousIds and pingIds can only be changed by the head chef: the admin panel
@@ -130,17 +154,27 @@ service cloud.firestore {
         && (resource != null || request.resource.data.get('addedById', '') in ['', request.resource.data.by])
         && (request.resource.data.get('done', false) != true || resource.data.get('done', false) == true || request.resource.data.get('doneById', '') == request.resource.data.by));
     }
+    function functionLine(key) {
+      let id = request.resource.data.get('fn', '');
+      let next = getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/functions/$(id)).data;
+      let old = get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/functions/$(id));
+      return session() && functionOnly(request.resource.data.by) && request.resource.data.by in cfg().get('fnIds', [])
+        && id != '' && key.matches('fn-' + id + '.*')
+        && (resource == null || resource.data.get('fn', '') == id)
+        && next.by == request.resource.data.by && next.v == (!exists(/databases/$(database)/documents/kitchens/KITCHEN_PIN/functions/$(id)) ? 1 : old.data.v + 1)
+        && onlyKeys(['text', 'qty', 'station', 'recipe', 'recipes', 'fn', 'dupOk', 'deleted', 'deletedBy', 'deletedAt', 'addedBy', 'addedById', 'addedAt', 'by']);
+    }
     match /kitchens/KITCHEN_PIN/days/{day}/items/{item} {
-      allow read: if true;
-      allow create: if writer() && lineOk(160) && lineWho(day);
-      allow update: if writer() && lineOk(160) && tickKept() && lineWho(day);
+      allow read: if kitchenRead();
+      allow create: if (writer() || functionLine(item)) && lineOk(160) && lineWho(day);
+      allow update: if (writer() || functionLine(item)) && lineOk(160) && tickKept() && lineWho(day);
       allow delete: if false;
     }
     // An order line is ticked as ordered (or not) only by the head chef or a sous chef, as the page shows (22 Oct 2026).
     match /kitchens/KITCHEN_PIN/orders/{day}/lines/{line} {
-      allow read: if true;
-      allow create: if writer() && lineOk(120) && lineWho(day) && (request.resource.data.get('ordered', false) == false || lead());
-      allow update: if writer() && lineOk(120) && lineWho(day) && (request.resource.data.get('ordered', false) == resource.data.get('ordered', false) || lead());
+      allow read: if kitchenRead();
+      allow create: if (writer() || functionLine(line)) && lineOk(120) && lineWho(day) && (request.resource.data.get('ordered', false) == false || lead());
+      allow update: if (writer() || functionLine(line)) && lineOk(120) && lineWho(day) && (request.resource.data.get('ordered', false) == resource.data.get('ordered', false) || lead());
       allow delete: if false;
     }
     // Today in kitchen time (Queensland, UTC+10, no daylight saving), with 15 minutes either side for a phone's clock.
@@ -154,7 +188,7 @@ service cloud.firestore {
     // Head chef decision (22 Oct 2026): with the kitchen PIN only today's lines can be read. Past days are for the
     // head chef's Google account (the admin panel's wastage log). The phones get what they need from summary/waste.
     match /kitchens/KITCHEN_PIN/waste/{day}/lines/{line} {
-      allow read: if isAdmin() || isToday(day);
+      allow read: if isAdmin() || (kitchenRead() && isToday(day));
       allow create: if writer()
         && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 80
         && request.resource.data.amount is number && request.resource.data.amount > 0 && request.resource.data.amount < 100000
@@ -173,7 +207,7 @@ service cloud.firestore {
     // End-of-day waste review, one per day. Everyone reads it (the change for the next shift shows on the prep list);
     // only the head chef or a sous chef writes it: today's on the wastage page, past days in the admin panel's wastage log.
     match /kitchens/KITCHEN_PIN/waste/{day} {
-      allow read: if true;
+      allow read: if kitchenRead();
       allow create, update: if writer() && lead()
         && request.resource.data.get('avoidable', '') is string && request.resource.data.get('avoidable', '').size() <= 300
         && request.resource.data.get('change', '') is string && request.resource.data.get('change', '').size() <= 300;
@@ -238,7 +272,7 @@ service cloud.firestore {
     // The open index is an exact copy of its dated line in the same atomic write.
     // Staff can query open loans across all dates without reading the private history.
     match /kitchens/KITCHEN_PIN/transferOpen/{key} {
-      allow read: if isAdmin() || resource.data.open == true;
+      allow read: if isAdmin() || (kitchenRead() && resource.data.open == true);
       allow create, update: if writer()
         && request.resource.data.keys().hasOnly(['date', 'lineId', 'record', 'open', 'by'])
         && request.resource.data.date is string
@@ -250,7 +284,7 @@ service cloud.firestore {
       allow delete: if false;
     }
     match /kitchens/KITCHEN_PIN/transfers/{day}/lines/{line} {
-      allow read: if isAdmin() || isToday(day);
+      allow read: if isAdmin() || (kitchenRead() && isToday(day));
       allow create: if isAdmin() || (staff() && nearDay(day) && xferOk());
       allow update: if (writer() && xferReturn(day, line)) || (isAdmin() && xferDel())
         || (staff() && sousBy() && resource.data.get('addedById', '') == request.resource.data.by
@@ -273,19 +307,19 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['day', 'tag', 'sg', 'pf', 'at', 'by']);
     }
     match /kitchens/KITCHEN_PIN/summary/{id} {
-      allow read: if true;
+      allow read: if kitchenRead();
       allow write: if isAdmin();
     }
     // Recipe book searches that found nothing.
     match /kitchens/KITCHEN_PIN/misses/{id} {
-      allow read: if true;
+      allow read: if kitchenRead();
       allow create, update: if isAdmin() || (staff() && request.resource.data.q is string && request.resource.data.q.size() <= 60
         && onlyKeys(['q', 'n', 'last', 'lastBy', 'hidden', 'by']));
       allow delete: if isAdmin();
     }
     // Recipe cards opened (counts only).
     match /kitchens/KITCHEN_PIN/views/{id} {
-      allow read: if true;
+      allow read: if kitchenRead();
       allow create, update: if isAdmin() || (staff() && request.resource.data.name is string && request.resource.data.name.size() <= 80 && request.resource.data.n is int
         && onlyKeys(['name', 'n', 'last', 'by']));
       allow delete: if isAdmin();
@@ -308,7 +342,7 @@ service cloud.firestore {
     // A ping is changed or removed by the person who wrote it (author, kept from the first save; older pings have only by),
     // the head chef, or a sous chef. A sous chef's edit does not take the ping over: the writer can still change it.
     match /kitchens/KITCHEN_PIN/notes/{id} {
-      allow read: if true;
+      allow read: if kitchenRead();
       allow create: if (isAdmin() || (staff() && (sousBy() || pingBy()))) && noteOk();
       allow update: if (lead() || (staff() && pingBy() && resource.data.get('author', resource.data.get('by', '')) == request.resource.data.by)) && noteOk();
       allow delete: if false;
@@ -342,18 +376,18 @@ service cloud.firestore {
         && request.resource.data.get('removed', false) is bool;
     }
     match /kitchens/KITCHEN_PIN/minutes/{id} {
-      allow get: if isAdmin() || resource.data.status == 'published';
-      allow list: if isAdmin() || resource.data.pubAt >= 1;
+      allow get: if isAdmin() || (kitchenRead() && resource.data.status == 'published');
+      allow list: if isAdmin() || (kitchenRead() && resource.data.pubAt >= 1);
       allow create, update: if isAdmin() && minutesOk();
       allow delete: if false;
       match /hist/{v} {
-        allow read: if true;
+        allow read: if isAdmin();
         allow create: if isAdmin() && minutesOk();
         allow update, delete: if false;
       }
       // The head chef may also create one when moving everything to a new kitchen PIN (an exact copy of the old record).
       match /signs/{sid} {
-        allow read: if true;
+        allow read: if isAdmin();
         allow create: if (isAdmin() && request.resource.data.v is int && request.resource.data.st in ['present', 'apology', 'absent']) || (staff()
           && request.resource.data.v is int
           && request.resource.data.st in ['present', 'apology', 'absent']
@@ -383,11 +417,11 @@ service cloud.firestore {
         && request.resource.data.get('removed', false) is bool;
     }
     match /kitchens/KITCHEN_PIN/guides/{id} {
-      allow read: if true;
+      allow read: if kitchenRead();
       allow create, update: if isAdmin() && guideOk();
       allow delete: if false;
       match /pages/{n} {
-        allow read: if true;
+        allow read: if kitchenRead();
         allow create, update: if isAdmin() && picture(request.resource.data.img) && request.resource.data.img.size() > 0 && request.resource.data.img.size() <= 1000000
           && request.resource.data.v is int && request.resource.data.n is int;
         allow delete: if isAdmin();
@@ -402,7 +436,8 @@ service cloud.firestore {
     // version in the same batch, so a save made from an old copy is refused. Recipes are never deleted (removed hides
     // one, off goes back to the js/data.js copy); every earlier version is kept in recipes/<id>/hist/<v>, which nobody can change.
     function headWrite() { return cfg().get('headId', '') != '' && staff() && request.resource.data.by == cfg().get('headId', ''); }
-    function bookBy() { return (isAdmin() && request.resource.data.get('by', '') in ['', cfg().get('headId', '')]) || headWrite(); }
+    function recipeWrite() { return staff() && chefId(request.resource.data.by); }
+    function bookBy() { return (isAdmin() && request.resource.data.get('by', '') in ['', cfg().get('headId', '')]) || recipeWrite(); }
     function bookIndex() { return getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/book/index).data; }
     function nextVersion() { return request.resource.data.v is int && request.resource.data.v == (resource == null ? 1 : resource.data.v + 1); }
     function recipeOk(id) {
@@ -426,7 +461,7 @@ service cloud.firestore {
     }
     match /kitchens/KITCHEN_PIN/book/index {
       allow read: if true;
-      allow create, update: if (isAdmin() || headWrite())
+      allow create, update: if (isAdmin() || recipeWrite())
         && request.resource.data.keys().hasOnly(['r', 'd', 'menu', 'by', 'upd'])
         && request.resource.data.get('r', {}) is map && request.resource.data.get('r', {}).size() <= 1000
         && request.resource.data.get('d', {}) is map && request.resource.data.get('d', {}).size() <= 3000
@@ -450,7 +485,7 @@ service cloud.firestore {
       allow update: if recipeOk(id) && bookBy() && nextVersion() && bookIndex().get('r', {}).get(id, 0) == request.resource.data.v;
       allow delete: if false;
       match /hist/{v} {
-        allow read: if true;
+        allow read: if kitchenRead();
         allow create: if bookBy() && request.resource.data.keys().hasOnly(['was', 'at', 'by']) && request.resource.data.was is map && request.resource.data.at is int
           && (isAdmin() || getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/recipes/$(id)).data.v == int(v) + 1);
         allow update, delete: if false;
@@ -487,7 +522,7 @@ service cloud.firestore {
       allow update: if drawingOk(id) && bookBy() && nextVersion() && bookIndex().get('d', {}).get(id, 0) == request.resource.data.v;
       allow delete: if false;
       match /hist/{v} {
-        allow read: if true;
+        allow read: if kitchenRead();
         allow create: if bookBy() && request.resource.data.keys().hasOnly(['was', 'at', 'by']) && request.resource.data.was is map && request.resource.data.at is int
           && (isAdmin() || getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/drawings/$(id)).data.v == int(v) + 1);
         allow update, delete: if false;
@@ -544,10 +579,10 @@ service cloud.firestore {
     // a cancelled function stays, and every earlier version is kept in functions/<id>/hist/<v>, which nobody can change.
     // A confirmed function must add up: every platter line's rounds sum to its booked number, rounds in time order.
     // Rules cannot loop, so the checks are written out for up to 8 platter lines and 8 rounds.
-    function fnBy() { return isAdmin() || (staff() && request.resource.data.by in cfg().get('fnIds', [])); }
+    function fnBy() { return isAdmin() || (session() && request.resource.data.by in cfg().get('fnIds', [])); }
     // Chefs can cancel a saved booking without permission to edit its food, time or contact. Undo is their own
     // most recent cancellation, for two minutes, restoring status and ordering from the immutable history.
-    function fnStatusBy() { return isAdmin() || (staff() && (chefId(request.resource.data.by) || request.resource.data.by in cfg().get('fnIds', []))); }
+    function fnStatusBy() { return isAdmin() || (session() && (chefId(request.resource.data.by) || request.resource.data.by in cfg().get('fnIds', []))); }
     function fnCancelChange(was, d) {
       return was.status == 'confirmed' && d.status == 'cancelled'
         && d.diff(was).affectedKeys().hasOnly(['status', 'v', 'upd', 'by', 'canBy', 'canAt', 'od', 'chg'])
@@ -600,7 +635,8 @@ service cloud.firestore {
     function fnCheck(id, d, was) {
       return id.matches('[a-z0-9][a-z0-9-]{0,47}')
         && d.keys().hasOnly(['v', 'status', 'name', 'date', 'start', 'st', 'loc', 'guests', 'gu', 'mode', 'lines', 'rounds', 'notes', 'kc', 'kcBy', 'kcAt', 'od',
-          'first', 'last', 'from', 'until', 'kq', 'was', 'chg', 'cBy', 'cAt', 'confBy', 'confAt', 'canBy', 'canAt', 'by', 'upd'])
+          'first', 'last', 'from', 'until', 'kq', 'was', 'chg', 'cBy', 'cAt', 'confBy', 'confAt', 'canBy', 'canAt', 'by', 'upd', 'removed'])
+        && d.get('removed', false) is bool && (d.get('removed', false) == false || (d.status == 'cancelled' && d.kq == 0))
         && d.upd is int && d.status in ['draft', 'confirmed', 'cancelled']
         && d.name.size() <= 80 && (d.date.size() == 0 || d.date.size() == 10)
         && d.start is int && d.guests is int && d.guests >= 0 && d.guests <= 2000 && d.get('gu', false) is bool && d.get('st', false) is bool && d.get('od', '').size() <= 10
@@ -614,14 +650,14 @@ service cloud.firestore {
         && (d.status != 'confirmed' || fnConfirmed(d));
     }
     match /kitchens/KITCHEN_PIN/functions/{id} {
-      allow read: if true;
+      allow read: if functionRead();
       // the head chef's Google account may also copy one as it is (move to a new kitchen PIN)
       allow create: if resource == null && (request.resource.data.v == 1 || isAdmin()) && fnBy() && fnOk(id);
       allow update: if resource != null && nextVersion()
         && ((fnStatusChange(id, resource.data, request.resource.data) && fnStatusBy() && fnStatusAudit(id, resource.data, request.resource.data)) || (fnBy() && fnOk(id)));
       allow delete: if false;
       match /hist/{v} {
-        allow read: if true;
+        allow read: if isAdmin() || (sessOk(reader()) && (chefId(reader()) || reader() in cfg().get('fnIds', [])));
         allow create: if (fnBy() || (fnStatusBy() && fnStatusHistory(id, v))) && request.resource.data.keys().hasOnly(['was', 'at', 'by', 'what']) && request.resource.data.was is map && request.resource.data.at is int
           && request.resource.data.get('what', '') is string && request.resource.data.get('what', '').size() <= 300
           && (isAdmin() || getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/functions/$(id)).data.v == int(v) + 1);
@@ -652,9 +688,9 @@ service cloud.firestore {
         && d.day is string && d.day.size() == 10 && d.sent is bool && d.sentAt is int && d.sentBy is string;
     }
     match /kitchens/KITCHEN_PIN/fnsent/{sid} {
-      allow read: if true;
-      allow create: if writer() && sentOk(sid) && request.resource.data.sent == true && request.resource.data.sentBy == request.resource.data.get('by', '');
-      allow update: if writer() && sentOk(sid) && (
+      allow read: if functionRead();
+      allow create: if (writer() || fnBy()) && sentOk(sid) && request.resource.data.sent == true && request.resource.data.sentBy == request.resource.data.get('by', '');
+      allow update: if (writer() || fnBy()) && sentOk(sid) && (
         (request.resource.data.sent == true && resource.data.sent == false && request.resource.data.sentBy == request.resource.data.get('by', ''))
         || (request.resource.data.sent == false && resource.data.sent == true && request.resource.data.sentBy == resource.data.sentBy
           && (lead() || (resource.data.sentBy == request.resource.data.get('by', '') && request.time.toMillis() - resource.data.sentAt < 120000))));
@@ -663,7 +699,7 @@ service cloud.firestore {
     // Who has seen a shift ping: one small record per person, ping and day, written when they tap Got it.
     // The record id is the day, an underscore and the writer's id. Records are never changed or deleted.
     match /kitchens/KITCHEN_PIN/notes/{id}/seen/{sid} {
-      allow read: if true;
+      allow read: if kitchenRead();
       allow create: if (isAdmin() || staff()) && request.resource.data.day is string && request.resource.data.day.size() == 10
         && request.resource.data.at is number
         && sid == request.resource.data.day + '_' + request.resource.data.by;
@@ -703,7 +739,7 @@ service cloud.firestore {
     // What happened to a mail (seen, done), under the same id, so the sender's phone can show it without reading the
     // message. It is read one record at a time by its id, never listed, and holds nothing else.
     match /kitchens/KITCHEN_PIN/mailstat/{id} {
-      allow get: if true;
+      allow get: if kitchenRead();
       allow list: if isAdmin();
       allow create: if isAdmin() || (staff()
         && request.resource.data.seen == false && request.resource.data.done == false
@@ -745,7 +781,7 @@ service cloud.firestore {
           && request.resource.data.get('doneAt', 0) == resource.data.get('doneAt', 0));
     }
     match /kitchens/KITCHEN_PIN/todos/{id} {
-      allow read: if isAdmin() || (sessOk(reader()) && chefId(reader()));
+      allow read: if isAdmin() || (sessOk(reader()) && !functionOnly(reader()) && chefId(reader()));
       allow create: if todoBy() && todoOk() && todoTickOk() && (isAdmin() || request.resource.data.get('from', '') == request.resource.data.by);
       allow update: if todoBy() && todoOk() && todoTickOk()
         && request.resource.data.get('from', '') == resource.data.get('from', '') && request.resource.data.get('at', 0) == resource.data.get('at', 0);
@@ -764,7 +800,7 @@ service cloud.firestore {
     match /kitchens/KITCHEN_PIN/push/{id} {
       allow read: if false;
       allow create, update: if pushOk() && ((isAdmin() && request.resource.data.by == 'owner') || (staff() && chefId(request.resource.data.by)));
-      allow delete: if isAdmin() || (sessOk(reader()) && chefId(reader()) && (resource == null || resource.data.by == reader()));
+      allow delete: if isAdmin() || (sessOk(reader()) && !functionOnly(reader()) && chefId(reader()) && (resource == null || resource.data.by == reader()));
     }
     // Supplier orders (24 Oct 2026): the chefs' shared tick list of supplier orders placed, one record per supplier and
     // cut-off day: cutdone/<day>_<supplier id> { day, sid, on, at, by }. The server sends no more pushes for one that is on.
@@ -778,7 +814,7 @@ service cloud.firestore {
         && request.resource.data.on is bool && request.resource.data.at is number;
     }
     match /kitchens/KITCHEN_PIN/cutdone/{id} {
-      allow read: if isAdmin() || (sessOk(reader()) && chefId(reader()));
+      allow read: if isAdmin() || (sessOk(reader()) && !functionOnly(reader()) && chefId(reader()));
       allow create, update: if cutDoneOk(id) && (isAdmin() || (staff() && chefId(request.resource.data.by)));
       allow delete: if false;
     }
@@ -786,7 +822,7 @@ service cloud.firestore {
     // A chef's current PIN session may read; only the head chef or the verified owner changes the catalogue. The page
     // validates each item and snapshot line, while these rules bound the arrays and enforce roles, revisions and the
     // writes that must be together. The owner may copy valid records unchanged when moving the kitchen PIN.
-    function supRead() { return isAdmin() || (sessOk(reader()) && chefId(reader())); }
+    function supRead() { return isAdmin() || (sessOk(reader()) && !functionOnly(reader()) && chefId(reader())); }
     function supEdit() { return isAdmin() || headWrite(); }
     function supChef() { return isAdmin() || (staff() && chefId(request.resource.data.by)); }
     function supId(id) { return id is string && id.matches('[a-zA-Z0-9_-]{1,80}'); }
@@ -900,7 +936,7 @@ service cloud.firestore {
     // The head chef may also create one when moving everything to a new kitchen PIN (an exact copy of the old record).
     function dkStr(k, n) { return request.resource.data.get(k, '') is string && request.resource.data.get(k, '').size() <= n; }
     match /kitchens/KITCHEN_PIN/drinks/{id} {
-      allow read: if true;
+      allow read: if kitchenRead();
       allow create, update: if isAdmin() || (staff() && id == request.resource.data.by
         && request.resource.data.keys().hasOnly(['by', 'kind', 'size', 'milk', 'shot', 'sugar', 'note', 'cold', 'other', 'at'])
         && dkStr('kind', 12) && dkStr('cold', 12) && dkStr('size', 12) && dkStr('milk', 12) && dkStr('shot', 12) && dkStr('sugar', 12)
@@ -911,7 +947,7 @@ service cloud.firestore {
     // get their role). One record per person and day, shifts/<day>_<id>, written only by that person (own PIN session).
     // The head chef may also create one when moving everything to a new kitchen PIN (an exact copy of the old record).
     match /kitchens/KITCHEN_PIN/shifts/{sid} {
-      allow read: if true;
+      allow read: if kitchenRead();
       allow create, update: if isAdmin() || (staff()
         && sid == request.resource.data.day + '_' + request.resource.data.by
         && request.resource.data.keys().hasOnly(['by', 'day', 'sec', 'name', 'auto', 'at'])
@@ -929,15 +965,21 @@ service cloud.firestore {
       allow read: if isAdmin();
       // a first PIN only while that person's set-up window is open (config/main pinOpen, 22 Oct 2026): opened when they
       // are added (7 days) or by Reset PIN (30 minutes), so nobody holding the kitchen PIN can take a name by setting it first
-      allow create: if isAdmin() || (request.resource.data.hash is string && request.resource.data.hash.size() == 64
+      allow create: if isAdmin() || (request.auth != null && request.resource.data.keys().hasOnly(['hash', 'setAt', 'name'])
+        && request.resource.data.get('name', '') is string && request.resource.data.get('name', '').size() <= 40 && request.resource.data.get('setAt', 0) is number && request.resource.data.hash is string && request.resource.data.hash.size() == 64
         && id in cfg().get('staffIds', [])
         && request.time.toMillis() < cfg().get('pinOpen', {}).get(id, 0)
         && getAfter(setDoc(id)).data.at is number);
       allow update, delete: if isAdmin();
     }
     match /kitchens/KITCHEN_PIN/pinset/{id} {
-      allow read: if true;
-      allow create: if request.resource.data.at is number;
+      allow get: if isAdmin() || (request.auth != null && onList(id));
+      allow list: if isAdmin();
+      allow create: if isAdmin() || (request.auth != null && onList(id)
+        && request.time.toMillis() < cfg().get('pinOpen', {}).get(id, 0)
+        && request.resource.data.keys().hasOnly(['at', 'name']) && request.resource.data.at is number
+        && request.resource.data.get('name', '') is string && request.resource.data.get('name', '').size() <= 40
+        && !exists(pinDoc(id)) && getAfter(pinDoc(id)).data.hash is string);
       allow update, delete: if isAdmin();
     }
     // A PIN try (22 Oct 2026): the phone writes the try first, on its own, so a wrong one still counts. One try per person
@@ -983,7 +1025,7 @@ service cloud.firestore {
     }
     // A person's tally (visits, lines added, ticks): their own, or anyone's for the head chef and sous chefs (an untick).
     match /kitchens/KITCHEN_PIN/activity/{id} {
-      allow read: if true;
+      allow read: if kitchenRead();
       allow create, update: if isAdmin() || (staff() && (sousBy() || id == request.resource.data.by)
         && request.resource.data.name is string && request.resource.data.name.size() <= 40
         && onlyKeys(['name', 'visits', 'lastSeen', 'added', 'lastAdded', 'ticked', 'by']));
@@ -992,7 +1034,7 @@ service cloud.firestore {
     // Sections and what the prep list learned: anyone with a PIN counts a use; hiding one is for the head chef or a sous chef.
     function hideOk() { return sousBy() || request.resource.data.get('hidden', false) == resource.data.get('hidden', false); }
     match /kitchens/KITCHEN_PIN/sections/{id} {
-      allow read: if true;
+      allow read: if kitchenRead();
       allow create: if isAdmin() || (staff() && request.resource.data.name is string && request.resource.data.name.size() <= 40
         && onlyKeys(['name', 'uses', 'lastUsed', 'lastBy', 'hidden', 'by']) && (sousBy() || request.resource.data.get('hidden', false) == false));
       allow update: if isAdmin() || (staff() && request.resource.data.name is string && request.resource.data.name.size() <= 40
@@ -1000,7 +1042,7 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
     match /kitchens/KITCHEN_PIN/learned/{id} {
-      allow read: if true;
+      allow read: if kitchenRead();
       // the counts come only from the nightly job (service account); a sous chef hides or shows an item (22 Oct 2026)
       allow create: if isAdmin();
       allow update: if isAdmin() || (staff() && sousBy() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hidden', 'by']) && request.resource.data.get('hidden', false) is bool);
@@ -1009,13 +1051,13 @@ service cloud.firestore {
     // What the order list has learned: one record per item ordered (text, uses, weekdays, usual amounts). Written by the
     // nightly job only (service account); the phones read it (22 Oct 2026).
     match /kitchens/KITCHEN_PIN/ordlearned/{id} {
-      allow read: if true;
+      allow read: if kitchenRead();
       allow create: if isAdmin();
       allow update: if isAdmin() || (staff() && sousBy() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hidden', 'by']) && request.resource.data.get('hidden', false) is bool);
       allow delete: if isAdmin();
     }
     match /kitchens/KITCHEN_PIN/learnlog/{id} {
-      allow read: if true;
+      allow read: if kitchenRead();
       allow create: if isAdmin();   // the nightly job's claim that a day was counted (service account), never a phone
       allow update: if false;
       allow delete: if isAdmin();

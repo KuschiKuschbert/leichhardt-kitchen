@@ -28,12 +28,20 @@ function remember(k) { if (seen.has(k)) return; seen.add(k); if (!seenSave) seen
 window.__fake.release = function () { const h = held.splice(0); pendingKeys.clear(); h.forEach(f => f()); notify(); };
 window.__fake.dump = function () { return store; };
 // a write from another phone: the document changes under this page and its listeners hear about it
-window.__fake.write = function (path, data) { store[path] = JSON.parse(JSON.stringify(data)); save(); notify(); };
+window.__fake.write = function (path, data) {
+  store[path] = JSON.parse(JSON.stringify(data));
+  if (/\/config\/main$/.test(path)) {
+    const c=store[path], roster={}; ['people','staffIds','sousIds','headId','fnIds','fnOnlyIds'].forEach(k=>{if(c[k] !== undefined) roster[k]=c[k];});
+    store[path.replace(/config\/main$/, 'login/roster')] = roster;
+  }
+  save(); notify();
+};
 let seq = 0;
 function rid() { return 'id' + Date.now().toString(36) + (seq++).toString(36); }
 
 export function initializeFirestore() { return { kind: 'db' }; }
 export function getFirestore() { return { kind: 'db' }; }
+export function memoryLocalCache() { return {}; }
 export function persistentLocalCache() { return {}; }
 export function persistentMultipleTabManager() { return {}; }
 export function terminate() { window.__fake.terminated = true; return Promise.resolve(); }
@@ -227,8 +235,8 @@ function commitOps(ops) {
   if (badSess) return Promise.reject({ code: 'permission-denied' });
   // who is writing: this phone's running session, while that person's PIN is the one it was opened with (Reset PIN or a
   // new PIN stops it)
-  const sessNow = uid && ops.length ? store[rootOf(ops[0]) + '/sessions/' + uid] : null;
-  const sessPin = sessNow ? store[rootOf(ops[0]) + '/pinset/' + sessNow.by] : null;
+  const sessNow = uid && ops.length ? store[rootOf(ops.find(o => key(o.ref.path).startsWith('kitchens/')) || ops[0]) + '/sessions/' + uid] : null;
+  const sessPin = sessNow ? store[rootOf(ops.find(o => key(o.ref.path).startsWith('kitchens/')) || ops[0]) + '/pinset/' + sessNow.by] : null;
   const actor = sessNow && sessNow.exp > Date.now() && sessPin && sessPin.at === sessNow.pinAt ? sessNow.by : '';
   // like staff() in the rules: any other write from a phone (no Google account) names its writer (by), and that writer
   // has this phone's running session
@@ -240,7 +248,8 @@ function commitOps(ops) {
   if (book.length) {
     const head = (store[key(book[0].ref.path).split('/').slice(0, 2).join('/') + '/config/main'] || {}).headId || '';
     const by = book.map(o => (o.data && o.data.by) || '');
-    const asHead = !!head && actor === head && by.every(b => b === head);
+    const config = store[key(book[0].ref.path).split('/').slice(0, 2).join('/') + '/config/main'] || {};
+    const asHead = !!actor && (actor === head || (config.sousIds || []).includes(actor)) && by.every(b => b === actor);
     const asOwner = !!window.__fakeUser && by.every(b => !b || b === head);
     if (!asHead && !asOwner) return Promise.reject({ code: 'permission-denied' });
   }

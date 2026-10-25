@@ -11,10 +11,10 @@ const state = p => p.evaluate(() => document.querySelector('#p-pin') ? 'kitchen-
   ok(/^in:Writing as Sam/.test(await state(p)), 'shared: Sam is signed in to start (' + await state(p) + ')');
   await p.clock.runFor(11 * 60000);
   await L.settle(p, 300);
-  ok((await state(p)) === 'guest', 'shared: after 11 minutes idle nobody is signed in and the list still shows, no kitchen PIN asked (' + await state(p) + ')');
+  ok((await state(p)) === 'who', 'shared: after 11 minutes idle nobody is signed in and the lists are hidden and personal login is required (' + await state(p) + ')');
   ok(await p.evaluate(() => localStorage.getItem('lk.prep.pin')) !== '', 'shared: the kitchen PIN is still on the device');
   await p.goto(L.BASE + '#/guides'); await L.settle(p, 800);
-  ok(await p.$('.p-name') === null && await p.$('#p-pin') === null, 'shared: guides still open without a name');
+  ok(await p.$('.p-name') !== null && await p.$('#p-pin') === null, 'shared: guides require a personal login');
   ok(p.errors.length === 0, 'shared idle: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -29,7 +29,7 @@ const state = p => p.evaluate(() => document.querySelector('#p-pin') ? 'kitchen-
   p = await L.open(b, '#/prep', { who: 'sam', touch: true, settings: { shared: true }, wait: 1200 });
   await p.evaluate(() => localStorage.setItem('lk.prep.day', '2020-01-01'));
   await p.reload({ waitUntil: 'load' }); await L.settle(p, 1200);
-  ok((await state(p)) === 'guest', 'shared, new day: the book opens with nobody signed in (' + await state(p) + ')');
+  ok((await state(p)) === 'who', 'shared, new day: the book opens with nobody signed in (' + await state(p) + ')');
   await p.context().close();
   p = await L.open(b, '#/prep', { who: 'sam', touch: true, wait: 1200 });
   await p.evaluate(() => localStorage.setItem('lk.prep.day', '2020-01-01'));

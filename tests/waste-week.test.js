@@ -107,7 +107,7 @@ extra[fsKey(['waste', yest, 'lines', 'y1'])] = { text: 'Mash', amount: 1.5, unit
   await p.context().close();
 
   // the wastage page on the head chef's Google device links to the log (a chef signed in, as on the line)
-  p = await L.open(b, '#/waste', { extra, admin: true, who: 'sam', wait: 1500 });
+  p = await L.open(b, '#/waste', { extra, admin: true, who: '', wait: 1500 });
   await L.waitFor(p, () => !!document.querySelector('.w-past'));
   ok(await p.$('.w-past a[href="#/admin"]') !== null, 'head chef: the wastage page links to the admin log');
   ok(p.errors.length === 0, 'head chef wastage: no page errors ' + p.errors.join(' | '));

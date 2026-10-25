@@ -14,11 +14,13 @@ const has = async (page, name) => { const t = await page.evaluate(() => document
   ok(await has(p, 'Zed'), 'staff page: Zed added to the draft');
   await p.clock.runFor(8 * 60000);
   await L.settle(p, 300);
-  ok(await p.$('#pf1') !== null, 'idle lock: the PIN screen is back after 8 minutes without a touch');
+  ok(await p.$('.p-name') !== null, 'idle lock: personal login is required after 8 minutes');
+  await p.click('.p-name[data-id="sam"]'); await L.settle(p, 300);
   await p.type('#pf1', '1111');
   await L.settle(p, 800);
-  ok(await p.$('[data-k="a-bulk"]') !== null, 'after the PIN: the staff page is open again');
-  ok(await has(p, 'Zed'), 'after the PIN: Zed is still in the draft');
+  await L.chef(p, 'staff'); await L.settle(p, 300);
+  ok(await p.$('[data-k="a-bulk"]') !== null, 'after the PIN: staff management can be opened again');
+  ok(!(await has(p, 'Zed')), 'idle lock discards the previous private staff draft');
   ok(p.errors.length === 0, 'idle draft: no page errors ' + p.errors.join(' | '));
   await p.context().close();
   await b.close();

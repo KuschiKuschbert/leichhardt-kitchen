@@ -1,78 +1,24 @@
-// The head chef's Google sign-in stays on a device. On a shared kitchen tablet that opened the head chef's tools for
-// whoever picked it up (20 Oct 2026). Now staff signed in there get their own view: no Admin in the menu, no admin panel, no
-// reports, no guide or minutes editing. A chef (head or sous) signed in, or nobody on a personal device, keeps them.
-const L = require('./lib');
-const { R, ok } = L.results(), { txt } = L;
-const key = async p => (await L.admItem(p)) === 'none' ? null : true;
-(async () => {
-  const b = await L.start();
-
-  // staff (Bo) signed in on the head chef's device: the staff view everywhere
-  let p = await L.open(b, '#/', { admin: true, who: 'bo', wait: 1800 });
-  ok(await key(p) === null, 'staff on the head chef device: no Admin in the menu');
-  await p.goto(L.BASE + '#/prep'); await L.settle(p, 1200);
-  ok(await p.$('[data-p="staff-open"]') === null && await p.$('[data-p="mn-open"]') === null, 'staff on the head chef device: no Manage staff, no Minutes register');
-  ok(await p.$('.nb-pace') === null && !/Pace/.test(await txt(p, '#prep-root') || ''), 'staff on the head chef device: no Pace box');
-  await p.goto(L.BASE + '#/admin'); await L.settle(p, 1200);
-  const adm = await txt(p, '#prep-root') || '';
-  ok(/Bo is signed in on this device/.test(adm) && await p.$('.a-groups') === null, 'staff on the head chef device: #/admin says a chef has to sign in, no admin sections (' + adm.slice(0, 120) + ')');
-  await p.goto(L.BASE + '#/minutes'); await L.settle(p, 1000);
-  ok(await p.$('[data-p="mn-admin"]') === null, 'staff on the head chef device: no "Write minutes" link');
-  await p.goto(L.BASE + '#/guides'); await L.settle(p, 1000);
-  ok(await p.$('[data-p="g-admin"]') === null, 'staff on the head chef device: no "Add or change guides"');
-  await p.goto(L.BASE + '#/settings'); await L.settle(p, 600);
-  ok(await p.$('[data-act="clearticks"]') === null, 'staff on the head chef device: Settings has no head chef blocks');
-  ok(p.errors.length === 0, 'staff on the head chef device: no page errors ' + p.errors.join(' | '));
+// A shared browser must never hand a Google admin session to a staff identity.
+const L=require('./lib'),{R,ok}=L.results();
+(async()=>{
+ const b=await L.start();
+ for(const [person,pin] of [['bo','3333'],['sam','1111']]) {
+  const p=await L.open(b,'#/prep',{admin:true,who:person,settings:{shared:true},wait:1600});
+  ok(await p.evaluate(()=>!LK_PREP.state.user&&!LK_PREP.state.authed),person+': remembered Google account is signed out before staff login');
+  await p.fill('#pf1',pin);await L.settle(p,1000);
+  ok(await L.admItem(p)==='none',person+': their personal PIN grants no admin access');
+  await p.goto(L.BASE+'#/admin');await L.settle(p,700);
+  ok(!await p.$('.a-groups'),person+': direct admin URL contains no private admin sections');
+  await p.goto(L.BASE+'#/prep');await L.settle(p,500);
+  ok(!!await p.$('.nb-row'),person+': normal kitchen access still works after login');
+  ok(!p.errors.length,person+': no page errors '+p.errors.join(' | '));await p.context().close();
+ }
+ for(const shared of [false,true]) {
+  const p=await L.open(b,'#/admin',{admin:true,who:'',settings:{shared},wait:1600});
+  ok(!!await p.$('.a-groups'),'explicit Google admin can open admin on '+(shared?'shared':'personal')+' device');
+  await p.evaluate(()=>LK_PREP.signOut(true));await L.settle(p,500);
+  ok(!await p.$('.a-groups')&&await p.evaluate(()=>!LK_PREP.state.user),'admin sign-out locks '+(shared?'shared':'personal')+' device');
   await p.context().close();
-
-  // a sous chef (Sam) signed in on the same device: the chef tools stay
-  p = await L.open(b, '#/', { admin: true, who: 'sam', wait: 1800 });
-  // Admin comes in after the owner check is read: wait for it, not for the page to be still (it flaked under load)
-  for (let i = 0; i < 20 && await key(p) === null; i++) await L.settle(p, 250);
-  ok(await key(p) !== null, 'sous chef on the head chef device: Admin shows in the menu');
-  await p.context().close();
-
-  // nobody signed in: a personal device keeps the tools, a shared kitchen device does not
-  p = await L.open(b, '#/', { admin: true, who: '', wait: 1800 });
-  ok(await key(p) !== null, 'nobody signed in, personal device: Admin shows in the menu');
-  await p.context().close();
-  p = await L.open(b, '#/', { admin: true, who: '', settings: { shared: true }, wait: 1800 });
-  ok(await key(p) === null, 'nobody signed in, shared device: no Admin in the menu');
-  await p.context().close();
-
-  // staff signs out with "Not you?" and Sam signs in: the key comes back without a reload
-  p = await L.open(b, '#/prep', { admin: true, who: 'bo', wait: 1800 });
-  ok(await key(p) === null, 'swap: no Admin while Bo is signed in');
-  await p.click('[data-p="who-change"]'); await L.settle(p, 300);
-  await p.click('.p-name[data-id="sam"]'); await L.settle(p, 500);
-  await p.type('#pf1', '1111'); await L.settle(p, 1200);
-  ok(await key(p) !== null, 'swap: the key is back once Sam signs in');
-  ok(p.errors.length === 0, 'swap: no page errors ' + p.errors.join(' | '));
-  await p.context().close();
-
-  // the admin card's "Not Bo? Change person" hands over like Not you? (23 Oct 2026): a line typed asks a second tap
-  // and the page stays put until then; on a shared device what Bo left goes
-  const whoNow = p => p.evaluate(() => window.LK_PREP.whoName());
-  for (const shared of [false, true]) {
-    const tag = shared ? 'change person, shared device' : 'change person';
-    p = await L.open(b, '#/prep', { admin: true, who: 'bo', settings: shared ? { shared: true } : {}, wait: 1800 });
-    if (shared) await p.evaluate(() => localStorage.setItem('lk.fe.draft.new', JSON.stringify({ name: 'Smith 50th' })));
-    await p.fill('#p-text', 'Pick parsley');
-    await p.evaluate(() => { location.hash = '#/admin'; }); await L.settle(p, 800);
-    const sel = '#prep-root a[data-p="who-change"]';
-    ok(/Not Bo\? Change person/.test(await txt(p, sel) || ''), tag + ': the admin card offers Not Bo? Change person (' + await txt(p, sel) + ')');
-    await p.click(sel); await L.settle(p, 300);
-    ok(/#\/admin$/.test(p.url()) && /Not saved\. Tap again/.test(await txt(p, sel) || '') && await whoNow(p) === 'Bo', tag + ': the first tap stays on the admin page and asks again (' + p.url() + ', ' + await txt(p, sel) + ')');
-    await p.click(sel, { timeout: 3000 }).catch(() => {}); await L.settle(p, 600);
-    ok(/#\/prep$/.test(p.url()) && await whoNow(p) === '' && !!(await p.$('.p-name')), tag + ': the second tap signs Bo out and asks who is writing (' + p.url() + ')');
-    if (shared) ok(await p.evaluate(() => localStorage.getItem('lk.fe.draft.new')) === null, tag + ': the function draft Bo left is gone');
-    ok(p.errors.length === 0, tag + ': no page errors ' + p.errors.join(' | '));
-    await p.context().close();
-  }
-
-  await b.close();
-  R.forEach(r => console.log(r));
-  const bad = R.filter(r => r.startsWith('FAIL')).length;
-  console.log(bad + ' failed of ' + R.length);
-  process.exit(bad ? 1 : 0);
-})();
+ }
+ await b.close();L.report(R);
+})().catch(e=>{console.error(e);process.exit(1)});

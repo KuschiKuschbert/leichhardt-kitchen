@@ -151,6 +151,7 @@
   var CHIPS = [['up', 'Coming up'], ['draft', 'Drafts'], ['past', 'Past'], ['cancelled', 'Cancelled'], ['all', 'All']];
   function inChip(f, c) {
     var t = today(), done = f.date && f.date < t;
+    if (f.removed) return false;
     if (c === 'up') return f.status !== 'cancelled' && (!f.date || !done);
     if (c === 'draft') return f.status === 'draft';
     if (c === 'past') return f.status !== 'cancelled' && !!done;
@@ -359,7 +360,7 @@
     else b.push('<button type="button" class="btn dark" data-fe="review"' + dis + '>Put it back on</button>');
     var more = [];
     if (!e.isNew) more.push('<button type="button" class="btn" data-fe="dup">Duplicate</button>');
-    if (!e.isNew && e.saved) more.push(FN.statusHTML(e.saved, 'fe'));
+    if (!e.isNew && e.saved) { more.push(FN.statusHTML(e.saved, 'fe')); more.push('<button type="button" class="btn" data-fe="remove"' + dis + '>' + (armed('remove') ? 'Tap again to delete function' : 'Delete function') + '</button>'); }
     if (dirty()) more.push('<button type="button" class="btn" data-fe="drop">' + (armed('drop') ? 'Tap again to drop your changes' : 'Drop my changes') + '</button>');
     return '<div class="btn-row fe-btns">' + b.join('') + '</div>' + (more.length ? '<div class="btn-row">' + more.join('') + '</div>' : '');
   }
@@ -388,7 +389,7 @@
     if (!e || e.saving) return;
     e.msg = ''; keep();
     if (!P.fnOK()) { e.msg = 'Not saved: you are not ticked for Functions any more. Your changes are kept on this device.'; draw(); return; }
-    var next = kind === 'confirm' ? 'confirmed' : kind === 'cancel' ? 'cancelled' : e.status;
+    var next = kind === 'confirm' ? 'confirmed' : kind === 'cancel' || kind === 'remove' ? 'cancelled' : e.status;
     var probs = check({ d: e.d, status: next });
     var contactBad = contactProblems(e.d);
     if ((next === 'confirmed' && probs.length) || contactBad.length) { e.shown = next === 'confirmed' ? probs : contactBad; e.review = false; draw(); goto(e.shown[0].k); return; }
@@ -418,6 +419,7 @@
       f.was = {};
       if (prev && prev.status === 'confirmed' && next === 'confirmed' && (prev.from !== f.from || prev.until !== f.until) && prev.date !== f.date) f.was = { date: prev.date, start: prev.start, first: prev.first, from: prev.from, until: prev.until };
       else if (prev && prev.was && prev.was.until && next === 'confirmed' && prev.date !== prev.was.date) f.was = prev.was;
+      if (kind === 'remove') f.removed = true;
       M.derive(f);
       // the order day: kept while the date stays, worked out again when it moves. A function confirmed before ordering
       // came in (no od) and not moved gets none, so nothing old is ordered twice.
@@ -445,6 +447,7 @@
       e.isNew = false; e.v = f.v; e.status = f.status; e.saved = f; e.savedC = { cname: e.d.cname.trim(), phone: e.d.phone.trim(), email: e.d.email.trim() }; e.d = fromDoc(f, e.savedC);
       e.saving = ''; e.conflict = null; e.review = false; e.restored = false; e.hist = null;
       if (Array.isArray(E.list)) { E.list = E.list.filter(function (x) { return x.id !== id; }).concat([f]); }
+      if (kind === 'remove') { E.ed = null; E.list = null; window.LK_APP.returnTo('#/functions'); return; }
       toast(kind === 'confirm' ? 'Confirmed. The kitchen sees it on the day.' : kind === 'cancel' ? 'Cancelled. The kitchen is told.' : f.status === 'confirmed' ? 'Saved. The kitchen sees the change now.' : 'Draft saved. The kitchen does not see it yet.');
       if (wasNew) { history.replaceState(history.state, '', '#/functions/' + encodeURIComponent(id)); if (window.LK_APP && window.LK_APP.noteRoute) window.LK_APP.noteRoute(true); E.sub = [id]; }
       if (E.ed === e) { draw(); var h = E.root && E.root.querySelector('#rtitle'); if (h) h.focus({ preventScroll: true }); window.scrollTo(0, 0); }
@@ -557,6 +560,7 @@
     if (a === 'rmround') { d.rounds.splice(i, 1); d.lines.forEach(function (l) { l.a.splice(i, 1); }); d.n = String(d.rounds.length); d.custom = true; if (d.rounds.length < 2) { d.mode = 'all'; retime(e); } keep(); draw(); return; }
     if (a === 'goto') { goto(v); return; }
     if (a === 'save') { save('save'); return; }
+    if (a === 'remove') { if (arm('remove')) save('remove'); return; }
     if (a === 'review') {
       flushPending();
       var probs = check({ d: d, status: 'confirmed' });

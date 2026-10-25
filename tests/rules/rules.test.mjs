@@ -95,7 +95,7 @@ await ok(setDoc(doc(anon, K + 'proofs/ann'), { tok: hash('ann', '2222'), at: ser
 await ok(setDoc(doc(anon, K + 'days/2026-10-19/items/a5'), line({ by: 'ann' })), false, 'no session: refused');
 
 // who may set a PIN: only people on the list (staffIds), once
-const setPin = id => { const b = writeBatch(anon); b.set(doc(anon, K + 'staffpins/' + id), { hash: hash(id, '4444') }); b.set(doc(anon, K + 'pinset/' + id), { at: 1 }); return b.commit(); };
+const setPin = id => { const phone = wPhone('setup'); const b = writeBatch(phone); b.set(doc(phone, K + 'staffpins/' + id), { hash: hash(id, '4444') }); b.set(doc(phone, K + 'pinset/' + id), { at: 1 }); return b.commit(); };
 // the set-up window (22 Oct 2026): no window, or one that has run out, means no first PIN
 await ok(setPin('cal'), false, 'PIN set: no set-up window for Cal yet, refused');
 await env.withSecurityRulesDisabled(async ctx => { await setDoc(doc(ctx.firestore(), K + 'config/main'), { pinOpen: { cal: Date.now() - 60000 } }, { merge: true }); });
@@ -222,7 +222,7 @@ await ok(W([['mailstat/k1', { seen: true, done: true }, true]], { id: 'ann' }), 
 await ok(W([['mail/k1', { done: true, doneAt: 6 }, true]], { id: 'sam' }), false, 'mail: a sous chef cannot tick mail done');
 await ok(getDoc(doc(anon, K + 'mail/k1')), false, 'mail: a PIN holder cannot read a mail');
 await ok(getDocs(collection(anon, K + 'mail')), false, 'mail: a PIN holder cannot list the mail');
-await ok(getDoc(doc(anon, K + 'mailstat/k1')), true, 'mailstat: the sender reads its status by id');
+await ok(getDoc(doc(anon, K + 'mailstat/k1')), false, 'mailstat: the sender cannot read while signed out its status by id');
 await ok(getDocs(collection(anon, K + 'mailstat')), false, 'mailstat: nobody but the head chef lists the status records');
 await ok(getDocs(collection(env.authenticatedContext('other', { email: 'someone@test.local', email_verified: true }).firestore(), K + 'mail')), false, 'mail: another Google account cannot list the mail');
 await ok(getDocs(collection(owner, K + 'mail')), true, 'mail: the head chef lists the mail');
@@ -266,7 +266,7 @@ await ok(W([['drinks/ann', drink({ cold: 'cokens' })]], { id: 'ann' }), true, 'd
 await ok(W([['drinks/ann', drink({ cold: 'x'.repeat(13) })]], { id: 'ann' }), false, 'drinks: a soft drink id over 12 characters is refused');
 await ok(W([['drinks/ann', drink({ price: 5 })]], { id: 'ann' }), false, 'drinks: no fields beyond the drink');
 await ok(W([['drinks/ann', drink({ at: 'now' })]], { id: 'ann' }), false, 'drinks: the time must be a number');
-await ok(getDocs(collection(anon, K + 'drinks')), true, 'drinks: a PIN holder reads the team\'s drinks');
+await ok(getDocs(collection(anon, K + 'drinks')), false, 'drinks: a PIN holder cannot read while signed out the team\'s drinks');
 await ok(deleteDoc(doc(anon, K + 'drinks/ann')), false, 'drinks: staff cannot delete one');
 await ok(setDoc(doc(owner, K + 'drinks/old-hand'), drink({ by: 'old-hand' })), true, 'drinks: the head chef copies one as it is (move to a new kitchen PIN)');
 
@@ -282,7 +282,7 @@ await ok(W([['shifts/2026-10-21_ann', sh({ name: 'x'.repeat(41) })]], { id: 'ann
 await ok(W([['shifts/2026-10-21_ann', sh({ score: 5 })]], { id: 'ann' }), false, 'shifts: no fields beyond the section');
 await ok(W([['shifts/2026-10-21_ann', sh({ at: 'now' })]], { id: 'ann' }), false, 'shifts: the time must be a number');
 await ok(W([['shifts/2026-10-21_sam', sh({ sec: 'sous', name: 'Sous chef', auto: true })]], { id: 'sam' }), true, 'shifts: a sous chef is given their role');
-await ok(getDocs(collection(anon, K + 'shifts')), true, 'shifts: a PIN holder reads who is on which section');
+await ok(getDocs(collection(anon, K + 'shifts')), false, 'shifts: a PIN holder cannot read while signed out who is on which section');
 await ok(deleteDoc(doc(anon, K + 'shifts/2026-10-21_ann')), false, 'shifts: staff cannot delete one');
 await ok(setDoc(doc(owner, K + 'shifts/2026-10-01_old-hand'), sh({ day: '2026-10-01', by: 'old-hand' })), true, 'shifts: the head chef copies one as it is (move to a new kitchen PIN)');
 await ok(W([['config/main', { kitSecs: [{ id: 'grill', name: 'Grill', off: false }] }, true]], { id: 'sam' }), false, 'config: a sous chef cannot change the kitchen sections');
@@ -300,7 +300,8 @@ await ok(W([['recipes/burger', rec({ v: 2 })], ['book/index', { r: { burger: 2 }
 await ok(W([['recipes/burger', rec({ v: 2 })], ['book/index', { r: { burger: 2 } }, true]], { id: 'hd' }), false, 'book: a save made from an old copy (the same version again) is refused');
 await ok(W([['recipes/burger', rec({ v: 3 })]], { id: 'hd' }), false, 'book: a save without the index in the same batch is refused');
 await ok(W([['recipes/burger', rec({ v: 3 })], ['book/index', { r: { burger: 4 } }, true]], { id: 'hd' }), false, 'book: the index and the recipe must say the same version');
-await ok(W([['recipes/pie', pie()], ['book/index', { r: { pie: 1 } }, true]], { id: 'sam' }), false, 'book: a sous chef cannot change recipes');
+await ok(W([['recipes/pie', pie()], ['book/index', { r: { pie: 1 } }, true]], { id: 'sam' }), true, 'book: a sous chef can change recipes');
+await env.withSecurityRulesDisabled(async ctx => { await deleteDoc(doc(ctx.firestore(), K + 'recipes/pie')); });
 await ok(W([['recipes/pie', pie()], ['book/index', { r: { pie: 1 } }, true]], { id: 'ann' }), false, 'book: staff cannot change recipes');
 await ok(W([['book/index', { r: { pie: 1 } }, true]], { id: 'ann' }), false, 'book: staff cannot change the index');
 await ok(W([['recipes/pie', pie()], ['book/index', { r: { pie: 1 } }, true]], { id: 'ann', as: 'hd' }), false, 'book: staff writing as the head chef (spoofed by) is refused');
@@ -333,7 +334,8 @@ await ok(getDoc(doc(anon, K + 'drawings/burger-plate')), true, 'drawings: a PIN 
 await ok(W([['drawings/burger-plate', dw({ v: 2 })], ['drawings/burger-plate/hist/1', { was: dw(), at: 1 }], ['book/index', { d: { 'burger-plate': 2 } }, true]], { id: 'hd' }), true, 'drawings: the next version with the earlier one kept');
 await ok(W([['drawings/burger-plate', dw({ v: 2 })], ['book/index', { d: { 'burger-plate': 2 } }, true]], { id: 'hd' }), false, 'drawings: a save made from an old copy is refused');
 await ok(W([['drawings/burger-plate', dw({ v: 3 })]], { id: 'hd' }), false, 'drawings: a save without the index is refused');
-await ok(W([['drawings/new-one', dw()], ['book/index', { d: { 'new-one': 1 } }, true]], { id: 'sam' }), false, 'drawings: a sous chef cannot save a drawing');
+await ok(W([['drawings/new-one', dw()], ['book/index', { d: { 'new-one': 1 } }, true]], { id: 'sam' }), true, 'drawings: a sous chef can save a drawing');
+await env.withSecurityRulesDisabled(async ctx => { await deleteDoc(doc(ctx.firestore(), K + 'drawings/new-one')); });
 await ok(W([['drawings/new-one', dw()], ['book/index', { d: { 'new-one': 1 } }, true]], { id: 'ann' }), false, 'drawings: staff cannot save a drawing');
 await ok(W([['drawings/new-one', dw({ script: 'x' })], ['book/index', { d: { 'new-one': 1 } }, true]], { id: 'hd' }), false, 'drawings: no fields beyond the drawing fields');
 await ok(W([['drawings/new-one', dw({ slot: 'poster' })], ['book/index', { d: { 'new-one': 1 } }, true]], { id: 'hd' }), false, 'drawings: the slot must be plate, pan, side or build');
@@ -347,7 +349,7 @@ await ok(W([['drawings/burger-plate', dw({ v: 3 })], ['drawings/burger-plate/his
 await ok(getDoc(doc(anon, K + 'book/matches')), true, 'matches: a PIN holder reads the picks');
 await ok(W([['book/matches', { m: { 'rum butterscotch': 'butterscotch-pool' }, upd: 2 }, true]], { id: 'hd' }), true, 'matches: the next pick is added (merge)');
 await ok(ownerBatch([['book/matches', { m: { cornbread: 'cornbread' }, upd: 3 }, true]]), true, 'matches: the head chef\'s Google account saves a pick');
-await ok(W([['book/matches', { m: { x: 'y' }, upd: 1 }, true]], { id: 'sam' }), false, 'matches: a sous chef cannot save a pick');
+await ok(W([['book/matches', { m: { x: 'y' }, upd: 1 }, true]], { id: 'sam' }), true, 'matches: a sous chef can save a pick');
 await ok(W([['book/matches', { m: { x: 'y' }, upd: 1 }, true]], { id: 'ann' }), false, 'matches: staff cannot save a pick');
 await ok(W([['book/matches', { m: { x: 'y' }, upd: 1 }, true]], { id: 'ann', as: 'hd' }), false, 'matches: staff writing as the head chef is refused');
 await ok(W([['book/matches', { m: { x: 'y' }, upd: 1, cost: 2 }, true]], { id: 'hd' }), false, 'matches: no fields beyond the picks');
@@ -360,7 +362,7 @@ await ok(W([['drawtpl/pub-split-1', tpl()]], { id: 'hd' }), true, 'templates: th
 await ok(getDoc(doc(anon, K + 'drawtpl/pub-split-1')), true, 'templates: a PIN holder reads a template');
 await ok(W([['drawtpl/pub-split-1', tpl({ v: 2, removed: true })]], { id: 'hd' }), true, 'templates: the next version (hidden)');
 await ok(W([['drawtpl/pub-split-1', tpl({ v: 2 })]], { id: 'hd' }), false, 'templates: a save from an old copy is refused');
-await ok(W([['drawtpl/other-1', tpl()]], { id: 'sam' }), false, 'templates: a sous chef cannot save a template');
+await ok(W([['drawtpl/other-1', tpl()]], { id: 'sam' }), true, 'templates: a sous chef can save a template');
 await ok(W([['drawtpl/other-1', tpl()]], { id: 'ann' }), false, 'templates: staff cannot save a template');
 await ok(W([['drawtpl/other-1', tpl({ slot: 'poster' })]], { id: 'hd' }), false, 'templates: the slot must be plate, pan, side or build');
 await ok(W([['drawtpl/other-1', tpl({ svgF: 'x'.repeat(300001) })]], { id: 'hd' }), false, 'templates: the drawing is capped at 300 000 characters');
@@ -371,7 +373,7 @@ await ok(W([['drawlib/house-slaw-1', lib()]], { id: 'hd' }), true, 'own library:
 await ok(W([['drawlib/pub-oval-1', { type: 'surf', name: 'Pub oval', p: { fam: 'plate', shape: 'oval', size: 34 }, v: 1, upd: 1, removed: false }]], { id: 'hd' }), true, 'own library: the head chef saves servingware');
 await ok(getDoc(doc(anon, K + 'drawlib/house-slaw-1')), true, 'own library: a PIN holder reads a piece');
 await ok(W([['drawlib/house-slaw-1', lib({ v: 2, name: 'House slaw, red' })]], { id: 'hd' }), true, 'own library: the next version of a piece');
-await ok(W([['drawlib/other-1', lib()]], { id: 'sam' }), false, 'own library: a sous chef cannot save a piece');
+await ok(W([['drawlib/other-1', lib()]], { id: 'sam' }), true, 'own library: a sous chef can save a piece');
 await ok(W([['drawlib/other-1', lib()]], { id: 'ann', as: 'hd' }), false, 'own library: staff writing as the head chef is refused');
 await ok(W([['drawlib/other-1', lib({ type: 'picture' })]], { id: 'hd' }), false, 'own library: a piece or servingware only');
 await ok(W([['drawlib/other-1', lib({ body: '' })]], { id: 'hd' }), false, 'own library: a piece needs its drawing');
@@ -490,7 +492,7 @@ await ok(ownerBatch([['functions/f3', fnc()]]), true, 'functions: the Google acc
 await ok(deleteDoc(doc(owner, K + 'functions/f1')), false, 'functions: never deleted');
 await ok(W([['functions/f1/hist/1', { was: fnc(), at: 9, what: 'x' }]], { id: 'fay' }), false, 'functions: an earlier version cannot be changed');
 await ok(W([['functions/f1/hist/7', { was: fnc(), at: 9, what: 'x' }]], { id: 'fay' }), false, 'functions: a history copy for a later version cannot be planted early');
-await ok(getDoc(doc(anon, K + 'functions/f1')), true, 'functions: a PIN holder reads the kitchen copy');
+await ok(getDoc(doc(anon, K + 'functions/f1')), false, 'functions: a PIN holder cannot read while signed out the kitchen copy');
 await ok(getDoc(doc(anon, K + 'fncontact/f1')), false, 'functions: nobody reads a contact with only the kitchen PIN (22 Oct 2026, S9)');
 await ok(getDocs(collection(anon, K + 'fncontact')), false, 'functions: nobody lists the contacts with only the kitchen PIN');
 await ok(getDocs(collection(owner, K + 'fncontact')), true, 'functions: the Google account lists them (backup, PIN move)');
@@ -553,8 +555,8 @@ await env.withSecurityRulesDisabled(async ctx => {
   await setDoc(doc(db, K + 'waste/' + WY), { avoidable: 'Rice', change: 'Cook less rice', reviewBy: 'Sam', reviewAt: 1 });
   await setDoc(doc(db, K + 'summary/waste'), { day: WT, items: [] });
 });
-await ok(getDoc(doc(anon, K + 'waste/' + WT + '/lines/t1')), true, 'waste: today\'s entry is read with the kitchen PIN');
-await ok(getDocs(collection(anon, K + 'waste/' + WT + '/lines')), true, 'waste: today\'s list is read with the kitchen PIN');
+await ok(getDoc(doc(anon, K + 'waste/' + WT + '/lines/t1')), false, 'waste: today\'s entry is read with the kitchen PIN');
+await ok(getDocs(collection(anon, K + 'waste/' + WT + '/lines')), false, 'waste: today\'s list is read with the kitchen PIN');
 await ok(getDoc(doc(anon, K + 'waste/' + WY + '/lines/y1')), false, 'waste: yesterday\'s entry is refused with only the kitchen PIN');
 await ok(getDocs(collection(anon, K + 'waste/' + WY + '/lines')), false, 'waste: yesterday\'s list is refused with only the kitchen PIN');
 await ok(getDocs(collection(anon, K + 'waste/' + WN + '/lines')), false, 'waste: tomorrow\'s list is refused too');
@@ -569,12 +571,12 @@ await ok(W([['waste/' + WT + '/lines/s1', { amount: 9 }, true]], { id: 'sam' }),
 await ok(W([['waste/' + WT + '/lines/s2', wline({ addedBy: 'Sam', addedById: 'sam', addedAt: Date.now() - 600000 })]], { id: 'sam' }), true, 'waste: an entry Sam logged 10 minutes ago');
 await ok(W([['waste/' + WT + '/lines/s2', { deleted: true, deletedBy: 'Sam', deletedAt: Date.now() }, true]], { id: 'sam' }), false, 'waste: Sam cannot undo it 10 minutes later');
 await ok(updateDoc(doc(owner, K + 'waste/' + WY + '/lines/y1'), { deleted: true, deletedBy: 'Head chef', deletedAt: 5 }), true, 'waste: the head chef\'s Google account removes a past entry');
-await ok(getDoc(doc(anon, K + 'waste/' + WY)), true, 'waste review: everyone reads it (the note on the prep list)');
+await ok(getDoc(doc(anon, K + 'waste/' + WY)), false, 'waste review: everyone cannot read while signed out it (the note on the prep list)');
 await ok(W([['waste/' + WT, { avoidable: 'Chips', change: '' }, true]], { id: 'ann' }), false, 'waste review: staff cannot write it');
 await ok(W([['waste/' + WT, { avoidable: 'Chips', change: 'Fewer chips' }, true]], { id: 'sam' }), true, 'waste review: a sous chef writes it');
 await ok(W([['waste/' + WT, { avoidable: 'Chips', change: '' }, true]], { id: 'ann', as: 'sam' }), false, 'waste review: Ann cannot write it as Sam');
 await ok(setDoc(doc(owner, K + 'waste/' + WY), { avoidable: 'Rice', change: 'Half a batch', reviewBy: 'Head chef', reviewAt: 2 }, { merge: true }), true, 'waste review: the head chef writes it from the admin panel');
-await ok(getDoc(doc(anon, K + 'summary/waste')), true, 'summary: the phones read the wastage summary');
+await ok(getDoc(doc(anon, K + 'summary/waste')), false, 'summary: the phones read the wastage summary');
 // usage counts (22 Oct 2026): one record a day per phone, counts only, written as the person, read only by the head chef
 const dly = x => Object.assign({ day: '2026-10-21', tag: 'abc123', sg: { quick: { s: 1, t: 2, d: 0 } }, pf: { lcp: [1, 0, 0, 0, 0] }, at: 5 }, x || {});
 await ok(W([['daily/2026-10-21_abc123', dly()]], { id: 'ann' }), true, 'daily: a phone sends its counts as the person signed in');
@@ -595,8 +597,8 @@ await env.withSecurityRulesDisabled(async ctx => {
   await setDoc(doc(db, K + XT + 't1'), xline());
   await setDoc(doc(db, K + XY + 'y1'), xline({ dir: 'in', text: 'Eggs', amount: 30, unit: 'pieces' }));
 });
-await ok(getDoc(doc(anon, K + XT + 't1')), true, 'transfers: today\'s line is read with the kitchen PIN');
-await ok(getDocs(collection(anon, K + 'transfers/' + WT + '/lines')), true, 'transfers: today\'s list is read with the kitchen PIN');
+await ok(getDoc(doc(anon, K + XT + 't1')), false, 'transfers: today\'s line is read with the kitchen PIN');
+await ok(getDocs(collection(anon, K + 'transfers/' + WT + '/lines')), false, 'transfers: today\'s list is read with the kitchen PIN');
 await ok(getDoc(doc(anon, K + XY + 'y1')), false, 'transfers: yesterday\'s line is refused with only the kitchen PIN');
 await ok(getDocs(collection(anon, K + 'transfers/' + WY + '/lines')), false, 'transfers: yesterday\'s list is refused with only the kitchen PIN');
 await ok(getDocs(collection(anon, K + 'transfers/' + WN + '/lines')), false, 'transfers: tomorrow\'s list is refused too');
@@ -664,7 +666,7 @@ await env.withSecurityRulesDisabled(async ctx => {
   await setDoc(doc(db, K + loanPath), loanRecord);
   await setDoc(doc(db, K + loanIndex), indexRecord(loanRecord));
 });
-await ok(getDocs(query(collection(anon, K + 'transferOpen'), where('open', '==', true))), true, 'returns: the open query includes older loans');
+await ok(getDocs(query(collection(anon, K + 'transferOpen'), where('open', '==', true))), false, 'returns: the open query includes older loans');
 await ok(getDocs(collection(anon, K + 'transferOpen')), false, 'returns: the complete return history stays private');
 const returnFields = (id = 'ann', time = Date.now()) => ({ returned: true, returnedBy: id, returnedById: id, returnedAt: time });
 async function returnLoan(fields, id = 'ann', altered = {}) {
@@ -770,13 +772,13 @@ await ok(getDoc(doc(ph6, K + 'fncontact/f1')), false, 'contacts: nor after their
 const minQ = (db, f, op, v) => getDocs(query(collection(db, K + 'minutes'), where(f, op, v)));
 await ok(getDoc(doc(anon, K + 'minutes/d1')), false, 'minutes: a draft cannot be read with only the kitchen PIN');
 await ok(getDoc(doc(ph7, K + 'minutes/d1')), false, 'minutes: nor through a PIN session');
-await ok(getDoc(doc(anon, K + 'minutes/m1')), true, 'minutes: published minutes can be');
-await ok(minQ(anon, 'pubAt', '>=', 1), true, 'minutes: the kitchen lists the published minutes, asking by pubAt');
+await ok(getDoc(doc(anon, K + 'minutes/m1')), false, 'minutes: published minutes cannot be read while signed out');
+await ok(minQ(anon, 'pubAt', '>=', 1), false, 'minutes: the kitchen lists the published minutes, asking by pubAt');
 await ok(minQ(anon, 'date', '>=', '2026-01-01'), false, 'minutes: a list by date could hold drafts, so it is refused');
 await ok(getDocs(collection(anon, K + 'minutes')), false, 'minutes: so is the whole collection');
 await ok(minQ(owner, 'date', '>=', '2026-01-01'), true, 'minutes: the Google account lists them all, drafts too');
 await ok(setDoc(doc(owner, K + 'minutes/m9'), mins({ no: 9, status: 'draft', pubAt: 5 })), false, 'minutes: a draft never carries pubAt');
-await ok(getDocs(collection(anon, K + 'minutes/m1/signs')), true, 'minutes: the sign-offs of published minutes are still read with the kitchen PIN');
+await ok(getDocs(collection(anon, K + 'minutes/m1/signs')), false, 'minutes: the sign-offs of published minutes are still read with the kitchen PIN');
 // the chef to-do list (23 Oct 2026): only the head chef (Google account, or their PIN as headId) and the sous chefs
 await env.withSecurityRulesDisabled(async ctx => { await setDoc(doc(ctx.firestore(), K + 'config/main'), { headId: 'hd', sousIds: ['sam'], staffIds: ['sam', 'ann', 'bo', 'cal', 'hd'] }, { merge: true }); });
 const todo = x => Object.assign({ text: 'Book the hood clean', st: 'open', due: '', for: '', from: 'sam', at: 5, doneAt: 0, doneBy: '', upd: 5 }, x || {});

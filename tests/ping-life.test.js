@@ -98,7 +98,7 @@ async function fromAnotherPhone(p, id, data) {
   await p.evaluate(() => { location.hash = '#/'; }); await L.settle(p, 500);
   await p.clock.runFor(61000); await L.settle(p, 300);
   await L.waitFor(p, () => !!document.querySelector('.nt-wrap')).catch(() => {});
-  ok(await sheet(p), 'off the names: the phone\'s own sheet comes up');
+  ok(!(await sheet(p)), 'signed out: pings remain hidden on every page');
   await p.context().close();
 
   // nothing pops up over a live Undo: a ping due at 14:01 waits while the Ticked toast is up, then comes at the next minute

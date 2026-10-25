@@ -84,7 +84,10 @@ const tab = p => p.evaluate(() => Array.prototype.some.call(document.querySelect
 
   // Bo (lead) sees all three while staff do not
   p = await L.open(b, '#/', { who: 'bo', extra: world(HIDE), wait: 2500 });
+  await L.waitFor(p, () => !!window.LK_PREP && LK_PREP.state.configFull && LK_PREP.state.authed);
+  await L.waitFor(p, () => !!document.querySelector('.docket[href="#/guides"]'));
   ok(await docket(p), 'lead: Guides docket shows');
+  await L.waitFor(p, () => !!document.querySelector('.nt'));
   ok(await p.$('.nt') !== null, 'lead: the shift pings popup opens');
   await p.click('.nt-got');
   await L.settle(p, 200);
@@ -101,6 +104,7 @@ const tab = p => p.evaluate(() => Array.prototype.some.call(document.querySelect
   // only Guides held back: Ann gets the pings popup and the minutes card, but no Guides
   p = await L.open(b, '#/', { who: 'ann', extra: world({ guides: false, pings: true, minutes: true }), wait: 2500 });
   ok(!(await docket(p)), 'guides only: no Guides docket for staff');
+  await L.waitFor(p, () => !!document.querySelector('.nt'));
   ok(await p.$('.nt') !== null, 'guides only: the pings popup opens for staff');
   // the minutes are read from Firestore: wait for the bell to say so (under load the page goes still before the read)
   await L.waitFor(p, () => /Minutes to sign: 1/.test((document.querySelector('.nbell') || { getAttribute: () => '' }).getAttribute('aria-label') || ''), null, 8000).catch(() => false);

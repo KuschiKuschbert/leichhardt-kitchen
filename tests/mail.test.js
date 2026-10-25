@@ -110,26 +110,14 @@ const mailReads = p => p.evaluate(() => (window.__fake.reads || []).filter(k => 
     ok(p.errors.length === 0, name + ' Admin panel: no page errors ' + p.errors.join(' | '));
     await p.context().close();
   }
-  p = await L.open(b, '#/', { admin: true, who: 'sam', extra: Object.assign({}, recent, headCfg), wait: 1800 });
-  await hatAdmin(p);
-  ok(await atab(p) !== 'mail' && !(await p.$('.ml-admin')), 'sous chef on the head chef\'s device: Admin panel opens the last page (' + await atab(p) + ')');
-  s = await store(p);
-  ok(['m1', 'm2', 'm3'].every(i => s[fsKey(['mail', i])].seen === false), 'sous chef on the head chef\'s device: no mail is marked seen');
-  ok(!(await p.$('.a-tab[data-t="mail"]')) && !(await p.$('.wtop-who .adm-n')), 'sous chef on the head chef\'s device, switch off: no Kitchen mail page and no mail count');
-  await p.click('.wtop-who'); await L.settle(p, 150);
-  ok(!!(await p.$('.wm a[href="#/mail"]')), 'chef hat menu: a sous chef on the head chef\'s device still writes Kitchen mail (only the head chef has none)');
-  await p.keyboard.press('Escape'); await L.settle(p, 100);
+  p = await L.open(b, '#/mail', { who: 'sam', extra: Object.assign({}, recent, headCfg), wait: 1800 });
+  ok(!await p.$('.ml-admin') && !await p.$('.a-groups'), 'sous chef cannot read admin mail while sous-mail access is off');
   await p.context().close();
-  // switched on: the sous chef on that device gets the Mail page, but not the switch, and still marks nothing seen
-  const headOn = { [fsKey(['config', 'main'])]: Object.assign({}, headCfg[fsKey(['config', 'main'])], { sousMail: true }) };
-  p = await L.open(b, '#/admin', { admin: true, who: 'sam', extra: Object.assign({}, recent, headOn), wait: 1800 });
-  await L.adminTab(p, 'mail');
-  await L.waitFor(p, () => document.querySelectorAll('.ml-admin [data-lv="mail"] .ml-row').length === 3, null, 6000).catch(() => {});
-  ok((await p.$$('.ml-admin [data-lv="mail"] .ml-row')).length === 3 && !(await p.$('[data-k="ml-sous"]')), 'sous chef on the head chef\'s device, switch on: reads the mail, no switch');
-  await L.settle(p, 600);
-  s = await store(p);
-  ok(['m1', 'm2', 'm3'].every(i => s[fsKey(['mail', i])].seen === false), 'sous chef on the head chef\'s device, switch on: nothing marked seen');
-  ok(p.errors.length === 0, 'sous chef Admin panel: no page errors ' + p.errors.join(' | '));
+  const headOn = { [fsKey(['config','main'])]: Object.assign({}, headCfg[fsKey(['config','main'])], { sousMail: true }) };
+  p = await L.open(b, '#/mail', { who: 'sam', extra: Object.assign({}, recent, headOn), wait: 1800 });
+  await L.waitFor(p, () => document.querySelectorAll('[data-lv="mail"] .ml-row').length === 3);
+  s=await store(p);
+  ok(['m1','m2','m3'].every(i => s[fsKey(['mail',i])].seen === false), 'authorised sous chef reads kitchen mail without marking it seen as admin');
   await p.context().close();
   // 23:00: no popup outside 10:00 to 22:00
   p = await L.open(b, '#/', { admin: true, who: '', extra, clock: L.NOW + 9 * 3600000, wait: 1800 });

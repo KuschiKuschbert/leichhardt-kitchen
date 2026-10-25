@@ -14,7 +14,10 @@ export function probeChecks(fs, pin) {
   const K = 'kitchens/' + pin + '/', day = new Date().toISOString().slice(0, 10), id = 'probe-' + Date.now();
   const str = s => ({ stringValue: s }), num = n => ({ integerValue: String(n) }), bool = b => ({ booleanValue: b });
   return [
-    ['the kitchen PIN opens the book: config/main can be read', () => fs.get(K + 'config/main'), true],
+    ['public recipes remain readable', () => fs.get(K + 'book/index'), true],
+    ['private config cannot be read while signed out', () => fs.get(K + 'config/main'), false],
+    ['functions cannot be read while signed out', () => fs.get(K + 'functions/' + id), false],
+    ['prep cannot be read while signed out', () => fs.query(K + 'days/' + day, 'items', 'deleted', 'EQUAL', bool(false)), false],
     ['a wrong kitchen PIN reads nothing', () => fs.get('kitchens/0/config/main'), false],
     ['nobody can read a PIN hash', () => fs.get(K + 'staffpins/' + id), false],
     ['a prep line with a writer id and no PIN proof is refused', () => fs.patch(K + 'days/' + day + '/items/' + id, { text: str('probe'), station: str(''), qty: str(''), recipe: str(''), addedBy: str('Probe'), addedById: str('probe'), addedAt: num(Date.now()), done: bool(false), deleted: bool(false), by: str('probe') }), false],

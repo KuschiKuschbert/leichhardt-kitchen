@@ -64,9 +64,9 @@ const extra = { [source]: record, [index]: { date: old, lineId: 'loan', record, 
   {
     const p = await L.open(b, '#/transfers', { who: 'sam', extra, touch: true, settings: { shared: true }, wait: 1200 });
     await p.clock.runFor(11 * 60000); await L.settle(p, 300);
-    await p.click('.tr-outstanding [data-p="tr-return"]'); await L.settle(p, 300);
-    ok(!!(await p.$('.p-name')), 'shared tablet: returning asks who is confirming');
+    ok(!!await p.$('.p-name') && !await p.$('.tr-outstanding'), 'shared tablet: return information stays hidden until login');
     await p.click('.p-name[data-id="ann"]'); await L.settle(p, 250); await p.keyboard.type('2222'); await L.settle(p, 1200);
+    await p.click('.tr-outstanding [data-p="tr-return"]'); await L.settle(p, 400);
     ok((await p.evaluate(k => window.__fake.dump()[k], source)).returnedById === 'ann', 'shared tablet: return belongs to the person who entered their PIN');
     await p.context().close();
   }
