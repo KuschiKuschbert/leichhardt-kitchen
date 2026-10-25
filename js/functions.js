@@ -543,10 +543,99 @@
     if (c.length) out += '<h3 class="fn-h">Changes</h3><ul class="fn-chg">' + c.slice(0, 5).map(function (x) { return '<li><span>' + esc(dayName(kday(x.at)) + ' ' + kclock(x.at)) + ', ' + esc(nameOf(x.by)) + '</span> ' + esc(x.what) + '</li>'; }).join('') + '</ul>';
     out += '<p class="fn-by fn-last">Last changed by ' + esc(nameOf(f.by)) + ', ' + esc(dayName(kday(f.upd)) + ' ' + kclock(f.upd)) + '.</p>';
     var can = P() && P().fnOK && P().fnOK();
-    if (inPop) out += '<div class="btn-row"><a class="btn dark" href="#/fn/' + encodeURIComponent(f.id) + '" data-fn="go">Open the full sheet</a>' + (can ? '<a class="btn" href="#/functions/' + encodeURIComponent(f.id) + '" data-fn="go">Change this function</a>' : '') + '</div>';
-    else if (can) out += '<div class="btn-row"><a class="btn" href="#/functions/' + encodeURIComponent(f.id) + '">Change this function</a></div>';
+    out += '<div class="btn-row"><button type="button" class="btn" data-fn="print" data-id="' + esc(f.id) + '">Print function</button>' +
+      (inPop ? '<a class="btn dark" href="#/fn/' + encodeURIComponent(f.id) + '" data-fn="go">Open the full sheet</a>' : '') +
+      (can ? '<a class="btn" href="#/functions/' + encodeURIComponent(f.id) + '"' + (inPop ? ' data-fn="go"' : '') + '>Change this function</a>' : '') + '</div>';
     return out;
   }
+
+  /* ---------- Layout 2 print copy (25 Oct 2026, head chef approved) ----------
+     Built only on a tap from the records already on this device. No reads, writes or new saved copies.
+     One function per sheet; a long booking flows onto more pages without shrinking its words. */
+  function printDate(d) { return isYmd(d) ? dayName(d) + ' ' + d.slice(0, 4) : 'TBC'; }
+  function printStamp(ms) { return ms ? printDate(kday(ms)) + ', ' + kclock(ms) + ' AEST' : 'Not saved'; }
+  function printQty(q) { return typeof q === 'number' && isFinite(q) && q >= 0 ? String(q) : 'TBC'; }
+  function printField(label, value) { return '<div><dt>' + label + '</dt><dd>' + esc(value || 'TBC') + '</dd></div>'; }
+  function printDayList(t) {
+    var d = kday(t);
+    return F.list.filter(function (f) {
+      return f.status === 'confirmed' && (f.date === d || (f.rounds || []).some(function (r) { return r.at && kday(r.at) === d; }));
+    }).sort(function (a, b) { return (a.first || 9e15) - (b.first || 9e15) || String(a.name).localeCompare(String(b.name)); });
+  }
+  function printSheet(f, opts, printed) {
+    var R = f.rounds || [], L = f.lines || [], draft = f.status !== 'confirmed' || opts.unsaved;
+    var status = f.status === 'cancelled' ? 'Cancelled / do not send' : opts.unsaved ? 'Draft / not saved' : draft ? 'Draft / not confirmed' : 'Confirmed';
+    var times = R.length <= 3 ? R.map(function (r) { return when(r.at, f.date); }).join(' / ') : when(f.first, f.date) + ' to ' + when(f.last, f.date);
+    var out = '<article class="fn-paper"><header class="fn-paper-head"><p class="fn-paper-brand">Leichhardt Hotel</p><h1>' + esc(f.name || 'New function') + '</h1>' +
+      '<div class="fn-paper-sub"><span>Function run sheet</span><strong>' + esc(status) + '</strong></div>' +
+      '<dl class="fn-paper-meta">' + printField('Date', printDate(f.date)) + printField('Event start', when(f.start, f.date)) + printField('Guests', f.gu ? 'Not known yet' : printQty(f.guests)) +
+      printField('Area', f.loc || 'Not specified') + printField('Food service', times || 'TBC') + printField('Booking', printQty(totalQty(f)) + ' platters / ' + R.length + (R.length === 1 ? ' round' : ' rounds')) + '</dl></header>';
+    if (opts.unsaved) out += '<p class="fn-paper-warning">This copy includes changes not saved to the book.</p>';
+    if (opts.source) out += '<p class="fn-paper-warning">' + esc(opts.source) + '</p>';
+    var probs = problems(f);
+    if (probs.length) out += '<section class="fn-paper-warning"><h2>Still to check</h2><ul>' + probs.map(function (p) { return '<li>' + esc(p.t) + '</li>'; }).join('') + '</ul></section>';
+    out += '<section><h2>Send in this order</h2><ol class="fn-paper-rounds">' + R.map(function (r, i) {
+      var a = roundCounts(f, i), sent = !opts.unsaved && sentRec(f, i), otherDay = r.at && kday(r.at) !== f.date;
+      return '<li class="fn-paper-round"><div class="fn-paper-time"><b>' + esc(r.at ? kclock(r.at) : 'TBC') + '</b>' +
+        (otherDay ? '<small>' + esc(when(r.at, f.date)) + '</small>' : '') + '<span>' + sum(a) + ' platters</span></div><div class="fn-paper-send"><h3>Round ' + (i + 1) + '</h3><ul class="fn-paper-lines">' +
+        L.map(function (l, j) { return a[j] > 0 ? '<li><b>' + a[j] + '</b><span>' + esc(l.name) + '</span></li>' : ''; }).join('') + '</ul>' +
+        (r.note ? '<p class="fn-paper-text fn-paper-round-note">' + esc(r.note) + '</p>' : '') + '</div><div class="fn-paper-sent">' +
+        (f.status === 'cancelled' ? 'Cancelled' : '<span class="fn-paper-tick' + (sent ? ' is-sent' : '') + '" aria-hidden="true"></span><span>' + (sent ? 'Sent ' + esc(kclock(sent.sentAt)) : 'Sent') + '</span>') + '</div></li>';
+    }).join('') + '</ol>' + (!R.length ? '<p>No rounds entered yet.</p>' : '') + '</section>';
+    out += '<section class="fn-paper-totals"><h2>Total booked / ' + esc(printQty(totalQty(f))) + ' platters</h2><ul class="fn-paper-lines">' + L.map(function (l) {
+      return '<li><b>' + esc(printQty(l.qty)) + '</b><span>' + esc(l.name) + (l.unit && l.unit !== 'platter' ? ' (' + esc(unitOf(l, l.qty)) + ')' : '') + '</span></li>';
+    }).join('') + '</ul>' + (!L.length ? '<p>No platters entered yet.</p>' : '') + '</section>';
+    out += '<section class="fn-paper-notes"><h2>Service &amp; dietary notes</h2><p class="fn-paper-text">' + esc(f.notes || 'None entered.') + '</p></section>' +
+      '<section class="fn-paper-notes"><h2>Kitchen comment</h2><p class="fn-paper-text">' + esc(f.kc || 'None entered.') + '</p>' +
+      (f.kc && f.kcAt && !opts.unsaved ? '<p class="fn-paper-by">' + esc(nameOf(f.kcBy)) + ' / ' + esc(printStamp(f.kcAt)) + '</p>' : '') + '</section>';
+    return out + '<footer class="fn-paper-foot"><span>' + (opts.unsaved ? 'Unsaved copy' : 'Version ' + esc(f.v || 1) + ' / last changed ' + esc(printStamp(f.upd))) + '</span><span>Printed ' + esc(printStamp(printed)) + '</span></footer></article>';
+  }
+  var printJob = null;
+  function printError(button, message) {
+    var row = button && button.parentNode;
+    if (row && document.body.contains(row)) {
+      var el = row.querySelector('.fn-print-error');
+      if (!el) { el = document.createElement('p'); el.className = 'fn-print-error p-err'; el.setAttribute('role', 'alert'); row.appendChild(el); }
+      el.textContent = message;
+    } else { var api = P() && P().book && P().book(); if (api) api.say(message); }
+  }
+  function printEnd() {
+    if (!printJob) return;
+    var job = printJob; printJob = null;
+    if (job.root.parentNode) job.root.parentNode.removeChild(job.root);
+    document.body.classList.remove('fn-printing'); document.title = job.title;
+    if (job.button && document.body.contains(job.button)) { job.button.disabled = false; job.button.focus({ preventScroll: true }); }
+  }
+  function printFunctions(list, opts, button) {
+    if (printJob) { if (!printJob.returned) return; printEnd(); }
+    var prep = P();
+    if (!prep || !/^\d{4,6}$/.test((prep.state && prep.state.pin) || '') || !list.length) return;
+    if (typeof window.print !== 'function') { printError(button, 'Printing is not available here. Open the book in your browser to print.'); return; }
+    var error = button && button.parentNode && button.parentNode.querySelector('.fn-print-error'); if (error) error.parentNode.removeChild(error);
+    opts = opts || {};
+    var root = document.createElement('div'), printed = now(); root.id = 'fn-print'; root.setAttribute('aria-hidden', 'true');
+    if (!opts.fromForm && (F.cached || F.offline || F.state !== 'ok')) opts.source = 'Saved copy / last read ' + printStamp(F.at) + '. Check the latest changes before service.';
+    root.innerHTML = (opts.day ? '<header class="fn-paper-day"><h1>Service run sheet / ' + esc(printDate(opts.day)) + '</h1><p>All rounds for today\'s functions, including rounds already sent. One function per sheet.</p></header>' : '') +
+      list.map(function (f) { return printSheet(f, opts, printed); }).join('');
+    printJob = { root: root, title: document.title, button: button }; if (button) button.disabled = true;
+    document.body.appendChild(root); document.body.classList.add('fn-printing'); document.title = (opts.day ? printDate(opts.day) : list[0].name || 'New function') + ' - Function run sheet';
+    // Native print keeps the current page and the unsaved form in place. The print-only copy is a snapshot, so service
+    // updates cannot change it while the dialog is open. Wait for fonts, but a failed font load still prints the fallback.
+    var ready = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
+    Promise.race([ready.catch(function () {}), new Promise(function (resolve) { setTimeout(resolve, 1000); })]).then(function () {
+      if (!printJob || printJob.root !== root) return;
+      printJob.started = true;
+      try {
+        window.print();
+        // An embedded mobile browser can return without afterprint or focus. Leave its copy ready for printing,
+        // but allow another tap to replace it, so a missing browser event never locks the control.
+        if (printJob && printJob.root === root) { printJob.returned = true; if (button) button.disabled = false; }
+      } catch (e) { printEnd(); printError(button, 'Could not open printing. Open the book in your browser and try again.'); }
+    });
+  }
+  window.addEventListener('afterprint', printEnd);
+  // Some mobile browsers do not send afterprint. Returning to the book releases that copy and the print button too.
+  window.addEventListener('focus', function () { if (printJob && printJob.started) printEnd(); });
   // the popup from the band, appended to document.body so a page redraw does not remove it; clicks use data-fn
   var sheetEl = null, sheetId = '', sheetBack = null;
   function sheetOpen(id, from) {
@@ -604,7 +693,7 @@
     var just = F.list.filter(function (f) { return f.status === 'confirmed'; }).map(function (f) {
       return (f.rounds || []).map(function (r, i) { var x = sentRec(f, i); return x && t - x.sentAt < 2 * MIN ? { f: f, i: i } : null; }).filter(Boolean);
     }).reduce(function (a, b) { return a.concat(b); }, []);
-    var out = '<section class="set-block fn-page fn-svc-page"><h2 id="rtitle" tabindex="-1">Service</h2>' + (known() ? '' : '<p role="status">Loading functions...</p>');
+    var out = '<section class="set-block fn-page fn-svc-page"><div class="fn-page-head"><h2 id="rtitle" tabindex="-1">Service</h2><button type="button" class="btn" data-fn="print-day"' + (!known() || !printDayList(t).length ? ' disabled' : '') + '>Print run sheet</button></div>' + (known() ? '' : '<p role="status">Loading functions...</p>');
     if (known() && !sv.rows.length) out += '<p class="hint">Nothing to send: no function has a round still to go out.</p>';
     if (sv.rows.length) out += '<h3 class="fn-h">Next out</h3><ul class="fn-svc-rows">' + sv.rows.map(function (r) {
       var n = r.f.rounds.length;
@@ -717,6 +806,8 @@
     var el = e.target.closest && e.target.closest('[data-fn]');
     if (!el) return;
     var a = el.getAttribute('data-fn');
+    if (a === 'print') { var f = byId(el.getAttribute('data-id')); if (f) printFunctions([f], {}, el); return; }
+    if (a === 'print-day') { printFunctions(printDayList(now()), { day: kday(now()) }, el); return; }
     if (a === 'open') { sheetOpen(el.getAttribute('data-id'), el); return; }
     if (a === 'close') { sheetClose(true); return; }
     if (a === 'sent' || a === 'unsent') { tickSent(el.getAttribute('data-id'), +el.getAttribute('data-r'), a === 'sent'); return; }
@@ -760,7 +851,7 @@
     bandSlot: function () { var h = bandHTML(); lastBand = h; return '<div class="fn-band" id="fn-band" role="region" aria-label="Functions"' + (h ? '' : ' hidden') + '>' + h + '</div>'; },
     landSlot: function () { var h = landHTML(); return '<div id="fn-land"' + (h ? '' : ' hidden') + '>' + h + '</div>'; },
     checkSlot: function () { var h = checkHTML(); return '<div id="fn-check"' + (h ? '' : ' hidden') + '>' + h + '</div>'; },
-    page: pageHTML, watch: watch, paint: paint, catalogue: catalogue, recipeOf: recipeOf, nameOf: nameOf, sheetHTML: sheetHTML, esc: esc
+    page: pageHTML, watch: watch, paint: paint, catalogue: catalogue, recipeOf: recipeOf, nameOf: nameOf, sheetHTML: sheetHTML, print: printFunctions, esc: esc
   };
   watch();
 })();
