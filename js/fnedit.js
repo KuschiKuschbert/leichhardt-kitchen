@@ -17,7 +17,7 @@
 (function () {
   'use strict';
 
-  var API = 6;
+  var API = 7;
   var FN = window.LK_FN, M = FN.M, P = window.LK_PREP, esc = FN.esc, T = window.LK_TIME;
   function B() { return P.book(); }
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -25,7 +25,7 @@
   function clone(x) { return JSON.parse(JSON.stringify(x)); }
   function now() { return T.now(); }
   function today() { return T.day(); }
-  var E = { root: null, sub: [], list: null, listErr: false, q: '', chip: 'up', ed: null, pending: {}, armed: '', armTimer: null };
+  var E = { root: null, sub: [], list: null, listErr: false, q: '', chip: 'up', ed: null, pending: {}, armed: '', armTimer: null, removing: {} };
   function arm(k) {
     if (E.armed === k) { E.armed = ''; clearTimeout(E.armTimer); return true; }
     E.armed = k; clearTimeout(E.armTimer); E.armTimer = setTimeout(function () { E.armed = ''; draw(); }, 4000);
@@ -145,12 +145,14 @@
       var fs = api.fs();
       return fs.getDocs(fs.query(api.colRef('functions'), fs.orderBy('date', 'desc'), fs.limit(400)));
     }).then(function (sn) {
-      E.list = sn.docs.map(function (x) { return M.derive(Object.assign({ id: x.id }, x.data())); }); E.listAt = now(); draw();
+      // A local Firestore snapshot may arrive before its write is acknowledged. Keep that card visible and disabled.
+      E.list = sn.docs.map(function (x) { return E.removing[x.id] || M.derive(Object.assign({ id: x.id }, x.data())); }); E.listAt = now(); draw();
     }, function () { E.listErr = true; if (E.list === 'loading') E.list = null; draw(); });
   }
-  var CHIPS = [['up', 'Coming up'], ['draft', 'Drafts'], ['past', 'Past'], ['cancelled', 'Cancelled'], ['all', 'All']];
+  var CHIPS = [['up', 'Coming up'], ['draft', 'Drafts'], ['past', 'Past'], ['cancelled', 'Cancelled'], ['all', 'All'], ['deleted', 'Deleted']];
   function inChip(f, c) {
     var t = today(), done = f.date && f.date < t;
+    if (c === 'deleted') return !!f.removed;
     if (f.removed) return false;
     if (c === 'up') return f.status !== 'cancelled' && (!f.date || !done);
     if (c === 'draft') return f.status === 'draft';
@@ -172,17 +174,65 @@
     var body = order.map(function (k) {
       var tot = M.dayTotals(groups[k])[k] || [];
       return '<section class="fe-day"><h3>' + esc(k ? M.dayName(k) + (k === today() ? ' (today)' : '') : 'No date yet') + '</h3><ul class="fe-rows">' + groups[k].map(function (f) {
-        var st = f.status === 'draft' ? '<span class="fn-tag">Draft</span>' : f.status === 'cancelled' ? '<span class="fn-tag fn-t-off">Cancelled</span>' : '<span class="fn-tag fn-t-ok">Confirmed</span>';
+        var st = f.removed ? '<span class="fn-tag fn-t-off">Deleted</span>' : f.status === 'draft' ? '<span class="fn-tag">Draft</span>' : f.status === 'cancelled' ? '<span class="fn-tag fn-t-off">Cancelled</span>' : '<span class="fn-tag fn-t-ok">Confirmed</span>';
         var o = (ov[f.id] || []).map(function (id) { return byName[id]; });
         return '<li><a class="fe-row" href="#/functions/' + encodeURIComponent(f.id) + '"><span class="fe-r1"><b>' + esc(f.name || 'No name yet') + '</b> ' + st + (lsGet(draftKey(f.id)) ? ' <span class="fn-tag">Not saved</span>' : '') + '</span>' +
           '<span class="fe-r2">' + (f.start || f.st ? 'Event ' + esc(M.when(f.start, f.date)) + ' · food ' + esc(M.when(f.first, f.date)) : 'No times yet') + (f.loc ? ' · ' + esc(f.loc) : '') + (f.gu || f.guests ? ' · ' + M.guestsText(f) : '') + ' · ' + M.totalQty(f) + ' platters' + (f.mode === 'stag' ? ', ' + (f.rounds || []).length + ' rounds' : '') + '</span>' +
-          (o.length ? '<span class="fe-ov">Food times overlap with ' + esc(o.join(', ')) + '</span>' : '') + '</a>' + (FN.statusHTML(f, 'fe') ? '<div class="fn-card-actions">' + FN.statusHTML(f, 'fe') + '</div>' : '') + '</li>';
+          (o.length ? '<span class="fe-ov">Food times overlap with ' + esc(o.join(', ')) + '</span>' : '') + '</a>' + rowActions(f) + '</li>';
       }).join('') + '</ul>' + (tot.length ? '<p class="fe-dtot">Confirmed for the day: ' + tot.map(function (r) { return r.qty + ' ' + esc(M.short(r.name)); }).join(', ') + '</p>' : '') + '</section>';
     }).join('');
     return head + (drafts.indexOf(draftKey('new')) >= 0 ? '<p class="fe-note">A new function you started is not saved yet. <a href="#/functions/new">Carry on with it</a>.</p>' : '') +
       '<div class="field"><label class="label" for="fe-q">Search</label><input id="fe-q" class="search" data-ff="q" value="' + esc(E.q) + '" placeholder="Name or place" autocomplete="off"></div>' +
       '<div class="chips scroll" role="group" aria-label="Show">' + CHIPS.map(function (c) { return '<button type="button" class="chip" data-fe="chip" data-v="' + c[0] + '" aria-pressed="' + (E.chip === c[0]) + '">' + c[1] + ' <span class="lv-n">' + E.list.filter(function (f) { return inChip(f, c[0]); }).length + '</span></button>'; }).join('') + '</div>' +
       (body || '<p class="hint">No functions here.</p>') + (E.listAt ? '<p class="hint">Read ' + esc(stamp(E.listAt)) + '. <button type="button" class="linkish" data-fe="reload">Read again</button></p>' : '');
+  }
+
+  // Keep the card link and its actions separate: cancelling or deleting never opens the form.
+  function removeHTML(f, form) {
+    if (!P.fnOK() || !f || !f.id || (!f.removed && f.status === 'confirmed')) return '';
+    var busy = E.removing[f.id] || FN.statusBusy(f.id), restore = !!f.removed, confirm = armed('remove:' + f.id);
+    return '<button type="button" class="linkish" data-fe="' + (restore ? 'restore-row' : form ? 'remove' : 'remove-row') + '" data-id="' + esc(f.id) + '"' +
+      (busy ? ' disabled' : '') + ' aria-label="' + esc((restore ? 'Restore ' : confirm ? 'Tap again to delete ' : 'Delete ') + f.name) + '">' +
+      (busy ? 'Saving...' : restore ? 'Restore function' : confirm ? 'Tap again to delete function' : 'Delete function') + '</button>';
+  }
+  function rowActions(f) {
+    var actions = (f.removed ? '' : FN.statusHTML(f, 'fe')) + removeHTML(f);
+    return actions ? '<div class="fn-card-actions">' + actions + '</div>' : '';
+  }
+  // One server read only on Delete/Restore. Preserve the saved record and contacts, never form edits.
+  // History and the next version are atomic; a stale screen, failed read or changed access saves nothing.
+  function setRemoved(view, removed) {
+    if (!view || !P.fnOK() || E.removing[view.id] || FN.statusBusy(view.id)) return;
+    if (removed ? view.removed || view.status === 'confirmed' : !view.removed) return;
+    var api = B(), id = view.id, me = api.who();
+    E.removing[id] = view; E.armed = ''; clearTimeout(E.armTimer); draw();
+    api.ready().then(function () { return api.fromServer(api.docRef('functions', id)); }).then(function (sn) {
+      if (!sn.exists()) throw new Error('This function is no longer available. Read the list again.');
+      var before = sn.data();
+      if (before.v !== view.v || !!before.removed !== !!view.removed || before.status !== view.status) throw new Error('This function changed. Read the latest copy before trying again.');
+      if (!P.fnOK() || api.who() !== me) throw new Error('Your access changed. The function has not been changed.');
+      var f = clone(before), t = now(), what = removed ? 'Deleted from list' : 'Restored to cancelled list';
+      f.removed = removed; f.status = 'cancelled'; f.od = ''; f.v = before.v + 1; f.upd = t; f.by = me;
+      // Keep canAt unchanged: restoration must never enable cancellation Undo or reactivate service.
+      f.chg = [{ at: t, by: me, what: what }].concat((before.chg || []).slice(0, 7));
+      M.derive(f);
+      var ops = [['set', api.docRef('functions', id), f], ['set', api.fs().doc(api.db(), 'kitchens', api.pin(), 'functions', id, 'hist', String(before.v)), { was: before, at: t, what: what }]];
+      return api.W(ops).then(function () { return Object.assign({ id: id }, f); });
+    }).then(function (f) {
+      delete E.removing[id];
+      if (Array.isArray(E.list)) E.list = E.list.filter(function (x) { return x.id !== id; }).concat([f]);
+      // The saved draft was explicitly deleted. Other drafts and customer contact records stay untouched.
+      if (removed) lsSet(draftKey(id), '');
+      if (E.ed && E.ed.id === id) {
+        if (removed) { E.ed = null; window.LK_APP.returnTo('#/functions'); }
+        else { E.ed.saved = f; E.ed.v = f.v; E.ed.status = f.status; E.ed.hist = null; E.ed.d = fromDoc(f, E.ed.savedC); }
+      }
+      toast(removed ? 'Deleted from the list. History is kept. Restore it from Deleted.' : 'Restored to Cancelled. Review and confirm it before service.');
+      draw();
+    }).catch(function (err) {
+      delete E.removing[id];
+      toast(err.code ? 'Not changed. Check your access and signal, then read the list again.' : err.message || 'Not changed. Read the list and try again.'); draw();
+    });
   }
 
   /* ---------- open a function in the form ---------- */
@@ -213,7 +263,7 @@
       var f = M.derive(Object.assign({ id: id }, r[0].data())), c = r[1] && r[1].exists() ? r[1].data() : {};
       // cMiss: the contact could not be read on this phone (no PIN session for a function manager, or no signal)
       var e = { id: id, isNew: false, v: f.v, status: f.status, saved: f, savedC: c, cMiss: r[1] === null, d: fromDoc(f, c) };
-      if (kept) { try { var k = JSON.parse(kept); if (k && k.d) { e.d = k.d; e.status = k.status || e.status; e.restored = true; e.keptV = k.v; } } catch (x) {} }
+      if (kept && !f.removed) { try { var k = JSON.parse(kept); if (k && k.d) { e.d = k.d; e.status = k.status || e.status; e.restored = true; e.keptV = k.v; } } catch (x) {} }
       E.ed = e; draw();
     }, function () { if (E.ed && E.ed.id === id) { E.ed = { id: id, failed: true }; draw(); } });
   }
@@ -316,6 +366,7 @@
     if (e.missing) return '<section class="set-block"><h2 id="rtitle" tabindex="-1">Function not found</h2><p>It may have a different link.</p></section>';
     if (e.failed) return '<section class="set-block"><h2 id="rtitle" tabindex="-1">Could not open the function</h2><p>Check the signal and try again.</p><div class="btn-row"><button type="button" class="btn dark" data-fe="reopen">Try again</button></div></section>';
     var d = e.d, s = e.saved, st = e.status;
+    if (s && s.removed) return '<div class="fe-head"><h2 id="rtitle" tabindex="-1">' + esc(s.name || 'Function') + '</h2><span class="fn-tag fn-t-off">Deleted</span></div><p>This function is removed from the list. Its booking and history are kept. Restoring it leaves it cancelled.</p><div class="btn-row">' + removeHTML(s) + '</div>' + histHTML(e);
     if (e.review) return '<div class="fe-head"><h2 id="rtitle" tabindex="-1">' + esc(d.name || 'New function') + '</h2></div>' + msgHTML(e) + reviewHTML(e);
     var stTag = st === 'draft' ? '<span class="fn-tag">Draft: the kitchen does not see it</span>' : st === 'cancelled' ? '<span class="fn-tag fn-t-off">Cancelled</span>' : '<span class="fn-tag fn-t-ok">Confirmed: in the kitchen\'s band on the day</span>';
     var out = '<div class="fe-head"><h2 id="rtitle" tabindex="-1">' + esc(e.isNew ? 'New function' : (s.name || 'Function')) + '</h2><div class="btn-row">' + stTag + '<button type="button" class="btn" data-fe="print"' + (e.saving ? ' disabled' : '') + '>Print function</button></div></div>' +
@@ -354,13 +405,13 @@
     return '<div class="fe-probs" role="alert"><b>Before it can be confirmed:</b><ul>' + e.shown.map(function (p) { return '<li><button type="button" class="linkish" data-fe="goto" data-v="' + esc(p.k) + '">' + esc(p.t) + '</button></li>'; }).join('') + '</ul></div>';
   }
   function buttonsHTML(e) {
-    var st = e.status, dis = e.saving || FN.statusBusy(e.id) ? ' disabled' : '', b = [];
+    var st = e.status, dis = e.saving || E.removing[e.id] || FN.statusBusy(e.id) ? ' disabled' : '', b = [];
     if (st === 'draft') { b.push('<button type="button" class="btn dark" data-fe="review"' + dis + '>Check and confirm</button>'); b.push('<button type="button" class="btn" data-fe="save"' + dis + '>Save draft</button>'); }
     else if (st === 'confirmed') b.push('<button type="button" class="btn dark" data-fe="save"' + dis + '>Save changes</button>');
     else b.push('<button type="button" class="btn dark" data-fe="review"' + dis + '>Put it back on</button>');
     var more = [];
     if (!e.isNew) more.push('<button type="button" class="btn" data-fe="dup">Duplicate</button>');
-    if (!e.isNew && e.saved) { more.push(FN.statusHTML(e.saved, 'fe')); more.push('<button type="button" class="btn" data-fe="remove"' + dis + '>' + (armed('remove') ? 'Tap again to delete function' : 'Delete function') + '</button>'); }
+    if (!e.isNew && e.saved) { more.push(FN.statusHTML(e.saved, 'fe')); more.push(removeHTML(e.saved, true)); }
     if (dirty()) more.push('<button type="button" class="btn" data-fe="drop">' + (armed('drop') ? 'Tap again to drop your changes' : 'Drop my changes') + '</button>');
     return '<div class="btn-row fe-btns">' + b.join('') + '</div>' + (more.length ? '<div class="btn-row">' + more.join('') + '</div>' : '');
   }
@@ -386,10 +437,10 @@
   /* ---------- saving ---------- */
   function save(kind) {
     var e = E.ed;
-    if (!e || e.saving) return;
+    if (!e || e.saving || E.removing[e.id] || (e.saved && e.saved.removed)) return;
     e.msg = ''; keep();
     if (!P.fnOK()) { e.msg = 'Not saved: you are not ticked for Functions any more. Your changes are kept on this device.'; draw(); return; }
-    var next = kind === 'confirm' ? 'confirmed' : kind === 'cancel' || kind === 'remove' ? 'cancelled' : e.status;
+    var next = kind === 'confirm' ? 'confirmed' : kind === 'cancel' ? 'cancelled' : e.status;
     var probs = check({ d: e.d, status: next });
     var contactBad = contactProblems(e.d);
     if ((next === 'confirmed' && probs.length) || contactBad.length) { e.shown = next === 'confirmed' ? probs : contactBad; e.review = false; draw(); goto(e.shown[0].k); return; }
@@ -419,7 +470,6 @@
       f.was = {};
       if (prev && prev.status === 'confirmed' && next === 'confirmed' && (prev.from !== f.from || prev.until !== f.until) && prev.date !== f.date) f.was = { date: prev.date, start: prev.start, first: prev.first, from: prev.from, until: prev.until };
       else if (prev && prev.was && prev.was.until && next === 'confirmed' && prev.date !== prev.was.date) f.was = prev.was;
-      if (kind === 'remove') f.removed = true;
       M.derive(f);
       // the order day: kept while the date stays, worked out again when it moves. A function confirmed before ordering
       // came in (no od) and not moved gets none, so nothing old is ordered twice.
@@ -447,7 +497,6 @@
       e.isNew = false; e.v = f.v; e.status = f.status; e.saved = f; e.savedC = { cname: e.d.cname.trim(), phone: e.d.phone.trim(), email: e.d.email.trim() }; e.d = fromDoc(f, e.savedC);
       e.saving = ''; e.conflict = null; e.review = false; e.restored = false; e.hist = null;
       if (Array.isArray(E.list)) { E.list = E.list.filter(function (x) { return x.id !== id; }).concat([f]); }
-      if (kind === 'remove') { E.ed = null; E.list = null; window.LK_APP.returnTo('#/functions'); return; }
       toast(kind === 'confirm' ? 'Confirmed. The kitchen sees it on the day.' : kind === 'cancel' ? 'Cancelled. The kitchen is told.' : f.status === 'confirmed' ? 'Saved. The kitchen sees the change now.' : 'Draft saved. The kitchen does not see it yet.');
       if (wasNew) { history.replaceState(history.state, '', '#/functions/' + encodeURIComponent(id)); if (window.LK_APP && window.LK_APP.noteRoute) window.LK_APP.noteRoute(true); E.sub = [id]; }
       if (E.ed === e) { draw(); var h = E.root && E.root.querySelector('#rtitle'); if (h) h.focus({ preventScroll: true }); window.scrollTo(0, 0); }
@@ -524,7 +573,7 @@
   // Keep focus in a typed time until Print or Cancel reads it. A blur's structural redraw would replace the button before
   // its click arrives. Keyboard activation still uses the same click handler and flushPending().
   document.addEventListener('pointerdown', function (ev) {
-    var el = ev.target.closest && ev.target.closest('[data-fe="print"], [data-fe="status"]');
+    var el = ev.target.closest && ev.target.closest('[data-fe="print"], [data-fe="status"], [data-fe="remove"], [data-fe="remove-row"], [data-fe="restore-row"]');
     if (el && E.root && E.root.contains(el)) ev.preventDefault();
   });
   document.addEventListener('click', function (ev) {
@@ -534,8 +583,20 @@
     if (a === 'chip') { E.chip = v; draw(); return; }
     if (a === 'reload') { loadList(); return; }
     if (a === 'reopen') { openId(e.id); return; }
-    if (a === 'status') {
+    if (a === 'remove-row' || a === 'restore-row' || a === 'remove') {
       if (e && e.saving) return;
+      var rid = el.getAttribute('data-id'), row = e && e.id === rid ? e.saved : Array.isArray(E.list) && E.list.filter(function (f) { return f.id === rid; })[0];
+      if (!row || !P.fnOK()) return;
+      if (a === 'restore-row' || arm('remove:' + rid)) setRemoved(row, a !== 'restore-row');
+      else if (E.root) {
+        // The confirmation redraw replaces the button. Keep keyboard focus on that same action.
+        var buttons = E.root.querySelectorAll('[data-fe="' + a + '"]');
+        Array.prototype.some.call(buttons, function (button) { if (button.getAttribute('data-id') !== rid) return false; button.focus({ preventScroll: true }); return true; });
+      }
+      return;
+    }
+    if (a === 'status') {
+      if ((e && e.saving) || E.removing[el.getAttribute('data-id')]) return;
       flushPending();
       var id = el.getAttribute('data-id'), target = e && e.id === id ? e.saved : Array.isArray(E.list) && E.list.filter(function (f) { return f.id === id; })[0];
       if (target) FN.setStatus(target, v === 'undo'); return;
@@ -560,7 +621,6 @@
     if (a === 'rmround') { d.rounds.splice(i, 1); d.lines.forEach(function (l) { l.a.splice(i, 1); }); d.n = String(d.rounds.length); d.custom = true; if (d.rounds.length < 2) { d.mode = 'all'; retime(e); } keep(); draw(); return; }
     if (a === 'goto') { goto(v); return; }
     if (a === 'save') { save('save'); return; }
-    if (a === 'remove') { if (arm('remove')) save('remove'); return; }
     if (a === 'review') {
       flushPending();
       var probs = check({ d: d, status: 'confirmed' });

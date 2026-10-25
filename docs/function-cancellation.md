@@ -12,6 +12,14 @@
 
 No new stored fields or collections are required. Function editing and contact permissions remain separate from cancellation. The rules enforce the narrow status transition and matching history snapshot.
 
+## Card actions and recovery (26 Oct 2026)
+
+The managers' list puts a small Delete function action below each draft and cancelled card. Confirmed bookings must be cancelled first. Delete needs a second tap on that same function within four seconds. It sets the existing `removed` flag from the private-access update, leaves the booking cancelled and outside the kitchen queue, and keeps the exact previous version in immutable history. Contacts and unsaved form fields are never written by this action. Other bookings and their drafts stay unchanged.
+
+Deleted records are excluded from Coming up, Drafts, Past, Cancelled and All. The separate Deleted filter offers Restore function to existing function editors and the verified admin. Restore keeps a new history version and returns the booking to Cancelled. It never confirms a booking or restarts prep/order work. Open a restored booking, review it and confirm it to put it back into service. A deleted booking opened by its old link shows recovery and history instead of an editable form.
+
+Delete and Restore each read the latest function once, only on the action. They refuse stale versions and changed access, write the next version and matching history atomically, and show success only after acknowledgement. They never read booking contacts or fetch history per card. These actions reuse the existing function-edit rules and the `removed` field from the private-access release; no additional rules or collections are introduced here. The app/editor API is 7.
+
 Visual checks with made-up bookings and people: [Functions on a phone](images/function-cancel-phone.png) and [the access checkbox on desktop](images/function-access-desktop.png). Browser journeys cover 390, 768 and 1280 px layouts.
 
 Before release: run the browser journeys and Firestore emulator checks, publish the new rules from the feature branch with the existing Publish rules workflow, verify its lock probe, then merge the app. Rollback is a revert on a fresh branch; publish the preceding rules too if cancellation access must be removed.

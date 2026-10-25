@@ -201,6 +201,7 @@ npm test
 
 ## Head chef decisions
 
+- **26 Oct 2026.** Put small actions at the bottom of each function card. Confirmed bookings have Cancel function; drafts and cancelled bookings have Delete function with a second tap to confirm. Delete removes the saved booking from normal lists and keeps its details, contact and immutable history. Function editors and the verified admin can recover it through Deleted, Restore function. Restored bookings stay cancelled until reviewed and confirmed. No new reads until an action is confirmed, then one latest-version read per action. Existing cancellation-only access stays separate. See `docs/function-cancellation.md` and `tests/function-list-actions.test.js`.
 - **25 Oct 2026.** Make admin wastage history easy to find: History first, Summary and Daily reviews beside it. Add one week, two weeks, 30 days, this month, last calendar month, three complete months and custom dates. Filters and CSV agree; missing reads never look like zero waste. Keep the existing verified admin and shared-device chef gates.
 
 - **25 Oct 2026.** Cancel a confirmed function with one click from Functions. Sous chefs, the head chef, function managers and the verified admin may cancel; ordinary staff may not. Keep a two-minute Undo, history and atomic prep/order cleanup. Label the existing per-person Functions tick Create/edit functions so access can be given without changing someone's kitchen role.

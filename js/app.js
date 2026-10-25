@@ -858,7 +858,7 @@
      and API in js/fnedit.js together when what LK_FN or LK_PREP.book() hands it changes. */
   function viewFn(route) { return '<div class="page fn-pg"><main id="main" class="fn-main">' + (window.LK_FN ? window.LK_FN.page(route.fid) : '') + '</main>' + footer() + '</div>'; }
   function viewFunctions() { return '<div class="page fe-page"><main id="main" class="fe"><div id="fe-root"></div></main></div>'; }
-  var FE_API = 6, feLoad = null;
+  var FE_API = 7, feLoad = null;
   function mountFunctions(route) {
     var root = document.getElementById('fe-root');
     if (!root) return;
