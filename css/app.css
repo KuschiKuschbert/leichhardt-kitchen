@@ -2023,7 +2023,8 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd 
    fields are never part of the print copy. Named pages keep A4 rules away from the book's other print views. */
 .fn-page-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.6rem; }
 .fn-page-head h2 { margin: 0; }
-.fn-card-actions { display: flex; justify-content: flex-end; padding: 0 0.7rem 0.6rem; }
+.fn-card-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 0.4rem 1rem; padding: 0 0.7rem 0.6rem; }
+.fn-card-actions .linkish { min-height: 44px; font-size: 0.875rem; }
 .fn-cancel { color: #A3230F; border-color: #A3230F; }
 .fn-card-actions .fn-cancel { min-height: 44px; padding: 0 0.7rem; font-size: 0.875rem; }
 .fn-print-error { flex-basis: 100%; }

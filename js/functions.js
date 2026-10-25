@@ -624,7 +624,7 @@
     return statusOK() && f.status === 'cancelled' && api && f.canBy === api.who() && f.upd === f.canAt && age >= 0 && age < 2 * MIN;
   }
   function statusHTML(f, scope) {
-    if (!f || !f.id || !statusOK() || (f.status !== 'confirmed' && !undoOK(f))) return '';
+    if (!f || !f.id || f.removed || !statusOK() || (f.status !== 'confirmed' && !undoOK(f))) return '';
     var undo = f.status === 'cancelled', busy = F.jobs[f.id], kind = scope === 'fe' ? 'fe' : 'fn';
     return '<button type="button" class="btn fn-cancel" data-' + kind + '="status" data-v="' + (undo ? 'undo' : 'cancel') + '" data-id="' + esc(f.id) + '"' +
       (busy ? ' disabled' : '') + ' aria-label="' + esc((undo ? 'Undo cancellation of ' : 'Cancel ') + f.name) + '">' +
@@ -641,7 +641,7 @@
   }
   function statusFail(message) { var err = new Error(message); err.fnMessage = message; throw err; }
   function setStatus(view, undo) {
-    if (!view || !view.id || F.jobs[view.id]) return;
+    if (!view || !view.id || view.removed || F.jobs[view.id]) return;
     if (!statusOK()) { statusNotice('Only a chef, function manager or admin can cancel a function.'); return; }
     if (undo ? !undoOK(view) : view.status !== 'confirmed') return;
     var api = P().book(), id = view.id, me = api.who(), label = undo ? 'Restoring' : 'Cancelling';
