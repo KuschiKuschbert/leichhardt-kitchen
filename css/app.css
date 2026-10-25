@@ -775,6 +775,43 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .a-export[open] > summary { background: var(--ink); color: #fff; }
 .a-export .btn-row { margin-top: 0.5rem; }
 .a-upd { margin: 0.4rem 0 0; }
+/* Wastage history: use the admin controls and list cards, with a compact totals strip. */
+.wh-period { align-items: flex-end; margin: 0.8rem 0 0; }
+.wh-period > .a-f { flex: 1 1 12rem; max-width: 22rem; }
+.wh-range { margin: 0.4rem 0 0.7rem; font-variant-numeric: tabular-nums; }
+.wh-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.4rem; max-width: 30rem; margin-bottom: 0.9rem; }
+.wh-tabs .chip { padding: 0.3rem 0.5rem; white-space: normal; line-height: 1.2; }
+.wh-search { margin-bottom: 0.25rem; max-width: 42rem; }
+.wh-filters > summary { display: flex; align-items: center; min-height: 44px; width: fit-content; cursor: pointer; font-size: 0.875rem; font-weight: 600; }
+.wh-filters > summary::before { content: '+'; margin-right: 0.4rem; }
+.wh-filters[open] > summary::before { content: '\2212'; }
+.wh-filters .a-check { align-self: flex-end; min-height: 44px; }
+.wh-custom { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0.6rem; margin-top: 0.6rem; }
+.wh-custom .a-f { flex: 1 1 8rem; }
+.wh-custom .hint { flex-basis: 100%; }
+.wh-report .a-f input { box-sizing: border-box; width: 100%; min-width: 0; max-width: 100%; min-height: 44px; padding: 0.35rem 0.55rem; font: inherit; color: var(--ink); background: var(--paper); border: 1.5px solid var(--ink); border-radius: var(--radius); }
+.wh-report .a-f { min-width: 0; }
+.wh-totals { display: flex; flex-wrap: wrap; gap: 0.6rem 1.2rem; margin-top: 0.8rem; padding: 0.7rem 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.wh-totals .a-tile { flex: 0 1 auto; min-width: 4.5rem; padding: 0; border: 0; background: none; }
+.wh-totals .a-tile strong { font-size: 1.5rem; }
+.wh-totals .a-tile span { font-size: 0.75rem; }
+.wh-note { margin-top: 0.2rem; max-width: 28rem; font-size: 0.8125rem; font-weight: 400; }
+.wh-note summary { display: flex; align-items: center; min-height: 44px; cursor: pointer; text-decoration: underline; }
+.wh-note p { margin: 0 0 0.4rem; overflow-wrap: anywhere; }
+.wh-report .a-rvform .nb-nav { margin-bottom: 0.7rem; }
+.wh-period > .chip { padding: 0 0.65rem; }
+.wh-history .wh-totals .a-tile { display: inline-flex; flex-direction: row; align-items: baseline; gap: 0.3rem; }
+.wh-history .wh-totals .a-tile strong { font-size: 1.125rem; }
+.wh-history .wh-totals .a-tile:last-child { flex-basis: 100%; }
+.wh-report [data-lv="waste-log"] .lv-tools { align-items: center; justify-content: space-between; margin-top: 0.7rem; }
+.wh-report [data-lv="waste-log"] .lv-tools h3 { flex: 1; margin: 0; }
+.wh-report [data-lv="waste-log"] .lv-count { margin: 0.4rem 0; }
+@media (max-width: 599px) {
+  .wh-period { flex-wrap: nowrap; }
+  .wh-period > .a-f { flex: 1; }
+  .wh-report > .a-title { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  .wh-report .lv-sort { width: auto; }
+}
 .a-step { margin: 0.4rem 0 0.6rem; }
 .a-sn { margin-right: 0.4rem; font: 700 0.85em var(--display); color: var(--small-ink); letter-spacing: 0.04em; }
 .a-onpage .chip .a-sn { margin-right: 0.3rem; }

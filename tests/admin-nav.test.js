@@ -66,7 +66,7 @@ const groupsShown = p => p.evaluate(() => { const r = document.querySelector('.a
     await p.click('[data-p="a-tab"][data-t="waste"]'); await L.settle(p, 600);
     v = await nav(p);
     const y = await p.evaluate(() => scrollY), mark = await p.evaluate(() => Math.round(document.querySelector('.a-navtop').getBoundingClientRect().top + scrollY));
-    ok(Math.abs(y - mark) <= 2 && v.chips.some(c => /By reason/.test(c)), w + ' admin nav: Wastage opens under the title with its parts (scroll ' + y + ', title ' + mark + ', ' + v.chips.length + ' parts)');
+    ok(Math.abs(y - mark) <= 2 && (v.hidden || v.chips.some(c => /Every entry/.test(c))) && !!(await p.$('[data-p="wh-view"][data-v="history"][aria-pressed="true"]')), w + ' admin nav: Wastage opens under the title with History first, without an extra jump row for one heading (scroll ' + y + ', title ' + mark + ', ' + v.chips.length + ' parts)');
 
     // a group with one page puts its parts straight under the groups
     await p.click('[data-p="a-group"][data-g="people"]'); await L.settle(p, 600);

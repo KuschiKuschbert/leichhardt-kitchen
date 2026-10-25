@@ -2076,6 +2076,10 @@
     sset(cfgDoc(), { pastEdit: v }, true).catch(function () {});   // before the rules allow it (or no signal) it is only a hint lost
   }
   function pastCheck() {
+    if (S.wStats && S.wStats.tag !== whTag() && pastStamp('w') !== S.whOwnStamp) {
+      S.wStats = null; lsSet('lk.w.history', '');
+      if (wAll() && (S.atab === 'waste' || S.atab === 'insights')) draw();
+    }
     // once per stamp, so a phone whose clock is a little behind never reads again on every config change
     var ns = pastStamp('n');
     if (S.notesFor && ns > (S.notesRead || 0) && ns !== S.nMine && ns !== S.nStampDone) { S.nStampDone = ns; loadNotes(true); }
@@ -2234,7 +2238,7 @@
   function afMine(x) { var who = AF().who; return !who || (x.rolled ? x.origBy === personName(who) : x.addedById === who); }
   function personName(id) { var p = ((S.config && S.config.people) || []).filter(function (x) { return x.id === id; })[0]; return p ? p.name : ''; }
   function afSections() {
-    var m = {};
+    var m = Object.create(null);
     if (S.stats && S.stats.days) Object.keys(S.stats.days).forEach(function (d) { S.stats.days[d].forEach(function (x) { if (!x.deleted) m[x.station || 'General'] = 1; }); });
     if (S.wStats && S.wStats.lines) S.wStats.lines.forEach(function (x) { if (!x.deleted) m[x.station || 'General'] = 1; });
     return Object.keys(m).sort();
@@ -2600,7 +2604,7 @@
     var s = lvState(c), key = esc(c.key), bar = '';
     if (c.items.length >= (c.tools == null ? 8 : c.tools)) {
       var fl = (c.filters || []).map(function (f) { return { f: f, n: f[2] ? c.items.filter(f[2]).length : c.items.length }; }).filter(function (x, i) { return i === 0 || x.n > 0 || x.f[0] === s.f; });
-      bar = '<div class="lv-tools">' +
+      bar = '<div class="lv-tools">' + (c.heading ? '<h3 class="a-ch-h">' + esc(c.heading) + '</h3>' : '') +
         (c.find ? '<div class="lv-qw"><label class="visually-hidden" for="lv-q-' + key + '">Search</label><input id="lv-q-' + key + '" type="search" class="search lv-q" data-k="lv-q:' + key + '" placeholder="' + esc(c.ph || 'Search') + '" value="' + esc(s.q) + '" autocomplete="off" enterkeyhint="search"></div>' : '') +
         (c.sorts && c.sorts.length > 1 ? '<label class="a-f lv-sort"><span>Sort</span><select data-k="lv-s:' + key + '" aria-label="Sort">' + c.sorts.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (o[0] === s.sort ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select></label>' : '') + '</div>' +
         (fl.length > 1 ? '<div class="chips lv-chips scroll" role="group" aria-label="Filter">' + fl.map(function (x) { return '<button type="button" class="chip" data-p="lv-f" data-lv="' + key + '" data-v="' + esc(x.f[0]) + '" aria-pressed="' + (x.f[0] === s.f) + '">' + esc(x.f[1]) + ' <span class="lv-n">' + x.n + '</span></button>'; }).join('') + '</div>' : '');
@@ -2737,6 +2741,7 @@
   }
   function hm(ms) { return ms ? clock(ms) : ''; }
   function exportCSV(kind) {
+    if (kind === 'waste') { whCSV(); return; }
     var n = S.statsRange, a = AF(), tag = dayNow() + '-' + n + 'd';
     if (kind === 'insights' && S.stats && !S.stats.loading) {
       var rows = [['Date', 'Weekday', 'Section', 'Line', 'Amount', 'Written by', 'Written on', 'Written at', 'Rolled over (times)', 'Ticked', 'Ticked by', 'Ticked at', 'Minutes to tick']];
@@ -2745,13 +2750,6 @@
         rows.push([d, DOWN[DOW.indexOf(parseYmd(d).getDay())], x.station || 'General', x.text, x.qty || '', x.rolled ? (x.origBy || '') : (x.addedBy || ''), firstAt(x) ? T.day(firstAt(x)) : '', hm(firstAt(x)), rolledN(x), x.done ? 'yes' : 'no', x.doneBy || '', hm(x.doneAt), x.done && x.doneAt && x.addedAt && !x.rolled ? Math.round((x.doneAt - x.addedAt) / 60000) : '']);
       }); });
       downloadCSV('leichhardt-prep-lines-' + tag + '.csv', rows);
-    } else if (kind === 'waste' && S.wStats && !S.wStats.loading) {
-      var ds = {}; afDates(n, 0).forEach(function (d) { ds[d] = 1; });
-      var w = [['Date', 'Weekday', 'Time', 'Section', 'Item', 'Amount', 'Unit', 'Reason', 'Action', 'Logged by']];
-      S.wStats.lines.filter(function (x) { return !x.deleted && ds[x.date] && (!a.sec || (x.station || 'General') === a.sec) && (!a.reason || x.reason === a.reason); })
-        .sort(function (p, q) { return (p.date + hm(p.addedAt)) < (q.date + hm(q.addedAt)) ? -1 : 1; })
-        .forEach(function (x) { w.push([x.date, DOWN[DOW.indexOf(parseYmd(x.date).getDay())], hm(x.addedAt), x.station || '', x.text, x.amount, x.unit, reasonName(x.reason), x.action || '', x.addedBy || '']); });
-      downloadCSV('leichhardt-wastage-' + tag + '.csv', w);
     } else if (kind === 'transfers' && S.xStats && !S.xStats.loading) {
       var xd = {}, xv = okey(a.venue); xDays(n).forEach(function (d) { xd[d] = 1; });
       var xr = [['Date', 'Weekday', 'Time', 'Way', 'Venue', 'Who came for it or gave it', 'Item', 'Amount', 'Unit', 'Note', 'Logged by', 'Returned', 'Returned by', 'Returned at']];
@@ -4182,7 +4180,7 @@
   }
   function wTotals(lines) {
     var t = { kg: 0, L: 0, portions: 0, pieces: 0 };
-    lines.forEach(function (x) { var a = +x.amount || 0; if (x.unit === 'g') t.kg += a / 1000; else if (x.unit === 'kg') t.kg += a; else if (x.unit === 'L') t.L += a; else if (t[x.unit] != null) t[x.unit] += a; });
+    lines.forEach(function (x) { var a = +x.amount || 0; if (x.unit === 'g') t.kg += a / 1000; else if (x.unit === 'kg') t.kg += a; else if (x.unit === 'L') t.L += a; else if (Object.prototype.hasOwnProperty.call(t, x.unit)) t[x.unit] += a; });
     return t;
   }
   function num(v) { return String(Math.round(v * 100) / 100); }
@@ -4252,14 +4250,18 @@
   function removeWaste(date, id, restore) {
     if (!wAll()) return;
     var mine = (S.wStats && S.wStats.lines) || [], it = (S.wLines || []).concat(mine).filter(function (x) { return x.id === id && x.date === date; })[0];
+    if (!it || S.wRemoving === date + '/' + id) return;
     var by = restore ? '' : (me() || {}).name || '', at = restore ? 0 : now();
-    mine.forEach(function (x) { if (x.id === id && x.date === date) { x.deleted = !restore; x.deletedBy = by; x.deletedAt = at; } });
-    supd(wRef(date, id), { deleted: !restore, deletedBy: by, deletedAt: at }).catch(failed);
-    if (!restore) toast('Removed ' + (it ? it.text : 'the entry') + ' from the wastage log', { label: 'Undo', fn: function () { removeWaste(date, id, true); } });
-    draw();
+    var value = { deleted: !restore, deletedBy: by, deletedAt: at }; S.wRemoving = date + '/' + id;
+    supd(wRef(date, id), value).then(function () {
+      S.wRemoving = ''; whPatch(date, id, value);
+      if (!restore) toast('Removed ' + it.text + ' from the wastage log', { label: 'Undo', fn: function () { removeWaste(date, id, true); } });
+      else toast('Put back ' + it.text);
+      draw();
+    }, function (e) { S.wRemoving = ''; failed(e); draw(); });
   }
   /* The end-of-day review lives in the admin panel's wastage log (22 Oct 2026): the head chef writes it for any day of
-     the last 60. The known review comes from the log's own reads (loadWStats), so opening it costs nothing more. */
+     the selected period. The known review comes from the log's own reads (loadWStats), so opening it costs nothing more. */
   function rvOf(d) { return ((S.wStats && S.wStats.reviews) || []).filter(function (r) { return r.date === d; })[0] || {}; }
   function rvSet(d, v) {
     if (!S.wStats || !S.wStats.reviews) return;
@@ -4296,7 +4298,7 @@
     if (armKey === 'wreview') arm('wreview');
     var a = (S.wrA != null ? S.wrA : r.avoidable || '').trim().slice(0, 300), c = (S.wrC != null ? S.wrC : r.change || '').trim().slice(0, 300);
     var v = { avoidable: a, change: c, reviewBy: name, reviewAt: now() };
-    sset(wDay(d), v, true).then(function () { if (page) S.wReview = v; rvSet(d, v); S.wrA = S.wrC = null; if (d >= shift(dayNow(), -3)) { S.wNoteFor = ''; lsSet('lk.w.note', ''); } toast('Review saved'); draw(); }, failed);
+    sset(wDay(d), v, true).then(function () { if (page) S.wReview = v; rvSet(d, v); if (wAll()) whPatch(d, '', v); S.wrA = S.wrC = null; if (d >= shift(dayNow(), -3)) { S.wNoteFor = ''; lsSet('lk.w.note', ''); } toast('Review saved'); draw(); }, failed);
   }
   /* the head chef's Google account: the only one the rules let read past wastage (22 Oct 2026) */
   function wAll() { return S.level === 'owner' && ownerHere(); }
@@ -5725,25 +5727,108 @@
   }
 
   /* ---------- wastage insights (admin) ---------- */
+  function whState() {
+    if (!S.wh) S.wh = { view: 'history', period: '30', q: '', who: '', unit: '', removed: false, from: '', to: '', msg: '' };
+    return S.wh;
+  }
+  function whValid(d) { return /^\d{4}-\d{2}-\d{2}$/.test(d) && ymd(parseYmd(d)) === d; }
+  function whRange() {
+    var h = whState(), today = dayNow(), first = today.slice(0, 8) + '01', from, to = today;
+    if (h.period === 'this') from = first;
+    else if (h.period === 'last' || h.period === 'months3') {
+      to = shift(first, -1); var m = parseYmd(first); m.setMonth(m.getMonth() - (h.period === 'last' ? 1 : 3)); from = ymd(m);
+    } else if (h.period === 'custom') { from = h.from; to = h.to; }
+    else from = shift(today, -(+h.period - 1));
+    var n = whValid(from) && whValid(to) ? Math.round((T.at(to, 0) - T.at(from, 0)) / 86400000) + 1 : 0;
+    if (!n || n < 1 || n > 366 || to > today) return { error: 'Choose valid dates, up to 366 days, ending today or earlier.' };
+    return { from: from, to: to, n: n, prev: { from: shift(from, -n), to: shift(from, -1), n: n } };
+  }
+  function whDates(r) {
+    var out = [], d = r.from, dow = AF().dow;
+    while (d <= r.to) { if (dow === '' || String(parseYmd(d).getDay()) === dow) out.push(d); d = shift(d, 1); }
+    return out;
+  }
+  function whTag() { return S.pin + '|' + dayNow() + '|' + pastStamp('w'); }
+  function whText(x) { return [x.text, x.station, x.addedBy, reasonName(x.reason), x.action].join(' ').toLowerCase(); }
+  function whLines(r, removed) {
+    var h = whState(), a = AF(), words = h.q.toLowerCase().trim().split(/\s+/).filter(Boolean), person = okey(h.who);
+    return ((S.wStats && S.wStats.lines) || []).filter(function (x) {
+      return (removed || !x.deleted) && x.date >= r.from && x.date <= r.to
+        && (a.dow === '' || String(parseYmd(x.date).getDay()) === a.dow)
+        && (!a.sec || (x.station || 'General') === a.sec) && (!a.reason || x.reason === a.reason)
+        && (!h.unit || (x.unit === 'g' ? 'kg' : x.unit) === h.unit)
+        && (!person || okey(x.addedBy).indexOf(person) >= 0)
+        && words.every(function (w) { return whText(x).indexOf(w) >= 0; });
+    });
+  }
+  /* A successful past correction patches this device's complete ranges, then stamps config/main once. The existing
+     config listener invalidates older copies on other admin devices. No extra reads, including Remove then Undo. */
+  function whPatch(date, id, value) {
+    function patch(range) {
+      if (id) (range.lines || []).forEach(function (x) { if (x.date === date && x.id === id) Object.assign(x, value); });
+      else if (date >= range.from && date <= range.to) range.reviews = (range.reviews || []).filter(function (x) { return x.date !== date; }).concat([Object.assign({ date: date }, value)]);
+    }
+    if (S.wStats) patch(S.wStats);
+    var c = dayCache('lk.w.history', whTag());
+    if (c && Array.isArray(c.ranges)) c.ranges.forEach(patch);
+    if (date < dayNow()) {
+      var stamp = now(); S.whOwnStamp = stamp;
+      S.config.pastEdit = Object.assign({}, S.config.pastEdit, { w: stamp });
+      if (S.wStats && S.wStats.loading) S.wStats = null;
+      else if (S.wStats) S.wStats.tag = whTag();
+      sset(cfgDoc(), { pastEdit: { w: stamp } }, true).catch(function () { toast('Saved. Refresh history on other devices to see this change.'); });
+    }
+    if (c) dayCacheSet('lk.w.history', whTag(), c);
+  }
+  /* History reads on opening a period, or Refresh: one collection-group query bounded by full waste document paths
+     and one review query, each billed per returned record (at least one). No query per day. Past complete ranges are
+     kept in lk.w.history until the kitchen day, PIN or pastEdit.w changes; today costs two fresh reads per visit.
+     SDK server reads prevent an incomplete offline cache from masquerading as an empty successful report. */
   function loadWStats(force) {
-    if (!fb || S.configState !== 'ok') return;
-    if (S.wStats && (S.wStats.loading || !force)) return;
-    S.wStats = { loading: true, lines: [], reviews: [] };
-    var today = dayNow(), dates = [], i;
-    for (i = 0; i < 60; i++) dates.push(shift(today, -i));
-    Promise.all(dates.map(function (d) {
-      return Promise.all([
-        pastRead(wCol(d), 'w/' + d, d, false, force).then(function (sn) { return sn.docs.map(function (x) { var v = x.data(); v.id = x.id; v.date = d; return v; }); }, function () { return []; }),
-        pastRead(wDay(d), 'r/' + d, d, true, force).then(function (sn) { return sn.exists() ? Object.assign({ date: d }, sn.data()) : null; }, function () { return null; })
-      ]);
-    })).then(function (res) {
-      S.wStats = { loading: false, lines: [].concat.apply([], res.map(function (r) { return r[0]; })), reviews: res.map(function (r) { return r[1]; }).filter(Boolean) }; draw();
+    if (!fb || S.configState !== 'ok' || !wAll()) return;
+    var today = dayNow(), r = S.atab === 'waste' ? whRange() : { from: shift(today, -59), to: today };
+    if (r.error) return;
+    var from = S.atab === 'waste' && whState().view === 'summary' ? r.prev.from : r.from, to = r.to, tag = whTag(), key = tag + '|' + from + '|' + to;
+    if (!force && S.wStats && S.wStats.tag === tag && S.wStats.from <= from && S.wStats.to >= to && !S.wStats.error) return;
+    if (!force && S.wStats && S.wStats.key === key) return;
+    var request = { loading: true, from: from, to: to, tag: tag, key: key, lines: [], reviews: [] };
+    S.wStats = request;
+    var f = fb.fs, pastTo = to < today ? to : shift(today, -1), saved = dayCache('lk.w.history', tag), ranges = saved && Array.isArray(saved.ranges) ? saved.ranges.filter(function (c) { return c && whValid(c.from) && whValid(c.to) && Array.isArray(c.lines) && Array.isArray(c.reviews); }) : [];
+    var copy = !force && ranges.filter(function (c) { return c.from <= from && c.to >= pastTo; })[0];
+    function dated(sn, d) { return sn.docs.map(function (x) { return Object.assign({}, x.data(), { id: x.id, date: d }); }); }
+    function past() {
+      if (from > pastTo) return Promise.resolve({ lines: [], reviews: [] });
+      if (copy) return Promise.resolve({ lines: copy.lines.filter(function (x) { return x.date >= from && x.date <= pastTo; }), reviews: copy.reviews.filter(function (x) { return x.date >= from && x.date <= pastTo; }) });
+      var lo = wRef(from, '\u0000'), hi = wRef(shift(pastTo, 1), '\u0000');
+      var q = f.query(f.collectionGroup(fb.db, 'lines'), f.where(f.documentId(), '>=', lo), f.where(f.documentId(), '<', hi));
+      var reviews = f.query(f.collection.apply(null, [fb.db].concat(base(), ['waste'])), f.where(f.documentId(), '>=', from), f.where(f.documentId(), '<=', pastTo));
+      return Promise.all([f.getDocsFromServer(q), f.getDocsFromServer(reviews)]).then(function (v) {
+        var prefix = base().concat(['waste']).join('/') + '/';
+        var lines = v[0].docs.map(function (x) {
+          var path = typeof x.ref.path === 'string' ? x.ref.path : x.ref.path.join('/'), p = path.split('/');
+          if (path.indexOf(prefix) !== 0 || p.length !== 6 || p[4] !== 'lines' || !whValid(p[3]) || p[3] < from || p[3] > pastTo) throw new Error('Unexpected history path');
+          return Object.assign({}, x.data(), { id: x.id, date: p[3] });
+        });
+        return { from: from, to: pastTo, lines: lines, reviews: v[1].docs.map(function (x) { return Object.assign({}, x.data(), { date: x.id }); }) };
+      });
+    }
+    var live = to >= today ? Promise.all([f.getDocsFromServer(wCol(today)), f.getDocFromServer(wDay(today))]).then(function (v) {
+      return { lines: dated(v[0], today), reviews: v[1].exists() ? [Object.assign({}, v[1].data(), { date: today })] : [] };
+    }) : Promise.resolve({ lines: [], reviews: [] });
+    Promise.all([past(), live]).then(function (v) {
+      if (S.wStats !== request) return;
+      if (!wAll() || whTag() !== tag) { S.wStats = null; if (wAll()) draw(); return; }
+      if (v[0].from) { ranges = ranges.filter(function (c) { return !(c.from >= from && c.to <= pastTo); }); ranges.push(v[0]); dayCacheSet('lk.w.history', tag, { ranges: ranges.slice(-4) }); }
+      Object.assign(request, { loading: false, at: now(), lines: v[0].lines.concat(v[1].lines), reviews: v[0].reviews.concat(v[1].reviews) }); draw();
+    }, function () {
+      if (S.wStats !== request) return;
+      request.loading = false; request.error = 'Could not load all wastage records for ' + from + ' to ' + to + '. Check the connection and try Refresh. Totals and export are unavailable until the complete period loads.'; draw();
     });
   }
   var WTIP = { excess: 'Prep smaller batches or less often.', expired: 'Order less or use it sooner. Check stock rotation.', fault: 'Check the method on the recipe card and run a quick refresher.', prep: 'Check trimming and yield.', returned: 'Check the dish against the recipe card and talk to front of house.' };
-  function eachDayList(n, lines, reviews) {
+  function eachDayList(n, lines, reviews, range) {
     var i, rv = {}, days = []; reviews.forEach(function (r) { rv[r.date] = r; });
-    for (i = 0; i < n; i++) { var d = shift(dayNow(), -i), l = lines.filter(function (x) { return x.date === d; }); days.push({ d: d, l: l, r: rv[d] && (rv[d].avoidable || rv[d].change) ? rv[d] : null }); }
+    for (i = 0; i < n; i++) { var d = shift(range ? range.to : dayNow(), -i), l = lines.filter(function (x) { return x.date === d; }); days.push({ d: d, l: l, r: rv[d] && (rv[d].avoidable || rv[d].change) ? rv[d] : null }); }
     return lvHTML({
       key: 'waste-days', items: days, step: 7, tools: 14, noun: ['day', 'days'], empty: 'No days in this time.',
       filters: [['all', 'All days'], ['some', 'Something logged', function (x) { return x.l.length > 0; }], ['none', 'Nothing logged', function (x) { return !x.l.length; }], ['rev', 'Has a review', function (x) { return !!x.r; }]],
@@ -5757,9 +5842,9 @@
     });
   }
   /* Waste calendar: entries per day, darker is more. Days nobody logged anything are marked. */
-  function wasteCalHTML(n, lines) {
-    var today = dayNow(), first = shift(today, -(n - 1)), start = first, i, by = {}, max = 0, inF = {};
-    afDates(n, 0).forEach(function (d) { inF[d] = 1; });
+  function wasteCalHTML(n, lines, range) {
+    var today = range ? range.to : dayNow(), first = range ? range.from : shift(today, -(n - 1)), start = first, i, by = {}, max = 0, inF = {};
+    (range ? whDates(range) : afDates(n, 0)).forEach(function (d) { inF[d] = 1; });
     lines.forEach(function (x) { by[x.date] = (by[x.date] || []).concat([x]); });
     Object.keys(by).forEach(function (d) { max = Math.max(max, by[d].length); });
     while (parseYmd(start).getDay() !== 1) start = shift(start, -1);
@@ -5781,9 +5866,9 @@
   /* Reasons by weekday: which kind of waste happens on which day. The All reasons row counts every entry, an unknown
      reason too, so it is the weekday total (23 Oct 2026: it replaced a By weekday table further down with the same
      numbers). Every cell is rounded to one decimal, so a total never reads lower than the one entry above it. */
-  function reasonDowHTML(lines, n) {
+  function reasonDowHTML(lines, n, range) {
     var occ = {}, c = {}, all = {}, max = 0;
-    afDates(n, 0).forEach(function (d) { var dw = parseYmd(d).getDay(); occ[dw] = (occ[dw] || 0) + 1; });
+    (range ? whDates(range) : afDates(n, 0)).forEach(function (d) { var dw = parseYmd(d).getDay(); occ[dw] = (occ[dw] || 0) + 1; });
     lines.forEach(function (x) { var dw = parseYmd(x.date).getDay(), k = x.reason + ':' + dw; c[k] = (c[k] || 0) + 1; all[dw] = (all[dw] || 0) + 1; });
     if (!lines.length) return '';
     var rs = REASONS.filter(function (r) { return lines.some(function (x) { return x.reason === r[0]; }); });
@@ -5792,110 +5877,158 @@
       rs.map(function (r) { return '<tr><th scope="row">' + esc(r[1]) + '</th>' + DOW.map(function (d) { var v = occ[d] ? (c[r[0] + ':' + d] || 0) / occ[d] : 0, lv = !v ? 0 : Math.min(4, 1 + Math.floor(v / (max || 1) * 3.999)); return '<td class="sk-c" style="background:' + SK[lv] + '">' + (v ? Math.round(v * 10) / 10 : '<span class="sk-0">0</span>') + '</td>'; }).join('') + '</tr>'; }).join('') +
       '<tr class="sk-tot"><th scope="row">All reasons</th>' + DOW.map(function (d) { return '<td>' + (occ[d] ? Math.round((all[d] || 0) / occ[d] * 10) / 10 : '0') + '</td>'; }).join('') + '</tr></tbody></table></div>';
   }
-  function wasteStatsHTML() {
-    loadWStats(false); loadStats(false);
-    var ws = S.wStats, n = S.statsRange;
-    var chips = filtersHTML('waste') + filterNote('waste');
-    var head = '<section class="set-block">' + toolsHTML('waste', 'Wastage') + '<span class="hint">From the wastage log on the phones. Amounts are what people wrote, in kg, L, portions and pieces (grams are counted as kg). <a href="#/waste">Open the wastage log</a></span>' + chips;
-    if (!ws || ws.loading) return head + '<p class="hint">Loading the last 60 days...</p></section>';
-    var af = AF(), from = shift(dayNow(), -(n - 1));
-    function wfilter(off) { var ds = {}; afDates(n, off).forEach(function (d) { ds[d] = 1; }); return ws.lines.filter(function (x) { return !x.deleted && ds[x.date] && (!af.sec || (x.station || 'General') === af.sec) && (!af.reason || x.reason === af.reason); }); }
-    var lines = wfilter(0), plines = wfilter(n);
-    var days = {}; lines.forEach(function (x) { days[x.date] = 1; });
-    var t = wTotals(lines), pt = wTotals(plines), nd = afDates(n, 0).length;
-    var tiles = [[lines.length, lines.length === 1 ? 'entry' : 'entries', delta(lines.length, plines.length, n, true)], [num(t.kg), 'kg', delta(t.kg, pt.kg, n, true)], [num(t.L), 'L', delta(t.L, pt.L, n, true)], [num(t.portions), 'portions', delta(t.portions, pt.portions, n, true)], [num(t.pieces), 'pieces', delta(t.pieces, pt.pieces, n, true)], [Object.keys(days).length + ' of ' + nd, 'days with something logged', '']];
-    var log = wLogHTML(n, af) + wReviewFormHTML();
-    // a zero with nothing to compare (0 L, 0 portions) is left out, as on Insights; the days tile always stays
-    tiles = tiles.filter(tileKeep);
-    if (!lines.length) return head + '<div class="a-tiles">' + tiles.map(tileHTML).join('') + '</div><p class="hint">Nothing logged in this time yet.</p>' + log + '</section>';
-    var byR = {}; lines.forEach(function (x) { var e = byR[x.reason] = byR[x.reason] || []; e.push(x); });
-    var rRows = REASONS.filter(function (r) { return byR[r[0]]; }).sort(function (a, b) { return byR[b[0]].length - byR[a[0]].length; }).map(function (r) {
-      var l = byR[r[0]]; return '<tr><th scope="row">' + esc(r[1]) + '</th><td>' + l.length + '</td><td>' + Math.round(l.length / lines.length * 100) + '%</td><td>' + esc(totalsText(wTotals(l))) + '</td></tr>';
-    }).join('');
-    // link waste to the prep list: how often the same item was written on the prep list in the same time
-    var prepN = {};
-    if (S.stats && !S.stats.loading) Object.keys(S.stats.days).forEach(function (d) { if (d < from) return; S.stats.days[d].forEach(function (x) { if (!x.deleted && !x.rolled && x.text) { var k = okey(x.text); prepN[k] = (prepN[k] || 0) + 1; } }); });
-    var m = {};
-    lines.forEach(function (x) { var k = okey(x.text), e = m[k] = m[k] || { text: x.text, l: [], r: {} }; e.l.push(x); e.r[x.reason] = (e.r[x.reason] || 0) + 1; });
-    var iItems = Object.keys(m).map(function (k) {
-      var e = m[k], mr = Object.keys(e.r).sort(function (a, b) { return e.r[b] - e.r[a]; })[0], pn = prepN[k] || 0;
-      var tip = (WTIP[mr] || '') + (mr === 'excess' && pn >= 3 ? ' It was on the prep list ' + pn + ' times.' : '');
-      if (mr === 'fault' || mr === 'returned') { loadViews(false); var rid = (e.l.filter(function (x) { return x.recipe; })[0] || {}).recipe || ((matchRecipe(e.text) || {}).id || ''); if (rid && S.views) tip += ' Card opened ' + ((S.views[rid] || {}).n || 0) + ' times so far.'; }
-      return { e: e, mr: mr, pn: pn, tip: tip };
-    });
-    var itemsList = lvHTML({
-      key: 'waste-items', items: iItems, step: 10, tools: 8, noun: ['item', 'items'], ph: 'Search wasted items', empty: 'Nothing logged in this time yet.',
-      find: function (o) { return o.e.text + ' ' + reasonName(o.mr); },
-      filters: [['all', 'All items'], ['rep', 'More than once', function (o) { return o.e.l.length >= 2; }]].concat(REASONS.map(function (r) { return [r[0], r[1], function (o) { return o.mr === r[0]; }]; })),
-      sorts: [['most', 'Most entries', function (a, b) { return b.e.l.length - a.e.l.length || String(a.e.text).toLowerCase().localeCompare(String(b.e.text).toLowerCase()); }], ['az', 'A to Z', function (a, b) { return String(a.e.text).toLowerCase().localeCompare(String(b.e.text).toLowerCase()); }], ['prep', 'Most on the prep list', function (a, b) { return b.pn - a.pn; }]],
-      cols: [
-        { h: 'Item', th: true, html: function (o) { return esc(o.e.text); } },
-        { h: 'Entries', html: function (o) { return String(o.e.l.length); } },
-        { h: 'Amount', html: function (o) { return esc(totalsText(wTotals(o.e.l))); } },
-        { h: 'Main reason', html: function (o) { return esc(reasonName(o.mr)); } },
-        { h: 'On the prep list', html: function (o) { return o.pn ? String(o.pn) : ''; } },
-        { h: 'Suggestion', wide: true, html: function (o) { return o.e.l.length >= 2 ? '<span class="a-flag">' + esc(o.tip) + '</span>' : '<span class="o-who-i">Once so far</span>'; } }
-      ]
-    });
-    var who = {}; lines.forEach(function (x) { var k = x.addedBy || 'Unknown'; who[k] = (who[k] || 0) + 1; });
-    var whoList = lvHTML({
-      key: 'waste-who', items: Object.keys(who).map(function (k) { return { k: k, n: who[k] }; }), step: 10, tools: 10, noun: ['person', 'people'], ph: 'Search names', empty: 'Nobody has logged anything.',
-      find: function (o) { return o.k; },
-      sorts: [['most', 'Most entries', function (a, b) { return b.n - a.n || a.k.localeCompare(b.k); }], ['az', 'A to Z', function (a, b) { return a.k.toLowerCase().localeCompare(b.k.toLowerCase()); }]],
-      cols: [{ h: 'Person', th: true, html: function (o) { return esc(o.k); } }, { h: 'Entries', html: function (o) { return String(o.n); } }]
-    });
-    var revs = ws.reviews.filter(function (r) { return r.date >= from && (r.avoidable || r.change); }).sort(function (a, b) { return a.date < b.date ? 1 : -1; });
-    var revList = lvHTML({
-      key: 'waste-rev', items: revs, step: 6, tools: 8, noun: ['review', 'reviews'], ph: 'Search reviews', empty: 'No reviews written in this time.',
-      find: function (r) { return (r.avoidable || '') + ' ' + (r.change || '') + ' ' + (r.reviewBy || ''); },
-      sorts: [['new', 'Newest first', function (a, b) { return a.date < b.date ? 1 : -1; }], ['old', 'Oldest first', function (a, b) { return a.date < b.date ? -1 : 1; }]],
-      card: function (r) { return '<li class="a-rev"><strong>' + esc(dayShort(r.date)) + (r.reviewBy ? ', ' + esc(r.reviewBy) : '') + ':</strong> ' + esc(r.avoidable || '') + (r.change ? ' <em>Change: ' + esc(r.change) + '</em>' : '') + '</li>'; }
-    });
-    var dayList = eachDayList(n, lines, ws.reviews);
-    return head + '<div class="a-tiles">' + tiles.map(tileHTML).join('') + '</div>' + wasteCalHTML(n, lines) + reasonDowHTML(lines, n) +
-      '<h3 class="a-ch-h">By reason</h3><div class="a-tablewrap" tabindex="0" role="region" aria-label="Table, scrolls sideways"><table class="a-table a-plain"><thead><tr><th scope="col">Reason</th><th scope="col">Entries</th><th scope="col">Share</th><th scope="col">Amount</th></tr></thead><tbody>' + rRows + '</tbody></table></div>' +
-      '<h3 class="a-ch-h">Wasted most often</h3><span class="hint">"On the prep list" counts how many times the same item was written on the prep list in this time, so you can see over-prepping.</span>' + itemsList +
-      '<h3 class="a-ch-h">Each day</h3>' + dayList +
-      '<h3 class="a-ch-h">Who logs waste</h3><span class="hint">A record, not a score: someone who never logs may just not know about the log.</span>' + whoList +
-      log + '<h3 class="a-ch-h">End-of-day reviews</h3>' + revList + '</section>';
+  function whSpan(r) { return r.from.split('-').reverse().join('/') + ' to ' + r.to.split('-').reverse().join('/'); }
+  function whSelect(key, label, value, options) {
+    if (value && !options.some(function (o) { return o[0] === value; })) options = [[value, value]].concat(options);
+    return '<label class="a-f"><span>' + esc(label) + '</span><select data-k="' + esc(key) + '">' + options.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (o[0] === value ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select></label>';
   }
-  /* Every wastage entry in the time picked, removed ones too, with Remove and Put back (22 Oct 2026: past days are
-     corrected here, not on the wastage page). Uses the 60 days loadWStats already read. */
-  function wLogHTML(n, af) {
-    var ds = {}; afDates(n, 0).forEach(function (d) { ds[d] = 1; });
-    var l = S.wStats.lines.filter(function (x) { return ds[x.date] && (!af.sec || (x.station || 'General') === af.sec) && (!af.reason || x.reason === af.reason); });
+  function whControls(r, ready) {
+    var h = whState(), a = AF(), period = whSelect('wh-period', 'Period', h.period, [['7', '1 week'], ['14', '2 weeks'], ['30', '30 days'], ['this', 'This month'], ['last', 'Last month'], ['months3', '3 months'], ['custom', 'Custom dates']]);
+    var out = '<div class="a-filters wh-period">' + period + '<button type="button" class="chip" data-p="w-refresh">Refresh</button>' +
+      '<button type="button" class="chip" data-p="csv" data-v="waste" aria-label="Download filtered wastage CSV"' + (!ready ? ' disabled' : '') + '>Export CSV</button></div>';
+    if (h.period === 'custom') out += '<div class="wh-custom"><label class="a-f"><span>From</span><input type="date" data-k="wh-from" max="' + dayNow() + '" value="' + esc(h.draftFrom || h.from) + '"></label>' +
+      '<label class="a-f"><span>To</span><input type="date" data-k="wh-to" max="' + dayNow() + '" value="' + esc(h.draftTo || h.to) + '"></label><button type="button" class="chip" data-p="wh-apply">Apply dates</button><span class="hint">Up to 366 days at a time.</span></div>';
+    if (h.msg) out += '<p class="p-err" role="alert">' + esc(h.msg) + '</p>';
+    if (r.error) return out;
+    out += '<p class="hint wh-range">' + esc(whSpan(r)) + ' (inclusive)</p><div class="wh-tabs" role="group" aria-label="Wastage view">' + [['history', 'History'], ['summary', 'Summary'], ['reviews', 'Daily reviews']].map(function (v) { return '<button type="button" class="chip" data-p="wh-view" data-v="' + v[0] + '" aria-pressed="' + (h.view === v[0]) + '">' + v[1] + '</button>'; }).join('') + '</div>';
+    if (h.view === 'reviews') return out;
+    var names = Object.create(null), opts = [];
+    ((S.wStats && S.wStats.lines) || []).forEach(function (x) { if (x.addedBy) names[x.addedBy] = 1; });
+    Object.keys(names).sort().forEach(function (n) { opts.push('<option value="' + esc(n) + '"></option>'); });
+    var active = a.sec || a.reason || a.dow !== '' || h.who || h.unit || h.removed;
+    out += '<label class="visually-hidden" for="wh-search">Search wastage entries</label><input id="wh-search" type="search" class="search wh-search" data-k="wh-search" placeholder="Search items, reasons or notes" value="' + esc(h.q) + '" autocomplete="off">' +
+      '<details class="wh-filters"' + (active ? ' open' : '') + '><summary>More filters' + (active ? ' (applied)' : '') + '</summary><div class="a-filters">' +
+      whSelect('af-sec', 'Section', a.sec, [['', 'All sections']].concat(afSections().map(function (x) { return [x, x]; }))) +
+      whSelect('af-reason', 'Reason', a.reason, [['', 'All reasons']].concat(REASONS.map(function (x) { return [x[0], x[1]]; }))) +
+      whSelect('af-dow', 'Weekday', a.dow, [['', 'Every day']].concat(DOW.map(function (d, i) { return [String(d), DOWN[i]]; }))) +
+      '<label class="a-f"><span>Logged by</span><input type="search" data-k="wh-who" placeholder="Anyone" list="wh-people" value="' + esc(h.who) + '"></label><datalist id="wh-people">' + opts.join('') + '</datalist>' +
+      whSelect('wh-unit', 'Unit', h.unit, [['', 'All units'], ['kg', 'kg (including g)'], ['L', 'Litres'], ['portions', 'Portions'], ['pieces', 'Pieces']]) +
+      '<label class="a-check"><input type="checkbox" data-k="wh-removed"' + (h.removed ? ' checked' : '') + '>Show removed entries</label></div></details>';
+    if (active || h.q) out += '<button type="button" class="p-x wh-clear" data-p="wh-clear">Clear filters</button>';
+    return out;
+  }
+  function whTotals(lines, r, prev) {
+    var t = wTotals(lines), pt = wTotals(prev || []), days = {}, nd = whDates(r).length;
+    lines.forEach(function (x) { days[x.date] = 1; });
+    var tiles = [[lines.length, 'logged entries', prev ? delta(lines.length, prev.length, r.n, true) : '']];
+    [['kg', t.kg, pt.kg], ['L', t.L, pt.L], ['portions', t.portions, pt.portions], ['pieces', t.pieces, pt.pieces]].forEach(function (x) { if (x[1] || x[2]) tiles.push([num(x[1]), x[0], prev ? delta(x[1], x[2], r.n, true) : '']); });
+    tiles.push([Object.keys(days).length + ' of ' + nd, 'days with something logged', '']);
+    return '<div class="a-tiles wh-totals" aria-label="Wastage totals" aria-describedby="wh-totals-hint">' + tiles.map(tileHTML).join('') + '</div><p id="wh-totals-hint" class="' + (whState().view === 'history' ? 'visually-hidden' : 'hint') + '">Grams count towards kg. Other units stay separate. Removed entries do not count in totals.</p>';
+  }
+  function whSorted(lines) {
+    var sort = (LV['waste-log'] || {}).sort;
+    return lines.slice().sort(function (a, b) {
+      if (sort === 'az') return String(a.text).toLowerCase().localeCompare(String(b.text).toLowerCase());
+      var order = a.date.localeCompare(b.date) || (+a.addedAt || 0) - (+b.addedAt || 0) || String(a.id).localeCompare(String(b.id));
+      return sort === 'old' ? order : -order;
+    });
+  }
+  function whCSV() {
+    var r = whRange(), ws = S.wStats, h = whState();
+    if (r.error || !ws || ws.loading || ws.error || ws.tag !== whTag() || ws.from > r.from || ws.to < r.to) { toast('Load the complete period before exporting.'); return; }
+    var rows = [['Date', 'Weekday', 'Time', 'Section', 'Item', 'Amount', 'Unit', 'Reason', 'Action', 'Logged by', 'Status', 'Removed by', 'Removed at']];
+    whSorted(whLines(r, h.removed)).forEach(function (x) { rows.push([x.date, DOWN[DOW.indexOf(parseYmd(x.date).getDay())], hm(x.addedAt), x.station || '', x.text, x.amount, x.unit, reasonName(x.reason), x.action || '', x.addedBy || '', x.deleted ? 'Removed' : 'Logged', x.deleted ? x.deletedBy || '' : '', x.deleted && x.deletedAt ? T.day(x.deletedAt) + ' ' + clock(x.deletedAt) : '']); });
+    // Typed names and notes stay text when opened in a spreadsheet, including a leading formula character.
+    rows = rows.map(function (row) { return row.map(function (cell) { return typeof cell === 'string' && /^[\s]*[=+@-]/.test(cell) ? "'" + cell : cell; }); });
+    downloadCSV('leichhardt-wastage-' + r.from + '-to-' + r.to + '.csv', rows);
+  }
+  function wasteStatsHTML() {
+    var r = whRange(), h = whState();
+    if (!r.error) loadWStats(false);
+    var ws = S.wStats, ready = !r.error && ws && !ws.loading && !ws.error && ws.tag === whTag() && ws.from <= r.from && ws.to >= r.to;
+    var head = '<section class="set-block wh-report wh-' + h.view + '"><h3 class="a-title">Wastage</h3>' + whControls(r, ready);
+    if (r.error) return head + '<p class="p-err" role="alert">' + esc(r.error) + '</p></section>';
+    if (ws && ws.error) return head + '<p class="p-err wh-error" role="alert">' + esc(ws.error) + '</p></section>';
+    if (!ready) return head + '<p class="hint" role="status">Loading wastage for ' + esc(whSpan(r)) + '...</p></section>';
+    var foot = '<p class="hint a-upd">Updated ' + esc(clock(ws.at)) + '. Refresh reads the newest.</p></section>';
+    if (h.view === 'reviews') return head + whReviewsHTML(r) + foot;
+    var lines = whLines(r, false), prev = h.view === 'summary' ? whLines(r.prev, false) : null;
+    head += whTotals(lines, r, prev);
+    if (h.view === 'history') return head + wLogHTML(r) + foot;
+    return head + whSummaryHTML(r, lines, prev) + foot;
+  }
+  function whSummaryHTML(r, lines, prev) {
+    var out = '<p class="hint">Compared with ' + esc(whSpan(r.prev)) + ', the preceding ' + r.n + ' days, using the same entry filters.</p>';
+    if (!lines.length) return out + '<p class="hint">Nothing logged for these dates and filters.</p>';
+    var byR = Object.create(null), items = Object.create(null), who = Object.create(null);
+    lines.forEach(function (x) { (byR[x.reason] = byR[x.reason] || []).push(x); var k = okey(x.text); (items[k] = items[k] || { text: x.text, lines: [] }).lines.push(x); who[x.addedBy || 'Unknown'] = (who[x.addedBy || 'Unknown'] || 0) + 1; });
+    var reasonRows = Object.keys(byR).map(function (k) { return { key: k, lines: byR[k] }; });
+    out += wasteCalHTML(r.n, lines, r) + reasonDowHTML(lines, r.n, r) + '<h3 class="a-ch-h">By reason</h3>' + lvHTML({
+      key: 'waste-reasons', items: reasonRows, step: 10, tools: 8, noun: ['reason', 'reasons'],
+      sorts: [['most', 'Most entries', function (a, b) { return b.lines.length - a.lines.length; }]],
+      cols: [{ h: 'Reason', th: true, html: function (x) { return esc(reasonName(x.key)); } }, { h: 'Entries', html: function (x) { return String(x.lines.length); } }, { h: 'Share', html: function (x) { return Math.round(x.lines.length / lines.length * 100) + '%'; } }, { h: 'Amount', html: function (x) { return esc(totalsText(wTotals(x.lines))); } }]
+    });
+    var prepN = Object.create(null), prepAvailable = S.stats && !S.stats.loading && r.from >= shift(dayNow(), -59), chosen = {};
+    whDates(r).forEach(function (d) { chosen[d] = 1; });
+    if (prepAvailable) Object.keys(S.stats.days).forEach(function (d) { if (!chosen[d]) return; S.stats.days[d].forEach(function (x) { if (!x.deleted && !x.rolled && (!AF().sec || (x.station || 'General') === AF().sec)) { var k = okey(x.text); prepN[k] = (prepN[k] || 0) + 1; } }); });
+    Object.keys(items).forEach(function (k) {
+      var item = items[k], reasons = Object.create(null); item.lines.forEach(function (x) { reasons[x.reason] = (reasons[x.reason] || 0) + 1; });
+      item.reason = Object.keys(reasons).sort(function (a, b) { return reasons[b] - reasons[a]; })[0];
+      item.prep = prepN[k] || 0; item.tip = WTIP[item.reason] || '';
+      if (item.reason === 'excess' && prepAvailable && item.prep >= 3) item.tip += ' It was on the prep list ' + item.prep + ' times.';
+      if (item.reason === 'fault' || item.reason === 'returned') {
+        loadViews(false); var rid = (item.lines.filter(function (x) { return x.recipe; })[0] || {}).recipe || ((matchRecipe(item.text) || {}).id || '');
+        if (rid && S.views) item.tip += ' Card opened ' + ((S.views[rid] || {}).n || 0) + ' times so far.';
+      }
+    });
+    out += '<h3 class="a-ch-h">Wasted most often</h3><p class="hint">Prep counts show matching lines across the team. Counts are unavailable outside the loaded 60 days of prep history.</p>' + lvHTML({
+      key: 'waste-items', items: Object.keys(items).map(function (k) { return items[k]; }), step: 10, tools: 8, noun: ['item', 'items'],
+      sorts: [['most', 'Most entries', function (a, b) { return b.lines.length - a.lines.length || String(a.text).localeCompare(String(b.text)); }], ['az', 'A to Z', function (a, b) { return String(a.text).localeCompare(String(b.text)); }]],
+      cols: [{ h: 'Item', th: true, html: function (x) { return esc(x.text); } }, { h: 'Entries', html: function (x) { return String(x.lines.length); } }, { h: 'Amount', html: function (x) { return esc(totalsText(wTotals(x.lines))); } }, { h: 'Main reason', html: function (x) { return esc(reasonName(x.reason)); } }, { h: 'On the prep list', html: function (x) { return prepAvailable ? String(x.prep) : 'Unavailable'; } }, { h: 'Suggestion', wide: true, html: function (x) { return x.lines.length > 1 ? esc(x.tip) : 'Once so far'; } }]
+    });
+    out += '<h3 class="a-ch-h">Each day</h3>' + eachDayList(r.n, lines, S.wStats.reviews, r) + '<h3 class="a-ch-h">Who logs waste</h3><span class="hint">A record of logging, not a measure of who caused waste. A day with nothing logged is not confirmed zero waste.</span>' + lvHTML({
+      key: 'waste-who', items: Object.keys(who).map(function (k) { return { k: k, n: who[k] }; }), step: 10, tools: 10, noun: ['person', 'people'],
+      sorts: [['most', 'Most entries', function (a, b) { return b.n - a.n; }]], cols: [{ h: 'Person', th: true, html: function (x) { return esc(x.k); } }, { h: 'Entries', html: function (x) { return String(x.n); } }]
+    });
+    return out;
+  }
+  function wLogHTML(r) {
     var del = wAll();
-    return '<h3 class="a-ch-h">Every entry</h3><span class="hint">Remove an entry that was logged by mistake. Removed entries stay here, so you can put them back.</span>' + lvHTML({
-      key: 'waste-log', items: l, step: 15, tools: 8, noun: ['entry', 'entries'], ph: 'Search entries', empty: 'Nothing logged in this time.',
-      find: function (x) { return x.text + ' ' + (x.station || '') + ' ' + (x.addedBy || '') + ' ' + reasonName(x.reason) + ' ' + (x.action || ''); },
-      filters: [['all', 'All'], ['live', 'Logged', function (x) { return !x.deleted; }], ['gone', 'Removed', function (x) { return !!x.deleted; }]],
-      sorts: [['new', 'Newest first', function (a, b) { return (b.addedAt || 0) - (a.addedAt || 0); }], ['old', 'Oldest first', function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }], ['az', 'A to Z', function (a, b) { return String(a.text).toLowerCase().localeCompare(String(b.text).toLowerCase()); }]],
+    return lvHTML({
+      key: 'waste-log', heading: 'Every entry', items: whLines(r, whState().removed), step: 15, tools: 0, noun: ['entry', 'entries'], empty: 'Nothing logged for these dates and filters.',
+      sorts: [['new', 'Newest first', function (a, b) { return b.date.localeCompare(a.date) || (+b.addedAt || 0) - (+a.addedAt || 0) || String(b.id).localeCompare(String(a.id)); }], ['old', 'Oldest first', function (a, b) { return a.date.localeCompare(b.date) || (+a.addedAt || 0) - (+b.addedAt || 0) || String(a.id).localeCompare(String(b.id)); }], ['az', 'A to Z', function (a, b) { return String(a.text).toLowerCase().localeCompare(String(b.text).toLowerCase()); }]],
       cols: [
-        { h: 'Day', html: function (x) { return esc(dayShort(x.date)) + (x.addedAt ? ' ' + clock(x.addedAt) : ''); } },
-        { h: 'Item', th: true, html: function (x) { return esc(x.text) + (x.deleted ? ' <span class="o-who-i">Removed' + (x.deletedBy ? ' by ' + esc(x.deletedBy) : '') + '</span>' : ''); } },
+        { h: 'Date / time', html: function (x) { return esc(x.date.split('-').reverse().join('/')) + (x.addedAt ? ' ' + clock(x.addedAt) : ''); } },
+        { h: 'Item', th: true, html: function (x) { return esc(x.text) + (x.deleted ? ' <span class="o-who-i">Removed' + (x.deletedBy ? ' by ' + esc(x.deletedBy) : '') + '</span>' : '') + (x.action ? '<details class="wh-note"><summary>Action / note</summary><p>' + esc(x.action) + '</p></details>' : ''); } },
         { h: 'Amount', html: function (x) { return esc(num(+x.amount || 0) + ' ' + x.unit); } },
         { h: 'Reason', html: function (x) { return esc(reasonName(x.reason)); } },
-        { h: 'Section', html: function (x) { return esc(x.station || ''); } },
-        { h: 'Who', html: function (x) { return esc(x.addedBy || ''); } },
-        { h: 'Action', wide: true, html: function (x) { return esc(x.action || ''); } },
-        { h: '', html: function (x) {
-          if (!del || !x.id) return '';
-          return x.deleted ? '<button type="button" class="p-x" data-p="wrestore" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Put back ' + x.text) + '">Put back</button>'
-            : '<button type="button" class="p-x" data-p="wdel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>';
-        } }
+        { h: 'Section', html: function (x) { return esc(x.station || 'General'); } },
+        { h: 'Logged by', html: function (x) { return esc(x.addedBy || 'Unknown'); } },
+        { h: '', html: function (x) { if (!del || !x.id) return ''; return '<button type="button" class="p-x" data-p="' + (x.deleted ? 'wrestore' : 'wdel') + '" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc((x.deleted ? 'Put back ' : 'Remove ') + x.text) + '">' + (x.deleted ? 'Put back' : 'Remove') + '</button>'; } }
       ]
     });
   }
-  /* The end-of-day review for one day (today by default, back up to 60 days): main avoidable waste and the change for the
+  function whReviewsHTML(r) {
+    var reviews = S.wStats.reviews.filter(function (x) { return x.date >= r.from && x.date <= r.to && (x.avoidable || x.change); });
+    var lines = S.wStats.lines.filter(function (x) { return !x.deleted && x.date >= r.from && x.date <= r.to; });
+    return '<p class="hint">Reviews cover all entries in the selected dates. Entry search and filters apply in History and Summary.</p>' + wReviewFormHTML() + '<h3 class="a-ch-h">Each day</h3>' + eachDayList(r.n, lines, reviews, r) + '<h3 class="a-ch-h">End-of-day reviews</h3>' + lvHTML({
+      key: 'waste-rev', items: reviews, step: 6, tools: 8, noun: ['review', 'reviews'], ph: 'Search reviews', empty: 'No reviews written for these dates.', find: function (x) { return [x.avoidable, x.change, x.reviewBy].join(' '); },
+      sorts: [['new', 'Newest first', function (a, b) { return b.date.localeCompare(a.date); }], ['old', 'Oldest first', function (a, b) { return a.date.localeCompare(b.date); }]],
+      card: function (x) { return '<li class="a-rev"><strong>' + esc(x.date) + (x.reviewBy ? ', ' + esc(x.reviewBy) : '') + ':</strong> ' + esc(x.avoidable || '') + (x.change ? ' <em>Change: ' + esc(x.change) + '</em>' : '') + '</li>'; }
+    });
+  }
+  function whReviewDirty() {
+    var r = rvOf(S.rvDate || dayNow());
+    return (S.wrA != null && S.wrA !== (r.avoidable || '')) || (S.wrC != null && S.wrC !== (r.change || ''));
+  }
+  function whCanChange() {
+    if (whState().view !== 'reviews' || S.wrWhere === 'page' || !whReviewDirty()) return true;
+    toast('Save the review or cancel its edits before changing dates or views.'); return false;
+  }
+  /* The end-of-day review for one day in the selected period: main avoidable waste and the change for the
      next shift, which shows at the top of the next prep list for everyone. */
   function wReviewFormHTML() {
-    var today = dayNow(), d = S.rvDate || today, r = rvOf(d), ra = S.wrA != null ? S.wrA : (r.avoidable || ''), rc = S.wrC != null ? S.wrC : (r.change || '');
+    var today = dayNow(), range = whRange(), d = S.rvDate || range.to;
+    if (d < range.from || d > range.to) d = range.to;
+    S.rvDate = d;
+    var r = rvOf(d), ra = S.wrA != null ? S.wrA : (r.avoidable || ''), rc = S.wrC != null ? S.wrC : (r.change || '');
     return '<h3 class="a-ch-h">End-of-day review</h3><div class="w-review a-rvform"><div class="nb-nav o-nav"><span class="o-days">' +
-      '<button type="button" class="chip" data-p="rv-day" data-d="-1" aria-label="Back one day">&lsaquo;</button><span class="a-rvday">' + esc(d === today ? 'Today' : dayShort(d)) + '</span>' +
-      '<button type="button" class="chip" data-p="rv-day" data-d="1" aria-label="Forward one day"' + (d >= today ? ' disabled' : '') + '>&rsaquo;</button></span></div>' +
+      '<button type="button" class="chip" data-p="rv-day" data-d="-1" aria-label="Back one day"' + (d <= range.from ? ' disabled' : '') + '>&lsaquo;</button><span class="a-rvday">' + esc(d === today ? 'Today' : dayShort(d)) + '</span>' +
+      '<button type="button" class="chip" data-p="rv-day" data-d="1" aria-label="Forward one day"' + (d >= range.to ? ' disabled' : '') + '>&rsaquo;</button></span></div>' +
+      '<label class="a-f"><span>Review date</span><input type="date" data-k="wh-review-date" min="' + range.from + '" max="' + range.to + '" value="' + esc(d) + '"></label>' +
       '<div class="field"><label class="label" for="w-ra">Main avoidable waste</label><textarea id="w-ra" class="w-ta" data-k="w-ra" maxlength="300" rows="2">' + esc(ra) + '</textarea></div>' +
       '<div class="field"><label class="label" for="w-rc">Prep or ordering change for the next shift</label><textarea id="w-rc" class="w-ta" data-k="w-rc" maxlength="300" rows="2">' + esc(rc) + '</textarea><span class="hint">This shows at the top of the next prep list.</span></div>' +
-      '<div class="btn-row"><button type="button" class="btn dark" data-p="wreview" data-v="admin">Save the review</button></div>' +
+      '<div class="btn-row"><button type="button" class="btn dark" data-p="wreview" data-v="admin">Save the review</button><button type="button" class="p-x" data-p="wh-review-cancel">Cancel edits</button></div>' +
       (r.reviewBy ? '<span class="hint">Last saved by ' + esc(r.reviewBy) + (r.reviewAt ? ' at ' + clock(r.reviewAt) : '') + '.</span>' : '') + '</div>';
   }
 
@@ -7566,10 +7699,20 @@
     if (a === 'woften') { var wo = wOften()[i]; if (wo) { S.wf.text = wo.text; if (wo.unit) S.wf.unit = wo.unit; if (wo.reason) S.wf.reason = wo.reason; if (wo.sec && !S.wf.sec && !mySec()) S.wf.sec = wo.sec; if (wo.amt && (S.wf.amtAuto || !String(S.wf.amt).trim())) { S.wf.amt = wo.amt; S.wf.amtAuto = true; } draw(); focusFilled('w-amt'); } return; }
     if (a === 'wdel') { removeWaste(dt, id); return; }
     if (a === 'wrestore') { removeWaste(dt, id, true); return; }
-    if (a === 'rv-day') { var rd = shift(S.rvDate || dayNow(), +el.getAttribute('data-d')); if (rd <= dayNow() && rd > shift(dayNow(), -60)) { S.rvDate = rd; S.wrA = S.wrC = null; } draw(); return; }
+    if (a === 'rv-day') { if (!whCanChange()) return; var rr = whRange(), rd = shift(S.rvDate || rr.to, +el.getAttribute('data-d')); if (rd <= rr.to && rd >= rr.from) { S.rvDate = rd; S.wrA = S.wrC = null; } draw(); return; }
     if (a === 'a-go-waste') { S.atab = 'waste'; lsSet('lk.prep.atab', 'waste'); return; }
     if (a === 'wreview') { saveReview(el.getAttribute('data-v')); return; }
-    if (a === 'w-refresh') { loadWStats(true); loadStats(true); draw(); return; }
+    if (a === 'wh-view') { if (!whCanChange()) return; var wv = el.getAttribute('data-v'); if (['history', 'summary', 'reviews'].indexOf(wv) >= 0) whState().view = wv; draw(); return; }
+    if (a === 'wh-review-cancel') { S.wrA = S.wrC = null; draw(); return; }
+    if (a === 'wh-clear') { var wc = whState(); wc.q = wc.who = wc.unit = ''; wc.removed = false; AF().sec = AF().reason = AF().dow = ''; afSave(); draw(); return; }
+    if (a === 'wh-apply') {
+      if (!whCanChange()) return;
+      var wa = whState(), wf0 = wa.from, wt0 = wa.to; wa.from = wa.draftFrom || ''; wa.to = wa.draftTo || '';
+      var wr0 = whRange();
+      if (wr0.error) { wa.from = wf0; wa.to = wt0; wa.msg = wr0.error; } else { wa.msg = ''; S.rvDate = ''; S.wrA = S.wrC = null; }
+      draw(); return;
+    }
+    if (a === 'w-refresh') { loadWStats(true); if (whState().view === 'summary') loadStats(true); draw(); return; }
     if (a === 'miss-hide') { sset(docRef('misses', id), { hidden: true, q: ((S.misses || []).filter(function (x) { return x.id === id; })[0] || {}).q || id }, true).then(function () { loadMisses(true); }, failed); return; }
     if (a === 'oqset') { S.oqty = el.getAttribute('data-v') || ''; draw(); var to = S.root.querySelector('[data-k="o-text"]'); if (to) to.focus(); return; }
     // "Add 5 L": the usual amount goes in and the line is added in the same tap
@@ -7588,7 +7731,7 @@
     if (a === 'signout') { if (draftDirty() && !arm('signout')) { toast('Unsaved staff changes. Tap Sign out of Google again to drop them.'); return; } signOut(); draw(); return; }
     if (a === 'sec-hide') { hideSection(id, el.getAttribute('data-hide') === '1'); return; }
     if (a === 'a-reset-pin') { resetPin(id); return; }
-    if (a === 'range') { S.statsRange = +el.getAttribute('data-v'); draw(); return; }
+    if (a === 'range') { if (S.atab === 'waste') { if (!whCanChange()) return; whState().period = el.getAttribute('data-v'); } else S.statsRange = +el.getAttribute('data-v'); draw(); return; }
     if (a === 'stats-refresh') { loadStats(true); draw(); return; }
     if (!S.draft) return;
     var d = S.draft;
@@ -7622,6 +7765,27 @@
     var el = e.target, k = el.getAttribute && el.getAttribute('data-k');
     if (!S.root || !S.root.contains(el)) return;
     clearReturnArm();
+    if (k && k.indexOf('wh-') === 0) {
+      var wh = whState();
+      if (k === 'wh-period') {
+        if (!whCanChange()) { el.value = wh.period; return; }
+        var prior = whRange();
+        if (['7', '14', '30', 'this', 'last', 'months3', 'custom'].indexOf(el.value) < 0) return;
+        wh.period = el.value; wh.msg = ''; S.rvDate = ''; S.wrA = S.wrC = null;
+        if (wh.period === 'custom') { wh.from = prior.from; wh.to = prior.to; wh.draftFrom = prior.from; wh.draftTo = prior.to; }
+      } else if (k === 'wh-from' || k === 'wh-to') { wh[k === 'wh-from' ? 'draftFrom' : 'draftTo'] = el.value; return; }
+      else if (k === 'wh-search') wh.q = el.value.slice(0, 160);
+      else if (k === 'wh-who') wh.who = el.value.slice(0, 80);
+      else if (k === 'wh-unit') wh.unit = ['', 'kg', 'L', 'portions', 'pieces'].indexOf(el.value) >= 0 ? el.value : '';
+      else if (k === 'wh-removed') wh.removed = el.checked;
+      else if (k === 'wh-review-date') {
+        var range = whRange();
+        if (!whCanChange() || !whValid(el.value) || el.value < range.from || el.value > range.to) { el.value = S.rvDate; return; }
+        S.rvDate = el.value; S.wrA = S.wrC = null;
+      }
+      if (LV['waste-log']) LV['waste-log'].shown = 15;
+      draw(); return;
+    }
     if (k && k.indexOf('lv-q:') === 0) { var lk = k.slice(5), lc = LVR[lk]; if (lc) { var ls0 = lvState(lc); ls0.q = el.value; ls0.shown = lc.step || 15; lvRefresh(lk); } return; }
     // a PIN goes in by itself the moment the fourth digit is typed (only when it reaches four, so it cannot send twice)
     if (k === 'p-pin') { var pp = S.pinInput.length; S.pinInput = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.pinInput; pinCells(el); if (pp < 4 && S.pinInput.length === 4) submitKitchenPin(); return; }

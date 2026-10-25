@@ -40,6 +40,7 @@ export function terminate() { window.__fake.terminated = true; return Promise.re
 function segs(a) { return a.filter(x => typeof x === 'string'); }
 function baseOf(x) { return x && x.path ? x.path : []; }
 export function collection(parent, ...p) { return { type: 'col', path: baseOf(parent).concat(segs(p)) }; }
+export function collectionGroup(parent, group) { return { type: 'group', path: ['**', group], group }; }
 export function doc(parent, ...p) {
   let path = baseOf(parent).concat(segs(p));
   if (parent && parent.type === 'col' && !p.length) path = parent.path.concat([rid()]);
@@ -50,7 +51,7 @@ export function documentId() { return '__name__'; }
 export function orderBy(f, dir) { return { k: 'order', f, dir: dir || 'asc' }; }
 export function limit(n) { return { k: 'limit', n }; }
 export function startAfter(sn) { return { k: 'after', id: sn.id }; }
-export function query(col, ...c) { return { type: 'query', path: col.path, c }; }
+export function query(col, ...c) { return { type: 'query', path: col.path, group: col.group, c }; }
 export function serverTimestamp() { return { __st: 1 }; }
 export function increment(n) { return { __inc: n }; }
 
@@ -59,11 +60,15 @@ function snapDoc(path) {
   const v = store[key(path)];
   return { id: path[path.length - 1], ref: { type: 'doc', path, id: path[path.length - 1] }, metadata: { hasPendingWrites: pendingKeys.has(key(path)) }, exists: () => v !== undefined, data: () => (v === undefined ? undefined : JSON.parse(JSON.stringify(v))) };
 }
-function listCol(path, c) {
+function listCol(path, c, group) {
   const pre = key(path) + '/', n = path.length + 1;
-  let docs = Object.keys(store).filter(k => k.indexOf(pre) === 0 && k.split('/').length === n).map(k => snapDoc(k.split('/')));
+  let docs = Object.keys(store).filter(k => group ? k.split('/').slice(-2)[0] === group : k.indexOf(pre) === 0 && k.split('/').length === n).map(k => snapDoc(k.split('/')));
+  if (group) docs.sort((a, b) => key(a.ref.path).localeCompare(key(b.ref.path)));
   (c || []).forEach(x => {
-    if (x.k === 'where' && x.f === '__name__') { docs = docs.filter(d => x.op === 'in' ? x.v.indexOf(d.id) >= 0 : d.id === x.v); return; }
+    if (x.k === 'where' && x.f === '__name__') {
+      const v = x.v && x.v.path ? key(x.v.path) : x.v;
+      docs = docs.filter(d => { const id = group ? key(d.ref.path) : d.id; return x.op === 'in' ? v.indexOf(id) >= 0 : x.op === '>=' ? id >= v : x.op === '<=' ? id <= v : x.op === '<' ? id < v : x.op === '>' ? id > v : id === v; }); return;
+    }
     if (x.k === 'where') docs = docs.filter(d => { const v = (d.data() || {})[x.f]; if (x.op === 'in') return x.v.indexOf(v) >= 0; return x.op === '==' ? v === x.v : x.op === '>=' ? v >= x.v : x.op === '<' ? v < x.v : x.op === '<=' ? v <= x.v : x.op === '>' ? v > x.v : true; });
     if (x.k === 'order') docs.sort((a, b) => { const A = a.data()[x.f], B = b.data()[x.f]; return (A > B ? 1 : A < B ? -1 : 0) * (x.dir === 'desc' ? -1 : 1); });
     if (x.k === 'after') { const i = docs.findIndex(d => d.id === x.id); docs = i < 0 ? [] : docs.slice(i + 1); }
@@ -72,7 +77,7 @@ function listCol(path, c) {
   return { docs, empty: !docs.length, size: docs.length, forEach: f => docs.forEach(f) };
 }
 function result(ref, keep = true) {
-  const r = ref.type === 'doc' ? snapDoc(ref.path) : listCol(ref.path, ref.c);
+  const r = ref.type === 'doc' ? snapDoc(ref.path) : listCol(ref.path, ref.c, ref.group);
   (ref.type === 'doc' ? [r] : r.docs).forEach(d => { const k = key(d.ref.path); if (d.exists()) { if (keep) remember(k); window.__fake.readLog.push(k); } else if (keep && ref.type === 'doc') remember(k); });
   return r;
 }
@@ -112,6 +117,7 @@ function chefReader(ref) {
 }
 function denied(ref) {
   const d = window.__fake.denyReads, k = key(ref.path);
+  if (ref.group && !window.__fakeUser) return true;
   if (/^kitchens\/[^/]+\/todos$/.test(k) && !chefReader(ref)) return true;
   if (/^kitchens\/[^/]+\/(suppliers|supplierlinks)(\/|$)/.test(k) && !chefReader(ref)) return true;
   if (/^kitchens\/[^/]+\/minutes$/.test(k) && !window.__fakeUser && !(ref.c || []).some(x => x.k === 'where' && x.f === 'pubAt' && (x.op === '>=' || x.op === '>') && x.v >= 1)) return true;
@@ -136,15 +142,16 @@ export function getDocFromServer(ref) {
 // win. A query by document id ('in') answers from those ids, so a document only the server has is found too.
 export function getDocsFromServer(ref) {
   const k = key(ref.path), sv = window.__fake.server || {};
-  const byId = (ref.c || []).filter(x => x.k === 'where' && x.f === '__name__')[0];
+  const byId = (ref.c || []).filter(x => x.k === 'where' && x.f === '__name__' && (x.op === 'in' || x.op === '=='))[0];
   // a query by id asks for those documents by name, so each one is listed in reads, like getDocFromServer
   if (byId) (byId.op === 'in' ? byId.v : [byId.v]).forEach(id => window.__fake.reads.push(k + '/' + id)); else window.__fake.reads.push(k);
-  if (window.__fake.mode === 'hold' || window.__fake.mode === 'fail') return Promise.reject({ code: 'unavailable' });
+  if (window.__fake.mode === 'hold' || window.__fake.mode === 'fail' || readFails(ref)) return Promise.reject({ code: 'unavailable' });
+  if (denied(ref)) return Promise.reject({ code: 'permission-denied' });
   let docs;
   if (byId) {
     const ids = byId.op === 'in' ? byId.v : [byId.v];
     docs = ids.map(id => { const p = ref.path.concat([id]), dk = key(p); if (dk in sv) { const v = sv[dk]; return { id, ref: { path: p }, exists: () => v != null, data: () => (v == null ? undefined : JSON.parse(JSON.stringify(v))) }; } return result({ type: 'doc', path: p }); }).filter(d => d.exists());
-  } else docs = listCol(ref.path, ref.c).docs;
+  } else docs = result(ref).docs;
   bill('query', k, docs.length);
   return delay({ docs, empty: !docs.length, size: docs.length, forEach: f => docs.forEach(f) });
 }
@@ -155,7 +162,7 @@ export function getDocFromCache(ref) {
   return delay(snapDoc(ref.path));
 }
 export function getDocsFromCache(ref) {
-  const r = listCol(ref.path, ref.c), docs = r.docs.filter(d => seen.has(key(d.ref.path)));
+  const r = listCol(ref.path, ref.c, ref.group), docs = r.docs.filter(d => seen.has(key(d.ref.path)));
   return delay({ docs, empty: !docs.length, size: docs.length, forEach: f => docs.forEach(f) });
 }
 export function onSnapshot(ref, next, err) {
