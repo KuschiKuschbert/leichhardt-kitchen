@@ -18,7 +18,7 @@
   document.addEventListener('pointerdown', function (e) {
     if (!e.isPrimary || e.button !== 0) return;
     navRelease();
-    var el = e.target.closest && e.target.closest('.wtop-btn, .pnav a, .tabbar a');
+    var el = e.target.closest && e.target.closest('.wtop-btn, .pnav a, .tabbar a, .wm-a');
     if (el && !el.matches(':disabled, [aria-disabled="true"]')) { navPress = el; el.classList.add('is-pressed'); }
   }, { passive: true });
   document.addEventListener('pointermove', function (e) {

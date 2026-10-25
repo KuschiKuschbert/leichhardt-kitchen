@@ -29,6 +29,10 @@ const still = s => s.rotate === 'none' && s.scale === 'none' && s.translate === 
   await p.hover('.wm-set'); await L.settle(p, 250);
   ok(await p.$eval(hat, e => getComputedStyle(e).backgroundColor === 'rgb(194, 69, 26)'), 'chef menu: the hat stays theme orange after the pointer moves into the dropdown');
   ok((await style(p, '.wm-set > svg')).translate === '2px', 'menu: a hovered row nudges its icon');
+  ok((await style(p, '.wm-set > svg')).rotate === '-8deg', 'menu: a hovered icon tilts left');
+  await p.mouse.down(); await L.settle(p, 180);
+  ok((await style(p, '.wm-set > svg')).rotate === '-12deg', 'menu: a held press deepens the icon tilt');
+  await p.mouse.move(5, 200); await p.mouse.up(); await L.settle(p, 250);
   await p.evaluate(() => window.dispatchEvent(new Event('lk-mail')));
   ok(await p.$eval(hat, e => e.getAttribute('aria-expanded') === 'true' && getComputedStyle(e).backgroundColor === 'rgb(194, 69, 26)'), 'chef menu: a mail badge refresh preserves the open orange button');
   await p.keyboard.press('Escape'); await L.settle(p, 250);
@@ -40,6 +44,9 @@ const still = s => s.rotate === 'none' && s.scale === 'none' && s.translate === 
   ok(still(await style(p, icon)) && still(await style(p, hat)), 'reduced motion: hover and hold have no tilt, shift or compression');
   await p.mouse.up(); await L.settle(p, 200);
   ok((await style(p, '.wm')).animation === 'none', 'reduced motion: the menu opens without movement');
+  await p.hover('.wm-set'); await p.mouse.down(); await L.settle(p, 180);
+  ok(still(await style(p, '.wm-set > svg')), 'reduced motion: menu icons stay still on hover and press');
+  await p.mouse.move(5, 200); await p.mouse.up();
   await p.click('.wm-set'); await L.settle(p, 300);
   await p.emulateMedia({ reducedMotion: 'no-preference' });
   const chosen = '.settings button[data-act="settext"][aria-pressed="true"]';
