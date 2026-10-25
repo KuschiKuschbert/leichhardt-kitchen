@@ -33,6 +33,16 @@ function fn(o) {
 }
 const extra = docs => Object.assign({}, base, ...Object.keys(docs).map(id => ({ [fsKey(['functions', id])]: docs[id] })));
 const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e => e.dispatchEvent(new Event('change', { bubbles: true }))); await L.settle(p, 80); };
+// Inspect contact fields and text at every depth. Numeric timestamps may contain a phone prefix by coincidence.
+function hasPrivateContact(value) {
+  const textHasContact = text => {
+    const t = text.toLowerCase();
+    return t.includes('jo smith') || t.includes('jo@example.com') || t.replace(/\D/g, '').includes('0400111222');
+  };
+  if (typeof value === 'string') return textHasContact(value);
+  if (!value || typeof value !== 'object') return false;
+  return Object.keys(value).some(k => /^(cname|phone|email)$/i.test(k) || textHasContact(k) || hasPrivateContact(value[k]));
+}
 
 (async () => {
   const b = await L.start();
@@ -89,7 +99,10 @@ const setV = async (p, sel, v) => { await p.fill(sel, v); await p.$eval(sel, e =
   ok(saved.status === 'confirmed' && saved.by === 'fay' && saved.confBy === 'fay' && saved.kcBy === 'fay' && saved.guests === 60, 'save: confirmed, written by Fay with her own id');
   ok(JSON.stringify(saved.lines.map(l => [l.rid, l.qty, M.fromU(l.u, 3)])) === JSON.stringify([['antipasto-platter', 3, [3, 0, 0]], ['aussie-platter', 4, [2, 2, 0]], ['pizza-platter', 5, [0, 2, 3]]]), 'save: every line keeps its platter id and adds up across the rounds');
   ok(saved.first === at(today, '18:30') && saved.last === at(today, '19:30') && saved.start === at(today, '18:00') && saved.until === at(today, '20:00'), 'save: first, last and the end of the band come from the saved rounds');
-  ok(!!contact && contact.phone === '0400 111 222' && contact.email === 'jo@example.com' && !JSON.stringify(saved).match(/0400|example\.com/), 'save: phone and email only in the contact record, not the kitchen\'s copy');
+  ok(!!contact && contact.cname === 'Jo Smith' && contact.phone === '0400 111 222' && contact.email === 'jo@example.com' && !hasPrivateContact(saved), 'save: phone and email only in the contact record, not the kitchen\'s copy');
+  ok(hasPrivateContact(Object.assign({}, saved, { debug: { phone: '0400 111 222' } })) &&
+    hasPrivateContact(Object.assign({}, saved, { notes: 'Contact jo@example.com' })) &&
+    hasPrivateContact(Object.assign({}, saved, { notes: 'Call 0400-111-222' })), 'save: the privacy check still rejects nested contact fields and embedded email or phone text');
   // the platters are on today's prep list, one line each, under Functions, linked to the recipe card
   const pl = rid => s[fsKey(['days', today, 'items', 'fn-' + id + '-' + rid])];
   ok(!!pl('antipasto-platter') && pl('antipasto-platter').text === 'Antipasto Platter: Smith 50th, from 18:30' && pl('antipasto-platter').qty === '3 platters' && pl('antipasto-platter').station === 'Functions' && pl('antipasto-platter').recipe === 'antipasto-platter' && pl('antipasto-platter').fn === id && pl('antipasto-platter').dupOk === true && !('done' in pl('antipasto-platter')),
