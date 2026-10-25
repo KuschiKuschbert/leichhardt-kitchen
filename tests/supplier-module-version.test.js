@@ -16,15 +16,24 @@ const staleCore = () => { window.LK_SUP_CORE = { API: 1 }; };
   ok(p.errors.length === 0, 'revised supplier page has no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // Reminder completion has its own lazy-loader entry point, before the supplier page is open.
-  p = await L.open(b, '#/', { who: 'bo', extra: F.fixture(), init: staleCore, wait: 1500 });
+  // The detailed order-list tick keeps its lazy-loader entry point before the supplier page is open.
+  p = await L.open(b, '#/orders', { who: 'bo', extra: F.fixture(), init: staleCore, wait: 1500 });
   await L.waitFor(p, () => !!document.querySelector('#cut-band [data-cut="done"][data-id^="northside|"]'), null, 10000);
-  ok(!supplierUrls(p).length, 'supplier code stays lazy before the first reminder action');
-  await p.click('#cut-band [data-cut="done"][data-id^="northside|"]');
+  ok(!supplierUrls(p).length, 'supplier code stays lazy before the detailed order-list action');
+  await p.click('.cut-tl [data-p="cut-tick"][data-id^="northside|"]');
   await L.waitFor(p, () => !!document.querySelector('input[data-sf="qty"]'), null, 15000);
   ok(revision(p, 'supplier-core.js') && await p.evaluate(() => window.LK_SUP_CORE.API === 2), 'reminder entry replaces an old core with the current revision');
   ok(await p.evaluate(({ day, key }) => location.hash === '#/suppliers/cutoff/northside/' + day && !window.__fake.dump()[key], { day: F.today, key: F.key(['cutdone', F.today + '_northside']) }), 'revised reminder entry opens the linked sheet without recording an order');
   ok(p.errors.length === 0, 'revised reminder entry has no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // The bar can confirm a reminder even when an old supplier core is already in memory.
+  p = await L.open(b, '#/', { who: 'bo', extra: F.fixture(), init: staleCore, wait: 1500 });
+  await L.waitFor(p, () => !!document.querySelector('#cut-band [data-cut="done"]:not([disabled])'), null, 10000);
+  await p.click('#cut-band [data-cut="done"][data-id^="northside|"]');
+  await L.waitFor(p, k => window.__fake.dump()[k]?.on === true, F.key(['cutdone', F.today + '_northside']), 10000);
+  ok(!supplierUrls(p).length && await p.evaluate(() => window.LK_SUP_CORE.API === 1 && location.hash === '#/'), 'reminder-only completion does not depend on or replace an older supplier module');
+  ok(p.errors.length === 0, 'reminder-only completion with an old module has no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
   // An old UI object must not be allowed to mount against the updated app shell.
