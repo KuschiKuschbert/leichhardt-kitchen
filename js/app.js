@@ -12,6 +12,25 @@
 (function () {
   'use strict';
 
+  // Touch browsers can defer :active until release; keep navigation feedback visible during the actual press.
+  var navPress = null;
+  function navRelease() { if (navPress) navPress.classList.remove('is-pressed'); navPress = null; }
+  document.addEventListener('pointerdown', function (e) {
+    if (!e.isPrimary || e.button !== 0) return;
+    navRelease();
+    var el = e.target.closest && e.target.closest('.wtop-btn, .pnav a, .tabbar a, .wm-a');
+    if (el && !el.matches(':disabled, [aria-disabled="true"]')) { navPress = el; el.classList.add('is-pressed'); }
+  }, { passive: true });
+  document.addEventListener('pointermove', function (e) {
+    if (!navPress || !e.isPrimary) return;
+    var r = navPress.getBoundingClientRect();
+    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) navRelease();
+  }, { passive: true });
+  document.addEventListener('pointerup', navRelease, { passive: true });
+  document.addEventListener('pointercancel', navRelease, { passive: true });
+  window.addEventListener('blur', navRelease);
+  document.addEventListener('visibilitychange', navRelease);
+
   var D = window.LK_DATA;
   var ART = window.LK_ART;
   var app = document.getElementById('app');
@@ -363,7 +382,7 @@
     var rn = parseRoute().name, here = rn === 'settings' || rn === 'admin' ? ' aria-current="page"' : '';
     // open kitchen mail shows as a count on the hat, as it did on the Admin key
     var ml = mailOpen(), mt = ml ? ', ' + ml + ' open kitchen mail' : '';
-    return '<button type="button" class="wtop-btn wtop-who' + (n ? ' on' : '') + (n && flip ? ' flip' : '') + '" data-who="menu" aria-haspopup="true" aria-expanded="false"' + here + (n ? ' title="Signed in as ' + esc(n) + mt + '" aria-label="Signed in as ' + esc(n) + ', menu and Settings' + mt + '"' : ' title="Menu and Settings' + mt + '" aria-label="Menu and Settings' + mt + '"') + '>' + ICON.chef + '<span class="wtop-lbl wtop-who-n">' + esc(n.split(' ')[0]) + '</span>' + mailBadge(ml) + '</button>';
+    return '<button type="button" class="wtop-btn wtop-who' + (n ? ' on' : '') + (n && flip ? ' flip' : '') + '" data-who="menu" aria-haspopup="true" aria-expanded="' + !!wmenu + '"' + here + (n ? ' title="Signed in as ' + esc(n) + mt + '" aria-label="Signed in as ' + esc(n) + ', menu and Settings' + mt + '"' : ' title="Menu and Settings' + mt + '" aria-label="Menu and Settings' + mt + '"') + '>' + ICON.chef + '<span class="wtop-lbl wtop-who-n">' + esc(n.split(' ')[0]) + '</span>' + mailBadge(ml) + '</button>';
   }
   /* Manage Recipes & Drawings (21 Oct 2026): the head chef only (js/prep.js bookEdit: their PIN as Head chef, or their
      Google device with nobody else signed in). Everyone else reads the recipes as before. */
