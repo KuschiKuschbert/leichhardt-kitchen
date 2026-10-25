@@ -2253,3 +2253,6 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
   .su-form-grid { grid-template-columns: minmax(0, 1fr); }
   .su-lines > div { grid-template-columns: minmax(0, 1fr) 5.5rem; gap: 0.7rem; }
 }
+
+/* Physical stock return: the familiar tick box keeps room for the item on a phone. */
+.tr-return-box { flex-basis: 44px; width: 44px; height: 44px; }

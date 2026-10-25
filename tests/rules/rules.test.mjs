@@ -587,6 +587,51 @@ const xgone = xline({ by: 'sam', deleted: true, deletedBy: 'Head chef', deletedA
 await ok(setDoc(doc(owner, K + 'transfers/' + OLD + '/lines/c2'), xgone), true, 'transfers: and a removed one, with who removed it and when');
 await ok(setDoc(doc(owner, K + 'transfers/' + OLD + '/lines/c2'), xgone), true, 'transfers: a move tried again copies it over itself');
 await ok(deleteDoc(doc(owner, K + XY + 'y1')), false, 'transfers: never deleted, not even by the head chef');
+await ok(W([['config/main', { pastEdit: { x: Date.now() } }, true]], { id: 'ann' }), true, 'returns: staff may invalidate cached transfer history');
+await ok(W([['config/main', { pastEdit: { p: Date.now() } }, true]], { id: 'ann' }), false, 'returns: staff cannot invalidate unrelated prep history');
+// Physical returns: old loans stay visible through a bounded open-only query.
+const loanDay = OLD, loanPath = 'transfers/' + loanDay + '/lines/loan-return';
+const loanIndex = 'transferOpen/' + loanDay + '_loan-return';
+let loanRecord = xline({ by: 'ann' });
+const indexRecord = (record, day = loanDay, lineId = 'loan-return') => ({ date: day, lineId, record, open: !record.deleted && !record.returned });
+await env.withSecurityRulesDisabled(async ctx => {
+  const db = ctx.firestore();
+  await setDoc(doc(db, K + loanPath), loanRecord);
+  await setDoc(doc(db, K + loanIndex), indexRecord(loanRecord));
+});
+await ok(getDocs(query(collection(anon, K + 'transferOpen'), where('open', '==', true))), true, 'returns: the open query includes older loans');
+await ok(getDocs(collection(anon, K + 'transferOpen')), false, 'returns: the complete return history stays private');
+const returnFields = (id = 'ann', time = Date.now()) => ({ returned: true, returnedBy: id, returnedById: id, returnedAt: time });
+async function returnLoan(fields, id = 'ann', altered = {}) {
+  const next = { ...loanRecord, ...fields, ...altered, by: id };
+  return W([[loanPath, { ...fields, ...altered }, true], [loanIndex, indexRecord(next)]], { id });
+}
+await ok(W([[loanPath, returnFields(), true]], { id: 'ann' }), false, 'returns: a return without the matching index is refused');
+await ok(returnLoan(returnFields(), 'ann', { amount: 99 }), false, 'returns: a return cannot alter the original quantity');
+await ok(returnLoan(returnFields('bo')), false, 'returns: cannot claim another person confirmed it');
+await ok(returnLoan(returnFields('ann', Date.now() + 600000)), false, 'returns: cannot give a return a future time');
+await ok(setDoc(doc(anon, K + loanIndex), indexRecord(loanRecord)), false, 'returns: no PIN session cannot write the open index');
+await ok(W([[loanIndex, indexRecord({ ...loanRecord, amount: 99 })]], { id: 'ann' }), false, 'returns: a forged open snapshot is refused');
+let fields = returnFields();
+await ok(returnLoan(fields), true, 'returns: a staff PIN returns an older loan in one batch');
+loanRecord = { ...loanRecord, ...fields, by: 'ann' };
+await ok(getDoc(doc(anon, K + loanIndex)), false, 'returns: a completed loan is hidden from open readers');
+await ok(getDoc(doc(owner, K + loanIndex)), true, 'returns: the head chef can read completed history');
+await ok(returnLoan(returnFields()), false, 'returns: two phones cannot re-stamp an already returned loan');
+const unreturn = { returned: false, returnedBy: '', returnedById: '', returnedAt: 0 };
+await ok(returnLoan(unreturn, 'bo'), false, 'returns: another staff member cannot undo the confirmation');
+await ok(returnLoan(unreturn), true, 'returns: the confirmer may undo a mis-tap');
+loanRecord = { ...loanRecord, returned: true, returnedById: 'ann', returnedBy: 'ann', returnedAt: Date.now() - 600000 };
+await env.withSecurityRulesDisabled(async ctx => {
+  const db = ctx.firestore();
+  await setDoc(doc(db, K + loanPath), loanRecord);
+  await setDoc(doc(db, K + loanIndex), indexRecord(loanRecord));
+});
+await ok(returnLoan(unreturn), false, 'returns: staff Undo expires after two minutes');
+await ok(returnLoan(unreturn, 'sam'), true, 'returns: a chef may reopen an older confirmation');
+const fresh = xline({ by: 'ann', addedAt: Date.now() });
+await ok(W([['transfers/' + WT + '/lines/new-loan', fresh], ['transferOpen/' + WT + '_new-loan', indexRecord(fresh, WT, 'new-loan')]], { id: 'ann' }), true, 'returns: a new loan and its index are saved together');
+
 // PIN sessions (22 Oct 2026): a phone signed in anonymously writes a PIN try first (one per person every 20 s), then
 // opens a session if that try was right; writes go through the session
 const phone = id => env.authenticatedContext(id, { firebase: { sign_in_provider: 'anonymous' } }).firestore();

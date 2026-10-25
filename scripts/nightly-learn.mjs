@@ -28,6 +28,7 @@
   Needs two secrets: FIREBASE_SA (a service account key, JSON) and KITCHEN_PIN. Nothing secret is ever printed.
   For a test run against the Firestore emulator: FIRESTORE_EMULATOR_HOST=127.0.0.1:8089 KITCHEN_PIN=000000 node nightly-learn.mjs
 */
+import { syncTransfers } from './transfer-index.mjs';
 import { initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { createRequire } from 'module';
@@ -263,3 +264,6 @@ console.log("Tomorrow's list: " + (LT.lists.usual >= 0 ? 'usually from ' + hhmm(
 const nL = await listSummary('learned', LEARN_TOP, ['text', 'uses', 'typed', 'picked', 'dow', 'secs', 'qtys', 'lastUsed', 'hidden'], { lists: LT.lists });
 const nO = await listSummary('ordlearned', ORD_TOP, ['text', 'uses', 'dow', 'qtys', 'hidden']);
 console.log('Summaries for the phones: ' + nL + ' prep items, ' + nO + ' order items.');
+
+// Repair the index for transfers logged by a phone running the previous app.
+await syncTransfers(K);

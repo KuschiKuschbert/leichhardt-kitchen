@@ -93,7 +93,14 @@ service cloud.firestore {
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pastEdit', 'by'])
           && request.resource.data.pastEdit is map && request.resource.data.pastEdit.keys().hasOnly(['p', 'o', 'n', 'x'])
           && request.resource.data.pastEdit.get('p', 0) is number && request.resource.data.pastEdit.get('o', 0) is number
-          && request.resource.data.pastEdit.get('n', 0) is number && request.resource.data.pastEdit.get('x', 0) is number);
+          && request.resource.data.pastEdit.get('n', 0) is number && request.resource.data.pastEdit.get('x', 0) is number)
+        // A returned past loan invalidates the head chef's saved transfer history.
+        || (staff() && onlyKeys(['pastEdit', 'by'])
+          && request.resource.data.pastEdit is map
+          && request.resource.data.pastEdit.diff(resource.data.get('pastEdit', {})).affectedKeys().hasOnly(['x'])
+          && request.resource.data.pastEdit.x is number
+          && request.resource.data.pastEdit.x >= request.time.toMillis() - 300000
+          && request.resource.data.pastEdit.x <= request.time.toMillis() + 60000);
       allow delete: if isAdmin();
     }
     match /kitchens/KITCHEN_PIN/config/admins { allow read, write: if isAdmin(); }
@@ -200,10 +207,45 @@ service cloud.firestore {
         && d.get('deletedBy', '') is string && d.get('deletedBy', '').size() <= 80
         && d.get('deletedAt', 0) is number;
     }
+    // A return closes a loan in full. Only return fields change, never its amount or venue.
+    // The writer may undo a mis-tap for two minutes; a chef may reopen it later.
+    function xferReturn(day, line) {
+      let d = request.resource.data;
+      return getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/transferOpen/$(day + '_' + line)).data.record == d
+        && onlyKeys(['returned', 'returnedBy', 'returnedById', 'returnedAt', 'by'])
+        && resource.data.get('deleted', false) == false
+        && d.returned is bool
+        && d.returnedBy is string && d.returnedBy.size() <= 80
+        && d.returnedById is string
+        && d.returnedAt is number
+        && (d.returned == true
+          ? resource.data.get('returned', false) == false
+            && (isAdmin() || d.returnedById == d.get('by', ''))
+            && d.returnedAt <= request.time.toMillis() + 60000
+            && d.returnedAt >= request.time.toMillis() - 300000
+          : resource.data.get('returned', false) == true
+            && d.returnedBy == '' && d.returnedById == '' && d.returnedAt == 0
+            && (isAdmin() || sousBy() || (resource.data.get('returnedById', '') == d.by
+              && request.time.toMillis() - resource.data.get('returnedAt', 0) < 120000)));
+    }
+    // The open index is an exact copy of its dated line in the same atomic write.
+    // Staff can query open loans across all dates without reading the private history.
+    match /kitchens/KITCHEN_PIN/transferOpen/{key} {
+      allow read: if isAdmin() || resource.data.open == true;
+      allow create, update: if writer()
+        && request.resource.data.keys().hasOnly(['date', 'lineId', 'record', 'open', 'by'])
+        && request.resource.data.date is string
+        && request.resource.data.date.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
+        && request.resource.data.lineId is string
+        && key == request.resource.data.date + '_' + request.resource.data.lineId
+        && request.resource.data.record == getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/transfers/$(request.resource.data.date)/lines/$(request.resource.data.lineId)).data
+        && request.resource.data.open == (request.resource.data.record.get('deleted', false) == false && request.resource.data.record.get('returned', false) == false);
+      allow delete: if false;
+    }
     match /kitchens/KITCHEN_PIN/transfers/{day}/lines/{line} {
       allow read: if isAdmin() || isToday(day);
       allow create: if isAdmin() || (staff() && nearDay(day) && xferOk());
-      allow update: if (isAdmin() && xferDel())
+      allow update: if (writer() && xferReturn(day, line)) || (isAdmin() && xferDel())
         || (staff() && sousBy() && resource.data.get('addedById', '') == request.resource.data.by
           && request.time.toMillis() - resource.data.get('addedAt', 0) < 120000 && xferDel());
       allow delete: if false;
