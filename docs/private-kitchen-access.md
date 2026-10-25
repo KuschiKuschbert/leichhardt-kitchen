@@ -23,7 +23,7 @@ Delete function is a two-tap soft deletion: cancelled, `removed: true`, `kq: 0`,
 
 ## Browser storage and offline behaviour
 
-Google authentication uses tab-session persistence. Operational Firestore records use an in-memory cache. Application caches used by a signed-in person are cleared on sign-out, expiry or account selection; all routes and readers require the current verified session. Public recipe/drawing assets retain their offline cache. A signed-in tab can continue using loaded information during a signal loss; reloading offline may require reconnection for private data. Public recipes remain available offline. Old Firestore IndexedDB copies from earlier releases are no longer used; clearing old site data removes those legacy copies from a shared device.
+Google authentication uses tab-session persistence. The anonymous device identity remains persistent so existing personal PIN sessions keep working on staff phones. Operational Firestore records use an in-memory cache. Application caches used by a signed-in person are cleared on sign-out, expiry or account selection; all routes and readers require the current verified session. Public recipe/drawing assets retain their offline cache. A signed-in tab can continue using loaded information during a signal loss; reloading offline may require reconnection for private data. Public recipes remain available offline. Old Firestore IndexedDB copies from earlier releases are no longer used; clearing old site data removes those legacy copies from a shared device.
 
 ## Rollout
 

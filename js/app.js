@@ -1195,6 +1195,7 @@
     var route = parseRoute();
     var changed = location.hash !== lastHash;
     if (changed) { ui.pick = null; }
+    var keepHeading = document.activeElement && document.activeElement.id === 'rtitle';
     var keep = document.activeElement && document.activeElement.getAttribute && document.activeElement.getAttribute('data-k');
     var view = settings.view || 'pass';
     var locked = route.name !== 'landing' && route.name !== 'home' && route.name !== 'recipe' && route.name !== 'settings' && route.name !== 'admin' && window.LK_PREP && !window.LK_PREP.routeAccess(route.name);
@@ -1244,7 +1245,7 @@
         el.focus({ preventScroll: true });
         if (keep === 'find') { var v = el.value; el.setSelectionRange(v.length, v.length); }
       }
-    }
+    } else if (keepHeading) { var nextTitle = document.getElementById('rtitle'); if (nextTitle) nextTitle.focus({ preventScroll: true }); }
   }
 
   // Pin labels stay off the food. Each plate drawing is painted to a small canvas to find where the food is,

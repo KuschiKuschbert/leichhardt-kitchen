@@ -152,7 +152,7 @@
       catch (e) { db = fs.getFirestore(app); }
       var auth = au.getAuth(app);
       // Google admin authentication lasts for this tab, never a remembered shared-browser login.
-      var persistence = au.setPersistence && au.browserSessionPersistence ? au.setPersistence(auth, au.browserSessionPersistence) : Promise.resolve();
+      var persistence = auth.authStateReady ? auth.authStateReady() : Promise.resolve();
       fb = { app: app, fs: fs, au: au, db: db, auth: auth };
       au.onAuthStateChanged(auth, function (u) {
         // PIN sessions (22 Oct 2026): every phone signs in anonymously; only a Google account is the head chef's (S.user)
@@ -161,7 +161,10 @@
         if (!S.user) { S.level = ''; S.adminsFor = ''; admMark(false); } featSync(); loadAdmins(); draw();
         if (S.authState === 'ready' && S.configState === 'ok') resume();
       });
-      return persistence.then(function () { return auth.currentUser ? fb : anonIn(); }).catch(function (e) { sdkP = null; throw e; });
+      return persistence.then(function () {
+        if (auth.currentUser && !auth.currentUser.isAnonymous) return au.setPersistence && au.browserSessionPersistence ? au.setPersistence(auth, au.browserSessionPersistence).then(function () { return fb; }) : fb;
+        return anonIn();
+      }).catch(function (e) { sdkP = null; throw e; });
     }, function (e) { sdkP = null; throw e; });
     return sdkP;
   }
@@ -599,7 +602,8 @@
     if (anonTask) return anonTask;
     if (!fb || !fb.au.signInAnonymously) return Promise.reject({ code: 'auth/unavailable' });
     S.anonBusy = true;
-    anonTask = fb.au.signInAnonymously(fb.auth).then(function () { S.anonBusy = false; anonTask = null; return fb; }, function (e) {
+    var rememberDevice = fb.au.setPersistence && fb.au.browserLocalPersistence ? fb.au.setPersistence(fb.auth, fb.au.browserLocalPersistence) : Promise.resolve();
+    anonTask = rememberDevice.then(function () { return fb.auth.currentUser && fb.auth.currentUser.isAnonymous ? null : fb.au.signInAnonymously(fb.auth); }).then(function () { S.anonBusy = false; anonTask = null; return fb; }, function (e) {
       S.anonBusy = false; anonTask = null; S.authState = 'ready'; if (S.configState === 'ok') resume(); throw e;
     });
     anonTask.catch(function () {}); // event handlers also start sign-in; sdk() receives the same result.
@@ -1983,7 +1987,8 @@
   function signIn() {
     sdk().then(function () {
       var provider = new fb.au.GoogleAuthProvider();
-      return fb.au.signInWithPopup(fb.auth, provider);
+      var adminSession = fb.au.setPersistence && fb.au.browserSessionPersistence ? fb.au.setPersistence(fb.auth, fb.au.browserSessionPersistence) : Promise.resolve();
+      return adminSession.then(function () { return fb.au.signInWithPopup(fb.auth, provider); });
     }).catch(function (e) {
       var c = e && e.code;
       if (c === 'auth/popup-blocked' || c === 'auth/operation-not-supported-in-this-environment') { return fb.au.signInWithRedirect(fb.auth, new fb.au.GoogleAuthProvider()); }

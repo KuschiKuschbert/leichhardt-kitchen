@@ -26,12 +26,13 @@ const extra = {[key(['functions','delete-me'])]:deletion,[key(['config','main'])
  p=await L.open(b,'#/manage',{who:'sam',extra,wait:1600});ok(!!await p.$('#mg-results'),'sous chef can manage recipes');await p.context().close();
  p=await L.open(b,'#/manage',{who:'ann',extra,wait:1400});ok(!await p.$('#mg-results'),'staff cannot manage recipes');await p.context().close();
  p=await L.open(b,'#/admin',{admin:true,who:'',extra,wait:1600});
+ ok(await p.evaluate(()=>window.__fakePersistence === 'session'),'Google admin uses tab-session persistence');
  await p.evaluate(()=>LK_PREP.signOut(true));await L.settle(p,1000);
  ok(await p.evaluate(()=>!LK_PREP.state.user && !LK_PREP.privateAccess() && localStorage.getItem('fake.user') !== '1'),'Google admin sign-out removes elevated access');await p.context().close();
  p=await L.open(b,'#/prep',{admin:true,who:'ann',extra,wait:1600});
  ok(await p.evaluate(()=>!LK_PREP.state.user && !LK_PREP.state.authed && localStorage.getItem('fake.user') !== '1'),'restored staff identity cannot inherit a remembered Google admin');
  await p.fill('#pf1','2222');await L.settle(p,1100);
- ok(await p.evaluate(()=>LK_PREP.state.authed && LK_PREP.state.who === 'ann' && !LK_PREP.state.user),'staff PIN opens their own session after Google is signed out');
+ ok(await p.evaluate(()=>LK_PREP.state.authed && LK_PREP.state.who === 'ann' && !LK_PREP.state.user && window.__fakePersistence === 'local'),'staff PIN opens their own session after Google is signed out');
  await p.evaluate(()=>LK_PREP.signOut(true));await L.settle(p,700);
  ok(!await p.$('.nb-row') && !/Slice onions/.test(await p.locator('body').innerText()),'logout immediately hides operational data');await p.context().close();
  await b.close();R.forEach(x=>console.log(x));const bad=R.filter(x=>x.startsWith('FAIL')).length;console.log(bad+' failed of '+R.length);process.exit(bad?1:0);

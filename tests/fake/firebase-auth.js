@@ -18,3 +18,7 @@ export function signInWithPopup() { window.__fakeUser = { uid: 'owner', email: '
 export function signInWithRedirect() { return signInWithPopup(); }
 export function signOut() { window.__fakeUser = null; anon = null; localStorage.removeItem('fake.user'); localStorage.removeItem('fake.anon'); cbs.forEach(c => c(null)); return Promise.resolve(); }
 if (localStorage.getItem('fake.user') === '1') window.__fakeUser = { uid: 'owner', email: 'headchef@test.local', emailVerified: true };
+
+export const browserSessionPersistence = 'session';
+export const browserLocalPersistence = 'local';
+export function setPersistence(auth, mode) { window.__fakePersistence = mode; return Promise.resolve(); }
