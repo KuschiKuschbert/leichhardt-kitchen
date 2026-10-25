@@ -348,6 +348,7 @@
   function dropGoogle() {
     if (!S.user || !fb) return Promise.resolve();
     S.level = ''; S.adminsFor = ''; admMark(false); S.user = null;
+    lsSet('lk.auth.lock', String(Date.now()) + ':' + Math.random().toString(36).slice(2));
     return fb.au.signOut(fb.auth).then(anonIn);
   }
   function canBrowse() { return (S.level === 'owner' && ownerHere()) || isSous(); }
@@ -8529,7 +8530,7 @@
   function localBackBusy() {
     return !!(S.root && document.body.contains(S.root) && (S.busy || S.nSaving || S.mSaving || S.gf && (S.gf.busy || S.gf.saving)));
   }
-  window.addEventListener('storage', function (e) { if ((e.key === 'lk.prep.who' || e.key === 'lk.prep.sess') && !e.newValue && S.authed) signOutPerson(true, true); });
+  window.addEventListener('storage', function (e) { if (((e.key === 'lk.prep.who' || e.key === 'lk.prep.sess') && !e.newValue || e.key === 'lk.auth.lock') && (S.authed || S.user)) signOutPerson(true, true); });
   window.LK_PREP = {
     sg: sg,
     privateAccess: privateAccess, kitchenAccess: kitchenAccess, routeAccess: routeAccess, functionOnly: functionOnly,

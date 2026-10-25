@@ -140,7 +140,10 @@ async function pin(p, name, digits) { await p.click('.p-name[data-id="' + name +
   ok(await p.$('.nt-wrap') === null, 'hand-over: nothing pops up over Who are you?');
   await p.click('[data-p="who-back"]').catch(() => {}); await L.settle(p, 300);
   await p.clock.runFor(61000); await L.settle(p, 400);
-  ok(!/peanut/.test(await p.evaluate(() => localStorage.getItem('lk.note.seen') || '')) && /peanut/.test(await txt(p, '.nt-list') || ''), 'hand-over: back on the list, the ping saved before signing out still comes up on the tablet');
+  ok(await p.$('.nt-wrap') === null && !/peanut/.test(await txt(p, '#prep-root') || ''), 'hand-over: saved pings stay private while signed out');
+  await pin(p, 'ann', '2222'); await L.settle(p, 500);
+  await L.waitFor(p, () => /peanut/.test((document.querySelector('.nt-list') || {}).textContent || ''));
+  ok(/peanut/.test(await txt(p, '.nt-list') || ''), 'hand-over: the saved ping appears for the next authenticated staff member');
   await p.context().close();
 
   // an Undo straight after a remove still tells the other phones (the stamp is sent at the end of the 5 seconds)
