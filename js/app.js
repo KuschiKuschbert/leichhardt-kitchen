@@ -839,7 +839,7 @@
      and API in js/fnedit.js together when what LK_FN or LK_PREP.book() hands it changes. */
   function viewFn(route) { return '<div class="page fn-pg"><main id="main" class="fn-main">' + (window.LK_FN ? window.LK_FN.page(route.fid) : '') + '</main>' + footer() + '</div>'; }
   function viewFunctions() { return '<div class="page fe-page"><main id="main" class="fe"><div id="fe-root"></div></main></div>'; }
-  var FE_API = 3, feLoad = null;
+  var FE_API = 4, feLoad = null;
   function mountFunctions(route) {
     var root = document.getElementById('fe-root');
     if (!root) return;
@@ -857,13 +857,13 @@
     }
     if (window.LK_FE) { if (window.LK_FE.api === FE_API) window.LK_FE.mount(root, route); else root.innerHTML = mgNote('Reload the book', 'The functions page on this device is a different version from the book. Reload the page to update it.', '<div class="btn-row"><button type="button" class="btn dark" data-act="reload">Reload</button></div>'); return; }
     root.innerHTML = mgNote('Functions', 'Opening functions...', ' ');
-    if (!feLoad) feLoad = mgScript('js/fnedit.js?v=3').catch(function (e) { feLoad = null; throw e; });
+    if (!feLoad) feLoad = mgScript('js/fnedit.js?v=4').catch(function (e) { feLoad = null; throw e; });
     feLoad.then(function () { if (parseRoute().name === 'functions') mountFunctions(parseRoute()); }, function () {
       var el = document.getElementById('fe-root');
       if (el) el.innerHTML = mgNote('Could not open functions', 'It needs the signal the first time it opens on a device. Check the signal and try again.', '<div class="btn-row"><button type="button" class="btn dark" data-act="feretry">Try again</button></div>');
     });
   }
-  var MG_API = 3, mgLoad = null;
+  var MG_API = 4, mgLoad = null;
   function viewManage() { return '<div class="page mg-page"><main id="main" class="mg"><div id="mg-root"></div></main>' + footer() + '</div>'; }
   function mgScript(f) {
     return fetch(f, { headers: { 'X-LK-Fresh': '1' } }).catch(function () {}).then(function () {
@@ -871,7 +871,7 @@
     });
   }
   function loadManage() {
-    if (!mgLoad) mgLoad = mgScript('js/manage.js?v=3').catch(function (e) { mgLoad = null; throw e; });
+    if (!mgLoad) mgLoad = mgScript('js/manage.js?v=4').catch(function (e) { mgLoad = null; throw e; });
     return mgLoad;
   }
   function mgNote(title, text, link) {
@@ -901,7 +901,7 @@
   function redrawManage() { if (parseRoute().name === 'manage') mountManage(parseRoute()); }
   /* Supplier tools are lazy, like the recipe editor. A failed download leaves a Retry action and never affects
      recipes, prep or orders. Protected data is fetched only after the current chef's session has been checked. */
-  var SUP_API = 4, supLoad = null;
+  var SUP_API = 5, supLoad = null;
   function viewSuppliers() { return '<div class="page sup-page"><main id="main"><div id="supplier-root"></div></main>' + footer() + '</div>'; }
   function mountSuppliers(route) {
     var root = document.getElementById('supplier-root'), P = window.LK_PREP, B = P && P.supplier ? P.supplier() : null;
@@ -918,7 +918,7 @@
       return;
     }
     root.innerHTML = mgNote('Supplier order', 'Opening supplier tools...', ' ');
-    if (!supLoad) supLoad = mgScript('js/suppliers.js?v=4').catch(function (e) { supLoad = null; throw e; });
+    if (!supLoad) supLoad = mgScript('js/suppliers.js?v=5').catch(function (e) { supLoad = null; throw e; });
     supLoad.then(function () { if (parseRoute().name === 'suppliers') mountSuppliers(parseRoute()); }, function () {
       if (parseRoute().name === 'suppliers') root.innerHTML = mgNote('Could not open supplier tools', 'Check the connection and try again. The other kitchen pages still work.', '<div class="btn-row"><button type="button" class="btn dark" data-sup-retry>Try again</button><a class="btn" href="#/orders">Order list</a></div>');
     });
@@ -939,6 +939,7 @@
   }
   window.LK_APP = {
     mgApi: MG_API, KIND: KIND, isDish: isDish, esc: esc, art: art, rollFor: rollFor, load: mgScript,
+    returnTo: function (hash) { parentReturn(hash); },
     noteRoute: function (replaced) {
       if (replaced && navPages[navHere]) navPages[navHere].hash = location.hash || '#/';
       else navVisit();
@@ -1062,7 +1063,7 @@
   /* Return only through pages opened in this run of the book. The browser keeps an opaque entry key; destinations
      and scroll positions stay in memory. A direct link or a reload starts a new trail with a fixed local fallback.
      Sheets own their same-address history entries (lkOv), so this never stamps or consumes one of those. */
-  var navPages = {}, navHere = '', navSeq = 0, navRun = Math.random().toString(36).slice(2), navBack = '', navBackTimer = null;
+  var navPages = {}, navHere = '', navSeq = 0, navRun = Math.random().toString(36).slice(2), navBack = '', navBackTimer = null, navBackTarget = '', navBackPath = null;
   function navVisit() {
     var hash = location.hash || '#/', state = history.state || {}, known = navPages[state.lkPage];
     if (known && known.hash === hash) {
@@ -1121,13 +1122,42 @@
     if (local && local.back && local.back()) { backSync(); return; }
     var info = backInfo();
     if (info.disabled) return;
-    if (info.prev) {
-      navBack = navHere; backSync(); history.back();
-      clearTimeout(navBackTimer); navBackTimer = setTimeout(function () { navBack = ''; backSync(); }, 1200);
-    } else location.hash = info.to;
+    if (info.prev) historyReturn(); else replaceReturn(info.to);
+  }
+  function historyReturn(target, path) {
+    navBackTarget = target || ''; navBackPath = path || null;
+    navBack = navHere; backSync(); history.back();
+    clearTimeout(navBackTimer); navBackTimer = setTimeout(function () { navBack = ''; navBackTarget = ''; navBackPath = null; render(); }, 1200);
+  }
+  // Reuse the nearest parent entry, including before a duplicated editor. Only known keys on that path may be
+  // skipped. A parent not yet visited replaces the child entry, so the next Back cannot reopen that child.
+  function parentReturn(hash) {
+    if (navBack || typeof hash !== 'string' || hash.indexOf('#/') !== 0) return;
+    var key = navHere, path = {};
+    while (key && navPages[key] && !path[key]) {
+      path[key] = true;
+      var prev = navPages[key].prev;
+      if (prev && navPages[prev] && navPages[prev].hash === hash) { path[prev] = true; historyReturn(prev, path); return; }
+      key = prev;
+    }
+    replaceReturn(hash);
+  }
+  function replaceReturn(hash) {
+    var here = navPages[navHere];
+    if (here) { here.hash = hash; here.y = 0; }
+    try { history.replaceState(history.state || {}, '', hash); }
+    catch (e) { location.replace(hash); return; }
+    render();
   }
   window.addEventListener('popstate', function () {
     if (!navBack) return;
+    if (navBackTarget) {
+      var entry = history.state && history.state.lkPage, target = navBackTarget;
+      if (entry !== target && navBackPath && navBackPath[entry] && navPages[entry] && navPages[entry].hash === location.hash) {
+        setTimeout(function () { if (navBackTarget === target && history.state && history.state.lkPage === entry) history.back(); }, 0);
+      } else { navBack = ''; navBackTarget = ''; navBackPath = null; clearTimeout(navBackTimer); backSync(); }
+      return;
+    }
     // A link from a sheet can leave its duplicate same-address entry behind. It is the same page, so keep going
     // to the named destination. Only this explicit page Back does that; the phone's Back still closes one sheet.
     var key = navBack;
@@ -1159,6 +1189,7 @@
     requestAnimationFrame(function () { requestAnimationFrame(function () { app.classList.remove('cv-all'); }); });
   }
   function render() {
+    if (navBackTarget && (!history.state || history.state.lkPage !== navBackTarget)) return;
     var returning = navVisit();
     var route = parseRoute();
     var changed = location.hash !== lastHash;
