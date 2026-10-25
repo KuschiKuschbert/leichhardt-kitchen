@@ -27,9 +27,13 @@ const still = s => s.rotate === 'none' && s.scale === 'none' && s.translate === 
   ok(await p.$('.pnav a[href="#/prep"][aria-current="page"]'), 'desktop navigation: release opens Prep and marks it current');
   await p.click(hat); await L.settle(p, 250);
   await p.hover('.wm-set'); await L.settle(p, 250);
+  ok(await p.$eval(hat, e => getComputedStyle(e).backgroundColor === 'rgb(194, 69, 26)'), 'chef menu: the hat stays theme orange after the pointer moves into the dropdown');
   ok((await style(p, '.wm-set > svg')).translate === '2px', 'menu: a hovered row nudges its icon');
+  await p.evaluate(() => window.dispatchEvent(new Event('lk-mail')));
+  ok(await p.$eval(hat, e => e.getAttribute('aria-expanded') === 'true' && getComputedStyle(e).backgroundColor === 'rgb(194, 69, 26)'), 'chef menu: a mail badge refresh preserves the open orange button');
   await p.keyboard.press('Escape'); await L.settle(p, 250);
   const focus = await style(p, hat);
+  ok(focus.bg === before.bg, 'chef menu: closing the dropdown restores the normal hat colour');
   ok(!await p.$('.wm') && focus.focus && focus.outline !== 'none', 'keyboard: Escape closes the menu and restores a visible focus ring');
   await p.emulateMedia({ reducedMotion: 'reduce' });
   await p.hover(hat); await p.mouse.down(); await L.settle(p, 200);

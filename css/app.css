@@ -1469,6 +1469,7 @@ html.gz-open, html.gz-open body { overflow: hidden; }
 .wtop-btn.wtop-who { font: inherit; cursor: pointer; background: transparent; }
 .wtop-btn.wtop-who:not(.on) { border-style: dashed; }
 .wtop-btn.wtop-who[aria-current="page"] { background: var(--bar-text); color: var(--bar); }
+.wtop-btn.wtop-who[aria-expanded="true"] { background: var(--accent-ink); border-color: var(--accent-ink); border-style: solid; color: #fff; }
 .wm-wrap { position: fixed; inset: 0; z-index: 85; }
 .wm-bg { position: absolute; inset: 0; background: rgba(28, 29, 31, 0.45); }   /* dims the page like the other popups (22 Oct 2026) */
 .wm { position: absolute; width: min(18rem, calc(100vw - 16px)); background: var(--paper); color: var(--ink); border: 2px solid var(--ink); border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); padding: 6px; font-family: var(--body); }
