@@ -10,6 +10,10 @@ name: Publish rules
 
 on:
   workflow_dispatch:
+  # Temporary release trigger for this branch only; removed after the tested rules are published.
+  push:
+    branches: [feat/wastage-history]
+    paths: [.github/workflows/publish-rules.yml]
 
 permissions:
   contents: read
