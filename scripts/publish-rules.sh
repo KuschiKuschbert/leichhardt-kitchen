@@ -19,6 +19,10 @@ read -r -s -p "Kitchen PIN (digits only, not shown): " PIN; echo
 read -r -p "Head chef's Google email: " EMAIL
 [[ "$EMAIL" == *@*.* ]] || { echo "That is not an email address."; exit 1; }
 
+# Bootstrap the minimal login roster before stricter reads are published.
+[ -n "${FIREBASE_SA:-}" ] || { echo "Use the Publish rules workflow, or set FIREBASE_SA for the access preparation step. Nothing published."; exit 1; }
+KITCHEN_PIN="$PIN" node scripts/access-bootstrap.mjs
+
 T=$(mktemp -d)
 trap 'rm -rf "$T"' EXIT
 sed "s/KITCHEN_PIN/$PIN/g;s/OWNER_EMAIL/$EMAIL/g" firestore.rules > "$T/firestore.rules"

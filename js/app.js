@@ -293,7 +293,7 @@
   var NAV = [['recipes', 'Recipes', '#/recipes'], ['prep', 'Prep', '#/prep'], ['orders', 'Orders', '#/orders'], ['waste', 'Wastage', '#/waste'], ['transfers', 'Transfers', '#/transfers'], ['guides', 'Guides', '#/guides']];
   /* The head chef can hold Guides back from staff for now (People tab in the admin panel); js/prep.js knows who is on this phone */
   function featOn(k) { return !window.LK_PREP || !window.LK_PREP.featOn || window.LK_PREP.featOn(k); }
-  function navList() { return NAV.filter(function (t) { return t[0] !== 'guides' || featOn('guides'); }); }
+  function navList() { return NAV.filter(function (t) { if (window.LK_PREP && (!window.LK_PREP.privateAccess() || window.LK_PREP.functionOnly())) return t[0] === 'recipes'; return t[0] !== 'guides' || featOn('guides'); }); }
   function navActive() {
     var n = parseRoute().name;
     return n === 'landing' ? 'home' : (n === 'home' || n === 'recipe') ? 'recipes' : n === 'prep' ? 'prep' : n === 'orders' ? 'orders' : n === 'waste' ? 'waste' : n === 'transfers' ? 'transfers' : n === 'guides' ? 'guides' : '';
@@ -392,7 +392,7 @@
   }
   function manageItem() {
     var on = parseRoute().name === 'manage' ? ' aria-current="page"' : '';
-    return '<a class="wm-a wm-mg" href="#/manage" data-who="go"' + on + '>' + ICON.pen + '<span><b>Manage Recipes &amp; Drawings</b></span></a>';
+    return '<a class="wm-a wm-mg" href="#/manage" data-who="go"' + on + '>' + ICON.pen + '<span><b>Recipes &amp; drawings</b></span></a>';
   }
   /* The chef mark's menu, appended to document.body (a top bar redraw does not remove it). Clicks use data-who. */
   var wmenu = null;
@@ -405,14 +405,14 @@
   function whoMenuOpen(btn) {
     var n = window.LK_PREP && window.LK_PREP.whoName ? window.LK_PREP.whoName() : '';
     if (wmenu) return;
-    var m = n && window.LK_PREP.chefMenu ? window.LK_PREP.chefMenu() : {}, adm = adminItem();
+    var m = n && window.LK_PREP.chefMenu ? window.LK_PREP.chefMenu() : {}, adm = adminItem(), fnOnly = window.LK_PREP && window.LK_PREP.functionOnly();
     var r = btn.getBoundingClientRect(), el = document.createElement('div');
     el.className = 'wm-wrap';
     var set = '<a class="wm-a wm-set" href="#/settings" data-who="go"' + (parseRoute().name === 'settings' ? ' aria-current="page"' : '') + '>' + ICON.gear + '<span><b>Settings</b></span></a>';
     el.innerHTML = '<div class="wm-bg" data-who="close"></div><nav class="wm" aria-label="' + (n ? esc(n) : 'Menu') + '" style="top:' + Math.round(r.bottom + 8) + 'px;right:' + Math.max(8, Math.round(window.innerWidth - r.right)) + 'px">' +
       (n ? '<p class="wm-h">Signed in as <b>' + esc(n) + '</b></p>' +
-        (m.head ? '' : '<a class="wm-a" href="#/mail" data-who="go">' + ICON.mail + '<span><b>Kitchen mail</b></span></a>') +
-        '<a class="wm-a" href="#/drinks" data-who="go">' + ICON.cup + '<span><b>Drinks run</b></span></a>' +
+        (m.head || fnOnly ? '' : '<a class="wm-a" href="#/mail" data-who="go">' + ICON.mail + '<span><b>Kitchen mail</b></span></a>') +
+        (fnOnly ? '' : '<a class="wm-a" href="#/drinks" data-who="go">' + ICON.cup + '<span><b>Drinks run</b></span></a>') +
         // a second line only while minutes wait to be signed (23 Oct 2026)
         (m.minutes ? '<a class="wm-a" href="#/minutes" data-who="go">' + ICON.doc + '<span><b>Meeting minutes</b>' + (m.toSign ? '<small class="wm-due">' + m.toSign + ' to sign</small>' : '') + '</span></a>' : '') +
         (m.fn ? fnItem() : fnViewItem()) +
@@ -477,7 +477,7 @@
   }
   /* Functions (js/functions.js): the band of today's functions right under the top bar, on every page. This is the empty
      slot; js/functions.js fills it and keeps it right as times pass and bookings change, without redrawing the page. */
-  function fnBand() { return (window.LK_FN ? window.LK_FN.bandSlot() : '') + cutBand(); }
+  function fnBand() { if (!window.LK_PREP || !window.LK_PREP.privateAccess()) return ''; return (window.LK_FN ? window.LK_FN.bandSlot() : '') + cutBand(); }
   /* Order cut-offs (js/prep.js): a bar for the head chef and sous chefs when a supplier's order closes within 3 hours.
      The empty slot; js/prep.js fills it from the kitchen settings and keeps it right as time passes. */
   function cutBand() { return window.LK_PREP && window.LK_PREP.cutSlot ? window.LK_PREP.cutSlot() : ''; }
@@ -492,7 +492,7 @@
     var d = window.LK_TIME.day().split('-'), today = new Date(+d[0], d[1] - 1, +d[2], 12).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
     return '<div class="wall">' + topBar() + fnBand() +
       '<main id="main" class="wall-main"><h2 class="wall-h" id="rtitle" tabindex="-1">Pick a docket</h2><p class="wall-date">' + esc(today) + '</p>' + minCard() + (window.LK_FN && window.LK_FN.checkSlot ? window.LK_FN.checkSlot() : '') + (window.LK_FN ? window.LK_FN.landSlot() : '') + installCard() +
-      '<div class="dockets">' + DOCKETS.filter(function (d) { return d[3] !== 'guides' || featOn('guides'); }).map(function (d) {
+      (window.LK_PREP && window.LK_PREP.functionOnly() ? '<p><a class="btn dark" href="#/functions">Manage functions</a></p>' : window.LK_PREP && !window.LK_PREP.privateAccess() ? '<p><a class="btn" href="#/prep">Kitchen sign in</a></p>' : '') + '<div class="dockets">' + DOCKETS.filter(function (d) { if (window.LK_PREP && (!window.LK_PREP.privateAccess() || window.LK_PREP.functionOnly())) return d[3] === 'recipes'; return d[3] !== 'guides' || featOn('guides'); }).map(function (d) {
         // Transfers and Guides are the long ones under the other four (a docket with a line under its name)
         return '<a class="docket' + (d[4] ? ' dk-wide' : '') + '" href="' + d[2] + '"><span class="dk-pin" aria-hidden="true"></span><span class="dk-top"><span class="dk-name">' + d[1] + '</span><span class="dk-no">No. ' + d[0] + '</span></span>' +
           (d[4] ? '<span class="dk-sub">' + esc(d[4]) + '</span>' : '') +
@@ -1188,6 +1188,7 @@
     window.scrollTo(0, a.getBoundingClientRect().top + window.scrollY - homeAt.top);
     requestAnimationFrame(function () { requestAnimationFrame(function () { app.classList.remove('cv-all'); }); });
   }
+  window.addEventListener('lk-access', function () { whoMenuClose(); render(); });
   function render() {
     if (navBackTarget && (!history.state || history.state.lkPage !== navBackTarget)) return;
     var returning = navVisit();
@@ -1196,8 +1197,10 @@
     if (changed) { ui.pick = null; }
     var keep = document.activeElement && document.activeElement.getAttribute && document.activeElement.getAttribute('data-k');
     var view = settings.view || 'pass';
+    var locked = route.name !== 'landing' && route.name !== 'home' && route.name !== 'recipe' && route.name !== 'settings' && route.name !== 'admin' && window.LK_PREP && !window.LK_PREP.routeAccess(route.name);
     var html;
-    if (route.name === 'landing') html = viewLanding();
+    if (locked) html = viewPrep();
+    else if (route.name === 'landing') html = viewLanding();
     else if (route.name === 'settings') html = viewSettings();
     else if (PREP_PAGES[route.name]) html = viewPrep();
     else if (route.name === 'manage') html = viewManage();
@@ -1214,10 +1217,10 @@
     app.innerHTML = html;
     if (!changed) Array.prototype.forEach.call(app.querySelectorAll('.chips.scroll'), function (el, i) { if (rowsAt[i]) el.scrollLeft = rowsAt[i]; });
     fitPins();
-    if (route.name === 'manage') mountManage(route); else if (window.LK_MG) window.LK_MG.unmount();
-    if (route.name === 'suppliers') mountSuppliers(route); else if (window.LK_SUP) window.LK_SUP.unmount();
-    if (route.name === 'functions') mountFunctions(route); else if (window.LK_FE) window.LK_FE.unmount();
-    if (PREP_PAGES[route.name] && window.LK_PREP) window.LK_PREP.mount(route.name, document.getElementById('prep-root'), route.gid);
+    if (!locked && route.name === 'manage') mountManage(route); else if (window.LK_MG) window.LK_MG.unmount();
+    if (!locked && route.name === 'suppliers') mountSuppliers(route); else if (window.LK_SUP) window.LK_SUP.unmount();
+    if (!locked && route.name === 'functions') mountFunctions(route); else if (window.LK_FE) window.LK_FE.unmount();
+    if ((locked || PREP_PAGES[route.name]) && window.LK_PREP) window.LK_PREP.mount(route.name, document.getElementById('prep-root'), route.gid);
     // On any other page, connect to the prep book in the background so Prep, Orders and Wastage open straight away.
     else if (window.LK_PREP && window.LK_PREP.warm && !warmed) { warmed = true; setTimeout(function () { window.LK_PREP.warm(); }, 900); }
     backSync();
@@ -1516,7 +1519,7 @@
   window.addEventListener('lk-admin', feRedraw);
   window.addEventListener('lk-fn', function () {
     var r = parseRoute();
-    if (r.name === 'fn') {
+    if (r.name === 'fn' && window.LK_PREP && window.LK_PREP.privateAccess()) {
       // drawn again only when something shows differently, and the button in use keeps the focus
       var m = document.getElementById('main'), y = window.scrollY, h = window.LK_FN.page(r.fid), a = document.activeElement, k = a && a.getAttribute && a.getAttribute('data-fn');
       if (!m || m.lkFn === h) return;

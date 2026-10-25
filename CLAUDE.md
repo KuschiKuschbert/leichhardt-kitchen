@@ -1,5 +1,7 @@
 # Working on the Leichhardt Kitchen Book
 
+Current access contract: read `docs/private-kitchen-access.md` before changing login, permissions, recipes or function writes. It supersedes the guest-reading and head-chef-only recipe rules described historically below.
+
 The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the prep list, the order list, the wastage log, the transfer list (stock shared with the other venues), the team's how-to guides and the head chef's admin panel. Plain HTML, CSS and JavaScript on GitHub Pages, no build step. Live at https://kuschikuschbert.github.io/leichhardt-kitchen/.
 
 ## Never in this repo (it is public)

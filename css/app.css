@@ -1432,8 +1432,8 @@ html.gz-open, html.gz-open body { overflow: hidden; }
 .wtop-btn.wtop-who[aria-current="page"] { background: var(--bar-text); color: var(--bar); }
 .wm-wrap { position: fixed; inset: 0; z-index: 85; }
 .wm-bg { position: absolute; inset: 0; background: rgba(28, 29, 31, 0.45); }   /* dims the page like the other popups (22 Oct 2026) */
-.wm { position: absolute; width: min(18rem, calc(100vw - 16px)); background: var(--paper); color: var(--ink); border: 2px solid var(--ink); border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); padding: 6px; font-family: var(--body); }
-.wm-h { margin: 6px 10px 8px; font-size: 0.875rem; color: var(--muted); }
+.wm { position: absolute; width: min(18rem, calc(100vw - 16px)); background: var(--paper); color: var(--ink); border: 2px solid var(--ink); border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); padding: 2px 6px; font-family: var(--body); }
+.wm-h { margin: 0 10px; line-height: 1.2; font-size: 0.8125rem; color: var(--muted); }
 /* one line per item, 48 px like .btn (22 Oct 2026); the few with a second line (My section, Sign in with Google, Sign
    out's "Not saved yet") keep the same height */
 .wm-a { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 6px 10px; border-radius: 8px; color: var(--ink); text-decoration: none; }
@@ -1446,8 +1446,8 @@ html.gz-open, html.gz-open body { overflow: hidden; }
    scrolls inside the phone */
 .wm { max-height: calc(100dvh - 90px); overflow-y: auto; }
 button.wm-a { width: 100%; border: 0; background: none; font: inherit; text-align: left; cursor: pointer; }
-.wm-sh { margin: 10px 10px 4px; padding-top: 8px; border-top: 1.5px solid var(--line); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.75rem; }
-.wm-out { margin-top: 6px; border-top: 1.5px solid var(--line); border-radius: 0 0 8px 8px; }
+.wm-sh { margin: 2px 10px; padding-top: 2px; border-top: 1.5px solid var(--line); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.75rem; }
+.wm-out { margin-top: 0; border-top: 1.5px solid var(--line); border-radius: 0 0 8px 8px; }
 .wm-out.is-armed small { color: var(--accent-ink); font-weight: 700; }
 /* Admin panel in the chef hat's menu; the open mail count sits on the hat and on the menu item */
 .wm-a > svg { flex: 0 0 22px; width: 22px; height: 22px; }
@@ -2269,10 +2269,10 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
 .su-copy { min-height: 9rem; height: auto; font-size: 0.9375rem; padding: 0.75rem; }
 /* Keep the extra supplier tool within the phone's short menu while every action keeps its 48 px target. */
 @media (max-width: 719px) {
-  .wm { padding: 4px; }
-  .wm-h:not(.wm-sh) { margin: 4px 10px 4px; }
-  .wm-sh { margin: 6px 10px 2px; padding-top: 4px; }
-  .wm-out { margin-top: 2px; }
+  .wm { padding: 2px 4px; }
+  .wm-h:not(.wm-sh) { margin: 2px 10px; }
+  .wm-sh { margin: 2px 10px; padding-top: 2px; }
+  .wm-out { margin-top: 0; }
 }
 @media (max-width: 1099px) {
   .su-layout { grid-template-columns: 10rem minmax(0, 1fr); gap: 1.25rem; }

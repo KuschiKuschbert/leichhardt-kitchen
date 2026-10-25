@@ -27,7 +27,7 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   await go(p, '#/r/burger');
   ok(await p.$('#r-edit a[href="#/manage/r/burger"]') !== null, 'head chef: the card has Change this recipe');
   await p.context().close();
-  for (const who of ['sam', 'bo']) {
+  for (const who of ['bo']) {
     p = await L.open(b, '#/r/burger', { who, extra: cfg(), wait: 1400 });
     l = await L.chefItems(p);
     ok(!l.includes('manage'), who + ': no Manage Recipes & Drawings in the menu (' + l.join(', ') + ')');

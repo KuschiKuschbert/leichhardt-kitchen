@@ -108,7 +108,7 @@ function hasPrivateContact(value) {
   ok(!!pl('antipasto-platter') && pl('antipasto-platter').text === 'Antipasto Platter: Smith 50th, from 18:30' && pl('antipasto-platter').qty === '3 platters' && pl('antipasto-platter').station === 'Functions' && pl('antipasto-platter').recipe === 'antipasto-platter' && pl('antipasto-platter').fn === id && pl('antipasto-platter').dupOk === true && !('done' in pl('antipasto-platter')),
     'prep list: each platter is a prep line under Functions (' + JSON.stringify(pl('antipasto-platter')) + ')');
   ok(!!pl('pizza-platter') && pl('pizza-platter').text === 'Pizza Platter: Smith 50th, from 19:00' && pl('pizza-platter').qty === '5 platters', 'prep list: the line says when that platter first goes out');
-  await p.goto(L.BASE + '#/prep'); await L.settle(p, 1200);
+  await p.context().close(); p = await L.open(b, '#/prep', { who: 'ann', extra: s, wait: 1400 }); await L.settle(p, 1200);
   ok(!/Pizza Platter: Smith 50th/.test(await txt(p, '.nb-left') || ''), 'prep list: the platters are not mixed into All');
   ok(/Functions\s*3/.test(await txt(p, '.nb-tab-fn') || ''), 'prep list: a highlighted Functions tab with 3 to do');
   await tap(p, '.nb-tab-fn'); await L.settle(p, 300);
@@ -264,10 +264,7 @@ function hasPrivateContact(value) {
   ok(p.errors.length === 0, 'sent: no page errors ' + p.errors.join(' | '));
   await p.context().close();
   p = await L.open(b, '#/recipes', { who: '', extra: extra({ smith }), clock: at(today, '18:31'), wait: 1200 });
-  await L.waitFor(p, () => /Smith 50th/.test((document.getElementById('fn-band') || {}).textContent || ''));
-  await tap(p, '#fn-band .fn-row'); await L.settle(p, 200);
-  await tap(p, '.fn-sheet [data-fn="sent"][data-r="0"]'); await L.settle(p, 500);
-  ok(/#\/prep/.test(p.url()) && !(await store(p))[fsKey(['fnsent', 'smith_' + at(today, '18:30')])], 'sent: with nobody signed in, Sent asks who you are first and saves nothing');
+  ok(!/Smith 50th/.test(await p.locator('body').innerText()) && !(await p.$('.fn-sheet')), 'signed out: no function band, booking details or service controls');
   await p.context().close();
 
   // the service view (22 Oct 2026): two functions on at once, everything due in one list, late first, platters added up

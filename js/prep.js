@@ -59,8 +59,10 @@
 
   /* ---------- small helpers ---------- */
   var LS = (function () { try { localStorage.getItem('x'); return localStorage; } catch (e) { return null; } })();
+  function privateKey(k) { return /^lk\.(past$|ord\.(hist(\.at)?|learned)$|[wx]\.(sum|note)$|use$|learned$|guides$|drinks$|mail\.sent$)/.test(k); }
   function lsGet(k) { try { return LS ? LS.getItem(k) : null; } catch (e) { return null; } }
   function lsSet(k, v) { try { if (LS) { if (v == null || v === '') LS.removeItem(k); else LS.setItem(k, v); } } catch (e) {} }
+  function clearPrivateCache() { try { Object.keys(LS || {}).forEach(function (k) { if (privateKey(k) || k === 'lk.fn') LS.removeItem(k); }); } catch (e) {} }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function pad(n) { return (n < 10 ? '0' : '') + n; }
   /* Time is the server's, in kitchen time (LK_TIME in index.html). now() is for anything saved on a line or compared with
@@ -99,6 +101,7 @@
     adminsFor: '', level: '', stats: null, statsRange: 14, week: null, weekAt: 0, weekBusy: false,
     user: null, authState: 'idle', draft: null, saveMsg: '', busy: false, toast: '', toastAct: null
   };
+  var accessEpoch = 0;
   var fb = null, sdkP = null, unsubCfg = null, unsubItems = null, unsubSec = null, unsubAct = null;
   var itemsKey = '', cfgKey = '', toastTimer = null, resumed = false;
 
@@ -139,20 +142,26 @@
     if (sdkP) return sdkP;
     var ack = FB.appCheckEnterpriseKey || FB.appCheckKey;
     sdkP = sdkFiles().then(function (m) {
-      var app = m[0].initializeApp(FB), fs = m[1], au = m[2], db;
+      var app = m[0].initializeApp(FB), rawFs = m[1], fs = Object.assign({}, rawFs), au = m[2], db;
+      ['getDoc', 'getDocs', 'getDocFromServer', 'getDocsFromServer'].forEach(function (method) {
+        if (!rawFs[method]) return;
+        fs[method] = function () { var epoch = accessEpoch; return rawFs[method].apply(rawFs, arguments).then(function (value) { if (epoch !== accessEpoch) throw { code: 'cancelled' }; return value; }); };
+      });
       if (ack && m[3]) { try { m[3].initializeAppCheck(app, { provider: FB.appCheckEnterpriseKey ? new m[3].ReCaptchaEnterpriseProvider(FB.appCheckEnterpriseKey) : new m[3].ReCaptchaV3Provider(FB.appCheckKey), isTokenAutoRefreshEnabled: true }); } catch (e) {} }
-      try { db = fs.initializeFirestore(app, { localCache: fs.persistentLocalCache({ tabManager: fs.persistentMultipleTabManager() }) }); }
+      try { db = fs.initializeFirestore(app, { localCache: fs.memoryLocalCache() }); }
       catch (e) { db = fs.getFirestore(app); }
       var auth = au.getAuth(app);
+      // Google admin authentication lasts for this tab, never a remembered shared-browser login.
+      var persistence = au.setPersistence && au.browserSessionPersistence ? au.setPersistence(auth, au.browserSessionPersistence) : Promise.resolve();
       fb = { app: app, fs: fs, au: au, db: db, auth: auth };
       au.onAuthStateChanged(auth, function (u) {
         // PIN sessions (22 Oct 2026): every phone signs in anonymously; only a Google account is the head chef's (S.user)
         S.user = u && !u.isAnonymous ? u : null; S.uid = u ? u.uid : '';
         if (!u) anonIn(); else { S.authState = 'ready'; sessCatchUp(); }
-        if (!S.user) admMark(false); featSync(); loadAdmins(); draw();
+        if (!S.user) { S.level = ''; S.adminsFor = ''; admMark(false); } featSync(); loadAdmins(); draw();
         if (S.authState === 'ready' && S.configState === 'ok') resume();
       });
-      return fb;
+      return persistence.then(function () { return auth.currentUser ? fb : anonIn(); }).catch(function (e) { sdkP = null; throw e; });
     }, function (e) { sdkP = null; throw e; });
     return sdkP;
   }
@@ -165,21 +174,30 @@
 
   function connect() {
     if (!/^\d{4,6}$/.test(S.pin)) return;
-    if (cfgKey === S.pin && unsubCfg) return;
+    var scope = S.pin + '|' + (kitchenAccess() ? 'kitchen' : 'login');
+    if (cfgKey === scope && unsubCfg) return;
     S.configState = 'loading'; draw();
-    // still Loading after 25 s while online: most likely a broken offline copy (see healCache)
-    setTimeout(function () { if (S.configState === 'loading' && navigator.onLine !== false) healCache(); }, 25000);
+    // Slow login is not evidence of a broken cache. Real SDK assertion errors still use healCache().
+    var epoch = accessEpoch;
     sdk().then(function () {
+      if (epoch !== accessEpoch) return;
+      scope = S.pin + '|' + (kitchenAccess() ? 'kitchen' : 'login');
+      if (cfgKey === scope && unsubCfg) { S.configState = 'ok'; draw(); return; }
       if (unsubCfg) unsubCfg();
-      cfgKey = S.pin;
-      unsubCfg = fb.fs.onSnapshot(cfgDoc(), function (snap) {
+      cfgKey = scope;
+      var full = scope.slice(-7) === 'kitchen';
+      unsubCfg = fb.fs.onSnapshot(full ? cfgDoc() : docRef('login', 'roster'), function (snap) {
+        if (cfgKey !== scope) return;
+        S.configFull = full;
         S.config = snap.exists() ? snap.data() : { people: [] };
         S.config.people = S.config.people || [];
         headFix(S.config);
-        S.configState = 'ok'; pastCheck(); featSync(); refreshDraft(); watchItems(); watchSections(); loadLearned();
+        S.configState = 'ok'; resume();
+        if (full && kitchenAccess()) { pastCheck(); refreshDraft(); watchItems(); watchSections(); loadLearned(); }
+        featSync();
         // the first PIN windows, once the settings are in (does nothing once everyone has one)
-        if (S.level === 'owner') seedPinOpen();
-        if (S.name === 'orders') watchOrders(); if (S.name === 'waste') watchWaste(); if (S.name === 'transfers') watchXfer(); resume(); if (S.authed) ksCheck(); loadAdmins(); loadNotes(); loadMinutes(); draw();
+        if (full && S.level === 'owner') { seedPinOpen(); seedIds(); }
+        if (full && kitchenAccess()) { loadNotes(); loadMinutes(); loadGuides(); dkCheck(); loadMail(); if (S.name === 'orders') watchOrders(); if (S.name === 'waste') watchWaste(); if (S.name === 'transfers') watchXfer(); } if (S.authed) ksCheck(); loadAdmins(); loadNotes(); loadMinutes(); draw();
         if (whoHead() !== headSeen) whoSync();   // the Head chef role was given or taken while this person is signed in
         cutWatch();   // the shared supplier order ticks (chefs only, while cut-offs are set)
         try { window.dispatchEvent(new Event('lk-cfg')); } catch (e) {}   // js/app.js: who may manage the recipes (bookEdit)
@@ -208,6 +226,7 @@
     });
   }
   function watchItems() {
+    if (!kitchenAccess() || !S.configFull) return;
     if (S.configState !== 'ok' || !fb) return;
     var key = S.pin + '|' + S.date;
     if (key === itemsKey && unsubItems) return;
@@ -230,6 +249,7 @@
      full on every reload and every 04:00 refresh). A failed read keeps nothing and tries again after 5 minutes. */
   var LEARN_N = 500;
   function loadLearned() {
+    if (!kitchenAccess() || !S.configFull) return;
     var tag = S.pin + '|' + dayNow();
     if (!fb || S.learnBusy || waiting('learned') || S.learnFor === tag) return;
     try { var c = JSON.parse(lsGet('lk.learned') || 'null'); if (c && c.tag === tag && Array.isArray(c.list)) { S.learned = foldLearned(c.list); S.lists = listsOf(c.lists); S.learnFor = tag; return; } } catch (e) {}
@@ -291,6 +311,7 @@
     return out.sort(function (a, b) { return (b.uses || 0) - (a.uses || 0); });
   }
   function watchSections() {
+    if (!kitchenAccess() || !S.configFull) return;
     if (unsubSec || !fb) return;
     unsubSec = fb.fs.onSnapshot(colRef('sections'), function (snap) {
       S.sections = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; });
@@ -298,6 +319,7 @@
     }, function () {});
   }
   function watchActivity() {
+    if (!kitchenAccess() || !S.configFull) return;
     if (unsubAct || !fb || !S.user || S.configState !== 'ok') return;
     unsubAct = fb.fs.onSnapshot(colRef('activity'), function (snap) {
       S.activity = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; });
@@ -310,8 +332,23 @@
   function who() { return people().filter(function (p) { return p.id === S.who; })[0] || null; }
   function me() { return S.authed ? who() : null; }
   /* only the head chef (signed in with Google) and sous chefs may look at other days; everyone else stays on today */
+  function functionOnly() { return !!(me() && (S.config.fnOnlyIds || []).indexOf(S.who) >= 0); }
+  function privateAccess() { return !!S.pin && !!(S.authed && me() && (!S.config.staffIds || S.config.staffIds.indexOf(S.who) >= 0) && canW() && S.sessExp > now() || S.user && S.level === 'owner' && ownerHere()); }
+  function kitchenAccess() { return privateAccess() && !functionOnly(); }
+  function routeAccess(name) { return privateAccess() && (!functionOnly() || name === 'fn' || name === 'functions'); }
+  function accessChanged() {
+    stopLive(); connect(); notesInit();
+    if (window.LK_FN) window.LK_FN.watch();
+    window.dispatchEvent(new Event('lk-access'));
+  }
+  // A selected staff name never inherits a Google account left on this browser.
+  function dropGoogle() {
+    if (!S.user || !fb) return Promise.resolve();
+    S.level = ''; S.adminsFor = ''; admMark(false); S.user = null;
+    return fb.au.signOut(fb.auth).then(anonIn);
+  }
   function canBrowse() { return (S.level === 'owner' && ownerHere()) || isSous(); }
-  function can(what) { if (guest()) return what === 'add' || what === 'tick'; var p = me(); return !!(p && p[what]); }
+  function can(what) { if (S.user && S.level === 'owner' && ownerHere()) return true; if (guest()) return what === 'add' || what === 'tick'; var p = me(); return !!(p && p[what]); }
   /* ---------- new pages the head chef can hold back from staff ----------
      Guides, Shift pings and Meeting minutes always show for the head chef, sous chefs and leads. Staff and View only see each one unless the head chef unticks it under New pages in the People
      tab (config/main staffSee, missing means shown). It only hides the links and skips the reads: it is not a lock.
@@ -332,15 +369,15 @@
      whoever picked it up (20 Oct 2026). The head chef's tools (Admin link and panel, reports, editing guides, minutes and
      pings, kitchen mail) now show only while a chef (head chef or sous chef) is the person signed in on this device, or,
      on a personal device (not ticked "Shared kitchen device"), while nobody is. Staff signed in get their own view. */
-  function ownerHere() { var p = who(); return p ? chefP(p) : !shared(); }
+  function ownerHere() { return !!S.user && (!S.who || (S.authed && whoHead())); }
   function featCalc(k) {
     var p = who();
     return admDev() || (S.config.staffSee || {})[k] !== false || !!(p && (chefP(p) || p.role === 'lead' || (k === 'pings' && canPingP(p))));
   }
-  function featOn(k) { return S.configState === 'ok' && S.config ? featCalc(k) : admDev() || featHave[k] !== false; }
+  function featOn(k) { if (!kitchenAccess() || !S.configFull) return false; return S.configState === 'ok' && S.config ? featCalc(k) : admDev() || featHave[k] !== false; }
   /* run when the staff list, the person on this phone or the Google sign-in changes */
   function featSync() {
-    if (S.configState !== 'ok' || !S.config) return;
+    if (S.configState !== 'ok' || !S.config || !S.configFull) return;
     var got = {}, was = featHave;
     FEATS.forEach(function (f) { got[f[0]] = featCalc(f[0]); });
     if (JSON.stringify(got) === JSON.stringify(was)) return;
@@ -445,7 +482,8 @@
     if (e && e.code === 'permission-denied' && S.authed && S.who && S.name !== 'admin') {
       var p = who(), kept = typeof restore === 'function' ? ' Your text is still in the box.' : '';
       toast('Not saved. Checking your PIN...', null, 12000);
-      sset(docRef('activity', S.who), { name: p ? p.name : '', lastSeen: now() }, true).then(function () {
+      if (functionOnly()) return;
+    sset(docRef('activity', S.who), { name: p ? p.name : '', lastSeen: now() }, true).then(function () {
         toast('Not saved. Ask the head chef.' + kept, { label: 'OK', fn: function () {} }, 12000);
       }, function () {
         pickName(S.who);
@@ -501,6 +539,12 @@
     ops.forEach(function (o) {
       if (o[0] === 'del') { b.delete(o[1]); return; }
       var data = as ? Object.assign({ by: S.who }, o[2]) : o[2];
+      var path = o[1].path, parts = typeof path === 'string' ? path.split('/') : path;
+      var publicCol = parts && parts.length === 4 && ({ book: 'publicBook', recipes: 'publicRecipes', drawings: 'publicDrawings' })[parts[2]];
+      if (publicCol && (parts[2] !== 'book' || parts[3] === 'index' || parts[3] === 'matches')) {
+        var mirror = fb.fs.doc(fb.db, publicCol, parts[3]);
+        if (o[0] === 'upd') b.update(mirror, data); else b.set(mirror, data, o[3] ? { merge: true } : {});
+      }
       if (o[0] === 'upd') b.update(o[1], data); else if (o[3]) b.set(o[1], data, { merge: true }); else b.set(o[1], data);
     });
     return track(b.commit());
@@ -549,15 +593,17 @@
   var NO_SIGNIN = 'This phone could not sign in to the book. Check the connection, then type your PIN again.';
   function sessOn() { return !!S.who && S.sessFor === S.who && !!S.uid && S.sessUid === S.uid; }
   // this phone may write as the person signed in: their session
-  function canW() { return sessOn(); }
+  function canW() { return sessOn() && S.sessExp > now(); }
+  var anonTask = null;
   function anonIn() {
-    if (!fb || !fb.au.signInAnonymously || S.anonBusy) { if (!S.anonBusy) S.authState = 'ready'; return; }
+    if (anonTask) return anonTask;
+    if (!fb || !fb.au.signInAnonymously) return Promise.reject({ code: 'auth/unavailable' });
     S.anonBusy = true;
-    fb.au.signInAnonymously(fb.auth).then(function () { S.anonBusy = false; }, function () {
-      // no signal on a first start, or anonymous sign-in off in the console: the PIN screen says so, and typing the PIN
-      // tries the sign-in again
-      S.anonBusy = false; S.authState = 'ready'; if (S.configState === 'ok') resume();
+    anonTask = fb.au.signInAnonymously(fb.auth).then(function () { S.anonBusy = false; anonTask = null; return fb; }, function (e) {
+      S.anonBusy = false; anonTask = null; S.authState = 'ready'; if (S.configState === 'ok') resume(); throw e;
     });
+    anonTask.catch(function () {}); // event handlers also start sign-in; sdk() receives the same result.
+    return anonTask;
   }
   /* The phone's sign-in is in, or changed (the head chef signed in or out with Google), while someone is signed in with
      their PIN but has no session for this sign-in: one is opened from the PIN this page already checked. A session made
@@ -570,7 +616,7 @@
     if (h) sessOpenRetry(id, h).catch(function () {});   // the PIN went in under 20 seconds ago: once more after the 20 seconds
   }
   function sessRef() { return docRef('sessions', S.uid); }
-  function sessKeep(id, exp, at) { S.sessFor = id; S.sessExp = exp; S.sessUid = S.uid; S.sessPinAt = at; lsSet('lk.prep.sess', [id, exp, S.uid, at].join(':')); lsSet('lk.prep.tok', ''); setTimeout(cutPaint, 0); }   // the supplier ticks and the push address wait for a session
+  function sessKeep(id, exp, at) { S.sessFor = id; S.sessExp = exp; S.sessUid = S.uid; S.sessPinAt = at; lsSet('lk.prep.sess', [id, exp, S.uid, at].join(':')); lsSet('lk.prep.tok', ''); setTimeout(cutPaint, 0); if (S.authed) setTimeout(accessChanged, 0); }   // the supplier ticks and the push address wait for a session
   // also a session only kept on the phone (a shared device asking who it is at the start of a new day)
   function sessDrop() {
     if (fb && S.uid && (S.sessUid === S.uid || (lsGet('lk.prep.sess') || '').split(':')[2] === S.uid)) fb.fs.deleteDoc(sessRef()).catch(function () {});
@@ -615,7 +661,8 @@
     fb.fs.setDoc(sessRef(), { by: id, pinAt: at, exp: exp, at: fb.fs.serverTimestamp() }).then(function () { if (sessOn() && S.uid === uid) sessKeep(id, exp, at); }).catch(function () {});
   }
   function pickName(id) {
-    noteClose('shut'); ksClose(); sessDrop();   // a sheet for the person before stays off the PIN screen
+    if (S.user) { S.authed = false; S.who = ''; dropGoogle().then(function () { pickName(id); }).catch(function () { S.pinMsg = 'Could not sign out the previous account. Try again.'; draw(); }); return; }
+    clearPrivateCache(); noteClose('shut'); ksClose(); sessDrop();   // a sheet for the person before stays off the PIN screen
     S.who = id; lsSet('lk.prep.who', id); lsSet('lk.prep.tok', ''); S.authed = false; S.tok = ''; S.pf1 = S.pf2 = ''; S.pinMsg = ''; S.pinStep = 'checking'; featSync(); draw(); whoSync();
     fb.fs.getDoc(docRef('pinset', id)).then(function (s) {
       var d = s.exists() ? s.data() : null;
@@ -633,7 +680,7 @@
     // chef hat (back) is a real start
     S.guestIn = !!(pend && !pend.back);
     lsSet('lk.prep.guest', S.guestIn ? id + ':' + dayNow() : '');   // kept for a reload; out of date for another person or day
-    draw(); whoSync(true);   // a real sign-in: the chef mark flips in
+    accessChanged(); draw(); whoSync(true);   // a real sign-in: the chef mark flips in
     if (pend) guestReplay(pend);
     dkCheck(); ksCheck(); noteMaybePop();
   }
@@ -645,7 +692,7 @@
      log waste) asks "Who are you?" first, then does that same thing once the PIN is right, so nobody taps twice. What was
      typed in the add boxes stays. Reading needs only the kitchen PIN, as before; every write still needs a person's PIN. */
   var GUEST_WRITES = { oreg: 1, tick: 1, urgent: 1, del: 1, restore: 1, 'add-recipe': 1, quick: 1, fnneed: 1, 'toast-act': 1, ogroup: 1, otick: 1, odel: 1, orestore: 1, wdel: 1, wrestore: 1, wreview: 1, 'tr-del': 1, 'tr-restore': 1, 'tr-return': 1, 'tr-unreturn': 1 };
-  function guest() { return shared() && !S.authed && !S.picking && !S.who && (S.name === 'prep' || S.name === 'orders' || S.name === 'waste' || S.name === 'transfers'); }
+  function guest() { return false; }
   function guestAsk(pend) { S.pending = pend; S.picking = true; S.who = ''; draw(); window.scrollTo(0, 0); }
   function guestSel(el) {
     return ['data-p', 'data-id', 'data-d', 'data-i', 'data-v', 'data-k2'].filter(function (k) { return el.hasAttribute(k); })
@@ -755,6 +802,7 @@
     if (fb && S.authState !== 'ready') return;   // the phone's sign-in first (anonymous or Google): it calls resume() again
     resumed = true;
     if (!S.who) return;
+    if (S.user && S.who !== (S.config || {}).headId) { var previous = S.who; dropGoogle().then(function () { pickName(previous); accessChanged(); }); return; }
     var tok = (lsGet('lk.prep.tok') || '').split(':'), sv = (lsGet('lk.prep.sess') || '').split(':');
     var hasTok = tok[0] === S.who && !!tok[1], hasSess = sv[0] === S.who && +sv[1] > now() && !!S.uid && sv[2] === S.uid;
     if (dayExpired()) { leave(); startIdle(); return; }
@@ -766,10 +814,11 @@
     // a phone that signed in before sessions: its kept proof opens one session, once (then the proof is dropped). The
     // writes below wait for it; if the PIN was reset since, the first write is refused and the PIN is asked
     else sessOpenRetry(S.who, tok[1]).catch(function () {});
-    S.authed = true; S.tok = hasTok ? tok[1] : ''; hereAdd(S.who); draw(); whoSync(); dkCheck();
+    S.authed = true; S.tok = hasTok ? tok[1] : ''; setTimeout(accessChanged, 0); hereAdd(S.who); draw(); whoSync(); dkCheck();
     var gi = (lsGet('lk.prep.guest') || '').split(':'); S.guestIn = gi[0] === S.who && gi[1] === dayNow();   // signed in just to tick, before a reload
     ksCheck(); noteMaybePop(); setTimeout(dailyFlush, 3000);   // the section first, then the pings
     // the first write checks it on the server: a reset PIN, a session that ran out or someone off the list asks again
+    if (functionOnly()) return;
     sset(docRef('activity', S.who), { name: (who() || {}).name || '', visits: fb.fs.increment(1), lastSeen: now() }, true).then(sessRenew, function (e) {
       if (e && e.code === 'permission-denied') { S.authed = false; S.tok = ''; pickName(S.who); }
     });
@@ -790,21 +839,26 @@
   /* a new kitchen day on a shared device: the person who signed in yesterday is not the person holding it today */
   function dayExpired() { var d = lsGet('lk.prep.day'); return shared() && !!d && d !== dayNow(); }
   /* the staff list draft (Manage staff) is kept: the person types their PIN again and carries on where they were */
-  function idleLock() {
-    if (!S.authed || !S.who || !fb) return;
-    if (shared()) { S.picking = false; S.pending = null; leave(); } else pickName(S.who);
-  }
+  function idleLock() { if (privateAccess()) signOutPerson(true, true); }
   function startIdle() {
     if (idleOn) return; idleOn = true;
     var last = 0;
     function act() { var n = Date.now(); lastAct = n; if (n - last > 5000) { last = n; lsSet('lk.prep.seen', String(n)); } }
     ['pointerdown', 'keydown', 'mousemove', 'wheel', 'touchstart'].forEach(function (ev) { document.addEventListener(ev, act, { passive: true, capture: true }); });
-    setInterval(function () { if (S.authed && idleExpired()) idleLock(); }, 15000);
-    document.addEventListener('visibilitychange', function () { if (!document.hidden && S.authed && idleExpired()) idleLock(); });
+    setInterval(function () { if ((S.authed && S.sessExp && S.sessExp <= now()) || (S.authed || S.user) && idleExpired()) signOutPerson(true, true); }, 15000);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden && (S.authed || S.user) && idleExpired()) idleLock(); });
     lsSet('lk.prep.seen', String(Date.now()));
   }
   /* the next person never lands in the last person's staff draft, minutes register or ping editor */
-  function leave() { if (window.LK_SUP) window.LK_SUP.reset(); if (supplierService) supplierService.reset(); sessDrop(); ksClose(); noteClose('shut'); S.nJust = null; S.guestIn = false; lsSet('lk.prep.guest', ''); S.drinkAsk = ''; S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; tdReset(); lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); }
+  function leave() {
+    accessEpoch++;
+    stopLive(); clearPrivateCache();
+    S.text = S.qty = S.otext = S.oqty = ''; S.wf = { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }; S.xf = xBlank();
+    if (mlf) mlf.text = '';
+    S.config = null; S.configFull = false; S.configState = 'idle'; S.past = []; S.pastFor = ''; S.week = null; S.ordHist = []; S.ordHistFor = ''; S.wSum = S.xSum = S.wStats = S.xStats = S.wNote = null;
+    S.items = []; S.ordLines = []; S.ordAll = []; S.wLines = []; S.xLines = []; S.notes = null; S.mins = null; S.guides = null; S.activity = []; S.hist = {}; S.stats = null;
+    ['lk.fn', 'lk.mail.sent', 'lk.drinks', 'lk.guides', 'lk.notes', 'lk.minutes'].forEach(function (k) { lsSet(k, ''); });
+ if (window.LK_SUP) window.LK_SUP.reset(); if (supplierService) supplierService.reset(); sessDrop(); ksClose(); noteClose('shut'); S.nJust = null; S.guestIn = false; lsSet('lk.prep.guest', ''); S.drinkAsk = ''; S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; tdReset(); lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); accessChanged(); }
   /* The chef mark's menu (js/app.js) asks what to show: Meeting minutes for everyone (when the page is on), and for the
      head chef and sous chefs Shift pings and Manage staff (22 Oct 2026: the Minutes register is "See who has signed" at
      the top of Meeting minutes). head: no Kitchen mail, the head chef's mail is read in the admin panel. tab: the head
@@ -820,7 +874,7 @@
      check the same on every save (fnBy() in firestore.rules), so this only decides what the page shows; the
      config/main listener redraws the page the moment the tick is taken away. */
   function fnOK() {
-    if (!S.pin || S.configState !== 'ok' || !S.config) return false;
+    if (!privateAccess() || !S.pin || S.configState !== 'ok' || !S.config) return false;
     var p = me();
     if (p) return (S.config.fnIds || []).indexOf(p.id) >= 0;
     return admDev() && !!S.user;
@@ -865,10 +919,10 @@
     } catch (e) {}
   }
   function signOutPerson(force, quiet) {
-    if (!S.authed) return true;
+    if (!S.authed && !S.user) return true;
     if (!force && window.LK_PREP.unsaved()) return false;
-    if (shared()) forgetMine(S.who);
-    S.picking = shared(); S.pending = null; leave(); if (!quiet) toast('Signed out. Hand the phone over.');
+    forgetMine(S.who);
+    S.picking = true; S.pending = null; leave(); dropGoogle().then(accessChanged).catch(function () { toast('Sign-out could not finish. Close this tab before handing over the device.'); }); if (!quiet) toast('Signed out. Hand the phone over.');
     return true;
   }
   /* "Not you?" next to "Writing as" (and Change person on the admin card) hands the phone over the way Sign out does
@@ -878,7 +932,7 @@
   /* Manage Recipes & Drawings (#/manage, 21 Oct 2026): the head chef only. With their own PIN as Head chef on any device,
      or on the head chef's Google device while nobody else is signed in with a PIN. The rules check the same on the
      server (bookBy() in firestore.rules), so this only decides what the page shows. */
-  function bookEdit() { return !!S.pin && (whoHead() || (admDev() && !(S.authed && who()))); }
+  function bookEdit() { return !!S.pin && (isSous() && S.authed && canW() || S.level === 'owner' && ownerHere()); }
   // 'yes', 'no', or 'wait' while the kitchen settings (who is Head chef) are still being read
   function bookState() {
     if (bookEdit()) return 'yes';
@@ -906,7 +960,7 @@
     if (!who()) return !!(S.user && S.level === 'owner' && ownerHere());
     return !!(S.authed && isSous() && canW() && S.sessExp > now() && S.config && (S.config.staffIds || []).indexOf(S.who) >= 0);
   }
-  function supplierEdit() { return supplierRead() && bookEdit(); }
+  function supplierEdit() { return supplierRead() && (whoHead() || S.level === 'owner' && ownerHere()); }
   function supplierContext() {
     var c = S.config || {};
     return [S.pin, S.uid, S.who, S.authed ? 1 : 0, S.sessFor, S.sessExp, S.level, shared() ? 1 : 0, c.headId || '', (c.sousIds || []).join(','), (c.staffIds || []).join(',')].join('|');
@@ -1547,6 +1601,7 @@
   }
   // yesterday's (or older, up to 7 days) counts go out once, through W(), when someone is signed in
   function dailyFlush() {
+    if (!kitchenAccess() || !S.configFull) return;
     var out = null; try { out = JSON.parse(lsGet('lk.daily.out') || 'null'); } catch (e) {}
     if (!out || !S.authed || !fb || !/^\d{4}-\d{2}-\d{2}$/.test(out.day || '') || waiting('daily')) return;
     if (out.day < shift(dayNow(), -7)) { lsSet('lk.daily.out', ''); return; }
@@ -1695,7 +1750,7 @@
     var today = dayNow(), dates = [], k;
     for (k = 0; k < 400; k++) dates.push(shift(today, -k));
     f.getDoc(f.doc(fb.db, 'kitchens', old, 'config', 'main')).then(function (sn) { if (sn.exists()) { n++; return f.setDoc(f.doc(fb.db, 'kitchens', np, 'config', 'main'), sn.data()); } })
-      .then(function () { return copyCol('pinset'); }).then(function () { return copyCol('staffpins'); }).then(function () { return copyCol('activity'); }).then(function () { return copyCol('sections'); })
+      .then(function () { return copyCol('login'); }).then(function () { return copyCol('pinset'); }).then(function () { return copyCol('staffpins'); }).then(function () { return copyCol('activity'); }).then(function () { return copyCol('sections'); })
       .then(function () { return copyCol('learned'); }).then(function () { return copyCol('ordlearned'); }).then(function () { return copyCol('learnlog'); }).then(function () { return copyCol('summary'); }).then(function () { return copyCol('daily'); }).then(function () { return copyCol('misses'); }).then(function () { return copyCol('views'); })
       .then(function () { return copyCol('notes'); }).then(function () { return copyCol('minutes'); }).then(function () { return copySub('minutes', 'hist'); })
       .then(function () { return copySub('minutes', 'signs', true); }).then(function () { return copySub('notes', 'seen', true); })
@@ -1854,7 +1909,7 @@
     if (c.headId && p.id === c.headId) return true;
     return c.sousIds ? c.sousIds.indexOf(p.id) >= 0 : isSousP(p);
   }
-  function canPingP(p) { return isSousP(p); }
+  function canPingP(p) { return chefP(p); }
   /* Manage functions: the tick in the People tab, nothing else (not the role, not being head chef) */
   function fnP(p) { return !!p.fn; }
   function isHeadP(p) { return !!p && p.role === 'head'; }
@@ -1885,7 +1940,7 @@
   // a chef opening the admin panel or Manage staff writes the windows of anyone on the list without one (one small write)
   function seedPinOpen() {
     var c = S.config, ids = (c && c.staffIds) || [];
-    if (!c || !ids.length || !(S.user || isSous()) || ids.every(function (id) { return typeof (c.pinOpen || {})[id] === 'number'; })) return;
+    if (!S.configFull || !c || !ids.length || !(S.user || isSous()) || ids.every(function (id) { return typeof (c.pinOpen || {})[id] === 'number'; })) return;
     var po = pinOpenFor(ids);
     (S.user ? track(fb.fs.setDoc(cfgDoc(), { pinOpen: po }, { merge: true })) : sset(cfgDoc(), { pinOpen: po }, true)).catch(function () {});
   }
@@ -1899,11 +1954,16 @@
       cutoffs: (function (l) { return CUT_OK ? cutClean(l) : (Array.isArray(l) ? l : []); })(S.config && S.config.cutoffs),   // set only from the Order cut-offs page (cutSave); kept as stored if js/cutoffs.js did not load
       sousIds: hold ? (hold.sousIds || []) : idsFor(cfg.people, isSousP), pingIds: hold ? (hold.pingIds || []) : idsFor(cfg.people, canPingP),
       fnIds: hold ? (hold.fnIds || []) : idsFor(cfg.people, fnP),
+      fnOnlyIds: hold ? (hold.fnOnlyIds || (S.config && S.config.fnOnlyIds) || []) : idsFor(cfg.people, function (p) { return p.role === 'fnc'; }),
       staffIds: idsFor(cfg.people, anyP), headId: headIdOf(cfg.people), pinOpen: pinOpenFor(idsFor(cfg.people, anyP)),
       updated: now(), updatedBy: S.user ? 'Head chef' : (who() ? who().name : '')   // never the Google email: anyone with the kitchen PIN can read this record
     };
     /* a sous chef may only change the people list and who may set a PIN, so only those are sent (merged): the rules refuse any other field */
-    return sdk().then(function () { return S.user ? track(fb.fs.setDoc(cfgDoc(), clean)) : sset(cfgDoc(), { people: clean.people, staffIds: clean.staffIds, pinOpen: clean.pinOpen, updated: clean.updated, updatedBy: clean.updatedBy }, true); }).then(function () { return clean; });
+    return sdk().then(function () { if (S.user && S.level === 'owner') {
+      var b = fb.fs.writeBatch(fb.db); b.set(cfgDoc(), clean);
+      b.set(docRef('login', 'roster'), { people: clean.people, staffIds: clean.staffIds, sousIds: clean.sousIds, headId: clean.headId, fnIds: clean.fnIds, fnOnlyIds: clean.fnOnlyIds });
+      return track(b.commit());
+    } return Wall([['set', cfgDoc(), { people: clean.people, staffIds: clean.staffIds, pinOpen: clean.pinOpen, updated: clean.updated, updatedBy: clean.updatedBy }, true], ['set', docRef('login', 'roster'), { people: clean.people, staffIds: clean.staffIds, sousIds: S.config.sousIds || [], headId: S.config.headId || '', fnIds: S.config.fnIds || [], fnOnlyIds: S.config.fnOnlyIds || [] }]]); }).then(function () { return clean; });
   }
   function adminSave() {
     S.busy = true; S.saveMsg = 'Saving...'; draw();
@@ -1930,7 +1990,7 @@
       S.saveMsg = (c === 'auth/popup-closed-by-user') ? '' : 'Sign-in did not work (' + (c || 'unknown') + '). Try again.'; draw();
     });
   }
-  function signOut() { if (fb) fb.au.signOut(fb.auth); S.draft = null; S.level = ''; S.adminsFor = ''; S.stats = null; if (unsubAct) { unsubAct(); unsubAct = null; } S.activity = []; }
+  function signOut() { signOutPerson(true, true); }
 
   /* ---------- recognising recipes in hand-written lines ---------- */
   var STOP = { and: 1, the: 1, for: 1, with: 1, of: 1, a: 1, in: 1, to: 1, on: 1, fresh: 1, more: 1 };
@@ -1990,7 +2050,7 @@
     var em = S.user.email || '';
     if (S.adminsFor === em) return;
     S.adminsFor = em; S.level = '';
-    fb.fs.getDoc(adminsRef()).then(function (sn) { S.level = 'owner'; var mo = sn && sn.exists() ? +(sn.data().mailOpened || 0) : 0; if (mo > mlOpened) { mlOpened = mo; lsSet('lk.mail.opened', String(mo)); } admMark(true); featSync(); seedIds(); loadMail(); draw(); cutPaint(); }, function () { S.level = 'none'; admMark(false); featSync(); draw(); cutPaint(); });
+    fb.fs.getDoc(adminsRef()).then(function (sn) { S.level = 'owner'; startIdle(); setTimeout(accessChanged, 0); var mo = sn && sn.exists() ? +(sn.data().mailOpened || 0) : 0; if (mo > mlOpened) { mlOpened = mo; lsSet('lk.mail.opened', String(mo)); } admMark(true); featSync(); seedIds(); loadMail(); draw(); cutPaint(); }, function () { S.level = 'none'; admMark(false); featSync(); draw(); cutPaint(); });
   }
   /* The rules read three lists next to the people list: sousIds (who may edit the staff list), pingIds (who may write
      shift pings) and staffIds (who may set a PIN). Only the head chef can write sousIds and pingIds, so the owner keeps
@@ -2008,6 +2068,7 @@
         var sous = c.sousIds.indexOf(p.id) >= 0;
         if (isSousP(p) !== sous) out.push({ p: p, sous: isSousP(p), what: isSousP(p) ? 'is now marked Sous chef' : 'is no longer marked Sous chef' });
       }
+      if (Array.isArray(c.fnOnlyIds) && (p.role === 'fnc') !== (c.fnOnlyIds.indexOf(p.id) >= 0)) out.push({ p: p, fnOnly: p.role === 'fnc', what: p.role === 'fnc' ? 'is now marked functions only' : 'is no longer marked functions only' });
       // Manage functions is given only by the head chef's Google account: a tick changed anywhere else is asked about
       var fn = (c.fnIds || []).indexOf(p.id) >= 0;
       if (fnP(p) !== fn) out.push({ p: p, fn: fnP(p), what: fnP(p) ? 'is now ticked for Functions' : 'is no longer ticked for Functions' });
@@ -2015,12 +2076,13 @@
     return out;
   }
   function seedIds() {
+    if (!S.configFull) return;
     var c = S.config; if (!c || !c.people) return;
     seedPinOpen();
     if (sameIds(c, c.sousIds, isSousP) && sameIds(c, c.pingIds, canPingP) && sameIds(c, c.staffIds, anyP) && sameIds(c, c.fnIds, fnP)) return;
     var asking = idChanges(c).length > 0;
     if (asking && sameIds(c, c.staffIds, anyP)) return;
-    saveConfig({ people: c.people, showBadges: c.showBadges, staffSee: c.staffSee }, asking ? { sousIds: c.sousIds || [], pingIds: c.pingIds || [], fnIds: c.fnIds || [] } : null).catch(function () {});
+    saveConfig({ people: c.people, showBadges: c.showBadges, staffSee: c.staffSee }, asking ? { sousIds: c.sousIds || [], pingIds: c.pingIds || [], fnIds: c.fnIds || [], fnOnlyIds: c.fnOnlyIds || [] } : null).catch(function () {});
   }
   function idCardHTML() {
     var c = S.config, ch = idChanges(c);
@@ -2036,6 +2098,7 @@
     var people = JSON.parse(JSON.stringify(c.people));
     if (!keep) ch.forEach(function (x) {
       var p = people.filter(function (q) { return q.id === x.p.id; })[0]; if (!p) return;
+      if ('fnOnly' in x) { p.role = x.fnOnly ? 'staff' : 'fnc'; return; }
       if ('fn' in x) { p.fn = !x.fn; return; }
       p.role = x.sous ? 'staff' : 'sous'; var r = ROLES[p.role]; p.add = r.add; p.tick = r.tick; p.del = r.del; p.ping = r.ping;
     });
@@ -2083,6 +2146,7 @@
     if (S.ordHistFor && pastStamp('o') > (S.ordHistAt || 0)) { S.ordHistFor = ''; lsSet('lk.ord.hist', ''); draw(); }
   }
   function loadPast() {
+    if (!kitchenAccess() || !S.configFull) return;
     var today = dayNow(), tag = pastTag();
     if (!fb || S.pastBusy || S.pastFor === tag) return;
     try { var c = JSON.parse(lsGet('lk.past') || 'null'); if (c && c.tag === tag && c.days && (c.at || 0) >= pastStamp('p')) { S.past = c.days; S.pastFor = tag; S.pastAt = c.at || 0; pastDerive(); return; } } catch (e) {}
@@ -2206,6 +2270,7 @@
 
   /* ---------- insights for the owner: numbers and charts from the last 30 days of lines ---------- */
   function loadStats(force) {
+    if (!kitchenAccess() || !S.configFull) return;
     if (!fb || S.configState !== 'ok') return;
     if (S.stats && (S.stats.loading || !force)) return;
     S.stats = { loading: true, days: {} };
@@ -2814,6 +2879,7 @@
      the next kitchen day; the head chef's Google account only). */
   var USE_NAMES = { quick: 'Quick add chips', usual: 'Usual amount chips', ordfill: 'Usual order amount filled in', fnneed: 'For the functions (Handy)', checks: 'To check before the functions' };
   function loadUsage() {
+    if (!kitchenAccess() || !S.configFull) return;
     if (S.useFor === dayNow() || S.useBusy || !fb || S.level !== 'owner') return;
     try { var c = JSON.parse(lsGet('lk.use') || 'null'); if (c && c.day === dayNow() && c.data) { S.use = c.data; S.useFor = c.day; return; } } catch (e) {}
     S.useBusy = true;
@@ -3695,6 +3761,8 @@
   }
   function bodyHTML() {
     if (!S.pin) { sdkEarly(); return gateHTML(); }
+    if (S.configState === 'ok' && !privateAccess() && S.name !== 'admin') return who() ? ownPinHTML() : whoHTML();
+    if (privateAccess() && !routeAccess(S.name)) return '<section class="p-card"><h2>Functions account</h2><p>This account can access functions only.</p><a class="btn" href="#/functions">Open functions</a></section>';
     // a page held back from staff: say so once it is known who is on this phone (or this phone already knows)
     var fk = S.name === 'guides' || S.name === 'minutes' ? S.name : '';
     if (fk && !featOn(fk)) { if (S.configState === 'ok' || featHave[fk] === false) return notYetHTML(fk); if (S.configState !== 'error') return loadingHTML(); }
@@ -3707,9 +3775,9 @@
     if (S.name === 'todo' && todoOK()) return todoPageHTML();
     if (S.name === 'todo' && guest()) return todoNoHTML();
     if (guest()) return '<div class="is-guest">' + guestBarHTML() + (S.name === 'orders' ? ordersHTML() : S.name === 'waste' ? wasteHTML() : S.name === 'transfers' ? xferHTML() : listHTML()) + '</div>';
-    if (!who()) return whoHTML();
-    if (!S.authed && !resumed) return loadingHTML();   // still finding out whether this phone is signed in (resume)
-    if (!S.authed) return ownPinHTML();
+    if (!who() && !(S.user && S.level === 'owner')) return whoHTML();
+    if (!S.authed && !S.user && !resumed) return loadingHTML();   // still finding out whether this phone is signed in (resume)
+    if (!S.authed && !(S.user && S.level === 'owner')) return ownPinHTML();
     flushMisses(); flushViews();
     if (S.name === 'todo') return todoNoHTML();
     if (S.name === 'orders') return drinkNudgeHTML() + ordersHTML();
@@ -3787,6 +3855,7 @@
     return ingIdx;
   }
   function watchOrders() {
+    if (!kitchenAccess() || !S.configFull) return;
     if (S.configState !== 'ok' || !fb) return;
     var key = S.pin + '|' + S.ordDate;
     if (key === ordKey && unsubOrd) return;
@@ -3798,6 +3867,7 @@
     }, function () { S.ordState = 'error'; draw(); });
   }
   function loadOrdAll(force) {
+    if (!kitchenAccess() || !S.configFull) return;
     if (!fb || S.ordBusy || S.configState !== 'ok') return;
     if (!force && Date.now() - S.ordAllAt < 60000) return;
     S.ordBusy = true; S.ordAllAt = Date.now();
@@ -3860,6 +3930,7 @@
      phone (lk.ord.learned) and drives the suggestions while typing, the usual amounts and the "usually ordered" chips. */
   var ORD_LEARN_N = 300;
   function loadOrdLearned() {
+    if (!kitchenAccess() || !S.configFull) return;
     var tag = S.pin + '|' + dayNow();
     if (!fb || S.ordLearnBusy || S.ordLearnFor === tag) return;
     try { var c = JSON.parse(lsGet('lk.ord.learned') || 'null'); if (c && c.tag === tag && c.list) { S.ordLearned = foldLearned(c.list); S.ordLearnFor = tag; S.ordLearnOk = true; return; } } catch (e) {}
@@ -4014,6 +4085,7 @@
   }
   function dayShort(s) { return parseYmd(s).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }); }
   function loadOrdHist() {
+    if (!kitchenAccess() || !S.configFull) return;
     var today = dayNow();
     if (!fb || S.ordHistBusy || waiting('ordHist') || S.ordHistFor === today) return;
     var tag = S.pin + '|' + today, c = dayCache('lk.ord.hist', tag);
@@ -4126,6 +4198,7 @@
   function wRef(date, id) { return fb.fs.doc.apply(null, [fb.db].concat(base(), ['waste', date, 'lines', id])); }
   function wDay(date) { return fb.fs.doc.apply(null, [fb.db].concat(base(), ['waste', date])); }
   function watchWaste() {
+    if (!kitchenAccess() || !S.configFull) return;
     if (S.configState !== 'ok' || !fb) return;
     var key = S.pin + '|' + S.wDate;
     if (key === wKey && unsubW) return;
@@ -4168,6 +4241,7 @@
      kept in lk.w.sum until the kitchen day changes. A summary made for an earlier day (the night job has not run yet)
      is used but not kept, so the next page load reads again. A failed read keeps nothing and tries again after 5 minutes. */
   function loadWSum() {
+    if (!kitchenAccess() || !S.configFull) return;
     var today = dayNow(), tag = S.pin + '|' + today;
     if (!fb || S.wSumBusy || waiting('wSum') || (S.wSum && S.wSumFor === today)) return;
     var c = dayCache('lk.w.sum', tag);
@@ -4271,6 +4345,7 @@
   /* the saved review the typing started from: the wastage page's today, or the admin form's day */
   function rvBase() { return S.wrWhere === 'page' ? S.wReview || {} : rvOf(S.rvDate || dayNow()); }
   function loadPageReview() {
+    if (!kitchenAccess() || !S.configFull) return;
     var today = dayNow();
     if (!fb || S.wReviewFor === today) return;
     S.wReviewFor = today; S.wReview = null;
@@ -4367,6 +4442,7 @@
   }
   /* Last night's "change for the next shift" note, shown on the prep list (the latest of the last 3 days). */
   function loadWNote() {
+    if (!kitchenAccess() || !S.configFull) return;
     var today = dayNow();
     if (!fb || S.wNoteFor === today) return;
     S.wNoteFor = today;
@@ -4417,6 +4493,7 @@
     return W(ops);
   }
   function watchXOpen() {
+    if (!kitchenAccess() || !S.configFull) return;
     if (unsubXO || !fb) return;
     S.xOpenState = 'loading';
     var col = fb.fs.collection.apply(null, [fb.db].concat(base(), ['transferOpen']));
@@ -4442,6 +4519,7 @@
     }, function (e) { failed(e); }).then(function () { delete S.xReturning[key]; draw(); });
   }
   function watchXfer() {
+    if (!kitchenAccess() || !S.configFull) return;
     if (S.configState !== 'ok' || !fb) return;
     var key = S.pin + '|' + S.xDate;
     if (key === xKey && unsubX) return;
@@ -4460,6 +4538,7 @@
      lk.x.sum until the kitchen day changes. A summary made for an earlier day (the night job has not run yet) is used but
      not kept, so the next page load reads again. A failed read keeps nothing and tries again after 5 minutes. */
   function loadXSum() {
+    if (!kitchenAccess() || !S.configFull) return;
     var today = dayNow(), tag = S.pin + '|' + today;
     if (!fb || S.xSumBusy || waiting('xSum') || (S.xSum && S.xSumFor === today)) return;
     var c = dayCache('lk.x.sum', tag);
@@ -4796,6 +4875,7 @@
     sdk().then(function () { loadNotes(); loadMinutes(); loadGuides(); rxSync(); startNoteTick(); }, function () {});
   }
   function loadNotes(force) {
+    if (!kitchenAccess() || !S.configFull) return;
     var today = dayNow();
     if (!fb || !/^\d{4,6}$/.test(S.pin) || S.notesBusy || !featOn('pings')) return;
     if (!force && S.notes && S.notesFor === today && Date.now() - S.notesAt < NOTE_STALE) return;
@@ -5000,6 +5080,7 @@
      and only a Safety, Allergen alert or Off today ping pops up for them; the others wait on the bell. Nothing pops up over
      "Who are you?": the next person picks their name first and gets their own sheet. */
   function noteMaybePop() {
+    if (!kitchenAccess() || !S.configFull) return;
     // a person picked but not signed in yet (their PIN screen, a desktop idle lock) gets it after their PIN, as themselves
     if (npop || sheetBusy() || (S.who && !S.authed) || namesUp()) return;
     if (ksWant) { ksWant = false; ksOpen(); if (ksPop) return; }   // the section first, then the pings
@@ -5229,6 +5310,7 @@
   }
   /* finished pings: one query when asked for (30 at most) */
   function loadPastNotes(more) {
+    if (!kitchenAccess() || !S.configFull) return;
     if (!fb || S.nPast === 'loading') return;
     S.nPastN = more ? (S.nPastN || 30) + 30 : 30;
     var keep = Array.isArray(S.nPast) ? S.nPast : null;
@@ -5251,6 +5333,7 @@
   }
   /* who tapped Got it today for one note (one small query, only when asked) */
   function loadSeen(id) {
+    if (!kitchenAccess() || !S.configFull) return;
     if (!fb) return;
     S.nSeen = S.nSeen || {}; S.nSeen[id] = { state: 'loading', names: [] }; draw();
     fb.fs.getDocs(fb.fs.query(fb.fs.collection.apply(null, [fb.db].concat(base(), ['notes', id, 'seen'])), fb.fs.where('day', '==', dayNow()))).then(function (snap) {
@@ -5322,6 +5405,7 @@
   // "Read and sign" opens the minutes the card names, not just the newest published ones (the card sits outside the prep root)
   document.addEventListener('click', function (e) { var a = e.target.closest && e.target.closest('.mn-nudge-btn[data-mn]'); if (a) { S.mSel = a.getAttribute('data-mn'); S.mErr = ''; } }, true);
   function loadMinutes(force) {
+    if (!kitchenAccess() || !S.configFull) return;
     var today = dayNow(), all = S.level === 'owner';
     if (!fb || !/^\d{4,6}$/.test(S.pin) || S.minsBusy || !featOn('minutes')) return;
     if (!force && S.mins && S.minsFor === today && S.minsAll === all && Date.now() - S.minsAt < MN_STALE) return;
@@ -5342,6 +5426,7 @@
   }
   /* has this person signed the current version? one small read per open minutes, remembered for the day */
   function loadMine() {
+    if (!kitchenAccess() || !S.configFull) return;
     if (!fb || !S.who || !S.mins) return;
     var w = S.who, jobs = [];
     mnMineList().forEach(function (m) {
@@ -5353,6 +5438,7 @@
     if (jobs.length) Promise.all(jobs).then(function () { minCard(); draw(); noteMaybePop(); });
   }
   function loadSigns(id, force) {
+    if (!kitchenAccess() || !S.configFull) return;
     if (!fb || !id) return;
     var cur = S.msigns[id];
     if (cur && (cur.loading || !force)) return;
@@ -5726,6 +5812,7 @@
 
   /* ---------- wastage insights (admin) ---------- */
   function loadWStats(force) {
+    if (!kitchenAccess() || !S.configFull) return;
     if (!fb || S.configState !== 'ok') return;
     if (S.wStats && (S.wStats.loading || !force)) return;
     S.wStats = { loading: true, lines: [], reviews: [] };
@@ -5907,6 +5994,7 @@
      read is counted and said, never shown as nothing moved. Older days are in the backups. */
   function xDays(n) { var t = dayNow(), out = [], i; for (i = n - 1; i >= 0; i--) out.push(shift(t, -i)); return out; }
   function loadXStats(force) {
+    if (!kitchenAccess() || !S.configFull) return;
     if (!fb || S.configState !== 'ok' || !wAll()) return;
     if (S.xStats && (S.xStats.loading || !force)) return;
     S.xStats = { loading: true, lines: [], miss: 0 };
@@ -6044,6 +6132,7 @@
     }, function () { flushingV = false; });
   }
   function loadViews(force) {
+    if (!kitchenAccess() || !S.configFull) return;
     if (!fb || S.configState !== 'ok' || S.viewBusy || (S.views && !force)) return;
     S.viewBusy = true;
     fb.fs.getDocs(colRef('views')).then(function (sn) { var m = {}; sn.docs.forEach(function (d) { m[d.id] = d.data(); }); S.views = m; S.viewBusy = false; draw(); }, function () { S.views = {}; S.viewBusy = false; });
@@ -6068,6 +6157,7 @@
       (ids.length ? '<details class="a-details"><summary>Not opened yet (' + dishes.length + ' cards)</summary><p>' + dishes.map(function (r) { return esc(r.name); }).join(', ') + '</p></details>' : '');
   }
   function loadMisses(force) {
+    if (!kitchenAccess() || !S.configFull) return;
     if (!fb || S.configState !== 'ok' || S.missBusy || (S.misses && !force)) return;
     S.missBusy = true;
     fb.fs.getDocs(colRef('misses')).then(function (sn) { S.misses = sn.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }); S.missBusy = false; draw(); }, function () { S.misses = []; S.missBusy = false; });
@@ -6141,17 +6231,12 @@
 
   /* the list is kept on the phone, so the Guides page and the recipe cards have it straight away */
   (function () {
-    try { var c = JSON.parse(lsGet('lk.guides') || 'null'); if (c && c.pin === S.pin && Array.isArray(c.list)) { S.guides = c.list; S.guidesFor = c.d || ''; S.guidesAt = c.at || 0; } } catch (e) {}
+    try { var c = JSON.parse(lsGet('lk.guides') || 'null'); if (kitchenAccess() && c && c.pin === S.pin && Array.isArray(c.list)) { S.guides = c.list; S.guidesFor = c.d || ''; S.guidesAt = c.at || 0; } } catch (e) {}
   })();
-  function gKeep() {
-    var c = { pin: S.pin, d: S.guidesFor, at: S.guidesAt, list: S.guides || [] }, t = JSON.stringify(c);
-    // a very long list keeps only the start of each PDF's words and no small pictures, so the phone's storage never fills up
-    if (t.length > 1500000) t = JSON.stringify(Object.assign(c, { list: c.list.map(function (g) { return Object.assign({}, g, { thumb: '', text: String(g.text || '').slice(0, 600) }); }) }));
-    lsSet('lk.guides', t);
-  }
-  // the guides (and the recipe changes, below) kept on this phone belong to the kitchen PIN: a new or wrong PIN drops them
+  function gKeep() { if (kitchenAccess()) lsSet('lk.guides', JSON.stringify({ pin: S.pin, d: S.guidesFor, at: S.guidesAt, list: S.guides || [] })); }
   function gForget() { S.guides = null; S.guidesFor = ''; S.guidesAt = 0; S.gRetry = 0; lsSet('lk.guides', ''); rxForget(); }
   function loadGuides(force) {
+    if (!kitchenAccess() || !S.configFull) return;
     if (!fb || !/^\d{4,6}$/.test(S.pin) || S.gBusy || Date.now() < S.gRetry || !featOn('guides')) return;
     var today = dayNow(), pin = S.pin;
     if (!force && S.guides && S.guidesFor === today) return;
@@ -6176,21 +6261,21 @@
   function rxDue() { return !!window.LK_RX && Date.now() - window.LK_RX.syncedAt() > RX_STALE; }
   function rxSync(force) {
     var X = window.LK_RX;
-    if (!X || !fb || !/^\d{4,6}$/.test(S.pin) || rxBusy || Date.now() < rxRetry || !(force || rxDue())) return Promise.resolve(false);
-    var pin = S.pin, have = X.pin() === pin ? X.versions() : {}, haveArt = {};
+    if (!X || !fb || rxBusy || Date.now() < rxRetry || !(force || rxDue())) return Promise.resolve(false);
+    var pin = S.pin || 'public', have = X.pin() === pin ? X.versions() : {}, haveArt = {};
     rxBusy = true;
     // the drawings kept on this phone are read from IndexedDB first, so only the ones that changed are read
-    return X.artReady().then(function () { haveArt = X.pin() === pin ? X.artVersions() : {}; return fb.fs.getDoc(docRef('book', 'index')); }).then(function (sn) {
+    return X.artReady().then(function () { haveArt = X.pin() === pin ? X.artVersions() : {}; return fb.fs.getDoc(S.pin ? docRef('book', 'index') : fb.fs.doc(fb.db, 'publicBook', 'index')); }).then(function (sn) {
       var idx = sn.exists() ? sn.data() : {}, ir = idx.r && typeof idx.r === 'object' ? idx.r : {}, id2 = idx.d && typeof idx.d === 'object' ? idx.d : {};
       var need = Object.keys(ir).filter(function (id) { return have[id] !== ir[id]; });
       var needArt = Object.keys(id2).filter(function (id) { return haveArt[id] !== id2[id]; });
       return Promise.all(need.map(function (id) {
-        return fb.fs.getDoc(docRef('recipes', id)).then(function (d) { return [id, d.exists() ? d.data() : null]; });
+        return fb.fs.getDoc(S.pin ? docRef('recipes', id) : fb.fs.doc(fb.db, 'publicRecipes', id)).then(function (d) { return [id, d.exists() ? d.data() : null]; });
       }).concat(needArt.map(function (id) {
-        return fb.fs.getDoc(docRef('drawings', id)).then(function (d) { return ['@' + id, d.exists() ? d.data() : null]; });
+        return fb.fs.getDoc(S.pin ? docRef('drawings', id) : fb.fs.doc(fb.db, 'publicDrawings', id)).then(function (d) { return ['@' + id, d.exists() ? d.data() : null]; });
       }))).then(function (got) {
         rxBusy = false;
-        if (pin !== S.pin) return false;
+        if (pin !== (S.pin || 'public')) return false;
         var recs = got.filter(function (g) { return g[0].charAt(0) !== '@'; }), arts = got.filter(function (g) { return g[0].charAt(0) === '@'; }).map(function (g) { return [g[0].slice(1), g[1]]; });
         var changed = X.take(pin, idx, recs);
         X.takeArt(pin, id2, arts);
@@ -6267,8 +6352,8 @@
     return idx;
   }
   function gCards(g) { return (gIndex().of[g.id] || []).map(recipeById).filter(Boolean); }
-  function guidesFor(rid) { return !featOn('guides') ? [] : (gIndex().by[rid] || []).map(gById).filter(Boolean).map(function (g) { return { id: g.id, title: g.title, cat: gCatName(g.cat) }; }); }
-  function guideSearch(q) { return !featOn('guides') ? [] : gWords(q).join('').length < 3 ? [] : gMatch(gLive(), q).slice(0, 4).map(function (g) { return { id: g.id, title: g.title }; }); }
+  function guidesFor(rid) { return !kitchenAccess() || !featOn('guides') ? [] : (gIndex().by[rid] || []).map(gById).filter(Boolean).map(function (g) { return { id: g.id, title: g.title, cat: gCatName(g.cat) }; }); }
+  function guideSearch(q) { return !kitchenAccess() || !featOn('guides') ? [] : gWords(q).join('').length < 3 ? [] : gMatch(gLive(), q).slice(0, 4).map(function (g) { return { id: g.id, title: g.title }; }); }
 
   /* A guide's pages: from the phone's own copy when it has this version, otherwise one read per page. Shown through blob: links so
      a redraw of the page never copies the big pictures again. */
@@ -6742,6 +6827,7 @@
   function dkFlag(v) { if (S.who) lsSet('lk.drink.' + S.who, v); }
   /* someone who signed up before the drinks run: ask once, if they have no usual yet */
   function dkCheck() {
+    if (!kitchenAccess() || !S.configFull) return;
     var id = S.who;
     if (!fb || !id || !S.authed || S.drinkAsk || lsGet('lk.drink.' + id)) return;
     if (dkList && dkList[id]) { dkFlag('set'); return; }
@@ -7270,6 +7356,7 @@
   }
   /* after the PIN (and when the book opens on a new day): staff and leads are asked once a day, chefs are given their role */
   function ksCheck() {
+    if (!kitchenAccess() || !S.configFull) return;
     var p = me(); if (!fb || !p || !kitSecs().length || ksGet(p.id)) return;
     var day = dayNow(), id = p.id, ref = docRef('shifts', day + '_' + id);
     if (isSousP(p)) {
@@ -7358,6 +7445,7 @@
   }
   var shiftsFor = '', shiftsBusy = false;
   function loadShifts(force) {
+    if (!kitchenAccess() || !S.configFull) return;
     if (!fb || shiftsBusy || (!force && shiftsFor === dayNow())) return;
     shiftsBusy = true;
     var f = fb.fs;
@@ -7521,7 +7609,7 @@
     if (a === 'who') { pickName(id); return; }
     if (a === 'who-change') {
       // the PIN screens' Not me and the admin card's Sign in: nobody is signed in yet, so nothing to hand over
-      if (!S.authed) { S.picking = shared(); S.pending = null; leave(); return; }
+      if (!S.authed) { S.picking = true; S.pending = null; leave(); dropGoogle().then(accessChanged).catch(function () { toast('Sign-out could not finish. Close this tab before handing over the device.'); }); return; }
       // the admin card's Change person is a link to the prep list: it stays put until the second tap
       if (window.LK_PREP.unsaved() && !arm('who-change')) { e.preventDefault(); return; }
       signOutPerson(true, true); return;
@@ -7856,6 +7944,7 @@
   /* open mail: one query (one read per open message), on the head chef's device when the book opens and after 30 minutes
      away; on a sous chef's phone only while #/mail is open, again after 30 minutes */
   function loadMail(force) {
+    if (!kitchenAccess() || !S.configFull) return;
     if (!mlReader() || mlBusyR || (!force && mlOpen && Date.now() - mlAt < ML_STALE)) return;
     mlBusyR = true;
     fb.fs.getDocs(fb.fs.query(colRef('mail'), fb.fs.where('done', '==', false))).then(function (sn) {
@@ -7869,6 +7958,7 @@
   }
   /* the ticked mail of the last 30 days, read once when the Mail tab opens */
   function loadMailDone(force) {
+    if (!kitchenAccess() || !S.configFull) return;
     if (!mlReader() || (!force && mlDone && Date.now() - mlDoneAt < ML_STALE)) return;
     mlDoneAt = Date.now(); if (!mlDone) mlDone = [];
     fb.fs.getDocs(fb.fs.query(colRef('mail'), fb.fs.where('doneAt', '>=', now() - ML_DONE_DAYS * 86400000))).then(function (sn) {
@@ -8270,8 +8360,10 @@
   function localBackBusy() {
     return !!(S.root && document.body.contains(S.root) && (S.busy || S.nSaving || S.mSaving || S.gf && (S.gf.busy || S.gf.saving)));
   }
+  window.addEventListener('storage', function (e) { if ((e.key === 'lk.prep.who' || e.key === 'lk.prep.sess') && !e.newValue && S.authed) signOutPerson(true, true); });
   window.LK_PREP = {
     sg: sg,
+    privateAccess: privateAccess, kitchenAccess: kitchenAccess, routeAccess: routeAccess, functionOnly: functionOnly,
     back: function () { if (localBackBusy()) return true; var a = localBackAction(); return !!a && localReturn(a.action); },
     backLabel: function () { var a = localBackAction(); return a ? a.label : ''; },
     backDisabled: localBackBusy,
@@ -8285,7 +8377,7 @@
       if (name === 'todo') todoLoad(TD_FRESH);
       if (S.pin) { connect(); if (name === 'admin') sdk(); if (name === 'orders') { S.ordDate = dayNow(); watchOrders(); } if (name === 'waste') { S.wDate = dayNow(); watchWaste(); } if (name === 'transfers') { S.xDate = dayNow(); watchXfer(); } notesInit(); }
     },
-    warm: function () { if (S.pin && S.configState !== 'ok' && S.configState !== 'loading') connect(); notesInit(); },
+    warm: function () { sdk().then(function () { rxSync(); }).catch(function () {}); if (S.pin && S.configState !== 'ok' && S.configState !== 'loading') connect(); notesInit(); },
     unsaved: function () {
       return pending > 0 || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!(window.LK_SUP && window.LK_SUP.dirty()) || !!mlf.text.trim() || tdDirty() || mfDirty() || nfDirty() || gfDirty() || draftDirty() || cutDirty() || !!String(S.bulk || '').trim() || !!S.sheet || !!S.recipeOpen ||
         !!(S.text.trim() || S.qty.trim() || S.otext.trim() || S.oqty.trim() || S.wf.text.trim() || String(S.wf.amt).trim() || S.wf.act.trim() || S.xf.text.trim() || String(S.xf.amt).trim() || S.xf.note.trim() || (S.wrA != null && S.wrA !== (rvBase().avoidable || '')) || (S.wrC != null && S.wrC !== (rvBase().change || '')));
@@ -8293,7 +8385,7 @@
     noteInfo: noteInfo, noteBellLabel: noteBellLabel,
     noteOpen: noteOpen,
     // the recipes were opened: look for the head chef's recipe changes when the last look is 30 minutes old
-    rxCheck: function () { rxSync(); },
+    rxCheck: function () { sdk().then(function () { rxSync(); }).catch(function () {}); },
     rxSync: rxSync,
     guidesFor: function (rid) { try { return guidesFor(rid); } catch (e) { return []; } },
     guideSearch: function (q) { try { return guideSearch(q); } catch (e) { return []; } },

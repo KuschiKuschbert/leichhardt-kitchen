@@ -27,7 +27,7 @@ const { R, ok } = L.results(), { txt } = L;
   ok(p.errors.length === 0, 'staff settings: no page errors ' + p.errors.join(' | '));
   await p.context().close();
   // the head chef's phone (a chef signed in, see shared-tablet-chef.test.js): nothing stored yet, the owner probe passes on the prep list and the key appears without a reload
-  p = await L.open(b, '#/prep', { admin: true, who: 'sam', wait: 1800 });
+  p = await L.open(b, '#/prep', { admin: true, who: '', wait: 1800 });
   ok(await p.evaluate(() => localStorage.getItem('lk.admin')) === '1', 'head chef: lk.admin set by the owner probe');
   ok(await p.$('.wtop .adm') === null, 'head chef #/prep: no Admin key in the top bar any more');
   ok(await L.admItem(p) === 'signed', 'head chef #/prep: Admin panel in the chef hat menu, after the probe');
@@ -40,7 +40,7 @@ const { R, ok } = L.results(), { txt } = L;
   ok(p.errors.length === 0, 'head chef: no page errors ' + p.errors.join(' | '));
   await p.context().close();
   // the head chef's Settings page: Clear all ticks and the device type, still no Admin panel block
-  p = await L.open(b, '#/settings', { admin: true, who: 'sam', wait: 1800 });
+  p = await L.open(b, '#/settings', { admin: true, who: '', wait: 1800 });
   // Config can be ready before the asynchronous owner probe has shown these controls.
   await L.waitFor(p, () => !!document.querySelector('[data-act="clearticks"]') && !!document.querySelector('[data-act="setshared"][data-val="1"]'), null, 10000);
   ok(await p.$('[aria-label="Admin panel"]') === null, 'head chef settings: no Admin panel block');

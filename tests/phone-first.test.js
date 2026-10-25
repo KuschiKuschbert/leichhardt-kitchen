@@ -46,6 +46,7 @@ const cfg = () => ({ [fsKey(['config', 'main'])]: { people: [P('sam', 'Sam', 'so
   await p.context().close();
 
   p = await L.open(b, '#/', { wait: 1200 });
+  await L.waitFor(p, () => document.querySelectorAll('.dockets .docket').length === 6);
   const bottoms = await p.evaluate(() => [...document.querySelectorAll('.docket')].map(e => Math.round(e.getBoundingClientRect().bottom)));
   ok(bottoms.length === 6 && bottoms.every(x => x <= 844 - 68), 'landing: all six dockets fit above the tab bar (' + bottoms + ')');
   await p.click('.docket[href="#/settings"]', { timeout: 2000 }).catch(() => {});

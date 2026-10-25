@@ -1,3 +1,5 @@
+> **Access policy, 25 October 2026:** recipes and plating drawings are public. Kitchen operations require the kitchen PIN plus a personal login. Functions-only accounts are restricted to functions. Head chef, sous chef and admin can manage recipes. Staff handover signs out any previous Google admin account. See [private kitchen access](docs/private-kitchen-access.md) for storage, rollout and recovery details. This supersedes earlier guest-reading instructions below.
+
 # Leichhardt Kitchen Book
 
 The Leichhardt Hotel kitchen's app: the recipe book, the prep list, the order list, the wastage log, the transfer list (stock shared with the other venues) and the team's how-to guides, plus the head chef's admin panel. It works on any phone, tablet or computer with a web browser and can be installed as an app. Working rules for changing it are in `CLAUDE.md`.
