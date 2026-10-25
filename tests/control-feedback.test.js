@@ -28,6 +28,7 @@ const still = s => s.rotate === 'none' && s.scale === 'none' && s.translate === 
   await p.click(hat); await L.settle(p, 250);
   await p.hover('.wm-set'); await L.settle(p, 250);
   ok(await p.$eval(hat, e => getComputedStyle(e).backgroundColor === 'rgb(194, 69, 26)'), 'chef menu: the hat stays theme orange after the pointer moves into the dropdown');
+  ok((await style(p, icon)).rotate === '-8deg', 'chef menu: the hat stays tilted after the pointer moves into the dropdown');
   ok((await style(p, '.wm-set > svg')).translate === '2px', 'menu: a hovered row nudges its icon');
   ok((await style(p, '.wm-set > svg')).rotate === '-8deg', 'menu: a hovered icon tilts left');
   await p.mouse.down(); await L.settle(p, 180);
