@@ -146,4 +146,29 @@ wd = would(push(at(22, 4)));
 ok(wd.length === 2 && wd.every(x => x.data.title === 'Bread: order by tomorrow 06:00'), 'pushes: 22:04, an early cut-off is pushed the night before');
 const ps = ((await K.collection('pushsent').doc('2026-10-23').get()).data() || {}).sent || {};
 ok(ps['pfd|2026-10-23'] === 'now' && ps['veg|2026-10-23'] === 'now' && !ps['chk|2026-10-23'], 'pushes: what was sent is kept per cut-off day');
+// Longer delivery lead times (25 Oct 2026): all four deliveries below close on Friday. Sunday less nine days
+// crosses a week boundary; one and two weeks keep Friday. The reminders still use the cut-off day's own key.
+await K.collection('config').doc('main').set({ cutoffs: [
+  { id: 'week-test', name: 'Weekly Test', dd: [5], at: 840, pre: 7, lead: 240 },
+  { id: 'eight-test', name: 'Eight Day Test', dd: [6], at: 840, pre: 8, lead: 240 },
+  { id: 'nine-test', name: 'Nine Day Test', dd: [0], at: 840, pre: 9, lead: 240 },
+  { id: 'fortnight-test', name: 'Fortnight Test', dd: [5], at: 840, pre: 14, lead: 240 },
+  { id: 'done-test', name: 'Done Test', dd: [5], at: 840, pre: 14, lead: 240 }
+] }, { merge: true });
+await K.collection('cutdone').doc('2026-10-23_done-test').set({ day: '2026-10-23', sid: 'done-test', on: true, at: 1, by: 'sam' });
+wd = would(push(at(10, 5)));
+const longBodies = {
+  'week-test': 'For Friday in 1 week. 3 h 55 min to go.',
+  'eight-test': 'For Saturday in 8 days. 3 h 55 min to go.',
+  'nine-test': 'For Sunday in 9 days. 3 h 55 min to go.',
+  'fortnight-test': 'For Friday in 2 weeks. 3 h 55 min to go.'
+};
+ok(wd.length === 8 && Object.keys(longBodies).every(sid => wd.filter(x => x.data.sid === sid && x.data.body === longBodies[sid]).length === 2), 'pushes: 7, 8, 9 and 14 days retain the correct weekday and delivery lead time');
+ok(wd.every(x => ['owner', 'sam'].includes(x.by) && x.data.day === '2026-10-23' && x.data.sid !== 'done-test'), 'pushes: long lead times still target only chefs, use the cut-off date and skip completed orders');
+ok(/Nothing new to send/.test(push(at(10, 15))), 'pushes: long lead reminders are not sent twice');
+await K.collection('cutdone').doc('2026-10-23_fortnight-test').set({ day: '2026-10-23', sid: 'fortnight-test', on: true, at: 2, by: 'sam' });
+wd = would(push(at(13, 5)));
+ok(wd.length === 6 && ['week-test', 'eight-test', 'nine-test'].every(sid => wd.filter(x => x.data.sid === sid && /^Order now: /.test(x.data.title) && /55 min to go\.$/.test(x.data.body)).length === 2), 'pushes: the final-hour stage still runs, and a completed two-week order gets no further push');
+const longSent = ((await K.collection('pushsent').doc('2026-10-23').get()).data() || {}).sent || {};
+ok(longSent['week-test|2026-10-23'] === 'now' && longSent['eight-test|2026-10-23'] === 'now' && longSent['nine-test|2026-10-23'] === 'now' && longSent['fortnight-test|2026-10-23'] === 'start' && !longSent['done-test|2026-10-23'], 'pushes: long lead stages are kept per cut-off, with completed orders left untouched');
 process.exit(fails ? 1 : 0);

@@ -41,6 +41,8 @@ const { R, ok } = L.results(), { txt } = L;
   await p.context().close();
   // the head chef's Settings page: Clear all ticks and the device type, still no Admin panel block
   p = await L.open(b, '#/settings', { admin: true, who: 'sam', wait: 1800 });
+  // Config can be ready before the asynchronous owner probe has shown these controls.
+  await L.waitFor(p, () => !!document.querySelector('[data-act="clearticks"]') && !!document.querySelector('[data-act="setshared"][data-val="1"]'), null, 10000);
   ok(await p.$('[aria-label="Admin panel"]') === null, 'head chef settings: no Admin panel block');
   ok(await p.$('[data-act="clearticks"]') !== null, 'head chef settings: Clear all ticks');
   ok(await p.$('[data-act="setshared"][data-val="1"]') !== null, 'head chef settings: device type');

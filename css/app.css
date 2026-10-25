@@ -1831,6 +1831,7 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd 
 .cut-dd .chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
 .cut-two { display: flex; flex-wrap: wrap; gap: 0 0.75rem; }
 .cut-two .field { flex: 1 1 9rem; min-width: 0; }
+.cut-two .field:nth-child(2) { flex-basis: 11rem; }
 .cut-say { margin: 0.2rem 0 0.4rem; }
 .cut-push { margin-top: 0.6rem; }
 .cut-push-l { margin: 0 0 0.4rem; }
