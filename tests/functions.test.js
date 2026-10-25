@@ -421,10 +421,8 @@ function hasPrivateContact(value) {
   ok(copies.length === 1 && copies[0].status === 'draft' && copies[0].date === day2 && copies[0].rounds[0].at === at(day2, '18:30') && copies[0].kq === 0, 'duplicate: saved as a draft on the new date, times kept, never in the kitchen\'s list');
   await p.context().close();
   p = await L.open(b, '#/functions/smith', { who: 'fay', extra: extra({ smith }), wait: 1500 });
-  await L.waitFor(p, () => !!document.querySelector('[data-fe="cancel"]'), null, 15000);
-  await tap(p, '[data-fe="cancel"]'); await L.settle(p, 100);
-  ok(/Tap again to cancel/.test(await txt(p, '[data-fe="cancel"]') || ''), 'cancel: asks for a second tap');
-  await tap(p, '[data-fe="cancel"]');
+  await L.waitFor(p, () => !!document.querySelector('[data-fe="status"][data-v="cancel"]'), null, 15000);
+  await tap(p, '[data-fe="status"][data-v="cancel"]');
   await L.waitFor(p, () => /Cancelled/.test((document.querySelector('.fe-head') || {}).textContent || ''));
   s = await store(p);
   f2 = s[fsKey(['functions', 'smith'])];

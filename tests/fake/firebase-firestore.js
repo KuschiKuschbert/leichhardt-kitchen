@@ -244,7 +244,24 @@ function commitOps(ops) {
     const c = store[key(fnOps[0].ref.path).split('/').slice(0, 2).join('/') + '/config/main'] || {};
     const pid = actor;
     const asFn = !!pid && (c.fnIds || []).indexOf(pid) >= 0 && fnOps.every(o => (o.data && o.data.by) === pid);
-    if (!asFn && !window.__fakeUser) return Promise.reject({ code: 'permission-denied' });
+    if (!asFn && !window.__fakeUser) {
+      const asChef = !!pid && ((c.sousIds || []).includes(pid) || c.headId === pid);
+      const main = fnOps.filter(o => /\/functions\/[^/]+$/.test(key(o.ref.path)));
+      const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+      const only = (a, b, names) => [...new Set(Object.keys(a).concat(Object.keys(b)))].every(k => same(a[k], b[k]) || names.includes(k));
+      let statusOnly = false;
+      if (asChef && main.length === 1 && fnOps.length === 2) {
+        const op = main[0], k = key(op.ref.path), before = store[k], d = op.data;
+        const hist = before && fnOps.find(o => key(o.ref.path) === k + '/hist/' + before.v);
+        const old = before && store[k + '/hist/' + (before.v - 1)], stamp = window.LK_TIME.now();
+        const cancel = before && before.status === 'confirmed' && d.status === 'cancelled' && d.canBy === pid && d.canAt === d.upd && d.od === '' &&
+          d.canAt >= stamp - 60000 && d.canAt <= stamp + 15000 && only(before, d, ['status', 'v', 'upd', 'by', 'canBy', 'canAt', 'od', 'chg']);
+        const undo = before && before.status === 'cancelled' && d.status === 'confirmed' && before.canBy === pid && before.upd === before.canAt && stamp - before.canAt < 120000 &&
+          old && old.was.status === 'confirmed' && d.kq === old.was.kq && d.od === (old.was.od || '') && only(before, d, ['status', 'v', 'upd', 'by', 'od', 'kq', 'chg']);
+        statusOnly = !!(hist && same(hist.data.was, before) && hist.data.at === d.upd && fnOps.every(o => o.data.by === pid) && (cancel || undo));
+      }
+      if (!statusOnly) return Promise.reject({ code: 'permission-denied' });
+    }
     const bad = fnOps.some(o => {
       const k = key(o.ref.path);
       if (/\/hist\//.test(k)) return store[k] !== undefined;

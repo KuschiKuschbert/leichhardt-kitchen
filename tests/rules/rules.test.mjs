@@ -422,6 +422,71 @@ await ok(W([['functions/f2', fnc()]], { id: 'hd' }), false, 'functions: the head
 await ok(W([['functions/f2', fnc()]], { id: 'ann', as: 'fay' }), false, 'functions: staff writing as a coordinator is refused');
 await ok(W([['fncontact/f1', { cname: 'X', phone: '1', email: '', upd: 5 }]], { id: 'ann' }), false, 'functions: staff cannot change a contact');
 await ok(ownerBatch([['functions/f3', fnc()]]), true, 'functions: the Google account saves a function');
+// 25 Oct: chefs cancel without full function editing or contacts. History and side effects remain one batch.
+{
+  const cfgBefore = (await getDoc(doc(owner, K + 'config/main'))).data();
+  const source = fnc({ status: 'confirmed', confBy: 'fay', confAt: 2, od: TODAY, by: 'fay' });
+  const seedStatus = async (id, f = source) => env.withSecurityRulesDisabled(ctx => setDoc(doc(ctx.firestore(), K + 'functions/' + id), f));
+  const cancel = (f, by, x = {}) => Object.assign({}, f, { status: 'cancelled', v: f.v + 1, by, canBy: by, canAt: Date.now(), upd: Date.now(), od: '', chg: [] }, x);
+  const undo = (f, old, by, x = {}) => Object.assign({}, f, { status: 'confirmed', v: f.v + 1, by, upd: Date.now(), od: old.od || '', kq: old.kq, chg: [] }, x);
+  const statusOps = (id, before, after, h = before) => [['functions/' + id, after], ['functions/' + id + '/hist/' + before.v, { was: h, by: after.by, at: after.upd, what: 'Status changed' }]];
+  await env.withSecurityRulesDisabled(ctx => setDoc(doc(ctx.firestore(), K + 'config/main'), { sousIds: ['sam'] }, { merge: true }));
+  await seedStatus('cancel-sous');
+  let c = cancel(source, 'sam'); c.canAt = c.upd;
+  await ok(W(statusOps('cancel-sous', source, c), { id: 'sam' }), true, 'cancel access: a sous chef cancels in one audited batch without the Functions tick');
+  await ok(W(statusOps('cancel-sous', source, c), { id: 'sam' }), false, 'cancel access: a repeated cancellation cannot overwrite the saved version');
+  await ok(W(statusOps('cancel-sous', c, undo(c, source, 'hd')), { id: 'hd' }), false, 'cancel access: another chef cannot undo someone else\'s cancellation');
+  await ok(W(statusOps('cancel-sous', c, undo(c, source, 'sam', { guests: 99 })), { id: 'sam' }), false, 'cancel access: Undo cannot change guests or other booking details');
+  await ok(W(statusOps('cancel-sous', c, undo(c, source, 'sam')), { id: 'sam' }), true, 'cancel access: the same sous chef restores the preceding booking within two minutes');
+  await seedStatus('cancel-head');
+  c = cancel(source, 'hd'); c.canAt = c.upd;
+  await ok(W(statusOps('cancel-head', source, c), { id: 'hd' }), true, 'cancel access: headId works even when not in sousIds or fnIds');
+  await ok(W(statusOps('cancel-head', c, undo(c, source, 'hd')), { id: 'hd' }), true, 'cancel access: the head chef also has their own Undo');
+  await seedStatus('cancel-staff');
+  c = cancel(source, 'ann'); c.canAt = c.upd;
+  await ok(W(statusOps('cancel-staff', source, c), { id: 'ann' }), false, 'cancel access: ordinary staff cannot cancel');
+  c = cancel(source, 'sam'); c.canAt = c.upd;
+  await ok(W(statusOps('cancel-staff', source, c), { id: 'ann', as: 'sam' }), false, 'cancel access: a staff PIN cannot impersonate a sous chef');
+  await ok(W([['functions/cancel-staff', c]], { id: 'sam' }), false, 'cancel access: a chef cannot cancel without the matching history in the same batch');
+  await ok(W(statusOps('cancel-staff', source, Object.assign({}, c, { notes: 'Overwritten' })), { id: 'sam' }), false, 'cancel access: cancellation cannot quietly edit notes');
+  await ok(W(statusOps('cancel-staff', source, c, Object.assign({}, source, { guests: 99 })), { id: 'sam' }), false, 'cancel access: the history must be the actual previous booking');
+  await ok(W(statusOps('cancel-staff', source, c).concat([['fncontact/cancel-staff', { cname: 'X', phone: '', email: '', upd: c.upd, by: 'sam' }]]), { id: 'sam' }), false, 'cancel access: cancellation does not grant contact writes');
+  await ok(W([['functions/cancel-new', source]], { id: 'sam' }), false, 'cancel access: cancellation does not grant function creation');
+  await ok(W(statusOps('cancel-staff', source, Object.assign({}, source, { v: 2, by: 'sam', loc: 'Changed' })), { id: 'sam' }), false, 'cancel access: cancellation does not grant general function editing');
+  await seedStatus('cancel-manager');
+  c = cancel(source, 'fay'); c.canAt = c.upd;
+  await ok(W(statusOps('cancel-manager', source, c), { id: 'fay' }), true, 'cancel access: existing function managers retain cancellation');
+  await seedStatus('cancel-admin');
+  c = cancel(source, ''); c.canAt = c.upd;
+  await ok(ownerBatch(statusOps('cancel-admin', source, c)), true, 'cancel access: the verified admin cancels');
+  await seedStatus('cancel-expired');
+  const expired = cancel(source, 'sam', { canAt: Date.now() - 130000, upd: Date.now() - 130000 }); expired.canAt = expired.upd;
+  await env.withSecurityRulesDisabled(async ctx => {
+    const db = ctx.firestore();
+    await setDoc(doc(db, K + 'functions/cancel-expired'), expired);
+    await setDoc(doc(db, K + 'functions/cancel-expired/hist/1'), { was: source, by: 'sam', at: expired.upd, what: 'Cancelled' });
+    await setDoc(doc(db, K + 'sessions/cancel-only'), { by: 'sam', pinAt: 1, exp: Date.now() + 86400000 });
+  });
+  await ok(W(statusOps('cancel-expired', expired, undo(expired, source, 'sam')), { id: 'sam' }), false, 'cancel access: Undo ends after two minutes');
+  await ok(getDoc(doc(env.authenticatedContext('cancel-only').firestore(), K + 'fncontact/f1')), false, 'cancel access: a chef with a PIN session still cannot read contacts without the Functions tick');
+  const futureDay = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10), baseAt = Date.now() + 7 * 86400000;
+  const largest = fnc({ status: 'confirmed', by: 'fay', confBy: 'fay', confAt: 2, date: futureDay, od: futureDay, start: baseAt,
+    lines: Array.from({ length: 12 }, (_, i) => ({ rid: 'large-' + i, name: 'Platter ' + i, unit: 'platter', spec: '', fp: '', qty: 40, u: Array.from({ length: 40 }, (_, n) => Math.floor(n / 5)) })),
+    rounds: Array.from({ length: 8 }, (_, i) => ({ at: baseAt + i * 1200000, note: '' })), first: baseAt, last: baseAt + 7 * 1200000, until: baseAt + 8 * 1200000, kq: baseAt + 8 * 1200000 });
+  await env.withSecurityRulesDisabled(async ctx => {
+    const db = ctx.firestore();
+    await setDoc(doc(db, K + 'functions/cancel-largest'), largest);
+    for (let i = 0; i < 12; i++) await setDoc(doc(db, K + 'days/' + futureDay + '/items/cancel-large-' + i), line({ text: 'Function platter', addedById: 'fay', done: true, doneAt: 1, doneById: 'ann', fn: 'cancel-largest', dupOk: true }));
+    await setDoc(doc(db, K + 'orders/' + futureDay + '/lines/cancel-largest'), line({ text: 'Function stock', addedById: 'fay', ordered: true, orderedAt: 1, fn: 'cancel-largest', dupOk: true }));
+  });
+  const largeCancel = cancel(largest, 'sam'); largeCancel.canAt = largeCancel.upd;
+  const sideEffects = on => Array.from({ length: 12 }, (_, i) => ['days/' + futureDay + '/items/cancel-large-' + i, { deleted: on }, true]).concat([['orders/' + futureDay + '/lines/cancel-largest', { deleted: on }, true]]);
+  await ok(W(statusOps('cancel-largest', largest, largeCancel).concat(sideEffects(true)), { id: 'sam' }), true, 'cancel access: 12 platter lines, 8 rounds, history and all prep/order cleanup fit one rules-checked batch');
+  await ok(W(statusOps('cancel-largest', largeCancel, undo(largeCancel, largest, 'sam')).concat(sideEffects(false)), { id: 'sam' }), true, 'cancel access: the largest Undo also fits the rules budget and keeps completed ticks');
+  await env.withSecurityRulesDisabled(ctx => setDoc(doc(ctx.firestore(), K + 'config/main'), { sousIds: [] }, { merge: true }));
+  await ok(W(statusOps('cancel-staff', source, cancel(source, 'sam')), { id: 'sam' }), false, 'cancel access: taking away the chef permission stops the next cancellation');
+  await env.withSecurityRulesDisabled(ctx => setDoc(doc(ctx.firestore(), K + 'config/main'), { sousIds: cfgBefore.sousIds }, { merge: true }));
+}
 await ok(deleteDoc(doc(owner, K + 'functions/f1')), false, 'functions: never deleted');
 await ok(W([['functions/f1/hist/1', { was: fnc(), at: 9, what: 'x' }]], { id: 'fay' }), false, 'functions: an earlier version cannot be changed');
 await ok(W([['functions/f1/hist/7', { was: fnc(), at: 9, what: 'x' }]], { id: 'fay' }), false, 'functions: a history copy for a later version cannot be planted early');

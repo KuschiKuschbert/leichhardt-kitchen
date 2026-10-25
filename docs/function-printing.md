@@ -19,7 +19,7 @@ Approved by the head chef on 25 Oct 2026: Layout 2, the timed run sheet. This su
 
 `js/functions.js` builds a print-only snapshot under `#fn-print`, calls the native print API and cleans it up on `afterprint` or a return to the window. The snapshot stays separate from live screen updates. The function editor flushes pending local input and hands only the kitchen document shape to that printer. It does not pass `fncontact`.
 
-The shared print code is already in the shell through `js/functions.js`. No new runtime dependency, service, Firestore read, listener, write, collection, field or persistent cache is added. `FE_API` and the editor's `API` are both 5 for this change. Print CSS uses a named A4 page so it does not change other browser print views.
+The shared print code is already in the shell through `js/functions.js`. No new runtime dependency, service, Firestore read, listener, write, collection, field or persistent cache is added. `FE_API` and the editor's `API` are both 6 after the cancellation-access change. Print CSS uses a named A4 page so it does not change other browser print views.
 
 ## Verification
 

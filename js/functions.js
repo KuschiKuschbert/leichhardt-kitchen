@@ -278,7 +278,7 @@
   function recipeOf(rid) { return D.recipes.filter(function (r) { return r.id === rid; })[0] || null; }
 
   /* state: the functions the kitchen may need (live), and how fresh they are */
-  var F = { list: [], state: 'idle', at: 0, err: '', key: '', unsub: null, more: false, offline: false };
+  var F = { list: [], state: 'idle', at: 0, err: '', key: '', unsub: null, more: false, offline: false, jobs: {} };
   (function () { try { var c = JSON.parse(lsGet('lk.fn') || 'null'); if (c && c.list) { F.list = c.list.map(derive); F.at = c.at || 0; F.cached = true; } } catch (e) {} })();
   function nameOf(id) {
     if (!id) return 'Head chef (admin)';
@@ -298,7 +298,11 @@
       var fs = api.fs();
       watchSent(api, fs);
       F.unsub = fs.onSnapshot(fs.query(api.colRef('functions'), fs.where('kq', '>=', T.at(T.day(), 0)), fs.orderBy('kq'), fs.limit(150)), { includeMetadataChanges: true }, function (snap) {
-        F.list = snap.docs.map(function (d) { return derive(Object.assign({ id: d.id }, d.data())); });
+        F.list = snap.docs.map(function (d) {
+          var job = F.jobs[d.id];
+          // A cancellation waiting for its server acknowledgement must not look finished on this phone.
+          return job && d.metadata && d.metadata.hasPendingWrites ? job.before : derive(Object.assign({ id: d.id }, d.data()));
+        });
         F.offline = !!(snap.metadata && snap.metadata.fromCache);
         if (!F.offline) { F.at = now(); F.cached = false; F.state = 'ok'; lsSet('lk.fn', JSON.stringify({ at: F.at, list: F.list })); }
         else if (F.state !== 'ok') F.state = navigator.onLine === false ? 'offline' : 'loading';
@@ -543,10 +547,139 @@
     if (c.length) out += '<h3 class="fn-h">Changes</h3><ul class="fn-chg">' + c.slice(0, 5).map(function (x) { return '<li><span>' + esc(dayName(kday(x.at)) + ' ' + kclock(x.at)) + ', ' + esc(nameOf(x.by)) + '</span> ' + esc(x.what) + '</li>'; }).join('') + '</ul>';
     out += '<p class="fn-by fn-last">Last changed by ' + esc(nameOf(f.by)) + ', ' + esc(dayName(kday(f.upd)) + ' ' + kclock(f.upd)) + '.</p>';
     var can = P() && P().fnOK && P().fnOK();
-    out += '<div class="btn-row"><button type="button" class="btn" data-fn="print" data-id="' + esc(f.id) + '">Print function</button>' +
+    out += '<div class="btn-row"><button type="button" class="btn" data-fn="print" data-id="' + esc(f.id) + '">Print function</button>' + statusHTML(f) +
       (inPop ? '<a class="btn dark" href="#/fn/' + encodeURIComponent(f.id) + '" data-fn="go">Open the full sheet</a>' : '') +
       (can ? '<a class="btn" href="#/functions/' + encodeURIComponent(f.id) + '"' + (inPop ? ' data-fn="go"' : '') + '>Change this function</a>' : '') + '</div>';
     return out;
+  }
+
+  /* The platters on the prep list (22 Oct 2026): a confirmed function puts one prep line per platter on its day, under the
+     section Functions, linked to the recipe card: "Pizza Platter: Smith 50th, from 18:30", "5 platters". The line id is
+     fn-<function>-<platter>, so a second save changes the same line instead of adding another. Only a line that is new or
+     changed is written, so a line the kitchen removed stays removed until the booking changes. A cancelled function, a
+     platter taken off, or a function moved to another day removes its old lines. Ticks are never touched (done is never
+     sent), lines never roll over and never merge with the kitchen's own lines (fn, dupOk). */
+  function prepText(f, l) {
+    var n = (f.rounds || []).length, a = M.counts(l, n), i = a.findIndex(function (x) { return x > 0; }), r = i >= 0 ? f.rounds[i] : f.rounds[0];
+    var at = r && r.at ? (f.mode === 'stag' ? 'from ' : 'at ') + M.when(r.at, f.date) : 'times TBC';
+    return (l.name + ': ' + (f.name || 'function') + ', ' + at).slice(0, 160);
+  }
+  function prepOps(api, prev, f, id, t) {
+    var fs = api.fs(), ops = [], who = P().whoName() || 'Head chef';
+    function ref(day, rid) { return fs.doc(api.db(), 'kitchens', api.pin(), 'days', day, 'items', ('fn-' + id + '-' + rid).slice(0, 120)); }
+    function line(g, l) { return { text: prepText(g, l), qty: (l.qty + ' ' + M.unitOf(l, l.qty)).slice(0, 40), station: 'Functions', recipe: l.rid, fn: id, dupOk: true }; }
+    var had = {}, want = {};
+    if (prev && prev.status === 'confirmed' && M.isYmd(prev.date)) (prev.lines || []).forEach(function (l) { had[prev.date + '|' + l.rid] = line(prev, l); });
+    if (f.status === 'confirmed' && M.isYmd(f.date)) f.lines.forEach(function (l) { want[f.date + '|' + l.rid] = line(f, l); });
+    Object.keys(had).forEach(function (k) {
+      if (want[k]) return;
+      var p = k.split('|');
+      ops.push(['set', ref(p[0], p[1]), Object.assign({}, had[k], { deleted: true, deletedBy: who, deletedAt: t }), true]);
+    });
+    Object.keys(want).forEach(function (k) {
+      var w = want[k], h = had[k], p = k.split('|');
+      if (h && h.text === w.text && h.qty === w.qty) return;   // the same as before: leave the kitchen's line alone
+      ops.push(['set', ref(p[0], p[1]), Object.assign({}, w, { deleted: false, addedBy: who, addedById: api.who(), addedAt: t }), true]);
+    });
+    return ops;
+  }
+  /* The order reminder (22 Oct 2026): a confirmed function puts one line on the order list on its order day (the latest
+     Sunday 4 days or more before it, or today when booked later): "Function stock: Smith 50th, Sat 31 Oct: 3 Antipasto,
+     4 Aussie, 5 Pizza", "12 platters". It rolls over until someone ticks it ordered, like any order line, and ordered is
+     never sent from here. A change before the order day changes the line; a move takes it off the old day; a change or a
+     cancel after the order day adds a line today, so whoever ordered can change the order. */
+  function orderOps(api, prev, f, id, t, undo) {
+    var fs = api.fs(), ops = [], who = P().whoName() || 'Head chef', day = kday(now());
+    function ref(d, suffix) { return fs.doc(api.db(), 'kitchens', api.pin(), 'orders', d, 'lines', ('fn-' + id + (suffix || '')).slice(0, 120)); }
+    function line(g, pre) {
+      var txt = (pre || 'Function stock') + ': ' + (g.name || 'function') + ', ' + M.dayName(g.date) + ': ' + (g.lines || []).map(function (l) { return l.qty + ' ' + M.short(l.name); }).join(', ');
+      return { text: txt.slice(0, 120), qty: (M.totalQty(g) + ' platters').slice(0, 40), recipes: (g.lines || []).map(function (l) { return l.rid; }), fn: id, dupOk: true };
+    }
+    if (undo && f.od && f.od < day) {
+      // A past order was never removed by Cancel. Correct its cancellation notice instead of rewriting that history.
+      var cancelledDay = kday(prev.canAt);
+      if (f.date >= cancelledDay) ops.push(['set', ref(cancelledDay, '-x' + cancelledDay.replace(/-/g, '')), Object.assign({}, line(f, 'Function restored, check the order'), { deleted: true, deletedBy: who, deletedAt: t }), true]);
+      if (f.date >= day) ops.push(['set', ref(day, '-r' + day.replace(/-/g, '')), Object.assign({}, line(f, 'Function restored, check the order'), { deleted: false, addedBy: who, addedById: api.who(), addedAt: t }), true]);
+      return ops;
+    }
+    var had = prev && prev.status === 'confirmed' && prev.od ? { day: prev.od, l: line(prev) } : null;
+    var want = f.od ? { day: f.od, l: line(f) } : null;
+    if (had && (!want || want.day !== had.day) && had.day >= day) ops.push(['set', ref(had.day), Object.assign({}, had.l, { deleted: true, deletedBy: who, deletedAt: t }), true]);
+    if (want && !(had && had.day === want.day && had.l.text === want.l.text && had.l.qty === want.l.qty)) {
+      var late = had && had.day < day;   // the first line is already in the past (maybe ordered): a new line today says what changed
+      ops.push(['set', late ? ref(day, '-' + day.replace(/-/g, '')) : ref(want.day), Object.assign({}, late ? line(f, 'Function stock changed') : want.l, { deleted: false, addedBy: who, addedById: api.who(), addedAt: t }), true]);
+    }
+    if (had && !want && had.day < day && prev.date >= day) ops.push(['set', ref(day, '-x' + day.replace(/-/g, '')), Object.assign({}, line(prev, 'Function cancelled, check the order'), { deleted: false, addedBy: who, addedById: api.who(), addedAt: t }), true]);
+    return ops;
+  }
+
+  /* One-tap cancellation (25 Oct 2026). Editing and contacts still need fnOK; chefs get only this status change.
+     Cancel reads one latest function on its tap. Undo also reads its immutable preceding history, never contacts. */
+  function statusOK() { return !!(P() && P().fnCancelOK && P().fnCancelOK()); }
+  function undoOK(f) {
+    var api = P() && P().book && P().book(), age = now() - (f.canAt || 0);
+    return statusOK() && f.status === 'cancelled' && api && f.canBy === api.who() && f.upd === f.canAt && age >= 0 && age < 2 * MIN;
+  }
+  function statusHTML(f, scope) {
+    if (!f || !f.id || !statusOK() || (f.status !== 'confirmed' && !undoOK(f))) return '';
+    var undo = f.status === 'cancelled', busy = F.jobs[f.id], kind = scope === 'fe' ? 'fe' : 'fn';
+    return '<button type="button" class="btn fn-cancel" data-' + kind + '="status" data-v="' + (undo ? 'undo' : 'cancel') + '" data-id="' + esc(f.id) + '"' +
+      (busy ? ' disabled' : '') + ' aria-label="' + esc((undo ? 'Undo cancellation of ' : 'Cancel ') + f.name) + '">' +
+      (busy ? (busy.undo ? 'Restoring...' : 'Cancelling...') : undo ? 'Undo cancel' : 'Cancel function') + '</button>';
+  }
+  function statusPaint(id, saved) {
+    if (/^#\/functions(?:\/|$)/.test(location.hash) && window.LK_FE && window.LK_FE.statusChanged) { paint(); window.LK_FE.statusChanged(id, saved); }
+    else changed();
+  }
+  function statusNotice(message, action) {
+    var prep = P(); if (!prep) return;
+    if (prep.toast) prep.toast(message, action || null, action ? 9000 : 5000);
+    else if (prep.book) prep.book().say(message);
+  }
+  function statusFail(message) { var err = new Error(message); err.fnMessage = message; throw err; }
+  function setStatus(view, undo) {
+    if (!view || !view.id || F.jobs[view.id]) return;
+    if (!statusOK()) { statusNotice('Only a chef, function manager or admin can cancel a function.'); return; }
+    if (undo ? !undoOK(view) : view.status !== 'confirmed') return;
+    var api = P().book(), id = view.id, me = api.who(), label = undo ? 'Restoring' : 'Cancelling';
+    F.jobs[id] = { before: view, undo: !!undo }; statusPaint(id);
+    var slow = setTimeout(function () { if (F.jobs[id]) statusNotice(label + ' is waiting for the signal.'); }, 5000);
+    api.ready().then(function () {
+      return api.fromServer(api.docRef('functions', id));
+    }).then(function (sn) {
+      if (!sn.exists()) statusFail('This function is no longer available. Read the list again.');
+      var before = sn.data();
+      if (before.v !== view.v || before.status !== view.status) statusFail('This function changed on another device. Read the latest copy before trying again.');
+      F.jobs[id].before = Object.assign({ id: id }, before);
+      if (!undo) return { before: before };
+      // One extra read only on Undo. History is already readable by the kitchen and contains no booking contact.
+      return api.fromServer(api.fs().doc(api.db(), 'kitchens', api.pin(), 'functions', id, 'hist', String(before.v - 1))).then(function (hist) {
+        var old = hist.exists() && hist.data().was;
+        if (!old || old.status !== 'confirmed') statusFail('This cancellation has changed. Ask a function manager to confirm the booking again.');
+        return { before: before, restore: old };
+      });
+    }).then(function (state) {
+      if (!statusOK() || api.who() !== me) statusFail('Your access changed. The function has not been changed.');
+      var before = state.before, f = JSON.parse(JSON.stringify(before)), t = now();
+      if (undo && !undoOK(Object.assign({ id: id }, before))) statusFail('Undo is available for two minutes. Ask a function manager to confirm the booking again.');
+      f.status = undo ? 'confirmed' : 'cancelled'; f.v = before.v + 1; f.upd = t; f.by = me;
+      if (undo) { f.od = state.restore.od || ''; f.kq = state.restore.kq; }
+      else { f.canBy = me; f.canAt = t; f.od = ''; }
+      var what = undo ? 'Cancellation undone' : 'Cancelled';
+      f.chg = [{ at: t, by: me, what: what }].concat((before.chg || []).slice(0, 7));
+      var ops = [['set', api.docRef('functions', id), f], ['set', api.fs().doc(api.db(), 'kitchens', api.pin(), 'functions', id, 'hist', String(before.v)), { was: before, at: t, what: what }]];
+      return api.W(ops.concat(prepOps(api, before, f, id, t), orderOps(api, before, f, id, t, undo))).then(function () { return Object.assign({ id: id }, f); });
+    }).then(function (f) {
+      delete F.jobs[id]; clearTimeout(slow);
+      F.list = F.list.filter(function (g) { return g.id !== id; });
+      if (f.kq >= T.at(T.day(), 0)) F.list.push(f);
+      statusPaint(id, f);
+      statusNotice((f.name || 'Function') + (undo ? ': cancellation undone.' : ': cancelled. The kitchen is told.'), undo ? null : { label: 'Undo', fn: function () { setStatus(f, true); } });
+      if (!undo) setTimeout(function () { statusPaint(id); }, 2 * MIN + 100);
+    }).catch(function (err) {
+      delete F.jobs[id]; clearTimeout(slow); statusPaint(id);
+      statusNotice(err.fnMessage || (err.code === 'permission-denied' ? 'Not changed. Your access or the function changed. Read the list again.' : 'Not changed. Check the signal and try again.'));
+    });
   }
 
   /* ---------- Layout 2 print copy (25 Oct 2026, head chef approved) ----------
@@ -668,7 +801,7 @@
     return '<li class="fn-card' + (f.status === 'cancelled' ? ' is-off' : '') + '"><a href="#/fn/' + encodeURIComponent(f.id) + '"><span class="fn-c1"><b>' + esc(f.name) + '</b>' +
       (f.status === 'cancelled' ? ' <span class="fn-tag fn-t-off">Cancelled</span>' : f.mode === 'stag' ? ' <span class="fn-tag">Staggered, ' + n + ' rounds</span>' : '') + (f.kc ? ' <span class="fn-tag fn-t-kc">Kitchen comment</span>' : '') + '</span>' +
       '<span class="fn-c2">Event ' + esc(when(f.start, f.date)) + ' · food from ' + esc(when(f.first, f.date)) + (f.loc ? ' · ' + esc(f.loc) : '') + '</span>' +
-      '<span class="fn-c3">' + esc(linesText(f)) + ' (' + tot + ')</span></a></li>';
+      '<span class="fn-c3">' + esc(linesText(f)) + ' (' + tot + ')</span></a>' + (statusHTML(f) ? '<div class="fn-card-actions">' + statusHTML(f) + '</div>' : '') + '</li>';
   }
   function totalsHTML(rows) {
     if (!rows || !rows.length) return '';
@@ -806,6 +939,7 @@
     var el = e.target.closest && e.target.closest('[data-fn]');
     if (!el) return;
     var a = el.getAttribute('data-fn');
+    if (a === 'status') { var target = byId(el.getAttribute('data-id')); if (target) setStatus(target, el.getAttribute('data-v') === 'undo'); return; }
     if (a === 'print') { var f = byId(el.getAttribute('data-id')); if (f) printFunctions([f], {}, el); return; }
     if (a === 'print-day') { printFunctions(printDayList(now()), { day: kday(now()) }, el); return; }
     if (a === 'open') { sheetOpen(el.getAttribute('data-id'), el); return; }
@@ -851,7 +985,8 @@
     bandSlot: function () { var h = bandHTML(); lastBand = h; return '<div class="fn-band" id="fn-band" role="region" aria-label="Functions"' + (h ? '' : ' hidden') + '>' + h + '</div>'; },
     landSlot: function () { var h = landHTML(); return '<div id="fn-land"' + (h ? '' : ' hidden') + '>' + h + '</div>'; },
     checkSlot: function () { var h = checkHTML(); return '<div id="fn-check"' + (h ? '' : ' hidden') + '>' + h + '</div>'; },
-    page: pageHTML, watch: watch, paint: paint, catalogue: catalogue, recipeOf: recipeOf, nameOf: nameOf, sheetHTML: sheetHTML, print: printFunctions, esc: esc
+    page: pageHTML, watch: watch, paint: paint, catalogue: catalogue, recipeOf: recipeOf, nameOf: nameOf, sheetHTML: sheetHTML, print: printFunctions, esc: esc,
+    statusHTML: statusHTML, setStatus: setStatus, statusBusy: function (id) { return !!F.jobs[id]; }, prepOps: prepOps, orderOps: orderOps
   };
   watch();
 })();
