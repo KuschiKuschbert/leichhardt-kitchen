@@ -17,7 +17,7 @@
 (function () {
   'use strict';
 
-  var API = 5;
+  var API = 6;
   var FN = window.LK_FN, M = FN.M, P = window.LK_PREP, esc = FN.esc, T = window.LK_TIME;
   function B() { return P.book(); }
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -175,7 +175,7 @@
         var o = (ov[f.id] || []).map(function (id) { return byName[id]; });
         return '<li><a class="fe-row" href="#/functions/' + encodeURIComponent(f.id) + '"><span class="fe-r1"><b>' + esc(f.name || 'No name yet') + '</b> ' + st + (lsGet(draftKey(f.id)) ? ' <span class="fn-tag">Not saved</span>' : '') + '</span>' +
           '<span class="fe-r2">' + (f.start || f.st ? 'Event ' + esc(M.when(f.start, f.date)) + ' · food ' + esc(M.when(f.first, f.date)) : 'No times yet') + (f.loc ? ' · ' + esc(f.loc) : '') + (f.gu || f.guests ? ' · ' + M.guestsText(f) : '') + ' · ' + M.totalQty(f) + ' platters' + (f.mode === 'stag' ? ', ' + (f.rounds || []).length + ' rounds' : '') + '</span>' +
-          (o.length ? '<span class="fe-ov">Food times overlap with ' + esc(o.join(', ')) + '</span>' : '') + '</a></li>';
+          (o.length ? '<span class="fe-ov">Food times overlap with ' + esc(o.join(', ')) + '</span>' : '') + '</a>' + (FN.statusHTML(f, 'fe') ? '<div class="fn-card-actions">' + FN.statusHTML(f, 'fe') + '</div>' : '') + '</li>';
       }).join('') + '</ul>' + (tot.length ? '<p class="fe-dtot">Confirmed for the day: ' + tot.map(function (r) { return r.qty + ' ' + esc(M.short(r.name)); }).join(', ') + '</p>' : '') + '</section>';
     }).join('');
     return head + (drafts.indexOf(draftKey('new')) >= 0 ? '<p class="fe-note">A new function you started is not saved yet. <a href="#/functions/new">Carry on with it</a>.</p>' : '') +
@@ -353,13 +353,13 @@
     return '<div class="fe-probs" role="alert"><b>Before it can be confirmed:</b><ul>' + e.shown.map(function (p) { return '<li><button type="button" class="linkish" data-fe="goto" data-v="' + esc(p.k) + '">' + esc(p.t) + '</button></li>'; }).join('') + '</ul></div>';
   }
   function buttonsHTML(e) {
-    var st = e.status, dis = e.saving ? ' disabled' : '', b = [];
+    var st = e.status, dis = e.saving || FN.statusBusy(e.id) ? ' disabled' : '', b = [];
     if (st === 'draft') { b.push('<button type="button" class="btn dark" data-fe="review"' + dis + '>Check and confirm</button>'); b.push('<button type="button" class="btn" data-fe="save"' + dis + '>Save draft</button>'); }
     else if (st === 'confirmed') b.push('<button type="button" class="btn dark" data-fe="save"' + dis + '>Save changes</button>');
     else b.push('<button type="button" class="btn dark" data-fe="review"' + dis + '>Put it back on</button>');
     var more = [];
     if (!e.isNew) more.push('<button type="button" class="btn" data-fe="dup">Duplicate</button>');
-    if (st === 'confirmed') more.push('<button type="button" class="btn fe-cancel" data-fe="cancel"' + dis + '>' + (armed('cancel') ? 'Tap again to cancel the function' : 'Cancel the function') + '</button>');
+    if (!e.isNew && e.saved) more.push(FN.statusHTML(e.saved, 'fe'));
     if (dirty()) more.push('<button type="button" class="btn" data-fe="drop">' + (armed('drop') ? 'Tap again to drop your changes' : 'Drop my changes') + '</button>');
     return '<div class="btn-row fe-btns">' + b.join('') + '</div>' + (more.length ? '<div class="btn-row">' + more.join('') + '</div>' : '');
   }
@@ -435,7 +435,7 @@
       // saves blanks over it
       var con = { cname: e.d.cname.trim().slice(0, 80), phone: e.d.phone.trim().slice(0, 30), email: e.d.email.trim().slice(0, 120) }, conWas = e.savedC || {};
       if (con.cname !== (conWas.cname || '') || con.phone !== (conWas.phone || '') || con.email !== (conWas.email || '')) ops.push(['set', api.docRef('fncontact', id), Object.assign(con, { upd: t })]);
-      return api.W(ops.concat(prepOps(api, prev, f, id, t), orderOps(api, prev, f, id, t))).then(function () { return f; });
+      return api.W(ops.concat(FN.prepOps(api, prev, f, id, t), FN.orderOps(api, prev, f, id, t))).then(function () { return f; });
     }).then(function (f) {
       clearTimeout(slow);
       if (!f) return;
@@ -454,58 +454,6 @@
       e.msg = code === 'permission-denied' ? 'Not saved: the book refused it. You may not be ticked for Functions any more, or someone saved it just now. Your changes are kept on this device.' : 'Not saved. Check the signal and try again. Your changes are kept on this device.';
       if (E.ed === e) draw();
     });
-  }
-  /* The platters on the prep list (22 Oct 2026): a confirmed function puts one prep line per platter on its day, under the
-     section Functions, linked to the recipe card: "Pizza Platter: Smith 50th, from 18:30", "5 platters". The line id is
-     fn-<function>-<platter>, so a second save changes the same line instead of adding another. Only a line that is new or
-     changed is written, so a line the kitchen removed stays removed until the booking changes. A cancelled function, a
-     platter taken off, or a function moved to another day removes its old lines. Ticks are never touched (done is never
-     sent), lines never roll over and never merge with the kitchen's own lines (fn, dupOk). */
-  function prepText(f, l) {
-    var n = (f.rounds || []).length, a = M.counts(l, n), i = a.findIndex(function (x) { return x > 0; }), r = i >= 0 ? f.rounds[i] : f.rounds[0];
-    var at = r && r.at ? (f.mode === 'stag' ? 'from ' : 'at ') + M.when(r.at, f.date) : 'times TBC';
-    return (l.name + ': ' + (f.name || 'function') + ', ' + at).slice(0, 160);
-  }
-  function prepOps(api, prev, f, id, t) {
-    var fs = api.fs(), ops = [], who = P.whoName() || 'Head chef';
-    function ref(day, rid) { return fs.doc(api.db(), 'kitchens', api.pin(), 'days', day, 'items', ('fn-' + id + '-' + rid).slice(0, 120)); }
-    function line(g, l) { return { text: prepText(g, l), qty: (l.qty + ' ' + M.unitOf(l, l.qty)).slice(0, 40), station: 'Functions', recipe: l.rid, fn: id, dupOk: true }; }
-    var had = {}, want = {};
-    if (prev && prev.status === 'confirmed' && M.isYmd(prev.date)) (prev.lines || []).forEach(function (l) { had[prev.date + '|' + l.rid] = line(prev, l); });
-    if (f.status === 'confirmed' && M.isYmd(f.date)) f.lines.forEach(function (l) { want[f.date + '|' + l.rid] = line(f, l); });
-    Object.keys(had).forEach(function (k) {
-      if (want[k]) return;
-      var p = k.split('|');
-      ops.push(['set', ref(p[0], p[1]), Object.assign({}, had[k], { deleted: true, deletedBy: who, deletedAt: t }), true]);
-    });
-    Object.keys(want).forEach(function (k) {
-      var w = want[k], h = had[k], p = k.split('|');
-      if (h && h.text === w.text && h.qty === w.qty) return;   // the same as before: leave the kitchen's line alone
-      ops.push(['set', ref(p[0], p[1]), Object.assign({}, w, { deleted: false, addedBy: who, addedById: api.who(), addedAt: t }), true]);
-    });
-    return ops;
-  }
-  /* The order reminder (22 Oct 2026): a confirmed function puts one line on the order list on its order day (the latest
-     Sunday 4 days or more before it, or today when booked later): "Function stock: Smith 50th, Sat 31 Oct: 3 Antipasto,
-     4 Aussie, 5 Pizza", "12 platters". It rolls over until someone ticks it ordered, like any order line, and ordered is
-     never sent from here. A change before the order day changes the line; a move takes it off the old day; a change or a
-     cancel after the order day adds a line today, so whoever ordered can change the order. */
-  function orderOps(api, prev, f, id, t) {
-    var fs = api.fs(), ops = [], who = P.whoName() || 'Head chef', day = today();
-    function ref(d, suffix) { return fs.doc(api.db(), 'kitchens', api.pin(), 'orders', d, 'lines', ('fn-' + id + (suffix || '')).slice(0, 120)); }
-    function line(g, pre) {
-      var txt = (pre || 'Function stock') + ': ' + (g.name || 'function') + ', ' + M.dayName(g.date) + ': ' + (g.lines || []).map(function (l) { return l.qty + ' ' + M.short(l.name); }).join(', ');
-      return { text: txt.slice(0, 120), qty: (M.totalQty(g) + ' platters').slice(0, 40), recipes: (g.lines || []).map(function (l) { return l.rid; }), fn: id, dupOk: true };
-    }
-    var had = prev && prev.status === 'confirmed' && prev.od ? { day: prev.od, l: line(prev) } : null;
-    var want = f.od ? { day: f.od, l: line(f) } : null;
-    if (had && (!want || want.day !== had.day) && had.day >= day) ops.push(['set', ref(had.day), Object.assign({}, had.l, { deleted: true, deletedBy: who, deletedAt: t }), true]);
-    if (want && !(had && had.day === want.day && had.l.text === want.l.text && had.l.qty === want.l.qty)) {
-      var late = had && had.day < day;   // the first line is already in the past (maybe ordered): a new line today says what changed
-      ops.push(['set', late ? ref(day, '-' + day.replace(/-/g, '')) : ref(want.day), Object.assign({}, late ? line(f, 'Function stock changed') : want.l, { deleted: false, addedBy: who, addedById: api.who(), addedAt: t }), true]);
-    }
-    if (had && !want && had.day < day && prev.date >= day) ops.push(['set', ref(day, '-x' + day.replace(/-/g, '')), Object.assign({}, line(prev, 'Function cancelled, check the order'), { deleted: false, addedBy: who, addedById: api.who(), addedAt: t }), true]);
-    return ops;
   }
   function goto(k) {
     var el = E.root && (E.root.querySelector('[data-ff="' + k + '"]') || E.root.querySelector('#fe-e-' + k));
@@ -570,10 +518,10 @@
   }
   document.addEventListener('input', onInput);
   document.addEventListener('change', onInput);
-  // Keep focus in a typed time until Print reads it. A blur's structural redraw would replace this button before
+  // Keep focus in a typed time until Print or Cancel reads it. A blur's structural redraw would replace the button before
   // its click arrives. Keyboard activation still uses the same click handler and flushPending().
   document.addEventListener('pointerdown', function (ev) {
-    var el = ev.target.closest && ev.target.closest('[data-fe="print"]');
+    var el = ev.target.closest && ev.target.closest('[data-fe="print"], [data-fe="status"]');
     if (el && E.root && E.root.contains(el)) ev.preventDefault();
   });
   document.addEventListener('click', function (ev) {
@@ -583,6 +531,12 @@
     if (a === 'chip') { E.chip = v; draw(); return; }
     if (a === 'reload') { loadList(); return; }
     if (a === 'reopen') { openId(e.id); return; }
+    if (a === 'status') {
+      if (e && e.saving) return;
+      flushPending();
+      var id = el.getAttribute('data-id'), target = e && e.id === id ? e.saved : Array.isArray(E.list) && E.list.filter(function (f) { return f.id === id; })[0];
+      if (target) FN.setStatus(target, v === 'undo'); return;
+    }
     if (!e || !e.d) return;
     var d = e.d;
     if (a === 'print') {
@@ -610,7 +564,6 @@
       e.reviewY = window.scrollY; e.review = true; e.shown = []; draw(); var h = E.root.querySelector('#fe-rv-h'); if (h) { h.focus({ preventScroll: true }); h.scrollIntoView({ block: 'start' }); } return;
     }
     if (a === 'confirm') { save('confirm'); return; }
-    if (a === 'cancel') { if (!arm('cancel')) return; save('cancel'); return; }
     if (a === 'dup') { var src = clone(d); history.pushState(null, '', '#/functions/new'); if (window.LK_APP && window.LK_APP.noteRoute) window.LK_APP.noteRoute(false); E.sub = ['new']; openNew(src); return; }
     if (a === 'drop') { if (!arm('drop')) return; forget(e); if (e.isNew) { E.ed = null; window.LK_APP.returnTo('#/functions'); return; } e.d = fromDoc(e.saved, e.savedC); e.status = e.saved.status; e.restored = false; e.shown = []; draw(); return; }
     if (a === 'theirs') { forget(e); E.ed = null; openId(e.id); return; }
@@ -651,6 +604,17 @@
     dirty: function () { return !!E.root && dirty(); },
     hasDraft: function () { return Object.keys(localStorage || {}).some(function (k) { return k.indexOf('lk.fe.draft.') === 0; }); },
     // the kitchen's functions changed (another manager saved): the list follows; an open form keeps what is typed
-    changed: function () { if (E.root && !E.sub.length) loadList(); }
+    changed: function () { if (E.root && !E.sub.length) loadList(); },
+    statusChanged: function (id, saved) {
+      if (!E.root) return;
+      if (saved && Array.isArray(E.list)) E.list = E.list.filter(function (f) { return f.id !== id; }).concat([saved]);
+      var e = E.ed;
+      if (saved && e && e.id === id && e.d) {
+        var changed = dirty(); e.saved = saved; e.v = saved.v; e.status = saved.status; e.hist = null; e.conflict = null;
+        if (!changed) e.d = fromDoc(saved, e.savedC);
+        else keep();
+      }
+      draw();
+    }
   };
 })();

@@ -322,7 +322,12 @@ function hasPrivateContact(value) {
   ok(await p.evaluate(() => parseInt(getComputedStyle(document.documentElement).getPropertyValue('--fn-stick'))) > 30, 'strip: the bars that stick to the top move down below it');
   await tap(p, '.fn-strip-b'); await L.settle(p, 200);
   ok(!!(await p.$('.fn-sheet')), 'strip: a tap opens the sheet');
-  await p.keyboard.press('Escape'); await p.evaluate(() => window.scrollTo(0, 0)); await L.settle(p, 300);
+  // Finish closing the sheet (including its history traversal) before testing a separate scroll back to the band.
+  await p.keyboard.press('Escape');
+  await L.waitFor(p, () => !document.querySelector('.fn-sheet') && !(history.state && history.state.lkOv));
+  await L.settle(p, 700);
+  await p.evaluate(() => window.scrollTo(0, 0));
+  await L.waitFor(p, () => window.scrollY === 0 && document.querySelector('.fn-strip').hidden);
   ok(await p.$eval('.fn-strip', e => e.hidden), 'strip: gone again back at the top');
   ok(p.errors.length === 0, 'strip: no page errors ' + p.errors.join(' | '));
   await p.context().close();
@@ -421,10 +426,8 @@ function hasPrivateContact(value) {
   ok(copies.length === 1 && copies[0].status === 'draft' && copies[0].date === day2 && copies[0].rounds[0].at === at(day2, '18:30') && copies[0].kq === 0, 'duplicate: saved as a draft on the new date, times kept, never in the kitchen\'s list');
   await p.context().close();
   p = await L.open(b, '#/functions/smith', { who: 'fay', extra: extra({ smith }), wait: 1500 });
-  await L.waitFor(p, () => !!document.querySelector('[data-fe="cancel"]'), null, 15000);
-  await tap(p, '[data-fe="cancel"]'); await L.settle(p, 100);
-  ok(/Tap again to cancel/.test(await txt(p, '[data-fe="cancel"]') || ''), 'cancel: asks for a second tap');
-  await tap(p, '[data-fe="cancel"]');
+  await L.waitFor(p, () => !!document.querySelector('[data-fe="status"][data-v="cancel"]'), null, 15000);
+  await tap(p, '[data-fe="status"][data-v="cancel"]');
   await L.waitFor(p, () => /Cancelled/.test((document.querySelector('.fe-head') || {}).textContent || ''));
   s = await store(p);
   f2 = s[fsKey(['functions', 'smith'])];

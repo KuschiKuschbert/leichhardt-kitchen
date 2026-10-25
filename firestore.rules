@@ -119,7 +119,7 @@ service cloud.firestore {
         && request.time < timestamp.date(int(day.split('-')[0]), int(day.split('-')[1]), int(day.split('-')[2])) + duration.value(2295, 'm');
     }
     function lineWho(day) {
-      return isAdmin() || ((nearDay(day) || sousBy() || request.resource.data.by in cfg().get('fnIds', [])) && request.resource.data.size() <= 60
+      return isAdmin() || ((nearDay(day) || chefId(request.resource.data.by) || request.resource.data.by in cfg().get('fnIds', [])) && request.resource.data.size() <= 60
         && (resource != null || request.resource.data.get('addedById', '') in ['', request.resource.data.by])
         && (request.resource.data.get('done', false) != true || resource.data.get('done', false) == true || request.resource.data.get('doneById', '') == request.resource.data.by));
     }
@@ -538,6 +538,39 @@ service cloud.firestore {
     // A confirmed function must add up: every platter line's rounds sum to its booked number, rounds in time order.
     // Rules cannot loop, so the checks are written out for up to 8 platter lines and 8 rounds.
     function fnBy() { return isAdmin() || (staff() && request.resource.data.by in cfg().get('fnIds', [])); }
+    // Chefs can cancel a saved booking without permission to edit its food, time or contact. Undo is their own
+    // most recent cancellation, for two minutes, restoring status and ordering from the immutable history.
+    function fnStatusBy() { return isAdmin() || (staff() && (chefId(request.resource.data.by) || request.resource.data.by in cfg().get('fnIds', []))); }
+    function fnCancelChange(was, d) {
+      return was.status == 'confirmed' && d.status == 'cancelled'
+        && d.diff(was).affectedKeys().hasOnly(['status', 'v', 'upd', 'by', 'canBy', 'canAt', 'od', 'chg'])
+        && d.canBy == d.by && d.canAt == d.upd && d.od == ''
+        && d.canAt >= request.time.toMillis() - 60000 && d.canAt <= request.time.toMillis() + 15000;
+    }
+    function fnUndoChange(id, was, d) {
+      let old = get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/functions/$(id)/hist/$(string(was.v - 1))).data.was;
+      return was.status == 'cancelled' && d.status == 'confirmed'
+        && was.canBy == d.by && was.upd == was.canAt && request.time.toMillis() - was.canAt < 120000
+        && d.diff(was).affectedKeys().hasOnly(['status', 'v', 'upd', 'by', 'od', 'kq', 'chg'])
+        && old.status == 'confirmed' && d.kq == old.kq && d.od == old.get('od', '') && fnConfirmed(d);
+    }
+    function fnStatusChange(id, was, d) {
+      return d.upd is int && d.chg is list && d.chg.size() <= 8
+        && (was.status == 'confirmed' && d.status == 'cancelled' ? fnCancelChange(was, d)
+          : was.status == 'cancelled' && d.status == 'confirmed' ? fnUndoChange(id, was, d) : false);
+    }
+    function fnStatusAudit(id, was, d) {
+      let hist = getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/functions/$(id)/hist/$(string(was.v))).data;
+      return hist.was == was && hist.by == d.by && hist.at == d.upd;
+    }
+    function fnStatusHistory(id, v) {
+      let was = get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/functions/$(id)).data;
+      let next = getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/functions/$(id)).data;
+      // The next function must pass its own update rule in this same batch. Do not re-run all booking checks here:
+      // Firestore caps a save at 1000 expressions, including its history copy.
+      return was.v == int(v) && next.v == was.v + 1 && next.status != was.status
+        && request.resource.data.was == was && request.resource.data.at == next.upd && request.resource.data.by == next.by;
+    }
     // A platter line: what was booked (qty, whole platters) and which round each platter goes out in (u, one round number
     // per platter, 0 for the first round). So 5 platters over 3 rounds as 2, 2 and 1 is u [0, 0, 1, 1, 2]. A confirmed line
     // has exactly as many entries as platters booked, and every entry is a round that exists: the rounds add up to the
@@ -577,11 +610,12 @@ service cloud.firestore {
       allow read: if true;
       // the head chef's Google account may also copy one as it is (move to a new kitchen PIN)
       allow create: if resource == null && (request.resource.data.v == 1 || isAdmin()) && fnBy() && fnOk(id);
-      allow update: if resource != null && nextVersion() && fnBy() && fnOk(id);
+      allow update: if resource != null && nextVersion()
+        && ((fnStatusChange(id, resource.data, request.resource.data) && fnStatusBy() && fnStatusAudit(id, resource.data, request.resource.data)) || (fnBy() && fnOk(id)));
       allow delete: if false;
       match /hist/{v} {
         allow read: if true;
-        allow create: if fnBy() && request.resource.data.keys().hasOnly(['was', 'at', 'by', 'what']) && request.resource.data.was is map && request.resource.data.at is int
+        allow create: if (fnBy() || (fnStatusBy() && fnStatusHistory(id, v))) && request.resource.data.keys().hasOnly(['was', 'at', 'by', 'what']) && request.resource.data.was is map && request.resource.data.at is int
           && request.resource.data.get('what', '') is string && request.resource.data.get('what', '').size() <= 300
           && (isAdmin() || getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/functions/$(id)).data.v == int(v) + 1);
         allow update, delete: if false;
