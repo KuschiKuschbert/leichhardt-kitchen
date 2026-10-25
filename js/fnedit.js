@@ -145,7 +145,8 @@
       var fs = api.fs();
       return fs.getDocs(fs.query(api.colRef('functions'), fs.orderBy('date', 'desc'), fs.limit(400)));
     }).then(function (sn) {
-      E.list = sn.docs.map(function (x) { return M.derive(Object.assign({ id: x.id }, x.data())); }); E.listAt = now(); draw();
+      // A local Firestore snapshot may arrive before its write is acknowledged. Keep that card visible and disabled.
+      E.list = sn.docs.map(function (x) { return E.removing[x.id] || M.derive(Object.assign({ id: x.id }, x.data())); }); E.listAt = now(); draw();
     }, function () { E.listErr = true; if (E.list === 'loading') E.list = null; draw(); });
   }
   var CHIPS = [['up', 'Coming up'], ['draft', 'Drafts'], ['past', 'Past'], ['cancelled', 'Cancelled'], ['all', 'All'], ['deleted', 'Deleted']];
@@ -204,7 +205,7 @@
     if (!view || !P.fnOK() || E.removing[view.id] || FN.statusBusy(view.id)) return;
     if (removed ? view.removed || view.status === 'confirmed' : !view.removed) return;
     var api = B(), id = view.id, me = api.who();
-    E.removing[id] = true; E.armed = ''; clearTimeout(E.armTimer); draw();
+    E.removing[id] = view; E.armed = ''; clearTimeout(E.armTimer); draw();
     api.ready().then(function () { return api.fromServer(api.docRef('functions', id)); }).then(function (sn) {
       if (!sn.exists()) throw new Error('This function is no longer available. Read the list again.');
       var before = sn.data();

@@ -89,9 +89,12 @@ async function list(b, width = 390) {
     await p.context().close(); p = null;
 
     p = await list(b);
-    await p.evaluate(() => { __fake.mode = 'hold'; });
+    await p.evaluate(() => {
+      const book = LK_PREP.book;
+      LK_PREP.book = function () { const api = book(), write = api.W; api.W = function (ops) { __fake.mode = 'hold'; return write(ops); }; return api; };
+    });
     await p.click(button('draft')); await p.click(button('draft')); await L.settle(p, 150);
-    ok(!((await dump(p))[key('draft')].removed) && await p.$eval(button('draft'), e => e.disabled), 'pending deletion disables repeated taps and has no premature success');
+    ok(await p.$eval(button('draft'), e => e.disabled) && !/Deleted from the list/.test(await p.locator('body').innerText()), 'pending deletion disables repeated taps and has no premature success');
     await p.evaluate(() => { __fake.mode = 'ok'; __fake.release(); });
     await L.waitFor(p, k => __fake.dump()[k].removed, key('draft'));
     ok(await p.evaluate(k => __fake.writes.filter(batch => batch.some(op => op.path === k)).length === 1, key('draft')), 'repeated taps save exactly one deletion version');
