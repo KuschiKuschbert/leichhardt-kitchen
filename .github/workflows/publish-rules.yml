@@ -32,6 +32,15 @@ jobs:
       - name: Install the Firebase CLI (the copy the rules tests use)
         working-directory: tests/rules
         run: npm ci --no-audit --no-fund
+      - name: Install transfer index dependencies
+        working-directory: scripts
+        run: npm ci --no-audit --no-fund
+      - name: Carry existing transfers into the outstanding list
+        working-directory: scripts
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+          KITCHEN_PIN: ${{ secrets.KITCHEN_PIN }}
+        run: node transfer-index.mjs
       - name: Fill in the template
         env:
           KITCHEN_PIN: ${{ secrets.KITCHEN_PIN }}

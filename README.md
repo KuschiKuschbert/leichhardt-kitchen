@@ -749,3 +749,8 @@ Supplier order accepts a plain number when the item has a confirmed order unit. 
 4. Change the `KITCHEN_PIN` secret in the GitHub repository settings to the new PIN, or the nightly learning keeps counting the old PIN's (now empty) days and nothing new is learned.
 
 `scripts/publish-rules.sh` fills in one PIN. For step 1 (two PINs live at once) and step 3, paste a hand-edited copy into the Firebase console instead, as described in the header of `firestore.rules`.
+
+
+### Outstanding stock transfers and returns
+
+Transfers remain outstanding across days until someone confirms the full amount has been returned. The Returned tick records who and when, with a short Undo for mistakes. Original transfer quantities and history stay intact. Existing loans begin unconfirmed. See [Transfer returns](docs/transfer-returns.md) for permissions, atomic writes, migration, read costs, release order and rollback.

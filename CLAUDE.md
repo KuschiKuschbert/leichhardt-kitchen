@@ -179,3 +179,8 @@ The `leichhardt-recipe-book` and `leichhardt-kitchen-book-backend` skills summar
 
 ## Open items
 README, "Open items" under Prep book and admin panel, lists what is still to do with the head chef (folding the head chef's recipe changes into `js/data.js` from a Backup; App Check is enforced and the Browser key restricted since 22 Oct 2026). Read it when the head chef asks what is left, keep it in step, and remove items as they are done. "Bringing the code in line" in the same part of the README lists the older code that does not meet the coding rules yet, in the order to fix it; each item is its own branch and pull request.
+
+
+## Transfer returns (25 Oct 2026)
+
+Read `docs/transfer-returns.md` before changing transfer storage. Dated lines now allow return updates through `xWrite()`, which atomically maintains `transferOpen`. Staff read older outstanding loans through one open-only listener, never the private dated history. Return fields must stay in backups, PIN moves and CSV exports. Run the Publish rules workflow on the feature branch before merging this app change; it indexes all existing loans before deploying rules. `scripts/transfer-index-check.mjs` verifies the migration on the emulator.
