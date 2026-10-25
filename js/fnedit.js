@@ -190,10 +190,10 @@
   // Keep the card link and its actions separate: cancelling or deleting never opens the form.
   function removeHTML(f, form) {
     if (!P.fnOK() || !f || !f.id || (!f.removed && f.status === 'confirmed')) return '';
-    var busy = E.removing[f.id] || FN.statusBusy(f.id), restore = !!f.removed;
+    var busy = E.removing[f.id] || FN.statusBusy(f.id), restore = !!f.removed, confirm = armed('remove:' + f.id);
     return '<button type="button" class="linkish" data-fe="' + (restore ? 'restore-row' : form ? 'remove' : 'remove-row') + '" data-id="' + esc(f.id) + '"' +
-      (busy ? ' disabled' : '') + ' aria-label="' + esc((restore ? 'Restore ' : 'Delete ') + f.name) + '">' +
-      (busy ? 'Saving...' : restore ? 'Restore function' : armed('remove:' + f.id) ? 'Tap again to delete function' : 'Delete function') + '</button>';
+      (busy ? ' disabled' : '') + ' aria-label="' + esc((restore ? 'Restore ' : confirm ? 'Tap again to delete ' : 'Delete ') + f.name) + '">' +
+      (busy ? 'Saving...' : restore ? 'Restore function' : confirm ? 'Tap again to delete function' : 'Delete function') + '</button>';
   }
   function rowActions(f) {
     var actions = (f.removed ? '' : FN.statusHTML(f, 'fe')) + removeHTML(f);
@@ -573,7 +573,7 @@
   // Keep focus in a typed time until Print or Cancel reads it. A blur's structural redraw would replace the button before
   // its click arrives. Keyboard activation still uses the same click handler and flushPending().
   document.addEventListener('pointerdown', function (ev) {
-    var el = ev.target.closest && ev.target.closest('[data-fe="print"], [data-fe="status"]');
+    var el = ev.target.closest && ev.target.closest('[data-fe="print"], [data-fe="status"], [data-fe="remove"], [data-fe="remove-row"], [data-fe="restore-row"]');
     if (el && E.root && E.root.contains(el)) ev.preventDefault();
   });
   document.addEventListener('click', function (ev) {
@@ -588,6 +588,11 @@
       var rid = el.getAttribute('data-id'), row = e && e.id === rid ? e.saved : Array.isArray(E.list) && E.list.filter(function (f) { return f.id === rid; })[0];
       if (!row || !P.fnOK()) return;
       if (a === 'restore-row' || arm('remove:' + rid)) setRemoved(row, a !== 'restore-row');
+      else if (E.root) {
+        // The confirmation redraw replaces the button. Keep keyboard focus on that same action.
+        var buttons = E.root.querySelectorAll('[data-fe="' + a + '"]');
+        Array.prototype.some.call(buttons, function (button) { if (button.getAttribute('data-id') !== rid) return false; button.focus({ preventScroll: true }); return true; });
+      }
       return;
     }
     if (a === 'status') {

@@ -36,9 +36,10 @@ async function list(b, width = 390) {
     }
     p = await list(b);
     const before = await dump(p);
-    await p.click(button('draft'));
+    await p.focus(button('draft')); await p.keyboard.press('Enter');
     ok(!(await dump(p))[key('draft')].removed && /Tap again to delete/.test(await p.locator(button('draft')).innerText()), 'first tap only asks for confirmation on the same card');
-    await p.click(button('draft'));
+    ok(await p.$eval(button('draft'), e => e === document.activeElement && /Tap again/.test(e.getAttribute('aria-label'))), 'confirmation keeps keyboard focus and announces its second action');
+    await p.keyboard.press('Enter');
     await L.waitFor(p, k => __fake.dump()[k].removed === true, key('draft'));
     let data = await dump(p);
     ok(data[key('draft')].v === 2 && JSON.stringify(data[key('draft') + '/hist/1'].was) === JSON.stringify(before[key('draft')]), 'deletion keeps an exact previous version');
