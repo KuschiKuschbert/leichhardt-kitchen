@@ -16,7 +16,7 @@
 (function () {
   'use strict';
 
-  var API = 3;
+  var API = 4;
   var D = window.LK_DATA, X = window.LK_RX, A = window.LK_APP, P = window.LK_PREP;
   var esc = A.esc, KIND = A.KIND, ALLERGENS = D.allergens;
   var LS = (function () { try { localStorage.getItem('x'); return localStorage; } catch (e) { return null; } })();
@@ -723,7 +723,7 @@
     if (!drawLoad) {
       drawLoad = A.load('js/library.js').then(function () {
         // a category file that fails to load leaves its drawings out; the editor still opens
-        return Promise.all(window.LK_LIB.files.map(function (f) { return A.load(f).catch(function () {}); }).concat([A.load('js/draw.js?v=3')]));
+        return Promise.all(window.LK_LIB.files.map(function (f) { return A.load(f).catch(function () {}); }).concat([A.load('js/draw.js?v=4')]));
       }).then(function () {
         // without the smart creator the editor still works by hand; the recipe reader (js/compose.js) needs it first
         return A.load('js/smart.js').then(function () { return A.load('js/compose.js'); }).catch(function () {});
@@ -735,7 +735,7 @@
     var key = sub.join('/');
     M.root = root; M.ed = null; drawn = 'draw:' + key;
     if (window.LK_DRAW) {
-      if (window.LK_DRAW.api === 3) window.LK_DRAW.mount(root, sub);
+      if (window.LK_DRAW.api === 4) window.LK_DRAW.mount(root, sub);
       else root.innerHTML = '<div class="mg-wrap"><h2 id="rtitle" tabindex="-1">Reload the book</h2><p>The drawing editor on this device needs the current book. Your saved drawings stay.</p><div class="btn-row"><button type="button" class="btn dark" data-act="reload">Reload</button></div></div>';
       return;
     }
@@ -902,7 +902,7 @@
     if (window.LK_DRAW && window.LK_DRAW.open()) return window.LK_DRAW.back();
     if (M.ed && M.ed.saving) return true;
     if (M.ed && dirty()) keepNow();
-    location.hash = '#/manage'; return true;
+    A.returnTo('#/manage'); return true;
   }
   window.LK_MG = {
     api: API,

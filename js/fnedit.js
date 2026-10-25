@@ -17,7 +17,7 @@
 (function () {
   'use strict';
 
-  var API = 3;
+  var API = 4;
   var FN = window.LK_FN, M = FN.M, P = window.LK_PREP, esc = FN.esc, T = window.LK_TIME;
   function B() { return P.book(); }
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -599,7 +599,7 @@
     if (a === 'confirm') { save('confirm'); return; }
     if (a === 'cancel') { if (!arm('cancel')) return; save('cancel'); return; }
     if (a === 'dup') { var src = clone(d); history.pushState(null, '', '#/functions/new'); if (window.LK_APP && window.LK_APP.noteRoute) window.LK_APP.noteRoute(false); E.sub = ['new']; openNew(src); return; }
-    if (a === 'drop') { if (!arm('drop')) return; forget(e); if (e.isNew) { E.ed = null; location.hash = '#/functions'; return; } e.d = fromDoc(e.saved, e.savedC); e.status = e.saved.status; e.restored = false; e.shown = []; draw(); return; }
+    if (a === 'drop') { if (!arm('drop')) return; forget(e); if (e.isNew) { E.ed = null; window.LK_APP.returnTo('#/functions'); return; } e.d = fromDoc(e.saved, e.savedC); e.status = e.saved.status; e.restored = false; e.shown = []; draw(); return; }
     if (a === 'theirs') { forget(e); E.ed = null; openId(e.id); return; }
     if (a === 'mine') { e.v = e.conflict.v; e.saved = e.conflict.doc; e.conflict = null; save(e.status === 'confirmed' ? 'save' : 'save'); return; }
     if (a === 'hist') { loadHist(); return; }
@@ -628,7 +628,7 @@
       var el = E.root.querySelector('[data-fe="review"]'); if (el) el.focus({ preventScroll: true });
       return true;
     }
-    location.hash = '#/functions'; return true;
+    window.LK_APP.returnTo('#/functions'); return true;
   }
   window.LK_FE = {
     api: API, mount: mount, unmount: unmount,

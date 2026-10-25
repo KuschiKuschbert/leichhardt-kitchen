@@ -25,7 +25,7 @@
 (function () {
   'use strict';
 
-  var API = 3;
+  var API = 4;
   var D = window.LK_DATA, X = window.LK_RX, A = window.LK_APP, P = window.LK_PREP, LIB = window.LK_LIB;
   var esc = A.esc;
   function B() { return P.book(); }
@@ -1460,7 +1460,7 @@
     back: function () {
       if (!W.root || !document.body.contains(W.root) || !W.d) return false;
       if (W.saving) return true;
-      keepNow(); location.hash = '#/manage/r/' + encodeURIComponent(W.d.rid); return true;
+      keepNow(); A.returnTo('#/manage/r/' + encodeURIComponent(W.d.rid)); return true;
     },
     backLabel: function () { return W.root && document.body.contains(W.root) && W.d ? 'Back to the recipe' : ''; },
     backDisabled: function () { return !!(W.root && document.body.contains(W.root) && W.saving); },

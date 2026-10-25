@@ -16,6 +16,15 @@ fresh trail: a nested recipe returns to its parent, a guide to Guides, a functio
 Supplier order and a primary page to Kitchen Book. Editor tasks return to their parent form or list first.
 Settings Done follows the same trail. Existing All recipes, All guides and navigation tabs still work.
 
+Corrected 25 Oct 2026: a parent return goes back to the nearest existing parent entry, including before a duplicated
+editor. Only known page keys on that path may be skipped; an unexpected history entry stops the return.
+Intermediate editors are not redrawn while returning through that path.
+If the parent has not been visited, it replaces the child entry instead of adding a forward entry with the child
+as its previous page. Repeated Back therefore keeps moving out through parent pages to Kitchen Book. This also
+applies to direct recipe, guide and function links. Explicit supplier catalogue routes change to their order
+route when the catalogue closes; local catalogue tabs keep their existing draft state and address. Native
+Forward can reopen an editor returned from through an existing parent, with the saved device draft available.
+
 Supplier review, item/par editing, supplier settings and import replace the workspace heading and tools with one
 current-task heading. Returning restores the workspace, its supplier and its quantities. Supplier history keeps
 its disclosure layout. The supplier sidebar remains collapsible in the workspace.
@@ -54,9 +63,9 @@ without controls that could replace its saved order identifier.
 
 No schema, rule, role, query, listener or persistent cache is added. Existing read budgets and save paths apply.
 Date selection, search, filters and admin tabs remain local controls without extra browser history entries.
-Lazy editors use revised script addresses and API checks (recipe/drawing/function UI 3, supplier UI 4) so an older delivered module asks for an update.
+Lazy editors use revised script addresses and API checks (recipe/drawing/function UI 4, supplier UI 5) so an older delivered module asks for an update.
 
-`back-navigation`, `local-back-navigation`, `editor-navigation` and `supplier-navigation` cover contextual returns,
+`parent-return`, `back-navigation`, `local-back-navigation`, `editor-navigation` and `supplier-navigation` cover contextual returns,
 direct links, Back and Forward, draft recovery, discard checks, blocked saves and native sheet closing. Existing
 admin navigation, supplier save, permissions, offline, read-budget and full click suites remain release gates.
 

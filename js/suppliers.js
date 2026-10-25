@@ -3,7 +3,7 @@
    read at most 20 records on a tap. No polling, per-item reads, public goods file or second persistent cache. */
 (function () {
   'use strict';
-  var API = 4, A = window.LK_APP, P = window.LK_PREP, T = window.LK_TIME, esc = A.esc;
+  var API = 5, A = window.LK_APP, P = window.LK_PREP, T = window.LK_TIME, esc = A.esc;
   var C, store, loadingCode = null, contextKey = '', generation = 0;
   var M = blank();
   function blank() {
@@ -353,8 +353,13 @@
     if (task === 'reuse') { M.reuse = ''; draw(); return true; }
     if (task === 'history') { closeHistory(); return true; }
     if (task === 'catalogue' && M.auditOpen) { M.auditOpen = false; draw(); focusBack('[data-su="audit"]'); return true; }
-    if (M.mode === 'manage') { M.mode = 'order'; M.q = ''; M.group = ''; M.page = 0; draw(); return true; }
+    if (M.mode === 'manage') { orderMode(); return true; }
     return false;
+  }
+  function orderMode() {
+    M.mode = 'order'; M.q = ''; M.group = ''; M.page = 0;
+    if (M.route.mode === 'manage') A.returnTo('#/suppliers' + (M.route.sid && M.sid ? '/' + encodeURIComponent(M.sid) : ''));
+    else draw();
   }
   function pick(sid) {
     if (!leaveForm('pick:' + sid)) return;
@@ -475,7 +480,7 @@
     if (cmd === 'group') { M.group = el.getAttribute('data-group'); M.page = 0; draw(); }
     if (cmd === 'previous') { M.page--; draw(); } if (cmd === 'next') { M.page++; draw(); }
     if (cmd === 'manage' && canEdit() && leaveForm('manage')) { M.mode = 'manage'; M.review = null; M.q = ''; M.group = ''; M.page = 0; draw(); }
-    if (cmd === 'order-mode' && leaveForm('order-mode')) { M.mode = 'order'; M.q = ''; M.group = ''; M.page = 0; draw(); }
+    if (cmd === 'order-mode' && leaveForm('order-mode')) orderMode();
     if (cmd === 'smart') { M.smart = !M.smart; draw(); if (M.smart) loadRequests(); }
     if (cmd === 'requests-retry') { M.requests = null; loadRequests(); }
     if (cmd === 'apply') { var d = draft(), i = item(id), suggestion = i && C.suggestQuantity(i, latest(), d.stock[id] || ''); if (suggestion && !String(d.qty[id] || '').trim()) { d.qty[id] = suggestion.qty; d.suggestions[id] = suggestion; M.review = null; message('Suggestion added. Check its quantity and unit before ordering.'); } }
