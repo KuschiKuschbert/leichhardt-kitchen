@@ -36,6 +36,7 @@ jobs:
         env:
           BASE: https://kuschikuschbert.github.io/leichhardt-kitchen/
           CHROME: /usr/bin/google-chrome
+          JOBS: 4
         run: npm test
       - name: Keep the screenshots of a failed run
         if: failure()
