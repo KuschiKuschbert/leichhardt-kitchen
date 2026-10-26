@@ -63,6 +63,7 @@ function hasPrivateContact(value) {
   ok(await p.evaluate(() => window.pickerCalls === 1), 'tapping the time field opens its native picker');
   await p.evaluate(() => { HTMLInputElement.prototype.showPicker = function () { throw new DOMException('Unavailable', 'NotAllowedError'); }; });
 
+  ok(await p.$eval('[data-ff="startT"]', e => { e.value = '25:99'; return e.value === ''; }), 'the native time control refuses an impossible time');
   await p.fill('[data-ff="name"]', 'Smith 50th');
   await setV(p, '[data-ff="date"]', today);
   await setV(p, '[data-ff="startT"]', '18:00');

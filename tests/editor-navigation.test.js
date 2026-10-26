@@ -83,7 +83,7 @@ const pendingBack = async (p, mod, save, field, name) => {
   await p.fill('#fe-name', 'Test booking draft');
   // Native browser Back can happen while a time field is still focused, without a blur/change.
   await p.evaluate(() => {
-    const el = document.querySelector('#fe-startT'); el.focus(); el.value = '1715'; el.dispatchEvent(new Event('input', { bubbles: true })); history.back();
+    const el = document.querySelector('#fe-startT'); el.focus(); el.value = '17:15'; el.dispatchEvent(new Event('input', { bubbles: true })); history.back();
   });
   await L.waitFor(p, () => !!document.querySelector('#fe-q'));
   kept = await p.evaluate(() => JSON.parse(localStorage.getItem('lk.fe.draft.test') || 'null'));
