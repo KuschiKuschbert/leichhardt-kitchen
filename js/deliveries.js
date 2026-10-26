@@ -123,7 +123,7 @@
       if (ctx !== key() || !allowed() || attempt && M.attempt !== attempt) return;
       M.busy = false;
       if (e && (e.code === 'permission-denied' || e.code === 'conflict')) M.attempt = null;
-      M.error = e && e.code === 'permission-denied' ? 'The save was refused. Your details are kept. Check your sign-in and that delivery rules have been published.' :
+      M.error = e && e.code === 'permission-denied' ? 'The save was refused. Your details are kept. Sign in again or ask the head chef to check delivery access.' :
         'The save could not be confirmed. Your details are kept. Reconnect and retry to check the same delivery.';
       draw();
     });
