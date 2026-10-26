@@ -405,6 +405,10 @@
     var on = parseRoute().name === 'todo' ? ' aria-current="page"' : '';
     return '<a class="wm-a wm-todo" href="#/todo" data-who="go"' + on + '>' + ICON.todo + '<span><b>Chef to-do</b></span></a>';
   }
+  function deliveryItem() {
+    if (!window.LK_PREP || !window.LK_PREP.privateAccess()) return '';
+    return '<a class="wm-a wm-delivery" href="#/deliveries" data-who="go"' + (parseRoute().name === 'deliveries' ? ' aria-current="page"' : '') + '>' + ICON.doc + '<span><b>Delivery received</b></span></a>';
+  }
   function supplierOK() { return !!(window.LK_PREP && window.LK_PREP.supplier && window.LK_PREP.supplier().read()); }
   function supplierItem() {
     return '<a class="wm-a wm-supplier" href="#/suppliers" data-who="go"' + (parseRoute().name === 'suppliers' ? ' aria-current="page"' : '') + '>' + ICON.todo + '<span><b>Supplier order</b></span></a>';
@@ -434,7 +438,7 @@
         (fnOnly ? '' : '<a class="wm-a" href="#/drinks" data-who="go">' + ICON.cup + '<span><b>Drinks run</b></span></a>') +
         // a second line only while minutes wait to be signed (23 Oct 2026)
         (m.minutes ? '<a class="wm-a" href="#/minutes" data-who="go">' + ICON.doc + '<span><b>Meeting minutes</b>' + (m.toSign ? '<small class="wm-due">' + m.toSign + ' to sign</small>' : '') + '</span></a>' : '') +
-        (m.fn ? fnItem() : fnViewItem()) +
+        (m.fn ? fnItem() : fnViewItem()) + deliveryItem() +
         (m.sec ? '<button type="button" class="wm-a" data-who="sec" data-v="section">' + ICON.chef + '<span><b>My section</b><small>' + esc(m.sec) + '</small></span></button>' : '') +
         (m.chef || adm || m.book ? '<p class="wm-h wm-sh">Chef</p>' + adm : '') + (m.book ? manageItem() : '') +
         (m.chef ? '<button type="button" class="wm-a" data-who="open" data-v="pings">' + ICON.bell + '<span><b>Shift pings</b></span></button>' : '') +
@@ -444,7 +448,7 @@
         // the empty line is where the first tap says "Not saved yet" (the click handler below)
         '<button type="button" class="wm-a wm-out" data-who="out">' + ICON.exit + '<span><b>Sign out</b><small aria-live="polite"></small></span></button>'
       : '<p class="wm-h">Nobody signed in on this phone</p>' +
-        '<a class="wm-a wm-in" href="#/prep" data-who="signin">' + ICON.chef + '<span><b>Sign in</b></span></a>' + adm + (bookEdit() ? manageItem() : '') + (todoOK() ? todoItem() : '') + (supplierOK() ? supplierItem() : '') + (fnOK() ? fnItem() : '') + set) + '</nav>';
+        '<a class="wm-a wm-in" href="#/prep" data-who="signin">' + ICON.chef + '<span><b>Sign in</b></span></a>' + adm + deliveryItem() + (bookEdit() ? manageItem() : '') + (todoOK() ? todoItem() : '') + (supplierOK() ? supplierItem() : '') + (fnOK() ? fnItem() : '') + set) + '</nav>';
     document.body.appendChild(el); wmenu = el;
     btn.setAttribute('aria-expanded', 'true');
     var first = el.querySelector('.wm-a'); if (first) first.focus({ preventScroll: true });
@@ -918,8 +922,24 @@
     });
   }
   function redrawManage() { if (parseRoute().name === 'manage') mountManage(parseRoute()); }
-  /* Supplier tools are lazy, like the recipe editor. A failed download leaves a Retry action and never affects
-     recipes, prep or orders. Protected data is fetched only after the current chef's session has been checked. */
+  /* Private tools load only on their page. A failed download leaves a Retry action.
+     Protected data is fetched only after the current sign-in has been checked. */
+  var deliveryLoad = null;
+  function viewDeliveries() { return '<div class="page"><main id="main"><div id="delivery-root"></div></main>' + footer() + '</div>'; }
+  function mountDeliveries() {
+    var root = document.getElementById('delivery-root'); if (!root || !window.LK_PREP.privateAccess()) return;
+    if (window.LK_DELIVERY) {
+      if (window.LK_DELIVERY.api === 1) window.LK_DELIVERY.mount(root);
+      else root.innerHTML = mgNote('Reload the book', 'Delivery records need the current book.', '<button type="button" class="btn dark" data-act="reload">Reload</button>');
+      return;
+    }
+    root.innerHTML = mgNote('Delivery received', 'Opening delivery records...', ' ');
+    if (!deliveryLoad) deliveryLoad = mgScript('js/deliveries.js?v=1').catch(function (e) { deliveryLoad = null; throw e; });
+    deliveryLoad.then(function () { if (parseRoute().name === 'deliveries') mountDeliveries(); }, function () {
+      if (parseRoute().name === 'deliveries' && root.isConnected) root.innerHTML = mgNote('Could not open delivery records', 'Check the connection and try again.', '<button type="button" class="btn dark" data-delivery-retry>Try again</button>');
+    });
+  }
+  document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-delivery-retry]')) mountDeliveries(); });
   var SUP_API = 7, supLoad = null;
   function viewSuppliers() { return '<div class="page sup-page"><main id="main"><div id="supplier-root"></div></main>' + footer() + '</div>'; }
   function mountSuppliers(route) {
@@ -1057,6 +1077,7 @@
       if (parts[1] === 'cutoff') return { name: 'suppliers', stack: [], sid: '', mode: 'order', cutoffId: valid(parts[2]), cutoffDay: /^\d{4}-\d{2}-\d{2}$/.test(parts[3] || '') ? parts[3] : '' };
       return { name: 'suppliers', stack: [], sid: parts[1] === 'manage' ? '' : valid(parts[1]), mode: parts[1] === 'manage' || parts[2] === 'manage' ? 'manage' : 'order', cutoffId: '', cutoffDay: '' };
     }
+    if (parts[0] === 'deliveries') return { name: 'deliveries', stack: [] };
     if (parts[0] === 'settings') return { name: 'settings', stack: [] };
     if (parts[0] === 'prep' || parts[0] === 'admin' || parts[0] === 'orders' || parts[0] === 'waste' || parts[0] === 'transfers' || parts[0] === 'minutes' || parts[0] === 'mail' || parts[0] === 'drinks' || parts[0] === 'todo') return { name: parts[0], stack: [] };
     if (parts[0] === 'guides') return { name: 'guides', stack: [], gid: parts[1] || '' };
@@ -1112,7 +1133,7 @@
     return '#/';
   }
   function backTitle(hash) {
-    var r = parseRoute(hash), names = { landing: 'Kitchen Book', home: 'recipes', prep: 'prep list', orders: 'order list', waste: 'wastage', transfers: 'transfers', minutes: 'meeting minutes', mail: 'kitchen mail', drinks: 'drinks run', todo: 'Chef to-do', admin: 'admin panel', settings: 'Settings', guides: 'guides', fn: 'functions', functions: 'Manage functions', manage: 'Manage recipes', suppliers: 'Supplier order' };
+    var r = parseRoute(hash), names = { landing: 'Kitchen Book', home: 'recipes', prep: 'prep list', orders: 'order list', waste: 'wastage', transfers: 'transfers', minutes: 'meeting minutes', mail: 'kitchen mail', drinks: 'drinks run', todo: 'Chef to-do', admin: 'admin panel', settings: 'Settings', guides: 'guides', fn: 'functions', functions: 'Manage functions', manage: 'Manage recipes', suppliers: 'Supplier order', deliveries: 'Delivery received' };
     if (r.name === 'recipe') return 'recipe';
     return names[r.name] || 'Kitchen Book';
   }
@@ -1225,6 +1246,7 @@
     else if (PREP_PAGES[route.name]) html = viewPrep();
     else if (route.name === 'manage') html = viewManage();
     else if (route.name === 'suppliers') html = viewSuppliers();
+    else if (route.name === 'deliveries') html = viewDeliveries();
     else if (route.name === 'fn') html = viewFn(route);
     else if (route.name === 'functions') html = viewFunctions();
     else if (view === 'pass') html = viewPass(route);
@@ -1238,6 +1260,7 @@
     if (!changed) Array.prototype.forEach.call(app.querySelectorAll('.chips.scroll'), function (el, i) { if (rowsAt[i]) el.scrollLeft = rowsAt[i]; });
     fitPins();
     if (!locked && route.name === 'manage') mountManage(route); else if (window.LK_MG) window.LK_MG.unmount();
+    if (!locked && route.name === 'deliveries') mountDeliveries(); else if (window.LK_DELIVERY) window.LK_DELIVERY.unmount();
     if (!locked && route.name === 'suppliers') mountSuppliers(route); else if (window.LK_SUP) window.LK_SUP.unmount();
     if (!locked && route.name === 'functions') mountFunctions(route); else if (window.LK_FE) window.LK_FE.unmount();
     if ((locked || PREP_PAGES[route.name]) && window.LK_PREP) window.LK_PREP.mount(route.name, document.getElementById('prep-root'), route.gid);

@@ -1,6 +1,6 @@
 # Delivery temperatures
 
-Requested by Kuschi, 26 October 2026. Status: database rules verified on the emulator; form implementation follows in a separate release.
+Requested by Kuschi, 26 October 2026. Status: implementation verified. Current deployment evidence is recorded in the release pull requests and GitHub Actions.
 
 ## Outcome
 
@@ -31,4 +31,8 @@ Publish the additive delivery rules and verify their workflow before releasing t
 - Blank readings, malformed dates/times, future receipt times and invalid numbers are rejected; decimal, negative and zero readings persist.
 - Failed saves retain the form. Repeating a save after a lost acknowledgement creates no duplicate.
 - Phone, tablet and desktop use the existing fonts, colours and controls without horizontal overflow. Text from other people is escaped.
-- Database evidence: all existing emulator suites pass, including 124 delivery access and validation checks. Browser and release checks follow with the form release.
+- Real database rules: all existing emulator suites passed, including 124 delivery access and validation checks.
+- Receiving browser flows passed for all six roles and Google-only admin, retries after refused/offline saves and a lost acknowledgement, history errors and 390 / 768 / 1280 px layouts.
+- Manual backup and PIN move checks passed with receipt fields preserved. The nightly backup emulator fixture passed the date window, zero, negative readings, notes and original receiver.
+- All 132 local browser files passed across the full run and the focused rerun for the new menu entry. The final receiving, head-chef menu and backup/PIN-move checks passed (139 checks). Existing read budgets pass without an increase.
+- The prerequisite database release is [PR #391](https://github.com/KuschiKuschbert/leichhardt-kitchen/pull/391). The form release records its full CI, Pages and live-check results in its pull request. No test receipts are written to the live kitchen.

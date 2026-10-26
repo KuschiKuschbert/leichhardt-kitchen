@@ -12,6 +12,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
 
   // Move to a new kitchen PIN: staff PINs, notes, minutes, earlier versions, sign-offs and seen records all come along
   const extra = {};
+  extra[fsKey(['deliveries', 'receipt-1'])] = { day: today, receivedAt: L.NOW - 60000, recordedAt: L.NOW, supplier: 'Test supplier', chilled: 0, frozen: -18.5, note: 'Sample goods', receivedBy: 'Ann', receivedById: 'ann', by: 'ann' };
   extra[fsKey(['notes', 'n1'])] = { text: 'Fryer oil change', tag: 'none', start: '2026-01-05', until: '2026-01-05', dows: [], removed: false, at: 1, upd: 1, by: 'sam' };
   extra[fsKey(['notes', 'n1', 'seen', today + '_ann'])] = { day: today, at: 1, by: 'ann' };
   extra[fsKey(['minutes', 'm1'])] = { no: 1, v: 2, status: 'published', date: today, att: [], acts: [], removed: false, at: 1, upd: 1 };
@@ -43,6 +44,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   ok(/^Copied \d+ records/.test(msg) && !/left on the old PIN/.test(msg), 'move PIN: finished without refusals (' + msg.slice(0, 60) + ')');
   s = await store(p);
   ['sam', 'ann', 'bo'].forEach(id => ok(!!s[newKey(['staffpins', id])] && !!s[newKey(['pinset', id])], 'move PIN: PIN of ' + id + ' copied'));
+  ok((s[newKey(['deliveries', 'receipt-1'])] || {}).frozen === -18.5, 'move PIN: delivery temperatures and original attribution copied');
   ok(!!s[newKey(['notes', 'n1'])], 'move PIN: notes copied');
   ok(!!s[newKey(['notes', 'n1', 'seen', today + '_ann'])], 'move PIN: seen records copied');
   ok(!!s[newKey(['minutes', 'm1'])], 'move PIN: minutes copied');
@@ -76,6 +78,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   ok((bk.transfers[today] || []).some(x => x.id === 'x1' && x.venue === 'Riviera'), 'backup: transfers between venues included');
   ok(bk.book.some(x => x.id === 'matches' && x.m['donut fry'] === 'fries-shoestring'), 'backup: the Draw it for me picks included');
   ok(bk.book.some(x => x.id === 'index') && bk.recipes.length === 1 && bk.recipes[0].v === 2 && (bk.recipesHist.burger || []).some(x => x.id === '1'), 'backup: the head chef\'s recipe changes and their earlier versions included');
+  ok(bk.deliveries.length === 1 && bk.deliveries[0].frozen === -18.5 && bk.deliveries[0].receivedById === 'ann', 'backup: delivery readings and original receiver included');
   ok(bk.drawtpl.length === 1 && bk.drawtpl[0].name === 'Pub split' && bk.drawlib.length === 1 && bk.drawlib[0].name === 'House slaw', 'backup: the head chef\'s templates and own library pieces included');
   ok(Object.keys(bk.days).length === 1 && bk.days[today].length === 6 && Array.isArray(bk.pins) && !bk.pins.some(x => x.hash), 'backup: prep lines still in, PIN fingerprints still left out');
   await L.settle(p, 200);

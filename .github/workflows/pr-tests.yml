@@ -52,7 +52,7 @@ jobs:
         run: npm ci --no-audit --no-fund && npm test
       - name: Check the nightly learning counts on the emulator
         working-directory: scripts
-        run: npm ci --no-audit --no-fund && ../tests/rules/node_modules/.bin/firebase emulators:exec --only firestore --project demo-test "node emulator-check.mjs && node transfer-index-check.mjs && node waste-range-check.mjs"
+        run: npm ci --no-audit --no-fund && ../tests/rules/node_modules/.bin/firebase emulators:exec --only firestore --project demo-test "node emulator-check.mjs && node transfer-index-check.mjs && node waste-range-check.mjs && node delivery-backup-check.mjs"
       - name: Keep the screenshots of a failed run
         if: failure()
         uses: actions/upload-artifact@v4

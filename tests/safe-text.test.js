@@ -7,6 +7,7 @@ const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
 const today = L.ymd(new Date(L.NOW));
 const P = 'Zz<i id="pwn"></i><img src=x onerror="window.__pwn=1">" data-pwn="1 \'Zz';
 const extra = {};
+extra[fsKey(['deliveries', 'bad-delivery'])] = { day: today, receivedAt: L.NOW - 60000, recordedAt: L.NOW, supplier: 'Delivery ' + P, chilled: 0, frozen: -18.5, note: 'Goods ' + P, receivedBy: 'Receiver ' + P, receivedById: 'ann', by: 'ann' };
 extra[fsKey(['days', today, 'items', 'x1'])] = { text: 'Line ' + P, station: 'Larder' + P, qty: '2' + P, recipe: '', addedBy: 'Ann' + P, addedById: 'ann', addedAt: L.NOW - 600000, done: false, deleted: false };
 extra[fsKey(['orders', today, 'lines', 'x1'])] = { text: 'Order ' + P, qty: '1' + P, recipes: [], addedBy: 'Ann' + P, addedById: 'ann', addedAt: L.NOW - 600000, ordered: false, deleted: false };
 extra[fsKey(['waste', today, 'lines', 'x1'])] = { text: 'Waste ' + P, amount: 1, unit: 'kg', reason: 'prep', action: 'Act ' + P, station: 'Sec' + P, addedBy: 'Bo' + P, addedById: 'bo', addedAt: L.NOW - 600000, deleted: false };
@@ -52,6 +53,7 @@ async function check(b, hash, o, name, see, then) {
     await p.evaluate(() => { const o = document.querySelector('[data-p="tr-often"]'); if (o) o.click(); }); await L.settle(p, 300);
     await p.fill('#tr-text', 'Ta'); await L.settle(p, 300);
   });
+  await check(b, '#/deliveries', { who: 'ann' }, 'deliveries', 'Delivery');
   await check(b, '#/drinks', { who: 'sam' }, 'drinks run', null);
   await check(b, '#/todo', { who: 'sam' }, 'chef to-do', 'Todo', async p => { await L.waitFor(p, () => !!document.querySelector('.todo-row'), null, 5000).catch(() => {}); await L.tap(p, '.todo-donebox summary'); await L.waitFor(p, () => !!document.querySelector('[data-lv="tododone"] .todo-row'), null, 5000).catch(() => {}); });
   await check(b, '#/guides', { who: 'ann' }, 'guides', 'Guide');
