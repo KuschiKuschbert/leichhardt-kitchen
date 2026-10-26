@@ -36,7 +36,7 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
         run: |
-          if [ "$EVENT_NAME" = workflow_dispatch ] || git diff-tree --no-commit-id --name-only -r HEAD | grep -Eq '^(firestore.rules|scripts/access-bootstrap.mjs|.github/workflows/publish-rules.yml)$'; then
+          if [ "$EVENT_NAME" = workflow_dispatch ] || git diff-tree --no-commit-id --name-only -r HEAD | grep -Eq '^(firestore.rules|scripts/access-bootstrap.mjs|scripts/ping-index.mjs|.github/workflows/publish-rules.yml)$'; then
             echo "publish=true" >> "$GITHUB_OUTPUT"
           else
             echo "publish=false" >> "$GITHUB_OUTPUT"
@@ -45,7 +45,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.publish == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
@@ -79,6 +79,12 @@ jobs:
           FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
           KITCHEN_PIN: ${{ secrets.KITCHEN_PIN }}
         run: node waste-range-check.mjs
+      - name: Prepare the private ping recipient index
+        working-directory: scripts
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+          KITCHEN_PIN: ${{ secrets.KITCHEN_PIN }}
+        run: node ping-index.mjs
       - name: Fill in the template
         env:
           KITCHEN_PIN: ${{ secrets.KITCHEN_PIN }}

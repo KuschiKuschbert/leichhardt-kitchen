@@ -16,6 +16,9 @@ export function probeChecks(fs, pin) {
   return [
     ['public recipes remain readable', () => fs.get(K + 'book/index'), true],
     ['private config cannot be read while signed out', () => fs.get(K + 'config/main'), false],
+    ['individual pings cannot be read while signed out', () => fs.get(K + 'directnotes/' + id), false],
+    ['individual pings cannot be queried while signed out', () => fs.query(K.slice(0, -1), 'directnotes', 'to', 'EQUAL', str('probe')), false],
+    ['individual ping receipts cannot be read while signed out', () => fs.get(K + 'directnotes/' + id + '/seen/' + day + '_probe'), false],
     ['functions cannot be read while signed out', () => fs.get(K + 'functions/' + id), false],
     ['prep cannot be read while signed out', () => fs.query(K + 'days/' + day, 'items', 'deleted', 'EQUAL', bool(false)), false],
     ['a wrong kitchen PIN reads nothing', () => fs.get('kitchens/0/config/main'), false],

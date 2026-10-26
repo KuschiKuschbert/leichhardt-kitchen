@@ -375,6 +375,40 @@ service cloud.firestore {
       allow update: if (lead() || (staff() && pingBy() && resource.data.get('author', resource.data.get('by', '')) == request.resource.data.by)) && noteOk();
       allow delete: if false;
     }
+    // Personal pings stay out of legacy Everyone queries.
+    function pingManager() {
+      return isAdmin() || (kitchenRead() && (reader() in cfg().get('sousIds', [])
+        || reader() == cfg().get('headId', '')));
+    }
+    function directWriter() { return isAdmin() || (staff() && (sousBy() || request.resource.data.by == cfg().get('headId', ''))); }
+    function directRead(d) { return pingManager() || (kitchenRead() && d.to == reader()); }
+    function directOk() {
+      return noteOk() && request.resource.data.keys().hasOnly(['text', 'tag', 'start', 'until', 'dows', 'tm', 'removed', 'upd', 'at', 'author', 'by', 'to'])
+        && request.resource.data.to is string && request.resource.data.to.size() > 0 && request.resource.data.to.size() <= 80
+        && request.resource.data.at is number && request.resource.data.upd is number
+        && request.resource.data.author is string && request.resource.data.author.size() <= 80
+        && request.resource.data.by is string && request.resource.data.by.size() <= 80;
+    }
+    match /kitchens/KITCHEN_PIN/directnotes/{id} {
+      allow read: if directRead(resource.data);
+      allow create: if directWriter() && directOk()
+        // The verified owner can preserve historical recipients/authors during a kitchen-PIN move.
+        && (isAdmin() || (request.resource.data.to in cfg().get('staffIds', []) && !functionOnly(request.resource.data.to)
+          && request.resource.data.author == request.resource.data.get('by', '')));
+      allow update: if directWriter() && directOk()
+        && request.resource.data.to == resource.data.to && request.resource.data.author == resource.data.author
+        && request.resource.data.at == resource.data.at;
+      allow delete: if false;
+    }
+    match /kitchens/KITCHEN_PIN/directnotes/{id}/seen/{sid} {
+      function parent() { return get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/directnotes/$(id)).data; }
+      allow read: if pingManager() || (kitchenRead() && parent().to == reader() && resource.data.by == reader());
+      allow create: if (isAdmin() || staff()) && parent().to == request.resource.data.by
+        && request.resource.data.keys().hasOnly(['day', 'at', 'by'])
+        && request.resource.data.day is string && request.resource.data.day.size() == 10
+        && request.resource.data.at is number && sid == request.resource.data.day + '_' + request.resource.data.by;
+      allow update, delete: if false;
+    }
     // Kitchen meeting minutes. Only the head chef (Google account) writes them (draft, then published). Sous chefs read the register. Everyone with the kitchen PIN reads the published ones.
     // Minutes are never deleted, only flagged as removed. "v" is the version: a change after publishing makes version 2 and everyone signs again.
     // Every earlier version is kept in minutes/<id>/hist/<v> and cannot be changed.

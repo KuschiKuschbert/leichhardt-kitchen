@@ -61,6 +61,7 @@ for (const name of ['activity', 'sections', 'learned', 'ordlearned', 'learnlog',
 out.deliveries = grab(await K.collection('deliveries').where('day', '>=', shift(today, -(DAYS - 1))).where('day', '<=', today).get());
 reads += Math.max(1, out.deliveries.length);
 out.notes = await all('notes'); out.notesSeen = await subs(out.notes, 'notes', 'seen');
+out.directnotes = await all('directnotes'); out.directnotesSeen = await subs(out.directnotes, 'directnotes', 'seen');
 out.minutes = await all('minutes'); out.minutesHist = await subs(out.minutes, 'minutes', 'hist'); out.minutesSigns = await subs(out.minutes, 'minutes', 'signs');
 // the head chef's book: the index, every recipe changed or added in the book and every drawing, with their earlier versions
 out.book = await all('book'); out.recipes = await all('recipes'); out.recipesHist = await subs(out.recipes, 'recipes', 'hist');
@@ -75,7 +76,7 @@ out.functions = await all('functions'); out.functionsHist = await subs(out.funct
 reads += out.functions.length + out.fncontact.length;
 reads += out.book.length + out.recipes.length + out.drawings.length;
 out.pins = (await all('pinset')).map(x => ({ id: x.id, name: x.name, setAt: x.setAt }));
-reads += out.notes.length + out.minutes.length + out.pins.length;
+reads += out.notes.length + out.directnotes.length + out.minutes.length + out.pins.length;
 let lines = 0, dayN = 0;
 for (let k = 0; k < DAYS; k++) {
   const d = shift(today, -k);
@@ -92,5 +93,5 @@ for (let k = 0; k < DAYS; k++) {
   if (trans.size) out.transfers[d] = grab(trans);
 }
 writeFileSync(OUT, JSON.stringify(out, null, 1));
-console.log('Backed up ' + lines + ' prep lines from ' + dayN + ' of the last ' + DAYS + ' days, ' + out.notes.length + ' shift pings, minutes from ' + out.minutes.length + ' meetings, ' + out.learned.length + ' learned items, ' + out.guides.length + ' guides and ' + out.recipes.length + ' recipes changed in the book (' + reads + ' reads).');
+console.log('Backed up ' + lines + ' prep lines from ' + dayN + ' of the last ' + DAYS + ' days, ' + (out.notes.length + out.directnotes.length) + ' shift pings, minutes from ' + out.minutes.length + ' meetings, ' + out.learned.length + ' learned items, ' + out.guides.length + ' guides and ' + out.recipes.length + ' recipes changed in the book (' + reads + ' reads).');
 process.exit(0);

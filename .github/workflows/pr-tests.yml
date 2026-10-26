@@ -46,6 +46,7 @@ jobs:
         working-directory: tests
         env:
           CHROME: /usr/bin/google-chrome
+          JOBS: 4
         run: npm test
       - name: Check the rules on the Firestore emulator
         working-directory: tests/rules
