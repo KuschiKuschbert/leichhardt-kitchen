@@ -194,3 +194,8 @@ Read `docs/function-printing.md` before changing the print copy. Layout 2 is app
 ## One-click function cancellation (25 Oct 2026)
 
 Read `docs/function-cancellation.md` before changing function status writes. Sous chefs, headId, function managers and the verified admin may cancel. Other editing and contact permissions still use fnIds. Cancel and the same person's two-minute Undo read the server, use version guards, keep matching immutable history and batch prep/order effects. Keep the shared helpers in `js/functions.js`; the form uses them too. Rules must pass the largest 12-line, 8-round batch and be published before this UI. The editor and app use API 7. List/form deletion uses `setRemoved()` in `js/fnedit.js`, only for drafts/cancelled bookings. Deleted has explicit recovery that leaves the booking cancelled. The People checkbox grants create/edit access without changing a kitchen role; do not hardcode real staff names or grant a named person access as part of code authoring.
+
+
+## Individual shift pings (26 Oct 2026)
+
+Read `docs/ping-recipients.md` before changing recipients, queries or delivery. Keep individual text in `directnotes`, outside legacy Everyone queries. Match the real personal session in Firestore; stale `pingIds` must not grant private management access. Recipient/author/creation time stay fixed. Publish tested rules and the additive recipient/date index from the feature branch before merging client code. Backups, PIN moves, receipts and shared-device clearing must retain both kinds of pings.

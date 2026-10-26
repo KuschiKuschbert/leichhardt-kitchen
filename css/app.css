@@ -2404,3 +2404,6 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
 
 /* Physical stock return: the familiar tick box keeps room for the item on a phone. */
 .tr-return-box { flex-basis: 44px; width: 44px; height: 44px; }
+
+/* Keep the native recipient picker within a phone screen, including long staff names. */
+.n-edit #n-to { width: min(100%, 28rem); min-width: 0; }

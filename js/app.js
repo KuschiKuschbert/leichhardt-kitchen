@@ -483,7 +483,7 @@
      to sign (js/prep.js noteBell() keeps it right after the page is drawn) */
   function noteBellHTML() {
     var P = window.LK_PREP, i = P && P.noteInfo ? P.noteInfo() : { on: false, n: 0, unread: false, sign: 0 };
-    return '<button type="button" class="wtop-btn nbell' + (i.unread || i.sign ? ' has-new' : '') + '" data-note="open"' + (i.on ? '' : ' hidden') + ' aria-label="' + esc(P && P.noteBellLabel ? P.noteBellLabel(i) : '') + '">' + BELL + '<span class="wtop-lbl">Pings</span></button>';
+    return '<button type="button" class="wtop-btn nbell' + (i.error || i.unread || i.sign ? ' has-new' : '') + '" data-note="open"' + (i.on ? '' : ' hidden') + ' aria-label="' + esc(P && P.noteBellLabel ? P.noteBellLabel(i) : '') + '">' + BELL + '<span class="wtop-lbl">Pings</span></button>';
   }
   /* The same top bar on every page as on the landing page: brand (goes home), the menu, Pings and the chef hat
      (its menu holds Admin and Settings). */
