@@ -184,6 +184,34 @@ service cloud.firestore {
         && request.time >= timestamp.date(int(day.split('-')[0]), int(day.split('-')[1]), int(day.split('-')[2])) - duration.value(615, 'm')
         && request.time < timestamp.date(int(day.split('-')[0]), int(day.split('-')[1]), int(day.split('-')[2])) + duration.value(855, 'm');
     }
+    // Delivery temperatures: every personal login, including function-only and view-only roles, may record and read
+    // today's receipts. The verified admin reads history and copies receipts during a PIN move. No other access changes.
+    function deliveryTemp(t) { return t == null || (t is number && t >= -100 && t <= 100); }
+    function deliveryOk() {
+      let d = request.resource.data;
+      let start = timestamp.date(int(d.day.split('-')[0]), int(d.day.split('-')[1]), int(d.day.split('-')[2])).toMillis() - 36000000;
+      return d.keys().hasOnly(['day', 'receivedAt', 'recordedAt', 'supplier', 'chilled', 'frozen', 'note', 'receivedBy', 'receivedById', 'by'])
+        && d.keys().hasAll(['day', 'receivedAt', 'recordedAt', 'supplier', 'chilled', 'frozen', 'note', 'receivedBy', 'receivedById', 'by'])
+        && d.day is string && d.day.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
+        && d.supplier is string && d.supplier.size() > 0 && d.supplier.size() <= 80 && d.supplier.matches('.*[^ ].*')
+        && d.note is string && d.note.size() <= 300
+        && deliveryTemp(d.chilled) && deliveryTemp(d.frozen) && (d.chilled != null || d.frozen != null)
+        && d.receivedBy is string && d.receivedBy.size() > 0 && d.receivedBy.size() <= 80
+        && d.by is string && d.by.size() > 0 && d.by.size() <= 80 && d.receivedById == d.by
+        && d.receivedAt is number && d.receivedAt >= start && d.receivedAt < start + 86400000
+        && d.recordedAt is number && d.recordedAt >= d.receivedAt
+        && (isAdmin() || (isToday(d.day) && d.receivedAt <= request.time.toMillis() + 60000
+          && d.recordedAt <= request.time.toMillis() + 60000 && d.recordedAt >= request.time.toMillis() - 86400000));
+    }
+    match /kitchens/KITCHEN_PIN/deliveries/{receipt} {
+      // The initial id check may read an absent document. Existing records still require today's date for staff.
+      allow get: if isAdmin() || (functionRead() && (resource == null || isToday(resource.data.day)));
+      allow list: if isAdmin() || (functionRead() && isToday(resource.data.day));
+      allow create: if (isAdmin() || session()) && deliveryOk();
+      // Exact retries are idempotent. A saved reading cannot be overwritten or deleted, including by admin.
+      allow update: if (isAdmin() || session()) && request.resource.data == resource.data;
+      allow delete: if false;
+    }
     // Wastage log: anyone signed in adds a line; only the head chef's Google account removes or puts one back.
     // Head chef decision (22 Oct 2026): with the kitchen PIN only today's lines can be read. Past days are for the
     // head chef's Google account (the admin panel's wastage log). The phones get what they need from summary/waste.

@@ -57,6 +57,9 @@ let reads = 0;
 const cfg = await K.collection('config').doc('main').get(); reads++;
 out.config = cfg.exists ? plain(cfg.data()) : null;
 for (const name of ['activity', 'sections', 'learned', 'ordlearned', 'learnlog', 'summary', 'misses', 'views', 'guides', 'mail', 'mailstat', 'drinks', 'shifts', 'daily', 'todos', 'cutdone', 'transferOpen']) { out[name] = await all(name); reads += out[name].length; }
+// One day range query, only the backup window. No separate read for each delivery day.
+out.deliveries = grab(await K.collection('deliveries').where('day', '>=', shift(today, -(DAYS - 1))).where('day', '<=', today).get());
+reads += Math.max(1, out.deliveries.length);
 out.notes = await all('notes'); out.notesSeen = await subs(out.notes, 'notes', 'seen');
 out.directnotes = await all('directnotes'); out.directnotesSeen = await subs(out.directnotes, 'directnotes', 'seen');
 out.minutes = await all('minutes'); out.minutesHist = await subs(out.minutes, 'minutes', 'hist'); out.minutesSigns = await subs(out.minutes, 'minutes', 'signs');

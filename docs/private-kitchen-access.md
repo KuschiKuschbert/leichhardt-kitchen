@@ -6,7 +6,7 @@ Approved by Kuschi, 25 October 2026. This policy replaces the earlier kitchen-PI
 
 - Signed out: current recipes and their plating drawings only. The kitchen PIN opens the minimal name picker; a personal PIN opens operational data. Anonymous Firebase authentication is not a personal login.
 - Staff: existing prep, orders, wastage, transfer, guide, published minute, ping-reading and kitchen-mail permissions after login. Existing restrictions on historical records remain.
-- Functions coordinator (`fnc`, canonical `fnOnlyIds`): public recipes and function management/service information only. No operational lists, staff administration, supplier data or kitchen mail. The separate Functions tick (`fnIds`) still controls booking writes.
+- Functions coordinator (`fnc`, canonical `fnOnlyIds`): public recipes, function management/service information and today's delivery temperature records. No operational lists, staff administration, supplier data or kitchen mail. The separate Functions tick (`fnIds`) still controls booking writes.
 - Head chef and sous chef: recipe and drawing management. Supplier catalogue editing remains head-chef/admin only.
 - Admin: verified owner Google account. A staff identity never inherits it. Selecting a person signs Google out before checking that person's PIN; a restored non-head staff identity on an old Google session is locked and must enter its own PIN again.
 - Sign out/idle lock: private screens, overlays and drafts close. Other tabs receive the lock. Sign out also ends Google authentication, not just the personal PIN session.
@@ -15,7 +15,7 @@ Approved by Kuschi, 25 October 2026. This policy replaces the earlier kitchen-PI
 
 `login/roster` is the minimal sign-in bootstrap document: names, role/permission ids and active membership, with no kitchen settings, contact details, PIN hashes or operational records. It is readable by an authenticated Firebase client that knows the kitchen path. Only the admin, or a sous chef's matching staff-list batch with unchanged canonical permission ids, may update it.
 
-All operational reads require a valid personal session (or admin). `fnOnlyIds` is admin-controlled and excludes functions-only accounts from kitchen reads and writes. Function-generated prep/order updates remain possible only for their own function in the same booking revision batch; the coordinator cannot read or edit unrelated lists. History subcollections are explicitly protected.
+All operational reads require a valid personal session (or admin). `fnOnlyIds` is admin-controlled and excludes functions-only accounts from other kitchen reads and writes. Delivery receipts are the explicit all-login exception; they do not grant access to config, orders or supplier catalogues. Function-generated prep/order updates remain possible only for their own function in the same booking revision batch; the coordinator cannot read or edit unrelated lists. History subcollections are explicitly protected.
 
 `publicBook/index`, `publicBook/matches`, `publicRecipes` and `publicDrawings` mirror current public recipe assets. Saves mirror the canonical kitchen documents in the same batch; rules require equality with those canonical documents. Histories and kitchen settings are never mirrored. The fixed public address lets a fresh visitor see edited/new recipes without knowing the kitchen PIN.
 
