@@ -17,7 +17,7 @@ Past pings use two date-bounded queries when a chef asks, with the existing 30-r
 ## Publish order
 
 1. Run browser and rules tests on the feature branch. The direct-ping rules tests cover constrained queries, other-person denials, expired/removed sessions, stale pingIds, functions-only accounts, writes, immutable targeting and receipts.
-2. Run the existing Publish rules workflow **from the tested feature branch before merging the UI**. Its new ping-index.mjs step adds only the collection-scope `to ASC, until ASC` index, waits for READY and proves the exact recipient/date query. It preserves all other indexes and writes no kitchen messages or records. Existing repository secrets are reused; no secret values belong in the repository or chat.
+2. Run the existing Publish rules workflow **from the tested feature branch before merging the UI**. Its new ping-index.mjs step first proves the exact recipient/date query with existing indexes, without index-admin permission. If an index is missing, it adds only the collection-scope `to ASC, until ASC` index and waits for READY. If index administration is refused, create that index once in Firebase Console and rerun; broader permanent credentials are unnecessary. It preserves all other indexes and writes no kitchen messages or records. Existing repository secrets are reused; no secret values belong in the repository or chat.
 3. Confirm the workflow succeeds, including live lock probes, then merge and wait for Pages and live browser checks. Older app versions continue showing Everyone pings; refresh them to receive individual pings.
 4. If preparation fails, keep the UI unmerged. Index or permission failures are prerequisites, never a reason to broaden message-read permissions.
 

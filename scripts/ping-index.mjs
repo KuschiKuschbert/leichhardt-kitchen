@@ -28,6 +28,12 @@ export async function ensurePingIndex(api, pause=ms=>new Promise(r=>setTimeout(r
   }
   if(!index||index.state!=='READY')throw new Error('The personal-ping index is not ready.');
 }
+// Existing query support does not require index-administration permissions.
+export async function preparePingQuery(check, api, pause) {
+  try { await check(); return; } catch(e) { if(e.code!==9&&e.code!=='failed-precondition')throw e; }
+  await ensurePingIndex(api,pause);
+  await check();
+}
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href) {
   const {cert,initializeApp,deleteApp}=await import('firebase-admin/app');
   const {getFirestore}=await import('firebase-admin/firestore');
@@ -45,12 +51,13 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href) {
     return response.json();
   };
   try {
-    await ensurePingIndex(api);
     // This reads no kitchen records; it proves the exact client query can use the deployed index.
-    await getFirestore(app).collection('kitchens').doc(process.env.KITCHEN_PIN||'index-check').collection('directnotes')
-      .where('to','==','__index_probe__').where('until','>=',new Date().toISOString().slice(0,10)).limit(1).get().catch(e=>{throw new Error('Recipient/date query validation failed with code '+e.code);});
-    console.log('Personal-ping index is ready and the recipient/date query succeeded. No kitchen records changed.');
+    const check=()=>getFirestore(app).collection('kitchens').doc(process.env.KITCHEN_PIN||'index-check').collection('directnotes')
+      .where('to','==','__index_probe__').where('until','>=',new Date().toISOString().slice(0,10)).limit(1).get().catch(e=>{const failure=new Error('Recipient/date query validation failed with code '+e.code);failure.code=e.code;throw failure;});
+    await preparePingQuery(check,api);
+    console.log('The recipient/date query is ready with the deployed indexes. No kitchen records changed.');
   } catch(e) {
+    if(e.status===403)console.error('Create a COLLECTION-scope directnotes index with to ASCENDING and until ASCENDING in Firebase, then rerun. No broader service-account role is needed once the query works.');
     console.error(/^(Firestore index API|Personal-ping index|The personal-ping index|Existing Firebase credentials|Recipient\/date query)/.test(e.message||'')?e.message:'Could not prepare the individual-ping index. Check service-account permissions and connectivity.');
     process.exitCode=1;
   } finally {await deleteApp(app);}

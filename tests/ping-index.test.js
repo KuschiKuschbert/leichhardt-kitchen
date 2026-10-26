@@ -1,7 +1,7 @@
 // Resource preparation is additive, waits for readiness, and fails closed on provisioning errors.
 const assert=require('node:assert/strict');
 (async()=>{
- const {ensurePingIndex}=await import('../scripts/ping-index.mjs');
+ const {ensurePingIndex,preparePingQuery}=await import('../scripts/ping-index.mjs');
  const fields=[{fieldPath:'to',order:'ASCENDING'},{fieldPath:'until',order:'ASCENDING'}];
  const ready={name:'projects/test/databases/(default)/collectionGroups/directnotes/indexes/ready',queryScope:'COLLECTION',fields:[...fields,{fieldPath:'__name__',order:'ASCENDING'}],state:'READY'};
  let calls=[];
@@ -27,5 +27,12 @@ const assert=require('node:assert/strict');
  },async()=>{});
  assert.equal(conflict,2);
  await assert.rejects(ensurePingIndex(async(path,method)=>method==='POST'?{done:true,error:{code:7}}:{indexes:[]}),/failed with code 7/);
- console.log('7 personal-ping index preparation checks passed.');
+ let adminCalls=0;
+ await preparePingQuery(async()=>{},async()=>{adminCalls++;throw new Error('no index-admin permission');});
+ assert.equal(adminCalls,0);
+ let queryChecks=0;
+ await preparePingQuery(async()=>{if(!queryChecks++){const e=new Error('missing index');e.code=9;throw e;}},async()=>({indexes:[ready]}));
+ assert.equal(queryChecks,2);
+ await assert.rejects(preparePingQuery(async()=>{const e=new Error('read denied');e.code=7;throw e;},async()=>{throw new Error('must not request index admin');}),/read denied/);
+ console.log('10 personal-ping index preparation checks passed.');
 })();
