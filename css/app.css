@@ -2068,7 +2068,7 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd 
 .fe-lq { display: flex; align-items: center; gap: 0.4rem; }
 .fe-num { width: 5rem; min-height: 44px; text-align: center; }
 .fe-grid .fe-num { width: 4rem; }
-.fe-time { width: 5rem; min-height: 40px; text-align: center; }
+.fe-time { width: 9rem; max-width: 100%; min-width: 0; min-height: 44px; text-align: center; }
 .fe-rnote { display: block; width: 11rem; margin-top: 0.25rem; min-height: 36px; font-size: 0.85rem; }
 .fe-rn { display: inline-block; min-width: 1.4rem; font-weight: 700; }
 .fe-nd { display: block; color: #6A4A00; font-weight: 600; }
@@ -2436,3 +2436,7 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
 
 /* Keep the native recipient picker within a phone screen, including long staff names. */
 .n-edit #n-to { width: min(100%, 28rem); min-width: 0; }
+
+/* Calendar and clock fields keep the native picker and an easy tap target. */
+input:is([type="date"], [type="time"]) { min-height: 44px; cursor: pointer; max-width: 100%; box-sizing: border-box; }
+input:is([type="date"], [type="time"]):disabled, input:is([type="date"], [type="time"]):read-only { cursor: default; }

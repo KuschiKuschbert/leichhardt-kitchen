@@ -32,6 +32,7 @@ const save = async p => { await p.click('#dl-form button[type="submit"]'); await
   for (const value of ['abc', '-101', '101', '1e2']) {
     await p.fill('#dl-chilled', value); await save(p); ok(/Enter a temperature/.test(await p.locator('#dl-save-note').innerText()), 'invalid reading rejected: ' + value);
   }
+  ok(await p.$eval('#dl-time', e => e.type === 'time' && e.step === '60'), 'delivery arrival uses a minute picker');
   await p.fill('#dl-chilled', '3,5'); await p.fill('#dl-time', '23:59'); await save(p); ok(/future/.test(await p.locator('#dl-save-note').innerText()), 'future receipt time is rejected');
   await p.fill('#dl-time', '13:45'); await save(p);
   let saved = (await records(p)).find(x => x.supplier === 'Test supplier');

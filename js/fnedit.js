@@ -17,7 +17,7 @@
 (function () {
   'use strict';
 
-  var API = 7;
+  var API = 8;
   var FN = window.LK_FN, M = FN.M, P = window.LK_PREP, esc = FN.esc, T = window.LK_TIME;
   function B() { return P.book(); }
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -64,8 +64,8 @@
     d.custom = d.mode === 'stag' && d.lines.some(function (l) { return JSON.stringify(l.a) !== JSON.stringify(M.even(+l.qty || 0, n)); });
     return d;
   }
-  // times are typed 24-hour: "1830", "18.30", "6:30" and "18:30" all mean what they say; anything else stays as typed
-  var T24 = ' inputmode="numeric" maxlength="5" placeholder="18:30" autocomplete="off"';
+  // Native time pickers provide minute values. Keep normalising older saved drafts.
+  var T24 = ' type="time" step="60" autocomplete="off"';
   function normT(v) {
     var t = String(v || '').trim().replace(/[.h ]/g, ':'), m = /^(\d{1,2}):?(\d{2})$/.exec(t);
     if (!m || +m[1] > 23 || +m[2] > 59) return String(v || '').trim();
@@ -286,7 +286,7 @@
   // the event start: a 24-hour time, or ticked TBC (the food times then wait too, unless one is typed)
   function startHTML(d) {
     var err = (E.ed.shown || []).some(function (x) { return x.k === 'startT' || x.k === 'start'; });
-    return '<div class="field fe-f"><label class="label" for="fe-startT">Event start (24-hour)</label><div class="fe-gu"><input id="fe-startT" class="search fe-time" data-ff="startT"' + T24 + ' value="' + esc(d.st ? '' : d.startT) + '"' + (d.st ? ' disabled' : '') +
+    return '<div class="field fe-f"><label class="label" for="fe-startT">Event start</label><div class="fe-gu"><input id="fe-startT" class="search fe-time" data-ff="startT"' + T24 + ' value="' + esc(d.st ? '' : d.startT) + '"' + (d.st ? ' disabled' : '') +
       (err ? ' aria-invalid="true" aria-describedby="fe-e-start"' : '') + '><label class="a-check"><input type="checkbox" data-ff="st"' + (d.st ? ' checked' : '') + '> TBC</label></div>' +
       (d.st ? '<span class="hint">The kitchen sees "TBC" and the function shows all day. It can still be confirmed (all at once); fill the time in when it is known.</span>' : '') + fieldErr('start') + '</div>';
   }
