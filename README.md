@@ -791,3 +791,7 @@ Transfers remain outstanding across days until someone confirms the full amount 
 ### Number-only supplier quantities, 25 October 2026
 
 Items without a confirmed unit accept a positive decimal quantity and retain an empty unit in history. Confirmed units and explicit typed units keep their existing behaviour. Stock counts also accept zero. No units or pack sizes are guessed; top-ups still require confirmed compatible units. No new reads, rules, schema or dependencies. Rollback: revert this change through a fresh branch and PR. Saved quantities remain intact; older clients may require a unit when reusing these lines.
+
+### Date and time pickers (26 Oct 2026)
+
+Date and time fields open the device calendar or clock picker when tapped, where the browser supports it. Function event, food and round times and delivery arrival times now use native time controls too. Keyboard entry remains available. Save and confirm actions check native validity, including incomplete entries and date limits; existing checks still enforce booking order, report ranges and Queensland delivery times. Optional fields can still be cleared. Picker appearance and 12/24-hour display follow the device; saved times remain 24-hour Queensland values. No new dependencies, reads, rules or saved fields.

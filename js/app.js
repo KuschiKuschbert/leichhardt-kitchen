@@ -862,7 +862,7 @@
      and API in js/fnedit.js together when what LK_FN or LK_PREP.book() hands it changes. */
   function viewFn(route) { return '<div class="page fn-pg"><main id="main" class="fn-main">' + (window.LK_FN ? window.LK_FN.page(route.fid) : '') + '</main>' + footer() + '</div>'; }
   function viewFunctions() { return '<div class="page fe-page"><main id="main" class="fe"><div id="fe-root"></div></main></div>'; }
-  var FE_API = 7, feLoad = null;
+  var FE_API = 8, feLoad = null;
   function mountFunctions(route) {
     var root = document.getElementById('fe-root');
     if (!root) return;
@@ -1590,6 +1590,30 @@
     else if (n === 'manage') { if (window.LK_MG) window.LK_MG.changed(); }
     else if (!PREP_PAGES[n]) render();
   });
+  // Open native calendars and clocks from the whole field. Older browsers keep their normal input behaviour.
+  document.addEventListener('click', function (ev) {
+    var el = ev.target;
+    if (!el.matches || !el.matches('input[type="date"], input[type="time"]') || el.disabled || el.readOnly || !el.showPicker) return;
+    try { el.showPicker(); } catch (e) { /* The browser's own input remains usable if a picker is unavailable. */ }
+  });
+  // These pages use buttons rather than form submission. Check native date/time validity before their save handlers.
+  function checkPickers(ev) {
+    var action = ev.target.closest && ev.target.closest('[data-p], [data-fe], [data-su]');
+    var key = action && (action.getAttribute('data-p') || action.getAttribute('data-fe') || action.getAttribute('data-su'));
+    if (ev.type !== 'submit' && !/^(n-save|mn-pub|mn-draft|todo-save|cut-save|wh-apply|save|review|confirm|record)$/.test(key || '')) return;
+    var root = ev.type === 'submit' ? ev.target : action.closest('main') || action.closest('section');
+    if (!root) return;
+    var fields = root.querySelectorAll('input[type="date"], input[type="time"]');
+    for (var i = 0; i < fields.length; i++) {
+      var field = fields[i];
+      if (!field.willValidate || field.validity.valid) continue;
+      ev.preventDefault(); ev.stopImmediatePropagation();
+      var details = field.closest('details'); if (details) details.open = true;
+      field.reportValidity(); field.focus(); return;
+    }
+  }
+  document.addEventListener('click', checkPickers, true);
+  document.addEventListener('submit', checkPickers, true);
   window.addEventListener('hashchange', render);
   render();
   // the book drew with the recipe changes laid over it, so they are safe to use at the next start too

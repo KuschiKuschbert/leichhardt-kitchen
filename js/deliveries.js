@@ -50,7 +50,7 @@
     M.root.innerHTML = '<div class="dl-page"><header class="dl-heading"><span class="eyebrow">Kitchen records</span><h1>Delivery received</h1><p class="hint">Record the measured food temperature on arrival. All times are Queensland time (AEST).</p></header>' +
       '<form id="dl-form" class="dl-form" novalidate><fieldset' + (M.busy || M.attempt ? ' disabled' : '') + '><legend class="sr-only">Delivery details</legend>' +
       field('supplier', 'Supplier', 'text', ' maxlength="80" autocomplete="organization" required') +
-      '<div class="dl-pair">' + field('day', 'Date', 'date', ' max="' + T.day() + '"' + (!admin() ? ' min="' + T.day() + '" readonly' : '') + ' required') + field('time', 'Time (24-hour)', 'text', ' inputmode="text" maxlength="5" placeholder="HH:MM" required') + '</div>' +
+      '<div class="dl-pair">' + field('day', 'Date', 'date', ' max="' + T.day() + '"' + (!admin() ? ' min="' + T.day() + '" readonly' : '') + ' required') + field('time', 'Time (24-hour)', 'time', ' step="60" required') + '</div>' +
       '<p id="dl-temp-help" class="hint">Enter either temperature, or both for a mixed delivery. Leave an unused box empty.</p><div class="dl-pair">' +
       field('chilled', 'Chiller / coldroom (°C)', 'text', ' inputmode="decimal" maxlength="8" aria-describedby="dl-temp-help" placeholder="e.g. 3.5"') +
       field('frozen', 'Freezer (°C)', 'text', ' inputmode="text" maxlength="8" aria-describedby="dl-temp-help" placeholder="e.g. -18"') + '</div>' +

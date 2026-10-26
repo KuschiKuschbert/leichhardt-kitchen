@@ -54,9 +54,24 @@ function hasPrivateContact(value) {
   await p.keyboard.press('Escape');
   await p.goto(L.BASE + '#/functions/new'); await L.settle(p, 900);
   ok(/New function/.test(await txt(p, '#fe-root') || ''), 'form: New function opens');
+  ok(await p.$eval('[data-ff="startT"]', e => e.type === 'time' && e.step === '60'), 'event start uses the minute picker');
+  await p.evaluate(() => {
+    window.pickerCalls = 0;
+    HTMLInputElement.prototype.showPicker = function () { window.pickerCalls++; };
+  });
+  await p.click('[data-ff="startT"]');
+  ok(await p.evaluate(() => window.pickerCalls === 1), 'tapping the time field opens its native picker');
+  await p.evaluate(() => { HTMLInputElement.prototype.showPicker = function () { throw new DOMException('Unavailable', 'NotAllowedError'); }; });
+
   await p.fill('[data-ff="name"]', 'Smith 50th');
   await setV(p, '[data-ff="date"]', today);
   await setV(p, '[data-ff="startT"]', '18:00');
+  ok(await p.inputValue('[data-ff="startT"]') === '18:00', 'keyboard entry works when showPicker is unavailable');
+  await p.$eval('[data-ff="date"]', e => { e.max = '2000-01-01'; });
+  await p.click('[data-fe="save"]');
+  ok(!Object.keys(await store(p)).some(k => k.startsWith(fsKey(['functions']) + '/')) && await p.$eval('[data-ff="date"]', e => !e.validity.valid && document.activeElement === e), 'save is blocked and focuses an out-of-range date');
+  await p.$eval('[data-ff="date"]', e => e.removeAttribute('max'));
+
   await p.click('[data-ff="gu"]'); await L.settle(p, 150);
   ok(await p.$eval('[data-ff="guests"]', e => e.disabled) && /guests not known yet/.test(await txt(p, '#fe-live') || ''), 'guests: Not known yet empties and locks the number');
   await p.click('[data-ff="gu"]'); await L.settle(p, 150);
@@ -73,8 +88,8 @@ function hasPrivateContact(value) {
   await setV(p, '[data-ff="qty0"]', '3'); await setV(p, '[data-ff="qty1"]', '4'); await setV(p, '[data-ff="qty2"]', '5');
   ok(/12 platters/.test(await txt(p, '#fe-live') || ''), 'platters: the bar adds up 12 platters (no guest multiplying)');
   await tap(p, '[data-fe="mode"][data-v="stag"]'); await L.settle(p, 100);
-  await setV(p, '[data-ff="foodT"]', '1830');
-  ok(await p.$eval('[data-ff="foodT"]', e => e.value) === '18:30', 'times: 1830 is read as 18:30 (24-hour)');
+  await setV(p, '[data-ff="foodT"]', '18:30');
+  ok(await p.$eval('[data-ff="foodT"]', e => e.value) === '18:30', 'times: the picker keeps 18:30 in 24-hour storage');
   ok(await p.$eval('[data-ff="a2_0"]', e => e.value) === '2' && await p.$eval('[data-ff="a2_1"]', e => e.value) === '2' && await p.$eval('[data-ff="a2_2"]', e => e.value) === '1', 'staggered: 5 pizza platters over 3 rounds start as 2, 2, 1');
   ok(await p.$eval('[data-ff="rt1"]', e => e.value) === '19:00' && await p.$eval('[data-ff="rt2"]', e => e.value) === '19:30', 'staggered: rounds every 30 minutes from 18:30');
   // the brief's example: antipasto first, aussie in the first two rounds, pizza later
