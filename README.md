@@ -60,6 +60,14 @@ The Leichhardt Hotel kitchen's app: the recipe book, the prep list, the order li
 
 A pre-existing fallback-font problem found by the baseline tests was corrected at the same time: wide top-bar navigation may wrap so Kitchen Book remains on one line at 1280 px when the web font has not loaded.
 
+## Delivery temperatures (26 Oct 2026)
+
+Open **Delivery received** in the chef-hat dropdown. Enter the supplier, check the Queensland date and time, and enter a chiller / coldroom reading, a freezer reading, or both. Zero, negative readings and decimals are accepted. Add items or notes if needed, then **Save delivery**. The saved receipt includes who received it. Everyone with a personal login can use it, including Functions and View only. Signed-out visitors cannot open delivery records.
+
+Today's receipts appear below the form. The verified Google admin can select an earlier date and record an earlier arrival. Saved readings stay as recorded; add a new receipt with an explanatory note for a correction. Failed saves keep their details, and retry checks the same id to prevent duplicate receipts. Delivery data and drafts are cleared on sign-out or account change. The form shares the book's Barlow fonts, colours and controls. The longer chef-hat menu scrolls within 60% of the viewport while preserving 48 px tap targets.
+
+`js/deliveries.js` loads only for `#/deliveries`. Today's page uses one live filtered query, removed on exit; admin history uses one date query on selection or Refresh. No delivery reads on normal startup and no persistent private cache. The database enforces login, today's staff access, input shape and immutable readings. The existing 400-day manual and 45-day nightly backup windows include receipts. PIN moves carry all receipts. See `docs/delivery-received.md` for the data contract and release evidence.
+
 ## Adding or changing a recipe
 
 All recipes are in **`js/data.js`**. The top of that file explains every field. Recipes the head chef changes or adds in the book itself are kept in Firestore and laid over this file, and the book's copy wins (see Recipes changed in the book below). To add one here:
@@ -203,7 +211,7 @@ npm test
 
 ## Head chef decisions
 
-- **26 Oct 2026, delivery records.** Every personal login may record today's delivery temperatures, including Functions and View only. Receipts preserve measured chiller / coldroom and freezer values, date, time and receiver. Verified admin reads history. The additive rules and nightly backup ship before the separate form release. See `docs/delivery-received.md`.
+- **26 Oct 2026, delivery received.** Every personal login can record delivery date, time and chiller / coldroom or freezer temperatures from the chef-hat menu, including mixed loads. Save the receiving person automatically. Staff see today; verified admin can select past dates. Keep receipts immutable, recover uncertain saves by the same id and include records in backups and PIN moves. The form records measurements without applying unconfirmed venue acceptance limits. See `docs/delivery-received.md`.
 
 - **26 Oct 2026, placement correction.** Cancel and Delete belong at the right-hand end inside the same function bar, not on a separate row underneath it. Keep compact text actions with 44 px tap targets. Booking details wrap on narrow screens without overlapping the actions. Permissions, confirmation and recovery behaviour stay as above.
 - **26 Oct 2026, sheet close scroll.** An explicit sheet close remembers the scroll after its caller finishes, before asynchronous browser history can restore an older position. This keeps a scroll made immediately after Escape. Native Back and the caller's scroll restoration mode retain their existing behaviour. The delayed-history regression fails before this fix and passes after it.
