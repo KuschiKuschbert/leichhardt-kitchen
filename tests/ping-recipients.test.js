@@ -46,7 +46,8 @@ const dump=p=>p.evaluate(()=>__fake.dump());
   fs.getDocsFromServer=function(ref){const result=original(ref);return ref.path&&ref.path[2]==='directnotes'?result.then(value=>new Promise(resolve=>{window.__releasePingRead=()=>resolve(value);})):result;};
   LK_PREP.state.notesAt=0;LK_PREP.chefOpen('pings');
  });
- await p.waitForFunction(()=>!!window.__releasePingRead);
+ // The shared wait helper works under the live site's Content Security Policy.
+ await L.waitFor(p,()=>!!window.__releasePingRead,null,10000);
  await p.evaluate(()=>{window.__restorePingRead();LK_PREP.signOut(true);});await L.settle(p,400);
  ok(await p.evaluate(()=>LK_PREP.state.notes===null&&LK_PREP.state.nPast===null),'handover: personal messages and private history are cleared');
  await p.click('.p-name[data-id="bo"]');await L.settle(p,250);await p.fill('#pf1','3333');await L.settle(p,1000);

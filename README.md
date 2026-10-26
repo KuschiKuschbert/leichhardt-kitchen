@@ -150,6 +150,8 @@ There's no build step and nothing to install. To try it on a computer, open `ind
 
 ## Testing
 
+The private-ping handover check uses `L.waitFor()` so it runs under the live site's Content Security Policy.
+
 The `tests/` folder holds click tests that open the book in Chrome and use it like the team does, on a phone, a tablet and a computer. Only the tests need installing (Node.js and Google Chrome on the computer):
 
 ```
