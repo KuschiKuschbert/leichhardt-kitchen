@@ -199,3 +199,7 @@ Read `docs/function-cancellation.md` before changing function status writes. Sou
 ## Delivery received (26 Oct 2026)
 
 Read `docs/delivery-received.md` before changing receipt data or access. `#/deliveries` loads `js/deliveries.js` only when opened. Every personal login may record and read today's temperatures, including Functions and View only; this grants no other kitchen access. The verified Google admin can select historical dates. `deliveries/<id>` records are immutable, including their receiver. A retry checks the same id before writing. Preserve null versus zero, negative readings, the Queensland clock and in-memory draft clearing on handover. Keep receipts in manual/nightly backups and PIN moves. `tests/deliveries.test.js`, the real rules suite and `scripts/delivery-backup-check.mjs` cover the flows. Do not invent food acceptance limits from the technical numeric input range.
+
+## Individual shift pings (26 Oct 2026)
+
+Read `docs/ping-recipients.md` before changing recipients, queries or delivery. Keep individual text in `directnotes`, outside legacy Everyone queries. Match the real personal session in Firestore; stale `pingIds` must not grant private management access. Recipient/author/creation time stay fixed. Publish tested rules and the additive recipient/date index from the feature branch before merging client code. Backups, PIN moves, receipts and shared-device clearing must retain both kinds of pings.

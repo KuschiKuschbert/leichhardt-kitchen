@@ -861,7 +861,7 @@
     S.text = S.qty = S.otext = S.oqty = ''; S.wf = { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }; S.xf = xBlank();
     if (mlf) mlf.text = '';
     S.config = null; S.configFull = false; S.configState = 'idle'; S.past = []; S.pastFor = ''; S.week = null; S.ordHist = []; S.ordHistFor = ''; S.wSum = S.xSum = S.wStats = S.xStats = S.wNote = null;
-    S.items = []; S.ordLines = []; S.ordAll = []; S.wLines = []; S.xLines = []; S.notes = null; S.mins = null; S.guides = null; S.activity = []; S.hist = {}; S.stats = null;
+    S.items = []; S.ordLines = []; S.ordAll = []; S.wLines = []; S.xLines = []; S.notes = null; S.notesBusy = false; S.nSaving = false; S.notesFor = ''; S.nPast = null; S.nPastOpen = false; S.nSeen = null; S.nPrivateError = ''; S.mins = null; S.guides = null; S.activity = []; S.hist = {}; S.stats = null;
     ['lk.fn', 'lk.mail.sent', 'lk.drinks', 'lk.guides', 'lk.notes', 'lk.minutes'].forEach(function (k) { lsSet(k, ''); });
  if (window.LK_DELIVERY) window.LK_DELIVERY.reset(); if (window.LK_SUP) window.LK_SUP.reset(); if (supplierService) supplierService.reset(); sessDrop(); ksClose(); noteClose('shut'); S.nJust = null; S.guestIn = false; lsSet('lk.prep.guest', ''); S.drinkAsk = ''; S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; tdReset(); lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); accessChanged(); }
   /* The chef mark's menu (js/app.js) asks what to show: Meeting minutes for everyone (when the page is on), and for the
@@ -1698,6 +1698,7 @@
       .then(function () { out.functionsHist = {}; return all('functions'); }).then(function (r) { out.functions = r; return subs(r, 'functions', 'hist', out.functionsHist); })
       .then(function () { return all('fncontact'); }).then(function (r) { out.fncontact = r; return all('fnsent'); }).then(function (r) { out.fnsent = r; })
       .then(function () { S.exporting = 'Reading shift pings and minutes...'; draw(); return all('notes'); }).then(function (r) { out.notes = r; return subs(r, 'notes', 'seen', out.notesSeen); })
+      .then(function () { return all('directnotes'); }).then(function (r) { out.directnotes = r; out.directnotesSeen = {}; return subs(r, 'directnotes', 'seen', out.directnotesSeen); })
       .then(function () { return all('minutes'); }).then(function (r) { out.minutes = r; return Promise.all([subs(r, 'minutes', 'hist', out.minutesHist), subs(r, 'minutes', 'signs', out.minutesSigns)]); })
       .then(function () { return all('pinset'); }).then(function (r) { out.pins = r.map(function (x) { return { id: x.id, name: x.name, setAt: x.setAt }; }); })
       .then(function () {
@@ -1721,7 +1722,7 @@
         a.href = URL.createObjectURL(blob); a.download = 'leichhardt-prep-backup-' + today + '.json';
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
         setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
-        var nn = out.notes.length, mn = out.minutes.length, dn = Object.keys(out.days).length;
+        var nn = out.notes.length + (out.directnotes || []).length, mn = out.minutes.length, dn = Object.keys(out.days).length;
         S.exporting = ''; toast('Backup saved: ' + n + (n === 1 ? ' line' : ' lines') + ' from ' + dn + (dn === 1 ? ' day, ' : ' days, ') + nn + (nn === 1 ? ' shift ping' : ' shift pings') + ' and minutes from ' + mn + (mn === 1 ? ' meeting.' : ' meetings.') + (left.length ? ' Left out, the rules do not allow it yet: ' + left.join(', ') + '.' : ''), null, left.length ? 10000 : undefined);
       }).catch(function () { S.exporting = ''; toast('Could not read everything' + (part ? ' (stopped at ' + part + ')' : '') + '. Check the connection and try again.', null, 8000); });
   }
@@ -1758,7 +1759,7 @@
     f.getDoc(f.doc(fb.db, 'kitchens', old, 'config', 'main')).then(function (sn) { if (sn.exists()) { n++; return f.setDoc(f.doc(fb.db, 'kitchens', np, 'config', 'main'), sn.data()); } })
       .then(function () { return copyCol('login'); }).then(function () { return copyCol('pinset'); }).then(function () { return copyCol('staffpins'); }).then(function () { return copyCol('activity'); }).then(function () { return copyCol('sections'); })
       .then(function () { return copyCol('learned'); }).then(function () { return copyCol('ordlearned'); }).then(function () { return copyCol('learnlog'); }).then(function () { return copyCol('summary'); }).then(function () { return copyCol('daily'); }).then(function () { return copyCol('misses'); }).then(function () { return copyCol('views'); })
-      .then(function () { return copyCol('notes'); }).then(function () { return copyCol('minutes'); }).then(function () { return copySub('minutes', 'hist'); })
+      .then(function () { return copyCol('notes'); }).then(function () { return copyCol('directnotes'); }).then(function () { return copySub('directnotes', 'seen', true); }).then(function () { return copyCol('minutes'); }).then(function () { return copySub('minutes', 'hist'); })
       .then(function () { return copySub('minutes', 'signs', true); }).then(function () { return copySub('notes', 'seen', true); })
       .then(function () { return copyCol('guides'); }).then(function () { return copySub('guides', 'pages'); })
       .then(function () { return copyCol('mail'); }).then(function () { return copyCol('mailstat'); }).then(function () { return copyCol('drinks'); }).then(function () { return copyCol('shifts'); }).then(function () { return copyCol('todos'); }).then(function () { return copyCol('cutdone'); }).then(function () { return copyCol('deliveries'); })
@@ -4821,10 +4822,16 @@
     return m;
   }
   // today's pings on screen now: from their pop-up time for 30 minutes (head chef, 24 Oct 2026)
+  function directNote(id) { return String(id || '').indexOf('direct/') === 0; }
+  function noteRef(id) { return docRef(directNote(id) ? 'directnotes' : 'notes', directNote(id) ? id.slice(7) : id); }
+  function noteRows(snap, direct) { return snap.docs.map(function (d) { var x = d.data(); x.id = (direct ? 'direct/' : '') + d.id; return x; }); }
+  function manageNotes() { return canPing() || (S.level === 'owner' && ownerHere()); }
+  function pingPeople() { return people().filter(function (p) { return (S.config.fnOnlyIds || []).indexOf(p.id) < 0 && ((S.config.staffSee || {}).pings !== false || chefP(p) || p.role === 'lead'); }); }
+  function noteAudience(n) { return directNote(n.id) ? 'For ' + (personName(n.to) || 'a former staff member') : 'Everyone'; }
   function todaysNotes() {
     var t = dayNow(), mins = T.mins();
-    if (!featOn('pings')) return [];
-    return (S.notes || []).filter(function (n) { if (!noteOn(n, t)) return false; var f = noteFrom(n, t); return mins >= f && mins < f + NOTE_LIFE; }).sort(function (a, b) { return noteRank(a) - noteRank(b) || (a.at || 0) - (b.at || 0); });
+    if (!kitchenAccess() || !featOn('pings')) return [];
+    return (S.notes || []).filter(function (n) { if (!noteOn(n, t) || (directNote(n.id) && n.to !== S.who)) return false; var f = noteFrom(n, t); return mins >= f && mins < f + NOTE_LIFE; }).sort(function (a, b) { return noteRank(a) - noteRank(b) || (a.at || 0) - (b.at || 0); });
   }
   function noteSig(list) { return list.map(function (n) { return n.id + ':' + (n.upd || n.at || 0); }).join('|'); }
   /* Got it is kept for each person (23 Oct 2026), so on a shared tablet the first cook's Got it no longer hides the pings
@@ -4867,15 +4874,15 @@
   /* what the bell shows: on (pings or minutes are on for this phone), today's pings, an unread one, minutes to sign */
   function noteInfo() {
     var on = /^\d{4,6}$/.test(S.pin) && (featOn('pings') || featOn('minutes'));
-    return { on: on, n: todaysNotes().length, unread: noteUnread(), sign: featOn('minutes') ? mnUnsigned().length : 0 };
+    return { on: on, error: !!S.nPrivateError, n: todaysNotes().length, unread: noteUnread(), sign: featOn('minutes') ? mnUnsigned().length : 0 };
   }
-  function noteBellLabel(i) { return (i.n ? i.n + ' shift ping' + (i.n === 1 ? '' : 's') + ' on now' : 'No shift pings on now') + (i.unread ? ', new' : '') + (i.sign ? '. Minutes to sign: ' + i.sign : ''); }
+  function noteBellLabel(i) { return (i.error ? 'Individual pings could not be checked. ' : '') + (i.n ? i.n + ' shift ping' + (i.n === 1 ? '' : 's') + ' on now' : 'No shift pings on now') + (i.unread ? ', new' : '') + (i.sign ? '. Minutes to sign: ' + i.sign : ''); }
   /* The bell in the top bar (23 Oct 2026): there every day while pings or minutes are on, so the top bar keeps one shape.
      It has a dot while a ping is unread or minutes are waiting to be signed, and opens the same sheet at any time. */
   function noteBell() {
     var i = noteInfo();
     Array.prototype.forEach.call(document.querySelectorAll('.nbell'), function (b) {
-      b.hidden = !i.on; b.classList.toggle('has-new', i.unread || i.sign > 0);
+      b.hidden = !i.on; b.classList.toggle('has-new', i.error || i.unread || i.sign > 0);
       b.setAttribute('aria-label', noteBellLabel(i));
     });
   }
@@ -4883,24 +4890,41 @@
     if (!/^\d{4,6}$/.test(S.pin)) return;
     sdk().then(function () { loadNotes(); loadMinutes(); loadGuides(); rxSync(); startNoteTick(); }, function () {});
   }
+  function noteQuery(ref) {
+    var timer;
+    return Promise.race([fb.fs.getDocsFromServer(ref), new Promise(function (resolve, reject) {
+      timer = setTimeout(function () { reject({ code: 'slow' }); }, 6000);
+    })]).finally(function () { clearTimeout(timer); });
+  }
   function loadNotes(force) {
     if (!kitchenAccess() || !S.configFull) return;
     var today = dayNow();
     if (!fb || !/^\d{4,6}$/.test(S.pin) || S.notesBusy || !featOn('pings')) return;
     if (!force && S.notes && S.notesFor === today && Date.now() - S.notesAt < NOTE_STALE) return;
     S.notesBusy = true;
-    var readAt = now();
-    fb.fs.getDocs(fb.fs.query(colRef('notes'), fb.fs.where('until', '>=', today))).then(function (snap) {
-      S.notes = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; });
+    var readAt = now(), epoch = accessEpoch;
+    var general = fb.fs.getDocs(fb.fs.query(colRef('notes'), fb.fs.where('until', '>=', today)));
+    var filters = [fb.fs.where('until', '>=', today)];
+    if (!manageNotes()) filters.push(fb.fs.where('to', '==', S.who));
+    // Personal pings must be checked against the server, never an offline copy from a previous identity.
+    var personal = noteQuery(fb.fs.query.apply(null, [colRef('directnotes')].concat(filters))).then(function (snap) { return noteRows(snap, true); }, function (e) {
+      if (epoch === accessEpoch) S.nPrivateError = e && e.code === 'failed-precondition' ? 'Individual pings are not ready yet. Ask the head chef to finish publishing the ping index.' : 'Could not check individual pings. Check the connection and refresh.';
+      return [];
+    });
+    S.nPrivateError = '';
+    Promise.all([general, personal]).then(function (snaps) {
+      if (epoch !== accessEpoch) return;
+      S.notes = noteRows(snaps[0], false).concat(snaps[1]);
       S.notesFor = today; S.notesAt = Date.now(); S.notesRead = readAt; S.notesBusy = false;
       if (S.nJust) { if (S.nJust.k === noteSeenKey()) noteJustSaved(S.nJust.id); S.nJust = null; }
-      noteBell(); noteMaybePop(); draw();
+      noteBell(); noteRefresh(); noteMaybePop(); draw();
     }, function () {
-      // no signal, or a wrong kitchen PIN: carry on with what is already here and try again in about 5 minutes
+      if (epoch !== accessEpoch) return;
       S.notesBusy = false; S.notesAt = Date.now() - NOTE_STALE + 5 * 60000; if (!S.notes) S.notes = [];
       noteBell(); draw();
     });
   }
+
   /* a note that names a recipe links to its card (the longest card name wins, a trailing s is allowed: "pies") */
   var NOTE_RN = null;
   function noteNames() {
@@ -4978,10 +5002,11 @@
     var editor = pv ? '' : admDev() ? '<a class="nt-edit" href="#/admin" data-note="edit">Write or edit pings</a>' : (canPing() ? '<a class="nt-edit" href="#/prep" data-note="edit-sous">Write or edit pings</a>' : '');
     var h = pv ? 'Preview' : showPings || !mins.length ? 'Today\'s shift pings' : 'Minutes to sign';
     var out = '<header class="nt-head"><span class="nt-eb">' + esc(p ? p.name : 'Leichhardt Hotel Kitchen') + '</span><h2 class="nt-h" id="nt-h">' + h + '</h2><span class="nt-date">' + esc(pv ? pv.label : parseYmd(t).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })) + '</span></header><div class="nt-body">';
+    if (!pv && showPings && S.nPrivateError) out += '<p class="warn" role="status">' + esc(S.nPrivateError) + ' <button type="button" class="btn" data-note="refresh">Refresh pings</button></p>';
     if (showPings && list.length) {
       out += '<ul class="nt-list">' + list.map(function (n) { return noteRowHTML(n, step === 'pings' && !pv && !!el.lkWas && el.lkWas.indexOf(n.id + ':' + (n.upd || n.at || 0)) < 0); }).join('') + '</ul>';
       if (!pv) out += '<div class="nt-sum" id="nt-sum"></div>';   // filled in by noteDraw, so a tick elsewhere does not redraw the sheet
-    } else if (showPings && !mins.length) out += '<p class="nt-none">No pings right now. Each ping is on for 30 minutes, then it is gone.</p>';
+    } else if (showPings && !mins.length && !S.nPrivateError) out += '<p class="nt-none">No pings right now. Each ping is on for 30 minutes, then it is gone.</p>';
     if (step === 'pings' && mins.length) out += '<p class="nt-next">Next: ' + (mins.length === 1 ? 'minutes to sign' : 'minutes from ' + mins.length + ' meetings to sign') + '</p>';
     else if (mins.length) out += '<h3 class="nt-sh">To sign</h3><div class="nt-mn">' + mins.map(mnRowHTML).join('') + '</div>';
     out += '</div><footer class="nt-foot">';
@@ -5134,6 +5159,7 @@
     // Read and sign: the minutes the row names (the sheet sits outside the prep root), then on to #/minutes by its link
     if (a === 'mn') { S.mSel = el.getAttribute('data-id'); S.mErr = ''; noteClose('later', true); if (location.hash === '#/minutes') draw(); return; }
     if (a === 'edit') { S.atab = 'notes'; lsSet('lk.prep.atab', 'notes'); noteClose('read', true); if (location.hash === '#/admin') draw(); return; }
+    if (a === 'refresh') { loadNotes(true); return; }
     if (a === 'edit-sous') { S.notesOpen = true; S.nf = null; noteClose('read', true); if (location.hash === '#/prep') draw(); return; }
   });
   document.addEventListener('keydown', function (e) {
@@ -5169,10 +5195,10 @@
   var NOTE_START = { off: 'Off today: ', special: 'Special: ', 'function': 'Function: ', delivery: 'Delivery: ', safety: 'Safety: ', allergen: 'Allergen alert: ' };
   /* a note being written counts as unsaved once it differs from what the editor opened with (or has any text, if that is unknown) */
   function nfDirty() { var f = S.nf; if (!f || !S.nOpen) return false; return S.nfSnap ? JSON.stringify(f) !== S.nfSnap : !!f.text.trim(); }
-  function nfNew() { return { id: '', text: '', tag: 'none', start: dayNow(), until: '', dows: [], run: false, tm: '' }; }
+  function nfNew() { return { id: '', text: '', tag: 'none', start: dayNow(), until: '', dows: [], run: false, tm: '', to: '' }; }
   function nfFrom(n) {
     var rep = n.dows && n.dows.length, until = n.until === NOTE_FAR || (n.until === n.start && !rep) ? '' : n.until, tm = noteTm(n);
-    return { id: n.id, text: n.text, tag: n.tag || 'none', start: n.start, until: until, dows: (n.dows || []).slice(), run: !!until, tm: tm == null ? '' : tmText(tm) };
+    return { id: n.id, to: directNote(n.id) ? n.to : '', text: n.text, tag: n.tag || 'none', start: n.start, until: until, dows: (n.dows || []).slice(), run: !!until, tm: tm == null ? '' : tmText(tm) };
   }
   // the editor's time box (HH:MM) as minutes after midnight, or null when empty or not a time
   function nfTm(f) { var m = /^(\d{2}):(\d{2})$/.exec(f.tm || ''); return m && +m[1] < 24 && +m[2] < 60 ? +m[1] * 60 + +m[2] : null; }
@@ -5203,7 +5229,7 @@
     var life = '';
     if (today) { var f = noteFrom(n, t), m = T.mins(); life = m < f ? 'Pops up at ' + tmText(f) : m < f + NOTE_LIFE ? 'On screen until ' + tmText(f + NOTE_LIFE) : 'Gone for today at ' + tmText(f + NOTE_LIFE); }
     return '<li class="nt-row t-' + esc(n.tag || 'none') + '"><div class="nt-rt"><span class="nt-tag">' + esc(noteTagName(n.tag)) + '</span><span class="nt-when">' + esc(noteWhen(n)) + (life ? '. ' + esc(life) : '') + '</span></div><p>' + esc(n.text) + '</p>' +
-      (who ? '<span class="nt-by">Written by ' + esc(who) + '</span>' : '') + seen +
+      '<span class="nt-by">' + esc(noteAudience(n)) + '</span>' + (who ? '<span class="nt-by">Written by ' + esc(who) + '</span>' : '') + seen +
       '<div class="btn-row">' + (past ? '' : '<button type="button" class="p-x" data-p="n-edit" data-id="' + esc(n.id) + '">Edit</button>') +
       '<button type="button" class="p-x" data-p="n-reuse" data-id="' + esc(n.id) + '">Use again</button>' +
       (past ? '' : '<button type="button" class="p-x" data-p="n-del" data-id="' + esc(n.id) + '">' + (armed('n-del:' + n.id) ? 'Tap again to remove' : 'Remove') + '</button>') + '</div></li>';
@@ -5219,7 +5245,7 @@
       if (!l.length) return '';
       return '<h3 class="n-gh3">' + title + ' (' + l.length + ')</h3>' + lvHTML({
         key: key, items: l, step: 8, tools: 6, noun: ['ping', 'pings'], ph: 'Search pings', empty: 'No pings.',
-        find: function (n) { return n.text + ' ' + noteTagName(n.tag) + ' ' + (personName(n.by) || ''); },
+        find: function (n) { return n.text + ' ' + noteTagName(n.tag) + ' ' + (personName(n.by) || '') + ' ' + noteAudience(n); },
         filters: [['all', 'All pings']].concat(NOTE_TAGS.map(function (x) { return [x[0], x[1], function (n) { return (n.tag || 'none') === x[0]; }]; })),
         sorts: sorter, card: function (n) { return noteRowAdmin(n, t, past); }
       });
@@ -5237,7 +5263,7 @@
           '<p class="hint">The last ' + S.nPast.length + ' pings that have finished. Use again copies one into a new ping.</p>' + (moreOld ? '<div class="btn-row"><button type="button" class="btn" data-p="n-past-more">Load 30 older pings</button></div>' : '');
       } else pastList = '<p class="hint">No finished pings yet.</p>';
     }
-    return out + '<div class="btn-row n-pastrow">' + pastBtn + '</div>' + pastList;
+    return (S.nPrivateError ? '<p class="warn" role="status">' + esc(S.nPrivateError) + ' <button type="button" class="btn" data-p="n-refresh">Refresh pings</button></p>' : '') + out + '<div class="btn-row n-pastrow">' + pastBtn + '</div>' + pastList;
   }
   function dayGridHTML(f) {
     var t = dayNow(), lead = (parseYmd(t).getDay() + 6) % 7, first = shift(t, -lead), end = f.until || f.start, cells = '', i;
@@ -5251,6 +5277,12 @@
     }
     return '<div class="n-grid" role="group" aria-label="Days">' + cells + '</div>';
   }
+  function noteRecipientField(f) {
+    var list = pingPeople(), found = list.some(function (p) { return p.id === f.to; });
+    var options = '<option value="">Everyone</option>' + list.map(function (p) { return '<option value="' + esc(p.id) + '"' + (p.id === f.to ? ' selected' : '') + '>' + esc(p.name) + '</option>'; }).join('');
+    if (f.to && !found) options += '<option value="' + esc(f.to) + '" selected>' + esc(personName(f.to) || 'Former staff member') + ' (not available)</option>';
+    return '<div class="field"><label class="label" for="n-to">Send to</label><select id="n-to" class="p-select" data-k="n-to"' + (f.id ? ' disabled' : '') + '>' + options + '</select><span class="hint">' + (f.id ? 'The recipient stays fixed. Use again makes a copy for someone else.' : 'Choose one person or Everyone. Individual pings are visible to that person and the chefs who manage pings.') + '</span></div>';
+  }
   function noteEditForm() {
     var f = S.nf || (S.nf = nfNew()), t = dayNow(), until = nfUntil(f);
     var tags = NOTE_TAGS.map(function (x) { return '<button type="button" class="chip" data-p="n-tag" data-v="' + x[0] + '" aria-pressed="' + (f.tag === x[0]) + '">' + esc(x[1]) + '</button>'; }).join('');
@@ -5259,7 +5291,7 @@
     var single = !f.run && !f.until;
     return '<section class="set-block n-edit"><span class="label">' + (f.id ? 'Edit this ping' : 'Write a ping') + '</span>' + prepLeaveHTML('n-cancel') +
       '<span class="hint">Short and plain. It pops up at 10:30, or at the time you set below, and is gone for everyone 30 minutes later. No prices, PINs or staff names. A recipe name links to its card.</span>' +
-      '<div class="field"><label class="label" for="n-text">Ping</label><textarea id="n-text" class="p-bulk" data-k="n-text" rows="4" maxlength="400" placeholder="For example: Barramundi is off until Thursday.">' + esc(f.text) + '</textarea><span class="hint" id="n-count">' + f.text.length + ' of 400. Ctrl+Enter saves.</span></div>' +
+      noteRecipientField(f) + '<div class="field"><label class="label" for="n-text">Ping</label><textarea id="n-text" class="p-bulk" data-k="n-text" rows="4" maxlength="400" placeholder="For example: Barramundi is off until Thursday.">' + esc(f.text) + '</textarea><span class="hint" id="n-count">' + f.text.length + ' of 400. Ctrl+Enter saves.</span></div>' +
       '<div class="field"><span class="label">Tag (starts the ping for you)</span><div class="nt-chips" role="group" aria-label="Tag">' + tags + '</div></div>' +
       '<div class="field"><span class="label">How it will look</span><div id="n-prev" class="n-prev">' + draftPreviewHTML(f) + '</div></div>' +
       '<div class="field"><span class="label">Show on</span><div class="nt-chips"><button type="button" class="chip" data-p="n-quick" data-v="0" aria-pressed="' + (f.start === t && single && !f.dows.length) + '">Today</button><button type="button" class="chip" data-p="n-quick" data-v="1" aria-pressed="' + (f.start === shift(t, 1) && single && !f.dows.length) + '">Tomorrow</button>' +
@@ -5282,9 +5314,10 @@
     return '<div class="p-admin p-notes-page"><h2 class="p-h" id="rtitle" tabindex="-1">Shift pings</h2>' + notesEditorHTML() + '</div>';
   }
   function saveNote() {
-    var f = S.nf;
+    var f = S.nf, epoch = accessEpoch;
     if (!f || S.nSaving || !fb) return;
     var text = f.text.replace(/\s+$/g, '').replace(/^\s+/g, ''), start = f.start, until = nfUntil(f), re = /^\d{4}-\d{2}-\d{2}$/;
+    if (!f.id && f.to && !pingPeople().some(function (p) { return p.id === f.to; })) { S.nMsg = 'Choose an active person who can receive Shift pings.'; draw(); focusSel('#n-to'); return; }
     if (!text) { S.nMsg = 'Write the ping first.'; draw(); return; }
     if (!re.test(start || '') || !re.test(until)) { S.nMsg = 'Pick the first day.'; draw(); return; }
     if (until < start) { S.nMsg = 'The last day cannot be before the first day.'; draw(); return; }
@@ -5293,40 +5326,45 @@
     var data = { text: text.slice(0, 400), tag: f.tag, start: start, until: until, dows: f.dows.slice().sort(), tm: nfTm(f), removed: false, upd: now() };
     // author is who wrote the ping and never changes; by is who saved it last (the rules need by to be the writer)
     if (!f.id) { data.at = now(); data.author = S.who || ''; }
-    var ref = f.id ? docRef('notes', f.id) : fb.fs.doc(colRef('notes')), when = noteWhen({ start: start, until: until, dows: data.dows, tm: data.tm });
+    if (f.to) data.to = f.to;
+    var ref = f.id ? noteRef(f.id) : fb.fs.doc(colRef(f.to ? 'directnotes' : 'notes')), when = noteWhen({ start: start, until: until, dows: data.dows, tm: data.tm });
     var was = f.id ? (S.notes || []).filter(function (x) { return x.id === f.id; })[0] : null, t = dayNow(), nk = noteSeenKey();
     // the head chef's Google device with nobody signed in: saved by nobody, not by the ping's writer (W() adds no by
     // there, and a merge would keep theirs). An older ping with no author keeps its writer.
     if (!canW()) { data.by = ''; if (was && !was.author && was.by) data.author = was.by; }
     S.nSaving = true; S.nMsg = ''; draw();
     sset(ref, data, !!f.id).then(function () {
-      if (noteOn(data, t) || (was && noteOn(was, t))) { markPings(); noteJust(ref.id, nk); }
+      if (epoch !== accessEpoch) return;
+      if (noteOn(data, t) || (was && noteOn(was, t))) { markPings(); noteJust((f.to ? 'direct/' : '') + ref.id, nk); }
       S.nSaving = false; S.nf = nfNew(); S.nOpen = false; S.nMsg = 'Saved. Shows: ' + when + '.'; loadNotes(true); draw();
     }, function (e) {
+      if (epoch !== accessEpoch) return;
       S.nSaving = false; S.nMsg = e && e.code === 'permission-denied' ? 'Not saved. Only the head chef and the sous chefs write pings. If you are one, sign in again with your PIN.' : 'Could not save. Check the connection and try again.'; draw();
     });
   }
   function removeNote(id) {
     if (!arm('n-del:' + id)) return;
     var was = (S.notes || []).filter(function (x) { return x.id === id; })[0], today = !!was && noteOn(was, dayNow()), nk = noteSeenKey();
-    sset(docRef('notes', id), { removed: true, upd: now() }, true).then(function () {
+    sset(noteRef(id), { removed: true, upd: now() }, true).then(function () {
       if (today) { markPings(); noteJust(id, nk); }
       if (S.nf && S.nf.id === id) { S.nf = nfNew(); S.nOpen = false; }
       S.nMsg = 'Removed.'; loadNotes(true); draw();
       // Undo puts back the same version (its old upd), so it does not pop up again for those who read it, or start its 30 minutes again
-      toast('Ping removed.', { label: 'Undo', fn: function () { var uk = noteSeenKey(); sset(docRef('notes', id), { removed: false, upd: (was && (was.upd || was.at)) || now() }, true).then(function () { if (today) { markPings(); noteJust(id, uk); } S.nMsg = ''; loadNotes(true); draw(); }, failed); } });
+      toast('Ping removed.', { label: 'Undo', fn: function () { var uk = noteSeenKey(); sset(noteRef(id), { removed: false, upd: (was && (was.upd || was.at)) || now() }, true).then(function () { if (today) { markPings(); noteJust(id, uk); } S.nMsg = ''; loadNotes(true); draw(); }, failed); } });
     }, function () { S.nMsg = 'Could not remove. Check the connection and try again.'; draw(); });
   }
   /* finished pings: one query when asked for (30 at most) */
   function loadPastNotes(more) {
-    if (!kitchenAccess() || !S.configFull) return;
+    if (!manageNotes() || !kitchenAccess() || !S.configFull) return;
     if (!fb || S.nPast === 'loading') return;
     S.nPastN = more ? (S.nPastN || 30) + 30 : 30;
     var keep = Array.isArray(S.nPast) ? S.nPast : null;
     S.nPast = 'loading'; draw();
-    fb.fs.getDocs(fb.fs.query(colRef('notes'), fb.fs.where('until', '<', dayNow()), fb.fs.orderBy('until', 'desc'), fb.fs.limit(S.nPastN))).then(function (snap) {
-      S.nPast = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }).filter(function (x) { return !x.removed; }); draw();
-    }, function () { S.nPast = keep || 'error'; if (keep) toast('Could not load more. Check the connection.'); draw(); });
+    var epoch = accessEpoch;
+    Promise.all(['notes', 'directnotes'].map(function (col) { return noteQuery(fb.fs.query(colRef(col), fb.fs.where('until', '<', dayNow()), fb.fs.orderBy('until', 'desc'), fb.fs.limit(S.nPastN))); })).then(function (snaps) {
+      if (epoch !== accessEpoch) return;
+      S.nPast = noteRows(snaps[0], false).concat(noteRows(snaps[1], true)).filter(function (x) { return !x.removed; }).sort(function (a, b) { return String(b.until).localeCompare(String(a.until)) || (b.at || 0) - (a.at || 0); }).slice(0, S.nPastN); draw();
+    }, function () { if (epoch !== accessEpoch) return; S.nPast = keep || 'error'; if (keep) toast('Could not load more. Check the connection.'); draw(); });
   }
   /* put the cursor in the note and bring the editor up under the sticky tabs, so the phone keyboard never hides it */
   function focusNoteText(tx) {
@@ -5337,19 +5375,21 @@
     var n = (S.notes || []).concat(Array.isArray(S.nPast) ? S.nPast : []).filter(function (x) { return x.id === id; })[0];
     if (!n) return;
     var tm = noteTm(n);
-    S.nf = nfNew(); S.nf.text = n.text; S.nf.tag = n.tag || 'none'; S.nf.tm = tm == null ? '' : tmText(tm); S.nfSnap = ''; S.nOpen = true; S.nMsg = '';
+    S.nf = nfNew(); S.nf.to = directNote(n.id) ? n.to : ''; S.nf.text = n.text; S.nf.tag = n.tag || 'none'; S.nf.tm = tm == null ? '' : tmText(tm); S.nfSnap = ''; S.nOpen = true; S.nMsg = '';
     draw(); var tx = S.root.querySelector('[data-k="n-text"]'); if (tx) { focusNoteText(tx); }
   }
   /* who tapped Got it today for one note (one small query, only when asked) */
   function loadSeen(id) {
-    if (!kitchenAccess() || !S.configFull) return;
+    if (!manageNotes() || !kitchenAccess() || !S.configFull) return;
     if (!fb) return;
+    var epoch = accessEpoch;
     S.nSeen = S.nSeen || {}; S.nSeen[id] = { state: 'loading', names: [] }; draw();
-    fb.fs.getDocs(fb.fs.query(fb.fs.collection.apply(null, [fb.db].concat(base(), ['notes', id, 'seen'])), fb.fs.where('day', '==', dayNow()))).then(function (snap) {
+    fb.fs.getDocs(fb.fs.query(fb.fs.collection.apply(null, [fb.db].concat(base(), [directNote(id) ? 'directnotes' : 'notes', directNote(id) ? id.slice(7) : id, 'seen'])), fb.fs.where('day', '==', dayNow()))).then(function (snap) {
+      if (epoch !== accessEpoch) return;
       var seen = {}, names = [];
       snap.docs.forEach(function (d) { var by = d.data().by; if (by && !seen[by]) { seen[by] = 1; names.push(personName(by) || 'Someone'); } });
       S.nSeen[id] = { state: 'ok', names: names.sort() }; draw();
-    }, function () { delete S.nSeen[id]; S.nMsg = 'Could not check. Try again.'; draw(); });
+    }, function () { if (epoch !== accessEpoch) return; delete S.nSeen[id]; S.nMsg = 'Could not check. Try again.'; draw(); });
   }
   /* "Got it" on a phone where someone is signed in leaves one small record per person, note and day */
   function noteWriteSeen(list) {
@@ -5359,7 +5399,7 @@
     list.forEach(function (n) {
       if (rec.ids.indexOf(n.id) >= 0) return;
       rec.ids.push(n.id); lsSet('lk.note.sw', JSON.stringify(rec));
-      sset(fb.fs.doc.apply(null, [fb.db].concat(base(), ['notes', n.id, 'seen', day + '_' + S.who])), { day: day, at: now() }).catch(function () {});
+      sset(fb.fs.doc.apply(null, [fb.db].concat(base(), [directNote(n.id) ? 'directnotes' : 'notes', directNote(n.id) ? n.id.slice(7) : n.id, 'seen', day + '_' + S.who])), { day: day, at: now() }).catch(function () {});
     });
   }
 
@@ -7691,6 +7731,7 @@
       else { nf.start = dd; }
       draw(); return;
     }
+    if (a === 'n-refresh') { loadNotes(true); return; }
     if (a === 'n-save') { saveNote(); return; }
     if (a === 'n-edit') { var nn = (S.notes || []).filter(function (x) { return x.id === id; })[0]; if (nn) { S.nf = nfFrom(nn); S.nfSnap = JSON.stringify(S.nf); S.nOpen = true; S.nMsg = ''; draw(); var tx = S.root.querySelector('[data-k="n-text"]'); if (tx) { focusNoteText(tx); } } return; }
     if (a === 'n-reuse') { reuseNote(id); return; }
@@ -7947,6 +7988,7 @@
     if (k === 'p-day') { if (el.value) { S.date = el.value; S.tab = ''; watchItems(); draw(); } return; }
     if (k === 'n-start') { if (S.nf && el.value) { S.nf.start = el.value; if (S.nf.until && S.nf.until < el.value) S.nf.until = ''; draw(); } return; }
     if (k === 'n-until') { if (S.nf) { S.nf.until = el.value; S.nf.run = !!el.value; draw(); } return; }
+    if (k === 'n-to') { if (S.nf && !S.nf.id) { S.nf.to = el.value; } return; }
     if (k === 'n-tm') { if (S.nf) { S.nf.tm = el.value; draw(); } return; }
     if (k === 'p-section' || k === 'w-sec') { checkSectionBox(el, k); return; }
     if (k === 'af-sec' || k === 'af-who' || k === 'af-dow' || k === 'af-reason' || k === 'af-venue') { AF()[k.slice(3)] = el.value; afSave(); draw(); return; }
