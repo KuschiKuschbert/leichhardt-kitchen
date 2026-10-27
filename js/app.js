@@ -940,7 +940,7 @@
     });
   }
   document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-delivery-retry]')) mountDeliveries(); });
-  var SUP_API = 7, supLoad = null;
+  var SUP_API = 8, supLoad = null;
   function viewSuppliers() { return '<div class="page sup-page"><main id="main"><div id="supplier-root"></div></main>' + footer() + '</div>'; }
   function mountSuppliers(route) {
     var root = document.getElementById('supplier-root'), P = window.LK_PREP, B = P && P.supplier ? P.supplier() : null;
@@ -957,7 +957,7 @@
       return;
     }
     root.innerHTML = mgNote('Supplier order', 'Opening supplier tools...', ' ');
-    if (!supLoad) supLoad = mgScript('js/suppliers.js?v=7').catch(function (e) { supLoad = null; throw e; });
+    if (!supLoad) supLoad = mgScript('js/suppliers.js?v=8').catch(function (e) { supLoad = null; throw e; });
     supLoad.then(function () { if (parseRoute().name === 'suppliers') mountSuppliers(parseRoute()); }, function () {
       if (parseRoute().name === 'suppliers') root.innerHTML = mgNote('Could not open supplier tools', 'Check the connection and try again. The other kitchen pages still work.', '<div class="btn-row"><button type="button" class="btn dark" data-sup-retry>Try again</button><a class="btn" href="#/orders">Order list</a></div>');
     });

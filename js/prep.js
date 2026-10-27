@@ -7265,9 +7265,11 @@
       var seen = {};
       sn.docs.forEach(function (d) { var x = d.data(); if (x && x.on === true && typeof x.sid === 'string' && days.indexOf(x.day) >= 0) seen[x.sid + '|' + x.day] = { by: typeof x.by === 'string' ? x.by : '', at: typeof x.at === 'number' ? x.at : 0 }; });
       cutSeen = seen;
-      cutPaint(); if (S.name === 'orders' || S.name === 'todo') draw();
+      cutShow();
     }, function () { if (cutSub) cutSub(); cutSub = null; cutErr = { key: cutSubKey + '|' + cutReader(), at: Date.now() }; cutSubKey = ''; });
   }
+  // the shared ticks changed on this phone: the bar, the tick lists and the card in Supplier order (lk-cut) follow
+  function cutShow() { cutPaint(); if (S.name === 'orders' || S.name === 'todo') draw(); try { window.dispatchEvent(new Event('lk-cut')); } catch (e) {} }
   function cutStop() { if (cutSub) cutSub(); cutSub = null; cutSubKey = ''; cutSeen = {}; }
   // what is ticked: { '<supplier id>|<cut-off day>': { by, at } }
   function cutDone() { return cutSeen; }
@@ -7288,7 +7290,7 @@
       if (on && was) return Promise.resolve(was);
       var write = {}; cutWrites[key] = write;
       if (on) cutSeen[key] = { by: by, at: data.at }; else delete cutSeen[key];
-      cutPaint(); if (S.name === 'orders' || S.name === 'todo') draw();
+      cutShow();
       return (by === 'owner' ? track(fb.fs.setDoc(ref, data)) : W([['set', ref, data]])).then(function () {
         return { by: by, at: data.at };
       }).catch(function (e) {
@@ -7296,7 +7298,7 @@
         // A late failure must not overwrite a later tap, another chef's tick or a different signed-in session.
         if (context === supplierContext() && cutWrites[key] === write && ours) {
           if (was) cutSeen[key] = was; else delete cutSeen[key];
-          cutPaint(); if (S.name === 'orders' || S.name === 'todo') draw();
+          cutShow();
         }
         throw e;
       }).finally(function () { if (cutWrites[key] === write) delete cutWrites[key]; });
@@ -7331,7 +7333,9 @@
   document.addEventListener('click', function (e) {
     var el = e.target.closest && e.target.closest('[data-cut]');
     if (!el || el.getAttribute('data-cut') !== 'done') return;
-    var key = el.getAttribute('data-id') || '', c = cutOn(0).concat(cutOn(1)).filter(function (x) { return x.key === key && cutOnNow(x, T.mins()); })[0];
+    // Any of today's or tomorrow's cut-offs, the two days the shared ticks cover: the bar shows those whose reminder is
+    // on, and the card for a cut-off with no catalogue supplier (js/suppliers.js) also offers one not started or closed.
+    var key = el.getAttribute('data-id') || '', c = cutOn(0).concat(cutOn(1)).filter(function (x) { return x.key === key; })[0];
     if (!c || !cutCanTick() || cutSeen[key]) return;
     var context = supplierContext(), by = cutTicker();
     function fail(e) {
@@ -7384,7 +7388,8 @@
      service worker, and keeps it in push/<hash of the address> { tok, at, ua, by }. Only the server reads those
      (scripts/cutoff-push.mjs, every 10 minutes on GitHub): it sends one push when a supplier's reminder starts and one an
      hour before the cut-off, to every chef's phone that is turned on, unless a chef ticked the supplier off (Supplier
-     orders, cutdone). sw.js shows it; a tap opens the order list.
+     orders, cutdone). sw.js shows it; a tap opens that cut-off in Supplier order (its supplier's sheet, or a card with
+     Order done when no single catalogue supplier is linked), and an older push opens the order list.
      The phone keeps lk.push { h, by, day, pin } (out of date the next kitchen day or under another kitchen PIN: it gets
      its address again and writes it, one write a day, so a changed address or a moved kitchen PIN is picked up by
      itself). */
