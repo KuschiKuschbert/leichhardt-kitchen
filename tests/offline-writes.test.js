@@ -194,6 +194,69 @@ const bar = p => p.evaluate(() => { const b = document.querySelector('.upd-bar')
     ok(p.errors.length === 0, 'transfers: no page errors ' + p.errors.join(' | '));
   });
 
+  // 4b. with the no-signal note (tests/offline-open.test.js): Orders first opened with no signal is not loaded yet, since
+  // the copy in memory holds only this phone's own lines. A line written there shows under the note and says Not sent,
+  // inside the words; the strip says to keep the book open and leaving asks first. With the signal back the list loads,
+  // and the note and the mark go.
+  await step('4b', async () => {
+    const NO_LIST = 'No signal. This list shows when the phone is back online. What you add now is sent then.';
+    p = await L.open(b, '#/prep', { who: 'sam', wait: 1500 });
+    await p.context().setOffline(true);
+    await p.evaluate(() => { window.__fake.cold = /./; window.__fake.mode = 'hold'; });
+    await p.evaluate(() => { location.hash = '#/orders'; });
+    await L.settle(p, 700);
+    ok(await p.evaluate(() => window.LK_PREP.state.ordState) === 'offline', 'orders first opened with no signal: not loaded yet, not empty');
+    await p.fill('#o-text', 'Lemons');
+    await p.fill('#o-qty', '2 kg');
+    await p.press('#o-text', 'Enter');
+    await L.waitFor(p, () => !!document.querySelector('.nb-unsent'), null, 3000).catch(() => {});
+    const t = await txt(p, '#prep-root') || '';
+    ok(t.indexOf(NO_LIST) >= 0 && t.indexOf('Lemons') > t.indexOf(NO_LIST) && !/Milk/.test(t), 'orders not loaded, a line written: the note stays and the line shows under it (' + t.slice(0, 160) + ')');
+    ok(await unsent(p, 'Lemons') === 'shown' && await p.evaluate(() => !!document.querySelector('.nb-row .nb-t .nb-unsent')), 'orders not loaded, a line written: it says Not sent, inside the words (' + await unsent(p, 'Lemons') + ')');
+    ok(await txt(p, '.p-sync') === 'No signal. Keep the book open: your changes send when the signal is back.', 'orders not loaded: the strip says to keep the book open');
+    ok(await asks(p), 'orders not loaded, a line waiting: leaving asks first');
+    await p.context().setOffline(false);
+    await p.evaluate(() => { window.__fake.warm(); });
+    await L.waitFor(p, () => /Milk/.test((document.querySelector('#prep-root') || {}).textContent || ''), null, 5000).catch(() => {});
+    await L.settle(p, 500);
+    const t2 = await txt(p, '#prep-root') || '';
+    ok(await p.evaluate(() => window.LK_PREP.state.ordState) === 'ok' && t2.indexOf(NO_LIST) < 0 && /Milk/.test(t2) && /Lemons/.test(t2), 'signal back: the order list loads with Milk and Lemons, and the note goes');
+    ok(await unsent(p, 'Lemons') === 'none', 'signal back: Not sent goes once the server has the line');
+    ok(!(await asks(p)), 'signal back: everything sent, leaving does not ask');
+    ok(p.errors.length === 0, 'orders not loaded: no page errors ' + p.errors.join(' | '));
+  });
+
+  // 4c. the server takes one line while the strip is still up (on a weak signal another write can still be waiting):
+  // only that line's mark goes, patched in its row (listSnap() says 'same'), on every list. The phone still says it is
+  // offline here, so the strip stays up and only the row patch can take the mark away.
+  const addLine = {
+    '#/prep': async p => { await p.fill('#p-text', 'Zest limes'); await p.press('#p-text', 'Enter'); return 'Zest limes'; },
+    '#/orders': async p => { await p.fill('#o-text', 'Limes'); await p.fill('#o-qty', '1 kg'); await p.press('#o-text', 'Enter'); return 'Limes'; },
+    '#/waste': async p => {
+      await p.fill('#w-text', 'Bread'); await p.fill('#w-amt', '2');
+      await p.evaluate(() => (document.querySelector('.w-rchips [data-v="excess"]') || document.querySelector('[data-p="wreason"][data-v="excess"]')).click());
+      await L.settle(p, 100); await p.click('.w-add .nb-addbtn'); return 'Bread';
+    },
+    '#/transfers': async p => {
+      await p.fill('#tr-venue', 'Riviera'); await p.fill('#tr-person', 'Tom'); await p.fill('#tr-text', 'Limes'); await p.fill('#tr-amt', '3');
+      await p.click('[data-p="tr-unit"][data-v="kg"]'); await p.click('.tr-add .nb-addbtn'); return 'Limes';
+    }
+  };
+  for (const hash of Object.keys(addLine)) {
+    await step('4c ' + hash, async () => {
+      p = await L.open(b, hash, { who: 'sam', wait: 1500 });
+      await p.context().setOffline(true);
+      await hold(p);
+      const text = await addLine[hash](p);
+      await L.waitFor(p, () => !!document.querySelector('.nb-unsent'), null, 3000).catch(() => {});
+      ok(await unsent(p, text) === 'shown', hash + ', strip up: the waiting line shows Not sent (' + await unsent(p, text) + ')');
+      await release(p);
+      await L.settle(p, 500);
+      ok(!!(await p.$('.p-sync')) && await unsent(p, text) === 'none', hash + ', strip still up: Not sent goes from the line the server has (' + await unsent(p, text) + ')');
+      ok(p.errors.length === 0, hash + ', strip still up: no page errors ' + p.errors.join(' | '));
+    });
+  }
+
   // 5. Update now with a write waiting, then with half a line typed: a second tap first
   await step('5', async () => {
     p = await L.open(b, '#/prep', { wait: 1500 });
