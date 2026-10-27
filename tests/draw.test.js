@@ -27,6 +27,31 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   ok(!p.urls.some(u => /js\/(draw|library|smart)\.js|js\/lib\//.test(u)), 'staff: the drawing editor, the library and the smart creator are never downloaded');
   await p.context().close();
 
+  // an empty new drawing cannot be saved (27 Oct 2026): one tap on Save used to put an empty plate with no labels on
+  // every phone. The recipe keeps the book's own plate and its Pass labels; one part on the plate turns Save on.
+  p = await L.open(b, '#/r/burger', { who: 'ann', extra: cfg(), wait: 1400 });
+  await wait(p, () => document.querySelectorAll('.stage .pin').length > 0);
+  const pinsOf = () => p.evaluate(() => [...document.querySelectorAll('.stage .pin')].map(x => x.textContent.trim()));
+  const pins0 = await pinsOf();
+  await p.evaluate(() => { location.hash = '#/manage/draw/new/burger/plate'; });
+  await wait(p, () => !!document.querySelector('.dw-svg') && !!document.querySelector('.dw-tile[data-dw="add"]'), null, 15000);
+  ok((await W(p)).n === 0 && await p.isDisabled('[data-dw="save"]') && /Nothing drawn yet/.test(await txt(p, '.dw-bar .mg-state') || ''), 'empty new drawing: Save is off and the bar says Nothing drawn yet (' + await txt(p, '.dw-bar .mg-state') + ')');
+  // a button left on from an older page, or anything else that asks Save, is refused too
+  await p.evaluate(() => { const sv = document.querySelector('[data-dw="save"]'); sv.disabled = false; sv.click(); });
+  await L.settle(p, 1500);
+  s = await store(p);
+  ok(!s[fsKey(['drawings', 'burger-plate'])] && !s[fsKey(['recipes', 'burger'])] && !s[fsKey(['book', 'index'])] && !/Saved/.test(await toastText(p) || ''), 'empty new drawing: nothing is saved and the recipe is not changed');
+  ok(await p.isDisabled('[data-dw="save"]') && /Nothing drawn yet/.test(await txt(p, '.dw-bar .mg-state') || ''), 'empty new drawing: after that tap, Save is off again and the bar still says Nothing drawn yet');
+  await p.evaluate(() => { location.hash = '#/r/burger'; });
+  await wait(p, () => document.querySelectorAll('.stage .pin').length > 0);
+  ok(pins0.length > 0 && JSON.stringify(await pinsOf()) === JSON.stringify(pins0) && !(await p.$('.stage svg.art [data-surf]')), 'empty new drawing: the card keeps its plate and its Pass labels (' + pins0.join(', ') + ')');
+  await p.evaluate(() => { location.hash = '#/manage/draw/new/burger/plate'; });
+  await wait(p, () => !!document.querySelector('.dw-tile[data-dw="add"]'), null, 15000);
+  await p.click('.dw-tile[data-dw="add"] >> nth=0'); await L.settle(p, 200);
+  ok((await W(p)).n === 1 && !(await p.isDisabled('[data-dw="save"]')) && !/Nothing drawn/.test(await txt(p, '.dw-bar .mg-state') || ''), 'one part on the plate: Save is on');
+  ok(errs(p).length === 0, 'empty new drawing: no page errors ' + errs(p).join(' | '));
+  await p.context().close();
+
   // the head chef draws the burger's plate (a computer, so the canvas and the library sit side by side)
   p = await L.open(b, '#/manage/draw/new/burger/plate', { who: 'ann', extra: cfg(), wait: 1400, width: 1280, height: 900 });
   await wait(p, () => !!document.querySelector('.dw-svg'), null, 15000);
