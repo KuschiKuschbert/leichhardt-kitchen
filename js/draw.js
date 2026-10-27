@@ -232,6 +232,9 @@
   function redo() { if (!W.redo.length) return; W.undo.push(snapNow()); restore(W.redo.pop()); changed(); }
   function draftKey() { return 'lk.dw.draft.' + (W.d.isNew ? 'new-' + W.d.rid + '-' + W.d.slot : W.d.id); }
   function dirty() { return !!(W.d && W.d.saved !== snapNow()); }
+  // a new drawing with no parts yet: saving it would put an empty plate with no Pass labels on every phone (27 Oct
+  // 2026), so Save stays off until one part is on it, like persist(). A saved drawing keeps its Save.
+  function nothingDrawn(d) { return !!(d && d.isNew && !d.els.length); }
   var keepT = null;
   function keepNow() {
     clearTimeout(keepT);
@@ -657,11 +660,12 @@
     var kept = d.kept ? '<div class="box beige mg-kept" role="note"><span class="label">Changes not saved yet</span><div>This device kept changes to this drawing from ' + esc(B().dayShort(d.kept.at) + ' ' + B().clock(d.kept.at)) + '.</div><div class="btn-row">' + btn('kept-use', 'Keep editing them', { cls: 'btn dark' }) + btn('kept-drop', 'Throw them away', { cls: 'btn' }) + '</div></div>' : '';
     var conflict = W.conflict ? '<div class="warn" role="alert"><span class="label">Changed on another device</span><span>Version ' + esc(W.conflict.v) + ' of this drawing was saved after you opened it.</span><div class="btn-row">' + btn('theirs', 'Open theirs', { cls: 'btn' }) + btn('mine', 'Save mine over it', { cls: 'btn dark' }) + '</div></div>' : '';
     var newer = d.els.some(function (el) { var it = el.t === 'item' && itemOf(el.a); return it && it.id + '@' + it.v !== el.a; }) ? '<div class="box beige" role="note"><span class="label">Newer library drawings</span><div>Some pieces have a newer drawing in the library. This drawing keeps its own copy until you ask.</div><div class="btn-row">' + btn('newer', 'Use the newer drawings', { cls: 'btn' }) + '</div></div>' : '';
-    var state = W.saving || (dirty() ? 'Not saved yet. Kept on this device.' : d.isNew ? 'New drawing.' : 'Saved. Version ' + d.meta.v + '.');
+    var empty = nothingDrawn(d);
+    var state = W.saving || (empty ? 'Nothing drawn yet.' : dirty() ? 'Not saved yet. Kept on this device.' : d.isNew ? 'New drawing.' : 'Saved. Version ' + d.meta.v + '.');
     return '<div class="dw"><div class="mg-head"><h2 id="rtitle" tabindex="-1">' + esc((r ? r.name : d.rid) + ': ' + SLOT_NAME[d.slot].toLowerCase()) + '</h2></div>' + kept + conflict + newer +
       '<div class="dw-main"><div class="dw-left">' + canvasHTML() + toolsHTML() + selHTML() + '</div><div class="dw-right">' + smart('panel') + startHTML() + missingHTML() + checkHTML() + panelHTML() + '</div></div>' +
       '<div class="mg-bar dw-bar"><span class="mg-state" role="status">' + esc(state) + '</span>' + (W.msg ? '<span class="p-err" role="alert">' + esc(W.msg) + '</span>' : '') +
-      '<div class="btn-row"><button type="button" class="btn dark" data-dw="save"' + (W.saving ? ' disabled' : '') + '>' + (W.saving ? 'Saving...' : 'Save') + '</button></div></div></div>';
+      '<div class="btn-row"><button type="button" class="btn dark" data-dw="save"' + (W.saving || empty ? ' disabled' : '') + '>' + (W.saving ? 'Saving...' : 'Save') + '</button></div></div></div>';
   }
   // drawing the page takes a typed box away, and its change event can ask for another draw while this one runs: that
   // one is left out (the page drawn now already has the change)
@@ -1353,6 +1357,9 @@
     if (!d || W.saving) return;
     W.msg = '';
     if (!P.bookEdit()) { W.msg = 'Not saved: only the head chef can change drawings. Sign in with your PIN as Head chef.'; draw(); return; }
+    // the button is off then, but a button left on from an older page (or anything else that asks Save) lands here too:
+    // the page is drawn again with Save off and "Nothing drawn yet."
+    if (nothingDrawn(d)) { draw(); return; }
     keepNow();
     W.saving = 'Saving...'; draw();
     var slow = setTimeout(function () { if (W.d === d && W.saving) { W.saving = 'Waiting for the signal. Your drawing is kept on this device.'; var s = W.root && W.root.querySelector('.mg-state'); if (s) s.textContent = W.saving; } }, 4000);
