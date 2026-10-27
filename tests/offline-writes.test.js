@@ -995,6 +995,64 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     ok(!(await reloaded(p)) && u && u.t === 'New version available.' && u.btn === 'Update now', 'back 7 minutes after an update, a newer version: no reload, the strip offers Update now (' + JSON.stringify(u) + ')');
   });
 
+  // 22. the update step 20 runs once the change is sent (review of the fix, 28 Oct 2026). Nobody tapped just now, so the
+  // strip says nothing while it checks the signal, and it never reloads over a box tapped into or typed in meanwhile (the
+  // server slow, 3 seconds): it reloaded over "Lamb shank" in the recipe search and over a tap into the search or a prep
+  // box, which closed the keyboard, and said Tap again to update over half a prep line. It waits quietly and goes at a
+  // later look once the box is left, within 10 minutes of the tap, still while the book is in use.
+  const INBOX = {
+    'search typed': { hash: '#/recipes', act: async p => { await p.fill('#find', 'Lamb shank'); return () => p.evaluate(() => { const f = document.getElementById('find'); return !!f && f.value === 'Lamb shank' && document.activeElement === f; }); } },
+    'search tapped': { hash: '#/recipes', act: async p => { await p.tap('#find'); return () => p.evaluate(() => document.activeElement === document.getElementById('find')); } },
+    'prep box tapped': { hash: '#/prep', act: async p => { await p.tap('#p-text'); return () => p.evaluate(() => document.activeElement === document.getElementById('p-text')); } },
+    'half a line': { hash: '#/prep', act: async p => { await p.fill('#p-text', 'Brunoise shallots'); return () => p.evaluate(() => (document.querySelector('#p-text') || {}).value === 'Brunoise shallots'); } }
+  };
+  for (const how of Object.keys(INBOX)) {
+    await step('22 ' + how, async () => {
+      p = await L.open(b, '#/prep', { who: 'ann', touch: true, wait: 1500 });
+      const st = { heads: 0, navs: 0 };   // HEADs of index.html (the update asking the server), and loads of the page
+      p.on('request', q => {
+        if (q.isNavigationRequest() && q.frame() === p.mainFrame()) st.navs++;
+        if (q.method() === 'HEAD' && q.url() === L.BASE + 'index.html') st.heads++;
+      });
+      await updBar(p);
+      await hold(p);
+      await p.fill('#p-text', 'Slice tomatoes');
+      await p.press('#p-text', 'Enter');
+      await L.settle(p, 300);
+      await p.evaluate(() => { if (document.activeElement) document.activeElement.blur(); });
+      await p.tap('.upd-bar button');
+      await L.settle(p, 300);
+      let u = await bar(p);
+      ok(u && u.t === WAITS, how + ': Update now, a change waiting: it updates once sent (' + JSON.stringify(u) + ')');
+      if (INBOX[how].hash !== '#/prep') { await p.evaluate(h => { location.hash = h; }, INBOX[how].hash); await L.settle(p, 600); }
+      await slowHead(p, 3000);
+      await release(p);
+      await L.settle(p, 300);
+      await mark(p);
+      st.heads = 0;
+      await p.clock.fastForward(20000);   // the next look: the change is sent, so the update starts and asks the server
+      for (let i = 0; i < 100 && !st.heads; i++) await L.sleep(50);
+      ok(st.heads > 0, how + ': the change sent, the update starts at the next look');
+      u = await bar(p);
+      ok(u && u.t === 'New version available.' && u.btn === 'Update now', how + ': nobody tapped just now, so the strip says nothing new while it checks (' + JSON.stringify(u) + ')');
+      const kept = await INBOX[how].act(p);
+      await L.settle(p, 4500);
+      ok(!(await reloaded(p)), how + ' while it checked: no reload');
+      ok(await kept(), how + ' while it checked: ' + (how === 'half a line' ? 'the words still there' : 'the box still in use, the keyboard still up'));
+      u = await bar(p);
+      ok(u && u.t === 'New version available.' && u.btn === 'Update now', how + ' while it checked: it waits quietly, with no Tap again to update (' + JSON.stringify(u) + ')');
+      // the box left (half a line cleared), the book still in use: it goes at a later look
+      await p.evaluate(() => { if (document.activeElement) document.activeElement.blur(); });
+      if (how === 'half a line') { await p.fill('#p-text', ''); await p.evaluate(() => { window.LK_PREP.state.text = ''; if (document.activeElement) document.activeElement.blur(); }); }
+      await swipe(p);
+      await p.clock.fastForward(20000);
+      await waitReload(p);
+      ok(await reloaded(p), how + ': the box left, a touch 20 seconds before: it updates at the next look');
+      await L.settle(p, 2000);
+      ok(st.navs === 1, how + ': it reloads once (' + st.navs + ')');
+    });
+  }
+
   await b.close();
   L.report(R);
 })().catch(e => { console.error(e); console.log(R.join('\n')); process.exit(1); });

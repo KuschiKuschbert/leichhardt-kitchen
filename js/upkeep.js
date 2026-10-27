@@ -107,35 +107,41 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
   var UNSENT_NOTE = 'Not sent yet. It\u00a0updates\u00a0once\u00a0sent.';
   /* The update running now, or null (28 Oct 2026). tapped: Update now was tapped for it, before it started or while it
      ran (a tap takes over an update nobody tapped, so the tap's own touch does not call it off). half: something half
-     typed when it was tapped, which the second tap said may go. files: it is fetching the files. */
+     typed when it was tapped, which the second tap said may go. files: it is fetching the files. asked: see reloadNow(). */
   var run = null;
-  /* When Update now was tapped while a change waited to send, or 0 (28 Oct 2026). The look every 20 seconds runs that
-     tapped update once the change is sent and nothing is in a box or half typed, within 10 minutes of the tap, even
-     while the book is in use. After that it updates by the usual rule. */
+  /* When Update now was tapped while a change waited to send, or 0 (28 Oct 2026). The look every 20 seconds runs the
+     update that tap asked for once the change is sent and nothing is in a box or half typed, within 10 minutes of the
+     tap, even while the book is in use. After that it updates by the usual rule. */
   var wanted = 0;
-  // back: the book was brought back after 5 minutes or more away
-  function reloadNow(tapped, back) {
+  /* back: the book was brought back after 5 minutes or more away. asked: the time of that tap (wanted), for the update
+     the look every 20 seconds runs once the change is sent. Nobody tapped just now, so it runs like an update nobody
+     tapped: no note in the strip, and a touch does not call it off. */
+  function reloadNow(tapped, back, asked) {
     if (run) return;
     // Once per 10 minutes at most, so a flapping header can never cause a reload loop. The strip still offers Update now.
     try { var last = +localStorage.getItem('lk.upd.last') || 0; if (Date.now() - last < 600000) { showBar(); return; } } catch (e) {}
-    var me = run = { tapped: !!tapped, half: !!tapped && lkUnsaved(), files: false }, touched = lkTouch, gone = false, wait = null;
+    var me = run = { tapped: !!tapped, half: !!tapped && lkUnsaved(), files: false, asked: asked || 0 }, touched = lkTouch, gone = false, wait = null;
     /* The check and the files take up to 8 seconds each on a weak signal, so the book looks again before it reloads
        (28 Oct 2026): an update nobody tapped stops when someone typed or wrote meanwhile, and the one after 2 minutes
        untouched also when someone touched the book. Coming back is a touch, so that update goes on over a swipe; a tick
-       still stops it. A tapped one stops when a change waits to send or something was typed after the tap. The strip
-       stays and the update waits for its next turn, or for the next tap. */
+       still stops it. The one after a tap whose change has since been sent (asked) goes on over a touch too, and stops
+       for a box tapped into, typed in or waiting to send (review of the fix, 28 Oct 2026: it reloaded over the recipe
+       search). A tapped one stops when a change waits to send or something was typed after the tap. The strip stays
+       and the update waits for its next turn, or for the next tap. */
     function stop() {
       var note = '';
       if (me.tapped) {
         if (lkUnsent()) note = UNSENT_NOTE; else if (lkUnsaved() && !me.half) note = 'Not saved yet.'; else return false;
-      } else if (!lkTyping() && (back || lkTouch === touched)) return false;
-      run = null; showBar();
+      } else if (!lkTyping() && (back || me.asked || lkTouch === touched)) return false;
+      run = null; showBar(); keep();
       if (note === UNSENT_NOTE) { wanted = Date.now(); say(note, 'Update now'); }
       else if (note) { say(note, 'Tap again to update'); armedAt = Date.now(); }
       return true;
     }
+    // the update after a tap that stopped, quietly: the look every 20 seconds tries it again, within 10 minutes of the tap
+    function keep() { if (me.asked && !me.tapped) wanted = me.asked; }
     // no signal (27 Oct 2026): the book stays as it is, the strip stays up, and it updates by itself once the signal is back
-    function noSignal() { run = null; showBar(); if (me.tapped) say('No signal. It updates later.', 'Update now'); }
+    function noSignal() { run = null; showBar(); keep(); if (me.tapped) say('No signal. It updates later.', 'Update now'); }
     // the check can take up to 8 seconds on a weak signal, so a tap says what is happening meanwhile
     if (me.tapped) busy('Checking the signal...');
     lkServerUp().then(function (up) {
@@ -223,8 +229,8 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
   setInterval(function () {
     if (document.visibilityState !== 'visible') return;
     if (found) {
-      // Update now tapped while a change waited: the tapped update, once it is sent (see wanted)
-      if (wanted && Date.now() - wanted < 600000 && !run && !lkTyping()) { wanted = 0; try { localStorage.removeItem('lk.upd.last'); } catch (e) {} reloadNow(true); }
+      // Update now tapped while a change waited: the update it asked for, once the change is sent (see wanted)
+      if (wanted && Date.now() - wanted < 600000 && !run && !lkTyping()) { var w = wanted; wanted = 0; try { localStorage.removeItem('lk.upd.last'); } catch (e) {} reloadNow(false, false, w); }
       else if (lkIdle()) reloadNow();
     }
     else if (Date.now() - lastCheck > 15 * 60000) check(false);
