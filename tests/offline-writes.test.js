@@ -1,6 +1,7 @@
 // No signal and changes waiting to send (27 Oct 2026, audit frame-12, r2-2-6, prep-orders-1, waste-transfers-todo-5).
 // Since 26 Oct 2026 (#387) Firestore keeps a change made with no signal in this tab's memory only (memoryLocalCache), so a
-// reload, Update now, the 04:00 refresh or a closed app loses it, and a reload with no signal opens an empty book.
+// reload or a closed app loses it, which is why Update now and the 04:00 refresh wait until it is sent, and a reload
+// with no signal opens an empty book.
 // The strip says to keep the book open, the browser asks before leaving while writes wait, Update now waits until a
 // change is sent (head chef, 28 Oct 2026) and asks for a second tap over half a line, the reloads wait for the signal
 // (wifi with no internet too) and look again before they go, and every list marks its lines Not sent, on
@@ -402,6 +403,27 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     await L.settle(p, 300);
   });
 
+  // 5d. half a line typed after the tap, while it checks the signal: no reload over it, "Not saved yet." and Tap again
+  // to update, the same as half a line typed before the tap (final review, 28 Oct 2026)
+  await step('5d', async () => {
+    p = await L.open(b, '#/prep', { who: 'ann', wait: 1500 });
+    await updBar(p);
+    await slowHead(p, 3000);
+    await mark(p);
+    await p.click('.upd-bar button');
+    await L.settle(p, 200);
+    let u = await bar(p);
+    ok(u && u.t === 'Checking the signal...', 'update, half a line typed after the tap: it was checking (' + JSON.stringify(u) + ')');
+    await p.fill('#p-text', 'Brunoise shallots');
+    await L.settle(p, 4500);
+    u = await bar(p);
+    ok(!(await reloaded(p)) && await p.evaluate(() => (document.querySelector('#p-text') || {}).value === 'Brunoise shallots'), 'update, half a line typed after the tap: no reload, the words still there');
+    ok(u && u.t === 'Not saved yet.' && u.btn === 'Tap again to update', 'update, half a line typed after the tap: it says Not saved yet with Tap again to update (' + JSON.stringify(u) + ')');
+    await p.click('.upd-bar button');
+    await waitReload(p);
+    ok(await reloaded(p), 'update, half a line typed after the tap: the second tap updates');
+  });
+
   // 6. Update now with no signal: the book stays as it is, and updates once the signal is back
   await step('6', async () => {
     p = await L.open(b, '#/prep', { wait: 1500 });
@@ -621,9 +643,18 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     await p.clock.fastForward('03:10');
     ok(await fetching(st), '04:00: it fetches the files');
     await p.fill('#p-text', 'Dice carrots');
-    await L.settle(p, 6000);
+    await L.settle(p, 4000);
     ok(!(await reloaded(p)), '04:00, half a line typed while the files came in: no reload');
     ok(await p.evaluate(() => (document.querySelector('#p-text') || {}).value === 'Dice carrots'), '04:00: the half line is still there');
+    // the line added or cleared once the files are in: it still waits its 10 minutes, it does not reload 8 seconds in
+    await p.fill('#p-text', '');
+    await p.evaluate(() => { window.LK_PREP.state.text = ''; window.LK_PREP.state.qty = ''; });
+    await L.settle(p, 6000);
+    ok(!(await reloaded(p)), '04:00, the box cleared after the files came in: no reload 8 seconds in, it waits 10 minutes');
+    await p.evaluate(() => { if (document.activeElement) document.activeElement.blur(); });
+    await p.clock.fastForward('10:30');
+    await waitReload(p);
+    ok(await reloaded(p), '04:00: 10 minutes later, nothing typed, it refreshes');
   });
 
   // 11. an order line with Used in (final review, 28 Oct 2026): the room for Not sent sits on the words' line, before
@@ -706,6 +737,120 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     await p.context().setOffline(false);
     await L.settle(p, 300);
   });
+
+  // 14. Update now tapped while the automatic update runs (the strip still says New version available.): the tap takes
+  // it over, says what is happening and updates, once. The tap is a touch, but it no longer calls the update off.
+  for (const phase of ['check', 'files']) {
+    await step('14 ' + phase, async () => {
+      p = await L.open(b, '#/prep', { who: 'ann', touch: true, wait: 1500 });
+      let navs = 0;   // loads of the page itself from now on: a reload asks for the document once
+      p.on('request', q => { if (q.isNavigationRequest() && q.frame() === p.mainFrame()) navs++; });
+      await updBar(p);
+      const st = phase === 'files' ? await slowFiles(p, 3000) : null;
+      if (phase === 'check') await slowHead(p, 3000);
+      await mark(p);
+      await p.clock.fastForward('02:30');   // 2 minutes untouched: the automatic update starts
+      if (st) ok(await fetching(st), 'automatic update: it fetches the files');
+      else await L.settle(p, 200);
+      let u = await bar(p);
+      ok(u && u.t === 'New version available.', 'automatic update, ' + phase + ': the strip still says New version available (' + JSON.stringify(u) + ')');
+      await p.tap('.upd-bar button');
+      await L.settle(p, 200);
+      u = await bar(p);
+      const words = phase === 'files' ? 'Updating...' : 'Checking the signal...';
+      ok(u && u.t === words, 'automatic update, ' + phase + ': a tap on Update now says ' + words + ' (' + JSON.stringify(u) + ')');
+      await waitReload(p);
+      ok(await reloaded(p), 'automatic update, ' + phase + ': the tap does not call it off, it updates');
+      await L.settle(p, 2000);
+      ok(navs === 1, 'automatic update, ' + phase + ': it reloads once (' + navs + ')');
+    });
+  }
+
+  // 15. the automatic update on coming back after 5 minutes away, with no answer from the server: the strip still
+  // comes, so Update now is there to tap while the book is in use (it used to show nothing)
+  await step('15', async () => {
+    const st = { on: false, n: 0 };
+    p = await L.open(b, '#/prep', { who: 'ann', touch: true, wait: 1500 });
+    await p.context().route(u => u.href === L.BASE + 'index.html', r => {
+      if (r.request().method() !== 'HEAD' || !st.on) return r.fallback();
+      // the first answer is a new version, then the signal goes
+      if (++st.n === 1) return r.fulfill({ status: 200, headers: { 'last-modified': 'Mon, 19 Oct 2026 00:00:00 GMT' } });
+      return r.abort('internetdisconnected');
+    });
+    await p.evaluate(() => {
+      window.__vis = 'visible';
+      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => window.__vis });
+    });
+    const vis = s => p.evaluate(s => { window.__vis = s; document.dispatchEvent(new Event('visibilitychange')); }, s);
+    await vis('hidden');
+    await p.clock.fastForward('06:00');
+    st.on = true;
+    await mark(p);
+    await vis('visible');
+    await L.settle(p, 1500);
+    ok(st.n >= 2, 'back after 6 minutes: it found the new version and asked the server again (' + st.n + ' asked)');
+    const u = await bar(p);
+    ok(!(await reloaded(p)) && u && u.t === 'New version available.' && u.btn === 'Update now', 'back after 6 minutes, no answer: no reload, and the strip offers Update now (' + JSON.stringify(u) + ')');
+  });
+
+  // 16. the signal goes while the files come in (the server answered first): no reload into an empty book, for the
+  // automatic update, Update now and the 04:00 refresh, and each goes once the signal is back
+  const dropOnFiles = async p => {
+    const st = { on: false };
+    await p.context().route(u => u.href === L.BASE + 'js/data.js', async r => {
+      if (!r.request().headers()['x-lk-fresh'] || st.on) return r.fallback();
+      st.on = true;
+      await p.context().setOffline(true);
+      return r.abort('internetdisconnected');
+    });
+    return st;
+  };
+  for (const how of ['automatic', 'tapped', '04:00']) {
+    await step('16 ' + how, async () => {
+      p = await L.open(b, how === '04:00' ? '#/recipes' : '#/prep', { who: 'ann', touch: true, wait: 1500 });
+      if (how !== '04:00') await updBar(p);
+      else { await p.clock.fastForward('13:58:00'); await L.settle(p, 300); }
+      const st = await dropOnFiles(p);
+      await mark(p);
+      if (how === 'automatic') await p.clock.fastForward('02:30');
+      else if (how === 'tapped') await p.tap('.upd-bar button');
+      else await p.clock.fastForward('00:03:00');
+      ok(await fetching(st), how + ': it asked for the files');
+      await L.settle(p, 1500);
+      ok(!(await reloaded(p)), how + ', the signal gone while the files came in: no reload into an empty book');
+      if (how === 'tapped') { const u = await bar(p); ok(u && /^No signal\./.test(u.t), how + ': the strip says No signal (' + JSON.stringify(u) + ')'); }
+      await p.context().setOffline(false);
+      await L.settle(p, 300);
+      if (how === 'automatic') await p.clock.fastForward('02:30');
+      else if (how === 'tapped') { await L.settle(p, 4500); await p.tap('.upd-bar button'); }
+      else await p.clock.fastForward(6000);   // 5 seconds after the signal is back
+      await waitReload(p);
+      ok(await reloaded(p), how + ': with the signal back, it updates');
+    });
+  }
+
+  // 17. "It updates once sent." stays whole, so on a narrow phone with Extra large text the strip is a little tighter:
+  // no sideways scroll at 360 px (the usual Android width) or 344 px
+  for (const width of [344, 360]) {
+    await step('17 ' + width, async () => {
+      p = await L.open(b, '#/prep', { width, settings: { text: 'xlarge' }, wait: 1500 });
+      await updBar(p);
+      await hold(p);
+      await p.fill('#p-text', 'Slice tomatoes');
+      await p.press('#p-text', 'Enter');
+      await L.settle(p, 300);
+      await p.evaluate(() => { if (document.activeElement) document.activeElement.blur(); });
+      await p.click('.upd-bar button');
+      await L.settle(p, 300);
+      const u = await bar(p);
+      ok(u && u.t === WAITS, width + ' px, Extra large: it says it updates once sent (' + JSON.stringify(u) + ')');
+      const over = await L.overflow(p);
+      ok(!over, width + ' px, Extra large: no sideways scroll ' + (over || ''));
+      ok(await p.evaluate(() => { const b = document.querySelector('.upd-bar'), s = b.querySelector('span').getBoundingClientRect(), r = b.getBoundingClientRect(); return s.top >= r.top && s.bottom <= r.bottom; }), width + ' px, Extra large: the words fit inside the strip');
+      await release(p);
+      await L.settle(p, 300);
+    });
+  }
 
   await b.close();
   L.report(R);

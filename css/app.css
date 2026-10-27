@@ -1680,6 +1680,9 @@ button.wm-a { width: 100%; border: 0; background: none; font: inherit; text-alig
    it shows, the bars that stick to the top of a page stick just under it. */
 .upd-bar { position: sticky; top: var(--fn-stick, 0px); z-index: 45; box-sizing: border-box; height: 48px; display: flex; align-items: center; justify-content: center; gap: 0.75rem; padding: 2px 0.5rem 2px 1rem; background: var(--ink); color: #fff; font: 600 0.95rem var(--body); }
 .upd-bar button { flex: none; min-height: 44px; padding: 0 1rem; border: 0; border-radius: 22px; background: var(--accent); color: #fff; font: 700 0.95rem var(--body); cursor: pointer; }
+/* a narrow phone with Extra large text (28 Oct 2026): "It updates once sent." stays whole, so the strip is a little
+   tighter there, or the page scrolled sideways at 360 px */
+@media (max-width: 380px) { .upd-bar { gap: 0.5rem; padding: 2px 0.5rem; } .upd-bar button { padding: 0 0.75rem; } }
 /* With the update strip and the function strip both up, the bars that stick to the top sit under both of them, and a
    jump lands below both (24 Oct 2026: they slid 46 px under the update strip). --fn-pad is the strip's height while
    today has a function it could show (js/functions.js strip()). */
