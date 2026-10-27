@@ -262,15 +262,15 @@
      hasPendingWrites (no reads; metadata changes are not billed). Since 26 Oct 2026 (#387) such a change waits only in
      this tab's memory, so people need to see which lines. Since 27 Oct 2026 prep, order, wastage and transfer lines,
      Done today and Ordered today all have it, on a phone too (who wrote a line is hidden below 600 px).
-     It shows only while the strip does (syncState(): no signal, or a write waiting more than 3 seconds). Every write is
+     It shows only while the strip does (stripOn(): no signal, or a write waiting more than 3 seconds). Every write is
      pending until the server answers, even on a good signal, so a mark on every tick would make the rows jump.
      The mark sits in a slot (.nb-mk) inside the words, so it wraps with them like Urgent and never narrows them.
      While the strip is up every slot keeps the mark's room (.nb-held: hidden, no words, so the row's text and the line
      sheet stay clean), so a tick with no signal only fills it and the rows never jump under the next tap (20 Oct 2026
      fast ticking). The rows move once, with the strip, when it comes or goes. */
   var UNSENT = '<span class="nb-unsent">Not sent</span>', HELD = '<span class="nb-held" aria-hidden="true"></span>';
-  function unsentOn(x) { return !!(x._unsent && syncState()); }
-  function markHTML(on) { return on ? UNSENT : syncState() ? HELD : ''; }
+  function unsentOn(x) { return !!(x._unsent && stripOn()); }
+  function markHTML(on) { return on ? UNSENT : stripOn() ? HELD : ''; }
   function unsentMark(x) { return '<span class="nb-mk">' + markHTML(unsentOn(x)) + '</span>'; }
   function markRow(row, on) {
     var s = row && row.querySelector('.nb-mk'), h = markHTML(on);
@@ -578,6 +578,10 @@
     return pr;
   }
   function syncState() { return offline ? 'off' : (pending && Date.now() - pendSince > 3000 ? 'wait' : ''); }
+  // the strip, and the Not sent marks and their room with it (28 Oct 2026): wherever this device writes, a PIN session
+  // or the head chef's Google account with nobody signed in by PIN (privateAccess()). Both keep a change in this tab's
+  // memory until it is sent. Before, the Google device got the marks' room but never the strip.
+  function stripOn() { return privateAccess() ? syncState() : ''; }
   function syncDraw() { var st = syncState(); if (st !== lastSync) { lastSync = st; draw(); } }
   window.addEventListener('online', function () { offline = false; syncDraw(); });
   window.addEventListener('offline', function () { offline = true; syncDraw(); });
@@ -585,8 +589,8 @@
   // closes the app in the background does not ask, which is why the strip says to keep the book open.
   window.addEventListener('beforeunload', function (e) { if (pending > 0) { e.preventDefault(); e.returnValue = ''; } });
   function syncHTML() {
-    var st = syncState();
-    if (!st || !S.pin || !S.authed) return '';
+    var st = stripOn();
+    if (!st) return '';
     return '<div class="p-sync" role="status">' + (st === 'off' ? '<strong>No signal.</strong> Keep the book open: your changes send when the signal is back.' :
       '<strong>Not sent yet.</strong> Other devices cannot see your latest changes yet. Keep the book open.') + '</div>';
   }
@@ -3074,7 +3078,10 @@
     lmClose();
     var row = btn.closest('.nb-row'); if (!row) return;
     var act = row.querySelector('.nb-x, .p-x[data-p="odel"], .p-x[data-p="orestore"]');
-    var who = (row.querySelector('.nb-wrote') || {}).textContent || '', t = row.querySelector('.nb-t'), name = t ? t.textContent.replace(/\s+/g, ' ').trim() : '';
+    // the title is the line's words and amount, without its Not sent slot or an order line's Used in
+    var who = (row.querySelector('.nb-wrote') || {}).textContent || '', t = row.querySelector('.nb-t'), c = t && t.cloneNode(true);
+    if (c) c.querySelectorAll('.nb-mk, .o-used').forEach(function (e) { e.remove(); });
+    var name = c ? c.textContent.replace(/\s+/g, ' ').trim() : '';
     var box = document.createElement('div');
     box.id = 'lm-sheet';
     box.innerHTML = '<div class="sheet-bg" data-lm="close"></div><div class="sheet lm-sheet" role="dialog" aria-modal="true" aria-labelledby="lm-h"><div class="sheet-grip" aria-hidden="true"></div>' +
@@ -4168,7 +4175,8 @@
     return '<li class="nb-row' + (x.ordered ? ' is-done' : '') + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(x.date + '/' + x.id) + '">' +
       '<button type="button" class="nb-box" data-p="otick" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-pressed="' + !!x.ordered + '" aria-label="' + esc('Ordered: ' + x.text) + '"' + (canTick ? '' : ' disabled') + '>' + (x.ordered ? TICK : BOX) + '</button>' +
       '<span class="nb-t"' + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') +
-      (rolledN(x) ? ' <span class="nb-roll" title="Not ordered yet, so it rolled over">Since ' + esc(dayShort(x.since || x.rolledFrom || x.date)) + '</span>' : '') + recipeChips(x) + unsentMark(x) + '</span>' +
+      // Not sent on the words' line, before Used in (a line of its own, .o-used), so its room never adds a line
+      (rolledN(x) ? ' <span class="nb-roll" title="Not ordered yet, so it rolled over">Since ' + esc(dayShort(x.since || x.rolledFrom || x.date)) + '</span>' : '') + unsentMark(x) + recipeChips(x) + '</span>' +
       '<span class="nb-by"><span class="nb-wrote">' + by + '</span></span>' +
       (canBrowse() && can('del') && (x.deleted || !x.ordered) ? moreBtn(x) : '') +
       (canBrowse() && can('del') && !x.deleted && !x.ordered ? '<button type="button" class="p-x" data-p="odel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') +

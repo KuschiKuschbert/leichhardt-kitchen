@@ -41,8 +41,9 @@ function lkServerUp() {
       // Re-fetch the data files past the browser cache first, so the reload shows the newest cards. The page stays on the same card.
       // X-LK-Fresh tells the service worker to fetch these from the network and save them (sw.js).
       var files = ['index.html', 'js/data.js', 'js/art.js', 'js/overlay.js', 'js/app.js', 'js/amounts.js', 'js/learn.js', 'js/cutoffs.js', 'js/prep.js', 'js/functions.js', 'js/firebase-config.js', 'js/boot.js', 'js/upkeep.js', 'css/app.css'];
-      // later(): if the reload is turned down (a page asks first), it tries again in 10 minutes
-      var go = function () { later(); location.reload(); };
+      // later(): if the reload is turned down (a page asks first), it tries again in 10 minutes. Something typed or
+      // written while the files came in (8 seconds at most) holds it back the same way (28 Oct 2026).
+      var go = function () { later(); if (!lkUnsaved()) location.reload(); };
       try {
         // 'no-cache' asks the server whether each file changed (a small answer when it did not), instead of downloading all
         // of them again every morning (about 435 kB a phone, 22 Oct 2026). An update found by the stamp check still uses 'reload'.
@@ -77,22 +78,42 @@ function lkServerUp() {
     if (lkUnsaved()) return true;
     return t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT' || !!(a && a.isContentEditable);
   }
+  // Update now's words while a change waits to send (head chef, 28 Oct 2026). On a phone they take two lines: the
+  // no-break spaces keep the second sentence whole, so the line breaks after "Not sent yet."
+  var UNSENT_NOTE = 'Not sent yet. It\u00a0updates\u00a0once\u00a0sent.';
   var going = false;
   function reloadNow(tapped) {
     if (going) return;
     // Once per 10 minutes at most, so a flapping header can never cause a reload loop.
     try { var last = +localStorage.getItem('lk.upd.last') || 0; if (Date.now() - last < 600000) return; } catch (e) {}
     going = true;
+    var touched = lastTouch, gone = false, wait = null;
+    /* The check and the files take up to 8 seconds each on a weak signal, so the book looks again before it reloads
+       (28 Oct 2026): an update nobody tapped stops when someone typed, wrote or touched the book meanwhile, a tapped one
+       when a change waits to send. The strip stays and the update waits for its next turn. */
+    function stop() {
+      if (tapped ? !lkUnsent() : !typing() && lastTouch === touched) return false;
+      going = false; showBar(); if (tapped) say(UNSENT_NOTE, 'Update now');
+      return true;
+    }
     // the check can take up to 8 seconds on a weak signal, so a tap says what is happening meanwhile
     if (tapped) busy('Checking the signal...');
     // no signal (27 Oct 2026): the book stays as it is, and updates by itself once the signal is back
     lkServerUp().then(function (up) {
       if (!up) { going = false; if (tapped) say('No signal. It updates later.', 'Update now'); return; }
+      if (stop()) return;
       if (tapped) busy('Updating...');
-      try { localStorage.setItem('lk.upd.last', String(Date.now())); } catch (e) {}
       var files = ['index.html', 'js/data.js', 'js/art.js', 'js/overlay.js', 'js/app.js', 'js/amounts.js', 'js/learn.js', 'js/cutoffs.js', 'js/prep.js', 'js/functions.js', 'js/firebase-config.js', 'js/boot.js', 'js/upkeep.js', 'css/app.css'];
-      var go = function () { going = false; location.reload(); };
-      try { Promise.all(files.map(function (f) { return fetch(f, { cache: 'reload', headers: { 'X-LK-Fresh': '1' } }); })).then(go, go); setTimeout(go, 8000); } catch (e) { go(); }
+      // once, when the files are in or after 8 seconds: a reload turned down (a page asks first) is not tried again
+      var go = function () {
+        if (gone) return;
+        gone = true; clearTimeout(wait);
+        if (stop()) return;
+        going = false;
+        try { localStorage.setItem('lk.upd.last', String(Date.now())); } catch (e) {}
+        location.reload();
+      };
+      try { Promise.all(files.map(function (f) { return fetch(f, { cache: 'reload', headers: { 'X-LK-Fresh': '1' } }); })).then(go, go); wait = setTimeout(go, 8000); } catch (e) { go(); }
     });
   }
   /* A slim strip at the top of the screen (21 Oct 2026), styled in css/app.css (.upd-bar), so it never sits with the
@@ -120,9 +141,13 @@ function lkServerUp() {
     var t = barText = document.createElement('span'); t.textContent = 'New version available.';
     var b = barBtn = document.createElement('button'); b.type = 'button'; b.textContent = 'Update now';
     b.onclick = function () {
-      // something not saved or not sent yet (27 Oct 2026): a second tap within 4 seconds, like Sign out, because the
-      // reload loses it. A write waiting for the server says Not sent yet, like the strip.
-      if (lkUnsaved() && !(armedAt && Date.now() - armedAt < 4000)) { say(lkUnsent() ? 'Not sent yet.' : 'Not saved yet.', 'Tap again to update'); armedAt = Date.now(); return; }
+      // the check or the update already running ("Checking the signal...", "Updating..."): the tap is ignored
+      if (going) return;
+      // a change waiting for the server (head chef, 28 Oct 2026): Update now waits, because the reload loses it, and the
+      // book updates by itself once it is sent, the same rule the automatic update follows. No second tap gets past it.
+      if (lkUnsent()) { armedAt = 0; say(UNSENT_NOTE, 'Update now'); return; }
+      // something half typed (27 Oct 2026): a second tap within 4 seconds, like the other Tap again buttons
+      if (lkUnsaved() && !(armedAt && Date.now() - armedAt < 4000)) { say('Not saved yet.', 'Tap again to update'); armedAt = Date.now(); return; }
       armedAt = 0;
       try { localStorage.removeItem('lk.upd.last'); } catch (e) {}
       reloadNow(true);

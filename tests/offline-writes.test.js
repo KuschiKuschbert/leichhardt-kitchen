@@ -1,8 +1,9 @@
 // No signal and changes waiting to send (27 Oct 2026, audit frame-12, r2-2-6, prep-orders-1, waste-transfers-todo-5).
 // Since 26 Oct 2026 (#387) Firestore keeps a change made with no signal in this tab's memory only (memoryLocalCache), so a
 // reload, Update now, the 04:00 refresh or a closed app loses it, and a reload with no signal opens an empty book.
-// The strip says to keep the book open, the browser asks before leaving while writes wait, Update now asks for a
-// second tap, the reloads wait for the signal (wifi with no internet too), and every list marks its lines Not sent, on
+// The strip says to keep the book open, the browser asks before leaving while writes wait, Update now waits until a
+// change is sent (head chef, 28 Oct 2026) and asks for a second tap over half a line, the reloads wait for the signal
+// (wifi with no internet too) and look again before they go, and every list marks its lines Not sent, on
 // a phone too. The mark shows only while the strip does (no signal, or a write waiting more than 3 seconds) and sits
 // inside the words, so a tick on a good signal never moves the rows below (review of the first fix, 27 Oct 2026). While
 // the strip is up every row keeps the mark's room, so a tick with no signal moves no row either (second review).
@@ -35,7 +36,10 @@ async function updBar(p) {
   await p.evaluate(() => navigator.serviceWorker.dispatchEvent(new MessageEvent('message', { data: 'lk-new' })));
   await L.waitFor(p, () => !!document.querySelector('.upd-bar'), null, 3000).catch(() => {});
 }
-const bar = p => p.evaluate(() => { const b = document.querySelector('.upd-bar'); return b ? { t: b.querySelector('span').textContent, btn: b.querySelector('button').textContent, oneLine: b.querySelector('span').getBoundingClientRect().height < 30 && b.scrollWidth <= b.clientWidth } : null; });
+// the update strip's words (no-break spaces read as spaces), its button, and whether the words fit on one line
+const bar = p => p.evaluate(() => { const b = document.querySelector('.upd-bar'); return b ? { t: b.querySelector('span').textContent.replace(/\u00a0/g, ' '), btn: b.querySelector('button').textContent, oneLine: b.querySelector('span').getBoundingClientRect().height < 30 && b.scrollWidth <= b.clientWidth } : null; });
+// a weak signal: the server takes ms to answer the HEAD of index.html that the update check and lkServerUp() send
+const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.html', async r => { if (r.request().method() === 'HEAD') await L.sleep(ms); return r.fallback(); });
 
 (async () => {
   const b = await L.start();
@@ -311,7 +315,9 @@ const bar = p => p.evaluate(() => { const b = document.querySelector('.upd-bar')
     });
   }
 
-  // 5. Update now with a write waiting, then with half a line typed: a second tap first
+  // 5. Update now with a write waiting (head chef, 28 Oct 2026): it waits, a second tap does not override it, and the
+  // book updates by itself once the change is sent, like the automatic update. Then half a line typed: a second tap first.
+  const WAITS = 'Not sent yet. It updates once sent.';
   await step('5', async () => {
     p = await L.open(b, '#/prep', { wait: 1500 });
     await updBar(p);
@@ -321,17 +327,41 @@ const bar = p => p.evaluate(() => { const b = document.querySelector('.upd-bar')
     await p.fill('#p-text', 'Slice tomatoes');
     await p.press('#p-text', 'Enter');
     await L.settle(p, 300);
+    await p.evaluate(() => { if (document.activeElement) document.activeElement.blur(); });
     await mark(p);
     await p.click('.upd-bar button');
     await L.settle(p, 1500);
-    ok(!(await reloaded(p)), 'update: a write waiting, the first tap does not reload');
+    ok(!(await reloaded(p)), 'update: a write waiting, the tap does not reload');
     u = await bar(p);
-    ok(u && u.t === 'Not sent yet.' && u.btn === 'Tap again to update' && u.oneLine, 'update: a write waiting, it says Not sent yet like the strip and asks for a second tap, on one line at 390 (' + JSON.stringify(u) + ')');
+    ok(u && u.t === WAITS && u.btn === 'Update now', 'update: a write waiting, it says it updates once sent, with no second tap to offer (' + JSON.stringify(u) + ')');
+    // at 390 the words take two lines inside the strip, broken after "Not sent yet."
+    const fit = await p.evaluate(() => {
+      const b = document.querySelector('.upd-bar'), s = b.querySelector('span'), n = s.firstChild, at = n ? n.textContent.indexOf('It') : -1, r = document.createRange();
+      if (at >= 0) { r.setStart(n, at); r.setEnd(n, n.textContent.length); }
+      return { inside: s.getBoundingClientRect().height <= b.getBoundingClientRect().height && b.scrollWidth <= b.clientWidth, whole: at >= 0 && r.getClientRects().length === 1 };
+    });
+    ok(fit.inside && fit.whole, 'update at 390: the words fit inside the strip, "It updates once sent." on a line of its own (' + JSON.stringify(fit) + ')');
+    await p.click('.upd-bar button');
+    await L.settle(p, 1500);
+    u = await bar(p);
+    ok(!(await reloaded(p)) && u && u.t === WAITS && u.btn === 'Update now', 'update: a write waiting, a second tap does not reload either (' + JSON.stringify(u) + ')');
     await L.settle(p, 4500);
     u = await bar(p);
-    ok(u && u.btn === 'Update now', 'update: left alone, the button goes back after 4 seconds');
+    ok(u && u.t === 'New version available.' && u.btn === 'Update now', 'update: left alone, the strip goes back after 4 seconds');
     await release(p);
     await L.settle(p, 400);
+    // sent: the book updates by itself, the way the automatic update does (2 minutes untouched, nothing typed)
+    await p.clock.fastForward('02:30');
+    await waitReload(p);
+    ok(await reloaded(p), 'update: once the change is sent, the book updates by itself');
+  });
+
+  // 5b. Update now with half a line typed: "Not saved yet." and a second tap
+  await step('5b', async () => {
+    p = await L.open(b, '#/prep', { wait: 1500 });
+    await updBar(p);
+    await mark(p);
+    let u;
     await p.fill('#p-text', 'Half a line');
     await p.click('.upd-bar button');
     await L.settle(p, 1500);
@@ -341,6 +371,35 @@ const bar = p => p.evaluate(() => { const b = document.querySelector('.upd-bar')
     await p.click('.upd-bar button');
     await waitReload(p);
     ok(await reloaded(p), 'update: the second tap updates');
+  });
+
+  // 5c. taps while Update now checks the signal are ignored, and a line ticked meanwhile holds the update back
+  // (head chef, 28 Oct 2026): it waits until the tick is sent, with no "Reload site?" box
+  await step('5c', async () => {
+    p = await L.open(b, '#/prep', { who: 'ann', wait: 1500 });
+    let asked = 0;
+    p.on('dialog', d => { asked++; d.dismiss().catch(() => {}); });
+    await updBar(p);
+    await slowHead(p, 3000);
+    await mark(p);
+    await p.click('.upd-bar button');
+    await L.settle(p, 200);
+    let u = await bar(p);
+    ok(u && u.t === 'Checking the signal...', 'update, slow server: the tap says it is checking (' + JSON.stringify(u) + ')');
+    await hold(p);
+    await p.evaluate(() => [...document.querySelectorAll('.nb-row')].find(r => /^Slice onions/.test((r.querySelector('.nb-t') || {}).textContent || '')).querySelector('.nb-box').click());
+    await L.settle(p, 200);
+    await p.click('.upd-bar button');
+    await L.settle(p, 200);
+    u = await bar(p);
+    ok(u && u.t === 'Checking the signal...' && u.btn === 'Update now', 'update, checking: a second tap is ignored (' + JSON.stringify(u) + ')');
+    await L.settle(p, 6000);
+    u = await bar(p);
+    ok(!(await reloaded(p)) && asked === 0, 'update, a tick made while it checked: no reload and no Reload site? box (' + asked + ' asked)');
+    ok(u && u.t === WAITS, 'update, a tick made while it checked: it says it updates once sent (' + JSON.stringify(u) + ')');
+    ok(await p.evaluate(() => !!(window.LK_PREP.state.items.find(x => x.id === 'i1') || {}).done), 'update, a tick made while it checked: the tick is still there');
+    await release(p);
+    await L.settle(p, 300);
   });
 
   // 6. Update now with no signal: the book stays as it is, and updates once the signal is back
@@ -472,6 +531,180 @@ const bar = p => p.evaluate(() => { const b = document.querySelector('.upd-bar')
     await p.clock.fastForward('00:10:30');
     await waitReload(p);
     ok(await reloaded(p), '04:00: sent, it refreshes 10 minutes later');
+  });
+
+  // 10. the automatic update looks again before it reloads (final review, 28 Oct 2026). It asks the server, then fetches
+  // the files, up to 8 seconds each on a weak signal: someone who types, ticks a line with the write waiting, or scrolls
+  // in that time keeps what they did, and the strip stays up
+  // the files the book fetches before a reload (X-LK-Fresh) held back ms on a weak signal; st.on once they are asked for
+  const slowFiles = async (p, ms) => {
+    const st = { on: false };
+    await p.context().route(u => u.href === L.BASE + 'js/data.js', async r => { if (r.request().headers()['x-lk-fresh']) { st.on = true; await L.sleep(ms); } return r.fallback(); });
+    return st;
+  };
+  const fetching = async st => { for (let i = 0; i < 100 && !st.on; i++) await L.sleep(50); return st.on; };
+
+  const autoUpd = async p => {
+    await updBar(p);
+    await slowHead(p, 3000);
+    await mark(p);
+    await p.clock.fastForward('02:30');   // 2 minutes untouched: the automatic update starts and asks the server
+    await L.settle(p, 200);
+  };
+  const ACTS = {
+    typing: async p => { await p.fill('#p-text', 'Brunoise shallots'); return () => p.evaluate(() => document.querySelector('#p-text').value === 'Brunoise shallots'); },
+    ticking: async p => {
+      await hold(p);
+      await p.click('[data-p="tick"][data-id="i1"]');
+      return () => p.evaluate(() => !!(window.LK_PREP.state.items.find(x => x.id === 'i1') || {}).done);
+    },
+    scrolling: async p => { await p.mouse.move(200, 500); await p.mouse.wheel(0, 300); return () => true; }
+  };
+  for (const act of Object.keys(ACTS)) {
+    await step('10 ' + act, async () => {
+      p = await L.open(b, '#/prep', { who: 'ann', wait: 1500 });
+      let asked = 0;
+      p.on('dialog', d => { asked++; d.dismiss().catch(() => {}); });
+      const files = await slowFiles(p, 0);
+      await autoUpd(p);
+      const kept = await ACTS[act](p);
+      await L.settle(p, 10000);
+      ok(!(await reloaded(p)) && asked === 0, 'automatic update, ' + act + ' while it checked: no reload and no Reload site? box (' + asked + ' asked)');
+      // the 14 files (about 435 kB) are not fetched for an update that is not going ahead
+      ok(!files.on, 'automatic update, ' + act + ' while it checked: it stops before it fetches the files');
+      ok(await kept(), 'automatic update, ' + act + ' while it checked: what was done is still there');
+      ok(!!(await bar(p)), 'automatic update, ' + act + ' while it checked: the strip still offers Update now');
+      if (act === 'ticking') await release(p);
+      await L.settle(p, 300);
+    });
+  }
+
+  // 10a. the second look, just before the reload: typing while the files come in holds the update back too, and it
+  // goes at its next turn (a reload that did not happen does not count towards the 10 minutes between reloads)
+  await step('10a', async () => {
+    p = await L.open(b, '#/prep', { who: 'ann', wait: 1500 });
+    await updBar(p);
+    const st = await slowFiles(p, 3000);
+    await mark(p);
+    await p.clock.fastForward('02:30');
+    ok(await fetching(st), 'automatic update: it fetches the files');
+    await p.fill('#p-text', 'Peel garlic');
+    await L.settle(p, 6000);
+    ok(!(await reloaded(p)) && await p.evaluate(() => (document.querySelector('#p-text') || {}).value === 'Peel garlic'), 'automatic update, typing while the files came in: no reload, the words still there');
+    await p.fill('#p-text', '');
+    await p.evaluate(() => { window.LK_PREP.state.text = ''; if (document.activeElement) document.activeElement.blur(); });
+    await p.clock.fastForward('02:30');
+    await waitReload(p);
+    ok(await reloaded(p), 'automatic update: left alone again for 2 minutes, it updates');
+  });
+
+  // 10b. the update reloads once: a reload the browser turns down (a page that asks first, like the staff list with
+  // changes) is not tried again 8 seconds later, so nobody gets a second Reload site? box out of nowhere
+  await step('10b', async () => {
+    p = await L.open(b, '#/prep', { who: 'ann', wait: 1500 });
+    let asked = 0;
+    p.on('dialog', d => { asked++; d.dismiss().catch(() => {}); });
+    await updBar(p);
+    await p.evaluate(() => window.addEventListener('beforeunload', e => { e.preventDefault(); e.returnValue = ''; }));
+    await p.click('.upd-bar span');   // the page has been used, so the browser may ask before leaving
+    await mark(p);
+    await p.clock.fastForward('02:30');
+    await L.settle(p, 10000);
+    ok(asked === 1 && !(await reloaded(p)), 'automatic update turned down: asked once, not again 8 seconds later (' + asked + ' asked)');
+  });
+
+  // 10c. the 04:00 refresh looks again after the files came in: half a line typed meanwhile holds it back
+  await step('10c', async () => {
+    p = await L.open(b, '#/prep', { who: 'ann', clock: L.NOW - 10 * 3600000 - 180000, wait: 1500 });   // 03:57
+    const st = await slowFiles(p, 3000);
+    await mark(p);
+    await p.clock.fastForward('03:10');
+    ok(await fetching(st), '04:00: it fetches the files');
+    await p.fill('#p-text', 'Dice carrots');
+    await L.settle(p, 6000);
+    ok(!(await reloaded(p)), '04:00, half a line typed while the files came in: no reload');
+    ok(await p.evaluate(() => (document.querySelector('#p-text') || {}).value === 'Dice carrots'), '04:00: the half line is still there');
+  });
+
+  // 11. an order line with Used in (final review, 28 Oct 2026): the room for Not sent sits on the words' line, before
+  // Used in, so the row does not grow when the strip comes, and the mark never sits alone under Used in
+  const cream = {};
+  cream[['kitchens', L.PIN, 'orders', today, 'lines', 'o3'].join('/')] = { text: 'Cream', qty: '4 L', recipes: ['carbonara-sauce'], addedBy: 'Ann', addedById: 'ann', addedAt: L.NOW - 2400000, ordered: false, deleted: false };
+  const creamRow = p => p.evaluate(() => {
+    const r = [...document.querySelectorAll('.nb-rows .nb-row')].find(r => /^Cream/.test((r.querySelector('.nb-t') || {}).textContent || ''));
+    if (!r) return null;
+    const u = r.querySelector('.o-used'), m = r.querySelector('.nb-unsent, .nb-held'), ub = u && u.getBoundingClientRect(), mb = m && m.getBoundingClientRect();
+    return { h: Math.round(r.getBoundingClientRect().height), used: !!u, above: !!(ub && mb) && mb.bottom <= ub.top + 1 };
+  });
+  for (const width of [390, 1280]) {
+    await step('11 ' + width, async () => {
+      p = await L.open(b, '#/orders', { width, extra: cream, wait: 1500 });
+      const r0 = await creamRow(p);
+      ok(r0 && r0.used, width + ': the Cream line says Used in (' + JSON.stringify(r0) + ')');
+      await p.context().setOffline(true);
+      await hold(p);
+      await L.settle(p, 300);
+      const r1 = await creamRow(p);
+      ok(r0 && r1 && r1.h === r0.h && r1.above, width + ', no signal: a line with Used in keeps its height, its room for Not sent above Used in (' + (r0 && r0.h) + ' px, then ' + JSON.stringify(r1) + ')');
+      await p.click('[data-p="otick"][data-id="o3"]');
+      await L.settle(p, 300);
+      const r2 = await creamRow(p);
+      ok(await unsent(p, 'Cream') === 'shown' && r2 && r2.above && r2.h === r0.h, width + ', no signal: Cream ticked shows Not sent on its words\' line, not under Used in (' + JSON.stringify(r2) + ')');
+      await p.context().setOffline(false);
+      await release(p);
+      await L.settle(p, 500);
+      ok(p.errors.length === 0, width + ', Used in: no page errors ' + p.errors.join(' | '));
+    });
+  }
+
+  // 12. the head chef's Google device with nobody signed in by PIN: its changes also wait in the tab's memory, so it
+  // gets the strip with the marks' room (final review, 28 Oct 2026; it had the room but never the strip)
+  for (const hash of ['#/prep', '#/orders']) {
+    await step('12 ' + hash, async () => {
+      p = await L.open(b, hash, { admin: true, who: '', wait: 1500 });
+      ok(await p.evaluate(() => document.querySelectorAll('.nb-row').length > 0 && !document.querySelector('.p-sync, .nb-held, .nb-unsent')), hash + ', Google device, good signal: the list, no strip and no marks');
+      await p.context().setOffline(true);
+      await L.settle(p, 300);
+      const s = await p.evaluate(() => ({ strip: ((document.querySelector('.p-sync') || {}).textContent || '').trim(), rows: document.querySelectorAll('.nb-rows .nb-row').length, held: document.querySelectorAll('.nb-rows .nb-row .nb-held').length }));
+      ok(s.strip === 'No signal. Keep the book open: your changes send when the signal is back.' && s.rows > 0 && s.held === s.rows, hash + ', Google device, no signal: the strip with the room for Not sent (' + JSON.stringify(s) + ')');
+      ok(!(await L.overflow(p)), hash + ', Google device, no signal: no sideways scroll at 390');
+      await p.context().setOffline(false);
+      await L.settle(p, 500);
+      ok(await p.evaluate(() => !document.querySelector('.p-sync, .nb-held, .nb-unsent')), hash + ', Google device: signal back, the strip and the room go');
+      ok(p.errors.length === 0, hash + ', Google device: no page errors ' + p.errors.join(' | '));
+    });
+  }
+
+  // 13. the line menu's title is the line's words and amount, never "Not sent" or Used in glued on
+  await step('13 prep', async () => {
+    p = await L.open(b, '#/prep', { wait: 1500 });
+    await p.context().setOffline(true);
+    await hold(p);
+    await p.fill('#p-text', 'Zest limes');
+    await p.fill('#p-qty', '2 tubs');
+    await p.press('#p-text', 'Enter');
+    await L.waitFor(p, () => !!document.querySelector('.nb-unsent'), null, 3000).catch(() => {});
+    ok(await unsent(p, 'Zest limes') === 'shown', 'line menu, prep: Zest limes shows Not sent');
+    await p.evaluate(() => [...document.querySelectorAll('.nb-row')].find(r => /^Zest limes/.test((r.querySelector('.nb-t') || {}).textContent || '')).querySelector('.nb-more').click());
+    await L.settle(p, 200);
+    const h = await txt(p, '#lm-h');
+    ok(h === 'Zest limes 2 tubs', 'line menu, prep: the title is the words and the amount (' + h + ')');
+    await p.keyboard.press('Escape');
+    await p.context().setOffline(false);
+    await release(p);
+    await L.settle(p, 300);
+  });
+  await step('13 orders', async () => {
+    p = await L.open(b, '#/orders', { extra: cream, wait: 1500 });
+    await p.context().setOffline(true);
+    await L.settle(p, 300);
+    await p.click('.nb-row [data-lm="open"][data-id="o3"]');
+    await L.settle(p, 200);
+    const h = await txt(p, '#lm-h');
+    ok(h === 'Cream 4 L', 'line menu, orders: the title is the words and the amount, without Used in (' + h + ')');
+    await p.keyboard.press('Escape');
+    await p.context().setOffline(false);
+    await L.settle(p, 300);
   });
 
   await b.close();
