@@ -2,17 +2,24 @@
 /* Something not saved or not sent yet in the prep pages (a line, a shift ping, minutes, the staff list, a write waiting
    for the server): LK_PREP.unsaved() in js/prep.js decides. */
 function lkUnsaved() { try { return !!(window.LK_PREP && window.LK_PREP.unsaved && window.LK_PREP.unsaved()); } catch (e) { return false; } }
+/* One HEAD of index.html past every cache (the service worker leaves HEAD alone): a tiny request, no Firestore. The
+   update check reads its stamp, the reloads ask it whether the server is there, and every answer keeps the book's clock
+   right (LK_TIME.learn). Gives the answer, or null with no answer (no signal, an error, or nothing in 8 seconds). */
+function lkHead() {
+  var t0 = Date.now();
+  return new Promise(function (res) {
+    var wait = setTimeout(function () { res(null); }, 8000);
+    function got(r) { clearTimeout(wait); window.LK_TIME.learn(r, t0, Date.now()); res(r); }
+    try { fetch('index.html', { method: 'HEAD', cache: 'no-store' }).then(function (r) { got(r.ok ? r : null); }, function () { got(null); }); } catch (e) { got(null); }
+  });
+}
 /* Is the book's server there (27 Oct 2026)? Since 26 Oct 2026 (#387) Firestore keeps the kitchen's data, and every
    change not sent yet, in this tab's memory only, so a reload with no signal opens an empty book and loses what was
-   waiting. The 04:00 refresh and the updates ask this first. The browser's own flag, then a HEAD of index.html past
-   every cache (the service worker leaves HEAD alone), so wifi with no internet counts as no signal too. One tiny
-   request when a reload is due, no Firestore; no answer in 8 seconds is no signal. */
+   waiting. The 04:00 refresh and the updates ask this first: the browser's own flag, then lkHead(), so wifi with no
+   internet counts as no signal too. One HEAD when a reload is due. */
 function lkServerUp() {
   if (navigator.onLine === false) return Promise.resolve(false);
-  return new Promise(function (res) {
-    setTimeout(function () { res(false); }, 8000);
-    try { fetch('index.html', { method: 'HEAD', cache: 'no-store' }).then(function (r) { res(!!r.ok); }, function () { res(false); }); } catch (e) { res(false); }
-  });
+  return lkHead().then(function (r) { return !!r; });
 }
 // Daily self-refresh: the book reloads itself once a day (about 04:00) so a tablet left open on the pass
 // always shows the latest cards. If the device was asleep at 04:00, it refreshes as soon as it wakes.
@@ -58,13 +65,9 @@ function lkServerUp() {
 // otherwise when nobody has touched it for 2 minutes and nothing is being typed. A bar offers "Update now" meanwhile.
 // The same answer carries the server's time, which keeps the book's clock right (LK_TIME, at the top).
 (function () {
-  var STAMP_URL = 'index.html', base = null, found = false, lastTouch = Date.now(), hiddenAt = 0, lastCheck = 0, bar = null;
+  var base = null, found = false, lastTouch = Date.now(), hiddenAt = 0, lastCheck = 0, bar = null;
   function stamp() {
-    var t0 = Date.now();
-    return fetch(STAMP_URL, { method: 'HEAD', cache: 'no-store' }).then(function (r) {
-      window.LK_TIME.learn(r.ok ? r : null, t0, Date.now());
-      return r.ok ? (r.headers.get('last-modified') || '') + '|' + (r.headers.get('etag') || '') : '';
-    }, function () { window.LK_TIME.learn(null); return ''; });
+    return lkHead().then(function (r) { return r ? (r.headers.get('last-modified') || '') + '|' + (r.headers.get('etag') || '') : ''; });
   }
   function typing() {
     var a = document.activeElement, t = a && a.tagName;

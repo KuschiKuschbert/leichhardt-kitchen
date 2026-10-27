@@ -106,9 +106,10 @@
   var itemsKey = '', cfgKey = '', toastTimer = null, resumed = false;
 
   /* ---------- Firebase (loaded only when the prep pages are opened) ---------- */
-  /* Firestore keeps an offline copy in the browser. Now and then that copy breaks ("INTERNAL ASSERTION FAILED",
-     canonifyTarget) and the prep pages hang on Loading with no names. The data on the server is fine, so the phone
-     throws its copy away and reloads, at most once a day (lk.fsheal) so it can never loop. */
+  /* Firestore keeps a copy of what it read (in the tab's memory since 26 Oct 2026, #387, memoryLocalCache; before that in
+     the browser's IndexedDB, which this still clears on phones that have one). Now and then that copy breaks ("INTERNAL
+     ASSERTION FAILED", canonifyTarget) and the prep pages hang on Loading with no names. The data on the server is fine,
+     so the phone throws its copy away and reloads, at most once a day (lk.fsheal) so it can never loop. */
   function healCache() {
     if (lsGet('lk.fsheal') === dayNow()) return;
     lsSet('lk.fsheal', dayNow());
@@ -258,16 +259,18 @@
     cutStop();
   }
   /* "Not sent": a line this phone changed that the server has not confirmed yet, from the listener's own
-     hasPendingWrites (no reads; metadata changes are not billed). Since 27 Oct 2026 it is its own mark after the words,
-     so it shows on a phone too (who wrote a line is hidden below 600 px), and prep, order, wastage and transfer lines
-     all have it. Since 26 Oct 2026 (#387) such a change waits only in this tab's memory, so people need to see which lines. */
+     hasPendingWrites (no reads; metadata changes are not billed). Since 26 Oct 2026 (#387) such a change waits only in
+     this tab's memory, so people need to see which lines. Since 27 Oct 2026 prep, order, wastage and transfer lines,
+     Done today and Ordered today all have it, on a phone too (who wrote a line is hidden below 600 px).
+     It shows only while the strip does (syncState(): no signal, or a write waiting more than 3 seconds). Every write is
+     pending until the server answers, even on a good signal, so a mark on every tick would make the rows jump.
+     The mark sits in a slot (.nb-mk) inside the words, so it wraps with them like Urgent and never narrows them. */
   var UNSENT = '<span class="nb-unsent">Not sent</span>';
-  function unsentMark(x) { return x._unsent ? UNSENT : ''; }
+  function unsentOn(x) { return !!(x._unsent && syncState()); }
+  function unsentMark(x) { return '<span class="nb-mk">' + (unsentOn(x) ? UNSENT : '') + '</span>'; }
   function markRow(row, on) {
-    var t = row && row.querySelector('.nb-t'), next = t && t.nextElementSibling, mark = next && next.classList.contains('nb-unsent') ? next : null;
-    if (!t) return;
-    if (on && !mark) t.insertAdjacentHTML('afterend', UNSENT);
-    if (!on && mark) mark.remove();
+    var s = row && row.querySelector('.nb-mk');
+    if (s && on !== !!s.firstChild) s.innerHTML = on ? UNSENT : '';
   }
   // a live list's lines, each with its Not sent flag
   function snapLines(snap, date) {
@@ -279,13 +282,14 @@
     if (!S.root || !document.body.contains(S.root) || holdDraw) { draw(); return; }
     patch();
   }
-  function patchUnsent() { S.items.forEach(function (x) { markRow(document.getElementById('nbr-' + x.id), x._unsent); }); }
-  // order, wastage and transfer rows carry data-ln="<date>/<id>" (a line can show twice, so not an id)
-  function patchLines(lines) {
+  // every row that can say Not sent carries data-ln="<date>/<id>" (a line can show twice, in the list and in Done today,
+  // so not an id); prep lines have no date of their own, so S.date
+  function patchLines(lines, date) {
     var by = {};
-    lines.forEach(function (x) { by[x.date + '/' + x.id] = x; });
-    if (S.root) S.root.querySelectorAll('[data-ln]').forEach(function (row) { var x = by[row.getAttribute('data-ln')]; if (x) markRow(row, x._unsent); });
+    lines.forEach(function (x) { by[(date || x.date) + '/' + x.id] = x; });
+    if (S.root) S.root.querySelectorAll('[data-ln]').forEach(function (row) { var x = by[row.getAttribute('data-ln')]; if (x) markRow(row, unsentOn(x)); });
   }
+  function patchUnsent() { patchLines(S.items, S.date); }
   var itemsLast = {};   // listSnap's memory for the prep list's listener
   function watchItems() {
     if (!kitchenAccess() || !S.configFull) return;
@@ -3044,10 +3048,10 @@
     var rid = x.recipe || ((matchRecipe(x.text) || {}).id || ''), rr = rid ? recipeById(rid) : null;
     var link = rid ? '<a class="nb-go" href="#/r/' + encodeURIComponent(rid) + '" title="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '" aria-label="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '">recipe</a>' : '';
     var del = delOk ? '<button type="button" class="nb-x" data-p="' + (x.deleted ? 'restore' : 'del') + '" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-label="' + (x.deleted ? 'Put back ' : 'Remove ') + esc(x.text) + '">' + (x.deleted ? 'Put back' : 'Remove') + '</button>' : '';
-    return '<li id="nbr-' + esc(x.id) + '" class="nb-row' + (x.done ? ' is-done' : '') + (rolledN(x) && !x.done ? ' is-rolled' : '') + (x.urgent && !x.done ? ' is-urgent' : '') + (x.deleted ? ' is-removed' : '') + '">' +
+    return '<li id="nbr-' + esc(x.id) + '" class="nb-row' + (x.done ? ' is-done' : '') + (rolledN(x) && !x.done ? ' is-rolled' : '') + (x.urgent && !x.done ? ' is-urgent' : '') + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(date + '/' + x.id) + '">' +
       '<button type="button" class="nb-box" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-pressed="' + !!x.done + '" aria-label="' + esc((x.done ? 'Untick ' : 'Tick ') + x.text) + '"' + (tickOk ? '' : ' disabled') + '>' + (x.done ? TICK : BOX) + '</button>' +
       // a tap on the words ticks too (the box is the button for keyboards and screen readers); Undo and the linger cover a slip
-      '<span class="nb-t' + (tickOk && !readonly ? ' nb-tt' : '') + '"' + (tickOk && !readonly ? ' data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '"' : '') + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + (marks ? ' <span class="nb-marks">' + marks + '</span>' : '') + '</span>' + unsentMark(x) +
+      '<span class="nb-t' + (tickOk && !readonly ? ' nb-tt' : '') + '"' + (tickOk && !readonly ? ' data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '"' : '') + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + (marks ? ' <span class="nb-marks">' + marks + '</span>' : '') + unsentMark(x) + '</span>' +
       '<span class="nb-by"><span class="nb-wrote">' + by + '</span></span>' + (star || link || del ? '<span class="nb-acts">' + star + link + del + (del && !readonly ? moreBtn(x) : '') + '</span>' : '') + '</li>';
   }
   /* The line menu (22 Oct 2026, Option B): on a phone, Remove (or Put back) and who wrote the line move behind a ⋯ on
@@ -3204,7 +3208,7 @@
     var dl = live.filter(function (x) { return x.done; }).sort(function (a, b) { return (b.doneAt || 0) - (a.doneAt || 0); });
     var donebox = '<h3 class="nb-sh" id="nb-donebox">' + (onToday ? 'Done today' : 'Done on ' + esc(dayShort(S.date))) + (off ? '' : ' (' + dl.length + ')') + '</h3>' +
       (off ? '<p class="nb-sd" role="status">' + (onToday ? 'No signal. Lines ticked today show when the phone is back online.' : 'No signal. Ticked lines show when the phone is back online.') + '</p>' : '') + (dl.length ? '<ul class="nb-done">' + dl.map(function (x) {
-      return '<li><span class="nb-dt">' + (x.doneAt ? clock(x.doneAt) : '') + '</span><span class="nb-dx">' + esc(x.text) + (x.qty ? ' <em>' + esc(x.qty) + '</em>' : '') + '</span><span class="nb-dw">' + esc(x.doneBy || '') + '</span>' + (can('tick') && canUntick(x) ? '<button type="button" class="p-x nb-undo" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(S.date) + '" aria-label="' + esc('Undo the tick on ' + x.text) + '">Undo</button>' : '') + '</li>';
+      return '<li data-ln="' + esc(S.date + '/' + x.id) + '"><span class="nb-dt">' + (x.doneAt ? clock(x.doneAt) : '') + '</span><span class="nb-dx">' + esc(x.text) + (x.qty ? ' <em>' + esc(x.qty) + '</em>' : '') + unsentMark(x) + '</span><span class="nb-dw">' + esc(x.doneBy || '') + '</span>' + (can('tick') && canUntick(x) ? '<button type="button" class="p-x nb-undo" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(S.date) + '" aria-label="' + esc('Undo the tick on ' + x.text) + '">Undo</button>' : '') + '</li>';
     }).join('') + '</ul>' : off ? '' : '<p class="nb-sd">' + (onToday ? 'Nothing ticked yet.' : 'Nothing was ticked.') + '</p>');
     return (flags ? '<div class="nb-rc">' + flags + '</div>' : '') + startHTML(live, true) + paceHTML + stuckHTML + (off ? '' : fnNeedsHTML()) + donebox + quick;
   }
@@ -4160,7 +4164,7 @@
     return '<li class="nb-row' + (x.ordered ? ' is-done' : '') + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(x.date + '/' + x.id) + '">' +
       '<button type="button" class="nb-box" data-p="otick" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-pressed="' + !!x.ordered + '" aria-label="' + esc('Ordered: ' + x.text) + '"' + (canTick ? '' : ' disabled') + '>' + (x.ordered ? TICK : BOX) + '</button>' +
       '<span class="nb-t"' + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') +
-      (rolledN(x) ? ' <span class="nb-roll" title="Not ordered yet, so it rolled over">Since ' + esc(dayShort(x.since || x.rolledFrom || x.date)) + '</span>' : '') + recipeChips(x) + '</span>' + unsentMark(x) +
+      (rolledN(x) ? ' <span class="nb-roll" title="Not ordered yet, so it rolled over">Since ' + esc(dayShort(x.since || x.rolledFrom || x.date)) + '</span>' : '') + recipeChips(x) + unsentMark(x) + '</span>' +
       '<span class="nb-by"><span class="nb-wrote">' + by + '</span></span>' +
       (canBrowse() && can('del') && (x.deleted || !x.ordered) ? moreBtn(x) : '') +
       (canBrowse() && can('del') && !x.deleted && !x.ordered ? '<button type="button" class="p-x" data-p="odel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') +
@@ -4279,7 +4283,7 @@
     var removedBox = view === 'day' && removedO.length && canBrowse() && can('del') ? '<button type="button" class="nb-link" data-p="oremoved">' + (S.oShowRemoved ? 'Hide' : 'Show') + ' removed (' + removedO.length + ')</button>' +
       (S.oShowRemoved ? '<ul class="nb-rows">' + removedO.map(ordRow).join('') + '</ul>' : '') : '';
     var orderedBox = view === 'day' && moved.length ? '<h3 class="nb-sh">Ordered today (' + moved.length + ')</h3><ul class="nb-done">' + moved.map(function (x) {
-      return '<li><span class="nb-dt">' + (x.orderedAt ? clock(x.orderedAt) : '') + '</span><span class="nb-dx">' + esc(x.text) + (x.qty ? ' <em>' + esc(x.qty) + '</em>' : '') + '</span><span class="nb-dw">' + esc(x.orderedBy || '') + '</span>' +
+      return '<li data-ln="' + esc(x.date + '/' + x.id) + '"><span class="nb-dt">' + (x.orderedAt ? clock(x.orderedAt) : '') + '</span><span class="nb-dx">' + esc(x.text) + (x.qty ? ' <em>' + esc(x.qty) + '</em>' : '') + unsentMark(x) + '</span><span class="nb-dw">' + esc(x.orderedBy || '') + '</span>' +
         (canBrowse() ? '<button type="button" class="p-x nb-undo" data-p="otick" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-pressed="true" aria-label="' + esc('Not ordered after all: ' + x.text) + '">Undo</button>' : '') + '</li>';
     }).join('') + '</ul>' : '';
     // no signal and the list not loaded yet: the note first, then only the lines this phone wrote since (listSnap)
@@ -4497,8 +4501,8 @@
     // 22 Oct 2026: entries are removed and put back by the head chef only (the admin log, or this page on the Google device)
     var del = wAll() && !x.deleted;
     return '<li class="nb-row w-row' + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(x.date + '/' + x.id) + '"><span class="w-time">' + (x.addedAt ? clock(x.addedAt) : '') + (x.station ? '<br><span class="w-sec">' + esc(x.station) + '</span>' : '') + '</span>' +
-      '<span class="nb-t"><strong>' + esc(x.text) + '</strong> <span class="w-amt">' + esc(num(+x.amount || 0) + ' ' + x.unit) + '</span> <span class="w-rs w-' + esc(x.reason) + '">' + esc(reasonName(x.reason)) + '</span>' +
-      (x.action ? '<span class="w-act">' + esc(x.action) + '</span>' : '') + '</span>' + unsentMark(x) + '<span class="nb-by">' + esc(x.addedBy || '') + '</span>' +
+      '<span class="nb-t"><strong>' + esc(x.text) + '</strong> <span class="w-amt">' + esc(num(+x.amount || 0) + ' ' + x.unit) + '</span> <span class="w-rs w-' + esc(x.reason) + '">' + esc(reasonName(x.reason)) + '</span>' + unsentMark(x) +
+      (x.action ? '<span class="w-act">' + esc(x.action) + '</span>' : '') + '</span><span class="nb-by">' + esc(x.addedBy || '') + '</span>' +
       (del ? '<button type="button" class="p-x" data-p="wdel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') +
       (x.deleted && wAll() ? '<button type="button" class="p-x" data-p="wrestore" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Put back ' + x.text) + '">Put back</button>' : '') + '</li>';
   }
@@ -4808,8 +4812,8 @@
     var ret = x.returned ? '<span class="w-act">Returned ' + esc(x.returnedBy || '') + (x.returnedAt ? ' · ' + esc(longDate(T.day(x.returnedAt))) + ' ' + clock(x.returnedAt) : '') + '</span>' : '';
     var tick = xReturnBtn(x);
     return '<li class="nb-row tr-row' + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(x.date + '/' + x.id) + '"><span class="w-time">' + (x.addedAt ? clock(x.addedAt) : '') + '</span>' +
-      '<span class="nb-t"><span class="tr-way tr-way-' + (out ? 'out' : 'in') + '">' + (out ? 'Out' : 'In') + '</span> <strong>' + esc(x.text) + '</strong> <span class="w-amt">' + esc(num(+x.amount || 0) + ' ' + x.unit) + '</span>' +
-      '<span class="tr-who">' + esc(xWho(x)) + '</span>' + (x.note ? '<span class="w-act">' + esc(x.note) + '</span>' : '') + ret + '</span>' + unsentMark(x) + '<span class="nb-by">' + esc(x.addedBy || '') + '</span>' + tick + xBtn(x) + '</li>';
+      '<span class="nb-t"><span class="tr-way tr-way-' + (out ? 'out' : 'in') + '">' + (out ? 'Out' : 'In') + '</span> <strong>' + esc(x.text) + '</strong> <span class="w-amt">' + esc(num(+x.amount || 0) + ' ' + x.unit) + '</span>' + unsentMark(x) +
+      '<span class="tr-who">' + esc(xWho(x)) + '</span>' + (x.note ? '<span class="w-act">' + esc(x.note) + '</span>' : '') + ret + '</span><span class="nb-by">' + esc(x.addedBy || '') + '</span>' + tick + xBtn(x) + '</li>';
   }
   // the venue and person chips, and the often taken chips that follow the venue (redrawn while the venue is typed)
   function xVenueChips() {
