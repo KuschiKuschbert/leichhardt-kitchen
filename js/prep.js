@@ -5548,8 +5548,9 @@
     var p = me(); if (!p) return '';
     var s = S.mmine[mnKey(m)], my = (m.att || []).filter(function (x) { return x.id === S.who; })[0], st = my ? my.st : 'absent';
     if (s && s !== 'loading') return '<section class="mn-sign is-done"><h3 class="mn-bh">Signed</h3><p>' + esc(p.name) + ' signed on ' + esc(dayShort(T.day(s.at))) + ' at ' + esc(clock(s.at)) + '. Version ' + m.v + '.</p></section>';
-    // the check failed or was refused: say so, instead of "Checking" until the next try in 5 minutes (loadMine)
-    if (s === undefined && waiting('mine:' + mnKey(m))) return '<section class="mn-sign mn-noprint"><p class="hint">Could not check your sign-off. Check the signal and try again in a few minutes.</p></section>';
+    // the check failed or was refused: say so, instead of "Checking". loadMine asks again on the first redraw after its
+    // 5 minutes (no timer of its own), so opening the minutes again is what brings the Sign button back
+    if (s === undefined && waiting('mine:' + mnKey(m))) return '<section class="mn-sign mn-noprint"><p class="hint">Could not check your sign-off. Open the minutes again in a few minutes.</p></section>';
     if (s === undefined || s === 'loading') return '<section class="mn-sign mn-noprint"><p class="hint">Checking your sign-off...</p></section>';
     // one tap: the person already typed their own PIN to open this page (20 Oct 2026, no second PIN)
     var mineN = mnMineN(m);

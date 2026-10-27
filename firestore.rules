@@ -409,7 +409,8 @@ service cloud.firestore {
         && request.resource.data.at is number && sid == request.resource.data.day + '_' + request.resource.data.by;
       allow update, delete: if false;
     }
-    // Kitchen meeting minutes. Only the head chef (Google account) writes them (draft, then published). Sous chefs read the register. Everyone with the kitchen PIN reads the published ones.
+    // Kitchen meeting minutes. Only the head chef (Google account) writes them (draft, then published). Everyone signed in
+    // with their own PIN (not functions only) reads the published ones. The chefs read the register of sign-offs.
     // Minutes are never deleted, only flagged as removed. "v" is the version: a change after publishing makes version 2 and everyone signs again.
     // Every earlier version is kept in minutes/<id>/hist/<v> and cannot be changed.
     // A person signs once per version, as themselves (their own PIN session): minutes/<id>/signs/<v>_<staffId>. A sign-off cannot be changed or deleted.
