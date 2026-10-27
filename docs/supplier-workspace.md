@@ -64,3 +64,11 @@ The bar keeps its existing compact button and uses the label Order done. A saved
 No schema, security rules, dependencies or persistent caches change. There are no additional reads. Detailed order validation and transactions remain unchanged. Roll back with a revert on a fresh branch and pull request, then verify Pages and live click tests. Existing completion records remain compatible with the previous client; saved orders and history need no migration or cleanup.
 
 Regression coverage is in tests/supplier-reminder-done.test.js. The existing supplier-cutoff-readiness tests continue to cover the detailed tick-list flow, and supplier order tests cover immutable recording, duplicates and additional orders.
+
+### Reminder links without one linked supplier, 27 October 2026
+
+A reminder link (bar, tick list or phone push) opens a supplier sheet only when exactly one catalogue supplier has that cutoffId. With none, or more than one, the workspace picks no supplier. It shows one short card: the cut-off's name with "is not in the supplier catalogue" or "is linked to more than one supplier", when it closes, the bar's own Order done control and a link to the Order list. Before this, the first supplier by name opened with a made-up "Selected order cut-off", and Record order placed always failed.
+
+Order done on the card is the bar's action (data-cut in js/prep.js): it writes only the existing cutdone record and offers the same Undo. It is offered for today's and tomorrow's occurrences, the two days the shared ticks cover; the bar handler now accepts any of those, not only one whose reminder is on. The card reads no order history and loads nothing new. A tick change on the phone fires lk-cut so the card follows. The head chef is pointed to Supplier settings to link the supplier; Refresh then opens its sheet.
+
+No schema, rules, reads or saved data change. Supplier UI revision 8 replaces 7 (js/app.js SUP_API and the lazy URL). tests/supplier-push-route.test.js covers the unlinked bar, tick-list and push routes, two links, an old push and a linked push.

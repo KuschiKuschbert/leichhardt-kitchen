@@ -3,7 +3,7 @@
    read at most 20 records on a tap. No polling, per-item reads, public goods file or second persistent cache. */
 (function () {
   'use strict';
-  var API = 7, A = window.LK_APP, P = window.LK_PREP, T = window.LK_TIME, esc = A.esc;
+  var API = 8, A = window.LK_APP, P = window.LK_PREP, T = window.LK_TIME, esc = A.esc;
   var C, store, loadingCode = null, contextKey = '', generation = 0;
   var M = blank();
   function blank() {
@@ -42,7 +42,7 @@
   function activeTask() {
     if (!canRead()) return '';
     if (M.mode === 'manage') return canEdit() ? editorHere() ? 'editor' : supplierEditorHere() ? 'supplier' : M.importing ? 'import' : 'catalogue' : '';
-    if (M.mode !== 'order') return '';
+    if (M.mode !== 'order' || cutCard()) return '';
     if (M.review && M.review.sid === M.sid) return 'review';
     return M.historyOpen ? M.reuse ? 'reuse' : 'history' : '';
   }
@@ -62,6 +62,24 @@
     var list = occurrences().filter(function (o) { return o.cutoffId === s.cutoffId; });
     if (M.route.cutoffId && M.route.cutoffDay) return list.filter(function (o) { return o.cutoffId === M.route.cutoffId && o.day === M.route.cutoffDay; })[0] || { cutoffId: M.route.cutoffId, day: M.route.cutoffDay, label: 'Selected order cut-off', done: false, deliveryDay: '' };
     return list.filter(function (o) { return o.day === day(); })[0] || list.filter(function (o) { return o.at >= epoch(); })[0] || null;
+  }
+  /* A reminder link (the bar, the tick list, a push) names a cut-off. Only a cut-off with exactly one catalogue supplier
+     opens a sheet. None (a supported state) or more than one gets a short card instead, never another supplier's sheet:
+     that sheet made up its cut-off and could not record (27 Oct 2026). Retained drafts and reviews stay in memory. */
+  function routeLinks() { return M.route.cutoffId && M.suppliers ? M.suppliers.filter(function (s) { return s.cutoffId === M.route.cutoffId; }) : []; }
+  function cutCard() { return M.mode === 'order' && !!M.route.cutoffId && !!M.suppliers && routeLinks().length !== 1; }
+  function cutCardHTML() {
+    var many = routeLinks().length > 1, cut = B().cuts().filter(function (c) { return c.id === M.route.cutoffId; })[0];
+    var o = occurrences().filter(function (x) { return x.cutoffId === M.route.cutoffId && x.day === M.route.cutoffDay; })[0];
+    // Order done is the bar's own control (data-cut, handled in js/prep.js): today's and tomorrow's cut-offs only, the
+    // two days the shared ticks cover. It saves the tick and offers Undo exactly as on the bar. No read.
+    var tick = !!o && (o.day === day() || o.day === day(epoch() + 86400000));
+    var head = cut ? esc(cut.name) + (many ? ' is linked to more than one supplier' : ' is not in the supplier catalogue') : 'This order cut-off is not set up';
+    return '<section class="empty su-cut-card" aria-labelledby="su-cut-h"><h3 class="h3" id="su-cut-h" tabindex="-1">' + head + '</h3>' +
+      (o ? '<p>' + (o.past ? 'Closed: ' : 'Order by ') + esc(occurrenceLabel(o)) + '.</p>' : '') +
+      (tick ? '<p>' + (o.done ? '<b>Order done.</b> The Order list shows who ticked it.' : 'Place the order as usual, then tap Order done. No quantities are saved.') + '</p>' : '') +
+      (cut && canEdit() ? '<p class="hint">' + (many ? 'Keep one supplier per cut-off in Supplier settings.' : 'To order it here, link its supplier to this cut-off in Supplier settings.') + '</p>' : '') +
+      '<div class="btn-row">' + (tick && !o.done ? '<button type="button" class="btn dark" data-cut="done" data-id="' + esc(o.key) + '">Order done</button>' : '') + '<a class="btn" href="#/orders">Order list</a></div></section>';
   }
   function occurrenceKey(o) { return o ? o.day + '_' + o.cutoffId : ''; }
   function occurrenceLabel(o) { return o && (o.label || (typeof o.at === 'number' ? dateText(o.at) : o.day)) || ''; }
@@ -114,7 +132,8 @@
       M.suppliers = list.sort(function (a, b) { return a.name.localeCompare(b.name); }); M.busy = false; if (force) { M.history = Object.create(null); M.audit = Object.create(null); M.requests = null; if (M.review && !M.review.uncertain && !M.review.recorded) M.review = null; }
       if (M.route.cutoffId) { var linked = list.filter(function (s) { return s.cutoffId === M.route.cutoffId; }); if (linked.length === 1) M.sid = linked[0].id; }
       if (!supplier()) M.sid = M.suppliers.length ? M.suppliers[0].id : '';
-      draw(); if (M.sid) loadHistory(M.historyOpen, false); if (M.smart) loadRequests();
+      // the card reads no supplier's history: none of them is this cut-off's
+      draw(); if (M.sid && !cutCard()) loadHistory(M.historyOpen, false); if (M.smart) loadRequests();
     }, function (e) { if (g === generation && key === ctx()) { M.busy = false; M.err = errorText(e); draw(); } });
   }
   function loadHistory(full, more) {
@@ -295,6 +314,7 @@
     var html = headerHTML() + statusHTML();
     if (M.busy && !M.suppliers) return '<section class="su-wrap">' + html + '<p class="hint" role="status">Reading the supplier catalogue...</p></section>';
     if (!M.suppliers) return '<section class="su-wrap">' + html + '</section>';
+    if (cutCard()) return '<section class="su-wrap">' + html + cutCardHTML() + '</section>';
     if (!M.suppliers.length) return '<section class="su-wrap">' + html + emptyHTML() + importInputHTML() + '</section>';
     return '<section class="su-wrap">' + html + '<div class="su-workspace-tools">' + button('collapse', M.sidebar ? 'Hide suppliers' : 'Show suppliers', ' aria-expanded="' + M.sidebar + '"') + '</div><div class="su-layout' + (M.sidebar ? '' : ' is-collapsed') + '">' + sidebarHTML() + '<div class="su-content">' + (M.mode === 'manage' ? manageHTML() : orderHTML()) + '</div></div>' + importInputHTML() + '</section>';
   }
@@ -474,7 +494,7 @@
     if (editorHere() && M.ed.routeKey === routeKey || supplierEditorHere() && M.supplierEd.routeKey === routeKey) M.mode = 'manage';
     if (M.route.cutoffId && M.suppliers) { var linked = M.suppliers.filter(function (s) { return s.cutoffId === M.route.cutoffId; }); if (linked.length === 1) M.sid = linked[0].id; }
     draw(); load(false);
-    if (M.suppliers && M.sid) loadHistory(false, false);
+    if (M.suppliers && M.sid && !cutCard()) loadHistory(false, false);
   }
   function unmount() { M.root = null; }
   document.addEventListener('click', function (ev) {
@@ -536,5 +556,12 @@
   });
   ['lk-who', 'lk-admin', 'lk-cfg'].forEach(function (event) { window.addEventListener(event, function () { if (contextKey && contextKey !== ctx() || !canRead()) { reset(); draw(); } else if (M.root) draw(); }); });
   window.addEventListener('online', function () { if (M.root) draw(); }); window.addEventListener('offline', function () { if (M.root) draw(); });
+  // The shared ticks changed (js/prep.js, lk-cut): the card follows its Order done, Undo or another chef's tick. No read.
+  window.addEventListener('lk-cut', function () {
+    if (!M.root || !canRead() || !cutCard()) return;
+    var had = !!document.activeElement && M.root.contains(document.activeElement) && document.activeElement.hasAttribute('data-cut');
+    draw();
+    if (had) { var el = M.root.querySelector('[data-cut]') || M.root.querySelector('#su-cut-h'); if (el) el.focus({ preventScroll: true }); }
+  });
   window.LK_SUP = { api: API, mount: mount, unmount: unmount, dirty: dirty, reset: reset, hasDraft: hasDraft, back: back, backLabel: backLabel, backDescription: function () { return M.root && M.root.querySelector('#su-leave-note') ? 'su-leave-note' : M.root && M.root.querySelector('#su-recording-status') ? 'su-recording-status' : ''; }, backDisabled: function () { return M.saving || !!(M.review && M.review.uncertain); }, open: function () { return !!M.root; } };
 })();

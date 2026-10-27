@@ -58,6 +58,13 @@ async function check(b, hash, o, name, see, then) {
   await check(b, '#/todo', { who: 'sam' }, 'chef to-do', 'Todo', async p => { await L.waitFor(p, () => !!document.querySelector('.todo-row'), null, 5000).catch(() => {}); await L.tap(p, '.todo-donebox summary'); await L.waitFor(p, () => !!document.querySelector('[data-lv="tododone"] .todo-row'), null, 5000).catch(() => {}); });
   await check(b, '#/guides', { who: 'ann' }, 'guides', 'Guide');
   await check(b, '#/guides/x1', { who: 'ann' }, 'a guide', 'Step');
+  // a cut-off's name (typed by the head chef) on the bar and on the card for a cut-off with no catalogue supplier (27 Oct 2026)
+  const F = require('./supplier-fixtures'), cx = Object.assign({}, extra, F.fixture());
+  cx[F.key(['config', 'main'])].cutoffs = [{ id: 'veg', name: 'Cut ' + P, dd: [(new Date(L.NOW).getDay() + 1) % 7], at: 15 * 60, pre: 1, lead: 240 }];
+  await check(b, '#/suppliers/cutoff/veg/' + today, { who: 'sam', extra: cx }, 'unlinked cut-off card', 'Cut', async p => {
+    await L.waitFor(p, () => !!document.querySelector('.su-cut-card'), null, 10000).catch(() => {});
+    ok(!!(await p.$('.su-cut-card')) && /Cut Zz<i id="pwn">/i.test(await p.textContent('.su-cut-card')), 'unlinked cut-off card: the card shows the name as typed');
+  });
   for (const t of ['waste', 'transfers', 'notes', 'mail', 'people', 'insights']) {
     await check(b, '#/admin', { admin: true, who: '' }, 'admin ' + t, t === 'waste' ? 'Waste' : t === 'transfers' ? 'Transfer' : t === 'notes' ? 'Ping' : t === 'mail' ? 'Mail' : null, async p => { await L.adminTab(p, t); });
   }
