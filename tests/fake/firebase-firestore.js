@@ -255,12 +255,15 @@ function commitOps(ops) {
   // has this phone's running session
   const free = /\/(staffpins|pinset|tries|sessions|proofs)\/[^/]+$/;
   if (!window.__fakeUser && ops.some(o => o.kind !== 'delete' && !free.test(key(o.ref.path)) && !(o.data && o.data.by && o.data.by === actor))) return Promise.reject({ code: 'permission-denied' });
-  // the head chef's book (book/index, recipes, drawings and the library): only the head chef writes it, with the
-  // Google account (nobody else signed in) or with their own PIN as config/main headId, like the real rules
+  // the rules see a record as it will be after the write (request.resource.data): a merge or an update keeps the fields
+  // already stored, by among them (27 Oct 2026: a merge with no by kept a sous chef's id and the rules refused the head chef)
+  const after = o => Object.assign({}, o.kind === 'set' && !o.merge ? {} : (store[key(o.ref.path)] || {}), o.data || {});
+  // the head chef's book (book/index, recipes, drawings and the library): only the head chef and the sous chefs write
+  // it, with the Google account (nobody else signed in) or with their own PIN (headId, sousIds), like the real rules
   const book = ops.filter(o => /^kitchens\/[^/]+\/(book|recipes|drawings|drawtpl|drawlib)\//.test(key(o.ref.path)));
   if (book.length) {
     const head = (store[key(book[0].ref.path).split('/').slice(0, 2).join('/') + '/config/main'] || {}).headId || '';
-    const by = book.map(o => (o.data && o.data.by) || '');
+    const by = book.map(o => (o.kind === 'delete' ? '' : after(o).by) || '');
     const config = store[key(book[0].ref.path).split('/').slice(0, 2).join('/') + '/config/main'] || {};
     const asHead = !!actor && (actor === head || (config.sousIds || []).includes(actor)) && by.every(b => b === actor);
     const asOwner = !!window.__fakeUser && by.every(b => !b || b === head);
@@ -302,6 +305,13 @@ function commitOps(ops) {
     });
     if (bad) return Promise.reject({ code: 'permission-denied' });
   }
+  // a round ticked as sent names who ticked it: sentBy is the writer (by) of the record as it will be, like the rules
+  const badSent = ops.some(o => {
+    if (o.kind === 'delete' || !/^kitchens\/[^/]+\/fnsent\/[^/]+$/.test(key(o.ref.path))) return false;
+    const a = after(o), old = store[key(o.ref.path)];
+    return a.sent === true && !(old && old.sent === true) && a.sentBy !== (a.by || '');
+  });
+  if (badSent) return Promise.reject({ code: 'permission-denied' });
   if (window.__fake.mode === 'deny') return Promise.reject({ code: 'permission-denied' });
   // __fake.deny = /regex/ refuses only the writes whose path matches (a right the rules do not give), the rest go through
   if (window.__fake.deny && ops.some(o => window.__fake.deny.test(key(o.ref.path)))) return Promise.reject({ code: 'permission-denied' });

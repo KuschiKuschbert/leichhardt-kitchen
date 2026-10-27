@@ -539,10 +539,11 @@
      typed, a phone moving from the older proof), a write waits for it, so it reaches the server after the session. */
   function W(ops) {
     if (sessP) return track(sessP.then(function () { return W(ops); }, function () { return W(ops); }));
-    var b = fb.fs.writeBatch(fb.db), as = canW();
+    var b = fb.fs.writeBatch(fb.db), by = wBy();
     ops.forEach(function (o) {
       if (o[0] === 'del') { b.delete(o[1]); return; }
-      var data = as ? Object.assign({ by: S.who }, o[2]) : o[2];
+      // a by the caller set (a delivery's 'owner') wins
+      var data = Object.assign({ by: by }, o[2]);
       var path = o[1].path, parts = typeof path === 'string' ? path.split('/') : path;
       var publicCol = parts && parts.length === 4 && ({ book: 'publicBook', recipes: 'publicRecipes', drawings: 'publicDrawings' })[parts[2]];
       if (publicCol && (parts[2] !== 'book' || parts[3] === 'index' || parts[3] === 'matches')) {
@@ -598,6 +599,12 @@
   function sessOn() { return !!S.who && S.sessFor === S.who && !!S.uid && S.sessUid === S.uid; }
   // this phone may write as the person signed in: their session
   function canW() { return sessOn() && S.sessExp > now(); }
+  /* Who a write names (by): the person whose PIN session this phone has, or nobody ('') on a phone with no session. The
+     only such phone the rules let write is the head chef's Google device with nobody signed in by PIN. by is sent empty,
+     never left out: a merge keeps the by already stored, so after a sous chef's save the rules refused the head chef's
+     next recipe, drawing and Draw it for me save, and a Sent tick on a round someone took back (27 Oct 2026). W() and
+     anything that copies the record it writes (xWrite) use this, so the copy and the record always agree. */
+  function wBy() { return canW() ? S.who : ''; }
   var anonTask = null;
   function anonIn() {
     if (anonTask) return anonTask;
@@ -4494,7 +4501,8 @@
     if (sessP) return sessP.then(function () { return xWrite(date, id, data, original); }, function () { return xWrite(date, id, data, original); });
     var record = Object.assign({}, original || {}, data);
     delete record.id; delete record.date;
-    if (canW()) record.by = S.who;
+    // the open copy must match the line as W() writes it, by included
+    record.by = wBy();
     var change = Object.assign({}, data);
     var ops = [[original ? 'upd' : 'set', xRef(date, id), change], ['set', xOpenRef(date, id), {
       date: date, lineId: id, record: record, open: !record.deleted && !record.returned
@@ -5329,9 +5337,9 @@
     if (f.to) data.to = f.to;
     var ref = f.id ? noteRef(f.id) : fb.fs.doc(colRef(f.to ? 'directnotes' : 'notes')), when = noteWhen({ start: start, until: until, dows: data.dows, tm: data.tm });
     var was = f.id ? (S.notes || []).filter(function (x) { return x.id === f.id; })[0] : null, t = dayNow(), nk = noteSeenKey();
-    // the head chef's Google device with nobody signed in: saved by nobody, not by the ping's writer (W() adds no by
-    // there, and a merge would keep theirs). An older ping with no author keeps its writer.
-    if (!canW()) { data.by = ''; if (was && !was.author && was.by) data.author = was.by; }
+    // the head chef's Google device with nobody signed in: saved by nobody (W() sends by empty there), not by the
+    // ping's writer. An older ping with no author keeps its writer.
+    if (!canW() && was && !was.author && was.by) data.author = was.by;
     S.nSaving = true; S.nMsg = ''; draw();
     sset(ref, data, !!f.id).then(function () {
       if (epoch !== accessEpoch) return;
