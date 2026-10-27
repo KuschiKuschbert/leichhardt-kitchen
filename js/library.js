@@ -298,7 +298,7 @@
     pepper: '#7A5634', peppercorn: '#7A5634', mushroom: '#8A6A4A', diane: '#8C5A36', gravy: '#7E4726', jus: '#5E2010', 'red wine': '#5E1F24', bordelaise: '#5E1F24',
     'garlic cream': '#F1E6C8', cream: '#F4EBCB', bechamel: '#F4EBCB', alfredo: '#F3E7C7', bacon: '#EED9B0', carbonara: '#F2E0A8', cheese: '#F2C14E', queso: '#F0B83A',
     napoli: '#C0392B', tomato: '#C0392B', bolognese: '#9E3B22', arrabbiata: '#B5301F', bbq: '#5E2A12', barbecue: '#5E2A12', ketchup: '#C0392B',
-    tartare: '#EFE8CF', aioli: '#F3E6C2', mayo: '#F6EED6', ranch: '#F2EEDC', 'sweet chilli': '#E05A3F', sriracha: '#D2402A', 'chilli jam': '#A8301F',
+    tartare: '#EFE8CF', aioli: '#F3E6C2', mayo: '#F6EED6', 'spicy mayo': '#EE9A62', 'buffalo mayo': '#EE9A62', buffalo: '#C9461E', 'chilli butter': '#F0B04A', ranch: '#F2EEDC', 'sweet chilli': '#E05A3F', sriracha: '#D2402A', 'chilli jam': '#A8301F',
     hollandaise: '#F2D27A', bearnaise: '#EFD27A', choron: '#EBA06A', 'beurre blanc': '#F4E9C9', 'brown butter': '#B9802F', butter: '#F4D98A',
     mustard: '#D9A62A', wholegrain: '#C99A3A', 'american mustard': '#E8C22A', honey: '#E2A93A', 'hot honey': '#D9862A', caramel: '#C99A22', 'salted caramel': '#B9802F',
     chocolate: '#5E2F1A', 'hazelnut spread': '#6B3A1E', berry: '#A3304F', raspberry: '#C02A4A', strawberry: '#D23A4A', coulis: '#A3304F', custard: '#F2D27A',

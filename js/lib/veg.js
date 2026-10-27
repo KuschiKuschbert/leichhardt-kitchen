@@ -617,10 +617,16 @@
     });
     return out + P.scatter(rnd, 18, 30, 24, function (x, y, i, q) { return P.path(P.blob(q, 1.6 + q(), 1.2 + q() * 0.6, 0.3, 6, x, y), '#D9B07A', '#A8804A', 0.4); });
   }
+  // smooth avocado puree spooned on: a soft mound with a spoon swirl and a sheen, no chunks
+  function avoPuree(P, rnd) {
+    var col = '#B5CC6A', out = mound(rnd, 22, 19, col, 0.08);
+    out += P.path('M-10 2 Q-8 -9 3 -8 Q12 -6 10 4 Q7 11 -2 9', 'none', P.shade(col, -0.16), 2.2, { 'stroke-linecap': 'round' }) + P.path('M-9 1 Q-7 -8 3 -7 Q11 -5 9 3', 'none', P.shade(col, 0.3), 1.2, { 'stroke-linecap': 'round' });
+    return out + P.hl(-8, -10, 6, 2, '#FFFFFF', 0.45, -20);
+  }
   function salsa(main) {
     return function (P, rnd) {
-      var d = P.blob(rnd, 22, 16, 0.12, 10), out = P.path(d, { corn: '#EFD98A', tomato: '#F2B8A8' }[main] || '#F2C98A', null, 0, { opacity: '0.4' });
-      var bag = main === 'tomato' ? ['t', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 'o', 'o', 'o', 'o', 'o', 'h', 'h', 'h', 'h', 'h', 'h'] : main === 'corn' ? ['k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'c', 'c', 'c', 'c', 'c', 'o', 'o', 'o', 'o', 'b', 'b', 'b', 'b', 'b', 'h', 'h', 'h', 'h'] : ['m', 'm', 'm', 'm', 'm', 'm', 'm', 'm', 'm', 'm', 'm', 'm', 'm', 'm', 'c', 'c', 'c', 'c', 'c', 'o', 'o', 'o', 'o', 'o', 'h', 'h', 'h', 'h', 'h'];
+      var d = P.blob(rnd, 22, 16, 0.12, 10), out = P.path(d, { corn: '#EFD98A', tomato: '#F2B8A8', pico: '#F2B8A8' }[main] || '#F2C98A', null, 0, { opacity: '0.4' });
+      var bag = main === 'pico' ? ['t', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 'o', 'o', 'o', 'o', 'o', 'o', 'h', 'h', 'h', 'h', 'h', 'h', 'j', 'j', 'j'] : main === 'tomato' ? ['t', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 'o', 'o', 'o', 'o', 'o', 'h', 'h', 'h', 'h', 'h', 'h'] : main === 'corn' ? ['k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'c', 'c', 'c', 'c', 'c', 'o', 'o', 'o', 'o', 'b', 'b', 'b', 'b', 'b', 'h', 'h', 'h', 'h'] : ['m', 'm', 'm', 'm', 'm', 'm', 'm', 'm', 'm', 'm', 'm', 'm', 'm', 'm', 'c', 'c', 'c', 'c', 'c', 'o', 'o', 'o', 'o', 'o', 'h', 'h', 'h', 'h', 'h'];
       return out + tossed(rnd, bag, 22, 16, {
         k: function (q, x, y) { return kernelAt(x, y, q() * 360, 0.9); },
         m: function (q, x, y) { return cubeAt(x, y, 5 + q() * 1.4, '#F2A93A', q() * 90, { sw: 0.5 }); },
@@ -628,7 +634,8 @@
         c: function (q, x, y) { return cubeAt(x, y, 3.6, '#C9302A', q() * 90, { sw: 0.4 }); },
         o: function (q, x, y) { return cubeAt(x, y, 3.2, '#B76A9E', q() * 90, { sw: 0.4 }); },
         b: function (q, x, y) { return P.ellipse(x, y, 2.4, 1.6, '#2E2420', '#1A1410', 0.4, { transform: rot(q() * 180, x, y) }) + P.circle(x - 0.6, y - 0.5, 0.5, '#8A7A70'); },
-        h: function (q, x, y) { return P.leaf(4, 3, '#4F8F2F', x, y, q() * 360, { vein: false }); }
+        h: function (q, x, y) { return P.leaf(4, 3, '#4F8F2F', x, y, q() * 360, { vein: false }); },
+        j: function (q, x, y) { return cubeAt(x, y, 3.4, '#5E9A3A', q() * 90, { sw: 0.4 }); }
       });
     };
   }
@@ -1007,6 +1014,7 @@
       out += P.scatter(rnd, 16, 22, 17, function (x, y, i, q) { return P.path(P.blob(q, 2.4 + q() * 3, 1.8 + q() * 2, 0.3, 6, x, y), pick(q, ['#C9DC86', '#8DB255', '#D6E496', '#7E9E46']), null, 0); });
       return out + sprinkle(rnd, 10, 20, 15, ['#FFFFFF', '#2E2A28'], 0.5) + sprinkle(rnd, 5, 18, 14, ['#C9402A'], 0.7);
     } },
+    { id: 'avocado-puree', name: 'Smashed avocado puree', sub: 'Fruiting veg', kw: 'avocado puree smashed avocado puree avo puree whipped avocado smooth velvety nachos', form: 'dollop', cook: 'fresh', role: 'topping', g: 60, w: 46, h: 40, side: { s: 'mound', h: 14, c: '#B5CC6A' }, draw: avoPuree },
     { id: 'guacamole', name: 'Guacamole', sub: 'Fruiting veg', kw: 'guacamole guac avocado dip mexican', form: 'mound', cook: 'fresh', role: 'sauce', g: 50, w: 49, h: 41, side: { s: 'mound', h: 12, c: '#8DB255' }, draw: function (P, rnd) {
       var out = mound(rnd, 25, 21, '#8DB255', 0.08);
       out += P.path('M2 1 Q6 -4 1 -8 Q-8 -10 -12 -2 Q-14 8 -4 12 Q10 15 16 4', 'none', '#6E9A3E', 2.6, { 'stroke-linecap': 'round' }) + P.path('M2 0 Q5 -4 0.6 -7 Q-7 -9 -11 -2 Q-13 7 -4 11 Q9 14 15 3', 'none', '#BDD683', 1.3, { 'stroke-linecap': 'round' });
@@ -1073,6 +1081,7 @@
     { id: 'wakame', name: 'Seaweed salad', sub: 'Salads', kw: 'wakame seaweed salad goma japanese', form: 'pile', cook: 'fresh', role: 'salad', g: 40, w: 43, h: 40, side: { s: 'pile', h: 10, c: '#3F9A3A' }, draw: function (P, rnd) { return heap(rnd, 22, 14, 11, function (x, y, i, q) { return seaweedAt(q, x, y, q() * 180, 18 + q() * 8, pick(q, ['#3F9A3A', '#52AE44', '#6EC05A'])); }) + P.scatter(rnd, 14, 20, 16, function (x, y, i, q) { return P.ellipse(x, y, 1, 0.6, '#F4EBCF', '#C9B88A', 0.3, { transform: rot(q() * 180, x, y) }); }) + strands(rnd, 3, 14, 10, ['#C9302A'], 10, 0.5, 2, { edgeW: 0 }); } },
     { id: 'mango-salsa', name: 'Mango salsa', sub: 'Salads', kw: 'mango salsa diced mango red onion chilli coriander', form: 'pile', cook: 'fresh', role: 'garnish', g: 50, w: 44, h: 37, side: { s: 'pile', h: 8, c: '#F2A93A' }, draw: salsa('mango') },
     { id: 'tomato-salsa', name: 'Tomato salsa', sub: 'Salads', kw: 'tomato salsa diced tomato red onion coriander fresh salsa mexican', form: 'pile', cook: 'fresh', role: 'garnish', g: 50, w: 44, h: 36, side: { s: 'pile', h: 8, c: '#D9473B' }, draw: salsa('tomato') },
+    { id: 'pico-de-gallo', name: 'Pico de gallo', sub: 'Salads', kw: 'pico de gallo pico salsa fresca diced tomato red onion coriander jalapeno lime mexican nachos tacos', form: 'pile', cook: 'fresh', role: 'garnish', g: 50, w: 44, h: 36, side: { s: 'pile', h: 8, c: '#D9473B' }, draw: salsa('pico') },
     { id: 'corn-salsa', name: 'Corn salsa', sub: 'Salads', kw: 'corn salsa charred corn black beans pico', form: 'pile', cook: 'fresh', role: 'garnish', g: 50, w: 44, h: 35, side: { s: 'pile', h: 8, c: '#F2C94C' }, draw: salsa('corn') },
     // pickles and ferments
     { id: 'kimchi', name: 'Kimchi', sub: 'Pickles and ferments', kw: 'kimchi kim chi korean fermented cabbage', form: 'pile', cook: 'cured', role: 'sidedish', g: 50, w: 43, h: 33, side: { s: 'pile', h: 12, c: '#D9502E' }, draw: function (P, rnd) { var d = P.blob(rnd, 18, 13, 0.14, 10); return P.path(d, '#B5301F', null, 0, { opacity: '0.5' }) + heap(rnd, 10, 15, 11, function (x, y, i, q) { return kimchiAt(q, x, y, 1); }) + sprinkle(rnd, 8, 16, 12, ['#F4EBCF'], 0.6) + P.scatter(rnd, 5, 14, 10, function (x, y) { return P.circle(x, y, 1.5, '#9CC067', '#4F8F2F', 0.6); }); } },

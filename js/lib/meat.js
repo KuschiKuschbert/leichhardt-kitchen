@@ -1137,6 +1137,7 @@
     { id: 'beef-bourguignon', name: 'Beef bourguignon', sub: 'Curries and braises', kw: 'beef bourguignon stew casserole red wine braise mushroom', form: 'bowlful', cook: 'braised', role: 'main', g: 380, w: 140, h: 140, side: { s: 'sauce', h: 20, c: '#5A2018' }, draw: curry({ sauce: '#5A2018', bits: [['beef', 7], ['carrot', 5], ['mushroom', 4], ['pearl', 4], ['bacon', 5]], garnish: [['parsley', 16]] }) },
     { id: 'osso-buco', name: 'Osso buco', sub: 'Curries and braises', kw: 'osso buco veal shank braised marrow gremolata', form: 'piece', cook: 'braised', role: 'main', g: 400, w: 88, h: 80, side: { s: 'slab', h: 30, c: '#6B3418' }, draw: ossoBuco },
     { id: 'pork-crackling', name: 'Pork crackling', sub: 'Pork', kw: 'pork crackling crackle pork skin rind puffed crispy', form: 'pile', cook: 'roasted', role: 'topping', g: 40, w: 66, h: 48, side: { s: 'pile', h: 10, c: '#E3B262' }, draw: crackling },
+    { id: 'smoked-pulled-lamb', name: 'Smoked pulled lamb', sub: 'Lamb', kw: 'smoked pulled lamb shredded lamb shoulder smoker slow smoked bark nachos', form: 'pile', cook: 'smoked', role: 'main', g: 150, w: 74, h: 58, side: { s: 'pile', h: 22, c: '#5A3018' }, draw: pulled({ rx: 36, ry: 27, count: 60, base: '#4A2614', cols: ['#7A3E22', '#94522E', '#5E2E18', '#A8683E', '#6B3A1E'], bark: '#241208' }) },
   ]);
   // the helpers, for the other category files that draw meat on something (burgers, pizzas, skewers, bowls)
   L.MEAT = {
