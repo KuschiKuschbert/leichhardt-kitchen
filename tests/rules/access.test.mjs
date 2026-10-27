@@ -9,7 +9,7 @@ const now = Date.now(), today = new Date(now + 10 * 3600000).toISOString().slice
 const paths = [
  'config/main','config/admins',`days/${today}/items/x`,`orders/${today}/lines/x`,`waste/${today}/lines/x`,`waste/${today}`,
  'transferOpen/x',`transfers/${today}/lines/x`,'daily/x','summary/waste','misses/x','views/x','notes/x','notes/x/seen/x',
- 'minutes/x','minutes/x/hist/1','minutes/x/signs/x','guides/x','guides/x/pages/0','functions/x','functions/x/hist/1',
+ 'minutes/x','minutes/x/hist/1','minutes/x/signs/x','minutes/x/signs/1_staff','guides/x','guides/x/pages/0','functions/x','functions/x/hist/1',
  'fncontact/x','fnsent/x','mail/x','mailstat/x','todos/x','push/x','cutdone/x','suppliers/x','suppliers/x/audit/1',
  'suppliers/x/orders/x','supplierlinks/x','drinks/x','shifts/x','staffpins/x','pinset/x','sessions/x','proofs/x','activity/x',
  'sections/x','learned/x','ordlearned/x','learnlog/x','recipes/x/hist/1','drawings/x/hist/1'
@@ -56,5 +56,13 @@ const recipe={r:{id:'new-public',name:'Public recipe',kind:'main',ingredients:[]
 batch=writeBatch(sous);batch.set(doc(sous,K+'recipes/new-public'),recipe);batch.set(doc(sous,K+'book/index'),{r:{'new-public':1},by:'sous'});batch.set(doc(sous,'publicRecipes/new-public'),recipe);batch.set(doc(sous,'publicBook/index'),{r:{'new-public':1},by:'sous'});
 await assertSucceeds(batch.commit());checks++;
 await assertFails(setDoc(doc(sous,'publicRecipes/new-public'),{...recipe,r:{...recipe.r,name:'Divergent public copy'}}));checks++;
+// Sign-offs (27 Oct 2026): a person reads only their own by id, signed or not yet; the chefs list the register.
+await assertSucceeds(getDoc(doc(staff,K+'minutes/x/signs/1_staff')));checks++;
+await assertSucceeds(getDoc(doc(staff,K+'minutes/x/signs/2_staff')));checks++;
+await assertFails(getDoc(doc(staff,K+'minutes/x/signs/1_sous')));checks++;
+await assertFails(getDocs(collection(staff,K+'minutes/x/signs')));checks++;
+await assertFails(getDoc(doc(fn,K+'minutes/x/signs/1_fn')));checks++;
+await assertSucceeds(getDocs(collection(sous,K+'minutes/x/signs')));checks++;
+await assertSucceeds(getDocs(collection(env.authenticatedContext('head').firestore(),K+'minutes/x/signs')));checks++;
 console.log('PASS private access matrix: '+checks+' checks, including every private collection and history.');
 await env.cleanup();
