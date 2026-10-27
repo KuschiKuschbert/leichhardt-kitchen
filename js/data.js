@@ -1080,23 +1080,23 @@ window.LK_DATA = {
     {
       id: 'buffalo-corn-cob-with-cashew-crumb', art: 'buffalo-corn', no: '122', kind: 'snack', forLine: 'Snack', name: 'Buffalo BBQ Corn on the Cob', short: 'Buffalo corn',
       menu: 'Buffalo BBQ Corn on the Cob: sweet, juicy corn with a tangy buffalo BBQ kick, coated in creamy, spicy mayo and finished with a crunchy toasted cashew crumb.',
-      yield: 'Per serve, on the big round grey plate. A whole corn cob brushed with chilli jalapeño butter, through the impinger, coated in buffalo mayo, crumbed with toasted cashews, pea shoots on top.',
+      yield: 'Per serve, on the big round grey plate. A whole corn cob brushed with chilli jalapeño butter, through the impinger, coated in buffalo mayo, crumbed with toasted cashews, snow pea tendrils on top.',
       ingredients: [
         { q: '1', name: 'Corn cob', note: 'whole' },
         { q: '[Qty]', name: 'Chilli jalapeño butter', note: 'brushed over the whole cob', tags: ['Milk'] },
         { q: '[Qty]', name: 'Buffalo mayo', note: 'coats the cob', tags: ['Egg'] },
         { q: '[Qty]', name: 'Toasted cashews', note: 'the crumb', tags: ['Tree nut'] },
-        { q: '[Qty]', name: 'Pea shoots', note: 'on top' }
+        { q: '[Qty]', name: 'Snow pea tendrils', note: 'on top' }
       ],
       pins: [
         { label: 'Corn cob', x: 17.9, y: 55.7, side: 'left', tags: [], note: 'Whole cob, through the impinger.' },
         { label: 'Chilli jalapeño butter', x: 60.4, y: 55.0, side: 'right', tags: ['Milk'], note: 'Brushed over the whole cob first.' },
         { label: 'Buffalo mayo', x: 69.8, y: 49.1, side: 'right', tags: ['Egg'], note: 'Coats the cob.' },
         { label: 'Toasted cashews', x: 36.8, y: 50.0, side: 'left', tags: ['Tree nut'], note: 'The crumb, all over.' },
-        { label: 'Pea shoots', x: 57.5, y: 38.7, side: 'left', tags: [], note: 'On top.' }
+        { label: 'Snow pea tendrils', x: 57.5, y: 38.7, side: 'left', tags: [], note: 'On top.' }
       ],
       sections: [
-        { title: 'Method', steps: ['Brush the whole corn cob with chilli jalapeño butter and run it through the impinger.', 'Coat in buffalo mayo.', 'Crumb with toasted cashews.', 'Serve on the big round grey plate.', 'Pea shoots on top.'] }
+        { title: 'Method', steps: ['Brush the whole corn cob with chilli jalapeño butter and run it through the impinger.', 'Coat in buffalo mayo.', 'Crumb with toasted cashews.', 'Serve on the big round grey plate.', 'Snow pea tendrils on top.'] }
       ],
       labelNote: 'Check the chilli jalapeño butter and buffalo mayo labels.'
     },
