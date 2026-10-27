@@ -648,6 +648,19 @@
     return [[-16, -9], [16, -7], [0, 13]].map(function (c) { return P.g(P.at(c[0], c[1], (rnd() - 0.5) * 30, 1.4), beetBite(P)); }).join('');
   }
 
+  // a whole cob brushed with buffalo BBQ sauce, rolled in spicy mayo and toasted cashew crumb: crumb all over,
+  // the orange mayo and a streak of sauce showing through, a few yellow kernels at the bare ends
+  function buffaloCob(P, rnd) {
+    var h = 44, r = 16, d = 'M' + (-h + r) + ' ' + (-r) + ' H' + (h - r) + ' A' + r + ' ' + r + ' 0 0 1 ' + (h - r) + ' ' + r + ' H' + (-h + r) + ' A' + r + ' ' + r + ' 0 0 1 ' + (-h + r) + ' ' + (-r) + ' Z';
+    var out = P.shadow(d, 2, 2.5) + P.path(d, '#E8B48A', '#A8682E', 1);
+    [-1, 1].forEach(function (sd) { for (var k = 0; k < 7; k++) { var y = -10 + k * 3.4; out += P.rect(sd * (h - 6) - 2, y - 1.4, 4, 2.8, 1, '#F2C94C', '#D9A632', 0.3); } });
+    out += P.path('M-30 -6 Q-8 -11 14 -5 Q28 -2 34 -7', 'none', '#C9461E', 2.2, { 'stroke-linecap': 'round', opacity: '0.75' }) + P.path('M-24 8 Q0 4 26 9', 'none', '#C9461E', 1.8, { 'stroke-linecap': 'round', opacity: '0.6' });
+    out += P.scatter(rnd, 210, h - 4, r - 2.5, function (x, y, i, q) {
+      var c = ['#E2B46A', '#D9A866', '#C99050', '#EBC88A', '#F0D6A0'][i % 5], cd = P.blob(q, 2 + q() * 2, 1.6 + q() * 1.6, 0.35, 6, x, y);
+      return i % 9 === 0 ? '' : P.path(cd, c, '#B9823E', 0.35);
+    }) + P.crumbs(rnd, 40, h - 6, r - 4, ['#A8682E', '#8A5424'], 0.7);
+    return out + P.hl(-6, -9, 26, 2.4, '#FFFFFF', 0.3, -2);
+  }
   L.add('prepared', [
     // fried bites
     { id: 'arancini', name: 'Arancini ball', sub: 'Fried bites', kw: 'arancini arancino rice ball risotto ball crumbed fried', form: 'piece', cook: 'crumbed', role: 'main', n: 1, w: 31, h: 31, side: { s: 'scoop', h: 28, c: '#D39A4C' }, draw: ball({ r: 15, col: '#D39A4C', count: 16 }) },
@@ -721,6 +734,7 @@
     { id: 'pico-de-gallo-dish', name: 'Pico de gallo', sub: 'Mexican', kw: 'pico de gallo salsa fresca salsa tomato onion coriander jalapeno', form: 'bowlful', cook: 'fresh', role: 'sidedish', g: 100, w: 80, h: 80, side: { s: 'cup', h: 26, c: '#D9473B' }, draw: dip({ col: '#E26A5A', top: DIPS.pico }) },
     { id: 'guacamole-molcajete', name: 'Guacamole in a stone bowl', sub: 'Mexican', kw: 'guacamole guac avocado dip molcajete stone bowl', form: 'bowlful', cook: 'fresh', role: 'sidedish', g: 120, w: 86, h: 86, side: { s: 'cup', h: 30, c: '#8DB255' }, draw: dip({ R: 41, col: '#8DB255', ware: '#55534F', stone: true, top: DIPS.guac }) },
     // other
+    { id: 'buffalo-corn-cob', name: 'Buffalo corn cob, cashew crumb', sub: 'Other', kw: 'buffalo corn cob corn on the cob coated spicy mayo cashew crumb crumbed corn elote street corn', form: 'piece', cook: 'grilled', role: 'main', n: 1, w: 92, h: 36, side: { s: 'stick', h: 34, c: '#D9A866' }, draw: buffaloCob },
     { id: 'baked-camembert-box', name: 'Baked camembert in its box', sub: 'Other', kw: 'baked camembert brie whole cheese box scored garlic rosemary honey sharing', form: 'whole', cook: 'baked', role: 'main', n: 1, w: 86, h: 86, side: { s: 'disc', h: 24, c: '#F4EEDC' }, draw: camembert },
     { id: 'shepherds-pie-portion', name: 'Shepherd\'s pie portion', sub: 'Other', kw: 'shepherds pie cottage pie mince mash top browned portion square tray bake', form: 'portion', cook: 'baked', role: 'main', g: 350, w: 72, h: 70, side: { s: 'slab', h: 40, c: '#EFDDB0' }, draw: shepherds },
     { id: 'beetroot-bites', name: 'Beetroot bites, crispy', sub: 'Fried bites', kw: 'beetroot bites crispy beetroot balls beet bites plant based vegan rissoles crumbed', form: 'pile', cook: 'fried', role: 'main', n: 3, w: 66, h: 56, side: { s: 'pile', h: 22, c: '#7A1F45' }, draw: beetBites },

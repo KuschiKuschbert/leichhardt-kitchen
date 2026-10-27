@@ -317,6 +317,14 @@
       return out;
     }, 8);
   }
+  // crumbled feta: rough white crumbs, a few big, most small, a cream edge
+  function fetaCrumble(P, rnd) {
+    var out = P.scatter(rnd, 11, 22, 15, function (x, y, i, q) {
+      var r = 2.6 + q() * 3, d = P.blob(q, r, r * (0.7 + q() * 0.3), 0.38, 6, x, y);
+      return P.shadow(d, 0.7, 1) + P.path(d, '#FBF9F1', '#D9D2C0', 0.6) + P.path(P.blob(q, r * 0.45, r * 0.35, 0.3, 5, x - r * 0.25, y - r * 0.3), '#FFFFFF', null, 0);
+    }, 7);
+    return out + P.scatter(rnd, 14, 24, 17, function (x, y, i, q) { return P.path(P.blob(q, 0.8 + q() * 0.9, 0.7 + q() * 0.6, 0.35, 5, x, y), '#FBF9F1', '#D9D2C0', 0.35); });
+  }
   function provolone(P, rnd) {
     var col = '#F4E2A8', d = P.blob(rnd, 30, 29.5, 0.02, 14), out = P.shadow(d, 1, 1.4) + P.path(d, col, '#C9A050', 2.2);
     out += P.path(P.blob(rnd, 26, 25.5, 0.03, 12), P.shade(col, 0.2), null, 0, { opacity: '0.6' });
@@ -444,6 +452,7 @@
     { id: 'mozzarella-melted', name: 'Mozzarella, melted', sub: 'Cheese', kw: 'melted mozzarella blanket pizza cheese bubbling browned parmy cheese', form: 'layer', cook: 'baked', role: 'topping', g: 60, w: 100, h: 74, side: { s: 'layer', h: 4, c: '#F7EEC9' }, draw: mozzarella },
     { id: 'baked-camembert', name: 'Baked camembert', sub: 'Cheese', kw: 'baked camembert brie whole wheel box scored garlic rosemary sharing', form: 'whole', cook: 'baked', role: 'main', n: 1, w: 88, h: 88, side: { s: 'disc', h: 26, c: '#F3EEE0' }, draw: bakedCamembert },
     { id: 'blue-cheese-crumble', name: 'Blue cheese, crumbled', sub: 'Cheese', kw: 'blue cheese crumble crumbled gorgonzola danish blue', form: 'scatter', role: 'garnish', g: 20, w: 48, h: 36, side: { s: 'pile', h: 6, c: '#F1ECDD' }, draw: shift(2, -3, blueCrumble) },
+    { id: 'feta-crumbled', name: 'Feta, crumbled', sub: 'Cheese', kw: 'feta crumbled crumble fetta persian feta danish feta nachos salad', form: 'scatter', role: 'garnish', g: 25, w: 50, h: 38, side: { s: 'pile', h: 5, c: '#FBF9F1' }, draw: fetaCrumble },
     { id: 'provolone-slice', name: 'Provolone slice', sub: 'Cheese', kw: 'provolone slice round cheese sandwich sub', form: 'layer', role: 'topping', n: 1, w: 62, h: 62, side: { s: 'layer', h: 3, c: '#F4E2A8' }, draw: provolone },
     { id: 'gouda-wedge', name: 'Gouda wedge', sub: 'Cheese', kw: 'gouda wedge dutch cheese red wax edam cheese board', form: 'wedge', role: 'main', g: 100, w: 66, h: 48, side: { s: 'wedge', h: 26, c: '#F4D683' }, draw: goudaWedge },
     { id: 'gouda-slices', name: 'Gouda, sliced', sub: 'Cheese', kw: 'gouda slices sliced dutch cheese sandwich', form: 'slices', role: 'topping', n: 3, w: 78, h: 62, side: { s: 'layer', h: 4, c: '#F4D683' }, draw: cheeseSlices('#F4D683') },

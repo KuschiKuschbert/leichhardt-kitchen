@@ -47,10 +47,10 @@
   on the guest menu, so they sit after the menu sections.
 */
 window.LK_DATA = {
-  updated: '20 October 2026',
+  updated: '27 October 2026',
   allergens: ['Gluten', 'Milk', 'Egg', 'Soy', 'Peanut', 'Tree nut', 'Fish', 'Crustacean', 'Mollusc', 'Sesame'],
   menuOrder: [
-    { title: "Snackin' Plates", ids: ['poutine', 'beetroot-bites', 'brisket-cob', 'wings', 'haloumi-tacos', 'pork-belly-bites', 'calamari', 'riblets', 'garlic-bread', 'bacon-cheese-bread', 'chips-snack'] },
+    { title: "Snackin' Plates", ids: ['poutine', 'beetroot-bites', 'brisket-cob', 'lamb-nachos', 'wings', 'haloumi-tacos', 'pork-belly-bites', 'calamari', 'riblets', 'garlic-bread', 'bacon-cheese-bread', 'chips-snack'] },
     { title: 'Salads', ids: ['caesar', 'green-bowl', 'pumpkin-salad'] },
     { title: 'Big Country Feeds', ids: ['beef-cheek', 'ribs', 'barra', 'carbonara', 'fish-chips', 'lamb-rissoles', 'vegan-rissoles', 'pork-belly', 'pie'] },
     { title: 'Off the Grill', ids: ['rump-250', 'rump-500', 'eye-fillet', 'rib-fillet', 'grill-board', 'taco-board', 'flank'] },
@@ -1044,6 +1044,38 @@ window.LK_DATA = {
       sections: [
         { title: 'Plating', steps: ['Serve in a bowl.', 'Chips in the bowl.', 'Grated mozzarella over the chips.', 'Smother with 160 ml of gravy, on top of the mozzarella.', 'American cheese sauce in a thin zigzag across the whole gravy.', 'Fried shallots on top.'] }
       ]
+    },
+    {
+      id: 'lamb-nachos', art: 'lamb-nachos', no: '123', kind: 'snack', forLine: 'Snack', name: 'Smoked Pulled Lamb Nachos', short: 'Lamb nachos',
+      menu: 'Smoked Pulled Lamb Nachos: slow-smoked pulled lamb layered over crisp corn chips and baked with bubbling mozzarella, topped with house pico de gallo, velvety smashed avocado puree, cool sour cream, feta cheese and a drizzle of creamy ranch.',
+      yield: 'Per serve, in a bowl. Corn chips, smoked pulled lamb and mozzarella baked together, then pico de gallo, avocado puree, sour cream, feta, ranch and pea shoots on top.',
+      ingredients: [
+        { q: '[Qty]', name: 'Corn chips', tags: ['Gluten?'] },
+        { q: '[Qty]', name: 'Smoked pulled lamb', note: 'from the smoker' },
+        { q: '[Qty]', name: 'Grated mozzarella', note: 'baked on until bubbling', link: 'grated-mozzarella', tags: ['Milk'] },
+        { q: '[Qty]', name: 'Pico de gallo', note: 'house made', link: 'pico' },
+        { q: '[Qty]', name: 'Smashed avocado puree' },
+        { q: '[Qty]', name: 'Sour cream', tags: ['Milk'] },
+        { q: '[Qty]', name: 'Feta', note: 'crumbled', tags: ['Milk'] },
+        { q: '[Qty]', name: 'Ranch', note: 'drizzled over', link: 'ranch', tags: ['Milk', 'Egg'] },
+        { q: '[Qty]', name: 'Pea shoots', note: 'on top' }
+      ],
+      pins: [
+        { label: 'Corn chips', x: 25.5, y: 72.6, side: 'left', tags: ['Gluten?'], note: 'Under everything, out to the edge of the bowl.' },
+        { label: 'Smoked pulled lamb', x: 43.4, y: 39.6, side: 'left', tags: [], note: 'From the smoker. Layered over the chips.' },
+        { label: 'Mozzarella', x: 54.7, y: 65.1, side: 'right', link: 'grated-mozzarella', note: 'Baked on until bubbling.' },
+        { label: 'Pico de gallo', x: 59.4, y: 56.6, side: 'right', link: 'pico', note: 'House made. Card to come.' },
+        { label: 'Avocado puree', x: 32.1, y: 59.4, side: 'left', tags: [], note: 'Smashed avocado puree, on one side.' },
+        { label: 'Sour cream', x: 69.8, y: 49.1, side: 'right', tags: ['Milk'], note: 'On the other side.' },
+        { label: 'Feta', x: 44.3, y: 56.6, side: 'left', tags: ['Milk'], note: 'Crumbled over.' },
+        { label: 'Ranch', x: 51.9, y: 45.3, side: 'left', link: 'ranch', note: 'Drizzled over everything.' },
+        { label: 'Pea shoots', x: 54.7, y: 32.1, side: 'right', tags: [], note: 'On top.' }
+      ],
+      sections: [
+        { title: 'Build and bake', steps: ['Corn chips in the bowl.', 'Layer the smoked pulled lamb over the chips.', 'Grated mozzarella over the top.', 'Bake until the mozzarella is bubbling. [Oven setting and time to come]'] },
+        { title: 'Plating', steps: ['Pico de gallo over the top.', 'Smashed avocado puree on one side.', 'Sour cream on the other side.', 'Crumble the feta over.', 'Drizzle the ranch over everything.', 'Pea shoots on top.'] }
+      ],
+      labelNote: 'Check the corn chip, lamb rub and avocado puree labels.'
     },
     {
       id: 'beetroot-bites', art: 'beetroot-bites', no: '47', kind: 'snack', forLine: 'Snack', name: 'Crispy Beetroot Bites',
