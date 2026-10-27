@@ -210,6 +210,27 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   ok(p.errors.length === 0, 'Google device: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // a sous chef saves, then the head chef's Google device with nobody signed in saves the same recipe (27 Oct 2026). The
+  // index is saved with merge: its by has to be empty after the head chef's save, or the rules refuse it (bookBy()).
+  p = await L.open(b, '#/manage/r/aioli', { who: 'sam', extra: cfg(), wait: 1400 });
+  await editor(p);
+  await p.fill('#mg-yield', '800 ml batch');
+  await p.click('[data-mg="save"]'); await toast(p);
+  ok(/Saved\. Version 1\./.test(await toastText(p) || ''), 'after a sous chef: Sam saves version 1');
+  s = await store(p);
+  ok((s[fsKey(['book', 'index'])] || {}).by === 'sam', 'after a sous chef: the index names Sam');
+  await p.context().close();
+  p = await L.open(b, '#/manage/r/aioli', { who: '', admin: true, extra: s, wait: 1400 });
+  await editor(p);
+  await p.fill('#mg-yield', '1 L batch');
+  await p.click('[data-mg="save"]'); await toast(p);
+  const ownSaid = await toastText(p) || await txt(p, '.mg-bar') || '';
+  ok(/Saved\. Version 2\./.test(ownSaid), 'after a sous chef: the head chef\'s Google device saves version 2 (' + ownSaid.slice(0, 120) + ')');
+  s = await store(p);
+  ok((s[fsKey(['book', 'index'])] || {}).by === '' && (s[fsKey(['recipes', 'aioli'])] || {}).by === '' && ((s[fsKey(['book', 'index'])] || {}).r || {}).aioli === 2, 'after a sous chef: the index and the recipe are saved by nobody, version 2');
+  ok(p.errors.length === 0, 'after a sous chef: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   await b.close();
   L.report(R);
 })().catch(e => { console.log(R.join("\n")); console.error(e); process.exit(1); });
