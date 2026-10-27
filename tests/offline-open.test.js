@@ -1,4 +1,4 @@
-// No signal (27 Oct 2026). Since 25 Oct 2026 Firestore keeps only a copy in memory, so with no signal a listener or a
+// No signal (27 Oct 2026). Since 26 Oct 2026 (#387) Firestore keeps only a copy in memory, so with no signal a listener or a
 // query answers at once from that copy, and the copy is empty for anything no other listener holds (marked fromCache).
 // That answer means "not loaded yet", never "nothing there": the names list, the kitchen lists, Everything to order,
 // the drinks run, guides, pings, minutes and functions say there is no signal, nothing empty is kept on the phone, and
@@ -112,6 +112,33 @@ const fnDoc = (name, date) => M.derive({ v: 1, status: 'confirmed', name, date, 
   ok(p.errors.length === 0, 'signal lost: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // 3b. The prep list's Handy page with no signal, after a day forward and back: Done today, Pace, Quick add and For the
+  // functions each read the whole list, so none of them comes from the lines this phone wrote since. On the server: two
+  // lines ticked today, three past days for Pace, a regular for Quick add and a function tomorrow.
+  const hd = {};
+  [1, 2, 3].forEach(n => { const d = L.ymd(new Date(L.NOW - n * 86400000)); for (let k = 0; k < 5; k++) hd[fsKey(['days', d, 'items', 'p' + n + k])] = { text: 'Past job ' + n + k, station: 'Larder', qty: '', recipe: '', addedBy: 'Sam', addedById: 'sam', addedAt: L.NOW - n * 86400000 - 7200000, done: true, doneBy: 'Sam', doneById: 'sam', doneAt: L.NOW - n * 86400000 - 3600000 * (k + 1), deleted: false }; });
+  [['d1', 'Peel garlic'], ['d2', 'Juice lemons']].forEach(([id, text], k) => { hd[fsKey(['days', today, 'items', id])] = { text, station: 'Larder', qty: '', recipe: '', addedBy: 'Sam', addedById: 'sam', addedAt: L.NOW - 7200000 + k, done: true, doneBy: 'Ann', doneById: 'ann', doneAt: L.NOW - 1800000 + k, deleted: false }; });
+  hd[fsKey(['learned', 'mise-onions'])] = { text: 'Mise onions', uses: 6, typed: 6, secs: { larder: { name: 'Larder', n: 6 } }, dow: {} };
+  hd[fsKey(['functions', 'f1'])] = fnDoc('Brown 21st', M.addDays(today, 1));
+  p = await L.open(b, '#/prep', { who: 'sam', extra: hd, width: 1280, height: 900, wait: 1800 });
+  const has = sel => p.$(sel).then(Boolean);
+  const handyOn = () => until(p, () => ['.nb-pace', '.nb-quick', '.fnn-sum'].every(s => !!document.querySelector(s)));
+  ok(await shows(p, '.nb-right', /Done today \(2\)[\s\S]*Peel garlic/) && await handyOn(), 'handy with signal: Done today (2), Pace, Quick add and For the functions show');
+  await cold(p);
+  await p.click('[data-p="day"][data-d="1"]'); await L.settle(p, 400);
+  await p.click('[data-p="today"]'); await L.settle(p, 600);
+  t = await txt(p, '.nb-right') || '';
+  ok(/No signal\. Lines ticked today show when the phone is back online\./.test(t) && !/Nothing ticked yet/.test(t) && !/Done today \(\d+\)/.test(t), 'handy with no signal: Done today says there is no signal, with no count, not "Nothing ticked yet" (' + t.slice(0, 160) + ')');
+  ok(!(await has('.nb-quick')) && !(await has('.nb-qadd')) && !(await has('.fnn-sum')), 'handy with no signal: no Quick add and no For the functions, which would offer lines already on the list');
+  for (const line of ['Slice tomatoes', 'Peel carrots', 'Pick parsley']) { await p.fill('#p-text', line); await p.press('#p-text', 'Enter'); await L.settle(p, 400); }
+  ok(await p.evaluate(() => window.LK_PREP.state.itemsState) === 'offline' && !(await has('.nb-pace')), 'handy, three lines written with no signal: no Pace card from those lines alone');
+  t = await txt(p, '.nb-right') || '';
+  ok(/Closing soon/.test(t) && !/still open and will roll/.test(t), 'handy, three lines written with no signal: Closing soon gives no count of the lines left open (' + t.slice(0, 120) + ')');
+  await warm(p);
+  ok(await shows(p, '.nb-right', /Done today \(2\)[\s\S]*Peel garlic/) && await handyOn(), 'handy, signal back: Done today (2) with the lines ticked today, Pace, Quick add and For the functions');
+  ok(p.errors.length === 0, 'handy: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   // 4. Guides read with no signal: the list kept on the phone is not replaced by an empty one
   p = await L.open(b, '#/guides', { who: 'ann', extra: L.guides(), cold: '/guides$', wait: 1500 });
   t = await page(p);
@@ -134,6 +161,23 @@ const fnDoc = (name, date) => M.derive({ v: 1, status: 'confirmed', name, date, 
   await warm(p);
   ok(await until(p, () => (window.LK_PREP.state.notes || []).some(n => /Bidfood/.test(n.text))), 'pings: signal back, the ping is read');
   ok(p.errors.length === 0, 'pings: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // 5b. Pings after midnight with no signal: the new day's read keeps to its 5-minute wait, not one read every minute,
+  // and once the signal is back the new day's pings are read
+  p = await L.open(b, '#/prep', { who: 'ann', extra: ping, clock: fnAt(today, '23:58'), wait: 1500 });
+  ok(await until(p, d => window.LK_PREP.state.notesFor === d, today), 'pings at midnight: today\'s pings are read before midnight');
+  await p.evaluate(() => { window.__fake.cold = /notes$/; });
+  const pingReads = () => p.evaluate(() => window.__fake.reads.filter(k => /\/notes$/.test(k)).length);
+  const n0 = await pingReads();
+  // a mouse move each minute, so the phone is not signed out for being left alone
+  for (let i = 0; i < 8; i++) { await p.mouse.move(20 + i, 20); await p.clock.runFor(60000); }
+  await L.settle(p, 300);
+  const n1 = await pingReads();
+  ok(n1 - n0 >= 1 && n1 - n0 <= 2, 'pings at midnight with no signal: tried at the new day and again after 5 minutes, not every minute (' + (n1 - n0) + ' reads in 8 minutes)');
+  await warm(p);
+  ok(await until(p, d => window.LK_PREP.state.notesFor === d, M.addDays(today, 1)), 'pings at midnight: signal back, the new day\'s pings are read');
+  ok(p.errors.length === 0, 'pings at midnight: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
   // 6. Minutes read with no signal: not "No meeting minutes yet", and no read loop while the page is open
@@ -193,9 +237,11 @@ const fnDoc = (name, date) => M.derive({ v: 1, status: 'confirmed', name, date, 
   for (const who of ['fay', 'ann']) {
     p = await L.open(b, '#/prep', { who, extra: dl, wait: 1500 });
     await cold(p);
-    await go(p, '#/deliveries'); await L.settle(p, 800);
+    await go(p, '#/deliveries');
+    // js/deliveries.js is fetched on this navigation: wait for the section itself
+    const said = await shows(p, '.dl-history', /No signal\. Today's deliveries show when the phone is back online\./);
     t = await txt(p, '.dl-history') || '';
-    ok(!/No deliveries recorded for this date/.test(t) && /No signal\. Today's deliveries show when the phone is back online\./.test(t), who + ', deliveries with no signal: says there is no signal, not that there are none (' + t.slice(0, 160) + ')');
+    ok(said && !/No deliveries recorded for this date/.test(t), who + ', deliveries with no signal: says there is no signal, not that there are none (' + t.slice(0, 160) + ')');
     await warm(p);
     ok(await shows(p, '.dl-history', /Bidfood/), who + ', deliveries: signal back, today\'s delivery shows');
     ok(p.errors.length === 0, who + ', deliveries: no page errors ' + p.errors.join(' | '));

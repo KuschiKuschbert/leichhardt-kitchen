@@ -4,7 +4,7 @@
 //   __fake.deny = /regex/ refuses only the writes whose path matches
 //   __fake.failReads = /regex/ makes getDoc, getDocs and getDocFromServer fail (unavailable) for the paths that match, like a read lost to a bad signal
 //   __fake.denyReads = /regex/ makes getDocs refuse (permission-denied) the collections that match, like rules not published yet
-//   __fake.cold = /regex/ is no signal the way the book's memory cache answers it (25 Oct 2026, memoryLocalCache), for
+//   __fake.cold = /regex/ is no signal the way the book's memory cache answers it (26 Oct 2026, #387, memoryLocalCache), for
 //   the paths that match: a listener started then answers at once from an empty copy (only this page's own unsent
 //   writes), marked fromCache; getDocs answers the same way; getDoc, getDocFromServer and getDocsFromServer refuse
 //   (unavailable). Listeners started before keep their documents, marked fromCache. __fake.warm() is the signal coming
