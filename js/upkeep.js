@@ -1,27 +1,52 @@
 /* Runs at the end of <body>, before the deferred app scripts (moved out of index.html for the security header, 20 Oct 2026). */
+/* Something not saved or not sent yet in the prep pages (a line, a shift ping, minutes, the staff list, a write waiting
+   for the server): LK_PREP.unsaved() in js/prep.js decides. */
+function lkUnsaved() { try { return !!(window.LK_PREP && window.LK_PREP.unsaved && window.LK_PREP.unsaved()); } catch (e) { return false; } }
+/* Is the book's server there (27 Oct 2026)? Since 26 Oct 2026 (#387) Firestore keeps the kitchen's data, and every
+   change not sent yet, in this tab's memory only, so a reload with no signal opens an empty book and loses what was
+   waiting. The 04:00 refresh and the updates ask this first. The browser's own flag, then a HEAD of index.html past
+   every cache (the service worker leaves HEAD alone), so wifi with no internet counts as no signal too. One tiny
+   request when a reload is due, no Firestore; no answer in 8 seconds is no signal. */
+function lkServerUp() {
+  if (navigator.onLine === false) return Promise.resolve(false);
+  return new Promise(function (res) {
+    setTimeout(function () { res(false); }, 8000);
+    try { fetch('index.html', { method: 'HEAD', cache: 'no-store' }).then(function (r) { res(!!r.ok); }, function () { res(false); }); } catch (e) { res(false); }
+  });
+}
 // Daily self-refresh: the book reloads itself once a day (about 04:00) so a tablet left open on the pass
 // always shows the latest cards. If the device was asleep at 04:00, it refreshes as soon as it wakes.
 (function () {
-  var DAY = 24 * 60 * 60 * 1000, CATCH_UP = 20 * 60 * 60 * 1000, loaded = Date.now(), T = window.LK_TIME;
+  var DAY = 24 * 60 * 60 * 1000, CATCH_UP = 20 * 60 * 60 * 1000, loaded = Date.now(), T = window.LK_TIME, due = false;
   function untilFour() { var n = T.now(), t = T.at(T.day(n), 240); if (t <= n + 60000) t += DAY; return t - n; }
+  // A refresh that has to wait tries again in 10 minutes, and soon after the signal is back. While it waits, the clock
+  // being put right (lk-clock) does not push it to tomorrow.
+  function later() { due = true; clearTimeout(timer); timer = setTimeout(refresh, 600000); }
   function refresh() {
-    // Something half written in the prep pages (a line, a shift ping, minutes, the staff list): try again in 10 minutes.
-    try { if (window.LK_PREP && window.LK_PREP.unsaved && window.LK_PREP.unsaved()) { clearTimeout(timer); timer = setTimeout(refresh, 600000); return; } } catch (e) {}
-    // Re-fetch the data files past the browser cache first, so the reload shows the newest cards. The page stays on the same card.
-    // X-LK-Fresh tells the service worker to fetch these from the network and save them (sw.js).
-    var files = ['index.html', 'js/data.js', 'js/art.js', 'js/overlay.js', 'js/app.js', 'js/amounts.js', 'js/learn.js', 'js/cutoffs.js', 'js/prep.js', 'js/functions.js', 'js/firebase-config.js', 'js/boot.js', 'js/upkeep.js', 'css/app.css'];
-    var go = function () { location.reload(); };
-    try {
-      // 'no-cache' asks the server whether each file changed (a small answer when it did not), instead of downloading all
-      // of them again every morning (about 435 kB a phone, 22 Oct 2026). An update found by the stamp check still uses 'reload'.
-      Promise.all(files.map(function (f) { return fetch(f, { cache: 'no-cache', headers: { 'X-LK-Fresh': '1' } }); })).then(go, go);
-      setTimeout(go, 8000);
-    } catch (e) { go(); }
+    // something half written or not sent yet: try again in 10 minutes
+    if (lkUnsaved()) { later(); return; }
+    due = true;
+    // no signal (a router restarting overnight, a phone waking before its wifi): the book stays as it is and waits
+    lkServerUp().then(function (up) {
+      if (!up || lkUnsaved()) { later(); return; }
+      // Re-fetch the data files past the browser cache first, so the reload shows the newest cards. The page stays on the same card.
+      // X-LK-Fresh tells the service worker to fetch these from the network and save them (sw.js).
+      var files = ['index.html', 'js/data.js', 'js/art.js', 'js/overlay.js', 'js/app.js', 'js/amounts.js', 'js/learn.js', 'js/cutoffs.js', 'js/prep.js', 'js/functions.js', 'js/firebase-config.js', 'js/boot.js', 'js/upkeep.js', 'css/app.css'];
+      // later(): if the reload is turned down (a page asks first), it tries again in 10 minutes
+      var go = function () { later(); location.reload(); };
+      try {
+        // 'no-cache' asks the server whether each file changed (a small answer when it did not), instead of downloading all
+        // of them again every morning (about 435 kB a phone, 22 Oct 2026). An update found by the stamp check still uses 'reload'.
+        Promise.all(files.map(function (f) { return fetch(f, { cache: 'no-cache', headers: { 'X-LK-Fresh': '1' } }); })).then(go, go);
+        setTimeout(go, 8000);
+      } catch (e) { go(); }
+    });
   }
   var timer = null;
-  function schedule() { clearTimeout(timer); timer = setTimeout(refresh, Math.max(1000, untilFour())); }
+  function schedule() { if (due) return; clearTimeout(timer); timer = setTimeout(refresh, Math.max(1000, untilFour())); }
   schedule();
   window.addEventListener('lk-clock', schedule);
+  window.addEventListener('online', function () { if (due) { clearTimeout(timer); timer = setTimeout(refresh, 5000); } });
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState !== 'visible') return;
     if (Date.now() - loaded > CATCH_UP) refresh(); else schedule();
@@ -44,25 +69,48 @@
   function typing() {
     var a = document.activeElement, t = a && a.tagName;
     // also anything half written in the prep pages, even when the cursor has left the box
-    try { if (window.LK_PREP && window.LK_PREP.unsaved && window.LK_PREP.unsaved()) return true; } catch (e) {}
+    if (lkUnsaved()) return true;
     return t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT' || !!(a && a.isContentEditable);
   }
-  function reloadNow() {
+  var going = false;
+  function reloadNow(tapped) {
+    if (going) return;
     // Once per 10 minutes at most, so a flapping header can never cause a reload loop.
-    try { var last = +localStorage.getItem('lk.upd.last') || 0; if (Date.now() - last < 600000) return; localStorage.setItem('lk.upd.last', String(Date.now())); } catch (e) {}
-    var files = ['index.html', 'js/data.js', 'js/art.js', 'js/overlay.js', 'js/app.js', 'js/amounts.js', 'js/learn.js', 'js/cutoffs.js', 'js/prep.js', 'js/functions.js', 'js/firebase-config.js', 'js/boot.js', 'js/upkeep.js', 'css/app.css'];
-    var go = function () { location.reload(); };
-    try { Promise.all(files.map(function (f) { return fetch(f, { cache: 'reload', headers: { 'X-LK-Fresh': '1' } }); })).then(go, go); setTimeout(go, 8000); } catch (e) { go(); }
+    try { var last = +localStorage.getItem('lk.upd.last') || 0; if (Date.now() - last < 600000) return; } catch (e) {}
+    going = true;
+    // no signal (27 Oct 2026): the book stays as it is, and updates by itself once the signal is back
+    lkServerUp().then(function (up) {
+      if (!up) { going = false; if (tapped) say('No signal. It updates later.', 'Update now'); return; }
+      try { localStorage.setItem('lk.upd.last', String(Date.now())); } catch (e) {}
+      var files = ['index.html', 'js/data.js', 'js/art.js', 'js/overlay.js', 'js/app.js', 'js/amounts.js', 'js/learn.js', 'js/cutoffs.js', 'js/prep.js', 'js/functions.js', 'js/firebase-config.js', 'js/boot.js', 'js/upkeep.js', 'css/app.css'];
+      var go = function () { going = false; location.reload(); };
+      try { Promise.all(files.map(function (f) { return fetch(f, { cache: 'reload', headers: { 'X-LK-Fresh': '1' } }); })).then(go, go); setTimeout(go, 8000); } catch (e) { go(); }
+    });
   }
   /* A slim strip at the top of the screen (21 Oct 2026), styled in css/app.css (.upd-bar), so it never sits with the
      toasts at the bottom. It sticks to the top while the page scrolls. */
+  var barText = null, barBtn = null, armedAt = 0, calm = null;
+  // a short note in the strip for 4 seconds, then the strip as it was
+  function say(msg, btn) {
+    if (!barText) return;
+    barText.textContent = msg; barBtn.textContent = btn;
+    clearTimeout(calm);
+    calm = setTimeout(function () { armedAt = 0; barText.textContent = 'New version available.'; barBtn.textContent = 'Update now'; }, 4000);
+  }
   function showBar() {
     if (bar || !document.body) return;
     bar = document.createElement('div'); bar.setAttribute('role', 'status'); bar.className = 'upd-bar';
     document.documentElement.classList.add('has-upd');
-    var t = document.createElement('span'); t.textContent = 'New version available.';
-    var b = document.createElement('button'); b.type = 'button'; b.textContent = 'Update now';
-    b.onclick = function () { try { localStorage.removeItem('lk.upd.last'); } catch (e) {} reloadNow(); };
+    var t = barText = document.createElement('span'); t.textContent = 'New version available.';
+    var b = barBtn = document.createElement('button'); b.type = 'button'; b.textContent = 'Update now';
+    b.onclick = function () {
+      // something not saved or not sent yet (27 Oct 2026): a second tap within 4 seconds, like Sign out, because the
+      // reload loses it
+      if (lkUnsaved() && !(armedAt && Date.now() - armedAt < 4000)) { say('Not saved yet.', 'Tap again to update'); armedAt = Date.now(); return; }
+      armedAt = 0;
+      try { localStorage.removeItem('lk.upd.last'); } catch (e) {}
+      reloadNow(true);
+    };
     bar.appendChild(t); bar.appendChild(b); document.body.insertBefore(bar, document.getElementById('app') || document.body.firstChild);
   }
   function check(returned) {
@@ -95,7 +143,7 @@
   if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', function (e) {
     if (e.data !== 'lk-new') return;
     found = true;
-    if (Date.now() - opened < 8000 && lastTouch <= opened && !typing()) {
+    if (Date.now() - opened < 8000 && lastTouch <= opened && !typing() && navigator.onLine !== false) {
       try { var last = +localStorage.getItem('lk.upd.last') || 0; if (Date.now() - last < 600000) { showBar(); return; } localStorage.setItem('lk.upd.last', String(Date.now())); } catch (err) {}
       location.reload();
     } else showBar();

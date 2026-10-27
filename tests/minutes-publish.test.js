@@ -50,7 +50,8 @@ const store = p => p.evaluate(() => window.__fake.dump());
   ok(s && /^Publishing\.\.\.$/.test(s.t), 'publishing: the message says Publishing... (' + (s && s.t) + ')');
   await L.waitFor(p, () => /Waiting for the signal/.test((document.querySelector('.mn-say:not(:empty)') || {}).textContent || ''), null, 7000).catch(() => {});
   s = await say(p);
-  ok(s && /Waiting for the signal\. The minutes are kept on this device and go to the team when the signal is back/.test(s.t) && s.seen, 'no answer after 4 s: it says it is waiting for the signal, on screen (' + JSON.stringify(s) + ')');
+  // 27 Oct 2026: a write waiting for the signal lives only in this tab's memory, so it says to keep the book open, not "kept on this device"
+  ok(s && /Waiting for the signal\. Keep the book open: the minutes go to the team when the signal is back/.test(s.t) && !/kept on this device/.test(s.t) && s.seen, 'no answer after 4 s: it says it is waiting for the signal and to keep the book open, on screen (' + JSON.stringify(s) + ')');
   ok(!!(await p.$('.mn-form')), 'still waiting: the form stays open');
 
   // the signal is back: the publish goes through
