@@ -409,7 +409,8 @@ service cloud.firestore {
         && request.resource.data.at is number && sid == request.resource.data.day + '_' + request.resource.data.by;
       allow update, delete: if false;
     }
-    // Kitchen meeting minutes. Only the head chef (Google account) writes them (draft, then published). Sous chefs read the register. Everyone with the kitchen PIN reads the published ones.
+    // Kitchen meeting minutes. Only the head chef (Google account) writes them (draft, then published). Everyone signed in
+    // with their own PIN (not functions only) reads the published ones. The chefs read the register of sign-offs.
     // Minutes are never deleted, only flagged as removed. "v" is the version: a change after publishing makes version 2 and everyone signs again.
     // Every earlier version is kept in minutes/<id>/hist/<v> and cannot be changed.
     // A person signs once per version, as themselves (their own PIN session): minutes/<id>/signs/<v>_<staffId>. A sign-off cannot be changed or deleted.
@@ -449,7 +450,14 @@ service cloud.firestore {
       }
       // The head chef may also create one when moving everything to a new kitchen PIN (an exact copy of the old record).
       match /signs/{sid} {
-        allow read: if isAdmin();
+        // Reading (27 Oct 2026): a person reads only their own sign-off, by id, signed or not yet, so the Sign button, the
+        // bell's dot and the start of the shift know whether they signed. The id is the version (digits), '_', then the
+        // reader's id from their own PIN session; it is compared as a whole, never used as a pattern. The register (every
+        // sign-off) is for the head chef's Google account and the chefs (sousIds or headId) on their own PIN session.
+        function signRegister() { return isAdmin() || (kitchenRead() && chefId(reader())); }
+        function ownSign() { let v = sid.split('_')[0]; return v.matches('[0-9]+') && sid == v + '_' + reader(); }
+        allow get: if signRegister() || (kitchenRead() && ownSign());
+        allow list: if signRegister();
         allow create: if (isAdmin() && request.resource.data.v is int && request.resource.data.st in ['present', 'apology', 'absent']) || (staff()
           && request.resource.data.v is int
           && request.resource.data.st in ['present', 'apology', 'absent']

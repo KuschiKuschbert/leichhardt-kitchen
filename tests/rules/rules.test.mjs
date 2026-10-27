@@ -778,7 +778,44 @@ await ok(minQ(anon, 'date', '>=', '2026-01-01'), false, 'minutes: a list by date
 await ok(getDocs(collection(anon, K + 'minutes')), false, 'minutes: so is the whole collection');
 await ok(minQ(owner, 'date', '>=', '2026-01-01'), true, 'minutes: the Google account lists them all, drafts too');
 await ok(setDoc(doc(owner, K + 'minutes/m9'), mins({ no: 9, status: 'draft', pubAt: 5 })), false, 'minutes: a draft never carries pubAt');
-await ok(getDocs(collection(anon, K + 'minutes/m1/signs')), false, 'minutes: the sign-offs of published minutes are still read with the kitchen PIN');
+await ok(getDocs(collection(anon, K + 'minutes/m1/signs')), false, 'minutes: the sign-offs cannot be listed with only the kitchen PIN');
+// Sign-off reads (27 Oct 2026). From 26 Oct (#387) only the Google account could read them, so nobody could sign on a PIN: the
+// Sign button, the bell's dot and the start of the shift all wait for the person's own sign-off, signed or not yet. A person
+// reads their own by id (<version>_<their id>). The register lists every sign-off: the Google account, and the chefs
+// (sousIds, headId) on their own PIN session.
+await env.withSecurityRulesDisabled(async ctx => { await setDoc(doc(ctx.firestore(), K + 'config/main'), { headId: 'hd', sousIds: ['sam'], staffIds: ['sam', 'ann', 'bo', 'cal', 'hd'] }, { merge: true }); });
+async function signPhone(id, exp) {
+  const uid = 'sg-' + id + (exp ? '-old' : '');
+  await env.withSecurityRulesDisabled(async ctx => { const c = ctx.firestore(), ps = await getDoc(doc(c, K + 'pinset/' + id)); await setDoc(doc(c, K + 'sessions/' + uid), { by: id, pinAt: ps.data().at, exp: exp || Date.now() + 86400000, at: 1 }); });
+  return wPhone(uid);
+}
+const sgAnn = await signPhone('ann'), sgBo = await signPhone('bo'), sgSam = await signPhone('sam'), sgHd = await signPhone('hd'), sgOld = await signPhone('ann', Date.now() - 1000);
+const signGet = (db, p) => getDoc(doc(db, K + 'minutes/' + p)), signList = db => getDocs(collection(db, K + 'minutes/m1/signs'));
+await ok(signGet(sgAnn, 'm1/signs/1_ann'), true, 'sign-off read: Ann reads her own sign-off by id');
+await ok(signGet(sgAnn, 'm3/signs/1_ann'), true, 'sign-off read: and asks for one she has not made yet (so the Sign button shows)');
+await ok(signGet(sgAnn, 'm2/signs/2_ann'), true, 'sign-off read: her own for version 2');
+await ok(signGet(sgAnn, 'm1/signs/1_bo'), false, 'sign-off read: Ann cannot read Bo\'s');
+await ok(signGet(sgBo, 'm1/signs/1_ann'), false, 'sign-off read: nor Bo Ann\'s');
+await ok(signGet(sgAnn, 'm1/signs/x_ann'), false, 'sign-off read: the version in front of the id is digits');
+await ok(signGet(sgAnn, 'm1/signs/1_ann_x'), false, 'sign-off read: the id ends with her own id, nothing after it');
+await ok(signGet(sgAnn, 'm1/signs/ann'), false, 'sign-off read: an id with no version is refused');
+await ok(signGet(sgOld, 'm1/signs/1_ann'), false, 'sign-off read: not with a session that ran out');
+await ok(signGet(anon, 'm1/signs/1_ann'), false, 'sign-off read: not with only the kitchen PIN');
+await ok(signList(sgAnn), false, 'sign-off read: staff cannot list the sign-offs');
+await ok(getDocs(query(collection(sgAnn, K + 'minutes/m1/signs'), where('by', '==', 'ann'))), false, 'sign-off read: not even their own by a query');
+await ok(signList(sgSam), true, 'sign-off register: a sous chef on their PIN session lists the sign-offs');
+await ok(signList(sgHd), true, 'sign-off register: so does the head chef by PIN (headId, not in sousIds)');
+await ok(signList(owner), true, 'sign-off register: so does the Google account');
+await ok(signGet(sgSam, 'm1/signs/1_ann'), true, 'sign-off register: a sous chef reads one person\'s sign-off');
+await ok(getDocs(collection(env.authenticatedContext('other', { email: 'someone@test.local', email_verified: true }).firestore(), K + 'minutes/m1/signs')), false, 'sign-off register: not another Google account');
+await env.withSecurityRulesDisabled(async ctx => { await setDoc(doc(ctx.firestore(), K + 'config/main'), { sousIds: [] }, { merge: true }); });
+await ok(signList(sgSam), false, 'sign-off register: not a sous chef taken off sousIds');
+await env.withSecurityRulesDisabled(async ctx => { await setDoc(doc(ctx.firestore(), K + 'config/main'), { sousIds: ['sam'] }, { merge: true }); });
+// reading opened nothing for writes: a sign-off is still made once, by the person, never changed or deleted
+await ok(W([['minutes/m1/signs/1_ann', { v: 1, st: 'present', at: 7 }]], { id: 'ann' }), false, 'sign-off write: still cannot be changed');
+await ok(W([['minutes/m3/signs/1_ann', { v: 1, st: 'present', at: 7 }]], { id: 'sam' }), false, 'sign-off write: a sous chef cannot sign for Ann');
+await ok(deleteDoc(doc(sgSam, K + 'minutes/m1/signs/1_ann')), false, 'sign-off write: a sous chef cannot delete one');
+await ok(W([['minutes/m3/signs/1_ann', { v: 1, st: 'present', at: 7, name: 'Ann' }]], { id: 'ann' }), true, 'sign-off write: Ann still signs as herself');
 // the chef to-do list (23 Oct 2026): only the head chef (Google account, or their PIN as headId) and the sous chefs
 await env.withSecurityRulesDisabled(async ctx => { await setDoc(doc(ctx.firestore(), K + 'config/main'), { headId: 'hd', sousIds: ['sam'], staffIds: ['sam', 'ann', 'bo', 'cal', 'hd'] }, { merge: true }); });
 const todo = x => Object.assign({ text: 'Book the hood clean', st: 'open', due: '', for: '', from: 'sam', at: 5, doneAt: 0, doneBy: '', upd: 5 }, x || {});

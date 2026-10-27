@@ -5473,7 +5473,9 @@
       minCard(); draw(); noteMaybePop();
     });
   }
-  /* has this person signed the current version? one small read per open minutes, remembered for the day */
+  /* has this person signed the current version? one small read per open minutes, remembered for the day (the rules let a
+     person read only their own sign-off, by id). A read that failed or was refused is not kept: the phone waits 5 minutes
+     (retryLater) before it asks again, and the sign box says it could not check. */
   function loadMine() {
     if (!kitchenAccess() || !S.configFull) return;
     if (!fb || !S.who || !S.mins) return;
@@ -5486,6 +5488,9 @@
     });
     if (jobs.length) Promise.all(jobs).then(function () { minCard(); draw(); noteMaybePop(); });
   }
+  /* the register: every sign-off of one meeting, one query when it opens and on Refresh (the rules let only the head chef's
+     Google account and the chefs on their own PIN session list them). A failed or refused read keeps no list, so the
+     register says it could not load them and never counts everyone as not signed (27 Oct 2026). */
   function loadSigns(id, force) {
     if (!kitchenAccess() || !S.configFull) return;
     if (!fb || !id) return;
@@ -5494,7 +5499,7 @@
     S.msigns[id] = { loading: true, list: (cur && cur.list) || null };
     fb.fs.getDocs(fb.fs.collection.apply(null, [fb.db].concat(base(), ['minutes', id, 'signs']))).then(function (sn) {
       S.msigns[id] = { loading: false, list: sn.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }) }; draw();
-    }, function () { S.msigns[id] = { loading: false, list: [], err: true }; draw(); });
+    }, function () { S.msigns[id] = { loading: false, list: null, err: true }; draw(); });
   }
 
   /* ---- the minutes as staff read them ---- */
@@ -5543,6 +5548,9 @@
     var p = me(); if (!p) return '';
     var s = S.mmine[mnKey(m)], my = (m.att || []).filter(function (x) { return x.id === S.who; })[0], st = my ? my.st : 'absent';
     if (s && s !== 'loading') return '<section class="mn-sign is-done"><h3 class="mn-bh">Signed</h3><p>' + esc(p.name) + ' signed on ' + esc(dayShort(T.day(s.at))) + ' at ' + esc(clock(s.at)) + '. Version ' + m.v + '.</p></section>';
+    // the check failed or was refused: say so, instead of "Checking". loadMine asks again on the first redraw after its
+    // 5 minutes (no timer of its own), so opening the minutes again is what brings the Sign button back
+    if (s === undefined && waiting('mine:' + mnKey(m))) return '<section class="mn-sign mn-noprint"><p class="hint">Could not check your sign-off. Open the minutes again in a few minutes.</p></section>';
     if (s === undefined || s === 'loading') return '<section class="mn-sign mn-noprint"><p class="hint">Checking your sign-off...</p></section>';
     // one tap: the person already typed their own PIN to open this page (20 Oct 2026, no second PIN)
     var mineN = mnMineN(m);
@@ -5817,7 +5825,7 @@
     var chips = '<div class="mn-earlier mn-noprint">' + recent.map(function (x) { return '<button type="button" class="chip" data-p="mn-sel" data-id="' + esc(x.id) + '" aria-pressed="' + (x.id === m.id) + '">' + pad(x.no || 0) + ' &middot; ' + esc(dayShort(x.date)) + '</button>'; }).join('') +
       (older.length ? '<label class="a-f mn-older"><span class="visually-hidden">Older minutes</span><select data-k="mn-older" aria-label="Older minutes"><option value=""' + (inOlder ? '' : ' selected') + ' disabled>Older minutes (' + older.length + ')</option>' + older.map(function (x) { return '<option value="' + esc(x.id) + '"' + (x.id === m.id ? ' selected' : '') + '>' + pad(x.no || 0) + ' - ' + esc(dayShort(x.date)) + '</option>'; }).join('') + '</select></label>' : '') + '</div>';
     var body;
-    if (!reg) body = '<p class="hint">' + (S.msigns[m.id] && S.msigns[m.id].err ? 'Could not load the sign-offs. Check the connection.' : 'Loading the sign-offs...') + '</p>';
+    if (!reg) body = '<p class="hint">' + (S.msigns[m.id] && S.msigns[m.id].err ? 'Could not load the sign-offs. Check the connection, then tap Refresh.' : 'Loading the sign-offs...') + '</p>';
     else {
       var tiles = '<div class="mn-tiles"><div class="mn-tile"><span>Signed</span><b>' + reg.signed + '<small> of ' + reg.rows.length + '</small></b></div><div class="mn-tile' + (reg.chase.length ? ' is-hot' : '') + '"><span>Not signed</span><b>' + reg.chase.length + '</b></div><div class="mn-tile"><span>Signed late</span><b>' + reg.late + '</b></div><div class="mn-tile"><span>Actions overdue</span><b>' + od.length + '</b></div></div>';
       var regList = lvHTML({
@@ -5838,7 +5846,8 @@
       body = tiles + '<div class="mn-regrid">' + chase + '<div class="mn-regall"><button type="button" class="btn mn-noprint" data-p="mn-regall" aria-expanded="' + !!S.mRegAll + '">' + (S.mRegAll ? 'Hide the full list' : 'Show everyone (' + reg.rows.length + ')') + '</button>' + table + '</div></div>';
     }
     return '<section class="set-block mn-print"><span class="label">Sign-off register</span><span class="hint">Minutes ' + pad(m.no || 0) + ', ' + esc(longDate(m.date)) + ', version ' + m.v + (typeof m.pubAt === 'number' ? ', published ' + esc(dayShort(T.day(m.pubAt))) + ' at ' + esc(clock(m.pubAt)) : '') + (m.v > 1 ? '. Earlier versions are kept' : '') + '. Staff who have not signed within ' + MN_LATE + ' days are marked late. Everyone on the staff list signs, including apology and absent.</span>' + chips + body +
-      '<div class="btn-row mn-noprint"><button type="button" class="btn" data-p="mn-csv" data-id="' + esc(m.id) + '">Download CSV</button><button type="button" class="btn" data-p="mn-refresh">Refresh</button>' + (mnCanWrite() ? '<button type="button" class="btn" data-p="mn-edit" data-id="' + esc(m.id) + '">Change as a new version</button><button type="button" class="btn" data-p="mn-remove" data-id="' + esc(m.id) + '">' + (armed('mn-del:' + m.id) ? 'Tap again to remove' : 'Remove') + '</button>' : '') + '</div></section>';
+      // no CSV until the sign-offs are in: a register that did not load is never proof that nobody signed
+      '<div class="btn-row mn-noprint"><button type="button" class="btn" data-p="mn-csv" data-id="' + esc(m.id) + '"' + (reg ? '' : ' disabled') + '>Download CSV</button><button type="button" class="btn" data-p="mn-refresh">Refresh</button>' + (mnCanWrite() ? '<button type="button" class="btn" data-p="mn-edit" data-id="' + esc(m.id) + '">Change as a new version</button><button type="button" class="btn" data-p="mn-remove" data-id="' + esc(m.id) + '">' + (armed('mn-del:' + m.id) ? 'Tap again to remove' : 'Remove') + '</button>' : '') + '</div></section>';
   }
   function minAdminHTML() {
     loadMinutes();

@@ -65,6 +65,66 @@ const mins = (no, date, decisions, x) => Object.assign({ no, v: 1, status: 'publ
   ok(/changed after they were first published \(version 2\)/.test(await txt(p, '.mn-sign') || ''), 'version 2: the sign box says the minutes changed');
   await p.context().close();
 
+  // Ann's own sign-off cannot be read (27 Oct 2026: from 26 Oct the rules refused it, so nobody could sign; no signal does
+  // the same, and the phone handles both alike). The sign box says it could not check, not "Checking your sign-off..."
+  // for ever, and the phone does not ask again on every redraw (it waits 5 minutes). A read lost to the signal stands in.
+  const one = {}; one[fsKey(['minutes', 'mone'])] = mins(5, ago(1), 'Gloves at the pass');
+  p = await L.open(b, '#/minutes', { who: 'ann', extra: one, wait: 1800, failReads: '/minutes/[^/]+/signs/' });
+  await L.waitFor(p, () => /Could not check/.test((document.querySelector('.mn-sign') || {}).textContent || ''), null, 5000).catch(() => {});
+  ok(/Could not check your sign-off\. Open the minutes again in a few minutes\./.test(await txt(p, '.mn-sign') || ''), 'own sign-off not read: the sign box says it could not check and what to do (' + await txt(p, '.mn-sign') + ')');
+  for (const h of ['#/prep', '#/minutes', '#/prep', '#/minutes']) { await p.evaluate(x => { location.hash = x; }, h); await L.settle(p, 400); }
+  const asked = await p.evaluate(() => window.__fake.reads.filter(k => /\/minutes\/mone\/signs\//.test(k)).length);
+  ok(asked === 1, 'own sign-off not read: asked once, not again on every redraw (' + asked + ')');
+  // the signal is back: once the 5 minutes are up, opening the minutes again asks again and the Sign button comes
+  await p.evaluate(() => { window.__fake.failReads = null; });
+  await p.clock.fastForward('06:00');
+  for (const h of ['#/prep', '#/minutes']) { await p.evaluate(x => { location.hash = x; }, h); await L.settle(p, 400); }
+  await L.waitFor(p, () => !!document.querySelector('.mn-signbtn'), null, 5000).catch(() => {});
+  ok(await p.$('.mn-signbtn:not([disabled])') !== null, 'own sign-off not read: opened again after the wait, the Sign button is there (' + await txt(p, '.mn-sign') + ')');
+  ok(p.errors.length === 0, 'own sign-off not read: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // the sous chef's register when the sign-offs cannot be listed (refused, as on the live book from 26 Oct): it says so,
+  // and never shows everyone as not signed, a chase list of everyone or a CSV of nobody signed. Refresh reads again.
+  const reg = {}; reg[fsKey(['minutes', 'mreg'])] = mins(6, ago(1), 'New fryer');
+  reg[fsKey(['minutes', 'mreg', 'signs', '1_ann'])] = { v: 1, st: 'present', at: L.NOW - 3600000, name: 'Ann', by: 'ann' };
+  p = await L.open(b, '#/minutes', { who: 'sam', extra: reg, wait: 1800, denyReads: '/minutes/[^/]+/signs$' });
+  await L.waitFor(p, () => !!document.querySelector('[data-p="mn-sous"]'), null, 5000).catch(() => {});
+  await p.click('[data-p="mn-sous"]');
+  await L.waitFor(p, () => /Could not load the sign-offs|Signed/.test((document.querySelector('.p-minutes-page') || {}).textContent || ''), null, 5000).catch(() => {});
+  const regTxt = await txt(p, '.p-minutes-page') || '';
+  ok(/Could not load the sign-offs/.test(regTxt), 'register refused: it says the sign-offs could not be loaded');
+  ok(await p.$('.p-minutes-page .mn-tile') === null && await p.$('.p-minutes-page .mn-chase') === null && !/Signed 0|Chase list/.test(regTxt), 'register refused: no counts and no chase list of everyone (' + regTxt.replace(/\s+/g, ' ').slice(0, 160) + ')');
+  ok(await p.$('[data-p="mn-csv"][disabled]') !== null, 'register refused: Download CSV is off, so no proof of nobody signed');
+  await p.evaluate(() => { window.__fake.denyReads = null; });
+  await p.click('[data-p="mn-refresh"]');
+  await L.waitFor(p, () => /Signed\s*1/.test((document.querySelector('.p-minutes-page .mn-tile') || {}).textContent || ''), null, 5000).catch(() => {});
+  ok(/Signed\s*1\s*of 3/.test(await txt(p, '.p-minutes-page .mn-tile') || ''), 'register refused: Refresh reads again and counts Ann (' + await txt(p, '.p-minutes-page .mn-tile') + ')');
+  ok(await p.$('[data-p="mn-csv"]:not([disabled])') !== null, 'register refused: Download CSV is back once the register is in');
+  ok(p.errors.length === 0, 'register refused: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // the stand-in refuses what the rules refuse (27 Oct 2026), so every click test reads sign-offs the way the live book
+  // must: a person on their own PIN session gets only their own sign-off by id, signed or not yet, and cannot list them;
+  // a chef lists the register; a functions-only account reads none
+  const rd = async (pg, ids) => pg.evaluate(async ([k, ids]) => {
+    const fs = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js'), db = fs.getFirestore();
+    const col = fs.collection(db, 'kitchens', k, 'minutes', 'mnew', 'signs');
+    return Promise.all(ids.map(id => (id ? fs.getDoc(fs.doc(col, id)) : fs.getDocs(col)).then(() => 'read', e => e.code))).then(r => r.join(','));
+  }, [L.PIN, ids]);
+  const both = Object.assign({}, extra); both[fsKey(['minutes', 'mnew', 'signs', '1_bo'])] = { v: 1, st: 'apology', at: L.NOW - 3600000, name: 'Bo', by: 'bo' };
+  p = await L.open(b, '#/prep', { who: 'ann', extra: both, wait: 1200 });
+  let got = await rd(p, ['1_ann', '2_ann', '1_bo', 'x_ann', '1_ann_x', '']);
+  ok(got === 'read,read,permission-denied,permission-denied,permission-denied,permission-denied', 'stand-in: Ann gets her own sign-off (signed or not yet), not Bo\'s, not a bad id, and cannot list them (' + got + ')');
+  await p.evaluate(k => { const c = JSON.parse(JSON.stringify(window.__fake.dump()[k])); c.fnOnlyIds = ['ann']; window.__fake.write(k, c); }, fsKey(['config', 'main']));
+  got = await rd(p, ['1_ann']);
+  ok(got === 'permission-denied', 'stand-in: a functions-only account cannot read even its own sign-off (' + got + ')');
+  await p.context().close();
+  p = await L.open(b, '#/prep', { who: 'sam', extra: both, wait: 1200 });
+  got = await rd(p, ['', '1_bo']);
+  ok(got === 'read,read', 'stand-in: the sous chef lists the register and reads anyone\'s sign-off (' + got + ')');
+  await p.context().close();
+
   await b.close();
   L.report(R);
 })();
