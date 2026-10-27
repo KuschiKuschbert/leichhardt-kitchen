@@ -299,17 +299,24 @@
     api.ready().then(function () {
       var fs = api.fs();
       watchSent(api, fs);
+      var served = false;   // this listener has had the server's answer
       F.unsub = fs.onSnapshot(fs.query(api.colRef('functions'), fs.where('kq', '>=', T.at(T.day(), 0)), fs.orderBy('kq'), fs.limit(150)), { includeMetadataChanges: true }, function (snap) {
+        // No signal before this listener's first server answer (opened offline, or started again at midnight): the copy
+        // in memory holds at most this phone's unsent changes, never the list (27 Oct 2026). The list already shown
+        // stays (at midnight, yesterday's, under "No signal. Last updated"), or the page waits for the server.
+        var fromCopy = !!(snap.metadata && snap.metadata.fromCache);
+        if (fromCopy && !served && snap.docs.every(function (d) { return !!(d.metadata && d.metadata.hasPendingWrites); })) {
+          F.offline = true; if (F.state !== 'ok') F.state = 'offline'; changed(); return;
+        }
+        if (!fromCopy) served = true;
         F.list = snap.docs.filter(function (d) { return !d.data().removed; }).map(function (d) {
           var job = F.jobs[d.id];
           // A cancellation waiting for its server acknowledgement must not look finished on this phone.
           return job && d.metadata && d.metadata.hasPendingWrites ? job.before : derive(Object.assign({ id: d.id }, d.data()));
         });
-        F.offline = !!(snap.metadata && snap.metadata.fromCache);
+        F.offline = fromCopy;
         if (!F.offline) { F.at = now(); F.cached = false; F.state = 'ok';  }
-        // no signal: the copy in memory answers at once, empty unless this phone holds unsent changes (27 Oct 2026). That
-        // is not loaded yet, never "no functions": known() waits for the server's answer
-        else if (F.state !== 'ok') F.state = navigator.onLine === false || !snap.docs.length ? 'offline' : 'loading';
+        else if (F.state !== 'ok') F.state = navigator.onLine === false ? 'offline' : 'loading';
         changed();
       }, function (e) { F.state = 'error'; F.err = e && e.code || ''; F.unsub = null; F.key = ''; changed(); });
     }, function () { F.state = 'error'; changed(); });

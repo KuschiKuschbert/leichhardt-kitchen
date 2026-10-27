@@ -16,7 +16,7 @@ Receipts are immutable. A correction is a new record with a note referring to th
 
 ## Reads and recovery
 
-`js/deliveries.js` loads only on `#/deliveries`. Today's page has one filtered live listener, removed when leaving. A past-date selection uses one server query and retains only successful complete results in this sign-in's memory; Refresh bypasses that copy. No extra reads at normal app startup, polling or persistent private cache. Each save checks one exact id before writing, also used to recover a lost acknowledgement. Read failures are visible and never recorded as an empty history.
+`js/deliveries.js` loads only on `#/deliveries`. Today's page has one filtered live listener, removed when leaving. A past-date selection uses one server query and retains only successful complete results in this sign-in's memory; Refresh bypasses that copy. No extra reads at normal app startup, polling or persistent private cache. Each save checks one exact id before writing, also used to recover a lost acknowledgement. Read failures are visible and never recorded as an empty history. With no signal, Today says so until the server answers (27 Oct 2026), and shows only this phone's receipts still waiting to send, never "No deliveries recorded for this date".
 
 The admin backup reads a single date range for the last 400 days. Nightly backups use their existing 45-day window. A kitchen PIN move copies all receipts without changing their ids, writers or timestamps. No order is marked done by logging a receipt.
 

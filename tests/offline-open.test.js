@@ -3,7 +3,10 @@
 // That answer means "not loaded yet", never "nothing there": the names list, the kitchen lists, Everything to order,
 // the drinks run, guides, pings, minutes and functions say there is no signal, nothing empty is kept on the phone, and
 // each one loads by itself once the signal is back. The stand-in answers like that with __fake.cold.
+// A list not loaded yet stays that way when the cook writes a line with no signal: the copy then holds only that line,
+// which shows under the note with no count, never as the whole list.
 const L = require('./lib');
+const M = require('../js/functions.js');
 const { R, ok } = L.results(), { txt } = L;
 const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
 const today = L.ymd(new Date(L.NOW)), yday = L.ymd(new Date(L.NOW - 86400000));
@@ -15,6 +18,13 @@ const cold = p => p.evaluate(() => { window.__fake.cold = /./; window.__fake.mod
 const warm = p => p.evaluate(() => { window.__lkOff = false; window.__fake.warm(); window.dispatchEvent(new Event('online')); });
 const ls = (p, k) => p.evaluate(k => localStorage.getItem(k), k);
 const until = (p, fn, arg) => L.waitFor(p, fn, arg, 5000).then(() => true, () => false);
+const shows = (p, sel, re) => L.waitFor(p, a => new RegExp(a[1]).test((document.querySelector(a[0]) || {}).textContent || ''), [sel, re.source], 5000).then(() => true, () => false);
+const head = p => txt(p, '.o-page .nb-ph').then(t => t || '');
+// a confirmed function the way the book writes it
+const fnAt = (ymd, hm) => M.kat(ymd, M.hmMin(hm));
+const fnDoc = (name, date) => M.derive({ v: 1, status: 'confirmed', name, date, start: fnAt(date, '18:00'), loc: 'Beer garden', guests: 40, mode: 'all', notes: '', kc: '', kcBy: '', kcAt: 0,
+  rounds: [{ at: fnAt(date, '18:30'), note: '' }], lines: [{ rid: 'antipasto-platter', name: 'Antipasto Platter', unit: 'platter', spec: 'Per platter.', fp: '', qty: 3, u: M.toU([3]) }],
+  was: {}, chg: [], cBy: 'sam', cAt: L.NOW - 86400000, confBy: 'sam', confAt: L.NOW - 86400000, by: 'sam', upd: L.NOW - 3600000 });
 (async () => {
   const b = await L.start();
   let p;
@@ -55,6 +65,11 @@ const until = (p, fn, arg) => L.waitFor(p, fn, arg, 5000).then(() => true, () =>
   ok(t.indexOf(NO_LIST) >= 0 && !/Nothing on the order list/.test(t), 'orders: says there is no signal, not that the list is empty');
   ok(!/0 of 0 ordered/.test(t), 'orders: no 0 of 0 count while the list is not loaded');
   ok(!(await ls(p, 'lk.ord.hist')), 'orders: no empty order history kept for the day');
+  // a line written now: it shows under the note, the note stays, no count (Milk and Brioche buns are on the server)
+  await p.fill('#o-text', 'Lemons'); await p.fill('#o-qty', '2 kg'); await p.press('#o-text', 'Enter'); await L.settle(p, 700);
+  t = await page(p);
+  ok(t.indexOf(NO_LIST) >= 0 && t.indexOf('Lemons') > t.indexOf(NO_LIST) && !/Milk/.test(t), 'orders, a line written with no signal: it shows under the note, which stays (' + t.slice(0, 200) + ')');
+  ok(!/ordered/.test(await head(p)) && !/Everything on this list has been ordered/.test(t), 'orders, a line written with no signal: no "0 of 1 ordered" from that line alone');
   await p.click('[data-p="oview"][data-v="all"]'); await L.settle(p, 700);
   t = await page(p);
   ok(/Could not load every day/.test(t) && !/Nothing waiting to be ordered/.test(t), 'everything to order: says it could not load, not that nothing is waiting');
@@ -66,6 +81,13 @@ const until = (p, fn, arg) => L.waitFor(p, fn, arg, 5000).then(() => true, () =>
   t = await page(p);
   ok(t.indexOf(NO_LIST) >= 0 && !/No transfers for/.test(t) && !/0 transfers/.test(t), 'transfers: says there is no signal, not that there are none');
   ok(t.split('This list shows when the phone is back online').length === 3 && !/No outstanding transfers from earlier days/.test(t), 'still outstanding: says there is no signal, not that there are none');
+  // a transfer logged now also writes its open record (xWrite): Still outstanding must not take that as the whole list
+  await p.fill('#tr-venue', 'Riviera'); await p.fill('#tr-person', 'Jess'); await p.fill('#tr-text', 'Pesto jars'); await p.fill('#tr-amt', '2');
+  await p.click('[data-p="tr-unit"][data-v="L"]');
+  await p.click('.tr-add .nb-addbtn'); await L.settle(p, 700);
+  t = await page(p);
+  ok(t.split('This list shows when the phone is back online').length === 3 && !/No outstanding transfers from earlier days/.test(t), 'transfers, one logged with no signal: Still outstanding still says there is no signal, not that there are none (' + t.slice(0, 200) + ')');
+  ok(/Pesto jars/.test(t) && !/\d+ (out|in)\b|\d+ transfers?\b/.test(await head(p)), 'transfers, one logged with no signal: it shows under the note, with no count');
   await go(p, '#/drinks');
   ok(/Could not load the team's drinks/.test(await page(p)), 'drinks: says it could not load the team\'s drinks');
   ok(!(await ls(p, 'lk.drinks')), 'drinks: no empty drinks list kept on the phone');
@@ -74,12 +96,17 @@ const until = (p, fn, arg) => L.waitFor(p, fn, arg, 5000).then(() => true, () =>
   await p.click('[data-p="today"]'); await L.settle(p, 600);
   t = await page(p);
   ok(t.indexOf(NO_LIST) >= 0 && !/Nothing written for/.test(t) && !/0 of 0 done/.test(t), 'prep, a day forward and back to Today: says there is no signal, not that nothing is written');
+  await p.fill('#p-text', 'Slice tomatoes'); await p.press('#p-text', 'Enter'); await L.settle(p, 700);
+  t = await page(p);
+  ok(t.indexOf(NO_LIST) >= 0 && t.indexOf('Slice tomatoes') > t.indexOf(NO_LIST) && !/of 1 done/.test(t), 'prep, a line written with no signal: it shows under the note, which stays, with no count (' + t.slice(0, 200) + ')');
   await warm(p);
   ok(await until(p, () => !!document.getElementById('nbr-i1')), 'signal back: today\'s prep lines show by themselves');
+  ok(await until(p, () => /Slice tomatoes/.test((document.querySelector('#prep-root') || {}).textContent || '')), 'signal back: the line written with no signal is on the prep list');
   await go(p, '#/orders');
-  ok(/Milk/.test(await page(p)), 'signal back: the order list shows Milk');
+  ok(await shows(p, '#prep-root', /Milk[\s\S]*Lemons|Lemons[\s\S]*Milk/), 'signal back: the order list shows Milk and the line written with no signal');
+  ok((await page(p)).indexOf(NO_LIST) < 0 && /\d+ of \d+ ordered/.test(await head(p)), 'signal back: the order list has its count and no note');
   await go(p, '#/transfers');
-  ok(/Butter/.test(await txt(p, '.tr-outstanding') || ''), 'signal back: yesterday\'s loan is still outstanding');
+  ok(await shows(p, '.tr-outstanding', /Butter/), 'signal back: yesterday\'s loan is still outstanding');
   await go(p, '#/drinks');
   ok(await until(p, () => !!(JSON.parse(localStorage.getItem('lk.drinks') || '{}').by || {}).ann), 'signal back: the team\'s drinks load and are kept');
   ok(p.errors.length === 0, 'signal lost: no page errors ' + p.errors.join(' | '));
@@ -131,6 +158,54 @@ const until = (p, fn, arg) => L.waitFor(p, fn, arg, 5000).then(() => true, () =>
   await warm(p);
   ok(await until(p, () => /Up to date/.test((document.querySelector('.fn-page') || {}).textContent || '')), 'functions: signal back, the list is read and up to date');
   ok(p.errors.length === 0, 'functions: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // 7b. The chefs' minutes register with no signal: not "No minutes have been published yet"
+  p = await L.open(b, '#/minutes', { who: 'sam', extra: mins, cold: '/minutes$', wait: 1500 });
+  await p.click('[data-p="mn-sous"]'); await L.settle(p, 700);
+  t = await page(p);
+  ok(!/No minutes have been published yet/.test(t) && /Could not load the minutes/.test(t), 'minutes register: says it could not load, not that none are published (' + t.slice(0, 160) + ')');
+  await warm(p);
+  ok(await until(p, () => /Sign-off register/.test((document.querySelector('#prep-root') || {}).textContent || '')), 'minutes register: signal back, the register shows');
+  ok(p.errors.length === 0, 'minutes register: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // 7c. Functions at midnight with no signal: the listener starts again from the new day, and the empty copy in memory
+  // does not replace the list already shown (yesterday's evening, read from the server)
+  const tmr = M.addDays(today, 1);
+  p = await L.open(b, '#/fn', { who: 'ann', extra: { [fsKey(['functions', 'f1'])]: fnDoc('Brown 21st', tmr) }, clock: fnAt(today, '23:56'), wait: 1500 });
+  ok(await shows(p, '.fn-page', /Brown 21st/), 'functions at midnight: the function tomorrow shows before midnight');
+  await p.evaluate(() => { window.__fake.cold = /\/functions$/; });
+  await p.clock.fastForward(6 * 60000); await L.settle(p, 800);
+  t = await txt(p, '.fn-page') || '';
+  ok(/Brown 21st/.test(t) && !/No functions on now/.test(t), 'functions at midnight with no signal: the list stays, not "No functions on now" (' + t.slice(0, 200) + ')');
+  ok(/No signal\. Last updated/.test(t), 'functions at midnight with no signal: says there is no signal and when it was last updated');
+  await warm(p);
+  ok(await shows(p, '.fn-page', /Up to date/), 'functions at midnight: signal back, the list is read and up to date');
+  ok(p.errors.length === 0, 'functions at midnight: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // 7d. Delivery received with no signal (Functions only and staff): not "No deliveries recorded for this date"
+  const dlPeople = [['head', 'Head', 'head'], ['sam', 'Sam', 'sous'], ['ann', 'Ann', 'staff'], ['fay', 'Fay', 'fnc']].map(([id, name, role]) => ({ id, name, role, active: true, add: role !== 'fnc', tick: true, del: false }));
+  const dl = { [fsKey(['config', 'main'])]: { people: dlPeople, staffIds: dlPeople.map(x => x.id), headId: 'head', sousIds: ['head', 'sam'], fnIds: ['fay'], fnOnlyIds: ['fay'] },
+    [fsKey(['deliveries', 'd1'])]: { day: today, supplier: 'Bidfood', receivedAt: L.NOW - 60000, recordedAt: L.NOW - 60000, chilled: 2.5, frozen: -18, note: 'Chicken', receivedBy: 'Ann', receivedById: 'ann', by: 'ann' } };
+  dlPeople.forEach(x => { dl[fsKey(['pinset', x.id])] = { at: 1 }; });
+  for (const who of ['fay', 'ann']) {
+    p = await L.open(b, '#/prep', { who, extra: dl, wait: 1500 });
+    await cold(p);
+    await go(p, '#/deliveries'); await L.settle(p, 800);
+    t = await txt(p, '.dl-history') || '';
+    ok(!/No deliveries recorded for this date/.test(t) && /No signal\. Today's deliveries show when the phone is back online\./.test(t), who + ', deliveries with no signal: says there is no signal, not that there are none (' + t.slice(0, 160) + ')');
+    await warm(p);
+    ok(await shows(p, '.dl-history', /Bidfood/), who + ', deliveries: signal back, today\'s delivery shows');
+    ok(p.errors.length === 0, who + ', deliveries: no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+  }
+
+  // 7e. Opened with no signal on a page another script draws: the card names that page, not "Prep book"
+  p = await L.open(b, '#/deliveries', { who: 'ann', cold: '.', fakeMode: 'hold', wait: 1500 });
+  t = await txt(p, '#prep-root h2') || '';
+  ok(t === 'Delivery received' && (await page(p)).indexOf(NO_KITCHEN) >= 0, 'cold open on Delivery received: the no-signal card is headed Delivery received (' + t + ')');
   await p.context().close();
 
   // 8. Saving your usual keeps who is on today in the drinks copy on the phone
