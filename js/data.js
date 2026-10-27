@@ -50,7 +50,7 @@ window.LK_DATA = {
   updated: '27 October 2026',
   allergens: ['Gluten', 'Milk', 'Egg', 'Soy', 'Peanut', 'Tree nut', 'Fish', 'Crustacean', 'Mollusc', 'Sesame'],
   menuOrder: [
-    { title: "Snackin' Plates", ids: ['poutine', 'beetroot-bites', 'brisket-cob', 'lamb-nachos', 'wings', 'haloumi-tacos', 'pork-belly-bites', 'calamari', 'riblets', 'garlic-bread', 'bacon-cheese-bread', 'chips-snack'] },
+    { title: "Snackin' Plates", ids: ['poutine', 'beetroot-bites', 'brisket-cob', 'lamb-nachos', 'buffalo-corn-cob-with-cashew-crumb', 'wings', 'haloumi-tacos', 'pork-belly-bites', 'calamari', 'riblets', 'garlic-bread', 'bacon-cheese-bread', 'chips-snack'] },
     { title: 'Salads', ids: ['caesar', 'green-bowl', 'pumpkin-salad'] },
     { title: 'Big Country Feeds', ids: ['beef-cheek', 'ribs', 'barra', 'carbonara', 'fish-chips', 'lamb-rissoles', 'vegan-rissoles', 'pork-belly', 'pie'] },
     { title: 'Off the Grill', ids: ['rump-250', 'rump-500', 'eye-fillet', 'rib-fillet', 'grill-board', 'taco-board', 'flank'] },
@@ -1076,6 +1076,29 @@ window.LK_DATA = {
         { title: 'Plating', steps: ['Pico de gallo over the top.', 'Smashed avocado puree on one side.', 'Sour cream on the other side.', 'Crumble the feta over.', 'Drizzle the ranch over everything.', 'Pea shoots on top.'] }
       ],
       labelNote: 'Check the corn chip, lamb rub and avocado puree labels.'
+    },
+    {
+      id: 'buffalo-corn-cob-with-cashew-crumb', art: 'buffalo-corn', no: '122', kind: 'snack', forLine: 'Snack', name: 'Buffalo BBQ Corn on the Cob', short: 'Buffalo corn',
+      menu: 'Buffalo BBQ Corn on the Cob: sweet, juicy corn with a tangy buffalo BBQ kick, coated in creamy, spicy mayo and finished with a crunchy toasted cashew crumb.',
+      yield: 'Per serve, on the big round grey plate. A whole corn cob brushed with chilli jalapeño butter, through the impinger, coated in buffalo mayo, crumbed with toasted cashews, pea shoots on top.',
+      ingredients: [
+        { q: '1', name: 'Corn cob', note: 'whole' },
+        { q: '[Qty]', name: 'Chilli jalapeño butter', note: 'brushed over the whole cob', tags: ['Milk'] },
+        { q: '[Qty]', name: 'Buffalo mayo', note: 'coats the cob', tags: ['Egg'] },
+        { q: '[Qty]', name: 'Toasted cashews', note: 'the crumb', tags: ['Tree nut'] },
+        { q: '[Qty]', name: 'Pea shoots', note: 'on top' }
+      ],
+      pins: [
+        { label: 'Corn cob', x: 17.9, y: 55.7, side: 'left', tags: [], note: 'Whole cob, through the impinger.' },
+        { label: 'Chilli jalapeño butter', x: 60.4, y: 55.0, side: 'right', tags: ['Milk'], note: 'Brushed over the whole cob first.' },
+        { label: 'Buffalo mayo', x: 69.8, y: 49.1, side: 'right', tags: ['Egg'], note: 'Coats the cob.' },
+        { label: 'Toasted cashews', x: 36.8, y: 50.0, side: 'left', tags: ['Tree nut'], note: 'The crumb, all over.' },
+        { label: 'Pea shoots', x: 57.5, y: 38.7, side: 'left', tags: [], note: 'On top.' }
+      ],
+      sections: [
+        { title: 'Method', steps: ['Brush the whole corn cob with chilli jalapeño butter and run it through the impinger.', 'Coat in buffalo mayo.', 'Crumb with toasted cashews.', 'Serve on the big round grey plate.', 'Pea shoots on top.'] }
+      ],
+      labelNote: 'Check the chilli jalapeño butter and buffalo mayo labels.'
     },
     {
       id: 'beetroot-bites', art: 'beetroot-bites', no: '47', kind: 'snack', forLine: 'Snack', name: 'Crispy Beetroot Bites',

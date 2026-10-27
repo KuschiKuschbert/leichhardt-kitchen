@@ -652,7 +652,8 @@
   vary('sauce-mayo-zigzag', 'american-mustard-zigzag', 'American mustard, zigzag', 'Savoury', 'american mustard yellow mustard hot dog zigzag', { c: S['american mustard'] });
   vary('sauce-mayo-zigzag', 'okonomi-sauce-zigzag', 'Okonomi sauce, zigzag', 'Savoury', 'okonomi sauce okonomiyaki tonkatsu bulldog zigzag', { c: '#4A2416' });
   vary('sauce-mayo-zigzag', 'ranch-drizzle', 'Ranch, drizzle', 'Savoury', 'ranch drizzle creamy ranch zigzag over the top nachos', { c: S.ranch, sw: 1.4 });
-  vary('sauce-dollop', 'spicy-mayo-dollop', 'Spicy mayo, dollop', 'Savoury', 'spicy mayo chilli mayo hot mayo dollop', { c: S['spicy mayo'], bits: [['chilli', 6]] });
+  vary('sauce-dollop', 'buffalo-mayo-dollop', 'Buffalo mayo, dollop', 'Savoury', 'buffalo mayo spicy mayo chilli mayo hot mayo dollop', { c: S['buffalo mayo'], bits: [['chilli', 6]] });
+  vary('sauce-brush-stroke', 'chilli-jalapeno-butter', 'Chilli jalapeño butter, brushed', 'Savoury', 'chilli jalapeno butter chili butter jalapeno butter melted butter brushed corn', { c: S['chilli butter'], bits: [['chilli', 10], ['herb', 6]] });
   vary('sauce-brush-stroke', 'buffalo-bbq-glaze', 'Buffalo BBQ sauce, brushed', 'Savoury', 'buffalo bbq sauce buffalo sauce hot sauce wings glaze brushed', { c: S.buffalo });
   vary('sauce-poured-broth', 'laksa-broth', 'Laksa broth, poured', 'Savoury', 'laksa broth coconut curry soup', { c: S.laksa, bits: [['redoil', 10]] });
   vary('sauce-poured-broth', 'dashi-broth', 'Dashi, poured', 'Savoury', 'dashi broth japanese stock ramen', { c: '#D9B87A' });

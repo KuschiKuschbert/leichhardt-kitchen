@@ -648,8 +648,8 @@
     return [[-16, -9], [16, -7], [0, 13]].map(function (c) { return P.g(P.at(c[0], c[1], (rnd() - 0.5) * 30, 1.4), beetBite(P)); }).join('');
   }
 
-  // a whole cob brushed with buffalo BBQ sauce, rolled in spicy mayo and toasted cashew crumb: crumb all over,
-  // the orange mayo and a streak of sauce showing through, a few yellow kernels at the bare ends
+  // a whole cob brushed with chilli jalapeno butter, coated in buffalo mayo and crumbed with toasted cashews: crumb all
+  // over, the orange mayo and a streak of the chilli butter showing through, a few yellow kernels at the bare ends
   function buffaloCob(P, rnd) {
     var h = 44, r = 16, d = 'M' + (-h + r) + ' ' + (-r) + ' H' + (h - r) + ' A' + r + ' ' + r + ' 0 0 1 ' + (h - r) + ' ' + r + ' H' + (-h + r) + ' A' + r + ' ' + r + ' 0 0 1 ' + (-h + r) + ' ' + (-r) + ' Z';
     var out = P.shadow(d, 2, 2.5) + P.path(d, '#E8B48A', '#A8682E', 1);
@@ -734,7 +734,7 @@
     { id: 'pico-de-gallo-dish', name: 'Pico de gallo', sub: 'Mexican', kw: 'pico de gallo salsa fresca salsa tomato onion coriander jalapeno', form: 'bowlful', cook: 'fresh', role: 'sidedish', g: 100, w: 80, h: 80, side: { s: 'cup', h: 26, c: '#D9473B' }, draw: dip({ col: '#E26A5A', top: DIPS.pico }) },
     { id: 'guacamole-molcajete', name: 'Guacamole in a stone bowl', sub: 'Mexican', kw: 'guacamole guac avocado dip molcajete stone bowl', form: 'bowlful', cook: 'fresh', role: 'sidedish', g: 120, w: 86, h: 86, side: { s: 'cup', h: 30, c: '#8DB255' }, draw: dip({ R: 41, col: '#8DB255', ware: '#55534F', stone: true, top: DIPS.guac }) },
     // other
-    { id: 'buffalo-corn-cob', name: 'Buffalo corn cob, cashew crumb', sub: 'Other', kw: 'buffalo corn cob corn on the cob coated spicy mayo cashew crumb crumbed corn elote street corn', form: 'piece', cook: 'grilled', role: 'main', n: 1, w: 92, h: 36, side: { s: 'stick', h: 34, c: '#D9A866' }, draw: buffaloCob },
+    { id: 'buffalo-corn-cob', name: 'Buffalo corn cob, cashew crumb', sub: 'Other', kw: 'buffalo bbq corn cob corn on the cob coated buffalo mayo spicy mayo cashew crumb chilli jalapeno butter crumbed corn elote street corn', form: 'piece', cook: 'grilled', role: 'main', n: 1, w: 92, h: 36, side: { s: 'stick', h: 34, c: '#D9A866' }, draw: buffaloCob },
     { id: 'baked-camembert-box', name: 'Baked camembert in its box', sub: 'Other', kw: 'baked camembert brie whole cheese box scored garlic rosemary honey sharing', form: 'whole', cook: 'baked', role: 'main', n: 1, w: 86, h: 86, side: { s: 'disc', h: 24, c: '#F4EEDC' }, draw: camembert },
     { id: 'shepherds-pie-portion', name: 'Shepherd\'s pie portion', sub: 'Other', kw: 'shepherds pie cottage pie mince mash top browned portion square tray bake', form: 'portion', cook: 'baked', role: 'main', g: 350, w: 72, h: 70, side: { s: 'slab', h: 40, c: '#EFDDB0' }, draw: shepherds },
     { id: 'beetroot-bites', name: 'Beetroot bites, crispy', sub: 'Fried bites', kw: 'beetroot bites crispy beetroot balls beet bites plant based vegan rissoles crumbed', form: 'pile', cook: 'fried', role: 'main', n: 3, w: 66, h: 56, side: { s: 'pile', h: 22, c: '#7A1F45' }, draw: beetBites },
