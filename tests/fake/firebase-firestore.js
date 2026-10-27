@@ -4,6 +4,11 @@
 //   __fake.deny = /regex/ refuses only the writes whose path matches
 //   __fake.failReads = /regex/ makes getDoc, getDocs and getDocFromServer fail (unavailable) for the paths that match, like a read lost to a bad signal
 //   __fake.denyReads = /regex/ makes getDocs refuse (permission-denied) the collections that match, like rules not published yet
+//   __fake.cold = /regex/ is no signal the way the book's memory cache answers it (26 Oct 2026, #387, memoryLocalCache), for
+//   the paths that match: a listener started then answers at once from an empty copy (only this page's own unsent
+//   writes), marked fromCache; getDocs answers the same way; getDoc, getDocFromServer and getDocsFromServer refuse
+//   (unavailable). Listeners started before keep their documents, marked fromCache. __fake.warm() is the signal coming
+//   back: cold goes, held writes are sent ('hold' becomes 'ok') and every listener gets the server's answer.
 // __fake.reads lists the paths asked for (getDoc, getDocs, getDocFromServer) and __fake.readLog every document read from the "server";
 // getDocsFromCache only returns documents this page has read before.
 const KEY = 'fake.fs';
@@ -26,6 +31,10 @@ const seen = new Set((() => { try { return JSON.parse(sessionStorage.getItem('fa
 let seenSave = 0;
 function remember(k) { if (seen.has(k)) return; seen.add(k); if (!seenSave) seenSave = setTimeout(() => { seenSave = 0; try { sessionStorage.setItem('fake.seen', JSON.stringify([...seen])); } catch (e) {} }, 0); }
 window.__fake.release = function () { const h = held.splice(0); pendingKeys.clear(); h.forEach(f => f()); notify(); };
+window.__fake.warm = function () {
+  window.__fake.cold = null; subs.forEach(s => { s.cold = false; });
+  if (window.__fake.mode === 'hold') { window.__fake.mode = 'ok'; window.__fake.release(); } else notify();
+};
 window.__fake.dump = function () { return store; };
 // a write from another phone: the document changes under this page and its listeners hear about it
 window.__fake.write = function (path, data) {
@@ -66,7 +75,18 @@ export function increment(n) { return { __inc: n }; }
 const key = p => p.join('/');
 function snapDoc(path) {
   const v = store[key(path)];
-  return { id: path[path.length - 1], ref: { type: 'doc', path, id: path[path.length - 1] }, metadata: { hasPendingWrites: pendingKeys.has(key(path)) }, exists: () => v !== undefined, data: () => (v === undefined ? undefined : JSON.parse(JSON.stringify(v))) };
+  return { id: path[path.length - 1], ref: { type: 'doc', path, id: path[path.length - 1] }, metadata: { fromCache: false, hasPendingWrites: pendingKeys.has(key(path)) }, exists: () => v !== undefined, data: () => (v === undefined ? undefined : JSON.parse(JSON.stringify(v))) };
+}
+// __fake.cold: is this path answered from the empty copy in memory (no signal)?
+function cold(ref) { const c = window.__fake.cold; return !!(c && c.test(key(ref.path))); }
+// what the memory copy holds with no signal: only this page's unsent writes, marked fromCache
+function cacheSnap(ref) {
+  if (ref.type === 'doc') {
+    const k = key(ref.path), has = pendingKeys.has(k), d = snapDoc(ref.path);
+    return { id: d.id, ref: d.ref, metadata: { fromCache: true, hasPendingWrites: has }, exists: () => has && d.exists(), data: () => (has ? d.data() : undefined) };
+  }
+  const docs = listCol(ref.path, ref.c, ref.group).docs.filter(d => pendingKeys.has(key(d.ref.path)));
+  return { docs, empty: !docs.length, size: docs.length, metadata: { fromCache: true, hasPendingWrites: docs.length > 0 }, forEach: f => docs.forEach(f) };
 }
 function listCol(path, c, group) {
   const pre = key(path) + '/', n = path.length + 1;
@@ -82,7 +102,7 @@ function listCol(path, c, group) {
     if (x.k === 'after') { const i = docs.findIndex(d => d.id === x.id); docs = i < 0 ? [] : docs.slice(i + 1); }
     if (x.k === 'limit') docs = docs.slice(0, x.n);
   });
-  return { docs, empty: !docs.length, size: docs.length, forEach: f => docs.forEach(f) };
+  return { docs, empty: !docs.length, size: docs.length, metadata: { fromCache: false, hasPendingWrites: docs.some(d => d.metadata.hasPendingWrites) }, forEach: f => docs.forEach(f) };
 }
 function result(ref, keep = true) {
   const r = ref.type === 'doc' ? snapDoc(ref.path) : listCol(ref.path, ref.c, ref.group);
@@ -115,6 +135,7 @@ export function getDoc(ref) {
   if (/\/config\/admins$/.test(key(ref.path)) && !window.__fakeUser) return Promise.reject({ code: 'permission-denied' });
   if (readRefused(ref)) return Promise.reject({ code: 'permission-denied' });
   window.__fake.reads.push(key(ref.path));
+  if (cold(ref)) return pendingKeys.has(key(ref.path)) ? delay(cacheSnap(ref)) : Promise.reject({ code: 'unavailable' });
   if (readFails(ref)) return Promise.reject({ code: 'unavailable' });
   bill('get', key(ref.path), 1);
   return delay(result(ref));
@@ -144,7 +165,7 @@ function denied(ref) {
   if (/^kitchens\/[^/]+\/minutes$/.test(k) && !window.__fakeUser && !(ref.c || []).some(x => x.k === 'where' && x.f === 'pubAt' && (x.op === '>=' || x.op === '>') && x.v >= 1)) return true;
   return /^kitchens\/[^/]+\/book$/.test(k) || !!(d && d.test(k));
 }
-export function getDocs(ref) { window.__fake.reads.push(key(ref.path)); if (readFails(ref)) return Promise.reject({ code: 'unavailable' }); if (denied(ref)) return Promise.reject({ code: 'permission-denied' }); const r = result(ref); bill('query', key(ref.path), r.docs.length); return delay(r); }
+export function getDocs(ref) { window.__fake.reads.push(key(ref.path)); if (cold(ref)) return delay(cacheSnap(ref)); if (readFails(ref)) return Promise.reject({ code: 'unavailable' }); if (denied(ref)) return Promise.reject({ code: 'permission-denied' }); const r = result(ref); bill('query', key(ref.path), r.docs.length); return delay(r); }
 function readFails(ref) { const f = window.__fake.failReads; return !!(f && f.test(key(ref.path))); }
 // a read that must come from the server: refused when there is no signal ('hold', 'fail'). __fake.server can hold a
 // newer copy of a document than this phone has (say a line ticked on another phone), keyed by path.
@@ -153,7 +174,7 @@ export function getDocFromServer(ref) {
   window.__fake.reads.push(k);
   // __fake.stall = /regex/: a read from the server that never answers, like a half-dropped connection
   if (window.__fake.stall && window.__fake.stall.test(k)) return new Promise(() => {});
-  if (window.__fake.mode === 'hold' || window.__fake.mode === 'fail' || readFails(ref)) return Promise.reject({ code: 'unavailable' });
+  if (window.__fake.mode === 'hold' || window.__fake.mode === 'fail' || cold(ref) || readFails(ref)) return Promise.reject({ code: 'unavailable' });
   if (readRefused(ref)) return Promise.reject({ code: 'permission-denied' });
   bill('server', k, 1);
   if (sv && k in sv) { const v = sv[k]; return delay({ id: ref.path[ref.path.length - 1], ref, exists: () => v != null, data: () => (v == null ? undefined : JSON.parse(JSON.stringify(v))) }); }
@@ -166,7 +187,7 @@ export function getDocsFromServer(ref) {
   const byId = (ref.c || []).filter(x => x.k === 'where' && x.f === '__name__' && (x.op === 'in' || x.op === '=='))[0];
   // a query by id asks for those documents by name, so each one is listed in reads, like getDocFromServer
   if (byId) (byId.op === 'in' ? byId.v : [byId.v]).forEach(id => window.__fake.reads.push(k + '/' + id)); else window.__fake.reads.push(k);
-  if (window.__fake.mode === 'hold' || window.__fake.mode === 'fail' || readFails(ref)) return Promise.reject({ code: 'unavailable' });
+  if (window.__fake.mode === 'hold' || window.__fake.mode === 'fail' || cold(ref) || readFails(ref)) return Promise.reject({ code: 'unavailable' });
   if (denied(ref)) return Promise.reject({ code: 'permission-denied' });
   let docs;
   if (byId) {
@@ -188,19 +209,24 @@ export function getDocsFromCache(ref) {
 }
 export function onSnapshot(ref, next, err) {
   if (next && typeof next === 'object') { next = err; err = arguments[3]; }   // onSnapshot(ref, options, next, error)
-  const s = { ref, next, last: null };
+  const s = { ref, next, last: null, cold: cold(ref) };
   subs.add(s);
   setTimeout(() => { if (subs.has(s)) deliver(s); }, 5);
   return () => subs.delete(s);
 }
-// a listener pays for what it first sends, then only for documents that changed since its last snapshot
+// a listener pays for what it first sends, then only for documents that changed since its last snapshot; an answer
+// from the empty copy in memory (cold) costs nothing
 function deliver(s) {
+  if (s.cold) { s.next(cacheSnap(s.ref)); return; }
   const r = s.ref.type === 'doc' ? snapDoc(s.ref.path) : listCol(s.ref.path, s.ref.c), docs = s.ref.type === 'doc' ? [r] : r.docs;
   const now = {}; docs.forEach(d => { now[key(d.ref.path)] = JSON.stringify(d.exists() ? d.data() : null); });
   if (!s.last) bill('listen', key(s.ref.path), docs.length);
   else { const ch = Object.keys(now).filter(k => s.last[k] !== now[k]).length; if (ch) window.__fake.bill.push({ kind: 'listen+', path: key(s.ref.path), n: ch }); }
   s.last = now;
-  s.next(result(s.ref));
+  const out = result(s.ref);
+  // started before the signal went: it keeps its documents, from the copy in memory
+  if (cold(s.ref)) out.metadata = Object.assign({}, out.metadata, { fromCache: true });
+  s.next(out);
 }
 function notify() { subs.forEach(s => { try { deliver(s); } catch (e) { console.error(e); } }); }
 function resolveVal(v, old) {

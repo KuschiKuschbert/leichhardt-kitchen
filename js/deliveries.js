@@ -61,7 +61,10 @@
       (!M.attempt ? '<button class="btn" type="button" data-dl="clear"' + (M.busy ? ' disabled' : '') + '>Clear form</button>' : '') + '</div></form>' +
       '<section class="dl-history" aria-labelledby="dl-records"><div class="dl-history-head"><h2 id="dl-records">' + (M.day === T.day() ? 'Today\'s deliveries' : 'Delivery records') + '</h2><button class="btn" type="button" data-dl="refresh">Refresh</button></div>' +
       (admin() ? '<label class="dl-field dl-filter" for="dl-view-day"><span class="label">View date</span><input type="date" id="dl-view-day" value="' + esc(M.day) + '" max="' + T.day() + '"></label>' : '') +
-      '<p class="hint">' + esc(M.day) + '</p>' + (M.state === 'error' ? '<p class="dl-error" role="alert">Could not read delivery records. Check the connection and tap Refresh.</p>' : M.state !== 'ok' ? '<p role="status">Loading deliveries...</p>' :
+      '<p class="hint">' + esc(M.day) + '</p>' + (M.state === 'error' ? '<p class="dl-error" role="alert">Could not read delivery records. Check the connection and tap Refresh.</p>' :
+        // no signal, not loaded yet: the note, then only this phone's receipts still waiting to send
+        M.state === 'offline' ? '<p class="dl-error" role="status">No signal. Today\'s deliveries show when the phone is back online.</p>' + (M.rows.length ? '<ol class="dl-receipts">' + M.rows.map(row).join('') + '</ol>' : '') :
+        M.state !== 'ok' ? '<p role="status">Loading deliveries...</p>' :
         M.rows.length ? '<ol class="dl-receipts">' + M.rows.map(row).join('') + '</ol>' : '<p class="hint">No deliveries recorded for this date.</p>') + '</section></div>';
     if (focus) { var el = M.root.querySelector('[data-dl-field="' + focus + '"]'); if (el) { el.focus({ preventScroll: true }); if (pos) el.setSelectionRange(pos[0], pos[1]); } }
   }
@@ -81,8 +84,16 @@
     if (date !== T.day() && !force && M.cache[date]) { M.rows = M.cache[date]; M.state = 'ok'; draw(); return; }
     B.ready().then(function () {
       if (g !== generation || !allowed() || !M.root) return;
-      var f = B.fs(), q = f.query(B.colRef('deliveries'), f.where('day', '==', date));
-      var done = function (sn) { if (g !== generation || !allowed() || !M.root) return; M.rows = rows(sn); M.state = 'ok'; if (date !== T.day()) M.cache[date] = M.rows; draw(); };
+      var f = B.fs(), q = f.query(B.colRef('deliveries'), f.where('day', '==', date)), last = {};
+      // No signal (27 Oct 2026): Today's first answer can come from the copy in memory, which holds at most this
+      // phone's unsent receipts. That is not loaded yet, never "no deliveries": 'offline' until the server answers
+      // (LK_PREP.book().listSnap sets last.st; an older js/prep.js without it keeps the old behaviour). Every
+      // snapshot is drawn, so "Waiting for connection" goes once a receipt is sent.
+      var done = function (sn) {
+        if (g !== generation || !allowed() || !M.root) return;
+        if (date === T.day() && B.listSnap) B.listSnap(sn, M.state, last);
+        M.rows = rows(sn); M.state = last.st === 'offline' ? 'offline' : 'ok'; if (date !== T.day()) M.cache[date] = M.rows; draw();
+      };
       var failed = function () { if (g !== generation) return; M.rows = []; M.state = 'error'; draw(); };
       if (date === T.day()) stop = f.onSnapshot(q, { includeMetadataChanges: true }, done, failed);
       else return f.getDocsFromServer(q).then(done, failed);
