@@ -90,7 +90,7 @@
     pin: lsGet('lk.prep.pin') || '', pinInput: '', pinError: '',
     who: lsGet('lk.prep.who') || '',
     date: dayNow(),
-    config: null, configState: 'idle',   // idle, loading, ok, badpin, error
+    config: null, configState: 'idle',   // idle, loading, ok, offline (no signal, nothing read yet), badpin, error
     items: [], itemsState: 'idle', showRemoved: false,
     section: '', text: '', qty: '', recipeSearch: '', recipeOpen: false, recipeAll: false, tab: '',
     authed: false, tok: '', pinStep: '', pinData: null, pf1: '', pf2: '', pinMsg: '',
@@ -143,9 +143,17 @@
     var ack = FB.appCheckEnterpriseKey || FB.appCheckKey;
     sdkP = sdkFiles().then(function (m) {
       var app = m[0].initializeApp(FB), rawFs = m[1], fs = Object.assign({}, rawFs), au = m[2], db;
+      /* No signal (27 Oct 2026): Firestore keeps only a copy in memory (memoryLocalCache below), so a query with no signal
+         answers at once from that copy (fromCache), holding only what live listeners and unsent writes hold. That is
+         never the whole answer, so getDocs treats it as a failed read: every caller keeps what it had, saves nothing
+         and tries again later, instead of taking it as "nothing there". No extra reads. */
       ['getDoc', 'getDocs', 'getDocFromServer', 'getDocsFromServer'].forEach(function (method) {
         if (!rawFs[method]) return;
-        fs[method] = function () { var epoch = accessEpoch; return rawFs[method].apply(rawFs, arguments).then(function (value) { if (epoch !== accessEpoch) throw { code: 'cancelled' }; return value; }); };
+        fs[method] = function () { var epoch = accessEpoch; return rawFs[method].apply(rawFs, arguments).then(function (value) {
+          if (epoch !== accessEpoch) throw { code: 'cancelled' };
+          if (method === 'getDocs' && cacheOnly(value)) throw { code: 'unavailable', cache: true };
+          return value;
+        }); };
       });
       if (ack && m[3]) { try { m[3].initializeAppCheck(app, { provider: FB.appCheckEnterpriseKey ? new m[3].ReCaptchaEnterpriseProvider(FB.appCheckEnterpriseKey) : new m[3].ReCaptchaV3Provider(FB.appCheckKey), isTokenAutoRefreshEnabled: true }); } catch (e) {} }
       try { db = fs.initializeFirestore(app, { localCache: fs.memoryLocalCache() }); }
@@ -185,17 +193,28 @@
     sdk().then(function () {
       if (epoch !== accessEpoch) return;
       scope = S.pin + '|' + (kitchenAccess() ? 'kitchen' : 'login');
-      if (cfgKey === scope && unsubCfg) { S.configState = 'ok'; draw(); return; }
+      if (cfgKey === scope && unsubCfg) { S.configState = cfgLast || 'loading'; draw(); return; }
       if (unsubCfg) unsubCfg();
-      cfgKey = scope;
+      cfgKey = scope; cfgLast = '';
       var full = scope.slice(-7) === 'kitchen';
-      unsubCfg = fb.fs.onSnapshot(full ? cfgDoc() : docRef('login', 'roster'), function (snap) {
+      // includeMetadataChanges: the server's answer also comes in when it is the same as the copy's (both missing);
+      // those snapshots are not billed
+      unsubCfg = fb.fs.onSnapshot(full ? cfgDoc() : docRef('login', 'roster'), { includeMetadataChanges: true }, function (snap) {
         if (cfgKey !== scope) return;
+        // No signal (27 Oct 2026): settings missing from the copy in memory are not loaded yet, never "no staff". Nobody
+        // is signed in from them (resume waits) and the page says there is no signal. The server's answer comes in on
+        // this same listener once the signal is back.
+        if (!snap.exists() && cacheOnly(snap)) { if (cfgLast !== 'ok') { cfgLast = 'offline'; S.configState = 'offline'; draw(); } return; }
+        var wasOff = cfgLast === 'offline';
+        cfgLast = 'ok';
         S.configFull = full;
         S.config = snap.exists() ? snap.data() : { people: [] };
         S.config.people = S.config.people || [];
         headFix(S.config);
         S.configState = 'ok'; resume();
+        // the sign-in list came after no signal: a person already signed in on this phone gets the kitchen's own
+        // settings and lists now (resume() does this itself for the person it signs in, and then cfgKey has moved on)
+        if (wasOff && !full && kitchenAccess()) setTimeout(function () { if (cfgKey === scope) accessChanged(); }, 0);
         if (full && kitchenAccess()) { pastCheck(); refreshDraft(); watchItems(); watchSections(); loadLearned(); }
         featSync();
         // the first PIN windows, once the settings are in (does nothing once everyone has one)
@@ -211,8 +230,25 @@
       });
     }, function () { S.configState = 'error'; draw(); });
   }
-  var unsubOrd = null, ordKey = '';
-  var unsubW = null, wKey = '', unsubX = null, xKey = '', unsubXO = null;
+  /* An answer from the copy in memory (no signal), not from the server. Since 25 Oct 2026 that copy holds only what
+     this page's live listeners and unsent writes hold, so it is "not loaded yet", never "nothing there". */
+  function cacheOnly(sn) { return !!(sn && sn.metadata && sn.metadata.fromCache); }
+  /* What a list listener does with a snapshot (27 Oct 2026). The lists listen with includeMetadataChanges, so the
+     server's first answer comes in even when the list is empty (metadata snapshots are not billed). 'wait': the empty
+     copy in memory answered and the list has not loaded yet (no signal), so it stays 'offline' until the server answers
+     or the copy holds lines. 'same': only the metadata changed since the last one drawn (a write reaching the server,
+     the signal coming or going), so nothing is drawn again. Otherwise 'new'. last: { sig, meta } for that list. */
+  function listSnap(snap, state, last) {
+    var m = snap.metadata || {}, meta = (m.fromCache ? 'c' : '') + (m.hasPendingWrites ? 'p' : '');
+    if (state !== 'ok' && m.fromCache && !snap.docs.length) return 'wait';
+    var sig = JSON.stringify(snap.docs.map(function (d) { return [d.id, d.data()]; })), same = state === 'ok' && last.sig === sig && last.meta !== meta;
+    last.sig = sig; last.meta = meta;
+    return same ? 'same' : 'new';
+  }
+  var OFF_LIST = 'No signal. This list shows when the phone is back online. What you add now is sent then.';
+  var cfgLast = '';   // what the settings listener now running last had: '' nothing yet, 'offline' only the empty copy, 'ok'
+  var unsubOrd = null, ordKey = '', ordSnap = {};
+  var unsubW = null, wKey = '', unsubX = null, xKey = '', unsubXO = null, wSnap = {}, xSnap = {}, xoSnap = {};
   /* Stops every live listener (kitchen PIN forgotten or moved), so nothing keeps reading the old PIN. */
   function stopLive() {
     [unsubCfg, unsubItems, unsubSec, unsubAct, unsubOrd, unsubW, unsubX, unsubXO].forEach(function (u) { if (u) u(); });
@@ -236,6 +272,8 @@
     if (unsubItems) unsubItems();
     itemsKey = key; S.itemsState = 'loading'; itemsSig = '';
     unsubItems = fb.fs.onSnapshot(itemsCol(S.date), { includeMetadataChanges: true }, function (snap) {
+      // no signal and this day not loaded yet (a day the phone moved to, or today again after another day): not "nothing written"
+      if (listSnap(snap, S.itemsState, {}) === 'wait') { S.items = []; itemsSig = ''; if (S.itemsState !== 'offline') { S.itemsState = 'offline'; draw(); } return; }
       // when the server confirms a change only the "Not sent" marks differ: those are patched, not the whole page drawn
       var sig = JSON.stringify(snap.docs.map(function (d) { return [d.id, d.data()]; })), same = sig === itemsSig && S.itemsState === 'ok';
       itemsSig = sig;
@@ -868,6 +906,8 @@
     S.text = S.qty = S.otext = S.oqty = ''; S.wf = { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }; S.xf = xBlank();
     if (mlf) mlf.text = '';
     S.config = null; S.configFull = false; S.configState = 'idle'; S.past = []; S.pastFor = ''; S.week = null; S.ordHist = []; S.ordHistFor = ''; S.wSum = S.xSum = S.wStats = S.xStats = S.wNote = null;
+    // the next person's pings and minutes are read for them straight away, not after this person's failed read
+    S.notesErr = S.minsErr = S.gErr = false; delete S.retryAt.notes; delete S.retryAt.mins; onlineRetry = {};
     S.items = []; S.ordLines = []; S.ordAll = []; S.wLines = []; S.xLines = []; S.notes = null; S.notesBusy = false; S.nSaving = false; S.notesFor = ''; S.nPast = null; S.nPastOpen = false; S.nSeen = null; S.nPrivateError = ''; S.mins = null; S.guides = null; S.activity = []; S.hist = {}; S.stats = null;
     ['lk.fn', 'lk.mail.sent', 'lk.drinks', 'lk.guides', 'lk.notes', 'lk.minutes'].forEach(function (k) { lsSet(k, ''); });
  if (window.LK_DELIVERY) window.LK_DELIVERY.reset(); if (window.LK_SUP) window.LK_SUP.reset(); if (supplierService) supplierService.reset(); sessDrop(); ksClose(); noteClose('shut'); S.nJust = null; S.guestIn = false; lsSet('lk.prep.guest', ''); S.drinkAsk = ''; S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; tdReset(); lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); accessChanged(); }
@@ -896,7 +936,7 @@
   // 'yes', 'no', 'wait' while who is signed in is still being read, or 'nopin'
   function fnState() {
     if (fnOK()) return 'yes';
-    if (S.pin && (S.configState === 'idle' || S.configState === 'loading' || (S.configState === 'ok' && !resumed && !!S.who))) return 'wait';
+    if (S.pin && (S.configState === 'idle' || S.configState === 'loading' || S.configState === 'offline' || (S.configState === 'ok' && !resumed && !!S.who))) return 'wait';
     return S.pin ? 'no' : 'nopin';
   }
   /* Manage staff, the Minutes register and Shift pings are drawn on the prep list's address. Leaving it (Orders, the
@@ -948,7 +988,7 @@
   // 'yes', 'no', or 'wait' while the kitchen settings (who is Head chef) are still being read
   function bookState() {
     if (bookEdit()) return 'yes';
-    if (S.pin && (S.configState === 'idle' || S.configState === 'loading' || (S.configState === 'ok' && !resumed && !!S.who))) return 'wait';
+    if (S.pin && (S.configState === 'idle' || S.configState === 'loading' || S.configState === 'offline' || (S.configState === 'ok' && !resumed && !!S.who))) return 'wait';
     return S.pin ? 'no' : 'nopin';
   }
   /* What js/manage.js needs to read and write the head chef's book: the same write path (W, with the PIN proof) and
@@ -979,7 +1019,7 @@
   }
   function supplierState() {
     if (!S.pin) return 'nopin';
-    if (S.configState === 'idle' || S.configState === 'loading' || sessP || (S.who && !resumed)) return 'wait';
+    if (S.configState === 'idle' || S.configState === 'loading' || S.configState === 'offline' || sessP || (S.who && !resumed)) return 'wait';
     return supplierRead() ? 'yes' : 'no';
   }
   function supplierOccurrences() {
@@ -1250,6 +1290,12 @@
   var RETRY_WAIT = 5 * 60000;
   function waiting(k) { return Date.now() < (S.retryAt[k] || 0); }
   function retryLater(k) { S.retryAt[k] = Date.now() + RETRY_WAIT; }
+  /* A read that failed for want of signal (pings, minutes, guides, the drinks run) also tries again as soon as the
+     browser says the phone is back online, not only after its wait (27 Oct 2026). Each failed read leaves its retry
+     here, so nothing is read when nothing failed, and each runs once. */
+  var onlineRetry = {};
+  // a moment after the event, so Firestore has its connection back first
+  window.addEventListener('online', function () { setTimeout(function () { var l = onlineRetry; onlineRetry = {}; Object.keys(l).forEach(function (k) { try { l[k](); } catch (e) {} }); }, 1500); });
   // a line that makes its day the last written day: anything not removed, apart from a function's platter lines
   function rollSource(x) { return !x.deleted && !x.fn; }
   function maybeRoll() {
@@ -3246,8 +3292,9 @@
     if (live.length && doneN === live.length && !S.tab) todayEmpty = '<p class="nb-empty">Everything on this list is ticked off. See Done today under Handy.</p>';
     if (S.tab && !live.some(function (x) { return inTab(x) && (!x.done || lingers(x)); })) todayEmpty = '<p class="nb-empty">Nothing left to do in ' + esc(S.tab === FN_TAB ? 'Functions' : S.tab) + '. Ticked lines are under Done today in Handy.</p>';
     if (!S.tab && !daily.length && fnLive.length && S.itemsState === 'ok') todayEmpty = '<p class="nb-empty">Nothing written for ' + esc(dayName(S.date).toLowerCase()) + ' yet. Function platters are on the Functions tab.</p>';
+    if (S.itemsState === 'offline') todayEmpty = '<p class="nb-empty" role="status">' + OFF_LIST + '</p>';
     var left = '<section class="nb-page nb-left"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + esc(dayName(S.date)) + '</h2><span class="nb-date">' + esc(longDate(S.date)) + '</span></div>' +
-      '<div class="nb-prog">' + doneN + ' of ' + live.length + ' done</div>' + (can('add') ? '<button type="button" class="nb-jump" data-p="write">Write a line</button>' : '') + (doneN ? '<button type="button" class="nb-jump nb-donejump" data-p="donejump">Done today (' + doneN + ')</button>' : '') + '</header>' +
+      (S.itemsState === 'offline' ? '' : '<div class="nb-prog">' + doneN + ' of ' + live.length + ' done</div>') + (can('add') ? '<button type="button" class="nb-jump" data-p="write">Write a line</button>' : '') + (doneN ? '<button type="button" class="nb-jump nb-donejump" data-p="donejump">Done today (' + doneN + ')</button>' : '') + '</header>' +
       (S.itemsState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' : '') +
       '<div class="nb-body">' + (flags ? '<div class="nb-lc">' + flags + '</div>' : '') + (S.tab === FN_TAB ? '' : startHTML(daily)) + pageBody(S.items, S.date) + todayEmpty + '</div>' +
       '<div class="nb-foot">' + add + (add && !can('del') ? '<p class="hint nb-who">Wrote the wrong thing? Undo it straight away, or ask the head chef or a sous chef to remove it.</p>' : '') +
@@ -3772,8 +3819,15 @@
     return '<section class="nb-page o-page is-loading"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + t + '</h2><span class="nb-date">' + esc(longDate(dayNow())) + '</span></div></header>' +
       '<div class="nb-body"><p class="nb-empty">Loading...</p></div></section>';
   }
+  /* the kitchen's settings are not loaded yet and there is no signal (27 Oct 2026): in place of Who are you? or a page
+     that would look empty. The settings listener carries on and the page opens by itself when the signal is back. */
+  function offlineHTML() {
+    return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">' + esc(PAGE_NAME[S.name] || 'Prep book') + '</h2><p class="p-err" role="status">No signal. The kitchen pages open when the phone is back online. Recipes work now.</p>' +
+      '<div class="btn-row"><a class="btn" href="#/recipes">Open the recipes</a></div></section>';
+  }
   function bodyHTML() {
     if (!S.pin) { sdkEarly(); return gateHTML(); }
+    if (S.configState === 'offline') return offlineHTML();
     if (S.configState === 'ok' && !privateAccess() && S.name !== 'admin') return who() ? ownPinHTML() : whoHTML();
     if (privateAccess() && !routeAccess(S.name)) return '<section class="p-card"><h2>Functions account</h2><p>This account can access functions and delivery records.</p><a class="btn" href="#/functions">Open functions</a></section>';
     // a page held back from staff: say so once it is known who is on this phone (or this phone already knows)
@@ -3873,8 +3927,11 @@
     var key = S.pin + '|' + S.ordDate;
     if (key === ordKey && unsubOrd) return;
     if (unsubOrd) unsubOrd();
-    ordKey = key; S.ordState = 'loading';
-    unsubOrd = fb.fs.onSnapshot(ordCol(S.ordDate), function (snap) {
+    ordKey = key; S.ordState = 'loading'; ordSnap = {};
+    unsubOrd = fb.fs.onSnapshot(ordCol(S.ordDate), { includeMetadataChanges: true }, function (snap) {
+      var k = listSnap(snap, S.ordState, ordSnap);
+      if (k === 'wait') { S.ordLines = []; if (S.ordState !== 'offline') { S.ordState = 'offline'; draw(); } return; }
+      if (k === 'same') return;
       S.ordLines = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; x.date = S.ordDate; return x; });
       S.ordState = 'ok'; draw();
     }, function () { S.ordState = 'error'; draw(); });
@@ -4187,10 +4244,10 @@
     }).join('') + '</ul>' : '';
     var body = view === 'all' ? ordAllHTML() :
       (S.ordState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' :
-        ordOverdueHTML(overdue, today) + (shown.length ? '<ul class="nb-rows">' + shown.slice().sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }).map(ordRow).join('') + '</ul>' : (overdue.length ? '' : live.length ? '<p class="nb-empty">Everything on this list has been ordered. See Ordered today below.</p>' : S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : '<p class="nb-empty">Loading...</p>')));
+        ordOverdueHTML(overdue, today) + (shown.length ? '<ul class="nb-rows">' + shown.slice().sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }).map(ordRow).join('') + '</ul>' : (overdue.length ? '' : live.length ? '<p class="nb-empty">Everything on this list has been ordered. See Ordered today below.</p>' : S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : S.ordState === 'offline' ? '<p class="nb-empty" role="status">' + OFF_LIST + '</p>' : '<p class="nb-empty">Loading...</p>')));
     return whoTopHTML('') + tabs +
       '<section class="nb-page o-page' + (view === 'all' ? ' o-all' : '') + '"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + (view === 'all' ? 'To order' : 'Order list') + '</h2><span class="nb-date">' + (view === 'all' ? 'Across the last ' + ORD_DAYS + ' days' : esc(longDate(S.ordDate))) + '</span></div>' +
-      (view === 'day' ? '<div class="nb-prog">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') + '</header>' +
+      (view === 'day' && S.ordState !== 'offline' ? '<div class="nb-prog">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') + '</header>' +
       (view === 'day' && S.ordDate === today ? cutOrdHTML() : '') +
       /* the add box is at the top, so it is always in reach; on big screens the list and the ordered-today list sit side by side below it */
       (view === 'day' && add ? '<div class="nb-foot o-add">' + add + (canBrowse() ? '' : '<p class="hint nb-who">Only the head chef or a sous chef ticks a line as ordered or removes it. Wrote the wrong thing? Undo it straight away, or ask them.</p>') + '</div>' : '') +
@@ -4216,8 +4273,11 @@
     var key = S.pin + '|' + S.wDate;
     if (key === wKey && unsubW) return;
     if (unsubW) unsubW();
-    wKey = key; S.wState = 'loading';
-    unsubW = fb.fs.onSnapshot(wCol(S.wDate), function (snap) {
+    wKey = key; S.wState = 'loading'; wSnap = {};
+    unsubW = fb.fs.onSnapshot(wCol(S.wDate), { includeMetadataChanges: true }, function (snap) {
+      var k = listSnap(snap, S.wState, wSnap);
+      if (k === 'wait') { S.wLines = []; if (S.wState !== 'offline') { S.wState = 'offline'; draw(); } return; }
+      if (k === 'same') return;
       S.wLines = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; x.date = S.wDate; return x; });
       S.wState = 'ok'; draw();
     }, function () { S.wState = 'error'; draw(); });
@@ -4437,10 +4497,10 @@
       '<button type="submit" class="nb-addbtn">Log it</button></div></form>' : '<p class="hint">You can read the wastage log but not write in it.</p>';
     var tot = totalsText(wTotals(live));
     var body = S.wState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' :
-      (shown.length ? '<ul class="nb-rows">' + shown.map(wRow).join('') + '</ul>' : (S.wState !== 'ok' ? '<p class="nb-empty">Loading...</p>' : '<p class="nb-empty">Nothing logged for ' + esc(dayName(S.wDate).toLowerCase()) + ' yet. Log waste when it happens: prep waste, expired stock, cooking faults, returns and excess production.</p>'));
+      (shown.length ? '<ul class="nb-rows">' + shown.map(wRow).join('') + '</ul>' : (S.wState === 'offline' ? '<p class="nb-empty" role="status">' + OFF_LIST + '</p>' : S.wState !== 'ok' ? '<p class="nb-empty">Loading...</p>' : '<p class="nb-empty">Nothing logged for ' + esc(dayName(S.wDate).toLowerCase()) + ' yet. Log waste when it happens: prep waste, expired stock, cooking faults, returns and excess production.</p>'));
     return whoTopHTML(ksTagHTML()) +
       '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Wastage</h2><span class="nb-date">' + esc(longDate(S.wDate)) + (tot ? ' &middot; ' + esc(tot) : '') + '</span></div>' +
-      '<div class="nb-prog">' + live.length + (live.length === 1 ? ' entry' : ' entries') + '</div></header>' +
+      (S.wState === 'offline' ? '' : '<div class="nb-prog">' + live.length + (live.length === 1 ? ' entry' : ' entries') + '</div>') + '</header>' +
       '<p class="w-rule">Write the actual amount and unit, not a dollar value. Unsafe food must never be reused to avoid logging waste.</p>' +
       // the form sits at the top, like the order list, so logging waste on a busy day never means scrolling past every entry
       (add ? '<div class="nb-foot w-addtop">' + add + '</div>' : '') + '<div class="nb-body">' + body + '</div></section>' +
@@ -4513,9 +4573,12 @@
   function watchXOpen() {
     if (!kitchenAccess() || !S.configFull) return;
     if (unsubXO || !fb) return;
-    S.xOpenState = 'loading';
+    S.xOpenState = 'loading'; xoSnap = {};
     var col = fb.fs.collection.apply(null, [fb.db].concat(base(), ['transferOpen']));
-    unsubXO = fb.fs.onSnapshot(fb.fs.query(col, fb.fs.where('open', '==', true)), function (snap) {
+    unsubXO = fb.fs.onSnapshot(fb.fs.query(col, fb.fs.where('open', '==', true)), { includeMetadataChanges: true }, function (snap) {
+      var k = listSnap(snap, S.xOpenState, xoSnap);
+      if (k === 'wait') { S.xOpen = []; if (S.xOpenState !== 'offline') { S.xOpenState = 'offline'; draw(); } return; }
+      if (k === 'same') return;
       S.xOpen = snap.docs.map(function (d) { var v = d.data(); return Object.assign({}, v.record, { date: v.date, id: v.lineId }); });
       S.xOpenState = 'ok'; draw();
     }, function () { S.xOpenState = 'error'; draw(); });
@@ -4543,8 +4606,11 @@
     if (key === xKey && unsubX) return;
     if (unsubX) unsubX();
     // a new day starts empty, so yesterday's lines never show under today's date while the read comes in
-    xKey = key; S.xState = 'loading'; S.xLines = [];
-    unsubX = fb.fs.onSnapshot(xCol(S.xDate), function (snap) {
+    xKey = key; S.xState = 'loading'; S.xLines = []; xSnap = {};
+    unsubX = fb.fs.onSnapshot(xCol(S.xDate), { includeMetadataChanges: true }, function (snap) {
+      var k = listSnap(snap, S.xState, xSnap);
+      if (k === 'wait') { S.xLines = []; if (S.xState !== 'offline') { S.xState = 'offline'; draw(); } return; }
+      if (k === 'same') return;
       S.xLines = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; x.date = S.xDate; return x; });
       S.xState = 'ok'; draw();
     }, function () { S.xState = 'error'; draw(); });
@@ -4751,13 +4817,14 @@
     var outstanding = (S.xOpen || []).filter(function (x) { return x.date !== today && !x.deleted && !x.returned; }).sort(byTime);
     var openBody = '<h3 class="a-ch-h">Still outstanding</h3><p class="hint">Tick the box only when the full amount has been returned. Items stay here across days.</p>' +
       (S.xOpenState === 'error' ? '<p class="p-err">Could not load outstanding transfers. This list may be incomplete. Reload to try again.</p>' :
+      S.xOpenState === 'offline' ? '<p class="nb-empty" role="status">No signal. This list shows when the phone is back online.</p>' :
       S.xOpenState !== 'ok' ? '<p class="nb-empty">Loading outstanding transfers...</p>' :
       outstanding.length ? '<ul class="nb-rows tr-outstanding">' + outstanding.map(function (x) { return '<li class="hint">' + esc(longDate(x.date)) + '</li>' + xRow(x); }).join('') + '</ul>' : '<p class="hint">No outstanding transfers from earlier days.</p>');
     var body = S.xState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' :
-      (shown.length ? '<ul class="nb-rows">' + shown.map(xRow).join('') + '</ul>' : (S.xState !== 'ok' ? '<p class="nb-empty">Loading...</p>' : '<p class="nb-empty">No transfers for ' + esc(dayName(S.xDate).toLowerCase()) + ' yet. When another venue takes stock, or we take some from them, log it here.</p>'));
+      (shown.length ? '<ul class="nb-rows">' + shown.map(xRow).join('') + '</ul>' : (S.xState === 'offline' ? '<p class="nb-empty" role="status">' + OFF_LIST + '</p>' : S.xState !== 'ok' ? '<p class="nb-empty">Loading...</p>' : '<p class="nb-empty">No transfers for ' + esc(dayName(S.xDate).toLowerCase()) + ' yet. When another venue takes stock, or we take some from them, log it here.</p>'));
     return whoTopHTML(ksTagHTML()) +
       '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Transfers</h2><span class="nb-date">' + esc(longDate(S.xDate)) + (sub ? ' &middot; ' + esc(sub) : '') + '</span></div>' +
-      '<div class="nb-prog">' + live.length + (live.length === 1 ? ' transfer' : ' transfers') + '</div></header>' +
+      (S.xState === 'offline' ? '' : '<div class="nb-prog">' + live.length + (live.length === 1 ? ' transfer' : ' transfers') + '</div>') + '</header>' +
       '<p class="w-rule">Stock shared with the other venues, both ways. Write the amount and unit, not a price.</p>' +
       '<div class="nb-foot w-addtop">' + add + '</div><div class="nb-body">' + openBody + '<h3 class="a-ch-h">Today</h3>' + body + '</div></section>' +
       (wAll() ? '<p class="hint w-past">Past days and the totals per venue are in the <a href="#/admin" data-p="tr-go-admin">admin panel, Transfers</a>.</p>' : '');
@@ -4909,6 +4976,7 @@
     var today = dayNow();
     if (!fb || !/^\d{4,6}$/.test(S.pin) || S.notesBusy || !featOn('pings')) return;
     if (!force && S.notes && S.notesFor === today && Date.now() - S.notesAt < NOTE_STALE) return;
+    if (!force && waiting('notes')) return;   // the last read failed: again after 5 minutes, or when the signal is back
     S.notesBusy = true;
     var readAt = now(), epoch = accessEpoch;
     var general = fb.fs.getDocs(fb.fs.query(colRef('notes'), fb.fs.where('until', '>=', today)));
@@ -4923,15 +4991,20 @@
     Promise.all([general, personal]).then(function (snaps) {
       if (epoch !== accessEpoch) return;
       S.notes = noteRows(snaps[0], false).concat(snaps[1]);
-      S.notesFor = today; S.notesAt = Date.now(); S.notesRead = readAt; S.notesBusy = false;
+      S.notesFor = today; S.notesAt = Date.now(); S.notesRead = readAt; S.notesBusy = false; S.notesErr = false;
       if (S.nJust) { if (S.nJust.k === noteSeenKey()) noteJustSaved(S.nJust.id); S.nJust = null; }
       noteBell(); noteRefresh(); noteMaybePop(); draw();
     }, function () {
+      // no signal (also an answer from the empty copy in memory): the pings kept stay, today's are not taken as read
+      // (notesFor), and the sheet says it could not check instead of "No pings right now"
       if (epoch !== accessEpoch) return;
       S.notesBusy = false; S.notesAt = Date.now() - NOTE_STALE + 5 * 60000; if (!S.notes) S.notes = [];
+      S.notesErr = true; retryLater('notes'); onlineRetry.notes = function () { loadNotes(true); };
       noteBell(); draw();
     });
   }
+  // today's pings could not be read at all yet (no signal): say so where "none" would show
+  function notesFailed() { return !!S.notesErr && S.notesFor !== dayNow(); }
 
   /* a note that names a recipe links to its card (the longest card name wins, a trailing s is allowed: "pies") */
   var NOTE_RN = null;
@@ -5010,11 +5083,11 @@
     var editor = pv ? '' : admDev() ? '<a class="nt-edit" href="#/admin" data-note="edit">Write or edit pings</a>' : (canPing() ? '<a class="nt-edit" href="#/prep" data-note="edit-sous">Write or edit pings</a>' : '');
     var h = pv ? 'Preview' : showPings || !mins.length ? 'Today\'s shift pings' : 'Minutes to sign';
     var out = '<header class="nt-head"><span class="nt-eb">' + esc(p ? p.name : 'Leichhardt Hotel Kitchen') + '</span><h2 class="nt-h" id="nt-h">' + h + '</h2><span class="nt-date">' + esc(pv ? pv.label : parseYmd(t).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })) + '</span></header><div class="nt-body">';
-    if (!pv && showPings && S.nPrivateError) out += '<p class="warn" role="status">' + esc(S.nPrivateError) + ' <button type="button" class="btn" data-note="refresh">Refresh pings</button></p>';
+    if (!pv && showPings && (notesFailed() || S.nPrivateError)) out += '<p class="warn" role="status">' + esc(notesFailed() ? 'Could not check the pings. Check the signal.' : S.nPrivateError) + ' <button type="button" class="btn" data-note="refresh">Refresh pings</button></p>';
     if (showPings && list.length) {
       out += '<ul class="nt-list">' + list.map(function (n) { return noteRowHTML(n, step === 'pings' && !pv && !!el.lkWas && el.lkWas.indexOf(n.id + ':' + (n.upd || n.at || 0)) < 0); }).join('') + '</ul>';
       if (!pv) out += '<div class="nt-sum" id="nt-sum"></div>';   // filled in by noteDraw, so a tick elsewhere does not redraw the sheet
-    } else if (showPings && !mins.length && !S.nPrivateError) out += '<p class="nt-none">No pings right now. Each ping is on for 30 minutes, then it is gone.</p>';
+    } else if (showPings && !mins.length && !S.nPrivateError && !notesFailed()) out += '<p class="nt-none">No pings right now. Each ping is on for 30 minutes, then it is gone.</p>';
     if (step === 'pings' && mins.length) out += '<p class="nt-next">Next: ' + (mins.length === 1 ? 'minutes to sign' : 'minutes from ' + mins.length + ' meetings to sign') + '</p>';
     else if (mins.length) out += '<h3 class="nt-sh">To sign</h3><div class="nt-mn">' + mins.map(mnRowHTML).join('') + '</div>';
     out += '</div><footer class="nt-foot">';
@@ -5259,7 +5332,7 @@
       });
     }
     var out = grp('Showing today', onNow) + noteList('notes-later', 'Coming up', later, false, [['soon', 'Soonest first', function (a, b) { return String(a.start).localeCompare(String(b.start)) || (a.at || 0) - (b.at || 0); }], ['late', 'Furthest away first', function (a, b) { return String(b.start).localeCompare(String(a.start)) || (b.at || 0) - (a.at || 0); }]]);
-    if (!onNow.length && !later.length) out = '<p class="hint">No pings are set for today or the days ahead. Tap Write a ping to add one.</p>';
+    if (!onNow.length && !later.length) out = notesFailed() ? '' : '<p class="hint">No pings are set for today or the days ahead. Tap Write a ping to add one.</p>';
     var pastBtn = '<button type="button" class="btn" data-p="n-past">' + (S.nPastOpen ? 'Hide past pings' : 'Past pings') + '</button>';
     var pastList = '';
     if (S.nPastOpen) {
@@ -5271,7 +5344,7 @@
           '<p class="hint">The last ' + S.nPast.length + ' pings that have finished. Use again copies one into a new ping.</p>' + (moreOld ? '<div class="btn-row"><button type="button" class="btn" data-p="n-past-more">Load 30 older pings</button></div>' : '');
       } else pastList = '<p class="hint">No finished pings yet.</p>';
     }
-    return (S.nPrivateError ? '<p class="warn" role="status">' + esc(S.nPrivateError) + ' <button type="button" class="btn" data-p="n-refresh">Refresh pings</button></p>' : '') + out + '<div class="btn-row n-pastrow">' + pastBtn + '</div>' + pastList;
+    return (notesFailed() || S.nPrivateError ? '<p class="warn" role="status">' + esc(notesFailed() ? 'Could not load the pings. Check the signal.' : S.nPrivateError) + ' <button type="button" class="btn" data-p="n-refresh">Refresh pings</button></p>' : '') + out + '<div class="btn-row n-pastrow">' + pastBtn + '</div>' + pastList;
   }
   function dayGridHTML(f) {
     var t = dayNow(), lead = (parseYmd(t).getDay() + 6) % 7, first = shift(t, -lead), end = f.until || f.start, cells = '', i;
@@ -5466,6 +5539,9 @@
     var today = dayNow(), all = S.level === 'owner';
     if (!fb || !/^\d{4,6}$/.test(S.pin) || S.minsBusy || !featOn('minutes')) return;
     if (!force && S.mins && S.minsFor === today && S.minsAll === all && Date.now() - S.minsAt < MN_STALE) return;
+    // the last read failed: again after 5 minutes or when the signal is back, not on every redraw (the minutes pages
+    // ask on each draw, so a failed read must not start the next one at once)
+    if (!force && waiting('mins')) return;
     S.minsBusy = true;
     // one query when the book opens, again after 30 minutes: one read per minutes in the last 90 days. The head chef's
     // Google account lists them by meeting date, drafts too; everyone else asks only for published ones, by when they were
@@ -5473,11 +5549,13 @@
     var q = all ? fb.fs.where('date', '>=', shift(today, -MN_DAYS)) : fb.fs.where('pubAt', '>=', now() - MN_DAYS * 86400000);
     fb.fs.getDocs(fb.fs.query(colRef('minutes'), q)).then(function (snap) {
       S.mins = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; });
-      S.minsFor = today; S.minsAll = all; S.minsAt = Date.now(); S.minsBusy = false;
+      S.minsFor = today; S.minsAll = all; S.minsAt = Date.now(); S.minsBusy = false; S.minsErr = false;
       loadMine(); minCard(); draw(); noteMaybePop();
     }, function () {
-      // no signal, or the minutes rules are not published yet: carry on without them and try again in about 5 minutes
+      // no signal (also an answer from the empty copy in memory), or the minutes rules are not published yet: carry on
+      // without them, say so on the page, and try again in about 5 minutes
       S.minsBusy = false; S.minsAt = Date.now() - MN_STALE + 5 * 60000; if (!S.mins) S.mins = [];
+      S.minsErr = true; retryLater('mins'); onlineRetry.mins = function () { loadMinutes(true); };
       minCard(); draw(); noteMaybePop();
     });
   }
@@ -5589,7 +5667,7 @@
         '<div class="nb-body"><p class="nb-empty">' + msg + '</p>' + mnWriteLink() + '</div></section>';
     }
     if (S.mins == null) return card('Loading...');
-    if (!list.length) return card('No meeting minutes yet. When Chef publishes them, they show here to read and sign.');
+    if (!list.length) return card(S.minsErr && S.minsFor !== dayNow() ? 'Could not load the minutes. Check the signal. The book tries again by itself.' : 'No meeting minutes yet. When Chef publishes them, they show here to read and sign.');
     var m = list.filter(function (x) { return x.id === S.mSel; })[0] || list[0], older = list.filter(function (x) { return x.id !== m.id; }).slice(0, 12);
     // minutes this person still has to sign come first among the earlier ones, marked To sign
     function toSign(x) { return S.mmine[mnKey(x)] === null; }
@@ -6431,7 +6509,7 @@
     try { var c = JSON.parse(lsGet('lk.guides') || 'null'); if (kitchenAccess() && c && c.pin === S.pin && Array.isArray(c.list)) { S.guides = c.list; S.guidesFor = c.d || ''; S.guidesAt = c.at || 0; } } catch (e) {}
   })();
   function gKeep() { if (kitchenAccess()) lsSet('lk.guides', JSON.stringify({ pin: S.pin, d: S.guidesFor, at: S.guidesAt, list: S.guides || [] })); }
-  function gForget() { S.guides = null; S.guidesFor = ''; S.guidesAt = 0; S.gRetry = 0; lsSet('lk.guides', ''); rxForget(); }
+  function gForget() { S.guides = null; S.guidesFor = ''; S.guidesAt = 0; S.gRetry = 0; S.gErr = false; lsSet('lk.guides', ''); rxForget(); }
   function loadGuides(force) {
     if (!kitchenAccess() || !S.configFull) return;
     if (!fb || !/^\d{4,6}$/.test(S.pin) || S.gBusy || Date.now() < S.gRetry || !featOn('guides')) return;
@@ -6442,11 +6520,13 @@
       S.gBusy = false;
       if (pin !== S.pin) return;
       var list = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }), was = S.guides, changed = !was || gSig(list) !== gSig(was);
-      S.guides = list; S.guidesFor = today; S.guidesAt = Date.now(); gKeep();
+      S.guides = list; S.guidesFor = today; S.guidesAt = Date.now(); S.gErr = false; gKeep();
       if (changed) { try { window.dispatchEvent(new Event('lk-guides')); } catch (e) {} draw(); }
     }, function () {
-      // no signal or a wrong PIN: carry on with the list kept on the phone and try again in a minute
-      S.gBusy = false; S.gRetry = Date.now() + 60000; if (!S.guides) S.guides = []; draw();
+      // no signal (also an answer from the empty copy in memory) or a wrong PIN: carry on with the list kept on the
+      // phone, keep nothing new, and try again in a minute or when the signal is back
+      S.gBusy = false; S.gRetry = Date.now() + 60000; if (!S.guides) { S.guides = []; S.gErr = true; }
+      onlineRetry.guides = function () { S.gRetry = 0; loadGuides(true); }; draw();
     });
   }
 
@@ -6618,6 +6698,7 @@
     if (S.gSel) return guideDocHTML();
     var live = gLive(), head = '<header class="g-head"><span class="g-eb">Leichhardt Hotel Kitchen</span><h2 class="g-title" id="rtitle" tabindex="-1">Guides</h2><p class="g-lead">How to work the equipment, clean it and find things. Written by the head chef.</p></header>';
     if (S.guides == null) return '<section class="g-page">' + head + '<p class="hint">Loading...</p></section>';
+    if (!live.length && S.gErr) return '<section class="g-page">' + head + '<p class="p-err" role="status">Could not load the guides. Check the signal. The book tries again by itself.</p></section>';
     if (!live.length) return '<section class="g-page">' + head + '<p class="p-empty">No guides yet. The head chef adds them in the admin panel.</p>' + gAdminLink() + '</section>';
     var cats = G_CATS.filter(function (c) { return live.some(function (g) { return g.cat === c[0]; }); });
     if (S.gcat !== 'all' && !cats.some(function (c) { return c[0] === S.gcat; })) S.gcat = 'all';
@@ -7050,7 +7131,10 @@
       lsSet('lk.drinks', JSON.stringify({ pin: S.pin, by: by, seen: seen }));
       if (S.who && by[S.who]) dkFlag('set');
       draw();
-    }, function () { dkLoading = false; dkErr = true; dkAt = Date.now() - DK_STALE + 5 * 60000; draw(); });
+    }, function () {
+      // no signal (also an answer from the empty copy in memory): the copy on the phone stays, nothing empty is kept
+      dkLoading = false; dkErr = true; dkAt = Date.now() - DK_STALE + 5 * 60000; onlineRetry.drinks = function () { dkLoad(true); }; draw();
+    });
   }
   /* in the book today: opened it with their PIN today, or the person on this phone */
   function dkToday(id) { return id === S.who || (!!dkSeen[id] && T.day(dkSeen[id]) === dayNow()); }
@@ -7064,7 +7148,7 @@
     var id = S.who, old = dkList ? dkList[id] : undefined;
     dkBusy = true; dkMsg = ''; draw();
     sset(docRef('drinks', id), data).then(function () {
-      dkBusy = false; dkList = dkList || {}; dkList[id] = data; lsSet('lk.drinks', JSON.stringify({ pin: S.pin, by: dkList }));
+      dkBusy = false; dkList = dkList || {}; dkList[id] = data; lsSet('lk.drinks', JSON.stringify({ pin: S.pin, by: dkList, seen: dkSeen }));
       dkFlag('set'); dkEditing = false; dkf = null;
       var first = S.drinkAsk === 'first'; S.drinkAsk = '';
       toast(first ? 'Saved. Welcome to the Kitchen Book.' : 'Saved. That is your usual on the drinks run.');
@@ -7652,13 +7736,14 @@
   var shiftsFor = '', shiftsBusy = false;
   function loadShifts(force) {
     if (!kitchenAccess() || !S.configFull) return;
-    if (!fb || shiftsBusy || (!force && shiftsFor === dayNow())) return;
+    // a failed read (no signal) waits 5 minutes: the admin People tab asks on every draw
+    if (!fb || shiftsBusy || (!force && (shiftsFor === dayNow() || waiting('shifts')))) return;
     shiftsBusy = true;
     var f = fb.fs;
     f.getDocs(f.query(colRef('shifts'), f.where('day', '>=', shift(dayNow(), -13)))).then(function (sn) {
       shiftsBusy = false; shiftsFor = dayNow();
       S.shifts = sn.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }); draw();
-    }, function () { shiftsBusy = false; S.shifts = S.shifts || []; draw(); });
+    }, function () { shiftsBusy = false; S.shifts = S.shifts || []; retryLater('shifts'); draw(); });
   }
   function ksName(id) { var p = ((S.config && S.config.people) || []).filter(function (x) { return x.id === id; })[0]; return p ? p.name : ''; }
   function ksAdminHTML(d) {

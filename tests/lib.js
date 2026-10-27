@@ -171,6 +171,9 @@ async function start() {
    o.fakeMode         the stand-in's mode from the first request: 'fail' (every read and write fails, like no signal) or 'deny'
    o.failReads        a regex source: getDoc and getDocs fail for the paths that match (say one past day of wastage)
    o.denyReads        a regex source: getDocs is refused (permission-denied) for the collections that match
+   o.cold             a regex source: no signal for the paths that match, the way the book's memory cache answers it
+                      (__fake.cold in tests/fake/firebase-firestore.js); with fakeMode 'hold' writes wait too.
+                      __fake.warm() in the page brings the signal back
    o.init             a function run in the page before the book starts, on every load (after the seed), to stand in
                       for what the test browser lacks (the notification permission, a running service worker)
    o.block            a regex source: the book's own files whose address matches fail to load (say js/cutoffs.js)
@@ -223,7 +226,7 @@ async function open(browser, hash, o) {
   if (!o.board) ['sam', 'ann', 'bo', 'fay', 'finn'].concat(who ? [who] : []).forEach(id => { ls['lk.board.' + id] = ymd(new Date(o.clock || NOW)); });
   if (o.admin) ls['fake.user'] = '1';
   if (o.noAnon) await ctx.addInitScript(() => { window.__fakeNoAnon = true; });
-  if (o.fakeServer || o.fakeMode || o.failReads || o.denyReads) await ctx.addInitScript(f => { window.__fake = { mode: f.mode || 'ok', writes: [], reads: [], server: f.server, failReads: f.fail ? new RegExp(f.fail) : null, denyReads: f.deny ? new RegExp(f.deny) : null }; }, { mode: o.fakeMode, server: o.fakeServer, fail: o.failReads, deny: o.denyReads });
+  if (o.fakeServer || o.fakeMode || o.failReads || o.denyReads || o.cold) await ctx.addInitScript(f => { window.__fake = { mode: f.mode || 'ok', writes: [], reads: [], server: f.server, failReads: f.fail ? new RegExp(f.fail) : null, denyReads: f.deny ? new RegExp(f.deny) : null, cold: f.cold ? new RegExp(f.cold) : null }; }, { mode: o.fakeMode, server: o.fakeServer, fail: o.failReads, deny: o.denyReads, cold: o.cold });
   // seed once per tab, so a reload keeps whatever the test did
   await ctx.addInitScript(ls => {
     if (sessionStorage.getItem('seeded')) return;
@@ -245,10 +248,10 @@ async function open(browser, hash, o) {
   await page.goto(base + (hash || ''), { waitUntil: 'load' });
   // the book starts up in steps (the Firebase stand-in loads, then the kitchen's settings, then the lists and the
   // sign-in), so a page that has just opened waits for the settings to be read (or to fail) and has to be still for longer
-  await settle(page, o.wait || 600, 300, () => { const st = window.LK_PREP && window.LK_PREP.state; return !st || !st.pin || st.configState === 'ok' || st.configState === 'error'; });
+  await settle(page, o.wait || 600, 300, () => { const st = window.LK_PREP && window.LK_PREP.state; return !st || !st.pin || st.configState === 'ok' || st.configState === 'error' || st.configState === 'offline'; });
   const expectedLogin = !o.noPin && !o.noAnon && ((sess && !o.admin) || (o.admin && (!who || who === (store[K.concat(['config','main']).join('/')] || {}).headId)));
   if (expectedLogin) {
-    await waitFor(page, () => { const p=window.LK_PREP; return p && p.privateAccess() && (p.functionOnly() || p.state.configFull); }, null, 5000).catch(() => {});
+    await waitFor(page, () => { const p=window.LK_PREP; return p && (p.state.configState === 'offline' || p.privateAccess() && (p.functionOnly() || p.state.configFull)); }, null, 5000).catch(() => {});
     await settle(page, 800, 200);
   }
   return page;

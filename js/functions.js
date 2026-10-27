@@ -307,7 +307,9 @@
         });
         F.offline = !!(snap.metadata && snap.metadata.fromCache);
         if (!F.offline) { F.at = now(); F.cached = false; F.state = 'ok';  }
-        else if (F.state !== 'ok') F.state = navigator.onLine === false ? 'offline' : 'loading';
+        // no signal: the copy in memory answers at once, empty unless this phone holds unsent changes (27 Oct 2026). That
+        // is not loaded yet, never "no functions": known() waits for the server's answer
+        else if (F.state !== 'ok') F.state = navigator.onLine === false || !snap.docs.length ? 'offline' : 'loading';
         changed();
       }, function (e) { F.state = 'error'; F.err = e && e.code || ''; F.unsub = null; F.key = ''; changed(); });
     }, function () { F.state = 'error'; changed(); });
@@ -814,7 +816,7 @@
     var t = now();
     if (F.state === 'error') return '<p class="p-err" role="alert">Could not load functions.' + (F.at ? ' Showing the copy from ' + esc(dayName(kday(F.at)) + ' ' + kclock(F.at)) + '.' : ' Check the signal and open this page again.') + '</p>';
     if (F.state === 'loading' || F.state === 'idle') return F.at ? '<p class="hint" role="status">Checking for changes. Showing the copy from ' + esc(when(F.at, kday(t))) + '.</p>' : '';
-    if (F.offline || navigator.onLine === false) return '<p class="hint" role="status">No signal. Last updated ' + esc(dayName(kday(F.at)) + ' ' + kclock(F.at)) + '.</p>';
+    if (F.offline || navigator.onLine === false) return F.at ? '<p class="hint" role="status">No signal. Last updated ' + esc(dayName(kday(F.at)) + ' ' + kclock(F.at)) + '.</p>' : '';
     return '<p class="hint fn-fresh">Up to date, ' + esc(kclock(F.at)) + '. Changes show here by themselves.</p>';
   }
   /* #/fn/now, the service view (22 Oct 2026): everything that goes out now across all functions, late first, each with
@@ -829,7 +831,7 @@
     var just = F.list.filter(function (f) { return f.status === 'confirmed'; }).map(function (f) {
       return (f.rounds || []).map(function (r, i) { var x = sentRec(f, i); return x && t - x.sentAt < 2 * MIN ? { f: f, i: i } : null; }).filter(Boolean);
     }).reduce(function (a, b) { return a.concat(b); }, []);
-    var out = '<section class="set-block fn-page fn-svc-page"><div class="fn-page-head"><h2 id="rtitle" tabindex="-1">Service</h2><button type="button" class="btn" data-fn="print-day"' + (!known() || !printDayList(t).length ? ' disabled' : '') + '>Print run sheet</button></div>' + (known() ? '' : '<p role="status">Loading functions...</p>');
+    var out = '<section class="set-block fn-page fn-svc-page"><div class="fn-page-head"><h2 id="rtitle" tabindex="-1">Service</h2><button type="button" class="btn" data-fn="print-day"' + (!known() || !printDayList(t).length ? ' disabled' : '') + '>Print run sheet</button></div>' + (known() ? '' : waitHTML());
     if (known() && !sv.rows.length) out += '<p class="hint">Nothing to send: no function has a round still to go out.</p>';
     if (sv.rows.length) out += '<h3 class="fn-h">Next out</h3><ul class="fn-svc-rows">' + sv.rows.map(function (r) {
       var n = r.f.rounds.length;
@@ -850,7 +852,10 @@
     }).join('') + '</ol>';
     return out + stateNote() + '<div class="btn-row"><a class="btn" href="#/fn">All functions</a></div></section>';
   }
-  function known() { return F.state === 'ok' || F.state === 'offline' || !!F.at; }
+  // the list has come from the server at least once (an empty answer from the copy in memory is not known)
+  function known() { return F.state === 'ok' || !!F.at; }
+  // what a page says while the list is not known yet: no signal, or still loading
+  function waitHTML() { return F.state === 'offline' ? '<p role="status">No signal. Functions show here when the phone is back online.</p>' : '<p role="status">Loading functions...</p>'; }
   function pageHTML(id) {
     if (!window.LK_PREP || !window.LK_PREP.privateAccess()) return '';
     var t = now(), today = kday(t), prep = P();
@@ -858,13 +863,13 @@
     if (id === 'now') return serviceHTML(t);
     if (id) {
       var f = byId(id);
-      if (!f) return '<section class="set-block"><h2 id="rtitle" tabindex="-1">Function</h2>' + (known() ? '<p>This function is not on the kitchen\'s list: it may be a draft, over, or cancelled a while ago.</p>' : '<p role="status">Loading...</p>') + stateNote() + '<div class="btn-row"><a class="btn" href="#/fn">All functions</a></div></section>';
+      if (!f) return '<section class="set-block"><h2 id="rtitle" tabindex="-1">Function</h2>' + (known() ? '<p>This function is not on the kitchen\'s list: it may be a draft, over, or cancelled a while ago.</p>' : waitHTML()) + stateNote() + '<div class="btn-row"><a class="btn" href="#/fn">All functions</a></div></section>';
       return '<section class="set-block fn-page"><h2 id="rtitle" tabindex="-1">' + esc(f.name) + '</h2>' + sheetHTML(f, false) + stateNote() + '<div class="btn-row"><a class="btn" href="#/fn">All functions</a></div></section>';
     }
     var on = showing(F.list, t, isSentK), up = [], totals = dayTotals(F.list), days = [], i;
     for (i = 1; i <= pageDays; i++) days.push(addDays(today, i));
     var body = '';
-    if (!known()) body = '<p role="status">Loading functions...</p>';
+    if (!known()) body = waitHTML();
     else {
       body += '<h3 class="fn-h">Today, ' + esc(dayName(today)) + '</h3>' + (on.length ? '<div class="btn-row"><a class="btn dark" href="#/fn/now">Service view</a></div>' : '') + (on.length ? '<ul class="fn-cards">' + on.map(function (x) { return cardHTML(x.f); }).join('') + '</ul>' + totalsHTML(totals[today]) : '<p class="hint">No functions on now.</p>');
       body += '<h3 class="fn-h">Upcoming functions</h3>';
