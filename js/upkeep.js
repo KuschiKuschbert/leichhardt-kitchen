@@ -23,24 +23,41 @@ function lkServerUp() {
   if (navigator.onLine === false) return Promise.resolve(false);
   return lkHead().then(function (r) { return !!r; });
 }
+/* The automatic update's rule for a reload nobody asked for, which a 04:00 refresh that had to wait follows too (28 Oct
+   2026): nothing in a box, half typed or waiting to send (lkTyping()), and nobody has touched the book for 2 minutes
+   (lkTouch: the last tap, key, touch or scroll). */
+var lkTouch = Date.now();
+['pointerdown', 'keydown', 'touchstart', 'wheel'].forEach(function (ev) { document.addEventListener(ev, function () { lkTouch = Date.now(); }, { passive: true, capture: true }); });
+function lkTyping() {
+  var a = document.activeElement, t = a && a.tagName;
+  // also anything half written in the prep pages, even when the cursor has left the box
+  if (lkUnsaved()) return true;
+  return t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT' || !!(a && a.isContentEditable);
+}
+function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
 // Daily self-refresh: the book reloads itself once a day (about 04:00) so a tablet left open on the pass
 // always shows the latest cards. If the device was asleep at 04:00, it refreshes as soon as it wakes.
 (function () {
   var DAY = 24 * 60 * 60 * 1000, CATCH_UP = 20 * 60 * 60 * 1000, loaded = Date.now(), T = window.LK_TIME, due = false;
   function untilFour() { var n = T.now(), t = T.at(T.day(n), 240); if (t <= n + 60000) t += DAY; return t - n; }
   // A refresh that has to wait tries again in 10 minutes, and soon after the signal is back. While it waits, the clock
-  // being put right (lk-clock) does not push it to tomorrow.
-  function later() { due = true; clearTimeout(timer); timer = setTimeout(refresh, 600000); }
+  // being put right (lk-clock) does not push it to tomorrow. A refresh that has waited has missed its night (28 Oct
+  // 2026), so from then on it goes only by the automatic update's rule (lkIdle()): a chef typing in the recipe search
+  // mid-morning keeps the words and the keyboard.
+  var waited = false;
+  function later() { due = waited = true; clearTimeout(timer); timer = setTimeout(refresh, 600000); }
+  // what holds it back: something half written or not sent yet, and once it has waited, the book being in use
+  function held() { return waited ? !lkIdle() : lkUnsaved(); }
   // one refresh at a time: the 04:00 timer and the catch-up after waking can both call it while one is still asking
   var flying = false;
   function refresh() {
     if (flying) return;
-    // something half written or not sent yet: try again in 10 minutes
-    if (lkUnsaved()) { later(); return; }
+    // held back: try again in 10 minutes
+    if (held()) { later(); return; }
     due = true; flying = true;
     // no signal (a router restarting overnight, a phone waking before its wifi): the book stays as it is and waits
     lkServerUp().then(function (up) {
-      if (!up || lkUnsaved()) { flying = false; later(); return; }
+      if (!up || held()) { flying = false; later(); return; }
       // Re-fetch the data files past the browser cache first, so the reload shows the newest cards. The page stays on the same card.
       // X-LK-Fresh tells the service worker to fetch these from the network and save them (sw.js).
       var files = ['index.html', 'js/data.js', 'js/art.js', 'js/overlay.js', 'js/app.js', 'js/amounts.js', 'js/learn.js', 'js/cutoffs.js', 'js/prep.js', 'js/functions.js', 'js/firebase-config.js', 'js/boot.js', 'js/upkeep.js', 'css/app.css'];
@@ -52,8 +69,10 @@ function lkServerUp() {
       var go = function () {
         if (gone) return;
         gone = true; clearTimeout(wait); flying = false;
+        // asked before later(), which counts as a wait
+        var ok = navigator.onLine !== false && !held();
         later();
-        if (navigator.onLine !== false && !lkUnsaved()) location.reload();
+        if (ok) location.reload();
       };
       try {
         // 'no-cache' asks the server whether each file changed (a small answer when it did not), instead of downloading all
@@ -79,15 +98,9 @@ function lkServerUp() {
 // otherwise when nobody has touched it for 2 minutes and nothing is being typed. A bar offers "Update now" meanwhile.
 // The same answer carries the server's time, which keeps the book's clock right (LK_TIME, at the top).
 (function () {
-  var base = null, found = false, lastTouch = Date.now(), hiddenAt = 0, lastCheck = 0, bar = null;
+  var base = null, found = false, hiddenAt = 0, lastCheck = 0, bar = null;
   function stamp() {
     return lkHead().then(function (r) { return r ? (r.headers.get('last-modified') || '') + '|' + (r.headers.get('etag') || '') : ''; });
-  }
-  function typing() {
-    var a = document.activeElement, t = a && a.tagName;
-    // also anything half written in the prep pages, even when the cursor has left the box
-    if (lkUnsaved()) return true;
-    return t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT' || !!(a && a.isContentEditable);
   }
   // Update now's words while a change waits to send (head chef, 28 Oct 2026). On a phone they take two lines: the
   // no-break spaces keep the second sentence whole, so the line breaks after "Not sent yet."
@@ -96,22 +109,28 @@ function lkServerUp() {
      ran (a tap takes over an update nobody tapped, so the tap's own touch does not call it off). half: something half
      typed when it was tapped, which the second tap said may go. files: it is fetching the files. */
   var run = null;
-  function reloadNow(tapped) {
+  /* When Update now was tapped while a change waited to send, or 0 (28 Oct 2026). The look every 20 seconds runs that
+     tapped update once the change is sent and nothing is in a box or half typed, within 10 minutes of the tap, even
+     while the book is in use. After that it updates by the usual rule. */
+  var wanted = 0;
+  // back: the book was brought back after 5 minutes or more away
+  function reloadNow(tapped, back) {
     if (run) return;
-    // Once per 10 minutes at most, so a flapping header can never cause a reload loop.
-    try { var last = +localStorage.getItem('lk.upd.last') || 0; if (Date.now() - last < 600000) return; } catch (e) {}
-    var me = run = { tapped: !!tapped, half: !!tapped && lkUnsaved(), files: false }, touched = lastTouch, gone = false, wait = null;
+    // Once per 10 minutes at most, so a flapping header can never cause a reload loop. The strip still offers Update now.
+    try { var last = +localStorage.getItem('lk.upd.last') || 0; if (Date.now() - last < 600000) { showBar(); return; } } catch (e) {}
+    var me = run = { tapped: !!tapped, half: !!tapped && lkUnsaved(), files: false }, touched = lkTouch, gone = false, wait = null;
     /* The check and the files take up to 8 seconds each on a weak signal, so the book looks again before it reloads
-       (28 Oct 2026): an update nobody tapped stops when someone typed, wrote or touched the book meanwhile, a tapped one
-       when a change waits to send or something was typed after the tap. The strip stays and the update waits for its
-       next turn, or for the next tap. */
+       (28 Oct 2026): an update nobody tapped stops when someone typed or wrote meanwhile, and the one after 2 minutes
+       untouched also when someone touched the book. Coming back is a touch, so that update goes on over a swipe; a tick
+       still stops it. A tapped one stops when a change waits to send or something was typed after the tap. The strip
+       stays and the update waits for its next turn, or for the next tap. */
     function stop() {
       var note = '';
       if (me.tapped) {
         if (lkUnsent()) note = UNSENT_NOTE; else if (lkUnsaved() && !me.half) note = 'Not saved yet.'; else return false;
-      } else if (!typing() && lastTouch === touched) return false;
+      } else if (!lkTyping() && (back || lkTouch === touched)) return false;
       run = null; showBar();
-      if (note === UNSENT_NOTE) say(note, 'Update now');
+      if (note === UNSENT_NOTE) { wanted = Date.now(); say(note, 'Update now'); }
       else if (note) { say(note, 'Tap again to update'); armedAt = Date.now(); }
       return true;
     }
@@ -131,6 +150,12 @@ function lkServerUp() {
       var go = function () {
         if (gone) return;
         gone = true; clearTimeout(wait);
+        land();
+      };
+      // a touch in the last 600 ms (a tap whose tick comes a moment later): the book looks again 700 ms on, once that
+      // tick waits to send and holds the update back (28 Oct 2026)
+      var land = function () {
+        if (!me.tapped && Date.now() - lkTouch < 600) { setTimeout(land, 700); return; }
         if (stop()) return;
         if (navigator.onLine === false) { noSignal(); return; }
         run = null;
@@ -168,8 +193,8 @@ function lkServerUp() {
       // a tapped update already running ("Checking the signal...", "Updating..."): the tap is ignored
       if (run && run.tapped) return;
       // a change waiting for the server (head chef, 28 Oct 2026): Update now waits, because the reload loses it, and the
-      // book updates by itself once it is sent, the same rule the automatic update follows. No second tap gets past it.
-      if (lkUnsent()) { armedAt = 0; say(UNSENT_NOTE, 'Update now'); return; }
+      // book updates by itself at its next look once it is sent (wanted). No second tap gets past it.
+      if (lkUnsent()) { armedAt = 0; wanted = Date.now(); say(UNSENT_NOTE, 'Update now'); return; }
       // something half typed (27 Oct 2026): a second tap within 4 seconds, like the other Tap again buttons
       if (lkUnsaved() && !(armedAt && Date.now() - armedAt < 4000)) { say('Not saved yet.', 'Tap again to update'); armedAt = Date.now(); return; }
       armedAt = 0;
@@ -187,18 +212,21 @@ function lkServerUp() {
       if (base === null) { base = s; return; }
       if (s === base) return;
       found = true;
-      if (returned && !typing()) reloadNow(); else showBar();
+      if (returned && !lkTyping()) reloadNow(false, true); else showBar();
     });
   }
-  ['pointerdown', 'keydown', 'touchstart', 'wheel'].forEach(function (ev) { document.addEventListener(ev, function () { lastTouch = Date.now(); }, { passive: true, capture: true }); });
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'hidden') { hiddenAt = Date.now(); return; }
     var away = hiddenAt ? Date.now() - hiddenAt : 0;
-    if (Date.now() - lastCheck > 60000) check(away > 300000); else if (found && away > 300000 && !typing()) reloadNow();
+    if (Date.now() - lastCheck > 60000) check(away > 300000); else if (found && away > 300000 && !lkTyping()) reloadNow(false, true);
   });
   setInterval(function () {
     if (document.visibilityState !== 'visible') return;
-    if (found) { if (Date.now() - lastTouch > 120000 && !typing()) reloadNow(); }
+    if (found) {
+      // Update now tapped while a change waited: the tapped update, once it is sent (see wanted)
+      if (wanted && Date.now() - wanted < 600000 && !run && !lkTyping()) { wanted = 0; try { localStorage.removeItem('lk.upd.last'); } catch (e) {} reloadNow(true); }
+      else if (lkIdle()) reloadNow();
+    }
     else if (Date.now() - lastCheck > 15 * 60000) check(false);
   }, 20000);
   window.addEventListener('load', function () { check(false); });
@@ -210,7 +238,7 @@ function lkServerUp() {
   if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', function (e) {
     if (e.data !== 'lk-new') return;
     found = true;
-    if (Date.now() - opened < 8000 && lastTouch <= opened && !typing() && navigator.onLine !== false) {
+    if (Date.now() - opened < 8000 && lkTouch <= opened && !lkTyping() && navigator.onLine !== false) {
       try { var last = +localStorage.getItem('lk.upd.last') || 0; if (Date.now() - last < 600000) { showBar(); return; } localStorage.setItem('lk.upd.last', String(Date.now())); } catch (err) {}
       location.reload();
     } else showBar();

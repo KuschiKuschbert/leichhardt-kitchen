@@ -351,7 +351,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     ok(u && u.t === 'New version available.' && u.btn === 'Update now', 'update: left alone, the strip goes back after 4 seconds');
     await release(p);
     await L.settle(p, 400);
-    // sent: the book updates by itself, the way the automatic update does (2 minutes untouched, nothing typed)
+    // sent: the book updates by itself at its next look (every 20 seconds), with nothing typed (step 20: also in use)
     await p.clock.fastForward('02:30');
     await waitReload(p);
     ok(await reloaded(p), 'update: once the change is sent, the book updates by itself');
@@ -851,6 +851,149 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
       await L.settle(p, 300);
     });
   }
+
+  // a swipe up the screen, the way a finger scrolls a phone: what the book hears as a touch
+  const swipe = async p => {
+    const c = await p.context().newCDPSession(p);
+    for (const [type, y] of [['touchStart', 600], ['touchMove', 500], ['touchMove', 400], ['touchEnd']]) await c.send('Input.dispatchTouchEvent', { type, touchPoints: y ? [{ x: 200, y }] : [] });
+    await c.detach();
+  };
+
+  // 18. the 04:00 refresh held back all night (review of the fix, 28 Oct 2026): a tablet on Recipes from 03:57, with
+  // every request to the book failing until 07:01, or no signal at all. A refresh that has waited has missed its night,
+  // so it goes only the way the automatic update does: a chef typing "Lamb shank" in the recipe search and scrolling
+  // keeps the words and the keyboard (it reloaded at 07:11, and 10 seconds after the signal came back). Left alone, it goes.
+  for (const how of ['wifi with no internet', 'no signal']) {
+    await step('18 ' + how, async () => {
+      p = await L.open(b, '#/recipes', { touch: true, width: 768, height: 1024, clock: L.NOW - 10 * 3600000 - 180000, wait: 1500 });   // 03:57
+      const cut = on => how === 'no signal' ? p.context().setOffline(on) : deadNet(p, on);
+      await cut(true);
+      await mark(p);
+      await p.clock.fastForward('03:10');   // 04:00: the refresh finds no server and waits
+      await L.settle(p, 1000);
+      await p.clock.fastForward('03:00:00');   // 07:00
+      await L.settle(p, 1000);
+      ok(!(await reloaded(p)), '04:00, ' + how + ' until 07:00: no reload into an empty book');
+      await p.fill('#find', 'Lamb shank');
+      await cut(false);
+      // a scroll every 10 seconds for 12 minutes: past the try 5 seconds after the signal is back, and the next 10 minute try
+      await p.mouse.move(380, 700);
+      for (let i = 0; i < 72 && !(await reloaded(p)); i++) { await p.mouse.wheel(0, i % 2 ? 150 : -150); await p.clock.fastForward(10000); await L.settle(p, 60); }
+      ok(!(await reloaded(p)), '04:00 missed, ' + how + ' until 07:01: no reload while a chef types in the recipe search and scrolls');
+      ok(await p.evaluate(() => { const f = document.getElementById('find'); return !!f && f.value === 'Lamb shank' && document.activeElement === f; }), '04:00 missed, ' + how + ': the search words still there, the keyboard still up');
+      // done: nothing in a box and nobody touching the tablet for 2 minutes, it refreshes at its next try
+      await p.evaluate(() => { if (document.activeElement) document.activeElement.blur(); });
+      await p.clock.fastForward('10:30');
+      await waitReload(p);
+      ok(await reloaded(p), '04:00 missed, ' + how + ': left alone for 2 minutes, it refreshes at its next try');
+      ok(/#\/recipes/.test(p.url()), '04:00 missed, ' + how + ': it stays on Recipes');
+    });
+  }
+
+  // 19. coming back after 5 minutes away updates straight away, over a swipe (review of the fix, 28 Oct 2026: a swipe as
+  // the phone came back called the update off, and with a swipe every 45 seconds it never updated in 60 minutes). A tick
+  // made meanwhile still holds it back until it is sent, and so does a tap whose tick comes a moment after its touch.
+  // back(): 6 minutes away, and the server has a new version (Last-Modified and ETag)
+  const back = async p => {
+    const st = { on: false };
+    await p.context().route(u => u.href === L.BASE + 'index.html', r => r.request().method() === 'HEAD' && st.on ? r.fulfill({ status: 200, headers: { 'last-modified': 'Mon, 19 Oct 2026 00:00:00 GMT', etag: '"v2"' } }) : r.fallback());
+    await p.evaluate(() => {
+      window.__vis = 'visible';
+      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => window.__vis });
+    });
+    const vis = s => p.evaluate(s => { window.__vis = s; document.dispatchEvent(new Event('visibilitychange')); }, s);
+    await vis('hidden');
+    await p.clock.fastForward('06:00');
+    st.on = true;
+    await mark(p);
+    await vis('visible');
+  };
+  const ticked = p => p.evaluate(() => !!(window.LK_PREP.state.items.find(x => x.id === 'i1') || {}).done);
+  await step('19 swipe', async () => {
+    p = await L.open(b, '#/prep', { who: 'ann', touch: true, wait: 1500 });
+    const st = await slowFiles(p, 1500);
+    await back(p);
+    await L.sleep(400);
+    await swipe(p);
+    ok(await fetching(st), 'back after 6 minutes: it fetches the files');
+    await waitReload(p);
+    ok(await reloaded(p), 'back after 6 minutes, a swipe 0.4 seconds in: it updates straight away');
+  });
+  await step('19 tick', async () => {
+    p = await L.open(b, '#/prep', { who: 'ann', touch: true, wait: 1500 });
+    await slowFiles(p, 1500);
+    await back(p);
+    await L.sleep(400);
+    await hold(p);
+    await p.tap('[data-p="tick"][data-id="i1"]');
+    await L.settle(p, 4000);
+    ok(!(await reloaded(p)), 'back after 6 minutes, a line ticked while it checked: no reload');
+    ok(await ticked(p), 'back after 6 minutes, a line ticked while it checked: the tick is still there');
+    const u = await bar(p);
+    ok(u && u.t === 'New version available.', 'back after 6 minutes, a line ticked while it checked: the strip offers Update now (' + JSON.stringify(u) + ')');
+    await release(p);
+    await L.settle(p, 300);
+  });
+  await step('19 tap', async () => {
+    p = await L.open(b, '#/prep', { who: 'ann', touch: true, wait: 1500 });
+    // the files the book fetches before the reload wait until the test lets them through
+    const st = { on: false };
+    let open = null;
+    const gate = new Promise(r => { open = r; });
+    await p.context().route(u => u.href === L.BASE + 'js/data.js', async r => { if (r.request().headers()['x-lk-fresh']) { st.on = true; await gate; } return r.fallback(); });
+    await back(p);
+    ok(await fetching(st), 'back after 6 minutes: it fetches the files');
+    // a finger comes down just before the files are in, and its tick follows 300 ms later
+    await p.evaluate(() => document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })));
+    await hold(p);
+    open();
+    await L.sleep(300);
+    await p.evaluate(() => document.querySelector('[data-p="tick"][data-id="i1"]').click());
+    await L.settle(p, 3000);
+    ok(!(await reloaded(p)), 'back after 6 minutes, a tap just as the files came in: it waits a moment, sees the tick and does not reload');
+    ok(await ticked(p), 'back after 6 minutes, a tap just as the files came in: the tick is still there');
+    await release(p);
+    await L.settle(p, 300);
+  });
+
+  // 20. Update now tapped while a change waits, then the change is sent: the book updates at its next look (every 20
+  // seconds), even while it is in use (review of the fix, 28 Oct 2026: it waited for 2 minutes untouched, so with a
+  // touch every 30 seconds it never updated)
+  await step('20', async () => {
+    p = await L.open(b, '#/prep', { who: 'ann', touch: true, wait: 1500 });
+    await updBar(p);
+    await hold(p);
+    await p.fill('#p-text', 'Slice tomatoes');
+    await p.press('#p-text', 'Enter');
+    await L.settle(p, 300);
+    await p.evaluate(() => { if (document.activeElement) document.activeElement.blur(); });
+    await mark(p);
+    await p.tap('.upd-bar button');
+    await L.settle(p, 300);
+    const u = await bar(p);
+    ok(u && u.t === WAITS, 'Update now, a change waiting: it updates once sent (' + JSON.stringify(u) + ')');
+    await swipe(p);
+    await p.clock.fastForward(30000);
+    await L.settle(p, 1500);
+    ok(!(await reloaded(p)), 'Update now, the change still waiting 30 seconds on: no reload');
+    await release(p);
+    await L.settle(p, 300);
+    await swipe(p);
+    await p.clock.fastForward(30000);
+    await L.waitFor(p, () => window.__mark !== 1, null, 8000).catch(() => {});
+    ok(await reloaded(p), 'Update now, the change sent, a touch every 30 seconds: it updates at the next look');
+  });
+
+  // 21. back within 10 minutes of the last update, with a newer version found on return: the strip offers Update now
+  // (the book reloads by itself at most once in 10 minutes; it used to show nothing)
+  await step('21', async () => {
+    p = await L.open(b, '#/prep', { who: 'ann', touch: true, wait: 1500 });
+    await p.evaluate(() => localStorage.setItem('lk.upd.last', String(Date.now() - 60000)));   // updated a minute ago
+    await back(p);
+    await L.settle(p, 1500);
+    const u = await bar(p);
+    ok(!(await reloaded(p)) && u && u.t === 'New version available.' && u.btn === 'Update now', 'back 7 minutes after an update, a newer version: no reload, the strip offers Update now (' + JSON.stringify(u) + ')');
+  });
 
   await b.close();
   L.report(R);
