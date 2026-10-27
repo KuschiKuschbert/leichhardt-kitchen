@@ -351,7 +351,11 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .nb-tt { cursor: pointer; }
 /* Not sent (27 Oct 2026): in a slot inside the words (.nb-mk), so on a phone it wraps with them like Urgent and never
    narrows them (who wrote a line, .nb-by, is hidden there). Shown only while the No signal or Not sent yet strip is up. */
-.nb-unsent { display: inline-block; margin-left: 0.3rem; vertical-align: 0.25em; padding: 0 0.4rem; border-radius: 999px; background: var(--accent-ink); color: #fff; font: 700 0.75rem/1.5 var(--body); white-space: nowrap; }
+.nb-unsent, .nb-held { display: inline-block; margin-left: 0.3rem; vertical-align: 0.25em; padding: 0 0.4rem; border-radius: 999px; background: var(--accent-ink); color: #fff; font: 700 0.75rem/1.5 var(--body); white-space: nowrap; }
+/* the mark's room while the strip is up, so a tick only fills it and no row moves: the same box, unseen, and its words
+   come from CSS so the row's text stays clean */
+.nb-held { visibility: hidden; }
+.nb-held::before { content: 'Not sent'; }
 .nb-box[aria-pressed="true"] { color: var(--done); }
 .nb-box:disabled { opacity: 0.45; cursor: default; }
 .nb-t { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }

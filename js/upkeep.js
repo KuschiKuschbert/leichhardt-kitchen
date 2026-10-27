@@ -2,6 +2,8 @@
 /* Something not saved or not sent yet in the prep pages (a line, a shift ping, minutes, the staff list, a write waiting
    for the server): LK_PREP.unsaved() in js/prep.js decides. */
 function lkUnsaved() { try { return !!(window.LK_PREP && window.LK_PREP.unsaved && window.LK_PREP.unsaved()); } catch (e) { return false; } }
+// of those, a write waiting for the server (LK_PREP.unsent()), which the strip on the prep pages calls Not sent yet
+function lkUnsent() { try { return !!(window.LK_PREP && window.LK_PREP.unsent && window.LK_PREP.unsent()); } catch (e) { return false; } }
 /* One HEAD of index.html past every cache (the service worker leaves HEAD alone): a tiny request, no Firestore. The
    update check reads its stamp, the reloads ask it whether the server is there, and every answer keeps the book's clock
    right (LK_TIME.learn). Gives the answer, or null with no answer (no signal, an error, or nothing in 8 seconds). */
@@ -81,9 +83,12 @@ function lkServerUp() {
     // Once per 10 minutes at most, so a flapping header can never cause a reload loop.
     try { var last = +localStorage.getItem('lk.upd.last') || 0; if (Date.now() - last < 600000) return; } catch (e) {}
     going = true;
+    // the check can take up to 8 seconds on a weak signal, so a tap says what is happening meanwhile
+    if (tapped) busy('Checking the signal...');
     // no signal (27 Oct 2026): the book stays as it is, and updates by itself once the signal is back
     lkServerUp().then(function (up) {
       if (!up) { going = false; if (tapped) say('No signal. It updates later.', 'Update now'); return; }
+      if (tapped) busy('Updating...');
       try { localStorage.setItem('lk.upd.last', String(Date.now())); } catch (e) {}
       var files = ['index.html', 'js/data.js', 'js/art.js', 'js/overlay.js', 'js/app.js', 'js/amounts.js', 'js/learn.js', 'js/cutoffs.js', 'js/prep.js', 'js/functions.js', 'js/firebase-config.js', 'js/boot.js', 'js/upkeep.js', 'css/app.css'];
       var go = function () { going = false; location.reload(); };
@@ -98,7 +103,15 @@ function lkServerUp() {
     if (!barText) return;
     barText.textContent = msg; barBtn.textContent = btn;
     clearTimeout(calm);
-    calm = setTimeout(function () { armedAt = 0; barText.textContent = 'New version available.'; barBtn.textContent = 'Update now'; }, 4000);
+    calm = setTimeout(reset, 4000);
+  }
+  function reset() { armedAt = 0; barText.textContent = 'New version available.'; barBtn.textContent = 'Update now'; }
+  // a note while the check and the reload run (each 8 seconds at most): the strip as it was after 12 seconds, in case
+  // the reload was turned down
+  function busy(msg) {
+    if (!barText) return;
+    clearTimeout(calm); barText.textContent = msg; barBtn.textContent = 'Update now';
+    calm = setTimeout(reset, 12000);
   }
   function showBar() {
     if (bar || !document.body) return;
@@ -108,8 +121,8 @@ function lkServerUp() {
     var b = barBtn = document.createElement('button'); b.type = 'button'; b.textContent = 'Update now';
     b.onclick = function () {
       // something not saved or not sent yet (27 Oct 2026): a second tap within 4 seconds, like Sign out, because the
-      // reload loses it
-      if (lkUnsaved() && !(armedAt && Date.now() - armedAt < 4000)) { say('Not saved yet.', 'Tap again to update'); armedAt = Date.now(); return; }
+      // reload loses it. A write waiting for the server says Not sent yet, like the strip.
+      if (lkUnsaved() && !(armedAt && Date.now() - armedAt < 4000)) { say(lkUnsent() ? 'Not sent yet.' : 'Not saved yet.', 'Tap again to update'); armedAt = Date.now(); return; }
       armedAt = 0;
       try { localStorage.removeItem('lk.upd.last'); } catch (e) {}
       reloadNow(true);

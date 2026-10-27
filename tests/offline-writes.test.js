@@ -4,7 +4,8 @@
 // The strip says to keep the book open, the browser asks before leaving while writes wait, Update now asks for a
 // second tap, the reloads wait for the signal (wifi with no internet too), and every list marks its lines Not sent, on
 // a phone too. The mark shows only while the strip does (no signal, or a write waiting more than 3 seconds) and sits
-// inside the words, so a tick on a good signal never moves the rows below (review of the first fix, 27 Oct 2026).
+// inside the words, so a tick on a good signal never moves the rows below (review of the first fix, 27 Oct 2026). While
+// the strip is up every row keeps the mark's room, so a tick with no signal moves no row either (second review).
 // The stand-in keeps its data in localStorage, so a lost write cannot be shown here: 'hold' stands in for a waiting write.
 const L = require('./lib');
 const { R, ok } = L.results(), { txt } = L;
@@ -89,7 +90,8 @@ const bar = p => p.evaluate(() => { const b = document.querySelector('.upd-bar')
     if (m) m.style.display = '';
     return w;
   }, [i, hide]);
-  for (const [who, hash, target] of [['ann', '#/prep', 'Slice onions'], ['sam', '#/prep', 'Laksa'], ['sam', '#/orders', 'Milk']]) {
+  // the last name is the line ticked with no signal: one whose words wrapped when the mark came (Brioche buns grew 9 px)
+  for (const [who, hash, target, offTarget] of [['ann', '#/prep', 'Slice onions', 'Slice onions'], ['sam', '#/prep', 'Laksa', 'Laksa'], ['sam', '#/orders', 'Milk', 'Brioche buns']]) {
     await step('1b ' + who + ' ' + hash, async () => {
       p = await L.open(b, hash, { who, wait: 1500 });
       const i = await rowAt(p, target), r0 = await rows(p);
@@ -112,7 +114,59 @@ const bar = p => p.evaluate(() => { const b = document.querySelector('.upd-bar')
       ok(await unsent(p, target) === 'none', hash + ' ' + who + ': Not sent goes once the server has it');
       ok(p.errors.length === 0, hash + ' ' + who + ': no page errors ' + p.errors.join(' | '));
     });
+    // no signal (the cool room): every row keeps the mark's room while the strip is up, so a tick only fills it and the
+    // rows below stay where they are (review 2 of the fix: Laksa moved them 26 px for a chef, Slice onions 9 px)
+    await step('1b ' + who + ' ' + hash + ' no signal', async () => {
+      p = await L.open(b, hash, { who, wait: 1500 });
+      await p.context().setOffline(true);
+      await hold(p);
+      await L.settle(p, 300);
+      const held = await p.evaluate(() => ({
+        n: document.querySelectorAll('.nb-row .nb-t .nb-held[aria-hidden="true"]').length, rows: document.querySelectorAll('.nb-row').length,
+        words: [...document.querySelectorAll('.nb-row .nb-t')].some(t => /Not sent/.test(t.textContent)), seen: [...document.querySelectorAll('.nb-held')].some(h => getComputedStyle(h).visibility !== 'hidden')
+      }));
+      ok(held.rows > 0 && held.n === held.rows && !held.words && !held.seen, hash + ' ' + who + ', no signal: every row keeps the room for Not sent, unseen and with no words in the row (' + JSON.stringify(held) + ')');
+      const i = await rowAt(p, offTarget), r0 = await rows(p);
+      await p.evaluate(i => document.querySelectorAll('.nb-row')[i].querySelector('.nb-box').click(), i);
+      await L.settle(p, 300);
+      const r1 = await rows(p), moved = Math.max(0, ...r0.slice(i).map((r, k) => Math.abs(((r1[i + k] || {}).top || 0) - r.top) + Math.abs(((r1[i + k] || {}).h || 0) - r.h)));
+      ok(await unsent(p, offTarget) === 'shown', hash + ' ' + who + ', no signal: the ticked line shows Not sent (' + await unsent(p, offTarget) + ')');
+      ok(i >= 0 && r1.length === r0.length && moved === 0, hash + ' ' + who + ' at 390, no signal: a tick moves no row (' + offTarget + ', moved ' + moved + ' px)');
+      await p.context().setOffline(false);
+      await release(p);
+      await L.settle(p, 500);
+      ok(await p.evaluate(() => !document.querySelector('.nb-held, .nb-unsent')), hash + ' ' + who + ': signal back and sent, the room for the mark goes with the strip');
+      ok(p.errors.length === 0, hash + ' ' + who + ', no signal: no page errors ' + p.errors.join(' | '));
+    });
   }
+
+  // 1b. ticking fast with no signal at 390 (the review's mis-tap): a chef taps Make gravy's words, then where Laksa was
+  // a third of the way down. The second tap lands on Laksa, so both lines end ticked (it used to untick Make gravy).
+  await step('1b fast taps, no signal', async () => {
+    p = await L.open(b, '#/prep', { who: 'sam', wait: 1500 });
+    await p.context().setOffline(true);
+    await hold(p);
+    await L.settle(p, 300);
+    // where a line's row and words are on screen now
+    const at = t => p.evaluate(t => {
+      const r = [...document.querySelectorAll('.nb-rows .nb-row')].find(r => ((r.querySelector('.nb-t') || {}).textContent || '').indexOf(t) === 0);
+      const w = r.querySelector('.nb-t').getBoundingClientRect(), rb = r.getBoundingClientRect();
+      return { x: w.left + 20, wy: w.top + w.height / 2, top: rb.top, h: rb.height };
+    }, t);
+    await p.evaluate(() => [...document.querySelectorAll('.nb-rows .nb-row')].find(r => /^Make gravy/.test((r.querySelector('.nb-t') || {}).textContent || '')).scrollIntoView({ block: 'center' }));
+    await L.settle(p, 300);
+    const g = await at('Make gravy'), l = await at('Laksa');
+    await p.mouse.click(g.x, g.wy);
+    await L.settle(p, 250);
+    await p.mouse.click(l.x, l.top + l.h / 3);
+    await L.settle(p, 300);
+    const done = await p.evaluate(() => ['Make gravy', 'Laksa'].map(t => { const r = [...document.querySelectorAll('.nb-rows .nb-row')].find(r => ((r.querySelector('.nb-t') || {}).textContent || '').indexOf(t) === 0); return !!(r && r.classList.contains('is-done')); }));
+    ok(done[0] && done[1], 'prep, no signal, two fast taps down the list: Make gravy and Laksa both end ticked (' + JSON.stringify(done) + ')');
+    await p.context().setOffline(false);
+    await release(p);
+    await L.settle(p, 500);
+    ok(p.errors.length === 0, 'fast taps, no signal: no page errors ' + p.errors.join(' | '));
+  });
 
   // 1c. Done today and Ordered today, where a ticked line goes: Not sent there too with no signal
   const doneMark = (p, t) => p.evaluate(t => { const li = [...document.querySelectorAll('.nb-done li')].find(l => (l.textContent || '').indexOf(t) >= 0); return li ? (li.querySelector('.nb-dx .nb-unsent') ? 'shown' : 'none') : 'no row'; }, t);
@@ -272,7 +326,7 @@ const bar = p => p.evaluate(() => { const b = document.querySelector('.upd-bar')
     await L.settle(p, 1500);
     ok(!(await reloaded(p)), 'update: a write waiting, the first tap does not reload');
     u = await bar(p);
-    ok(u && u.t === 'Not saved yet.' && u.btn === 'Tap again to update' && u.oneLine, 'update: it asks for a second tap, on one line at 390 (' + JSON.stringify(u) + ')');
+    ok(u && u.t === 'Not sent yet.' && u.btn === 'Tap again to update' && u.oneLine, 'update: a write waiting, it says Not sent yet like the strip and asks for a second tap, on one line at 390 (' + JSON.stringify(u) + ')');
     await L.settle(p, 4500);
     u = await bar(p);
     ok(u && u.btn === 'Update now', 'update: left alone, the button goes back after 4 seconds');
@@ -282,6 +336,8 @@ const bar = p => p.evaluate(() => { const b = document.querySelector('.upd-bar')
     await p.click('.upd-bar button');
     await L.settle(p, 1500);
     ok(!(await reloaded(p)), 'update: half a line typed, the first tap does not reload');
+    u = await bar(p);
+    ok(u && u.t === 'Not saved yet.' && u.btn === 'Tap again to update', 'update: half a line typed, it says Not saved yet (' + JSON.stringify(u) + ')');
     await p.click('.upd-bar button');
     await waitReload(p);
     ok(await reloaded(p), 'update: the second tap updates');
@@ -323,6 +379,27 @@ const bar = p => p.evaluate(() => { const b = document.querySelector('.upd-bar')
     await p.click('.upd-bar button');
     await waitReload(p);
     ok(await reloaded(p), 'update: with the internet back, the tap updates');
+  });
+
+  // 6c. Update now on a signal so weak the server takes its time: the strip says the book is checking, then No signal
+  // after 8 seconds with no answer (it used to show nothing for those 8 seconds)
+  await step('6c', async () => {
+    p = await L.open(b, '#/prep', { wait: 1500 });
+    await updBar(p);
+    await p.context().route(DEAD, () => {});   // every request to the book waits, unanswered
+    await mark(p);
+    await p.click('.upd-bar button');
+    await L.settle(p, 300);
+    let u = await bar(p);
+    ok(u && u.t === 'Checking the signal...', 'update, weak signal: the strip says it is checking (' + JSON.stringify(u) + ')');
+    await p.clock.fastForward(5000);
+    u = await bar(p);
+    ok(u && u.t === 'Checking the signal...', 'update, weak signal: still checking after 5 seconds, not back to New version (' + JSON.stringify(u) + ')');
+    await p.clock.fastForward(3500);
+    await L.settle(p, 300);
+    u = await bar(p);
+    ok(!(await reloaded(p)) && u && /^No signal\./.test(u.t), 'update, weak signal: no answer in 8 seconds, no reload and the strip says No signal (' + JSON.stringify(u) + ')');
+    await deadNet(p, false);
   });
 
   // 7. the automatic update with no signal (2 minutes untouched): it waits for the signal

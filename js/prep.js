@@ -264,13 +264,17 @@
      Done today and Ordered today all have it, on a phone too (who wrote a line is hidden below 600 px).
      It shows only while the strip does (syncState(): no signal, or a write waiting more than 3 seconds). Every write is
      pending until the server answers, even on a good signal, so a mark on every tick would make the rows jump.
-     The mark sits in a slot (.nb-mk) inside the words, so it wraps with them like Urgent and never narrows them. */
-  var UNSENT = '<span class="nb-unsent">Not sent</span>';
+     The mark sits in a slot (.nb-mk) inside the words, so it wraps with them like Urgent and never narrows them.
+     While the strip is up every slot keeps the mark's room (.nb-held: hidden, no words, so the row's text and the line
+     sheet stay clean), so a tick with no signal only fills it and the rows never jump under the next tap (20 Oct 2026
+     fast ticking). The rows move once, with the strip, when it comes or goes. */
+  var UNSENT = '<span class="nb-unsent">Not sent</span>', HELD = '<span class="nb-held" aria-hidden="true"></span>';
   function unsentOn(x) { return !!(x._unsent && syncState()); }
-  function unsentMark(x) { return '<span class="nb-mk">' + (unsentOn(x) ? UNSENT : '') + '</span>'; }
+  function markHTML(on) { return on ? UNSENT : syncState() ? HELD : ''; }
+  function unsentMark(x) { return '<span class="nb-mk">' + markHTML(unsentOn(x)) + '</span>'; }
   function markRow(row, on) {
-    var s = row && row.querySelector('.nb-mk');
-    if (s && on !== !!s.firstChild) s.innerHTML = on ? UNSENT : '';
+    var s = row && row.querySelector('.nb-mk'), h = markHTML(on);
+    if (s && s.innerHTML !== h) s.innerHTML = h;
   }
   // a live list's lines, each with its Not sent flag
   function snapLines(snap, date) {
@@ -8755,6 +8759,8 @@
       return pending > 0 || !!(window.LK_DELIVERY && window.LK_DELIVERY.dirty()) || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!(window.LK_SUP && window.LK_SUP.dirty()) || !!mlf.text.trim() || tdDirty() || mfDirty() || nfDirty() || gfDirty() || draftDirty() || cutDirty() || !!String(S.bulk || '').trim() || !!S.sheet || !!S.recipeOpen ||
         !!(S.text.trim() || S.qty.trim() || S.otext.trim() || S.oqty.trim() || S.wf.text.trim() || String(S.wf.amt).trim() || S.wf.act.trim() || S.xf.text.trim() || String(S.xf.amt).trim() || S.xf.note.trim() || (S.wrA != null && S.wrA !== (rvBase().avoidable || '')) || (S.wrC != null && S.wrC !== (rvBase().change || '')));
     },
+    // a write waiting for the server (part of unsaved()), so Update now can say "Not sent yet." like the strip
+    unsent: function () { return pending > 0; },
     noteInfo: noteInfo, noteBellLabel: noteBellLabel,
     noteOpen: noteOpen,
     // the recipes were opened: look for the head chef's recipe changes when the last look is 30 minutes old
