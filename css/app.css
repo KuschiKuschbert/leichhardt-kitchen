@@ -100,6 +100,9 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .chip { flex: 0 0 auto; min-height: 44px; padding: 0 0.85rem; border-radius: 22px; border: 1.5px solid var(--ink); background: var(--paper); font-weight: 600; font-size: 0.875rem; cursor: pointer; }
 .chip.sq { border-radius: 8px; }
 .chip[aria-pressed="true"] { background: var(--ink); color: #fff; }
+/* the Specials chip (27 Oct 2026): orange, so the specials are easy to find first */
+.chip.sp { border-color: var(--small-ink); color: var(--small-ink); }
+.chip.sp[aria-pressed="true"] { background: var(--small-ink); color: #fff; }
 .row-label { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.15rem 0.75rem; }
 .empty { padding: 1.25rem; border: 1.5px dashed var(--stone); border-radius: var(--radius); color: var(--muted); }
 .tag { display: inline-block; font-size: 0.8125rem; font-weight: 700; padding: 0.1rem 0.5rem; border-radius: 6px; border: 1.5px solid var(--ink); }
@@ -1776,6 +1779,17 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd 
 .mg-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.6rem; }
 .mg-check { display: flex; align-items: center; gap: 0.6rem; min-height: 44px; font-weight: 600; }
 .mg-check input { width: 1.4rem; height: 1.4rem; accent-color: var(--accent-ink); }
+/* the recipe form's On the book switches (Show in the book, Special): a row each, the switch on the right */
+.mg-sws { display: flex; flex-direction: column; gap: 0.5rem; }
+.mg-sw { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; width: 100%; min-height: 52px; padding: 0.5rem 0.75rem; border: 1.5px solid var(--edge); border-radius: var(--radius); background: var(--paper); color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.mg-sw-t { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+.mg-sw-t b { font-weight: 700; }
+.mg-sw-t small { color: var(--muted); font-size: 0.875rem; }
+.mg-sw-k { flex: 0 0 auto; position: relative; width: 3rem; height: 1.75rem; border-radius: var(--r-pick); background: var(--steel-dark); }
+.mg-sw-k::after { content: ''; position: absolute; top: 0.2rem; left: 0.2rem; width: 1.35rem; height: 1.35rem; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgb(0 0 0 / 0.3); transition: left 0.18s ease-out; }
+.mg-sw[aria-checked="true"] { border-color: var(--accent); }
+.mg-sw[aria-checked="true"] .mg-sw-k { background: var(--accent-ink); }
+.mg-sw[aria-checked="true"] .mg-sw-k::after { left: 1.45rem; }
 .mg-ings, .mg-pins, .mg-hist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.6rem; }
 .mg-ing, .mg-pinrow { display: flex; flex-direction: column; gap: 0.45rem; padding: 0.7rem; border: 1.5px solid var(--edge); border-radius: var(--radius); background: var(--paper); }
 .mg-pinrow.on { border-color: var(--accent); }

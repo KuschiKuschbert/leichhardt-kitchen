@@ -181,8 +181,11 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
 
   // hide a recipe and put it back
   await go(p, '#/manage/r/side-salad'); await editor(p);
-  await p.click('[data-mg="hide"][data-v="1"]'); await L.settle(p, 100);
-  await p.click('[data-mg="hide"][data-v="1"]');
+  ok(await p.getAttribute('[data-mg="sw-show"]', 'aria-checked') === 'true', 'hide: the Show in the book switch starts on');
+  await p.click('[data-mg="sw-show"]'); await L.settle(p, 100);
+  ok(await p.getAttribute('[data-mg="sw-show"]', 'aria-checked') === 'false', 'hide: the switch turns off');
+  ok(/Not saved yet/.test(await txt(p, '.mg-state') || ''), 'hide: the switch waits for Save');
+  await p.click('[data-mg="save"]');
   await toast(p);
   ok(/Hidden from the book/.test(await toastText(p) || ''), 'hide: the toast says hidden');
   await go(p, '#/recipes'); await L.settle(p, 300);
@@ -191,10 +194,31 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   await p.click('[data-mg="chip"][data-v="hidden"]'); await L.settle(p, 200);
   ok(await p.$('#mg-results a[href="#/manage/r/side-salad"]') !== null, 'hide: listed under Hidden');
   await p.click('#mg-results a[href="#/manage/r/side-salad"]'); await editor(p);
-  await p.click('[data-mg="hide"][data-v="0"]');
+  await p.click('[data-mg="sw-show"]'); await p.click('[data-mg="save"]');
   await wait(p, () => /Version 2/.test((document.querySelector('.mg-toasts .p-toast') || {}).textContent || ''));
   await go(p, '#/recipes'); await L.settle(p, 300);
   ok(await p.$('a[href="#/r/side-salad"]') !== null, 'hide: put back in the book');
+
+  // Special: the switch moves a dish into Specials, first on the Pass with its own chip; off puts it back in Salads
+  await go(p, '#/manage/r/caesar'); await editor(p);
+  ok(await p.getAttribute('[data-mg="sw-special"]', 'aria-checked') === 'false', 'special: the switch starts off');
+  await p.click('[data-mg="sw-special"]'); await L.settle(p, 100);
+  ok(await p.inputValue('#mg-msec') === 'Specials', 'special: the menu section reads Specials');
+  await p.click('[data-mg="save"]'); await toast(p);
+  ok(/Saved/.test(await toastText(p) || ''), 'special: saved');
+  await go(p, '#/recipes'); await L.settle(p, 300);
+  const chips = await p.$$eval('[data-act="kind"]', els => els.map(e => e.textContent));
+  ok(/^Specials \(1\)$/.test(chips[1] || ''), 'special: the Specials chip comes first after All ' + chips.slice(0, 3).join(', '));
+  ok(await p.getAttribute('#shelves .shelf', 'aria-label') === 'Specials', 'special: the Specials shelf is first');
+  await p.click('[data-act="kind"][data-val="sp"]'); await L.settle(p, 300);
+  ok(await p.$$eval('#shelves a[href^="#/r/"]', els => els.map(e => e.getAttribute('href')).join(',')) === '#/r/caesar', 'special: the chip shows only the specials');
+  await go(p, '#/manage/r/caesar'); await editor(p);
+  ok(await p.getAttribute('[data-mg="sw-special"]', 'aria-checked') === 'true', 'special: the switch opens on');
+  await p.click('[data-mg="sw-special"]'); await L.settle(p, 100);
+  ok(await p.inputValue('#mg-msec') === '', 'special: off with no earlier section leaves it to pick');
+  await p.selectOption('#mg-msec', 'Salads'); await p.click('[data-mg="save"]'); await toast(p);
+  await go(p, '#/recipes'); await L.settle(p, 300);
+  ok(!(await p.$$eval('[data-act="kind"]', els => els.map(e => e.textContent).join('|'))).includes('Specials'), 'special: no Specials chip once none are left');
   ok(p.errors.length === 0, 'editing: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 

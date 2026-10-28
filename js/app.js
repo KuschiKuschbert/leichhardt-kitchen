@@ -46,6 +46,7 @@
      (js/overlay.js lays them over js/data.js; js/prep.js says when new ones arrived: lk-rx) */
   var byId, usedIn, rolled, rows, tags, hay, missing;
   var MENU, PREP, placed, memb, GROUPS, SHELVES;
+  var SPECIALS = 'Specials';   // the menu section the recipe form's Special switch uses (27 Oct 2026)
   // A recipe with no contains or check list gets them worked out from its ingredient tags.
   function fromTags(r) {
     r.contains = []; r.check = [];
@@ -73,10 +74,12 @@
     /* ---------- menu sections: the guest menu in its printed order, then the prep recipes ---------- */
     // Each group is { key, title, list }. All three views (Tiles, List, The Pass) use these.
     MENU = []; PREP = []; placed = {}; memb = {};
-    (D.menuOrder || []).forEach(function (s, i) {
+    // Specials (27 Oct 2026): the head chef's Special switch puts a dish in this section; it always comes first
+    var menu = (D.menuOrder || []).filter(function (s) { return s.title === SPECIALS; }).concat((D.menuOrder || []).filter(function (s) { return s.title !== SPECIALS; }));
+    menu.forEach(function (s, i) {
       var list = (s.ids || []).filter(function (id) { return byId[id] && !placed[id]; });
       list.forEach(function (id) { placed[id] = true; byId[id].sec = s.title; });
-      if (list.length) MENU.push({ key: 'm' + i, title: s.title, list: list.map(function (id) { return byId[id]; }) });
+      if (list.length) MENU.push({ key: s.title === SPECIALS ? 'sp' : 'm' + i, title: s.title, list: list.map(function (id) { return byId[id]; }) });
     });
     // A dish that is in no menu section still shows, so nothing goes missing.
     var other = D.recipes.filter(function (r) { return !placed[r.id] && (r.kind === 'main' || r.kind === 'snack' || r.kind === 'side' || r.kind === 'dessert'); });
@@ -696,11 +699,13 @@
     }).join('');
     return searchNote() + (any ? '<div class="tile-groups">' + html + '</div>' : '<div class="empty">No recipes match. <button type="button" class="btn" data-act="clearall">Clear search and filters</button></div>');
   }
-  // The Functions chip sits first after All so it is always on view; every other chip follows the menu order.
+  // Specials, then Functions, sit first after All so they are always on view; every other chip follows the menu order.
+  // The Specials chip shows only the specials (the Specials shelf is already first on the page).
   function kindChips() {
-    var all = [{ key: 'all', title: 'All', list: D.recipes }].concat(GROUPS.filter(function (g) { return g.title === 'Functions'; }), GROUPS.filter(function (g) { return g.title !== 'Functions'; }));
+    var first = function (g) { return g.key === 'sp' || g.title === 'Functions'; };
+    var all = [{ key: 'all', title: 'All', list: D.recipes }].concat(GROUPS.filter(function (g) { return g.key === 'sp'; }), GROUPS.filter(function (g) { return g.key !== 'sp' && g.title === 'Functions'; }), GROUPS.filter(function (g) { return !first(g); }));
     return '<div class="chips scroll" role="group" aria-label="Recipe type">' + all.map(function (g) {
-      return '<button type="button" class="chip' + (g.title === 'Functions' ? ' sq' : '') + '" data-act="kind" data-val="' + g.key + '" data-k="kind:' + g.key + '" aria-pressed="' + (ui.kind === g.key) + '">' + esc(g.title) + ' (' + g.list.length + ')</button>';
+      return '<button type="button" class="chip' + (g.key === 'sp' ? ' sq sp' : g.title === 'Functions' ? ' sq' : '') + '" data-act="kind" data-val="' + g.key + '" data-k="kind:' + g.key + '" aria-pressed="' + (ui.kind === g.key) + '">' + esc(g.title) + ' (' + g.list.length + ')</button>';
     }).join('') + '</div>';
   }
   function viewTiles(route) {
@@ -989,7 +994,9 @@
     tags: function (id) { return tags[id] || []; },
     missing: function (id) { return (missing[id] || []).slice(); },   // allergens incomplete: the ingredients with no allergen info yet
     usedIn: function (id) { return (usedIn[id] || []).slice(); },
-    menuTitles: function () { return (D.menuOrder || []).map(function (s) { return s.title; }); },
+    // Specials is always offered first, even before any dish is in it
+    menuTitles: function () { return [SPECIALS].concat((D.menuOrder || []).map(function (s) { return s.title; }).filter(function (t) { return t !== SPECIALS; })); },
+    specials: SPECIALS,
     sectionOf: function (id) { var s = (D.menuOrder || []).filter(function (x) { return x.ids.indexOf(id) >= 0; })[0]; return s ? s.title : ''; },
     // links to cards not in the book yet: { id, by: [recipe names] }
     toCome: function () {
