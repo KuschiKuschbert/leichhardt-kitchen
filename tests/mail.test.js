@@ -167,6 +167,44 @@ const mailReads = p => p.evaluate(() => (window.__fake.reads || []).filter(k => 
   ok(p.errors.length === 0, 'admin mail: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // the done mail could not be read (no signal, 28 Oct 2026): no "(0)" and no "Nothing ticked off", no read on every
+  // draw, and it is read again once the phone is back online
+  const doneX = Object.assign(L.mail(), { [fsKey(['mail', 'm4'])]: { from: 'bo', by: 'bo', cat: 'idea', pri: 'any', text: 'Label the dry store shelves', at: L.NOW - 3 * 86400000, done: true, doneAt: L.NOW - 86400000, seen: true },
+    [fsKey(['mailstat', 'm4'])]: { seen: true, done: true, by: 'bo' } });
+  p = await L.open(b, '#/admin', { admin: true, who: '', extra: doneX, width: 1280, height: 900, wait: 2000 });
+  await L.waitFor(p, () => (window.__fake.reads || []).some(k => /\/mail$/.test(k)), null, 8000).catch(() => {});
+  await L.settle(p, 800);
+  await p.evaluate(() => { window.__fake.failReads = /\/mail$/; });
+  const dn0 = await mailReads(p);
+  await L.adminTab(p, 'mail'); await L.settle(p, 800);
+  for (let i = 0; i < 3; i++) { await L.adminTab(p, 'insights'); await L.adminTab(p, 'mail'); }
+  const dn1 = await mailReads(p), box = await p.evaluate(() => { const d = document.querySelector('.ml-donebox'); return d ? d.textContent : ''; });
+  ok(!/\(0\)/.test(await txt(p, '.ml-donebox summary') || '') && !/Nothing ticked off/.test(box) && /Could not load the done mail\. Check the signal\./.test(box), 'done mail unreadable: it says so, with no (0) and no "Nothing ticked off" (' + box.slice(0, 120) + ')');
+  ok(dn1 - dn0 <= 1, 'done mail unreadable: no read on every draw (' + (dn1 - dn0) + ' reads)');
+  for (const w of [390, 768, 1280]) { await p.setViewportSize({ width: w, height: 900 }); await L.settle(p, 250); const o = await L.overflow(p); ok(!o, 'done mail unreadable: no sideways scroll at ' + w + ' px' + (o ? ' (' + o + ')' : '')); }
+  await p.evaluate(() => { window.__fake.failReads = null; window.dispatchEvent(new Event('online')); });
+  ok(await L.waitFor(p, () => /Done in the last 30 days \(1\)/.test((document.querySelector('.ml-donebox summary') || {}).textContent || ''), null, 6000).then(() => true, () => false), 'done mail, signal back: read again by itself, Done (1)');
+  ok(p.errors.length === 0, 'done mail: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+  // the same, read again after its wait with no online event (wifi that stayed up): an online event later, with
+  // nothing failed, reads nothing (review of 28 Oct 2026: the retry stayed set and read the done mail again)
+  p = await L.open(b, '#/admin', { admin: true, who: '', extra: doneX, width: 1280, height: 900, wait: 2000 });
+  await L.waitFor(p, () => (window.__fake.reads || []).some(k => /\/mail$/.test(k)), null, 8000).catch(() => {});
+  await L.settle(p, 800);
+  await p.evaluate(() => { window.__fake.failReads = /\/mail$/; });
+  await L.adminTab(p, 'mail'); await L.settle(p, 800);
+  await p.evaluate(() => { window.__fake.failReads = null; });
+  await p.clock.fastForward('06:00');
+  await L.adminTab(p, 'insights'); await L.adminTab(p, 'mail');
+  ok(await L.waitFor(p, () => /Done in the last 30 days \(1\)/.test((document.querySelector('.ml-donebox summary') || {}).textContent || ''), null, 6000).then(() => true, () => false), 'done mail, after the wait: read again at the next draw');
+  const dn2 = await mailReads(p);
+  await L.adminTab(p, 'insights');
+  await p.evaluate(() => { window.dispatchEvent(new Event('offline')); window.dispatchEvent(new Event('online')); });
+  await L.settle(p, 2500);
+  ok(await mailReads(p) === dn2, 'done mail in, then an online event: nothing read again (' + dn2 + ' then ' + await mailReads(p) + ')');
+  ok(p.errors.length === 0, 'done mail after the wait: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   // a sous chef's own phone: no mail list while it is off
   const cfgMain = (await (async () => { const q = await L.open(b, '#/', { who: 'sam', wait: 800 }); await L.waitFor(q, () => !!window.__fake, null, 5000); const d = (await store(q))[fsKey(['config', 'main'])]; await q.context().close(); return d; })());
   p = await L.open(b, '#/mail', { who: 'sam', extra: L.mail(), wait: 1500 });

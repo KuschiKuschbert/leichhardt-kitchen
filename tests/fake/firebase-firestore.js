@@ -11,6 +11,9 @@
 //   writes), marked fromCache; getDocs answers the same way; getDoc, getDocFromServer and getDocsFromServer refuse
 //   (unavailable). Listeners started before keep their documents, marked fromCache. __fake.warm() is the signal coming
 //   back: cold goes, held writes are sent ('hold' becomes 'ok') and every listener gets the server's answer.
+//   __fake.ack() lets the listeners hear the server's confirm of the held writes, whose promises still wait for
+//   release(); __fake.quiet = true tells a listener only what changed for it, like the SDK (see sigOf below).
+//   __fake.notOwner = true: the Google account is not the head chef's (the owner check, config/admins, is refused)
 // __fake.reads lists the paths asked for (getDoc, getDocs, getDocFromServer) and __fake.readLog every document read from the "server";
 // getDocsFromCache only returns documents this page has read before.
 // Reads the real rules refuse are refused here too, for the sign-in on this page (colRefused(), readRefused(),
@@ -44,6 +47,13 @@ const seen = new Set((() => { try { return JSON.parse(sessionStorage.getItem('fa
 let seenSave = 0;
 function remember(k) { if (seen.has(k)) return; seen.add(k); if (!seenSave) seenSave = setTimeout(() => { seenSave = 0; try { sessionStorage.setItem('fake.seen', JSON.stringify([...seen])); } catch (e) {} }, 0); }
 window.__fake.release = function () { const h = held.splice(0); pendingKeys.clear(); h.forEach(f => f()); notify(); };
+// the server's confirm reaching the listeners first (28 Oct 2026): the snapshots lose hasPendingWrites while the writes'
+// promises still wait (release() ends them), so a page's own .then() after a write does not draw
+window.__fake.ack = function () { pendingKeys.clear(); notify(); };
+// __fake.quiet = true: like the SDK, a listener hears nothing when nothing it holds changed (documents, hasPendingWrites
+// and fromCache all the same as its last snapshot). Off by default: every listener is told again after any write, which
+// redraws the page, so a check that something is patched in place without a redraw turns this on
+function sigOf(docs, fromCache) { return JSON.stringify(docs.map(d => [key(d.ref.path), d.exists() ? d.data() : null, !!(d.metadata && d.metadata.hasPendingWrites)])) + '|' + !!fromCache; }
 window.__fake.warm = function () {
   window.__fake.cold = null; subs.forEach(s => { s.cold = false; });
   if (window.__fake.mode === 'hold') { window.__fake.mode = 'ok'; window.__fake.release(); } else notify();
@@ -190,6 +200,9 @@ function colRefused(ref, list) {
 /* One record the real rules refuse this phone (getDoc, getDocFromServer, a listener on it, Lite). */
 function readRefused(ref) {
   if (colRefused(ref, false)) return true;
+  // __fake.notOwner = true: the Google account signed in is not the head chef's, so the owner check is refused (28 Oct
+  // 2026: only that refusal means "not the head chef's account", no signal does not)
+  if (window.__fake.notOwner && /\/config\/admins$/.test(key(ref.path))) return true;
   if (window.__fakeUser) return false;
   const k = key(ref.path), root = ref.path.slice(0, 2).join('/');
   if (/\/config\/admins$/.test(k)) return true;   // the owner check: only the head chef's Google account reads it
@@ -308,8 +321,15 @@ export function onSnapshot(ref, next, err) {
 // a listener pays for what it first sends, then only for documents that changed since its last snapshot; an answer
 // from the empty copy in memory (cold) costs nothing
 function deliver(s) {
-  if (s.cold) { s.next(cacheSnap(s.ref)); return; }
+  if (s.cold) {
+    const c = cacheSnap(s.ref), sg = sigOf(c.docs || [c], true);
+    if (window.__fake.quiet && s.sig === sg) return;
+    s.sig = sg; s.next(c); return;
+  }
   const r = s.ref.type === 'doc' ? snapDoc(s.ref.path) : listCol(s.ref.path, s.ref.c), docs = s.ref.type === 'doc' ? [r] : r.docs;
+  const sg = sigOf(docs, cold(s.ref));
+  if (window.__fake.quiet && s.sig === sg) return;
+  s.sig = sg;
   const now = {}; docs.forEach(d => { now[key(d.ref.path)] = JSON.stringify(d.exists() ? d.data() : null); });
   if (!s.last) bill('listen', key(s.ref.path), docs.length);
   else { const ch = Object.keys(now).filter(k => s.last[k] !== now[k]).length; if (ch) window.__fake.bill.push({ kind: 'listen+', path: key(s.ref.path), n: ch }); }

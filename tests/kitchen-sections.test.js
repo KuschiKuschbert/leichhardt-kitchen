@@ -180,6 +180,17 @@ const addLine = async (p, text, sec) => {
   ok(/Ann/.test(days) && /Grill 1/.test(days) && /Pass 1/.test(days), 'admin: who worked where lists Ann on Grill and Pass');
   ok(p.errors.length === 0, 'admin board: no page errors ' + p.errors.join(' | '));
   await p.context().close();
+  // the same with who is on unreadable (no signal, a lost read, 28 Oct 2026): it says it could not load, never
+  // "Nobody yet" for every section and "Nobody has picked a section yet", and comes in once the signal is back
+  p = await L.open(b, '#/admin', { admin: true, extra: withSecs(shifts), failReads: '/shifts$', wait: 1800 });
+  await L.adminTab(p, 'people'); await L.settle(p, 600);
+  const blk = await txt(p, '.a-ks') || '';
+  ok(/Could not load who is on today\. Check the signal\./.test(blk) && !/Nobody yet|Nobody has picked a section yet/.test(blk), 'admin, who is on unreadable: says it could not load, not Nobody yet (' + blk.slice(-160) + ')');
+  ok(!(await L.overflow(p)), 'admin, who is on unreadable: no sideways scroll at 390');
+  await p.evaluate(() => { window.__fake.failReads = null; window.dispatchEvent(new Event('online')); });
+  ok(await L.waitFor(p, () => /Grill\s*Ann/.test((document.querySelector('.a-ks-today') || {}).textContent || ''), null, 6000).then(() => true, () => false), 'admin, signal back: On today shows Ann on Grill by itself');
+  ok(p.errors.length === 0, 'admin board unreadable: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
 
   await b.close();
   L.report(R);

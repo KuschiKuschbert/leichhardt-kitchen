@@ -323,12 +323,21 @@
   }
   function stop() { if (F.unsub) F.unsub(); if (F.unsub2) F.unsub2(); F.unsub = F.unsub2 = null; F.key = ''; }
   /* Rounds ticked as sent (fnsent/<function>_<round time>): one more small listener, on yesterday and later, so an
-     overnight round is still there after midnight. A round whose time was changed after it was ticked shows as not sent. */
+     overnight round is still there after midnight. A round whose time was changed after it was ticked shows as not sent.
+     No signal (28 Oct 2026): started again at midnight, the listener answers at once from the copy in memory, which holds
+     at most this phone's own unsent ticks (LK_PREP.book().listSnap says 'wait'). The rounds already read stay sent, with
+     this phone's ticks on top, until the server answers; before, every round showed as not sent and could go out twice.
+     includeMetadataChanges: the server's first answer comes in even when nothing changed (not billed). */
   F.sent = {};
   function watchSent(api, fs) {
     if (F.unsub2) F.unsub2();
-    F.unsub2 = fs.onSnapshot(fs.query(api.colRef('fnsent'), fs.where('day', '>=', kday(now() - DAY))), function (snap) {
-      var m = {}; snap.docs.forEach(function (d) { m[d.id] = d.data(); }); F.sent = m; changed();
+    var state = 'loading', last = {};
+    F.unsub2 = fs.onSnapshot(fs.query(api.colRef('fnsent'), fs.where('day', '>=', kday(now() - DAY))), { includeMetadataChanges: true }, function (snap) {
+      var k = api.listSnap ? api.listSnap(snap, state, last) : 'new';
+      if (k === 'same') return;
+      var m = k === 'wait' ? Object.assign({}, F.sent) : {}; snap.docs.forEach(function (d) { m[d.id] = d.data(); }); F.sent = m;
+      state = k === 'wait' ? 'offline' : 'ok';
+      changed();
     }, function () { F.unsub2 = null; });
   }
   function sentRec(f, i) { var r = (f.rounds || [])[i], x = r && r.at ? F.sent[f.id + '_' + r.at] : null; return x && x.sent ? x : null; }
