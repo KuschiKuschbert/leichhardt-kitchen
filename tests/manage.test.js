@@ -200,6 +200,7 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   ok(await p.$('a[href="#/r/side-salad"]') !== null, 'hide: put back in the book');
 
   // Special: the switch moves a dish into Specials, first on the Pass with its own chip; off puts it back in Salads
+  // (Chicken Adobo is a special in the book file, so Specials always holds it too)
   await go(p, '#/manage/r/caesar'); await editor(p);
   ok(await p.getAttribute('[data-mg="sw-special"]', 'aria-checked') === 'false', 'special: the switch starts off');
   await p.click('[data-mg="sw-special"]'); await L.settle(p, 100);
@@ -208,17 +209,17 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   ok(/Saved/.test(await toastText(p) || ''), 'special: saved');
   await go(p, '#/recipes'); await L.settle(p, 300);
   const chips = await p.$$eval('[data-act="kind"]', els => els.map(e => e.textContent));
-  ok(/^Specials \(1\)$/.test(chips[1] || ''), 'special: the Specials chip comes first after All ' + chips.slice(0, 3).join(', '));
+  ok(/^Specials \(2\)$/.test(chips[1] || ''), 'special: the Specials chip comes first after All ' + chips.slice(0, 3).join(', '));
   ok(await p.getAttribute('#shelves .shelf', 'aria-label') === 'Specials', 'special: the Specials shelf is first');
   await p.click('[data-act="kind"][data-val="sp"]'); await L.settle(p, 300);
-  ok(await p.$$eval('#shelves a[href^="#/r/"]', els => els.map(e => e.getAttribute('href')).join(',')) === '#/r/caesar', 'special: the chip shows only the specials');
+  ok(await p.$$eval('#shelves a[href^="#/r/"]', els => els.map(e => e.getAttribute('href')).sort().join(',')) === '#/r/caesar,#/r/chicken-adobo', 'special: the chip shows only the specials');
   await go(p, '#/manage/r/caesar'); await editor(p);
   ok(await p.getAttribute('[data-mg="sw-special"]', 'aria-checked') === 'true', 'special: the switch opens on');
   await p.click('[data-mg="sw-special"]'); await L.settle(p, 100);
   ok(await p.inputValue('#mg-msec') === '', 'special: off with no earlier section leaves it to pick');
   await p.selectOption('#mg-msec', 'Salads'); await p.click('[data-mg="save"]'); await toast(p);
   await go(p, '#/recipes'); await L.settle(p, 300);
-  ok(!(await p.$$eval('[data-act="kind"]', els => els.map(e => e.textContent).join('|'))).includes('Specials'), 'special: no Specials chip once none are left');
+  ok((await p.$$eval('[data-act="kind"]', els => els.map(e => e.textContent))).includes('Specials (1)'), 'special: off takes the dish out of Specials');
   ok(p.errors.length === 0, 'editing: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
