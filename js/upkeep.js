@@ -210,6 +210,9 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
       reloadNow(true);
     };
     bar.appendChild(t); bar.appendChild(b); document.body.insertBefore(bar, document.getElementById('app') || document.body.firstChild);
+    // the strip keeps its usual height, taller only when its words need more room (Extra large text in a wide font):
+    // the bars that stick under it follow its real height (--upd-h, 48 px in css/app.css until this has measured it)
+    if (window.ResizeObserver) new ResizeObserver(function () { document.documentElement.style.setProperty('--upd-h', bar.offsetHeight + 'px'); }).observe(bar);
   }
   function check(returned) {
     lastCheck = Date.now();

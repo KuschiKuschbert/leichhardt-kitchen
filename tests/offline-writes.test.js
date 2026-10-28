@@ -37,8 +37,14 @@ async function updBar(p) {
   await p.evaluate(() => navigator.serviceWorker.dispatchEvent(new MessageEvent('message', { data: 'lk-new' })));
   await L.waitFor(p, () => !!document.querySelector('.upd-bar'), null, 3000).catch(() => {});
 }
-// the update strip's words (no-break spaces read as spaces), its button, and whether the words fit on one line
-const bar = p => p.evaluate(() => { const b = document.querySelector('.upd-bar'); return b ? { t: b.querySelector('span').textContent.replace(/\u00a0/g, ' '), btn: b.querySelector('button').textContent, oneLine: b.querySelector('span').getBoundingClientRect().height < 30 && b.scrollWidth <= b.clientWidth } : null; });
+// the update strip's words (no-break spaces read as spaces), its button, and whether it all fits: the words inside the
+// strip, the strip no wider than its room, and the button on the screen
+const bar = p => p.evaluate(() => { const b = document.querySelector('.upd-bar'); if (!b) return null; const s = b.querySelector('span'), n = b.querySelector('button'), r = b.getBoundingClientRect(), w = s.getBoundingClientRect(), k = n.getBoundingClientRect(); return { t: s.textContent.replace(/\u00a0/g, ' '), btn: n.textContent, fits: w.top >= r.top && w.bottom <= r.bottom && b.scrollWidth <= b.clientWidth && k.left >= 0 && k.right <= window.innerWidth }; });
+// the tests answer the book's fonts with nothing (tests/lib.js), so words show in the machine's own font, which is
+// wider on GitHub than here: a wide font with extra spacing on the strip stands in for the widest, on every machine
+const wide = p => p.addStyleTag({ content: '.upd-bar, .upd-bar button { font-family: "DejaVu Sans", Verdana, sans-serif !important; letter-spacing: 0.04em !important; }' });
+// page errors, less the browser's own note for a request it could not make while the test has the signal off on purpose
+const errs = p => p.errors.filter(e => !/Failed to load resource: net::ERR_(FAILED|INTERNET_DISCONNECTED)/.test(e));
 // a weak signal: the server takes ms to answer the HEAD of index.html that the update check and lkServerUp() send
 const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.html', async r => { if (r.request().method() === 'HEAD') await L.sleep(ms); return r.fallback(); });
 
@@ -79,7 +85,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     await L.settle(p, 500);
     ok(await unsent(p, 'Wipe the pass shelves') === 'none', 'prep: Not sent goes once the server has it');
     ok(!(await asks(p)), 'leaving: everything sent, the browser does not ask');
-    ok(p.errors.length === 0, 'prep: no page errors ' + p.errors.join(' | '));
+    ok(errs(p).length === 0, 'prep: no page errors ' + errs(p).join(' | '));
   });
 
   // 1b. ticking fast on a good signal at 390 (20 Oct 2026 decision): the rows below stay where they are, so the next tap
@@ -117,7 +123,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
       await release(p);
       await L.settle(p, 500);
       ok(await unsent(p, target) === 'none', hash + ' ' + who + ': Not sent goes once the server has it');
-      ok(p.errors.length === 0, hash + ' ' + who + ': no page errors ' + p.errors.join(' | '));
+      ok(errs(p).length === 0, hash + ' ' + who + ': no page errors ' + errs(p).join(' | '));
     });
     // no signal (the cool room): every row keeps the mark's room while the strip is up, so a tick only fills it and the
     // rows below stay where they are (review 2 of the fix: Laksa moved them 26 px for a chef, Slice onions 9 px)
@@ -141,7 +147,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
       await release(p);
       await L.settle(p, 500);
       ok(await p.evaluate(() => !document.querySelector('.nb-held, .nb-unsent')), hash + ' ' + who + ': signal back and sent, the room for the mark goes with the strip');
-      ok(p.errors.length === 0, hash + ' ' + who + ', no signal: no page errors ' + p.errors.join(' | '));
+      ok(errs(p).length === 0, hash + ' ' + who + ', no signal: no page errors ' + errs(p).join(' | '));
     });
   }
 
@@ -170,7 +176,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     await p.context().setOffline(false);
     await release(p);
     await L.settle(p, 500);
-    ok(p.errors.length === 0, 'fast taps, no signal: no page errors ' + p.errors.join(' | '));
+    ok(errs(p).length === 0, 'fast taps, no signal: no page errors ' + errs(p).join(' | '));
   });
 
   // 1c. Done today and Ordered today, where a ticked line goes: Not sent there too with no signal
@@ -207,7 +213,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     await release(p);
     await L.settle(p, 500);
     ok(await unsent(p, 'Cream') === 'none', 'orders: Not sent goes once the server has it');
-    ok(p.errors.length === 0, 'orders: no page errors ' + p.errors.join(' | '));
+    ok(errs(p).length === 0, 'orders: no page errors ' + errs(p).join(' | '));
   });
 
   // 3. wastage at 390, no signal
@@ -226,7 +232,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     await release(p);
     await L.settle(p, 500);
     ok(await unsent(p, 'Rice') === 'none', 'wastage: Not sent goes once the server has it');
-    ok(p.errors.length === 0, 'wastage: no page errors ' + p.errors.join(' | '));
+    ok(errs(p).length === 0, 'wastage: no page errors ' + errs(p).join(' | '));
   });
 
   // 4. transfers at 390, no signal, then a return: the phone's own mark is never saved in the open loan's record
@@ -250,7 +256,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     await L.settle(p, 600);
     const rec = await p.evaluate(d => { const s = window.__fake.dump(); const k = Object.keys(s).find(k => k.indexOf('/transferOpen/' + d + '_') > 0 && s[k].record && s[k].record.text === 'Butter'); return k ? s[k] : null; }, today);
     ok(rec && rec.record.returned === true && !('_unsent' in rec.record), 'transfers: a return saves the record without the phone\'s Not sent flag (' + JSON.stringify(rec && Object.keys(rec.record)) + ')');
-    ok(p.errors.length === 0, 'transfers: no page errors ' + p.errors.join(' | '));
+    ok(errs(p).length === 0, 'transfers: no page errors ' + errs(p).join(' | '));
   });
 
   // 4b. with the no-signal note (tests/offline-open.test.js): Orders first opened with no signal is not loaded yet, since
@@ -282,7 +288,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     ok(await p.evaluate(() => window.LK_PREP.state.ordState) === 'ok' && t2.indexOf(NO_LIST) < 0 && /Milk/.test(t2) && /Lemons/.test(t2), 'signal back: the order list loads with Milk and Lemons, and the note goes');
     ok(await unsent(p, 'Lemons') === 'none', 'signal back: Not sent goes once the server has the line');
     ok(!(await asks(p)), 'signal back: everything sent, leaving does not ask');
-    ok(p.errors.length === 0, 'orders not loaded: no page errors ' + p.errors.join(' | '));
+    ok(errs(p).length === 0, 'orders not loaded: no page errors ' + errs(p).join(' | '));
   });
 
   // 4c. the server takes one line while the strip is still up (on a weak signal another write can still be waiting):
@@ -312,7 +318,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
       await release(p);
       await L.settle(p, 500);
       ok(!!(await p.$('.p-sync')) && await unsent(p, text) === 'none', hash + ', strip still up: Not sent goes from the line the server has (' + await unsent(p, text) + ')');
-      ok(p.errors.length === 0, hash + ', strip still up: no page errors ' + p.errors.join(' | '));
+      ok(errs(p).length === 0, hash + ', strip still up: no page errors ' + errs(p).join(' | '));
     });
   }
 
@@ -428,6 +434,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
   await step('6', async () => {
     p = await L.open(b, '#/prep', { wait: 1500 });
     await updBar(p);
+    await wide(p);
     await p.context().setOffline(true);
     await L.settle(p, 300);
     await mark(p);
@@ -435,7 +442,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     await L.settle(p, 1500);
     ok(!(await reloaded(p)), 'update, no signal: the tap does not reload into an empty book');
     const u = await bar(p);
-    ok(u && /^No signal\./.test(u.t) && u.oneLine, 'update, no signal: the strip says so, on one line at 390 (' + JSON.stringify(u) + ')');
+    ok(u && /^No signal\./.test(u.t) && u.fits, 'update, no signal: the strip says so, and it fits at 390 in a wide font (' + JSON.stringify(u) + ')');
     ok(/Writing as/.test(await txt(p, '#prep-root') || ''), 'update, no signal: the prep list is still there');
     await p.context().setOffline(false);
     await L.settle(p, 300);
@@ -684,7 +691,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
       await p.context().setOffline(false);
       await release(p);
       await L.settle(p, 500);
-      ok(p.errors.length === 0, width + ', Used in: no page errors ' + p.errors.join(' | '));
+      ok(errs(p).length === 0, width + ', Used in: no page errors ' + errs(p).join(' | '));
     });
   }
 
@@ -702,7 +709,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
       await p.context().setOffline(false);
       await L.settle(p, 500);
       ok(await p.evaluate(() => !document.querySelector('.p-sync, .nb-held, .nb-unsent')), hash + ', Google device: signal back, the strip and the room go');
-      ok(p.errors.length === 0, hash + ', Google device: no page errors ' + p.errors.join(' | '));
+      ok(errs(p).length === 0, hash + ', Google device: no page errors ' + errs(p).join(' | '));
     });
   }
 
@@ -829,12 +836,14 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     });
   }
 
-  // 17. "It updates once sent." stays whole, so on a narrow phone with Extra large text the strip is a little tighter:
-  // no sideways scroll at 360 px (the usual Android width) or 344 px
+  // 17. On a narrow phone with Extra large text, in a wide font, the strip still fits: its words wrap inside it and its
+  // button stays on the screen at 360 px (the usual Android width) or 344 px. Only the strip is measured here: the tab
+  // bar's own fit at Extra large is not this check's.
   for (const width of [344, 360]) {
     await step('17 ' + width, async () => {
       p = await L.open(b, '#/prep', { width, settings: { text: 'xlarge' }, wait: 1500 });
       await updBar(p);
+      await wide(p);
       await hold(p);
       await p.fill('#p-text', 'Slice tomatoes');
       await p.press('#p-text', 'Enter');
@@ -844,9 +853,9 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
       await L.settle(p, 300);
       const u = await bar(p);
       ok(u && u.t === WAITS, width + ' px, Extra large: it says it updates once sent (' + JSON.stringify(u) + ')');
-      const over = await L.overflow(p);
-      ok(!over, width + ' px, Extra large: no sideways scroll ' + (over || ''));
-      ok(await p.evaluate(() => { const b = document.querySelector('.upd-bar'), s = b.querySelector('span').getBoundingClientRect(), r = b.getBoundingClientRect(); return s.top >= r.top && s.bottom <= r.bottom; }), width + ' px, Extra large: the words fit inside the strip');
+      ok(u && u.fits, width + ' px, Extra large, wide font: the words fit inside the strip and Update now stays on the screen (' + JSON.stringify(u) + ')');
+      const h = await p.evaluate(() => ({ bar: document.querySelector('.upd-bar').offsetHeight, room: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--upd-h')) }));
+      ok(h.room === h.bar, width + ' px, Extra large, wide font: the bars below sit under the strip at its real height (' + JSON.stringify(h) + ')');
       await release(p);
       await L.settle(p, 300);
     });
