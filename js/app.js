@@ -413,6 +413,8 @@
     return '<a class="wm-a wm-delivery" href="#/deliveries" data-who="go"' + (parseRoute().name === 'deliveries' ? ' aria-current="page"' : '') + '>' + ICON.doc + '<span><b>Delivery received</b></span></a>';
   }
   function supplierOK() { return !!(window.LK_PREP && window.LK_PREP.supplier && window.LK_PREP.supplier().read()); }
+  // the no-signal sentence while the kitchen's settings are not loaded and there is no signal (js/prep.js), otherwise ''
+  function offline() { return window.LK_PREP && window.LK_PREP.offline ? window.LK_PREP.offline() : ''; }
   function supplierItem() {
     return '<a class="wm-a wm-supplier" href="#/suppliers" data-who="go"' + (parseRoute().name === 'suppliers' ? ' aria-current="page"' : '') + '>' + ICON.todo + '<span><b>Supplier order</b></span></a>';
   }
@@ -450,8 +452,10 @@
         set +
         // the empty line is where the first tap says "Not saved yet" (the click handler below)
         '<button type="button" class="wm-a wm-out" data-who="out">' + ICON.exit + '<span><b>Sign out</b><small aria-live="polite"></small></span></button>'
-      : '<p class="wm-h">Nobody signed in on this phone</p>' +
-        '<a class="wm-a wm-in" href="#/prep" data-who="signin">' + ICON.chef + '<span><b>Sign in</b></span></a>' + adm + deliveryItem() + (bookEdit() ? manageItem() : '') + (todoOK() ? todoItem() : '') + (supplierOK() ? supplierItem() : '') + (fnOK() ? fnItem() : '') + set) + '</nav>';
+      // with no signal before the kitchen's settings are in, who is on this phone is not known yet, not "nobody": no
+      // Sign in, which would forget them (28 Oct 2026)
+      : (offline() ? '<p class="wm-h">' + esc(offline()) + '</p>' : '<p class="wm-h">Nobody signed in on this phone</p>' +
+        '<a class="wm-a wm-in" href="#/prep" data-who="signin">' + ICON.chef + '<span><b>Sign in</b></span></a>') + adm + deliveryItem() + (bookEdit() ? manageItem() : '') + (todoOK() ? todoItem() : '') + (supplierOK() ? supplierItem() : '') + (fnOK() ? fnItem() : '') + set) + '</nav>';
     document.body.appendChild(el); wmenu = el;
     btn.setAttribute('aria-expanded', 'true');
     var first = el.querySelector('.wm-a'); if (first) first.focus({ preventScroll: true });
@@ -518,7 +522,8 @@
     var d = window.LK_TIME.day().split('-'), today = new Date(+d[0], d[1] - 1, +d[2], 12).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
     return '<div class="wall">' + topBar() + fnBand() +
       '<main id="main" class="wall-main"><h2 class="wall-h" id="rtitle" tabindex="-1">Pick a docket</h2><p class="wall-date">' + esc(today) + '</p>' + minCard() + (window.LK_FN && window.LK_FN.checkSlot ? window.LK_FN.checkSlot() : '') + (window.LK_FN ? window.LK_FN.landSlot() : '') + installCard() +
-      (window.LK_PREP && window.LK_PREP.functionOnly() ? '<p><a class="btn dark" href="#/functions">Manage functions</a></p>' : window.LK_PREP && !window.LK_PREP.privateAccess() ? '<p><a class="btn" href="#/prep">Kitchen sign in</a></p>' : '') + '<div class="dockets">' + DOCKETS.filter(function (d) { if (window.LK_PREP && (!window.LK_PREP.privateAccess() || window.LK_PREP.functionOnly())) return d[3] === 'recipes'; return d[3] !== 'guides' || featOn('guides'); }).map(function (d) {
+      // with no signal before the kitchen's settings are in: the no-signal sentence, not Kitchen sign in (28 Oct 2026)
+      (window.LK_PREP && window.LK_PREP.functionOnly() ? '<p><a class="btn dark" href="#/functions">Manage functions</a></p>' : offline() ? '<p class="hint" role="status">' + esc(offline()) + '</p>' : window.LK_PREP && !window.LK_PREP.privateAccess() ? '<p><a class="btn" href="#/prep">Kitchen sign in</a></p>' : '') + '<div class="dockets">' + DOCKETS.filter(function (d) { if (window.LK_PREP && (!window.LK_PREP.privateAccess() || window.LK_PREP.functionOnly())) return d[3] === 'recipes'; return d[3] !== 'guides' || featOn('guides'); }).map(function (d) {
         // Transfers and Guides are the long ones under the other four (a docket with a line under its name)
         return '<a class="docket' + (d[4] ? ' dk-wide' : '') + '" href="' + d[2] + '"><span class="dk-pin" aria-hidden="true"></span><span class="dk-top"><span class="dk-name">' + d[1] + '</span><span class="dk-no">No. ' + d[0] + '</span></span>' +
           (d[4] ? '<span class="dk-sub">' + esc(d[4]) + '</span>' : '') +
@@ -874,6 +879,8 @@
     if (!root) return;
     var st = window.LK_PREP && window.LK_PREP.fnState ? window.LK_PREP.fnState() : 'no';
     function note(t, x, link) { root.innerHTML = mgNote(t, x, link || '<div class="btn-row"><a class="btn" href="#/fn">See the functions</a></div>'); }
+    // the kitchen's settings started again with no signal (28 Oct 2026): what a draft holds stays on the device
+    if (st === 'offline') { root.innerHTML = mgNote('Manage functions', offline()); return; }
     if (st === 'wait') { note('Functions', 'Checking who is signed in on this device...', ' '); return; }
     if (st === 'nopin') { note('Functions', 'This device has no kitchen PIN yet. Open the Prep list and enter it, then sign in with your own PIN.', '<div class="btn-row"><a class="btn dark" href="#/prep">Open the Prep list</a></div>'); return; }
     if (st !== 'yes') {
@@ -910,6 +917,7 @@
     var root = document.getElementById('mg-root');
     if (!root) return;
     var st = window.LK_PREP && window.LK_PREP.bookState ? window.LK_PREP.bookState() : 'no';
+    if (st === 'offline') { root.innerHTML = mgNote('Manage Recipes & Drawings', offline()); return; }
     if (st === 'wait') { root.innerHTML = mgNote('Manage Recipes & Drawings', 'Checking who is signed in on this device...', ' '); return; }
     if (st === 'nopin') { root.innerHTML = mgNote('Manage Recipes & Drawings', 'This device has no kitchen PIN yet. Open the Prep list and enter it, then sign in as the head chef.', '<div class="btn-row"><a class="btn dark" href="#/prep">Open the Prep list</a></div>'); return; }
     if (st !== 'yes') {
@@ -952,6 +960,8 @@
     var root = document.getElementById('supplier-root'), P = window.LK_PREP, B = P && P.supplier ? P.supplier() : null;
     if (!root) return;
     var st = B ? B.state() : 'no';
+    // module memory (a draft) is kept; the sheet comes back once the settings are in again
+    if (st === 'offline') { root.innerHTML = mgNote('Supplier order', offline()); return; }
     if (st === 'wait') { root.innerHTML = mgNote('Supplier order', 'Checking your kitchen sign-in...', ' '); if (P && P.warm) P.warm(); return; }
     if (st !== 'yes' || (route.mode === 'manage' && !B.edit())) {
       if (window.LK_SUP) window.LK_SUP.reset();

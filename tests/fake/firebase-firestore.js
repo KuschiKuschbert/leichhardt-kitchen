@@ -13,6 +13,7 @@
 //   back: cold goes, held writes are sent ('hold' becomes 'ok') and every listener gets the server's answer.
 //   __fake.ack() lets the listeners hear the server's confirm of the held writes, whose promises still wait for
 //   release(); __fake.quiet = true tells a listener only what changed for it, like the SDK (see sigOf below).
+//   __fake.notOwner = true: the Google account is not the head chef's (the owner check, config/admins, is refused)
 // __fake.reads lists the paths asked for (getDoc, getDocs, getDocFromServer) and __fake.readLog every document read from the "server";
 // getDocsFromCache only returns documents this page has read before.
 // Reads the real rules refuse are refused here too, for the sign-in on this page (colRefused(), readRefused(),
@@ -199,6 +200,9 @@ function colRefused(ref, list) {
 /* One record the real rules refuse this phone (getDoc, getDocFromServer, a listener on it, Lite). */
 function readRefused(ref) {
   if (colRefused(ref, false)) return true;
+  // __fake.notOwner = true: the Google account signed in is not the head chef's, so the owner check is refused (28 Oct
+  // 2026: only that refusal means "not the head chef's account", no signal does not)
+  if (window.__fake.notOwner && /\/config\/admins$/.test(key(ref.path))) return true;
   if (window.__fakeUser) return false;
   const k = key(ref.path), root = ref.path.slice(0, 2).join('/');
   if (/\/config\/admins$/.test(k)) return true;   // the owner check: only the head chef's Google account reads it

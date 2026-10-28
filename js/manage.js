@@ -91,20 +91,29 @@
     return false;
   }
   /* The head chef's templates (drawtpl) and own pieces and servingware (drawlib): one query each, the first time their
-     list opens. Hide takes one out of the editor (a new version with removed); drawings made from it keep their copy. */
-  var MINE = { tpl: null, lib: null, busy: false };
+     list opens. Hide takes one out of the editor (a new version with removed); drawings made from it keep their copy.
+     A read that failed for want of signal (28 Oct 2026) is not "No templates yet": what was read before stays, the list
+     says there is no signal, and the two queries go again once, when the phone is back online with the list open or
+     when its chip is tapped, never on every draw. A refusal is still nothing to show. */
+  var MINE = { tpl: null, lib: null, busy: false, off: false };
   function loadMine(force) {
-    if (MINE.busy || (!force && MINE.tpl && MINE.lib)) return;
-    MINE.busy = true;
+    if (MINE.busy || (!force && (MINE.off || MINE.tpl && MINE.lib))) return;
+    MINE.busy = true; MINE.off = false;
     var api = B(), grab = function (sn) { return sn.docs.map(function (x) { var o = x.data(); o.id = x.id; return o; }); };
     api.ready().then(function () { var fs = api.fs(); return Promise.all([fs.getDocs(api.colRef('drawtpl')), fs.getDocs(api.colRef('drawlib'))]); }).then(function (r) {
       MINE.tpl = grab(r[0]); MINE.lib = grab(r[1]); MINE.busy = false; draw();
-    }, function () { MINE.busy = false; MINE.tpl = MINE.tpl || []; MINE.lib = MINE.lib || []; draw(); });
+    }, function (e) {
+      MINE.busy = false;
+      if (e && e.code === 'permission-denied') { MINE.tpl = MINE.tpl || []; MINE.lib = MINE.lib || []; } else MINE.off = true;
+      draw();
+    });
   }
+  window.addEventListener('online', function () { if (MINE.off && M.root && (M.chip === 'templates' || M.chip === 'mylib')) loadMine(true); });
   function mineHTML(kind, words) {
     loadMine();
     var list = kind === 'templates' ? MINE.tpl : MINE.lib;
-    if (!list) return '<p class="hint">Reading them from the book...</p>';
+    var off = MINE.off ? '<p class="p-err" role="status">No signal. ' + (kind === 'templates' ? 'Your templates show' : 'What you made in the book shows') + ' when the phone is back online.</p>' : '';
+    if (!list) return off || '<p class="hint">Reading them from the book...</p>';
     list = list.filter(function (x) { return !words.length || words.every(function (w) { return (x.name + ' ' + (x.kw || '') + ' ' + (x.slot || '') + ' ' + (x.cat || '')).toLowerCase().indexOf(w) >= 0; }); });
     var pic = function (x) {
       if (kind === 'templates') return '<svg class="mg-thumb" viewBox="' + esc(/^-?[\d.]+ -?[\d.]+ [\d.]+ [\d.]+$/.test(x.vb || '') ? x.vb : '-110 -110 220 220') + '" aria-hidden="true" focusable="false"><g data-surf="1">' + X.clean(x.svgS) + '</g>' + X.clean(x.svgF) + '</svg>';
@@ -114,11 +123,11 @@
     };
     var what = function (x) { return kind === 'templates' ? { plate: 'Plate', pan: 'Pan', side: 'From the side', build: 'Build' }[x.slot] || x.slot : x.type === 'surf' ? 'Servingware' : 'Library piece'; };
     var none = kind === 'templates' ? 'No templates yet. In the drawing editor, Save as a template keeps a plating for any recipe to start from.' : 'Nothing made in the book yet. In the drawing editor, Save as a library piece, Import a drawing (SVG) and Save this servingware add to the library.';
-    return list.length ? '<p class="hint" role="status">' + list.length + (kind === 'templates' ? (list.length === 1 ? ' template' : ' templates') : (list.length === 1 ? ' piece or servingware' : ' pieces and servingware')) + '. Drawings made from them keep their own copy.</p><ul class="mg-list">' + list.map(function (x) {
+    return off + (list.length ? '<p class="hint" role="status">' + list.length + (kind === 'templates' ? (list.length === 1 ? ' template' : ' templates') : (list.length === 1 ? ' piece or servingware' : ' pieces and servingware')) + '. Drawings made from them keep their own copy.</p><ul class="mg-list">' + list.map(function (x) {
       var k = (kind === 'templates' ? 'tpl:' : 'lib:') + x.id;
       return '<li class="mg-row">' + pic(x) + '<span class="mg-rt"><b>' + esc(x.name || x.id) + '</b><span class="hint">' + esc(what(x)) + ' · version ' + esc(x.v || 1) + (x.removed ? ' · hidden' : '') + '</span></span>' +
         '<button type="button" class="p-x" data-mg="mine-hide" data-v="' + esc(k) + '">' + (armed('mine-hide:' + k) ? 'Tap again to ' + (x.removed ? 'show it' : 'hide it') : x.removed ? 'Show it again' : 'Hide') + '</button></li>';
-    }).join('') + '</ul>' : '<p class="hint">' + none + '</p>';
+    }).join('') + '</ul>' : off ? '' : '<p class="hint">' + none + '</p>');
   }
   function mineHide(k) {
     var api = B(), m = /^(tpl|lib):(.+)$/.exec(k || ''); if (!m) return;
@@ -804,7 +813,7 @@
     var el = ev.target.closest('[data-mg]');
     if (!el) return;
     var a = el.getAttribute('data-mg'), i = +el.getAttribute('data-i'), v = el.getAttribute('data-v'), e = M.ed, d = e && e.d;
-    if (a === 'chip') { M.chip = v; M.more = false; draw(); return; }
+    if (a === 'chip') { M.chip = v; M.more = false; if (MINE.off && (v === 'templates' || v === 'mylib')) loadMine(true); draw(); return; }
     if (a === 'mine-hide') { mineHide(v); return; }
     if (a === 'more') { M.more = true; draw(); return; }
     if (!e || !d) return;

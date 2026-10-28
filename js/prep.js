@@ -93,12 +93,12 @@
     config: null, configState: 'idle',   // idle, loading, ok, offline (no signal, nothing read yet), badpin, error
     items: [], itemsState: 'idle', showRemoved: false,
     section: '', text: '', qty: '', recipeSearch: '', recipeOpen: false, recipeAll: false, tab: '',
-    authed: false, tok: '', pinStep: '', pinData: null, pf1: '', pf2: '', pinMsg: '',
+    authed: false, tok: '', pinStep: '', pinOff: false, pinData: null, pf1: '', pf2: '', pinMsg: '',
     sections: [], activity: [], hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false, exporting: '', moving: false, moveMsg: '', newPin: '', atab: lsGet('lk.prep.atab') || 'insights', ordDate: dayNow(), ordLines: [], ordState: 'idle', ordView: 'day', otext: '', oqty: '', ordAll: [], ordAllAt: 0, ordBusy: false, osugg: [],
     retryAt: {}, wDate: dayNow(), wLines: [], wState: 'idle', rvDate: '', wReview: null, wReviewFor: '', wrA: null, wrC: null, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wSum: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, xDate: dayNow(), xLines: [], xState: 'idle', xf: xBlank(), xSum: null, xsugg: [], xStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nMsg: '', nSaving: false,
     mins: null, minsFor: '', minsAt: 0, minsBusy: false, mmine: {}, msigns: {}, mSel: '', mf: null, mMsg: '', mSaving: false, mSigning: false, minOpen: false, mErr: '',
     guides: null, guidesFor: '', guidesAt: 0, gBusy: false, gRetry: 0, gq: '', gcat: 'all', gSel: '', gf: null, gfSnap: '', gMsg: '',
-    adminsFor: '', level: '', stats: null, statsRange: 14, week: null, weekAt: 0, weekBusy: false,
+    adminsFor: '', adminsOff: null, level: '', stats: null, statsRange: 14, week: null, weekAt: 0, weekBusy: false,
     user: null, authState: 'idle', draft: null, saveMsg: '', busy: false, toast: '', toastAct: null
   };
   var accessEpoch = 0;
@@ -206,7 +206,10 @@
         // is signed in from them (resume waits) and the page says there is no signal. The server's answer comes in on
         // this same listener once the signal is back, and from then on it is the same as with signal: resume() on the
         // first answer, and sessKeep(), loadAdmins() or the PIN sign-in move the phone to the kitchen's own settings.
-        if (!snap.exists() && cacheOnly(snap)) { if (cfgLast !== 'ok') { cfgLast = 'offline'; S.configState = 'offline'; draw(); } return; }
+        // js/app.js draws the landing page, the chef hat's menu and the pages other scripts draw from offline() (28 Oct
+        // 2026), so it is told (lk-access) when this listener goes to 'offline' and when it comes back from it
+        if (!snap.exists() && cacheOnly(snap)) { if (cfgLast !== 'ok') { var was = cfgLast; cfgLast = 'offline'; S.configState = 'offline'; draw(); if (was !== 'offline') offSay(); } return; }
+        var wasOff = cfgLast === 'offline';
         cfgLast = 'ok';
         S.configFull = full;
         S.config = snap.exists() ? snap.data() : { people: [] };
@@ -221,6 +224,7 @@
         if (whoHead() !== headSeen) whoSync();   // the Head chef role was given or taken while this person is signed in
         cutWatch();   // the shared supplier order ticks (chefs only, while cut-offs are set)
         try { window.dispatchEvent(new Event('lk-cfg')); } catch (e) {}   // js/app.js: who may manage the recipes (bookEdit)
+        if (wasOff) offSay();
       }, function (err) {
         S.configState = err && err.code === 'permission-denied' ? 'badpin' : 'error';
         if (S.configState === 'badpin') { S.pinError = 'That PIN is not right.'; S.pin = ''; lsSet('lk.prep.pin', ''); cfgKey = ''; unsubCfg = null; gForget(); }
@@ -249,6 +253,12 @@
     return same ? 'same' : wait ? 'wait' : 'new';
   }
   var OFF_LIST = 'No signal. This list shows when the phone is back online. What you add now is sent then.';
+  /* The kitchen's settings not loaded and no signal (configState 'offline'): the card on the kitchen pages, and since 28
+     Oct 2026 the landing page, the chef hat's menu and the pages other scripts draw (LK_PREP.offline()). The person on
+     the phone is known (lk.prep.who) but not their name or what they may open, so nothing offers Sign in or Kitchen
+     sign in, which would forget them. */
+  var OFF_KITCHEN = 'No signal. The kitchen pages open when the phone is back online. Recipes work now.';
+  function offSay() { try { window.dispatchEvent(new Event('lk-access')); } catch (e) {} }
   var cfgLast = '';   // what the settings listener now running last had: '' nothing yet, 'offline' only the empty copy, 'ok'
   var unsubOrd = null, ordKey = '', ordSnap = {};
   var unsubW = null, wKey = '', unsubX = null, xKey = '', unsubXO = null, wSnap = {}, xSnap = {}, xoSnap = {};
@@ -431,7 +441,7 @@
   // A selected staff name never inherits a Google account left on this browser.
   function dropGoogle() {
     if (!S.user || !fb) return Promise.resolve();
-    S.level = ''; S.adminsFor = ''; admMark(false); S.user = null;
+    S.level = ''; S.adminsFor = ''; S.adminsOff = null; admMark(false); S.user = null;
     lsSet('lk.auth.lock', String(Date.now()) + ':' + Math.random().toString(36).slice(2));
     return fb.au.signOut(fb.auth).then(anonIn);
   }
@@ -768,12 +778,21 @@
   function pickName(id) {
     if (S.user) { S.authed = false; S.who = ''; dropGoogle().then(function () { pickName(id); }).catch(function () { S.pinMsg = 'Could not sign out the previous account. Try again.'; draw(); }); return; }
     clearPrivateCache(); noteClose('shut'); ksClose(); sessDrop();   // a sheet for the person before stays off the PIN screen
-    S.who = id; lsSet('lk.prep.who', id); lsSet('lk.prep.tok', ''); S.authed = false; S.tok = ''; S.pf1 = S.pf2 = ''; S.pinMsg = ''; S.pinStep = 'checking'; featSync(); draw(); whoSync();
+    S.who = id; lsSet('lk.prep.who', id); lsSet('lk.prep.tok', ''); S.authed = false; S.tok = ''; S.pf1 = S.pf2 = ''; S.pinMsg = ''; S.pinStep = 'checking'; S.pinOff = false; featSync(); draw(); whoSync();
+    // one read: does this person have a PIN yet. An answer for a name picked before (another name since, or a handover)
+    // is dropped. With no signal (28 Oct 2026, r2-2-2) the screen says so, and the same read goes again by itself once
+    // the phone is back online, if this person is still on the screen; a refusal keeps the old words
     fb.fs.getDoc(docRef('pinset', id)).then(function (s) {
+      if (S.who !== id) return;
       var d = s.exists() ? s.data() : null;
       S.pinStep = d ? 'enter' : 'set'; S.pinAt = d && typeof d.at === 'number' ? { id: id, at: d.at } : null; draw();   // the session names the PIN's time
       if (/^\d{4}$/.test(S.pf1)) { if (S.pinStep === 'enter') submitPin(); else focusK('pf2'); }
-    }, function () { S.pinStep = 'error'; draw(); });
+    }, function (e) {
+      if (S.who !== id || (e && e.code === 'cancelled')) return;
+      S.pinStep = 'error'; S.pinOff = !(e && e.code === 'permission-denied');
+      if (S.pinOff) onlineRetry.pick = function () { if (S.who === id && S.pinStep === 'error') pickName(id); };
+      draw();
+    });
   }
   function signedIn(id, hash) {
     setTimeout(dailyFlush, 3000);   // yesterday's counts, once someone is signed in (W writes as them)
@@ -962,7 +981,7 @@
     if (mlf) mlf.text = '';
     S.config = null; S.configFull = false; S.configState = 'idle'; S.past = []; S.pastFor = ''; S.week = null; S.ordHist = []; S.ordHistFor = ''; S.wSum = S.xSum = S.wStats = S.xStats = S.wNote = null;
     // the next person's pings and minutes are read for them straight away, not after this person's failed read
-    S.notesErr = S.minsErr = S.gErr = false; delete S.retryAt.notes; delete S.retryAt.mins; onlineRetry = {};
+    S.notesErr = S.minsErr = S.gErr = false; delete S.retryAt.notes; delete S.retryAt.mins; delete S.retryAt.admins; S.adminsOff = null; onlineRetry = {};
     S.items = []; S.ordLines = []; S.ordAll = []; S.wLines = []; S.xLines = []; S.notes = null; S.notesBusy = false; S.nSaving = false; S.notesFor = ''; S.nPast = null; S.nPastOpen = false; S.nSeen = null; S.nPrivateError = ''; S.mins = null; S.guides = null; S.activity = []; S.actState = ''; S.hist = {}; S.stats = null;
     ['lk.fn', 'lk.mail.sent', 'lk.drinks', 'lk.guides', 'lk.notes', 'lk.minutes'].forEach(function (k) { lsSet(k, ''); });
  if (window.LK_DELIVERY) window.LK_DELIVERY.reset(); if (window.LK_SUP) window.LK_SUP.reset(); if (supplierService) supplierService.reset(); sessDrop(); ksClose(); noteClose('shut'); S.nJust = null; S.guestIn = false; lsSet('lk.prep.guest', ''); S.drinkAsk = ''; S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; tdReset(); lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); accessChanged(); }
@@ -988,10 +1007,14 @@
   }
   // Cancel is separate from editing: chefs may cancel without being ticked for full function access.
   function fnCancelOK() { return fnOK() || todoOK(); }
-  // 'yes', 'no', 'wait' while who is signed in is still being read, or 'nopin'
+  /* 'yes', 'no', 'wait' while who is signed in is still being read, 'offline' while the settings are not loaded and there
+     is no signal, or 'nopin'. 'offline' (28 Oct 2026): the settings listener starts again when who is on the phone
+     changes (a sign-in, a session opened or renewed, the head chef's owner check), and in a dead spot it answers from the
+     empty copy. The page then said "Checking who is signed in" until the signal came back. */
   function fnState() {
     if (fnOK()) return 'yes';
-    if (S.pin && (S.configState === 'idle' || S.configState === 'loading' || S.configState === 'offline' || (S.configState === 'ok' && !resumed && !!S.who))) return 'wait';
+    if (S.pin && S.configState === 'offline') return 'offline';
+    if (S.pin && (S.configState === 'idle' || S.configState === 'loading' || (S.configState === 'ok' && !resumed && !!S.who))) return 'wait';
     return S.pin ? 'no' : 'nopin';
   }
   /* Manage staff, the Minutes register and Shift pings are drawn on the prep list's address. Leaving it (Orders, the
@@ -1040,10 +1063,11 @@
      or on the head chef's Google device while nobody else is signed in with a PIN. The rules check the same on the
      server (bookBy() in firestore.rules), so this only decides what the page shows. */
   function bookEdit() { return !!S.pin && (isSous() && S.authed && canW() || S.level === 'owner' && ownerHere()); }
-  // 'yes', 'no', or 'wait' while the kitchen settings (who is Head chef) are still being read
+  // 'yes', 'no', 'wait' while the kitchen settings (who is Head chef) are still being read, or 'offline' (see fnState())
   function bookState() {
     if (bookEdit()) return 'yes';
-    if (S.pin && (S.configState === 'idle' || S.configState === 'loading' || S.configState === 'offline' || (S.configState === 'ok' && !resumed && !!S.who))) return 'wait';
+    if (S.pin && S.configState === 'offline') return 'offline';
+    if (S.pin && (S.configState === 'idle' || S.configState === 'loading' || (S.configState === 'ok' && !resumed && !!S.who))) return 'wait';
     return S.pin ? 'no' : 'nopin';
   }
   /* What js/manage.js and js/deliveries.js need to read and write the book: the same write path (W, with the PIN
@@ -1074,9 +1098,11 @@
     var c = S.config || {};
     return [S.pin, S.uid, S.who, S.authed ? 1 : 0, S.sessFor, S.sessExp, S.level, shared() ? 1 : 0, c.headId || '', (c.sousIds || []).join(','), (c.staffIds || []).join(',')].join('|');
   }
+  // 'yes', 'no', 'wait', 'offline' (see fnState()) or 'nopin'
   function supplierState() {
     if (!S.pin) return 'nopin';
-    if (S.configState === 'idle' || S.configState === 'loading' || S.configState === 'offline' || sessP || (S.who && !resumed)) return 'wait';
+    if (S.configState === 'offline') return 'offline';
+    if (S.configState === 'idle' || S.configState === 'loading' || sessP || (S.who && !resumed)) return 'wait';
     return supplierRead() ? 'yes' : 'no';
   }
   function supplierOccurrences() {
@@ -2170,12 +2196,21 @@
 
   /* ---------- who is the owner: only the owner's Google account may read config/admins, so a successful read proves it ---------- */
   function adminsRef() { return docRef('config', 'admins'); }
+  /* One getDoc once the settings are in, for each Google account. Only a refusal means "not the head chef's account"
+     (28 Oct 2026, r2-2-4): with no signal or a lost read the device keeps its head chef mark (lk.admin) and the admin
+     panel says there is no signal. The same one read goes again after 5 minutes, at the next draw, or once the phone is
+     back online (retrySoon), never in a loop: before, any failure counted as "not the head chef's account" until a reload.
+     A read cut short because the person on the phone changed (cancelled) is simply asked again for the next one. */
   function loadAdmins() {
     if (!S.user || !fb || S.configState !== 'ok') return;
     var em = S.user.email || '';
-    if (S.adminsFor === em) return;
+    if (S.adminsFor === em || (S.adminsOff === em && waiting('admins'))) return;
     S.adminsFor = em; S.level = '';
-    fb.fs.getDoc(adminsRef()).then(function (sn) { S.level = 'owner'; startIdle(); setTimeout(accessChanged, 0); var mo = sn && sn.exists() ? +(sn.data().mailOpened || 0) : 0; if (mo > mlOpened) { mlOpened = mo; lsSet('lk.mail.opened', String(mo)); } admMark(true); featSync(); seedIds(); loadMail(); draw(); cutPaint(); }, function () { S.level = 'none'; admMark(false); featSync(); draw(); cutPaint(); });
+    fb.fs.getDoc(adminsRef()).then(function (sn) { S.level = 'owner'; S.adminsOff = null; startIdle(); setTimeout(accessChanged, 0); var mo = sn && sn.exists() ? +(sn.data().mailOpened || 0) : 0; if (mo > mlOpened) { mlOpened = mo; lsSet('lk.mail.opened', String(mo)); } admMark(true); featSync(); seedIds(); loadMail(); draw(); cutPaint(); }, function (e) {
+      if (e && e.code === 'permission-denied') { S.level = 'none'; admMark(false); }
+      else { S.adminsFor = ''; if (!(e && e.code === 'cancelled')) { S.adminsOff = em; retrySoon('admins', loadAdmins); } }
+      featSync(); draw(); cutPaint();
+    });
   }
   /* The rules read three lists next to the people list: sousIds (who may edit the staff list), pingIds (who may write
      shift pings) and staffIds (who may set a PIN). Only the head chef can write sousIds and pingIds, so the owner keeps
@@ -3077,7 +3112,7 @@
   function ownPinHTML() {
     var p = who(), step = S.pinStep;
     if (!p) return whoHTML();
-    if (step === 'error') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">' + esc(p.name) + '</h2><p class="p-err">Could not check your PIN. Check the connection.</p><div class="btn-row"><button type="button" class="btn dark" data-p="who" data-id="' + esc(p.id) + '">Try again</button><button type="button" class="btn" data-p="who-change">Not me</button></div></section>';
+    if (step === 'error') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">' + esc(p.name) + '</h2>' + (S.pinOff ? '<p class="p-err" role="status">No signal. You can sign in once the phone is back online.</p>' : '<p class="p-err">Could not check your PIN. Check the connection.</p>') + '<div class="btn-row"><button type="button" class="btn dark" data-p="who" data-id="' + esc(p.id) + '">Try again</button><button type="button" class="btn" data-p="who-change">Not me</button></div></section>';
     var setting = step === 'set', checking = step !== 'set' && step !== 'enter';
     // while the book checks whether this person has a PIN yet, the box is already there: it takes the keyboard inside
     // the tap on the name (an iPhone opens the keyboard only inside a tap), and a PIN typed early is sent once it knows
@@ -3691,7 +3726,7 @@
         '<div class="btn-row"><button type="button" class="btn dark" data-p="signin">Sign in with Google</button><a class="btn" href="#/prep">Back to the prep book</a></div></section>';
     }
     loadAdmins();
-    if (!S.level) return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2><p class="hint">Checking your access...</p></section>';
+    if (!S.level) return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2>' + (S.adminsOff === (S.user.email || '') ? '<p class="p-err" role="status">No signal. The admin panel opens when the phone is back online.</p>' : '<p class="hint">Checking your access...</p>') + '</section>';
     if (S.level === 'none') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2><p class="p-err">' + esc(S.user.email) + ' is not the head chef\'s Google account, so it cannot open the admin panel. Sign out and sign in with the head chef\'s account.</p><div class="btn-row"><button type="button" class="btn dark" data-p="signout">Sign out</button><a class="btn" href="#/prep">Back to the prep book</a></div></section>';
     if (!ownerHere()) {
       var op = who();
@@ -3930,7 +3965,7 @@
   /* the kitchen's settings are not loaded yet and there is no signal (27 Oct 2026): in place of Who are you? or a page
      that would look empty. The settings listener carries on and the page opens by itself when the signal is back. */
   function offlineHTML() {
-    return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">' + esc(PAGE_NAME[S.name] || 'Prep book') + '</h2><p class="p-err" role="status">No signal. The kitchen pages open when the phone is back online. Recipes work now.</p>' +
+    return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">' + esc(PAGE_NAME[S.name] || 'Prep book') + '</h2><p class="p-err" role="status">' + OFF_KITCHEN + '</p>' +
       '<div class="btn-row"><a class="btn" href="#/recipes">Open the recipes</a></div></section>';
   }
   function bodyHTML() {
@@ -8904,9 +8939,12 @@
     featOn: featOn,
     ownerHere: ownerHere,
     whoName: whoName,
-    // Sign in from the chef hat with nobody signed in: "Who are you?" on the prep list, then back to the page it came from
+    // the no-signal sentence while the kitchen's settings are not loaded and there is no signal, otherwise '' (js/app.js)
+    offline: function () { return S.pin && S.configState === 'offline' ? OFF_KITCHEN : ''; },
+    // Sign in from the chef hat with nobody signed in: "Who are you?" on the prep list, then back to the page it came from.
+    // Not with no signal before the settings are in: the person on this phone is known, and this would forget them
     signIn: function (back) {
-      if (whoName()) return;
+      if (whoName() || S.configState === 'offline') return;
       S.picking = true; S.who = ''; S.pending = back && back !== '#/prep' && back.indexOf('#/') === 0 ? { back: back } : null;
       if (location.hash === '#/prep') draw(); else location.hash = '#/prep';
       window.scrollTo(0, 0);
