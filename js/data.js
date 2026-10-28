@@ -1627,8 +1627,8 @@ window.LK_DATA = {
       labelNote: 'Check the sauce, onion ring and fried shallot labels.'
     },
     {
-      id: 'chicken-adobo', no: '124', kind: 'main', forLine: 'Special', name: 'Chicken Adobo', short: 'Adobo',
-      yield: 'Batch: 2.5 kg bone-in chicken thigh braised in soy and vinegar. [Serves per batch and the plating to come]',
+      id: 'chicken-adobo', art: 'chicken-adobo', no: '124', kind: 'main', forLine: 'Special', name: 'Chicken Adobo', short: 'Adobo',
+      yield: 'Per plate with 180 g steamed jasmine rice. Batch: 2.5 kg bone-in chicken thigh braised in soy and vinegar. [Serves per batch to come]',
       ingredients: [
         { q: '2.5 kg', name: 'Chicken thigh', note: 'bone-in, skin-on' },
         { q: '250 ml', name: 'Soy sauce', tags: ['Soy', 'Gluten?'] },
@@ -1639,7 +1639,13 @@ window.LK_DATA = {
         { q: '5 pcs', name: 'Bay leaves' },
         { q: '10 g', name: 'Whole black peppercorns' },
         { q: '25 g', name: 'Brown sugar' },
-        { q: '40 ml', name: 'Neutral cooking oil' }
+        { q: '40 ml', name: 'Neutral cooking oil' },
+        { q: '180 g', name: 'Jasmine rice', note: 'steamed, per plate' }
+      ],
+      pins: [
+        { label: 'Jasmine rice', x: 35.8, y: 43.4, side: 'left', tags: [], note: '180 g, steamed.' },
+        { label: 'Chicken adobo', x: 63.2, y: 50.9, side: 'right', tags: ['Soy', 'Gluten?'], note: 'Skin side up, beside the rice. [Pieces per serve to come]' },
+        { label: 'Adobo sauce', x: 66.0, y: 72.6, side: 'right', tags: ['Soy', 'Gluten?'], note: 'From the pot, over the chicken. [Amount per serve to come]' }
       ],
       sections: [
         { title: 'Prepare and marinate', steps: ['Check the chicken and trim the excess fat.', 'Combine with the soy sauce, half the garlic, the bay leaves and the peppercorns.', 'Refrigerate for 30 min, or longer if your service schedule needs it.'] },
@@ -1647,7 +1653,8 @@ window.LK_DATA = {
         { title: 'Sauté the aromatics', steps: ['Cook the rest of the garlic and the onion until fragrant.', 'Return the chicken to the pot.'] },
         { title: 'Add the liquids', steps: ['Add the kept marinade, the vinegar and the water or stock.', 'Bring to the boil and simmer for 5 min before stirring.'] },
         { title: 'Braise', steps: ['Cover partly and simmer gently for 30 to 45 min, turning the chicken as needed.', 'Probe the thickest pieces: at least 75 °C.'] },
-        { title: 'Finish the sauce', steps: ['Add the brown sugar. Taste and adjust.', 'Reduce uncovered until the sauce lightly coats the chicken.'] }
+        { title: 'Finish the sauce', steps: ['Add the brown sugar. Taste and adjust.', 'Reduce uncovered until the sauce lightly coats the chicken.'] },
+        { title: 'Plating', steps: ['180 g steamed jasmine rice on the plate.', 'Chicken adobo beside the rice, skin side up. [Pieces per serve to come]', 'Sauce from the pot over the chicken. [Amount per serve to come]'] }
       ],
       labelNote: 'Check the soy sauce and stock labels. Most soy sauce has wheat.'
     },
