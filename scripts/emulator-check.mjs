@@ -28,6 +28,9 @@ await w(['waste', y, 'lines', 'w2'], wl('rice ', { amount: 2, station: 'Pans', a
 await w(['waste', y, 'lines', 'w3'], wl('Chips', { unit: 'kg', reason: 'excess' }));
 await w(['waste', y, 'lines', 'w4'], wl('Gone', { deleted: true }));
 await w(['waste', today, 'lines', 'w5'], wl('Rice'));
+// words that are also keys on every object: an item or section typed like that counts like any other word
+await w(['waste', y, 'lines', 'w6'], wl('constructor', { station: 'constructor' }));
+await w(['waste', y, 'lines', 'w7'], wl('__proto__', { station: '__proto__', reason: 'excess' }));
 // transfers for the nightly summary (23 Oct 2026): Riviera three times in two spellings (Butter twice out, once in), the
 // Bowls Club twice (Lemons in, the second on the oldest day kept); one removed, one practice, one with no venue, today's
 // and one from 29 days ago left out. The two kg amounts of Butter tie, so the newer one (3) is the usual amount.
@@ -75,7 +78,10 @@ ok(ws.day === today && ws.to === y, 'summary: made today, up to yesterday (' + w
 ok(rice.n === 2 && rice.r.expired === 2 && rice.unit === 'portions', 'summary: Rice twice as expired stock, today not counted (' + JSON.stringify(rice) + ')');
 ok(rice.last && rice.last.sec === 'Pans' && rice.last.amt === 2, 'summary: the last time is the newest entry');
 ok((ws.items || []).some(x => x.t === 'Chips' && x.r.excess === 1) && !(ws.items || []).some(x => x.t === 'Gone'), 'summary: Chips once, the removed entry left out');
-ok(/Wastage summary: 2 items/.test(out1), 'summary: the run says how many items');
+ok(/Wastage summary: 4 items/.test(out1), 'summary: the run says how many items');
+const odd = k => (ws.items || []).find(x => x.t === k) || {};
+ok(odd('constructor').n === 1 && odd('constructor').r.expired === 1 && odd('constructor').sec === 'constructor', 'summary: an item and a section typed "constructor" count like any other word (' + JSON.stringify(odd('constructor')) + ')');
+ok(odd('__proto__').n === 1 && odd('__proto__').r.excess === 1 && odd('__proto__').sec === '__proto__', 'summary: an item and a section typed "__proto__" count like any other word (' + JSON.stringify(odd('__proto__')) + ')');
 const ts = (await K.collection('summary').doc('transfers').get()).data() || {};
 const tv = ts.venues || [], ti = ts.items || [], tj = o => JSON.stringify(o);
 ok(ts.day === today && ts.from === day(28) && ts.to === y && typeof ts.at === 'number', 'transfers: made today, the 28 days up to yesterday (' + ts.day + ', ' + ts.from + ', ' + ts.to + ')');
