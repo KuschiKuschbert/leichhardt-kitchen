@@ -400,7 +400,9 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     await L.settle(p, 200);
     u = await bar(p);
     ok(u && u.t === 'Checking the signal...' && u.btn === 'Update now', 'update, checking: a second tap is ignored (' + JSON.stringify(u) + ')');
-    await L.settle(p, 6000);
+    // the note shows for 4 seconds from when the slow check answers (3 s in), so a read at a fixed time can land after
+    // it went on a slow runner: wait for the note, then read it at once
+    await L.waitFor(p, () => { const s = document.querySelector('.upd-bar span'); return !!s && /updates.once.sent/.test(s.textContent.replace(/\u00a0/g, ' ')); }, null, 12000).catch(() => {});
     u = await bar(p);
     ok(!(await reloaded(p)) && asked === 0, 'update, a tick made while it checked: no reload and no Reload site? box (' + asked + ' asked)');
     ok(u && u.t === WAITS, 'update, a tick made while it checked: it says it updates once sent (' + JSON.stringify(u) + ')');
