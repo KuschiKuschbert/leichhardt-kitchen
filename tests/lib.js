@@ -168,7 +168,8 @@ async function start() {
    o.server           the server's time when the page opens; without it the update check's answer has no Date,
                       so the book keeps the phone's clock (LK_TIME in index.html)
    o.fakeServer       documents the "server" holds newer copies of than the phone (path: data), for getDocFromServer
-   o.fakeMode         the stand-in's mode from the first request: 'fail' (every read and write fails, like no signal) or 'deny'
+   o.fakeMode         the stand-in's mode from the first request: 'fail' (every write and every read from the server fails;
+                      getDoc, getDocs and listeners still answer, so it is not no signal: that is o.cold), 'hold' or 'deny'
    o.failReads        a regex source: getDoc and getDocs fail for the paths that match (say one past day of wastage)
    o.denyReads        a regex source: getDocs is refused (permission-denied) for the collections that match
    o.cold             a regex source: no signal for the paths that match, the way the book's memory cache answers it

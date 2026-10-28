@@ -1,6 +1,8 @@
 // Stand-in for the Firestore web SDK, for the click tests only (tests/lib.js serves it instead of the real SDK).
 // Data lives in localStorage ('fake.fs') so reloads keep it. window.__fake controls failures:
 //   __fake.mode = 'ok' | 'deny' (every write refused, permission-denied) | 'hold' (writes wait, like no signal)
+//   | 'fail' (every write and every read from the server fails, unavailable; getDoc, getDocs and listeners still
+//   answer, so it is not no signal: __fake.cold below is)
 //   __fake.deny = /regex/ refuses only the writes whose path matches
 //   __fake.failReads = /regex/ makes getDoc, getDocs and getDocFromServer fail (unavailable) for the paths that match, like a read lost to a bad signal
 //   __fake.denyReads = /regex/ makes getDocs refuse (permission-denied) the collections that match, like rules not published yet
@@ -11,6 +13,9 @@
 //   back: cold goes, held writes are sent ('hold' becomes 'ok') and every listener gets the server's answer.
 // __fake.reads lists the paths asked for (getDoc, getDocs, getDocFromServer) and __fake.readLog every document read from the "server";
 // getDocsFromCache only returns documents this page has read before.
+// Reads the real rules refuse are refused here too, for the sign-in on this page (readRefused(), rulesDenied(), listeners
+// included), and each one is listed in __fake.refused ({ kind, path }), so a page that starts asking for one shows up
+// in the click tests (tests/roles.test.js). __fake.failReads and __fake.denyReads are not listed: a test asked for those.
 const KEY = 'fake.fs';
 function load() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } }
 let store = load();
@@ -26,7 +31,11 @@ window.__fake = window.__fake || { mode: 'ok', writes: [], reads: [] };
 window.__fake.bill = window.__fake.bill || [];
 function bill(kind, path, n) { window.__fake.bill.push({ kind, path, n: Math.max(1, n) }); }
 window.__fake.readLog = [];
-// the documents this tab has read (its "offline copy"): kept across a reload, like the real persistent cache
+window.__fake.refused = window.__fake.refused || [];
+function refuse(kind, ref) { window.__fake.refused.push({ kind, path: key(ref.path) }); return Promise.reject({ code: 'permission-denied' }); }
+/* the documents this tab has read, for getDocFromCache and getDocsFromCache. Kept across a reload (sessionStorage), which
+   the book's own cache no longer does: since #387 (26 Oct 2026) it keeps a copy in memory only (memoryLocalCache), lost
+   on every reload. A test that needs the real no-signal answer uses __fake.cold (o.cold in tests/lib.js). */
 const seen = new Set((() => { try { return JSON.parse(sessionStorage.getItem('fake.seen') || '[]'); } catch (e) { return []; } })());
 let seenSave = 0;
 function remember(k) { if (seen.has(k)) return; seen.add(k); if (!seenSave) seenSave = setTimeout(() => { seenSave = 0; try { sessionStorage.setItem('fake.seen', JSON.stringify([...seen])); } catch (e) {} }, 0); }
@@ -110,16 +119,40 @@ function result(ref, keep = true) {
   return r;
 }
 function delay(v) { return new Promise(r => setTimeout(() => r(v), 5)); }
-// like the real rules (22 Oct 2026, review S9): a function contact is read by the head chef's Google account or through
-// a PIN session of someone ticked for Functions; one minutes record only when it is published
+/* Who this phone reads as, like the rules (firestore.rules sessOk(reader()), kitchenRead(), chefId()), for the person on
+   this phone's PIN session; the head chef's Google account (window.__fakeUser) is the verified owner and reads it all. */
+function cfgOf(ref) { return store[ref.path.slice(0, 2).join('/') + '/config/main'] || {}; }
+// sessOk(reader()): a PIN session that has not run out, opened since their PIN was last set, for someone on the staff
+// list. '' when there is none
+function sessionReader(ref) {
+  const root = ref.path.slice(0, 2).join('/'), uid = window.__fakeUid ? window.__fakeUid() : '', ss = uid ? store[root + '/sessions/' + uid] : null;
+  const ps = ss ? store[root + '/pinset/' + ss.by] : null, c = cfgOf(ref);
+  return ss && ss.exp > Date.now() && ps && ps.at === ss.pinAt && (!c.staffIds || c.staffIds.indexOf(ss.by) >= 0) ? ss.by : '';
+}
+/* kitchenRead(): the same, for someone who is not functions only */
+function kitchenReader(ref) { const by = sessionReader(ref); return by && (cfgOf(ref).fnOnlyIds || []).indexOf(by) < 0 ? by : ''; }
+/* the chef to-do list (23 Oct 2026), the supplier tools, the sign-off register (27 Oct 2026), the supplier order ticks
+   (cutdone), the personal pings of others and who has seen them: like the rules, only the head chef's Google account or a
+   phone whose kitchen reader is a chef (sousIds or headId in config/main) reads them */
+function chefReader(ref) {
+  if (window.__fakeUser) return true;
+  const by = kitchenReader(ref), c = cfgOf(ref);
+  return !!by && ((c.sousIds || []).indexOf(by) >= 0 || (!!c.headId && c.headId === by));
+}
+// someone ticked for Functions (fnIds) on their own PIN session, functions only or not (fncontact, functions/<id>/hist)
+function fnReader(ref) { if (window.__fakeUser) return true; const by = sessionReader(ref); return !!by && (cfgOf(ref).fnIds || []).indexOf(by) >= 0; }
+// kitchen mail: the Google account, or a sous chef on their PIN session while the head chef has sous chef mail on
+function mailReader(ref) { if (window.__fakeUser) return true; const c = cfgOf(ref), by = kitchenReader(ref); return c.sousMail === true && !!by && (c.sousIds || []).indexOf(by) >= 0; }
+const at3 = (k, name) => new RegExp('^kitchens/[^/]+/' + name).test(k);
+/* One record the real rules refuse this phone (getDoc, getDocFromServer, a listener on it, Lite). */
 function readRefused(ref) {
   if (window.__fakeUser) return false;
   const k = key(ref.path), root = ref.path.slice(0, 2).join('/');
-  if (/\/fncontact\/[^/]+$/.test(k)) {
-    const uid = window.__fakeUid ? window.__fakeUid() : '', ss = uid ? store[root + '/sessions/' + uid] : null, ps = ss ? store[root + '/pinset/' + ss.by] : null;
-    const fnIds = (store[root + '/config/main'] || {}).fnIds || [];
-    return !(ss && ss.exp > Date.now() && ps && ps.at === ss.pinAt && fnIds.indexOf(ss.by) >= 0);
-  }
+  if (/\/config\/admins$/.test(k)) return true;   // the owner check: only the head chef's Google account reads it
+  // a function contact (22 Oct 2026, review S9) and a function's history (fnIds or a chef)
+  if (/\/fncontact\/[^/]+$/.test(k)) return !fnReader(ref);
+  if (at3(k, 'functions/[^/]+/hist/[^/]+$')) return !(chefReader(ref) || fnReader(ref));
+  // one minutes record only when it is published
   if (/\/minutes\/[^/]+$/.test(k)) return store[k] !== undefined && store[k].status !== 'published';
   // a sign-off (27 Oct 2026), like the rules: a chef reads any of them; anyone else reads only their own, signed or not
   // yet: the id is the version (digits), '_', then the id of the person on this phone's session, as a whole
@@ -127,45 +160,50 @@ function readRefused(ref) {
     const by = kitchenReader(ref), sid = ref.path[ref.path.length - 1], v = sid.split('_')[0];
     return !(chefReader(ref) || (by && /^[0-9]+$/.test(v) && sid === v + '_' + by));
   }
+  // a personal ping: its person, or a chef; who has seen it: a chef, or its person reading their own record
+  if (at3(k, 'directnotes/[^/]+$')) { const by = kitchenReader(ref); return !(chefReader(ref) || (by && store[k] && store[k].to === by)); }
+  if (at3(k, 'directnotes/[^/]+/seen/[^/]+$')) {
+    const by = kitchenReader(ref), parent = store[ref.path.slice(0, 4).join('/')];
+    return !(chefReader(ref) || (by && parent && parent.to === by && store[k] && store[k].by === by));
+  }
   if (/\/todos\/[^/]+$/.test(k)) return !chefReader(ref);
-  if (/^kitchens\/[^/]+\/(suppliers|supplierlinks)(\/|$)/.test(k)) return !chefReader(ref);
+  if (at3(k, '(suppliers|supplierlinks|cutdone)(/|$)')) return !chefReader(ref);
+  if (at3(k, 'mail/[^/]+$')) return !mailReader(ref);
   return false;
 }
 export function getDoc(ref) {
-  if (/\/config\/admins$/.test(key(ref.path)) && !window.__fakeUser) return Promise.reject({ code: 'permission-denied' });
-  if (readRefused(ref)) return Promise.reject({ code: 'permission-denied' });
+  if (readRefused(ref)) return refuse('get', ref);
   window.__fake.reads.push(key(ref.path));
   if (cold(ref)) return pendingKeys.has(key(ref.path)) ? delay(cacheSnap(ref)) : Promise.reject({ code: 'unavailable' });
   if (readFails(ref)) return Promise.reject({ code: 'unavailable' });
   bill('get', key(ref.path), 1);
   return delay(result(ref));
 }
-// like the real rules: book/index and book/matches are allowed by name only, so a query on the whole book collection is
-// refused; the minutes are listed by pubAt (published only) except by the head chef's Google account (22 Oct 2026, S9)
-/* the person this phone reads the kitchen as, like kitchenRead() in the rules: a PIN session that has not run out, opened
-   since their PIN was last set, for someone on the staff list who is not functions only. '' when there is none */
-function kitchenReader(ref) {
-  const root = ref.path.slice(0, 2).join('/'), uid = window.__fakeUid ? window.__fakeUid() : '', ss = uid ? store[root + '/sessions/' + uid] : null;
-  const ps = ss ? store[root + '/pinset/' + ss.by] : null, c = store[root + '/config/main'] || {};
-  return ss && ss.exp > Date.now() && ps && ps.at === ss.pinAt && (!c.staffIds || c.staffIds.indexOf(ss.by) >= 0) && (c.fnOnlyIds || []).indexOf(ss.by) < 0 ? ss.by : '';
-}
-/* the chef to-do list (23 Oct 2026), the supplier tools and the sign-off register (27 Oct 2026): like the rules, only the
-   head chef's Google account or a phone whose kitchen reader is a chef (sousIds or headId in config/main) reads them */
-function chefReader(ref) {
-  if (window.__fakeUser) return true;
-  const by = kitchenReader(ref), c = store[ref.path.slice(0, 2).join('/') + '/config/main'] || {};
-  return !!by && ((c.sousIds || []).indexOf(by) >= 0 || (!!c.headId && c.headId === by));
-}
-function denied(ref) {
-  const d = window.__fake.denyReads, k = key(ref.path);
+// a query asks for a where on this field with this value
+const asks = (ref, f, op, v) => (ref.c || []).some(x => x.k === 'where' && x.f === f && x.op === op && (v === undefined || x.v === v));
+/* A query (or a listener on one) the real rules refuse this phone: book/index and book/matches are allowed by name only,
+   so a query on the whole book collection is refused; the minutes are listed by pubAt (published only) except by the
+   head chef's Google account (22 Oct 2026, S9); the lists only chefs or the Google account read; a personal ping asked for
+   by someone who does not manage pings must ask for their own (to == them), and only a chef lists who has seen one. */
+function rulesDenied(ref) {
+  const k = key(ref.path);
   if (ref.group && !window.__fakeUser) return true;
   if (/^kitchens\/[^/]+\/todos$/.test(k) && !chefReader(ref)) return true;
   if (/^kitchens\/[^/]+\/minutes\/[^/]+\/signs$/.test(k) && !chefReader(ref)) return true;   // the register, chefs only
-  if (/^kitchens\/[^/]+\/(suppliers|supplierlinks)(\/|$)/.test(k) && !chefReader(ref)) return true;
+  if (at3(k, '(suppliers|supplierlinks|cutdone)(/|$)') && !chefReader(ref)) return true;
   if (/^kitchens\/[^/]+\/minutes$/.test(k) && !window.__fakeUser && !(ref.c || []).some(x => x.k === 'where' && x.f === 'pubAt' && (x.op === '>=' || x.op === '>') && x.v >= 1)) return true;
-  return /^kitchens\/[^/]+\/book$/.test(k) || !!(d && d.test(k));
+  if (at3(k, 'mail$') && !mailReader(ref)) return true;
+  if (at3(k, 'fncontact$') && !window.__fakeUser) return true;   // listed only by the Google account (the backup)
+  if (at3(k, 'functions/[^/]+/hist$') && !(chefReader(ref) || fnReader(ref))) return true;
+  if (at3(k, 'directnotes$') && !chefReader(ref)) { const by = kitchenReader(ref); return !(by && asks(ref, 'to', '==', by)); }
+  if (at3(k, 'directnotes/[^/]+/seen$') && !chefReader(ref)) {
+    const by = kitchenReader(ref), parent = store[ref.path.slice(0, 4).join('/')];
+    return !(by && parent && parent.to === by && asks(ref, 'by', '==', by));
+  }
+  return /^kitchens\/[^/]+\/book$/.test(k);
 }
-export function getDocs(ref) { window.__fake.reads.push(key(ref.path)); if (cold(ref)) return delay(cacheSnap(ref)); if (readFails(ref)) return Promise.reject({ code: 'unavailable' }); if (denied(ref)) return Promise.reject({ code: 'permission-denied' }); const r = result(ref); bill('query', key(ref.path), r.docs.length); return delay(r); }
+function denied(ref) { const d = window.__fake.denyReads; return !!(d && d.test(key(ref.path))); }
+export function getDocs(ref) { window.__fake.reads.push(key(ref.path)); if (cold(ref)) return delay(cacheSnap(ref)); if (readFails(ref)) return Promise.reject({ code: 'unavailable' }); if (rulesDenied(ref)) return refuse('query', ref); if (denied(ref)) return Promise.reject({ code: 'permission-denied' }); const r = result(ref); bill('query', key(ref.path), r.docs.length); return delay(r); }
 function readFails(ref) { const f = window.__fake.failReads; return !!(f && f.test(key(ref.path))); }
 // a read that must come from the server: refused when there is no signal ('hold', 'fail'). __fake.server can hold a
 // newer copy of a document than this phone has (say a line ticked on another phone), keyed by path.
@@ -175,7 +213,7 @@ export function getDocFromServer(ref) {
   // __fake.stall = /regex/: a read from the server that never answers, like a half-dropped connection
   if (window.__fake.stall && window.__fake.stall.test(k)) return new Promise(() => {});
   if (window.__fake.mode === 'hold' || window.__fake.mode === 'fail' || cold(ref) || readFails(ref)) return Promise.reject({ code: 'unavailable' });
-  if (readRefused(ref)) return Promise.reject({ code: 'permission-denied' });
+  if (readRefused(ref)) return refuse('server', ref);
   bill('server', k, 1);
   if (sv && k in sv) { const v = sv[k]; return delay({ id: ref.path[ref.path.length - 1], ref, exists: () => v != null, data: () => (v == null ? undefined : JSON.parse(JSON.stringify(v))) }); }
   return delay(result(ref));
@@ -188,6 +226,7 @@ export function getDocsFromServer(ref) {
   // a query by id asks for those documents by name, so each one is listed in reads, like getDocFromServer
   if (byId) (byId.op === 'in' ? byId.v : [byId.v]).forEach(id => window.__fake.reads.push(k + '/' + id)); else window.__fake.reads.push(k);
   if (window.__fake.mode === 'hold' || window.__fake.mode === 'fail' || cold(ref) || readFails(ref)) return Promise.reject({ code: 'unavailable' });
+  if (rulesDenied(ref)) return refuse('server-query', ref);
   if (denied(ref)) return Promise.reject({ code: 'permission-denied' });
   let docs;
   if (byId) {
@@ -209,6 +248,13 @@ export function getDocsFromCache(ref) {
 }
 export function onSnapshot(ref, next, err) {
   if (next && typeof next === 'object') { next = err; err = arguments[3]; }   // onSnapshot(ref, options, next, error)
+  // a listener the rules refuse gets the refusal instead of its first answer, and nothing after (like the SDK). One
+  // started with no signal (cold) answers from the copy in memory, as the SDK does, and is not refused here later
+  if (!cold(ref) && (ref.type === 'doc' ? readRefused(ref) : rulesDenied(ref))) {
+    let live = true;
+    refuse('listen', ref).catch(e => setTimeout(() => { if (live && err) err(e); }, 5));
+    return () => { live = false; };
+  }
   const s = { ref, next, last: null, cold: cold(ref) };
   subs.add(s);
   setTimeout(() => { if (subs.has(s)) deliver(s); }, 5);
@@ -372,7 +418,8 @@ export function liteGetDoc(ref) {
   window.__fake.reads.push(k);
   if (window.__fake.stall && window.__fake.stall.test(k)) return new Promise(() => {});
   if (window.__fake.mode === 'hold' || window.__fake.mode === 'fail' || readFails(ref)) return Promise.reject({ code: 'unavailable' });
-  if (readRefused(ref) || (window.__fake.denyReads && window.__fake.denyReads.test(k))) return Promise.reject({ code: 'permission-denied' });
+  if (readRefused(ref)) return refuse('lite-get', ref);
+  if (window.__fake.denyReads && window.__fake.denyReads.test(k)) return Promise.reject({ code: 'permission-denied' });
   bill('lite-get', k, 1);
   return delay(result(ref, false));
 }
@@ -381,6 +428,7 @@ export function liteGetDocs(ref) {
   window.__fake.reads.push(k);
   if (window.__fake.stall && window.__fake.stall.test(k)) return new Promise(() => {});
   if (window.__fake.mode === 'hold' || window.__fake.mode === 'fail' || readFails(ref)) return Promise.reject({ code: 'unavailable' });
+  if (rulesDenied(ref)) return refuse('lite-query', ref);
   if (denied(ref)) return Promise.reject({ code: 'permission-denied' });
   const r = result(ref, false); bill('lite-query', k, r.docs.length); return delay(r);
 }
