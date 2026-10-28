@@ -186,6 +186,24 @@ const mailReads = p => p.evaluate(() => (window.__fake.reads || []).filter(k => 
   ok(await L.waitFor(p, () => /Done in the last 30 days \(1\)/.test((document.querySelector('.ml-donebox summary') || {}).textContent || ''), null, 6000).then(() => true, () => false), 'done mail, signal back: read again by itself, Done (1)');
   ok(p.errors.length === 0, 'done mail: no page errors ' + p.errors.join(' | '));
   await p.context().close();
+  // the same, read again after its wait with no online event (wifi that stayed up): an online event later, with
+  // nothing failed, reads nothing (review of 28 Oct 2026: the retry stayed set and read the done mail again)
+  p = await L.open(b, '#/admin', { admin: true, who: '', extra: doneX, width: 1280, height: 900, wait: 2000 });
+  await L.waitFor(p, () => (window.__fake.reads || []).some(k => /\/mail$/.test(k)), null, 8000).catch(() => {});
+  await L.settle(p, 800);
+  await p.evaluate(() => { window.__fake.failReads = /\/mail$/; });
+  await L.adminTab(p, 'mail'); await L.settle(p, 800);
+  await p.evaluate(() => { window.__fake.failReads = null; });
+  await p.clock.fastForward('06:00');
+  await L.adminTab(p, 'insights'); await L.adminTab(p, 'mail');
+  ok(await L.waitFor(p, () => /Done in the last 30 days \(1\)/.test((document.querySelector('.ml-donebox summary') || {}).textContent || ''), null, 6000).then(() => true, () => false), 'done mail, after the wait: read again at the next draw');
+  const dn2 = await mailReads(p);
+  await L.adminTab(p, 'insights');
+  await p.evaluate(() => { window.dispatchEvent(new Event('offline')); window.dispatchEvent(new Event('online')); });
+  await L.settle(p, 2500);
+  ok(await mailReads(p) === dn2, 'done mail in, then an online event: nothing read again (' + dn2 + ' then ' + await mailReads(p) + ')');
+  ok(p.errors.length === 0, 'done mail after the wait: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
 
   // a sous chef's own phone: no mail list while it is off
   const cfgMain = (await (async () => { const q = await L.open(b, '#/', { who: 'sam', wait: 800 }); await L.waitFor(q, () => !!window.__fake, null, 5000); const d = (await store(q))[fsKey(['config', 'main'])]; await q.context().close(); return d; })());

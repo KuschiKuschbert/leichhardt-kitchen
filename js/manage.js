@@ -670,6 +670,9 @@
       var say = [];
       if (res.drawn.length) say.push('Drawn: ' + res.drawn.map(function (s) { return SLOT_WORD[s] || s; }).join(' and ').replace(/ and (?=.* and )/g, ', ') + '.');
       if (res.redrawn.length) say.push('Redrawn: ' + res.redrawn.join(', ') + '.');
+      // nothing drawn for want of signal (28 Oct 2026, js/smart.js autoDraw): said, so a drawing is not taken as done
+      if (res.nopicks) say.push('Drawings not drawn again: your picks could not be read. Check the signal and save again.');
+      if (res.sideLeft && res.sideLeft.length) say.push('Side view not drawn again, no signal: ' + res.sideLeft.join(', ') + '.');
       if (say.length) toast(say.join(' '));
     }).catch(function () {});
   }

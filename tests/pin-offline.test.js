@@ -36,6 +36,29 @@ const { R, ok } = L.results(), { txt } = L;
     ok(q.errors.length === 0, 'shared tablet at ' + w + ' px: no page errors ' + q.errors.join(' | '));
     await q.context().close();
   }
+  // A shared tablet: Ann taps her name, the read of whether she has a PIN is slow, she taps Not me and Bo (no PIN yet)
+  // taps his. Ann's answer, when it comes, is for a name picked before (review of 28 Oct 2026): it never turns Bo's
+  // screen into "Could not check your PIN" or asks Bo, who has no PIN, to enter one.
+  for (const mode of ['fails', 'comes in']) {
+    const q = await L.open(b, '#/prep', { who: '', settings: { shared: true }, width: 390, wait: 1500, extra: { ['kitchens/' + L.PIN + '/pinset/bo']: undefined } });
+    await q.evaluate(mode => {
+      const fs = window.LK_PREP.book().fs(), g = fs.getDoc;
+      fs.getDoc = function (ref) {
+        const r = g.apply(this, arguments);
+        if (/pinset\/ann$/.test([].concat(ref.path || []).join('/'))) return new Promise((y, n) => setTimeout(() => (mode === 'fails' ? n({ code: 'unavailable' }) : r.then(y, n)), 1500));
+        return r;
+      };
+    }, mode);
+    await q.click('.p-name[data-id="ann"]'); await L.settle(q, 200);
+    await q.click('[data-p="who-change"]'); await L.settle(q, 200);
+    await q.click('.p-name[data-id="bo"]'); await L.settle(q, 400);
+    const st0 = await q.evaluate(() => window.LK_PREP.state.pinStep + '/' + window.LK_PREP.state.who);
+    await L.settle(q, 2500);
+    const st1 = await q.evaluate(() => window.LK_PREP.state.pinStep + '/' + window.LK_PREP.state.who), t = await txt(q, '#prep-root') || '';
+    ok(st0 === 'set/bo' && st1 === 'set/bo' && !/Could not check your PIN|enter your PIN/i.test(t), 'shared tablet, Ann\'s slow read ' + mode + ' after Bo picked his name: Bo\'s screen stays on setting his PIN (' + st0 + ' then ' + st1 + ')');
+    ok(q.errors.length === 0, 'shared tablet, a late answer: no page errors ' + q.errors.join(' | '));
+    await q.context().close();
+  }
   await b.close();
   R.forEach(r => console.log(r));
   const bad = R.filter(r => r.startsWith('FAIL')).length;

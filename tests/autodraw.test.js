@@ -87,6 +87,7 @@ const errs = p => p.errors.filter(e => !/Failed to load resource/.test(e));
   s = await store(p);
   const pl2 = s[fsKey(['drawings', 'rump-on-mash-plate'])] || {}, sd2 = s[fsKey(['drawings', 'rump-on-mash-side'])] || {};
   ok(pl2.v === 2 && sd2.v === 1 && JSON.stringify(sd2.els) === JSON.stringify(sd.els), 'plate unreadable for the side view: the plate is drawn again (version ' + pl2.v + '), the side view is left as it was (version ' + sd2.v + ')');
+  ok(/Side view not drawn again, no signal: Rump on Mash\./i.test(await toasts(p)), 'plate unreadable for the side view: the save says the side view was not drawn again (' + await toasts(p) + ')');
   ok(!errs(p).length, 'plate unreadable on save: no page errors ' + errs(p).join(' | '));
   const kept = s;
   await p.context().close();
@@ -113,10 +114,44 @@ const errs = p => p.errors.filter(e => !/Failed to load resource/.test(e));
   const mr = () => p.evaluate(() => window.__fake.reads.filter(k => /\/book\/matches$/.test(k)).length);
   const m0 = await mr();
   ok(m0 >= 1 && await p.evaluate(() => !Object.keys(window.LK_SMART.learned()).length), 'picks unreadable: read once when the editor opened, none known yet');
+  // a pick taught meanwhile, not saved yet
+  await p.evaluate(() => window.LK_SMART.teach('Sea salt', 'chips-thick-cut'));
   await p.evaluate(() => { window.__fake.failReads = null; });
   await p.click('[data-dw="sm-draw"]');
-  ok(await wait(p, () => Object.keys(window.LK_SMART.learned()).length > 0, null, 6000) && await mr() === m0 + 1, 'picks, signal back: Draw it for me reads them again, once (' + m0 + ' then ' + await mr() + ' reads)');
+  ok(await wait(p, () => window.LK_SMART.learned()['chicken wings'] === 'chicken-wings', null, 6000) && await mr() === m0 + 1, 'picks, signal back: Draw it for me reads them again, once (' + m0 + ' then ' + await mr() + ' reads)');
+  ok(await p.evaluate(() => window.LK_SMART.learned()[window.LK_SMART.key('Sea salt')] === 'chips-thick-cut'), 'picks read again: the pick taught meanwhile (not saved yet) stays');
   ok(!errs(p).length, 'picks unreadable: no page errors ' + errs(p).join(' | '));
+  await p.context().close();
+
+  // Drawn on save while the picks cannot be read (review of 28 Oct 2026): nothing is drawn from a guess and saved, and
+  // the save says so. It drew the matcher's own piece over the head chef's pick. Saved again with the signal back, the
+  // picks are read again and the plate is drawn with the pick.
+  const PICK = 'chips-thick-cut', wingPicks = Object.assign(cfg(), { [fsKey(['book', 'matches'])]: { m: { 'chicken wings': PICK, 'chicken wing': PICK }, upd: L.NOW } });
+  p = await L.open(b, '#/manage/new', { who: 'ann', extra: wingPicks, failReads: '/book/matches$', wait: 1400 });
+  await editor(p);
+  await p.fill('#mg-name', 'Wing Bucket');
+  await p.selectOption('#mg-kind', 'main');
+  const ingLast = () => p.evaluate(() => document.querySelectorAll('.mg-ing').length - 1);
+  await p.click('[data-mg="ing-add"]'); await L.settle(p, 150);
+  let wk = await ingLast();
+  await p.fill('[data-f="ing.' + wk + '.q"]', '300 g'); await p.fill('[data-f="ing.' + wk + '.name"]', 'Chicken wings');
+  await L.settle(p, 200);
+  await p.click('[data-mg="save"]');
+  await wait(p, () => /picks could not be read/.test(Array.from(document.querySelectorAll('.mg-toasts .p-toast')).map(t => t.textContent).join(' ')), null, 30000);
+  s = await store(p);
+  ok(!s[fsKey(['drawings', 'wing-bucket-plate'])] && /Drawings not drawn again: your picks could not be read\./.test(await toasts(p)), 'picks unreadable on save: no plate drawn from a guess, and the save says so (' + await toasts(p) + ')');
+  await p.evaluate(() => { window.__fake.failReads = null; });
+  await p.click('[data-mg="ing-add"]'); await L.settle(p, 150);
+  wk = await ingLast();
+  await p.fill('[data-f="ing.' + wk + '.q"]', '20 g'); await p.fill('[data-f="ing.' + wk + '.name"]', 'Sea salt');
+  await L.settle(p, 200);
+  await p.click('[data-mg="save"]');
+  await wait(p, () => /Drawn:/.test(Array.from(document.querySelectorAll('.mg-toasts .p-toast')).map(t => t.textContent).join(' ')), null, 30000);
+  await L.settle(p, 800);
+  s = await store(p);
+  const wb = s[fsKey(['drawings', 'wing-bucket-plate'])] || {};
+  ok(wb.v === 1 && JSON.stringify(wb.els || []).indexOf(PICK) >= 0, 'picks, signal back: saved again, the picks are read again and the plate is drawn with the pick (' + PICK + ')');
+  ok(!errs(p).length, 'picks unreadable on save: no page errors ' + errs(p).join(' | '));
   await p.context().close();
 
   // the wings drawn by Draw it for me and saved, with the wings moved by hand

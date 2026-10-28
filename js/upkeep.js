@@ -27,23 +27,41 @@ function lkServerUp() {
    With the service worker in charge it runs its own round (freshen() in sw.js), which replaces the saved copy only once
    every file is in. Before, the update and the 04:00 refresh fetched the files here and the worker saved each one as it
    came, so on a weak signal the reload, and every later opening, could run a new js/app.js with an old js/prep.js.
-   With no worker (the first visit, or a browser with none) the files are fetched here (cache: 'reload' or 'no-cache';
-   X-LK-Fresh as before). No answer in 8 seconds counts as no signal: the old copy stays and the reload waits. */
+   With no worker (the first visit, or a browser with none) the files are fetched here (cache: 'reload' or 'no-cache'),
+   and so they are with a worker from before 28 Oct 2026: it has no round, so it never says it started, and it goes to
+   the network for a file with the X-LK-Fresh header. It used to wait for an answer that never came and say No signal
+   with the wifi fine, and with no reload the browser did not look for the new worker for up to a day. No answer in 8
+   seconds counts as no signal: the old copy stays and the reload waits. */
 function lkFresh(files, mode) {
   var w = navigator.serviceWorker && navigator.serviceWorker.controller;
   return new Promise(function (res) {
-    var wait = setTimeout(function () { res(false); }, 8000);
-    function got(ok) { clearTimeout(wait); res(ok === true); }
-    try {
-      if (w && window.MessageChannel) {
-        var ch = new MessageChannel();
-        ch.port1.onmessage = function (e) { got(!!e.data && e.data.ok === true); };
-        w.postMessage({ lk: 'fresh' }, [ch.port2]);
-        return;
-      }
+    var wait = setTimeout(function () { got(false); }, 8000), old = null, done = false;
+    function got(ok) { if (done) return; done = true; clearTimeout(wait); clearTimeout(old); res(ok === true); }
+    function own() {
       Promise.all(files.map(function (f) {
         return fetch(f, { cache: mode, headers: { 'X-LK-Fresh': '1' } }).then(function (r) { if (!r.ok) throw new Error('not ok'); });
       })).then(function () { got(true); }, function () { got(false); });
+    }
+    try {
+      if (w && window.MessageChannel) {
+        var ch = new MessageChannel();
+        ch.port1.onmessage = function (e) {
+          var d = e.data || {};
+          if (d.started) { clearTimeout(old); return; }
+          got(d.ok === true);
+        };
+        // no word in 2 seconds: the worker before 28 Oct 2026. The files come here, with 8 seconds of their own, and the
+        // browser is asked to look for the new worker now.
+        old = setTimeout(function () {
+          if (done) return;
+          clearTimeout(wait); wait = setTimeout(function () { got(false); }, 8000);
+          try { navigator.serviceWorker.getRegistration().then(function (r) { if (r) r.update().catch(function () {}); }, function () {}); } catch (e) {}
+          own();
+        }, 2000);
+        w.postMessage({ lk: 'fresh' }, [ch.port2]);
+        return;
+      }
+      own();
     } catch (e) { got(false); }
   });
 }
@@ -122,10 +140,12 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
   }
   /* The version this page opened from (28 Oct 2026): opened by the service worker from its saved copy, the stamp of that
      copy of index.html (read once from the phone's own Cache Storage: no request, no Firestore). The first look that gets
-     an answer compares with it when the looks before had none (opened with no signal), so a version that came out
-     meanwhile is found. It used to take that first answer as the version running, and missed the update until 04:00. */
-  var savedAt = '', missed = false;
-  try { if (navigator.serviceWorker && navigator.serviceWorker.controller && window.caches) caches.match('./index.html').then(function (r) { if (r) savedAt = stampOf(r); }, function () {}); } catch (e) {}
+     an answer compares with it, so a version that came out meanwhile is found: opened with no signal, or opened with
+     signal while the worker's round lost a file on weak wifi (nothing saved, so no lk-new). It used to take that first
+     answer as the version running, and missed the update until 04:00. A round that saved the new version first still
+     says so with lk-new. Gives '' when there is no saved copy (no worker, or the first visit). */
+  var savedAt = Promise.resolve('');
+  try { if (navigator.serviceWorker && navigator.serviceWorker.controller && window.caches) savedAt = caches.match('./index.html').then(function (r) { return r ? stampOf(r) : ''; }, function () { return ''; }); } catch (e) {}
   // Update now's words while a change waits to send (head chef, 28 Oct 2026). On a phone they take two lines: the
   // no-break spaces keep the second sentence whole, so the line breaks after "Not sent yet."
   var UNSENT_NOTE = 'Not sent yet. It\u00a0updates\u00a0once\u00a0sent.';
@@ -250,11 +270,15 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
   window.LK_UPDATE = { now: updateNow };
   function check(returned) {
     lastCheck = Date.now();
-    stamp().then(function (s) {
-      if (!s || s === '|') { if (base === null) missed = true; return; }
-      // the first answer: the version running, or after looks with no answer the saved copy this page opened from
-      if (base === null) { base = missed && savedAt && savedAt !== '|' ? savedAt : s; if (s === base) return; }
-      if (s === base) return;
+    Promise.all([stamp(), savedAt]).then(function (x) {
+      var s = x[0], was = x[1];
+      if (!s || s === '|') return;
+      // the first answer: the saved copy this page opened from, or with none the version running
+      if (base === null) base = was && was !== '|' ? was : s;
+      // back after 5 minutes away with an update already found (the worker's lk-new, so the server's stamp is the one
+      // this look already knew): it updates now, as it does for a stamp that changed. It used to wait for 2 minutes
+      // untouched, so a cook who tapped straight away kept the old version.
+      if (s === base) { if (found && returned && !lkTyping()) reloadNow(false, true); return; }
       found = true;
       if (returned && !lkTyping()) reloadNow(false, true); else showBar();
     });

@@ -53,6 +53,11 @@ const reads = (p, re) => p.evaluate(s => window.__fake.reads.filter(k => new Reg
   ok(/Veg Co/.test(t) && !/Early Meats/.test(t), 'cut-offs after midnight with no signal: Early Meats, already ordered, is not offered again (' + t.slice(0, 160) + ')');
   ok(/No signal\. Orders ticked on other phones show when the phone is back online\./.test(t), 'cut-offs after midnight with no signal: the bar says ticks from other phones are not in yet');
   await fits(p, 'cut-off bar with the no-signal words', 390);
+  // the tick list on the order list says the same, above its rows (review of 28 Oct 2026: no check reached it)
+  await go(p, '#/orders');
+  t = await p.evaluate(() => { const l = document.querySelector('.cut-tl'), n = l && l.previousElementSibling; return n && n.classList.contains('cut-note') ? n.textContent : ''; });
+  ok(/No signal\. Orders ticked on other phones show when the phone is back online\./.test(t), 'cut-offs after midnight with no signal: the tick list on the order list says so too (' + t + ')');
+  await go(p, '#/');
   await warm(p);
   ok(await until(p, () => { const e = document.getElementById('cut-band'); return !!e && !/No signal/.test(e.textContent) && /Veg Co/.test(e.textContent) && !/Early Meats/.test(e.textContent); }), 'cut-offs, signal back: the note goes and Early Meats stays off (' + await band() + ')');
   ok(p.errors.length === 0, 'cut-offs: no page errors ' + p.errors.join(' | '));
@@ -143,6 +148,115 @@ const reads = (p, re) => p.evaluate(s => window.__fake.reads.filter(k => new Reg
   await warm(p);
   ok(await until(p, () => !!document.getElementById('w-ra')), 'wastage review, signal back: the review form shows by itself');
   ok(p.errors.length === 0, 'wastage review: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // 7. A past day lost to a bad signal (loadPast(), review of 28 Oct 2026): the 13 days that came in stay in memory,
+  // and once the signal is back only the missing day is read again. A first fix read all 14 again every 5 minutes.
+  p = await L.open(b, '#/prep', { who: 'sam', extra: pastX, failReads: '/days/' + day(2) + '/items$', width: 1280, height: 900, wait: 1800 });
+  ok(await p.evaluate(() => !window.LK_PREP.state.pastFor && !localStorage.getItem('lk.past')), 'a past day unreadable: not taken as read, nothing kept');
+  const m0 = await reads(p, pastRe), d0 = await reads(p, new RegExp('/days/' + day(2) + '/items$'));
+  await p.evaluate(() => { window.__fake.failReads = null; window.dispatchEvent(new Event('online')); });
+  ok(await until(p, () => !!localStorage.getItem('lk.past')), 'a past day unreadable, signal back: read again by itself and kept');
+  ok(await reads(p, pastRe) - m0 === 1 && await reads(p, new RegExp('/days/' + day(2) + '/items$')) - d0 === 1, 'a past day unreadable, signal back: only that day is read again (' + (await reads(p, pastRe) - m0) + ' past-day reads)');
+  ok(await p.evaluate(d => (window.LK_PREP.state.past[d] || []).length === 5, day(2)), 'a past day unreadable, signal back: its 5 lines are in');
+  ok(p.errors.length === 0, 'a past day unreadable: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // 8. A handover after a failed read (review of 28 Oct 2026). Sam opens the prep list with no signal for the past days,
+  // signs out, the signal comes back and Ann signs in: her past days are read for her at once. They waited 5 minutes
+  // or more behind Sam's failed read, with no Pace or usual amounts, and her rollover read 7 days instead of 1.
+  p = await L.open(b, '#/prep', { who: 'sam', extra: pastX, cold: pastRe.source, width: 1280, height: 900, wait: 2500 });
+  ok(await p.evaluate(() => !window.LK_PREP.state.pastFor), 'handover: Sam\'s past days could not be read');
+  await p.evaluate(() => window.LK_PREP.signOut(true)); await L.settle(p, 500);
+  await warm(p); await L.settle(p, 2500);
+  await p.click('.p-name[data-id="ann"]'); await L.settle(p, 300); await p.fill('#pf1', '2222'); await L.settle(p, 2000);
+  if (await p.evaluate(() => location.hash) !== '#/prep') await go(p, '#/prep');
+  ok(await until(p, () => { const s = window.LK_PREP.state; return s.who === 'ann' && s.authed && !!s.pastFor && Object.keys(s.past || {}).length === 14; }), 'handover: Ann signs in and her 14 past days are read at once (' + JSON.stringify(await p.evaluate(() => { const s = window.LK_PREP.state; return { who: s.who, pastFor: !!s.pastFor, n: Object.keys(s.past || {}).length }; })) + ')');
+  ok(p.errors.length === 0, 'handover: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // 9. The head chef signs out while Team's 30 order days are still being read (review of 28 Oct 2026). The late
+  // answers armed their retry for the next person, so the next online event read 30 order days on a phone signed out
+  // (all refused) or on a staff phone (Ann). Now the answers for the person before are dropped.
+  const ordX = {};
+  for (let i = 1; i < 30; i++) ordX[fsKey(['orders', day(i), 'lines', 'o' + i])] = { text: 'Cream ' + i, qty: '2 L', recipes: [], addedBy: 'Ann', addedById: 'ann', addedAt: L.NOW - i * 86400000, ordered: false, deleted: false };
+  const ordRe = /\/orders\/[^/]+\/lines$/;
+  for (const next of ['nobody', 'Ann']) {
+    p = await L.open(b, '#/admin', { admin: true, who: '', extra: ordX, width: 1280, height: 900, wait: 2000 });
+    await L.waitFor(p, () => { const s = window.LK_PREP.state.stats; return !!s && !s.loading; }, null, 8000).catch(() => {});
+    const mid = await p.evaluate(() => {
+      const st = () => window.LK_PREP.state, leaf = () => document.querySelector('[data-p="a-tab"][data-t="team"]');
+      if (leaf()) leaf().click();
+      else for (const g of [...document.querySelectorAll('[data-p="a-group"]')].map(x => x.getAttribute('data-g'))) {
+        document.querySelector('[data-p="a-group"][data-g="' + g + '"]').click();
+        if (st().atab === 'team') break;
+        if (leaf()) { leaf().click(); break; }
+      }
+      const o = st().ordStats, busy = !!(o && o.loading);
+      window.LK_PREP.signOut(true);
+      return busy;
+    });
+    await L.settle(p, 1500);
+    if (next === 'Ann') {
+      await go(p, '#/prep');
+      if (await p.$('.p-name[data-id="ann"]')) { await p.click('.p-name[data-id="ann"]'); await L.settle(p, 600); }
+      if (await p.$('#pf1')) await p.type('#pf1', '2222');
+      await L.settle(p, 1500);
+    }
+    const o0 = await reads(p, ordRe);
+    await p.evaluate(() => window.dispatchEvent(new Event('online')));
+    await L.settle(p, 3000);
+    ok(mid && await reads(p, ordRe) === o0, 'Team\'s reads cut short by a sign-out, then ' + next + ' on the phone and an online event: no order days read (' + (await reads(p, ordRe) - o0) + ')');
+    ok(p.errors.length === 0, 'Team cut short, ' + next + ': no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+  }
+
+  // 11. The sections people write (watchSections()), started again with no signal for the next person: the copy in
+  // memory is empty, which is not "no sections". The ones already known stay for the suggestions and the spell check.
+  const secX = { [fsKey(['sections', 'larder'])]: { name: 'Larder', uses: 5 }, [fsKey(['sections', 'pastry'])]: { name: 'Pastry', uses: 3 } };
+  p = await L.open(b, '#/prep', { who: 'sam', extra: secX, wait: 1800 });
+  ok(await until(p, () => window.LK_PREP.state.sections.length === 2), 'sections: both read with signal');
+  await p.evaluate(() => window.LK_PREP.signOut(true)); await L.settle(p, 500);
+  await p.evaluate(() => { window.__fake.cold = /\/sections$/; });
+  await p.click('.p-name[data-id="ann"]'); await L.settle(p, 300); await p.fill('#pf1', '2222'); await L.settle(p, 2000);
+  ok(await p.evaluate(() => window.LK_PREP.state.who === 'ann' && window.LK_PREP.state.sections.length === 2), 'sections started again with no signal: the two known stay (' + await p.evaluate(() => window.LK_PREP.state.sections.length) + ')');
+  ok(p.errors.length === 0, 'sections: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // 12. A rollover while a far past day (10 days ago) could not be read (review of 28 Oct 2026): the 7 days it needs are
+  // in, so yesterday's open line still rolls over now, not after the past days' retry
+  const rollX = Object.assign({}, pastX, { [fsKey(['days', day(1), 'items', 'open1'])]: { text: 'Open job yesterday', station: 'Larder', qty: '', recipe: '', addedBy: 'Sam', addedById: 'sam', addedAt: L.NOW - 86400000 - 7200000, done: false, deleted: false } });
+  p = await L.open(b, '#/prep', { who: 'sam', extra: rollX, failReads: '/days/' + day(10) + '/items$', width: 1280, height: 900, wait: 2500 });
+  ok(await until(p, () => window.LK_PREP.state.items.some(x => x.text === 'Open job yesterday' && x.rolled === 1)) && await p.evaluate(() => !window.LK_PREP.state.pastFor), 'a far past day unreadable: yesterday\'s open line rolls over now');
+  ok(p.errors.length === 0, 'rollover with a far day lost: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // 10. The same for a read that fails after the sign-out (no signal): who is on today in the admin People tab. The
+  // failure came back as no signal, not as cut short, so it armed its retry and Ann's staff phone read the shifts on the
+  // next online event. Now any answer after the person changed is cut short (sdk()).
+  const ksX = { [fsKey(['config', 'main'])]: { people, sousIds: ['sam'], pingIds: ['sam'], staffIds: ['sam', 'ann', 'bo'], showBadges: true, kitSecs: [{ id: 'grill', name: 'Grill', off: false }] } };
+  p = await L.open(b, '#/admin', { admin: true, who: '', extra: ksX, width: 1280, height: 900, failReads: '/shifts$', wait: 2000 });
+  const sh0 = await reads(p, /\/shifts$/);
+  await p.evaluate(() => {
+    const st = () => window.LK_PREP.state, leaf = () => document.querySelector('[data-p="a-tab"][data-t="people"]');
+    if (leaf()) leaf().click();
+    else for (const g of [...document.querySelectorAll('[data-p="a-group"]')].map(x => x.getAttribute('data-g'))) {
+      document.querySelector('[data-p="a-group"][data-g="' + g + '"]').click();
+      if (st().atab === 'people') break;
+      if (leaf()) { leaf().click(); break; }
+    }
+    window.LK_PREP.signOut(true);
+  });
+  await L.settle(p, 1000);
+  const sh1 = await reads(p, /\/shifts$/);
+  await go(p, '#/prep');
+  if (await p.$('.p-name[data-id="ann"]')) { await p.click('.p-name[data-id="ann"]'); await L.settle(p, 600); }
+  if (await p.$('#pf1')) await p.type('#pf1', '2222');
+  await L.settle(p, 1500);
+  await p.evaluate(() => { window.__fake.failReads = null; window.dispatchEvent(new Event('online')); });
+  await L.settle(p, 3000);
+  ok(sh1 === sh0 + 1 && await reads(p, /\/shifts$/) === sh1 && await p.evaluate(() => window.LK_PREP.state.who === 'ann'), 'a read that failed after the sign-out, then Ann on the phone and an online event: nothing read for the person before (' + sh0 + ', ' + sh1 + ', ' + await reads(p, /\/shifts$/) + ' reads)');
+  ok(p.errors.length === 0, 'a read that failed after the sign-out: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
   await b.close();

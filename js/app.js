@@ -377,7 +377,9 @@
      Manage staff; not Manage staff on the head chef's own Google device, where it is People in the admin panel), Settings
      and Sign out,
      which hands the phone to the next person. With nobody signed in the ring is dashed and the menu has Sign in ("Who
-     are you?", then back to the same page), Admin panel on the head chef's personal device, and Settings.
+     are you?", then back to the same page), Admin panel on the head chef's personal device, and Settings. Not with no
+     signal before what this phone may open is known (LK_PREP.offline(): the settings not in, or the head chef's owner
+     check waiting): then the no-signal sentence in place of Sign in, which would forget the person or the head chef mark.
      Each item is one line (shortened 22 Oct 2026); a second line shows only when it changes: today's section, Sign in
      with Google, and Sign out's "Not saved yet". js/prep.js says when the person changes (lk-who). */
   function whoMark(flip) {

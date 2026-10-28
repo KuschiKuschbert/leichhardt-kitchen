@@ -5,10 +5,11 @@
    phone never mixes old and new files. If anything changed it tells the open book, which updates itself (js/upkeep.js).
    The update and the 04:00 refresh (js/upkeep.js) ask the worker for the same round and wait for its answer (28 Oct
    2026), so they reload only into a whole new set. A file fetched with the X-LK-Fresh header (a page's script loader,
-   js/app.js mgScript()) goes to the network first. With no saved copy yet, or a file that is not saved, it goes to the
-   network and keeps what comes back. A page's script with its version (js/manage.js?v=4) is kept under its plain
-   address, so the pages loaded only when they open (Manage recipes, Delivery received, Supplier order and the others)
-   open with no signal too, once they have opened with it.
+   js/app.js mgScript()) goes to the network first, past the browser's own copy. With no saved copy yet, or a file that
+   is not saved, it goes to the network and keeps what comes back. A page's script with its version (js/manage.js?v=4)
+   is kept under its plain address, so the pages loaded only when they open (Manage recipes, Delivery received, Supplier
+   order and the others) open with no signal too, once they have opened with it. A start file (SHELL) is never loaded
+   with a version.
    Google Fonts and the Firebase files are kept once loaded. The prep list, orders and wastage talk to Firebase directly,
    so those requests are not touched: their data is never kept here (since 26 Oct 2026, #387, Firebase keeps it in the
    tab's memory only). */
@@ -43,6 +44,9 @@ function freshen() {
 self.addEventListener('message', function (e) {
   var port = e.ports && e.ports[0];
   if (!port || !e.data || e.data.lk !== 'fresh') return;
+  // started at once, so the page can tell this worker from one before 28 Oct 2026, which has no round and never
+  // answers: the page then fetches the files itself, the way the book did before (lkFresh() in js/upkeep.js)
+  port.postMessage({ started: true });
   e.waitUntil(freshen().then(function (ok) { port.postMessage({ ok: ok === true }); }));
 });
 function freshRound() {
@@ -83,9 +87,15 @@ self.addEventListener('fetch', function (e) {
   // one copy per file, so it opens with no signal once it has opened with it. Before, nothing with a ? was kept, so those
   // pages said they could not open with no signal even after a visit. A newer one still comes from the network first,
   // and each page checks the version it got (MG_API, FE_API, SUP_API in js/app.js and the files' own API).
-  var lazy = /^\?v=\d{1,4}$/.test(u.search) && /\.js$/.test(u.pathname);
+  // Never a start file (SHELL) with a version: kept under its plain address it would replace the saved shell one file at
+  // a time, outside the all-or-nothing round. Nothing loads one that way; if something did, it goes to the network and
+  // is not kept.
+  var lazy = /^\?v=\d{1,4}$/.test(u.search) && /\.js$/.test(u.pathname) && !SHELL.some(function (f) { return new URL(f, self.location).pathname === u.pathname; });
   function net() {
-    return fetch(r).then(function (res) {
+    // asked for the newest, or a page's script with its version: past the browser's own copy too (28 Oct 2026). GitHub
+    // Pages lets the browser keep a file for 10 minutes, so after an update a page opened again ran its old scripts, and
+    // the worker kept those for no signal. A file that did not change is a small "not changed" answer.
+    return fetch(asked || lazy ? new Request(r, { cache: 'no-cache' }) : r).then(function (res) {
       if (!res.ok || (u.search && !lazy)) return res;
       var c = res.clone(), put = caches.open(CACHE).then(function (ca) { return ca.put(lazy ? u.origin + u.pathname : key, c); });
       // asked for the newest (X-LK-Fresh): answered once it is saved, so the script tag that follows gets this copy

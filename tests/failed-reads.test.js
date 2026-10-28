@@ -66,6 +66,9 @@ async function fits(p, what, back) {
   ok(await shows(p, '#prep-root', /Insights[\s\S]*Could not load every day\. Check the signal\./), 'insights, a day unreadable: says it could not load every day');
   ok(await p.evaluate(d => { const st = window.LK_PREP.state.stats; return !!st && (st.miss || []).indexOf(d) >= 0; }, d2), 'insights, a day unreadable: the day is listed as missing, not as a day with no lines');
   ok(await p.evaluate(() => { const x = document.querySelector('[data-p="csv"][data-v="insights"]'); return !!x && x.disabled; }), 'insights, a day unreadable: no CSV of only the days that came in');
+  // a button left on (an older page) does not make one either: exportCSV() refuses and says why
+  const csvTry = await p.evaluate(() => { let n = 0; const o = URL.createObjectURL; URL.createObjectURL = function () { n++; return o.apply(this, arguments); }; const x = document.querySelector('[data-p="csv"][data-v="insights"]'); x.disabled = false; x.click(); URL.createObjectURL = o; return n; });
+  ok(csvTry === 0 && await until(p, () => /Could not load every day/.test(document.body.textContent) && ![...document.querySelectorAll('a[download]')].length), 'insights, a day unreadable, the CSV button forced on: no file is made');
   await fits(p, 'insights with the could-not-load note', 1280);
   const dr0 = await reads(p, /\/days\/[^/]+\/items$/);
   await p.evaluate(() => { window.__fake.failReads = null; window.dispatchEvent(new Event('online')); });
@@ -85,6 +88,16 @@ async function fits(p, what, back) {
   ok(!/Could not load every day/.test(await ordBlock()), 'team, signal back: the note goes');
   ok(p.errors.length === 0, 'team: no page errors ' + p.errors.join(' | '));
   await p.context().close();
+  // the same, and the signal back with no online event: Refresh on Team reads the order days too (review of 28 Oct
+  // 2026: it read only the prep days, and the note stayed under "Refresh reads the newest")
+  p = await L.open(b, '#/admin', { admin: true, who: '', extra, width: 1280, height: 900, failReads: '/orders/' + day(1) + '/lines$', wait: 2000 });
+  await L.adminTab(p, 'team');
+  await until(p, () => { const o = window.LK_PREP.state.ordStats; return !!o && !o.loading && (o.miss || []).length > 0; });
+  await p.evaluate(() => { window.__fake.failReads = null; });
+  await p.click('[data-p="stats-refresh"][data-v="team"]');
+  ok(await until(p, () => { const o = window.LK_PREP.state.ordStats; return !!o && !o.loading && !(o.miss || []).length && o.lines.some(x => x.text === 'Cream'); }) && !/Could not load every day/.test(await ordBlock()), 'team, a day unreadable, then Refresh with the signal back: the order day is read and the note goes');
+  ok(p.errors.length === 0, 'team Refresh: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
 
   // admin Insights' counts unreadable (loadViews(), loadMisses(), loadUsage()): not "none", no read on every draw, and
   // read again once the signal is back
@@ -100,6 +113,21 @@ async function fits(p, what, back) {
   ok(await until(p, () => { const x = (document.querySelector('#prep-root') || {}).textContent || ''; return /No card opens counted yet/.test(x) && /No empty searches yet/.test(x) && /Nothing counted yet/.test(x) && !/Could not load these counts/.test(x); }), 'insights counts, signal back: each is read again and shows what is there');
   ok(p.errors.length === 0, 'insights counts: no page errors ' + p.errors.join(' | '));
   await p.context().close();
+  // the same, read again after the 5-minute wait with no online event (wifi that stayed up): an online event later,
+  // with nothing failed, reads nothing (review of 28 Oct 2026: the retry stayed set and read both lists again)
+  p = await L.open(b, '#/admin', { admin: true, who: '', width: 1280, height: 900, failReads: '/(views|misses)$', wait: 2000 });
+  await until(p, () => (((document.querySelector('#prep-root') || {}).textContent || '').match(/Could not load these counts/g) || []).length === 2);
+  await p.evaluate(() => { window.__fake.failReads = null; });
+  await p.clock.fastForward('06:00');
+  await L.adminTab(p, 'team'); await L.adminTab(p, 'insights');
+  ok(await until(p, () => { const x = (document.querySelector('#prep-root') || {}).textContent || ''; return /No card opens counted yet/.test(x) && /No empty searches yet/.test(x); }), 'insights counts, after the wait: read again at the next draw');
+  const v0 = await reads(p, /\/(views|misses)$/);
+  await go(p, '#/prep');
+  await p.evaluate(() => { window.dispatchEvent(new Event('offline')); window.dispatchEvent(new Event('online')); });
+  await L.settle(p, 2500);
+  ok(await reads(p, /\/(views|misses)$/) === v0, 'insights counts in, then an online event: nothing read again (' + v0 + ' then ' + await reads(p, /\/(views|misses)$/) + ')');
+  ok(p.errors.length === 0, 'insights counts after the wait: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
 
   // the nightly summaries of what is usual unreadable (sumList()): no fall back to reading up to 500 learned records
   // (or 300 order records) in their place; read again later
@@ -110,11 +138,33 @@ async function fits(p, what, back) {
   ok(await p.evaluate(() => !localStorage.getItem('lk.learned') && !localStorage.getItem('lk.ord.learned')), 'summaries unreadable: nothing kept for the day');
   const s0 = await reads(p, /\/summary\/(learned|ordlearned)$/);
   await p.evaluate(() => { window.__fake.failReads = null; window.dispatchEvent(new Event('online')); });
+  // summary/learned like summary/ordlearned (28 Oct 2026): at once with the online event, not only after the wait
+  ok(await until(p, () => !!localStorage.getItem('lk.learned')), 'summaries, signal back with an online event: summary/learned is read again at once and kept');
   await p.clock.fastForward('06:00');
   await go(p, '#/orders'); await go(p, '#/prep');
   ok(await until(p, () => !!localStorage.getItem('lk.learned') && !!localStorage.getItem('lk.ord.learned')), 'summaries, signal back: both read again by themselves and kept (' + s0 + ' then ' + await reads(p, /\/summary\/(learned|ordlearned)$/) + ' reads)');
   ok(await reads(p, /^kitchens\/[^/]+\/(learned|ordlearned)$/) === 0, 'summaries, signal back: still no read of the learned records');
   ok(p.errors.length === 0, 'summaries: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // the pings, minutes, guides and the drinks run unreadable, then read again after their wait with no online event
+  // (wifi that stayed up): an online event later, with nothing failed, reads none of them again (review of 28 Oct 2026:
+  // each one's online retry stayed set after it came in; they all go through retrySoon() and retryDone() now)
+  p = await L.open(b, '#/prep', { who: 'sam', failReads: '/(notes|minutes|guides|drinks)$', wait: 1800 });
+  await go(p, '#/drinks'); await go(p, '#/prep');   // the drinks run is read when its page opens
+  await L.settle(p, 1000);
+  ok(await p.evaluate(() => { const s = window.LK_PREP.state; return s.notesErr && s.minsErr && s.gErr; }), 'pings, minutes and guides unreadable at first');
+  await p.evaluate(() => { window.__fake.failReads = null; });
+  for (let i = 0; i < 6; i++) { await p.mouse.move(20 + i, 20); await p.clock.runFor(60000); }
+  await p.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  for (const h of ['#/minutes', '#/guides', '#/drinks', '#/prep']) await go(p, h);
+  const ret = /\/(notes|minutes|guides|drinks)$/;
+  ok(await until(p, () => { const s = window.LK_PREP.state; return !s.notesErr && !s.minsErr && Array.isArray(s.guides) && !s.gErr && !!localStorage.getItem('lk.drinks'); }), 'pings, minutes, guides and drinks, after the wait: each read again and in');
+  const q0 = await reads(p, ret);
+  await p.evaluate(() => { window.dispatchEvent(new Event('offline')); window.dispatchEvent(new Event('online')); });
+  await L.settle(p, 2500);
+  ok(await reads(p, ret) === q0, 'pings, minutes, guides and drinks in, then an online event: nothing read again (' + q0 + ' then ' + await reads(p, ret) + ')');
+  ok(p.errors.length === 0, 'retries after the wait: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
   // a good signal: one read of the summary, cached, and no past wastage lines read at all

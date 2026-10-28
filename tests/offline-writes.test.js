@@ -930,6 +930,25 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     await waitReload(p);
     ok(await reloaded(p), 'back after 6 minutes, a swipe 0.4 seconds in: it updates straight away');
   });
+  // 19 lk-new. The same when the strip came from the worker (lk-new: the files are already saved, and the server's
+  // stamp is the one the book knew): it used to wait for 2 minutes untouched (review of 28 Oct 2026, older than this fix)
+  await step('19 lk-new', async () => {
+    p = await L.open(b, '#/prep', { who: 'ann', touch: true, wait: 1500 });
+    await updBar(p);
+    await p.evaluate(() => {
+      window.__vis = 'visible';
+      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => window.__vis });
+    });
+    const vis = s => p.evaluate(s => { window.__vis = s; document.dispatchEvent(new Event('visibilitychange')); }, s);
+    await vis('hidden');
+    await p.clock.fastForward('06:00');
+    await mark(p);
+    await vis('visible');
+    await L.sleep(300);
+    await swipe(p);
+    await waitReload(p);
+    ok(await reloaded(p), 'the strip from the worker, back after 6 minutes, a swipe 0.3 seconds in: it updates straight away');
+  });
   await step('19 tick', async () => {
     p = await L.open(b, '#/prep', { who: 'ann', touch: true, wait: 1500 });
     await slowFiles(p, 1500);
@@ -1126,6 +1145,23 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     for (let i = 0; i < 33 && !(await reloaded(p)); i++) { await p.clock.fastForward(20000); await L.settle(p, 150); }
     await waitReload(p);
     ok(await reloaded(p), 'the internet back with no online event: it updates within 11 minutes');
+  });
+  // 24 online. The same, but the signal comes back with an online event (the phone's wifi came back): it updates at the
+  // next look, not after the longest wait (review of the fix, 28 Oct 2026: nothing checked goodLook() on online)
+  await step('24 online', async () => {
+    p = await L.open(b, '#/prep', { touch: true, wait: 1500 });
+    await updBar(p);
+    await deadNet(p, true);
+    await mark(p);
+    // 15 minutes: the first look is 2 minutes in (nobody has touched it), then 20 seconds, 1, 2 and 5 minutes, so the
+    // next one waits 10 minutes
+    for (let i = 0; i < 45; i++) { await p.clock.fastForward(20000); await L.settle(p, 150); }
+    ok(!(await reloaded(p)), 'wifi with no internet for 15 minutes: no reload');
+    await deadNet(p, false);
+    await p.evaluate(() => window.dispatchEvent(new Event('online')));
+    for (let i = 0; i < 2 && !(await reloaded(p)); i++) { await p.clock.fastForward(20000); await L.settle(p, 300); }
+    await waitReload(p);
+    ok(await reloaded(p), 'the internet back with an online event: it updates within the next two looks, not after the 10 minute wait');
   });
 
   // 25. the server has a change while the strip is still up: the listener's 'same' snapshot patches the row's Not sent

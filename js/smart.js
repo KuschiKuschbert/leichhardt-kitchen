@@ -60,13 +60,13 @@
   /* One getDoc when the editor opens. A read that failed (no signal) is not taken as "no picks" for the rest of the page
      (28 Oct 2026): the picks taught since stay, and the next Draw it for me, or the next drawing on save, reads again
      (one read, only after a failure). */
-  var learned = null, learnP = null;
+  var learned = null, learnP = null, learnIn = false;   // learnIn: read from the server at least once on this page
   function loadLearned() {
     if (learnP) return learnP;
     var api = B();
     learnP = api.ready().then(function () { return api.fs().getDoc(api.docRef('book', 'matches')); }).then(function (sn) {
       var m = sn.exists() && sn.data().m && typeof sn.data().m === 'object' ? sn.data().m : {};
-      learned = Object.assign({}, m, pending);   // a pick taught here and not saved yet stays
+      learned = Object.assign({}, m, pending); learnIn = true;   // a pick taught here and not saved yet stays
     }, function () { learnP = null; });
     return learnP;
   }
@@ -508,19 +508,25 @@
     return out;
   }
   function autoDraw(rid) {
-    // the head chef's picks first (a read only when the last one failed)
-    var r = R.recipeOf(rid), res = { drawn: [], redrawn: [] }, made = {}, chain = loadLearned(), plate = null, cur = X.change(rid);
+    var r = R.recipeOf(rid), res = { drawn: [], redrawn: [], sideLeft: [] }, made = {}, plate = null, cur = X.change(rid);
     if (!r) return Promise.resolve(res);
     // worked out before its own slots are drawn, as drawing them saves the recipe again (version 2)
     var first = !X.pristine(rid) && !!cur && cur.v === 1 && /\btopper\b/i.test(rid + ' ' + (r.name || ''));
-    slotsToDraw(r).forEach(function (slot) {
-      chain = chain.then(function () {
-        var d = drawFresh(DR.blank(rid, slot), plate);
-        if (!d.els.length) return null;
-        return DR.persist(d).then(function (done) { if (done && !done.conflict) { res.drawn.push(slot); made[d.id] = 1; if (slot === 'plate' || slot === 'pan') plate = d; } });
+    // the head chef's picks first (a read only when the last one failed). Not read (no signal, a lost read, 28 Oct
+    // 2026): nothing is drawn or drawn again, so no drawing is saved from a guess without the picks; the save says so
+    // (nopicks) and the next save draws them
+    return loadLearned().then(function () {
+      if (!learnIn) { res.nopicks = true; return res; }
+      var chain = Promise.resolve();
+      slotsToDraw(r).forEach(function (slot) {
+        chain = chain.then(function () {
+          var d = drawFresh(DR.blank(rid, slot), plate);
+          if (!d.els.length) return null;
+          return DR.persist(d).then(function (done) { if (done && !done.conflict) { res.drawn.push(slot); made[d.id] = 1; if (slot === 'plate' || slot === 'pan') plate = d; } });
+        });
       });
+      return chain.then(function () { return first ? firstCard(rid, res, made) : null; }).then(function () { return redrawFrom(rid, res, made); }).then(function () { return res; });
     });
-    return chain.then(function () { return first ? firstCard(rid, res, made) : null; }).then(function () { return redrawFrom(rid, res, made); }).then(function () { return res; });
   }
   /* A topper card to come written for the first time (the French, Mexican and Americana toppers, head chef 22 Oct 2026):
      a topper is what the dish looks like, so the dishes that link to it and still show the book's own plate drawing
@@ -561,7 +567,8 @@
           // the plate could not be read (no signal, a lost read): this side view is left as it is, never drawn from a
           // guessed plate and saved (28 Oct 2026). A plate that is not there is drawn from, as before.
           return (pl ? api.fs().getDocFromServer(api.docRef('drawings', pl.id)).then(function (ps) { return ps.exists() ? ps.data() : null; }, function () { return NO_PLATE; }) : Promise.resolve(null)).then(function (plate) {
-            if (plate === NO_PLATE) return null;
+            // said in the save's message (sideLeft), so the head chef knows it still shows the plate before
+            if (plate === NO_PLATE) { var lr = R.recipeOf(a.rid), ln = lr ? lr.name : a.rid; if (res.sideLeft && res.sideLeft.indexOf(ln) < 0) res.sideLeft.push(ln); return null; }
             var was = JSON.stringify(d.els);
             drawFresh(d, plate);
             // drawn again exactly as it was (the change was to the method or the yield): nothing to save

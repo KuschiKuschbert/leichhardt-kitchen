@@ -94,6 +94,59 @@ async function fits(p, what, back) {
   ok(await until(p, () => window.LK_PREP.state.level === 'owner' && !!document.querySelector('.a-nav')), 'owner check, signal back: the admin panel opens by itself');
   ok(p.errors.length === 0, 'owner check with no signal: no page errors ' + p.errors.join(' | '));
   await p.context().close();
+  // each Google account is checked for itself: a second account on the device after the first one's check failed is
+  // checked at once, not after the first one's 5-minute wait
+  p = await L.open(b, '#/admin', { admin: true, cold: '/config/admins$', width: 1280, wait: 1500, init: () => { localStorage.setItem('lk.admin', '1'); } });
+  await shows(p, '#prep-root', /No signal\. The admin panel opens/);
+  const a0 = await reads(p, /config\/admins$/);
+  await p.evaluate(() => { window.__fakeUser.email = 'second@test.local'; });
+  await go(p, '#/recipes'); await go(p, '#/admin');
+  ok(await reads(p, /config\/admins$/) === a0 + 1, 'owner check with no signal, then another Google account: that account is checked at once (' + a0 + ' then ' + await reads(p, /config\/admins$/) + ' reads)');
+  await p.context().close();
+
+  // 2b. The signal back with no online event (wifi that stayed up while the internet dropped): the settings listener
+  // hears the server and the owner check goes again at once, not after its 5-minute wait (review of 28 Oct 2026: the
+  // panel stayed on No signal). And the card has Try again and Back to the prep book, for a lost read on a good signal
+  // (the listener then hears nothing new).
+  for (const how of ['the settings listener', 'Try again']) {
+    p = await L.open(b, '#/admin', { admin: true, cold: '/config/admins$', width: 1280, wait: 1500, init: () => { localStorage.setItem('lk.admin', '1'); } });
+    await shows(p, '#prep-root', /No signal\. The admin panel opens/);
+    if (how === 'Try again') {
+      ok(!!(await p.$('#prep-root [data-p="admins-retry"]')) && !!(await p.$('#prep-root a[href="#/prep"]')), 'owner check with no signal: the card offers Try again and Back to the prep book');
+      await p.evaluate(() => { window.__fake.cold = null; });   // the read would go through now, and no listener hears it
+      await L.settle(p, 500);
+      await p.click('#prep-root [data-p="admins-retry"]', { timeout: 2000 }).catch(() => {});
+    } else await p.evaluate(() => window.__fake.warm());   // no online event
+    ok(await until(p, () => window.LK_PREP.state.level === 'owner' && !!document.querySelector('.a-nav')), 'owner check, signal back with no online event, ' + how + ': the admin panel opens at once');
+    ok(p.errors.length === 0, 'owner check, ' + how + ': no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+  }
+
+  // 2c. The rest of the book on the head chef's device while that check waits (review of 28 Oct 2026). The start page
+  // offered Kitchen sign in, the chef hat "Nobody signed in" with Sign in, and the kitchen and tool pages Who are you?:
+  // a name tapped there signed the Google account out and lost the head chef mark. Now they say there is no signal.
+  p = await L.open(b, '#/', { admin: true, cold: '/config/admins$', width: 1280, wait: 1500, init: () => { localStorage.setItem('lk.admin', '1'); } });
+  await until(p, () => !!window.LK_PREP.state.adminsOff);
+  ok(await shows(p, '.wall-main', NO_KITCHEN) && !/Kitchen sign in/.test(await text(p, '.wall-main')), 'head chef\'s device, owner check waiting: the start page says there is no signal, not Kitchen sign in (' + (await text(p, '.wall-main')).slice(0, 120) + ')');
+  await p.click('.wtop-who'); await L.settle(p, 150);
+  t = await text(p, '.wm');
+  ok(NO_KITCHEN.test(t) && !/Nobody signed in/.test(t) && !(await p.$('.wm [data-who="signin"]')) && !!(await p.$('.wm .wm-adm')), 'head chef\'s device, owner check waiting: the chef hat says there is no signal, offers no Sign in and keeps Admin panel (' + t.slice(0, 160) + ')');
+  await p.keyboard.press('Escape'); await L.settle(p, 100);
+  for (const h of ['#/prep', '#/orders', '#/todo', '#/manage', '#/functions', '#/suppliers']) {
+    const sel = 'main';
+    await go(p, h);
+    const said = await shows(p, sel, NO_KITCHEN);
+    t = await text(p, sel);
+    ok(said && !/Who are you/.test(t) && !(await p.$(sel + ' [data-p="who"]')), 'head chef\'s device, owner check waiting, ' + h + ': says there is no signal, no Who are you? (' + t.slice(0, 100) + ')');
+  }
+  ok(await p.evaluate(() => { window.LK_PREP.signIn('#/'); return !window.LK_PREP.state.picking && localStorage.getItem('lk.admin') === '1'; }), 'head chef\'s device, owner check waiting: Sign in from elsewhere does nothing, and the mark stays');
+  await fits(p, 'head chef\'s device, owner check waiting', 1280);
+  await go(p, '#/prep');
+  await warm(p);
+  ok(await until(p, () => window.LK_PREP.state.level === 'owner' && !document.querySelector('#prep-root [data-p="who"]') && !/No signal/.test(document.querySelector('#prep-root').textContent)), 'head chef\'s device, signal back: the prep list opens for the head chef');
+  ok(p.errors.length === 0, 'head chef\'s device, owner check waiting: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   // a Google account the rules refuse is still told it is not the head chef's account
   p = await L.open(b, '#/admin', { admin: true, width: 1280, wait: 1500, init: () => { window.__fake = window.__fake || { mode: 'ok', writes: [], reads: [] }; window.__fake.notOwner = true; } });
   ok(await shows(p, '#prep-root', /is not the head chef's Google account/) && !/No signal/.test(await text(p, '#prep-root')), 'owner check refused: says it is not the head chef\'s Google account');
@@ -122,9 +175,14 @@ async function fits(p, what, back) {
       t = await text(p, '#mg-root');
       ok(await reads(p, /drawtpl$/) === n0 && /No signal/.test(t) && !/Nothing made in the book yet/.test(t), 'Made in the book with no signal: typing a search reads nothing again and still says there is no signal');
       await p.fill('#mg-q', ''); await L.settle(p, 300);
+      // the signal back with no online event (wifi that stayed up): a tap on the chip reads again
+      await p.evaluate(() => { window.__fake.cold = null; });
       await p.click('[data-mg="chip"][data-v="templates"]'); await L.settle(p, 300);
+      ok(await shows(p, '#mg-root', /House plate/), 'Templates, signal back with no online event: a tap on the chip reads again and the template shows');
+    }
+    if (w === 768) {
       await warm(p);
-      ok(await shows(p, '#mg-root', /House plate/), 'Templates, signal back: the template shows by itself');
+      ok(await shows(p, '#mg-root', /Nothing made in the book yet/) && !/No signal/.test(await text(p, '#mg-root')), 'Made in the book, signal back: read again by itself');
     }
     ok(p.errors.length === 0, 'Templates with no signal at ' + w + ' px: no page errors ' + p.errors.join(' | '));
     await p.context().close();

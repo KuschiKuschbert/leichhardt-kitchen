@@ -6,7 +6,8 @@
 const http = require('http'), fs = require('fs'), path = require('path');
 const root = path.resolve(__dirname, '..');
 const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.webmanifest': 'application/manifest+json', '.json': 'application/json', '.pdf': 'application/pdf' };
-/* over (tests only): files the server answers differently, by path: { body, lastModified, trickle }; over.delay holds
+/* over (tests only): files the server answers differently, by path: { body, lastModified, trickle, etag, headEtag }
+   (etag: its ETag, headEtag: the one a HEAD gets, if different, like a zipped answer marked weak); over.delay holds
    every answer back that many ms, like slow wifi; a file's trickle sends its headers at once and the rest of it that
    many ms later; over.maxAge lets the browser keep every file that many seconds, the way GitHub Pages does (600).
    saved-copy.test.js starts its own server with these. */
@@ -23,7 +24,8 @@ function answer(req, res, over) {
   if (!f.startsWith(root + path.sep)) { res.writeHead(403); return res.end(); }
   const o = over[p], cc = over.maxAge ? 'max-age=' + over.maxAge : 'no-store';
   if (o) {
-    res.writeHead(200, { 'Content-Type': types[path.extname(f)] || 'application/octet-stream', 'Cache-Control': cc, 'Last-Modified': o.lastModified });
+    const et = req.method === 'HEAD' && o.headEtag ? o.headEtag : o.etag;
+    res.writeHead(200, Object.assign({ 'Content-Type': types[path.extname(f)] || 'application/octet-stream', 'Cache-Control': cc, 'Last-Modified': o.lastModified }, et ? { ETag: et } : {}));
     if (!o.trickle) return res.end(o.body);
     res.write(o.body.slice(0, 64));
     return setTimeout(() => res.end(o.body.slice(64)), o.trickle);
