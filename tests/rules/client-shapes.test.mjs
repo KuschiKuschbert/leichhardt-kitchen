@@ -1,8 +1,11 @@
 /*
-  Every Firestore call the book makes, as the book makes it, against the real rules for each sign-in (28 Oct 2026, r2-1-4).
-  One row per call: the read, query, listener or batch with the book's own paths, filters, fields and merges, labelled
-  with its file and function (not line numbers, they move). W() is copied from js/prep.js: by on every set and update
-  (empty on the head chef's Google device with nobody signed in by PIN), and the public copy of a recipe, a drawing,
+  The book's Firestore calls, as the book makes them, against the real rules for each sign-in (28 Oct 2026, r2-1-4).
+  One row per call shape: the read, query, listener or batch with the book's own paths, filters, fields and merges,
+  labelled with its file and function (not line numbers, they move). A call that sends what a row sends (Put back after
+  Remove, a second page that asks the same read) shares that row; a change with a rule clause of its own (an untick, an
+  Undo, an edit, sous chef mail switched on) is a row of its own, and so is each list with a rule of its own (a row
+  that read two would hide one of them let through). W() is copied from js/prep.js: by on every set and update (empty
+  on the head chef's Google device with nobody signed in by PIN), and the public copy of a recipe, a drawing,
   book/index and book/matches in the same batch.
 
   Each row runs as 9 sign-ins (made-up people, the stand-in's own names):
@@ -15,10 +18,12 @@
     vic     view only
     fay     functions only (fnIds and fnOnlyIds, on the staff list but not kitchen staff)
     tab     Bo, staff, on a shared kitchen tablet (its own phone sign-in)
-  ok lists who the rules let through; everyone else must be refused. asks lists the sign-ins whose pages make the call
-  and need it to work, and the file checks that every one of them is in ok: a page that needs what the rules refuse is a
-  live bug. Such a row is marked known with the pull request that fixes it, printed as KNOWN and kept out of the
-  failure count. A known mark also notes a client bug that sends a call the rules rightly refuse.
+  ok lists who the rules let through; everyone else must be refused, and every cell is checked against it. asks lists
+  the sign-ins whose pages make the call and need it to work, and the file checks that every one of them is in ok: a
+  page that needs what the rules refuse is a live bug. Such a row is marked known for those sign-ins, with the pull
+  request that fixes it, printed as KNOWN, and that need is kept out of the failure count. A known mark also notes a
+  client bug that sends a call the rules rightly refuse. It never excuses the rules: a known cell that the rules start
+  to answer the other way fails like any other.
 
   What the other files in tests/rules already check (not repeated here):
     rules.test.mjs         each rule with hand-made shapes: the staff lock, PIN tries and sessions, who sets a PIN,
@@ -35,7 +40,7 @@
     suppliers.test.mjs     the supplier catalogue, its orders, links and ticks, through the real Lite SDK
     wastage-history.test.mjs  the admin wastage history query (collection group by full path)
     probe.test.mjs         the live lock probe's own checks
-  So the PIN sign-in itself, supplier writes, wastage history and the PIN move are not rows here.
+  So the PIN sign-in itself, supplier writes, wastage history and the PIN move's writes are not rows here.
   Run with the other rules checks: cd tests/rules && npm test.
 */
 import { initializeTestEnvironment } from '@firebase/rules-unit-testing';
@@ -92,6 +97,8 @@ async function put(map) {
     await b.commit();
   });
 }
+// a field or two of config/main changed with the rules off (a switch the head chef turns on for one row, then off)
+const cfgMerge = x => off(db => setDoc(doc(db, at('config/main')), x, { merge: true }));
 const fnRec = (id, x) => Object.assign({ v: 1, status: 'confirmed', name: 'Party ' + id, date: TODAY, start: T0, loc: 'Deck', guests: 30, mode: 'all',
   lines: [{ rid: 'pizza', name: 'Pizza Platter', unit: 'platter', spec: '', fp: '', qty: 2, u: [0, 0] }], rounds: [{ at: T0, note: '' }],
   notes: '', kc: '', kcBy: '', kcAt: 0, od: TODAY, first: T0, last: T0, from: T0 - 18 * 3600000, until: T0 + 7200000, kq: T0 + 7200000,
@@ -192,7 +199,7 @@ const ownId = (role, who) => who || 'owner';   // the owner's own record id, whe
 // sign-in and settings (js/prep.js)
 row('js/prep.js connect(): login/roster listener (the name picker, and functions only)', { ok: ALL, asks: ALL, run: db => listen(D(db, 'login/roster')) });
 row('js/prep.js connect(): config/main listener (the kitchen settings)', { ok: KITCHEN, asks: KITCHEN, run: db => listen(D(db, 'config/main')) });
-row('js/prep.js pinAt() and pickName(): pinset/<me> get', { ok: ALL, asks: ALL, run: (db, w) => getDoc(D(db, 'pinset/' + (w || 'ann'))) });
+row('js/prep.js pinAtOf() and pickName(): pinset/<me> get', { ok: ALL, asks: ALL, run: (db, w) => getDoc(D(db, 'pinset/' + (w || 'ann'))) });
 row('js/prep.js loadAdmins(): config/admins get (the owner check)', { ok: GOOGLE, asks: GOOGLE, run: db => getDoc(D(db, 'config/admins')) });
 
 // prep list
@@ -205,18 +212,21 @@ row('js/prep.js maybeRoll(): the last written day\'s prep lines', { ok: KITCHEN,
 row('js/prep.js loadPast(): a past day\'s prep lines (14 days, dayCache)', { ok: KITCHEN, asks: KITCHEN, run: db => getDocs(C(db, `days/${YDAY}/items`)) });
 row('js/prep.js mergeDups(): today\'s lines by id from the server', { ok: KITCHEN, asks: not('owner', 'vic', 'fay'), run: db => getDocsFromServer(query(C(db, `days/${TODAY}/items`), where(documentId(), 'in', ['l1', 'l9']))) });
 row('js/prep.js loadUsage(): summary/usage get (admin)', { ok: KITCHEN, asks: GOOGLE, run: db => getDoc(D(db, 'summary/usage')) });
-row('js/prep.js loadViews() and loadMisses(): views and misses lists (admin)', { ok: KITCHEN, asks: GOOGLE, run: db => Promise.all([getDocs(C(db, 'views')), getDocs(C(db, 'misses'))]) });
+row('js/prep.js loadViews(): the views list (admin Insights)', { ok: KITCHEN, asks: GOOGLE, run: db => getDocs(C(db, 'views')) });
+row('js/prep.js loadMisses(): the misses list (admin Insights)', { ok: KITCHEN, asks: GOOGLE, run: db => getDocs(C(db, 'misses')) });
 
 // orders
 row('js/prep.js watchOrders(): today\'s order lines listener', { ok: KITCHEN, asks: KITCHEN, run: db => listen(C(db, `orders/${TODAY}/lines`)) });
 row('js/prep.js loadOrdHist(), ordRoll(), loadOrdStats(): a past day\'s order lines', { ok: KITCHEN, asks: KITCHEN, run: db => getDocs(C(db, `orders/${PAST}/lines`)) });
-row('js/prep.js loadOrdLearned(): summary/ordlearned, then ordlearned, the 300 most used', { ok: KITCHEN, asks: KITCHEN, run: db => Promise.all([getDoc(D(db, 'summary/ordlearned')), getDocs(query(C(db, 'ordlearned'), orderBy('uses', 'desc'), limit(300)))]) });
+row('js/prep.js loadOrdLearned(): summary/ordlearned get', { ok: KITCHEN, asks: KITCHEN, run: db => getDoc(D(db, 'summary/ordlearned')) });
+row('js/prep.js loadOrdLearned(): ordlearned, the 300 most used (summary missing or old)', { ok: KITCHEN, asks: KITCHEN, run: db => getDocs(query(C(db, 'ordlearned'), orderBy('uses', 'desc'), limit(300))) });
 row('js/prep.js book().requests(): today\'s order lines not ordered yet (Supplier order)', { ok: KITCHEN, asks: CHEFS, run: db => getDocs(query(C(db, `orders/${TODAY}/lines`), where('ordered', '==', false))) });
 
 // wastage
 row('js/prep.js watchWaste(): today\'s wastage lines listener', { ok: KITCHEN, asks: KITCHEN, run: db => listen(C(db, `waste/${TODAY}/lines`)) });
 row('js/prep.js loadWSum(): summary/waste get', { ok: KITCHEN, asks: KITCHEN, run: db => getDoc(D(db, 'summary/waste')) });
-row('js/prep.js today\'s review and the note on the prep list: waste/<today>, waste/<yesterday>', { ok: KITCHEN, asks: KITCHEN, run: db => Promise.all([getDoc(D(db, `waste/${TODAY}`)), getDocFromServer(D(db, `waste/${YDAY}`))]) });
+row('js/prep.js loadPageReview() and loadWNote(): today\'s waste review and the last days\' (waste/<day>)', { ok: KITCHEN, asks: KITCHEN, run: db => Promise.all([getDoc(D(db, `waste/${TODAY}`)), getDoc(D(db, `waste/${YDAY}`))]) });
+row('js/prep.js saveReview(): the review from the server before it is saved (waste/<day>)', { ok: KITCHEN, asks: CHEFS, run: db => getDocFromServer(D(db, `waste/${TODAY}`)) });
 row('js/prep.js pastRead() (admin Reports): a past day\'s wastage lines', { ok: GOOGLE, asks: GOOGLE, run: db => getDocs(C(db, `waste/${PAST}/lines`)) });
 
 // transfers
@@ -232,6 +242,10 @@ row('js/prep.js loadNotes(): my own personal pings (directnotes, until >= today,
 row('js/prep.js loadNotes(): every personal ping, for those who manage pings', { ok: CHEFS, asks: CHEFS, run: db => getDocsFromServer(query(C(db, 'directnotes'), where('until', '>=', TODAY))) });
 row('js/prep.js loadSeen(): who tapped Got it on an Everyone ping (notes/<id>/seen)', { ok: KITCHEN, asks: CHEFS, run: db => getDocs(query(C(db, 'notes/n1/seen'), where('day', '==', TODAY))) });
 row('js/prep.js loadSeen(): who tapped Got it on a personal ping (directnotes/<id>/seen)', { ok: CHEFS, asks: CHEFS, run: db => getDocs(query(C(db, 'directnotes/d1/seen'), where('day', '==', TODAY))) });
+// loadPastNotes(): the finished pings, for those who manage pings (noteQuery(): from the server, 30 at a time)
+const pastPings = (db, col) => getDocsFromServer(query(C(db, col), where('until', '<', TODAY), orderBy('until', 'desc'), limit(30)));
+row('js/prep.js loadPastNotes(): finished Everyone pings (notes, until < today, newest first)', { ok: KITCHEN, asks: CHEFS, run: db => pastPings(db, 'notes') });
+row('js/prep.js loadPastNotes(): finished personal pings (directnotes, until < today, newest first)', { ok: CHEFS, asks: CHEFS, run: db => pastPings(db, 'directnotes') });
 
 // meeting minutes
 row('js/prep.js loadMinutes(): published minutes by pubAt (not the Google device)', { ok: KITCHEN, asks: KPINS.filter(r => r !== 'ownkit'),
@@ -241,11 +255,13 @@ row('js/prep.js loadMine(): my own sign-off (minutes/<id>/signs/<v>_<me>)', { ok
 row('js/prep.js loadSigns(): the register (minutes/<id>/signs)', { ok: CHEFS, asks: CHEFS, run: db => getDocs(C(db, 'minutes/m1/signs')) });
 
 // guides, recipes, drinks, sections, mail, to-do, cut-offs
-row('js/prep.js loadGuides() and the pages: guides, guides/<id>/pages', { ok: KITCHEN, asks: KITCHEN, run: db => Promise.all([getDocs(C(db, 'guides')), getDocs(C(db, 'guides/g1/pages'))]) });
+row('js/prep.js loadGuides(): the guides list', { ok: KITCHEN, asks: KITCHEN, run: db => getDocs(C(db, 'guides')) });
+row('js/prep.js gPagesFor(): a guide\'s pages (guides/<id>/pages)', { ok: KITCHEN, asks: KITCHEN, run: db => getDocs(C(db, 'guides/g1/pages')) });
 row('js/prep.js rxSync(): book/index, a changed recipe and drawing (with the kitchen PIN)', { ok: ALL, asks: ALL,
   run: db => Promise.all([getDoc(D(db, 'book/index')), getDoc(D(db, 'recipes/burger')), getDoc(D(db, 'drawings/burger-plate'))]) });
 row('js/prep.js dkCheck(): my usual drink (drinks/<me>)', { ok: KITCHEN, asks: KPINS, run: (db, w, r) => getDoc(D(db, 'drinks/' + ownId(r, w))) });
-row('js/prep.js dkLoad(): the drinks run (drinks and activity lists)', { ok: KITCHEN, asks: KITCHEN, run: db => Promise.all([getDocs(C(db, 'drinks')), getDocs(C(db, 'activity'))]) });
+row('js/prep.js dkLoad(): the drinks run (the drinks list)', { ok: KITCHEN, asks: KITCHEN, run: db => getDocs(C(db, 'drinks')) });
+row('js/prep.js dkLoad(): who was in today (the activity list)', { ok: KITCHEN, asks: KITCHEN, run: db => getDocs(C(db, 'activity')) });
 row('js/prep.js ksCheck(): my section today (shifts/<today>_<me>)', { ok: KITCHEN, asks: ['ann', 'lou', 'tab'], run: (db, w, r) => getDoc(D(db, `shifts/${TODAY}_${ownId(r, w)}`)) });
 row('js/prep.js loadShifts() (admin People, Manage staff): 14 days of sections', { ok: KITCHEN, asks: CHEFS, run: db => getDocs(query(C(db, 'shifts'), where('day', '>=', kday(NOW - 13 * DAY)))) });
 row('js/prep.js mlStatLoad(): what happened to a mail I sent (mailstat/<id>)', { ok: KITCHEN, asks: MAIL, run: db => getDoc(D(db, 'mailstat/x1')) });
@@ -254,19 +270,36 @@ row('js/prep.js loadMailDone(): mail ticked in the last 30 days', { ok: GOOGLE, 
 row('js/prep.js todoLoad() and the Done list: todos, st == open and doneAt in 30 days', { ok: CHEFS, asks: CHEFS,
   run: db => Promise.all([getDocs(query(C(db, 'todos'), where('st', '==', 'open'))), getDocs(query(C(db, 'todos'), where('doneAt', '>=', NOW - 30 * DAY)))]) });
 row('js/prep.js cutWatch(): supplier order ticks listener (cutdone, day in today and tomorrow)', { ok: CHEFS, asks: CHEFS, run: db => listen(query(C(db, 'cutdone'), where('day', 'in', [TODAY, TMW]))) });
-row('js/supplier-store.js: the catalogue, a supplier, its orders and a cut-off\'s link', { ok: CHEFS, asks: CHEFS,
-  run: db => Promise.all([getDocs(C(db, 'suppliers')), getDoc(D(db, 'suppliers/s1')), getDocs(query(C(db, 'suppliers/s1/orders'), orderBy('at', 'desc'), limit(21))), getDoc(D(db, `supplierlinks/${TODAY}_northside`))]) });
-row('js/prep.js backup(): staffpins, pinset, fncontact and deliveries (admin Backup)', { ok: GOOGLE, asks: GOOGLE,
-  run: db => Promise.all([getDocs(C(db, 'staffpins')), getDocs(C(db, 'pinset')), getDocs(C(db, 'fncontact')), getDocs(query(C(db, 'deliveries'), where('day', '>=', kday(NOW - 399 * DAY)), where('day', '<=', TODAY)))]) });
+row('js/supplier-store.js: the catalogue and a supplier (suppliers)', { ok: CHEFS, asks: CHEFS, run: db => Promise.all([getDocs(C(db, 'suppliers')), getDoc(D(db, 'suppliers/s1'))]) });
+row('js/supplier-store.js: a supplier\'s orders (suppliers/<id>/orders, the last 21)', { ok: CHEFS, asks: CHEFS, run: db => getDocs(query(C(db, 'suppliers/s1/orders'), orderBy('at', 'desc'), limit(21))) });
+row('js/supplier-store.js: a cut-off\'s link (supplierlinks/<day>_<cut-off>)', { ok: CHEFS, asks: CHEFS, run: db => getDoc(D(db, `supplierlinks/${TODAY}_northside`)) });
+// the admin Backup (exportAll(), the Google device only): one row per list that has a rule of its own, so a rule
+// loosened for one of them shows on its own row. The lists every kitchen phone reads are rows above.
+const EXP_ALL = 'js/prep.js exportAll() (admin Backup): ';
+row(EXP_ALL + 'the pinset list (who has a PIN)', { ok: GOOGLE, asks: GOOGLE, run: db => getDocs(C(db, 'pinset')) });
+row(EXP_ALL + 'every booking contact (the fncontact list)', { ok: GOOGLE, asks: GOOGLE, run: db => getDocs(C(db, 'fncontact')) });
+row(EXP_ALL + 'delivery receipts of the last 400 days', { ok: GOOGLE, asks: GOOGLE,
+  run: db => getDocs(query(C(db, 'deliveries'), where('day', '>=', kday(NOW - 399 * DAY)), where('day', '<=', TODAY))) });
+row(EXP_ALL + 'the mailstat list', { ok: GOOGLE, asks: GOOGLE, run: db => getDocs(C(db, 'mailstat')) });
+row(EXP_ALL + 'every kitchen mail (the mail list, sous chef mail off)', { ok: GOOGLE, asks: GOOGLE, run: db => getDocs(C(db, 'mail')) });
+row(EXP_ALL + 'the usage counts (the daily list)', { ok: GOOGLE, asks: GOOGLE, run: db => getDocs(C(db, 'daily')) });
+row(EXP_ALL + 'every loan, returned and removed too (the transferOpen list)', { ok: GOOGLE, asks: GOOGLE, run: db => getDocs(C(db, 'transferOpen')) });
+row(EXP_ALL + 'every minutes record, drafts too (no filter)', { ok: GOOGLE, asks: GOOGLE, run: db => getDocs(C(db, 'minutes')) });
+row(EXP_ALL + 'a minutes record\'s earlier versions (minutes/<id>/hist)', { ok: GOOGLE, asks: GOOGLE, run: db => getDocs(C(db, 'minutes/m1/hist')) });
+row(EXP_ALL + 'every personal ping (the directnotes list, no filter)', { ok: CHEFS, asks: GOOGLE, run: db => getDocs(C(db, 'directnotes')) });
+row(EXP_ALL + 'every chef job (the todos list, no filter)', { ok: CHEFS, asks: GOOGLE, run: db => getDocs(C(db, 'todos')) });
+row(EXP_ALL + 'every supplier order tick (the cutdone list, no filter)', { ok: CHEFS, asks: GOOGLE, run: db => getDocs(C(db, 'cutdone')) });
+// the PIN move copies the PIN fingerprints too (copyCol(); its writes go to the new kitchen PIN, not rows here)
+row('js/prep.js movePin() copyCol(): the staffpins list', { ok: GOOGLE, asks: GOOGLE, run: db => getDocs(C(db, 'staffpins')) });
 
 // functions
 row('js/functions.js watch(): functions from today (kq >= midnight, by kq, 150) listener', { ok: ALL, asks: ALL, run: db => listen(query(C(db, 'functions'), where('kq', '>=', MIDNIGHT), orderBy('kq'), limit(150))) });
 row('js/functions.js watchSent(): rounds ticked sent (fnsent, day >= yesterday) listener', { ok: ALL, asks: ALL, run: db => listen(query(C(db, 'fnsent'), where('day', '>=', YDAY))) });
 row('js/functions.js setStatus(): the function from the server (Cancel and Undo)', { ok: ALL, asks: FNCANCEL, run: db => getDocFromServer(D(db, 'functions/f1')) });
 row('js/functions.js setStatus() Undo: the version before (functions/<id>/hist/<v>)', { ok: FNCANCEL, asks: FNCANCEL, run: db => getDocFromServer(D(db, 'functions/f1/hist/0')) });
-row('js/fnedit.js load(): the managers\' list (functions by date, 400)', { ok: ALL, asks: FNMGR, run: db => getDocs(query(C(db, 'functions'), orderBy('date', 'desc'), limit(400))) });
-row('js/fnedit.js open(): the booking contact (fncontact/<id>)', { ok: ['owner', 'ownkit', 'fay'], asks: FNMGR, run: db => getDocFromServer(D(db, 'fncontact/f1')) });
-row('js/fnedit.js history: every earlier version (functions/<id>/hist)', { ok: FNCANCEL, asks: FNMGR, run: db => getDocs(C(db, 'functions/f1/hist')) });
+row('js/fnedit.js loadList(): the managers\' list (functions by date, 400)', { ok: ALL, asks: FNMGR, run: db => getDocs(query(C(db, 'functions'), orderBy('date', 'desc'), limit(400))) });
+row('js/fnedit.js openId(): the booking contact (fncontact/<id>)', { ok: ['owner', 'ownkit', 'fay'], asks: FNMGR, run: db => getDocFromServer(D(db, 'fncontact/f1')) });
+row('js/fnedit.js loadHist(): every earlier version (functions/<id>/hist)', { ok: FNCANCEL, asks: FNMGR, run: db => getDocs(C(db, 'functions/f1/hist')) });
 
 // deliveries
 row('js/deliveries.js load(): today\'s receipts listener (deliveries, day == today)', { ok: ALL, asks: ALL, run: db => listen(query(C(db, 'deliveries'), where('day', '==', TODAY))) });
@@ -274,10 +307,10 @@ row('js/deliveries.js load(): a past day from the server (admin)', { ok: GOOGLE,
 row('js/deliveries.js save(): the retry check of a new receipt id', { ok: ALL, asks: ALL, run: (db, w, r) => getDocFromServer(D(db, 'deliveries/new-' + r)) });
 
 // Manage Recipes & Drawings
-row('js/manage.js and js/draw.js: templates and own pieces (drawtpl, drawlib)', { ok: ALL, asks: CHEFS, run: db => Promise.all([getDocs(C(db, 'drawtpl')), getDocs(C(db, 'drawlib'))]) });
+row('js/manage.js loadMine() and js/draw.js loadMine(): templates and own pieces (drawtpl, drawlib)', { ok: ALL, asks: CHEFS, run: db => Promise.all([getDocs(C(db, 'drawtpl')), getDocs(C(db, 'drawlib'))]) });
 row('js/manage.js save(), js/draw.js commit(): the recipe and the drawing from the server', { ok: ALL, asks: CHEFS, run: db => Promise.all([getDocFromServer(D(db, 'recipes/burger')), getDocFromServer(D(db, 'drawings/burger-plate'))]) });
-row('js/manage.js history: a recipe\'s earlier versions (recipes/<id>/hist)', { ok: KITCHEN, asks: CHEFS, run: db => getDocs(C(db, 'recipes/burger/hist')) });
-row('js/smart.js learnP: the head chef\'s picks (book/matches)', { ok: ALL, asks: CHEFS, run: db => getDoc(D(db, 'book/matches')) });
+row('js/manage.js loadHist(): a recipe\'s earlier versions (recipes/<id>/hist)', { ok: KITCHEN, asks: CHEFS, run: db => getDocs(C(db, 'recipes/burger/hist')) });
+row('js/smart.js loadLearned(): the head chef\'s picks (book/matches)', { ok: ALL, asks: CHEFS, run: db => getDoc(D(db, 'book/matches')) });
 
 /* ---------- writes ---------- */
 const MINE = r => 'z-' + r;   // each sign-in writes its own record, so one cell never changes the next
@@ -296,6 +329,18 @@ row('js/prep.js tickNow(): tick a prep line', { ok: KITCHEN, asks: TICKS,
   known: Object.assign({ roles: ['owner'], why: 'on the Google device with nobody on PIN tickNow() reads me().name, which is null, so the tick throws before it is sent' }, EXP),
   prep: r => put({ [`days/${TODAY}/items/${MINE(r)}`]: line() }),
   run: (db, w, r) => W(r, [['upd', `days/${TODAY}/items/${MINE(r)}`, { done: true, doneBy: NAME[r], doneById: w, doneAt: Date.now() }]]) });
+// an untick (canUntick()): a chef any time (canBrowse()), or the person who ticked it within 2 minutes. tickNow() then
+// takes the tick off that person's tally, a write of its own (activity/<doneById>, ticked - 1)
+const UNTICK = { done: false, doneBy: '', doneById: '', doneAt: 0 };
+row('js/prep.js tickNow(): a chef unticks a line Ann ticked 10 minutes ago', { ok: CHEFS, asks: CHEFS,
+  prep: r => put({ [`days/${TODAY}/items/u-${r}`]: line({ done: true, doneBy: 'Ann', doneById: 'ann', doneAt: Date.now() - 10 * MIN }) }),
+  run: (db, w, r) => W(r, [['upd', `days/${TODAY}/items/u-${r}`, UNTICK]]) });
+// (Ann may write her own tally, as every visit does; nobody else but a chef may write hers)
+row('js/prep.js tickNow(): a chef\'s untick takes it off Ann\'s tally (activity/ann, ticked - 1)', { ok: CHEFS.concat('ann'), asks: CHEFS,
+  run: (db, w, r) => W(r, [['set', 'activity/ann', { name: 'Ann', ticked: increment(-1) }, true]]) });
+row('js/prep.js tickNow(): untick my own tick within 2 minutes, and off my tally', { ok: KITCHEN, asks: not('owner', 'vic', 'fay'),
+  prep: (r, w) => put({ [`days/${TODAY}/items/m-${r}`]: line({ done: true, doneBy: NAME[r], doneById: w, doneAt: Date.now() - 30000 }) }),
+  run: async (db, w, r) => { await W(r, [['upd', `days/${TODAY}/items/m-${r}`, UNTICK]]); return W(r, [['set', 'activity/' + ownId(r, w), { name: NAME[r], ticked: increment(-1) }, true]]); } });
 row('js/prep.js removeItem(): remove a prep line', { ok: KITCHEN, asks: DELS,
   known: Object.assign({ roles: ['owner'], why: 'on the Google device with nobody on PIN removeItem() reads me().name, which is null, so Remove throws before it is sent' }, EXP),
   prep: r => put({ [`days/${TODAY}/items/${MINE(r)}`]: line() }),
@@ -310,9 +355,10 @@ row('js/prep.js orderedOp(): tick an order line ordered', { ok: CHEFS, asks: CHE
   known: Object.assign({ roles: ['owner'], why: 'on the Google device with nobody on PIN orderedOp() reads me().name, which is null, so Ordered throws before it is sent' }, EXP),
   prep: r => put({ [`orders/${TODAY}/lines/${MINE(r)}`]: { text: 'Cream', qty: '4 L', recipes: [], addedBy: 'Ann', addedById: 'ann', addedAt: NOW - 3600000, ordered: false, deleted: false, by: 'ann' } }),
   run: (db, w, r) => W(r, [['upd', `orders/${TODAY}/lines/${MINE(r)}`, { ordered: true, orderedBy: NAME[r], orderedAt: Date.now() }]]) });
-row('js/prep.js removeOrd(): remove an order line', { ok: KITCHEN, asks: DELS,
+// (canBrowse() and can('del'): the chefs only, so a lead never sends it)
+row('js/prep.js removeOrderLine(): remove an order line', { ok: KITCHEN, asks: CHEFS,
   prep: r => put({ [`orders/${TODAY}/lines/${MINE(r)}`]: { text: 'Cream', qty: '4 L', recipes: [], addedBy: 'Ann', addedById: 'ann', addedAt: NOW - 3600000, ordered: false, deleted: false, by: 'ann' } }),
-  run: (db, w, r) => W(r, [['upd', `orders/${TODAY}/lines/${MINE(r)}`, { deleted: true, deletedBy: NAME[r] || 'Head chef', deletedAt: Date.now() }]]) });
+  run: (db, w, r) => W(r, [['upd', `orders/${TODAY}/lines/${MINE(r)}`, { deleted: true, deletedBy: NAME[r], deletedAt: Date.now() }]]) });
 row('js/prep.js addWaste(): a wastage line', { ok: KITCHEN, asks: ADDS,
   run: (db, w, r) => W(r, [['set', `waste/${TODAY}/lines/${MINE(r)}`, { text: 'Rice', amount: 1.5, unit: 'kg', reason: 'expired', action: '', station: 'Larder', recipe: '', addedBy: NAME[r], addedById: w, addedAt: Date.now(), deleted: false }]]) });
 row('js/prep.js removeWaste(): remove someone\'s wastage line (the Google device)', { ok: GOOGLE, asks: GOOGLE,
@@ -335,10 +381,36 @@ row('js/prep.js removeXfer() through xWrite(): remove someone\'s transfer (the G
   prep: r => put({ [`transfers/${TODAY}/lines/${MINE(r)}`]: xrec(), [`transferOpen/${TODAY}_${MINE(r)}`]: { date: TODAY, lineId: MINE(r), record: xrec(), open: true, by: 'ann' } }),
   run: (db, w, r) => { const ch = { deleted: true, deletedBy: NAME[r] || 'Head chef', deletedAt: Date.now() };
     return W(r, [['upd', `transfers/${TODAY}/lines/${MINE(r)}`, ch], ['set', `transferOpen/${TODAY}_${MINE(r)}`, { date: TODAY, lineId: MINE(r), record: Object.assign(xrec(), ch, { by: BY[r] }), open: false }]]); } });
+// addXfer()'s Undo is offered to the chefs only (canBrowse()): their own line, straight after
+row('js/prep.js addXfer() Undo through xWrite(): take back my own transfer within 2 minutes', { ok: CHEFS, asks: CHEFS,
+  prep: (r, w) => { const rec = xrec({ addedBy: NAME[r], addedById: w, addedAt: Date.now() - 20000, by: w });
+    return put({ [`transfers/${TODAY}/lines/u-${r}`]: rec, [`transferOpen/${TODAY}_u-${r}`]: { date: TODAY, lineId: 'u-' + r, record: rec, open: true, by: w } }); },
+  run: async (db, w, r) => { const cur = await serverRec(`transfers/${TODAY}/lines/u-${r}`), ch = { deleted: true, deletedBy: NAME[r] || 'Head chef', deletedAt: Date.now() };
+    return W(r, [['upd', `transfers/${TODAY}/lines/u-${r}`, ch], ['set', `transferOpen/${TODAY}_u-${r}`, { date: TODAY, lineId: 'u-' + r, record: Object.assign({}, cur, ch, { by: BY[r] }), open: false }]]); } });
+// returnXfer(..., undo): the person who marked it returned within 2 minutes, or a chef any time (xReturnBtn())
+const RETURNED = (by, at) => ({ returned: true, returnedBy: by === 'ann' ? 'Ann' : by, returnedById: by, returnedAt: at });
+const UNRETURN = { returned: false, returnedBy: '', returnedById: '', returnedAt: 0 };
+const xUndo = (r, id, rec) => W(r, [['upd', `transfers/${PAST}/lines/${id}`, UNRETURN],
+  ['set', `transferOpen/${PAST}_${id}`, { date: PAST, lineId: id, record: Object.assign({}, rec, UNRETURN, { by: BY[r] }), open: true }],
+  ['set', 'config/main', { pastEdit: { x: Date.now() } }, true]]);
+row('js/prep.js returnXfer() undo through xWrite(): my own return within 2 minutes', { ok: KITCHEN, asks: TICKS,
+  prep: (r, w) => { const rec = Object.assign(xrec({ addedAt: NOW - 5 * DAY }), RETURNED(w, Date.now() - 30000), { by: w });
+    return put({ [`transfers/${PAST}/lines/ur-${r}`]: rec, [`transferOpen/${PAST}_ur-${r}`]: { date: PAST, lineId: 'ur-' + r, record: rec, open: false, by: w } }); },
+  run: async (db, w, r) => xUndo(r, 'ur-' + r, await serverRec(`transfers/${PAST}/lines/ur-${r}`)) });
+row('js/prep.js returnXfer() undo through xWrite(): a chef reopens a loan Ann returned 10 minutes ago', { ok: CHEFS, asks: CHEFS,
+  prep: r => { const rec = Object.assign(xrec({ addedAt: NOW - 5 * DAY }), RETURNED('ann', Date.now() - 10 * MIN));
+    return put({ [`transfers/${PAST}/lines/uc-${r}`]: rec, [`transferOpen/${PAST}_uc-${r}`]: { date: PAST, lineId: 'uc-' + r, record: rec, open: false, by: 'ann' } }); },
+  run: async (db, w, r) => xUndo(r, 'uc-' + r, await serverRec(`transfers/${PAST}/lines/uc-${r}`)) });
 row('js/prep.js saveNote(): a new Everyone ping', { ok: CHEFS, asks: CHEFS,
   run: (db, w, r) => W(r, [['set', 'notes/' + MINE(r), { text: 'Fryer 2 is out', tag: 'safety', start: TODAY, until: TODAY, dows: [], tm: 840, removed: false, upd: Date.now(), at: Date.now(), author: w }]]) });
 row('js/prep.js saveNote(): a new personal ping to Ann (directnotes)', { ok: CHEFS, asks: CHEFS,
   run: (db, w, r) => W(r, [['set', 'directnotes/' + MINE(r), { text: 'Ann, pastry cream first', tag: 'none', start: TODAY, until: TODAY, dows: [], tm: 839, removed: false, upd: Date.now(), at: Date.now(), author: w, to: 'ann' }]]) });
+// an edit (Edit this ping, then Save): merged onto the ping as Sam wrote it, author and at kept, by the one who saves
+const pingEdit = to => Object.assign({ text: 'Fryer 2 is out until 16:00', tag: 'safety', start: TODAY, until: TODAY, dows: [], tm: 845, removed: false, upd: Date.now() }, to ? { to } : {});
+row('js/prep.js saveNote(): change an Everyone ping Sam wrote (notes merge)', { ok: CHEFS, asks: CHEFS,
+  prep: r => put({ ['notes/e-' + r]: ping() }), run: (db, w, r) => W(r, [['set', 'notes/e-' + r, pingEdit(), true]]) });
+row('js/prep.js saveNote(): change a personal ping to Ann that Sam wrote (directnotes merge)', { ok: CHEFS, asks: CHEFS,
+  prep: r => put({ ['directnotes/e-' + r]: ping({ text: 'Ann, see me at 15:00', tag: 'none', to: 'ann' }) }), run: (db, w, r) => W(r, [['set', 'directnotes/e-' + r, pingEdit('ann'), true]]) });
 row('js/prep.js markPings() and markPast(): config/main pastEdit merge', { ok: CHEFS, asks: CHEFS,
   run: (db, w, r) => W(r, [['set', 'config/main', { pastEdit: { n: Date.now() } }, true]]) });
 row('js/prep.js noteWriteSeen(): Got it on an Everyone ping (notes/<id>/seen/<today>_<me>)', { ok: KITCHEN, asks: KPINS,
@@ -356,14 +428,15 @@ row('js/prep.js saveGuide() (admin): a guide and its page picture', { ok: GOOGLE
   run: (db, w, r) => W(r, [['set', `guides/${MINE(r)}/pages/0`, { img: 'data:image/png;base64,AA', w: 4, h: 6, v: 1, n: 0 }], ['set', 'guides/' + MINE(r), { title: 'Slicer', cat: 'equipment', sum: '', steps: 'Unplug it first.', kw: '', text: '', thumb: '', pages: 1, dims: [], v: 1, file: '', removed: false, at: Date.now(), upd: Date.now() }]]) });
 row('js/prep.js dkSave(): my usual drink (drinks/<me>)', { ok: KITCHEN, asks: KPINS,
   run: (db, w, r) => W(r, [['set', 'drinks/' + ownId(r, w), { kind: 'flat', size: 'reg', milk: 'oat', shot: '', sugar: '1', note: '', cold: '', other: '', at: Date.now() }]]) });
-row('js/prep.js ksSave() and ksCheck(): my section today (shifts/<today>_<me>)', { ok: KITCHEN, asks: ['ownkit', 'kit', 'sam', 'ann', 'lou', 'tab'],
+row('js/prep.js ksPick() and ksCheck(): my section today (shifts/<today>_<me>)', { ok: KITCHEN, asks: ['ownkit', 'kit', 'sam', 'ann', 'lou', 'tab'],
   run: (db, w, r) => W(r, [['set', `shifts/${TODAY}_${ownId(r, w)}`, { day: TODAY, sec: 'grill', name: 'Grill', auto: false, at: Date.now() }]]) });
 row('js/prep.js cutOrdered(): tick a supplier order (cutdone; the Google device as owner, setDoc)', { ok: CHEFS, asks: CHEFS,
   run: (db, w, r) => { const data = { day: TMW, sid: 'veg-' + r, on: true, at: Date.now(), by: w || 'owner' }, p = `cutdone/${data.day}_${data.sid}`;
     return w ? W(r, [['set', p, data]]) : setDoc(D(db, p), data); } });
+// pushWhoId(): the Google device is 'owner' (setDoc, deleteDoc) also while the head chef is signed in by PIN there
 row('js/prep.js pushSave(): this phone\'s push address (push/<hash>; the Google device as owner, setDoc)', { ok: CHEFS, asks: CHEFS,
   run: (db, w, r) => { const data = { tok: 'token-' + r, at: Date.now(), ua: 'android' }, p = 'push/h' + r;
-    return w ? W(r, [['set', p, data]]) : setDoc(D(db, p), Object.assign({ by: 'owner' }, data)); } });
+    return GOOGLE.includes(r) ? setDoc(D(db, p), Object.assign({ by: 'owner' }, data)) : W(r, [['set', p, data]]); } });
 row('js/prep.js cutSave(), mlSousSet(), seedPinOpen(): admin settings merged into config/main (setDoc, no by)', { ok: GOOGLE, asks: GOOGLE,
   run: (db, w, r) => setDoc(D(db, 'config/main'), { cutoffs: [Object.assign({}, CFG.cutoffs[0], { at: 900 + ALL.indexOf(r) })], sousMail: false, pinOpen: { finn: NOW + DAY + ALL.indexOf(r) } }, { merge: true }) });
 row('js/prep.js mlSend(): a mail to the head chef with its status (mail and mailstat)', { ok: KITCHEN, asks: MAIL,
@@ -372,13 +445,44 @@ row('js/prep.js mlTick(): tick a mail done (mail and mailstat updates)', { ok: G
   prep: r => put({ ['mail/' + MINE(r)]: seed['mail/x1'], ['mailstat/' + MINE(r)]: seed['mailstat/x1'] }),
   run: (db, w, r) => { const t = Date.now(); return W(r, [['upd', 'mail/' + MINE(r), { done: true, doneAt: t, seen: true, seenAt: t }], ['upd', 'mailstat/' + MINE(r), { seen: true, done: true }]]); } });
 row('js/prep.js mlSeenAll(): config/admins mailOpened merge', { ok: GOOGLE, asks: GOOGLE, run: (db, w, r) => W(r, [['set', 'config/admins', { mailOpened: Date.now() }, true]]) });
+row('js/prep.js mlSeenAll(): the open mail marked seen (mail and mailstat updates)', { ok: GOOGLE, asks: GOOGLE,
+  prep: r => put({ ['mail/s-' + r]: seed['mail/x1'], ['mailstat/s-' + r]: seed['mailstat/x1'] }),
+  run: (db, w, r) => W(r, [['upd', 'mail/s-' + r, { seen: true, seenAt: Date.now() }], ['upd', 'mailstat/s-' + r, { seen: true, done: false }]]) });
+// sous chef mail switched on (config/main sousMail, mlSousSet()): a sous chef on #/mail reads and ticks it with their own
+// PIN (mlSous()); the Google device still reads it as the head chef. Kit (headId, also in sousIds) is let through too,
+// though the head chef's menu has no Kitchen mail
+const SOUSMAIL = ['owner', 'ownkit', 'kit', 'sam'];
+const mailOn = { prep: () => cfgMerge({ sousMail: true }), after: () => cfgMerge({ sousMail: false }) };
+row('js/prep.js loadMail() and loadMailDone(), sous chef mail on: the open mail and the last 30 days ticked', Object.assign({ ok: SOUSMAIL, asks: ['owner', 'ownkit', 'sam'],
+  run: db => Promise.all([getDocs(query(C(db, 'mail'), where('done', '==', false))), getDocs(query(C(db, 'mail'), where('doneAt', '>=', NOW - 30 * DAY)))]) }, mailOn));
+row('js/prep.js mlTick(), sous chef mail on: a sous chef ticks a mail done (seen left for the head chef)', Object.assign({ ok: SOUSMAIL, asks: ['sam'],
+  run: (db, w, r) => W(r, [['upd', 'mail/t-' + r, { done: true, doneAt: Date.now() }], ['upd', 'mailstat/t-' + r, { done: true }]]) }, mailOn,
+  { prep: async r => { await cfgMerge({ sousMail: true }); await put({ ['mail/t-' + r]: seed['mail/x1'], ['mailstat/t-' + r]: seed['mailstat/x1'] }); } }));
+row('js/prep.js mlSetPri(), sous chef mail on: how soon a mail matters', Object.assign({ ok: SOUSMAIL, asks: ['owner', 'ownkit', 'sam'],
+  run: (db, w, r) => W(r, [['upd', 'mail/q-' + r, { pri: 'today' }]]) }, mailOn,
+  { prep: async r => { await cfgMerge({ sousMail: true }); await put({ ['mail/q-' + r]: seed['mail/x1'] }); } }));
 row('js/prep.js todoSave() and todoTick(): a new chef job, then ticked done', { ok: CHEFS, asks: CHEFS,
   run: async (db, w, r) => { const t = Date.now(), me = w || 'kit';
     await W(r, [['set', 'todos/' + MINE(r), { text: 'Book the hood clean', st: 'open', due: '', for: '', from: me, at: t, doneAt: 0, doneBy: '', upd: t }]]);
     return W(r, [['upd', 'todos/' + MINE(r), { st: 'done', doneAt: t + 1, doneBy: me, upd: t + 1 }]]); } });
+// the other to-do changes, each on a job Sam wrote (from and at never change; an open job names no one)
+const job = x => Object.assign({ text: 'Call the fridge tech', st: 'open', due: '', for: '', from: 'sam', at: NOW - DAY, doneAt: 0, doneBy: '', upd: NOW - DAY, by: 'sam' }, x || {});
+const DONE_JOB = { st: 'done', doneAt: NOW - 3600000, doneBy: 'sam' };
+row('js/prep.js todoTick(): untick a job Sam ticked done', { ok: CHEFS, asks: CHEFS, prep: r => put({ ['todos/u-' + r]: job(DONE_JOB) }),
+  run: (db, w, r) => W(r, [['upd', 'todos/u-' + r, { st: 'open', doneAt: 0, doneBy: '', upd: Date.now() }]]) });
+row('js/prep.js todoSave(): change a job (text, due day, for whom)', { ok: CHEFS, asks: CHEFS, prep: r => put({ ['todos/e-' + r]: job() }),
+  run: (db, w, r) => W(r, [['upd', 'todos/e-' + r, { text: 'Call the fridge tech before 10:00', due: TMW, for: 'sam', upd: Date.now() }]]) });
+row('js/prep.js todoRemove(): remove a job (st gone)', { ok: CHEFS, asks: CHEFS, prep: r => put({ ['todos/g-' + r]: job() }),
+  run: (db, w, r) => W(r, [['upd', 'todos/g-' + r, { st: 'gone', upd: Date.now() }]]) });
+row('js/prep.js todoRemove() Undo: an open job put back (names no one)', { ok: CHEFS, asks: CHEFS, prep: r => put({ ['todos/b-' + r]: job({ st: 'gone' }) }),
+  run: (db, w, r) => W(r, [['upd', 'todos/b-' + r, { st: 'open', doneAt: 0, doneBy: '', upd: Date.now() }]]) });
+row('js/prep.js todoRemove() Undo: a done job put back, who ticked it kept', { ok: CHEFS, asks: CHEFS, prep: r => put({ ['todos/d-' + r]: job(Object.assign({}, DONE_JOB, { st: 'gone' })) }),
+  run: (db, w, r) => W(r, [['upd', 'todos/d-' + r, { st: 'done', upd: Date.now() }]]) });
 row('js/prep.js saveConfig(), a sous chef: people and staffIds merged into config/main, with login/roster', { ok: CHEFS, asks: ['kit', 'sam'],
   run: (db, w, r) => { const people = PEOPLE.map(p => p.id === 'ann' ? Object.assign({}, p, { name: 'Ann ' + r }) : p);
-    return W(r, [['set', 'config/main', { people, staffIds: IDS, pinOpen: {}, updated: Date.now(), updatedBy: NAME[r] }, true],
+    // pinOpenFor(staffIds): a window for everyone on the list
+    const pinOpen = Object.fromEntries(IDS.map(id => [id, NOW + 7 * DAY]));
+    return W(r, [['set', 'config/main', { people, staffIds: IDS, pinOpen, updated: Date.now(), updatedBy: NAME[r] }, true],
       ['set', 'login/roster', { people, staffIds: IDS, sousIds: CFG.sousIds, headId: 'kit', fnIds: CFG.fnIds, fnOnlyIds: CFG.fnOnlyIds }]]); } });
 row('js/prep.js saveConfig(), the Google device: config/main and login/roster (batch, no by)', { ok: GOOGLE, asks: GOOGLE,
   run: db => { const b = writeBatch(db); b.set(D(db, 'config/main'), Object.assign({}, CFG, { updated: Date.now(), updatedBy: 'Head chef' })); b.set(D(db, 'login/roster'), ROSTER); return b.commit(); } });
@@ -415,9 +519,9 @@ row('js/prep.js mlSetPri(): how soon a mail matters (mail update)', { ok: GOOGLE
 row('js/prep.js seedPinOpen(), a sous chef: the PIN windows merged into config/main', { ok: CHEFS, asks: ['kit', 'sam'],
   run: (db, w, r) => W(r, [['set', 'config/main', { pinOpen: { finn: NOW + 7 * DAY + ALL.indexOf(r) } }, true]]) });
 row('js/prep.js pushOff(): this phone\'s push address removed (the Google device: deleteDoc)', { ok: CHEFS, asks: CHEFS,
-  prep: (r, w) => put({ ['push/off-' + r]: { tok: 'token-' + r, at: 1, ua: 'android', by: w || 'owner' } }),
-  run: (db, w, r) => w ? W(r, [['del', 'push/off-' + r]]) : deleteDoc(D(db, 'push/off-' + r)) });
-row('js/manage.js: hide a template or own piece (its next version)', { ok: CHEFS, asks: CHEFS,
+  prep: (r, w) => put({ ['push/off-' + r]: { tok: 'token-' + r, at: 1, ua: 'android', by: GOOGLE.includes(r) ? 'owner' : w } }),
+  run: (db, w, r) => GOOGLE.includes(r) ? deleteDoc(D(db, 'push/off-' + r)) : W(r, [['del', 'push/off-' + r]]) });
+row('js/manage.js mineHide(): hide a template or own piece (its next version)', { ok: CHEFS, asks: CHEFS,
   prep: r => put({ ['drawtpl/h-' + r]: { name: 'Round plate', slot: 'plate', surf: {}, els: [], defs: '{}', vb: '', svgS: '', svgF: '', v: 1, upd: 1, removed: false, by: 'sam' } }),
   run: (db, w, r) => W(r, [['set', 'drawtpl/h-' + r, { name: 'Round plate', slot: 'plate', surf: {}, els: [], defs: '{}', vb: '', svgS: '', svgF: '', v: 2, upd: Date.now(), removed: true }]]) });
 
@@ -457,12 +561,28 @@ row('js/functions.js tickSent(): tick a round sent (fnsent merge)', { ok: ALL, a
 row('js/functions.js tickSent(): a chef takes back a round someone else ticked', { ok: CHEFS, asks: ['ownkit', 'kit', 'sam'],
   prep: r => { const a = T0 + 100 + ALL.indexOf(r); return put({ [`fnsent/f1_${a}`]: { fid: 'f1', at: a, day: TODAY, sent: true, sentAt: NOW - 10 * MIN, sentBy: 'ann', by: 'ann' } }); },
   run: (db, w, r) => { const a = T0 + 100 + ALL.indexOf(r); return W(r, [['set', `fnsent/f1_${a}`, { fid: 'f1', at: a, day: TODAY, sent: false, sentAt: NOW - 10 * MIN, sentBy: 'ann' }, true]]); } });
+row('js/functions.js tickSent(): take back my own tick within 2 minutes', { ok: ALL, asks: ALL,
+  prep: (r, w) => { const a = T0 + 200 + ALL.indexOf(r), t = Date.now() - 30000; return put({ [`fnsent/f1_${a}`]: { fid: 'f1', at: a, day: TODAY, sent: true, sentAt: t, sentBy: w, by: w } }); },
+  run: async (db, w, r) => { const a = T0 + 200 + ALL.indexOf(r), cur = await serverRec(`fnsent/f1_${a}`);
+    return W(r, [['set', `fnsent/f1_${a}`, { fid: 'f1', at: a, day: TODAY, sent: false, sentAt: cur.sentAt, sentBy: cur.sentBy }, true]]); } });
 row('js/fnedit.js save(): confirm a new function with its contact, prep line and order line', { ok: ['owner', 'ownkit', 'fay'], asks: FNMGR,
   prep: r => put({ ['functions/n' + FN(r)]: null }),
   run: (db, w, r) => { const id = 'n' + FN(r), t = Date.now(), f = fnRec(id, { cBy: w, cAt: t, confBy: w, confAt: t, by: w, upd: t });
     return W(r, [['set', 'functions/' + id, f], ['set', 'fncontact/' + id, { cname: 'Jo Example', phone: '0400 000 000', email: '', upd: t }],
       ['set', `days/${TODAY}/items/fn-${id}-pizza`, Object.assign(pline(id), { deleted: false, addedBy: NAME[r] || 'Head chef', addedById: w, addedAt: t }), true],
       ['set', `orders/${TODAY}/lines/fn-${id}`, Object.assign(oline(id), { deleted: false, addedBy: NAME[r] || 'Head chef', addedById: w, addedAt: t }), true]]); } });
+// save() of a booking already confirmed: the next version and its history, the changed prep and order lines merged
+// (prepOps(), orderOps(); the order day stays, so the order line changes in place). The contact is not sent: it did not change
+row('js/fnedit.js save(): change a confirmed function (2 platters to 3)', { ok: ['owner', 'ownkit', 'fay'], asks: FNMGR,
+  prep: r => { const id = 'e' + FN(r); return put({ ['functions/' + id]: fnRec(id), [`functions/${id}/hist/1`]: null,
+    [`days/${TODAY}/items/fn-${id}-pizza`]: Object.assign(pline(id), { deleted: false, addedBy: 'Fay', addedById: 'fay', addedAt: NOW - 3 * DAY, by: 'fay' }),
+    [`orders/${TODAY}/lines/fn-${id}`]: Object.assign(oline(id), { deleted: false, addedBy: 'Fay', addedById: 'fay', addedAt: NOW - 3 * DAY, by: 'fay' }) }); },
+  run: async (db, w, r) => { const id = 'e' + FN(r), before = await serverRec('functions/' + id), t = Date.now(), what = 'Pizza Platter 2 to 3', who = NAME[r] || 'Head chef';
+    const f = Object.assign(JSON.parse(JSON.stringify(before)), { v: before.v + 1, upd: t, by: w });
+    f.lines[0].qty = 3; f.lines[0].u = [0, 0, 0]; f.chg = [{ at: t, by: w, what }].concat(before.chg || []).slice(0, 8);
+    return W(r, [['set', 'functions/' + id, f], ['set', `functions/${id}/hist/${before.v}`, { was: before, at: t, what }],
+      ['set', `days/${TODAY}/items/fn-${id}-pizza`, Object.assign(pline(id), { qty: '3 platters', deleted: false, addedBy: who, addedById: w, addedAt: t }), true],
+      ['set', `orders/${TODAY}/lines/fn-${id}`, Object.assign(oline(id), { text: 'Function stock: Party ' + id + ', 3 Pizza', qty: '3 platters', deleted: false, addedBy: who, addedById: w, addedAt: t }), true]]); } });
 row('js/fnedit.js setRemoved(): delete a cancelled function from the list', { ok: ['owner', 'ownkit', 'fay'], asks: FNMGR,
   prep: r => { const id = 'd' + FN(r), f = fnRec(id, { v: 2, status: 'cancelled', od: '', canBy: 'fay', canAt: NOW - DAY, upd: NOW - DAY }); return put({ ['functions/' + id]: f, [`functions/${id}/hist/2`]: null }); },
   run: async (db, w, r) => { const id = 'd' + FN(r); let before; await off(async a => { before = (await getDoc(doc(a, at('functions/' + id)))).data(); });
@@ -492,16 +612,15 @@ row('js/manage.js save(): change a recipe after a sous chef saved last (book/ind
 row('js/manage.js save(): change a recipe after the Google device saved last (book/index by nobody)', { ok: CHEFS, asks: CHEFS, prep: rxPrep(''), run: (db, w, r) => saveRecipe(r, 'rx-' + r) });
 row('js/manage.js save(): a new recipe after a sous chef saved last', { ok: CHEFS, asks: CHEFS,
   prep: r => lastWriter('sam', { ['recipes/new-' + r]: null, ['/publicRecipes/new-' + r]: null }), run: (db, w, r) => saveRecipe(r, 'new-' + r) });
-// commit() in js/draw.js: the drawing, the recipe's link (patchRecipe()), book/index merged, and the picks (book/matches)
-row('js/draw.js commit(): a new drawing with the recipe link and the picks, after a sous chef saved last', { ok: CHEFS, asks: CHEFS,
+// commit() in js/draw.js: the drawing, the recipe's link (patchRecipe()), book/index merged, and the picks (book/matches,
+// from LK_SMART.pendingOps(): teach() in js/smart.js only queues a pick, so the picks are only ever sent in this batch)
+row('js/draw.js commit(): a new drawing with the recipe link and the picks (pendingOps()), after a sous chef saved last', { ok: CHEFS, asks: CHEFS,
   prep: async r => { const id = 'dr-' + r; await lastWriter('sam', { ['recipes/' + id]: recipe(id, 1, 'sam'), ['/publicRecipes/' + id]: recipe(id, 1, 'sam'), [`recipes/${id}/hist/1`]: null, [`drawings/${id}-plate`]: null, [`/publicDrawings/${id}-plate`]: null }); await bumpIndex(id, 1); },
   run: async (db, w, r) => { const id = 'dr-' + r, did = id + '-plate', t = Date.now(), rc = await serverRec('recipes/' + id), rv = rc.v + 1;
     const was = {}; ['r', 'v', 'upd', 'by', 'src', 'base', 'removed', 'off'].forEach(k => { if (rc[k] !== undefined) was[k] = rc[k]; });
     const rec = recipe(id, rv, undefined, { r: Object.assign({}, rc.r, { art: '@' + did }), upd: t });
     return W(r, [['set', 'drawings/' + did, drawing(id, 1)], ['set', 'recipes/' + id, rec], ['set', `recipes/${id}/hist/${rc.v}`, { was, at: t }],
       ['set', 'book/index', { d: { [did]: 1 }, r: { [id]: rv }, upd: t }, true], ['set', 'book/matches', { m: { ['leek-' + r]: 'leek-1' }, upd: t }, true]]); } });
-row('js/smart.js teach: a pick on its own (book/matches merge), after a sous chef saved last', { ok: CHEFS, asks: CHEFS,
-  prep: () => lastWriter('sam'), run: (db, w, r) => W(r, [['set', 'book/matches', { m: { ['dill-' + r]: 'dill-1' }, upd: Date.now() }, true]]) });
 row('js/draw.js saveTemplate(), savePiece(), saveWare(): drawtpl and drawlib', { ok: CHEFS, asks: CHEFS,
   run: (db, w, r) => W(r, [['set', 'drawtpl/' + MINE(r), { name: 'Round plate', slot: 'plate', surf: {}, els: [], defs: '{}', vb: '-110 -110 220 220', svgS: '', svgF: '', v: 1, upd: Date.now(), removed: false }],
     ['set', 'drawlib/' + MINE(r), { type: 'surf', name: 'Board ' + r, p: {}, v: 1, upd: Date.now(), removed: false }]]) });
@@ -536,13 +655,15 @@ for (const [n, x] of ROWS.entries()) {
     catch (e) { if (e && e.code !== 'permission-denied') { bad.push(r + ' failed: ' + String(e.code || e.message).slice(0, 80)); ok = null; } else ok = false; }
     if (x.after) await x.after(r, w);
     got[r] = ok; cells++;
+    // every cell is checked against the rules, known or not: a known mark excuses what a page asks for, never a change
+    // in what the rules let through
     const want = x.ok.includes(r);
-    if (ok !== null && ok !== want && !kr.includes(r)) bad.push(r + (want ? ' refused, the rules should let it through' : ' let through, the rules should refuse it'));
+    if (ok !== null && ok !== want) bad.push(r + (want ? ' refused, the rules should let it through' : ' let through, the rules should refuse it'));
   }
-  // the pages' needs: every sign-in whose page makes the call must be let through
+  // the pages' needs: every sign-in whose page makes the call must be let through, unless the row is known for it
   const need = (x.asks || []).filter(r => !x.ok.includes(r) && !kr.includes(r));
   if (need.length) bad.push('the page asks for it as ' + need.join(', ') + ', but the row expects a refusal (a live bug: mark it known with its fix)');
-  const line = ALL.map(r => r + mark(got[r]) + (got[r] === null || (got[r] !== x.ok.includes(r) && !kr.includes(r)) ? '!' : kr.includes(r) ? '~' : '')).join(' ');
+  const line = ALL.map(r => r + mark(got[r]) + (got[r] === null || got[r] !== x.ok.includes(r) ? '!' : kr.includes(r) ? '~' : '')).join(' ');
   grid.push(String(n + 1).padStart(3) + ' ' + line + '  ' + x.label);
   if (bad.length) { fails++; console.log('FAIL ' + x.label + ': ' + bad.join('; ')); }
   else console.log('PASS ' + x.label);
@@ -550,6 +671,6 @@ for (const [n, x] of ROWS.entries()) {
 }
 await env.cleanup();
 console.log('\nWho the rules let through (+) or refuse (.), in the order ' + ALL.join(', ') + '. ! is not as expected, ~ is a known mark:\n' + grid.join('\n'));
-console.log('\nKnown (a mismatch there is never counted as a failure):\n' + known.map(s => '- ' + s).join('\n'));
+console.log('\nKnown (what the page needs there is not counted as a failure; what the rules do there still is):\n' + known.map(s => '- ' + s).join('\n'));
 console.log('\n' + (fails ? fails + ' of ' + ROWS.length + ' client shape rows FAILED' : ROWS.length + ' client shape rows passed') + ' (' + cells + ' calls, ' + ALL.length + ' sign-ins, ' + known.length + ' known).');
 if (fails) process.exit(1);

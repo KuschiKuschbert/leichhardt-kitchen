@@ -102,7 +102,7 @@ const minIds = p => p.evaluate(() => (window.LK_PREP.state.mins || []).map(m => 
 
   // the reads that are for the chefs, the function managers or the Google account (28 Oct 2026, checked against the real
   // rules in tests/rules/client-shapes.test.mjs): the stand-in refuses them for staff like the rules do, and lists each
-  // in __fake.refused, so a page that starts asking for one fails tests/roles.test.js
+  // in __fake.refused, so a page tests/roles.test.js opens that starts asking for one fails there
   const ping = (to, x) => Object.assign({ text: 'See me at 15:00', tag: 'none', start: today, until: today, dows: [], tm: null, removed: false, upd: L.NOW, at: L.NOW, author: 'sam', by: 'sam', to }, x || {});
   const lockExtra = Object.assign({}, fnExtra, L.mail(), {
     [fsKey(['functions', 'smith', 'hist', '0'])]: { was: {}, at: 1, by: 'finn' },

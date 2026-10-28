@@ -13,9 +13,13 @@
 //   back: cold goes, held writes are sent ('hold' becomes 'ok') and every listener gets the server's answer.
 // __fake.reads lists the paths asked for (getDoc, getDocs, getDocFromServer) and __fake.readLog every document read from the "server";
 // getDocsFromCache only returns documents this page has read before.
-// Reads the real rules refuse are refused here too, for the sign-in on this page (readRefused(), rulesDenied(), listeners
-// included), and each one is listed in __fake.refused ({ kind, path }), so a page that starts asking for one shows up
-// in the click tests (tests/roles.test.js). __fake.failReads and __fake.denyReads are not listed: a test asked for those.
+// Reads the real rules refuse are refused here too, for the sign-in on this page (colRefused(), readRefused(),
+// rulesDenied(), listeners included): the kitchen's records without a live PIN session or for functions only, past
+// wastage and transfer lines, loans not on the open list, functions and deliveries without a session, deliveries of
+// another day, what only the head chef's Google account reads, and record by record the chef, function manager, mail,
+// sign-off and personal ping rules. Each one is listed in __fake.refused ({ kind, path }), so a page that starts asking
+// for one shows up in the click tests (tests/roles.test.js). __fake.failReads and __fake.denyReads are not listed: a
+// test asked for those. The PIN screen's own reads (login/roster, pinset/<id>) are not checked here.
 const KEY = 'fake.fs';
 function load() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } }
 let store = load();
@@ -144,8 +148,48 @@ function fnReader(ref) { if (window.__fakeUser) return true; const by = sessionR
 // kitchen mail: the Google account, or a sous chef on their PIN session while the head chef has sous chef mail on
 function mailReader(ref) { if (window.__fakeUser) return true; const c = cfgOf(ref), by = kitchenReader(ref); return c.sousMail === true && !!by && (c.sousIds || []).indexOf(by) >= 0; }
 const at3 = (k, name) => new RegExp('^kitchens/[^/]+/' + name).test(k);
+/* isToday(day) in the rules: the path's date is today in kitchen time (Queensland, UTC+10), with 15 minutes either side
+   for a phone's clock. On the page's own clock, which the tests set */
+function isToday(day) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day || '')) return false;
+  const mid = Date.parse(day + 'T00:00:00Z') - 10 * 3600000, t = Date.now();
+  return t >= mid - 15 * 60000 && t < mid + 86400000 + 15 * 60000;
+}
+// the operational records (kitchenRead() in the rules): a live PIN session for someone who is not functions only
+const KITCHEN_COLS = ['config', 'days', 'orders', 'waste', 'summary', 'misses', 'views', 'notes', 'guides', 'drinks', 'shifts', 'activity', 'sections',
+  'learned', 'ordlearned', 'learnlog', 'minutes', 'mailstat', 'transfers', 'transferOpen'];
+/* The read rules by collection, before the record-by-record ones in readRefused() and rulesDenied(): true when the real
+   rules refuse this phone the record (list false) or the query (list true). Everything here is open to the head chef's
+   Google account, apart from the records nobody reads (pushes, PIN tries, the old proofs). */
+function colRefused(ref, list) {
+  const rel = ref.path.slice(2), c = rel[0], k = key(ref.path);
+  if (ref.path[0] !== 'kitchens' || ref.group) return false;
+  if (c === 'push' || c === 'tries' || c === 'proofs') return true;
+  if (window.__fakeUser) return false;
+  // only the head chef's Google account: PIN fingerprints, the usage counts, the minutes' earlier versions, and the
+  // lists of who has a PIN and of every mail's status (one record by id is for the kitchen)
+  if (c === 'staffpins' || c === 'daily' || (c === 'minutes' && rel[2] === 'hist')) return true;
+  if (list && (c === 'pinset' || c === 'mailstat')) return true;
+  // recipes and drawings are public, their earlier versions are for the kitchen
+  if ((c === 'recipes' || c === 'drawings') && rel[2] === 'hist' && !kitchenReader(ref)) return true;
+  // functions, the rounds sent and today's delivery receipts (functionRead(): any live PIN session, functions only too)
+  if (c === 'functions' || c === 'fnsent') return !sessionReader(ref) && rel[2] !== 'hist';
+  if (c === 'deliveries') {
+    if (!sessionReader(ref)) return true;
+    if (list) return !(ref.c || []).some(x => x.k === 'where' && x.f === 'day' && x.op === '==' && isToday(x.v));
+    return store[k] !== undefined && !isToday(store[k].day);   // a new receipt's id may be checked before it is written
+  }
+  if (KITCHEN_COLS.indexOf(c) < 0 || (c === 'config' && rel[1] !== 'main')) return false;
+  if (!kitchenReader(ref)) return true;
+  // past wastage and transfer lines are for the head chef's Google account (admin Reports): the kitchen reads today's
+  if ((c === 'waste' || c === 'transfers') && rel[2] === 'lines') return !isToday(rel[1]);
+  // a loan is read from the open list only: a query for open == true, or one record that is open
+  if (c === 'transferOpen') return list ? !asks(ref, 'open', '==', true) : !(store[k] && store[k].open === true);
+  return false;
+}
 /* One record the real rules refuse this phone (getDoc, getDocFromServer, a listener on it, Lite). */
 function readRefused(ref) {
+  if (colRefused(ref, false)) return true;
   if (window.__fakeUser) return false;
   const k = key(ref.path), root = ref.path.slice(0, 2).join('/');
   if (/\/config\/admins$/.test(k)) return true;   // the owner check: only the head chef's Google account reads it
@@ -188,6 +232,7 @@ const asks = (ref, f, op, v) => (ref.c || []).some(x => x.k === 'where' && x.f =
 function rulesDenied(ref) {
   const k = key(ref.path);
   if (ref.group && !window.__fakeUser) return true;
+  if (colRefused(ref, true)) return true;
   if (/^kitchens\/[^/]+\/todos$/.test(k) && !chefReader(ref)) return true;
   if (/^kitchens\/[^/]+\/minutes\/[^/]+\/signs$/.test(k) && !chefReader(ref)) return true;   // the register, chefs only
   if (at3(k, '(suppliers|supplierlinks|cutdone)(/|$)') && !chefReader(ref)) return true;

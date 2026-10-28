@@ -5,12 +5,16 @@
   menu offers it, and this records for every page:
     - the controls on show and enabled (buttons and links): how many, how many on the first screen, and their names;
     - the share of the first screen under bars (first: the top bar, the bands, strips and the tab bar at the top of the
-      page; kept: what stays on screen once the page is scrolled one screen down), and each bar's height;
+      page; kept: what stays on screen once the page is scrolled one screen down, empty for a page too short to get
+      there, with how far it scrolled), and each bar's height;
     - the chef hat menu's items and the tabs.
   The record goes to tests/shots/roles.json (git ignores tests/shots) with a short summary in the log. Only what holds
   today and must keep holding is checked: no page errors, no sideways scroll at the default text size, the menu and tab
-  rights of each sign-in, and no read the rules refuse (the stand-in lists those in __fake.refused, so a page that starts
-  asking for one fails here). Budgets for the bars and checks for dead controls come in later pull requests.
+  rights of each sign-in (the whole tab list), and no read the rules refuse. The stand-in refuses those like the rules
+  (tests/fake/firebase-firestore.js, colRefused() and the record-by-record checks) and lists each in __fake.refused, so a
+  page that starts asking for one here fails. The book here has minutes to sign, pings on now and guides (extra()), so
+  the reads those bring run too; a read that needs other data (a sheet opened by a tap) is checked by its own test file
+  and by tests/rules/client-shapes.test.mjs. Budgets for the bars and checks for dead controls come in later pull requests.
 */
 const L = require('./lib');
 const M = require('../js/functions.js');
@@ -23,12 +27,25 @@ const PEOPLE = [P('kit', 'Kit', 'head'), P('sam', 'Sam', 'sous'), P('ann', 'Ann'
   P('vic', 'Vic', 'view', { add: false, tick: false, del: false }), P('fay', 'Fay', 'fnc', { add: false, tick: false, del: false, fn: true })];
 // a supplier whose order closes at 15:00 today (the cut-off bar shows for the chefs at 14:00) and a function tonight
 const next = (new Date(L.NOW).getDay() + 1) % 7;
+// what staff see of the new pages (config/main staffSee): the tabs below follow it
+const SEE = { guides: true, pings: true, minutes: true };
+/* Also what makes a page read more than an empty book does, so the reads it brings run under "no read the rules
+   refuse": minutes published yesterday (each phone reads its own sign-off, loadMine()), an Everyone ping and personal
+   pings to Ann and Lou on now (13:55, so they pop up and Got it writes who has seen them), and the guides. */
 function extra() {
   const x = {
     [fsKey(['config', 'main'])]: { people: PEOPLE, headId: 'kit', sousIds: ['kit', 'sam'], pingIds: ['kit', 'sam'], staffIds: PEOPLE.map(p => p.id), fnIds: ['fay'], fnOnlyIds: ['fay'],
-      showBadges: true, staffSee: { guides: true, pings: true, minutes: true }, cutoffs: [{ id: 'northside', name: 'Northside Test Foods', dd: [next], at: 900, pre: 1, lead: 240 }] },
+      showBadges: true, staffSee: SEE, cutoffs: [{ id: 'northside', name: 'Northside Test Foods', dd: [next], at: 900, pre: 1, lead: 240 }] },
     [fsKey(['config', 'admins'])]: { x: 1, mailOpened: L.NOW }
   };
+  Object.assign(x, L.guides());
+  x[fsKey(['minutes', 'mr1'])] = { no: 1, v: 1, status: 'published', date: L.ymd(new Date(L.NOW - DAY)), start: '14:00', loc: 'Kitchen', chair: 'sam', taker: 'sam',
+    att: ['kit', 'sam', 'ann', 'bo', 'lou', 'vic'].map(id => ({ id, st: 'present' })), guests: '', decisions: 'Label every tub', menu: '', safety: '', dates: '', other: '',
+    acts: [], next: '', pubAt: L.NOW - DAY, removed: false, at: 1, upd: 1, by: 'sam' };
+  const ping = (text, to) => Object.assign({ text, tag: 'none', start: today, until: today, dows: [], tm: 835, removed: false, upd: L.NOW - 3600000, at: L.NOW - 3600000, author: 'sam', by: 'sam' }, to ? { to } : {});
+  x[fsKey(['notes', 'nr1'])] = ping('Fish delivery at 15:00');
+  x[fsKey(['directnotes', 'dr1'])] = ping('Ann, pastry cream first', 'ann');
+  x[fsKey(['directnotes', 'dr2'])] = ping('Lou, check the cool room', 'lou');
   ['kit', 'lou', 'vic', 'fay'].forEach(id => { x[fsKey(['pinset', id])] = { at: 1 }; x[fsKey(['drinks', id])] = { kind: 'flat', size: 'reg', milk: '', shot: '', sugar: '', note: '', other: '', at: L.NOW - DAY, by: id }; });
   const t = hm => M.kat(today, M.hmMin(hm));
   x[fsKey(['functions', 'smith'])] = M.derive({ v: 1, status: 'confirmed', name: 'Smith 50th', date: today, start: t('18:00'), loc: 'Beer garden', guests: 60, mode: 'all', notes: '', kc: '', kcBy: '', kcAt: 0,
@@ -37,8 +54,9 @@ function extra() {
   x[fsKey(['transfers', today, 'lines', 't1'])] = { dir: 'out', venue: 'Riviera', person: 'Jess', text: 'Brioche buns', amount: 2, unit: 'packs', note: '', addedBy: 'Bo', addedById: 'bo', addedAt: L.NOW - 5400000, deleted: false };
   return x;
 }
-// the 8 sign-ins: who is on the phone, and what its menu and tabs must and must not hold
-const KITCHEN_TABS = ['Recipes', 'Prep', 'Orders', 'Wastage', 'Transfers'];
+// the 8 sign-ins: who is on the phone, and what its menu and tabs must and must not hold. Guides shows for everyone in
+// the kitchen while staff see it (SEE.guides), and never for functions only
+const KITCHEN_TABS = ['Recipes', 'Prep', 'Orders', 'Wastage', 'Transfers'].concat(SEE.guides ? ['Guides'] : []);
 const CREW_NO = ['admin', 'todo', 'manage', 'pings', 'staff', 'functions', 'suppliers'];
 const SIGNINS = [
   { id: 'staff', name: 'staff (Ann)', o: { who: 'ann' }, has: ['mail', 'drinks', 'fn', 'deliveries', 'settings', 'out'], no: CREW_NO, tabs: KITCHEN_TABS },
@@ -93,9 +111,11 @@ function look(stuckOnly) {
 }
 async function lookPage(p) {
   const a = await p.evaluate(look, false);
-  // one screen down: only what sticks stays on screen
+  // one screen down: only what sticks stays on screen. A page shorter than two screens cannot get there: its kept share
+  // is left empty (null), with how far it did scroll and how tall it is, so a later budget reads only real numbers
   await p.evaluate(() => window.scrollTo(0, innerHeight)); await L.settle(p, 300);
-  a.kept = (await p.evaluate(look, true)).bars;
+  a.scroll = await p.evaluate(() => ({ y: Math.round(scrollY), height: document.documentElement.scrollHeight, screen: innerHeight }));
+  a.kept = a.scroll.y >= a.scroll.screen - 1 ? (await p.evaluate(look, true)).bars : { share: null, parts: [] };
   await p.evaluate(() => window.scrollTo(0, 0)); await L.settle(p, 200);
   return a;
 }
@@ -119,7 +139,7 @@ const refusedNow = p => p.evaluate(() => (window.__fake.refused || []).map(x => 
           if (LISTS.includes(hash) && !s.fnOnly) await L.waitFor(p, () => !document.querySelector('.is-loading'), null, 5000).catch(() => {});
           const a = await lookPage(p), e = p.errors.slice(errs), rf = (await refusedNow(p)).slice(refused);
           errs = p.errors.length; refused += rf.length;
-          r.pages[hash] = { controls: a.controls, firstScreen: a.firstScreen, names: a.names, bars: { first: a.bars.share, kept: a.kept.share, firstParts: a.bars.parts, keptParts: a.kept.parts }, refused: rf };
+          r.pages[hash] = { controls: a.controls, firstScreen: a.firstScreen, names: a.names, bars: { first: a.bars.share, kept: a.kept.share, firstParts: a.bars.parts, keptParts: a.kept.parts, keptScroll: a.scroll }, refused: rf };
           if (hash === '#/prep') r.tabs = a.tabs;
           ok(!e.length, at + ' ' + hash + ': no page errors ' + e.join(' | '));
           const of = await L.overflow(p);
@@ -135,8 +155,7 @@ const refusedNow = p => p.evaluate(() => (window.__fake.refused || []).map(x => 
         // the menu and the tabs this sign-in has, and must not have
         const miss = s.has.filter(x => !r.menu.includes(x)), extraItems = s.no.filter(x => r.menu.includes(x));
         ok(!miss.length && !extraItems.length, at + ': the chef hat menu (' + r.menu.join(', ') + ')' + (miss.length ? ' is missing ' + miss.join(', ') : '') + (extraItems.length ? ' should not have ' + extraItems.join(', ') : ''));
-        const tabs = r.tabs.filter(t => t !== 'Guides');
-        ok(JSON.stringify(tabs) === JSON.stringify(s.tabs), at + ': the tabs (' + r.tabs.join(', ') + ')');
+        ok(JSON.stringify(r.tabs) === JSON.stringify(s.tabs), at + ': the tabs (' + r.tabs.join(', ') + ')' + (JSON.stringify(r.tabs) === JSON.stringify(s.tabs) ? '' : ', not ' + s.tabs.join(', ')));
         await p.context().close();
       }));
     }
@@ -146,12 +165,12 @@ const refusedNow = p => p.evaluate(() => (window.__fake.refused || []).map(x => 
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'roles.json'), JSON.stringify(out, null, 1));
   // the summary: per sign-in and size, the menu, then per page the controls (first screen) and the bar shares
-  const pct = v => Math.round(v * 100) + '%';
+  const pct = v => v === null ? '-' : Math.round(v * 100) + '%';
   for (const s of SIGNINS) for (const [w] of SIZES) {
     const r = out.signins[s.id].sizes[w];
     console.log(s.name + ' ' + w + ' px, menu ' + r.menu.length + ' (' + r.menu.join(' ') + '), tabs ' + r.tabs.length + ': ' +
       Object.keys(r.pages).map(h => (h.replace('#/', '') || 'landing') + ' ' + r.pages[h].controls + '/' + r.pages[h].firstScreen + ' bars ' + pct(r.pages[h].bars.first) + '|' + pct(r.pages[h].bars.kept)).join(', '));
   }
-  console.log('(controls on the page/on the first screen, bars over the first screen at the top|one screen down) Written to tests/shots/roles.json');
+  console.log('(controls on the page/on the first screen, bars over the first screen at the top|one screen down, - for a page too short to scroll a screen) Written to tests/shots/roles.json');
   L.report(R);
 })().catch(e => { console.error(e); console.log(R.join('\n')); process.exit(1); });
