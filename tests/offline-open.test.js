@@ -288,6 +288,9 @@ const fnDoc = (name, date) => M.derive({ v: 1, status: 'confirmed', name, date, 
   p = await L.open(b, '#/drinks', { who: 'ann', wait: 1500 });
   await until(p, () => !!localStorage.getItem('lk.drinks'));
   await p.click('[data-p="dk-edit"]'); await L.settle(p, 200);
+  // a change first: Save my usual is off on a usual not changed (28 Oct 2026)
+  await p.click('[data-p="dk-open"][data-f="kind"]'); await L.settle(p, 100);
+  await p.click('[data-p="dk-pick"][data-f="kind"][data-v="latte"]'); await L.settle(p, 100);
   await p.click('[data-p="dk-save"]'); await L.settle(p, 600);
   const kept = JSON.parse(await ls(p, 'lk.drinks') || '{}');
   ok(!!kept.seen && !!kept.by && !!kept.by.ann, 'drinks: after saving a usual, the copy on the phone still knows who is on today');

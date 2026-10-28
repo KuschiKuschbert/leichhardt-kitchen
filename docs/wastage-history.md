@@ -27,7 +27,9 @@ chef's verified Google account and the existing shared-device chef gate.
   editor, including its check for a newer review before replacing one. The
   editor keeps its own draft, apart from the one typed on the wastage page
   (rvTyped(), 28 Oct 2026), so its day arrows never drop the page's review, and
-  Cancel edits asks a second tap before the words go.
+  Cancel edits asks a second tap before the words go. Save the review is off
+  until something in it changed, here and on the wastage page, and the save
+  refuses too, so an untouched review is never saved under another name.
 - A failed history read shows an error and retry. It never produces a successful
   empty report, a cached empty range or an apparently complete CSV.
 

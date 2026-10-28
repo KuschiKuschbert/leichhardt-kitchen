@@ -211,6 +211,8 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
         if (navigator.onLine === false) { noSignal(); return; }
         run = null; goodLook();
         try { localStorage.setItem('lk.upd.last', String(Date.now())); } catch (e) {}
+        // the second tap said what is half typed may go: the book's own Reload site? question does not ask again
+        if (me.half) letGoAt = Date.now();
         location.reload();
       };
       /* Once, when every file is in (lkFresh(), all or nothing): a reload turned down (a page asks first) is not tried
@@ -267,7 +269,11 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
     if (run) { run.tapped = true; run.half = lkUnsaved(); busy(run.files ? 'Updating...' : 'Checking the signal...'); return; }
     reloadNow(true);
   }
-  window.LK_UPDATE = { now: updateNow };
+  /* Words typed on the prep pages make a reload or closing the tab ask first (typedHere() in js/prep.js, 28 Oct 2026).
+     The reload after Update now's second tap over them is the one the person already said yes to, so for a moment
+     around it letGo() is true and the book does not ask again. Date.now(): time passing on the phone. */
+  var letGoAt = 0;
+  window.LK_UPDATE = { now: updateNow, letGo: function () { return !!letGoAt && Date.now() - letGoAt < 3000; } };
   function check(returned) {
     lastCheck = Date.now();
     Promise.all([stamp(), savedAt]).then(function (x) {
