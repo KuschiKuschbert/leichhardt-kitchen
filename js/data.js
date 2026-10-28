@@ -51,7 +51,7 @@ window.LK_DATA = {
   updated: '27 October 2026',
   allergens: ['Gluten', 'Milk', 'Egg', 'Soy', 'Peanut', 'Tree nut', 'Fish', 'Crustacean', 'Mollusc', 'Sesame'],
   menuOrder: [
-    { title: 'Specials', ids: [] },
+    { title: 'Specials', ids: ['chicken-adobo'] },
     { title: "Snackin' Plates", ids: ['poutine', 'beetroot-bites', 'brisket-cob', 'lamb-nachos', 'buffalo-corn-cob-with-cashew-crumb', 'wings', 'haloumi-tacos', 'pork-belly-bites', 'calamari', 'riblets', 'garlic-bread', 'bacon-cheese-bread', 'chips-snack'] },
     { title: 'Salads', ids: ['caesar', 'green-bowl', 'pumpkin-salad'] },
     { title: 'Big Country Feeds', ids: ['beef-cheek', 'ribs', 'barra', 'carbonara', 'fish-chips', 'lamb-rissoles', 'vegan-rissoles', 'pork-belly', 'pie'] },
