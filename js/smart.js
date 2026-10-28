@@ -57,13 +57,17 @@
   }
 
   /* ---------- learned matches (book/matches, the head chef's picks) ---------- */
+  /* One getDoc when the editor opens. A read that failed (no signal) is not taken as "no picks" for the rest of the page
+     (28 Oct 2026): the picks taught since stay, and the next Draw it for me, or the next drawing on save, reads again
+     (one read, only after a failure). */
   var learned = null, learnP = null;
   function loadLearned() {
     if (learnP) return learnP;
     var api = B();
     learnP = api.ready().then(function () { return api.fs().getDoc(api.docRef('book', 'matches')); }).then(function (sn) {
-      learned = sn.exists() && sn.data().m && typeof sn.data().m === 'object' ? sn.data().m : {};
-    }, function () { learned = {}; });
+      var m = sn.exists() && sn.data().m && typeof sn.data().m === 'object' ? sn.data().m : {};
+      learned = Object.assign({}, m, pending);   // a pick taught here and not saved yet stays
+    }, function () { learnP = null; });
     return learnP;
   }
   // a pick or a correction: kept so the next recipe gets it right first time (written with the drawing's save)
@@ -504,7 +508,8 @@
     return out;
   }
   function autoDraw(rid) {
-    var r = R.recipeOf(rid), res = { drawn: [], redrawn: [] }, made = {}, chain = Promise.resolve(), plate = null, cur = X.change(rid);
+    // the head chef's picks first (a read only when the last one failed)
+    var r = R.recipeOf(rid), res = { drawn: [], redrawn: [] }, made = {}, chain = loadLearned(), plate = null, cur = X.change(rid);
     if (!r) return Promise.resolve(res);
     // worked out before its own slots are drawn, as drawing them saves the recipe again (version 2)
     var first = !X.pristine(rid) && !!cur && cur.v === 1 && /\btopper\b/i.test(rid + ' ' + (r.name || ''));
@@ -553,7 +558,10 @@
           if ((d.slot === 'side' || d.slot === 'build') && d.els.some(function (e) { return e.fixed || e.pick; })) return null;
           // a side view stands on the dish's plate drawing as it is now (drawn again just before)
           var pl = d.slot === 'side' ? X.arts().filter(function (y) { return y.rid === a.rid && (y.slot === 'plate' || y.slot === 'pan') && !y.removed; })[0] : null;
-          return (pl ? api.fs().getDocFromServer(api.docRef('drawings', pl.id)).then(function (ps) { return ps.exists() ? ps.data() : null; }, function () { return null; }) : Promise.resolve(null)).then(function (plate) {
+          // the plate could not be read (no signal, a lost read): this side view is left as it is, never drawn from a
+          // guessed plate and saved (28 Oct 2026). A plate that is not there is drawn from, as before.
+          return (pl ? api.fs().getDocFromServer(api.docRef('drawings', pl.id)).then(function (ps) { return ps.exists() ? ps.data() : null; }, function () { return NO_PLATE; }) : Promise.resolve(null)).then(function (plate) {
+            if (plate === NO_PLATE) return null;
             var was = JSON.stringify(d.els);
             drawFresh(d, plate);
             // drawn again exactly as it was (the change was to the method or the yield): nothing to save
@@ -599,10 +607,14 @@
     var prof = LIB.get('side-profile-' + ((it.side && it.side.s) || 'mound'));
     return prof || null;
   }
+  /* A plate drawing that could not be read (no signal, a lost read): not the same as no plate drawn yet, so nothing is
+     drawn from a guessed plate in its place (28 Oct 2026). Draw it for me says so in the editor; drawn on save
+     (redrawFrom()) leaves that side view as it is. */
+  var NO_PLATE = { code: 'no-plate' }, NO_PLATE_SAY = 'Could not read the plate drawing, so the side view is not drawn. Check the signal and try again.';
   function sideFrom(seed) {
     var W = DR.state(), d = W.d, api = B(), r = R.recipeOf(d.rid);
     var plate = (X.arts().filter(function (x) { return x.rid === d.rid && (x.slot === 'plate' || x.slot === 'pan') && !x.removed; })[0]);
-    return (plate ? api.ready().then(function () { return api.fs().getDoc(api.docRef('drawings', plate.id)); }).then(function (sn) { return sn.exists() ? sn.data() : null; }, function () { return null; }) : Promise.resolve(null)).then(function (pd) {
+    return (plate ? api.ready().then(function () { return api.fs().getDoc(api.docRef('drawings', plate.id)); }).then(function (sn) { return sn.exists() ? sn.data() : null; }, function () { throw NO_PLATE; }) : Promise.resolve(null)).then(function (pd) {
       return DR.withDrawing(d, function () { return sideOf(d, r, pd, seed); });
     });
   }
@@ -715,10 +727,11 @@
   /* ---------- the buttons and the panel on the drawing page (js/draw.js asks for them) ---------- */
   function esc(t) { return window.LK_APP.esc(t); }
   function run(W, seed) {
+    loadLearned();   // read again only if the read when the editor opened failed, for the next tap
     DR.before();
     var res = drawIt(seed);
-    var done = function (r) { W.smart = r || null; W.sel = []; DR.redraw(); if (r) DR.say((r.parts ? 'Drawn: ' + r.parts + (r.parts === 1 ? ' part' : ' parts') : 'Drawn') + (r.unsure && r.unsure.length ? ', ' + r.unsure.length + ' to pick' : '') + '.'); };
-    if (res && typeof res.then === 'function') res.then(done, function () { DR.redraw(); }); else done(res);
+    var done = function (r) { W.smart = r || null; W.sel = []; if (W.msg === NO_PLATE_SAY) W.msg = ''; DR.redraw(); if (r) DR.say((r.parts ? 'Drawn: ' + r.parts + (r.parts === 1 ? ' part' : ' parts') : 'Drawn') + (r.unsure && r.unsure.length ? ', ' + r.unsure.length + ' to pick' : '') + '.'); };
+    if (res && typeof res.then === 'function') res.then(done, function (e) { if (e === NO_PLATE) W.msg = NO_PLATE_SAY; DR.redraw(); }); else done(res);
   }
   var ui = {
     tools: function (W, btn) {

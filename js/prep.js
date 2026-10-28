@@ -338,12 +338,15 @@
   }
   /* summary/learned and summary/ordlearned (scripts/nightly-learn.mjs, 03:00): one read each, once a day per phone. The
      record, or null when it is missing, unreadable or older than yesterday (a night the job did not run), so the caller
-     reads the collection as before; a failed read is never taken as "nothing learned". */
+     reads the collection as before; a failed read is never taken as "nothing learned". A read that failed (no signal, a
+     lost read) rejects (28 Oct 2026), so the caller tries again later: before, it started the collection read of up to
+     500 records in its place, which on a weak signal could cost 500 reads instead of 1. Refused (rules without the
+     summary) still falls back. */
   function sumList(name) {
     return fb.fs.getDoc(docRef('summary', name)).then(function (sn) {
       var d = sn.exists() ? sn.data() : null;
       return d && Array.isArray(d.items) && d.day >= shift(dayNow(), -1) ? d : null;
-    }, function () { return null; });
+    }, function (e) { if (e && e.code === 'permission-denied') return null; throw e; });
   }
   // lk.learned also keeps lists, so it is out of date at the next kitchen day like the list itself
   function learnSave() { lsSet('lk.learned', JSON.stringify({ tag: S.learnFor, list: S.learned, lists: S.lists })); }
@@ -380,10 +383,20 @@
     });
     return out.sort(function (a, b) { return (b.uses || 0) - (a.uses || 0); });
   }
+  /* The sections people write (suggestions, the spell check, the admin Learning list) and, for the head chef's Google
+     account, who writes and ticks (admin Team). No signal before a listener's first server answer (28 Oct 2026): the
+     copy in memory holds at most this phone's own unsent counts, never the team's (listSnap() says 'wait'). The sections
+     already known stay; the Team table says there is no signal instead of showing everyone as never seen. Neither
+     draws again for a snapshot that changed nothing ('same'). */
+  var secLast = {}, secState = 'loading', actLast = {};
   function watchSections() {
     if (!kitchenAccess() || !S.configFull) return;
     if (unsubSec || !fb) return;
-    unsubSec = fb.fs.onSnapshot(colRef('sections'), function (snap) {
+    secState = 'loading'; secLast = {};
+    unsubSec = fb.fs.onSnapshot(colRef('sections'), { includeMetadataChanges: true }, function (snap) {
+      var k = listSnap(snap, secState, secLast);
+      if (k === 'same' || k === 'wait') return;
+      secState = 'ok';
       S.sections = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; });
       draw();
     }, function () {});
@@ -391,8 +404,12 @@
   function watchActivity() {
     if (!kitchenAccess() || !S.configFull) return;
     if (unsubAct || !fb || !S.user || S.configState !== 'ok') return;
-    unsubAct = fb.fs.onSnapshot(colRef('activity'), function (snap) {
-      S.activity = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; });
+    S.actState = 'loading'; actLast = {};
+    unsubAct = fb.fs.onSnapshot(colRef('activity'), { includeMetadataChanges: true }, function (snap) {
+      var k = listSnap(snap, S.actState, actLast);
+      if (k === 'same') return;
+      S.actState = k === 'wait' ? 'offline' : 'ok';
+      if (k !== 'wait') S.activity = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; });
       draw();
     }, function () {});
   }
@@ -946,7 +963,7 @@
     S.config = null; S.configFull = false; S.configState = 'idle'; S.past = []; S.pastFor = ''; S.week = null; S.ordHist = []; S.ordHistFor = ''; S.wSum = S.xSum = S.wStats = S.xStats = S.wNote = null;
     // the next person's pings and minutes are read for them straight away, not after this person's failed read
     S.notesErr = S.minsErr = S.gErr = false; delete S.retryAt.notes; delete S.retryAt.mins; onlineRetry = {};
-    S.items = []; S.ordLines = []; S.ordAll = []; S.wLines = []; S.xLines = []; S.notes = null; S.notesBusy = false; S.nSaving = false; S.notesFor = ''; S.nPast = null; S.nPastOpen = false; S.nSeen = null; S.nPrivateError = ''; S.mins = null; S.guides = null; S.activity = []; S.hist = {}; S.stats = null;
+    S.items = []; S.ordLines = []; S.ordAll = []; S.wLines = []; S.xLines = []; S.notes = null; S.notesBusy = false; S.nSaving = false; S.notesFor = ''; S.nPast = null; S.nPastOpen = false; S.nSeen = null; S.nPrivateError = ''; S.mins = null; S.guides = null; S.activity = []; S.actState = ''; S.hist = {}; S.stats = null;
     ['lk.fn', 'lk.mail.sent', 'lk.drinks', 'lk.guides', 'lk.notes', 'lk.minutes'].forEach(function (k) { lsSet(k, ''); });
  if (window.LK_DELIVERY) window.LK_DELIVERY.reset(); if (window.LK_SUP) window.LK_SUP.reset(); if (supplierService) supplierService.reset(); sessDrop(); ksClose(); noteClose('shut'); S.nJust = null; S.guestIn = false; lsSet('lk.prep.guest', ''); S.drinkAsk = ''; S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; tdReset(); lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); accessChanged(); }
   /* The chef mark's menu (js/app.js) asks what to show: Meeting minutes for everyone (when the page is on), and for the
@@ -1336,6 +1353,9 @@
   var onlineRetry = {};
   // a moment after the event, so Firestore has its connection back first
   window.addEventListener('online', function () { setTimeout(function () { var l = onlineRetry; onlineRetry = {}; Object.keys(l).forEach(function (k) { try { l[k](); } catch (e) {} }); }, 1500); });
+  // both at once for a read that failed (28 Oct 2026): fn runs again after the wait (the caller checks waiting(k) on its
+  // next draw) or once the phone is back online, whichever comes first
+  function retrySoon(k, fn) { retryLater(k); onlineRetry[k] = function () { delete S.retryAt[k]; fn(); }; }
   // a line that makes its day the last written day: anything not removed, apart from a function's platter lines
   function rollSource(x) { return !x.deleted && !x.fn; }
   function maybeRoll() {
@@ -1343,9 +1363,11 @@
     // lk.prep.rolled: the kitchen day this phone last rolled the prep list over (22 Oct 2026; it was kept in memory only,
     // so every reload read today and the last day again). Out of date at the next kitchen day.
     if (lsGet('lk.prep.rolled') === today) S.rolledFor = today;
-    if (!T.ready() || !S.authed || !fb || !can('add') || S.date !== today || S.itemsState !== 'ok' || S.rolledFor === today || waiting('roll')) return;
-    if (S.pastFor !== pastTag() || !learnedIn()) return; // the cut (cutFor) comes from the past days and summary/learned, so wait for them
+    if (!T.ready() || !S.authed || !fb || !can('add') || S.date !== today || S.itemsState !== 'ok' || !learnedIn()) return;
+    // the old copies' ahead marks need every past day, so repairAhead() waits for them by itself (once a day)
     repairAhead();
+    if (S.rolledFor === today || waiting('roll')) return;
+    if (!pastIn()) return; // the cut (cutFor) comes from the past days and summary/learned, so wait for them
     S.rolledFor = today;
     var dates = [], k;
     for (k = 1; k <= 7; k++) dates.push(shift(today, -k));
@@ -1884,7 +1906,7 @@
       .then(function () {
         S.moving = false; S.moveMsg = 'Copied ' + n + ' records. This device now uses the new PIN. Everyone else enters the new PIN next time they open the book.' +
           (skipped ? ' ' + skipped + ' sign-offs and seen records were left on the old PIN: the published rules do not let the head chef copy them yet.' : '');
-        S.pin = np; lsSet('lk.prep.pin', np); S.items = []; S.learned = []; S.lists = null; S.learnFor = ''; S.sections = []; S.activity = []; gForget();
+        S.pin = np; lsSet('lk.prep.pin', np); S.items = []; S.learned = []; S.lists = null; S.learnFor = ''; S.sections = []; S.activity = []; S.actState = ''; gForget();
         stopLive(); S.rolledFor = ''; lsSet('lk.prep.rolled', ''); S.learnRan = false; S.weekAt = 0; S.stats = null; S.xStats = null; S.xLines = [];
         connect();
       }).catch(function (e) { S.moving = false; S.moveMsg = e && e.code === 'permission-denied' ? 'The rules do not allow the new PIN yet. Nothing was changed on the old PIN.' : 'Stopped part way. Nothing was changed on the old PIN, so it is safe to try again.'; draw(); });
@@ -1929,6 +1951,8 @@
   }
   // the rollovers wait for summary/learned (or for its read to fail), so they know when the night list was written
   function learnedIn() { return S.learnFor === S.pin + '|' + dayNow() || waiting('learned'); }
+  // the same for the past days: read, or their read failed (the rollover then reads the days it needs itself)
+  function pastIn() { return S.pastFor === pastTag() || waiting('past'); }
   /* Lines that rolled over before the written-for-tomorrow rule (19 Oct 2026), or on a phone with older code: a copy
      that rolled once is checked against the time its original was written, and marked ahead for everyone if it was
      written after the cut. Once a day per phone, only today's list, no extra reads (the past days are cached). */
@@ -2250,10 +2274,16 @@
     if (S.pastFor && pastStamp('p') > (S.pastAt || 0)) { S.pastFor = ''; lsSet('lk.past', ''); draw(); }
     if (S.ordHistFor && pastStamp('o') > (S.ordHistAt || 0)) { S.ordHistFor = ''; lsSet('lk.ord.hist', ''); draw(); }
   }
+  /* The last 14 days of prep lines, for the hints (Pace, Due today, the usual amounts, closing time, the badges): one
+     query per day (one read per line, one for an empty day) once a day per phone, kept in lk.past (out of date at the
+     next kitchen day, or when a past day changed on another phone: pastStamp('p')). A day that could not be read (no
+     signal: the copy in memory answers, which counts as a failed read) is never taken as read (28 Oct 2026): the hints use
+     the days that came in, nothing is kept, and every day is read again after the 5-minute wait or once the phone is
+     back online. Before, that day stayed missing until the book was reloaded. */
   function loadPast() {
     if (!kitchenAccess() || !S.configFull) return;
     var today = dayNow(), tag = pastTag();
-    if (!fb || S.pastBusy || S.pastFor === tag) return;
+    if (!fb || S.pastBusy || S.pastFor === tag || waiting('past')) return;
     try { var c = JSON.parse(lsGet('lk.past') || 'null'); if (c && c.tag === tag && c.days && (c.at || 0) >= pastStamp('p')) { S.past = c.days; S.pastFor = tag; S.pastAt = c.at || 0; pastDerive(); return; } } catch (e) {}
     S.pastBusy = true;
     var at = now();
@@ -2262,8 +2292,9 @@
     Promise.all(dates.map(function (d) { return fb.fs.getDocs(itemsCol(d)).then(function (sn) { return [d, sn.docs.map(function (x) { var v = x.data(), o = { id: x.id }; PAST_KEYS.forEach(function (k) { if (v[k] != null && v[k] !== '' && v[k] !== false && v[k] !== 0) o[k] = v[k]; }); return o; })]; }, function () { return [d, null]; }); })).then(function (res) {
       var days = {}, ok = true;
       res.forEach(function (r) { if (r[1] === null) ok = false; else days[r[0]] = r[1]; });
-      S.past = days; S.pastFor = tag; S.pastAt = at; S.pastBusy = false;
-      if (ok) lsSet('lk.past', JSON.stringify({ tag: tag, days: days, at: at }));
+      S.past = days; S.pastBusy = false;
+      if (ok) { S.pastFor = tag; S.pastAt = at; lsSet('lk.past', JSON.stringify({ tag: tag, days: days, at: at })); }
+      else retrySoon('past', loadPast);
       pastDerive(); draw();
     });
   }
@@ -2376,16 +2407,23 @@
   }
 
   /* ---------- insights for the owner: numbers and charts from the last 30 days of lines ---------- */
+  /* The last 60 days of prep lines for Insights and Team (pastRead(): today and Refresh from the server, the past days
+     read today from this device's copy). A day that could not be read (no signal, a lost read) is never counted as a day
+     with no lines (28 Oct 2026): it is listed in miss, the pages say they could not load every day and offer no CSV, and
+     only those days are read again after the 5-minute wait or once the phone is back online (one query each). */
   function loadStats(force) {
     if (!kitchenAccess() || !S.configFull) return;
     if (!fb || S.configState !== 'ok') return;
-    if (S.stats && (S.stats.loading || !force)) return;
-    S.stats = { loading: true, days: {} };
-    var today = dayNow(), dates = [], i;
-    for (i = 0; i < 60; i++) dates.push(shift(today, -i));
-    Promise.all(dates.map(function (d) { return pastRead(itemsCol(d), 'd/' + d, d, false, force).then(function (s) { return [d, s.docs.map(function (x) { return x.data(); })]; }, function () { return [d, []]; }); })).then(function (res) {
-      var days = {}; res.forEach(function (r) { days[r[0]] = r[1]; });
-      S.stats = { loading: false, days: days, at: Date.now() };
+    var st = S.stats, part = !force && !!st && !st.loading && !!(st.miss && st.miss.length);
+    if (st && (st.loading || (!force && (st.busy || !part || waiting('stats'))))) return;
+    var today = dayNow(), dates = [], i, miss = [];
+    if (part) { dates = st.miss.slice(); st.busy = true; }
+    else { for (i = 0; i < 60; i++) dates.push(shift(today, -i)); st = S.stats = { loading: true, days: {} }; }
+    Promise.all(dates.map(function (d) { return pastRead(itemsCol(d), 'd/' + d, d, false, force).then(function (s) { return [d, s.docs.map(function (x) { return x.data(); })]; }, function () { miss.push(d); return [d, []]; }); })).then(function (res) {
+      if (S.stats !== st) return;   // a Refresh, or the person changed, while these were read
+      var days = part ? st.days : {}; res.forEach(function (r) { days[r[0]] = r[1]; });
+      S.stats = { loading: false, days: days, at: part ? st.at : Date.now(), miss: miss };
+      if (miss.length) retrySoon('stats', function () { loadStats(false); });
       draw();
     });
   }
@@ -2893,11 +2931,14 @@
   /* ---------- export (Insights, Team, Waste) ---------- */
   function rangeText(n) { var t = dayNow(); return n + ' days, ' + dayShort(shift(t, -(n - 1))) + ' to ' + dayShort(t); }
   // o: { at } for a page that compares nothing and has its own read time (Transfers)
+  // a day of prep lines could not be read (loadStats): said under the filters, and no CSV until it is in
+  function statsGaps() { return !!(S.stats && S.stats.miss && S.stats.miss.length); }
+  function statsMiss(st) { return st && st.miss && st.miss.length ? '<p class="p-err" role="alert">' + MISS_TEXT + '</p>' : ''; }
   function toolsHTML(kind, title, o) {
-    var n = S.statsRange, at = o ? o.at : S.stats && S.stats.at;
+    var n = S.statsRange, at = o ? o.at : S.stats && S.stats.at, gap = !o && statsGaps();
     return '<div class="a-tools"><div><h3 class="a-title">' + esc(title) + '</h3><span class="hint">' + esc(rangeText(n)) + (o ? '.' : ', compared with the ' + n + ' days before.') + '</span></div>' +
       // the export buttons fold into one Export menu, so the first screen is the numbers, not the buttons
-      '<details class="a-tbtns a-export"><summary class="btn">Export</summary><div class="btn-row"><button type="button" class="btn" data-p="csv" data-v="' + kind + '">Download CSV</button></div></details></div>' +
+      '<details class="a-tbtns a-export"><summary class="btn">Export</summary><div class="btn-row"><button type="button" class="btn" data-p="csv" data-v="' + kind + '"' + (gap ? ' disabled' : '') + '>Download CSV</button></div></details></div>' +
       (at ? '<p class="hint a-upd">Updated ' + esc(clock(at)) + '. Refresh reads the newest.</p>' : '');
   }
   function csvCell(v) { v = v == null ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
@@ -2910,6 +2951,7 @@
   function hm(ms) { return ms ? clock(ms) : ''; }
   function exportCSV(kind) {
     if (kind === 'waste') { whCSV(); return; }
+    if ((kind === 'insights' || kind === 'team') && statsGaps()) { toast(MISS_TEXT); return; }
     var n = S.statsRange, a = AF(), tag = dayNow() + '-' + n + 'd';
     if (kind === 'insights' && S.stats && !S.stats.loading) {
       var rows = [['Date', 'Weekday', 'Section', 'Line', 'Amount', 'Written by', 'Written on', 'Written at', 'Rolled over (times)', 'Ticked', 'Ticked by', 'Ticked at', 'Minutes to tick']];
@@ -2952,6 +2994,7 @@
     var st = S.stats, n = S.statsRange, a = AF();
     var head = '<section class="set-block a-ins">' + toolsHTML('insights', 'Insights') + filtersHTML('insights') + filterNote('insights');
     if (!st || st.loading) return head + '<p class="hint">Loading the last 60 days...</p></section>';
+    head += statsMiss(st);
     loadWStats(false);
     var agg = aggregate(n, 0), prev = aggregate(n, n);
     var med = agg.times.length ? agg.times[Math.floor(agg.times.length / 2)] : 0, pmed = prev.times.length ? prev.times[Math.floor(prev.times.length / 2)] : 0;
@@ -2981,18 +3024,18 @@
   var USE_NAMES = { quick: 'Quick add chips', usual: 'Usual amount chips', ordfill: 'Usual order amount filled in', fnneed: 'For the functions (Handy)', checks: 'To check before the functions' };
   function loadUsage() {
     if (!kitchenAccess() || !S.configFull) return;
-    if (S.useFor === dayNow() || S.useBusy || !fb || S.level !== 'owner') return;
+    if (S.useFor === dayNow() || S.useBusy || !fb || S.level !== 'owner' || waiting('use')) return;
     try { var c = JSON.parse(lsGet('lk.use') || 'null'); if (c && c.day === dayNow() && c.data) { S.use = c.data; S.useFor = c.day; return; } } catch (e) {}
     S.useBusy = true;
     fb.fs.getDoc(docRef('summary', 'usage')).then(function (sn) {
-      S.use = sn.exists() ? sn.data() : { days: {} }; S.useFor = dayNow(); S.useBusy = false;
+      S.use = sn.exists() ? sn.data() : { days: {} }; S.useFor = dayNow(); S.useBusy = false; S.useErr = false;
       lsSet('lk.use', JSON.stringify({ day: dayNow(), data: S.use })); draw();
-    }, function () { S.useBusy = false; });
+    }, function () { S.useBusy = false; S.useErr = true; retrySoon('use', loadUsage); draw(); });   // nothing kept, see COUNTS_FAIL
   }
   function usageHTML() {
     loadUsage();
     var u = S.use, days = u && u.days ? Object.keys(u.days) : [];
-    if (!u) return '<p class="hint">Loading...</p>';
+    if (!u) return S.useErr ? '<p class="hint" role="status">' + COUNTS_FAIL + '</p>' : '<p class="hint">Loading...</p>';
     if (!days.length) return '<p class="hint">Nothing counted yet. Phones send their counts once a day, and the nightly job adds them up.</p>';
     var f = {}, lcp = null, tap = null;
     days.forEach(function (d) {
@@ -3376,7 +3419,9 @@
     var peopleRows = (S.config.people || []).map(function (p) { var a = byId[p.id] || {}; return { id: p.id, name: p.name, added: Math.max(0, a.added || 0), ticked: Math.max(0, a.ticked || 0), visits: a.visits || 0, lastSeen: a.lastSeen || 0 }; });
     var topAdd = peopleRows.slice().sort(function (a, b) { return b.added - a.added; })[0];
     var topTick = peopleRows.slice().sort(function (a, b) { return b.ticked - a.ticked; })[0];
-    var people = '<section class="set-block"><span class="label">Who is writing and ticking (all time)</span><span class="hint">Counted in the background since this feature started. Ticks that are taken back are taken off.</span>' + lvHTML({
+    var people = '<section class="set-block"><span class="label">Who is writing and ticking (all time)</span><span class="hint">Counted in the background since this feature started. Ticks that are taken back are taken off.</span>' +
+      // no signal before the first answer: the counts are not in, so nobody is shown as never seen
+      (S.actState === 'offline' ? '<p class="hint" role="status">No signal. This table shows when the phone is back online.</p></section>' : lvHTML({
       key: 'stats-people', items: peopleRows, step: 10, tools: 10, noun: ['person', 'people'], ph: 'Search names', empty: 'No people yet.',
       find: function (r) { return r.name; },
       sorts: [['busy', 'Most written and ticked', function (a, b) { return (b.added + b.ticked) - (a.added + a.ticked); }], ['seen', 'Last seen', function (a, b) { return b.lastSeen - a.lastSeen; }], ['az', 'A to Z', function (a, b) { return a.name.toLowerCase().localeCompare(b.name.toLowerCase()); }]],
@@ -3387,7 +3432,7 @@
         { h: 'Sign-ins', html: function (r) { return String(r.visits); } },
         { h: 'Last seen', html: function (r) { return esc(ago(r.lastSeen)); } }
       ]
-    }) + '</section>';
+    }) + '</section>');
     var secs = '<section class="set-block"><span class="label">Sections people have written</span><span class="hint">Sections appear by themselves when someone types a new one. Hide one to stop it showing as a suggestion.</span>' + lvHTML({
       key: 'stats-sections', items: S.sections.slice(), step: 15, noun: ['section', 'sections'], ph: 'Search sections', empty: 'No sections yet.',
       find: function (x) { return x.name; },
@@ -3404,14 +3449,22 @@
     return part === 'sections' ? secs : people;
   }
   /* ---------- team: who writes where, who writes rarely, order tracking (owner) ---------- */
+  /* The last 30 order days for Team, like loadStats(): a day that could not be read is listed in miss, never counted
+     as a day with nothing ordered, and only those days are read again after the wait or once back online. raw keeps
+     every line read, so a day read later is folded in with ordNewest() over the whole set. */
   function loadOrdStats(force) {
     if (!fb || S.configState !== 'ok') return;
-    if (S.ordStats && (S.ordStats.loading || !force)) return;
-    S.ordStats = { loading: true, lines: [] };
-    var today = dayNow(), dates = [], i;
-    for (i = 0; i < 30; i++) dates.push(shift(today, -i));
-    Promise.all(dates.map(function (d) { return pastRead(ordCol(d), 'o/' + d, d, false, force).then(function (s) { return s.docs.map(function (x) { var v = x.data(); v.id = x.id; v.date = d; return v; }); }, function () { return []; }); })).then(function (l) {
-      S.ordStats = { loading: false, lines: ordNewest([].concat.apply([], l)) }; draw();
+    var st = S.ordStats, part = !force && !!st && !st.loading && !!(st.miss && st.miss.length);
+    if (st && (st.loading || (!force && (st.busy || !part || waiting('ordStats'))))) return;
+    var today = dayNow(), dates = [], i, miss = [];
+    if (part) { dates = st.miss.slice(); st.busy = true; }
+    else { for (i = 0; i < 30; i++) dates.push(shift(today, -i)); st = S.ordStats = { loading: true, lines: [] }; }
+    Promise.all(dates.map(function (d) { return pastRead(ordCol(d), 'o/' + d, d, false, force).then(function (s) { return s.docs.map(function (x) { var v = x.data(); v.id = x.id; v.date = d; return v; }); }, function () { miss.push(d); return []; }); })).then(function (l) {
+      if (S.ordStats !== st) return;   // a newer read, or the person changed, while these were read
+      var raw = [].concat.apply(part ? st.raw || [] : [], l);
+      S.ordStats = { loading: false, lines: ordNewest(raw), raw: raw, miss: miss };
+      if (miss.length) retrySoon('ordStats', function () { loadOrdStats(false); });
+      draw();
     });
   }
   function blankRec(id) { return { id: id, w: 0, days: {}, secDay: {}, secs: {}, t: 0, tdays: {}, tsecs: {}, tsecDay: {}, last: '' }; }
@@ -3489,7 +3542,7 @@
     loadOrdStats(false);
     var n = S.statsRange, td = teamData(n), people = (S.config.people || []).filter(function (p) { return p.active !== false; });
     var rows = people.map(function (p) { var r = td.per[p.id] || blankRec(p.id); return { p: p, r: r, h: habit(r, td), wd: Object.keys(r.days).length, tdN: Object.keys(r.tdays).length }; });
-    var chips = toolsHTML('team', 'Team') + filtersHTML('team');
+    var chips = toolsHTML('team', 'Team') + filtersHTML('team') + statsMiss(st);
     var habRows = rows.filter(function (x) { return x.h.tot; });
     var hab = habRows.length ? lvHTML({
       key: 'team-habits', items: habRows, step: 10, tools: 10, noun: ['person', 'people'], ph: 'Search names',
@@ -3582,7 +3635,7 @@
     });
     var lag = lines.filter(function (x) { var a = x.origAt || x.addedAt; return x.ordered && x.orderedAt && a && x.orderedAt > a; }).map(function (x) { return x.orderedAt - (x.origAt || x.addedAt); }).sort(function (a, b) { return a - b; });
     var old = lines.filter(function (x) { return !x.ordered && x.addedAt && now() - x.addedAt > 3 * 86400000; }).length;
-    return '<section class="set-block"><span class="label">Order list</span><span class="hint">Who put what on the order list and on which days, over the same time range. No scores, just a record.</span>' +
+    return '<section class="set-block"><span class="label">Order list</span><span class="hint">Who put what on the order list and on which days, over the same time range. No scores, just a record.</span>' + statsMiss(os) +
       '<div class="a-tiles"><div class="a-tile"><strong>' + lines.length + '</strong><span>lines written</span></div><div class="a-tile"><strong>' + ordered + '</strong><span>ticked as ordered</span></div><div class="a-tile"><strong>' + (lines.length - ordered) + '</strong><span>not yet ordered</span></div>' +
       '<div class="a-tile"><strong>' + (lag.length ? dur(lag[Math.floor(lag.length / 2)]) : 'n/a') + '</strong><span>typical time from written to ordered</span></div><div class="a-tile"><strong>' + old + '</strong><span>waiting more than 3 days</span></div></div>' +
       standingHTML(os.lines) +
@@ -4057,7 +4110,7 @@
   function loadOrdLearned() {
     if (!kitchenAccess() || !S.configFull) return;
     var tag = S.pin + '|' + dayNow();
-    if (!fb || S.ordLearnBusy || S.ordLearnFor === tag) return;
+    if (!fb || S.ordLearnBusy || S.ordLearnFor === tag || waiting('ordLearned')) return;
     try { var c = JSON.parse(lsGet('lk.ord.learned') || 'null'); if (c && c.tag === tag && c.list) { S.ordLearned = foldLearned(c.list); S.ordLearnFor = tag; S.ordLearnOk = true; return; } } catch (e) {}
     S.ordLearnBusy = true;
     // the nightly summary first: 1 read instead of up to 300 (22 Oct 2026); the old read when it is missing or old
@@ -4068,9 +4121,11 @@
     }).then(function (list) {
       S.ordLearned = foldLearned(list.map(function (x) { return { id: x.id, text: x.text || '', uses: x.uses || 0, dow: x.dow || {}, qtys: x.qtys || {}, hidden: !!x.hidden }; }));
       S.ordLearnFor = tag; S.ordLearnOk = true; S.ordLearnBusy = false; ordLearnSave(); draw();
-    }, function () {
-      // no signal, or rules without ordlearned (a new kitchen PIN): suggest from the last 14 days only, try again tomorrow
-      S.ordLearned = S.ordLearned || []; S.ordLearnFor = tag; S.ordLearnOk = false; S.ordLearnBusy = false;
+    }, function (e) {
+      // rules without ordlearned (a new kitchen PIN): suggest from the last 14 days only, try again tomorrow. No signal or
+      // a lost read (28 Oct 2026): the same for now, and read again after the 5-minute wait or once back online
+      S.ordLearned = S.ordLearned || []; S.ordLearnOk = false; S.ordLearnBusy = false;
+      if (e && e.code === 'permission-denied') S.ordLearnFor = tag; else retrySoon('ordLearned', loadOrdLearned);
     });
   }
   function ordLearnSave() { lsSet('lk.ord.learned', JSON.stringify({ tag: S.ordLearnFor, list: S.ordLearned || [] })); }
@@ -4476,16 +4531,21 @@
     S.wStats.reviews = S.wStats.reviews.filter(function (r) { return r.date !== d; }).concat([Object.assign({ date: d }, v)]);
   }
   /* Today's review on the wastage page for the head chef and sous chefs (head chef decision, 22 Oct 2026): one read of
-     waste/<today> when a chef opens the page, again on a new day. */
+     waste/<today> when a chef opens the page, again on a new day. A failed read (no signal) says so (28 Oct 2026) instead
+     of Loading... for good, and reads again after the 5-minute wait or once the phone is back online, not on every draw. */
   function rvChef() { return wAll() || isSous(); }
   /* the saved review the typing started from: the wastage page's today, or the admin form's day */
   function rvBase() { return S.wrWhere === 'page' ? S.wReview || {} : rvOf(S.rvDate || dayNow()); }
   function loadPageReview() {
     if (!kitchenAccess() || !S.configFull) return;
     var today = dayNow();
-    if (!fb || S.wReviewFor === today) return;
-    S.wReviewFor = today; S.wReview = null;
-    fb.fs.getDoc(wDay(today)).then(function (sn) { if (S.wReviewFor === today) { S.wReview = sn.exists() ? sn.data() : {}; draw(); } }, function () { S.wReviewFor = ''; retryLater('wReview'); });
+    if (!fb || S.wReviewFor === today || waiting('wReview')) return;
+    S.wReviewFor = today; S.wReview = null; S.wReviewErr = false;
+    fb.fs.getDoc(wDay(today)).then(function (sn) { if (S.wReviewFor === today) { S.wReview = sn.exists() ? sn.data() : {}; draw(); } }, function () {
+      if (S.wReviewFor !== today) return;
+      S.wReviewFor = ''; S.wReviewErr = true; retrySoon('wReview', loadPageReview);
+      draw();
+    });
   }
   function saveReview(where) {
     if (where === 'page' ? !rvChef() : !wAll()) return;
@@ -4570,7 +4630,7 @@
   }
   function pageReviewHTML() {
     loadPageReview();
-    if (!S.wReview) return '<section class="set-block w-review"><span class="label">End-of-day review</span><p class="hint">Loading...</p></section>';
+    if (!S.wReview) return '<section class="set-block w-review"><span class="label">End-of-day review</span>' + (S.wReviewErr ? '<p class="hint" role="status">Could not load today\'s review. Check the signal. The book tries again in a few minutes.</p>' : '<p class="hint">Loading...</p>') + '</section>';
     var r = S.wReview, ra = S.wrA != null ? S.wrA : (r.avoidable || ''), rc = S.wrC != null ? S.wrC : (r.change || '');
     return '<section class="set-block w-review"><span class="label">End-of-day review</span>' +
       '<div class="field"><label class="label" for="w-ra">Main avoidable waste today</label><textarea id="w-ra" class="w-ta" data-k="w-ra" maxlength="300" rows="2">' + esc(ra) + '</textarea></div>' +
@@ -4578,17 +4638,27 @@
       '<div class="btn-row"><button type="button" class="btn dark" data-p="wreview" data-v="page">Save the review</button></div>' +
       (r.reviewBy ? '<span class="hint">Last saved by ' + esc(r.reviewBy) + (r.reviewAt ? ' at ' + clock(r.reviewAt) : '') + '.</span>' : '') + '</section>';
   }
-  /* Last night's "change for the next shift" note, shown on the prep list (the latest of the last 3 days). */
+  /* Last night's "change for the next shift" note, shown on the prep list (the latest of the last 3 days): three getDoc
+     reads once a day per phone, kept in lk.w.note (out of date at the next kitchen day; a review saved on this phone
+     clears it). A day that could not be read (no signal) is never kept as "no note" (28 Oct 2026): a note that came in
+     shows, nothing is kept, and the three days are read again after the 5-minute wait or once the phone is back online.
+     Before, the whole day's prep lists went without the head chef's note. */
   function loadWNote() {
     if (!kitchenAccess() || !S.configFull) return;
     var today = dayNow();
-    if (!fb || S.wNoteFor === today) return;
+    if (!fb || S.wNoteFor === today || waiting('wNote')) return;
     S.wNoteFor = today;
     var tag = S.pin + '|' + today, c = dayCache('lk.w.note', tag);
     if (c) { S.wNote = c.n; return; }
-    var ds = [1, 2, 3].map(function (k) { return shift(today, -k); });
-    Promise.all(ds.map(function (d) { return fb.fs.getDoc(wDay(d)).then(function (sn) { return sn.exists() ? Object.assign({ date: d }, sn.data()) : null; }, function () { return null; }); })).then(function (l) {
-      S.wNote = l.filter(function (x) { return x && x.change; })[0] || null; dayCacheSet('lk.w.note', tag, { n: S.wNote }); draw();
+    var ds = [1, 2, 3].map(function (k) { return shift(today, -k); }), miss = 0;
+    Promise.all(ds.map(function (d) { return fb.fs.getDoc(wDay(d)).then(function (sn) { return sn.exists() ? Object.assign({ date: d }, sn.data()) : null; }, function () { miss++; return null; }); })).then(function (l) {
+      var n = l.filter(function (x) { return x && x.change; })[0] || null;
+      if (miss) {
+        if (n) { S.wNote = n; draw(); }
+        S.wNoteFor = ''; retrySoon('wNote', loadWNote);
+        return;
+      }
+      S.wNote = n; dayCacheSet('lk.w.note', tag, { n: S.wNote }); draw();
     });
   }
   function wNoteHTML() {
@@ -5012,9 +5082,13 @@
   /* what the bell shows: on (pings or minutes are on for this phone), today's pings, an unread one, minutes to sign */
   function noteInfo() {
     var on = /^\d{4,6}$/.test(S.pin) && (featOn('pings') || featOn('minutes'));
-    return { on: on, error: !!S.nPrivateError, n: todaysNotes().length, unread: noteUnread(), sign: featOn('minutes') ? mnUnsigned().length : 0 };
+    return { on: on, error: !!S.nPrivateError, failed: notesFailed(), n: todaysNotes().length, unread: noteUnread(), sign: featOn('minutes') ? mnUnsigned().length : 0 };
   }
-  function noteBellLabel(i) { return (i.error ? 'Individual pings could not be checked. ' : '') + (i.n ? i.n + ' shift ping' + (i.n === 1 ? '' : 's') + ' on now' : 'No shift pings on now') + (i.unread ? ', new' : '') + (i.sign ? '. Minutes to sign: ' + i.sign : ''); }
+  // today's pings not read at all yet (no signal): the bell says so, never "No shift pings on now"
+  function noteBellLabel(i) {
+    var count = i.n ? i.n + ' shift ping' + (i.n === 1 ? '' : 's') + ' on now' + (i.unread ? ', new' : '') : i.failed ? '' : 'No shift pings on now';
+    return [i.failed ? 'Shift pings could not be checked' : i.error ? 'Individual pings could not be checked' : '', count, i.sign ? 'Minutes to sign: ' + i.sign : ''].filter(Boolean).join('. ');
+  }
   /* The bell in the top bar (23 Oct 2026): there every day while pings or minutes are on, so the top bar keeps one shape.
      It has a dot while a ping is unread or minutes are waiting to be signed, and opens the same sheet at any time. */
   function noteBell() {
@@ -5046,15 +5120,21 @@
     var filters = [fb.fs.where('until', '>=', today)];
     if (!manageNotes()) filters.push(fb.fs.where('to', '==', S.who));
     // Personal pings must be checked against the server, never an offline copy from a previous identity.
+    // When that check fails (no signal, a slow or lost read), the personal pings this phone already read for this person
+    // stay (28 Oct 2026; S.notes is cleared on every handover, and the epoch drops a late answer), the warning shows, and
+    // the pings are read again in 5 minutes or once the phone is back online, not after 30.
+    var personalFailed = false;
     var personal = noteQuery(fb.fs.query.apply(null, [colRef('directnotes')].concat(filters))).then(function (snap) { return noteRows(snap, true); }, function (e) {
       if (epoch === accessEpoch) S.nPrivateError = e && e.code === 'failed-precondition' ? 'Individual pings are not ready yet. Ask the head chef to finish publishing the ping index.' : 'Could not check individual pings. Check the connection and refresh.';
-      return [];
+      personalFailed = true;
+      return (S.notes || []).filter(function (n) { return directNote(n.id); });
     });
     S.nPrivateError = '';
     Promise.all([general, personal]).then(function (snaps) {
       if (epoch !== accessEpoch) return;
       S.notes = noteRows(snaps[0], false).concat(snaps[1]);
       S.notesFor = today; S.notesAt = Date.now(); S.notesRead = readAt; S.notesBusy = false; S.notesErr = false;
+      if (personalFailed) { S.notesAt = Date.now() - NOTE_STALE + 5 * 60000; onlineRetry.notes = function () { loadNotes(true); }; }
       if (S.nJust) { if (S.nJust.k === noteSeenKey()) noteJustSaved(S.nJust.id); S.nJust = null; }
       noteBell(); noteRefresh(); noteMaybePop(); draw();
     }, function () {
@@ -6475,15 +6555,22 @@
       lsSet('lk.views', JSON.stringify(cur)); flushingV = false;
     }, function () { flushingV = false; });
   }
+  /* The admin Insights counts read from Firestore (card opens, empty searches, summary/usage). A failed read (no signal)
+     is never shown as none (28 Oct 2026): what was read stays, the card says it could not load, and it reads again after
+     the 5-minute wait or once the phone is back online, never on every draw. */
+  var COUNTS_FAIL = 'Could not load these counts. Check the signal. The book tries again by itself in a few minutes.';
+  // views/<recipe id>: one query (one read per card opened at least once) when Insights opens
   function loadViews(force) {
     if (!kitchenAccess() || !S.configFull) return;
-    if (!fb || S.configState !== 'ok' || S.viewBusy || (S.views && !force)) return;
+    if (!fb || S.configState !== 'ok' || S.viewBusy || (!force && (S.views || waiting('views')))) return;
     S.viewBusy = true;
-    fb.fs.getDocs(colRef('views')).then(function (sn) { var m = {}; sn.docs.forEach(function (d) { m[d.id] = d.data(); }); S.views = m; S.viewBusy = false; draw(); }, function () { S.views = {}; S.viewBusy = false; });
+    fb.fs.getDocs(colRef('views')).then(function (sn) { var m = {}; sn.docs.forEach(function (d) { m[d.id] = d.data(); }); S.views = m; S.viewBusy = false; S.viewErr = false; draw(); }, function () {
+      S.viewBusy = false; S.viewErr = true; retrySoon('views', function () { loadViews(true); }); draw();
+    });
   }
   function viewsHTML() {
     loadViews(false);
-    if (!S.views) return '';
+    if (!S.views) return S.viewErr ? '<h3 class="a-ch-h">Recipe cards opened</h3><p class="hint" role="status">' + COUNTS_FAIL + '</p>' : '';
     var vm = S.views, ids = Object.keys(vm).filter(function (id) { return recipeById(id); }).sort(function (a, b) { return (vm[b].n || 0) - (vm[a].n || 0); });
     var dishes = D.recipes.filter(function (r) { return !vm[r.id]; });
     var total = 0; ids.forEach(function (id) { total += vm[id].n || 0; });
@@ -6500,17 +6587,21 @@
       }) + '<p class="hint">' + total + ' opens counted so far.</p>' : '<p class="hint">No card opens counted yet.</p>') +
       (ids.length ? '<details class="a-details"><summary>Not opened yet (' + dishes.length + ' cards)</summary><p>' + dishes.map(function (r) { return esc(r.name); }).join(', ') + '</p></details>' : '');
   }
+  // misses/<search>: one query (one read per empty search kept) when Insights opens, again after a Hide
   function loadMisses(force) {
     if (!kitchenAccess() || !S.configFull) return;
-    if (!fb || S.configState !== 'ok' || S.missBusy || (S.misses && !force)) return;
+    if (!fb || S.configState !== 'ok' || S.missBusy || (!force && (S.misses || waiting('misses')))) return;
     S.missBusy = true;
-    fb.fs.getDocs(colRef('misses')).then(function (sn) { S.misses = sn.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }); S.missBusy = false; draw(); }, function () { S.misses = []; S.missBusy = false; });
+    fb.fs.getDocs(colRef('misses')).then(function (sn) { S.misses = sn.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }); S.missBusy = false; S.missErr = false; draw(); }, function () {
+      S.missBusy = false; S.missErr = true; retrySoon('misses', function () { loadMisses(true); }); draw();
+    });
   }
   function missesHTML() {
     loadMisses(false);
     var l = (S.misses || []).filter(function (x) { return !x.hidden && x.q; }).sort(function (a, b) { return (b.n || 0) - (a.n || 0) || (b.last || 0) - (a.last || 0); });
     return '<h3 class="a-ch-h">Searched for, not in the book</h3><span class="hint">Recipe book searches that found nothing, sent from phones where someone is signed in to the prep book. These are the cards people are looking for. Hide one once the card is written.</span>' +
-      (l.length ? lvHTML({
+      // not read yet, or the read failed: never "No empty searches yet"
+      (!S.misses ? '<p class="hint"' + (S.missErr ? ' role="status">' + COUNTS_FAIL : '>Loading...') + '</p>' : l.length ? lvHTML({
         key: 'ins-misses', items: l, step: 10, tools: 10, noun: ['search', 'searches'], ph: 'Search these',
         find: function (x) { return x.q + ' ' + (x.lastBy || ''); },
         sorts: [['most', 'Most often', function (a, b) { return (b.n || 0) - (a.n || 0) || (b.last || 0) - (a.last || 0); }], ['new', 'Most recent', function (a, b) { return (b.last || 0) - (a.last || 0); }], ['az', 'A to Z', function (a, b) { return String(a.q).toLowerCase().localeCompare(String(b.q).toLowerCase()); }]],
@@ -7397,8 +7488,13 @@
      chef's phone (their PIN session) or the head chef's Google account, only while cut-offs are set: one read per record of
      those two days (ticks and taken-off ticks, one when there are none) when the book opens, then only what changes. It moves on when the kitchen day changes, and starts as soon as
      this phone may read (cutWatch() runs on every paint, so a Google account checked or a PIN session opened late is
-     caught). A refused or failed read keeps what this phone last saw (the bar and the pushes carry on). */
-  var cutSub = null, cutSubKey = '', cutSeen = {}, cutWrites = Object.create(null);
+     caught). A refused or failed read keeps what this phone last saw (the bar and the pushes carry on).
+     No signal (28 Oct 2026): the listener started again (the kitchen day changed, a chef signed in) answers at once
+     from the copy in memory, which holds at most this phone's own unsent ticks. That is not the server's list
+     (listSnap(), cutState 'offline'): the ticks already read for a day the listener still covers stay, with this
+     phone's own on top, and the bar and the tick list say ticks from other phones are not in yet. Otherwise a supplier
+     another chef ordered showed as not ordered after midnight, and could be ordered twice. */
+  var cutSub = null, cutSubKey = '', cutSeen = {}, cutWrites = Object.create(null), cutState = 'loading', cutSnap = {};
   function cutHas() { return cutWho() && cutList().some(function (s) { return s.at >= 0 && s.dd.length; }); }
   function cutCanRead() { return !!fb && !!S.pin && cutHas() && (canW() || (!!S.user && S.level === 'owner')); }
   var cutErr = { key: '', at: 0 };
@@ -7410,20 +7506,36 @@
     if (want === cutSubKey) return;
     if (want && cutErr.key === want + '|' + cutReader() && Date.now() - cutErr.at < 300000) return;
     if (cutSub) cutSub();
-    if (cutSubKey) cutSeen = {};   // another kitchen PIN, day or person: a tick just made on this phone (before the first read) stays
-    cutSub = null; cutSubKey = want;
+    var days = want ? [dayNow(), shift(dayNow(), 1)] : [];
+    // another kitchen PIN: nothing kept. The next kitchen day on the same PIN: the ticks of a day still covered (the day
+    // that was tomorrow) stay until the server answers. A tick just made on this phone before the first read stays too.
+    if (cutSubKey) {
+      var kept = {};
+      if (cutSubKey.split('|')[0] === S.pin) Object.keys(cutSeen).forEach(function (k) { if (days.indexOf(k.split('|')[1]) >= 0) kept[k] = cutSeen[k]; });
+      cutSeen = kept;
+    }
+    cutSub = null; cutSubKey = want; cutState = 'loading'; cutSnap = {};
     if (!want) { cutSeen = {}; return; }
-    var days = [dayNow(), shift(dayNow(), 1)];
-    cutSub = fb.fs.onSnapshot(fb.fs.query(colRef('cutdone'), fb.fs.where('day', 'in', days)), function (sn) {
-      var seen = {};
-      sn.docs.forEach(function (d) { var x = d.data(); if (x && x.on === true && typeof x.sid === 'string' && days.indexOf(x.day) >= 0) seen[x.sid + '|' + x.day] = { by: typeof x.by === 'string' ? x.by : '', at: typeof x.at === 'number' ? x.at : 0 }; });
-      cutSeen = seen;
+    // includeMetadataChanges: the server's first answer comes in even when it is the same as the copy (no billed reads)
+    cutSub = fb.fs.onSnapshot(fb.fs.query(colRef('cutdone'), fb.fs.where('day', 'in', days)), { includeMetadataChanges: true }, function (sn) {
+      var k = listSnap(sn, cutState, cutSnap);
+      if (k === 'same') return;
+      // 'wait': only this phone's unsent ticks, laid over the ticks kept; otherwise the server's list as it is
+      var seen = k === 'wait' ? Object.assign({}, cutSeen) : {};
+      sn.docs.forEach(function (d) {
+        var x = d.data(); if (!x || typeof x.sid !== 'string' || days.indexOf(x.day) < 0) return;
+        if (x.on === true) seen[x.sid + '|' + x.day] = { by: typeof x.by === 'string' ? x.by : '', at: typeof x.at === 'number' ? x.at : 0 };
+        else delete seen[x.sid + '|' + x.day];
+      });
+      cutSeen = seen; cutState = k === 'wait' ? 'offline' : 'ok';
       cutShow();
     }, function () { if (cutSub) cutSub(); cutSub = null; cutErr = { key: cutSubKey + '|' + cutReader(), at: Date.now() }; cutSubKey = ''; });
   }
   // the shared ticks changed on this phone: the bar, the tick lists and the card in Supplier order (lk-cut) follow
   function cutShow() { cutPaint(); if (S.name === 'orders' || S.name === 'todo') draw(); try { window.dispatchEvent(new Event('lk-cut')); } catch (e) {} }
-  function cutStop() { if (cutSub) cutSub(); cutSub = null; cutSubKey = ''; cutSeen = {}; }
+  function cutStop() { if (cutSub) cutSub(); cutSub = null; cutSubKey = ''; cutSeen = {}; cutState = 'loading'; }
+  // the ticks are not in from the server yet (no signal): said on the bar and above the tick list
+  var CUT_OFF = 'No signal. Orders ticked on other phones show when the phone is back online.';
   // what is ticked: { '<supplier id>|<cut-off day>': { by, at } }
   function cutDone() { return cutSeen; }
   function cutByName(v) { return !v.by ? '' : v.by === 'owner' ? 'Head chef' : (ksName(v.by) || 'Former staff'); }
@@ -7463,7 +7575,8 @@
     if (!cutWho()) return '';
     var m = T.mins(), done = cutDone(), xs = cutOn(0).concat(cutOn(1)).filter(function (c) { return cutOnNow(c, m) && !done[c.key]; });
     if (!xs.length) return '';
-    return '<div class="cut-top"><h2 class="cut-h">Order cut-off' + (xs.length > 1 ? 's' : '') + '</h2><a class="cut-go" href="#/orders">Order list</a></div><ul class="cut-list">' + xs.map(function (c) {
+    return '<div class="cut-top"><h2 class="cut-h">Order cut-off' + (xs.length > 1 ? 's' : '') + '</h2><a class="cut-go" href="#/orders">Order list</a></div>' +
+      (cutState === 'offline' ? '<p class="hint cut-note" role="status">' + CUT_OFF + '</p>' : '') + '<ul class="cut-list">' + xs.map(function (c) {
       var left = c.at - m, soon = left <= CUT_SOON;
       return '<li class="cut-row' + (soon ? ' is-soon' : '') + '"><a class="cut-n" href="#/suppliers/cutoff/' + encodeURIComponent(c.s.id) + '/' + encodeURIComponent(c.day) + '">' + esc(c.s.name) + '</a><span class="cut-t">' + (soon ? '<b class="cut-now">Order now</b> ' : '') + 'by ' + (c.at >= 1440 ? 'tomorrow ' : '') + hhmm(c.at % 1440) + ' <b>' + cutIn(left) + '</b> <span class="cut-for">' + esc(cutDel(c)) + '</span></span>' +
         '<button type="button" class="cut-done" data-cut="done" data-id="' + esc(c.key) + '" aria-label="' + esc('Order done for ' + c.s.name + ': confirm without quantities') + '"' + (cutCanTick() ? '' : ' disabled') + '>Order done</button></li>';
@@ -7516,7 +7629,7 @@
   function cutRowsHTML() {
     var m = T.mins(), done = cutDone(), xs = cutToday().concat(cutOn(1).filter(function (c) { return cutOnNow(c, m); }));
     if (!xs.length) return '<p class="hint">No cut-offs today.</p>';
-    return '<ul class="cut-tl">' + xs.map(function (c) {
+    return (cutState === 'offline' ? '<p class="hint cut-note" role="status">' + CUT_OFF + '</p>' : '') + '<ul class="cut-tl">' + xs.map(function (c) {
       var d = done[c.key], past = c.at <= m, who = d ? cutByName(d) : '';
       var st = d ? 'Ordered' + (who ? ' by ' + who : '') + (d.at ? ', ' + clock(d.at) : '') : past ? 'Closed, not ticked' : cutIn(c.at - m);
       var cls = d ? 'is-done' : past ? 'is-past' : c.at - m <= CUT_SOON ? 'is-soon' : '';
@@ -8241,7 +8354,8 @@
   var ML_PRI = [['today', 'Today'], ['week', 'This week'], ['any', 'Whenever']];
   var ML_MAX = 600, ML_STALE = 30 * 60000, ML_NUDGE = 10 * 3600000, ML_DONE_DAYS = 30, ML_KEEP = 60 * 86400000, ML_SENT_MAX = 40;
   var mlf = { cat: '', pri: 'week', text: '' }, mlMsg = '', mlBusy = false, mlStatAt = 0, mlStatBusy = false;
-  var mlOpen = null, mlErr = false, mlDone = null, mlAt = 0, mlBusyR = false, mlDoneAt = 0, mlOpened = +(lsGet('lk.mail.opened') || 0), mlOpenedW = 0, mlPop = null, mlPrev = null, mlLastN = -1;
+  // mlDoneIn: the done list came in from the server at least once (a tick alone does not make it the whole list)
+  var mlOpen = null, mlErr = false, mlDone = null, mlDoneIn = false, mlDoneBusy = false, mlDoneErr = false, mlAt = 0, mlBusyR = false, mlDoneAt = 0, mlOpened = +(lsGet('lk.mail.opened') || 0), mlOpenedW = 0, mlPop = null, mlPrev = null, mlLastN = -1;
   function mlCat(id) { var c = ML_CATS.filter(function (x) { return x[0] === id; })[0]; return c ? c[1] : 'Other'; }
   function mlPri(id) { var c = ML_PRI.filter(function (x) { return x[0] === id; })[0]; return c ? c[1] : 'Whenever'; }
   function mlWhen(ms) { return dayShort(T.day(ms)) + ', ' + clock(ms); }
@@ -8349,14 +8463,19 @@
       mlTell(); draw();
     });
   }
-  /* the ticked mail of the last 30 days, read once when the Mail tab opens */
+  /* the ticked mail of the last 30 days: one query (one read per message) when the Mail tab opens, again after 30
+     minutes. A failed read (no signal) is never shown as none (28 Oct 2026): the list kept stays, the box says it could
+     not load with no count, and it reads again in about 5 minutes or once the phone is back online, not on every draw. */
   function loadMailDone(force) {
     if (!kitchenAccess() || !S.configFull) return;
-    if (!mlReader() || (!force && mlDone && Date.now() - mlDoneAt < ML_STALE)) return;
-    mlDoneAt = Date.now(); if (!mlDone) mlDone = [];
+    if (!mlReader() || mlDoneBusy || (!force && mlDoneAt && Date.now() - mlDoneAt < ML_STALE)) return;
+    mlDoneAt = Date.now(); mlDoneBusy = true;
     fb.fs.getDocs(fb.fs.query(colRef('mail'), fb.fs.where('doneAt', '>=', now() - ML_DONE_DAYS * 86400000))).then(function (sn) {
-      mlDone = mlGrab(sn).filter(function (x) { return x.done; }); draw();
-    }, function () { mlDoneAt = 0; });
+      mlDoneBusy = false; mlDoneErr = false; mlDoneIn = true; mlDone = mlGrab(sn).filter(function (x) { return x.done; }); draw();
+    }, function () {
+      mlDoneBusy = false; mlDoneErr = true; mlDoneAt = Date.now() - ML_STALE + 5 * 60000;
+      onlineRetry.mailDone = function () { loadMailDone(true); }; draw();
+    });
   }
   function mlOnTab() { return S.name === 'admin' && (S.atab || 'insights') === 'mail' && !!S.root && document.body.contains(S.root) && document.visibilityState !== 'hidden'; }
   /* the Mail tab is open: everything on it counts as seen, and the nudge clock starts again (saved with the head chef's
@@ -8395,12 +8514,16 @@
     loadMail(); loadMailDone();
     if (!mlOpen || mlErr) return '<section class="set-block"><span class="label">' + title + '</span><p class="hint">' + (mlErr ? 'Could not load the mail. Check the signal. The book tries again in a few minutes.' : 'Loading...') + '</p></section>';
     var done = (mlDone || []).slice().sort(function (a, b) { return (b.doneAt || 0) - (a.doneAt || 0); });
+    // the done list only once it came in from the server, and its count only while it is the newest: no "(0)" and no
+    // "Nothing ticked off" from a read that failed (a list read earlier stays under the note)
+    var doneNote = mlDoneErr ? '<p class="hint" role="status">Could not load the done mail. Check the signal. The book tries again in a few minutes.</p>' : mlDoneIn ? '' : '<p class="hint">Loading...</p>';
+    var doneBody = mlDoneIn ? lvHTML({ key: 'maildone', items: done, step: 15, noun: ['message', 'messages'], ph: 'Search done mail', find: mlFind, filters: mlFilters(), card: mlRow, empty: 'Nothing ticked off in the last 30 days.' }) : '';
     return '<section class="set-block ml-admin"><span class="label">' + title + '</span><span class="hint">' + hint + '</span>' +
       lvHTML({ key: 'mail', items: mlOpen, step: 20, noun: ['open message', 'open messages'], ph: 'Search mail', find: mlFind, filters: mlFilters(),
         sorts: [['pri', 'Most urgent first', function (a, b) { return mlRank(a) - mlRank(b) || (a.at || 0) - (b.at || 0); }], ['new', 'Newest first', function (a, b) { return (b.at || 0) - (a.at || 0); }], ['old', 'Oldest first', function (a, b) { return (a.at || 0) - (b.at || 0); }]],
         card: mlRow, empty: 'No open mail. Everything is dealt with.' }) + mlSeenSoon() +
-      '<details class="ml-donebox"' + (S.mlDoneOpen ? ' open' : '') + '><summary data-p="ml-donebox">Done in the last 30 days (' + done.length + ')</summary>' +
-      lvHTML({ key: 'maildone', items: done, step: 15, noun: ['message', 'messages'], ph: 'Search done mail', find: mlFind, filters: mlFilters(), card: mlRow, empty: 'Nothing ticked off in the last 30 days.' }) + '</details>' + (foot || '') + '</section>';
+      '<details class="ml-donebox"' + (S.mlDoneOpen ? ' open' : '') + '><summary data-p="ml-donebox">Done in the last 30 days' + (mlDoneIn && !mlDoneErr ? ' (' + done.length + ')' : '') + '</summary>' +
+      doneNote + doneBody + '</details>' + (foot || '') + '</section>';
   }
   function mlTick(id) {
     var x = (mlOpen || []).concat(mlDone || []).filter(function (m) { return m.id === id; })[0];

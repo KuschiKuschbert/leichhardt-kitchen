@@ -67,5 +67,25 @@ const dump=p=>p.evaluate(()=>__fake.dump());
  ok(await p.evaluate(()=>!LK_PREP.state.notesBusy&&!!LK_PREP.state.nPrivateError),'slow connection: a stalled private query times out and releases the loading state');
  ok((await L.txt(p,'.nt')).includes('Whole kitchen brief'),'slow connection: Everyone pings remain available');
  ok(!p.errors.length,'failed read: no page errors');await p.context().close();
+ // the personal check fails after a good read (no signal, a lost read; 28 Oct 2026): the personal ping already read for
+ // this person stays with the warning, and the pings are read again once the phone is back online, not after 30 minutes
+ p=await L.open(b,'#/prep',{who:'ann',extra,wait:1800});
+ await L.waitFor(p,()=>(LK_PREP.state.notes||[]).some(n=>n.text==='Ann private brief'),null,6000).catch(()=>{});
+ await p.evaluate(()=>{__fake.failReads=/directnotes/;const k=Object.keys(__fake.dump()).find(x=>/config\/main$/.test(x)),c=__fake.dump()[k];c.pastEdit=Object.assign({},c.pastEdit||{},{n:Date.now()+5000});__fake.write(k,c);});
+ await L.waitFor(p,()=>!!LK_PREP.state.nPrivateError,null,6000).catch(()=>{});
+ ok(await p.evaluate(()=>(LK_PREP.state.notes||[]).some(n=>n.text==='Ann private brief')),'personal check failed after a good read: Ann\'s ping already read stays');
+ if(!await p.$('.nt'))await p.click('.nbell');await L.settle(p,250);
+ const kept=await L.txt(p,'.nt')||'';ok(kept.includes('Ann private brief')&&kept.includes('Could not check individual pings'),'personal check failed: the sheet keeps her ping, with the warning');
+ await p.keyboard.press('Escape');await L.settle(p,300);
+ const dn0=await p.evaluate(()=>__fake.reads.filter(k=>/directnotes/.test(k)).length);
+ await p.evaluate(()=>{__fake.failReads=null;window.dispatchEvent(new Event('online'));});
+ ok(await L.waitFor(p,d=>__fake.reads.filter(k=>/directnotes/.test(k)).length>d&&!LK_PREP.state.nPrivateError,dn0,6000).then(()=>true,()=>false),'personal check, signal back: read again by itself, and the warning goes');
+ ok(!p.errors.length,'personal check failed: no page errors');await p.context().close();
+ // opened with no signal: neither kind of ping is read, so the bell never says there are none
+ p=await L.open(b,'#/prep',{who:'ann',extra,cold:'notes$',wait:1800});
+ await L.waitFor(p,()=>!!LK_PREP.state.notesErr,null,6000).catch(()=>{});
+ const lab=await p.evaluate(()=>(document.querySelector('.nbell')||{getAttribute:()=>''}).getAttribute('aria-label')||'');
+ ok(!/No shift pings on now/.test(lab)&&/^Shift pings could not be checked/.test(lab),'no signal: the bell says the pings could not be checked, not that there are none ('+lab+')');
+ ok(!p.errors.length,'no signal bell: no page errors');await p.context().close();
  await b.close();L.report(R);
 })().catch(e=>{console.error(e);process.exit(1)});

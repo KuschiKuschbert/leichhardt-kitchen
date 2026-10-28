@@ -1128,6 +1128,42 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     ok(await reloaded(p), 'the internet back with no online event: it updates within 11 minutes');
   });
 
+  // 25. the server has a change while the strip is still up: the listener's 'same' snapshot patches the row's Not sent
+  // mark in place (patchOrDraw(), patchLines()), with no redraw, and the row keeps the mark's room (28 Oct 2026; no test
+  // reached it before). __fake.ack() lets the listeners hear the server's confirm while the write's own promise waits
+  // (its .then() draws), and __fake.quiet stops the stand-in telling every other listener too, which redrew the page.
+  // An added order line, an order line under Ordered today, and an added prep line.
+  const ROWS = [['orders, an added line', '#/orders', 'Lemons'], ['orders, Ordered today', '#/orders', 'Milk'], ['prep, an added line', '#/prep', 'Zest limes']];
+  for (const [what, hash, text] of ROWS) {
+    await step('25 ' + what, async () => {
+      p = await L.open(b, hash, { who: 'sam', wait: 1500 });
+      await p.context().setOffline(true);
+      await p.evaluate(() => { window.__fake.mode = 'hold'; window.__fake.quiet = true; });
+      await L.settle(p, 300);
+      if (text === 'Milk') {
+        await p.evaluate(() => [...document.querySelectorAll('.nb-row')].find(r => /^Milk/.test((r.querySelector('.nb-t') || {}).textContent || '')).querySelector('.nb-box').click());
+        // 10 minutes on, the ticked line leaves the list for Ordered today (a touch each minute, so nobody is signed out)
+        for (let i = 0; i < 11; i++) { await p.mouse.move(30 + i, 30); await p.clock.runFor(60000); }
+        await L.settle(p, 500);
+      } else {
+        const box = hash === '#/orders' ? '#o-text' : '#p-text';
+        await p.fill(box, text); await p.press(box, 'Enter'); await L.settle(p, 500);
+      }
+      // the row the line is in: Ordered today's li for Milk, the list's row otherwise
+      const tag = await p.evaluate(t => { const r = [...document.querySelectorAll(t === 'Milk' ? '.nb-done li[data-ln]' : '.nb-rows .nb-row')].find(x => x.textContent.indexOf(t) >= 0); if (!r) return 'no row'; r.__k = 1; return r.querySelector('.nb-unsent') ? 'shown' : 'none'; }, text);
+      ok(tag === 'shown', what + ': with no signal the line shows Not sent (' + tag + ')');
+      await p.evaluate(() => window.__fake.ack());
+      await L.settle(p, 400);
+      const s = await p.evaluate(t => { const r = [...document.querySelectorAll('[data-ln]')].find(x => x.__k === 1); return r ? { same: true, inPage: document.body.contains(r) && r.textContent.indexOf(t) >= 0, unsent: !!r.querySelector('.nb-unsent'), held: !!r.querySelector('.nb-held'), strip: !!document.querySelector('.p-sync') } : { same: false }; }, text);
+      ok(s.same && s.inPage && !s.unsent && s.held && s.strip, what + ': the server has it, so the mark goes from the same row, which keeps its room under the strip (' + JSON.stringify(s) + ')');
+      ok(!(await L.overflow(p)), what + ': no sideways scroll at 390');
+      await release(p);
+      await p.context().setOffline(false);
+      await L.settle(p, 300);
+      ok(errs(p).length === 0, what + ': no page errors ' + errs(p).join(' | '));
+    });
+  }
+
   await b.close();
   L.report(R);
 })().catch(e => { console.error(e); console.log(R.join('\n')); process.exit(1); });

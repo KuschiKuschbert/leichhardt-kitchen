@@ -70,6 +70,53 @@ const errs = p => p.errors.filter(e => !/Failed to load resource/.test(e));
   ok(rm.art === '@rump-on-mash-plate' && rm.side === '@rump-on-mash-side' && (s[fsKey(['drawings', 'rump-on-mash-plate'])] || {}).v === 1 && sd.v === 1 && sd.layout && sd.layout.auto, 'new dish: the recipe links to both');
   ok((rm.pins || []).some(x => x.label === 'Rump steak') && (rm.pins || []).some(x => x.label === 'Pepper sauce'), 'new dish: Pass labels for its ingredients');
   ok(!errs(p).length, 'new dish: no page errors ' + errs(p).join(' | '));
+  // saved again while the plate drawing cannot be read for the side view (a weak signal; 28 Oct 2026): the plate is
+  // drawn again, and the side view is left as it was, never drawn from a guessed plate and saved. The read that fails
+  // is the plate's, straight after the side view's own read.
+  await p.evaluate(() => {
+    const fs = window.LK_PREP.book().fs(), orig = fs.getDocFromServer; let last = '';
+    fs.getDocFromServer = function (ref) { const k = (ref.path || []).join('/'), was = last; last = k; return /drawings\/rump-on-mash-plate$/.test(k) && /drawings\/rump-on-mash-side$/.test(was) ? Promise.reject({ code: 'unavailable' }) : orig.apply(this, arguments); };
+  });
+  await p.click('[data-mg="ing-add"]'); await L.settle(p, 150);
+  const kw = await p.evaluate(() => document.querySelectorAll('.mg-ing').length - 1);
+  await p.fill('[data-f="ing.' + kw + '.q"]', '20 g'); await p.fill('[data-f="ing.' + kw + '.name"]', 'Watercress');
+  await L.settle(p, 200);
+  await p.click('[data-mg="save"]');
+  await wait(p, () => /Redrawn:/.test(Array.from(document.querySelectorAll('.mg-toasts .p-toast')).map(t => t.textContent).join(' ')), null, 30000);
+  await L.settle(p, 800);
+  s = await store(p);
+  const pl2 = s[fsKey(['drawings', 'rump-on-mash-plate'])] || {}, sd2 = s[fsKey(['drawings', 'rump-on-mash-side'])] || {};
+  ok(pl2.v === 2 && sd2.v === 1 && JSON.stringify(sd2.els) === JSON.stringify(sd.els), 'plate unreadable for the side view: the plate is drawn again (version ' + pl2.v + '), the side view is left as it was (version ' + sd2.v + ')');
+  ok(!errs(p).length, 'plate unreadable on save: no page errors ' + errs(p).join(' | '));
+  const kept = s;
+  await p.context().close();
+
+  // Draw it for me on the side view while the plate drawing cannot be read: it says so and draws nothing from a guess
+  p = await L.open(b, '#/manage/draw/rump-on-mash-side', { who: 'ann', extra: Object.assign({}, kept, cfg()), wait: 1400, width: 1280, height: 900 });
+  await wait(p, () => !!document.querySelector('[data-dw="sm-draw"]'), null, 20000);
+  await p.evaluate(() => {
+    const fs = window.LK_PREP.book().fs(), orig = fs.getDoc;
+    fs.getDoc = function (ref) { return /drawings\/rump-on-mash-plate$/.test((ref.path || []).join('/')) ? Promise.reject({ code: 'unavailable' }) : orig.apply(this, arguments); };
+  });
+  const els0 = await p.evaluate(() => JSON.stringify(window.LK_DRAW.state().d.els));
+  await p.click('[data-dw="sm-draw"]');
+  const said = await wait(p, () => /Could not read the plate drawing/.test((document.querySelector('.dw-bar') || {}).textContent || ''), null, 6000);
+  ok(said && await p.evaluate(() => JSON.stringify(window.LK_DRAW.state().d.els)) === els0, 'side view, plate unreadable: Draw it for me says it could not read the plate, and the drawing is unchanged');
+  ok(!errs(p).length, 'side view, plate unreadable: no page errors ' + errs(p).join(' | '));
+  await p.context().close();
+
+  // the head chef's picks (book/matches) could not be read when the editor opened: not taken as none for the rest of the
+  // page, the next Draw it for me reads them again
+  const picks = Object.assign(cfg(), { [fsKey(['book', 'matches'])]: { m: { 'chicken wings': 'chicken-wings' }, upd: L.NOW } });
+  p = await L.open(b, '#/manage/draw/new/wings/plate', { who: 'ann', extra: picks, failReads: '/book/matches$', wait: 1200, width: 1280, height: 900 });
+  await wait(p, () => !!document.querySelector('[data-dw="sm-draw"]'), null, 20000);
+  const mr = () => p.evaluate(() => window.__fake.reads.filter(k => /\/book\/matches$/.test(k)).length);
+  const m0 = await mr();
+  ok(m0 >= 1 && await p.evaluate(() => !Object.keys(window.LK_SMART.learned()).length), 'picks unreadable: read once when the editor opened, none known yet');
+  await p.evaluate(() => { window.__fake.failReads = null; });
+  await p.click('[data-dw="sm-draw"]');
+  ok(await wait(p, () => Object.keys(window.LK_SMART.learned()).length > 0, null, 6000) && await mr() === m0 + 1, 'picks, signal back: Draw it for me reads them again, once (' + m0 + ' then ' + await mr() + ' reads)');
+  ok(!errs(p).length, 'picks unreadable: no page errors ' + errs(p).join(' | '));
   await p.context().close();
 
   // the wings drawn by Draw it for me and saved, with the wings moved by hand
