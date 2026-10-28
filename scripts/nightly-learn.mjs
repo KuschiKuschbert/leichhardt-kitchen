@@ -119,16 +119,18 @@ async function learnDay(day, kind) {
    amount, and what was used the last time. The same key as okey() in js/prep.js. */
 const okey = t => String(t || '').toLowerCase().replace(/\s+/g, ' ').trim();
 const top = o => Object.keys(o).sort((a, b) => o[b] - o[a])[0] || '';
+// every map below is keyed by typed words, so none has inherited keys: an item, reason or section typed as "constructor" or "__proto__" counts like any other word
+const map = () => Object.create(null);
 const WASTE_DAYS = 14, WASTE_ITEMS = 300;
 async function wasteSummary(today) {
   const days = [];
   for (let i = 1; i <= WASTE_DAYS; i++) days.push(shift(today, -i));
   const snaps = await Promise.all(days.map(d => K.collection('waste').doc(d).collection('lines').get()));
-  const m = {};
+  const m = map();
   snaps.forEach(sn => sn.docs.forEach(doc => {
     const x = doc.data(); if (!x || x.deleted || x.tst || !x.text) return;   // tst: written in practice mode
     const text = String(x.text).trim().slice(0, 80), k = okey(text); if (!k) return;
-    const e = m[k] = m[k] || { t: text, n: 0, r: {}, u: {}, s: {}, a: {}, at: -1, last: null };
+    const e = m[k] = m[k] || { t: text, n: 0, r: map(), u: map(), s: map(), a: map(), at: -1, last: null };
     const amt = +x.amount || 0, sec = String(x.station || '').slice(0, 40);
     e.n++; e.r[x.reason] = (e.r[x.reason] || 0) + 1; e.u[x.unit] = (e.u[x.unit] || 0) + 1;
     if (sec) e.s[sec] = (e.s[sec] || 0) + 1;
@@ -137,7 +139,7 @@ async function wasteSummary(today) {
   }));
   const items = Object.keys(m).map(k => {
     const e = m[k], ta = top(e.a);
-    return { t: e.t, n: e.n, r: e.r, unit: top(e.u), reason: top(e.r), sec: top(e.s), amt: ta ? +ta.split(' ')[0] : 0, last: e.last, at: e.at };
+    return { t: e.t, n: e.n, r: Object.fromEntries(Object.entries(e.r)), unit: top(e.u), reason: top(e.r), sec: top(e.s), amt: ta ? +ta.split(' ')[0] : 0, last: e.last, at: e.at };
   }).sort((a, b) => b.n - a.n || b.at - a.at).slice(0, WASTE_ITEMS);
   await K.collection('summary').doc('waste').set({ day: today, from: days[days.length - 1], to: days[0], items, at: Date.now() });
   return items.length;
@@ -149,7 +151,6 @@ async function wasteSummary(today) {
    A tie goes to the most recent. Reads, every night: 28 queries (one per day, an empty day still costs 1) plus one read
    per transfer line in those days. Every map is keyed by typed words, so none has inherited keys (map()): an item,
    venue or person typed as "constructor" or "__proto__" counts like any other word. */
-const map = () => Object.create(null);
 const TR_DAYS = 28, TR_VENUES = 30, TR_ITEMS = 200, TR_PEOPLE = 6;
 const tidy = (s, n) => String(s || '').replace(/\s+/g, ' ').trim().slice(0, n);
 // one more of the words s in o, under okey(s) with each spelling, and when each was last seen (more: the group's own fields)
@@ -188,8 +189,11 @@ async function transferSummary(today) {
 
 const today = kitchenDay(Date.now());
 // first, so a problem with one day's learning never leaves the phones without a fresh wastage summary
-const wItems = await wasteSummary(today);
-console.log('Wastage summary: ' + wItems + ' items from the last ' + WASTE_DAYS + ' days.');
+// on its own, like the transfers: a problem there is logged (the error only) and the learning goes on
+try {
+  const wItems = await wasteSummary(today);
+  console.log('Wastage summary: ' + wItems + ' items from the last ' + WASTE_DAYS + ' days.');
+} catch (e) { console.error('Wastage summary failed (' + String((e && (e.code || e.name)) || 'error') + '). The log leaves out the message: it can hold a typed name.'); process.exitCode = 1; }
 // then the transfers, on their own: a problem there is logged (counts and the error only) and the learning goes on
 try {
   const [tItems, tVenues] = await transferSummary(today);

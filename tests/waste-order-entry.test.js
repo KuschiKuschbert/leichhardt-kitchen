@@ -11,7 +11,7 @@ const extra = {};
 Object.assign(extra, L.wasteSum([{ t: 'Rice', n: 1, r: { expired: 1 }, unit: 'portions', reason: 'expired', sec: 'Pans', amt: 1, last: { unit: 'portions', reason: 'expired', sec: 'Pans', amt: 1 } }]));
 extra[fsKey(['ordlearned', 'duck-fat'])] = { text: 'Duck fat', uses: 6, dow: {}, qtys: { '2-tubs': { q: '2 tubs', n: 5 } } };
 const saved = (p, text) => p.evaluate(a => Object.keys(window.__fake.dump()).filter(k => k.indexOf('/waste/' + a.d + '/lines/') > 0 && window.__fake.dump()[k].text === a.t).map(k => window.__fake.dump()[k]), { d: today, t: text });
-async function log(p, text, amt, unit) {
+async function log(p, text, amt, unit, before) {
   await p.fill('#w-text', text); await p.fill('#w-amt', amt);
   await p.click('[data-p="wunit"][data-v="' + unit + '"]');
   if (!(await p.evaluate(() => /excess|Excess/.test((document.querySelector('.w-rbtn') || document.querySelector('.w-rchips [aria-pressed="true"]') || {}).textContent || '')))) {
@@ -20,6 +20,7 @@ async function log(p, text, amt, unit) {
     await p.evaluate(() => { const b = document.querySelector('.sheet [data-v="excess"]'); if (b) b.click(); });
   }
   await L.settle(p, 150);
+  if (before) await before();   // after the last redraw, just before Log it
   await p.click('.w-add .nb-addbtn'); await L.settle(p, 350);
 }
 (async () => {
@@ -35,6 +36,9 @@ async function log(p, text, amt, unit) {
   ok((await saved(p, 'Chips')).some(x => x.amount === 500 && x.unit === 'kg'), 'waste: a second tap logs 500 kg');
   await log(p, 'Bread', '500', 'g');
   ok((await saved(p, 'Bread')).some(x => x.amount === 500 && x.unit === 'g'), 'waste: 500 g logs straight away');
+  // just after midnight the page can still be on yesterday's list (typing does not redraw): the line goes on today's
+  await log(p, 'Midnight rice', '2', 'kg', () => p.evaluate(y => { window.LK_PREP.state.wDate = y; }, day(1)));
+  ok((await saved(p, 'Midnight rice')).length === 1 && await p.evaluate(t => window.LK_PREP.state.wDate === t, today), 'waste: a line typed on a page still on yesterday goes on today\'s list');
 
   // Next on What was wasted goes to Amount, without an error
   await p.fill('#w-text', 'Lettuce'); await p.fill('#w-amt', '');

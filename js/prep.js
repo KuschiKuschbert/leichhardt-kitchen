@@ -4438,6 +4438,8 @@
     // a big number for its unit is often grams typed with kg still picked: ask once (second tap on Log it)
     if (amt > (W_BIG[f.unit] || Infinity) && !arm('wbig:' + amt + f.unit)) { toast(amt + ' ' + f.unit + '? Check the unit. Tap Log it again if it is right.', null, 4000); focusSel('.seg-b[aria-checked="true"]'); return; }
     if (!REASONS.some(function (r) { return r[0] === f.reason; })) { toast('Pick a reason.'); focusSel(window.matchMedia && window.matchMedia('(max-width: 719px)').matches ? '.w-rbtn' : '.w-rchips .chip'); return; }
+    // the page may still be on yesterday's list just after midnight (typing does not redraw): the line goes on today's
+    if (S.wDate !== dayNow()) { S.wDate = dayNow(); watchWaste(); }
     var secInfo = {}, sec = cleanSection(f.sec, secInfo) || mySec(), rm = matchRecipe(t), ref = fb.fs.doc(wCol(S.wDate));
     sset(ref, practiceOn({ text: t, amount: amt, unit: f.unit, reason: f.reason, action: f.act.trim().slice(0, 120), station: sec, recipe: rm ? rm.id : '',
       addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: now(), deleted: false })).catch(function (e) { failed(e, function () { if (!S.wf.text.trim()) S.wf = f; }); });
