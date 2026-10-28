@@ -95,7 +95,7 @@
     section: '', text: '', qty: '', recipeSearch: '', recipeOpen: false, recipeAll: false, tab: '',
     authed: false, tok: '', pinStep: '', pinOff: false, pinData: null, pf1: '', pf2: '', pinMsg: '',
     sections: [], activity: [], hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false, exporting: '', moving: false, moveMsg: '', newPin: '', atab: lsGet('lk.prep.atab') || 'insights', ordDate: dayNow(), ordLines: [], ordState: 'idle', ordView: 'day', otext: '', oqty: '', ordAll: [], ordAllAt: 0, ordBusy: false, osugg: [],
-    retryAt: {}, wDate: dayNow(), wLines: [], wState: 'idle', rvDate: '', wReview: null, wReviewFor: '', wrA: null, wrC: null, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wSum: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, xDate: dayNow(), xLines: [], xState: 'idle', xf: xBlank(), xSum: null, xsugg: [], xStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nMsg: '', nSaving: false,
+    retryAt: {}, wDate: dayNow(), wLines: [], wState: 'idle', rvDate: '', wReview: null, wReviewFor: '', wrA: null, wrC: null, wpA: null, wpC: null, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wSum: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, xDate: dayNow(), xLines: [], xState: 'idle', xf: xBlank(), xSum: null, xsugg: [], xStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nMsg: '', nSaving: false,
     mins: null, minsFor: '', minsAt: 0, minsBusy: false, mmine: {}, msigns: {}, mSel: '', mf: null, mMsg: '', mSaving: false, mSigning: false, minOpen: false, mErr: '',
     guides: null, guidesFor: '', guidesAt: 0, gBusy: false, gRetry: 0, gq: '', gcat: 'all', gSel: '', gf: null, gfSnap: '', gMsg: '',
     adminsFor: '', adminsOff: null, level: '', stats: null, statsRange: 14, week: null, weekAt: 0, weekBusy: false,
@@ -986,7 +986,9 @@
     document.addEventListener('visibilitychange', function () { if (!document.hidden && (S.authed || S.user) && idleExpired()) idleLock(); });
     lsSet('lk.prep.seen', String(Date.now()));
   }
-  /* the next person never lands in the last person's staff draft, minutes register or ping editor */
+  /* the next person never lands in the last person's staff draft, minutes register or ping editor, and nothing this
+     person typed or left open stays for them (28 Oct 2026: also a guide, the order cut-offs, Add several names, a
+     review and the recipe picker, which kept the next person's Sign out and the self-update saying "Not saved yet") */
   function leave() {
     accessEpoch++;
     stopLive(); clearPrivateCache();
@@ -1000,7 +1002,7 @@
     S.pastBusy = S.minsBusy = S.viewBusy = S.missBusy = S.useBusy = false; S.pastPart = null; S.ordStats = null; S.views = S.misses = null; S.viewErr = S.missErr = S.useErr = S.wReviewErr = false; S.wReview = null; S.wReviewFor = S.wNoteFor = '';
     S.items = []; S.ordLines = []; S.ordAll = []; S.wLines = []; S.xLines = []; S.notes = null; S.notesBusy = false; S.nSaving = false; S.notesFor = ''; S.nPast = null; S.nPastOpen = false; S.nSeen = null; S.nPrivateError = ''; S.mins = null; S.guides = null; S.activity = []; S.actState = ''; S.hist = {}; S.stats = null;
     ['lk.fn', 'lk.mail.sent', 'lk.drinks', 'lk.guides', 'lk.notes', 'lk.minutes'].forEach(function (k) { lsSet(k, ''); });
- if (window.LK_DELIVERY) window.LK_DELIVERY.reset(); if (window.LK_SUP) window.LK_SUP.reset(); if (supplierService) supplierService.reset(); sessDrop(); ksClose(); noteClose('shut'); S.nJust = null; S.guestIn = false; lsSet('lk.prep.guest', ''); S.drinkAsk = ''; S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; tdReset(); lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); accessChanged(); }
+ if (window.LK_DELIVERY) window.LK_DELIVERY.reset(); if (window.LK_SUP) window.LK_SUP.reset(); if (supplierService) supplierService.reset(); sessDrop(); ksClose(); noteClose('shut'); S.nJust = null; S.guestIn = false; lsSet('lk.prep.guest', ''); S.drinkAsk = ''; S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; S.gf = null; S.gfSnap = ''; S.cutDraft = null; S.cutSnap = ''; S.bulk = ''; S.wrA = S.wrC = S.wpA = S.wpC = null; S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; tdReset(); lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); accessChanged(); }
   /* The chef mark's menu (js/app.js) asks what to show: Meeting minutes for everyone (when the page is on), and for the
      head chef and sous chefs Shift pings and Manage staff (22 Oct 2026: the Minutes register is "See who has signed" at
      the top of Meeting minutes). head: no Kitchen mail, the head chef's mail is read in the admin panel. tab: the head
@@ -1072,9 +1074,13 @@
     return true;
   }
   /* "Not you?" next to "Writing as" (and Change person on the admin card) hands the phone over the way Sign out does
-     (23 Oct 2026): something not saved asks a second tap, and on a shared device what this person left on it goes. The
-     lines typed in the add boxes stay for the person who signs in, as before. */
-  function notYouHTML() { return '<button type="button" class="p-link" data-p="who-change">' + (armed('who-change') ? 'Not saved. Tap again' : 'Not you?') + '</button>'; }
+     (23 Oct 2026): something not saved asks a second tap, and on a shared device what this person left on it goes. What
+     was typed in the add boxes goes too (leave()), so the next person starts with empty boxes. */
+  function notYouHTML() { return '<button type="button" class="p-link" data-p="who-change">' + (armed('who-change') ? notSaved() + '. Tap again' : 'Not you?') + '</button>'; }
+  /* The first words of a second tap over something not saved (28 Oct 2026): "Not saved" while something is typed or open
+     here, "Not sent" when the only thing waiting is a change on its way to the server (the strip's words). On a PIN
+     phone a sign-out does not lose that change while the tab stays open. */
+  function notSaved() { return unsavedHere() ? 'Not saved' : 'Not sent'; }
   /* Manage Recipes & Drawings (#/manage, 21 Oct 2026): the head chef only. With their own PIN as Head chef on any device,
      or on the head chef's Google device while nobody else is signed in with a PIN. The rules check the same on the
      server (bookBy() in firestore.rules), so this only decides what the page shows. */
@@ -2134,7 +2140,9 @@
       return track(b.commit());
     } return Wall([['set', cfgDoc(), { people: clean.people, staffIds: clean.staffIds, pinOpen: clean.pinOpen, updated: clean.updated, updatedBy: clean.updatedBy }, true], ['set', docRef('login', 'roster'), { people: clean.people, staffIds: clean.staffIds, sousIds: S.config.sousIds || [], headId: S.config.headId || '', fnIds: S.config.fnIds || [], fnOnlyIds: S.config.fnOnlyIds || [] }]]); }).then(function () { return clean; });
   }
+  // Save is off while nothing changed, and this refuses too (28 Oct 2026), so a button left on cannot save the list again
   function adminSave() {
+    if (S.busy || !draftDirty()) return;
     S.busy = true; S.saveMsg = 'Saving...'; draw();
     saveConfig(mergeDraft()).then(function () { S.busy = false; startDraft(); S.saveMsg = 'Saved. Everyone sees the changes now.'; draw(); },
       function (e) { S.busy = false; S.saveMsg = e && e.code === 'permission-denied' ? 'Not allowed to change these settings.' : 'Could not save. Check the connection.'; draw(); });
@@ -2284,7 +2292,9 @@
       p.role = x.sous ? 'staff' : 'sous'; var r = ROLES[p.role]; p.add = r.add; p.tick = r.tick; p.del = r.del; p.ping = r.ping;
     });
     S.idBusy = true; S.idMsg = 'Saving...'; draw();
-    saveConfig({ people: people, showBadges: c.showBadges, staffSee: c.staffSee }).then(function () { S.idBusy = false; S.idMsg = ''; startDraft(); draw(); },
+    // a People draft with changes stays (28 Oct 2026: it was thrown away); its save carries only what it changed onto
+    // the list as it is now (mergeDraft), so the kept or undone roles are not saved over
+    saveConfig({ people: people, showBadges: c.showBadges, staffSee: c.staffSee }).then(function () { S.idBusy = false; S.idMsg = ''; refreshDraft(); draw(); },
       function () { S.idBusy = false; S.idMsg = 'Could not save. Check the connection.'; draw(); });
   }
   /* ---------- the last 14 days, read once a day per phone ----------
@@ -3759,7 +3769,7 @@
     if (!ownerHere()) {
       var op = who();
       return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2><p class="hint">' + (op ? esc(op.name) + ' is signed in on this device. ' : 'Nobody is signed in on this shared device. ') + 'The admin panel opens only while a chef is signed in with their PIN.</p>' +
-        '<div class="btn-row"><a class="btn dark" href="#/prep" data-p="who-change">' + (op ? (armed('who-change') ? 'Not saved. Tap again' : 'Not ' + esc(op.name.split(' ')[0]) + '? Change person') : 'Sign in') + '</a><button type="button" class="btn" data-p="signout">Sign out of Google</button></div></section>';
+        '<div class="btn-row"><a class="btn dark" href="#/prep" data-p="who-change">' + (armed('who-change') ? notSaved() + '. Tap again' : op ? 'Not ' + esc(op.name.split(' ')[0]) + '? Change person' : 'Sign in') + '</a><button type="button" class="btn" data-p="signout">Sign out of Google</button></div></section>';
     }
     if (!S.draft) startDraft();
     var d = S.draft, owner = S.level === 'owner';
@@ -3972,7 +3982,11 @@
     adminScroll(true);
   }
   function draftDirty() { return !!S.draft && JSON.stringify(S.draft) !== S.draftSnap; }
-  window.addEventListener('beforeunload', function (e) { if ((S.name === 'admin' || S.staffOpen) && draftDirty()) { e.preventDefault(); e.returnValue = ''; } });
+  /* The admin drafts not saved yet: the staff list and Add several names, minutes, a ping, a guide and the order
+     cut-offs. They live in this tab's memory only and stay there on every page, so a reload or closing the tab asks
+     first wherever the book is (28 Oct 2026; before, only the staff list did, and only on its own page). */
+  function draftsDirty() { return draftDirty() || !!String(S.bulk || '').trim() || mfDirty() || nfDirty() || gfDirty() || cutDirty(); }
+  window.addEventListener('beforeunload', function (e) { if (draftsDirty()) { e.preventDefault(); e.returnValue = ''; } });
   function staffHTML() {
     var d = S.draft || (startDraft(), S.draft);
     var bulk = '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line">' + esc(S.bulk || '') + '</textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div>';
@@ -4597,8 +4611,13 @@
      waste/<today> when a chef opens the page, again on a new day. A failed read (no signal) says so (28 Oct 2026) instead
      of Loading... for good, and reads again after the 5-minute wait or once the phone is back online, not on every draw. */
   function rvChef() { return wAll() || isSous(); }
-  /* the saved review the typing started from: the wastage page's today, or the admin form's day */
-  function rvBase() { return S.wrWhere === 'page' ? S.wReview || {} : rvOf(S.rvDate || dayNow()); }
+  /* A review typed and not saved yet. page: today's on the wastage page (S.wpA, S.wpC), otherwise the admin panel's
+     Daily reviews form for its day (S.wrA, S.wrC). Two drafts (28 Oct 2026): they shared one, so the admin form showed
+     the page's words under its own day, and its day arrows threw away what was typed on the wastage page. */
+  function rvTyped(page) {
+    var a = page ? S.wpA : S.wrA, c = page ? S.wpC : S.wrC, r = page ? S.wReview || {} : rvOf(S.rvDate || dayNow());
+    return (a != null && a !== (r.avoidable || '')) || (c != null && c !== (r.change || ''));
+  }
   function loadPageReview() {
     if (!kitchenAccess() || !S.configFull) return;
     var today = dayNow();
@@ -4628,9 +4647,10 @@
       return;
     }
     if (armKey === 'wreview') arm('wreview');
-    var a = (S.wrA != null ? S.wrA : r.avoidable || '').trim().slice(0, 300), c = (S.wrC != null ? S.wrC : r.change || '').trim().slice(0, 300);
+    var ta = page ? S.wpA : S.wrA, tc = page ? S.wpC : S.wrC;
+    var a = (ta != null ? ta : r.avoidable || '').trim().slice(0, 300), c = (tc != null ? tc : r.change || '').trim().slice(0, 300);
     var v = { avoidable: a, change: c, reviewBy: name, reviewAt: now() };
-    sset(wDay(d), v, true).then(function () { if (page) S.wReview = v; rvSet(d, v); if (wAll()) whPatch(d, '', v); S.wrA = S.wrC = null; if (d >= shift(dayNow(), -3)) { S.wNoteFor = ''; lsSet('lk.w.note', ''); } toast('Review saved'); draw(); }, failed);
+    sset(wDay(d), v, true).then(function () { if (page) { S.wReview = v; S.wpA = S.wpC = null; } else S.wrA = S.wrC = null; rvSet(d, v); if (wAll()) whPatch(d, '', v); if (d >= shift(dayNow(), -3)) { S.wNoteFor = ''; lsSet('lk.w.note', ''); } toast('Review saved'); draw(); }, failed);
   }
   /* the head chef's Google account: the only one the rules let read past wastage (22 Oct 2026) */
   function wAll() { return S.level === 'owner' && ownerHere(); }
@@ -4694,7 +4714,7 @@
   function pageReviewHTML() {
     loadPageReview();
     if (!S.wReview) return '<section class="set-block w-review"><span class="label">End-of-day review</span>' + (S.wReviewErr ? '<p class="hint" role="status">Could not load today\'s review. Check the signal. The book tries again in a few minutes.</p>' : '<p class="hint">Loading...</p>') + '</section>';
-    var r = S.wReview, ra = S.wrA != null ? S.wrA : (r.avoidable || ''), rc = S.wrC != null ? S.wrC : (r.change || '');
+    var r = S.wReview, ra = S.wpA != null ? S.wpA : (r.avoidable || ''), rc = S.wpC != null ? S.wpC : (r.change || '');
     return '<section class="set-block w-review"><span class="label">End-of-day review</span>' +
       '<div class="field"><label class="label" for="w-ra">Main avoidable waste today</label><textarea id="w-ra" class="w-ta" data-k="w-ra" maxlength="300" rows="2">' + esc(ra) + '</textarea></div>' +
       '<div class="field"><label class="label" for="w-rc">Prep or ordering change for the next shift</label><textarea id="w-rc" class="w-ta" data-k="w-rc" maxlength="300" rows="2">' + esc(rc) + '</textarea><span class="hint">This shows at the top of the next prep list.</span></div>' +
@@ -5485,6 +5505,9 @@
   var NOTE_START = { off: 'Off today: ', special: 'Special: ', 'function': 'Function: ', delivery: 'Delivery: ', safety: 'Safety: ', allergen: 'Allergen alert: ' };
   /* a note being written counts as unsaved once it differs from what the editor opened with (or has any text, if that is unknown) */
   function nfDirty() { var f = S.nf; if (!f || !S.nOpen) return false; return S.nfSnap ? JSON.stringify(f) !== S.nfSnap : !!f.text.trim(); }
+  // an edit not changed since it opened: Save changes is off and saveNote() refuses (28 Oct 2026), since a save moves
+  // the ping's 30 minutes on screen to now and it popped up again on every phone
+  function nfSame() { return !!S.nf && !!S.nf.id && !nfDirty(); }
   function nfNew() { return { id: '', text: '', tag: 'none', start: dayNow(), until: '', dows: [], run: false, tm: '', to: '' }; }
   function nfFrom(n) {
     var rep = n.dows && n.dows.length, until = n.until === NOTE_FAR || (n.until === n.start && !rep) ? '' : n.until, tm = noteTm(n);
@@ -5520,8 +5543,8 @@
     if (today) { var f = noteFrom(n, t), m = T.mins(); life = m < f ? 'Pops up at ' + tmText(f) : m < f + NOTE_LIFE ? 'On screen until ' + tmText(f + NOTE_LIFE) : 'Gone for today at ' + tmText(f + NOTE_LIFE); }
     return '<li class="nt-row t-' + esc(n.tag || 'none') + '"><div class="nt-rt"><span class="nt-tag">' + esc(noteTagName(n.tag)) + '</span><span class="nt-when">' + esc(noteWhen(n)) + (life ? '. ' + esc(life) : '') + '</span></div><p>' + esc(n.text) + '</p>' +
       '<span class="nt-by">' + esc(noteAudience(n)) + '</span>' + (who ? '<span class="nt-by">Written by ' + esc(who) + '</span>' : '') + seen +
-      '<div class="btn-row">' + (past ? '' : '<button type="button" class="p-x" data-p="n-edit" data-id="' + esc(n.id) + '">Edit</button>') +
-      '<button type="button" class="p-x" data-p="n-reuse" data-id="' + esc(n.id) + '">Use again</button>' +
+      '<div class="btn-row">' + (past ? '' : '<button type="button" class="p-x" data-p="n-edit" data-id="' + esc(n.id) + '">' + (armed('n-edit:' + n.id) ? 'Not saved. Tap again' : 'Edit') + '</button>') +
+      '<button type="button" class="p-x" data-p="n-reuse" data-id="' + esc(n.id) + '">' + (armed('n-reuse:' + n.id) ? 'Not saved. Tap again' : 'Use again') + '</button>' +
       (past ? '' : '<button type="button" class="p-x" data-p="n-del" data-id="' + esc(n.id) + '">' + (armed('n-del:' + n.id) ? 'Tap again to remove' : 'Remove') + '</button>') + '</div></li>';
   }
   function notesListHTML() {
@@ -5591,7 +5614,7 @@
       '<div class="field"><span class="label">Repeat every week on (optional)</span><div class="nt-chips" role="group" aria-label="Weekdays">' + dows + (f.dows.length ? '<button type="button" class="chip" data-p="n-dowclr">Clear weekdays</button>' : '') + '</div><span class="hint">With weekdays picked and no last day, the ping comes back every week until you remove it.</span></div>' +
       '<div class="field"><label class="label" for="n-tm">Pop up at (optional)</label><div class="nt-chips"><input id="n-tm" type="time" class="p-dateinput" data-k="n-tm" value="' + esc(f.tm || '') + '">' + (f.tm ? '<button type="button" class="chip" data-p="n-tmclr">No set time</button>' : '') + '</div><span class="hint">Empty: it pops up at 10:30. With a time, it pops up then on every phone. Either way it is gone 30 minutes later, so for a later shift set its time. Saved for today after its time, it pops up straight away.</span></div>' +
       '<p class="nt-whenline" role="status">' + esc(when) + '</p>' +
-      '<div class="btn-row"><button type="button" class="btn dark" data-p="n-save"' + (S.nSaving ? ' disabled' : '') + '>' + (f.id ? 'Save changes' : 'Save ping') + '</button><button type="button" class="btn" data-p="n-preview">Preview the popup</button><button type="button" class="btn" data-p="n-reset">Reset days</button><button type="button" class="btn" data-p="n-cancel">' + (armed('n-cancel') ? 'Tap again to discard' : f.id ? 'Cancel' : 'Close') + '</button></div>' +
+      '<div class="btn-row"><button type="button" class="btn dark" data-p="n-save"' + (S.nSaving || nfSame() ? ' disabled' : '') + '>' + (f.id ? 'Save changes' : 'Save ping') + '</button><button type="button" class="btn" data-p="n-preview">Preview the popup</button><button type="button" class="btn" data-p="n-reset">Reset days</button><button type="button" class="btn" data-p="n-cancel">' + (armed('n-cancel') ? 'Tap again to discard' : f.id ? 'Cancel' : 'Close') + '</button></div>' +
       '<span class="saved" role="status">' + esc(S.nMsg) + '</span></section>';
   }
   function notesEditorHTML() {
@@ -5605,7 +5628,7 @@
   }
   function saveNote() {
     var f = S.nf, epoch = accessEpoch;
-    if (!f || S.nSaving || !fb) return;
+    if (!f || S.nSaving || !fb || nfSame()) return;
     var text = f.text.replace(/\s+$/g, '').replace(/^\s+/g, ''), start = f.start, until = nfUntil(f), re = /^\d{4}-\d{2}-\d{2}$/;
     if (!f.id && f.to && !pingPeople().some(function (p) { return p.id === f.to; })) { S.nMsg = 'Choose an active person who can receive Shift pings.'; draw(); focusSel('#n-to'); return; }
     if (!text) { S.nMsg = 'Write the ping first.'; draw(); return; }
@@ -5665,7 +5688,8 @@
     var n = (S.notes || []).concat(Array.isArray(S.nPast) ? S.nPast : []).filter(function (x) { return x.id === id; })[0];
     if (!n) return;
     var tm = noteTm(n);
-    S.nf = nfNew(); S.nf.to = directNote(n.id) ? n.to : ''; S.nf.text = n.text; S.nf.tag = n.tag || 'none'; S.nf.tm = tm == null ? '' : tmText(tm); S.nfSnap = ''; S.nOpen = true; S.nMsg = '';
+    // the copy as it opens is nothing typed yet, so Close, another Edit or Sign out does not ask until it is changed
+    S.nf = nfNew(); S.nf.to = directNote(n.id) ? n.to : ''; S.nf.text = n.text; S.nf.tag = n.tag || 'none'; S.nf.tm = tm == null ? '' : tmText(tm); S.nfSnap = JSON.stringify(S.nf); S.nOpen = true; S.nMsg = '';
     draw(); var tx = S.root.querySelector('[data-k="n-text"]'); if (tx) { focusNoteText(tx); }
   }
   /* who tapped Got it today for one note (one small query, only when asked) */
@@ -5982,6 +6006,9 @@
   /* what the form held when it was opened, to tell whether Cancel would throw anything away */
   function mfSnap(f) { return f ? JSON.stringify(Object.assign({}, f, { prev: false, orig: null })) : ''; }
   function mfDirty() { return !!S.mf && mfSnap(S.mf) !== S.mfSnap; }
+  /* Nothing to save (28 Oct 2026): a saved draft, or published minutes opened as a new version, not changed since they
+     opened. Save draft, and Publish as a new version (everyone signs again), are off and saveMinutes() refuses too. */
+  function mfSame(publish) { var f = S.mf; return !!f && !!f.id && (!publish || f.status === 'published') && !mfDirty(); }
   function mfFrom(m) {
     var att = {}; (m.att || []).forEach(function (x) { att[x.id] = x.st; });
     return { id: m.id, no: m.no, v: m.v, status: m.status, date: m.date, start: m.start || '', loc: m.loc || '', chair: m.chair || '', taker: m.taker || '', att: att, guests: m.guests || '', decisions: m.decisions || '', menu: m.menu || '', safety: m.safety || '', dates: m.dates || '', other: m.other || '', acts: (m.acts || []).map(function (a) { return Object.assign({}, a); }), next: m.next || '', orig: m, prev: false };
@@ -6027,7 +6054,7 @@
     var actRows = f.acts.map(function (a, i) {
       if (a.carried) return '<div class="mn-act is-carried"><span class="mn-at">' + esc(a.what) + ' <small>' + esc((a.who === 'all' ? 'Everyone' : mnName(a.who)) + (a.by ? ', by ' + dayShort(a.by) : '')) + '</small></span><div class="mn-seg" role="group" aria-label="Carried action">' + [['done', 'Done'], ['open', 'Carry over'], ['dropped', 'Drop']].map(function (x) { return '<button type="button" class="chip" data-p="mn-ast" data-i="' + i + '" data-v="' + x[0] + '" aria-pressed="' + ((a.st || 'open') === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div></div>';
       return '<div class="mn-act"><label class="visually-hidden" for="mn-aw' + i + '">Action</label><input id="mn-aw' + i + '" class="search" data-k="mn-aw" data-i="' + i + '" maxlength="160" placeholder="What needs doing" value="' + esc(a.what) + '">' +
-        '<div class="mn-act2">' + personSelect('mn-awho', a.who || '', i, true) + '<label class="visually-hidden" for="mn-aby' + i + '">By</label><input id="mn-aby' + i + '" type="date" class="p-dateinput" data-k="mn-aby" data-i="' + i + '" value="' + esc(a.by || '') + '"><button type="button" class="p-x" data-p="mn-arem" data-i="' + i + '">Remove</button></div></div>';
+        '<div class="mn-act2">' + personSelect('mn-awho', a.who || '', i, true) + '<label class="visually-hidden" for="mn-aby' + i + '">By</label><input id="mn-aby' + i + '" type="date" class="p-dateinput" data-k="mn-aby" data-i="' + i + '" value="' + esc(a.by || '') + '"><button type="button" class="p-x" data-p="mn-arem" data-i="' + i + '">' + (armed('mn-arem:' + i) ? 'Tap again to remove' : 'Remove') + '</button></div></div>';
     }).join('');
     return '<section class="set-block mn-form"><span class="label">' + (isEdit ? 'Change these minutes (becomes version ' + (f.v + 1) + ')' : f.id ? 'Draft minutes ' + pad(f.no) : 'New minutes ' + pad(f.no)) + '</span>' + prepLeaveHTML('mn-cancel') +
       (isEdit ? '<span class="hint">Everyone signs again after a change. The earlier version is kept.</span>' : '<span class="hint">Short lines, one per line. Spelling is yours to check. Recipe names link to their card. Leave out prices, PINs and private details. A line starting with # is a heading. A draft is not shown to staff in the app.</span>') +
@@ -6037,7 +6064,7 @@
       '<div class="field"><span class="label">Actions</span>' + (actRows || '<p class="hint">No actions yet.</p>') + '<div class="btn-row"><button type="button" class="btn" data-p="mn-aadd">Add an action</button></div></div>' +
       mfTextarea('mn-menu', 'Menu changes', 3, 'What changes, and for which dish.') + mfTextarea('mn-dates', 'Dates ahead', 3, 'Deliveries, functions, events.') + mfTextarea('mn-other', 'Other', 3, '') + attBlock +
       '<div class="field"><label class="label" for="mn-next">Next meeting (optional)</label><input id="mn-next" type="date" class="p-dateinput" data-k="mn-next" value="' + esc(f.next) + '"></div>' +
-      '<div class="btn-row"><button type="button" class="btn dark" data-p="mn-pub"' + (S.mSaving ? ' disabled' : '') + '>' + (S.mSaving === 'pub' ? 'Publishing...' : armed('mn-pub') ? 'Tap again to publish to ' + people().length + ' staff' : isEdit ? 'Publish as version ' + (f.v + 1) : 'Publish and start sign-off') + '</button>' + (isEdit ? '' : '<button type="button" class="btn" data-p="mn-draft"' + (S.mSaving ? ' disabled' : '') + '>' + (S.mSaving === 'draft' ? 'Saving...' : 'Save draft') + '</button>') + '<button type="button" class="btn" data-p="mn-prev">Preview</button><button type="button" class="btn" data-p="mn-cancel">' + (armed('mn-cancel') ? 'Tap again to discard' : 'Cancel') + '</button></div><span class="saved mn-say" role="status">' + esc(S.mMsg) + '</span></section>';
+      '<div class="btn-row"><button type="button" class="btn dark" data-p="mn-pub"' + (S.mSaving || mfSame(true) ? ' disabled' : '') + '>' + (S.mSaving === 'pub' ? 'Publishing...' : armed('mn-pub') ? 'Tap again to publish to ' + people().length + ' staff' : isEdit ? 'Publish as version ' + (f.v + 1) : 'Publish and start sign-off') + '</button>' + (isEdit ? '' : '<button type="button" class="btn" data-p="mn-draft"' + (S.mSaving || mfSame(false) ? ' disabled' : '') + '>' + (S.mSaving === 'draft' ? 'Saving...' : 'Save draft') + '</button>') + '<button type="button" class="btn" data-p="mn-prev">Preview</button><button type="button" class="btn" data-p="mn-cancel">' + (armed('mn-cancel') ? 'Tap again to discard' : 'Cancel') + '</button></div><span class="saved mn-say" role="status">' + esc(S.mMsg) + '</span></section>';
   }
   /* the minutes' message after a redraw: the form is long, and it closes on a save, so the page jumps. The message is
      brought on screen between the sticky admin bar and the phone's tab bar (which covers the foot of the screen),
@@ -6053,7 +6080,7 @@
     else if (r.top < top + 8) window.scrollBy(0, r.top - top - 16);
   }
   function saveMinutes(publish) {
-    var f = S.mf; if (!f || S.mSaving || !fb) return;
+    var f = S.mf; if (!f || S.mSaving || !fb || mfSame(publish)) return;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(f.date || '')) { mnSay('Pick the meeting date.'); return; }
     var data = mfData(f, publish), wasPub = f.status === 'published';
     if (publish) {
@@ -6147,14 +6174,14 @@
     }
     return '<section class="set-block mn-print"><span class="label">Sign-off register</span><span class="hint">Minutes ' + pad(m.no || 0) + ', ' + esc(longDate(m.date)) + ', version ' + m.v + (typeof m.pubAt === 'number' ? ', published ' + esc(dayShort(T.day(m.pubAt))) + ' at ' + esc(clock(m.pubAt)) : '') + (m.v > 1 ? '. Earlier versions are kept' : '') + '. Staff who have not signed within ' + MN_LATE + ' days are marked late. Everyone on the staff list signs, including apology and absent.</span>' + chips + body +
       // no CSV until the sign-offs are in: a register that did not load is never proof that nobody signed
-      '<div class="btn-row mn-noprint"><button type="button" class="btn" data-p="mn-csv" data-id="' + esc(m.id) + '"' + (reg ? '' : ' disabled') + '>Download CSV</button><button type="button" class="btn" data-p="mn-refresh">Refresh</button>' + (mnCanWrite() ? '<button type="button" class="btn" data-p="mn-edit" data-id="' + esc(m.id) + '">Change as a new version</button><button type="button" class="btn" data-p="mn-remove" data-id="' + esc(m.id) + '">' + (armed('mn-del:' + m.id) ? 'Tap again to remove' : 'Remove') + '</button>' : '') + '</div></section>';
+      '<div class="btn-row mn-noprint"><button type="button" class="btn" data-p="mn-csv" data-id="' + esc(m.id) + '"' + (reg ? '' : ' disabled') + '>Download CSV</button><button type="button" class="btn" data-p="mn-refresh">Refresh</button>' + (mnCanWrite() ? '<button type="button" class="btn" data-p="mn-edit" data-id="' + esc(m.id) + '">' + (armed('mn-edit:' + m.id) ? 'Not saved. Tap again' : 'Change as a new version') + '</button><button type="button" class="btn" data-p="mn-remove" data-id="' + esc(m.id) + '">' + (armed('mn-del:' + m.id) ? 'Tap again to remove' : 'Remove') + '</button>' : '') + '</div></section>';
   }
   function minAdminHTML() {
     loadMinutes();
     if (S.mins == null) return '<p class="hint">Loading...</p>';
     var drafts = mnDrafts(), pub = mnPub();
     var intro = '<section class="set-block mn-noprint"><span class="label">Kitchen meeting minutes</span><span class="hint">Write the minutes after the meeting. Staff read them at Meeting minutes in the app and sign with their own PIN. A change after publishing makes a new version and everyone signs again.</span>' +
-      '<div class="btn-row"><button type="button" class="btn dark" data-p="mn-new">Write new minutes</button><button type="button" class="btn" data-p="mn-tpl">Start from the team notes</button>' + drafts.map(function (d) { return '<button type="button" class="btn" data-p="mn-draft-open" data-id="' + esc(d.id) + '">Continue draft ' + pad(d.no || 0) + ' (' + esc(dayShort(d.date)) + ')</button>'; }).join('') + '</div><span class="saved mn-say" role="status">' + (S.mf ? '' : esc(S.mMsg)) + '</span></section>';
+      '<div class="btn-row"><button type="button" class="btn dark" data-p="mn-new">' + (armed('mn-new') ? 'Not saved. Tap again' : 'Write new minutes') + '</button><button type="button" class="btn" data-p="mn-tpl">' + (armed('mn-tpl') ? 'Not saved. Tap again' : 'Start from the team notes') + '</button>' + drafts.map(function (d) { return '<button type="button" class="btn" data-p="mn-draft-open" data-id="' + esc(d.id) + '">' + (armed('mn-draft-open:' + d.id) ? 'Not saved. Tap again' : 'Continue draft ' + pad(d.no || 0) + ' (' + esc(dayShort(d.date)) + ')') + '</button>'; }).join('') + '</div><span class="saved mn-say" role="status">' + (S.mf ? '' : esc(S.mMsg)) + '</span></section>';
     if (!mnCanWrite()) intro = '<section class="set-block mn-noprint"><span class="label">Kitchen meeting minutes</span><span class="hint">See who has signed the minutes and who still needs to. Only the head chef writes and publishes minutes.</span></section>';
     return intro + (S.mf && mnCanWrite() ? mfHTML() : '') + mnRegisterHTML(pub);
   }
@@ -6450,12 +6477,9 @@
       card: function (x) { return '<li class="a-rev"><strong>' + esc(x.date) + (x.reviewBy ? ', ' + esc(x.reviewBy) : '') + ':</strong> ' + esc(x.avoidable || '') + (x.change ? ' <em>Change: ' + esc(x.change) + '</em>' : '') + '</li>'; }
     });
   }
-  function whReviewDirty() {
-    var r = rvOf(S.rvDate || dayNow());
-    return (S.wrA != null && S.wrA !== (r.avoidable || '')) || (S.wrC != null && S.wrC !== (r.change || ''));
-  }
+  function whReviewDirty() { return rvTyped(false); }
   function whCanChange() {
-    if (whState().view !== 'reviews' || S.wrWhere === 'page' || !whReviewDirty()) return true;
+    if (whState().view !== 'reviews' || !whReviewDirty()) return true;
     toast('Save the review or cancel its edits before changing dates or views.'); return false;
   }
   /* The end-of-day review for one day in the selected period: main avoidable waste and the change for the
@@ -6471,7 +6495,7 @@
       '<label class="a-f"><span>Review date</span><input type="date" data-k="wh-review-date" min="' + range.from + '" max="' + range.to + '" value="' + esc(d) + '"></label>' +
       '<div class="field"><label class="label" for="w-ra">Main avoidable waste</label><textarea id="w-ra" class="w-ta" data-k="w-ra" maxlength="300" rows="2">' + esc(ra) + '</textarea></div>' +
       '<div class="field"><label class="label" for="w-rc">Prep or ordering change for the next shift</label><textarea id="w-rc" class="w-ta" data-k="w-rc" maxlength="300" rows="2">' + esc(rc) + '</textarea><span class="hint">This shows at the top of the next prep list.</span></div>' +
-      '<div class="btn-row"><button type="button" class="btn dark" data-p="wreview" data-v="admin">Save the review</button><button type="button" class="p-x" data-p="wh-review-cancel">Cancel edits</button></div>' +
+      '<div class="btn-row"><button type="button" class="btn dark" data-p="wreview" data-v="admin">Save the review</button><button type="button" class="p-x" data-p="wh-review-cancel">' + (armed('wh-review-cancel') ? 'Tap again to discard' : 'Cancel edits') + '</button></div>' +
       (r.reviewBy ? '<span class="hint">Last saved by ' + esc(r.reviewBy) + (r.reviewAt ? ' at ' + clock(r.reviewAt) : '') + '.</span>' : '') + '</div>';
   }
 
@@ -6957,7 +6981,7 @@
     return back + '<article class="g-doc"><header class="g-dh"><span class="g-eb">' + esc(gCatName(g.cat)) + ' guide</span><h2 class="g-title" id="rtitle" tabindex="-1">' + esc(g.title) + '</h2>' +
       (g.sum ? '<p class="g-lead">' + esc(g.sum) + '</p>' : '') + '<p class="g-meta">' + esc(gMeta(g)) + '</p>' +
       // the head chef's Change this guide sits under the title, like Change this recipe on a card (not after every page)
-      (admin ? '<p class="g-chg g-noprint"><button type="button" class="p-x g-chg-a" data-p="g-change" data-id="' + esc(g.id) + '">' + pen + '<span>Change this guide</span></button></p>' : '') + '</header>' +
+      (admin ? '<p class="g-chg g-noprint"><button type="button" class="p-x g-chg-a" data-p="g-change" data-id="' + esc(g.id) + '">' + pen + '<span>' + (armed('g-change:' + g.id) ? 'Not saved. Tap again' : 'Change this guide') + '</span></button></p>' : '') + '</header>' +
       (steps.length ? '<section class="g-steps"><h3 class="g-h3">Steps</h3><ol class="g-ol">' + steps.map(function (t) { return '<li><span class="g-c" aria-hidden="true"></span><span>' + linkNote(t) + '</span></li>'; }).join('') + '</ol></section>' : '') +
       (n ? '<section class="g-pages" aria-label="Pages"><p class="hint g-noprint">' + (n > 1 ? n + ' pages. ' : '') + 'Tap a page to open it big.</p>' +
         (n > 2 ? '<div class="g-thumbs g-noprint">' + pv.urls.slice(0, n).map(function (u, k) { return u ? '<button type="button" class="g-thumb" data-p="g-zoom" data-i="' + k + '" aria-label="' + esc('Open page ' + (k + 1) + ' big') + '"><img src="' + esc(u) + '" alt=""><span>' + (k + 1) + '</span></button>' : ''; }).join('') + '</div>' : '') + figs +
@@ -7079,8 +7103,12 @@
   function gfFrom(g) { return { id: g.id, nid: '', title: g.title || '', cat: g.cat || 'other', who: g.who || 'all', sum: g.sum || '', steps: g.steps || '', kw: g.kw || '', pages: null, text: '', file: '', busy: '', msg: '', saving: false }; }
   function gfSnap(f) { return f ? JSON.stringify([f.title, f.cat, f.who, f.sum, f.steps, f.kw, f.pages ? f.pages.map(function (p) { return p.k; }) : null]) : ''; }
   function gfDirty() { return !!S.gf && (!!S.gf.busy || !!S.gf.saving || gfSnap(S.gf) !== S.gfSnap); }
+  // a saved guide not changed since it opened: Save changes is off and saveGuide() refuses (28 Oct 2026)
+  function gfSame() { return !!S.gf && !!S.gf.id && gfSnap(S.gf) === S.gfSnap; }
+  // f is the guide's form, or the one already open (S.gf), which keeps its changes
   function gOpenEditor(f) {
-    S.gf = f; S.gfSnap = gfSnap(f); S.gMsg = ''; S.atab = 'guides'; lsSet('lk.prep.atab', 'guides'); draw();
+    if (f !== S.gf) { S.gf = f; S.gfSnap = gfSnap(f); }
+    S.gMsg = ''; S.atab = 'guides'; lsSet('lk.prep.atab', 'guides'); draw();
     var t = S.root && S.root.querySelector('[data-k="g-title"]');
     if (t) { t.focus({ preventScroll: true }); t.scrollIntoView({ block: 'start' }); }
   }
@@ -7185,7 +7213,7 @@
       strip = '<ol class="g-strip">' + pages.map(function (p, i) {
         return '<li><img src="' + esc(p.thumb) + '" alt="' + esc('Page ' + (i + 1)) + '"><span>Page ' + (i + 1) + ' · ' + gKb(p) + '</span><span class="g-sbtn">' +
           (i ? '<button type="button" class="p-x" data-p="g-pup" data-i="' + i + '" aria-label="' + esc('Move page ' + (i + 1) + ' earlier') + '">Earlier</button>' : '') +
-          '<button type="button" class="p-x" data-p="g-prm" data-i="' + i + '" aria-label="' + esc('Remove page ' + (i + 1)) + '">Remove</button></span></li>';
+          '<button type="button" class="p-x" data-p="g-prm" data-i="' + i + '" aria-label="' + esc((armed('g-prm:' + i) ? 'Tap again to remove page ' : 'Remove page ') + (i + 1)) + '">' + (armed('g-prm:' + i) ? 'Tap again to remove' : 'Remove') + '</button></span></li>';
       }).join('') + '</ol>';
     }
     var pagesMsg = pages ? (pages.length ? pages.length + (pages.length === 1 ? ' page' : ' pages') + ' ready to save.' + (old && old.pages ? ' They replace the ' + old.pages + ' saved now.' : '') : 'No pages chosen.' + (old && old.pages ? ' Saving removes the ' + old.pages + ' saved now.' : '')) :
@@ -7205,7 +7233,7 @@
       '<div class="field"><label class="label" for="g-kw">Search words (optional)</label><input id="g-kw" class="search" data-k="g-kw" maxlength="200" autocomplete="off" placeholder="For example: iCombi, oven, programme" value="' + esc(f.kw) + '"><span class="hint">Separate them with commas. A recipe card that mentions one of these words shows a link to this guide.</span></div>' +
       '<p class="g-links" id="g-links">' + esc(gLinksText(f)) + '</p>' +
       (f.msg ? '<p class="p-err" role="alert">' + esc(f.msg) + '</p>' : '') +
-      '<div class="btn-row"><button type="button" class="btn dark" data-p="g-save"' + (f.busy || f.saving ? ' disabled' : '') + '>' + (f.saving ? 'Saving...' : f.id ? 'Save changes' : 'Save guide') + '</button>' +
+      '<div class="btn-row"><button type="button" class="btn dark" data-p="g-save"' + (f.busy || f.saving || gfSame() ? ' disabled' : '') + '>' + (f.saving ? 'Saving...' : f.id ? 'Save changes' : 'Save guide') + '</button>' +
       '<button type="button" class="btn" data-p="g-cancel">' + (armed('g-cancel') ? 'Tap again to discard' : f.id ? 'Cancel' : 'Close') + '</button></div></section>';
   }
   /* while writing: which recipe cards the guide will show on (the same rule as gIndex) */
@@ -7217,7 +7245,7 @@
     var cards = gCards(g).map(function (r) { return r.name; });
     return '<li class="nt-row g-row"><div class="g-rt">' + gThumbHTML(g) + '<div class="g-rb"><span class="nt-tag">' + esc(gCatName(g.cat)) + '</span>' + gWhoTag(g) + '<b>' + esc(g.title) + '</b>' + (g.sum ? '<span>' + esc(g.sum) + '</span>' : '') +
       '<span class="nt-by">' + esc(gMeta(g)) + (cards.length ? '. On ' + esc(cards.slice(0, 4).join(', ')) + (cards.length > 4 ? ' and ' + (cards.length - 4) + ' more' : '') : '') + '</span></div></div>' +
-      '<div class="btn-row"><a class="p-x g-open" href="#/guides/' + encodeURIComponent(g.id) + '">Open</a><button type="button" class="p-x" data-p="g-edit" data-id="' + esc(g.id) + '">Change</button>' +
+      '<div class="btn-row"><a class="p-x g-open" href="#/guides/' + encodeURIComponent(g.id) + '">Open</a><button type="button" class="p-x" data-p="g-edit" data-id="' + esc(g.id) + '">' + (armed('g-edit:' + g.id) ? 'Not saved. Tap again' : 'Change') + '</button>' +
       '<button type="button" class="p-x" data-p="g-del" data-id="' + esc(g.id) + '">' + (armed('g-del:' + g.id) ? 'Tap again to remove' : 'Remove') + '</button></div></li>';
   }
   function guidesAdminHTML() {
@@ -7239,7 +7267,7 @@
      so a guide never shows before its pages are there. A failed save keeps everything in the editor to try again. */
   function saveGuide() {
     var f = S.gf;
-    if (!f || f.saving || f.busy || !fb) return;
+    if (!f || f.saving || f.busy || !fb || gfSame()) return;
     var old = f.id ? gById(f.id) : null, pages = f.pages, title = gClean(f.title, 80).replace(/\s+/g, ' ');
     function stop(m) { f.msg = m; draw(); }
     if (S.level !== 'owner') return stop('Only the head chef can save guides.');
@@ -7832,7 +7860,7 @@
     return '<section class="set-block a-cut"><span class="label">Order cut-offs</span><span class="hint">You and the sous chefs get a bar at the top of every page from the time you pick under Remind us (4 hours before unless you change it) until the cut-off passes. It turns orange in the last hour. An early cut-off is reminded from the night before. Today\'s cut-offs show on the order list. Tick the days the supplier delivers, then when the order has to be in.</span>' +
       (rows ? '<ul class="cut-eds">' + rows + '</ul>' : '<p class="hint">No suppliers yet, so nobody is reminded.</p>') +
       '<div class="btn-row"><button type="button" class="btn" data-p="cut-add">Add a supplier</button>' + (d.length ? '' : '<button type="button" class="btn" data-p="cut-usual">Add ' + esc(CUT_USUAL.map(function (x) { return x.name; }).join(', ')) + '</button>') + '</div>' +
-      '<div class="btn-row"><button type="button" class="btn dark" data-p="cut-save"' + (owner && cutDirty() && !S.cutBusy ? '' : ' disabled') + '>Save cut-offs</button><button type="button" class="btn" data-p="cut-undo"' + (cutDirty() ? '' : ' disabled') + '>Undo unsaved changes</button></div>' +
+      '<div class="btn-row"><button type="button" class="btn dark" data-p="cut-save"' + (owner && cutDirty() && !S.cutBusy ? '' : ' disabled') + '>Save cut-offs</button><button type="button" class="btn" data-p="cut-undo"' + (cutDirty() ? '' : ' disabled') + '>' + (armed('cut-undo') ? 'Tap again to undo' : 'Undo unsaved changes') + '</button></div>' +
       '<span class="saved" role="status">' + esc(S.cutMsg || '') + '</span>' + (pushWhoId() ? '<h3 class="a-ch-h">Pushes on this device</h3>' + pushHTML() : '') + '</section>';
   }
   function cutSave() {
@@ -7852,7 +7880,8 @@
     if (a === 'cut-usual') { S.cutDraft = JSON.parse(JSON.stringify(CUT_USUAL)); draw(); return; }
     if (a === 'cut-rm') { if (!d[i] || !arm('cut-rm:' + i)) return; d.splice(i, 1); draw(); return; }
     if (a === 'cut-day') { var v = +el.getAttribute('data-v'), s = d[i]; if (!s) return; var k = s.dd.indexOf(v); if (k >= 0) s.dd.splice(k, 1); else { s.dd.push(v); s.dd.sort(); } draw(); return; }
-    if (a === 'cut-undo') { cutStart(); S.cutMsg = ''; draw(); return; }
+    // every change goes at once, so it asks a second tap first, like Undo on the People tab (28 Oct 2026)
+    if (a === 'cut-undo') { if (cutDirty() && !arm('cut-undo')) return; cutStart(); S.cutMsg = ''; draw(); return; }
     if (a === 'cut-save') { cutSave(); return; }
   }
   // typing a name keeps the cursor (no redraw); a time or the days before redraw the line that says when orders close
@@ -8098,8 +8127,16 @@
     }
     if (a === 'n-refresh') { loadNotes(true); return; }
     if (a === 'n-save') { saveNote(); return; }
-    if (a === 'n-edit') { var nn = (S.notes || []).filter(function (x) { return x.id === id; })[0]; if (nn) { S.nf = nfFrom(nn); S.nfSnap = JSON.stringify(S.nf); S.nOpen = true; S.nMsg = ''; draw(); var tx = S.root.querySelector('[data-k="n-text"]'); if (tx) { focusNoteText(tx); } } return; }
-    if (a === 'n-reuse') { reuseNote(id); return; }
+    /* Edit, Use again, Write new minutes, Continue draft, Change: a ping, minutes or a guide open with changes not saved
+       asks a second tap before another one takes its place (28 Oct 2026: one tap threw it away). The one open is the one
+       tapped: the editor just carries on with the changes. */
+    if (a === 'n-edit') {
+      var nn = (S.notes || []).filter(function (x) { return x.id === id; })[0]; if (!nn) return;
+      if (!(nfDirty() && S.nf.id === id)) { if (nfDirty() && !arm('n-edit:' + id)) return; S.nf = nfFrom(nn); S.nfSnap = JSON.stringify(S.nf); }
+      S.nOpen = true; S.nMsg = ''; draw(); var tx = S.root.querySelector('[data-k="n-text"]'); if (tx) { focusNoteText(tx); }
+      return;
+    }
+    if (a === 'n-reuse') { if (nfDirty() && !arm('n-reuse:' + id)) return; reuseNote(id); return; }
     if (a === 'n-past-more') { loadPastNotes(true); return; }
     if (a === 'n-past') { S.nPastOpen = !S.nPastOpen; if (S.nPastOpen && !Array.isArray(S.nPast)) loadPastNotes(); else draw(); return; }
     if (a === 'n-seen') { loadSeen(id); return; }
@@ -8120,15 +8157,21 @@
     if (a === 'mn-refresh') { loadMinutes(true); loadSigns(S.mSel || (mnPub()[0] || {}).id, true); draw(); return; }
     if (a === 'mn-sel') { S.mSel = id; loadSigns(id, true); draw(); return; }
     if (/^mn-(new|tpl|draft-open|edit|draft|pub|remove)$/.test(a) && !mnCanWrite()) return;
-    if (a === 'mn-new' || a === 'mn-tpl') { S.mf = a === 'mn-tpl' ? mfTpl() : mfNew(); S.mfSnap = mfSnap(S.mf); S.mMsg = ''; draw(); var mfe = S.root.querySelector('.mn-form'); if (mfe) mfe.scrollIntoView({ block: 'start' }); return; }
-    if (a === 'mn-draft-open' || a === 'mn-edit') { var mm = mnById(id); if (mm) { S.mf = mfFrom(mm); S.mfSnap = mfSnap(S.mf); S.mMsg = ''; draw(); var mfe2 = S.root.querySelector('.mn-form'); if (mfe2) mfe2.scrollIntoView({ block: 'start' }); } return; }
+    if (a === 'mn-new' || a === 'mn-tpl') { if (mfDirty() && !arm(a)) return; S.mf = a === 'mn-tpl' ? mfTpl() : mfNew(); S.mfSnap = mfSnap(S.mf); S.mMsg = ''; draw(); var mfe = S.root.querySelector('.mn-form'); if (mfe) mfe.scrollIntoView({ block: 'start' }); return; }
+    if (a === 'mn-draft-open' || a === 'mn-edit') {
+      var mm = mnById(id); if (!mm) return;
+      if (!(mfDirty() && S.mf.id === id)) { if (mfDirty() && !arm(a + ':' + id)) return; S.mf = mfFrom(mm); S.mfSnap = mfSnap(S.mf); }
+      S.mMsg = ''; draw(); var mfe2 = S.root.querySelector('.mn-form'); if (mfe2) mfe2.scrollIntoView({ block: 'start' });
+      return;
+    }
     if (a === 'mn-attopen') { S.mAttOpen = !S.mAttOpen; draw(); return; }
     if (a === 'mn-attc') { if (S.mf) { var cur = S.mf.att[id]; S.mf.att[id] = cur === 'present' ? 'apology' : cur === 'apology' ? 'absent' : 'present'; draw(); } return; }
     if (a === 'mn-regall') { S.mRegAll = !S.mRegAll; draw(); return; }
     if (a === 'mn-all') { if (S.mf) { people().forEach(function (p) { S.mf.att[p.id] = 'present'; }); draw(); } return; }
     if (a === 'mn-ast') { if (S.mf && S.mf.acts[i]) { S.mf.acts[i].st = el.getAttribute('data-v'); draw(); } return; }
     if (a === 'mn-aadd') { if (S.mf) { S.mf.acts.push({ what: '', who: '', by: '', st: 'open' }); draw(); var mw = S.root.querySelector('[data-k="mn-aw"][data-i="' + (S.mf.acts.length - 1) + '"]'); if (mw) mw.focus(); } return; }
-    if (a === 'mn-arem') { if (S.mf) { S.mf.acts.splice(i, 1); draw(); } return; }
+    // an action with words, a person or a date asks a second tap (28 Oct 2026); a blank one goes in one tap
+    if (a === 'mn-arem') { var ma = S.mf && S.mf.acts[i]; if (!ma) return; if ((String(ma.what || '').trim() || ma.who || ma.by) && !arm('mn-arem:' + i)) return; S.mf.acts.splice(i, 1); draw(); return; }
     if (a === 'mn-draft') { saveMinutes(false); return; }
     if (a === 'mn-pub') { saveMinutes(true); return; }
     if (a === 'mn-remove') { removeMinutes(id); return; }
@@ -8137,16 +8180,22 @@
     if (a === 'g-zoom') { var gzg = gById(S.gSel); if (gzg) gzOpen(gzg.id, i); return; }
     if (a === 'g-retry') { var grg = gById(S.gSel); if (grg) { delete gPg[grg.id + ':' + (grg.v || 1)]; draw(); } return; }
     if (a === 'g-admin') { S.atab = 'guides'; lsSet('lk.prep.atab', 'guides'); location.hash = '#/admin'; return; }
-    if (a === 'g-change') { var gcg = gById(id); if (gcg) { S.gf = gfFrom(gcg); S.gfSnap = gfSnap(S.gf); S.atab = 'guides'; lsSet('lk.prep.atab', 'guides'); location.hash = '#/admin'; } return; }
+    if (a === 'g-change') {
+      var gcg = gById(id); if (!gcg) return;
+      if (!(gfDirty() && S.gf.id === id)) { if (gfDirty() && !arm('g-change:' + id)) return; S.gf = gfFrom(gcg); S.gfSnap = gfSnap(S.gf); }
+      S.atab = 'guides'; lsSet('lk.prep.atab', 'guides'); location.hash = '#/admin';
+      return;
+    }
     if (/^g-(new|edit|del|save|cancel|fcat|pup|prm)$/.test(a) && S.level !== 'owner') return;
     if (a === 'g-new') { gOpenEditor(gfNew()); return; }
-    if (a === 'g-edit') { var geg = gById(id); if (geg) gOpenEditor(gfFrom(geg)); return; }
+    if (a === 'g-edit') { var geg = gById(id); if (!geg) return; if (gfDirty() && S.gf.id === id) { gOpenEditor(S.gf); return; } if (gfDirty() && !arm('g-edit:' + id)) return; gOpenEditor(gfFrom(geg)); return; }
     if (a === 'g-del') { removeGuide(id); return; }
     if (a === 'g-save') { saveGuide(); return; }
     if (a === 'g-fcat') { if (S.gf) { S.gf.cat = el.getAttribute('data-v'); S.gf.msg = ''; draw(); } return; }
     if (a === 'g-fwho') { if (S.gf) { S.gf.who = el.getAttribute('data-v'); S.gf.msg = ''; draw(); } return; }
     if (a === 'g-pup') { var gp = S.gf && S.gf.pages; if (gp && i > 0 && gp[i]) { gp.splice(i - 1, 0, gp.splice(i, 1)[0]); draw(); } return; }
-    if (a === 'g-prm') { var gp2 = S.gf && S.gf.pages; if (gp2 && gp2[i]) { gp2.splice(i, 1); S.gf.msg = ''; draw(); } return; }
+    // a page is a picture made on this device: getting it back means choosing the file again, so a second tap first
+    if (a === 'g-prm') { var gp2 = S.gf && S.gf.pages; if (gp2 && gp2[i]) { if (!arm('g-prm:' + i)) return; gp2.splice(i, 1); S.gf.msg = ''; draw(); } return; }
     if (a === 'otick') { tickOrderLine(el.getAttribute('data-d'), id, el.getAttribute('aria-pressed') !== 'true'); return; }
     if (a === 'odel') { removeOrderLine(el.getAttribute('data-d'), id); return; }
     if (a === 'orestore') { removeOrderLine(el.getAttribute('data-d'), id, true); return; }
@@ -8158,10 +8207,12 @@
     if (a === 'osugg') { var st = (S.osugg || [])[i]; if (st) { S.otext = st; if (!S.oqty.trim()) S.oqty = (ordQtyList(st)[0] || {}).q || ''; draw(); var oe = S.root.querySelector('[data-k="o-text"]'); if (oe) { oe.focus(); try { oe.setSelectionRange(oe.value.length, oe.value.length); } catch (x) {} } } return; }
     if (a === 'who') { pickName(id); return; }
     if (a === 'who-change') {
-      // the PIN screens' Not me and the admin card's Sign in: nobody is signed in yet, so nothing to hand over
+      // something not saved asks a second tap wherever this hands the device over: a person signed in, or the head
+      // chef's Google account with nobody on a PIN (its lone Not you? and the admin card's Sign in, 28 Oct 2026: they
+      // signed Google out in one tap over a typed line). The admin card's links to the prep list stay put until then.
+      if ((S.authed || S.user) && window.LK_PREP.unsaved() && !arm('who-change')) { e.preventDefault(); return; }
+      // the PIN screens' Not me: nobody is signed in yet (picking a name signs Google out first), so it goes in one tap
       if (!S.authed) { S.picking = true; S.pending = null; leave(); dropGoogle().then(accessChanged).catch(function () { toast('Sign-out could not finish. Close this tab before handing over the device.'); }); return; }
-      // the admin card's Change person is a link to the prep list: it stays put until the second tap
-      if (window.LK_PREP.unsaved() && !arm('who-change')) { e.preventDefault(); return; }
       signOutPerson(true, true); return;
     }
     if (a === 'guest-who') { guestAsk(null); return; }
@@ -8208,7 +8259,7 @@
     if (a === 'a-go-waste') { S.atab = 'waste'; lsSet('lk.prep.atab', 'waste'); return; }
     if (a === 'wreview') { saveReview(el.getAttribute('data-v')); return; }
     if (a === 'wh-view') { if (!whCanChange()) return; var wv = el.getAttribute('data-v'); if (['history', 'summary', 'reviews'].indexOf(wv) >= 0) whState().view = wv; draw(); return; }
-    if (a === 'wh-review-cancel') { S.wrA = S.wrC = null; draw(); return; }
+    if (a === 'wh-review-cancel') { if (whReviewDirty() && !arm('wh-review-cancel')) return; S.wrA = S.wrC = null; draw(); return; }
     if (a === 'wh-clear') { var wc = whState(); wc.q = wc.who = wc.unit = ''; wc.removed = false; AF().sec = AF().reason = AF().dow = ''; afSave(); draw(); return; }
     if (a === 'wh-apply') {
       if (!whCanChange()) return;
@@ -8235,7 +8286,9 @@
     if (a === 'signin') { signIn(); return; }
     // the owner check again now, past its 5-minute wait (the No signal card on the admin panel)
     if (a === 'admins-retry') { delete S.retryAt.admins; loadAdmins(); draw(); return; }
-    if (a === 'signout') { if (draftDirty() && !arm('signout')) { toast('Unsaved staff changes. Tap Sign out of Google again to drop them.'); return; } signOut(); draw(); return; }
+    // anything not saved asks first, like the chef hat's Sign out (28 Oct 2026: only the staff list did, and minutes, a
+    // ping, a guide or the cut-offs went in one tap)
+    if (a === 'signout') { if (window.LK_PREP.unsaved() && !arm('signout')) { toast(notSaved() + ' yet. Tap Sign out of Google again to sign out.'); return; } signOut(); draw(); return; }
     if (a === 'sec-hide') { hideSection(id, el.getAttribute('data-hide') === '1'); return; }
     if (a === 'a-reset-pin') { resetPin(id); return; }
     if (a === 'range') { if (S.atab === 'waste') { if (!whCanChange()) return; whState().period = el.getAttribute('data-v'); } else S.statsRange = +el.getAttribute('data-v'); draw(); return; }
@@ -8268,6 +8321,13 @@
     if (a === 'a-ids-keep') { idDecide(true); return; }
     if (a === 'a-ids-undo') { idDecide(false); return; }
     if (a === 'a-reset') { if (draftDirty() && !arm('a-reset')) return; startDraft(); draw(); return; }
+  }
+  // typing does not redraw the minutes, ping or guide form, so their Save buttons follow here: off while nothing changed
+  function saveSync() {
+    var b = S.root && S.root.querySelector('[data-p="mn-draft"]'); if (b) b.disabled = !!S.mSaving || mfSame(false);
+    b = S.root && S.root.querySelector('[data-p="mn-pub"]'); if (b) b.disabled = !!S.mSaving || mfSame(true);
+    b = S.root && S.root.querySelector('[data-p="n-save"]'); if (b) b.disabled = !!S.nSaving || nfSame();
+    b = S.root && S.root.querySelector('[data-p="g-save"]'); if (b && S.gf) b.disabled = !!(S.gf.busy || S.gf.saving) || gfSame();
   }
   function onInput(e) {
     var el = e.target, k = el.getAttribute && el.getAttribute('data-k');
@@ -8304,7 +8364,7 @@
     if (k === 'ml-text') { mlf.text = el.value.slice(0, ML_MAX); mlMsg = ''; var mll = S.root.querySelector('#ml-left'), mln = ML_MAX - mlf.text.length; if (mll) mll.textContent = mln < 100 ? mln + ' characters left' : ''; return; }
     if (k === 'a-newpin') { S.newPin = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.newPin; return; }
     if (k === 'a-newpin2') { S.newPin2 = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.newPin2; return; }
-    if (k && k.indexOf('mn-') === 0) { mfSet(k, el); return; }
+    if (k && k.indexOf('mn-') === 0) { mfSet(k, el); saveSync(); return; }
     if (k === 'pf1') {
       var p1 = S.pf1.length; S.pf1 = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.pf1; pinCells(el);
       if (p1 < 4 && S.pf1.length === 4) {
@@ -8322,15 +8382,16 @@
       if (!S.gf) return;
       S.gf[k.slice(2)] = el.value;
       var gln = S.root.querySelector('#g-links'); if (gln) gln.textContent = gLinksText(S.gf);
-      return;
+      saveSync(); return;
     }
-    if (k === 'n-text') { if (S.nf) S.nf.text = el.value; var nc = S.root.querySelector('#n-count'); if (nc) nc.textContent = el.value.length + ' of 400. Ctrl+Enter saves.'; var npv = S.root.querySelector('#n-prev'); if (npv && S.nf) npv.innerHTML = draftPreviewHTML(S.nf); return; }
+    if (k === 'n-text') { if (S.nf) S.nf.text = el.value; var nc = S.root.querySelector('#n-count'); if (nc) nc.textContent = el.value.length + ' of 400. Ctrl+Enter saves.'; var npv = S.root.querySelector('#n-prev'); if (npv && S.nf) npv.innerHTML = draftPreviewHTML(S.nf); saveSync(); return; }
     if (k && k.indexOf('tr-') === 0) { trInput(k, el); return; }
     if (k === 'w-text') { S.wf.text = el.value; var wg = S.root.querySelector('#w-sugg'); if (wg) wg.innerHTML = wSuggHTML(); return; }
     if (k === 'w-amt') { S.wf.amt = el.value.replace(/[^0-9.,]/g, ''); S.wf.amtAuto = false; if (el.value !== S.wf.amt) el.value = S.wf.amt; return; }
     if (k === 'w-sec') { S.wf.sec = el.value; return; }
     if (k === 'w-act') { S.wf.act = el.value; return; }
-    if (k === 'w-ra' || k === 'w-rc') { S.wrWhere = el.closest('.a-rvform') ? 'admin' : 'page'; if (k === 'w-ra') S.wrA = el.value; else S.wrC = el.value; return; }
+    // the admin panel's Daily reviews form and the wastage page each keep their own (rvTyped())
+    if (k === 'w-ra' || k === 'w-rc') { if (el.closest('.a-rvform')) { if (k === 'w-ra') S.wrA = el.value; else S.wrC = el.value; } else if (k === 'w-ra') S.wpA = el.value; else S.wpC = el.value; return; }
     if (k === 'p-qty') { S.qty = el.value; var qs2 = S.root.querySelector('#p-qsugg'); if (qs2) qs2.innerHTML = qtyChipsHTML(); return; }
     if (k === 'p-section') { S.section = el.value; S.secTyped = !!el.value.trim(); return; }
     if (k === 'p-rs') { S.recipeSearch = el.value; S.recipeOpen = true; draw(); return; }
@@ -8352,7 +8413,7 @@
     if (k === 'todo-due') { tdf.due = tdDue(el.value); var nd = S.root.querySelector('[data-p="todo-nodue"]'); if (nd) nd.hidden = !tdf.due; return; }
     if (k === 'g-file') { var gfl = el.files; gReadFiles(gfl); try { el.value = ''; } catch (x) {} return; }
     if (k === 'mn-older') { S.mSel = el.value; loadSigns(el.value, true); draw(); return; }
-    if (k && k.indexOf('mn-') === 0) { mfSet(k, el); return; }
+    if (k && k.indexOf('mn-') === 0) { mfSet(k, el); saveSync(); return; }
     if (k === 'p-day') { if (el.value) { S.date = el.value; S.tab = ''; watchItems(); draw(); } return; }
     if (k === 'n-start') { if (S.nf && el.value) { S.nf.start = el.value; if (S.nf.until && S.nf.until < el.value) S.nf.until = ''; draw(); } return; }
     if (k === 'n-until') { if (S.nf) { S.nf.until = el.value; S.nf.run = !!el.value; draw(); } return; }
@@ -8949,6 +9010,13 @@
   function localBackBusy() {
     return !!(S.root && document.body.contains(S.root) && (S.busy || S.nSaving || S.mSaving || S.gf && (S.gf.busy || S.gf.saving)));
   }
+  /* Something not saved on this device apart from a change waiting to send (LK_PREP.unsaved() is this or a write
+     waiting): a line half typed or a sheet open on the prep pages, an admin draft (draftsDirty()), a review, or a page
+     loaded on its own with changes (Delivery received, Manage Recipes, Manage functions, Supplier order). */
+  function unsavedHere() {
+    return !!(window.LK_DELIVERY && window.LK_DELIVERY.dirty()) || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!(window.LK_SUP && window.LK_SUP.dirty()) || !!mlf.text.trim() || tdDirty() || draftsDirty() || !!S.sheet || !!S.recipeOpen ||
+      !!(S.text.trim() || S.qty.trim() || S.otext.trim() || S.oqty.trim() || S.wf.text.trim() || String(S.wf.amt).trim() || S.wf.act.trim() || S.xf.text.trim() || String(S.xf.amt).trim() || S.xf.note.trim()) || rvTyped(true) || rvTyped(false);
+  }
   window.addEventListener('storage', function (e) { if (((e.key === 'lk.prep.who' || e.key === 'lk.prep.sess') && !e.newValue || e.key === 'lk.auth.lock') && (S.authed || S.user)) signOutPerson(true, true); });
   window.LK_PREP = {
     sg: sg,
@@ -8967,12 +9035,11 @@
       if (S.pin) { connect(); if (name === 'admin') sdk(); if (name === 'orders') { S.ordDate = dayNow(); watchOrders(); } if (name === 'waste') { S.wDate = dayNow(); watchWaste(); } if (name === 'transfers') { S.xDate = dayNow(); watchXfer(); } notesInit(); }
     },
     warm: function () { sdk().then(function () { rxSync(); }).catch(function () {}); if (S.pin && S.configState !== 'ok' && S.configState !== 'loading') connect(); notesInit(); },
-    unsaved: function () {
-      return pending > 0 || !!(window.LK_DELIVERY && window.LK_DELIVERY.dirty()) || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!(window.LK_SUP && window.LK_SUP.dirty()) || !!mlf.text.trim() || tdDirty() || mfDirty() || nfDirty() || gfDirty() || draftDirty() || cutDirty() || !!String(S.bulk || '').trim() || !!S.sheet || !!S.recipeOpen ||
-        !!(S.text.trim() || S.qty.trim() || S.otext.trim() || S.oqty.trim() || S.wf.text.trim() || String(S.wf.amt).trim() || S.wf.act.trim() || S.xf.text.trim() || String(S.xf.amt).trim() || S.xf.note.trim() || (S.wrA != null && S.wrA !== (rvBase().avoidable || '')) || (S.wrC != null && S.wrC !== (rvBase().change || '')));
-    },
+    unsaved: function () { return pending > 0 || unsavedHere(); },
     // a write waiting for the server (part of unsaved()), so Update now can say "Not sent yet." like the strip
     unsent: function () { return pending > 0; },
+    // the rest of unsaved(): typed or open here, so the chef hat's Sign out says "Not saved yet." or "Not sent yet."
+    unsavedHere: unsavedHere,
     noteInfo: noteInfo, noteBellLabel: noteBellLabel,
     noteOpen: noteOpen,
     // the recipes were opened: look for the head chef's recipe changes when the last look is 30 minutes old

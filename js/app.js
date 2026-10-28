@@ -474,9 +474,10 @@
     if (a === 'open') { whoMenuClose(); window.LK_PREP.chefOpen(el.getAttribute('data-v')); return; }
     if (a === 'sec') { whoMenuClose(); window.LK_PREP.secOpen(); return; }
     if (a === 'out') {
-      // something not saved yet: the first tap says so, the second signs out anyway
+      // something not saved yet: the first tap says so, the second signs out anyway. "Not sent yet." when the only thing
+      // waiting is a change on its way to the server (28 Oct 2026: it said Not saved yet for that too)
       if (!window.LK_PREP.signOut(el.classList.contains('is-armed'))) {
-        el.classList.add('is-armed'); el.querySelector('small').textContent = 'Not saved yet. Tap again to sign out'; return;
+        el.classList.add('is-armed'); el.querySelector('small').textContent = (window.LK_PREP.unsavedHere && !window.LK_PREP.unsavedHere() ? 'Not sent yet.' : 'Not saved yet.') + ' Tap again to sign out'; return;
       }
       // "Signed out" is the prep toast, which shows by itself off the prep pages too (toast() in js/prep.js)
       whoMenuClose();

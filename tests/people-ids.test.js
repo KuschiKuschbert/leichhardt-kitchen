@@ -38,6 +38,24 @@ const same = (a, b) => (a || []).slice().sort().join(',') === b.slice().sort().j
   ok(p.errors.length === 0, 'admin: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // admin: Keep on the card while the People tab has a change not saved keeps that change (28 Oct 2026: it went), and
+  // its save carries it onto the list without undoing what was kept
+  p = await L.open(b, '#/admin', { admin: true, extra: cfg({ role: 'sous', del: true }), wait: 1800 });
+  await L.adminTab(p, 'people');
+  await L.settle(p, 300);
+  await p.fill('#a-bulk', 'Zed');
+  await p.click('[data-p="a-bulk-add"]');
+  await L.settle(p, 200);
+  await L.tap(p, '[data-p="a-ids-keep"]');
+  await L.settle(p, 600);
+  ok(await p.evaluate(() => (window.LK_PREP.state.draft.people || []).some(x => x.name === 'Zed')) && /1 unsaved change/.test(await txt(p, '.a-unsaved') || ''), 'admin: Keep these changes keeps the person added and not saved yet (' + await txt(p, '.a-unsaved') + ')');
+  await L.tap(p, '[data-p="a-save"]');
+  await L.settle(p, 500);
+  s = await store(p);
+  ok(s[CFG].people.some(x => x.name === 'Zed') && same(s[CFG].sousIds, ['sam', 'bo']) && s[CFG].people.filter(x => x.id === 'bo')[0].role === 'sous', 'admin: Save keeps Bo as Sous chef and adds Zed');
+  ok(p.errors.length === 0, 'admin keep with a draft: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   // admin: an old Pings tick on Bo (before 20 Oct 2026) asks nothing: pings follow the role, so pingIds stays the sous chefs
   p = await L.open(b, '#/admin', { admin: true, extra: cfg({ ping: true }), wait: 1800 });
   s = await store(p);

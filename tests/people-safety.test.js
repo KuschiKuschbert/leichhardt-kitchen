@@ -16,7 +16,7 @@ const cfg = p => p.evaluate(k => window.__fake.dump()[k], CFG);
   ok(/Put back/.test(await txt(p, '[data-p="a-remove-person"][data-i="2"]')) && /1 unsaved change/.test(await txt(p, '.a-unsaved') || ''), 'Bo is off the list, with Put back, and 1 unsaved change');
   ok(await p.$('[data-p="a-save"]:not([disabled])') !== null, 'Save is on');
   await L.tap(p, '[data-p="signout"]'); await L.settle(p, 200);
-  ok(/Unsaved staff changes/.test(await txt(p, '.p-toast') || '') && /headchef/.test(await txt(p, '.p-bar') || ''), 'Sign out with changes waiting asks again and stays signed in');
+  ok(/Not saved yet/.test(await txt(p, '.p-toast') || '') && /headchef/.test(await txt(p, '.p-bar') || ''), 'Sign out with changes waiting asks again and stays signed in');
   // the bar is about the Google account, not the person, and Prep is in the top bar (23 Oct 2026)
   ok(await txt(p, '.p-bar [data-p="signout"]') === 'Sign out of Google' && /^Google account:/.test(await txt(p, '.p-bar') || '') && !(await p.$('.p-bar a[href="#/prep"]')), 'admin bar: Google account, Sign out of Google, no Prep list link (' + await txt(p, '.p-bar') + ')');
   ok(/Sign out of Google again/.test(await txt(p, '.p-toast') || ''), 'admin bar: the toast names Sign out of Google');
