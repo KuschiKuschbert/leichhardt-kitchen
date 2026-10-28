@@ -106,9 +106,10 @@
   var itemsKey = '', cfgKey = '', toastTimer = null, resumed = false;
 
   /* ---------- Firebase (loaded only when the prep pages are opened) ---------- */
-  /* Firestore keeps an offline copy in the browser. Now and then that copy breaks ("INTERNAL ASSERTION FAILED",
-     canonifyTarget) and the prep pages hang on Loading with no names. The data on the server is fine, so the phone
-     throws its copy away and reloads, at most once a day (lk.fsheal) so it can never loop. */
+  /* Firestore keeps a copy of what it read (in the tab's memory since 26 Oct 2026, #387, memoryLocalCache; before that in
+     the browser's IndexedDB, which this still clears on phones that have one). Now and then that copy breaks ("INTERNAL
+     ASSERTION FAILED", canonifyTarget) and the prep pages hang on Loading with no names. The data on the server is fine,
+     so the phone throws its copy away and reloads, at most once a day (lk.fsheal) so it can never loop. */
   function healCache() {
     if (lsGet('lk.fsheal') === dayNow()) return;
     lsSet('lk.fsheal', dayNow());
@@ -235,7 +236,8 @@
      has not loaded from the server yet and the copy in memory answered (no signal). That copy holds at most this
      phone's own unsent lines, so the list stays 'offline' until the server answers: the page shows those lines under
      the no-signal note, with no count, never as the whole list. 'same': the lines and the state are the same as last
-     time (a write reaching the server, the signal coming or going), so nothing is drawn again. Otherwise 'new'.
+     time (a write reaching the server, the signal coming or going), so nothing is drawn again: only the Not sent marks
+     can differ, and the rows are patched (patchOrDraw()). Otherwise 'new'.
      state: the list's state now ('ok' once the server answered). last: { sig, st } kept for that listener.
      js/deliveries.js asks it through LK_PREP.book().listSnap. */
   function listSnap(snap, state, last) {
@@ -256,15 +258,43 @@
     unsubCfg = unsubItems = unsubSec = unsubAct = unsubOrd = unsubW = unsubX = unsubXO = null; S.xOpen = []; S.xOpenState = 'idle'; cfgKey = itemsKey = ordKey = wKey = xKey = '';
     cutStop();
   }
-  var itemsLast = {};   // listSnap's memory for the prep list's listener
-  function patchUnsent() {
-    S.items.forEach(function (x) {
-      var row = document.getElementById('nbr-' + x.id), by = row && row.querySelector('.nb-by'), mark = by && by.querySelector('.nb-unsent');
-      if (!by) return;
-      if (x._unsent && !mark) by.insertAdjacentHTML('afterbegin', '<span class="nb-unsent">Not sent</span> ');
-      if (!x._unsent && mark) { var sp = mark.nextSibling; mark.remove(); if (sp && sp.nodeType === 3 && sp.nodeValue === ' ') sp.remove(); }
-    });
+  /* "Not sent": a line this phone changed that the server has not confirmed yet, from the listener's own
+     hasPendingWrites (no reads; metadata changes are not billed). Since 26 Oct 2026 (#387) such a change waits only in
+     this tab's memory, so people need to see which lines. Since 27 Oct 2026 prep, order, wastage and transfer lines,
+     Done today and Ordered today all have it, on a phone too (who wrote a line is hidden below 600 px).
+     It shows only while the strip does (stripOn(): no signal, or a write waiting more than 3 seconds). Every write is
+     pending until the server answers, even on a good signal, so a mark on every tick would make the rows jump.
+     The mark sits in a slot (.nb-mk) inside the words, so it wraps with them like Urgent and never narrows them.
+     While the strip is up every slot keeps the mark's room (.nb-held: hidden, no words, so the row's text and the line
+     sheet stay clean), so a tick with no signal only fills it and the rows never jump under the next tap (20 Oct 2026
+     fast ticking). The rows move once, with the strip, when it comes or goes. */
+  var UNSENT = '<span class="nb-unsent">Not sent</span>', HELD = '<span class="nb-held" aria-hidden="true"></span>';
+  function unsentOn(x) { return !!(x._unsent && stripOn()); }
+  function markHTML(on) { return on ? UNSENT : stripOn() ? HELD : ''; }
+  function unsentMark(x) { return '<span class="nb-mk">' + markHTML(unsentOn(x)) + '</span>'; }
+  function markRow(row, on) {
+    var s = row && row.querySelector('.nb-mk'), h = markHTML(on);
+    if (s && s.innerHTML !== h) s.innerHTML = h;
   }
+  // a live list's lines, each with its Not sent flag
+  function snapLines(snap, date) {
+    return snap.docs.map(function (d) { var x = d.data(); x.id = d.id; if (date) x.date = date; x._unsent = !!(d.metadata && d.metadata.hasPendingWrites); return x; });
+  }
+  /* listSnap() said 'same': the lines are the same, so only the Not sent marks can differ (the server confirmed a
+     change). Those are patched in the rows while the page is up, not the whole page drawn; otherwise it is drawn. */
+  function patchOrDraw(patch) {
+    if (!S.root || !document.body.contains(S.root) || holdDraw) { draw(); return; }
+    patch();
+  }
+  // every row that can say Not sent carries data-ln="<date>/<id>" (a line can show twice, in the list and in Done today,
+  // so not an id); prep lines have no date of their own, so S.date
+  function patchLines(lines, date) {
+    var by = {};
+    lines.forEach(function (x) { by[(date || x.date) + '/' + x.id] = x; });
+    if (S.root) S.root.querySelectorAll('[data-ln]').forEach(function (row) { var x = by[row.getAttribute('data-ln')]; if (x) markRow(row, unsentOn(x)); });
+  }
+  function patchUnsent() { patchLines(S.items, S.date); }
+  var itemsLast = {};   // listSnap's memory for the prep list's listener
   function watchItems() {
     if (!kitchenAccess() || !S.configFull) return;
     if (S.configState !== 'ok' || !fb) return;
@@ -276,11 +306,9 @@
       // no signal and this day not loaded yet (a day the phone moved to, or today again after another day): 'offline',
       // with only the lines this phone wrote since, never "nothing written"
       var k = listSnap(snap, S.itemsState, itemsLast);
-      S.items = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; x._unsent = !!(d.metadata && d.metadata.hasPendingWrites); return x; });
-      // when the server confirms a change only the "Not sent" marks differ: those are patched, not the whole page drawn
-      if (k === 'same') { if (S.root && document.body.contains(S.root) && !holdDraw) { patchUnsent(); return; } }
-      else S.itemsState = k === 'wait' ? 'offline' : 'ok';
-      draw();
+      S.items = snapLines(snap, '');
+      if (k === 'same') { patchOrDraw(patchUnsent); return; }
+      S.itemsState = k === 'wait' ? 'offline' : 'ok'; draw();
     }, function () { S.itemsState = 'error'; draw(); });
   }
   /* What the prep list learned, for suggestions, Quick add and the Learning tab: the 500 most used items. The collection
@@ -536,9 +564,11 @@
     }
     toast('Not saved. Check the connection and try again.', { label: 'OK', fn: function () {} }, 12000);
   }
-  /* Writes still waiting for the server. With no signal Firestore keeps them on the phone and sends them later, so the
-     page looks saved when nobody else can see the change yet. This count (and the browser's online flag) drives the
-     strip at the top of the prep pages. No reads, no polling. */
+  /* Writes still waiting for the server. With no signal Firestore queues them and sends them later, so the page looks
+     saved when nobody else can see the change yet. Since 26 Oct 2026 (#387, memoryLocalCache) that queue lives only in
+     this tab's memory: a reload, Update now, the 04:00 refresh or a closed app loses it. This count (and the browser's
+     online flag) drives the strip at the top of the prep pages, and LK_PREP.unsaved() holds the reloads back. No reads,
+     no polling. */
   var pending = 0, pendSince = 0, offline = navigator.onLine === false, lastSync = '';
   function track(pr) {
     pending++; if (pending === 1) pendSince = Date.now();
@@ -548,13 +578,20 @@
     return pr;
   }
   function syncState() { return offline ? 'off' : (pending && Date.now() - pendSince > 3000 ? 'wait' : ''); }
+  // the strip, and the Not sent marks and their room with it (28 Oct 2026): wherever this device writes, a PIN session
+  // or the head chef's Google account with nobody signed in by PIN (privateAccess()). Both keep a change in this tab's
+  // memory until it is sent. Before, the Google device got the marks' room but never the strip.
+  function stripOn() { return privateAccess() ? syncState() : ''; }
   function syncDraw() { var st = syncState(); if (st !== lastSync) { lastSync = st; draw(); } }
   window.addEventListener('online', function () { offline = false; syncDraw(); });
   window.addEventListener('offline', function () { offline = true; syncDraw(); });
+  // a reload or closing the tab while writes wait would lose them, so the browser asks first (27 Oct 2026). A phone that
+  // closes the app in the background does not ask, which is why the strip says to keep the book open.
+  window.addEventListener('beforeunload', function (e) { if (pending > 0) { e.preventDefault(); e.returnValue = ''; } });
   function syncHTML() {
-    var st = syncState();
-    if (!st || !S.pin || !S.authed) return '';
-    return '<div class="p-sync" role="status">' + (st === 'off' ? '<strong>No signal.</strong> What you write is kept on this device and sent when the signal is back. Lines marked Not sent are waiting.' :
+    var st = stripOn();
+    if (!st) return '';
+    return '<div class="p-sync" role="status">' + (st === 'off' ? '<strong>No signal.</strong> Keep the book open: your changes send when the signal is back.' :
       '<strong>Not sent yet.</strong> Other devices cannot see your latest changes yet. Keep the book open.') + '</div>';
   }
   /* Two taps for anything that is hard to take back: the first tap arms the button ("Tap again..."), a second tap
@@ -3019,11 +3056,11 @@
     var rid = x.recipe || ((matchRecipe(x.text) || {}).id || ''), rr = rid ? recipeById(rid) : null;
     var link = rid ? '<a class="nb-go" href="#/r/' + encodeURIComponent(rid) + '" title="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '" aria-label="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '">recipe</a>' : '';
     var del = delOk ? '<button type="button" class="nb-x" data-p="' + (x.deleted ? 'restore' : 'del') + '" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-label="' + (x.deleted ? 'Put back ' : 'Remove ') + esc(x.text) + '">' + (x.deleted ? 'Put back' : 'Remove') + '</button>' : '';
-    return '<li id="nbr-' + esc(x.id) + '" class="nb-row' + (x.done ? ' is-done' : '') + (rolledN(x) && !x.done ? ' is-rolled' : '') + (x.urgent && !x.done ? ' is-urgent' : '') + (x.deleted ? ' is-removed' : '') + '">' +
+    return '<li id="nbr-' + esc(x.id) + '" class="nb-row' + (x.done ? ' is-done' : '') + (rolledN(x) && !x.done ? ' is-rolled' : '') + (x.urgent && !x.done ? ' is-urgent' : '') + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(date + '/' + x.id) + '">' +
       '<button type="button" class="nb-box" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-pressed="' + !!x.done + '" aria-label="' + esc((x.done ? 'Untick ' : 'Tick ') + x.text) + '"' + (tickOk ? '' : ' disabled') + '>' + (x.done ? TICK : BOX) + '</button>' +
       // a tap on the words ticks too (the box is the button for keyboards and screen readers); Undo and the linger cover a slip
-      '<span class="nb-t' + (tickOk && !readonly ? ' nb-tt' : '') + '"' + (tickOk && !readonly ? ' data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '"' : '') + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + (marks ? ' <span class="nb-marks">' + marks + '</span>' : '') + '</span>' +
-      '<span class="nb-by">' + (x._unsent ? '<span class="nb-unsent">Not sent</span> ' : '') + '<span class="nb-wrote">' + by + '</span></span>' + (star || link || del ? '<span class="nb-acts">' + star + link + del + (del && !readonly ? moreBtn(x) : '') + '</span>' : '') + '</li>';
+      '<span class="nb-t' + (tickOk && !readonly ? ' nb-tt' : '') + '"' + (tickOk && !readonly ? ' data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '"' : '') + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + (marks ? ' <span class="nb-marks">' + marks + '</span>' : '') + unsentMark(x) + '</span>' +
+      '<span class="nb-by"><span class="nb-wrote">' + by + '</span></span>' + (star || link || del ? '<span class="nb-acts">' + star + link + del + (del && !readonly ? moreBtn(x) : '') + '</span>' : '') + '</li>';
   }
   /* The line menu (22 Oct 2026, Option B): on a phone, Remove (or Put back) and who wrote the line move behind a ⋯ on
      the line, so the item and the amount lead. On a laptop everything stays in the line and the ⋯ is not shown. The sheet
@@ -3041,7 +3078,10 @@
     lmClose();
     var row = btn.closest('.nb-row'); if (!row) return;
     var act = row.querySelector('.nb-x, .p-x[data-p="odel"], .p-x[data-p="orestore"]');
-    var who = (row.querySelector('.nb-wrote') || {}).textContent || '', t = row.querySelector('.nb-t'), name = t ? t.textContent.replace(/\s+/g, ' ').trim() : '';
+    // the title is the line's words and amount, without its Not sent slot or an order line's Used in
+    var who = (row.querySelector('.nb-wrote') || {}).textContent || '', t = row.querySelector('.nb-t'), c = t && t.cloneNode(true);
+    if (c) c.querySelectorAll('.nb-mk, .o-used').forEach(function (e) { e.remove(); });
+    var name = c ? c.textContent.replace(/\s+/g, ' ').trim() : '';
     var box = document.createElement('div');
     box.id = 'lm-sheet';
     box.innerHTML = '<div class="sheet-bg" data-lm="close"></div><div class="sheet lm-sheet" role="dialog" aria-modal="true" aria-labelledby="lm-h"><div class="sheet-grip" aria-hidden="true"></div>' +
@@ -3179,7 +3219,7 @@
     var dl = live.filter(function (x) { return x.done; }).sort(function (a, b) { return (b.doneAt || 0) - (a.doneAt || 0); });
     var donebox = '<h3 class="nb-sh" id="nb-donebox">' + (onToday ? 'Done today' : 'Done on ' + esc(dayShort(S.date))) + (off ? '' : ' (' + dl.length + ')') + '</h3>' +
       (off ? '<p class="nb-sd" role="status">' + (onToday ? 'No signal. Lines ticked today show when the phone is back online.' : 'No signal. Ticked lines show when the phone is back online.') + '</p>' : '') + (dl.length ? '<ul class="nb-done">' + dl.map(function (x) {
-      return '<li><span class="nb-dt">' + (x.doneAt ? clock(x.doneAt) : '') + '</span><span class="nb-dx">' + esc(x.text) + (x.qty ? ' <em>' + esc(x.qty) + '</em>' : '') + '</span><span class="nb-dw">' + esc(x.doneBy || '') + '</span>' + (can('tick') && canUntick(x) ? '<button type="button" class="p-x nb-undo" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(S.date) + '" aria-label="' + esc('Undo the tick on ' + x.text) + '">Undo</button>' : '') + '</li>';
+      return '<li data-ln="' + esc(S.date + '/' + x.id) + '"><span class="nb-dt">' + (x.doneAt ? clock(x.doneAt) : '') + '</span><span class="nb-dx">' + esc(x.text) + (x.qty ? ' <em>' + esc(x.qty) + '</em>' : '') + unsentMark(x) + '</span><span class="nb-dw">' + esc(x.doneBy || '') + '</span>' + (can('tick') && canUntick(x) ? '<button type="button" class="p-x nb-undo" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(S.date) + '" aria-label="' + esc('Undo the tick on ' + x.text) + '">Undo</button>' : '') + '</li>';
     }).join('') + '</ul>' : off ? '' : '<p class="nb-sd">' + (onToday ? 'Nothing ticked yet.' : 'Nothing was ticked.') + '</p>');
     return (flags ? '<div class="nb-rc">' + flags + '</div>' : '') + startHTML(live, true) + paceHTML + stuckHTML + (off ? '' : fnNeedsHTML()) + donebox + quick;
   }
@@ -3946,8 +3986,8 @@
     unsubOrd = fb.fs.onSnapshot(ordCol(S.ordDate), { includeMetadataChanges: true }, function (snap) {
       // 'wait': no signal and not loaded yet, so only this phone's unsent lines (see listSnap)
       var k = listSnap(snap, S.ordState, ordSnap);
-      if (k === 'same') return;
-      S.ordLines = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; x.date = S.ordDate; return x; });
+      S.ordLines = snapLines(snap, S.ordDate);
+      if (k === 'same') { patchOrDraw(function () { patchLines(S.ordLines); }); return; }
       S.ordState = k === 'wait' ? 'offline' : 'ok'; draw();
     }, function () { S.ordState = 'error'; draw(); });
   }
@@ -4132,10 +4172,11 @@
   function ordRow(x) {
     var canTick = canBrowse() && !x.deleted;
     var by = x.ordered && x.orderedBy ? 'Ordered by ' + esc(x.orderedBy) : (x.rolled ? (x.origBy ? 'from ' + esc(x.origBy) : '') : esc(x.addedBy || ''));
-    return '<li class="nb-row' + (x.ordered ? ' is-done' : '') + (x.deleted ? ' is-removed' : '') + '">' +
+    return '<li class="nb-row' + (x.ordered ? ' is-done' : '') + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(x.date + '/' + x.id) + '">' +
       '<button type="button" class="nb-box" data-p="otick" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-pressed="' + !!x.ordered + '" aria-label="' + esc('Ordered: ' + x.text) + '"' + (canTick ? '' : ' disabled') + '>' + (x.ordered ? TICK : BOX) + '</button>' +
       '<span class="nb-t"' + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') +
-      (rolledN(x) ? ' <span class="nb-roll" title="Not ordered yet, so it rolled over">Since ' + esc(dayShort(x.since || x.rolledFrom || x.date)) + '</span>' : '') + recipeChips(x) + '</span>' +
+      // Not sent on the words' line, before Used in (a line of its own, .o-used), so its room never adds a line
+      (rolledN(x) ? ' <span class="nb-roll" title="Not ordered yet, so it rolled over">Since ' + esc(dayShort(x.since || x.rolledFrom || x.date)) + '</span>' : '') + unsentMark(x) + recipeChips(x) + '</span>' +
       '<span class="nb-by"><span class="nb-wrote">' + by + '</span></span>' +
       (canBrowse() && can('del') && (x.deleted || !x.ordered) ? moreBtn(x) : '') +
       (canBrowse() && can('del') && !x.deleted && !x.ordered ? '<button type="button" class="p-x" data-p="odel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') +
@@ -4254,7 +4295,7 @@
     var removedBox = view === 'day' && removedO.length && canBrowse() && can('del') ? '<button type="button" class="nb-link" data-p="oremoved">' + (S.oShowRemoved ? 'Hide' : 'Show') + ' removed (' + removedO.length + ')</button>' +
       (S.oShowRemoved ? '<ul class="nb-rows">' + removedO.map(ordRow).join('') + '</ul>' : '') : '';
     var orderedBox = view === 'day' && moved.length ? '<h3 class="nb-sh">Ordered today (' + moved.length + ')</h3><ul class="nb-done">' + moved.map(function (x) {
-      return '<li><span class="nb-dt">' + (x.orderedAt ? clock(x.orderedAt) : '') + '</span><span class="nb-dx">' + esc(x.text) + (x.qty ? ' <em>' + esc(x.qty) + '</em>' : '') + '</span><span class="nb-dw">' + esc(x.orderedBy || '') + '</span>' +
+      return '<li data-ln="' + esc(x.date + '/' + x.id) + '"><span class="nb-dt">' + (x.orderedAt ? clock(x.orderedAt) : '') + '</span><span class="nb-dx">' + esc(x.text) + (x.qty ? ' <em>' + esc(x.qty) + '</em>' : '') + unsentMark(x) + '</span><span class="nb-dw">' + esc(x.orderedBy || '') + '</span>' +
         (canBrowse() ? '<button type="button" class="p-x nb-undo" data-p="otick" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-pressed="true" aria-label="' + esc('Not ordered after all: ' + x.text) + '">Undo</button>' : '') + '</li>';
     }).join('') + '</ul>' : '';
     // no signal and the list not loaded yet: the note first, then only the lines this phone wrote since (listSnap)
@@ -4293,8 +4334,8 @@
     wKey = key; S.wState = 'loading'; wSnap = {};
     unsubW = fb.fs.onSnapshot(wCol(S.wDate), { includeMetadataChanges: true }, function (snap) {
       var k = listSnap(snap, S.wState, wSnap);   // 'wait': only this phone's unsent lines (see listSnap)
-      if (k === 'same') return;
-      S.wLines = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; x.date = S.wDate; return x; });
+      S.wLines = snapLines(snap, S.wDate);
+      if (k === 'same') { patchOrDraw(function () { patchLines(S.wLines); }); return; }
       S.wState = k === 'wait' ? 'offline' : 'ok'; draw();
     }, function () { S.wState = 'error'; draw(); });
     loadWSum();
@@ -4471,8 +4512,8 @@
   function wRow(x) {
     // 22 Oct 2026: entries are removed and put back by the head chef only (the admin log, or this page on the Google device)
     var del = wAll() && !x.deleted;
-    return '<li class="nb-row w-row' + (x.deleted ? ' is-removed' : '') + '"><span class="w-time">' + (x.addedAt ? clock(x.addedAt) : '') + (x.station ? '<br><span class="w-sec">' + esc(x.station) + '</span>' : '') + '</span>' +
-      '<span class="nb-t"><strong>' + esc(x.text) + '</strong> <span class="w-amt">' + esc(num(+x.amount || 0) + ' ' + x.unit) + '</span> <span class="w-rs w-' + esc(x.reason) + '">' + esc(reasonName(x.reason)) + '</span>' +
+    return '<li class="nb-row w-row' + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(x.date + '/' + x.id) + '"><span class="w-time">' + (x.addedAt ? clock(x.addedAt) : '') + (x.station ? '<br><span class="w-sec">' + esc(x.station) + '</span>' : '') + '</span>' +
+      '<span class="nb-t"><strong>' + esc(x.text) + '</strong> <span class="w-amt">' + esc(num(+x.amount || 0) + ' ' + x.unit) + '</span> <span class="w-rs w-' + esc(x.reason) + '">' + esc(reasonName(x.reason)) + '</span>' + unsentMark(x) +
       (x.action ? '<span class="w-act">' + esc(x.action) + '</span>' : '') + '</span><span class="nb-by">' + esc(x.addedBy || '') + '</span>' +
       (del ? '<button type="button" class="p-x" data-p="wdel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') +
       (x.deleted && wAll() ? '<button type="button" class="p-x" data-p="wrestore" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Put back ' + x.text) + '">Put back</button>' : '') + '</li>';
@@ -4578,7 +4619,7 @@
   function xWrite(date, id, data, original) {
     if (sessP) return sessP.then(function () { return xWrite(date, id, data, original); }, function () { return xWrite(date, id, data, original); });
     var record = Object.assign({}, original || {}, data);
-    delete record.id; delete record.date;
+    delete record.id; delete record.date; delete record._unsent;   // _unsent: this phone's Not sent mark, never saved
     // the open copy must match the line as W() writes it, by included
     record.by = wBy();
     var change = Object.assign({}, data);
@@ -4628,8 +4669,8 @@
     xKey = key; S.xState = 'loading'; S.xLines = []; xSnap = {};
     unsubX = fb.fs.onSnapshot(xCol(S.xDate), { includeMetadataChanges: true }, function (snap) {
       var k = listSnap(snap, S.xState, xSnap);   // 'wait': only this phone's unsent lines (see listSnap)
-      if (k === 'same') return;
-      S.xLines = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; x.date = S.xDate; return x; });
+      S.xLines = snapLines(snap, S.xDate);
+      if (k === 'same') { patchOrDraw(function () { patchLines(S.xLines); }); return; }
       S.xState = k === 'wait' ? 'offline' : 'ok'; draw();
     }, function () { S.xState = 'error'; draw(); });
     watchXOpen(); loadXSum();
@@ -4782,8 +4823,8 @@
     var out = x.dir !== 'in';
     var ret = x.returned ? '<span class="w-act">Returned ' + esc(x.returnedBy || '') + (x.returnedAt ? ' · ' + esc(longDate(T.day(x.returnedAt))) + ' ' + clock(x.returnedAt) : '') + '</span>' : '';
     var tick = xReturnBtn(x);
-    return '<li class="nb-row tr-row' + (x.deleted ? ' is-removed' : '') + '"><span class="w-time">' + (x.addedAt ? clock(x.addedAt) : '') + '</span>' +
-      '<span class="nb-t"><span class="tr-way tr-way-' + (out ? 'out' : 'in') + '">' + (out ? 'Out' : 'In') + '</span> <strong>' + esc(x.text) + '</strong> <span class="w-amt">' + esc(num(+x.amount || 0) + ' ' + x.unit) + '</span>' +
+    return '<li class="nb-row tr-row' + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(x.date + '/' + x.id) + '"><span class="w-time">' + (x.addedAt ? clock(x.addedAt) : '') + '</span>' +
+      '<span class="nb-t"><span class="tr-way tr-way-' + (out ? 'out' : 'in') + '">' + (out ? 'Out' : 'In') + '</span> <strong>' + esc(x.text) + '</strong> <span class="w-amt">' + esc(num(+x.amount || 0) + ' ' + x.unit) + '</span>' + unsentMark(x) +
       '<span class="tr-who">' + esc(xWho(x)) + '</span>' + (x.note ? '<span class="w-act">' + esc(x.note) + '</span>' : '') + ret + '</span><span class="nb-by">' + esc(x.addedBy || '') + '</span>' + tick + xBtn(x) + '</li>';
   }
   // the venue and person chips, and the often taken chips that follow the venue (redrawn while the venue is typed)
@@ -5886,9 +5927,9 @@
     ops.push(['set', ref, data, !!f.id]);
     S.mSaving = publish ? 'pub' : 'draft'; mnSay(publish ? 'Publishing...' : 'Saving...');
     // a half-dropped signal can leave the save with no answer for a long time: say so, rather than a grey button and
-    // no words (23 Oct 2026, the head chef could not tell whether minutes were published). Firestore keeps the write on
-    // this device and sends it with the signal
-    var slow = setTimeout(function () { if (S.mf === f && S.mSaving) mnSay('Waiting for the signal. The minutes are kept on this device and ' + (publish ? 'go to the team' : 'are saved') + ' when the signal is back. Keep the book open.'); }, 4000);
+    // no words (23 Oct 2026, the head chef could not tell whether minutes were published). Firestore keeps the write in
+    // this tab's memory (since 26 Oct 2026) and sends it with the signal, so the book has to stay open
+    var slow = setTimeout(function () { if (S.mf === f && S.mSaving) mnSay('Waiting for the signal. Keep the book open: the minutes ' + (publish ? 'go to the team' : 'are saved') + ' when the signal is back.'); }, 4000);
     W(ops).then(function () {
       clearTimeout(slow);
       S.mSaving = false; S.mf = null; if (publish) { S.mSel = ref.id; delete S.mmine[ref.id + '_' + data.v + '_' + S.who]; }
@@ -8726,6 +8767,8 @@
       return pending > 0 || !!(window.LK_DELIVERY && window.LK_DELIVERY.dirty()) || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!(window.LK_SUP && window.LK_SUP.dirty()) || !!mlf.text.trim() || tdDirty() || mfDirty() || nfDirty() || gfDirty() || draftDirty() || cutDirty() || !!String(S.bulk || '').trim() || !!S.sheet || !!S.recipeOpen ||
         !!(S.text.trim() || S.qty.trim() || S.otext.trim() || S.oqty.trim() || S.wf.text.trim() || String(S.wf.amt).trim() || S.wf.act.trim() || S.xf.text.trim() || String(S.xf.amt).trim() || S.xf.note.trim() || (S.wrA != null && S.wrA !== (rvBase().avoidable || '')) || (S.wrC != null && S.wrC !== (rvBase().change || '')));
     },
+    // a write waiting for the server (part of unsaved()), so Update now can say "Not sent yet." like the strip
+    unsent: function () { return pending > 0; },
     noteInfo: noteInfo, noteBellLabel: noteBellLabel,
     noteOpen: noteOpen,
     // the recipes were opened: look for the head chef's recipe changes when the last look is 30 minutes old

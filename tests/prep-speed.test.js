@@ -26,12 +26,14 @@ const item = (p, id) => p.evaluate(k => window.__fake.dump()[k] || {}, fsKey(['d
   // the chip to the middle of the screen first, as a person would: a toast at the bottom takes the taps under it
   if (has) { await chip.evaluate(e => e.scrollIntoView({ block: 'center' })); await L.settle(p, 100); await chip.click(); await L.settle(p, 400); }
   ok(await p.evaluate(a => Object.values(window.__fake.dump()).some(v => v && v.text === 'Mise onions' && v.qty === '2 tubs'), today), 'one tap adds Mise onions, 2 tubs');
-  // no signal: the line shows Not sent until the write goes through
+  // no signal: the line shows Not sent until the write goes through (on a good signal only after 3 seconds, 27 Oct 2026)
+  await p.context().setOffline(true);
   await p.evaluate(() => { window.__fake.mode = 'hold'; });
   await L.tap(p, '[data-p="tick"][data-id="i6"]'); await L.settle(p, 400);
   await p.evaluate(() => { window.__fake.mode = 'ok'; });
   await p.click('.nb-tab[data-v=""]', { timeout: 2000 }).catch(() => {});
   ok(/Not sent/.test(await p.evaluate(() => document.body.textContent)), 'an unsent tick shows Not sent');
+  await p.context().setOffline(false);
   await p.evaluate(() => window.__fake.release()); await L.settle(p, 400);
   ok(!/Not sent/.test(await p.evaluate(() => [...document.querySelectorAll('.nb-unsent')].map(e => e.textContent).join(''))), 'Not sent goes once it is sent');
   ok(p.errors.length === 0, 'no page errors ' + p.errors.join(' | '));

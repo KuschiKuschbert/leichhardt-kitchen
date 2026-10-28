@@ -349,7 +349,13 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .nb-box { flex: 0 0 34px; width: 34px; height: 34px; display: grid; place-items: center; padding: 0; border: 0; background: none; color: var(--ink); cursor: pointer; }
 .nb-box svg { width: 33px; height: 33px; }
 .nb-tt { cursor: pointer; }
-.nb-unsent { display: inline-block; padding: 0 0.4rem; border-radius: 999px; background: var(--accent-ink); color: #fff; font-weight: 700; }
+/* Not sent (27 Oct 2026): in a slot inside the words (.nb-mk), so on a phone it wraps with them like Urgent and never
+   narrows them (who wrote a line, .nb-by, is hidden there). Shown only while the No signal or Not sent yet strip is up. */
+.nb-unsent, .nb-held { display: inline-block; margin-left: 0.3rem; vertical-align: 0.25em; padding: 0 0.4rem; border-radius: 999px; background: var(--accent-ink); color: #fff; font: 700 0.75rem/1.5 var(--body); white-space: nowrap; }
+/* the mark's room while the strip is up, so a tick only fills it and no row moves: the same box, unseen, and its words
+   come from CSS so the row's text stays clean */
+.nb-held { visibility: hidden; }
+.nb-held::before { content: 'Not sent'; }
 .nb-box[aria-pressed="true"] { color: var(--done); }
 .nb-box:disabled { opacity: 0.45; cursor: default; }
 .nb-t { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
@@ -1672,8 +1678,14 @@ button.wm-a { width: 100%; border: 0; background: none; font: inherit; text-alig
 
 /* The update notice (21 Oct 2026) is a slim strip at the top of the screen, never with the toasts at the bottom. While
    it shows, the bars that stick to the top of a page stick just under it. */
-.upd-bar { position: sticky; top: var(--fn-stick, 0px); z-index: 45; box-sizing: border-box; height: 48px; display: flex; align-items: center; justify-content: center; gap: 0.75rem; padding: 2px 0.5rem 2px 1rem; background: var(--ink); color: #fff; font: 600 0.95rem var(--body); }
+.upd-bar { position: sticky; top: var(--fn-stick, 0px); z-index: 45; box-sizing: border-box; min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 0.75rem; padding: 2px 0.5rem 2px 1rem; background: var(--ink); color: #fff; font: 600 0.95rem var(--body); }
 .upd-bar button { flex: none; min-height: 44px; padding: 0 1rem; border: 0; border-radius: 22px; background: var(--accent); color: #fff; font: 700 0.95rem var(--body); cursor: pointer; }
+/* a narrow phone with Extra large text (28 Oct 2026): "It updates once sent." stays whole, so the strip is a little
+   tighter there, or the page scrolled sideways at 360 px */
+@media (max-width: 380px) { .upd-bar { gap: 0.5rem; padding: 2px 0.5rem; } .upd-bar button { padding: 0 0.75rem; } }
+/* and in a wider font than the book's (28 Oct 2026) the words wrap inside the strip, never pushing Update now off the
+   screen; the strip grows for them, and js/upkeep.js keeps --upd-h at its height so the bars below sit under it */
+.upd-bar span { min-width: 0; overflow-wrap: anywhere; }
 /* With the update strip and the function strip both up, the bars that stick to the top sit under both of them, and a
    jump lands below both (24 Oct 2026: they slid 46 px under the update strip). --fn-pad is the strip's height while
    today has a function it could show (js/functions.js strip()). */
