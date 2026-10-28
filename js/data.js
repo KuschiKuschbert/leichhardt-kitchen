@@ -1626,6 +1626,31 @@ window.LK_DATA = {
       ],
       labelNote: 'Check the sauce, onion ring and fried shallot labels.'
     },
+    {
+      id: 'chicken-adobo', no: '124', kind: 'main', forLine: 'Special', name: 'Chicken Adobo', short: 'Adobo',
+      yield: 'Batch: 2.5 kg bone-in chicken thigh braised in soy and vinegar. [Serves per batch and the plating to come]',
+      ingredients: [
+        { q: '2.5 kg', name: 'Chicken thigh', note: 'bone-in, skin-on' },
+        { q: '250 ml', name: 'Soy sauce', tags: ['Soy', 'Gluten?'] },
+        { q: '200 ml', name: 'White cane vinegar' },
+        { q: '500 ml', name: 'Unsalted chicken stock', tags: ['Gluten?'] },
+        { q: '100 g', name: 'Garlic', note: 'crushed, half for the marinade' },
+        { q: '200 g', name: 'Brown onion', note: 'sliced' },
+        { q: '5 pcs', name: 'Bay leaves' },
+        { q: '10 g', name: 'Whole black peppercorns' },
+        { q: '25 g', name: 'Brown sugar' },
+        { q: '40 ml', name: 'Neutral cooking oil' }
+      ],
+      sections: [
+        { title: 'Prepare and marinate', steps: ['Check the chicken and trim the excess fat.', 'Combine with the soy sauce, half the garlic, the bay leaves and the peppercorns.', 'Refrigerate for 30 min, or longer if your service schedule needs it.'] },
+        { title: 'Brown the chicken', steps: ['Heat the oil in a large pot.', 'Drain the chicken. Keep the marinade.', 'Brown the chicken in batches so the pot is not overcrowded.'] },
+        { title: 'Sauté the aromatics', steps: ['Cook the rest of the garlic and the onion until fragrant.', 'Return the chicken to the pot.'] },
+        { title: 'Add the liquids', steps: ['Add the kept marinade, the vinegar and the water or stock.', 'Bring to the boil and simmer for 5 min before stirring.'] },
+        { title: 'Braise', steps: ['Cover partly and simmer gently for 30 to 45 min, turning the chicken as needed.', 'Probe the thickest pieces: at least 75 °C.'] },
+        { title: 'Finish the sauce', steps: ['Add the brown sugar. Taste and adjust.', 'Reduce uncovered until the sauce lightly coats the chicken.'] }
+      ],
+      labelNote: 'Check the soy sauce and stock labels. Most soy sauce has wheat.'
+    },
 
     {
       id: 'charred-corn', art: 'charred-corn', no: '93', kind: 'component', forLine: 'For the taco board and the haloumi tacos', name: 'Charred Corn Kernels', short: 'Charred corn',
