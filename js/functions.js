@@ -664,7 +664,8 @@
       if (before.v !== view.v || before.status !== view.status) statusFail('This function changed on another device. Read the latest copy before trying again.');
       F.jobs[id].before = Object.assign({ id: id }, before);
       if (!undo) return { before: before };
-      // One extra read only on Undo. History is already readable by the kitchen and contains no booking contact.
+      // One extra read only on Undo. The rules let only the chefs, the function managers (fnIds) and the head chef's
+      // Google account read the history, the same people who may Undo, and it holds no booking contact.
       return api.fromServer(api.fs().doc(api.db(), 'kitchens', api.pin(), 'functions', id, 'hist', String(before.v - 1))).then(function (hist) {
         var old = hist.exists() && hist.data().was;
         if (!old || old.status !== 'confirmed') statusFail('This cancellation has changed. Ask a function manager to confirm the booking again.');

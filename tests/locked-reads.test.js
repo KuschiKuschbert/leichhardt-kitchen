@@ -100,6 +100,50 @@ const minIds = p => p.evaluate(() => (window.LK_PREP.state.mins || []).map(m => 
   ok(p.errors.length === 0, 'admin: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // the reads that are for the chefs, the function managers or the Google account (28 Oct 2026, checked against the real
+  // rules in tests/rules/client-shapes.test.mjs): the stand-in refuses them for staff like the rules do, and lists each
+  // in __fake.refused, so a page tests/roles.test.js opens that starts asking for one fails there
+  const ping = (to, x) => Object.assign({ text: 'See me at 15:00', tag: 'none', start: today, until: today, dows: [], tm: null, removed: false, upd: L.NOW, at: L.NOW, author: 'sam', by: 'sam', to }, x || {});
+  const lockExtra = Object.assign({}, fnExtra, L.mail(), {
+    [fsKey(['functions', 'smith', 'hist', '0'])]: { was: {}, at: 1, by: 'finn' },
+    [fsKey(['cutdone', today + '_northside'])]: { day: today, sid: 'northside', on: true, at: L.NOW, by: 'sam' },
+    [fsKey(['directnotes', 'd1'])]: ping('bo'), [fsKey(['directnotes', 'd1', 'seen', today + '_bo'])]: { day: today, at: L.NOW, by: 'bo' },
+    [fsKey(['directnotes', 'd2'])]: ping('ann')
+  });
+  const probe = page => page.evaluate(async ([k, day]) => {
+    const fs = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js'), db = fs.getFirestore(), col = (...x) => fs.collection(db, 'kitchens', k, ...x);
+    const cut = fs.query(col('cutdone'), fs.where('day', 'in', [day]));
+    const tries = {
+      cutdone: () => fs.getDocs(cut),
+      cutListen: () => new Promise((res, rej) => { const stop = fs.onSnapshot(cut, s => { stop(); res(s); }, rej); }),
+      mail: () => fs.getDocs(fs.query(col('mail'), fs.where('done', '==', false))),
+      hist: () => fs.getDoc(fs.doc(db, 'kitchens', k, 'functions', 'smith', 'hist', '0')),
+      histList: () => fs.getDocs(col('functions', 'smith', 'hist')),
+      contacts: () => fs.getDocs(col('fncontact')),
+      everyPing: () => fs.getDocsFromServer(fs.query(col('directnotes'), fs.where('until', '>=', day))),
+      seen: () => fs.getDocs(fs.query(col('directnotes', 'd1', 'seen'), fs.where('day', '==', day))),
+      myPings: () => fs.getDocsFromServer(fs.query(col('directnotes'), fs.where('until', '>=', day), fs.where('to', '==', 'ann')))
+    };
+    const out = {};
+    for (const n of Object.keys(tries)) out[n] = await tries[n]().then(() => 'read', e => e.code === 'permission-denied' ? 'refused' : e.code);
+    return out;
+  }, [L.PIN, today]);
+  const want = (got, w) => Object.keys(w).filter(n => got[n] !== w[n]).map(n => n + ' ' + got[n]);
+  p = await L.open(b, '#/prep', { who: 'ann', extra: lockExtra, wait: 1500 });
+  let got = await probe(p), bad = want(got, { cutdone: 'refused', cutListen: 'refused', mail: 'refused', hist: 'refused', histList: 'refused', contacts: 'refused', everyPing: 'refused', seen: 'refused', myPings: 'read' });
+  ok(!bad.length, 'staff: supplier ticks (a query and a listener), mail, a function\'s history, the contact list, others\' personal pings and who saw them are refused; Ann\'s own pings are not (' + (bad.join(', ') || 'as the rules') + ')');
+  const listed = await p.evaluate(() => window.__fake.refused.map(x => x.kind + ' ' + x.path.split('/').slice(2).join('/')));
+  ok(listed.length === 8, 'staff: each refusal is listed in __fake.refused (' + listed.join(', ') + ')');
+  await p.context().close();
+  p = await L.open(b, '#/prep', { who: 'sam', extra: lockExtra, wait: 1500 });
+  got = await probe(p); bad = want(got, { cutdone: 'read', cutListen: 'read', mail: 'refused', hist: 'read', histList: 'read', contacts: 'refused', everyPing: 'read', seen: 'read', myPings: 'read' });
+  ok(!bad.length, 'sous chef: the chefs\' reads work; mail stays the head chef\'s while sous chef mail is off, and only the Google account lists contacts (' + (bad.join(', ') || 'as the rules') + ')');
+  await p.context().close();
+  p = await L.open(b, '#/functions/smith', { who: 'finn', extra: lockExtra, wait: 1500 });
+  got = await probe(p); bad = want(got, { hist: 'read', histList: 'read', cutdone: 'refused', mail: 'refused', everyPing: 'refused' });
+  ok(!bad.length, 'function manager: the function\'s history, nothing of the kitchen\'s (' + (bad.join(', ') || 'as the rules') + ')');
+  await p.context().close();
+
   await b.close();
   L.report(R);
 })();

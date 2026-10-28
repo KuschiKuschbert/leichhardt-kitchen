@@ -4,7 +4,7 @@
   "description": "Checks firestore.rules on the Firestore emulator. See README, Publishing rules.",
   "type": "module",
   "scripts": {
-    "test": "firebase emulators:exec --only firestore,auth --project demo-test \"node rules.test.mjs && node access.test.mjs && node direct-pings.test.mjs && node probe.test.mjs && node suppliers.test.mjs && node wastage-history.test.mjs && node deliveries.test.mjs && node owner-saves.test.mjs\"",
+    "test": "firebase emulators:exec --only firestore,auth --project demo-test \"node rules.test.mjs && node access.test.mjs && node direct-pings.test.mjs && node probe.test.mjs && node suppliers.test.mjs && node wastage-history.test.mjs && node deliveries.test.mjs && node owner-saves.test.mjs && node client-shapes.test.mjs\"",
     "probe": "node probe.mjs"
   },
   "devDependencies": {
