@@ -1640,10 +1640,10 @@ window.LK_DATA = {
         { q: '10 g', name: 'Whole black peppercorns' },
         { q: '25 g', name: 'Brown sugar' },
         { q: '40 ml', name: 'Neutral cooking oil' },
-        { q: '180 g', name: 'Jasmine rice', note: 'steamed, per plate' }
+        { q: '180 g', name: 'Jasmine rice', note: 'steamed, per plate', link: 'jasmine-rice' }
       ],
       pins: [
-        { label: 'Jasmine rice', x: 35.8, y: 43.4, side: 'left', tags: [], note: '180 g, steamed.' },
+        { label: 'Jasmine rice', x: 35.8, y: 43.4, side: 'left', link: 'jasmine-rice', note: '180 g, steamed.' },
         { label: 'Chicken adobo', x: 63.2, y: 50.9, side: 'right', tags: ['Soy', 'Gluten?'], note: 'Skin side up, beside the rice. [Pieces per serve to come]' },
         { label: 'Adobo sauce', x: 66.0, y: 72.6, side: 'right', tags: ['Soy', 'Gluten?'], note: 'From the pot, over the chicken. [Amount per serve to come]' }
       ],
@@ -1657,6 +1657,22 @@ window.LK_DATA = {
         { title: 'Plating', steps: ['180 g steamed jasmine rice on the plate.', 'Chicken adobo beside the rice, skin side up. [Pieces per serve to come]', 'Sauce from the pot over the chicken. [Amount per serve to come]'] }
       ],
       labelNote: 'Check the soy sauce and stock labels. Most soy sauce has wheat.'
+    },
+    {
+      id: 'jasmine-rice', no: '125', kind: 'batch', forLine: 'For the chicken adobo', name: 'Jasmine Rice', short: 'Jasmine rice', art: 'rice',
+      yield: 'Batch, cooked the same way as the Steamed Rice (card 05). 180 g per plate. [Batch size to come]',
+      ingredients: [
+        { q: '[Qty]', name: 'Jasmine rice', note: 'card 05 uses 5 kg of rice' },
+        { q: '[Qty]', name: 'Water', note: 'card 05 uses 9.5 L' },
+        { q: '[Qty]', name: 'Chicken stock', note: 'card 05 uses 2.5 tbsp', tags: ['Gluten?', 'Soy?'] },
+        { q: '[Qty]', name: 'Bay leaves', note: 'card 05 uses 13' }
+      ],
+      sections: [
+        { title: 'Method', steps: ['Wash the rice 3 times until the water runs clear.', 'Spread the rice in 1/1 GN pans, 60 mm deep, divided evenly. Add the water, chicken stock and bay leaves, divided evenly across the pans.', 'Steam 25 min.', 'Check the rice. It must not be too soft. If it needs more, steam on in 2 min steps, checking each time.'] },
+        { title: 'Portioning', steps: ['Portion 180 g per serve for the Chicken Adobo.'] }
+      ],
+      labelNote: 'Stock powders can also carry celery. Check the label.',
+      tip: { title: 'On the iCombi', text: 'Steam mode, 100 °C, 25 min, as for the Steamed Rice (programme RICE).' }
     },
 
     {
