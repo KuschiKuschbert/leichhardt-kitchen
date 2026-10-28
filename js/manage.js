@@ -466,14 +466,26 @@
     return '<section class="set-block mg-sec" aria-labelledby="mg-h-hist"><h3 class="h3" id="mg-h-hist">Earlier versions</h3>' + list +
       (h ? '' : '<div class="btn-row"><button type="button" class="btn" data-mg="hist">Show earlier versions</button></div>') + '</section>';
   }
+  /* Show in the book and Special (head chef, 27 Oct 2026): two switches at the top of the form, saved with Save.
+     Hidden keeps the recipe (removed); Special puts a dish in the Specials menu section (LK_APP.specials), which the
+     Pass and Tiles show first with its own chip. Turning Special off puts the dish back where it was when the form opened. */
+  function swRow(act, on, title, sub) {
+    return '<button type="button" class="mg-sw" role="switch" aria-checked="' + on + '" data-mg="' + act + '"><span class="mg-sw-t"><b>' + esc(title) + '</b><small>' + esc(sub) + '</small></span><span class="mg-sw-k" aria-hidden="true"></span></button>';
+  }
+  function isSpecial(e) { return e.menu.sec === A.specials; }
+  function swHTML(e) {
+    var shown = !e.meta.removed, sp = isSpecial(e);
+    return '<section class="set-block mg-sec" aria-labelledby="mg-h-sw"><h3 class="h3" id="mg-h-sw">In the book</h3><div class="mg-sws">' +
+      swRow('sw-show', shown, 'Show in the book', shown ? 'Staff see this recipe.' : 'Hidden: staff do not see it. It is kept and can be shown again. Links to it show "Card to come".') +
+      (DISH[e.d.kind] ? swRow('sw-special', sp, 'Special', sp ? 'In Specials, first on the Pass and Tiles.' : 'Not a special.') : '') +
+      '</div><p class="hint">Save to make the change.</p></section>';
+  }
   function moreHTML(e) {
     if (e.isNew) return '';
     var st = status(e.id), base = X.pristine(e.id), out = '';
     if (base && !e.meta.off && (st.changed || e.meta.v)) out += '<div class="btn-row"><button type="button" class="btn" data-mg="off">' + (armed('off') ? 'Tap again: show the book file\'s copy' : 'Go back to the book file\'s copy') + '</button></div><p class="hint">Staff then see the recipe as js/data.js has it. This version stays in the earlier versions.</p>';
-    out += e.meta.removed
-      ? '<div class="btn-row"><button type="button" class="btn dark" data-mg="hide" data-v="0">Put it back in the book</button></div><p class="hint">Hidden: staff do not see this recipe.</p>'
-      : '<div class="btn-row"><button type="button" class="btn" data-mg="hide" data-v="1">' + (armed('hide') ? 'Tap again to hide it' : 'Hide this recipe from the book') + '</button></div><p class="hint">Hidden recipes are kept and can be put back. Links to it show "Card to come".</p>';
-    return '<section class="set-block mg-sec" aria-labelledby="mg-h-more"><h3 class="h3" id="mg-h-more">In the book</h3>' + out + '</section>';
+    if (!out) return '';
+    return '<section class="set-block mg-sec" aria-labelledby="mg-h-more"><h3 class="h3" id="mg-h-more">The book file</h3>' + out + '</section>';
   }
   function editorHTML() {
     var e = M.ed;
@@ -489,7 +501,7 @@
     var errs = e.errs.length ? '<div class="warn" role="alert"><span class="label">Not saved yet</span><ul class="mg-errs">' + e.errs.map(function (x) { return '<li><a href="#' + esc(x.at) + '" data-mg="goto" data-v="' + esc(x.at) + '">' + esc(x.msg) + '</a></li>'; }).join('') + '</ul></div>' : '';
     var warns = e.warns.length ? '<div class="box beige" role="note">' + e.warns.map(function (w) { return '<div>' + esc(w) + '</div>'; }).join('') + '</div>' : '';
     return '<div class="mg-wrap mg-ed">' + linkList() + head + kept + fileNote + conflict + errs + warns +
-      basicsHTML(e) + ingHTML(e) + methodHTML(e) + allergenHTML(e) + drawingHTML(e) + menuHTML(e) + boxesHTML(e) + histHTML(e) + moreHTML(e) +
+      swHTML(e) + basicsHTML(e) + ingHTML(e) + methodHTML(e) + allergenHTML(e) + drawingHTML(e) + menuHTML(e) + boxesHTML(e) + histHTML(e) + moreHTML(e) +
       '<div class="mg-bar"><span class="mg-state" role="status">' + esc(stateText()) + '</span>' + (e.msg ? '<span class="p-err" role="alert">' + esc(e.msg) + '</span>' : '') +
       '<div class="btn-row"><button type="button" class="btn dark" data-mg="save"' + (e.saving ? ' disabled' : '') + '>' + (e.saving ? 'Saving...' : 'Save') + '</button>' +
       (dirty() ? '<button type="button" class="btn" data-mg="undo-all">' + (armed('undo-all') ? 'Tap again to undo all' : 'Undo all changes') + '</button>' : '') + '</div></div></div>';
@@ -561,7 +573,7 @@
     menu.forEach(function (s) { s.ids = s.ids.filter(function (id) { return id !== e.id; }); });
     if (e.menu.sec) {
       var s = menu.filter(function (x) { return x.title === e.menu.sec; })[0];
-      if (!s) { s = { title: e.menu.sec, ids: [] }; menu.push(s); }
+      if (!s) { s = { title: e.menu.sec, ids: [] }; if (s.title === A.specials) menu.unshift(s); else menu.push(s); }
       var at = e.menu.after === '^' ? 0 : e.menu.after === '$' || !e.menu.after ? s.ids.length : s.ids.indexOf(e.menu.after) + 1;
       if (at < 0) at = s.ids.length;
       s.ids.splice(at, 0, e.id);
@@ -784,6 +796,8 @@
     else list.push(a);
     return list;
   }
+  // after a switch redraws the form, the same switch keeps the focus
+  function focusSw(a) { var b = M.root && M.root.querySelector('[data-mg="' + a + '"]'); if (b) b.focus(); }
   function move(arr, i, to) { var x = arr.splice(i, 1)[0]; arr.splice(to, 0, x); }
   document.addEventListener('click', function (ev) {
     if (!M.root || !M.root.contains(ev.target)) return;
@@ -834,9 +848,11 @@
     if (a === 'pin-pick') { if (dragMoved) { dragMoved = false; return; } e.pinOpen = e.pinOpen === i ? -1 : i; draw(); return; }
     if (a === 'hist') { loadHist(); return; }
     if (a === 'hist-use') { var hv = e.hist[i].rec; if (hv && hv.r) { e.d = clone(hv.r); e.handTags = !!(hv.r.contains || hv.r.check); e.meta.removed = false; e.meta.off = false; keepDraft(); draw(); toast('Version ' + hv.v + ' is in the form. Save to make it the card again.'); } return; }
-    if (a === 'hide') {
-      if (v === '1' && !arm('hide')) return;
-      e.meta.removed = v === '1'; save(false); return;
+    if (a === 'sw-show') { e.meta.removed = !e.meta.removed; if (e.meta.removed) e.meta.off = false; keepDraft(); draw(); focusSw(a); return; }
+    if (a === 'sw-special') {
+      if (isSpecial(e)) { var was = e.menuWas || (e.isNew ? null : menuOf(e.id)); e.menu = was && was.sec !== A.specials ? clone(was) : { sec: '', after: '' }; }
+      else { e.menuWas = clone(e.menu); e.menu = { sec: A.specials, after: '$' }; }
+      keepDraft(); draw(); focusSw(a); return;
     }
     if (a === 'off') { if (!arm('off')) return; e.meta.off = true; e.meta.removed = false; save(false); return; }
   });
