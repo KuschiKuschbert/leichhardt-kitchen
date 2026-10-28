@@ -635,13 +635,15 @@
       '<strong>Not sent yet.</strong> Other devices cannot see your latest changes yet. Keep the book open.') + '</div>';
   }
   /* Two taps for anything that is hard to take back: the first tap arms the button ("Tap again..."), a second tap
-     within 4 seconds does it. Left alone, the button goes back to normal by itself. */
+     within 4 seconds does it. Left alone, the button goes back to normal by itself. redraw: the page that shows the
+     button, when it is not the prep pages (the drawing editor and Delivery received, through bookApi()). */
   var armKey = '', armTimer = null;
   function armed(k) { return armKey === k; }
-  function arm(k) {
+  function arm(k, redraw) {
+    var re = typeof redraw === 'function' ? redraw : draw;
     clearTimeout(armTimer);
     if (armKey === k) { armKey = ''; return true; }
-    armKey = k; armTimer = setTimeout(function () { armKey = ''; draw(); }, 4000); draw();
+    armKey = k; armTimer = setTimeout(function () { armKey = ''; re(); }, 4000); re();
     return false;
   }
 
@@ -988,7 +990,8 @@
   }
   /* the next person never lands in the last person's staff draft, minutes register or ping editor, and nothing this
      person typed or left open stays for them (28 Oct 2026: also a guide, the order cut-offs, Add several names, a
-     review and the recipe picker, which kept the next person's Sign out and the self-update saying "Not saved yet") */
+     review and the recipe picker, which kept the next person's Sign out and the self-update saying "Not saved yet"; and
+     the line menu, whose Remove now finds its line after a redraw, so it could act for the next person) */
   function leave() {
     accessEpoch++;
     stopLive(); clearPrivateCache();
@@ -1002,7 +1005,7 @@
     S.pastBusy = S.minsBusy = S.viewBusy = S.missBusy = S.useBusy = false; S.pastPart = null; S.ordStats = null; S.views = S.misses = null; S.viewErr = S.missErr = S.useErr = S.wReviewErr = false; S.wReview = null; S.wReviewFor = S.wNoteFor = '';
     S.items = []; S.ordLines = []; S.ordAll = []; S.wLines = []; S.xLines = []; S.notes = null; S.notesBusy = false; S.nSaving = false; S.notesFor = ''; S.nPast = null; S.nPastOpen = false; S.nSeen = null; S.nPrivateError = ''; S.mins = null; S.guides = null; S.activity = []; S.actState = ''; S.hist = {}; S.stats = null;
     ['lk.fn', 'lk.mail.sent', 'lk.drinks', 'lk.guides', 'lk.notes', 'lk.minutes'].forEach(function (k) { lsSet(k, ''); });
- if (window.LK_DELIVERY) window.LK_DELIVERY.reset(); if (window.LK_SUP) window.LK_SUP.reset(); if (supplierService) supplierService.reset(); sessDrop(); ksClose(); noteClose('shut'); S.nJust = null; S.guestIn = false; lsSet('lk.prep.guest', ''); S.drinkAsk = ''; S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; S.gf = null; S.gfSnap = ''; S.cutDraft = null; S.cutSnap = ''; S.bulk = ''; S.wrA = S.wrC = S.wpA = S.wpC = null; S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; tdReset(); lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); accessChanged(); }
+ if (window.LK_DELIVERY) window.LK_DELIVERY.reset(); if (window.LK_SUP) window.LK_SUP.reset(); if (supplierService) supplierService.reset(); sessDrop(); ksClose(); noteClose('shut'); lmClose(); S.nJust = null; S.guestIn = false; lsSet('lk.prep.guest', ''); S.drinkAsk = ''; S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; S.gf = null; S.gfSnap = ''; S.cutDraft = null; S.cutSnap = ''; S.bulk = ''; S.wrA = S.wrC = S.wpA = S.wpC = null; S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; tdReset(); lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); accessChanged(); }
   /* The chef mark's menu (js/app.js) asks what to show: Meeting minutes for everyone (when the page is on), and for the
      head chef and sous chefs Shift pings and Manage staff (22 Oct 2026: the Minutes register is "See who has signed" at
      the top of Meeting minutes). head: no Kitchen mail, the head chef's mail is read in the admin panel. tab: the head
@@ -1105,7 +1108,10 @@
       nameOf: function (id) { var p = (S.config && S.config.people || []).filter(function (x) { return x.id === id; })[0]; return p ? p.name : ''; },
       edit: bookEdit, changed: rxChanged, fromServer: fromServer,
       // what a list listener's snapshot means with no signal (27 Oct 2026, js/deliveries.js): see listSnap()
-      listSnap: listSnap
+      listSnap: listSnap,
+      // the book's one two-tap helper (28 Oct 2026, js/draw.js and js/deliveries.js): arm(key, redraw) and armed(key).
+      // js/fnedit.js keeps its own for now and does not use these, so FE_API stays as it is (README, Bringing the code in line)
+      arm: arm, armed: armed
     };
   }
   /* Supplier workspace (24 Oct 2026). This bridge shares the kitchen's sign-in, writer, clock and pending-write
@@ -1116,9 +1122,11 @@
     return !!(S.authed && isSous() && canW() && S.sessExp > now() && S.config && (S.config.staffIds || []).indexOf(S.who) >= 0);
   }
   function supplierEdit() { return supplierRead() && (whoHead() || S.level === 'owner' && ownerHere()); }
+  /* Who is on this device. A staff list saved on another phone (a new starter in staffIds, another role) is not a
+     hand-over, so it no longer wipes an order typed here (28 Oct 2026): a person who loses the right to read is still
+     reset by supplierRead(), and js/suppliers.js closes the catalogue forms of one who loses the right to edit. */
   function supplierContext() {
-    var c = S.config || {};
-    return [S.pin, S.uid, S.who, S.authed ? 1 : 0, S.sessFor, S.sessExp, S.level, shared() ? 1 : 0, c.headId || '', (c.sousIds || []).join(','), (c.staffIds || []).join(',')].join('|');
+    return [S.pin, S.uid, S.who, S.authed ? 1 : 0, S.sessFor, S.sessExp, S.level, shared() ? 1 : 0].join('|');
   }
   // 'yes', 'no', 'wait', 'offline' (see fnState()) or 'nopin'
   function supplierState() {
@@ -3202,7 +3210,8 @@
       '<h3 id="lm-h">' + esc(name) + '</h3>' + (who.trim() ? '<p class="lm-who">' + esc(/^(from|Ordered by) /.test(who.trim()) ? who.trim() : 'Written by ' + who.trim()) + '</p>' : '') +
       (act ? '<button type="button" class="sheet-o lm-act" data-lm="act"><strong>' + esc(act.textContent.trim() === 'Remove' ? 'Remove line' : act.textContent.trim()) + '</strong></button>' : '') +
       '<button type="button" class="btn sheet-x" data-lm="close">Cancel</button></div>';
-    lmOpenFrom = btn; box._act = act;
+    // what the button does, as well as the button: the list is often drawn again while the sheet is open
+    lmOpenFrom = btn; box._act = act; box._sel = act ? guestSel(act) : '';
     document.body.appendChild(box); document.documentElement.classList.add('sheet-open');
     ovPush('lm', function () { lmClose(true); });
     var f = box.querySelector('.lm-act') || box.querySelector('.sheet-x'); if (f) f.focus();
@@ -3212,7 +3221,14 @@
     var a = el.getAttribute('data-lm');
     if (a === 'open') { e.preventDefault(); lmOpen(el); return; }
     var box = document.getElementById('lm-sheet');
-    if (a === 'act') { var act = box && box._act; lmOpenFrom = null; lmClose(); if (act && document.body.contains(act)) act.click(); return; }
+    if (a === 'act') {
+      // another phone's tick or a toast drew the list again since the sheet opened: the same line's own button, found by
+      // what it does (guestSel()), so Undo works as before. A line removed or ticked elsewhere no longer matches it.
+      var act = box && box._act, sel = box && box._sel; lmOpenFrom = null; lmClose();
+      if (!(act && document.body.contains(act))) act = sel && S.root ? S.root.querySelector(sel) : null;
+      if (act) act.click(); else toast('That line has changed. Try again.');
+      return;
+    }
     if (a === 'close') lmClose();
   });
   document.addEventListener('keydown', function (e) {
@@ -8328,6 +8344,8 @@
     b = S.root && S.root.querySelector('[data-p="mn-pub"]'); if (b) b.disabled = !!S.mSaving || mfSame(true);
     b = S.root && S.root.querySelector('[data-p="n-save"]'); if (b) b.disabled = !!S.nSaving || nfSame();
     b = S.root && S.root.querySelector('[data-p="g-save"]'); if (b && S.gf) b.disabled = !!(S.gf.busy || S.gf.saving) || gfSame();
+    // Chef to-do: Save changes on a job opened with Change, on once something in it changed
+    b = S.root && S.root.querySelector('[data-p="todo-save"]'); if (b && tdf.id) b.disabled = !tdDirty();
   }
   function onInput(e) {
     var el = e.target, k = el.getAttribute && el.getAttribute('data-k');
@@ -8360,7 +8378,7 @@
     if (k === 'a-bulk') { S.bulk = el.value; return; }
     if (k && /^cut-[ntpr]\d/.test(k)) { cutField(k, el); return; }
     if (k === 'dk-note' || k === 'dk-other') { dkf[k.slice(3)] = el.value.slice(0, k === 'dk-note' ? DK_NOTE : DK_OTHER); return; }
-    if (k === 'todo-text') { tdf.text = el.value.slice(0, TD_MAX); tdMsg = ''; return; }
+    if (k === 'todo-text') { tdf.text = el.value.slice(0, TD_MAX); tdMsg = ''; saveSync(); return; }
     if (k === 'ml-text') { mlf.text = el.value.slice(0, ML_MAX); mlMsg = ''; var mll = S.root.querySelector('#ml-left'), mln = ML_MAX - mlf.text.length; if (mll) mll.textContent = mln < 100 ? mln + ' characters left' : ''; return; }
     if (k === 'a-newpin') { S.newPin = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.newPin; return; }
     if (k === 'a-newpin2') { S.newPin2 = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.newPin2; return; }
@@ -8410,7 +8428,7 @@
     if (k === 'ml-sous') { mlSousSet(el.checked); return; }
     if (k && /^cut-[tpr]\d/.test(k)) { cutField(k, el); return; }
     // no redraw: typing a date on a keyboard changes it digit by digit, and a redraw would put the box back each time
-    if (k === 'todo-due') { tdf.due = tdDue(el.value); var nd = S.root.querySelector('[data-p="todo-nodue"]'); if (nd) nd.hidden = !tdf.due; return; }
+    if (k === 'todo-due') { tdf.due = tdDue(el.value); var nd = S.root.querySelector('[data-p="todo-nodue"]'); if (nd) nd.hidden = !tdf.due; saveSync(); return; }
     if (k === 'g-file') { var gfl = el.files; gReadFiles(gfl); try { el.value = ''; } catch (x) {} return; }
     if (k === 'mn-older') { S.mSel = el.value; loadSigns(el.value, true); draw(); return; }
     if (k && k.indexOf('mn-') === 0) { mfSet(k, el); saveSync(); return; }
@@ -8824,6 +8842,8 @@
     if (!todoOK()) return;
     var t = tdf.text.replace(/^\s+|\s+$/g, '').slice(0, TD_MAX), due = tdDue(tdf.due), fr = tdForOk(tdf.fr) ? tdf.fr : '', at = now(), keep = tdf;
     if (!t) { tdMsg = 'Write the job first.'; draw(); focusK('todo-text'); return; }
+    // a job opened with Change and not changed: Save changes is off, and a button left on by an older page saves nothing
+    if (tdf.id && !tdDirty()) { draw(); return; }
     if (tdf.id) {
       // the job being changed, even once it left both lists because it was ticked on this phone before Done was read
       // (a job a read dropped, removed or ticked elsewhere, is not on the list any more)
@@ -8855,6 +8875,12 @@
   function todoEdit(id) {
     var x = tdFind(id);
     if (!x || x.st !== 'open') return;
+    // words in the box not saved yet: the job already open carries on with them, another one asks first ("Not saved.
+    // Tap again"), so a half-typed job is never swapped out in one tap
+    if (tdDirty()) {
+      if (tdf.id === id) { focusK('todo-text'); window.scrollTo(0, 0); return; }
+      if (!arm('todo-edit:' + id)) return;
+    }
     tdf = { id: x.id, text: String(x.text || ''), due: tdDue(x.due), fr: tdForOk(x.for) ? x.for : '' }; tdSnap = JSON.stringify(tdf); tdEditX = x; tdMsg = ''; draw();
     focusK('todo-text'); window.scrollTo(0, 0);
   }
@@ -8887,8 +8913,8 @@
     return '<li class="todo-row' + (done ? ' is-done' : '') + (late ? ' is-late' : '') + '">' +
       '<button type="button" class="todo-tick" data-p="todo-tick" data-id="' + id + '" aria-pressed="' + done + '" aria-label="' + esc((done ? 'Untick: ' : 'Tick off: ') + String(x.text || '').slice(0, 40)) + '">' + TICK + '</button>' +
       '<div class="todo-body"><p class="todo-text">' + esc(x.text) + '</p><div class="todo-meta">' + meta.join('') + '</div>' +
-      '<div class="todo-acts">' + (done ? '' : '<button type="button" class="p-link" data-p="todo-edit" data-id="' + id + '">Change</button>') +
-      '<button type="button" class="p-link" data-p="todo-del" data-id="' + id + '">Remove</button></div></div></li>';
+      '<div class="todo-acts">' + (done ? '' : '<button type="button" class="p-link" data-p="todo-edit" data-id="' + id + '">' + (armed('todo-edit:' + x.id) ? 'Not saved. Tap again' : 'Change') + '</button>') +
+      '<button type="button" class="p-link" data-p="todo-del" data-id="' + id + '">' + (armed('todo-del:' + x.id) ? 'Not saved. Tap again' : 'Remove') + '</button></div></div></li>';
   }
   function tdFindText(x) { return x.text + ' ' + (tdForOk(x.for) ? mnName(x.for) : '') + ' ' + tdName(x.from); }
   function tdFilters() {
@@ -8909,8 +8935,8 @@
       '<div class="field"><label class="label" for="todo-due">Due by (optional)</label><div class="todo-dues"><input id="todo-due" type="date" class="p-dateinput" data-k="todo-due" value="' + esc(due) + '">' +
       '<button type="button" class="chip" data-p="todo-nodue"' + (due ? '' : ' hidden') + '>No date</button></div></div>' + fr +
       (tdMsg ? '<p class="p-err" role="alert">' + esc(tdMsg) + '</p>' : '') +
-      '<div class="btn-row"><button type="button" class="btn dark" data-p="todo-save">' + (editing ? 'Save changes' : 'Add to the list') + '</button>' +
-      (editing ? '<button type="button" class="btn" data-p="todo-cancel">Cancel</button>' : '') + '</div></section>';
+      '<div class="btn-row"><button type="button" class="btn dark" data-p="todo-save"' + (editing && !tdDirty() ? ' disabled' : '') + '>' + (editing ? 'Save changes' : 'Add to the list') + '</button>' +
+      (editing ? '<button type="button" class="btn" data-p="todo-cancel">' + (armed('todo-cancel') ? 'Tap again to discard' : 'Cancel') + '</button>' : '') + '</div></section>';
   }
   function todoPageHTML() {
     todoLoad();
@@ -8939,7 +8965,7 @@
   function todoClick(a, el) {
     var id = el.getAttribute('data-id');
     if (a === 'todo-save') { todoSave(); return; }
-    if (a === 'todo-cancel') { tdf = tdBlank(); tdSnap = ''; tdEditX = null; tdMsg = ''; draw(); return; }
+    if (a === 'todo-cancel') { if (tdDirty() && !arm('todo-cancel')) return; tdf = tdBlank(); tdSnap = ''; tdEditX = null; tdMsg = ''; draw(); return; }
     if (a === 'todo-for') { tdf.fr = el.getAttribute('data-v') || ''; draw(); return; }
     if (a === 'todo-nodue') { tdf.due = ''; draw(); focusK('todo-due'); return; }
     if (a === 'todo-pin') { if (S.who) pickName(S.who); return; }
@@ -8956,7 +8982,8 @@
       return;
     }
     if (a === 'todo-edit') { todoEdit(id); return; }
-    if (a === 'todo-del') { todoRemove(id); return; }
+    // Remove has Undo, but Undo puts back the saved job, not words changed in the box: those ask first
+    if (a === 'todo-del') { if (tdf.id === id && tdDirty() && !arm('todo-del:' + id)) return; todoRemove(id); return; }
     if (a === 'todo-refresh') { todoLoad(0); if (tdDoneOpen) todoLoadDone(true); else tdDoneAt = 0; draw(); return; }
     if (a === 'todo-donebox') { tdDoneOpen = !el.parentNode.open; if (tdDoneOpen) todoLoadDone(); }
   }

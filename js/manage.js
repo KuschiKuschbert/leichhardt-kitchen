@@ -16,7 +16,7 @@
 (function () {
   'use strict';
 
-  var API = 4;
+  var API = 5;
   var D = window.LK_DATA, X = window.LK_RX, A = window.LK_APP, P = window.LK_PREP;
   var esc = A.esc, KIND = A.KIND, ALLERGENS = D.allergens;
   var LS = (function () { try { localStorage.getItem('x'); return localStorage; } catch (e) { return null; } })();
@@ -237,18 +237,36 @@
     M.ed = e;
   }
   var keepTimer = null;
+  // true when the changes are now kept on this device (never while the kept box shows: that draft is not touched)
   function keepNow() {
     clearTimeout(keepTimer);
-    var e = M.ed; if (!e || !e.d || e.kept) return;
-    if (snapOf(e) === e.snap) { lsSet(draftKey(e.key), ''); return; }
+    var e = M.ed; if (!e || !e.d || e.kept) return false;
+    if (snapOf(e) === e.snap) { lsSet(draftKey(e.key), ''); return false; }
     lsSet(draftKey(e.key), JSON.stringify({ at: B().now(), e: { id: e.id, d: e.d, menu: e.menu, meta: e.meta, handTags: e.handTags, idTyped: e.idTyped } }));
     dirtyNote();
+    return true;
   }
+  /* Keep editing them: the changes kept on this device go back in the form. The first change made while the "Changes
+     not saved yet" box shows does this first (28 Oct 2026: a tap in a box, a button that changes the recipe, a label
+     dragged), so nothing typed lands on the saved copy, where it was never kept and was lost on leaving. */
+  function useKept(e) {
+    var k = e.kept.e; e.d = k.d; e.menu = k.menu || e.menu; e.meta = Object.assign(e.meta, { removed: !!k.meta.removed, off: !!k.meta.off }); e.handTags = !!k.handTags;
+    if (e.isNew) { e.id = k.id || e.id; e.idTyped = !!k.idTyped; }
+    e.kept = null; e.open = -1; e.pinOpen = -1;
+  }
+  function keptBack(e) { useKept(e); keepNow(); draw(); toast('Your kept changes are back in the form.'); }
   function keepDraft() { clearTimeout(keepTimer); keepTimer = setTimeout(keepNow, 400); }
   function dirty() { var e = M.ed; return !!(e && e.d && snapOf(e) !== e.snap); }
+  // Save on a recipe already in the book is off until something changed: a save makes a new version, and for a recipe
+  // from js/data.js it makes the book's copy win over the file from then on. A new recipe keeps Save on (check() says
+  // what it needs).
+  function unchanged(e) { return !!(e && !e.isNew && !dirty()); }
   function dirtyNote() {
     var el = M.root && M.root.querySelector('.mg-state');
     if (el) el.textContent = stateText();
+    // typing does not draw the page again: Save follows here
+    var sb = M.root && M.root.querySelector('[data-mg="save"]');
+    if (sb && M.ed && M.ed.d && !M.ed.saving) sb.disabled = unchanged(M.ed);
   }
   function stateText() {
     var e = M.ed;
@@ -367,7 +385,7 @@
           '<div class="btn-row mg-mini"><button type="button" class="p-x" data-mg="ing-tags" data-i="' + k + '" aria-expanded="' + open + '">' + esc(i.link ? 'Allergens from its recipe' : tagSummary(i.tags)) + '</button>' +
           (k ? '<button type="button" class="p-x" data-mg="ing-up" data-i="' + k + '" aria-label="Move ingredient ' + (k + 1) + ' up">Up</button>' : '') +
           (k < n - 1 ? '<button type="button" class="p-x" data-mg="ing-down" data-i="' + k + '" aria-label="Move ingredient ' + (k + 1) + ' down">Down</button>' : '') +
-          '<button type="button" class="p-x" data-mg="ing-del" data-i="' + k + '" aria-label="Remove ingredient ' + (k + 1) + '">Remove</button></div>' +
+          '<button type="button" class="p-x" data-mg="ing-del" data-i="' + k + '" aria-label="' + (armed('ing-del:' + k) ? 'Tap again to remove' : 'Remove') + ' ingredient ' + (k + 1) + '">' + (armed('ing-del:' + k) ? 'Tap again to remove' : 'Remove') + '</button></div>' +
           (open ? tagChips(i.tags, 'ing', k) : '') + '</li>';
       }).join('') + '</ol><div class="btn-row"><button type="button" class="btn" data-mg="ing-add">Add an ingredient</button></div></section>';
   }
@@ -397,7 +415,7 @@
     } else body = '<p class="hint">Worked out from the allergens tagged on each ingredient, and from the recipes linked.</p>';
     var change = JSON.stringify(now) === JSON.stringify(next) ? '' : '<p class="mg-change" role="status"><b>After saving:</b> ' + esc(next.length ? next.join(', ') : 'none') + (now.length || !e.isNew ? ' (now: ' + esc(now.length ? now.join(', ') : 'none') + ')' : '') + '</p>';
     return '<section class="set-block mg-sec" aria-labelledby="mg-h-alg"><h3 class="h3" id="mg-h-alg">Allergens</h3>' +
-      '<div class="chips" role="group" aria-label="How the allergens are set"><button type="button" class="chip" data-mg="hand" data-v="0" aria-pressed="' + !e.handTags + '">Worked out from the ingredients</button><button type="button" class="chip" data-mg="hand" data-v="1" aria-pressed="' + e.handTags + '">Set by hand</button></div>' +
+      '<div class="chips" role="group" aria-label="How the allergens are set"><button type="button" class="chip" data-mg="hand" data-v="0" aria-pressed="' + !e.handTags + '">' + (armed('hand') ? 'Tap again: hand-set allergens go' : 'Worked out from the ingredients') + '</button><button type="button" class="chip" data-mg="hand" data-v="1" aria-pressed="' + e.handTags + '">Set by hand</button></div>' +
       (e.handTags ? '<p class="hint">This recipe sets its allergens by hand, so the ingredient tags do not change them.</p>' : '') + body +
       '<div class="mg-alg-now"><span class="label">The card shows</span><span class="chips">' + (next.length ? next.map(function (t) { return '<span class="tag' + (/\?$/.test(t) ? ' maybe' : '') + '">' + esc(t) + '</span>'; }).join('') : '<span class="hint">No allergens</span>') + '</span>' +
       (ro.missing.length ? '<p class="hint">Not complete: ' + esc(ro.missing.join(', ')) + ' has no card yet.</p>' : '') + '</div>' + change +
@@ -462,7 +480,7 @@
             '<label class="field"><span class="label">Down %</span><input class="search" inputmode="decimal" data-f="pin.' + k + '.y" value="' + esc(p.y) + '"></label></div>' +
             '<div class="field"><label class="label" for="mg-pside-' + k + '">Label side</label><select id="mg-pside-' + k + '" class="search" data-f="pin.' + k + '.side"><option value=""' + (!p.side ? ' selected' : '') + '>Where it fits</option><option value="left"' + (p.side === 'left' ? ' selected' : '') + '>Left</option><option value="right"' + (p.side === 'right' ? ' selected' : '') + '>Right</option></select></div>' +
             (p.link ? '<p class="hint">Opens its recipe; its allergens come from there.</p>' : '<span class="label">Allergens in this part</span>' + tagChips(p.tags, 'pin', k) + '<p class="hint">These are the label\'s own tags, apart from the ingredient list.</p>') +
-            '<div class="btn-row mg-mini"><button type="button" class="p-x" data-mg="pin-del" data-i="' + k + '">Remove this label</button></div>' : '') + '</li>';
+            '<div class="btn-row mg-mini"><button type="button" class="p-x" data-mg="pin-del" data-i="' + k + '">' + (armed('pin-del:' + k) ? 'Tap again to remove' : 'Remove this label') + '</button></div>' : '') + '</li>';
       }).join('') + '</ol><div class="btn-row"><button type="button" class="btn" data-mg="pin-add">Add a label</button></div>';
   }
   function histHTML(e) {
@@ -470,7 +488,7 @@
     var h = e.hist;
     var list = h === 'loading' ? '<p class="hint" role="status">Reading earlier versions...</p>' : h === 'error' ? '<p class="p-err" role="alert">Could not read the earlier versions. Check the signal.</p>' :
       h ? (h.length ? '<ol class="mg-hist">' + h.map(function (x, k) {
-        return '<li><span><b>Version ' + esc(x.v) + '</b> · ' + esc(x.when) + (x.who ? ' · ' + esc(x.who) : '') + (x.name ? ' · ' + esc(x.name) : '') + '</span><button type="button" class="p-x" data-mg="hist-use" data-i="' + k + '">Open this version</button></li>';
+        return '<li><span><b>Version ' + esc(x.v) + '</b> · ' + esc(x.when) + (x.who ? ' · ' + esc(x.who) : '') + (x.name ? ' · ' + esc(x.name) : '') + '</span><button type="button" class="p-x" data-mg="hist-use" data-i="' + k + '">' + (armed('hist-use:' + k) ? 'Not saved. Tap again' : 'Open this version') + '</button></li>';
       }).join('') + '</ol><p class="hint">Opening a version puts it in the form. Save to make it the card again.</p>' : '<p class="hint">No earlier versions yet.</p>') : '';
     return '<section class="set-block mg-sec" aria-labelledby="mg-h-hist"><h3 class="h3" id="mg-h-hist">Earlier versions</h3>' + list +
       (h ? '' : '<div class="btn-row"><button type="button" class="btn" data-mg="hist">Show earlier versions</button></div>') + '</section>';
@@ -506,13 +524,13 @@
       '<div class="btn-row"><button type="button" class="btn dark" data-mg="kept-use">Keep editing them</button><button type="button" class="btn" data-mg="kept-drop">' + (armed('kept-drop') ? 'Tap again to throw them away' : 'Throw them away') + '</button></div></div>' : '';
     var fileNote = st && st.fileChanged ? '<div class="box beige" role="note"><span class="label">The book file changed</span><div>js/data.js has a newer copy of this recipe than the one this change was made from. Check the steps and amounts, or go back to the book file\'s copy (In the book, below).</div></div>' : '';
     var conflict = e.conflict ? '<div class="warn" role="alert"><span class="label">Changed on another device</span><span>Version ' + esc(e.conflict.v) + ' was saved' + (e.conflict.who ? ' by ' + esc(e.conflict.who) : '') + (e.conflict.when ? ' at ' + esc(e.conflict.when) : '') + ' after you opened this recipe.</span>' +
-      '<div class="btn-row"><button type="button" class="btn" data-mg="theirs">Open theirs</button><button type="button" class="btn dark" data-mg="mine">Save mine over it</button></div></div>' : '';
+      '<div class="btn-row"><button type="button" class="btn" data-mg="theirs">' + (armed('theirs') ? 'Tap again: yours here go' : 'Open theirs') + '</button><button type="button" class="btn dark" data-mg="mine">Save mine over it</button></div></div>' : '';
     var errs = e.errs.length ? '<div class="warn" role="alert"><span class="label">Not saved yet</span><ul class="mg-errs">' + e.errs.map(function (x) { return '<li><a href="#' + esc(x.at) + '" data-mg="goto" data-v="' + esc(x.at) + '">' + esc(x.msg) + '</a></li>'; }).join('') + '</ul></div>' : '';
     var warns = e.warns.length ? '<div class="box beige" role="note">' + e.warns.map(function (w) { return '<div>' + esc(w) + '</div>'; }).join('') + '</div>' : '';
     return '<div class="mg-wrap mg-ed">' + linkList() + head + kept + fileNote + conflict + errs + warns +
       swHTML(e) + basicsHTML(e) + ingHTML(e) + methodHTML(e) + allergenHTML(e) + drawingHTML(e) + menuHTML(e) + boxesHTML(e) + histHTML(e) + moreHTML(e) +
       '<div class="mg-bar"><span class="mg-state" role="status">' + esc(stateText()) + '</span>' + (e.msg ? '<span class="p-err" role="alert">' + esc(e.msg) + '</span>' : '') +
-      '<div class="btn-row"><button type="button" class="btn dark" data-mg="save"' + (e.saving ? ' disabled' : '') + '>' + (e.saving ? 'Saving...' : 'Save') + '</button>' +
+      '<div class="btn-row"><button type="button" class="btn dark" data-mg="save"' + (e.saving || unchanged(e) ? ' disabled' : '') + '>' + (e.saving ? 'Saving...' : 'Save') + '</button>' +
       (dirty() ? '<button type="button" class="btn" data-mg="undo-all">' + (armed('undo-all') ? 'Tap again to undo all' : 'Undo all changes') + '</button>' : '') + '</div></div></div>';
   }
 
@@ -594,6 +612,9 @@
   function save(force) {
     var e = M.ed;
     if (!e || e.saving) return;
+    // nothing changed: Save is off, and a button left on by an older page saves nothing either (Go back to the book
+    // file's copy, Hide and Earlier versions change the form first, so they still save; Save mine over it is force)
+    if (!force && unchanged(e)) { draw(); return; }
     e.msg = ''; e.conflict = force ? null : e.conflict;
     keepNow();   // kept on this device until the save is confirmed
     if (!e.meta.off && !e.meta.removed && !check(e)) { draw(); focusId(e.errs[0].at); return; }
@@ -729,12 +750,14 @@
   function draw() {
     if (window.LK_DRAW && window.LK_DRAW.open()) return;
     if (!M.root || !document.body.contains(M.root)) return;
-    var keep = document.activeElement && M.root.contains(document.activeElement) ? (document.activeElement.getAttribute('data-f') || document.activeElement.getAttribute('data-mg') + ':' + (document.activeElement.getAttribute('data-i') || '')) : '';
+    var ae = document.activeElement, keep = ae && M.root.contains(ae) ? (ae.getAttribute('data-f') || ae.getAttribute('data-mg') + ':' + (ae.getAttribute('data-i') || '')) : '', fl = ae && M.root.contains(ae) ? ae.getAttribute('data-fl') : '';
     var y = window.scrollY;
     M.root.innerHTML = M.ed ? editorHTML() : listHTML();
     window.scrollTo(0, y);
     window.dispatchEvent(new Event('lk-nav'));
-    if (keep) {
+    // a recipe link box (data-fl) keeps the focus too
+    if (fl) { var lb = M.root.querySelector('[data-fl="' + fl + '"]'); if (lb) lb.focus({ preventScroll: true }); }
+    else if (keep) {
       var el = M.root.querySelector('[data-f="' + keep + '"]') || (keep.indexOf(':') > 0 ? M.root.querySelector('[data-mg="' + keep.split(':')[0] + '"]' + (keep.split(':')[1] ? '[data-i="' + keep.split(':')[1] + '"]' : '')) : null);
       if (el && el.focus) el.focus({ preventScroll: true });
     }
@@ -747,7 +770,7 @@
     if (!drawLoad) {
       drawLoad = A.load('js/library.js').then(function () {
         // a category file that fails to load leaves its drawings out; the editor still opens
-        return Promise.all(window.LK_LIB.files.map(function (f) { return A.load(f).catch(function () {}); }).concat([A.load('js/draw.js?v=4')]));
+        return Promise.all(window.LK_LIB.files.map(function (f) { return A.load(f).catch(function () {}); }).concat([A.load('js/draw.js?v=5')]));
       }).then(function () {
         // without the smart creator the editor still works by hand; the recipe reader (js/compose.js) needs it first
         return A.load('js/smart.js').then(function () { return A.load('js/compose.js'); }).catch(function () {});
@@ -759,7 +782,7 @@
     var key = sub.join('/');
     M.root = root; M.ed = null; drawn = 'draw:' + key;
     if (window.LK_DRAW) {
-      if (window.LK_DRAW.api === 4) window.LK_DRAW.mount(root, sub);
+      if (window.LK_DRAW.api === 5) window.LK_DRAW.mount(root, sub);
       else root.innerHTML = '<div class="mg-wrap"><h2 id="rtitle" tabindex="-1">Reload the book</h2><p>The drawing editor on this device needs the current book. Your saved drawings stay.</p><div class="btn-row"><button type="button" class="btn dark" data-act="reload">Reload</button></div></div>';
       return;
     }
@@ -794,12 +817,20 @@
   function unmount() {
     var hadRoot = !!M.root;
     if (window.LK_DRAW && window.LK_DRAW.open()) window.LK_DRAW.unmount();
-    if (M.ed && dirty() && M.root) { keepNow(); toast('Your changes are kept as a draft on this device.'); }
+    // only when they were kept: while the kept box shows, the form holds the saved copy and nothing is kept
+    if (M.ed && dirty() && M.root && keepNow()) toast('Your changes are kept as a draft on this device.');
     M.root = null; M.sub = []; drawn = ''; M.ed = null;
     if (hadRoot) window.dispatchEvent(new Event('lk-nav'));
   }
 
   /* ---------- clicks, typing and dragging ---------- */
+  // something set by hand that the ingredients do not give: another choice, or a "from which part" note
+  function handOwn(e) {
+    var d = e.d, ro = A.rollFor(Object.assign(cleanRecipe(e), { contains: undefined, check: undefined }));
+    var list = function (l) { return (l || []).map(function (x) { return x.allergen; }).sort().join('|'); };
+    return (d.contains || []).concat(d.check || []).some(function (x) { return trimStr(x.from); }) ||
+      list(d.contains) !== ro.contains.slice().sort().join('|') || list(d.check) !== ro.check.slice().sort().join('|');
+  }
   function cycleTag(list, a) {
     list = (list || []).slice();
     var has = list.indexOf(a), may = list.indexOf(a + '?');
@@ -828,16 +859,22 @@
     }
     if (a === 'save') { save(false); return; }
     if (a === 'mine') { save(true); return; }
+    // a change while the kept box shows: the kept changes come back first, and this tap does nothing else (its row may
+    // not be the same row in the kept changes)
+    if (e.kept && !/^(kept-use|kept-drop|hist|ing-tags|pin-pick|theirs)$/.test(a)) { keptBack(e); return; }
     if (a === 'theirs') {
+      // the changes typed here go: ask first, like Throw them away
+      if (dirty() && !arm('theirs')) return;
       var c = e.conflict && e.conflict.rec;
       if (c && c.r) { e.d = clone(c.r); e.meta.v = c.v; e.meta.removed = !!c.removed; e.meta.off = !!c.off; e.handTags = !!(c.r.contains || c.r.check); }
       e.conflict = null; e.snap = snapOf(e); lsSet(draftKey(e.key), ''); draw(); return;
     }
-    if (a === 'kept-use') { var k = e.kept.e; e.d = k.d; e.menu = k.menu || e.menu; e.meta = Object.assign(e.meta, { removed: !!k.meta.removed, off: !!k.meta.off }); e.handTags = !!k.handTags; if (e.isNew) { e.id = k.id || e.id; e.idTyped = !!k.idTyped; } e.kept = null; draw(); return; }
+    if (a === 'kept-use') { if (e.kept) useKept(e); draw(); return; }
     if (a === 'kept-drop') { if (!arm('kept-drop')) return; e.kept = null; lsSet(draftKey(e.key), ''); draw(); return; }
     if (a === 'undo-all') { if (!arm('undo-all')) return; var fr = JSON.parse(e.snap); e.d = fr[0]; e.menu = fr[1]; e.meta.removed = fr[2]; e.meta.off = fr[3]; e.handTags = !!(e.d.contains || e.d.check); lsSet(draftKey(e.key), ''); draw(); return; }
     if (a === 'ing-add') { d.ingredients.push({ q: '', name: '' }); keepDraft(); draw(); var ins = M.root.querySelectorAll('[data-f$=".q"][data-f^="ing."]'); if (ins.length) ins[ins.length - 1].focus(); return; }
-    if (a === 'ing-del') { d.ingredients.splice(i, 1); e.open = -1; keepDraft(); draw(); return; }
+    // an ingredient with anything in it asks first; an empty row added by mistake goes at once
+    if (a === 'ing-del') { var ri = d.ingredients[i] || {}; if ((trimStr(ri.q) || trimStr(ri.name) || trimStr(ri.note) || ri.link || (ri.tags || []).length) && !arm('ing-del:' + i)) return; d.ingredients.splice(i, 1); e.open = -1; keepDraft(); draw(); return; }
     if (a === 'ing-up') { move(d.ingredients, i, i - 1); e.open = -1; keepDraft(); draw(); return; }
     if (a === 'ing-down') { move(d.ingredients, i, i + 1); e.open = -1; keepDraft(); draw(); return; }
     if (a === 'ing-tags') { e.open = e.open === i ? -1 : i; draw(); return; }
@@ -850,16 +887,20 @@
     if (a === 'sec-up') { move(d.sections, i, i - 1); keepDraft(); draw(); return; }
     if (a === 'sec-down') { move(d.sections, i, i + 1); keepDraft(); draw(); return; }
     if (a === 'hand') {
+      // back to worked out from the ingredients drops what was set by hand (a different choice, a "from which part" note):
+      // that asks first; allergens that match the ingredients go in one tap
+      if (v === '0' && e.handTags && handOwn(e) && !arm('hand')) return;
       e.handTags = v === '1';
       if (e.handTags) { var ro = A.rollFor(Object.assign(cleanRecipe(e), { contains: undefined, check: undefined })); d.contains = ro.contains.map(function (x) { return { allergen: x, from: '' }; }); d.check = ro.check.map(function (x) { return { allergen: x, from: '' }; }); }
       else { delete d.contains; delete d.check; }
       keepDraft(); draw(); return;
     }
     if (a === 'pin-add') { d.pins = d.pins || []; d.pins.push({ label: '', x: 50, y: 50, tags: [], own: true }); e.pinOpen = d.pins.length - 1; keepDraft(); draw(); return; }
-    if (a === 'pin-del') { d.pins.splice(i, 1); e.pinOpen = -1; keepDraft(); draw(); return; }
+    if (a === 'pin-del') { var rp = d.pins[i] || {}; if ((trimStr(rp.label) || trimStr(rp.note) || rp.link || (rp.tags || []).length) && !arm('pin-del:' + i)) return; d.pins.splice(i, 1); e.pinOpen = -1; keepDraft(); draw(); return; }
     if (a === 'pin-pick') { if (dragMoved) { dragMoved = false; return; } e.pinOpen = e.pinOpen === i ? -1 : i; draw(); return; }
     if (a === 'hist') { loadHist(); return; }
-    if (a === 'hist-use') { var hv = e.hist[i].rec; if (hv && hv.r) { e.d = clone(hv.r); e.handTags = !!(hv.r.contains || hv.r.check); e.meta.removed = false; e.meta.off = false; keepDraft(); draw(); toast('Version ' + hv.v + ' is in the form. Save to make it the card again.'); } return; }
+    // an earlier version goes over the form: changes not saved yet ask first ("Not saved. Tap again")
+    if (a === 'hist-use') { if (dirty() && !arm('hist-use:' + i)) return; var hv = e.hist[i].rec; if (hv && hv.r) { e.d = clone(hv.r); e.handTags = !!(hv.r.contains || hv.r.check); e.meta.removed = false; e.meta.off = false; keepDraft(); draw(); toast('Version ' + hv.v + ' is in the form. Save to make it the card again.'); } return; }
     if (a === 'sw-show') { e.meta.removed = !e.meta.removed; if (e.meta.removed) e.meta.off = false; keepDraft(); draw(); focusSw(a); return; }
     if (a === 'sw-special') {
       if (isSpecial(e)) { var was = e.menuWas || (e.isNew ? null : menuOf(e.id)); e.menu = was && was.sec !== A.specials ? clone(was) : { sec: '', after: '' }; }
@@ -880,6 +921,15 @@
     if (ev.type === 'change' && /^(kind|art|menu\.sec|hand\.|ing\.\d+\.link|pin\.\d+\.link|pin\.\d+\.(x|y)|done)/.test(f)) draw();
   }
   document.addEventListener('input', onField);
+  /* A box tapped while the kept box shows: the kept changes come back first, so what is typed goes on them. The form
+     is drawn again (draw() keeps the focus on the same box) and the caret goes to the end of what the box holds. */
+  document.addEventListener('focusin', function (ev) {
+    var e = M.ed, t = ev.target;
+    if (!e || !e.kept || !M.root || !M.root.contains(t) || !t.getAttribute || !(t.getAttribute('data-f') || t.getAttribute('data-fl'))) return;
+    keptBack(e);
+    var n = document.activeElement;
+    if (n && M.root.contains(n) && n.setSelectionRange && (n.tagName === 'TEXTAREA' || /^(text|search)$/.test(n.type))) try { n.setSelectionRange(n.value.length, n.value.length); } catch (x) {}
+  });
   // the recipe link boxes: a pick from the list (or a whole name typed) links it; anything else goes back when the box is left
   document.addEventListener('change', function (ev) {
     var el = ev.target; if (!M.root || !M.root.contains(el) || !el.getAttribute('data-fl')) return;
@@ -916,6 +966,8 @@
     if (!drag || ev.pointerId !== drag.id) return;
     var dd = drag; drag = null;
     if (!dragMoved || !M.ed) return;
+    // a label dragged while the kept box shows: the kept changes come back, and the label stays where they had it
+    if (M.ed.kept) { keptBack(M.ed); setTimeout(function () { dragMoved = false; }, 0); return; }
     var p = M.ed.d.pins[dd.i]; p.x = dd.x; p.y = dd.y; p.own = true; keepDraft();
     M.ed.pinOpen = dd.i; draw();
     setTimeout(function () { dragMoved = false; }, 0);

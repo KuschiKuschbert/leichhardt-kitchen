@@ -902,7 +902,7 @@
       if (el) el.innerHTML = mgNote('Could not open functions', 'It needs the signal the first time it opens on a device. Check the signal and try again.', '<div class="btn-row"><button type="button" class="btn dark" data-act="feretry">Try again</button></div>');
     });
   }
-  var MG_API = 4, mgLoad = null;
+  var MG_API = 5, mgLoad = null;
   function viewManage() { return '<div class="page mg-page"><main id="main" class="mg"><div id="mg-root"></div></main>' + footer() + '</div>'; }
   function mgScript(f) {
     return fetch(f, { headers: { 'X-LK-Fresh': '1' } }).catch(function () {}).then(function () {
@@ -910,7 +910,7 @@
     });
   }
   function loadManage() {
-    if (!mgLoad) mgLoad = mgScript('js/manage.js?v=4').catch(function (e) { mgLoad = null; throw e; });
+    if (!mgLoad) mgLoad = mgScript('js/manage.js?v=5').catch(function (e) { mgLoad = null; throw e; });
     return mgLoad;
   }
   function mgNote(title, text, link) {
@@ -946,12 +946,12 @@
   function mountDeliveries() {
     var root = document.getElementById('delivery-root'); if (!root || !window.LK_PREP.privateAccess()) return;
     if (window.LK_DELIVERY) {
-      if (window.LK_DELIVERY.api === 1) window.LK_DELIVERY.mount(root);
+      if (window.LK_DELIVERY.api === 2) window.LK_DELIVERY.mount(root);
       else root.innerHTML = mgNote('Reload the book', 'Delivery records need the current book.', '<button type="button" class="btn dark" data-act="reload">Reload</button>');
       return;
     }
     root.innerHTML = mgNote('Delivery received', 'Opening delivery records...', ' ');
-    if (!deliveryLoad) deliveryLoad = mgScript('js/deliveries.js?v=1').catch(function (e) { deliveryLoad = null; throw e; });
+    if (!deliveryLoad) deliveryLoad = mgScript('js/deliveries.js?v=2').catch(function (e) { deliveryLoad = null; throw e; });
     deliveryLoad.then(function () { if (parseRoute().name === 'deliveries') mountDeliveries(); }, function () {
       if (parseRoute().name === 'deliveries' && root.isConnected) root.innerHTML = mgNote('Could not open delivery records', 'Check the connection and try again.', '<button type="button" class="btn dark" data-delivery-retry>Try again</button>');
     });

@@ -25,7 +25,7 @@
 (function () {
   'use strict';
 
-  var API = 4;
+  var API = 5;
   var D = window.LK_DATA, X = window.LK_RX, A = window.LK_APP, P = window.LK_PREP, LIB = window.LK_LIB;
   var esc = A.esc;
   function B() { return P.book(); }
@@ -226,7 +226,19 @@
 
   /* ---------- undo, redo and drafts ---------- */
   function snapNow() { return JSON.stringify({ surf: W.d.surf, els: W.d.els, name: W.d.name }); }
-  function before() { W.undo.push(snapNow()); if (W.undo.length > 100) W.undo.shift(); W.redo = []; }
+  /* Keep editing them: the drawing kept on this device comes back, as one undo step. The first change made while the
+     "Changes not saved yet" box shows does this first (28 Oct 2026), so nothing drawn lands on the saved copy, is never
+     kept and is lost on leaving. The part picked on the saved copy is let go: its place may hold another part now. */
+  function takeKept() {
+    var k = W.d.kept; W.undo.push(snapNow()); if (W.undo.length > 100) W.undo.shift(); W.redo = []; W.d.kept = null; W.sel = [];
+    W.d.surf = k.surf; W.d.els = k.els; W.d.name = k.name || W.d.name;
+    Object.keys(k.defs || {}).forEach(function (x) { if (W.d.defs[x] === undefined) W.d.defs[x] = k.defs[x]; });
+  }
+  function keptBack() { takeKept(); toast('Your kept drawing is back.'); }
+  function before() { if (W.d && W.d.kept) keptBack(); W.undo.push(snapNow()); if (W.undo.length > 100) W.undo.shift(); W.redo = []; }
+  // the book's one two-tap helper (js/prep.js arm(), through LK_PREP.book()), drawing this page again
+  function arm(k) { var b = B(); return b.arm ? b.arm(k, draw) : true; }
+  function armed(k) { var b = B(); return !!(b.armed && b.armed(k)); }
   function restore(s) { var o = JSON.parse(s); W.d.surf = o.surf; W.d.els = o.els; W.d.name = o.name; W.sel = W.sel.filter(function (i) { return i < W.d.els.length; }); }
   function undo() { if (!W.undo.length) return; W.redo.push(snapNow()); restore(W.undo.pop()); changed(); }
   function redo() { if (!W.redo.length) return; W.undo.push(snapNow()); restore(W.redo.pop()); changed(); }
@@ -236,16 +248,29 @@
   // 2026), so Save stays off until one part is on it, like persist(). A saved drawing keeps its Save.
   function nothingDrawn(d) { return !!(d && d.isNew && !d.els.length); }
   var keepT = null;
+  // true when the drawing is now kept on this device (never while the kept box shows: that one is not touched)
   function keepNow() {
     clearTimeout(keepT);
-    if (!W.d || W.d.kept) return;
-    if (!dirty()) { lsSet(draftKey(), ''); return; }
+    if (!W.d || W.d.kept) return false;
+    if (!dirty()) { lsSet(draftKey(), ''); return false; }
     var used = {}; W.d.els.forEach(function (el) { if (isPiece(el)) used[el.a] = W.d.defs[el.a] !== undefined ? W.d.defs[el.a] : bodyOf(el.a); });
     lsSet(draftKey(), JSON.stringify({ at: B().now(), surf: W.d.surf, els: W.d.els, name: W.d.name, defs: used }));
+    return true;
   }
   // every change: kept on this device, the page drawn again (soft: only the canvas, so a tap that is half done on a
   // button, while a typed box loses the focus, still lands)
-  function changed(soft) { clearTimeout(keepT); keepT = setTimeout(keepNow, 400); W.check = null; if (soft) drawCanvas(); else draw(); }
+  function changed(soft) { clearTimeout(keepT); keepT = setTimeout(keepNow, 400); W.check = null; if (soft) { drawCanvas(); barNote(); } else draw(); }
+  // nothing to save on a drawing already in the book: Save is off, and save() refuses too
+  function unchanged(d) { return !!(d && !d.isNew && !d.followed && !dirty()); }
+  // the save bar after a change that draws only the canvas (a typed label, a tint, an arrow key): its words, and Save on
+  // only with something to save
+  function barNote() {
+    var d = W.d, s = W.root && W.root.querySelector('.dw-bar .mg-state'), b = W.root && W.root.querySelector('[data-dw="save"]');
+    if (!d || W.saving) return;
+    if (s) s.textContent = stateWords(d);
+    if (b) b.disabled = nothingDrawn(d) || unchanged(d);
+  }
+  function stateWords(d) { return nothingDrawn(d) ? 'Nothing drawn yet.' : dirty() ? 'Not saved yet. Kept on this device.' : d.isNew ? 'New drawing.' : 'Saved. Version ' + d.meta.v + '.'; }
 
   /* ---------- where a new piece goes ---------- */
   function area() { var s = surface(W.d); return s ? s.area : { shape: 'box', cx: 0, cy: 0, rx: 100, ry: 60 }; }
@@ -657,15 +682,15 @@
   }
   function pageHTML() {
     var d = W.d, r = rec();
-    var kept = d.kept ? '<div class="box beige mg-kept" role="note"><span class="label">Changes not saved yet</span><div>This device kept changes to this drawing from ' + esc(B().dayShort(d.kept.at) + ' ' + B().clock(d.kept.at)) + '.</div><div class="btn-row">' + btn('kept-use', 'Keep editing them', { cls: 'btn dark' }) + btn('kept-drop', 'Throw them away', { cls: 'btn' }) + '</div></div>' : '';
-    var conflict = W.conflict ? '<div class="warn" role="alert"><span class="label">Changed on another device</span><span>Version ' + esc(W.conflict.v) + ' of this drawing was saved after you opened it.</span><div class="btn-row">' + btn('theirs', 'Open theirs', { cls: 'btn' }) + btn('mine', 'Save mine over it', { cls: 'btn dark' }) + '</div></div>' : '';
+    var kept = d.kept ? '<div class="box beige mg-kept" role="note"><span class="label">Changes not saved yet</span><div>This device kept changes to this drawing from ' + esc(B().dayShort(d.kept.at) + ' ' + B().clock(d.kept.at)) + '.</div><div class="btn-row">' + btn('kept-use', 'Keep editing them', { cls: 'btn dark' }) + btn('kept-drop', armed('kept-drop') ? 'Tap again to throw them away' : 'Throw them away', { cls: 'btn' }) + '</div></div>' : '';
+    var conflict = W.conflict ? '<div class="warn" role="alert"><span class="label">Changed on another device</span><span>Version ' + esc(W.conflict.v) + ' of this drawing was saved after you opened it.</span><div class="btn-row">' + btn('theirs', armed('theirs') ? 'Tap again: yours here go' : 'Open theirs', { cls: 'btn' }) + btn('mine', 'Save mine over it', { cls: 'btn dark' }) + '</div></div>' : '';
     var newer = d.els.some(function (el) { var it = el.t === 'item' && itemOf(el.a); return it && it.id + '@' + it.v !== el.a; }) ? '<div class="box beige" role="note"><span class="label">Newer library drawings</span><div>Some pieces have a newer drawing in the library. This drawing keeps its own copy until you ask.</div><div class="btn-row">' + btn('newer', 'Use the newer drawings', { cls: 'btn' }) + '</div></div>' : '';
     var empty = nothingDrawn(d);
-    var state = W.saving || (empty ? 'Nothing drawn yet.' : dirty() ? 'Not saved yet. Kept on this device.' : d.isNew ? 'New drawing.' : 'Saved. Version ' + d.meta.v + '.');
+    var state = W.saving || stateWords(d);
     return '<div class="dw"><div class="mg-head"><h2 id="rtitle" tabindex="-1">' + esc((r ? r.name : d.rid) + ': ' + SLOT_NAME[d.slot].toLowerCase()) + '</h2></div>' + kept + conflict + newer +
       '<div class="dw-main"><div class="dw-left">' + canvasHTML() + toolsHTML() + selHTML() + '</div><div class="dw-right">' + smart('panel') + startHTML() + missingHTML() + checkHTML() + panelHTML() + '</div></div>' +
       '<div class="mg-bar dw-bar"><span class="mg-state" role="status">' + esc(state) + '</span>' + (W.msg ? '<span class="p-err" role="alert">' + esc(W.msg) + '</span>' : '') +
-      '<div class="btn-row"><button type="button" class="btn dark" data-dw="save"' + (W.saving || empty ? ' disabled' : '') + '>' + (W.saving ? 'Saving...' : 'Save') + '</button></div></div></div>';
+      '<div class="btn-row"><button type="button" class="btn dark" data-dw="save"' + (W.saving || empty || unchanged(d) ? ' disabled' : '') + '>' + (W.saving ? 'Saving...' : 'Save') + '</button></div></div></div>';
   }
   // drawing the page takes a typed box away, and its change event can ask for another draw while this one runs: that
   // one is left out (the page drawn now already has the change)
@@ -846,6 +871,8 @@
   function onDown(ev) {
     var svg = ev.target.closest && ev.target.closest('.dw-svg');
     if (!svg || !W.root || !W.root.contains(svg) || !W.d) return;
+    // a touch on the drawing while the kept box shows brings the kept drawing back, and does nothing else
+    if (W.d.kept) { ev.preventDefault(); keptBack(); changed(); return; }
     ptrs[ev.pointerId] = [ev.clientX, ev.clientY];
     try { svg.setPointerCapture(ev.pointerId); } catch (e) {}
     var ids = Object.keys(ptrs);
@@ -987,9 +1014,10 @@
     var a = el.getAttribute('data-dw'), v = el.getAttribute('data-v');
     if (a === 'save') { save(false); return; }
     if (a === 'mine') { save(true); return; }
-    if (a === 'theirs') { var t = W.conflict && W.conflict.rec; W.conflict = null; if (t) { W.d = fromDoc(W.d.id, t); W.d.saved = snapNow(); } lsSet(draftKey(), ''); draw(); return; }
-    if (a === 'kept-use') { var k = W.d.kept; before(); W.d.surf = k.surf; W.d.els = k.els; W.d.name = k.name || W.d.name; Object.keys(k.defs || {}).forEach(function (x) { if (W.d.defs[x] === undefined) W.d.defs[x] = k.defs[x]; }); W.d.kept = null; changed(); return; }
-    if (a === 'kept-drop') { W.d.kept = null; lsSet(draftKey(), ''); draw(); return; }
+    // Open theirs drops what was drawn here, and Throw them away the kept drawing: both ask first, like the recipe form
+    if (a === 'theirs') { if (dirty() && !arm('theirs')) return; var t = W.conflict && W.conflict.rec; W.conflict = null; if (t) { W.d = fromDoc(W.d.id, t); W.d.saved = snapNow(); } lsSet(draftKey(), ''); draw(); return; }
+    if (a === 'kept-use') { if (W.d.kept) takeKept(); changed(); return; }
+    if (a === 'kept-drop') { if (!arm('kept-drop')) return; W.d.kept = null; lsSet(draftKey(), ''); draw(); return; }
     if (a === 'newer') { before(); W.d.els.forEach(function (e) { if (e.t !== 'item') return; var it = itemOf(e.a); if (it && it.id + '@' + it.v !== e.a) { e.a = it.id + '@' + it.v; W.d.defs[e.a] = LIB.body(it.id); } }); changed(); return; }
     cmd(a, v, el);
   });
@@ -1016,7 +1044,7 @@
     if (mv && W.sel.length) {
       ev.preventDefault(); before();
       W.sel.forEach(function (i) { var e = W.d.els[i]; if (e.t === 'line') e.pts = pts(e).map(function (q) { return f(q[0] + mv[0]) + ',' + f(q[1] + mv[1]); }).join(' '); else { e.x = n1(e.x + mv[0]); e.y = n1(e.y + mv[1]); if (e.lx != null) { e.lx = n1(e.lx + mv[0]); e.ly = n1(e.ly + mv[1]); } } if (isPiece(e)) e.fixed = true; });
-      clearTimeout(keepT); keepT = setTimeout(keepNow, 400); drawCanvas();
+      clearTimeout(keepT); keepT = setTimeout(keepNow, 400); drawCanvas(); barNote();
     }
   });
   window.addEventListener('beforeunload', function (ev) { if (W.root && dirty()) { ev.preventDefault(); ev.returnValue = ''; } });
@@ -1361,8 +1389,9 @@
     W.msg = '';
     if (!P.bookEdit()) { W.msg = 'Not saved: only the head chef can change drawings. Sign in with your PIN as Head chef.'; draw(); return; }
     // the button is off then, but a button left on from an older page (or anything else that asks Save) lands here too:
-    // the page is drawn again with Save off and "Nothing drawn yet."
-    if (nothingDrawn(d)) { draw(); return; }
+    // the page is drawn again with Save off and "Nothing drawn yet.", or nothing changed on a drawing in the book (a new
+    // version for nothing, 28 Oct 2026). Save mine over it (force) after a clash still saves.
+    if (nothingDrawn(d) || (!force && unchanged(d))) { draw(); return; }
     keepNow();
     W.saving = 'Saving...'; draw();
     var slow = setTimeout(function () { if (W.d === d && W.saving) { W.saving = 'Waiting for the signal. Your drawing is kept on this device.'; var s = W.root && W.root.querySelector('.mg-state'); if (s) s.textContent = W.saving; } }, 4000);
@@ -1372,7 +1401,7 @@
       clearTimeout(slow);
       if (!done) return;
       if (done.conflict) { W.saving = ''; W.conflict = done.conflict; draw(); return; }
-      W.saving = ''; W.conflict = null; var wasNew = d.isNew, oldKey = draftKey(); d.isNew = false; d.saved = snapNow();
+      W.saving = ''; W.conflict = null; var wasNew = d.isNew, oldKey = draftKey(); d.isNew = false; d.saved = snapNow(); d.followed = false;
       lsSet(oldKey, ''); lsSet(draftKey(), '');
       toast('Saved. Version ' + done.v + '.' + (done.rp ? ' The recipe shows it.' : ''));
       if (wasNew && W.d === d) { W.key = 'draw/' + d.id; history.replaceState(history.state, '', '#/manage/draw/' + encodeURIComponent(d.id)); if (A.noteRoute) A.noteRoute(true); }
@@ -1417,8 +1446,10 @@
     });
   }
   function finishOpen() {
-    var d = W.d;
+    var d = W.d, was = snapNow();
     followRenames();
+    // parts that followed a renamed ingredient: the drawing in the book still has the old names, so Save stays on
+    d.followed = snapNow() !== was;
     d.saved = snapNow();
     try {
       var k = JSON.parse(lsGet(draftKey()) || 'null');
@@ -1458,7 +1489,8 @@
   }
   function unmount() {
     var hadRoot = !!W.root;
-    if (W.d && dirty()) { keepNow(); toast('Your drawing is kept as a draft on this device.'); }
+    // only when it was kept: while the kept box shows, what is on screen is the saved copy and nothing is kept
+    if (W.d && dirty() && keepNow()) toast('Your drawing is kept as a draft on this device.');
     W.root = null; W.key = ''; W.d = null; drag = null; ptrs = {};
     if (hadRoot) window.dispatchEvent(new Event('lk-nav'));
   }

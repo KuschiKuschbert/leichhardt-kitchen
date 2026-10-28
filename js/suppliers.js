@@ -35,7 +35,16 @@
   }
   function draftHas(d) { return !!d && [d.qty, d.stock].some(function (o) { return Object.keys(o).some(function (k) { return String(o[k]).trim(); }); }); }
   function hasDraft(sid) { return sid ? draftHas(M.drafts[sid]) : Object.keys(M.drafts).some(function (k) { return draftHas(M.drafts[k]); }); }
-  function formDirty() { return !!(M.ed && JSON.stringify(M.ed.value) !== M.ed.start) || !!(M.supplierEd && JSON.stringify(M.supplierEd.value) !== M.supplierEd.start); }
+  function edDirty(e) { return !!(e && JSON.stringify(e.value) !== e.start); }
+  function formDirty() { return edDirty(M.ed) || edDirty(M.supplierEd); }
+  // Save on an item or supplier that is already in the catalogue is off until something changed (a save would make a
+  // new catalogue revision and an audit entry for nothing); a new one keeps Save on and says what it needs
+  function itemSame() { return !!(M.ed && M.ed.original && !edDirty(M.ed)); }
+  function supplierSame() { return !!(M.supplierEd && M.supplierEd.existing && !edDirty(M.supplierEd)); }
+  function saveSync() {
+    var b = M.root && M.root.querySelector('[data-su="save-item"]'); if (b && !M.saving) b.disabled = itemSame();
+    b = M.root && M.root.querySelector('[data-su="save-supplier"]'); if (b && !M.saving) b.disabled = supplierSame();
+  }
   function editorHere() { return !!(M.ed && M.ed.sid === M.sid); }
   function supplierEditorHere() { return !!(M.supplierEd && M.supplierEd.originSid === M.sid); }
   // Retained tasks belong to their supplier and mode. Hidden work never controls the current page's Back action.
@@ -280,7 +289,7 @@
   function unitField(k, label, value) { return '<label class="field"><span class="label">' + label + '</span><input class="search" data-sf="' + k + '" value="' + esc(value || '') + '" list="su-unit-list" maxlength="40" placeholder="Unconfirmed"></label>'; }
   function editorHTML() {
     var e = M.ed, i = e.value, old = e.original, manual = !old || old.manual;
-    return '<div class="su-editor"><h2 id="rtitle" tabindex="-1">' + (old ? manual ? 'Edit item' : 'Edit par' : 'Add item') + '</h2><p class="hint">' + esc(supplier().name) + '</p>' + statusHTML() + '<p class="hint">' + (manual ? 'Item name is required. A par is optional.' : 'Imported names and original PDF records stay unchanged.') + '</p><div class="su-form-grid">' + field('name', 'Item name', i.name, { readonly: !manual, max: 180 }) + field('par', 'Current par', i.par, { placeholder: 'Not set', decimal: true, max: 40 }) + '</div><p class="hint">Leave par blank for Not set. Save 0 to keep an explicit zero.</p><details class="su-more"' + (e.more ? ' open' : '') + '><summary>More item details</summary><div class="su-form-grid">' + field('pack', 'Pack description', i.pack, { max: 120 }) + field('category', 'Category', i.category, { max: 80 }) + field('group', 'Source group', i.group, { max: 80 }) + unitField('parUnit', 'Par unit', i.parUnit) + unitField('orderUnit', 'Order unit', i.orderUnit) + field('factor', 'Par units in one order unit', i.factor || '', { placeholder: 'Unconfirmed', decimal: true, max: 30 }) + '</div><p class="hint">Only enter a conversion after verifying it. For example, 5 kg per carton means 5, with kg as the par unit and carton as the order unit. Blank leaves stock-based conversions off.</p>' + field('aliases', 'Other names used on staff requests', (i.aliases || []).join(', '), { placeholder: 'Separate exact aliases with commas', max: 1500 }) + '<p class="hint">Aliases help match staff requests. Matching never uses a spelling guess.</p></details>' + (old ? sourceHTML(old) : '') + (M.archive ? archiveHTML() : '') + '<div class="btn-row su-editor-actions">' + button('save-item', M.saving ? 'Saving...' : 'Save changes', M.saving ? ' disabled' : '', true) + (old ? old.archived ? smallButton('restore', 'Restore item', ' data-i="' + esc(old.id) + '"') : smallButton('archive', 'Archive item', ' data-i="' + esc(old.id) + '"') : '') + '</div>' + (e.stale ? '<div class="btn-row">' + button('reload-form', 'Load latest catalogue and keep these edits') + '</div>' : '') + '<datalist id="su-unit-list">' + ['kg', 'g', 'L', 'mL', 'each', 'pack', 'bag', 'carton', 'case', 'bunch', 'dozen', 'tray', 'tub'].map(function (u) { return '<option value="' + u + '"></option>'; }).join('') + '</datalist></div>';
+    return '<div class="su-editor"><h2 id="rtitle" tabindex="-1">' + (old ? manual ? 'Edit item' : 'Edit par' : 'Add item') + '</h2><p class="hint">' + esc(supplier().name) + '</p>' + statusHTML() + '<p class="hint">' + (manual ? 'Item name is required. A par is optional.' : 'Imported names and original PDF records stay unchanged.') + '</p><div class="su-form-grid">' + field('name', 'Item name', i.name, { readonly: !manual, max: 180 }) + field('par', 'Current par', i.par, { placeholder: 'Not set', decimal: true, max: 40 }) + '</div><p class="hint">Leave par blank for Not set. Save 0 to keep an explicit zero.</p><details class="su-more"' + (e.more ? ' open' : '') + '><summary>More item details</summary><div class="su-form-grid">' + field('pack', 'Pack description', i.pack, { max: 120 }) + field('category', 'Category', i.category, { max: 80 }) + field('group', 'Source group', i.group, { max: 80 }) + unitField('parUnit', 'Par unit', i.parUnit) + unitField('orderUnit', 'Order unit', i.orderUnit) + field('factor', 'Par units in one order unit', i.factor || '', { placeholder: 'Unconfirmed', decimal: true, max: 30 }) + '</div><p class="hint">Only enter a conversion after verifying it. For example, 5 kg per carton means 5, with kg as the par unit and carton as the order unit. Blank leaves stock-based conversions off.</p>' + field('aliases', 'Other names used on staff requests', (i.aliases || []).join(', '), { placeholder: 'Separate exact aliases with commas', max: 1500 }) + '<p class="hint">Aliases help match staff requests. Matching never uses a spelling guess.</p></details>' + (old ? sourceHTML(old) : '') + (M.archive ? archiveHTML() : '') + '<div class="btn-row su-editor-actions">' + button('save-item', M.saving ? 'Saving...' : 'Save changes', M.saving || itemSame() ? ' disabled' : '', true) + (old ? old.archived ? smallButton('restore', 'Restore item', ' data-i="' + esc(old.id) + '"') : smallButton('archive', 'Archive item', ' data-i="' + esc(old.id) + '"') : '') + '</div>' + (e.stale ? '<div class="btn-row">' + button('reload-form', 'Load latest catalogue and keep these edits') + '</div>' : '') + '<datalist id="su-unit-list">' + ['kg', 'g', 'L', 'mL', 'each', 'pack', 'bag', 'carton', 'case', 'bunch', 'dozen', 'tray', 'tub'].map(function (u) { return '<option value="' + u + '"></option>'; }).join('') + '</datalist></div>';
   }
   function archiveHTML() { var i = item(M.archive); return i ? '<div class="su-confirm"><h4>Archive ' + esc(i.name) + '?</h4><p>It leaves new order sheets. Its original record and past orders stay.' + (String(draft().qty[i.id] || '').trim() ? ' This also removes its quantity from the current draft.' : '') + '</p><div class="btn-row">' + button('archive-confirm', 'Archive item', ' data-i="' + esc(i.id) + '"', true) + button('archive-cancel', 'Cancel') + '</div></div>' : ''; }
   function auditHTML() {
@@ -298,7 +307,7 @@
   }
   function supplierEditorHTML() {
     var e = M.supplierEd, allCuts = B().cuts(), cuts = allCuts.filter(function (c) { return !M.cutQ || c.name.toLowerCase().indexOf(M.cutQ.toLowerCase()) >= 0 || c.id === e.value.cutoffId; }).filter(function (c, i) { return i < 12 || c.id === e.value.cutoffId; });
-    return '<section class="su-editor"><h2 id="rtitle" tabindex="-1">' + (e.existing ? 'Supplier settings' : 'Add supplier') + '</h2>' + statusHTML() + (allCuts.length > 12 ? field('cutQ', 'Find an existing reminder', M.cutQ, { type: 'search', placeholder: 'Reminder name' }) : '') + '<div class="su-form-grid">' + field('supplierName', 'Supplier name', e.value.name, { max: 80 }) + '<label class="field"><span class="label">Existing order reminder</span><select class="search" data-sf="supplierCutoff"><option value="">No reminder linked</option>' + cuts.map(function (c) { return '<option value="' + esc(c.id) + '"' + (e.value.cutoffId === c.id ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select></label></div><p class="hint">This links the existing reminder. Delivery days and cut-off times stay in Admin settings.</p><div class="btn-row">' + button('save-supplier', M.saving ? 'Saving...' : 'Save supplier', M.saving ? ' disabled' : '', true) + '</div></section>';
+    return '<section class="su-editor"><h2 id="rtitle" tabindex="-1">' + (e.existing ? 'Supplier settings' : 'Add supplier') + '</h2>' + statusHTML() + (allCuts.length > 12 ? field('cutQ', 'Find an existing reminder', M.cutQ, { type: 'search', placeholder: 'Reminder name' }) : '') + '<div class="su-form-grid">' + field('supplierName', 'Supplier name', e.value.name, { max: 80 }) + '<label class="field"><span class="label">Existing order reminder</span><select class="search" data-sf="supplierCutoff"><option value="">No reminder linked</option>' + cuts.map(function (c) { return '<option value="' + esc(c.id) + '"' + (e.value.cutoffId === c.id ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select></label></div><p class="hint">This links the existing reminder. Delivery days and cut-off times stay in Admin settings.</p><div class="btn-row">' + button('save-supplier', M.saving ? 'Saving...' : 'Save supplier', M.saving || supplierSame() ? ' disabled' : '', true) + '</div></section>';
   }
   function importHTML() {
     var n = M.importing.suppliers.reduce(function (a, s) { return a + s.items.length; }, 0), words = M.importQ.toLowerCase(), cuts = B().cuts().filter(function (c) { return !words || c.name.toLowerCase().indexOf(words) >= 0; });
@@ -424,6 +433,8 @@
   }
   function saveItem() {
     if (!editorHere() || M.saving || !canEdit()) return;
+    // nothing changed: the button is off, and a button left on by an older page saves nothing either
+    if (itemSame()) { draw(); return; }
     var ed = M.ed, s = supplier(), value;
     try {
       value = C.cleanItem(ed.value, ed.original || undefined);
@@ -463,6 +474,7 @@
   }
   function saveSupplier() {
     if (!supplierEditorHere() || M.saving || !canEdit()) return;
+    if (supplierSame()) { draw(); return; }
     var e = M.supplierEd; if (!e.value.name.trim()) { message('Enter the supplier name.'); return; }
     var duplicate = (M.suppliers || []).some(function (s) { return s.id !== e.id && C.normaliseName(s.name) === C.normaliseName(e.value.name); });
     if (duplicate) { message('That supplier already exists. Open its supplier settings.'); return; }
@@ -542,8 +554,8 @@
     if (f === 'cutQ') { M.cutQ = el.value; draw(); return; }
     if (f === 'historyQ') { M.historyQ = el.value; draw(); return; } if (f === 'importQ') { M.importQ = el.value; draw(); return; }
     if (f === 'qty' || f === 'stock') { draft()[f][id] = el.value; var enteredItem = item(id); if (String(el.value).trim() && enteredItem) draft().units[f][id] = f === 'qty' ? enteredItem.orderUnit : enteredItem.parUnit; else delete draft().units[f][id]; if (f === 'qty') delete draft().suggestions[id]; M.review = null; clearEntryError(f, id, el.value); if (M.smart || f === 'stock') draw(); else { var hint = el.closest('.su-qty').querySelector('.hint'); if (hint) hint.textContent = orderUnitHint(item(id), draft()); var count = M.root.querySelector('.su-order-actions > .hint'); if (count) count.textContent = Object.keys(draft().qty).filter(function (k) { return String(draft().qty[k]).trim(); }).length + ' items in this supplier draft'; var reviewButton = M.root.querySelector('[data-su="review"]'); if (reviewButton) reviewButton.disabled = !Object.keys(draft().qty).some(function (k) { return String(draft().qty[k]).trim(); }); } return; }
-    if (M.ed && canEdit() && Object.prototype.hasOwnProperty.call(M.ed.value, f)) { disarmLeave(); M.ed.value[f] = f === 'aliases' ? el.value.split(',').map(function (x) { return x.trim(); }).filter(Boolean) : f === 'factor' ? (el.value.trim() === '' ? 0 : Number(el.value)) : el.value; M.ed.more = !!(M.root.querySelector('.su-more') && M.root.querySelector('.su-more').open); }
-    if (M.supplierEd && canEdit() && f === 'supplierName') { disarmLeave(); M.supplierEd.value.name = el.value; }
+    if (M.ed && canEdit() && Object.prototype.hasOwnProperty.call(M.ed.value, f)) { disarmLeave(); M.ed.value[f] = f === 'aliases' ? el.value.split(',').map(function (x) { return x.trim(); }).filter(Boolean) : f === 'factor' ? (el.value.trim() === '' ? 0 : Number(el.value)) : el.value; M.ed.more = !!(M.root.querySelector('.su-more') && M.root.querySelector('.su-more').open); saveSync(); }
+    if (M.supplierEd && canEdit() && f === 'supplierName') { disarmLeave(); M.supplierEd.value.name = el.value; saveSync(); }
   });
   document.addEventListener('toggle', function (ev) { if (!M.root || !M.root.contains(ev.target) || !ev.target.classList.contains('su-item')) return; var row = ev.target.closest('[data-item]'); if (row) M.openItems[row.getAttribute('data-item')] = ev.target.open; }, true);
   document.addEventListener('change', function (ev) {
@@ -552,10 +564,20 @@
     if (f === 'supplier') pick(el.value); if (f === 'includeArchived') { M.includeArchived = el.checked; M.page = 0; draw(); }
     if (f === 'import') importFile(el.files && el.files[0]);
     if (f === 'import-cutoff') { disarmLeave(); M.importMap[el.getAttribute('data-sid')] = el.value; }
-    if (f === 'supplierCutoff' && M.supplierEd) { disarmLeave(); M.supplierEd.value.cutoffId = el.value; }
+    if (f === 'supplierCutoff' && M.supplierEd) { disarmLeave(); M.supplierEd.value.cutoffId = el.value; saveSync(); }
   });
-  ['lk-who', 'lk-admin', 'lk-cfg'].forEach(function (event) { window.addEventListener(event, function () { if (contextKey && contextKey !== ctx() || !canRead()) { reset(); draw(); } else if (M.root) draw(); }); });
+  /* A hand-over or a person who may not read any more resets everything. The staff list saved on another device is
+     neither (28 Oct 2026, supplierContext() in js/prep.js), so the order drafts typed here stay; a person who may not
+     change the catalogue any more loses its open forms (not while a save is on its way). */
+  ['lk-who', 'lk-admin', 'lk-cfg'].forEach(function (event) { window.addEventListener(event, function () {
+    if (contextKey && contextKey !== ctx() || !canRead()) { reset(); draw(); return; }
+    if (!canEdit() && !M.saving && (M.ed || M.supplierEd || M.importing)) { M.ed = null; M.supplierEd = null; M.importing = null; M.archive = ''; M.armedLeave = ''; }
+    if (M.root) draw();
+  }); });
   window.addEventListener('online', function () { if (M.root) draw(); }); window.addEventListener('offline', function () { if (M.root) draw(); });
+  // Drafts live in this tab's memory only (docs/supplier-workspace.md): a reload or closing the tab asks first, like
+  // the other editors. iPhone Safari never asks, and nothing is kept past the page.
+  window.addEventListener('beforeunload', function (ev) { if (dirty()) { ev.preventDefault(); ev.returnValue = ''; } });
   // The shared ticks changed (js/prep.js, lk-cut): the card follows its Order done, Undo or another chef's tick. No read.
   window.addEventListener('lk-cut', function () {
     if (!M.root || !canRead() || !cutCard()) return;

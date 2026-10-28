@@ -271,7 +271,9 @@
   function forget(e) { lsSet(draftKey(e.isNew ? 'new' : e.id), ''); }
   function dirty() {
     var e = E.ed; if (!e || !e.d) return false;
-    if (e.isNew) return !!(e.d.name || e.d.date || e.d.lines.length || e.d.kc || e.d.notes);
+    // a new form: anything typed in it (28 Oct 2026: also the place, guests, times and the contact, since Save draft is
+    // off until something is in it)
+    if (e.isNew) { var n = e.d; return !!(['name', 'date', 'startT', 'loc', 'guests', 'cname', 'phone', 'email', 'kc', 'notes'].some(function (k) { return String(n[k] || '').trim(); }) || n.lines.length || n.gu || n.st); }
     return JSON.stringify(e.d) !== JSON.stringify(fromDoc(e.saved, e.savedC)) || e.status !== e.saved.status;
   }
 
@@ -406,8 +408,10 @@
   }
   function buttonsHTML(e) {
     var st = e.status, dis = e.saving || E.removing[e.id] || FN.statusBusy(e.id) ? ' disabled' : '', b = [];
-    if (st === 'draft') { b.push('<button type="button" class="btn dark" data-fe="review"' + dis + '>Check and confirm</button>'); b.push('<button type="button" class="btn" data-fe="save"' + dis + '>Save draft</button>'); }
-    else if (st === 'confirmed') b.push('<button type="button" class="btn dark" data-fe="save"' + dis + '>Save changes</button>');
+    // Save draft and Save changes are off with nothing to save (saveSync() keeps them in step while typing)
+    var sdis = dis || (!canSave() ? ' disabled' : '');
+    if (st === 'draft') { b.push('<button type="button" class="btn dark" data-fe="review"' + dis + '>Check and confirm</button>'); b.push('<button type="button" class="btn" data-fe="save"' + sdis + '>Save draft</button>'); }
+    else if (st === 'confirmed') b.push('<button type="button" class="btn dark" data-fe="save"' + sdis + '>Save changes</button>');
     else b.push('<button type="button" class="btn dark" data-fe="review"' + dis + '>Put it back on</button>');
     var more = [];
     if (!e.isNew) more.push('<button type="button" class="btn" data-fe="dup">Duplicate</button>');
@@ -438,6 +442,10 @@
   function save(kind) {
     var e = E.ed;
     if (!e || e.saving || E.removing[e.id] || (e.saved && e.saved.removed)) return;
+    // nothing changed: Save is off, and a button left on by an older page saves nothing either (a new version for
+    // nothing, or an empty draft). Confirm and Put it back on change the status, so they still save.
+    flushPending();
+    if (kind === 'save' && !dirty()) { draw(); return; }
     e.msg = ''; keep();
     if (!P.fnOK()) { e.msg = 'Not saved: you are not ticked for Functions any more. Your changes are kept on this device.'; draw(); return; }
     var next = kind === 'confirm' ? 'confirmed' : kind === 'cancel' ? 'cancelled' : e.status;
@@ -549,7 +557,15 @@
     else if (k in d) d[k] = v;
     if (e.shown && e.shown.length) e.shown = check({ d: d, status: 'confirmed' }).filter(function (p) { return e.shown.some(function (s) { return s.k === p.k; }); });
     keep();
-    if (!quiet) { if (structural) draw(); else live(); }
+    if (!quiet) { if (structural) draw(); else { live(); saveSync(); } }
+  }
+  // something to save: a change, or a date or time typed and not taken yet (it is taken when the box is left or Save
+  // is tapped, flushPending())
+  function canSave() { return dirty() || Object.keys(E.pending).length > 0; }
+  // typing draws only the live part: Save draft or Save changes follows here
+  function saveSync() {
+    var e = E.ed, b = E.root && E.root.querySelector('[data-fe="save"]');
+    if (b && e && e.d) b.disabled = !!(e.saving || E.removing[e.id] || FN.statusBusy(e.id)) || !canSave();
   }
   function onInput(ev) {
     if (!E.root || !E.root.contains(ev.target)) return;
@@ -559,7 +575,7 @@
     if (E.drawing) { var v = ev.target.value; setTimeout(function () { setField(k, v, true); }, 0); return; }
     // what changes the page's shape waits for the change event (so typing "12" does not redraw at "1")
     var shape = /^(date|startT|foodDate|foodT|n|gap|qty\d+|a\d+_\d+|rt\d+)$/.test(k);
-    if (ev.type === 'input' && shape) { if (/^(a\d+_\d+|qty\d+)$/.test(k)) { setField(k, ev.target.value, false); } else E.pending[k] = ev.target.value; return; }
+    if (ev.type === 'input' && shape) { if (/^(a\d+_\d+|qty\d+)$/.test(k)) { setField(k, ev.target.value, false); } else { E.pending[k] = ev.target.value; saveSync(); } return; }
     delete E.pending[k];
     setField(k, ev.target.value, ev.type === 'change' && shape);
   }
