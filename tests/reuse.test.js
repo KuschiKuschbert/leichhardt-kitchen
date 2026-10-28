@@ -14,6 +14,8 @@ const wait = (p, fn, arg, t) => L.waitFor(p, fn, arg, t || 8000).catch(() => fal
 const store = p => p.evaluate(() => window.__fake.dump());
 const S = p => p.evaluate(() => { const w = window.LK_DRAW.state(); return { surf: w.d.surf, from: w.d.from, els: JSON.parse(JSON.stringify(w.d.els)), sel: w.sel.slice(), msg: w.msg, panel: w.panel }; });
 const errs = p => p.errors.filter(e => !/Failed to load resource/.test(e));
+// Chrome may log a CSP error for the inline handlers this test plants on purpose (onclick, onload). What matters is that none reaches the page, which the checks beside it prove, so only that message is ignored here.
+const errsTrap = p => errs(p).filter(e => !/Executing inline event handler/.test(e));
 // a Saved toast not counted yet (the last one stays 4 s, and a fast computer saves again before it goes), then it is counted
 const saved = p => wait(p, () => { const t = document.querySelector('.mg-toasts .p-toast'); if (!t || t.dataset.read || !/Saved/.test(t.textContent)) return false; t.dataset.read = '1'; return true; }, null, 10000);
 const shot = async (p, name) => { if (SHOTS) await (await p.$('.dw-svg')).screenshot({ path: path.join(SHOTS, 'reuse-' + name + '.png') }); };
@@ -149,7 +151,7 @@ const BAD_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><s
   const ware = Object.keys(s).filter(k => /\/drawlib\//.test(k)).map(k => s[k]).find(x => x.type === 'surf') || {};
   ok(ware.name === 'Pie plate, cream' && ware.p && ware.p.fam === 'plate', 'servingware: saved as a preset');
   ok(await p.$('[data-dw="wfam"][data-v="saved"]') !== null && await p.$('.dw-ware [data-dw="ware"]') !== null, 'servingware: offered under Saved');
-  ok(!errs(p).length, 'SVG and servingware: no page errors ' + errs(p).join(' | '));
+  ok(!errsTrap(p).length, 'SVG and servingware: no page errors ' + errsTrap(p).join(' | '));
   const store3 = s;
   await p.context().close();
 
