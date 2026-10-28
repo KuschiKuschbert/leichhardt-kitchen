@@ -1660,12 +1660,12 @@ window.LK_DATA = {
     },
     {
       id: 'jasmine-rice', no: '125', kind: 'batch', forLine: 'For the chicken adobo', name: 'Jasmine Rice', short: 'Jasmine rice', art: 'rice',
-      yield: 'Batch, cooked the same way as the Steamed Rice (card 05). 180 g per plate. [Batch size to come]',
+      yield: 'Batch: 5 kg raw jasmine rice, exactly as the Steamed Rice (card 05). 180 g per plate.',
       ingredients: [
-        { q: '[Qty]', name: 'Jasmine rice', note: 'card 05 uses 5 kg of rice' },
-        { q: '[Qty]', name: 'Water', note: 'card 05 uses 9.5 L' },
-        { q: '[Qty]', name: 'Chicken stock', note: 'card 05 uses 2.5 tbsp', tags: ['Gluten?', 'Soy?'] },
-        { q: '[Qty]', name: 'Bay leaves', note: 'card 05 uses 13' }
+        { q: '5 kg', name: 'Jasmine rice' },
+        { q: '9.5 L', name: 'Water' },
+        { q: '2.5 tbsp', name: 'Chicken stock', tags: ['Gluten?', 'Soy?'] },
+        { q: '13', name: 'Bay leaves' }
       ],
       sections: [
         { title: 'Method', steps: ['Wash the rice 3 times until the water runs clear.', 'Spread the rice in 1/1 GN pans, 60 mm deep, divided evenly. Add the water, chicken stock and bay leaves, divided evenly across the pans.', 'Steam 25 min.', 'Check the rice. It must not be too soft. If it needs more, steam on in 2 min steps, checking each time.'] },
