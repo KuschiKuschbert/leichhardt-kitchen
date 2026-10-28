@@ -1064,6 +1064,70 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     });
   }
 
+  // 23. Reload the book (28 Oct 2026): a page loaded on its own that is a different version from the book (here an old
+  // js/manage.js) offers Reload, which now goes through Update now's own path. With a change waiting it says it updates
+  // once sent, with no Reload site? box, and does; with half a line typed it asks for a second tap. It used to reload at
+  // once: the browser asked (a phone app that does not ask lost the change), and the half line went.
+  const headCfg = { [['kitchens', L.PIN, 'config', 'main'].join('/')]: { people: [
+    { id: 'ann', name: 'Ann', role: 'head', add: true, tick: true, del: true, active: true },
+    { id: 'sam', name: 'Sam', role: 'sous', add: true, tick: true, del: true, active: true }
+  ], headId: 'ann', sousIds: ['sam', 'ann'], showBadges: true } };
+  const OLD_MG = 'window.LK_MG = { api: 3, render: {}, mount: function () {}, unmount: function () {}, open: function () { return false; }, dirty: function () { return false; }, hasDraft: function () { return false; } };';
+  for (const how of ['a change waiting', 'half a line']) {
+    await step('23 ' + how, async () => {
+      p = await L.open(b, '#/prep', { who: 'ann', extra: headCfg, touch: true, wait: 1500 });
+      let asked = 0;
+      p.on('dialog', d => { asked++; d.dismiss().catch(() => {}); });
+      await p.context().route(/\/js\/manage\.js(?:\?|$)/, r => r.fulfill({ status: 200, contentType: 'text/javascript', body: OLD_MG }));
+      if (how === 'a change waiting') { await hold(p); await p.fill('#p-text', 'Portion the brisket'); await p.press('#p-text', 'Enter'); await L.settle(p, 300); }
+      else { await p.fill('#p-text', 'Half a line'); await L.settle(p, 200); }
+      await p.evaluate(() => { if (document.activeElement) document.activeElement.blur(); });
+      await p.evaluate(() => { location.hash = '#/manage/r/burger'; });
+      await L.waitFor(p, () => /Reload the book/.test((document.querySelector('#mg-root') || {}).textContent || ''), null, 10000);
+      await mark(p);
+      // L.tap: a click that starts a reload the browser asks about would wait on it
+      await L.tap(p, '[data-act="reload"]');
+      await L.settle(p, 1500);
+      const u = await bar(p);
+      if (how === 'a change waiting') {
+        ok(!(await reloaded(p)) && asked === 0, 'Reload the book, a change waiting: no reload and no Reload site? box (' + asked + ' asked)');
+        ok(u && u.t === WAITS && u.btn === 'Update now', 'Reload the book, a change waiting: the strip says it updates once sent (' + JSON.stringify(u) + ')');
+        for (const width of [390, 768, 1280]) {
+          await p.setViewportSize({ width, height: 844 });
+          ok(!(await L.overflow(p)), 'Reload the book with the strip: no sideways scroll at ' + width);
+        }
+        await release(p);
+        await L.settle(p, 400);
+        await p.clock.fastForward(21000);   // the next look, the change sent
+      } else {
+        ok(!(await reloaded(p)) && u && u.t === 'Not saved yet.' && u.btn === 'Tap again to update', 'Reload the book, half a line typed: it asks first (' + JSON.stringify(u) + ')');
+        await L.tap(p, '[data-act="reload"]');
+      }
+      await waitReload(p);
+      ok(await reloaded(p), 'Reload the book, ' + how + ': then it updates');
+    });
+  }
+
+  // 24. an update waiting on wifi with no internet, the book left alone (28 Oct 2026): the look every 20 seconds waits
+  // longer after each try that found no signal (20 seconds, then 1, 2, 5 and 10 minutes). It asked the server every 20
+  // seconds, 25 times in 10 minutes. With the internet back, and no online event (the wifi never went), it still
+  // updates within the longest wait.
+  await step('24', async () => {
+    p = await L.open(b, '#/prep', { touch: true, wait: 1500 });
+    let heads = 0;
+    p.on('request', q => { if (q.method() === 'HEAD' && q.url() === L.BASE + 'index.html') heads++; });
+    await updBar(p);
+    await deadNet(p, true);
+    await mark(p);
+    heads = 0;
+    for (let i = 0; i < 30; i++) { await p.clock.fastForward(20000); await L.settle(p, 150); }
+    ok(heads <= 6 && !(await reloaded(p)), 'wifi with no internet, left alone for 10 minutes: no reload, and it asked the server ' + heads + ' times (6 at most)');
+    await deadNet(p, false);
+    for (let i = 0; i < 33 && !(await reloaded(p)); i++) { await p.clock.fastForward(20000); await L.settle(p, 150); }
+    await waitReload(p);
+    ok(await reloaded(p), 'the internet back with no online event: it updates within 11 minutes');
+  });
+
   await b.close();
   L.report(R);
 })().catch(e => { console.error(e); console.log(R.join('\n')); process.exit(1); });

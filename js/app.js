@@ -860,7 +860,8 @@
   }
   /* ---------- Manage Recipes & Drawings (#/manage, the head chef only) ----------
      The page is drawn by js/manage.js, loaded the first time it opens (staff phones never download it): fetched with
-     X-LK-Fresh, so the service worker goes to the network first and keeps a copy for no signal (sw.js), then run.
+     X-LK-Fresh, so the service worker goes to the network first and keeps a copy for no signal under its plain address
+     (sw.js, 28 Oct 2026), then run.
      Without the head chef signed in, the page says so and nothing is loaded. The rules are the real lock. */
   /* Functions: #/fn (everyone: today, the next days, a function's sheet) is drawn by js/functions.js; #/functions (the
      function managers' list and form) by js/fnedit.js, loaded only when it opens, like js/manage.js. Bump FE_API here
@@ -1493,7 +1494,9 @@
       render(); var fi = document.getElementById('find'); if (fi) fi.focus(); return;
     }
     if (act === 'jump') { var jt = document.getElementById(val); if (jt) jt.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
-    if (act === 'reload') { location.reload(); return; }
+    // a page loaded on its own that is a different version from the book (Reload the book): Update now's own path in
+    // js/upkeep.js, so it waits for a change to send, asks before half a line goes and never reloads with no signal
+    if (act === 'reload') { if (window.LK_UPDATE) window.LK_UPDATE.now(); else location.reload(); return; }
     if (act === 'mgretry') { redrawManage(); return; }
     if (act === 'feretry') { feRedraw(); return; }
     if (act === 'kind') { ui.kind = val; }
