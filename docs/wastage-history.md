@@ -24,7 +24,14 @@ chef's verified Google account and the existing shared-device chef gate.
 - Summary preserves daily patterns, reasons, repeated items and logging coverage.
   Compare with the immediately preceding period of equal length.
 - Daily reviews lists the period's dates, saved reviews and the existing review
-  editor, including its check for a newer review before replacing one.
+  editor, including its check for a newer review before replacing one. The
+  editor keeps its own draft, apart from the one typed on the wastage page
+  (rvTyped(), 28 Oct 2026), so its day arrows never drop the page's review, and
+  Cancel edits asks a second tap before the words go. Save the review is off
+  until something in it changed, here and on the wastage page, and the save
+  refuses too, so an untouched review is never saved under another name. A
+  space or a new line added is no change: rvTyped() compares the words the way
+  the save keeps them (29 Oct 2026).
 - A failed history read shows an error and retry. It never produces a successful
   empty report, a cached empty range or an apparently complete CSV.
 

@@ -127,7 +127,62 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   ok(p.errors.length === 0, 'sign out: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // "Not you?" does what Sign out does (23 Oct 2026): a line typed asks a second tap, and the line stays for the next person
+  // only a change on its way to the server (28 Oct 2026): Sign out and Not you? say Not sent, not Not saved, and the
+  // change still goes once the signal is back; something typed says Not saved yet, as before
+  p = await L.open(b, '#/prep', { who: 'sam', wait: 1800, fakeMode: 'hold' });
+  await p.fill('#p-text', 'Peel garlic'); await p.keyboard.press('Enter'); await L.settle(p, 3600);
+  ok(await p.evaluate(() => window.LK_PREP.unsent() && document.querySelector('#p-text').value === ''), 'not sent: the line waits for the server and nothing is typed');
+  await p.click('.nb-top [data-p="who-change"]'); await L.settle(p, 200);
+  ok(await signedIn(p) && await txt(p, '.nb-top [data-p="who-change"]') === 'Not sent. Tap again', 'not sent: Not you? asks again with Not sent (' + await txt(p, '.nb-top [data-p="who-change"]') + ')');
+  await p.click('.wtop-who'); await L.settle(p, 150);
+  await p.click('.wm [data-who="out"]'); await L.settle(p, 200);
+  ok(await signedIn(p) && await txt(p, '.wm-out small') === 'Not sent yet. Tap again to sign out', 'not sent: Sign out says Not sent yet (' + await txt(p, '.wm-out small') + ')');
+  await p.keyboard.press('Escape'); await L.settle(p, 150);
+  await p.fill('#p-text', 'Pick parsley');
+  await p.click('.wtop-who'); await L.settle(p, 150);
+  await p.click('.wm [data-who="out"]'); await L.settle(p, 200);
+  ok(await txt(p, '.wm-out small') === 'Not saved yet. Tap again to sign out', 'half a line typed as well: Sign out says Not saved yet (' + await txt(p, '.wm-out small') + ')');
+  await p.click('.wm [data-who="out"]'); await L.settle(p, 400);
+  ok(!(await signedIn(p)), 'not sent: the second tap signs out');
+  await p.evaluate(() => window.__fake.release()); await L.settle(p, 600);
+  ok(await p.evaluate(() => { const d = window.__fake.dump(); return Object.keys(d).some(k => /\/items\//.test(k) && d[k].text === 'Peel garlic'); }) && !(await p.evaluate(() => window.LK_PREP.unsaved())), 'not sent: once the signal is back the line reaches the server, and nothing is left waiting');
+  ok(p.errors.length === 0, 'not sent: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // the recipe picker left open goes with the person: the next one is not told Not saved yet on Sign out
+  p = await L.open(b, '#/prep', { who: 'sam', wait: 1800 });
+  await p.click('[data-p="recipe-toggle"]'); await L.settle(p, 200);
+  await p.click('.wtop-who'); await L.settle(p, 150);
+  await p.click('.wm [data-who="out"]'); await L.settle(p, 200);
+  if (await signedIn(p)) { await p.click('.wm [data-who="out"]'); await L.settle(p, 400); }
+  ok(!(await signedIn(p)) && await p.evaluate(() => !window.LK_PREP.state.recipeOpen && !window.LK_PREP.unsaved()), 'recipe picker: after Sign out nothing counts as not saved for the next person');
+  await p.context().close();
+
+  // the recipe picker closes when the cook leaves the prep list (head chef, 29 Oct 2026): on the other pages nothing
+  // counts as not saved, so Sign out (and the self-updates, LK_PREP.unsaved()) do not wait for it, and Prep shows it closed
+  p = await L.open(b, '#/prep', { who: 'sam', wait: 1800 });
+  // open on the prep list, with a search typed (a picker still open from before is left as it is)
+  const pickOpen = async () => {
+    if (!(await p.$('.p-pick.is-open'))) { await p.click('[data-p="recipe-toggle"]'); await L.settle(p, 200); }
+    await p.fill('#p-rs', 'lak'); await L.settle(p, 200);
+  };
+  await pickOpen();
+  ok(await p.evaluate(() => window.LK_PREP.state.recipeOpen && !!document.querySelector('.p-pick.is-open') && window.LK_PREP.unsaved()), 'recipe picker: open on the prep list with a search typed, it counts as open there');
+  for (const h of ['#/recipes', '#/orders', '#/']) {
+    await p.evaluate(h => { location.hash = h; }, h); await L.settle(p, 600);
+    ok(await p.evaluate(() => !window.LK_PREP.state.recipeOpen && !window.LK_PREP.state.recipeSearch && !window.LK_PREP.unsaved()), 'recipe picker: leaving the prep list for ' + h + ' closes it, and nothing counts as not saved');
+    await p.evaluate(() => { location.hash = '#/prep'; }); await L.settle(p, 600);
+    ok(await p.evaluate(() => { const t = document.querySelector('[data-p="recipe-toggle"]'); return !!t && t.getAttribute('aria-expanded') === 'false' && !document.querySelector('.p-pick.is-open') && !document.querySelector('#p-rs'); }), 'recipe picker: back from ' + h + ', Prep shows it closed');
+    await pickOpen();
+  }
+  await p.evaluate(() => { location.hash = '#/recipes'; }); await L.settle(p, 600);
+  await p.click('.wtop-who'); await L.settle(p, 150);
+  await p.click('.wm [data-who="out"]'); await L.settle(p, 400);
+  ok(!(await signedIn(p)), 'recipe picker left open on the prep list: on the recipes, Sign out goes in one tap');
+  ok(p.errors.length === 0, 'recipe picker: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // "Not you?" does what Sign out does (23 Oct 2026): a line typed asks a second tap, and the line goes with the person
   p = await L.open(b, '#/prep', { who: 'ann', wait: 1800 });
   await p.fill('#p-text', 'Pick parsley');
   await p.click('.nb-top [data-p="who-change"]'); await L.settle(p, 200);

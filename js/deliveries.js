@@ -11,6 +11,9 @@
   function admin() { return allowed() && P.ownerHere() && P.state.level === 'owner'; }
   function key() { return allowed() ? B.pin() + '|' + (B.who() || 'owner') + '|' + (admin() ? 'admin' : 'person') : ''; }
   function dirty() { return allowed() && (!!M.attempt || M.busy || !!(M.form.supplier.trim() || M.form.chilled.trim() || M.form.frozen.trim() || M.form.note.trim() || M.form.day + '|' + M.form.time !== M.form.initial)); }
+  // the book's one two-tap helper (js/prep.js arm()), drawing this page again; an older book acts on the first tap
+  function arm(k) { return B.arm ? B.arm(k, draw) : true; }
+  function armed(k) { return !!(B.armed && B.armed(k)); }
   function unwatch() { if (stop) stop(); stop = null; watchKey = ''; }
   function reset() { var root = M.root; generation++; unwatch(); clearTimeout(timer); context = ''; M = blank(); M.root = root; }
   function unmount() { M.root = null; unwatch(); clearTimeout(timer); timer = null; }
@@ -45,7 +48,9 @@
   function draw() {
     if (!M.root || !document.body.contains(M.root)) return;
     if (!allowed()) { M.root.innerHTML = ''; return; }
-    var d = M.form, old = document.activeElement, focus = old && old.getAttribute('data-dl-field');
+    // a box keeps its focus and caret; a button too (29 Oct 2026: after the first Enter on Clear form the focus went to
+    // the page, so a keyboard never reached "Tap again to clear")
+    var d = M.form, old = document.activeElement, focus = old && old.getAttribute('data-dl-field'), btn = !focus && old && M.root.contains(old) && old.getAttribute('data-dl');
     var pos = focus && typeof old.selectionStart === 'number' ? [old.selectionStart, old.selectionEnd] : null;
     M.root.innerHTML = '<div class="dl-page"><header class="dl-heading"><span class="eyebrow">Kitchen records</span><h1>Delivery received</h1><p class="hint">Record the measured food temperature on arrival. All times are Queensland time (AEST).</p></header>' +
       '<form id="dl-form" class="dl-form" novalidate><fieldset' + (M.busy || M.attempt ? ' disabled' : '') + '><legend class="sr-only">Delivery details</legend>' +
@@ -58,7 +63,7 @@
       '<p class="hint">Receiving as <b>' + esc(P.whoName() || 'Admin') + '</b>. Saved readings are kept as recorded.</p>' +
       '<p id="dl-save-note" class="' + (M.error ? 'dl-error' : 'dl-message') + '" role="' + (M.error ? 'alert' : 'status') + '">' + esc(M.error || M.message) + '</p>' +
       '<div class="btn-row"><button class="btn dark" type="submit"' + (M.busy ? ' disabled' : '') + '>' + (M.busy ? 'Saving...' : M.attempt ? 'Check and retry save' : 'Save delivery') + '</button>' +
-      (!M.attempt ? '<button class="btn" type="button" data-dl="clear"' + (M.busy ? ' disabled' : '') + '>Clear form</button>' : '') + '</div></form>' +
+      (!M.attempt ? '<button class="btn" type="button" data-dl="clear"' + (M.busy ? ' disabled' : '') + '>' + (armed('dl-clear') ? 'Tap again to clear' : 'Clear form') + '</button>' : '') + '</div></form>' +
       '<section class="dl-history" aria-labelledby="dl-records"><div class="dl-history-head"><h2 id="dl-records">' + (M.day === T.day() ? 'Today\'s deliveries' : 'Delivery records') + '</h2><button class="btn" type="button" data-dl="refresh">Refresh</button></div>' +
       (admin() ? '<label class="dl-field dl-filter" for="dl-view-day"><span class="label">View date</span><input type="date" id="dl-view-day" value="' + esc(M.day) + '" max="' + T.day() + '"></label>' : '') +
       '<p class="hint">' + esc(M.day) + '</p>' + (M.state === 'error' ? '<p class="dl-error" role="alert">Could not read delivery records. Check the connection and tap Refresh.</p>' :
@@ -67,6 +72,7 @@
         M.state !== 'ok' ? '<p role="status">Loading deliveries...</p>' :
         M.rows.length ? '<ol class="dl-receipts">' + M.rows.map(row).join('') + '</ol>' : '<p class="hint">No deliveries recorded for this date.</p>') + '</section></div>';
     if (focus) { var el = M.root.querySelector('[data-dl-field="' + focus + '"]'); if (el) { el.focus({ preventScroll: true }); if (pos) el.setSelectionRange(pos[0], pos[1]); } }
+    else if (btn) { var bt = M.root.querySelector('[data-dl="' + btn + '"]'); if (bt) bt.focus({ preventScroll: true }); }
   }
   function rows(snap) {
     return snap.docs.map(function (d) { return Object.assign({}, d.data(), { id: d.id, pending: !!(d.metadata && d.metadata.hasPendingWrites) }); })
@@ -162,11 +168,13 @@
     if (!M.root || !M.root.contains(e.target) || !allowed()) return;
     var el = e.target.closest('[data-dl]'); if (!el) return;
     if (el.getAttribute('data-dl') === 'refresh') load(true);
-    if (el.getAttribute('data-dl') === 'clear' && !M.busy && !M.attempt) { M.form = form(); M.error = ''; M.message = ''; draw(); }
+    // a typed supplier, reading or note asks first (the book's two-tap helper); an untouched form clears in one tap
+    if (el.getAttribute('data-dl') === 'clear' && !M.busy && !M.attempt) { if (dirty() && !arm('dl-clear')) return; M.form = form(); M.error = ''; M.message = ''; draw(); }
   });
   document.addEventListener('change', function (e) { if (M.root && M.root.contains(e.target) && e.target.id === 'dl-view-day' && admin()) { var date = e.target.value; if (!validDay(date) || date > T.day()) { draw(); return; } M.followToday = date === T.day(); M.day = date; load(); } });
   ['lk-access', 'lk-who', 'lk-admin', 'lk-cfg'].forEach(function (name) { window.addEventListener(name, function () { if (!allowed() || context && context !== key()) { reset(); draw(); } else draw(); }); });
   window.addEventListener('lk-clock', tick);
-  window.addEventListener('beforeunload', function (e) { if (dirty()) { e.preventDefault(); e.returnValue = ''; } });
+  // Update now's second tap already said the readings may go (LK_UPDATE.letGo() in js/upkeep.js): no second question
+  window.addEventListener('beforeunload', function (e) { if (dirty() && !(window.LK_UPDATE && window.LK_UPDATE.letGo && window.LK_UPDATE.letGo())) { e.preventDefault(); e.returnValue = ''; } });
   window.LK_DELIVERY = { api: 1, mount: mount, unmount: unmount, reset: reset, dirty: dirty };
 })();

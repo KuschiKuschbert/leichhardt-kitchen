@@ -1160,6 +1160,11 @@ details.nb-start-l[open] > summary::after { content: '\2212'; }
 .mn-seg { display: flex; flex-wrap: wrap; gap: 0.35rem; }
 .mn-act { display: flex; flex-direction: column; gap: 0.4rem; padding: 0.5rem 0; border-bottom: 1px solid var(--line); }
 .mn-act2 { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
+/* An action's Remove keeps its width when it asks again (29 Oct 2026): "Tap again to remove" holds its room from the
+   start, unseen, so the row never moves under the second tap (it did at 390 px with Normal text). Only this button. */
+.mn-arem { display: inline-grid; justify-items: start; align-items: center; }
+.mn-arem > span, .mn-arem::after { grid-area: 1 / 1; }
+.mn-arem::after { content: 'Tap again to remove'; visibility: hidden; }
 .mn-at small { color: var(--muted); }
 .mn-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); gap: 0.6rem; }
 .mn-tile { display: flex; flex-direction: column; padding: 0.55rem 0.75rem; border: 1.5px solid var(--ink); border-radius: 8px; background: var(--paper); }
@@ -1526,7 +1531,8 @@ html.gz-open, html.gz-open body { overflow: hidden; }
 button.wm-a { width: 100%; border: 0; background: none; font: inherit; text-align: left; cursor: pointer; }
 .wm-sh { margin: 2px 10px; padding-top: 2px; border-top: 1.5px solid var(--line); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.75rem; }
 .wm-out { margin-top: 0; border-top: 1.5px solid var(--line); border-radius: 0 0 8px 8px; }
-.wm-out.is-armed small { color: var(--accent-ink); font-weight: 700; }
+/* is-wait: "Not sent yet." on the head chef's own Google device, where Sign out waits until it is sent (29 Oct 2026) */
+.wm-out.is-armed small, .wm-out.is-wait small { color: var(--accent-ink); font-weight: 700; }
 /* Admin panel in the chef hat's menu; the open mail count sits on the hat and on the menu item */
 .wm-a > svg { flex: 0 0 22px; width: 22px; height: 22px; }
 .wm-adm[aria-current="page"] { background: var(--hit); }

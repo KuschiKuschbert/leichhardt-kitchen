@@ -37,6 +37,56 @@ const state = p => p.evaluate(() => document.querySelector('#p-pin') ? 'kitchen-
   ok(/^in:Writing as Sam/.test(await state(p)), 'personal phone, new day: still signed in (' + await state(p) + ')');
   await p.context().close();
 
+  // opening on a new kitchen day, or after the idle time with the tab closed, a shared device takes the drafts the last
+  // person left on it, like Sign out (29 Oct 2026: recipe, drawing and function drafts stayed for the next person). A
+  // personal phone keeps its own drafts.
+  const DRAFTS = { 'lk.mg.draft.laksa': '{"name":"Laksa, kept"}', 'lk.dw.draft.d1': '{"parts":[]}', 'lk.fe.draft.new': '{"phone":"0400 000 000"}' };
+  const plant = p => p.evaluate(d => Object.keys(d).forEach(k => localStorage.setItem(k, d[k])), DRAFTS);
+  const left = p => p.evaluate(d => Object.keys(d).filter(k => localStorage.getItem(k)), DRAFTS);
+  for (const [label, shared, touch, away] of [['shared, new day', true, true, 'day'], ['shared, 11 minutes with the tab closed', true, true, 'idle'],
+    ['personal phone, new day', false, true, 'day'], ['personal computer, 11 minutes with the tab closed', false, false, 'idle']]) {
+    p = await L.open(b, '#/prep', { who: 'sam', touch, settings: shared ? { shared: true } : {}, wait: 1200 });
+    await plant(p);
+    await p.evaluate(a => { if (a === 'day') localStorage.setItem('lk.prep.day', '2020-01-01'); else localStorage.setItem('lk.prep.seen', String(Date.now() - 11 * 60000)); }, away);
+    await p.reload({ waitUntil: 'load' }); await L.settle(p, 1200);
+    const l = await left(p);
+    if (shared) ok((await state(p)) === 'who' && !l.length, label + ': nobody is signed in and the drafts left on the device are gone (' + await state(p) + ', left ' + JSON.stringify(l) + ')');
+    else ok(l.length === 3, label + ': the drafts stay for the same person (' + await state(p) + ', left ' + JSON.stringify(l) + ')');
+    ok(p.errors.length === 0, label + ': no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+  }
+  // the same with only the head chef's Google account on the device (review, 29 Oct 2026). Its sign-in lasts for the tab
+  // (the stand-in keeps it in fake.user), so after the tab closed nobody is signed in and her drafts stayed for the next
+  // person: a sous chef opening the recipe was offered her changes. Past the idle time they go; within it, and on a
+  // personal device, they stay, as for a person on a PIN.
+  const kept = p => p.evaluate(() => { const k = document.querySelector('.mg-kept'); return k ? k.textContent.replace(/\s+/g, ' ').trim() : ''; });
+  for (const [label, shared, mins] of [['shared, Google only, 11 minutes with the tab closed', true, 11], ['shared, Google only, 2 minutes with the tab closed', true, 2],
+    ['personal phone, Google only, 11 minutes with the tab closed', false, 11]]) {
+    const gone = shared && mins > 10;
+    p = await L.open(b, '#/manage/r/burger', { admin: true, touch: true, settings: shared ? { shared: true } : {}, wait: 1800 });
+    await L.waitFor(p, () => !!document.getElementById('mg-name'), null, 8000).catch(() => {});
+    await p.fill('#mg-name', 'Burger, head chef changes'); await L.settle(p, 800);
+    await plant(p);
+    const before = await p.evaluate(() => !!localStorage.getItem('lk.mg.draft.burger'));
+    await p.evaluate(m => { localStorage.removeItem('fake.user'); localStorage.setItem('lk.prep.seen', String(Date.now() - m * 60000)); }, mins);
+    await p.reload({ waitUntil: 'load' }); await L.settle(p, 1500);
+    const l = (await left(p)).concat(await p.evaluate(() => localStorage.getItem('lk.mg.draft.burger') ? ['lk.mg.draft.burger'] : []));
+    if (gone) ok(before && !l.length, label + ': the drafts she left are gone (left ' + JSON.stringify(l) + ')');
+    else ok(before && l.length === 4, label + ': the drafts stay (left ' + JSON.stringify(l) + ')');
+    if (gone) {
+      // Sam, a sous chef, signs in and opens the recipe: nothing kept from the head chef
+      await p.evaluate(() => { location.hash = '#/prep'; }); await L.settle(p, 800);
+      await L.waitFor(p, () => !!document.querySelector('.p-name[data-id="sam"]'), null, 8000).catch(() => {});
+      await p.click('.p-name[data-id="sam"]'); await L.settle(p, 300);
+      await p.type('#pf1', '1111'); await L.settle(p, 1500);
+      await p.evaluate(() => { location.hash = '#/manage/r/burger'; }); await L.settle(p, 1500);
+      await L.waitFor(p, () => !!document.getElementById('mg-name'), null, 8000).catch(() => {});
+      ok(await p.evaluate(() => window.LK_PREP.state.who === 'sam') && !!(await p.$('#mg-name')) && !(await kept(p)), label + ': Sam opens the recipe and is not offered her changes (' + await kept(p) + ')');
+    }
+    ok(p.errors.length === 0, label + ': no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+  }
+
   // the switch lives in Settings on the head chef's signed-in device and is kept on the device
   p = await L.open(b, '#/settings', { admin: true, wait: 1800 });
   // Settings draws the owner-only block after the Google account check finishes. Wait for that actual UI, as the

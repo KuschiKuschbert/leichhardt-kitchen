@@ -381,7 +381,7 @@
      signal before what this phone may open is known (LK_PREP.offline(): the settings not in, or the head chef's owner
      check waiting): then the no-signal sentence in place of Sign in, which would forget the person or the head chef mark.
      Each item is one line (shortened 22 Oct 2026); a second line shows only when it changes: today's section, Sign in
-     with Google, and Sign out's "Not saved yet". js/prep.js says when the person changes (lk-who). */
+     with Google, and Sign out's "Not saved yet" (or "Not sent yet"). js/prep.js says when the person changes (lk-who). */
   function whoMark(flip) {
     var n = window.LK_PREP && window.LK_PREP.whoName ? window.LK_PREP.whoName() : '';
     var rn = parseRoute().name, here = rn === 'settings' || rn === 'admin' ? ' aria-current="page"' : '';
@@ -452,7 +452,8 @@
         (m.todo ? todoItem() : '') + (supplierOK() ? supplierItem() : '') +
         (m.chef && !m.tab ? '<button type="button" class="wm-a" data-who="open" data-v="staff">' + ICON.team + '<span><b>Manage staff</b></span></button>' : '') +
         set +
-        // the empty line is where the first tap says "Not saved yet" (the click handler below)
+        // the empty line is where the first tap says "Not saved yet", or "Not sent yet" when only a change waits to send
+        // (the click handler below)
         '<button type="button" class="wm-a wm-out" data-who="out">' + ICON.exit + '<span><b>Sign out</b><small aria-live="polite"></small></span></button>'
       // with no signal before the kitchen's settings are in, who is on this phone is not known yet, not "nobody": no
       // Sign in, which would forget them (28 Oct 2026)
@@ -474,13 +475,25 @@
     if (a === 'open') { whoMenuClose(); window.LK_PREP.chefOpen(el.getAttribute('data-v')); return; }
     if (a === 'sec') { whoMenuClose(); window.LK_PREP.secOpen(); return; }
     if (a === 'out') {
-      // something not saved yet: the first tap says so, the second signs out anyway
-      if (!window.LK_PREP.signOut(el.classList.contains('is-armed'))) {
-        el.classList.add('is-armed'); el.querySelector('small').textContent = 'Not saved yet. Tap again to sign out'; return;
+      // something not saved yet: the first tap says so, the second signs out anyway. "Not sent yet." when the only thing
+      // waiting is a change on its way to the server (28 Oct 2026: it said Not saved yet for that too). On the head chef's
+      // own Google device that change holds Sign out: "Not sent yet." and no second tap gets past it (29 Oct 2026,
+      // sendFirst() in js/prep.js, whose toast says Sign out once it is sent); once it is sent, the line goes (lk-sent
+      // below) and the next tap signs out as usual
+      var wait = !!(window.LK_PREP.sendFirst && window.LK_PREP.sendFirst());
+      if (!window.LK_PREP.signOut(!wait && el.classList.contains('is-armed'))) {
+        el.classList.toggle('is-wait', wait); el.classList.toggle('is-armed', !wait);
+        el.querySelector('small').textContent = wait ? 'Not sent yet.' : (window.LK_PREP.unsavedHere && !window.LK_PREP.unsavedHere() ? 'Not sent yet.' : 'Not saved yet.') + ' Tap again to sign out'; return;
       }
       // "Signed out" is the prep toast, which shows by itself off the prep pages too (toast() in js/prep.js)
       whoMenuClose();
     }
+  });
+  // the change Sign out waited for is sent (js/prep.js, 29 Oct 2026): "Not sent yet." goes from an open menu, so it never
+  // says so after it is sent. The next tap signs out, or asks "Not saved yet" for something half typed.
+  window.addEventListener('lk-sent', function () {
+    var o = wmenu && wmenu.querySelector('.wm-out.is-wait');
+    if (o) { o.classList.remove('is-wait'); o.querySelector('small').textContent = ''; }
   });
   document.addEventListener('keydown', function (e) {
     if (!wmenu) return;
@@ -871,8 +884,14 @@
      (sw.js, 28 Oct 2026), then run.
      Without the head chef signed in, the page says so and nothing is loaded. The rules are the real lock. */
   /* Functions: #/fn (everyone: today, the next days, a function's sheet) is drawn by js/functions.js; #/functions (the
-     function managers' list and form) by js/fnedit.js, loaded only when it opens, like js/manage.js. Bump FE_API here
-     and API in js/fnedit.js together when what LK_FN or LK_PREP.book() hands it changes. */
+     function managers' list and form) by js/fnedit.js, loaded only when it opens, like js/manage.js.
+     The page versions (FE_API, MG_API, SUP_API here, LK_DRAW.api in js/manage.js, the delivery page's api) go up with
+     the file's own API only when an older copy of one side cannot run with the other. A phone keeps each page's file
+     for no signal (sw.js, 28 Oct 2026), so a new number shuts that page with no signal until it has opened once with
+     signal, and Reload cannot help. A change that only adds keeps the numbers: the file checks for what is new (say
+     B.arm in js/draw.js) and the book checks for what the file added (LK_MG.drop in js/prep.js). The ?v= address may go
+     up with a change: a browser with no worker in charge then fetches the file fresh instead of running its own copy
+     for up to 10 minutes, and it never shuts a page (29 Oct 2026). */
   function viewFn(route) { return '<div class="page fn-pg"><main id="main" class="fn-main">' + (window.LK_FN ? window.LK_FN.page(route.fid) : '') + '</main>' + footer() + '</div>'; }
   function viewFunctions() { return '<div class="page fe-page"><main id="main" class="fe"><div id="fe-root"></div></main></div>'; }
   var FE_API = 8, feLoad = null;
@@ -909,7 +928,7 @@
     });
   }
   function loadManage() {
-    if (!mgLoad) mgLoad = mgScript('js/manage.js?v=4').catch(function (e) { mgLoad = null; throw e; });
+    if (!mgLoad) mgLoad = mgScript('js/manage.js?v=5').catch(function (e) { mgLoad = null; throw e; });
     return mgLoad;
   }
   function mgNote(title, text, link) {
@@ -950,7 +969,7 @@
       return;
     }
     root.innerHTML = mgNote('Delivery received', 'Opening delivery records...', ' ');
-    if (!deliveryLoad) deliveryLoad = mgScript('js/deliveries.js?v=1').catch(function (e) { deliveryLoad = null; throw e; });
+    if (!deliveryLoad) deliveryLoad = mgScript('js/deliveries.js?v=2').catch(function (e) { deliveryLoad = null; throw e; });
     deliveryLoad.then(function () { if (parseRoute().name === 'deliveries') mountDeliveries(); }, function () {
       if (parseRoute().name === 'deliveries' && root.isConnected) root.innerHTML = mgNote('Could not open delivery records', 'Check the connection and try again.', '<button type="button" class="btn dark" data-delivery-retry>Try again</button>');
     });

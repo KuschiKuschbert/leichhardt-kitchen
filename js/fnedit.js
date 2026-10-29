@@ -271,7 +271,9 @@
   function forget(e) { lsSet(draftKey(e.isNew ? 'new' : e.id), ''); }
   function dirty() {
     var e = E.ed; if (!e || !e.d) return false;
-    if (e.isNew) return !!(e.d.name || e.d.date || e.d.lines.length || e.d.kc || e.d.notes);
+    // a new form: anything typed in it (28 Oct 2026: also the place, guests, times and the contact, since Save draft is
+    // off until something is in it)
+    if (e.isNew) { var n = e.d; return !!(['name', 'date', 'startT', 'loc', 'guests', 'cname', 'phone', 'email', 'kc', 'notes'].some(function (k) { return String(n[k] || '').trim(); }) || n.lines.length || n.gu || n.st); }
     return JSON.stringify(e.d) !== JSON.stringify(fromDoc(e.saved, e.savedC)) || e.status !== e.saved.status;
   }
 
@@ -340,7 +342,7 @@
     out += '<div class="fe-row2">' + inp('foodDate', d.mode === 'all' ? 'Food goes out on' : 'First round on', d.foodDate, ' type="date"') + inp('foodT', d.mode === 'all' ? 'Food goes out at' : 'First round at', d.foodT, T24, d.foodSet ? '' : 'Same as the event start until you change it.') + '</div>';
     if (d.mode === 'stag') {
       out += '<div class="fe-row2">' + inp('n', 'Rounds', d.n, ' type="number" inputmode="numeric" min="2" max="' + M.MAX_ROUNDS + '" step="1"') + inp('gap', 'Minutes between rounds', d.gap, ' type="number" inputmode="numeric" min="1" max="600" step="5"') + '</div>' +
-        '<p class="hint">' + (d.custom ? 'Split by hand. Changing the rounds keeps your numbers; ' : 'Split evenly, earlier rounds first (5 over 3 is 2, 2, 1). Type in the grid to split by hand. ') + '<button type="button" class="linkish" data-fe="even">Split evenly again</button></p>' + gridHTML(e);
+        '<p class="hint">' + (d.custom ? 'Split by hand. Changing the rounds keeps your numbers; ' : 'Split evenly, earlier rounds first (5 over 3 is 2, 2, 1). Type in the grid to split by hand. ') + '<button type="button" class="linkish" data-fe="even">' + (armed('even') ? 'Tap again to split evenly' : 'Split evenly again') + '</button></p>' + gridHTML(e);
     } else if (d.lines.length) {
       out += '<p class="fe-allline">All at ' + esc(d.foodT || '?') + ': ' + esc(d.lines.map(function (l) { return (int(l.qty) || 0) + ' ' + M.short(l.name); }).join(', ')) + '</p>';
     }
@@ -394,7 +396,7 @@
     if (e.conflict) {
       var c = e.conflict;
       out += '<div class="fe-conflict" role="alert"><p><b>Someone else saved this function</b> (' + esc(c.who || 'another device') + ', ' + esc(stamp(c.when)) + ', version ' + c.v + ') after you opened it. Saving now would put your copy over theirs.</p>' +
-        '<div class="btn-row"><button type="button" class="btn" data-fe="theirs">Load theirs (yours here go)</button><button type="button" class="btn dark" data-fe="mine">Keep mine and save over theirs</button></div></div>';
+        '<div class="btn-row"><button type="button" class="btn" data-fe="theirs">' + (armed('theirs') ? 'Tap again: your changes go' : 'Load theirs (yours here go)') + '</button><button type="button" class="btn dark" data-fe="mine">Keep mine and save over theirs</button></div></div>';
     }
     if (e.saving) out += '<p class="fe-saving" role="status">' + esc(e.saving) + '</p>';
     if (e.msg) out += '<p class="p-err" role="alert">' + esc(e.msg) + '</p>';
@@ -406,8 +408,10 @@
   }
   function buttonsHTML(e) {
     var st = e.status, dis = e.saving || E.removing[e.id] || FN.statusBusy(e.id) ? ' disabled' : '', b = [];
-    if (st === 'draft') { b.push('<button type="button" class="btn dark" data-fe="review"' + dis + '>Check and confirm</button>'); b.push('<button type="button" class="btn" data-fe="save"' + dis + '>Save draft</button>'); }
-    else if (st === 'confirmed') b.push('<button type="button" class="btn dark" data-fe="save"' + dis + '>Save changes</button>');
+    // Save draft and Save changes are off with nothing to save (saveSync() keeps them in step while typing)
+    var sdis = dis || (!canSave() ? ' disabled' : '');
+    if (st === 'draft') { b.push('<button type="button" class="btn dark" data-fe="review"' + dis + '>Check and confirm</button>'); b.push('<button type="button" class="btn" data-fe="save"' + sdis + '>Save draft</button>'); }
+    else if (st === 'confirmed') b.push('<button type="button" class="btn dark" data-fe="save"' + sdis + '>Save changes</button>');
     else b.push('<button type="button" class="btn dark" data-fe="review"' + dis + '>Put it back on</button>');
     var more = [];
     if (!e.isNew) more.push('<button type="button" class="btn" data-fe="dup">Duplicate</button>');
@@ -438,6 +442,10 @@
   function save(kind) {
     var e = E.ed;
     if (!e || e.saving || E.removing[e.id] || (e.saved && e.saved.removed)) return;
+    // nothing changed: Save is off, and a button left on by an older page saves nothing either (a new version for
+    // nothing, or an empty draft). Confirm and Put it back on change the status, so they still save.
+    flushPending();
+    if (kind === 'save' && !dirty()) { draw(); return; }
     e.msg = ''; keep();
     if (!P.fnOK()) { e.msg = 'Not saved: you are not ticked for Functions any more. Your changes are kept on this device.'; draw(); return; }
     var next = kind === 'confirm' ? 'confirmed' : kind === 'cancel' ? 'cancelled' : e.status;
@@ -549,7 +557,15 @@
     else if (k in d) d[k] = v;
     if (e.shown && e.shown.length) e.shown = check({ d: d, status: 'confirmed' }).filter(function (p) { return e.shown.some(function (s) { return s.k === p.k; }); });
     keep();
-    if (!quiet) { if (structural) draw(); else live(); }
+    if (!quiet) { if (structural) draw(); else { live(); saveSync(); } }
+  }
+  // something to save: a change, or a date or time typed and not taken yet (it is taken when the box is left or Save
+  // is tapped, flushPending())
+  function canSave() { return dirty() || Object.keys(E.pending).length > 0; }
+  // typing draws only the live part: Save draft or Save changes follows here
+  function saveSync() {
+    var e = E.ed, b = E.root && E.root.querySelector('[data-fe="save"]');
+    if (b && e && e.d) b.disabled = !!(e.saving || E.removing[e.id] || FN.statusBusy(e.id)) || !canSave();
   }
   function onInput(ev) {
     if (!E.root || !E.root.contains(ev.target)) return;
@@ -559,7 +575,7 @@
     if (E.drawing) { var v = ev.target.value; setTimeout(function () { setField(k, v, true); }, 0); return; }
     // what changes the page's shape waits for the change event (so typing "12" does not redraw at "1")
     var shape = /^(date|startT|foodDate|foodT|n|gap|qty\d+|a\d+_\d+|rt\d+)$/.test(k);
-    if (ev.type === 'input' && shape) { if (/^(a\d+_\d+|qty\d+)$/.test(k)) { setField(k, ev.target.value, false); } else E.pending[k] = ev.target.value; return; }
+    if (ev.type === 'input' && shape) { if (/^(a\d+_\d+|qty\d+)$/.test(k)) { setField(k, ev.target.value, false); } else { E.pending[k] = ev.target.value; saveSync(); } return; }
     delete E.pending[k];
     setField(k, ev.target.value, ev.type === 'change' && shape);
   }
@@ -617,7 +633,8 @@
     }
     if (a === 'rmline') { if (!arm('rm' + i)) return; d.lines.splice(i, 1); keep(); draw(); return; }
     if (a === 'mode') { d.mode = v; if (v === 'stag' && int(d.n) < 2) d.n = '3'; d.custom = false; retime(e); keep(); draw(); return; }
-    if (a === 'even') { d.custom = false; realloc(e); keep(); draw(); return; }
+    // a split typed by hand goes back to even: a second tap first (29 Oct 2026), there is no Undo
+    if (a === 'even') { if (d.custom && !arm('even')) return; d.custom = false; realloc(e); keep(); draw(); return; }
     if (a === 'rmround') { d.rounds.splice(i, 1); d.lines.forEach(function (l) { l.a.splice(i, 1); }); d.n = String(d.rounds.length); d.custom = true; if (d.rounds.length < 2) { d.mode = 'all'; retime(e); } keep(); draw(); return; }
     if (a === 'goto') { goto(v); return; }
     if (a === 'save') { save('save'); return; }
@@ -630,12 +647,14 @@
     if (a === 'confirm') { save('confirm'); return; }
     if (a === 'dup') { var src = clone(d); history.pushState(null, '', '#/functions/new'); if (window.LK_APP && window.LK_APP.noteRoute) window.LK_APP.noteRoute(false); E.sub = ['new']; openNew(src); return; }
     if (a === 'drop') { if (!arm('drop')) return; forget(e); if (e.isNew) { E.ed = null; window.LK_APP.returnTo('#/functions'); return; } e.d = fromDoc(e.saved, e.savedC); e.status = e.saved.status; e.restored = false; e.shown = []; draw(); return; }
-    if (a === 'theirs') { forget(e); E.ed = null; openId(e.id); return; }
+    // their version over the changes typed here: a second tap first, like Drop my changes (29 Oct 2026)
+    if (a === 'theirs') { if (dirty() && !arm('theirs')) return; forget(e); E.ed = null; openId(e.id); return; }
     if (a === 'mine') { e.v = e.conflict.v; e.saved = e.conflict.doc; e.conflict = null; save(e.status === 'confirmed' ? 'save' : 'save'); return; }
     if (a === 'hist') { loadHist(); return; }
   });
   function focusF(k) { var el = E.root && E.root.querySelector('[data-ff="' + k + '"]'); if (el) el.focus({ preventScroll: true }); }
-  window.addEventListener('beforeunload', function (ev) { flushPending(); if (dirty()) { ev.preventDefault(); ev.returnValue = ''; } });
+  // Update now's second tap already said the changes may go (LK_UPDATE.letGo() in js/upkeep.js): no second question
+  window.addEventListener('beforeunload', function (ev) { flushPending(); if (dirty() && !(window.LK_UPDATE && window.LK_UPDATE.letGo && window.LK_UPDATE.letGo())) { ev.preventDefault(); ev.returnValue = ''; } });
 
   function mount(root, route) {
     var sub = route.sub || [], same = E.root === root && JSON.stringify(sub) === JSON.stringify(E.sub);
@@ -662,6 +681,9 @@
   }
   window.LK_FE = {
     api: API, mount: mount, unmount: unmount,
+    // a hand-over (leave() in js/prep.js, 29 Oct 2026): a date or time typed and not taken yet goes with the person.
+    // Before, the page closing after the sign-out took it and kept the whole form as a draft again
+    drop: function () { E.pending = {}; E.ed = null; },
     back: back,
     backLabel: function () { return !E.root || !document.body.contains(E.root) || !E.sub.length ? '' : E.ed && E.ed.review ? 'Back to the form' : 'Back to all functions'; },
     backDisabled: function () { return !!(E.root && document.body.contains(E.root) && E.ed && E.ed.saving); },

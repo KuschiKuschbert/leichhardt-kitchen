@@ -173,6 +173,9 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   await p.click('[data-mg="hist"]');
   await wait(p, () => document.querySelectorAll('.mg-hist li').length >= 1);
   ok(await p.evaluate(() => document.querySelectorAll('.mg-hist li').length) === 1 && /Version 2/.test(await txt(p, '.mg-hist') || ''), 'earlier versions: version 2 is listed');
+  // the form holds the kept changes, so Open this version asks first (28 Oct 2026), then goes on the second tap
+  await p.click('.mg-hist li:first-child [data-mg="hist-use"]'); await L.settle(p, 100);
+  ok(await txt(p, '.mg-hist li:first-child [data-mg="hist-use"]') === 'Not saved. Tap again' && await p.inputValue('#mg-name') === 'Chicken Burger Refused', 'earlier versions: over changes not saved, the first tap asks and keeps them');
   // its own toast ("Version 2 is in the form") can come late on a busy computer: read it here, not after the save
   await p.click('.mg-hist li:first-child [data-mg="hist-use"]'); await toast(p); await toastText(p);
   ok(await p.inputValue('#mg-name') === 'Chicken Burger Other', 'earlier versions: version 2 is in the form');

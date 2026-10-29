@@ -90,7 +90,11 @@ async function csv(p) {
   await p.fill('#w-ra', 'Changed review');
   await p.selectOption('[data-k="wh-period"]', '7');
   ok(await p.$eval('[data-k="wh-period"]', e => e.value) === 'last' && await p.inputValue('#w-ra') === 'Changed review', 'changing dates cannot silently discard an unsaved review');
+  // Cancel edits throws the words away, so it asks a second tap first (28 Oct 2026)
   await p.click('[data-p="wh-review-cancel"]');
+  ok(await p.inputValue('#w-ra') === 'Changed review' && await L.txt(p, '[data-p="wh-review-cancel"]') === 'Tap again to discard', 'Cancel edits asks again before the words go');
+  await p.click('[data-p="wh-review-cancel"]');
+  ok(/Month end review/.test(await p.inputValue('#w-ra')), 'the second tap on Cancel edits puts the saved review back');
   await p.click('[data-p="wh-view"][data-v="history"]');
   await period(p, 'custom');
   await p.fill('[data-k="wh-from"]', '2026-07-01'); await p.fill('[data-k="wh-to"]', '2026-07-31');
