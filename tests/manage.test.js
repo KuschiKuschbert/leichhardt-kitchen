@@ -209,6 +209,9 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   await p.click('[data-mg="save"]'); await toast(p);
   ok(/Saved/.test(await toastText(p) || ''), 'special: saved');
   await go(p, '#/recipes'); await L.settle(p, 300);
+  // the chip count follows the saved change a moment later on a slow runner: wait for it
+  const specialsChip = n => L.waitFor(p, c => [...document.querySelectorAll('[data-act="kind"]')].some(e => e.textContent === c), 'Specials (' + n + ')', 8000).catch(() => {});
+  await specialsChip(fileSpecials.length + 1);
   const chips = await p.$$eval('[data-act="kind"]', els => els.map(e => e.textContent));
   ok(chips[1] === 'Specials (' + (fileSpecials.length + 1) + ')', 'special: the Specials chip comes first after All ' + chips.slice(0, 3).join(', '));
   ok(await p.getAttribute('#shelves .shelf', 'aria-label') === 'Specials', 'special: the Specials shelf is first');
@@ -220,6 +223,7 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   ok(await p.inputValue('#mg-msec') === '', 'special: off with no earlier section leaves it to pick');
   await p.selectOption('#mg-msec', 'Salads'); await p.click('[data-mg="save"]'); await toast(p);
   await go(p, '#/recipes'); await L.settle(p, 300);
+  await specialsChip(fileSpecials.length);
   ok((await p.$$eval('[data-act="kind"]', els => els.map(e => e.textContent))).includes('Specials (' + fileSpecials.length + ')'), 'special: off takes the dish out of Specials');
   ok(p.errors.length === 0, 'editing: no page errors ' + p.errors.join(' | '));
   await p.context().close();
