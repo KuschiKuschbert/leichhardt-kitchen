@@ -13,3 +13,7 @@ tests/shots-baseline-u/
 
 # other sessions' worktrees
 .claude/worktrees/
+
+# a Backup holds the whole kitchen: never commit one (scripts/fold-recipes.mjs reads it)
+kitchen-book-*.json
+kitchen-book-*.json.enc
