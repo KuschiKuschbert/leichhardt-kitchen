@@ -158,6 +158,30 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   ok(!(await signedIn(p)) && await p.evaluate(() => !window.LK_PREP.state.recipeOpen && !window.LK_PREP.unsaved()), 'recipe picker: after Sign out nothing counts as not saved for the next person');
   await p.context().close();
 
+  // the recipe picker closes when the cook leaves the prep list (head chef, 29 Oct 2026): on the other pages nothing
+  // counts as not saved, so Sign out (and the self-updates, LK_PREP.unsaved()) do not wait for it, and Prep shows it closed
+  p = await L.open(b, '#/prep', { who: 'sam', wait: 1800 });
+  // open on the prep list, with a search typed (a picker still open from before is left as it is)
+  const pickOpen = async () => {
+    if (!(await p.$('.p-pick.is-open'))) { await p.click('[data-p="recipe-toggle"]'); await L.settle(p, 200); }
+    await p.fill('#p-rs', 'lak'); await L.settle(p, 200);
+  };
+  await pickOpen();
+  ok(await p.evaluate(() => window.LK_PREP.state.recipeOpen && !!document.querySelector('.p-pick.is-open') && window.LK_PREP.unsaved()), 'recipe picker: open on the prep list with a search typed, it counts as open there');
+  for (const h of ['#/recipes', '#/orders', '#/']) {
+    await p.evaluate(h => { location.hash = h; }, h); await L.settle(p, 600);
+    ok(await p.evaluate(() => !window.LK_PREP.state.recipeOpen && !window.LK_PREP.state.recipeSearch && !window.LK_PREP.unsaved()), 'recipe picker: leaving the prep list for ' + h + ' closes it, and nothing counts as not saved');
+    await p.evaluate(() => { location.hash = '#/prep'; }); await L.settle(p, 600);
+    ok(await p.evaluate(() => { const t = document.querySelector('[data-p="recipe-toggle"]'); return !!t && t.getAttribute('aria-expanded') === 'false' && !document.querySelector('.p-pick.is-open') && !document.querySelector('#p-rs'); }), 'recipe picker: back from ' + h + ', Prep shows it closed');
+    await pickOpen();
+  }
+  await p.evaluate(() => { location.hash = '#/recipes'; }); await L.settle(p, 600);
+  await p.click('.wtop-who'); await L.settle(p, 150);
+  await p.click('.wm [data-who="out"]'); await L.settle(p, 400);
+  ok(!(await signedIn(p)), 'recipe picker left open on the prep list: on the recipes, Sign out goes in one tap');
+  ok(p.errors.length === 0, 'recipe picker: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   // "Not you?" does what Sign out does (23 Oct 2026): a line typed asks a second tap, and the line goes with the person
   p = await L.open(b, '#/prep', { who: 'ann', wait: 1800 });
   await p.fill('#p-text', 'Pick parsley');

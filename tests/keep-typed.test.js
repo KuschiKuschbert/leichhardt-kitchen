@@ -233,6 +233,29 @@ const READY = { minutes: '[data-p="mn-new"]', notes: '[data-p="n-new"]', guides:
     await p.context().close();
   });
 
+  // a minutes action's Remove keeps its width when it asks again, so the row does not move under the second tap (29 Oct
+  // 2026: "Tap again to remove" grew the button and moved the row at 390 px with Normal text). Measured from the row, so
+  // the page itself scrolling does not count.
+  for (const [w, text] of [[390, ''], [768, ''], [1280, ''], [390, 'xlarge']]) await safe('action Remove width ' + w + ' ' + text, async () => {
+    const lb = 'minutes action Remove, ' + w + (text ? ' Extra large' : ' Normal text');
+    p = await L.open(b, '#/admin', { admin: true, who: '', extra, wait: 1800, width: w, height: w > 400 ? 900 : 844, settings: text ? { text } : {} });
+    await L.adminTab(p, 'minutes'); await L.waitFor(p, () => !!document.querySelector('[data-p="mn-new"]'), null, 8000);
+    await p.click('[data-p="mn-new"]'); await L.settle(p, 200);
+    await p.click('[data-p="mn-aadd"]'); await L.settle(p, 150);
+    await p.click('[data-p="mn-aadd"]'); await L.settle(p, 150);
+    await p.fill('[data-k="mn-aw"][data-i="0"]', 'Order new tongs');
+    const where = () => S(p, () => [...document.querySelectorAll('.mn-act')].slice(0, 2).map(r => { const e = r.querySelector('[data-p="mn-arem"]'), b = e.getBoundingClientRect(), a = r.getBoundingClientRect(); return [b.left - a.left, b.top - a.top, b.width, b.height, a.height].map(Math.round).join(','); }).join(' | '));
+    const before = await where();
+    await p.click('[data-p="mn-arem"][data-i="0"]'); await L.settle(p, 200);
+    const after = await where();
+    ok(await txt(p, '[data-p="mn-arem"][data-i="0"]') === 'Tap again to remove' && before === after, lb + ': asking again, the button keeps its size and place, and the rows do not move (' + before + ' then ' + after + ')');
+    await fits(p, lb + ' asking');
+    await p.click('[data-p="mn-arem"][data-i="0"]'); await L.settle(p, 200);
+    ok(await S(p, () => window.LK_PREP.state.mf.acts.length) === 1, lb + ': the second tap still removes it');
+    ok(p.errors.length === 0, lb + ': no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+  });
+
   // nothing to save: Save is off, and a button left on saves nothing either (one page per form)
   await safe('saves minutes draft', async () => {
     p = await owner(b);

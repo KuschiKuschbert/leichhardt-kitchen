@@ -944,10 +944,13 @@
     if (S.user && S.who !== (S.config || {}).headId) { var previous = S.who; dropGoogle().then(function () { pickName(previous); accessChanged(); }); return; }
     var tok = (lsGet('lk.prep.tok') || '').split(':'), sv = (lsGet('lk.prep.sess') || '').split(':');
     var hasTok = tok[0] === S.who && !!tok[1], hasSess = sv[0] === S.who && +sv[1] > now() && !!S.uid && sv[2] === S.uid;
-    if (dayExpired()) { leave(); startIdle(); return; }
+    // a shared device handing over when it opens (a new kitchen day, or its idle time passed with the tab closed) takes
+    // what the last person left on it, like Sign out (29 Oct 2026: their recipe, drawing and function drafts stayed for
+    // the next person). A personal phone keeps its own drafts: the same person types their PIN again.
+    if (dayExpired()) { forgetMine(S.who); leave(); startIdle(); return; }
     // with no session, a phone that signed in before sessions opens one with its kept proof; with no Firebase sign-in it
     // cannot, so the PIN is asked (and the PIN screen says why)
-    if ((!hasSess && !(hasTok && S.uid)) || idleExpired()) { if (S.who) { if (shared()) leave(); else pickName(S.who); } startIdle(); return; }
+    if ((!hasSess && !(hasTok && S.uid)) || idleExpired()) { if (S.who) { if (shared()) { forgetMine(S.who); leave(); } else pickName(S.who); } startIdle(); return; }
     startIdle();
     if (hasSess) { S.sessFor = S.who; S.sessExp = +sv[1]; S.sessUid = sv[2]; S.sessPinAt = +sv[3]; }
     // a phone that signed in before sessions: its kept proof opens one session, once (then the proof is dropped). The
@@ -1050,11 +1053,14 @@
   /* Manage staff, the Minutes register and Shift pings are drawn on the prep list's address. Leaving it (Orders, the
      recipes, the landing page) closes them, so Prep is the prep list again next time (23 Oct 2026). Something not saved
      yet keeps its page open, as before. Runs before js/app.js draws the new page (this file loads first). chefOpen() and
-     See who has signed set their page before they go to #/prep, so they still open. */
+     See who has signed set their page before they go to #/prep, so they still open. The recipe picker (Add from the
+     recipes) closes too, search and all (head chef, 29 Oct 2026): it holds nothing typed, and left open it kept the chef
+     hat's Sign out and the self-updates saying "Not saved yet" on the other pages. Prep shows it closed. */
   function leftPrep() {
     if (S.staffOpen && !draftDirty()) { S.staffOpen = false; S.draft = null; }
     if (S.minOpen && !mfDirty()) { S.minOpen = false; S.mf = null; }
     if (S.notesOpen && !nfDirty()) S.notesOpen = false;
+    if (S.recipeOpen) { S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; }
   }
   window.addEventListener('hashchange', function () { if (location.hash !== '#/prep') leftPrep(); if (S.sheet) wasteSheetClose(true); });
   function chefOpen(k) {
@@ -1071,7 +1077,8 @@
      open). Something not saved yet: false, and the menu asks for a second tap first. */
   /* Sign out: what this person left on the device goes (22 Oct 2026). Function drafts hold a customer's phone and email,
      recipe and drawing drafts are the head chef's, and the mail they sent is theirs. Every hand-over runs it: Sign out,
-     Not you?, the idle lock, and the head chef's Google account signing out with nobody on a PIN (29 Oct 2026). */
+     Not you?, the idle lock, the head chef's Google account signing out with nobody on a PIN, and a shared device that
+     opens on a new kitchen day or after its idle time (resume(), 29 Oct 2026). */
   function forgetMine(id) {
     try {
       Object.keys(LS || {}).forEach(function (k) { if (/^lk\.(fe|mg|dw)\.draft\./.test(k)) lsSet(k, ''); });
@@ -1088,11 +1095,20 @@
   /* "Not you?" next to "Writing as" (and Change person on the admin card) hands the phone over the way Sign out does
      (23 Oct 2026): something not saved asks a second tap, and on a shared device what this person left on it goes. What
      was typed in the add boxes goes too (leave()), so the next person starts with empty boxes. */
-  function notYouHTML() { return '<button type="button" class="p-link" data-p="who-change">' + (armed('who-change') ? notSaved() + '. Tap again' : 'Not you?') + '</button>'; }
+  function notYouHTML() { return '<button type="button" class="p-link" data-p="who-change">' + (armed('who-change:sent') ? 'Not sent yet.' : armed('who-change') ? notSaved() + '. Tap again' : 'Not you?') + '</button>'; }
   /* The first words of a second tap over something not saved (28 Oct 2026): "Not saved" while something is typed or open
      here, "Not sent" when the only thing waiting is a change on its way to the server (the strip's words). On a PIN
      phone a sign-out does not lose that change while the tab stays open. */
   function notSaved() { return unsavedHere() ? 'Not saved' : 'Not sent'; }
+  /* Sign out waits until sent on the head chef's own Google device (head chef, 29 Oct 2026). A sign-out there signs the
+     Google account out too, and a change still waiting to send goes with it. So while one waits, Sign out of Google, the
+     lone Not you? and the head chef's own Sign out (the chef hat, Not you? beside Writing as) say "Not sent yet." and do
+     nothing. No second tap gets past it, like Update now (28 Oct 2026). Once it is sent, the next tap signs out as usual.
+     Only there: the verified account (level 'owner') with nobody or the head chef on a PIN (ownerHere()), on a device not
+     ticked Shared kitchen device. Staff phones, a shared kitchen device and anyone else signing out keep "Not sent. Tap
+     again". Only taps ask it: the idle lock, the other tab's lock and a new kitchen day never wait for it. */
+  function sendFirst() { return pending > 0 && !!S.user && S.level === 'owner' && ownerHere() && !shared(); }
+  var SEND_FIRST = 'Not sent yet. Sign out once it is sent.';
   /* Manage Recipes & Drawings (#/manage, 21 Oct 2026): the head chef only. With their own PIN as Head chef on any device,
      or on the head chef's Google device while nobody else is signed in with a PIN. The rules check the same on the
      server (bookBy() in firestore.rules), so this only decides what the page shows. */
@@ -3801,7 +3817,7 @@
     var d = S.draft, owner = S.level === 'owner';
     if (owner) { watchActivity(); loadStats(false); }
     // the Google account, not the person: the chef hat's Sign out is for the person (Prep is in the top bar and tab bar)
-    var bar = '<div class="p-bar"><span>Google account: <strong>' + esc(S.user.email) + '</strong></span><span class="p-links"><button type="button" class="p-link" data-p="signout">' + (armed('signout') ? notSaved() + '. Tap again' : 'Sign out of Google') + '</button></span></div>';
+    var bar = '<div class="p-bar"><span>Google account: <strong>' + esc(S.user.email) + '</strong></span><span class="p-links"><button type="button" class="p-link" data-p="signout">' + (armed('signout:sent') ? 'Not sent yet.' : armed('signout') ? notSaved() + '. Tap again' : 'Sign out of Google') + '</button></span></div>';
     var bulk = '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line">' + esc(S.bulk || '') + '</textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div>';
     var saveBlock = saveBarHTML();
     var at = S.atab || 'insights';
@@ -6093,10 +6109,12 @@
     var attBlock = '<div class="field mn-attblock"><button type="button" class="mn-atth" data-p="mn-attopen" aria-expanded="' + !!S.mAttOpen + '"><span class="label">Who was there</span><span class="mn-attsum' + (ppl.length && nSet < ppl.length ? ' is-open' : '') + '">' + esc(attSum) + '</span><span class="mn-attgo" aria-hidden="true">' + (S.mAttOpen ? 'Hide' : 'Set') + '</span></button>' +
       (S.mAttOpen ? '<div class="mn-attbody"><div class="btn-row"><button type="button" class="btn" data-p="mn-all">Mark all present</button></div><div class="mn-pcs" role="group" aria-label="Attendance">' + attChips + '</div><span class="hint">Tap a name to change it: Present, Apology, then Absent.</span></div>' : '') +
       '<label class="label" for="mn-guests">Guests (not signed)</label><input id="mn-guests" class="search" data-k="mn-guests" maxlength="120" placeholder="For example a supplier or manager" value="' + esc(f.guests) + '"></div>';
+    // an action's Remove keeps its width when it asks again (.mn-arem in css/app.css, 29 Oct 2026): the row never moves
+    // under the second tap
     var actRows = f.acts.map(function (a, i) {
       if (a.carried) return '<div class="mn-act is-carried"><span class="mn-at">' + esc(a.what) + ' <small>' + esc((a.who === 'all' ? 'Everyone' : mnName(a.who)) + (a.by ? ', by ' + dayShort(a.by) : '')) + '</small></span><div class="mn-seg" role="group" aria-label="Carried action">' + [['done', 'Done'], ['open', 'Carry over'], ['dropped', 'Drop']].map(function (x) { return '<button type="button" class="chip" data-p="mn-ast" data-i="' + i + '" data-v="' + x[0] + '" aria-pressed="' + ((a.st || 'open') === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div></div>';
       return '<div class="mn-act"><label class="visually-hidden" for="mn-aw' + i + '">Action</label><input id="mn-aw' + i + '" class="search" data-k="mn-aw" data-i="' + i + '" maxlength="160" placeholder="What needs doing" value="' + esc(a.what) + '">' +
-        '<div class="mn-act2">' + personSelect('mn-awho', a.who || '', i, true) + '<label class="visually-hidden" for="mn-aby' + i + '">By</label><input id="mn-aby' + i + '" type="date" class="p-dateinput" data-k="mn-aby" data-i="' + i + '" value="' + esc(a.by || '') + '"><button type="button" class="p-x" data-p="mn-arem" data-i="' + i + '">' + (armed('mn-arem:' + i) ? 'Tap again to remove' : 'Remove') + '</button></div></div>';
+        '<div class="mn-act2">' + personSelect('mn-awho', a.who || '', i, true) + '<label class="visually-hidden" for="mn-aby' + i + '">By</label><input id="mn-aby' + i + '" type="date" class="p-dateinput" data-k="mn-aby" data-i="' + i + '" value="' + esc(a.by || '') + '"><button type="button" class="p-x mn-arem" data-p="mn-arem" data-i="' + i + '"><span>' + (armed('mn-arem:' + i) ? 'Tap again to remove' : 'Remove') + '</span></button></div></div>';
     }).join('');
     return '<section class="set-block mn-form"><span class="label">' + (isEdit ? 'Change these minutes (becomes version ' + (f.v + 1) + ')' : f.id ? 'Draft minutes ' + pad(f.no) : 'New minutes ' + pad(f.no)) + '</span>' + prepLeaveHTML('mn-cancel') +
       (isEdit ? '<span class="hint">Everyone signs again after a change. The earlier version is kept.</span>' : '<span class="hint">Short lines, one per line. Spelling is yours to check. Recipe names link to their card. Leave out prices, PINs and private details. A line starting with # is a heading. A draft is not shown to staff in the app.</span>') +
@@ -8268,6 +8286,9 @@
       // something not saved asks a second tap wherever this hands the device over: a person signed in, or the head
       // chef's Google account with nobody on a PIN (its lone Not you? and the admin card's Sign in, 28 Oct 2026: they
       // signed Google out in one tap over a typed line). The admin card's links to the prep list stay put until then.
+      // On the head chef's own Google device a change waiting to send holds it, and no second tap gets past it (29 Oct
+      // 2026, sendFirst())
+      if (sendFirst()) { e.preventDefault(); if (!armed('who-change:sent')) arm('who-change:sent'); toast(SEND_FIRST); return; }
       if ((S.authed || S.user) && window.LK_PREP.unsaved() && !arm('who-change')) { e.preventDefault(); return; }
       // the PIN screens' Not me: nobody is signed in yet (picking a name signs Google out first), so it goes in one tap.
       // The head chef's Google account handing over (the lone Not you?, the admin card's Sign in) takes what it left on
@@ -8347,8 +8368,13 @@
     // the owner check again now, past its 5-minute wait (the No signal card on the admin panel)
     if (a === 'admins-retry') { delete S.retryAt.admins; loadAdmins(); draw(); return; }
     // anything not saved asks first, like the chef hat's Sign out (28 Oct 2026: only the staff list did, and minutes, a
-    // ping, a guide or the cut-offs went in one tap)
-    if (a === 'signout') { if (window.LK_PREP.unsaved() && !arm('signout')) { toast(notSaved() + ' yet. Tap Sign out of Google again to sign out.'); return; } signOut(); draw(); return; }
+    // ping, a guide or the cut-offs went in one tap). On the head chef's own Google device a change waiting to send holds
+    // it, and no second tap gets past it (29 Oct 2026, sendFirst())
+    if (a === 'signout') {
+      if (sendFirst()) { if (!armed('signout:sent')) arm('signout:sent'); toast(SEND_FIRST); return; }
+      if (window.LK_PREP.unsaved() && !arm('signout')) { toast(notSaved() + ' yet. Tap Sign out of Google again to sign out.'); return; }
+      signOut(); draw(); return;
+    }
     if (a === 'sec-hide') { hideSection(id, el.getAttribute('data-hide') === '1'); return; }
     if (a === 'a-reset-pin') { resetPin(id); return; }
     if (a === 'range') { if (S.atab === 'waste') { if (!whCanChange()) return; whState().period = el.getAttribute('data-v'); } else S.statsRange = +el.getAttribute('data-v'); draw(); return; }
@@ -9161,7 +9187,11 @@
     chefMenu: chefMenu,
     chefOpen: chefOpen,
     secOpen: function () { ksOpen(true); },
-    signOut: signOutPerson,
+    // the chef hat's Sign out, a tap: on the head chef's own Google device it waits while a change waits to send, and
+    // no second tap gets past it (29 Oct 2026, sendFirst(); the menu says "Not sent yet."). The idle lock and the other
+    // tab's lock call signOutPerson() itself, which never waits for it.
+    signOut: function (force, quiet) { return !sendFirst() && signOutPerson(force, quiet); },
+    sendFirst: sendFirst,
     minNudge: minNudgeHTML,
     cutSlot: cutSlot,
     mailInfo: mlInfo,

@@ -476,7 +476,13 @@
     if (a === 'sec') { whoMenuClose(); window.LK_PREP.secOpen(); return; }
     if (a === 'out') {
       // something not saved yet: the first tap says so, the second signs out anyway. "Not sent yet." when the only thing
-      // waiting is a change on its way to the server (28 Oct 2026: it said Not saved yet for that too)
+      // waiting is a change on its way to the server (28 Oct 2026: it said Not saved yet for that too). On the head chef's
+      // own Google device that change holds Sign out: "Not sent yet." and no second tap gets past it (29 Oct 2026,
+      // sendFirst() in js/prep.js); once it is sent, the next tap signs out as usual
+      if (window.LK_PREP.sendFirst && window.LK_PREP.sendFirst()) {
+        el.classList.remove('is-armed'); el.classList.add('is-wait'); el.querySelector('small').textContent = 'Not sent yet.'; return;
+      }
+      el.classList.remove('is-wait');
       if (!window.LK_PREP.signOut(el.classList.contains('is-armed'))) {
         el.classList.add('is-armed'); el.querySelector('small').textContent = (window.LK_PREP.unsavedHere && !window.LK_PREP.unsavedHere() ? 'Not sent yet.' : 'Not saved yet.') + ' Tap again to sign out'; return;
       }
