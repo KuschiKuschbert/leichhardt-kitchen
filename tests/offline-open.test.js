@@ -40,6 +40,36 @@ const fnDoc = (name, date) => M.derive({ v: 1, status: 'confirmed', name, date, 
   ok(p.errors.length === 0, 'cold open: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // 1b. The landing page and the chef hat, opened with no signal (28 Oct 2026). Ann is on this phone (kept on it), but her
+  // name and what she may open come with the settings. So neither says Kitchen sign in or "Nobody signed in on this
+  // phone", and the hat offers no Sign in, which forgot her: with the signal back she got Who are you? instead of her list.
+  // The tab bar keeps Recipes only, the one page that opens. With the signal back her dockets come by themselves.
+  for (const w of [390, 768, 1280]) {
+    p = await L.open(b, '#/', { who: 'ann', cold: '.', fakeMode: 'hold', width: w, wait: 1500 });
+    ok(await shows(p, '.wall-main', /No signal\. The kitchen pages open when the phone is back online\./) && !/Kitchen sign in/.test(await txt(p, '.wall-main') || ''), 'landing, cold open at ' + w + ' px: says there is no signal, not Kitchen sign in (' + (await txt(p, '.wall-main') || '').slice(0, 120) + ')');
+    await p.click('.wtop-who'); await L.settle(p, 150);
+    t = await txt(p, '.wm') || '';
+    ok(t.indexOf(NO_KITCHEN) >= 0 && !/Nobody signed in/.test(t) && !(await p.$('.wm [data-who="signin"]')), 'chef hat, cold open at ' + w + ' px: says there is no signal, not "Nobody signed in", and offers no Sign in (' + t + ')');
+    const o = await L.overflow(p);
+    ok(!o, 'landing and chef hat, cold open at ' + w + ' px: no sideways scroll' + (o ? ' (' + o + ')' : ''));
+    await p.keyboard.press('Escape'); await L.settle(p, 100);
+    if (w === 390) {
+      // a Sign in from anywhere else (a function's tick asks for one) does not forget her either
+      ok(await p.evaluate(() => { window.LK_PREP.signIn('#/'); return window.LK_PREP.state.who === 'ann' && location.hash === '#/'; }), 'cold open: Sign in does not forget Ann while the settings are not in');
+      await warm(p);
+      ok(await until(p, () => window.LK_PREP.whoName() === 'Ann' && document.querySelectorAll('.dockets .docket').length >= 5 && !/No signal/.test(document.querySelector('.wall-main').textContent)), 'landing, signal back: Ann is signed in, her dockets show and the note goes');
+    }
+    ok(p.errors.length === 0, 'landing, cold open at ' + w + ' px: no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+  }
+  // nobody on this phone: the note goes and Kitchen sign in comes back once the signal is back
+  p = await L.open(b, '#/', { who: '', cold: '.', fakeMode: 'hold', wait: 1500 });
+  ok(await shows(p, '.wall-main', /No signal\. The kitchen pages open/), 'landing, nobody on the phone, cold open: says there is no signal');
+  await warm(p);
+  ok(await until(p, () => /Kitchen sign in/.test(document.querySelector('.wall-main').textContent) && !/No signal/.test(document.querySelector('.wall-main').textContent)), 'landing, nobody on the phone, signal back: Kitchen sign in comes back and the note goes');
+  ok(p.errors.length === 0, 'landing, nobody on the phone: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   // 2. Sign out with no signal: the names are not shown as "none", and come back with the signal
   p = await L.open(b, '#/prep', { who: 'ann', wait: 1200 });
   await cold(p);

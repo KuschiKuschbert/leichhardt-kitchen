@@ -1,5 +1,6 @@
 // A read lost to a bad signal is never kept as "nothing there": Everything to order says so, nothing goes into the day
-// cache, and the book reads again by itself later (usability U1). The same for the wastage summary (22 Oct 2026).
+// cache, and the book reads again by itself later (usability U1). The same for the wastage summary (22 Oct 2026), and
+// since 28 Oct 2026 for the admin Insights and Team days, the Insights counts and the nightly summaries of what is usual.
 const L = require('./lib');
 const { R, ok } = L.results(), txt = L.txt;
 const day = n => L.ymd(new Date(L.NOW - n * 86400000));
@@ -8,9 +9,22 @@ const extra = {};
 Object.assign(extra, L.wasteSum([{ t: 'Rice', n: 2, r: { expired: 2 }, unit: 'portions', reason: 'expired', sec: 'Pans', amt: 1, last: { unit: 'portions', reason: 'expired', sec: 'Pans', amt: 1 } }]));
 extra[path('orders', day(1), 'lines', 'old1')] = { text: 'Cream', qty: '2 L', recipes: [], addedBy: 'Ann', addedById: 'ann', addedAt: L.NOW - 86400000, ordered: false, deleted: false, rolled: 1 };
 const cached = (p, k) => p.evaluate(k => localStorage.getItem(k), k);
+const until = (p, fn, arg) => L.waitFor(p, fn, arg, 6000).then(() => true, () => false);
+const shows = (p, sel, re) => until(p, a => new RegExp(a[1]).test((document.querySelector(a[0]) || {}).textContent || ''), [sel, re.source]);
+const reads = (p, re) => p.evaluate(s => window.__fake.reads.filter(k => new RegExp(s).test(k)).length, re.source);
+const go = async (p, h) => { await p.evaluate(h => { location.hash = h; }, h); await L.settle(p, 700); };
+// no sideways scroll at the three widths, then back to the width the page opened at
+async function fits(p, what, back) {
+  for (const w of [390, 768, 1280]) {
+    await p.setViewportSize({ width: w, height: 900 }); await L.settle(p, 250);
+    const o = await L.overflow(p);
+    ok(!o, what + ': no sideways scroll at ' + w + ' px' + (o ? ' (' + o + ')' : ''));
+  }
+  await p.setViewportSize({ width: back, height: 900 }); await L.settle(p, 250);
+}
 (async () => {
   const b = await L.start();
-  let p;
+  let p, t;
 
   // wastage: the summary cannot be read. The form and today's entries still work, nothing is cached, and it is read again later
   p = await L.open(b, '#/waste', { wait: 1500, extra, failReads: '/summary/waste$' });
@@ -42,6 +56,115 @@ const cached = (p, k) => p.evaluate(k => localStorage.getItem(k), k);
   const all2 = await txt(p, '.o-page') || '';
   ok(/Cream/.test(all2) && !/Could not load/.test(all2), 'orders all: after the wait it reads again and shows Cream');
   ok(p.errors.length === 0, 'orders: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // admin Insights with one past day unreadable (loadStats(), 28 Oct 2026): never counted as a day with no lines. It
+  // says it could not load every day, offers no CSV, and once the signal is back reads only that day again
+  const d2 = day(2), insX = {};
+  for (let k = 0; k < 4; k++) insX[path('days', d2, 'items', 'q' + k)] = { text: 'Job ' + k, station: 'Larder', qty: '', recipe: '', addedBy: 'Sam', addedById: 'sam', addedAt: L.NOW - 2 * 86400000, done: true, doneBy: 'Sam', doneById: 'sam', doneAt: L.NOW - 2 * 86400000 + 3600000, deleted: false };
+  p = await L.open(b, '#/admin', { admin: true, who: '', extra: insX, width: 1280, height: 900, failReads: '/days/' + d2 + '/items$', wait: 2000 });
+  ok(await shows(p, '#prep-root', /Insights[\s\S]*Could not load every day\. Check the signal\./), 'insights, a day unreadable: says it could not load every day');
+  ok(await p.evaluate(d => { const st = window.LK_PREP.state.stats; return !!st && (st.miss || []).indexOf(d) >= 0; }, d2), 'insights, a day unreadable: the day is listed as missing, not as a day with no lines');
+  ok(await p.evaluate(() => { const x = document.querySelector('[data-p="csv"][data-v="insights"]'); return !!x && x.disabled; }), 'insights, a day unreadable: no CSV of only the days that came in');
+  // a button left on (an older page) does not make one either: exportCSV() refuses and says why
+  const csvTry = await p.evaluate(() => { let n = 0; const o = URL.createObjectURL; URL.createObjectURL = function () { n++; return o.apply(this, arguments); }; const x = document.querySelector('[data-p="csv"][data-v="insights"]'); x.disabled = false; x.click(); URL.createObjectURL = o; return n; });
+  ok(csvTry === 0 && await until(p, () => /Could not load every day/.test(document.body.textContent) && ![...document.querySelectorAll('a[download]')].length), 'insights, a day unreadable, the CSV button forced on: no file is made');
+  await fits(p, 'insights with the could-not-load note', 1280);
+  const dr0 = await reads(p, /\/days\/[^/]+\/items$/);
+  await p.evaluate(() => { window.__fake.failReads = null; window.dispatchEvent(new Event('online')); });
+  ok(await until(p, d => { const st = window.LK_PREP.state.stats; return !!st && !!st.days[d] && st.days[d].length === 4 && !(st.miss || []).length; }, d2), 'insights, signal back: the missing day is read by itself and counted (4 lines)');
+  ok(await reads(p, /\/days\/[^/]+\/items$/) - dr0 === 1, 'insights, signal back: only that day is read again (' + (await reads(p, /\/days\/[^/]+\/items$/) - dr0) + ' reads)');
+  ok(await until(p, () => !/Could not load every day/.test((document.querySelector('#prep-root') || {}).textContent || '') && !document.querySelector('[data-p="csv"][data-v="insights"]').disabled), 'insights, signal back: the note goes and Download CSV is back');
+  ok(p.errors.length === 0, 'insights: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // admin Team with one past order day unreadable (loadOrdStats()): the Order list block says so, and the day comes in
+  p = await L.open(b, '#/admin', { admin: true, who: '', extra, width: 1280, height: 900, failReads: '/orders/' + day(1) + '/lines$', wait: 2000 });
+  await L.adminTab(p, 'team');
+  const ordBlock = () => p.evaluate(() => { const l = [...document.querySelectorAll('.set-block')].find(x => /^Order list/.test((x.querySelector('.label') || {}).textContent || '')); return l ? l.textContent : ''; });
+  ok(await until(p, () => { const l = [...document.querySelectorAll('.set-block')].find(x => /^Order list/.test((x.querySelector('.label') || {}).textContent || '')); return !!l && /Could not load every day/.test(l.textContent); }), 'team, an order day unreadable: the Order list says it could not load every day (' + (await ordBlock()).slice(0, 160) + ')');
+  await p.evaluate(() => { window.__fake.failReads = null; window.dispatchEvent(new Event('online')); });
+  ok(await until(p, () => { const o = window.LK_PREP.state.ordStats; return !!o && !(o.miss || []).length && o.lines.some(x => x.text === 'Cream'); }), 'team, signal back: the order day is read by itself (Cream is in)');
+  ok(!/Could not load every day/.test(await ordBlock()), 'team, signal back: the note goes');
+  ok(p.errors.length === 0, 'team: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+  // the same, and the signal back with no online event: Refresh on Team reads the order days too (review of 28 Oct
+  // 2026: it read only the prep days, and the note stayed under "Refresh reads the newest")
+  p = await L.open(b, '#/admin', { admin: true, who: '', extra, width: 1280, height: 900, failReads: '/orders/' + day(1) + '/lines$', wait: 2000 });
+  await L.adminTab(p, 'team');
+  await until(p, () => { const o = window.LK_PREP.state.ordStats; return !!o && !o.loading && (o.miss || []).length > 0; });
+  await p.evaluate(() => { window.__fake.failReads = null; });
+  await p.click('[data-p="stats-refresh"][data-v="team"]');
+  ok(await until(p, () => { const o = window.LK_PREP.state.ordStats; return !!o && !o.loading && !(o.miss || []).length && o.lines.some(x => x.text === 'Cream'); }) && !/Could not load every day/.test(await ordBlock()), 'team, a day unreadable, then Refresh with the signal back: the order day is read and the note goes');
+  ok(p.errors.length === 0, 'team Refresh: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // admin Insights' counts unreadable (loadViews(), loadMisses(), loadUsage()): not "none", no read on every draw, and
+  // read again once the signal is back
+  p = await L.open(b, '#/admin', { admin: true, who: '', width: 1280, height: 900, failReads: '/(views|misses)$|/summary/usage$', wait: 2000 });
+  const COUNTS = /Could not load these counts\. Check the signal\./;
+  ok(await until(p, () => (((document.querySelector('#prep-root') || {}).textContent || '').match(/Could not load these counts/g) || []).length === 3), 'insights counts unreadable: card opens, empty searches and smart features each say they could not load');
+  t = await txt(p, '#prep-root') || '';
+  ok(COUNTS.test(t) && !/No card opens counted yet/.test(t) && !/No empty searches yet/.test(t), 'insights counts unreadable: never "No card opens counted yet" or "No empty searches yet"');
+  const u0 = await reads(p, /\/summary\/usage$|\/views$|\/misses$/);
+  for (const g of ['team', 'insights', 'team', 'insights']) await L.adminTab(p, g);
+  ok(await reads(p, /\/summary\/usage$|\/views$|\/misses$/) === u0, 'insights counts unreadable: no read on every draw (' + u0 + ' then ' + await reads(p, /\/summary\/usage$|\/views$|\/misses$/) + ')');
+  await p.evaluate(() => { window.__fake.failReads = null; window.dispatchEvent(new Event('online')); });
+  ok(await until(p, () => { const x = (document.querySelector('#prep-root') || {}).textContent || ''; return /No card opens counted yet/.test(x) && /No empty searches yet/.test(x) && /Nothing counted yet/.test(x) && !/Could not load these counts/.test(x); }), 'insights counts, signal back: each is read again and shows what is there');
+  ok(p.errors.length === 0, 'insights counts: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+  // the same, read again after the 5-minute wait with no online event (wifi that stayed up): an online event later,
+  // with nothing failed, reads nothing (review of 28 Oct 2026: the retry stayed set and read both lists again)
+  p = await L.open(b, '#/admin', { admin: true, who: '', width: 1280, height: 900, failReads: '/(views|misses)$', wait: 2000 });
+  await until(p, () => (((document.querySelector('#prep-root') || {}).textContent || '').match(/Could not load these counts/g) || []).length === 2);
+  await p.evaluate(() => { window.__fake.failReads = null; });
+  await p.clock.fastForward('06:00');
+  await L.adminTab(p, 'team'); await L.adminTab(p, 'insights');
+  ok(await until(p, () => { const x = (document.querySelector('#prep-root') || {}).textContent || ''; return /No card opens counted yet/.test(x) && /No empty searches yet/.test(x); }), 'insights counts, after the wait: read again at the next draw');
+  const v0 = await reads(p, /\/(views|misses)$/);
+  await go(p, '#/prep');
+  await p.evaluate(() => { window.dispatchEvent(new Event('offline')); window.dispatchEvent(new Event('online')); });
+  await L.settle(p, 2500);
+  ok(await reads(p, /\/(views|misses)$/) === v0, 'insights counts in, then an online event: nothing read again (' + v0 + ' then ' + await reads(p, /\/(views|misses)$/) + ')');
+  ok(p.errors.length === 0, 'insights counts after the wait: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // the nightly summaries of what is usual unreadable (sumList()): no fall back to reading up to 500 learned records
+  // (or 300 order records) in their place; read again later
+  const sumX = { [path('summary', 'learned')]: { day: day(0), items: [{ id: 'mise onions', text: 'Mise onions', uses: 6, typed: 6, dow: {}, qtys: {}, secs: {} }] }, [path('summary', 'ordlearned')]: { day: day(0), items: [] } };
+  p = await L.open(b, '#/prep', { extra: sumX, failReads: '/summary/(learned|ordlearned)$', wait: 1800 });
+  await go(p, '#/orders'); await go(p, '#/prep');
+  ok(await reads(p, /^kitchens\/[^/]+\/(learned|ordlearned)$/) === 0, 'summaries unreadable: the learned records are not read in their place (' + await p.evaluate(() => window.__fake.reads.filter(k => /^kitchens\/[^/]+\/(learned|ordlearned)$/.test(k)).join(' | ')) + ')');
+  ok(await p.evaluate(() => !localStorage.getItem('lk.learned') && !localStorage.getItem('lk.ord.learned')), 'summaries unreadable: nothing kept for the day');
+  const s0 = await reads(p, /\/summary\/(learned|ordlearned)$/);
+  await p.evaluate(() => { window.__fake.failReads = null; window.dispatchEvent(new Event('online')); });
+  // summary/learned like summary/ordlearned (28 Oct 2026): at once with the online event, not only after the wait
+  ok(await until(p, () => !!localStorage.getItem('lk.learned')), 'summaries, signal back with an online event: summary/learned is read again at once and kept');
+  await p.clock.fastForward('06:00');
+  await go(p, '#/orders'); await go(p, '#/prep');
+  ok(await until(p, () => !!localStorage.getItem('lk.learned') && !!localStorage.getItem('lk.ord.learned')), 'summaries, signal back: both read again by themselves and kept (' + s0 + ' then ' + await reads(p, /\/summary\/(learned|ordlearned)$/) + ' reads)');
+  ok(await reads(p, /^kitchens\/[^/]+\/(learned|ordlearned)$/) === 0, 'summaries, signal back: still no read of the learned records');
+  ok(p.errors.length === 0, 'summaries: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // the pings, minutes, guides and the drinks run unreadable, then read again after their wait with no online event
+  // (wifi that stayed up): an online event later, with nothing failed, reads none of them again (review of 28 Oct 2026:
+  // each one's online retry stayed set after it came in; they all go through retrySoon() and retryDone() now)
+  p = await L.open(b, '#/prep', { who: 'sam', failReads: '/(notes|minutes|guides|drinks)$', wait: 1800 });
+  await go(p, '#/drinks'); await go(p, '#/prep');   // the drinks run is read when its page opens
+  await L.settle(p, 1000);
+  ok(await p.evaluate(() => { const s = window.LK_PREP.state; return s.notesErr && s.minsErr && s.gErr; }), 'pings, minutes and guides unreadable at first');
+  await p.evaluate(() => { window.__fake.failReads = null; });
+  for (let i = 0; i < 6; i++) { await p.mouse.move(20 + i, 20); await p.clock.runFor(60000); }
+  await p.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  for (const h of ['#/minutes', '#/guides', '#/drinks', '#/prep']) await go(p, h);
+  const ret = /\/(notes|minutes|guides|drinks)$/;
+  ok(await until(p, () => { const s = window.LK_PREP.state; return !s.notesErr && !s.minsErr && Array.isArray(s.guides) && !s.gErr && !!localStorage.getItem('lk.drinks'); }), 'pings, minutes, guides and drinks, after the wait: each read again and in');
+  const q0 = await reads(p, ret);
+  await p.evaluate(() => { window.dispatchEvent(new Event('offline')); window.dispatchEvent(new Event('online')); });
+  await L.settle(p, 2500);
+  ok(await reads(p, ret) === q0, 'pings, minutes, guides and drinks in, then an online event: nothing read again (' + q0 + ' then ' + await reads(p, ret) + ')');
+  ok(p.errors.length === 0, 'retries after the wait: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
   // a good signal: one read of the summary, cached, and no past wastage lines read at all

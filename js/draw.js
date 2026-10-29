@@ -1026,7 +1026,7 @@
      changes. Templates (drawtpl) and the head chef's own pieces and servingware (drawlib) are read with one query each
      when the editor opens. Everything read from the book is cleaned like the book's own drawings. */
   var SVGNS = 'http://www.w3.org/2000/svg';
-  var MINE = { tpl: [], lib: [], loaded: false, p: null };
+  var MINE = { tpl: [], lib: [], loaded: false, p: null, off: false };
   function vbOk(v) { return typeof v === 'string' && /^-?[\d.]+ -?[\d.]+ [\d.]+ [\d.]+$/.test(v) ? v : ''; }
   function tplRec(id, x) {
     if (!x || !Array.isArray(x.els) || !SLOT_NAME[x.slot]) return null;
@@ -1049,11 +1049,14 @@
     }).then(function (r) {
       MINE.tpl = r[0].docs.map(function (sn) { return tplRec(sn.id, sn.data()); }).filter(function (t) { return t && !t.removed; });
       MINE.lib = r[1].docs.map(function (sn) { var x = sn.data(); x.id = sn.id; return x; }).filter(function (x) { return !x.removed; });
-      mineToLib(); MINE.loaded = true;
+      mineToLib(); MINE.loaded = true; MINE.off = false;
       if (W.d) draw();
-    }, function () { MINE.p = null; MINE.loaded = true; if (W.d) draw(); });
+    }, function (e) { MINE.p = null; MINE.loaded = true; MINE.off = !(e && e.code === 'permission-denied'); if (W.d) draw(); });
     return MINE.p;
   }
+  // a read that failed for want of signal (28 Oct 2026): Start from a copy says so, not a list with no templates, and the
+  // two queries go again once the phone is back online while a drawing is open (each drawing opened reads them anyway)
+  window.addEventListener('online', function () { if (MINE.off && W.d && W.root) loadMine(true); });
   function slug(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 36) || 'piece'; }
   function freshId(name) { return slug(name) + '-' + Math.floor(B().now()).toString(36); }
   function hash(s) { var h = 5381; for (var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36) + s.length.toString(36); }
@@ -1148,7 +1151,7 @@
     // one line until it is opened, so the library stays where it is
     return '<details class="dw-panel dw-start"' + (W.startOpen ? ' open' : '') + '><summary data-dw="start-open">Start from a copy' + (own ? ' of the book\'s drawing' : '') + (tpls.length ? ', a template' : '') + ' or another drawing</summary><p class="hint">Draw from blank with the library below, or start from a copy. What you start from stays as it is.</p>' +
       (own || tpls.length ? '<div class="dw-lib">' + (own ? tile('book:' + own, 'The book\'s drawing of ' + (r ? r.name : d.rid), bookThumb(d.slot, own)) : '') + tpls.map(function (t) { return tile('tpl:' + t.id, 'Template: ' + t.name, tplThumb(t)); }).join('') + '</div>' : '') +
-      (!MINE.loaded ? '<p class="hint">Looking for templates...</p>' : '') +
+      (!MINE.loaded ? '<p class="hint">Looking for templates...</p>' : MINE.off ? '<p class="hint" role="status">No signal. Your templates show when the phone is back online.</p>' : '') +
       '<div class="field"><label class="label" for="dw-from">Or a copy of another drawing</label><select id="dw-from" class="search" data-dwf="fromsel"><option value="">Pick a drawing</option>' +
       (others.length ? '<optgroup label="Drawn in the book">' + others.map(function (x) { return '<option value="d:' + esc(x.id) + '"' + (W.fromSel === 'd:' + x.id ? ' selected' : '') + '>' + esc(x.name || x.id) + '</option>'; }).join('') + '</optgroup>' : '') +
       '<optgroup label="The book\'s own">' + bookKeys(d.slot).map(function (k) { var rr = A.byId(k); return '<option value="book:' + esc(k) + '"' + (W.fromSel === 'book:' + k ? ' selected' : '') + '>' + esc(rr ? rr.name : k) + '</option>'; }).join('') + '</optgroup></select></div>' +

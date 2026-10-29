@@ -930,6 +930,25 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     await waitReload(p);
     ok(await reloaded(p), 'back after 6 minutes, a swipe 0.4 seconds in: it updates straight away');
   });
+  // 19 lk-new. The same when the strip came from the worker (lk-new: the files are already saved, and the server's
+  // stamp is the one the book knew): it used to wait for 2 minutes untouched (review of 28 Oct 2026, older than this fix)
+  await step('19 lk-new', async () => {
+    p = await L.open(b, '#/prep', { who: 'ann', touch: true, wait: 1500 });
+    await updBar(p);
+    await p.evaluate(() => {
+      window.__vis = 'visible';
+      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => window.__vis });
+    });
+    const vis = s => p.evaluate(s => { window.__vis = s; document.dispatchEvent(new Event('visibilitychange')); }, s);
+    await vis('hidden');
+    await p.clock.fastForward('06:00');
+    await mark(p);
+    await vis('visible');
+    await L.sleep(300);
+    await swipe(p);
+    await waitReload(p);
+    ok(await reloaded(p), 'the strip from the worker, back after 6 minutes, a swipe 0.3 seconds in: it updates straight away');
+  });
   await step('19 tick', async () => {
     p = await L.open(b, '#/prep', { who: 'ann', touch: true, wait: 1500 });
     await slowFiles(p, 1500);
@@ -1061,6 +1080,123 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
       ok(await reloaded(p), how + ': the box left, a touch 20 seconds before: it updates at the next look');
       await L.settle(p, 2000);
       ok(st.navs === 1, how + ': it reloads once (' + st.navs + ')');
+    });
+  }
+
+  // 23. Reload the book (28 Oct 2026): a page loaded on its own that is a different version from the book (here an old
+  // js/manage.js) offers Reload, which now goes through Update now's own path. With a change waiting it says it updates
+  // once sent, with no Reload site? box, and does; with half a line typed it asks for a second tap. It used to reload at
+  // once: the browser asked (a phone app that does not ask lost the change), and the half line went.
+  const headCfg = { [['kitchens', L.PIN, 'config', 'main'].join('/')]: { people: [
+    { id: 'ann', name: 'Ann', role: 'head', add: true, tick: true, del: true, active: true },
+    { id: 'sam', name: 'Sam', role: 'sous', add: true, tick: true, del: true, active: true }
+  ], headId: 'ann', sousIds: ['sam', 'ann'], showBadges: true } };
+  const OLD_MG = 'window.LK_MG = { api: 3, render: {}, mount: function () {}, unmount: function () {}, open: function () { return false; }, dirty: function () { return false; }, hasDraft: function () { return false; } };';
+  for (const how of ['a change waiting', 'half a line']) {
+    await step('23 ' + how, async () => {
+      p = await L.open(b, '#/prep', { who: 'ann', extra: headCfg, touch: true, wait: 1500 });
+      let asked = 0;
+      p.on('dialog', d => { asked++; d.dismiss().catch(() => {}); });
+      await p.context().route(/\/js\/manage\.js(?:\?|$)/, r => r.fulfill({ status: 200, contentType: 'text/javascript', body: OLD_MG }));
+      if (how === 'a change waiting') { await hold(p); await p.fill('#p-text', 'Portion the brisket'); await p.press('#p-text', 'Enter'); await L.settle(p, 300); }
+      else { await p.fill('#p-text', 'Half a line'); await L.settle(p, 200); }
+      await p.evaluate(() => { if (document.activeElement) document.activeElement.blur(); });
+      await p.evaluate(() => { location.hash = '#/manage/r/burger'; });
+      await L.waitFor(p, () => /Reload the book/.test((document.querySelector('#mg-root') || {}).textContent || ''), null, 10000);
+      await mark(p);
+      // L.tap: a click that starts a reload the browser asks about would wait on it
+      await L.tap(p, '[data-act="reload"]');
+      await L.settle(p, 1500);
+      const u = await bar(p);
+      if (how === 'a change waiting') {
+        ok(!(await reloaded(p)) && asked === 0, 'Reload the book, a change waiting: no reload and no Reload site? box (' + asked + ' asked)');
+        ok(u && u.t === WAITS && u.btn === 'Update now', 'Reload the book, a change waiting: the strip says it updates once sent (' + JSON.stringify(u) + ')');
+        for (const width of [390, 768, 1280]) {
+          await p.setViewportSize({ width, height: 844 });
+          ok(!(await L.overflow(p)), 'Reload the book with the strip: no sideways scroll at ' + width);
+        }
+        await release(p);
+        await L.settle(p, 400);
+        await p.clock.fastForward(21000);   // the next look, the change sent
+      } else {
+        ok(!(await reloaded(p)) && u && u.t === 'Not saved yet.' && u.btn === 'Tap again to update', 'Reload the book, half a line typed: it asks first (' + JSON.stringify(u) + ')');
+        await L.tap(p, '[data-act="reload"]');
+      }
+      await waitReload(p);
+      ok(await reloaded(p), 'Reload the book, ' + how + ': then it updates');
+    });
+  }
+
+  // 24. an update waiting on wifi with no internet, the book left alone (28 Oct 2026): the look every 20 seconds waits
+  // longer after each try that found no signal (20 seconds, then 1, 2, 5 and 10 minutes). It asked the server every 20
+  // seconds, 25 times in 10 minutes. With the internet back, and no online event (the wifi never went), it still
+  // updates within the longest wait.
+  await step('24', async () => {
+    p = await L.open(b, '#/prep', { touch: true, wait: 1500 });
+    let heads = 0;
+    p.on('request', q => { if (q.method() === 'HEAD' && q.url() === L.BASE + 'index.html') heads++; });
+    await updBar(p);
+    await deadNet(p, true);
+    await mark(p);
+    heads = 0;
+    for (let i = 0; i < 30; i++) { await p.clock.fastForward(20000); await L.settle(p, 150); }
+    ok(heads <= 6 && !(await reloaded(p)), 'wifi with no internet, left alone for 10 minutes: no reload, and it asked the server ' + heads + ' times (6 at most)');
+    await deadNet(p, false);
+    for (let i = 0; i < 33 && !(await reloaded(p)); i++) { await p.clock.fastForward(20000); await L.settle(p, 150); }
+    await waitReload(p);
+    ok(await reloaded(p), 'the internet back with no online event: it updates within 11 minutes');
+  });
+  // 24 online. The same, but the signal comes back with an online event (the phone's wifi came back): it updates at the
+  // next look, not after the longest wait (review of the fix, 28 Oct 2026: nothing checked goodLook() on online)
+  await step('24 online', async () => {
+    p = await L.open(b, '#/prep', { touch: true, wait: 1500 });
+    await updBar(p);
+    await deadNet(p, true);
+    await mark(p);
+    // 15 minutes: the first look is 2 minutes in (nobody has touched it), then 20 seconds, 1, 2 and 5 minutes, so the
+    // next one waits 10 minutes
+    for (let i = 0; i < 45; i++) { await p.clock.fastForward(20000); await L.settle(p, 150); }
+    ok(!(await reloaded(p)), 'wifi with no internet for 15 minutes: no reload');
+    await deadNet(p, false);
+    await p.evaluate(() => window.dispatchEvent(new Event('online')));
+    for (let i = 0; i < 2 && !(await reloaded(p)); i++) { await p.clock.fastForward(20000); await L.settle(p, 300); }
+    await waitReload(p);
+    ok(await reloaded(p), 'the internet back with an online event: it updates within the next two looks, not after the 10 minute wait');
+  });
+
+  // 25. the server has a change while the strip is still up: the listener's 'same' snapshot patches the row's Not sent
+  // mark in place (patchOrDraw(), patchLines()), with no redraw, and the row keeps the mark's room (28 Oct 2026; no test
+  // reached it before). __fake.ack() lets the listeners hear the server's confirm while the write's own promise waits
+  // (its .then() draws), and __fake.quiet stops the stand-in telling every other listener too, which redrew the page.
+  // An added order line, an order line under Ordered today, and an added prep line.
+  const ROWS = [['orders, an added line', '#/orders', 'Lemons'], ['orders, Ordered today', '#/orders', 'Milk'], ['prep, an added line', '#/prep', 'Zest limes']];
+  for (const [what, hash, text] of ROWS) {
+    await step('25 ' + what, async () => {
+      p = await L.open(b, hash, { who: 'sam', wait: 1500 });
+      await p.context().setOffline(true);
+      await p.evaluate(() => { window.__fake.mode = 'hold'; window.__fake.quiet = true; });
+      await L.settle(p, 300);
+      if (text === 'Milk') {
+        await p.evaluate(() => [...document.querySelectorAll('.nb-row')].find(r => /^Milk/.test((r.querySelector('.nb-t') || {}).textContent || '')).querySelector('.nb-box').click());
+        // 10 minutes on, the ticked line leaves the list for Ordered today (a touch each minute, so nobody is signed out)
+        for (let i = 0; i < 11; i++) { await p.mouse.move(30 + i, 30); await p.clock.runFor(60000); }
+        await L.settle(p, 500);
+      } else {
+        const box = hash === '#/orders' ? '#o-text' : '#p-text';
+        await p.fill(box, text); await p.press(box, 'Enter'); await L.settle(p, 500);
+      }
+      // the row the line is in: Ordered today's li for Milk, the list's row otherwise
+      const tag = await p.evaluate(t => { const r = [...document.querySelectorAll(t === 'Milk' ? '.nb-done li[data-ln]' : '.nb-rows .nb-row')].find(x => x.textContent.indexOf(t) >= 0); if (!r) return 'no row'; r.__k = 1; return r.querySelector('.nb-unsent') ? 'shown' : 'none'; }, text);
+      ok(tag === 'shown', what + ': with no signal the line shows Not sent (' + tag + ')');
+      await p.evaluate(() => window.__fake.ack());
+      await L.settle(p, 400);
+      const s = await p.evaluate(t => { const r = [...document.querySelectorAll('[data-ln]')].find(x => x.__k === 1); return r ? { same: true, inPage: document.body.contains(r) && r.textContent.indexOf(t) >= 0, unsent: !!r.querySelector('.nb-unsent'), held: !!r.querySelector('.nb-held'), strip: !!document.querySelector('.p-sync') } : { same: false }; }, text);
+      ok(s.same && s.inPage && !s.unsent && s.held && s.strip, what + ': the server has it, so the mark goes from the same row, which keeps its room under the strip (' + JSON.stringify(s) + ')');
+      ok(!(await L.overflow(p)), what + ': no sideways scroll at 390');
+      await release(p);
+      await p.context().setOffline(false);
+      await L.settle(p, 300);
+      ok(errs(p).length === 0, what + ': no page errors ' + errs(p).join(' | '));
     });
   }
 

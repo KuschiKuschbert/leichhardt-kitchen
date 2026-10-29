@@ -1939,6 +1939,9 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd 
 .cut-h { margin: 0; font: 700 0.8125rem var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--small-ink); }
 .cut-go { font-weight: 600; font-size: 0.95rem; }
 .cut-list { list-style: none; max-width: 1240px; margin: 0 auto; padding: 0.15rem 0.75rem 0.45rem; }
+/* no signal: the ticks from other phones are not in yet (cutState 'offline' in js/prep.js) */
+.cut-note { margin: 0 0 0.4rem; }
+.cut-band .cut-note { max-width: 1240px; margin: 0 auto; padding: 0.15rem 0.75rem 0; color: var(--ink); }
 .cut-row { display: flex; align-items: center; flex-wrap: wrap; gap: 0.15rem 0.6rem; padding: 0.2rem 0; }
 .cut-row + .cut-row { border-top: 1px solid var(--line); }
 .cut-n { font-weight: 700; min-width: 0; overflow-wrap: anywhere; }
