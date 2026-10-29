@@ -381,7 +381,7 @@
      signal before what this phone may open is known (LK_PREP.offline(): the settings not in, or the head chef's owner
      check waiting): then the no-signal sentence in place of Sign in, which would forget the person or the head chef mark.
      Each item is one line (shortened 22 Oct 2026); a second line shows only when it changes: today's section, Sign in
-     with Google, and Sign out's "Not saved yet". js/prep.js says when the person changes (lk-who). */
+     with Google, and Sign out's "Not saved yet" (or "Not sent yet"). js/prep.js says when the person changes (lk-who). */
   function whoMark(flip) {
     var n = window.LK_PREP && window.LK_PREP.whoName ? window.LK_PREP.whoName() : '';
     var rn = parseRoute().name, here = rn === 'settings' || rn === 'admin' ? ' aria-current="page"' : '';
@@ -452,7 +452,8 @@
         (m.todo ? todoItem() : '') + (supplierOK() ? supplierItem() : '') +
         (m.chef && !m.tab ? '<button type="button" class="wm-a" data-who="open" data-v="staff">' + ICON.team + '<span><b>Manage staff</b></span></button>' : '') +
         set +
-        // the empty line is where the first tap says "Not saved yet" (the click handler below)
+        // the empty line is where the first tap says "Not saved yet", or "Not sent yet" when only a change waits to send
+        // (the click handler below)
         '<button type="button" class="wm-a wm-out" data-who="out">' + ICON.exit + '<span><b>Sign out</b><small aria-live="polite"></small></span></button>'
       // with no signal before the kitchen's settings are in, who is on this phone is not known yet, not "nobody": no
       // Sign in, which would forget them (28 Oct 2026)
@@ -872,8 +873,14 @@
      (sw.js, 28 Oct 2026), then run.
      Without the head chef signed in, the page says so and nothing is loaded. The rules are the real lock. */
   /* Functions: #/fn (everyone: today, the next days, a function's sheet) is drawn by js/functions.js; #/functions (the
-     function managers' list and form) by js/fnedit.js, loaded only when it opens, like js/manage.js. Bump FE_API here
-     and API in js/fnedit.js together when what LK_FN or LK_PREP.book() hands it changes. */
+     function managers' list and form) by js/fnedit.js, loaded only when it opens, like js/manage.js.
+     The page versions (FE_API, MG_API, SUP_API here, LK_DRAW.api in js/manage.js, the delivery page's api) go up with
+     the file's own API only when an older copy of one side cannot run with the other. A phone keeps each page's file
+     for no signal (sw.js, 28 Oct 2026), so a new number shuts that page with no signal until it has opened once with
+     signal, and Reload cannot help. A change that only adds keeps the numbers: the file checks for what is new (say
+     B.arm in js/draw.js) and the book checks for what the file added (LK_MG.drop in js/prep.js). The ?v= address may go
+     up with a change: a browser with no worker in charge then fetches the file fresh instead of running its own copy
+     for up to 10 minutes, and it never shuts a page (29 Oct 2026). */
   function viewFn(route) { return '<div class="page fn-pg"><main id="main" class="fn-main">' + (window.LK_FN ? window.LK_FN.page(route.fid) : '') + '</main>' + footer() + '</div>'; }
   function viewFunctions() { return '<div class="page fe-page"><main id="main" class="fe"><div id="fe-root"></div></main></div>'; }
   var FE_API = 8, feLoad = null;
@@ -902,7 +909,7 @@
       if (el) el.innerHTML = mgNote('Could not open functions', 'It needs the signal the first time it opens on a device. Check the signal and try again.', '<div class="btn-row"><button type="button" class="btn dark" data-act="feretry">Try again</button></div>');
     });
   }
-  var MG_API = 5, mgLoad = null;
+  var MG_API = 4, mgLoad = null;
   function viewManage() { return '<div class="page mg-page"><main id="main" class="mg"><div id="mg-root"></div></main>' + footer() + '</div>'; }
   function mgScript(f) {
     return fetch(f, { headers: { 'X-LK-Fresh': '1' } }).catch(function () {}).then(function () {
@@ -946,7 +953,7 @@
   function mountDeliveries() {
     var root = document.getElementById('delivery-root'); if (!root || !window.LK_PREP.privateAccess()) return;
     if (window.LK_DELIVERY) {
-      if (window.LK_DELIVERY.api === 2) window.LK_DELIVERY.mount(root);
+      if (window.LK_DELIVERY.api === 1) window.LK_DELIVERY.mount(root);
       else root.innerHTML = mgNote('Reload the book', 'Delivery records need the current book.', '<button type="button" class="btn dark" data-act="reload">Reload</button>');
       return;
     }

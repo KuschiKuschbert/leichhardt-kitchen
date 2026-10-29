@@ -3,7 +3,9 @@
 // reviews form) and Save my usual (the drinks run) are off with nothing changed, and the saves refuse too. Cancel on a
 // changed drink asks a second tap, the drinks form counts as not saved, and a sign-out takes it with the person. A
 // reload or closing the tab asks first over words typed on any of these pages, and Update now's own second tap still
-// reloads with no Reload site? box.
+// reloads with no Reload site? box. Since 29 Oct 2026: a regular tapped over its own name typed empties the boxes; a
+// space added to another chef's review, or a drink picked away and back, is no change; Skip for now on the first usual
+// asks over a pick; and a sign-out takes a half-typed review, the open reason sheet and a typed section with the person.
 const L = require('./lib');
 const { R, ok } = L.results(), { txt } = L;
 const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
@@ -53,6 +55,30 @@ const rvBo = { [fsKey(['waste', today])]: { avoidable: 'Over-portioned chips', c
     await p.context().close();
   });
 
+  // a regular tapped over its own name typed (or the start of it): the boxes empty, so Add never puts it on twice
+  const creams = q => store(q).then(st => Object.entries(st).filter(([k, v]) => k.indexOf(fsKey(['orders', today, 'lines'])) === 0 && v && !v.deleted && /^cre/i.test(v.text)).map(([, v]) => v.text + '|' + v.qty));
+  for (const typed of ['Cream', 'Cre']) {
+    await safe('regular ' + typed, async () => {
+      p = await L.open(b, '#/orders', { who: 'ann', extra: hist, wait: 1500 });
+      await L.waitFor(p, () => !!document.querySelector('[data-p="oreg"]'), null, 8000);
+      await p.fill('#o-text', typed);
+      await p.click('[data-p="oreg"]'); await L.settle(p, 400);
+      ok(await p.inputValue('#o-text') === '' && !(await asks(p)), 'regular ' + typed + ': tapped over "' + typed + '", the box empties and a reload does not ask');
+      await p.press('#o-text', 'Enter'); await L.settle(p, 500);
+      ok(JSON.stringify(await creams(p)) === JSON.stringify(['Cream|2 L']), 'regular ' + typed + ': Enter then adds nothing more: one Cream line (' + JSON.stringify(await creams(p)) + ')');
+      await p.context().close();
+    });
+  }
+  // a regular that could not be saved leaves the empty boxes empty: its words were never typed there
+  await safe('regular refused', async () => {
+    p = await L.open(b, '#/orders', { who: 'ann', extra: hist, wait: 1500 });
+    await L.waitFor(p, () => !!document.querySelector('[data-p="oreg"]'), null, 8000);
+    await S(p, () => { window.__fake.mode = 'fail'; });
+    await p.click('[data-p="oreg"]'); await L.settle(p, 800);
+    ok(await p.inputValue('#o-text') === '' && await p.inputValue('#o-qty') === '', 'regular refused: the boxes stay empty');
+    await p.context().close();
+  });
+
   // the wastage page: Save the review is off with nothing typed, and saves nothing even when forced
   for (const w of [390, 768, 1280]) {
     await safe(w + ' review', async () => {
@@ -89,6 +115,14 @@ const rvBo = { [fsKey(['waste', today])]: { avoidable: 'Over-portioned chips', c
     await force(p, sel); await L.settle(p, 700);
     const rv = (await store(p))[fsKey(['waste', today])] || {};
     ok(rv.reviewBy === 'Bo' && rv.reviewAt === L.NOW - 3600000, 'review by Bo: a forced tap leaves Bo\'s review and name as they were (' + JSON.stringify(rv) + ')');
+    // a keyboard's space or a new line at the end is not a change: Save stays off, a reload does not ask
+    await p.fill('#w-ra', 'Over-portioned chips '); await L.settle(p, 100);
+    ok(await off(p, sel) === true && !(await asks(p)), 'review by Bo: a space added leaves Save off, and a reload does not ask');
+    await p.fill('#w-ra', 'Over-portioned chips\n'); await L.settle(p, 100);
+    ok(await off(p, sel) === true, 'review by Bo: a new line added leaves Save off');
+    await force(p, sel); await L.settle(p, 700);
+    const rv2 = (await store(p))[fsKey(['waste', today])] || {};
+    ok(rv2.reviewBy === 'Bo' && rv2.reviewAt === L.NOW - 3600000, 'review by Bo: a forced tap then still keeps Bo\'s name (' + JSON.stringify(rv2) + ')');
     await p.context().close();
   });
 
@@ -140,6 +174,41 @@ const rvBo = { [fsKey(['waste', today])]: { avoidable: 'Over-portioned chips', c
     });
   }
 
+  // the drinks run: a detour back to the drink as saved, or a space, is no change
+  const pickDk = async (q, f, v) => {
+    if (!(await q.$('[data-f="' + f + '"][data-v="' + v + '"]'))) { await L.tap(q, '.dr-fold[data-f="' + f + '"]'); await L.settle(q, 100); }
+    await L.tap(q, '[data-f="' + f + '"][data-v="' + v + '"]'); await L.settle(q, 150);
+  };
+  await safe('drinks detour', async () => {
+    p = await L.open(b, '#/drinks', { who: 'sam', wait: 1500 });
+    await L.waitFor(p, () => !!document.querySelector('[data-p="dk-edit"]'), null, 8000);
+    await p.click('[data-p="dk-edit"]'); await L.settle(p, 200);
+    await pickDk(p, 'kind', 'latte'); await pickDk(p, 'milk', 'full'); await pickDk(p, 'kind', 'long');
+    ok(await off(p, '[data-p="dk-save"]') === true && !(await S(p, () => window.LK_PREP.unsaved())), 'drinks: Latte, Full cream, then Long black again is the usual as saved: Save is off and nothing counts as not saved');
+    await p.fill('[data-k="dk-other"]', ' '); await L.settle(p, 100);
+    ok(await off(p, '[data-p="dk-save"]') === true, 'drinks: a space typed alone leaves Save off');
+    await p.context().close();
+  });
+  // the first usual: Skip for now over something picked asks a second tap, like Cancel
+  await safe('drinks skip', async () => {
+    const cfgK = { people: [
+      { id: 'sam', name: 'Sam', role: 'sous', add: true, tick: true, del: true, active: true },
+      { id: 'kim', name: 'Kim Lee', role: 'staff', add: true, tick: true, del: false, active: true }
+    ], sousIds: ['sam'], staffIds: ['sam', 'kim'], showBadges: true };
+    p = await L.open(b, '#/prep', { who: '', extra: { [fsKey(['config', 'main'])]: cfgK }, wait: 1200 });
+    await p.click('.p-name[data-id="kim"]');
+    await p.keyboard.type('4444'); await L.settle(p, 600);
+    await p.keyboard.type('4444'); await L.settle(p, 1000);
+    await L.waitFor(p, () => !!document.querySelector('[data-p="dk-skip"]'), null, 8000);
+    await pickDk(p, 'kind', 'flat');
+    await p.click('[data-p="dk-skip"]'); await L.settle(p, 200);
+    ok(!!(await p.$('.dr-form')) && await txt(p, '[data-p="dk-skip"]') === 'Tap again to skip', 'drinks skip: the first tap on Skip for now keeps the pick and asks again');
+    await fits(p, 'drinks Skip armed at 390');
+    await p.click('[data-p="dk-skip"]'); await L.settle(p, 300);
+    ok(!(await p.$('.dr-form')) && !(await store(p))[fsKey(['drinks', 'kim'])], 'drinks skip: the second tap skips, with nothing saved');
+    await p.context().close();
+  });
+
   // a sign-out takes the drinks form with the person: the next person never gets it, ready to save as their usual
   await safe('drinks hand-over', async () => {
     p = await L.open(b, '#/drinks', { who: 'sam', wait: 1500 });
@@ -159,6 +228,54 @@ const rvBo = { [fsKey(['waste', today])]: { avoidable: 'Over-portioned chips', c
     const ann = await S(p, () => ({ who: window.LK_PREP.state.who, form: !!document.querySelector('.dr-form'), page: (document.querySelector('.dr-page') || {}).textContent || '' }));
     ok(ann.who === 'ann' && !ann.form && ann.page.indexOf('banana') < 0, 'drinks hand-over: Ann gets her own usual, not Sam\'s form (' + JSON.stringify({ who: ann.who, form: ann.form }) + ')');
     ok(p.errors.length === 0, 'drinks hand-over: no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+  });
+
+  // a sign-out takes a review half typed with the person: Bo (a sous chef here) gets the saved review, not Sam's words
+  await safe('review hand-over', async () => {
+    const people = [
+      { id: 'sam', name: 'Sam', role: 'sous', add: true, tick: true, del: true, active: true },
+      { id: 'ann', name: 'Ann', role: 'staff', add: true, tick: true, del: false, active: true },
+      { id: 'bo', name: 'Bo', role: 'sous', add: true, tick: true, del: true, active: true }];
+    p = await L.open(b, '#/waste', { who: 'sam', settings: { shared: true }, extra: { [fsKey(['config', 'main'])]: { people, sousIds: ['sam', 'bo'], showBadges: true } }, wait: 1500 });
+    await L.waitFor(p, () => !!document.querySelector('#w-ra'), null, 8000);
+    await p.fill('#w-ra', 'Sam half typed this'); await L.settle(p, 100);
+    await p.click('.wtop-who'); await L.settle(p, 150);
+    await p.click('.wm [data-who="out"]'); await L.settle(p, 300);
+    await p.click('.wm [data-who="out"]'); await L.settle(p, 500);
+    await S(p, () => { location.hash = '#/prep'; }); await L.settle(p, 500);
+    await L.waitFor(p, () => !!document.querySelector('.p-name[data-id="bo"]'), null, 8000);
+    await p.click('.p-name[data-id="bo"]'); await L.settle(p, 300);
+    await p.fill('#pf1', '3333'); await L.settle(p, 1500);
+    await S(p, () => { location.hash = '#/waste'; }); await L.settle(p, 800);
+    await L.waitFor(p, () => !!document.querySelector('#w-ra'), null, 8000);
+    ok(await S(p, () => window.LK_PREP.state.who) === 'bo' && await p.inputValue('#w-ra') === '' && !(await S(p, () => window.LK_PREP.unsaved())) && await off(p, '[data-p="wreview"][data-v="page"]') === true, 'review hand-over: Bo gets an empty review box, nothing not saved, and Save off');
+    ok(p.errors.length === 0, 'review hand-over: no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+  });
+  // the waste reason sheet left open, and a section typed on the prep list, go with the person too
+  await safe('sheet hand-over', async () => {
+    p = await L.open(b, '#/waste', { who: 'sam', settings: { shared: true }, wait: 1500 });
+    await L.waitFor(p, () => !!document.querySelector('[data-p="sheet"]'), null, 8000);
+    await p.click('[data-p="sheet"]'); await L.settle(p, 200);
+    ok(await S(p, () => window.LK_PREP.state.sheet) === 'reason' && await S(p, () => window.LK_PREP.unsaved()), 'sheet hand-over: the reason sheet open counts as open');
+    await S(p, () => window.LK_PREP.signOut(true, true)); await L.settle(p, 500);
+    ok(!(await S(p, () => window.LK_PREP.state.sheet)) && !(await S(p, () => window.LK_PREP.unsaved())) && !(await p.$('.sheet')), 'sheet hand-over: the idle lock closes it, so nothing holds the next person\'s Sign out or the self-update');
+    await p.context().close();
+  });
+  await safe('section hand-over', async () => {
+    p = await L.open(b, '#/prep', { who: 'sam', settings: { shared: true }, wait: 1500 });
+    await L.waitFor(p, () => !!document.querySelector('#p-section'), null, 8000);
+    await p.fill('#p-section', 'Larder'); await p.fill('#p-text', 'Peel garlic');
+    await p.press('#p-text', 'Enter'); await L.settle(p, 500);
+    ok(await p.inputValue('#p-section') === 'Larder', 'section hand-over: the section typed stays for Sam\'s next line');
+    await p.click('.nb-top [data-p="who-change"]'); await L.settle(p, 500);
+    await L.waitFor(p, () => !!document.querySelector('.p-name[data-id="bo"]'), null, 8000);
+    await p.click('.p-name[data-id="bo"]'); await L.settle(p, 300);
+    await p.fill('#pf1', '3333'); await L.settle(p, 1500);
+    await L.waitFor(p, () => !!document.querySelector('#p-section'), null, 8000);
+    ok(await S(p, () => window.LK_PREP.state.who) === 'bo' && await p.inputValue('#p-section') === '' && !(await S(p, () => window.LK_PREP.state.secTyped)), 'section hand-over: Bo\'s Section box does not hold Sam\'s Larder (' + await p.inputValue('#p-section') + ')');
+    ok(p.errors.length === 0, 'section hand-over: no page errors ' + p.errors.join(' | '));
     await p.context().close();
   });
 

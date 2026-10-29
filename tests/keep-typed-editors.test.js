@@ -7,6 +7,10 @@
 // line menu's Remove line finds its line after the list redrew, and a sign-out closes the menu. Supplier order: a reload
 // asks over a draft, a staff list saved on another phone keeps it, and an unchanged item or supplier saves nothing.
 // Delivery received: Clear form over typed readings asks first. Manage functions: an untouched form saves nothing.
+// Since 29 Oct 2026: a button, a link box or a label dragged while the kept box shows; an armed Remove after Up; Save on
+// a recipe flagged "The book file changed"; a part's words, an arrow key and Delete while the kept drawing box shows;
+// a hand-over with an editor open leaves no draft; Clear form with a keyboard; Manage catalogue losing its edit rights;
+// Load theirs and Split evenly again ask first; and Update now's second tap with no Reload site? box on each page.
 const L = require('./lib');
 const F = require('./supplier-fixtures');
 const M = require('../js/functions.js');
@@ -131,7 +135,7 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
     await p.click('[data-mg="save"]');
     await wait(p, () => !!document.querySelector('[data-mg="theirs"]'));
     await p.click('[data-mg="theirs"]'); await L.settle(p, 300);
-    ok(await p.inputValue('#mg-yield') === 'MINE yield' && await txt(p, '[data-mg="theirs"]') === 'Tap again: yours here go', 'another device: the first tap on Open theirs keeps what was typed here');
+    ok(await p.inputValue('#mg-yield') === 'MINE yield' && await txt(p, '[data-mg="theirs"]') === 'Tap again: your changes go', 'another device: the first tap on Open theirs keeps what was typed here');
     await fits(p, 'Open theirs armed at 390');
     await p.click('[data-mg="theirs"]'); await L.settle(p, 300);
     ok(await p.inputValue('#mg-name') === 'Chicken Burger Theirs', 'another device: the second tap opens theirs');
@@ -208,7 +212,7 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
     await p.click('[data-dw="save"]');
     await wait(p, () => !!document.querySelector('[data-dw="theirs"]'), null, 10000);
     await p.click('[data-dw="theirs"]'); await L.settle(p, 200);
-    ok(!!(await p.$('[data-dw="theirs"]')) && await S(p, () => window.LK_DRAW.dirty() && window.LK_DRAW.state().d.els.length === 2) && await txt(p, '[data-dw="theirs"]') === 'Tap again: yours here go', 'drawing: the first tap on Open theirs keeps the part added here');
+    ok(!!(await p.$('[data-dw="theirs"]')) && await S(p, () => window.LK_DRAW.dirty() && window.LK_DRAW.state().d.els.length === 2) && await txt(p, '[data-dw="theirs"]') === 'Tap again: your changes go', 'drawing: the first tap on Open theirs keeps the part added here');
     await p.click('[data-dw="theirs"]'); await L.settle(p, 200);
     ok(!(await p.$('[data-dw="theirs"]')) && !(await S(p, () => window.LK_DRAW.dirty())), 'drawing: the second tap opens theirs');
     quiet(p, 'drawing clash');
@@ -269,7 +273,7 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
     // Remove on the job open with changes: Undo would bring back the saved job, not the words, so it asks first
     await changed(p, 'Order 8 new tongs');
     await p.click('[data-p="todo-del"][data-id="t2"]'); await L.settle(p, 200);
-    ok(await box(p) === 'Order 8 new tongs' && !!(await p.$('[data-p="todo-del"][data-id="t2"]')) && await txt(p, '[data-p="todo-del"][data-id="t2"]') === 'Not saved. Tap again', 'to-do: Remove on the job open with changes asks first');
+    ok(await box(p) === 'Order 8 new tongs' && !!(await p.$('[data-p="todo-del"][data-id="t2"]')) && await txt(p, '[data-p="todo-del"][data-id="t2"]') === 'Not saved. Tap again to remove', 'to-do: Remove on the job open with changes asks first, and says what the second tap does');
     await p.click('[data-p="todo-del"][data-id="t2"]'); await L.settle(p, 400);
     ok(!(await p.$('[data-p="todo-del"][data-id="t2"]')) && /Removed/.test(await txt(p, '.p-toast') || ''), 'to-do: the second tap removes it, with Undo');
     quiet(p, 'to-do remove');
@@ -397,6 +401,296 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
     quiet(p, 'functions');
     await p.context().close();
   });
+
+  // ---------- 29 Oct 2026 review: the kept box, row arms, the book file, hand-overs, keyboards and clashes ----------
+  const names = q => S(q, () => [...document.querySelectorAll('[data-f^="ing."][data-f$=".name"]')].map(e => e.value));
+  // a recipe with changes kept on this device, opened again: the kept box shows
+  const keptRecipe = async (name, o) => {
+    const q = await L.open(b, '#/manage/r/burger', Object.assign({ who: 'ann', extra: cfg(), wait: 1400 }, o || {}));
+    await editor(q);
+    await q.fill('#mg-name', name); await L.settle(q, 700);
+    await go(q, '#/manage'); await go(q, '#/manage/r/burger'); await editor(q);
+    return q;
+  };
+  await safe('recipe kept buttons', async () => {
+    p = await keptRecipe('Chicken Burger KEPT');
+    const o0 = await names(p);
+    ok(!!(await p.$('.mg-kept')), 'kept buttons: the kept box shows');
+    // Down leaves the focus where it is: the kept changes come back, and the move waits for a tap of its own
+    await p.click('[data-mg="ing-down"][data-i="0"]'); await L.settle(p, 200);
+    ok(!(await p.$('.mg-kept')) && await p.inputValue('#mg-name') === 'Chicken Burger KEPT' && JSON.stringify(await names(p)) === JSON.stringify(o0), 'kept buttons: Down while the box shows brings the kept changes back and moves nothing on the saved copy');
+    await p.click('[data-mg="ing-down"][data-i="0"]'); await L.settle(p, 700);
+    const o1 = await names(p);
+    ok(o1[0] === o0[1] && o1[1] === o0[0], 'kept buttons: the next Down moves the ingredient');
+    await go(p, '#/r/burger');
+    const dk = await draft(p, 'lk.mg.draft.burger');
+    ok(/kept as a draft/.test(await toastNow(p)) && !!dk && dk.e.d.name === 'Chicken Burger KEPT' && dk.e.d.ingredients[0].name === o0[1], 'kept buttons: leaving keeps the kept name and the move (draft ' + (dk && dk.e.d.ingredients[0].name) + ')');
+    // a recipe link box tapped while the box shows keeps the focus, so what is typed goes in it
+    await go(p, '#/manage/r/burger'); await editor(p);
+    await p.click('#mg-link-1'); await L.settle(p, 200);
+    ok(!(await p.$('.mg-kept')) && await S(p, () => document.activeElement && document.activeElement.id) === 'mg-link-1', 'kept buttons: a tap in a recipe link box brings the kept changes back and keeps the focus there');
+    await p.keyboard.type('Ranch'); await L.settle(p, 150);
+    ok(/Ranch$/.test(await p.inputValue('#mg-link-1')), 'kept buttons: what is typed then goes in the link box');
+    quiet(p, 'recipe kept buttons');
+    await p.context().close();
+  });
+  await safe('recipe kept drag', async () => {
+    p = await keptRecipe('Chicken Burger DRAG');
+    const at = () => S(p, () => { const e = document.querySelector('.mg-pin[data-i="0"]'); return e ? e.style.left + ',' + e.style.top : ''; });
+    await p.locator('.mg-pin[data-i="0"]').scrollIntoViewIfNeeded();
+    const a0 = await at(), bx = await p.$eval('.mg-pin[data-i="0"]', e => { const r = e.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; });
+    await p.mouse.move(bx.x, bx.y); await p.mouse.down(); await p.mouse.move(bx.x + 40, bx.y + 30, { steps: 5 }); await p.mouse.up(); await L.settle(p, 300);
+    ok(!(await p.$('.mg-kept')) && await p.inputValue('#mg-name') === 'Chicken Burger DRAG' && await at() === a0, 'kept drag: a Pass label dragged while the box shows brings the kept changes back, and the saved copy\'s label does not move (' + a0 + ' then ' + await at() + ')');
+    await go(p, '#/r/burger');
+    const dk = await draft(p, 'lk.mg.draft.burger');
+    ok(!!dk && dk.e.d.name === 'Chicken Burger DRAG', 'kept drag: leaving keeps the kept changes');
+    quiet(p, 'recipe kept drag');
+    await p.context().close();
+  });
+  await safe('recipe row arm', async () => {
+    p = await L.open(b, '#/manage/r/burger', { who: 'ann', extra: cfg(), wait: 1400 });
+    await editor(p);
+    const o0 = await names(p);
+    // Remove on row 3 asks; Up moves it; the ingredient now in row 3 never asked, so its Remove asks first
+    await p.click('[data-mg="ing-del"][data-i="2"]'); await L.settle(p, 150);
+    await p.click('[data-mg="ing-up"][data-i="2"]'); await L.settle(p, 150);
+    ok(await txt(p, '[data-mg="ing-del"][data-i="2"]') === 'Remove', 'row arm: after Up, the row now in that place reads Remove, not Tap again (' + await txt(p, '[data-mg="ing-del"][data-i="2"]') + ')');
+    await p.click('[data-mg="ing-del"][data-i="2"]'); await L.settle(p, 150);
+    ok((await names(p)).length === o0.length && (await names(p))[2] === o0[1], 'row arm: one tap on its Remove keeps ' + o0[1] + ' and asks first');
+    await p.click('[data-mg="ing-del"][data-i="2"]'); await L.settle(p, 150);
+    ok((await names(p)).length === o0.length - 1 && (await names(p)).indexOf(o0[1]) < 0, 'row arm: the second tap removes it');
+    quiet(p, 'recipe row arm');
+    await p.context().close();
+  });
+  await safe('recipe book file', async () => {
+    const r = { id: 'burger', kind: 'main', no: '1', forLine: 'Plate', name: 'Chicken Burger', yield: 'Per plate', ingredients: [{ q: '1', name: 'Burger bun' }, { q: '1', name: 'Crumbed chicken thigh' }], pins: [] };
+    const ex = Object.assign(cfg(), { [fsKey(['recipes', 'burger'])]: { r, v: 2, upd: L.NOW - 9e6, src: 'book', base: 'stale-fingerprint', removed: false, by: 'ann' }, [fsKey(['book', 'index'])]: { r: { burger: 2 }, upd: L.NOW - 9e6 } });
+    p = await L.open(b, '#/manage/r/burger', { who: 'ann', extra: ex, wait: 1400 });
+    await wait(p, () => /The book file changed/.test(document.querySelector('#mg-root').textContent));
+    ok(/The book file changed/.test(await txt(p, '#mg-root') || '') && /Save to keep this version/.test(await txt(p, '#mg-root') || '') && await disabled(p, '[data-mg="save"]') === false, 'book file changed: the note says Save keeps this version, and Save is on with nothing typed');
+    await p.click('[data-mg="save"]');
+    await wait(p, k => (window.__fake.dump()[k] || {}).v === 3, fsKey(['recipes', 'burger']), 8000);
+    const rec = (await store(p))[fsKey(['recipes', 'burger'])] || {};
+    await L.settle(p, 500);
+    ok(rec.v === 3 && rec.base && rec.base !== 'stale-fingerprint' && !/The book file changed/.test(await txt(p, '#mg-root') || ''), 'book file changed: Save keeps this version against the new file, and the flag goes (v ' + rec.v + ')');
+    ok(await disabled(p, '[data-mg="save"]') === true, 'book file changed: then Save is off again');
+    quiet(p, 'recipe book file');
+    await p.context().close();
+  });
+  await safe('recipe allergens match', async () => {
+    p = await L.open(b, '#/manage/r/flank', { who: 'ann', extra: cfg(), wait: 1400 });
+    await editor(p);
+    const hand = () => S(p, () => document.querySelectorAll('[data-f^="hand."]').length);
+    await p.click('[data-mg="hand"][data-v="1"]'); await L.settle(p, 150);
+    const n1 = await hand();
+    await p.click('[data-mg="hand"][data-v="0"]'); await L.settle(p, 150);
+    ok(n1 > 0 && await hand() === 0, 'allergens: set by hand as the ingredients give them, Worked out from the ingredients goes back in one tap (' + n1 + ' then ' + await hand() + ')');
+    quiet(p, 'recipe allergens match');
+    await p.context().close();
+  });
+
+  // the drawing editor: a part's words typed, an arrow key while the kept box shows, and the bar after a typed label
+  await safe('drawing kept part', async () => {
+    p = await L.open(b, '#/manage/draw/new/burger/plate', { who: 'ann', extra: cfg(), wait: 1500 });
+    await canvas(p);
+    await S(p, () => { window.LK_DRAW.addItem('rump'); });
+    await p.click('[data-dw="text"]'); await L.settle(p, 200);
+    await p.click('[data-dw="save"]');
+    await wait(p, () => /\/manage\/draw\/burger-plate$/.test(location.hash) && !window.LK_DRAW.state().saving, null, 10000);
+    await L.settle(p, 600);
+    const els = () => S(p, () => window.LK_DRAW.state().d.els.map(e => e.t === 'text' ? 'text:' + e.s : e.t));
+    const ti = (await els()).findIndex(x => /^text:/.test(x));
+    const pickPart = async i => {
+      if (!(await p.$('[data-dw="pick"][data-v="' + i + '"]'))) { await p.click('[data-dw="panel"][data-v="parts"]'); await L.settle(p, 150); }
+      await p.click('[data-dw="pick"][data-v="' + i + '"]'); await L.settle(p, 150);
+    };
+    const changeIt = async () => { await p.click('[data-dw="panel"][data-v="edit"]'); await L.settle(p, 150); };
+    // a saved drawing: words typed in a label turn Save on, and the bar says so, with only the drawing drawn again
+    await pickPart(ti); await changeIt();
+    await p.fill('[data-dwf="el.s"]', 'Label two'); await L.settle(p, 200);
+    ok(await disabled(p, '[data-dw="save"]') === false && /Not saved yet/.test(await txt(p, '.dw-bar .mg-state') || ''), 'drawing: words typed in a label turn Save on, and the bar says Not saved yet (' + await txt(p, '.dw-bar .mg-state') + ')');
+    await p.fill('[data-dwf="el.s"]', 'Label'); await L.settle(p, 200);
+    ok(await disabled(p, '[data-dw="save"]') === true, 'drawing: the words back as they were, Save is off again');
+    // a change kept on this device, and the drawing opened again: the kept box shows
+    await S(p, () => { window.LK_DRAW.addItem('rump'); }); await L.settle(p, 700);
+    await S(p, () => { document.querySelector('.wtop [data-act="back"]').click(); }); await editor(p);
+    await go(p, '#/manage/draw/burger-plate');
+    await wait(p, () => !!document.querySelector('[data-dw="kept-use"]'), null, 15000);
+    const kept = await S(p, () => window.LK_DRAW.state().d.kept.els.length);
+    await pickPart(ti); await changeIt();
+    await p.click('[data-dwf="el.s"]'); await L.settle(p, 300);
+    ok(!(await p.$('.mg-kept')) && (await els()).length === kept && !(await p.$('[data-dwf="el.s"]')), 'drawing: a tap in a picked part\'s words while the kept box shows brings the kept drawing back, and the box of the saved copy\'s part goes');
+    // the label may sit in another place in the kept drawing (a piece added goes under the labels)
+    const tk = (await els()).findIndex(x => /^text:/.test(x));
+    await pickPart(tk); await changeIt();
+    await p.fill('[data-dwf="el.s"]', 'Label for chips'); await L.settle(p, 700);
+    const dk = await draft(p, 'lk.dw.draft.burger-plate');
+    ok((await els())[tk] === 'text:Label for chips' && !!dk && dk.els[tk].s === 'Label for chips', 'drawing: the words typed then go on the kept drawing, and are kept on this device (' + JSON.stringify(await els()) + ')');
+    // the kept box again: an arrow key on a part picked in Parts brings the kept drawing back and moves nothing
+    await S(p, () => { document.querySelector('.wtop [data-act="back"]').click(); }); await editor(p);
+    await go(p, '#/manage/draw/burger-plate');
+    await wait(p, () => !!document.querySelector('[data-dw="kept-use"]'), null, 15000);
+    const x0 = await S(p, () => window.LK_DRAW.state().d.kept.els[0].x);
+    await pickPart(0);
+    await S(p, () => document.querySelector('.dw-svg').focus());
+    await p.keyboard.press('ArrowRight'); await L.settle(p, 300);
+    ok(!(await p.$('.mg-kept')) && await S(p, () => window.LK_DRAW.state().d.els[0].x) === x0 && await S(p, () => window.LK_DRAW.state().sel.length) === 0, 'drawing: an arrow key while the kept box shows brings the kept drawing back, and moves nothing');
+    const reopen = async () => {
+      await S(p, () => { document.querySelector('.wtop [data-act="back"]').click(); }); await editor(p);
+      await go(p, '#/manage/draw/burger-plate');
+      await wait(p, () => !!document.querySelector('[data-dw="kept-use"]'), null, 15000);
+    };
+    // Delete on a part picked in Parts: the kept drawing comes back as one undo step, and nothing goes
+    await reopen();
+    const n0 = await S(p, () => window.LK_DRAW.state().d.kept.els.length);
+    await pickPart(0);
+    await S(p, () => document.querySelector('.dw-svg').focus());
+    await p.keyboard.press('Delete'); await L.settle(p, 300);
+    ok(!(await p.$('.mg-kept')) && (await els()).length === n0 && await S(p, () => window.LK_DRAW.state().undo.length) === 1, 'drawing: Delete while the kept box shows brings the kept drawing back as one undo step, and takes nothing away');
+    // words that reach a picked part's box with no tap first (a keyboard's suggestion): the same, and the box goes
+    await reopen();
+    await pickPart(ti); await changeIt();
+    await S(p, () => { const t = document.querySelector('[data-dwf="el.s"]'); t.value = 'Ghost'; t.dispatchEvent(new Event('input', { bubbles: true })); });
+    await L.settle(p, 300);
+    ok(!(await p.$('.mg-kept')) && !(await p.$('[data-dwf="el.s"]')) && (await els()).indexOf('text:Ghost') < 0, 'drawing: words put in a picked part\'s box with no tap first bring the kept drawing back, and go on no part (' + JSON.stringify(await els()) + ')');
+    quiet(p, 'drawing kept part');
+    await p.context().close();
+  });
+
+  // a hand-over with an editor open: what was changed goes with the person, and the next one finds no kept box
+  await safe('hand-over editors', async () => {
+    p = await L.open(b, '#/manage/r/burger', { who: 'ann', extra: cfg(), settings: { shared: true }, wait: 1400 });
+    await editor(p);
+    await p.fill('#mg-name', 'Chicken Burger SECRET'); await L.settle(p, 700);
+    await p.click('.wtop-who'); await L.settle(p, 150);
+    await p.click('.wm [data-who="out"]'); await L.settle(p, 200);
+    await p.click('.wm [data-who="out"]'); await L.settle(p, 900);
+    const toasts = await S(p, () => [...document.querySelectorAll('.p-toast')].map(t => t.textContent).join(' | '));
+    ok(!(await S(p, () => window.LK_PREP.state.who)) && !(await draft(p, 'lk.mg.draft.burger')) && !/kept as a draft/.test(toasts), 'hand-over: Sign out with a recipe changed leaves no draft on the device (' + toasts + ')');
+    await go(p, '#/prep');
+    await L.waitFor(p, () => !!document.querySelector('.p-name[data-id="sam"]'), null, 8000);
+    await p.click('.p-name[data-id="sam"]'); await L.settle(p, 300);
+    await p.fill('#pf1', '1111'); await L.settle(p, 1500);
+    await go(p, '#/manage/r/burger'); await editor(p);
+    ok(await S(p, () => window.LK_PREP.state.who) === 'sam' && !(await p.$('.mg-kept')) && await p.inputValue('#mg-name') === 'Chicken Burger', 'hand-over: the next sous chef opens Burger with no kept changes from the last person');
+    quiet(p, 'hand-over recipe');
+    await p.context().close();
+    // the idle lock with a drawing changed
+    p = await L.open(b, '#/manage/draw/new/burger/plate', { who: 'ann', extra: cfg(), settings: { shared: true }, wait: 1500 });
+    await canvas(p);
+    await S(p, () => { window.LK_DRAW.addItem('rump'); }); await L.settle(p, 700);
+    ok(!!(await draft(p, 'lk.dw.draft.new-burger-plate')), 'hand-over: the drawing is kept on the device while Ann works');
+    await S(p, () => window.LK_PREP.signOut(true, true)); await L.settle(p, 900);
+    ok(!(await draft(p, 'lk.dw.draft.new-burger-plate')) && !/kept as a draft/.test(await toastNow(p)), 'hand-over: the idle lock with a drawing changed leaves no drawing draft');
+    quiet(p, 'hand-over drawing');
+    await p.context().close();
+    // the idle lock with a function's start time typed and not taken yet (it is taken when the box is left)
+    p = await L.open(b, '#/functions/new', { who: 'ann', extra: cfg(), settings: { shared: true }, wait: 1500 });
+    await wait(p, () => !!document.querySelector('#fe-name'), null, 10000);
+    await p.fill('#fe-name', 'Smith 50th'); await L.settle(p, 200);
+    await S(p, () => { const t = document.querySelector('[data-ff="startT"]'); t.value = '18:30'; t.dispatchEvent(new Event('input', { bubbles: true })); });
+    await S(p, () => window.LK_PREP.signOut(true, true)); await L.settle(p, 900);
+    ok(!(await draft(p, 'lk.fe.draft.new')), 'hand-over: the idle lock with a start time half typed leaves no function draft (the customer\'s booking)');
+    quiet(p, 'hand-over function');
+    await p.context().close();
+  });
+
+  // Delivery received with a keyboard: the first Enter on Clear form keeps the focus on it, so the second clears
+  await safe('delivery keyboard', async () => {
+    p = await L.open(b, '#/deliveries', { wait: 1500 });
+    await wait(p, () => !!document.querySelector('#dl-supplier'), null, 10000);
+    await p.fill('#dl-supplier', 'Valley Veg'); await p.fill('#dl-chilled', '4'); await L.settle(p, 150);
+    await p.focus('[data-dl="clear"]'); await p.keyboard.press('Enter'); await L.settle(p, 150);
+    ok(await S(p, () => (document.activeElement || {}).getAttribute && document.activeElement.getAttribute('data-dl')) === 'clear' && await txt(p, '[data-dl="clear"]') === 'Tap again to clear', 'delivery keyboard: the first Enter keeps the focus on Clear form, which says Tap again to clear');
+    await p.keyboard.press('Enter'); await L.settle(p, 150);
+    ok(await p.inputValue('#dl-supplier') === '', 'delivery keyboard: the second Enter clears the form');
+    quiet(p, 'delivery keyboard');
+    await p.context().close();
+  });
+
+  // Supplier order: Manage catalogue opened from the order page, then the head chef moved to someone else
+  await safe('supplier rights', async () => {
+    p = await L.open(b, '#/suppliers/northside', { who: 'bo', extra: F.fixture(), wait: 1800 });
+    await wait(p, s => !!document.querySelector(s), qty, 15000);
+    await p.click('[data-su="manage"]'); await wait(p, () => !!document.querySelector('[data-su="edit"][data-i="t-stock"]'), null, 10000);
+    await p.click('[data-su="edit"][data-i="t-stock"]'); await wait(p, () => !!document.querySelector('[data-sf="par"]'));
+    await p.fill('[data-sf="par"]', '11'); await L.settle(p, 150);
+    ok(await S(p, () => window.LK_SUP.dirty()), 'supplier rights: a changed par counts as not saved');
+    const c = (await store(p))[F.key(['config', 'main'])];
+    await S(p, ([k, v]) => window.__fake.write(k, v), [F.key(['config', 'main']), Object.assign({}, c, { headId: 'sam' })]);
+    await L.settle(p, 700);
+    ok(!(await S(p, () => window.LK_SUP.dirty())) && !(await p.$('[data-sf="par"]')) && await asks(p) === false, 'supplier rights: Bo may still read but not change the catalogue: the open item form goes, and a reload does not ask');
+    await S(p, ([k, v]) => window.__fake.write(k, v), [F.key(['config', 'main']), c]);
+    await L.settle(p, 700);
+    ok(!(await p.$('[data-sf="par"]')) && !(await S(p, () => window.LK_SUP.dirty())), 'supplier rights: Bo made head chef again does not get the old form back');
+    quiet(p, 'supplier rights');
+    await p.context().close();
+  });
+
+  // Manage functions: Load theirs over changes asks first, a split by hand asks before it goes even, a time half typed counts
+  await safe('functions clash', async () => {
+    const ex = Object.assign(cfg(), { [fsKey(['functions', 'test'])]: fnDoc('Test booking') });
+    p = await L.open(b, '#/functions/test', { who: 'ann', extra: ex, wait: 1500 });
+    await wait(p, () => (document.querySelector('#fe-name') || {}).value === 'Test booking', null, 10000);
+    await S(p, () => { const t = document.querySelector('[data-ff="startT"]'); t.value = '18:30'; t.dispatchEvent(new Event('input', { bubbles: true })); });
+    ok(await disabled(p, '[data-fe="save"]') === false, 'functions: a start time typed and not taken yet turns Save draft on');
+    await S(p, () => { const t = document.querySelector('[data-ff="startT"]'); t.value = '18:00'; t.dispatchEvent(new Event('change', { bubbles: true })); }); await L.settle(p, 300);
+    await p.fill('#fe-name', 'Smith wedding'); await L.settle(p, 200);
+    await S(p, ([k, v]) => window.__fake.write(k, v), [fsKey(['functions', 'test']), Object.assign(fnDoc('Test booking (theirs)'), { v: 2, by: 'sam', upd: L.NOW - 60000 })]);
+    await p.click('[data-fe="save"]');
+    await wait(p, () => !!document.querySelector('[data-fe="theirs"]'), null, 10000);
+    await p.click('[data-fe="theirs"]'); await L.settle(p, 300);
+    ok(await p.inputValue('#fe-name') === 'Smith wedding' && await txt(p, '[data-fe="theirs"]') === 'Tap again: your changes go' && !!(await draft(p, 'lk.fe.draft.test')), 'functions: the first tap on Load theirs keeps the changes here and asks again');
+    await fits(p, 'functions Load theirs armed at 390');
+    await p.click('[data-fe="theirs"]');
+    await wait(p, () => (document.querySelector('#fe-name') || {}).value === 'Test booking (theirs)', null, 8000);
+    ok(await p.inputValue('#fe-name') === 'Test booking (theirs)', 'functions: the second tap loads theirs');
+    quiet(p, 'functions clash');
+    await p.context().close();
+  });
+  await safe('functions split', async () => {
+    const day0 = today, f = fnDoc('Staggered');
+    Object.assign(f, { mode: 'stag', rounds: [{ at: M.kat(day0, 1110), note: '' }, { at: M.kat(day0, 1140), note: '' }, { at: M.kat(day0, 1170), note: '' }], lines: [Object.assign({}, f.lines[0], { qty: 6, u: M.toU([1, 1, 4]) })] });
+    p = await L.open(b, '#/functions/stag', { who: 'ann', extra: Object.assign(cfg(), { [fsKey(['functions', 'stag'])]: f }), wait: 1500 });
+    await wait(p, () => !!document.querySelector('[data-ff="a0_2"]'), null, 10000);
+    const grid = () => S(p, () => [0, 1, 2].map(r => document.querySelector('[data-ff="a0_' + r + '"]').value).join(','));
+    await p.click('[data-fe="even"]'); await L.settle(p, 200);
+    ok(await grid() === '1,1,4' && await txt(p, '[data-fe="even"]') === 'Tap again to split evenly', 'functions: a split by hand keeps its numbers on the first tap of Split evenly again (' + await grid() + ')');
+    await p.click('[data-fe="even"]'); await L.settle(p, 200);
+    ok(await grid() === '2,2,2', 'functions: the second tap splits evenly (' + await grid() + ')');
+    quiet(p, 'functions split');
+    await p.context().close();
+  });
+
+  // Update now's second tap is the yes on the pages loaded on their own too: no Reload site? box on top
+  const UPD = [
+    ['Delivery received', '#/deliveries', { wait: 1500 }, '#dl-chilled', q => q.fill('#dl-chilled', '4')],
+    ['Supplier order', '#/suppliers/northside', { who: 'bo', extra: F.fixture(), wait: 1800 }, qty, q => q.fill(qty, '4 kg')],
+    ['Manage recipes', '#/manage/r/burger', { who: 'ann', extra: cfg(), wait: 1400 }, '#mg-name', q => q.fill('#mg-name', 'Chicken Burger UPD')],
+    ['Manage functions', '#/functions/new', { who: 'ann', extra: cfg(), wait: 1500 }, '#fe-name', q => q.fill('#fe-name', 'Jones wedding')],
+    ['the drawing editor', '#/manage/draw/new/burger/plate', { who: 'ann', extra: cfg(), wait: 1500 }, '.dw-svg', q => S(q, () => { window.LK_DRAW.addItem('rump'); })]
+  ];
+  for (const [label, hash, o, sel, type] of UPD) {
+    await safe('update now ' + label, async () => {
+      p = await L.open(b, hash, o);
+      let asked = 0;
+      p.on('dialog', d => { asked++; d.dismiss().catch(() => {}); });
+      await wait(p, s => !!document.querySelector(s), sel, 15000);
+      await type(p); await L.settle(p, 500);
+      ok(await asks(p), label + ': a change here makes a reload ask first');
+      await p.clock.fastForward(10000);
+      await S(p, () => navigator.serviceWorker.dispatchEvent(new MessageEvent('message', { data: 'lk-new' })));
+      await wait(p, () => !!document.querySelector('.upd-bar'), null, 3000);
+      await S(p, () => { window.__mark = 1; });
+      await p.click('.upd-bar button'); await L.settle(p, 1500);
+      ok(/Tap again to update/.test(await txt(p, '.upd-bar') || ''), label + ': the first tap on Update now asks for a second (' + await txt(p, '.upd-bar') + ')');
+      await p.click('.upd-bar button');
+      await L.waitFor(p, () => window.__mark !== 1, null, 15000).catch(() => {});
+      const gone = await S(p, () => window.__mark !== 1).catch(() => true);
+      ok(gone && asked === 0, label + ': the second tap updates, with no Reload site? box (' + asked + ' asked)');
+      await p.context().close();
+    });
+  }
 
   // ---------- the armed words fit at every width ----------
   for (const w of [768, 1280]) {

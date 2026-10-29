@@ -577,7 +577,8 @@
   window.addEventListener('online', function () { if (M.root) draw(); }); window.addEventListener('offline', function () { if (M.root) draw(); });
   // Drafts live in this tab's memory only (docs/supplier-workspace.md): a reload or closing the tab asks first, like
   // the other editors. iPhone Safari never asks, and nothing is kept past the page.
-  window.addEventListener('beforeunload', function (ev) { if (dirty()) { ev.preventDefault(); ev.returnValue = ''; } });
+  // Update now's second tap already said the draft may go (LK_UPDATE.letGo() in js/upkeep.js): no second question
+  window.addEventListener('beforeunload', function (ev) { if (dirty() && !(window.LK_UPDATE && window.LK_UPDATE.letGo && window.LK_UPDATE.letGo())) { ev.preventDefault(); ev.returnValue = ''; } });
   // The shared ticks changed (js/prep.js, lk-cut): the card follows its Order done, Undo or another chef's tick. No read.
   window.addEventListener('lk-cut', function () {
     if (!M.root || !canRead() || !cutCard()) return;

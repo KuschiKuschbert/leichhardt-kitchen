@@ -9,7 +9,7 @@ Approved by Kuschi, 25 October 2026. This policy replaces the earlier kitchen-PI
 - Functions coordinator (`fnc`, canonical `fnOnlyIds`): public recipes, function management/service information and today's delivery temperature records. No operational lists, staff administration, supplier data or kitchen mail. The separate Functions tick (`fnIds`) still controls booking writes.
 - Head chef and sous chef: recipe and drawing management. Supplier catalogue editing remains head-chef/admin only.
 - Admin: verified owner Google account. A staff identity never inherits it. Selecting a person signs Google out before checking that person's PIN; a restored non-head staff identity on an old Google session is locked and must enter its own PIN again.
-- Sign out/idle lock: private screens, overlays and drafts close. Other tabs receive the lock. Sign out also ends Google authentication, not just the personal PIN session.
+- Sign out/idle lock: private screens, overlays and drafts close, including an open recipe, drawing or function form (29 Oct 2026: the page closing after the sign-out kept it as a draft again). The head chef's Google account handing over with nobody on a PIN (the lone Not you?, the admin card's Sign in) clears the drafts it left too. Other tabs receive the lock. Sign out also ends Google authentication, not just the personal PIN session.
 
 ## Data boundaries
 

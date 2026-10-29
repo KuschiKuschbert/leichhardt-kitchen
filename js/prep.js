@@ -962,8 +962,8 @@
       if (e && e.code === 'permission-denied') { S.authed = false; S.tok = ''; pickName(S.who); }
     });
   }
-  /* Desktop idle lock: after 7.5 minutes with no mouse, keyboard or touch, a desktop browser goes back to the person's own
-     PIN screen (the kitchen PIN stays). Phones and tablets (no mouse) are left alone. No network use: a timer and a timestamp.
+  /* Desktop idle lock: after 7.5 minutes with no mouse, keyboard or touch, a desktop browser signs the person out, back
+     to "Who are you?" (the kitchen PIN stays). Phones and tablets (no mouse) are left alone. No network use: a timer and a timestamp.
      Shared kitchen device (Settings, kept on the device in lk.settings.v1): a tablet or phone everyone picks up. After
      10 minutes with no touch, and when the book opens on a new kitchen day, it goes back to "Who are you?" instead, so the
      next person does not write under the last person's name or see that person's pages. The kitchen PIN stays, so the
@@ -977,7 +977,8 @@
   }
   /* a new kitchen day on a shared device: the person who signed in yesterday is not the person holding it today */
   function dayExpired() { var d = lsGet('lk.prep.day'); return shared() && !!d && d !== dayNow(); }
-  /* the staff list draft (Manage staff) is kept: the person types their PIN again and carries on where they were */
+  /* a sign-out like Sign out (signOutPerson()): what was typed and not saved goes with the person, drafts too, so the next
+     person never finds it (docs/private-kitchen-access.md). */
   function idleLock() { if (privateAccess()) signOutPerson(true, true); }
   function startIdle() {
     if (idleOn) return; idleOn = true;
@@ -992,7 +993,10 @@
      person typed or left open stays for them (28 Oct 2026: also a guide, the order cut-offs, Add several names, a
      review and the recipe picker, which kept the next person's Sign out and the self-update saying "Not saved yet"; and
      the line menu, whose Remove now finds its line after a redraw, so it could act for the next person; and the drinks
-     run's form, which opened for the next person with the last one's picks and words, ready to save as their usual) */
+     run's form, which opened for the next person with the last one's picks and words, ready to save as their usual.
+     29 Oct 2026: also the waste reason sheet, which kept the next person's Sign out and the self-update waiting; the
+     section typed on the prep list, which went on the next person's lines; and an open recipe, drawing or function
+     form, which the page closing after the sign-out kept as a draft again for the next person) */
   function leave() {
     accessEpoch++;
     stopLive(); clearPrivateCache();
@@ -1006,7 +1010,11 @@
     S.pastBusy = S.minsBusy = S.viewBusy = S.missBusy = S.useBusy = false; S.pastPart = null; S.ordStats = null; S.views = S.misses = null; S.viewErr = S.missErr = S.useErr = S.wReviewErr = false; S.wReview = null; S.wReviewFor = S.wNoteFor = '';
     S.items = []; S.ordLines = []; S.ordAll = []; S.wLines = []; S.xLines = []; S.notes = null; S.notesBusy = false; S.nSaving = false; S.notesFor = ''; S.nPast = null; S.nPastOpen = false; S.nSeen = null; S.nPrivateError = ''; S.mins = null; S.guides = null; S.activity = []; S.actState = ''; S.hist = {}; S.stats = null;
     ['lk.fn', 'lk.mail.sent', 'lk.drinks', 'lk.guides', 'lk.notes', 'lk.minutes'].forEach(function (k) { lsSet(k, ''); });
- if (window.LK_DELIVERY) window.LK_DELIVERY.reset(); if (window.LK_SUP) window.LK_SUP.reset(); if (supplierService) supplierService.reset(); sessDrop(); ksClose(); noteClose('shut'); lmClose(); S.nJust = null; S.guestIn = false; lsSet('lk.prep.guest', ''); S.drinkAsk = ''; S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; S.gf = null; S.gfSnap = ''; S.cutDraft = null; S.cutSnap = ''; S.bulk = ''; S.wrA = S.wrC = S.wpA = S.wpC = null; S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; tdReset(); dkf = null; dkSnap = ''; dkEditing = false; dkMsg = ''; dkOpen = ''; lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); accessChanged(); }
+ if (window.LK_DELIVERY) window.LK_DELIVERY.reset(); if (window.LK_SUP) window.LK_SUP.reset(); if (supplierService) supplierService.reset();
+    // an editor an older copy of its file has no drop(): it closes as before
+    if (window.LK_MG && window.LK_MG.drop) window.LK_MG.drop(); if (window.LK_FE && window.LK_FE.drop) window.LK_FE.drop();
+    if (S.sheet) { S.sheet = ''; ovDone('reason'); } S.section = ''; S.secTyped = false;
+    sessDrop(); ksClose(); noteClose('shut'); lmClose(); S.nJust = null; S.guestIn = false; lsSet('lk.prep.guest', ''); S.drinkAsk = ''; S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; S.gf = null; S.gfSnap = ''; S.cutDraft = null; S.cutSnap = ''; S.bulk = ''; S.wrA = S.wrC = S.wpA = S.wpC = null; S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; tdReset(); dkf = null; dkSnap = ''; dkEditing = false; dkMsg = ''; dkOpen = ''; lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); accessChanged(); }
   /* The chef mark's menu (js/app.js) asks what to show: Meeting minutes for everyone (when the page is on), and for the
      head chef and sous chefs Shift pings and Manage staff (22 Oct 2026: the Minutes register is "See who has signed" at
      the top of Meeting minutes). head: no Kitchen mail, the head chef's mail is read in the admin panel. tab: the head
@@ -1061,9 +1069,9 @@
   }
   /* Sign out from the chef mark: back to Who are you? on this device (the kitchen PIN stays, so recipes and guides stay
      open). Something not saved yet: false, and the menu asks for a second tap first. */
-  /* Sign out on a shared kitchen device: what this person left on it goes (22 Oct 2026). Function drafts hold a
-     customer's phone and email, recipe and drawing drafts are the head chef's, and the mail they sent is theirs. Only on
-     Sign out: the idle lock keeps them, so nothing typed is lost to a pause. */
+  /* Sign out: what this person left on the device goes (22 Oct 2026). Function drafts hold a customer's phone and email,
+     recipe and drawing drafts are the head chef's, and the mail they sent is theirs. Every hand-over runs it: Sign out,
+     Not you?, the idle lock, and the head chef's Google account signing out with nobody on a PIN (29 Oct 2026). */
   function forgetMine(id) {
     try {
       Object.keys(LS || {}).forEach(function (k) { if (/^lk\.(fe|mg|dw)\.draft\./.test(k)) lsSet(k, ''); });
@@ -2151,7 +2159,8 @@
   }
   // Save is off while nothing changed, and this refuses too (28 Oct 2026), so a button left on cannot save the list again
   function adminSave() {
-    if (S.busy || !draftDirty()) return;
+    if (S.busy) return;
+    if (!draftDirty()) { draw(); return; }   // nothing changed: nothing saved, and a button left on goes off
     S.busy = true; S.saveMsg = 'Saving...'; draw();
     saveConfig(mergeDraft()).then(function () { S.busy = false; startDraft(); S.saveMsg = 'Saved. Everyone sees the changes now.'; draw(); },
       function (e) { S.busy = false; S.saveMsg = e && e.code === 'permission-denied' ? 'Not allowed to change these settings.' : 'Could not save. Check the connection.'; draw(); });
@@ -3782,17 +3791,17 @@
     }
     loadAdmins();
     if (!S.level) return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2>' + (S.adminsOff === (S.user.email || '') ? '<p class="p-err" role="status">No signal. The admin panel opens when the phone is back online.</p><div class="btn-row"><button type="button" class="btn dark" data-p="admins-retry">Try again</button><a class="btn" href="#/prep">Back to the prep book</a></div>' : '<p class="hint">Checking your access...</p>') + '</section>';
-    if (S.level === 'none') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2><p class="p-err">' + esc(S.user.email) + ' is not the head chef\'s Google account, so it cannot open the admin panel. Sign out and sign in with the head chef\'s account.</p><div class="btn-row"><button type="button" class="btn dark" data-p="signout">Sign out</button><a class="btn" href="#/prep">Back to the prep book</a></div></section>';
+    if (S.level === 'none') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2><p class="p-err">' + esc(S.user.email) + ' is not the head chef\'s Google account, so it cannot open the admin panel. Sign out and sign in with the head chef\'s account.</p><div class="btn-row"><button type="button" class="btn dark" data-p="signout">' + (armed('signout') ? notSaved() + '. Tap again' : 'Sign out') + '</button><a class="btn" href="#/prep">Back to the prep book</a></div></section>';
     if (!ownerHere()) {
       var op = who();
       return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2><p class="hint">' + (op ? esc(op.name) + ' is signed in on this device. ' : 'Nobody is signed in on this shared device. ') + 'The admin panel opens only while a chef is signed in with their PIN.</p>' +
-        '<div class="btn-row"><a class="btn dark" href="#/prep" data-p="who-change">' + (armed('who-change') ? notSaved() + '. Tap again' : op ? 'Not ' + esc(op.name.split(' ')[0]) + '? Change person' : 'Sign in') + '</a><button type="button" class="btn" data-p="signout">Sign out of Google</button></div></section>';
+        '<div class="btn-row"><a class="btn dark" href="#/prep" data-p="who-change">' + (armed('who-change') ? notSaved() + '. Tap again' : op ? 'Not ' + esc(op.name.split(' ')[0]) + '? Change person' : 'Sign in') + '</a><button type="button" class="btn" data-p="signout">' + (armed('signout') ? notSaved() + '. Tap again' : 'Sign out of Google') + '</button></div></section>';
     }
     if (!S.draft) startDraft();
     var d = S.draft, owner = S.level === 'owner';
     if (owner) { watchActivity(); loadStats(false); }
     // the Google account, not the person: the chef hat's Sign out is for the person (Prep is in the top bar and tab bar)
-    var bar = '<div class="p-bar"><span>Google account: <strong>' + esc(S.user.email) + '</strong></span><span class="p-links"><button type="button" class="p-link" data-p="signout">Sign out of Google</button></span></div>';
+    var bar = '<div class="p-bar"><span>Google account: <strong>' + esc(S.user.email) + '</strong></span><span class="p-links"><button type="button" class="p-link" data-p="signout">' + (armed('signout') ? notSaved() + '. Tap again' : 'Sign out of Google') + '</button></span></div>';
     var bulk = '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line">' + esc(S.bulk || '') + '</textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div>';
     var saveBlock = saveBarHTML();
     var at = S.atab || 'insights';
@@ -4267,8 +4276,11 @@
     var hit = ingredientFor(t), p = me(), ref = fb.fs.doc(ordCol(S.ordDate));
     var oFix = pr.changes.map(function (c) { return c[0] + ' to ' + c[1]; }).join(', ');
     var q = (reg ? String(reg.q || '') : S.oqty).trim().slice(0, 40);
-    if (!reg) {
-      if (S.oqtyAuto && S.oqty === S.oqtyAuto) sg('ordfill', 't');   // added with the filled-in amount as it was
+    // a regular tapped over its own name typed, or the start of it ("Cre" for Cream): the boxes empty too, or Add put it
+    // on the list twice (29 Oct 2026). Anything else half typed stays for its own Add.
+    var own = !!reg && !!okey(S.otext) && okey(reg.text).indexOf(okey(S.otext)) === 0;
+    if (!reg || own) {
+      if (!reg && S.oqtyAuto && S.oqty === S.oqtyAuto) sg('ordfill', 't');   // added with the filled-in amount as it was
       S.otext = ''; S.oqty = ''; S.oqtyAuto = '';
     }
     draw();
@@ -4639,7 +4651,10 @@
      the page's words under its own day, and its day arrows threw away what was typed on the wastage page. */
   function rvTyped(page) {
     var a = page ? S.wpA : S.wrA, c = page ? S.wpC : S.wrC, r = page ? S.wReview || {} : rvOf(S.rvDate || dayNow());
-    return (a != null && a !== (r.avoidable || '')) || (c != null && c !== (r.change || ''));
+    // compared the way saveReview() saves them (29 Oct 2026): a space or a new line added is not a change. It turned Save
+    // on, and the tap saved another chef's words under this chef's name
+    function same(t, was) { return String(t).trim().slice(0, 300) === String(was || '').trim().slice(0, 300); }
+    return (a != null && !same(a, r.avoidable)) || (c != null && !same(c, r.change));
   }
   function loadPageReview() {
     if (!kitchenAccess() || !S.configFull) return;
@@ -5654,7 +5669,8 @@
   }
   function saveNote() {
     var f = S.nf, epoch = accessEpoch;
-    if (!f || S.nSaving || !fb || nfSame()) return;
+    // nothing changed: nothing saved, and the page drawn again, so a button left on goes off (29 Oct 2026)
+    if (!f || S.nSaving || !fb) return; if (nfSame()) { draw(); return; }
     var text = f.text.replace(/\s+$/g, '').replace(/^\s+/g, ''), start = f.start, until = nfUntil(f), re = /^\d{4}-\d{2}-\d{2}$/;
     if (!f.id && f.to && !pingPeople().some(function (p) { return p.id === f.to; })) { S.nMsg = 'Choose an active person who can receive Shift pings.'; draw(); focusSel('#n-to'); return; }
     if (!text) { S.nMsg = 'Write the ping first.'; draw(); return; }
@@ -6106,7 +6122,8 @@
     else if (r.top < top + 8) window.scrollBy(0, r.top - top - 16);
   }
   function saveMinutes(publish) {
-    var f = S.mf; if (!f || S.mSaving || !fb || mfSame(publish)) return;
+    var f = S.mf; if (!f || S.mSaving || !fb) return;
+    if (mfSame(publish)) { draw(); return; }   // nothing changed: nothing saved, and a button left on goes off
     if (!/^\d{4}-\d{2}-\d{2}$/.test(f.date || '')) { mnSay('Pick the meeting date.'); return; }
     var data = mfData(f, publish), wasPub = f.status === 'published';
     if (publish) {
@@ -7293,7 +7310,8 @@
      so a guide never shows before its pages are there. A failed save keeps everything in the editor to try again. */
   function saveGuide() {
     var f = S.gf;
-    if (!f || f.saving || f.busy || !fb || gfSame()) return;
+    if (!f || f.saving || f.busy || !fb) return;
+    if (gfSame()) { draw(); return; }   // nothing changed: nothing saved, and a button left on goes off
     var old = f.id ? gById(f.id) : null, pages = f.pages, title = gClean(f.title, 80).replace(/\s+/g, ' ');
     function stop(m) { f.msg = m; draw(); }
     if (S.level !== 'owner') return stop('Only the head chef can save guides.');
@@ -7388,12 +7406,19 @@
   function dkEdit() {
     var m = dkMine() || {};
     dkf = { kind: m.kind || '', size: m.size || 'reg', milk: m.milk || '', shot: m.shot || '', sugar: m.sugar || '', note: m.note || '', cold: m.cold || '', other: m.other || '' };
-    dkSnap = JSON.stringify(dkf);
+    dkSnap = JSON.stringify(dkData(dkf));
     dkEditing = true; dkMsg = ''; dkOpen = m.kind || m.cold || m.other ? '' : 'kind';
   }
   /* something picked or typed in the form since it opened (28 Oct 2026): Save my usual is off on a usual not changed,
      Cancel asks a second tap, and LK_PREP.unsaved() counts it, so Sign out, Update now and a reload ask first */
-  function dkDirty() { return !!dkf && JSON.stringify(dkf) !== dkSnap; }
+  function dkDirty() { return !!dkf && JSON.stringify(dkData(dkf)) !== dkSnap; }
+  /* what Save my usual saves from the form: only what the drink asks for, and the words trimmed. dkDirty() compares
+     this (29 Oct 2026): a milk left from a detour back to a long black, or a space typed, saved the same drink again */
+  function dkData(f) {
+    var k = f.kind, hot = !!k && k !== 'none';
+    return { kind: k, size: dkAsks(k, 's') ? f.size : '', milk: dkAsks(k, 'm') ? f.milk : '', shot: dkAsks(k, 'e') ? f.shot : '', sugar: hot ? f.sugar : '',
+      note: hot ? String(f.note).trim().slice(0, DK_NOTE) : '', cold: f.cold, other: String(f.other).trim().slice(0, DK_OTHER) };
+  }
   function dkFlag(v) { if (S.who) lsSet('lk.drink.' + S.who, v); }
   /* someone who signed up before the drinks run: ask once, if they have no usual yet */
   function dkCheck() {
@@ -7432,10 +7457,9 @@
     if (dkBusy || !fb || !p || !f) return;
     // a usual opened with Change and not changed: nothing to save (it wrote the same drink again with a new time)
     if (dkMine() && !dkDirty()) return;
-    f.note = f.note.replace(/^\s+|\s+$/g, ''); f.other = f.other.replace(/^\s+|\s+$/g, '');
-    if (!f.kind && !f.cold && !f.other) { dkMsg = 'Pick a coffee or a cold drink first, or write something else you like.'; draw(); return; }
-    var k = f.kind, data = { kind: k, size: dkAsks(k, 's') ? f.size : '', milk: dkAsks(k, 'm') ? f.milk : '', shot: dkAsks(k, 'e') ? f.shot : '',
-      sugar: k && k !== 'none' ? f.sugar : '', note: k && k !== 'none' ? f.note.slice(0, DK_NOTE) : '', cold: f.cold, other: f.other.slice(0, DK_OTHER), at: now() };
+    var data = dkData(f);
+    if (!data.kind && !data.cold && !data.other) { dkMsg = 'Pick a coffee or a cold drink first, or write something else you like.'; draw(); return; }
+    data.at = now();
     var id = S.who, old = dkList ? dkList[id] : undefined;
     dkBusy = true; dkMsg = ''; draw();
     sset(docRef('drinks', id), data).then(function () {
@@ -7455,7 +7479,8 @@
     if (a === 'dk-save') { dkSave(); return; }
     if (a === 'dk-edit') { dkEdit(); draw(); focusSel('.dr-form'); return; }
     if (a === 'dk-cancel') { if (dkDirty() && !arm('dk-cancel')) return; dkEditing = false; dkf = null; dkSnap = ''; dkMsg = ''; draw(); return; }
-    if (a === 'dk-skip') { S.drinkAsk = ''; dkEditing = false; dkf = null; dkFlag('skip'); draw(); toast('No worries. Set it any time from the chef hat at the top.'); sheetNext(); return; }
+    // the first form's Skip for now over something picked or typed: a second tap first, like Cancel (29 Oct 2026)
+    if (a === 'dk-skip') { if (dkDirty() && !arm('dk-skip')) return; S.drinkAsk = ''; dkEditing = false; dkf = null; dkFlag('skip'); draw(); toast('No worries. Set it any time from the chef hat at the top.'); sheetNext(); return; }
     if (a === 'dk-later') { S.drinkAsk = ''; dkFlag('later'); draw(); return; }
     if (a === 'dk-set') { S.drinkAsk = ''; dkFlag('later'); dkEdit(); return; }   // the link goes on to #/drinks with the form open
     if (a === 'dk-all') { dkAll = !dkAll; draw(); return; }
@@ -7482,7 +7507,7 @@
   }
   function dkFormHTML(first) {
     if (!dkf) dkEdit();
-    var k = dkf.kind, hot = k && k !== 'none', prev = dkSum({ kind: k, size: dkf.size, milk: dkf.milk, shot: dkf.shot, sugar: dkf.sugar, note: hot ? dkf.note.trim() : '', cold: dkf.cold, other: dkf.other.trim() });
+    var k = dkf.kind, hot = k && k !== 'none', prev = dkSum(dkData(dkf));
     return '<div class="dr-form" tabindex="-1">' + dkChips('kind', DK_KINDS, 'Coffee or hot drink', 'Pick one') +
       (dkAsks(k, 's') ? '<div class="field"><span class="label" id="dk-l-size">Size</span><div class="ml-seg" role="group" aria-labelledby="dk-l-size">' + DK_SIZE.map(function (c) {
         return '<button type="button" class="ml-sb" data-p="dk-pick" data-f="size" data-v="' + c[0] + '" aria-pressed="' + (dkf.size === c[0]) + '">' + c[1] + '</button>';
@@ -7496,7 +7521,7 @@
       (prev ? '<p class="dr-prev"><span class="label">Your usual</span>' + esc(prev) + '</p>' : '') +
       (dkMsg ? '<p class="p-err" role="alert">' + esc(dkMsg) + '</p>' : '') +
       '<div class="btn-row"><button type="button" class="btn dark" data-p="dk-save"' + (dkBusy || dkMine() && !dkDirty() ? ' disabled' : '') + '>' + (dkBusy ? 'Saving...' : 'Save my usual') + '</button>' +
-      (first ? '<button type="button" class="btn" data-p="dk-skip">Skip for now</button>' : '<button type="button" class="btn" data-p="dk-cancel">' + (armed('dk-cancel') ? 'Tap again to discard' : 'Cancel') + '</button>') + '</div></div>';
+      (first ? '<button type="button" class="btn" data-p="dk-skip">' + (armed('dk-skip') ? 'Tap again to skip' : 'Skip for now') + '</button>' : '<button type="button" class="btn" data-p="dk-cancel">' + (armed('dk-cancel') ? 'Tap again to discard' : 'Cancel') + '</button>') + '</div></div>';
   }
   function drinkAskHTML() {
     var p = who();
@@ -8070,7 +8095,7 @@
     var list = d.kitSecs || [], t = dayNow();
     var rows = list.map(function (s, i) {
       return '<li class="a-ks-row' + (s.off ? ' is-off' : '') + '"><label class="visually-hidden" for="a-ks' + i + '">Section name</label><input id="a-ks' + i + '" class="search" data-k="a-ks' + i + '" data-a="ksec" data-i="' + i + '" maxlength="40" autocomplete="off" placeholder="Section name" value="' + esc(s.name) + '"' + (s.off ? ' disabled' : '') + '>' +
-        '<button type="button" class="p-x" data-p="ks-rm" data-i="' + i + '" aria-label="' + esc((s.off ? 'Put back: ' : 'Remove: ') + (s.name || 'this section')) + '">' + (s.off ? 'Put back' : 'Remove') + '</button></li>';
+        '<button type="button" class="p-x" data-p="ks-rm" data-i="' + i + '" aria-label="' + esc((s.off ? 'Put back: ' : 'Remove: ') + (s.name || 'this section')) + '">' + (s.off ? 'Put back' : armed('ks-rm:' + s.id) ? 'Tap again to remove' : 'Remove') + '</button></li>';
     }).join('');
     var out = '<section class="set-block a-ks"><span class="label">Kitchen sections</span><span class="hint">Staff and leads pick one of these straight after their PIN, once a day. Their prep lines and wastage go under it unless they write another section. You and the sous chefs are not asked: your section is your role. Renaming a section keeps its history. Save changes at the bottom to put them live.</span>' +
       (rows ? '<ul class="a-ks-list">' + rows + '</ul>' : '<p class="hint">No sections yet, so nobody is asked.</p>') +
@@ -8244,8 +8269,10 @@
       // chef's Google account with nobody on a PIN (its lone Not you? and the admin card's Sign in, 28 Oct 2026: they
       // signed Google out in one tap over a typed line). The admin card's links to the prep list stay put until then.
       if ((S.authed || S.user) && window.LK_PREP.unsaved() && !arm('who-change')) { e.preventDefault(); return; }
-      // the PIN screens' Not me: nobody is signed in yet (picking a name signs Google out first), so it goes in one tap
-      if (!S.authed) { S.picking = true; S.pending = null; leave(); dropGoogle().then(accessChanged).catch(function () { toast('Sign-out could not finish. Close this tab before handing over the device.'); }); return; }
+      // the PIN screens' Not me: nobody is signed in yet (picking a name signs Google out first), so it goes in one tap.
+      // The head chef's Google account handing over (the lone Not you?, the admin card's Sign in) takes what it left on
+      // the device, like Sign out (29 Oct 2026: function, recipe and drawing drafts stayed for the next person)
+      if (!S.authed) { if (S.user) forgetMine(''); S.picking = true; S.pending = null; leave(); dropGoogle().then(accessChanged).catch(function () { toast('Sign-out could not finish. Close this tab before handing over the device.'); }); return; }
       signOutPerson(true, true); return;
     }
     if (a === 'guest-who') { guestAsk(null); return; }
@@ -8332,7 +8359,8 @@
     if (a === 'a-add-person') { lvReveal('people'); lvReveal('staff'); d.people.push({ id: slug('person') + '-' + Date.now().toString(36), name: '', role: 'staff', add: true, tick: true, del: false, active: true, isNew: true }); draw(); var n = S.root.querySelector('[data-k="a-n' + (d.people.length - 1) + '"]'); if (n) n.focus(); return; }
     if (a === 'ks-add') { d.kitSecs = d.kitSecs || []; d.kitSecs.push({ id: 'ks-' + Date.now().toString(36), name: '', off: false, isNew: true }); draw(); var kn = S.root.querySelector('[data-k="a-ks' + (d.kitSecs.length - 1) + '"]'); if (kn) kn.focus(); return; }
     if (a === 'ks-usual') { d.kitSecs = KS_USUAL.map(function (n) { return { id: slug(n), name: n, off: false }; }); draw(); return; }
-    if (a === 'ks-rm') { var ks = (d.kitSecs || [])[i]; if (!ks) return; if (ks.isNew) d.kitSecs.splice(i, 1); else ks.off = !ks.off; draw(); return; }
+    // a new section with its name typed asks a second tap, like a new person; a blank one goes in one (29 Oct 2026)
+    if (a === 'ks-rm') { var ks = (d.kitSecs || [])[i]; if (!ks) return; if (ks.isNew && String(ks.name || '').trim() && !arm('ks-rm:' + ks.id)) return; if (ks.isNew) d.kitSecs.splice(i, 1); else ks.off = !ks.off; draw(); return; }
     if (a === 'a-bulk-add') {
       lvReveal('people'); lvReveal('staff');
       var lines = String(S.bulk || '').split(/\n/).map(function (s) { return s.trim(); }).filter(Boolean);
@@ -8934,7 +8962,7 @@
       '<button type="button" class="todo-tick" data-p="todo-tick" data-id="' + id + '" aria-pressed="' + done + '" aria-label="' + esc((done ? 'Untick: ' : 'Tick off: ') + String(x.text || '').slice(0, 40)) + '">' + TICK + '</button>' +
       '<div class="todo-body"><p class="todo-text">' + esc(x.text) + '</p><div class="todo-meta">' + meta.join('') + '</div>' +
       '<div class="todo-acts">' + (done ? '' : '<button type="button" class="p-link" data-p="todo-edit" data-id="' + id + '">' + (armed('todo-edit:' + x.id) ? 'Not saved. Tap again' : 'Change') + '</button>') +
-      '<button type="button" class="p-link" data-p="todo-del" data-id="' + id + '">' + (armed('todo-del:' + x.id) ? 'Not saved. Tap again' : 'Remove') + '</button></div></div></li>';
+      '<button type="button" class="p-link" data-p="todo-del" data-id="' + id + '">' + (armed('todo-del:' + x.id) ? 'Not saved. Tap again to remove' : 'Remove') + '</button></div></div></li>';
   }
   function tdFindText(x) { return x.text + ' ' + (tdForOk(x.for) ? mnName(x.for) : '') + ' ' + tdName(x.from); }
   function tdFilters() {

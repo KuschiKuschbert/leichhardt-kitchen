@@ -342,7 +342,7 @@
     out += '<div class="fe-row2">' + inp('foodDate', d.mode === 'all' ? 'Food goes out on' : 'First round on', d.foodDate, ' type="date"') + inp('foodT', d.mode === 'all' ? 'Food goes out at' : 'First round at', d.foodT, T24, d.foodSet ? '' : 'Same as the event start until you change it.') + '</div>';
     if (d.mode === 'stag') {
       out += '<div class="fe-row2">' + inp('n', 'Rounds', d.n, ' type="number" inputmode="numeric" min="2" max="' + M.MAX_ROUNDS + '" step="1"') + inp('gap', 'Minutes between rounds', d.gap, ' type="number" inputmode="numeric" min="1" max="600" step="5"') + '</div>' +
-        '<p class="hint">' + (d.custom ? 'Split by hand. Changing the rounds keeps your numbers; ' : 'Split evenly, earlier rounds first (5 over 3 is 2, 2, 1). Type in the grid to split by hand. ') + '<button type="button" class="linkish" data-fe="even">Split evenly again</button></p>' + gridHTML(e);
+        '<p class="hint">' + (d.custom ? 'Split by hand. Changing the rounds keeps your numbers; ' : 'Split evenly, earlier rounds first (5 over 3 is 2, 2, 1). Type in the grid to split by hand. ') + '<button type="button" class="linkish" data-fe="even">' + (armed('even') ? 'Tap again to split evenly' : 'Split evenly again') + '</button></p>' + gridHTML(e);
     } else if (d.lines.length) {
       out += '<p class="fe-allline">All at ' + esc(d.foodT || '?') + ': ' + esc(d.lines.map(function (l) { return (int(l.qty) || 0) + ' ' + M.short(l.name); }).join(', ')) + '</p>';
     }
@@ -396,7 +396,7 @@
     if (e.conflict) {
       var c = e.conflict;
       out += '<div class="fe-conflict" role="alert"><p><b>Someone else saved this function</b> (' + esc(c.who || 'another device') + ', ' + esc(stamp(c.when)) + ', version ' + c.v + ') after you opened it. Saving now would put your copy over theirs.</p>' +
-        '<div class="btn-row"><button type="button" class="btn" data-fe="theirs">Load theirs (yours here go)</button><button type="button" class="btn dark" data-fe="mine">Keep mine and save over theirs</button></div></div>';
+        '<div class="btn-row"><button type="button" class="btn" data-fe="theirs">' + (armed('theirs') ? 'Tap again: your changes go' : 'Load theirs (yours here go)') + '</button><button type="button" class="btn dark" data-fe="mine">Keep mine and save over theirs</button></div></div>';
     }
     if (e.saving) out += '<p class="fe-saving" role="status">' + esc(e.saving) + '</p>';
     if (e.msg) out += '<p class="p-err" role="alert">' + esc(e.msg) + '</p>';
@@ -633,7 +633,8 @@
     }
     if (a === 'rmline') { if (!arm('rm' + i)) return; d.lines.splice(i, 1); keep(); draw(); return; }
     if (a === 'mode') { d.mode = v; if (v === 'stag' && int(d.n) < 2) d.n = '3'; d.custom = false; retime(e); keep(); draw(); return; }
-    if (a === 'even') { d.custom = false; realloc(e); keep(); draw(); return; }
+    // a split typed by hand goes back to even: a second tap first (29 Oct 2026), there is no Undo
+    if (a === 'even') { if (d.custom && !arm('even')) return; d.custom = false; realloc(e); keep(); draw(); return; }
     if (a === 'rmround') { d.rounds.splice(i, 1); d.lines.forEach(function (l) { l.a.splice(i, 1); }); d.n = String(d.rounds.length); d.custom = true; if (d.rounds.length < 2) { d.mode = 'all'; retime(e); } keep(); draw(); return; }
     if (a === 'goto') { goto(v); return; }
     if (a === 'save') { save('save'); return; }
@@ -646,12 +647,14 @@
     if (a === 'confirm') { save('confirm'); return; }
     if (a === 'dup') { var src = clone(d); history.pushState(null, '', '#/functions/new'); if (window.LK_APP && window.LK_APP.noteRoute) window.LK_APP.noteRoute(false); E.sub = ['new']; openNew(src); return; }
     if (a === 'drop') { if (!arm('drop')) return; forget(e); if (e.isNew) { E.ed = null; window.LK_APP.returnTo('#/functions'); return; } e.d = fromDoc(e.saved, e.savedC); e.status = e.saved.status; e.restored = false; e.shown = []; draw(); return; }
-    if (a === 'theirs') { forget(e); E.ed = null; openId(e.id); return; }
+    // their version over the changes typed here: a second tap first, like Drop my changes (29 Oct 2026)
+    if (a === 'theirs') { if (dirty() && !arm('theirs')) return; forget(e); E.ed = null; openId(e.id); return; }
     if (a === 'mine') { e.v = e.conflict.v; e.saved = e.conflict.doc; e.conflict = null; save(e.status === 'confirmed' ? 'save' : 'save'); return; }
     if (a === 'hist') { loadHist(); return; }
   });
   function focusF(k) { var el = E.root && E.root.querySelector('[data-ff="' + k + '"]'); if (el) el.focus({ preventScroll: true }); }
-  window.addEventListener('beforeunload', function (ev) { flushPending(); if (dirty()) { ev.preventDefault(); ev.returnValue = ''; } });
+  // Update now's second tap already said the changes may go (LK_UPDATE.letGo() in js/upkeep.js): no second question
+  window.addEventListener('beforeunload', function (ev) { flushPending(); if (dirty() && !(window.LK_UPDATE && window.LK_UPDATE.letGo && window.LK_UPDATE.letGo())) { ev.preventDefault(); ev.returnValue = ''; } });
 
   function mount(root, route) {
     var sub = route.sub || [], same = E.root === root && JSON.stringify(sub) === JSON.stringify(E.sub);
@@ -678,6 +681,9 @@
   }
   window.LK_FE = {
     api: API, mount: mount, unmount: unmount,
+    // a hand-over (leave() in js/prep.js, 29 Oct 2026): a date or time typed and not taken yet goes with the person.
+    // Before, the page closing after the sign-out took it and kept the whole form as a draft again
+    drop: function () { E.pending = {}; E.ed = null; },
     back: back,
     backLabel: function () { return !E.root || !document.body.contains(E.root) || !E.sub.length ? '' : E.ed && E.ed.review ? 'Back to the form' : 'Back to all functions'; },
     backDisabled: function () { return !!(E.root && document.body.contains(E.root) && E.ed && E.ed.saving); },

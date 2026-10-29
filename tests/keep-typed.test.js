@@ -3,8 +3,9 @@
 // names), and a sign-out leaves none of it for the next person. Write new minutes, Start from the team notes, Continue
 // draft, Change as a new version, Edit, Use again and Change ask a second tap before another form takes the place of
 // one with changes, and the one already open carries on in one tap. The cut-offs' Undo, a minutes action and a guide
-// page ask again. A lone Not you? on the head chef's Google device asks first. A Save with nothing changed is off and
-// saves nothing. The admin Daily reviews form and the wastage page keep their own review.
+// page ask again. A lone Not you? on the head chef's Google device asks first, and takes the drafts left on the device
+// like Sign out (29 Oct 2026). A Save with nothing changed is off and saves nothing, and a refused tap leaves it off.
+// A new kitchen section with its name typed asks before it goes. The admin Daily reviews form and the wastage page keep their own review.
 const L = require('./lib');
 const { R, ok } = L.results(), { txt } = L;
 const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
@@ -65,6 +66,7 @@ const READY = { minutes: '[data-p="mn-new"]', notes: '[data-p="n-new"]', guides:
         const s1 = await st(p);
         ok(s1.user && kept(s1), lb + ': one tap on Sign out of Google keeps the Google account and the draft ' + JSON.stringify(s1));
         ok(/Not saved yet\. Tap Sign out of Google again to sign out\./.test(await txt(p, '.p-toast') || ''), lb + ': the toast says Not saved yet (' + await txt(p, '.p-toast') + ')');
+        ok(await txt(p, '.p-bar [data-p="signout"]') === 'Not saved. Tap again', lb + ': the button itself says Not saved. Tap again (' + await txt(p, '.p-bar [data-p="signout"]') + ')');
         if (w !== 390) await fits(p, lb + ' asking');
         await L.tap(p, '.p-bar [data-p="signout"]'); await L.settle(p, 600);
         const s2 = await st(p);
@@ -170,6 +172,8 @@ const READY = { minutes: '[data-p="mn-new"]', notes: '[data-p="n-new"]', guides:
     for (const route of w === 390 ? ['#/prep', '#/orders'] : ['#/prep']) await safe(w + ' Not you? ' + route, async () => {
       p = await owner(b, route, w);
       const k = route === '#/prep' ? 'p-text' : 'o-text';
+      // what the head chef's Google account left on the device: a function started (a customer's contact), a recipe and a drawing changed
+      await S(p, () => { localStorage.setItem('lk.fe.draft.new', JSON.stringify({ id: 'x', isNew: true, d: { name: 'Smith 50th', cname: 'Jo Smith', phone: '0400 000 000' } })); localStorage.setItem('lk.mg.draft.burger', '{"at":1,"e":{"id":"burger"}}'); localStorage.setItem('lk.dw.draft.burger-plate', '{"at":1,"els":[]}'); });
       await p.fill('[data-k="' + k + '"]', 'Peel garlic'); await L.settle(p, 150);
       await p.click('.nb-top [data-p="who-change"]'); await L.settle(p, 300);
       const s = await S(p, k => ({ user: !!window.LK_PREP.state.user, text: (document.querySelector('[data-k="' + k + '"]') || {}).value, admin: localStorage.getItem('lk.admin') }), k);
@@ -177,6 +181,8 @@ const READY = { minutes: '[data-p="mn-new"]', notes: '[data-p="n-new"]', guides:
       await fits(p, w + ' ' + route + ' Not you? asking');
       await L.tap(p, '.nb-top [data-p="who-change"]'); await L.settle(p, 600);
       ok(await S(p, () => !window.LK_PREP.state.user) && !!(await p.$('.p-name')), w + ' ' + route + ': the second tap signs Google out to Who are you?');
+      const left = await S(p, () => ['lk.fe.draft.new', 'lk.mg.draft.burger', 'lk.dw.draft.burger-plate'].filter(k => localStorage.getItem(k)));
+      ok(!left.length, w + ' ' + route + ': and takes the function, recipe and drawing drafts with it, like Sign out (left ' + JSON.stringify(left) + ')');
       if (route === '#/prep') {
         // the PIN screen's Not me: nobody is signed in yet, so one tap
         await p.click('.p-name[data-id="ann"]'); await L.settle(p, 400);
@@ -211,6 +217,18 @@ const READY = { minutes: '[data-p="mn-new"]', notes: '[data-p="n-new"]', guides:
     await fits(p, 'guide page Remove asking');
     await L.tap(p, '[data-p="g-prm"][data-i="0"]'); await L.settle(p, 200);
     ok(await S(p, () => window.LK_PREP.state.gf.pages.length) === 0, 'guide page: the second tap removes it');
+    // a new kitchen section with its name typed asks a second tap; a blank one goes in one
+    await L.adminTab(p, 'people'); await L.waitFor(p, () => !!document.querySelector('[data-p="ks-add"]'), null, 8000);
+    const secs = () => S(p, () => (window.LK_PREP.state.draft.kitSecs || []).length);
+    await p.click('[data-p="ks-add"]'); await L.settle(p, 150);
+    await p.fill('[data-k="a-ks0"]', 'Pastry'); await L.settle(p, 100);
+    await p.click('[data-p="ks-rm"][data-i="0"]'); await L.settle(p, 200);
+    ok(await secs() === 1 && await txt(p, '[data-p="ks-rm"][data-i="0"]') === 'Tap again to remove', 'new section with a name: one tap on Remove keeps it and asks again');
+    await L.tap(p, '[data-p="ks-rm"][data-i="0"]'); await L.settle(p, 200);
+    ok(await secs() === 0, 'new section: the second tap removes it');
+    await p.click('[data-p="ks-add"]'); await L.settle(p, 150);
+    await p.click('[data-p="ks-rm"][data-i="0"]'); await L.settle(p, 200);
+    ok(await secs() === 0, 'new section left blank: Remove takes it in one tap');
     ok(p.errors.length === 0, 'rows: no page errors ' + p.errors.join(' | '));
     await p.context().close();
   });
@@ -223,8 +241,11 @@ const READY = { minutes: '[data-p="mn-new"]', notes: '[data-p="n-new"]', guides:
     ok(await S(p, () => document.querySelector('[data-p="mn-draft"]').disabled), 'minutes draft unchanged: Save draft is off');
     await force(p, '[data-p="mn-draft"]'); await L.settle(p, 400);
     ok(await writesTo(p, '/minutes/d1$') === 0, 'minutes draft unchanged: Save draft saves nothing');
+    ok(await S(p, () => document.querySelector('[data-p="mn-draft"]').disabled), 'minutes draft unchanged: the refused tap leaves Save draft off');
     if (await p.$('[data-k="mn-decisions"]')) await p.fill('[data-k="mn-decisions"]', 'Old draft, changed');
     ok(await S(p, () => { const e = document.querySelector('[data-p="mn-draft"]'); return !!e && !e.disabled; }), 'minutes draft: typing turns Save draft on');
+    await p.fill('[data-k="mn-decisions"]', 'Old draft');
+    ok(await S(p, () => document.querySelector('[data-p="mn-draft"]').disabled), 'minutes draft: back as it was, Save draft is off again');
     ok(p.errors.length === 0, 'saves minutes draft: no page errors ' + p.errors.join(' | '));
     await p.context().close();
   });
@@ -235,8 +256,11 @@ const READY = { minutes: '[data-p="mn-new"]', notes: '[data-p="n-new"]', guides:
     ok(await S(p, () => document.querySelector('[data-p="mn-pub"]').disabled), 'published minutes unchanged: Publish as version 2 is off');
     await force(p, '[data-p="mn-pub"]'); await L.settle(p, 150); await force(p, '[data-p="mn-pub"]'); await L.settle(p, 400);
     ok(await writesTo(p, '/minutes/p1') === 0, 'published minutes unchanged: no new version, so nobody signs again for nothing');
+    ok(await S(p, () => document.querySelector('[data-p="mn-pub"]').disabled), 'published minutes unchanged: the refused tap leaves Publish off');
     if (await p.$('[data-k="mn-decisions"]')) await p.fill('[data-k="mn-decisions"]', 'New fryer oil every Monday and Thursday');
     ok(await S(p, () => { const e = document.querySelector('[data-p="mn-pub"]'); return !!e && !e.disabled; }), 'published minutes: typing turns Publish on');
+    await p.fill('[data-k="mn-decisions"]', 'New fryer oil every Monday');
+    ok(await S(p, () => document.querySelector('[data-p="mn-pub"]').disabled), 'published minutes: back as it was, Publish is off again');
     await p.context().close();
   });
   await safe('saves ping', async () => {
@@ -246,8 +270,11 @@ const READY = { minutes: '[data-p="mn-new"]', notes: '[data-p="n-new"]', guides:
     ok(await S(p, () => document.querySelector('[data-p="n-save"]').disabled), 'ping unchanged: Save changes is off');
     await force(p, '[data-p="n-save"]'); await L.settle(p, 400);
     ok(await writesTo(p, '/notes/n2$') === 0 && await S(p, k => window.__fake.dump()[k].upd, fsKey(['notes', 'n2'])) === L.NOW - 21600000, 'ping unchanged: Save changes saves nothing, so it does not pop up again on every phone');
+    ok(await S(p, () => document.querySelector('[data-p="n-save"]').disabled), 'ping unchanged: the refused tap leaves Save changes off');
     if (await p.$('[data-k="n-text"]')) await p.fill('[data-k="n-text"]', 'Fish delivery at the front');
     ok(await S(p, () => { const e = document.querySelector('[data-p="n-save"]'); return !!e && !e.disabled; }), 'ping: typing turns Save changes on');
+    await p.fill('[data-k="n-text"]', 'Fish delivery at the back door');
+    ok(await S(p, () => document.querySelector('[data-p="n-save"]').disabled), 'ping: back as it was, Save changes is off again');
     await p.context().close();
   });
   await safe('saves guide', async () => {
@@ -257,8 +284,11 @@ const READY = { minutes: '[data-p="mn-new"]', notes: '[data-p="n-new"]', guides:
     ok(await S(p, () => document.querySelector('[data-p="g-save"]').disabled), 'guide unchanged: Save changes is off');
     await force(p, '[data-p="g-save"]'); await L.settle(p, 400);
     ok(await writesTo(p, '/guides/fryer$') === 0, 'guide unchanged: Save changes saves nothing');
+    ok(await S(p, () => document.querySelector('[data-p="g-save"]').disabled), 'guide unchanged: the refused tap leaves Save changes off');
     if (await p.$('[data-k="g-title"]')) await p.fill('[data-k="g-title"]', 'Fryer oil change, daily');
     ok(await S(p, () => { const e = document.querySelector('[data-p="g-save"]'); return !!e && !e.disabled; }), 'guide: typing turns Save changes on');
+    await p.fill('[data-k="g-title"]', 'Fryer oil change');
+    ok(await S(p, () => document.querySelector('[data-p="g-save"]').disabled), 'guide: back as it was, Save changes is off again');
     await p.context().close();
   });
   await safe('saves people', async () => {
@@ -268,6 +298,7 @@ const READY = { minutes: '[data-p="mn-new"]', notes: '[data-p="n-new"]', guides:
     const cfgWrites = await writesTo(p, '/config/main$');
     await force(p, '[data-p="a-save"]'); await L.settle(p, 400);
     ok(await writesTo(p, '/config/main$') === cfgWrites && !/Saved/.test(await txt(p, '.a-savebar .saved') || ''), 'People unchanged: Save changes saves nothing');
+    ok(await S(p, () => document.querySelector('[data-p="a-save"]').disabled), 'People unchanged: the refused tap leaves Save changes off');
     ok(p.errors.length === 0, 'saves people: no page errors ' + p.errors.join(' | '));
     await p.context().close();
   });

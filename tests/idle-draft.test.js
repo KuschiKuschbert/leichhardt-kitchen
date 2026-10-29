@@ -1,5 +1,5 @@
-// The desktop idle lock (7.5 minutes without a mouse or key) asks for the PIN again but keeps an unsaved staff list,
-// so a sous chef carries on where they were (audit, October 2026).
+// The desktop idle lock (7.5 minutes without a mouse or key) signs the person out like Sign out (since #387): back to
+// Who are you?, and an unsaved staff list goes with them, so the next person never lands in it (29 Oct 2026 wording).
 const L = require('./lib');
 const { R, ok } = L.results();
 const has = async (page, name) => { const t = await page.evaluate(() => document.getElementById('prep-root').textContent + ' ' + Array.from(document.querySelectorAll('#prep-root input')).map(i => i.value).join(' ')); return t.indexOf(name) >= 0; };

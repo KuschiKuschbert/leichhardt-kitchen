@@ -16,7 +16,7 @@
 (function () {
   'use strict';
 
-  var API = 5;
+  var API = 4;
   var D = window.LK_DATA, X = window.LK_RX, A = window.LK_APP, P = window.LK_PREP;
   var esc = A.esc, KIND = A.KIND, ALLERGENS = D.allergens;
   var LS = (function () { try { localStorage.getItem('x'); return localStorage; } catch (e) { return null; } })();
@@ -38,6 +38,9 @@
     draw(); return false;
   }
   function armed(k) { return M.armed === k; }
+  // a row moved or gone, or another copy in the form: an armed Remove would stay on whatever row now sits in that place
+  // (29 Oct 2026), so it goes
+  function unarm() { M.armed = ''; clearTimeout(M.armTimer); }
   var toastEl = null, toastTimer = null;
   function toast(msg) {
     B().say(msg);
@@ -252,15 +255,16 @@
   function useKept(e) {
     var k = e.kept.e; e.d = k.d; e.menu = k.menu || e.menu; e.meta = Object.assign(e.meta, { removed: !!k.meta.removed, off: !!k.meta.off }); e.handTags = !!k.handTags;
     if (e.isNew) { e.id = k.id || e.id; e.idTyped = !!k.idTyped; }
-    e.kept = null; e.open = -1; e.pinOpen = -1;
+    e.kept = null; e.open = -1; e.pinOpen = -1; unarm();
   }
   function keptBack(e) { useKept(e); keepNow(); draw(); toast('Your kept changes are back in the form.'); }
   function keepDraft() { clearTimeout(keepTimer); keepTimer = setTimeout(keepNow, 400); }
   function dirty() { var e = M.ed; return !!(e && e.d && snapOf(e) !== e.snap); }
   // Save on a recipe already in the book is off until something changed: a save makes a new version, and for a recipe
   // from js/data.js it makes the book's copy win over the file from then on. A new recipe keeps Save on (check() says
-  // what it needs).
-  function unchanged(e) { return !!(e && !e.isNew && !dirty()); }
+  // what it needs). The book file changed since this version was made (29 Oct 2026): Save stays on, so the head chef
+  // can check it and keep this version, which takes the flag away.
+  function unchanged(e) { return !!(e && !e.isNew && !dirty() && !status(e.id).fileChanged); }
   function dirtyNote() {
     var el = M.root && M.root.querySelector('.mg-state');
     if (el) el.textContent = stateText();
@@ -522,9 +526,9 @@
       (st && !e.isNew && A.byId(e.id) ? '<a class="p-x" href="#/r/' + encodeURIComponent(e.id) + '">Open the card</a>' : '') + '</div>';
     var kept = e.kept ? '<div class="box beige mg-kept" role="note"><span class="label">Changes not saved yet</span><div>This device kept changes to this recipe from ' + esc(B().dayShort(e.kept.at) + ' ' + B().clock(e.kept.at)) + '.</div>' +
       '<div class="btn-row"><button type="button" class="btn dark" data-mg="kept-use">Keep editing them</button><button type="button" class="btn" data-mg="kept-drop">' + (armed('kept-drop') ? 'Tap again to throw them away' : 'Throw them away') + '</button></div></div>' : '';
-    var fileNote = st && st.fileChanged ? '<div class="box beige" role="note"><span class="label">The book file changed</span><div>js/data.js has a newer copy of this recipe than the one this change was made from. Check the steps and amounts, or go back to the book file\'s copy (In the book, below).</div></div>' : '';
+    var fileNote = st && st.fileChanged ? '<div class="box beige" role="note"><span class="label">The book file changed</span><div>js/data.js has a newer copy of this recipe than the one this change was made from. Check the steps and amounts, then Save to keep this version, or go back to the book file\'s copy (The book file, below).</div></div>' : '';
     var conflict = e.conflict ? '<div class="warn" role="alert"><span class="label">Changed on another device</span><span>Version ' + esc(e.conflict.v) + ' was saved' + (e.conflict.who ? ' by ' + esc(e.conflict.who) : '') + (e.conflict.when ? ' at ' + esc(e.conflict.when) : '') + ' after you opened this recipe.</span>' +
-      '<div class="btn-row"><button type="button" class="btn" data-mg="theirs">' + (armed('theirs') ? 'Tap again: yours here go' : 'Open theirs') + '</button><button type="button" class="btn dark" data-mg="mine">Save mine over it</button></div></div>' : '';
+      '<div class="btn-row"><button type="button" class="btn" data-mg="theirs">' + (armed('theirs') ? 'Tap again: your changes go' : 'Open theirs') + '</button><button type="button" class="btn dark" data-mg="mine">Save mine over it</button></div></div>' : '';
     var errs = e.errs.length ? '<div class="warn" role="alert"><span class="label">Not saved yet</span><ul class="mg-errs">' + e.errs.map(function (x) { return '<li><a href="#' + esc(x.at) + '" data-mg="goto" data-v="' + esc(x.at) + '">' + esc(x.msg) + '</a></li>'; }).join('') + '</ul></div>' : '';
     var warns = e.warns.length ? '<div class="box beige" role="note">' + e.warns.map(function (w) { return '<div>' + esc(w) + '</div>'; }).join('') + '</div>' : '';
     return '<div class="mg-wrap mg-ed">' + linkList() + head + kept + fileNote + conflict + errs + warns +
@@ -782,7 +786,7 @@
     var key = sub.join('/');
     M.root = root; M.ed = null; drawn = 'draw:' + key;
     if (window.LK_DRAW) {
-      if (window.LK_DRAW.api === 5) window.LK_DRAW.mount(root, sub);
+      if (window.LK_DRAW.api === 4) window.LK_DRAW.mount(root, sub);
       else root.innerHTML = '<div class="mg-wrap"><h2 id="rtitle" tabindex="-1">Reload the book</h2><p>The drawing editor on this device needs the current book. Your saved drawings stay.</p><div class="btn-row"><button type="button" class="btn dark" data-act="reload">Reload</button></div></div>';
       return;
     }
@@ -814,6 +818,9 @@
     }
     if (fresh) draw();
   }
+  /* A hand-over (Sign out, Not you?, the idle lock: leave() in js/prep.js, 29 Oct 2026): the open form and drawing go
+     with the person. Before, the page closing after the sign-out kept them as a draft again, for the next person. */
+  function drop() { clearTimeout(keepTimer); if (window.LK_DRAW && window.LK_DRAW.drop) window.LK_DRAW.drop(); M.ed = null; drawn = ''; unarm(); }
   function unmount() {
     var hadRoot = !!M.root;
     if (window.LK_DRAW && window.LK_DRAW.open()) window.LK_DRAW.unmount();
@@ -867,16 +874,16 @@
       if (dirty() && !arm('theirs')) return;
       var c = e.conflict && e.conflict.rec;
       if (c && c.r) { e.d = clone(c.r); e.meta.v = c.v; e.meta.removed = !!c.removed; e.meta.off = !!c.off; e.handTags = !!(c.r.contains || c.r.check); }
-      e.conflict = null; e.snap = snapOf(e); lsSet(draftKey(e.key), ''); draw(); return;
+      e.conflict = null; e.snap = snapOf(e); lsSet(draftKey(e.key), ''); unarm(); draw(); return;
     }
     if (a === 'kept-use') { if (e.kept) useKept(e); draw(); return; }
     if (a === 'kept-drop') { if (!arm('kept-drop')) return; e.kept = null; lsSet(draftKey(e.key), ''); draw(); return; }
     if (a === 'undo-all') { if (!arm('undo-all')) return; var fr = JSON.parse(e.snap); e.d = fr[0]; e.menu = fr[1]; e.meta.removed = fr[2]; e.meta.off = fr[3]; e.handTags = !!(e.d.contains || e.d.check); lsSet(draftKey(e.key), ''); draw(); return; }
     if (a === 'ing-add') { d.ingredients.push({ q: '', name: '' }); keepDraft(); draw(); var ins = M.root.querySelectorAll('[data-f$=".q"][data-f^="ing."]'); if (ins.length) ins[ins.length - 1].focus(); return; }
     // an ingredient with anything in it asks first; an empty row added by mistake goes at once
-    if (a === 'ing-del') { var ri = d.ingredients[i] || {}; if ((trimStr(ri.q) || trimStr(ri.name) || trimStr(ri.note) || ri.link || (ri.tags || []).length) && !arm('ing-del:' + i)) return; d.ingredients.splice(i, 1); e.open = -1; keepDraft(); draw(); return; }
-    if (a === 'ing-up') { move(d.ingredients, i, i - 1); e.open = -1; keepDraft(); draw(); return; }
-    if (a === 'ing-down') { move(d.ingredients, i, i + 1); e.open = -1; keepDraft(); draw(); return; }
+    if (a === 'ing-del') { var ri = d.ingredients[i] || {}; if ((trimStr(ri.q) || trimStr(ri.name) || trimStr(ri.note) || ri.link || (ri.tags || []).length) && !arm('ing-del:' + i)) return; d.ingredients.splice(i, 1); e.open = -1; unarm(); keepDraft(); draw(); return; }
+    if (a === 'ing-up') { move(d.ingredients, i, i - 1); e.open = -1; unarm(); keepDraft(); draw(); return; }
+    if (a === 'ing-down') { move(d.ingredients, i, i + 1); e.open = -1; unarm(); keepDraft(); draw(); return; }
     if (a === 'ing-tags') { e.open = e.open === i ? -1 : i; draw(); return; }
     if (a === 'tag') {
       var w = el.getAttribute('data-w'), obj = w === 'pin' ? d.pins[i] : d.ingredients[i];
@@ -884,8 +891,8 @@
     }
     if (a === 'sec-add') { d.sections = d.sections || []; d.sections.push({ title: '', steps: [] }); keepDraft(); draw(); return; }
     if (a === 'sec-del') { if (!arm('sec-del:' + i)) return; d.sections.splice(i, 1); keepDraft(); draw(); return; }
-    if (a === 'sec-up') { move(d.sections, i, i - 1); keepDraft(); draw(); return; }
-    if (a === 'sec-down') { move(d.sections, i, i + 1); keepDraft(); draw(); return; }
+    if (a === 'sec-up') { move(d.sections, i, i - 1); unarm(); keepDraft(); draw(); return; }
+    if (a === 'sec-down') { move(d.sections, i, i + 1); unarm(); keepDraft(); draw(); return; }
     if (a === 'hand') {
       // back to worked out from the ingredients drops what was set by hand (a different choice, a "from which part" note):
       // that asks first; allergens that match the ingredients go in one tap
@@ -896,7 +903,7 @@
       keepDraft(); draw(); return;
     }
     if (a === 'pin-add') { d.pins = d.pins || []; d.pins.push({ label: '', x: 50, y: 50, tags: [], own: true }); e.pinOpen = d.pins.length - 1; keepDraft(); draw(); return; }
-    if (a === 'pin-del') { var rp = d.pins[i] || {}; if ((trimStr(rp.label) || trimStr(rp.note) || rp.link || (rp.tags || []).length) && !arm('pin-del:' + i)) return; d.pins.splice(i, 1); e.pinOpen = -1; keepDraft(); draw(); return; }
+    if (a === 'pin-del') { var rp = d.pins[i] || {}; if ((trimStr(rp.label) || trimStr(rp.note) || rp.link || (rp.tags || []).length) && !arm('pin-del:' + i)) return; d.pins.splice(i, 1); e.pinOpen = -1; unarm(); keepDraft(); draw(); return; }
     if (a === 'pin-pick') { if (dragMoved) { dragMoved = false; return; } e.pinOpen = e.pinOpen === i ? -1 : i; draw(); return; }
     if (a === 'hist') { loadHist(); return; }
     // an earlier version goes over the form: changes not saved yet ask first ("Not saved. Tap again")
@@ -974,7 +981,8 @@
   }
   document.addEventListener('pointerup', dragEnd);
   document.addEventListener('pointercancel', dragEnd);
-  window.addEventListener('beforeunload', function (ev) { if (dirty()) { ev.preventDefault(); ev.returnValue = ''; } });
+  // Update now's second tap already said the changes may go (LK_UPDATE.letGo() in js/upkeep.js): no second question
+  window.addEventListener('beforeunload', function (ev) { if (dirty() && !(window.LK_UPDATE && window.LK_UPDATE.letGo && window.LK_UPDATE.letGo())) { ev.preventDefault(); ev.returnValue = ''; } });
 
   // The shared header returns through the task without repeating large controls in the form.
   function back() {
@@ -988,6 +996,7 @@
     api: API,
     mount: mount,
     unmount: unmount,
+    drop: drop,
     back: back,
     backLabel: function () { return !M.root || !document.body.contains(M.root) || !M.sub.length ? '' : window.LK_DRAW && window.LK_DRAW.open() ? window.LK_DRAW.backLabel() : 'Back to all recipes'; },
     backDisabled: function () { return !!(M.root && document.body.contains(M.root) && ((M.ed && M.ed.saving) || (window.LK_DRAW && window.LK_DRAW.open() && window.LK_DRAW.backDisabled()))); },

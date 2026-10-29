@@ -25,7 +25,7 @@
 (function () {
   'use strict';
 
-  var API = 5;
+  var API = 4;
   var D = window.LK_DATA, X = window.LK_RX, A = window.LK_APP, P = window.LK_PREP, LIB = window.LK_LIB;
   var esc = A.esc;
   function B() { return P.book(); }
@@ -235,6 +235,11 @@
     Object.keys(k.defs || {}).forEach(function (x) { if (W.d.defs[x] === undefined) W.d.defs[x] = k.defs[x]; });
   }
   function keptBack() { takeKept(); toast('Your kept drawing is back.'); }
+  /* A change to the part picked while the kept box shows (words or a colour typed, a tint, an arrow key, Delete): the
+     kept drawing comes back, and this change does nothing else (29 Oct 2026), like a touch on the drawing. The part
+     picked on the saved copy may be another part in the kept drawing: before, the words went on a part no longer in
+     the drawing and were never kept or saved. A piece added or new servingware goes on the kept drawing (before()). */
+  function keptFirst() { if (!W.d || !W.d.kept) return false; keptBack(); changed(); return true; }
   function before() { if (W.d && W.d.kept) keptBack(); W.undo.push(snapNow()); if (W.undo.length > 100) W.undo.shift(); W.redo = []; }
   // the book's one two-tap helper (js/prep.js arm(), through LK_PREP.book()), drawing this page again
   function arm(k) { var b = B(); return b.arm ? b.arm(k, draw) : true; }
@@ -270,7 +275,8 @@
     if (s) s.textContent = stateWords(d);
     if (b) b.disabled = nothingDrawn(d) || unchanged(d);
   }
-  function stateWords(d) { return nothingDrawn(d) ? 'Nothing drawn yet.' : dirty() ? 'Not saved yet. Kept on this device.' : d.isNew ? 'New drawing.' : 'Saved. Version ' + d.meta.v + '.'; }
+  // parts that followed a renamed ingredient (finishOpen()): Save is on, and the bar says why (29 Oct 2026)
+  function stateWords(d) { return nothingDrawn(d) ? 'Nothing drawn yet.' : dirty() ? 'Not saved yet. Kept on this device.' : d.isNew ? 'New drawing.' : d.followed ? 'The recipe renamed an ingredient. Save to put the new name in the drawing.' : 'Saved. Version ' + d.meta.v + '.'; }
 
   /* ---------- where a new piece goes ---------- */
   function area() { var s = surface(W.d); return s ? s.area : { shape: 'box', cx: 0, cy: 0, rx: 100, ry: 60 }; }
@@ -683,7 +689,7 @@
   function pageHTML() {
     var d = W.d, r = rec();
     var kept = d.kept ? '<div class="box beige mg-kept" role="note"><span class="label">Changes not saved yet</span><div>This device kept changes to this drawing from ' + esc(B().dayShort(d.kept.at) + ' ' + B().clock(d.kept.at)) + '.</div><div class="btn-row">' + btn('kept-use', 'Keep editing them', { cls: 'btn dark' }) + btn('kept-drop', armed('kept-drop') ? 'Tap again to throw them away' : 'Throw them away', { cls: 'btn' }) + '</div></div>' : '';
-    var conflict = W.conflict ? '<div class="warn" role="alert"><span class="label">Changed on another device</span><span>Version ' + esc(W.conflict.v) + ' of this drawing was saved after you opened it.</span><div class="btn-row">' + btn('theirs', armed('theirs') ? 'Tap again: yours here go' : 'Open theirs', { cls: 'btn' }) + btn('mine', 'Save mine over it', { cls: 'btn dark' }) + '</div></div>' : '';
+    var conflict = W.conflict ? '<div class="warn" role="alert"><span class="label">Changed on another device</span><span>Version ' + esc(W.conflict.v) + ' of this drawing was saved after you opened it.</span><div class="btn-row">' + btn('theirs', armed('theirs') ? 'Tap again: your changes go' : 'Open theirs', { cls: 'btn' }) + btn('mine', 'Save mine over it', { cls: 'btn dark' }) + '</div></div>' : '';
     var newer = d.els.some(function (el) { var it = el.t === 'item' && itemOf(el.a); return it && it.id + '@' + it.v !== el.a; }) ? '<div class="box beige" role="note"><span class="label">Newer library drawings</span><div>Some pieces have a newer drawing in the library. This drawing keeps its own copy until you ask.</div><div class="btn-row">' + btn('newer', 'Use the newer drawings', { cls: 'btn' }) + '</div></div>' : '';
     var empty = nothingDrawn(d);
     var state = W.saving || stateWords(d);
@@ -772,7 +778,7 @@
       case 'start-open': W.startOpen = !W.startOpen; return;
       case 'from': startFrom(v); return;
       case 'from-sel': if (W.fromSel) startFrom(W.fromSel); else { W.msg = 'Pick a drawing first.'; draw(); } return;
-      case 'split': if (one) splitRaw(W.sel[0]); return;
+      case 'split': if (one && !keptFirst()) splitRaw(W.sel[0]); return;
       case 'piece': pieceFromSel(); return;
       case 'pc-save': savePiece(); return;
       case 'pc-cancel': W.piece = null; W.panel = ''; W.msg = ''; draw(); return;
@@ -788,7 +794,7 @@
       }
     }
     if (window.LK_SMART && window.LK_SMART.ui && window.LK_SMART.ui.cmd && window.LK_SMART.ui.cmd(a, v, W)) return;
-    if (!W.sel.length) return;
+    if (!W.sel.length || keptFirst()) return;
     before();
     if (a === 'dup') { var add = W.sel.map(function (i) { var e = clone(d.els[i]); e.x = n1((e.x || 0) + 8); e.y = n1((e.y || 0) + 8); if (e.t === 'line') e.pts = pts(e).map(function (p) { return f(p[0] + 8) + ',' + f(p[1] + 8); }).join(' '); delete e.fixed; return e; }); d.els = d.els.concat(add); W.sel = add.map(function (x, k) { return d.els.length - add.length + k; }); }
     else if (a === 'del') { d.els = d.els.filter(function (x, i) { return W.sel.indexOf(i) < 0; }); W.sel = []; if (/colour|label|edit/.test(W.panel)) W.panel = ''; }
@@ -834,7 +840,7 @@
     if (k === 'wname') { W.wname = val; return; }
     if (k.indexOf('pc.') === 0) { if (W.piece) W.piece[k.slice(3)] = val; return; }
     if (k.indexOf('surf.') === 0) { var p = clone(d.surf), kk = k.slice(5); p[kk] = kk === 'size' ? Number(val) : val; setSurf(p); return; }
-    if (!one) return;
+    if (!one || keptFirst()) return;
     if (k.indexOf('col.') === 0) { if (ev.type !== 'change') return; before(); one.cm = one.cm || {}; one.cm[k.slice(4)] = String(val).toUpperCase(); changed(); return; }
     if (k === 'tint') { if (ev.type !== 'change') return; var col = LIB.sauceColour(val); if (!col) { say('No sauce colour for ' + val); return; } var it = itemOf(one.a); before(); one.cm = tintMap(bodyOf(one.a), (it && it.side && it.side.c) || coloursIn(bodyOf(one.a))[0], col); changed(true); say('Coloured like ' + val); return; }
     if (k === 'op') { if (ev.type !== 'change') { one.op = Number(val) / 100; drawCanvas(); return; } before(); one.op = Number(val) / 100; changed(); return; }
@@ -1042,12 +1048,18 @@
     if (k === 'Escape') { W.sel = []; draw(); return; }
     var step = ev.shiftKey ? 10 : 1, mv = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[k];
     if (mv && W.sel.length) {
-      ev.preventDefault(); before();
+      ev.preventDefault(); if (keptFirst()) return; before();
       W.sel.forEach(function (i) { var e = W.d.els[i]; if (e.t === 'line') e.pts = pts(e).map(function (q) { return f(q[0] + mv[0]) + ',' + f(q[1] + mv[1]); }).join(' '); else { e.x = n1(e.x + mv[0]); e.y = n1(e.y + mv[1]); if (e.lx != null) { e.lx = n1(e.lx + mv[0]); e.ly = n1(e.ly + mv[1]); } } if (isPiece(e)) e.fixed = true; });
       clearTimeout(keepT); keepT = setTimeout(keepNow, 400); drawCanvas(); barNote();
     }
   });
-  window.addEventListener('beforeunload', function (ev) { if (W.root && dirty()) { ev.preventDefault(); ev.returnValue = ''; } });
+  // a box of the part picked, tapped while the kept box shows: the kept drawing comes back before anything is typed
+  document.addEventListener('focusin', function (ev) {
+    var k = ev.target && ev.target.getAttribute && ev.target.getAttribute('data-dwf');
+    if (k && !drawing && W.root && W.root.contains(ev.target) && /^(el\.|col\.|tint$|op$)/.test(k) && keptFirst()) { var s = W.root.querySelector('.dw-svg'); if (s) s.focus({ preventScroll: true }); }
+  });
+  // Update now's second tap already said the changes may go (LK_UPDATE.letGo() in js/upkeep.js): no second question
+  window.addEventListener('beforeunload', function (ev) { if (W.root && dirty() && !(window.LK_UPDATE && window.LK_UPDATE.letGo && window.LK_UPDATE.letGo())) { ev.preventDefault(); ev.returnValue = ''; } });
 
   /* ---------- reuse (21 Oct 2026): start from a copy, templates, the head chef's own pieces and servingware ----------
      A new drawing can start from a copy of a template, another drawing or the book's own drawing; the original never
@@ -1487,6 +1499,8 @@
       W.d = fromDoc(id, sn.data()); finishOpen();
     }, function () { if (W.key === key) root.innerHTML = note('Could not open the drawing', 'Check the signal and try again.'); });
   }
+  // a hand-over (js/manage.js drop()): the drawing goes with the person, and nothing is kept for the next one
+  function drop() { clearTimeout(keepT); W.d = null; W.key = ''; W.conflict = null; W.root = null; drag = null; ptrs = {}; }
   function unmount() {
     var hadRoot = !!W.root;
     // only when it was kept: while the kept box shows, what is on screen is the saved copy and nothing is kept
@@ -1499,6 +1513,7 @@
     api: API,
     mount: mount,
     unmount: unmount,
+    drop: drop,
     back: function () {
       if (!W.root || !document.body.contains(W.root) || !W.d) return false;
       if (W.saving) return true;

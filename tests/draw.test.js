@@ -225,6 +225,8 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   await p.click('[data-mg="draw"][data-v="burger-plate"]');
   await wait(p, () => !!(window.LK_DRAW && window.LK_DRAW.open() && document.querySelector('.dw-svg')), null, 15000);
   ok((await W(p)).els.some(e => e.ing === 'Crumbed thigh'), 'rename: the part on the plate follows it too');
+  // the drawing in the book still has the old name: Save is on, and the bar says why (29 Oct 2026)
+  ok(!(await p.isDisabled('[data-dw="save"]')) && /renamed an ingredient/.test(await txt(p, '.dw-bar .mg-state') || ''), 'rename: the drawing opens with Save on, so the new name can be saved into it (' + await txt(p, '.dw-bar .mg-state') + ')');
   ok(errs(p).length === 0, 'rename: no page errors ' + errs(p).join(' | '));
   await p.context().close();
 

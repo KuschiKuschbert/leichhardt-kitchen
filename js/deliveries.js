@@ -48,7 +48,9 @@
   function draw() {
     if (!M.root || !document.body.contains(M.root)) return;
     if (!allowed()) { M.root.innerHTML = ''; return; }
-    var d = M.form, old = document.activeElement, focus = old && old.getAttribute('data-dl-field');
+    // a box keeps its focus and caret; a button too (29 Oct 2026: after the first Enter on Clear form the focus went to
+    // the page, so a keyboard never reached "Tap again to clear")
+    var d = M.form, old = document.activeElement, focus = old && old.getAttribute('data-dl-field'), btn = !focus && old && M.root.contains(old) && old.getAttribute('data-dl');
     var pos = focus && typeof old.selectionStart === 'number' ? [old.selectionStart, old.selectionEnd] : null;
     M.root.innerHTML = '<div class="dl-page"><header class="dl-heading"><span class="eyebrow">Kitchen records</span><h1>Delivery received</h1><p class="hint">Record the measured food temperature on arrival. All times are Queensland time (AEST).</p></header>' +
       '<form id="dl-form" class="dl-form" novalidate><fieldset' + (M.busy || M.attempt ? ' disabled' : '') + '><legend class="sr-only">Delivery details</legend>' +
@@ -70,6 +72,7 @@
         M.state !== 'ok' ? '<p role="status">Loading deliveries...</p>' :
         M.rows.length ? '<ol class="dl-receipts">' + M.rows.map(row).join('') + '</ol>' : '<p class="hint">No deliveries recorded for this date.</p>') + '</section></div>';
     if (focus) { var el = M.root.querySelector('[data-dl-field="' + focus + '"]'); if (el) { el.focus({ preventScroll: true }); if (pos) el.setSelectionRange(pos[0], pos[1]); } }
+    else if (btn) { var bt = M.root.querySelector('[data-dl="' + btn + '"]'); if (bt) bt.focus({ preventScroll: true }); }
   }
   function rows(snap) {
     return snap.docs.map(function (d) { return Object.assign({}, d.data(), { id: d.id, pending: !!(d.metadata && d.metadata.hasPendingWrites) }); })
@@ -171,6 +174,7 @@
   document.addEventListener('change', function (e) { if (M.root && M.root.contains(e.target) && e.target.id === 'dl-view-day' && admin()) { var date = e.target.value; if (!validDay(date) || date > T.day()) { draw(); return; } M.followToday = date === T.day(); M.day = date; load(); } });
   ['lk-access', 'lk-who', 'lk-admin', 'lk-cfg'].forEach(function (name) { window.addEventListener(name, function () { if (!allowed() || context && context !== key()) { reset(); draw(); } else draw(); }); });
   window.addEventListener('lk-clock', tick);
-  window.addEventListener('beforeunload', function (e) { if (dirty()) { e.preventDefault(); e.returnValue = ''; } });
-  window.LK_DELIVERY = { api: 2, mount: mount, unmount: unmount, reset: reset, dirty: dirty };
+  // Update now's second tap already said the readings may go (LK_UPDATE.letGo() in js/upkeep.js): no second question
+  window.addEventListener('beforeunload', function (e) { if (dirty() && !(window.LK_UPDATE && window.LK_UPDATE.letGo && window.LK_UPDATE.letGo())) { e.preventDefault(); e.returnValue = ''; } });
+  window.LK_DELIVERY = { api: 1, mount: mount, unmount: unmount, reset: reset, dirty: dirty };
 })();
