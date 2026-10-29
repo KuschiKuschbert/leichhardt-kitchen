@@ -609,14 +609,26 @@
      this tab's memory: a reload, Update now, the 04:00 refresh or a closed app loses it. This count (and the browser's
      online flag) drives the strip at the top of the prep pages, and LK_PREP.unsaved() holds the reloads back. No reads,
      no polling. */
-  var pending = 0, pendSince = 0, offline = navigator.onLine === false, lastSync = '';
+  /* pendFor: the same count for each Firebase sign-in (S.uid when the write started, 29 Oct 2026). A write still waiting
+     when the sign-in changes (the head chef's PIN, then Sign in with Google) stays with the sign-in it was made under:
+     Firestore sends it, and settles it, only while that sign-in is back. So what waits for the sign-in on the device now
+     (sendingNow()) holds Sign out and Sign in with Google, and one stranded by a change of sign-in never holds them for
+     good. In memory only, like the count. */
+  var pending = 0, pendFor = {}, pendSince = 0, offline = navigator.onLine === false, lastSync = '';
   function track(pr) {
-    pending++; if (pending === 1) pendSince = Date.now();
+    var uid = S.uid || '';
+    pending++; pendFor[uid] = (pendFor[uid] || 0) + 1; if (pending === 1) pendSince = Date.now();
     setTimeout(syncDraw, 3100);
-    var done = function () { pending = Math.max(0, pending - 1); syncDraw(); };
+    var done = function () {
+      pending = Math.max(0, pending - 1); pendFor[uid] = Math.max(0, pendFor[uid] - 1);
+      // the chef hat's Sign out says "Not sent yet." while it waits: js/app.js clears it once it is sent (lk-sent)
+      if (!pendFor[uid] && uid === (S.uid || '')) { try { window.dispatchEvent(new Event('lk-sent')); } catch (e) {} }
+      syncDraw();
+    };
     pr.then(done, done);
     return pr;
   }
+  function sendingNow() { return (pendFor[S.uid || ''] || 0) > 0; }
   function syncState() { return offline ? 'off' : (pending && Date.now() - pendSince > 3000 ? 'wait' : ''); }
   // the strip, and the Not sent marks and their room with it (28 Oct 2026): wherever this device writes, a PIN session
   // or the head chef's Google account with nobody signed in by PIN (privateAccess()). Both keep a change in this tab's
@@ -940,7 +952,11 @@
     if (resumed) return;
     if (fb && S.authState !== 'ready') return;   // the phone's sign-in first (anonymous or Google): it calls resume() again
     resumed = true;
-    if (!S.who) return;
+    // nobody on a PIN: a shared device past its idle time takes the drafts the head chef's Google account left too
+    // (review, 29 Oct 2026). The Google sign-in lasts only for the tab, so after the tab closed nobody is signed in here
+    // and her recipe, drawing and function drafts stayed for the next person. Within the idle time they stay, as they do
+    // for a person on a PIN. A personal device keeps them.
+    if (!S.who) { if (shared() && idleExpired()) forgetMine(''); return; }
     if (S.user && S.who !== (S.config || {}).headId) { var previous = S.who; dropGoogle().then(function () { pickName(previous); accessChanged(); }); return; }
     var tok = (lsGet('lk.prep.tok') || '').split(':'), sv = (lsGet('lk.prep.sess') || '').split(':');
     var hasTok = tok[0] === S.who && !!tok[1], hasSess = sv[0] === S.who && +sv[1] > now() && !!S.uid && sv[2] === S.uid;
@@ -1078,7 +1094,8 @@
   /* Sign out: what this person left on the device goes (22 Oct 2026). Function drafts hold a customer's phone and email,
      recipe and drawing drafts are the head chef's, and the mail they sent is theirs. Every hand-over runs it: Sign out,
      Not you?, the idle lock, the head chef's Google account signing out with nobody on a PIN, and a shared device that
-     opens on a new kitchen day or after its idle time (resume(), 29 Oct 2026). */
+     opens on a new kitchen day or after its idle time (resume(), 29 Oct 2026), also when only the head chef's Google
+     account was on it. */
   function forgetMine(id) {
     try {
       Object.keys(LS || {}).forEach(function (k) { if (/^lk\.(fe|mg|dw)\.draft\./.test(k)) lsSet(k, ''); });
@@ -1106,8 +1123,11 @@
      nothing. No second tap gets past it, like Update now (28 Oct 2026). Once it is sent, the next tap signs out as usual.
      Only there: the verified account (level 'owner') with nobody or the head chef on a PIN (ownerHere()), on a device not
      ticked Shared kitchen device. Staff phones, a shared kitchen device and anyone else signing out keep "Not sent. Tap
-     again". Only taps ask it: the idle lock, the other tab's lock and a new kitchen day never wait for it. */
-  function sendFirst() { return pending > 0 && !!S.user && S.level === 'owner' && ownerHere() && !shared(); }
+     again". Only taps ask it: the idle lock, the other tab's lock and a new kitchen day never wait for it. Only what waits
+     for the sign-in on the device now counts (sendingNow()): a write left under the head chef's PIN by Sign in with
+     Google never sends while Google is in, and it held Sign out for good (review, 29 Oct 2026). That one keeps the usual
+     "Not sent. Tap again" (LK_PREP.unsaved() still counts it). */
+  function sendFirst() { return sendingNow() && !!S.user && S.level === 'owner' && ownerHere() && !shared(); }
   var SEND_FIRST = 'Not sent yet. Sign out once it is sent.';
   /* Manage Recipes & Drawings (#/manage, 21 Oct 2026): the head chef only. With their own PIN as Head chef on any device,
      or on the head chef's Google device while nobody else is signed in with a PIN. The rules check the same on the
@@ -3803,7 +3823,7 @@
       return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2>' + (whoHead() ? '<p class="hint a-headpin">Chef, your PIN opens the prep book. The admin panel also needs your Google account, so a PIN seen over your shoulder cannot change the book. Sign in once on this phone and it stays signed in. On a shared kitchen device, sign out when you are done.</p>' :
         '<p class="hint">The admin panel is for the head chef. Sign in with the head chef\'s Google account. Staff and sous chefs use their own PIN in the prep book instead.</p>') +
         (S.saveMsg ? '<p class="p-err">' + esc(S.saveMsg) + '</p>' : '') +
-        '<div class="btn-row"><button type="button" class="btn dark" data-p="signin">Sign in with Google</button><a class="btn" href="#/prep">Back to the prep book</a></div></section>';
+        '<div class="btn-row"><button type="button" class="btn dark" data-p="signin">' + (armed('signin:sent') ? 'Not sent yet.' : 'Sign in with Google') + '</button><a class="btn" href="#/prep">Back to the prep book</a></div></section>';
     }
     loadAdmins();
     if (!S.level) return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2>' + (S.adminsOff === (S.user.email || '') ? '<p class="p-err" role="status">No signal. The admin panel opens when the phone is back online.</p><div class="btn-row"><button type="button" class="btn dark" data-p="admins-retry">Try again</button><a class="btn" href="#/prep">Back to the prep book</a></div>' : '<p class="hint">Checking your access...</p>') + '</section>';
@@ -8364,7 +8384,9 @@
     if (a === 'a-tab') { S.atab = el.getAttribute('data-t'); S.agLast = S.agLast || {}; S.agLast[adminGroupOf(S.atab)[0]] = S.atab; lsSet('lk.prep.atab', S.atab); draw(); adminToTop(); return; }
     if (a === 'staff-open') { if (isSous()) { startDraft(); S.staffOpen = true; draw(); seedPinOpen(); } return; }
     if (a === 'add-recipe') { addRecipe(id); return; }
-    if (a === 'signin') { signIn(); return; }
+    // a change waiting to send holds Sign in with Google, with no second tap past it (review, 29 Oct 2026): the sign-in
+    // changes who this device writes as, and Firestore never sends a write left under the PIN's sign-in after that
+    if (a === 'signin') { if (sendingNow()) { if (!armed('signin:sent')) arm('signin:sent'); toast('Not sent yet. Sign in once it is sent.'); return; } signIn(); return; }
     // the owner check again now, past its 5-minute wait (the No signal card on the admin panel)
     if (a === 'admins-retry') { delete S.retryAt.admins; loadAdmins(); draw(); return; }
     // anything not saved asks first, like the chef hat's Sign out (28 Oct 2026: only the staff list did, and minutes, a
@@ -9188,9 +9210,10 @@
     chefOpen: chefOpen,
     secOpen: function () { ksOpen(true); },
     // the chef hat's Sign out, a tap: on the head chef's own Google device it waits while a change waits to send, and
-    // no second tap gets past it (29 Oct 2026, sendFirst(); the menu says "Not sent yet."). The idle lock and the other
-    // tab's lock call signOutPerson() itself, which never waits for it.
-    signOut: function (force, quiet) { return !sendFirst() && signOutPerson(force, quiet); },
+    // no second tap gets past it (29 Oct 2026, sendFirst(); the menu says "Not sent yet."). The toast says what happens
+    // next, and says it again on each tap (the menu's line stays the same, so a screen reader hears nothing new there).
+    // The idle lock and the other tab's lock call signOutPerson() itself, which never waits for it.
+    signOut: function (force, quiet) { if (sendFirst()) { toast(SEND_FIRST); return false; } return signOutPerson(force, quiet); },
     sendFirst: sendFirst,
     minNudge: minNudgeHTML,
     cutSlot: cutSlot,

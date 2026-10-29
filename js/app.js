@@ -478,17 +478,22 @@
       // something not saved yet: the first tap says so, the second signs out anyway. "Not sent yet." when the only thing
       // waiting is a change on its way to the server (28 Oct 2026: it said Not saved yet for that too). On the head chef's
       // own Google device that change holds Sign out: "Not sent yet." and no second tap gets past it (29 Oct 2026,
-      // sendFirst() in js/prep.js); once it is sent, the next tap signs out as usual
-      if (window.LK_PREP.sendFirst && window.LK_PREP.sendFirst()) {
-        el.classList.remove('is-armed'); el.classList.add('is-wait'); el.querySelector('small').textContent = 'Not sent yet.'; return;
-      }
-      el.classList.remove('is-wait');
-      if (!window.LK_PREP.signOut(el.classList.contains('is-armed'))) {
-        el.classList.add('is-armed'); el.querySelector('small').textContent = (window.LK_PREP.unsavedHere && !window.LK_PREP.unsavedHere() ? 'Not sent yet.' : 'Not saved yet.') + ' Tap again to sign out'; return;
+      // sendFirst() in js/prep.js, whose toast says Sign out once it is sent); once it is sent, the line goes (lk-sent
+      // below) and the next tap signs out as usual
+      var wait = !!(window.LK_PREP.sendFirst && window.LK_PREP.sendFirst());
+      if (!window.LK_PREP.signOut(!wait && el.classList.contains('is-armed'))) {
+        el.classList.toggle('is-wait', wait); el.classList.toggle('is-armed', !wait);
+        el.querySelector('small').textContent = wait ? 'Not sent yet.' : (window.LK_PREP.unsavedHere && !window.LK_PREP.unsavedHere() ? 'Not sent yet.' : 'Not saved yet.') + ' Tap again to sign out'; return;
       }
       // "Signed out" is the prep toast, which shows by itself off the prep pages too (toast() in js/prep.js)
       whoMenuClose();
     }
+  });
+  // the change Sign out waited for is sent (js/prep.js, 29 Oct 2026): "Not sent yet." goes from an open menu, so it never
+  // says so after it is sent. The next tap signs out, or asks "Not saved yet" for something half typed.
+  window.addEventListener('lk-sent', function () {
+    var o = wmenu && wmenu.querySelector('.wm-out.is-wait');
+    if (o) { o.classList.remove('is-wait'); o.querySelector('small').textContent = ''; }
   });
   document.addEventListener('keydown', function (e) {
     if (!wmenu) return;
