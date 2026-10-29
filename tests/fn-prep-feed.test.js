@@ -19,10 +19,17 @@ function fn(o) {
     [fsKey(['functions', 'brown'])]: fn({ name: 'Brown 21st', date: tmr, start: '19:00', rounds: ['19:30'], lines: [['antipasto-platter', 'Antipasto Platter', [4]]] }),
     [fsKey(['days', today, 'items', 'fn-smith-aussie-platter'])]: { text: 'Aussie Platter', qty: '5 platters', station: 'Functions', recipe: 'aussie-platter', fn: 'smith', dupOk: true, addedBy: 'Fay', addedById: 'fay', addedAt: L.NOW - 3600000, done: false, deleted: false }
   };
+  // an amount the card does not give: the head chef's copy of the Antipasto platter with the dried fruit amount to come
+  // (the book file has every platter amount now, so the test makes its own)
+  const antipasto = (() => { const c = { window: {} }; require('vm').runInNewContext(require('fs').readFileSync(require('path').join(__dirname, '../js/data.js'), 'utf8'), c); return JSON.parse(JSON.stringify(c.window.LK_DATA.recipes.find(r => r.id === 'antipasto-platter'))); })();
+  antipasto.ingredients.forEach(i => { if (i.name === 'Dried fruit salad') i.q = '[Qty]'; });
+  extra[fsKey(['book', 'index'])] = { r: { 'antipasto-platter': 1 } };
+  extra[fsKey(['recipes', 'antipasto-platter'])] = { r: antipasto, v: 1, upd: L.NOW - 3600000, by: 'hd', src: 'book', base: 'abcd1234', removed: false };
   const p = await L.open(b, '#/prep', { extra, wait: 1800 });
   await L.waitFor(p, () => /What the platters need: 8 today, 10 tomorrow/.test(document.body.textContent)).catch(() => {});
   ok(/What the platters need: 8 today, 10 tomorrow/.test(await L.txt(p, '.nb-right') || '') && !(await p.$('.fnn')), 'folded: one line with the counts');
   await p.click('[data-p="fnneed-fold"]'); await L.settle(p, 200);
+  await L.waitFor(p, () => /Dried fruit salad/.test((document.querySelector('.nb-right') || {}).textContent || '')).catch(() => {});
   const t = (await L.txt(p, '.nb-right') || '').replace(/\s+/g, ' ');
   ok(/Party pies 50 pieces/.test(t) && /Smith 50th: 5 platters/.test(t), 'today: 5 Aussie platters need 50 party pies, and it says for whom');
   ok(/Leg ham 400 g/.test(t) && /Cheese selection 1\.2 kg/.test(t) && /Brown 21st: 4 platters/.test(t), 'tomorrow: 4 Antipasto platters, leg ham 400 g and cheese 1.2 kg');

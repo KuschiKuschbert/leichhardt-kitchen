@@ -48,11 +48,11 @@
   Specials always shows first. The head chef's Special switch in Manage Recipes puts a dish in it.
 */
 window.LK_DATA = {
-  updated: '27 October 2026',
+  updated: '29 October 2026',
   allergens: ['Gluten', 'Milk', 'Egg', 'Soy', 'Peanut', 'Tree nut', 'Fish', 'Crustacean', 'Mollusc', 'Sesame'],
   menuOrder: [
-    { title: 'Specials', ids: ['chicken-adobo'] },
-    { title: "Snackin' Plates", ids: ['poutine', 'beetroot-bites', 'brisket-cob', 'lamb-nachos', 'buffalo-corn-cob-with-cashew-crumb', 'wings', 'haloumi-tacos', 'pork-belly-bites', 'calamari', 'riblets', 'garlic-bread', 'bacon-cheese-bread', 'chips-snack'] },
+    { title: 'Specials', ids: ['chicken-adobo', 'lamb-nachos', 'buffalo-corn-cob-with-cashew-crumb'] },
+    { title: "Snackin' Plates", ids: ['poutine', 'beetroot-bites', 'brisket-cob', 'wings', 'haloumi-tacos', 'pork-belly-bites', 'calamari', 'riblets', 'garlic-bread', 'bacon-cheese-bread', 'chips-snack'] },
     { title: 'Salads', ids: ['caesar', 'green-bowl', 'pumpkin-salad'] },
     { title: 'Big Country Feeds', ids: ['beef-cheek', 'ribs', 'barra', 'carbonara', 'fish-chips', 'lamb-rissoles', 'vegan-rissoles', 'pork-belly', 'pie'] },
     { title: 'Off the Grill', ids: ['rump-250', 'rump-500', 'eye-fillet', 'rib-fillet', 'grill-board', 'taco-board', 'flank'] },
@@ -223,14 +223,16 @@ window.LK_DATA = {
         { q: '1', name: 'White cabbage' },
         { q: '12', name: 'Corn cobs' },
         { q: '1 tin', name: 'Roasted red peppers' },
-        { q: '[Qty]', name: 'Aioli', link: 'aioli', note: 'for service', tags: ['Egg'] },
-        { q: '[Qty]', name: 'Lemon juice', note: 'for service' }
+        { q: '', name: 'Aioli', link: 'aioli', note: 'for service' },
+        { q: '', name: 'Lemon juice', note: 'for service' }
       ],
       sections: [
         { title: 'Method', steps: ['Steam the corn cobs 12 min, then char them on the grill.', 'Cut the kernels off the cobs.', 'Carrots through the Robot-Coupe julienne blade.', 'Red and white cabbage through the 4 mm slicing blade.', 'Add the roasted red peppers.', 'Combine as the base batch. Store in a big container in the coolroom.', 'For service, take what is needed into the prep fridge and mix with aioli and lemon juice, as before.'] }
       ],
-      contains: [{ allergen: 'Egg', from: 'aioli' }], check: [],
-      labelNote: 'None in the base. Check the aioli label.'
+      contains: [{ allergen: 'Egg', from: 'aioli' }],
+      check: [],
+      labelNote: 'None in the base. Check the aioli label.',
+      done: true
     },
     {
       id: 'snickers', no: '10', kind: 'dessert', forLine: 'Plate', name: 'Snickers Spring Rolls', art: 'snickers', avc: 'Snickers spring rolls S26',
@@ -1026,40 +1028,39 @@ window.LK_DATA = {
 
     /* Snacks */
     {
-      id: 'poutine', art: 'poutine', no: '46', kind: 'snack', forLine: 'Snack', name: 'Poutine Fries',
-      menu: 'Poutine Fries: fries, melted cheddar and mozzarella, gravy.',
+      id: 'poutine', art: 'poutine', no: '46', kind: 'snack', forLine: 'Snack', name: 'Poutine Fries', menu: 'Poutine Fries: fries, melted cheddar and mozzarella, gravy.',
       yield: 'Per serve, in a bowl. 200 g of chips, grated mozzarella, 160 ml of gravy, a thin zigzag of American cheese sauce, topped with fried shallots.',
       ingredients: [
         { q: '200 g', name: 'Chips' },
-        { q: '[Qty]', name: 'Grated mozzarella', note: 'bought in', link: 'grated-mozzarella', tags: ['Milk'] },
-        { q: '160 ml', name: 'Gravy', note: 'smothered over the mozzarella', link: 'gravy' },
-        { q: '[Qty]', name: 'American cheese sauce', note: 'bought in, thin zigzag over the gravy', link: 'american-cheese-sauce', tags: ['Milk'] },
+        { q: '80 g', name: 'Grated mozzarella', link: 'grated-mozzarella', note: 'bought in' },
+        { q: '160 ml', name: 'Gravy', link: 'gravy', note: 'smothered over the mozzarella' },
+        { q: '50 ml', name: 'American cheese sauce', link: 'american-cheese-sauce', note: 'bought in, thin zigzag over the gravy' },
         { q: '[Qty]', name: 'Fried shallots', note: 'bought in, on top' }
       ],
       pins: [
-        { label: 'Chips', x: 34.0, y: 58.5, side: 'left', tags: [], note: '200 g, in a bowl.' },
+        { label: 'Chips', x: 34, y: 58.5, side: 'left', tags: [], note: '200 g, in a bowl.' },
         { label: 'American cheese sauce', x: 49.1, y: 38.7, side: 'right', link: 'american-cheese-sauce', note: 'Bought in. Thin zigzag across the whole gravy.' },
-        { label: 'Grated mozzarella', x: 27.8, y: 40.0, side: 'left', link: 'grated-mozzarella', note: 'Bought in. Under the gravy.' },
-        { label: 'Gravy', x: 41.0, y: 47.2, side: 'left', link: 'gravy', note: '160 ml. Sits on top of the mozzarella.' },
+        { label: 'Grated mozzarella', x: 27.8, y: 40, side: 'left', link: 'grated-mozzarella', note: 'Bought in. Under the gravy.' },
+        { label: 'Gravy', x: 41, y: 47.2, side: 'left', link: 'gravy', note: '160 ml. Sits on top of the mozzarella.' },
         { label: 'Fried shallots', x: 48.1, y: 44.3, side: 'right', tags: [], note: 'Bought in. On top.' }
       ],
       sections: [
         { title: 'Plating', steps: ['Serve in a bowl.', 'Chips in the bowl.', 'Grated mozzarella over the chips.', 'Smother with 160 ml of gravy, on top of the mozzarella.', 'American cheese sauce in a thin zigzag across the whole gravy.', 'Fried shallots on top.'] }
-      ]
+      ],
+      done: true
     },
     {
-      id: 'lamb-nachos', art: 'lamb-nachos', no: '123', kind: 'snack', forLine: 'Snack', name: 'Smoked Pulled Lamb Nachos', short: 'Lamb nachos',
-      menu: 'Smoked Pulled Lamb Nachos: slow-smoked pulled lamb layered over crisp corn chips and baked with bubbling mozzarella, topped with house pico de gallo, velvety smashed avocado puree, cool sour cream, feta cheese and a drizzle of creamy ranch.',
+      id: 'lamb-nachos', art: 'lamb-nachos', no: '123', kind: 'snack', forLine: 'Snack', name: 'Smoked Pulled Lamb Nachos', short: 'Lamb nachos', menu: 'Smoked Pulled Lamb Nachos: slow-smoked pulled lamb layered over crisp corn chips and baked with bubbling mozzarella, topped with house pico de gallo, velvety smashed avocado puree, cool sour cream, feta cheese and a drizzle of creamy ranch.',
       yield: 'Per serve, in a bowl. Corn chips and mozzarella through the impinger halfway, the pulled lamb through all the way. In the bowl: chips, lamb, avocado puree, sour cream, feta, ranch, pico de gallo, snow pea tendrils.',
       ingredients: [
         { q: '[Qty]', name: 'Corn chips', note: 'on a baking tray', tags: ['Gluten?'] },
-        { q: '[Qty]', name: 'Grated mozzarella', note: 'on the chips, through the impinger halfway', link: 'grated-mozzarella', tags: ['Milk'] },
+        { q: '[Qty]', name: 'Grated mozzarella', link: 'grated-mozzarella', note: 'on the chips, through the impinger halfway' },
         { q: '[Qty]', name: 'Smoked pulled lamb', note: 'from the smoker, on its own tray, through the impinger all the way' },
         { q: '[Qty]', name: 'Smashed avocado puree', note: 'on one side' },
         { q: '[Qty]', name: 'Sour cream', note: 'on the other side', tags: ['Milk'] },
         { q: '[Qty]', name: 'Feta', note: 'crumbled all over', tags: ['Milk'] },
-        { q: '[Qty]', name: 'Ranch dressing', note: 'drizzled over', link: 'ranch', tags: ['Milk', 'Egg'] },
-        { q: '[Qty]', name: 'Pico de gallo', note: 'house made', link: 'pico' },
+        { q: '[Qty]', name: 'Ranch dressing', link: 'ranch', note: 'drizzled over' },
+        { q: '[Qty]', name: 'Pico de gallo', link: 'pico', note: 'house made' },
         { q: '[Qty]', name: 'Snow pea tendrils', note: 'to finish' }
       ],
       pins: [
@@ -1103,13 +1104,12 @@ window.LK_DATA = {
       labelNote: 'Check the chilli jalapeño butter and buffalo mayo labels.'
     },
     {
-      id: 'beetroot-bites', art: 'beetroot-bites', no: '47', kind: 'snack', forLine: 'Snack', name: 'Crispy Beetroot Bites',
-      menu: 'Crispy Beetroot Bites: fried beetroot, caramelised chilli jam, Korean-style cucumber.',
+      id: 'beetroot-bites', art: 'beetroot-bites', no: '47', kind: 'snack', forLine: 'Snack', name: 'Crispy Beetroot Bites', menu: 'Crispy Beetroot Bites: fried beetroot, caramelised chilli jam, Korean-style cucumber.',
       yield: 'Per serve. 7 pieces of fried beetroot tossed in chilli jam, piled in the middle, Korean-style cucumber on top.',
       ingredients: [
         { q: '7 pieces', name: 'Crispy beetroot bites', note: 'fried', tags: ['Gluten?'] },
-        { q: '[Qty]', name: 'Caramelised chilli jam', link: 'chilli-jam' },
-        { q: '[Qty]', name: 'Korean-style cucumber', link: 'korean-cucumber' }
+        { q: '100 ml', name: 'Caramelised chilli jam', link: 'chilli-jam' },
+        { q: '30 g', name: 'Korean-style cucumber', link: 'korean-cucumber' }
       ],
       pins: [
         { label: 'Crispy beetroot bites', x: 36.3, y: 56.6, side: 'left', tags: ['Gluten?'], note: '7 pieces, fried, tossed in chilli jam, piled in the middle.' },
@@ -1118,46 +1118,47 @@ window.LK_DATA = {
       ],
       sections: [
         { title: 'Plating', steps: ['Toss the 7 beetroot bites in the caramelised chilli jam.', 'Pile them in the middle of the plate.', 'Korean-style cucumber on top.'] }
-      ]
+      ],
+      done: true
     },
     {
-      id: 'brisket-cob', art: 'brisket-cob', no: '48', kind: 'snack', forLine: 'Snack', name: 'Brisket Cob',
-      menu: 'Brisket Cob: slow-roasted house-rubbed brisket, cream cheese, corn, caramelised onion, in a cob.',
+      id: 'brisket-cob', art: 'brisket-cob', no: '48', kind: 'snack', forLine: 'Snack', name: 'Brisket Cob', menu: 'Brisket Cob: slow-roasted house-rubbed brisket, cream cheese, corn, caramelised onion, in a cob.',
       yield: 'Per serve. A cob loaf filled with cob loaf mix, grated mozzarella on top, spring onions to garnish.',
       ingredients: [
         { q: '1', name: 'Cob loaf', tags: ['Gluten'] },
-        { q: '280 ml', name: 'Cob loaf mix', note: 'cream cheese, corn and caramelised onion are in the mix', link: 'cob-mix' },
-        { q: 'about 50 g', name: 'Grated mozzarella', note: 'bought in, on top', link: 'grated-mozzarella', tags: ['Milk'] },
+        { q: '280 ml', name: 'Cob loaf mix', link: 'cob-mix', note: 'cream cheese, corn and caramelised onion are in the mix' },
+        { q: 'about 50 g', name: 'Grated mozzarella', link: 'grated-mozzarella', note: 'bought in, on top' },
         { q: '[Qty]', name: 'Spring onions', note: 'garnish' }
       ],
       pins: [
-        { label: 'Cob loaf', x: 49.1, y: 28.3, side: 'right', tags: ['Gluten'], note: '' },
+        { label: 'Cob loaf', x: 49.1, y: 28.3, side: 'right', tags: ['Gluten'] },
         { label: 'Cob loaf mix', x: 44.3, y: 51.9, side: 'left', link: 'cob-mix', note: '280 ml in the hollowed cob.' },
         { label: 'Grated mozzarella', x: 54.7, y: 46.2, side: 'right', link: 'grated-mozzarella', note: 'About 50 g, on top.' },
         { label: 'Spring onions', x: 50.9, y: 41.5, side: 'right', tags: [], note: 'Garnish.' }
       ],
       sections: [
         { title: 'Plating', steps: ['Fill the hollowed cob with 280 ml of cob loaf mix.', 'About 50 g grated mozzarella on top.', 'Spring onions to garnish.'] }
-      ]
+      ],
+      done: true
     },
     {
-      id: 'wings', art: 'wings', no: '49', kind: 'snack', forLine: 'Snack', name: 'Fried Chicken Wings',
-      menu: 'Fried Chicken Wings: double-smoked BBQ sauce.',
+      id: 'wings', art: 'wings', no: '49', kind: 'snack', forLine: 'Snack', name: 'Fried Chicken Wings', menu: 'Fried Chicken Wings: double-smoked BBQ sauce.',
       yield: 'Per serve. 380 to 420 g fried wings in double-smoked BBQ sauce, with cowboy candy (jalapeño candy) on top.',
       ingredients: [
         { q: '380 to 420 g', name: 'Chicken wings', note: 'portioned in a sandwich bag' },
-        { q: '[Qty]', name: 'Wing flour', link: 'wing-flour', tags: ['Gluten?'] },
-        { q: '[Qty]', name: 'Double-smoked BBQ sauce', tags: ['Gluten?', 'Soy?'] },
-        { q: '[Qty]', name: 'Cowboy candy', note: 'also called jalapeño candy, candied jalapeños, on top', link: 'cowboy-candy' }
+        { q: '20 g', name: 'Wing flour', link: 'wing-flour' },
+        { q: '100 ml', name: 'Double-smoked BBQ sauce', tags: ['Gluten?', 'Soy?'] },
+        { q: '25 g', name: 'Cowboy candy', link: 'cowboy-candy', note: 'also called jalapeño candy, candied jalapeños, on top' }
       ],
       pins: [
         { label: 'Chicken wings', x: 39.6, y: 42.5, side: 'right', tags: [], note: '380 to 420 g, fried.' },
         { label: 'Double-smoked BBQ sauce', x: 58.5, y: 64.2, side: 'left', tags: ['Gluten?', 'Soy?'], note: 'On the wings.' },
-        { label: 'Cowboy candy', x: 51.9, y: 41.0, side: 'right', link: 'cowboy-candy', note: 'Also called jalapeño candy. On top of the wings.' }
+        { label: 'Cowboy candy', x: 51.9, y: 41, side: 'right', link: 'cowboy-candy', note: 'Also called jalapeño candy. On top of the wings.' }
       ],
       sections: [
         { title: 'Plating', steps: ['Wings in the double-smoked BBQ sauce.', 'Cowboy candy (jalapeño candy) on top of the wings.'] }
-      ]
+      ],
+      done: true
     },
     {
       id: 'haloumi-tacos', art: 'haloumi-tacos', no: '50', kind: 'snack', forLine: 'Snack', name: 'Haloumi Tacos',
@@ -1807,8 +1808,8 @@ window.LK_DATA = {
         { q: '300 g total', name: 'Cheese selection', note: 'Cracker Barrel, blue cheese and brie', tags: ['Milk'] },
         { q: '1/2 pkt', name: 'Crackers', tags: ['Gluten', 'Sesame?', 'Soy?'] },
         { q: '1 cob', name: 'Sourdough', note: 'cut and grilled', tags: ['Gluten'] },
-        { q: '[Qty]', name: 'Dried fruit salad', note: 'the dried fruit selection' },
-        { q: '2ea', name: 'Tomato relish', note: 'dip', link: 'tomato-relish' },
+        { q: '120gm', name: 'Dried fruit salad', note: 'the dried fruit selection' },
+        { q: '2ea', name: 'Tomato relish', link: 'tomato-relish', note: 'dip' },
         { q: '2ea', name: 'Caramelised onions', note: 'dip' },
         { q: '2ea', name: 'Basil pesto', note: 'dip', tags: ['Tree nut?', 'Milk?'] }
       ],
@@ -1841,7 +1842,7 @@ window.LK_DATA = {
         { q: '6-8ea', name: 'King prawns', tags: ['Crustacean'] },
         { q: '10ea', name: 'Oysters', tags: ['Mollusc'] },
         { q: 'Large handful', name: 'Sweet potato chips' },
-        { q: '[Qty]', name: 'Lemon wedges' },
+        { q: '8', name: 'Lemon wedges' },
         { q: '2ea', name: 'Tartare sauce', link: 'tartare' },
         { q: '2ea', name: 'Sweet chilli sauce' }
       ],
@@ -1923,8 +1924,7 @@ window.LK_DATA = {
     },
     /* ---------- Batch cards from AVC Live (Oct 2026): only fully confirmed ingredient lists ---------- */
     {
-      id: 'chips-salad', no: '66', art: 'chips-salad', kind: 'batch', forLine: 'For steaks, schnitzels, parmys and fish', name: 'Chips and Salad', short: 'Chips + salad',
-      avc: 'GLOBAL 200g CHIP PORTION MEALS SEP26 / GLOBAL BASE SALAD PORTION SEP26',
+      id: 'chips-salad', no: '66', art: 'chips-salad', kind: 'batch', forLine: 'For steaks, schnitzels, parmys and fish', name: 'Chips and Salad', short: 'Chips + salad', avc: 'GLOBAL 200g CHIP PORTION MEALS SEP26 / GLOBAL BASE SALAD PORTION SEP26',
       yield: 'Per serve: 200 g chips and one base salad.',
       ingredients: [
         { q: '200 g', name: 'Chips', note: '9 mm skin-on' },
@@ -1934,12 +1934,13 @@ window.LK_DATA = {
         { q: '5 g', name: 'Carrot, julienne' },
         { q: '10 g', name: 'Peeled red onion' },
         { q: '10 g', name: 'Lebanese cucumber' },
-        { q: '20 ml', name: 'Green goddess dressing', link: 'green-goddess', note: 'vegan', tags: ['Soy?', 'Sesame?'] },
+        { q: '20 ml', name: 'Green goddess dressing', link: 'green-goddess', note: 'vegan' },
         { q: '2 g', name: 'Salt flakes', note: 'on the salad' }
       ],
       contains: [],
       check: [{ allergen: 'Soy', from: 'green goddess dressing' }, { allergen: 'Sesame', from: 'green goddess dressing' }],
-      labelNote: 'Check the chip and dressing labels. AVC also lists chicken salt and lemon pepper on the chips at 0 g, so they are not counted here.'
+      labelNote: 'Check the chip and dressing labels. AVC also lists chicken salt and lemon pepper on the chips at 0 g, so they are not counted here.',
+      done: true
     },
     {
       id: 'pork-belly-batch', done: true, no: '67', art: 'pork-belly-batch', kind: 'batch', forLine: 'For the pork belly and the pork belly bites', name: 'Pork Belly and Crackle', short: 'Pork belly',
@@ -2105,7 +2106,7 @@ window.LK_DATA = {
       labelNote: 'Check the gravy powder and cooking cream labels.'
     },
     {
-      id: 'diane-sauce', no: '77', kind: 'batch', forLine: 'For the Grill Maiden\'s Board', name: 'Diane Sauce', short: 'Diane sauce', art: 'diane-sauce',
+      id: 'diane-sauce', no: '77', kind: 'batch', forLine: "For the Grill Maiden's Board", name: 'Diane Sauce', short: 'Diane sauce', art: 'diane-sauce',
       yield: 'Batch: 5 L. One portion of sauce is 50 ml.',
       ingredients: [
         { q: '1150 g', name: 'Gravy powder' },
@@ -2114,20 +2115,16 @@ window.LK_DATA = {
         { q: '1 L', name: 'Cooking cream', tags: ['Milk'] },
         { q: '250 ml', name: 'Worcestershire sauce', tags: ['Fish?', 'Gluten?', 'Soy?'] },
         { q: '500 g', name: 'Tomato sauce', link: 'tomato-sauce' },
-        { q: '200 ml', name: 'Water', note: 'for the slurry' }
+        { q: '200 ml', name: 'Water', note: 'for the slurry' },
+        { q: '8 l', name: 'Water' }
       ],
       sections: [
-        { title: 'Method', steps: [
-          'Cook off the ingredients individually, starting with the garlic.',
-          'Deglaze with the red cooking wine.',
-          'Add the Worcestershire sauce and the tomato sauce. [Order to confirm]',
-          'Top up with the cooking cream.',
-          'Make a slurry with the gravy powder and 200 ml of water, and add it.'
-        ] }
+        { title: 'Method', steps: ['Cook off the ingredients individually, starting with the garlic.', 'Deglaze with the red cooking wine.', 'Add the Worcestershire sauce and the tomato sauce. [Order to confirm]', 'Top up with the cooking cream.', 'Make a slurry with the gravy powder and 200 ml of water, and add it.'] }
       ],
       contains: [{ allergen: 'Milk', from: 'cooking cream' }],
       check: [{ allergen: 'Fish', from: 'Worcestershire sauce' }, { allergen: 'Gluten', from: 'Worcestershire sauce' }, { allergen: 'Soy', from: 'Worcestershire sauce' }],
-      labelNote: 'Check the Worcestershire sauce, tomato sauce, gravy powder and cooking cream labels.'
+      labelNote: 'Check the Worcestershire sauce, tomato sauce, gravy powder and cooking cream labels.',
+      done: true
     },
     {
       id: 'wing-flour', done: true, no: '78', kind: 'batch', forLine: 'For the wings', name: 'Szechuan Wing Flour', short: 'Wing flour', art: 'wing-flour',
@@ -2551,7 +2548,8 @@ window.LK_DATA = {
         { title: 'Method', steps: ['Mix the bourbon BBQ dry rub through the butter.', 'Roll the butter and store it in the freezer.', 'When needed, cut portions of about 80 g.'] }
       ],
       contains: [{ allergen: 'Milk', from: 'butter' }],
-      labelNote: 'Check the supplier label for allergens on the dry rub.'
+      labelNote: 'Check the supplier label for allergens on the dry rub.',
+      done: true
     },
     {
       id: 'asian-greens', art: 'asian-greens', no: '116', kind: 'batch', forLine: 'For the barramundi', name: 'Asian Greens', short: 'Asian greens',
