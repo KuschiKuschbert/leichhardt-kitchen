@@ -6,7 +6,7 @@ The Leichhardt Hotel kitchen's app: the recipe book, the prep list, the order li
 
 ## Smoker batch cards (30 October 2026)
 
-Carolina Gold BBQ Sauce, House BBQ Sauce, Alabama White Sauce and Cornbread have batch cards and matching pan drawings. Cornbread and Alabama White link from the ingredients and drawing pins on both smoked boards. The supplied cards have no methods, and three ingredient entries need confirmation. These remain marked To come, with incomplete allergen information kept out of Free from results. House BBQ is not substituted for double-smoked BBQ without confirmation. See [smoker batch cards](docs/smoker-batches.md) for the source questions and saved-book overlay limitation.
+Carolina Gold BBQ Sauce, House BBQ Sauce, Alabama White Sauce and Cornbread have batch cards and matching pan drawings. Cornbread and Alabama White link from the ingredients and drawing pins on both smoked boards. The supplied cards have no methods. The head chef instructed us to omit the pecan and unnamed ingredient entries. The drawings reuse existing sauce pans and the library's exact cornbread piece. House BBQ is not substituted for double-smoked BBQ without confirmation. See [smoker batch cards](docs/smoker-batches.md) for the source questions and saved-book overlay limitation.
 
 ## What it does
 

@@ -1507,7 +1507,7 @@ window.LK_DATA = {
         { label: 'Bread and butter pickles', x: 17.9, y: 64.6, side: 'left', tags: [], note: '' },
         { label: 'Double-smoked BBQ sauce', x: 29.7, y: 66, side: 'right', tags: ['Gluten?', 'Soy?'], note: '' },
         { label: 'Bourbon BBQ sauce', x: 41.5, y: 64.2, side: 'right', link: 'bourbon-bbq-sauce', note: '' },
-        { label: 'Alabama white sauce', x: 53.3, y: 66, side: 'right', link: 'alabama-white-sauce', note: 'Batch card 128. Two ingredients still to confirm.' }
+        { label: 'Alabama white sauce', x: 53.3, y: 66, side: 'right', link: 'alabama-white-sauce', note: 'Batch card 128.' }
       ],
       sections: [
         { title: 'Cooking', steps: ['Brisket, pulled pork and pulled lamb come from the smoker [times and holding to confirm].', 'Cornbread: glaze the top with maple butter, then into the oven [oven setting and time to confirm].'] },
@@ -1546,7 +1546,7 @@ window.LK_DATA = {
         { label: 'Bread and butter pickles', x: 13.2, y: 64.6, side: 'left', tags: [], note: '' },
         { label: 'Double-smoked BBQ sauce', x: 25, y: 66, side: 'right', tags: ['Gluten?', 'Soy?'], note: '' },
         { label: 'Bourbon BBQ sauce', x: 36.8, y: 64.2, side: 'right', link: 'bourbon-bbq-sauce', note: '' },
-        { label: 'Alabama white sauce', x: 48.6, y: 66, side: 'right', link: 'alabama-white-sauce', note: 'Batch card 128. Two ingredients still to confirm.' }
+        { label: 'Alabama white sauce', x: 48.6, y: 66, side: 'right', link: 'alabama-white-sauce', note: 'Batch card 128.' }
       ],
       sections: [
         { title: 'Cooking', steps: ['Brisket, pulled pork and pulled lamb come from the smoker [times and holding to confirm].', 'Cornbread: glaze the top with maple butter, then into the oven [oven setting and time to confirm].'] },
@@ -2609,12 +2609,6 @@ window.LK_DATA = {
           "name": "Garlic powder"
         },
         {
-          "q": "100 g",
-          "name": "[Ingredient to confirm]",
-          "link": "carolina-gold-ingredient-to-confirm",
-          "note": "The source says caramel pecan. Confirm the ingredient before making."
-        },
-        {
           "q": "75 ml",
           "name": "Buffalo sauce"
         },
@@ -2623,7 +2617,7 @@ window.LK_DATA = {
           "name": "Sea salt flakes"
         }
       ],
-      "labelNote": "Ingredient unresolved. Check the current mustard, Worcestershire and buffalo sauce labels. Method not supplied. The source yield is 4.2 L; confirm the finished yield.",
+      "labelNote": "Check the current mustard, Worcestershire and buffalo sauce labels. Method not supplied. The source yield is 4.2 L; confirm the finished yield.",
       "yield": "Batch: 4.2 L (source yield)."
     },
     {
@@ -2750,12 +2744,6 @@ window.LK_DATA = {
           "name": "Caster sugar"
         },
         {
-          "q": "800 g",
-          "name": "[Ingredient to confirm]",
-          "link": "alabama-white-ingredient-to-confirm",
-          "note": "The source has no product name for this ingredient."
-        },
-        {
           "q": "675 ml",
           "name": "Worcestershire sauce",
           "note": "Lee & Perrins; check the current label",
@@ -2779,12 +2767,6 @@ window.LK_DATA = {
         },
         {
           "q": "85 g",
-          "name": "[Ingredient to confirm]",
-          "link": "alabama-white-second-ingredient-to-confirm",
-          "note": "The source says caramel pecan. Confirm the ingredient before making."
-        },
-        {
-          "q": "85 g",
           "name": "Sea salt flakes"
         },
         {
@@ -2792,7 +2774,7 @@ window.LK_DATA = {
           "name": "Ground black pepper"
         }
       ],
-      "labelNote": "Two ingredients unresolved. Check current mayonnaise, mustard, Worcestershire and hot sauce labels. Method not supplied. The source yield is 16 L; confirm the finished yield.",
+      "labelNote": "Check current mayonnaise, mustard, Worcestershire and hot sauce labels. Method not supplied. The source yield is 16 L; confirm the finished yield.",
       "yield": "Batch: 16 L (source yield)."
     },
     {

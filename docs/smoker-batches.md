@@ -4,14 +4,10 @@ Four uploaded recipe PDFs supply ingredient quantities and stated yields for Car
 
 Cornbread and Alabama White Sauce link from the ingredients and Pass pins on Butchers Board and The Beast Board. Their existing plating, positions and portion placeholders stay. House BBQ is not assumed to be double-smoked BBQ. Carolina Gold has no confirmed serving dish. Neither sauce replaces an existing board sauce without confirmation.
 
-Outstanding source questions:
-- Carolina Gold: the 100 g ingredient is printed as caramel pecan.
-- Alabama White: one 800 g ingredient has no name; another 85 g ingredient is printed as caramel pecan.
-- Confirm the sauce methods and finished yields, and the cornbread baking method, oven setting and time.
-- Confirm House BBQ's relationship to double-smoked BBQ and Carolina Gold's serving dishes.
+On 30 October 2026 the head chef instructed us to ignore the pecan and unnamed ingredients. Omitted: Carolina Gold's 100 g caramel pecan entry, Alabama White's unnamed 800 g entry and its 85 g caramel pecan entry. No replacement ingredient or amount was invented. Their unresolved recipe links were removed. Allergens now roll up from the remaining ingredients and current label checks.
 
-Ambiguous ingredients have bracketed names and unresolved recipe links. This deliberately keeps Allergens incomplete and excludes affected cards and linked boards from every Free from result. Remove those unresolved links only when the ingredient and its allergens are confirmed. Supplier-dependent allergens still need current label checks.
+Still to confirm: sauce methods and finished yields, the cornbread baking method, House BBQ's relationship to double-smoked BBQ, and Carolina Gold's serving dishes.
 
-The four native SVG pan drawings use the existing steel rim, warm colours and drawing registry. Cornbread's twelve pieces illustrate the source's twelve portions, not a confirmed tin size or cutting instruction. No new image requests, runtime modules, permissions, Firestore reads, rules or saved fields.
+Drawings reuse the book's assets exactly. House BBQ uses the Bourbon BBQ pan unchanged. Carolina Gold uses the aioli pan with mustard colours from the library palette. Alabama White uses the ranch pan with its flecks coloured as pepper. Cornbread repeats the library's exact cornbread SVG, which was copied from the Butchers Board, twelve times inside the existing steel pan. Only placement, scale and sauce colours change. No new shapes, strokes, outside illustrations or runtime library loads. The twelve pieces illustrate the source yield, not a confirmed cutting method.
 
 The public/canonical Firestore overlay wins over static data for recipes already edited in the book. A saved board override can therefore retain its older links until reconciled in Manage Recipes. No private live data was accessed or overwritten by this source change.
