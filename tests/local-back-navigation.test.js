@@ -166,19 +166,23 @@ const configWrites = p => p.evaluate(() => __fake.writes.flat().filter(w => /\/c
     await p.context().close();
   }
 
-  // A slow history traversal can restore the opening position before its popstate reaches the sheet closer.
+  // Control the artificial delay with the installed test clock. Competing CI pages must not let the
+  // 600 ms fallback overtake this 50 ms delay before Chromium dispatches its native popstate.
   p = await L.open(b, '#/recipes', { extra: { [key(['functions', 'test'])]: booking }, wait: 1500 });
   await p.evaluate(() => { document.body.style.minHeight = '4000px'; scrollTo(0, 1500); });
   await L.settle(p, 200); await p.click('.fn-strip-b'); await L.settle(p, 150);
+  await p.clock.pauseAt(await p.evaluate(() => Date.now() + 1000));
   await p.evaluate(() => {
     const back = history.back.bind(history);
     history.back = () => setTimeout(() => { scrollTo(0, 1500); back(); }, 50);
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     scrollTo(0, 0);
   });
-  // History scroll restoration spans animation frames, which can be delayed on a busy CI browser.
-  // Wait for traversal and the expected restored state, then keep the original regression assertions.
-  await L.waitFor(p, () => !history.state.lkOv && scrollY === 0 && document.querySelector('.fn-strip').hidden, null, 5000).catch(() => {});
+  await p.clock.runFor(50);
+  await L.waitFor(p, () => !history.state.lkOv, null, 5000);
+  // Native history is asynchronous; once it lands, advance both restoration frames explicitly.
+  await p.clock.runFor(100);
+  await L.waitFor(p, () => scrollY === 0 && document.querySelector('.fn-strip').hidden, null, 5000).catch(() => {});
   const delayedState = await p.evaluate(() => ({ y: scrollY, hidden: document.querySelector('.fn-strip').hidden }));
   ok(delayedState.y === 0 && delayedState.hidden, 'delayed history restoration cannot overwrite a scroll made immediately after closing ' + JSON.stringify(delayedState));
   noErrors(p, 'delayed function sheet close'); await p.context().close();
