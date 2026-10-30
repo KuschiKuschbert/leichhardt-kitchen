@@ -4,6 +4,10 @@
 
 The Leichhardt Hotel kitchen's app: the recipe book, the prep list, the order list, the wastage log, the transfer list (stock shared with the other venues) and the team's how-to guides, plus the head chef's admin panel. It works on any phone, tablet or computer with a web browser and can be installed as an app. Working rules for changing it are in `CLAUDE.md`.
 
+## Smoker batch cards (30 October 2026)
+
+Carolina Gold BBQ Sauce, House BBQ Sauce, Alabama White Sauce and Cornbread have batch cards and matching pan drawings. Cornbread and Alabama White link from the ingredients and drawing pins on both smoked boards. The supplied cards have no methods. The head chef instructed us to omit the pecan and unnamed ingredient entries. The drawings reuse existing sauce pans and the library's exact cornbread piece. House BBQ is not substituted for double-smoked BBQ without confirmation. See [smoker batch cards](docs/smoker-batches.md) for the source questions, saved-book overlay limitation and controlled-clock release verification.
+
 ## What it does
 
 - **Individual shift pings (26 Oct 2026).** Write a ping has a Send to dropdown: Everyone, or one active kitchen person. Individual messages are private to that person and the chefs who manage pings. Their existing schedule, 30-minute window and Got it tracking stay. Recipients stay fixed after saving; Use again makes a copy for someone else. Old apps keep Everyone pings and need a refresh for individual pings. Both kinds are included in backups. See [individual pings](docs/ping-recipients.md).
