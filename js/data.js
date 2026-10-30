@@ -48,7 +48,7 @@
   Specials always shows first. The head chef's Special switch in Manage Recipes puts a dish in it.
 */
 window.LK_DATA = {
-  updated: '29 October 2026',
+  updated: '30 October 2026',
   allergens: ['Gluten', 'Milk', 'Egg', 'Soy', 'Peanut', 'Tree nut', 'Fish', 'Crustacean', 'Mollusc', 'Sesame'],
   menuOrder: [
     { title: 'Specials', ids: ['chicken-adobo', 'lamb-nachos', 'buffalo-corn-cob-with-cashew-crumb'] },
@@ -1490,16 +1490,16 @@ window.LK_DATA = {
         { q: '[Qty]', name: 'Pulled lamb', note: 'from the smoker' },
         { q: '[Qty]', name: 'Texas sausages', tags: ['Gluten?', 'Soy?'] },
         { q: '[Qty]', name: 'New slaw', note: 'the coleslaw', link: 'slaw' },
-        { q: '[Qty]', name: 'Cornbread', note: '[recipe or bought in to confirm]', tags: ['Gluten?', 'Milk?', 'Egg?'] },
+        { q: '[Qty]', name: 'Cornbread', link: 'cornbread' },
         { q: '[Qty]', name: 'Maple butter', note: 'glaze on the cornbread', tags: ['Milk'] },
-        { q: '[Qty]', name: 'Alabama white sauce', note: '[recipe to confirm]', tags: ['Egg?'] },
+        { q: '[Qty]', name: 'Alabama white sauce', link: 'alabama-white-sauce' },
         { q: '[Qty]', name: 'Double-smoked BBQ sauce', tags: ['Gluten?', 'Soy?'] },
         { q: '[Qty]', name: 'Bourbon BBQ sauce', link: 'bourbon-bbq-sauce' },
         { q: '[Qty]', name: 'Bread and butter pickles', note: 'bought in' }
       ],
       pins: [
         { label: 'New slaw', x: 16, y: 45.8, side: 'left', link: 'slaw', note: 'The coleslaw.' },
-        { label: 'Cornbread', x: 24.5, y: 34.9, side: 'left', tags: ['Gluten?', 'Milk?', 'Egg?'], note: 'Glazed with maple butter, then in the oven. [Recipe or bought in to confirm]' },
+        { label: 'Cornbread', x: 24.5, y: 34.9, side: 'left', link: 'cornbread', note: 'Glazed with maple butter, then in the oven.' },
         { label: 'Pulled pork', x: 41.5, y: 35.8, side: 'right', tags: [], note: 'From the smoker.' },
         { label: 'Pulled lamb', x: 56.6, y: 43.4, side: 'left', tags: [], note: 'From the smoker.' },
         { label: 'Texas sausages', x: 69.3, y: 33, side: 'right', tags: ['Gluten?', 'Soy?'], note: '' },
@@ -1507,7 +1507,7 @@ window.LK_DATA = {
         { label: 'Bread and butter pickles', x: 17.9, y: 64.6, side: 'left', tags: [], note: '' },
         { label: 'Double-smoked BBQ sauce', x: 29.7, y: 66, side: 'right', tags: ['Gluten?', 'Soy?'], note: '' },
         { label: 'Bourbon BBQ sauce', x: 41.5, y: 64.2, side: 'right', link: 'bourbon-bbq-sauce', note: '' },
-        { label: 'Alabama white sauce', x: 53.3, y: 66, side: 'right', tags: ['Egg?'], note: '[Recipe to confirm]' }
+        { label: 'Alabama white sauce', x: 53.3, y: 66, side: 'right', link: 'alabama-white-sauce', note: 'Batch card 128. Two ingredients still to confirm.' }
       ],
       sections: [
         { title: 'Cooking', steps: ['Brisket, pulled pork and pulled lamb come from the smoker [times and holding to confirm].', 'Cornbread: glaze the top with maple butter, then into the oven [oven setting and time to confirm].'] },
@@ -1527,16 +1527,16 @@ window.LK_DATA = {
         { q: '[Qty]', name: 'Texas sausages', tags: ['Gluten?', 'Soy?'] },
         { q: '380 to 420 g', name: 'Chicken wings', note: '[seasoning to confirm]' },
         { q: '[Qty]', name: 'New slaw', note: 'the coleslaw', link: 'slaw' },
-        { q: '[Qty]', name: 'Cornbread', note: '[recipe or bought in to confirm]', tags: ['Gluten?', 'Milk?', 'Egg?'] },
+        { q: '[Qty]', name: 'Cornbread', link: 'cornbread' },
         { q: '[Qty]', name: 'Maple butter', note: 'glaze on the cornbread', tags: ['Milk'] },
-        { q: '[Qty]', name: 'Alabama white sauce', note: '[recipe to confirm]', tags: ['Egg?'] },
+        { q: '[Qty]', name: 'Alabama white sauce', link: 'alabama-white-sauce' },
         { q: '[Qty]', name: 'Double-smoked BBQ sauce', tags: ['Gluten?', 'Soy?'] },
         { q: '[Qty]', name: 'Bourbon BBQ sauce', link: 'bourbon-bbq-sauce' },
         { q: '[Qty]', name: 'Bread and butter pickles', note: 'bought in' }
       ],
       pins: [
         { label: 'New slaw', x: 11.3, y: 45.8, side: 'left', link: 'slaw', note: 'The coleslaw.' },
-        { label: 'Cornbread', x: 19.8, y: 34.9, side: 'left', tags: ['Gluten?', 'Milk?', 'Egg?'], note: 'Glazed with maple butter, then in the oven. [Recipe or bought in to confirm]' },
+        { label: 'Cornbread', x: 19.8, y: 34.9, side: 'left', link: 'cornbread', note: 'Glazed with maple butter, then in the oven.' },
         { label: 'Pulled pork', x: 36.8, y: 35.8, side: 'right', tags: [], note: 'From the smoker.' },
         { label: 'Pulled lamb', x: 51.9, y: 43.4, side: 'left', tags: [], note: 'From the smoker.' },
         { label: 'Texas sausages', x: 64.6, y: 33, side: 'right', tags: ['Gluten?', 'Soy?'], note: '' },
@@ -1546,7 +1546,7 @@ window.LK_DATA = {
         { label: 'Bread and butter pickles', x: 13.2, y: 64.6, side: 'left', tags: [], note: '' },
         { label: 'Double-smoked BBQ sauce', x: 25, y: 66, side: 'right', tags: ['Gluten?', 'Soy?'], note: '' },
         { label: 'Bourbon BBQ sauce', x: 36.8, y: 64.2, side: 'right', link: 'bourbon-bbq-sauce', note: '' },
-        { label: 'Alabama white sauce', x: 48.6, y: 66, side: 'right', tags: ['Egg?'], note: '[Recipe to confirm]' }
+        { label: 'Alabama white sauce', x: 48.6, y: 66, side: 'right', link: 'alabama-white-sauce', note: 'Batch card 128. Two ingredients still to confirm.' }
       ],
       sections: [
         { title: 'Cooking', steps: ['Brisket, pulled pork and pulled lamb come from the smoker [times and holding to confirm].', 'Cornbread: glaze the top with maple butter, then into the oven [oven setting and time to confirm].'] },
@@ -2565,6 +2565,300 @@ window.LK_DATA = {
       ],
       contains: [],
       check: []
+    },
+    /* Smoker batches from the supplied recipe cards, 30 October 2026. */
+    {
+      "id": "carolina-gold",
+      "art": "carolina-gold",
+      "no": "126",
+      "kind": "batch",
+      "forLine": "Smoker prep",
+      "name": "Carolina Gold BBQ Sauce",
+      "ingredients": [
+        {
+          "q": "2.5 kg",
+          "name": "American mustard"
+        },
+        {
+          "q": "1.6 kg",
+          "name": "Honey"
+        },
+        {
+          "q": "910 g",
+          "name": "Brown sugar"
+        },
+        {
+          "q": "1 L",
+          "name": "Cider vinegar"
+        },
+        {
+          "q": "100 ml",
+          "name": "Tomato ketchup"
+        },
+        {
+          "q": "100 ml",
+          "name": "Worcestershire sauce",
+          "note": "Fountain, labelled gluten free; check the current label",
+          "tags": [
+            "Fish?",
+            "Soy?"
+          ]
+        },
+        {
+          "q": "300 g",
+          "name": "Garlic powder"
+        },
+        {
+          "q": "100 g",
+          "name": "[Ingredient to confirm]",
+          "link": "carolina-gold-ingredient-to-confirm",
+          "note": "The source says caramel pecan. Confirm the ingredient before making."
+        },
+        {
+          "q": "75 ml",
+          "name": "Buffalo sauce"
+        },
+        {
+          "q": "40 g",
+          "name": "Sea salt flakes"
+        }
+      ],
+      "labelNote": "Ingredient unresolved. Check the current mustard, Worcestershire and buffalo sauce labels. Method not supplied. The source yield is 4.2 L; confirm the finished yield.",
+      "yield": "Batch: 4.2 L (source yield)."
+    },
+    {
+      "id": "house-bbq-sauce",
+      "art": "house-bbq-sauce",
+      "no": "127",
+      "kind": "batch",
+      "forLine": "Smoker prep",
+      "name": "House BBQ Sauce",
+      "ingredients": [
+        {
+          "q": "765 ml",
+          "name": "Cider vinegar"
+        },
+        {
+          "q": "660 g",
+          "name": "Brown sugar"
+        },
+        {
+          "q": "129 ml",
+          "name": "Worcestershire sauce",
+          "note": "Lee & Perrins; check the current label",
+          "tags": [
+            "Fish?",
+            "Gluten?"
+          ]
+        },
+        {
+          "q": "129 ml",
+          "name": "Soy sauce",
+          "note": "Kikkoman",
+          "tags": [
+            "Soy",
+            "Gluten"
+          ]
+        },
+        {
+          "q": "30 g",
+          "name": "Sea salt flakes"
+        },
+        {
+          "q": "30 g",
+          "name": "Ground black pepper"
+        },
+        {
+          "q": "24 g",
+          "name": "White pepper"
+        },
+        {
+          "q": "15 g",
+          "name": "Chilli powder"
+        },
+        {
+          "q": "15 g",
+          "name": "Garlic powder"
+        },
+        {
+          "q": "15 g",
+          "name": "Onion powder"
+        },
+        {
+          "q": "15 g",
+          "name": "Chilli flakes"
+        },
+        {
+          "q": "6 g",
+          "name": "Ground cumin"
+        },
+        {
+          "q": "6 g",
+          "name": "Chinese five spice"
+        },
+        {
+          "q": "4 L",
+          "name": "Tomato ketchup"
+        },
+        {
+          "q": "6 g",
+          "name": "Mild curry powder"
+        },
+        {
+          "q": "1.125 kg",
+          "name": "Golden syrup"
+        },
+        {
+          "q": "600 g",
+          "name": "Honey"
+        },
+        {
+          "q": "6 kg",
+          "name": "Whole plums in juice"
+        }
+      ],
+      "labelNote": "Check current Worcestershire, soy sauce and spice blend labels. Method not supplied. Confirm whether this is the double-smoked BBQ sauce used on the boards and wings.",
+      "avc": "BBQ Sauce House",
+      "yield": "Batch: 12 L (source yield)."
+    },
+    {
+      "id": "alabama-white-sauce",
+      "art": "alabama-white-sauce",
+      "no": "128",
+      "kind": "batch",
+      "forLine": "Smoked boards",
+      "name": "Alabama White Sauce",
+      "ingredients": [
+        {
+          "q": "15 kg",
+          "name": "Whole egg mayonnaise",
+          "note": "Birch & Waite, labelled gluten free",
+          "tags": [
+            "Egg"
+          ]
+        },
+        {
+          "q": "1 L",
+          "name": "Cider vinegar"
+        },
+        {
+          "q": "200 g",
+          "name": "American mustard"
+        },
+        {
+          "q": "675 g",
+          "name": "Caster sugar"
+        },
+        {
+          "q": "800 g",
+          "name": "[Ingredient to confirm]",
+          "link": "alabama-white-ingredient-to-confirm",
+          "note": "The source has no product name for this ingredient."
+        },
+        {
+          "q": "675 ml",
+          "name": "Worcestershire sauce",
+          "note": "Lee & Perrins; check the current label",
+          "tags": [
+            "Fish?",
+            "Gluten?"
+          ]
+        },
+        {
+          "q": "375 ml",
+          "name": "Red hot sauce",
+          "note": "Franks"
+        },
+        {
+          "q": "100 g",
+          "name": "Garlic powder"
+        },
+        {
+          "q": "85 g",
+          "name": "Onion powder"
+        },
+        {
+          "q": "85 g",
+          "name": "[Ingredient to confirm]",
+          "link": "alabama-white-second-ingredient-to-confirm",
+          "note": "The source says caramel pecan. Confirm the ingredient before making."
+        },
+        {
+          "q": "85 g",
+          "name": "Sea salt flakes"
+        },
+        {
+          "q": "85 g",
+          "name": "Ground black pepper"
+        }
+      ],
+      "labelNote": "Two ingredients unresolved. Check current mayonnaise, mustard, Worcestershire and hot sauce labels. Method not supplied. The source yield is 16 L; confirm the finished yield.",
+      "yield": "Batch: 16 L (source yield)."
+    },
+    {
+      "id": "cornbread",
+      "art": "cornbread",
+      "no": "129",
+      "kind": "batch",
+      "forLine": "Smoked boards",
+      "name": "Cornbread",
+      "ingredients": [
+        {
+          "q": "375 g",
+          "name": "Corn kernels"
+        },
+        {
+          "q": "187 g",
+          "name": "Plain flour",
+          "tags": [
+            "Gluten"
+          ]
+        },
+        {
+          "q": "5 g",
+          "name": "Baking powder",
+          "note": "check the label for gluten",
+          "tags": [
+            "Gluten?"
+          ]
+        },
+        {
+          "q": "100 g",
+          "name": "Caster sugar"
+        },
+        {
+          "q": "2 g",
+          "name": "Table salt"
+        },
+        {
+          "q": "125 g",
+          "name": "Unsalted butter",
+          "tags": [
+            "Milk"
+          ]
+        },
+        {
+          "q": "2",
+          "name": "Eggs",
+          "tags": [
+            "Egg"
+          ]
+        },
+        {
+          "q": "200 ml",
+          "name": "Full cream milk",
+          "tags": [
+            "Milk"
+          ]
+        },
+        {
+          "q": "100 g",
+          "name": "Polenta"
+        }
+      ],
+      "labelNote": "Check the baking powder label. Baking method, oven setting and time were not supplied. Maple butter is the board service glaze, separate from this batch.",
+      "avc": "Cornbread Batch BF 12ptn",
+      "yield": "Batch: 12 portions."
     }
   ]
 };
