@@ -114,7 +114,7 @@ async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, nul
   // Admin: add a guide from a photo
   p = await L.open(b, '#/admin', { admin: true, width: 1280, height: 900, extra, wait: 1800 });
   await L.adminTab(p, 'guides'); await L.settle(p, 300);
-  ok(await p.locator('.g-row').count() === 2, 'admin: the Guides tab lists the two guides');
+  ok(await p.locator('.g-row').count() === 4, 'admin: the Guides tab lists two uploaded and two bundled guides');
   await p.click('[data-p="g-new"]'); await L.settle(p, 200);
   await p.click('[data-p="g-save"]'); await L.settle(p, 100);
   ok(/title/.test(await p.locator('.g-edit .p-err').innerText()), 'admin: saving with nothing asks for a title');
@@ -131,7 +131,7 @@ async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, nul
   const dk = Object.keys(s).find(k => /\/guides\/[^/]+$/.test(k) && s[k].title === 'Dishwasher start up'), did = dk ? dk.split('/').pop() : '';
   ok(!!dk && s[dk].pages === 1 && s[dk].v === 1 && s[dk].cat === 'cleaning' && /^data:image\/jpeg/.test(s[dk].thumb) && s[dk].dims.length === 1, 'admin photo: the guide is saved with one page and a small picture');
   ok(!!dk && /^data:image\/(webp|jpeg)/.test((s[G([did, 'pages', '0'])] || {}).img || ''), 'admin photo: the page picture is saved on its own');
-  ok(/Saved "Dishwasher start up"/.test(await S(p, () => window.LK_PREP.state.gMsg)) && await p.locator('.g-row').count() === 3, 'admin photo: says saved, and the list shows it');
+  ok(/Saved "Dishwasher start up"/.test(await S(p, () => window.LK_PREP.state.gMsg)) && await p.locator('.g-row').count() === 5, 'admin photo: says saved, and the list shows it');
 
   // Admin: add a guide from a two page PDF (pages drawn and words read by pdf.js)
   await p.click('[data-p="g-new"]'); await L.settle(p, 200);
@@ -170,7 +170,7 @@ async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, nul
   await p.click('[data-p="g-del"][data-id="' + cid + '"]'); await L.settle(p, 100);
   ok(/Tap again/.test(await p.locator('[data-p="g-del"][data-id="' + cid + '"]').innerText()) && !(await store(p))[ck].removed, 'admin remove: the first tap only asks again');
   await p.click('[data-p="g-del"][data-id="' + cid + '"]'); await L.settle(p, 200);
-  ok((await store(p))[ck].removed === true && await p.locator('.g-row').count() === 3, 'admin remove: the second tap removes it from the list');
+  ok((await store(p))[ck].removed === true && await p.locator('.g-row').count() === 5, 'admin remove: the second tap removes it from the list');
   await p.click('[data-p="toast-act"]'); await L.settle(p, 300);
   ok((await store(p))[ck].removed === false, 'admin remove: Undo puts it back');
 
@@ -249,7 +249,7 @@ async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, nul
   // the head chef's Google device: every guide in the admin list, and Who sees it is saved
   p = await L.open(b, '#/admin', { admin: true, who: '', width: 1280, height: 900, extra: whoX, wait: 1800 });
   await L.adminTab(p, 'guides'); await L.settle(p, 300);
-  ok(await p.locator('.g-row').count() === 4, 'who sees it: the admin Guides tab lists all four guides');
+  ok(await p.locator('.g-row').count() === 6, 'who sees it: the admin Guides tab lists all four uploaded and two bundled guides');
   await p.click('[data-p="g-edit"][data-id="fryer"]'); await L.settle(p, 200);
   ok(await p.locator('[data-p="g-fwho"][data-v="all"][aria-pressed="true"]').count() === 1, 'who sees it: an older guide opens as Everyone');
   await p.click('[data-p="g-fwho"][data-v="chefs"]');
