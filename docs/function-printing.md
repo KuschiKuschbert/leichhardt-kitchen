@@ -29,18 +29,16 @@ The shared print code is already in the shell through `js/functions.js`. No new 
 
 Revert the feature pull request on a fresh branch and redeploy Pages. No saved data or database rules need rolling back. The old editor and app API versions must be restored together.
 
-## Combined daily prep sheet (31 Oct 2026)
+## Platter prep tiles (31 Oct 2026)
 
-Kuschi requested one cheat sheet with all functions at a glance, rather than one sheet per function. **Print prep sheet** sits under Today and each upcoming date on Functions (`#/fn`), and beside Print run sheet in Service View (`#/fn/now`). Each button prints its labelled day, not the whole upcoming fortnight. Empty days have a disabled button.
+**Print prep sheet** sits under Today and each upcoming date on Functions (`#/fn`), and beside Print run sheet in Service View (`#/fn/now`). Each button prints its labelled day. Empty days have a disabled button.
 
-The A4 landscape copy has no title or introductory header, as requested by Kuschi. Its prep date is in the footer. It starts with one table of every confirmed function for that day: name, area, food times, platter counts by type, service and dietary notes, and kitchen comment. It includes completed functions and already-sent rounds so it remains a full daily prep reference. Overnight functions contribute only rounds on the selected day. Undated rounds belong to the booking date and say TBC. Drafts and cancellations are excluded. Totals add the selected day's rounds, not every round of an overnight booking.
+The A4 landscape copy shows the book's platter references as tiles in three columns. Each tile contains only the platter name, drawing, ingredients, quantities per platter and total platters to prep for the selected day. All Functions platters stay visible, including zero-booked references, plus any booked recipe no longer in the catalogue. There is no page title, introduction, function overview, ingredient explanation or recipe description. The selected date is in a small footer. The normal six-platter menu fits one page with readable ingredient text. Long ingredient lists continue without clipping.
 
-The platter references follow in three columns: every Functions platter in the current book, plus any booked recipe no longer in the catalogue. Each appears once with its current drawing, ingredients, per-platter amounts, ingredient notes, yield and total platters to prep. Zero-booked platters stay visible as references. Amounts are not multiplied or inferred. Missing recipes and drawings say so. Square-bracket amounts stay unconfirmed. This is a prep reference; consult the recipe cards and bought-in labels for allergen checks.
+Totals include every confirmed function with food on the selected day, including completed functions and already-sent rounds. Overnight functions contribute only rounds on that day. Undated rounds belong to the booking date. Drafts and cancellations are excluded. Ingredients use current recipe quantities without multiplying or guessing amounts. Square-bracket amounts stay unconfirmed. Missing recipes or drawings say so. Existing portrait run sheets remain available for function names, round times and service and dietary notes.
 
-The standard six-platter, three-function example fits one A4 landscape page. Exceptionally large schedules or notes continue at the same readable size, without dropping information. There are no forced page breaks between functions. The existing portrait run sheets remain available.
-
-The prep sheet shares the native print lifecycle, offline/source warning, retry and access gate. It reads only already-loaded function, recipe and drawing data. SVG is cleaned again at print time. No reads, writes, rules, caches, contacts or new dependencies are added. `tests/function-prep-print.test.js` verifies real PDFs, daily and overnight totals, upcoming-day buttons, current/missing recipes, drawings, safe text, long notes, screen widths, empty days and the read/write budget.
+The tiles share the native print lifecycle, offline/source warning, retry and access gate. Printing uses only already-loaded function, recipe and drawing data. SVG is cleaned again at print time. No reads, writes, rules, caches, contacts or new dependencies are added. `tests/function-prep-print.test.js` verifies real A4 PDFs, daily and overnight totals, upcoming-day buttons, current and missing recipes, drawings, safe text, long ingredient lists, screen widths, empty days and the read/write budget.
 
 Example with synthetic bookings:
 
-![Combined daily prep sheet](images/function-prep-sheet.png)
+![Daily platter prep tiles](images/function-prep-sheet.png)

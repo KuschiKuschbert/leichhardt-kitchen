@@ -729,30 +729,18 @@
   function prepButton(day, t) {
     return '<button type="button" class="btn" data-fn="print-prep" data-day="' + esc(day) + '"' + (!known() || !printDayList(t, day).length ? ' disabled' : '') + '>Print prep sheet</button>';
   }
-  function printPrepSheet(list, opts, printed) {
-    var cards = catalogue(), counts = [], totals = {};
+  function printPrepSheet(list, opts) {
+    var cards = catalogue(), totals = {};
     list.forEach(function (f) {
-      var byRecipe = {}, a = prepCounts(f, opts.day);
+      var a = prepCounts(f, opts.day);
       (f.lines || []).forEach(function (l, i) {
-        byRecipe[l.rid] = (byRecipe[l.rid] || 0) + a[i];
         totals[l.rid] = (totals[l.rid] || 0) + a[i];
         if (!cards.some(function (c) { return c.rid === l.rid; })) cards.push({ rid: l.rid, name: l.name });
       });
-      counts.push(byRecipe);
     });
     var out = '<article class="fn-prep-paper">';
     if (opts.source) out += '<p class="fn-prep-warning">' + esc(opts.source) + '</p>';
-    out += '<table class="fn-prep-overview"><thead><tr><th scope="col">Function / area</th><th scope="col">Food times / rounds</th>' + cards.map(function (c) { return '<th scope="col">' + esc(short(c.name)) + '</th>'; }).join('') + '<th scope="col">Service &amp; dietary notes / kitchen comment</th></tr></thead><tbody>';
-    list.forEach(function (f, i) {
-      var times = (f.rounds || []).map(function (r, j) {
-        if (r.at ? kday(r.at) !== opts.day : f.date !== opts.day) return '';
-        var a = roundCounts(f, j);
-        return '<div><b>' + esc(r.at ? kclock(r.at) : 'TBC') + '</b> ' + (f.lines || []).map(function (l, k) { return a[k] ? a[k] + ' ' + esc(short(l.name)) : ''; }).filter(Boolean).join(', ') + (r.note ? ' (' + esc(r.note) + ')' : '') + '</div>';
-      }).join('');
-      out += '<tr><th scope="row">' + esc(f.name) + (f.loc ? '<small>' + esc(f.loc) + '</small>' : '') + (f.date !== opts.day ? '<small>Overnight from ' + esc(printDate(f.date)) + '</small>' : '') + '</th><td>' + (times || 'TBC') + '</td>' + cards.map(function (c) { return '<td class="fn-prep-number">' + (counts[i][c.rid] || '0') + '</td>'; }).join('') +
-        '<td class="fn-prep-notes">' + esc(f.notes || 'None entered.') + (f.kc ? '<br><b>Kitchen:</b> ' + esc(f.kc) : '') + '</td></tr>';
-    });
-    out += '</tbody><tfoot><tr><th scope="row" colspan="2">Total platters to prep</th>' + cards.map(function (c) { return '<td class="fn-prep-number">' + (totals[c.rid] || 0) + '</td>'; }).join('') + '<td>Paper ticks do not change the book.</td></tr></tfoot></table><div class="fn-prep-cards">';
+    out += '<div class="fn-prep-cards">';
     out += cards.map(function (c) {
       var r = recipeOf(c.rid), art = window.LK_ART, hasArt = r && art && r.art && (art.plates[r.art] || art.pans[r.art]);
       var drawing = '';
@@ -763,11 +751,11 @@
       }
       return '<section class="fn-prep-card"><h2>' + esc(c.name) + '<span>' + (totals[c.rid] || 0) + ' to prep</span></h2>' +
         (drawing ? '<div class="fn-prep-art">' + drawing + '</div>' : '<p>Drawing to come.</p>') +
-        (r ? '<p class="fn-prep-yield">' + esc(/^per platter[.\s]/i.test(r.yield || '') ? 'Per platter' : r.yield || 'Yield to come. Check amounts.') + '</p><table><thead><tr><th scope="col">Ingredient</th><th scope="col">Amount</th></tr></thead><tbody>' + (r.ingredients || []).map(function (ing) {
-          return '<tr><td>' + esc(ing.name) + (ing.note ? '<small>' + esc(ing.note) + '</small>' : '') + '</td><td>' + esc(ing.q || 'To come') + '</td></tr>';
+        (r ? '<table><thead><tr><th scope="col">Ingredient</th><th scope="col">Per platter</th></tr></thead><tbody>' + (r.ingredients || []).map(function (ing) {
+          return '<tr><td>' + esc(ing.name) + '</td><td>' + esc(ing.q || 'To come') + '</td></tr>';
         }).join('') + '</tbody></table>' : '<p>Recipe missing from the book. Check before prep.</p>') + '</section>';
     }).join('');
-    return out + '</div><footer>Prep for ' + esc(printDate(opts.day)) + '. Includes rounds already sent. Printed ' + esc(printStamp(printed)) + '. Current recipe amounts, not scaled totals. Check bought-in labels and dietary requests.</footer></article>';
+    return out + '</div><footer>' + esc(printDate(opts.day)) + '</footer></article>';
   }
   function printSheet(f, opts, printed) {
     var R = f.rounds || [], L = f.lines || [], draft = f.status !== 'confirmed' || opts.unsaved;
@@ -823,7 +811,7 @@
     var root = document.createElement('div'), printed = now(); root.id = 'fn-print'; root.setAttribute('aria-hidden', 'true');
     if (!opts.fromForm && (F.cached || F.offline || F.state !== 'ok')) opts.source = 'Saved copy / last read ' + printStamp(F.at) + '. Check the latest changes before service.';
     if (opts.prep) root.className = 'fn-prep-print';
-    root.innerHTML = opts.prep ? printPrepSheet(list, opts, printed) : (opts.day ? '<header class="fn-paper-day"><h1>Service run sheet / ' + esc(printDate(opts.day)) + '</h1><p>All rounds for today\'s functions, including rounds already sent. One function per sheet.</p></header>' : '') +
+    root.innerHTML = opts.prep ? printPrepSheet(list, opts) : (opts.day ? '<header class="fn-paper-day"><h1>Service run sheet / ' + esc(printDate(opts.day)) + '</h1><p>All rounds for today\'s functions, including rounds already sent. One function per sheet.</p></header>' : '') +
       list.map(function (f) { return printSheet(f, opts, printed); }).join('');
     printJob = { root: root, title: document.title, button: button }; if (button) button.disabled = true;
     document.body.appendChild(root); document.body.classList.add('fn-printing'); document.title = (opts.day ? printDate(opts.day) : list[0].name || 'New function') + (opts.prep ? ' - Functions prep sheet' : ' - Function run sheet');

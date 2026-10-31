@@ -1,4 +1,4 @@
-// Combined daily prep: real A4 PDFs, counts by kitchen day, current recipe cards and no database work.
+// Daily platter tiles: real A4 PDFs, counts by kitchen day, current recipes and no database work.
 const fs = require('fs'), path = require('path');
 const L = require('./lib'), M = require('../js/functions.js');
 const { R, ok } = L.results();
@@ -46,16 +46,14 @@ async function pdf(p, filename) {
     const before = await p.evaluate(() => [window.__fake.bill.length, window.__fake.writes.length, JSON.stringify(window.__fake.dump())]);
     await print(p, today);
     let content = await p.$eval('#fn-print', el => el.textContent);
-    ok(!(await p.$('.fn-prep-paper header, .fn-prep-paper h1')) && /Prep for/.test(content), 'no title or introductory header; the selected prep date stays in the footer');
-    const rows = await p.$$eval('.fn-prep-overview tbody tr', els => els.map(el => el.textContent));
-    ok(rows.length === 3 && /Overnight function/.test(rows[0]) && /Lunch function/.test(rows[1]) && /Evening function/.test(rows[2]), 'one overview includes every confirmed function in food-time order, even lunch already finished');
-    ok(!/Tomorrow function|Cancelled function|Draft function|23:30/.test(content), 'only this day prints: no drafts, cancellations, tomorrow or yesterday rounds');
-    const totals = await p.$$eval('.fn-prep-overview tfoot .fn-prep-number', els => els.map(el => el.textContent));
-    ok(JSON.stringify(totals) === JSON.stringify(['4', '3', '3', '3', '2', '3']), 'totals add both functions and only the one after-midnight platter from the overnight function');
+    ok(!(await p.$('.fn-prep-paper header, .fn-prep-paper h1')) && (await p.$eval('.fn-prep-paper footer', e => e.textContent)).length > 0, 'no title or introductory header; the selected prep date stays in the footer');
+    ok(!(await p.$('.fn-prep-overview')) && !/Overnight function|Lunch function|Evening function|Tomorrow function|Cancelled function|Draft function/.test(content), 'only platter tiles print, with no function overview or booking descriptions');
+    const totals = await p.$$eval('.fn-prep-card h2 span', els => els.map(el => el.textContent));
+    ok(JSON.stringify(totals) === JSON.stringify(['4 to prep', '3 to prep', '3 to prep', '3 to prep', '2 to prep', '3 to prep']), 'daily totals include both functions and only the one after-midnight platter, excluding drafts, cancellations and tomorrow');
     ok((await p.$$('.fn-prep-card')).length === 6 && (await p.$$('.fn-prep-art svg path')).length > 6, 'all six platter references and real book drawings print once each');
     ok(/1\/2 slab|Margherita pizza/.test(content) && /10ea/.test(content) && /Per platter/.test(content), 'recipe quantities remain per platter');
     const standard = await pdf(p, 'function-prep-sheet.pdf');
-    ok(standard.pages === 1 && /Lunch function/.test(standard.text) && /Seafood Platter/i.test(standard.text), 'three functions and all six platter drawings and ingredient tables fit one A4 cheat sheet');
+    ok(standard.pages === 1 && /Pizza Platter/i.test(standard.text) && /Seafood Platter/i.test(standard.text), 'all six platter tiles with drawings and ingredient tables fit one A4 cheat sheet');
     const after = await p.evaluate(() => [window.__fake.bill.length, window.__fake.writes.length, JSON.stringify(window.__fake.dump())]);
     ok(JSON.stringify(before) === JSON.stringify(after), 'prep printing adds no reads, writes or saved data');
     ok(!(await p.$('#fn-print a, #fn-print button, #fn-print input')) && !(await p.evaluate(() => window.__fake.readLog.some(k => /\/fncontact\//.test(k)))), 'no booking contacts, app controls or editor are loaded');
@@ -63,19 +61,20 @@ async function pdf(p, filename) {
     for (const width of [390, 768, 1280]) { await p.setViewportSize({ width, height: 900 }); await L.settle(p, 100); ok(!(await L.overflow(p)), 'prep controls fit at ' + width + ' px'); }
     await print(p, tomorrow);
     content = await p.$eval('#fn-print', el => el.textContent);
-    ok(/Tomorrow function/.test(content) && !/Evening function|Lunch function/.test(content), 'upcoming day button prints that day alone');
+    ok((await p.$eval('.fn-prep-card h2 span', el => el.textContent)) === '3 to prep', 'upcoming day button prints that day alone');
     await close(p);
     await p.goto(L.BASE + '#/fn/now');
     await L.waitFor(p, () => !!document.querySelector('[data-fn="print-prep"]:not(:disabled)'));
     await p.evaluate(() => { window.print = () => { window.__printed = true; }; });
     await print(p, today);
-    ok((await p.$$('.fn-prep-overview tbody tr')).length === 3, 'Service View offers the same full-day prep sheet');
+    ok((await p.$eval('.fn-prep-card h2 span', el => el.textContent)) === '4 to prep', 'Service View offers the same full-day platter totals');
     await close(p);
     await p.evaluate(() => {
       const r = window.LK_DATA.recipes.find(r => r.id === 'pizza-platter');
       r.ingredients[0].name = '<img src=x onerror=alert(1)> Updated recipe';
       r.ingredients[0].q = '[Amount to confirm]';
-      r.ingredients[0].note = 'Long recipe note. '.repeat(120) + 'END OF NOTE';
+      r.ingredients[0].note = 'EXPLANATION HIDDEN';
+      for (let i = 0; i < 70; i++) r.ingredients.push({ name: i === 69 ? 'END OF INGREDIENTS' : 'Additional ingredient ' + i, q: '1 ea' });
       window.LK_ART.plates[r.art] = '<script>alert(1)</script><path onmouseover="alert(1)" d="M0 0L10 10"/>';
       window.LK_DATA.recipes = window.LK_DATA.recipes.filter(r => r.id !== 'aussie-platter');
     });
@@ -83,8 +82,9 @@ async function pdf(p, filename) {
     content = await p.$eval('#fn-print', el => el.textContent);
     ok(/Updated recipe/.test(content) && /\[Amount to confirm\]/.test(content) && /Recipe missing from the book/.test(content), 'current recipe edits and missing booked recipes appear without made-up replacements');
     ok(!(await p.$('#fn-print img, #fn-print script, #fn-print [onmouseover]')), 'typed text is escaped and SVG is sanitised at print time');
+    ok(!/EXPLANATION HIDDEN|Check bought-in labels|Current recipe amounts|G. Banga/.test(content), 'tiles show only the platter, ingredient names and amounts, without explanations');
     const long = await pdf(p, 'function-prep-sheet-long.pdf');
-    ok(/END OF NOTE/.test(long.text), 'long material continues rather than being clipped or dropped');
+    ok(/END OF INGREDIENTS/.test(long.text), 'long ingredient lists continue rather than being clipped or dropped');
     await close(p); await p.close();
     p = await L.open(browser, '#/fn', { who: 'ann' });
     await L.waitFor(p, () => !!document.querySelector('[data-fn="print-prep"]'));
