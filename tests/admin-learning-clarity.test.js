@@ -85,6 +85,18 @@ const searchReferences = async (p, text) => {
     }
     ok(await p.inputValue('#ai-personId') === 'ann' && await p.inputValue('#ai-section') === 'Grill' && await p.inputValue('#ai-status') === 'not-assessed', width + ': an opportunity opens an explicit assessment draft without confirming it');
     ok(await privateWrites(p) === 1, width + ': reviewing opportunities creates no assessment write');
+    const sectionFocus = await p.evaluate(() => {
+      document.getElementById('ai-section').focus();
+      LK_PREP.mount('admin', LK_PREP.state.root);
+      return { id: document.activeElement && document.activeElement.id, value: document.getElementById('ai-section').value };
+    });
+    ok(sectionFocus.id === 'ai-section' && sectionFocus.value === 'Grill', width + ': a background redraw keeps focus and value in the training section field (' + JSON.stringify(sectionFocus) + ')');
+    const sectionKeys = await p.evaluate(() => ({
+      navigation: document.querySelector('.a-section-picker select').getAttribute('data-k'),
+      editor: document.getElementById('ai-section').getAttribute('data-k')
+    }));
+    ok(sectionKeys.navigation !== sectionKeys.editor, width + ': admin navigation and training section use distinct focus keys (' + JSON.stringify(sectionKeys) + ')');
+
     await p.click('[data-ai="cancel"]');
     ok(!(await L.overflow(p)), width + ': references and training fit without sideways scroll');
     ok(p.errors.length === 0, width + ': no browser errors ' + p.errors.join(' | '));
