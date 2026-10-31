@@ -2475,3 +2475,36 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
 /* Calendar and clock fields keep the native picker and an easy tap target. */
 input:is([type="date"], [type="time"]) { min-height: 44px; cursor: pointer; max-width: 100%; box-sizing: border-box; }
 input:is([type="date"], [type="time"]):disabled, input:is([type="date"], [type="time"]):read-only { cursor: default; }
+
+/* Combined daily prep copy: all functions in one table, platter references once each. */
+@page fn-prep-sheet { size: A4 landscape; margin: 8mm; }
+@media print {
+  body.fn-printing #fn-print.fn-prep-print { page: fn-prep-sheet; padding: 0; font: 8pt/1.15 var(--body); }
+  #fn-print .fn-prep-paper { overflow-wrap: anywhere; }
+  #fn-print .fn-prep-paper h1 { font-size: 20pt; margin: 1mm 0; }
+  #fn-print .fn-prep-paper header { margin-bottom: 3mm; }
+  #fn-print .fn-prep-paper table { width: 100%; border-collapse: collapse; font-size: inherit; }
+  #fn-print .fn-prep-paper th, #fn-print .fn-prep-paper td { padding: 0.4mm 0.8mm; border-bottom: 0.4pt solid #999; text-align: left; vertical-align: top; }
+  #fn-print .fn-prep-paper thead { display: table-header-group; }
+  #fn-print .fn-prep-paper tfoot { display: table-row-group; font-weight: 700; }
+  #fn-print .fn-prep-paper tr { break-inside: avoid; }
+  #fn-print .fn-prep-overview { margin-bottom: 3mm; }
+  #fn-print .fn-prep-overview thead th { border-top: 1pt solid #222; border-bottom: 1pt solid #222; }
+  #fn-print .fn-prep-overview th:first-child { width: 15%; }
+  #fn-print .fn-prep-overview th:nth-child(2) { width: 25%; }
+  #fn-print .fn-prep-overview th:last-child { width: 24%; }
+  #fn-print .fn-prep-overview .fn-prep-number { text-align: center; font-weight: 700; font-size: 11pt; }
+  #fn-print .fn-prep-paper small { display: block; font-size: 7pt; font-weight: 400; }
+  #fn-print .fn-prep-notes { white-space: pre-wrap; }
+  #fn-print .fn-prep-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3mm 4mm; align-items: start; }
+  #fn-print .fn-prep-card { display: grid; grid-template-columns: 26mm minmax(0, 1fr); column-gap: 2mm; break-inside: avoid; min-width: 0; border-top: 1pt solid #222; padding-top: 1.5mm; }
+  #fn-print .fn-prep-card h2 { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 2mm; font-size: 12pt; margin-bottom: 1mm; }
+  #fn-print .fn-prep-card h2 span { font-size: 9pt; white-space: nowrap; }
+  #fn-print .fn-prep-art { grid-column: 1; grid-row: 2; width: 26mm; margin: 0; }
+  #fn-print .fn-prep-art svg { display: block; width: 100%; height: 24mm; }
+  #fn-print .fn-prep-yield { grid-column: 1; grid-row: 3; font-size: 7pt; }
+  #fn-print .fn-prep-card table { grid-column: 2; grid-row: 2 / span 2; }
+  #fn-print .fn-prep-card th:last-child, #fn-print .fn-prep-card td:last-child { width: 27%; }
+  #fn-print .fn-prep-warning { padding: 2mm; border: 1pt solid #222; margin-bottom: 2mm; font-weight: 700; }
+  #fn-print .fn-prep-paper footer { clear: both; margin-top: 2mm; font-size: 7pt; border-top: 0.4pt solid #999; padding-top: 1mm; }
+}
