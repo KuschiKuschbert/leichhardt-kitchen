@@ -2495,3 +2495,11 @@ input:is([type="date"], [type="time"]):disabled, input:is([type="date"], [type="
   #fn-print .fn-prep-warning { padding: 2mm; border: 1pt solid #222; margin-bottom: 2mm; font-weight: 700; }
   #fn-print .fn-prep-paper footer { clear: both; margin-top: 2mm; font-size: 7pt; border-top: 0.4pt solid #999; padding-top: 1mm; }
 }
+
+/* The food safety guide uses the book's type, paper and orange accent. */
+.g-food-band { border-block: 2px solid var(--ink); padding: .8rem 0; font-size: 1.2rem; }
+.g-food-times { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1.5rem 0; }
+.g-food-times > div { border-top: 6px solid var(--accent); padding: 1rem; background: var(--beige); }
+.g-food-times dt { font: 700 1.8rem/1.1 var(--display); margin-bottom: .7rem; }
+.g-food-times dd { margin: 0; font-weight: 600; }
+@media (max-width: 600px) { .g-food-times { grid-template-columns: 1fr; } }
