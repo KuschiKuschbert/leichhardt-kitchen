@@ -15,10 +15,15 @@ const base = { supplier: 'Test supplier', receivedAt: at - 60000, recordedAt: at
 const folder = mkdtempSync(join(tmpdir(), 'delivery-backup-'));
 try {
   await Promise.all([0, 1, 3].map(n => col.doc('test-' + n).set({ ...base, day: day(at - n * 86400000), receivedAt: at - n * 86400000 - 60000 })));
+  const kitchen = db.collection('kitchens').doc(pin);
+  for (const name of ['analysis', 'analysisDaily', 'references', 'training']) await kitchen.collection(name).doc('backup-test').set({ v: 2, by: 'owner' });
+  for (const name of ['references', 'training']) await kitchen.collection(name).doc('backup-test').collection('hist').doc('1').set({ v: 1, by: 'owner' });
   const file = join(folder, 'backup.json');
   const run = spawnSync(process.execPath, ['nightly-backup.mjs', file], { env: { ...process.env, KITCHEN_PIN: pin, BACKUP_DAYS: '2' }, encoding: 'utf8' });
   assert.equal(run.status, 0, 'Nightly backup must complete.');
   const out = JSON.parse(readFileSync(file, 'utf8'));
+  for (const name of ['analysis', 'analysisDaily', 'references', 'training']) assert.equal(out[name][0].v, 2);
+  for (const name of ['references', 'training']) assert.equal(out[name + 'Hist']['backup-test'][0].v, 1);
   assert.equal(out.deliveries.length, 2, 'Only the selected backup date window is read.');
   for (const r of out.deliveries) {
     assert.equal(r.chilled, 0); assert.equal(r.frozen, -18.5);
@@ -28,6 +33,7 @@ try {
   console.log('Delivery backup: window, zero, negative readings, notes and original receiver passed.');
 } finally {
   await Promise.all([0, 1, 3].map(n => col.doc('test-' + n).delete()));
+  for (const name of ['analysis', 'analysisDaily', 'references', 'training']) await db.recursiveDelete(db.collection('kitchens').doc(pin).collection(name).doc('backup-test'));
   rmSync(folder, { recursive: true, force: true });
   await db.terminate();
 }

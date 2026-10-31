@@ -834,3 +834,8 @@ Items without a confirmed unit accept a positive decimal quantity and retain an 
 ### Date and time pickers (26 Oct 2026)
 
 Date and time fields open the device calendar or clock picker when tapped, where the browser supports it. Function event, food and round times and delivery arrival times now use native time controls too. Keyboard entry remains available. Save and confirm actions check native validity, including incomplete entries and date limits; existing checks still enforce booking order, report ranges and Queensland delivery times. Optional fields can still be cleared. Picker appearance and 12/24-hour display follow the device; saved times remain 24-hour Queensland values. No new dependencies, reads, rules or saved fields.
+
+
+### Admin analysis, references and training
+
+The admin panel now groups Overview, Analysis, Learning, Training, Operations and Settings, with a desktop sidebar and phone section picker. Existing page links and remembered pages still work. The new nightly analysis uses existing infrastructure to publish private 7/30/90-day evidence, source coverage, data-quality counts, confirmed item references and station activity. Explicit training assessments link to recipes and guides; ticks never confirm competence. Source evidence, revisions, failure behaviour, read limits, backups, release order and comparison-mode limits are in [Admin analysis](docs/admin-intelligence.md). No external imports or automatic orders are introduced.

@@ -35,3 +35,10 @@ jobs:
           FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
           KITCHEN_PIN: ${{ secrets.KITCHEN_PIN }}
         run: node nightly-learn.mjs
+      - name: Analyse existing kitchen data
+        if: ${{ !cancelled() }}
+        working-directory: scripts
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+          KITCHEN_PIN: ${{ secrets.KITCHEN_PIN }}
+        run: node nightly-analysis.mjs

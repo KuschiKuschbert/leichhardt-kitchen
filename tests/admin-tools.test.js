@@ -12,6 +12,15 @@ const store = page => page.evaluate(() => window.__fake.dump());
 
   // Move to a new kitchen PIN: staff PINs, notes, minutes, earlier versions, sign-offs and seen records all come along
   const extra = {};
+  const reference = { alias: 'Milk', label: 'Milk', recipeId: 'laksa', supplierId: '', itemId: '', guideId: '', v: 2, at: 1, by: 'owner' };
+  const training = { personId: 'ann', section: 'Larder', recipeId: '', guideId: '', status: 'in-training', assessorId: 'sam', day: today, v: 2, at: 1, by: 'owner' };
+  extra[fsKey(['references', 'ai-test'])] = reference;
+  extra[fsKey(['references', 'ai-test', 'hist', '1'])] = { ...reference, v: 1 };
+  extra[fsKey(['training', 'ai-test'])] = training;
+  extra[fsKey(['training', 'ai-test', 'hist', '1'])] = { ...training, v: 1 };
+  extra[fsKey(['analysis', 'current'])] = { generation: 'g1', at: L.NOW, from: today, to: today, days: 1 };
+  extra[fsKey(['analysisDaily', 'g1_' + today])] = { day: today, entries: [], v: 1 };
+
   extra[fsKey(['deliveries', 'receipt-1'])] = { day: today, receivedAt: L.NOW - 60000, recordedAt: L.NOW, supplier: 'Test supplier', chilled: 0, frozen: -18.5, note: 'Sample goods', receivedBy: 'Ann', receivedById: 'ann', by: 'ann' };
   extra[fsKey(['notes', 'n1'])] = { text: 'Fryer oil change', tag: 'none', start: '2026-01-05', until: '2026-01-05', dows: [], removed: false, at: 1, upd: 1, by: 'sam' };
   extra[fsKey(['notes', 'n1', 'seen', today + '_ann'])] = { day: today, at: 1, by: 'ann' };
@@ -45,6 +54,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   s = await store(p);
   ['sam', 'ann', 'bo'].forEach(id => ok(!!s[newKey(['staffpins', id])] && !!s[newKey(['pinset', id])], 'move PIN: PIN of ' + id + ' copied'));
   ok((s[newKey(['deliveries', 'receipt-1'])] || {}).frozen === -18.5, 'move PIN: delivery temperatures and original attribution copied');
+  ok(s[newKey(['references', 'ai-test'])].v === 2 && s[newKey(['references', 'ai-test', 'hist', '1'])].v === 1 && s[newKey(['training', 'ai-test', 'hist', '1'])].status === 'in-training' && !!s[newKey(['analysisDaily', 'g1_' + today])], 'move PIN: analysis, references, training and histories copied');
   ok(!!s[newKey(['notes', 'n1'])], 'move PIN: notes copied');
   ok(!!s[newKey(['notes', 'n1', 'seen', today + '_ann'])], 'move PIN: seen records copied');
   ok(!!s[newKey(['minutes', 'm1'])], 'move PIN: minutes copied');
@@ -69,6 +79,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   const chunks = []; for await (const c of await file.createReadStream()) chunks.push(c);
   const bk = JSON.parse(Buffer.concat(chunks).toString('utf8'));
   ok(/^leichhardt-prep-backup-\d{4}-\d{2}-\d{2}\.json$/.test(file.suggestedFilename()), 'backup: a dated JSON file (' + file.suggestedFilename() + ')');
+  ok(bk.references[0].v === 2 && bk.referencesHist['ai-test'][0].v === 1 && bk.training[0].status === 'in-training' && bk.trainingHist['ai-test'][0].v === 1 && bk.analysisDaily[0].day === today, 'backup: analysis, references, training and histories preserved');
   ok(bk.notes.length === 1 && bk.notes[0].id === 'n1' && bk.notes[0].text === 'Fryer oil change', 'backup: shift pings included');
   ok((bk.notesSeen.n1 || []).some(x => x.id === today + '_ann' && x.by === 'ann'), 'backup: who has seen a note included');
   ok(bk.minutes.length === 1 && bk.minutes[0].v === 2, 'backup: meeting minutes included');
