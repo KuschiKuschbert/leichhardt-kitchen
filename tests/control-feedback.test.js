@@ -32,7 +32,10 @@ const still = s => s.rotate === 'none' && s.scale === 'none' && s.translate === 
   ok((await style(p, '.wm-set > svg')).translate === '2px', 'menu: a hovered row nudges its icon');
   ok((await style(p, '.wm-set > svg')).rotate === '-8deg', 'menu: a hovered icon tilts left');
   await p.mouse.down(); await L.settle(p, 180);
-  ok((await style(p, '.wm-set > svg')).rotate === '-12deg', 'menu: a held press deepens the icon tilt');
+  // Wait for the CSS state itself: DOM quietness does not mean an animation finished on a busy CI runner.
+  await L.waitFor(p, () => { const icon = document.querySelector('.wm-set > svg'); return icon && getComputedStyle(icon).rotate === '-12deg'; }, null, 2000).catch(() => {});
+  const menuHeld = await style(p, '.wm-set > svg');
+  ok(menuHeld.rotate === '-12deg', 'menu: a held press deepens the icon tilt (' + menuHeld.rotate + ')');
   await p.mouse.move(5, 200); await p.mouse.up(); await L.settle(p, 250);
   await p.evaluate(() => window.dispatchEvent(new Event('lk-mail')));
   ok(await p.$eval(hat, e => e.getAttribute('aria-expanded') === 'true' && getComputedStyle(e).backgroundColor === 'rgb(194, 69, 26)'), 'chef menu: a mail badge refresh preserves the open orange button');
