@@ -711,11 +711,51 @@
   function printStamp(ms) { return ms ? printDate(kday(ms)) + ', ' + kclock(ms) + ' AEST' : 'Not saved'; }
   function printQty(q) { return typeof q === 'number' && isFinite(q) && q >= 0 ? String(q) : 'TBC'; }
   function printField(label, value) { return '<div><dt>' + label + '</dt><dd>' + esc(value || 'TBC') + '</dd></div>'; }
-  function printDayList(t) {
-    var d = kday(t);
+  function printDayList(t, day) {
+    var d = day || kday(t);
     return F.list.filter(function (f) {
       return f.status === 'confirmed' && (f.date === d || (f.rounds || []).some(function (r) { return r.at && kday(r.at) === d; }));
     }).sort(function (a, b) { return (a.first || 9e15) - (b.first || 9e15) || String(a.name).localeCompare(String(b.name)); });
+  }
+  // One daily overview. Count only the rounds on this kitchen day, including rounds already sent.
+  function prepCounts(f, day) {
+    var counts = (f.lines || []).map(function () { return 0; });
+    (f.rounds || []).forEach(function (r, i) {
+      if (r.at ? kday(r.at) !== day : f.date !== day) return;
+      roundCounts(f, i).forEach(function (q, j) { counts[j] += q; });
+    });
+    return counts;
+  }
+  function prepButton(day, t) {
+    return '<button type="button" class="btn" data-fn="print-prep" data-day="' + esc(day) + '"' + (!known() || !printDayList(t, day).length ? ' disabled' : '') + '>Print prep sheet</button>';
+  }
+  function printPrepSheet(list, opts) {
+    var cards = catalogue(), totals = {};
+    list.forEach(function (f) {
+      var a = prepCounts(f, opts.day);
+      (f.lines || []).forEach(function (l, i) {
+        totals[l.rid] = (totals[l.rid] || 0) + a[i];
+        if (!cards.some(function (c) { return c.rid === l.rid; })) cards.push({ rid: l.rid, name: l.name });
+      });
+    });
+    var out = '<article class="fn-prep-paper">';
+    if (opts.source) out += '<p class="fn-prep-warning">' + esc(opts.source) + '</p>';
+    out += '<div class="fn-prep-cards">';
+    out += cards.map(function (c) {
+      var r = recipeOf(c.rid), art = window.LK_ART, hasArt = r && art && r.art && (art.plates[r.art] || art.pans[r.art]);
+      var drawing = '';
+      if (hasArt && window.LK_APP && window.LK_RX) {
+        var svg = new DOMParser().parseFromString(window.LK_APP.art(r, 'fn-prep-drawing'), 'image/svg+xml').documentElement;
+        var vb = svg.getAttribute('viewBox') || '', body = window.LK_RX.clean(svg.innerHTML);
+        if (/^-?[\d.]+ -?[\d.]+ [\d.]+ [\d.]+$/.test(vb) && body) drawing = '<svg viewBox="' + esc(vb) + '" aria-hidden="true">' + body + '</svg>';
+      }
+      return '<section class="fn-prep-card"><h2>' + esc(c.name) + '<span>' + (totals[c.rid] || 0) + ' to prep</span></h2>' +
+        (drawing ? '<div class="fn-prep-art">' + drawing + '</div>' : '<p>Drawing to come.</p>') +
+        (r ? '<table><thead><tr><th scope="col">Ingredient</th><th scope="col">Per platter</th></tr></thead><tbody>' + (r.ingredients || []).map(function (ing) {
+          return '<tr><td>' + esc(ing.name) + '</td><td>' + esc(ing.q || 'To come') + '</td></tr>';
+        }).join('') + '</tbody></table>' : '<p>Recipe missing from the book. Check before prep.</p>') + '</section>';
+    }).join('');
+    return out + '</div><footer>' + esc(printDate(opts.day)) + '</footer></article>';
   }
   function printSheet(f, opts, printed) {
     var R = f.rounds || [], L = f.lines || [], draft = f.status !== 'confirmed' || opts.unsaved;
@@ -770,10 +810,11 @@
     opts = opts || {};
     var root = document.createElement('div'), printed = now(); root.id = 'fn-print'; root.setAttribute('aria-hidden', 'true');
     if (!opts.fromForm && (F.cached || F.offline || F.state !== 'ok')) opts.source = 'Saved copy / last read ' + printStamp(F.at) + '. Check the latest changes before service.';
-    root.innerHTML = (opts.day ? '<header class="fn-paper-day"><h1>Service run sheet / ' + esc(printDate(opts.day)) + '</h1><p>All rounds for today\'s functions, including rounds already sent. One function per sheet.</p></header>' : '') +
+    if (opts.prep) root.className = 'fn-prep-print';
+    root.innerHTML = opts.prep ? printPrepSheet(list, opts) : (opts.day ? '<header class="fn-paper-day"><h1>Service run sheet / ' + esc(printDate(opts.day)) + '</h1><p>All rounds for today\'s functions, including rounds already sent. One function per sheet.</p></header>' : '') +
       list.map(function (f) { return printSheet(f, opts, printed); }).join('');
     printJob = { root: root, title: document.title, button: button }; if (button) button.disabled = true;
-    document.body.appendChild(root); document.body.classList.add('fn-printing'); document.title = (opts.day ? printDate(opts.day) : list[0].name || 'New function') + ' - Function run sheet';
+    document.body.appendChild(root); document.body.classList.add('fn-printing'); document.title = (opts.day ? printDate(opts.day) : list[0].name || 'New function') + (opts.prep ? ' - Functions prep sheet' : ' - Function run sheet');
     // Native print keeps the current page and the unsaved form in place. The print-only copy is a snapshot, so service
     // updates cannot change it while the dialog is open. Wait for fonts, but a failed font load still prints the fallback.
     var ready = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
@@ -848,7 +889,7 @@
     var just = F.list.filter(function (f) { return f.status === 'confirmed'; }).map(function (f) {
       return (f.rounds || []).map(function (r, i) { var x = sentRec(f, i); return x && t - x.sentAt < 2 * MIN ? { f: f, i: i } : null; }).filter(Boolean);
     }).reduce(function (a, b) { return a.concat(b); }, []);
-    var out = '<section class="set-block fn-page fn-svc-page"><div class="fn-page-head"><h2 id="rtitle" tabindex="-1">Service</h2><button type="button" class="btn" data-fn="print-day"' + (!known() || !printDayList(t).length ? ' disabled' : '') + '>Print run sheet</button></div>' + (known() ? '' : waitHTML());
+    var out = '<section class="set-block fn-page fn-svc-page"><div class="fn-page-head"><h2 id="rtitle" tabindex="-1">Service</h2><div class="btn-row">' + prepButton(kday(t), t) + '<button type="button" class="btn" data-fn="print-day"' + (!known() || !printDayList(t).length ? ' disabled' : '') + '>Print run sheet</button></div></div>' + (known() ? '' : waitHTML());
     if (known() && !sv.rows.length) out += '<p class="hint">Nothing to send: no function has a round still to go out.</p>';
     if (sv.rows.length) out += '<h3 class="fn-h">Next out</h3><ul class="fn-svc-rows">' + sv.rows.map(function (r) {
       var n = r.f.rounds.length;
@@ -888,12 +929,12 @@
     var body = '';
     if (!known()) body = waitHTML();
     else {
-      body += '<h3 class="fn-h">Today, ' + esc(dayName(today)) + '</h3>' + (on.length ? '<div class="btn-row"><a class="btn dark" href="#/fn/now">Service view</a></div>' : '') + (on.length ? '<ul class="fn-cards">' + on.map(function (x) { return cardHTML(x.f); }).join('') + '</ul>' + totalsHTML(totals[today]) : '<p class="hint">No functions on now.</p>');
+      body += '<h3 class="fn-h">Today, ' + esc(dayName(today)) + '</h3>' + prepButton(today, t) + (on.length ? '<div class="btn-row"><a class="btn dark" href="#/fn/now">Service view</a></div>' : '') + (on.length ? '<ul class="fn-cards">' + on.map(function (x) { return cardHTML(x.f); }).join('') + '</ul>' + totalsHTML(totals[today]) : '<p class="hint">No functions on now.</p>');
       body += '<h3 class="fn-h">Upcoming functions</h3>';
       days.forEach(function (d) {
         var fs = F.list.filter(function (f) { return f.date === d && (f.status === 'confirmed' || f.status === 'cancelled'); }).sort(function (a, b) { return a.first - b.first; });
         up.push(d);
-        body += '<div class="fn-day"><h4>' + esc(dayName(d)) + '</h4>' + (fs.length ? '<ul class="fn-cards">' + fs.map(cardHTML).join('') + '</ul>' + totalsHTML(totals[d]) : '<p class="hint">None.</p>') + '</div>';
+        body += '<div class="fn-day"><h4>' + esc(dayName(d)) + '</h4>' + prepButton(d, t) + (fs.length ? '<ul class="fn-cards">' + fs.map(cardHTML).join('') + '</ul>' + totalsHTML(totals[d]) : '<p class="hint">None.</p>') + '</div>';
       });
       body += '<div class="btn-row">' + (pageDays < 14 ? '<button type="button" class="btn" data-fn="days" data-v="14">Show the next 14 days</button>' : '<button type="button" class="btn" data-fn="days" data-v="3">Show the next 3 days</button>') + '</div>';
     }
@@ -969,6 +1010,7 @@
     var a = el.getAttribute('data-fn');
     if (a === 'status') { var target = byId(el.getAttribute('data-id')); if (target) setStatus(target, el.getAttribute('data-v') === 'undo'); return; }
     if (a === 'print') { var f = byId(el.getAttribute('data-id')); if (f) printFunctions([f], {}, el); return; }
+    if (a === 'print-prep') { var day = el.getAttribute('data-day'); if (isYmd(day)) printFunctions(printDayList(now(), day), { day: day, prep: true }, el); return; }
     if (a === 'print-day') { printFunctions(printDayList(now()), { day: kday(now()) }, el); return; }
     if (a === 'open') { sheetOpen(el.getAttribute('data-id'), el); return; }
     if (a === 'close') { sheetClose(true); return; }

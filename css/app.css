@@ -2476,6 +2476,26 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
 input:is([type="date"], [type="time"]) { min-height: 44px; cursor: pointer; max-width: 100%; box-sizing: border-box; }
 input:is([type="date"], [type="time"]):disabled, input:is([type="date"], [type="time"]):read-only { cursor: default; }
 
+/* Daily platter prep tiles: drawings, ingredient amounts and booked totals. */
+@page fn-prep-sheet { size: A4 landscape; margin: 8mm; }
+@media print {
+  body.fn-printing #fn-print.fn-prep-print { page: fn-prep-sheet; padding: 0; font: 9.5pt/1.15 var(--body); }
+  #fn-print .fn-prep-paper { overflow-wrap: anywhere; }
+  #fn-print .fn-prep-paper table { width: 100%; border-collapse: collapse; font-size: inherit; }
+  #fn-print .fn-prep-paper th, #fn-print .fn-prep-paper td { padding: 0.4mm 0.8mm; border-bottom: 0.4pt solid #999; text-align: left; vertical-align: top; }
+  #fn-print .fn-prep-paper thead { display: table-header-group; }
+  #fn-print .fn-prep-paper tr { break-inside: avoid; }
+  #fn-print .fn-prep-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3mm 4mm; align-items: stretch; }
+  #fn-print .fn-prep-card { break-inside: avoid; min-width: 0; border: 0.7pt solid #777; padding: 2mm; }
+  #fn-print .fn-prep-card h2 { display: flex; justify-content: space-between; gap: 2mm; font-size: 12pt; margin-bottom: 1mm; }
+  #fn-print .fn-prep-card h2 span { font-size: 9pt; white-space: nowrap; }
+  #fn-print .fn-prep-art { width: 100%; margin: 0 0 1mm; }
+  #fn-print .fn-prep-art svg { display: block; width: 100%; height: 28mm; }
+  #fn-print .fn-prep-card th:last-child, #fn-print .fn-prep-card td:last-child { width: 27%; }
+  #fn-print .fn-prep-warning { padding: 2mm; border: 1pt solid #222; margin-bottom: 2mm; font-weight: 700; }
+  #fn-print .fn-prep-paper footer { clear: both; margin-top: 2mm; font-size: 7pt; border-top: 0.4pt solid #999; padding-top: 1mm; }
+}
+
 /* The food safety guide uses the book's type, paper and orange accent. */
 .g-food-band { border-block: 2px solid var(--ink); padding: .8rem 0; font-size: 1.2rem; }
 .g-food-times { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1.5rem 0; }

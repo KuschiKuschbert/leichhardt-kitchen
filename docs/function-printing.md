@@ -28,3 +28,17 @@ The shared print code is already in the shell through `js/functions.js`. No new 
 ## Rollback
 
 Revert the feature pull request on a fresh branch and redeploy Pages. No saved data or database rules need rolling back. The old editor and app API versions must be restored together.
+
+## Platter prep tiles (31 Oct 2026)
+
+**Print prep sheet** sits under Today and each upcoming date on Functions (`#/fn`), and beside Print run sheet in Service View (`#/fn/now`). Each button prints its labelled day. Empty days have a disabled button.
+
+The A4 landscape copy shows the book's platter references as tiles in three columns. Each tile contains only the platter name, drawing, ingredients, quantities per platter and total platters to prep for the selected day. All Functions platters stay visible, including zero-booked references, plus any booked recipe no longer in the catalogue. There is no page title, introduction, function overview, ingredient explanation or recipe description. The selected date is in a small footer. The normal six-platter menu fits one page with readable ingredient text. Long ingredient lists continue without clipping.
+
+Totals include every confirmed function with food on the selected day, including completed functions and already-sent rounds. Overnight functions contribute only rounds on that day. Undated rounds belong to the booking date. Drafts and cancellations are excluded. Ingredients use current recipe quantities without multiplying or guessing amounts. Square-bracket amounts stay unconfirmed. Missing recipes or drawings say so. Existing portrait run sheets remain available for function names, round times and service and dietary notes.
+
+The tiles share the native print lifecycle, offline/source warning, retry and access gate. Printing uses only already-loaded function, recipe and drawing data. SVG is cleaned again at print time. No reads, writes, rules, caches, contacts or new dependencies are added. `tests/function-prep-print.test.js` verifies real A4 PDFs, daily and overnight totals, upcoming-day buttons, current and missing recipes, drawings, safe text, long ingredient lists, screen widths, empty days and the read/write budget.
+
+Example with synthetic bookings:
+
+![Daily platter prep tiles](images/function-prep-sheet.png)
