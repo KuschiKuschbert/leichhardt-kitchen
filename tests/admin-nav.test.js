@@ -13,7 +13,12 @@ const L = require('./lib'); const { R, ok } = L.results();
       ok(await p.evaluate(t => LK_PREP.state.atab === t, tab), width + ': retained page id ' + tab);
     }
     await L.adminTab(p, 'insights'); await L.settle(p, 700);
-    if (width >= 1100) ok(await p.evaluate(() => document.querySelector('.a-nav').getBoundingClientRect().right <= document.querySelector('.a-pane').getBoundingClientRect().left), 'desktop sidebar sits beside report');
+    if (width >= 1100) {
+      ok(await p.evaluate(() => document.querySelector('.a-nav').getBoundingClientRect().right <= document.querySelector('.a-pane').getBoundingClientRect().left), 'desktop sidebar sits beside report');
+      await p.evaluate(() => scrollTo(0, 700)); await L.settle(p, 100);
+      await L.adminTab(p, 'people');
+      ok(await p.evaluate(() => scrollY < 5), 'desktop page change starts at the top');
+    }
     ok(!(await L.overflow(p)), width + ': no sideways scroll');
     ok(p.errors.length === 0, width + ': no page errors ' + p.errors.join(' | '));
     await p.context().close();

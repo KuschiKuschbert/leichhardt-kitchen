@@ -4093,6 +4093,7 @@
   }
   /* a new page starts just under the panel's title: the nav stays where it was, nothing jumps back above it */
   function adminToTop() {
+    if (window.matchMedia('(min-width: 1100px)').matches) { S.anavMin = false; window.scrollTo(0, 0); return; }
     var mark = S.root && S.root.querySelector('.a-navtop');
     S.anavMin = false;
     if (!mark) { window.scrollTo(0, 0); return; }
