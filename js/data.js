@@ -1631,7 +1631,7 @@ window.LK_DATA = {
     },
     {
       id: 'chicken-adobo', art: 'chicken-adobo', no: '124', kind: 'main', forLine: 'Special', name: 'Chicken Adobo', short: 'Adobo',
-      yield: 'Per plate on 189 g steamed jasmine rice, garnished with spring onion curls and sliced red chilli. Batch: 2.5 kg bone-in chicken thigh braised in soy and vinegar. [Serves per batch to come]',
+      yield: 'Per plate on 180 g steamed jasmine rice, garnished with spring onion curls and sliced red chilli. Batch: 2.5 kg bone-in chicken thigh braised in soy and vinegar. [Serves per batch to come]',
       ingredients: [
         { q: '2.5 kg', name: 'Chicken thigh', note: 'bone-in, skin-on' },
         { q: '250 ml', name: 'Soy sauce', tags: ['Soy', 'Gluten?'] },
@@ -1643,12 +1643,12 @@ window.LK_DATA = {
         { q: '10 g', name: 'Whole black peppercorns' },
         { q: '25 g', name: 'Brown sugar' },
         { q: '40 ml', name: 'Neutral cooking oil' },
-        { q: '189 g', name: 'Jasmine rice', note: 'steamed, per plate', link: 'jasmine-rice' },
+        { q: '180 g', name: 'Jasmine rice', note: 'steamed, per plate', link: 'jasmine-rice' },
         { q: '[Qty]', name: 'Spring onion', note: 'curls, garnish per plate' },
         { q: '[Qty]', name: 'Red chilli', note: 'sliced, garnish per plate' }
       ],
       pins: [
-        { label: 'Jasmine rice', x: 30, y: 60, side: 'left', link: 'jasmine-rice', note: '189 g, steamed. Under the chicken.' },
+        { label: 'Jasmine rice', x: 30, y: 60, side: 'left', link: 'jasmine-rice', note: '180 g, steamed. Under the chicken.' },
         { label: 'Chicken adobo', x: 50, y: 44, side: 'right', tags: ['Soy', 'Gluten?'], note: 'Skin side up, on top of the rice. [Pieces per serve to come]' },
         { label: 'Adobo sauce', x: 67, y: 65, side: 'right', tags: ['Soy', 'Gluten?'], note: 'From the pot, over the chicken. [Amount per serve to come]' },
         { label: 'Garnish', x: 50, y: 39, side: 'left', note: 'Spring onion curls and sliced red chilli. [Amount per serve to come]' }
@@ -1660,13 +1660,13 @@ window.LK_DATA = {
         { title: 'Add the liquids', steps: ['Add the kept marinade, the vinegar and the water or stock.', 'Bring to the boil and simmer for 5 min before stirring.'] },
         { title: 'Braise', steps: ['Cover partly and simmer gently for 30 to 45 min, turning the chicken as needed.', 'Probe the thickest pieces: at least 75 °C.'] },
         { title: 'Finish the sauce', steps: ['Add the brown sugar. Taste and adjust.', 'Reduce uncovered until the sauce lightly coats the chicken.'] },
-        { title: 'Plating', steps: ['189 g steamed jasmine rice on the plate.', 'Chicken adobo on top of the rice, skin side up. [Pieces per serve to come]', 'Sauce from the pot over the chicken. [Amount per serve to come]', 'Garnish with spring onion curls and sliced red chilli. [Amount per serve to come]'] }
+        { title: 'Plating', steps: ['180 g steamed jasmine rice on the plate.', 'Chicken adobo on top of the rice, skin side up. [Pieces per serve to come]', 'Sauce from the pot over the chicken. [Amount per serve to come]', 'Garnish with spring onion curls and sliced red chilli. [Amount per serve to come]'] }
       ],
       labelNote: 'Check the soy sauce and stock labels. Most soy sauce has wheat.'
     },
     {
       id: 'jasmine-rice', no: '125', kind: 'batch', forLine: 'For the chicken adobo', name: 'Jasmine Rice', short: 'Jasmine rice', art: 'rice',
-      yield: 'Batch: 5 kg raw jasmine rice, exactly as the Steamed Rice (card 05). 189 g per plate.',
+      yield: 'Batch: 5 kg raw jasmine rice, exactly as the Steamed Rice (card 05). 180 g per plate.',
       ingredients: [
         { q: '5 kg', name: 'Jasmine rice' },
         { q: '9.5 L', name: 'Water' },
@@ -1675,7 +1675,7 @@ window.LK_DATA = {
       ],
       sections: [
         { title: 'Method', steps: ['Wash the rice 3 times until the water runs clear.', 'Spread the rice in 1/1 GN pans, 60 mm deep, divided evenly. Add the water, chicken stock and bay leaves, divided evenly across the pans.', 'Steam 25 min.', 'Check the rice. It must not be too soft. If it needs more, steam on in 2 min steps, checking each time.'] },
-        { title: 'Portioning', steps: ['Portion 189 g per serve for the Chicken Adobo.'] }
+        { title: 'Portioning', steps: ['Portion 180 g per serve for the Chicken Adobo.'] }
       ],
       labelNote: 'Stock powders can also carry celery. Check the label.',
       tip: { title: 'On the iCombi', text: 'Steam mode, 100 °C, 25 min, as for the Steamed Rice (programme RICE).' }
