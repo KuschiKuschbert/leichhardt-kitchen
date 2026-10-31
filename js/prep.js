@@ -6835,8 +6835,9 @@
   }
   function gViewer() { var p = me(); return (admDev() ? 'a' : '') + (p ? p.id + (chefP(p) ? 'c' : '') : '') + (fnOK() ? 'f' : ''); }
   function gWhoTag(g) { return g.who === 'chefs' || g.who === 'fn' ? '<span class="g-who">For ' + esc(gWhoName(g.who).toLowerCase()) + '</span>' : ''; }
-  function gAll() { return (S.guides || []).filter(function (g) { return !g.removed && g.title; }).sort(gOrder); }
-  function gLive() { return gAll().filter(function (g) { return g.id !== G_FOOD.id && g.id !== G_SMOKE.id; }).concat([G_FOOD, G_SMOKE]).filter(gSees).sort(gOrder); }
+  function gBundled(g) { return g.id === G_FOOD.id || g.id === G_SMOKE.id; }
+  function gAll() { return (S.guides || []).filter(function (g) { return !g.removed && g.title && !gBundled(g); }).concat([G_FOOD, G_SMOKE]).sort(gOrder); }
+  function gLive() { return gAll().filter(gSees); }
   function gSig(list) { return (list || []).map(function (g) { return g.id + ':' + (g.upd || 0) + (g.removed ? 'r' : ''); }).join('|'); }
   function gIsNew(g) { return now() - (g.at || 0) < G_NEW; }
   function gMeta(g) {
@@ -7346,15 +7347,16 @@
     return names.length ? 'Shows on these recipe cards: ' + names.slice(0, 12).join(', ') + (names.length > 12 ? ' and ' + (names.length - 12) + ' more' : '') + '.' : 'Not on any recipe card yet. A recipe name or a search word puts it there.';
   }
   function gRowAdmin(g) {
-    var cards = gCards(g).map(function (r) { return r.name; });
+    var cards = gCards(g).map(function (r) { return r.name; }), bundled = gBundled(g);
     return '<li class="nt-row g-row"><div class="g-rt">' + gThumbHTML(g) + '<div class="g-rb"><span class="nt-tag">' + esc(gCatName(g.cat)) + '</span>' + gWhoTag(g) + '<b>' + esc(g.title) + '</b>' + (g.sum ? '<span>' + esc(g.sum) + '</span>' : '') +
       '<span class="nt-by">' + esc(gMeta(g)) + (cards.length ? '. On ' + esc(cards.slice(0, 4).join(', ')) + (cards.length > 4 ? ' and ' + (cards.length - 4) + ' more' : '') : '') + '</span></div></div>' +
-      '<div class="btn-row"><a class="p-x g-open" href="#/guides/' + encodeURIComponent(g.id) + '">Open</a><button type="button" class="p-x" data-p="g-edit" data-id="' + esc(g.id) + '">' + (armed('g-edit:' + g.id) ? 'Not saved. Tap again' : 'Change') + '</button>' +
-      '<button type="button" class="p-x" data-p="g-del" data-id="' + esc(g.id) + '">' + (armed('g-del:' + g.id) ? 'Tap again to remove' : 'Remove') + '</button></div></li>';
+      (bundled ? '<span class="hint">Included with the book. Open to read or download the PDF.</span>' : '') +
+      '<div class="btn-row"><a class="p-x g-open" href="#/guides/' + encodeURIComponent(g.id) + '">Open</a>' + (bundled ? '' : '<button type="button" class="p-x" data-p="g-edit" data-id="' + esc(g.id) + '">' + (armed('g-edit:' + g.id) ? 'Not saved. Tap again' : 'Change') + '</button>' +
+      '<button type="button" class="p-x" data-p="g-del" data-id="' + esc(g.id) + '">' + (armed('g-del:' + g.id) ? 'Tap again to remove' : 'Remove') + '</button>') + '</div></li>';
   }
   function guidesAdminHTML() {
     var open = !!S.gf, live = gAll();
-    var list = S.guides == null ? '<p class="hint">Loading...</p>' : lvHTML({
+    var list = (S.guides == null ? '<p class="hint">Loading uploaded guides...</p>' : S.gErr ? '<p class="p-err" role="status">Could not load uploaded guides. Check the signal. The guides included with the book are available below.</p>' : '') + lvHTML({
       key: 'guides', items: live, step: 10, tools: 6, noun: ['guide', 'guides'], ph: 'Search guides', empty: 'No guides yet. Tap Add a guide to upload the first one.',
       find: gHay,
       filters: [['all', 'All guides']].concat(G_CATS.map(function (c) { return [c[0], c[1], function (g) { return g.cat === c[0]; }]; })),
