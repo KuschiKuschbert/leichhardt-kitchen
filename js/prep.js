@@ -8570,7 +8570,7 @@
       return;
     }
     if (k === 'pf2') { var p2 = S.pf2.length; S.pf2 = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.pf2; pinCells(el); if (p2 < 4 && S.pf2.length === 4 && /^\d{4}$/.test(S.pf1)) submitPin(); return; }
-    if (k === 'p-text') { S.text = el.value; var hn = S.root.querySelector('#p-hint'); if (hn) hn.textContent = hintText(S.text); var sg = S.root.querySelector('#p-sugg'); if (sg) sg.innerHTML = suggestHTML(); var qs = S.root.querySelector('#p-qsugg'); if (qs) qs.innerHTML = qtyChipsHTML(); return; }
+    if (k === 'p-text') { S.text = el.value; var hn = S.root.querySelector('#p-hint'); if (hn) hn.textContent = hintText(S.text); var suggestionBox = S.root.querySelector('#p-sugg'); if (suggestionBox) suggestionBox.innerHTML = suggestHTML(); var qs = S.root.querySelector('#p-qsugg'); if (qs) qs.innerHTML = qtyChipsHTML(); return; }
     if (k === 'o-text') { S.otext = el.value; var og = S.root.querySelector('#o-sugg'); if (og) og.innerHTML = ordSuggHTML(); oAutoQty(); return; }
     if (k === 'o-qty') { if (S.oqtyAuto && S.oqtyAuto !== el.value) sg('ordfill', 'e'); S.oqty = el.value; S.oqtyAuto = ''; return; }
     if (k === 'g-q') { S.gq = el.value; var gl = S.root.querySelector('#g-list'); if (gl) gl.innerHTML = gListHTML(); if (el.parentNode && el.parentNode.classList) el.parentNode.classList.toggle('has-q', !!S.gq); return; }

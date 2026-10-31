@@ -37,9 +37,10 @@ const yday = L.ymd(new Date(L.NOW - 86400000));
 
   p = await L.open(b, '#/orders', { who: 'ann', extra: { [fsKey(['ordlearned', 'paper-towels'])]: { text: 'Paper towels', uses: 9, dow: {}, qtys: { '6-rolls': { q: '6 rolls', n: 5 } } } }, wait: 1800 });
   await p.fill('#o-text', 'Paper towels'); await L.settle(p, 300);
-  await p.fill('#o-qty', '3 rolls');
+  await p.fill('#o-qty', '3 rolls'); await L.settle(p, 300);
   const edited = await p.evaluate(() => JSON.parse(localStorage.getItem('lk.daily') || 'null'));
-  ok(edited && edited.sg.ordfill && edited.sg.ordfill.e === 1, 'edited usual quantity is counted without retaining text');
+  ok(edited && edited.sg.ordfill && edited.sg.ordfill.e === 1, 'edited usual quantity is counted without retaining text (' + JSON.stringify(edited && edited.sg) + ')');
+  ok(p.errors.length === 0, 'editing a suggested quantity has no browser errors ' + p.errors.join(' | '));
   await p.context().close();
 
   // the admin panel: Insights shows the nightly sum
