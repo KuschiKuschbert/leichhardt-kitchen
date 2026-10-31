@@ -219,24 +219,28 @@ console.log('Learned ' + n + ' kitchen days (' + lines + ' lines). Up to ' + shi
 const USE_DAYS = 28, KEEP_DAILY = 7;
 async function usageSummary() {
   const yday = shift(today, -1);
-  const got = await K.collection('daily').where('day', '==', yday).get();
-  const sg = {}, pf = {};
+  const got = await K.collection('daily').where('day', '>=', shift(today, -KEEP_DAILY)).where('day', '<', today).get();
+  const grouped = {};
   got.docs.forEach(d => {
-    const x = d.data() || {};
-    Object.keys(x.sg || {}).forEach(f => { const e = x.sg[f] || {}, o = sg[f] = sg[f] || { s: 0, t: 0, d: 0 }; ['s', 't', 'd'].forEach(k => { o[k] += Math.max(0, Math.min(1000, +e[k] || 0)); }); });
-    Object.keys(x.pf || {}).forEach(k => { const a = Array.isArray(x.pf[k]) ? x.pf[k] : []; const o = pf[k] = pf[k] || a.map(() => 0); a.forEach((v, i) => { if (i < o.length) o[i] += Math.max(0, Math.min(1000, +v || 0)); }); });
+    const x = d.data() || {}, day = x.day;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day || '')) return;
+    const group = grouped[day] = grouped[day] || { phones: 0, sg: Object.create(null), pf: Object.create(null) };
+    group.phones++;
+    Object.keys(x.sg || {}).forEach(f => { const e = x.sg[f] || {}, o = group.sg[f] = group.sg[f] || { s: 0, t: 0, d: 0, e: 0 }; ['s', 't', 'd', 'e'].forEach(k => { o[k] += Math.max(0, Math.min(1000, +e[k] || 0)); }); });
+    Object.keys(x.pf || {}).forEach(k => { const a = Array.isArray(x.pf[k]) ? x.pf[k] : []; const o = group.pf[k] = group.pf[k] || a.map(() => 0); a.forEach((v, i) => { if (i < o.length) o[i] += Math.max(0, Math.min(1000, +v || 0)); }); });
   });
   const ref = K.collection('summary').doc('usage'), old = ((await ref.get()).data() || {}).days || {};
   const days = {};
   Object.keys(old).filter(d => d >= shift(today, -USE_DAYS)).forEach(d => { days[d] = old[d]; });
-  days[yday] = { phones: got.size, sg, pf };
+  Object.keys(grouped).forEach(d => { days[d] = grouped[d]; });
+  if (!days[yday]) days[yday] = { phones: 0, sg: Object.create(null), pf: Object.create(null) };
   await ref.set({ day: today, days, at: Date.now() });
   const gone = await K.collection('daily').where('day', '<', shift(today, -KEEP_DAILY)).get();
   for (let i = 0; i < gone.docs.length; i += 400) { const b = db.batch(); gone.docs.slice(i, i + 400).forEach(d => b.delete(d.ref)); await b.commit(); }
   return [got.size, gone.size];
 }
 const [uN, uGone] = await usageSummary();
-console.log('Usage: ' + uN + ' phone records for yesterday, ' + uGone + ' older than ' + KEEP_DAILY + ' days deleted.');
+console.log('Usage: ' + uN + ' phone records from recent days, ' + uGone + ' older than ' + KEEP_DAILY + ' days deleted.');
 // the lists the phones read once a day, as one record each (fields the phones use only, so each stays well under 1 MB)
 const LEARN_TOP = 500, ORD_TOP = 300;
 async function listSummary(col, n, keep, extra) {

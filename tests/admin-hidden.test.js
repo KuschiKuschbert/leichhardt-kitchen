@@ -34,7 +34,7 @@ const { R, ok } = L.results(), { txt } = L;
   await p.click('.wtop-who'); await L.settle(p, 150);
   await p.click('.wm .wm-adm');
   await L.settle(p, 1500);
-  ok(await p.$('[data-p="a-tab"]') !== null, 'head chef: Admin panel in the menu opens the admin panel');
+  ok(await p.$('.p-admin .a-nav') !== null, 'head chef: Admin panel in the menu opens the admin panel');
   ok(await p.$('.wm-wrap') === null, 'head chef: the menu closes on the way');
   ok(await p.$('.wtop-who[aria-current="page"]') !== null, 'head chef #/admin: the chef hat marks the page');
   ok(p.errors.length === 0, 'head chef: no page errors ' + p.errors.join(' | '));

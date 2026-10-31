@@ -215,6 +215,8 @@ async function open(browser, hash, o) {
   const pinAt = who && (store[K.concat(['pinset', who]).join('/')] || {}).at, sess = who && !o.noTok && !o.oldTok && !o.noAnon && typeof pinAt === 'number';
   if (sess) store[K.concat(['sessions', uid]).join('/')] = { by: who, pinAt, exp, at: o.clock || NOW };
   const ls = {
+    // Existing journeys use a returning admin whose last page was Insights. Set adminPage: '' to test a first visit.
+    'lk.prep.atab': o.adminPage === undefined ? 'insights' : o.adminPage,
     'fake.fs': JSON.stringify(store),
     'fake.anon': o.noAnon ? '' : 'anon-test',
     'lk.prep.pin': o.noPin ? '' : PIN,

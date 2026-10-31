@@ -111,7 +111,10 @@ ok(/Tomorrow's list: usually from 21:10 \(4 of the last 28 nights\)/.test(out1) 
 // words that are also built-in object names count like any other word (23 Oct 2026): a venue "Constructor", an item
 // "__proto__" and a person "constructor", logged yesterday, are in the second run's transfer summary
 await w(['transfers', y, 'lines', 't11'], tl(1, '__proto__', { venue: 'Constructor', person: 'constructor', amount: 1, unit: 'packs' }));
+await K.collection('daily').doc(y2 + '_late').set({ day: y2, tag: 'late', sg: { ordfill: { s: 1, t: 0, d: 0, e: 1 } }, pf: {}, at: 1 });
 const out2 = run();
+const lateUsage = ((await K.collection('summary').doc('usage').get()).data().days || {})[y2];
+ok(lateUsage && lateUsage.phones === 1 && lateUsage.sg.ordfill.e === 1, 'usage: late feedback and edited quantities are included once');
 const on2 = (await K.collection('learned').doc('slice-onions').get()).data();
 ok(on2.uses === 3, 'second run counts nothing twice (' + on2.uses + ')');
 const ly2 = ((((await K.collection('summary').doc('learned').get()).data() || {}).lists || {}).days || {})[y] || {};

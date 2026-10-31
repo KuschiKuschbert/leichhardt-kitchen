@@ -35,6 +35,13 @@ const yday = L.ymd(new Date(L.NOW - 86400000));
   ok(od && od.sg.ordfill && od.sg.ordfill.s === 1 && od.sg.ordfill.t === 1, 'usual order amount: shown and taken counted (' + JSON.stringify(od && od.sg) + ')');
   await p.context().close();
 
+  p = await L.open(b, '#/orders', { who: 'ann', extra: { [fsKey(['ordlearned', 'paper-towels'])]: { text: 'Paper towels', uses: 9, dow: {}, qtys: { '6-rolls': { q: '6 rolls', n: 5 } } } }, wait: 1800 });
+  await p.fill('#o-text', 'Paper towels'); await L.settle(p, 300);
+  await p.fill('#o-qty', '3 rolls');
+  const edited = await p.evaluate(() => JSON.parse(localStorage.getItem('lk.daily') || 'null'));
+  ok(edited && edited.sg.ordfill && edited.sg.ordfill.e === 1, 'edited usual quantity is counted without retaining text');
+  await p.context().close();
+
   // the admin panel: Insights shows the nightly sum
   const use = { [fsKey(['summary', 'usage'])]: { day: L.ymd(new Date(L.NOW)), days: { [yday]: { phones: 3, sg: { quick: { s: 3, t: 7, d: 1 }, checks: { s: 1, t: 0, d: 1 } }, pf: { lcp: [5, 3, 1, 1, 0], tap: [10, 5, 3, 2, 0] } } } } };
   p = await L.open(b, '#/admin', { admin: true, who: '', extra: use, wait: 2000 });

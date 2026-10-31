@@ -35,8 +35,8 @@ const onTop = (p, sel) => p.evaluate(s => {
     p = await L.open(b, '#/admin', { admin: true, width: w, height: 900, wait: 1800 });
     v = await onTop(p, '[data-p="a-group"][data-g="settings"]');
     ok(v === true, w + ' admin: the Settings group can be seen and tapped (' + v + ')');
-    v = await onTop(p, '[data-p="a-group"][data-g="people"]');
-    ok(v === true, w + ' admin: the People group can be seen and tapped (' + v + ')');
+    v = await onTop(p, '[data-p="a-group"][data-g="training"]');
+    ok(v === true, w + ' admin: the Training group can be seen and tapped (' + v + ')');
     await L.adminTab(p, 'people'); await L.settle(p, 300);
     const h = await p.evaluate(() => Math.max(...[...document.querySelectorAll('[data-p="a-reset-pin"]')].map(e => e.getBoundingClientRect().height)));
     ok(h > 0 && h <= 52, w + ' admin: Reset PIN fits on one line (' + Math.round(h) + ' px high)');

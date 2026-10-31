@@ -94,7 +94,7 @@
     items: [], itemsState: 'idle', showRemoved: false,
     section: '', text: '', qty: '', recipeSearch: '', recipeOpen: false, recipeAll: false, tab: '',
     authed: false, tok: '', pinStep: '', pinOff: false, pinData: null, pf1: '', pf2: '', pinMsg: '',
-    sections: [], activity: [], hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false, exporting: '', moving: false, moveMsg: '', newPin: '', atab: lsGet('lk.prep.atab') || 'insights', ordDate: dayNow(), ordLines: [], ordState: 'idle', ordView: 'day', otext: '', oqty: '', ordAll: [], ordAllAt: 0, ordBusy: false, osugg: [],
+    sections: [], activity: [], hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false, exporting: '', moving: false, moveMsg: '', newPin: '', atab: lsGet('lk.prep.atab') || 'overview', ordDate: dayNow(), ordLines: [], ordState: 'idle', ordView: 'day', otext: '', oqty: '', ordAll: [], ordAllAt: 0, ordBusy: false, osugg: [],
     retryAt: {}, wDate: dayNow(), wLines: [], wState: 'idle', rvDate: '', wReview: null, wReviewFor: '', wrA: null, wrC: null, wpA: null, wpC: null, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wSum: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, xDate: dayNow(), xLines: [], xState: 'idle', xf: xBlank(), xSum: null, xsugg: [], xStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nMsg: '', nSaving: false,
     mins: null, minsFor: '', minsAt: 0, minsBusy: false, mmine: {}, msigns: {}, mSel: '', mf: null, mMsg: '', mSaving: false, mSigning: false, minOpen: false, mErr: '',
     guides: null, guidesFor: '', guidesAt: 0, gBusy: false, gRetry: 0, gq: '', gcat: 'all', gSel: '', gf: null, gfSnap: '', gMsg: '',
@@ -1029,7 +1029,7 @@
     S.pastBusy = S.minsBusy = S.viewBusy = S.missBusy = S.useBusy = false; S.pastPart = null; S.ordStats = null; S.views = S.misses = null; S.viewErr = S.missErr = S.useErr = S.wReviewErr = false; S.wReview = null; S.wReviewFor = S.wNoteFor = '';
     S.items = []; S.ordLines = []; S.ordAll = []; S.wLines = []; S.xLines = []; S.notes = null; S.notesBusy = false; S.nSaving = false; S.notesFor = ''; S.nPast = null; S.nPastOpen = false; S.nSeen = null; S.nPrivateError = ''; S.mins = null; S.guides = null; S.activity = []; S.actState = ''; S.hist = {}; S.stats = null;
     ['lk.fn', 'lk.mail.sent', 'lk.drinks', 'lk.guides', 'lk.notes', 'lk.minutes'].forEach(function (k) { lsSet(k, ''); });
- if (window.LK_DELIVERY) window.LK_DELIVERY.reset(); if (window.LK_SUP) window.LK_SUP.reset(); if (supplierService) supplierService.reset();
+ if (window.LK_INTELLIGENCE) window.LK_INTELLIGENCE.reset(); if (window.LK_DELIVERY) window.LK_DELIVERY.reset(); if (window.LK_SUP) window.LK_SUP.reset(); if (supplierService) supplierService.reset();
     // an editor an older copy of its file has no drop(): it closes as before
     if (window.LK_MG && window.LK_MG.drop) window.LK_MG.drop(); if (window.LK_FE && window.LK_FE.drop) window.LK_FE.drop();
     if (S.sheet) { S.sheet = ''; ovDone('reason'); } S.section = ''; S.secTyped = false;
@@ -1813,7 +1813,7 @@
   function dailySave() { if (dailyMem) lsSet('lk.daily', JSON.stringify(dailyMem)); }
   // s: had something to show today (once a day), t: taken, d: put away
   function sg(f, k) {
-    if (DAILY_FEATS.indexOf(f) < 0) return;
+    if (practice() || DAILY_FEATS.indexOf(f) < 0 || ['s', 't', 'd', 'e'].indexOf(k) < 0) return;
     var d = dailyGet(), e = d.sg[f] = d.sg[f] || { s: 0, t: 0, d: 0 };
     if (k === 's') { if (e.s) return; e.s = 1; } else e[k] = (e[k] || 0) + 1;
     dailySave();
@@ -1900,6 +1900,10 @@
       .then(function () { return all('learnlog'); }).then(function (r) { out.learnlog = r; })
       .then(function () { return all('summary'); }).then(function (r) { out.summary = r; })
       .then(function () { return all('daily'); }).then(function (r) { out.daily = r; })
+      .then(function () { return all('analysis'); }).then(function (r) { out.analysis = r; })
+      .then(function () { return all('analysisDaily'); }).then(function (r) { out.analysisDaily = r; })
+      .then(function () { return all('references'); }).then(function (r) { out.references = r; out.referencesHist = {}; return subs(r, 'references', 'hist', out.referencesHist); })
+      .then(function () { return all('training'); }).then(function (r) { out.training = r; out.trainingHist = {}; return subs(r, 'training', 'hist', out.trainingHist); })
       .then(function () { return all('misses'); }).then(function (r) { out.misses = r; })
       .then(function () { return all('views'); }).then(function (r) { out.views = r; })
       .then(function () { return all('guides'); }).then(function (r) { out.guides = r; })
@@ -1977,7 +1981,7 @@
     for (k = 0; k < 400; k++) dates.push(shift(today, -k));
     f.getDoc(f.doc(fb.db, 'kitchens', old, 'config', 'main')).then(function (sn) { if (sn.exists()) { n++; return f.setDoc(f.doc(fb.db, 'kitchens', np, 'config', 'main'), sn.data()); } })
       .then(function () { return copyCol('login'); }).then(function () { return copyCol('pinset'); }).then(function () { return copyCol('staffpins'); }).then(function () { return copyCol('activity'); }).then(function () { return copyCol('sections'); })
-      .then(function () { return copyCol('learned'); }).then(function () { return copyCol('ordlearned'); }).then(function () { return copyCol('learnlog'); }).then(function () { return copyCol('summary'); }).then(function () { return copyCol('daily'); }).then(function () { return copyCol('misses'); }).then(function () { return copyCol('views'); })
+      .then(function () { return copyCol('learned'); }).then(function () { return copyCol('ordlearned'); }).then(function () { return copyCol('learnlog'); }).then(function () { return copyCol('summary'); }).then(function () { return copyCol('analysis'); }).then(function () { return copyCol('analysisDaily'); }).then(function () { return copyCol('references'); }).then(function () { return copySub('references', 'hist'); }).then(function () { return copyCol('training'); }).then(function () { return copySub('training', 'hist'); }).then(function () { return copyCol('daily'); }).then(function () { return copyCol('misses'); }).then(function () { return copyCol('views'); })
       .then(function () { return copyCol('notes'); }).then(function () { return copyCol('directnotes'); }).then(function () { return copySub('directnotes', 'seen', true); }).then(function () { return copyCol('minutes'); }).then(function () { return copySub('minutes', 'hist'); })
       .then(function () { return copySub('minutes', 'signs', true); }).then(function () { return copySub('notes', 'seen', true); })
       .then(function () { return copyCol('guides'); }).then(function () { return copySub('guides', 'pages'); })
@@ -3162,16 +3166,17 @@
     var u = S.use, days = u && u.days ? Object.keys(u.days) : [];
     if (!u) return S.useErr ? '<p class="hint" role="status">' + COUNTS_FAIL + '</p>' : '<p class="hint">Loading...</p>';
     if (!days.length) return '<p class="hint">Nothing counted yet. Phones send their counts once a day, and the nightly job adds them up.</p>';
-    var f = {}, lcp = null, tap = null;
+    var f = Object.create(null), lcp = null, tap = null;
     days.forEach(function (d) {
       var x = u.days[d] || {};
-      Object.keys(x.sg || {}).forEach(function (k) { var e = x.sg[k] || {}, o = f[k] = f[k] || { s: 0, t: 0, d: 0 }; o.s += +e.s || 0; o.t += +e.t || 0; o.d += +e.d || 0; });
+      Object.keys(x.sg || {}).forEach(function (k) { var e = x.sg[k] || {}, o = f[k] = f[k] || { s: 0, t: 0, d: 0, e: 0 }; o.s += +e.s || 0; o.t += +e.t || 0; o.d += +e.d || 0; o.e += +e.e || 0; });
       ['lcp', 'tap'].forEach(function (k) { var a = (x.pf || {})[k]; if (!Array.isArray(a)) return; var o = k === 'lcp' ? (lcp = lcp || a.map(function () { return 0; })) : (tap = tap || a.map(function () { return 0; })); a.forEach(function (v, i) { if (i < o.length) o[i] += +v || 0; }); });
     });
     function share(a, upto) { if (!a) return ''; var t = 0, g = 0; a.forEach(function (v, i) { t += v; if (i < upto) g += v; }); return t ? Math.round(100 * g / t) + '% of ' + t : ''; }
-    var rows = Object.keys(USE_NAMES).filter(function (k) { return f[k]; }).map(function (k) { return '<tr><th scope="row">' + esc(USE_NAMES[k]) + '</th><td>' + f[k].s + '</td><td>' + f[k].t + '</td><td>' + f[k].d + '</td></tr>'; }).join('');
+    var edited = Object.keys(f).some(function (k) { return f[k].e > 0; });
+    var rows = Object.keys(USE_NAMES).filter(function (k) { return f[k]; }).map(function (k) { return '<tr><th scope="row">' + esc(USE_NAMES[k]) + '</th><td>' + f[k].s + '</td><td>' + f[k].t + '</td><td>' + f[k].d + '</td>' + (edited ? '<td>' + f[k].e + '</td>' : '') + '</tr>'; }).join('');
     return '<h3 class="a-ch-h">Smart features</h3><span class="hint">Phone-days it had something to show, times it was taken, times it was put away.</span>' +
-      (rows ? '<div class="a-tablewrap" tabindex="0" role="region" aria-label="Table, scrolls sideways"><table class="a-table a-plain"><thead><tr><th scope="col">Feature</th><th scope="col">Shown on</th><th scope="col">Taken</th><th scope="col">Put away</th></tr></thead><tbody>' + rows + '</tbody></table></div>' : '<p class="hint">No smart feature had anything to show yet.</p>') +
+      (rows ? '<div class="a-tablewrap" tabindex="0" role="region" aria-label="Table, scrolls sideways"><table class="a-table a-plain"><thead><tr><th scope="col">Feature</th><th scope="col">Shown on</th><th scope="col">Taken</th><th scope="col">Put away</th>' + (edited ? '<th scope="col">Edited</th>' : '') + '</tr></thead><tbody>' + rows + '</tbody></table></div>' : '<p class="hint">No smart feature had anything to show yet.</p>') +
       '<h3 class="a-ch-h">Speed on the phones</h3><span class="hint">Field numbers: the first page on screen within 2.5 s, and the slowest tap of a visit within 200 ms (Google\'s targets).</span>' +
       '<p>' + (share(lcp, 3) ? 'First page within 2.5 s: <strong>' + esc(share(lcp, 3)) + '</strong> opens.' : 'No page speeds yet.') + ' ' + (share(tap, 3) ? 'Slowest tap within 200 ms: <strong>' + esc(share(tap, 3)) + '</strong> visits.' : '') + '</p>';
   }
@@ -3657,10 +3662,10 @@
       var have = secs.filter(function (k) { return (x.r.tsecs || {})[k]; }).length;
       return '<tr><th scope="row">' + esc(x.p.name) + '</th>' + secs.map(function (k) {
         var v = (x.r.tsecs || {})[k] || 0;
-        return '<td class="sk-c" style="background:' + SK[skLevel(v)] + '" title="' + esc(x.p.name + ', ' + k + ': ' + v + (v === 1 ? ' line ticked' : ' lines ticked')) + '">' + (v || '<span class="sk-0">never</span>') + '</td>';
+        return '<td class="sk-c" style="background:' + SK[skLevel(v)] + '" title="' + esc(x.p.name + ', ' + k + ': ' + v + (v === 1 ? ' line ticked' : ' lines ticked')) + '">' + (v || '<span class="sk-0" title="No recorded activity in this period">0</span>') + '</td>';
       }).join('') + '<td>' + have + ' of ' + secs.length + '</td></tr>';
     }).join('');
-    var key = '<div class="a-legend sk-key"><span>Lines ticked:</span>' + [['never', 0], ['1 to 2', 1], ['3 to 5', 2], ['6 to 10', 3], ['over 10', 4]].map(function (k) { return '<span><i style="background:' + SK[k[1]] + '"></i>' + k[0] + '</span>'; }).join('') + '</div>';
+    var key = '<div class="a-legend sk-key"><span>Lines ticked:</span>' + [['no recorded activity', 0], ['1 to 2', 1], ['3 to 5', 2], ['6 to 10', 3], ['over 10', 4]].map(function (k) { return '<span><i style="background:' + SK[k[1]] + '"></i>' + k[0] + '</span>'; }).join('') + '</div>';
     var gaps = secs.filter(function (k) { return td.tickSec[k] >= 5; }).map(function (k) {
       var pros = ppl.filter(function (x) { return ((x.r.tsecs || {})[k] || 0) >= 3; }).sort(function (a, b) { return b.r.tsecs[k] - a.r.tsecs[k]; }).slice(0, 2);
       var never = ppl.filter(function (x) { return x.r.t >= 5 && !(x.r.tsecs || {})[k]; });
@@ -3668,7 +3673,7 @@
       return '<li><strong>' + esc(k) + ':</strong> ' + esc(never.map(function (x) { return x.p.name; }).join(', ')) + (never.length === 1 ? ' has' : ' have') + ' not ticked a line here. Pair them with ' + esc(pros.map(function (x) { return x.p.name + ' (' + x.r.tsecs[k] + ')'; }).join(' or ')) + '.</li>';
     }).filter(Boolean).join('');
     return key + '<div class="a-tablewrap" tabindex="0" role="region" aria-label="Table, scrolls sideways"><table class="a-table a-plain sk-t"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>' +
-      '<h3 class="a-ch-h">Cross-training chances</h3><span class="hint">Sections with at least 5 ticked lines, people with 5 or more ticks overall who have never ticked one there, and who has done that section most.</span>' +
+      '<h3 class="a-ch-h">Cross-training chances</h3><span class="hint">Sections with at least 5 recorded ticks, people with 5 or more ticks overall and none recorded there in this period. Check assessments before pairing people; ticks do not establish competence.</span>' +
       (gaps ? '<ul class="a-list">' + gaps + '</ul>' : '<p class="hint">No gaps worth flagging in this time.</p>');
   }
   function teamHTML() {
@@ -3707,8 +3712,8 @@
         { h: 'Note', html: function (x) { return x.quiet ? '<span class="a-flag">Writes rarely</span>' : '<span class="o-who-i">OK</span>'; } }
       ]
     }) : '';
-    return '<section class="set-block">' + chips + '<span class="hint">Worked out from the section each line sits under, who ticked it and who wrote it. Ticks show where someone actually worked, so they count first. Use it as a prompt for a chat, not a verdict.</span>' +
-      '<h3 class="a-ch-h">Skills matrix</h3><span class="hint">Lines each person ticked in each section (the 8 busiest sections).</span>' + skillsHTML(rows, td) +
+    return '<section class="set-block">' + chips + '<span class="hint">Worked out from the section each line sits under, who ticked it and who wrote it. Ticks record activity, so they count first. They do not confirm competence. Use it as a prompt for a chat, not a verdict.</span>' +
+      '<h3 class="a-ch-h">Recorded station activity</h3><span class="hint">Lines each person ticked in each section (the 8 busiest sections).</span>' + skillsHTML(rows, td) +
       '<h3 class="a-ch-h">Section habits</h3><span class="hint">Based on ticks for anyone with 8 or more ticked lines, otherwise on the lines they wrote. Flagged when 70% or more of them over 5 or more days, or the last 5 or more days, were in one section. The suggestion is the section they have done least.</span>' +
       (hab || '<p class="hint">No lines with a section in this time.</p>') +
       '<h3 class="a-ch-h">Who writes, and who does not</h3><span class="hint">Days written is out of the ' + td.nActive + ' days in this time that had any lines written. Fewest first. Ticks are shown so you can tell someone who works but does not write.</span>' +
@@ -3815,6 +3820,56 @@
       }
     });
   }
+  var intelligenceLoading = null, intelligenceError = false;
+  function intelligenceAllowed() { return !!fb && S.level === 'owner' && ownerHere() && !!S.user; }
+  function intelligenceContext() { return S.pin + '|' + (S.user ? S.user.uid : '') + '|' + S.who + '|' + accessEpoch; }
+  function intelligenceHTML(page) {
+    if (!intelligenceAllowed()) return '';
+    if (!window.LK_INTELLIGENCE || !window.LK_ANALYSIS) {
+      if (!intelligenceLoading && !intelligenceError) {
+        intelligenceLoading = window.LK_APP.load('js/analysis-core.js?v=1').then(function () { return window.LK_APP.load('js/admin-intelligence.js?v=1'); }).then(function () { intelligenceLoading = null; if (intelligenceAllowed()) draw(); }, function () { intelligenceLoading = null; intelligenceError = true; if (intelligenceAllowed()) draw(); });
+      }
+      return '<section class="set-block"><h3 class="label">Admin workspace</h3><p class="hint" role="status">' + (intelligenceError ? 'Could not load the workspace. Check the connection and reload this page.' : 'Loading...') + '</p></section>';
+    }
+    return window.LK_INTELLIGENCE.html(page, {
+      allowed: intelligenceAllowed, context: intelligenceContext, draw: draw, now: now,
+      day: function (at) { return at == null ? dayNow() : T.day(at); }, clock: function (at) { return T.day(at) + ' ' + hhmm(T.mins(at)); },
+      page: function (tab) { if (['overview', 'analysis', 'references', 'training'].indexOf(tab) < 0) return; S.atab = tab; lsSet('lk.prep.atab', tab); draw(); adminToTop(); },
+      get: function (path) {
+        if (!intelligenceAllowed() || !/^(analysis\/(current|health|range-(7|30|90))|analysisDaily\/[a-z0-9]+_\d{4}-\d{2}-\d{2})$/.test(path)) return Promise.reject({ code: 'permission' });
+        return fb.fs.getDocFromServer(docRef.apply(null, path.split('/'))).then(function (sn) { return sn.exists() ? sn.data() : null; });
+      },
+      list: function (col) {
+        if (!intelligenceAllowed() || !(/^(references|training|suppliers)$/.test(col) || /^(references|training)\/ai-[a-z0-9-]+\/hist$/.test(col))) return Promise.reject({ code: 'permission' });
+        return fb.fs.getDocsFromServer(fb.fs.query(fb.fs.collection.apply(null, [fb.db].concat(base(), col.split('/'))), fb.fs.limit(501))).then(function (sn) {
+          if (sn.size > 500) throw { code: 'too-many-records' };
+          return sn.docs.map(function (d) { return Object.assign({}, d.data(), { id: d.id }); });
+        });
+      },
+      save: function (col, id, value) {
+        if (!intelligenceAllowed() || ['references', 'training'].indexOf(col) < 0 || !/^ai-[a-z0-9-]+$/.test(id)) return Promise.reject({ code: 'permission' });
+        var epoch = intelligenceContext(), ref = docRef(col, id);
+        return fb.fs.getDocFromServer(ref).then(function (sn) {
+          if (!intelligenceAllowed() || epoch !== intelligenceContext()) throw { code: 'context' };
+          var previous = sn.exists() ? sn.data() : null;
+          if (previous && previous.v === value.v && Object.keys(value).every(function (k) { return previous[k] === value[k]; })) return;
+          if ((previous ? previous.v : 0) !== value.v - 1) throw { code: 'stale' };
+          var ops = [['set', ref, Object.assign({}, value, { by: 'owner' })]];
+          if (previous) ops.push(['set', fb.fs.doc.apply(null, [fb.db].concat(base(), [col, id, 'hist', String(previous.v)])), previous]);
+          return W(ops);
+        });
+      },
+      people: function () { return people().filter(function (p) { return p.active !== false; }); },
+      sections: function () { return ((S.config || {}).kitSecs || []).filter(function (s) { return !s.off; }).map(function (s) { return s.name; }); },
+      recipes: function () { return (D.recipes || []).map(function (r) { return { id: r.id, name: r.name }; }); },
+      loadGuides: loadGuides, guides: function () { return gLive().map(function (g) { return { id: g.id, title: g.title }; }); }
+    });
+  }
+  document.addEventListener('change', function (e) {
+    if (!e.target.matches('[data-k="ai-section"]') || !intelligenceAllowed()) return;
+    var group = A_GROUPS.filter(function (g) { return g[0] === e.target.value; })[0];
+    if (group) { S.atab = (S.agLast || {})[group[0]] || group[2][0]; lsSet('lk.prep.atab', S.atab); draw(); adminToTop(); }
+  });
   function adminHTML() {
     if (S.authState !== 'ready' && !S.user) {
       return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2><p class="hint">Loading...</p></section>';
@@ -3835,12 +3890,12 @@
     }
     if (!S.draft) startDraft();
     var d = S.draft, owner = S.level === 'owner';
-    if (owner) { watchActivity(); loadStats(false); }
+    if (owner && ['insights', 'team', 'waste', 'transfers', 'learning'].indexOf(S.atab || 'overview') >= 0) { watchActivity(); loadStats(false); }
     // the Google account, not the person: the chef hat's Sign out is for the person (Prep is in the top bar and tab bar)
     var bar = '<div class="p-bar"><span>Google account: <strong>' + esc(S.user.email) + '</strong></span><span class="p-links"><button type="button" class="p-link" data-p="signout">' + (armed('signout:sent') ? 'Not sent yet.' : armed('signout') ? notSaved() + '. Tap again' : 'Sign out of Google') + '</button></span></div>';
     var bulk = '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line">' + esc(S.bulk || '') + '</textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div>';
     var saveBlock = saveBarHTML();
-    var at = S.atab || 'insights';
+    var at = S.atab || 'overview';
     // a sous chef on the head chef's device has no Kitchen mail page until the head chef switches it on (23 Oct 2026)
     if (at === 'mail' && !mlOwner()) at = S.atab = 'notes';
     // Head chef decision D4 (20 Oct 2026): five groups on top, the pages of the open group underneath (the page ids
@@ -3848,7 +3903,7 @@
     var mlN = mlInfo().n, ag = adminGroupOf(at), agTabs = ag[2].filter(function (t) { return t !== 'mail' || mlOwner(); });
     // 21 Oct 2026: groups, pages and "On this page" sit in one nav that stays at the top of the screen (adminJumps() fills
     // the last row from the page's headings after each draw, adminScroll() tucks it up while scrolling down)
-    var tabsBar = '<div class="a-navtop"></div><div class="a-nav' + (S.anavMin ? ' is-min' : '') + '"><nav class="a-groups" aria-label="Admin sections">' + A_GROUPS.map(function (g) {
+    var tabsBar = '<div class="a-navtop"></div><div class="a-nav' + (S.anavMin ? ' is-min' : '') + '"><label class="a-section-picker">Admin section<select data-k="ai-section" aria-label="Admin section">' + A_GROUPS.map(function (g) { return '<option value="' + g[0] + '"' + (ag[0] === g[0] ? ' selected' : '') + '>' + g[1] + '</option>'; }).join('') + '</select></label><nav class="a-groups" aria-label="Admin sections">' + A_GROUPS.map(function (g) {
       return '<button type="button" class="a-group" data-p="a-group" data-g="' + g[0] + '" aria-current="' + (ag[0] === g[0] ? 'page' : 'false') + '">' + g[1] + (g[0] === 'today' && mlN ? ' (' + mlN + ')' : '') + '</button>';
     }).join('') + '</nav>' + (agTabs.length > 1 ? '<nav class="a-tabs" aria-label="' + esc(ag[1]) + ' pages">' + agTabs.map(function (t) {
       return '<button type="button" class="a-tab" data-p="a-tab" data-t="' + t + '" aria-pressed="' + (at === t) + '">' + A_TAB_NAMES[t] + (t === 'mail' && mlN ? ' (' + mlN + ')' : '') + '</button>';
@@ -3856,7 +3911,7 @@
     if (at === 'notes') loadNotes();
     if (at === 'minutes') loadMinutes();
     if (at === 'guides') loadGuides();
-    var pane = at === 'suppliers' ? supplierAdminHTML() : at === 'cutoffs' ? cutAdminHTML() : at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'transfers' ? xferStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() : at === 'people' ? (
+    var pane = ['overview', 'analysis', 'references', 'training'].indexOf(at) >= 0 ? intelligenceHTML(at) : at === 'suppliers' ? supplierAdminHTML() : at === 'cutoffs' ? cutAdminHTML() : at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'transfers' ? xferStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() : at === 'people' ? (
       '<section class="set-block"><span class="label">People</span><details class="a-how"><summary>How roles and ticks work</summary><p class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Shift pings are written by you and the sous chefs. Create/edit functions lets that person enter and change function bookings (Functions coordinator ticks it for you); only your save here gives it or takes it away, and nothing else comes with it. Reset PIN lets that person choose a new one: do it with them there, as whoever signs in with that name next sets the PIN. Removing someone from the list keeps their name on old lines, and their PIN stops working for anything. Head chef is for your own name: it gets the kitchen and sous chef pages, and a sous chef cannot change or remove it. Function editing still has its own tick.</p></details>' +
       (headIdOf(d.people) ? '' : '<p class="hint a-nohead" role="note">No one is marked Head chef yet. Set your own name to Head chef and save, so your PIN has full rights on the kitchen devices.</p>') +
       '<p class="hint">Tick Create/edit functions beside a person, then save. Their kitchen role stays the same.</p>' + peopleListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' + ksAdminHTML(d) +
@@ -3924,8 +3979,8 @@
     return '<section class="set-block"><h2 class="p-h">Suppliers &amp; pars</h2><p>Current pars, manual items and the original supplier records are kept in the catalogue.</p>' +
       (supplierEdit() ? '<div class="btn-row"><a class="btn dark" href="#/suppliers/manage">Manage catalogue</a><a class="btn" href="#/suppliers">Supplier order</a></div>' : '<p class="hint">Only the head chef changes suppliers and pars. Sous chefs can use <a href="#/suppliers">Supplier order</a>.</p>') + '</section>';
   }
-  var A_TAB_NAMES = { mail: 'Kitchen mail', notes: 'Shift pings', insights: 'Insights', team: 'Team', waste: 'Wastage', transfers: 'Transfers', learning: 'Learning', people: 'People', minutes: 'Minutes', guides: 'Guides', tools: 'Backup and PIN', cutoffs: 'Order cut-offs', suppliers: 'Suppliers & pars' };
-  var A_GROUPS = [['today', 'Today', ['mail', 'notes']], ['reports', 'Reports', ['insights', 'team', 'waste', 'transfers', 'learning']], ['people', 'People', ['people']], ['content', 'Content', ['minutes', 'guides', 'suppliers']], ['settings', 'Settings', ['tools', 'cutoffs']]];
+  var A_TAB_NAMES = { overview: 'Overview', analysis: 'Item evidence', references: 'Item references', training: 'Training records', mail: 'Kitchen mail', notes: 'Shift pings', insights: 'Insights', team: 'Team', waste: 'Wastage', transfers: 'Transfers', learning: 'Learning', people: 'People', minutes: 'Minutes', guides: 'Guides', tools: 'Backup and PIN', cutoffs: 'Order cut-offs', suppliers: 'Suppliers & pars' };
+  var A_GROUPS = [['overview', 'Overview', ['overview']], ['reports', 'Analysis', ['analysis', 'insights', 'waste', 'transfers']], ['learning', 'Learning', ['references', 'learning']], ['training', 'Training', ['training', 'team', 'guides']], ['today', 'Operations', ['mail', 'notes', 'minutes', 'suppliers', 'cutoffs']], ['settings', 'Settings', ['people', 'tools']]];
   function adminGroupOf(t) { return A_GROUPS.filter(function (g) { return g[2].indexOf(t) >= 0; })[0] || A_GROUPS[1]; }
   /* "On this page": one chip per heading of the open page (the numbered Insights sections, otherwise each block's label
      and the chart headings in it), so a long page is one tap from any part. Built from the page after each draw, so a
@@ -3934,7 +3989,7 @@
     var pane = S.root && S.root.querySelector('.a-pane');
     if (!pane) return [];
     var hs = pane.querySelectorAll('.a-sh');
-    if (!hs.length) hs = pane.querySelectorAll(':scope > .set-block > .label:first-child, :scope > .set-block > h3.a-ch-h');
+    if (!hs.length) hs = pane.querySelectorAll(':scope > .set-block > .label:first-child, :scope > .set-block > h3.a-ch-h, .ai-workspace > .set-block > .label');
     return Array.prototype.filter.call(hs, function (h) { return h.offsetParent && h.textContent.trim(); });
   }
   function adminJumps() {
@@ -3963,6 +4018,7 @@
     // a redraw starts the count again, unless a scroll is still waiting for its frame: that scroll is real and counts
     if (redraw ? !navTick : Math.abs(dy) > 6) navY = y;
     if (!nav) return;
+    if (window.matchMedia('(min-width: 1100px)').matches) { S.anavMin = false; nav.classList.remove('is-min'); return; }
     var mark = S.root.querySelector('.a-navtop'), stuck = !!mark && mark.getBoundingClientRect().top < (parseFloat(getComputedStyle(nav).top) || 0) - 2;
     var hide = navHide(nav);
     nav.style.setProperty('--a-nav-hide', hide + 'px');
@@ -4029,8 +4085,9 @@
     var tg = document.getElementById(id), nav = S.root && S.root.querySelector('.a-nav');
     if (!tg) return;
     navJump = id; navJumpAt = Date.now();
-    var top = tg.getBoundingClientRect().top, h = nav ? nav.offsetHeight : 0;
-    if (nav && top > h) h -= navHide(nav);
+    var desktopNav = window.matchMedia('(min-width: 1100px)').matches;
+    var top = tg.getBoundingClientRect().top, h = nav && !desktopNav ? nav.offsetHeight : 0;
+    if (nav && !desktopNav && top > h) h -= navHide(nav);
     if (nav) h += parseFloat(getComputedStyle(nav).top) || 0; // under the update strip when it shows
     window.scrollTo({ top: Math.max(0, window.scrollY + top - h - 10), behavior: 'smooth' });
   }
@@ -8515,7 +8572,7 @@
     if (k === 'pf2') { var p2 = S.pf2.length; S.pf2 = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.pf2; pinCells(el); if (p2 < 4 && S.pf2.length === 4 && /^\d{4}$/.test(S.pf1)) submitPin(); return; }
     if (k === 'p-text') { S.text = el.value; var hn = S.root.querySelector('#p-hint'); if (hn) hn.textContent = hintText(S.text); var sg = S.root.querySelector('#p-sugg'); if (sg) sg.innerHTML = suggestHTML(); var qs = S.root.querySelector('#p-qsugg'); if (qs) qs.innerHTML = qtyChipsHTML(); return; }
     if (k === 'o-text') { S.otext = el.value; var og = S.root.querySelector('#o-sugg'); if (og) og.innerHTML = ordSuggHTML(); oAutoQty(); return; }
-    if (k === 'o-qty') { S.oqty = el.value; S.oqtyAuto = ''; return; }
+    if (k === 'o-qty') { if (S.oqtyAuto && S.oqtyAuto !== el.value) sg('ordfill', 'e'); S.oqty = el.value; S.oqtyAuto = ''; return; }
     if (k === 'g-q') { S.gq = el.value; var gl = S.root.querySelector('#g-list'); if (gl) gl.innerHTML = gListHTML(); if (el.parentNode && el.parentNode.classList) el.parentNode.classList.toggle('has-q', !!S.gq); return; }
     if (k === 'g-title' || k === 'g-sum' || k === 'g-steps' || k === 'g-kw') {
       if (!S.gf) return;
@@ -9174,7 +9231,7 @@
      (LK_UPDATE.letGo() in js/upkeep.js). iPhone Safari never asks, and a phone that drops the tab in the background
      does not either. */
   function typedHere() {
-    return draftsDirty() || !!mlf.text.trim() || tdDirty() || dkDirty() || rvTyped(true) || rvTyped(false) ||
+    return !!(window.LK_INTELLIGENCE && window.LK_INTELLIGENCE.dirty()) || draftsDirty() || !!mlf.text.trim() || tdDirty() || dkDirty() || rvTyped(true) || rvTyped(false) ||
       !!(S.text.trim() || S.qty.trim() || S.otext.trim() || S.oqty.trim() || S.wf.text.trim() || String(S.wf.amt).trim() || S.wf.act.trim() || S.xf.text.trim() || String(S.xf.amt).trim() || S.xf.note.trim());
   }
   window.addEventListener('beforeunload', function (e) {
