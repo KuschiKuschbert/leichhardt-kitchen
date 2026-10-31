@@ -1648,9 +1648,9 @@ window.LK_DATA = {
         { q: '[Qty]', name: 'Red chilli', note: 'sliced, garnish per plate' }
       ],
       pins: [
-        { label: 'Jasmine rice', x: 30, y: 60, side: 'left', link: 'jasmine-rice', note: '180 g, steamed. Under the chicken.' },
+        { label: 'Jasmine rice', x: 22, y: 59, side: 'left', link: 'jasmine-rice', note: '180 g, steamed. Under the chicken.' },
         { label: 'Chicken adobo', x: 50, y: 44, side: 'right', tags: ['Soy', 'Gluten?'], note: 'Skin side up, on top of the rice. [Pieces per serve to come]' },
-        { label: 'Adobo sauce', x: 67, y: 65, side: 'right', tags: ['Soy', 'Gluten?'], note: 'From the pot, over the chicken. [Amount per serve to come]' },
+        { label: 'Adobo sauce', x: 72, y: 53, side: 'right', tags: ['Soy', 'Gluten?'], note: 'From the pot, over the chicken. [Amount per serve to come]' },
         { label: 'Garnish', x: 50, y: 39, side: 'left', note: 'Spring onion curls and sliced red chilli. [Amount per serve to come]' }
       ],
       sections: [
