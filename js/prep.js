@@ -6813,7 +6813,13 @@
     sum: 'Keep potentially hazardous food safe when it is between 5°C and 60°C.',
     kw: 'food safety, refrigeration, temperature, 2 hour, 4 hour', pages: 0,
     steps: 'Start timing when food leaves refrigeration at 5°C or below.\nRecord each time it comes out and goes back. Add up all time between 5°C and 60°C, including preparation, storage, transport and display.\nUnder 2 hours: use, sell or refrigerate at 5°C or below for later.\n2 to under 4 hours: use or sell straight away. Do not put it back in the fridge.\n4 hours or more: throw it away.\nIf in doubt, throw it out.' };
-  function gById(id) { return id === G_FOOD.id ? G_FOOD : (S.guides || []).filter(function (g) { return g.id === id; })[0] || null; }
+  // Approved smoke sheets, bundled for every kitchen login with no guide-page database reads.
+  var G_SMOKE = { id: 'lk-smoke-service', title: 'Smoke menu prep and setup', cat: 'prep', who: 'all',
+    sum: 'Prep and station setup for the Butchers Board and The Beast Board. Two illustrated sheets and a printable PDF.',
+    kw: 'smoke menu, butchers board, beast board, maple butter, California gold',
+    thumb: 'guides/smoke-prep.png', pages: 2, dims: [{ w: 1191, h: 1683 }, { w: 1191, h: 1683 }],
+    steps: 'Brisket: vac down with BBQ sauce. Keep in the blanching pot. [Reheat method to confirm]\nPulled lamb and pulled pork: reheat to 75°C. Record the core temperatures, then keep in the hot box.\nService fridge: wings, sausages, cornbread, sauces and sliders. Keep slaw refrigerated until plating. [Heating methods to confirm]\nBring a service batch of maple butter to room temperature. Manage its time out of refrigeration.\nOn the bench: green board and brown board. Set out Alabama white, California gold and house smoked BBQ sauce, pickles in a 1/6 bain, and a separate bain of maple butter.\nUnder the oven, in covered bains: pulled pork, pulled lamb, sauced brisket slices, sausages, wings and cornbread. Use this space only with verified hot holding at 60°C or above. Keep fridge stock at 5°C or below.\nButchers Board: pork, lamb, brisket, sausage, slaw, cornbread and pickles. The Beast Board adds wings and sliders. [Portions and service quantities to confirm]' };
+  function gById(id) { return id === G_SMOKE.id ? G_SMOKE : id === G_FOOD.id ? G_FOOD : (S.guides || []).filter(function (g) { return g.id === id; })[0] || null; }
   function gOrder(a, b) { return (G_RANK[a.cat] == null ? 99 : G_RANK[a.cat]) - (G_RANK[b.cat] == null ? 99 : G_RANK[b.cat]) || String(a.title).localeCompare(String(b.title)); }
   /* Who sees a guide (23 Oct 2026, head chef): who is 'all' (or missing), 'chefs' (the head chef and sous chefs) or 'fn'
      (function managers and chefs). The head chef's Google device sees every guide. Nobody signed in is the staff view.
@@ -6830,7 +6836,7 @@
   function gViewer() { var p = me(); return (admDev() ? 'a' : '') + (p ? p.id + (chefP(p) ? 'c' : '') : '') + (fnOK() ? 'f' : ''); }
   function gWhoTag(g) { return g.who === 'chefs' || g.who === 'fn' ? '<span class="g-who">For ' + esc(gWhoName(g.who).toLowerCase()) + '</span>' : ''; }
   function gAll() { return (S.guides || []).filter(function (g) { return !g.removed && g.title; }).sort(gOrder); }
-  function gLive() { return gAll().filter(function (g) { return g.id !== G_FOOD.id; }).concat([G_FOOD]).filter(gSees).sort(gOrder); }
+  function gLive() { return gAll().filter(function (g) { return g.id !== G_FOOD.id && g.id !== G_SMOKE.id; }).concat([G_FOOD, G_SMOKE]).filter(gSees).sort(gOrder); }
   function gSig(list) { return (list || []).map(function (g) { return g.id + ':' + (g.upd || 0) + (g.removed ? 'r' : ''); }).join('|'); }
   function gIsNew(g) { return now() - (g.at || 0) < G_NEW; }
   function gMeta(g) {
@@ -6982,6 +6988,7 @@
     } catch (e) { return u; }
   }
   function gPagesFor(g) {
+    if (g.id === G_SMOKE.id) return gPg[g.id + ':' + (g.v || 1)] = { state: 'ok', urls: ['guides/smoke-prep.png', 'guides/smoke-setup.png'] };
     var v = g.v || 1, k = g.id + ':' + v, e = gPg[k];
     if (e && (e.state !== 'error' || Date.now() < e.retry)) return e;
     e = gPg[k] = { state: 'loading', urls: [] };
@@ -7050,7 +7057,7 @@
       // drops the keyboard (onKey), and a 44 px Clear while something is typed (g-qx, toggled in onInput)
       '<div class="g-find"><label class="visually-hidden" for="g-q">Search the guides</label><span class="g-qwrap' + (S.gq ? ' has-q' : '') + '"><input id="g-q" type="search" class="search" data-k="g-q" placeholder="Search: oven, fryer, cleaning" value="' + esc(S.gq) + '" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">' +
       '<button type="button" class="g-qx" data-p="g-clear" aria-label="Clear the search">&times;</button></span></div>' + chips +
-      (S.gErr ? '<p class="p-err" role="status">Could not load the guides uploaded by the head chef. Check the signal. The food safety guide is available below.</p>' : '') +
+      (S.gErr ? '<p class="p-err" role="status">Could not load the guides uploaded by the head chef. Check the signal. The bundled food safety and smoke service guides are available below.</p>' : '') +
       '<div id="g-list" class="g-list">' + gListHTML() + '</div>' + gAdminLink() + '</section>';
   }
   function foodRuleHTML() {
@@ -7072,12 +7079,13 @@
         '<div class="g-ph" style="aspect-ratio: ' + (+d.w || 1414) + ' / ' + (+d.h || 2000) + '">' + (pv.state === 'error' ? 'Could not load this page.' : 'Loading page ' + (i + 1) + '...') + '</div>') +
         (n > 1 ? '<figcaption>Page ' + (i + 1) + ' of ' + n + '</figcaption>' : '') + '</figure>';
     }
-    var admin = admDev() && g.id !== G_FOOD.id, pen = admin && window.LK_APP && window.LK_APP.icon ? window.LK_APP.icon('pen') : '';
+    var admin = admDev() && g.id !== G_FOOD.id && g.id !== G_SMOKE.id, pen = admin && window.LK_APP && window.LK_APP.icon ? window.LK_APP.icon('pen') : '';
     return back + '<article class="g-doc"><header class="g-dh"><span class="g-eb">' + esc(gCatName(g.cat)) + ' guide</span><h2 class="g-title" id="rtitle" tabindex="-1">' + esc(g.title) + '</h2>' +
       (g.sum ? '<p class="g-lead">' + esc(g.sum) + '</p>' : '') + '<p class="g-meta">' + esc(gMeta(g)) + '</p>' +
       // the head chef's Change this guide sits under the title, like Change this recipe on a card (not after every page)
       (admin ? '<p class="g-chg g-noprint"><button type="button" class="p-x g-chg-a" data-p="g-change" data-id="' + esc(g.id) + '">' + pen + '<span>' + (armed('g-change:' + g.id) ? 'Not saved. Tap again' : 'Change this guide') + '</span></button></p>' : '') + '</header>' +
       (g.id === G_FOOD.id ? foodRuleHTML() : '') +
+      (g.id === G_SMOKE.id ? '<p class="g-noprint"><a class="btn" href="guides/smoke-prep-and-setup.pdf" download>Download printable sheets (PDF)</a></p>' : '') +
       (steps.length ? '<section class="g-steps"><h3 class="g-h3">Steps</h3><ol class="g-ol">' + steps.map(function (t) { return '<li><span class="g-c" aria-hidden="true"></span><span>' + linkNote(t) + '</span></li>'; }).join('') + '</ol></section>' : '') +
       (n ? '<section class="g-pages" aria-label="Pages"><p class="hint g-noprint">' + (n > 1 ? n + ' pages. ' : '') + 'Tap a page to open it big.</p>' +
         (n > 2 ? '<div class="g-thumbs g-noprint">' + pv.urls.slice(0, n).map(function (u, k) { return u ? '<button type="button" class="g-thumb" data-p="g-zoom" data-i="' + k + '" aria-label="' + esc('Open page ' + (k + 1) + ' big') + '"><img src="' + esc(u) + '" alt=""><span>' + (k + 1) + '</span></button>' : ''; }).join('') + '</div>' : '') + figs +
