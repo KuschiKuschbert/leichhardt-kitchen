@@ -7050,6 +7050,7 @@
       // drops the keyboard (onKey), and a 44 px Clear while something is typed (g-qx, toggled in onInput)
       '<div class="g-find"><label class="visually-hidden" for="g-q">Search the guides</label><span class="g-qwrap' + (S.gq ? ' has-q' : '') + '"><input id="g-q" type="search" class="search" data-k="g-q" placeholder="Search: oven, fryer, cleaning" value="' + esc(S.gq) + '" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">' +
       '<button type="button" class="g-qx" data-p="g-clear" aria-label="Clear the search">&times;</button></span></div>' + chips +
+      (S.gErr ? '<p class="p-err" role="status">Could not load the guides uploaded by the head chef. Check the signal. The food safety guide is available below.</p>' : '') +
       '<div id="g-list" class="g-list">' + gListHTML() + '</div>' + gAdminLink() + '</section>';
   }
   function foodRuleHTML() {
