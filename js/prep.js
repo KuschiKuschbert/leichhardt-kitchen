@@ -6808,7 +6808,12 @@
   function gRef(id) { return docRef('guides', id); }
   function gPageRef(id, n) { return fb.fs.doc.apply(null, [fb.db].concat(base(), ['guides', id, 'pages', String(n)])); }
   function gPagesCol(id) { return fb.fs.collection.apply(null, [fb.db].concat(base(), ['guides', id, 'pages'])); }
-  function gById(id) { return (S.guides || []).filter(function (g) { return g.id === id; })[0] || null; }
+  // Bundled food safety guide. It travels with the book and needs no Firestore write.
+  var G_FOOD = { id: 'lk-2-hour-4-hour', title: '2-hour / 4-hour rule', cat: 'safety', who: 'all',
+    sum: 'Keep potentially hazardous food safe when it is between 5°C and 60°C.',
+    kw: 'food safety, refrigeration, temperature, 2 hour, 4 hour', pages: 0,
+    steps: 'Start timing when food leaves refrigeration at 5°C or below.\nRecord each time it comes out and goes back. Add up all time between 5°C and 60°C, including preparation, storage, transport and display.\nUnder 2 hours: use, sell or refrigerate at 5°C or below for later.\n2 to under 4 hours: use or sell straight away. Do not put it back in the fridge.\n4 hours or more: throw it away.\nIf in doubt, throw it out.' };
+  function gById(id) { return id === G_FOOD.id ? G_FOOD : (S.guides || []).filter(function (g) { return g.id === id; })[0] || null; }
   function gOrder(a, b) { return (G_RANK[a.cat] == null ? 99 : G_RANK[a.cat]) - (G_RANK[b.cat] == null ? 99 : G_RANK[b.cat]) || String(a.title).localeCompare(String(b.title)); }
   /* Who sees a guide (23 Oct 2026, head chef): who is 'all' (or missing), 'chefs' (the head chef and sous chefs) or 'fn'
      (function managers and chefs). The head chef's Google device sees every guide. Nobody signed in is the staff view.
@@ -6825,7 +6830,7 @@
   function gViewer() { var p = me(); return (admDev() ? 'a' : '') + (p ? p.id + (chefP(p) ? 'c' : '') : '') + (fnOK() ? 'f' : ''); }
   function gWhoTag(g) { return g.who === 'chefs' || g.who === 'fn' ? '<span class="g-who">For ' + esc(gWhoName(g.who).toLowerCase()) + '</span>' : ''; }
   function gAll() { return (S.guides || []).filter(function (g) { return !g.removed && g.title; }).sort(gOrder); }
-  function gLive() { return gAll().filter(gSees); }
+  function gLive() { return gAll().filter(function (g) { return g.id !== G_FOOD.id; }).concat([G_FOOD]).filter(gSees).sort(gOrder); }
   function gSig(list) { return (list || []).map(function (g) { return g.id + ':' + (g.upd || 0) + (g.removed ? 'r' : ''); }).join('|'); }
   function gIsNew(g) { return now() - (g.at || 0) < G_NEW; }
   function gMeta(g) {
@@ -7031,7 +7036,7 @@
     loadGuides(Date.now() - S.guidesAt > G_STALE);
     if (S.gSel) return guideDocHTML();
     var live = gLive(), head = '<header class="g-head"><span class="g-eb">Leichhardt Hotel Kitchen</span><h2 class="g-title" id="rtitle" tabindex="-1">Guides</h2><p class="g-lead">How to work the equipment, clean it and find things. Written by the head chef.</p></header>';
-    if (S.guides == null) return '<section class="g-page">' + head + '<p class="hint">Loading...</p></section>';
+    if (S.guides == null && !live.length) return '<section class="g-page">' + head + '<p class="hint">Loading...</p></section>';
     if (!live.length && S.gErr) return '<section class="g-page">' + head + '<p class="p-err" role="status">Could not load the guides. Check the signal. The book tries again by itself.</p></section>';
     if (!live.length) return '<section class="g-page">' + head + '<p class="p-empty">No guides yet. The head chef adds them in the admin panel.</p>' + gAdminLink() + '</section>';
     var cats = G_CATS.filter(function (c) { return live.some(function (g) { return g.cat === c[0]; }); });
@@ -7047,6 +7052,14 @@
       '<button type="button" class="g-qx" data-p="g-clear" aria-label="Clear the search">&times;</button></span></div>' + chips +
       '<div id="g-list" class="g-list">' + gListHTML() + '</div>' + gAdminLink() + '</section>';
   }
+  function foodRuleHTML() {
+    return '<section class="g-food" aria-label="Time and action"><p class="g-food-band">Total time between <b>5°C and 60°C</b></p>' +
+      '<dl class="g-food-times"><div><dt>Under 2 hours</dt><dd>Use or refrigerate</dd></div><div><dt>2 to under 4 hours</dt><dd>Use straight away<br>Do not refrigerate</dd></div><div><dt>4 hours or more</dt><dd>Throw away</dd></div></dl>' +
+      '<p><b>Add every period together.</b> Putting food back in the fridge does not reset the time.</p>' +
+      '<p class="hint">The rule is based on how quickly microorganisms grow in potentially hazardous food between 5°C and 60°C.</p>' +
+      '<p class="g-noprint"><a class="btn" href="guides/2-hour-4-hour.pdf" download>Download printable guide (PDF)</a></p>' +
+      '<p class="hint">Adapted from Food Standards Australia New Zealand, Safe Food Australia InfoBite, 2-hour / 4-hour rule. See <a href="https://www.foodstandards.gov.au/safefood" target="_blank" rel="noopener noreferrer">Safe Food Australia</a>, Appendix 2, for using time as a control.</p></section>';
+  }
   function guideDocHTML() {
     var g = gById(S.gSel), back = '<nav class="g-top g-noprint" aria-label="Back"><a class="p-link" href="#/guides">All guides</a></nav>';
     if (g && !g.removed && !gSees(g)) return back + '<section class="g-page"><h2 class="g-title" id="rtitle" tabindex="-1">This guide is for ' + esc(gWhoName(g.who).toLowerCase()) + '</h2><p class="hint">Sign in with your PIN to open it, or ask the head chef.</p></section>';
@@ -7058,11 +7071,12 @@
         '<div class="g-ph" style="aspect-ratio: ' + (+d.w || 1414) + ' / ' + (+d.h || 2000) + '">' + (pv.state === 'error' ? 'Could not load this page.' : 'Loading page ' + (i + 1) + '...') + '</div>') +
         (n > 1 ? '<figcaption>Page ' + (i + 1) + ' of ' + n + '</figcaption>' : '') + '</figure>';
     }
-    var admin = admDev(), pen = admin && window.LK_APP && window.LK_APP.icon ? window.LK_APP.icon('pen') : '';
+    var admin = admDev() && g.id !== G_FOOD.id, pen = admin && window.LK_APP && window.LK_APP.icon ? window.LK_APP.icon('pen') : '';
     return back + '<article class="g-doc"><header class="g-dh"><span class="g-eb">' + esc(gCatName(g.cat)) + ' guide</span><h2 class="g-title" id="rtitle" tabindex="-1">' + esc(g.title) + '</h2>' +
       (g.sum ? '<p class="g-lead">' + esc(g.sum) + '</p>' : '') + '<p class="g-meta">' + esc(gMeta(g)) + '</p>' +
       // the head chef's Change this guide sits under the title, like Change this recipe on a card (not after every page)
       (admin ? '<p class="g-chg g-noprint"><button type="button" class="p-x g-chg-a" data-p="g-change" data-id="' + esc(g.id) + '">' + pen + '<span>' + (armed('g-change:' + g.id) ? 'Not saved. Tap again' : 'Change this guide') + '</span></button></p>' : '') + '</header>' +
+      (g.id === G_FOOD.id ? foodRuleHTML() : '') +
       (steps.length ? '<section class="g-steps"><h3 class="g-h3">Steps</h3><ol class="g-ol">' + steps.map(function (t) { return '<li><span class="g-c" aria-hidden="true"></span><span>' + linkNote(t) + '</span></li>'; }).join('') + '</ol></section>' : '') +
       (n ? '<section class="g-pages" aria-label="Pages"><p class="hint g-noprint">' + (n > 1 ? n + ' pages. ' : '') + 'Tap a page to open it big.</p>' +
         (n > 2 ? '<div class="g-thumbs g-noprint">' + pv.urls.slice(0, n).map(function (u, k) { return u ? '<button type="button" class="g-thumb" data-p="g-zoom" data-i="' + k + '" aria-label="' + esc('Open page ' + (k + 1) + ' big') + '"><img src="' + esc(u) + '" alt=""><span>' + (k + 1) + '</span></button>' : ''; }).join('') + '</div>' : '') + figs +

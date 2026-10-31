@@ -2475,3 +2475,11 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
 /* Calendar and clock fields keep the native picker and an easy tap target. */
 input:is([type="date"], [type="time"]) { min-height: 44px; cursor: pointer; max-width: 100%; box-sizing: border-box; }
 input:is([type="date"], [type="time"]):disabled, input:is([type="date"], [type="time"]):read-only { cursor: default; }
+
+/* The food safety guide uses the book's type, paper and orange accent. */
+.g-food-band { border-block: 2px solid var(--ink); padding: .8rem 0; font-size: 1.2rem; }
+.g-food-times { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1.5rem 0; }
+.g-food-times > div { border-top: 6px solid var(--accent); padding: 1rem; background: var(--beige); }
+.g-food-times dt { font: 700 1.8rem/1.1 var(--display); margin-bottom: .7rem; }
+.g-food-times dd { margin: 0; font-weight: 600; }
+@media (max-width: 600px) { .g-food-times { grid-template-columns: 1fr; } }
