@@ -839,3 +839,8 @@ Date and time fields open the device calendar or clock picker when tapped, where
 ### Admin analysis, references and training
 
 The admin panel now groups Overview, Analysis, Learning, Training, Operations and Settings, with a desktop sidebar and phone section picker. Existing page links and remembered pages still work. The new nightly analysis uses existing infrastructure to publish private 7/30/90-day evidence, source coverage, data-quality counts, confirmed item references and station activity. Explicit training assessments link to recipes and guides; ticks never confirm competence. Source evidence, revisions, failure behaviour, read limits, backups, release order and comparison-mode limits are in [Admin analysis](docs/admin-intelligence.md). No external imports or automatic orders are introduced.
+
+
+### Clearer training opportunities and item references
+
+Training now explains how to review a person, practise together and record an assessment. Opportunities are visible before choosing a person, and a confirmed recipe does not mark the whole section confirmed. Item references shows recorded items to review alongside confirmed links, with search, source-period information and explicit confirmation. Confirming one item leaves the other recorded items available. Refresh also ignores older pending reads. This is an admin display update with the existing data and permissions. See [Admin analysis](docs/admin-intelligence.md).

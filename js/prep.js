@@ -3825,9 +3825,9 @@
   function intelligenceContext() { return S.pin + '|' + (S.user ? S.user.uid : '') + '|' + S.who + '|' + accessEpoch; }
   function intelligenceHTML(page) {
     if (!intelligenceAllowed()) return '';
-    if (!window.LK_INTELLIGENCE || !window.LK_ANALYSIS) {
+    if (!window.LK_INTELLIGENCE || window.LK_INTELLIGENCE.API !== 2 || !window.LK_ANALYSIS) {
       if (!intelligenceLoading && !intelligenceError) {
-        intelligenceLoading = window.LK_APP.load('js/analysis-core.js?v=1').then(function () { return window.LK_APP.load('js/admin-intelligence.js?v=1'); }).then(function () { intelligenceLoading = null; if (intelligenceAllowed()) draw(); }, function () { intelligenceLoading = null; intelligenceError = true; if (intelligenceAllowed()) draw(); });
+        intelligenceLoading = window.LK_APP.load('js/analysis-core.js?v=1').then(function () { return window.LK_APP.load('js/admin-intelligence.js?v=2'); }).then(function () { if (!window.LK_INTELLIGENCE || window.LK_INTELLIGENCE.API !== 2 || !window.LK_ANALYSIS) throw { code: 'workspace-version' }; }).then(function () { intelligenceLoading = null; if (intelligenceAllowed()) draw(); }, function () { intelligenceLoading = null; intelligenceError = true; if (intelligenceAllowed()) draw(); });
       }
       return '<section class="set-block"><h3 class="label">Admin workspace</h3><p class="hint" role="status">' + (intelligenceError ? 'Could not load the workspace. Check the connection and reload this page.' : 'Loading...') + '</p></section>';
     }
