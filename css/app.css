@@ -1224,7 +1224,7 @@ details.nb-start-l[open] > summary::after { content: '\2212'; }
   .lv-people .a-name { width: 100%; min-width: 0; }
   .lv-people .p-select { max-width: none; width: 100%; }
   .a-table.lv-people td.a-c { grid-column: auto; width: auto; display: flex; flex-direction: column; align-items: flex-start; gap: 0.3rem; text-align: left; }
-  .a-table.lv-people td.a-act { display: flex; flex-wrap: wrap; gap: 0.4rem; text-align: left; }
+  .a-table.lv-people td.a-act { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 0.4rem; text-align: left; }
 }
 .lv-cards { margin: 0; }
 /* ---------- admin: five groups, the open group's pages underneath (20 Oct 2026) ---------- */
