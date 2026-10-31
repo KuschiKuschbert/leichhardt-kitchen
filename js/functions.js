@@ -740,8 +740,7 @@
       });
       counts.push(byRecipe);
     });
-    var out = '<article class="fn-prep-paper"><header><p>Leichhardt Hotel / ' + esc(printDate(opts.day)) + '</p><h1>Functions prep sheet</h1>' +
-      '<p>All confirmed functions with food on this day. Counts include rounds already sent. Ingredient amounts are per platter; check dietary notes and current recipe cards.</p></header>';
+    var out = '<article class="fn-prep-paper">';
     if (opts.source) out += '<p class="fn-prep-warning">' + esc(opts.source) + '</p>';
     out += '<table class="fn-prep-overview"><thead><tr><th scope="col">Function / area</th><th scope="col">Food times / rounds</th>' + cards.map(function (c) { return '<th scope="col">' + esc(short(c.name)) + '</th>'; }).join('') + '<th scope="col">Service &amp; dietary notes / kitchen comment</th></tr></thead><tbody>';
     list.forEach(function (f, i) {
@@ -768,7 +767,7 @@
           return '<tr><td>' + esc(ing.name) + (ing.note ? '<small>' + esc(ing.note) + '</small>' : '') + '</td><td>' + esc(ing.q || 'To come') + '</td></tr>';
         }).join('') + '</tbody></table>' : '<p>Recipe missing from the book. Check before prep.</p>') + '</section>';
     }).join('');
-    return out + '</div><footer>Printed ' + esc(printStamp(printed)) + '. Current recipe amounts, not scaled totals. Check bought-in labels and dietary requests.</footer></article>';
+    return out + '</div><footer>Prep for ' + esc(printDate(opts.day)) + '. Includes rounds already sent. Printed ' + esc(printStamp(printed)) + '. Current recipe amounts, not scaled totals. Check bought-in labels and dietary requests.</footer></article>';
   }
   function printSheet(f, opts, printed) {
     var R = f.rounds || [], L = f.lines || [], draft = f.status !== 'confirmed' || opts.unsaved;

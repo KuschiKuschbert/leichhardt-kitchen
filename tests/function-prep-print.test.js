@@ -46,6 +46,7 @@ async function pdf(p, filename) {
     const before = await p.evaluate(() => [window.__fake.bill.length, window.__fake.writes.length, JSON.stringify(window.__fake.dump())]);
     await print(p, today);
     let content = await p.$eval('#fn-print', el => el.textContent);
+    ok(!(await p.$('.fn-prep-paper header, .fn-prep-paper h1')) && /Prep for/.test(content), 'no title or introductory header; the selected prep date stays in the footer');
     const rows = await p.$$eval('.fn-prep-overview tbody tr', els => els.map(el => el.textContent));
     ok(rows.length === 3 && /Overnight function/.test(rows[0]) && /Lunch function/.test(rows[1]) && /Evening function/.test(rows[2]), 'one overview includes every confirmed function in food-time order, even lunch already finished');
     ok(!/Tomorrow function|Cancelled function|Draft function|23:30/.test(content), 'only this day prints: no drafts, cancellations, tomorrow or yesterday rounds');

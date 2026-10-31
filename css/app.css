@@ -2481,8 +2481,6 @@ input:is([type="date"], [type="time"]):disabled, input:is([type="date"], [type="
 @media print {
   body.fn-printing #fn-print.fn-prep-print { page: fn-prep-sheet; padding: 0; font: 8pt/1.15 var(--body); }
   #fn-print .fn-prep-paper { overflow-wrap: anywhere; }
-  #fn-print .fn-prep-paper h1 { font-size: 20pt; margin: 1mm 0; }
-  #fn-print .fn-prep-paper header { margin-bottom: 3mm; }
   #fn-print .fn-prep-paper table { width: 100%; border-collapse: collapse; font-size: inherit; }
   #fn-print .fn-prep-paper th, #fn-print .fn-prep-paper td { padding: 0.4mm 0.8mm; border-bottom: 0.4pt solid #999; text-align: left; vertical-align: top; }
   #fn-print .fn-prep-paper thead { display: table-header-group; }
