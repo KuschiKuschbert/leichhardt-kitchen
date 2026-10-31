@@ -22,7 +22,7 @@
     return state.errors[name] ? '<p class="p-err" role="status">Could not load this data. Check the connection and try again.</p>' + button('retry', 'Try again', name) : '<p class="hint" role="status">Loading...</p>';
   }
   function options(list, value, empty) { return '<option value="">' + esc(empty || 'Not linked') + '</option>' + list.map(function (x) { return '<option value="' + esc(x.id) + '"' + (x.id === value ? ' selected' : '') + '>' + esc(x.name || x.title || x.id) + '</option>'; }).join(''); }
-  function field(name, label, value, opts) { return '<div class="field"><label class="label" for="ai-' + name + '">' + esc(label) + '</label>' + (opts ? '<select class="search" id="ai-' + name + '" data-ai-field="' + name + '">' + options(opts, value, ['personId', 'assessorId', 'section'].indexOf(name) >= 0 ? 'Choose ' + label.toLowerCase() : 'Not linked') + '</select>' : '<input class="search" id="ai-' + name + '" data-ai-field="' + name + '" maxlength="160" value="' + esc(value) + '">') + '</div>'; }
+  function field(name, label, value, opts) { return '<div class="field"><label class="label" for="ai-' + name + '">' + esc(label) + '</label>' + (opts ? '<select class="search" id="ai-' + name + '" data-k="ai-' + name + '" data-ai-field="' + name + '">' + options(opts, value, ['personId', 'assessorId', 'section'].indexOf(name) >= 0 ? 'Choose ' + label.toLowerCase() : 'Not linked') + '</select>' : '<input class="search" id="ai-' + name + '" data-k="ai-' + name + '" data-ai-field="' + name + '" maxlength="160" value="' + esc(value) + '">') + '</div>'; }
   function linked(r) {
     if (!r) return '';
     return '<div class="btn-row">' + (r.recipeId ? '<a class="btn" href="#/r/' + encodeURIComponent(r.recipeId) + '">Recipe</a>' : '') +
@@ -105,7 +105,7 @@
     var body = kind === 'references' ? field('alias', 'Typed name or alias', d.alias) + field('label', 'Reference name', d.label) + field('recipeId', 'Recipe', d.recipeId, recipes) + field('supplierId', 'Supplier', d.supplierId, suppliers) + field('itemId', 'Supplier item', d.itemId, (suppliers.filter(function (s) { return s.id === d.supplierId; })[0] || {}).items || []) + field('guideId', 'Guide', d.guideId, guides) :
       field('personId', 'Person', d.personId, api.people()) + field('section', 'Section', d.section, api.sections().map(function (s) { return { id: s, name: s }; })) + field('recipeId', 'Recipe', d.recipeId, recipes) + field('guideId', 'Guide', d.guideId, guides) +
       field('status', 'Training status', d.status, [{ id: 'not-assessed', name: 'Not assessed' }, { id: 'in-training', name: 'In training' }, { id: 'confirmed', name: 'Confirmed' }]) + field('assessorId', 'Assessor', d.assessorId, api.people()) +
-      '<div class="field"><label class="label" for="ai-day">Assessment date</label><input type="date" class="search" id="ai-day" data-ai-field="day" value="' + esc(d.day) + '" max="' + api.day() + '"></div>';
+      '<div class="field"><label class="label" for="ai-day">Assessment date</label><input type="date" class="search" id="ai-day" data-k="ai-day" data-ai-field="day" value="' + esc(d.day) + '" max="' + api.day() + '"></div>';
     var help = kind === 'references' ? '<p class="hint">Keep the recorded name in Typed name or alias. Choose the recipe or supplier item it means, then save to confirm the link. A guide is optional.</p>' : '<p class="hint">Record what you have checked with this person. Choose a section for a whole-station assessment, or a recipe for that dish only. Pick the person who assessed them and the date it happened.</p>';
     return block(kind === 'references' ? 'Confirm reference' : 'Training record', '<div class="ai-editor">' + help + (d.reviewNote ? '<p class="hint" role="note">' + esc(d.reviewNote) + '</p>' : '') + body + '<div class="btn-row"><button type="button" class="btn dark" data-ai="save"' + (state.busy ? ' disabled' : '') + '>' + (state.busy ? 'Saving...' : 'Save record') + '</button>' + button('cancel', 'Cancel') + '</div><p class="hint">Changes are saved with a revision history. Original operational records stay intact.</p></div>');
   }
@@ -132,7 +132,7 @@
     var intro = '<p>Help the book recognise the same item across prep, orders and waste. Review a recorded name, check its recipe or supplier item, then save the link.</p>' +
       '<p class="hint">Recorded items below come from kitchen activity. Confirmed references are links you have saved. Confirming one item does not remove the others.</p>' +
       '<div class="btn-row">' + button('new-reference', 'Add a reference') + button('refresh', 'Refresh') + '</div>' +
-      '<form data-ai-reference-search><label class="label" for="ai-reference-query">Find a recorded item or confirmed reference</label><div class="btn-row"><input class="search" type="search" id="ai-reference-query" data-ai-reference-query name="q" value="' + esc(state.referenceSearchDraft) + '"><button class="btn" type="submit">Search</button>' + button('clear-reference-search', 'Clear search') + '</div></form>';
+      '<form data-ai-reference-search><label class="label" for="ai-reference-query">Find a recorded item or confirmed reference</label><div class="btn-row"><input class="search" type="search" id="ai-reference-query" data-k="ai-reference-query" data-ai-reference-query name="q" value="' + esc(state.referenceSearchDraft) + '"><button class="btn" type="submit">Search</button>' + button('clear-reference-search', 'Clear search') + '</div></form>';
     if (refs === undefined) return block('Item references', intro) + block('Confirmed references', waiting('references'));
     var candidates = s ? referenceItems(s, refs) : [], query = window.LK_ANALYSIS.key(state.referenceQuery);
     var saved = refs.filter(function (r) { return window.LK_ANALYSIS.key(r.alias + ' ' + r.label).indexOf(query) >= 0; });
@@ -246,12 +246,10 @@
     state.draft = Object.assign({ kind: kind, id: 'ai-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8), v: 0,
       alias: '', label: '', recipeId: '', supplierId: '', itemId: '', guideId: '', personId: '', section: '', status: 'not-assessed', assessorId: '', day: api.day() }, record || {});
     state.message = ''; redraw();
-    var draft = state.draft, c = context;
-    requestAnimationFrame(function () {
-      if (!api.allowed() || api.context() !== c || state.draft !== draft) return;
-      var input = document.querySelector('.ai-editor input, .ai-editor select');
-      if (input) { input.focus({ preventScroll: true }); input.scrollIntoView({ block: 'center' }); }
-    });
+    // Focus during the opening click, before the user can choose another field or start typing.
+    // data-k on the fields lets the parent preserve focus and selection during later data redraws.
+    var input = document.querySelector('.ai-editor input, .ai-editor select');
+    if (input) { input.focus({ preventScroll: true }); input.scrollIntoView({ block: 'center' }); }
   }
   function save() {
     var d = state.draft; if (!d || state.busy || !api.allowed()) return;

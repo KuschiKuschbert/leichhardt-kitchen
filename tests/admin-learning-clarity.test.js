@@ -69,6 +69,8 @@ const searchReferences = async (p, text) => {
     await review(p, 'prep:chop herbs'); await p.fill('#ai-label', 'Keep this draft');
     await L.adminTab(p, 'training'); await L.adminTab(p, 'references');
     ok(await p.inputValue('#ai-label') === 'Keep this draft' && await p.evaluate(() => LK_PREP.unsaved()), width + ': a reference draft survives changing admin pages');
+    await p.evaluate(() => { const label = document.getElementById('ai-label'); label.focus(); label.setSelectionRange(2, 5); LK_PREP.mount('admin', LK_PREP.state.root); });
+    ok(await p.evaluate(() => { const label = document.getElementById('ai-label'); return document.activeElement === label && label.value === 'Keep this draft' && label.selectionStart === 2 && label.selectionEnd === 5; }), width + ': a background redraw preserves the chosen field, text and selection');
     await p.click('[data-ai="cancel"]');
     await L.adminTab(p, 'training');
     await L.waitFor(p, () => !!document.querySelector('.ai-training-opportunities [data-ai="training-opportunity"]'));
