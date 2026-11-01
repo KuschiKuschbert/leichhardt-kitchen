@@ -173,14 +173,17 @@ const configWrites = p => p.evaluate(() => __fake.writes.flat().filter(w => /\/c
   await L.settle(p, 200); await p.click('.fn-strip-b'); await L.settle(p, 150);
   await p.clock.pauseAt(await p.evaluate(() => Date.now() + 1000));
   await p.evaluate(() => {
+    window.__delayedHistoryPop = false;
+    window.addEventListener('popstate', () => { window.__delayedHistoryPop = true; }, { once: true });
     const back = history.back.bind(history);
     history.back = () => setTimeout(() => { scrollTo(0, 1500); back(); }, 50);
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     scrollTo(0, 0);
   });
   await p.clock.runFor(50);
-  await L.waitFor(p, () => !history.state.lkOv, null, 5000);
-  // Native history is asynchronous; once it lands, advance both restoration frames explicitly.
+  // history.state can change before popstate runs. Wait for event delivery after the app's handlers,
+  // so the paused clock advances the two restoration frames only after they have been scheduled.
+  await L.waitFor(p, () => window.__delayedHistoryPop && !history.state.lkOv, null, 5000);
   await p.clock.runFor(100);
   await L.waitFor(p, () => scrollY === 0 && document.querySelector('.fn-strip').hidden, null, 5000).catch(() => {});
   const delayedState = await p.evaluate(() => ({ y: scrollY, hidden: document.querySelector('.fn-strip').hidden }));

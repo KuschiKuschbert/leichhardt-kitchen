@@ -1,6 +1,6 @@
 # Admin flow redesign
 
-Status: in progress. The user selected A, Review desk, on 1 November 2026. Implement and release through PR #427; no further layout approval is needed.
+Status: A selected and implemented. Local verification is recorded below; [PR #427](https://github.com/KuschiKuschbert/leichhardt-kitchen/pull/427) tracks required CI and deployment evidence. The user selected A on 1 November 2026; no further layout approval is needed.
 
 ## Problem and evidence
 
@@ -28,7 +28,7 @@ The self-contained [interactive comparison](admin-flow-concepts.html) uses examp
 | B. People and items | Search for a subject, open a workspace, switch between activity, links, assessments and history, return to the same subject. | Strong connected exploration. More navigation when processing many unrelated tasks. |
 | C. Guided tasks | Choose a job, review context, record a decision, see completion and choose the next job. | Clear for occasional use. More steps for bulk review. |
 
-All three include evidence, explicit reference confirmation, explicit training assessment and access to saved records. Operations and Settings remain available. A is selected. The other two concepts are retained as design context. The live app remains the PR #425 release until this implementation passes its release checks.
+All three include evidence, explicit reference confirmation, explicit training assessment and access to saved records. Operations and Settings remain available. A is selected. The other two concepts are retained as design context. The live app receives this implementation after the PR release gates pass; the PR records the deployed revision.
 
 ## Contract shared by all concepts
 
@@ -62,4 +62,4 @@ The untouched previous implementation failed all four initial visibility/focus a
 
 ## Resume
 
-Implement A, Review desk. Verify focused regressions, update documentation and PR #427, then complete required CI and release checks. Worktree: `.claude/worktrees/admin-workflow`; branch: `design/admin-workflow`. The prototype, comparison image and this note are the only new files for the comparison. README and the existing admin note record the design status and completed previous release.
+Read PR #427 for current CI, merge and live-verification results. If it is open, complete those release gates; if merged, verify its Pages/live result before starting new work. The selected flow and focused regression work are already implemented. Worktree: `.claude/worktrees/admin-workflow`; branch: `design/admin-workflow`. The prototype, comparison image and this note are the only new files for the comparison. README and the existing admin note record the design status and completed previous release.
