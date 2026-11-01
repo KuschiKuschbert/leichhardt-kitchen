@@ -14,7 +14,8 @@ const { R, ok } = L.results(), { txt } = L;
 const today = L.ymd(new Date(L.NOW));
 const mark = p => p.evaluate(() => { window.__mark = 1; });
 const reloaded = p => p.evaluate(() => window.__mark !== 1).catch(() => true);
-const waitReload = p => L.waitFor(p, () => window.__mark !== 1, null, 15000).catch(() => {});
+// A healthy update may use both eight-second network stages before the landing page arrives.
+const waitReload = p => L.waitFor(p, () => window.__mark !== 1, null, 20000).catch(() => {});
 // what a reload or closing the tab would do: true when the book asks first
 const asks = p => p.evaluate(() => { const e = new Event('beforeunload', { cancelable: true }); window.dispatchEvent(e); return e.defaultPrevented; });
 // the Not sent mark on the row whose words hold this text: 'shown' (it has a size on screen), 'hidden', 'none' or 'no row'
@@ -62,11 +63,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
   // each step on its own: one that fails (say the page reloaded) is a FAIL, and the next steps still run
   async function step(n, fn) {
     try { await fn(); } catch (e) { ok(false, 'step ' + n + ' stopped: ' + String(e && e.message || e).split('\n')[0]); }
-    if (p) {
-      // Assertions are finished. Detach delayed test routes before closing their context.
-      await p.context().unrouteAll({ behavior: 'ignoreErrors' });
-      await p.context().close().catch(() => {});
-    }
+    if (p) await p.context().close().catch(() => {});
     p = null;
   }
 
@@ -1137,8 +1134,8 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
           ok(!(await L.overflow(p)), 'Reload the book with the strip: no sideways scroll at ' + width);
         }
         await release(p);
-        await L.settle(p, 400);
-        await p.clock.fastForward(21000);   // the next look, the change sent
+        // The acknowledgement resumes Update directly. A virtual leap here can expire a real in-flight request.
+        await L.waitFor(p, () => !LK_PREP.unsent());
       } else {
         ok(!(await reloaded(p)) && await p.locator('#lk-update-confirm[open]').count() === 1, 'Reload the book, half a line typed: an explicit decision keeps the draft safe');
         await p.click('#lk-update-confirm [data-update="discard"]');
