@@ -159,10 +159,10 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   ok(['Napoli sauce', 'Shaved leg ham', 'Mozzarella'].every(k => inside(w.els.find(e => e.ing === k), sch2)), 'Tidy up: the toppings stay on the schnitzel');
   // a plating style picked by hand
   await p.click('[data-dw="panel"][data-v="style"]'); await L.settle(p, 200);
-  await p.click('[data-dw="sm-st"][data-v="clock"]'); await L.settle(p, 300);
+  await L.choose(p, '[data-dw="sm-st"][data-v="clock"]'); await L.settle(p, 300);
   ok((await S(p)).style === 'clock', 'Plating style: Classic lays it out the classic way');
   await p.click('[data-dw="panel"][data-v="style"]'); await L.settle(p, 200);
-  await p.click('[data-dw="sm-st"][data-v=""]'); await L.settle(p, 300);
+  await L.choose(p, '[data-dw="sm-st"][data-v=""]'); await L.settle(p, 300);
   w = await S(p);
   ok(w.style === 'pub', 'Plating style: Pick for me goes back to the pub split');
   // saved, then the side view is made from it

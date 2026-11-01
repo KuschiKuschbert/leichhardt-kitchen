@@ -49,7 +49,7 @@ async function csv(p) {
   await period(p, '14');
   ok((await rows(p)).some(x => /500 g/.test(x)), 'two weeks includes the older entry');
   ok(await reads(p) === before, 'switching shorter periods reuses loaded records');
-  await p.fill('[data-k="wh-search"]', 'Fish fillets');
+  await p.fill('[data-k="wh-search"]', 'Fish fillets'); await L.settle(p, 250);
   let t = await totals(p);
   ok(t.some(x => x.label === 'kg' && x.n === '2.5') && t.some(x => /logged entries/.test(x.label) && x.n === '2'), 'search updates totals; 500 g and 2 kg combine into 2.5 kg');
   let file = await csv(p);

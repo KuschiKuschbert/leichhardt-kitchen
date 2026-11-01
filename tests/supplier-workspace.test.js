@@ -6,7 +6,7 @@ const dump = p => p.evaluate(() => window.__fake.dump());
 const ordersOf = (s, sid) => Object.entries(s).filter(([k]) => k.startsWith(F.key(['suppliers', sid, 'orders']) + '/') && k.split('/').length === 6);
 const supplierReads = p => p.evaluate(() => (window.__fake && window.__fake.reads || []).filter(k => /\/(suppliers|supplierlinks)(\/|$)/.test(k)));
 const qtySel = id => 'input[data-sf="qty"][data-i="' + id + '"]';
-const action = (p, name, extra) => p.click('[data-su="' + name + '"]' + (extra || ''));
+const action = (p, name, extra) => L.choose(p, '[data-su="' + name + '"]' + (extra || ''));
 async function ready(p) { await L.waitFor(p, () => !!document.querySelector('input[data-sf="qty"]'), null, 15000); }
 async function navigate(p, hash) { await p.evaluate(h => { location.hash = h; }, hash); await L.settle(p, 400); }
 async function open(b, hash, opt) { return L.open(b, hash || '#/suppliers/northside', Object.assign({ who: 'bo', extra: F.fixture(), wait: 1800 }, opt || {})); }

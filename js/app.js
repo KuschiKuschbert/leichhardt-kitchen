@@ -1496,7 +1496,7 @@
   app.addEventListener('input', function (e) {
     if (e.target.id !== 'find') return;
     ui.query = e.target.value;
-    var fw = e.target.parentNode; if (fw && fw.classList) fw.classList.toggle('has-q', !!ui.query);
+    var fw = e.target.closest('.find-wrap'); if (fw && fw.classList) fw.classList.toggle('has-q', !!ui.query);
     clearTimeout(timer);
     timer = setTimeout(updateResults, 60);
     clearTimeout(missTimer);

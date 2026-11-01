@@ -56,9 +56,9 @@ const cfg = () => ({ [fsKey(['config', 'main'])]: { people: [P('sam', 'Sam', 'so
   ok(order[0] === 'Text size', 'settings: Text size comes first (' + order.slice(0, 3) + ')');
   // Opens with: each view shows a computer and a phone preview; tapping one marks it and the recipes open with it
   ok(await p.evaluate(() => [...document.querySelectorAll('.view-opt')].map(e => e.querySelectorAll('.vo-desk svg, .vo-phone svg').length).join()) === '2,2', 'settings: The Pass and Tiles each show a computer and a phone preview');
-  await p.click('[data-k="setview:tiles"]'); await L.settle(p, 300);
+  await L.choose(p, '[data-k="setview:tiles"]'); await L.settle(p, 300);
   ok(await p.evaluate(() => document.querySelector('[data-k="setview:tiles"]').getAttribute('aria-checked') === 'true' && /Opens with this/.test(document.querySelector('[data-k="setview:tiles"]').textContent) && document.querySelector('[data-k="setview:pass"]').getAttribute('aria-checked') === 'false'), 'settings: tapping Tiles marks it as the one it opens with');
-  await p.click('[data-k="setview:pass"]'); await L.settle(p, 300);
+  await L.choose(p, '[data-k="setview:pass"]'); await L.settle(p, 300);
   await p.click('[data-act="done"]'); await L.settle(p, 400);
   ok(await p.evaluate(() => location.hash) === '#/r/laksa', 'settings: Done goes back to where you came from');
   ok(p.errors.length === 0, 'landing and settings: no page errors ' + p.errors.join(' | '));

@@ -32,7 +32,7 @@
     input.parentNode.insertBefore(wrap, input); wrap.appendChild(input); wrap.appendChild(clear);
     clear.type = 'button'; clear.setAttribute('aria-label', 'Clear search'); input.dataset.smartSearch = 'true';
     // Old route-specific X controls have the same job; show only the shared reset.
-    slice(wrap.parentNode.querySelectorAll(':scope > .find-x, :scope > .g-qx')).forEach(function (x) { x.hidden = true; });
+    slice(wrap.parentNode.querySelectorAll(':scope > .find-x, :scope > .g-qx')).forEach(function (x) { x.remove(); });
     function paint() {
       input.value = s.raw;
       input.placeholder = s.replacing ? "Filtering by '" + s.query + "' — type 2+ chars for new search" : placeholder;
@@ -93,6 +93,7 @@
     if (config.multiple) list.setAttribute('aria-multiselectable', 'true');
     var search, apply;
     cursor = items.findIndex(function (item) { return selected.indexOf(item.value) >= 0 && !item.disabled; });
+    if (cursor < 0) cursor = items.findIndex(function (item) { return !item.disabled; });
     function visible() { return items.filter(function (it) { return !query || String(it.label).toLocaleLowerCase().indexOf(query.toLocaleLowerCase()) >= 0; }); }
     function choose(it) {
       if (it.disabled) return;
