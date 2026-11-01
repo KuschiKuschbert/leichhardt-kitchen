@@ -1,6 +1,6 @@
 # Shared-screen prep attribution
 
-Approved for Prep first, 1 November 2026. Implementation and release verification are in progress. Transfers, Wastage, orders, delivery checks and sign-offs retain their current behaviour.
+Approved for Prep first, 1 November 2026. Transfers, Wastage, orders, delivery checks and sign-offs retain their current behaviour. The [release pull request](https://github.com/KuschiKuschbert/leichhardt-kitchen/pull/434) records current CI, deployment and live verification.
 
 ## Interaction
 
@@ -40,7 +40,9 @@ Required: focused browser interaction checks, existing app browser suite, real F
 
 The new attribution validation is stricter. Existing rules already permit the extra fields while retaining `doneById == by`; release the compatible client first, then publish the tested rules through **Publish rules**. Preserve all private-read restrictions. Confirm Pages, live click tests and the live Lock probe before calling the release complete. No data migration is required.
 
-Release evidence will be recorded here after verification. Until then, do not claim the feature is live.
+Local evidence: 265 focused browser checks passed before the full app run, including 133 new attribution checks. The full real emulator suite passed, including 46 new attribution checks, the role/client-shape matrix and existing private-access checks. The new rules checks fail 19 of 46 against the old rules and pass all 46 with this contract. Analysis unit, analysis emulator and backup emulator checks also pass. Full browser, required GitHub CI, Pages, rules publication and live verification results are maintained in the release pull request. Do not infer a live deployment from local checks alone.
+
+Synthetic captures of the production interface: [phone](images/shared-prep-phone.png) and [tablet](images/shared-prep-tablet.png).
 
 ## Rollback
 
