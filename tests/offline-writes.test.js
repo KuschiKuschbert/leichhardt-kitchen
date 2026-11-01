@@ -1157,15 +1157,27 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     heads = 0;
     for (let i = 0; i < 30; i++) { await p.clock.fastForward(20000); await L.settle(p, 150); }
     ok(heads <= 6 && !(await reloaded(p)), 'wifi with no internet, left alone for 10 minutes: no reload, and it asked the server ' + heads + ' times (6 at most)');
+    let handledHeads = heads;
+    const recoveryStarted = await p.evaluate(() => Date.now());
     await deadNet(p, false);
-    for (let i = 0; i < 33 && !(await reloaded(p)); i++) {
-      const before = heads;
-      await p.clock.fastForward(20000); await L.settle(p, 150);
-      // A healthy round owns real request deadlines. Finish it before another virtual look.
-      if (heads > before && !(await reloaded(p))) await waitReload(p);
+    for (let i = 0; i < 33; i++) {
+      // Finish an already-started round before advancing another real request deadline.
+      if (heads > handledHeads && !(await reloaded(p))) {
+        handledHeads = heads;
+        await waitReload(p);
+      }
+      if (await reloaded(p)) break;
+      const remaining = 660000 - ((await p.evaluate(() => Date.now())) - recoveryStarted);
+      if (remaining <= 0) break;
+      await p.clock.fastForward(Math.min(20000, remaining));
+      await L.settle(p, 150);
+      if (heads > handledHeads && !(await reloaded(p))) {
+        handledHeads = heads;
+        await waitReload(p);
+      }
     }
-    await waitReload(p);
-    ok(await reloaded(p), 'the internet back with no online event: it updates within 11 minutes');
+    const elapsed = (await p.evaluate(() => Date.now())) - recoveryStarted;
+    ok(await reloaded(p) && elapsed <= 660000, 'the internet back with no online event: it updates within 11 minutes');
   });
   // 24 online. The same, but the signal comes back with an online event (the phone's wifi came back): it updates at the
   // next look, not after the longest wait (review of the fix, 28 Oct 2026: nothing checked goodLook() on online)
@@ -1180,17 +1192,23 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     // next one waits 10 minutes
     for (let i = 0; i < 45; i++) { await p.clock.fastForward(20000); await L.settle(p, 150); }
     ok(!(await reloaded(p)), 'wifi with no internet for 15 minutes: no reload');
+    // Capture before the online event so its request is completed before another clock jump.
+    let handledHeads = heads;
     await deadNet(p, false);
-    const beforeOnline = heads;
     await p.evaluate(() => window.dispatchEvent(new Event('online')));
-    await L.settle(p, 300);
-    if (heads > beforeOnline && !(await reloaded(p))) await waitReload(p);
-    for (let i = 0; i < 2 && !(await reloaded(p)); i++) {
-      const before = heads;
-      await p.clock.fastForward(20000); await L.settle(p, 300);
-      if (heads > before && !(await reloaded(p))) await waitReload(p);
+    for (let i = 0; i < 2; i++) {
+      if (heads > handledHeads && !(await reloaded(p))) {
+        handledHeads = heads;
+        await waitReload(p);
+      }
+      if (await reloaded(p)) break;
+      await p.clock.fastForward(20000);
+      await L.settle(p, 300);
+      if (heads > handledHeads && !(await reloaded(p))) {
+        handledHeads = heads;
+        await waitReload(p);
+      }
     }
-    await waitReload(p);
     ok(await reloaded(p), 'the internet back with an online event: it updates within the next two looks, not after the 10 minute wait');
   });
 
