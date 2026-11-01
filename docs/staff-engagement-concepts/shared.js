@@ -18,4 +18,14 @@
   function esc(value) { return String(value == null ? '' : value).replace(/[&<>"']/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
   function icon(name, size) { return '<svg aria-hidden="true" width="' + (size || 20) + '" height="' + (size || 20) + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round">' + (shapes[name] || shapes.book) + '</svg>'; }
   window.Study = { esc: esc, icon: icon };
+  function preservationNote() {
+    if (!document.body || document.querySelector('.preview-preservation')) return;
+    var note = document.createElement('details');
+    note.className = 'preview-preservation';
+    note.innerHTML = '<summary>Add-on preview: your normal sheets stay</summary><div><p>These examples show the encouragement layer with a few sample rows. The full existing Prep and Wastage sheets stay available when a design is integrated.</p><p>Normal items, sections, quantities, adding, ticking and waste entry controls are preserved. Existing history, chef reviews and permissions keep their current access rules. Encouragement can be hidden and never blocks normal work.</p><p class="preview-live-label">These links open the real Kitchen Book in a new tab:</p><div class="row"><a class="btn" href="https://kuschikuschbert.github.io/leichhardt-kitchen/#/prep" target="_blank" rel="noopener">Current Prep (live)</a><a class="btn" href="https://kuschikuschbert.github.io/leichhardt-kitchen/#/waste" target="_blank" rel="noopener">Current Wastage (live)</a></div><p class="hint">Use the example controls below for simulated entries. The live links are your actual app.</p></div>';
+    document.body.insertBefore(note, document.body.firstChild);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', preservationNote);
+  else preservationNote();
+
 })();

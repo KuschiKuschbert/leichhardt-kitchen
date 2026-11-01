@@ -14,6 +14,10 @@ Use the existing Kitchen Book paper (#FBFAF7), white, ink (#1C1D1F), charcoal sh
 
 These vary information placement and interaction, not just colour. All include the same core actions below. Only synthetic examples appear in screenshots and source. Use Example cook, Example chef, Larder/Grill/Dessert, Carrot trimmings and a generic labelled prep follow-up; never actual kitchen people, PINs or operational records. Figures are clearly illustrative, not measured results.
 
+## Preserve the existing app
+
+All normal Prep and Wastage functionality is mandatory. Reduced prototype rows only illustrate the new layer. Keep existing sheets, tools, weekly badges, routes and role boundaries. Encouragement is optional, never replaces a sheet and cannot gate normal prep or waste actions. Clearly separate sample controls from links to the live sheets.
+
 ## Common core for comparable previews
 
 1. Show the current example name and section; offer Change person. A demo device control switches My phone and Shared screen. A named PIN session on either device receives exactly the same recognition. Do not infer physical actor, ownership or attendance from a saved name.

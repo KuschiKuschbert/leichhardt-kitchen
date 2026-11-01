@@ -10,6 +10,25 @@ The aim is more useful, honestly attributed records and easier follow-through. T
 
 This is a separately hosted synthetic preview. It does not connect to kitchen data or change the live Kitchen Book. The hosting package passed 17 root-URL and example-save checks; Sites confirmed successful deployment of version 1.
 
+## Existing functionality is mandatory
+
+Clarified by the user, 1 November 2026: all existing functionality must remain. The concepts are an optional encouragement layer around the existing sheets. Their short sample lists are not replacements for the real Prep or Wastage screens.
+
+- Keep the existing Prep sheet and its current routes, sections, items, quantities, add/tick workflows, date/list controls and other available tools. Preserve existing weekly badges; this proposal adds no new individual ranking and does not remove the current one.
+- Keep the complete current Wastage entry and sheet workflows. History, removal/restoration, daily reviews, CSV and admin reports retain their existing role checks. Do not infer permission from a simplified preview or an outdated code comment.
+- Place the selected encouragement beside or below the normal sheet. Hide encouragement must leave every normal work control available. Logging waste never requires completing a game check, setup step or progress goal first.
+- Keep existing authoritative records, writers and pending-save behaviour. Do not create a second prep or wastage system. Any proposed new check/history remains separately scoped and requires its own agreed data contract.
+- The preview explicitly labels its reduced sample content and links to the current live Prep and Wastage screens in separate tabs. Those live links are clearly distinguished from simulated example entries.
+
+Preservation checklist for any selected implementation:
+
+| Existing area | Keep |
+| --- | --- |
+| Prep sheet | Dated list, sections and Functions tab; free-text/recipe additions, quantities, suggestions/usual amounts and Quick add; duplicates, urgent flags and rollover; permitted ticking/Undo/removal recovery; Handy, Done today, Start here, closing reminders and the waste-review note. |
+| Wastage sheet | Full current team log and totals; item, section, amount, existing units/reasons, optional action and recorded name/time; Logged often, suggestions, unit checks and existing correction controls. |
+| Reviews and history | Today's chef review, author/time, conflict checks and separate draft; next-shift prep change; admin History/Summary/Daily reviews, date/filter controls and CSV. Existing access gates stay exactly as implemented. |
+| Shared foundations | All other kitchen pages, personal PINs and name switching, shared-device use, pending/offline states, draft protection, navigation and weekly badges. |
+
 ## Three additional insight ideas
 
 | Idea | What the head chef could learn | Available source and minimal addition | Definition and limit |
