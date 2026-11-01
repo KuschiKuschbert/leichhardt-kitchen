@@ -66,12 +66,13 @@ service cloud.firestore {
     function nextFour(ms) { return ms - ((ms + 21600000) % 86400000) + 86400000; }
     function dailySession(d) {
       return d.get('v', 0) == 2 && d.get('mode', '') in ['personal', 'shared']
-        && d.get('issuedAt', 0) is timestamp && d.get('at', 0) is timestamp
-        && d.at >= d.issuedAt
+        && d.get('issuedAt', 0) is timestamp
         && d.get('exp', 0) is number && d.exp == nextFour(d.issuedAt.toMillis());
     }
     function sessOk(id) {
-      return request.auth != null && exists(sessDoc()) && ((anonymousDevice() && dailySession(get(sessDoc()).data)) || get(sessDoc()).data.get('v', 0) != 2)
+      // Session creation already enforces the exact 04:00 cap and immutable authentication cycle. Reads check the
+      // policy marker and live authority, as the previous policy checked its server-issued exp without revalidating shape.
+      return request.auth != null && exists(sessDoc()) && ((anonymousDevice() && get(sessDoc()).data.get('v', 0) == 2) || get(sessDoc()).data.get('v', 0) != 2)
         && get(sessDoc()).data.by == id
         && get(sessDoc()).data.exp > request.time.toMillis()
         && exists(setDoc(id))
@@ -81,16 +82,16 @@ service cloud.firestore {
     function adminDeviceDoc(uid) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/adminDevices/$(uid); }
     function matchingAdminGrant(g, s) {
       return g.get('v', 0) == 2 && g.get('by', '') == s.by && g.get('pinAt', -1) == s.pinAt
-        && g.get('issuedAt', 0) == s.issuedAt && g.get('exp', 0) == s.exp
-        && g.get('googleUid', '') is string && g.googleUid.size() > 0 && g.googleUid.size() <= 160
-        && g.get('at', 0) is timestamp && g.at >= s.issuedAt;
+        && g.get('issuedAt', 0) == s.issuedAt && g.get('exp', 0) == s.exp;
     }
     function adminSession(s) {
       let c = cfg();
-      return dailySession(s) && s.get('by', '') != '' && s.by == c.get('headId', '')
+      // Shape and exact 04:00 cap were verified at issuance. Check the mutable authority and session binding here;
+      // repeating the entire writer validator in every nested operational rule exceeds the expression budget.
+      return s.get('by', '') != '' && s.by == c.get('headId', '') && exists(adminDeviceDoc(request.auth.uid))
+        && s.get('v', 0) == 2
         && s.exp > request.time.toMillis() && s.by in c.get('staffIds', []) && !(s.by in c.get('fnOnlyIds', []))
         && exists(setDoc(s.by)) && s.pinAt == get(setDoc(s.by)).data.at
-        && exists(adminDeviceDoc(request.auth.uid))
         && matchingAdminGrant(get(adminDeviceDoc(request.auth.uid)).data, s);
     }
     function deviceAdmin() {
@@ -111,9 +112,22 @@ service cloud.firestore {
         && d.headId in d.staffIds && d.headId in d.sousIds && !(d.headId in d.get('fnOnlyIds', []))
         && d.get('pinOpen', {}) is map && d.get('pinOpen', {}).size() <= 80;
     }
+    function ownerInitialConfig() {
+      let d = request.resource.data;
+      return ownerFresh() && resource == null
+        && d.get('people', []) is list && d.get('people', []).size() <= 80
+        && d.get('staffIds', []) is list && d.get('staffIds', []).size() <= 80
+        && d.get('sousIds', []) is list && d.get('sousIds', []).size() <= 80
+        && d.get('headId', '') is string && d.headId.size() > 0 && d.headId.size() <= 80
+        && d.headId in d.staffIds && d.headId in d.sousIds && !(d.headId in d.get('fnOnlyIds', []));
+    }
+    function setupHead() {
+      return getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/config/main).data.get('headId', '');
+    }
     function ownerRosterBootstrap() {
       let c = getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/config/main).data;
-      return ownerIdentity() && cfg().get('headId', '') == '' && c.get('headId', '') != ''
+      return ownerIdentity() && ((!exists(/databases/$(database)/documents/kitchens/KITCHEN_PIN/config/main) && ownerFresh())
+          || cfg().get('headId', '') == '' || (resource == null && ownerFresh())) && c.get('headId', '') != ''
         && request.resource.data.keys().hasOnly(['people', 'staffIds', 'sousIds', 'headId', 'fnIds', 'fnOnlyIds', 'by'])
         && request.resource.data.people == c.people && request.resource.data.staffIds == c.staffIds
         && request.resource.data.sousIds == c.get('sousIds', []) && request.resource.data.headId == c.headId
@@ -203,7 +217,7 @@ service cloud.firestore {
     match /kitchens/KITCHEN_PIN/config/main {
       allow get: if kitchenRead() || (ownerIdentity() && resource.data.get('headId', '') == '');
       allow list: if kitchenRead();
-      allow create: if isAdmin() && proofState(request.resource.data);
+      allow create: if (isAdmin() || ownerInitialConfig()) && proofState(request.resource.data);
       // A sous chef (own PIN, no Google sign-in) may only change the people list and staffIds (who may set a PIN),
       // and only if listed in sousIds. sousIds and pingIds can only be changed by the head chef: the admin panel
       // shows the head chef any role or Pings tick a sous chef changed in the people list before it takes effect.
@@ -247,6 +261,7 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['by', 'pinAt', 'issuedAt', 'exp', 'googleUid', 'at', 'v'])
         && request.resource.data.keys().hasAll(['by', 'pinAt', 'issuedAt', 'exp', 'googleUid', 'at', 'v'])
         && request.resource.data.googleUid == request.auth.uid && request.resource.data.at == request.time
+        && request.resource.data.issuedAt <= request.time
         && exists(/databases/$(database)/documents/kitchens/KITCHEN_PIN/sessions/$(uid))
         && dailySession(get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/sessions/$(uid)).data)
         && get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/sessions/$(uid)).data.by == cfg().get('headId', '')
@@ -1287,7 +1302,12 @@ service cloud.firestore {
       allow read: if isAdmin();
       // a first PIN only while that person's set-up window is open (config/main pinOpen, 22 Oct 2026): opened when they
       // are added (7 days) or by Reset PIN (30 minutes), so nobody holding the kitchen PIN can take a name by setting it first
-      allow create: if isAdmin() || (request.auth != null && request.resource.data.keys().hasOnly(['hash', 'setAt', 'name'])
+      allow create: if isAdmin() || (ownerFresh() && id == setupHead()
+        && request.resource.data.keys().hasOnly(['hash', 'setAt', 'name'])
+        && request.resource.data.hash is string && request.resource.data.hash.size() == 64
+        && request.resource.data.get('name', '') is string && request.resource.data.get('name', '').size() <= 40
+        && request.resource.data.get('setAt', 0) is number && getAfter(setDoc(id)).data.at is number)
+        || (request.auth != null && request.resource.data.keys().hasOnly(['hash', 'setAt', 'name'])
         && request.resource.data.get('name', '') is string && request.resource.data.get('name', '').size() <= 40 && request.resource.data.get('setAt', 0) is number && request.resource.data.hash is string && request.resource.data.hash.size() == 64
         && id in cfg().get('staffIds', [])
         && request.time.toMillis() < cfg().get('pinOpen', {}).get(id, 0)
@@ -1298,7 +1318,11 @@ service cloud.firestore {
     match /kitchens/KITCHEN_PIN/pinset/{id} {
       allow get: if isAdmin() || (request.auth != null && onList(id));
       allow list: if isAdmin();
-      allow create: if isAdmin() || (request.auth != null && onList(id)
+      allow create: if isAdmin() || (ownerFresh() && id == setupHead()
+        && request.resource.data.keys().hasOnly(['at', 'name']) && request.resource.data.at is number
+        && request.resource.data.get('name', '') is string && request.resource.data.get('name', '').size() <= 40
+        && !exists(pinDoc(id)) && getAfter(pinDoc(id)).data.hash is string)
+        || (request.auth != null && onList(id)
         && request.time.toMillis() < cfg().get('pinOpen', {}).get(id, 0)
         && request.resource.data.keys().hasOnly(['at', 'name']) && request.resource.data.at is number
         && request.resource.data.get('name', '') is string && request.resource.data.get('name', '').size() <= 40
@@ -1331,7 +1355,7 @@ service cloud.firestore {
       return anonymousDevice() && request.auth.uid == uid
         && d.keys().hasOnly(['by', 'pinAt', 'exp', 'at', 'issuedAt', 'mode', 'v'])
         && d.keys().hasAll(['by', 'pinAt', 'exp', 'at', 'issuedAt', 'mode', 'v'])
-        && d.by is string && onList(d.by) && d.at == request.time && dailySession(d)
+        && d.by is string && onList(d.by) && d.at == request.time && dailySession(d) && d.issuedAt <= request.time
         && d.exp > request.time.toMillis()
         && exists(setDoc(d.by)) && d.pinAt == get(setDoc(d.by)).data.at
         && ((d.issuedAt == request.time && freshDevicePin(d, uid))
