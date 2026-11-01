@@ -4,6 +4,16 @@
 function lkUnsaved() { try { return !!(window.LK_PREP && window.LK_PREP.unsaved && window.LK_PREP.unsaved()); } catch (e) { return false; } }
 // of those, a write waiting for the server (LK_PREP.unsent()), which the strip on the prep pages calls Not sent yet
 function lkUnsent() { try { return !!(window.LK_PREP && window.LK_PREP.unsent && window.LK_PREP.unsent()); } catch (e) { return false; } }
+// Manual Update distinguishes actual drafts from a picker that is merely open. Older modules stay conservative.
+function lkDirty() {
+  try {
+    var p = window.LK_PREP;
+    return !!(p && (p.dirtyForUpdate ? p.dirtyForUpdate() : p.unsavedHere ? p.unsavedHere() : lkUnsaved() && !lkUnsent()));
+  } catch (e) { return true; }
+}
+// Discard consent covers the words present at that decision, not later typing while the files arrive.
+var lkEdits = 0;
+['input', 'change'].forEach(function (ev) { document.addEventListener(ev, function () { lkEdits++; }, { capture: true }); });
 /* One HEAD of index.html past every cache (the service worker leaves HEAD alone): a tiny request, no Firestore. The
    update check reads its stamp, the reloads ask it whether the server is there, and every answer keeps the book's clock
    right (LK_TIME.learn). Gives the answer, or null with no answer (no signal, an error, or nothing in 8 seconds). */
@@ -70,12 +80,11 @@ function lkFresh(files, mode) {
    (lkTouch: the last tap, key, touch or scroll). */
 var lkTouch = Date.now();
 ['pointerdown', 'keydown', 'touchstart', 'wheel'].forEach(function (ev) { document.addEventListener(ev, function () { lkTouch = Date.now(); }, { passive: true, capture: true }); });
-function lkTyping() {
+function lkEditing() {
   var a = document.activeElement, t = a && a.tagName;
-  // also anything half written in the prep pages, even when the cursor has left the box
-  if (lkUnsaved()) return true;
   return t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT' || !!(a && a.isContentEditable);
 }
+function lkTyping() { return lkUnsaved() || lkEditing(); }
 function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
 // Daily self-refresh: the book reloads itself once a day (about 04:00) so a tablet left open on the pass
 // always shows the latest cards. If the device was asleep at 04:00, it refreshes as soon as it wakes.
@@ -101,7 +110,7 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
     lkServerUp().then(function (up) {
       if (!up || held()) { flying = false; later(); return; }
       // The newest files first, all or nothing (lkFresh()), so the reload shows the newest cards. The page stays on the same card.
-      var files = ['index.html', 'js/data.js', 'js/art.js', 'js/overlay.js', 'js/controls.js', 'js/app.js', 'js/amounts.js', 'js/learn.js', 'js/cutoffs.js', 'js/prep.js', 'js/functions.js', 'js/firebase-config.js', 'js/boot.js', 'js/upkeep.js', 'css/app.css'];
+      var files = ['index.html', 'js/data.js', 'js/art.js', 'js/overlay.js', 'js/controls.js', 'js/device.js', 'js/app.js', 'js/amounts.js', 'js/learn.js', 'js/cutoffs.js', 'js/prep.js', 'js/functions.js', 'js/firebase-config.js', 'js/boot.js', 'js/upkeep.js', 'css/app.css'];
       /* Once, when every file is in (28 Oct 2026). later(): if the reload is turned down (a page asks first), it tries
          again in 10 minutes. Something typed or written while the files came in holds it back the same way, and so do a
          file that did not come in (weak signal, no answer in 8 seconds) and the signal going meanwhile. */
@@ -149,14 +158,21 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
   // Update now's words while a change waits to send (head chef, 28 Oct 2026). On a phone they take two lines: the
   // no-break spaces keep the second sentence whole, so the line breaks after "Not sent yet."
   var UNSENT_NOTE = 'Not sent yet. It\u00a0updates\u00a0once\u00a0sent.';
-  /* The update running now, or null (28 Oct 2026). tapped: Update now was tapped for it, before it started or while it
-     ran (a tap takes over an update nobody tapped, so the tap's own touch does not call it off). half: something half
-     typed when it was tapped, which the second tap said may go. files: it is fetching the files. asked: see reloadNow(). */
+  /* tapped: an explicit Update request. half: the current draft has discard consent for this edit revision.
+     files: the atomic file round is running. asked: a previous tap is continuing after pending writes or no signal. */
   var run = null;
-  /* When Update now was tapped while a change waited to send, or 0 (28 Oct 2026). The look every 20 seconds runs the
-     update that tap asked for once the change is sent and nothing is in a box or half typed, within 10 minutes of the
-     tap, even while the book is in use. After that it updates by the usual rule. */
+  // A requested update waits for every pending write. New typing or an active field still holds its quiet resumption.
   var wanted = 0;
+  var consentRevision = null, confirmation = null, resumeTimer = null;
+  // A resumed draft can change through Add, Remove or drawing tools without an input/change event. Any interaction
+  // back in the book revokes the old discard decision; retrying Update itself keeps that decision.
+  ['pointerdown', 'click', 'keydown'].forEach(function (ev) {
+    document.addEventListener(ev, function (e) {
+      if (consentRevision === null) return;
+      if (e.target && e.target.closest && e.target.closest('.upd-bar, #lk-update-confirm')) return;
+      lkEdits++; consentRevision = null;
+    }, { capture: true });
+  });
   /* The look every 20 seconds waits longer after each update that found no signal (28 Oct 2026): 20 seconds, then 1, 2,
      5 and 10 minutes. On wifi with no internet the phone says it is online, so it used to ask the server every 20
      seconds all shift. The signal coming back (the online event), a tap on Update now or a Reload button, and an update
@@ -169,10 +185,11 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
      the look every 20 seconds runs once the change is sent. Nobody tapped just now, so it runs like an update nobody
      tapped: no note in the strip, and a touch does not call it off. */
   function reloadNow(tapped, back, asked) {
-    if (run) return;
+    if (run || confirmation) return;
     // Once per 10 minutes at most, so a flapping header can never cause a reload loop. The strip still offers Update now.
     try { var last = +localStorage.getItem('lk.upd.last') || 0; if (Date.now() - last < 600000) { showBar(); return; } } catch (e) {}
-    var me = run = { tapped: !!tapped, half: !!tapped && lkUnsaved(), files: false, asked: asked || 0 }, touched = lkTouch;
+    var me = run = { tapped: !!tapped, half: !!(tapped || asked) && lkDirty() && consentRevision === lkEdits,
+      edits: lkEdits, files: false, asked: asked || 0 }, touched = lkTouch;
     /* The check and the files take up to 8 seconds each on a weak signal, so the book looks again before it reloads
        (28 Oct 2026): an update nobody tapped stops when someone typed or wrote meanwhile, and the one after 2 minutes
        untouched also when someone touched the book. Coming back is a touch, so that update goes on over a swipe; a tick
@@ -181,49 +198,55 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
        search). A tapped one stops when a change waits to send or something was typed after the tap. The strip stays
        and the update waits for its next turn, or for the next tap. */
     function stop() {
+      if (run !== me) return true;
       var note = '';
       if (me.tapped) {
-        if (lkUnsent()) note = UNSENT_NOTE; else if (lkUnsaved() && !me.half) note = 'Not saved yet.'; else return false;
-      } else if (!lkTyping() && (back || me.asked || lkTouch === touched)) return false;
+        if (lkUnsent()) note = UNSENT_NOTE;
+        else if (lkDirty() && (!me.half || me.edits !== lkEdits || consentRevision !== me.edits)) {
+          run = null; wanted = 0; showBar(); confirmUpdate(); return true;
+        } else return false;
+      } else if (me.asked) {
+        if (!lkUnsent() && !lkEditing() && (!lkDirty() || me.half && me.edits === lkEdits && consentRevision === me.edits)) return false;
+      } else if (!lkTyping() && (back || lkTouch === touched)) return false;
       run = null; showBar(); keep();
       if (note === UNSENT_NOTE) { wanted = Date.now(); say(note, 'Update now'); }
-      else if (note) { say(note, 'Tap again to update'); armedAt = Date.now(); }
       return true;
     }
-    // the update after a tap that stopped, quietly: the look every 20 seconds tries it again, within 10 minutes of the tap
-    function keep() { if (me.asked && !me.tapped) wanted = me.asked; }
+    function keep() { if (me.tapped || me.asked) wanted = me.asked || Date.now(); }
     // no signal (27 Oct 2026): the book stays as it is, the strip stays up, and it updates by itself once the signal is
     // back; the look every 20 seconds waits longer each time (failedLook())
-    function noSignal() { run = null; showBar(); keep(); failedLook(); if (me.tapped) say('No signal. It updates later.', 'Update now'); }
+    function noSignal() { if (run !== me) return; run = null; showBar(); keep(); failedLook(); if (me.tapped) say('No signal. It updates later.', 'Update now'); }
     // the check can take up to 8 seconds on a weak signal, so a tap says what is happening meanwhile
     if (me.tapped) busy('Checking the signal...');
     lkServerUp().then(function (up) {
+      if (run !== me) return;
       if (!up) { noSignal(); return; }
       if (stop()) return;
       me.files = true;
       if (me.tapped) busy('Updating...');
-      var files = ['index.html', 'js/data.js', 'js/art.js', 'js/overlay.js', 'js/controls.js', 'js/app.js', 'js/amounts.js', 'js/learn.js', 'js/cutoffs.js', 'js/prep.js', 'js/functions.js', 'js/firebase-config.js', 'js/boot.js', 'js/upkeep.js', 'css/app.css'];
+      var files = ['index.html', 'js/data.js', 'js/art.js', 'js/overlay.js', 'js/controls.js', 'js/device.js', 'js/app.js', 'js/amounts.js', 'js/learn.js', 'js/cutoffs.js', 'js/prep.js', 'js/functions.js', 'js/firebase-config.js', 'js/boot.js', 'js/upkeep.js', 'css/app.css'];
       // a touch in the last 600 ms (a tap whose tick comes a moment later): the book looks again 700 ms on, once that
       // tick waits to send and holds the update back (28 Oct 2026)
       var land = function () {
+        if (run !== me) return;
         if (!me.tapped && Date.now() - lkTouch < 600) { setTimeout(land, 700); return; }
         if (stop()) return;
         if (navigator.onLine === false) { noSignal(); return; }
-        run = null; goodLook();
+        run = null; wanted = 0; goodLook();
         try { localStorage.setItem('lk.upd.last', String(Date.now())); } catch (e) {}
-        // the second tap said what is half typed may go: the book's own Reload site? question does not ask again
+        // The explicit discard decision already covered this draft, so beforeunload must not ask a second time.
         if (me.half) letGoAt = Date.now();
         location.reload();
       };
       /* Once, when every file is in (lkFresh(), all or nothing): a reload turned down (a page asks first) is not tried
          again. A file that did not come in, no answer in 8 seconds or the signal going meanwhile counts as no signal,
          unless something typed or written meanwhile stops it first. */
-      lkFresh(files, 'reload').then(function (got) { if (got) land(); else if (!stop()) noSignal(); });
+      lkFresh(files, 'reload').then(function (got) { if (run !== me) return; if (got) land(); else if (!stop()) noSignal(); });
     });
   }
   /* A slim strip at the top of the screen (21 Oct 2026), styled in css/app.css (.upd-bar), so it never sits with the
      toasts at the bottom. It sticks to the top while the page scrolls. */
-  var barText = null, barBtn = null, armedAt = 0, calm = null;
+  var barText = null, barBtn = null, calm = null;
   // a short note in the strip for 4 seconds, then the strip as it was
   function say(msg, btn) {
     if (!barText) return;
@@ -231,7 +254,7 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
     clearTimeout(calm);
     calm = setTimeout(reset, 4000);
   }
-  function reset() { armedAt = 0; barText.textContent = 'New version available.'; barBtn.textContent = 'Update now'; }
+  function reset() { barText.textContent = 'New version available.'; barBtn.textContent = 'Update now'; }
   // a note while the check and the reload run (each 8 seconds at most): the strip as it was after 12 seconds, in case
   // the reload was turned down
   function busy(msg) {
@@ -260,17 +283,78 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
     if (run && run.tapped) return;
     // a change waiting for the server (head chef, 28 Oct 2026): Update now waits, because the reload loses it, and the
     // book updates by itself at its next look once it is sent (wanted). No second tap gets past it.
-    if (lkUnsent()) { armedAt = 0; wanted = Date.now(); say(UNSENT_NOTE, 'Update now'); return; }
-    // something half typed (27 Oct 2026): a second tap within 4 seconds, like the other Tap again buttons
-    if (lkUnsaved() && !(armedAt && Date.now() - armedAt < 4000)) { say('Not saved yet.', 'Tap again to update'); armedAt = Date.now(); return; }
-    armedAt = 0;
+    if (lkUnsent()) { wanted = Date.now(); say(UNSENT_NOTE, 'Update now'); return; }
+    if (lkDirty() && consentRevision !== lkEdits) { confirmUpdate(); return; }
+    beginTapped();
+  }
+  function beginTapped() {
+    // A write can start while the discard dialog is open. Its data must be acknowledged before any reload.
+    if (lkUnsent()) { wanted = Date.now(); say(UNSENT_NOTE, 'Update now'); return; }
+    wanted = 0;
     try { localStorage.removeItem('lk.upd.last'); } catch (e) {}
     // the automatic update already running, the strip still saying New version available.: the tap takes it over
-    if (run) { run.tapped = true; run.half = lkUnsaved(); busy(run.files ? 'Updating...' : 'Checking the signal...'); return; }
+    if (run) { run.tapped = true; run.half = lkDirty() && consentRevision === lkEdits; run.edits = lkEdits; run.asked = 0; busy(run.files ? 'Updating...' : 'Checking the signal...'); return; }
     reloadNow(true);
   }
+  function confirmUpdate() {
+    if (confirmation) { confirmation.keep.focus(); return; }
+    // Stop an in-flight automatic update before asking. Its callbacks are guarded by their run identity.
+    run = null; wanted = 0; consentRevision = null; clearTimeout(calm); reset();
+    var dialog = document.createElement('dialog'), trigger = barBtn || document.activeElement, openedHash = location.hash;
+    dialog.id = 'lk-update-confirm'; dialog.className = 'ux-picker';
+    dialog.setAttribute('aria-labelledby', 'lk-update-confirm-title'); dialog.setAttribute('aria-describedby', 'lk-update-confirm-note');
+    var header = document.createElement('header'); header.className = 'ux-picker-head';
+    var title = document.createElement('h2'); title.id = 'lk-update-confirm-title'; title.textContent = 'Unsaved changes'; header.appendChild(title);
+    var body = document.createElement('div'); body.className = 'ux-picker-options';
+    var note = document.createElement('p'); note.id = 'lk-update-confirm-note'; note.textContent = 'You have changes that are not saved. Discard them to update the book.'; body.appendChild(note);
+    var footer = document.createElement('footer'); footer.className = 'ux-picker-footer';
+    var keep = document.createElement('button'); keep.type = 'button'; keep.className = 'btn'; keep.setAttribute('data-update', 'keep'); keep.textContent = 'Keep working';
+    var discard = document.createElement('button'); discard.type = 'button'; discard.className = 'btn dark'; discard.setAttribute('data-update', 'discard'); discard.textContent = 'Discard and update';
+    footer.appendChild(keep); footer.appendChild(discard); dialog.appendChild(header); dialog.appendChild(body); dialog.appendChild(footer);
+    var closeHistory = null, fromHistory = false;
+    function finish(update) {
+      if (!confirmation || confirmation.dialog !== dialog) return;
+      confirmation = null; dialog.close(); dialog.remove();
+      if (closeHistory) closeHistory(fromHistory || location.hash !== openedHash);
+      if (trigger && trigger.isConnected) trigger.focus({ preventScroll: true });
+      if (update) { consentRevision = lkEdits; beginTapped(); }
+      else { wanted = 0; consentRevision = null; reset(); }
+    }
+    confirmation = { dialog: dialog, keep: keep, close: function () { finish(false); } };
+    keep.onclick = function () { finish(false); };
+    discard.onclick = function () { finish(true); };
+    dialog.addEventListener('cancel', function (e) { e.preventDefault(); finish(false); });
+    dialog.addEventListener('click', function (e) {
+      if (e.target !== dialog) return;
+      var r = dialog.getBoundingClientRect();
+      if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) finish(false);
+    });
+    dialog.addEventListener('keydown', function (e) {
+      e.stopPropagation();
+      if (e.key === 'Escape') { e.preventDefault(); finish(false); return; }
+      if (e.key === 'Tab') {
+        if (e.shiftKey && document.activeElement === keep) { e.preventDefault(); discard.focus(); }
+        else if (!e.shiftKey && document.activeElement === discard) { e.preventDefault(); keep.focus(); }
+      }
+    });
+    document.body.appendChild(dialog); dialog.showModal();
+    if (window.LK_PREP && window.LK_PREP.pickerOverlay) closeHistory = window.LK_PREP.pickerOverlay(function () { fromHistory = true; finish(false); });
+    keep.focus();
+  }
+  function resumeWanted() {
+    if (!wanted || run || confirmation || Date.now() < nextTry || lkUnsent() || lkEditing()) return;
+    if (lkDirty() && consentRevision !== lkEdits) return;
+    var asked = wanted; wanted = 0;
+    try { localStorage.removeItem('lk.upd.last'); } catch (e) {}
+    clearTimeout(calm); reset();
+    reloadNow(false, false, asked);
+  }
+  // Acknowledgement handlers finish their forms in promise callbacks. Recheck after those callbacks settle.
+  function resumeSoon() { clearTimeout(resumeTimer); resumeTimer = setTimeout(resumeWanted, 100); }
+  window.addEventListener('lk-sent', resumeSoon);
+  window.addEventListener('hashchange', function () { consentRevision = null; if (confirmation) confirmation.close(); });
   /* Words typed on the prep pages make a reload or closing the tab ask first (typedHere() in js/prep.js, 28 Oct 2026).
-     The reload after Update now's second tap over them is the one the person already said yes to, so for a moment
+     The reload after Discard and update is the one the person already said yes to, so for a moment
      around it letGo() is true and the book does not ask again. Date.now(): time passing on the phone. */
   var letGoAt = 0;
   window.LK_UPDATE = { now: updateNow, letGo: function () { return !!letGoAt && Date.now() - letGoAt < 3000; } };
@@ -297,10 +381,11 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
   setInterval(function () {
     if (document.visibilityState !== 'visible') return;
     if (found) {
+      if (confirmation) return;
       // the last update found no signal: wait longer before asking the server again (see failedLook())
       if (Date.now() < nextTry) return;
       // Update now tapped while a change waited: the update it asked for, once the change is sent (see wanted)
-      if (wanted && Date.now() - wanted < 600000 && !run && !lkTyping()) { var w = wanted; wanted = 0; try { localStorage.removeItem('lk.upd.last'); } catch (e) {} reloadNow(false, false, w); }
+      if (wanted) resumeWanted();
       else if (lkIdle()) reloadNow();
     }
     else if (Date.now() - lastCheck > 15 * 60000) check(false);

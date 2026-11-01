@@ -1,5 +1,6 @@
 import { initializeTestEnvironment, assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
 import { doc, getDoc, getDocs, collection, setDoc, writeBatch } from 'firebase/firestore';
+import { anonContext, dailySession, adminGrant, seedOwnerDevice, nextFour } from './device-auth-fixtures.mjs';
 import { readFileSync } from 'node:fs';
 const pin = '000000', K = `kitchens/${pin}/`, ownerEmail = 'owner@test.local';
 const rules = readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8').replaceAll('KITCHEN_PIN', pin).replaceAll('OWNER_EMAIL', ownerEmail);
@@ -22,18 +23,18 @@ await env.withSecurityRulesDisabled(async c => {
  await setDoc(doc(db,K+'login/roster'),{people:cfg.people,staffIds:cfg.staffIds,sousIds:cfg.sousIds,headId:'head',fnIds:['fn'],fnOnlyIds:['fn']});
  for (const id of cfg.staffIds) {
   await setDoc(doc(db,K+'pinset/'+id),{at:1});
-  await setDoc(doc(db,K+'sessions/'+id),{by:id,exp:now+600000,pinAt:1});
+  await setDoc(doc(db,K+'sessions/'+id),dailySession(id, {at:now}));
  }
- await setDoc(doc(db,K+'sessions/expired'),{by:'staff',exp:now-1000,pinAt:1});
+ await setDoc(doc(db,K+'sessions/expired'),dailySession('staff', {at:now,exp:now-1000}));
  for(const p of ['book/index','book/matches','recipes/x','drawings/x','drawtpl/x','drawlib/x']) await setDoc(doc(db,K+p),{by:'head'});
  for(const p of ['publicBook/index','publicRecipes/x','publicDrawings/x']) await setDoc(doc(db,p),{by:'head'});
 });
 let checks=0;
-for(const db of [env.unauthenticatedContext().firestore(),env.authenticatedContext('anonymous').firestore(),env.authenticatedContext('expired').firestore()]) {
+for(const db of [env.unauthenticatedContext().firestore(),env.authenticatedContext('anonymous').firestore(),anonContext(env,'expired').firestore()]) {
  for(const p of paths) { await assertFails(getDoc(doc(db,K+p)));checks++; }
  for(const p of ['publicBook/index','publicRecipes/x','publicDrawings/x',K+'recipes/x']) { await assertSucceeds(getDoc(doc(db,p)));checks++; }
 }
-const fn=env.authenticatedContext('fn').firestore(), staff=env.authenticatedContext('staff').firestore();
+const fn=anonContext(env,'fn').firestore(), staff=anonContext(env,'staff').firestore();
 for(const p of paths.filter(p=>!['functions/x','functions/x/hist/1','fncontact/x','fnsent/x'].includes(p))) { await assertFails(getDoc(doc(fn,K+p)));checks++; }
 for(const p of ['functions/x','functions/x/hist/1','fncontact/x','fnsent/x']) { await assertSucceeds(getDoc(doc(fn,K+p)));checks++; }
 for(const p of ['config/main',`days/${today}/items/x`,`orders/${today}/lines/x`,`waste/${today}/lines/x`,'notes/x','guides/x']) { await assertSucceeds(getDoc(doc(staff,K+p)));checks++; }
@@ -51,7 +52,7 @@ await assertFails(setDoc(doc(fn,K+`days/${today}/items/fn-private-event-pizza`),
 batch=writeBatch(fn);batch.set(doc(fn,K+'functions/private-event'),{...f,v:2,status:'cancelled',removed:true,kq:0,by:'fn',upd:now+1});batch.set(doc(fn,K+'functions/private-event/hist/1'),{was:f,at:now+1,by:'fn',what:'Deleted'});batch.set(doc(fn,K+`days/${today}/items/fn-private-event-pizza`),{...generated,deleted:true});
 await assertSucceeds(batch.commit());checks++;
 // Public copies must be the exact canonical recipe in the same authorised batch.
-const sous=env.authenticatedContext('sous').firestore();
+const sous=anonContext(env,'sous').firestore();
 const recipe={r:{id:'new-public',name:'Public recipe',kind:'main',ingredients:[],sections:[]},v:1,upd:now,by:'sous'};
 batch=writeBatch(sous);batch.set(doc(sous,K+'recipes/new-public'),recipe);batch.set(doc(sous,K+'book/index'),{r:{'new-public':1},by:'sous'});batch.set(doc(sous,'publicRecipes/new-public'),recipe);batch.set(doc(sous,'publicBook/index'),{r:{'new-public':1},by:'sous'});
 await assertSucceeds(batch.commit());checks++;
@@ -63,6 +64,6 @@ await assertFails(getDoc(doc(staff,K+'minutes/x/signs/1_sous')));checks++;
 await assertFails(getDocs(collection(staff,K+'minutes/x/signs')));checks++;
 await assertFails(getDoc(doc(fn,K+'minutes/x/signs/1_fn')));checks++;
 await assertSucceeds(getDocs(collection(sous,K+'minutes/x/signs')));checks++;
-await assertSucceeds(getDocs(collection(env.authenticatedContext('head').firestore(),K+'minutes/x/signs')));checks++;
+await assertSucceeds(getDocs(collection(anonContext(env,'head').firestore(),K+'minutes/x/signs')));checks++;
 console.log('PASS private access matrix: '+checks+' checks, including every private collection and history.');
 await env.cleanup();

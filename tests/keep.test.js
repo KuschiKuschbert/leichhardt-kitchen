@@ -88,10 +88,10 @@ function riceTwice() {
   await L.adminTab(p, 'people');
   await L.settle(p, 300);
   const cnt = () => p.evaluate(() => (document.querySelector('[data-lvb="people"] .lv-count') || {}).textContent || '');
-  ok(/Showing 15 of 20 people/.test(await cnt()), 'admin: the people list shows 15 of 20 (' + await cnt() + ')');
+  ok(/Showing 15 of 21 people/.test(await cnt()), 'admin: the people list shows 15 of 21, including the signed-in head (' + await cnt() + ')');
   await p.click('[data-p="lv-more"][data-lv="people"]');
   await L.settle(p, 200);
-  ok(/^20 people/.test(await cnt()) && await p.$('[data-p="lv-less"][data-lv="people"]') !== null, 'admin: Show more shows all 20, with Show fewer');
+  ok(/^21 people/.test(await cnt()) && await p.$('[data-p="lv-less"][data-lv="people"]') !== null, 'admin: Show more shows all 21, with Show fewer');
   await p.fill('[data-k="lv-q:people"]', 'cook 1');
   await L.settle(p, 300);
   ok(/matching/.test(await cnt()) && await p.evaluate(() => document.activeElement && document.activeElement.getAttribute('data-k')) === 'lv-q:people', 'admin: the search narrows the list and keeps the cursor (' + await cnt() + ')');

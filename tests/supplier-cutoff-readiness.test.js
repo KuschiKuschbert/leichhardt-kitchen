@@ -75,7 +75,7 @@ async function open(b, linked, name) {
   await p.context().close();
 
   // A denied lookup started by one chef must not use its legacy fallback as the next chef on the same tablet.
-  p = await L.open(b, '#/orders', { who: 'bo', extra: fixture(false), wait: 1500, denyReads: '/suppliers$' });
+  p = await L.open(b, '#/orders', { who: 'bo', deviceMode: 'shared', extra: fixture(false), wait: 1500, denyReads: '/suppliers$' });
   await L.waitFor(p, () => !!document.querySelector('#cut-band [data-cut="done"]') && window.LK_PREP.supplier().read(), null, 10000);
   release = await holdTools(p);
   request = p.waitForRequest(/\/js\/supplier-core\.js(?:\?|$)/);

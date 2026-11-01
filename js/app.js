@@ -894,7 +894,7 @@
      for up to 10 minutes, and it never shuts a page (29 Oct 2026). */
   function viewFn(route) { return '<div class="page fn-pg"><main id="main" class="fn-main">' + (window.LK_FN ? window.LK_FN.page(route.fid) : '') + '</main>' + footer() + '</div>'; }
   function viewFunctions() { return '<div class="page fe-page"><main id="main" class="fe"><div id="fe-root"></div></main></div>'; }
-  var FE_API = 8, feLoad = null;
+  var FE_API = 9, feLoad = null;
   function mountFunctions(route) {
     var root = document.getElementById('fe-root');
     if (!root) return;
@@ -914,13 +914,13 @@
     }
     if (window.LK_FE) { if (window.LK_FE.api === FE_API) window.LK_FE.mount(root, route); else root.innerHTML = mgNote('Reload the book', 'The functions page on this device is a different version from the book. Reload the page to update it.', '<div class="btn-row"><button type="button" class="btn dark" data-act="reload">Reload</button></div>'); return; }
     root.innerHTML = mgNote('Functions', 'Opening functions...', ' ');
-    if (!feLoad) feLoad = mgScript('js/fnedit.js?v=4').catch(function (e) { feLoad = null; throw e; });
+    if (!feLoad) feLoad = mgScript('js/fnedit.js?v=5').catch(function (e) { feLoad = null; throw e; });
     feLoad.then(function () { if (parseRoute().name === 'functions') mountFunctions(parseRoute()); }, function () {
       var el = document.getElementById('fe-root');
       if (el) el.innerHTML = mgNote('Could not open functions', 'It needs the signal the first time it opens on a device. Check the signal and try again.', '<div class="btn-row"><button type="button" class="btn dark" data-act="feretry">Try again</button></div>');
     });
   }
-  var MG_API = 4, mgLoad = null;
+  var MG_API = 5, mgLoad = null;
   function viewManage() { return '<div class="page mg-page"><main id="main" class="mg"><div id="mg-root"></div></main>' + footer() + '</div>'; }
   function mgScript(f) {
     return fetch(f, { headers: { 'X-LK-Fresh': '1' } }).catch(function () {}).then(function () {
@@ -928,7 +928,7 @@
     });
   }
   function loadManage() {
-    if (!mgLoad) mgLoad = mgScript('js/manage.js?v=5').catch(function (e) { mgLoad = null; throw e; });
+    if (!mgLoad) mgLoad = mgScript('js/manage.js?v=6').catch(function (e) { mgLoad = null; throw e; });
     return mgLoad;
   }
   function mgNote(title, text, link) {
@@ -964,18 +964,18 @@
   function mountDeliveries() {
     var root = document.getElementById('delivery-root'); if (!root || !window.LK_PREP.privateAccess()) return;
     if (window.LK_DELIVERY) {
-      if (window.LK_DELIVERY.api === 1) window.LK_DELIVERY.mount(root);
+      if (window.LK_DELIVERY.api === 2) window.LK_DELIVERY.mount(root);
       else root.innerHTML = mgNote('Reload the book', 'Delivery records need the current book.', '<button type="button" class="btn dark" data-act="reload">Reload</button>');
       return;
     }
     root.innerHTML = mgNote('Delivery received', 'Opening delivery records...', ' ');
-    if (!deliveryLoad) deliveryLoad = mgScript('js/deliveries.js?v=2').catch(function (e) { deliveryLoad = null; throw e; });
+    if (!deliveryLoad) deliveryLoad = mgScript('js/deliveries.js?v=3').catch(function (e) { deliveryLoad = null; throw e; });
     deliveryLoad.then(function () { if (parseRoute().name === 'deliveries') mountDeliveries(); }, function () {
       if (parseRoute().name === 'deliveries' && root.isConnected) root.innerHTML = mgNote('Could not open delivery records', 'Check the connection and try again.', '<button type="button" class="btn dark" data-delivery-retry>Try again</button>');
     });
   }
   document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-delivery-retry]')) mountDeliveries(); });
-  var SUP_API = 8, supLoad = null;
+  var SUP_API = 9, supLoad = null;
   function viewSuppliers() { return '<div class="page sup-page"><main id="main"><div id="supplier-root"></div></main>' + footer() + '</div>'; }
   function mountSuppliers(route) {
     var root = document.getElementById('supplier-root'), P = window.LK_PREP, B = P && P.supplier ? P.supplier() : null;
@@ -994,7 +994,7 @@
       return;
     }
     root.innerHTML = mgNote('Supplier order', 'Opening supplier tools...', ' ');
-    if (!supLoad) supLoad = mgScript('js/suppliers.js?v=8').catch(function (e) { supLoad = null; throw e; });
+    if (!supLoad) supLoad = mgScript('js/suppliers.js?v=9').catch(function (e) { supLoad = null; throw e; });
     supLoad.then(function () { if (parseRoute().name === 'suppliers') mountSuppliers(parseRoute()); }, function () {
       if (parseRoute().name === 'suppliers') root.innerHTML = mgNote('Could not open supplier tools', 'Check the connection and try again. The other kitchen pages still work.', '<div class="btn-row"><button type="button" class="btn dark" data-sup-retry>Try again</button><a class="btn" href="#/orders">Order list</a></div>');
     });
@@ -1085,7 +1085,14 @@
   }
   function viewSettings() {
     var nTicks = Object.keys(ticks).filter(function (k) { return ticks[k]; }).length;
-    // Clear all ticks and the device type are for the head chef setting up a device: only on the head chef's signed-in device
+    var device = window.LK_DEVICE, mode = device ? device.mode() : '', P = window.LK_PREP;
+    var changeDevice = !!(P && P.canChangeDevice && P.canChangeDevice());
+    var deviceHTML = '<section class="set-block" aria-label="This device"><span class="label">This device</span><strong>' +
+      (mode === 'personal' ? 'My own device' : mode === 'shared' ? 'Shared kitchen screen' : 'Choose how this device is used') + '</strong><span class="hint">' +
+      (mode === 'personal' ? 'No idle lock. Unlock with your PIN after 04:00 each day. Your Google sign-in stays remembered.' : mode === 'shared' ? 'Locks after 10 minutes. Google and PIN sign out at 04:00 on this device.' : 'Choose once for this browser or installed app.') + '</span>' +
+      (!mode || changeDevice ? '<div class="btn-row"><button type="button" class="btn" data-act="device-choice">' + (mode ? 'Change device type' : 'Choose device type') + '</button>' +
+      (mode ? '<button type="button" class="btn" data-act="device-forget">Forget this device</button>' : '') + '</div>' : '<span class="hint">' + (mode === 'shared' ? 'The head chef can change this after signing in.' : 'Sign in with your PIN to change this.') + '</span>') + '</section>';
+    // Clear all ticks and practice are for the head chef setting up a device.
     var adm = isAdminDevice();
     return '<div class="page">' + '<main id="main" class="settings"><div class="row-label" style="justify-content: space-between; align-items: center">' +
       '<h2 tabindex="-1" id="rtitle">Settings</h2><a class="btn dark" href="#/" data-act="done">Done</a></div>' +
@@ -1093,6 +1100,7 @@
         return '<button type="button" class="chip" data-act="settext" data-val="' + t[0] + '" data-k="settext:' + t[0] + '" aria-pressed="' + (settings.text === t[0]) + '">' + esc(t[1]) + '</button>';
       }).join('') + '</div></section>' +
       installHTML() +
+      deviceHTML +
       '<section class="set-block" aria-label="Opens with"><span class="label">Opens with</span><span class="hint">Tap one. This is how the recipes look when you arrive, on a computer and on a phone.</span>' + viewOptions('setview') + '</section>' +
       '<section class="set-block set-qr" aria-label="Open on a phone"><span class="label">Open on a phone</span><div class="qr-row"><img class="qr-img" src="qr.svg" width="180" height="180" alt="QR code that opens the Kitchen Book">' +
       '<div><p class="hint">Scan with a phone camera to open the Kitchen Book on that phone, then add it to the home screen so it is one tap away.</p><p class="qr-url">kuschikuschbert.github.io/leichhardt-kitchen</p>' +
@@ -1100,8 +1108,6 @@
       (adm ?
         '<section class="set-block" aria-label="Ticked steps"><span class="label">Ticked steps</span><span class="hint">' + esc(plural(nTicks, 'step is', 'steps are')) + ' ticked. Ticks clear when you close the page.</span>' +
         '<div class="btn-row"><button type="button" class="btn" data-act="clearticks" data-k="clearticks">Clear all ticks</button></div></section>' +
-        '<section class="set-block" aria-label="Shared kitchen device"><span class="label">Shared kitchen device</span><span class="hint">For a tablet or phone everyone picks up. After 10 minutes with no touch, and each new day, the prep pages ask who you are again, so nobody writes under the last person\'s name. Recipes and guides stay open and the kitchen PIN stays. A personal phone keeps you signed in.</span>' +
-        '<div class="chips"><button type="button" class="chip" data-act="setshared" data-val="0" data-k="setshared:0" aria-pressed="' + !settings.shared + '">Personal phone</button><button type="button" class="chip" data-act="setshared" data-val="1" data-k="setshared:1" aria-pressed="' + !!settings.shared + '">Shared device</button></div></section>' +
         '<section class="set-block" aria-label="Practice on this device"><span class="label">Practice on this device</span><span class="hint">For trying the book out or showing someone how it works. Lines written here while it is on are marked as practice: the book does not learn from them and the wastage summary leaves them out. A strip on the prep pages says it is on.</span>' +
         '<div class="chips"><button type="button" class="chip" data-act="setpractice" data-val="0" data-k="setpractice:0" aria-pressed="' + !settings.practice + '">Off</button><button type="button" class="chip" data-act="setpractice" data-val="1" data-k="setpractice:1" aria-pressed="' + !!settings.practice + '">On</button></div></section>' : '') +
       '<section class="set-block" aria-label="About"><span class="label">About</span><span class="saved">' + esc(plural(D.recipes.length, 'recipe', 'recipes')) + ', updated ' + esc(D.updated) +
@@ -1537,7 +1543,8 @@
     else if (act === 'setview' || act === 'topview') { var was = settings.view; settings.view = val; saveSettings(); if (act === 'topview' && was !== val) { render(); window.scrollTo(0, 0); return; } }
     else if (act === 'settext') { settings.text = val; saveSettings(); document.documentElement.setAttribute('data-text', val); }
     else if (act === 'clearticks') { ticks = {}; saveTicks(); }
-    else if (act === 'setshared') { settings.shared = val === '1'; saveSettings(); }
+    else if (act === 'device-choice') { if (window.LK_DEVICE) window.LK_DEVICE.settings(); return; }
+    else if (act === 'device-forget') { if (window.LK_DEVICE) window.LK_DEVICE.forget(); return; }
     else if (act === 'setpractice') { settings.practice = val === '1'; saveSettings(); }
     else if (act === 'installno') { settings.installNo = true; saveSettings(); }
     else if (act === 'install') {
@@ -1575,6 +1582,10 @@
     if (parseRoute().name === 'settings') { render(); return; }
     var ic = app.querySelector('.wtop-icons');
     if (ic) ic.outerHTML = topIcons();
+  });
+  window.addEventListener('lk-device', function () {
+    if (window.LK_DEVICE) settings.shared = window.LK_DEVICE.mode() === 'shared';
+    if (parseRoute().name === 'settings') render();
   });
   // js/prep.js signed a person in or out: redraw the chef mark in the top bar. On a sign-in just made (not a phone that
   // was already signed in) the mark flips in like a coin and settles, so the person sees it is now them.

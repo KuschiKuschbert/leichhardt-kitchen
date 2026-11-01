@@ -2,15 +2,15 @@
 import { initializeTestEnvironment } from '@firebase/rules-unit-testing';
 import { doc, collection, query, orderBy, limit, getDoc, getDocFromServer, getDocs, setDoc, updateDoc, deleteDoc, writeBatch, setLogLevel } from 'firebase/firestore';
 import { readFileSync } from 'node:fs';
-setLogLevel('silent');
+import { anonContext, dailySession, seedOwnerDevice } from './device-auth-fixtures.mjs';
+setLogLevel(process.env.RULE_DEBUG ? 'error' : 'silent');
 const K = 'kitchens/000000/', email = 'owner@test.local', at = Date.now();
 const today = new Date(at + 10 * 3600000).toISOString().slice(0, 10);
 const env = await initializeTestEnvironment({ projectId: 'demo-proofreader', firestore: { rules: readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8').replaceAll('KITCHEN_PIN', '000000').replaceAll('OWNER_EMAIL', email) } });
 await env.clearFirestore();
 const roles = { owner: '', ownkit: 'kit', kit: 'kit', sam: 'sam', ann: 'ann', lou: 'lou', vic: 'vic', fay: 'fay', tab: 'bo', anonymous: '', unverified: '', other: '' };
-const google = { email, email_verified: true };
-const dbs = Object.fromEntries(Object.keys(roles).map(r => [r, env.authenticatedContext(r,
-  r === 'owner' || r === 'ownkit' ? google : r === 'unverified' ? { email, email_verified: false } : r === 'other' ? { email: 'other@test.local', email_verified: true } : {}).firestore()]));
+const dbs = Object.fromEntries(Object.keys(roles).map(r => [r, (r === 'unverified' ? env.authenticatedContext(r, { email, email_verified: false })
+  : r === 'other' ? env.authenticatedContext(r, { email: 'other@test.local', email_verified: true }) : anonContext(env, r)).firestore()]));
 dbs.signedout = env.unauthenticatedContext().firestore();
 const config = { staffIds: ['kit', 'sam', 'ann', 'lou', 'vic', 'fay', 'bo'], sousIds: ['kit', 'sam'], headId: 'kit', fnIds: ['fay'], fnOnlyIds: ['fay'], people: [], by: 'sam' };
 const line = { text: 'Cut brine', orig: 'cut brie', qty: '2', station: 'Larder', recipe: 'wrong', done: false, deleted: false, addedBy: 'Ann', addedById: 'ann', addedAt: at - 3600000, by: 'ann' };
@@ -19,15 +19,16 @@ let checks = 0, failed = 0;
 async function expect(label, allowed, action) {
   let got;
   try { await action(); got = true; }
-  catch (e) { if (e.code !== 'permission-denied') throw e; got = false; }
+  catch (e) { if (e.code !== 'permission-denied') throw e; if (process.env.RULE_DEBUG && allowed) console.log('DEBUG ' + label + ': ' + e.message); got = false; }
   checks++;
   if (got !== allowed) { failed++; console.log('FAIL ' + label + ': ' + (got ? 'allowed' : 'refused')); }
 }
 async function seed(values) { await env.withSecurityRulesDisabled(async c => { const db = c.firestore(), b = writeBatch(db); for (const [path, data] of Object.entries(values)) data === null ? b.delete(doc(db, K + path)) : b.set(doc(db, K + path), data); await b.commit(); }); }
 async function reset() {
   const values = { 'config/main': config, [p]: line, [o]: { ...line, recipes: ['wrong'], ordered: false }, 'proofHistory/line-event': null, 'proofHistory/word-event': null };
-  for (const [r, id] of Object.entries(roles)) if (id) { values['pinset/' + id] = { at: 1 }; values['sessions/' + r] = { by: id, pinAt: 1, exp: at + 86400000 }; }
+  for (const [r, id] of Object.entries(roles)) if (id) { values['pinset/' + id] = { at: 1 }; values['sessions/' + r] = dailySession(id, { at }); }
   await seed(values);
+  for (const uid of ['owner', 'ownkit']) await seedOwnerDevice(env, { uid, headId: 'kit', at });
 }
 const by = r => roles[r] || '';
 function repair(db, role, source = 'prep', options = {}) {
@@ -109,7 +110,11 @@ await expect('owner copies source proof metadata during PIN move', true, () => s
 await seed({ 'proofHistory/line-event': null });
 await expect('owner copies immutable line audit during PIN move', true, () => repair(owner, 'owner', 'prep', { source: false, event: { before: 'Old copy' } }));
 await expect('owner copies protected word history during PIN move', true, () => word(owner, 'owner', { source: false }));
-await expect('owner copies shared protected word state during PIN move', true, async () => { await seed({ 'config/main': null }); return setDoc(doc(owner, K + 'config/main'), { ...config, proofWords: ['brie'], proofV: 1, proofEvent: 'copied-word' }); });
+await seed({ 'config/main': null });
+const copiedConfig = { ...config, proofWords: ['brie'], proofV: 1, proofEvent: 'copied-word' };
+await expect('a device grant cannot initialise a missing kitchen config', false, () => setDoc(doc(owner, K + 'config/main'), copiedConfig));
+const freshOwner = env.authenticatedContext('google-owner', { email, email_verified: true, auth_time: Math.floor(Date.now() / 1000), firebase: { sign_in_provider: 'google.com' } }).firestore();
+await expect('fresh owner copies shared protected word state during PIN move', true, () => setDoc(doc(freshOwner, K + 'config/main'), copiedConfig));
 await reset();
 await seed({ 'proofHistory/line-event': { kind: 'line', action: 'restore', source: 'prep', day: today, recordId: 'line', before: line.text, after: line.orig, original: line.orig, v: 1, at, by: '' } });
 await expect('cannot replay a pre-created line history copy as a repair', false, () => repair(owner, 'owner'));

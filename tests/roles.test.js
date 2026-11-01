@@ -64,7 +64,7 @@ const SIGNINS = [
   { id: 'view', name: 'view only (Vic)', o: { who: 'vic' }, has: ['mail', 'drinks', 'fn', 'out'], no: CREW_NO, tabs: KITCHEN_TABS },
   { id: 'sous', name: 'sous chef (Sam)', o: { who: 'sam' }, has: ['todo', 'manage', 'pings', 'staff', 'fn', 'out'], no: ['admin', 'functions'], tabs: KITCHEN_TABS },
   { id: 'head', name: 'head chef on PIN (Kit)', o: { who: 'kit' }, has: ['admin', 'todo', 'manage', 'pings', 'staff', 'out'], no: ['mail', 'functions'], tabs: KITCHEN_TABS, admin: true },
-  { id: 'owner', name: 'head chef\'s Google device', o: { admin: true, who: '' }, has: ['admin', 'todo', 'manage', 'functions'], no: ['mail', 'out'], tabs: KITCHEN_TABS, admin: true },
+  { id: 'owner', name: 'head chef\'s Google device with daily head PIN', o: { admin: true, who: 'kit' }, has: ['admin', 'todo', 'manage', 'functions', 'out'], no: ['mail'], tabs: KITCHEN_TABS, admin: true },
   { id: 'tablet', name: 'shared tablet (Bo)', o: { who: 'bo', settings: { shared: true }, touch: true }, has: ['mail', 'drinks', 'fn', 'out'], no: CREW_NO, tabs: KITCHEN_TABS },
   { id: 'fnonly', name: 'functions only (Fay)', o: { who: 'fay' }, has: ['functions', 'deliveries', 'out'], no: ['admin', 'todo', 'manage', 'pings', 'staff', 'mail', 'drinks', 'fn', 'suppliers'], tabs: ['Recipes'], fnOnly: true }
 ];

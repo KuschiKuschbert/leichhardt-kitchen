@@ -45,7 +45,7 @@ const tab = p => p.evaluate(() => Array.prototype.some.call(document.querySelect
   await L.settle(p, 500);
   s = await store(p);
   ok(JSON.stringify(s[CFG].staffSee) === JSON.stringify(HIDE), 'admin: saving stores staffSee all off (' + JSON.stringify(s[CFG].staffSee) + ')');
-  ok(JSON.stringify(s[CFG].sousIds) === '["sam"]' && JSON.stringify(s[CFG].pingIds) === '["sam"]', 'admin: sousIds and pingIds kept');
+  ok(JSON.stringify(s[CFG].sousIds) === '["sam","head"]' && JSON.stringify(s[CFG].pingIds) === '["sam","head"]' && s[CFG].headId === 'head', 'admin: sousIds and pingIds keep the daily head-PIN owner');
   await p.goto(L.BASE + '#/');
   await L.settle(p, 1500);
   ok(await docket(p), 'admin: the head chef still sees the Guides docket');

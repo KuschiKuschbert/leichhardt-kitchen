@@ -168,9 +168,9 @@ const READY = { minutes: '[data-p="mn-new"]', notes: '[data-p="n-new"]', guides:
       ok(!(await st(p)).cut, w + ' cut-offs: the second tap undoes them');
       await p.context().close();
     });
-    // the head chef's Google device with nobody on a PIN: a lone Not you? asks first over a typed line
+    // The head chef hands a shared kitchen screen over: Not you? asks first over a typed line and clears their drafts.
     for (const route of w === 390 ? ['#/prep', '#/orders'] : ['#/prep']) await safe(w + ' Not you? ' + route, async () => {
-      p = await owner(b, route, w);
+      p = await L.open(b, route, { admin: true, deviceMode: 'shared', extra, wait: 1800, width: w, height: w > 400 ? 900 : 844 });
       const k = route === '#/prep' ? 'p-text' : 'o-text';
       // what the head chef's Google account left on the device: a function started (a customer's contact), a recipe and a drawing changed
       await S(p, () => { localStorage.setItem('lk.fe.draft.new', JSON.stringify({ id: 'x', isNew: true, d: { name: 'Smith 50th', cname: 'Jo Smith', phone: '0400 000 000' } })); localStorage.setItem('lk.mg.draft.burger', '{"at":1,"e":{"id":"burger"}}'); localStorage.setItem('lk.dw.draft.burger-plate', '{"at":1,"els":[]}'); });

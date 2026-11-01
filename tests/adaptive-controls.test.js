@@ -92,7 +92,7 @@ const { R, ok } = L.results();
   const q = p.locator('[data-k="lv-q:people"]'); await q.fill('ann'); await L.settle(p, 240);
   ok(await p.locator('[data-lvb="people"] tbody tr').count() === 1, 'admin: search filters complete list');
   await p.locator('[data-lva="people"] [data-part="all"]').click();
-  ok(await q.inputValue() === '' && await p.locator('[data-lvb="people"] tbody tr').count() === 3, 'admin: Reset All Filters restores all rows and clears search');
+  ok(await q.inputValue() === '' && await p.locator('[data-lvb="people"] tbody tr').count() === 4, 'admin: Reset All Filters restores all four people, including the signed-in head, and clears search');
   ok(p.errors.length === 0, 'admin: no browser errors ' + p.errors.join('|'));
   await p.context().close();
   const seed = L.seed(), configKey = ['kitchens', L.PIN, 'config', 'main'].join('/');

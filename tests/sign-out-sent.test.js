@@ -1,12 +1,7 @@
-// Sign out waits until sent on the head chef's own Google device (head chef, 29 Oct 2026). A sign-out there signs the
-// Google account out too, and a change still waiting to send went with it. While one waits, Sign out of Google, the
-// lone Not you? and the head chef's own Sign out (the chef hat, Not you? beside Writing as) say "Not sent yet." and do
-// nothing, a second tap too, like Update now. Once it is sent, the next tap signs out as usual, and the "Not saved yet"
-// second tap for something half typed stays as it was. Only there: a shared kitchen device keeps "Not sent. Tap again"
-// (staff phones are in chef-menu.test.js), and the idle lock and the other tab's lock never wait for it.
-// Review, 29 Oct 2026: the chef hat's line goes once it is sent; Sign in with Google waits too; a change left under the
-// PIN's sign-in when Google came in (never sent while Google is in) does not hold Sign out for good; the head chef on
-// her PIN with no Google keeps Not sent. Tap again; her PIN session running out signs out over a waiting change.
+// Every manual identity change waits until primary-device writes are acknowledged; no second tap bypasses it.
+// A separate Google proof does not strand a PIN writer's changes. Draft discard still needs confirmation.
+// Automatic privacy locks hide private content immediately, keeping the original recorder's unsent work:
+// personal devices have no idle lock and retain Google at04; shared devices locally sign out Google after10min/04.
 // The stand-in's 'hold' stands in for no signal: a write waits until __fake.release().
 const L = require('./lib');
 const { R, ok } = L.results(), { txt } = L;
@@ -20,7 +15,7 @@ const hold = p => S(p, () => { window.__fake.mode = 'hold'; });
 const release = async p => { await S(p, () => window.__fake.release()); await L.waitFor(p, () => !window.LK_PREP.unsent(), null, 5000).catch(() => {}); await L.settle(p, 300); };
 // a line written while the signal is gone: it waits to send
 const waiting = async (p, words) => { await p.fill('#p-text', words); await p.keyboard.press('Enter'); await L.settle(p, 400); };
-const owner = (b, hash, o) => L.open(b, hash, Object.assign({ admin: true, who: '', extra, wait: 1800 }, o || {}));
+const owner = (b, hash, o) => L.open(b, hash, Object.assign({ admin: true, who: 'ann', extra, wait: 1800 }, o || {}));
 const verified = p => L.waitFor(p, () => window.LK_PREP.state.level === 'owner', null, 8000).catch(() => {});
 async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label + ' threw ' + String(e).split('\n')[0]); } }
 
@@ -28,34 +23,34 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
   const b = await L.start();
   let p, s;
 
-  // nobody on a PIN: the lone Not you? and Sign out of Google wait, a second tap too; once sent, one tap signs out
-  for (const w of [390, 1280]) await safe(w + ' Google only', async () => {
+  // A daily head PIN plus Google grant: every sign-out surface waits, a second tap too.
+  for (const w of [390, 1280]) await safe(w + ' daily head and Google', async () => {
     p = await owner(b, '#/prep', { width: w, height: w > 400 ? 900 : 844 });
     await verified(p); await hold(p);
     await waiting(p, 'Peel garlic');
-    ok((await st(p)).unsent, w + ' Google only: the line waits to send');
+    ok((await st(p)).unsent, w + ' head PIN + Google: the line waits to send');
     await p.click('.nb-top [data-p="who-change"]'); await L.settle(p, 300);
     s = await st(p);
-    ok(s.user && s.admin === '1' && await txt(p, '.nb-top [data-p="who-change"]') === 'Not sent yet.', w + ' Google only: Not you? says Not sent yet and keeps the Google account (' + await txt(p, '.nb-top [data-p="who-change"]') + ', ' + JSON.stringify(s) + ')');
+    ok(s.user && s.admin === '1' && await txt(p, '.nb-top [data-p="who-change"]') === 'Not sent yet.', w + ' head PIN + Google: Not you? says Not sent yet and keeps the Google account (' + await txt(p, '.nb-top [data-p="who-change"]') + ', ' + JSON.stringify(s) + ')');
     await p.click('.nb-top [data-p="who-change"]'); await L.settle(p, 400);
     s = await st(p);
-    ok(s.user && s.unsent && await txt(p, '.nb-top [data-p="who-change"]') === 'Not sent yet.', w + ' Google only: a second tap on Not you? does not get past it (' + JSON.stringify(s) + ')');
-    ok(!(await L.overflow(p)), w + ' Google only: no sideways scroll with Not sent yet (' + await L.overflow(p) + ')');
+    ok(s.user && s.unsent && await txt(p, '.nb-top [data-p="who-change"]') === 'Not sent yet.', w + ' head PIN + Google: a second tap on Not you? does not get past it (' + JSON.stringify(s) + ')');
+    ok(!(await L.overflow(p)), w + ' head PIN + Google: no sideways scroll with Not sent yet (' + await L.overflow(p) + ')');
     await S(p, () => { location.hash = '#/admin'; }); await L.settle(p, 800);
     await L.waitFor(p, () => !!document.querySelector('.p-bar [data-p="signout"]'), null, 8000).catch(() => {});
     await p.click('.p-bar [data-p="signout"]'); await L.settle(p, 300);
     s = await st(p);
-    ok(s.user && await txt(p, '.p-bar [data-p="signout"]') === 'Not sent yet.', w + ' Google only: Sign out of Google says Not sent yet and keeps the account (' + await txt(p, '.p-bar [data-p="signout"]') + ', ' + JSON.stringify(s) + ')');
+    ok(s.user && await txt(p, '.p-bar [data-p="signout"]') === 'Not sent yet.', w + ' head PIN + Google: Sign out of Google says Not sent yet and keeps the account (' + await txt(p, '.p-bar [data-p="signout"]') + ', ' + JSON.stringify(s) + ')');
     await p.click('.p-bar [data-p="signout"]'); await L.settle(p, 400);
     s = await st(p);
-    ok(s.user && s.unsent, w + ' Google only: a second tap on Sign out of Google does not get past it (' + JSON.stringify(s) + ')');
-    ok(!(await L.overflow(p)), w + ' Google only, admin: no sideways scroll with Not sent yet (' + await L.overflow(p) + ')');
+    ok(s.user && s.unsent, w + ' head PIN + Google: a second tap on Sign out of Google does not get past it (' + JSON.stringify(s) + ')');
+    ok(!(await L.overflow(p)), w + ' head PIN + Google, admin: no sideways scroll with Not sent yet (' + await L.overflow(p) + ')');
     await release(p);
-    ok(await S(p, () => { const d = window.__fake.dump(); return Object.keys(d).some(k => /\/items\//.test(k) && d[k].text === 'Peel garlic'); }), w + ' Google only: the line reaches the server once the signal is back');
+    ok(await S(p, () => { const d = window.__fake.dump(); return Object.keys(d).some(k => /\/items\//.test(k) && d[k].text === 'Peel garlic'); }), w + ' head PIN + Google: the line reaches the server once the signal is back');
     await p.click('.p-bar [data-p="signout"]'); await L.settle(p, 600);
     s = await st(p);
-    ok(!s.user && s.admin === '', w + ' Google only: once it is sent, one tap on Sign out of Google signs out (' + JSON.stringify(s) + ')');
-    ok(p.errors.length === 0, w + ' Google only: no page errors ' + p.errors.join(' | '));
+    ok(!s.user && s.admin === '', w + ' head PIN + Google: once it is sent, one tap on Sign out of Google signs out (' + JSON.stringify(s) + ')');
+    ok(p.errors.length === 0, w + ' head PIN + Google: no page errors ' + p.errors.join(' | '));
     await p.context().close();
   });
 
@@ -140,9 +135,8 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
     await p.context().close();
   });
 
-  // the head chef on her PIN with no Google account on the device: Sign in with Google waits for a change on its way,
-  // with no second tap past it (review, 29 Oct 2026). The sign-in changes who the device writes as, and Firestore never
-  // sends a write left under the PIN's sign-in after that. Once it is sent, one tap signs in.
+  // Google sign-in waits for ordinary pending work, with no second-tap override.
+  // Once acknowledged, the secondary Google proof can augment the same head-PIN session.
   await safe('sign in waits', async () => {
     p = await L.open(b, '#/prep', { who: 'ann', extra, wait: 1800 });
     await hold(p);
@@ -151,7 +145,7 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
     await L.waitFor(p, () => !!document.querySelector('[data-p="signin"]'), null, 8000).catch(() => {});
     await p.click('[data-p="signin"]'); await L.settle(p, 300);
     s = await st(p);
-    ok(!s.user && s.authed && s.unsent && await txt(p, '[data-p="signin"]') === 'Not sent yet.' && await txt(p, '#lk-live') === 'Not sent yet. Sign in once it is sent.', 'head chef PIN only: Sign in with Google says Not sent yet and does not sign in (' + await txt(p, '[data-p="signin"]') + ', ' + await txt(p, '#lk-live') + ', ' + JSON.stringify(s) + ')');
+    ok(!s.user && s.authed && s.unsent && !await S(p, () => __fakeAuthUser('kitchen-owner')) && await txt(p, '#lk-live') === 'Not sent yet. Sign in once it is sent.', 'head chef PIN only: Sign in with Google announces Not sent yet and does not authenticate (' + await txt(p, '[data-p="signin"]') + ', ' + await txt(p, '#lk-live') + ', ' + JSON.stringify(s) + ')');
     await p.click('[data-p="signin"]'); await L.settle(p, 400);
     s = await st(p);
     ok(!s.user && s.unsent, 'head chef PIN only: a second tap on Sign in with Google does not get past it (' + JSON.stringify(s) + ')');
@@ -164,72 +158,91 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
     await p.context().close();
   });
 
-  // a write left under the PIN's sign-in when the Google sign-in comes in anyway (a popup opened before the line was
-  // written) never sends while Google is in, so it must not hold Sign out for good (review, 29 Oct 2026). It keeps the
-  // usual Not sent yet. Tap again, and the second tap signs out. The stand-in's hold stands in for it: never let go.
-  await safe('stranded', async () => {
+  // A popup already open may finish during a pending write. Secondary Google never replaces its primary recorder.
+  await safe('popup completes while sending', async () => {
     p = await L.open(b, '#/prep', { who: 'ann', extra, wait: 1800 });
+    const primary = await S(p, () => __fakeUid());
     await hold(p);
     await waiting(p, 'Peel garlic');
-    await S(p, async () => { window.__fake.mode = 'ok'; const a = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js'); await a.signInWithPopup(); });
+    await S(p, async () => { window.__fake.mode = 'ok'; const a = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js'); await a.signInWithPopup(a.getAuth({name:'kitchen-owner'})); });
     await verified(p); await L.settle(p, 400);
     s = await st(p);
-    ok(s.user && s.who === 'ann' && s.unsent && !(await S(p, () => window.LK_PREP.sendFirst())), 'stranded: Google in, Ann still on her PIN, the old line still waits, and Sign out does not wait for it (' + JSON.stringify(s) + ')');
+    ok(s.user && s.who === 'ann' && s.unsent && await S(p, () => window.LK_PREP.sendFirst()) && await S(p, () => __fakeUid()) === primary, 'popup: Google proof retains Ann primary UID, pending recorder and sign-out guard (' + JSON.stringify(s) + ')');
     await p.click('.wtop-who'); await L.settle(p, 150);
     await p.click('.wm [data-who="out"]'); await L.settle(p, 200);
-    ok((await st(p)).authed && await txt(p, '.wm-out small') === 'Not sent yet. Tap again to sign out', 'stranded: the chef hat\'s Sign out asks the usual second tap (' + await txt(p, '.wm-out small') + ')');
+    ok((await st(p)).authed && await txt(p, '.wm-out small') === 'Not sent yet.', 'popup: Sign out keeps waiting for the original write');
     await p.click('.wm [data-who="out"]'); await L.settle(p, 600);
     s = await st(p);
-    ok(!s.authed && !s.user, 'stranded: the second tap signs out, Google too (' + JSON.stringify(s) + ')');
-    ok(p.errors.length === 0, 'stranded: no page errors ' + p.errors.join(' | '));
+    ok(s.authed && s.user && s.unsent, 'popup: a second tap cannot bypass the pending recorder guard (' + JSON.stringify(s) + ')');
+    await release(p);
+    ok(await S(p, () => {
+      const lines = Object.entries(__fake.dump()).filter(([path, d]) => /\/days\/[^/]+\/items\/[^/]+$/.test(path) && d.text === 'Peel garlic');
+      const writes = __fake.writes.flat().filter(op => /\/items\/[^/]+$/.test(op.path) && op.data && op.data.text === 'Peel garlic');
+      return lines.length === 1 && lines[0][1].by === 'ann' && writes.length === 1 && writes[0].app === '[DEFAULT]';
+    }), 'popup: exactly one acknowledged primary-device line retains Ann attribution');
+    await p.click('.wm [data-who="out"]'); await L.settle(p, 600);
+    ok(!(await st(p)).authed && !(await st(p)).user, 'popup: acknowledged work permits ordinary sign-out');
+    ok(p.errors.length === 0, 'popup during send: no page errors ' + p.errors.join(' | '));
     await p.context().close();
   });
 
-  // the head chef on her PIN on a phone with no Google account: no different from anyone else's PIN sign-out. The chef
-  // hat and Not you? say Not sent yet. Tap again, and the second tap signs out (the change still goes while the tab is open)
+  // PIN-only writers keep the same pending guard, through both manual handover surfaces.
   await safe('head chef PIN only', async () => {
     p = await L.open(b, '#/prep', { who: 'ann', extra, wait: 1800 });
     await hold(p);
     await waiting(p, 'Peel garlic');
     await p.click('.wtop-who'); await L.settle(p, 150);
     await p.click('.wm [data-who="out"]'); await L.settle(p, 200);
-    ok((await st(p)).authed && await txt(p, '.wm-out small') === 'Not sent yet. Tap again to sign out', 'head chef PIN only: the chef hat\'s Sign out says Not sent yet. Tap again to sign out (' + await txt(p, '.wm-out small') + ')');
+    ok((await st(p)).authed && await txt(p, '.wm-out small') === 'Not sent yet.', 'head chef PIN only: the chef hat announces Not sent yet');
     await p.click('.wm [data-who="out"]'); await L.settle(p, 600);
     s = await st(p);
-    ok(!s.authed && s.who === '', 'head chef PIN only: the second tap on the chef hat\'s Sign out signs out (' + JSON.stringify(s) + ')');
+    ok(s.authed && s.who === 'ann' && s.unsent, 'head chef PIN only: the second tap cannot discard a pending writer (' + JSON.stringify(s) + ')');
+    await release(p); await p.click('.wm [data-who="out"]'); await L.settle(p, 500);
+    ok(!(await st(p)).authed, 'head chef PIN only: acknowledgement permits chef-hat sign-out');
     await p.context().close();
     p = await L.open(b, '#/prep', { who: 'ann', extra, wait: 1800 });
     await hold(p);
     await waiting(p, 'Peel garlic');
     await p.click('.nb-top [data-p="who-change"]'); await L.settle(p, 300);
-    ok((await st(p)).authed && await txt(p, '.nb-top [data-p="who-change"]') === 'Not sent. Tap again', 'head chef PIN only: Not you? says Not sent. Tap again (' + await txt(p, '.nb-top [data-p="who-change"]') + ')');
+    ok((await st(p)).authed && await txt(p, '.nb-top [data-p="who-change"]') === 'Not sent yet.', 'head chef PIN only: Not you? announces Not sent yet');
     await p.click('.nb-top [data-p="who-change"]'); await L.settle(p, 600);
     s = await st(p);
-    ok(!s.authed && s.who === '', 'head chef PIN only: the second tap on Not you? signs out (' + JSON.stringify(s) + ')');
+    ok(s.authed && s.who === 'ann' && s.unsent, 'head chef PIN only: a second Not you? tap cannot bypass pending work (' + JSON.stringify(s) + ')');
+    await release(p); await p.click('.nb-top [data-p="who-change"]'); await L.settle(p, 500);
+    ok(!(await st(p)).authed, 'head chef PIN only: acknowledgement permits Not you? handover');
     ok(p.errors.length === 0, 'head chef PIN only: no page errors ' + p.errors.join(' | '));
     await p.context().close();
   });
 
-  // a shared kitchen device keeps today's: Not sent. Tap again, and the second tap signs out
+  // Shared devices use the same manual guard. Automatic privacy locks remain immediate.
   await safe('shared', async () => {
     p = await owner(b, '#/prep', { settings: { shared: true } });
     await verified(p); await hold(p);
     await waiting(p, 'Peel garlic');
     await p.click('.nb-top [data-p="who-change"]'); await L.settle(p, 300);
-    ok((await st(p)).user && await txt(p, '.nb-top [data-p="who-change"]') === 'Not sent. Tap again', 'shared kitchen device: Not you? says Not sent. Tap again, as before (' + await txt(p, '.nb-top [data-p="who-change"]') + ')');
+    ok((await st(p)).user && await txt(p, '.nb-top [data-p="who-change"]') === 'Not sent yet.', 'shared kitchen device: Not you? announces Not sent yet');
     await p.click('.nb-top [data-p="who-change"]'); await L.settle(p, 600);
-    ok(!(await st(p)).user, 'shared kitchen device: the second tap signs out');
+    ok((await st(p)).user && (await st(p)).authed, 'shared kitchen device: a second tap cannot bypass pending work');
+    await release(p); await p.click('.nb-top [data-p="who-change"]'); await L.settle(p, 500);
+    ok(!(await st(p)).user && !(await st(p)).authed, 'shared kitchen device: acknowledgement permits manual handover');
     await p.context().close();
   });
 
-  // nothing automatic waits for it: the idle lock and the other tab's lock sign out over a change waiting to send
-  await safe('idle lock', async () => {
+  await safe('personal has no idle lock', async () => {
     p = await owner(b, '#/prep');
     await verified(p); await hold(p);
     await waiting(p, 'Peel garlic');
-    await p.clock.runFor(8 * 60000); await L.settle(p, 400);
+    await p.clock.runFor(11 * 60000); await L.settle(p, 400);
     s = await st(p);
-    ok(!s.user && s.admin === '', 'idle lock on the head chef\'s Google device: it signs out over a change waiting to send (' + JSON.stringify(s) + ')');
+    ok(s.user && s.authed && s.unsent && s.admin === '1', 'personal device: eleven idle minutes retain the daily head session and pending work (' + JSON.stringify(s) + ')');
+    await p.context().close();
+  });
+  await safe('shared idle lock', async () => {
+    p = await owner(b, '#/prep', { deviceMode: 'shared' });
+    await verified(p); await hold(p); await waiting(p, 'Peel garlic');
+    await p.clock.runFor(10 * 60000 + 16000); await L.settle(p, 400);
+    s = await st(p);
+    ok(!s.user && !s.authed && s.unsent && !await S(p, () => __fakeAuthUser('kitchen-owner')) && !await p.$('.nb-row'), 'shared ten-minute lock hides private UI and locally signs Google out while its deletes and original work are held');
     await p.context().close();
   });
   await safe('other tab', async () => {
@@ -238,7 +251,7 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
     await waiting(p, 'Peel garlic');
     await S(p, () => window.dispatchEvent(new StorageEvent('storage', { key: 'lk.auth.lock', newValue: '1:x' }))); await L.settle(p, 400);
     s = await st(p);
-    ok(!s.user && !s.authed, 'the other tab\'s lock on the head chef\'s Google device: it signs out over a change waiting to send (' + JSON.stringify(s) + ')');
+    ok(!s.authed && s.unsent && !await S(p, () => LK_PREP.privateAccess()) && !await p.$('.nb-row'), 'other-tab handover: private UI locks immediately while the original pending recorder is retained (' + JSON.stringify(s) + ')');
     await p.context().close();
   });
   await safe('session ran out', async () => {
@@ -249,7 +262,7 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
     await S(p, () => { window.LK_PREP.state.sessExp = window.LK_TIME.now() - 1000; });
     await p.clock.runFor(16000); await L.settle(p, 400);
     s = await st(p);
-    ok(!s.user && !s.authed, 'her PIN session running out on the head chef\'s Google device: it signs out over a change waiting to send (' + JSON.stringify(s) + ')');
+    ok(s.user && !s.authed && s.unsent && !await S(p, () => LK_PREP.privateAccess()) && !await p.$('.nb-row'), 'personal daily cutoff: Google remains remembered, private UI locks immediately and pending work stays with its recorder (' + JSON.stringify(s) + ')');
     await p.context().close();
   });
 

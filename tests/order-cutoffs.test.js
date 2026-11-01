@@ -117,7 +117,7 @@ const names = p => p.evaluate(() => [...document.querySelectorAll('#cut-band .cu
   s = await store(p);
   const saved = s[CFG].cutoffs || [];
   ok(saved.length === 4 && saved[1].name === 'PFD' && saved[1].at === 930 && saved[1].pre === 0 && saved[1].dd.join() === '1,2,3,4,5,6' && saved[1].lead === 0 && saved[0].lead === 480 && saved[2].lead === 240 && saved[3].at === -1, 'admin: Save writes the cut-offs to config/main');
-  ok((s[CFG].people || []).length === 3, 'admin: the staff list is left as it was');
+  ok((s[CFG].people || []).length === 4 && s[CFG].headId === 'head', 'admin: the staff list keeps the daily head-PIN owner');
   ok(/Saved/.test(await txt(p, '.a-cut .saved')), 'admin: Saved shows');
   // the People tab's full save keeps the cut-offs
   await L.adminTab(p, 'people');

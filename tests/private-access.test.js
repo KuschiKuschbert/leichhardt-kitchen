@@ -26,12 +26,12 @@ const extra = {[key(['functions','delete-me'])]:deletion,[key(['config','main'])
  p=await L.open(b,'#/manage',{who:'sam',extra,wait:1600});ok(!!await p.$('#mg-results'),'sous chef can manage recipes');await p.context().close();
  p=await L.open(b,'#/manage',{who:'ann',extra,wait:1400});ok(!await p.$('#mg-results'),'staff cannot manage recipes');await p.context().close();
  p=await L.open(b,'#/admin',{admin:true,who:'',extra,wait:1600});
- ok(await p.evaluate(()=>window.__fakePersistence === 'session'),'Google admin uses tab-session persistence');
+ ok(await p.evaluate(()=>window.__fakePersistenceByApp['kitchen-owner'] === 'local' && window.__fakeAuthUser().isAnonymous),'personal Google persists locally while the operational identity stays anonymous');
  await p.evaluate(()=>LK_PREP.signOut(true));await L.settle(p,1000);
  ok(await p.evaluate(()=>!LK_PREP.state.user && !LK_PREP.privateAccess() && localStorage.getItem('fake.user') !== '1'),'Google admin sign-out removes elevated access');await p.context().close();
  p=await L.open(b,'#/admin',{admin:true,who:'',extra,wait:1600});
  await p.evaluate(()=>window.dispatchEvent(new StorageEvent('storage',{key:'lk.auth.lock',newValue:'other-tab-handover'})));await L.settle(p,800);
- ok(await p.evaluate(()=>!LK_PREP.state.user&&!LK_PREP.privateAccess()),'handover in another tab also signs out a Google-only admin session');await p.context().close();
+ ok(await p.evaluate(()=>!LK_PREP.privateAccess()&&!LK_PREP.state.authed) && !await p.$('.a-groups'),'handover in another tab hides private access even with a remembered personal Google identity');await p.context().close();
  p=await L.open(b,'#/prep',{admin:true,who:'ann',extra,wait:1600});
  ok(await p.evaluate(()=>!LK_PREP.state.user && !LK_PREP.state.authed && localStorage.getItem('fake.user') !== '1'),'restored staff identity cannot inherit a remembered Google admin');
  await p.fill('#pf1','2222');await L.settle(p,1100);

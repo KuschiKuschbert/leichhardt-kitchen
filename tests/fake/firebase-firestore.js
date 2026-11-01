@@ -24,7 +24,24 @@
 // for one shows up in the click tests (tests/roles.test.js). __fake.failReads and __fake.denyReads are not listed: a
 // test asked for those. The PIN screen's own reads (login/roster, pinset/<id>) are not checked here.
 const KEY = 'fake.fs';
-function load() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } }
+export class Timestamp {
+  constructor(seconds, nanoseconds = 0) { this.seconds = seconds; this.nanoseconds = nanoseconds; }
+  static fromMillis(value) { const seconds = Math.floor(value / 1000); return new Timestamp(seconds, Math.round((value - seconds * 1000) * 1000000)); }
+  toMillis() { return this.seconds * 1000 + this.nanoseconds / 1000000; }
+  valueOf() { return this.toMillis(); }
+  isEqual(other) { return other instanceof Timestamp && other.seconds === this.seconds && other.nanoseconds === this.nanoseconds; }
+  toJSON() { return { __fakeTimestamp: this.toMillis() }; }
+}
+function revive(key, value) {
+  if (value && typeof value === 'object' && typeof value.__fakeTimestamp === 'number') return Timestamp.fromMillis(value.__fakeTimestamp);
+  if (value && typeof value === 'object' && Object.keys(value).every(k => ['seconds', 'nanoseconds'].includes(k)) && Number.isInteger(value.seconds) && Number.isInteger(value.nanoseconds)) return new Timestamp(value.seconds, value.nanoseconds);
+  return value;
+}
+const clone = value => JSON.parse(JSON.stringify(value), revive);
+const requestNow = () => Date.now() + (window.__fakeServerOffset || 0);
+const stampMillis = value => value instanceof Timestamp ? value.toMillis() : NaN;
+const nextFour = value => (Math.floor((value + 6 * 3600000) / 86400000) + 1) * 86400000 - 6 * 3600000;
+function load() { try { return JSON.parse(localStorage.getItem(KEY) || '{}', revive); } catch (e) { return {}; } }
 let store = load();
 function save() { localStorage.setItem(KEY, JSON.stringify(store)); }
 const subs = new Set();
@@ -45,7 +62,8 @@ function refuse(kind, ref) { window.__fake.refused.push({ kind, path: key(ref.pa
    on every reload. A test that needs the real no-signal answer uses __fake.cold (o.cold in tests/lib.js). */
 const seen = new Set((() => { try { return JSON.parse(sessionStorage.getItem('fake.seen') || '[]'); } catch (e) { return []; } })());
 let seenSave = 0;
-function remember(k) { if (seen.has(k)) return; seen.add(k); if (!seenSave) seenSave = setTimeout(() => { seenSave = 0; try { sessionStorage.setItem('fake.seen', JSON.stringify([...seen])); } catch (e) {} }, 0); }
+const cacheKey = (k, appName) => !appName || appName === '[DEFAULT]' ? k : appName + '|' + k;
+function remember(k, appName) { k = cacheKey(k, appName); if (seen.has(k)) return; seen.add(k); if (!seenSave) seenSave = setTimeout(() => { seenSave = 0; try { sessionStorage.setItem('fake.seen', JSON.stringify([...seen])); } catch (e) {} }, 0); }
 window.__fake.release = function () { const h = held.splice(0); pendingKeys.clear(); h.forEach(f => f()); notify(); };
 // the server's confirm reaching the listeners first (28 Oct 2026): the snapshots lose hasPendingWrites while the writes'
 // promises still wait (release() ends them), so a page's own .then() after a write does not draw
@@ -61,7 +79,7 @@ window.__fake.warm = function () {
 window.__fake.dump = function () { return store; };
 // a write from another phone: the document changes under this page and its listeners hear about it
 window.__fake.write = function (path, data) {
-  store[path] = JSON.parse(JSON.stringify(data));
+  if (data == null) delete store[path]; else store[path] = clone(data);
   if (/\/config\/main$/.test(path)) {
     const c=store[path], roster={}; ['people','staffIds','sousIds','headId','fnIds','fnOnlyIds'].forEach(k=>{if(c[k] !== undefined) roster[k]=c[k];});
     store[path.replace(/config\/main$/, 'login/roster')] = roster;
@@ -71,49 +89,52 @@ window.__fake.write = function (path, data) {
 let seq = 0;
 function rid() { return 'id' + Date.now().toString(36) + (seq++).toString(36); }
 
-export function initializeFirestore() { return { kind: 'db' }; }
-export function getFirestore() { return { kind: 'db' }; }
+export function initializeFirestore(app) { return { kind: 'db', app, appName: app && app.name || '[DEFAULT]' }; }
+export function getFirestore(app) { return initializeFirestore(app); }
 export function memoryLocalCache() { return {}; }
 export function persistentLocalCache() { return {}; }
 export function persistentMultipleTabManager() { return {}; }
 export function terminate() { window.__fake.terminated = true; return Promise.resolve(); }
 function segs(a) { return a.filter(x => typeof x === 'string'); }
 function baseOf(x) { return x && x.path ? x.path : []; }
-export function collection(parent, ...p) { return { type: 'col', path: baseOf(parent).concat(segs(p)) }; }
-export function collectionGroup(parent, group) { return { type: 'group', path: ['**', group], group }; }
+const appOf = value => value && (value.appName || value.app && value.app.name) || '[DEFAULT]';
+const authUser = ref => window.__fakeAuthUser ? window.__fakeAuthUser(appOf(ref)) : null;
+const authUid = ref => (authUser(ref) || {}).uid || '';
+export function collection(parent, ...p) { return { type: 'col', path: baseOf(parent).concat(segs(p)), appName: appOf(parent) }; }
+export function collectionGroup(parent, group) { return { type: 'group', path: ['**', group], group, appName: appOf(parent) }; }
 export function doc(parent, ...p) {
   let path = baseOf(parent).concat(segs(p));
   if (parent && parent.type === 'col' && !p.length) path = parent.path.concat([rid()]);
-  return { type: 'doc', path, id: path[path.length - 1] };
+  return { type: 'doc', path, id: path[path.length - 1], appName: appOf(parent) };
 }
 export function where(f, op, v) { return { k: 'where', f, op, v }; }
 export function documentId() { return '__name__'; }
 export function orderBy(f, dir) { return { k: 'order', f, dir: dir || 'asc' }; }
 export function limit(n) { return { k: 'limit', n }; }
 export function startAfter(sn) { return { k: 'after', id: sn.id }; }
-export function query(col, ...c) { return { type: 'query', path: col.path, group: col.group, c }; }
+export function query(col, ...c) { return { type: 'query', path: col.path, group: col.group, c, appName: appOf(col) }; }
 export function serverTimestamp() { return { __st: 1 }; }
 export function increment(n) { return { __inc: n }; }
 
 const key = p => p.join('/');
-function snapDoc(path) {
+function snapDoc(path, appName = '[DEFAULT]') {
   const v = store[key(path)];
-  return { id: path[path.length - 1], ref: { type: 'doc', path, id: path[path.length - 1] }, metadata: { fromCache: false, hasPendingWrites: pendingKeys.has(key(path)) }, exists: () => v !== undefined, data: () => (v === undefined ? undefined : JSON.parse(JSON.stringify(v))) };
+  return { id: path[path.length - 1], ref: { type: 'doc', path, id: path[path.length - 1], appName }, metadata: { fromCache: false, hasPendingWrites: pendingKeys.has(key(path)) }, exists: () => v !== undefined, data: () => (v === undefined ? undefined : clone(v)) };
 }
 // __fake.cold: is this path answered from the empty copy in memory (no signal)?
 function cold(ref) { const c = window.__fake.cold; return !!(c && c.test(key(ref.path))); }
 // what the memory copy holds with no signal: only this page's unsent writes, marked fromCache
 function cacheSnap(ref) {
   if (ref.type === 'doc') {
-    const k = key(ref.path), has = pendingKeys.has(k), d = snapDoc(ref.path);
+    const k = key(ref.path), has = pendingKeys.has(k), d = snapDoc(ref.path, appOf(ref));
     return { id: d.id, ref: d.ref, metadata: { fromCache: true, hasPendingWrites: has }, exists: () => has && d.exists(), data: () => (has ? d.data() : undefined) };
   }
-  const docs = listCol(ref.path, ref.c, ref.group).docs.filter(d => pendingKeys.has(key(d.ref.path)));
+  const docs = listCol(ref.path, ref.c, ref.group, appOf(ref)).docs.filter(d => pendingKeys.has(key(d.ref.path)));
   return { docs, empty: !docs.length, size: docs.length, metadata: { fromCache: true, hasPendingWrites: docs.length > 0 }, forEach: f => docs.forEach(f) };
 }
-function listCol(path, c, group) {
+function listCol(path, c, group, appName = '[DEFAULT]') {
   const pre = key(path) + '/', n = path.length + 1;
-  let docs = Object.keys(store).filter(k => group ? k.split('/').slice(-2)[0] === group : k.indexOf(pre) === 0 && k.split('/').length === n).map(k => snapDoc(k.split('/')));
+  let docs = Object.keys(store).filter(k => group ? k.split('/').slice(-2)[0] === group : k.indexOf(pre) === 0 && k.split('/').length === n).map(k => snapDoc(k.split('/'), appName));
   if (group) docs.sort((a, b) => key(a.ref.path).localeCompare(key(b.ref.path)));
   (c || []).forEach(x => {
     if (x.k === 'where' && x.f === '__name__') {
@@ -128,20 +149,32 @@ function listCol(path, c, group) {
   return { docs, empty: !docs.length, size: docs.length, metadata: { fromCache: false, hasPendingWrites: docs.some(d => d.metadata.hasPendingWrites) }, forEach: f => docs.forEach(f) };
 }
 function result(ref, keep = true) {
-  const r = ref.type === 'doc' ? snapDoc(ref.path) : listCol(ref.path, ref.c, ref.group);
-  (ref.type === 'doc' ? [r] : r.docs).forEach(d => { const k = key(d.ref.path); if (d.exists()) { if (keep) remember(k); window.__fake.readLog.push(k); } else if (keep && ref.type === 'doc') remember(k); });
+  const r = ref.type === 'doc' ? snapDoc(ref.path, appOf(ref)) : listCol(ref.path, ref.c, ref.group, appOf(ref));
+  (ref.type === 'doc' ? [r] : r.docs).forEach(d => { const k = key(d.ref.path); if (d.exists()) { if (keep) remember(k, appOf(ref)); window.__fake.readLog.push(k); } else if (keep && ref.type === 'doc') remember(k, appOf(ref)); });
   return r;
 }
 function delay(v) { return new Promise(r => setTimeout(() => r(v), 5)); }
 /* Who this phone reads as, like the rules (firestore.rules sessOk(reader()), kitchenRead(), chefId()), for the person on
-   this phone's PIN session; the head chef's Google account (window.__fakeUser) is the verified owner and reads it all. */
-function cfgOf(ref) { return store[ref.path.slice(0, 2).join('/') + '/config/main'] || {}; }
+   this phone's PIN session; the head chef's Google account (isAdmin(ref)) is the verified owner and reads it all. */
+function rootOfRef(ref) { return ref.path[0] === 'kitchens' ? ref.path.slice(0, 2).join('/') : (Object.keys(store).find(k => /^kitchens\/[^/]+\/config\/main$/.test(k)) || 'kitchens/000000/config/main').split('/').slice(0, 2).join('/'); }
+function cfgOf(ref) { return store[rootOfRef(ref) + '/config/main'] || {}; }
+function rawOwner(ref) { const user = authUser(ref); return !!(user && !user.isAnonymous && user.emailVerified === true && user.email === 'headchef@test.local' && !window.__fake.notOwner); }
+function validSession(ss, c, root) {
+  const ps = ss && store[root + '/pinset/' + ss.by], issued = ss && stampMillis(ss.issuedAt), at = ss && stampMillis(ss.at), t = requestNow();
+  return !!(ss && ss.v === 2 && ['personal', 'shared'].includes(ss.mode) && ps && ps.at === ss.pinAt && (c.staffIds || []).includes(ss.by) &&
+    Number.isFinite(issued) && Number.isFinite(at) && issued <= t && at >= issued && at <= t && ss.exp === nextFour(issued) && ss.exp > t);
+}
+function isAdmin(ref) {
+  const user = authUser(ref), root = rootOfRef(ref), c = cfgOf(ref), uid = authUid(ref), ss = store[root + '/sessions/' + uid], grant = store[root + '/adminDevices/' + uid];
+  return !!(user && user.isAnonymous && validSession(ss, c, root) && c.headId && ss.by === c.headId && !(c.fnOnlyIds || []).includes(ss.by) && grant && grant.v === 2 && grant.by === ss.by &&
+    grant.pinAt === ss.pinAt && grant.exp === ss.exp && stampMillis(grant.issuedAt) === stampMillis(ss.issuedAt) && stampMillis(grant.at) >= stampMillis(ss.issuedAt) && stampMillis(grant.at) <= requestNow() &&
+    typeof grant.googleUid === 'string' && grant.googleUid.length > 0 && grant.googleUid.length <= 160);
+}
 // sessOk(reader()): a PIN session that has not run out, opened since their PIN was last set, for someone on the staff
 // list. '' when there is none
 function sessionReader(ref) {
-  const root = ref.path.slice(0, 2).join('/'), uid = window.__fakeUid ? window.__fakeUid() : '', ss = uid ? store[root + '/sessions/' + uid] : null;
-  const ps = ss ? store[root + '/pinset/' + ss.by] : null, c = cfgOf(ref);
-  return ss && ss.exp > Date.now() && ps && ps.at === ss.pinAt && (!c.staffIds || c.staffIds.indexOf(ss.by) >= 0) ? ss.by : '';
+  const root = rootOfRef(ref), uid = authUid(ref), ss = uid ? store[root + '/sessions/' + uid] : null;
+  return authUser(ref) && authUser(ref).isAnonymous && validSession(ss, cfgOf(ref), root) ? ss.by : '';
 }
 /* kitchenRead(): the same, for someone who is not functions only */
 function kitchenReader(ref) { const by = sessionReader(ref); return by && (cfgOf(ref).fnOnlyIds || []).indexOf(by) < 0 ? by : ''; }
@@ -149,14 +182,14 @@ function kitchenReader(ref) { const by = sessionReader(ref); return by && (cfgOf
    (cutdone), the personal pings of others and who has seen them: like the rules, only the head chef's Google account or a
    phone whose kitchen reader is a chef (sousIds or headId in config/main) reads them */
 function chefReader(ref) {
-  if (window.__fakeUser) return true;
+  if (isAdmin(ref)) return true;
   const by = kitchenReader(ref), c = cfgOf(ref);
   return !!by && ((c.sousIds || []).indexOf(by) >= 0 || (!!c.headId && c.headId === by));
 }
 // someone ticked for Functions (fnIds) on their own PIN session, functions only or not (fncontact, functions/<id>/hist)
-function fnReader(ref) { if (window.__fakeUser) return true; const by = sessionReader(ref); return !!by && (cfgOf(ref).fnIds || []).indexOf(by) >= 0; }
+function fnReader(ref) { if (isAdmin(ref)) return true; const by = sessionReader(ref); return !!by && (cfgOf(ref).fnIds || []).indexOf(by) >= 0; }
 // kitchen mail: the Google account, or a sous chef on their PIN session while the head chef has sous chef mail on
-function mailReader(ref) { if (window.__fakeUser) return true; const c = cfgOf(ref), by = kitchenReader(ref); return c.sousMail === true && !!by && (c.sousIds || []).indexOf(by) >= 0; }
+function mailReader(ref) { if (isAdmin(ref)) return true; const c = cfgOf(ref), by = kitchenReader(ref); return c.sousMail === true && !!by && (c.sousIds || []).indexOf(by) >= 0; }
 const at3 = (k, name) => new RegExp('^kitchens/[^/]+/' + name).test(k);
 /* isToday(day) in the rules: the path's date is today in kitchen time (Queensland, UTC+10), with 15 minutes either side
    for a phone's clock. On the page's own clock, which the tests set */
@@ -174,8 +207,11 @@ const KITCHEN_COLS = ['config', 'days', 'orders', 'waste', 'summary', 'misses', 
 function colRefused(ref, list) {
   const rel = ref.path.slice(2), c = rel[0], k = key(ref.path);
   if (ref.path[0] !== 'kitchens' || ref.group) return false;
+  if (c === 'adminDevices') return list || !(rawOwner(ref) || authUid(ref) && rel[1] === authUid(ref));
+  if (c === 'sessions') return list || !authUid(ref) || rel[1] !== authUid(ref);
   if (c === 'push' || c === 'tries' || c === 'proofs') return true;
-  if (window.__fakeUser) return false;
+  if (rawOwner(ref) && !list && c === 'config' && ['main', 'admins'].includes(rel[1])) return false;
+  if (isAdmin(ref)) return false;
   // only the head chef's Google account: PIN fingerprints, the usage counts, the minutes' earlier versions, and the
   // lists of who has a PIN and of every mail's status (one record by id is for the kitchen)
   if (c === 'staffpins' || c === 'daily' || c === 'proofHistory' || (c === 'minutes' && rel[2] === 'hist')) return true;
@@ -203,7 +239,8 @@ function readRefused(ref) {
   // __fake.notOwner = true: the Google account signed in is not the head chef's, so the owner check is refused (28 Oct
   // 2026: only that refusal means "not the head chef's account", no signal does not)
   if (window.__fake.notOwner && /\/config\/admins$/.test(key(ref.path))) return true;
-  if (window.__fakeUser) return false;
+  if (rawOwner(ref) && /\/config\/(main|admins)$/.test(key(ref.path))) return false;
+  if (isAdmin(ref)) return false;
   const k = key(ref.path), root = ref.path.slice(0, 2).join('/');
   if (/\/config\/admins$/.test(k)) return true;   // the owner check: only the head chef's Google account reads it
   // a function contact (22 Oct 2026, review S9) and a function's history (fnIds or a chef)
@@ -244,14 +281,15 @@ const asks = (ref, f, op, v) => (ref.c || []).some(x => x.k === 'where' && x.f =
    by someone who does not manage pings must ask for their own (to == them), and only a chef lists who has seen one. */
 function rulesDenied(ref) {
   const k = key(ref.path);
-  if (ref.group && !window.__fakeUser) return true;
+  if (/^kitchens\/[^/]+\/(adminDevices|sessions)$/.test(k)) return true;
+  if (ref.group && !isAdmin(ref)) return true;
   if (colRefused(ref, true)) return true;
   if (/^kitchens\/[^/]+\/todos$/.test(k) && !chefReader(ref)) return true;
   if (/^kitchens\/[^/]+\/minutes\/[^/]+\/signs$/.test(k) && !chefReader(ref)) return true;   // the register, chefs only
   if (at3(k, '(suppliers|supplierlinks|cutdone)(/|$)') && !chefReader(ref)) return true;
-  if (/^kitchens\/[^/]+\/minutes$/.test(k) && !window.__fakeUser && !(ref.c || []).some(x => x.k === 'where' && x.f === 'pubAt' && (x.op === '>=' || x.op === '>') && x.v >= 1)) return true;
+  if (/^kitchens\/[^/]+\/minutes$/.test(k) && !isAdmin(ref) && !(ref.c || []).some(x => x.k === 'where' && x.f === 'pubAt' && (x.op === '>=' || x.op === '>') && x.v >= 1)) return true;
   if (at3(k, 'mail$') && !mailReader(ref)) return true;
-  if (at3(k, 'fncontact$') && !window.__fakeUser) return true;   // listed only by the Google account (the backup)
+  if (at3(k, 'fncontact$') && !isAdmin(ref)) return true;   // listed only by the Google account (the backup)
   if (at3(k, 'functions/[^/]+/hist$') && !(chefReader(ref) || fnReader(ref))) return true;
   if (at3(k, 'directnotes$') && !chefReader(ref)) { const by = kitchenReader(ref); return !(by && asks(ref, 'to', '==', by)); }
   if (at3(k, 'directnotes/[^/]+/seen$') && !chefReader(ref)) {
@@ -273,7 +311,7 @@ export function getDocFromServer(ref) {
   if (window.__fake.mode === 'hold' || window.__fake.mode === 'fail' || cold(ref) || readFails(ref)) return Promise.reject({ code: 'unavailable' });
   if (readRefused(ref)) return refuse('server', ref);
   bill('server', k, 1);
-  if (sv && k in sv) { const v = sv[k]; return delay({ id: ref.path[ref.path.length - 1], ref, exists: () => v != null, data: () => (v == null ? undefined : JSON.parse(JSON.stringify(v))) }); }
+  if (sv && k in sv) { const v = sv[k]; return delay({ id: ref.path[ref.path.length - 1], ref, exists: () => v != null, data: () => (v == null ? undefined : clone(v)) }); }
   return delay(result(ref));
 }
 // a query that must come from the server, like getDocFromServer: refused with no signal, and __fake.server's newer copies
@@ -289,7 +327,7 @@ export function getDocsFromServer(ref) {
   let docs;
   if (byId) {
     const ids = byId.op === 'in' ? byId.v : [byId.v];
-    docs = ids.map(id => { const p = ref.path.concat([id]), dk = key(p); if (dk in sv) { const v = sv[dk]; return { id, ref: { path: p }, exists: () => v != null, data: () => (v == null ? undefined : JSON.parse(JSON.stringify(v))) }; } return result({ type: 'doc', path: p }); }).filter(d => d.exists());
+    docs = ids.map(id => { const p = ref.path.concat([id]), dk = key(p); if (dk in sv) { const v = sv[dk]; return { id, ref: { path: p, appName: appOf(ref) }, exists: () => v != null, data: () => (v == null ? undefined : clone(v)) }; } return result({ type: 'doc', path: p, appName: appOf(ref) }); }).filter(d => d.exists());
   } else docs = result(ref).docs;
   bill('query', k, docs.length);
   return delay({ docs, empty: !docs.length, size: docs.length, forEach: f => docs.forEach(f) });
@@ -297,11 +335,11 @@ export function getDocsFromServer(ref) {
 // a document from the offline copy: known (even known to be missing) once it was read, refused otherwise, like the SDK
 export function getDocFromCache(ref) {
   const k = key(ref.path);
-  if (!seen.has(k)) return Promise.reject({ code: 'unavailable' });
-  return delay(snapDoc(ref.path));
+  if (!seen.has(cacheKey(k, appOf(ref)))) return Promise.reject({ code: 'unavailable' });
+  return delay(snapDoc(ref.path, appOf(ref)));
 }
 export function getDocsFromCache(ref) {
-  const r = listCol(ref.path, ref.c, ref.group), docs = r.docs.filter(d => seen.has(key(d.ref.path)));
+  const r = listCol(ref.path, ref.c, ref.group, appOf(ref)), docs = r.docs.filter(d => seen.has(cacheKey(key(d.ref.path), appOf(ref))));
   return delay({ docs, empty: !docs.length, size: docs.length, forEach: f => docs.forEach(f) });
 }
 export function onSnapshot(ref, next, err) {
@@ -313,7 +351,7 @@ export function onSnapshot(ref, next, err) {
     refuse('listen', ref).catch(e => setTimeout(() => { if (live && err) err(e); }, 5));
     return () => { live = false; };
   }
-  const s = { ref, next, last: null, cold: cold(ref) };
+  const s = { ref, next, error: err, last: null, cold: cold(ref) };
   subs.add(s);
   setTimeout(() => { if (subs.has(s)) deliver(s); }, 5);
   return () => subs.delete(s);
@@ -321,12 +359,17 @@ export function onSnapshot(ref, next, err) {
 // a listener pays for what it first sends, then only for documents that changed since its last snapshot; an answer
 // from the empty copy in memory (cold) costs nothing
 function deliver(s) {
+  if (!s.cold && (s.ref.type === 'doc' ? readRefused(s.ref) : rulesDenied(s.ref))) {
+    subs.delete(s); window.__fake.refused.push({ kind: 'listen', path: key(s.ref.path) });
+    if (s.error) setTimeout(() => s.error({ code: 'permission-denied' }), 0);
+    return;
+  }
   if (s.cold) {
     const c = cacheSnap(s.ref), sg = sigOf(c.docs || [c], true);
     if (window.__fake.quiet && s.sig === sg) return;
     s.sig = sg; s.next(c); return;
   }
-  const r = s.ref.type === 'doc' ? snapDoc(s.ref.path) : listCol(s.ref.path, s.ref.c), docs = s.ref.type === 'doc' ? [r] : r.docs;
+  const r = s.ref.type === 'doc' ? snapDoc(s.ref.path, appOf(s.ref)) : listCol(s.ref.path, s.ref.c, s.ref.group, appOf(s.ref)), docs = s.ref.type === 'doc' ? [r] : r.docs;
   const sg = sigOf(docs, cold(s.ref));
   if (window.__fake.quiet && s.sig === sg) return;
   s.sig = sg;
@@ -340,23 +383,111 @@ function deliver(s) {
   s.next(out);
 }
 function notify() { subs.forEach(s => { try { deliver(s); } catch (e) { console.error(e); } }); }
-function resolveVal(v, old) {
+window.addEventListener('fake-auth-changed', notify);
+function resolveVal(v, old, stamp = requestNow()) {
   if (v && typeof v === 'object' && v.__inc != null) return (typeof old === 'number' ? old : 0) + v.__inc;
-  if (v && typeof v === 'object' && v.__st) return Date.now();
-  if (v && typeof v === 'object' && !Array.isArray(v)) { const o = {}; Object.keys(v).forEach(k => { o[k] = resolveVal(v[k], old && old[k]); }); return Object.assign({}, old && typeof old === 'object' && !Array.isArray(old) ? old : {}, o); }
+  if (v instanceof Timestamp) return clone(v);
+  if (v && typeof v === 'object' && v.__st) return Timestamp.fromMillis(stamp);
+  if (v && typeof v === 'object' && !Array.isArray(v)) { const o = {}; Object.keys(v).forEach(k => { o[k] = resolveVal(v[k], old && old[k], stamp); }); return Object.assign({}, old && typeof old === 'object' && !Array.isArray(old) ? old : {}, o); }
   return v;
 }
-function applyOp(o) {
+function applyOp(o, stamp) {
   const k = key(o.ref.path), old = store[k];
   if (o.kind === 'delete') { delete store[k]; return; }
   if (o.kind === 'update' && old === undefined) throw { code: 'not-found' };
   const base = o.kind === 'set' && !o.merge ? {} : (old || {});
   const out = Object.assign({}, base);
-  Object.keys(o.data).forEach(f => { out[f] = resolveVal(o.data[f], base[f]); });
+  Object.keys(o.data).forEach(f => { out[f] = resolveVal(o.data[f], base[f], stamp); });
   store[k] = out;
 }
+function finishOps(ops) {
+  if (window.__fake.mode === 'deny' || window.__fake.deny && ops.some(o => window.__fake.deny.test(key(o.ref.path)))) return Promise.reject({ code: 'permission-denied' });
+  if (window.__fake.mode === 'fail') return Promise.reject({ code: 'unavailable' });
+  const stamp = requestNow(), run = () => { ops.forEach(o => applyOp(o, stamp)); save(); notify(); };
+  if (window.__fake.mode === 'hold') {
+    ops.forEach(o => pendingKeys.add(key(o.ref.path))); run();
+    return new Promise(res => held.push(res));
+  }
+  run(); return delay(undefined);
+}
+const exactKeys = (value, names) => value && Object.keys(value).length === names.length && names.every(name => Object.hasOwn(value, name));
+const freshStamp = value => !!(value && value.__st) || stampMillis(value) === requestNow();
+function controlWrite(ops) {
+  const first = ops[0] && ops[0].ref;
+  if (!first) return null;
+  const raw = rawOwner(first), root = rootOfRef(first), config = cfgOf(first), head = config.headId, uid = authUid(first);
+  if (ops.every(o => /^kitchens\/[^/]+\/adminDevices\/[^/]+$/.test(key(o.ref.path)))) return ops.every(o => {
+    const target = o.ref.path.at(-1);
+    if (o.kind === 'delete') return raw || !!uid && uid === target;
+    const d = o.data, ss = store[root + '/sessions/' + target];
+    return raw && exactKeys(d, ['by', 'pinAt', 'issuedAt', 'exp', 'googleUid', 'at', 'v']) && validSession(ss, config, root) && ss.by === head &&
+      d.by === head && d.pinAt === ss.pinAt && stampMillis(d.issuedAt) === stampMillis(ss.issuedAt) && d.exp === ss.exp && d.googleUid === uid && d.v === 2 && freshStamp(d.at);
+  });
+  if (ops.some(o => /\/adminDevices\//.test(key(o.ref.path)))) return false;
+  if (!raw) return null;
+  // A raw Google owner has no operational role. Initial head setup, a fresh destination bootstrap,
+  // and the tightly bounded PIN recovery path are the only configuration/PIN exceptions.
+  const cfg = ops.find(o => key(o.ref.path) === root + '/config/main'), roster = ops.find(o => key(o.ref.path) === root + '/login/roster');
+  // Inspect the exact after-image applyOp will commit, including merge:true's nested map leaves.
+  const cfgBase = cfg && cfg.kind === 'set' && !cfg.merge ? {} : config;
+  const next = cfg && resolveVal(cfg.data, cfgBase), allowed = ['people', 'staffIds', 'sousIds', 'headId', 'pingIds', 'fnIds', 'fnOnlyIds', 'pinOpen', 'updated', 'updatedBy', 'by'];
+  const user = authUser(first), authTime = user && user.authTime * 1000;
+  const freshOwner = Number.isFinite(authTime) && authTime <= requestNow() + 60000 && authTime >= requestNow() - 300000;
+  const afterConfig = next || config, configMissing = store[root + '/config/main'] === undefined;
+  const onlyKeys = (value, names) => value && Object.keys(value).every(name => names.includes(name));
+  const boundedList = value => Array.isArray(value) && value.length <= 80;
+  const field = (value, name, fallback) => Object.hasOwn(value, name) ? value[name] : fallback;
+  const canonicalHead = value => boundedList(field(value, 'people', [])) && boundedList(field(value, 'staffIds', [])) && boundedList(field(value, 'sousIds', [])) &&
+    typeof value.headId === 'string' && value.headId.length > 0 && value.headId.length <= 80 &&
+    (value.staffIds || []).includes(value.headId) && (value.sousIds || []).includes(value.headId) &&
+    Array.isArray(field(value, 'fnOnlyIds', [])) && !field(value, 'fnOnlyIds', []).includes(value.headId);
+  const proofState = value => Array.isArray(field(value, 'proofWords', [])) && field(value, 'proofWords', []).length <= 200 &&
+    Number.isInteger(field(value, 'proofV', 0)) && field(value, 'proofV', 0) >= 0 &&
+    (field(value, 'proofEvent', '') === '' || typeof value.proofEvent === 'string' && /^[a-zA-Z0-9_-]{1,160}$/.test(value.proofEvent));
+  const changed = next && [...new Set(Object.keys(config).concat(Object.keys(next)))].filter(k => JSON.stringify(config[k]) !== JSON.stringify(next[k]));
+  const pinAfter = id => {
+    const op = ops.find(o => key(o.ref.path) === root + '/staffpins/' + id);
+    return op ? op.kind === 'delete' ? undefined : op.data : store[root + '/staffpins/' + id];
+  };
+  const setAfter = id => {
+    const op = ops.find(o => key(o.ref.path) === root + '/pinset/' + id);
+    return op ? op.kind === 'delete' ? undefined : op.data : store[root + '/pinset/' + id];
+  };
+  const setupOnly = ops.every(o => {
+    const path = key(o.ref.path), data = o.data || {};
+    if (o.kind === 'delete') return false;
+    if (o === cfg) return proofState(next) && canonicalHead(next) && (configMissing ? freshOwner : !head &&
+      changed.every(k => allowed.includes(k)) && field(next, 'pinOpen', {}) && typeof field(next, 'pinOpen', {}) === 'object' &&
+      !Array.isArray(field(next, 'pinOpen', {})) && Object.keys(field(next, 'pinOpen', {})).length <= 80);
+    if (o === roster) return ((!head && !configMissing) || freshOwner && (configMissing || store[path] === undefined)) &&
+      !!afterConfig.headId && onlyKeys(data, ['people', 'staffIds', 'sousIds', 'headId', 'fnIds', 'fnOnlyIds', 'by']) &&
+      ['people', 'staffIds', 'sousIds', 'headId', 'fnIds', 'fnOnlyIds'].every(name => JSON.stringify(data[name]) === JSON.stringify(afterConfig[name] || (name === 'headId' ? '' : [])));
+    if (!freshOwner || o.ref.path.at(-1) !== afterConfig.headId || store[path] !== undefined) return false;
+    if (path === root + '/staffpins/' + afterConfig.headId) return onlyKeys(data, ['hash', 'setAt', 'name']) &&
+      typeof data.hash === 'string' && data.hash.length === 64 && typeof field(data, 'name', '') === 'string' && field(data, 'name', '').length <= 40 &&
+      typeof field(data, 'setAt', 0) === 'number' && !!setAfter(afterConfig.headId) && typeof setAfter(afterConfig.headId).at === 'number';
+    if (path === root + '/pinset/' + afterConfig.headId) return onlyKeys(data, ['at', 'name']) && typeof data.at === 'number' &&
+      typeof field(data, 'name', '') === 'string' && field(data, 'name', '').length <= 40 && store[root + '/staffpins/' + afterConfig.headId] === undefined &&
+      !!pinAfter(afterConfig.headId) && typeof pinAfter(afterConfig.headId).hash === 'string';
+    return false;
+  });
+  if (setupOnly) return true;
+  if (head && cfg && freshOwner && ops.every(o =>
+    o === cfg || o.kind === 'delete' && [root + '/staffpins/' + head, root + '/pinset/' + head].includes(key(o.ref.path)))) {
+    const changed = [...new Set(Object.keys(config).concat(Object.keys(next)))].filter(k => JSON.stringify(config[k]) !== JSON.stringify(next[k]));
+    const until = next.pinOpen && next.pinOpen[head];
+    const oldWindows = config.pinOpen || {}, windows = next.pinOpen;
+    return changed.every(k => ['pinOpen', 'updated', 'updatedBy', 'by'].includes(k)) && windows && typeof windows === 'object' && !Array.isArray(windows) && Object.keys(windows).length <= 80 &&
+      [...new Set(Object.keys(oldWindows).concat(Object.keys(windows)))].every(id => id === head || oldWindows[id] === windows[id]) &&
+      Number.isFinite(until) && until > requestNow() && until <= requestNow() + 1800000;
+  }
+  return false;
+}
 function commitOps(ops) {
-  window.__fake.writes.push(ops.map(o => ({ kind: o.kind, path: key(o.ref.path), data: o.data })));
+  window.__fake.writes.push(ops.map(o => ({ kind: o.kind, path: key(o.ref.path), data: o.data, app: appOf(o.ref) })));
+  if (ops.some(o => appOf(o.ref) !== appOf(ops[0].ref))) return Promise.reject({ code: 'invalid-argument' });
+  const admin = !!(ops.length && isAdmin(ops[0].ref)), control = controlWrite(ops);
+  if (control !== null) return control ? finishOps(ops) : Promise.reject({ code: 'permission-denied' });
   // the older PIN proof was switched off in phase 2 of PIN sessions (22 Oct 2026): the rules refuse any proofs write
   if (ops.some(o => /\/proofs\//.test(key(o.ref.path)))) return Promise.reject({ code: 'permission-denied' });
   // two of the real rules that order of writes depends on: a staff PIN hash is only created once its pinset record
@@ -370,7 +501,7 @@ function commitOps(ops) {
   if (refused) return Promise.reject({ code: 'permission-denied' });
   // PIN sessions (22 Oct 2026), like the real rules: a try is written as this phone, one per person every 20 s; a session
   // opens only after a right try from this phone in the last 2 minutes, or moves forward while it runs
-  const uid = window.__fakeUid ? window.__fakeUid() : '', rootOf = o => key(o.ref.path).split('/').slice(0, 2).join('/');
+  const uid = ops.length ? authUid(ops[0].ref) : '', rootOf = o => key(o.ref.path).split('/').slice(0, 2).join('/');
   const badSess = ops.some(o => {
     const k = key(o.ref.path), t = k.match(/\/tries\/([^/]+)$/), m = k.match(/\/sessions\/([^/]+)$/);
     if (t) { const old = store[k]; return !uid || o.data.uid !== uid || (old && Date.now() - old.at < 20000); }
@@ -378,20 +509,23 @@ function commitOps(ops) {
     if (m[1] !== uid) return true;
     if (o.kind === 'delete') return false;
     const d = o.data, r = rootOf(o), tr = store[r + '/tries/' + d.by], pin = store[r + '/staffpins/' + d.by], ps = store[r + '/pinset/' + d.by], old = store[k];
-    const fresh = !!tr && tr.uid === uid && Date.now() - tr.at < 120000 && !!pin && pin.hash === tr.tok;
-    const renew = !!old && old.by === d.by && old.pinAt === d.pinAt && old.exp > Date.now();
-    return !ps || ps.at !== d.pinAt || !(fresh || renew);
+    const stamp = requestNow(), issued = d.issuedAt && d.issuedAt.__st ? stamp : stampMillis(d.issuedAt), at = d.at && d.at.__st ? stamp : stampMillis(d.at);
+    const fresh = !!tr && tr.uid === uid && stamp - tr.at >= 0 && stamp - tr.at < 120000 && Number(tr.at) >= nextFour(stamp) - 86400000 && !!pin && pin.hash === tr.tok && issued === stamp;
+    const renew = validSession(old, store[r + '/config/main'] || {}, r) && old.by === d.by && old.pinAt === d.pinAt && stampMillis(old.issuedAt) === issued && old.mode === d.mode && old.exp === d.exp;
+    return !exactKeys(d, ['by', 'pinAt', 'exp', 'at', 'issuedAt', 'mode', 'v']) || d.v !== 2 || !['personal', 'shared'].includes(d.mode) ||
+      !ps || ps.at !== d.pinAt || !(fresh || renew) || !(Number.isFinite(issued) && issued <= stamp && at === stamp && d.exp === nextFour(issued) && d.exp > stamp);
   });
   if (badSess) return Promise.reject({ code: 'permission-denied' });
   // who is writing: this phone's running session, while that person's PIN is the one it was opened with (Reset PIN or a
   // new PIN stops it)
-  const sessNow = uid && ops.length ? store[rootOf(ops.find(o => key(o.ref.path).startsWith('kitchens/')) || ops[0]) + '/sessions/' + uid] : null;
-  const sessPin = sessNow ? store[rootOf(ops.find(o => key(o.ref.path).startsWith('kitchens/')) || ops[0]) + '/pinset/' + sessNow.by] : null;
-  const actor = sessNow && sessNow.exp > Date.now() && sessPin && sessPin.at === sessNow.pinAt ? sessNow.by : '';
+  const kitchenOp = ops.find(o => key(o.ref.path).startsWith('kitchens/')) || ops[0];
+  const sessNow = uid && kitchenOp ? store[rootOf(kitchenOp) + '/sessions/' + uid] : null;
+  const sessPin = sessNow ? store[rootOf(kitchenOp) + '/pinset/' + sessNow.by] : null;
+  const actor = sessNow && kitchenOp && authUser(kitchenOp.ref) && authUser(kitchenOp.ref).isAnonymous && validSession(sessNow, cfgOf(kitchenOp.ref), rootOf(kitchenOp)) && sessPin && sessPin.at === sessNow.pinAt ? sessNow.by : '';
   // like staff() in the rules: any other write from a phone (no Google account) names its writer (by), and that writer
   // has this phone's running session
   const free = /\/(staffpins|pinset|tries|sessions|proofs)\/[^/]+$/;
-  if (!window.__fakeUser && ops.some(o => o.kind !== 'delete' && !free.test(key(o.ref.path)) && !(o.data && o.data.by && o.data.by === actor))) return Promise.reject({ code: 'permission-denied' });
+  if (!admin && ops.some(o => o.kind !== 'delete' && !free.test(key(o.ref.path)) && !(o.data && o.data.by && o.data.by === actor))) return Promise.reject({ code: 'permission-denied' });
   // the rules see a record as it will be after the write (request.resource.data): a merge or an update keeps the fields
   // already stored, by among them (27 Oct 2026: a merge with no by kept a sous chef's id and the rules refused the head chef)
   const after = o => Object.assign({}, o.kind === 'set' && !o.merge ? {} : (store[key(o.ref.path)] || {}), o.data || {});
@@ -400,7 +534,7 @@ function commitOps(ops) {
   const preparedValue = (d, field) => d && d[field] !== undefined ? d[field] : field === 'preparedAt' ? 0 : '';
   const preparedEmpty = d => preparedValue(d, 'preparedBy') === '' && preparedValue(d, 'preparedById') === '' && preparedValue(d, 'preparedAt') === 0;
   const preparedSame = (a, b) => ['preparedBy', 'preparedById', 'preparedAt'].every(field => preparedValue(a, field) === preparedValue(b, field));
-  const badPrepared = !window.__fakeUser && ops.some(o => {
+  const badPrepared = !admin && ops.some(o => {
     if (o.kind === 'delete' || !/^kitchens\/[^/]+\/days\/[^/]+\/items\/[^/]+$/.test(key(o.ref.path))) return false;
     const old = store[key(o.ref.path)], next = after(o), config = store[rootOf(o) + '/config/main'] || {};
     const same = preparedSame(next, old), inert = !!old && same && preparedValue(next, 'preparedAt') !== (next.doneAt || 0);
@@ -423,7 +557,7 @@ function commitOps(ops) {
   const proofEvents = ops.filter(o => /^kitchens\/[^/]+\/proofHistory\/[^/]+$/.test(key(o.ref.path)));
   const validProofEvent = o => {
     const event = after(o), word = event.kind === 'word', names = word ? ['kind', 'action', 'word', 'v', 'at', 'by'] : ['kind', 'action', 'source', 'day', 'recordId', 'before', 'after', 'original', 'v', 'at', 'by'];
-    if (o.kind === 'delete' || !window.__fakeUser) return false;
+    if (o.kind === 'delete' || !admin) return false;
     if (store[key(o.ref.path)] !== undefined) return sameProof(event, store[key(o.ref.path)]);
     if (!proofId(o.ref.path.at(-1)) ||
       !proofVersion(event.v) || !Number.isFinite(event.at) || event.at < 0 || event.at > Date.now() + 300000 || typeof event.by !== 'string' ||
@@ -440,7 +574,7 @@ function commitOps(ops) {
     if (/\/config\/main$/.test(path)) {
       const changed = ['proofWords', 'proofV', 'proofEvent'].some(name => !sameProof((old || {})[name], next[name]));
       if (!changed) return false;
-      if (!window.__fakeUser || !Array.isArray(next.proofWords) || next.proofWords.length > 200 || new Set(next.proofWords).size !== next.proofWords.length ||
+      if (!admin || !Array.isArray(next.proofWords) || next.proofWords.length > 200 || new Set(next.proofWords).size !== next.proofWords.length ||
         next.proofWords.some(word => typeof word !== 'string' || !/^[a-z]{2,40}$/.test(word)) || !proofVersion(next.proofV) || !proofId(next.proofEvent)) return true;
       if (!old) return false;
       const op = freshProofEvent(o, next.proofEvent), event = op && after(op), words = old.proofWords || [];
@@ -451,7 +585,7 @@ function commitOps(ops) {
     if (!match) return false;
     const changed = ['proofV', 'proofEvent'].some(name => !sameProof((old || {})[name], next[name]));
     if (!changed) return !!old && old.proofV > 0 && (!sameProof(old.text, next.text) || !sameProof(old.orig, next.orig));
-    if (!window.__fakeUser || !proofVersion(next.proofV) || !proofId(next.proofEvent)) return true;
+    if (!admin || !proofVersion(next.proofV) || !proofId(next.proofEvent)) return true;
     if (!old) return false;
     const op = freshProofEvent(o, next.proofEvent), event = op && after(op), source = match[1] === 'days' ? 'prep' : 'orders';
     return !event || event.kind !== 'line' || event.source !== source || event.day !== match[2] || event.recordId !== match[4] ||
@@ -467,7 +601,7 @@ function commitOps(ops) {
     const by = book.map(o => (o.kind === 'delete' ? '' : after(o).by) || '');
     const config = store[key(book[0].ref.path).split('/').slice(0, 2).join('/') + '/config/main'] || {};
     const asHead = !!actor && (actor === head || (config.sousIds || []).includes(actor)) && by.every(b => b === actor);
-    const asOwner = !!window.__fakeUser && by.every(b => !b || b === head);
+    const asOwner = !!admin && by.every(b => !b || b === head);
     if (!asHead && !asOwner) return Promise.reject({ code: 'permission-denied' });
   }
   // functions (21 Oct 2026): only the Google account or someone in config/main fnIds writes them, each save the next
@@ -477,7 +611,7 @@ function commitOps(ops) {
     const c = store[key(fnOps[0].ref.path).split('/').slice(0, 2).join('/') + '/config/main'] || {};
     const pid = actor;
     const asFn = !!pid && (c.fnIds || []).indexOf(pid) >= 0 && fnOps.every(o => (o.data && o.data.by) === pid);
-    if (!asFn && !window.__fakeUser) {
+    if (!asFn && !admin) {
       const asChef = !!pid && ((c.sousIds || []).includes(pid) || c.headId === pid);
       const main = fnOps.filter(o => /\/functions\/[^/]+$/.test(key(o.ref.path)));
       const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -513,19 +647,7 @@ function commitOps(ops) {
     return a.sent === true && !(old && old.sent === true) && a.sentBy !== (a.by || '');
   });
   if (badSent) return Promise.reject({ code: 'permission-denied' });
-  if (window.__fake.mode === 'deny') return Promise.reject({ code: 'permission-denied' });
-  // __fake.deny = /regex/ refuses only the writes whose path matches (a right the rules do not give), the rest go through
-  if (window.__fake.deny && ops.some(o => window.__fake.deny.test(key(o.ref.path)))) return Promise.reject({ code: 'permission-denied' });
-  if (window.__fake.mode === 'fail') return Promise.reject({ code: 'unavailable' });
-  const run = () => { ops.filter(o => !/\/proofs\//.test(key(o.ref.path))).forEach(applyOp); save(); notify(); };
-  if (window.__fake.mode === 'hold') {
-    // like Firestore offline: the change shows on this phone at once, the promise waits for the server
-    ops.filter(o => !/\/proofs\//.test(key(o.ref.path))).forEach(o => pendingKeys.add(key(o.ref.path)));
-    run();
-    return new Promise(res => held.push(res));
-  }
-  run();
-  return delay(undefined);
+  return finishOps(ops);
 }
 export function writeBatch() {
   const ops = [];

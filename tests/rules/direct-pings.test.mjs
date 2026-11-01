@@ -1,6 +1,7 @@
 import { initializeTestEnvironment, assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
 import { collection, doc, getDoc, getDocs, query, where, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { readFileSync } from 'node:fs';
+import { anonContext, dailySession, seedOwnerDevice } from './device-auth-fixtures.mjs';
 const K='kitchens/000000/', now=Date.now(), day=new Date(now+36000000).toISOString().slice(0,10);
 const rules=readFileSync(new URL('../../firestore.rules',import.meta.url),'utf8').replaceAll('KITCHEN_PIN','000000').replaceAll('OWNER_EMAIL','owner@test.local');
 const env=await initializeTestEnvironment({projectId:'demo-direct-pings',firestore:{rules}});
@@ -8,17 +9,18 @@ const cfg={people:[],staffIds:['head','sam','ann','bo','fn'],sousIds:['head','sa
 const ping={text:'Private test message',tag:'none',start:day,until:day,dows:[],tm:840,removed:false,at:now,upd:now,author:'sam',by:'sam',to:'ann'};
 await env.withSecurityRulesDisabled(async c=>{
  const db=c.firestore(); await setDoc(doc(db,K+'config/main'),cfg);
- for(const id of cfg.staffIds){await setDoc(doc(db,K+'pinset/'+id),{at:1});await setDoc(doc(db,K+'sessions/'+id),{by:id,pinAt:1,exp:now+600000});}
- await setDoc(doc(db,K+'sessions/expired'),{by:'ann',pinAt:1,exp:now-1});
+ for(const id of cfg.staffIds){await setDoc(doc(db,K+'pinset/'+id),{at:1});await setDoc(doc(db,K+'sessions/'+id),dailySession(id,{at:now}));}
+ await setDoc(doc(db,K+'sessions/expired'),dailySession('ann',{at:now-86400000}));
  await setDoc(doc(db,K+'directnotes/a'),ping);
  await setDoc(doc(db,K+'notes/everyone'),{...ping,to:'',text:'Everyone message'});
 });
-const db=id=>env.authenticatedContext(id).firestore(), ref=(d,id='a')=>doc(d,K+'directnotes/'+id);
+await seedOwnerDevice(env,{uid:'owner',headId:'head',at:now});
+const db=id=>anonContext(env,id).firestore(), ref=(d,id='a')=>doc(d,K+'directnotes/'+id);
 let checks=0;
 async function pass(p){await assertSucceeds(p);checks++;} async function deny(p){await assertFails(p);checks++;}
 try {
  const ann=db('ann'),bo=db('bo'),sam=db('sam'),head=db('head'),fn=db('fn');
- const owner=env.authenticatedContext('owner',{email:'owner@test.local',email_verified:true}).firestore();
+ const owner=db('owner');
  for(const d of [ann,sam,head,owner])await pass(getDoc(ref(d)));
  for(const d of [bo,fn,db('anonymous'),db('expired'),env.unauthenticatedContext().firestore(),env.authenticatedContext('wrong-owner',{email:'owner@test.local',email_verified:false}).firestore()])await deny(getDoc(ref(d)));
  await pass(getDocs(query(collection(ann,K+'directnotes'),where('to','==','ann'),where('until','>=',day))));

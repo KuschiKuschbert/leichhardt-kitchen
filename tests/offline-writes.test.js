@@ -3,7 +3,7 @@
 // reload or a closed app loses it, which is why Update now and the 04:00 refresh wait until it is sent, and a reload
 // with no signal opens an empty book.
 // The strip says to keep the book open, the browser asks before leaving while writes wait, Update now waits until a
-// change is sent (head chef, 28 Oct 2026) and asks for a second tap over half a line, the reloads wait for the signal
+// change is sent and asks explicitly before discarding half a line; reloads wait for the signal
 // (wifi with no internet too) and look again before they go, and every list marks its lines Not sent, on
 // a phone too. The mark shows only while the strip does (no signal, or a write waiting more than 3 seconds) and sits
 // inside the words, so a tick on a good signal never moves the rows below (review of the first fix, 27 Oct 2026). While
@@ -31,6 +31,13 @@ const hold = p => p.evaluate(() => { window.__fake.mode = 'hold'; });
 const DEAD = u => u.href.indexOf(L.BASE) === 0;
 const deadNet = (p, on) => on ? p.context().route(DEAD, r => r.abort('internetdisconnected')) : p.context().unroute(DEAD);
 const release = p => p.evaluate(() => { window.__fake.mode = 'ok'; window.__fake.release(); });
+// The daily boundary needs a fresh real session before retained work can send; never extend the fixture's expiry.
+async function unlock(p, id, pin) {
+  const name = p.locator('.p-name[data-id="' + id + '"]');
+  if (await name.count() && await name.isVisible()) await name.click();
+  await p.fill('#pf1', pin);
+  await L.waitFor(p, expected => LK_PREP.privateAccess() && LK_PREP.state.who === expected, id, 8000);
+}
 // the update strip, as when the service worker has saved a new version (more than 8 seconds after opening)
 async function updBar(p) {
   await p.clock.fastForward(10000);
@@ -323,7 +330,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
   }
 
   // 5. Update now with a write waiting (head chef, 28 Oct 2026): it waits, a second tap does not override it, and the
-  // book updates by itself once the change is sent, like the automatic update. Then half a line typed: a second tap first.
+  // book updates by itself once the change is sent. An unsaved draft receives an explicit discard decision.
   const WAITS = 'Not sent yet. It updates once sent.';
   await step('5', async () => {
     p = await L.open(b, '#/prep', { wait: 1500 });
@@ -363,7 +370,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     ok(await reloaded(p), 'update: once the change is sent, the book updates by itself');
   });
 
-  // 5b. Update now with half a line typed: "Not saved yet." and a second tap
+  // 5b. Update now with half a line typed: an explicit discard dialog.
   await step('5b', async () => {
     p = await L.open(b, '#/prep', { wait: 1500 });
     await updBar(p);
@@ -372,12 +379,12 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     await p.fill('#p-text', 'Half a line');
     await p.click('.upd-bar button');
     await L.settle(p, 1500);
-    ok(!(await reloaded(p)), 'update: half a line typed, the first tap does not reload');
+    ok(!(await reloaded(p)), 'update: half a line typed, opening the decision does not reload');
     u = await bar(p);
-    ok(u && u.t === 'Not saved yet.' && u.btn === 'Tap again to update', 'update: half a line typed, it says Not saved yet (' + JSON.stringify(u) + ')');
-    await p.click('.upd-bar button');
+    ok(await p.locator('#lk-update-confirm[open]').count() === 1, 'update: half a line typed, Keep working and Discard and update are offered');
+    await p.click('#lk-update-confirm [data-update="discard"]');
     await waitReload(p);
-    ok(await reloaded(p), 'update: the second tap updates');
+    ok(await reloaded(p), 'update: confirmed discard updates');
   });
 
   // 5c. taps while Update now checks the signal are ignored, and a line ticked meanwhile holds the update back
@@ -411,8 +418,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     await L.settle(p, 300);
   });
 
-  // 5d. half a line typed after the tap, while it checks the signal: no reload over it, "Not saved yet." and Tap again
-  // to update, the same as half a line typed before the tap (final review, 28 Oct 2026)
+  // 5d. Half a line typed while checking the signal receives the same explicit discard decision.
   await step('5d', async () => {
     p = await L.open(b, '#/prep', { who: 'ann', wait: 1500 });
     await updBar(p);
@@ -426,10 +432,10 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     await L.settle(p, 4500);
     u = await bar(p);
     ok(!(await reloaded(p)) && await p.evaluate(() => (document.querySelector('#p-text') || {}).value === 'Brunoise shallots'), 'update, half a line typed after the tap: no reload, the words still there');
-    ok(u && u.t === 'Not saved yet.' && u.btn === 'Tap again to update', 'update, half a line typed after the tap: it says Not saved yet with Tap again to update (' + JSON.stringify(u) + ')');
-    await p.click('.upd-bar button');
+    ok(await p.locator('#lk-update-confirm[open]').count() === 1, 'update, half a line typed after the tap: the new draft receives an explicit decision');
+    await p.click('#lk-update-confirm [data-update="discard"]');
     await waitReload(p);
-    ok(await reloaded(p), 'update, half a line typed after the tap: the second tap updates');
+    ok(await reloaded(p), 'update, half a line typed after the tap: confirmed discard updates');
   });
 
   // 6. Update now with no signal: the book stays as it is, and updates once the signal is back
@@ -555,10 +561,14 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     await mark(p);
     await p.clock.fastForward('14:01:00');
     await L.settle(p, 1500);
-    ok(!(await reloaded(p)), '04:00, a write waiting: no reload');
+    ok(!(await reloaded(p)) && await p.evaluate(() => LK_PREP.unsent() && !LK_PREP.privateAccess()), '04:00, a write waiting: no reload and the original work stays behind the daily PIN');
     await release(p);
     await L.settle(p, 400);
-    await p.evaluate(() => { window.LK_PREP.state.text = ''; window.LK_PREP.state.qty = ''; });
+    ok(!(await reloaded(p)) && await p.evaluate(() => LK_PREP.unsent()), '04:00: restoring signal cannot reload over PIN-locked pending work');
+    await unlock(p, 'sam', '1111');
+    await L.waitFor(p, () => !LK_PREP.unsent(), null, 8000);
+    ok(await p.evaluate(() => Object.values(__fake.dump()).some(x => x && x.text === 'Portion the brisket' && x.addedById === 'sam')), '04:00: the same-person PIN sends the original pending prep entry');
+    await p.evaluate(() => { if (document.activeElement) document.activeElement.blur(); });
     await p.clock.fastForward('00:10:30');
     await waitReload(p);
     ok(await reloaded(p), '04:00: sent, it refreshes 10 minutes later');
@@ -647,11 +657,19 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
   // 10c. the 04:00 refresh looks again after the files came in: half a line typed meanwhile holds it back
   await step('10c', async () => {
     p = await L.open(b, '#/prep', { who: 'ann', clock: L.NOW - 10 * 3600000 - 180000, wait: 1500 });   // 03:57
-    const st = await slowFiles(p, 3000);
+    let releaseFiles;
+    const ready = new Promise(resolve => { releaseFiles = resolve; }), st = { on: false };
+    await p.context().route(u => u.href === L.BASE + 'js/data.js', async r => {
+      if (r.request().headers()['x-lk-fresh']) { st.on = true; await ready; }
+      return r.fallback();
+    });
     await mark(p);
     await p.clock.fastForward('03:10');
     ok(await fetching(st), '04:00: it fetches the files');
+    ok(await p.evaluate(() => !LK_PREP.privateAccess()), '04:00: the private prep page locks while the atomic files arrive');
+    await unlock(p, 'ann', '2222');
     await p.fill('#p-text', 'Dice carrots');
+    releaseFiles();
     await L.settle(p, 4000);
     ok(!(await reloaded(p)), '04:00, half a line typed while the files came in: no reload');
     ok(await p.evaluate(() => (document.querySelector('#p-text') || {}).value === 'Dice carrots'), '04:00: the half line is still there');
@@ -1029,7 +1047,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
   // strip says nothing while it checks the signal, and it never reloads over a box tapped into or typed in meanwhile (the
   // server slow, 3 seconds): it reloaded over "Lamb shank" in the recipe search and over a tap into the search or a prep
   // box, which closed the keyboard, and said Tap again to update over half a prep line. It waits quietly and goes at a
-  // later look once the box is left, within 10 minutes of the tap, still while the book is in use.
+  // later look once the box is left, still while the book is in use.
   const INBOX = {
     'search typed': { hash: '#/recipes', act: async p => { await p.fill('#find', 'Lamb shank'); return () => p.evaluate(() => { const f = document.getElementById('find'); return !!f && f.value === 'Lamb shank' && document.activeElement === f; }); } },
     'search tapped': { hash: '#/recipes', act: async p => { await p.tap('#find'); return () => p.evaluate(() => document.activeElement === document.getElementById('find')); } },
@@ -1056,13 +1074,12 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
       ok(u && u.t === WAITS, how + ': Update now, a change waiting: it updates once sent (' + JSON.stringify(u) + ')');
       if (INBOX[how].hash !== '#/prep') { await p.evaluate(h => { location.hash = h; }, INBOX[how].hash); await L.settle(p, 600); }
       await slowHead(p, 3000);
-      await release(p);
-      await L.settle(p, 300);
       await mark(p);
       st.heads = 0;
-      await p.clock.fastForward(20000);   // the next look: the change is sent, so the update starts and asks the server
+      await release(p);
+      await L.settle(p, 300);
       for (let i = 0; i < 100 && !st.heads; i++) await L.sleep(50);
-      ok(st.heads > 0, how + ': the change sent, the update starts at the next look');
+      ok(st.heads > 0, how + ': acknowledgement resumes the requested update');
       u = await bar(p);
       ok(u && u.t === 'New version available.' && u.btn === 'Update now', how + ': nobody tapped just now, so the strip says nothing new while it checks (' + JSON.stringify(u) + ')');
       const kept = await INBOX[how].act(p);
@@ -1085,7 +1102,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
 
   // 23. Reload the book (28 Oct 2026): a page loaded on its own that is a different version from the book (here an old
   // js/manage.js) offers Reload, which now goes through Update now's own path. With a change waiting it says it updates
-  // once sent, with no Reload site? box, and does; with half a line typed it asks for a second tap. It used to reload at
+  // once sent, with no Reload site? box, and does; half a line typed receives a discard dialog. It used to reload at
   // once: the browser asked (a phone app that does not ask lost the change), and the half line went.
   const headCfg = { [['kitchens', L.PIN, 'config', 'main'].join('/')]: { people: [
     { id: 'ann', name: 'Ann', role: 'head', add: true, tick: true, del: true, active: true },
@@ -1119,8 +1136,8 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
         await L.settle(p, 400);
         await p.clock.fastForward(21000);   // the next look, the change sent
       } else {
-        ok(!(await reloaded(p)) && u && u.t === 'Not saved yet.' && u.btn === 'Tap again to update', 'Reload the book, half a line typed: it asks first (' + JSON.stringify(u) + ')');
-        await L.tap(p, '[data-act="reload"]');
+        ok(!(await reloaded(p)) && await p.locator('#lk-update-confirm[open]').count() === 1, 'Reload the book, half a line typed: an explicit decision keeps the draft safe');
+        await p.click('#lk-update-confirm [data-update="discard"]');
       }
       await waitReload(p);
       ok(await reloaded(p), 'Reload the book, ' + how + ': then it updates');

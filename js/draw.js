@@ -25,7 +25,7 @@
 (function () {
   'use strict';
 
-  var API = 4;
+  var API = 5;
   var D = window.LK_DATA, X = window.LK_RX, A = window.LK_APP, P = window.LK_PREP, LIB = window.LK_LIB;
   var esc = A.esc;
   function B() { return P.book(); }
@@ -44,7 +44,11 @@
 
   /* ---------- state ---------- */
   // W.d: the drawing being edited; W.sel: selected element indexes; W.view: the zoom and pan
-  var W = { root: null, key: '', d: null, sel: [], undo: [], redo: [], view: { z: 1, x: 0, y: 0 }, panel: '', msg: '', saving: '', many: false, q: '', cat: '', sub: '', more: 0, stretch: false, check: null, conflict: null };
+  var W = { root: null, key: '', d: null, sel: [], undo: [], redo: [], view: { z: 1, x: 0, y: 0 }, panel: '', msg: '', saving: '', many: false, q: '', cat: '', sub: '', more: 0, stretch: false, check: null, conflict: null, identity: '', suspended: false, load: null };
+  function identity() { var api = B(); return api.identity ? api.identity() : [api.pin(), api.who()].join('|'); }
+  function workLock() { var api = B(); return api.workLock ? api.workLock() : null; }
+  function owns(d, owner) { return W.d === d && W.identity === owner && identity() === owner; }
+  function writeOps(api, ops, context, owner) { return identity() === owner ? api.W(ops, context) : Promise.reject({ code: 'cancelled' }); }
 
   /* ---------- the library pieces a drawing uses ---------- */
   function libKey(id) { var it = LIB.get(id); return it ? it.id + '@' + it.v : ''; }
@@ -256,10 +260,11 @@
   // true when the drawing is now kept on this device (never while the kept box shows: that one is not touched)
   function keepNow() {
     clearTimeout(keepT);
+    if (W.suspended) return false;
     if (!W.d || W.d.kept) return false;
     if (!dirty()) { lsSet(draftKey(), ''); return false; }
     var used = {}; W.d.els.forEach(function (el) { if (isPiece(el)) used[el.a] = W.d.defs[el.a] !== undefined ? W.d.defs[el.a] : bodyOf(el.a); });
-    lsSet(draftKey(), JSON.stringify({ at: B().now(), surf: W.d.surf, els: W.d.els, name: W.d.name, defs: used }));
+    lsSet(draftKey(), JSON.stringify({ identity: W.identity, at: B().now(), surf: W.d.surf, els: W.d.els, name: W.d.name, defs: used }));
     return true;
   }
   // every change: kept on this device, the page drawn again (soft: only the canvas, so a tap that is half done on a
@@ -524,6 +529,7 @@
   function say(m) { try { B().say(m); } catch (e) {} }
   var toastEl = null, toastT = null;
   function toast(m) {
+    if (W.suspended || workLock()) return;
     say(m);
     if (!toastEl) { toastEl = document.createElement('div'); toastEl.className = 'p-toasts mg-toasts'; document.body.appendChild(toastEl); }
     toastEl.innerHTML = '<div class="p-toast p-toast-plain" role="presentation">' + esc(m) + '</div>';
@@ -1273,7 +1279,7 @@
       '<div class="btn-row">' + btn('pc-save', 'Save to the library', { cls: 'btn dark', dis: !!W.busy }) + btn('pc-cancel', 'Cancel', { cls: 'btn' }) + '</div></section>';
   }
   function savePiece() {
-    var pc = W.piece, api = B();
+    var pc = W.piece, api = B(), d = W.d, owner = W.identity, context = api.writeContext ? api.writeContext() : null;
     if (!pc || W.busy) return;
     var name = String(pc.name || '').replace(/\s+/g, ' ').trim().slice(0, 60);
     if (!name) { W.msg = 'Give the piece a name.'; draw(); return; }
@@ -1283,25 +1289,27 @@
     var col = coloursIn(body).filter(function (h) { return h !== '#FFFFFF' && h !== '#000000'; })[0] || '#C98A45';
     var id = freshId(name), out = { type: 'item', name: name, cat: pc.cat, kw: String(pc.kw || '').slice(0, 300), role: PIECE_ROLE[pc.cat] || 'main', form: 'piece', n: 1, w: pc.w, h: pc.h, body: body, side: { s: 'mound', h: Math.max(4, n1(pc.h * 0.3)), c: col }, v: 1, upd: api.now(), removed: false };
     W.busy = true; W.msg = ''; draw();
-    api.ready().then(function () { return api.W([['set', api.docRef('drawlib', id), out]]); }).then(function () {
+    api.ready().then(function () { return writeOps(api, [['set', api.docRef('drawlib', id), out]], context, owner); }).then(function () {
+      if (!owns(d, owner)) return;
       W.busy = false; out.id = id; MINE.lib.push(out); mineToLib();
       if (pc.from === 'svg' && W.d) { before(); addItem('my-' + id, {}); changed(); }
       W.piece = null; W.panel = 'lib'; W.q = name; W.cat = ''; W.sub = '';
       toast('Saved to the library: ' + name + '.'); draw();
-    }, function (err) { W.busy = false; W.msg = refused(err, 'library pieces'); draw(); });
+    }, function (err) { if (!owns(d, owner)) return; W.busy = false; W.msg = refused(err, 'library pieces'); draw(); });
   }
 
   // the servingware on this drawing, kept as a preset (the family Saved)
   function saveWare() {
-    var api = B(), name = String(W.wname || '').replace(/\s+/g, ' ').trim().slice(0, 60);
+    var api = B(), d = W.d, owner = W.identity, context = api.writeContext ? api.writeContext() : null, name = String(W.wname || '').replace(/\s+/g, ' ').trim().slice(0, 60);
     if (W.busy) return;
     if (!name) { W.msg = 'Give the servingware a name.'; draw(); return; }
     var id = freshId(name), out = { type: 'surf', name: name, p: clone(W.d.surf), v: 1, upd: api.now(), removed: false };
     W.busy = true; W.msg = ''; draw();
-    api.ready().then(function () { return api.W([['set', api.docRef('drawlib', id), out]]); }).then(function () {
+    api.ready().then(function () { return writeOps(api, [['set', api.docRef('drawlib', id), out]], context, owner); }).then(function () {
+      if (!owns(d, owner)) return;
       W.busy = false; out.id = id; MINE.lib.push(out); mineToLib(); W.wsave = false; W.wname = ''; W.wareFam = 'saved';
       toast('Servingware saved: ' + name + '.'); draw();
-    }, function (err) { W.busy = false; W.msg = refused(err, 'servingware'); draw(); });
+    }, function (err) { if (!owns(d, owner)) return; W.busy = false; W.msg = refused(err, 'servingware'); draw(); });
   }
 
   // Save as a template: the plating without its labels, for any recipe to start from
@@ -1311,7 +1319,7 @@
       '<div class="btn-row">' + btn('tpl-save', 'Save the template', { cls: 'btn dark', dis: !!W.busy }) + '</div></section>';
   }
   function saveTemplate() {
-    var d = W.d, api = B(), name = String(W.tplName == null ? d.name : W.tplName).replace(/\s+/g, ' ').trim().slice(0, 80);
+    var d = W.d, api = B(), owner = W.identity, context = api.writeContext ? api.writeContext() : null, name = String(W.tplName == null ? d.name : W.tplName).replace(/\s+/g, ' ').trim().slice(0, 80);
     if (W.busy) return;
     if (!name) { W.msg = 'Give the template a name.'; draw(); return; }
     if (!d.els.length) { W.msg = 'Put something on the drawing first.'; draw(); return; }
@@ -1321,10 +1329,11 @@
     if (out.defs.length > 300000 || out.svgF.length > 300000) { W.msg = 'Not saved: this drawing is too big for a template.'; draw(); return; }
     var id = freshId(name);
     W.busy = true; W.msg = ''; draw();
-    api.ready().then(function () { return api.W([['set', api.docRef('drawtpl', id), out]]); }).then(function () {
+    api.ready().then(function () { return writeOps(api, [['set', api.docRef('drawtpl', id), out]], context, owner); }).then(function () {
+      if (!owns(d, owner)) return;
       W.busy = false; MINE.tpl.push(tplRec(id, out)); W.panel = ''; W.tplName = null;
       toast('Saved as a template: ' + name + '. New drawings can start from it.'); draw();
-    }, function (err) { W.busy = false; W.msg = refused(err, 'templates'); draw(); });
+    }, function (err) { if (!owns(d, owner)) return; W.busy = false; W.msg = refused(err, 'templates'); draw(); });
   }
 
   // Use for another recipe: a copy of this drawing opens for the recipe picked
@@ -1353,8 +1362,8 @@
   function outOf(d) {
     var r = recipeOf(d.rid), vb = viewBoxOf(d), used = {};
     d.els.forEach(function (el) { if (isPiece(el)) used[el.a] = bodyOf(el.a); });
-    var out = { rid: d.rid, slot: d.slot, name: String(d.name || '').slice(0, 80), vb: vb, k: 1, surf: d.surf, els: clone(d.els), defs: JSON.stringify(used), svgS: svgS(d), svgF: svgF(d), alt: altText(d, r ? r.name : d.rid), from: d.from || '', upd: 0, v: 0, removed: false };
-    if (d.layout) out.layout = d.layout;
+    var out = { rid: d.rid, slot: d.slot, name: String(d.name || '').slice(0, 80), vb: vb, k: 1, surf: clone(d.surf), els: clone(d.els), defs: JSON.stringify(used), svgS: svgS(d), svgF: svgF(d), alt: altText(d, r ? r.name : d.rid), from: d.from || '', upd: 0, v: 0, removed: false };
+    if (d.layout) out.layout = clone(d.layout);
     if (d.slot === 'build') out.title = 'How it is built';
     return { out: out, vb: vb, big: out.defs.length > 300000 || out.svgF.length > 300000 || out.els.length > 600 };
   }
@@ -1362,13 +1371,14 @@
      The version is read from the server first; a version saved on another device meanwhile comes back as { conflict }
      unless force. picks: the head chef's picks for the matcher ride along (the open drawing only). */
   function commit(d, o, force, picks) {
-    var api = B(), fs, out = o.out, vb = o.vb;
+    var api = B(), fs, out = o.out, vb = o.vb, source = clone(d), owner = identity(), context = api.writeContext ? api.writeContext() : null;
     return api.ready().then(function () {
       fs = api.fs();
       return (api.fromServer ? api.fromServer(api.docRef('drawings', d.id)) : fs.getDocFromServer(api.docRef('drawings', d.id))).then(function (sn) { return sn.exists() ? sn.data() : null; }, function () { return 'offline'; });
     }).then(function (server) {
-      var sv = server === 'offline' ? d.meta.v : (server ? server.v : 0);
-      if (server !== 'offline' && sv !== d.meta.v && !force) return { conflict: { v: sv, rec: server } };
+      if (identity() !== owner) return null;
+      var sv = server === 'offline' ? source.meta.v : (server ? server.v : 0);
+      if (server !== 'offline' && sv !== source.meta.v && !force) return { conflict: { v: sv, rec: server } };
       var v = sv + 1, prev = server === 'offline' ? null : server;
       out.v = v; out.upd = api.now();
       var ops = [['set', api.docRef('drawings', d.id), out]], idx = { d: {}, upd: api.now() };
@@ -1378,16 +1388,16 @@
       var field = d.slot === 'plate' || d.slot === 'pan' ? 'art' : d.slot === 'side' ? 'side' : 'diagram';
       return window.LK_MG.patchRecipe(d.rid, function (rr) {
         rr[field] = '@' + d.id;
-        if (field === 'art') rr.pins = autoPins(d, rr, vb);
+        if (field === 'art') rr.pins = autoPins(source, rr, vb);
       }).then(function (rp) {
         if (rp) { ops = ops.concat(rp.ops); idx.r = {}; idx.r[d.rid] = rp.v; }
         ops.push(['set', api.docRef('book', 'index'), idx, true]);
         // js/smart.js: the matches the head chef picked, kept for the next recipe (book/matches)
         if (picks && window.LK_SMART && window.LK_SMART.pendingOps) ops = ops.concat(window.LK_SMART.pendingOps());
-        return api.W(ops).then(function () { if (picks && window.LK_SMART && window.LK_SMART.saved) window.LK_SMART.saved(); return { v: v, rp: rp, idx: idx }; });
+        return writeOps(api, ops, context, owner).then(function () { if (identity() === owner && picks && window.LK_SMART && window.LK_SMART.saved) window.LK_SMART.saved(); return { v: v, rp: rp, idx: idx }; });
       });
     }).then(function (done) {
-      if (!done || done.conflict) return done;
+      if (!done || done.conflict || identity() !== owner) return done;
       X.putArt(api.pin(), d.id, out);
       if (done.rp) X.put(api.pin(), d.rid, done.rp.rec, { r: done.idx.r });
       api.changed();
@@ -1396,7 +1406,7 @@
     });
   }
   function save(force) {
-    var d = W.d;
+    var d = W.d, owner = W.identity;
     if (!d || W.saving) return;
     W.msg = '';
     if (!P.bookEdit()) { W.msg = 'Not saved: only the head chef can change drawings. Sign in with your PIN as Head chef.'; draw(); return; }
@@ -1407,19 +1417,23 @@
     keepNow();
     W.saving = 'Saving...'; draw();
     var slow = setTimeout(function () { if (W.d === d && W.saving) { W.saving = 'Waiting for the signal. Your drawing is kept on this device.'; var s = W.root && W.root.querySelector('.mg-state'); if (s) s.textContent = W.saving; } }, 4000);
-    var o = outOf(d);
+    var o = outOf(d), submitted = snapNow();
     if (o.big) { clearTimeout(slow); W.saving = ''; W.msg = 'Not saved: this drawing is too big for the book. Take some parts off.'; draw(); return; }
     commit(d, o, force, true).then(function (done) {
       clearTimeout(slow);
-      if (!done) return;
+      if (!done || !owns(d, owner)) return;
       if (done.conflict) { W.saving = ''; W.conflict = done.conflict; draw(); return; }
-      W.saving = ''; W.conflict = null; var wasNew = d.isNew, oldKey = draftKey(); d.isNew = false; d.saved = snapNow(); d.followed = false;
+      W.saving = ''; W.conflict = null; var wasNew = d.isNew, oldKey = draftKey(); d.isNew = false; d.saved = submitted; d.followed = false;
       lsSet(oldKey, ''); lsSet(draftKey(), '');
       toast('Saved. Version ' + done.v + '.' + (done.rp ? ' The recipe shows it.' : ''));
-      if (wasNew && W.d === d) { W.key = 'draw/' + d.id; history.replaceState(history.state, '', '#/manage/draw/' + encodeURIComponent(d.id)); if (A.noteRoute) A.noteRoute(true); }
+      if (wasNew) {
+        if (W.root && !W.suspended && !workLock()) { W.key = 'draw/' + d.id; history.replaceState(history.state, '', '#/manage/draw/' + encodeURIComponent(d.id)); if (A.noteRoute) A.noteRoute(true); }
+        else d.savedRoute = ['draw', d.id];
+      }
+      if (dirty()) keepNow();
       if (W.d === d) draw();
     }).catch(function (err) {
-      clearTimeout(slow); W.saving = '';
+      clearTimeout(slow); if (!owns(d, owner)) return; W.saving = '';
       W.msg = err && err.code === 'permission-denied' ? 'Not saved: the book refused it. Only the head chef can change drawings, and it may have changed on another device. Try again.' : 'Not saved. Check the signal and try again. Your drawing is kept on this device.';
       if (W.d === d) draw();
     });
@@ -1465,20 +1479,30 @@
     d.saved = snapNow();
     try {
       var k = JSON.parse(lsGet(draftKey()) || 'null');
-      if (k && JSON.stringify({ surf: k.surf, els: k.els, name: k.name }) !== d.saved) d.kept = k;
+      if (k && (!k.identity || k.identity === W.identity) && JSON.stringify({ surf: k.surf, els: k.els, name: k.name }) !== d.saved) d.kept = k;
     } catch (e) {}
     W.panel = d.els.length ? '' : 'lib';
     if (!d.els.length && (d.slot === 'side' || d.slot === 'build')) W.cat = 'build';
     draw();
+    if (!W.root || W.suspended || workLock()) return;
     var t = W.root.querySelector('#rtitle'); if (t) t.focus({ preventScroll: true });
     window.scrollTo(0, 0);
   }
   function note(title, text) { return '<div class="mg-wrap"><h2 id="rtitle" tabindex="-1">' + esc(title) + '</h2><p>' + esc(text) + '</p></div>'; }
   function mount(root, sub) {
     var key = sub.join('/');
+    var owner = identity();
+    if (W.identity && W.identity !== owner) drop();
+    if (workLock() || !P.bookEdit()) return;
+    W.identity = owner; W.suspended = false;
+    if (W.d && W.d.savedRoute && W.key === key) {
+      sub = W.d.savedRoute; key = sub.join('/'); W.d.savedRoute = null; W.key = key;
+      history.replaceState(history.state, '', '#/manage/' + sub.map(encodeURIComponent).join('/')); if (A.noteRoute) A.noteRoute(true);
+    }
     if (W.d && W.key !== key && dirty()) keepNow();
     W.root = root;
     if (W.key === key && W.d) { draw(); return; }
+    if (W.key === key && W.load) { root.innerHTML = note('Opening the drawing', 'Reading it from the book...'); return; }
     W.key = key; W.d = null; W.sel = []; W.undo = []; W.redo = []; W.view = { z: 1, x: 0, y: 0 }; W.panel = ''; W.msg = ''; W.saving = ''; W.check = null; W.conflict = null; W.q = ''; W.cat = ''; W.sub = ''; W.more = 0; W.pendingIng = ''; W.swap = null; W.wareFam = '';
     W.started = false; W.startOpen = false; W.piece = null; W.fromSel = ''; W.tplName = null; W.reuse = ''; W.wsave = false; W.wname = ''; W.busy = false;
     // read again each time a drawing opens, so a template hidden on the manage page is not offered
@@ -1491,21 +1515,33 @@
       if (sub[4]) startFrom(sub.slice(4).join('/'));
       return;
     }
-    var id = sub[1] || '', api = B();
+    var id = sub[1] || '', api = B(), load = W.load = {};
     root.innerHTML = note('Opening the drawing', 'Reading it from the book...');
     api.ready().then(function () { return api.fs().getDoc(api.docRef('drawings', id)); }).then(function (sn) {
-      if (W.key !== key) return;
-      if (!sn.exists()) { root.innerHTML = note('Drawing not found', 'There is no drawing "' + id + '" in the book.'); return; }
+      if (W.key !== key || W.load !== load || W.identity !== owner || identity() !== owner) return;
+      W.load = null;
+      if (!sn.exists()) { if (W.root) W.root.innerHTML = note('Drawing not found', 'There is no drawing "' + id + '" in the book.'); return; }
       W.d = fromDoc(id, sn.data()); finishOpen();
-    }, function () { if (W.key === key) root.innerHTML = note('Could not open the drawing', 'Check the signal and try again.'); });
+    }, function () { if (W.key === key && W.load === load) { W.load = null; if (W.root) W.root.innerHTML = note('Could not open the drawing', 'Check the signal and try again.'); } });
   }
   // a hand-over (js/manage.js drop()): the drawing goes with the person, and nothing is kept for the next one
-  function drop() { clearTimeout(keepT); W.d = null; W.key = ''; W.conflict = null; W.root = null; drag = null; ptrs = {}; }
+  function drop() {
+    clearTimeout(keepT); W.d = null; W.key = ''; W.conflict = null; W.root = null; W.identity = ''; W.suspended = false; W.load = null;
+    W.sel = []; W.undo = []; W.redo = []; W.saving = ''; W.msg = ''; W.panel = ''; W.piece = null; W.tplName = null; W.wname = ''; W.check = null; W.busy = false; W.smart = null; W.styleChoice = null; W.seed = null;
+    drag = null; ptrs = {};
+  }
   function unmount() {
     var hadRoot = !!W.root;
+    var lock = workLock();
+    if (W.suspended && !W.root && identity() === W.identity || lock && lock.identity === W.identity) {
+      clearTimeout(keepT); W.suspended = true; W.root = null; drag = null; ptrs = {};
+      if (toastEl) toastEl.innerHTML = '';
+      if (hadRoot) window.dispatchEvent(new Event('lk-nav'));
+      return;
+    }
     // only when it was kept: while the kept box shows, what is on screen is the saved copy and nothing is kept
     if (W.d && dirty() && keepNow()) toast('Your drawing is kept as a draft on this device.');
-    W.root = null; W.key = ''; W.d = null; drag = null; ptrs = {};
+    W.root = null; W.key = ''; W.d = null; W.identity = ''; W.suspended = false; W.load = null; drag = null; ptrs = {};
     if (hadRoot) window.dispatchEvent(new Event('lk-nav'));
   }
 
@@ -1522,7 +1558,7 @@
     backLabel: function () { return W.root && document.body.contains(W.root) && W.d ? 'Back to the recipe' : ''; },
     backDisabled: function () { return !!(W.root && document.body.contains(W.root) && W.saving); },
     open: function () { return !!(W.root && W.d); },
-    dirty: function () { return !!(W.root && dirty()); },
+    dirty: dirty,
     // for js/smart.js and the tests
     state: function () { return W; },
     addItem: function (id, o) { before(); var r = addItem(id, o); changed(); return r; },

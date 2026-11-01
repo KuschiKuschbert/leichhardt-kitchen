@@ -150,22 +150,26 @@ async function swOpen(b, hash, o) {
     ok(await (c.root === '#supplier-root' ? supOff(q) : opened(q, c)), c.name + ': with no signal after a reload, it still opens (' + await rootText(q, c) + ')');
   }
   ok(!(await L.overflow(q)), 'Supplier order with no signal: no sideways scroll at 390');
-  // A page's file kept from before a change (29 Oct 2026). The page versions stay as they are when a change only adds
-  // (js/app.js): 1 for Delivery received, 4 for the recipe and drawing editors. A phone that kept those files before a
-  // change still opens the pages with no signal. A new number shut them until they had opened once with signal, and
-  // Reload could not help. (A real change of number needs this check changed with it, and a note to open the page once
-  // with signal.)
+  // Daily-lock draft retention changes the lazy-page contract. Deployed Delivery1/Manage4/Draw4 copies must not
+  // mount under the new shell, because they clear drafts at04. Open the revised pages once with signal, then their
+  // saved revised modules still open offline. The API guard must reject an unsafe cached copy before it mounts.
   const OLD = { '/js/deliveries.js': [/api: \d+,/, 'api: 1,'], '/js/manage.js': [/var API = \d+;/, 'var API = 4;'], '/js/draw.js': [/var API = \d+;/, 'var API = 4;'] };
   await q.context().setOffline(false);
   Object.keys(OLD).forEach(f => { over[f] = { lastModified: 'Wed, 28 Oct 2026 00:00:00 GMT', body: file(f.slice(1)).replace(OLD[f][0], OLD[f][1]) }; });
   await q.reload(); await L.settle(q, 1500); await access();
-  for (const c of LAZY.slice(0, 3)) { await go(q, c.hash); await opened(q, c); }
+  for (const c of LAZY.slice(0, 3)) {
+    await go(q, c.hash);
+    await L.waitFor(q, root => /Reload the book/.test((document.querySelector(root) || {}).textContent || ''), c.root);
+    ok(/Reload the book/.test(await rootText(q, c)), c.name + ': unsafe pre-lock module is rejected before mounting');
+  }
   Object.keys(OLD).forEach(f => { delete over[f]; });
+  await go(q, '#/prep'); await q.reload(); await L.settle(q, 1500); await access();
+  for (const c of LAZY.slice(0, 3)) { await go(q, c.hash); await opened(q, c); }
   await go(q, '#/prep'); await q.reload(); await L.settle(q, 1500); await access();
   await q.context().setOffline(true);
   for (const c of LAZY.slice(0, 3)) {
     await go(q, c.hash);
-    ok(await opened(q, c), c.name + ': its file kept from before a change still opens with no signal (' + await rootText(q, c) + ')');
+    ok(await opened(q, c), c.name + ': revised saved module still opens with no signal (' + await rootText(q, c) + ')');
   }
   // a script with no version (js/smart.js) asked for with X-LK-Fresh (js/app.js mgScript()): the worker answers once the
   // new copy is saved, so the script tag that follows runs it. Before, it answered first and the tag got the old copy

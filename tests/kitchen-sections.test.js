@@ -162,7 +162,7 @@ const addLine = async (p, text, sec) => {
   ok(ks.map(x => x.name).join(',') === 'Grill,Pass,Pans,Fryers,Hot larder,Salads and dessert,Prep and butchery,Breakfast', 'admin: saved in order, with the rename and the new one (' + ks.map(x => x.name).join(',') + ')');
   ok(ks[4].off === true && ks[0].off === false, 'admin: a removed one is kept, marked off');
   ok(ks[6].id === 'prep', 'admin: a renamed section keeps its id');
-  ok(s[CFG].people.length === 3 && (s[CFG].sousIds || []).join() === 'sam', 'admin: the people list is left as it was');
+  ok(s[CFG].people.length === 4 && (s[CFG].sousIds || []).join() === 'sam,head' && s[CFG].headId === 'head', 'admin: the people and canonical chef list keep the daily head-PIN owner');
   ok(p.errors.length === 0, 'admin: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 

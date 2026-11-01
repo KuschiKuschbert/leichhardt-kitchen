@@ -63,7 +63,7 @@ const changed = (before, after, fields) => fields.every(field => JSON.stringify(
     await p.click('[data-pr="restore"]'); await status(p, 'Original wording restored');
     let store = await dump(p), repaired = store[prepKey], events = await history(p), audit = events.find(([, event]) => event.recordId === 'pr-brie');
     ok(repaired.text === 'Cut brie' && repaired.orig === 'Cut brie' && repaired.recipe === '' && changed(extra[prepKey], repaired, ['qty', 'done', 'doneBy', 'doneById', 'doneAt', 'addedBy', 'addedById', 'addedAt', 'station']), width + ': restoring prep keeps its original, quantity, ticks and author and clears the derived recipe');
-    ok(events.length === 1 && audit && repaired.proofV === 1 && repaired.proofEvent === audit[0].split('/').pop() && audit[1].action === 'restore' && audit[1].before === 'Cut brine' && audit[1].after === 'Cut brie' && audit[1].original === 'Cut brie' && audit[1].by === '' && store[cfgKey].pastEdit.p === audit[1].at, width + ': prep repair and immutable audit share the version, writer and report invalidation timestamp');
+    ok(events.length === 1 && audit && repaired.proofV === 1 && repaired.proofEvent === audit[0].split('/').pop() && audit[1].action === 'restore' && audit[1].before === 'Cut brine' && audit[1].after === 'Cut brie' && audit[1].original === 'Cut brie' && audit[1].by === store[cfgKey].headId && repaired.by === audit[1].by && store[cfgKey].pastEdit.p === audit[1].at, width + ': prep repair and immutable audit share the version, daily verified head writer and report invalidation timestamp');
     await search(p, 'Cut brie');
     ok(await p.locator('[data-pr="review"]').count() === 0, width + ': a restored line leaves the correction queue after acknowledgement');
 

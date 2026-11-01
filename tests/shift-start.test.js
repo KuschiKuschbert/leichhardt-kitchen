@@ -1,7 +1,7 @@
 // The start of a shift (23 Oct 2026): once a day per person, one sheet comes up after the section picker with today's
 // pings and then the minutes still to sign. Never two sheets at once. Got it counts for each person, chefs get the
-// pings too (only a ping they have just saved does not pop straight back up at them), and on a shared tablet a sign-in
-// just to tick only brings up a Safety, Allergen alert or Off today ping. The mail nudge waits for the other sheets and never opens over a recipe.
+// pings too (only a ping they have just saved does not pop straight back up at them). Shared tablets require each
+// person's PIN before showing their pings. The mail nudge waits for other sheets and never opens over a recipe.
 const L = require('./lib');
 const { R, ok } = L.results(), { txt } = L;
 const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
@@ -22,7 +22,12 @@ const mins = () => ({ [fsKey(['minutes', 'm1'])]: { no: 1, v: 1, status: 'publis
   acts: [], next: '', pubAt: L.NOW - 3600000, removed: false, at: 1, upd: 1, by: 'sam' } });
 const sheets = p => p.evaluate(() => document.querySelectorAll('.nt-wrap, .ks-wrap, .mlp-wrap').length);
 const dot = p => p.evaluate(() => { const b = document.querySelector('.nbell'); return !!b && !b.hidden && b.classList.contains('has-new'); });
-async function pin(p, name, digits) { await p.click('.p-name[data-id="' + name + '"]'); await L.settle(p, 250); await p.keyboard.type(digits); await L.settle(p, 900); }
+async function pin(p, name, digits) {
+  const choice = p.locator('.p-name[data-id="' + name + '"]');
+  if (await choice.count() && await choice.isVisible()) { await choice.click(); await L.settle(p, 250); }
+  await p.fill('#pf1', digits);
+  await L.waitFor(p, id => LK_PREP.privateAccess() && LK_PREP.state.who === id, name, 8000); await L.settle(p, 300);
+}
 
 (async () => {
   const b = await L.start();
@@ -121,7 +126,8 @@ async function pin(p, name, digits) { await p.click('.p-name[data-id="' + name +
   ok(/Bidfood at 15:00/.test(await txt(p, '.nt-list') || '') && /pork belly/.test(await txt(p, '.nt-list') || ''), 'sous chef: the bell lists both');
   await p.context().close();
 
-  // a save that lands after its writer handed the tablet over is not marked read for the next person (or nobody)
+  // An unsent save cannot move to the next person's identity. If a forced lock hides it, the original recorder
+  // unlocks it first, then explicitly hands over once its acknowledgement has completed.
   p = await L.open(b, '#/prep', { who: 'sam', touch: true, settings: { shared: true }, extra: Object.assign(cfg(), ping('n1', 'Special: pork belly', { by: 'ann' })), wait: 2000 });
   await p.evaluate(d => { localStorage.setItem('lk.note.mig', '1'); localStorage.setItem('lk.note.seen', JSON.stringify({ d, sig: 'n1:1' })); }, today);
   await L.waitFor(p, () => !!document.querySelector('.nt-got')).catch(() => {});
@@ -134,8 +140,12 @@ async function pin(p, name, digits) { await p.click('.p-name[data-id="' + name +
   await p.click('.wtop-who'); await L.settle(p, 200);
   await p.click('[data-who="out"]'); await L.settle(p, 200);
   await p.click('[data-who="out"]').catch(() => {}); await L.settle(p, 400);
+  ok(await p.evaluate(() => LK_PREP.state.who === 'sam' || LK_PREP.state.lockRecorder === 'sam'), 'hand-over: an unsent ping remains tied to Sam until its acknowledgement completes');
   await p.evaluate(() => { window.__fake.mode = 'ok'; window.__fake.release(); });
   await L.settle(p, 600);
+  if (!await p.evaluate(() => LK_PREP.privateAccess())) await pin(p, 'sam', '1111');
+  await L.waitFor(p, () => !LK_PREP.unsaved(), null, 8000);
+  await p.evaluate(() => LK_PREP.signOut(true)); await L.settle(p, 500);
   await p.clock.runFor(61000); await L.settle(p, 400);
   ok(await p.$('.nt-wrap') === null, 'hand-over: nothing pops up over Who are you?');
   await p.click('[data-p="who-back"]').catch(() => {}); await L.settle(p, 300);
@@ -162,11 +172,10 @@ async function pin(p, name, digits) { await p.click('.p-name[data-id="' + name +
   ok(!!st1 && st2 > st1 && s[fsKey(['notes', 'n1'])].removed === false, 'Undo of a remove: put back, and a second stamp tells the other phones (' + st1 + ', ' + st2 + ')');
   await p.context().close();
 
-  // a shared tablet: Bo signs in only to tick. A Special waits on the bell; a Safety ping comes up, with no minutes
+  // A shared tablet shows no person's pings until their PIN; both ordinary and Safety pings then belong to Bo.
   p = await L.open(b, '#/prep', { who: '', touch: true, settings: { shared: true }, board: true, extra: Object.assign(cfg(), ping('n1', 'Special: pork belly', { tag: 'special' }), mins()), wait: 1500 });
-  // the tablet's own 14:00 call with nobody signed in: read on the tablet (after the update, so the mark is not handed on)
-  await L.waitFor(p, () => !!document.querySelector('.nt-got')).catch(() => {});
-  await p.evaluate(() => { localStorage.setItem('lk.note.mig', '1'); const n = document.querySelector('.nt-got'); if (n) n.click(); });
+  ok(!(await p.$('.nt-wrap')), 'tablet before a personal PIN: private pings are hidden');
+  await p.evaluate(() => { localStorage.setItem('lk.note.mig', '1'); });
   await L.settle(p, 300);
   await pin(p, 'bo', '3333');
   await p.clock.runFor(61000); await L.settle(p, 400);
@@ -174,9 +183,7 @@ async function pin(p, name, digits) { await p.click('.p-name[data-id="' + name +
   ok(await dot(p), 'tablet tick: the bell has its dot for Bo');
   await p.context().close();
   p = await L.open(b, '#/prep', { who: '', touch: true, settings: { shared: true }, board: true, extra: Object.assign(cfg(), ping('n1', 'Safety: fryer 2 is out', { tag: 'safety' }), mins()), wait: 1500 });
-  // nobody's Got it on a shared tablet is not handed on to the first cook after the update (no lk.note.mig set here)
-  await L.waitFor(p, () => !!document.querySelector('.nt-got')).catch(() => {});
-  await p.evaluate(() => { const n = document.querySelector('.nt-got'); if (n) n.click(); });
+  ok(!(await p.$('.nt-wrap')), 'tablet before Bo\'s PIN: no Safety ping or minutes are exposed');
   await L.settle(p, 300);
   await pin(p, 'bo', '3333');
   await p.clock.runFor(61000); await L.settle(p, 400);
@@ -241,17 +248,19 @@ async function pin(p, name, digits) { await p.click('.p-name[data-id="' + name +
   ok(await p.$('.nt-wrap') === null && await p.evaluate(d => localStorage.getItem('lk.board.ann') === d, today), 'the bell, then Close: no second sheet with the same minutes');
   await p.context().close();
 
-  // a desktop idle lock takes the sheet away; after the PIN it is Ann's again, and her Got it is hers
-  p = await L.open(b, '#/prep', { who: 'ann', width: 1280, height: 800, board: true, extra: Object.assign(cfg(), ping('n1', 'Delivery: Bidfood 09:00')), wait: 2000 });
+  // A shared computer's ten-minute lock hides the sheet without reading it. Ann can open her still-unread pings
+  // after the same PIN; the once-per-day start sheet does not need to pop up a second time.
+  p = await L.open(b, '#/prep', { who: 'ann', deviceMode: 'shared', width: 1280, height: 800, board: true, extra: Object.assign(cfg(), ping('n1', 'Delivery: Bidfood 09:00')), wait: 2000 });
   await L.waitFor(p, () => !!document.querySelector('.nt-wrap')).catch(() => {});
-  await p.clock.runFor(8 * 60000); await L.settle(p, 500);
-  ok(await p.$('.nt-wrap') === null && await p.evaluate(() => !localStorage.getItem('lk.note.seen')), 'idle lock: the sheet goes, nothing read for nobody');
-  if(await p.$('.p-name[data-id="ann"]')) { await p.click('.p-name[data-id="ann"]');await L.settle(p,300); }
-  await p.keyboard.type('2222'); await L.settle(p, 1200);
-  await L.waitFor(p, () => !!document.querySelector('.nt-got')).catch(() => {});
+  await p.clock.runFor(11 * 60000); await L.settle(p, 500);
+  ok(await p.$('.nt-wrap') === null && await p.evaluate(() => !localStorage.getItem('lk.note.seen') && !localStorage.getItem('lk.note.seen.ann')), 'idle lock: the sheet goes and Ann\'s pings are not marked read');
+  await pin(p, 'ann', '2222');
+  ok(await dot(p), 'idle lock: Ann\'s bell still identifies the unread pings after her PIN');
+  if (!(await p.$('.nt-got'))) { await p.click('.nbell'); await L.settle(p, 300); }
+  await L.waitFor(p, () => !!document.querySelector('.nt-got'));
   ok(await txt(p, '.nt-eb') === 'Ann', 'idle lock: after the PIN the sheet is Ann\'s');
   await p.click('.nt-got'); await L.settle(p, 300);
-  ok(await p.evaluate(() => !!localStorage.getItem('lk.note.seen.ann')), 'idle lock: her Got it is hers');
+  ok(await p.evaluate(() => !!localStorage.getItem('lk.note.seen.ann')) && !!(await store(p))[fsKey(['notes', 'n1', 'seen', today + '_ann'])], 'idle lock: her Got it records both the local mark and personal receipt for Ann');
   await p.context().close();
 
   // the sheet at tablet and laptop width: no sideways scroll, Got it in view, in the middle from 900 px
@@ -287,7 +296,7 @@ async function pin(p, name, digits) { await p.click('.p-name[data-id="' + name +
   ok(/^#\/r\//.test(await p.evaluate(() => location.hash)) && !(await p.$('.mlp-wrap')), 'mail: no nudge over the recipe a ping links to (' + await p.evaluate(() => location.hash) + ')');
   await p.context().close();
 
-  // the head chef's edit from the Google device is saved by nobody, not by the ping's writer
+  // An admin edit names the current head PIN recorder while retaining the ping's original author.
   p = await L.open(b, '#/admin', { admin: true, who: '', extra: Object.assign({}, head, ping('n1', 'Delivery: Bidfood 09:00', { by: 'ann', author: 'ann' })), wait: 2200 });
   await L.waitFor(p, () => !!document.querySelector('.nt-got')).catch(() => {});
   await p.click('.nt-got'); await L.settle(p, 300);
@@ -296,7 +305,7 @@ async function pin(p, name, digits) { await p.click('.p-name[data-id="' + name +
   await p.fill('[data-k="n-text"]', 'Delivery: Bidfood cancelled today');
   await p.click('[data-p="n-save"]'); await L.settle(p, 700);
   s = await store(p);
-  ok(s[fsKey(['notes', 'n1'])].by === '' && s[fsKey(['notes', 'n1'])].author === 'ann', 'Google device edit: saved by nobody, the writer kept');
+  ok(s[fsKey(['notes', 'n1'])].by === 'sam' && s[fsKey(['notes', 'n1'])].author === 'ann' && s[fsKey(['notes', 'n1'])].text === 'Delivery: Bidfood cancelled today', 'Google device edit: saved by the verified head PIN recorder and original author retained');
   await p.context().close();
 
   await b.close();

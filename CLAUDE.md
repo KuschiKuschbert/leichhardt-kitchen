@@ -15,6 +15,7 @@ The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the
 | Changing | Read |
 | --- | --- |
 | Login, who can read or write what, recipes, function writes | `docs/private-kitchen-access.md` (wins over older wording below) |
+| Device choice, Google persistence, daily PIN unlock, Update confirmation | `docs/device-sessions.md` (2 Nov 2026, replaces earlier session wording) |
 | Multiplying recipe amounts | `docs/recipe-multiplier.md` |
 | Shared-screen Prep attribution, modal picker, recorder identity and completion credit | `docs/shared-prep-attribution.md` |
 | Admin analysis, references, training records and nightly analysis | `docs/admin-intelligence.md` |
@@ -40,6 +41,7 @@ The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the
 | --- | --- |
 | `index.html` | The page and its security header (which outside services may load) |
 | `js/boot.js` | Runs first in `<head>`: the install offer, the saved text size, the book's clock (`LK_TIME`) |
+| `js/device.js` | Personal/shared device choice and guarded Settings controls. Read `docs/device-sessions.md` |
 | `js/upkeep.js` | Runs at the end of `<body>`: the daily 04:00 self-refresh, automatic updates, the service worker registration |
 | `js/data.js` | Every recipe (the only file staff edit). Field guide at the top |
 | `js/overlay.js` | Lays the head chef's recipe changes (Firestore `book/index`, `recipes/<id>`, kept on the phone in `lk.rx`) over `js/data.js` before `js/prep.js` and `js/app.js` run |
@@ -157,7 +159,7 @@ These hold for every session, every message and every change, however small. A h
 ## Changes that went wrong before (28 Oct 2026)
 Each rule here is a bug the book shipped and then fixed. Check your change against them before the pull request.
 
-**Walk every role through the change (#397, #398, #387).** An access or rules change locked staff out of their own minutes sign-off, and the head chef's Google device out of saving after a sous chef had. List every read and write the page makes, then run each through each role on the emulator: signed out, staff, lead, view only, Functions only, sous chef, the head chef on a PIN, the head chef's Google device with nobody signed in, the same device with staff signed in, and the shared tablet. A rule that tests only the new write is not enough. The page's reads fail too, and a refused read must say so, never show "nobody" or "0". `tests/rules/client-shapes.test.mjs` holds one row per call shape the book sends, with who may and who asks, for nine sign-ins: add a row for a new call. `tests/roles.test.js` opens each page as each role and fails on a read the rules refuse, and the stand-in (`tests/fake/`) refuses what the rules refuse.
+**Walk every role through the change (#397, #398, #387).** An access or rules change locked staff out of their own minutes sign-off, and the head chef's Google device out of saving after a sous chef had. List every read and write the page makes, then run each through each role on the emulator: signed out, staff, lead, view only, Functions only, sous chef, the head chef on a PIN, the remembered Google device while locked, its matching head PIN plus grant, the same device with staff signed in, and the shared tablet. A rule that tests only the new write is not enough. The page's reads fail too, and a refused read must say so, never show "nobody" or "0". `tests/rules/client-shapes.test.mjs` holds one row per call shape the book sends, with who may and who asks, for nine sign-ins: add a row for a new call. `tests/roles.test.js` opens each page as each role and fails on a read the rules refuse, and the stand-in (`tests/fake/`) refuses what the rules refuse.
 
 **A merge keeps what is stored (#398).** `setDoc` with `merge` leaves the old `by` and any field you do not send. Test a second writer after the first, not only the first save. `W()` always sends `by` (`wBy()`), including `''`.
 

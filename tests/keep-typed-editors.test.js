@@ -324,10 +324,12 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
     await S(p, ([k, v]) => window.__fake.write(k, v), [fsKey(['config', 'main']), Object.assign({}, c, { people: c.people.concat([P('zed', 'Zed', 'staff')]), staffIds: c.staffIds.concat(['zed']) })]);
     await L.settle(p, 600);
     ok(await p.$eval(qty, e => e.value) === '4 kg' && await S(p, () => window.LK_SUP.hasDraft()), 'supplier: a new starter saved on another phone keeps the order typed here');
-    // a person who may not open supplier orders any more loses it (privacy)
+    // Revocation hides the form and preserves the original work until explicit discard.
     await S(p, ([k, v]) => window.__fake.write(k, v), [fsKey(['config', 'main']), Object.assign({}, c, { headId: '', sousIds: ['sam'], staffIds: ['sam', 'ann'] })]);
     await L.settle(p, 600);
-    ok(!(await S(p, () => window.LK_SUP.hasDraft())) && await asks(p) === false, 'supplier: a person who may not open it any more loses the draft');
+    ok(await S(p, () => !!LK_PREP.workLock() && !LK_PREP.privateAccess() && LK_SUP.hasDraft()) && await asks(p) === true && !(await p.$(qty)), 'supplier: revoked access hides the form and keeps the original draft behind the lock');
+    await S(p, () => LK_PREP.signOut(true)); await L.settle(p, 300);
+    ok(!(await S(p, () => LK_SUP.hasDraft())) && await asks(p) === false, 'supplier: explicit discard clears the revoked person\'s retained draft');
     quiet(p, 'supplier draft');
     await p.context().close();
   });
@@ -662,7 +664,7 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
     await p.context().close();
   });
 
-  // Update now's second tap is the yes on the pages loaded on their own too: no Reload site? box on top
+  // Update now's explicit discard decision covers the independent editors without another browser question.
   const UPD = [
     ['Delivery received', '#/deliveries', { wait: 1500 }, '#dl-chilled', q => q.fill('#dl-chilled', '4')],
     ['Supplier order', '#/suppliers/northside', { who: 'bo', extra: F.fixture(), wait: 1800 }, qty, q => q.fill(qty, '4 kg')],
@@ -683,11 +685,11 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
       await wait(p, () => !!document.querySelector('.upd-bar'), null, 3000);
       await S(p, () => { window.__mark = 1; });
       await p.click('.upd-bar button'); await L.settle(p, 1500);
-      ok(/Tap again to update/.test(await txt(p, '.upd-bar') || ''), label + ': the first tap on Update now asks for a second (' + await txt(p, '.upd-bar') + ')');
-      await p.click('.upd-bar button');
+      ok(await p.locator('#lk-update-confirm[open]').count() === 1, label + ': Update now offers Keep working or Discard and update');
+      await p.click('#lk-update-confirm [data-update="discard"]');
       await L.waitFor(p, () => window.__mark !== 1, null, 15000).catch(() => {});
       const gone = await S(p, () => window.__mark !== 1).catch(() => true);
-      ok(gone && asked === 0, label + ': the second tap updates, with no Reload site? box (' + asked + ' asked)');
+      ok(gone && asked === 0, label + ': confirmed discard updates, with no Reload site? box (' + asked + ' asked)');
       await p.context().close();
     });
   }

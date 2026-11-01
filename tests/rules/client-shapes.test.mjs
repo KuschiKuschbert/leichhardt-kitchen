@@ -4,13 +4,13 @@
   labelled with its file and function (not line numbers, they move). A call that sends what a row sends (Put back after
   Remove, a second page that asks the same read) shares that row; a change with a rule clause of its own (an untick, an
   Undo, an edit, sous chef mail switched on) is a row of its own, and so is each list with a rule of its own (a row
-  that read two would hide one of them let through). W() is copied from js/prep.js: by on every set and update (empty
-  on the head chef's Google device with nobody signed in by PIN), and the public copy of a recipe, a drawing,
+  that read two would hide one of them let through). W() is copied from js/prep.js: the authenticated PIN recorder's by
+  on every set and update, and the public copy of a recipe, a drawing,
   book/index and book/matches in the same batch.
 
   Each row runs as 9 sign-ins (made-up people, the stand-in's own names):
-    owner   the head chef's Google account, nobody signed in by PIN
-    ownkit  the same Google device with Kit (the head chef, headId) signed in by PIN
+    owner   the head chef's personal anonymous device, daily PIN and owner grant
+    ownkit  a separate shared anonymous device, Kit's daily PIN and owner grant
     kit     Kit on their PIN only (headId, also in sousIds)
     sam     a sous chef (sousIds)
     ann     staff
@@ -33,7 +33,7 @@
     access.test.mjs        signed out, anonymous and a session that ran out: every private path refused, the public
                            recipe copies readable; what functions only and staff may read by path; public copies equal
                            to the canonical record
-    owner-saves.test.mjs   the Google device with nobody on PIN saving after a sous chef (recipe, drawing, picks, a Sent
+    owner-saves.test.mjs   a device with the head PIN and Google grant saving after a sous chef (recipe, drawing, picks, a Sent
                            tick, transfer Remove, Put back and Return, function Cancel and Undo), through W()
     direct-pings.test.mjs  personal pings: who writes, reads and marks them seen
     deliveries.test.mjs    delivery receipts: every field, the day window, immutable records
@@ -46,6 +46,7 @@
 import { initializeTestEnvironment } from '@firebase/rules-unit-testing';
 import { doc, getDoc, getDocs, getDocFromServer, getDocsFromServer, onSnapshot, collection, query, where, orderBy, limit, documentId,
   setDoc, deleteDoc, writeBatch, increment, setLogLevel } from 'firebase/firestore';
+import { anonContext, dailySession, adminGrant, seedOwnerDevice, nextFour } from './device-auth-fixtures.mjs';
 import { readFileSync } from 'node:fs';
 
 setLogLevel('silent');   // a refusal is an answer here, not something to log
@@ -72,15 +73,15 @@ const ROSTER = { people: PEOPLE, staffIds: IDS, sousIds: CFG.sousIds, headId: 'k
 
 /* ---------- the 9 sign-ins ---------- */
 const ALL = ['owner', 'ownkit', 'kit', 'sam', 'ann', 'lou', 'vic', 'fay', 'tab'];
-const WHO = { owner: '', ownkit: 'kit', kit: 'kit', sam: 'sam', ann: 'ann', lou: 'lou', vic: 'vic', fay: 'fay', tab: 'bo' };
+const WHO = { owner: 'kit', ownkit: 'kit', kit: 'kit', sam: 'sam', ann: 'ann', lou: 'lou', vic: 'vic', fay: 'fay', tab: 'bo' };
 const UID = { owner: 'g-owner', ownkit: 'g-ownkit', kit: 'u-kit', sam: 'u-sam', ann: 'u-ann', lou: 'u-lou', vic: 'u-vic', fay: 'u-fay', tab: 'u-tab' };
-const NAME = { owner: '', ownkit: 'Kit', kit: 'Kit', sam: 'Sam', ann: 'Ann', lou: 'Lou', vic: 'Vic', fay: 'Fay', tab: 'Bo' };
+const NAME = { owner: 'Kit', ownkit: 'Kit', kit: 'Kit', sam: 'Sam', ann: 'Ann', lou: 'Lou', vic: 'Vic', fay: 'Fay', tab: 'Bo' };
 const google = { email: OWNER, email_verified: true, firebase: { sign_in_provider: 'google.com' } }, anon = { firebase: { sign_in_provider: 'anonymous' } };
-const DB = Object.fromEntries(ALL.map(r => [r, env.authenticatedContext(UID[r], r === 'owner' || r === 'ownkit' ? google : anon).firestore()]));
+const DB = Object.fromEntries(ALL.map(r => [r, anonContext(env, UID[r]).firestore()]));
 // who the pages are: kitchenAccess() is everyone but functions only; the chefs are headId and sousIds, on their PIN
 // or the head chef's Google device (todoOK(), cutWho(), bookEdit()); the crew are staff, the lead, view only and the tablet
 const not = (...x) => ALL.filter(r => !x.includes(r));
-const KITCHEN = not('fay'), PINS = not('owner'), KPINS = not('owner', 'fay'), GOOGLE = ['owner', 'ownkit'];
+const KITCHEN = not('fay'), PINS = ALL, KPINS = not('fay'), GOOGLE = ['owner', 'ownkit'];
 const CHEFS = ['owner', 'ownkit', 'kit', 'sam'], CREW = ['ann', 'lou', 'vic', 'tab'];
 const ADDS = not('vic', 'fay'), TICKS = ADDS, DELS = ['owner', 'ownkit', 'kit', 'sam', 'lou'];   // can('add'), can('tick'), can('del')
 const MAIL = ['sam', 'ann', 'lou', 'vic', 'tab'];   // Kitchen mail in the chef hat: everyone signed in but the head chef
@@ -158,8 +159,9 @@ const seed = {
 };
 for (const id of IDS) seed['pinset/' + id] = { at: 1 };
 // every sign-in but the Google account alone has a running PIN session on its own phone (the tablet's is Bo's)
-for (const r of PINS) seed['sessions/' + UID[r]] = { by: WHO[r], pinAt: 1, exp: NOW + 20 * DAY, at: 1 };
+for (const r of PINS) seed['sessions/' + UID[r]] = dailySession(WHO[r],{at:NOW,mode:r==='ownkit'?'shared':'personal'});
 await put(seed);
+for(const r of GOOGLE) await seedOwnerDevice(env,{uid:UID[r],headId:'kit',at:NOW,mode:r==='ownkit'?'shared':'personal'});
 
 /* W() from js/prep.js: the writer's id (by) on every set and update (a by the caller set wins; '' on the Google device
    with nobody on PIN), the public copy in the same batch, the same merge */
@@ -326,11 +328,9 @@ row('js/prep.js newItem(): a prep line on today\'s list', { ok: KITCHEN, asks: A
 row('js/prep.js maybeRoll(): a line rolled onto today (addedById empty)', { ok: KITCHEN, asks: not('owner', 'vic', 'fay'),
   run: (db, w, r) => W(r, [['set', `days/${TODAY}/items/r-${r}`, newLine({ addedBy: 'Rolled over', addedById: '', addedAt: Date.now(), rolled: 1, root: 'l0', from: 'l0', rolledFrom: YDAY, origBy: 'Ann', origAt: NOW - DAY, urgent: false, ahead: false })]]) });
 row('js/prep.js tickNow(): tick a prep line', { ok: KITCHEN, asks: TICKS,
-  known: Object.assign({ roles: ['owner'], why: 'on the Google device with nobody on PIN tickNow() reads me().name, which is null, so the tick throws before it is sent' }, EXP),
   prep: r => put({ [`days/${TODAY}/items/${MINE(r)}`]: line() }),
   run: (db, w, r) => { const stamp = Date.now(); return W(r, [['upd', `days/${TODAY}/items/${MINE(r)}`, { done: true, doneBy: NAME[r], doneById: w, doneAt: stamp, preparedBy: NAME[r], preparedById: w, preparedAt: stamp }]]); } });
 row('js/prep.js shared tick: reported worker differs from the authenticated recorder', { ok: KITCHEN, asks: TICKS,
-  known: Object.assign({ roles: ['owner'], why: 'the shared prep picker requires a personal operator; the Google device with nobody on PIN has no task recorder' }, EXP),
   prep: r => put({ [`days/${TODAY}/items/shared-${r}`]: line() }),
   run: (db, w, r) => { const stamp = Date.now(); return W(r, [['upd', `days/${TODAY}/items/shared-${r}`, { done: true, doneBy: NAME[r], doneById: w, doneAt: stamp, preparedBy: 'Ann', preparedById: 'ann', preparedAt: stamp }]]); } });
 // an untick (canUntick()): a chef any time (canBrowse()), or the person who ticked it within 2 minutes. tickNow() then
@@ -346,7 +346,6 @@ row('js/prep.js tickNow(): untick my own tick within 2 minutes, and off my tally
   prep: (r, w) => put({ [`days/${TODAY}/items/m-${r}`]: line({ done: true, doneBy: NAME[r], doneById: w, doneAt: Date.now() - 30000 }) }),
   run: async (db, w, r) => { await W(r, [['upd', `days/${TODAY}/items/m-${r}`, UNTICK]]); return W(r, [['set', 'activity/' + ownId(r, w), { name: NAME[r], ticked: increment(-1) }, true]]); } });
 row('js/prep.js removeItem(): remove a prep line', { ok: KITCHEN, asks: DELS,
-  known: Object.assign({ roles: ['owner'], why: 'on the Google device with nobody on PIN removeItem() reads me().name, which is null, so Remove throws before it is sent' }, EXP),
   prep: r => put({ [`days/${TODAY}/items/${MINE(r)}`]: line() }),
   run: (db, w, r) => W(r, [['upd', `days/${TODAY}/items/${MINE(r)}`, { deleted: true, deletedBy: NAME[r], deletedAt: Date.now() }]]) });
 row('js/prep.js noteSection(): sections/<name> merge (uses + 1)', { ok: KITCHEN, asks: ADDS,
@@ -356,7 +355,6 @@ row('js/prep.js dailyFlush(): daily/<day>_<tag> (usage counts)', { ok: KITCHEN, 
 row('js/prep.js addOrder(): an order line', { ok: KITCHEN, asks: ADDS,
   run: (db, w, r) => W(r, [['set', `orders/${TODAY}/lines/${MINE(r)}`, { text: 'Lemons', qty: '2 kg', qn: 2, qu: 'kg', recipes: [], addedBy: NAME[r], addedById: w, addedAt: Date.now(), ordered: false, deleted: false }]]) });
 row('js/prep.js orderedOp(): tick an order line ordered', { ok: CHEFS, asks: CHEFS,
-  known: Object.assign({ roles: ['owner'], why: 'on the Google device with nobody on PIN orderedOp() reads me().name, which is null, so Ordered throws before it is sent' }, EXP),
   prep: r => put({ [`orders/${TODAY}/lines/${MINE(r)}`]: { text: 'Cream', qty: '4 L', recipes: [], addedBy: 'Ann', addedById: 'ann', addedAt: NOW - 3600000, ordered: false, deleted: false, by: 'ann' } }),
   run: (db, w, r) => W(r, [['upd', `orders/${TODAY}/lines/${MINE(r)}`, { ordered: true, orderedBy: NAME[r], orderedAt: Date.now() }]]) });
 // (canBrowse() and can('del'): the chefs only, so a lead never sends it)
@@ -656,11 +654,9 @@ row('js/prep.js proofWord(): protected word config and private audit in one W() 
 /* ---------- a person's PIN reset while their book is open (r2-1-2) ----------
    The owner's Reset PIN deletes pinset/<id>; the person's running config/main listener is refused at once, which is
    right. login/roster still opens, so the page can tell this from a wrong kitchen PIN. Kept last: it takes PINs away. */
-const RESET = KPINS.filter(r => r !== 'ownkit');
 const resetPrep = (r, w) => w ? put({ ['pinset/' + w]: null }) : Promise.resolve();
 const resetBack = (r, w) => w ? put({ ['pinset/' + w]: { at: 1 } }) : Promise.resolve();
-row('js/prep.js connect(): config/main listener once my PIN is reset (Reset PIN, Stopped working here)', { ok: GOOGLE, asks: [],
-  known: { roles: RESET, pr: 'PR 4 (r2-1-2)', why: 'the refusal is right, but the page reads it as a wrong kitchen PIN and forgets the kitchen PIN, when it should ask this person for their own PIN again (client)' },
+row('js/prep.js connect(): config/main listener once my PIN is reset (Reset PIN, Stopped working here)', { ok: [], asks: [],
   prep: resetPrep, after: resetBack, run: db => listen(D(db, 'config/main')) });
 row('js/prep.js connect(): login/roster once my PIN is reset (what the page falls back to)', { ok: ALL, asks: KPINS,
   prep: resetPrep, after: resetBack, run: db => getDoc(D(db, 'login/roster')) });

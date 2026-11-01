@@ -19,7 +19,7 @@ const reloaded = p => p.evaluate(() => window.__mark !== 1).catch(() => true);
   await p.context().close();
 
   // something half written on the prep list: no reload at 04:00, one 10 minutes later once it is gone
-  // a phone (touch, no keyboard events), so the computer's 7.5 minute idle lock stays out of it
+  // Personal devices keep the draft behind the daily PIN, with no idle logout.
   p = await L.open(b, '#/prep', { touch: true, wait: 1500 });
   const type = v => p.evaluate(v => { const e = document.getElementById('p-text'); e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); }, v);
   await type('Half a line');
@@ -27,12 +27,17 @@ const reloaded = p => p.evaluate(() => window.__mark !== 1).catch(() => true);
   await p.clock.fastForward('14:01:00');
   await L.settle(p, 500);
   ok(!(await reloaded(p)), 'half a line typed: no reload at 04:00');
+  ok(await p.evaluate(() => !!LK_PREP.workLock() && LK_PREP.state.text === 'Half a line'), '04:00 preserves the original draft behind the PIN');
+  const person = p.locator('.p-name[data-id="sam"]'); if (await person.count() && await person.isVisible()) await person.click();
+  await p.locator('#pf1').fill('1111');
+  await L.waitFor(p, () => LK_PREP.privateAccess());
+  await p.clock.runFor(4000); await L.waitFor(p, () => !LK_PREP.unsent());
   // after midnight a sous chef's list shows yesterday (no add box there); the half line is still held, so it is cleared
   // the way Add or Clear would leave it
   await p.evaluate(() => { window.LK_PREP.state.text = ''; window.LK_PREP.state.qty = ''; if (document.activeElement) document.activeElement.blur(); });
   await p.clock.fastForward('00:10:30');
   await L.waitFor(p, () => window.__mark !== 1, null, 10000).catch(() => {});
-  ok(await reloaded(p), 'the box emptied: it reloads 10 minutes later');
+  ok(await reloaded(p), 'same-person unlock and the box emptied: it reloads 10 minutes later');
   await p.context().close();
 
   await b.close();

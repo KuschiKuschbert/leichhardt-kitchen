@@ -19,7 +19,7 @@ const val = (p, f) => txt(p, '.dr-fold[data-f="' + f + '"] .dr-val');
     { id: 'ann', name: 'Ann', role: 'staff', add: true, tick: true, del: false, active: true },
     { id: 'bo', name: 'Bo', role: 'staff', add: true, tick: true, del: false, active: true },
     { id: 'kim', name: 'Kim Lee', role: 'staff', add: true, tick: true, del: false, active: true }
-  ], sousIds: ['sam'], staffIds: ['sam', 'ann', 'bo', 'kim'], showBadges: true };
+  ], sousIds: ['sam'], staffIds: ['sam', 'ann', 'bo', 'kim'], pinOpen: { kim: L.NOW + 7 * 86400000 }, showBadges: true };
   let p = await L.open(b, '#/prep', { who: '', extra: { [fsKey(['config', 'main'])]: cfg }, wait: 1200 });
   await p.click('.p-name[data-id="kim"]');
   await p.keyboard.type('4444'); await L.settle(p, 600);
