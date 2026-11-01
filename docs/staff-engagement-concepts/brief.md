@@ -1,14 +1,33 @@
 # Better signals and quiet encouragement
 
-Requested 1 November 2026. Status: proposals and three interactive visual concepts, awaiting selection. This branch changes documentation and example-only previews. It does not change the live app, collect staff information or read/write kitchen records.
+Requested 1 November 2026. Current status: focused shared-screen prep attribution preview following the user's workshop. Earlier encouragement ideas remain proposals. This branch changes documentation and example-only previews. It does not change the live app, collect staff information or read/write kitchen records.
 
 The aim is more useful, honestly attributed records and easier follow-through. The examples treat "clock in" as signing into the app under a person's own name. The Kitchen Book is not a payroll time clock. A personal PIN session on the shared screen is as valid as one on a phone.
 
 ## Test the designs in a browser
 
-[Open the private interactive preview](https://leichhardt-staff-designs-20261101.suededulse1.chatgpt.site/). Direct examples: [A, Shift Card](https://leichhardt-staff-designs-20261101.suededulse1.chatgpt.site/a.html), [B, Section Board](https://leichhardt-staff-designs-20261101.suededulse1.chatgpt.site/b.html), [C, Craft Book](https://leichhardt-staff-designs-20261101.suededulse1.chatgpt.site/c.html). Sign in with the same ChatGPT account if prompted. These links replace the internal workspace paths, which were not usable from the chat.
+[Open the latest shared-screen prep demo](https://leichhardt-staff-designs-20261101.suededulse1.chatgpt.site/). Tap an unfinished task's normal tick, then a name. Try Others, cancelling, Undo, and switching the preview to Own phone. The sample Prep and Wastage views remain available. All names, amounts and records are illustrative and reset on reload.
 
-This is a separately hosted synthetic preview. It does not connect to kitchen data or change the live Kitchen Book. The hosting package passed 17 root-URL and example-save checks; Sites confirmed successful deployment of version 1.
+The [earlier three-concept comparison](https://leichhardt-staff-designs-20261101.suededulse1.chatgpt.site/encouragement.html) remains available: [A, Shift Card](https://leichhardt-staff-designs-20261101.suededulse1.chatgpt.site/a.html), [B, Section Board](https://leichhardt-staff-designs-20261101.suededulse1.chatgpt.site/b.html), [C, Craft Book](https://leichhardt-staff-designs-20261101.suededulse1.chatgpt.site/c.html). Sign in with the same ChatGPT account if prompted. These links replace the internal workspace paths, which were not usable from the chat.
+
+This is a separately hosted synthetic preview. It does not connect to kitchen data or change the live Kitchen Book.
+
+## Current workshop: quick attribution on the normal prep sheet
+
+The user's priority is to make personal-phone use convenient and give shared-screen prep a quick, accurate reported doer. Multiple staff may have prepared different items even though one account ticks the list. The chosen preview explores the existing tick with one extra name tap. No production implementation is authorised by the request to see this preview.
+
+| Context | Proposed interaction |
+| --- | --- |
+| Own phone | The normal one-tap tick credits the signed-in person. |
+| Shared screen | Tap the existing tick to open a compact inline Who did this? picker for that task. Task completion waits for a name. |
+| Priority names | Show active staff with successful sign-ins on this exact device during the same kitchen day, most recent first. These are device sign-ins, not attendance or proof of who did the task. |
+| Others | Reveal remaining active kitchen staff as inline name chips. Selecting a doer does not sign them in, switch the session or change device-login recency. |
+| Attribution | Keep the reported doer separate from the authenticated account recording the action. No PIN or account switch is added per task. |
+| Cancel and change | Cancel or Escape leaves the task unfinished. The next task asks again; a previous selected doer is not silently carried forward. Permitted Undo remains available. |
+
+All current Prep, Wastage, navigation, role checks and other workflows must remain. The prototype includes realistic sample sheets to show placement, not a complete copy of every production tool. Unrelated example destinations are labelled clearly. No points, streaks or new rankings are part of this focused flow.
+
+The existing `hereGet()` / `hereAdd()` helpers in `js/prep.js` already keep a device-local, kitchen-day list of authenticated names, most recent first and capped at 12. Successful sign-in and a valid restored session add to it; the current person picker filters inactive staff. Future implementation should reuse this ordering where appropriate and agree the reported-doer/recorder storage and rules contract. The existing prep writer and rules currently bind completion identity to the authenticated actor. A separate claimed doer cannot be introduced by changing the display alone. Device-login sorting is a convenience; no attendance, payroll or verified physical identity may be inferred.
 
 ## Existing functionality is mandatory
 
@@ -92,13 +111,17 @@ This review uses repository code and existing synthetic tests, not production st
 
 ## Selection and implementation boundary
 
-Choose a visual direction and the first behaviours before changing the app. The smallest useful first release is A with the current-name receipt and useful-save feedback. An explicit section check or private cross-day history needs its own agreed data/rules design; do not silently create it from silence or tick counts. Staff must not gain access to admin analysis, other people's private progress or chef-only reviews.
+The workshop has narrowed the next design to the inline shared-screen attribution flow above. The earlier Shift Card, Section Board and Craft Book are retained for reference, not selected for implementation. Explicit section checks, private cross-day history and other encouragement features remain undecided. Do not introduce them with the attribution picker. Staff must not gain access to admin analysis, other people's private progress or chef-only reviews.
 
 This design PR must remain a draft and must not be merged or deployed as implemented gamification. The existing live application is unchanged. Selection and later release evidence belong in the PR and this brief.
 
 ## Preview files and verification
 
-Open [the interactive comparison](index.html), [the single-file portable comparison](review.html), or [the design board](previews/comparison.png). The board shows A's default work view, B's board after scrolling past work, and C's book after opening it. The [design contract](design-contract.md) records the comparable actions and boundaries.
+The focused prep attribution demo passes 33 browser checks. They cover recent-name ordering, active-only Others choices, separate doer and recorder, unchanged sign-in priority after choosing a doer, Cancel/Escape/click-away, Undo, one-tap phone completion, simulated successful sign-in, ordinary Add/date/section controls and sample waste logging. Keyboard access, 44 px targets, enlarged phone text and 390/768/1440 px layouts pass. Phone picker controls and expanded choices stay above fixed navigation. No missing assets, page errors, app API calls, network writes or storage writes were observed. An independent review also exercised the core interaction. These checks validate the synthetic preview only.
+
+Captures: [phone](previews/prep-attribution-390.png), [tablet](previews/prep-attribution-768.png), [desktop](previews/prep-attribution-1440.png). The hosted homepage and `prep-attribution.html` intentionally use the same document and assets. Keep them in step when changing this demo.
+
+Open [the latest prep attribution demo](prep-attribution.html), [the earlier interactive comparison](encouragement.html), [the single-file portable comparison](review.html), or [the earlier design board](previews/comparison.png). The board shows A's default work view, B's board after scrolling past work, and C's book after opening it. The [design contract](design-contract.md) records the current interaction and earlier comparison boundaries.
 
 The three concepts pass 165 focused checks in total: A 48, B 46 and C 71. Both the normal and portable comparisons pass 69 checks each across 390, 768 and 1440 px, including tabs, keyboard controls, preview sizing, state retention and full-size links. These are 303 focused browser checks in total. Final captures use the actual fonts and fit all three widths with no page errors or horizontal overflow. Enlarged phone text, Save clearance, failure/retry and changing the example person are covered.
 

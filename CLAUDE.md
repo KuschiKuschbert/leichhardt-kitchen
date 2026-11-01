@@ -18,7 +18,7 @@ The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the
 | Multiplying recipe amounts | `docs/recipe-multiplier.md` |
 | Admin analysis, references, training records and nightly analysis | `docs/admin-intelligence.md` |
 | Admin visual design, selected A: The Chef's Desk | `docs/admin-design-options/brief.md` |
-| Staff insight and quiet encouragement design proposals, awaiting selection | `docs/staff-engagement-concepts/brief.md` |
+| Shared-screen prep attribution preview and earlier encouragement proposals; no production implementation yet | `docs/staff-engagement-concepts/brief.md` |
 | Suppliers, order history, cut-off sheets | `docs/supplier-workspace.md` |
 | Wastage history, ranges, CSV | `docs/wastage-history.md` |
 | Transfer storage and returns | `docs/transfer-returns.md` |
