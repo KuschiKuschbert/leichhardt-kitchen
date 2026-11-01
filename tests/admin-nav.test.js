@@ -4,11 +4,14 @@ const L = require('./lib'); const { R, ok } = L.results();
   const b = await L.start();
   for (const width of [390, 768, 1280]) {
     const p = await L.open(b, '#/admin', { admin: true, width, height: 900, wait: 1800 });
-    ok(await p.locator('.a-group').count() === 6, width + ': six admin sections');
-    if (width < 720) await p.selectOption('[data-k="ai-section"]', 'training');
-    else await p.click('[data-g="training"]');
-    ok(await p.locator('[data-t="training"]').count() === 1, width + ': Training section opens');
-    for (const tab of ['insights', 'team', 'waste', 'transfers', 'learning', 'people', 'tools', 'cutoffs', 'minutes', 'guides']) {
+    const groups = await p.locator('.a-group').evaluateAll(nodes => nodes.map(el => el.getAttribute('data-g')));
+    ok(JSON.stringify(groups) === JSON.stringify(['review', 'reports', 'records', 'today', 'settings']), width + ': five task-based admin sections');
+    if (width < 720) await p.selectOption('[data-k="ai-section"]', 'review');
+    else await p.click('[data-g="review"]');
+    ok(await p.locator('[data-t="references"]').count() === 1 && await p.locator('[data-t="training"]').count() === 1, width + ': Review desk offers item links and training');
+    await L.adminTab(p, 'reference-records');
+    ok(await p.locator('[data-g="records"][aria-current="page"]').count() === 1 && await p.locator('[data-t="training-records"]').count() === 1, width + ': confirmed links and assessments are together in Saved records');
+    for (const tab of ['overview', 'references', 'training', 'reference-records', 'training-records', 'analysis', 'insights', 'team', 'waste', 'transfers', 'learning', 'people', 'tools', 'cutoffs', 'minutes', 'guides']) {
       await L.adminTab(p, tab);
       ok(await p.evaluate(t => LK_PREP.state.atab === t, tab), width + ': retained page id ' + tab);
     }

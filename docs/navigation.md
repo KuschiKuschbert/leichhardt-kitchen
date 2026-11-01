@@ -65,6 +65,29 @@ No schema, rule, role, query, listener or persistent cache is added. Existing re
 Date selection, search, filters and admin tabs remain local controls without extra browser history entries.
 Lazy editors use revised script addresses and API checks (recipe/drawing/function UI 4, supplier UI 5) so an older delivered module asks for an update.
 
+## Admin review desk
+
+The selected workbench flow groups the admin panel into Review desk, Reports, Saved records, Operations and
+Settings. Review desk has Item links and Training queues. Its existing `overview` page id opens the desk with
+Item links selected; existing admin entry links and saved page ids remain valid. Reports retains item evidence,
+Insights, Wastage, Transfers, Learning and Team. Confirmed links, Assessments and Guides live under Saved records.
+
+Item-link review, training assessment, item evidence and revision history use the admin module's contextual
+return action while that workspace is visible. The dark-header arrow names the return destination and returns
+within the task before leaving admin. No Back action saves a record. A visible admin task whose save is waiting
+keeps Back disabled until its outcome is known. Drafts retained on another admin page do not intercept that
+page's Back action.
+
+The unfinished-task banner remains available on Reports, Saved records, Operations and Settings when the
+current reference or assessment draft is elsewhere. Resume returns to that task with its typed values. Opening
+a second task cannot silently replace an existing draft. Existing sign-out, shared-device clearing and unload
+checks still apply. Opening a recipe, guide or supplier continues to use the normal page trail.
+
+Review desk and focused detail views suppress the extra On this page navigation row. Longer existing reports
+retain their heading jumps. The admin module uses API 3 and a revised lazy script address, with a version check
+before it is allowed to render. This is a client flow change; it adds no native history entries for local tabs,
+does not put form values in browser history and changes no save permissions or database contracts.
+
 `parent-return`, `back-navigation`, `local-back-navigation`, `editor-navigation` and `supplier-navigation` cover contextual returns,
 direct links, Back and Forward, draft recovery, discard checks, blocked saves and native sheet closing. Existing
 admin navigation, supplier save, permissions, offline, read-budget and full click suites remain release gates.

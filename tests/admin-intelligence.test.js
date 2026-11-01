@@ -10,6 +10,12 @@ const extra = { [path('references', 'ai-milk')]: ref,
   [path('analysis', 'health')]: { at: L.NOW, status: 'failed' }, [path('analysisDaily', 'g1_' + day)]: daily };
 for (const n of [7, 30, 90]) extra[path('analysis', 'range-' + n)] = { ...agg, generation: 'g1', from: day, to: day, days: 1, totalItems: agg.items.length, at: L.NOW, dates: [{ day, counts: daily.counts }] };
 extra[path('config', 'main')] = { ...L.seed()[path('config', 'main')], kitSecs: [{ id: 'larder', name: 'Larder' }] };
+const editSavedReference = async (p, label) => {
+  await L.adminTab(p, 'reference-records');
+  await p.click('.ai-reference-confirmed [data-ai="edit-reference"]');
+  await p.locator('[data-ai-disclosure="reference-options"] summary').click();
+  await p.fill('#ai-label', label);
+};
 (async () => {
   const b = await L.start();
   for (const width of [390, 768, 1280]) {
@@ -21,7 +27,7 @@ extra[path('config', 'main')] = { ...L.seed()[path('config', 'main')], kitSecs: 
     await p.locator('[data-ai="evidence"]').first().click(); await L.settle(p, 500);
     ok(/Record: w/.test(await L.txt(p, '.ai-workspace')), width + ': opens daily source evidence');
     ok(await p.locator('.ai-workspace a[href="#/r/laksa"]').count() === 1, width + ': recipe reference');
-    await L.adminTab(p, 'references'); await p.click('[data-ai="edit-reference"]'); await p.fill('#ai-label', 'Milk reference');
+    await editSavedReference(p, 'Milk reference');
     await p.click('[data-ai="save"]');
     await L.waitFor(p, k => (window.__fake.dump()[k] || {}).v === 2, path('references', 'ai-milk'));
     const dump = await p.evaluate(() => window.__fake.dump());
@@ -33,14 +39,14 @@ extra[path('config', 'main')] = { ...L.seed()[path('config', 'main')], kitSecs: 
     await L.waitFor(p, () => Object.keys(window.__fake.dump()).some(k => /\/training\/[^/]+$/.test(k)));
     const saved = await p.evaluate(() => Object.entries(window.__fake.dump()).filter(([k]) => /\/training\/[^/]+$/.test(k)).map(([, v]) => v));
     ok(saved.length === 1 && saved[0].status === 'in-training', width + ': explicit training assessment saved');
-    await p.click('[data-ai="person"][data-value="ann"]');
+    await p.selectOption('#ai-person-filter', 'ann');
     ok(/Larder/.test(await L.txt(p, '.ai-workspace')), width + ': person activity accessible');
     ok(!(await L.overflow(p)), width + ': no overflow');
     ok(p.errors.length === 0, width + ': no browser errors ' + p.errors.join(' | '));
     await p.context().close();
   }
   let p = await L.open(b, '#/admin', { admin: true, who: '', extra, wait: 1800 });
-  await L.adminTab(p, 'references'); await p.click('[data-ai="edit-reference"]'); await p.fill('#ai-label', 'Keep my draft');
+  await editSavedReference(p, 'Keep my draft');
   await p.evaluate(() => { window.__fake.deny = /\/references\//; });
   await p.click('[data-ai="save"]');
   await L.waitFor(p, () => /Could not save/.test((document.querySelector('.ai-message') || {}).textContent || ''), null, 5000).catch(() => {});
