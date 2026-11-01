@@ -88,6 +88,37 @@ async function checkDateClearance(p, name) {
   ok(clearance, name + ': the last required training field can scroll clear of the fixed Save area');
 }
 
+async function checkLearningJump(browser, text) {
+  const name = '390 Learning ' + (text === 'xlarge' ? 'extra large' : 'normal text');
+  const p = await L.open(browser, '#/admin', { admin: true, adminPage: 'learning', who: '', width: 390, height: 844, settings: { text }, wait: 1600 });
+  await L.adminTab(p, 'learning');
+  await L.waitFor(p, () => document.querySelectorAll('.a-onpage [data-p="jump"]').length > 0);
+  const longest = await p.locator('.a-onpage [data-p="jump"]').evaluateAll(nodes => nodes.map(el => ({
+    id: el.getAttribute('data-v'), label: el.textContent.replace(/^\d+\s*/, '').trim()
+  })).sort((a, b) => b.label.length - a.label.length)[0]);
+  await p.click('[data-p="aj-open"]');
+  await p.click('#aj-sheet [data-aj="go"][data-v="' + longest.id + '"]');
+  await L.settle(p, 600);
+  const revealed = await p.evaluate(id => {
+    const heading = document.getElementById(id).getBoundingClientRect(), picker = document.querySelector('.a-nav').getBoundingClientRect();
+    const limit = document.querySelector('.tabbar').getBoundingClientRect().top;
+    return heading.top >= picker.bottom - 1 && heading.top < limit && !document.querySelector('#aj-sheet');
+  }, longest.id);
+  ok(revealed, name + ': choosing the longest real section name reveals its heading below the chapter picker');
+  const fits = await p.evaluate(label => {
+    const control = document.querySelector('.a-jumpbtn'), current = control.querySelector('.a-jumpcur');
+    const r = control.getBoundingClientRect(), c = current.getBoundingClientRect();
+    return r.width >= 44 && r.height >= 44 && r.left >= -1 && r.right <= innerWidth + 1 &&
+      c.left >= r.left && c.right <= r.right + 1 && current.scrollWidth <= current.clientWidth + 1 && current.textContent.trim() === label;
+  }, longest.label);
+  ok(fits, name + ': the longest current jump label fits the phone within a 44 px target');
+  await p.click('[data-p="aj-open"]');
+  ok(await p.locator('#aj-sheet [role="dialog"]').isVisible(), name + ': the jump control remains tappable after showing the long current label');
+  await p.keyboard.press('Escape');
+  ok(!(await L.overflow(p)) && p.errors.length === 0, name + ': the actual jump flow has no sideways scroll or browser errors ' + p.errors.join(' | '));
+  await p.context().close();
+}
+
 const privateWrites = p => p.evaluate(() => window.__fake.writes.flat().filter(x => /\/(references|training)\//.test(x.path)).length);
 
 (async () => {
@@ -177,5 +208,6 @@ const privateWrites = p => p.evaluate(() => window.__fake.writes.flat().filter(x
   ok(await p.locator('.ai-editor:visible').count() === 0 && !(await L.overflow(p)), '390 extra large: the visible Save completes the explicit assessment and returns to a fitting queue');
   ok(p.errors.length === 0, '390 extra large: no browser errors ' + p.errors.join(' | '));
   await p.context().close();
+  for (const text of ['normal', 'xlarge']) await checkLearningJump(b, text);
   await b.close(); L.report(R);
 })().catch(e => { console.error(e); process.exit(1); });
