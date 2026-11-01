@@ -1315,6 +1315,8 @@ details.nb-start-l[open] > summary::after { content: '\2212'; }
   .p-admin > .p-bar, .p-admin > h2 { grid-column: 1 / -1; }
   .p-admin > .a-navtop { display: none; }
   .p-admin > .a-nav { grid-column: 1; grid-row: 3; margin: 0; max-height: calc(100dvh - 5rem); overflow-y: auto; transform: none; }
+  /* The sidebar scrolls as one column. Shrinking its groups lets later page buttons cover Settings. */
+  .p-admin > .a-nav > nav { flex: 0 0 auto; }
   .p-admin > .a-pane { grid-column: 2; grid-row: 3; min-width: 0; }
   .p-admin .a-groups { flex-direction: column; }
   .p-admin .a-group { flex: none; text-align: left; border-left: 0; border-top: 1px solid var(--line); padding: 0.65rem; white-space: normal; }
