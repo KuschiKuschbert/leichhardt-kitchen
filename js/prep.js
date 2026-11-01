@@ -3823,18 +3823,24 @@
   var intelligenceLoading = null, intelligenceError = false;
   function intelligenceAllowed() { return !!fb && S.level === 'owner' && ownerHere() && !!S.user; }
   function intelligenceContext() { return S.pin + '|' + (S.user ? S.user.uid : '') + '|' + S.who + '|' + accessEpoch; }
+  var INTELLIGENCE_PAGES = ['overview', 'analysis', 'references', 'training', 'reference-records', 'training-records'];
+  function intelligenceVisible() {
+    return intelligenceAllowed() && S.name === 'admin' && S.root && document.body.contains(S.root) &&
+      S.root.querySelector('.ai-workspace') && window.LK_INTELLIGENCE && window.LK_INTELLIGENCE.API === 3;
+  }
+  function intelligenceBusy() { return !!(intelligenceVisible() && window.LK_INTELLIGENCE.busy && window.LK_INTELLIGENCE.busy()); }
   function intelligenceHTML(page) {
     if (!intelligenceAllowed()) return '';
-    if (!window.LK_INTELLIGENCE || window.LK_INTELLIGENCE.API !== 2 || !window.LK_ANALYSIS) {
+    if (!window.LK_INTELLIGENCE || window.LK_INTELLIGENCE.API !== 3 || !window.LK_ANALYSIS) {
       if (!intelligenceLoading && !intelligenceError) {
-        intelligenceLoading = window.LK_APP.load('js/analysis-core.js?v=1').then(function () { return window.LK_APP.load('js/admin-intelligence.js?v=2'); }).then(function () { if (!window.LK_INTELLIGENCE || window.LK_INTELLIGENCE.API !== 2 || !window.LK_ANALYSIS) throw { code: 'workspace-version' }; }).then(function () { intelligenceLoading = null; if (intelligenceAllowed()) draw(); }, function () { intelligenceLoading = null; intelligenceError = true; if (intelligenceAllowed()) draw(); });
+        intelligenceLoading = window.LK_APP.load('js/analysis-core.js?v=1').then(function () { return window.LK_APP.load('js/admin-intelligence.js?v=3'); }).then(function () { if (!window.LK_INTELLIGENCE || window.LK_INTELLIGENCE.API !== 3 || !window.LK_ANALYSIS) throw { code: 'workspace-version' }; }).then(function () { intelligenceLoading = null; if (intelligenceAllowed()) draw(); }, function () { intelligenceLoading = null; intelligenceError = true; if (intelligenceAllowed()) draw(); });
       }
       return '<section class="set-block"><h3 class="label">Admin workspace</h3><p class="hint" role="status">' + (intelligenceError ? 'Could not load the workspace. Check the connection and reload this page.' : 'Loading...') + '</p></section>';
     }
     return window.LK_INTELLIGENCE.html(page, {
       allowed: intelligenceAllowed, context: intelligenceContext, draw: draw, now: now,
       day: function (at) { return at == null ? dayNow() : T.day(at); }, clock: function (at) { return T.day(at) + ' ' + hhmm(T.mins(at)); },
-      page: function (tab) { if (['overview', 'analysis', 'references', 'training'].indexOf(tab) < 0) return; S.atab = tab; lsSet('lk.prep.atab', tab); draw(); adminToTop(); },
+      page: function (tab) { if (INTELLIGENCE_PAGES.indexOf(tab) < 0 || intelligenceBusy()) return; S.atab = tab; lsSet('lk.prep.atab', tab); draw(); adminToTop(); },
       get: function (path) {
         if (!intelligenceAllowed() || !/^(analysis\/(current|health|range-(7|30|90))|analysisDaily\/[a-z0-9]+_\d{4}-\d{2}-\d{2})$/.test(path)) return Promise.reject({ code: 'permission' });
         return fb.fs.getDocFromServer(docRef.apply(null, path.split('/'))).then(function (sn) { return sn.exists() ? sn.data() : null; });
@@ -3867,6 +3873,7 @@
   }
   document.addEventListener('change', function (e) {
     if (!e.target.matches('[data-k="ai-section"]') || !intelligenceAllowed()) return;
+    if (intelligenceBusy()) { e.target.value = adminGroupOf(S.atab || 'overview')[0]; return; }
     var group = A_GROUPS.filter(function (g) { return g[0] === e.target.value; })[0];
     if (group) { S.atab = (S.agLast || {})[group[0]] || group[2][0]; lsSet('lk.prep.atab', S.atab); draw(); adminToTop(); }
   });
@@ -3898,20 +3905,19 @@
     var at = S.atab || 'overview';
     // a sous chef on the head chef's device has no Kitchen mail page until the head chef switches it on (23 Oct 2026)
     if (at === 'mail' && !mlOwner()) at = S.atab = 'notes';
-    // Head chef decision D4 (20 Oct 2026): five groups on top, the pages of the open group underneath (the page ids
-    // stay the same, so lk.prep.atab and every link into a page still work)
-    var mlN = mlInfo().n, ag = adminGroupOf(at), agTabs = ag[2].filter(function (t) { return t !== 'mail' || mlOwner(); });
+    // Review desk groups the two queues; saved records and reports remain separate. Existing page ids still work.
+    var navBusy = intelligenceBusy(), mlN = mlInfo().n, ag = adminGroupOf(at), agTabs = ag[2].filter(function (t) { return t !== 'overview' && (t !== 'mail' || mlOwner()); });
     // 21 Oct 2026: groups, pages and "On this page" sit in one nav that stays at the top of the screen (adminJumps() fills
     // the last row from the page's headings after each draw, adminScroll() tucks it up while scrolling down)
-    var tabsBar = '<div class="a-navtop"></div><div class="a-nav' + (S.anavMin ? ' is-min' : '') + '"><label class="a-section-picker">Admin section<select data-k="ai-section" aria-label="Admin section">' + A_GROUPS.map(function (g) { return '<option value="' + g[0] + '"' + (ag[0] === g[0] ? ' selected' : '') + '>' + g[1] + '</option>'; }).join('') + '</select></label><nav class="a-groups" aria-label="Admin sections">' + A_GROUPS.map(function (g) {
-      return '<button type="button" class="a-group" data-p="a-group" data-g="' + g[0] + '" aria-current="' + (ag[0] === g[0] ? 'page' : 'false') + '">' + g[1] + (g[0] === 'today' && mlN ? ' (' + mlN + ')' : '') + '</button>';
+    var tabsBar = '<div class="a-navtop"></div><div class="a-nav' + (S.anavMin ? ' is-min' : '') + '"><label class="a-section-picker">Admin section<select data-k="ai-section" aria-label="Admin section"' + (navBusy ? ' disabled' : '') + '>' + A_GROUPS.map(function (g) { return '<option value="' + g[0] + '"' + (ag[0] === g[0] ? ' selected' : '') + '>' + g[1] + '</option>'; }).join('') + '</select></label><nav class="a-groups" aria-label="Admin sections">' + A_GROUPS.map(function (g) {
+      return '<button type="button" class="a-group" data-p="a-group" data-g="' + g[0] + '"' + (navBusy ? ' disabled' : '') + ' aria-current="' + (ag[0] === g[0] ? 'page' : 'false') + '">' + g[1] + (g[0] === 'today' && mlN ? ' (' + mlN + ')' : '') + '</button>';
     }).join('') + '</nav>' + (agTabs.length > 1 ? '<nav class="a-tabs" aria-label="' + esc(ag[1]) + ' pages">' + agTabs.map(function (t) {
-      return '<button type="button" class="a-tab" data-p="a-tab" data-t="' + t + '" aria-pressed="' + (at === t) + '">' + A_TAB_NAMES[t] + (t === 'mail' && mlN ? ' (' + mlN + ')' : '') + '</button>';
+      return '<button type="button" class="a-tab" data-p="a-tab" data-t="' + t + '"' + (navBusy ? ' disabled' : '') + ' aria-pressed="' + (at === t || at === 'overview' && t === 'references') + '">' + A_TAB_NAMES[t] + (t === 'mail' && mlN ? ' (' + mlN + ')' : '') + '</button>';
     }).join('') + '</nav>' : '') + '<nav class="a-onpage" aria-label="On this page" hidden></nav></div>';
     if (at === 'notes') loadNotes();
     if (at === 'minutes') loadMinutes();
     if (at === 'guides') loadGuides();
-    var pane = ['overview', 'analysis', 'references', 'training'].indexOf(at) >= 0 ? intelligenceHTML(at) : at === 'suppliers' ? supplierAdminHTML() : at === 'cutoffs' ? cutAdminHTML() : at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'transfers' ? xferStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() : at === 'people' ? (
+    var pane = INTELLIGENCE_PAGES.indexOf(at) >= 0 ? intelligenceHTML(at) : at === 'suppliers' ? supplierAdminHTML() : at === 'cutoffs' ? cutAdminHTML() : at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'transfers' ? xferStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() : at === 'people' ? (
       '<section class="set-block"><span class="label">People</span><details class="a-how"><summary>How roles and ticks work</summary><p class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Shift pings are written by you and the sous chefs. Create/edit functions lets that person enter and change function bookings (Functions coordinator ticks it for you); only your save here gives it or takes it away, and nothing else comes with it. Reset PIN lets that person choose a new one: do it with them there, as whoever signs in with that name next sets the PIN. Removing someone from the list keeps their name on old lines, and their PIN stops working for anything. Head chef is for your own name: it gets the kitchen and sous chef pages, and a sous chef cannot change or remove it. Function editing still has its own tick.</p></details>' +
       (headIdOf(d.people) ? '' : '<p class="hint a-nohead" role="note">No one is marked Head chef yet. Set your own name to Head chef and save, so your PIN has full rights on the kitchen devices.</p>') +
       '<p class="hint">Tick Create/edit functions beside a person, then save. Their kitchen role stays the same.</p>' + peopleListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' + ksAdminHTML(d) +
@@ -3926,7 +3932,8 @@
       '<div class="field"><label class="label" for="a-newpin2">Type it again</label><input id="a-newpin2" class="search" inputmode="numeric" maxlength="4" autocomplete="off" data-k="a-newpin2" placeholder="4 digits" value="' + esc(S.newPin2 || '') + '"></div>' +
       '<div class="btn-row"><button type="button" class="btn" data-p="move-pin"' + (S.moving ? ' disabled' : '') + '>' + (armed('move-pin') ? 'Tap again to copy everything' : 'Copy everything to the new PIN') + '</button></div><span class="saved" role="status">' + esc(S.moveMsg) + '</span>' +
       '<div class="btn-row a-forget"><button type="button" class="btn" data-p="pin-forget">' + (armed('pin-forget') ? 'Tap again: this device forgets the kitchen PIN' : 'Use a different kitchen PIN on this device') + '</button></div><span class="hint">Forgets the kitchen PIN on this device only and asks for one again. Staff phones pick up a new PIN by themselves once the old rules are removed.</span></section></div>');
-    return '<div class="p-admin">' + bar + '<h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2>' + tabsBar + '<div class="a-pane">' + (owner ? idCardHTML() : '') + pane + '</div></div>';
+    var resume = INTELLIGENCE_PAGES.indexOf(at) < 0 && intelligenceAllowed() && window.LK_INTELLIGENCE && window.LK_INTELLIGENCE.API === 3 && window.LK_INTELLIGENCE.resumeHTML ? window.LK_INTELLIGENCE.resumeHTML(at) : '';
+    return '<div class="p-admin">' + bar + '<h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2>' + tabsBar + '<div class="a-pane">' + (owner ? idCardHTML() : '') + resume + pane + '</div></div>';
   }
   /* the same Remove button on the admin People tab and the sous chef's staff list, with a second tap to be sure */
   /* Head chef decision D6 (20 Oct 2026): someone who leaves is taken off the list, not deleted, so their name stays on
@@ -3979,15 +3986,15 @@
     return '<section class="set-block"><h2 class="p-h">Suppliers &amp; pars</h2><p>Current pars, manual items and the original supplier records are kept in the catalogue.</p>' +
       (supplierEdit() ? '<div class="btn-row"><a class="btn dark" href="#/suppliers/manage">Manage catalogue</a><a class="btn" href="#/suppliers">Supplier order</a></div>' : '<p class="hint">Only the head chef changes suppliers and pars. Sous chefs can use <a href="#/suppliers">Supplier order</a>.</p>') + '</section>';
   }
-  var A_TAB_NAMES = { overview: 'Overview', analysis: 'Item evidence', references: 'Item references', training: 'Training records', mail: 'Kitchen mail', notes: 'Shift pings', insights: 'Insights', team: 'Team', waste: 'Wastage', transfers: 'Transfers', learning: 'Learning', people: 'People', minutes: 'Minutes', guides: 'Guides', tools: 'Backup and PIN', cutoffs: 'Order cut-offs', suppliers: 'Suppliers & pars' };
-  var A_GROUPS = [['overview', 'Overview', ['overview']], ['reports', 'Analysis', ['analysis', 'insights', 'waste', 'transfers']], ['learning', 'Learning', ['references', 'learning']], ['training', 'Training', ['training', 'team', 'guides']], ['today', 'Operations', ['mail', 'notes', 'minutes', 'suppliers', 'cutoffs']], ['settings', 'Settings', ['people', 'tools']]];
+  var A_TAB_NAMES = { overview: 'Review desk', analysis: 'Item evidence', references: 'Item links', training: 'Training', 'reference-records': 'Confirmed links', 'training-records': 'Assessments', mail: 'Kitchen mail', notes: 'Shift pings', insights: 'Insights', team: 'Team', waste: 'Wastage', transfers: 'Transfers', learning: 'Learning', people: 'People', minutes: 'Minutes', guides: 'Guides', tools: 'Backup and PIN', cutoffs: 'Order cut-offs', suppliers: 'Suppliers & pars' };
+  var A_GROUPS = [['review', 'Review desk', ['overview', 'references', 'training']], ['reports', 'Reports', ['analysis', 'insights', 'waste', 'transfers', 'learning', 'team']], ['records', 'Saved records', ['reference-records', 'training-records', 'guides']], ['today', 'Operations', ['mail', 'notes', 'minutes', 'suppliers', 'cutoffs']], ['settings', 'Settings', ['people', 'tools']]];
   function adminGroupOf(t) { return A_GROUPS.filter(function (g) { return g[2].indexOf(t) >= 0; })[0] || A_GROUPS[1]; }
   /* "On this page": one chip per heading of the open page (the numbered Insights sections, otherwise each block's label
      and the chart headings in it), so a long page is one tap from any part. Built from the page after each draw, so a
      new block on any admin page gets its chip by itself. Hidden when a page has fewer than two parts. */
   function adminHeads() {
     var pane = S.root && S.root.querySelector('.a-pane');
-    if (!pane) return [];
+    if (!pane || pane.querySelector('.ai-desk, .ai-detail')) return [];
     var hs = pane.querySelectorAll('.a-sh');
     if (!hs.length) hs = pane.querySelectorAll(':scope > .set-block > .label:first-child, :scope > .set-block > h3.a-ch-h, .ai-workspace > .set-block > .label');
     return Array.prototype.filter.call(hs, function (h) { return h.offsetParent && h.textContent.trim(); });
@@ -8463,8 +8470,8 @@
     if (a === 'donejump') { var dj = S.root.querySelector('#nb-donebox'); if (dj) dj.scrollIntoView({ block: 'start', behavior: 'smooth' }); return; }
     if (a === 'write') { var wt = S.root.querySelector('[data-k="p-text"]'); if (wt) { wt.scrollIntoView({ block: 'center', behavior: 'smooth' }); wt.focus({ preventScroll: true }); } return; }
     if (a === 'learn-hide') { hideLearned(id, el.getAttribute('data-hide') === '1'); return; }
-    if (a === 'a-group') { var gg = A_GROUPS.filter(function (g) { return g[0] === el.getAttribute('data-g'); })[0]; if (gg) { S.atab = (S.agLast || {})[gg[0]] || gg[2].filter(function (t) { return t !== 'mail' || mlOwner(); })[0]; lsSet('lk.prep.atab', S.atab); draw(); adminToTop(); } return; }
-    if (a === 'a-tab') { S.atab = el.getAttribute('data-t'); S.agLast = S.agLast || {}; S.agLast[adminGroupOf(S.atab)[0]] = S.atab; lsSet('lk.prep.atab', S.atab); draw(); adminToTop(); return; }
+    if (a === 'a-group') { if (intelligenceBusy()) return; var gg = A_GROUPS.filter(function (g) { return g[0] === el.getAttribute('data-g'); })[0]; if (gg) { S.atab = (S.agLast || {})[gg[0]] || gg[2].filter(function (t) { return t !== 'mail' || mlOwner(); })[0]; lsSet('lk.prep.atab', S.atab); draw(); adminToTop(); } return; }
+    if (a === 'a-tab') { if (intelligenceBusy()) return; S.atab = el.getAttribute('data-t'); S.agLast = S.agLast || {}; S.agLast[adminGroupOf(S.atab)[0]] = S.atab; lsSet('lk.prep.atab', S.atab); draw(); adminToTop(); return; }
     if (a === 'staff-open') { if (isSous()) { startDraft(); S.staffOpen = true; draw(); seedPinOpen(); } return; }
     if (a === 'add-recipe') { addRecipe(id); return; }
     // a change waiting to send holds Sign in with Google, with no second tap past it (review, 29 Oct 2026): the sign-in
@@ -9186,6 +9193,7 @@
     window.dispatchEvent(new Event('lk-back'));
   }
   function localReturn(a) {
+    if (a === 'intelligence-back') return !!(intelligenceVisible() && window.LK_INTELLIGENCE.back && window.LK_INTELLIGENCE.back());
     if (a === 'recipe-close') { S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; draw(); focusSel('.p-pickbtn'); return true; }
     if (a === 'notes-close') { S.notesOpen = false; draw(); return true; }
     if (a === 'n-cancel') { if (nfDirty() && !arm('n-cancel')) return true; S.nf = nfNew(); S.nOpen = false; S.nMsg = ''; draw(); return true; }
@@ -9200,6 +9208,10 @@
   function localBackAction() {
     if (!S.root || !document.body.contains(S.root)) return null;
     var pick = function (a, label) { return { action: a, label: label }; };
+    if (intelligenceVisible() && window.LK_INTELLIGENCE.backLabel) {
+      var intelligenceLabel = window.LK_INTELLIGENCE.backLabel();
+      if (intelligenceLabel) return pick('intelligence-back', intelligenceLabel);
+    }
     if (S.sheet) return pick('sheet-close', 'Back to wastage');
     if (S.root.querySelector('.g-edit')) return pick('g-cancel', 'Back to guides');
     if (S.root.querySelector('.n-edit')) return pick('n-cancel', 'Back to pings');
@@ -9214,7 +9226,7 @@
     return null;
   }
   function localBackBusy() {
-    return !!(S.root && document.body.contains(S.root) && (S.busy || S.nSaving || S.mSaving || S.gf && (S.gf.busy || S.gf.saving)));
+    return !!(S.root && document.body.contains(S.root) && (S.busy || S.nSaving || S.mSaving || S.gf && (S.gf.busy || S.gf.saving) || intelligenceBusy()));
   }
   /* Something not saved on this device apart from a change waiting to send (LK_PREP.unsaved() is this or a write
      waiting): words typed here (typedHere(): a line half typed, an admin draft, a review, the drinks run), a sheet or

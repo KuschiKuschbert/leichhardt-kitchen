@@ -35,8 +35,19 @@ const onTop = (p, sel) => p.evaluate(s => {
     p = await L.open(b, '#/admin', { admin: true, width: w, height: 900, wait: 1800 });
     v = await onTop(p, '[data-p="a-group"][data-g="settings"]');
     ok(v === true, w + ' admin: the Settings group can be seen and tapped (' + v + ')');
-    v = await onTop(p, '[data-p="a-group"][data-g="training"]');
-    ok(v === true, w + ' admin: the Training group can be seen and tapped (' + v + ')');
+    for (const [group, label] of [['review', 'Review desk'], ['reports', 'Reports'], ['records', 'Saved records'], ['today', 'Operations'], ['settings', 'Settings']]) {
+      v = await onTop(p, '[data-p="a-group"][data-g="' + group + '"]');
+      ok(v === true, w + ' admin: the ' + label + ' group can be seen and tapped (' + v + ')');
+      // The hit test above stays strict even when a regression covers this group. Open it directly so the
+      // remaining menu centres are still checked, without scrolling any control into view.
+      await L.tap(p, '[data-p="a-group"][data-g="' + group + '"]'); await L.settle(p, 300);
+      const pages = await p.locator('[data-p="a-tab"]').evaluateAll(nodes => nodes.map(el => ({ id: el.getAttribute('data-t'), label: el.textContent.trim() })));
+      ok(pages.length > 0, w + ' admin: ' + label + ' exposes its destinations');
+      for (const page of pages) {
+        v = await onTop(p, '[data-p="a-tab"][data-t="' + page.id + '"]');
+        ok(v === true, w + ' admin: ' + label + ' / ' + page.label + ' can be seen and tapped (' + v + ')');
+      }
+    }
     await L.adminTab(p, 'people'); await L.settle(p, 300);
     const h = await p.evaluate(() => Math.max(...[...document.querySelectorAll('[data-p="a-reset-pin"]')].map(e => e.getBoundingClientRect().height)));
     ok(h > 0 && h <= 52, w + ' admin: Reset PIN fits on one line (' + Math.round(h) + ' px high)');

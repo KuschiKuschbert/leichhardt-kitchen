@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en-AU">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kitchen Book · Admin flow concepts</title>
+<style>
+:root{--paper:#faf9f6;--ink:#292824;--muted:#68665f;--line:#ddd8ce;--accent:#d74f22;--soft:#eeeae2;--green:#356244;font:16px/1.45 system-ui,sans-serif;color:var(--ink);background:var(--paper)}
+*{box-sizing:border-box}body{margin:0}button,input,select{font:inherit}button,a{touch-action:manipulation}button{cursor:pointer;color:inherit}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:3px}button{border:1px solid var(--line);border-radius:7px;background:transparent;padding:11px 14px;text-align:left;min-height:44px}button:hover{border-color:var(--ink)}button[aria-selected=true],button[aria-pressed=true]{background:var(--ink);color:white;border-color:var(--ink)}button.primary{background:var(--ink);color:white;border-color:var(--ink)}button.quiet{border-color:transparent;padding-left:0;color:var(--muted)}button.small{padding:7px 10px;font-size:.86rem}button.link{padding:0;min-height:44px;border:0;text-decoration:underline;text-underline-offset:4px;color:var(--accent)}button:disabled{opacity:.45;cursor:default}h1,h2,h3,p{margin:0 0 12px}h1{font-size:1.55rem;line-height:1.2}h2{font-size:1.35rem;line-height:1.25}h3{font-size:1.05rem}small,.muted{color:var(--muted);font-size:.85rem}.eyebrow{font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;font-weight:750;color:var(--muted)}.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.spread{justify-content:space-between}.stack{display:grid;gap:12px}.rule{border-top:1px solid var(--line);padding-top:18px;margin-top:18px}.preview{background:#eeeae2;padding:17px max(18px,calc((100vw - 1200px)/2));border-bottom:1px solid var(--line)}.preview p{margin-bottom:10px}.concept-switch{gap:8px}.concept-switch button{background:var(--paper);font-size:.87rem;font-weight:650}.concept-switch button[aria-selected=true]{background:var(--ink)}.preview-note{font-size:.78rem;margin:10px 0 0!important;color:var(--muted)}.book-header{background:var(--ink);color:white;padding:19px max(20px,calc((100vw - 1200px)/2));display:flex;justify-content:space-between;gap:16px;align-items:center}.book-header strong{font-size:1.3rem;letter-spacing:-.025em}.book-header small{color:#c9c4b8}.concept-description{max-width:1200px;margin:20px auto 0;padding:0 20px}.shell{max-width:1200px;margin:26px auto 50px;display:grid;grid-template-columns:165px minmax(0,1fr);gap:36px;padding:0 20px}.nav{display:flex;flex-direction:column;gap:4px;align-items:stretch}.nav button{border-color:transparent;font-size:.9rem}.nav button.current{background:var(--soft);font-weight:700;border-left:3px solid var(--accent);border-radius:0}.nav .brand{margin:0 12px 12px}.content{min-width:0}.content>header{margin-bottom:20px}.desk{display:grid;grid-template-columns:minmax(220px,.85fr) minmax(0,1.3fr);gap:30px}.queue{border-right:1px solid var(--line);padding-right:26px}.tabs{display:flex;gap:6px;margin:15px 0}.tabs button{flex:1;text-align:center;font-size:.85rem;padding:9px}.task{border:0;border-bottom:1px solid var(--line);border-radius:0;width:100%;padding:18px 0;display:block}.task span,.task strong{display:block}.task strong{margin:6px 0}.task.selected{border-left:3px solid var(--accent);padding-left:12px}.pill{display:inline-block!important;width:max-content;max-width:100%;border-radius:4px;background:var(--soft);font-size:.7rem;padding:3px 7px;font-weight:650;color:var(--muted)}.pill.attention{color:#9d3c1c;background:#f6e7df}.pill.good{color:var(--green);background:#e6eee7}.detail{min-width:0}.detail .back{display:none}.detail-head{margin-bottom:20px}.context{border-left:2px solid var(--line);padding:1px 0 1px 16px;margin:20px 0}.context p:last-child{margin:0}.context strong{display:block}.field{display:grid;gap:7px;margin:18px 0}.field label{font-size:.8rem;font-weight:700}input,select{background:var(--paper);border:1px solid #a5a198;padding:11px 12px;border-radius:6px;min-width:0;width:100%}details{border-top:1px solid var(--line);padding:13px 0}summary{cursor:pointer;font-size:.9rem;font-weight:650;min-height:30px}details p{margin:12px 0 0}.actions{border-top:1px solid var(--line);padding-top:18px;margin-top:22px}.notice{border-left:3px solid var(--green);padding:12px 15px;background:#edf2eb;margin:14px 0}.notice:empty{display:none}.empty-note{padding:30px 0;color:var(--muted)}.browse{display:grid;grid-template-columns:250px minmax(0,1fr);gap:30px}.index{border-right:1px solid var(--line);padding-right:25px}.index .task{padding:15px 0}.profile-nav{display:flex;gap:18px;border-bottom:1px solid var(--line);margin:18px 0;overflow:auto}.profile-nav button{border:0;border-radius:0;white-space:nowrap;padding:12px 0;background:transparent!important;color:var(--muted)!important;min-width:max-content}.profile-nav button[aria-selected=true]{border-bottom:3px solid var(--accent);color:var(--ink)!important;font-weight:700}.profile .back{display:none}.stat-line{display:flex;gap:22px;margin:20px 0}.stat-line strong{font-size:1.5rem;display:block}.stat-line span{font-size:.8rem;color:var(--muted)}.wizard{max-width:680px;margin:0 auto}.steps{list-style:none;display:flex;padding:0;margin:0 0 30px;gap:15px}.steps li{font-size:.8rem;flex:1;border-top:3px solid var(--line);padding-top:9px;color:var(--muted)}.steps li.active{border-color:var(--accent);color:var(--ink);font-weight:700}.choice{padding:20px;border:1px solid var(--line);width:100%;display:block}.choice strong,.choice span{display:block}.choice strong{margin-bottom:5px}.choice span{font-size:.85rem;color:var(--muted)}.wizard-body{min-height:310px}.helper{padding:13px 0;color:var(--muted);font-size:.85rem}.screen-reader{position:absolute;clip:rect(0,0,0,0);width:1px;height:1px;overflow:hidden}.mobile-only{display:none}[hidden]{display:none!important}
+@media(max-width:760px){.preview{padding:14px 16px}.preview h1{font-size:1.2rem}.preview .intro{display:none}.concept-switch{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.concept-switch button{font-size:.78rem;padding:9px 7px;text-align:center}.concept-switch .long{display:none}.book-header{padding:15px 16px}.book-header strong{font-size:1.15rem}.book-header small{font-size:.72rem}.concept-description{margin-top:16px;padding:0 16px;font-size:.85rem}.shell{display:block;padding:0 16px;margin-top:20px}.nav{flex-direction:row;overflow:auto;gap:10px;padding-bottom:10px;margin-bottom:18px;border-bottom:1px solid var(--line)}.nav .brand{display:none}.nav button{white-space:nowrap;padding:8px 6px;font-size:.8rem}.nav button.current{border-left:0;border-bottom:2px solid var(--accent);background:transparent}.desk,.browse{display:block}.queue,.index{border:0;padding:0}.detail,.profile{display:none}.desk[data-view=detail] .queue,.browse[data-view=detail] .index{display:none}.desk[data-view=detail] .detail,.browse[data-view=detail] .profile{display:block}.detail .back,.profile .back{display:block;margin-bottom:12px}.desk[data-view=list] .detail{display:none}.steps{gap:8px;margin-bottom:22px}.steps li{font-size:.73rem}.wizard-body{min-height:0}.mobile-only{display:initial}h1{font-size:1.4rem}.task{padding:18px 0}.content>header{margin-bottom:16px}.actions button{flex:1;text-align:center}.actions{padding-bottom:12px}.stat-line{gap:16px}}
+</style>
+<body>
+<header class="preview">
+ <p class="eyebrow">Design comparison · example data</p>
+ <h1>A clearer admin workflow</h1>
+ <p class="intro muted">Compare the same jobs: inspect evidence, confirm an item link and record a training assessment.</p>
+ <div class="row concept-switch" role="tablist" aria-label="Design concept">
+  <button type="button" role="tab" aria-selected="true" aria-controls="concept-a" id="tab-a" data-concept-switch="a">A<span class="long"> · </span> Review desk</button>
+  <button type="button" role="tab" aria-selected="false" tabindex="-1" aria-controls="concept-b" id="tab-b" data-concept-switch="b">B<span class="long"> · </span> People &amp; items</button>
+  <button type="button" role="tab" aria-selected="false" tabindex="-1" aria-controls="concept-c" id="tab-c" data-concept-switch="c">C<span class="long"> · </span> Guided tasks</button>
+ </div>
+ <p class="preview-note">Interactive previews only. All names and counts are examples. Nothing is read from or saved to the kitchen.</p>
+</header>
+<div class="book-header"><strong>Kitchen Book</strong><small>Admin panel</small></div>
+<section data-concept="a" id="concept-a" role="tabpanel" aria-labelledby="tab-a">
+ <p class="concept-description"><strong>A · Review desk, recommended.</strong> Pick one task, check its context, save, then move to the next. Fast for regular admin work.</p>
+ <div class="shell">
+  <nav class="nav" aria-label="Review desk navigation"><p class="eyebrow brand">Admin</p><button class="current" data-preview-nav="review">Review desk</button><button data-preview-nav="evidence">Reports</button><button data-preview-nav="saved">Saved records</button><button data-preview-nav="operations">Operations</button><button data-preview-nav="settings">Settings</button></nav>
+  <main class="content">
+   <header><p class="eyebrow">What needs a decision</p><h1>Review desk</h1><p class="muted">Choose an item link or a training assessment to review.</p></header>
+   <p class="notice" role="status" data-notice="a"></p>
+   <div class="desk" data-view="list">
+    <aside class="queue"><div class="tabs" role="group" aria-label="Review queue"><button aria-pressed="true" data-a-filter="items">Item links · 3</button><button aria-pressed="false" data-a-filter="training">Training · 2</button></div><div data-a-list></div><details class="rule"><summary>How this list is built</summary><p class="muted">Item links come from the published 90-day summary. Training prompts use saved section assessments. Activity does not confirm skill.</p></details></aside>
+    <section class="detail" aria-label="Selected review"><button class="quiet back" data-a-back>← Back to review list</button><div data-a-detail></div></section>
+   </div>
+  </main>
+ </div>
+</section>
+<section data-concept="b" id="concept-b" role="tabpanel" aria-labelledby="tab-b" hidden>
+ <p class="concept-description"><strong>B · People &amp; items.</strong> Search for a subject, then keep its activity, links and records together. Best for exploring connections.</p>
+ <div class="shell">
+  <nav class="nav" aria-label="People and items navigation"><p class="eyebrow brand">Admin</p><button class="current" data-preview-nav="browse">People &amp; items</button><button data-preview-nav="evidence">Reports</button><button data-preview-nav="saved">Saved records</button><button data-preview-nav="operations">Operations</button><button data-preview-nav="settings">Settings</button></nav>
+  <main class="content">
+   <header><p class="eyebrow">Explore a subject</p><h1>People &amp; items</h1><p class="muted">Find a person or item. Keep their evidence and saved records in one place.</p></header>
+   <p class="notice" role="status" data-notice="b"></p>
+   <div class="browse" data-view="list">
+    <aside class="index"><label class="screen-reader" for="entity-search">Find a person or item</label><input id="entity-search" type="search" placeholder="Find a person or item" data-b-search><div class="tabs" role="group" aria-label="Browse subjects"><button aria-pressed="true" data-b-filter="items">Items</button><button aria-pressed="false" data-b-filter="people">People</button></div><div data-b-list></div></aside>
+    <section class="profile" aria-label="Selected subject"><button class="quiet back" data-b-back>← Back to people &amp; items</button><div data-b-profile></div></section>
+   </div>
+  </main>
+ </div>
+</section>
+<section data-concept="c" id="concept-c" role="tabpanel" aria-labelledby="tab-c" hidden>
+ <p class="concept-description"><strong>C · Guided tasks.</strong> A short sequence walks through each decision. Most helpful for occasional use, with more steps for bulk work.</p>
+ <div class="shell">
+  <nav class="nav" aria-label="Guided tasks navigation"><p class="eyebrow brand">Admin</p><button class="current" data-preview-nav="tasks">Tasks</button><button data-preview-nav="saved">Saved records</button><button data-preview-nav="evidence">Reports</button><button data-preview-nav="operations">Operations</button><button data-preview-nav="settings">Settings</button></nav>
+  <main class="content wizard">
+   <header><p class="eyebrow">One decision at a time</p><h1>What would you like to do?</h1></header>
+   <p class="notice" role="status" data-notice="c"></p>
+   <ol class="steps" aria-label="Review steps"><li class="active" data-step-indicator="1">1 · Choose</li><li data-step-indicator="2">2 · Review</li><li data-step-indicator="3">3 · Record</li></ol>
+   <div class="wizard-body" data-c-body></div>
+  </main>
+ </div>
+</section>
+<script>
+(() => {
+ 'use strict';
+ const q = s => document.querySelector(s), all = s => Array.from(document.querySelectorAll(s));
+ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const state = { aFilter:'items', aSelected:'burger', aSaved:[], bFilter:'items', bSelected:'burger', bTab:'overview', bQuery:'', cStep:1, cKind:'item', saved:false };
+ const itemRows = [{id:'burger',name:'Chicken Burger',note:'Check its recipe link',status:'Needs confirmation'},{id:'herbs',name:'Chop herbs',note:'Choose what this name refers to',status:'Needs a link'},{id:'rolls',name:'Bread rolls',note:'Check its supplier item',status:'Needs confirmation'}];
+ const peopleRows = [{id:'person',name:'Example team member',note:'Grill · Not assessed',status:'Section assessment'},{id:'other',name:'Another team member',note:'Larder · In training',status:'Follow-up check'}];
+ const evidence = '<div class="context"><p><strong>Recorded activity</strong><span class="muted">Prep · 3 recorded lines<br>Orders · 2 recorded lines<br>Waste · 1 recorded entry</span></p><p class="muted">Example completed-day summary. Counts describe records, not stock or consumption.</p></div>';
+ const trainingContext = '<div class="context"><p><strong>Example team member · Grill</strong><span class="muted">Section status: Not assessed<br>8 prep ticks in the selected period</span></p><p class="muted">Recorded activity is context. An assessor must check the work before confirming training.</p></div>';
+ const help = '<details><summary>What does confirming mean?</summary><p class="muted">You are checking this link yourself. The original prep, order and waste records stay unchanged. The next nightly analysis uses the saved link.</p></details>';
+ const referenceFields = (prefix,id='burger') => '<div class="field"><label for="'+prefix+'-recipe">This recorded name refers to</label><select id="'+prefix+'-recipe" data-reference-target><option value=""'+(id==='herbs'?' selected':'')+'>Choose a recipe or supplier item</option><option value="recipe-burger"'+(id==='burger'?' selected':'')+'>Recipe · Chicken Burger</option><option value="supplier-rolls"'+(id==='rolls'?' selected':'')+'>Supplier item · Bread rolls</option></select></div><details><summary>Alias, guide and other options</summary><p class="muted">Keep the recorded name. Add an optional guide or change the reference name here.</p></details>';
+ const trainingFields = prefix => '<div class="field"><label for="'+prefix+'-status">Assessment outcome</label><select id="'+prefix+'-status"><option>Not assessed</option><option>In training</option><option>Confirmed</option></select></div><div class="row"><span class="pill">Whole section</span><span class="muted">Assessor and date are confirmed before saving.</span></div><details><summary>Add a recipe or guide</summary><p class="muted">A recipe assessment applies only to that dish. It does not confirm the whole section.</p></details>';
+ const savedRow = '<div class="context"><strong>Milk → saved recipe link</strong><p class="muted">Confirmed reference. Saved links stay available when activity dates change.</p></div>';
+ function notice(concept,text){q('[data-notice="'+concept+'"]').textContent=text;}
+ function focusHeading(root){const h=root.querySelector('h2');if(h){h.tabIndex=-1;h.focus({preventScroll:true});if(innerWidth<=760)h.scrollIntoView({block:'start'});}}
+ function renderA(){
+  const training=state.aFilter==='training';const rows=training?peopleRows:itemRows.filter(x=>!state.aSaved.includes(x.id));
+  q('[data-a-filter="items"]').textContent='Item links · '+itemRows.filter(x=>!state.aSaved.includes(x.id)).length;
+  q('[data-a-list]').innerHTML=rows.map(x=>'<button class="task '+(state.aSelected===x.id?'selected':'')+'" data-a-open="'+x.id+'"><span class="pill attention">'+esc(x.status)+'</span><strong>'+esc(x.name)+'</strong><span class="muted">'+esc(x.note)+' →</span></button>').join('')||'<p class="empty-note">This example queue is complete. Saved links remain in Saved records.</p>';
+  const item=itemRows.find(x=>x.id===state.aSelected)||itemRows[0];
+  if(!training&&!rows.length){q('[data-a-detail]').innerHTML='<span class="pill good">Example queue complete</span><h2 class="rule">All item links reviewed</h2><p class="muted">Your confirmed links are in Saved records. Choose Training to review another task.</p><button data-preview-nav="saved">View saved records</button>';return;}
+  q('[data-a-detail]').innerHTML='<div class="detail-head"><p class="eyebrow">'+(training?'Training review':'Item link review')+'</p><h2>'+(training?'Assess the Grill section':esc(item.name))+'</h2><p class="muted">'+(training?'Check the work together, then record the outcome.':'Check the evidence and the target before confirming.')+'</p></div>'+(training?trainingContext:evidence)+(training?trainingFields('a'):referenceFields('a',item.id))+(training?'<details><summary>Open saved learning material</summary><p class="muted">Recipe: Chicken Burger · Guide: service checklist.</p></details>':help)+'<div class="row actions"><button class="primary" data-a-save'+(!training&&item.id==='herbs'?' disabled':'')+'>'+(training?'Save assessment':'Confirm link & next')+'</button><button data-a-cancel>Back to list</button></div>';
+  all('[data-a-filter]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.aFilter===state.aFilter));
+ }
+ function renderB(){
+  const people=state.bFilter==='people';const rows=(people?peopleRows:itemRows).filter(x=>(x.name+' '+x.note).toLowerCase().includes(state.bQuery.toLowerCase()));
+  q('[data-b-list]').innerHTML=rows.map(x=>'<button class="task '+(state.bSelected===x.id?'selected':'')+'" data-b-open="'+x.id+'"><strong>'+esc(x.name)+'</strong><span class="muted">'+esc(x.note)+'</span></button>').join('')||'<p class="empty-note">No example subjects match. Clear search to see the list.</p>';
+  const row=(people?peopleRows:itemRows).find(x=>x.id===state.bSelected)||(people?peopleRows[0]:itemRows[0]);
+  const tabs=people?['overview','activity','training','history']:['overview','evidence','links','history'];
+  if(!tabs.includes(state.bTab))state.bTab='overview';
+  let body='';
+  if(state.bTab==='overview')body='<span class="pill attention">'+esc(row.status)+'</span>'+(people?trainingContext:evidence)+'<button class="primary" data-b-action>'+(people?'Record an assessment':'Review this link')+'</button>';
+  else if(state.bTab==='links')body='<h3>Recipe and supplier links</h3>'+referenceFields('b',row.id)+'<button class="primary" data-b-save'+(row.id==='herbs'?' disabled':'')+'>Confirm link</button><div class="rule">'+savedRow+'</div>';
+  else if(state.bTab==='training')body='<h3>Section assessment</h3>'+trainingContext+trainingFields('b')+'<div class="row actions"><button class="primary" data-b-save>Save assessment</button></div>';
+  else if(state.bTab==='history')body='<h3>Saved changes</h3><p class="muted">Earlier confirmations and assessments appear here. Viewing history never changes a record.</p>'+savedRow;
+  else body='<h3>'+(people?'Recorded section activity':'Source evidence')+'</h3>'+(people?trainingContext:evidence)+'<details><summary>Show original records</summary><p class="muted">Daily records and their source identifiers stay available here.</p></details>';
+  q('[data-b-profile]').innerHTML='<p class="eyebrow">'+(people?'Person':'Item')+' workspace</p><h2>'+esc(row.name)+'</h2><nav class="profile-nav" aria-label="Subject details">'+tabs.map(t=>'<button aria-selected="'+(t===state.bTab)+'" data-b-tab="'+t+'">'+t[0].toUpperCase()+t.slice(1)+'</button>').join('')+'</nav>'+body;
+  all('[data-b-filter]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.bFilter===state.bFilter));
+ }
+ function renderC(){
+  const training=state.cKind==='training';let body='';
+  if(state.cStep===1)body='<div class="stack"><button class="choice" data-c-task="item"><strong>Connect an item</strong><span>Choose a recorded name, review evidence and confirm its recipe or supplier link.</span></button><button class="choice" data-c-task="training"><strong>Assess training</strong><span>Choose a person and section, review activity and save an explicit assessment.</span></button><button class="choice" data-c-task="evidence"><strong>Explore activity</strong><span>Open item or section evidence without changing any record.</span></button></div>';
+  else if(state.cStep===2)body='<h2>'+(training?'Review the person and section':'Review Chicken Burger')+'</h2>'+(training?trainingContext:evidence)+'<details open><summary>'+(training?'What to check together':'Existing recipe link')+'</summary><p class="muted">'+(training?'Use the saved recipe or guide to agree the task. Activity alone does not confirm competence.':'The source record points to Chicken Burger. Review that recipe before confirming the link.')+'</p></details><div class="row actions"><button data-c-back>Back</button><button class="primary" data-c-next>'+(state.cKind==='evidence'?'Finish exploring':'Continue to record')+'</button></div>';
+  else if(state.cStep===3)body='<h2>'+(training?'Record the assessment':'Confirm the item link')+'</h2><p class="muted">'+(training?'Example team member · Whole Grill section':'Recorded name: Chicken Burger')+'</p>'+(training?trainingFields('c'):referenceFields('c'))+'<div class="row actions"><button data-c-back>Back</button><button class="primary" data-c-save>'+(training?'Save assessment':'Confirm link')+'</button></div>';
+  else body='<span class="pill good">Preview complete</span><h2 class="rule">'+(state.cKind==='evidence'?'Evidence reviewed':training?'Assessment recorded':'Item link confirmed')+'</h2><p class="muted">This is a preview result. No kitchen data was changed.</p><div class="row actions"><button class="primary" data-c-reset>Review another</button><button data-c-records>View saved records</button></div>';
+  q('[data-c-body]').innerHTML=body;all('[data-step-indicator]').forEach(x=>x.classList.toggle('active',+x.dataset.stepIndicator===Math.min(state.cStep,3)));
+ }
+ document.addEventListener('change',e=>{if(e.target.matches('[data-reference-target]')){const save=e.target.closest('.detail,.profile,.wizard-body').querySelector('[data-a-save],[data-b-save],[data-c-save]');if(save)save.disabled=!e.target.value;}});
+ document.addEventListener('input',e=>{if(e.target.matches('[data-b-search]')){state.bQuery=e.target.value;renderB();}});
+ document.addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.conceptSwitch){const id=b.dataset.conceptSwitch;all('[data-concept]').forEach(x=>x.hidden=x.dataset.concept!==id);all('[data-concept-switch]').forEach(x=>{x.setAttribute('aria-selected',x.dataset.conceptSwitch===id);x.tabIndex=x.dataset.conceptSwitch===id?0:-1;});return;}
+  if(b.dataset.aFilter){state.aFilter=b.dataset.aFilter;state.aSelected=state.aFilter==='training'?'person':'burger';q('.desk').dataset.view='list';renderA();}
+  if(b.dataset.aOpen){state.aSelected=b.dataset.aOpen;q('.desk').dataset.view='detail';renderA();focusHeading(q('[data-a-detail]'));}
+  if(b.matches('[data-a-back],[data-a-cancel]')){q('.desk').dataset.view='list';q('[data-a-list] button')?.focus();}
+  if(b.matches('[data-a-save]')){if(state.aFilter==='items'){state.aSaved.push(state.aSelected);state.aSelected=itemRows.find(x=>!state.aSaved.includes(x.id))?.id||'burger';notice('a','Preview: link confirmed. The next item is ready; the confirmed link is in Saved records.');}else notice('a','Preview: assessment recorded. Return to the queue or review another person.');renderA();focusHeading(q('[data-a-detail]'));}
+  if(b.dataset.bFilter){state.bFilter=b.dataset.bFilter;state.bSelected=state.bFilter==='people'?'person':'burger';state.bTab='overview';q('.browse').dataset.view='list';renderB();}
+  if(b.dataset.bOpen){state.bSelected=b.dataset.bOpen;state.bTab='overview';q('.browse').dataset.view='detail';renderB();focusHeading(q('[data-b-profile]'));}
+  if(b.dataset.bTab){state.bTab=b.dataset.bTab;renderB();}
+  if(b.matches('[data-b-action]')){state.bTab=state.bFilter==='people'?'training':'links';renderB();}
+  if(b.matches('[data-b-back]')){q('.browse').dataset.view='list';q('[data-b-list] button')?.focus();}
+  if(b.matches('[data-b-save]')){notice('b','Preview: record saved. You remain in the same subject workspace.');state.bTab='history';renderB();}
+  if(b.dataset.cTask){state.cKind=b.dataset.cTask;state.cStep=2;renderC();focusHeading(q('[data-c-body]'));}
+  if(b.matches('[data-c-next]')){state.cStep=state.cKind==='evidence'?4:3;renderC();focusHeading(q('[data-c-body]'));}
+  if(b.matches('[data-c-back]')){state.cStep--;renderC();}
+  if(b.matches('[data-c-save]')){state.cStep=4;renderC();focusHeading(q('[data-c-body]'));}
+  if(b.matches('[data-c-reset]')){state.cStep=1;renderC();}
+  if(b.matches('[data-c-records]'))notice('c','Preview: the saved record is available without changing the activity period.');
+  if(b.dataset.previewNav){const concept=b.closest('[data-concept]').dataset.concept;notice(concept,b.dataset.previewNav==='saved'?'Preview: confirmed links and training records have their own searchable library.':'Preview: existing reports, operations and settings stay accessible from this navigation.');}
+ });
+ q('.concept-switch').addEventListener('keydown',e=>{if(!['ArrowRight','ArrowLeft','Home','End'].includes(e.key))return;e.preventDefault();const tabs=all('[data-concept-switch]');let i=tabs.indexOf(document.activeElement);i=e.key==='Home'?0:e.key==='End'?tabs.length-1:(i+(e.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;tabs[i].click();tabs[i].focus();});
+ renderA();renderB();renderC();
+})();
+</script>
+</body>
+</html>
