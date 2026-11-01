@@ -625,6 +625,30 @@ row('js/draw.js saveTemplate(), savePiece(), saveWare(): drawtpl and drawlib', {
   run: (db, w, r) => W(r, [['set', 'drawtpl/' + MINE(r), { name: 'Round plate', slot: 'plate', surf: {}, els: [], defs: '{}', vb: '-110 -110 220 220', svgS: '', svgF: '', v: 1, upd: Date.now(), removed: false }],
     ['set', 'drawlib/' + MINE(r), { type: 'surf', name: 'Board ' + r, p: {}, v: 1, upd: Date.now(), removed: false }]]) });
 
+/* ---------- admin proofreader: the page's exact server reads and atomic writes ---------- */
+row('js/prep.js proofAdapter.history(): newest private corrections from the server', { ok: GOOGLE, asks: GOOGLE,
+  run: db => getDocsFromServer(query(C(db, 'proofHistory'), orderBy('at', 'desc'), limit(100))) });
+row('js/prep.js proofWord(): current shared word config from the server before Save', { ok: KITCHEN, asks: GOOGLE,
+  run: db => getDocFromServer(D(db, 'config/main')) });
+for (const source of ['prep', 'orders']) {
+  const kind = source === 'prep' ? 'p' : 'o', path = source === 'prep' ? `days/${TODAY}/items/proof-line` : `orders/${TODAY}/lines/proof-line`;
+  const value = source === 'prep' ? line({ text: 'Cut brine', orig: 'cut brie' }) : { ...line({ text: 'Buy brine', orig: 'buy brie' }), recipes: [], ordered: false };
+  row('js/prep.js proofSave(): ' + source + ' wording read from the server before Save', { ok: KITCHEN, asks: GOOGLE,
+    prep: () => put({ [path]: value }), run: db => getDocFromServer(D(db, path)) });
+  row('js/prep.js proofSave(): ' + source + ' repair, private audit and pastEdit stamp in one W() batch', { ok: GOOGLE, asks: GOOGLE,
+    prep: r => put({ [path]: value, ['proofHistory/proof-' + source + '-' + r]: null }),
+    run: (db, w, r) => {
+      const event = 'proof-' + source + '-' + r;
+      return W(r, [['upd', path, { text: value.orig, [source === 'prep' ? 'recipe' : 'recipes']: source === 'prep' ? '' : [], proofV: 1, proofEvent: event }],
+        ['set', 'proofHistory/' + event, { kind: 'line', action: 'restore', source, day: TODAY, recordId: 'proof-line', before: value.text, after: value.orig, original: value.orig, v: 1, at: NOW }],
+        ['set', 'config/main', { pastEdit: { [kind]: NOW } }, true]]);
+    } });
+}
+row('js/prep.js proofWord(): protected word config and private audit in one W() batch', { ok: GOOGLE, asks: GOOGLE,
+  prep: r => put({ 'config/main': CFG, ['proofHistory/proof-word-' + r]: null }), after: () => put({ 'config/main': CFG }),
+  run: (db, w, r) => W(r, [['set', 'config/main', { proofWords: ['brie'], proofV: 1, proofEvent: 'proof-word-' + r }, true],
+    ['set', 'proofHistory/proof-word-' + r, { kind: 'word', action: 'keep', word: 'brie', v: 1, at: NOW }]]) });
+
 /* ---------- a person's PIN reset while their book is open (r2-1-2) ----------
    The owner's Reset PIN deletes pinset/<id>; the person's running config/main listener is refused at once, which is
    right. login/roster still opens, so the page can tell this from a wrong kitchen PIN. Kept last: it takes PINs away. */

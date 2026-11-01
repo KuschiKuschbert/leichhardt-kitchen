@@ -2694,6 +2694,27 @@ input:is([type="date"], [type="time"]):disabled, input:is([type="date"], [type="
 .p-admin.ad-admin .ai-saved-library .ai-list > li > strong { font: 700 1.4rem/1.15 var(--display); }
 .p-admin.ad-admin .ai-metrics { grid-template-columns: repeat(auto-fit, minmax(min(9rem, 100%), 1fr)); }
 
+/* The Proofreader keeps typed wording, saved wording and deliberate edits distinct. */
+.p-admin.ad-admin .pr-workspace { min-width: 0; }
+.p-admin.ad-admin .pr-tabs { gap: .45rem; margin: 0 0 1.25rem; }
+.p-admin.ad-admin .pr-tabs > :is(.btn, .chip) { min-height: 44px; padding: .6rem .9rem; border: 1px solid var(--edge); border-radius: var(--r-pick); background: transparent; color: var(--muted); font: 600 .875rem/1.25 var(--body); }
+.p-admin.ad-admin .pr-tabs > [aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--paper); }
+.p-admin.ad-admin .pr-comparison { display: grid; gap: .8rem; min-width: 0; margin: 1rem 0; }
+.p-admin.ad-admin .pr-comparison > div { min-width: 0; padding: .8rem 1rem; border-left: 3px solid var(--line); background: var(--beige); }
+.p-admin.ad-admin .pr-comparison > div:last-child { border-left-color: var(--accent-ink); }
+.p-admin.ad-admin .pr-comparison dt { color: var(--muted); font: 600 .8125rem/1.35 var(--body); }
+.p-admin.ad-admin .pr-comparison dd { margin: .4rem 0 0; color: var(--ink); font-size: 1.125rem; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.p-admin.ad-admin .pr-word-form { display: grid; gap: .65rem; min-width: 0; max-width: 36rem; margin: 1.1rem 0; }
+.p-admin.ad-admin .pr-word-form > .btn { justify-self: start; }
+.p-admin.ad-admin .pr-suggestions { gap: .5rem; margin: .7rem 0; }
+.p-admin.ad-admin .pr-suggestions > .btn { min-height: 44px; text-align: left; }
+.p-admin.ad-admin :is(.pr-list, .pr-words, .pr-history) { min-width: 0; overflow-wrap: anywhere; }
+.p-admin.ad-admin .pr-list .lv-cards { gap: 0; border-top: 1px solid var(--ink); }
+.p-admin.ad-admin .pr-list .lv-cards > li { min-width: 0; border-bottom: 1px solid var(--line); }
+.p-admin.ad-admin :is(.pr-list, .pr-history) th > .hint, .p-admin.ad-admin .pr-history td:last-child > .hint { display: block; margin-top: .3rem; }
+.p-admin.ad-admin .pr-queue-meta { display: flex; align-items: center; gap: .65rem; flex: 0 0 auto; }
+.p-admin.ad-admin .pr-workspace :is(input, textarea, select, summary), .p-admin.ad-admin .pr-editor [data-pr="cancel"] { scroll-margin-block: 1rem 12rem; }
+
 @media (min-width: 1000px) {
   .p-admin.ad-admin .ad-layout { grid-template-columns: 11.75rem minmax(0, 1fr); column-gap: 2.25rem; }
   .p-admin.ad-admin .a-nav { top: calc(var(--fn-stick, 0px) + var(--upd-h, 0px) + 1rem); margin: 0; padding: 1.3rem 1.2rem 1.5rem 0; border: 0; border-right: 1px solid var(--line); max-height: calc(100dvh - var(--fn-stick, 0px) - var(--upd-h, 0px) - 2rem); overflow-y: auto; }
@@ -2710,6 +2731,7 @@ input:is([type="date"], [type="time"]):disabled, input:is([type="date"], [type="
   .p-admin.ad-admin .ai-desk { grid-template-columns: minmax(0, 1.3fr) minmax(18rem, .95fr); }
 }
 @media (max-width: 1099px) {
+  .p-admin.ad-admin .pr-workspace:has(.ai-desk.has-detail) > .pr-tabs { display: none; }
   .p-admin.ad-admin .ai-desk { grid-template-columns: minmax(0, 1fr); }
   .p-admin.ad-admin .ai-detail { max-width: 46rem; }
   .p-admin.ad-admin .ai-desk.has-detail > .ai-detail { width: 100%; }
@@ -2720,6 +2742,10 @@ input:is([type="date"], [type="time"]):disabled, input:is([type="date"], [type="
   .p-admin.ad-admin:has(.ai-desk.has-detail) .a-nav { display: none; }
 }
 @media (max-width: 719px) {
+  .p-admin.ad-admin .pr-tabs { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(6rem, 100%), 1fr)); gap: .35rem; margin-bottom: .5rem; }
+  .p-admin.ad-admin .pr-tabs > :is(.btn, .chip) { padding: .6rem .35rem; text-align: center; }
+  .p-admin.ad-admin .pr-queue-meta .ai-queue-count { display: none; }
+  .p-admin.ad-admin .pr-workspace .ai-queue-head:has(.pr-queue-meta) .ai-queue-title { font-size: 1.4rem; }
   .p-admin.ad-admin > .p-bar { margin-bottom: .25rem; font-size: .75rem; }
   .p-admin.ad-admin .ad-heading { margin-bottom: .85rem; padding-top: .2rem; padding-bottom: .9rem; }
   .p-admin.ad-admin .ad-title { font-size: 3rem; }

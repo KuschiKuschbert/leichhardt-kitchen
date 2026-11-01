@@ -178,7 +178,7 @@ function colRefused(ref, list) {
   if (window.__fakeUser) return false;
   // only the head chef's Google account: PIN fingerprints, the usage counts, the minutes' earlier versions, and the
   // lists of who has a PIN and of every mail's status (one record by id is for the kitchen)
-  if (c === 'staffpins' || c === 'daily' || (c === 'minutes' && rel[2] === 'hist')) return true;
+  if (c === 'staffpins' || c === 'daily' || c === 'proofHistory' || (c === 'minutes' && rel[2] === 'hist')) return true;
   if (list && (c === 'pinset' || c === 'mailstat')) return true;
   // recipes and drawings are public, their earlier versions are for the kitchen
   if ((c === 'recipes' || c === 'drawings') && rel[2] === 'hist' && !kitchenReader(ref)) return true;
@@ -395,6 +395,52 @@ function commitOps(ops) {
   // the rules see a record as it will be after the write (request.resource.data): a merge or an update keeps the fields
   // already stored, by among them (27 Oct 2026: a merge with no by kept a sous chef's id and the rules refused the head chef)
   const after = o => Object.assign({}, o.kind === 'set' && !o.merge ? {} : (store[key(o.ref.path)] || {}), o.data || {});
+  // Manual proofreader repairs (2026-11): private immutable events accompany changes to existing source wording
+  // or protected words. Copied new records may retain proof fields before their history copies arrive.
+  const sameProof = (a, b) => a === b || !!a && !!b && typeof a === 'object' && typeof b === 'object' &&
+    Array.isArray(a) === Array.isArray(b) && Object.keys(a).length === Object.keys(b).length && Object.keys(a).every(name => Object.prototype.hasOwnProperty.call(b, name) && sameProof(a[name], b[name]));
+  const proofFieldsOnly = (a, b, names) => [...new Set(Object.keys(a).concat(Object.keys(b)))].every(name => sameProof(a[name], b[name]) || names.includes(name));
+  const proofId = value => typeof value === 'string' && /^[a-zA-Z0-9_-]{1,160}$/.test(value);
+  const proofVersion = value => Number.isInteger(value) && value > 0;
+  const proofEvents = ops.filter(o => /^kitchens\/[^/]+\/proofHistory\/[^/]+$/.test(key(o.ref.path)));
+  const validProofEvent = o => {
+    const event = after(o), word = event.kind === 'word', names = word ? ['kind', 'action', 'word', 'v', 'at', 'by'] : ['kind', 'action', 'source', 'day', 'recordId', 'before', 'after', 'original', 'v', 'at', 'by'];
+    if (o.kind === 'delete' || !window.__fakeUser) return false;
+    if (store[key(o.ref.path)] !== undefined) return sameProof(event, store[key(o.ref.path)]);
+    if (!proofId(o.ref.path.at(-1)) ||
+      !proofVersion(event.v) || !Number.isFinite(event.at) || event.at < 0 || event.at > Date.now() + 300000 || typeof event.by !== 'string' ||
+      Object.keys(event).some(name => !names.includes(name)) || names.some(name => event[name] === undefined)) return false;
+    if (word) return ['keep', 'release'].includes(event.action) && typeof event.word === 'string' && /^[a-z]{2,40}$/.test(event.word);
+    const limit = event.source === 'prep' ? 160 : 120;
+    return event.kind === 'line' && ['restore', 'edit'].includes(event.action) && ['prep', 'orders'].includes(event.source) &&
+      /^\d{4}-\d{2}-\d{2}$/.test(event.day) && proofId(event.recordId) && ['before', 'after', 'original'].every(name => typeof event[name] === 'string') &&
+      event.after.trim().length > 0 && event.after.length <= limit && event.after !== event.before && (event.action !== 'restore' || event.after === event.original);
+  };
+  const freshProofEvent = (o, eventId) => proofEvents.find(event => store[key(event.ref.path)] === undefined && rootOf(event) === rootOf(o) && event.ref.path.at(-1) === eventId && validProofEvent(event));
+  const badProof = proofEvents.some(o => !validProofEvent(o)) || ops.some(o => {
+    const path = key(o.ref.path), old = store[path], next = after(o);
+    if (/\/config\/main$/.test(path)) {
+      const changed = ['proofWords', 'proofV', 'proofEvent'].some(name => !sameProof((old || {})[name], next[name]));
+      if (!changed) return false;
+      if (!window.__fakeUser || !Array.isArray(next.proofWords) || next.proofWords.length > 200 || new Set(next.proofWords).size !== next.proofWords.length ||
+        next.proofWords.some(word => typeof word !== 'string' || !/^[a-z]{2,40}$/.test(word)) || !proofVersion(next.proofV) || !proofId(next.proofEvent)) return true;
+      if (!old) return false;
+      const op = freshProofEvent(o, next.proofEvent), event = op && after(op), words = old.proofWords || [];
+      return !event || event.kind !== 'word' || event.v !== next.proofV || next.proofV !== (old.proofV || 0) + 1 ||
+        (event.action === 'keep' ? words.includes(event.word) || !sameProof(next.proofWords, words.concat([event.word])) : !words.includes(event.word) || !sameProof(next.proofWords, words.filter(word => word !== event.word)));
+    }
+    const match = path.match(/^kitchens\/[^/]+\/(days|orders)\/(\d{4}-\d{2}-\d{2})\/(items|lines)\/([^/]+)$/);
+    if (!match) return false;
+    const changed = ['proofV', 'proofEvent'].some(name => !sameProof((old || {})[name], next[name]));
+    if (!changed) return !!old && old.proofV > 0 && (!sameProof(old.text, next.text) || !sameProof(old.orig, next.orig));
+    if (!window.__fakeUser || !proofVersion(next.proofV) || !proofId(next.proofEvent)) return true;
+    if (!old) return false;
+    const op = freshProofEvent(o, next.proofEvent), event = op && after(op), source = match[1] === 'days' ? 'prep' : 'orders';
+    return !event || event.kind !== 'line' || event.source !== source || event.day !== match[2] || event.recordId !== match[4] ||
+      event.v !== next.proofV || next.proofV !== (old.proofV || 0) + 1 || event.before !== old.text || event.after !== next.text || event.original !== old.orig ||
+      old.deleted === true || !!old.fn || !proofFieldsOnly(old, next, ['text', 'recipe', 'recipes', 'proofV', 'proofEvent', 'by']);
+  });
+  if (badProof) return Promise.reject({ code: 'permission-denied' });
   // the head chef's book (book/index, recipes, drawings and the library): only the head chef and the sous chefs write
   // it, with the Google account (nobody else signed in) or with their own PIN (headId, sousIds), like the real rules
   const book = ops.filter(o => /^kitchens\/[^/]+\/(book|recipes|drawings|drawtpl|drawlib)\//.test(key(o.ref.path)));

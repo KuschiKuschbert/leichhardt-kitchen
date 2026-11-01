@@ -1029,7 +1029,7 @@
     S.pastBusy = S.minsBusy = S.viewBusy = S.missBusy = S.useBusy = false; S.pastPart = null; S.ordStats = null; S.views = S.misses = null; S.viewErr = S.missErr = S.useErr = S.wReviewErr = false; S.wReview = null; S.wReviewFor = S.wNoteFor = '';
     S.items = []; S.ordLines = []; S.ordAll = []; S.wLines = []; S.xLines = []; S.notes = null; S.notesBusy = false; S.nSaving = false; S.notesFor = ''; S.nPast = null; S.nPastOpen = false; S.nSeen = null; S.nPrivateError = ''; S.mins = null; S.guides = null; S.activity = []; S.actState = ''; S.hist = {}; S.stats = null;
     ['lk.fn', 'lk.mail.sent', 'lk.drinks', 'lk.guides', 'lk.notes', 'lk.minutes'].forEach(function (k) { lsSet(k, ''); });
- if (window.LK_INTELLIGENCE) window.LK_INTELLIGENCE.reset(); if (window.LK_DELIVERY) window.LK_DELIVERY.reset(); if (window.LK_SUP) window.LK_SUP.reset(); if (supplierService) supplierService.reset();
+ if (window.LK_INTELLIGENCE) window.LK_INTELLIGENCE.reset(); if (window.LK_PROOFREADER) window.LK_PROOFREADER.reset(); proofRepairStamp = {}; if (window.LK_DELIVERY) window.LK_DELIVERY.reset(); if (window.LK_SUP) window.LK_SUP.reset(); if (supplierService) supplierService.reset();
     // an editor an older copy of its file has no drop(): it closes as before
     if (window.LK_MG && window.LK_MG.drop) window.LK_MG.drop(); if (window.LK_FE && window.LK_FE.drop) window.LK_FE.drop();
     if (S.sheet) { S.sheet = ''; ovDone('reason'); } S.section = ''; S.secTyped = false;
@@ -1560,7 +1560,9 @@
   function keepWords(list) { list.forEach(function (c) { KEEP[c[0].toLowerCase()] = 1; }); lsSet('lk.prep.keep', JSON.stringify(KEEP)); }
   function fixWord(w) {
     var lw = w.toLowerCase(), v = vocab();
-    if (lw.length < 4 || /[^\x00-\x7f]/.test(w) || v[lw] || realWords(lw) || KEEP[lw] || v[lw.replace(/(es|s|ed|ing)$/, '')] || v[lw.replace(/s$/, '')] || v[lw.replace(/d$/, '')]) return null;
+    // The existing config listener shares exact-word protection with every kitchen device. Read it fresh, outside
+    // vocab's weighted candidate cache, so a same-size word-list change takes effect without adding fuzzy targets.
+    if (lw.length < 4 || /[^\x00-\x7f]/.test(w) || ((S.config || {}).proofWords || []).indexOf(lw) >= 0 || v[lw] || realWords(lw) || KEEP[lw] || v[lw.replace(/(es|s|ed|ing)$/, '')] || v[lw.replace(/s$/, '')] || v[lw.replace(/d$/, '')]) return null;
     // a word that is only the singular or plural, or the past tense, of a word we know is not a slip
     if (v[lw + 's'] || v[lw + 'es'] || v[lw + 'd'] || v[lw + 'ed'] || v[lw + 'ing']) return null;
     var maxd = lw.length >= 8 ? 2 : 1, best = null, bd = 9, bw = -1, tie = false;
@@ -1908,6 +1910,7 @@
       .then(function () { return all('daily'); }).then(function (r) { out.daily = r; })
       .then(function () { return all('analysis'); }).then(function (r) { out.analysis = r; })
       .then(function () { return all('analysisDaily'); }).then(function (r) { out.analysisDaily = r; })
+      .then(function () { return all('proofHistory'); }).then(function (r) { out.proofHistory = r; })
       .then(function () { return all('references'); }).then(function (r) { out.references = r; out.referencesHist = {}; return subs(r, 'references', 'hist', out.referencesHist); })
       .then(function () { return all('training'); }).then(function (r) { out.training = r; out.trainingHist = {}; return subs(r, 'training', 'hist', out.trainingHist); })
       .then(function () { return all('misses'); }).then(function (r) { out.misses = r; })
@@ -1987,7 +1990,7 @@
     for (k = 0; k < 400; k++) dates.push(shift(today, -k));
     f.getDoc(f.doc(fb.db, 'kitchens', old, 'config', 'main')).then(function (sn) { if (sn.exists()) { n++; return f.setDoc(f.doc(fb.db, 'kitchens', np, 'config', 'main'), sn.data()); } })
       .then(function () { return copyCol('login'); }).then(function () { return copyCol('pinset'); }).then(function () { return copyCol('staffpins'); }).then(function () { return copyCol('activity'); }).then(function () { return copyCol('sections'); })
-      .then(function () { return copyCol('learned'); }).then(function () { return copyCol('ordlearned'); }).then(function () { return copyCol('learnlog'); }).then(function () { return copyCol('summary'); }).then(function () { return copyCol('analysis'); }).then(function () { return copyCol('analysisDaily'); }).then(function () { return copyCol('references'); }).then(function () { return copySub('references', 'hist'); }).then(function () { return copyCol('training'); }).then(function () { return copySub('training', 'hist'); }).then(function () { return copyCol('daily'); }).then(function () { return copyCol('misses'); }).then(function () { return copyCol('views'); })
+      .then(function () { return copyCol('learned'); }).then(function () { return copyCol('ordlearned'); }).then(function () { return copyCol('learnlog'); }).then(function () { return copyCol('summary'); }).then(function () { return copyCol('analysis'); }).then(function () { return copyCol('analysisDaily'); }).then(function () { return copyCol('proofHistory'); }).then(function () { return copyCol('references'); }).then(function () { return copySub('references', 'hist'); }).then(function () { return copyCol('training'); }).then(function () { return copySub('training', 'hist'); }).then(function () { return copyCol('daily'); }).then(function () { return copyCol('misses'); }).then(function () { return copyCol('views'); })
       .then(function () { return copyCol('notes'); }).then(function () { return copyCol('directnotes'); }).then(function () { return copySub('directnotes', 'seen', true); }).then(function () { return copyCol('minutes'); }).then(function () { return copySub('minutes', 'hist'); })
       .then(function () { return copySub('minutes', 'signs', true); }).then(function () { return copySub('notes', 'seen', true); })
       .then(function () { return copyCol('guides'); }).then(function () { return copySub('guides', 'pages'); })
@@ -2394,6 +2397,10 @@
     sset(cfgDoc(), { pastEdit: v }, true).catch(function () {});   // before the rules allow it (or no signal) it is only a hint lost
   }
   function pastCheck() {
+    // Admin reports keep their own loaded sources. A repair on another device must expire these too; in-flight
+    // reads are discarded by their existing identity check. Own successful repairs patch these sources below.
+    if (S.stats && (S.stats.stamp || 0) < pastStamp('p') && proofRepairStamp.p !== pastStamp('p')) S.stats = null;
+    if (S.ordStats && (S.ordStats.stamp || 0) < pastStamp('o') && proofRepairStamp.o !== pastStamp('o')) S.ordStats = null;
     if (S.wStats && S.wStats.tag !== whTag() && pastStamp('w') !== S.whOwnStamp) {
       S.wStats = null; lsSet('lk.w.history', '');
       if (wAll() && (S.atab === 'waste' || S.atab === 'insights')) draw();
@@ -2551,13 +2558,13 @@
     if (!fb || S.configState !== 'ok') return;
     var st = S.stats, part = !force && !!st && !st.loading && !!(st.miss && st.miss.length);
     if (st && (st.loading || (!force && (st.busy || !part || waiting('stats'))))) return;
-    var today = dayNow(), dates = [], i, miss = [];
+    var today = dayNow(), dates = [], i, miss = [], stamp = pastStamp('p');
     if (part) { dates = st.miss.slice(); st.busy = true; }
-    else { for (i = 0; i < 60; i++) dates.push(shift(today, -i)); st = S.stats = { loading: true, days: {} }; }
-    Promise.all(dates.map(function (d) { return pastRead(itemsCol(d), 'd/' + d, d, false, force).then(function (s) { return [d, s.docs.map(function (x) { return x.data(); })]; }, function () { miss.push(d); return [d, []]; }); })).then(function (res) {
+    else { for (i = 0; i < 60; i++) dates.push(shift(today, -i)); st = S.stats = { loading: true, days: {}, stamp: stamp }; }
+    Promise.all(dates.map(function (d) { return pastRead(itemsCol(d), 'd/' + d, d, false, force).then(function (s) { return [d, s.docs.map(function (x) { return Object.assign({}, x.data(), { id: x.id }); })]; }, function () { miss.push(d); return [d, []]; }); })).then(function (res) {
       if (S.stats !== st) return;   // a Refresh, or the person changed, while these were read
       var days = part ? st.days : {}; res.forEach(function (r) { days[r[0]] = r[1]; });
-      S.stats = { loading: false, days: days, at: part ? st.at : Date.now(), miss: miss };
+      S.stats = { loading: false, days: days, at: part ? st.at : Date.now(), miss: miss, stamp: stamp };
       if (miss.length) retrySoon('stats', function () { loadStats(false); }); else retryDone('stats');
       draw();
     });
@@ -2736,7 +2743,7 @@
   }
   function fixesHTML(agg) {
     if (!agg.fixes.length) return '<h3 class="a-ch-h">Proofreader</h3><p class="hint">No lines needed correcting in this time.</p>';
-    return '<h3 class="a-ch-h">Proofreader</h3><span class="hint">The latest corrections. Anyone can tap Undo straight after, and that word is then left alone on their device.</span>' + lvHTML({
+    return '<h3 class="a-ch-h">Proofreader</h3><div class="btn-row"><button type="button" class="btn" data-p="a-tab" data-t="proofreader">Review corrections</button></div><span class="hint">Anyone can tap Undo straight after a correction. In Review desk, open Proofreader to repair saved wording or protect a word across staff devices.</span>' + lvHTML({
       key: 'ins-fixes', items: agg.fixes.slice().reverse(), step: 10, tools: 10, noun: ['correction', 'corrections'], ph: 'Search typed or saved words',
       find: function (f) { return f.from + ' ' + f.to + ' ' + f.by; },
       sorts: [['new', 'Newest first', function () { return 0; }], ['az', 'Typed A to Z', function (a, b) { return String(a.from).toLowerCase().localeCompare(String(b.from).toLowerCase()); }]],
@@ -3602,13 +3609,13 @@
     if (!fb || S.configState !== 'ok') return;
     var st = S.ordStats, part = !force && !!st && !st.loading && !!(st.miss && st.miss.length);
     if (st && (st.loading || (!force && (st.busy || !part || waiting('ordStats'))))) return;
-    var today = dayNow(), dates = [], i, miss = [];
+    var today = dayNow(), dates = [], i, miss = [], stamp = pastStamp('o');
     if (part) { dates = st.miss.slice(); st.busy = true; }
-    else { for (i = 0; i < 30; i++) dates.push(shift(today, -i)); st = S.ordStats = { loading: true, lines: [] }; }
+    else { for (i = 0; i < 30; i++) dates.push(shift(today, -i)); st = S.ordStats = { loading: true, lines: [], stamp: stamp }; }
     Promise.all(dates.map(function (d) { return pastRead(ordCol(d), 'o/' + d, d, false, force).then(function (s) { return s.docs.map(function (x) { var v = x.data(); v.id = x.id; v.date = d; return v; }); }, function () { miss.push(d); return []; }); })).then(function (l) {
       if (S.ordStats !== st) return;   // a newer read, or the person changed, while these were read
       var raw = [].concat.apply(part ? st.raw || [] : [], l);
-      S.ordStats = { loading: false, lines: ordNewest(raw), raw: raw, miss: miss };
+      S.ordStats = { loading: false, lines: ordNewest(raw), raw: raw, miss: miss, stamp: stamp };
       if (miss.length) retrySoon('ordStats', function () { loadOrdStats(false); }); else retryDone('ordStats');
       draw();
     });
@@ -3826,6 +3833,104 @@
       }
     });
   }
+  /* Admin spelling repairs use the sources already loaded by Insights/Team. Shared protection rides on config's
+     existing listener; private history is a bounded, on-demand query and is never requested by staff devices. */
+  var proofLoading = null, proofError = false, proofRepairStamp = {};
+  function proofModule() { return window.LK_PROOFREADER && window.LK_PROOFREADER.API === 1 ? window.LK_PROOFREADER : null; }
+  function proofBusy() { var p = proofModule(); return !!(intelligenceAllowed() && p && p.busy()); }
+  function proofVisible() { return intelligenceAllowed() && S.name === 'admin' && S.atab === 'proofreader' && !!proofModule(); }
+  function proofRows() {
+    loadStats(false); loadOrdStats(false);
+    var rows = [], p = S.stats, o = S.ordStats;
+    function add(source, day, x) {
+      if (!x.id || !x.orig || x.orig === x.text || x.deleted || x.fn) return;
+      rows.push({ source: source, day: day, id: x.id, text: x.text, orig: x.orig, proofV: x.proofV || 0, by: x.addedBy || '' });
+    }
+    Object.keys(p && p.days || {}).forEach(function (day) { p.days[day].forEach(function (x) { add('prep', day, x); }); });
+    (o && o.raw || []).forEach(function (x) { add('orders', x.date, x); });
+    rows.sort(function (a, b) { return b.day.localeCompare(a.day) || a.source.localeCompare(b.source) || a.id.localeCompare(b.id); });
+    return { loading: !p || !o || p.loading || o.loading || p.busy || o.busy, miss: (p && p.miss || []).concat(o && o.miss || []), rows: rows };
+  }
+  function proofPatch(row, patch, stamp) {
+    function patchList(list) { (list || []).forEach(function (x) { if (x.id === row.id) Object.assign(x, patch); }); }
+    if (row.source === 'prep') {
+      if (S.date === row.day) patchList(S.items);
+      // An older report read may still be finishing after this save. Discard its object so its identity check
+      // cannot replace the repaired cache with the answer captured before the repair.
+      if (S.stats && (S.stats.loading || S.stats.busy)) S.stats = null;
+      else if (S.stats && S.stats.days) { patchList(S.stats.days[row.day]); S.stats.stamp = stamp; }
+      if (S.past && S.past[row.day]) { patchList(S.past[row.day]); pastDerive(); }
+      S.pastFor = ''; S.pastPart = null; lsSet('lk.past', '');
+    } else {
+      if (S.ordDate === row.day) patchList(S.ordLines);
+      (S.ordAll || []).forEach(function (x) { if (x.id === row.id && x.date === row.day) Object.assign(x, patch); });
+      if (S.ordStats && (S.ordStats.loading || S.ordStats.busy)) S.ordStats = null;
+      else if (S.ordStats) { (S.ordStats.raw || []).forEach(function (x) { if (x.id === row.id && x.date === row.day) Object.assign(x, patch); }); S.ordStats.lines = ordNewest(S.ordStats.raw || []); S.ordStats.stamp = stamp; }
+      S.ordHistFor = ''; lsSet('lk.ord.hist', '');
+    }
+  }
+  function proofSave(row, text, action) {
+    if (!intelligenceAllowed()) return Promise.reject({ code: 'permission-denied' });
+    if (!row || ['prep', 'orders'].indexOf(row.source) < 0 || !/^\d{4}-\d{2}-\d{2}$/.test(row.day) || !row.id || row.id.indexOf('/') >= 0 || ['restore', 'edit'].indexOf(action) < 0) return Promise.reject({ code: 'invalid' });
+    text = String(text == null ? '' : text);
+    if (!text.trim() || text.length > (row.source === 'prep' ? 160 : 120) || text === row.text || action === 'restore' && text !== row.orig) return Promise.reject({ code: 'invalid' });
+    var context = intelligenceContext(), ref = row.source === 'prep' ? fb.fs.doc(itemsCol(row.day), row.id) : fb.fs.doc(ordCol(row.day), row.id);
+    // One server read at Save, followed by a version-checked atomic source/audit/invalidation batch. A changed
+    // source is left for the admin to review again; operational fields are never copied back from an old draft.
+    return fb.fs.getDocFromServer(ref).then(function (sn) {
+      if (!intelligenceAllowed() || context !== intelligenceContext()) throw { code: 'permission-denied' };
+      var previous = sn.exists() ? sn.data() : null;
+      if (!previous || previous.deleted || previous.fn || previous.text !== row.text || previous.orig !== row.orig || (previous.proofV || 0) !== row.proofV) throw { code: 'stale' };
+      var audit = fb.fs.doc(colRef('proofHistory')), at = now(), v = (previous.proofV || 0) + 1, kind = row.source === 'prep' ? 'p' : 'o';
+      var patch = { text: text, proofV: v, proofEvent: audit.id }, event = { kind: 'line', action: action, source: row.source, day: row.day, recordId: row.id, before: previous.text, after: text, original: previous.orig, v: v, at: at };
+      patch[row.source === 'prep' ? 'recipe' : 'recipes'] = row.source === 'prep' ? '' : [];
+      var mark = {}; mark[kind] = at; proofRepairStamp[kind] = at;
+      return W([['upd', ref, patch], ['set', audit, event], ['set', cfgDoc(), { pastEdit: mark }, true]]).then(function () {
+        if (context === intelligenceContext() && intelligenceAllowed()) proofPatch(row, patch, at);
+        if (proofRepairStamp[kind] === at) delete proofRepairStamp[kind];
+      }, function (err) { if (proofRepairStamp[kind] === at) delete proofRepairStamp[kind]; throw err; });
+    });
+  }
+  function proofWord(word, keep) {
+    word = String(word || '').trim().toLowerCase();
+    if (!intelligenceAllowed()) return Promise.reject({ code: 'permission-denied' });
+    if (!/^[a-z]{2,40}$/.test(word)) return Promise.reject({ code: 'invalid' });
+    var context = intelligenceContext();
+    // A shared-list change reads this one config document at Save. Rules compare its version, so concurrent
+    // additions cannot silently replace one another. It does not rewrite any saved lines or learned counts.
+    return fb.fs.getDocFromServer(cfgDoc()).then(function (sn) {
+      if (!intelligenceAllowed() || context !== intelligenceContext()) throw { code: 'permission-denied' };
+      var previous = sn.exists() ? sn.data() : {}, words = previous.proofWords || [], has = words.indexOf(word) >= 0;
+      if (keep === has) return;
+      if (keep && words.length >= 200) throw { code: 'too-many-words' };
+      var audit = fb.fs.doc(colRef('proofHistory')), v = (previous.proofV || 0) + 1;
+      return W([['set', cfgDoc(), { proofWords: keep ? words.concat([word]) : words.filter(function (w) { return w !== word; }), proofV: v, proofEvent: audit.id }, true],
+        ['set', audit, { kind: 'word', action: keep ? 'keep' : 'release', word: word, v: v, at: now() }]]);
+    });
+  }
+  function proofAdapter() {
+    return { allowed: intelligenceAllowed, context: intelligenceContext, draw: draw, rows: proofRows,
+      onPage: function () { return S.name === 'admin' && S.atab === 'proofreader'; },
+      page: function () { S.atab = 'proofreader'; lsSet('lk.prep.atab', S.atab); draw(); adminToTop(); },
+      refresh: function () { if (intelligenceAllowed()) { loadStats(true); loadOrdStats(true); draw(); } },
+      words: function () { return ((S.config || {}).proofWords || []).slice(); }, save: proofSave, word: proofWord,
+      listHTML: lvHTML, person: personName, dayLabel: dayShort, clock: function (at) { return T.day(at) + ' ' + hhmm(T.mins(at)); },
+      history: function () {
+        if (!intelligenceAllowed()) return Promise.reject({ code: 'permission-denied' });
+        return fb.fs.getDocsFromServer(fb.fs.query(colRef('proofHistory'), fb.fs.orderBy('at', 'desc'), fb.fs.limit(100))).then(function (sn) { return sn.docs.map(function (d) { return Object.assign({}, d.data(), { id: d.id }); }); });
+      }
+    };
+  }
+  function proofHTML() {
+    if (!intelligenceAllowed()) return '';
+    var p = proofModule();
+    if (p) return p.render(proofAdapter());
+    if (!proofLoading && !proofError) proofLoading = window.LK_APP.load('js/proofreader-admin.js?v=1').then(function () { if (!proofModule()) throw { code: 'workspace-version' }; proofLoading = null; if (intelligenceAllowed()) draw(); }).catch(function () { proofLoading = null; proofError = true; if (intelligenceAllowed()) draw(); });
+    return '<section class="set-block"><h3 class="label">Proofreader</h3><p class="hint" role="status">' + (proofError ? 'Could not load the proofreader. Check the connection and reload this page.' : 'Loading...') + '</p></section>';
+  }
+  document.addEventListener('click', function (e) { var el = e.target.closest('[data-pr]'), p = proofModule(); if (el && S.root && S.root.contains(el) && intelligenceAllowed() && p) { e.preventDefault(); p.click(el); } });
+  document.addEventListener('input', function (e) { var p = proofModule(); if (e.target.matches('[data-pr-field]') && S.root && S.root.contains(e.target) && intelligenceAllowed() && p) p.input(e.target); });
+
   var intelligenceLoading = null, intelligenceError = false;
   function intelligenceAllowed() { return !!fb && S.level === 'owner' && ownerHere() && !!S.user; }
   function intelligenceContext() { return S.pin + '|' + (S.user ? S.user.uid : '') + '|' + S.who + '|' + accessEpoch; }
@@ -3834,7 +3939,7 @@
     return intelligenceAllowed() && S.name === 'admin' && S.root && document.body.contains(S.root) &&
       S.root.querySelector('.ai-workspace') && window.LK_INTELLIGENCE && window.LK_INTELLIGENCE.API === 3;
   }
-  function intelligenceBusy() { return !!(intelligenceVisible() && window.LK_INTELLIGENCE.busy && window.LK_INTELLIGENCE.busy()); }
+  function intelligenceBusy() { return proofBusy() || !!(intelligenceVisible() && window.LK_INTELLIGENCE.busy && window.LK_INTELLIGENCE.busy()); }
   function intelligenceHTML(page) {
     if (!intelligenceAllowed()) return '';
     if (!window.LK_INTELLIGENCE || window.LK_INTELLIGENCE.API !== 3 || !window.LK_ANALYSIS) {
@@ -3923,7 +4028,7 @@
     if (at === 'notes') loadNotes();
     if (at === 'minutes') loadMinutes();
     if (at === 'guides') loadGuides();
-    var pane = INTELLIGENCE_PAGES.indexOf(at) >= 0 ? intelligenceHTML(at) : at === 'suppliers' ? supplierAdminHTML() : at === 'cutoffs' ? cutAdminHTML() : at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'transfers' ? xferStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() : at === 'people' ? (
+    var pane = INTELLIGENCE_PAGES.indexOf(at) >= 0 ? intelligenceHTML(at) : at === 'proofreader' ? proofHTML() : at === 'suppliers' ? supplierAdminHTML() : at === 'cutoffs' ? cutAdminHTML() : at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'transfers' ? xferStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() : at === 'people' ? (
       '<section class="set-block"><span class="label">People</span><details class="a-how"><summary>How roles and ticks work</summary><p class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Shift pings are written by you and the sous chefs. Create/edit functions lets that person enter and change function bookings (Functions coordinator ticks it for you); only your save here gives it or takes it away, and nothing else comes with it. Reset PIN lets that person choose a new one: do it with them there, as whoever signs in with that name next sets the PIN. Removing someone from the list keeps their name on old lines, and their PIN stops working for anything. Head chef is for your own name: it gets the kitchen and sous chef pages, and a sous chef cannot change or remove it. Function editing still has its own tick.</p></details>' +
       (headIdOf(d.people) ? '' : '<p class="hint a-nohead" role="note">No one is marked Head chef yet. Set your own name to Head chef and save, so your PIN has full rights on the kitchen devices.</p>') +
       '<p class="hint">Tick Create/edit functions beside a person, then save. Their kitchen role stays the same.</p>' + peopleListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' + ksAdminHTML(d) +
@@ -3939,6 +4044,7 @@
       '<div class="btn-row"><button type="button" class="btn" data-p="move-pin"' + (S.moving ? ' disabled' : '') + '>' + (armed('move-pin') ? 'Tap again to copy everything' : 'Copy everything to the new PIN') + '</button></div><span class="saved" role="status">' + esc(S.moveMsg) + '</span>' +
       '<div class="btn-row a-forget"><button type="button" class="btn" data-p="pin-forget">' + (armed('pin-forget') ? 'Tap again: this device forgets the kitchen PIN' : 'Use a different kitchen PIN on this device') + '</button></div><span class="hint">Forgets the kitchen PIN on this device only and asks for one again. Staff phones pick up a new PIN by themselves once the old rules are removed.</span></section>');
     var resume = INTELLIGENCE_PAGES.indexOf(at) < 0 && intelligenceAllowed() && window.LK_INTELLIGENCE && window.LK_INTELLIGENCE.API === 3 && window.LK_INTELLIGENCE.resumeHTML ? window.LK_INTELLIGENCE.resumeHTML(at) : '';
+    if (at !== 'proofreader' && intelligenceAllowed() && proofModule()) resume += proofModule().resumeHTML(proofAdapter());
     var chapterNo = A_GROUPS.indexOf(ag) + 1;
     return '<div class="p-admin ad-admin">' + bar + '<div class="ad-layout">' + chapters + '<div class="ad-main"><header class="ad-heading"><p class="ad-eyebrow">Kitchen administration <span aria-hidden="true">/ 0' + chapterNo + '</span></p><h2 class="ad-title p-h" id="rtitle" tabindex="-1">' + ag[1] + '</h2><p class="ad-intro">' + A_GROUP_NOTES[ag[0]] + '</p></header>' + tabsBar + '<div class="a-pane">' + (owner ? idCardHTML() : '') + resume + pane + '</div></div></div></div>';
   }
@@ -3993,8 +4099,8 @@
     return '<section class="set-block"><h2 class="p-h">Suppliers &amp; pars</h2><p>Current pars, manual items and the original supplier records are kept in the catalogue.</p>' +
       (supplierEdit() ? '<div class="btn-row"><a class="btn dark" href="#/suppliers/manage">Manage catalogue</a><a class="btn" href="#/suppliers">Supplier order</a></div>' : '<p class="hint">Only the head chef changes suppliers and pars. Sous chefs can use <a href="#/suppliers">Supplier order</a>.</p>') + '</section>';
   }
-  var A_TAB_NAMES = { overview: 'Review desk', analysis: 'Item evidence', references: 'Item links', training: 'Training', 'reference-records': 'Confirmed links', 'training-records': 'Assessments', mail: 'Kitchen mail', notes: 'Shift pings', insights: 'Insights', team: 'Team', waste: 'Wastage', transfers: 'Transfers', learning: 'Learning', people: 'People', minutes: 'Minutes', guides: 'Guides', tools: 'Backup and PIN', cutoffs: 'Order cut-offs', suppliers: 'Suppliers & pars' };
-  var A_GROUPS = [['review', 'Review desk', ['overview', 'references', 'training']], ['reports', 'Reports', ['analysis', 'insights', 'waste', 'transfers', 'learning', 'team']], ['records', 'Saved records', ['reference-records', 'training-records', 'guides']], ['today', 'Operations', ['mail', 'notes', 'minutes', 'suppliers', 'cutoffs']], ['settings', 'Settings', ['people', 'tools']]];
+  var A_TAB_NAMES = { overview: 'Review desk', analysis: 'Item evidence', references: 'Item links', training: 'Training', proofreader: 'Proofreader', 'reference-records': 'Confirmed links', 'training-records': 'Assessments', mail: 'Kitchen mail', notes: 'Shift pings', insights: 'Insights', team: 'Team', waste: 'Wastage', transfers: 'Transfers', learning: 'Learning', people: 'People', minutes: 'Minutes', guides: 'Guides', tools: 'Backup and PIN', cutoffs: 'Order cut-offs', suppliers: 'Suppliers & pars' };
+  var A_GROUPS = [['review', 'Review desk', ['overview', 'references', 'training', 'proofreader']], ['reports', 'Reports', ['analysis', 'insights', 'waste', 'transfers', 'learning', 'team']], ['records', 'Saved records', ['reference-records', 'training-records', 'guides']], ['today', 'Operations', ['mail', 'notes', 'minutes', 'suppliers', 'cutoffs']], ['settings', 'Settings', ['people', 'tools']]];
   var A_GROUP_NOTES = { review: 'One item or assessment at a time. Your unfinished work stays here.', reports: 'Read the recorded activity and follow it back to its source.', records: 'Find confirmed links, assessments and the kitchen guides.', today: 'Keep the kitchen informed and ready for the next shift.', settings: 'Look after the team, kitchen access and the book\'s backup.' };
   function adminGroupOf(t) { return A_GROUPS.filter(function (g) { return g[2].indexOf(t) >= 0; })[0] || A_GROUPS[1]; }
   /* "On this page": one chip per heading of the open page (the numbered Insights sections, otherwise each block's label
@@ -9184,6 +9290,7 @@
     window.dispatchEvent(new Event('lk-back'));
   }
   function localReturn(a) {
+    if (a === 'proofreader-back') return !!(proofVisible() && proofModule().back());
     if (a === 'intelligence-back') return !!(intelligenceVisible() && window.LK_INTELLIGENCE.back && window.LK_INTELLIGENCE.back());
     if (a === 'recipe-close') { S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; draw(); focusSel('.p-pickbtn'); return true; }
     if (a === 'notes-close') { S.notesOpen = false; draw(); return true; }
@@ -9199,6 +9306,7 @@
   function localBackAction() {
     if (!S.root || !document.body.contains(S.root)) return null;
     var pick = function (a, label) { return { action: a, label: label }; };
+    if (proofVisible() && proofModule().backLabel()) return pick('proofreader-back', proofModule().backLabel());
     if (intelligenceVisible() && window.LK_INTELLIGENCE.backLabel) {
       var intelligenceLabel = window.LK_INTELLIGENCE.backLabel();
       if (intelligenceLabel) return pick('intelligence-back', intelligenceLabel);
@@ -9235,7 +9343,7 @@
      (LK_UPDATE.letGo() in js/upkeep.js). iPhone Safari never asks, and a phone that drops the tab in the background
      does not either. */
   function typedHere() {
-    return !!(window.LK_INTELLIGENCE && window.LK_INTELLIGENCE.dirty()) || draftsDirty() || !!mlf.text.trim() || tdDirty() || dkDirty() || rvTyped(true) || rvTyped(false) ||
+    return !!(proofModule() && proofModule().dirty()) || !!(window.LK_INTELLIGENCE && window.LK_INTELLIGENCE.dirty()) || draftsDirty() || !!mlf.text.trim() || tdDirty() || dkDirty() || rvTyped(true) || rvTyped(false) ||
       !!(S.text.trim() || S.qty.trim() || S.otext.trim() || S.oqty.trim() || S.wf.text.trim() || String(S.wf.amt).trim() || S.wf.act.trim() || S.xf.text.trim() || String(S.xf.amt).trim() || S.xf.note.trim());
   }
   window.addEventListener('beforeunload', function (e) {
