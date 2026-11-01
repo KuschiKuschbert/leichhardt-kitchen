@@ -3010,6 +3010,8 @@
     else if (a === 'lv-all') s.shown = LV_BIG;
     else if (a === 'lv-less') s.shown = step;
     else if (a === 'lv-clear') {
+      s.facets = {};
+      Array.prototype.forEach.call(S.root.querySelectorAll('[data-k="lv-cf:' + key + '"]'), function (select) { select.value = ''; if (select._uxUpdate) select._uxUpdate(); });
       s.q = ''; s.f = c.filters && c.filters.length ? c.filters[0][0] : ''; s.shown = step;
       var qi = S.root.querySelector('[data-k="lv-q:' + key + '"]'); if (qi) window.LK_UX.resetSearch(qi);
       Array.prototype.forEach.call(S.root.querySelectorAll('[data-p="lv-f"][data-lv="' + key + '"]'), function (ch) { ch.setAttribute('aria-pressed', ch.getAttribute('data-v') === s.f ? 'true' : 'false'); });
@@ -3017,7 +3019,7 @@
     lvRefresh(key);
   }
   /* a row that was just added must be on screen: clear the search and filter and open every row */
-  function lvReveal(key) { var s = LV[key], c = LVR[key]; if (!s) return; s.q = ''; if (c && c.filters && c.filters.length) s.f = c.filters[0][0]; s.shown = LV_BIG; }
+  function lvReveal(key) { var s = LV[key], c = LVR[key]; if (!s) return; s.q = ''; s.facets = {}; if (c && c.filters && c.filters.length) s.f = c.filters[0][0]; s.shown = LV_BIG; }
   /* Every day at a glance: a calendar, darker means more. Tap a day to open it in the prep book. */
   function calHTML(n) {
     var a = AF(), m = S.calM || 'done', today = dayNow(), agg = aggregate(n, 0), first = shift(today, -(n - 1)), start = first, i;
@@ -4569,7 +4571,7 @@
       // Not sent on the words' line, before Used in (a line of its own, .o-used), so its room never adds a line
       (rolledN(x) ? ' <span class="nb-roll" title="Not ordered yet, so it rolled over">Since ' + esc(dayShort(x.since || x.rolledFrom || x.date)) + '</span>' : '') + unsentMark(x) + recipeChips(x) + '</span>' +
       '<span class="nb-by"><span class="nb-wrote">' + by + '</span></span>' +
-      (canBrowse() && can('del') && (x.deleted || !x.ordered) ? moreBtn(x) : '') +
+      (canBrowse() && can('del') ? (x.deleted || !x.ordered ? moreBtn(x) : '<span class="nb-more nb-more-held" aria-hidden="true"></span>') : '') +
       (canBrowse() && can('del') && !x.deleted && !x.ordered ? '<button type="button" class="p-x" data-p="odel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') +
       (canBrowse() && can('del') && x.deleted ? '<button type="button" class="p-x" data-p="orestore" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Put back ' + x.text) + '">Put back</button>' : '') + '</li>';
   }

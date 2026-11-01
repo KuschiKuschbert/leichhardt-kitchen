@@ -2826,3 +2826,6 @@ input:is([type="date"], [type="time"]):disabled, input:is([type="date"], [type="
 .ux-record-advanced > summary { min-height: 44px; padding-block: .65rem; cursor: pointer; }
 
 @media (hover: hover) and (pointer: fine) { .ux-picker-option[aria-selected="true"]:hover { box-shadow: none; } }
+
+/* A completed phone order keeps its action column so the next tick target stays in place. */
+.nb-more-held { visibility: hidden; pointer-events: none; }

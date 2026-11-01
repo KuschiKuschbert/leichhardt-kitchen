@@ -374,7 +374,8 @@
     });
     if (added) schedule();
   }).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled', 'aria-pressed', 'aria-checked'] });
-  window.addEventListener('hashchange', function () { if (activePicker) activePicker.close(); searchMemory.forEach(function (s) { clearTimeout(s.timer); }); searchMemory.clear(); });
+  document.addEventListener('focusin', function (event) { if (!event.target.closest('.ux-picker, .ux-picker-trigger')) lastTrigger = null; });
+  window.addEventListener('hashchange', function () { if (activePicker) activePicker.close(); lastTrigger = null; searchMemory.forEach(function (s) { clearTimeout(s.timer); }); searchMemory.clear(); });
   window.LK_UX = { close: function () { if (activePicker) activePicker.close(); }, enhance: enhance, compare: compare, cellValue: cellValue, AdaptivePicker: AdaptivePicker, SmartSearchBar: SmartSearchBar, resetSearch: function (input) { var s = searches.get(input); if (s) s.reset(); } };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', schedule); else schedule();
 })();

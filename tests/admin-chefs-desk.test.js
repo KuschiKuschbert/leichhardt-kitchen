@@ -83,9 +83,9 @@ async function checkDateClearance(p, name) {
   const clearance = await p.evaluate(() => {
     const field = document.getElementById('ai-day').getBoundingClientRect(), actions = document.querySelector('.ai-task-actions').getBoundingClientRect();
     const top = Math.max(0, document.querySelector('.wtop').getBoundingClientRect().bottom);
-    return field.top >= top && field.bottom <= actions.top + 1 && actions.top < innerHeight;
+    return { ok: field.top >= top && field.bottom <= actions.top + 1 && actions.top < innerHeight, top: field.top, bottom: field.bottom, actions: actions.top, header: top, scroll: scrollY };
   });
-  ok(clearance, name + ': the last required training field can scroll clear of the fixed Save area');
+  ok(clearance.ok, name + ': the last required training field can scroll clear of the fixed Save area' + (clearance.ok ? '' : ' ' + JSON.stringify(clearance)));
 }
 
 async function checkLearningJump(browser, text) {

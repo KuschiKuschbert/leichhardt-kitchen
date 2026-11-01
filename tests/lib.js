@@ -356,6 +356,7 @@ async function choose(page, selector, options) {
   await page.locator(selector).first().evaluate(el => el.closest('.ux-choice-source').nextElementSibling.click());
   await page.locator('.ux-picker [data-index="' + source.index + '"]').click();
   if (source.multiple) await page.locator('.ux-picker-footer .dark').click();
+  await settle(page, 250); // Let the overlay's Back entry and scroll restoration finish.
 }
 async function pick(page, selector, value) {
   const source = page.locator(selector).first();
@@ -370,6 +371,7 @@ async function pick(page, selector, value) {
     await search.fill(label); await search.press('Enter');
     await page.locator('.ux-picker-option').filter({ hasText: label }).first().click();
   } else await page.locator('.ux-picker [data-index="' + option + '"]').click();
+  await settle(page, 250);
 }
 
 async function clear(page, selector) {

@@ -26,6 +26,16 @@ const { R, ok } = L.results();
     ok(width < 768 ? Math.abs(geometry.bottom - geometry.height) < 2 : geometry.top > 0, width + ': responsive picker placement');
     await p.keyboard.press('ArrowDown'); await p.keyboard.press('Enter');
     ok(await p.locator('.ux-picker').count() === 0, width + ': keyboard selection commits and closes');
+    await L.choose(p, '[data-act="amode"][data-val="free"]');
+    await L.settle(p, 200);
+    await p.locator('[data-act="free"]').first().evaluate(el => el.closest('.ux-choice-source').nextElementSibling.click());
+    await p.locator('.ux-picker-option').nth(0).click(); await p.locator('.ux-picker-option').nth(1).click();
+    await p.locator('.ux-picker-footer .dark').click();
+    ok(await p.locator('[data-act="free"][aria-pressed="true"]').count() === 2, width + ': applying multiple recipe filters survives intervening app redraws');
+    await L.settle(p, 200);
+    await p.locator('[data-act="free"]').first().evaluate(el => el.closest('.ux-choice-source').nextElementSibling.click());
+    await p.locator('.ux-picker-footer .btn').first().click(); await p.locator('.ux-picker-footer .dark').click();
+    ok(await p.locator('[data-act="free"][aria-pressed="true"]').count() === 0, width + ': multi-select Clear applies to the real recipe filters');
     await p.evaluate(() => {
       const select = document.createElement('select'); select.id = 'ux-many'; select.setAttribute('aria-label', 'Many choices');
       for (let i = 0; i < 160; i++) select.add(new Option('Choice ' + i, String(i)));
@@ -96,6 +106,9 @@ const { R, ok } = L.results();
   const staffValue = await roleFilter.evaluate(el => [...el.options].find(o => /staff/i.test(o.textContent)).value);
   await L.pick(many, '[data-k="lv-cf:people"]', staffValue);
   ok(await many.locator('[data-lva="people"] [data-part^="facet:"]').count() === 1 && !(await many.locator('[data-lvb="people"] [data-a="name"]').evaluateAll(nodes => nodes.some(x => x.value === 'Sam'))), 'admin: a categorical column filter has a removable active badge');
+  await many.locator('[data-k="lv-q:people"]').fill('No matching person'); await L.settle(many, 250);
+  await many.locator('[data-p="lv-clear"][data-lv="people"]').click();
+  ok(await many.locator('[data-lvb="people"] tbody tr').count() === 15 && await roleFilter.inputValue() === '', 'admin: the empty-state clear also resets categorical column filters');
   await many.locator('[data-lva="people"] [data-part="all"]').click();
   await many.evaluate(() => {
     const box = document.createElement('div'); box.innerHTML = '<div><table id="ux-report"><thead><tr><th>Number</th><th>Date</th><th>Status</th></tr></thead><tbody><tr><td>10</td><td><time data-sort-value="2026-12-31">31 Dec</time></td><td>Open</td></tr><tr><td>2</td><td><time data-sort-value="2027-01-01">1 Jan</time></td><td>Done</td></tr></tbody></table></div>'; document.querySelector('.p-admin').append(box); LK_UX.enhance(document);
