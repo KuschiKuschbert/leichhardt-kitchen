@@ -395,6 +395,24 @@ function commitOps(ops) {
   // the rules see a record as it will be after the write (request.resource.data): a merge or an update keeps the fields
   // already stored, by among them (27 Oct 2026: a merge with no by kept a sous chef's id and the rules refused the head chef)
   const after = o => Object.assign({}, o.kind === 'set' && !o.merge ? {} : (store[key(o.ref.path)] || {}), o.data || {});
+  // Shared prep attributes reported work separately from the PIN-session recorder. Match the prep-only rules;
+  // preparedAt ties the report to this tick so an old client's retained fields never credit its later re-tick.
+  const preparedValue = (d, field) => d && d[field] !== undefined ? d[field] : field === 'preparedAt' ? 0 : '';
+  const preparedEmpty = d => preparedValue(d, 'preparedBy') === '' && preparedValue(d, 'preparedById') === '' && preparedValue(d, 'preparedAt') === 0;
+  const preparedSame = (a, b) => ['preparedBy', 'preparedById', 'preparedAt'].every(field => preparedValue(a, field) === preparedValue(b, field));
+  const badPrepared = !window.__fakeUser && ops.some(o => {
+    if (o.kind === 'delete' || !/^kitchens\/[^/]+\/days\/[^/]+\/items\/[^/]+$/.test(key(o.ref.path))) return false;
+    const old = store[key(o.ref.path)], next = after(o), config = store[rootOf(o) + '/config/main'] || {};
+    const same = preparedSame(next, old), inert = !!old && same && preparedValue(next, 'preparedAt') !== (next.doneAt || 0);
+    if (next.done !== true) return !(preparedEmpty(next) || inert);
+    if (old && old.done === true) return !same || (next.doneBy || '') !== (old.doneBy || '') || (next.doneById || '') !== (old.doneById || '');
+    const worker = typeof next.preparedBy === 'string' && next.preparedBy.length > 0 && next.preparedBy.length <= 80 && /[^ ]/.test(next.preparedBy) &&
+      typeof next.preparedById === 'string' && next.preparedById.length > 0 && next.preparedById.length <= 80 &&
+      (config.staffIds || []).includes(next.preparedById) && !(config.fnOnlyIds || []).includes(next.preparedById) &&
+      typeof next.preparedAt === 'number' && next.preparedAt > 0 && next.preparedAt === next.doneAt;
+    return !(preparedEmpty(next) || worker || inert);
+  });
+  if (badPrepared) return Promise.reject({ code: 'permission-denied' });
   // Manual proofreader repairs (2026-11): private immutable events accompany changes to existing source wording
   // or protected words. Copied new records may retain proof fields before their history copies arrive.
   const sameProof = (a, b) => a === b || !!a && !!b && typeof a === 'object' && typeof b === 'object' &&

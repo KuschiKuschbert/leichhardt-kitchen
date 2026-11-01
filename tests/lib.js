@@ -50,6 +50,8 @@ function seed(extra) {
   put(['waste', today, 'lines', 'w1'], { text: 'Chips', amount: 2, unit: 'kg', reason: 'excess', action: '', station: 'Fryer', addedBy: 'Bo', addedById: 'bo', addedAt: NOW - 1800000, deleted: false });
   Object.assign(s, extra || {});
   const cfg = s[K.concat(['config', 'main']).join('/')];
+  // Deployed kitchens keep canonical active membership through access-bootstrap and staff saves.
+  if (!Array.isArray(cfg.staffIds)) cfg.staffIds = (cfg.people || []).filter(p => p.active !== false).map(p => p.id);
   cfg.fnOnlyIds = cfg.fnOnlyIds || (cfg.people || []).filter(p => p.active !== false && p.role === 'fnc').map(p => p.id);
   s[K.concat(['login', 'roster']).join('/')] = Object.fromEntries(['people', 'staffIds', 'sousIds', 'headId', 'fnIds', 'fnOnlyIds'].filter(k => cfg[k] !== undefined).map(k => [k, cfg[k]]));
   return s;

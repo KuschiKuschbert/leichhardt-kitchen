@@ -322,6 +322,12 @@
       // with only the lines this phone wrote since, never "nothing written"
       var k = listSnap(snap, S.itemsState, itemsLast);
       S.items = snapLines(snap, '');
+      if (pt && (pt.busy || pt.uncertain) && ptContext(pt)) S.items = S.items.map(function (x) {
+        if (x.id !== pt.id) return x;
+        pt.latest = Object.assign({}, x);pt.latestServer = !cacheOnly(snap) && !x._unsent;
+        return Object.assign({}, x, { done: pt.before.done || false, doneBy: pt.before.doneBy || '', doneById: pt.before.doneById || '', doneAt: pt.before.doneAt || 0, preparedBy: pt.before.preparedBy || '', preparedById: pt.before.preparedById || '', preparedAt: pt.before.preparedAt || 0 });
+      });
+      if (pt && pt.uncertain && pt.latestServer) { var confirming = pt;Promise.resolve().then(function () { ptReconcile(confirming); }); }
       if (k === 'same') { patchOrDraw(patchUnsent); return; }
       S.itemsState = k === 'wait' ? 'offline' : 'ok'; draw();
     }, function () { S.itemsState = 'error'; draw(); });
@@ -1017,6 +1023,7 @@
      section typed on the prep list, which went on the next person's lines; and an open recipe, drawing or function
      form, which the page closing after the sign-out kept as a draft again for the next person) */
   function leave() {
+    ptClose(true, true);
     accessEpoch++;
     stopLive(); clearPrivateCache();
     S.text = S.qty = S.otext = S.oqty = ''; S.wf = { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }; S.xf = xBlank();
@@ -1074,6 +1081,7 @@
      recipes) closes too, search and all (head chef, 29 Oct 2026): it holds nothing typed, and left open it kept the chef
      hat's Sign out and the self-updates saying "Not saved yet" on the other pages. Prep shows it closed. */
   function leftPrep() {
+    ptClose(true, true);
     if (S.staffOpen && !draftDirty()) { S.staffOpen = false; S.draft = null; }
     if (S.minOpen && !mfDirty()) { S.minOpen = false; S.mf = null; }
     if (S.notesOpen && !nfDirty()) S.notesOpen = false;
@@ -1427,16 +1435,161 @@
     if (secInfo.from) { S.section = sec; var sf = secInfo.from, mid = made.id, dte = S.date; toast('Added, section ' + sf + ' corrected to ' + sec, { label: 'Undo', fn: function () { keepSection(sf); noteSection(sf); S.section = sf; supd(itemRef(dte, mid), { station: sf }).catch(failed); } }); }
     else addedToast(sec, S.date, made.id);
   }
+  /* Completion activity belongs to the recorder. Reported preparation is a separate, cycle-stamped identity. */
+  function preparedWorker(x) {
+    var valid = x && x.done === true && typeof x.preparedBy === 'string' && x.preparedBy.trim() && x.preparedBy.length <= 80 && typeof x.preparedById === 'string' && x.preparedById.trim() && x.preparedById.length <= 80 && Number.isFinite(x.preparedAt) && x.preparedAt > 0 && x.preparedAt === x.doneAt;
+    return valid ? { id: x.preparedById, name: x.preparedBy } : { id: x && x.doneById || '', name: x && x.doneBy || '' };
+  }
+  var pt = null, ptPop = null;
+  function ptPeople() {
+    var c = S.config || {}, ids = c.staffIds || [], excluded = c.fnOnlyIds || [];
+    return people().filter(function (p) { return ids.indexOf(p.id) >= 0 && excluded.indexOf(p.id) < 0 && typeof p.name === 'string' && p.name.trim() && p.name.length <= 80; });
+  }
+  function ptPerson(id) { return ptPeople().filter(function (p) { return p.id === id; })[0]; }
+  function ptItem(id) { return S.items.filter(function (x) { return x.id === id; })[0]; }
+  function ptSignature(x) { return JSON.stringify([x.text || '', x.qty || '', x.station || '', x.recipe || '', x.fn || '', !!x.done, !!x.deleted, x.doneAt || 0, x.doneById || '', x.preparedBy || '', x.preparedById || '', x.preparedAt || 0, x.addedAt || 0, x.rolled || 0]); }
+  function ptContext(d) { return !!(d && d.epoch === accessEpoch && d.openedDay === dayNow() && d.pin === S.pin && d.uid === S.uid && d.recorder === S.who && d.pinAt === S.sessPinAt && S.authed && canW() && kitchenAccess() && can('tick') && shared() && S.name === 'prep' && S.date === d.date && S.root && document.body.contains(S.root)); }
+  function ptSource(d) { var x = ptItem(d.id); return !!(x && !x.done && !x.deleted && ptSignature(x) === d.signature); }
+  function ptFocus(d) {
+    if (!d || !S.root || !document.body.contains(S.root)) return;
+    var buttons = S.root.querySelectorAll('.nb-box[data-p="tick"]'), chosen;
+    Array.prototype.some.call(buttons, function (el) { if (el.getAttribute('data-id') === d.id && el.getAttribute('data-d') === d.date) { chosen = el; return true; } return false; });
+    if (!chosen || chosen.disabled) chosen = S.root.querySelector('.nb-box[data-p="tick"]:not([disabled])') || S.root.querySelector('#rtitle');
+    if (chosen) chosen.focus({ preventScroll: true });
+  }
+  function ptClose(noBack, force) {
+    if (!ptPop || pt && pt.busy && !force) return;
+    var previous = pt;pt = null;ptPop.remove();ptPop = null;
+    ovDone('pt', noBack);document.documentElement.classList.toggle('sheet-open', !!document.querySelector('.sheet'));
+    if (previous && ptContext(previous)) ptFocus(previous);
+    if (!force) { whoSync();sheetNext(); }
+  }
+  function ptBack() { if (pt && pt.busy) { ovPush('pt', ptBack);liveSay('The prep tick is still saving.');return; }ptClose(true); }
+  function ptDraw() {
+    if (!pt || !ptPop) return;
+    if (!ptContext(pt)) { ptClose(true, true);return; }
+    if (!pt.busy && !ptSource(pt)) { pt.stale = true;pt.error = 'This prep line changed. Close this choice and review the list.'; }
+    if (!pt.busy && pt.selected && !ptPerson(pt.selected)) { pt.stale = true;pt.error = 'That person is no longer available. Close this choice and try again.'; }
+    var active = ptPeople(), first = [], here = hereGet(), rest;
+    here.forEach(function (id) { var p = active.filter(function (x) { return x.id === id; })[0];if (p && first.indexOf(p) < 0) first.push(p); });
+    rest = active.filter(function (p) { return first.indexOf(p) < 0; });
+    var disabled = pt.busy || pt.stale || pt.uncertain, query = String(pt.query || '').trim().toLowerCase();
+    var filtered = rest.filter(function (p) { return String(p.name).toLowerCase().indexOf(query) >= 0; });
+    var others = (active.length > 12 ? '<label class="visually-hidden" for="pt-query">Find a person</label><input class="search pt-query" id="pt-query" data-pt-query value="' + esc(pt.query || '') + '" placeholder="Find a person"' + (disabled ? ' disabled' : '') + '>' : '') + names(filtered, 'pt-others');
+    function names(list, cls) { return '<div class="pt-names ' + cls + '">' + list.map(function (p) { return '<button type="button" class="chip" data-pt="choose" data-id="' + esc(p.id) + '"' + (disabled ? ' disabled' : '') + '>' + esc(p.name) + '</button>'; }).join('') + '</div>'; }
+    var body = '<div class="sheet-grip" aria-hidden="true"></div><h3 id="pt-h">Who did this?</h3><p class="pt-item">' + esc(pt.before.text) + (pt.before.qty ? ' <span>' + esc(pt.before.qty) + '</span>' : '') + '</p>' +
+      (first.length ? '<p class="hint">Signed in on this device today</p>' + names(first, 'pt-recent') : '') +
+      (rest.length ? (first.length ? '<button type="button" class="p-link pt-others-button" data-pt="others" aria-expanded="' + pt.others + '"' + (disabled ? ' disabled' : '') + '>Others...</button>' : '') + (pt.others || !first.length ? others : '') : '') +
+      (!active.length ? '<p class="p-err" role="status">No eligible kitchen names are available. Close and check the staff list.</p>' : '') +
+      (pt.busy ? '<p class="pt-status" role="status">Recording for ' + esc((ptPerson(pt.selected) || {}).name || '') + '... Not saved yet.</p>' : '') +
+      (pt.error ? '<p class="p-err pt-status" role="alert">' + esc(pt.error) + '</p>' + (!pt.stale && pt.selected ? '<button type="button" class="btn dark" data-pt="retry">Try again</button>' : '') : '') +
+      '<button type="button" class="btn sheet-x" data-pt="cancel"' + (pt.busy ? ' disabled' : '') + '>Cancel</button>';
+    var focus = document.activeElement, queryFocus = focus && ptPop.contains(focus) && focus.hasAttribute('data-pt-query'), cursor = queryFocus ? focus.selectionStart : null, action = focus && ptPop.contains(focus) && focus.getAttribute('data-pt'), id = focus && focus.getAttribute('data-id');
+    var pane = ptPop.querySelector('.pt-sheet');if (pane.lkHTML !== body) { pane.innerHTML = body;pane.lkHTML = body; }
+    pane.setAttribute('aria-busy', String(pt.busy));
+    if (pt.busy) pane.focus({ preventScroll: true });
+    else if (queryFocus) { var input = pane.querySelector('[data-pt-query]');if (input) { input.focus({ preventScroll: true });if (cursor != null) input.setSelectionRange(cursor, cursor); } }
+    else if (action) {
+      var next = Array.prototype.filter.call(pane.querySelectorAll('[data-pt]'), function (el) { return el.getAttribute('data-pt') === action && (!id || el.getAttribute('data-id') === id); })[0];
+      if (next && !next.disabled) next.focus({ preventScroll: true });
+    }
+  }
+  function ptOpen(date, id) {
+    var x = ptItem(id), actor = me();
+    if (!actor) { toast('Choose your name before ticking prep.');return; }
+    if (ovBack) { var epoch = accessEpoch, recorder = actor.id;ovAfterBack(function () { if (epoch === accessEpoch && S.who === recorder) ptOpen(date, id); });return; }
+    if (pt || !x || x.done || x.deleted || !can('tick') || !kitchenAccess() || !canW() || date !== S.date || sheetOpen() || ksWait || dkFirstUp()) return;
+    pt = { id: id, date: date, pin: S.pin, uid: S.uid, recorder: actor.id, pinAt: S.sessPinAt, epoch: accessEpoch, openedDay: dayNow(), signature: ptSignature(x), before: Object.assign({}, x), others: false, selected: '', error: '', busy: false, stale: false, latest: null };
+    var box = document.createElement('div');box.id = 'pt-sheet';box.innerHTML = '<div class="sheet-bg" data-pt="cancel"></div><section class="sheet pt-sheet" role="dialog" aria-modal="true" aria-labelledby="pt-h" tabindex="-1"></section>';
+    ptPop = box;document.body.appendChild(box);ovPush('pt', ptBack);document.documentElement.classList.add('sheet-open');ptDraw();whoSync();
+    var first = box.querySelector('.pt-recent .chip') || box.querySelector('.pt-others .chip') || box.querySelector('[data-pt="others"]') || box.querySelector('[data-pt="cancel"]');if (first) first.focus({ preventScroll: true });
+  }
+  function ptRestore(d, acknowledged) {
+    var index = S.items.map(function (x) { return x.id; }).indexOf(d.id);if (index < 0) return;
+    var before = { done: d.before.done || false, doneBy: d.before.doneBy || '', doneById: d.before.doneById || '', doneAt: d.before.doneAt || 0, preparedBy: d.before.preparedBy || '', preparedById: d.before.preparedById || '', preparedAt: d.before.preparedAt || 0 };
+    S.items[index] = Object.assign({}, d.latest || S.items[index], acknowledged || before, { _unsent: false });
+  }
+  function ptSameSave(d, x) { var v = d.value;return !!(v && x && x.done === true && !x.deleted && x.doneAt === v.doneAt && x.doneById === v.doneById && x.preparedAt === v.preparedAt && x.preparedById === v.preparedById); }
+  function ptReconcile(d) {
+    if (pt !== d || !d.uncertain || !ptContext(d) || !d.latestServer || !d.latest) return;
+    if (ptSameSave(d, d.latest)) { ptComplete(d);return; }
+    if (d.latest.done || d.latest.deleted) {
+      d.uncertain = false;d.busy = false;ptRestore(d, d.latest);d.stale = true;d.error = 'This prep line changed. Close and review the list.';draw();ptDraw();
+    }
+  }
+  function ptComplete(d) {
+    if (pt !== d || d.finished || !ptContext(d)) return;
+    d.finished = true;d.busy = false;d.uncertain = false;ptRestore(d, d.value);markPast('p', d.date);bump({ ticked: 1 });
+    ptClose();batch(function () { toast('Ticked', { label: 'Undo', fn: function () { tick(d.date, d.id); } });draw(); });setTimeout(draw, LINGER + 100);
+  }
+  function ptCheck() {
+    var d = pt;if (!d || d.busy || !ptContext(d)) return;
+    if (!d.uncertain) { ptSave(d.selected);return; }
+    d.busy = true;ptDraw();whoSync();
+    // Only after an uncertain acknowledgement and an explicit retry: one fresh document read, never a poll.
+    fb.fs.getDocFromServer(itemRef(d.date, d.id)).then(function (snap) {
+      if (pt !== d || !ptContext(d)) return;
+      var x = snap.exists() ? Object.assign({ id: d.id }, snap.data()) : null;d.busy = false;d.latest = x;d.latestServer = true;
+      if (ptSameSave(d, x)) { ptComplete(d);return; }
+      if (!x || x.deleted || x.done || ptSignature(x) !== d.signature) {
+        if (x) ptRestore(d, x);d.stale = true;d.error = 'This prep line changed. Close and review the list.';draw();ptDraw();return;
+      }
+      d.uncertain = false;ptRestore(d, x);ptSave(d.selected);
+    }, function () {
+      if (pt !== d || !ptContext(d)) return;
+      d.busy = false;d.error = 'Could not confirm whether this tick saved. Your choice is kept. Try again to check before recording it again.';ptDraw();whoSync();
+    });
+  }
+  function ptSave(id) {
+    var d = pt, actor = me(), worker = ptPerson(id);
+    if (!d || d.busy || !ptContext(d)) return;
+    if (!ptSource(d) || !worker || !actor) { d.stale = true;d.error = 'The prep line or person changed. Close and try again.';ptDraw();return; }
+    var at = now(), value = { done: true, doneBy: actor.name, doneById: actor.id, doneAt: at, preparedBy: worker.name, preparedById: worker.id, preparedAt: at };
+    d.selected = worker.id;d.error = '';d.busy = true;d.latest = null;d.latestServer = false;d.value = value;ptDraw();whoSync();
+    supd(itemRef(d.date, d.id), value).then(function () {
+      if (pt !== d || !ptContext(d)) return;
+      ptComplete(d);
+    }, function (error) {
+      if (pt !== d || !ptContext(d)) return;
+      if (d.latestServer && ptSameSave(d, d.latest)) { ptComplete(d);return; }
+      d.busy = false;
+      if (d.latestServer && d.latest && d.latest.done) { ptRestore(d, d.latest);d.stale = true;d.error = 'This line was ticked elsewhere. Close and review the list.'; }
+      else {
+        ptRestore(d);d.uncertain = !(error && error.code === 'permission-denied');
+        d.error = d.uncertain ? 'Could not confirm whether this tick saved. Your choice is kept. Try again to check before recording it again.' : 'Could not save. The line is not ticked. Your choice is kept. Try again.';
+      }
+      draw();ptDraw();whoSync();
+      var retry = ptPop && ptPop.querySelector('[data-pt="retry"]');if (retry) retry.focus({ preventScroll: true });
+    });
+  }
+  document.addEventListener('click', function (e) {
+    var button = e.target.closest && e.target.closest('[data-pt]');if (!button || !ptPop || !ptPop.contains(button)) return;
+    e.preventDefault();var action = button.getAttribute('data-pt');
+    if (action === 'cancel') ptClose();
+    else if (pt && !pt.busy && action === 'others') { pt.others = !pt.others;ptDraw();var next = ptPop.querySelector('.pt-others .chip');if (next) next.focus({ preventScroll: true }); }
+    else if (action === 'choose') ptSave(button.getAttribute('data-id'));
+    else if (action === 'retry' && pt) ptCheck();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (!ptPop) return;
+    if (e.key === 'Escape') { e.preventDefault();if (!pt.busy) ptClose(); }
+    if (e.key === 'Tab') { var pane = ptPop.querySelector('.pt-sheet');if (pt.busy) { e.preventDefault();pane.focus({ preventScroll: true }); } else trapTab(e, pane, 'button:not([disabled]), input:not([disabled])'); }
+  });
+
+  document.addEventListener('input', function (e) { if (pt && !pt.busy && e.target.hasAttribute && e.target.hasAttribute('data-pt-query') && ptPop.contains(e.target)) { pt.query = e.target.value;ptDraw(); } });
+
   function canUntick(x) {
     return canBrowse() || (!!x.doneById && x.doneById === S.who && now() - (x.doneAt || 0) < 110000);
   }
-  function tick(date, id) { batch(function () { tickNow(date, id); }); }
+  function tick(date, id) { var item = ptItem(id);if (pt && pt.busy) return;if (item && !item.done && shared() && S.name === 'prep') { ptOpen(date, id);return; }batch(function () { tickNow(date, id); }); }
   function tickNow(date, id) {
     var it = S.items.filter(function (x) { return x.id === id; })[0], p = me();
     if (!it || !can('tick')) return;
+    if (!p) { toast('Choose your name before ticking prep.');return; }
     var done = !it.done;
     if (!done && !canUntick(it)) { toast('Ticked lines stay ticked. Ask the head chef or sous chef to undo it.'); return; }
-    supd(itemRef(date, id), { done: done, doneBy: done ? p.name : '', doneById: done ? p.id : '', doneAt: done ? now() : 0 }).then(function () { markPast('p', date); }, failed);
+    var at = done ? now() : 0;
+    supd(itemRef(date, id), { done: done, doneBy: done ? p.name : '', doneById: done ? p.id : '', doneAt: at, preparedBy: done ? p.name : '', preparedById: done ? p.id : '', preparedAt: at }).then(function () { markPast('p', date); }, failed);
     if (done) { bump({ ticked: 1 }); toast('Ticked', { label: 'Undo', fn: function () { tick(date, id); } }); setTimeout(draw, LINGER + 100); }
     else if (it.doneById && fb) sset(docRef('activity', it.doneById), { name: it.doneBy || '', ticked: fb.fs.increment(-1) }, true).catch(function () {});
   }
@@ -2368,8 +2521,8 @@
   /* ---------- the last 14 days, read once a day per phone ----------
      Past days hardly change, so they are read once a day and kept on the phone. Today comes from the live list.
      The weekly badges, usual amounts, Start here, Due today, the pace card and the close-out nudge all work from this. */
-  var PAST_DAYS = 14, PAST_KEYS = ['text', 'station', 'qty', 'addedBy', 'addedById', 'addedAt', 'done', 'doneBy', 'doneById', 'doneAt', 'rolled', 'ahead', 'deleted', 'urgent', 'fn'];
-  function pastTag() { return S.pin + '|' + dayNow() + '|3'; }   // |3: copies keep fn (22 Oct 2026), so older copies are read again once
+  var PAST_DAYS = 14, PAST_KEYS = ['text', 'station', 'qty', 'addedBy', 'addedById', 'addedAt', 'done', 'doneBy', 'doneById', 'doneAt', 'preparedBy', 'preparedById', 'preparedAt', 'rolled', 'ahead', 'deleted', 'urgent', 'fn'];
+  function pastTag() { return S.pin + '|' + dayNow() + '|4'; }   // |4: retain reported preparation identities and their completion-cycle stamp.
   /* A change to a past day reaches the other phones (coding rules, 22 Oct 2026). Past days are kept on each phone for the
      day (lk.past, lk.ord.hist, the admin's lk.st.got). When the head chef or a sous chef ticks, unticks, removes or puts
      back a line on a past day, the book stamps config/main.pastEdit (p for prep, o for orders) with the time. Every phone
@@ -2461,7 +2614,7 @@
   function weekRanks() {
     var counts = {}, start = T.at(shift(dayNow(), -6));
     var lists = pastDays(6).map(function (e) { return e[1]; }).concat([S.date === dayNow() ? S.items : []]);
-    lists.forEach(function (l) { l.forEach(function (x) { if (x.done && !x.deleted && x.doneBy && (x.doneAt || 0) >= start) counts[x.doneBy] = (counts[x.doneBy] || 0) + 1; }); });
+    lists.forEach(function (l) { l.forEach(function (x) { if (x.done && !x.deleted && preparedWorker(x).name && (x.doneAt || 0) >= start) { var worker = preparedWorker(x);counts[worker.name] = (counts[worker.name] || 0) + 1; } }); });
     var arr = Object.keys(counts).map(function (n) { return { name: n, n: counts[n] }; }).sort(function (a, b) { return b.n - a.n || a.name.localeCompare(b.name); });
     var rank = 0, prev = -1;
     arr.forEach(function (x, k) { if (x.n !== prev) { rank = k + 1; prev = x.n; } x.rank = rank; });
@@ -2637,9 +2790,9 @@
           if (x.orig && x.orig !== x.text) agg.fixes.push({ d: d, from: x.orig, to: x.text, by: x.addedBy || '' });
         }
         if (!who) pd.n++;
-        if (x.done && (!who || x.doneById === who)) {
+        if (x.done && (!who || preparedWorker(x).id === who)) {
           pd.t++; agg.ticked++;
-          var tn = x.doneBy || 'Unknown', tp = agg.people[tn] = agg.people[tn] || { w: 0, t: 0 };
+          var tn = preparedWorker(x).name || 'Unknown', tp = agg.people[tn] = agg.people[tn] || { w: 0, t: 0 };
           tp.t++;
           if (x.doneAt) { agg.tHour[T.hour(x.doneAt)]++; if (!x.rolled && x.addedAt && x.doneAt > x.addedAt) agg.times.push(x.doneAt - x.addedAt); }
         }
@@ -3053,7 +3206,7 @@
     afDates(n, 0).forEach(function (d) {
       var dw = parseYmd(d).getDay(); occ[dw] = (occ[dw] || 0) + 1;
       afItems(d).forEach(function (x) {
-        var t = m === 't' ? (x.done && (!who || x.doneById === who) ? x.doneAt : 0) : (!x.rolled && (!who || x.addedById === who) ? x.addedAt : 0);
+        var t = m === 't' ? (x.done && (!who || preparedWorker(x).id === who) ? x.doneAt : 0) : (!x.rolled && (!who || x.addedById === who) ? x.addedAt : 0);
         if (!t) return;
         var h = T.hour(t), k = dw + ':' + h;
         cnt[k] = (cnt[k] || 0) + 1; lo = Math.min(lo, h); hi = Math.max(hi, h);
@@ -3133,10 +3286,10 @@
     if ((kind === 'insights' || kind === 'team') && statsGaps()) { toast(MISS_TEXT); return; }
     var n = S.statsRange, a = AF(), tag = dayNow() + '-' + n + 'd';
     if (kind === 'insights' && S.stats && !S.stats.loading) {
-      var rows = [['Date', 'Weekday', 'Section', 'Line', 'Amount', 'Written by', 'Written on', 'Written at', 'Rolled over (times)', 'Ticked', 'Ticked by', 'Ticked at', 'Minutes to tick']];
+      var rows = [['Date', 'Weekday', 'Section', 'Line', 'Amount', 'Written by', 'Written on', 'Written at', 'Rolled over (times)', 'Ticked', 'Reported prepared by', 'Ticked at', 'Minutes to tick']];
       afDates(n, 0).forEach(function (d) { afItems(d).forEach(function (x) {
-        if (!afMine(x) && !(a.who && x.doneById === a.who)) return;
-        rows.push([d, DOWN[DOW.indexOf(parseYmd(d).getDay())], x.station || 'General', x.text, x.qty || '', x.rolled ? (x.origBy || '') : (x.addedBy || ''), firstAt(x) ? T.day(firstAt(x)) : '', hm(firstAt(x)), rolledN(x), x.done ? 'yes' : 'no', x.doneBy || '', hm(x.doneAt), x.done && x.doneAt && x.addedAt && !x.rolled ? Math.round((x.doneAt - x.addedAt) / 60000) : '']);
+        if (!afMine(x) && !(a.who && preparedWorker(x).id === a.who)) return;
+        rows.push([d, DOWN[DOW.indexOf(parseYmd(d).getDay())], x.station || 'General', x.text, x.qty || '', x.rolled ? (x.origBy || '') : (x.addedBy || ''), firstAt(x) ? T.day(firstAt(x)) : '', hm(firstAt(x)), rolledN(x), x.done ? 'yes' : 'no', preparedWorker(x).name || '', hm(x.doneAt), x.done && x.doneAt && x.addedAt && !x.rolled ? Math.round((x.doneAt - x.addedAt) / 60000) : '']);
       }); });
       downloadCSV('leichhardt-prep-lines-' + tag + '.csv', rows);
     } else if (kind === 'transfers' && S.xStats && !S.xStats.loading) {
@@ -3159,7 +3312,7 @@
   function tickBySectionHTML(n) {
     var m = {}, who = AF().who;
     afDates(n, 0).forEach(function (d) { afItems(d).forEach(function (x) {
-      if (x.rolled || !x.done || !x.doneAt || !x.addedAt || x.doneAt <= x.addedAt || (who && x.doneById !== who)) return;
+      if (x.rolled || !x.done || !x.doneAt || !x.addedAt || x.doneAt <= x.addedAt || (who && preparedWorker(x).id !== who)) return;
       (m[x.station || 'General'] = m[x.station || 'General'] || []).push(x.doneAt - x.addedAt);
     }); });
     var rows = Object.keys(m).filter(function (k) { return m[k].length >= 2; }).map(function (k) { var v = m[k].sort(function (a, b) { return a - b; }); return { k: k, n: v.length, med: v[Math.floor(v.length / 2)], p90: v[Math.min(v.length - 1, Math.floor(v.length * 0.9))] }; }).sort(function (a, b) { return b.med - a.med; });
@@ -3272,7 +3425,7 @@
   var BOX = '<svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><rect x="2.5" y="2.5" width="21" height="21" rx="3" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
   function rowHTML(x, date, readonly, also) {
     var tickOk = can('tick') && !x.deleted && (!x.done || canUntick(x)), delOk = can('del');
-    var by = x.done && x.doneBy ? esc(x.doneBy) + (x.doneAt ? ' ' + clock(x.doneAt) : '') : (rolledN(x) ? (x.origBy ? 'from ' + esc(x.origBy) + (firstDay(x) ? ', ' + firstDay(x) : '') : '') : x.rolled ? esc(x.origBy || '') : (x.addedBy ? esc(x.addedBy) : ''));
+    var by = x.done && preparedWorker(x).name ? esc(preparedWorker(x).name) + (x.doneAt ? ' ' + clock(x.doneAt) : '') : (rolledN(x) ? (x.origBy ? 'from ' + esc(x.origBy) + (firstDay(x) ? ', ' + firstDay(x) : '') : '') : x.rolled ? esc(x.origBy || '') : (x.addedBy ? esc(x.addedBy) : ''));
     var marks = (x.urgent ? '<span class="nb-urg">Urgent</span>' : '') + (rolledN(x) ? '<span class="nb-roll" title="Not finished earlier, so it rolled over">Rolled' + (rolledN(x) > 1 ? ' x' + rolledN(x) : '') + '</span>' : '') +
       (x.deleted && x.mergedInto ? '<span class="nb-also">Double up</span>' : (also || ''));
     var star = can('add') && !x.deleted && !readonly ? '<button type="button" class="nb-star" data-p="urgent" data-id="' + esc(x.id) + '" aria-pressed="' + !!x.urgent + '" aria-label="' + esc((x.urgent ? 'Not urgent: ' : 'Mark urgent: ') + x.text) + '">!</button>' : '';
@@ -3283,7 +3436,7 @@
       '<button type="button" class="nb-box" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-pressed="' + !!x.done + '" aria-label="' + esc((x.done ? 'Untick ' : 'Tick ') + x.text) + '"' + (tickOk ? '' : ' disabled') + '>' + (x.done ? TICK : BOX) + '</button>' +
       // a tap on the words ticks too (the box is the button for keyboards and screen readers); Undo and the linger cover a slip
       '<span class="nb-t' + (tickOk && !readonly ? ' nb-tt' : '') + '"' + (tickOk && !readonly ? ' data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '"' : '') + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + (marks ? ' <span class="nb-marks">' + marks + '</span>' : '') + unsentMark(x) + '</span>' +
-      '<span class="nb-by"><span class="nb-wrote">' + by + '</span></span>' + (star || link || del ? '<span class="nb-acts">' + star + link + del + (del && !readonly ? moreBtn(x) : '') + '</span>' : '') + '</li>';
+      '<span class="nb-by"><span class="nb-wrote"' + (x.done ? ' title="' + esc('Recorded by ' + (x.doneBy || '')) + '"' : '') + '>' + by + '</span></span>' + (star || link || del ? '<span class="nb-acts">' + star + link + del + (del && !readonly ? moreBtn(x) : '') + '</span>' : '') + '</li>';
   }
   /* The line menu (22 Oct 2026, Option B): on a phone, Remove (or Put back) and who wrote the line move behind a ⋯ on
      the line, so the item and the amount lead. On a laptop everything stays in the line and the ⋯ is not shown. The sheet
@@ -3305,10 +3458,11 @@
     var who = (row.querySelector('.nb-wrote') || {}).textContent || '', t = row.querySelector('.nb-t'), c = t && t.cloneNode(true);
     if (c) c.querySelectorAll('.nb-mk, .o-used').forEach(function (e) { e.remove(); });
     var name = c ? c.textContent.replace(/\s+/g, ' ').trim() : '';
+    var completed = S.name === 'prep' && ptItem(btn.getAttribute('data-id')), completionWho = completed && completed.done ? 'Reported prepared by ' + preparedWorker(completed).name + '. Recorded by ' + (completed.doneBy || '') + '.' : '';
     var box = document.createElement('div');
     box.id = 'lm-sheet';
     box.innerHTML = '<div class="sheet-bg" data-lm="close"></div><div class="sheet lm-sheet" role="dialog" aria-modal="true" aria-labelledby="lm-h"><div class="sheet-grip" aria-hidden="true"></div>' +
-      '<h3 id="lm-h">' + esc(name) + '</h3>' + (who.trim() ? '<p class="lm-who">' + esc(/^(from|Ordered by) /.test(who.trim()) ? who.trim() : 'Written by ' + who.trim()) + '</p>' : '') +
+      '<h3 id="lm-h">' + esc(name) + '</h3>' + (completionWho ? '<p class="lm-who">' + esc(completionWho) + '</p>' : who.trim() ? '<p class="lm-who">' + esc(/^(from|Ordered by) /.test(who.trim()) ? who.trim() : 'Written by ' + who.trim()) + '</p>' : '') +
       (act ? '<button type="button" class="sheet-o lm-act" data-lm="act"><strong>' + esc(act.textContent.trim() === 'Remove' ? 'Remove line' : act.textContent.trim()) + '</strong></button>' : '') +
       '<button type="button" class="btn sheet-x" data-lm="close">Cancel</button></div>';
     // what the button does, as well as the button: the list is often drawn again while the sheet is open
@@ -3440,7 +3594,7 @@
     var dl = live.filter(function (x) { return x.done; }).sort(function (a, b) { return (b.doneAt || 0) - (a.doneAt || 0); });
     var donebox = '<h3 class="nb-sh" id="nb-donebox">' + (onToday ? 'Done today' : 'Done on ' + esc(dayShort(S.date))) + (off ? '' : ' (' + dl.length + ')') + '</h3>' +
       (off ? '<p class="nb-sd" role="status">' + (onToday ? 'No signal. Lines ticked today show when the phone is back online.' : 'No signal. Ticked lines show when the phone is back online.') + '</p>' : '') + (dl.length ? '<ul class="nb-done">' + dl.map(function (x) {
-      return '<li data-ln="' + esc(S.date + '/' + x.id) + '"><span class="nb-dt">' + (x.doneAt ? clock(x.doneAt) : '') + '</span><span class="nb-dx">' + esc(x.text) + (x.qty ? ' <em>' + esc(x.qty) + '</em>' : '') + unsentMark(x) + '</span><span class="nb-dw">' + esc(x.doneBy || '') + '</span>' + (can('tick') && canUntick(x) ? '<button type="button" class="p-x nb-undo" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(S.date) + '" aria-label="' + esc('Undo the tick on ' + x.text) + '">Undo</button>' : '') + '</li>';
+      return '<li data-ln="' + esc(S.date + '/' + x.id) + '"><span class="nb-dt">' + (x.doneAt ? clock(x.doneAt) : '') + '</span><span class="nb-dx">' + esc(x.text) + (x.qty ? ' <em>' + esc(x.qty) + '</em>' : '') + unsentMark(x) + '</span><span class="nb-dw" title="' + esc('Recorded by ' + (x.doneBy || '')) + '">' + esc(preparedWorker(x).name) + '</span>' + (can('tick') && canUntick(x) ? '<button type="button" class="p-x nb-undo" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(S.date) + '" aria-label="' + esc('Undo the tick on ' + x.text) + '">Undo</button>' : '') + '</li>';
     }).join('') + '</ul>' : off ? '' : '<p class="nb-sd">' + (onToday ? 'Nothing ticked yet.' : 'Nothing was ticked.') + '</p>');
     return (flags ? '<div class="nb-rc">' + flags + '</div>' : '') + startHTML(live, true) + paceHTML + stuckHTML + (off ? '' : fnNeedsHTML()) + donebox + quick;
   }
@@ -3664,8 +3818,8 @@
           var r = rec(x); r.w++; r.days[d] = 1; activeDays[d] = 1; if (!r.last || d > r.last) r.last = d;
           if (x.station) { r.secs[x.station] = (r.secs[x.station] || 0) + 1; secTotal[x.station] = (secTotal[x.station] || 0) + 1; (r.secDay[d] = r.secDay[d] || {})[x.station] = ((r.secDay[d] || {})[x.station] || 0) + 1; }
         }
-        if (x.done && x.doneById) {
-          var tr = per[x.doneById] = per[x.doneById] || blankRec(x.doneById); tr.t++; tr.tdays[d] = 1;
+        if (x.done && preparedWorker(x).id) {
+          var worker = preparedWorker(x), tr = per[worker.id] = per[worker.id] || blankRec(worker.id);if (!names[worker.id] && worker.name) names[worker.id] = worker.name;tr.t++; tr.tdays[d] = 1;
           if (x.station) { tr.tsecs[x.station] = (tr.tsecs[x.station] || 0) + 1; tickSec[x.station] = (tickSec[x.station] || 0) + 1; var td2 = tr.tsecDay[d] = tr.tsecDay[d] || {}; td2[x.station] = (td2[x.station] || 0) + 1; }
         }
       });
@@ -3971,7 +4125,7 @@
     if (!intelligenceAllowed()) return '';
     if (!window.LK_INTELLIGENCE || window.LK_INTELLIGENCE.API !== 3 || !window.LK_ANALYSIS) {
       if (!intelligenceLoading && !intelligenceError) {
-        intelligenceLoading = window.LK_APP.load('js/analysis-core.js?v=1').then(function () { return window.LK_APP.load('js/admin-intelligence.js?v=3'); }).then(function () { if (!window.LK_INTELLIGENCE || window.LK_INTELLIGENCE.API !== 3 || !window.LK_ANALYSIS) throw { code: 'workspace-version' }; }).then(function () { intelligenceLoading = null; if (intelligenceAllowed()) draw(); }, function () { intelligenceLoading = null; intelligenceError = true; if (intelligenceAllowed()) draw(); });
+        intelligenceLoading = window.LK_APP.load('js/analysis-core.js?v=2').then(function () { return window.LK_APP.load('js/admin-intelligence.js?v=3'); }).then(function () { if (!window.LK_INTELLIGENCE || window.LK_INTELLIGENCE.API !== 3 || !window.LK_ANALYSIS) throw { code: 'workspace-version' }; }).then(function () { intelligenceLoading = null; if (intelligenceAllowed()) draw(); }, function () { intelligenceLoading = null; intelligenceError = true; if (intelligenceAllowed()) draw(); });
       }
       return '<section class="set-block"><h3 class="label">Admin workspace</h3><p class="hint" role="status">' + (intelligenceError ? 'Could not load the workspace. Check the connection and reload this page.' : 'Loading...') + '</p></section>';
     }
@@ -4322,7 +4476,7 @@
     S.root.innerHTML = syncHTML() + practiceHTML() + bodyHTML() + toastHTML();
     if (S.toast) plainAway();
     S.root.classList.toggle('is-book', S.name === 'prep' && !!S.root.querySelector('.nb'));
-    document.documentElement.classList.toggle('sheet-open', !!S.root.querySelector('.sheet'));
+    document.documentElement.classList.toggle('sheet-open', !!S.root.querySelector('.sheet') || !!ptPop);
     if (scrolls.length) Array.prototype.forEach.call(S.root.querySelectorAll('.nb-body'), function (b, i) { if (scrolls[i] != null) b.scrollTop = scrolls[i]; });
     if (window.LK_UX) window.LK_UX.enhance(S.root);
     if (key) { var el = S.root.querySelector('[data-k="' + key + '"]'); if (el && el._uxTrigger) el = el._uxTrigger; if (el) { el.focus({ preventScroll: true }); if (start != null && el.setSelectionRange) { try { el.setSelectionRange(start, end); } catch (e) {} } } }
@@ -4333,6 +4487,7 @@
     }
     else focusPin();
     if (S.name === 'admin') adminJumps();
+    if (ptPop) ptDraw();
     rendering = false;
     window.dispatchEvent(new Event('lk-back'));
   }
@@ -9324,6 +9479,7 @@
     window.dispatchEvent(new Event('lk-back'));
   }
   function localReturn(a) {
+    if (a === 'pt-cancel' && ptPop) { ptClose();return true; }
     if (a === 'proofreader-back') return !!(proofVisible() && proofModule().back());
     if (a === 'intelligence-back') return !!(intelligenceVisible() && window.LK_INTELLIGENCE.back && window.LK_INTELLIGENCE.back());
     if (a === 'recipe-close') { S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; draw(); focusSel('.p-pickbtn'); return true; }
@@ -9340,6 +9496,7 @@
   function localBackAction() {
     if (!S.root || !document.body.contains(S.root)) return null;
     var pick = function (a, label) { return { action: a, label: label }; };
+    if (ptPop) return pick('pt-cancel', 'Back to prep list');
     if (proofVisible() && proofModule().backLabel()) return pick('proofreader-back', proofModule().backLabel());
     if (intelligenceVisible() && window.LK_INTELLIGENCE.backLabel) {
       var intelligenceLabel = window.LK_INTELLIGENCE.backLabel();
@@ -9359,14 +9516,14 @@
     return null;
   }
   function localBackBusy() {
-    return !!(S.root && document.body.contains(S.root) && (S.busy || S.nSaving || S.mSaving || S.gf && (S.gf.busy || S.gf.saving) || intelligenceBusy()));
+    return !!(S.root && document.body.contains(S.root) && (S.busy || S.nSaving || S.mSaving || pt && pt.busy || S.gf && (S.gf.busy || S.gf.saving) || intelligenceBusy()));
   }
   /* Something not saved on this device apart from a change waiting to send (LK_PREP.unsaved() is this or a write
      waiting): words typed here (typedHere(): a line half typed, an admin draft, a review, the drinks run), a sheet or
      the recipe picker open on the prep pages, or a page loaded on its own with changes (Delivery received, Manage
      Recipes, Manage functions, Supplier order). */
   function unsavedHere() {
-    return !!(window.LK_DELIVERY && window.LK_DELIVERY.dirty()) || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!(window.LK_SUP && window.LK_SUP.dirty()) || typedHere() || !!S.sheet || !!S.recipeOpen;
+    return !!(window.LK_DELIVERY && window.LK_DELIVERY.dirty()) || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!(window.LK_SUP && window.LK_SUP.dirty()) || typedHere() || !!S.sheet || !!S.recipeOpen || !!ptPop;
   }
   /* Words typed on the pages this file draws and not saved yet: half a prep, order, wastage or transfer line (the venue
      and person stay after Log it on purpose, so they do not count), kitchen mail, a to-do job, a review, the drinks run,

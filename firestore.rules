@@ -187,6 +187,32 @@ service cloud.firestore {
         && (resource != null || request.resource.data.get('addedById', '') in ['', request.resource.data.by])
         && (request.resource.data.get('done', false) != true || resource.data.get('done', false) == true || request.resource.data.get('doneById', '') == request.resource.data.by));
     }
+    // Prep only: preparedBy is a reported worker, never a login or permission. The authenticated recorder remains
+    // doneById/by. Old clients may omit the pair; a new completion can only name active kitchen staff. The pair
+    // stays fixed while done. preparedAt ties the report to this completion: an older client can Undo or re-tick
+    // while carrying an unchanged old report, but readers ignore it when its stamp no longer matches doneAt.
+    function preparedEmpty(d) { return d.get('preparedBy', '') == '' && d.get('preparedById', '') == '' && d.get('preparedAt', 0) == 0; }
+    function preparedSame(a, b) {
+      return a.get('preparedBy', '') == b.get('preparedBy', '') && a.get('preparedById', '') == b.get('preparedById', '')
+        && a.get('preparedAt', 0) == b.get('preparedAt', 0);
+    }
+    function preparedPerson(d) {
+      return d.get('preparedBy', '') is string && d.preparedBy.size() > 0 && d.preparedBy.size() <= 80 && d.preparedBy.matches('.*[^ ].*')
+        && d.get('preparedById', '') is string && d.preparedById.size() > 0 && d.preparedById.size() <= 80
+        && d.preparedById in cfg().get('staffIds', []) && !functionOnly(d.preparedById)
+        && d.get('preparedAt', 0) is number && d.preparedAt > 0 && d.preparedAt == d.get('doneAt', 0);
+    }
+    function prepAttribution() {
+      let next = request.resource.data;
+      let old = resource == null ? {} : resource.data;
+      let unchanged = preparedSame(next, old);
+      let inert = resource != null && unchanged && next.get('preparedAt', 0) != next.get('doneAt', 0);
+      return isAdmin() || (next.get('done', false) != true ? preparedEmpty(next) || inert
+        : old.get('done', false) == true
+          ? unchanged
+            && next.get('doneBy', '') == old.get('doneBy', '') && next.get('doneById', '') == old.get('doneById', '')
+          : preparedEmpty(next) || preparedPerson(next) || inert);
+    }
     function functionLine(key) {
       let id = request.resource.data.get('fn', '');
       let next = getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/functions/$(id)).data;
@@ -241,8 +267,8 @@ service cloud.firestore {
     }
     match /kitchens/KITCHEN_PIN/days/{day}/items/{item} {
       allow read: if kitchenRead();
-      allow create: if (writer() || functionLine(item)) && lineOk(160) && lineWho(day) && proofLineCreate();
-      allow update: if (writer() || functionLine(item)) && lineOk(160) && tickKept() && lineWho(day) && proofLineKept('prep', day, item);
+      allow create: if (writer() || functionLine(item)) && lineOk(160) && lineWho(day) && prepAttribution() && proofLineCreate();
+      allow update: if (writer() || functionLine(item)) && lineOk(160) && tickKept() && lineWho(day) && prepAttribution() && proofLineKept('prep', day, item);
       allow delete: if false;
     }
     // An order line is ticked as ordered (or not) only by the head chef or a sous chef, as the page shows (22 Oct 2026).

@@ -24,7 +24,9 @@ try {
     { id: 'word-test', kind: 'word', action: 'keep', word: 'burrata', v: 2, at, by: 'test-admin' }
   ];
   for (const { id, ...event } of proofEvents) await kitchen.collection('proofHistory').doc(id).set(event);
-  const prepLine = { text: 'Cut brie', orig: 'Cut brie', qty: '2 trays', done: true, doneById: 'test-staff', addedById: 'test-staff', proofV: 1, proofEvent: 'line-test', by: 'test-admin' };
+  const prepLine = { text: 'Cut brie', orig: 'Cut brie', qty: '2 trays', done: true, doneBy: 'Test recorder', doneById: 'test-staff', doneAt: at,
+    preparedBy: 'Test worker', preparedById: 'test-worker', preparedAt: at, addedBy: 'Test creator', addedById: 'test-creator', addedAt: at - 1000,
+    proofV: 1, proofEvent: 'line-test', by: 'test-admin' };
   const orderLine = { text: 'Burrata', orig: 'burrata', qty: '3 tubs', ordered: true, addedById: 'test-staff', proofV: 1, proofEvent: 'order-test', by: 'test-admin' };
   await kitchen.collection('days').doc(day(at)).collection('items').doc('test-line').set(prepLine);
   await kitchen.collection('orders').doc(day(at)).collection('lines').doc('test-line').set(orderLine);
@@ -36,7 +38,7 @@ try {
   const out = JSON.parse(readFileSync(file, 'utf8'));
   assert.deepEqual(out.config, proofConfig, 'Shared protected words and their revision must survive backup.');
   assert.deepEqual(out.proofHistory, proofEvents, 'Every immutable repair and protected-word event must survive backup.');
-  assert.deepEqual(out.days[day(at)], [{ ...prepLine, id: 'test-line' }], 'Prep wording, quantities, status, attribution and repair revision must survive backup.');
+  assert.deepEqual(out.days[day(at)], [{ ...prepLine, id: 'test-line' }], 'Prep wording, quantities, status, immutable creator, recorder, stamped reported worker and repair revision must survive backup.');
   assert.deepEqual(out.orders[day(at)], [{ ...orderLine, id: 'test-line' }], 'Order wording, quantities, status, attribution and repair revision must survive backup.');
   for (const name of ['analysis', 'analysisDaily', 'references', 'training']) assert.equal(out[name][0].v, 2);
   for (const name of ['references', 'training']) assert.equal(out[name + 'Hist']['backup-test'][0].v, 1);

@@ -6,6 +6,14 @@
   function map() { return Object.create(null); }
   function count(o, k, n) { o[k] = (o[k] || 0) + (n == null ? 1 : n); }
   function active(x) { return x && !x.deleted && !x.removed && !x.tst; }
+  function prepPerson(x) {
+    if (!x.done) return '';
+    // Older clients can leave prepared fields after Undo. Credit them only for their original tick cycle.
+    var prepared = x.done === true && typeof x.preparedById === 'string' && x.preparedById.trim() && x.preparedById.length <= 80
+      && typeof x.preparedBy === 'string' && x.preparedBy.trim() && x.preparedBy.length <= 80
+      && typeof x.preparedAt === 'number' && Number.isFinite(x.preparedAt) && x.preparedAt > 0 && x.preparedAt === x.doneAt;
+    return prepared ? x.preparedById : (x.doneById || '');
+  }
   function identity(r) { return r.itemId ? 'supplier:' + r.supplierId + ':' + r.itemId : 'recipe:' + r.recipeId; }
   function resolve(e, refs) {
     var matches = e.itemId ? refs.filter(function (r) { return r.itemId === e.itemId && r.supplierId === e.supplierId; }) : [];
@@ -24,7 +32,7 @@
       (input[source] || []).forEach(function (x) {
         if (!active(x) || ((source === 'prep' || source === 'orders') && x.rolled) || (source === 'functions' && x.status !== 'confirmed')) { out.excluded[source]++; return; }
         var e = { source: source, id: x.id || '', text: String(x.text || x.name || x.supplier || '').trim().slice(0, 160),
-          section: String(x.station || '').slice(0, 80), person: x.done ? (x.doneById || '') : '',
+          section: String(x.station || '').slice(0, 80), person: source === 'prep' ? prepPerson(x) : x.done ? (x.doneById || '') : '',
           recipe: x.recipe || '', supplierId: x.sid || '', itemId: x.itemId || '', qty: String(x.qty == null ? '' : x.qty).slice(0, 80),
           amount: typeof x.amount === 'number' && Number.isFinite(x.amount) ? x.amount : null,
           unit: String(x.unit || '').slice(0, 40), reason: String(x.reason || '').slice(0, 80),
