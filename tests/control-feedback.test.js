@@ -60,6 +60,8 @@ const still = s => s.rotate === 'none' && s.scale === 'none' && s.translate === 
   await p.hover(selectedOption); await L.settle(p, 250);
   ok((await style(p, selectedOption)).bg === chosenBefore.bg, 'selected chip: hover preserves the selected colour');
   await p.mouse.down(); await L.settle(p, 180);
+  // Wait for the rendered press state, as the menu check does on a busy runner.
+  await L.waitFor(p, () => { const chip = document.querySelector('.ux-picker-option[aria-selected="true"]'); if (!chip) return false; const s = getComputedStyle(chip); return s.scale === '0.97' && s.translate === '0px 1px'; }, null, 2000).catch(() => {});
   const chipHeld = await style(p, selectedOption);
   ok(chipHeld.scale === '0.97' && chipHeld.translate === '0px 1px', 'chips: a held press compresses and moves down slightly');
   await p.mouse.move(5, 200); await p.mouse.up(); await L.settle(p, 250);
