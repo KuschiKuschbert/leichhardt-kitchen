@@ -285,6 +285,7 @@
     var e = M.ed, d = e && e.d, p = path.split('.');
     if (p[0] === 'q') { M.q = val; M.more = false; var box = M.root.querySelector('#mg-results'); if (box) { var tmp = document.createElement('div'); tmp.innerHTML = listHTML(); box.innerHTML = tmp.querySelector('#mg-results').innerHTML; } return; }
     if (!e || !d) return;
+    if (p[0] === 'multiplier') { e.multiplier = val; return; }
     if (p[0] === 'ing') { d.ingredients[+p[1]][p[2]] = val; if (p[2] === 'link' && !val) delete d.ingredients[+p[1]].link; }
     else if (p[0] === 'sec') {
       var sc = d.sections[+p[1]];
@@ -378,6 +379,7 @@
   function ingHTML(e) {
     var d = e.d, n = d.ingredients.length;
     return '<section class="set-block mg-sec" aria-labelledby="mg-h-ing"><h3 class="h3" id="mg-h-ing">Ingredients</h3>' +
+      multiplierHTML(e) +
       '<p class="hint">Link an ingredient to its own recipe to make it tappable; its allergens then come from that recipe.</p>' +
       '<ol class="mg-ings">' + d.ingredients.map(function (i, k) {
         var open = e.open === k;
@@ -392,6 +394,33 @@
           '<button type="button" class="p-x" data-mg="ing-del" data-i="' + k + '" aria-label="' + (armed('ing-del:' + k) ? 'Tap again to remove' : 'Remove') + ' ingredient ' + (k + 1) + '">' + (armed('ing-del:' + k) ? 'Tap again to remove' : 'Remove') + '</button></div>' +
           (open ? tagChips(i.tags, 'ing', k) : '') + '</li>';
       }).join('') + '</ol><div class="btn-row"><button type="button" class="btn" data-mg="ing-add">Add an ingredient</button></div></section>';
+  }
+  function multiplierHTML(e) {
+    if (!P.bookEdit() || !window.LK_AMT || !window.LK_AMT.scale) return '';
+    return '<div class="mg-two">' + field('mg-multiplier', 'Multiply amounts by', 'multiplier', e.multiplier == null ? '2' : e.multiplier, { mode: 'decimal', max: 16, hint: 'For example: 2 doubles them, 0.5 halves them.' }) +
+      '<div class="btn-row"><button type="button" class="btn" data-mg="multiply"' + (e.saving ? ' disabled' : '') + '>Apply multiplier</button>' +
+      (e.scaled ? '<button type="button" class="p-x" data-mg="multiply-undo"' + (e.saving ? ' disabled' : '') + '>Undo multiplier</button>' : '') + '</div></div>' +
+      '<p class="hint">Applies to the ingredient amounts currently in this form. Check the portion or batch line and method yourself, then Save.</p>' +
+      (e.scaleMsg ? '<p class="hint" role="status">' + esc(e.scaleMsg) + '</p>' : '') +
+      (e.scaleSkipped && e.scaleSkipped.length ? '<p class="hint">Check by hand: ' + e.scaleSkipped.map(esc).join('; ') + '.</p>' : '');
+  }
+  function multiply(e) {
+    if (e.saving || !P.bookEdit() || !window.LK_AMT || !window.LK_AMT.scale) return;
+    var typed = String(e.multiplier == null ? '2' : e.multiplier).trim(), factor = Number(typed.replace(',', '.'));
+    if (!/^\d*(?:[.,]\d+)?$/.test(typed) || !isFinite(factor) || factor <= 0) {
+      e.scaleMsg = 'Enter a number greater than 0, such as 2 or 0.5.'; draw(); focusId('mg-multiplier'); return;
+    }
+    if (factor === 1) { e.scaleMsg = 'Amounts are unchanged. Choose a multiplier other than 1.'; draw(); return; }
+    var changed = [], skipped = [];
+    e.d.ingredients.forEach(function (ing) {
+      var q = ing.q || '', out = window.LK_AMT.scale(q, factor);
+      if (out === null) { skipped.push((ing.name || 'Unnamed ingredient') + ': ' + (q || 'no amount')); return; }
+      if (out !== q) { changed.push({ ing: ing, before: q, after: out }); ing.q = out; }
+    });
+    e.scaleSkipped = skipped;
+    e.scaleMsg = changed.length ? changed.length + ' ingredient amounts multiplied by ' + factor + '. Review them, then Save.' : 'No amounts could be multiplied. Check them by hand.';
+    if (changed.length) { e.scaled = changed; e.multiplier = '1'; unarm(); keepNow(); }
+    draw();
   }
   function methodHTML(e) {
     var d = e.d, secs = d.sections || [], n = secs.length;
@@ -879,6 +908,13 @@
     if (a === 'kept-use') { if (e.kept) useKept(e); draw(); return; }
     if (a === 'kept-drop') { if (!arm('kept-drop')) return; e.kept = null; lsSet(draftKey(e.key), ''); draw(); return; }
     if (a === 'undo-all') { if (!arm('undo-all')) return; var fr = JSON.parse(e.snap); e.d = fr[0]; e.menu = fr[1]; e.meta.removed = fr[2]; e.meta.off = fr[3]; e.handTags = !!(e.d.contains || e.d.check); lsSet(draftKey(e.key), ''); draw(); return; }
+    if (a === 'multiply') { multiply(e); return; }
+    if (a === 'multiply-undo') {
+      if (e.saving || !P.bookEdit() || !e.scaled) return;
+      // Undo only amounts still as this multiplier left them. Later edits and removed rows stay as the chef left them.
+      e.scaled.forEach(function (x) { if (d.ingredients.indexOf(x.ing) >= 0 && x.ing.q === x.after) x.ing.q = x.before; });
+      e.scaled = null; e.scaleSkipped = []; e.scaleMsg = 'Multiplier undone. Later edits are kept.'; unarm(); keepNow(); draw(); return;
+    }
     if (a === 'ing-add') { d.ingredients.push({ q: '', name: '' }); keepDraft(); draw(); var ins = M.root.querySelectorAll('[data-f$=".q"][data-f^="ing."]'); if (ins.length) ins[ins.length - 1].focus(); return; }
     // an ingredient with anything in it asks first; an empty row added by mistake goes at once
     if (a === 'ing-del') { var ri = d.ingredients[i] || {}; if ((trimStr(ri.q) || trimStr(ri.name) || trimStr(ri.note) || ri.link || (ri.tags || []).length) && !arm('ing-del:' + i)) return; d.ingredients.splice(i, 1); e.open = -1; unarm(); keepDraft(); draw(); return; }

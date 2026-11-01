@@ -15,6 +15,7 @@ The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the
 | Changing | Read |
 | --- | --- |
 | Login, who can read or write what, recipes, function writes | `docs/private-kitchen-access.md` (wins over older wording below) |
+| Multiplying recipe amounts | `docs/recipe-multiplier.md` |
 | Admin analysis, references, training records and nightly analysis | `docs/admin-intelligence.md` |
 | Suppliers, order history, cut-off sheets | `docs/supplier-workspace.md` |
 | Wastage history, ranges, CSV | `docs/wastage-history.md` |
