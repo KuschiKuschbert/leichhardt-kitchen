@@ -1,5 +1,7 @@
 # Admin flow redesign
 
+New visual design round, 1 November 2026: the user has requested three fresh layouts and will choose before implementation. See [current visual options](admin-design-options/brief.md). The selected flow below describes the existing baseline, not a selection in the new visual round.
+
 Status: A selected and implemented. Local verification is recorded below; [PR #427](https://github.com/KuschiKuschbert/leichhardt-kitchen/pull/427) tracks required CI and deployment evidence. The user selected A on 1 November 2026; no further layout approval is needed.
 
 ## Problem and evidence
