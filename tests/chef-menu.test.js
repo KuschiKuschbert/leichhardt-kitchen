@@ -76,7 +76,7 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   await p.context().close();
   p = await L.open(b, '#/recipes', { who: 'sam', wait: 1800 });
   m = await L.chefItems(p);
-  ok(m.join(',') === 'mail,drinks,minutes,fn,deliveries,manage,pings,todo,staff,settings,out', 'sous chef: the Chef group has Shift pings, Chef to-do and Manage staff, the register is in Meeting minutes (' + m + ')');
+  ok(m.join(',') === 'mail,drinks,minutes,fn,deliveries,manage,pings,todo,suppliers,staff,settings,out', 'sous chef: the Chef group has Shift pings, Chef to-do, Supplier order and Manage staff, the register is in Meeting minutes (' + m + ')');
   // the short menu: 48 px rows, no second line with nothing to say, Sign out's line read out when it changes
   await p.click('.wtop-who'); await L.settle(p, 150);
   let box = await menuBox(p);
@@ -238,7 +238,7 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   // the head chef by PIN: no Kitchen mail to herself, Admin panel says Sign in with Google, Manage staff stays
   p = await L.open(b, '#/recipes', { who: 'ann', extra: headCfg(), wait: 1800 });
   m = await L.chefItems(p);
-  ok(m.join(',') === 'drinks,minutes,functions,deliveries,admin,manage,pings,todo,staff,settings,out', 'head chef by PIN: no Kitchen mail, Functions in its one place, Shift pings, Chef to-do and Manage staff (' + m + ')');
+  ok(m.join(',') === 'drinks,minutes,functions,deliveries,admin,manage,pings,todo,suppliers,staff,settings,out', 'head chef by PIN: no Kitchen mail, Functions in its one place, Shift pings, Chef to-do, Supplier order and Manage staff (' + m + ')');
   await p.click('.wtop-who'); await L.settle(p, 150);
   box = await menuBox(p);
   ok(box.small.join('|') === 'Sign in with Google', 'head chef by PIN: the only second line is Sign in with Google (' + box.small.join(' | ') + ')');
