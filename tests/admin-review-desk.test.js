@@ -91,7 +91,7 @@ const initialListGuard = async () => {
     });
     ok(width < 1100 ? !layout.queueVisible : layout.queueVisible && layout.beside, width + ': review uses a focused phone or tablet view, or a queue beside the detail on desktop');
     await p.click('.wtop [data-act="back"]'); await L.settle(p, 150);
-    const restored = await p.evaluate(() => ({ query: document.querySelector('[data-ai-search] [name="q"]').value,
+    const restored = await p.evaluate(() => ({ query: document.querySelector('[data-ai-search] [name="q"]').dataset.committedQuery,
       range: document.querySelector('[data-ai="range"][aria-pressed="true"]').getAttribute('data-value'), top: scrollY,
       queue: document.querySelector('.ai-queue').scrollTop }));
     ok(restored.query === 'Recorded item' && restored.range === '7', width + ': contextual Back preserves the item search and activity period');

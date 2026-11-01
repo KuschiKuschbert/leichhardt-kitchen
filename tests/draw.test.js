@@ -81,7 +81,9 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   await p.mouse.move(sz[0], sz[1]); await p.mouse.down(); await p.mouse.move(sz[0] + 50, sz[1] + 40, { steps: 5 }); await p.mouse.up(); await L.settle(p, 200);
   w = await W(p);
   ok(w.els[1].sx > 1.1 && Math.abs(w.els[1].sx - w.els[1].sy) < 0.01, 'size handle: bigger, in proportion');
+  await p.locator('.dw-turn').evaluate(el => el.scrollIntoView({ block: 'center' })); await L.settle(p, 200);
   const tn = await centreOf(p, '.dw-turn'), el1 = await centreOf(p, '.dw-el[data-i="1"]');
+  ok(await p.evaluate(([x, y]) => !!document.elementFromPoint(x, y)?.closest('[data-h="turn"]'), tn), 'turn handle: the real pointer target is visible before dragging');
   await p.mouse.move(tn[0], tn[1]); await p.mouse.down(); await p.mouse.move(el1[0] + 120, el1[1], { steps: 6 }); await p.mouse.up(); await L.settle(p, 200);
   w = await W(p);
   ok(Math.abs(w.els[1].r) > 30, 'turn handle: the piece turns (' + w.els[1].r + ' degrees)');
