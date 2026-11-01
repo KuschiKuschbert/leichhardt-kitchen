@@ -209,6 +209,7 @@
     if (input.dataset.adaptive) return;
     var label = labelFor(input), b = triggerFor(input, label), listId = input.getAttribute('list');
     input.removeAttribute('list');
+    if (input.hasAttribute('data-fl')) input.type = 'text'; // Direct link entry; option search lives in the picker.
     input.classList.remove('ux-choice-source'); // Free-entry fields keep typing; suggestions open in the shared picker.
     function update() { b.textContent = 'Choose ' + label + ' ▾'; b.disabled = input.disabled || input.readOnly; }
     update(); input.addEventListener('input', update); input.addEventListener('change', update); input._uxUpdate = update;

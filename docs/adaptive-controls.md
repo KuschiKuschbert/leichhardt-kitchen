@@ -1,6 +1,6 @@
 # Adaptive controls rollout
 
-Status: implementation complete; full regression verification in progress. Baseline: `1427fcc`; integrated current main `069e548` on 1 November 2026.
+Status: implementation and local verification complete. Baseline: `1427fcc`; integrated current main `a2a24b2` on 1 November 2026.
 
 The app stays dependency-free. Existing hidden form controls remain the value and validation source. Shared DOM components enhance new and redrawn controls. Existing save handlers, permissions and reads remain authoritative.
 
@@ -209,7 +209,13 @@ A checked entry marks an audited rendering site. Route navigation, canvas object
 
 ## Verification
 
-Dedicated browser checks cover deferred replacement, blur restoration, explicit reset, both responsive layouts, keyboard selection, virtualised options, multi-select drafts, focus trapping, phone Back, drag dismissal, native validation, column filters, complete-list sorting before pagination, numeric comparison and dates across a year boundary. The full browser suite is running on the integrated main branch. Phone and desktop previews were captured with synthetic staff data.
+- All 160 test files have passing local evidence across the full browser run and targeted reruns of corrected journeys. Existing assertions were retained or updated for the requested picker and deferred-search behaviour.
+- Final release check: adaptive controls 79 assertions, Chef's Desk 106, autocorrect administration 58 and screen integrations 17, all passing on current main.
+- The unchanged offline-write regression passes all 270 assertions. A 9 px order-row shift was reproduced on unchanged main: completing an order removed its phone menu and widened its text. Keeping an invisible action-column slot holds the row at the same height before and after ticking. No assertion was relaxed.
+- The dedicated checks exercise draft/committed queries, blur restoration, explicit reset, compact and extended layouts, real multi-select filter updates across redraws, cancellation, keyboard focus, native Back, swipe dismissal, native form validation, windowing above 100 options, categorical filters, empty-state reset, sorting before pagination, numeric ordering and dates across a year boundary.
+- Picker test drivers wait for asynchronous overlay history and scroll restoration before measuring the underlying form. Largest-text phone fields remain clear of fixed save actions.
+- All application JavaScript, library JavaScript and the service worker pass `node --check`. `git diff --check` passes. Read-budget checks pass.
+- Phone and desktop previews use synthetic staff and the real application styles. GitHub CI status is recorded on PR #433; this branch has not been merged or deployed.
 
 ## Integration details
 
