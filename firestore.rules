@@ -5,9 +5,16 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function isAdmin() {
-      return request.auth != null && request.auth.token.email == 'OWNER_EMAIL' && request.auth.token.email_verified == true;
+    // The named Google app proves owner identity only for device grants and narrow recovery. All operational
+    // requests use the primary anonymous device UID, its daily PIN session and a grant tied to that exact session.
+    function ownerIdentity() {
+      return request.auth != null && request.auth.token.get('email', '') == 'OWNER_EMAIL'
+        && request.auth.token.get('email_verified', false) == true;
     }
+    function anonymousDevice() {
+      return request.auth != null && request.auth.token.get('firebase', {}).get('sign_in_provider', '') == 'anonymous';
+    }
+    function isAdmin() { return ownerIdentity() || deviceAdmin(); }
     // Kitchen data needs a live personal session. Anonymous Firebase auth alone is not a staff login.
     function functionOnly(id) { return id in cfg().get('fnOnlyIds', []); }
     function kitchenRead() { return isAdmin() || (sessOk(reader()) && !functionOnly(reader())); }
@@ -16,7 +23,7 @@ service cloud.firestore {
       // Minimal names and permission ids for the PIN screen, never kitchen settings or operational data.
       allow get: if request.auth != null;
       allow list: if false;
-      allow write: if isAdmin() || (staff() && sousBy()
+      allow write: if isAdmin() || ownerRosterBootstrap() || (staff() && sousBy()
         && request.resource.data.keys().hasOnly(['people', 'staffIds', 'sousIds', 'headId', 'fnIds', 'fnOnlyIds', 'by'])
         && request.resource.data.people == getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/config/main).data.people
         && request.resource.data.staffIds == getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/config/main).data.staffIds
@@ -55,13 +62,72 @@ service cloud.firestore {
     function triesDoc(id) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/tries/$(id); }
     // this phone has a session for this person: opened with their PIN, not run out, and their PIN not reset since (pinAt
     // is the pinset time it was opened with; Reset PIN deletes pinset and a new PIN gives a new time)
+    // Brisbane is UTC+10 without daylight saving. Its 04:00 boundary is 18:00 UTC on the previous date.
+    function nextFour(ms) { return ms - ((ms + 21600000) % 86400000) + 86400000; }
+    function dailySession(d) {
+      return d.get('v', 0) == 2 && d.get('mode', '') in ['personal', 'shared']
+        && d.get('issuedAt', 0) is timestamp && d.get('at', 0) is timestamp
+        && d.at >= d.issuedAt
+        && d.get('exp', 0) is number && d.exp == nextFour(d.issuedAt.toMillis());
+    }
     function sessOk(id) {
-      return request.auth != null && exists(sessDoc())
+      return request.auth != null && exists(sessDoc()) && ((anonymousDevice() && dailySession(get(sessDoc()).data)) || get(sessDoc()).data.get('v', 0) != 2)
         && get(sessDoc()).data.by == id
         && get(sessDoc()).data.exp > request.time.toMillis()
         && exists(setDoc(id))
         && get(sessDoc()).data.pinAt == get(setDoc(id)).data.at
         && onList(id);
+    }
+    function adminDeviceDoc(uid) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/adminDevices/$(uid); }
+    function matchingAdminGrant(g, s) {
+      return g.get('v', 0) == 2 && g.get('by', '') == s.by && g.get('pinAt', -1) == s.pinAt
+        && g.get('issuedAt', 0) == s.issuedAt && g.get('exp', 0) == s.exp
+        && g.get('googleUid', '') is string && g.googleUid.size() > 0 && g.googleUid.size() <= 160
+        && g.get('at', 0) is timestamp && g.at >= s.issuedAt;
+    }
+    function adminSession(s) {
+      let c = cfg();
+      return dailySession(s) && s.get('by', '') != '' && s.by == c.get('headId', '')
+        && s.exp > request.time.toMillis() && s.by in c.get('staffIds', []) && !(s.by in c.get('fnOnlyIds', []))
+        && exists(setDoc(s.by)) && s.pinAt == get(setDoc(s.by)).data.at
+        && exists(adminDeviceDoc(request.auth.uid))
+        && matchingAdminGrant(get(adminDeviceDoc(request.auth.uid)).data, s);
+    }
+    function deviceAdmin() {
+      return anonymousDevice() && exists(sessDoc()) && adminSession(get(sessDoc()).data);
+    }
+    function ownerFresh() {
+      return ownerIdentity() && request.auth.token.get('auth_time', 0) is int
+        && request.auth.token.auth_time * 1000 <= request.time.toMillis() + 60000
+        && request.auth.token.auth_time * 1000 >= request.time.toMillis() - 300000;
+    }
+    function ownerBootstrap() {
+      let d = request.resource.data;
+      return ownerIdentity() && resource.data.get('headId', '') == ''
+        && d.diff(resource.data).affectedKeys().hasOnly(['people', 'headId', 'staffIds', 'sousIds', 'pingIds', 'fnIds', 'fnOnlyIds', 'pinOpen', 'updated', 'updatedBy', 'by'])
+        && d.people is list && d.people.size() <= 80
+        && d.staffIds is list && d.staffIds.size() <= 80 && d.sousIds is list && d.sousIds.size() <= 80
+        && d.get('headId', '') is string && d.headId.size() > 0 && d.headId.size() <= 80
+        && d.headId in d.staffIds && d.headId in d.sousIds && !(d.headId in d.get('fnOnlyIds', []))
+        && d.get('pinOpen', {}) is map && d.get('pinOpen', {}).size() <= 80;
+    }
+    function ownerRosterBootstrap() {
+      let c = getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/config/main).data;
+      return ownerIdentity() && cfg().get('headId', '') == '' && c.get('headId', '') != ''
+        && request.resource.data.keys().hasOnly(['people', 'staffIds', 'sousIds', 'headId', 'fnIds', 'fnOnlyIds', 'by'])
+        && request.resource.data.people == c.people && request.resource.data.staffIds == c.staffIds
+        && request.resource.data.sousIds == c.get('sousIds', []) && request.resource.data.headId == c.headId
+        && request.resource.data.fnIds == c.get('fnIds', []) && request.resource.data.fnOnlyIds == c.get('fnOnlyIds', []);
+    }
+    function ownerHeadRecovery() {
+      let head = resource.data.get('headId', '');
+      let d = request.resource.data;
+      return ownerFresh() && head != ''
+        && d.diff(resource.data).affectedKeys().hasOnly(['pinOpen', 'updated', 'updatedBy', 'by'])
+        && d.get('pinOpen', {}) is map && d.pinOpen.size() <= 80
+        && d.pinOpen.diff(resource.data.get('pinOpen', {})).affectedKeys().hasOnly([head])
+        && d.pinOpen.get(head, 0) is number && d.pinOpen.get(head, 0) > request.time.toMillis()
+        && d.pinOpen.get(head, 0) <= request.time.toMillis() + 1800000;
     }
     // a write: the writer (by) has a session on this phone
     function session() { return request.resource.data.by is string && sessOk(request.resource.data.by); }
@@ -135,12 +201,13 @@ service cloud.firestore {
         || proofConfigChange();
     }
     match /kitchens/KITCHEN_PIN/config/main {
-      allow read: if kitchenRead();
+      allow get: if kitchenRead() || (ownerIdentity() && resource.data.get('headId', '') == '');
+      allow list: if kitchenRead();
       allow create: if isAdmin() && proofState(request.resource.data);
       // A sous chef (own PIN, no Google sign-in) may only change the people list and staffIds (who may set a PIN),
       // and only if listed in sousIds. sousIds and pingIds can only be changed by the head chef: the admin panel
       // shows the head chef any role or Pings tick a sous chef changed in the people list before it takes effect.
-      allow update: if (isAdmin() && proofConfigKept()) || (staff()
+      allow update: if ownerBootstrap() || ownerHeadRecovery() || (isAdmin() && proofConfigKept()) || (staff()
         && request.resource.data.by in resource.data.get('sousIds', [])
         && request.resource.data.people is list && request.resource.data.people.size() <= 80
         && request.resource.data.get('staffIds', []) is list && request.resource.data.get('staffIds', []).size() <= 80
@@ -167,7 +234,29 @@ service cloud.firestore {
           && request.resource.data.pastEdit.x <= request.time.toMillis() + 60000);
       allow delete: if isAdmin();
     }
-    match /kitchens/KITCHEN_PIN/config/admins { allow read, write: if isAdmin(); }
+    match /kitchens/KITCHEN_PIN/config/admins {
+      allow get: if isAdmin() || ownerIdentity();
+      allow list, write: if isAdmin();
+    }
+    match /kitchens/KITCHEN_PIN/adminDevices/{uid} {
+      // The primary device can inspect or discard only its own grant. A remembered Google identity may issue a
+      // grant only for a live daily head-chef PIN session, with exact session identity and expiry.
+      allow get: if ownerIdentity() || (request.auth != null && request.auth.uid == uid);
+      allow list: if false;
+      allow create, update: if ownerIdentity()
+        && request.resource.data.keys().hasOnly(['by', 'pinAt', 'issuedAt', 'exp', 'googleUid', 'at', 'v'])
+        && request.resource.data.keys().hasAll(['by', 'pinAt', 'issuedAt', 'exp', 'googleUid', 'at', 'v'])
+        && request.resource.data.googleUid == request.auth.uid && request.resource.data.at == request.time
+        && exists(/databases/$(database)/documents/kitchens/KITCHEN_PIN/sessions/$(uid))
+        && dailySession(get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/sessions/$(uid)).data)
+        && get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/sessions/$(uid)).data.by == cfg().get('headId', '')
+        && cfg().get('headId', '') != '' && onList(cfg().headId)
+        && exists(setDoc(cfg().headId))
+        && get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/sessions/$(uid)).data.pinAt == get(setDoc(cfg().headId)).data.at
+        && get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/sessions/$(uid)).data.exp > request.time.toMillis()
+        && matchingAdminGrant(request.resource.data, get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/sessions/$(uid)).data);
+      allow delete: if ownerIdentity() || (request.auth != null && request.auth.uid == uid);
+    }
     function lineOk(max) {
       return request.resource.data.text is string && request.resource.data.text.size() <= max
         && request.resource.data.get('qty', '') is string && request.resource.data.get('qty', '').size() <= 40
@@ -1203,7 +1292,8 @@ service cloud.firestore {
         && id in cfg().get('staffIds', [])
         && request.time.toMillis() < cfg().get('pinOpen', {}).get(id, 0)
         && getAfter(setDoc(id)).data.at is number);
-      allow update, delete: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin() || (ownerFresh() && id == cfg().get('headId', ''));
     }
     match /kitchens/KITCHEN_PIN/pinset/{id} {
       allow get: if isAdmin() || (request.auth != null && onList(id));
@@ -1213,7 +1303,8 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['at', 'name']) && request.resource.data.at is number
         && request.resource.data.get('name', '') is string && request.resource.data.get('name', '').size() <= 40
         && !exists(pinDoc(id)) && getAfter(pinDoc(id)).data.hash is string);
-      allow update, delete: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin() || (ownerFresh() && id == cfg().get('headId', ''));
     }
     // A PIN try (22 Oct 2026): the phone writes the try first, on its own, so a wrong one still counts. One try per person
     // every 20 seconds. Nobody reads it: only the session rule below compares it with the stored hash.
@@ -1226,12 +1317,30 @@ service cloud.firestore {
         && (resource == null || request.time > resource.data.at + duration.value(20, 's'));
       allow delete: if isAdmin();
     }
-    // A session: this phone (the anonymous or Google sign-in's uid) writes as this person. Opened only right after a
-    // right PIN try from this phone (within 2 minutes), for at most 31 days; a session still running may move its end
-    // forward; the phone deletes it on Sign out.
-    match /kitchens/KITCHEN_PIN/sessions/{uid} {
-      allow read: if request.auth != null && request.auth.uid == uid;
-      allow create, update: if request.auth != null && request.auth.uid == uid
+    // A policy-v2 session belongs to one anonymous device and ends at the next Brisbane 04:00. An old proof
+    // from before that boundary cannot unlock the next app day. Renewals keep this exact authentication cycle.
+    function freshDevicePin(d, uid) {
+      return exists(triesDoc(d.by)) && get(triesDoc(d.by)).data.uid == uid
+        && get(triesDoc(d.by)).data.at is timestamp
+        && get(triesDoc(d.by)).data.at.toMillis() >= nextFour(request.time.toMillis()) - 86400000
+        && request.time < get(triesDoc(d.by)).data.at + duration.value(2, 'm')
+        && exists(pinDoc(d.by)) && get(triesDoc(d.by)).data.tok == get(pinDoc(d.by)).data.hash;
+    }
+    function deviceSessionWrite(uid) {
+      let d = request.resource.data;
+      return anonymousDevice() && request.auth.uid == uid
+        && d.keys().hasOnly(['by', 'pinAt', 'exp', 'at', 'issuedAt', 'mode', 'v'])
+        && d.keys().hasAll(['by', 'pinAt', 'exp', 'at', 'issuedAt', 'mode', 'v'])
+        && d.by is string && onList(d.by) && d.at == request.time && dailySession(d)
+        && d.exp > request.time.toMillis()
+        && exists(setDoc(d.by)) && d.pinAt == get(setDoc(d.by)).data.at
+        && ((d.issuedAt == request.time && freshDevicePin(d, uid))
+          || (resource != null && dailySession(resource.data) && resource.data.by == d.by
+            && resource.data.pinAt == d.pinAt && resource.data.mode == d.mode && resource.data.issuedAt == d.issuedAt
+            && resource.data.exp > request.time.toMillis()));
+    }
+    // Temporary rollout foundation only: the published client still uses the v1 session shape.
+    function legacyDeviceSessionWrite(uid) { return request.auth != null && request.auth.uid == uid
         && request.resource.data.keys().hasOnly(['by', 'pinAt', 'exp', 'at'])
         && request.resource.data.by is string && onList(request.resource.data.by)
         && request.resource.data.exp is number && request.resource.data.exp <= request.time.toMillis() + 31 * 86400000
@@ -1248,6 +1357,10 @@ service cloud.firestore {
           || (resource != null && resource.data.by == request.resource.data.by && resource.data.pinAt == request.resource.data.pinAt
             && resource.data.exp > request.time.toMillis())
         );
+    }
+    match /kitchens/KITCHEN_PIN/sessions/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if deviceSessionWrite(uid) || legacyDeviceSessionWrite(uid);
       allow delete: if (request.auth != null && request.auth.uid == uid) || isAdmin();
     }
     // The older PIN proof, switched off in phase 2 (22 Oct 2026): nothing writes it any more, and the head chef's Google
