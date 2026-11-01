@@ -19,7 +19,7 @@ for (let n = 0; n < 20; n++) extra[key('days', yesterday, 'items', 'pr-padding-'
 const dump = p => p.evaluate(() => window.__fake.dump());
 const history = async p => Object.entries(await dump(p)).filter(([path]) => /\/proofHistory\/[^/]+$/.test(path));
 const privateWrites = p => p.evaluate(() => window.__fake.writes.flat().filter(op => /\/(proofHistory|config)\//.test(op.path) || /\/days\/.*\/items\/|\/orders\/.*\/lines\//.test(op.path)));
-const search = async (p, text) => { await p.fill('[data-k="lv-q:pr-corrections"]', text); await L.settle(p, 100); };
+const search = async (p, text) => { if (text) await p.fill('[data-k="lv-q:pr-corrections"]', text); else await L.clear(p, '[data-k="lv-q:pr-corrections"]'); await L.settle(p, 250); };
 const review = async (p, source, id) => {
   const value = source + '/' + yesterday + '/' + id;
   await p.locator('[data-pr="review"]').evaluateAll((nodes, value) => {

@@ -298,6 +298,11 @@
       (err ? ' aria-invalid="true" aria-describedby="fe-e-guests"' : '') + '><label class="a-check"><input type="checkbox" data-ff="gu"' + (d.gu ? ' checked' : '') + '> Not known yet</label></div>' +
       fieldErr('guests') + '</div>';
   }
+  function addPlatter(v) { var e = E.ed; if (!e || !e.d) return; var d = e.d;
+      var c = FN.catalogue().filter(function (x) { return x.rid === v; })[0]; if (!c || d.lines.length >= M.MAX_LINES) return;
+      d.lines.push({ rid: c.rid, name: c.name, unit: c.unit, spec: c.spec, fp: c.fp, qty: '1', a: [] }); e.pq = '';
+      retime(e); keep(); draw(); var q = E.root.querySelector('[data-ff="qty' + (d.lines.length - 1) + '"]'); if (q) { q.focus(); q.select(); } return;
+  }
   function linesHTML(e) {
     var d = e.d, cat = FN.catalogue(), have = {}, q = (e.pq || '').trim().toLowerCase();
     d.lines.forEach(function (l) { have[l.rid] = 1; });
@@ -310,8 +315,7 @@
     }).join('') + '</ul>';
     var left = cat.filter(function (c) { return !have[c.rid] && (!q || c.name.toLowerCase().indexOf(q) >= 0); });
     if (d.lines.length < M.MAX_LINES) {
-      out += '<div class="fe-pick"><label class="label" for="fe-pq">Add a platter</label><input id="fe-pq" class="search" data-ff="pq" value="' + esc(e.pq || '') + '" placeholder="Search the Functions platters" autocomplete="off">' +
-        '<div class="fe-picks">' + (left.length ? left.map(function (c) { return '<button type="button" class="chip" data-fe="addline" data-v="' + esc(c.rid) + '">+ ' + esc(c.name) + '</button>'; }).join('') : '<span class="hint">' + (cat.length ? 'No other platter matches.' : 'The book has no Functions platters yet.') + '</span>') + '</div></div>';
+      out += '<div class="fe-pick"><label class="label" for="fe-platter">Add a platter</label><select id="fe-platter" data-ff="pickline" aria-label="Add a platter"><option value="">Choose a platter</option>' + cat.filter(function (c) { return !have[c.rid]; }).map(function (c) { return '<option value="' + esc(c.rid) + '">' + esc(c.name) + '</option>'; }).join('') + '</select></div>';
     } else out += '<p class="hint">At most ' + M.MAX_LINES + ' kinds of platter on one function.</p>';
     return out + fieldErr('lines');
   }
@@ -585,6 +589,7 @@
     Object.keys(pending).forEach(function (k) { setField(k, pending[k], true, true); });
   }
   document.addEventListener('input', onInput);
+  document.addEventListener('change', function (event) { if (E.root && E.root.contains(event.target) && event.target.matches('[data-ff="pickline"]')) addPlatter(event.target.value); });
   document.addEventListener('change', onInput);
   // Keep focus in a typed time until Print or Cancel reads it. A blur's structural redraw would replace the button before
   // its click arrives. Keyboard activation still uses the same click handler and flushPending().
@@ -626,11 +631,7 @@
       var f = Object.assign({}, e.saved || {}, toDoc(e), { id: e.id, v: e.v });
       FN.print([f], { unsaved: e.isNew || dirty(), fromForm: true }, el); return;
     }
-    if (a === 'addline') {
-      var c = FN.catalogue().filter(function (x) { return x.rid === v; })[0]; if (!c || d.lines.length >= M.MAX_LINES) return;
-      d.lines.push({ rid: c.rid, name: c.name, unit: c.unit, spec: c.spec, fp: c.fp, qty: '1', a: [] }); e.pq = '';
-      retime(e); keep(); draw(); var q = E.root.querySelector('[data-ff="qty' + (d.lines.length - 1) + '"]'); if (q) { q.focus(); q.select(); } return;
-    }
+    if (a === 'addline') { addPlatter(v); return; }
     if (a === 'rmline') { if (!arm('rm' + i)) return; d.lines.splice(i, 1); keep(); draw(); return; }
     if (a === 'mode') { d.mode = v; if (v === 'stag' && int(d.n) < 2) d.n = '3'; d.custom = false; retime(e); keep(); draw(); return; }
     // a split typed by hand goes back to even: a second tap first (29 Oct 2026), there is no Undo

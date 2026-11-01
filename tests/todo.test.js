@@ -46,7 +46,7 @@ const T = (id, x) => ({ [fsKey(['todos', id])]: Object.assign({ text: 'Job ' + i
   await p.evaluate(k => window.__fake.write(k, { text: 'Slice onions', station: 'Larder', qty: '', recipe: '', addedBy: 'Ann', addedById: 'ann', addedAt: Date.now(), done: false, deleted: false }), fsKey(['days', L.ymd(new Date(L.NOW)), 'items', 'zz9']));
   await L.settle(p, 400);
   ok(await p.$eval('[data-k="todo-text"]', e => e.value) === 'Half typed', 'redraw: the half-typed job stays');
-  await p.fill('[data-k="todo-text"]', ''); await L.settle(p, 100);
+  await L.clear(p, '[data-k="todo-text"]'); await L.settle(p, 100);
 
   // tick, untick: the tick names who did it
   await tap(p, '[data-p="todo-tick"][data-id="t2"]'); await L.settle(p, 600);
@@ -178,7 +178,7 @@ const T = (id, x) => ({ [fsKey(['todos', id])]: Object.assign({ text: 'Job ' + i
   ok(await p.$eval('[data-p="todo-nodue"]', e => !e.hidden), 'date: No date shows once a day is set');
   await p.context().close();
 
-  // 8 jobs: the chips show; For me filters; once the list is short again every job shows
+  // Filtering remains available as the list shrinks. Reset explicitly returns to every job.
   const many = Object.assign({}, seed);
   for (let i = 0; i < 6; i++) Object.assign(many, T('m' + i, { text: 'Many ' + i, for: i < 2 ? 'sam' : '' }));
   p = await L.open(b, '#/todo', { who: 'sam', extra: many, wait: 1500 });
@@ -187,7 +187,9 @@ const T = (id, x) => ({ [fsKey(['todos', id])]: Object.assign({ text: 'Job ' + i
   await tap(p, '[data-p="lv-f"][data-lv="todo"][data-v="me"]'); await L.settle(p, 300);
   ok((await rows(p)).length === 3, 'filters: For me shows the 3 jobs for Sam (' + (await rows(p)).length + ')');
   await tap(p, '[data-p="todo-tick"][data-id="m0"]'); await L.settle(p, 500);
-  ok((await rows(p)).length === 7, 'filters: with 7 jobs left (no chips), every job shows again (' + (await rows(p)).length + ')');
+  ok((await rows(p)).length === 2, 'filters: For me stays active as the list shrinks');
+  await p.click('[data-lva="todo"] [data-part="all"]'); await L.settle(p, 200);
+  ok((await rows(p)).length === 7, 'filters: explicit Reset All Filters restores every remaining job');
   // with Done open, the keyboard stays on the open list after a tick (it does not follow the job into Done)
   await tap(p, '.todo-donebox summary');
   await L.waitFor(p, () => !!document.querySelector('[data-lv="tododone"] .todo-row'), null, 6000).catch(() => {});

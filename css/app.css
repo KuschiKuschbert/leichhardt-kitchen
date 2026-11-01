@@ -1804,7 +1804,7 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd 
    positioned pins and the chef's sign-in flip intact. Low specificity leaves each control's own states in charge. */
 :where(button:not(:disabled), a[href], summary):not([aria-disabled="true"]) { transition: scale 0.18s ease-out, box-shadow 0.18s ease-out; }
 :where(button:not(:disabled), a[href], summary):not([aria-disabled="true"]):active { scale: 0.97; transition-duration: 0.07s; }
-:where(.btn, .nb-addbtn, .nb-btn, .chip, .nb-tab):not(:disabled):not([aria-disabled="true"]) {
+:where(.btn, .nb-addbtn, .nb-btn, .chip, .nb-tab, .ux-picker-trigger, .ux-picker-option):not(:disabled):not([aria-disabled="true"]) {
   transition: scale 0.18s ease-out, translate 0.18s ease-out, box-shadow 0.18s ease-out, background-color 0.18s ease-out, border-color 0.18s ease-out;
 }
 /* Menu rows and joined switches stay in place; their tint works over both selected and unselected colours. */
@@ -1822,7 +1822,7 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd 
   :where(button:not(:disabled):not(.pin):not(.view-opt):not(.mg-pin)):not([aria-disabled="true"]):hover {
     box-shadow: inset 0 0 0 100vmax rgb(226 96 42 / 0.07);
   }
-  :where(.btn, .nb-addbtn, .nb-btn, .chip, .nb-tab):not(:disabled):not([aria-disabled="true"]):hover {
+  :where(.btn, .nb-addbtn, .nb-btn, .chip, .nb-tab, .ux-picker-trigger, .ux-picker-option):not(:disabled):not([aria-disabled="true"]):hover {
     translate: 0 -1px;
     box-shadow: inset 0 0 0 100vmax rgb(226 96 42 / 0.07), 0 3px 0 rgb(28 29 31 / 0.12);
   }
@@ -1835,7 +1835,7 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd 
   :where(.wtop-btn, .tabbar a):not(:disabled):not([aria-disabled="true"]):hover > svg { rotate: -8deg; }
   .wm-a:not(:disabled):not([aria-disabled="true"]):hover > svg { translate: 2px 0; rotate: -8deg; }
 }
-:where(.btn, .nb-addbtn, .nb-btn, .chip, .nb-tab):not(:disabled):not([aria-disabled="true"]):active {
+:where(.btn, .nb-addbtn, .nb-btn, .chip, .nb-tab, .ux-picker-trigger, .ux-picker-option):not(:disabled):not([aria-disabled="true"]):active {
   translate: 0 1px;
   box-shadow: inset 0 0 0 100vmax rgb(226 96 42 / 0.12);
   transition-duration: 0.07s;
@@ -2779,3 +2779,53 @@ input:is([type="date"], [type="time"]):disabled, input:is([type="date"], [type="
   .p-admin.ad-admin .ad-layout { display: block; }
   .p-admin.ad-admin .ai-editor { padding-bottom: 0; }
 }
+
+/* Adaptive choices and committed-query searches share the Kitchen Book's existing tokens. */
+.ux-choice-source { display: none !important; }
+.ux-picker-trigger { display: inline-flex; align-items: center; justify-content: space-between; gap: .75rem; min-height: 44px; min-width: 0; max-width: 100%; padding: .65rem .8rem; border: 1px solid var(--ink); border-radius: var(--r-pick); background: var(--paper); color: var(--ink); font: 600 1rem/1.3 var(--body); text-align: left; white-space: normal; overflow-wrap: anywhere; }
+.field > .ux-picker-trigger, .a-f > .ux-picker-trigger { width: 100%; }
+.ux-picker-trigger:disabled { opacity: .55; cursor: default; }
+.ux-picker-trigger:focus-visible, .ux-picker button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.ux-search { display: inline-flex; position: relative; min-width: 0; width: 100%; flex: 1 1 10rem; }
+.ux-search > input { width: 100%; min-width: 0; padding-right: 3rem !important; }
+.ux-search > input::-webkit-search-cancel-button { display: none; }
+.ux-search-clear { position: absolute; right: 0; top: 50%; transform: translateY(-50%); min-width: 44px; min-height: 44px; border: 0; background: transparent; color: var(--ink); font: 1.5rem var(--body); }
+.ux-search-clear[hidden] { display: none; }
+.ux-picker { position: fixed; inset: 0; width: min(38rem, calc(100% - 2rem)); max-height: min(82dvh, 48rem); margin: auto; padding: 0; border: 1px solid var(--edge); border-radius: 12px; background: var(--paper); color: var(--ink); box-shadow: 0 20px 90px #0005; overflow: hidden; }
+.ux-picker[open] { display: flex; flex-direction: column; animation: ux-picker-in .18s ease-out; }
+.ux-picker::backdrop { background: #1c1d1f88; backdrop-filter: blur(4px); }
+.ux-picker-head { position: relative; flex-shrink: 0; padding: 1.2rem; border-bottom: 1px solid var(--line); background: var(--paper); }
+.ux-picker-head h2 { margin: 0 3rem .7rem 0; font: 700 1.7rem/1.2 var(--display); overflow-wrap: anywhere; }
+.ux-picker-close { position: absolute; top: .5rem; right: .5rem; width: 44px; height: 44px; border: 0; background: transparent; color: var(--ink); font-size: 1.7rem; }
+.ux-picker-options { overflow-y: auto; overscroll-behavior: contain; min-height: 0; max-height: 55dvh; padding: 1rem; }
+.ux-picker-chips { display: flex; flex-wrap: wrap; gap: .6rem; }
+.ux-picker-option { min-height: 44px; max-width: 100%; padding: .65rem 1rem; border: 1px solid var(--edge); border-radius: 24px; background: transparent; color: var(--ink); font: 600 1rem/1.3 var(--body); text-align: left; overflow-wrap: anywhere; }
+.ux-picker-option[aria-selected="true"] { border-color: var(--ink); background: var(--ink); color: var(--paper); }
+.ux-picker-option:disabled { opacity: .45; }
+.ux-picker-list { padding: 0; }
+.ux-picker-list .ux-picker-option { display: block; width: 100%; height: 56px; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; padding: .65rem 1.2rem; overflow: hidden; }
+.ux-picker-footer { display: flex; flex-wrap: wrap; flex-shrink: 0; gap: .6rem; padding: 1rem; border-top: 1px solid var(--line); background: var(--paper); }
+.ux-picker-footer .btn { min-height: 44px; }
+.ux-active-filters { display: flex; flex-wrap: wrap; gap: .4rem; margin-block: .6rem; }
+.ux-sort { min-height: 44px; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; }
+@keyframes ux-picker-in { from { opacity: 0; translate: 0 12px; } to { opacity: 1; translate: 0 0; } }
+@media (max-width: 767px) {
+  .ux-picker { inset: auto 0 0; width: 100%; max-width: 100%; max-height: 90dvh; margin: 0; border-radius: 16px 16px 0 0; padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .ux-picker-head { padding-top: 1.8rem; }
+  .ux-picker-grip { position: absolute; top: 0; left: 25%; width: 50%; height: 26px; touch-action: none; }
+  .ux-picker-grip::after { content: ''; display: block; width: 40px; height: 4px; margin: 9px auto; border-radius: 4px; background: var(--muted); }
+  .ux-picker-options { max-height: 57dvh; }
+  .a-section-picker > .ux-picker-trigger { max-width: 70%; }
+}
+@media (prefers-reduced-motion: reduce) { .ux-picker[open] { animation: none; } }
+@media print { .ux-picker, .ux-search-clear, .ux-active-filters { display: none !important; } }
+.ux-column-filters, .ux-table-tools { display: flex; flex-wrap: wrap; align-items: end; gap: .6rem; margin-block: .6rem; }
+.ux-column-filters .a-f { flex: 0 1 14rem; }
+.ux-table-tools .ux-active-filters { flex-basis: 100%; }
+.ux-record-advanced { margin-block: .4rem; }
+.ux-record-advanced > summary { min-height: 44px; padding-block: .65rem; cursor: pointer; }
+
+@media (hover: hover) and (pointer: fine) { .ux-picker-option[aria-selected="true"]:hover { box-shadow: none; } }
+
+/* A completed phone order keeps its action column so the next tick target stays in place. */
+.nb-more-held { visibility: hidden; pointer-events: none; }

@@ -94,7 +94,7 @@ const state = p => p.evaluate(() => document.querySelector('#p-pin') ? 'kitchen-
   await L.waitFor(p, () => !!document.querySelector('[data-act="setshared"][data-val="1"]'), null, 8000);
   ok(await p.$('[data-act="setshared"][data-val="1"]') !== null, 'settings: the Shared device choice is there');
   ok((await p.getAttribute('[data-act="setshared"][data-val="0"]', 'aria-pressed')) === 'true', 'settings: Personal phone is the default');
-  await p.click('[data-act="setshared"][data-val="1"]');
+  await L.choose(p, '[data-act="setshared"][data-val="1"]');
   await L.settle(p, 200);
   ok(await p.evaluate(() => JSON.parse(localStorage.getItem('lk.settings.v1') || '{}').shared === true), 'settings: Shared device is saved on the device');
   ok((await p.getAttribute('[data-act="setshared"][data-val="1"]', 'aria-pressed')) === 'true', 'settings: Shared device shows as chosen');

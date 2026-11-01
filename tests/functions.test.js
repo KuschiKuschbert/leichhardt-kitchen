@@ -81,11 +81,13 @@ function hasPrivateContact(value) {
   await p.fill('[data-ff="cname"]', 'Jo Smith');
   await p.fill('[data-ff="phone"]', '0400 111 222');
   await p.fill('[data-ff="email"]', 'jo@example.com');
-  await p.fill('[data-ff="pq"]', 'anti'); await L.settle(p, 100);
-  ok((await p.$$('[data-fe="addline"]')).length === 1, 'platters: the search narrows the book\'s Functions platters');
-  await tap(p, '[data-fe="addline"][data-v="antipasto-platter"]'); await L.settle(p, 100);
-  await tap(p, '[data-fe="addline"][data-v="aussie-platter"]'); await L.settle(p, 100);
-  await tap(p, '[data-fe="addline"][data-v="pizza-platter"]'); await L.settle(p, 100);
+  await p.click('#fe-platter + .ux-picker-trigger');
+  if (await p.locator('.ux-picker input').count()) { await p.fill('.ux-picker input', 'anti'); await p.press('.ux-picker input', 'Enter'); }
+  ok(await p.locator('.ux-picker').count() === 1, 'platters: the adaptive picker opens the book\'s Functions platters');
+  await p.click('.ux-picker-close');
+  await L.pick(p, '#fe-platter', 'antipasto-platter'); await L.settle(p, 100);
+  await L.pick(p, '#fe-platter', 'aussie-platter'); await L.settle(p, 100);
+  await L.pick(p, '#fe-platter', 'pizza-platter'); await L.settle(p, 100);
   await setV(p, '[data-ff="qty0"]', '3'); await setV(p, '[data-ff="qty1"]', '4'); await setV(p, '[data-ff="qty2"]', '5');
   ok(/12 platters/.test(await txt(p, '#fe-live') || ''), 'platters: the bar adds up 12 platters (no guest multiplying)');
   await tap(p, '[data-fe="mode"][data-v="stag"]'); await L.settle(p, 100);
@@ -225,7 +227,7 @@ function hasPrivateContact(value) {
   await p.click('[data-ff="st"]'); await L.settle(p, 150);
   await p.click('[data-ff="gu"]'); await L.settle(p, 150);
   ok(await p.$eval('[data-ff="startT"]', e => e.disabled), 'TBC: the start time box is locked');
-  await tap(p, '[data-fe="addline"][data-v="pizza-platter"]'); await L.settle(p, 100);
+  await L.pick(p, '#fe-platter', 'pizza-platter'); await L.settle(p, 100);
   await setV(p, '[data-ff="qty0"]', '4');
   await tap(p, '[data-fe="review"]'); await L.settle(p, 200);
   ok(!!(await p.$('.fe-review')) && /TBC/.test(await txt(p, '.fe-review') || ''), 'TBC: confirming is allowed and the review says TBC');
@@ -470,7 +472,7 @@ function hasPrivateContact(value) {
   p = await L.open(b, '#/admin', { admin: true, who: '', extra: base, wait: 1800 });
   await L.adminTab(p, 'people'); await L.settle(p, 300);
   ok(await p.evaluate(() => [...document.querySelectorAll('#a-r1 option')].some(o => o.value === 'fnc' && /Functions coordinator/.test(o.textContent))), 'admin: Functions coordinator is a role');
-  await p.selectOption('#a-r1', 'fnc'); await L.settle(p, 200);
+  await L.pick(p, '#a-r1', 'fnc'); await L.settle(p, 200);
   await p.click('input[data-perm="fn"][data-i="2"]'); await L.settle(p, 100);
   await p.click('[data-p="a-save"]'); await L.settle(p, 600);
   s = await store(p);

@@ -23,7 +23,7 @@ const box = (p, sel) => p.evaluate(s => { const e = document.querySelector(s); i
   // the recipe search under both strips
   p = await L.open(b, '#/recipes', { wait: 1800, extra: fn() });
   await L.waitFor(p, () => { const e = document.getElementById('fn-band'); return e && !e.hidden; }, null, 8000).catch(() => {});
-  await p.click('.chip[data-act="kind"]').catch(() => {}); await L.settle(p, 200);   // a real tap: the book only reloads by itself before anyone touches it
+  await L.choose(p, '.chip[data-act="kind"]').catch(() => {}); await L.settle(p, 200);   // a real tap: the book only reloads by itself before anyone touches it
   await p.evaluate(() => navigator.serviceWorker.dispatchEvent(new MessageEvent('message', { data: 'lk-new' })));
   await L.waitFor(p, () => !!document.querySelector('.upd-bar'), null, 3000).catch(() => {});
   await p.evaluate(() => window.scrollTo(0, 1400)); await L.settle(p, 400);

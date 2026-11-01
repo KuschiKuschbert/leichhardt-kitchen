@@ -31,7 +31,7 @@ const { R, ok } = L.results(), { txt } = L;
   await p.fill('#p-text', 'Half written');
   await p.click('.nb-title');
   ok(await p.evaluate(() => window.LK_PREP.unsaved()), 'update guard: a half-written line counts as unsaved');
-  await p.fill('#p-text', '');
+  await L.clear(p, '#p-text');
   await p.click('.nb-title');
 
   // connection error: text comes back, the message stays with OK

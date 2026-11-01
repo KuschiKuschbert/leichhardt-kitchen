@@ -68,7 +68,7 @@ function past(n) { const d = new Date(); d.setDate(d.getDate() - n); return L.ym
   // recipe picker: Close gives focus back to its button
   await p.click('[data-p="recipe-toggle"]');
   await L.settle(p, 150);
-  await p.click('[data-p="recipe-close"]');
+  await p.click('.ux-picker-close');
   await L.settle(p, 150);
   ok(/p-pickbtn/.test(await active(p)), 'picker: Close returns focus to Add from the recipes');
   ok(p.errors.length === 0, 'prep: no page errors ' + p.errors.join(' | '));
@@ -121,8 +121,8 @@ function past(n) { const d = new Date(); d.setDate(d.getDate() - n); return L.ym
   await p.click('.w-rbtn');
   await L.settle(p, 150);
   for (let k = 0; k < 9; k++) await p.keyboard.press('Tab');
-  ok(await p.evaluate(() => !!document.activeElement.closest('.sheet')), 'waste: Tab stays inside the reason sheet');
-  await p.click('.sheet [data-v="excess"]');
+  ok(await p.evaluate(() => !!document.activeElement.closest('.ux-picker')), 'waste: Tab stays inside the reason sheet');
+  await p.click('.ux-picker [data-v="excess"]');
   await L.settle(p, 150);
   await p.click('.w-add .nb-addbtn');
   await L.settle(p, 300);

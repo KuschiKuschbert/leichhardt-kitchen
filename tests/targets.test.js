@@ -8,7 +8,7 @@ const { R, ok } = L.results();
   if (L.adminTab) await L.adminTab(p, 'people'); else { await p.click('[data-p="a-tab"][data-t="people"]'); await L.settle(p, 300); }
   const m = await p.evaluate(() => {
     const h = s => { const e = document.querySelector(s); return e ? Math.round(e.getBoundingClientRect().height) : -1; };
-    return { name: h('.a-table .a-name'), sel: h('.a-table .p-select'), cb: h('.a-table input[type=checkbox]'), faint: getComputedStyle(document.documentElement).getPropertyValue('--faint').trim() };
+    return { name: h('.a-table .a-name'), sel: h('.a-table .p-select + .ux-picker-trigger'), cb: h('.a-table input[type=checkbox]'), faint: getComputedStyle(document.documentElement).getPropertyValue('--faint').trim() };
   });
   ok(m.name >= 44 && m.sel >= 44, 'admin: name fields and role menus are 44 px (' + m.name + ', ' + m.sel + ')');
   ok(m.cb >= 28, 'admin: ticks are 28 px (' + m.cb + ')');

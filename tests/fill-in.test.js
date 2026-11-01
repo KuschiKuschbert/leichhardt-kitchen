@@ -28,16 +28,16 @@ const sel = (p, k) => p.$eval('[data-k="' + k + '"]', e => document.activeElemen
   // a typed amount stays when another chip is tapped; an amount the book filled is replaced
   await p.click('[data-p="woften"][data-i="1"]'); await L.settle(p, 300);
   ok(await val(p, 'w-text') === 'Chips' && await val(p, 'w-amt') === '8', 'often chip: a typed amount stays (' + await val(p, 'w-amt') + ')');
-  await p.fill('[data-k="w-amt"]', ''); await p.click('[data-p="woften"][data-i="1"]'); await L.settle(p, 300);
+  await L.clear(p, '[data-k="w-amt"]'); await p.click('[data-p="woften"][data-i="1"]'); await L.settle(p, 300);
   ok(await val(p, 'w-amt') === '1.5', 'often chip: an empty box takes the usual amount (' + await val(p, 'w-amt') + ')');
   await p.click('[data-p="woften"][data-i="0"]'); await L.settle(p, 300);
   ok(await val(p, 'w-amt') === '6', 'often chip: an amount the book filled follows the next chip (' + await val(p, 'w-amt') + ')');
   // a damaged amount in the summary is not put in the box
-  await p.fill('[data-k="w-amt"]', ''); await p.click('[data-p="woften"][data-i="2"]'); await L.settle(p, 300);
+  await L.clear(p, '[data-k="w-amt"]'); await p.click('[data-p="woften"][data-i="2"]'); await L.settle(p, 300);
   ok(await val(p, 'w-amt') === '' && !(await p.$('#pwn')), 'often chip: an amount that is not a plain number is left out');
 
   // a typing suggestion fills the usual amount too
-  await p.fill('[data-k="w-amt"]', ''); await p.fill('[data-k="w-text"]', 'Brio'); await L.settle(p, 300);
+  await L.clear(p, '[data-k="w-amt"]'); await p.fill('[data-k="w-text"]', 'Brio'); await L.settle(p, 300);
   await p.click('[data-p="wsugg"]'); await L.settle(p, 300);
   ok(await val(p, 'w-text') === 'Brioche buns' && await val(p, 'w-amt') === '6' && await sel(p, 'w-amt'), 'suggestion: the usual amount, selected (' + await val(p, 'w-amt') + ')');
 
