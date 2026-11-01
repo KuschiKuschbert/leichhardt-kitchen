@@ -364,9 +364,8 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     u = await bar(p);
     ok(u && u.t === 'New version available.' && u.btn === 'Update now', 'update: left alone, the strip goes back after 4 seconds');
     await release(p);
-    await L.settle(p, 400);
-    // sent: the book updates by itself at its next look (every 20 seconds), with nothing typed (step 20: also in use)
-    await p.clock.fastForward('02:30');
+    // Acknowledgement resumes the requested update; keep real network deadlines running normally.
+    await L.waitFor(p, () => !LK_PREP.unsent());
     await waitReload(p);
     ok(await reloaded(p), 'update: once the change is sent, the book updates by itself');
   });
@@ -1028,9 +1027,8 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     await release(p);
     await L.settle(p, 300);
     await swipe(p);
-    await p.clock.fastForward(30000);
-    await L.waitFor(p, () => window.__mark !== 1, null, 8000).catch(() => {});
-    ok(await reloaded(p), 'Update now, the change sent, a touch every 30 seconds: it updates at the next look');
+    await waitReload(p);
+    ok(await reloaded(p), 'Update now, the change sent, a touch while checking: it updates without waiting for idle');
   });
 
   // 21. back within 10 minutes of the last update, with a newer version found on return: the strip offers Update now
@@ -1160,7 +1158,12 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     for (let i = 0; i < 30; i++) { await p.clock.fastForward(20000); await L.settle(p, 150); }
     ok(heads <= 6 && !(await reloaded(p)), 'wifi with no internet, left alone for 10 minutes: no reload, and it asked the server ' + heads + ' times (6 at most)');
     await deadNet(p, false);
-    for (let i = 0; i < 33 && !(await reloaded(p)); i++) { await p.clock.fastForward(20000); await L.settle(p, 150); }
+    for (let i = 0; i < 33 && !(await reloaded(p)); i++) {
+      const before = heads;
+      await p.clock.fastForward(20000); await L.settle(p, 150);
+      // A healthy round owns real request deadlines. Finish it before another virtual look.
+      if (heads > before && !(await reloaded(p))) await waitReload(p);
+    }
     await waitReload(p);
     ok(await reloaded(p), 'the internet back with no online event: it updates within 11 minutes');
   });
@@ -1168,6 +1171,8 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
   // next look, not after the longest wait (review of the fix, 28 Oct 2026: nothing checked goodLook() on online)
   await step('24 online', async () => {
     p = await L.open(b, '#/prep', { touch: true, wait: 1500 });
+    let heads = 0;
+    p.on('request', q => { if (q.method() === 'HEAD' && q.url() === L.BASE + 'index.html') heads++; });
     await updBar(p);
     await deadNet(p, true);
     await mark(p);
@@ -1176,8 +1181,15 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     for (let i = 0; i < 45; i++) { await p.clock.fastForward(20000); await L.settle(p, 150); }
     ok(!(await reloaded(p)), 'wifi with no internet for 15 minutes: no reload');
     await deadNet(p, false);
+    const beforeOnline = heads;
     await p.evaluate(() => window.dispatchEvent(new Event('online')));
-    for (let i = 0; i < 2 && !(await reloaded(p)); i++) { await p.clock.fastForward(20000); await L.settle(p, 300); }
+    await L.settle(p, 300);
+    if (heads > beforeOnline && !(await reloaded(p))) await waitReload(p);
+    for (let i = 0; i < 2 && !(await reloaded(p)); i++) {
+      const before = heads;
+      await p.clock.fastForward(20000); await L.settle(p, 300);
+      if (heads > before && !(await reloaded(p))) await waitReload(p);
+    }
     await waitReload(p);
     ok(await reloaded(p), 'the internet back with an online event: it updates within the next two looks, not after the 10 minute wait');
   });
