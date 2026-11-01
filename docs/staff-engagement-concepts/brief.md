@@ -4,6 +4,12 @@ Requested 1 November 2026. Status: proposals and three interactive visual concep
 
 The aim is more useful, honestly attributed records and easier follow-through. The examples treat "clock in" as signing into the app under a person's own name. The Kitchen Book is not a payroll time clock. A personal PIN session on the shared screen is as valid as one on a phone.
 
+## Test the designs in a browser
+
+[Open the private interactive preview](https://leichhardt-staff-designs-20261101.suededulse1.chatgpt.site/). Direct examples: [A, Shift Card](https://leichhardt-staff-designs-20261101.suededulse1.chatgpt.site/a.html), [B, Section Board](https://leichhardt-staff-designs-20261101.suededulse1.chatgpt.site/b.html), [C, Craft Book](https://leichhardt-staff-designs-20261101.suededulse1.chatgpt.site/c.html). Sign in with the same ChatGPT account if prompted. These links replace the internal workspace paths, which were not usable from the chat.
+
+This is a separately hosted synthetic preview. It does not connect to kitchen data or change the live Kitchen Book. The hosting package passed 17 root-URL and example-save checks; Sites confirmed successful deployment of version 1.
+
 ## Three additional insight ideas
 
 | Idea | What the head chef could learn | Available source and minimal addition | Definition and limit |
