@@ -7,6 +7,7 @@ const today = L.ymd(new Date(L.NOW));
 const item = (p, id) => p.evaluate(a => window.__fake.dump()[['kitchens', a.pin, 'days', a.d, 'items', a.id].join('/')], { pin: L.PIN, d: today, id });
 const lineBy = (p, text) => p.evaluate(a => { const s = window.__fake.dump(); const k = Object.keys(s).filter(k => k.indexOf('/days/' + a.d + '/items/') > 0 && s[k].text === a.t)[0]; return k ? s[k] : null; }, { d: today, t: text });
 async function pin(p, name, digits) { await p.click('.p-name[data-id="' + name + '"]'); await L.settle(p, 250); await p.keyboard.type(digits); await L.settle(p, 900); }
+async function preparedBy(p, id) { await p.click('#pt-sheet [data-pt="choose"][data-id="' + id + '"]'); await L.settle(p, 300); }
 async function idle(p) { await p.clock.runFor(11 * 60000); await L.settle(p, 300); }
 (async () => {
   const b = await L.start();
@@ -17,8 +18,9 @@ async function idle(p) { await p.clock.runFor(11 * 60000); await L.settle(p, 300
   ok(await p.$('#p-text') === null, 'the previous private input is not visible');
   ok(await p.evaluate(() => [...document.querySelectorAll('.p-names')][0].querySelector('.p-name').getAttribute('data-id')) === 'sam', 'recent people remain first in the login picker');
   await pin(p, 'sam', '1111');
-  await p.click('[data-p="tick"][data-id="i1"]');await L.settle(p,300);
-  ok((await item(p,'i1')).doneById === 'sam', 'after login a tick is recorded as Sam');
+  await p.click('[data-p="tick"][data-id="i1"]'); await preparedBy(p, 'sam');
+  const signedTick = await item(p, 'i1');
+  ok(signedTick.doneById === 'sam' && signedTick.preparedById === 'sam', 'after login a shared tick keeps Sam as recorder and the chosen worker');
   await idle(p);await pin(p,'ann','2222');
   await p.fill('#p-text','Ann new line');await p.press('#p-text','Enter');await L.settle(p,300);
   ok((await lineBy(p,'Ann new line')).addedById === 'ann', 'a new login writes only as its own person');
@@ -47,9 +49,9 @@ async function idle(p) { await p.clock.runFor(11 * 60000); await L.settle(p, 300
   await p.keyboard.type('4444'); await L.settle(p, 600);
   await p.keyboard.type('4444'); await L.settle(p, 1200);
   if(await p.$('[data-p="dk-skip"]')) { await L.tap(p,'[data-p="dk-skip"]');await L.settle(p,300); }
-  await L.tap(p,'[data-p="tick"][data-id="i1"]');await L.settle(p,300);
+  await L.tap(p,'[data-p="tick"][data-id="i1"]'); await preparedBy(p, 'kim');
   const k1 = await item(p, 'i1');
-  ok(k1 && k1.done === true && k1.doneById === 'kim', 'first PIN: the tick is done under Kim (' + JSON.stringify(k1 && { done: k1.done, by: k1.doneById }) + ')');
+  ok(k1 && k1.done === true && k1.doneById === 'kim' && k1.preparedById === 'kim', 'first PIN: the chosen worker and authenticated recorder are Kim (' + JSON.stringify(k1 && { done: k1.done, by: k1.doneById, preparedBy: k1.preparedById }) + ')');
   ok(!/That line has changed/.test(await txt(p, '#prep-root') || '') && !/One more thing/.test(await txt(p, '#prep-root') || '') , 'first PIN: the list with the drinks run card, not One more thing');
   ok(p.errors.length === 0, 'first PIN: no page errors ' + p.errors.join(' | '));
   await p.context().close();

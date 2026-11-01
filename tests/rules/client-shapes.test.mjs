@@ -328,10 +328,14 @@ row('js/prep.js maybeRoll(): a line rolled onto today (addedById empty)', { ok: 
 row('js/prep.js tickNow(): tick a prep line', { ok: KITCHEN, asks: TICKS,
   known: Object.assign({ roles: ['owner'], why: 'on the Google device with nobody on PIN tickNow() reads me().name, which is null, so the tick throws before it is sent' }, EXP),
   prep: r => put({ [`days/${TODAY}/items/${MINE(r)}`]: line() }),
-  run: (db, w, r) => W(r, [['upd', `days/${TODAY}/items/${MINE(r)}`, { done: true, doneBy: NAME[r], doneById: w, doneAt: Date.now() }]]) });
+  run: (db, w, r) => { const stamp = Date.now(); return W(r, [['upd', `days/${TODAY}/items/${MINE(r)}`, { done: true, doneBy: NAME[r], doneById: w, doneAt: stamp, preparedBy: NAME[r], preparedById: w, preparedAt: stamp }]]); } });
+row('js/prep.js shared tick: reported worker differs from the authenticated recorder', { ok: KITCHEN, asks: TICKS,
+  known: Object.assign({ roles: ['owner'], why: 'the shared prep picker requires a personal operator; the Google device with nobody on PIN has no task recorder' }, EXP),
+  prep: r => put({ [`days/${TODAY}/items/shared-${r}`]: line() }),
+  run: (db, w, r) => { const stamp = Date.now(); return W(r, [['upd', `days/${TODAY}/items/shared-${r}`, { done: true, doneBy: NAME[r], doneById: w, doneAt: stamp, preparedBy: 'Ann', preparedById: 'ann', preparedAt: stamp }]]); } });
 // an untick (canUntick()): a chef any time (canBrowse()), or the person who ticked it within 2 minutes. tickNow() then
 // takes the tick off that person's tally, a write of its own (activity/<doneById>, ticked - 1)
-const UNTICK = { done: false, doneBy: '', doneById: '', doneAt: 0 };
+const UNTICK = { done: false, doneBy: '', doneById: '', doneAt: 0, preparedBy: '', preparedById: '', preparedAt: 0 };
 row('js/prep.js tickNow(): a chef unticks a line Ann ticked 10 minutes ago', { ok: CHEFS, asks: CHEFS,
   prep: r => put({ [`days/${TODAY}/items/u-${r}`]: line({ done: true, doneBy: 'Ann', doneById: 'ann', doneAt: Date.now() - 10 * MIN }) }),
   run: (db, w, r) => W(r, [['upd', `days/${TODAY}/items/u-${r}`, UNTICK]]) });

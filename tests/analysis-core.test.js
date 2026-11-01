@@ -22,4 +22,20 @@ const original = C.daily('2026-10-30', { prep: [{ text: 'Old entry' }] });
 const correction = C.daily('2026-10-30', { prep: [{ text: 'Old entry', deleted: true }] });
 assert.equal(C.aggregate([original]).counts.prep, 1); assert.equal(C.aggregate([correction]).counts.prep, undefined);
 assert.equal(C.aggregate([C.daily('2026-10-30', { prep: [{ text: 'Milk' }], waste: [{ text: 'Milk' }] })]).items.length, 2);
-console.log('PASS analysis exclusions, confirmed aliases, ambiguous joins, units, activity and corrections');
+const attributed = patch => C.daily('2026-10-30', { prep: [{ text: 'Example prep', station: 'Grill', done: true,
+  doneBy: 'Example recorder', doneById: 'recorder', doneAt: 200, preparedBy: 'Example cook', preparedById: 'worker', preparedAt: 200, ...patch }] });
+const prepared = attributed({});
+assert.equal(prepared.entries[0].person, 'worker', 'A stamped completion credits the reported worker rather than the recorder.');
+assert.equal(C.aggregate([prepared]).people.worker.Grill, 1);
+assert.equal(C.aggregate([prepared]).people.recorder, undefined, 'One shared tick does not also count as work by its recorder.');
+for (const patch of [
+  { preparedBy: undefined, preparedById: undefined, preparedAt: undefined },
+  { preparedBy: '', preparedById: '' }, { preparedBy: '   ' }, { preparedById: '' },
+  { preparedBy: 2 }, { preparedById: ['worker'] },
+  { preparedBy: 'x'.repeat(81) }, { preparedById: 'x'.repeat(81) },
+  { preparedAt: undefined }, { preparedAt: '200' }, { preparedAt: 0 }, { preparedAt: 199 },
+  { preparedAt: Infinity, doneAt: Infinity }, { doneAt: 201 }
+]) assert.equal(attributed(patch).entries[0].person, 'recorder', 'Legacy, malformed or stale attribution falls back to the recorder: ' + JSON.stringify(patch));
+assert.equal(attributed({ done: false }).entries[0].person, '', 'Undo removes completion credit even when an older client leaves prepared fields behind.');
+assert.equal(C.aggregate([attributed({ doneAt: 201 })]).people.recorder.Grill, 1, 'An old-client re-tick with a new timestamp cannot inherit an earlier worker.');
+console.log('PASS analysis exclusions, confirmed aliases, ambiguous joins, units, stamped worker attribution, legacy fallback and corrections');

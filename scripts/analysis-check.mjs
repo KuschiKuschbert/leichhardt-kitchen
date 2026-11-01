@@ -8,13 +8,21 @@ const db = getFirestore(), K = db.collection('kitchens').doc('000000');
 const at = Date.parse('2026-10-31T04:00:00Z'), yesterday = '2026-10-30';
 await db.recursiveDelete(K);
 await K.collection('references').doc('milk').set({ alias: 'Milk', label: 'Milk', recipeId: 'milk' });
-await K.collection('days').doc(yesterday).collection('items').doc('p').set({ text: 'Milk', done: true, doneById: 'ann', station: 'Larder' });
+await K.collection('days').doc(yesterday).collection('items').doc('p').set({ text: 'Milk', done: true, doneBy: 'Example recorder', doneById: 'ann', doneAt: at - 1000,
+  preparedBy: 'Example cook', preparedById: 'bo', preparedAt: at - 1000, station: 'Larder' });
 await K.collection('waste').doc(yesterday).collection('lines').doc('w').set({ text: 'Milk', amount: 2, unit: 'L' });
 const get = async id => (await K.collection('analysis').doc(id).get()).data();
 await analyse(K, { days: 3, at });
 assert.equal((await get('range-7')).counts.prep, 1);
+assert.equal((await get('range-7')).people.bo.Larder, 1, 'Published analysis credits the reported worker.');
+assert.equal((await get('range-7')).people.ann, undefined, 'The recorder is not counted as a second worker.');
+const initialGeneration = (await get('current')).generation;
+assert.equal((await K.collection('analysisDaily').doc(initialGeneration + '_' + yesterday).get()).data().entries.find(e => e.source === 'prep').person, 'bo', 'The daily contribution keeps the same worker as the published range.');
+await K.collection('days').doc(yesterday).collection('items').doc('p').update({ doneAt: at - 500 });
 await analyse(K, { days: 3, at: at + 1 });
 assert.equal((await get('range-7')).counts.prep, 1);
+assert.equal((await get('range-7')).people.ann.Larder, 1, 'An old-client re-tick does not inherit a previous prepared worker.');
+assert.equal((await get('range-7')).people.bo, undefined);
 await K.collection('days').doc(yesterday).collection('items').doc('p').update({ deleted: true });
 await analyse(K, { days: 3, at: at + 2 });
 assert.equal((await get('range-7')).counts.prep, undefined);
@@ -26,4 +34,4 @@ await assert.rejects(analyse(K, { days: 91 }));
 for (let i = 0; i < 3000; i += 400) { const batch = db.batch(); for (let j = i; j < Math.min(3000, i + 400); j++) batch.set(K.collection('days').doc(yesterday).collection('items').doc('large-' + j), { text: 'x'.repeat(160), station: 's'.repeat(80), qty: 'q'.repeat(80) }); await batch.commit(); }
 await assert.rejects(analyse(K, { days: 3, at: at + 4 }), /analysis-day-too-large/);
 assert.equal((await get('current')).generation, generation);
-console.log('PASS analysis reruns, corrections, atomic publication, read budget and generation retention');
+console.log('PASS analysis worker attribution, old-client re-ticks, reruns, corrections, atomic publication, read budget and generation retention');
