@@ -322,11 +322,12 @@
       // with only the lines this phone wrote since, never "nothing written"
       var k = listSnap(snap, S.itemsState, itemsLast);
       S.items = snapLines(snap, '');
-      if (pt && pt.busy && ptContext(pt)) S.items = S.items.map(function (x) {
+      if (pt && (pt.busy || pt.uncertain) && ptContext(pt)) S.items = S.items.map(function (x) {
         if (x.id !== pt.id) return x;
         pt.latest = Object.assign({}, x);pt.latestServer = !cacheOnly(snap) && !x._unsent;
         return Object.assign({}, x, { done: pt.before.done || false, doneBy: pt.before.doneBy || '', doneById: pt.before.doneById || '', doneAt: pt.before.doneAt || 0, preparedBy: pt.before.preparedBy || '', preparedById: pt.before.preparedById || '', preparedAt: pt.before.preparedAt || 0 });
       });
+      if (pt && pt.uncertain && pt.latestServer) { var confirming = pt;Promise.resolve().then(function () { ptReconcile(confirming); }); }
       if (k === 'same') { patchOrDraw(patchUnsent); return; }
       S.itemsState = k === 'wait' ? 'offline' : 'ok'; draw();
     }, function () { S.itemsState = 'error'; draw(); });
@@ -1508,9 +1509,16 @@
     S.items[index] = Object.assign({}, d.latest || S.items[index], acknowledged || before, { _unsent: false });
   }
   function ptSameSave(d, x) { var v = d.value;return !!(v && x && x.done === true && !x.deleted && x.doneAt === v.doneAt && x.doneById === v.doneById && x.preparedAt === v.preparedAt && x.preparedById === v.preparedById); }
+  function ptReconcile(d) {
+    if (pt !== d || !d.uncertain || !ptContext(d) || !d.latestServer || !d.latest) return;
+    if (ptSameSave(d, d.latest)) { ptComplete(d);return; }
+    if (d.latest.done || d.latest.deleted) {
+      d.uncertain = false;d.busy = false;ptRestore(d, d.latest);d.stale = true;d.error = 'This prep line changed. Close and review the list.';draw();ptDraw();
+    }
+  }
   function ptComplete(d) {
     if (pt !== d || d.finished || !ptContext(d)) return;
-    d.finished = true;d.busy = false;ptRestore(d, d.value);markPast('p', d.date);bump({ ticked: 1 });
+    d.finished = true;d.busy = false;d.uncertain = false;ptRestore(d, d.value);markPast('p', d.date);bump({ ticked: 1 });
     ptClose();batch(function () { toast('Ticked', { label: 'Undo', fn: function () { tick(d.date, d.id); } });draw(); });setTimeout(draw, LINGER + 100);
   }
   function ptCheck() {
@@ -4090,7 +4098,7 @@
     if (!intelligenceAllowed()) return '';
     if (!window.LK_INTELLIGENCE || window.LK_INTELLIGENCE.API !== 3 || !window.LK_ANALYSIS) {
       if (!intelligenceLoading && !intelligenceError) {
-        intelligenceLoading = window.LK_APP.load('js/analysis-core.js?v=1').then(function () { return window.LK_APP.load('js/admin-intelligence.js?v=3'); }).then(function () { if (!window.LK_INTELLIGENCE || window.LK_INTELLIGENCE.API !== 3 || !window.LK_ANALYSIS) throw { code: 'workspace-version' }; }).then(function () { intelligenceLoading = null; if (intelligenceAllowed()) draw(); }, function () { intelligenceLoading = null; intelligenceError = true; if (intelligenceAllowed()) draw(); });
+        intelligenceLoading = window.LK_APP.load('js/analysis-core.js?v=2').then(function () { return window.LK_APP.load('js/admin-intelligence.js?v=3'); }).then(function () { if (!window.LK_INTELLIGENCE || window.LK_INTELLIGENCE.API !== 3 || !window.LK_ANALYSIS) throw { code: 'workspace-version' }; }).then(function () { intelligenceLoading = null; if (intelligenceAllowed()) draw(); }, function () { intelligenceLoading = null; intelligenceError = true; if (intelligenceAllowed()) draw(); });
       }
       return '<section class="set-block"><h3 class="label">Admin workspace</h3><p class="hint" role="status">' + (intelligenceError ? 'Could not load the workspace. Check the connection and reload this page.' : 'Loading...') + '</p></section>';
     }
@@ -9481,7 +9489,7 @@
      the recipe picker open on the prep pages, or a page loaded on its own with changes (Delivery received, Manage
      Recipes, Manage functions, Supplier order). */
   function unsavedHere() {
-    return !!(window.LK_DELIVERY && window.LK_DELIVERY.dirty()) || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!(window.LK_SUP && window.LK_SUP.dirty()) || typedHere() || !!S.sheet || !!S.recipeOpen;
+    return !!(window.LK_DELIVERY && window.LK_DELIVERY.dirty()) || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!(window.LK_SUP && window.LK_SUP.dirty()) || typedHere() || !!S.sheet || !!S.recipeOpen || !!ptPop;
   }
   /* Words typed on the pages this file draws and not saved yet: half a prep, order, wastage or transfer line (the venue
      and person stay after Log it on purpose, so they do not count), kitchen mail, a to-do job, a review, the drinks run,

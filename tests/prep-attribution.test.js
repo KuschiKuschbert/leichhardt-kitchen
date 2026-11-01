@@ -70,11 +70,12 @@ async function open(b, options = {}) {
   for (const width of [390, 720, 768, 1280]) await step('sheet ' + width, async () => {
     p = await open(b, { width, height: width === 390 ? 844 : 1000 });
     const before = await p.evaluate(() => ({ rows: [...document.querySelectorAll('.nb-left .nb-row')].map(e => e.id),
-      second: document.querySelector('#nbr-i2').getBoundingClientRect().top,
+      second: document.querySelector('#nbr-i2').getBoundingClientRect().top + scrollY,
       folded: localStorage.getItem('lk.fn.fold'), band: document.querySelector('#fn-band').textContent }));
     ok(await visible(p, '.nb-tabs') && await visible(p, '#p-text') && !!(await p.$('.nb-right #nb-donebox')), width + ': native sections, Add and Handy remain');
     if (width === 390) ok(!!(await p.$('details.nb-start-l:not([open])')) && await visible(p, '.nb-qadd [data-p="quick"]'), 'phone: collapsed Start here and normal Quick add remain');
     await tick(p);
+    ok(await p.evaluate(() => LK_PREP.unsavedHere()), width + ': open picker keeps the existing update/draft guard active');
     const shape = await p.evaluate(() => {
       const wrap = document.getElementById('pt-sheet'), e = wrap && wrap.querySelector('[role="dialog"]');
       if (!e) return null;
@@ -90,7 +91,7 @@ async function open(b, options = {}) {
     ok(shape.left >= -1 && shape.right <= width + 1 && shape.targets.every(h => h >= 44), width + ': dialog fits and choices retain 44 px targets');
     ok(width < 720 ? Math.abs(shape.bottom - shape.vh) <= 1 : shape.width <= 422 && shape.top > 0 && shape.bottom < shape.vh && Math.abs((shape.left + shape.right) / 2 - width / 2) <= 1,
       width + ': phone bottom sheet or centred tablet/desktop dialog');
-    const during = await p.evaluate(() => ({ rows: [...document.querySelectorAll('.nb-left .nb-row')].map(e => e.id), second: document.querySelector('#nbr-i2').getBoundingClientRect().top }));
+    const during = await p.evaluate(() => ({ rows: [...document.querySelectorAll('.nb-left .nb-row')].map(e => e.id), second: document.querySelector('#nbr-i2').getBoundingClientRect().top + scrollY }));
     ok(JSON.stringify(before.rows) === JSON.stringify(during.rows) && Math.abs(before.second - during.second) <= 1, width + ': opening attribution neither inserts nor shifts prep tasks');
     const focusable = '#pt-sheet button:not(:disabled):visible';
     await p.locator(focusable).last().focus(); await p.keyboard.press('Tab');
@@ -128,7 +129,7 @@ async function open(b, options = {}) {
 
   await step('cancel Back and backdrop', async () => {
     p = await open(b);
-    await tick(p, 'i1', true); await p.locator('#pt-sheet [data-pt="cancel"]').click(); await L.settle(p, 300);
+    await tick(p, 'i1', true); await p.locator('#pt-sheet button[data-pt="cancel"]').click(); await L.settle(p, 300);
     ok(!(await item(p, 'i1')).done && !(await p.$('#pt-sheet')) && await p.evaluate(() => document.activeElement.matches('#nbr-i1 .nb-box')), 'Cancel on a word-tap leaves the job open and focuses its keyboard tick');
     await tick(p); await p.goBack(); await L.settle(p, 350);
     ok(!(await p.$('#pt-sheet')) && await p.evaluate(() => location.hash === '#/prep') && !(await item(p, 'i1')).done, 'native Back closes only the attribution sheet');
@@ -233,6 +234,27 @@ async function open(b, options = {}) {
     ok(prepared(await item(p, 'i1'), 'bo', 'ann') && !(await p.$('#pt-sheet')), 'a saved completion with a lost acknowledgement is reconciled without a false stale failure');
     ok(new Set(attempts.map(x => x.data.preparedAt)).size === 1, 'lost acknowledgement retains the same logical completion cycle');
     ok(await p.evaluate(({ k, before }) => ((__fake.dump()[k] || {}).ticked || 0) - before === 1, { k: key('activity', 'ann'), before }), 'lost acknowledgement credits the recorder exactly once');
+  });
+
+  await step('late authoritative acknowledgement', async () => {
+    p = await open(b); await tick(p);
+    const before = await p.evaluate(k => (__fake.dump()[k] || {}).ticked || 0, key('activity', 'ann'));
+    await p.evaluate(() => { __fake.mode = 'fail'; }); await choose(p, 'bo');
+    const attempts = await completionWrites(p, 'i1'), value = attempts[0] && attempts[0].data;
+    ok(attempts.length === 1 && !!(await p.$('#pt-sheet [data-pt="retry"]')) && !(await item(p, 'i1')).done,
+      'the rejected callback leaves one uncertain completion attempt and its choice open');
+    if (!value) throw new Error('The uncertain save did not record its attempted payload');
+    // The server accepted that exact cycle, but its authoritative listener reaches this tab after the rejection.
+    await p.evaluate(({ k, value }) => { __fake.mode = 'ok'; __fake.write(k, { ...__fake.dump()[k], ...value }); }, { k: itemKey('i1'), value });
+    await L.waitFor(p, () => !document.getElementById('pt-sheet')); await L.settle(p, 300);
+    const saved = await item(p, 'i1');
+    ok(prepared(saved, 'bo', 'ann') && saved.preparedAt === value.preparedAt && /Ticked/.test(await L.txt(p, '.p-toast') || ''),
+      'late matching authoritative proof resolves the original uncertain completion without another choice');
+    // Repeated delivery of the same authoritative state must not repeat completion side effects.
+    await p.evaluate(({ k, value }) => __fake.write(k, { ...__fake.dump()[k], ...value }), { k: itemKey('i1'), value }); await L.settle(p, 300);
+    ok((await completionWrites(p, 'i1')).length === 1 && !(await p.$('#pt-sheet')), 'late and repeated acknowledgement cause no duplicate completion write');
+    ok(await p.evaluate(({ k, before }) => ((__fake.dump()[k] || {}).ticked || 0) - before === 1, { k: key('activity', 'ann'), before }),
+      'late authoritative acknowledgement credits the authenticated recorder exactly once');
   });
 
   await step('enlarged phone text', async () => {
