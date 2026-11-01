@@ -16,6 +16,9 @@ export function probeChecks(fs, pin) {
   return [
     ['public recipes remain readable', () => fs.get(K + 'book/index'), true],
     ['private config cannot be read while signed out', () => fs.get(K + 'config/main'), false],
+    ['proofreader history cannot be read while signed out', () => fs.get(K + 'proofHistory/' + id), false],
+    ['proofreader history cannot be queried while signed out', () => fs.query(K.slice(0, -1), 'proofHistory', 'v', 'GREATER_THAN_OR_EQUAL', num(1)), false],
+    ['proofreader history cannot be planted while signed out', () => fs.patch(K + 'proofHistory/' + id, { kind: str('word'), action: str('keep'), word: str('probe'), v: num(1), at: num(Date.now()), by: str('probe') }), false],
     ['individual pings cannot be read while signed out', () => fs.get(K + 'directnotes/' + id), false],
     ['individual pings cannot be queried while signed out', () => fs.query(K.slice(0, -1), 'directnotes', 'to', 'EQUAL', str('probe')), false],
     ['individual ping receipts cannot be read while signed out', () => fs.get(K + 'directnotes/' + id + '/seen/' + day + '_probe'), false],

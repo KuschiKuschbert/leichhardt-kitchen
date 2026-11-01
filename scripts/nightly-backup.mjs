@@ -6,7 +6,7 @@
   for the last BACKUP_DAYS days (45), every shift ping with who has seen it, every meeting minutes with earlier versions
   and sign-offs, what the prep and order lists have learned, the learning log, the chef to-do list, tallies, sections,
   empty searches, card opens, the guides' words and small pictures, the recipes the head chef changed or added in the
-  book with their earlier versions, and who has set a PIN.
+  book with their earlier versions, shared protected words and immutable proofreader history, and who has set a PIN.
   People's PIN fingerprints and the guides' page pictures are left out, like the button.
   The workflow then encrypts the file with the BACKUP_KEY secret and keeps it as a GitHub artifact for 90 days.
 
@@ -56,7 +56,8 @@ const out = { exportedAt: new Date().toISOString(), by: 'nightly backup', days: 
 let reads = 0;
 const cfg = await K.collection('config').doc('main').get(); reads++;
 out.config = cfg.exists ? plain(cfg.data()) : null;
-for (const name of ['activity', 'sections', 'learned', 'ordlearned', 'learnlog', 'summary', 'analysis', 'analysisDaily', 'references', 'training', 'misses', 'views', 'guides', 'mail', 'mailstat', 'drinks', 'shifts', 'daily', 'todos', 'cutdone', 'transferOpen']) { out[name] = await all(name); reads += out[name].length; }
+// Nightly only: one query per collection, including every immutable proofreader event (one read per event).
+for (const name of ['activity', 'sections', 'learned', 'ordlearned', 'learnlog', 'summary', 'analysis', 'analysisDaily', 'references', 'training', 'proofHistory', 'misses', 'views', 'guides', 'mail', 'mailstat', 'drinks', 'shifts', 'daily', 'todos', 'cutdone', 'transferOpen']) { out[name] = await all(name); reads += out[name].length; }
 // One day range query, only the backup window. No separate read for each delivery day.
 out.deliveries = grab(await K.collection('deliveries').where('day', '>=', shift(today, -(DAYS - 1))).where('day', '<=', today).get());
 reads += Math.max(1, out.deliveries.length);

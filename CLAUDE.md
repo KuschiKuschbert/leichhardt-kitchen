@@ -17,6 +17,7 @@ The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the
 | Login, who can read or write what, recipes, function writes | `docs/private-kitchen-access.md` (wins over older wording below) |
 | Multiplying recipe amounts | `docs/recipe-multiplier.md` |
 | Admin analysis, references, training records and nightly analysis | `docs/admin-intelligence.md` |
+| Admin autocorrect repairs, shared protected words and private correction history | `docs/proofreader-admin.md` |
 | Admin visual design, selected A: The Chef's Desk | `docs/admin-design-options/brief.md` |
 | Suppliers, order history, cut-off sheets | `docs/supplier-workspace.md` |
 | Wastage history, ranges, CSV | `docs/wastage-history.md` |
@@ -243,3 +244,9 @@ Read `docs/delivery-received.md` before changing receipt data or access. `#/deli
 ## Individual shift pings (26 Oct 2026)
 
 Read `docs/ping-recipients.md` before changing recipients, queries or delivery. Keep individual text in `directnotes`, outside legacy Everyone queries. Match the real personal session in Firestore; stale `pingIds` must not grant private management access. Recipient/author/creation time stay fixed. Publish tested rules and the additive recipient/date index from the feature branch before merging client code. Backups, PIN moves, receipts and shared-device clearing must retain both kinds of pings.
+
+## Admin proofreader (1 November 2026)
+
+Read `docs/proofreader-admin.md` before changing manual repairs or shared word protection.
+Keep each admin repair or word revision atomic with immutable private `proofHistory`, using `W()`.
+Reuse the existing config listener and report caches; preserve all repair fields and history in backups and PIN moves.
