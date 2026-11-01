@@ -209,7 +209,16 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   ok(await p.getAttribute('[data-mg="sw-special"]', 'aria-checked') === 'false', 'special: the switch starts off');
   await p.click('[data-mg="sw-special"]'); await L.settle(p, 100);
   ok(await p.inputValue('#mg-msec') === 'Specials', 'special: the menu section reads Specials');
-  await p.click('[data-mg="save"]'); await toast(p);
+  await p.click('[data-mg="save"]');
+  // Wait for this save. The previous recipe's toast may still be visible.
+  await L.waitFor(p, root => {
+    const saved = __fake.dump(), recipe = saved[root + '/recipes/caesar'], index = saved[root + '/book/index'];
+    const save = document.querySelector('[data-mg="save"]');
+    return recipe && index && (index.r || {}).caesar === recipe.v &&
+      (index.menu || []).some(section => section.title === 'Specials' && (section.ids || []).includes('caesar')) &&
+      save && save.disabled && save.textContent.trim() === 'Save';
+  }, fsKey([]), 10000);
+  await toast(p);
   ok(/Saved/.test(await toastText(p) || ''), 'special: saved');
   await go(p, '#/recipes'); await L.settle(p, 300);
   // the chip count follows the saved change a moment later on a slow runner: wait for it
