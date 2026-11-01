@@ -20,7 +20,7 @@ const cfg = (people, lists) => { const e = {}; e[CFG] = Object.assign({ people, 
   await L.settle(p, 300);
   ok(/No one is marked Head chef yet/.test(await txt(p, '.a-nohead')), 'admin: the People tab asks for a head chef');
   ok(await p.evaluate(() => [...document.querySelectorAll('#a-r1 option')].some(o => o.value === 'head')), 'admin: Head chef is a role the head chef can pick');
-  await p.selectOption('#a-r1', 'head');
+  await L.pick(p, '#a-r1', 'head');
   await L.settle(p, 200);
   await p.click('[data-p="a-save"]');
   await L.settle(p, 500);
@@ -30,7 +30,7 @@ const cfg = (people, lists) => { const e = {}; e[CFG] = Object.assign({ people, 
   ok(same(s[CFG].sousIds, ['sam', 'ann']) && same(s[CFG].pingIds, ['sam', 'ann']), 'admin: the head chef is in sousIds and pingIds');
   ok(await p.$('.a-nohead') === null, 'admin: the hint goes once a head chef is set');
   // only one head chef: picking Bo makes Ann a sous chef
-  await p.selectOption('#a-r2', 'head');
+  await L.pick(p, '#a-r2', 'head');
   await L.settle(p, 200);
   ok(await p.evaluate(() => document.querySelector('#a-r1').value) === 'sous', 'admin: a second Head chef turns the first into Sous chef');
   ok(p.errors.length === 0, 'admin: no page errors ' + p.errors.join(' | '));

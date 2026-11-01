@@ -20,7 +20,7 @@ const errs = p => p.errors.filter(e => !/Failed to load resource/.test(e));
   p = await L.open(b, '#/manage/new', { who: 'ann', extra: cfg(), wait: 1400 });
   await editor(p);
   await p.fill('#mg-name', 'Pickled Chillies');
-  await p.selectOption('#mg-kind', 'batch');
+  await L.pick(p, '#mg-kind', 'batch');
   for (const [q, name] of [['500 g', 'Red chillies (sliced)'], ['300 ml', 'Cider vinegar'], ['200 g', 'Caster sugar'], ['10 g', 'Mustard seed']]) {
     await p.click('[data-mg="ing-add"]'); await L.settle(p, 150);
     const k = await p.evaluate(() => document.querySelectorAll('.mg-ing').length - 1);
@@ -55,7 +55,7 @@ const errs = p => p.errors.filter(e => !/Failed to load resource/.test(e));
   p = await L.open(b, '#/manage/new', { who: 'ann', extra: cfg(), wait: 1400 });
   await editor(p);
   await p.fill('#mg-name', 'Rump on Mash');
-  await p.selectOption('#mg-kind', 'main');
+  await L.pick(p, '#mg-kind', 'main');
   for (const [q, name] of [['250 g', 'Rump steak (chargrilled)'], ['150 g', 'Mash'], ['50 ml', 'Pepper sauce']]) {
     await p.click('[data-mg="ing-add"]'); await L.settle(p, 150);
     const k = await p.evaluate(() => document.querySelectorAll('.mg-ing').length - 1);
@@ -130,7 +130,7 @@ const errs = p => p.errors.filter(e => !/Failed to load resource/.test(e));
   p = await L.open(b, '#/manage/new', { who: 'ann', extra: wingPicks, failReads: '/book/matches$', wait: 1400 });
   await editor(p);
   await p.fill('#mg-name', 'Wing Bucket');
-  await p.selectOption('#mg-kind', 'main');
+  await L.pick(p, '#mg-kind', 'main');
   const ingLast = () => p.evaluate(() => document.querySelectorAll('.mg-ing').length - 1);
   await p.click('[data-mg="ing-add"]'); await L.settle(p, 150);
   let wk = await ingLast();

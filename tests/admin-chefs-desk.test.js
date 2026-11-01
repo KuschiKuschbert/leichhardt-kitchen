@@ -22,7 +22,7 @@ for (const n of [7, 30, 90]) extra[path('analysis', 'range-' + n)] = {
 };
 
 async function chapter(p, group, tab) {
-  if (await p.locator('[data-k="ai-section"]').isVisible()) await p.selectOption('[data-k="ai-section"]', group);
+  if (await p.locator('[data-k="ai-section"] + .ux-picker-trigger').isVisible()) await L.pick(p, '[data-k="ai-section"]', group);
   else await p.click('[data-p="a-group"][data-g="' + group + '"]');
   await L.settle(p, 150);
   await L.adminTab(p, tab);
@@ -156,10 +156,10 @@ const privateWrites = p => p.evaluate(() => window.__fake.writes.flat().filter(x
     await L.adminTab(p, 'training');
     await p.click('[data-ai="new-training"]');
     await checkFocusedTask(p, width, 'training assessment');
-    await p.selectOption('#ai-personId', 'ann');
-    await p.selectOption('#ai-section', 'Grill');
-    await p.selectOption('#ai-status', 'in-training');
-    await p.selectOption('#ai-assessorId', 'sam');
+    await L.pick(p, '#ai-personId', 'ann');
+    await L.pick(p, '#ai-section', 'Grill');
+    await L.pick(p, '#ai-status', 'in-training');
+    await L.pick(p, '#ai-assessorId', 'sam');
     if (width < 720) await checkDateClearance(p, String(width));
     await p.click('[data-ai="save"]');
     await L.waitFor(p, () => Object.entries(window.__fake.dump()).some(([key, value]) => /\/training\/[^/]+$/.test(key) && value.personId === 'ann'));
@@ -198,10 +198,10 @@ const privateWrites = p => p.evaluate(() => window.__fake.writes.flat().filter(x
   await L.adminTab(p, 'training');
   await p.click('[data-ai="new-training"]');
   await checkFocusedTask(p, 390, 'extra large training assessment');
-  await p.selectOption('#ai-personId', 'ann');
-  await p.selectOption('#ai-section', 'Grill');
-  await p.selectOption('#ai-status', 'confirmed');
-  await p.selectOption('#ai-assessorId', 'sam');
+  await L.pick(p, '#ai-personId', 'ann');
+  await L.pick(p, '#ai-section', 'Grill');
+  await L.pick(p, '#ai-status', 'confirmed');
+  await L.pick(p, '#ai-assessorId', 'sam');
   await checkDateClearance(p, '390 extra large');
   await p.click('[data-ai="save"]');
   await L.waitFor(p, () => Object.entries(window.__fake.dump()).some(([key, value]) => /\/training\/[^/]+$/.test(key) && value.personId === 'ann' && value.status === 'confirmed'));

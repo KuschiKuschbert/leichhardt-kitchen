@@ -22,10 +22,10 @@ const count = p => p.evaluate(() => document.getElementById('count').textContent
   await p.fill('#find', 'chicken'); await L.settle(p, 300);
   const shown = await visible(p);
   ok(new RegExp('^' + shown + ' of ').test(await count(p)), 'pass: with a kind picked the count matches the dishes shown (' + await count(p) + ', ' + shown + ' shown)');
-  ok(await p.$('.find-wrap.has-q .find-x') !== null, 'search: a Clear button shows while something is typed');
+  ok(await p.$('.find-wrap.has-q .ux-search-clear') !== null, 'search: a Clear button shows while something is typed');
   await p.press('#find', 'Enter'); await L.settle(p, 150);
   ok(await p.evaluate(() => document.activeElement.id) !== 'find', 'search: Enter drops the keyboard');
-  await p.click('.find-x'); await L.settle(p, 300);
+  await p.click('.ux-search-clear'); await L.settle(p, 300);
   ok(await p.inputValue('#find') === '' && await p.evaluate(() => document.activeElement.id) === 'find', 'search: Clear empties the box and keeps the cursor there');
   await p.fill('#find', 'zzqqxx'); await L.settle(p, 300);
   ok(await p.$('.empty [data-act="clearall"]') !== null, 'search: nothing found offers Clear search and filters');

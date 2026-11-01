@@ -141,7 +141,7 @@ const reads = (p, re) => p.evaluate(s => window.__fake.reads.filter(k => new Reg
   const revRe = new RegExp('/waste/' + today + '$');
   ok(await until(p, () => /Could not load today's review\. Check the signal\./.test((document.querySelector('.w-review') || {}).textContent || '')), 'wastage review with no signal: says it could not load (' + (await txt(p, '.w-review') || '') + ')');
   const w0 = await reads(p, revRe);
-  for (const u of ['g', 'kg', 'L', 'kg']) { await p.click('[data-p="wunit"][data-v="' + u + '"]'); await L.settle(p, 150); }
+  for (const u of ['g', 'kg', 'L', 'kg']) { await L.choose(p, '[data-p="wunit"][data-v="' + u + '"]'); await L.settle(p, 150); }
   const w1 = await reads(p, revRe);
   ok(w1 === w0 && w0 <= 1, 'wastage review with no signal: no read on every draw (' + w0 + ' then ' + w1 + ')');
   await fits(p, 'wastage with the review note', 390);

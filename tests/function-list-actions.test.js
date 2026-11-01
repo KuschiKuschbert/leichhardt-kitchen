@@ -39,7 +39,7 @@ async function list(b, width = 390) {
         return action.top >= bar.top && action.bottom <= bar.bottom && action.left > bar.left + bar.width / 2;
       }), width + ': Cancel is inline at the right end of the function bar');
       if (process.env.LK_ACTION_SHOTS) await p.screenshot({ path: '/tmp/function-actions-' + width + '.png', fullPage: true });
-      await p.click('[data-fe="chip"][data-v="cancelled"]');
+      await L.choose(p, '[data-fe="chip"][data-v="cancelled"]');
       ok(!!await p.$(button('cancelled')), width + ': cancelled card has Delete');
       await p.context().close(); p = null;
     }
@@ -55,14 +55,14 @@ async function list(b, width = 390) {
     ok(data[key('draft')].notes === 'Keep these notes' && JSON.stringify(data[key('active')]) === JSON.stringify(before[key('active')]), 'deletion preserves details and other bookings');
     ok(JSON.stringify(data[['kitchens', L.PIN, 'fncontact/draft'].join('/')]) === JSON.stringify(before[['kitchens', L.PIN, 'fncontact/draft'].join('/')]), 'customer contact is untouched');
     ok(!await p.$('a.fe-row[href="#/functions/draft"]'), 'deleted function leaves normal list');
-    await p.click('[data-fe="chip"][data-v="all"]');
+    await L.choose(p, '[data-fe="chip"][data-v="all"]');
     ok(!await p.$('a.fe-row[href="#/functions/draft"]'), 'All excludes deleted functions');
-    await p.click('[data-fe="chip"][data-v="deleted"]');
+    await L.choose(p, '[data-fe="chip"][data-v="deleted"]');
     await p.click(button('draft', 'restore-row'));
     await L.waitFor(p, k => __fake.dump()[k].removed === false, key('draft'));
     data = await dump(p);
     ok(data[key('draft')].status === 'cancelled' && data[key('draft')].v === 3 && data[key('draft') + '/hist/2'].was.removed, 'Restore retains deletion history and leaves booking cancelled');
-    await p.click('[data-fe="chip"][data-v="cancelled"]');
+    await L.choose(p, '[data-fe="chip"][data-v="cancelled"]');
     ok(!!await p.$('a.fe-row[href="#/functions/draft"]') && !await p.$('[data-fe="status"][data-id="draft"][data-v="undo"]'), 'restored booking is listed as cancelled without service Undo');
     ok(!await p.evaluate(() => __fake.readLog.some(k => /\/fncontact\//.test(k))), 'list actions never read contacts');
     ok(!p.errors.length, 'delete and restore cause no page errors');

@@ -14,7 +14,7 @@ const cfg = () => ({ [fsKey(['config', 'main'])]: { people: [P('sam', 'Sam', 'so
   ok(t > 0 && t < 360 && a > t && d > a, 'phone recipe: name, then allergens, then the drawing (' + [t, a, d] + ')');
   ok(await p.evaluate(() => !document.querySelector('.lens-fold').open), 'phone recipe: the allergen lens is folded');
   await p.click('.lens-fold summary'); await L.settle(p, 150);
-  await p.click('[data-act="lens"][data-val="Fish"]'); await L.settle(p, 300);
+  await L.choose(p, '[data-act="lens"][data-val="Fish"]'); await L.settle(p, 300);
   ok(await p.evaluate(() => document.querySelector('.lens-fold').open && /Fish/.test(document.querySelector('.lens-fold summary').textContent)), 'phone recipe: a lens that is on keeps the fold open and names it');
   ok(p.errors.length === 0, 'recipe: no page errors ' + p.errors.join(' | '));
   await p.context().close();

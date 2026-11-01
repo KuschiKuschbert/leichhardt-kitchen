@@ -29,7 +29,7 @@ async function report(b, opts) {
   await L.adminTab(p, 'waste'); await ready(p); return p;
 }
 async function period(p, value) {
-  await p.selectOption('[data-k="wh-period"]', value); await ready(p);
+  await L.pick(p, '[data-k="wh-period"]', value); await ready(p);
 }
 async function csv(p) {
   const dl = p.waitForEvent('download'); await p.click('[data-p="csv"][data-v="waste"]');
@@ -55,12 +55,12 @@ async function csv(p) {
   let file = await csv(p);
   ok((file.text.match(/Fish fillets/g) || []).length === 2 && !/Cream|Removed fish/.test(file.text), 'CSV matches the search');
   await p.click('.wh-filters > summary');
-  await p.selectOption('[data-k="af-reason"]', 'expired');
+  await L.pick(p, '[data-k="af-reason"]', 'expired');
   await p.fill('[data-k="wh-who"]', 'Ann');
-  await p.selectOption('[data-k="wh-unit"]', 'kg');
+  await L.pick(p, '[data-k="wh-unit"]', 'kg');
   t = await totals(p); file = await csv(p);
   ok((await rows(p)).length === 1 && t.some(x => x.label === 'kg' && x.n === '2') && (file.text.match(/Fish fillets/g) || []).length === 1, 'reason, logger and unit filters agree across list, totals and CSV');
-  await p.selectOption('[data-k="af-dow"]', String(new Date(ago(2) + 'T12:00:00+10:00').getDay()));
+  await L.pick(p, '[data-k="af-dow"]', String(new Date(ago(2) + 'T12:00:00+10:00').getDay()));
   file = await csv(p);
   ok((await rows(p)).length === 1 && /Fish fillets/.test(file.text), 'weekday filter also applies to CSV');
   await p.click('[data-p="wh-clear"]');
@@ -69,7 +69,7 @@ async function csv(p) {
   file = await csv(p); t = await totals(p);
   ok((await rows(p)).some(x => /Removed fish/.test(x)) && /Removed fish.*Removed/.test(file.text) && t.some(x => x.label === 'kg' && x.n === '4.5'), 'Show removed includes marked entries in the list and CSV while excluding their 50 kg from totals');
   ok(file.text.includes("'=HYPERLINK"), 'typed formula-like notes export as spreadsheet text');
-  await p.selectOption('[data-k="lv-s:waste-log"]', 'old');
+  await L.pick(p, '[data-k="lv-s:waste-log"]', 'old');
   file = await csv(p);
   ok(file.text.indexOf('500,g') < file.text.indexOf('2,kg,Expired stock'), 'CSV follows the selected oldest-first list order');
   await p.evaluate(() => { window.__fake.deny = /\/waste\/.*\/lines\/fillet$/; });
@@ -88,7 +88,7 @@ async function csv(p) {
   await L.waitFor(p, () => !!document.querySelector('#w-ra'));
   ok(await p.$eval('[data-k="wh-review-date"]', e => e.value) === monthEnd && /Month end review/.test(await p.inputValue('#w-ra')), 'Daily reviews opens the last selected day and its saved review');
   await p.fill('#w-ra', 'Changed review');
-  await p.selectOption('[data-k="wh-period"]', '7');
+  await L.pick(p, '[data-k="wh-period"]', '7');
   ok(await p.$eval('[data-k="wh-period"]', e => e.value) === 'last' && await p.inputValue('#w-ra') === 'Changed review', 'changing dates cannot silently discard an unsaved review');
   // Cancel edits throws the words away, so it asks a second tap first (28 Oct 2026)
   await p.click('[data-p="wh-review-cancel"]');

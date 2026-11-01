@@ -26,7 +26,7 @@ const box = p => p.inputValue('#p-section');
   await add(p, 'Salt steaks');
   ok(await stationOf(p, 'Salt steaks') === 'Grill', 'typed: the next line goes under Grill too');
 
-  await p.fill('#p-section', '');
+  await L.clear(p, '#p-section');
   await add(p, 'Pick mint again');
   await add(p, 'Make aioli');
   ok(await box(p) === '', 'cleared: with the box emptied the book fills it in again and clears it after');

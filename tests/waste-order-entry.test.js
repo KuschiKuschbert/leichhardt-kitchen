@@ -13,7 +13,7 @@ extra[fsKey(['ordlearned', 'duck-fat'])] = { text: 'Duck fat', uses: 6, dow: {},
 const saved = (p, text) => p.evaluate(a => Object.keys(window.__fake.dump()).filter(k => k.indexOf('/waste/' + a.d + '/lines/') > 0 && window.__fake.dump()[k].text === a.t).map(k => window.__fake.dump()[k]), { d: today, t: text });
 async function log(p, text, amt, unit, before) {
   await p.fill('#w-text', text); await p.fill('#w-amt', amt);
-  await p.click('[data-p="wunit"][data-v="' + unit + '"]');
+  await L.choose(p, '[data-p="wunit"][data-v="' + unit + '"]');
   if (!(await p.evaluate(() => /excess|Excess/.test((document.querySelector('.w-rbtn') || document.querySelector('.w-rchips [aria-pressed="true"]') || {}).textContent || '')))) {
     await p.evaluate(() => { const b = document.querySelector('.w-rchips [data-v="excess"]') || document.querySelector('[data-p="wreason"][data-v="excess"]'); if (b) b.click(); else document.querySelector('.w-rbtn').click(); });
     await L.settle(p, 150);
@@ -41,7 +41,7 @@ async function log(p, text, amt, unit, before) {
   ok((await saved(p, 'Midnight rice')).length === 1 && await p.evaluate(t => window.LK_PREP.state.wDate === t, today), 'waste: a line typed on a page still on yesterday goes on today\'s list');
 
   // Next on What was wasted goes to Amount, without an error
-  await p.fill('#w-text', 'Lettuce'); await p.fill('#w-amt', '');
+  await p.fill('#w-text', 'Lettuce'); await L.clear(p, '#w-amt');
   await p.press('#w-text', 'Enter'); await L.settle(p, 200);
   ok(await p.evaluate(() => document.activeElement && document.activeElement.id) === 'w-amt' && !/Write the amount/.test(await txt(p, '.p-toast') || ''), 'waste: Next on the item goes to Amount without a telling-off');
 

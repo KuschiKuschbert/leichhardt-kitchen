@@ -136,9 +136,9 @@ async function clearForm(p, par) { await p.fill('[data-sf="par"]', par); await a
   await navigate(p, '#/suppliers/cutoff/northside/' + F.today); await ready(p);
   ok((await p.evaluate(() => document.body.textContent)).includes('Northside Test Foods'), 'cut-off deep link opens the matching supplier');
   ok(await p.$eval(qtySel('t-stock'), e => e.value) === '9 kg', 'opening the matching reminder preserves its existing draft');
-  await p.selectOption('[data-sf="supplier"]', 'west-bay');
+  await L.pick(p, '[data-sf="supplier"]', 'west-bay');
   await L.waitFor(p, () => !!document.querySelector('input[data-sf="qty"][data-i="w-one"]'), null, 5000);
-  await p.fill(qtySel('w-one'), '2 bags'); await p.selectOption('[data-sf="supplier"]', 'northside'); await ready(p);
+  await p.fill(qtySel('w-one'), '2 bags'); await L.pick(p, '[data-sf="supplier"]', 'northside'); await ready(p);
   ok(await p.$eval(qtySel('t-stock'), e => e.value) === '9 kg', 'switching suppliers retains a separate quantity draft for each');
   await p.evaluate(() => window.LK_PREP.signOut(true));
   await L.waitFor(p, () => !document.querySelector('input[data-sf="qty"]'), null, 5000);

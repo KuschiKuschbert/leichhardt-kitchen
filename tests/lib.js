@@ -343,4 +343,40 @@ async function lineAct(page, sel) {
   await settle(page, 120);
   return page.click('#lm-sheet .lm-act');
 }
-module.exports = { lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
+/* Select an existing choice through its adaptive trigger. Keeping the source selector here makes
+   older journey tests describe the same intent while exercising the new visible control. */
+async function choose(page, selector, options) {
+  const source = await page.locator(selector).first().evaluate(el => {
+    const group = el.closest('.ux-choice-source');
+    if (!group || getComputedStyle(group).display !== 'none') return null;
+    const buttons = [...group.querySelectorAll('button')];
+    return { trigger: group.nextElementSibling.classList.contains('ux-picker-trigger'), index: el.matches('[data-mg="tag"]') ? (el.classList.contains('is-has') ? 2 : el.classList.contains('is-may') ? 0 : 1) : el.matches('[data-p="mn-attc"]') ? ({ present: 1, apology: 2, absent: 0 }[el.dataset.st] || 0) : buttons.indexOf(el), multiple: /:(free|n-dow|cut-day)$/.test([...el.attributes].filter(a => /^data-(act|p)$/.test(a.name)).map(a => ':' + a.value).join('')) };
+  }).catch(() => null);
+  if (!source || !source.trigger || source.index < 0) return page.click(selector, options);
+  await page.locator(selector).first().evaluate(el => el.closest('.ux-choice-source').nextElementSibling.click());
+  await page.locator('.ux-picker [data-index="' + source.index + '"]').click();
+  if (source.multiple) await page.locator('.ux-picker-footer .dark').click();
+}
+async function pick(page, selector, value) {
+  const source = page.locator(selector).first();
+  await source.evaluate(el => el.nextElementSibling.click());
+  const option = await source.evaluate((el, value) => {
+    const v = typeof value === 'object' ? value.value : value;
+    return [...el.options].findIndex(o => typeof value === 'object' && value.label ? o.label === value.label : o.value === v);
+  }, value);
+  const search = page.locator('.ux-picker-head input');
+  if (await search.count()) {
+    const label = await source.evaluate((el, i) => el.options[i].textContent, option);
+    await search.fill(label); await search.press('Enter');
+    await page.locator('.ux-picker-option').filter({ hasText: label }).first().click();
+  } else await page.locator('.ux-picker [data-index="' + option + '"]').click();
+}
+
+async function clear(page, selector) {
+  const input = page.locator(selector).first();
+  if (await input.getAttribute('data-smart-search')) {
+    const button = input.locator('..').locator('.ux-search-clear');
+    if (await button.isVisible()) await button.click();
+  } else await input.fill('');
+}
+module.exports = { clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };

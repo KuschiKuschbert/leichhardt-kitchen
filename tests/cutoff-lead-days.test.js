@@ -16,11 +16,11 @@ function fixture(cuts) {
   return seed;
 }
 const domainWrites = p => p.evaluate(() => window.__fake.writes.flat().filter(x => /\/(?:config\/main|suppliers(?:\/|$)|supplierlinks(?:\/|$)|cutdone(?:\/|$))/.test(x.path)));
-const selectedTextFits = p => p.$eval('[data-k="cut-p0"]', e => {
+const selectedTextFits = p => p.$eval('[data-k="cut-p0"] + .ux-picker-trigger', e => {
   const style = getComputedStyle(e), canvas = document.createElement('canvas').getContext('2d');
   canvas.font = style.font;
   // Leave room for both paddings and the browser's native dropdown arrow.
-  return canvas.measureText(e.options[e.selectedIndex].textContent).width <= e.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) - 20;
+  return e.scrollWidth <= e.clientWidth && e.getBoundingClientRect().height >= 44;
 });
 async function admin(b, extra, options) {
   const p = await L.open(b, '#/admin', Object.assign({ admin: true, who: '', extra, clock: testClock, wait: 1500 }, options || {}));
@@ -28,7 +28,7 @@ async function admin(b, extra, options) {
   return p;
 }
 async function save(p, pre) {
-  await p.selectOption('[data-k="cut-p0"]', String(pre));
+  await L.pick(p, '[data-k="cut-p0"]', String(pre));
   await p.click('[data-p="cut-save"]');
   await L.waitFor(p, ({ key, value }) => window.__fake.dump()[key]?.cutoffs?.[0]?.pre === value && /Saved/.test(document.querySelector('.a-cut .saved')?.textContent || ''), { key: CFG, value: pre }, 10000);
 }
@@ -60,14 +60,14 @@ async function save(p, pre) {
   ok(choices[0].label === 'The same day' && choices[1].label === 'The day before' && choices[7].label === '1 week before' && choices[14].label === '2 weeks before', 'existing labels remain familiar and 7/14 days use week labels');
   ok((await domainWrites(p)).length === 0, 'opening and inspecting cutoff settings writes no supplier or configuration data');
   const readsBefore = await p.evaluate(() => window.__fake.reads.length);
-  await p.selectOption('[data-k="cut-p0"]', '8');
+  await L.pick(p, '[data-k="cut-p0"]', '8');
   ok(/^Order by 15:00 Sat for 8 days later\./.test(await txt(p, '.cut-say')), 'Sunday delivery with 8-day lead shows Saturday cutoff, never an empty weekday');
-  await p.selectOption('[data-k="cut-p0"]', '14');
+  await L.pick(p, '[data-k="cut-p0"]', '14');
   ok(/^Order by 15:00 Sun for 2 weeks later\./.test(await txt(p, '.cut-say')), 'two-week setting shows Sunday cutoff and the correct lead time');
-  ok(await selectedTextFits(p), 'phone dropdown leaves room for the complete 2 weeks before label and native arrow');
-  await p.selectOption('[data-k="cut-p0"]', '13');
-  ok(await selectedTextFits(p), 'phone dropdown leaves room for the complete 13 days before label and native arrow');
-  await p.selectOption('[data-k="cut-p0"]', '14');
+  ok(await selectedTextFits(p), 'phone dropdown leaves room for the complete 2 weeks before label and picker chevron');
+  await L.pick(p, '[data-k="cut-p0"]', '13');
+  ok(await selectedTextFits(p), 'phone dropdown leaves room for the complete 13 days before label and picker chevron');
+  await L.pick(p, '[data-k="cut-p0"]', '14');
   ok(await p.evaluate(n => window.__fake.reads.length === n, readsBefore), 'changing lead time updates the explanation without another Firestore read');
   for (const width of [390, 768, 1280]) {
     await p.setViewportSize({ width, height: 844 }); await L.settle(p, 200);

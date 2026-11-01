@@ -41,21 +41,21 @@ async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, nul
   p = await L.open(b, '#/guides', { who: 'ann', extra, wait: 1500 });
   ok(await p.locator('.g-card').count() === 4, 'guides: two uploaded guides plus food safety and smoke service, the removed one left out');
   ok(await p.locator('[data-p="g-cat"]').count() === 5, 'guides: category chips All, Equipment, Cleaning, Food safety and Prep and cooking');
-  await p.click('[data-p="g-cat"][data-v="cleaning"]');
+  await L.choose(p, '[data-p="g-cat"][data-v="cleaning"]');
   ok(await p.locator('.g-card').count() === 1 && /Fryer/.test(await p.locator('.g-card').innerText()), 'guides: the Cleaning chip shows only the fryer guide');
-  await p.click('[data-p="g-cat"][data-v="all"]');
+  await L.choose(p, '[data-p="g-cat"][data-v="all"]');
   // the same box as the recipe search (23 Oct 2026): no autocorrect, a Search key that drops the keyboard, a 44 px Clear
   ok(await p.getAttribute('#g-q', 'autocorrect') === 'off' && await p.getAttribute('#g-q', 'spellcheck') === 'false' && await p.getAttribute('#g-q', 'autocapitalize') === 'off', 'guides search: no autocorrect, spell check or capitals');
-  ok(!(await p.locator('.g-qx').isVisible()), 'guides search: no Clear button while the box is empty');
+  ok(!(await p.locator('#g-q + .ux-search-clear').isVisible()), 'guides search: no Clear button while the box is empty');
   await p.fill('#g-q', 'pork belly');
   ok(await p.locator('.g-card').count() === 1 && /PORK BELLY/i.test(await p.locator('.g-snip').innerText()), 'guides: search finds words inside the PDF and shows them');
   ok(await S(p, () => document.activeElement && document.activeElement.id === 'g-q'), 'guides: the search box keeps the cursor while typing');
-  const gx = await p.locator('.g-qx').boundingBox();
-  ok(await p.locator('.g-qx').isVisible() && gx && gx.width >= 44 && gx.height >= 44, 'guides search: a 44 px Clear button shows while something is typed');
+  const gx = await p.locator('#g-q + .ux-search-clear').boundingBox();
+  ok(await p.locator('#g-q + .ux-search-clear').isVisible() && gx && gx.width >= 44 && gx.height >= 44, 'guides search: a 44 px Clear button shows while something is typed');
   await p.press('#g-q', 'Enter'); await L.settle(p, 150);
   ok(await S(p, () => document.activeElement.id) !== 'g-q' && await p.locator('.g-card').count() === 1, 'guides search: Enter drops the keyboard and keeps the results');
-  await p.click('.g-qx'); await L.settle(p, 200);
-  ok(await p.inputValue('#g-q') === '' && await S(p, () => document.activeElement.id) === 'g-q' && await p.locator('.g-card').count() === 4 && !(await p.locator('.g-qx').isVisible()), 'guides search: Clear empties the box, keeps the cursor there and shows every guide');
+  await p.click('#g-q + .ux-search-clear'); await L.settle(p, 200);
+  ok(await p.inputValue('#g-q') === '' && await S(p, () => document.activeElement.id) === 'g-q' && await p.locator('.g-card').count() === 4 && !(await p.locator('#g-q + .ux-search-clear').isVisible()), 'guides search: Clear empties the box, keeps the cursor there and shows every guide');
   await p.fill('#g-q', 'slicer');
   ok(await p.locator('.g-card').count() === 0 && await p.locator('.p-empty [data-p="g-clear"]').count() === 1, 'guides: a removed guide is not found, and Clear the search is offered');
   await p.click('.p-empty [data-p="g-clear"]');
@@ -123,7 +123,7 @@ async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, nul
   await p.fill('#g-title', 'Dishwasher start up');
   await p.click('[data-p="g-save"]'); await L.settle(p, 100);
   ok(/category/.test(await p.locator('.g-edit .p-err').innerText()), 'admin: saving with no category asks for one');
-  await p.click('[data-p="g-fcat"][data-v="cleaning"]');
+  await L.choose(p, '[data-p="g-fcat"][data-v="cleaning"]');
   await p.fill('#g-steps', 'Fill the tank.\nWait for the green light.');
   await p.click('[data-p="g-save"]');
   await saved(p);
@@ -142,7 +142,7 @@ async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, nul
   await p.click('[data-p="g-pup"][data-i="1"]');
   ok(await S(p, () => window.LK_PREP.state.gf.pages[0].k > window.LK_PREP.state.gf.pages[1].k), 'admin PDF: Earlier moves page 2 to the front');
   await p.click('[data-p="g-pup"][data-i="1"]');
-  await p.click('[data-p="g-fcat"][data-v="safety"]');
+  await L.choose(p, '[data-p="g-fcat"][data-v="safety"]');
   await p.click('[data-p="g-save"]');
   await saved(p);
   s = await store(p);
@@ -180,7 +180,7 @@ async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, nul
   await p.click('[data-p="g-cancel"]'); await L.settle(p, 100);
   ok(await S(p, () => !!window.LK_PREP.state.gf) && /Tap again/.test(await p.locator('[data-p="g-cancel"]').innerText()), 'admin: Close with writing in it asks again');
   ok(await S(p, () => window.LK_PREP.unsaved()), 'admin: a guide being written blocks the self-update');
-  await p.click('[data-p="g-fcat"][data-v="other"]');
+  await L.choose(p, '[data-p="g-fcat"][data-v="other"]');
   await p.fill('#g-steps', 'One step.');
   await S(p, () => { window.__fake.mode = 'deny'; });
   await p.click('[data-p="g-save"]'); await L.settle(p, 400);
@@ -252,7 +252,7 @@ async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, nul
   ok(await p.locator('.g-row').count() === 6, 'who sees it: the admin Guides tab lists all four uploaded and two bundled guides');
   await p.click('[data-p="g-edit"][data-id="fryer"]'); await L.settle(p, 200);
   ok(await p.locator('[data-p="g-fwho"][data-v="all"][aria-pressed="true"]').count() === 1, 'who sees it: an older guide opens as Everyone');
-  await p.click('[data-p="g-fwho"][data-v="chefs"]');
+  await L.choose(p, '[data-p="g-fwho"][data-v="chefs"]');
   await p.click('[data-p="g-save"]');
   await saved(p);
   s = await store(p);

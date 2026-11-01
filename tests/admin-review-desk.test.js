@@ -128,7 +128,7 @@ const initialListGuard = async () => {
     const nextAlias = await p.inputValue('#ai-alias');
     ok(nextAlias !== 'Chicken Burger' && await p.evaluate(() => Object.values(window.__fake.dump()).some(v => v && v.alias === 'Chicken Burger' && v.recipeId === 'burger')), width + ': acknowledged Save and next confirms only that reference and opens another queued item');
     await openOptions(p); await p.fill('#ai-label', 'Keep the failed next link');
-    if (await p.inputValue('#ai-linkType') === 'recipe') await p.selectOption('#ai-recipeId', 'burger');
+    if (await p.inputValue('#ai-linkType') === 'recipe') await L.pick(p, '#ai-recipeId', 'burger');
     await p.evaluate(() => { window.__fake.deny = /\/references\//; });
     await p.click('[data-ai="save-next"]');
     await L.waitFor(p, () => /Could not save/.test((document.querySelector('.ai-message') || {}).textContent || ''));
@@ -144,7 +144,7 @@ const initialListGuard = async () => {
     const optional = p.locator('[data-ai-disclosure="reference-options"]');
     if (await optional.evaluate(el => el.open)) await optional.locator('summary').click();
     const manualAlias = 'Manual recipe link ' + width;
-    await p.fill('#ai-alias', manualAlias); await p.selectOption('#ai-recipeId', 'burger');
+    await p.fill('#ai-alias', manualAlias); await L.pick(p, '#ai-recipeId', 'burger');
     const manualReady = await p.locator('[data-ai="save"]').isEnabled();
     ok(manualReady && !(await optional.evaluate(el => el.open)), width + ': a manually added link can be saved using its visible name and recipe fields');
     if (manualReady) {

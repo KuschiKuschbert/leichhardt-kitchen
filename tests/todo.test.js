@@ -46,7 +46,7 @@ const T = (id, x) => ({ [fsKey(['todos', id])]: Object.assign({ text: 'Job ' + i
   await p.evaluate(k => window.__fake.write(k, { text: 'Slice onions', station: 'Larder', qty: '', recipe: '', addedBy: 'Ann', addedById: 'ann', addedAt: Date.now(), done: false, deleted: false }), fsKey(['days', L.ymd(new Date(L.NOW)), 'items', 'zz9']));
   await L.settle(p, 400);
   ok(await p.$eval('[data-k="todo-text"]', e => e.value) === 'Half typed', 'redraw: the half-typed job stays');
-  await p.fill('[data-k="todo-text"]', ''); await L.settle(p, 100);
+  await L.clear(p, '[data-k="todo-text"]'); await L.settle(p, 100);
 
   // tick, untick: the tick names who did it
   await tap(p, '[data-p="todo-tick"][data-id="t2"]'); await L.settle(p, 600);

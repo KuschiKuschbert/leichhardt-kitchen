@@ -25,7 +25,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   await p.keyboard.type('pap');
   await L.settle(p, 200);
   ok(/Paper towels/.test(await txt(p, '#o-sugg')) && /6 rolls/.test(await txt(p, '#o-sugg')), 'typing: a learned item is suggested with its usual amount');
-  await p.fill('#o-text', '');
+  await L.clear(p, '#o-text');
   await p.click('#o-text');
   await p.keyboard.type('Paper towels');
   await L.settle(p, 200);
@@ -41,7 +41,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   // an amount a person typed is never changed by the fill
   await p.fill('#o-qty', '3 rolls'); await p.click('#o-text'); await p.keyboard.press('End'); await p.keyboard.type(' '); await p.keyboard.press('Backspace'); await L.settle(p, 150);
   ok(await p.inputValue('#o-qty') === '3 rolls', 'a typed amount stays as typed');
-  await p.fill('#o-text', ''); await p.fill('#o-qty', '');
+  await L.clear(p, '#o-text'); await L.clear(p, '#o-qty');
   await p.fill('#o-text', 'Star anise');
   await p.fill('#o-qty', '100 g');
   await p.press('#o-text', 'Enter');

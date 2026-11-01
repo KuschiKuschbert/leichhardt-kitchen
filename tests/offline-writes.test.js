@@ -244,7 +244,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     await p.fill('#tr-person', 'Tom');
     await p.fill('#tr-text', 'Butter');
     await p.fill('#tr-amt', '2');
-    await p.click('[data-p="tr-unit"][data-v="kg"]');
+    await L.choose(p, '[data-p="tr-unit"][data-v="kg"]');
     await p.click('.tr-add .nb-addbtn');
     await L.waitFor(p, () => !!document.querySelector('.nb-unsent'), null, 3000).catch(() => {});
     ok(await unsent(p, 'Butter') === 'shown', 'transfers at 390: the waiting line shows Not sent (' + await unsent(p, 'Butter') + ')');
@@ -304,7 +304,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     },
     '#/transfers': async p => {
       await p.fill('#tr-venue', 'Riviera'); await p.fill('#tr-person', 'Tom'); await p.fill('#tr-text', 'Limes'); await p.fill('#tr-amt', '3');
-      await p.click('[data-p="tr-unit"][data-v="kg"]'); await p.click('.tr-add .nb-addbtn'); return 'Limes';
+      await L.choose(p, '[data-p="tr-unit"][data-v="kg"]'); await L.choose(p, '.tr-add .nb-addbtn'); return 'Limes';
     }
   };
   for (const hash of Object.keys(addLine)) {
@@ -622,7 +622,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     await p.fill('#p-text', 'Peel garlic');
     await L.settle(p, 6000);
     ok(!(await reloaded(p)) && await p.evaluate(() => (document.querySelector('#p-text') || {}).value === 'Peel garlic'), 'automatic update, typing while the files came in: no reload, the words still there');
-    await p.fill('#p-text', '');
+    await L.clear(p, '#p-text');
     await p.evaluate(() => { window.LK_PREP.state.text = ''; if (document.activeElement) document.activeElement.blur(); });
     await p.clock.fastForward('02:30');
     await waitReload(p);
@@ -656,7 +656,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     ok(!(await reloaded(p)), '04:00, half a line typed while the files came in: no reload');
     ok(await p.evaluate(() => (document.querySelector('#p-text') || {}).value === 'Dice carrots'), '04:00: the half line is still there');
     // the line added or cleared once the files are in: it still waits its 10 minutes, it does not reload 8 seconds in
-    await p.fill('#p-text', '');
+    await L.clear(p, '#p-text');
     await p.evaluate(() => { window.LK_PREP.state.text = ''; window.LK_PREP.state.qty = ''; });
     await L.settle(p, 6000);
     ok(!(await reloaded(p)), '04:00, the box cleared after the files came in: no reload 8 seconds in, it waits 10 minutes');
@@ -1073,7 +1073,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
       ok(u && u.t === 'New version available.' && u.btn === 'Update now', how + ' while it checked: it waits quietly, with no Tap again to update (' + JSON.stringify(u) + ')');
       // the box left (half a line cleared), the book still in use: it goes at a later look
       await p.evaluate(() => { if (document.activeElement) document.activeElement.blur(); });
-      if (how === 'half a line') { await p.fill('#p-text', ''); await p.evaluate(() => { window.LK_PREP.state.text = ''; if (document.activeElement) document.activeElement.blur(); }); }
+      if (how === 'half a line') { await L.clear(p, '#p-text'); await p.evaluate(() => { window.LK_PREP.state.text = ''; if (document.activeElement) document.activeElement.blur(); }); }
       await swipe(p);
       await p.clock.fastForward(20000);
       await waitReload(p);
