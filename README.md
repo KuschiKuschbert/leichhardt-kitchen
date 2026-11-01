@@ -844,3 +844,5 @@ The admin panel now groups Overview, Analysis, Learning, Training, Operations an
 ### Clearer training opportunities and item references
 
 Training now explains how to review a person, practise together and record an assessment. Opportunities are visible before choosing a person, and a confirmed recipe does not mark the whole section confirmed. Item references shows recorded items to review alongside confirmed links, with search, source-period information and explicit confirmation. Confirming one item leaves the other recorded items available. Refresh also ignores older pending reads. This is an admin display update with the existing data and permissions. See [Admin analysis](docs/admin-intelligence.md).
+
+The next flow improvement is at the design-comparison stage. [Three interactive concepts](docs/admin-flow-concepts.html), a [phone comparison](docs/admin-flow-comparison.png) and the [flow contract](docs/admin-flow-spec.md) compare a review desk, people/item workspaces and guided tasks. They use example data only. No new direction is selected or deployed.
