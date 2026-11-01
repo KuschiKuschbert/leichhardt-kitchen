@@ -2719,14 +2719,18 @@ input:is([type="date"], [type="time"]):disabled, input:is([type="date"], [type="
 }
 @media (max-width: 719px) {
   .p-admin.ad-admin > .p-bar { margin-bottom: .25rem; font-size: .75rem; }
-  .p-admin.ad-admin .ad-heading { padding-top: .2rem; padding-bottom: 1.15rem; }
+  .p-admin.ad-admin .ad-heading { margin-bottom: .85rem; padding-top: .2rem; padding-bottom: .9rem; }
   .p-admin.ad-admin .ad-title { font-size: 3rem; }
-  .p-admin.ad-admin .ad-intro { font-size: .9375rem; }
+  .p-admin.ad-admin .ad-intro { display: none; }
   .p-admin.ad-admin .ad-eyebrow { font-size: .75rem; letter-spacing: .1em; }
   .p-admin.ad-admin .a-tabs { gap: .4rem; margin-bottom: 1.1rem; }
   .p-admin.ad-admin .a-tab { padding: .55rem .85rem; }
   .p-admin.ad-admin .a-pane .set-block { padding-block: 1.2rem 1.4rem; }
   .p-admin.ad-admin .ai-desk { gap: 0; margin-top: 1rem; }
+  .p-admin.ad-admin .ai-desk:not(.has-detail) { margin-top: .6rem; }
+  .p-admin.ad-admin .ai-queue-head { margin-bottom: .65rem; }
+  .p-admin.ad-admin .ai-queue-kicker,
+  .p-admin.ad-admin .ai-queue-intro { display: none; }
   .p-admin.ad-admin .ai-desk.has-detail > .ai-detail { max-width: none; padding: 1rem 0 0; border: 0; border-top: 3px solid var(--accent); background: transparent; }
   .p-admin.ad-admin .ai-task-heading { font-size: 2.65rem; }
   .p-admin.ad-admin .ai-queue-title { font-size: 1.6rem; }

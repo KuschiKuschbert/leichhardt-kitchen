@@ -41,13 +41,13 @@ Completed checks: all three layouts fit 390, 768 and 1440 px without horizontal 
 
 ## Selected implementation
 
-The production frame uses one chapter rail on desktop and a section picker on smaller screens. Page choices sit with the chapter title rather than inside a second sidebar level. Ruled queues use Barlow Condensed task headings and an adjacent warm-paper context or editor. Focused phone tasks hide the chapter picker, chapter heading and page choices. Save actions stay above the existing kitchen navigation; required inputs can scroll clear. Reports, saved records, Operations and Settings use the same typography, spacing and rules.
+The production frame uses one chapter rail on desktop and a section picker on smaller screens. Page choices sit with the chapter title rather than inside a second sidebar level. Ruled queues use Barlow Condensed task headings and an adjacent warm-paper context or editor. The initial phone queue trims decorative introductions so its first review target stays on screen at 390 by 844 px. Focused phone tasks hide the chapter picker, chapter heading and page choices. Save actions stay above the existing kitchen navigation; required inputs can scroll clear. Reports, saved records, Operations and Settings use the same typography, spacing and rules.
 
 Existing page ids, heading jumps, permissions, private drafts, Back/Resume, acknowledged saves, explicit assessment scope and record histories remain in use. No prototype examples or simulated writes enter the application. Styles stay in the existing atomic application shell; this adds no lazy asset or data reads. The pre-change revision is tagged locally as `admin-visual-baseline-2026-11-01`.
 
 ## Production verification
 
-The dedicated Chef's Desk test passes 97 checks at 390, 768 and 1280 px, including largest-text phone inputs, header Back, action clearance, private draft resumption and acknowledged reference/training saves. Existing admin, roles, read-budget and local-navigation checks were run; the three files affected by the selected layout were updated and rechecked successfully. PR #429 records the full browser suite, required CI and live release checks.
+The dedicated Chef's Desk test passes 98 checks at 390, 768 and 1280 px, including largest-text phone inputs, header Back, action clearance, private draft resumption and acknowledged reference/training saves. Existing admin, roles, read-budget and local-navigation checks were run; the affected navigation expectations were updated and rechecked successfully. The final focused run passes all 15 test files. PR #429 records the full browser suite, required CI and live release checks.
 
 Production-layout captures use only synthetic test data and the application's actual fonts. They fit 390, 768 and 1440 px without horizontal overflow or browser errors.
 

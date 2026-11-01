@@ -150,6 +150,18 @@ const privateWrites = p => p.evaluate(() => window.__fake.writes.flat().filter(x
     ok(p.errors.length === 0, width + ': no browser errors ' + p.errors.join(' | '));
     await p.context().close();
   }
+  const queuePage = await L.open(b, '#/admin', { admin: true, adminPage: 'references', who: '', width: 390, height: 844, extra, wait: 1600 });
+  await L.waitFor(queuePage, () => !!document.querySelector('.ai-reference-candidates [data-ai="review-reference"]'));
+  const firstTarget = await queuePage.evaluate(() => {
+    const row = document.querySelector('.ai-reference-candidates [data-ai="review-reference"]'), r = row.getBoundingClientRect();
+    const top = Math.max(0, document.querySelector('.wtop').getBoundingClientRect().bottom), limit = document.querySelector('.tabbar').getBoundingClientRect().top;
+    const centre = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    const shown = Math.min(r.bottom, limit) - Math.max(r.top, top);
+    return { usable: scrollY < 1 && r.width >= 44 && r.height >= 44 && shown >= 44 && centre.y >= top && centre.y < limit && row.contains(document.elementFromPoint(centre.x, centre.y)),
+      top: r.top, bottom: r.bottom, limit, shown };
+  });
+  ok(firstTarget.usable, '390 normal text: the first review row offers a visible 44 px target above the kitchen navigation without scrolling' + (firstTarget.usable ? '' : ' ' + JSON.stringify(firstTarget)));
+  await queuePage.context().close();
   const p = await L.open(b, '#/admin', { admin: true, adminPage: 'training', who: '', width: 390, height: 844, settings: { text: 'xlarge' }, extra, wait: 1600 });
   ok(await p.evaluate(() => document.documentElement.getAttribute('data-text') === 'xlarge'), '390 extra large: the app uses its largest reading setting');
   await L.adminTab(p, 'training');

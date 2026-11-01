@@ -221,7 +221,7 @@
   function references() {
     // On opening this queue, reuse the same once-per-session reference, supplier and 90-day summary reads.
     var refs = data('references', true), s = data('analysis/range-90'); data('suppliers', true);
-    var intro = '<p class="hint">Choose a recorded name, check its recipe or supplier item, then confirm the link.</p>';
+    var intro = '<p class="hint ai-queue-intro">Choose a recorded name, check its recipe or supplier item, then confirm the link.</p>';
     // One health document on first queue open, reused until Refresh. No polling or staff reads.
     var health = data('analysis/health'), healthNotice = '';
     if (health && health.status === 'failed') healthNotice = '<p class="p-err" role="status">The latest analysis run failed. The queue uses the last successful results.</p>';
@@ -261,7 +261,7 @@
 
   function training() {
     var records = data('training', true), s = summary(), people = api.people();
-    var queue = queueHeading('Ready for an assessment', '', 'Training') + '<p class="hint">Review a section with the person, then record what was assessed.</p>' + filters() + '<p class="hint">Prep ticks show recorded work. They do not confirm skill or training.</p>' +
+    var queue = queueHeading('Ready for an assessment', '', 'Training') + '<p class="hint ai-queue-intro">Review a section with the person, then record what was assessed.</p>' + filters() + '<p class="hint">Prep ticks show recorded work. They do not confirm skill or training.</p>' +
       '<label class="label" for="ai-person-filter">Person</label><select class="search" id="ai-person-filter" data-k="ai-person-filter" data-ai-person>' + options(people, state.person, 'Everyone') + '</select>';
     if (s) queue += '<p class="hint">Activity: ' + esc(s.from) + ' to ' + esc(s.to) + '. Today is excluded.</p>';
     else queue += s === undefined ? waiting('analysis/range-' + state.range) : '<p class="hint">No activity summary is available. Saved assessments remain available.</p>';
