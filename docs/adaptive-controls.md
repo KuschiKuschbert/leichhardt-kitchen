@@ -216,7 +216,7 @@ A checked entry marks an audited rendering site. Route navigation, canvas object
 - Picker test drivers wait for asynchronous overlay history and scroll restoration before measuring the underlying form. Largest-text phone fields remain clear of fixed save actions.
 - CI follow-up (2 November 2026): late recipe/menu updates now refresh picker counts together with shelves. Contextual Back checks the committed query, and the drawing test centres and verifies its real rotation handle before dragging. The four affected test files pass together locally.
 - All application JavaScript, library JavaScript and the service worker pass `node --check`. `git diff --check` passes. Read-budget checks pass.
-- Phone and desktop previews use synthetic staff and the real application styles. GitHub CI status is recorded on PR #433; this branch has not been merged or deployed.
+- Phone and desktop previews use synthetic staff and the real application styles. GitHub CI and deployment status are recorded on PR #433.
 
 ## Integration details
 
