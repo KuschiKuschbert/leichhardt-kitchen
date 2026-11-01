@@ -110,6 +110,7 @@ async function handover(p, label, expectedAttempts = 1) {
         await ready(p, admin); await begin(p, { admin, refusal: true }); await revoke(p, admin);
         await p.evaluate(() => window.__releaseRevokedRefusal());
         await L.waitFor(p, () => !LK_PREP.unsent() && window.__revokedError === 'permission-denied', null, 8000);
+        await L.waitFor(p, () => /save was refused because (your )?access changed/i.test((document.querySelector('#prep-root') || {}).textContent || ''), null, 8000);
         const s = await snapshot(p);
         ok(!s.done && !s.saved && s.attempts === 1, label + ': known rejection ends pending without writing or replaying its payload');
         ok(s.text === draft && s.dirty && s.lock?.identity === await p.evaluate(() => window.__revokedOriginalIdentity) && s.blocked === id, label + ': the original recorder keeps their unsaved draft behind the lock');
@@ -151,6 +152,7 @@ async function handover(p, label, expectedAttempts = 1) {
           error => { window.__revokedError = error.code || 'failed'; });
       });
       await L.waitFor(late, () => !LK_PREP.unsent() && window.__revokedError === 'permission-denied', null, 8000);
+      await L.waitFor(late, () => /save was refused because (your )?access changed/i.test((document.querySelector('#prep-root') || {}).textContent || ''), null, 8000);
       const s = await snapshot(late);
       ok(!s.done && !s.saved && s.attempts === 0, label + ': lost authority ends the save before any SDK write or replay');
       ok(s.text === draft && s.dirty && s.lock?.identity === await late.evaluate(() => window.__revokedOriginalIdentity) && s.blocked === 'head', label + ': the original recorder retains the draft behind the lock');
