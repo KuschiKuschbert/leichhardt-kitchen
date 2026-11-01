@@ -62,7 +62,11 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
   // each step on its own: one that fails (say the page reloaded) is a FAIL, and the next steps still run
   async function step(n, fn) {
     try { await fn(); } catch (e) { ok(false, 'step ' + n + ' stopped: ' + String(e && e.message || e).split('\n')[0]); }
-    if (p) await p.context().close().catch(() => {});
+    if (p) {
+      // Assertions are finished. Detach delayed test routes before closing their context.
+      await p.context().unrouteAll({ behavior: 'ignoreErrors' });
+      await p.context().close().catch(() => {});
+    }
     p = null;
   }
 
