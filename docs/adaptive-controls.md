@@ -1,12 +1,12 @@
 # Adaptive controls rollout
 
-Status: inventory complete; shared controls in progress. Baseline: `1427fcc` (GitHub main verified 1 November 2026).
+Status: implementation complete; full regression verification in progress. Baseline: `1427fcc`; integrated current main `069e548` on 1 November 2026.
 
 The app stays dependency-free. Existing hidden form controls remain the value and validation source. Shared DOM components enhance new and redrawn controls. Existing save handlers, permissions and reads remain authoritative.
 
 ## Phase 1 inventory
 
-Each entry is a rendering site; helpers can render many controls. Static design comparisons under docs are examples, not application routes.
+A checked entry marks an audited rendering site. Route navigation, canvas object selection and command toggles (tick, urgent, expand and remove) retain their direct actions. Independent permission checkboxes retain their binary form semantics. Free-entry autocomplete fields keep an editable text field and open their suggestions in the shared picker. Each entry is a rendering site; helpers can render many controls. Static design comparisons under docs are examples, not application routes.
 
 ### Native selectors and autocomplete
 
@@ -209,4 +209,33 @@ Each entry is a rendering site; helpers can render many controls. Static design 
 
 ## Verification
 
-Pending implementation and browser checks.
+Dedicated browser checks cover deferred replacement, blur restoration, explicit reset, both responsive layouts, keyboard selection, virtualised options, multi-select drafts, focus trapping, phone Back, drag dismissal, native validation, column filters, complete-list sorting before pagination, numeric comparison and dates across a year boundary. The full browser suite is running on the integrated main branch. Phone and desktop previews were captured with synthetic staff data.
+
+## Integration details
+
+- All native selectors use hidden native fields for values and validation, with labelled adaptive triggers. New or redrawn controls are enhanced automatically.
+- Recipe addition, function platter selection and daily kitchen-section selection open the shared picker directly. Allergen tags and minutes attendance expose explicit states instead of cycling invisibly.
+- Standalone searches, picker searches, review queues and table searches share the committed-query lifecycle. The former supplier reminder searches now live inside their complete, untruncated pickers.
+- `lvHTML` filters and sorts the entire dataset before pagination. It includes relevant categorical column filters, typed comparisons, header sort controls, active badges and reset. Card lists retain their predefined sort choices or use default/A to Z/Z to A.
+- Static admin report tables use the same search and comparison functions. Calendar and hour-grid headers remain fixed coordinates; those matrices have row search while record tables have three-state column sorting.
+- The supplier catalogue's tabular management view also sorts its complete filtered dataset before pagination, with reset badges.
+- The newly integrated autocorrect admin lists use the same list helper. Their tab buttons remain page navigation.
+- Native dialog top-layer placement handles nested screens. Escape, backdrop, swipe, phone Back and route changes dismiss a picker. Existing overlay history and automatic-sheet sequencing remain authoritative.
+- The new startup script is in `index.html`, service-worker `SHELL` and both workerless freshness lists. There are no dependencies, backend changes, new reads or new persistent data.
+
+## Added inventory from main integration
+
+- [x] `js/proofreader-admin.js`: correction queue, shared-word table and correction-history table, all rendered through `lvHTML`.
+- [x] `js/fnedit.js`: text-based platter autocomplete replaced by the full catalogue picker.
+- [x] `js/prep.js`: recipe autocomplete and daily section sheet replaced by direct shared pickers; minutes attendance now exposes Present, Apology and Absent.
+- [x] `js/manage.js`: ingredient and pin allergen tags now expose Not in it, Has it and May have it.
+- [x] `js/smart.js`: drawing style choices use the shared picker adapter.
+- [x] `js/suppliers.js`: catalogue management's Item/source, Current par and PDF par columns sort before its 20-row page limit.
+
+## Review previews
+
+These captures use synthetic staff and the real application styles.
+
+| Phone bottom sheet | Desktop modal |
+| --- | --- |
+| ![Phone picker](images/adaptive-picker-390.png) | ![Desktop picker](images/adaptive-picker-1280.png) |

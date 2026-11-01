@@ -253,7 +253,23 @@
     return '<section class="su-disclosure"><button type="button" class="su-disclosure-button" data-su="smart" aria-expanded="' + M.smart + '">Suggestions <span class="hint">' + (M.smart ? 'Hide' : 'Show') + '</span></button>' + (M.smart ? '<div class="su-disclosure-body">' + body + '</div>' : '') + '</section>';
   }
   function filterItems(manage) {
-    var words = M.q.toLowerCase().trim().split(/\s+/); return items(manage && M.includeArchived).filter(function (i) { return (!M.group || i.group === M.group) && words.every(function (w) { return (i.name + ' ' + i.pack + ' ' + (i.aliases || []).join(' ')).toLowerCase().indexOf(w) >= 0; }); });
+    var words = M.q.toLowerCase().trim().split(/\s+/), list = items(manage && M.includeArchived).filter(function (i) { return (!M.group || i.group === M.group) && words.every(function (w) { return (i.name + ' ' + i.pack + ' ' + (i.aliases || []).join(' ')).toLowerCase().indexOf(w) >= 0; }); });
+    if (manage && M.tableSort && M.tableSort.direction) list = list.slice().sort(function (a, b) {
+      function value(item) { return M.tableSort.column === 'name' ? item.name : window.LK_UX.cellValue(esc(M.tableSort.column === 'par' ? currentPar(item) : item.source && item.source.par || '')); }
+      return window.LK_UX.compare(value(a), value(b)) * M.tableSort.direction;
+    });
+    return list;
+  }
+  function catalogueHeading(column, label) { return '<button type="button" class="ux-sort" data-su="sort" data-column="' + column + '">' + label + (M.tableSort && M.tableSort.column === column && M.tableSort.direction ? M.tableSort.direction === 1 ? ' ↑' : ' ↓' : ' ↕') + '</button>'; }
+  function filterBadges() {
+    var out = [];
+    function badge(text, field) { return '<button type="button" class="chip" data-su="reset-filter" data-field="' + field + '">' + esc(text) + ' ×</button>'; }
+    if (M.q) out.push(badge('Search: ' + M.q, 'q'));
+    if (M.group) out.push(badge('Group: ' + M.group, 'group'));
+    if (M.includeArchived && M.mode === 'manage') out.push(badge('Include archived', 'includeArchived'));
+    if (M.tableSort && M.tableSort.direction && M.mode === 'manage') out.push(badge('Sort: ' + M.tableSort.column, 'sort'));
+    if (out.length) out.push(badge('Reset All Filters', 'all'));
+    return '<div class="ux-active-filters">' + out.join('') + '</div>';
   }
   function pager(list) {
     var pages = Math.ceil(list.length / 20); if (pages <= 1) return '';
@@ -303,7 +319,7 @@
     if (task === 'supplier') return supplierEditorHTML();
     if (task === 'import') return importHTML();
     var list = filterItems(true); M.page = Math.max(0, Math.min(M.page, Math.ceil(list.length / 20) - 1));
-    return '<p class="hint su-breadcrumb">Content / Suppliers &amp; pars</p><div class="su-manage-links"><div class="btn-row">' + button('import', 'Import catalogue') + smallButton('supplier-settings', 'Supplier settings') + '</div><button type="button" class="p-x" data-su="cutoff-settings">Order cut-offs in Admin settings</button></div>' + toolbarHTML() + '<div class="su-catalogue-options"><span class="hint">' + esc(supplier().name) + ' · revision ' + supplier().v + '</span><label><input type="checkbox" data-sf="includeArchived"' + (M.includeArchived ? ' checked' : '') + '> Include archived</label></div>' + (M.archive ? archiveHTML() : '') + '<div class="su-catalogue-head"><span>Item / source</span><span>Current par</span><span>PDF par</span><span></span></div>' + list.slice(M.page * 20, M.page * 20 + 20).map(function (i) { return '<div class="su-catalogue-row' + (i.archived ? ' is-archived' : '') + '"><div><b>' + esc(i.name) + '</b><span class="hint">Pack: ' + esc(i.pack || 'Not set') + ' · ' + (i.manual ? 'Manual item' : esc(i.source.file) + ' · page ' + esc(i.source.page)) + (i.archived ? ' · Archived' : '') + '</span></div><div><span class="su-mobile-label">Current par</span><b>' + esc(currentPar(i)) + '</b></div><div><span class="su-mobile-label">PDF par</span>' + esc(i.manual ? 'Manual' : i.source.par === '' ? 'Not set' : i.source.par) + '</div><div class="btn-row">' + button('edit', i.manual ? 'Edit item' : 'Edit par', ' data-i="' + esc(i.id) + '"') + (i.archived ? smallButton('restore', 'Restore', ' data-i="' + esc(i.id) + '"') : '') + '</div></div>'; }).join('') + (!list.length ? '<p class="empty">No items match.</p>' : '') + pager(list) + auditHTML();
+    return '<p class="hint su-breadcrumb">Content / Suppliers &amp; pars</p><div class="su-manage-links"><div class="btn-row">' + button('import', 'Import catalogue') + smallButton('supplier-settings', 'Supplier settings') + '</div><button type="button" class="p-x" data-su="cutoff-settings">Order cut-offs in Admin settings</button></div>' + toolbarHTML() + '<div class="su-catalogue-options"><span class="hint">' + esc(supplier().name) + ' · revision ' + supplier().v + '</span><label><input type="checkbox" data-sf="includeArchived"' + (M.includeArchived ? ' checked' : '') + '> Include archived</label></div>' + (M.archive ? archiveHTML() : '') + '<div class="su-catalogue-head">' + catalogueHeading('name', 'Item / source') + catalogueHeading('par', 'Current par') + catalogueHeading('source', 'PDF par') + '<span></span></div>' + list.slice(M.page * 20, M.page * 20 + 20).map(function (i) { return '<div class="su-catalogue-row' + (i.archived ? ' is-archived' : '') + '"><div><b>' + esc(i.name) + '</b><span class="hint">Pack: ' + esc(i.pack || 'Not set') + ' · ' + (i.manual ? 'Manual item' : esc(i.source.file) + ' · page ' + esc(i.source.page)) + (i.archived ? ' · Archived' : '') + '</span></div><div><span class="su-mobile-label">Current par</span><b>' + esc(currentPar(i)) + '</b></div><div><span class="su-mobile-label">PDF par</span>' + esc(i.manual ? 'Manual' : i.source.par === '' ? 'Not set' : i.source.par) + '</div><div class="btn-row">' + button('edit', i.manual ? 'Edit item' : 'Edit par', ' data-i="' + esc(i.id) + '"') + (i.archived ? smallButton('restore', 'Restore', ' data-i="' + esc(i.id) + '"') : '') + '</div></div>'; }).join('') + (!list.length ? '<p class="empty">No items match.</p>' : '') + pager(list) + auditHTML();
   }
   function supplierEditorHTML() {
     var e = M.supplierEd, cuts = B().cuts();
@@ -519,6 +535,15 @@
     if (cmd === 'collapse') { M.sidebar = !M.sidebar; try { localStorage.setItem('lk.sup.sidebar', M.sidebar ? 'show' : 'hide'); } catch (e) {} draw(); }
     if (cmd === 'pick') pick(el.getAttribute('data-sid'));
     if (cmd === 'group') { M.group = el.getAttribute('data-group'); M.page = 0; draw(); }
+    if (cmd === 'sort') { var column = el.dataset.column, previous = M.tableSort; M.tableSort = { column: column, direction: previous && previous.column === column ? previous.direction === 1 ? -1 : previous.direction === -1 ? 0 : 1 : 1 }; M.page = 0; draw(); }
+    if (cmd === 'reset-filter') {
+      var field = el.dataset.field;
+      if (field === 'all' || field === 'q') { M.q = ''; var search = M.root.querySelector('[data-sf="q"]'); if (search) window.LK_UX.resetSearch(search); }
+      if (field === 'all' || field === 'group') M.group = '';
+      if (field === 'all' || field === 'includeArchived') M.includeArchived = false;
+      if (field === 'all' || field === 'sort') M.tableSort = null;
+      M.page = 0; draw();
+    }
     if (cmd === 'previous') { M.page--; draw(); } if (cmd === 'next') { M.page++; draw(); }
     if (cmd === 'manage' && canEdit() && leaveForm('manage')) { M.mode = 'manage'; M.review = null; M.q = ''; M.group = ''; M.page = 0; draw(); }
     if (cmd === 'order-mode' && leaveForm('order-mode')) orderMode();

@@ -2819,3 +2819,10 @@ input:is([type="date"], [type="time"]):disabled, input:is([type="date"], [type="
 }
 @media (prefers-reduced-motion: reduce) { .ux-picker[open] { animation: none; } }
 @media print { .ux-picker, .ux-search-clear, .ux-active-filters { display: none !important; } }
+.ux-column-filters, .ux-table-tools { display: flex; flex-wrap: wrap; align-items: end; gap: .6rem; margin-block: .6rem; }
+.ux-column-filters .a-f { flex: 0 1 14rem; }
+.ux-table-tools .ux-active-filters { flex-basis: 100%; }
+.ux-record-advanced { margin-block: .4rem; }
+.ux-record-advanced > summary { min-height: 44px; padding-block: .65rem; cursor: pointer; }
+
+@media (hover: hover) and (pointer: fine) { .ux-picker-option[aria-selected="true"]:hover { box-shadow: none; } }

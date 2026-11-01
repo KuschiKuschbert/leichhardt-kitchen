@@ -47,7 +47,7 @@ async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, nul
   // the same box as the recipe search (23 Oct 2026): no autocorrect, a Search key that drops the keyboard, a 44 px Clear
   ok(await p.getAttribute('#g-q', 'autocorrect') === 'off' && await p.getAttribute('#g-q', 'spellcheck') === 'false' && await p.getAttribute('#g-q', 'autocapitalize') === 'off', 'guides search: no autocorrect, spell check or capitals');
   ok(!(await p.locator('#g-q + .ux-search-clear').isVisible()), 'guides search: no Clear button while the box is empty');
-  await p.fill('#g-q', 'pork belly');
+  await p.fill('#g-q', 'pork belly'); await L.settle(p, 250);
   ok(await p.locator('.g-card').count() === 1 && /PORK BELLY/i.test(await p.locator('.g-snip').innerText()), 'guides: search finds words inside the PDF and shows them');
   ok(await S(p, () => document.activeElement && document.activeElement.id === 'g-q'), 'guides: the search box keeps the cursor while typing');
   const gx = await p.locator('#g-q + .ux-search-clear').boundingBox();
@@ -56,7 +56,7 @@ async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, nul
   ok(await S(p, () => document.activeElement.id) !== 'g-q' && await p.locator('.g-card').count() === 1, 'guides search: Enter drops the keyboard and keeps the results');
   await p.click('#g-q + .ux-search-clear'); await L.settle(p, 200);
   ok(await p.inputValue('#g-q') === '' && await S(p, () => document.activeElement.id) === 'g-q' && await p.locator('.g-card').count() === 4 && !(await p.locator('#g-q + .ux-search-clear').isVisible()), 'guides search: Clear empties the box, keeps the cursor there and shows every guide');
-  await p.fill('#g-q', 'slicer');
+  await p.fill('#g-q', 'slicer'); await L.settle(p, 250);
   ok(await p.locator('.g-card').count() === 0 && await p.locator('.p-empty [data-p="g-clear"]').count() === 1, 'guides: a removed guide is not found, and Clear the search is offered');
   await p.click('.p-empty [data-p="g-clear"]');
   ok(await p.locator('.g-card').count() === 4, 'guides: Clear the search brings all four back');

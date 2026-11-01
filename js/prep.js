@@ -2794,7 +2794,7 @@
     if (!L || L.usual < 0) return head + '<p class="hint">Not clocked yet: it needs 3 nights with a list' + (L ? ' (' + L.n + ' so far)' : '') + '. Until then the book goes by the list it finds in each night\'s lines, or ' + fall + '.</p></section>';
     var nights = Object.keys(L.days).sort().reverse().slice(0, 7).map(function (d) {
       var e = L.days[d];
-      return '<tr><th scope="row">' + esc(dayShort(d)) + '</th><td>' + (e.m >= 0 ? esc(hhmm(e.m)) : 'No list found') + '</td><td>' + (e.m >= 0 ? e.n + (e.n === 1 ? ' line' : ' lines') : '') + '</td></tr>';
+      return '<tr><th scope="row" data-sort-value="' + esc(d) + '">' + esc(dayShort(d)) + '</th><td>' + (e.m >= 0 ? esc(hhmm(e.m)) : 'No list found') + '</td><td>' + (e.m >= 0 ? e.n + (e.n === 1 ? ' line' : ' lines') : '') + '</td></tr>';
     }).join('');
     return head + '<div class="a-tiles"><div class="a-tile"><strong>' + esc(hhmm(L.usual)) + '</strong><span>usual start, ' + L.n + ' of the last ' + Object.keys(L.days).length + ' nights</span></div></div>' +
       '<h3 class="a-ch-h">Each weekday</h3><span class="hint">The night the list is written on. A weekday shows once it has 2 nights with a list.</span>' +
@@ -2915,6 +2915,7 @@
   }
   function lvRows(c) {
     var s = lvState(c), l = c.items, f, so, words;
+    if (s.facets && c.cols) l = l.filter(function (row) { return Object.keys(s.facets).every(function (i) { return !s.facets[i] || String(window.LK_UX.cellValue(c.cols[i].html(row))) === s.facets[i]; }); });
     var q = s.q.replace(/^\s+|\s+$/g, '').toLowerCase();
     f = (c.filters || []).filter(function (x) { return x[0] === s.f; })[0];
     if (f && f[2]) l = l.filter(f[2]);
@@ -2951,6 +2952,7 @@
   }
   function lvHTML(c) {
     if (!c.find) c.find = function (item) { return c.cols ? c.cols.map(function (column) { return window.LK_UX.cellValue(column.html(item)); }).join(' ') : window.LK_UX.cellValue(c.card(item)); };
+    if (!c.sorts || !c.sorts.length) c.sorts = [['default', 'Default order', function () { return 0; }], ['az', 'A to Z', function (a, b) { return window.LK_UX.compare(c.find(a), c.find(b)); }], ['za', 'Z to A', function (a, b) { return window.LK_UX.compare(c.find(b), c.find(a)); }]];
     LVR[c.key] = c;
     var s = lvState(c), key = esc(c.key), bar = '';
     {
@@ -2960,7 +2962,13 @@
         (c.sorts && c.sorts.length > 1 ? '<label class="a-f lv-sort"><span>Sort</span><select data-k="lv-s:' + key + '" aria-label="Sort">' + c.sorts.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (o[0] === s.sort ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select></label>' : '') + '</div>' +
         (fl.length > 1 ? '<div class="chips lv-chips scroll" role="group" aria-label="Filter">' + fl.map(function (x) { return '<button type="button" class="chip" data-p="lv-f" data-lv="' + key + '" data-v="' + esc(x.f[0]) + '" aria-pressed="' + (x.f[0] === s.f) + '">' + esc(x.f[1]) + ' <span class="lv-n">' + x.n + '</span></button>'; }).join('') + '</div>' : '');
     }
-    return '<div class="lv" data-lv="' + key + '">' + bar + '<div class="ux-active-filters" data-lva="' + key + '">' + lvActive(c) + '</div><div class="lv-body" data-lvb="' + key + '">' + lvBody(c) + '</div></div>';
+    var facets = (c.cols || []).map(function (column, i) {
+      if (!/role|status|category|section|reason|venue|attendance/i.test(column.h || '')) return '';
+      var values = Array.from(new Set(c.items.map(function (row) { return String(window.LK_UX.cellValue(column.html(row))); }))).filter(Boolean).sort();
+      if (values.length < 2) return '';
+      return '<label class="a-f"><span>' + esc(column.h) + '</span><select data-k="lv-cf:' + key + '" data-col="' + i + '" aria-label="Filter ' + esc(column.h) + '"><option value="">All</option>' + values.map(function (v) { return '<option value="' + esc(v) + '"' + (s.facets && s.facets[i] === v ? ' selected' : '') + '>' + esc(v) + '</option>'; }).join('') + '</select></label>';
+    }).join('');
+    return '<div class="lv" data-lv="' + key + '">' + bar + '<div class="ux-column-filters">' + facets + '</div>' + '<div class="ux-active-filters" data-lva="' + key + '">' + lvActive(c) + '</div><div class="lv-body" data-lvb="' + key + '">' + lvBody(c) + '</div></div>';
   }
   /* redraw just the rows of one list, so the search box keeps its focus while someone types */
   function lvActive(c) {
@@ -2968,6 +2976,7 @@
     function badge(text, part) { return '<button type="button" class="chip" data-p="lv-reset" data-lv="' + esc(c.key) + '" data-part="' + part + '">' + esc(text) + ' ×</button>'; }
     if (s.q) out.push(badge('Search: ' + s.q, 'q'));
     if (c.filters && s.f !== c.filters[0][0]) { var f = c.filters.filter(function (x) { return x[0] === s.f; })[0]; if (f) out.push(badge(f[1], 'f')); }
+    Object.keys(s.facets || {}).forEach(function (i) { if (s.facets[i]) out.push(badge(c.cols[i].h + ': ' + s.facets[i], 'facet:' + i)); });
     if (s.col != null) out.push(badge('Sort: ' + c.cols[s.col].h + (s.desc ? ' descending' : ' ascending'), 'sort'));
     else if (c.sorts && s.sort !== c.sorts[0][0]) out.push(badge('Sort: ' + s.sort, 'sort'));
     if (out.length) out.push(badge('Reset All Filters', 'all'));
@@ -2987,6 +2996,10 @@
     if (a === 'lv-col') { var col = +el.getAttribute('data-col'); if (s.col !== col) { s.col = col; s.desc = false; } else if (!s.desc) s.desc = true; else { s.col = null; s.desc = false; } s.shown = step; }
     else if (a === 'lv-reset') {
       var part = el.getAttribute('data-part');
+      if (part === 'all' || part.indexOf('facet:') === 0) {
+        if (part === 'all') s.facets = {}; else if (s.facets) delete s.facets[part.slice(6)];
+        Array.prototype.forEach.call(S.root.querySelectorAll('[data-k="lv-cf:' + key + '"]'), function (select) { select.value = s.facets && s.facets[select.dataset.col] || ''; if (select._uxUpdate) select._uxUpdate(); });
+      }
       if (part === 'q' || part === 'all') { s.q = ''; var search = S.root.querySelector('[data-k="lv-q:' + key + '"]'); if (search) window.LK_UX.resetSearch(search); }
       if (part === 'f' || part === 'all') s.f = c.filters && c.filters.length ? c.filters[0][0] : '';
       if (part === 'sort' || part === 'all') { s.col = null; s.desc = false; s.sort = c.sorts && c.sorts.length ? c.sorts[0][0] : ''; var sortInput = S.root.querySelector('[data-k="lv-s:' + key + '"]'); if (sortInput) { sortInput.value = s.sort; if (sortInput._uxUpdate) sortInput._uxUpdate(); } }
@@ -3171,7 +3184,7 @@
       [agg.fixes.length, 'lines corrected by the proofreader', '']
     ];
     var tbl = '<details class="a-details"><summary>Show the daily numbers as a table</summary><div class="a-scroll"><table class="a-table"><thead><tr><th scope="col">Day</th><th scope="col">Written</th><th scope="col">Ticked</th><th scope="col">Rolled over</th></tr></thead><tbody>' +
-      agg.dates.slice().reverse().map(function (d) { return '<tr><th scope="row">' + esc(dayShort(d)) + '</th><td>' + agg.perDay[d].w + '</td><td>' + agg.perDay[d].t + '</td><td>' + agg.perDay[d].r + '</td></tr>'; }).join('') + '</tbody></table></div></details>';
+      agg.dates.slice().reverse().map(function (d) { return '<tr><th scope="row" data-sort-value="' + esc(d) + '">' + esc(dayShort(d)) + '</th><td>' + agg.perDay[d].w + '</td><td>' + agg.perDay[d].t + '</td><td>' + agg.perDay[d].r + '</td></tr>'; }).join('') + '</tbody></table></div></details>';
     return head +
       '<section class="a-sec">' + secHead(0) + '<div class="a-grid">' + smartHTML(agg, prev, n) + '</div><div class="a-tiles">' + tiles.filter(tileKeep).map(tileHTML).join('') + '</div></section>' +
       '<section class="a-sec">' + secHead(1) + '<div class="a-grid">' + card(calHTML(n), 'full') + card('<h3 class="a-ch-h">Lines each day</h3>' + legend([['Written', CW], ['Ticked off', CT]]) + dailyChart(agg) + tbl, 'full') + '</div></section>' +
@@ -8724,6 +8737,7 @@
     var el = e.target, k = el.getAttribute && el.getAttribute('data-k');
     if (!S.root || !S.root.contains(el)) return;
     clearReturnArm();
+    if (k && k.indexOf('lv-cf:') === 0) { var facetKey = k.slice(6), facetConfig = LVR[facetKey]; if (facetConfig) { var facetState = lvState(facetConfig); facetState.facets = facetState.facets || {}; facetState.facets[el.dataset.col] = el.value; facetState.shown = facetConfig.step || 15; lvRefresh(facetKey); } return; }
     if (k && k.indexOf('lv-s:') === 0) { var sk = k.slice(5), sc = LVR[sk]; if (sc) { var ss = lvState(sc); ss.sort = el.value; ss.col = null; ss.desc = false; ss.shown = sc.step || 15; lvRefresh(sk); } return; }
     if (k && k.indexOf('ml-pri:') === 0) { mlSetPri(k.slice(7), el.value); return; }
     if (k === 'ml-sous') { mlSousSet(el.checked); return; }

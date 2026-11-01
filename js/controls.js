@@ -14,7 +14,7 @@
   }
   function identity(el) {
     if (el.id) return '#' + CSS.escape(el.id);
-    var attrs = slice(el.attributes).filter(function (a) { return /^data-(k|f|fl|sf|i|sid|dwf|ai-field)$/.test(a.name); });
+    var attrs = slice(el.attributes).filter(function (a) { return /^data-(k|f|fl|sf|i|sid|col|dwf|ai-field)$/.test(a.name); });
     return el.tagName.toLowerCase() + attrs.map(function (a) { return '[' + a.name + '="' + CSS.escape(a.value) + '"]'; }).join('');
   }
   function emit(el, type) { syncing = true; try { el.dispatchEvent(new Event(type, { bubbles: true })); } finally { syncing = false; } }
@@ -92,6 +92,7 @@
     list.classList.add(compact ? 'ux-picker-chips' : 'ux-picker-list'); list.setAttribute('role', 'listbox'); list.setAttribute('aria-label', config.label || 'Choices');
     if (config.multiple) list.setAttribute('aria-multiselectable', 'true');
     var search, apply;
+    cursor = items.findIndex(function (item) { return selected.indexOf(item.value) >= 0 && !item.disabled; });
     function visible() { return items.filter(function (it) { return !query || String(it.label).toLocaleLowerCase().indexOf(query.toLocaleLowerCase()) >= 0; }); }
     function choose(it) {
       if (it.disabled) return;
@@ -189,12 +190,16 @@
     var label = labelFor(select), b = triggerFor(select, label);
     function update() { b.textContent = (slice(select.selectedOptions).map(function (o) { return o.textContent; }).join(', ') || 'Choose') + ' ▾'; b.disabled = select.disabled; }
     if (select.labels) slice(select.labels).forEach(function (labelNode) { labelNode.addEventListener('click', function (e) { if (e.target === labelNode || e.target.tagName === 'SPAN') { e.preventDefault(); if (!b.disabled) b.click(); } }); });
-    update(); select.addEventListener('change', update); select.addEventListener('invalid', function (e) { e.preventDefault(); b.focus(); b.setAttribute('aria-invalid', 'true'); });
+    update(); select.addEventListener('change', update); select.addEventListener('invalid', function (e) {
+      e.preventDefault(); b.focus(); b.setAttribute('aria-invalid', 'true');
+      if (!select._uxError) { select._uxError = node('span', 'p-err'); select._uxError.id = 'ux-choice-error-' + (++serial); select._uxError.setAttribute('role', 'alert'); b.after(select._uxError); }
+      select._uxError.textContent = select.validationMessage; b.setAttribute('aria-describedby', select._uxError.id);
+    });
     b.addEventListener('click', function () {
       AdaptivePicker({ label: label, trigger: b, threshold: select.dataset.threshold == null ? 12 : +select.dataset.threshold, multiple: select.multiple,
         value: slice(select.selectedOptions).map(function (o) { return o.value; }),
         items: slice(select.options).map(function (o) { return { value: o.value, label: (o.parentNode.tagName === 'OPTGROUP' ? o.parentNode.label + ': ' : '') + o.textContent, disabled: o.disabled || (o.parentNode.tagName === 'OPTGROUP' && o.parentNode.disabled) }; }),
-        onChange: function (values) { slice(select.options).forEach(function (o) { o.selected = values.indexOf(o.value) >= 0; }); update(); b.removeAttribute('aria-invalid'); emit(select, 'input'); emit(select, 'change'); }
+        onChange: function (values) { slice(select.options).forEach(function (o) { o.selected = values.indexOf(o.value) >= 0; }); update(); b.removeAttribute('aria-invalid'); if (select._uxError) { select._uxError.remove(); select._uxError = null; b.removeAttribute('aria-describedby'); } emit(select, 'input'); emit(select, 'change'); }
       });
     });
     select._uxUpdate = update;
@@ -221,6 +226,7 @@
     'data-mg': 'chip hand', 'data-fe': 'chip mode', 'data-dw': 'sm-st cat sub wfam ware tintc setIng', 'data-ai': 'range', 'data-su': 'group history-order'
   };
   function choiceAction(b) { var found; Object.keys(choiceActions).some(function (attr) { var v = b.getAttribute(attr); if (v && choiceActions[attr].split(' ').indexOf(v) >= 0) { found = attr + ':' + v; return true; } return false; }); return found; }
+  function choiceLabel(button) { var name = button.querySelector('.vo-name'); return name ? name.firstChild.textContent.trim() : button.textContent.trim() || button.getAttribute('aria-label') || 'Choice'; }
   function groupPicker(group) {
     if (group.dataset.adaptive || group.closest('.ux-choice-source, .ux-picker')) return;
     var buttons = slice(group.children).filter(function (n) { return n.tagName === 'BUTTON' && choiceAction(n); });
@@ -233,15 +239,16 @@
     var label = labelFor(group), source = node('span');
     group.insertBefore(source, buttons[0]); buttons.forEach(function (button) { source.appendChild(button); });
     var b = triggerFor(source, label);
+    if (group.getAttribute('role') === 'radiogroup') group.setAttribute('role', 'group');
     b._uxSelector = 'button' + slice(buttons[0].attributes).filter(function (a) { return /^data-/.test(a.name); }).map(function (a) { return '[' + a.name + '="' + CSS.escape(a.value) + '"]'; }).join('');
     b._uxGroup = true;
     function isOn(x) { return x.getAttribute('aria-pressed') === 'true' || x.getAttribute('aria-checked') === 'true' || x.classList.contains('on'); }
-    function update() { b.textContent = (buttons.filter(isOn).map(function (x) { return x.textContent.trim(); }).join(', ') || 'Choose') + ' ▾'; b.disabled = buttons.every(function (x) { return x.disabled; }); }
+    function update() { b.textContent = (buttons.filter(isOn).map(function (x) { return choiceLabel(x); }).join(', ') || 'Choose') + ' ▾'; b.disabled = buttons.every(function (x) { return x.disabled; }); }
     update(); source._uxUpdate = update;
     b.addEventListener('click', function () {
       var values = buttons.filter(isOn).map(function (x) { return buttons.indexOf(x); });
       AdaptivePicker({ label: label, trigger: b, multiple: multi, value: values,
-        items: buttons.map(function (x, i) { return { value: i, label: (x.querySelector('.vo-name') || x).textContent.trim() || x.getAttribute('aria-label'), disabled: x.disabled }; }),
+        items: buttons.map(function (x, i) { return { value: i, label: choiceLabel(x), disabled: x.disabled }; }),
         onChange: function (next) {
           var changed = multi ? buttons.filter(function (x, i) { return (values.indexOf(i) >= 0) !== (next.indexOf(i) >= 0); }) : next.map(function (i) { return buttons[i]; });
           changed.forEach(function (original) {
@@ -274,7 +281,7 @@
     if (/^\d{4}-\d{2}-\d{2}/.test(t) || /^\d{1,2}\s+[A-Za-z]{3,9}\s+\d{4}/.test(t)) { var date = Date.parse(t); if (isFinite(date)) return date; }
     if (/^(true|yes|on|active)$/i.test(t)) return true;
     if (/^(false|no|off|inactive)$/i.test(t)) return false;
-    var duration = /^(?:(\d+)h\s*)?(?:(\d+)m\s*)?(?:(\d+)s)?$/.exec(t);
+    var duration = /^(?:(\d+)\s*h\s*)?(?:(\d+)\s*(?:min|m)\s*)?(?:(\d+)\s*s)?$/.exec(t);
     if (duration && t) return (+duration[1] || 0) * 3600 + (+duration[2] || 0) * 60 + (+duration[3] || 0);
     return t;
   }
@@ -286,7 +293,7 @@
     var wrap = table.parentNode, tools = node('div', 'ux-table-tools'), bar = node('div', 'ux-active-filters'), q = node('input', 'search');
     q.type = 'search'; q.placeholder = 'Search this table'; q.setAttribute('aria-label', 'Search this table'); tools.appendChild(q);
     var state = { query: '', col: -1, direction: 0, filters: {} }, buttons = [], filters = [];
-    function cell(row, i) { var c = row.cells[i]; return c ? cellValue(c.innerHTML) : ''; }
+    function cell(row, i) { var c = row.cells[i]; return c ? c.dataset.sortValue != null ? typed(c.dataset.sortValue) : cellValue(c.innerHTML) : ''; }
     function refresh() {
       var shown = rows.filter(function (r) { return (!state.query || r.textContent.toLocaleLowerCase().indexOf(state.query.toLocaleLowerCase()) >= 0) && Object.keys(state.filters).every(function (i) { return !state.filters[i] || String(cell(r, +i)) === state.filters[i]; }); });
       if (state.direction) shown.sort(function (a, b) { return compare(cell(a, state.col), cell(b, state.col)) * state.direction; });
