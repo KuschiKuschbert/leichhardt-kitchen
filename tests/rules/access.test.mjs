@@ -7,7 +7,7 @@ const env = await initializeTestEnvironment({ projectId: 'demo-access', firestor
 await env.clearFirestore();
 const now = Date.now(), today = new Date(now + 10 * 3600000).toISOString().slice(0, 10);
 const paths = [
- 'config/main','config/admins',`days/${today}/items/x`,`orders/${today}/lines/x`,`waste/${today}/lines/x`,`waste/${today}`,
+ 'config/main','config/admins','proofHistory/x',`days/${today}/items/x`,`orders/${today}/lines/x`,`waste/${today}/lines/x`,`waste/${today}`,
  'transferOpen/x',`transfers/${today}/lines/x`,'daily/x','summary/waste','misses/x','views/x','notes/x','notes/x/seen/x',
  'minutes/x','minutes/x/hist/1','minutes/x/signs/x','minutes/x/signs/1_staff','guides/x','guides/x/pages/0','functions/x','functions/x/hist/1',
  'fncontact/x','fnsent/x','mail/x','mailstat/x','todos/x','push/x','cutdone/x','suppliers/x','suppliers/x/audit/1',
