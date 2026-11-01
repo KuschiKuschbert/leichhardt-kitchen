@@ -73,7 +73,7 @@ const same = (a, b) => (a || []).slice().sort().join(',') === b.slice().sort().j
   p = await L.open(b, '#/admin', { admin: true, extra: cfg(), wait: 1800 });
   await L.adminTab(p, 'people');
   await L.settle(p, 300);
-  await p.selectOption('#a-r2', 'sous');
+  await L.pick(p, '#a-r2', 'sous');
   await L.settle(p, 200);
   await p.click('[data-p="a-save"]');
   await L.settle(p, 400);

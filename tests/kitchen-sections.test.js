@@ -31,7 +31,7 @@ const addLine = async (p, text, sec) => {
   const offered = await p.evaluate(() => [...document.querySelectorAll('.ks-b')].map(e => e.textContent));
   ok(offered.join(',') === 'Grill,Pass,Pans', 'staff: the sections on the list are offered, a removed one is not (' + offered.join(',') + ')');
   ok(!(await L.overflow(p)), 'staff: the picker fits a phone');
-  ok(await p.$eval('.ks', e => Math.abs(e.getBoundingClientRect().bottom - window.innerHeight) < 2), 'staff: the picker is a sheet at the bottom of the screen');
+  ok(await p.$eval('.ux-picker', e => Math.abs(e.getBoundingClientRect().bottom - window.innerHeight) < 2), 'staff: the picker is a sheet at the bottom of the screen');
   ok(await p.$eval('.ks-b', e => e.getBoundingClientRect().height) >= 44, 'staff: the section buttons are big enough to tap');
   await p.click('.ks-b[data-v="grill"]'); await L.settle(p, 500);
   s = await store(p);
@@ -49,9 +49,9 @@ const addLine = async (p, text, sec) => {
   ok((lineOf(s, 'Pick mint') || {}).station === 'Larder', 'prep: a section typed by hand wins');
 
   // changing it later: the tag opens the picker with Close
-  await p.fill('[data-k="p-section"]', '');
+  await L.clear(p, '[data-k="p-section"]');
   await tap(p, '.ks-tag'); await L.settle(p, 300);
-  ok(!!(await p.$('.ks-wrap [data-ks="close"]')) && await p.$eval('.ks-b[data-v="grill"]', e => e.getAttribute('aria-pressed')) === 'true', 'change: the picker opens with Grill marked');
+  ok(!!(await p.$('.ux-picker-close')) && await p.$eval('.ks-b[data-v="grill"]', e => e.getAttribute('aria-selected')) === 'true', 'change: the picker opens with Grill marked');
   await p.click('.ks-b[data-v="pass"]'); await L.settle(p, 500);
   s = await store(p);
   ok(s[fsKey(['shifts', today + '_ann'])].sec === 'pass', 'change: Pass is saved for today');
@@ -105,7 +105,7 @@ const addLine = async (p, text, sec) => {
   ok(!(await p.$('.ks-wrap')), 'PIN: not asked before the PIN');
   await p.keyboard.type('3333'); await L.settle(p, 1200);
   ok(!!(await p.$('.ks-wrap')), 'PIN: asked straight after the PIN');
-  await p.click('.ks-out'); await L.settle(p, 300);
+  await p.click('.ux-picker [data-v=""]'); await L.settle(p, 300);
   ok(!(await p.$('.ks-wrap')) && /Pick a section/.test(await txt(p, '.ks-tag') || ''), 'skip: closed, and the tag offers to pick one');
   ok(await p.$eval('[data-k="p-section"]', e => e.value) === '', 'skip: the section box stays empty');
   await p.reload(); await L.settle(p, 1500);
@@ -123,8 +123,8 @@ const addLine = async (p, text, sec) => {
   p = await L.open(b, '#/prep', { who: 'bo', extra: withSecs({ [fsKey(['shifts', yday + '_bo'])]: { day: yday, sec: 'grill', name: 'Grill', auto: false, at: L.NOW - 86400000, by: 'bo' } }), wait: 300 });
   await p.evaluate(d => { localStorage.setItem('lk.sec.bo', JSON.stringify({ d, sec: 'grill', name: 'Grill' })); }, yday);
   await p.reload(); await L.settle(p, 1500);
-  ok(!!(await p.$('.ks-wrap')) && await p.$eval('.ks-b[data-v="grill"]', e => e.getAttribute('aria-pressed')) === 'false', 'next day: yesterday\'s Grill is gone and Bo is asked again');
-  await p.click('.ks-out'); await L.settle(p, 300);
+  ok(!!(await p.$('.ks-wrap')) && await p.$eval('.ks-b[data-v="grill"]', e => e.getAttribute('aria-selected')) === 'false', 'next day: yesterday\'s Grill is gone and Bo is asked again');
+  await p.click('.ux-picker [data-v=""]'); await L.settle(p, 300);
   ok(await p.$eval('[data-k="p-section"]', e => e.value) === '', 'next day: no section until Bo picks one');
   await p.context().close();
 

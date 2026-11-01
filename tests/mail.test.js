@@ -150,7 +150,7 @@ const mailReads = p => p.evaluate(() => (window.__fake.reads || []).filter(k => 
   ok(/Done in the last 30 days \(1\)/.test(await txt(p, '.ml-donebox summary') || ''), 'tick: it shows under Done');
   ok(await badge(p) === '2', 'tick: the count on the key goes down to 2');
   // change how soon it matters
-  await p.selectOption('[data-k="ml-pri:m3"]', 'today'); await L.settle(p, 500);
+  await L.pick(p, '[data-k="ml-pri:m3"]', 'today'); await L.settle(p, 500);
   s = await store(p);
   ok(s[fsKey(['mail', 'm3'])].pri === 'today', 'priority: the head chef changes This week to Today');
   // untick

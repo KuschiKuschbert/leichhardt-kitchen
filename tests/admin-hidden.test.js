@@ -48,7 +48,7 @@ const { R, ok } = L.results(), { txt } = L;
   ok(await p.$('[data-act="setshared"][data-val="1"]') !== null, 'head chef settings: device type');
   ok(await L.admItem(p) === 'signed', 'head chef settings: Admin in the chef hat menu');
   // signing out on that device drops them again without a reload, and the device type chosen stays
-  await p.click('[data-act="setshared"][data-val="1"]');
+  await L.choose(p, '[data-act="setshared"][data-val="1"]');
   await p.evaluate(() => { localStorage.setItem('lk.admin', ''); window.dispatchEvent(new Event('lk-admin')); });
   await L.settle(p, 300);
   ok(await p.$('[data-act="setshared"]') === null && await p.$('[data-act="clearticks"]') === null, 'head chef signed out: the device blocks are gone');

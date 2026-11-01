@@ -4,7 +4,7 @@ const L = require('./lib');
 const F = require('./supplier-fixtures');
 const { R, ok } = L.results();
 const qty = 'input[data-sf="qty"][data-i="t-stock"]';
-const action = (p, cmd) => p.click('[data-su="' + cmd + '"]');
+const action = (p, cmd) => L.choose(p, '[data-su="' + cmd + '"]');
 const localBack = p => p.evaluate(() => window.LK_SUP.back());
 const back = '.wtop [data-act="back"]';
 const label = p => p.getAttribute(back, 'aria-label');

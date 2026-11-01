@@ -101,7 +101,7 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   // a new recipe for a card to come: the beer batter the fish burger links to
   p = await L.open(b, '#/manage', { who: 'ann', extra: cfg(), wait: 1400 });
   await wait(p, () => !!document.getElementById('mg-q'));
-  await p.click('[data-mg="chip"][data-v="tocome"]'); await L.settle(p, 200);
+  await L.choose(p, '[data-mg="chip"][data-v="tocome"]'); await L.settle(p, 200);
   ok(await p.$('a[href="#/manage/new/beer-batter"]') !== null, 'Cards to come lists beer-batter');
   await p.click('a[href="#/manage/new/beer-batter"]');
   await editor(p);
@@ -116,7 +116,7 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
     const k = await p.evaluate(() => document.querySelectorAll('.mg-ing').length - 1);
     await p.fill('[data-f="ing.' + k + '.q"]', q); await p.fill('[data-f="ing.' + k + '.name"]', name);
     await p.click('[data-mg="ing-tags"][data-i="' + k + '"]'); await L.settle(p, 150);
-    await p.click('[data-mg="tag"][data-i="' + k + '"][data-v="Gluten"]'); await L.settle(p, 150);
+    await L.choose(p, '[data-mg="tag"][data-i="' + k + '"][data-v="Gluten"]'); await L.settle(p, 150);
   }
   await p.fill('#mg-ss-0', 'Whisk the beer into the flour until smooth.\nRest 20 minutes in the cool room.');
   await L.settle(p, 200);
@@ -194,7 +194,7 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   await go(p, '#/recipes'); await L.settle(p, 300);
   ok(await p.$('a[href="#/r/side-salad"]') === null, 'hide: gone from the recipes');
   await go(p, '#/manage'); await L.settle(p, 200);
-  await p.click('[data-mg="chip"][data-v="hidden"]'); await L.settle(p, 200);
+  await L.choose(p, '[data-mg="chip"][data-v="hidden"]'); await L.settle(p, 200);
   ok(await p.$('#mg-results a[href="#/manage/r/side-salad"]') !== null, 'hide: listed under Hidden');
   await p.click('#mg-results a[href="#/manage/r/side-salad"]'); await editor(p);
   await p.click('[data-mg="sw-show"]'); await p.click('[data-mg="save"]');
@@ -218,13 +218,13 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   const chips = await p.$$eval('[data-act="kind"]', els => els.map(e => e.textContent));
   ok(chips[1] === 'Specials (' + (fileSpecials.length + 1) + ')', 'special: the Specials chip comes first after All ' + chips.slice(0, 3).join(', '));
   ok(await p.getAttribute('#shelves .shelf', 'aria-label') === 'Specials', 'special: the Specials shelf is first');
-  await p.click('[data-act="kind"][data-val="sp"]'); await L.settle(p, 300);
+  await L.choose(p, '[data-act="kind"][data-val="sp"]'); await L.settle(p, 300);
   ok(await p.$$eval('#shelves a[href^="#/r/"]', els => els.map(e => e.getAttribute('href')).sort().join(',')) === fileSpecials.concat('caesar').map(id => '#/r/' + id).sort().join(','), 'special: the chip shows only the specials');
   await go(p, '#/manage/r/caesar'); await editor(p);
   ok(await p.getAttribute('[data-mg="sw-special"]', 'aria-checked') === 'true', 'special: the switch opens on');
   await p.click('[data-mg="sw-special"]'); await L.settle(p, 100);
   ok(await p.inputValue('#mg-msec') === '', 'special: off with no earlier section leaves it to pick');
-  await p.selectOption('#mg-msec', 'Salads'); await p.click('[data-mg="save"]'); await toast(p);
+  await L.pick(p, '#mg-msec', 'Salads'); await p.click('[data-mg="save"]'); await toast(p);
   await go(p, '#/recipes'); await L.settle(p, 300);
   await specialsChip(fileSpecials.length);
   ok((await p.$$eval('[data-act="kind"]', els => els.map(e => e.textContent))).includes('Specials (' + fileSpecials.length + ')'), 'special: off takes the dish out of Specials');

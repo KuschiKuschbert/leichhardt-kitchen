@@ -57,6 +57,7 @@ The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the
 | `js/deliveries.js` | Delivery received (`#/deliveries`): chilled and frozen temperatures. Loaded only when the page opens. `docs/delivery-received.md` |
 | `js/functions.js` | Functions: the schedule maths (also run by node), the kitchen band under the top bar, the function sheet, `#/fn`, the landing card. In `SHELL` |
 | `js/fnedit.js` | Manage functions (`#/functions`): the function managers' list and form, loaded by `js/app.js` only for someone ticked for Functions, not in `SHELL` |
+| `js/controls.js` | Shared adaptive pickers, deferred search and report-table controls. Loaded in the atomic shell. `docs/adaptive-controls.md` |
 | `js/app.js` | Routing, top bar, recipe views (Pass, Tiles), recipe cards, settings, install, QR |
 | `js/prep.js` | Prep list, orders, wastage, guides, admin panel, staff lock, insights, learning, suggestions |
 | `js/firebase-config.js` | Public Firebase web config |

@@ -1496,7 +1496,7 @@
   app.addEventListener('input', function (e) {
     if (e.target.id !== 'find') return;
     ui.query = e.target.value;
-    var fw = e.target.parentNode; if (fw && fw.classList) fw.classList.toggle('has-q', !!ui.query);
+    var fw = e.target.closest('.find-wrap'); if (fw && fw.classList) fw.classList.toggle('has-q', !!ui.query);
     clearTimeout(timer);
     timer = setTimeout(updateResults, 60);
     clearTimeout(missTimer);
@@ -1619,7 +1619,11 @@
   window.addEventListener('lk-rx', function () {
     reindex();
     var n = parseRoute().name;
-    if (n === 'home' && document.getElementById(settings.view === 'tiles' ? 'results' : 'shelves')) updateResults();
+    if (n === 'home' && document.getElementById(settings.view === 'tiles' ? 'results' : 'shelves')) {
+      // The menu can arrive after the recipe page opens. Refresh its choices as well as the recipe shelves.
+      var kinds = app.querySelector('[aria-label="Recipe type"]'); if (kinds) kinds.outerHTML = kindChips();
+      updateResults();
+    }
     else if (n === 'manage') { if (window.LK_MG) window.LK_MG.changed(); }
     else if (!PREP_PAGES[n]) render();
   });

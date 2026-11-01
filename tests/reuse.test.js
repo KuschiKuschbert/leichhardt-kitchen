@@ -44,9 +44,9 @@ const BAD_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><s
   ok(!(await p.$('.dw-start')), 'start from: the choice goes once something is on the drawing');
   await shot(p, 'book-burger');
   // swap the servingware: the picture stays
-  await p.click('[data-dw="panel"][data-v="ware"]'); await L.settle(p, 200);
-  await p.click('[data-dw="wfam"][data-v="board"]'); await L.settle(p, 200);
-  await p.click('.dw-ware [data-dw="ware"][data-v="0"]'); await L.settle(p, 300);
+  await L.choose(p, '[data-dw="panel"][data-v="ware"]'); await L.settle(p, 200);
+  await L.choose(p, '[data-dw="wfam"][data-v="board"]'); await L.settle(p, 200);
+  await L.choose(p, '.dw-ware [data-dw="ware"][data-v="0"]'); await L.settle(p, 300);
   w = await S(p);
   ok(w.surf.fam === 'board' && w.els.length === 1, 'book drawing: the plate swaps for a board, the food stays');
   await p.click('[data-dw="undo"]'); await L.settle(p, 200);
@@ -68,7 +68,7 @@ const BAD_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><s
   await p.click('.dw-selbar [data-dw="piece"]'); await L.settle(p, 200);
   ok(await p.$('#dw-h-pc') !== null && await p.$('.dw-pc-prev svg') !== null, 'library piece: the form shows what will be saved');
   await p.fill('[data-dwf="pc.name"]', 'Leichhardt burger top');
-  await p.selectOption('[data-dwf="pc.cat"]', 'bread');
+  await L.pick(p, '[data-dwf="pc.cat"]', 'bread');
   await p.fill('[data-dwf="pc.kw"]', 'house bun lid');
   await p.click('[data-dw="pc-save"]');
   await saved(p);
@@ -113,7 +113,7 @@ const BAD_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><s
   p = await open('#/manage/draw/rump-250-plate', store2);
   await wait(p, () => window.LK_DRAW.state().d.els.length > 0, null, 10000);
   await p.click('[data-dw="panel"][data-v="reuse"]'); await L.settle(p, 200);
-  await p.selectOption('[data-dwf="reuse"]', 'rump-500');
+  await L.pick(p, '[data-dwf="reuse"]', 'rump-500');
   await p.click('[data-dw="reuse-go"]');
   await wait(p, () => { const d = window.LK_DRAW.state().d; return !!d && d.rid === 'rump-500' && d.els.length > 0; }, null, 10000);
   w = await S(p);
@@ -143,7 +143,7 @@ const BAD_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><s
   await wait(p, () => /100 kB/.test((document.querySelector('.dw-bar .p-err') || {}).textContent || ''));
   ok(/100 kB at most/.test(await txt(p, '.dw-bar .p-err') || ''), 'SVG import: a file over 100 kB is refused');
   // servingware saved as a preset
-  await p.click('[data-dw="panel"][data-v="ware"]'); await L.settle(p, 200);
+  await L.choose(p, '[data-dw="panel"][data-v="ware"]'); await L.settle(p, 200);
   await p.click('[data-dw="ware-save"]'); await L.settle(p, 100);
   await p.fill('[data-dwf="wname"]', 'Pie plate, cream');
   await p.click('[data-dw="ware-save-go"]'); await saved(p);
@@ -166,7 +166,7 @@ const BAD_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><s
   // the manage page: Templates and Made in the book list them; Hide takes one out of the editor
   p = await L.open(b, '#/manage', { who: 'ann', extra: Object.assign({}, store3, cfg()), wait: 1200 });
   await wait(p, () => !!document.querySelector('[data-mg="chip"][data-v="templates"]'), null, 10000);
-  await p.click('[data-mg="chip"][data-v="templates"]');
+  await L.choose(p, '[data-mg="chip"][data-v="templates"]');
   await wait(p, () => !!document.querySelector('[data-mg="mine-hide"]'));
   ok(/Burger and chips, pieces/.test(await txt(p, '.mg-list') || ''), 'manage: Templates lists the template');
   await p.click('[data-mg="mine-hide"]'); await L.settle(p, 100);
@@ -175,7 +175,7 @@ const BAD_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><s
   s = await store(p);
   const tpl2 = s[tplKey] || {};
   ok(tpl2.removed === true && tpl2.v === 2 && tpl2.els.length === n, 'manage: Hide (tapped twice) saves version 2, hidden, the rest kept');
-  await p.click('[data-mg="chip"][data-v="mylib"]');
+  await L.choose(p, '[data-mg="chip"][data-v="mylib"]');
   await wait(p, () => /Leichhardt burger top/.test((document.querySelector('.mg-list') || {}).textContent || ''));
   ok(/Leichhardt burger top/.test(await txt(p, '.mg-list') || '') && /Pie plate, cream/.test(await txt(p, '.mg-list') || ''), 'manage: Made in the book lists the pieces and the servingware');
   ok(!errs(p).length, 'manage: no page errors ' + errs(p).join(' | '));

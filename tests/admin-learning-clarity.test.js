@@ -45,8 +45,8 @@ const referenceOptions = async p => {
 };
 const privateWrites = p => p.evaluate(() => window.__fake.writes.flat().filter(x => /\/(references|training)\//.test(x.path)).length);
 const searchReferences = async (p, text) => {
-  await p.locator('[data-ai-reference-search] [name="q"]').fill(text);
-  await p.locator('[data-ai-reference-search]').evaluate(form => form.requestSubmit());
+  if (text) await p.locator('#record-q-reference-queue, #record-q-reference-records').fill(text); else await L.clear(p, '#record-q-reference-queue, #record-q-reference-records');
+  await L.settle(p, 250);
   await L.settle(p, 200);
 };
 
@@ -102,18 +102,18 @@ const searchReferences = async (p, text) => {
     ok(await p.inputValue('#ai-personId') === 'ann' && await p.inputValue('#ai-section') === 'Grill' && await p.inputValue('#ai-status') === 'not-assessed', width + ': an opportunity opens an explicit assessment draft without confirming it');
     ok(await privateWrites(p) === 1, width + ': reviewing opportunities creates no assessment write');
     const sectionFocus = await p.evaluate(() => {
-      document.getElementById('ai-section').focus();
+      document.getElementById('ai-section-picker').focus();
       LK_PREP.mount('admin', LK_PREP.state.root);
       return { id: document.activeElement && document.activeElement.id, value: document.getElementById('ai-section').value };
     });
-    ok(sectionFocus.id === 'ai-section' && sectionFocus.value === 'Grill', width + ': a background redraw keeps focus and value in the training section field (' + JSON.stringify(sectionFocus) + ')');
+    ok(sectionFocus.id === 'ai-section-picker' && sectionFocus.value === 'Grill', width + ': a background redraw keeps focus and value in the training section field (' + JSON.stringify(sectionFocus) + ')');
     const sectionKeys = await p.evaluate(() => ({
       navigation: document.querySelector('.a-section-picker select').getAttribute('data-k'),
       editor: document.getElementById('ai-section').getAttribute('data-k')
     }));
     ok(sectionKeys.navigation !== sectionKeys.editor, width + ': admin navigation and training section use distinct focus keys (' + JSON.stringify(sectionKeys) + ')');
 
-    await p.selectOption('#ai-status', 'confirmed'); await p.selectOption('#ai-assessorId', 'sam');
+    await L.pick(p, '#ai-status', 'confirmed'); await L.pick(p, '#ai-assessorId', 'sam');
     await p.click('[data-ai="save-next"]');
     await L.waitFor(p, () => Object.values(window.__fake.dump()).some(r => r && r.personId === 'ann' && r.section === 'Grill' && !r.recipeId && r.status === 'confirmed'));
     const assessments = await p.evaluate(() => Object.entries(window.__fake.dump()).filter(([k]) => /\/training\/[^/]+$/.test(k)).map(([, v]) => v));
@@ -133,7 +133,7 @@ const searchReferences = async (p, text) => {
   for (let i = 0; i < 3; i++) {
     const subject = await p.inputValue('#ai-personId') + ':' + await p.inputValue('#ai-section');
     visited.push(subject);
-    await p.selectOption('#ai-status', 'in-training'); await p.selectOption('#ai-assessorId', 'sam');
+    await L.pick(p, '#ai-status', 'in-training'); await L.pick(p, '#ai-assessorId', 'sam');
     await p.click('[data-ai="save-next"]');
     await L.waitFor(p, before => !LK_INTELLIGENCE.busy() && document.getElementById('ai-personId') && document.getElementById('ai-personId').value + ':' + document.getElementById('ai-section').value !== before, subject);
     const next = await p.inputValue('#ai-personId') + ':' + await p.inputValue('#ai-section');

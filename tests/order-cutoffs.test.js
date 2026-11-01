@@ -106,12 +106,12 @@ const names = p => p.evaluate(() => [...document.querySelectorAll('#cut-band .cu
   ok(!(await L.overflow(p)), 'admin: the page fits a phone');
   // change PFD to 15:30, the same day, not Sunday
   await p.fill('[data-k="cut-t1"]', '15:30'); await L.settle(p, 200);
-  await p.selectOption('[data-k="cut-p1"]', '0'); await L.settle(p, 200);
-  await p.click('[data-p="cut-day"][data-i="1"][data-v="0"]'); await L.settle(p, 200);
+  await L.pick(p, '[data-k="cut-p1"]', '0'); await L.settle(p, 200);
+  await L.choose(p, '[data-p="cut-day"][data-i="1"][data-v="0"]'); await L.settle(p, 200);
   ok(/^Order by 15:30 Mon, Tue, Wed, Thu, Fri, Sat for the same day\. Reminder from 11:30\.$/.test(await txt(p, '.cut-ed:nth-child(2) .cut-say')), 'admin: the line follows the time, the days and Order closes');
-  await p.selectOption('[data-k="cut-r1"]', '0'); await L.settle(p, 200);
+  await L.pick(p, '[data-k="cut-r1"]', '0'); await L.settle(p, 200);
   ok(/Reminder all day\.$/.test(await txt(p, '.cut-ed:nth-child(2) .cut-say')), 'admin: Remind us all day');
-  await p.fill('[data-k="cut-t0"]', '06:00'); await p.selectOption('[data-k="cut-r0"]', '480'); await L.settle(p, 200);
+  await p.fill('[data-k="cut-t0"]', '06:00'); await L.pick(p, '[data-k="cut-r0"]', '480'); await L.settle(p, 200);
   ok(/Reminder from 22:00 the night before\.$/.test(await txt(p, '.cut-ed:nth-child(1) .cut-say')), 'admin: an early cut-off is reminded the night before');
   await p.click('[data-p="cut-save"]'); await L.settle(p, 600);
   s = await store(p);

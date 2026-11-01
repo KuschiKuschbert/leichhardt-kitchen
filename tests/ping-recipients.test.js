@@ -10,7 +10,7 @@ const dump=p=>p.evaluate(()=>__fake.dump());
  await L.chef(p,'pings');await p.click('[data-p="n-new"]');await L.settle(p,200);
  ok(await p.inputValue('#n-to')==='', 'new ping: Everyone is the default');
  ok((await p.locator('#n-to option').allTextContents()).join('|')==='Everyone|Sam|Ann|Bo','recipients: active kitchen people are listed');
- await p.selectOption('#n-to','ann');await p.fill('#n-text','Ann targeted prep reminder');await p.click('[data-p="n-save"]');await L.settle(p,500);
+ await L.pick(p, '#n-to','ann');await p.fill('#n-text','Ann targeted prep reminder');await p.click('[data-p="n-save"]');await L.settle(p,500);
  let data=await dump(p), entries=Object.entries(data).filter(([k,v])=>k.includes('/directnotes/')&&v.text==='Ann targeted prep reminder');
  ok(entries.length===1&&entries[0][1].to==='ann'&&entries[0][1].author==='sam','save: the message is stored privately for Ann');
  ok(!Object.entries(data).some(([k,v])=>k.includes('/notes/')&&v.text==='Ann targeted prep reminder'),'save: no individual text is written to Everyone pings');

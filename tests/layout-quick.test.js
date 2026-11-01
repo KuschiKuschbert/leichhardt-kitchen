@@ -33,8 +33,8 @@ const onTop = (p, sel) => p.evaluate(s => {
   // admin: every tab can be seen and tapped at 1280 and 768, and Tools opens
   for (const w of [1280, 768]) {
     p = await L.open(b, '#/admin', { admin: true, width: w, height: 900, wait: 1800 });
-    const picker = await p.locator('[data-k="ai-section"]').isVisible();
-    const groupControl = group => picker ? '[data-k="ai-section"]' : '[data-p="a-group"][data-g="' + group + '"]';
+    const picker = await p.locator('[data-k="ai-section"] + .ux-picker-trigger').isVisible();
+    const groupControl = group => picker ? '[data-k="ai-section"] + .ux-picker-trigger' : '[data-p="a-group"][data-g="' + group + '"]';
     v = await onTop(p, groupControl('settings'));
     ok(v === true, w + ' admin: the Settings group can be seen and tapped (' + v + ')');
     for (const [group, label] of [['review', 'Review desk'], ['reports', 'Reports'], ['records', 'Saved records'], ['today', 'Operations'], ['settings', 'Settings']]) {
@@ -42,7 +42,7 @@ const onTop = (p, sel) => p.evaluate(s => {
       if (picker) ok(await p.locator('[data-k="ai-section"] option[value="' + group + '"]').count() === 1, w + ' admin: the section picker offers ' + label);
       ok(v === true, w + ' admin: the ' + label + ' group can be seen and tapped (' + v + ')');
       // Check the real visible control, then open this chapter without scrolling any destination into view.
-      if (picker) await p.selectOption('[data-k="ai-section"]', group);
+      if (picker) await L.pick(p, '[data-k="ai-section"]', group);
       else await L.tap(p, groupControl(group));
       await L.settle(p, 300);
       const pages = await p.locator('[data-p="a-tab"]').evaluateAll(nodes => nodes.map(el => ({ id: el.getAttribute('data-t'), label: el.textContent.trim() })));

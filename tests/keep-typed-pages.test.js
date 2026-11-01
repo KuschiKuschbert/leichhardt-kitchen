@@ -92,7 +92,7 @@ const rvBo = { [fsKey(['waste', today])]: { avoidable: 'Over-portioned chips', c
       ok(await off(p, sel) === false, w + ' review: typing turns Save the review on, with no redraw');
       ok(await asks(p), w + ' review: words typed, a reload asks first');
       await fits(p, w + ' review');
-      await p.fill('#w-ra', ''); await L.settle(p, 100);
+      await L.clear(p, '#w-ra'); await L.settle(p, 100);
       ok(await off(p, sel) === true && !(await asks(p)), w + ' review: back as it was, Save is off again and a reload does not ask');
       if (w === 390) {
         await p.fill('#w-rc', 'Drop chips to order after 21:00');
@@ -310,7 +310,7 @@ const rvBo = { [fsKey(['waste', today])]: { avoidable: 'Over-portioned chips', c
     await p.fill('#tr-venue', 'Riviera'); await p.fill('#tr-person', 'Jess');
     ok(!(await asks(p)), 'transfer: a venue and a person alone do not ask');
     await p.fill('#tr-text', 'Cream'); await p.fill('#tr-amt', '2');
-    await p.click('[data-p="tr-unit"][data-v="L"]');
+    await L.choose(p, '[data-p="tr-unit"][data-v="L"]');
     ok(await asks(p), 'transfer: an item typed asks first');
     await p.click('.tr-add .nb-addbtn'); await L.settle(p, 400);
     ok(await p.inputValue('#tr-venue') === 'Riviera' && !(await asks(p)), 'transfer: logged, the venue stays and a reload does not ask');

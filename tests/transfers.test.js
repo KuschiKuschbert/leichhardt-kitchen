@@ -37,13 +37,13 @@ extra[fsKey(['summary', 'transfers'])] = { day: today, from: yest, to: yest, at:
     await L.waitFor(p, () => !!document.querySelector('[data-p="tr-vpick"]'));
     const vchips = await p.$$eval('[data-p="tr-vpick"]', l => l.map(e => e.textContent));
     ok(vchips[0] === 'Riviera' && vchips.indexOf('Grand Hotel') > 0 && vchips.indexOf('Constructor') > 0, who + ': venue chips from today and the summary, a venue called Constructor too (' + vchips.join(', ') + ')');
-    await p.click('[data-p="tr-vpick"][data-v="Riviera"]'); await L.settle(p, 200);
+    await L.choose(p, '[data-p="tr-vpick"][data-v="Riviera"]'); await L.settle(p, 200);
     ok(await p.inputValue('#tr-venue') === 'Riviera' && await p.evaluate(() => document.activeElement && document.activeElement.id) === 'tr-person', who + ': the venue chip fills the box and moves on to who came');
     const pchips = await p.$$eval('[data-p="tr-ppick"]', l => l.map(e => e.textContent));
     ok(pchips.join(',') === 'Jess,Tom', who + ': who came before for Riviera (' + pchips.join(', ') + ')');
     await p.click('.tr-add .nb-addbtn'); await L.settle(p, 250);
     ok(/Write who came for it/.test(await txt(p, '.p-toast') || ''), who + ': out needs who came for it');
-    await p.click('[data-p="tr-ppick"][data-v="Tom"]'); await L.settle(p, 200);
+    await L.choose(p, '[data-p="tr-ppick"][data-v="Tom"]'); await L.settle(p, 200);
     ok(await p.inputValue('#tr-person') === 'Tom', who + ': the person chip fills the box');
 
     // the often taken chip fills the item, the unit and the usual amount
@@ -68,19 +68,19 @@ extra[fsKey(['summary', 'transfers'])] = { day: today, from: yest, to: yest, at:
     await p.fill('#tr-text', 'Flour'); await p.fill('#tr-amt', '200');
     await p.click('.tr-add .nb-addbtn'); await L.settle(p, 300);
     ok((await saved(p, 'Flour')).length === 0 && /200 kg\? Check the unit/.test(await txt(p, '.p-toast') || ''), who + ': 200 kg asks first and saves nothing');
-    await p.click('[data-p="tr-unit"][data-v="g"]'); await L.settle(p, 150);
+    await L.choose(p, '[data-p="tr-unit"][data-v="g"]'); await L.settle(p, 150);
     await p.click('.tr-add .nb-addbtn'); await L.settle(p, 400);
     ok((await saved(p, 'Flour')).some(x => x.amount === 200 && x.unit === 'g'), who + ': 200 g logs straight away');
 
     // the other way: we took from them; a venue typed in other letters is saved the way the book knows it, who gave it is optional
-    await p.click('[data-p="tr-dir"][data-v="in"]'); await L.settle(p, 200);
+    await L.choose(p, '[data-p="tr-dir"][data-v="in"]'); await L.settle(p, 200);
     ok(await p.getAttribute('#tr-text', 'placeholder') === 'What did we take?' && /optional/.test(await p.getAttribute('#tr-person', 'placeholder')), who + ': We took from them changes the boxes');
-    await p.fill('#tr-venue', '  grand   HOTEL '); await p.fill('#tr-person', '');
+    await p.fill('#tr-venue', '  grand   HOTEL '); await L.clear(p, '#tr-person');
     const n0 = await todayN(p);
     await p.press('#tr-venue', 'Enter'); await L.settle(p, 150);
     ok(await p.evaluate(() => document.activeElement && document.activeElement.id) === 'tr-person' && await todayN(p) === n0, who + ': Next on the venue goes to who gave it, nothing is sent');
     await p.fill('#tr-text', 'Lemons'); await L.settle(p, 100);
-    await p.fill('#tr-amt', '12'); await p.click('[data-p="tr-unit"][data-v="pieces"]');
+    await p.fill('#tr-amt', '12'); await L.choose(p, '[data-p="tr-unit"][data-v="pieces"]');
     await p.click('.tr-add .nb-addbtn'); await L.settle(p, 400);
     const lm = await saved(p, 'Lemons');
     ok(lm.length === 1 && lm[0].dir === 'in' && lm[0].venue === 'Grand Hotel' && lm[0].person === '' && lm[0].amount === 12 && lm[0].unit === 'pieces', who + ': we took 12 pieces of Lemons from Grand Hotel (' + JSON.stringify(lm[0]) + ')');
@@ -118,7 +118,7 @@ extra[fsKey(['summary', 'transfers'])] = { day: today, from: yest, to: yest, at:
     ok(!!await p.$('.p-name') && !await p.$('.tr-row'), 'shared tablet: transfers are hidden after idle lock');
     await p.click('.p-name[data-id="ann"]'); await L.settle(p,250); await p.keyboard.type('2222'); await L.settle(p,1000);
     await p.fill('#tr-venue', 'Riviera'); await p.fill('#tr-person', 'Jess'); await p.fill('#tr-text', 'Cream'); await p.fill('#tr-amt', '2');
-    await p.click('[data-p="tr-unit"][data-v="L"]');
+    await L.choose(p, '[data-p="tr-unit"][data-v="L"]');
     await p.click('.tr-add .nb-addbtn'); await L.settle(p, 300);
     ok(!await p.$('.p-name'), 'shared tablet: authenticated staff can log a transfer');
     const cr = await saved(p, 'Cream');
@@ -154,7 +154,7 @@ extra[fsKey(['summary', 'transfers'])] = { day: today, from: yest, to: yest, at:
     ok((await lineReads(p)).length === reads, 'admin: Remove and Put back read nothing again');
     ok(!!(await p.$('[data-p="csv"][data-v="transfers"]')), 'admin: Export has a CSV of the transfers');
     // the venue filter
-    await p.selectOption('[data-k="af-venue"]', 'Riviera'); await L.settle(p, 300);
+    await L.pick(p, '[data-k="af-venue"]', 'Riviera'); await L.settle(p, 300);
     const fl = await txt(p, '[data-lv="xfer-log"]') || '';
     ok(/Showing: Riviera/.test(await txt(p, '.a-pane') || '') && /Milk/.test(fl) && !/Lemons/.test(fl), 'admin: the venue filter shows Riviera only');
     await p.click('[data-p="af-reset"]'); await L.settle(p, 200);

@@ -40,9 +40,9 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
 const DRAFTS = [
   ['minutes', 'minutes', async p => { await p.click('[data-p="mn-new"]'); await L.settle(p, 200); await p.fill('[data-k="mn-decisions"]', 'Fryer roster'); }, s => s.mf === 'Fryer roster'],
   ['a ping for everyone', 'notes', async p => { await p.click('[data-p="n-new"]'); await L.settle(p, 200); await p.fill('[data-k="n-text"]', 'Fryer 2 is out'); }, s => s.nf === 'Fryer 2 is out'],
-  ['a ping for Ann, only the person picked', 'notes', async p => { await p.click('[data-p="n-new"]'); await L.settle(p, 200); await p.selectOption('[data-k="n-to"]', 'ann'); }, s => s.to === 'ann'],
+  ['a ping for Ann, only the person picked', 'notes', async p => { await p.click('[data-p="n-new"]'); await L.settle(p, 200); await L.pick(p, '[data-k="n-to"]', 'ann'); }, s => s.to === 'ann'],
   ['a guide', 'guides', async p => { await p.click('[data-p="g-new"]'); await L.settle(p, 200); await p.fill('[data-k="g-title"]', 'Slicer clean'); }, s => s.gf === 'Slicer clean'],
-  ['the order cut-offs', 'cutoffs', async p => { await p.click('[data-p="cut-day"][data-i="0"][data-v="' + ((next + 2) % 7) + '"]'); }, s => s.cut],
+  ['the order cut-offs', 'cutoffs', async p => { await L.choose(p, '[data-p="cut-day"][data-i="0"][data-v="' + ((next + 2) % 7) + '"]'); }, s => s.cut],
   ['Add several names', 'people', async p => { await p.fill('[data-k="a-bulk"]', 'Zed\nYan'); }, s => s.bulk === 'Zed\nYan']
 ];
 const READY = { minutes: '[data-p="mn-new"]', notes: '[data-p="n-new"]', guides: '[data-p="g-new"]', cutoffs: '[data-p="cut-day"]', people: '[data-k="a-bulk"]' };
@@ -156,8 +156,8 @@ const READY = { minutes: '[data-p="mn-new"]', notes: '[data-p="n-new"]', guides:
     await safe(w + ' cut-offs', async () => {
       p = await owner(b, '#/admin', w);
       await L.adminTab(p, 'cutoffs'); await L.waitFor(p, () => !!document.querySelector('[data-p="cut-day"]'), null, 8000);
-      await p.click('[data-p="cut-day"][data-i="0"][data-v="' + ((next + 2) % 7) + '"]'); await L.settle(p, 150);
-      await p.click('[data-p="cut-day"][data-i="1"][data-v="' + ((next + 3) % 7) + '"]'); await L.settle(p, 150);
+      await L.choose(p, '[data-p="cut-day"][data-i="0"][data-v="' + ((next + 2) % 7) + '"]'); await L.settle(p, 150);
+      await L.choose(p, '[data-p="cut-day"][data-i="1"][data-v="' + ((next + 3) % 7) + '"]'); await L.settle(p, 150);
       await p.click('[data-p="cut-undo"]'); await L.settle(p, 200);
       ok((await st(p)).cut && await txt(p, '[data-p="cut-undo"]') === 'Tap again to undo', w + ' cut-offs: one tap on Undo keeps both changes and asks again (' + await txt(p, '[data-p="cut-undo"]') + ')');
       await fits(p, w + ' cut-offs asking');

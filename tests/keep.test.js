@@ -30,10 +30,10 @@ function riceTwice() {
   // wastage: the reason sheet closes with Escape and gives focus back to its button
   await p.click('.w-rbtn');
   await L.settle(p, 200);
-  ok(await p.$('.sheet') !== null, 'waste: the reason sheet opens');
+  ok(await p.$('.ux-picker') !== null, 'waste: the reason sheet opens');
   await p.keyboard.press('Escape');
   await L.settle(p, 250);
-  ok(await p.$('.sheet') === null, 'waste: Escape closes the reason sheet');
+  ok(await p.$('.ux-picker') === null, 'waste: Escape closes the reason sheet');
   ok(await p.evaluate(() => !!document.activeElement && document.activeElement.classList.contains('w-rbtn')), 'waste: focus goes back to the reason button');
   ok(p.errors.length === 0, 'waste: no page errors ' + p.errors.join(' | '));
   await p.context().close();

@@ -160,12 +160,12 @@ async function fits(p, what, back) {
     p = await L.open(b, '#/manage', { who: 'sam', extra: tpl, width: w, wait: 1500 });
     await until(p, () => !!document.querySelector('[data-mg="chip"][data-v="templates"]'));
     await cold(p);
-    await p.click('[data-mg="chip"][data-v="templates"]'); await L.settle(p, 600);
+    await L.choose(p, '[data-mg="chip"][data-v="templates"]'); await L.settle(p, 600);
     t = await text(p, '#mg-root');
     ok(/No signal\. Your templates show when the phone is back online\./.test(t) && !/No templates yet/.test(t), 'Templates with no signal at ' + w + ' px: says there is no signal, not "No templates yet"');
     const o = await L.overflow(p);
     ok(!o, 'Templates with no signal: no sideways scroll at ' + w + ' px' + (o ? ' (' + o + ')' : ''));
-    await p.click('[data-mg="chip"][data-v="mylib"]'); await L.settle(p, 600);
+    await L.choose(p, '[data-mg="chip"][data-v="mylib"]'); await L.settle(p, 600);
     t = await text(p, '#mg-root');
     ok(/No signal\. What you made in the book shows when the phone is back online\./.test(t) && !/Nothing made in the book yet/.test(t), 'Made in the book with no signal at ' + w + ' px: says there is no signal, not "Nothing made in the book yet"');
     if (w === 390) {
@@ -174,10 +174,10 @@ async function fits(p, what, back) {
       await p.type('#mg-q', 'pl'); await L.settle(p, 300);
       t = await text(p, '#mg-root');
       ok(await reads(p, /drawtpl$/) === n0 && /No signal/.test(t) && !/Nothing made in the book yet/.test(t), 'Made in the book with no signal: typing a search reads nothing again and still says there is no signal');
-      await p.fill('#mg-q', ''); await L.settle(p, 300);
+      await L.clear(p, '#mg-q'); await L.settle(p, 300);
       // the signal back with no online event (wifi that stayed up): a tap on the chip reads again
       await p.evaluate(() => { window.__fake.cold = null; });
-      await p.click('[data-mg="chip"][data-v="templates"]'); await L.settle(p, 300);
+      await L.choose(p, '[data-mg="chip"][data-v="templates"]'); await L.settle(p, 300);
       ok(await shows(p, '#mg-root', /House plate/), 'Templates, signal back with no online event: a tap on the chip reads again and the template shows');
     }
     if (w === 768) {

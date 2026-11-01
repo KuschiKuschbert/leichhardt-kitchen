@@ -31,7 +31,7 @@ const { R, ok } = L.results();
     const m = await p.evaluate(t => {
       const box = s => { const e = document.querySelector(s); return e ? e.getBoundingClientRect() : null; };
       const hs = t === 'waste' ? '.wh-report > .a-title' : '.a-tools .a-title';
-      const h = box(hs), x = box(t === 'waste' ? '[data-p="csv"][data-v="waste"]' : '.a-export > summary'), d = box(t === 'waste' ? '[data-k="wh-period"]' : '.a-tools .hint');
+      const h = box(hs), x = box(t === 'waste' ? '[data-p="csv"][data-v="waste"]' : '.a-export > summary'), d = box(t === 'waste' ? '[data-k="wh-period"] + .ux-picker-trigger' : '.a-tools .hint');
       return { title: document.querySelector(hs) ? document.querySelector(hs).textContent : '', hw: h && Math.round(h.width), xw: x && Math.round(x.width), sameRow: !!(x && d && x.top < d.bottom && x.bottom > d.top) };
     }, t);
     ok(m.title && m.hw <= 1, t + ' on a phone: the page name is for screen readers only (' + JSON.stringify(m) + ')');

@@ -152,6 +152,7 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   // the recipe picker left open goes with the person: the next one is not told Not saved yet on Sign out
   p = await L.open(b, '#/prep', { who: 'sam', wait: 1800 });
   await p.click('[data-p="recipe-toggle"]'); await L.settle(p, 200);
+  await p.keyboard.press('Escape'); await L.settle(p, 200);
   await p.click('.wtop-who'); await L.settle(p, 150);
   await p.click('.wm [data-who="out"]'); await L.settle(p, 200);
   if (await signedIn(p)) { await p.click('.wm [data-who="out"]'); await L.settle(p, 400); }
@@ -163,11 +164,11 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   p = await L.open(b, '#/prep', { who: 'sam', wait: 1800 });
   // open on the prep list, with a search typed (a picker still open from before is left as it is)
   const pickOpen = async () => {
-    if (!(await p.$('.p-pick.is-open'))) { await p.click('[data-p="recipe-toggle"]'); await L.settle(p, 200); }
-    await p.fill('#p-rs', 'lak'); await L.settle(p, 200);
+    if (!(await p.$('.ux-picker[open]'))) { await p.click('[data-p="recipe-toggle"]'); await L.settle(p, 200); }
+    await p.fill('.ux-picker input[type="search"]', 'lak'); await L.settle(p, 200);
   };
   await pickOpen();
-  ok(await p.evaluate(() => window.LK_PREP.state.recipeOpen && !!document.querySelector('.p-pick.is-open') && window.LK_PREP.unsaved()), 'recipe picker: open on the prep list with a search typed, it counts as open there');
+  ok(await p.evaluate(() => window.LK_PREP.state.recipeOpen && !!document.querySelector('.ux-picker[open]') && window.LK_PREP.unsaved()), 'recipe picker: open on the prep list with a search typed, it counts as open there');
   for (const h of ['#/recipes', '#/orders', '#/']) {
     await p.evaluate(h => { location.hash = h; }, h); await L.settle(p, 600);
     ok(await p.evaluate(() => !window.LK_PREP.state.recipeOpen && !window.LK_PREP.state.recipeSearch && !window.LK_PREP.unsaved()), 'recipe picker: leaving the prep list for ' + h + ' closes it, and nothing counts as not saved');

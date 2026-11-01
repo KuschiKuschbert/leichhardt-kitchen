@@ -101,7 +101,7 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
     lkServerUp().then(function (up) {
       if (!up || held()) { flying = false; later(); return; }
       // The newest files first, all or nothing (lkFresh()), so the reload shows the newest cards. The page stays on the same card.
-      var files = ['index.html', 'js/data.js', 'js/art.js', 'js/overlay.js', 'js/app.js', 'js/amounts.js', 'js/learn.js', 'js/cutoffs.js', 'js/prep.js', 'js/functions.js', 'js/firebase-config.js', 'js/boot.js', 'js/upkeep.js', 'css/app.css'];
+      var files = ['index.html', 'js/data.js', 'js/art.js', 'js/overlay.js', 'js/controls.js', 'js/app.js', 'js/amounts.js', 'js/learn.js', 'js/cutoffs.js', 'js/prep.js', 'js/functions.js', 'js/firebase-config.js', 'js/boot.js', 'js/upkeep.js', 'css/app.css'];
       /* Once, when every file is in (28 Oct 2026). later(): if the reload is turned down (a page asks first), it tries
          again in 10 minutes. Something typed or written while the files came in holds it back the same way, and so do a
          file that did not come in (weak signal, no answer in 8 seconds) and the signal going meanwhile. */
@@ -202,7 +202,7 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
       if (stop()) return;
       me.files = true;
       if (me.tapped) busy('Updating...');
-      var files = ['index.html', 'js/data.js', 'js/art.js', 'js/overlay.js', 'js/app.js', 'js/amounts.js', 'js/learn.js', 'js/cutoffs.js', 'js/prep.js', 'js/functions.js', 'js/firebase-config.js', 'js/boot.js', 'js/upkeep.js', 'css/app.css'];
+      var files = ['index.html', 'js/data.js', 'js/art.js', 'js/overlay.js', 'js/controls.js', 'js/app.js', 'js/amounts.js', 'js/learn.js', 'js/cutoffs.js', 'js/prep.js', 'js/functions.js', 'js/firebase-config.js', 'js/boot.js', 'js/upkeep.js', 'css/app.css'];
       // a touch in the last 600 ms (a tap whose tick comes a moment later): the book looks again 700 ms on, once that
       // tick waits to send and holds the update back (28 Oct 2026)
       var land = function () {

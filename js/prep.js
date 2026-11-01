@@ -1039,6 +1039,7 @@
  if (window.LK_INTELLIGENCE) window.LK_INTELLIGENCE.reset(); if (window.LK_PROOFREADER) window.LK_PROOFREADER.reset(); proofRepairStamp = {}; if (window.LK_DELIVERY) window.LK_DELIVERY.reset(); if (window.LK_SUP) window.LK_SUP.reset(); if (supplierService) supplierService.reset();
     // an editor an older copy of its file has no drop(): it closes as before
     if (window.LK_MG && window.LK_MG.drop) window.LK_MG.drop(); if (window.LK_FE && window.LK_FE.drop) window.LK_FE.drop();
+    if (window.LK_UX) window.LK_UX.close();
     if (S.sheet) { S.sheet = ''; ovDone('reason'); } S.section = ''; S.secTyped = false;
     sessDrop(); ksClose(); noteClose('shut'); lmClose(); S.nJust = null; S.guestIn = false; lsSet('lk.prep.guest', ''); S.drinkAsk = ''; S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; S.gf = null; S.gfSnap = ''; S.cutDraft = null; S.cutSnap = ''; S.bulk = ''; S.wrA = S.wrC = S.wpA = S.wpC = null; S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; tdReset(); dkf = null; dkSnap = ''; dkEditing = false; dkMsg = ''; dkOpen = ''; lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); accessChanged(); }
   /* The chef mark's menu (js/app.js) asks what to show: Meeting minutes for everyone (when the page is on), and for the
@@ -2932,7 +2933,7 @@
         { h: 'Uses', html: function (x) { return String(x.uses || 0); } },
         { h: 'Typed/picked', html: function (x) { return (x.typed || 0) + '/' + (x.picked || 0); } },
         { h: 'Usual section', html: function (x) { return esc(bestSection(x)); } },
-        { h: 'Last used', html: function (x) { return esc(ago(x.lastUsed)); } },
+        { h: 'Last used', value: function (x) { return x.lastUsed || 0; }, html: function (x) { return esc(ago(x.lastUsed)); } },
         { h: '', cls: 'a-act', html: function (x) { return '<button type="button" class="p-x" data-p="learn-hide" data-id="' + esc(x.id) + '" data-hide="' + (x.hidden ? '0' : '1') + '">' + (x.hidden ? 'Show in suggestions' : 'Hide from suggestions') + '</button>'; } }
       ]
     });
@@ -2946,7 +2947,7 @@
     if (!L || L.usual < 0) return head + '<p class="hint">Not clocked yet: it needs 3 nights with a list' + (L ? ' (' + L.n + ' so far)' : '') + '. Until then the book goes by the list it finds in each night\'s lines, or ' + fall + '.</p></section>';
     var nights = Object.keys(L.days).sort().reverse().slice(0, 7).map(function (d) {
       var e = L.days[d];
-      return '<tr><th scope="row">' + esc(dayShort(d)) + '</th><td>' + (e.m >= 0 ? esc(hhmm(e.m)) : 'No list found') + '</td><td>' + (e.m >= 0 ? e.n + (e.n === 1 ? ' line' : ' lines') : '') + '</td></tr>';
+      return '<tr><th scope="row" data-sort-value="' + esc(d) + '">' + esc(dayShort(d)) + '</th><td>' + (e.m >= 0 ? esc(hhmm(e.m)) : 'No list found') + '</td><td>' + (e.m >= 0 ? e.n + (e.n === 1 ? ' line' : ' lines') : '') + '</td></tr>';
     }).join('');
     return head + '<div class="a-tiles"><div class="a-tile"><strong>' + esc(hhmm(L.usual)) + '</strong><span>usual start, ' + L.n + ' of the last ' + Object.keys(L.days).length + ' nights</span></div></div>' +
       '<h3 class="a-ch-h">Each weekday</h3><span class="hint">The night the list is written on. A weekday shows once it has 2 nights with a list.</span>' +
@@ -3030,7 +3031,7 @@
       cols: [
         { h: 'Line', th: true, html: function (x) { return esc(x.e.text); } },
         { h: 'Written', html: function (x) { return String(x.e.w); } },
-        { h: 'Typical time to tick', html: function (x) { return x.med ? dur(x.med) : 'n/a'; } },
+        { h: 'Typical time to tick', value: function (x) { return x.med || 0; }, html: function (x) { return x.med ? dur(x.med) : 'n/a'; } },
         { h: 'Rolled over', html: function (x) { return String(x.e.r); } },
         { h: 'Removed', html: function (x) { return String(x.e.del); } },
         { h: 'Suggestion', wide: true, html: function (x) { return x.tips.map(function (t) { return '<span class="a-flag">' + esc(t) + '</span>'; }).join(' '); } }
@@ -3067,14 +3068,16 @@
   }
   function lvRows(c) {
     var s = lvState(c), l = c.items, f, so, words;
-    // a list too short for the tools (no search, chips or sort shown) is plain: a chip or search left on from when it was
-    // longer would hide rows with no way to clear it
-    if (l.length < (c.tools == null ? 8 : c.tools)) s = { q: '', f: c.filters && c.filters.length ? c.filters[0][0] : '', sort: c.sorts && c.sorts.length ? c.sorts[0][0] : '' };
+    if (s.facets && c.cols) l = l.filter(function (row) { return Object.keys(s.facets).every(function (i) { return !s.facets[i] || String(window.LK_UX.cellValue(c.cols[i].html(row))) === s.facets[i]; }); });
     var q = s.q.replace(/^\s+|\s+$/g, '').toLowerCase();
     f = (c.filters || []).filter(function (x) { return x[0] === s.f; })[0];
     if (f && f[2]) l = l.filter(f[2]);
     if (q && c.find) { words = q.split(/\s+/); l = l.filter(function (it) { var t = String(c.find(it)).toLowerCase(); return words.every(function (w) { return t.indexOf(w) >= 0; }); }); }
     so = (c.sorts || []).filter(function (x) { return x[0] === s.sort; })[0];
+    if (s.col != null && c.cols && c.cols[s.col]) {
+      var column = c.cols[s.col];
+      return l.slice().sort(function (a, b) { return window.LK_UX.compare(column.value ? column.value(a) : window.LK_UX.cellValue(column.html(a)), column.value ? column.value(b) : window.LK_UX.cellValue(column.html(b))) * (s.desc ? -1 : 1); });
+    }
     return so ? l.slice().sort(so[2]) : l;
   }
   function lvBody(c) {
@@ -3085,8 +3088,8 @@
     var lim = Math.max(step, s.shown), shown = rows.slice(0, lim), left = all - shown.length, body;
     if (c.card) body = '<ul class="lv-cards nt-rows">' + shown.map(c.card).join('') + '</ul>';
     else {
-      body = '<div class="a-tablewrap lv-wrap" tabindex="0" role="region" aria-label="Table, scrolls sideways"><table class="a-table a-plain lv-table' + (c.table ? ' ' + esc(c.table) : '') + '"><thead><tr>' + c.cols.map(function (x) {
-        return '<th scope="col"' + (x.cls ? ' class="' + esc(x.cls) + '"' : '') + '>' + (x.h ? esc(x.h) : '<span class="visually-hidden">Actions</span>') + '</th>';
+      body = '<div class="a-tablewrap lv-wrap" tabindex="0" role="region" aria-label="Table, scrolls sideways"><table class="a-table a-plain lv-table' + (c.table ? ' ' + esc(c.table) : '') + '"><thead><tr>' + c.cols.map(function (x, i) {
+        return '<th scope="col"' + (x.h && x.sortable !== false ? ' aria-sort="' + (s.col === i ? s.desc ? 'descending' : 'ascending' : 'none') + '"' : '') + (x.cls ? ' class="' + esc(x.cls) + '"' : '') + '>' + (x.h && x.sortable !== false ? '<button type="button" class="ux-sort" data-p="lv-col" data-lv="' + esc(c.key) + '" data-col="' + i + '">' + esc(x.h) + (s.col === i ? s.desc ? ' ↓' : ' ↑' : ' ↕') + '</button>' : x.h ? esc(x.h) : '<span class="visually-hidden">Actions</span>') + '</th>';
       }).join('') + '</tr></thead><tbody>' + shown.map(function (it) {
         return '<tr' + (c.rowCls && c.rowCls(it) ? ' class="' + esc(c.rowCls(it)) + '"' : '') + '>' + c.cols.map(function (x) {
           var inner = x.html(it);
@@ -3101,41 +3104,75 @@
     return count + body + more;
   }
   function lvHTML(c) {
+    if (!c.find) c.find = function (item) { return c.cols ? c.cols.map(function (column) { return window.LK_UX.cellValue(column.html(item)); }).join(' ') : window.LK_UX.cellValue(c.card(item)); };
+    if (!c.sorts || !c.sorts.length) c.sorts = [['default', 'Default order', function () { return 0; }], ['az', 'A to Z', function (a, b) { return window.LK_UX.compare(c.find(a), c.find(b)); }], ['za', 'Z to A', function (a, b) { return window.LK_UX.compare(c.find(b), c.find(a)); }]];
     LVR[c.key] = c;
     var s = lvState(c), key = esc(c.key), bar = '';
-    if (c.items.length >= (c.tools == null ? 8 : c.tools)) {
+    {
       var fl = (c.filters || []).map(function (f) { return { f: f, n: f[2] ? c.items.filter(f[2]).length : c.items.length }; }).filter(function (x, i) { return i === 0 || x.n > 0 || x.f[0] === s.f; });
       bar = '<div class="lv-tools">' + (c.heading ? '<h3 class="a-ch-h">' + esc(c.heading) + '</h3>' : '') +
-        (c.find ? '<div class="lv-qw"><label class="visually-hidden" for="lv-q-' + key + '">Search</label><input id="lv-q-' + key + '" type="search" class="search lv-q" data-k="lv-q:' + key + '" placeholder="' + esc(c.ph || 'Search') + '" value="' + esc(s.q) + '" autocomplete="off" enterkeyhint="search"></div>' : '') +
+        '<div class="lv-qw"><label class="visually-hidden" for="lv-q-' + key + '">Search</label><input id="lv-q-' + key + '" type="search" class="search lv-q" data-k="lv-q:' + key + '" placeholder="' + esc(c.ph || 'Search') + '" value="' + esc(s.q) + '" autocomplete="off" enterkeyhint="search"></div>' +
         (c.sorts && c.sorts.length > 1 ? '<label class="a-f lv-sort"><span>Sort</span><select data-k="lv-s:' + key + '" aria-label="Sort">' + c.sorts.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (o[0] === s.sort ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select></label>' : '') + '</div>' +
         (fl.length > 1 ? '<div class="chips lv-chips scroll" role="group" aria-label="Filter">' + fl.map(function (x) { return '<button type="button" class="chip" data-p="lv-f" data-lv="' + key + '" data-v="' + esc(x.f[0]) + '" aria-pressed="' + (x.f[0] === s.f) + '">' + esc(x.f[1]) + ' <span class="lv-n">' + x.n + '</span></button>'; }).join('') + '</div>' : '');
     }
-    return '<div class="lv" data-lv="' + key + '">' + bar + '<div class="lv-body" data-lvb="' + key + '">' + lvBody(c) + '</div></div>';
+    var facets = (c.cols || []).map(function (column, i) {
+      if (!/role|status|category|section|reason|venue|attendance/i.test(column.h || '')) return '';
+      var values = Array.from(new Set(c.items.map(function (row) { return String(window.LK_UX.cellValue(column.html(row))); }))).filter(Boolean).sort();
+      if (values.length < 2) return '';
+      return '<label class="a-f"><span>' + esc(column.h) + '</span><select data-k="lv-cf:' + key + '" data-col="' + i + '" aria-label="Filter ' + esc(column.h) + '"><option value="">All</option>' + values.map(function (v) { return '<option value="' + esc(v) + '"' + (s.facets && s.facets[i] === v ? ' selected' : '') + '>' + esc(v) + '</option>'; }).join('') + '</select></label>';
+    }).join('');
+    return '<div class="lv" data-lv="' + key + '">' + bar + '<div class="ux-column-filters">' + facets + '</div>' + '<div class="ux-active-filters" data-lva="' + key + '">' + lvActive(c) + '</div><div class="lv-body" data-lvb="' + key + '">' + lvBody(c) + '</div></div>';
   }
   /* redraw just the rows of one list, so the search box keeps its focus while someone types */
+  function lvActive(c) {
+    var s = lvState(c), out = [];
+    function badge(text, part) { return '<button type="button" class="chip" data-p="lv-reset" data-lv="' + esc(c.key) + '" data-part="' + part + '">' + esc(text) + ' ×</button>'; }
+    if (s.q) out.push(badge('Search: ' + s.q, 'q'));
+    if (c.filters && s.f !== c.filters[0][0]) { var f = c.filters.filter(function (x) { return x[0] === s.f; })[0]; if (f) out.push(badge(f[1], 'f')); }
+    Object.keys(s.facets || {}).forEach(function (i) { if (s.facets[i]) out.push(badge(c.cols[i].h + ': ' + s.facets[i], 'facet:' + i)); });
+    if (s.col != null) out.push(badge('Sort: ' + c.cols[s.col].h + (s.desc ? ' descending' : ' ascending'), 'sort'));
+    else if (c.sorts && s.sort !== c.sorts[0][0]) out.push(badge('Sort: ' + s.sort, 'sort'));
+    if (out.length) out.push(badge('Reset All Filters', 'all'));
+    return out.join('');
+  }
   function lvRefresh(key) {
     var c = LVR[key], b = S.root && S.root.querySelector('[data-lvb="' + key + '"]');
     if (!c || !b) return;
     b.innerHTML = lvBody(c);
+    var active = S.root.querySelector('[data-lva="' + key + '"]'); if (active) active.innerHTML = lvActive(c);
     var s = lvState(c);
     Array.prototype.forEach.call(S.root.querySelectorAll('[data-p="lv-f"][data-lv="' + key + '"]'), function (ch) { ch.setAttribute('aria-pressed', ch.getAttribute('data-v') === s.f ? 'true' : 'false'); });
   }
   function lvClick(a, el) {
     var key = el.getAttribute('data-lv'), c = LVR[key]; if (!c) return;
     var s = lvState(c), step = c.step || 15;
-    if (a === 'lv-f') { s.f = el.getAttribute('data-v'); s.shown = step; }
+    if (a === 'lv-col') { var col = +el.getAttribute('data-col'); if (s.col !== col) { s.col = col; s.desc = false; } else if (!s.desc) s.desc = true; else { s.col = null; s.desc = false; } s.shown = step; }
+    else if (a === 'lv-reset') {
+      var part = el.getAttribute('data-part');
+      if (part === 'all' || part.indexOf('facet:') === 0) {
+        if (part === 'all') s.facets = {}; else if (s.facets) delete s.facets[part.slice(6)];
+        Array.prototype.forEach.call(S.root.querySelectorAll('[data-k="lv-cf:' + key + '"]'), function (select) { select.value = s.facets && s.facets[select.dataset.col] || ''; if (select._uxUpdate) select._uxUpdate(); });
+      }
+      if (part === 'q' || part === 'all') { s.q = ''; var search = S.root.querySelector('[data-k="lv-q:' + key + '"]'); if (search) window.LK_UX.resetSearch(search); }
+      if (part === 'f' || part === 'all') s.f = c.filters && c.filters.length ? c.filters[0][0] : '';
+      if (part === 'sort' || part === 'all') { s.col = null; s.desc = false; s.sort = c.sorts && c.sorts.length ? c.sorts[0][0] : ''; var sortInput = S.root.querySelector('[data-k="lv-s:' + key + '"]'); if (sortInput) { sortInput.value = s.sort; if (sortInput._uxUpdate) sortInput._uxUpdate(); } }
+      s.shown = step;
+    }
+    else if (a === 'lv-f') { s.f = el.getAttribute('data-v'); s.shown = step; }
     else if (a === 'lv-more') s.shown = Math.max(step, s.shown) + step;
     else if (a === 'lv-all') s.shown = LV_BIG;
     else if (a === 'lv-less') s.shown = step;
     else if (a === 'lv-clear') {
+      s.facets = {};
+      Array.prototype.forEach.call(S.root.querySelectorAll('[data-k="lv-cf:' + key + '"]'), function (select) { select.value = ''; if (select._uxUpdate) select._uxUpdate(); });
       s.q = ''; s.f = c.filters && c.filters.length ? c.filters[0][0] : ''; s.shown = step;
-      var qi = S.root.querySelector('[data-k="lv-q:' + key + '"]'); if (qi) qi.value = '';
+      var qi = S.root.querySelector('[data-k="lv-q:' + key + '"]'); if (qi) window.LK_UX.resetSearch(qi);
       Array.prototype.forEach.call(S.root.querySelectorAll('[data-p="lv-f"][data-lv="' + key + '"]'), function (ch) { ch.setAttribute('aria-pressed', ch.getAttribute('data-v') === s.f ? 'true' : 'false'); });
     }
     lvRefresh(key);
   }
   /* a row that was just added must be on screen: clear the search and filter and open every row */
-  function lvReveal(key) { var s = LV[key], c = LVR[key]; if (!s) return; s.q = ''; if (c && c.filters && c.filters.length) s.f = c.filters[0][0]; s.shown = LV_BIG; }
+  function lvReveal(key) { var s = LV[key], c = LVR[key]; if (!s) return; s.q = ''; s.facets = {}; if (c && c.filters && c.filters.length) s.f = c.filters[0][0]; s.shown = LV_BIG; }
   /* Every day at a glance: a calendar, darker means more. Tap a day to open it in the prep book. */
   function calHTML(n) {
     var a = AF(), m = S.calM || 'done', today = dayNow(), agg = aggregate(n, 0), first = shift(today, -(n - 1)), start = first, i;
@@ -3302,7 +3339,7 @@
       [agg.fixes.length, 'lines corrected by the proofreader', '']
     ];
     var tbl = '<details class="a-details"><summary>Show the daily numbers as a table</summary><div class="a-scroll"><table class="a-table"><thead><tr><th scope="col">Day</th><th scope="col">Written</th><th scope="col">Ticked</th><th scope="col">Rolled over</th></tr></thead><tbody>' +
-      agg.dates.slice().reverse().map(function (d) { return '<tr><th scope="row">' + esc(dayShort(d)) + '</th><td>' + agg.perDay[d].w + '</td><td>' + agg.perDay[d].t + '</td><td>' + agg.perDay[d].r + '</td></tr>'; }).join('') + '</tbody></table></div></details>';
+      agg.dates.slice().reverse().map(function (d) { return '<tr><th scope="row" data-sort-value="' + esc(d) + '">' + esc(dayShort(d)) + '</th><td>' + agg.perDay[d].w + '</td><td>' + agg.perDay[d].t + '</td><td>' + agg.perDay[d].r + '</td></tr>'; }).join('') + '</tbody></table></div></details>';
     return head +
       '<section class="a-sec">' + secHead(0) + '<div class="a-grid">' + smartHTML(agg, prev, n) + '</div><div class="a-tiles">' + tiles.filter(tileKeep).map(tileHTML).join('') + '</div></section>' +
       '<section class="a-sec">' + secHead(1) + '<div class="a-grid">' + card(calHTML(n), 'full') + card('<h3 class="a-ch-h">Lines each day</h3>' + legend([['Written', CW], ['Ticked off', CT]]) + dailyChart(agg) + tbl, 'full') + '</div></section>' +
@@ -3479,17 +3516,7 @@
   /* "Add from the recipes" opens a panel that floats over the list (it does not push the list or the add form around).
      Nothing is listed until the person types or taps Show all. The list inside scrolls. */
   function recipePicker() {
-    var s = S.recipeSearch.trim().toLowerCase();
-    var all = D.recipes.filter(function (r) { return r.kind === 'batch' || r.kind === 'component'; });
-    var btn = '<button type="button" class="nb-btn p-pickbtn" data-p="recipe-toggle" aria-expanded="' + !!S.recipeOpen + '">Add from the recipes</button>';
-    if (!S.recipeOpen) return '<div class="p-pick">' + btn + '</div>';
-    var list = s ? all.filter(function (r) { return (r.name + ' ' + (r.short || '')).toLowerCase().indexOf(s) >= 0; }).slice(0, 40) : (S.recipeAll ? all : []);
-    var body = list.length ? '<div class="p-recipes">' + list.map(function (r) { return '<button type="button" class="chip sq" data-p="add-recipe" data-id="' + esc(r.id) + '">' + esc(r.short || r.name) + '</button>'; }).join('') + '</div>'
-      : (s ? '<p class="hint">No recipe matches.</p>' : '<p class="hint">Type a name to find a recipe.</p><button type="button" class="p-link" data-p="recipe-all">Show all ' + all.length + ' recipes</button>');
-    return '<div class="p-pick is-open">' + btn + '<div class="p-pick-panel" role="dialog" aria-label="Add from the recipes">' +
-      '<div class="p-pick-h"><label class="label" for="p-rs">Find a batch or component recipe</label><button type="button" class="p-link" data-p="recipe-close">Close</button></div>' +
-      '<input id="p-rs" class="search" type="search" data-k="p-rs" autocomplete="off" placeholder="Start typing..." value="' + esc(S.recipeSearch) + '">' + body +
-      '<p class="hint">It goes under the section written in the add box.</p></div></div>';
+    return '<div class="p-pick"><button type="button" class="nb-btn p-pickbtn" data-p="recipe-toggle" aria-haspopup="dialog" aria-expanded="false">Add from the recipes</button></div>';
   }
   /* how often an item (or a longer line holding it) was wasted in the last 14 days, for the given reasons */
   function wasteFor(t, reasons) {
@@ -3735,7 +3762,7 @@
         { h: 'Lines written', html: function (r) { return String(r.added); } },
         { h: 'Ticked off', html: function (r) { return String(r.ticked); } },
         { h: 'Sign-ins', html: function (r) { return String(r.visits); } },
-        { h: 'Last seen', html: function (r) { return esc(ago(r.lastSeen)); } }
+        { h: 'Last seen', value: function (r) { return r.lastSeen || 0; }, html: function (r) { return esc(ago(r.lastSeen)); } }
       ]
     }) + '</section>');
     var secs = '<section class="set-block"><span class="label">Sections people have written</span><span class="hint">Sections appear by themselves when someone types a new one. Hide one to stop it showing as a suggestion.</span>' + lvHTML({
@@ -3747,7 +3774,7 @@
         { h: 'Section', th: true, html: function (x) { return esc(x.name) + (x.hidden ? ' <span class="a-badge off">hidden</span>' : ''); } },
         { h: 'Lines', html: function (x) { return String(x.uses || 0); } },
         { h: 'Last written by', html: function (x) { return esc(x.lastBy || ''); } },
-        { h: 'Last used', html: function (x) { return esc(ago(x.lastUsed)); } },
+        { h: 'Last used', value: function (x) { return x.lastUsed || 0; }, html: function (x) { return esc(ago(x.lastUsed)); } },
         { h: '', html: function (x) { return '<button type="button" class="p-x" data-p="sec-hide" data-id="' + esc(x.id) + '" data-hide="' + (x.hidden ? '0' : '1') + '">' + (x.hidden ? 'Show in suggestions' : 'Hide from suggestions') + '</button>'; } }
       ]
     }) + '</section>';
@@ -3926,13 +3953,13 @@
       key: 'ord-days', items: Object.keys(byDay).map(function (d) { return { d: d, n: byDay[d].n, who: Object.keys(byDay[d].who) }; }), step: 7, tools: 10, noun: ['day', 'days'], ph: 'Search by day or name',
       find: function (o) { return dayShort(o.d) + ' ' + o.who.join(' '); },
       sorts: [['new', 'Newest first', function (a, b) { return a.d < b.d ? 1 : -1; }], ['most', 'Most lines', function (a, b) { return b.n - a.n || (a.d < b.d ? 1 : -1); }]],
-      cols: [{ h: 'Day', th: true, html: function (o) { return esc(dayShort(o.d)); } }, { h: 'Lines', html: function (o) { return String(o.n); } }, { h: 'Written by', wide: true, html: function (o) { return esc(o.who.join(', ')); } }]
+      cols: [{ h: 'Day', th: true, value: function (o) { return o.d || ""; }, html: function (o) { return esc(dayShort(o.d)); } }, { h: 'Lines', html: function (o) { return String(o.n); } }, { h: 'Written by', wide: true, html: function (o) { return esc(o.who.join(', ')); } }]
     });
     var perList = lvHTML({
       key: 'ord-people', items: Object.keys(byPerson).map(function (k) { var q = byPerson[k]; return { k: k, n: q.n, days: Object.keys(q.days).length, last: q.last }; }), step: 10, tools: 10, noun: ['person', 'people'], ph: 'Search names',
       find: function (o) { return o.k; },
       sorts: [['most', 'Most lines', function (a, b) { return b.n - a.n || a.k.localeCompare(b.k); }], ['az', 'A to Z', function (a, b) { return a.k.toLowerCase().localeCompare(b.k.toLowerCase()); }], ['last', 'Wrote most recently', function (a, b) { return a.last < b.last ? 1 : -1; }]],
-      cols: [{ h: 'Person', th: true, html: function (o) { return esc(o.k); } }, { h: 'Lines', html: function (o) { return String(o.n); } }, { h: 'Days', html: function (o) { return String(o.days); } }, { h: 'Last', html: function (o) { return esc(dayShort(o.last)); } }]
+      cols: [{ h: 'Person', th: true, html: function (o) { return esc(o.k); } }, { h: 'Lines', html: function (o) { return String(o.n); } }, { h: 'Days', html: function (o) { return String(o.days); } }, { h: 'Last', value: function (o) { return o.last || ""; }, html: function (o) { return esc(dayShort(o.last)); } }]
     });
     var itemList = lvHTML({
       key: 'ord-items', items: Object.keys(items).map(function (k) { var it = items[k]; return { t: it.text, n: it.n, days: Object.keys(it.days).length }; }), step: 10, tools: 10, noun: ['item', 'items'], ph: 'Search items',
@@ -4440,7 +4467,7 @@
     if (S.mins) { loadMine(); minCard(); }
     if (!S.root || !document.body.contains(S.root) || rendering) return;
     rendering = true;
-    var ae = document.activeElement, key = ae && ae.getAttribute && ae.getAttribute('data-k'), start = null, end = null;
+    var ae = document.activeElement, key = ae && ae.getAttribute && (ae.getAttribute('data-k') || (ae._uxSource && ae._uxSource.getAttribute('data-k'))), start = null, end = null;
     var btnSel = !key && ae && S.root.contains(ae) && ae.getAttribute && ae.getAttribute('data-p') ? guestSel(ae) : '', tickAt = -1;
     if (btnSel && ae.getAttribute('data-p') === 'tick') tickAt = Array.prototype.indexOf.call(S.root.querySelectorAll('.nb-box[data-p="tick"]'), ae);
     if (key && ae.selectionStart != null) { try { start = ae.selectionStart; end = ae.selectionEnd; } catch (e) {} }
@@ -4451,7 +4478,8 @@
     S.root.classList.toggle('is-book', S.name === 'prep' && !!S.root.querySelector('.nb'));
     document.documentElement.classList.toggle('sheet-open', !!S.root.querySelector('.sheet') || !!ptPop);
     if (scrolls.length) Array.prototype.forEach.call(S.root.querySelectorAll('.nb-body'), function (b, i) { if (scrolls[i] != null) b.scrollTop = scrolls[i]; });
-    if (key) { var el = S.root.querySelector('[data-k="' + key + '"]'); if (el) { el.focus({ preventScroll: true }); if (start != null && el.setSelectionRange) { try { el.setSelectionRange(start, end); } catch (e) {} } } }
+    if (window.LK_UX) window.LK_UX.enhance(S.root);
+    if (key) { var el = S.root.querySelector('[data-k="' + key + '"]'); if (el && el._uxTrigger) el = el._uxTrigger; if (el) { el.focus({ preventScroll: true }); if (start != null && el.setSelectionRange) { try { el.setSelectionRange(start, end); } catch (e) {} } } }
     else if (btnSel) {
       var back = S.root.querySelector(btnSel);
       if (!back && tickAt >= 0) { var ticks2 = S.root.querySelectorAll('.nb-box[data-p="tick"]:not([disabled])'); back = ticks2[Math.min(tickAt, ticks2.length - 1)]; }
@@ -4698,7 +4726,7 @@
       // Not sent on the words' line, before Used in (a line of its own, .o-used), so its room never adds a line
       (rolledN(x) ? ' <span class="nb-roll" title="Not ordered yet, so it rolled over">Since ' + esc(dayShort(x.since || x.rolledFrom || x.date)) + '</span>' : '') + unsentMark(x) + recipeChips(x) + '</span>' +
       '<span class="nb-by"><span class="nb-wrote">' + by + '</span></span>' +
-      (canBrowse() && can('del') && (x.deleted || !x.ordered) ? moreBtn(x) : '') +
+      (canBrowse() && can('del') ? (x.deleted || !x.ordered ? moreBtn(x) : '<span class="nb-more nb-more-held" aria-hidden="true"></span>') : '') +
       (canBrowse() && can('del') && !x.deleted && !x.ordered ? '<button type="button" class="p-x" data-p="odel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') +
       (canBrowse() && can('del') && x.deleted ? '<button type="button" class="p-x" data-p="orestore" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Put back ' + x.text) + '">Put back</button>' : '') + '</li>';
   }
@@ -5877,7 +5905,7 @@
      closing sheet takes its history entry off with Back (ovDone), so the next one waits for that Back to land first. */
   var ksWant = false, ksWait = false, nextWait = false;
   // every sheet or popup over the page: these, the function sheet, the wastage reason sheet and the other bottom sheets
-  function sheetOpen() { return !!(ksPop || npop || mlPop || gz || S.sheet || document.querySelector('.wm-wrap, .fn-pop, .sheet-bg')); }
+  function sheetOpen() { return !!(ksPop || npop || mlPop || gz || S.sheet || document.querySelector('.wm-wrap, .fn-pop, .sheet-bg, .ux-picker[open]')); }
   function typing() { var ae = document.activeElement; return !!(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) && ae.type !== 'button'); }
   // a first PIN's One more thing, while it is on the screen (it shows only on the prep list)
   function dkFirstUp() { return S.drinkAsk === 'first' && S.name === 'prep' && !!(S.root && document.body.contains(S.root) && S.root.querySelector('.dr-first')); }
@@ -6702,7 +6730,7 @@
       filters: [['all', 'All days'], ['some', 'Something logged', function (x) { return x.l.length > 0; }], ['none', 'Nothing logged', function (x) { return !x.l.length; }], ['rev', 'Has a review', function (x) { return !!x.r; }]],
       sorts: [['new', 'Newest first', function (a, b) { return a.d < b.d ? 1 : -1; }], ['old', 'Oldest first', function (a, b) { return a.d < b.d ? -1 : 1; }], ['most', 'Most entries', function (a, b) { return b.l.length - a.l.length || (a.d < b.d ? 1 : -1); }]],
       cols: [
-        { h: 'Day', th: true, html: function (x) { return esc(dayShort(x.d)); } },
+        { h: 'Day', th: true, value: function (x) { return x.d || ""; }, html: function (x) { return esc(dayShort(x.d)); } },
         { h: 'Entries', html: function (x) { return x.l.length ? String(x.l.length) : '<span class="o-who-i">none</span>'; } },
         { h: 'Amount', html: function (x) { return esc(totalsText(wTotals(x.l))); } },
         { h: 'Review', wide: true, html: function (x) { return x.r ? esc((x.r.reviewBy || '') + ': ' + (x.r.change || x.r.avoidable)) : '<span class="o-who-i">not written</span>'; } }
@@ -6856,7 +6884,7 @@
       key: 'waste-log', heading: 'Every entry', items: whLines(r, whState().removed), step: 15, tools: 0, noun: ['entry', 'entries'], empty: 'Nothing logged for these dates and filters.',
       sorts: [['new', 'Newest first', function (a, b) { return b.date.localeCompare(a.date) || (+b.addedAt || 0) - (+a.addedAt || 0) || String(b.id).localeCompare(String(a.id)); }], ['old', 'Oldest first', function (a, b) { return a.date.localeCompare(b.date) || (+a.addedAt || 0) - (+b.addedAt || 0) || String(a.id).localeCompare(String(b.id)); }], ['az', 'A to Z', function (a, b) { return String(a.text).toLowerCase().localeCompare(String(b.text).toLowerCase()); }]],
       cols: [
-        { h: 'Date / time', html: function (x) { return esc(x.date.split('-').reverse().join('/')) + (x.addedAt ? ' ' + clock(x.addedAt) : ''); } },
+        { h: 'Date / time', value: function (x) { return x.addedAt || Date.parse(x.date + 'T00:00:00+10:00'); }, html: function (x) { return esc(x.date.split('-').reverse().join('/')) + (x.addedAt ? ' ' + clock(x.addedAt) : ''); } },
         { h: 'Item', th: true, html: function (x) { return esc(x.text) + (x.deleted ? ' <span class="o-who-i">Removed' + (x.deletedBy ? ' by ' + esc(x.deletedBy) : '') + '</span>' : '') + (x.action ? '<details class="wh-note"><summary>Action / note</summary><p>' + esc(x.action) + '</p></details>' : ''); } },
         { h: 'Amount', html: function (x) { return esc(num(+x.amount || 0) + ' ' + x.unit); } },
         { h: 'Reason', html: function (x) { return esc(reasonName(x.reason)); } },
@@ -6965,7 +6993,7 @@
         { h: 'Venue', th: true, html: function (e) { return esc(e.v); } },
         { h: 'They took', html: function (e) { return amounts(e.out); } },
         { h: 'We took', html: function (e) { return amounts(e.in); } },
-        { h: 'Last', html: function (e) { return e.last ? esc(dayShort(e.last)) : ''; } },
+        { h: 'Last', value: function (e) { return e.last || ""; }, html: function (e) { return e.last ? esc(dayShort(e.last)) : ''; } },
         { h: 'People', wide: true, html: function (e) { var p = e.ppl; return esc(Object.keys(p).sort(function (a, b) { return p[b] - p[a]; }).slice(0, 6).join(', ')); } }
       ]
     });
@@ -6994,7 +7022,7 @@
       filters: [['all', 'All'], ['out', 'They took', function (x) { return !x.deleted && x.dir !== 'in'; }], ['in', 'We took', function (x) { return !x.deleted && x.dir === 'in'; }], ['gone', 'Removed', function (x) { return !!x.deleted; }]],
       sorts: [['new', 'Newest first', function (a, b) { return xNum(b.addedAt) - xNum(a.addedAt); }], ['old', 'Oldest first', function (a, b) { return xNum(a.addedAt) - xNum(b.addedAt); }], ['az', 'A to Z', function (a, b) { return xAz(a.text, b.text); }]],
       cols: [
-        { h: 'Day', html: function (x) { return esc(dayShort(x.date)) + (x.addedAt ? ' ' + clock(x.addedAt) : ''); } },
+        { h: 'Day', value: function (x) { return x.date || ""; }, html: function (x) { return esc(dayShort(x.date)) + (x.addedAt ? ' ' + clock(x.addedAt) : ''); } },
         { h: 'Item', th: true, html: function (x) { return esc(x.text) + (x.deleted ? ' <span class="o-who-i">Removed' + (x.deletedBy ? ' by ' + esc(x.deletedBy) : '') + '</span>' : ''); } },
         { h: 'Amount', html: function (x) { return esc(num(+x.amount || 0) + ' ' + x.unit); } },
         { h: 'Way', html: function (x) { return x.dir === 'in' ? 'We took' : 'They took'; } },
@@ -8388,6 +8416,7 @@
       ksDone();
     }, function () { if (S.who === id && S.authed) ksWant = true; ksDone(); });
   }
+  var ksAdaptive = null;
   function ksOpen(change) {
     var p = me(); if (ksPop || !ksPicks(p)) return;
     if (!change && ksGet(p.id)) return;   // asked by itself: picked (or skipped) in the meantime
@@ -8395,23 +8424,21 @@
     ksPrev = document.activeElement;
     var el = document.createElement('div');
     el.className = 'ks-wrap';
-    el.innerHTML = '<div class="ks-bg" data-ks="' + out + '"></div><section class="ks" role="dialog" aria-modal="true" aria-labelledby="ks-h" tabindex="-1">' +
-      '<div class="ks-grip" aria-hidden="true"></div><header class="ks-head"><span class="ks-eb">' + esc(p.name) + '</span><h2 class="ks-h" id="ks-h">Your section today</h2></header>' +
-      '<p class="ks-hint">Your prep lines and wastage go under it, unless you write another section.</p>' +
-      '<div class="ks-grid" role="group" aria-labelledby="ks-h">' + kitSecs().map(function (s) {
-        return '<button type="button" class="ks-b" data-ks="pick" data-v="' + esc(s.id) + '" aria-pressed="' + (!!cur && cur.sec === s.id) + '">' + esc(s.name) + '</button>';
-      }).join('') + '</div>' +
-      '<footer class="ks-foot"><button type="button" class="ks-out" data-ks="' + out + '">' + (change ? 'Close' : 'Not on a section today') + '</button></footer></section>';
+
     document.body.appendChild(el);
     ksPop = el;
     ovPush('ks');
     document.documentElement.classList.add('ks-open');
-    var f = el.querySelector('.ks-b[aria-pressed="true"]') || el.querySelector('.ks-b'); if (f) f.focus({ preventScroll: true });
+    ksAdaptive = window.LK_UX.AdaptivePicker({ label: 'Your section today', trigger: ksPrev, managedOverlay: true, className: 'ux-section-picker', optionClass: 'ks-b',
+      items: kitSecs().map(function (s) { return { value: s.id, label: s.name }; }).concat([{ value: '', label: 'Not on a section today' }]),
+      value: [cur ? cur.sec : ''], onChange: function (v) { if (v[0]) ksPick(v[0]); else ksSkip(); }, onDismiss: function () { if (ksPop) { if (change) ksClose(); else ksSkip(); } }
+    });
   }
   function ksClose(noBack) {
     if (!ksPop) return;
     ovDone('ks', noBack);
-    ksPop.parentNode.removeChild(ksPop); ksPop = null;
+    var old = ksPop; ksPop = null; old.remove();
+    var picker = ksAdaptive; ksAdaptive = null; if (picker) picker.close();
     document.documentElement.classList.remove('ks-open');
     if (ksPrev && ksPrev.focus && document.body.contains(ksPrev)) { try { ksPrev.focus({ preventScroll: true }); } catch (e) {} }
     ksPrev = null;
@@ -8506,7 +8533,7 @@
         { h: 'Name', th: true, html: function (r) { return esc(r.name); } },
         { h: 'Days', html: function (r) { return String(r.days); } },
         { h: 'Sections', wide: true, html: function (r) { return esc(Object.keys(r.secs).sort(function (a, b) { return r.secs[b] - r.secs[a]; }).map(function (n) { return n + ' ' + r.secs[n]; }).join(', ')); } },
-        { h: 'Last', html: function (r) { return esc(dayShort(r.last)); } }
+        { h: 'Last', value: function (r) { return r.last || ""; }, html: function (r) { return esc(dayShort(r.last)); } }
       ]
     });
     return out + '</section>';
@@ -8534,7 +8561,10 @@
     if (a === 'ml-tick') { mlTick(id); return; }
     if (a === 'ml-donebox') { S.mlDoneOpen = !el.parentNode.open; return; }
     if (a === 'ml-goadmin') { S.atab = 'mail'; lsSet('lk.prep.atab', 'mail'); return; }
-    if (a === 'recipe-toggle') { S.recipeOpen = !S.recipeOpen; if (!S.recipeOpen) { S.recipeSearch = ''; S.recipeAll = false; } draw(); if (S.recipeOpen) { var rse = S.root.querySelector('#p-rs'); if (rse) rse.focus({ preventScroll: true }); } return; }
+    if (a === 'recipe-toggle') {
+      S.recipeOpen = true;
+      window.LK_UX.AdaptivePicker({ label: 'Add from the recipes', trigger: el, items: D.recipes.filter(function (r) { return r.kind === 'batch' || r.kind === 'component'; }).map(function (r) { return { value: r.id, label: r.name }; }), value: [], onChange: function (v) { S.recipeOpen = false; if (v[0]) addRecipe(v[0]); }, onDismiss: function () { S.recipeOpen = false; S.recipeSearch = ''; } }); return;
+    }
     if (a === 'recipe-all') { S.recipeAll = true; draw(); var rse2 = S.root.querySelector('#p-rs'); if (rse2) rse2.focus({ preventScroll: true }); return; }
     if (a === 'pin-go') { submitKitchenPin(); return; }
     // head chef only (admin Tools tab): this device forgets the kitchen PIN and goes to the PIN screen of the prep book
@@ -8693,7 +8723,10 @@
     if (a === 'wunit') { S.wf.unit = el.getAttribute('data-v'); draw(); return; }
     if (a === 'w-act-open') { S.wf.actOpen = true; draw(); focusSel('#w-act'); return; }
     if (a === 'wreason') { S.wf.reason = el.getAttribute('data-v'); if (S.sheet) wasteSheetClose(); else draw(); return; }
-    if (a === 'sheet') { S.sheet = el.getAttribute('data-v'); ovPush('reason', function () { wasteSheetClose(true); }); draw(); var so = S.root.querySelector('.sheet-o[aria-checked="true"]') || S.root.querySelector('.sheet-o'); if (so) so.focus(); return; }
+    if (a === 'sheet') {
+      S.sheet = 'reason';
+      window.LK_UX.AdaptivePicker({ label: 'Why was it wasted?', trigger: el, value: [S.wf.reason], items: REASONS.map(function (r) { return { value: r[0], label: r[1] }; }), onChange: function (v) { S.sheet = ''; S.wf.reason = v[0]; draw(); }, onDismiss: function () { S.sheet = ''; } }); return;
+    }
     if (a === 'wsugg') { var wt = (S.wsugg || [])[i]; if (wt) { S.wf.text = wt; var wl = wLast(wt); if (wl) { if (wl.unit) S.wf.unit = wl.unit; if (wl.reason && !S.wf.reason) S.wf.reason = wl.reason; if (wl.station && !S.wf.sec && !mySec()) S.wf.sec = wl.station; if (wl.amt && (S.wf.amtAuto || !String(S.wf.amt).trim())) { S.wf.amt = wl.amt; S.wf.amtAuto = true; } } draw(); focusFilled('w-amt'); } return; }
     if (a === 'woften') { var wo = wOften()[i]; if (wo) { S.wf.text = wo.text; if (wo.unit) S.wf.unit = wo.unit; if (wo.reason) S.wf.reason = wo.reason; if (wo.sec && !S.wf.sec && !mySec()) S.wf.sec = wo.sec; if (wo.amt && (S.wf.amtAuto || !String(S.wf.amt).trim())) { S.wf.amt = wo.amt; S.wf.amtAuto = true; } draw(); focusFilled('w-amt'); } return; }
     if (a === 'wdel') { removeWaste(dt, id); return; }
@@ -8833,7 +8866,7 @@
     if (k === 'p-text') { S.text = el.value; var hn = S.root.querySelector('#p-hint'); if (hn) hn.textContent = hintText(S.text); var suggestionBox = S.root.querySelector('#p-sugg'); if (suggestionBox) suggestionBox.innerHTML = suggestHTML(); var qs = S.root.querySelector('#p-qsugg'); if (qs) qs.innerHTML = qtyChipsHTML(); return; }
     if (k === 'o-text') { S.otext = el.value; var og = S.root.querySelector('#o-sugg'); if (og) og.innerHTML = ordSuggHTML(); oAutoQty(); return; }
     if (k === 'o-qty') { if (S.oqtyAuto && S.oqtyAuto !== el.value) sg('ordfill', 'e'); S.oqty = el.value; S.oqtyAuto = ''; return; }
-    if (k === 'g-q') { S.gq = el.value; var gl = S.root.querySelector('#g-list'); if (gl) gl.innerHTML = gListHTML(); if (el.parentNode && el.parentNode.classList) el.parentNode.classList.toggle('has-q', !!S.gq); return; }
+    if (k === 'g-q') { S.gq = el.value; var gl = S.root.querySelector('#g-list'); if (gl) gl.innerHTML = gListHTML(); var gWrap = el.closest('.g-qwrap'); if (gWrap) gWrap.classList.toggle('has-q', !!S.gq); return; }
     if (k === 'g-title' || k === 'g-sum' || k === 'g-steps' || k === 'g-kw') {
       if (!S.gf) return;
       S.gf[k.slice(2)] = el.value;
@@ -8861,7 +8894,8 @@
     var el = e.target, k = el.getAttribute && el.getAttribute('data-k');
     if (!S.root || !S.root.contains(el)) return;
     clearReturnArm();
-    if (k && k.indexOf('lv-s:') === 0) { var sk = k.slice(5), sc = LVR[sk]; if (sc) { var ss = lvState(sc); ss.sort = el.value; ss.shown = sc.step || 15; lvRefresh(sk); } return; }
+    if (k && k.indexOf('lv-cf:') === 0) { var facetKey = k.slice(6), facetConfig = LVR[facetKey]; if (facetConfig) { var facetState = lvState(facetConfig); facetState.facets = facetState.facets || {}; facetState.facets[el.dataset.col] = el.value; facetState.shown = facetConfig.step || 15; lvRefresh(facetKey); } return; }
+    if (k && k.indexOf('lv-s:') === 0) { var sk = k.slice(5), sc = LVR[sk]; if (sc) { var ss = lvState(sc); ss.sort = el.value; ss.col = null; ss.desc = false; ss.shown = sc.step || 15; lvRefresh(sk); } return; }
     if (k && k.indexOf('ml-pri:') === 0) { mlSetPri(k.slice(7), el.value); return; }
     if (k === 'ml-sous') { mlSousSet(el.checked); return; }
     if (k && /^cut-[tpr]\d/.test(k)) { cutField(k, el); return; }
@@ -9508,6 +9542,11 @@
   });
   window.addEventListener('storage', function (e) { if (((e.key === 'lk.prep.who' || e.key === 'lk.prep.sess') && !e.newValue || e.key === 'lk.auth.lock') && (S.authed || S.user)) signOutPerson(true, true); });
   window.LK_PREP = {
+    pickerOverlay: function (close) {
+      var previous = { on: ovOn, close: ovClose };
+      ovPush('adaptive', function () { ovOn = previous.on; ovClose = previous.close; close(); });
+      return function (noBack) { if (ovOn === 'adaptive') ovDone('adaptive', noBack); ovOn = previous.on; ovClose = previous.close; };
+    },
     sg: sg,
     privateAccess: privateAccess, kitchenAccess: kitchenAccess, routeAccess: routeAccess, functionOnly: functionOnly,
     back: function () { if (localBackBusy()) return true; var a = localBackAction(); return !!a && localReturn(a.action); },

@@ -80,10 +80,10 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
     // back to worked out from the ingredients drops the hand-set allergens and their notes: a second tap
     const notes = () => S(p, () => [...document.querySelectorAll('[data-f^="handfrom."]')].map(e => e.value).filter(Boolean).length);
     const had = await notes();
-    await p.click('[data-mg="hand"][data-v="0"]'); await L.settle(p, 150);
+    await L.choose(p, '[data-mg="hand"][data-v="0"]'); await L.settle(p, 150);
     ok(had > 0 && await notes() === had && await txt(p, '[data-mg="hand"][data-v="0"]') === 'Tap again: hand-set allergens go', 'allergens: the first tap on Worked out from the ingredients keeps the hand-set ones and their notes');
     await fits(p, 'allergens armed at 390');
-    await p.click('[data-mg="hand"][data-v="0"]'); await L.settle(p, 150);
+    await L.choose(p, '[data-mg="hand"][data-v="0"]'); await L.settle(p, 150);
     ok(await S(p, () => document.querySelectorAll('[data-f^="hand."]').length) === 0, 'allergens: the second tap works them out from the ingredients');
     // an ingredient with words in it: Remove asks first; an empty row goes in one tap
     const ings = () => S(p, () => document.querySelectorAll('.mg-ing').length);
@@ -481,9 +481,9 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
     p = await L.open(b, '#/manage/r/flank', { who: 'ann', extra: cfg(), wait: 1400 });
     await editor(p);
     const hand = () => S(p, () => document.querySelectorAll('[data-f^="hand."]').length);
-    await p.click('[data-mg="hand"][data-v="1"]'); await L.settle(p, 150);
+    await L.choose(p, '[data-mg="hand"][data-v="1"]'); await L.settle(p, 150);
     const n1 = await hand();
-    await p.click('[data-mg="hand"][data-v="0"]'); await L.settle(p, 150);
+    await L.choose(p, '[data-mg="hand"][data-v="0"]'); await L.settle(p, 150);
     ok(n1 > 0 && await hand() === 0, 'allergens: set by hand as the ingredients give them, Worked out from the ingredients goes back in one tap (' + n1 + ' then ' + await hand() + ')');
     quiet(p, 'recipe allergens match');
     await p.context().close();
@@ -698,7 +698,7 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
       p = await L.open(b, '#/manage/r/burger', { who: 'ann', extra: cfg(), width: w, height: 900, wait: 1400 });
       await editor(p);
       await p.click('[data-mg="ing-del"][data-i="0"]'); await L.settle(p, 150);
-      await p.click('[data-mg="hand"][data-v="0"]'); await L.settle(p, 150);
+      await L.choose(p, '[data-mg="hand"][data-v="0"]'); await L.settle(p, 150);
       ok(await txt(p, '[data-mg="hand"][data-v="0"]') === 'Tap again: hand-set allergens go', w + ' recipe form: the allergen chip asks again');
       await fits(p, w + ' recipe form armed');
       await p.context().close();

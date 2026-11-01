@@ -30,13 +30,15 @@ const cfg = () => ({ [fsKey(['config', 'main'])]: { people: [P('sam', 'Sam', 'so
   // the recipe link: a box that finds recipes as you type, from one list for the whole form
   p = await L.open(b, '#/manage/r/burger', { who: 'ann', extra: cfg(), wait: 1500 });
   await L.waitFor(p, () => !!document.getElementById('mg-name'), null, 10000);
-  ok(await p.evaluate(() => !document.querySelector('select.mg-link') && document.querySelectorAll('input.mg-link[list="mg-rx"]').length > 0), 'manage: the link is a type-to-find box, not a dropdown');
+  ok(await p.evaluate(() => document.querySelectorAll('input.mg-link:not([list]) + .ux-picker-trigger').length > 0), 'manage: recipe links keep free entry and offer an adaptive picker');
   ok(await p.evaluate(() => document.querySelectorAll('#mg-rx option').length) > 50, 'manage: one list of recipes for the whole form');
   const k = await p.evaluate(() => [...document.querySelectorAll('input.mg-link[data-fl^="ing."]')].findIndex(e => !e.getAttribute('data-id')));
   ok(k >= 0, 'manage: an ingredient without a link (' + k + ')');
   const box = 'input.mg-link[data-fl="ing.' + k + '.link"]';
   const label = await p.evaluate(() => document.querySelector('#mg-rx option').value);
-  await p.fill(box, label); await p.dispatchEvent(box, 'change');
+  await p.locator(box).evaluate(el => el.nextElementSibling.click());
+  await p.fill('.ux-picker-head input', label); await p.press('.ux-picker-head input', 'Enter');
+  await p.locator('.ux-picker-option').filter({ hasText: label }).first().click();
   await L.waitFor(p, b => { const e = document.querySelector(b); return !!e && !!e.getAttribute('data-id'); }, box, 5000).catch(() => {});
   const id = await p.$eval(box, e => e.getAttribute('data-id'));
   ok(!!id && await p.$eval(box, e => e.value) === label, 'manage: picking ' + label + ' links it (' + id + ')');
