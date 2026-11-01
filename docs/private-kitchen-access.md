@@ -8,8 +8,8 @@ Approved by Kuschi, 25 October 2026. This policy replaces the earlier kitchen-PI
 - Staff: existing prep, orders, wastage, transfer, guide, published minute, ping-reading and kitchen-mail permissions after login. Existing restrictions on historical records remain.
 - Functions coordinator (`fnc`, canonical `fnOnlyIds`): public recipes, function management/service information and today's delivery temperature records. No operational lists, staff administration, supplier data or kitchen mail. The separate Functions tick (`fnIds`) still controls booking writes.
 - Head chef and sous chef: recipe and drawing management. Supplier catalogue editing remains head-chef/admin only.
-- Admin: verified owner Google account. A staff identity never inherits it. Selecting a person signs Google out before checking that person's PIN; a restored non-head staff identity on an old Google session is locked and must enter its own PIN again.
-- Sign out/idle lock: private screens, overlays and drafts close, including an open recipe, drawing or function form (29 Oct 2026: the page closing after the sign-out kept it as a draft again). The head chef's Google account handing over with nobody on a PIN (the lone Not you?, the admin card's Sign in) clears the drafts it left too, and so does a shared device that opens on a new kitchen day or after its idle time with the tab closed (29 Oct 2026), also when only the head chef's Google account was on it (its sign-in lasts for the tab); a personal phone keeps its own drafts for the same person. Other tabs receive the lock. Sign out also ends Google authentication, not just the personal PIN session, so on the head chef's own Google device (not a shared device) a change still waiting to send holds Sign out of Google, the lone Not you? and the head chef's own Sign out: "Not sent yet.", with no second tap past it, until it is sent (head chef, 29 Oct 2026). Only a change waiting for the device's own sign-in counts: one made on the head chef's PIN before Google came in never sends while Google is in, so it keeps the usual "Not sent. Tap again". Sign in with Google waits for a change on its way on any device, with no second tap past it, since the change would never send after the sign-in. The idle lock, the other tabs' lock, a PIN session running out and a new kitchen day never wait for it.
+- Admin: verified owner Google identity plus that device's current head-chef PIN session and matching device grant. Remembered Google alone never opens private operations. See [device sessions](device-sessions.md).
+- Personal devices keep Google remembered, have no idle logout and lock kitchen access at 04:00 Queensland time for a daily PIN unlock. Shared screens clear this device's Google and PIN on the 10-minute idle lock and at 04:00. Voluntary handover clears private work, waits for unsent writes and never transfers the previous person's authority. Scheduled locks preserve the same person's unfinished work behind the PIN screen.
 
 ## Data boundaries
 
@@ -23,7 +23,9 @@ Delete function is a two-tap soft deletion: cancelled, `removed: true`, `kq: 0`,
 
 ## Browser storage and offline behaviour
 
-Google authentication uses tab-session persistence. The anonymous device identity remains persistent so existing personal PIN sessions keep working on staff phones. Operational Firestore records use an in-memory cache. Application caches used by a signed-in person are cleared on sign-out, expiry or account selection; all routes and readers require the current verified session. Public recipe/drawing assets retain their offline cache. A signed-in tab can continue using loaded information during a signal loss; reloading offline may require reconnection for private data. Public recipes remain available offline. Old Firestore IndexedDB copies from earlier releases are no longer used; clearing old site data removes those legacy copies from a shared device.
+Google authentication is held in a separate named Firebase app: local persistence on personal devices, session persistence on shared screens. Operational Firebase authentication always uses a stable anonymous device UID. Personal PIN sessions expire at the next 04:00, and admin grants are bound to that exact session. See [device sessions](device-sessions.md) for device choice, server expiry, migration and recovery.
+
+Operational Firestore records use an in-memory cache. Private screens are gated by the current valid PIN session. Public recipe and drawing assets retain their offline cache. Keep a tab open while changes are not sent; closing or reloading offline can lose its in-memory queue. The daily privacy lock does not force a reload over that work.
 
 ## Rollout
 
@@ -32,7 +34,7 @@ Google authentication uses tab-session persistence. The anonymous device identit
 3. Release the client, then publish the stricter rules with **Publish rules**. The workflow automatically runs after a successful main-branch Pages deployment when access rules or preparation code changed; it is also available manually. The workflow repeats the preparation safely and runs the updated signed-out lock probe. Stale clients may be refused until refreshed, which is preferable to leaving private data open.
 4. Verify the Pages release, live lock probe, and live browser tests. Do not call source-only changes a live security fix.
 
-The browser's **Shared device** option no longer grants guest access. An explicit Google admin session counts as logged in on either device type. Sign out of Google before handing over a shared device.
+The browser's **Shared device** option no longer grants guest access. Google alone is not an operational login. The matching head-chef PIN and device grant are required. Shared-device locks clear Google locally without revoking other devices.
 
 ## Rollback
 

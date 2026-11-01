@@ -3,8 +3,8 @@
 // That is "not loaded yet", never "nothing there", "not allowed" or "still checking":
 // - the kitchen's settings listener starting again in a dead spot: Manage functions, Supplier order and Manage Recipes &
 //   Drawings say there is no signal, not "Checking who is signed in", and open by themselves once it is back;
-// - the head chef's owner check (config/admins) that fails for want of signal keeps the device's head chef mark and says
-//   there is no signal, not "is not the head chef's Google account"; only a refusal says that;
+// - the head chef's owner check (config/admins) says there is no signal rather than rejecting their account, while a
+//   real daily head PIN continues to grant its own kitchen role and never substitutes for verified admin access;
 // - Templates and Made in the book on Manage Recipes & Drawings, and Start from a copy in the drawing editor, say there
 //   is no signal, not "No templates yet", and show once it is back.
 // The stand-in answers like the memory copy with __fake.cold; __fake.notOwner refuses the owner check.
@@ -76,15 +76,14 @@ async function fits(p, what, back) {
   ok(p.errors.length === 0, 'Manage Recipes & Drawings with no signal: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // 2. The head chef's owner check with no signal (P4, r2-2-4): the staff list came in, then the signal went before
-  // config/admins was read. Before, any failure there counted as "not the head chef's account": the panel said so with a
-  // red Sign out, the device lost its head chef mark (lk.admin) and Admin panel left the chef hat, until a reload.
+  // 2. A lost owner probe must say there is no signal rather than rejecting the Google identity. The current daily
+  // head PIN remains real kitchen authentication; the admin workspace still waits for successful owner verification.
   p = await L.open(b, '#/admin', { admin: true, cold: '/config/admins$', width: 1280, wait: 1500, init: () => { localStorage.setItem('lk.admin', '1'); } });
   const said = await shows(p, '#prep-root', /No signal\. The admin panel opens when the phone is back online\./);
   t = await text(p, '#prep-root');
   ok(said && !/is not the head chef's Google account/.test(t), 'owner check with no signal: says there is no signal, not "not the head chef\'s Google account" (' + t.slice(0, 140) + ')');
-  ok(await p.evaluate(() => localStorage.getItem('lk.admin')) === '1', 'owner check with no signal: the device keeps its head chef mark');
-  ok(await L.admItem(p) === 'signed', 'owner check with no signal: the chef hat keeps Admin panel');
+  ok(await p.evaluate(() => localStorage.getItem('lk.admin')) !== '1', 'owner check with no signal: a remembered mark does not claim verified current admin access');
+  ok(await L.admItem(p) === 'outline', 'owner check with no signal: the head PIN keeps the admin entry available without claiming a verified Google grant');
   const r0 = await reads(p, /config\/admins$/);
   await p.mouse.move(30, 30); await L.settle(p, 2000); await p.mouse.move(40, 40); await L.settle(p, 300);
   const r1 = await reads(p, /config\/admins$/);
@@ -98,10 +97,9 @@ async function fits(p, what, back) {
   // checked at once, not after the first one's 5-minute wait
   p = await L.open(b, '#/admin', { admin: true, cold: '/config/admins$', width: 1280, wait: 1500, init: () => { localStorage.setItem('lk.admin', '1'); } });
   await shows(p, '#prep-root', /No signal\. The admin panel opens/);
-  const a0 = await reads(p, /config\/admins$/);
-  await p.evaluate(() => { window.__fakeUser.email = 'second@test.local'; });
+  await p.evaluate(() => { window.__fakeUser = { ...window.__fakeUser, uid: 'different-google', email: 'second@test.local' }; });
   await go(p, '#/recipes'); await go(p, '#/admin');
-  ok(await reads(p, /config\/admins$/) === a0 + 1, 'owner check with no signal, then another Google account: that account is checked at once (' + a0 + ' then ' + await reads(p, /config\/admins$/) + ' reads)');
+  ok(await shows(p, '#prep-root', /is not the head chef's Google account/) && await p.evaluate(() => LK_PREP.state.level !== 'owner'), 'another Google identity is checked at once and cannot inherit the earlier identity\'s owner status');
   await p.context().close();
 
   // 2b. The signal back with no online event (wifi that stayed up while the internet dropped): the settings listener
@@ -122,24 +120,22 @@ async function fits(p, what, back) {
     await p.context().close();
   }
 
-  // 2c. The rest of the book on the head chef's device while that check waits (review of 28 Oct 2026). The start page
-  // offered Kitchen sign in, the chef hat "Nobody signed in" with Sign in, and the kitchen and tool pages Who are you?:
-  // a name tapped there signed the Google account out and lost the head chef mark. Now they say there is no signal.
+  // 2c. A real head PIN remains a kitchen login while Google owner verification waits. Its normal role permissions
+  // continue to work; admin never opens from the remembered Google account alone.
   p = await L.open(b, '#/', { admin: true, cold: '/config/admins$', width: 1280, wait: 1500, init: () => { localStorage.setItem('lk.admin', '1'); } });
   await until(p, () => !!window.LK_PREP.state.adminsOff);
-  ok(await shows(p, '.wall-main', NO_KITCHEN) && !/Kitchen sign in/.test(await text(p, '.wall-main')), 'head chef\'s device, owner check waiting: the start page says there is no signal, not Kitchen sign in (' + (await text(p, '.wall-main')).slice(0, 120) + ')');
+  ok(await p.evaluate(() => LK_PREP.privateAccess() && LK_PREP.state.authed && LK_PREP.state.who === LK_PREP.state.config.headId) && !/Kitchen sign in/.test(await text(p, '.wall-main')), 'owner check waiting: the real head PIN still opens the kitchen start page');
   await p.click('.wtop-who'); await L.settle(p, 150);
   t = await text(p, '.wm');
-  ok(NO_KITCHEN.test(t) && !/Nobody signed in/.test(t) && !(await p.$('.wm [data-who="signin"]')) && !!(await p.$('.wm .wm-adm')), 'head chef\'s device, owner check waiting: the chef hat says there is no signal, offers no Sign in and keeps Admin panel (' + t.slice(0, 160) + ')');
+  ok(/Signed in as Head chef/.test(t) && !(await p.$('.wm [data-who="signin"]')) && !!(await p.$('.wm .wm-adm:not(.is-signed)')), 'owner check waiting: the chef menu identifies the PIN user and offers admin without claiming Google verification');
   await p.keyboard.press('Escape'); await L.settle(p, 100);
   for (const h of ['#/prep', '#/orders', '#/todo', '#/manage', '#/functions', '#/suppliers']) {
     const sel = 'main';
     await go(p, h);
-    const said = await shows(p, sel, NO_KITCHEN);
     t = await text(p, sel);
-    ok(said && !/Who are you/.test(t) && !(await p.$(sel + ' [data-p="who"]')), 'head chef\'s device, owner check waiting, ' + h + ': says there is no signal, no Who are you? (' + t.slice(0, 100) + ')');
+    ok(await p.evaluate(() => LK_PREP.privateAccess() && LK_PREP.state.authed && LK_PREP.state.level !== 'owner') && !/Who are you/.test(t) && !(await p.$('.ad-admin')), 'owner check waiting, ' + h + ': the daily head PIN retains its role access and no admin workspace opens');
   }
-  ok(await p.evaluate(() => { window.LK_PREP.signIn('#/'); return !window.LK_PREP.state.picking && localStorage.getItem('lk.admin') === '1'; }), 'head chef\'s device, owner check waiting: Sign in from elsewhere does nothing, and the mark stays');
+  ok(await p.evaluate(() => LK_PREP.state.authed && LK_PREP.state.who === LK_PREP.state.config.headId && localStorage.getItem('lk.admin') !== '1'), 'navigation while the owner check waits preserves the actual PIN identity without a stale admin mark');
   await fits(p, 'head chef\'s device, owner check waiting', 1280);
   await go(p, '#/prep');
   await warm(p);

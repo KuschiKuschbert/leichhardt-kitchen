@@ -2,6 +2,7 @@
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
 import { doc, setDoc, getDoc, updateDoc, setLogLevel } from 'firebase/firestore';
 import { readFileSync } from 'node:fs';
+import { anonContext, dailySession, seedOwnerDevice } from './device-auth-fixtures.mjs';
 
 setLogLevel('silent');
 const PIN = '000000', OWNER = 'headchef@test.local', K = `kitchens/${PIN}/`;
@@ -27,11 +28,13 @@ const roles = [
   { id: 'fay', who: 'fay', auth: true, allowed: false },
   { id: 'sam', who: 'sam', auth: true, allowed: true },
   { id: 'headpin', who: 'hd', auth: true, allowed: true },
-  { id: 'owner', who: '', auth: true, admin: true, allowed: true },
+  { id: 'owner', who: 'hd', auth: true, admin: true, allowed: true },
   { id: 'ownstaff', who: 'ann', auth: true, admin: true, allowed: true },
   { id: 'tablet', who: 'bo', auth: true, allowed: true }
 ];
-const dbs = Object.fromEntries(roles.map(r => [r.id, r.auth ? env.authenticatedContext(r.id, r.admin ? { email: OWNER, email_verified: true } : {}).firestore() : env.unauthenticatedContext().firestore()]));
+// Google identity is separate from operational authentication. Only the head's exact device session has a grant;
+// the remembered-Google staff case remains an ordinary staff session.
+const dbs = Object.fromEntries(roles.map(r => [r.id, r.auth ? anonContext(env, r.id).firestore() : env.unauthenticatedContext().firestore()]));
 const path = id => `days/${today}/items/${id}`;
 const base = () => ({ text: 'Slice onions', station: 'Larder', qty: '2 tubs', recipe: '', addedBy: 'Ann', addedById: 'ann', addedAt: NOW - MIN, done: false, deleted: false, by: 'ann' });
 const report = (who = 'ann', changes = {}) => ({ done: true, doneBy: people.find(p => p.id === who)?.name || '', doneById: who, doneAt: NOW,
@@ -41,8 +44,9 @@ await env.withSecurityRulesDisabled(async ctx => {
   const db = ctx.firestore();
   await setDoc(doc(db, K + 'config/main'), cfg);
   for (const p of people) await setDoc(doc(db, K + 'pinset/' + p.id), { at: 1 });
-  for (const r of roles) if (r.who) await setDoc(doc(db, K + 'sessions/' + r.id), { by: r.who, pinAt: 1, exp: r.expired ? NOW - MIN : NOW + DAY, at: NOW - MIN });
+  for (const r of roles) if (r.who) await setDoc(doc(db, K + 'sessions/' + r.id), dailySession(r.who, { at: r.expired ? NOW - DAY : NOW - MIN, mode: r.id === 'tablet' ? 'shared' : 'personal' }));
 });
+await seedOwnerDevice(env, { uid: 'owner', headId: 'hd', at: NOW - MIN });
 let n = 0, fails = 0;
 async function check(label, fn, allowed = true) {
   n++;

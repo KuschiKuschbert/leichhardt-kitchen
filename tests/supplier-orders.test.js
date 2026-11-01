@@ -102,19 +102,19 @@ const rows = p => p.evaluate(() => [...document.querySelectorAll('.cut-tl li')].
   ok(await p.evaluate(() => !window.__fake.bill.some(x => /\/cutdone/.test(x.path))), 'staff: the ticks are never read');
   await p.context().close();
 
-  // the head chef's Google account, nobody signed in: Chef to-do, ticks as the head chef
+  // The head chef's remembered Google account and daily PIN: Chef to-do ticks as the head chef.
   p = await L.open(b, '#/todo', { admin: true, who: '', extra: extra(), wait: 2000 });
   await L.waitFor(p, () => !!document.querySelector('.todo-cut .cut-box:not([disabled])'), null, 10000);
   await p.click('.todo-cut li:nth-child(2) .cut-box');
   await L.waitFor(p, () => { const e = document.querySelector('.todo-cut li:nth-child(2) .cut-box'); return e && e.getAttribute('aria-pressed') === 'true'; }, null, 10000);
   s = await store(p);
-  ok(s[CD('pfd')] && s[CD('pfd')].by === 'owner' && /Ordered by Head chef/.test(await txt(p, '.todo-cut li:nth-child(2) .cut-st')), 'Google account: ticks as the head chef');
+  ok(s[CD('pfd')] && s[CD('pfd')].by === s[CFG].headId && /Ordered by Head chef/.test(await txt(p, '.todo-cut li:nth-child(2) .cut-st')), 'Google account: ticks as the head chef on their daily PIN');
   await p.context().close();
 
   // the Google account on the landing page, nobody signed in: the ticks are read as soon as the account is checked, so a
   // supplier a sous chef ticked is not on its bar (review, 24 Oct 2026). The kitchen settings are in step (every PIN
   // window set, fnIds), so nothing writes config/main and its listener does not fire again: the real path.
-  const settled = { [CFG]: { people, sousIds: ['sam'], pingIds: ['sam'], staffIds: ['sam', 'ann', 'bo'], fnIds: [], showBadges: true, cutoffs: CUTS, pinOpen: { sam: L.NOW + 86400000 * 5, ann: L.NOW + 86400000 * 5, bo: L.NOW + 86400000 * 5 } } };
+  const settled = { [CFG]: { people: people.concat([{ id: 'head', name: 'Head chef', role: 'head', active: true, add: true, tick: true, del: true }]), headId: 'head', sousIds: ['sam', 'head'], pingIds: ['sam', 'head'], staffIds: ['sam', 'ann', 'bo', 'head'], fnIds: [], showBadges: true, cutoffs: CUTS, pinOpen: { sam: L.NOW + 86400000 * 5, ann: L.NOW + 86400000 * 5, bo: L.NOW + 86400000 * 5, head: L.NOW + 86400000 * 5 } } };
   p = await L.open(b, '#/', { admin: true, who: '', extra: Object.assign(settled, tickOf('pfd', 'sam', L.NOW - 3600000)), wait: 2000 });
   await L.waitFor(p, () => { const e = document.getElementById('cut-band'); return e && !e.hidden && e.textContent.indexOf('Veg') >= 0 && e.textContent.indexOf('PFD') < 0; }, null, 8000);
   ok((await band(p)).join() === 'Veg', 'Google account, landing page: PFD, ticked by a sous chef, is not on the bar');

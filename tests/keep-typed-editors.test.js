@@ -662,7 +662,7 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
     await p.context().close();
   });
 
-  // Update now's second tap is the yes on the pages loaded on their own too: no Reload site? box on top
+  // Update now's explicit discard decision covers the independent editors without another browser question.
   const UPD = [
     ['Delivery received', '#/deliveries', { wait: 1500 }, '#dl-chilled', q => q.fill('#dl-chilled', '4')],
     ['Supplier order', '#/suppliers/northside', { who: 'bo', extra: F.fixture(), wait: 1800 }, qty, q => q.fill(qty, '4 kg')],
@@ -683,11 +683,11 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
       await wait(p, () => !!document.querySelector('.upd-bar'), null, 3000);
       await S(p, () => { window.__mark = 1; });
       await p.click('.upd-bar button'); await L.settle(p, 1500);
-      ok(/Tap again to update/.test(await txt(p, '.upd-bar') || ''), label + ': the first tap on Update now asks for a second (' + await txt(p, '.upd-bar') + ')');
-      await p.click('.upd-bar button');
+      ok(await p.locator('#lk-update-confirm[open]').count() === 1, label + ': Update now offers Keep working or Discard and update');
+      await p.click('#lk-update-confirm [data-update="discard"]');
       await L.waitFor(p, () => window.__mark !== 1, null, 15000).catch(() => {});
       const gone = await S(p, () => window.__mark !== 1).catch(() => true);
-      ok(gone && asked === 0, label + ': the second tap updates, with no Reload site? box (' + asked + ' asked)');
+      ok(gone && asked === 0, label + ': confirmed discard updates, with no Reload site? box (' + asked + ' asked)');
       await p.context().close();
     });
   }

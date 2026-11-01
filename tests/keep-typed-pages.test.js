@@ -2,7 +2,7 @@
 // list adds itself and leaves a half-typed line in its boxes. Save the review (the wastage page and the admin Daily
 // reviews form) and Save my usual (the drinks run) are off with nothing changed, and the saves refuse too. Cancel on a
 // changed drink asks a second tap, the drinks form counts as not saved, and a sign-out takes it with the person. A
-// reload or closing the tab asks first over words typed on any of these pages, and Update now's own second tap still
+// reload or closing the tab asks first over words typed on any of these pages, and Discard and update still
 // reloads with no Reload site? box. Since 29 Oct 2026: a regular tapped over its own name typed empties the boxes; a
 // space added to another chef's review, or a drink picked away and back, is no change; Skip for now on the first usual
 // asks over a pick; and a sign-out takes a half-typed review, the open reason sheet and a typed section with the person.
@@ -211,7 +211,7 @@ const rvBo = { [fsKey(['waste', today])]: { avoidable: 'Over-portioned chips', c
 
   // a sign-out takes the drinks form with the person: the next person never gets it, ready to save as their usual
   await safe('drinks hand-over', async () => {
-    p = await L.open(b, '#/drinks', { who: 'sam', wait: 1500 });
+    p = await L.open(b, '#/drinks', { who: 'sam', deviceMode: 'shared', wait: 1500 });
     await L.waitFor(p, () => !!document.querySelector('[data-p="dk-edit"]'), null, 8000);
     await p.click('[data-p="dk-edit"]'); await L.settle(p, 200);
     await p.fill('[data-k="dk-other"]', 'Sam wants a banana bread');
@@ -317,7 +317,7 @@ const rvBo = { [fsKey(['waste', today])]: { avoidable: 'Over-portioned chips', c
     await p.context().close();
   });
 
-  // Update now's own second tap over half a line still reloads, with no Reload site? box on top
+  // Update now asks explicitly about the draft, without a second browser question after discard.
   await safe('update now', async () => {
     p = await L.open(b, '#/prep', { who: 'ann', wait: 1500 });
     let asked = 0;
@@ -329,10 +329,10 @@ const rvBo = { [fsKey(['waste', today])]: { avoidable: 'Over-portioned chips', c
     await p.fill('#p-text', 'Half a line');
     ok(await asks(p), 'update now: half a line typed, a reload asks first');
     await p.click('.upd-bar button'); await L.settle(p, 1500);
-    ok(!(await reloaded(p)) && /Tap again to update/.test(await txt(p, '.upd-bar') || ''), 'update now: the first tap asks for a second (' + await txt(p, '.upd-bar') + ')');
-    await p.click('.upd-bar button');
+    ok(!(await reloaded(p)) && await p.locator('#lk-update-confirm[open]').count() === 1, 'update now: the draft receives an explicit discard decision');
+    await p.click('#lk-update-confirm [data-update="discard"]');
     await waitReload(p);
-    ok(await reloaded(p) && asked === 0, 'update now: the second tap updates, with no Reload site? box (' + asked + ' asked)');
+    ok(await reloaded(p) && asked === 0, 'update now: confirmed discard updates, with no Reload site? box (' + asked + ' asked)');
     await p.context().close();
   });
 

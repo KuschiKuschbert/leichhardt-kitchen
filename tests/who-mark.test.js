@@ -45,7 +45,7 @@ const mark = p => p.evaluate(() => { const e = document.querySelector('.wtop-who
     await p.context().close();
   }
   // sign out and in again on the prep list: the mark follows without a reload
-  p = await L.open(b, '#/prep', { who: 'sam', wait: 1200 });
+  p = await L.open(b, '#/prep', { who: 'sam', deviceMode: 'shared', wait: 1200 });
   ok((await mark(p)) === 'on:Signed in as Sam:', 'prep list: mark on for Sam (' + await mark(p) + ')');
   await p.click('[data-p="who-change"]');
   await L.settle(p, 300);
@@ -60,7 +60,7 @@ const mark = p => p.evaluate(() => { const e = document.querySelector('.wtop-who
   await p.context().close();
   // "Not you?" sits next to "Writing as" on the order list, wastage and transfers too, and the next person signs in on that page
   for (const pg of ['orders', 'waste', 'transfers']) {
-    p = await L.open(b, '#/' + pg, { who: 'sam', wait: 1200 });
+    p = await L.open(b, '#/' + pg, { who: 'sam', deviceMode: 'shared', wait: 1200 });
     ok(/Writing as\s*Sam/.test(await txt(p, '.nb-top') || '') && !!(await p.$('.nb-top [data-p="who-change"]')), pg + ': "Not you?" next to "Writing as Sam"');
     // the tab bar or the pill menu always has Prep, so the line has no Prep list link of its own (23 Oct 2026)
     ok(!(await p.$('.nb-top a[href="#/prep"]')), pg + ': no extra Prep list link next to "Not you?"');

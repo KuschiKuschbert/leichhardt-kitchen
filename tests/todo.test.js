@@ -106,7 +106,8 @@ const T = (id, x) => ({ [fsKey(['todos', id])]: Object.assign({ text: 'Job ' + i
   await tap(p, '[data-p="todo-save"]'); await L.settle(p, 600);
   s = await store(p);
   const gk = Object.keys(s).filter(k => /\/todos\/[^/]+$/.test(k) && s[k].text === 'Sign the new roster')[0];
-  ok(!!gk && s[gk].from === '' && !s[gk].by, 'Google device: saved as the head chef (no PIN writer)');
+  const head = s[fsKey(['config', 'main'])].headId;
+  ok(!!gk && s[gk].from === head && s[gk].by === head, 'Google device: saved as the head chef on their daily PIN');
   ok(/Added by Head chef/.test(await p.$$eval('.todo-row', r => r.map(x => x.textContent).join(' '))), 'Google device: shown as added by the head chef');
   ok(p.errors.length === 0, 'Google device: no page errors ' + p.errors.join(' | '));
   await p.context().close();

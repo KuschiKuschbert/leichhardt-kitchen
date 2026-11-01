@@ -14,7 +14,7 @@ service cloud.firestore {
     function anonymousDevice() {
       return request.auth != null && request.auth.token.firebase.sign_in_provider == 'anonymous';
     }
-    function isAdmin() { return ownerIdentity() || deviceAdmin(); }
+    function isAdmin() { return deviceAdmin(); }
     // Kitchen data needs a live personal session. Anonymous Firebase auth alone is not a staff login.
     function functionOnly(id) { return id in cfg().get('fnOnlyIds', []); }
     function kitchenRead() { return isAdmin() || (sessOk(reader()) && !functionOnly(reader())); }
@@ -70,13 +70,13 @@ service cloud.firestore {
         && d.get('exp', 0) is number && d.exp == nextFour(d.issuedAt.toMillis());
     }
     function liveDeviceSession(s, id) {
-      return (s.get('v', 0) != 2 || anonymousDevice()) && s.by == id && s.exp > request.time.toMillis()
+      return s.v == 2 && s.by == id && s.exp > request.time.toMillis()
         && s.pinAt == get(setDoc(id)).data.at && onList(id);
     }
     function sessOk(id) {
       // Session creation already enforces the exact 04:00 cap and immutable authentication cycle. Reads check the
       // policy marker and live authority, as the previous policy checked its server-issued exp without revalidating shape.
-      return request.auth != null && exists(sessDoc()) && liveDeviceSession(get(sessDoc()).data, id);
+      return anonymousDevice() && exists(sessDoc()) && liveDeviceSession(get(sessDoc()).data, id);
     }
     function adminDeviceDoc(uid) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/adminDevices/$(uid); }
     function matchingAdminGrant(g, s) {
@@ -1377,28 +1377,9 @@ service cloud.firestore {
             && resource.data.pinAt == d.pinAt && resource.data.mode == d.mode && resource.data.issuedAt == d.issuedAt
             && resource.data.exp > request.time.toMillis()));
     }
-    // Temporary rollout foundation only: the published client still uses the v1 session shape.
-    function legacyDeviceSessionWrite(uid) { return request.auth != null && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['by', 'pinAt', 'exp', 'at'])
-        && request.resource.data.by is string && onList(request.resource.data.by)
-        && request.resource.data.exp is number && request.resource.data.exp <= request.time.toMillis() + 31 * 86400000
-        && request.resource.data.at == request.time
-        && exists(setDoc(request.resource.data.by)) && request.resource.data.pinAt == get(setDoc(request.resource.data.by)).data.at
-        && (
-          // a new session: the last try for this person was from this phone, in the last 2 minutes, and right
-          (exists(triesDoc(request.resource.data.by))
-            && get(triesDoc(request.resource.data.by)).data.uid == uid
-            && request.time < get(triesDoc(request.resource.data.by)).data.at + duration.value(2, 'm')
-            && exists(pinDoc(request.resource.data.by))
-            && get(triesDoc(request.resource.data.by)).data.tok == get(pinDoc(request.resource.data.by)).data.hash)
-          // or the same session moved forward while it is still running
-          || (resource != null && resource.data.by == request.resource.data.by && resource.data.pinAt == request.resource.data.pinAt
-            && resource.data.exp > request.time.toMillis())
-        );
-    }
     match /kitchens/KITCHEN_PIN/sessions/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
-      allow create, update: if deviceSessionWrite(uid) || legacyDeviceSessionWrite(uid);
+      allow create, update: if deviceSessionWrite(uid);
       allow delete: if (request.auth != null && request.auth.uid == uid) || isAdmin();
     }
     // The older PIN proof, switched off in phase 2 (22 Oct 2026): nothing writes it any more, and the head chef's Google

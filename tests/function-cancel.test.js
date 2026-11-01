@@ -41,7 +41,7 @@ const button = (kind = 'fn', action = 'cancel') => '[data-' + kind + '="status"]
       await L.waitFor(p, () => !!document.querySelector('[data-fn="status"][data-id="alpha"]'));
       await p.click(button()); await waitStatus(p, 'cancelled');
       let s = await dump(p), f = s[key(['functions', 'alpha'])];
-      ok(f.canBy === o.who && f.v === 2 && f.status === 'cancelled', o.label + ': one click cancels as the signed-in person');
+      ok(f.canBy === (o.admin ? s[key(['config', 'main'])].headId : o.who) && f.v === 2 && f.status === 'cancelled', o.label + ': one click cancels as the signed-in person, including the daily admin PIN');
       ok(s[key(['functions', 'alpha', 'hist', '1'])].was.status === 'confirmed' && s[key(['functions', 'other'])].status === 'confirmed', o.label + ': immutable history is kept and the other function is unchanged');
       ok(f.notes === 'Saved service notes' && f.lines[0].qty === 3 && s[key(['days', day, 'items', 'fn-alpha-pizza-platter'])].deleted, o.label + ': cancellation keeps the booking and removes its prep work');
       ok(s[key(['orders', day, 'lines', 'fn-alpha'])].deleted && s[key(['orders', day, 'lines', 'fn-alpha'])].ordered && s[key(['days', day, 'items', 'fn-alpha-pizza-platter'])].done, o.label + ': order and prep ticks survive cancellation');

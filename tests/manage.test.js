@@ -260,7 +260,8 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   const ownSaid = await toastText(p) || await txt(p, '.mg-bar') || '';
   ok(/Saved\. Version 2\./.test(ownSaid), 'after a sous chef: the head chef\'s Google device saves version 2 (' + ownSaid.slice(0, 120) + ')');
   s = await store(p);
-  ok((s[fsKey(['book', 'index'])] || {}).by === '' && (s[fsKey(['recipes', 'aioli'])] || {}).by === '' && ((s[fsKey(['book', 'index'])] || {}).r || {}).aioli === 2, 'after a sous chef: the index and the recipe are saved by nobody, version 2');
+  const dailyHead = s[fsKey(['config', 'main'])].headId;
+  ok((s[fsKey(['book', 'index'])] || {}).by === dailyHead && (s[fsKey(['recipes', 'aioli'])] || {}).by === dailyHead && ((s[fsKey(['book', 'index'])] || {}).r || {}).aioli === 2, 'after a sous chef: the index and recipe name the daily head-PIN writer, version 2');
   ok(p.errors.length === 0, 'after a sous chef: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 

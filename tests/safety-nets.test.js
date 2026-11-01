@@ -139,7 +139,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   await L.settle(p, 100);
   await p.click('[data-p="mn-pub"]');
   await L.settle(p, 150);
-  ok(/Tap again to publish to 3 staff/.test(await txt(p, '[data-p="mn-pub"]')), 'minutes: Publish asks for a second tap (' + await txt(p, '[data-p="mn-pub"]') + ')');
+  ok(/Tap again to publish to 4 staff/.test(await txt(p, '[data-p="mn-pub"]')), 'minutes: Publish asks for a second tap and includes the daily head-PIN owner (' + await txt(p, '[data-p="mn-pub"]') + ')');
   s = await store(p);
   ok(!Object.keys(s).some(k => /\/minutes\//.test(k)), 'minutes: nothing published after one tap');
   await p.click('[data-p="mn-pub"]');

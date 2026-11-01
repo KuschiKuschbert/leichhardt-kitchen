@@ -35,7 +35,7 @@ const dump=p=>p.evaluate(()=>__fake.dump());
   ok(!Object.keys(data).some(k=>k.startsWith(key(['directnotes',who==='ann'?'bo-message':'ann-message','seen']))),who+': no receipt is written for someone else');
   ok(!p.errors.length,who+': no page errors');await p.context().close();
  }
- p=await L.open(b,'#/prep',{who:'sam',extra,wait:1800});
+ p=await L.open(b,'#/prep',{who:'sam',deviceMode:'shared',extra,wait:1800});
  if(!await p.$('.nt'))await p.click('.nbell');await L.settle(p,250);const chefText=await L.txt(p,'.nt');
  ok(!chefText.includes('Ann private brief')&&!chefText.includes('Bo private brief'),'chef bell: managing other people’s pings does not deliver them to the chef');
  await p.keyboard.press('Escape');await L.chef(p,'pings');await p.click('[data-p="n-past"]');await L.settle(p,300);

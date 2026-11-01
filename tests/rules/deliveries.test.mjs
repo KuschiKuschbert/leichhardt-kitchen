@@ -1,6 +1,7 @@
 import { initializeTestEnvironment, assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
 import { doc, getDoc, getDocs, collection, setDoc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
 import { readFileSync } from 'node:fs';
+import { anonContext, dailySession, seedOwnerDevice } from './device-auth-fixtures.mjs';
 const K = 'kitchens/000000/', ownerEmail = 'owner@test.local';
 const rules = readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8').replaceAll('KITCHEN_PIN', '000000').replaceAll('OWNER_EMAIL', ownerEmail);
 const env = await initializeTestEnvironment({ projectId: 'demo-deliveries', firestore: { rules } });
@@ -14,17 +15,18 @@ await env.withSecurityRulesDisabled(async c => {
   await setDoc(doc(db, K + 'config/main'), { staffIds: ids, headId: 'head', sousIds: ['head', 'sous'], fnIds: ['function'], fnOnlyIds: ['function'] });
   for (const id of [...ids, 'removed']) {
     await setDoc(doc(db, K + 'pinset/' + id), { at: 1 });
-    await setDoc(doc(db, K + 'sessions/' + id), { by: id, pinAt: 1, exp: at + 86400000 });
+    await setDoc(doc(db, K + 'sessions/' + id), dailySession(id, { at }));
   }
-  await setDoc(doc(db, K + 'sessions/expired'), { by: 'staff', pinAt: 1, exp: 1 });
-  await setDoc(doc(db, K + 'sessions/reset'), { by: 'staff', pinAt: 0, exp: at + 86400000 });
+  await setDoc(doc(db, K + 'sessions/expired'), dailySession('staff', { at: at - 86400000 }));
+  await setDoc(doc(db, K + 'sessions/reset'), dailySession('staff', { pinAt: 0, at }));
   await setDoc(doc(db, K + 'deliveries/today'), receipt('staff'));
   await setDoc(doc(db, K + 'deliveries/past'), old);
 });
+await seedOwnerDevice(env, { uid: 'admin', headId: 'head', at });
 let n = 0;
 const yes = async p => { await assertSucceeds(p); n++; }, no = async p => { await assertFails(p); n++; };
-const phone = id => env.authenticatedContext(id).firestore();
-const owner = env.authenticatedContext('admin', { email: ownerEmail, email_verified: true }).firestore();
+const phone = id => anonContext(env, id).firestore();
+const owner = phone('admin');
 for (const id of ids) {
   const db = phone(id), ref = doc(db, K + 'deliveries/by-' + id), data = receipt(id);
   await yes(getDoc(doc(db, K + 'deliveries/today')));

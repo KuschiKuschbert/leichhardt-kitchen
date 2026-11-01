@@ -14,20 +14,19 @@ const cfg = (people, lists) => { const e = {}; e[CFG] = Object.assign({ people, 
   const b = await L.start();
   let p, s;
 
-  // admin: no head chef yet, the People tab says so; picking Head chef and saving writes headId, sousIds and pingIds
-  p = await L.open(b, '#/admin', { admin: true, extra: cfg([P('sam', 'Sam', 'sous'), P('ann', 'Ann', 'staff'), P('bo', 'Bo', 'staff')], { sousIds: ['sam'], pingIds: ['sam'] }), wait: 1800 });
-  await L.adminTab(p, 'people');
-  await L.settle(p, 300);
-  ok(/No one is marked Head chef yet/.test(await txt(p, '.a-nohead')), 'admin: the People tab asks for a head chef');
-  ok(await p.evaluate(() => [...document.querySelectorAll('#a-r1 option')].some(o => o.value === 'head')), 'admin: Head chef is a role the head chef can pick');
-  await L.pick(p, '#a-r1', 'head');
-  await L.settle(p, 200);
-  await p.click('[data-p="a-save"]');
-  await L.settle(p, 500);
+  // Google alone may initialise the head identity, then its own PIN is required before normal admin opens.
+  p = await L.open(b, '#/admin', { admin: true, bootstrapOwner: true, extra: cfg([P('sam', 'Sam', 'sous'), P('ann', 'Ann', 'staff'), P('bo', 'Bo', 'staff')], { sousIds: ['sam'], pingIds: ['sam'] }), wait: 1800 });
+  ok(!!(await p.$('[data-p="owner-head"][data-id="ann"]')) && !(await p.$('.a-groups')), 'bootstrap: verified Google can choose the head chef but cannot open normal admin');
+  await p.click('[data-p="owner-head"][data-id="ann"]'); await L.settle(p, 400);
   s = await store(p);
   const ann = s[CFG].people.filter(x => x.id === 'ann')[0];
   ok(s[CFG].headId === 'ann' && ann.role === 'head' && ann.add && ann.tick && ann.del && ann.ping, 'admin: Ann is saved as Head chef with every permission');
   ok(same(s[CFG].sousIds, ['sam', 'ann']) && same(s[CFG].pingIds, ['sam', 'ann']), 'admin: the head chef is in sousIds and pingIds');
+  ok(!!(await p.$('#pf1')) && !(await p.$('.a-groups')), 'bootstrap: the chosen head chef must verify their own PIN before receiving admin access');
+  await p.fill('#pf1', '2222');
+  await L.waitFor(p, () => LK_PREP.state.level === 'owner' && !!document.querySelector('.a-groups'), null, 8000);
+  await L.adminTab(p, 'people'); await L.settle(p, 250);
+  ok(await p.evaluate(() => [...document.querySelectorAll('#a-r1 option')].some(o => o.value === 'head')), 'admin: Head chef is available after the verified daily unlock');
   ok(await p.$('.a-nohead') === null, 'admin: the hint goes once a head chef is set');
   // only one head chef: picking Bo makes Ann a sous chef
   await L.pick(p, '#a-r2', 'head');

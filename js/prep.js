@@ -83,6 +83,10 @@
   function longDate(s) { return parseYmd(s).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' }); }
   function clock(ms) { return T.clock(ms); }
   function slug(s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'person'; }
+  function deviceMode() { return window.LK_DEVICE ? window.LK_DEVICE.mode() : ''; }
+  function deviceReady() { return !!(window.LK_DEVICE && window.LK_DEVICE.classified()); }
+  function deviceOwner() { return window.LK_DEVICE ? window.LK_DEVICE.ownerId() : ''; }
+  function nextUnlock(at) { var day = T.day(at), end = T.at(day, 240); return end > at ? end : T.at(shift(day, 1), 240); }
 
     /* ---------- state ---------- */
   var S = {
@@ -161,20 +165,38 @@
       if (ack && m[3]) { try { m[3].initializeAppCheck(app, { provider: FB.appCheckEnterpriseKey ? new m[3].ReCaptchaEnterpriseProvider(FB.appCheckEnterpriseKey) : new m[3].ReCaptchaV3Provider(FB.appCheckKey), isTokenAutoRefreshEnabled: true }); } catch (e) {} }
       try { db = fs.initializeFirestore(app, { localCache: fs.memoryLocalCache() }); }
       catch (e) { db = fs.getFirestore(app); }
-      var auth = au.getAuth(app);
-      // Google admin authentication lasts for this tab, never a remembered shared-browser login.
-      var persistence = auth.authStateReady ? auth.authStateReady() : Promise.resolve();
-      fb = { app: app, fs: fs, au: au, db: db, auth: auth };
-      au.onAuthStateChanged(auth, function (u) {
-        // PIN sessions (22 Oct 2026): every phone signs in anonymously; only a Google account is the head chef's (S.user)
-        S.user = u && !u.isAnonymous ? u : null; S.uid = u ? u.uid : '';
-        if (!u) anonIn(); else { S.authState = 'ready'; sessCatchUp(); }
-        if (!S.user) { S.level = ''; S.adminsFor = ''; admMark(false); } featSync(); loadAdmins(); draw();
-        if (S.authState === 'ready' && S.configState === 'ok') resume();
-      });
-      return persistence.then(function () {
-        if (auth.currentUser && !auth.currentUser.isAnonymous) return au.setPersistence && au.browserSessionPersistence ? au.setPersistence(auth, au.browserSessionPersistence).then(function () { return fb; }) : fb;
-        return anonIn();
+      var auth = au.getAuth(app), ownerApp = m[0].initializeApp(FB, 'kitchen-owner'), ownerAuth = au.getAuth(ownerApp), ownerDb;
+      if (ack && m[3]) { try { m[3].initializeAppCheck(ownerApp, { provider: FB.appCheckEnterpriseKey ? new m[3].ReCaptchaEnterpriseProvider(FB.appCheckEnterpriseKey) : new m[3].ReCaptchaV3Provider(FB.appCheckKey), isTokenAutoRefreshEnabled: true }); } catch (e) {} }
+      try { ownerDb = rawFs.initializeFirestore(ownerApp, { localCache: rawFs.memoryLocalCache() }); }
+      catch (e) { ownerDb = rawFs.getFirestore(ownerApp); }
+      fb = { app: app, fs: fs, au: au, db: db, auth: auth, ownerApp: ownerApp, ownerAuth: ownerAuth, ownerDb: ownerDb, ownerFs: rawFs };
+      installWriteRecovery(fs, rawFs);
+      return Promise.all([auth.authStateReady ? auth.authStateReady() : Promise.resolve(), ownerAuth.authStateReady ? ownerAuth.authStateReady() : Promise.resolve()]).then(function () {
+        var old = auth.currentUser;
+        // A previous release used the Google UID for every device. Move its local account without deleting that
+        // shared UID's PIN session. The primary identity below belongs only to this browser.
+        return ownerPersistence().then(function () {
+          return old && !old.isAnonymous && !ownerAuth.currentUser && au.updateCurrentUser ? au.updateCurrentUser(ownerAuth, old) : null;
+        }).then(function () { return old && !old.isAnonymous ? au.signOut(auth) : null; });
+      }).then(function () { return anonIn(); }).then(function () {
+        au.onAuthStateChanged(auth, function (u) {
+          S.uid = u && u.isAnonymous ? u.uid : '';
+          if (!u) anonIn(); else S.authState = 'ready';
+          if (S.authState === 'ready' && S.configState === 'ok') resume();
+        });
+        au.onAuthStateChanged(ownerAuth, function (u) {
+          var previous = S.user && S.user.uid, next = u && !u.isAnonymous ? u.uid : '';
+          if (previous && previous !== next && S.uid && S.pin) {
+            var grantRef = docRef('adminDevices', S.uid); rawFs.deleteDoc(grantRef).catch(function () {});
+            if (S.grantTask) S.grantTask.then(function () { return rawFs.deleteDoc(grantRef); }, function () {}).catch(function () {});
+          }
+          S.user = u && !u.isAnonymous ? u : null;
+          S.level = ''; S.grantExp = 0; S.ownerVerified = false; S.adminsFor = ''; S.adminsOff = null; admMark(false);
+          if (S.user && shared() && (S.privacyLocked || idleExpired())) { if (!S.privacyLocked) privacyLock('idle'); else dropGoogle().catch(function () {}); draw(); return; }
+          if (S.user && deviceReady()) startIdle();
+          ownerPersistence(); featSync(); loadAdmins(); draw();
+        });
+        return fb;
       }).catch(function (e) { sdkP = null; throw e; });
     }, function (e) { sdkP = null; throw e; });
     return sdkP;
@@ -231,6 +253,12 @@
         try { window.dispatchEvent(new Event('lk-cfg')); } catch (e) {}   // js/app.js: who may manage the recipes (bookEdit)
         if (wasOff) offSay();
       }, function (err) {
+        if (cfgKey !== scope) return;
+        if (full && err && err.code === 'permission-denied') {
+          // A live PIN/grant revocation does not mean the kitchen PIN changed. Keep its path and return to the
+          // personal PIN through the minimal roster; the old private listener cannot clear the kitchen address.
+          privacyLock('revoked'); return;
+        }
         S.configState = err && err.code === 'permission-denied' ? 'badpin' : 'error';
         if (S.configState === 'badpin') { S.pinError = 'That PIN is not right.'; S.pin = ''; lsSet('lk.prep.pin', ''); cfgKey = ''; unsubCfg = null; gForget(); }
         draw();
@@ -442,7 +470,7 @@
   function me() { return S.authed ? who() : null; }
   /* only the head chef (signed in with Google) and sous chefs may look at other days; everyone else stays on today */
   function functionOnly() { return !!(me() && (S.config.fnOnlyIds || []).indexOf(S.who) >= 0); }
-  function privateAccess() { return !!S.pin && !!(S.authed && me() && (!S.config.staffIds || S.config.staffIds.indexOf(S.who) >= 0) && canW() && S.sessExp > now() || S.user && S.level === 'owner' && ownerHere()); }
+  function privateAccess() { return deviceReady() && !S.privacyLocked && !!S.pin && !!(S.authed && me() && (!S.config.staffIds || S.config.staffIds.indexOf(S.who) >= 0) && canW() && S.sessExp > now() || S.user && S.level === 'owner' && ownerHere()); }
   function kitchenAccess() { return privateAccess() && !functionOnly(); }
   function routeAccess(name) { return privateAccess() && (!functionOnly() || name === 'fn' || name === 'functions' || name === 'deliveries'); }
   function accessChanged() {
@@ -455,8 +483,18 @@
     if (!S.user || !fb) return Promise.resolve();
     S.level = ''; S.adminsFor = ''; S.adminsOff = null; admMark(false); S.user = null;
     lsSet('lk.auth.lock', String(Date.now()) + ':' + Math.random().toString(36).slice(2));
-    return fb.au.signOut(fb.auth).then(anonIn);
+    // Local Google sign-out cannot wait for a network acknowledgement. The stable primary identity owns this
+    // revocation, so its queued delete can still finish after the secondary account is gone.
+    if (S.uid && S.pin) fb.ownerFs.deleteDoc(docRef('adminDevices', S.uid)).catch(function () {});
+    return fb.au.signOut(fb.ownerAuth);
   }
+  var ownerPersistenceMode = '';
+  function ownerPersistence() {
+    var mode = deviceReady() ? deviceMode() : 'unclassified';
+    if (!fb || ownerPersistenceMode === mode) return Promise.resolve();
+    return (fb.au.setPersistence ? fb.au.setPersistence(fb.ownerAuth, mode === 'personal' ? fb.au.browserLocalPersistence : fb.au.browserSessionPersistence) : Promise.resolve()).then(function () { ownerPersistenceMode = mode; });
+  }
+  function ownerRef(col, id) { return fb.ownerFs.doc(fb.ownerDb, 'kitchens', S.pin, col, id); }
   function canBrowse() { return (S.level === 'owner' && ownerHere()) || isSous(); }
   function can(what) { if (S.user && S.level === 'owner' && ownerHere()) return true; if (guest()) return what === 'add' || what === 'tick'; var p = me(); return !!(p && p[what]); }
   /* ---------- new pages the head chef can hold back from staff ----------
@@ -486,7 +524,7 @@
      whoever picked it up (20 Oct 2026). The head chef's tools (Admin link and panel, reports, editing guides, minutes and
      pings, kitchen mail) now show only while a chef (head chef or sous chef) is the person signed in on this device, or,
      on a personal device (not ticked "Shared kitchen device"), while nobody is. Staff signed in get their own view. */
-  function ownerHere() { return !!S.user && (!S.who || (S.authed && whoHead())); }
+  function ownerHere() { return deviceReady() && !S.privacyLocked && !!S.user && S.authed && whoHead() && canW() && S.grantExp > now(); }
   function featCalc(k) {
     var p = who();
     return admDev() || (S.config.staffSee || {})[k] !== false || !!(p && (chefP(p) || p.role === 'lead' || (k === 'pings' && canPingP(p))));
@@ -615,26 +653,69 @@
      this tab's memory: a reload, Update now, the 04:00 refresh or a closed app loses it. This count (and the browser's
      online flag) drives the strip at the top of the prep pages, and LK_PREP.unsaved() holds the reloads back. No reads,
      no polling. */
-  /* pendFor: the same count for each Firebase sign-in (S.uid when the write started, 29 Oct 2026). A write still waiting
-     when the sign-in changes (the head chef's PIN, then Sign in with Google) stays with the sign-in it was made under:
-     Firestore sends it, and settles it, only while that sign-in is back. So what waits for the sign-in on the device now
-     (sendingNow()) holds Sign out and Sign in with Google, and one stranded by a change of sign-in never holds them for
-     good. In memory only, like the count. */
-  var pending = 0, pendFor = {}, pendSince = 0, offline = navigator.onLine === false, lastSync = '';
+  /* Counts include the recorder and PIN cycle. Privacy locks keep write payloads and callbacks in this tab until
+     that same person signs in again. Only an atomic permission refusal permits a retry after the new daily PIN. */
+  var pending = 0, pendFor = {}, pendSince = 0, offline = navigator.onLine === false, lastSync = '', writeTickets = [];
+  function writerKey() { return [S.uid || '', S.who || '', millis(S.sessIssuedAt)].join('|'); }
+  function blockedRecorder() { return writeTickets.length ? writeTickets[0].person : S.privacyLocked && dirtyForUpdate() ? S.lockRecorder || '' : ''; }
+  function copyWrite(value) {
+    if (Array.isArray(value)) return value.map(copyWrite);
+    if (value && Object.getPrototypeOf(value) === Object.prototype) { var out = {}; Object.keys(value).forEach(function (k) { out[k] = copyWrite(value[k]); }); return out; }
+    return value;
+  }
+  function recoverCommit(run) {
+    var ticket = { uid: S.uid, person: S.who, pin: S.pin, exp: S.sessExp || 0, issued: millis(S.sessIssuedAt), admin: ownerHere(), phase: 'waiting', run: run }, resolve, reject;
+    var promise = new Promise(function (ok, no) { resolve = ok; reject = no; }); ticket.resolve = resolve; ticket.reject = reject; writeTickets.push(ticket);
+    function release() {
+      if (S.authed && dayExpired()) privacyLock('daily');
+      if (S.privacyLocked || ticket.person && !S.authed || ticket.admin && !ownerHere() || S.uid !== ticket.uid || S.who !== ticket.person || S.pin !== ticket.pin) return;
+      if (ticket.phase !== 'acked' && ticket.phase !== 'failed') return;
+      writeTickets.splice(writeTickets.indexOf(ticket), 1); if (ticket.phase === 'acked') resolve(); else reject(ticket.error); notifySent();
+    }
+    ticket.release = release;
+    ticket.start = function () {
+      if (ticket.phase === 'inflight' || ticket.phase === 'acked') return;
+      ticket.phase = 'inflight'; ticket.exp = S.sessExp || ticket.exp; ticket.issued = millis(S.sessIssuedAt);
+      Promise.resolve().then(run).then(function () { ticket.phase = 'acked'; release(); }, function (error) {
+        // A permission refusal is an atomic rejection. An uncertain or lost acknowledgement is never replayed.
+        if (error && error.code === 'permission-denied' && ticket.person && (ticket.exp <= now() || S.privacyLocked)) {
+          ticket.phase = 'blocked'; privacyLock('daily'); draw(); return;
+        }
+        ticket.phase = 'failed'; ticket.error = error; release();
+      });
+    };
+    ticket.start(); return promise;
+  }
+  function recoverWrites(id) {
+    writeTickets.slice().forEach(function (t) { if (t.uid !== S.uid || t.person !== id || t.pin !== S.pin || t.admin && !ownerHere()) return; if (t.phase === 'blocked') t.start(); else t.release(); });
+  }
+  function notifySent() { if (!pending && !writeTickets.length) { try { window.dispatchEvent(new Event('lk-sent')); } catch (e) {} } }
+  function installWriteRecovery(fs, raw) {
+    function loginOnly(ref) { var path = ref && ref.path || ''; if (Array.isArray(path)) path = path.join('/'); return /\/(sessions|tries|staffpins|pinset)\//.test(path); }
+    ['setDoc', 'updateDoc', 'deleteDoc'].forEach(function (method) {
+      fs[method] = function () { var args = Array.prototype.slice.call(arguments).map(function (v, i) { return i ? copyWrite(v) : v; }); if (loginOnly(args[0])) return raw[method].apply(raw, args); return recoverCommit(function () { return raw[method].apply(raw, args); }); };
+    });
+    fs.writeBatch = function (db) {
+      var ops = [], batch = {};
+      ['set', 'update', 'delete'].forEach(function (method) { batch[method] = function () { ops.push([method, Array.prototype.slice.call(arguments).map(function (v, i) { return i ? copyWrite(v) : v; })]); return batch; }; });
+      function commit() { var rawBatch = raw.writeBatch(db); ops.forEach(function (op) { rawBatch[op[0]].apply(rawBatch, op[1]); }); return rawBatch.commit(); }
+      batch.commit = function () { return ops.some(function (op) { return loginOnly(op[1][0]); }) ? commit() : recoverCommit(commit); }; return batch;
+    };
+  }
   function track(pr) {
-    var uid = S.uid || '';
+    var uid = writerKey();
     pending++; pendFor[uid] = (pendFor[uid] || 0) + 1; if (pending === 1) pendSince = Date.now();
     setTimeout(syncDraw, 3100);
     var done = function () {
       pending = Math.max(0, pending - 1); pendFor[uid] = Math.max(0, pendFor[uid] - 1);
       // the chef hat's Sign out says "Not sent yet." while it waits: js/app.js clears it once it is sent (lk-sent)
-      if (!pendFor[uid] && uid === (S.uid || '')) { try { window.dispatchEvent(new Event('lk-sent')); } catch (e) {} }
+      notifySent();
       syncDraw();
     };
     pr.then(done, done);
     return pr;
   }
-  function sendingNow() { return (pendFor[S.uid || ''] || 0) > 0; }
+  function sendingNow() { return pending > 0 || writeTickets.length > 0; }
   function syncState() { return offline ? 'off' : (pending && Date.now() - pendSince > 3000 ? 'wait' : ''); }
   // the strip, and the Not sent marks and their room with it (28 Oct 2026): wherever this device writes, a PIN session
   // or the head chef's Google account with nobody signed in by PIN (privateAccess()). Both keep a change in this tab's
@@ -645,7 +726,7 @@
   window.addEventListener('offline', function () { offline = true; syncDraw(); });
   // a reload or closing the tab while writes wait would lose them, so the browser asks first (27 Oct 2026). A phone that
   // closes the app in the background does not ask, which is why the strip says to keep the book open.
-  window.addEventListener('beforeunload', function (e) { if (pending > 0) { e.preventDefault(); e.returnValue = ''; } });
+  window.addEventListener('beforeunload', function (e) { if (sendingNow()) { e.preventDefault(); e.returnValue = ''; } });
   function syncHTML() {
     var st = stripOn();
     if (!st) return '';
@@ -673,9 +754,11 @@
   /* Every write carries the writer's id (by), and the security rules check this phone's PIN session for that person (see
      PIN sessions below), so only people who know a personal PIN can write. While a session is being opened (a PIN just
      typed, a phone moving from the older proof), a write waits for it, so it reaches the server after the session. */
-  function W(ops) {
-    if (sessP) return track(sessP.then(function () { return W(ops); }, function () { return W(ops); }));
-    var b = fb.fs.writeBatch(fb.db), by = wBy();
+  function W(ops, context) {
+    context = context || { uid: S.uid, by: wBy(), person: S.who, pin: S.pin };
+    if (sessP) return track(sessP.then(function () { return W(ops, context); }, function () { return W(ops, context); }));
+    if (context.uid !== S.uid || context.person !== S.who || context.pin !== S.pin) return Promise.reject({ code: 'cancelled' });
+    var b = fb.fs.writeBatch(fb.db), by = context.by;
     ops.forEach(function (o) {
       if (o[0] === 'del') { b.delete(o[1]); return; }
       // a by the caller set (a delivery's 'owner') wins
@@ -693,8 +776,8 @@
   /* A long list of writes (a rollover, a big merge) goes in batches of 400, one after the other, so nothing past the
      first 400 is dropped (a Firestore batch holds 500 writes). */
   function Wall(ops) {
-    var p = Promise.resolve(), k;
-    for (k = 0; k < ops.length; k += 400) (function (part) { p = p.then(function () { return W(part); }); })(ops.slice(k, k + 400));
+    var p = Promise.resolve(), k, context = { uid: S.uid, by: wBy(), person: S.who, pin: S.pin };
+    for (k = 0; k < ops.length; k += 400) (function (part) { p = p.then(function () { return W(part, context); }); })(ops.slice(k, k + 400));
     return p;
   }
   function sset(ref, data, merge) { return W([['set', ref, data, merge]]); }
@@ -717,24 +800,15 @@
     Object.keys(patch).forEach(function (k) { data[k] = (k === 'lastSeen' || k === 'lastAdded') ? patch[k] : f.increment(patch[k]); });
     sset(docRef('activity', p.id), data, true).catch(function () {});
   }
-  /* ---------- PIN sessions (22 Oct 2026, review S8) ----------
-     The phone signs in to Firebase anonymously (its own uid). A PIN is checked by writing a try (tries/<id>: the PIN's
-     hash, the time, this phone's uid; the rules allow one per person every 20 seconds, so a PIN cannot be guessed by
-     script), then opening a session (sessions/<uid>: who, the PIN's time from pinset, an end 30 days on), which the
-     rules allow only after a right try from this phone. Writes then carry only who wrote them: no proof, and nothing
-     secret is kept on the phone. Since phase 2 (22 Oct 2026) the rules accept nothing else: a phone with no session cannot
-     write, and a phone with no Firebase sign-in cannot open one (the PIN screen says so and tries the sign-in again).
-     A running session moves its end forward once a day; Sign out and the idle lock end it;
-     Reset PIN and Stopped working here stop it in the rules. lk.prep.sess (who, the end, this phone's uid and the PIN's
-     time; nothing secret) lets a phone with no signal open as before; it is out of date at that end, when the phone's
-     sign-in changes (the head chef signing in or out with Google) and when the PIN is reset (the first write is refused
-     and the PIN is asked again). The older proof (lk.prep.tok, on a phone that signed in before sessions) is used once,
-     as a PIN try, to open a session, then dropped. */
-  var SESS_DAYS = 30, TRY_MS = 20000, sessRenewed = '', lastTry = {}, tryTimer = 0, sessP = null;
+  /* PIN sessions v2: the primary anonymous UID belongs to this device, including while Google is signed in through
+     the separate kitchen-owner app. A fresh PIN try opens a session until the next Brisbane 04:00. The server-stamped
+     issuedAt binds a head chef's device grant to that exact PIN cycle. Kept session metadata contains no PIN hash.
+     Old 30-day sessions and kept proofs never restore private access. */
+  var TRY_MS = 20000, lastTry = {}, tryTimer = 0, sessP = null;
   var NO_SIGNIN = 'This phone could not sign in to the book. Check the connection, then type your PIN again.';
   function sessOn() { return !!S.who && S.sessFor === S.who && !!S.uid && S.sessUid === S.uid; }
   // this phone may write as the person signed in: their session
-  function canW() { return sessOn() && S.sessExp > now(); }
+  function canW() { return deviceReady() && !S.privacyLocked && sessOn() && S.sessExp > now() && S.sessMode === deviceMode(); }
   /* Who a write names (by): the person whose PIN session this phone has, or nobody ('') on a phone with no session. The
      only such phone the rules let write is the head chef's Google device with nobody signed in by PIN. by is sent empty,
      never left out: a merge keeps the by already stored, so after a sous chef's save the rules refused the head chef's
@@ -753,22 +827,19 @@
     anonTask.catch(function () {}); // event handlers also start sign-in; sdk() receives the same result.
     return anonTask;
   }
-  /* The phone's sign-in is in, or changed (the head chef signed in or out with Google), while someone is signed in with
-     their PIN but has no session for this sign-in: one is opened from the PIN this page already checked. A session made
-     under the old sign-in is dropped. With no PIN in hand (the page opened with its session), the next write is refused
-     and failed() asks for the PIN. */
-  function sessCatchUp() {
-    if (!S.uid || !S.authed || !S.who || sessOn()) return;
-    if (S.sessFor) { S.sessFor = ''; S.sessUid = ''; lsSet('lk.prep.sess', ''); }
-    var id = S.who, h = S.tok;
-    if (h) sessOpenRetry(id, h).catch(function () {});   // the PIN went in under 20 seconds ago: once more after the 20 seconds
-  }
   function sessRef() { return docRef('sessions', S.uid); }
-  function sessKeep(id, exp, at) { S.sessFor = id; S.sessExp = exp; S.sessUid = S.uid; S.sessPinAt = at; lsSet('lk.prep.sess', [id, exp, S.uid, at].join(':')); lsSet('lk.prep.tok', ''); setTimeout(cutPaint, 0); if (S.authed) setTimeout(accessChanged, 0); }   // the supplier ticks and the push address wait for a session
+  function millis(t) { return t && typeof t.toMillis === 'function' ? t.toMillis() : typeof t === 'number' ? t : 0; }
+  function savedSession() { try { var v = JSON.parse(lsGet('lk.prep.sess') || 'null'); return v && v.v === 2 ? v : null; } catch (e) { return null; } }
+  function sessKeep(id, exp, at, issuedAt, mode) {
+    S.sessFor = id; S.sessExp = exp; S.sessUid = S.uid; S.sessPinAt = at; S.sessIssuedAt = issuedAt; S.sessMode = mode;
+    lsSet('lk.prep.sess', JSON.stringify({ v: 2, by: id, exp: exp, uid: S.uid, pinAt: at, issuedAt: millis(issuedAt), mode: mode }));
+    lsSet('lk.prep.tok', ''); setTimeout(cutPaint, 0); if (S.authed) setTimeout(accessChanged, 0);
+  }
   // also a session only kept on the phone (a shared device asking who it is at the start of a new day)
   function sessDrop() {
-    if (fb && S.uid && (S.sessUid === S.uid || (lsGet('lk.prep.sess') || '').split(':')[2] === S.uid)) fb.fs.deleteDoc(sessRef()).catch(function () {});
-    S.sessFor = ''; S.sessExp = 0; S.sessUid = ''; lsSet('lk.prep.sess', '');
+    var kept = savedSession();
+    if (fb && S.uid && (S.sessUid === S.uid || kept && kept.uid === S.uid)) fb.fs.deleteDoc(sessRef()).catch(function () {});
+    S.sessFor = ''; S.sessExp = 0; S.sessUid = ''; S.sessIssuedAt = null; S.sessMode = ''; S.grantExp = 0; lsSet('lk.prep.sess', '');
   }
   function pinAtOf(id) {
     // one read, only when the PIN screen did not read it already (a phone moving from the older proof)
@@ -777,12 +848,19 @@
   // the PIN check: a try, then the session. Rejects { code: 'wait' } when the last try was under 20 seconds ago,
   // { code: 'permission-denied' } for a wrong PIN, { code: 'no-session' } when this phone has no anonymous sign-in
   function sessTry(id, h, pinAt) {
-    if (!S.uid) return Promise.reject({ code: 'no-session' });
-    var f = fb.fs, exp = now() + SESS_DAYS * 86400000, uid = S.uid;
+    if (!S.uid || !deviceReady()) return Promise.reject({ code: 'no-session' });
+    var f = fb.fs, exp = nextUnlock(now()), uid = S.uid, mode = deviceMode(), epoch = accessEpoch;
     return (typeof pinAt === 'number' ? Promise.resolve(pinAt) : pinAtOf(id)).then(function (at) {
       lastTry[id] = Date.now();
       return track(f.setDoc(docRef('tries', id), { tok: h, at: f.serverTimestamp(), uid: uid })).then(function () {
-        return track(f.setDoc(docRef('sessions', uid), { by: id, pinAt: at, exp: exp, at: f.serverTimestamp() })).then(function () { if (S.uid === uid && S.who === id) sessKeep(id, exp, at); });
+        if (epoch !== accessEpoch || S.uid !== uid || S.who !== id || mode !== deviceMode()) throw { code: 'cancelled' };
+        return track(f.setDoc(docRef('sessions', uid), { by: id, pinAt: at, exp: exp, at: f.serverTimestamp(), issuedAt: f.serverTimestamp(), mode: mode, v: 2 })).then(function () {
+          return f.getDocFromServer(docRef('sessions', uid));
+        }).then(function (snap) {
+          if (epoch !== accessEpoch || S.uid !== uid || S.who !== id || mode !== deviceMode()) throw { code: 'cancelled' };
+          var data = snap.exists() && snap.data(); if (!data || data.v !== 2 || !millis(data.issuedAt)) throw { code: 'no-session' };
+          sessKeep(id, exp, at, data.issuedAt, mode);
+        });
       }, function (e) { throw e && e.code === 'permission-denied' ? { code: 'wait' } : e; });
     });
   }
@@ -802,15 +880,12 @@
   }
   // once a day: a running session moves its end forward (one write, no read); the rules allow it only while it still
   // runs. The end kept in lk.prep.sess is what makes it once a day across reloads.
-  function sessRenew() {
-    if (!sessOn() || typeof S.sessPinAt !== 'number' || sessRenewed === dayNow() || S.sessExp - now() > (SESS_DAYS - 1) * 86400000) return;
-    sessRenewed = dayNow();
-    var exp = now() + SESS_DAYS * 86400000, id = S.who, at = S.sessPinAt, uid = S.uid;
-    fb.fs.setDoc(sessRef(), { by: id, pinAt: at, exp: exp, at: fb.fs.serverTimestamp() }).then(function () { if (sessOn() && S.uid === uid) sessKeep(id, exp, at); }).catch(function () {});
-  }
   function pickName(id) {
-    if (S.user) { S.authed = false; S.who = ''; dropGoogle().then(function () { pickName(id); }).catch(function () { S.pinMsg = 'Could not sign out the previous account. Try again.'; draw(); }); return; }
-    clearPrivateCache(); noteClose('shut'); ksClose(); sessDrop();   // a sheet for the person before stays off the PIN screen
+    if (!deviceReady()) { window.LK_DEVICE.request(); return; }
+    if (blockedRecorder() && blockedRecorder() !== id) { toast('Sign in as the person whose work is waiting first.'); return; }
+    if (deviceMode() === 'personal' && deviceOwner() && deviceOwner() !== id) { toast('This personal device belongs to another person. Change or forget it in Settings first.'); return; }
+    if (S.user && id !== (S.config || {}).headId) { S.authed = false; S.who = ''; dropGoogle().then(function () { pickName(id); }).catch(function () { S.pinMsg = 'Could not sign out the previous account. Try again.'; draw(); }); return; }
+    clearPrivateCache(); noteClose('shut'); ksClose(); if (!S.privacyLocked) sessDrop();
     S.who = id; lsSet('lk.prep.who', id); lsSet('lk.prep.tok', ''); S.authed = false; S.tok = ''; S.pf1 = S.pf2 = ''; S.pinMsg = ''; S.pinStep = 'checking'; S.pinOff = false; featSync(); draw(); whoSync();
     // one read: does this person have a PIN yet. An answer for a name picked before (another name since, or a handover)
     // is dropped. With no signal (28 Oct 2026, r2-2-2) the screen says so, and the same read goes again by itself once
@@ -828,8 +903,9 @@
     });
   }
   function signedIn(id, hash) {
+    if (!deviceReady() || !window.LK_DEVICE.verify(id)) { S.authed = false; S.pinMsg = 'This personal device is assigned to another person. Change it in Settings first.'; draw(); return; }
     setTimeout(dailyFlush, 3000);   // yesterday's counts, once someone is signed in (W writes as them)
-    S.authed = true; S.tok = hash; S.pf1 = S.pf2 = ''; S.pinMsg = ''; S.pinStep = '';
+    S.privacyLocked = false; S.lockRecorder = ''; S.authed = true; S.tok = hash; S.pf1 = S.pf2 = ''; S.pinMsg = ''; S.pinStep = '';
     lsSet('lk.prep.tok', ''); lsSet('lk.prep.seen', String(Date.now())); lsSet('lk.prep.day', dayNow()); lastAct = Date.now(); startIdle();
     hereAdd(id);
     var pend = S.pending; S.pending = null; S.picking = false;
@@ -837,7 +913,7 @@
     // chef hat (back) is a real start
     S.guestIn = !!(pend && !pend.back);
     lsSet('lk.prep.guest', S.guestIn ? id + ':' + dayNow() : '');   // kept for a reload; out of date for another person or day
-    accessChanged(); draw(); whoSync(true);   // a real sign-in: the chef mark flips in
+    recoverWrites(id); loadAdmins(); accessChanged(); draw(); whoSync(true);
     if (pend) guestReplay(pend);
     dkCheck(); ksCheck(); noteMaybePop();
   }
@@ -891,18 +967,21 @@
     S.pin = v; S.pinError = ''; S.pinInput = ''; lsSet('lk.prep.pin', v); connect();
   }
   function submitPin() {
-    var id = S.who, p = who();
+    var id = S.who, p = who(), epoch = accessEpoch, uid = S.uid, mode = deviceMode();
+    function current() { return epoch === accessEpoch && uid === S.uid && id === S.who && mode === deviceMode(); }
     if (!p) return;
     if (!/^\d{4}$/.test(S.pf1)) { S.pinMsg = 'Your PIN is 4 digits.'; draw(); return; }
     if (S.pinStep === 'set') {
       if (S.pf1 !== S.pf2) { S.pinMsg = 'The two PINs do not match. Type it again.'; S.pf2 = ''; draw(); focusK('pf2'); return; }
       pinHash(id, S.pf1).then(function (h) {
+        if (!current()) throw { code: 'cancelled' };
         var b = fb.fs.writeBatch(fb.db);
         b.set(docRef('staffpins', id), { hash: h, setAt: now(), name: p.name });
         var setAt = now();
         b.set(docRef('pinset', id), { at: setAt, name: p.name });
         return track(b.commit()).then(function () {
           return sessOpenRetry(id, h, setAt).then(function () {
+            if (!current()) return;
             // One more thing (the usual drink) takes the whole prep list, so it comes only when the PIN was set there with
             // nothing waiting. Set on the order list or wastage, from the chef hat's Sign in or for a tap on a shared
             // device (S.pending, which signedIn() replays), the drinks run card asks instead and the page stays put.
@@ -910,6 +989,7 @@
             S.drinkAsk = ask ? 'first' : 'again'; if (ask) dkEdit();
             signedIn(id, h); S.tok = h; bump({ visits: 1, lastSeen: now() });
           }, function (e) {
+            if (!current() || e && e.code === 'cancelled') return;
             // the PIN is saved, but this phone could not sign in yet (no Firebase sign-in, or no signal): type it again
             S.pinStep = 'enter'; S.pinAt = { id: id, at: setAt }; S.pf1 = S.pf2 = '';
             S.pinMsg = e && e.code === 'no-session' ? NO_SIGNIN : 'Your PIN is saved. Type it again to sign in.';
@@ -917,7 +997,7 @@
             draw();
           });
         });
-      }).catch(function () { S.pinMsg = 'Could not save your PIN. If someone already set one for this name, pick the name again. Otherwise ask the head chef to reset your PIN, then set it within 30 minutes.'; draw(); });
+      }).catch(function (e) { if (!current() || e && e.code === 'cancelled') return; S.pinMsg = 'Could not save your PIN. If someone already set one for this name, pick the name again. Otherwise ask the head chef to reset your PIN, then set it within 30 minutes.'; draw(); });
       return;
     }
     if (S.pinStep === 'enter') {
@@ -937,18 +1017,21 @@
       S.pinMsg = 'Checking your PIN...'; draw();
       var slow = setTimeout(function () { if (S.pinMsg === 'Checking your PIN...') { S.pinMsg = 'No signal. Your PIN cannot be checked until the phone is back online. Keep the book open: it signs you in by itself when the signal is back.'; draw(); } }, 8000);
       pinHash(id, S.pf1).then(function (h) {
+        if (!current()) throw { code: 'cancelled' };
         S.who = id; S.tok = h;
         // the try and the session: the rules compare the try with the stored PIN
-        var check = sessOpen(id, h, S.pinAt && S.pinAt.id === id ? S.pinAt.at : null).then(function () { bump({ visits: 1, lastSeen: now() }); });
-        return check.then(function () { clearTimeout(slow); lsSet(lockKey(), ''); signedIn(id, h); },
+        var check = sessOpen(id, h, S.pinAt && S.pinAt.id === id ? S.pinAt.at : null);
+        return check.then(function () { clearTimeout(slow); if (!current()) return; lsSet(lockKey(), ''); signedIn(id, h); bump({ visits: 1, lastSeen: now() }); },
           function (e) {
-            clearTimeout(slow); S.tok = '';
+            clearTimeout(slow);
+            if (!current() || e && e.code === 'cancelled') return;
+            S.tok = '';
             if (e && e.code === 'wait') { lastTry[id] = Date.now(); S.pinMsg = 'One try every 20 seconds. Wait a moment, then type it again.'; S.pf1 = ''; }
             else if (e && e.code === 'permission-denied') { S.pinAt = null; lockFail(); S.pinMsg = lockLeft() > 0 ? lockWait(lockLeft()) : 'That PIN is not right.'; S.pf1 = ''; }
             else S.pinMsg = 'Could not check your PIN. Check the connection.';
             draw();
           });
-      });
+      }).catch(function (e) { clearTimeout(slow); if (current() && !(e && e.code === 'cancelled')) { S.pinMsg = 'Could not check your PIN. Try again.'; draw(); } });
     }
   }
   function resume() {
@@ -956,62 +1039,73 @@
     // once per page load, also when nobody was signed in: run later (the config listener fires again on any change) it
     // would sign out a person who is halfway through typing their PIN
     if (resumed) return;
+    if (!deviceReady()) { if (window.LK_DEVICE) window.LK_DEVICE.request(); return; }
+    if (!T.ready()) return;   // A restored daily session is compared with kitchen time, never the uncorrected phone clock.
     if (fb && S.authState !== 'ready') return;   // the phone's sign-in first (anonymous or Google): it calls resume() again
     resumed = true;
     // nobody on a PIN: a shared device past its idle time takes the drafts the head chef's Google account left too
     // (review, 29 Oct 2026). The Google sign-in lasts only for the tab, so after the tab closed nobody is signed in here
     // and her recipe, drawing and function drafts stayed for the next person. Within the idle time they stay, as they do
     // for a person on a PIN. A personal device keeps them.
-    if (!S.who) { if (shared() && idleExpired()) forgetMine(''); return; }
+    if (!S.who) { if (shared() && S.user && idleExpired()) privacyLock('idle'); return; }
+    if (deviceMode() === 'personal' && deviceOwner() && deviceOwner() !== S.who) {
+      var bound = deviceOwner(); S.authed = false; S.sessFor = ''; S.sessUid = ''; S.sessExp = 0; lsSet('lk.prep.sess', '');
+      dropGoogle().then(function () { pickName(bound); accessChanged(); }); return;
+    }
     if (S.user && S.who !== (S.config || {}).headId) { var previous = S.who; dropGoogle().then(function () { pickName(previous); accessChanged(); }); return; }
-    var tok = (lsGet('lk.prep.tok') || '').split(':'), sv = (lsGet('lk.prep.sess') || '').split(':');
-    var hasTok = tok[0] === S.who && !!tok[1], hasSess = sv[0] === S.who && +sv[1] > now() && !!S.uid && sv[2] === S.uid;
+    var sv = savedSession(), hasSess = sv && sv.by === S.who && sv.exp > now() && sv.exp === nextUnlock(sv.issuedAt) && sv.issuedAt < now() + 60000 && sv.uid === S.uid && sv.mode === deviceMode() && (deviceMode() !== 'personal' || deviceOwner() === S.who);
     // a shared device handing over when it opens (a new kitchen day, or its idle time passed with the tab closed) takes
     // what the last person left on it, like Sign out (29 Oct 2026: their recipe, drawing and function drafts stayed for
     // the next person). A personal phone keeps its own drafts: the same person types their PIN again.
-    if (dayExpired()) { forgetMine(S.who); leave(); startIdle(); return; }
     // with no session, a phone that signed in before sessions opens one with its kept proof; with no Firebase sign-in it
     // cannot, so the PIN is asked (and the PIN screen says why)
-    if ((!hasSess && !(hasTok && S.uid)) || idleExpired()) { if (S.who) { if (shared()) { forgetMine(S.who); leave(); } else pickName(S.who); } startIdle(); return; }
+    if (!hasSess || idleExpired()) { if (shared() && (idleExpired() || !!lsGet('lk.prep.sess'))) privacyLock(idleExpired() ? 'idle' : 'daily'); if (S.who) pickName(S.who); startIdle(); return; }
     startIdle();
-    if (hasSess) { S.sessFor = S.who; S.sessExp = +sv[1]; S.sessUid = sv[2]; S.sessPinAt = +sv[3]; }
-    // a phone that signed in before sessions: its kept proof opens one session, once (then the proof is dropped). The
-    // writes below wait for it; if the PIN was reset since, the first write is refused and the PIN is asked
-    else sessOpenRetry(S.who, tok[1]).catch(function () {});
-    S.authed = true; S.tok = hasTok ? tok[1] : ''; setTimeout(accessChanged, 0); hereAdd(S.who); draw(); whoSync(); dkCheck();
+    if (hasSess) { S.sessFor = S.who; S.sessExp = sv.exp; S.sessUid = sv.uid; S.sessPinAt = sv.pinAt; S.sessIssuedAt = sv.issuedAt; S.sessMode = sv.mode; }
+    S.authed = true; S.tok = ''; setTimeout(accessChanged, 0); loadAdmins(); hereAdd(S.who); draw(); whoSync(); dkCheck();
     var gi = (lsGet('lk.prep.guest') || '').split(':'); S.guestIn = gi[0] === S.who && gi[1] === dayNow();   // signed in just to tick, before a reload
     ksCheck(); noteMaybePop(); setTimeout(dailyFlush, 3000);   // the section first, then the pings
     // the first write checks it on the server: a reset PIN, a session that ran out or someone off the list asks again
     if (functionOnly()) return;
-    sset(docRef('activity', S.who), { name: (who() || {}).name || '', visits: fb.fs.increment(1), lastSeen: now() }, true).then(sessRenew, function (e) {
+    sset(docRef('activity', S.who), { name: (who() || {}).name || '', visits: fb.fs.increment(1), lastSeen: now() }, true).catch(function (e) {
       if (e && e.code === 'permission-denied') { S.authed = false; S.tok = ''; pickName(S.who); }
     });
   }
-  /* Desktop idle lock: after 7.5 minutes with no mouse, keyboard or touch, a desktop browser signs the person out, back
-     to "Who are you?" (the kitchen PIN stays). Phones and tablets (no mouse) are left alone. No network use: a timer and a timestamp.
-     Shared kitchen device (Settings, kept on the device in lk.settings.v1): a tablet or phone everyone picks up. After
-     10 minutes with no touch, and when the book opens on a new kitchen day, it goes back to "Who are you?" instead, so the
-     next person does not write under the last person's name or see that person's pages. The kitchen PIN stays, so the
-     recipes, guides and the lists are never locked. */
-  var IDLE_MS = 450000, SHARED_MS = 600000, lastAct = Date.now(), idleOn = false;
-  function isDesktop() { try { return window.matchMedia('(hover: hover) and (pointer: fine)').matches; } catch (e) { return false; } }
-  function shared() { try { return !!JSON.parse(lsGet('lk.settings.v1') || '{}').shared; } catch (e) { return false; } }
+  window.addEventListener('lk-clock', function () { if (!resumed && S.configState === 'ok') resume(); });
+  /* Personal devices have no idle lock. Shared devices lock after ten minutes away. Both require a fresh daily PIN
+     at 04:00. These locks hide private content immediately while retaining unsent work for its original recorder. */
+  var SHARED_MS = 600000, lastAct = Date.now(), idleOn = false;
+  function shared() { return deviceMode() === 'shared'; }
   function idleExpired() {
     var away = Date.now() - (+lsGet('lk.prep.seen') || lastAct);
-    return shared() ? away > SHARED_MS : isDesktop() && away > IDLE_MS;
+    return shared() && away >= SHARED_MS;
   }
   /* a new kitchen day on a shared device: the person who signed in yesterday is not the person holding it today */
-  function dayExpired() { var d = lsGet('lk.prep.day'); return shared() && !!d && d !== dayNow(); }
+  function dayExpired() { return !!S.sessExp && S.sessExp <= now(); }
   /* a sign-out like Sign out (signOutPerson()): what was typed and not saved goes with the person, drafts too, so the next
      person never finds it (docs/private-kitchen-access.md). */
-  function idleLock() { if (privateAccess()) signOutPerson(true, true); }
+  function privacyLock(reason) {
+    if (S.privacyLocked || !S.who && !S.user) return;
+    S.lockRecorder = S.who || ''; S.privacyLocked = true; S.lockReason = reason; S.authed = false; S.level = ''; S.grantExp = 0; accessEpoch++;
+    stopLive(); clearPrivateCache(); ptClose(true, true); ksClose(); noteClose('shut'); lmClose();
+    if (window.LK_UX) window.LK_UX.close();
+    if (shared()) { if (fb && S.uid) fb.fs.deleteDoc(sessRef()).catch(function () {}); dropGoogle().catch(function () {}); }
+    admMark(false); featSync(); accessChanged(); draw(); whoSync();
+    if (S.who) pickName(S.who);
+  }
+  function idleLock() { privacyLock('idle'); }
+  function checkUnlock() { if (dayExpired()) privacyLock('daily'); else if (idleExpired()) idleLock(); }
   function startIdle() {
     if (idleOn) return; idleOn = true;
     var last = 0;
-    function act() { var n = Date.now(); lastAct = n; if (n - last > 5000) { last = n; lsSet('lk.prep.seen', String(n)); } }
-    ['pointerdown', 'keydown', 'mousemove', 'wheel', 'touchstart'].forEach(function (ev) { document.addEventListener(ev, act, { passive: true, capture: true }); });
-    setInterval(function () { if ((S.authed && S.sessExp && S.sessExp <= now()) || (S.authed || S.user) && idleExpired()) signOutPerson(true, true); }, 15000);
-    document.addEventListener('visibilitychange', function () { if (!document.hidden && (S.authed || S.user) && idleExpired()) idleLock(); });
+    function act(e) {
+      if (!S.privacyLocked && (S.authed || S.user) && (dayExpired() || idleExpired())) { checkUnlock(); if (e.cancelable) e.preventDefault(); e.stopImmediatePropagation(); return; }
+      var n = Date.now(); lastAct = n; if (n - last > 5000) { last = n; lsSet('lk.prep.seen', String(n)); }
+    }
+    ['pointerdown', 'keydown', 'mousemove', 'wheel', 'touchstart'].forEach(function (ev) { document.addEventListener(ev, act, { passive: false, capture: true }); });
+    setInterval(checkUnlock, 15000);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) checkUnlock(); });
+    window.addEventListener('lk-clock', checkUnlock);
     lsSet('lk.prep.seen', String(Date.now()));
   }
   /* the next person never lands in the last person's staff draft, minutes register or ping editor, and nothing this
@@ -1024,6 +1118,7 @@
      form, which the page closing after the sign-out kept as a draft again for the next person) */
   function leave() {
     ptClose(true, true);
+    S.privacyLocked = false; S.lockRecorder = ''; S.grantExp = 0;
     accessEpoch++;
     stopLive(); clearPrivateCache();
     S.text = S.qty = S.otext = S.oqty = ''; S.wf = { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }; S.xf = xBlank();
@@ -1057,6 +1152,7 @@
      check the same on every save (fnBy() in firestore.rules), so this only decides what the page shows; the
      config/main listener redraws the page the moment the tick is taken away. */
   function fnOK() {
+    if (ownerHere()) return true;
     if (!privateAccess() || !S.pin || S.configState !== 'ok' || !S.config) return false;
     var p = me();
     if (p) return (S.config.fnIds || []).indexOf(p.id) >= 0;
@@ -1113,6 +1209,7 @@
   }
   function signOutPerson(force, quiet) {
     if (!S.authed && !S.user) return true;
+    if (sendingNow()) { if (force) privacyLock('handover'); toast('Not sent yet. Sign in as the same person to finish sending.'); return false; }
     if (!force && window.LK_PREP.unsaved()) return false;
     forgetMine(S.who);
     S.picking = true; S.pending = null; leave(); dropGoogle().then(accessChanged).catch(function () { toast('Sign-out could not finish. Close this tab before handing over the device.'); }); if (!quiet) toast('Signed out. Hand the phone over.');
@@ -1126,17 +1223,9 @@
      here, "Not sent" when the only thing waiting is a change on its way to the server (the strip's words). On a PIN
      phone a sign-out does not lose that change while the tab stays open. */
   function notSaved() { return unsavedHere() ? 'Not saved' : 'Not sent'; }
-  /* Sign out waits until sent on the head chef's own Google device (head chef, 29 Oct 2026). A sign-out there signs the
-     Google account out too, and a change still waiting to send goes with it. So while one waits, Sign out of Google, the
-     lone Not you? and the head chef's own Sign out (the chef hat, Not you? beside Writing as) say "Not sent yet." and do
-     nothing. No second tap gets past it, like Update now (28 Oct 2026). Once it is sent, the next tap signs out as usual.
-     Only there: the verified account (level 'owner') with nobody or the head chef on a PIN (ownerHere()), on a device not
-     ticked Shared kitchen device. Staff phones, a shared kitchen device and anyone else signing out keep "Not sent. Tap
-     again". Only taps ask it: the idle lock, the other tab's lock and a new kitchen day never wait for it. Only what waits
-     for the sign-in on the device now counts (sendingNow()): a write left under the head chef's PIN by Sign in with
-     Google never sends while Google is in, and it held Sign out for good (review, 29 Oct 2026). That one keeps the usual
-     "Not sent. Tap again" (LK_PREP.unsaved() still counts it). */
-  function sendFirst() { return sendingNow() && !!S.user && S.level === 'owner' && ownerHere() && !shared(); }
+  /* Every manual handover and update waits for all unsent work. A privacy lock hides the page immediately and keeps
+     the original recorder's tickets. Reauthenticating that same person can finish them without changing the writer. */
+  function sendFirst() { return sendingNow(); }
   var SEND_FIRST = 'Not sent yet. Sign out once it is sent.';
   /* Manage Recipes & Drawings (#/manage, 21 Oct 2026): the head chef only. With their own PIN as Head chef on any device,
      or on the head chef's Google device while nobody else is signed in with a PIN. The rules check the same on the
@@ -2114,6 +2203,38 @@
   }
   /* Owner only: copy everything under the current kitchen PIN to a new one, then switch this device over.
      The security rules must already allow the new PIN (see firestore.rules) or the copy is refused. */
+  function freshOwner() {
+    if (!S.user) return Promise.reject({ code: 'permission-denied' });
+    return (S.user.getIdTokenResult ? S.user.getIdTokenResult() : Promise.resolve({ claims: { auth_time: S.user.authTime || 0 } })).then(function (token) {
+      if (now() - +(token.claims || {}).auth_time * 1000 <= 4 * 60000) return;
+      return ownerPersistence().then(function () { return fb.au.signInWithPopup(fb.ownerAuth, new fb.au.GoogleAuthProvider()); });
+    });
+  }
+  function moveBootstrap(pin, config) {
+    var f = fb.fs, raw = fb.ownerFs, uid = S.uid, id = config.headId, source = S.pin, epoch = accessEpoch, headHash, headPin, session;
+    function ref(db, kitchen, col, key) { return f.doc(db, 'kitchens', kitchen, col, key); }
+    function current() { if (epoch !== accessEpoch || uid !== S.uid || source !== S.pin || S.who !== id || !canW()) throw { code: 'cancelled' }; }
+    current();
+    return Promise.all([f.getDoc(ref(fb.db, source, 'staffpins', id)), f.getDoc(ref(fb.db, source, 'pinset', id)), f.getDoc(ref(fb.db, pin, 'login', 'roster'))]).then(function (docs) {
+      current(); if (!docs[0].exists() || !docs[1].exists()) throw { code: 'permission-denied' };
+      headHash = docs[0].data(); headPin = docs[1].data();
+      if (docs[2].exists()) { if (docs[2].data().headId !== id) throw { code: 'permission-denied' }; return; }
+      return freshOwner().then(function () {
+        current(); var data = copyWrite(config), roster = {};
+        ['people', 'staffIds', 'sousIds', 'pingIds', 'headId', 'fnIds', 'fnOnlyIds'].forEach(function (k) { data[k] = copyWrite(config[k] || (k === 'headId' ? '' : [])); if (k !== 'pingIds') roster[k] = data[k]; });
+        data.updated = now(); data.updatedBy = 'Head chef';
+        var b = raw.writeBatch(fb.ownerDb); b.set(ref(fb.ownerDb, pin, 'config', 'main'), data); b.set(ref(fb.ownerDb, pin, 'login', 'roster'), roster);
+        b.set(ref(fb.ownerDb, pin, 'pinset', id), headPin); b.set(ref(fb.ownerDb, pin, 'staffpins', id), headHash); return track(b.commit());
+      });
+    }).then(function () {
+      current(); return track(f.setDoc(ref(fb.db, pin, 'tries', id), { tok: headHash.hash, uid: uid, at: f.serverTimestamp() }));
+    }).then(function () {
+      current(); return track(f.setDoc(ref(fb.db, pin, 'sessions', uid), { by: id, pinAt: headPin.at, exp: nextUnlock(now()), issuedAt: f.serverTimestamp(), at: f.serverTimestamp(), mode: deviceMode(), v: 2 }));
+    }).then(function () { return f.getDocFromServer(ref(fb.db, pin, 'sessions', uid)); }).then(function (snap) {
+      current(); if (!snap.exists() || !S.user) throw { code: 'permission-denied' }; session = snap.data();
+      return track(raw.setDoc(ref(fb.ownerDb, pin, 'adminDevices', uid), { by: id, pinAt: session.pinAt, issuedAt: session.issuedAt, exp: session.exp, googleUid: S.user.uid, at: raw.serverTimestamp(), v: 2 }));
+    }).then(function () { current(); return session; });
+  }
   function movePin() {
     var box = S.root.querySelector('#a-newpin'), np = box ? box.value.trim() : '';
     /* only the head chef (Google account) changes the kitchen PIN; the admin panel is for the head chef only, and this checks again */
@@ -2124,10 +2245,11 @@
     if (!box2 || box2.value.trim() !== np) { S.moveMsg = 'The two PINs do not match. Type the new PIN again.'; draw(); return; }
     if (!arm('move-pin')) return;
     S.moving = true; S.moveMsg = 'Copying...'; draw();
-    var f = fb.fs, old = S.pin, n = 0;
+    var f = fb.fs, old = S.pin, n = 0, destinationSession;
     function oc(name) { return f.collection.apply(null, [fb.db, 'kitchens', old, name]); }
     function nd(name, id) { return f.doc(fb.db, 'kitchens', np, name, id); }
     var ids = {}, skipped = 0;
+    function copyRoster() { return f.getDoc(f.doc(fb.db, 'kitchens', old, 'login', 'roster')).then(function (snap) { if (snap.exists()) { n++; return f.setDoc(nd('login', 'roster'), snap.data()); } }); }
     function copyCol(name) { return f.getDocs(oc(name)).then(function (sn) { n += sn.docs.length; ids[name] = sn.docs.map(function (d) { return d.id; }); return Promise.all(sn.docs.map(function (d) { return f.setDoc(nd(name, d.id), d.data()); })); }); }
     /* records under a note or a minutes entry (seen, hist, signs). Sign-offs and seen records need the newer rules
        that let the head chef copy them; where the rules refuse, they are counted as left behind instead of stopping the move. */
@@ -2142,8 +2264,11 @@
     }
     var today = dayNow(), dates = [], k;
     for (k = 0; k < 400; k++) dates.push(shift(today, -k));
-    f.getDoc(f.doc(fb.db, 'kitchens', old, 'config', 'main')).then(function (sn) { if (sn.exists()) { n++; return f.setDoc(f.doc(fb.db, 'kitchens', np, 'config', 'main'), sn.data()); } })
-      .then(function () { return copyCol('login'); }).then(function () { return copyCol('pinset'); }).then(function () { return copyCol('staffpins'); }).then(function () { return copyCol('activity'); }).then(function () { return copyCol('sections'); })
+    f.getDoc(f.doc(fb.db, 'kitchens', old, 'config', 'main')).then(function (sn) {
+      if (!sn.exists()) throw { code: 'permission-denied' }; var config = sn.data();
+      return moveBootstrap(np, config).then(function (session) { destinationSession = session; n++; return f.setDoc(f.doc(fb.db, 'kitchens', np, 'config', 'main'), config); });
+    })
+      .then(copyRoster).then(function () { return copyCol('pinset'); }).then(function () { return copyCol('staffpins'); }).then(function () { return copyCol('activity'); }).then(function () { return copyCol('sections'); })
       .then(function () { return copyCol('learned'); }).then(function () { return copyCol('ordlearned'); }).then(function () { return copyCol('learnlog'); }).then(function () { return copyCol('summary'); }).then(function () { return copyCol('analysis'); }).then(function () { return copyCol('analysisDaily'); }).then(function () { return copyCol('proofHistory'); }).then(function () { return copyCol('references'); }).then(function () { return copySub('references', 'hist'); }).then(function () { return copyCol('training'); }).then(function () { return copySub('training', 'hist'); }).then(function () { return copyCol('daily'); }).then(function () { return copyCol('misses'); }).then(function () { return copyCol('views'); })
       .then(function () { return copyCol('notes'); }).then(function () { return copyCol('directnotes'); }).then(function () { return copySub('directnotes', 'seen', true); }).then(function () { return copyCol('minutes'); }).then(function () { return copySub('minutes', 'hist'); })
       .then(function () { return copySub('minutes', 'signs', true); }).then(function () { return copySub('notes', 'seen', true); })
@@ -2177,7 +2302,7 @@
       .then(function () {
         S.moving = false; S.moveMsg = 'Copied ' + n + ' records. This device now uses the new PIN. Everyone else enters the new PIN next time they open the book.' +
           (skipped ? ' ' + skipped + ' sign-offs and seen records were left on the old PIN: the published rules do not let the head chef copy them yet.' : '');
-        S.pin = np; lsSet('lk.prep.pin', np); S.items = []; S.learned = []; S.lists = null; S.learnFor = ''; S.sections = []; S.activity = []; S.actState = ''; gForget();
+        S.pin = np; lsSet('lk.prep.pin', np); sessKeep(destinationSession.by, destinationSession.exp, destinationSession.pinAt, destinationSession.issuedAt, destinationSession.mode); S.grantExp = destinationSession.exp; S.adminsFor = ''; accessEpoch++; S.items = []; S.learned = []; S.lists = null; S.learnFor = ''; S.sections = []; S.activity = []; S.actState = ''; gForget();
         stopLive(); S.rolledFor = ''; lsSet('lk.prep.rolled', ''); S.learnRan = false; S.weekAt = 0; S.stats = null; S.ordStats = null; S.views = S.misses = null; S.xStats = null; S.xLines = [];
         connect();
       }).catch(function (e) { S.moving = false; S.moveMsg = e && e.code === 'permission-denied' ? 'The rules do not allow the new PIN yet. Nothing was changed on the old PIN.' : 'Stopped part way. Nothing was changed on the old PIN, so it is safe to try again.'; draw(); });
@@ -2378,14 +2503,20 @@
   function hideSection(id, hidden) {
     sset(docRef('sections', id), { hidden: hidden }, true).catch(failed);
   }
+  function canRecoverGoogle() {
+    var head = (S.config || {}).headId;
+    return !!head && blockedRecorder() === head && writeTickets.some(function (t) { return t.admin && (S.privacyLocked || t.phase === 'blocked' || t.exp <= now()); }) && writeTickets.every(function (t) { return t.uid === S.uid && t.person === head && t.pin === S.pin; }) && (S.privacyLocked && S.lockRecorder === head || S.authed && S.who === head && canW());
+  }
   function signIn() {
+    if (sendingNow() && !canRecoverGoogle()) { toast('Not sent yet. Sign in once it is sent.'); return; }
+    if (!deviceReady()) { if (window.LK_DEVICE) window.LK_DEVICE.request(); return; }
+    if (S.privacyLocked && shared()) { S.privacyLocked = false; S.sessFor = ''; S.sessUid = ''; S.sessExp = 0; S.sessIssuedAt = null; lsSet('lk.prep.sess', ''); }
     sdk().then(function () {
       var provider = new fb.au.GoogleAuthProvider();
-      var adminSession = fb.au.setPersistence && fb.au.browserSessionPersistence ? fb.au.setPersistence(fb.auth, fb.au.browserSessionPersistence) : Promise.resolve();
-      return adminSession.then(function () { return fb.au.signInWithPopup(fb.auth, provider); });
+      return ownerPersistence().then(function () { return fb.au.signInWithPopup(fb.ownerAuth, provider); });
     }).catch(function (e) {
       var c = e && e.code;
-      if (c === 'auth/popup-blocked' || c === 'auth/operation-not-supported-in-this-environment') { return fb.au.signInWithRedirect(fb.auth, new fb.au.GoogleAuthProvider()); }
+      if (c === 'auth/popup-blocked' || c === 'auth/operation-not-supported-in-this-environment') { return fb.au.signInWithRedirect(fb.ownerAuth, new fb.au.GoogleAuthProvider()); }
       S.saveMsg = (c === 'auth/popup-closed-by-user') ? '' : 'Sign-in did not work (' + (c || 'unknown') + '). Try again.'; draw();
     });
   }
@@ -2444,19 +2575,78 @@
 
   /* ---------- who is the owner: only the owner's Google account may read config/admins, so a successful read proves it ---------- */
   function adminsRef() { return docRef('config', 'admins'); }
+  function bootstrapHTML() {
+    var c = S.bootstrapConfig || {}, names = (c.people || []).filter(function (p) { return p.active !== false; });
+    return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Set up the head chef</h2><p class="hint">Your Google account is verified. Choose the head chef name, then set its personal PIN to unlock this device.</p><div class="p-names">' + names.map(function (p) { return '<button type="button" class="chip" data-p="owner-head" data-id="' + esc(p.id) + '">' + esc(p.name) + '</button>'; }).join('') + '</div><div class="field"><label class="label" for="owner-name">Or add the head chef name</label><input class="search" id="owner-name" maxlength="40" autocomplete="name"></div><button type="button" class="btn dark" data-p="owner-create">Add head chef</button>' + (S.saveMsg ? '<p class="p-err" role="status">' + esc(S.saveMsg) + '</p>' : '') + '</section>';
+  }
+  function bootstrapHead(id, name) {
+    if (!S.ownerVerified || !S.user || !deviceReady() || S.bootstrapBusy) return;
+    S.bootstrapBusy = true; S.saveMsg = 'Saving head chef...'; draw();
+    var epoch = accessEpoch, google = S.user.uid;
+    freshOwner().then(function () { return fb.ownerFs.getDoc(ownerRef('config', 'main')); }).then(function (snap) {
+      if (epoch !== accessEpoch || !S.user || S.user.uid !== google) throw { code: 'cancelled' };
+      var c = snap.exists() ? snap.data() : { people: [] };
+      if (c.headId) throw { code: 'changed' };
+      var list = copyWrite(c.people || []), head = list.filter(function (p) { return p.id === id && p.active !== false; })[0];
+      if (!head) {
+        name = String(name || '').replace(/\s+/g, ' ').trim().slice(0, 40); if (!name) throw { code: 'name' };
+        id = slug(name); while (list.some(function (p) { return p.id === id; })) id += '-head';
+        head = { id: id, name: name, active: true }; list.push(head);
+      }
+      Object.keys(ROLES.head).forEach(function (k) { if (k !== 'name') head[k] = ROLES.head[k]; }); head.role = 'head';
+      var staff = idsFor(list, anyP), sous = (c.sousIds || []).filter(function (x) { return staff.indexOf(x) >= 0; }); if (sous.indexOf(id) < 0) sous.push(id);
+      var pinOpen = Object.assign({}, c.pinOpen || {}); pinOpen[id] = now() + 30 * 60000;
+      var data = { people: list, staffIds: staff, sousIds: sous, pingIds: Array.from(new Set((c.pingIds || []).concat([id]))), headId: id, fnIds: c.fnIds || [], fnOnlyIds: (c.fnOnlyIds || []).filter(function (x) { return x !== id; }), pinOpen: pinOpen, updated: now(), updatedBy: 'Head chef' };
+      var roster = {}; ['people', 'staffIds', 'sousIds', 'headId', 'fnIds', 'fnOnlyIds'].forEach(function (k) { roster[k] = data[k]; });
+      var b = fb.ownerFs.writeBatch(fb.ownerDb); b.set(ownerRef('config', 'main'), data, { merge: true }); b.set(ownerRef('login', 'roster'), roster);
+      return track(b.commit()).then(function () { S.bootstrapConfig = null; S.config = roster; S.level = 'pin'; S.saveMsg = ''; S.adminsFor = ''; pickName(id); });
+    }).catch(function (e) { if (!(e && e.code === 'cancelled')) S.saveMsg = e && e.code === 'name' ? 'Enter a name first.' : 'Could not set up the head chef. Check the connection and try again.'; }).then(function () { S.bootstrapBusy = false; draw(); });
+  }
+  function recoverHeadPin() {
+    if (!S.ownerVerified || !S.user || !(S.config || {}).headId || !arm('owner-reset')) return;
+    var head = S.config.headId, retainedHead = blockedRecorder() === head && S.who === head && writeTickets.length > 0 && writeTickets.every(function (t) { return t.uid === S.uid && t.person === head && t.pin === S.pin; }) && writeTickets.some(function (t) { return t.admin && (t.phase === 'blocked' || t.exp <= now()); });
+    if (sendingNow() && !retainedHead) { toast('Not sent yet. Wait until your changes are sent.'); return; }
+    var id = S.config.headId, epoch = accessEpoch;
+    S.saveMsg = 'Confirm your Google account to reset the head chef PIN.'; draw();
+    ownerPersistence().then(function () { return fb.au.signInWithPopup(fb.ownerAuth, new fb.au.GoogleAuthProvider()); }).then(function () {
+      if (epoch !== accessEpoch || (S.config || {}).headId !== id) throw { code: 'cancelled' };
+      var pinOpen = {}; pinOpen[id] = now() + 29 * 60000;
+      var b = fb.ownerFs.writeBatch(fb.ownerDb); b.delete(ownerRef('staffpins', id)); b.delete(ownerRef('pinset', id)); b.set(ownerRef('config', 'main'), { pinOpen: pinOpen }, { merge: true }); return b.commit();
+    }).then(function () { sessDrop(); S.adminsFor = ''; S.saveMsg = 'Choose a new head chef PIN.'; pickName(id); }, function (e) { if (!(e && e.code === 'cancelled')) S.saveMsg = 'Could not reset the head chef PIN. Confirm the head chef Google account and try again.'; draw(); });
+  }
   /* One getDoc once the settings are in, for each Google account. Only a refusal means "not the head chef's account"
      (28 Oct 2026, r2-2-4): with no signal or a lost read the device keeps its head chef mark (lk.admin) and the admin
      panel says there is no signal. The same one read goes again after 5 minutes, at the next draw, or once the phone is
      back online (retrySoon), never in a loop: before, any failure counted as "not the head chef's account" until a reload.
      A read cut short because the person on the phone changed (cancelled) is simply asked again for the next one. */
   function loadAdmins() {
-    if (!S.user || !fb || S.configState !== 'ok') return;
-    var em = S.user.email || '';
-    if (S.adminsFor === em || (S.adminsOff === em && waiting('admins'))) return;
-    S.adminsFor = em; S.level = '';
-    fb.fs.getDoc(adminsRef()).then(function (sn) { var wasW = !!S.adminsOff; S.level = 'owner'; S.adminsOff = null; retryDone('admins'); if (wasW) offSay(); startIdle(); setTimeout(accessChanged, 0); var mo = sn && sn.exists() ? +(sn.data().mailOpened || 0) : 0; if (mo > mlOpened) { mlOpened = mo; lsSet('lk.mail.opened', String(mo)); } admMark(true); featSync(); seedIds(); loadMail(); draw(); cutPaint(); }, function (e) {
+    if (!deviceReady() || S.privacyLocked || !S.user || !fb || S.configState !== 'ok') return;
+    var em = S.user.email || '', epoch = accessEpoch, uid = S.uid, google = S.user.uid, key = [em, uid, S.sessFor, millis(S.sessIssuedAt)].join('|');
+    if (S.adminsFor === key || (S.adminsOff === em && waiting('admins'))) return;
+    S.adminsFor = key; S.level = '';
+    fb.ownerFs.getDoc(ownerRef('config', 'admins')).then(function (sn) {
+      if (epoch !== accessEpoch || !S.user || S.user.uid !== google || S.uid !== uid) throw { code: 'cancelled' };
+      S.ownerVerified = true; S.adminsOff = null; retryDone('admins');
+      var opened = sn && sn.exists() ? +(sn.data().mailOpened || 0) : 0;
+      if (opened > mlOpened) { mlOpened = opened; lsSet('lk.mail.opened', String(opened)); }
+      if (!(S.config || {}).headId) return fb.ownerFs.getDoc(ownerRef('config', 'main')).then(function (cfg) { if (epoch === accessEpoch) { S.bootstrapConfig = cfg.exists() ? cfg.data() : { people: [] }; S.level = 'setup'; draw(); } });
+      if (!S.authed || !canW() || S.who !== S.config.headId) {
+        S.level = 'pin'; if (!S.who) pickName(S.config.headId); draw(); return;
+      }
+      var sessionValue = typeof S.sessIssuedAt === 'number' ? fb.fs.getDocFromServer(sessRef()).then(function (session) { return session.exists() ? session.data() : null; }) : Promise.resolve({ by: S.who, pinAt: S.sessPinAt, issuedAt: S.sessIssuedAt, exp: S.sessExp, mode: S.sessMode, v: 2 });
+      return sessionValue.then(function (value) {
+        if (epoch !== accessEpoch || !canW() || !value || !S.user || S.user.uid !== google) throw { code: 'cancelled' };
+        if (value.by !== S.config.headId || value.v !== 2 || value.exp !== S.sessExp || millis(value.issuedAt) !== millis(S.sessIssuedAt)) throw { code: 'permission-denied' };
+        S.grantTask = track(fb.ownerFs.setDoc(ownerRef('adminDevices', uid), { by: value.by, pinAt: value.pinAt, issuedAt: value.issuedAt, exp: value.exp, googleUid: google, at: fb.ownerFs.serverTimestamp(), v: 2 }));
+        return S.grantTask;
+      }).then(function () {
+        if (epoch !== accessEpoch || !canW() || !S.user || S.user.uid !== google) return;
+        S.level = 'owner'; S.grantExp = S.sessExp; admMark(true); recoverWrites(S.who); featSync(); accessChanged(); seedIds(); loadMail(); draw(); cutPaint();
+      });
+    }).catch(function (e) {
       var wasW = !!S.adminsOff;
-      if (e && e.code === 'permission-denied') { S.level = 'none'; S.adminsOff = null; admMark(false); }
+      if (e && e.code === 'cancelled') return;
+      if (e && e.code === 'permission-denied') { S.level = S.ownerVerified ? 'pin' : 'none'; S.adminsOff = null; admMark(false); }
       else { S.adminsFor = ''; if (!(e && e.code === 'cancelled')) { S.adminsOff = em; retrySoon('admins', loadAdmins, e); } }
       if (wasW !== !!S.adminsOff) offSay();   // js/app.js: the start page and the chef hat follow offline()
       featSync(); draw(); cutPaint();
@@ -3415,7 +3605,8 @@
     // while the book checks whether this person has a PIN yet, the box is already there: it takes the keyboard inside
     // the tap on the name (an iPhone opens the keyboard only inside a tap), and a PIN typed early is sent once it knows
     return '<form class="p-card" data-p-form="pin"><h2 class="p-h" id="rtitle" tabindex="-1">' + (setting ? 'Hi ' + esc(p.name) + ', choose your PIN' : esc(p.name) + ', enter your PIN') + '</h2>' +
-      '<p class="hint">' + (setting ? 'Pick 4 digits you will remember. You use it with your name from now on. ' + (shared() ? 'This device asks who you are again after 10 minutes.' : 'This phone stays signed in.') : checking ? 'One moment...' : 'Your own 4-digit PIN.') + '</p>' +
+      '<p class="hint">' + (setting ? 'Pick 4 digits you will remember. ' + (shared() ? 'This device locks after 10 minutes away and at 04:00.' : 'Enter it again after 04:00 each day.') : checking ? 'One moment...' : 'Your own 4-digit PIN. It unlocks this device until 04:00.') + '</p>' +
+      (S.privacyLocked && blockedRecorder() ? '<p class="p-err" role="status">Your work is kept in this tab. Enter the same person\'s PIN to finish. Keep the book open.</p>' : '') +
       '<div class="field"><label class="label" for="pf1">' + (setting ? 'New PIN' : 'PIN') + '</label>' + pinField('pf1', 'pf1', S.pf1, true) + '</div>' +
       (setting ? '<div class="field"><label class="label" for="pf2">Type it again</label>' + pinField('pf2', 'pf2', S.pf2, true) + '</div>' : '') +
       (S.pinMsg ? '<p class="p-err" role="alert">' + esc(S.pinMsg) + '</p>' : '') +
@@ -4179,7 +4370,10 @@
         (S.saveMsg ? '<p class="p-err">' + esc(S.saveMsg) + '</p>' : '') +
         '<div class="btn-row"><button type="button" class="btn dark" data-p="signin">' + (armed('signin:sent') ? 'Not sent yet.' : 'Sign in with Google') + '</button><a class="btn" href="#/prep">Back to the prep book</a></div></section>';
     }
+    if (S.privacyLocked && who() && S.user && S.ownerVerified) return '<p class="hint">Your Google account stays signed in. Enter your head chef PIN for the new kitchen day.</p>' + ownPinHTML();
     loadAdmins();
+    if (S.level === 'setup') return bootstrapHTML();
+    if (S.level === 'pin' && S.ownerVerified) return '<p class="hint">Your Google account is recognised. Enter your head chef PIN to unlock this device until 04:00.</p>' + ownPinHTML() + '<p><button type="button" class="p-link" data-p="owner-reset">' + (armed('owner-reset') ? 'Confirm reset of the head chef PIN' : 'Forgot the head chef PIN?') + '</button></p>' + (S.saveMsg ? '<p class="p-err" role="status">' + esc(S.saveMsg) + '</p>' : '');
     if (!S.level) return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2>' + (S.adminsOff === (S.user.email || '') ? '<p class="p-err" role="status">No signal. The admin panel opens when the phone is back online.</p><div class="btn-row"><button type="button" class="btn dark" data-p="admins-retry">Try again</button><a class="btn" href="#/prep">Back to the prep book</a></div>' : '<p class="hint">Checking your access...</p>') + '</section>';
     if (S.level === 'none') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2><p class="p-err">' + esc(S.user.email) + ' is not the head chef\'s Google account, so it cannot open the admin panel. Sign out and sign in with the head chef\'s account.</p><div class="btn-row"><button type="button" class="btn dark" data-p="signout">' + (armed('signout') ? notSaved() + '. Tap again' : 'Sign out') + '</button><a class="btn" href="#/prep">Back to the prep book</a></div></section>';
     if (!ownerHere()) {
@@ -4415,6 +4609,8 @@
       '<div class="btn-row"><a class="btn" href="#/recipes">Open the recipes</a></div></section>';
   }
   function bodyHTML() {
+    if (!deviceReady()) return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Choose this device</h2><p class="hint">Tell the book whether this is your own device or a shared kitchen screen before signing in.</p><button type="button" class="btn dark" data-p="device-request">Choose device</button><p><a href="#/recipes">View recipes for now</a></p></section>';
+    if (S.pin && !T.ready()) return loadingHTML();
     if (!S.pin) { sdkEarly(); return gateHTML(); }
     if (S.configState === 'offline') return offlineHTML();
     if (S.configState === 'ok' && !privateAccess() && S.name !== 'admin') return ownerWait() ? offlineHTML() : who() ? ownPinHTML() : whoHTML();
@@ -8544,6 +8740,10 @@
     var el = e.target.closest('[data-p]');
     if (!el || !S.root || !S.root.contains(el)) return;
     var a = el.getAttribute('data-p'), id = el.getAttribute('data-id'), i = +el.getAttribute('data-i'), dt = el.getAttribute('data-d');
+    if (a === 'device-request') { window.LK_DEVICE.request(); return; }
+    if (a === 'owner-head') { bootstrapHead(id); return; }
+    if (a === 'owner-create') { var input = S.root.querySelector('#owner-name'); bootstrapHead('', input && input.value); return; }
+    if (a === 'owner-reset') { recoverHeadPin(); return; }
     if (guest() && GUEST_WRITES[a]) { e.preventDefault(); guestAsk({ sel: guestSel(el) }); return; }
     if (a !== armKey) clearReturnArm();
     if (localReturn(a)) return;
@@ -8681,7 +8881,7 @@
       // On the head chef's own Google device a change waiting to send holds it, and no second tap gets past it (29 Oct
       // 2026, sendFirst())
       if (sendFirst()) { e.preventDefault(); if (!armed('who-change:sent')) arm('who-change:sent'); toast(SEND_FIRST); return; }
-      if ((S.authed || S.user) && window.LK_PREP.unsaved() && !arm('who-change')) { e.preventDefault(); return; }
+      if ((S.authed || S.user || S.privacyLocked) && window.LK_PREP.unsaved() && !arm('who-change')) { e.preventDefault(); return; }
       // the PIN screens' Not me: nobody is signed in yet (picking a name signs Google out first), so it goes in one tap.
       // The head chef's Google account handing over (the lone Not you?, the admin card's Sign in) takes what it left on
       // the device, like Sign out (29 Oct 2026: function, recipe and drawing drafts stayed for the next person)
@@ -8761,7 +8961,7 @@
     if (a === 'add-recipe') { addRecipe(id); return; }
     // a change waiting to send holds Sign in with Google, with no second tap past it (review, 29 Oct 2026): the sign-in
     // changes who this device writes as, and Firestore never sends a write left under the PIN's sign-in after that
-    if (a === 'signin') { if (sendingNow()) { if (!armed('signin:sent')) arm('signin:sent'); toast('Not sent yet. Sign in once it is sent.'); return; } signIn(); return; }
+    if (a === 'signin') { signIn(); return; }
     // the owner check again now, past its 5-minute wait (the No signal card on the admin panel)
     if (a === 'admins-retry') { delete S.retryAt.admins; loadAdmins(); draw(); return; }
     // anything not saved asks first, like the chef hat's Sign out (28 Oct 2026: only the staff list did, and minutes, a
@@ -9530,24 +9730,48 @@
      or an admin draft (draftsDirty()). They live in this tab's memory only, so a reload or closing the tab asks first
      (28 Oct 2026; before, only the admin drafts did, and a pull-to-refresh lost half a line with no question). An open
      picker (the waste reason sheet, the recipe picker) holds no words, and the pages loaded on their own ask for
-     themselves. Update now's second tap has already said the words may go, so its own reload does not ask again
+     themselves. Discard and update explicitly permits losing these words, so its own reload does not ask again
      (LK_UPDATE.letGo() in js/upkeep.js). iPhone Safari never asks, and a phone that drops the tab in the background
      does not either. */
   function typedHere() {
     return !!(proofModule() && proofModule().dirty()) || !!(window.LK_INTELLIGENCE && window.LK_INTELLIGENCE.dirty()) || draftsDirty() || !!mlf.text.trim() || tdDirty() || dkDirty() || rvTyped(true) || rvTyped(false) ||
       !!(S.text.trim() || S.qty.trim() || S.otext.trim() || S.oqty.trim() || S.wf.text.trim() || String(S.wf.amt).trim() || S.wf.act.trim() || S.xf.text.trim() || String(S.xf.amt).trim() || S.xf.note.trim());
   }
+  function dirtyForUpdate() {
+    return !!(window.LK_DELIVERY && window.LK_DELIVERY.dirty()) || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!(window.LK_SUP && window.LK_SUP.dirty()) || typedHere();
+  }
+  function canChangeDevice() {
+    return deviceReady() && canW() && !!me() && (shared() ? whoHead() : deviceOwner() === S.who);
+  }
+  function changeDevice(mode, discard) {
+    if (sendingNow()) { toast('Not sent yet. Wait until all changes on this device are sent.'); return Promise.resolve(false); }
+    if (!canChangeDevice()) { toast(sendingNow() ? 'Not sent yet. Wait until your changes are sent.' : 'Sign in as this device\'s owner before changing it.'); return Promise.resolve(false); }
+    if (dirtyForUpdate() && !discard) { toast('Your changes are not saved. Save them or confirm they may be discarded first.'); return Promise.resolve(false); }
+    if (mode !== 'forget' && mode !== 'personal' && mode !== 'shared') return Promise.resolve(false);
+    S.deviceChanging = true; forgetMine(S.who); leave();
+    return dropGoogle().then(function () { window.LK_DEVICE.reset(); if (mode === 'forget') window.LK_DEVICE.request(); else window.LK_DEVICE.choose(mode); S.deviceChanging = false; resumed = false; accessChanged(); draw(); return true; }, function () { S.deviceChanging = false; toast('Could not sign out of Google. Try again before handing over this device.'); return false; });
+  }
+  window.addEventListener('lk-device', function () {
+    if (S.deviceChanging) return;
+    ownerPersistence();
+    setTimeout(function () { if (!S.authed && !S.privacyLocked && S.configState === 'ok' && !S.sessFor) { resumed = false; resume(); } loadAdmins(); accessChanged(); draw(); }, 0);
+  });
   window.addEventListener('beforeunload', function (e) {
     if (typedHere() && !(window.LK_UPDATE && window.LK_UPDATE.letGo && window.LK_UPDATE.letGo())) { e.preventDefault(); e.returnValue = ''; }
   });
   window.addEventListener('storage', function (e) { if (((e.key === 'lk.prep.who' || e.key === 'lk.prep.sess') && !e.newValue || e.key === 'lk.auth.lock') && (S.authed || S.user)) signOutPerson(true, true); });
   window.LK_PREP = {
+    afterOverlay: ovAfterBack,
     pickerOverlay: function (close) {
       var previous = { on: ovOn, close: ovClose };
       ovPush('adaptive', function () { ovOn = previous.on; ovClose = previous.close; close(); });
       return function (noBack) { if (ovOn === 'adaptive') ovDone('adaptive', noBack); ovOn = previous.on; ovClose = previous.close; };
     },
     sg: sg,
+    dirtyForUpdate: dirtyForUpdate,
+    blockedRecorder: blockedRecorder,
+    canChangeDevice: canChangeDevice,
+    changeDevice: changeDevice,
     privateAccess: privateAccess, kitchenAccess: kitchenAccess, routeAccess: routeAccess, functionOnly: functionOnly,
     back: function () { if (localBackBusy()) return true; var a = localBackAction(); return !!a && localReturn(a.action); },
     backLabel: function () { var a = localBackAction(); return a ? a.label : ''; },
@@ -9563,9 +9787,9 @@
       if (S.pin) { connect(); if (name === 'admin') sdk(); if (name === 'orders') { S.ordDate = dayNow(); watchOrders(); } if (name === 'waste') { S.wDate = dayNow(); watchWaste(); } if (name === 'transfers') { S.xDate = dayNow(); watchXfer(); } notesInit(); }
     },
     warm: function () { sdk().then(function () { rxSync(); }).catch(function () {}); if (S.pin && S.configState !== 'ok' && S.configState !== 'loading') connect(); notesInit(); },
-    unsaved: function () { return pending > 0 || unsavedHere(); },
+    unsaved: function () { return sendingNow() || unsavedHere(); },
     // a write waiting for the server (part of unsaved()), so Update now can say "Not sent yet." like the strip
-    unsent: function () { return pending > 0; },
+    unsent: sendingNow,
     // the rest of unsaved(): typed or open here, so the chef hat's Sign out says "Not saved yet." or "Not sent yet."
     unsavedHere: unsavedHere,
     noteInfo: noteInfo, noteBellLabel: noteBellLabel,
@@ -9599,10 +9823,7 @@
     chefMenu: chefMenu,
     chefOpen: chefOpen,
     secOpen: function () { ksOpen(true); },
-    // the chef hat's Sign out, a tap: on the head chef's own Google device it waits while a change waits to send, and
-    // no second tap gets past it (29 Oct 2026, sendFirst(); the menu says "Not sent yet."). The toast says what happens
-    // next, and says it again on each tap (the menu's line stays the same, so a screen reader hears nothing new there).
-    // The idle lock and the other tab's lock call signOutPerson() itself, which never waits for it.
+    // Manual Sign out never overrides unsent work. Automatic locks retain it behind the original person's PIN.
     signOut: function (force, quiet) { if (sendFirst()) { toast(SEND_FIRST); return false; } return signOutPerson(force, quiet); },
     sendFirst: sendFirst,
     minNudge: minNudgeHTML,

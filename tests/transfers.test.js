@@ -111,11 +111,12 @@ extra[fsKey(['summary', 'transfers'])] = { day: today, from: yest, to: yest, at:
     await p.context().close();
   }
 
-  // a shared kitchen tablet with nobody signed in: the page shows, Log it asks who you are, then logs it under that person
+  // A shared kitchen tablet locks its private page, then accepts another person's own PIN through Change person.
   {
-    const p = await L.open(b, '#/transfers', { extra, who: 'sam', touch: true, settings: { shared: true }, wait: 1200 });
+    const p = await L.open(b, '#/transfers', { extra, who: 'sam', touch: true, deviceMode: 'shared', wait: 1200 });
     await p.clock.runFor(11 * 60000); await L.settle(p, 300);
-    ok(!!await p.$('.p-name') && !await p.$('.tr-row'), 'shared tablet: transfers are hidden after idle lock');
+    ok(!!await p.$('[data-k="pf1"]') && !await p.$('.tr-row'), 'shared tablet: transfers are hidden behind the idle PIN lock');
+    await p.click('[data-p="who-change"]'); await L.settle(p, 200);
     await p.click('.p-name[data-id="ann"]'); await L.settle(p,250); await p.keyboard.type('2222'); await L.settle(p,1000);
     await p.fill('#tr-venue', 'Riviera'); await p.fill('#tr-person', 'Jess'); await p.fill('#tr-text', 'Cream'); await p.fill('#tr-amt', '2');
     await L.choose(p, '[data-p="tr-unit"][data-v="L"]');
@@ -133,7 +134,7 @@ extra[fsKey(['summary', 'transfers'])] = { day: today, from: yest, to: yest, at:
     // words that are also built-in object names are words like any other (review, 23 Oct 2026)
     ea[fsKey(['transfers', yest, 'lines', 'y3'])] = { dir: 'out', venue: 'constructor', person: '__proto__', text: '__proto__', amount: 1, unit: 'packs', note: '', addedBy: 'Ann', addedById: 'ann', addedAt: L.NOW - 86400000 - 1800000, deleted: false };
     ea[fsKey(['transfers', yest, 'lines', 'y2'])] = { dir: 'in', venue: 'grand hotel', person: 'Lee', text: 'Lemons', amount: 12, unit: 'pieces', note: '', addedBy: 'Ann', addedById: 'ann', addedAt: L.NOW - 86400000 - 3600000, deleted: false };
-    const p = await L.open(b, '#/admin', { extra: ea, admin: true, who: '', wait: 1500 });
+    const p = await L.open(b, '#/admin', { extra: ea, admin: true, wait: 1500 });
     await L.adminTab(p, 'transfers');
     await L.waitFor(p, () => /Milk/.test((document.querySelector('[data-lv="xfer-log"]') || {}).textContent || ''));
     const page = await txt(p, '.a-pane') || '';
@@ -165,7 +166,7 @@ extra[fsKey(['summary', 'transfers'])] = { day: today, from: yest, to: yest, at:
 
   // a past day that could not be read is said, never shown as nothing moved
   {
-    const p = await L.open(b, '#/admin', { extra, admin: true, who: '', wait: 1500, failReads: '/transfers/' + yest + '/lines$' });
+    const p = await L.open(b, '#/admin', { extra, admin: true, wait: 1500, failReads: '/transfers/' + yest + '/lines$' });
     await L.adminTab(p, 'transfers');
     await L.waitFor(p, () => /Could not read 1 day/.test((document.querySelector('.a-pane') || {}).textContent || ''));
     ok(/Could not read 1 day/.test(await txt(p, '.a-pane') || ''), 'admin: a day that failed to read is said');

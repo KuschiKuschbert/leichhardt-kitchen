@@ -1,6 +1,6 @@
 // Admin in the chef hat's menu only shows on a phone or computer where the head chef has signed in and passed the owner check.
 // Staff never see it, and Settings says nothing about it. #/admin opens the Google sign-in card by its address.
-// Clear all ticks and the device type (Personal phone or Shared device) only show on Settings on that device.
+// Clear all ticks stays an admin control. Every person sees the saved device choice in Settings.
 const L = require('./lib');
 const { R, ok } = L.results(), { txt } = L;
 (async () => {
@@ -13,12 +13,12 @@ const { R, ok } = L.results(), { txt } = L;
     ok(p.errors.length === 0, 'staff ' + h + ': no page errors ' + p.errors.join(' | '));
     await p.context().close();
   }
-  // staff on Settings: no Admin panel block, no Clear all ticks, no device type; #/admin still opens the sign-in card
+  // Staff can manage their own personal-device choice without receiving admin controls.
   let p = await L.open(b, '#/settings', { who: 'ann', wait: 1000 });
   ok(await L.admItem(p) === 'none', 'staff settings: no Admin in the menu');
   ok(await p.$('[aria-label="Admin panel"]') === null && await p.$('[data-k="adm-signin"]') === null, 'staff settings: no Admin panel block');
   ok(await p.$('[data-act="clearticks"]') === null, 'staff settings: no Clear all ticks');
-  ok(await p.$('[data-act="setshared"]') === null, 'staff settings: no device type');
+  ok(await p.$('[aria-label="This device"] [data-act="device-choice"]') !== null, 'staff settings: protected personal-device choice');
   ok(await p.$('[data-act="settext"]') !== null, 'staff settings: text size still there');
   await p.goto(L.BASE + '#/admin');
   await L.settle(p, 1200);
@@ -42,17 +42,16 @@ const { R, ok } = L.results(), { txt } = L;
   // the head chef's Settings page: Clear all ticks and the device type, still no Admin panel block
   p = await L.open(b, '#/settings', { admin: true, who: '', wait: 1800 });
   // Config can be ready before the asynchronous owner probe has shown these controls.
-  await L.waitFor(p, () => !!document.querySelector('[data-act="clearticks"]') && !!document.querySelector('[data-act="setshared"][data-val="1"]'), null, 10000);
+  await L.waitFor(p, () => !!document.querySelector('[data-act="clearticks"]') && !!document.querySelector('[data-act="device-choice"]'), null, 10000);
   ok(await p.$('[aria-label="Admin panel"]') === null, 'head chef settings: no Admin panel block');
   ok(await p.$('[data-act="clearticks"]') !== null, 'head chef settings: Clear all ticks');
-  ok(await p.$('[data-act="setshared"][data-val="1"]') !== null, 'head chef settings: device type');
+  ok(await p.$('[data-act="device-choice"]') !== null, 'head chef settings: protected device type');
   ok(await L.admItem(p) === 'signed', 'head chef settings: Admin in the chef hat menu');
   // signing out on that device drops them again without a reload, and the device type chosen stays
-  await L.choose(p, '[data-act="setshared"][data-val="1"]');
-  await p.evaluate(() => { localStorage.setItem('lk.admin', ''); window.dispatchEvent(new Event('lk-admin')); });
-  await L.settle(p, 300);
-  ok(await p.$('[data-act="setshared"]') === null && await p.$('[data-act="clearticks"]') === null, 'head chef signed out: the device blocks are gone');
-  ok(await p.evaluate(() => JSON.parse(localStorage.getItem('lk.settings.v1') || '{}').shared === true), 'head chef signed out: Shared device stays on the device');
+  await p.click('[data-act="device-choice"]'); await p.click('[data-device="shared"]');
+  await L.waitFor(p, () => LK_DEVICE.mode() === 'shared' && !LK_PREP.privateAccess());
+  ok(await p.$('[data-act="device-choice"]') === null && await p.$('[data-act="clearticks"]') === null && await p.$('[aria-label="This device"]') !== null, 'head chef signed out: saved device summary stays, protected controls close');
+  ok(await p.evaluate(() => LK_DEVICE.mode() === 'shared' && !LK_PREP.state.user), 'head chef signed out: shared choice stays and Google clears on this device');
   ok(p.errors.length === 0, 'head chef settings: no page errors ' + p.errors.join(' | '));
   await p.context().close();
   await b.close();

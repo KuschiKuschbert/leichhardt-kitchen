@@ -117,7 +117,7 @@ async function noErrors(p, label) { ok(p.errors.length === 0, label + ': no page
   await p.context().close();
 
   // Existing chef permissions and the compact bar layout hold on phone, tablet and desktop.
-  for (const persona of [{ who: 'bo', width: 390, by: 'bo' }, { who: 'sam', width: 768, by: 'sam' }, { who: '', admin: true, width: 1280, by: 'owner' }]) {
+  for (const persona of [{ who: 'bo', width: 390, by: 'bo' }, { who: 'sam', width: 768, by: 'sam' }, { who: 'bo', admin: true, width: 1280, by: 'bo' }]) {
     p = await open(b, '#/', persona); await ready(p);
     ok(!(await L.overflow(p)), 'Order done fits the existing bar at ' + persona.width + ' px');
     await p.click(button); await saved(p); await undoReady(p);
@@ -137,7 +137,7 @@ async function noErrors(p, label) { ok(p.errors.length === 0, label + ': no page
   await p.context().close();
 
   // An Undo left from the previous chef must not be carried into the next chef's session.
-  p = await open(b, '#/orders'); await ready(p);
+  p = await open(b, '#/orders', { deviceMode: 'shared' }); await ready(p);
   await p.click(button); await saved(p); await undoReady(p);
   await p.click('.nb-top [data-p="who-change"]');
   await L.waitFor(p, () => !!document.querySelector('.p-name[data-id="bo"]'), null, 10000);

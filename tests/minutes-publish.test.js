@@ -63,7 +63,7 @@ const store = p => p.evaluate(() => window.__fake.dump());
   ok(!(await p.$('.mn-form')), 'published: the form is closed');
   const hint = await txt(p, '.mn-print .hint') || '';
   ok(/^Minutes 02, .*version 1, published \w+, \d+ \w+ at \d\d:\d\d\./.test(hint), 'published: the register shows the new minutes and when they were published (' + hint.slice(0, 80) + ')');
-  ok(/Not signed/.test(await txt(p, '.mn-tiles') || '') && /0\s*of 18/.test(await txt(p, '.mn-tiles') || ''), 'published: the register counts the 18 people for the new minutes');
+  ok(/Not signed/.test(await txt(p, '.mn-tiles') || '') && /0\s*of 19/.test(await txt(p, '.mn-tiles') || ''), 'published: the register counts all 19 people, including the daily head-PIN owner');
   const st = await store(p), key = Object.keys(st).find(k => /\/minutes\/[^/]+$/.test(k) && st[k].no === 2);
   ok(!!key && st[key].status === 'published' && typeof st[key].pubAt === 'number', 'published: minutes 02 are in the store, published');
 

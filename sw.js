@@ -14,7 +14,7 @@
    so those requests are not touched: their data is never kept here (since 26 Oct 2026, #387, Firebase keeps it in the
    tab's memory only). */
 var CACHE = 'lk-book-v8';
-var SHELL = ['./', './index.html', 'css/app.css', 'js/data.js', 'js/art.js', 'js/overlay.js', 'js/controls.js', 'js/app.js', 'js/amounts.js', 'js/learn.js', 'js/cutoffs.js', 'js/prep.js', 'js/functions.js', 'js/firebase-config.js', 'js/boot.js', 'js/upkeep.js', 'icon.svg', 'manifest.webmanifest', 'icons/icon-192.png'];
+var SHELL = ['./', './index.html', 'css/app.css', 'js/data.js', 'js/art.js', 'js/overlay.js', 'js/controls.js', 'js/device.js', 'js/app.js', 'js/amounts.js', 'js/learn.js', 'js/cutoffs.js', 'js/prep.js', 'js/functions.js', 'js/firebase-config.js', 'js/boot.js', 'js/upkeep.js', 'icon.svg', 'manifest.webmanifest', 'icons/icon-192.png'];
 self.addEventListener('install', function (e) {
   // past the browser's own cache (28 Oct 2026): GitHub Pages lets it keep a file for 10 minutes, so a new worker could
   // save files from before a deploy next to new ones over the saved copy every opening uses

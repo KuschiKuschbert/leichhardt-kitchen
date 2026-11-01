@@ -65,7 +65,7 @@ const save = async p => { await p.click('#dl-form button[type="submit"]'); await
     await p.context().close();
   }
   // Admin selects history with one query. Ordinary roles never query past days.
-  p = await open(b, { who: '', admin: true });
+  p = await open(b, { who: 'head', admin: true });
   await p.fill('#dl-view-day', past); await p.dispatchEvent('#dl-view-day', 'change'); await L.settle(p, 300);
   ok(/Earlier supplier/.test(await p.locator('.dl-receipts').innerText()), 'verified admin can open earlier delivery records');
   await p.evaluate(() => { window.__fake.failReads = /\/deliveries/; }); await p.click('[data-dl="refresh"]'); await L.settle(p, 300);
@@ -73,7 +73,7 @@ const save = async p => { await p.click('#dl-form button[type="submit"]'); await
   await p.evaluate(() => { window.__fake.failReads = null; }); await p.click('[data-dl="refresh"]'); await L.settle(p, 300);
   ok(/Earlier supplier/.test(await p.locator('.dl-receipts').innerText()), 'refresh recovers a failed history read');
   await p.fill('#dl-day', past); await fill(p, '4', ''); await save(p);
-  ok((await records(p)).some(x => x.day === past && x.supplier === 'Test supplier' && x.by === 'owner'), 'Google-only admin records a past delivery with explicit Admin attribution');
+  ok((await records(p)).some(x => x.day === past && x.supplier === 'Test supplier' && x.by === 'head' && x.receivedById === 'head' && x.receivedBy === 'Head'), 'the verified head-chef device records a past delivery with the authenticated receiver');
   ok(/Test supplier/.test(await p.locator('.dl-receipts').innerText()), 'past-date save appears immediately without another history read');
   await p.context().close();
   p = await L.open(b, '#/deliveries', { who: '', extra, wait: 1500 });

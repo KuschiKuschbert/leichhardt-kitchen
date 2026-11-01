@@ -154,11 +154,17 @@ async function start() {
    o.width, o.height  viewport (390 x 844 by default, a phone)
    o.who              who is signed in on this phone: 'sam' (default), 'ann', 'bo', or '' for the name screen
    o.noTok            the person is picked but has to type their own PIN
-   o.oldTok           the person signed in before PIN sessions (22 Oct 2026): the phone keeps their PIN proof
-                      (lk.prep.tok) instead of a session, and moves to a session when it opens
+   o.oldTok           legacy PIN proof only, with no v2 session: the daily PIN must be entered again
    o.noAnon           the phone's Firebase sign-in fails (no signal on a first start): no uid, so no session
    o.noPin            no kitchen PIN on this phone yet
-   o.admin            the head chef's Google account is signed in
+   o.admin            a verified daily head-PIN session and matching device grant, with remembered secondary Google
+                      (adds a dedicated synthetic head only when the fixture has none)
+   o.bootstrapOwner   Google-only first setup: no daily PIN session or operational admin grant
+   o.ownerGoogle      explicitly seed or omit the secondary remembered Google login
+   o.deviceMode       'personal' (default) or 'shared'; shared Google uses sessionStorage
+   o.profile          explicit lk.device.v2 profile; null (or deviceUnclassified:true) leaves the choice unmade
+   o.dailyLocked      omit the daily PIN session while retaining profile/Google as appropriate
+   o.legacyPrimaryGoogle  old default-app Google identity for the one-time anonymous-device migration
    o.settings         saved recipe book settings, for example { view: 'tiles' }
    o.extra            more seed documents (see seed)
    o.base             the book's address for this page (BASE by default)
@@ -210,35 +216,69 @@ async function open(browser, hash, o) {
     if (!f.startsWith(PDFJS) || !fs.existsSync(f)) return r.fulfill({ status: 404, body: '' });
     return r.fulfill({ status: 200, headers: { 'Access-Control-Allow-Origin': '*' }, contentType: /\.m?js$/.test(f) ? 'text/javascript' : 'application/octet-stream', body: fs.readFileSync(f) });
   });
-  const who = o.who === undefined ? (o.admin ? '' : 'sam') : o.who, pins = { sam: '1111', ann: '2222', bo: '3333', fay: '5151', finn: '5252' };
-  // a person signed in on this phone has a running PIN session (sessions/<this phone's uid>), as every phone does once
-  // it has moved from the older proof; the head chef's Google account is the phone's sign-in when o.admin is set
-  const store = seed(o.extra), uid = o.admin ? 'owner' : 'anon-test', exp = (o.clock || NOW) + 30 * 86400000;
-  const pinAt = who && (store[K.concat(['pinset', who]).join('/')] || {}).at, sess = who && !o.noTok && !o.oldTok && !o.noAnon && typeof pinAt === 'number';
-  if (sess) store[K.concat(['sessions', uid]).join('/')] = { by: who, pinAt, exp, at: o.clock || NOW };
+  const pins = { sam: '1111', ann: '2222', bo: '3333', fay: '5151', finn: '5252', head: '4444' };
+  const store = seed(o.extra), configKey = K.concat(['config', 'main']).join('/');
+  let config = store[configKey];
+  // Ordinary owner journeys represent an actual daily head unlock. Bootstrap tests explicitly retain no head.
+  if (o.admin && !o.bootstrapOwner && !config.headId) {
+    let id = 'head'; while ((config.people || []).some(p => p.id === id)) id = 'owner-' + id;
+    pins[id] = '4444';
+    config = { ...config, people: (config.people || []).concat([{ id, name: 'Head chef', role: 'head', active: true, add: true, tick: true, del: true, ping: true }]),
+      headId: id, staffIds: (config.staffIds || []).concat([id]), sousIds: (config.sousIds || []).concat([id]), pingIds: (config.pingIds || []).concat([id]) };
+    store[configKey] = config;
+  }
+  const who = o.admin && !o.bootstrapOwner && !o.who ? config.headId : o.who === undefined ? (o.bootstrapOwner ? '' : 'sam') : o.who;
+  if (o.admin && config.headId) {
+    const id = config.headId;
+    if (!store[K.concat(['pinset', id]).join('/')]) store[K.concat(['pinset', id]).join('/')] = { at: 1 };
+    if (!store[K.concat(['staffpins', id]).join('/')]) store[K.concat(['staffpins', id]).join('/')] = { hash: sha('lk:' + id + ':' + (pins[id] || '4444')) };
+  }
+  store[K.concat(['login', 'roster']).join('/')] = Object.fromEntries(['people', 'staffIds', 'sousIds', 'headId', 'fnIds', 'fnOnlyIds'].filter(k => config[k] !== undefined).map(k => [k, config[k]]));
+  const clock = o.clock || NOW, serverClock = o.server || clock, uid = o.deviceUid || 'anon-test';
+  if (o.admin && config.headId) {
+    const drinkKey = K.concat(['drinks', config.headId]).join('/');
+    if (!Object.hasOwn(o.extra || {}, drinkKey) && !store[drinkKey]) store[drinkKey] = { kind: 'flat', size: 'reg', at: serverClock - 86400000, by: config.headId };
+  }
+  const mode = o.deviceMode === 'shared' || o.settings && o.settings.shared ? 'shared' : 'personal';
+  const issuedAt = o.sessionIssuedAt === undefined ? serverClock - 1000 : o.sessionIssuedAt;
+  const exp = o.sessionExp === undefined ? (Math.floor((issuedAt + 6 * 3600000) / 86400000) + 1) * 86400000 - 6 * 3600000 : o.sessionExp;
+  const timestamp = value => ({ __fakeTimestamp: value });
+  const pinAt = who && (store[K.concat(['pinset', who]).join('/')] || {}).at;
+  const sess = who && !o.noTok && !o.oldTok && !o.noAnon && !o.dailyLocked && !o.legacyPrimaryGoogle && typeof pinAt === 'number';
+  if (sess) store[K.concat(['sessions', uid]).join('/')] = { by: who, pinAt, exp, at: timestamp(issuedAt), issuedAt: timestamp(issuedAt), mode, v: 2 };
+  const google = o.ownerGoogle === undefined ? !!(o.admin || o.bootstrapOwner) : !!o.ownerGoogle;
+  const googleUser = { uid: 'owner', email: 'headchef@test.local', emailVerified: true, isAnonymous: false, authTime: Math.floor(serverClock / 1000), ...(o.googleUser || {}) };
+  if (sess && who === config.headId && o.adminGrant !== false && (google || o.adminGrant && typeof o.adminGrant === 'object')) {
+    store[K.concat(['adminDevices', uid]).join('/')] = { by: who, pinAt, issuedAt: timestamp(issuedAt), exp, googleUid: googleUser.uid, at: timestamp(serverClock), v: 2, ...(o.adminGrant || {}) };
+  }
   const ls = {
     // Existing journeys use a returning admin whose last page was Insights. Set adminPage: '' to test a first visit.
     'lk.prep.atab': o.adminPage === undefined ? 'insights' : o.adminPage,
     'fake.fs': JSON.stringify(store),
-    'fake.anon': o.noAnon ? '' : 'anon-test',
+    'fake.anon': o.noAnon || o.legacyPrimaryGoogle ? '' : uid,
     'lk.prep.pin': o.noPin ? '' : PIN,
     'lk.prep.who': who || '',
     'lk.prep.tok': who && o.oldTok ? who + ':' + sha('lk:' + who + ':' + pins[who]) : '',
-    'lk.prep.sess': sess ? [who, exp, uid, pinAt].join(':') : '',
-    'lk.prep.seen': String(o.clock || NOW),   // on the phone's clock, like the idle check
+    'lk.prep.sess': sess ? JSON.stringify({ v: 2, by: who, exp, uid, pinAt, issuedAt, mode }) : '',
+    'lk.prep.seen': String(clock),   // on the phone's clock, like the idle check
     'lk.settings.v1': JSON.stringify(Object.assign({ installNo: true }, o.settings || {}))
   };
-  if (!o.board) ['sam', 'ann', 'bo', 'fay', 'finn'].concat(who ? [who] : []).forEach(id => { ls['lk.board.' + id] = ymd(new Date(o.clock || NOW)); });
-  if (o.admin) ls['fake.user'] = '1';
+  if (!(o.deviceUnclassified || o.deviceMode === 'unclassified' || o.profile === null)) ls['lk.device.v2'] = JSON.stringify(o.profile || { v: 2, mode, ownerId: mode === 'personal' ? who || '' : '' });
+  if (!o.board) ['sam', 'ann', 'bo', 'fay', 'finn'].concat((config.people || []).map(p => p.id), who ? [who] : []).forEach(id => { ls['lk.board.' + id] = ymd(new Date(serverClock)); });
+  const ss = {};
+  if (google && !o.legacyPrimaryGoogle) (mode === 'shared' ? ss : ls)['fake.auth.kitchen-owner.user'] = JSON.stringify(googleUser);
+  if (o.legacyPrimaryGoogle) ls['fake.user'] = '1';
   if (o.noAnon) await ctx.addInitScript(() => { window.__fakeNoAnon = true; });
   if (o.fakeServer || o.fakeMode || o.failReads || o.denyReads || o.cold) await ctx.addInitScript(f => { window.__fake = { mode: f.mode || 'ok', writes: [], reads: [], server: f.server, failReads: f.fail ? new RegExp(f.fail) : null, denyReads: f.deny ? new RegExp(f.deny) : null, cold: f.cold ? new RegExp(f.cold) : null }; }, { mode: o.fakeMode, server: o.fakeServer, fail: o.failReads, deny: o.denyReads, cold: o.cold });
-  // seed once per tab, so a reload keeps whatever the test did
-  await ctx.addInitScript(ls => {
-    if (sessionStorage.getItem('seeded')) return;
+  // Seed once per profile. A second tab must retain the real device identity and remembered personal Google login.
+  await ctx.addInitScript(({ ls, ss, offset }) => {
+    window.__fakeServerOffset = offset;
+    if (!localStorage.getItem('fake.profile.seeded')) {
+      localStorage.clear(); Object.keys(ls).forEach(k => { if (ls[k]) localStorage.setItem(k, ls[k]); });
+      Object.keys(ss).forEach(k => sessionStorage.setItem(k, ss[k])); localStorage.setItem('fake.profile.seeded', '1');
+    }
     sessionStorage.setItem('seeded', '1');
-    localStorage.clear();
-    Object.keys(ls).forEach(k => { if (ls[k]) localStorage.setItem(k, ls[k]); });
-  }, ls);
+  }, { ls, ss, offset: serverClock - clock });
   if (o.init) await ctx.addInitScript(o.init);
   if (o.block) await ctx.route(new RegExp(o.block), r => r.abort());
   const page = await ctx.newPage();
@@ -254,7 +294,7 @@ async function open(browser, hash, o) {
   // the book starts up in steps (the Firebase stand-in loads, then the kitchen's settings, then the lists and the
   // sign-in), so a page that has just opened waits for the settings to be read (or to fail) and has to be still for longer
   await settle(page, o.wait || 600, 300, () => { const st = window.LK_PREP && window.LK_PREP.state; return !st || !st.pin || st.configState === 'ok' || st.configState === 'error' || st.configState === 'offline'; });
-  const expectedLogin = !o.noPin && !o.noAnon && ((sess && !o.admin) || (o.admin && (!who || who === (store[K.concat(['config','main']).join('/')] || {}).headId)));
+  const expectedLogin = !o.noPin && !o.noAnon && sess && exp > serverClock && !(o.deviceUnclassified || o.profile === null || o.deviceMode === 'unclassified');
   if (expectedLogin) {
     await waitFor(page, () => { const p=window.LK_PREP; return p && (p.state.configState === 'offline' || p.privateAccess() && (p.functionOnly() || p.state.configFull)); }, null, 5000).catch(() => {});
     await settle(page, 800, 200);

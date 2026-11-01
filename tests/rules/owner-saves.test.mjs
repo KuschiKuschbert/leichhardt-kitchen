@@ -1,5 +1,5 @@
 /*
-  The head chef's Google device with nobody signed in by PIN saves after a sous chef (27 Oct 2026).
+  The head chef's device with its daily PIN and owner grant saves after a sous chef (27 Oct 2026).
   Every recipe and drawing save writes book/index with merge, Draw it for me merges book/matches, and a Sent tick merges
   onto the round's record. W() in js/prep.js mirrors book/index and book/matches to publicBook in the same batch. A merge
   keeps the by already stored, so when a sous chef saved last the rules (bookBy(), the Sent rule) refused the head
@@ -9,6 +9,7 @@
 */
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
 import { doc, getDoc, setDoc, writeBatch } from 'firebase/firestore';
+import { anonContext, dailySession, adminGrant, seedOwnerDevice, nextFour } from './device-auth-fixtures.mjs';
 import { readFileSync } from 'node:fs';
 
 const PIN = '000000', OWNER = 'headchef@test.local', K = 'kitchens/' + PIN + '/';
@@ -24,14 +25,15 @@ await rulesOff(async db => {
   await setDoc(doc(db, K + 'config/main'), CFG);
   for (const id of CFG.staffIds) {
     await setDoc(doc(db, K + 'pinset/' + id), { at: 1 });
-    await setDoc(doc(db, K + 'sessions/u-' + id), { by: id, pinAt: 1, exp: NOW + 86400000, at: 1 });
+    await setDoc(doc(db, K + 'sessions/u-' + id), dailySession(id,{at:NOW}));
   }
 });
 const phone = id => env.authenticatedContext('u-' + id, { firebase: { sign_in_provider: 'anonymous' } }).firestore();
-const DB = { owner: env.authenticatedContext('g-owner', { email: OWNER, email_verified: true, firebase: { sign_in_provider: 'google.com' } }).firestore(), sam: phone('sam'), ann: phone('ann') };
+const DB = { owner: anonContext(env,'g-owner').firestore(), sam: phone('sam'), ann: phone('ann') };
 // the by W() sends: the PIN session's person, '' on the head chef's Google device. OLD is the W() before 27 Oct 2026,
 // which left by out there (kept only to show the refusal it caused).
-const BY = { owner: '', sam: 'sam', ann: 'ann' }, OLD = 'old';
+await seedOwnerDevice(env,{uid:'g-owner',headId:'hd',at:NOW});
+const BY = { owner: 'hd', sam: 'sam', ann: 'ann' }, OLD = 'old';
 
 /* W() from js/prep.js: by added to every set and update (a by the caller set wins), and the public mirror of a
    recipe, a drawing, book/index and book/matches in the same batch, with the same data and merge. */
@@ -88,7 +90,7 @@ check((await server(K + 'book/index')).by === 'sam', 'book: the index now names 
 await ok(saveRecipe(OLD, 'burger'), false, 'book: the old W() (by left out) keeps Sam\'s id in the merged index, so the head chef\'s save is refused (why W() sends by empty)');
 await ok(saveRecipe('owner', 'burger'), true, 'book: the head chef\'s Google device saves the burger after Sam, version 2');
 const idx = await server(K + 'book/index'), pub = await server('publicBook/index');
-check(idx.by === '' && !!pub && pub.by === '' && idx.r.burger === 2 && pub.r.burger === 2, 'book: the index and its public copy say version 2, saved by nobody', [idx.by, pub && pub.by]);
+check(idx.by === 'hd' && !!pub && pub.by === 'hd' && idx.r.burger === 2 && pub.r.burger === 2, 'book: the index and its public copy say version 2, saved by the head PIN identity', [idx.by, pub && pub.by]);
 await ok(saveRecipe('sam', 'soup'), true, 'book: Sam adds a new recipe, the soup');
 await ok(saveRecipe('owner', 'pie'), true, 'book: then the head chef\'s Google device adds a new recipe, the pie');
 await ok(saveRecipe('sam', 'burger'), true, 'book: Sam saves the burger again after the head chef, version 3');
@@ -101,15 +103,15 @@ await ok(W('sam', [['set', 'book/matches', { m: { chive: 'chive-1' }, upd: Date.
 await ok(W(OLD, [['set', 'book/matches', { m: { dill: 'dill-1' }, upd: Date.now() }, true]]), false, 'matches: the old W() is refused after Sam');
 await ok(W('owner', [['set', 'book/matches', { m: { dill: 'dill-1' }, upd: Date.now() }, true]]), true, 'matches: the head chef\'s Google device saves a pick after Sam');
 const mt = await server(K + 'book/matches');
-check(mt.by === '' && mt.m.chive === 'chive-1' && mt.m.dill === 'dill-1', 'matches: Sam\'s pick is kept, saved by nobody', mt);
+check(mt.by === 'hd' && mt.m.chive === 'chive-1' && mt.m.dill === 'dill-1', 'matches: Sam\'s pick is kept, saved by the head PIN identity', mt);
 
 // 3. a Sent tick (js/functions.js tickSent()): Ann ticks, takes it back, then the head chef's Google device ticks it
 const at = T0 + 1800000, sid = `fnsent/f1_${at}`, sent = (on, sentBy, sentAt) => ({ fid: 'f1', at, day: TODAY, sent: on, sentAt, sentBy });
 const annAt = Date.now();
 await ok(W('ann', [['set', sid, sent(true, 'ann', annAt), true]]), true, 'sent: Ann ticks a round sent');
 await ok(W('ann', [['set', sid, sent(false, 'ann', annAt), true]]), true, 'sent: Ann takes it back within 2 minutes');
-await ok(W(OLD, [['set', sid, sent(true, '', Date.now()), true]]), false, 'sent: the old W() is refused (the record still names Ann)');
-await ok(W('owner', [['set', sid, sent(true, '', Date.now()), true]]), true, 'sent: the head chef\'s Google device ticks the round Ann took back');
+await ok(W(OLD, [['set', sid, sent(true, 'hd', Date.now()), true]]), false, 'sent: the old W() is refused (the record still names Ann)');
+await ok(W('owner', [['set', sid, sent(true, 'hd', Date.now()), true]]), true, 'sent: the head chef\'s Google device ticks the round Ann took back');
 
 // 4. transfers (xWrite() in js/prep.js): the open copy must match the line as W() writes it, by included
 const xline = { dir: 'out', venue: 'Riviera', person: 'Jo', text: 'Butter', amount: 2, unit: 'kg', note: '', addedBy: 'Ann', addedById: 'ann', addedAt: Date.now(), deleted: false };
@@ -125,7 +127,7 @@ await ok(xWrite('owner', 'x1', { deleted: true, deletedBy: 'Head chef', deletedA
 xl = await server(K + `transfers/${TODAY}/lines/x1`);
 await ok(xWrite('owner', 'x1', { deleted: false, deletedBy: '', deletedAt: 0 }, xl), true, 'transfers: and puts it back');
 xl = await server(K + `transfers/${TODAY}/lines/x1`);
-await ok(xWrite('owner', 'x1', { returned: true, returnedBy: 'Head chef', returnedById: '', returnedAt: Date.now() }, xl), true, 'transfers: and marks it returned');
+await ok(xWrite('owner', 'x1', { returned: true, returnedBy: 'Head chef', returnedById: 'hd', returnedAt: Date.now() }, xl), true, 'transfers: and marks it returned');
 
 // 5. a function cancel and its Undo (js/functions.js setStatus()), with the prep and order lines in the same batch
 const fnRec = { v: 1, status: 'confirmed', name: 'Smith 50th', date: TODAY, start: T0, loc: 'Deck', guests: 30, mode: 'all',

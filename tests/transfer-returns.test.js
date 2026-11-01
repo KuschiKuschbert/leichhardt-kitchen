@@ -46,7 +46,7 @@ const extra = { [source]: record, [index]: { date: old, lineId: 'loan', record, 
     const recent = L.ymd(new Date(L.NOW - 86400000));
     const closed = { ...record, returned: true, returnedBy: 'Ann', returnedById: 'ann', returnedAt: L.NOW - 600000 };
     const path = root + 'transfers/' + recent + '/lines/closed';
-    const p = await L.open(b, '#/admin', { admin: true, who: '', extra: { [path]: closed }, wait: 1200 });
+    const p = await L.open(b, '#/admin', { admin: true, extra: { [path]: closed }, wait: 1200 });
     await L.adminTab(p, 'transfers');
     await L.waitFor(p, () => !!document.querySelector('[data-p="tr-unreturn"][data-id="closed"]'));
     ok(/Returned Ann/.test(await L.txt(p, '[data-lv="xfer-log"]')), 'admin: dated history shows the confirmer and return status');
@@ -62,9 +62,10 @@ const extra = { [source]: record, [index]: { date: old, lineId: 'loan', record, 
     await p.context().close();
   }
   {
-    const p = await L.open(b, '#/transfers', { who: 'sam', extra, touch: true, settings: { shared: true }, wait: 1200 });
+    const p = await L.open(b, '#/transfers', { who: 'sam', extra, touch: true, deviceMode: 'shared', wait: 1200 });
     await p.clock.runFor(11 * 60000); await L.settle(p, 300);
-    ok(!!await p.$('.p-name') && !await p.$('.tr-outstanding'), 'shared tablet: return information stays hidden until login');
+    ok(!!await p.$('[data-k="pf1"]') && !await p.$('.tr-outstanding'), 'shared tablet: return information stays hidden behind the idle PIN lock');
+    await p.click('[data-p="who-change"]'); await L.settle(p, 200);
     await p.click('.p-name[data-id="ann"]'); await L.settle(p, 250); await p.keyboard.type('2222'); await L.settle(p, 1200);
     await p.click('.tr-outstanding [data-p="tr-return"]'); await L.settle(p, 400);
     ok((await p.evaluate(k => window.__fake.dump()[k], source)).returnedById === 'ann', 'shared tablet: return belongs to the person who entered their PIN');

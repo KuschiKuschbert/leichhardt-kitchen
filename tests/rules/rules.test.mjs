@@ -6,6 +6,7 @@
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
 import { doc, setDoc, getDoc, getDocs, collection, query, where, updateDoc, deleteDoc, writeBatch, serverTimestamp, Timestamp, increment } from 'firebase/firestore';
 import { createHash } from 'crypto';
+import { anonContext, dailySession, adminGrant, seedOwnerDevice, nextFour } from './device-auth-fixtures.mjs';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import path from 'path';
@@ -44,7 +45,8 @@ await env.withSecurityRulesDisabled(async ctx => {
 });
 
 const anon = env.unauthenticatedContext().firestore();
-const owner = env.authenticatedContext('owner', { email: OWNER, email_verified: true }).firestore();
+const owner = anonContext(env, 'owner').firestore();
+await seedOwnerDevice(env, {uid:'owner',headId:'hd'});
 
 /* A staff write the way the book does it since PIN sessions (phase 2, 22 Oct 2026): the person's phone has a session
    (opened with their PIN, at their current PIN time) and every document carries "by". pin: the PIN typed (a wrong one
@@ -57,7 +59,7 @@ async function W(ops, o) {
   const id = o.id, right = !o.pin || o.pin === pins[id], uid = 'w-' + id + (right ? '' : '-wrong'), db = wPhone(uid);
   if (right) await env.withSecurityRulesDisabled(async ctx => {
     const c = ctx.firestore(), ps = await getDoc(doc(c, K + 'pinset/' + id));
-    if (ps.exists()) await setDoc(doc(c, K + 'sessions/' + uid), { by: id, pinAt: ps.data().at, exp: Date.now() + 86400000, at: 1 });
+    if (ps.exists()) await setDoc(doc(c, K + 'sessions/' + uid), dailySession(id, {pinAt:ps.data().at}));
   });
   const b = writeBatch(db);
   for (const [p, data, merge] of ops) b.set(doc(db, K + p), Object.assign({ by: o.as || id }, data), merge ? { merge: true } : {});
@@ -115,7 +117,7 @@ await ok(W([['config/main', { pinOpen: { dee: Date.now() + 86400000 } }, true]],
 await ok(W([['config/main', { sousIds: ['sam', 'ann'], updated: 1, updatedBy: 'Sam' }, true]], { id: 'sam' }), false, 'config: a sous chef cannot change sousIds');
 await ok(W([['config/main', { pingIds: ['sam', 'ann'], updated: 1, updatedBy: 'Sam' }, true]], { id: 'sam' }), false, 'config: a sous chef cannot change pingIds');
 await ok(W([['config/main', { people: [{ id: 'ann', name: 'Ann', role: 'staff', active: true }], updated: 1, updatedBy: 'Ann' }, true]], { id: 'ann' }), false, 'config: staff cannot change the people list');
-await ok(setDoc(doc(owner, K + 'config/main'), { people: PEOPLE, sousIds: ['sam'], pingIds: ['sam', 'bo'], staffIds: ['sam', 'ann', 'bo', 'cal'], showBadges: false }), true, 'config: the head chef writes everything');
+await ok(setDoc(doc(owner, K + 'config/main'), { people: PEOPLE, headId:'hd', sousIds: ['sam'], pingIds: ['sam', 'bo'], staffIds: ['sam', 'ann', 'bo', 'cal','hd'], showBadges: false }), true, 'config: the head chef writes everything');
 
 // activity: a person's own tally, or the head chef or a sous chef for anyone
 await ok(W([['activity/ann', { name: 'Ann', visits: increment(1) }, true]], { id: 'ann' }), true, 'activity: own tally (an older field on the record does not get in the way)');
@@ -467,10 +469,10 @@ await ok(ownerBatch([['functions/f3', fnc()]]), true, 'functions: the Google acc
     const db = ctx.firestore();
     await setDoc(doc(db, K + 'functions/cancel-expired'), expired);
     await setDoc(doc(db, K + 'functions/cancel-expired/hist/1'), { was: source, by: 'sam', at: expired.upd, what: 'Cancelled' });
-    await setDoc(doc(db, K + 'sessions/cancel-only'), { by: 'sam', pinAt: 1, exp: Date.now() + 86400000 });
+    await setDoc(doc(db, K + 'sessions/cancel-only'), dailySession('sam'));
   });
   await ok(W(statusOps('cancel-expired', expired, undo(expired, source, 'sam')), { id: 'sam' }), false, 'cancel access: Undo ends after two minutes');
-  await ok(getDoc(doc(env.authenticatedContext('cancel-only').firestore(), K + 'fncontact/f1')), false, 'cancel access: a chef with a PIN session still cannot read contacts without the Functions tick');
+  await ok(getDoc(doc(anonContext(env,'cancel-only').firestore(), K + 'fncontact/f1')), false, 'cancel access: a chef with a PIN session still cannot read contacts without the Functions tick');
   const futureDay = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10), baseAt = Date.now() + 7 * 86400000;
   const largest = fnc({ status: 'confirmed', by: 'fay', confBy: 'fay', confAt: 2, date: futureDay, od: futureDay, start: baseAt,
     lines: Array.from({ length: 12 }, (_, i) => ({ rid: 'large-' + i, name: 'Platter ' + i, unit: 'platter', spec: '', fp: '', qty: 40, u: Array.from({ length: 40 }, (_, n) => Math.floor(n / 5)) })),
@@ -705,13 +707,13 @@ const phone = id => env.authenticatedContext(id, { firebase: { sign_in_provider:
 const ph1 = phone('ph1'), ph2 = phone('ph2'), ph3 = phone('ph3');
 await env.withSecurityRulesDisabled(async ctx => { const db = ctx.firestore(); await setDoc(doc(db, K + 'pinset/ann'), { at: 111 }); await setDoc(doc(db, K + 'pinset/bo'), { at: 222 }); });
 const tryPin = (db, id, pin, uid) => setDoc(doc(db, K + 'tries/' + id), { tok: hash(id, pin), at: serverTimestamp(), uid });
-const sess = (db, uid, id, x) => setDoc(doc(db, K + 'sessions/' + uid), Object.assign({ by: id, pinAt: id === 'ann' ? 111 : 222, exp: Date.now() + 86400000, at: serverTimestamp() }, x || {}));
+const sess = (db, uid, id, x) => setDoc(doc(db, K + 'sessions/' + uid), Object.assign({ by: id, pinAt: id === 'ann' ? 111 : 222, exp: nextFour(Date.now()), at: serverTimestamp(),issuedAt:serverTimestamp(),mode:'personal',v:2 }, x || {}));
 await ok(tryPin(anon, 'ann', '2222', 'ph1'), false, 'sessions: a try needs a signed-in phone');
 await ok(tryPin(ph1, 'ann', '2222', 'ph2'), false, 'sessions: a try is written as the phone itself');
 await ok(tryPin(ph1, 'ann', '2222', 'ph1'), true, 'sessions: Ann\'s phone writes a PIN try');
 await ok(tryPin(ph1, 'ann', '2222', 'ph1'), false, 'sessions: a second try within 20 seconds is refused');
 await ok(sess(ph2, 'ph2', 'ann'), false, 'sessions: another phone cannot use Ann\'s try');
-await ok(sess(ph1, 'ph1', 'ann', { exp: Date.now() + 40 * 86400000 }), false, 'sessions: no session longer than 31 days');
+await ok(sess(ph1, 'ph1', 'ann', { exp: Date.now() + 40 * 86400000 }), false, 'sessions: a session cannot run beyond the next 04:00');
 await ok(sess(ph1, 'ph1', 'ann', { pinAt: 5 }), false, 'sessions: the session must name Ann\'s PIN time');
 await ok(sess(ph1, 'ph1', 'ann'), true, 'sessions: the right try opens a session');
 await ok(setDoc(doc(ph1, K + 'days/' + TODAY + '/items/sx1'), line({ by: 'ann', addedById: 'ann' })), true, 'sessions: Ann writes a line through her session');
@@ -722,7 +724,7 @@ await ok(sess(ph3, 'ph3', 'bo'), false, 'sessions: a wrong try opens no session'
 await ok(tryPin(ph3, 'bo', '3333', 'ph3'), false, 'sessions: and the next try waits 20 seconds');
 await ok(getDoc(doc(ph2, K + 'sessions/ph1')), false, 'sessions: a phone cannot read another phone\'s session');
 await ok(getDoc(doc(ph1, K + 'tries/ann')), false, 'sessions: nobody reads a try');
-await ok(sess(ph1, 'ph1', 'ann', { exp: Date.now() + 20 * 86400000 }), true, 'sessions: a running session moves its end forward');
+await ok(sess(ph1, 'ph1', 'ann', { exp: nextFour(Date.now()) }), true, 'sessions: a running session keeps its 04:00 deadline');
 await env.withSecurityRulesDisabled(async ctx => { await deleteDoc(doc(ctx.firestore(), K + 'pinset/ann')); });
 await ok(setDoc(doc(ph1, K + 'days/' + TODAY + '/items/sx4'), line({ by: 'ann', addedById: 'ann' })), false, 'sessions: after Reset PIN the session writes nothing');
 await env.withSecurityRulesDisabled(async ctx => { const db = ctx.firestore(); await setDoc(doc(db, K + 'pinset/ann'), { at: 333 }); await setDoc(doc(db, K + 'staffpins/ann'), { hash: hash('ann', '7777') }); });
@@ -738,9 +740,9 @@ await ok(setDoc(doc(ph2, K + 'tries/cal'), { tok: hash('cal', '1234'), at: Times
 const ph4 = phone('ph4'), ph5 = phone('ph5');
 await env.withSecurityRulesDisabled(async ctx => {
   const db = ctx.firestore();
-  await setDoc(doc(db, K + 'sessions/ph4'), { by: 'bo', pinAt: 222, exp: Date.now() - 1000, at: 1 });
+  await setDoc(doc(db, K + 'sessions/ph4'), dailySession('bo',{pinAt:222,exp:Date.now()-1000}));
   await setDoc(doc(db, K + 'pinset/zed'), { at: 444 }); await setDoc(doc(db, K + 'staffpins/zed'), { hash: hash('zed', '5555') });
-  await setDoc(doc(db, K + 'sessions/ph5'), { by: 'zed', pinAt: 444, exp: Date.now() + 86400000, at: 1 });
+  await setDoc(doc(db, K + 'sessions/ph5'), dailySession('zed',{pinAt:444}));
 });
 await ok(setDoc(doc(ph4, K + 'days/' + TODAY + '/items/sx6'), line({ by: 'bo', addedById: 'bo' })), false, 'sessions: a session that ran out writes nothing');
 await ok(sess(ph4, 'ph4', 'bo', { exp: Date.now() + 86400000 }), false, 'sessions: and cannot be moved forward');
@@ -755,9 +757,9 @@ await env.withSecurityRulesDisabled(async ctx => {
   const db = ctx.firestore();
   await setDoc(doc(db, K + 'config/main'), { fnIds: ['finn'] }, { merge: true });
   await setDoc(doc(db, K + 'pinset/finn'), { at: 555 });
-  await setDoc(doc(db, K + 'sessions/ph6'), { by: 'finn', pinAt: 555, exp: Date.now() + 86400000, at: 1 });
-  await setDoc(doc(db, K + 'sessions/ph7'), { by: 'ann', pinAt: 333, exp: Date.now() + 86400000, at: 1 });
-  await setDoc(doc(db, K + 'sessions/ph8'), { by: 'finn', pinAt: 555, exp: Date.now() - 1000, at: 1 });
+  await setDoc(doc(db, K + 'sessions/ph6'), dailySession('finn',{pinAt:555}));
+  await setDoc(doc(db, K + 'sessions/ph7'), dailySession('ann',{pinAt:333}));
+  await setDoc(doc(db, K + 'sessions/ph8'), dailySession('finn',{pinAt:555,exp:Date.now()-1000}));
 });
 await ok(getDoc(doc(ph6, K + 'fncontact/f1')), true, 'contacts: a function manager reads one through their PIN session');
 await ok(getDoc(doc(owner, K + 'fncontact/f1')), true, 'contacts: the Google account reads one');
@@ -786,7 +788,7 @@ await ok(getDocs(collection(anon, K + 'minutes/m1/signs')), false, 'minutes: the
 await env.withSecurityRulesDisabled(async ctx => { await setDoc(doc(ctx.firestore(), K + 'config/main'), { headId: 'hd', sousIds: ['sam'], staffIds: ['sam', 'ann', 'bo', 'cal', 'hd'] }, { merge: true }); });
 async function signPhone(id, exp) {
   const uid = 'sg-' + id + (exp ? '-old' : '');
-  await env.withSecurityRulesDisabled(async ctx => { const c = ctx.firestore(), ps = await getDoc(doc(c, K + 'pinset/' + id)); await setDoc(doc(c, K + 'sessions/' + uid), { by: id, pinAt: ps.data().at, exp: exp || Date.now() + 86400000, at: 1 }); });
+  await env.withSecurityRulesDisabled(async ctx => { const c = ctx.firestore(), ps = await getDoc(doc(c, K + 'pinset/' + id)); await setDoc(doc(c, K + 'sessions/' + uid), dailySession(id,{pinAt:ps.data().at,...(exp?{exp}:{})})); });
   return wPhone(uid);
 }
 const sgAnn = await signPhone('ann'), sgBo = await signPhone('bo'), sgSam = await signPhone('sam'), sgHd = await signPhone('hd'), sgOld = await signPhone('ann', Date.now() - 1000);

@@ -8,6 +8,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import supplierCore from '../../js/supplier-core.js';
+import { anonContext, dailySession, seedOwnerDevice } from './device-auth-fixtures.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PIN = '000000', OWNER = 'headchef@test.local', K = 'kitchens/' + PIN + '/';
@@ -21,24 +22,26 @@ const catalogue = x => Object.assign({ name: 'Test vendor', cutoffId: CUT, v: 1,
 const line = x => Object.assign({ itemId: item.id, name: item.name, pack: item.pack, qty: '2 bags', amount: 2, unit: 'bag', par: '0', parUnit: '', source, suggestion: '', stock: '' }, x || {});
 const order = x => Object.assign({ sid: SID, supplierName: 'Test vendor', v: 1, at: 10, day: DAY, deliveryDay: '2026-10-26', cutoffDay: '', cutoffId: '', by: 'sous', lines: [line()] }, x || {});
 const existing = order({ by: 'owner' });
+const sessionAt = Date.now();
 await env.withSecurityRulesDisabled(async ctx => {
   const db = ctx.firestore();
   await setDoc(doc(db, K + 'config/main'), { headId: 'head', sousIds: ['head', 'sous', 'removed'], fnIds: ['function'], staffIds: ['head', 'sous', 'staff', 'lead', 'function'], people: [] });
   for (const id of ['head', 'sous', 'staff', 'lead', 'function', 'removed']) await setDoc(doc(db, K + 'pinset/' + id), { at: 1 });
-  for (const [uid, by, pinAt, exp] of [
-    ['head-phone', 'head', 1, Date.now() + 86400000], ['sous-phone', 'sous', 1, Date.now() + 86400000],
-    ['staff-phone', 'staff', 1, Date.now() + 86400000], ['lead-phone', 'lead', 1, Date.now() + 86400000],
-    ['function-phone', 'function', 1, Date.now() + 86400000], ['removed-phone', 'removed', 1, Date.now() + 86400000],
-    ['expired-phone', 'head', 1, 1], ['reset-phone', 'head', 0, Date.now() + 86400000]
-  ]) await setDoc(doc(db, K + 'sessions/' + uid), { by, pinAt, exp, at: 1 });
+  for (const [uid, by, pinAt, expired] of [
+    ['head-phone', 'head', 1], ['sous-phone', 'sous', 1],
+    ['staff-phone', 'staff', 1], ['lead-phone', 'lead', 1],
+    ['function-phone', 'function', 1], ['removed-phone', 'removed', 1],
+    ['expired-phone', 'head', 1, true], ['reset-phone', 'head', 0]
+  ]) await setDoc(doc(db, K + 'sessions/' + uid), dailySession(by, { pinAt, at: expired ? sessionAt - 86400000 : sessionAt }));
   await setDoc(doc(db, K + 'suppliers/' + SID), catalogue());
   await setDoc(doc(db, K + 'suppliers/' + SID + '/orders/existing'), existing);
   await setDoc(doc(db, K + 'suppliers/' + SID + '/audit/1'), { v: 1, itemId: '', action: 'Imported', before: null, after: catalogue(), at: 1, by: 'owner' });
   await setDoc(doc(db, K + 'supplierlinks/2026-10-20_' + CUT), { sid: SID, cutoffId: CUT, day: '2026-10-20', v: 1, orderId: 'existing', at: 10, by: 'owner' });
 });
+await seedOwnerDevice(env, { pin: PIN, uid: 'owner', headId: 'head', at: sessionAt });
 
-const phone = uid => env.authenticatedContext(uid, { firebase: { sign_in_provider: 'anonymous' } }).firestore();
-const owner = env.authenticatedContext('owner', { email: OWNER, email_verified: true }).firestore();
+const phone = uid => anonContext(env, uid).firestore();
+const owner = phone('owner');
 const wrongOwner = env.authenticatedContext('owner-unverified', { email: OWNER, email_verified: false }).firestore();
 const head = phone('head-phone'), sous = phone('sous-phone'), staff = phone('staff-phone');
 const anon = env.unauthenticatedContext().firestore();
@@ -142,7 +145,7 @@ for (const [patch, label] of [
   [{ deliveryDay: 'Monday' }, 'invalid delivery day'], [{ unexpected: true }, 'unknown order field']
 ]) await ok(setDoc(doc(owner, K + 'suppliers/' + SID + '/orders/invalid-order'), order(patch)), false, label + ' refused');
 
-// The Google owner can move old versions and their exact audit/history without manufacturing a new order or reminder.
+// The owner device can move old versions and their exact audit/history without manufacturing a new order or reminder.
 await ok(setDoc(doc(owner, K + 'suppliers/copied-vendor'), catalogue({ name: 'Copied test vendor', v: 9 })), true, 'owner may copy an older catalogue revision to a new kitchen path');
 await ok(setDoc(doc(owner, K + 'suppliers/copied-vendor/audit/7'), { v: 7, itemId: '', action: 'Prior edit', before: null, after: {}, at: 1, by: 'head' }), true, 'owner may copy earlier audit records');
 await ok(setDoc(doc(owner, K + 'suppliers/copied-vendor/orders/copied-order'), order({ sid: 'copied-vendor', supplierName: 'Old test vendor name', v: 3, cutoffId: CUT, cutoffDay: '2026-01-05', by: 'head' })), true, 'owner may copy immutable old history without completing an old reminder again');
@@ -164,7 +167,7 @@ connectFirestoreEmulator(fullDb, firestoreHost, Number(firestorePort));
 lite.connectFirestoreEmulator(liteDb, firestoreHost, Number(firestorePort));
 const signed = await signInAnonymously(auth);
 await env.withSecurityRulesDisabled(async ctx => {
-  await setDoc(doc(ctx.firestore(), K + 'sessions/' + signed.user.uid), { by: 'head', pinAt: 1, exp: Date.now() + 60000, at: 1 });
+  await setDoc(doc(ctx.firestore(), K + 'sessions/' + signed.user.uid), dailySession('head'));
 });
 await ok(Promise.resolve().then(() => {
   if (fullDb === liteDb || fullDb.app !== smokeApp || liteDb.app !== smokeApp || liteDb.type !== 'firestore-lite') throw Error('Firestore components not separated');

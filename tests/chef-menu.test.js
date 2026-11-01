@@ -102,7 +102,8 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   ok(!(await signedIn(p)) && !!(await p.$('.p-name[data-id="sam"]')), 'sign out: back to Who are you? on the prep list');
   ok(!(await p.$('.wm')), 'sign out: the menu closes');
   await p.click('.p-name[data-id="sam"]'); await L.settle(p, 400);
-  await p.type('#pf1', '1111'); await L.settle(p, 900);
+  await p.type('#pf1', '1111');
+  await L.waitFor(p, () => LK_PREP.privateAccess() && LK_PREP.state.who === 'sam', null, 8000);
   ok(await signedIn(p) && !(await p.$('[data-p="a-add-person"]')) && !!(await p.$('.nb-left')), 'sign in again: the prep list, not the last Manage staff page');
   ok(p.errors.length === 0, 'sous chef menu: no page errors ' + p.errors.join(' | '));
   await p.context().close();
@@ -127,25 +128,33 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   ok(p.errors.length === 0, 'sign out: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // only a change on its way to the server (28 Oct 2026): Sign out and Not you? say Not sent, not Not saved, and the
-  // change still goes once the signal is back; something typed says Not saved yet, as before
+  // Every device keeps the original writer while a write waits. Neither repeated Sign out nor Not you? can abandon it,
+  // including when another line is half typed. Once acknowledged, the ordinary draft-discard choice is available.
   p = await L.open(b, '#/prep', { who: 'sam', wait: 1800, fakeMode: 'hold' });
   await p.fill('#p-text', 'Peel garlic'); await p.keyboard.press('Enter'); await L.settle(p, 3600);
   ok(await p.evaluate(() => window.LK_PREP.unsent() && document.querySelector('#p-text').value === ''), 'not sent: the line waits for the server and nothing is typed');
   await p.click('.nb-top [data-p="who-change"]'); await L.settle(p, 200);
-  ok(await signedIn(p) && await txt(p, '.nb-top [data-p="who-change"]') === 'Not sent. Tap again', 'not sent: Not you? asks again with Not sent (' + await txt(p, '.nb-top [data-p="who-change"]') + ')');
+  ok(await signedIn(p) && await txt(p, '.nb-top [data-p="who-change"]') === 'Not sent yet.', 'not sent: Not you? keeps the original writer and explains the pending change');
+  await p.click('.nb-top [data-p="who-change"]'); await L.settle(p, 200);
+  ok(await signedIn(p) && await p.evaluate(() => LK_PREP.unsent()), 'not sent: a repeated Not you? cannot hand over pending work');
   await p.click('.wtop-who'); await L.settle(p, 150);
   await p.click('.wm [data-who="out"]'); await L.settle(p, 200);
-  ok(await signedIn(p) && await txt(p, '.wm-out small') === 'Not sent yet. Tap again to sign out', 'not sent: Sign out says Not sent yet (' + await txt(p, '.wm-out small') + ')');
+  ok(await signedIn(p) && await txt(p, '.wm-out small') === 'Not sent yet.', 'not sent: Sign out explains that the change must finish sending');
   await p.keyboard.press('Escape'); await L.settle(p, 150);
   await p.fill('#p-text', 'Pick parsley');
   await p.click('.wtop-who'); await L.settle(p, 150);
   await p.click('.wm [data-who="out"]'); await L.settle(p, 200);
-  ok(await txt(p, '.wm-out small') === 'Not saved yet. Tap again to sign out', 'half a line typed as well: Sign out says Not saved yet (' + await txt(p, '.wm-out small') + ')');
+  ok(await txt(p, '.wm-out small') === 'Not sent yet.', 'half a line typed as well: pending writes still prevent sign-out');
   await p.click('.wm [data-who="out"]'); await L.settle(p, 400);
-  ok(!(await signedIn(p)), 'not sent: the second tap signs out');
-  await p.evaluate(() => window.__fake.release()); await L.settle(p, 600);
-  ok(await p.evaluate(() => { const d = window.__fake.dump(); return Object.keys(d).some(k => /\/items\//.test(k) && d[k].text === 'Peel garlic'); }) && !(await p.evaluate(() => window.LK_PREP.unsaved())), 'not sent: once the signal is back the line reaches the server, and nothing is left waiting');
+  ok(await signedIn(p) && await p.evaluate(() => LK_PREP.state.who === 'sam' && LK_PREP.unsent()), 'not sent: repeated Sign out cannot replace the original writer');
+  await p.evaluate(() => { window.__fake.mode = 'ok'; window.__fake.release(); });
+  await L.waitFor(p, () => !LK_PREP.unsent(), null, 8000);
+  ok(await p.evaluate(() => { const d = window.__fake.dump(); return Object.keys(d).some(k => /\/items\//.test(k) && d[k].text === 'Peel garlic' && d[k].addedById === 'sam'); }) && await p.inputValue('#p-text') === 'Pick parsley', 'not sent: acknowledgement saves Sam\'s original line and preserves his separate unfinished draft');
+  if (!(await p.locator('.wm').count())) await p.click('.wtop-who');
+  await p.click('.wm [data-who="out"]'); await L.settle(p, 200);
+  ok(await signedIn(p) && await txt(p, '.wm-out small') === 'Not saved yet. Tap again to sign out', 'sent: the remaining unsaved draft receives the ordinary discard choice');
+  await p.click('.wm [data-who="out"]'); await L.settle(p, 300);
+  ok(!(await signedIn(p)) && !(await p.evaluate(() => LK_PREP.unsaved())), 'sent: explicit draft discard signs out with no unfinished work left');
   ok(p.errors.length === 0, 'not sent: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -184,7 +193,7 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   await p.context().close();
 
   // "Not you?" does what Sign out does (23 Oct 2026): a line typed asks a second tap, and the line goes with the person
-  p = await L.open(b, '#/prep', { who: 'ann', wait: 1800 });
+  p = await L.open(b, '#/prep', { who: 'ann', deviceMode: 'shared', wait: 1800 });
   await p.fill('#p-text', 'Pick parsley');
   await p.click('.nb-top [data-p="who-change"]'); await L.settle(p, 200);
   ok(await signedIn(p) && /Not saved\. Tap again/.test(await txt(p, '.nb-top [data-p="who-change"]') || ''), 'Not you? with a line typed: the first tap asks again (' + await txt(p, '.nb-top [data-p="who-change"]') + ')');

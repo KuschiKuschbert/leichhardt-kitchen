@@ -165,7 +165,7 @@ const reads = (p, re) => p.evaluate(s => window.__fake.reads.filter(k => new Reg
   // 8. A handover after a failed read (review of 28 Oct 2026). Sam opens the prep list with no signal for the past days,
   // signs out, the signal comes back and Ann signs in: her past days are read for her at once. They waited 5 minutes
   // or more behind Sam's failed read, with no Pace or usual amounts, and her rollover read 7 days instead of 1.
-  p = await L.open(b, '#/prep', { who: 'sam', extra: pastX, cold: pastRe.source, width: 1280, height: 900, wait: 2500 });
+  p = await L.open(b, '#/prep', { who: 'sam', deviceMode: 'shared', extra: pastX, cold: pastRe.source, width: 1280, height: 900, wait: 2500 });
   ok(await p.evaluate(() => !window.LK_PREP.state.pastFor), 'handover: Sam\'s past days could not be read');
   await p.evaluate(() => window.LK_PREP.signOut(true)); await L.settle(p, 500);
   await warm(p); await L.settle(p, 2500);
@@ -182,7 +182,7 @@ const reads = (p, re) => p.evaluate(s => window.__fake.reads.filter(k => new Reg
   for (let i = 1; i < 30; i++) ordX[fsKey(['orders', day(i), 'lines', 'o' + i])] = { text: 'Cream ' + i, qty: '2 L', recipes: [], addedBy: 'Ann', addedById: 'ann', addedAt: L.NOW - i * 86400000, ordered: false, deleted: false };
   const ordRe = /\/orders\/[^/]+\/lines$/;
   for (const next of ['nobody', 'Ann']) {
-    p = await L.open(b, '#/admin', { admin: true, who: '', extra: ordX, width: 1280, height: 900, wait: 2000 });
+    p = await L.open(b, '#/admin', { admin: true, who: '', deviceMode: 'shared', extra: ordX, width: 1280, height: 900, wait: 2000 });
     await L.waitFor(p, () => { const s = window.LK_PREP.state.stats; return !!s && !s.loading; }, null, 8000).catch(() => {});
     const mid = await p.evaluate(() => {
       const st = () => window.LK_PREP.state, leaf = () => document.querySelector('[data-p="a-tab"][data-t="team"]');
@@ -214,7 +214,7 @@ const reads = (p, re) => p.evaluate(s => window.__fake.reads.filter(k => new Reg
   // 11. The sections people write (watchSections()), started again with no signal for the next person: the copy in
   // memory is empty, which is not "no sections". The ones already known stay for the suggestions and the spell check.
   const secX = { [fsKey(['sections', 'larder'])]: { name: 'Larder', uses: 5 }, [fsKey(['sections', 'pastry'])]: { name: 'Pastry', uses: 3 } };
-  p = await L.open(b, '#/prep', { who: 'sam', extra: secX, wait: 1800 });
+  p = await L.open(b, '#/prep', { who: 'sam', deviceMode: 'shared', extra: secX, wait: 1800 });
   ok(await until(p, () => window.LK_PREP.state.sections.length === 2), 'sections: both read with signal');
   await p.evaluate(() => window.LK_PREP.signOut(true)); await L.settle(p, 500);
   await p.evaluate(() => { window.__fake.cold = /\/sections$/; });
@@ -235,7 +235,7 @@ const reads = (p, re) => p.evaluate(s => window.__fake.reads.filter(k => new Reg
   // failure came back as no signal, not as cut short, so it armed its retry and Ann's staff phone read the shifts on the
   // next online event. Now any answer after the person changed is cut short (sdk()).
   const ksX = { [fsKey(['config', 'main'])]: { people, sousIds: ['sam'], pingIds: ['sam'], staffIds: ['sam', 'ann', 'bo'], showBadges: true, kitSecs: [{ id: 'grill', name: 'Grill', off: false }] } };
-  p = await L.open(b, '#/admin', { admin: true, who: '', extra: ksX, width: 1280, height: 900, failReads: '/shifts$', wait: 2000 });
+  p = await L.open(b, '#/admin', { admin: true, who: '', deviceMode: 'shared', extra: ksX, width: 1280, height: 900, failReads: '/shifts$', wait: 2000 });
   const sh0 = await reads(p, /\/shifts$/);
   await p.evaluate(() => {
     const st = () => window.LK_PREP.state, leaf = () => document.querySelector('[data-p="a-tab"][data-t="people"]');

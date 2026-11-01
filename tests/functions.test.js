@@ -283,14 +283,15 @@ function hasPrivateContact(value) {
   s = await store(p);
   await p.context().close();
   // then the head chef's Google device with nobody signed in ticks that round (27 Oct 2026): the tick is saved with merge
-  // onto Ann's record, so its by has to be empty too, or the rules refuse it (sentBy is the writer)
+  // onto Ann's record. The remembered owner now writes under the matching daily head PIN (sentBy is the writer).
   p = await L.open(b, '#/recipes', { who: '', admin: true, extra: s, clock: at(today, '18:33'), wait: 1200 });
   await L.waitFor(p, () => /Smith 50th/.test((document.getElementById('fn-band') || {}).textContent || ''));
   await tap(p, '#fn-band .fn-row'); await L.settle(p, 200);
   await tap(p, '.fn-next [data-fn="sent"]');
   await L.waitFor(p, k => { const v = window.__fake.dump()[k]; return !!v && v.sent === true; }, fsKey(['fnsent', 'smith_' + at(today, '18:30')]), 6000).catch(() => {});
   const ot = (await store(p))[fsKey(['fnsent', 'smith_' + at(today, '18:30')])];
-  ok(!!ot && ot.sent === true && ot.sentBy === '' && ot.by === '', 'sent: the head chef\'s Google device ticks a round Ann took back, saved by nobody (' + JSON.stringify(ot && { sentBy: ot.sentBy, by: ot.by }) + ')');
+  const ownerHead = (await store(p))[fsKey(['config', 'main'])].headId;
+  ok(!!ot && ot.sent === true && ot.sentBy === ownerHead && ot.by === ownerHead, 'sent: the head chef\'s Google device ticks a round Ann took back under its daily head PIN (' + JSON.stringify(ot && { sentBy: ot.sentBy, by: ot.by }) + ')');
   // what a screen reader hears (book().say(), #lk-live)
   await L.waitFor(p, () => /sent|Not saved/.test((document.getElementById('lk-live') || {}).textContent || ''), null, 4000).catch(() => {});
   const otMsg = await txt(p, '#lk-live') || '';

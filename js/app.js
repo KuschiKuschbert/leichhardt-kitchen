@@ -1085,7 +1085,14 @@
   }
   function viewSettings() {
     var nTicks = Object.keys(ticks).filter(function (k) { return ticks[k]; }).length;
-    // Clear all ticks and the device type are for the head chef setting up a device: only on the head chef's signed-in device
+    var device = window.LK_DEVICE, mode = device ? device.mode() : '', P = window.LK_PREP;
+    var changeDevice = !!(P && P.canChangeDevice && P.canChangeDevice());
+    var deviceHTML = '<section class="set-block" aria-label="This device"><span class="label">This device</span><strong>' +
+      (mode === 'personal' ? 'My own device' : mode === 'shared' ? 'Shared kitchen screen' : 'Choose how this device is used') + '</strong><span class="hint">' +
+      (mode === 'personal' ? 'No idle lock. Unlock with your PIN after 04:00 each day. Your Google sign-in stays remembered.' : mode === 'shared' ? 'Locks after 10 minutes. Google and PIN sign out at 04:00 on this device.' : 'Choose once for this browser or installed app.') + '</span>' +
+      (!mode || changeDevice ? '<div class="btn-row"><button type="button" class="btn" data-act="device-choice">' + (mode ? 'Change device type' : 'Choose device type') + '</button>' +
+      (mode ? '<button type="button" class="btn" data-act="device-forget">Forget this device</button>' : '') + '</div>' : '<span class="hint">' + (mode === 'shared' ? 'The head chef can change this after signing in.' : 'Sign in with your PIN to change this.') + '</span>') + '</section>';
+    // Clear all ticks and practice are for the head chef setting up a device.
     var adm = isAdminDevice();
     return '<div class="page">' + '<main id="main" class="settings"><div class="row-label" style="justify-content: space-between; align-items: center">' +
       '<h2 tabindex="-1" id="rtitle">Settings</h2><a class="btn dark" href="#/" data-act="done">Done</a></div>' +
@@ -1093,6 +1100,7 @@
         return '<button type="button" class="chip" data-act="settext" data-val="' + t[0] + '" data-k="settext:' + t[0] + '" aria-pressed="' + (settings.text === t[0]) + '">' + esc(t[1]) + '</button>';
       }).join('') + '</div></section>' +
       installHTML() +
+      deviceHTML +
       '<section class="set-block" aria-label="Opens with"><span class="label">Opens with</span><span class="hint">Tap one. This is how the recipes look when you arrive, on a computer and on a phone.</span>' + viewOptions('setview') + '</section>' +
       '<section class="set-block set-qr" aria-label="Open on a phone"><span class="label">Open on a phone</span><div class="qr-row"><img class="qr-img" src="qr.svg" width="180" height="180" alt="QR code that opens the Kitchen Book">' +
       '<div><p class="hint">Scan with a phone camera to open the Kitchen Book on that phone, then add it to the home screen so it is one tap away.</p><p class="qr-url">kuschikuschbert.github.io/leichhardt-kitchen</p>' +
@@ -1100,8 +1108,6 @@
       (adm ?
         '<section class="set-block" aria-label="Ticked steps"><span class="label">Ticked steps</span><span class="hint">' + esc(plural(nTicks, 'step is', 'steps are')) + ' ticked. Ticks clear when you close the page.</span>' +
         '<div class="btn-row"><button type="button" class="btn" data-act="clearticks" data-k="clearticks">Clear all ticks</button></div></section>' +
-        '<section class="set-block" aria-label="Shared kitchen device"><span class="label">Shared kitchen device</span><span class="hint">For a tablet or phone everyone picks up. After 10 minutes with no touch, and each new day, the prep pages ask who you are again, so nobody writes under the last person\'s name. Recipes and guides stay open and the kitchen PIN stays. A personal phone keeps you signed in.</span>' +
-        '<div class="chips"><button type="button" class="chip" data-act="setshared" data-val="0" data-k="setshared:0" aria-pressed="' + !settings.shared + '">Personal phone</button><button type="button" class="chip" data-act="setshared" data-val="1" data-k="setshared:1" aria-pressed="' + !!settings.shared + '">Shared device</button></div></section>' +
         '<section class="set-block" aria-label="Practice on this device"><span class="label">Practice on this device</span><span class="hint">For trying the book out or showing someone how it works. Lines written here while it is on are marked as practice: the book does not learn from them and the wastage summary leaves them out. A strip on the prep pages says it is on.</span>' +
         '<div class="chips"><button type="button" class="chip" data-act="setpractice" data-val="0" data-k="setpractice:0" aria-pressed="' + !settings.practice + '">Off</button><button type="button" class="chip" data-act="setpractice" data-val="1" data-k="setpractice:1" aria-pressed="' + !!settings.practice + '">On</button></div></section>' : '') +
       '<section class="set-block" aria-label="About"><span class="label">About</span><span class="saved">' + esc(plural(D.recipes.length, 'recipe', 'recipes')) + ', updated ' + esc(D.updated) +
@@ -1537,7 +1543,8 @@
     else if (act === 'setview' || act === 'topview') { var was = settings.view; settings.view = val; saveSettings(); if (act === 'topview' && was !== val) { render(); window.scrollTo(0, 0); return; } }
     else if (act === 'settext') { settings.text = val; saveSettings(); document.documentElement.setAttribute('data-text', val); }
     else if (act === 'clearticks') { ticks = {}; saveTicks(); }
-    else if (act === 'setshared') { settings.shared = val === '1'; saveSettings(); }
+    else if (act === 'device-choice') { if (window.LK_DEVICE) window.LK_DEVICE.settings(); return; }
+    else if (act === 'device-forget') { if (window.LK_DEVICE) window.LK_DEVICE.forget(); return; }
     else if (act === 'setpractice') { settings.practice = val === '1'; saveSettings(); }
     else if (act === 'installno') { settings.installNo = true; saveSettings(); }
     else if (act === 'install') {
@@ -1575,6 +1582,10 @@
     if (parseRoute().name === 'settings') { render(); return; }
     var ic = app.querySelector('.wtop-icons');
     if (ic) ic.outerHTML = topIcons();
+  });
+  window.addEventListener('lk-device', function () {
+    if (window.LK_DEVICE) settings.shared = window.LK_DEVICE.mode() === 'shared';
+    if (parseRoute().name === 'settings') render();
   });
   // js/prep.js signed a person in or out: redraw the chef mark in the top bar. On a sign-in just made (not a phone that
   // was already signed in) the mark flips in like a coin and settles, so the person sees it is now them.

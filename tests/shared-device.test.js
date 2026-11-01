@@ -1,108 +1,71 @@
-// Shared kitchen device (Settings): a tablet everyone picks up goes back to "Who are you?" after 10 minutes without a
-// touch and on a new kitchen day, so the next person does not write under the last name. The kitchen PIN stays, so
-// nothing is locked. A personal phone keeps the person signed in (19 Oct 2026).
+// Shared screens lock private records after ten idle minutes and at 04:00 Queensland time. Scheduled locks keep
+// the original person's drafts behind their PIN; explicit handover clears them before another person signs in.
 const L = require('./lib');
-const { R, ok } = L.results(), { txt } = L;
-const state = p => p.evaluate(() => document.querySelector('#p-pin') ? 'kitchen-pin' : document.querySelector('.nb-guest') ? 'guest' : document.querySelector('.p-name') ? 'who' : document.querySelector('#pf1') ? 'own-pin' : document.querySelector('.nb-top') ? 'in:' + document.querySelector('.nb-top').textContent.replace(/\s+/g, ' ').trim() : 'other');
+const { R, ok } = L.results();
+const DRAFTS = { 'lk.mg.draft.laksa': '{"name":"Laksa, kept"}', 'lk.dw.draft.d1': '{"parts":[]}', 'lk.fe.draft.new': '{"phone":"0400 000 000"}' };
+const plant = p => p.evaluate(d => Object.keys(d).forEach(k => localStorage.setItem(k, d[k])), DRAFTS);
+const left = p => p.evaluate(d => Object.keys(d).filter(k => localStorage.getItem(k)), DRAFTS);
+const privateOn = p => p.evaluate(() => LK_PREP.privateAccess());
+async function unlock(p, id = 'sam', pin = '1111') {
+  const name = p.locator('.p-name[data-id="' + id + '"]');
+  if (await name.count() && await name.isVisible()) { await name.click(); await L.settle(p, 200); }
+  await p.fill('#pf1', pin);
+  await L.waitFor(p, expected => LK_PREP.privateAccess() && LK_PREP.state.who === expected, id, 8000); await L.settle(p, 300);
+}
 (async () => {
   const b = await L.start();
-  // a shared tablet: 11 minutes without a touch and the names are back, the kitchen PIN is not asked
-  let p = await L.open(b, '#/prep', { who: 'sam', touch: true, settings: { shared: true }, wait: 1200 });
-  ok(/^in:Writing as Sam/.test(await state(p)), 'shared: Sam is signed in to start (' + await state(p) + ')');
-  await p.clock.runFor(11 * 60000);
-  await L.settle(p, 300);
-  ok((await state(p)) === 'who', 'shared: after 11 minutes idle nobody is signed in and the lists are hidden and personal login is required (' + await state(p) + ')');
-  ok(await p.evaluate(() => localStorage.getItem('lk.prep.pin')) !== '', 'shared: the kitchen PIN is still on the device');
+  let p = await L.open(b, '#/prep', { who: 'sam', touch: true, deviceMode: 'shared', wait: 1200 });
+  ok(await privateOn(p), 'shared: Sam starts with an actual daily PIN session');
+  await p.clock.runFor(11 * 60000); await L.settle(p, 300);
+  ok(!await privateOn(p) && !(await p.$('.nb-row')) && !!(await p.$('#pf1')), 'shared: eleven idle minutes hide the list and ask for the original person\'s PIN');
+  ok(await p.evaluate(() => !!localStorage.getItem('lk.prep.pin') && LK_DEVICE.mode() === 'shared'), 'shared: the kitchen PIN and explicit device choice remain');
   await p.goto(L.BASE + '#/guides'); await L.settle(p, 800);
-  ok(await p.$('.p-name') !== null && await p.$('#p-pin') === null, 'shared: guides require a personal login');
-  ok(p.errors.length === 0, 'shared idle: no page errors ' + p.errors.join(' | '));
-  await p.context().close();
+  ok(!await privateOn(p) && !(await p.$('.g-card')) && !(await p.$('#p-pin')), 'shared: guides stay private without asking again for the kitchen PIN');
+  await p.goto(L.BASE + '#/recipes'); await L.settle(p, 700);
+  ok(!await privateOn(p) && !!(await p.$('#shelves a.dish')), 'shared: current recipes remain public after the lock');
+  ok(!p.errors.length, 'shared idle: no page errors ' + p.errors.join(' | ')); await p.context().close();
 
-  // a personal phone: 11 minutes idle changes nothing
-  p = await L.open(b, '#/prep', { who: 'sam', touch: true, wait: 1200 });
-  await p.clock.runFor(11 * 60000);
-  await L.settle(p, 300);
-  ok(/^in:Writing as Sam/.test(await state(p)), 'personal phone: still signed in after 11 minutes (' + await state(p) + ')');
-  await p.context().close();
-
-  // a new kitchen day on a shared device: the book opens on the names
-  p = await L.open(b, '#/prep', { who: 'sam', touch: true, settings: { shared: true }, wait: 1200 });
-  await p.evaluate(() => localStorage.setItem('lk.prep.day', '2020-01-01'));
-  await p.reload({ waitUntil: 'load' }); await L.settle(p, 1200);
-  ok((await state(p)) === 'who', 'shared, new day: the book opens with nobody signed in (' + await state(p) + ')');
-  await p.context().close();
-  p = await L.open(b, '#/prep', { who: 'sam', touch: true, wait: 1200 });
-  await p.evaluate(() => localStorage.setItem('lk.prep.day', '2020-01-01'));
-  await p.reload({ waitUntil: 'load' }); await L.settle(p, 1200);
-  ok(/^in:Writing as Sam/.test(await state(p)), 'personal phone, new day: still signed in (' + await state(p) + ')');
-  await p.context().close();
-
-  // opening on a new kitchen day, or after the idle time with the tab closed, a shared device takes the drafts the last
-  // person left on it, like Sign out (29 Oct 2026: recipe, drawing and function drafts stayed for the next person). A
-  // personal phone keeps its own drafts.
-  const DRAFTS = { 'lk.mg.draft.laksa': '{"name":"Laksa, kept"}', 'lk.dw.draft.d1': '{"parts":[]}', 'lk.fe.draft.new': '{"phone":"0400 000 000"}' };
-  const plant = p => p.evaluate(d => Object.keys(d).forEach(k => localStorage.setItem(k, d[k])), DRAFTS);
-  const left = p => p.evaluate(d => Object.keys(d).filter(k => localStorage.getItem(k)), DRAFTS);
-  for (const [label, shared, touch, away] of [['shared, new day', true, true, 'day'], ['shared, 11 minutes with the tab closed', true, true, 'idle'],
-    ['personal phone, new day', false, true, 'day'], ['personal computer, 11 minutes with the tab closed', false, false, 'idle']]) {
-    p = await L.open(b, '#/prep', { who: 'sam', touch, settings: shared ? { shared: true } : {}, wait: 1200 });
-    await plant(p);
-    await p.evaluate(a => { if (a === 'day') localStorage.setItem('lk.prep.day', '2020-01-01'); else localStorage.setItem('lk.prep.seen', String(Date.now() - 11 * 60000)); }, away);
+  // Calendar midnight is not the authentication boundary. The v2 session's 04:00 expiry is authoritative.
+  for (const deviceMode of ['own', 'shared']) {
+    p = await L.open(b, '#/prep', { who: 'sam', touch: true, deviceMode, wait: 1200 });
+    await p.evaluate(() => localStorage.setItem('lk.prep.day', '2020-01-01'));
     await p.reload({ waitUntil: 'load' }); await L.settle(p, 1200);
-    const l = await left(p);
-    if (shared) ok((await state(p)) === 'who' && !l.length, label + ': nobody is signed in and the drafts left on the device are gone (' + await state(p) + ', left ' + JSON.stringify(l) + ')');
-    else ok(l.length === 3, label + ': the drafts stay for the same person (' + await state(p) + ', left ' + JSON.stringify(l) + ')');
-    ok(p.errors.length === 0, label + ': no page errors ' + p.errors.join(' | '));
-    await p.context().close();
-  }
-  // the same with only the head chef's Google account on the device (review, 29 Oct 2026). Its sign-in lasts for the tab
-  // (the stand-in keeps it in fake.user), so after the tab closed nobody is signed in and her drafts stayed for the next
-  // person: a sous chef opening the recipe was offered her changes. Past the idle time they go; within it, and on a
-  // personal device, they stay, as for a person on a PIN.
-  const kept = p => p.evaluate(() => { const k = document.querySelector('.mg-kept'); return k ? k.textContent.replace(/\s+/g, ' ').trim() : ''; });
-  for (const [label, shared, mins] of [['shared, Google only, 11 minutes with the tab closed', true, 11], ['shared, Google only, 2 minutes with the tab closed', true, 2],
-    ['personal phone, Google only, 11 minutes with the tab closed', false, 11]]) {
-    const gone = shared && mins > 10;
-    p = await L.open(b, '#/manage/r/burger', { admin: true, touch: true, settings: shared ? { shared: true } : {}, wait: 1800 });
-    await L.waitFor(p, () => !!document.getElementById('mg-name'), null, 8000).catch(() => {});
-    await p.fill('#mg-name', 'Burger, head chef changes'); await L.settle(p, 800);
-    await plant(p);
-    const before = await p.evaluate(() => !!localStorage.getItem('lk.mg.draft.burger'));
-    await p.evaluate(m => { localStorage.removeItem('fake.user'); localStorage.setItem('lk.prep.seen', String(Date.now() - m * 60000)); }, mins);
-    await p.reload({ waitUntil: 'load' }); await L.settle(p, 1500);
-    const l = (await left(p)).concat(await p.evaluate(() => localStorage.getItem('lk.mg.draft.burger') ? ['lk.mg.draft.burger'] : []));
-    if (gone) ok(before && !l.length, label + ': the drafts she left are gone (left ' + JSON.stringify(l) + ')');
-    else ok(before && l.length === 4, label + ': the drafts stay (left ' + JSON.stringify(l) + ')');
-    if (gone) {
-      // Sam, a sous chef, signs in and opens the recipe: nothing kept from the head chef
-      await p.evaluate(() => { location.hash = '#/prep'; }); await L.settle(p, 800);
-      await L.waitFor(p, () => !!document.querySelector('.p-name[data-id="sam"]'), null, 8000).catch(() => {});
-      await p.click('.p-name[data-id="sam"]'); await L.settle(p, 300);
-      await p.type('#pf1', '1111'); await L.settle(p, 1500);
-      await p.evaluate(() => { location.hash = '#/manage/r/burger'; }); await L.settle(p, 1500);
-      await L.waitFor(p, () => !!document.getElementById('mg-name'), null, 8000).catch(() => {});
-      ok(await p.evaluate(() => window.LK_PREP.state.who === 'sam') && !!(await p.$('#mg-name')) && !(await kept(p)), label + ': Sam opens the recipe and is not offered her changes (' + await kept(p) + ')');
-    }
-    ok(p.errors.length === 0, label + ': no page errors ' + p.errors.join(' | '));
-    await p.context().close();
+    ok(await privateOn(p), deviceMode + ': an old calendar-day flag cannot override the valid daily session');
+    ok(!p.errors.length, deviceMode + ' calendar flag: no page errors ' + p.errors.join(' | ')); await p.context().close();
   }
 
-  // the switch lives in Settings on the head chef's signed-in device and is kept on the device
-  p = await L.open(b, '#/settings', { admin: true, wait: 1800 });
-  // Settings draws the owner-only block after the Google account check finishes. Wait for that actual UI, as the
-  // following getAttribute and click already do, rather than assuming open() means the owner check is complete.
-  await L.waitFor(p, () => !!document.querySelector('[data-act="setshared"][data-val="1"]'), null, 8000);
-  ok(await p.$('[data-act="setshared"][data-val="1"]') !== null, 'settings: the Shared device choice is there');
-  ok((await p.getAttribute('[data-act="setshared"][data-val="0"]', 'aria-pressed')) === 'true', 'settings: Personal phone is the default');
-  await L.choose(p, '[data-act="setshared"][data-val="1"]');
-  await L.settle(p, 200);
-  ok(await p.evaluate(() => JSON.parse(localStorage.getItem('lk.settings.v1') || '{}').shared === true), 'settings: Shared device is saved on the device');
-  ok((await p.getAttribute('[data-act="setshared"][data-val="1"]', 'aria-pressed')) === 'true', 'settings: Shared device shows as chosen');
-  ok(p.errors.length === 0, 'shared settings: no page errors ' + p.errors.join(' | '));
-  await p.context().close();
-  await b.close();
-  R.forEach(r => console.log(r));
-  const bad = R.filter(r => r.startsWith('FAIL')).length;
-  console.log(bad + ' failed of ' + R.length);
-  process.exit(bad ? 1 : 0);
-})();
+  for (const [deviceMode, touch] of [['own', true], ['own', false], ['shared', true]]) {
+    p = await L.open(b, '#/prep', { who: 'sam', touch, deviceMode, wait: 1200 }); await plant(p);
+    await p.evaluate(() => localStorage.setItem('lk.prep.seen', String(Date.now() - 11 * 60000)));
+    await p.reload({ waitUntil: 'load' }); await L.settle(p, 1200);
+    ok((await left(p)).length === 3, deviceMode + (touch ? ' phone' : ' computer') + ': reopening retains drafts for their original person');
+    if (deviceMode === 'shared') {
+      ok(!await privateOn(p) && !!(await p.$('#pf1')), 'reopening an idle shared screen requires the same PIN before private records return');
+      await unlock(p);
+      ok((await left(p)).length === 3 && await privateOn(p), 'the original person can recover the drafts with their PIN');
+      await p.click('.wtop-who'); await L.settle(p, 150); await p.click('.wm [data-who="out"]'); await L.settle(p, 400);
+      if (await privateOn(p)) { await p.click('.wm [data-who="out"]'); await L.settle(p, 400); }
+      ok(!(await left(p)).length && !await privateOn(p), 'explicit shared handover clears the old recipe, drawing and function drafts');
+      await unlock(p, 'ann', '2222');
+      ok(await p.evaluate(() => LK_PREP.state.who === 'ann') && !(await left(p)).length, 'the next person receives their own access without the old drafts');
+    } else ok(await privateOn(p), 'personal ' + (touch ? 'phone' : 'computer') + ': reopening after eleven idle minutes needs no new PIN');
+    ok(!p.errors.length, deviceMode + ' draft recovery: no page errors ' + p.errors.join(' | ')); await p.context().close();
+  }
+
+  const day = new Date(L.NOW + 10 * 3600000).toISOString().slice(0, 10), cutoff = Date.parse(day + 'T04:00:00+10:00');
+  for (const deviceMode of ['own', 'shared']) {
+    p = await L.open(b, '#/prep', { who: 'sam', deviceMode, clock: cutoff - 60000, sessionExp: cutoff, wait: 1200 });
+    await plant(p); await p.clock.runFor(90000); await L.settle(p, 400);
+    ok(!await privateOn(p) && (await left(p)).length === 3, deviceMode + ': 04:00 locks access and keeps the same person\'s drafts');
+    await unlock(p);
+    ok(await privateOn(p) && (await left(p)).length === 3, deviceMode + ': the next daily PIN restores access to those drafts');
+    ok(!p.errors.length, deviceMode + ' daily draft recovery: no page errors ' + p.errors.join(' | ')); await p.context().close();
+  }
+
+  p = await L.open(b, '#/settings', { admin: true, deviceMode: 'own', wait: 1800 });
+  await L.waitFor(p, () => !!document.querySelector('[data-act="device-choice"]'), null, 8000);
+  await p.click('[data-act="device-choice"]'); await p.click('[data-device="shared"]'); await L.settle(p, 400);
+  ok(await p.evaluate(() => LK_DEVICE.mode() === 'shared' && !LK_DEVICE.ownerId() && !LK_PREP.privateAccess() && !LK_PREP.state.user), 'Settings changes the explicit profile and ends the previous PIN and Google access');
+  ok(!p.errors.length, 'shared Settings: no page errors ' + p.errors.join(' | ')); await p.context().close();
+  await b.close(); L.report(R);
+})().catch(e => { console.error(e); process.exitCode = 1; });

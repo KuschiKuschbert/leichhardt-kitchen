@@ -27,7 +27,7 @@ function withAnn() {
   await L.adminTab(p, 'notes');
   ok(await txt(p, '[data-p="a-tab"][data-t="notes"]') === 'Shift pings', 'admin: the Notes tab is called Shift pings');
   s = await store(p);
-  ok(JSON.stringify(s[CFG].pingIds) === '["sam"]', 'admin: pingIds is the sous chefs only, Ann taken off (' + JSON.stringify(s[CFG].pingIds) + ')');
+  ok(JSON.stringify(s[CFG].pingIds) === '["sam","head"]', 'admin: pingIds keeps the head and sous chef, Ann taken off (' + JSON.stringify(s[CFG].pingIds) + ')');
   ok(!(await p.$('.a-ids-list')), 'admin: no Changed from the prep book card for the old Pings tick');
   ok(/Write a ping/.test(await txt(p, '[data-p="n-new"]') || ''), 'admin: Write a ping button');
   await L.adminTab(p, 'people');

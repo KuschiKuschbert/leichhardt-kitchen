@@ -56,7 +56,7 @@ const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
     await p.click('[data-mg="save"]');
     await L.waitFor(p, k => __fake.dump()[k]?.v === 2, key(['recipes', 'multiply-test']));
     const saved = await p.evaluate(k => __fake.dump()[k], key(['recipes', 'multiply-test']));
-    ok(same(saved.r.ingredients.map(i => i.q), doubled) && saved.by === (admin ? '' : who), role + ': normal Save persists the quantities with the correct writer');
+    ok(same(saved.r.ingredients.map(i => i.q), doubled) && saved.by === (admin ? 'ann' : who), role + ': normal Save persists the quantities with the correct PIN writer');
     ok(saved.r.ingredients[0].tags[0] === 'Gluten' && saved.r.ingredients[1].link === 'gravy' && saved.r.ingredients[0].note === 'Sifted', role + ': links, allergens and notes stay intact');
     ok(await p.evaluate(k => __fake.dump()[k+'/hist/1'].was.r.ingredients[0].q === '100 g' && __fake.dump()['publicRecipes/multiply-test'].r.ingredients[0].q === '200 g', key(['recipes', 'multiply-test'])), role + ': save keeps history and updates the public recipe');
     await p.reload();
