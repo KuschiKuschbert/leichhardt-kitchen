@@ -6,7 +6,7 @@ const L = require('./lib'); const { R, ok } = L.results();
     const p = await L.open(b, '#/admin', { admin: true, width, height: 900, wait: 1800 });
     const groups = await p.locator('.a-group').evaluateAll(nodes => nodes.map(el => el.getAttribute('data-g')));
     ok(JSON.stringify(groups) === JSON.stringify(['review', 'reports', 'records', 'today', 'settings']), width + ': five task-based admin sections');
-    if (width < 720) await p.selectOption('[data-k="ai-section"]', 'review');
+    if (await p.locator('[data-k="ai-section"]').isVisible()) await p.selectOption('[data-k="ai-section"]', 'review');
     else await p.click('[data-g="review"]');
     ok(await p.locator('[data-t="references"]').count() === 1 && await p.locator('[data-t="training"]').count() === 1, width + ': Review desk offers item links and training');
     await L.adminTab(p, 'reference-records');

@@ -105,3 +105,5 @@ fit on the first screen while the existing order cut-off reminder remains visibl
 | Before | Header arrow |
 | --- | --- |
 | ![Supplier review before the compact return](images/back-before-phone.png) | ![Supplier review with the compact header arrow](images/back-after-phone.png) |
+
+The Chef's Desk visual follow-up, selected 1 November 2026, moves page choices and heading jumps beside the current chapter instead of nesting them inside the chapter rail. Long reports retain the On this page controls and close-first phone sheet. Jumps account for the phone section picker and update strip; the desktop rail stays beside the page. A chapter change starts at its title. Focused tasks hide the phone chapter picker and page choices, while contextual task Back still restores its queue position.

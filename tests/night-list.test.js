@@ -77,7 +77,14 @@ const copy = (s, id) => s[fsKey(['days', today, 'items', rid(id)])];
   const t = await p.evaluate(() => document.body.textContent);
   ok(/When tomorrow's list is written/.test(t) && /21:10\s*usual start, 6 of the last 7 nights/.test(t), 'Learning: the usual start, 21:10, from 6 nights');
   ok(/21:01/.test(t) && /11 lines/.test(t) && /No list found/.test(t), 'Learning: the last nights with their times and line counts, and a night with no list');
-  ok(await p.evaluate(() => [...document.querySelectorAll('.a-nav button, .a-nav a')].some(x => /tomorrow/i.test(x.textContent))), 'Learning: the block has its own chip in the admin nav');
+  const jump = p.locator('.a-onpage [data-p="jump"]').filter({ hasText: /tomorrow/i }), jumpId = await jump.getAttribute('data-v');
+  ok(await p.evaluate(id => { const h = document.getElementById(id); return !!h && /tomorrow/i.test(h.textContent); }, jumpId), 'Learning: the block has its own heading jump beside the page');
+  await p.click('[data-p="aj-open"]');
+  await p.click('#aj-sheet [data-aj="go"][data-v="' + jumpId + '"]'); await L.settle(p, 600);
+  ok(await p.evaluate(id => {
+    const heading = document.getElementById(id).getBoundingClientRect(), nav = document.querySelector('.a-nav').getBoundingClientRect();
+    return heading.top >= nav.bottom - 1 && heading.top < innerHeight - 68;
+  }, jumpId), 'Learning: its phone heading jump reveals the block below the chapter picker');
   ok(p.errors.length === 0, 'Learning: no page errors ' + p.errors.join(' | '));
   await p.context().close();
   // odd values in the record (a booby-trapped night, a time that is text) are left out, not drawn

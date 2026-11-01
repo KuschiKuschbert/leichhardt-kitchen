@@ -8,10 +8,12 @@
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
   function button(action, text, value, disabled) { return '<button type="button" class="btn" data-ai="' + action + '" data-value="' + esc(value || '') + '"' + (disabled ? ' disabled' : '') + '>' + esc(text) + '</button>'; }
   function block(title, body, cls) { return '<section class="set-block' + (cls ? ' ' + esc(cls) : '') + '"><h3 class="label">' + esc(title) + '</h3>' + body + '</section>'; }
-  function help(title, body, key) {
-    return '<details class="ai-help"' + (key ? ' data-ai-disclosure="' + key + '"' + (state.disclosures[key] ? ' open' : '') : '') + '><summary>' + esc(title) + '</summary>' + body + '</details>';
+  function help(title, body, key, cls) {
+    return '<details class="ai-help' + (cls ? ' ' + esc(cls) : '') + '"' + (key ? ' data-ai-disclosure="' + key + '"' + (state.disclosures[key] ? ' open' : '') : '') + '><summary>' + esc(title) + '</summary>' + body + '</details>';
   }
-  function heading(title, note) { return '<h3 class="ai-task-heading" data-k="ai-task-heading" tabindex="-1">' + esc(title) + '</h3>' + (note ? '<p class="hint">' + esc(note) + '</p>' : ''); }
+  function heading(title, note, kicker) { return '<header class="ai-task-header">' + (kicker ? '<p class="eyebrow ai-task-kicker">' + esc(kicker) + '</p>' : '') + '<h3 class="ai-task-heading" data-k="ai-task-heading" tabindex="-1">' + esc(title) + '</h3>' + (note ? '<p class="hint ai-task-note">' + esc(note) + '</p>' : '') + '</header>'; }
+  function queueHeading(title, count, kicker) { return '<header class="ai-queue-head"><div>' + (kicker ? '<p class="eyebrow ai-queue-kicker">' + esc(kicker) + '</p>' : '') + '<h3 class="ai-queue-title">' + esc(title) + '</h3></div>' + (count ? '<span class="ai-queue-count">' + esc(count) + '</span>' : '') + '</header>'; }
+  function idleContext(title, note, body) { return '<aside class="ai-idle-context ai-detail-context"><p class="eyebrow">Before you begin</p><h3>' + esc(title) + '</h3><p class="hint">' + esc(note) + '</p>' + (body || '') + '</aside>'; }
   function desk(queue, detail, active) { return '<div class="ai-desk' + (active ? ' has-detail' : '') + '"><section class="ai-queue">' + queue + '</section><section class="ai-detail" aria-label="Current review">' + detail + '</section></div>'; }
   function validContext() { return api && api.allowed() && api.context() === context; }
   function draftVisible(page) { return !!state.draft && state.draftOpen && state.draftPage === (page || state.page); }
@@ -21,8 +23,12 @@
     return '<aside class="ai-resume" role="status"><strong>' + (state.busy ? 'Saving ' : 'Unfinished review: ') + esc(subject) + '</strong><p class="hint">Your entries are kept in this tab.</p>' + button('resume', state.busy ? 'Return to saving record' : 'Resume review') + '</aside>';
   }
   function focusTask() {
-    var el = document.querySelector('.ai-detail .ai-task-heading');
-    if (el) { el.focus({ preventScroll: true }); el.scrollIntoView({ block: 'start' }); }
+    var el = document.querySelector('.ai-detail .ai-task-heading'), detail = document.querySelector('.ai-detail');
+    if (el) {
+      el.focus({ preventScroll: true });
+      if (window.innerWidth < 1100) window.scrollTo(0, 0);
+      else if (detail) detail.scrollIntoView({ block: 'start' });
+    }
   }
   function origin(action, value) { return { page: state.page, y: window.scrollY || 0, action: action || '', value: value || '' }; }
   function returnTo(from) {
@@ -103,7 +109,7 @@
     if (item.ref && item.ref.indexOf('supplier:') === 0) data('suppliers', true);
     var refs = data('references', true) || [], r = refs.filter(function (x) { return window.LK_ANALYSIS.identity(x) === item.ref; })[0];
     if (!r && item.ref && item.ref.indexOf('recipe:') === 0) r = { recipeId: item.ref.slice(7) };
-    return block(item.text, '<p class="hint">' + (item.ref ? 'Confirmed or explicit source reference.' : 'Unconfirmed name. Kept separate from other sources.') + ' Recorded on ' + item.sample + ' days.</p>' + metrics(item.counts) +
+    return block('Recorded evidence', '<p class="hint">' + (item.ref ? 'Confirmed or explicit source reference.' : 'Unconfirmed name. Kept separate from other sources.') + ' Recorded on ' + item.sample + ' days.</p>' + metrics(item.counts) +
       '<h4>Recorded amounts, kept by source and unit</h4>' + metrics(item.amounts) + '<h4>Typed quantity patterns</h4>' + metrics(item.quantities) + '<h4>Waste reasons</h4>' + metrics(item.reasons) +
       '<h4>Weekday evidence</h4>' + Object.keys(item.weekdays || {}).map(function (source) { var days = {}; Object.keys(item.weekdays[source]).forEach(function (n) { days[['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][+n]] = item.weekdays[source][n]; }); return '<p>' + esc(labels[source]) + '</p>' + metrics(days); }).join('') +
       (item.routine ? '<p class="hint">Routine prep: ' + item.routine.recent + ' lines in the last ' + s.comparison.recentDays + ' days; ' + item.routine.previous + ' in the preceding ' + s.comparison.previousDays + ' days. Function-related lines are excluded from this comparison.</p>' : '') +
@@ -144,15 +150,15 @@
     }
     state.analysisData = s;
     var list = s.items.filter(function (x) { return window.LK_ANALYSIS.key(x.text).indexOf(window.LK_ANALYSIS.key(state.query)) >= 0; });
-    var queue = filters() + '<p class="hint">' + esc(s.from) + ' to ' + esc(s.to) + '. Today is excluded.</p>' +
+    var queue = queueHeading('Recorded items', list.length + ' matches', 'Source evidence') + filters() + '<p class="hint">' + esc(s.from) + ' to ' + esc(s.to) + '. Today is excluded.</p>' +
       '<label class="label" for="ai-section-filter">Section</label><select class="search" id="ai-section-filter" data-k="ai-analysis-section" data-ai-section>' + options(sectionOptions, state.section, 'All sections') + '</select>' +
       '<form class="ai-queue-search" data-ai-search><label class="label" for="ai-search">Find an item</label><div class="btn-row"><input class="search" id="ai-search" data-k="ai-analysis-search" name="q" value="' + esc(state.query) + '"><button class="btn" type="submit">Search</button></div></form>' +
-      '<ul class="ai-list">' + list.slice(0, 40).map(function (x) { return '<li><button type="button" class="ai-review-row" data-ai="item" data-value="' + esc(x.id) + '"' + (state.item === x.id ? ' aria-current="true"' : '') + '><strong>' + esc(x.text) + '</strong><span class="hint">' + x.sample + (x.sample === 1 ? ' day. ' : ' days. ') + (x.ref ? 'Source link available' : 'Needs a reference') + '</span></button></li>'; }).join('') + '</ul>' +
+      '<ul class="ai-list">' + list.slice(0, 40).map(function (x) { return '<li><button type="button" class="ai-review-row" data-ai="item" data-value="' + esc(x.id) + '"' + (state.item === x.id ? ' aria-current="true"' : '') + '><span class="eyebrow ai-row-kind">Recorded evidence</span><strong class="ai-row-title">' + esc(x.text) + '</strong><span class="hint ai-row-meta">' + x.sample + (x.sample === 1 ? ' day. ' : ' days. ') + (x.ref ? 'Source link available' : 'Needs a reference') + '</span></button></li>'; }).join('') + '</ul>' +
       '<p class="hint">' + (list.length ? 'Showing ' + Math.min(list.length, 40) + ' of ' + list.length + ' matches.' : 'No matching recorded items.') + '</p>' +
       help('Coverage and daily records', '<p class="hint">Most active ' + s.items.length + ' of ' + s.totalItems + ' item groups. Original daily evidence remains available. Section filters include only explicitly tagged records.</p>' + metrics(s.coverage) + metrics(s.quality) + '<div class="btn-row">' + (s.dates || []).map(function (d) { return button('day-evidence', d.day, d.day); }).join('') + '</div>');
     var selected = (s.items || []).filter(function (x) { return x.id === state.item; })[0];
-    var detail = selected ? heading(selected.text, 'Review its recorded evidence and linked material.') + itemDetail(s) + evidence(s) : state.evidence ? heading('Daily source evidence') + evidence(s) : '<p class="hint">Choose an item to open its evidence here.</p>';
-    return block('Item evidence', changedGeneration) + desk(queue, detail, !!selected || !!state.evidence) + help('Analysis health and source coverage', analysisHealth(s));
+    var detail = selected ? heading(selected.text, 'Review its recorded evidence and linked material.') + itemDetail(s) + evidence(s) : state.evidence ? heading('Daily source evidence') + evidence(s) : idleContext('Read with the sources.', 'Choose an item to open its recorded evidence here.', '<p class="hint">Amounts stay separate by source and unit. Recorded activity does not measure consumption or training competence.</p>');
+    return changedGeneration + desk(queue, detail, !!selected || !!state.evidence) + help('Analysis health and source coverage', analysisHealth(s));
   }
   function ready(d) {
     if (state.cache[d.kind] === undefined) return false;
@@ -170,10 +176,10 @@
       body = field('alias', 'Recorded name or alias', d.alias) + field('linkType', 'Link this name to', d.linkType, [{ id: 'recipe', name: 'Recipe' }, { id: 'supplier', name: 'Supplier item' }]);
       body += d.linkType === 'supplier' ? field('supplierId', 'Supplier', d.supplierId, suppliers) + field('itemId', 'Supplier item', d.itemId, (suppliers.filter(function (s) { return s.id === d.supplierId; })[0] || {}).items || []) : field('recipeId', 'Recipe', d.recipeId, recipes);
       body += help('Reference name and guide', field('label', 'Reference name', d.label) + field('guideId', 'Guide', d.guideId, guides) + (d.linkType === 'supplier' ? field('recipeId', 'Related recipe, optional', d.recipeId, recipes) : ''), 'reference-options');
-      if (d.sourceItem) evidence = '<div class="ai-task-context"><strong>Recorded context</strong><p class="hint">' + esc(d.sourceItem.text) + (Number.isFinite(d.sourceItem.sample) ? '. Recorded on ' + d.sourceItem.sample + (d.sourceItem.sample === 1 ? ' completed day.' : ' completed days.') : '. Original recorded name.') + '</p>' + metrics(d.sourceItem.counts) + linked(d) + '</div>';
+      if (d.sourceItem) evidence = help('Recorded context', '<p class="hint">' + esc(d.sourceItem.text) + (Number.isFinite(d.sourceItem.sample) ? '. Recorded on ' + d.sourceItem.sample + (d.sourceItem.sample === 1 ? ' completed day.' : ' completed days.') : '. Original recorded name.') + '</p>' + metrics(d.sourceItem.counts) + linked(d), 'reference-context', 'ai-task-context');
     } else {
       var person = api.people().filter(function (p) { return p.id === d.personId; })[0];
-      evidence = '<div class="ai-task-context"><strong>' + esc(person ? person.name : 'Choose a person') + (d.section ? ': ' + esc(d.section) : '') + '</strong><p class="hint">' + (d.assessType === 'recipe' ? 'Recipe assessment only.' : 'Whole-section assessment.') + ' ' + esc(trainingActivity(state.cache['analysis/range-' + state.range], d.personId, d.section)) + '</p>' + (!state.busy ? trainingMaterials(state.cache.training || [], d.personId, d.section) : '') + '</div>';
+      evidence = help('Activity and saved learning material', '<strong>' + esc(person ? person.name : 'Choose a person') + (d.section ? ': ' + esc(d.section) : '') + '</strong><p class="hint">' + (d.assessType === 'recipe' ? 'Recipe assessment only.' : 'Whole-section assessment.') + ' ' + esc(trainingActivity(state.cache['analysis/range-' + state.range], d.personId, d.section)) + '</p>' + (!state.busy ? trainingMaterials(state.cache.training || [], d.personId, d.section) : ''), 'training-context', 'ai-task-context');
       body = field('personId', 'Person', d.personId, api.people()) + field('assessType', 'What was assessed?', d.assessType, [{ id: 'section', name: 'Whole section' }, { id: 'recipe', name: 'One recipe' }]) +
         field('section', d.assessType === 'recipe' ? 'Section, optional' : 'Section', d.section, api.sections().map(function (section) { return { id: section, name: section }; })) + (d.assessType === 'recipe' ? field('recipeId', 'Recipe', d.recipeId, recipes) : '') +
         field('status', 'Training status', d.status, [{ id: 'not-assessed', name: 'Not assessed' }, { id: 'in-training', name: 'In training' }, { id: 'confirmed', name: 'Confirmed' }]) +
@@ -181,11 +187,14 @@
         help('Learning material', field('guideId', 'Guide', d.guideId, guides), 'training-materials');
     }
     var next = !!d.sourceId && state.origin && ['overview', 'references', 'training'].indexOf(state.origin.page) >= 0;
-    return '<div class="ai-editor">' + (state.cache[kind] === undefined ? waiting(kind) : '') + heading(kind === 'references' ? 'Review ' + (d.alias || 'item link') : 'Training assessment', kind === 'references' ? 'Check the recorded name and its target. Saving confirms this link.' : 'Record an explicit assessment. Prep ticks do not confirm skill.') + evidence +
+    var recipe = recipes.filter(function (r) { return r.id === d.recipeId; })[0];
+    var title = kind === 'references' ? d.alias || 'Item link' : d.assessType === 'recipe' ? (recipe ? recipe.name : 'Recipe assessment') : d.section || 'Training assessment';
+    var note = kind === 'references' ? 'Check the recorded name and its target. Saving confirms this link.' : (person ? person.name + '. ' : '') + 'Record an explicit assessment. Prep ticks do not confirm skill.';
+    return '<div class="ai-editor">' + (state.cache[kind] === undefined ? waiting(kind) : '') + heading(title, note, kind === 'references' ? 'Review the link' : 'Record an assessment') + evidence +
       '<fieldset class="ai-fields" aria-label="Review fields"' + (state.busy ? ' disabled' : '') + '>' + body + '</fieldset>' +
-      '<p class="hint">' + (ready(d) ? 'Save records this decision with revision history.' : kind === 'references' ? 'Choose a recipe or a complete supplier item before confirming.' : 'Choose the person, section or recipe, assessor and assessment date.') + '</p>' +
-      '<div class="btn-row ai-actions">' + (next ? '<button type="button" class="btn dark" data-ai="save-next"' + (state.busy || !ready(d) ? ' disabled' : '') + '>' + (state.busy ? 'Saving...' : 'Save and next') + '</button>' : '') +
-      '<button type="button" class="btn' + (!next ? ' dark' : '') + '" data-ai="save"' + (state.busy || !ready(d) ? ' disabled' : '') + '>' + (state.busy ? 'Saving...' : 'Save and return') + '</button>' + button('back', 'Back to list', '', state.busy) + button('cancel', 'Cancel changes', '', state.busy) + '</div></div>';
+      '<p class="hint ai-save-note">' + (ready(d) ? 'Save records this decision with revision history.' : kind === 'references' ? 'Choose a recipe or a complete supplier item before confirming.' : 'Choose the person, section or recipe, assessor and assessment date.') + '</p>' +
+      '<div class="btn-row ai-actions ai-task-actions" role="group" aria-label="Review actions"><button type="button" class="btn dark" data-ai="save"' + (state.busy || !ready(d) ? ' disabled' : '') + '>' + (state.busy ? 'Saving...' : 'Save and return') + '</button>' +
+      (next ? '<button type="button" class="btn" data-ai="save-next"' + (state.busy || !ready(d) ? ' disabled' : '') + '>' + (state.busy ? 'Saving...' : 'Save and next') + '</button>' : '') + '</div><div class="ai-task-secondary">' + button('cancel', 'Cancel changes', '', state.busy) + '</div></div>';
   }
 
   function referenceItems(s, refs) {
@@ -212,33 +221,33 @@
   function references() {
     // On opening this queue, reuse the same once-per-session reference, supplier and 90-day summary reads.
     var refs = data('references', true), s = data('analysis/range-90'); data('suppliers', true);
-    var intro = '<p class="hint">Choose a recorded name, check its recipe or supplier item, then confirm the link.</p>';
+    var intro = '<p class="hint ai-queue-intro">Choose a recorded name, check its recipe or supplier item, then confirm the link.</p>';
     // One health document on first queue open, reused until Refresh. No polling or staff reads.
-    var health = data('analysis/health');
-    if (health && health.status === 'failed') intro += '<p class="p-err" role="status">The latest analysis run failed. The queue uses the last successful results.</p>';
+    var health = data('analysis/health'), healthNotice = '';
+    if (health && health.status === 'failed') healthNotice = '<p class="p-err" role="status">The latest analysis run failed. The queue uses the last successful results.</p>';
     var query = window.LK_ANALYSIS.key(state.referenceQuery), candidates = refs && s ? referenceItems(s, refs) : [];
     var available = candidates.filter(function (item) { return window.LK_ANALYSIS.key(item.text).indexOf(query) >= 0; });
-    var queue = referenceSearch() + '<div class="btn-row">' + button('new-reference', 'Add a link') + button('refresh', 'Refresh') + '</div>';
+    var queue = queueHeading('Ready for a closer look', refs && s ? candidates.length + ' to review' : '', 'Item links') + intro + referenceSearch() + '<div class="btn-row">' + button('new-reference', 'Add a link') + button('refresh', 'Refresh') + '</div>';
     if (refs === undefined) queue += waiting('references');
     else if (s === undefined) queue += waiting('analysis/range-90');
     else if (!s) queue += '<p class="hint">No item summary is available yet. Confirmed links are available in Saved records.</p>';
     else queue += '<p class="hint" role="status">' + candidates.length + ' item groups to review. ' + esc(s.from) + ' to ' + esc(s.to) + '.</p><ul class="ai-list">' + available.slice(0, state.referenceLimit).map(function (item) {
-      return '<li><button type="button" class="ai-review-row" data-ai="review-reference" data-value="' + esc(item.id) + '"' + (state.selectedRef === item.id ? ' aria-current="true"' : '') + '><strong>' + esc(item.text) + '</strong><span class="hint">' + (item.ref ? 'Check the recorded link' : 'Choose a recipe or supplier item') + '. ' + item.sample + ' days.</span></button></li>';
+      return '<li><button type="button" class="ai-review-row" data-ai="review-reference" data-value="' + esc(item.id) + '"' + (state.selectedRef === item.id ? ' aria-current="true"' : '') + '><span class="eyebrow ai-row-kind">' + (item.ref && item.ref.indexOf('supplier:') === 0 ? 'Supplier item' : item.ref ? 'Source reference' : 'Recorded name') + '</span><strong class="ai-row-title">' + esc(item.text) + '</strong><span class="hint ai-row-meta">' + (item.ref ? 'Check the recorded link' : 'Choose a recipe or supplier item') + '. ' + item.sample + (item.sample === 1 ? ' day.' : ' days.') + '</span></button></li>';
     }).join('') + '</ul>' + (!available.length ? '<p class="hint">' + (query ? 'No items match. Clear search to see the review list.' : 'No further item groups need a link in this summary.') + '</p>' : '<p class="hint">Showing ' + Math.min(available.length, state.referenceLimit) + ' of ' + available.length + ' matches.</p>') +
       (available.length > state.referenceLimit ? button('more-references', 'Show more items') : '');
     queue += '<div class="btn-row">' + button('page', 'Confirmed links' + (refs ? ' (' + refs.length + ')' : ''), 'reference-records') + button('page', 'Explore evidence', 'analysis') + '</div>' +
       help('About this review list', '<p class="hint">This queue always uses the published 90-day summary, regardless of dates in Reports or Training. Related names may be grouped. The summary includes up to 200 active groups; original daily records stay in Reports. Confirming one link leaves other items available.</p>');
-    var detail = editor('references') || '<p class="hint">Select an item to review its link here. Confirmed links have their own Saved records page.</p>';
-    return block('Review desk', intro) + desk('<div class="ai-reference-queue ai-reference-candidates">' + queue + '</div>', detail, draftVisible() && state.draft.kind === 'references');
+    var detail = editor('references') || idleContext('A clear starting point.', 'Select an item to review its recipe or supplier link.', '<p class="hint">Confirmed links have their own Saved records page. A link keeps the original source entry intact.</p>');
+    return healthNotice + desk('<div class="ai-reference-queue ai-reference-candidates">' + queue + '</div>', detail, draftVisible() && state.draft.kind === 'references');
   }
   function referenceRecords() {
     var refs = data('references', true); data('suppliers', true);
-    var body = referenceSearch() + button('new-reference', 'Add a link') + button('refresh', 'Refresh');
+    var body = queueHeading('Confirmed links', refs ? refs.length + ' saved' : '', 'Saved records') + referenceSearch() + button('new-reference', 'Add a link') + button('refresh', 'Refresh');
     if (refs === undefined) return block('Confirmed links', body + waiting('references'), 'ai-saved-library ai-reference-confirmed');
     var query = window.LK_ANALYSIS.key(state.referenceQuery), saved = refs.filter(function (r) { return window.LK_ANALYSIS.key(r.alias + ' ' + r.label).indexOf(query) >= 0; });
     body += '<p class="hint">' + refs.length + ' saved links. These remain available regardless of activity dates. Changes enter the next nightly analysis.</p><ul class="ai-list">' + saved.slice(0, state.confirmedLimit).map(function (r) { return '<li><strong>' + esc(r.alias) + '</strong> → ' + esc(r.label) + referenceTarget(r) + linked(r) + button('edit-reference', 'Change reference', r.id) + button('history', 'Revision history', 'references/' + r.id + '/hist') + '</li>'; }).join('') + '</ul>' +
       (!saved.length ? '<p class="hint">No saved links match this view.</p>' : '') + (saved.length > state.confirmedLimit ? button('more-confirmed', 'Show more confirmed links') : '') + button('page', 'Review item links', 'references');
-    return block('Confirmed links (' + refs.length + ')', '') + desk('<div class="ai-saved-library ai-reference-confirmed">' + body + '</div>', editor('references') || '<p class="hint">Choose a saved link to edit it.</p>', draftVisible() && state.draft.kind === 'references');
+    return desk('<div class="ai-saved-library ai-reference-confirmed">' + body + '</div>', editor('references') || idleContext('Decisions kept clear.', 'Choose a saved link to edit it.', '<p class="hint">Confirmed links stay available independently of report dates. Earlier revisions remain in the history.</p>'), draftVisible() && state.draft.kind === 'references');
   }
   function reviewReference(id, from) {
     if (state.draft) { state.message = 'Resume or cancel your unfinished review first.'; redraw(); return; }
@@ -252,7 +261,7 @@
 
   function training() {
     var records = data('training', true), s = summary(), people = api.people();
-    var queue = filters() + '<p class="hint">Prep ticks show recorded work. They do not confirm skill or training.</p>' +
+    var queue = queueHeading('Ready for an assessment', '', 'Training') + '<p class="hint ai-queue-intro">Review a section with the person, then record what was assessed.</p>' + filters() + '<p class="hint">Prep ticks show recorded work. They do not confirm skill or training.</p>' +
       '<label class="label" for="ai-person-filter">Person</label><select class="search" id="ai-person-filter" data-k="ai-person-filter" data-ai-person>' + options(people, state.person, 'Everyone') + '</select>';
     if (s) queue += '<p class="hint">Activity: ' + esc(s.from) + ' to ' + esc(s.to) + '. Today is excluded.</p>';
     else queue += s === undefined ? waiting('analysis/range-' + state.range) : '<p class="hint">No activity summary is available. Saved assessments remain available.</p>';
@@ -260,17 +269,17 @@
     queue += '<div class="btn-row">' + button('new-training', 'Add assessment') + button('page', 'Saved assessments', 'training-records') + '</div>' +
       help('How to use training reviews', '<p class="hint">Choose a person and section, check the work together, then save the assessor, date and outcome. No recorded activity does not mean someone is untrained.</p><p class="hint">Not assessed: no assessment is saved. In training: agree practice and a follow-up. Confirmed: an assessor checked this section or recipe. One recipe never confirms a whole section.</p>') +
       (state.person && records ? help('All sections for this person', stationGaps(s, records, state.person)) : '');
-    return block('Review desk', '<p class="hint">Review a section with the person, then record what was assessed.</p>') + desk(queue, editor('training') || '<p class="hint">Choose an opportunity to open an assessment here.</p>', draftVisible() && state.draft.kind === 'training');
+    return desk(queue, editor('training') || idleContext('An explicit decision.', 'Choose a person and section to open an assessment here.', '<p class="hint">Completed jobs describe activity. Training status comes from an assessment, and one recipe never confirms a whole section.</p>'), draftVisible() && state.draft.kind === 'training');
   }
   function trainingRecords() {
     var records = data('training', true), names = {}, recipes = api.recipes(); api.people().forEach(function (p) { names[p.id] = p.name; });
     if (!records) return block('Saved assessments', waiting('training'));
     var selected = records.filter(function (r) { return !state.person || r.personId === state.person; }).slice().sort(trainingRecent);
-    var body = '<label class="label" for="ai-person-filter">Person</label><select class="search" id="ai-person-filter" data-k="ai-person-filter" data-ai-person>' + options(api.people(), state.person, 'Everyone') + '</select>' + button('new-training', 'Add assessment') + '<p class="hint">Saved assessments remain available when activity dates change. Recipe and section assessments are distinct.</p><ul class="ai-list">' + selected.slice(0, state.savedTrainingLimit).map(function (r) {
+    var body = queueHeading('Saved assessments', selected.length + ' records', 'Saved records') + '<label class="label" for="ai-person-filter">Person</label><select class="search" id="ai-person-filter" data-k="ai-person-filter" data-ai-person>' + options(api.people(), state.person, 'Everyone') + '</select>' + button('new-training', 'Add assessment') + '<p class="hint">Saved assessments remain available when activity dates change. Recipe and section assessments are distinct.</p><ul class="ai-list">' + selected.slice(0, state.savedTrainingLimit).map(function (r) {
       var recipe = recipes.filter(function (x) { return x.id === r.recipeId; })[0], subject = r.recipeId ? (recipe ? recipe.name : r.recipeId) : r.section;
       return '<li><strong>' + esc(names[r.personId] || 'Former team member') + ': ' + esc(subject) + '</strong><p>' + trainingStatus(r.status) + '. ' + (r.recipeId ? 'Recipe' : 'Section') + ' assessment.</p><small>' + esc(r.day) + ', assessor: ' + esc(names[r.assessorId] || 'Former team member') + '</small>' + linked(r) + button('edit-training', 'Change assessment', r.id) + button('history', 'Revision history', 'training/' + r.id + '/hist') + '</li>';
     }).join('') + '</ul>' + (!selected.length ? '<p class="hint">No assessments match this view.</p>' : '') + (selected.length > state.savedTrainingLimit ? button('more-training-records', 'Show more assessments') : '') + button('page', 'Review training', 'training');
-    return block('Saved assessments', '') + desk('<div class="ai-saved-library">' + body + '</div>', editor('training') || '<p class="hint">Choose an assessment to edit it.</p>', draftVisible() && state.draft.kind === 'training');
+    return desk('<div class="ai-saved-library">' + body + '</div>', editor('training') || idleContext('Learning on record.', 'Choose an assessment to edit it.', '<p class="hint">Recipe and whole-section assessments remain distinct. Each saved outcome keeps its assessor, day and revision history.</p>'), draftVisible() && state.draft.kind === 'training');
   }
 
   function trainingStatus(status) { return { 'not-assessed': 'Not assessed', 'in-training': 'In training', confirmed: 'Confirmed' }[status] || 'Not assessed'; }
@@ -315,7 +324,7 @@
     if (!opportunities.length) return '<div class="ai-training-opportunities"><p class="hint">No further section assessments need review in this view. Saved assessments remain available.</p></div>';
     return '<div class="ai-training-opportunities"><p class="hint">' + opportunities.length + ' person and section combinations to review.</p><ul class="ai-list">' + opportunities.slice(0, state.trainingLimit).map(function (o) {
       var value = { personId: o.person.id, section: o.section, recordId: o.assessment ? o.assessment.id : '' };
-      return '<li><button type="button" class="ai-review-row" data-ai="training-opportunity" data-value="' + esc(JSON.stringify(value)) + '"' + (state.selectedTraining === o.person.id + ':' + o.section ? ' aria-current="true"' : '') + '><strong>' + esc(o.person.name) + ': ' + esc(o.section) + '</strong><span class="hint">' + trainingStatus(o.assessment ? o.assessment.status : 'not-assessed') + '. ' + esc(trainingActivity(s, o.person.id, o.section)) + '</span></button></li>';
+      return '<li><button type="button" class="ai-review-row" data-ai="training-opportunity" data-value="' + esc(JSON.stringify(value)) + '"' + (state.selectedTraining === o.person.id + ':' + o.section ? ' aria-current="true"' : '') + '><span class="eyebrow ai-row-kind">Explicit assessment</span><strong class="ai-row-title">' + esc(o.person.name) + ': ' + esc(o.section) + '</strong><span class="hint ai-row-meta">' + trainingStatus(o.assessment ? o.assessment.status : 'not-assessed') + '. ' + esc(trainingActivity(s, o.person.id, o.section)) + '</span></button></li>';
     }).join('') + '</ul>' + (opportunities.length > state.trainingLimit ? button('more-opportunities', 'Show more opportunities') : '') + '</div>';
   }
   function stationGaps(s, records, person) {

@@ -3913,13 +3913,13 @@
     if (at === 'mail' && !mlOwner()) at = S.atab = 'notes';
     // Review desk groups the two queues; saved records and reports remain separate. Existing page ids still work.
     var navBusy = intelligenceBusy(), mlN = mlInfo().n, ag = adminGroupOf(at), agTabs = ag[2].filter(function (t) { return t !== 'overview' && (t !== 'mail' || mlOwner()); });
-    // 21 Oct 2026: groups, pages and "On this page" sit in one nav that stays at the top of the screen (adminJumps() fills
-    // the last row from the page's headings after each draw, adminScroll() tucks it up while scrolling down)
-    var tabsBar = '<div class="a-navtop"></div><div class="a-nav' + (S.anavMin ? ' is-min' : '') + '"><label class="a-section-picker">Admin section<select data-k="ai-section" aria-label="Admin section"' + (navBusy ? ' disabled' : '') + '>' + A_GROUPS.map(function (g) { return '<option value="' + g[0] + '"' + (ag[0] === g[0] ? ' selected' : '') + '>' + g[1] + '</option>'; }).join('') + '</select></label><nav class="a-groups" aria-label="Admin sections">' + A_GROUPS.map(function (g) {
-      return '<button type="button" class="a-group" data-p="a-group" data-g="' + g[0] + '"' + (navBusy ? ' disabled' : '') + ' aria-current="' + (ag[0] === g[0] ? 'page' : 'false') + '">' + g[1] + (g[0] === 'today' && mlN ? ' (' + mlN + ')' : '') + '</button>';
-    }).join('') + '</nav>' + (agTabs.length > 1 ? '<nav class="a-tabs" aria-label="' + esc(ag[1]) + ' pages">' + agTabs.map(function (t) {
+    // The selected Chef's Desk keeps chapters in one rail, with the current page's choices beside its title.
+    var chapters = '<aside class="a-nav"><p class="ad-nav-label">Admin panel</p><label class="a-section-picker">Admin section<select data-k="ai-section" aria-label="Admin section"' + (navBusy ? ' disabled' : '') + '>' + A_GROUPS.map(function (g) { return '<option value="' + g[0] + '"' + (ag[0] === g[0] ? ' selected' : '') + '>' + g[1] + '</option>'; }).join('') + '</select></label><nav class="a-groups" aria-label="Admin sections">' + A_GROUPS.map(function (g, i) {
+      return '<button type="button" class="a-group" data-p="a-group" data-g="' + g[0] + '"' + (navBusy ? ' disabled' : '') + ' aria-current="' + (ag[0] === g[0] ? 'page' : 'false') + '"><span class="ad-nav-number" aria-hidden="true">0' + (i + 1) + '</span><span>' + g[1] + (g[0] === 'today' && mlN ? ' (' + mlN + ')' : '') + '</span></button>';
+    }).join('') + '</nav></aside>';
+    var tabsBar = (agTabs.length > 1 ? '<nav class="a-tabs" aria-label="' + esc(ag[1]) + ' pages">' + agTabs.map(function (t) {
       return '<button type="button" class="a-tab" data-p="a-tab" data-t="' + t + '"' + (navBusy ? ' disabled' : '') + ' aria-pressed="' + (at === t || at === 'overview' && t === 'references') + '">' + A_TAB_NAMES[t] + (t === 'mail' && mlN ? ' (' + mlN + ')' : '') + '</button>';
-    }).join('') + '</nav>' : '') + '<nav class="a-onpage" aria-label="On this page" hidden></nav></div>';
+    }).join('') + '</nav>' : '') + '<nav class="a-onpage" aria-label="On this page" hidden></nav>';
     if (at === 'notes') loadNotes();
     if (at === 'minutes') loadMinutes();
     if (at === 'guides') loadGuides();
@@ -3937,9 +3937,10 @@
       '<div class="field"><label class="label" for="a-newpin">New 4 digit kitchen PIN</label><input id="a-newpin" class="search" inputmode="numeric" maxlength="4" autocomplete="off" data-k="a-newpin" placeholder="4 digits" value="' + esc(S.newPin) + '"></div>' +
       '<div class="field"><label class="label" for="a-newpin2">Type it again</label><input id="a-newpin2" class="search" inputmode="numeric" maxlength="4" autocomplete="off" data-k="a-newpin2" placeholder="4 digits" value="' + esc(S.newPin2 || '') + '"></div>' +
       '<div class="btn-row"><button type="button" class="btn" data-p="move-pin"' + (S.moving ? ' disabled' : '') + '>' + (armed('move-pin') ? 'Tap again to copy everything' : 'Copy everything to the new PIN') + '</button></div><span class="saved" role="status">' + esc(S.moveMsg) + '</span>' +
-      '<div class="btn-row a-forget"><button type="button" class="btn" data-p="pin-forget">' + (armed('pin-forget') ? 'Tap again: this device forgets the kitchen PIN' : 'Use a different kitchen PIN on this device') + '</button></div><span class="hint">Forgets the kitchen PIN on this device only and asks for one again. Staff phones pick up a new PIN by themselves once the old rules are removed.</span></section></div>');
+      '<div class="btn-row a-forget"><button type="button" class="btn" data-p="pin-forget">' + (armed('pin-forget') ? 'Tap again: this device forgets the kitchen PIN' : 'Use a different kitchen PIN on this device') + '</button></div><span class="hint">Forgets the kitchen PIN on this device only and asks for one again. Staff phones pick up a new PIN by themselves once the old rules are removed.</span></section>');
     var resume = INTELLIGENCE_PAGES.indexOf(at) < 0 && intelligenceAllowed() && window.LK_INTELLIGENCE && window.LK_INTELLIGENCE.API === 3 && window.LK_INTELLIGENCE.resumeHTML ? window.LK_INTELLIGENCE.resumeHTML(at) : '';
-    return '<div class="p-admin">' + bar + '<h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2>' + tabsBar + '<div class="a-pane">' + (owner ? idCardHTML() : '') + resume + pane + '</div></div>';
+    var chapterNo = A_GROUPS.indexOf(ag) + 1;
+    return '<div class="p-admin ad-admin">' + bar + '<div class="ad-layout">' + chapters + '<div class="ad-main"><header class="ad-heading"><p class="ad-eyebrow">Kitchen administration <span aria-hidden="true">/ 0' + chapterNo + '</span></p><h2 class="ad-title p-h" id="rtitle" tabindex="-1">' + ag[1] + '</h2><p class="ad-intro">' + A_GROUP_NOTES[ag[0]] + '</p></header>' + tabsBar + '<div class="a-pane">' + (owner ? idCardHTML() : '') + resume + pane + '</div></div></div></div>';
   }
   /* the same Remove button on the admin People tab and the sous chef's staff list, with a second tap to be sure */
   /* Head chef decision D6 (20 Oct 2026): someone who leaves is taken off the list, not deleted, so their name stays on
@@ -3994,6 +3995,7 @@
   }
   var A_TAB_NAMES = { overview: 'Review desk', analysis: 'Item evidence', references: 'Item links', training: 'Training', 'reference-records': 'Confirmed links', 'training-records': 'Assessments', mail: 'Kitchen mail', notes: 'Shift pings', insights: 'Insights', team: 'Team', waste: 'Wastage', transfers: 'Transfers', learning: 'Learning', people: 'People', minutes: 'Minutes', guides: 'Guides', tools: 'Backup and PIN', cutoffs: 'Order cut-offs', suppliers: 'Suppliers & pars' };
   var A_GROUPS = [['review', 'Review desk', ['overview', 'references', 'training']], ['reports', 'Reports', ['analysis', 'insights', 'waste', 'transfers', 'learning', 'team']], ['records', 'Saved records', ['reference-records', 'training-records', 'guides']], ['today', 'Operations', ['mail', 'notes', 'minutes', 'suppliers', 'cutoffs']], ['settings', 'Settings', ['people', 'tools']]];
+  var A_GROUP_NOTES = { review: 'One item or assessment at a time. Your unfinished work stays here.', reports: 'Read the recorded activity and follow it back to its source.', records: 'Find confirmed links, assessments and the kitchen guides.', today: 'Keep the kitchen informed and ready for the next shift.', settings: 'Look after the team, kitchen access and the book\'s backup.' };
   function adminGroupOf(t) { return A_GROUPS.filter(function (g) { return g[2].indexOf(t) >= 0; })[0] || A_GROUPS[1]; }
   /* "On this page": one chip per heading of the open page (the numbered Insights sections, otherwise each block's label
      and the chart headings in it), so a long page is one tap from any part. Built from the page after each draw, so a
@@ -4006,7 +4008,7 @@
     return Array.prototype.filter.call(hs, function (h) { return h.offsetParent && h.textContent.trim(); });
   }
   function adminJumps() {
-    var nav = S.root && S.root.querySelector('.a-nav'), row = nav && nav.querySelector('.a-onpage');
+    var row = S.root && S.root.querySelector('.a-onpage');
     if (!row) return;
     var hs = adminHeads();
     if (hs.length < 2) { row.hidden = true; row.innerHTML = ''; } else {
@@ -4022,31 +4024,23 @@
     }
     adminScroll(true);
   }
-  /* how far the nav moves up when tucked away: everything above its last row */
-  function navHide(nav) { var rows = Array.prototype.filter.call(nav.children, function (x) { return !x.hidden; }); return rows.length > 1 ? rows[rows.length - 1].offsetTop - 4 : 0; }
-  var navY = 0, navTick = false, navOn = '', navJump = '', navJumpAt = 0;
+  /* The chapter rail does not cover the desktop page. Only the phone picker and update strip affect a jump. */
+  function adminTopEdge() {
+    var nav = S.root && S.root.querySelector('.a-nav');
+    if (!nav) return 0;
+    return (parseFloat(getComputedStyle(nav).top) || 0) + (window.matchMedia('(max-width: 999px)').matches && nav.getClientRects().length ? nav.offsetHeight : 0);
+  }
+  var navTick = false, navOn = '', navJump = '', navJumpAt = 0;
   function adminScroll(redraw) {
     var nav = S.name === 'admin' && S.root && S.root.querySelector('.a-nav');
-    var y = window.scrollY, dy = y - navY;
-    // a redraw starts the count again, unless a scroll is still waiting for its frame: that scroll is real and counts
-    if (redraw ? !navTick : Math.abs(dy) > 6) navY = y;
     if (!nav) return;
-    if (window.matchMedia('(min-width: 1100px)').matches) { S.anavMin = false; nav.classList.remove('is-min'); return; }
-    var mark = S.root.querySelector('.a-navtop'), stuck = !!mark && mark.getBoundingClientRect().top < (parseFloat(getComputedStyle(nav).top) || 0) - 2;
-    var hide = navHide(nav);
-    nav.style.setProperty('--a-nav-hide', hide + 'px');
-    var ae = document.activeElement, focusIn = !!ae && nav.contains(ae) && !(ae.closest && ae.closest('.a-onpage'));
-    if (!stuck || !hide || focusIn || (!redraw && dy < -6)) S.anavMin = false;
-    else if (!redraw && dy > 6) S.anavMin = true;
-    nav.classList.toggle('is-min', !!S.anavMin);
-    // the part of the page on screen: the last heading that has reached the bottom of the nav
-    var row = nav.querySelector('.a-onpage');
+    var row = S.root.querySelector('.a-onpage');
     if (!row || row.hidden) return;
-    var edge = nav.getBoundingClientRect().bottom + 24, on = '';
+    var edge = adminTopEdge() + 24, on = '';
     adminHeads().forEach(function (h) { if (h.getBoundingClientRect().top <= edge) on = h.id; });
     // near the end of a page the last parts cannot reach the nav: a part just jumped to stays marked while it is on screen
     var jt = navJump && document.getElementById(navJump), jr = jt && jt.getBoundingClientRect();
-    var jOn = jr && jr.top >= nav.getBoundingClientRect().bottom - 4 && jr.top < window.innerHeight;
+    var jOn = jr && jr.top >= edge - 28 && jr.top < window.innerHeight;
     if (jOn) on = navJump; else if (Date.now() - navJumpAt > 1500) navJump = '';
     if (!on && row.querySelector('.chip')) on = row.querySelector('.chip').getAttribute('data-v');
     // the row follows only when the part on screen changes, so a swipe along the row is not undone by the next scroll
@@ -4064,7 +4058,7 @@
     requestAnimationFrame(function () { navTick = false; adminScroll(false); });
   }, { passive: true });
   document.addEventListener('focusin', function (e) { if (S.name === 'admin' && e.target.closest && e.target.closest('.a-nav')) adminScroll(false); });
-  /* a jump lands the heading just under the nav (only its last row stays when the page moves down) */
+  /* A jump lands the heading under the phone picker, leaving the chapter rail beside a desktop page. */
   /* The jump list on a phone: a sheet on document.body (dims, closes on the backdrop, Cancel and Escape), clicks data-aj. */
   function ajOpen(from) {
     ajClose();
@@ -4095,23 +4089,14 @@
   });
   window.addEventListener('hashchange', function () { ajClose(true, true); });
   function adminJumpTo(id) {
-    var tg = document.getElementById(id), nav = S.root && S.root.querySelector('.a-nav');
+    var tg = document.getElementById(id);
     if (!tg) return;
     navJump = id; navJumpAt = Date.now();
-    var desktopNav = window.matchMedia('(min-width: 1100px)').matches;
-    var top = tg.getBoundingClientRect().top, h = nav && !desktopNav ? nav.offsetHeight : 0;
-    if (nav && !desktopNav && top > h) h -= navHide(nav);
-    if (nav) h += parseFloat(getComputedStyle(nav).top) || 0; // under the update strip when it shows
-    window.scrollTo({ top: Math.max(0, window.scrollY + top - h - 10), behavior: 'smooth' });
+    window.scrollTo({ top: Math.max(0, window.scrollY + tg.getBoundingClientRect().top - adminTopEdge() - 10), behavior: 'smooth' });
   }
-  /* a new page starts just under the panel's title: the nav stays where it was, nothing jumps back above it */
+  /* A new page starts with its chapter title. Task Back restores its queue position separately. */
   function adminToTop() {
-    if (window.matchMedia('(min-width: 1100px)').matches) { S.anavMin = false; window.scrollTo(0, 0); return; }
-    var mark = S.root && S.root.querySelector('.a-navtop');
-    S.anavMin = false;
-    if (!mark) { window.scrollTo(0, 0); return; }
-    var y = mark.getBoundingClientRect().top + window.scrollY;
-    if (window.scrollY > y) window.scrollTo(0, y);
+    window.scrollTo(0, 0);
     adminScroll(true);
   }
   function draftDirty() { return !!S.draft && JSON.stringify(S.draft) !== S.draftSnap; }
@@ -6224,8 +6209,8 @@
   function mnSay(msg, mid) {
     S.mMsg = msg; draw();
     var el = S.root && S.root.querySelector('.mn-say:not(:empty)'); if (!el) return;
-    var r = el.getBoundingClientRect(), nav = S.root.querySelector('.a-nav'), tb = document.querySelector('.tabbar');
-    var top = nav ? nav.getBoundingClientRect().bottom : 0, foot = tb && tb.getClientRects().length ? tb.getBoundingClientRect().top : window.innerHeight;
+    var r = el.getBoundingClientRect(), tb = document.querySelector('.tabbar');
+    var top = adminTopEdge(), foot = tb && tb.getClientRects().length ? tb.getBoundingClientRect().top : window.innerHeight;
     if (mid) window.scrollBy(0, r.top - (top + foot - r.height) / 2);
     else if (r.bottom > foot - 8) window.scrollBy(0, r.bottom - foot + 16);
     else if (r.top < top + 8) window.scrollBy(0, r.top - top - 16);
