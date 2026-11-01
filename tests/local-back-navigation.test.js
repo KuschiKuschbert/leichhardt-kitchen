@@ -181,10 +181,10 @@ const configWrites = p => p.evaluate(() => __fake.writes.flat().filter(w => /\/c
     scrollTo(0, 0);
   });
   await p.clock.runFor(50);
-  // history.state can change before popstate runs. Wait for event delivery after the app's handlers,
-  // so the paused clock advances the two restoration frames only after they have been scheduled.
+  // history.state can change before popstate runs. After event delivery, resume normal browser frames:
+  // pumping fake frames in one clock call can finish before Chromium restores its native history scroll.
   await L.waitFor(p, () => window.__delayedHistoryPop && !history.state.lkOv, null, 5000);
-  await p.clock.runFor(100);
+  await p.clock.resume();
   await L.waitFor(p, () => scrollY === 0 && document.querySelector('.fn-strip').hidden, null, 5000).catch(() => {});
   const delayedState = await p.evaluate(() => ({ y: scrollY, hidden: document.querySelector('.fn-strip').hidden }));
   ok(delayedState.y === 0 && delayedState.hidden, 'delayed history restoration cannot overwrite a scroll made immediately after closing ' + JSON.stringify(delayedState));
