@@ -96,7 +96,8 @@ async function handover(p, label, expectedAttempts = 1) {
   ok(await p.evaluate(() => !LK_PREP.ownerHere()), label + ': the next PIN session does not inherit the original Google admin grant');
   ok(await deniedAdminRead(p), label + ': the next person is still refused a private admin read by the server');
   await p.fill('#p-text', nextText); await p.press('#p-text', 'Enter');
-  await L.waitFor(p, text => Object.entries(__fake.dump()).some(([key, value]) => /\/items\//.test(key) && value.text === text && value.by === 'sam'), nextText);
+  // A local record appears before its SDK acknowledgement clears the pending save.
+  await L.waitFor(p, text => !LK_PREP.unsent() && Object.entries(__fake.dump()).some(([key, value]) => /\/items\//.test(key) && value.text === text && value.by === 'sam'), nextText);
   ok(await p.evaluate(attempts => !LK_PREP.unsent() && !__fake.dump()[window.__revokedPath] && __fake.writes.flat().filter(op => op.path === window.__revokedPath).length - window.__revokedInitialAttempts === attempts, expectedAttempts), label + ': new work saves as Sam without replaying the refused payload');
 }
 
