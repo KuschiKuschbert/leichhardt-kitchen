@@ -146,8 +146,24 @@ function chromeOpts() {
   // put the tablet layout in a 753 px window and count as sideways scroll
   return process.env.CHROME ? { executablePath: process.env.CHROME, headless: true, args: ['--hide-scrollbars'] } : { channel: 'chrome', headless: true, args: ['--hide-scrollbars'] };
 }
+// Routed requests may still be returning after a test finishes. Dispose their handlers only during teardown.
+// Active network failures continue to fail the test; each shared-browser connection owns its own contexts.
+async function unrouteForClose(ctx) {
+  await Promise.all([ctx.unrouteAll({ behavior: 'ignoreErrors' }), ...ctx.pages().filter(p => !p.isClosed()).map(p => p.unrouteAll({ behavior: 'ignoreErrors' }))]);
+}
 async function start() {
-  return process.env.LK_WS ? chromium.connect(process.env.LK_WS) : chromium.launch(chromeOpts());
+  const b = await (process.env.LK_WS ? chromium.connect(process.env.LK_WS) : chromium.launch(chromeOpts()));
+  const rawNewContext = b.newContext.bind(b), rawBrowserClose = b.close.bind(b);
+  b.newContext = async opts => {
+    const ctx = await rawNewContext(opts), rawClose = ctx.close.bind(ctx);
+    let closing, closed = false;
+    ctx.on('close', () => { closed = true; });
+    ctx.close = opts => closed ? rawClose(opts) : closing || (closing = (async () => { await unrouteForClose(ctx); return rawClose(opts); })());
+    return ctx;
+  };
+  let closing;
+  b.close = opts => closing || (closing = (async () => { await Promise.all(b.contexts().map(unrouteForClose)); return rawBrowserClose(opts); })());
+  return b;
 }
 
 /* Opens one page in a fresh browser profile.
