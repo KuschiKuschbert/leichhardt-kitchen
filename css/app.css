@@ -1251,8 +1251,60 @@ details.nb-start-l[open] > summary::after { content: '\2212'; }
 .ai-metrics dt { color: var(--muted); font-size: 0.875rem; }
 .ai-metrics dd { font-weight: 700; margin: 0.35rem 0 0; }
 .ai-editor { display: grid; gap: 0.75rem; }
+.ai-fields { display: grid; gap: 0.75rem; min-width: 0; margin: 0; padding: 0; border: 0; }
 .ai-editor .search, .ai-workspace input, .a-section-picker select { width: 100%; min-width: 0; max-width: 100%; }
 .ai-message { padding: 0.75rem; background: var(--paper); border: 1px solid var(--ink); border-radius: var(--radius); }
+/* Review desk: keep the next task beside its context on a laptop, and give one task the phone screen. */
+.ai-desk { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem; align-items: start; margin: 1rem 0 1.5rem; }
+.ai-queue, .ai-detail, .ai-saved-library { min-width: 0; overflow-wrap: anywhere; }
+.ai-queue > :first-child, .ai-detail > :first-child { margin-top: 0; }
+.ai-queue h3, .ai-detail h3 { overflow-wrap: anywhere; }
+.ai-queue .ai-list { margin: 0.75rem 0; }
+.ai-queue .ai-list > li { padding: 0; }
+.ai-queue .ai-review-row { display: flex; flex-direction: column; align-items: flex-start; gap: 0.3rem; width: 100%; min-width: 0; min-height: 44px; margin: 0; padding: 0.9rem 0.75rem; border: 0; border-left: 3px solid transparent; border-radius: 0; background: transparent; color: var(--ink); font: inherit; line-height: 1.35; text-align: left; white-space: normal; overflow-wrap: anywhere; cursor: pointer; }
+.ai-review-row > * { max-width: 100%; }
+.ai-review-row strong { font-size: 1.0625rem; }
+.ai-review-row small, .ai-review-row .hint { margin: 0; color: var(--muted); font-size: 0.875rem; font-weight: 400; line-height: 1.4; }
+.ai-queue .ai-review-row[aria-current="true"], .ai-queue .ai-review-row[aria-current="page"], .ai-queue .ai-review-row[aria-pressed="true"] { border-left-color: var(--accent-ink); background: var(--hit); }
+.ai-queue .ai-review-row:focus-visible { position: relative; z-index: 1; outline: 3px solid var(--accent-ink); outline-offset: -3px; }
+@media (hover: hover) and (pointer: fine) { .ai-queue .ai-review-row:hover { background: var(--beige); } }
+.ai-task-heading { margin: 0 0 0.85rem; color: var(--ink); font: 700 1.5rem/1.2 var(--body); letter-spacing: normal; text-transform: none; overflow-wrap: anywhere; scroll-margin-top: 6rem; }
+.ai-task-heading:focus-visible { outline: 3px solid var(--accent-ink); outline-offset: 5px; }
+.ai-queue-search { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0.5rem; margin: 0.75rem 0 1rem; min-width: 0; }
+.ai-queue-search > label, .ai-queue-search .btn-row { width: 100%; }
+.ai-queue-search .btn-row { display: flex; flex-wrap: wrap; gap: 0.5rem; min-width: 0; }
+.ai-queue-search .search { flex: 1 1 8rem; width: auto; min-width: 0; min-height: 44px; height: auto; padding: 0.65rem 0.75rem; }
+.ai-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; margin: 1rem 0; min-width: 0; }
+.ai-actions > .btn, .ai-queue-search .btn { flex: 0 1 auto; max-width: 100%; min-width: 0; min-height: 44px; padding: 0.65rem 1rem; line-height: 1.25; white-space: normal; }
+.ai-task-context { margin: 1rem 0; padding-top: 1rem; border-top: 1px solid var(--line); min-width: 0; }
+.ai-task-context .ai-metrics { grid-template-columns: repeat(auto-fit, minmax(min(7.5rem, 100%), 1fr)); gap: 0.5rem 1rem; }
+.ai-task-context .ai-metrics > div { padding: 0.4rem 0; border: 0; border-radius: 0; background: transparent; }
+.ai-task-context .ai-metrics dd { font-size: 1.0625rem; }
+.ai-task-context > .hint:first-child { margin-top: 0; }
+.ai-help { margin: 1rem 0; min-width: 0; font-size: 0.9375rem; }
+.ai-help > summary, .ai-help details > summary { min-height: 44px; padding: 0.65rem 0; font-weight: 600; cursor: pointer; overflow-wrap: anywhere; }
+.ai-help[open] > summary, .ai-help details[open] > summary { margin-bottom: 0.75rem; border-bottom: 1px solid var(--line); }
+.ai-help .field { margin-bottom: 0.8rem; }
+.ai-resume { margin: 1rem 0; padding: 0.8rem 1rem; border-left: 3px solid var(--accent-ink); background: var(--paper); overflow-wrap: anywhere; }
+.ai-resume > p:first-child { margin-top: 0; }
+.ai-resume > :last-child { margin-bottom: 0; }
+.ai-outcome { margin: 0.5rem 0 1.25rem; padding: 1.1rem 0; border-top: 3px solid var(--accent-ink); overflow-wrap: anywhere; }
+.ai-outcome > :first-child { margin-top: 0; }
+.ai-saved-library .ai-list { margin-top: 0.75rem; }
+.ai-saved-library .ai-list > li { padding: 1rem 0; }
+.ai-saved-library > .btn { margin: 0.6rem 0.4rem 0.3rem 0; }
+.ai-saved-library .ai-list > li > small { display: block; margin: 0.35rem 0; }
+.ai-saved-library .ai-list > li > .btn { margin: 0.4rem 0.4rem 0 0; }
+.ai-desk select, .ai-saved-library select { max-width: 100%; min-width: 0; }
+@media (max-width: 1099px) {
+  .ai-desk.has-detail > .ai-queue, .ai-desk:not(.has-detail) > .ai-detail { display: none; }
+  .ai-detail .ai-editor { gap: 0.8rem; }
+}
+@media (min-width: 1100px) {
+  .ai-desk { grid-template-columns: minmax(12rem, 0.85fr) minmax(0, 1.4fr); gap: 1.5rem; }
+  .ai-queue { padding-right: 1.25rem; border-right: 1px solid var(--line); }
+  .ai-detail { padding-top: 0.15rem; }
+}
 @media (max-width: 719px) {
   .p-admin .a-groups { display: none; }
   .a-section-picker { display: flex; align-items: center; gap: 0.75rem; font-weight: 700; }

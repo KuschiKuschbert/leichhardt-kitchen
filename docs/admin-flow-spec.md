@@ -1,6 +1,6 @@
 # Admin flow redesign
 
-Status: concepts prepared; awaiting the user's design choice. Production behaviour is unchanged.
+Status: in progress. The user selected A, Review desk, on 1 November 2026. Implement and release through PR #427; no further layout approval is needed.
 
 ## Problem and evidence
 
@@ -28,7 +28,7 @@ The self-contained [interactive comparison](admin-flow-concepts.html) uses examp
 | B. People and items | Search for a subject, open a workspace, switch between activity, links, assessments and history, return to the same subject. | Strong connected exploration. More navigation when processing many unrelated tasks. |
 | C. Guided tasks | Choose a job, review context, record a decision, see completion and choose the next job. | Clear for occasional use. More steps for bulk review. |
 
-All three include evidence, explicit reference confirmation, explicit training assessment and access to saved records. Operations and Settings remain available. No direction is selected yet. The previous grouped design is the current live behaviour, not approval for one of these alternatives.
+All three include evidence, explicit reference confirmation, explicit training assessment and access to saved records. Operations and Settings remain available. A is selected. The other two concepts are retained as design context. The live app remains the PR #425 release until this implementation passes its release checks.
 
 ## Contract shared by all concepts
 
@@ -41,14 +41,25 @@ All three include evidence, explicit reference confirmation, explicit training a
 - Preserve permissions, private in-memory state, access-context guards, read budgets, generation freshness, stable ids and revision history.
 - Retain staff entry behaviour and existing operational routes. No new backend service, schema, data import, automatic quantity change or rules expansion is needed.
 
+## Selected Review desk contract
+
+- Five primary destinations: Review desk, Reports, Saved records, Operations and Settings. Existing page ids still open the corresponding job or report.
+- Item links and Training are the Review desk queues. A first visit opens the item queue. Queue counts use already requested data; inactive queues do not trigger extra queries merely to decorate navigation.
+- Desktop keeps the queue beside the focused task. Phone and tablet use a focused task view with contextual Back. Optional explanation and fields are disclosed within that task.
+- Confirmed links and saved assessments live in Saved records. They remain available during source-summary failures and independently of activity dates.
+- Back leaves a draft in memory and restores the queue. A visible unfinished-task banner has a direct Resume control, including when another admin page is open. Explicit Cancel discards the form.
+- Save returns to the originating list or report with an outcome. Save and next advances only after acknowledgement. A refused or pending save keeps the current record; Back is disabled while its outcome is unresolved.
+- Selecting an analysis item reveals its evidence in a focused view. Moving to reference review retains known source ids and returns to the source item after Save or Back.
+- Local page/filter controls continue to avoid extra browser-history entries. The shared header arrow closes the current task before leaving admin. Links to recipes, guides and supplier pages retain the existing route trail.
+
 ## Concept verification
 
 The standalone preview passed 46 interaction probes across phone (390 px) and desktop (1280 px) views, with no horizontal overflow, unnamed controls, browser errors or external requests. Keyboard checks cover Tab and the concept selector arrow/Home controls. Known, unlinked and supplier references display different example targets; an unlinked target cannot be confirmed until selected. This verifies the comparison only, not a production implementation.
 
-## Verification after a choice
+## Implementation verification
 
-Write focused regression journeys for the approved flow, including contextual Back, visible draft resumption, evidence identity, Save/Next, failure retention, keyboard use and 390/768/1280 px layouts. Prove the relevant regressions on old code, then run the affected checks and required PR CI. Use the normal pre-merge, squash-merge, Pages and live-verification flow.
+The untouched previous implementation failed all four initial visibility/focus assertions. The production Review desk passes its focused journeys for contextual Back, draft resumption on legacy pages, source identity, acknowledged Save and next, failure retention and 390/768/1280 px layouts. Additional checks reproduced and fixed heading focus loss during redraw, editable pending saves, training review cycling and delayed initial list reads. The five focused files pass 228 checks. Seven related files also pass, covering Back navigation, roles, safe text, hidden admin data and read budgets. Synthetic layout checks pass at 390/768/1280 px and 24 px root text. Required PR CI and deployed verification remain the release gates. These checks use synthetic Firebase data, not a real Google admin session.
 
 ## Resume
 
-Choose A, B or C with the user. Then update this document and `docs/admin-intelligence.md` with the selected contract before changing production UI. Worktree: `.claude/worktrees/admin-workflow`; branch: `design/admin-workflow`. The prototype, comparison image and this note are the only new files for the comparison. README and the existing admin note record the design status and completed previous release.
+Implement A, Review desk. Verify focused regressions, update documentation and PR #427, then complete required CI and release checks. Worktree: `.claude/worktrees/admin-workflow`; branch: `design/admin-workflow`. The prototype, comparison image and this note are the only new files for the comparison. README and the existing admin note record the design status and completed previous release.
