@@ -32,7 +32,12 @@ const open = async (b, width = 360) => {
   const p = await L.open(b, '#/admin', { admin: true, who: '', width, height: 900, extra, wait: 1600 });
   p.initialProofWrites = (await privateWrites(p)).length;
   await L.adminTab(p, 'proofreader');
-  await L.waitFor(p, () => document.querySelector('.pr-workspace') && document.querySelectorAll('[data-pr="review"]').length > 1, null, 10000);
+  // Prep and orders finish independently. A partial prep list is not ready for the combined row-count check.
+  await L.waitFor(p, () => {
+    const state = window.LK_PREP && window.LK_PREP.state;
+    return document.querySelector('.pr-workspace') && state && [state.stats, state.ordStats].every(report =>
+      report && !report.loading && !report.busy && !(report.miss || []).length) && document.querySelectorAll('[data-pr="review"]').length > 1;
+  }, null, 10000);
   return p;
 };
 const status = (p, expression) => L.waitFor(p, expression => new RegExp(expression, 'i').test((document.querySelector('.pr-status') || {}).textContent || '') && !LK_PROOFREADER.busy(), expression);
