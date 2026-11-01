@@ -4,15 +4,18 @@ Requested 1 November 2026. Design stage only. The current workshop focuses on qu
 
 ## Current focused demo
 
-`prep-attribution.html`, `.css` and `.js` show the normal prep sheet with an inline name picker. The hosted homepage opens this same demo. The earlier comparison has moved to `encouragement.html`.
+`index.html` and `prep-attribution.html` open an isolated copy of the actual app with sample data. `build-faithful-preview.cjs` packages the real app into the selected output's `current-prep/` folder. Keep `css/app.css`, `listHTML()`, `rowHTML()` and all existing prep markup unchanged. The earlier rebuilt prep mock-up was rejected because it changed the layout and apparent functionality; it is not the design authority.
+
+`faithful-picker.js/.css` insert only one picker sibling beside the clicked native row. There are no overrides of existing `.nb-*` layout or row styles. The external preview toolbar offers Shared screen, Own phone and Existing app comparison. It sits outside the app.
 
 - Default shared screen: tap a normal task tick, then choose the reported doer. Only then complete the task.
 - Show people signed in on this exact device during the same kitchen day first, most recent first. Others opens the remaining active staff as chips.
 - Selecting a doer is not a sign-in and must not reorder or add to device-login priority. Keep the recorder session unchanged and separate from the reported doer.
 - Cancel or Escape leaves the task incomplete. Each task asks afresh. Retain permitted Undo.
 - Own phone: the normal one-tap tick credits the signed-in person.
-- Keep Prep, Wastage, quantities, dates, section controls, add and navigation visible. Sample sheets demonstrate placement; all current production functionality remains mandatory.
-- Use synthetic names and records, held in memory only. No PIN, operational API, persistence, telemetry, points, streaks or extra habit layers. A prototype name selection grants no actual session or access.
+- Keep the real notebook/Handy layout, handwriting, function strip, section tabs, date navigation, quantities, native Add/suggestions/recipe picker/Quick add, urgent/recipe/line-menu actions, Done today, Undo and all six navigation destinations. No redesigned substitute sheets.
+- Use synthetic names and records, held in RAM only. The fixture virtualises local/session storage, uses local test SDKs and a synthetic Firebase config, and blocks external connections through its CSP. No real sign-in, operational API, persistent staff records, points, streaks or extra habit layers. The preview omits service-worker/install/update behaviour.
+- For the workshop, keep native ticks and Undo unchanged and show the chosen doer through a separate RAM contribution map and existing attribution labels. Native recorder, session, permissions and counters remain the existing app behaviour. This is a visual proposal, not implemented production tracking.
 - Keep the current role boundaries. Any production reported-doer fields, recorder fields and rules changes need their own agreed contract and verification.
 
 ## Shared design language

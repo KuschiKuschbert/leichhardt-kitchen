@@ -1,0 +1,15 @@
+/* Preview-only insertion. No existing prep sheet, row, quantity or navigation rules change. */
+li.lk-attribution { display: block; list-style: none; margin: 6px 0 10px; padding: 12px 14px 10px; border-left: 3px solid var(--accent); background: var(--beige); color: var(--ink); font: 400 .875rem/1.4 var(--body); scroll-margin-block: 12px calc(var(--tabbar-h, 68px) + 20px); }
+.lk-attribution fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+.lk-attribution legend { float: left; width: 100%; padding: 0; margin: 0 0 3px; font: 700 1.65rem/1.05 'Caveat', cursive; }
+.lk-attribution .lk-attribution-body { clear: both; }
+.lk-attribution p { margin: 0 0 9px; color: var(--muted); font: 400 .75rem/1.45 var(--body); }
+.lk-attribution .lk-attribution-names { display: flex; flex-wrap: wrap; gap: 6px; }
+.lk-attribution button { min-width: 44px; min-height: 44px; max-width: 100%; color: var(--ink); font: 600 .875rem/1.2 var(--body); cursor: pointer; }
+.lk-attribution .lk-attribution-name { min-width: 76px; padding: 9px 16px; border: 1px solid var(--ink); border-radius: 999px; background: var(--paper); overflow-wrap: anywhere; }
+.lk-attribution .lk-attribution-name:hover { background: var(--ink); color: var(--paper); }
+.lk-attribution .lk-attribution-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 5px 13px; margin-top: 4px; }
+.lk-attribution .lk-attribution-quiet { padding: 7px 4px; border: 0; border-radius: 0; background: transparent; font-size: .75rem; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
+.lk-attribution .lk-attribution-others { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--line); scroll-margin-block: 12px calc(var(--tabbar-h, 68px) + 20px); }
+.lk-attribution :focus-visible { outline: 3px solid var(--accent-ink); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .lk-attribution { scroll-behavior: auto; } }
