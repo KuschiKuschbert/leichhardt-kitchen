@@ -324,10 +324,12 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
     await S(p, ([k, v]) => window.__fake.write(k, v), [fsKey(['config', 'main']), Object.assign({}, c, { people: c.people.concat([P('zed', 'Zed', 'staff')]), staffIds: c.staffIds.concat(['zed']) })]);
     await L.settle(p, 600);
     ok(await p.$eval(qty, e => e.value) === '4 kg' && await S(p, () => window.LK_SUP.hasDraft()), 'supplier: a new starter saved on another phone keeps the order typed here');
-    // a person who may not open supplier orders any more loses it (privacy)
+    // Revocation hides the form and preserves the original work until explicit discard.
     await S(p, ([k, v]) => window.__fake.write(k, v), [fsKey(['config', 'main']), Object.assign({}, c, { headId: '', sousIds: ['sam'], staffIds: ['sam', 'ann'] })]);
     await L.settle(p, 600);
-    ok(!(await S(p, () => window.LK_SUP.hasDraft())) && await asks(p) === false, 'supplier: a person who may not open it any more loses the draft');
+    ok(await S(p, () => !!LK_PREP.workLock() && !LK_PREP.privateAccess() && LK_SUP.hasDraft()) && await asks(p) === true && !(await p.$(qty)), 'supplier: revoked access hides the form and keeps the original draft behind the lock');
+    await S(p, () => LK_PREP.signOut(true)); await L.settle(p, 300);
+    ok(!(await S(p, () => LK_SUP.hasDraft())) && await asks(p) === false, 'supplier: explicit discard clears the revoked person\'s retained draft');
     quiet(p, 'supplier draft');
     await p.context().close();
   });

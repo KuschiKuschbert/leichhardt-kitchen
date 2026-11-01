@@ -221,11 +221,12 @@
       if (cfgKey === scope && unsubCfg) { S.configState = cfgLast || 'loading'; draw(); return; }
       if (unsubCfg) unsubCfg();
       cfgKey = scope; cfgLast = '';
-      var full = scope.slice(-7) === 'kitchen';
+      var full = scope.slice(-7) === 'kitchen', cfgFromCache = null;
       // includeMetadataChanges: the server's answer also comes in when it is the same as the copy's (both missing);
       // those snapshots are not billed
       unsubCfg = fb.fs.onSnapshot(full ? cfgDoc() : docRef('login', 'roster'), { includeMetadataChanges: true }, function (snap) {
         if (cfgKey !== scope) return;
+        var cached = cacheOnly(snap), recoveredServer = !cached && cfgFromCache !== false; cfgFromCache = cached;
         // No signal (27 Oct 2026): settings missing from the copy in memory are not loaded yet, never "no staff". Nobody
         // is signed in from them (resume waits) and the page says there is no signal. The server's answer comes in on
         // this same listener once the signal is back, and from then on it is the same as with signal: resume() on the
@@ -237,11 +238,16 @@
         cfgLast = 'ok';
         // the server answered, so the signal is back: an owner check that failed for want of it goes again now (one read,
         // only after a failure), not after its 5-minute wait. Wifi with no internet sends no online event.
-        if (!cacheOnly(snap) && S.user && S.adminsOff && S.adminsOff === (S.user.email || '')) delete S.retryAt.admins;
+        if (recoveredServer && S.user && S.adminsOff && S.adminsOff === (S.user.email || '')) delete S.retryAt.admins;
         S.configFull = full;
         S.config = snap.exists() ? snap.data() : { people: [] };
         S.config.people = S.config.people || [];
         headFix(S.config);
+        if (!cached && !(snap.metadata && snap.metadata.hasPendingWrites) && Array.isArray(S.config.staffIds)) {
+          S.canonicalSerial = (S.canonicalSerial || 0) + 1;
+          S.canonicalAccess = { pin: S.pin, uid: S.uid, serial: S.canonicalSerial, staffIds: S.config.staffIds.slice(), headId: S.config.headId };
+          Promise.resolve().then(settleRevokedWrites);
+        }
         S.configState = 'ok'; resume();
         if (full && kitchenAccess()) { pastCheck(); refreshDraft(); watchItems(); watchSections(); loadLearned(); }
         featSync();
@@ -634,6 +640,7 @@
      Other errors stay up for 12 seconds with an OK button, so nobody misses them. */
   function failed(e, restore) {
     if (typeof restore === 'function') restore();
+    if (e && e.terminalWork) return;
     if (e && e.code === 'permission-denied' && S.authed && S.who && S.name !== 'admin') {
       var p = who(), kept = typeof restore === 'function' ? ' Your text is still in the box.' : '';
       toast('Not saved. Checking your PIN...', null, 12000);
@@ -657,26 +664,54 @@
      that same person signs in again. Only an atomic permission refusal permits a retry after the new daily PIN. */
   var pending = 0, pendFor = {}, pendSince = 0, offline = navigator.onLine === false, lastSync = '', writeTickets = [];
   function writerKey() { return [S.uid || '', S.who || '', millis(S.sessIssuedAt)].join('|'); }
-  function blockedRecorder() { return writeTickets.length ? writeTickets[0].person : S.privacyLocked && dirtyForUpdate() ? S.lockRecorder || '' : ''; }
+  function stableIdentity() { return [S.pin, S.uid || '', S.who || ''].join('|'); }
+  function writeContext() { return { uid: S.uid, person: S.who, pin: S.pin, by: wBy(), admin: ownerHere(), identity: stableIdentity(), exp: S.sessExp || 0, issuedAt: S.sessIssuedAt, canonicalSerial: S.canonicalSerial || 0 }; }
+  function workLock() { return S.privacyLocked || S.unlocking ? { identity: S.lockIdentity, person: S.lockRecorder, reason: S.lockReason } : null; }
+  function blockedRecorder() { return writeTickets.length ? writeTickets[0].person : workLock() && (S.lockHasDraft || dirtyForUpdate()) ? S.lockRecorder || '' : ''; }
   function copyWrite(value) {
     if (Array.isArray(value)) return value.map(copyWrite);
     if (value && Object.getPrototypeOf(value) === Object.prototype) { var out = {}; Object.keys(value).forEach(function (k) { out[k] = copyWrite(value[k]); }); return out; }
     return value;
   }
-  function recoverCommit(run) {
-    var ticket = { uid: S.uid, person: S.who, pin: S.pin, exp: S.sessExp || 0, issued: millis(S.sessIssuedAt), admin: ownerHere(), phase: 'waiting', run: run }, resolve, reject;
+  function lostCanonicalAccess(ticket) {
+    var c = S.canonicalAccess;
+    return !!(c && c.pin === ticket.pin && c.uid === ticket.uid && c.serial > ticket.canonicalSerial &&
+      (c.staffIds.indexOf(ticket.person) < 0 || ticket.admin && typeof c.headId === 'string' && c.headId !== ticket.person));
+  }
+  function settleRevokedTicket(ticket) {
+    if (ticket.retired || !lostCanonicalAccess(ticket) || stableIdentity() !== [ticket.pin, ticket.uid, ticket.person].join('|')) return false;
+    var accepted = ticket.phase === 'acked';
+    if (!accepted && !ticket.atomicRefusal && ticket.attempted) return false;
+    // An accepted save can report its acknowledgement to the same still-authenticated person, without another grant.
+    if (accepted && !workLock() && S.authed && canW()) return false;
+    if (!workLock()) privacyLock('revoked');
+    S.lockReason = 'revoked'; S.lockHasDraft = true; S.lockRecorder = ticket.person; S.lockIdentity = [ticket.pin, ticket.uid, ticket.person].join('|');
+    S.workNotice = accepted ? 'The save was sent before your access changed. Your original work is kept until you discard it.' : 'The save was refused because your access changed. Your original work is kept until you discard it.';
+    ticket.retired = true; var index = writeTickets.indexOf(ticket); if (index >= 0) writeTickets.splice(index, 1);
+    if (accepted) ticket.resolve(); else ticket.reject(Object.assign({}, ticket.error || {}, { code: 'permission-denied', terminalWork: true }));
+    notifySent(); draw(); return true;
+  }
+  function settleRevokedWrites() { writeTickets.slice().forEach(settleRevokedTicket); }
+  function recoverCommit(run, context) {
+    context = context || writeContext();
+    if (!context.uid || !context.pin || !context.by || context.by !== context.person) return Promise.reject({ code: 'permission-denied' });
+    var ticket = { uid: context.uid, person: context.person, pin: context.pin, exp: context.exp || 0, issued: millis(context.issuedAt), admin: !!context.admin, canonicalSerial: context.canonicalSerial || 0, attempted: false, phase: 'waiting', run: run }, resolve, reject;
     var promise = new Promise(function (ok, no) { resolve = ok; reject = no; }); ticket.resolve = resolve; ticket.reject = reject; writeTickets.push(ticket);
     function release() {
+      if (ticket.retired || settleRevokedTicket(ticket)) return;
       if (S.authed && dayExpired()) privacyLock('daily');
-      if (S.privacyLocked || ticket.person && !S.authed || ticket.admin && !ownerHere() || S.uid !== ticket.uid || S.who !== ticket.person || S.pin !== ticket.pin) return;
+      if (S.privacyLocked || ticket.person && !S.authed || ticket.admin && !ownerHere() && ticket.phase !== 'acked' && !ticket.atomicRefusal || S.uid !== ticket.uid || S.who !== ticket.person || S.pin !== ticket.pin) return;
       if (ticket.phase !== 'acked' && ticket.phase !== 'failed') return;
       writeTickets.splice(writeTickets.indexOf(ticket), 1); if (ticket.phase === 'acked') resolve(); else reject(ticket.error); notifySent();
     }
     ticket.release = release;
     ticket.start = function () {
-      if (ticket.phase === 'inflight' || ticket.phase === 'acked') return;
+      if (ticket.retired || ticket.phase === 'inflight' || ticket.phase === 'acked') return;
+      if (!S.authed || !canW() || ticket.admin && !ownerHere()) { ticket.phase = 'blocked'; settleRevokedTicket(ticket); return; }
       ticket.phase = 'inflight'; ticket.exp = S.sessExp || ticket.exp; ticket.issued = millis(S.sessIssuedAt);
-      Promise.resolve().then(run).then(function () { ticket.phase = 'acked'; release(); }, function (error) {
+      Promise.resolve().then(function () { if (ticket.retired) return; ticket.attempted = true; ticket.atomicRefusal = false; ticket.error = null; return run(); }).then(function () { ticket.phase = 'acked'; release(); }, function (error) {
+        ticket.error = error; ticket.atomicRefusal = !!(error && error.code === 'permission-denied');
+        if (settleRevokedTicket(ticket)) return;
         // A permission refusal is an atomic rejection. An uncertain or lost acknowledgement is never replayed.
         if (error && error.code === 'permission-denied' && ticket.person && (ticket.exp <= now() || S.privacyLocked)) {
           ticket.phase = 'blocked'; privacyLock('daily'); draw(); return;
@@ -699,7 +734,7 @@
       var ops = [], batch = {};
       ['set', 'update', 'delete'].forEach(function (method) { batch[method] = function () { ops.push([method, Array.prototype.slice.call(arguments).map(function (v, i) { return i ? copyWrite(v) : v; })]); return batch; }; });
       function commit() { var rawBatch = raw.writeBatch(db); ops.forEach(function (op) { rawBatch[op[0]].apply(rawBatch, op[1]); }); return rawBatch.commit(); }
-      batch.commit = function () { return ops.some(function (op) { return loginOnly(op[1][0]); }) ? commit() : recoverCommit(commit); }; return batch;
+      batch.commit = function (context) { return ops.every(function (op) { return loginOnly(op[1][0]); }) && !S.authed ? commit() : recoverCommit(commit, context); }; return batch;
     };
   }
   function track(pr) {
@@ -755,7 +790,7 @@
      PIN sessions below), so only people who know a personal PIN can write. While a session is being opened (a PIN just
      typed, a phone moving from the older proof), a write waits for it, so it reaches the server after the session. */
   function W(ops, context) {
-    context = context || { uid: S.uid, by: wBy(), person: S.who, pin: S.pin };
+    context = context || writeContext();
     if (sessP) return track(sessP.then(function () { return W(ops, context); }, function () { return W(ops, context); }));
     if (context.uid !== S.uid || context.person !== S.who || context.pin !== S.pin) return Promise.reject({ code: 'cancelled' });
     var b = fb.fs.writeBatch(fb.db), by = context.by;
@@ -771,12 +806,12 @@
       }
       if (o[0] === 'upd') b.update(o[1], data); else if (o[3]) b.set(o[1], data, { merge: true }); else b.set(o[1], data);
     });
-    return track(b.commit());
+    return track(b.commit(context));
   }
   /* A long list of writes (a rollover, a big merge) goes in batches of 400, one after the other, so nothing past the
      first 400 is dropped (a Firestore batch holds 500 writes). */
   function Wall(ops) {
-    var p = Promise.resolve(), k, context = { uid: S.uid, by: wBy(), person: S.who, pin: S.pin };
+    var p = Promise.resolve(), k, context = writeContext();
     for (k = 0; k < ops.length; k += 400) (function (part) { p = p.then(function () { return W(part, context); }); })(ops.slice(k, k + 400));
     return p;
   }
@@ -882,7 +917,7 @@
   // runs. The end kept in lk.prep.sess is what makes it once a day across reloads.
   function pickName(id) {
     if (!deviceReady()) { window.LK_DEVICE.request(); return; }
-    if (blockedRecorder() && blockedRecorder() !== id) { toast('Sign in as the person whose work is waiting first.'); return; }
+    if (blockedRecorder() && blockedRecorder() !== id) { toast(S.workNotice && !sendingNow() ? 'Your original work is kept. Use Change person to discard it first.' : 'Sign in as the person whose work is waiting first.'); return; }
     if (deviceMode() === 'personal' && deviceOwner() && deviceOwner() !== id) { toast('This personal device belongs to another person. Change or forget it in Settings first.'); return; }
     if (S.user && id !== (S.config || {}).headId) { S.authed = false; S.who = ''; dropGoogle().then(function () { pickName(id); }).catch(function () { S.pinMsg = 'Could not sign out the previous account. Try again.'; draw(); }); return; }
     clearPrivateCache(); noteClose('shut'); ksClose(); if (!S.privacyLocked) sessDrop();
@@ -905,7 +940,7 @@
   function signedIn(id, hash) {
     if (!deviceReady() || !window.LK_DEVICE.verify(id)) { S.authed = false; S.pinMsg = 'This personal device is assigned to another person. Change it in Settings first.'; draw(); return; }
     setTimeout(dailyFlush, 3000);   // yesterday's counts, once someone is signed in (W writes as them)
-    S.privacyLocked = false; S.lockRecorder = ''; S.authed = true; S.tok = hash; S.pf1 = S.pf2 = ''; S.pinMsg = ''; S.pinStep = '';
+    S.privacyLocked = false; S.unlocking = false; S.lockHasDraft = false; S.lockIdentity = ''; S.lockRecorder = ''; S.authed = true; S.tok = hash; S.pf1 = S.pf2 = ''; S.pinMsg = ''; S.pinStep = '';
     lsSet('lk.prep.tok', ''); lsSet('lk.prep.seen', String(Date.now())); lsSet('lk.prep.day', dayNow()); lastAct = Date.now(); startIdle();
     hereAdd(id);
     var pend = S.pending; S.pending = null; S.picking = false;
@@ -1086,6 +1121,8 @@
      person never finds it (docs/private-kitchen-access.md). */
   function privacyLock(reason) {
     if (S.privacyLocked || !S.who && !S.user) return;
+    S.lockHasDraft = dirtyForUpdate(); S.lockIdentity = stableIdentity();
+    if (pt && pt.busy) pt.lockRetained = S.lockIdentity;
     S.lockRecorder = S.who || ''; S.privacyLocked = true; S.lockReason = reason; S.authed = false; S.level = ''; S.grantExp = 0; accessEpoch++;
     stopLive(); clearPrivateCache(); ptClose(true, true); ksClose(); noteClose('shut'); lmClose();
     if (window.LK_UX) window.LK_UX.close();
@@ -1118,7 +1155,7 @@
      form, which the page closing after the sign-out kept as a draft again for the next person) */
   function leave() {
     ptClose(true, true);
-    S.privacyLocked = false; S.lockRecorder = ''; S.grantExp = 0;
+    S.privacyLocked = false; S.unlocking = false; S.lockRecorder = ''; S.lockHasDraft = false; S.lockIdentity = ''; S.workNotice = ''; S.grantExp = 0;
     accessEpoch++;
     stopLive(); clearPrivateCache();
     S.text = S.qty = S.otext = S.oqty = ''; S.wf = { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }; S.xf = xBlank();
@@ -1131,7 +1168,7 @@
     S.pastBusy = S.minsBusy = S.viewBusy = S.missBusy = S.useBusy = false; S.pastPart = null; S.ordStats = null; S.views = S.misses = null; S.viewErr = S.missErr = S.useErr = S.wReviewErr = false; S.wReview = null; S.wReviewFor = S.wNoteFor = '';
     S.items = []; S.ordLines = []; S.ordAll = []; S.wLines = []; S.xLines = []; S.notes = null; S.notesBusy = false; S.nSaving = false; S.notesFor = ''; S.nPast = null; S.nPastOpen = false; S.nSeen = null; S.nPrivateError = ''; S.mins = null; S.guides = null; S.activity = []; S.actState = ''; S.hist = {}; S.stats = null;
     ['lk.fn', 'lk.mail.sent', 'lk.drinks', 'lk.guides', 'lk.notes', 'lk.minutes'].forEach(function (k) { lsSet(k, ''); });
- if (window.LK_INTELLIGENCE) window.LK_INTELLIGENCE.reset(); if (window.LK_PROOFREADER) window.LK_PROOFREADER.reset(); proofRepairStamp = {}; if (window.LK_DELIVERY) window.LK_DELIVERY.reset(); if (window.LK_SUP) window.LK_SUP.reset(); if (supplierService) supplierService.reset();
+ if (window.LK_INTELLIGENCE) window.LK_INTELLIGENCE.reset(); if (window.LK_PROOFREADER) window.LK_PROOFREADER.reset(); proofRepairStamp = {}; if (window.LK_DELIVERY) window.LK_DELIVERY.reset(); if (window.LK_SUP) window.LK_SUP.reset(true); if (supplierService) supplierService.reset();
     // an editor an older copy of its file has no drop(): it closes as before
     if (window.LK_MG && window.LK_MG.drop) window.LK_MG.drop(); if (window.LK_FE && window.LK_FE.drop) window.LK_FE.drop();
     if (window.LK_UX) window.LK_UX.close();
@@ -1208,7 +1245,7 @@
     } catch (e) {}
   }
   function signOutPerson(force, quiet) {
-    if (!S.authed && !S.user) return true;
+    if (!S.authed && !S.user && !workLock()) return true;
     if (sendingNow()) { if (force) privacyLock('handover'); toast('Not sent yet. Sign in as the same person to finish sending.'); return false; }
     if (!force && window.LK_PREP.unsaved()) return false;
     forgetMine(S.who);
@@ -1242,6 +1279,7 @@
      proof) and helpers as the prep pages, so the rules and the "Not sent" handling are the same. */
   function bookApi() {
     return {
+      identity: stableIdentity, workLock: workLock, writeContext: writeContext,
       ready: function () { return sdk().then(function () { return fb; }); },
       W: W, docRef: docRef, colRef: colRef,
       fs: function () { return fb.fs; }, db: function () { return fb.db; },
@@ -1269,7 +1307,7 @@
      hand-over, so it no longer wipes an order typed here (28 Oct 2026): a person who loses the right to read is still
      reset by supplierRead(), and js/suppliers.js closes the catalogue forms of one who loses the right to edit. */
   function supplierContext() {
-    return [S.pin, S.uid, S.who, S.authed ? 1 : 0, S.sessFor, S.sessExp, S.level, shared() ? 1 : 0].join('|');
+    return [S.pin, S.uid, S.who, S.authed ? 1 : 0, S.sessFor, S.sessExp, S.sessPinAt, millis(S.sessIssuedAt), S.level, shared() ? 1 : 0].join('|');
   }
   // 'yes', 'no', 'wait', 'offline' (see fnState()) or 'nopin'
   function supplierState() {
@@ -1606,8 +1644,13 @@
       d.uncertain = false;d.busy = false;ptRestore(d, d.latest);d.stale = true;d.error = 'This prep line changed. Close and review the list.';draw();ptDraw();
     }
   }
+  function ptRetained(d) { return !!(d && d.lockRetained && d.lockRetained === stableIdentity() && d.uid === S.uid && d.pin === S.pin && d.recorder === S.who && S.authed && canW() && kitchenAccess() && !workLock()); }
   function ptComplete(d) {
-    if (pt !== d || d.finished || !ptContext(d)) return;
+    if (d.finished) return;
+    if (pt !== d || !ptContext(d)) {
+      if (ptRetained(d)) { d.finished = true; d.busy = false; d.uncertain = false; markPast('p', d.date); bump({ ticked: 1 }); }
+      return;
+    }
     d.finished = true;d.busy = false;d.uncertain = false;ptRestore(d, d.value);markPast('p', d.date);bump({ ticked: 1 });
     ptClose();batch(function () { toast('Ticked', { label: 'Undo', fn: function () { tick(d.date, d.id); } });draw(); });setTimeout(draw, LINGER + 100);
   }
@@ -1636,7 +1679,7 @@
     var at = now(), value = { done: true, doneBy: actor.name, doneById: actor.id, doneAt: at, preparedBy: worker.name, preparedById: worker.id, preparedAt: at };
     d.selected = worker.id;d.error = '';d.busy = true;d.latest = null;d.latestServer = false;d.value = value;ptDraw();whoSync();
     supd(itemRef(d.date, d.id), value).then(function () {
-      if (pt !== d || !ptContext(d)) return;
+      if ((pt !== d || !ptContext(d)) && !ptRetained(d)) return;
       ptComplete(d);
     }, function (error) {
       if (pt !== d || !ptContext(d)) return;
@@ -2510,7 +2553,7 @@
   function signIn() {
     if (sendingNow() && !canRecoverGoogle()) { toast('Not sent yet. Sign in once it is sent.'); return; }
     if (!deviceReady()) { if (window.LK_DEVICE) window.LK_DEVICE.request(); return; }
-    if (S.privacyLocked && shared()) { S.privacyLocked = false; S.sessFor = ''; S.sessUid = ''; S.sessExp = 0; S.sessIssuedAt = null; lsSet('lk.prep.sess', ''); }
+    if (S.privacyLocked && shared()) { S.unlocking = true; S.privacyLocked = false; S.sessFor = ''; S.sessUid = ''; S.sessExp = 0; S.sessIssuedAt = null; lsSet('lk.prep.sess', ''); }
     sdk().then(function () {
       var provider = new fb.au.GoogleAuthProvider();
       return ownerPersistence().then(function () { return fb.au.signInWithPopup(fb.ownerAuth, provider); });
@@ -2611,7 +2654,7 @@
     ownerPersistence().then(function () { return fb.au.signInWithPopup(fb.ownerAuth, new fb.au.GoogleAuthProvider()); }).then(function () {
       if (epoch !== accessEpoch || (S.config || {}).headId !== id) throw { code: 'cancelled' };
       var pinOpen = {}; pinOpen[id] = now() + 29 * 60000;
-      var b = fb.ownerFs.writeBatch(fb.ownerDb); b.delete(ownerRef('staffpins', id)); b.delete(ownerRef('pinset', id)); b.set(ownerRef('config', 'main'), { pinOpen: pinOpen }, { merge: true }); return b.commit();
+      var b = fb.ownerFs.writeBatch(fb.ownerDb); b.delete(ownerRef('staffpins', id)); b.delete(ownerRef('pinset', id)); b.set(ownerRef('config', 'main'), { pinOpen: pinOpen }, { merge: true }); return track(b.commit());
     }).then(function () { sessDrop(); S.adminsFor = ''; S.saveMsg = 'Choose a new head chef PIN.'; pickName(id); }, function (e) { if (!(e && e.code === 'cancelled')) S.saveMsg = 'Could not reset the head chef PIN. Confirm the head chef Google account and try again.'; draw(); });
   }
   /* One getDoc once the settings are in, for each Google account. Only a refusal means "not the head chef's account"
@@ -3586,13 +3629,17 @@
       (S.pinError ? '<p class="p-err" role="alert">' + esc(S.pinError) + '</p>' : '') +
       '<div class="btn-row"><button type="button" class="btn dark" data-p="pin-go">' + openLabel() + '</button></div></section>';
   }
+  function workNoticeHTML(change) {
+    if (!workLock() || !S.workNotice) return '';
+    return '<p class="p-err" role="alert">' + esc(S.workNotice) + '</p>' + (change ? '<button type="button" class="btn" data-p="who-change">' + (armed('who-change') ? 'Discard work and change person' : 'Change person') + '</button>' : '');
+  }
   function whoHTML() {
     var list = people(), here = hereGet(), first = [], rest = [];
     // the people who signed in on this device today come first, newest first: one tap and 4 digits on a shared tablet
     here.forEach(function (id) { var p = list.filter(function (x) { return x.id === id; })[0]; if (p) first.push(p); });
     list.forEach(function (p) { if (first.indexOf(p) < 0) rest.push(p); });
     function names(l) { return '<div class="p-names">' + l.map(function (p) { return '<button type="button" class="chip p-name" data-p="who" data-id="' + esc(p.id) + '">' + esc(p.name) + '</button>'; }).join('') + '</div>'; }
-    return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Who are you?</h2><p class="hint">' + (S.pending && S.pending.back ? 'Pick your name and type your PIN. Then the book goes back to where you were.' : S.pending ? 'Pick your name and type your PIN. Then it is done for you.' : 'Pick your name. The first time, you choose your own 4-digit PIN to go with it.') + '</p>' +
+    return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Who are you?</h2>' + workNoticeHTML(true) + '<p class="hint">' + (S.pending && S.pending.back ? 'Pick your name and type your PIN. Then the book goes back to where you were.' : S.pending ? 'Pick your name and type your PIN. Then it is done for you.' : 'Pick your name. The first time, you choose your own 4-digit PIN to go with it.') + '</p>' +
       (!list.length ? '<p class="p-err">No names are set up yet. The head chef adds them in the admin panel.</p>' :
         first.length ? '<p class="nb-ql p-here">Here today</p>' + names(first) + (rest.length ? '<p class="nb-ql p-here">Everyone</p>' + names(rest) : '') : names(list)) +
       (S.picking && shared() ? '<div class="btn-row"><button type="button" class="btn" data-p="who-back">Back to the list</button></div>' : '') + '</section>';
@@ -3600,17 +3647,17 @@
   function ownPinHTML() {
     var p = who(), step = S.pinStep;
     if (!p) return whoHTML();
-    if (step === 'error') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">' + esc(p.name) + '</h2>' + (S.pinOff ? '<p class="p-err" role="status">No signal. You can sign in once the phone is back online.</p>' : '<p class="p-err">Could not check your PIN. Check the connection.</p>') + '<div class="btn-row"><button type="button" class="btn dark" data-p="who" data-id="' + esc(p.id) + '">Try again</button><button type="button" class="btn" data-p="who-change">Not me</button></div></section>';
+    if (step === 'error') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">' + esc(p.name) + '</h2>' + (S.pinOff ? '<p class="p-err" role="status">No signal. You can sign in once the phone is back online.</p>' : '<p class="p-err">Could not check your PIN. Check the connection.</p>') + '<div class="btn-row"><button type="button" class="btn dark" data-p="who" data-id="' + esc(p.id) + '">Try again</button><button type="button" class="btn" data-p="who-change">' + (armed('who-change') ? 'Discard work and change person' : 'Not me') + '</button></div></section>';
     var setting = step === 'set', checking = step !== 'set' && step !== 'enter';
     // while the book checks whether this person has a PIN yet, the box is already there: it takes the keyboard inside
     // the tap on the name (an iPhone opens the keyboard only inside a tap), and a PIN typed early is sent once it knows
-    return '<form class="p-card" data-p-form="pin"><h2 class="p-h" id="rtitle" tabindex="-1">' + (setting ? 'Hi ' + esc(p.name) + ', choose your PIN' : esc(p.name) + ', enter your PIN') + '</h2>' +
+    return '<form class="p-card" data-p-form="pin"><h2 class="p-h" id="rtitle" tabindex="-1">' + (setting ? 'Hi ' + esc(p.name) + ', choose your PIN' : esc(p.name) + ', enter your PIN') + '</h2>' + workNoticeHTML(false) +
       '<p class="hint">' + (setting ? 'Pick 4 digits you will remember. ' + (shared() ? 'This device locks after 10 minutes away and at 04:00.' : 'Enter it again after 04:00 each day.') : checking ? 'One moment...' : 'Your own 4-digit PIN. It unlocks this device until 04:00.') + '</p>' +
       (S.privacyLocked && blockedRecorder() ? '<p class="p-err" role="status">Your work is kept in this tab. Enter the same person\'s PIN to finish. Keep the book open.</p>' : '') +
       '<div class="field"><label class="label" for="pf1">' + (setting ? 'New PIN' : 'PIN') + '</label>' + pinField('pf1', 'pf1', S.pf1, true) + '</div>' +
       (setting ? '<div class="field"><label class="label" for="pf2">Type it again</label>' + pinField('pf2', 'pf2', S.pf2, true) + '</div>' : '') +
       (S.pinMsg ? '<p class="p-err" role="alert">' + esc(S.pinMsg) + '</p>' : '') +
-      '<div class="btn-row"><button type="submit" class="btn dark">' + (setting ? 'Save my PIN' : openLabel()) + '</button><button type="button" class="btn" data-p="who-change">Not me</button></div></form>';
+      '<div class="btn-row"><button type="submit" class="btn dark">' + (setting ? 'Save my PIN' : openLabel()) + '</button><button type="button" class="btn" data-p="who-change">' + (armed('who-change') ? 'Discard work and change person' : 'Not me') + '</button></div></form>';
   }
 
   var BOX = '<svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><rect x="2.5" y="2.5" width="21" height="21" rx="3" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
@@ -4365,7 +4412,7 @@
       return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2><p class="hint">Loading...</p></section>';
     }
     if (!S.user) {
-      return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2>' + (whoHead() ? '<p class="hint a-headpin">Chef, your PIN opens the prep book. The admin panel also needs your Google account, so a PIN seen over your shoulder cannot change the book. Sign in once on this phone and it stays signed in. On a shared kitchen device, sign out when you are done.</p>' :
+      return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2>' + workNoticeHTML(true) + (whoHead() ? '<p class="hint a-headpin">Chef, your PIN opens the prep book. The admin panel also needs your Google account, so a PIN seen over your shoulder cannot change the book. Sign in once on this phone and it stays signed in. On a shared kitchen device, sign out when you are done.</p>' :
         '<p class="hint">The admin panel is for the head chef. Sign in with the head chef\'s Google account. Staff and sous chefs use their own PIN in the prep book instead.</p>') +
         (S.saveMsg ? '<p class="p-err">' + esc(S.saveMsg) + '</p>' : '') +
         '<div class="btn-row"><button type="button" class="btn dark" data-p="signin">' + (armed('signin:sent') ? 'Not sent yet.' : 'Sign in with Google') + '</button><a class="btn" href="#/prep">Back to the prep book</a></div></section>';
@@ -8881,11 +8928,11 @@
       // On the head chef's own Google device a change waiting to send holds it, and no second tap gets past it (29 Oct
       // 2026, sendFirst())
       if (sendFirst()) { e.preventDefault(); if (!armed('who-change:sent')) arm('who-change:sent'); toast(SEND_FIRST); return; }
-      if ((S.authed || S.user || S.privacyLocked) && window.LK_PREP.unsaved() && !arm('who-change')) { e.preventDefault(); return; }
+      if ((S.authed || S.user || workLock()) && window.LK_PREP.unsaved() && !arm('who-change')) { e.preventDefault(); return; }
       // the PIN screens' Not me: nobody is signed in yet (picking a name signs Google out first), so it goes in one tap.
       // The head chef's Google account handing over (the lone Not you?, the admin card's Sign in) takes what it left on
       // the device, like Sign out (29 Oct 2026: function, recipe and drawing drafts stayed for the next person)
-      if (!S.authed) { if (S.user) forgetMine(''); S.picking = true; S.pending = null; leave(); dropGoogle().then(accessChanged).catch(function () { toast('Sign-out could not finish. Close this tab before handing over the device.'); }); return; }
+      if (!S.authed) { if (S.user || workLock()) forgetMine(S.lockRecorder || S.who); S.picking = true; S.pending = null; leave(); dropGoogle().then(accessChanged).catch(function () { toast('Sign-out could not finish. Close this tab before handing over the device.'); }); return; }
       signOutPerson(true, true); return;
     }
     if (a === 'guest-who') { guestAsk(null); return; }
@@ -9723,7 +9770,7 @@
      the recipe picker open on the prep pages, or a page loaded on its own with changes (Delivery received, Manage
      Recipes, Manage functions, Supplier order). */
   function unsavedHere() {
-    return !!(window.LK_DELIVERY && window.LK_DELIVERY.dirty()) || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!(window.LK_SUP && window.LK_SUP.dirty()) || typedHere() || !!S.sheet || !!S.recipeOpen || !!ptPop;
+    return !!(workLock() && S.lockHasDraft) || !!(window.LK_DELIVERY && window.LK_DELIVERY.dirty()) || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!(window.LK_SUP && window.LK_SUP.dirty()) || typedHere() || !!S.sheet || !!S.recipeOpen || !!ptPop;
   }
   /* Words typed on the pages this file draws and not saved yet: half a prep, order, wastage or transfer line (the venue
      and person stay after Log it on purpose, so they do not count), kitchen mail, a to-do job, a review, the drinks run,
@@ -9738,7 +9785,7 @@
       !!(S.text.trim() || S.qty.trim() || S.otext.trim() || S.oqty.trim() || S.wf.text.trim() || String(S.wf.amt).trim() || S.wf.act.trim() || S.xf.text.trim() || String(S.xf.amt).trim() || S.xf.note.trim());
   }
   function dirtyForUpdate() {
-    return !!(window.LK_DELIVERY && window.LK_DELIVERY.dirty()) || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!(window.LK_SUP && window.LK_SUP.dirty()) || typedHere();
+    return !!(workLock() && S.lockHasDraft) || !!(window.LK_DELIVERY && window.LK_DELIVERY.dirty()) || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!(window.LK_SUP && window.LK_SUP.dirty()) || typedHere();
   }
   function canChangeDevice() {
     return deviceReady() && canW() && !!me() && (shared() ? whoHead() : deviceOwner() === S.who);
@@ -9768,6 +9815,8 @@
       return function (noBack) { if (ovOn === 'adaptive') ovDone('adaptive', noBack); ovOn = previous.on; ovClose = previous.close; };
     },
     sg: sg,
+    workLock: workLock,
+    identity: stableIdentity,
     dirtyForUpdate: dirtyForUpdate,
     blockedRecorder: blockedRecorder,
     canChangeDevice: canChangeDevice,
@@ -9808,6 +9857,7 @@
     // Not with no signal before the settings are in: the person on this phone is known, and this would forget them
     signIn: function (back) {
       if (whoName() || offWait()) return;
+      if (blockedRecorder()) { S.pending = back && back !== '#/prep' && back.indexOf('#/') === 0 ? { back: back } : null; pickName(blockedRecorder()); if (location.hash !== '#/prep') location.hash = '#/prep'; return; }
       S.picking = true; S.who = ''; S.pending = back && back !== '#/prep' && back.indexOf('#/') === 0 ? { back: back } : null;
       if (location.hash === '#/prep') draw(); else location.hash = '#/prep';
       window.scrollTo(0, 0);

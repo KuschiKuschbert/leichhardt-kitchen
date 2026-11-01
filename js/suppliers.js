@@ -3,8 +3,8 @@
    read at most 20 records on a tap. No polling, per-item reads, public goods file or second persistent cache. */
 (function () {
   'use strict';
-  var API = 8, A = window.LK_APP, P = window.LK_PREP, T = window.LK_TIME, esc = A.esc;
-  var C, store, loadingCode = null, contextKey = '', generation = 0;
+  var API = 9, A = window.LK_APP, P = window.LK_PREP, T = window.LK_TIME, esc = A.esc;
+  var C, store, loadingCode = null, contextKey = '', identityKey = '', lockedIdentity = '', generation = 0;
   var M = blank();
   function blank() {
     var collapsed = false; try { collapsed = localStorage.getItem('lk.sup.sidebar') === 'hide'; } catch (e) {}
@@ -19,6 +19,7 @@
   function canRead() { try { return !!B().read(); } catch (e) { return false; } }
   function canEdit() { try { return !!B().edit(); } catch (e) { return false; } }
   function ctx() { try { return String(B().context()); } catch (e) { return ''; } }
+  function identity() { try { return String(P.book().identity()); } catch (e) { return ''; } }
   function epoch() { return B().now(); }
   function day(ms) { return B().day(ms); }
   function clone(x) { return JSON.parse(JSON.stringify(x)); }
@@ -439,7 +440,7 @@
       if (g !== generation) return;
       var h = hist(r.sid); h.rows = [result.order].concat((h.rows || []).filter(function (o) { return o.id !== result.order.id; }));
       delete M.drafts[r.sid]; M.review = null; M.saving = false; M.additional = ''; M.historyId = result.order.id; M.msg = result.replayed ? 'This order was already recorded. No duplicate was made.' : 'Order recorded. Nothing was sent to the supplier.'; draw();
-    }, function (e) { if (g === generation) { M.saving = false; if (e.code === 'uncertain') r.uncertain = true; if (e.code === 'recorded') { r.recorded = true; r.uncertain = false; if (e.prior) { var h = hist(r.sid); h.rows = [e.prior].concat((h.rows || []).filter(function (o) { return o.id !== e.prior.id; })); } } M.err = errorText(e); draw(); } });
+    }, function (e) { if (g === generation) { M.saving = false; if (e.code === 'uncertain') r.uncertain = true; if (e.code === 'stale' || e.code === 'concurrent') r.uncertain = false; if (e.code === 'recorded') { r.recorded = true; r.uncertain = false; if (e.prior) { var h = hist(r.sid); h.rows = [e.prior].concat((h.rows || []).filter(function (o) { return o.id !== e.prior.id; })); } } M.err = errorText(e); draw(); } });
   }
   function openEditor(id) {
     if (!canEdit() || !leaveForm('edit:' + id)) return;
@@ -514,9 +515,45 @@
     M.saving = true; M.err = ''; M.msg = ''; M.armedLeave = ''; draw(); var payload = M.importing, map = clone(M.importMap), g = generation;
     store.importCatalogue(payload, map).then(function (saved) { if (g !== generation) return; saved.forEach(rememberSupplier); M.importing = null; M.saving = false; if (!supplier()) M.sid = saved.length ? saved[0].id : ''; M.msg = 'Private catalogue imported. Check each supplier before the first order.'; draw(); if (M.sid) loadHistory(false, false); }, function (e) { if (g === generation) { M.saving = false; M.err = errorText(e); if (e.saved && e.saved.length) { e.saved.forEach(rememberSupplier); M.msg = e.saved.length + ' suppliers were saved before the import stopped. The remaining import is kept. Check the connection, then retry.'; draw(); store.loadSuppliers().then(function (list) { if (g === generation) { M.suppliers = list.sort(function (a, b) { return a.name.localeCompare(b.name); }); draw(); } }, function () { if (g === generation) draw(); }); } else draw(); } });
   }
-  function reset() { var root = M.root; generation++; if (store) store.reset(); store = null; contextKey = ''; M = blank(); M.root = root; }
+  function invalidateContext() {
+    generation++; if (store) store.reset(); store = null;
+    // Only the person's form survives. New reads and transaction attempts must use the new PIN context.
+    M.suppliers = null; M.history = Object.create(null); M.audit = Object.create(null); M.requests = null;
+    M.busy = false; M.requestsBusy = false; M.requestsError = ''; M.requestsDay = ''; M.validation = null;
+    if (M.review) { M.review.checking = false; if (M.saving) M.review.uncertain = true; }
+    if (M.saving) M.msg = 'Your supplier draft is kept. Check the latest records, then retry the save. Nothing will retry automatically.';
+    M.saving = false; M.err = ''; M.armedLeave = '';
+  }
+  function retainLock() {
+    var lock = P.workLock && P.workLock();
+    if (!lock || !identityKey || lock.identity !== identityKey) return false;
+    if (lockedIdentity === lock.identity) return true;
+    lockedIdentity = lock.identity; invalidateContext();
+    return true;
+  }
+  function reset(force) {
+    // App access checks may run between the daily PIN and its refreshed catalogue permissions. A deliberate
+    // handover calls reset(true), so another person never inherits the retained form.
+    if (!force && (retainLock() || lockedIdentity && identity() === lockedIdentity)) return;
+    var root = M.root; generation++; if (store) store.reset(); store = null; contextKey = ''; identityKey = ''; lockedIdentity = ''; M = blank(); M.root = root;
+  }
+  function syncContext() {
+    if (retainLock()) return false;
+    var current = identity();
+    if (lockedIdentity) {
+      if (current !== lockedIdentity) reset(true);
+      else if (!canRead()) return false;
+      else { lockedIdentity = ''; contextKey = ctx(); identityKey = current; }
+    } else if (contextKey && contextKey !== ctx() || !canRead()) {
+      // The head PIN can restore chef access before its Google grant finishes. That later grant is a new
+      // transaction context for the same person, so it refreshes data without discarding the retained form.
+      if (canRead() && current && current === identityKey) invalidateContext(); else reset(true);
+    }
+    if (!canRead()) return false;
+    contextKey = ctx(); identityKey = current; return true;
+  }
   function mount(root, route) {
-    if (contextKey && contextKey !== ctx()) reset(); contextKey = ctx(); M.root = root;
+    syncContext(); M.root = root;
     var routeKey = [route && route.sid || '', route && route.mode || 'order', route && route.cutoffId || '', route && route.cutoffDay || ''].join('|');
     if (routeKey !== M.routeKey) { M.route = Object.assign({}, route || {}); M.routeKey = routeKey; M.mode = route && route.mode === 'manage' ? 'manage' : 'order'; if (route && route.sid) M.sid = route.sid; }
     if (editorHere() && M.ed.routeKey === routeKey || supplierEditorHere() && M.supplierEd.routeKey === routeKey) M.mode = 'manage';
@@ -591,13 +628,12 @@
     if (f === 'import-cutoff') { disarmLeave(); M.importMap[el.getAttribute('data-sid')] = el.value; }
     if (f === 'supplierCutoff' && M.supplierEd) { disarmLeave(); M.supplierEd.value.cutoffId = el.value; saveSync(); }
   });
-  /* A hand-over or a person who may not read any more resets everything. The staff list saved on another device is
-     neither (28 Oct 2026, supplierContext() in js/prep.js), so the order drafts typed here stay; a person who may not
-     change the catalogue any more loses its open forms (not while a save is on its way). */
+  /* Daily and idle privacy locks retain only this person's forms. A handover or unrelated access change clears
+     them. The old transaction context is always invalidated; signing in never replays a supplier transaction. */
   ['lk-who', 'lk-admin', 'lk-cfg'].forEach(function (event) { window.addEventListener(event, function () {
-    if (contextKey && contextKey !== ctx() || !canRead()) { reset(); draw(); return; }
+    if (!syncContext()) { draw(); return; }
     if (!canEdit() && !M.saving && (M.ed || M.supplierEd || M.importing)) { M.ed = null; M.supplierEd = null; M.importing = null; M.archive = ''; M.armedLeave = ''; }
-    if (M.root) draw();
+    if (M.root) { draw(); load(false); }
   }); });
   window.addEventListener('online', function () { if (M.root) draw(); }); window.addEventListener('offline', function () { if (M.root) draw(); });
   // Drafts live in this tab's memory only (docs/supplier-workspace.md): a reload or closing the tab asks first, like

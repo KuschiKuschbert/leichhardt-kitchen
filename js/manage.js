@@ -16,7 +16,7 @@
 (function () {
   'use strict';
 
-  var API = 4;
+  var API = 5;
   var D = window.LK_DATA, X = window.LK_RX, A = window.LK_APP, P = window.LK_PREP;
   var esc = A.esc, KIND = A.KIND, ALLERGENS = D.allergens;
   var LS = (function () { try { localStorage.getItem('x'); return localStorage; } catch (e) { return null; } })();
@@ -25,7 +25,10 @@
   function clone(x) { return JSON.parse(JSON.stringify(x)); }
   function B() { return P.book(); }
 
-  var M = { root: null, sub: [], q: '', chip: 'all', more: false, ed: null, armed: '', armTimer: null };
+  var M = { root: null, sub: [], q: '', chip: 'all', more: false, ed: null, armed: '', armTimer: null, identity: '', suspended: false };
+  function identity() { var api = B(); return api.identity ? api.identity() : [api.pin(), api.who()].join('|'); }
+  function owns(e, owner) { return M.ed === e && M.identity === owner && identity() === owner; }
+  function workLock() { var api = B(); return api.workLock ? api.workLock() : null; }
 
   /* ---------- small helpers ---------- */
   var DISH = { main: 1, snack: 1, side: 1, dessert: 1 };
@@ -43,6 +46,7 @@
   function unarm() { M.armed = ''; clearTimeout(M.armTimer); }
   var toastEl = null, toastTimer = null;
   function toast(msg) {
+    if (M.suspended || workLock()) return;
     B().say(msg);
     if (!toastEl) { toastEl = document.createElement('div'); toastEl.className = 'p-toasts mg-toasts'; document.body.appendChild(toastEl); }
     toastEl.innerHTML = '<div class="p-toast p-toast-plain" role="presentation">' + esc(msg) + '</div>';
@@ -235,7 +239,7 @@
     // a draft kept on this device from before: offered back
     try {
       var kept = JSON.parse(lsGet(draftKey(e.key)) || 'null');
-      if (kept && kept.e && JSON.stringify([kept.e.d, kept.e.menu, kept.e.meta.removed, kept.e.meta.off]) !== e.snap) e.kept = kept;
+      if (kept && kept.e && (!kept.identity || kept.identity === M.identity) && JSON.stringify([kept.e.d, kept.e.menu, kept.e.meta.removed, kept.e.meta.off]) !== e.snap) e.kept = kept;
     } catch (x) {}
     M.ed = e;
   }
@@ -243,9 +247,10 @@
   // true when the changes are now kept on this device (never while the kept box shows: that draft is not touched)
   function keepNow() {
     clearTimeout(keepTimer);
+    if (M.suspended) return false;
     var e = M.ed; if (!e || !e.d || e.kept) return false;
     if (snapOf(e) === e.snap) { lsSet(draftKey(e.key), ''); return false; }
-    lsSet(draftKey(e.key), JSON.stringify({ at: B().now(), e: { id: e.id, d: e.d, menu: e.menu, meta: e.meta, handTags: e.handTags, idTyped: e.idTyped } }));
+    lsSet(draftKey(e.key), JSON.stringify({ identity: M.identity, at: B().now(), e: { id: e.id, d: e.d, menu: e.menu, meta: e.meta, handTags: e.handTags, idTyped: e.idTyped } }));
     dirtyNote();
     return true;
   }
@@ -652,7 +657,9 @@
     keepNow();   // kept on this device until the save is confirmed
     if (!e.meta.off && !e.meta.removed && !check(e)) { draw(); focusId(e.errs[0].at); return; }
     if (!P.bookEdit()) { e.msg = 'Not saved: only the head chef can change recipes. Sign in with your PIN as Head chef.'; draw(); return; }
-    var api = B(), id = e.id, clean = cleanRecipe(e), menu = menuAfter(e);
+    var api = B(), owner = M.identity, context = api.writeContext ? api.writeContext() : null;
+    var id = e.id, clean = cleanRecipe(e), menu = menuAfter(e), submitted = snapOf(e), recorder = api.who();
+    var savedMeta = { src: e.meta.src, removed: !!e.meta.removed, off: !!e.meta.off };
     e.saving = 'Saving...'; draw();
     var slow = setTimeout(function () { if (M.ed === e && e.saving) { e.saving = 'Waiting for the signal. Your changes are kept on this device and go when the signal is back.'; dirtyNote(); } }, 4000);
     var fs, prev;
@@ -660,6 +667,7 @@
       fs = api.fs();
       return (api.fromServer ? api.fromServer(api.docRef('recipes', id)) : fs.getDocFromServer(api.docRef('recipes', id))).then(function (sn) { return sn.exists() ? sn.data() : null; }, function () { return 'offline'; });
     }).then(function (server) {
+      if (!owns(e, owner)) return null;
       var sv = server === 'offline' ? e.meta.v : (server ? server.v : 0);
       if (server !== 'offline' && sv !== e.meta.v && !force) {
         clearTimeout(slow); e.saving = '';
@@ -667,8 +675,8 @@
         draw(); return null;
       }
       prev = server === 'offline' ? X.change(id) : server;
-      var v = sv + 1, rec = { r: clean, v: v, upd: api.now(), src: e.meta.src, base: e.meta.src === 'book' ? X.fingerprint(id) : '', removed: !!e.meta.removed };
-      if (e.meta.off) rec.off = true;
+      var v = sv + 1, rec = { r: clean, v: v, upd: api.now(), src: savedMeta.src, base: savedMeta.src === 'book' ? X.fingerprint(id) : '', removed: savedMeta.removed };
+      if (savedMeta.off) rec.off = true;
       var idx = { r: {}, upd: api.now() };
       idx.r[id] = v;
       if (menu) idx.menu = menu;
@@ -678,23 +686,32 @@
         ops.push(['set', fs.doc(api.db(), 'kitchens', api.pin(), 'recipes', id, 'hist', String(prev.v)), { was: was, at: api.now() }]);
       }
       // the change shows on this device at once; the save goes when the signal allows
-      return api.W(ops).then(function () { return { v: v, rec: rec, idx: idx }; });
+      return api.W(ops, context).then(function () { return { v: v, rec: rec, idx: idx }; });
     }).then(function (done) {
       clearTimeout(slow);
-      if (!done) return;
+      if (!done || !owns(e, owner)) return;
+      var newer = snapOf(e) !== submitted;
       X.put(api.pin(), id, done.rec, done.idx);
       api.changed();
-      e.saving = ''; e.meta.v = done.v; e.meta.by = api.who(); e.meta.upd = done.rec.upd; e.conflict = null; e.hist = null;
+      e.saving = ''; e.meta.v = done.v; e.meta.by = recorder; e.meta.upd = done.rec.upd; e.conflict = null; e.hist = null;
       lsSet(draftKey(e.key), '');
       var wasNew = e.isNew;
-      if (wasNew) { e.isNew = false; e.key = id; e.meta.src = 'new'; }
-      e.menu = menuOf(id); e.snap = snapOf(e); e.d.pins = clean.pins; e.ing0 = ingMap(e.d); e.snap = snapOf(e);
-      toast(e.meta.removed ? 'Hidden from the book. Version ' + done.v + '.' : e.meta.off ? 'Back to the book file\'s copy. Version ' + done.v + '.' : 'Saved. Version ' + done.v + '.');
-      if (wasNew && M.ed === e) { history.replaceState(history.state, '', '#/manage/r/' + encodeURIComponent(id)); if (A.noteRoute) A.noteRoute(true); M.sub = ['r', id]; }
+      if (wasNew) { e.isNew = false; e.key = e.id = e.d.id = id; e.meta.src = 'new'; }
+      if (!newer) { e.menu = menuOf(id); e.d.pins = clean.pins; e.ing0 = ingMap(e.d); e.snap = snapOf(e); }
+      else { e.snap = submitted; keepNow(); }
+      toast(savedMeta.removed ? 'Hidden from the book. Version ' + done.v + '.' : savedMeta.off ? 'Back to the book file\'s copy. Version ' + done.v + '.' : 'Saved. Version ' + done.v + '.');
+      if (wasNew) {
+        if (M.root && !M.suspended && !workLock()) { history.replaceState(history.state, '', '#/manage/r/' + encodeURIComponent(id)); if (A.noteRoute) A.noteRoute(true); M.sub = ['r', id]; }
+        else e.savedRoute = ['r', id];
+      }
       if (M.ed === e) draw();
-      if (!e.meta.removed && !e.meta.off) autoDraw(id, e);
+      if (!savedMeta.removed && !savedMeta.off) {
+        if (M.suspended || workLock()) e.drawAfterSave = id;
+        else autoDraw(id, e);
+      }
     }).catch(function (err) {
       clearTimeout(slow);
+      if (!owns(e, owner)) return;
       e.saving = '';
       var code = err && err.code;
       e.msg = code === 'permission-denied' ? 'Not saved: the book refused it. Only the head chef can change recipes, and the recipe may have changed on another device. Try again.' : 'Not saved. Check the signal and try again. Your changes are kept on this device.';
@@ -799,11 +816,12 @@
      first time a drawing opens. */
   var drawLoad = null;
   function loadDraw() {
+    if (window.LK_DRAW && window.LK_DRAW.api !== 5) return Promise.reject(new Error('Reload the book to update the drawing editor.'));
     if (window.LK_DRAW && window.LK_LIB && window.LK_LIB.items.length) return Promise.resolve();
     if (!drawLoad) {
       drawLoad = A.load('js/library.js').then(function () {
         // a category file that fails to load leaves its drawings out; the editor still opens
-        return Promise.all(window.LK_LIB.files.map(function (f) { return A.load(f).catch(function () {}); }).concat([A.load('js/draw.js?v=5')]));
+        return Promise.all(window.LK_LIB.files.map(function (f) { return A.load(f).catch(function () {}); }).concat([A.load('js/draw.js?v=6')]));
       }).then(function () {
         // without the smart creator the editor still works by hand; the recipe reader (js/compose.js) needs it first
         return A.load('js/smart.js').then(function () { return A.load('js/compose.js'); }).catch(function () {});
@@ -815,7 +833,7 @@
     var key = sub.join('/');
     M.root = root; M.ed = null; drawn = 'draw:' + key;
     if (window.LK_DRAW) {
-      if (window.LK_DRAW.api === 4) window.LK_DRAW.mount(root, sub);
+      if (window.LK_DRAW.api === 5) window.LK_DRAW.mount(root, sub);
       else root.innerHTML = '<div class="mg-wrap"><h2 id="rtitle" tabindex="-1">Reload the book</h2><p>The drawing editor on this device needs the current book. Your saved drawings stay.</p><div class="btn-row"><button type="button" class="btn dark" data-act="reload">Reload</button></div></div>';
       return;
     }
@@ -828,6 +846,18 @@
   }
   function mount(root, route) {
     var sub = route.sub || [], key = sub.join('/');
+    var owner = identity();
+    if (M.identity && M.identity !== owner) drop();
+    if (workLock() || !P.bookEdit()) return;
+    M.identity = owner; M.suspended = false;
+    if (M.ed && M.ed.drawAfterSave) {
+      var saved = M.ed, recipe = saved.drawAfterSave; saved.drawAfterSave = '';
+      Promise.resolve().then(function () { if (owns(saved, owner) && !workLock() && P.bookEdit()) autoDraw(recipe, saved); else if (owns(saved, owner)) saved.drawAfterSave = recipe; });
+    }
+    if (M.ed && M.ed.savedRoute && M.ed.sub === key) {
+      sub = M.ed.savedRoute; key = sub.join('/'); M.ed.savedRoute = null; M.ed.sub = drawn = key;
+      history.replaceState(history.state, '', '#/manage/' + sub.map(encodeURIComponent).join('/')); if (A.noteRoute) A.noteRoute(true);
+    }
     M.sub = sub.slice();
     // Keep the last keystroke before a quick Back or another editor clears the current form.
     if (M.ed && M.ed.sub !== key && dirty()) keepNow();
@@ -849,13 +879,20 @@
   }
   /* A hand-over (Sign out, Not you?, the idle lock: leave() in js/prep.js, 29 Oct 2026): the open form and drawing go
      with the person. Before, the page closing after the sign-out kept them as a draft again, for the next person. */
-  function drop() { clearTimeout(keepTimer); if (window.LK_DRAW && window.LK_DRAW.drop) window.LK_DRAW.drop(); M.ed = null; drawn = ''; unarm(); }
+  function drop() { clearTimeout(keepTimer); if (window.LK_DRAW && window.LK_DRAW.drop) window.LK_DRAW.drop(); M.ed = null; M.identity = ''; M.suspended = false; drawn = ''; unarm(); }
   function unmount() {
     var hadRoot = !!M.root;
     if (window.LK_DRAW && window.LK_DRAW.open()) window.LK_DRAW.unmount();
+    var lock = workLock();
+    if (M.suspended && !M.root && identity() === M.identity || lock && lock.identity === M.identity) {
+      clearTimeout(keepTimer); M.suspended = true; M.root = null;
+      if (toastEl) toastEl.innerHTML = '';
+      if (hadRoot) window.dispatchEvent(new Event('lk-nav'));
+      return;
+    }
     // only when they were kept: while the kept box shows, the form holds the saved copy and nothing is kept
     if (M.ed && dirty() && M.root && keepNow()) toast('Your changes are kept as a draft on this device.');
-    M.root = null; M.sub = []; drawn = ''; M.ed = null;
+    M.root = null; M.sub = []; drawn = ''; M.ed = null; M.identity = ''; M.suspended = false;
     if (hadRoot) window.dispatchEvent(new Event('lk-nav'));
   }
 

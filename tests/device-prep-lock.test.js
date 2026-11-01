@@ -1,0 +1,34 @@
+// Daily PIN recovery preserves both the reported worker and the authenticated recorder's single activity count.
+const L = require('./lib');
+const { R, ok } = L.results();
+const key = (...p) => ['kitchens', L.PIN, ...p].join('/');
+const day = L.ymd(new Date(L.NOW)), cutoff = Date.parse(day + 'T04:00:00+10:00');
+(async () => {
+  const b = await L.start();
+  const p = await L.open(b, '#/prep', { who: 'ann', deviceMode: 'shared', clock: cutoff - 60000, wait: 1000 });
+  await L.waitFor(p, () => LK_PREP.privateAccess() && !LK_PREP.unsent());
+  const count = () => p.evaluate(k => (__fake.dump()[k] || {}).ticked || 0, key('activity', 'ann'));
+  const before = await count();
+  await p.click('#nbr-i1 .nb-box');
+  await L.waitFor(p, () => !!document.querySelector('#pt-sheet'));
+  let bo = p.locator('#pt-sheet [data-pt="choose"][data-id="bo"]');
+  if (!await bo.isVisible()) await p.click('#pt-sheet [data-pt="others"]');
+  await p.evaluate(() => { __fake.mode = 'hold'; });
+  await bo.click();
+  await L.waitFor(p, () => LK_PREP.unsent());
+  await p.clock.runFor(90000); await L.settle(p, 300);
+  ok(await p.evaluate(() => !LK_PREP.privateAccess() && !document.querySelector('#pt-sheet')), 'daily lock hides the in-flight attribution sheet and private prep');
+  await p.evaluate(() => { __fake.mode = 'ok'; __fake.release(); }); await L.settle(p, 200);
+  ok(await p.evaluate(() => LK_PREP.unsent()) && await count() === before, 'server acknowledgement remains behind the original recorder PIN');
+  const ann = p.locator('.p-name[data-id="ann"]'); if (await ann.count() && await ann.isVisible()) await ann.click();
+  await p.locator('#pf1').fill('2222');
+  await L.waitFor(p, () => LK_PREP.privateAccess() && !LK_PREP.unsent()); await L.settle(p, 500);
+  const saved = await p.evaluate(k => __fake.dump()[k], key('days', day, 'items', 'i1'));
+  ok(saved.done && saved.doneById === 'ann' && saved.by === 'ann' && saved.preparedById === 'bo' && saved.preparedAt === saved.doneAt, 'acknowledged completion keeps Bo as preparer and Ann as recorder after fresh daily PIN');
+  ok(await count() === before + 1, 'acknowledged recovered prep increments the original recorder exactly once');
+  await p.evaluate(() => { __fake.release(); __fake.ack(); }); await L.settle(p, 300);
+  ok(await count() === before + 1, 'late duplicate notification cannot count recovered prep twice');
+  ok(!(await p.locator('#pt-sheet').count()), 'a recovered completion does not reopen the old picker');
+  ok(!p.errors.length, 'recovered prep has no browser errors ' + p.errors.join(' | '));
+  await p.context().close(); await b.close(); L.report(R);
+})().catch(e => { console.error(e); process.exitCode = 1; });

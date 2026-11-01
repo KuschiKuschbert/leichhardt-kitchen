@@ -3,19 +3,37 @@
 (function () {
   'use strict';
   var P = window.LK_PREP, T = window.LK_TIME, esc = window.LK_APP.esc, B = P.book();
-  var generation = 0, stop = null, watchKey = '', context = '', timer = null;
+  var generation = 0, stop = null, watchKey = '', context = '', recorder = '', timer = null;
   var M = blank();
   function form() { var day = T.day(), time = T.clock(); return { day: day, time: time, initial: day + '|' + time, supplier: '', chilled: '', frozen: '', note: '' }; }
-  function blank() { return { root: null, form: form(), day: T.day(), followToday: true, rows: [], state: 'idle', error: '', message: '', busy: false, attempt: null, cache: Object.create(null) }; }
+  function blank() { return { root: null, form: form(), day: T.day(), followToday: true, rows: [], state: 'idle', error: '', message: '', busy: false, attempt: null, suspended: false, cache: Object.create(null) }; }
   function allowed() { return P.privateAccess(); }
   function admin() { return allowed() && P.ownerHere() && P.state.level === 'owner'; }
-  function key() { return allowed() ? B.pin() + '|' + (B.who() || 'owner') + '|' + (admin() ? 'admin' : 'person') : ''; }
-  function dirty() { return allowed() && (!!M.attempt || M.busy || !!(M.form.supplier.trim() || M.form.chilled.trim() || M.form.frozen.trim() || M.form.note.trim() || M.form.day + '|' + M.form.time !== M.form.initial)); }
+  function identity() { return B.identity ? B.identity() : [B.pin(), P.state.uid || '', P.state.who || B.who() || 'owner'].join('|'); }
+  function key() { return allowed() ? identity() + '|' + (admin() ? 'admin' : 'person') : ''; }
+  // A privacy lock keeps the original person's work in memory. Permission changes still stop reads and writes.
+  function dirty() { return !!M.attempt || M.busy || !!(M.form.supplier.trim() || M.form.chilled.trim() || M.form.frozen.trim() || M.form.note.trim() || M.form.day + '|' + M.form.time !== M.form.initial); }
+  function retainedLock() { var lock = B.workLock && B.workLock(); return !!(recorder && lock && lock.identity === recorder); }
   // the book's one two-tap helper (js/prep.js arm()), drawing this page again; an older book acts on the first tap
   function arm(k) { return B.arm ? B.arm(k, draw) : true; }
   function armed(k) { return !!(B.armed && B.armed(k)); }
   function unwatch() { if (stop) stop(); stop = null; watchKey = ''; }
-  function reset() { var root = M.root; generation++; unwatch(); clearTimeout(timer); context = ''; M = blank(); M.root = root; }
+  function reset() { var root = M.root; generation++; unwatch(); clearTimeout(timer); context = recorder = ''; M = blank(); M.root = root; }
+  function clearReads() { generation++; unwatch(); clearTimeout(timer); M.rows = []; M.cache = Object.create(null); M.state = 'idle'; }
+  function access() {
+    if (!allowed()) {
+      if (retainedLock()) { if (!M.suspended) clearReads(); M.suspended = true; context = ''; }
+      else reset();
+      return false;
+    }
+    var id = identity();
+    if (recorder && recorder !== id) reset();
+    recorder = id;
+    var next = key();
+    if (M.suspended || context && context !== next) clearReads();
+    M.suspended = false; context = next;
+    return true;
+  }
   function unmount() { M.root = null; unwatch(); clearTimeout(timer); timer = null; }
   function validDay(day) { return /^\d{4}-\d{2}-\d{2}$/.test(day) && T.day(T.at(day)) === day; }
   function temp(text) {
@@ -106,7 +124,11 @@
     }).catch(function () { if (g === generation) { M.state = 'error'; draw(); } });
   }
   function confirmed(attempt) {
-    if (M.attempt !== attempt || context !== key() || !allowed()) return;
+    if (M.attempt !== attempt || recorder !== identity()) return;
+    // A late acknowledgement may arrive during the PIN lock. Remember it without revealing the receipt or
+    // announcing success, then finish once this same identity has a valid session again.
+    attempt.acknowledged = true;
+    if (!allowed()) return;
     M.attempt = null; M.busy = false; M.form = form(); M.error = ''; M.message = 'Delivery saved.';
     delete M.cache[attempt.data.day];
     if (M.day === attempt.data.day && M.day !== T.day()) { M.rows = [Object.assign({ id: attempt.id, pending: false }, attempt.data)].concat(M.rows.filter(function (r) { return r.id !== attempt.id; })).sort(function (a, b) { return b.receivedAt - a.receivedAt || b.recordedAt - a.recordedAt; }); M.cache[M.day] = M.rows; M.state = 'ok'; }
@@ -116,9 +138,9 @@
   function save() {
     if (!allowed() || M.busy) return;
     M.error = M.attempt ? '' : validation(); M.message = ''; if (M.error) { draw(); return; }
-    var attempt = M.attempt, ctx = key(), token = {}; M.saveToken = token; M.busy = true; draw();
+    var attempt = M.attempt, id = recorder, hold = M, token = {}, writeContext = B.writeContext ? B.writeContext() : null; M.saveToken = token; M.busy = true; draw();
     B.ready().then(function () {
-      if (ctx !== key() || !allowed()) throw { code: 'context' };
+      if (M !== hold || id !== identity() || !allowed()) throw { code: 'context' };
       if (!attempt) {
         var by = B.who() || 'owner';
         attempt = { id: B.fs().doc(B.colRef('deliveries')).id, data: { day: M.form.day, receivedAt: receivedAt(M.form), recordedAt: T.now(), supplier: M.form.supplier.trim(),
@@ -128,16 +150,16 @@
       var ref = B.docRef('deliveries', attempt.id);
       // Retry checks this exact id first (one server read). A lost acknowledgement never becomes a second receipt.
       return B.fromServer(ref).then(function (sn) {
-        if (ctx !== key() || !allowed()) throw { code: 'context' };
+        if (M !== hold || id !== identity() || !allowed()) throw { code: 'context' };
         if (sn.exists()) {
           var data = sn.data(), same = Object.keys(attempt.data).every(function (k) { return data[k] === attempt.data[k]; });
           if (!same) throw { code: 'conflict' };
           return;
         }
-        return B.W([['set', ref, attempt.data]]);
+        return B.W([['set', ref, attempt.data]], writeContext);
       });
     }).then(function () { confirmed(attempt); }, function (e) {
-      if (ctx !== key() || !allowed() || attempt && M.attempt !== attempt) return;
+      if (M !== hold || id !== identity() || attempt && M.attempt !== attempt) return;
       M.busy = false;
       if (e && (e.code === 'permission-denied' || e.code === 'conflict')) M.attempt = null;
       M.error = e && e.code === 'permission-denied' ? 'The save was refused. Your details are kept. Sign in again or ask the head chef to check delivery access.' :
@@ -145,25 +167,25 @@
       draw();
     });
     // Firestore can hold a write while offline. Keep its exact id and payload, and handle a late acknowledgement above.
-    var hold = M;
-    setTimeout(function () { if (M === hold && M.saveToken === token && M.busy && ctx === key()) { M.busy = false; M.error = 'Still waiting for confirmation. Your details are kept. Reconnect and retry to check the same delivery.'; draw(); } }, 10000);
+    setTimeout(function () { if (M === hold && M.saveToken === token && M.busy && id === identity()) { M.busy = false; M.error = 'Still waiting for confirmation. Your details are kept. Reconnect and retry to check the same delivery.'; draw(); } }, 10000);
   }
   function tick() {
     clearTimeout(timer);
     if (!M.root) return;
-    if (!allowed()) { reset(); draw(); return; }
+    if (!allowed()) { access(); draw(); return; }
     var current = T.day();
     if (M.followToday && M.day !== current) { M.day = current; load(); }
     if (!dirty() && (M.form.day !== current || M.form.time !== T.clock())) { M.form = form(); draw(); }
     timer = setTimeout(tick, 30000);
   }
   function mount(root) {
-    if (context && context !== key()) reset(); context = key(); M.root = root;
+    access(); M.root = root;
+    if (M.attempt && M.attempt.acknowledged) confirmed(M.attempt);
     draw(); load(); tick();
   }
   document.addEventListener('focusin', function (e) { var field = e.target.getAttribute && e.target.getAttribute('data-dl-field'); if (M.root && M.root.contains(e.target) && ['time', 'chilled', 'frozen'].indexOf(field) >= 0 && e.target.value) e.target.select(); });
   document.addEventListener('submit', function (e) { if (M.root && M.root.contains(e.target) && e.target.id === 'dl-form') { e.preventDefault(); save(); } });
-  document.addEventListener('input', function (e) { var field = e.target.getAttribute('data-dl-field'); if (M.root && M.root.contains(e.target) && field && !M.busy && !M.attempt) { M.form[field] = e.target.value; M.message = ''; } });
+  document.addEventListener('input', function (e) { var field = e.target.getAttribute('data-dl-field'); if (allowed() && M.root && M.root.contains(e.target) && field && !M.busy && !M.attempt) { M.form[field] = e.target.value; M.message = ''; } });
   document.addEventListener('click', function (e) {
     if (!M.root || !M.root.contains(e.target) || !allowed()) return;
     var el = e.target.closest('[data-dl]'); if (!el) return;
@@ -172,9 +194,9 @@
     if (el.getAttribute('data-dl') === 'clear' && !M.busy && !M.attempt) { if (dirty() && !arm('dl-clear')) return; M.form = form(); M.error = ''; M.message = ''; draw(); }
   });
   document.addEventListener('change', function (e) { if (M.root && M.root.contains(e.target) && e.target.id === 'dl-view-day' && admin()) { var date = e.target.value; if (!validDay(date) || date > T.day()) { draw(); return; } M.followToday = date === T.day(); M.day = date; load(); } });
-  ['lk-access', 'lk-who', 'lk-admin', 'lk-cfg'].forEach(function (name) { window.addEventListener(name, function () { if (!allowed() || context && context !== key()) { reset(); draw(); } else draw(); }); });
+  ['lk-access', 'lk-who', 'lk-admin', 'lk-cfg'].forEach(function (name) { window.addEventListener(name, function () { var open = access(); if (open && M.attempt && M.attempt.acknowledged) confirmed(M.attempt); draw(); if (open && M.root && document.body.contains(M.root)) { load(); tick(); } }); });
   window.addEventListener('lk-clock', tick);
   // Update now's second tap already said the readings may go (LK_UPDATE.letGo() in js/upkeep.js): no second question
   window.addEventListener('beforeunload', function (e) { if (dirty() && !(window.LK_UPDATE && window.LK_UPDATE.letGo && window.LK_UPDATE.letGo())) { e.preventDefault(); e.returnValue = ''; } });
-  window.LK_DELIVERY = { api: 1, mount: mount, unmount: unmount, reset: reset, dirty: dirty };
+  window.LK_DELIVERY = { api: 2, mount: mount, unmount: unmount, reset: reset, dirty: dirty };
 })();

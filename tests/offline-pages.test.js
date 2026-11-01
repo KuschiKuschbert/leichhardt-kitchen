@@ -114,7 +114,14 @@ async function fits(p, what, back) {
       await p.evaluate(() => { window.__fake.cold = null; });   // the read would go through now, and no listener hears it
       await L.settle(p, 500);
       await p.click('#prep-root [data-p="admins-retry"]', { timeout: 2000 }).catch(() => {});
-    } else await p.evaluate(() => window.__fake.warm());   // no online event
+    } else await p.evaluate(() => {
+      // Firestore first reports its existing configuration from cache while disconnected. The later server
+      // metadata is genuine connection recovery, unlike an unchanged server snapshot caused by another write.
+      window.__fake.cold = /\/config\/(main|admins)$/;
+      var key = 'kitchens/' + LK_PREP.state.pin + '/config/main';
+      window.__fake.write(key, window.__fake.dump()[key]);
+      window.__fake.warm();   // no browser online event
+    });
     ok(await until(p, () => window.LK_PREP.state.level === 'owner' && !!document.querySelector('.a-nav')), 'owner check, signal back with no online event, ' + how + ': the admin panel opens at once');
     ok(p.errors.length === 0, 'owner check, ' + how + ': no page errors ' + p.errors.join(' | '));
     await p.context().close();

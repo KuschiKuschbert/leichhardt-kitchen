@@ -17,7 +17,7 @@
 (function () {
   'use strict';
 
-  var API = 8;
+  var API = 9;
   var FN = window.LK_FN, M = FN.M, P = window.LK_PREP, esc = FN.esc, T = window.LK_TIME;
   function B() { return P.book(); }
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -25,7 +25,11 @@
   function clone(x) { return JSON.parse(JSON.stringify(x)); }
   function now() { return T.now(); }
   function today() { return T.day(); }
-  var E = { root: null, sub: [], list: null, listErr: false, q: '', chip: 'up', ed: null, pending: {}, armed: '', armTimer: null, removing: {} };
+  var E = { root: null, sub: [], list: null, listErr: false, q: '', chip: 'up', ed: null, pending: {}, armed: '', armTimer: null, removing: {}, identity: '', suspended: false };
+  function identity() { var api = B(); return api.identity ? api.identity() : [api.pin(), api.who()].join('|'); }
+  function workLock() { var api = B(); return api.workLock ? api.workLock() : null; }
+  function owned(owner) { var lock = workLock(); return E.identity === owner && (identity() === owner || lock && lock.identity === owner); }
+  function active() { return !!(E.root && document.body.contains(E.root) && !workLock() && E.identity === identity() && P.fnOK()); }
   function arm(k) {
     if (E.armed === k) { E.armed = ''; clearTimeout(E.armTimer); return true; }
     E.armed = k; clearTimeout(E.armTimer); E.armTimer = setTimeout(function () { E.armed = ''; draw(); }, 4000);
@@ -34,6 +38,7 @@
   function armed(k) { return E.armed === k; }
   var toastEl = null, toastTimer = null;
   function toast(msg) {
+    if (!active()) return;
     B().say(msg);
     if (!toastEl) { toastEl = document.createElement('div'); toastEl.className = 'p-toasts fe-toasts'; document.body.appendChild(toastEl); }
     toastEl.innerHTML = '<div class="p-toast p-toast-plain" role="presentation">' + esc(msg) + '</div>';
@@ -140,14 +145,15 @@
   /* ---------- the list (#/functions) ---------- */
   function loadList() {
     E.list = E.list || 'loading'; E.listErr = false; draw();
-    var api = B();
+    var api = B(), owner = E.identity;
     api.ready().then(function () {
       var fs = api.fs();
       return fs.getDocs(fs.query(api.colRef('functions'), fs.orderBy('date', 'desc'), fs.limit(400)));
     }).then(function (sn) {
+      if (!owned(owner)) return;
       // A local Firestore snapshot may arrive before its write is acknowledged. Keep that card visible and disabled.
       E.list = sn.docs.map(function (x) { return E.removing[x.id] || M.derive(Object.assign({ id: x.id }, x.data())); }); E.listAt = now(); draw();
-    }, function () { E.listErr = true; if (E.list === 'loading') E.list = null; draw(); });
+    }, function () { if (!owned(owner)) return; E.listErr = true; if (E.list === 'loading') E.list = null; draw(); });
   }
   var CHIPS = [['up', 'Coming up'], ['draft', 'Drafts'], ['past', 'Past'], ['cancelled', 'Cancelled'], ['all', 'All'], ['deleted', 'Deleted']];
   function inChip(f, c) {
@@ -204,32 +210,36 @@
   function setRemoved(view, removed) {
     if (!view || !P.fnOK() || E.removing[view.id] || FN.statusBusy(view.id)) return;
     if (removed ? view.removed || view.status === 'confirmed' : !view.removed) return;
-    var api = B(), id = view.id, me = api.who();
+    var api = B(), id = view.id, me = api.who(), owner = E.identity, context = api.writeContext ? api.writeContext() : null;
     E.removing[id] = view; E.armed = ''; clearTimeout(E.armTimer); draw();
     api.ready().then(function () { return api.fromServer(api.docRef('functions', id)); }).then(function (sn) {
+      if (!owned(owner)) throw { code: 'context' };
       if (!sn.exists()) throw new Error('This function is no longer available. Read the list again.');
       var before = sn.data();
       if (before.v !== view.v || !!before.removed !== !!view.removed || before.status !== view.status) throw new Error('This function changed. Read the latest copy before trying again.');
-      if (!P.fnOK() || api.who() !== me) throw new Error('Your access changed. The function has not been changed.');
+      var lock = workLock();
+      if ((!P.fnOK() || api.who() !== me) && !(context && lock && lock.identity === owner)) throw new Error('Your access changed. The function has not been changed.');
       var f = clone(before), t = now(), what = removed ? 'Deleted from list' : 'Restored to cancelled list';
       f.removed = removed; f.status = 'cancelled'; f.od = ''; f.v = before.v + 1; f.upd = t; f.by = me;
       // Keep canAt unchanged: restoration must never enable cancellation Undo or reactivate service.
       f.chg = [{ at: t, by: me, what: what }].concat((before.chg || []).slice(0, 7));
       M.derive(f);
       var ops = [['set', api.docRef('functions', id), f], ['set', api.fs().doc(api.db(), 'kitchens', api.pin(), 'functions', id, 'hist', String(before.v)), { was: before, at: t, what: what }]];
-      return api.W(ops).then(function () { return Object.assign({ id: id }, f); });
+      return api.W(ops, context).then(function () { return Object.assign({ id: id }, f); });
     }).then(function (f) {
+      if (!owned(owner)) return;
       delete E.removing[id];
       if (Array.isArray(E.list)) E.list = E.list.filter(function (x) { return x.id !== id; }).concat([f]);
       // The saved draft was explicitly deleted. Other drafts and customer contact records stay untouched.
       if (removed) lsSet(draftKey(id), '');
       if (E.ed && E.ed.id === id) {
-        if (removed) { E.ed = null; window.LK_APP.returnTo('#/functions'); }
+        if (removed) { E.ed = null; if (active()) window.LK_APP.returnTo('#/functions'); }
         else { E.ed.saved = f; E.ed.v = f.v; E.ed.status = f.status; E.ed.hist = null; E.ed.d = fromDoc(f, E.ed.savedC); }
       }
       toast(removed ? 'Deleted from the list. History is kept. Restore it from Deleted.' : 'Restored to Cancelled. Review and confirm it before service.');
       draw();
     }).catch(function (err) {
+      if (!owned(owner)) return;
       delete E.removing[id];
       toast(err.code ? 'Not changed. Check your access and signal, then read the list again.' : err.message || 'Not changed. Read the list and try again.'); draw();
     });
@@ -238,7 +248,7 @@
   /* ---------- open a function in the form ---------- */
   function openNew(copyOf) {
     var kept = lsGet(draftKey('new')), e = null;
-    if (kept && !copyOf) { try { e = JSON.parse(kept); } catch (x) { e = null; } }
+    if (kept && !copyOf) { try { e = JSON.parse(kept); if (e.identity && e.identity !== E.identity) e = null; } catch (x) { e = null; } }
     if (!e) {
       e = { id: newId(''), isNew: true, v: 0, status: 'draft', saved: null, savedC: null, d: blank() };
       if (copyOf) {
@@ -251,23 +261,23 @@
     focusF('name');
   }
   function openId(id) {
-    var kept = lsGet(draftKey(id)), api = B();
-    E.ed = { id: id, loading: true }; draw();
+    var kept = lsGet(draftKey(id)), api = B(), owner = E.identity;
+    var opening = E.ed = { id: id, loading: true }; draw();
     api.ready().then(function () {
       var fs = api.fs();
       var g = function (ref) { return fs.getDocFromServer(ref).catch(function () { return fs.getDoc(ref); }); };
       return Promise.all([g(api.docRef('functions', id)), g(api.docRef('fncontact', id)).catch(function () { return null; })]);
     }).then(function (r) {
-      if (!E.ed || E.ed.id !== id) return;
+      if (E.ed !== opening || !owned(owner)) return;
       if (!r[0].exists()) { E.ed = { id: id, missing: true }; draw(); return; }
       var f = M.derive(Object.assign({ id: id }, r[0].data())), c = r[1] && r[1].exists() ? r[1].data() : {};
       // cMiss: the contact could not be read on this phone (no PIN session for a function manager, or no signal)
       var e = { id: id, isNew: false, v: f.v, status: f.status, saved: f, savedC: c, cMiss: r[1] === null, d: fromDoc(f, c) };
-      if (kept && !f.removed) { try { var k = JSON.parse(kept); if (k && k.d) { e.d = k.d; e.status = k.status || e.status; e.restored = true; e.keptV = k.v; } } catch (x) {} }
+      if (kept && !f.removed) { try { var k = JSON.parse(kept); if (k && k.d && (!k.identity || k.identity === owner)) { e.d = k.d; e.status = k.status || e.status; e.restored = true; e.keptV = k.v; } } catch (x) {} }
       E.ed = e; draw();
-    }, function () { if (E.ed && E.ed.id === id) { E.ed = { id: id, failed: true }; draw(); } });
+    }, function () { if (E.ed === opening && owned(owner)) { E.ed = { id: id, failed: true }; draw(); } });
   }
-  function keep() { var e = E.ed; if (!e || !e.d) return; lsSet(draftKey(e.isNew ? 'new' : e.id), JSON.stringify({ id: e.id, isNew: e.isNew, v: e.v, status: e.status, d: e.d, saved: e.isNew ? null : undefined })); }
+  function keep() { var e = E.ed; if (!e || !e.d || workLock() || !owned(E.identity)) return; lsSet(draftKey(e.isNew ? 'new' : e.id), JSON.stringify({ identity: E.identity, id: e.id, isNew: e.isNew, v: e.v, status: e.status, d: e.d, saved: e.isNew ? null : undefined })); }
   function forget(e) { lsSet(draftKey(e.isNew ? 'new' : e.id), ''); }
   function dirty() {
     var e = E.ed; if (!e || !e.d) return false;
@@ -456,13 +466,16 @@
     var probs = check({ d: e.d, status: next });
     var contactBad = contactProblems(e.d);
     if ((next === 'confirmed' && probs.length) || contactBad.length) { e.shown = next === 'confirmed' ? probs : contactBad; e.review = false; draw(); goto(e.shown[0].k); return; }
-    var api = B(), id = e.id, me = api.who();
+    var api = B(), id = e.id, me = api.who(), owner = E.identity, submitted = clone(e.d), context = api.writeContext ? api.writeContext() : null;
     e.saving = 'Saving...'; e.shown = []; draw();
     var slow = setTimeout(function () { if (E.ed === e && e.saving) { e.saving = 'Waiting for the signal. Your changes are kept on this device.'; draw(); } }, 5000);
     api.ready().then(function () {
       var fs = api.fs();
       return (api.fromServer ? api.fromServer(api.docRef('functions', id)) : fs.getDocFromServer(api.docRef('functions', id))).then(function (sn) { return sn.exists() ? Object.assign({ id: id }, sn.data()) : null; }, function () { return 'offline'; });
     }).then(function (server) {
+      if (E.ed !== e || !owned(owner)) return null;
+      var lock = workLock();
+      if (!P.fnOK() && !(context && lock && lock.identity === owner)) throw { code: 'permission-denied' };
       var sv = server === 'offline' ? e.v : (server ? server.v : 0);
       if (server !== 'offline' && sv !== e.v) {
         clearTimeout(slow); e.saving = '';
@@ -470,7 +483,7 @@
         draw(); return null;
       }
       var prev = server === 'offline' ? e.saved : server, t = now();
-      var f = toDoc({ d: e.d, status: next });
+      var f = toDoc({ d: submitted, status: next });
       f.v = sv + 1; f.upd = t;
       f.cBy = prev ? prev.cBy || '' : me; f.cAt = prev ? prev.cAt || 0 : t;
       if (prev && prev.confAt) { f.confBy = prev.confBy || ''; f.confAt = prev.confAt; }
@@ -497,23 +510,26 @@
       }
       // the contact is written only when it changed (22 Oct 2026, review S9), so a phone that could not read it never
       // saves blanks over it
-      var con = { cname: e.d.cname.trim().slice(0, 80), phone: e.d.phone.trim().slice(0, 30), email: e.d.email.trim().slice(0, 120) }, conWas = e.savedC || {};
+      var con = { cname: submitted.cname.trim().slice(0, 80), phone: submitted.phone.trim().slice(0, 30), email: submitted.email.trim().slice(0, 120) }, conWas = e.savedC || {};
       if (con.cname !== (conWas.cname || '') || con.phone !== (conWas.phone || '') || con.email !== (conWas.email || '')) ops.push(['set', api.docRef('fncontact', id), Object.assign(con, { upd: t })]);
-      return api.W(ops.concat(FN.prepOps(api, prev, f, id, t), FN.orderOps(api, prev, f, id, t))).then(function () { return f; });
+      return api.W(ops.concat(FN.prepOps(api, prev, f, id, t), FN.orderOps(api, prev, f, id, t)), context).then(function () { return f; });
     }).then(function (f) {
       clearTimeout(slow);
-      if (!f) return;
+      if (!f || E.ed !== e || !owned(owner)) return;
+      flushPending();
+      var changed = JSON.stringify(e.d) !== JSON.stringify(submitted);
       f.id = id; if (me) f.by = me;
       var wasNew = e.isNew;
       forget(e);
-      e.isNew = false; e.v = f.v; e.status = f.status; e.saved = f; e.savedC = { cname: e.d.cname.trim(), phone: e.d.phone.trim(), email: e.d.email.trim() }; e.d = fromDoc(f, e.savedC);
+      e.isNew = false; e.v = f.v; e.status = f.status; e.saved = f; e.savedC = { cname: submitted.cname.trim(), phone: submitted.phone.trim(), email: submitted.email.trim() }; if (!changed) e.d = fromDoc(f, e.savedC);
       e.saving = ''; e.conflict = null; e.review = false; e.restored = false; e.hist = null;
       if (Array.isArray(E.list)) { E.list = E.list.filter(function (x) { return x.id !== id; }).concat([f]); }
       toast(kind === 'confirm' ? 'Confirmed. The kitchen sees it on the day.' : kind === 'cancel' ? 'Cancelled. The kitchen is told.' : f.status === 'confirmed' ? 'Saved. The kitchen sees the change now.' : 'Draft saved. The kitchen does not see it yet.');
-      if (wasNew) { history.replaceState(history.state, '', '#/functions/' + encodeURIComponent(id)); if (window.LK_APP && window.LK_APP.noteRoute) window.LK_APP.noteRoute(true); E.sub = [id]; }
-      if (E.ed === e) { draw(); var h = E.root && E.root.querySelector('#rtitle'); if (h) h.focus({ preventScroll: true }); window.scrollTo(0, 0); }
+      if (wasNew) e.canonical = true;
+      if (changed) keep();
+      if (active()) { canonical(); draw(); var h = E.root.querySelector('#rtitle'); if (h) h.focus({ preventScroll: true }); window.scrollTo(0, 0); }
     }).catch(function (err) {
-      clearTimeout(slow); e.saving = '';
+      clearTimeout(slow); if (E.ed !== e || !owned(owner)) return; e.saving = '';
       var code = err && err.code;
       e.msg = code === 'permission-denied' ? 'Not saved: the book refused it. You may not be ticked for Functions any more, or someone saved it just now. Your changes are kept on this device.' : 'Not saved. Check the signal and try again. Your changes are kept on this device.';
       if (E.ed === e) draw();
@@ -530,7 +546,7 @@
 
   /* ---------- drawing and events ---------- */
   function draw() {
-    if (!E.root || E.drawing) return;
+    if (!active() || E.drawing) return;
     E.drawing = true;
     try { drawNow(); } finally { E.drawing = false; }
   }
@@ -565,7 +581,15 @@
   }
   // something to save: a change, or a date or time typed and not taken yet (it is taken when the box is left or Save
   // is tapped, flushPending())
-  function canSave() { return dirty() || Object.keys(E.pending).length > 0; }
+  function pendingDirty() {
+    var e = E.ed;
+    if (!e || !e.d) return false;
+    return Object.keys(E.pending).some(function (k) {
+      var round = /^rt(\d+)$/.exec(k), current = round ? (e.d.rounds[+round[1]] || {}).t : e.d[k];
+      return String(E.pending[k]) !== String(current == null ? '' : current);
+    });
+  }
+  function canSave() { return dirty() || pendingDirty(); }
   // typing draws only the live part: Save draft or Save changes follows here
   function saveSync() {
     var e = E.ed, b = E.root && E.root.querySelector('[data-fe="save"]');
@@ -576,7 +600,7 @@
     var k = ev.target.getAttribute('data-ff'); if (!k) return;
     // a box that loses focus while the page redraws sends its change late: take it once the redraw is done
     if (ev.target.type === 'checkbox') { if (ev.type === 'change') setField(k, ev.target.checked, true); return; }
-    if (E.drawing) { var v = ev.target.value; setTimeout(function () { setField(k, v, true); }, 0); return; }
+    if (E.drawing) { var v = ev.target.value, editor = E.ed, owner = E.identity; setTimeout(function () { if (E.ed === editor && owned(owner)) setField(k, v, true); }, 0); return; }
     // what changes the page's shape waits for the change event (so typing "12" does not redraw at "1")
     var shape = /^(date|startT|foodDate|foodT|n|gap|qty\d+|a\d+_\d+|rt\d+)$/.test(k);
     if (ev.type === 'input' && shape) { if (/^(a\d+_\d+|qty\d+)$/.test(k)) { setField(k, ev.target.value, false); } else { E.pending[k] = ev.target.value; saveSync(); } return; }
@@ -654,11 +678,16 @@
     if (a === 'hist') { loadHist(); return; }
   });
   function focusF(k) { var el = E.root && E.root.querySelector('[data-ff="' + k + '"]'); if (el) el.focus({ preventScroll: true }); }
-  // Update now's second tap already said the changes may go (LK_UPDATE.letGo() in js/upkeep.js): no second question
+  // Discard and update already said the changes may go (LK_UPDATE.letGo() in js/upkeep.js): no second question
   window.addEventListener('beforeunload', function (ev) { flushPending(); if (dirty() && !(window.LK_UPDATE && window.LK_UPDATE.letGo && window.LK_UPDATE.letGo())) { ev.preventDefault(); ev.returnValue = ''; } });
 
   function mount(root, route) {
-    var sub = route.sub || [], same = E.root === root && JSON.stringify(sub) === JSON.stringify(E.sub);
+    var owner = identity(), sub = route.sub || [];
+    if (!P.fnOK() || workLock()) return;
+    if (E.identity && E.identity !== owner) drop();
+    E.identity = owner;
+    var sameRoute = JSON.stringify(sub) === JSON.stringify(E.sub), same = E.root === root && sameRoute;
+    if (E.ed && sameRoute) { E.root = root; E.suspended = false; canonical(); draw(); return; }
     if (!same) flushPending();
     E.root = root;
     if (same && (E.ed || !sub.length)) { draw(); return; }
@@ -667,7 +696,22 @@
     if (!Array.isArray(E.list)) loadList();
     if (sub[0] === 'new') openNew(); else openId(sub[0]);
   }
-  function unmount() { var hadRoot = !!E.root; flushPending(); E.root = null; E.sub = []; E.ed = null; if (hadRoot) window.dispatchEvent(new Event('lk-nav')); }
+  function canonical() {
+    var e = E.ed;
+    if (!e || !e.canonical || !active()) return;
+    history.replaceState(history.state, '', '#/functions/' + encodeURIComponent(e.id));
+    if (window.LK_APP && window.LK_APP.noteRoute) window.LK_APP.noteRoute(true);
+    E.sub = [e.id]; e.canonical = false;
+  }
+  function drop() { clearTimeout(E.armTimer); E.armed = ''; E.pending = {}; E.ed = null; E.list = null; E.removing = {}; E.sub = []; E.identity = ''; E.suspended = false; E.root = null; }
+  function unmount() {
+    var hadRoot = !!E.root, lock = workLock();
+    flushPending(); E.root = null;
+    if (lock && lock.identity === E.identity || E.suspended && E.identity === identity()) E.suspended = true;
+    else { E.sub = []; E.ed = null; E.suspended = false; }
+    if (toastEl) toastEl.innerHTML = '';
+    if (hadRoot) window.dispatchEvent(new Event('lk-nav'));
+  }
   function back() {
     if (!E.root || !document.body.contains(E.root) || !E.sub.length) return false;
     var e = E.ed;
@@ -684,12 +728,12 @@
     api: API, mount: mount, unmount: unmount,
     // a hand-over (leave() in js/prep.js, 29 Oct 2026): a date or time typed and not taken yet goes with the person.
     // Before, the page closing after the sign-out took it and kept the whole form as a draft again
-    drop: function () { E.pending = {}; E.ed = null; },
+    drop: drop,
     back: back,
     backLabel: function () { return !E.root || !document.body.contains(E.root) || !E.sub.length ? '' : E.ed && E.ed.review ? 'Back to the form' : 'Back to all functions'; },
     backDisabled: function () { return !!(E.root && document.body.contains(E.root) && E.ed && E.ed.saving); },
-    dirty: function () { return !!E.root && dirty(); },
-    hasDraft: function () { return Object.keys(localStorage || {}).some(function (k) { return k.indexOf('lk.fe.draft.') === 0; }); },
+    dirty: canSave,
+    hasDraft: function () { return canSave() || Object.keys(localStorage || {}).some(function (k) { return k.indexOf('lk.fe.draft.') === 0; }); },
     // the kitchen's functions changed (another manager saved): the list follows; an open form keeps what is typed
     changed: function () { if (E.root && !E.sub.length) loadList(); },
     statusChanged: function (id, saved) {
