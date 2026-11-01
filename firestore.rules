@@ -12,7 +12,7 @@ service cloud.firestore {
         && request.auth.token.get('email_verified', false) == true;
     }
     function anonymousDevice() {
-      return request.auth != null && request.auth.token.get('firebase', {}).get('sign_in_provider', '') == 'anonymous';
+      return request.auth != null && request.auth.token.firebase.sign_in_provider == 'anonymous';
     }
     function isAdmin() { return ownerIdentity() || deviceAdmin(); }
     // Kitchen data needs a live personal session. Anonymous Firebase auth alone is not a staff login.
@@ -69,33 +69,32 @@ service cloud.firestore {
         && d.get('issuedAt', 0) is timestamp
         && d.get('exp', 0) is number && d.exp == nextFour(d.issuedAt.toMillis());
     }
+    function liveDeviceSession(s, id) {
+      return (s.get('v', 0) != 2 || anonymousDevice()) && s.by == id && s.exp > request.time.toMillis()
+        && s.pinAt == get(setDoc(id)).data.at && onList(id);
+    }
     function sessOk(id) {
       // Session creation already enforces the exact 04:00 cap and immutable authentication cycle. Reads check the
       // policy marker and live authority, as the previous policy checked its server-issued exp without revalidating shape.
-      return request.auth != null && exists(sessDoc()) && ((anonymousDevice() && get(sessDoc()).data.get('v', 0) == 2) || get(sessDoc()).data.get('v', 0) != 2)
-        && get(sessDoc()).data.by == id
-        && get(sessDoc()).data.exp > request.time.toMillis()
-        && exists(setDoc(id))
-        && get(sessDoc()).data.pinAt == get(setDoc(id)).data.at
-        && onList(id);
+      return request.auth != null && exists(sessDoc()) && liveDeviceSession(get(sessDoc()).data, id);
     }
     function adminDeviceDoc(uid) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/adminDevices/$(uid); }
     function matchingAdminGrant(g, s) {
-      return g.get('v', 0) == 2 && g.get('by', '') == s.by && g.get('pinAt', -1) == s.pinAt
-        && g.get('issuedAt', 0) == s.issuedAt && g.get('exp', 0) == s.exp;
+      return g.v == 2 && g.by == s.by && g.pinAt == s.pinAt
+        && g.issuedAt == s.issuedAt && g.exp == s.exp;
     }
     function adminSession(s) {
       let c = cfg();
       // Shape and exact 04:00 cap were verified at issuance. Check the mutable authority and session binding here;
       // repeating the entire writer validator in every nested operational rule exceeds the expression budget.
-      return s.get('by', '') != '' && s.by == c.get('headId', '') && exists(adminDeviceDoc(request.auth.uid))
-        && s.get('v', 0) == 2
+      return s.v == 2 && s.by != '' && s.by == c.get('headId', '')
         && s.exp > request.time.toMillis() && s.by in c.get('staffIds', []) && !(s.by in c.get('fnOnlyIds', []))
-        && exists(setDoc(s.by)) && s.pinAt == get(setDoc(s.by)).data.at
+        && s.pinAt == get(setDoc(s.by)).data.at
         && matchingAdminGrant(get(adminDeviceDoc(request.auth.uid)).data, s);
     }
     function deviceAdmin() {
-      return anonymousDevice() && exists(sessDoc()) && adminSession(get(sessDoc()).data);
+      return anonymousDevice() && exists(adminDeviceDoc(request.auth.uid)) && exists(sessDoc())
+        && adminSession(get(sessDoc()).data);
     }
     function ownerFresh() {
       return ownerIdentity() && request.auth.token.get('auth_time', 0) is int
@@ -166,10 +165,10 @@ service cloud.firestore {
     function sousBy() { return request.resource.data.by in cfg().get('sousIds', []); }
     // People the head chef ticked for Pings (and every sous chef) may write shift pings. The head chef keeps pingIds in step.
     function pingBy() { return request.resource.data.by in cfg().get('pingIds', []); }
-    function tickKept() {
+    function tickKept(admin) {
       return resource.data.get('done', false) != true
         || (request.resource.data.get('done', false) == true && request.resource.data.get('doneAt', 0) == resource.data.get('doneAt', 0))
-        || isAdmin() || sousBy()
+        || admin || sousBy()
         || (request.resource.data.get('done', false) != true && resource.data.get('doneById', '') == request.resource.data.by
             && request.time.toMillis() - resource.data.get('doneAt', 0) < 120000);
     }
@@ -286,8 +285,8 @@ service cloud.firestore {
         && request.time >= timestamp.date(int(day.split('-')[0]), int(day.split('-')[1]), int(day.split('-')[2])) - duration.value(2055, 'm')
         && request.time < timestamp.date(int(day.split('-')[0]), int(day.split('-')[1]), int(day.split('-')[2])) + duration.value(2295, 'm');
     }
-    function lineWho(day) {
-      return isAdmin() || ((nearDay(day) || chefId(request.resource.data.by) || request.resource.data.by in cfg().get('fnIds', [])) && request.resource.data.size() <= 60
+    function lineWho(day, admin) {
+      return admin || ((nearDay(day) || chefId(request.resource.data.by) || request.resource.data.by in cfg().get('fnIds', [])) && request.resource.data.size() <= 60
         && (resource != null || request.resource.data.get('addedById', '') in ['', request.resource.data.by])
         && (request.resource.data.get('done', false) != true || resource.data.get('done', false) == true || request.resource.data.get('doneById', '') == request.resource.data.by));
     }
@@ -306,12 +305,12 @@ service cloud.firestore {
         && d.preparedById in cfg().get('staffIds', []) && !functionOnly(d.preparedById)
         && d.get('preparedAt', 0) is number && d.preparedAt > 0 && d.preparedAt == d.get('doneAt', 0);
     }
-    function prepAttribution() {
+    function prepAttribution(admin) {
       let next = request.resource.data;
       let old = resource == null ? {} : resource.data;
       let unchanged = preparedSame(next, old);
       let inert = resource != null && unchanged && next.get('preparedAt', 0) != next.get('doneAt', 0);
-      return isAdmin() || (next.get('done', false) != true ? preparedEmpty(next) || inert
+      return admin || (next.get('done', false) != true ? preparedEmpty(next) || inert
         : old.get('done', false) == true
           ? unchanged
             && next.get('doneBy', '') == old.get('doneBy', '') && next.get('doneById', '') == old.get('doneById', '')
@@ -338,16 +337,16 @@ service cloud.firestore {
         && (d.action != 'restore' || d.after == d.original);
     }
     // New ordinary lines cannot impersonate a repair. Admin can copy the complete metadata during a PIN move.
-    function proofLineCreate() {
+    function proofLineCreate(admin) {
       return !request.resource.data.keys().hasAny(['proofV', 'proofEvent'])
-        || (isAdmin() && request.resource.data.proofV is int && request.resource.data.proofV >= 1
+        || (admin && request.resource.data.proofV is int && request.resource.data.proofV >= 1
           && proofId(request.resource.data.proofEvent));
     }
-    function proofLineRepair(source, day, id) {
+    function proofLineRepair(source, day, id, admin) {
       let d = request.resource.data;
       let eventPath = /databases/$(database)/documents/kitchens/KITCHEN_PIN/proofHistory/$(d.proofEvent);
       let e = getAfter(eventPath).data;
-      return isAdmin() && resource.data.get('deleted', false) != true && resource.data.get('fn', '') == ''
+      return admin && resource.data.get('deleted', false) != true && resource.data.get('fn', '') == ''
         && d.proofV is int && d.proofV == resource.data.get('proofV', 0) + 1
         && proofId(d.proofEvent) && !exists(eventPath)
         && d.diff(resource.data).affectedKeys().hasOnly(['text', 'recipe', 'recipes', 'proofV', 'proofEvent', 'by'])
@@ -355,11 +354,26 @@ service cloud.firestore {
         && e.before == resource.data.text && e.after == d.text && e.original == resource.data.get('orig', '')
         && e.v == d.proofV && e.by == d.by;
     }
-    function proofLineKept(source, day, id) {
+    function proofLineKept(source, day, id, admin) {
       let changed = request.resource.data.diff(resource.data).affectedKeys();
       return (!changed.hasAny(['proofV', 'proofEvent'])
           && (resource.data.get('proofV', 0) == 0 || !changed.hasAny(['text', 'orig'])))
-        || proofLineRepair(source, day, id);
+        || proofLineRepair(source, day, id, admin);
+    }
+    // Evaluate the device grant once per line. The same authority gates attribution and spelling repair; repeating
+    // that full chain inside each validator exhausts Firestore's expression budget for a valid atomic repair.
+    function prepLineWrite(day, id, creating) {
+      let admin = isAdmin();
+      return (admin || staff() || functionLine(id)) && lineOk(160) && lineWho(day, admin) && prepAttribution(admin)
+        && (creating ? proofLineCreate(admin) : tickKept(admin) && proofLineKept('prep', day, id, admin));
+    }
+    function orderLineWrite(day, id, creating) {
+      let admin = isAdmin();
+      return (admin || staff() || functionLine(id)) && lineOk(120) && lineWho(day, admin)
+        && (creating ? proofLineCreate(admin) : proofLineKept('orders', day, id, admin))
+        && ((creating ? request.resource.data.get('ordered', false) == false
+          : request.resource.data.get('ordered', false) == resource.data.get('ordered', false))
+          || admin || (staff() && sousBy()));
     }
     match /kitchens/KITCHEN_PIN/proofHistory/{event} {
       allow read: if isAdmin();
@@ -371,15 +385,15 @@ service cloud.firestore {
     }
     match /kitchens/KITCHEN_PIN/days/{day}/items/{item} {
       allow read: if kitchenRead();
-      allow create: if (writer() || functionLine(item)) && lineOk(160) && lineWho(day) && prepAttribution() && proofLineCreate();
-      allow update: if (writer() || functionLine(item)) && lineOk(160) && tickKept() && lineWho(day) && prepAttribution() && proofLineKept('prep', day, item);
+      allow create: if prepLineWrite(day, item, true);
+      allow update: if prepLineWrite(day, item, false);
       allow delete: if false;
     }
     // An order line is ticked as ordered (or not) only by the head chef or a sous chef, as the page shows (22 Oct 2026).
     match /kitchens/KITCHEN_PIN/orders/{day}/lines/{line} {
       allow read: if kitchenRead();
-      allow create: if (writer() || functionLine(line)) && lineOk(120) && lineWho(day) && proofLineCreate() && (request.resource.data.get('ordered', false) == false || lead());
-      allow update: if (writer() || functionLine(line)) && lineOk(120) && lineWho(day) && proofLineKept('orders', day, line) && (request.resource.data.get('ordered', false) == resource.data.get('ordered', false) || lead());
+      allow create: if orderLineWrite(day, line, true);
+      allow update: if orderLineWrite(day, line, false);
       allow delete: if false;
     }
     // Today in kitchen time (Queensland, UTC+10, no daylight saving), with 15 minutes either side for a phone's clock.
