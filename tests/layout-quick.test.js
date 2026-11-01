@@ -33,14 +33,18 @@ const onTop = (p, sel) => p.evaluate(s => {
   // admin: every tab can be seen and tapped at 1280 and 768, and Tools opens
   for (const w of [1280, 768]) {
     p = await L.open(b, '#/admin', { admin: true, width: w, height: 900, wait: 1800 });
-    v = await onTop(p, '[data-p="a-group"][data-g="settings"]');
+    const picker = await p.locator('[data-k="ai-section"]').isVisible();
+    const groupControl = group => picker ? '[data-k="ai-section"]' : '[data-p="a-group"][data-g="' + group + '"]';
+    v = await onTop(p, groupControl('settings'));
     ok(v === true, w + ' admin: the Settings group can be seen and tapped (' + v + ')');
     for (const [group, label] of [['review', 'Review desk'], ['reports', 'Reports'], ['records', 'Saved records'], ['today', 'Operations'], ['settings', 'Settings']]) {
-      v = await onTop(p, '[data-p="a-group"][data-g="' + group + '"]');
+      v = await onTop(p, groupControl(group));
+      if (picker) ok(await p.locator('[data-k="ai-section"] option[value="' + group + '"]').count() === 1, w + ' admin: the section picker offers ' + label);
       ok(v === true, w + ' admin: the ' + label + ' group can be seen and tapped (' + v + ')');
-      // The hit test above stays strict even when a regression covers this group. Open it directly so the
-      // remaining menu centres are still checked, without scrolling any control into view.
-      await L.tap(p, '[data-p="a-group"][data-g="' + group + '"]'); await L.settle(p, 300);
+      // Check the real visible control, then open this chapter without scrolling any destination into view.
+      if (picker) await p.selectOption('[data-k="ai-section"]', group);
+      else await L.tap(p, groupControl(group));
+      await L.settle(p, 300);
       const pages = await p.locator('[data-p="a-tab"]').evaluateAll(nodes => nodes.map(el => ({ id: el.getAttribute('data-t'), label: el.textContent.trim() })));
       ok(pages.length > 0, w + ' admin: ' + label + ' exposes its destinations');
       for (const page of pages) {
@@ -64,7 +68,7 @@ const onTop = (p, sel) => p.evaluate(s => {
   await p.evaluate(() => window.scrollTo(0, 0)); await L.settle(p, 150);
   v = await onTop(p, '[data-p="a-save"]');
   ok(v === true, 'phone admin: Save changes can be tapped, not under the tab bar (' + v + ')');
-  ok(await p.evaluate(() => getComputedStyle(document.querySelector('.a-nav')).position === 'sticky'), 'phone admin: the admin nav stays at the top (it tucks away while scrolling down, admin-nav.test.js)');
+  ok(await p.evaluate(() => getComputedStyle(document.querySelector('.a-nav')).position === 'sticky'), 'phone admin: the chapter picker stays at the top while scrolling');
   await p.context().close();
 
   await b.close();
