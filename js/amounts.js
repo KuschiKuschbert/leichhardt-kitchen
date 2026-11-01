@@ -63,7 +63,27 @@
     var v = String(Math.round(n * 100) / 100);
     return u ? v + ' ' + u : v;
   }
-  var A = { parse: parse, key: key, say: say, UNITS: UNITS };
+  /* Recipe amounts: keep the unit as written and multiply only a clear amount or range. Reuse num() so fractions
+     keep their precision. Descriptions, alternatives and placeholders need the chef's own check. */
+  function scale(text, factor) {
+    if (typeof factor !== 'number' || !isFinite(factor) || factor <= 0) return null;
+    var t = String(text == null ? '' : text).trim();
+    if (!t || t.length > 40) return null;
+    var number = '(?:\\d+\\s+\\d+\\s*\\/\\s*\\d+|\\d+\\s*\\/\\s*\\d+|\\d*\\s*[½¼¾⅓⅔]|\\d+(?:[.,]\\d+)?)';
+    var m = new RegExp('^(about\\s+|approx\\.?\\s+)?(' + number + ')(?:(\\s*(?:to|-)\\s*)(' + number + '))?(\\s*[a-z]+(?:\\s+total)?\\.?)?$', 'i').exec(t);
+    if (!m) return null;
+    var suffix = m[5] || '', unit = suffix.trim().toLowerCase().replace(/\.$/, '').replace(/ total$/, '');
+    if (unit && !UNITS[unit] && !/^(?:slices?|leaf|leaves|scoops?|strips?|heads?|sprigs?|tsp|tbsp|teaspoons?|tablespoons?)$/.test(unit)) return null;
+    function times(s) {
+      var n = num(s) * factor, rounded = Math.round(n * 1000000) / 1000000;
+      return isFinite(n) && n > 0 && n <= 9007199254740991 && rounded > 0 ? String(rounded) : null;
+    }
+    var first = times(m[2]), last = m[4] ? times(m[4]) : '';
+    if (first === null || last === null) return null;
+    var out = (m[1] || '') + first + (m[4] ? m[3] + last : '') + suffix;
+    return out.length <= 40 ? out : null;
+  }
+  var A = { parse: parse, key: key, say: say, scale: scale, UNITS: UNITS };
   if (typeof module === 'object' && module.exports) { module.exports = A; return; }
   window.LK_AMT = A;
 })();
