@@ -6,7 +6,7 @@ The Leichhardt Hotel kitchen's app: the recipe book, the prep list, the order li
 
 The [whole-app engineering audit brief](docs/whole-app-audit.md) sets out the verified starting stack, critical usability/design council, design-before-code workflow, consistency and security checks, feature-preservation requirements, tests and rollback plan. It is an execution prompt. Its presence does not mean the audit has run or application changes have shipped.
 
-The [first-phase findings](docs/ux-council-audit.md#whole-app-audit-first-delivery) and [30-family inventory](docs/whole-app-inventory.md) record fresh discovery, baseline limits, prioritised repairs and three constrained narrow-Prep row alternatives. Application implementation awaits the plan and design approval required by the brief. No application behaviour or layout is changed by these audit records.
+The [first-phase findings](docs/ux-council-audit.md#whole-app-audit-first-delivery) and [30-family inventory](docs/whole-app-inventory.md) record fresh discovery, baseline limits, prioritised repairs and three constrained narrow-Prep row alternatives. The owner approved the recommended repair plan and selected narrow Prep option A on 2 November 2026. No application behaviour or layout is changed by these audit records.
 
 ## Smoker batch cards (30 October 2026)
 
