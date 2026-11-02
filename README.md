@@ -85,6 +85,8 @@ Open **Delivery received** in the chef-hat dropdown. Enter the supplier, check t
 
 Today's receipts appear below the form. The verified Google admin can select an earlier date and record an earlier arrival. Saved readings stay as recorded; add a new receipt with an explanatory note for a correction. Failed saves keep their details, and retry checks the same id to prevent duplicate receipts. Delivery data and drafts are cleared on sign-out or account change. The form shares the book's Barlow fonts, colours and controls. The longer chef-hat menu scrolls within 60% of the viewport while preserving 48 px tap targets.
 
+An invalid save moves keyboard focus to the field that needs correcting, with its error linked to the field. Missing temperatures identify both alternatives. Correcting the affected field clears that error while keeping the other details; an unrelated edit leaves the error visible. Technical temperature limits, the receiver and exact retry remain unchanged.
+
 `js/deliveries.js` loads only for `#/deliveries`. Today's page uses one live filtered query, removed on exit; admin history uses one date query on selection or Refresh. No delivery reads on normal startup and no persistent private cache. The database enforces login, today's staff access, input shape and immutable readings. The existing 400-day manual and 45-day nightly backup windows include receipts. PIN moves carry all receipts. See `docs/delivery-received.md` for the data contract and release evidence.
 
 ## Adding or changing a recipe

@@ -6,7 +6,7 @@
   var generation = 0, stop = null, watchKey = '', context = '', recorder = '', timer = null;
   var M = blank();
   function form() { var day = T.day(), time = T.clock(); return { day: day, time: time, initial: day + '|' + time, supplier: '', chilled: '', frozen: '', note: '' }; }
-  function blank() { return { root: null, form: form(), day: T.day(), followToday: true, rows: [], state: 'idle', error: '', message: '', busy: false, attempt: null, suspended: false, cache: Object.create(null) }; }
+  function blank() { return { root: null, form: form(), day: T.day(), followToday: true, rows: [], state: 'idle', error: '', invalid: [], message: '', busy: false, attempt: null, suspended: false, cache: Object.create(null) }; }
   function allowed() { return P.privateAccess(); }
   function admin() { return allowed() && P.ownerHere() && P.state.level === 'owner'; }
   function identity() { return B.identity ? B.identity() : [B.pin(), P.state.uid || '', P.state.who || B.who() || 'owner'].join('|'); }
@@ -43,18 +43,23 @@
   }
   function validation() {
     var d = M.form, c = temp(d.chilled), f = temp(d.frozen);
-    if (!d.supplier.trim() || d.supplier.trim().length > 80) return 'Enter the supplier name (up to 80 characters).';
-    if (!validDay(d.day) || d.day > T.day() || !admin() && d.day !== T.day()) return 'Use today\'s date. Admin can record earlier deliveries.';
-    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(d.time)) return 'Enter the delivery time in 24-hour format.';
-    if (receivedAt(d) > T.now() + 60000) return 'The delivery time cannot be in the future.';
-    if (c === null && f === null) return 'Enter a chiller / coldroom temperature, a freezer temperature, or both.';
-    if (isNaN(c) || isNaN(f)) return 'Enter a temperature from -100 to 100 °C. Negative and decimal readings are accepted.';
-    if (d.note.trim().length > 300) return 'Keep the items / notes to 300 characters.';
-    return '';
+    function problem(fields, message) { return { fields: fields, message: message }; }
+    if (!d.supplier.trim() || d.supplier.trim().length > 80) return problem(['supplier'], 'Enter the supplier name (up to 80 characters).');
+    if (!validDay(d.day) || d.day > T.day() || !admin() && d.day !== T.day()) return problem(['day'], 'Use today\'s date. Admin can record earlier deliveries.');
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(d.time)) return problem(['time'], 'Enter the delivery time in 24-hour format.');
+    if (receivedAt(d) > T.now() + 60000) return problem(['time'], 'The delivery time cannot be in the future.');
+    if (c === null && f === null) return problem(['chilled', 'frozen'], 'Enter a chiller / coldroom temperature, a freezer temperature, or both.');
+    if (isNaN(c) || isNaN(f)) return problem([isNaN(c) ? 'chilled' : 'frozen'], 'Enter a temperature from -100 to 100 °C. Negative and decimal readings are accepted.');
+    if (d.note.trim().length > 300) return problem(['note'], 'Keep the items / notes to 300 characters.');
+    return null;
   }
   function receivedAt(d) { var p = d.time.split(':'); return T.at(d.day, +p[0] * 60 + +p[1]); }
-  function field(name, label, type, extra) {
-    return '<label class="dl-field" for="dl-' + name + '"><span class="label">' + label + '</span><input id="dl-' + name + '" data-dl-field="' + name + '" type="' + type + '" value="' + esc(M.form[name]) + '"' + (extra || '') + '></label>';
+  function errorAttrs(name, help) {
+    var invalid = M.invalid.indexOf(name) >= 0, described = (help || '') + (invalid ? (help ? ' ' : '') + 'dl-save-note' : '');
+    return (invalid ? ' aria-invalid="true"' : '') + (described ? ' aria-describedby="' + described + '"' : '');
+  }
+  function field(name, label, type, extra, help) {
+    return '<label class="dl-field" for="dl-' + name + '"><span class="label">' + label + '</span><input id="dl-' + name + '" data-dl-field="' + name + '" type="' + type + '" value="' + esc(M.form[name]) + '"' + (extra || '') + errorAttrs(name, help) + '></label>';
   }
   function row(r) {
     return '<li class="dl-receipt"><div class="dl-receipt-head"><b>' + esc(r.supplier) + '</b><time>' + esc(T.clock(r.receivedAt)) + '</time></div>' +
@@ -75,12 +80,12 @@
       field('supplier', 'Supplier', 'text', ' maxlength="80" autocomplete="organization" required') +
       '<div class="dl-pair">' + field('day', 'Date', 'date', ' max="' + T.day() + '"' + (!admin() ? ' min="' + T.day() + '" readonly' : '') + ' required') + field('time', 'Time', 'time', ' step="60" required') + '</div>' +
       '<p id="dl-temp-help" class="hint">Enter either temperature, or both for a mixed delivery. Leave an unused box empty.</p><div class="dl-pair">' +
-      field('chilled', 'Chiller / coldroom (°C)', 'text', ' inputmode="decimal" maxlength="8" aria-describedby="dl-temp-help" placeholder="e.g. 3.5"') +
-      field('frozen', 'Freezer (°C)', 'text', ' inputmode="text" maxlength="8" aria-describedby="dl-temp-help" placeholder="e.g. -18"') + '</div>' +
-      '<label class="dl-field" for="dl-note"><span class="label">Items / notes <span class="hint">(optional)</span></span><textarea id="dl-note" data-dl-field="note" maxlength="300" rows="2" placeholder="Items checked, condition or action taken">' + esc(d.note) + '</textarea></label></fieldset>' +
+      field('chilled', 'Chiller / coldroom (°C)', 'text', ' inputmode="decimal" maxlength="8" placeholder="e.g. 3.5"', 'dl-temp-help') +
+      field('frozen', 'Freezer (°C)', 'text', ' inputmode="text" maxlength="8" placeholder="e.g. -18"', 'dl-temp-help') + '</div>' +
+      '<label class="dl-field" for="dl-note"><span class="label">Items / notes <span class="hint">(optional)</span></span><textarea id="dl-note" data-dl-field="note" maxlength="300" rows="2" placeholder="Items checked, condition or action taken"' + errorAttrs('note') + '>' + esc(d.note) + '</textarea></label></fieldset>' +
       '<p class="hint">Receiving as <b>' + esc(P.whoName() || 'Admin') + '</b>. Saved readings are kept as recorded.</p>' +
       '<p id="dl-save-note" class="' + (M.error ? 'dl-error' : 'dl-message') + '" role="' + (M.error ? 'alert' : 'status') + '">' + esc(M.error || M.message) + '</p>' +
-      '<div class="btn-row"><button class="btn dark" type="submit"' + (M.busy ? ' disabled' : '') + '>' + (M.busy ? 'Saving...' : M.attempt ? 'Check and retry save' : 'Save delivery') + '</button>' +
+      '<div class="btn-row"><button class="btn dark" type="submit" data-dl="save"' + (M.busy ? ' disabled' : '') + '>' + (M.busy ? 'Saving...' : M.attempt ? 'Check and retry save' : 'Save delivery') + '</button>' +
       (!M.attempt ? '<button class="btn" type="button" data-dl="clear"' + (M.busy ? ' disabled' : '') + '>' + (armed('dl-clear') ? 'Tap again to clear' : 'Clear form') + '</button>' : '') + '</div></form>' +
       '<section class="dl-history" aria-labelledby="dl-records"><div class="dl-history-head"><h2 id="dl-records">' + (M.day === T.day() ? 'Today\'s deliveries' : 'Delivery records') + '</h2><button class="btn" type="button" data-dl="refresh">Refresh</button></div>' +
       (admin() ? '<label class="dl-field dl-filter" for="dl-view-day"><span class="label">View date</span><input type="date" id="dl-view-day" value="' + esc(M.day) + '" max="' + T.day() + '"></label>' : '') +
@@ -129,7 +134,7 @@
     // announcing success, then finish once this same identity has a valid session again.
     attempt.acknowledged = true;
     if (!allowed()) return;
-    M.attempt = null; M.busy = false; M.form = form(); M.error = ''; M.message = 'Delivery saved.';
+    M.attempt = null; M.busy = false; M.form = form(); M.error = ''; M.invalid = []; M.message = 'Delivery saved.';
     delete M.cache[attempt.data.day];
     if (M.day === attempt.data.day && M.day !== T.day()) { M.rows = [Object.assign({ id: attempt.id, pending: false }, attempt.data)].concat(M.rows.filter(function (r) { return r.id !== attempt.id; })).sort(function (a, b) { return b.receivedAt - a.receivedAt || b.recordedAt - a.recordedAt; }); M.cache[M.day] = M.rows; M.state = 'ok'; }
     draw(); B.say('Delivery saved.');
@@ -137,7 +142,14 @@
   }
   function save() {
     if (!allowed() || M.busy) return;
-    M.error = M.attempt ? '' : validation(); M.message = ''; if (M.error) { draw(); return; }
+    var problem = M.attempt ? null : validation();
+    M.error = problem ? problem.message : ''; M.invalid = problem ? problem.fields : []; M.message = '';
+    if (problem) {
+      draw();
+      var invalid = M.root.querySelector('[data-dl-field="' + M.invalid[0] + '"]');
+      if (invalid) { invalid.focus({ preventScroll: true }); invalid.scrollIntoView({ block: 'center' }); }
+      return;
+    }
     var attempt = M.attempt, id = recorder, hold = M, token = {}, writeContext = B.writeContext ? B.writeContext() : null; M.saveToken = token; M.busy = true; draw();
     B.ready().then(function () {
       if (M !== hold || id !== identity() || !allowed()) throw { code: 'context' };
@@ -185,13 +197,21 @@
   }
   document.addEventListener('focusin', function (e) { var field = e.target.getAttribute && e.target.getAttribute('data-dl-field'); if (M.root && M.root.contains(e.target) && ['time', 'chilled', 'frozen'].indexOf(field) >= 0 && e.target.value) e.target.select(); });
   document.addEventListener('submit', function (e) { if (M.root && M.root.contains(e.target) && e.target.id === 'dl-form') { e.preventDefault(); save(); } });
-  document.addEventListener('input', function (e) { var field = e.target.getAttribute('data-dl-field'); if (allowed() && M.root && M.root.contains(e.target) && field && !M.busy && !M.attempt) { M.form[field] = e.target.value; M.message = ''; } });
+  document.addEventListener('input', function (e) {
+    var field = e.target.getAttribute('data-dl-field');
+    if (allowed() && M.root && M.root.contains(e.target) && field && !M.busy && !M.attempt) {
+      M.form[field] = e.target.value; M.message = '';
+      // Clear an identified field error only when one of its correction fields changes. Ordinary typing keeps its caret.
+      if (M.invalid.indexOf(field) >= 0) { M.invalid = []; M.error = ''; draw(); }
+      else if (!M.error) { var note = M.root.querySelector('#dl-save-note'); if (note) note.textContent = ''; }
+    }
+  });
   document.addEventListener('click', function (e) {
     if (!M.root || !M.root.contains(e.target) || !allowed()) return;
     var el = e.target.closest('[data-dl]'); if (!el) return;
     if (el.getAttribute('data-dl') === 'refresh') load(true);
     // a typed supplier, reading or note asks first (the book's two-tap helper); an untouched form clears in one tap
-    if (el.getAttribute('data-dl') === 'clear' && !M.busy && !M.attempt) { if (dirty() && !arm('dl-clear')) return; M.form = form(); M.error = ''; M.message = ''; draw(); }
+    if (el.getAttribute('data-dl') === 'clear' && !M.busy && !M.attempt) { if (dirty() && !arm('dl-clear')) return; M.form = form(); M.error = ''; M.invalid = []; M.message = ''; draw(); }
   });
   document.addEventListener('change', function (e) { if (M.root && M.root.contains(e.target) && e.target.id === 'dl-view-day' && admin()) { var date = e.target.value; if (!validDay(date) || date > T.day()) { draw(); return; } M.followToday = date === T.day(); M.day = date; load(); } });
   ['lk-access', 'lk-who', 'lk-admin', 'lk-cfg'].forEach(function (name) { window.addEventListener(name, function () { var open = access(); if (open && M.attempt && M.attempt.acknowledged) confirmed(M.attempt); draw(); if (open && M.root && document.body.contains(M.root)) { load(); tick(); } }); });
