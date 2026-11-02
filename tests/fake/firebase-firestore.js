@@ -1,5 +1,6 @@
 // Stand-in for the Firestore web SDK, for the click tests only (tests/lib.js serves it instead of the real SDK).
-// Data lives in localStorage ('fake.fs') so reloads keep it. window.__fake controls failures:
+// Synthetic server data lives in localStorage ('fake.fs') so reloads keep it. The client read cache is memory only.
+// window.__fake controls failures:
 //   __fake.mode = 'ok' | 'deny' (every write refused, permission-denied) | 'hold' (writes wait, like no signal)
 //   | 'fail' (every write and every read from the server fails, unavailable; getDoc, getDocs and listeners still
 //   answer, so it is not no signal: __fake.cold below is)
@@ -57,13 +58,12 @@ function bill(kind, path, n) { window.__fake.bill.push({ kind, path, n: Math.max
 window.__fake.readLog = [];
 window.__fake.refused = window.__fake.refused || [];
 function refuse(kind, ref) { window.__fake.refused.push({ kind, path: key(ref.path) }); return Promise.reject({ code: 'permission-denied' }); }
-/* the documents this tab has read, for getDocFromCache and getDocsFromCache. Kept across a reload (sessionStorage), which
-   the book's own cache no longer does: since #387 (26 Oct 2026) it keeps a copy in memory only (memoryLocalCache), lost
-   on every reload. A test that needs the real no-signal answer uses __fake.cold (o.cold in tests/lib.js). */
-const seen = new Set((() => { try { return JSON.parse(sessionStorage.getItem('fake.seen') || '[]'); } catch (e) { return []; } })());
-let seenSave = 0;
+/* The documents this page has read, for getDocFromCache and getDocsFromCache. Like memoryLocalCache in the app, this
+   copy lasts through same-page navigation and disappears on a full reload. The synthetic server above remains intact.
+   __fake.cold (o.cold in tests/lib.js) separately models a cold read with no signal. */
+const seen = new Set();
 const cacheKey = (k, appName) => !appName || appName === '[DEFAULT]' ? k : appName + '|' + k;
-function remember(k, appName) { k = cacheKey(k, appName); if (seen.has(k)) return; seen.add(k); if (!seenSave) seenSave = setTimeout(() => { seenSave = 0; try { sessionStorage.setItem('fake.seen', JSON.stringify([...seen])); } catch (e) {} }, 0); }
+function remember(k, appName) { seen.add(cacheKey(k, appName)); }
 window.__fake.release = function () { const h = held.splice(0); pendingKeys.clear(); h.forEach(f => f()); notify(); };
 // the server's confirm reaching the listeners first (28 Oct 2026): the snapshots lose hasPendingWrites while the writes'
 // promises still wait (release() ends them), so a page's own .then() after a write does not draw

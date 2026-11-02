@@ -29,6 +29,17 @@ async function measure(b, hash, o, settle) {
   await L.settle(p, settle || 1500);
   return p;
 }
+async function reportData(p) {
+  await L.waitFor(p, () => { const s = LK_PREP.state; return s.stats && !s.stats.loading && s.ordStats && !s.ordStats.loading; });
+  return p.evaluate(() => {
+    const s = LK_PREP.state;
+    return {
+      prep: Object.values(s.stats.days).flat().filter(x => /^Line \d+$/.test(x.text)).length,
+      orders: (s.ordStats.raw || []).filter(x => /^Milk \d+$/.test(x.text)).length,
+      missing: (s.stats.miss || []).length + (s.ordStats.miss || []).length
+    };
+  });
+}
 (async () => {
   const b = await L.start();
   // measured 22 Oct 2026 with this seed: first open 657 (277 once the nightly summaries exist), first open before them 655, reload 17, admin 699, admin again 27 (before: first open 775, the
@@ -37,7 +48,11 @@ async function measure(b, hash, o, settle) {
   // Transfers (23 Oct 2026): first open 659, with the summaries 279, reload 19 (today's transfer list and its summary,
   // one read each), admin 732 (the Transfers page reads its 30 days once a day, one query per day, empty days included),
   // admin again 28. The admin budget went from 720 to 760 for those 30.
-  const BUDGET = { first: 680, firstSum: 300, reload: 40, admin: 760, admin2: 60 };
+  // 2 Nov 2026: the stand-in now loses its read cache on reload, like the app's memoryLocalCache. Reopening reports
+  // in this page remains cheap. A full reload must fetch the fixture's 140 past prep and 35 order records again:
+  // 219 reads including current data/session/listeners, rather than the former fake-persistent result of 44. The 240
+  // reload ceiling records that existing runtime cost; no production reads or private persistent cache were added.
+  const BUDGET = { first: 680, firstSum: 300, reload: 40, admin: 760, adminSamePage: 60, admin2: 240 };
   const show = !!process.env.RB_SHOW;
 
   // a staff phone opens the prep list for the first time today, then goes to orders, wastage and transfers
@@ -81,17 +96,31 @@ async function measure(b, hash, o, settle) {
   await L.adminTab(p, 'waste'); await L.settle(p, 1500);
   await L.adminTab(p, 'transfers'); await L.settle(p, 1500);
   await L.adminTab(p, 'team'); await L.settle(p, 1500);
+  const beforeReturn = await reportData(p);
   bl = await billed(p);
   const admin = sum(bl);
   if (show) console.log('admin: ' + admin + ' (' + top(bl) + ')');
-  // later the same day: the past days come from the device's own copy
+  ok(beforeReturn.prep === 140 && beforeReturn.orders === 35 && !beforeReturn.missing, 'first admin visit has all 140 seeded past prep lines and 35 order lines');
+  // Another report visit without a reload uses this page's loaded data and memory cache.
+  await p.evaluate(() => { window.__fake.bill = []; });
+  await L.adminTab(p, 'insights'); await L.settle(p, 500);
+  await L.adminTab(p, 'waste'); await L.settle(p, 500);
+  await L.adminTab(p, 'transfers'); await L.settle(p, 500);
+  await L.adminTab(p, 'team'); await L.settle(p, 500);
+  bl = await billed(p);
+  const adminSamePage = sum(bl), pastOnReturn = bl.filter(x => /\/(days|orders|transfers)\/\d{4}-\d{2}-\d{2}\//.test(x.path) && x.path.indexOf('/' + day(0) + '/') < 0);
+  if (show) console.log('admin same page: ' + adminSamePage + ' (' + top(bl) + ')');
+  ok(pastOnReturn.length === 0, 'returning to loaded admin reports in the same page adds no past-day server reads');
+  // A full reload keeps the synthetic backend but loses the client's memory-only Firestore read cache.
   await p.reload(); await L.settle(p, 2500);
   await L.adminTab(p, 'waste'); await L.settle(p, 1500);
   await L.adminTab(p, 'transfers'); await L.settle(p, 1500);
   await L.adminTab(p, 'team'); await L.settle(p, 1500);
+  const afterReload = await reportData(p);
   bl = await billed(p);
   const admin2 = sum(bl);
   if (show) console.log('admin again: ' + admin2 + ' (' + top(bl) + ')');
+  ok(afterReload.prep === 140 && afterReload.orders === 35 && !afterReload.missing, 'reloaded admin reports fetch complete historical records rather than treating the empty memory cache as an empty report');
   ok(p.errors.length === 0, 'admin: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -100,7 +129,8 @@ async function measure(b, hash, o, settle) {
     ok(firstSum <= BUDGET.firstSum, 'staff first open today with the nightly summaries: ' + firstSum + ' reads (budget ' + BUDGET.firstSum + ')');
     ok(reload <= BUDGET.reload, 'staff reload the same day: ' + reload + ' reads (budget ' + BUDGET.reload + ')');
     ok(admin <= BUDGET.admin, 'admin panel open: ' + admin + ' reads (budget ' + BUDGET.admin + ')');
-    ok(admin2 <= BUDGET.admin2, 'admin panel again the same day: ' + admin2 + ' reads (budget ' + BUDGET.admin2 + ')');
+    ok(adminSamePage <= BUDGET.adminSamePage, 'admin reports revisited without reload: ' + adminSamePage + ' reads (budget ' + BUDGET.adminSamePage + ')');
+    ok(admin2 <= BUDGET.admin2, 'admin panel reloaded the same day with a fresh memory cache: ' + admin2 + ' reads (budget ' + BUDGET.admin2 + ')');
   }
   await b.close();
   L.report(R);
