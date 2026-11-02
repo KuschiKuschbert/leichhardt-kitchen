@@ -3582,7 +3582,13 @@
       '<details class="a-tbtns a-export"><summary class="btn">Export</summary><div class="btn-row"><button type="button" class="btn" data-p="csv" data-v="' + kind + '"' + (gap ? ' disabled' : '') + '>Download CSV</button></div></details></div>' +
       (at ? '<p class="hint a-upd">Updated ' + esc(clock(at)) + '. Refresh reads the newest.</p>' : '');
   }
-  function csvCell(v) { v = v == null ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+  // Report text stays literal in spreadsheets. Keep actual numbers numeric and leave the saved words unchanged.
+  function csvCell(v) {
+    var numeric = typeof v === 'number';
+    v = v == null ? '' : String(v);
+    if (!numeric && (/^[\s\u0000-\u001f\u007f]*[=+@-]/.test(v) || /^[\t\r\n]/.test(v))) v = "'" + v;
+    return /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+  }
   function downloadCSV(name, rows) {
     var text = '﻿' + rows.map(function (r) { return r.map(csvCell).join(','); }).join('\r\n');
     var blob = new Blob([text], { type: 'text/csv;charset=utf-8' }), a = document.createElement('a');
@@ -7145,8 +7151,6 @@
     if (r.error || !ws || ws.loading || ws.error || ws.tag !== whTag() || ws.from > r.from || ws.to < r.to) { toast('Load the complete period before exporting.'); return; }
     var rows = [['Date', 'Weekday', 'Time', 'Section', 'Item', 'Amount', 'Unit', 'Reason', 'Action', 'Logged by', 'Status', 'Removed by', 'Removed at']];
     whSorted(whLines(r, h.removed)).forEach(function (x) { rows.push([x.date, DOWN[DOW.indexOf(parseYmd(x.date).getDay())], hm(x.addedAt), x.station || '', x.text, x.amount, x.unit, reasonName(x.reason), x.action || '', x.addedBy || '', x.deleted ? 'Removed' : 'Logged', x.deleted ? x.deletedBy || '' : '', x.deleted && x.deletedAt ? T.day(x.deletedAt) + ' ' + clock(x.deletedAt) : '']); });
-    // Typed names and notes stay text when opened in a spreadsheet, including a leading formula character.
-    rows = rows.map(function (row) { return row.map(function (cell) { return typeof cell === 'string' && /^[\s]*[=+@-]/.test(cell) ? "'" + cell : cell; }); });
     downloadCSV('leichhardt-wastage-' + r.from + '-to-' + r.to + '.csv', rows);
   }
   function wasteStatsHTML() {
