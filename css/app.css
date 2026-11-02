@@ -43,6 +43,7 @@
   --hit: #FFF1E6;
   --tabbar-h: 68px;
   --done: #2E8B57;
+  --done-ink: #237347; /* small success text and white-on-green labels; decorative frames keep --done */
   --done-tint: #EAF5EE;
   --steel: #CFD3D8;
   --steel-dark: #A9AFB6;
@@ -131,7 +132,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .box { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.9rem 1rem; border-radius: var(--radius); }
 .box.outline { border: 1.5px solid var(--ink); }
 .box.beige { background: var(--beige); }
-.box.safety { background: var(--accent); color: #fff; }
+.box.safety { background: var(--accent-ink); color: #fff; }
 .box .label { font-size: 1rem; }
 .box.safety .label { font-size: 1.05rem; }
 .allergen-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(12.5rem, 1fr)); gap: 0.4rem 0.9rem; }
@@ -147,8 +148,10 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .ilink span:first-child { text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: 2px; text-underline-offset: 4px; }
 .rtag { font-family: var(--display); font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #fff; background: var(--tag); border-radius: 4px; padding: 0.1rem 0.45rem; }
 .rtag.soon { color: var(--muted); background: transparent; border: 1.5px dashed var(--faint); }
-.warn { display: flex; flex-direction: column; gap: 0.4rem; padding: 0.75rem 0.9rem; border-radius: 8px; background: var(--accent); color: #fff; font-size: 0.9375rem; }
+.warn { display: flex; flex-direction: column; gap: 0.4rem; padding: 0.75rem 0.9rem; border-radius: 8px; background: var(--accent-ink); color: #fff; font-size: 0.9375rem; }
 .warn .tag { border-color: #fff; color: #fff; font-size: 0.75rem; }
+:where(.warn, .box.safety) .btn:not(.dark) { color: var(--ink); }
+:where(.warn, .box.safety) :focus-visible { outline-color: var(--ink); }
 .used { display: flex; flex-direction: column; gap: 0.1rem; }
 .sections { display: flex; flex-direction: column; gap: 1.1rem; }
 .sections.side { flex-direction: row; flex-wrap: wrap; gap: 1.25rem 2rem; }
@@ -278,7 +281,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .card.done .card-art, .card.done .side-art, .stage.done, .pan-art.done { border: 2.5px solid var(--done); border-radius: 12px; background: var(--done-tint); box-sizing: border-box; }
 .card.done .card-art, .pan-art.done { padding: 0.35rem; }
 .stage.done { padding: 0.35rem; }
-.tag.done-tag { background: var(--done); border-color: var(--done); color: #fff; }
+.tag.done-tag { background: var(--done-ink); border-color: var(--done-ink); color: #fff; }
 .card-head .done-tag { display: block; width: max-content; margin: 0.35rem 0 0; }
 
 /* ---------- prep list and admin panel ---------- */
@@ -981,7 +984,7 @@ html.note-open, html.note-open body { overflow: hidden; }
 .nt-later { flex: 1 1 6rem; min-height: 52px; padding: 0 18px; border: 2px solid var(--ink); border-radius: 26px; background: transparent; color: var(--ink); font-weight: 700; font-size: 1.0625rem; cursor: pointer; }
 .nt-edit { font-weight: 600; display: inline-flex; align-items: center; min-height: 44px; }
 .mn-tbl tr.is-mine td { font-weight: 700; background: var(--hit); }
-.mn-yours { background: var(--accent); color: #fff; border-color: var(--accent); }
+.mn-yours { background: var(--accent); color: var(--ink); border-color: var(--accent); }
 .mn-tosign b { color: var(--accent-ink); }
 .mn-changed, .mn-mine { font-weight: 600; padding: 0.4rem 0.6rem; border-left: 4px solid var(--accent); background: var(--hit); }
 @media (prefers-reduced-motion: reduce) { .nt { animation: none; } }
@@ -1433,6 +1436,28 @@ details.nb-start-l[open] > summary::after { content: '\2212'; }
   .nb-go { padding: 0 0.3rem; }
   .nb-x { margin-left: 0.2rem; padding: 0 0.35rem; }
 }
+/* Approved narrow Prep option A (2 Nov 2026): keep Tick beside the words, with the same actions below.
+   Limit the exception to Prep at the measured narrow widths. */
+@media (max-width: 359px) {
+  #prep-root.is-book .nb-left .nb-row { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 0.2rem 0.35rem; align-items: start; padding-top: 0.5rem; padding-bottom: 0.5rem; }
+  #prep-root.is-book .nb-left .nb-box { grid-column: 1; grid-row: 1; align-self: start; margin: 0; }
+  #prep-root.is-book .nb-left .nb-t { grid-column: 2; grid-row: 1; }
+  #prep-root.is-book .nb-left .nb-q { display: block; margin: 0.2rem 0 0; white-space: normal; }
+  #prep-root.is-book .nb-left .nb-marks { margin: 0.2rem 0 0; vertical-align: baseline; }
+  #prep-root.is-book .nb-left .nb-by { display: none; }
+  #prep-root.is-book .nb-left .nb-acts { grid-column: 2; grid-row: 2; justify-content: flex-start; flex-wrap: wrap; gap: 0; }
+  #prep-root.is-book .nb-left .nb-acts .nb-star + * { margin-left: 0; }
+}
+@media (max-width: 479px) {
+  html[data-text="xlarge"] #prep-root.is-book .nb-left .nb-row { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 0.2rem 0.35rem; align-items: start; padding-top: 0.5rem; padding-bottom: 0.5rem; }
+  html[data-text="xlarge"] #prep-root.is-book .nb-left .nb-box { grid-column: 1; grid-row: 1; align-self: start; margin: 0; }
+  html[data-text="xlarge"] #prep-root.is-book .nb-left .nb-t { grid-column: 2; grid-row: 1; }
+  html[data-text="xlarge"] #prep-root.is-book .nb-left .nb-q { display: block; margin: 0.2rem 0 0; white-space: normal; }
+  html[data-text="xlarge"] #prep-root.is-book .nb-left .nb-marks { margin: 0.2rem 0 0; vertical-align: baseline; }
+  html[data-text="xlarge"] #prep-root.is-book .nb-left .nb-by { display: none; }
+  html[data-text="xlarge"] #prep-root.is-book .nb-left .nb-acts { grid-column: 2; grid-row: 2; justify-content: flex-start; flex-wrap: wrap; gap: 0; }
+  html[data-text="xlarge"] #prep-root.is-book .nb-left .nb-acts .nb-star + * { margin-left: 0; }
+}
 
 /* Recipe book, finding and reading (October 2026) */
 /* the search bar stays at the top while the list scrolls */
@@ -1621,7 +1646,7 @@ button.wm-a { width: 100%; border: 0; background: none; font: inherit; text-alig
 .wm-adm[aria-current="page"] { background: var(--hit); }
 .wm-adm .adm-n { position: static; margin-left: auto; flex: 0 0 auto; border-color: var(--paper); line-height: 16px; }   /* the count centred like on the hat, not the row's 1.25 */
 .wtop-btn.wtop-who { position: relative; }
-.adm-n { position: absolute; top: -5px; right: -5px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--accent); color: #fff; border: 2px solid var(--bar); font-size: 0.6875rem; font-weight: 700; line-height: 16px; text-align: center; box-sizing: border-box; }
+.adm-n { position: absolute; top: -5px; right: -5px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--accent); color: var(--ink); border: 2px solid var(--bar); font-size: 0.6875rem; font-weight: 700; line-height: 16px; text-align: center; box-sizing: border-box; }
 .ml-urgent { margin: 0 0 12px; padding: 10px 12px; border-left: 4px solid var(--accent); background: var(--hit); border-radius: 6px; }
 .ml-roster { margin: -4px 0 12px; padding: 10px 12px; border: 1.5px dashed var(--ink); border-radius: 8px; background: var(--beige); }
 .ml-cats { flex-wrap: wrap; gap: 8px; }
@@ -1641,7 +1666,7 @@ button.wm-a { width: 100%; border: 0; background: none; font: inherit; text-alig
 .ml-from b { color: var(--ink); }
 .ml-st { margin-left: auto; padding: 2px 8px; border-radius: 10px; font-weight: 700; border: 1px solid var(--ink); }
 .ml-st.st-seen { background: var(--hit); }
-.ml-st.st-done { background: var(--done-tint); border-color: var(--done); color: var(--done); }
+.ml-st.st-done { background: var(--done-tint); border-color: var(--done); color: var(--done-ink); }
 .ml-st.st-wait { border-style: dashed; color: var(--muted); }
 .ml-text { margin: 6px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .ml-admin .lv-cards { list-style: none; margin: 0; padding: 0; }
@@ -1705,7 +1730,7 @@ button.wm-a { width: 100%; border: 0; background: none; font: inherit; text-alig
 .dr-fold.is-open { min-height: 0; margin: 0 0 8px; padding: 0; border: 0; background: none; align-items: center; }
 .dr-fold.is-open .label { flex: 1 1 auto; }
 .dr-more { display: block; width: 100%; min-height: 44px; margin: 12px 0 0; padding: 8px 4px; border: 0; border-top: 1px solid var(--line); background: none; color: var(--ink); font: inherit; font-weight: 600; text-align: left; text-decoration: underline; cursor: pointer; }
-.dr-eb { display: inline-block; margin: 0 0 4px; padding: 2px 8px; border-radius: 10px; background: var(--done-tint); color: var(--done); font-weight: 700; font-size: 0.8125rem; }
+.dr-eb { display: inline-block; margin: 0 0 4px; padding: 2px 8px; border-radius: 10px; background: var(--done-tint); color: var(--done-ink); font-weight: 700; font-size: 0.8125rem; }
 .dr-prev { margin: 0 0 12px; padding: 10px 12px; border: 1.5px dashed var(--ink); border-radius: 8px; background: var(--beige); overflow-wrap: anywhere; }
 .dr-prev .label { display: block; margin-bottom: 2px; }
 .dr-mine { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; padding: 6px 4px 6px 12px; border-radius: var(--radius); background: var(--beige); }
@@ -1720,7 +1745,7 @@ button.wm-a { width: 100%; border: 0; background: none; font: inherit; text-alig
 .dr-team { list-style: none; margin: 0; padding: 0; }
 /* a row to read, not to tap: tick, name, drink on one line (the drink wraps under itself) */
 .dr-row { display: flex; align-items: baseline; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line); }
-.dr-tick { flex: 0 0 16px; color: var(--done); font-weight: 700; }
+.dr-tick { flex: 0 0 16px; color: var(--done-ink); font-weight: 700; }
 .dr-who { flex: 0 0 auto; max-width: 40%; font-weight: 700; overflow-wrap: anywhere; }
 .dr-what { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
 .dr-row .dr-what { color: var(--muted); }
@@ -1768,7 +1793,8 @@ button.wm-a { width: 100%; border: 0; background: none; font: inherit; text-alig
 /* The update notice (21 Oct 2026) is a slim strip at the top of the screen, never with the toasts at the bottom. While
    it shows, the bars that stick to the top of a page stick just under it. */
 .upd-bar { position: sticky; top: var(--fn-stick, 0px); z-index: 45; box-sizing: border-box; min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 0.75rem; padding: 2px 0.5rem 2px 1rem; background: var(--ink); color: #fff; font: 600 0.95rem var(--body); }
-.upd-bar button { flex: none; min-height: 44px; padding: 0 1rem; border: 0; border-radius: 22px; background: var(--accent); color: #fff; font: 700 0.95rem var(--body); cursor: pointer; }
+.upd-bar button { flex: none; min-height: 44px; padding: 0 1rem; border: 0; border-radius: 22px; background: var(--accent-ink); color: #fff; font: 700 0.95rem var(--body); cursor: pointer; }
+.upd-bar button:focus-visible { outline-color: var(--paper); }
 /* a narrow phone with Extra large text (28 Oct 2026): "It updates once sent." stays whole, so the strip is a little
    tighter there, or the page scrolled sideways at 360 px */
 @media (max-width: 380px) { .upd-bar { gap: 0.5rem; padding: 2px 0.5rem; } .upd-bar button { padding: 0 0.75rem; } }
@@ -2058,7 +2084,7 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd 
 .cut-box[aria-pressed="true"] { background: var(--done); border-color: var(--done); }
 .cut-box:disabled { opacity: 0.5; cursor: default; }
 .cut-tl li.is-done .cut-n, .cut-tl li.is-done .cut-t { color: var(--muted); }
-.cut-tl li.is-done .cut-st { color: var(--done); }
+.cut-tl li.is-done .cut-st { color: var(--done-ink); }
 .cut-how { margin: 0 0 0.4rem; }
 .todo-cut { margin: 0.5rem 0 1rem; }
 .cut-eds { list-style: none; margin: 0.5rem 0; padding: 0; }
@@ -2325,7 +2351,7 @@ a.fn-svc { display: inline-flex; align-items: center; color: var(--bar-text); te
 /* the prep list's Functions tab: a function's platters, kept apart from the day's own prep (22 Oct 2026) */
 .nb-tab.nb-tab-fn { background: #FFF6D9; border-color: #E8C35A; color: #6A4A00; }
 .nb-tab.nb-tab-fn[aria-pressed="true"] { background: #E8C35A; border-color: #B8922A; color: var(--ink); }
-.nb-tab-n { display: inline-block; min-width: 1.3em; margin-left: 0.3em; padding: 0 0.3em; border-radius: 999px; background: var(--accent); color: #fff; font-size: 0.8em; text-align: center; }
+.nb-tab-n { display: inline-block; min-width: 1.3em; margin-left: 0.3em; padding: 0 0.3em; border-radius: 999px; background: var(--accent); color: var(--ink); font-size: 0.8em; text-align: center; }
 /* every round as a list in the function sheet: time, what goes out, Sent (22 Oct 2026) */
 .fn-rounds { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
 .fn-round { display: grid; grid-template-columns: 4.6rem minmax(0, 1fr) auto; align-items: center; gap: 0.3rem 0.6rem; padding: 0.45rem 0; border-bottom: 1px solid var(--line); }
@@ -2344,7 +2370,7 @@ a.fn-svc { display: inline-flex; align-items: center; color: var(--bar-text); te
 .fnn-q { font-weight: 700; }
 .fnn-tc { font-size: 0.875rem; color: var(--muted); font-style: italic; }
 .fnn-w { flex-basis: 100%; font-size: 0.8125rem; color: var(--muted); }
-.fnn-on { font-size: 0.875rem; font-weight: 600; color: var(--done); }
+.fnn-on { font-size: 0.875rem; font-weight: 600; color: var(--done-ink); }
 .fnn-add { min-height: 44px; }
 
 /* Option B (22 Oct 2026): the admin jump list is one button on a phone, the People how-to folds, the wastage action folds */
