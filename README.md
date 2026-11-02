@@ -841,6 +841,10 @@ Code that breaks a coding rule from now on is fixed in the same branch, or added
 
 Measured and kept as it is: `js/art.js` (1.3 MB, 164 kB zipped) still loads at start (22 Oct 2026). Loading it only when Recipes opens was built and measured on a phone six times slower than a laptop: the start was 9 ms sooner (284 to 275 ms until the scripts had run, 71 to 65 ms at full speed), nothing less was downloaded (it stays in `SHELL`), and the first Recipes after each start was about 90 ms slower (944 to 1036 ms). Recipes is the page the book opens most, so the change was not merged.
 
+### Readable Prep rows on narrow screens
+
+On screens below 360 px, or below 480 px with Extra large text, the tick stays beside the prep words and the same priority, recipe and More actions sit below them. Long amounts wrap within the row. The notebook, personal one-tap ticking, shared-screen worker choice and Undo stay the same. Normal phone, tablet, desktop and landscape rows keep their existing arrangement where the exception does not apply. [Selected option and checks](docs/adaptive-controls.md#narrow-prep-rows-selected-option-a).
+
 ### Staff save presses
 
 Manage staff and the People panel update their save feedback in place. The Save and Undo buttons stay in place while a name field loses focus, so a held press is not cancelled by the input-change redraw. The New pages regression uses a held Save press after editing a name and checks the saved staff list and retained visibility settings. The Practice settings test waits for its owner-only control before checking it, matching the account check that the next click already waits for.
