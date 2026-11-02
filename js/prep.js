@@ -63,6 +63,10 @@
   function lsSet(k, v) { try { if (LS) { if (v == null || v === '') LS.removeItem(k); else LS.setItem(k, v); } } catch (e) {} }
   function clearPrivateCache() { try { Object.keys(LS || {}).forEach(function (k) { if (privateKey(k) || k === 'lk.fn') LS.removeItem(k); }); } catch (e) {} }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  // Motion follows the existing work state. It adds no reads, timers or save acknowledgements.
+  function inkState() { return navigator.onLine === false ? 'still' : 'busy'; }
+  function inkLabel(text, icon) { return window.LK_MOTION ? window.LK_MOTION.label(text, icon || 'save', inkState()) : esc(text); }
+  function inkWait(text, icon, rows) { return window.LK_MOTION ? window.LK_MOTION.status(text, { icon: icon || 'prep', state: inkState(), rows: rows || 0 }) : '<p class="hint" role="status">' + esc(text) + '</p>'; }
   function pad(n) { return (n < 10 ? '0' : '') + n; }
   /* Time is the server's, in kitchen time (LK_TIME in index.html). now() is for anything saved on a line or compared with
      a saved time; dayNow() is the kitchen's date. Date.now() is only for time passing on this phone (timers, the lock). */
@@ -1671,12 +1675,12 @@
     var disabled = pt.busy || pt.stale || pt.uncertain, query = String(pt.query || '').trim().toLowerCase();
     var filtered = rest.filter(function (p) { return String(p.name).toLowerCase().indexOf(query) >= 0; });
     var others = (active.length > 12 ? '<label class="visually-hidden" for="pt-query">Find a person</label><input class="search pt-query" id="pt-query" data-pt-query value="' + esc(pt.query || '') + '" placeholder="Find a person"' + (disabled ? ' disabled' : '') + '>' : '') + names(filtered, 'pt-others');
-    function names(list, cls) { return '<div class="pt-names ' + cls + '">' + list.map(function (p) { return '<button type="button" class="chip" data-pt="choose" data-id="' + esc(p.id) + '"' + (disabled ? ' disabled' : '') + '>' + esc(p.name) + '</button>'; }).join('') + '</div>'; }
+    function names(list, cls) { return '<div class="pt-names ' + cls + '">' + list.map(function (p) { var saving = pt.busy && pt.selected === p.id; return '<button type="button" class="chip" data-pt="choose" data-id="' + esc(p.id) + '" aria-busy="' + saving + '"' + (disabled ? ' disabled' : '') + '>' + (saving ? inkLabel(p.name, 'prep') : esc(p.name)) + '</button>'; }).join('') + '</div>'; }
     var body = '<div class="sheet-grip" aria-hidden="true"></div><h3 id="pt-h">Who did this?</h3><p class="pt-item">' + esc(pt.before.text) + (pt.before.qty ? ' <span>' + esc(pt.before.qty) + '</span>' : '') + '</p>' +
       (first.length ? '<p class="hint">Signed in on this device today</p>' + names(first, 'pt-recent') : '') +
       (rest.length ? (first.length ? '<button type="button" class="p-link pt-others-button" data-pt="others" aria-expanded="' + pt.others + '"' + (disabled ? ' disabled' : '') + '>Others...</button>' : '') + (pt.others || !first.length ? others : '') : '') +
       (!active.length ? '<p class="p-err" role="status">No eligible kitchen names are available. Close and check the staff list.</p>' : '') +
-      (pt.busy ? '<p class="pt-status" role="status">Recording for ' + esc((ptPerson(pt.selected) || {}).name || '') + '... Not saved yet.</p>' : '') +
+      (pt.busy ? '<p class="pt-status" role="status">' + inkLabel('Recording for ' + ((ptPerson(pt.selected) || {}).name || '') + '... Not saved yet.', 'prep') + '</p>' : '') +
       (pt.error ? '<p class="p-err pt-status" role="alert">' + esc(pt.error) + '</p>' + (!pt.stale && pt.selected ? '<button type="button" class="btn dark" data-pt="retry">Try again</button>' : '') : '') +
       '<button type="button" class="btn sheet-x" data-pt="cancel"' + (pt.busy ? ' disabled' : '') + '>Cancel</button>';
     var focus = document.activeElement, queryFocus = focus && ptPop.contains(focus) && focus.hasAttribute('data-pt-query'), cursor = queryFocus ? focus.selectionStart : null, action = focus && ptPop.contains(focus) && focus.getAttribute('data-pt'), id = focus && focus.getAttribute('data-id');
@@ -3654,7 +3658,7 @@
   function insightsHTML() {
     var st = S.stats, n = S.statsRange, a = AF();
     var head = '<section class="set-block a-ins">' + toolsHTML('insights', 'Insights') + filtersHTML('insights') + filterNote('insights');
-    if (!st || st.loading) return head + '<p class="hint">Loading the last 60 days...</p></section>';
+    if (!st || st.loading) return head + inkWait('Loading the last 60 days...', 'prep', 4) + '</section>';
     head += statsMiss(st);
     loadWStats(false);
     var agg = aggregate(n, 0), prev = aggregate(n, n);
@@ -3748,11 +3752,11 @@
     // while the book checks whether this person has a PIN yet, the box is already there: it takes the keyboard inside
     // the tap on the name (an iPhone opens the keyboard only inside a tap), and a PIN typed early is sent once it knows
     return '<form class="p-card" data-p-form="pin"><h2 class="p-h" id="rtitle" tabindex="-1">' + (setting ? 'Hi ' + esc(p.name) + ', choose your PIN' : esc(p.name) + ', enter your PIN') + '</h2>' + workNoticeHTML(false) +
-      '<p class="hint">' + (setting ? 'Pick 4 digits you will remember. ' + (shared() ? 'This device locks after 10 minutes away and at 04:00.' : 'Enter it again after 04:00 each day.') : checking ? 'One moment...' : 'Your own 4-digit PIN. It unlocks this device until 04:00.') + '</p>' +
+      '<p class="hint"' + (checking ? ' role="status"' : '') + '>' + (setting ? 'Pick 4 digits you will remember. ' + (shared() ? 'This device locks after 10 minutes away and at 04:00.' : 'Enter it again after 04:00 each day.') : checking ? inkLabel('One moment...', 'chef') : 'Your own 4-digit PIN. It unlocks this device until 04:00.') + '</p>' +
       (S.privacyLocked && blockedRecorder() ? '<p class="p-err" role="status">Your work is kept in this tab. Enter the same person\'s PIN to finish. Keep the book open.</p>' : '') +
       '<div class="field"><label class="label" for="pf1">' + (setting ? 'New PIN' : 'PIN') + '</label>' + pinField('pf1', 'pf1', S.pf1, true) + '</div>' +
       (setting ? '<div class="field"><label class="label" for="pf2">Type it again</label>' + pinField('pf2', 'pf2', S.pf2, true) + '</div>' : '') +
-      (S.pinMsg ? '<p class="p-err" role="alert">' + esc(S.pinMsg) + '</p>' : '') +
+      (S.pinMsg ? S.pinMsg === 'Checking your PIN...' ? inkWait(S.pinMsg, 'chef') : '<p class="p-err" role="alert">' + esc(S.pinMsg) + '</p>' : '') +
       '<div class="btn-row"><button type="submit" class="btn dark">' + (setting ? 'Save my PIN' : openLabel()) + '</button><button type="button" class="btn" data-p="who-change">' + (armed('who-change') ? 'Discard work and change person' : 'Not me') + '</button></div></form>';
   }
 
@@ -4049,14 +4053,15 @@
       '<label class="visually-hidden" for="p-qty">Amount</label><input id="p-qty" class="nb-in nb-in-qty" data-k="p-qty" enterkeyhint="done" autocomplete="off" placeholder="Amount" maxlength="40" value="' + esc(S.qty) + '">' +
       '<button type="submit" class="nb-addbtn">Add</button></div><div class="nb-sugg" id="p-sugg">' + suggestHTML() + '</div><div class="nb-sugg nb-qs" id="p-qsugg">' + qtyChipsHTML() + '</div><p class="nb-hint" id="p-hint" aria-live="polite">' + esc(hintText(S.text)) + '</p>' + recipePicker() + (S.quickChips ? '<div class="nb-qadd"><span class="nb-ql">Quick add</span><div class="nb-usual">' + S.quickChips + '</div></div>' : '') + '</form>' : (S.date !== today ? '<p class="hint">You are looking at ' + esc(dayName(S.date)) + '. Lines are added on Today only.</p>' : '<p class="hint">You can read the book but not write in it. Ask the head chef if that is wrong.</p>');
     var todayEmpty = !live.length && S.itemsState === 'ok' ? '<p class="nb-empty">Nothing written for ' + esc(dayName(S.date).toLowerCase()) + ' yet.</p>' : '';
+    if (!S.items.length && S.itemsState === 'loading') todayEmpty = inkWait('Loading the prep list...', 'prep', 4);
     if (live.length && doneN === live.length && !S.tab) todayEmpty = '<p class="nb-empty">Everything on this list is ticked off. See Done today under Handy.</p>';
-    if (S.tab && !live.some(function (x) { return inTab(x) && (!x.done || lingers(x)); })) todayEmpty = '<p class="nb-empty">Nothing left to do in ' + esc(S.tab === FN_TAB ? 'Functions' : S.tab) + '. Ticked lines are under Done today in Handy.</p>';
+    if (S.itemsState === 'ok' && S.tab && !live.some(function (x) { return inTab(x) && (!x.done || lingers(x)); })) todayEmpty = '<p class="nb-empty">Nothing left to do in ' + esc(S.tab === FN_TAB ? 'Functions' : S.tab) + '. Ticked lines are under Done today in Handy.</p>';
     if (!S.tab && !daily.length && fnLive.length && S.itemsState === 'ok') todayEmpty = '<p class="nb-empty">Nothing written for ' + esc(dayName(S.date).toLowerCase()) + ' yet. Function platters are on the Functions tab.</p>';
     // no signal and this day not loaded yet: the note first, then only the lines this phone wrote since (listSnap)
     var offNote = S.itemsState === 'offline' ? '<p class="nb-empty" role="status">' + OFF_LIST + '</p>' : '';
     if (offNote) todayEmpty = '';
     var left = '<section class="nb-page nb-left"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + esc(dayName(S.date)) + '</h2><span class="nb-date">' + esc(longDate(S.date)) + '</span></div>' +
-      (S.itemsState === 'offline' ? '' : '<div class="nb-prog">' + doneN + ' of ' + live.length + ' done</div>') + (can('add') ? '<button type="button" class="nb-jump" data-p="write">Write a line</button>' : '') + (doneN ? '<button type="button" class="nb-jump nb-donejump" data-p="donejump">Done today' + (S.itemsState === 'offline' ? '' : ' (' + doneN + ')') + '</button>' : '') + '</header>' +
+      (S.itemsState !== 'ok' && !live.length || S.itemsState === 'offline' ? '' : '<div class="nb-prog">' + doneN + ' of ' + live.length + ' done</div>') + (can('add') ? '<button type="button" class="nb-jump" data-p="write">Write a line</button>' : '') + (doneN ? '<button type="button" class="nb-jump nb-donejump" data-p="donejump">Done today' + (S.itemsState === 'offline' ? '' : ' (' + doneN + ')') + '</button>' : '') + '</header>' +
       (S.itemsState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' : '') +
       '<div class="nb-body">' + (flags ? '<div class="nb-lc">' + flags + '</div>' : '') + offNote + (S.tab === FN_TAB ? '' : startHTML(daily)) + pageBody(S.items, S.date) + todayEmpty + '</div>' +
       '<div class="nb-foot">' + add + (add && !can('del') ? '<p class="hint nb-who">Wrote the wrong thing? Undo it straight away, or ask the head chef or a sous chef to remove it.</p>' : '') +
@@ -4206,7 +4211,7 @@
   }
   function teamHTML() {
     var st = S.stats;
-    if (!st || st.loading) return '<section class="set-block"><span class="label">Team</span><p class="hint">Loading the last 30 days...</p></section>';
+    if (!st || st.loading) return '<section class="set-block"><span class="label">Team</span>' + inkWait('Loading the last 30 days...', 'prep', 4) + '</section>';
     loadOrdStats(false);
     var n = S.statsRange, td = teamData(n), people = (S.config.people || []).filter(function (p) { return p.active !== false; });
     var rows = people.map(function (p) { var r = td.per[p.id] || blankRec(p.id); return { p: p, r: r, h: habit(r, td), wd: Object.keys(r.days).length, tdN: Object.keys(r.tdays).length }; });
@@ -4274,7 +4279,7 @@
   }
   function orderStatsHTML(td, n) {
     var os = S.ordStats;
-    if (!os || os.loading) return '<section class="set-block"><span class="label">Order list</span><p class="hint">Loading...</p></section>';
+    if (!os || os.loading) return '<section class="set-block"><span class="label">Order list</span>' + inkWait('Loading...', 'orders', 4) + '</section>';
     var from = shift(dayNow(), -(n - 1)), lines = os.lines.filter(function (x) { return !x.deleted && x.date >= from; });
     var byDay = {}, byPerson = {}, items = {}, ordered = 0;
     lines.forEach(function (x) {
@@ -4441,7 +4446,7 @@
     var p = proofModule();
     if (p) return p.render(proofAdapter());
     if (!proofLoading && !proofError) proofLoading = window.LK_APP.load('js/proofreader-admin.js?v=1').then(function () { if (!proofModule()) throw { code: 'workspace-version' }; proofLoading = null; if (intelligenceAllowed()) draw(); }).catch(function () { proofLoading = null; proofError = true; if (intelligenceAllowed()) draw(); });
-    return '<section class="set-block"><h3 class="label">Proofreader</h3><p class="hint" role="status">' + (proofError ? 'Could not load the proofreader. Check the connection and reload this page.' : 'Loading...') + '</p></section>';
+    return '<section class="set-block"><h3 class="label">Proofreader</h3><p class="hint" role="status">' + (proofError ? 'Could not load the proofreader. Check the connection and reload this page.' : inkLabel('Loading...', 'chef')) + '</p></section>';
   }
   document.addEventListener('click', function (e) { var el = e.target.closest('[data-pr]'), p = proofModule(); if (el && S.root && S.root.contains(el) && intelligenceAllowed() && p) { e.preventDefault(); p.click(el); } });
   document.addEventListener('input', function (e) { var p = proofModule(); if (e.target.matches('[data-pr-field]') && S.root && S.root.contains(e.target) && intelligenceAllowed() && p) p.input(e.target); });
@@ -4461,7 +4466,7 @@
       if (!intelligenceLoading && !intelligenceError) {
         intelligenceLoading = window.LK_APP.load('js/analysis-core.js?v=2').then(function () { return window.LK_APP.load('js/admin-intelligence.js?v=3'); }).then(function () { if (!window.LK_INTELLIGENCE || window.LK_INTELLIGENCE.API !== 3 || !window.LK_ANALYSIS) throw { code: 'workspace-version' }; }).then(function () { intelligenceLoading = null; if (intelligenceAllowed()) draw(); }, function () { intelligenceLoading = null; intelligenceError = true; if (intelligenceAllowed()) draw(); });
       }
-      return '<section class="set-block"><h3 class="label">Admin workspace</h3><p class="hint" role="status">' + (intelligenceError ? 'Could not load the workspace. Check the connection and reload this page.' : 'Loading...') + '</p></section>';
+      return '<section class="set-block"><h3 class="label">Admin workspace</h3><p class="hint" role="status">' + (intelligenceError ? 'Could not load the workspace. Check the connection and reload this page.' : inkLabel('Loading...', 'chef')) + '</p></section>';
     }
     return window.LK_INTELLIGENCE.html(page, {
       allowed: intelligenceAllowed, context: intelligenceContext, draw: draw, now: now,
@@ -4505,7 +4510,7 @@
   });
   function adminHTML() {
     if (S.authState !== 'ready' && !S.user) {
-      return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2><p class="hint">Loading...</p></section>';
+      return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2>' + inkWait('Loading...', 'chef') + '</section>';
     }
     if (!S.user) {
       return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2>' + workNoticeHTML(true) + (whoHead() ? '<p class="hint a-headpin">Chef, your PIN opens the prep book. The admin panel also needs your Google account, so a PIN seen over your shoulder cannot change the book. Sign in once on this phone and it stays signed in. On a shared kitchen device, sign out when you are done.</p>' :
@@ -4517,7 +4522,7 @@
     loadAdmins();
     if (S.level === 'setup') return bootstrapHTML();
     if (S.level === 'pin' && S.ownerVerified) return '<p class="hint">Your Google account is recognised. Enter your head chef PIN to unlock this device until 04:00.</p>' + ownPinHTML() + '<p><button type="button" class="p-link" data-p="owner-reset">' + (armed('owner-reset') ? 'Confirm reset of the head chef PIN' : 'Forgot the head chef PIN?') + '</button></p>' + (S.saveMsg ? '<p class="p-err" role="status">' + esc(S.saveMsg) + '</p>' : '');
-    if (!S.level) return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2>' + (S.adminsOff === (S.user.email || '') ? '<p class="p-err" role="status">No signal. The admin panel opens when the phone is back online.</p><div class="btn-row"><button type="button" class="btn dark" data-p="admins-retry">Try again</button><a class="btn" href="#/prep">Back to the prep book</a></div>' : '<p class="hint">Checking your access...</p>') + '</section>';
+    if (!S.level) return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2>' + (S.adminsOff === (S.user.email || '') ? '<p class="p-err" role="status">No signal. The admin panel opens when the phone is back online.</p><div class="btn-row"><button type="button" class="btn dark" data-p="admins-retry">Try again</button><a class="btn" href="#/prep">Back to the prep book</a></div>' : inkWait('Checking your access...', 'chef')) + '</section>';
     if (S.level === 'none') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2><p class="p-err">' + esc(S.user.email) + ' is not the head chef\'s Google account, so it cannot open the admin panel. Sign out and sign in with the head chef\'s account.</p><div class="btn-row"><button type="button" class="btn dark" data-p="signout">' + (armed('signout') ? notSaved() + '. Tap again' : 'Sign out') + '</button><a class="btn" href="#/prep">Back to the prep book</a></div></section>';
     if (!ownerHere()) {
       var op = who();
@@ -4596,7 +4601,8 @@
       var selector = '[data-p="' + action + '"]', old = sb.querySelector(selector), fresh = next.querySelector(selector);
       if (!old || !fresh) return;
       if (old.disabled !== fresh.disabled) old.disabled = fresh.disabled;
-      if (old.textContent !== fresh.textContent) old.textContent = fresh.textContent;
+      if (old.innerHTML !== fresh.innerHTML) old.innerHTML = fresh.innerHTML;
+      if (fresh.hasAttribute('aria-busy')) old.setAttribute('aria-busy', fresh.getAttribute('aria-busy'));
     });
     ['.a-unsaved', '.saved', '.a-stale'].forEach(function (selector) {
       var old = sb.querySelector(selector), fresh = next.querySelector(selector);
@@ -4609,7 +4615,7 @@
   ['change', 'input'].forEach(function (ev) { document.addEventListener(ev, function (e) { if (e.target && e.target.getAttribute && e.target.getAttribute('data-a')) setTimeout(saveBarRefresh, 0); }, true); });
   function saveBarHTML() {
     var n = draftChanges();
-    return '<section class="set-block a-savebar">' + staleHint() + '<div class="btn-row"><button type="button" class="btn dark" data-p="a-save"' + (S.busy || !n ? ' disabled' : '') + '>Save changes</button>' +
+    return '<section class="set-block a-savebar">' + staleHint() + '<div class="btn-row"><button type="button" class="btn dark ink-busy-button" data-p="a-save" aria-busy="' + !!S.busy + '"' + (S.busy || !n ? ' disabled' : '') + '>' + (S.busy ? inkLabel('Saving...') : 'Save changes') + '</button>' +
       '<button type="button" class="btn" data-p="a-reset"' + (n ? '' : ' disabled') + '>' + (armed('a-reset') ? 'Tap again to undo ' + (n === 1 ? 'it' : 'all ' + n) : 'Undo unsaved changes') + '</button>' +
       (n ? '<span class="a-unsaved">' + n + ' unsaved change' + (n === 1 ? '' : 's') + '</span>' : '') + '</div><span class="saved" role="status">' + esc(S.saveMsg) + '</span></section>';
   }
@@ -4741,9 +4747,10 @@
     fn: 'Functions', functions: 'Manage functions', deliveries: 'Delivery received', suppliers: 'Supplier order', manage: 'Manage Recipes & Drawings' };
   function loadingHTML() {
     var t = esc(PAGE_NAME[S.name] || 'Prep book');
-    if (S.name === 'admin') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">' + t + '</h2><p class="hint">Loading...</p></section>';
+    var icon = ['prep', 'orders', 'waste', 'transfers', 'guides'].indexOf(S.name) >= 0 ? S.name : 'chef';
+    if (S.name === 'admin') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">' + t + '</h2>' + inkWait('Loading...', icon, 3) + '</section>';
     return '<section class="nb-page o-page is-loading"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + t + '</h2><span class="nb-date">' + esc(longDate(dayNow())) + '</span></div></header>' +
-      '<div class="nb-body"><p class="nb-empty">Loading...</p></div></section>';
+      '<div class="nb-body">' + inkWait('Loading...', icon, 4) + '</div></section>';
   }
   /* the kitchen's settings are not loaded yet and there is no signal (27 Oct 2026): in place of Who are you? or a page
      that would look empty. The settings listener carries on and the page opens by itself when the signal is back. */
@@ -5082,7 +5089,7 @@
   }
   var MISS_TEXT = 'Could not load every day. Check the signal. The book tries again by itself in a few minutes.';
   function ordAllHTML() {
-    if (S.ordBusy && !(S.ordAll || []).length) return '<p class="hint">Loading the last ' + ORD_DAYS + ' days...</p>';
+    if (S.ordBusy && !(S.ordAll || []).length) return inkWait('Loading the last ' + ORD_DAYS + ' days...', 'orders', 4);
     var gs = ordGroups(), miss = S.ordAllMiss ? '<p class="hint o-miss" role="alert">' + MISS_TEXT + '</p>' : '';
     if (!gs.length && miss) return miss;
     if (!gs.length) return '<p class="nb-empty">Nothing waiting to be ordered. Anything written in the last ' + ORD_DAYS + ' days has been ticked off.</p>';
@@ -5191,10 +5198,10 @@
     var offO = S.ordState === 'offline' ? '<p class="nb-empty" role="status">' + OFF_LIST + '</p>' : '';
     var body = view === 'all' ? ordAllHTML() :
       (S.ordState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' :
-        offO + ordOverdueHTML(overdue, today) + (shown.length ? '<ul class="nb-rows">' + shown.slice().sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }).map(ordRow).join('') + '</ul>' : (overdue.length || offO ? '' : live.length ? '<p class="nb-empty">Everything on this list has been ordered. See Ordered today below.</p>' : S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : '<p class="nb-empty">Loading...</p>')));
+        offO + ordOverdueHTML(overdue, today) + (shown.length ? '<ul class="nb-rows">' + shown.slice().sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }).map(ordRow).join('') + '</ul>' : (overdue.length || offO ? '' : live.length ? '<p class="nb-empty">Everything on this list has been ordered. See Ordered today below.</p>' : S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : inkWait('Loading the order list...', 'orders', 4))));
     return whoTopHTML('') + tabs +
       '<section class="nb-page o-page' + (view === 'all' ? ' o-all' : '') + '"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + (view === 'all' ? 'To order' : 'Order list') + '</h2><span class="nb-date">' + (view === 'all' ? 'Across the last ' + ORD_DAYS + ' days' : esc(longDate(S.ordDate))) + '</span></div>' +
-      (view === 'day' && S.ordState !== 'offline' ? '<div class="nb-prog">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') + '</header>' +
+      (view === 'day' && S.ordState !== 'offline' && (S.ordState === 'ok' || live.length) ? '<div class="nb-prog">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') + '</header>' +
       (view === 'day' && S.ordDate === today ? cutOrdHTML() : '') +
       /* the add box is at the top, so it is always in reach; on big screens the list and the ordered-today list sit side by side below it */
       (view === 'day' && add ? '<div class="nb-foot o-add">' + add + (canBrowse() ? '' : '<p class="hint nb-who">Only the head chef or a sous chef ticks a line as ordered or removes it. Wrote the wrong thing? Undo it straight away, or ask them.</p>') + '</div>' : '') +
@@ -5464,10 +5471,10 @@
     var offW = S.wState === 'offline' ? '<p class="nb-empty" role="status">' + OFF_LIST + '</p>' : '';
     var tot = offW ? '' : totalsText(wTotals(live));
     var body = S.wState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' :
-      offW + (shown.length ? '<ul class="nb-rows">' + shown.map(wRow).join('') + '</ul>' : (offW ? '' : S.wState !== 'ok' ? '<p class="nb-empty">Loading...</p>' : '<p class="nb-empty">Nothing logged for ' + esc(dayName(S.wDate).toLowerCase()) + ' yet. Log waste when it happens: prep waste, expired stock, cooking faults, returns and excess production.</p>'));
+      offW + (shown.length ? '<ul class="nb-rows">' + shown.map(wRow).join('') + '</ul>' : (offW ? '' : S.wState !== 'ok' ? inkWait('Loading wastage...', 'waste', 4) : '<p class="nb-empty">Nothing logged for ' + esc(dayName(S.wDate).toLowerCase()) + ' yet. Log waste when it happens: prep waste, expired stock, cooking faults, returns and excess production.</p>'));
     return whoTopHTML(ksTagHTML()) +
       '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Wastage</h2><span class="nb-date">' + esc(longDate(S.wDate)) + (tot ? ' &middot; ' + esc(tot) : '') + '</span></div>' +
-      (S.wState === 'offline' ? '' : '<div class="nb-prog">' + live.length + (live.length === 1 ? ' entry' : ' entries') + '</div>') + '</header>' +
+      (S.wState === 'offline' || S.wState !== 'ok' && !live.length ? '' : '<div class="nb-prog">' + live.length + (live.length === 1 ? ' entry' : ' entries') + '</div>') + '</header>' +
       '<p class="w-rule">Write the actual amount and unit, not a dollar value. Unsafe food must never be reused to avoid logging waste.</p>' +
       // the form sits at the top, like the order list, so logging waste on a busy day never means scrolling past every entry
       (add ? '<div class="nb-foot w-addtop">' + add + '</div>' : '') + '<div class="nb-body">' + body + '</div></section>' +
@@ -5798,13 +5805,13 @@
     var openBody = '<h3 class="a-ch-h">Still outstanding</h3><p class="hint">Tick the box only when the full amount has been returned. Items stay here across days.</p>' +
       (S.xOpenState === 'error' ? '<p class="p-err">Could not load outstanding transfers. This list may be incomplete. Reload to try again.</p>' :
       S.xOpenState === 'offline' ? '<p class="nb-empty" role="status">No signal. This list shows when the phone is back online.</p>' :
-      S.xOpenState !== 'ok' ? '<p class="nb-empty">Loading outstanding transfers...</p>' :
+      S.xOpenState !== 'ok' ? inkWait('Loading outstanding transfers...', 'transfers', 2) :
       outstanding.length ? '<ul class="nb-rows tr-outstanding">' + outstanding.map(function (x) { return '<li class="hint">' + esc(longDate(x.date)) + '</li>' + xRow(x); }).join('') + '</ul>' : '<p class="hint">No outstanding transfers from earlier days.</p>');
     var body = S.xState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' :
-      offX + (shown.length ? '<ul class="nb-rows">' + shown.map(xRow).join('') + '</ul>' : (offX ? '' : S.xState !== 'ok' ? '<p class="nb-empty">Loading...</p>' : '<p class="nb-empty">No transfers for ' + esc(dayName(S.xDate).toLowerCase()) + ' yet. When another venue takes stock, or we take some from them, log it here.</p>'));
+      offX + (shown.length ? '<ul class="nb-rows">' + shown.map(xRow).join('') + '</ul>' : (offX ? '' : S.xState !== 'ok' ? inkWait('Loading transfers...', 'transfers', 4) : '<p class="nb-empty">No transfers for ' + esc(dayName(S.xDate).toLowerCase()) + ' yet. When another venue takes stock, or we take some from them, log it here.</p>'));
     return whoTopHTML(ksTagHTML()) +
       '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Transfers</h2><span class="nb-date">' + esc(longDate(S.xDate)) + (sub ? ' &middot; ' + esc(sub) : '') + '</span></div>' +
-      (S.xState === 'offline' ? '' : '<div class="nb-prog">' + live.length + (live.length === 1 ? ' transfer' : ' transfers') + '</div>') + '</header>' +
+      (S.xState === 'offline' || S.xState !== 'ok' && !live.length ? '' : '<div class="nb-prog">' + live.length + (live.length === 1 ? ' transfer' : ' transfers') + '</div>') + '</header>' +
       '<p class="w-rule">Stock shared with the other venues, both ways. Write the amount and unit, not a price.</p>' +
       '<div class="nb-foot w-addtop">' + add + '</div><div class="nb-body">' + openBody + '<h3 class="a-ch-h">Today</h3>' + body + '</div></section>' +
       (wAll() ? '<p class="hint w-past">Past days and the totals per venue are in the <a href="#/admin" data-p="tr-go-admin">admin panel, Transfers</a>.</p>' : '');
@@ -6377,7 +6384,7 @@
       '<div class="field"><span class="label">Repeat every week on (optional)</span><div class="nt-chips" role="group" aria-label="Weekdays">' + dows + (f.dows.length ? '<button type="button" class="chip" data-p="n-dowclr">Clear weekdays</button>' : '') + '</div><span class="hint">With weekdays picked and no last day, the ping comes back every week until you remove it.</span></div>' +
       '<div class="field"><label class="label" for="n-tm">Pop up at (optional)</label><div class="nt-chips"><input id="n-tm" type="time" class="p-dateinput" data-k="n-tm" value="' + esc(f.tm || '') + '">' + (f.tm ? '<button type="button" class="chip" data-p="n-tmclr">No set time</button>' : '') + '</div><span class="hint">Empty: it pops up at 10:30. With a time, it pops up then on every phone. Either way it is gone 30 minutes later, so for a later shift set its time. Saved for today after its time, it pops up straight away.</span></div>' +
       '<p class="nt-whenline" role="status">' + esc(when) + '</p>' +
-      '<div class="btn-row"><button type="button" class="btn dark" data-p="n-save"' + (S.nSaving || nfSame() ? ' disabled' : '') + '>' + (f.id ? 'Save changes' : 'Save ping') + '</button><button type="button" class="btn" data-p="n-preview">Preview the popup</button><button type="button" class="btn" data-p="n-reset">Reset days</button><button type="button" class="btn" data-p="n-cancel">' + (armed('n-cancel') ? 'Tap again to discard' : f.id ? 'Cancel' : 'Close') + '</button></div>' +
+      '<div class="btn-row"><button type="button" class="btn dark ink-busy-button" data-p="n-save" aria-busy="' + !!S.nSaving + '"' + (S.nSaving || nfSame() ? ' disabled' : '') + '>' + (S.nSaving ? inkLabel('Saving...') : f.id ? 'Save changes' : 'Save ping') + '</button><button type="button" class="btn" data-p="n-preview">Preview the popup</button><button type="button" class="btn" data-p="n-reset">Reset days</button><button type="button" class="btn" data-p="n-cancel">' + (armed('n-cancel') ? 'Tap again to discard' : f.id ? 'Cancel' : 'Close') + '</button></div>' +
       '<span class="saved" role="status">' + esc(S.nMsg) + '</span></section>';
   }
   function notesEditorHTML() {
@@ -6409,7 +6416,7 @@
     // the head chef's Google device with nobody signed in: saved by nobody (W() sends by empty there), not by the
     // ping's writer. An older ping with no author keeps its writer.
     if (!canW() && was && !was.author && was.by) data.author = was.by;
-    S.nSaving = true; S.nMsg = ''; draw();
+    S.nSaving = true; S.nMsg = 'Saving...'; draw();
     sset(ref, data, !!f.id).then(function () {
       if (epoch !== accessEpoch) return;
       if (noteOn(data, t) || (was && noteOn(was, t))) { markPings(); noteJust((f.to ? 'direct/' : '') + ref.id, nk); }
@@ -7174,7 +7181,7 @@
     var head = '<section class="set-block wh-report wh-' + h.view + '"><h3 class="a-title">Wastage</h3>' + whControls(r, ready);
     if (r.error) return head + '<p class="p-err" role="alert">' + esc(r.error) + '</p></section>';
     if (ws && ws.error) return head + '<p class="p-err wh-error" role="alert">' + esc(ws.error) + '</p></section>';
-    if (!ready) return head + '<p class="hint" role="status">Loading wastage for ' + esc(whSpan(r)) + '...</p></section>';
+    if (!ready) return head + inkWait('Loading wastage for ' + whSpan(r) + '...', 'waste', 4) + '</section>';
     var foot = '<p class="hint a-upd">Updated ' + esc(clock(ws.at)) + '. Refresh reads the newest.</p></section>';
     if (h.view === 'reviews') return head + whReviewsHTML(r) + foot;
     var lines = whLines(r, false), prev = h.view === 'summary' ? whLines(r.prev, false) : null;
@@ -7306,7 +7313,7 @@
     var xs = S.xStats, n = S.statsRange, vk = okey(AF().venue);
     var head = '<section class="set-block">' + toolsHTML('transfers', 'Transfers', { at: xs && !xs.loading ? xs.at : 0 }) +
       '<span class="hint">From the transfer list on the phones: what other venues took from us and what we took from them. Amounts are what people wrote (grams are counted as kg). Days older than 30 are in the backups. <a href="#/transfers">Open the transfer list</a></span>' + xFiltersHTML();
-    if (!xs || xs.loading) return head + '<p class="hint">Loading the last ' + X_DAYS + ' days...</p></section>';
+    if (!xs || xs.loading) return head + inkWait('Loading the last ' + X_DAYS + ' days...', 'transfers', 4) + '</section>';
     var ds = {}; xDays(n).forEach(function (d) { ds[d] = 1; });
     var all = xs.lines.filter(function (x) { return ds[x.date] && (!vk || okey(x.venue) === vk); }), lines = all.filter(function (x) { return !x.deleted; });
     var outs = lines.filter(function (x) { return x.dir !== 'in'; }), ins = lines.filter(function (x) { return x.dir === 'in'; });
@@ -7564,13 +7571,14 @@
      book/index lists every changed recipe with its version, so one read says what is new; then only the recipes whose
      version changed are read. It runs when the book connects, when someone comes back after 30 minutes away and when
      the recipes are opened, each time only if the last check is 30 minutes old. No listener, no polling. */
-  var RX_STALE = 30 * 60000, rxBusy = false, rxRetry = 0;
+  var RX_STALE = 30 * 60000, rxBusy = false, rxRetry = 0, rxState = 'idle';
+  function rxStatus(state) { rxState = state; try { window.dispatchEvent(new Event('lk-rx-status')); } catch (e) {} }
   function rxDue() { return !!window.LK_RX && Date.now() - window.LK_RX.syncedAt() > RX_STALE; }
   function rxSync(force) {
     var X = window.LK_RX;
     if (!X || !fb || rxBusy || Date.now() < rxRetry || !(force || rxDue())) return Promise.resolve(false);
     var pin = S.pin || 'public', have = X.pin() === pin ? X.versions() : {}, haveArt = {};
-    rxBusy = true;
+    rxBusy = true; rxStatus('loading');
     // the drawings kept on this phone are read from IndexedDB first, so only the ones that changed are read
     return X.artReady().then(function () { haveArt = X.pin() === pin ? X.artVersions() : {}; return fb.fs.getDoc(S.pin ? docRef('book', 'index') : fb.fs.doc(fb.db, 'publicBook', 'index')); }).then(function (sn) {
       var idx = sn.exists() ? sn.data() : {}, ir = idx.r && typeof idx.r === 'object' ? idx.r : {}, id2 = idx.d && typeof idx.d === 'object' ? idx.d : {};
@@ -7582,16 +7590,19 @@
         return fb.fs.getDoc(S.pin ? docRef('drawings', id) : fb.fs.doc(fb.db, 'publicDrawings', id)).then(function (d) { return ['@' + id, d.exists() ? d.data() : null]; });
       }))).then(function (got) {
         rxBusy = false;
-        if (pin !== (S.pin || 'public')) return false;
+        if (pin !== (S.pin || 'public')) { rxStatus('idle'); return false; }
         var recs = got.filter(function (g) { return g[0].charAt(0) !== '@'; }), arts = got.filter(function (g) { return g[0].charAt(0) === '@'; }).map(function (g) { return [g[0].slice(1), g[1]]; });
         var changed = X.take(pin, idx, recs);
         X.takeArt(pin, id2, arts);
         if (changed) rxChanged();
+        rxStatus('ok');
         return changed;
       });
-    }).catch(function () {
+    }).catch(function (e) {
       // no signal, or rules not published yet: keep the changes on this phone and try again in a minute
-      rxBusy = false; rxRetry = Date.now() + 60000; return false;
+      rxBusy = false; rxRetry = Date.now() + 60000;
+      rxStatus(pin !== (S.pin || 'public') ? 'idle' : navigator.onLine === false ? 'offline' : 'error');
+      return false;
     });
   }
   // the recipe lists this file works out from js/data.js (spelling, recipe links, guides on cards) are worked out again
@@ -7933,10 +7944,12 @@
   /* the words read from a PDF, for search: one space between words, and letter-spaced headings ("I C O M B I") joined up */
   function gTidy(t) { return String(t).replace(/\s+/g, ' ').replace(/(^|\s)((?:[A-Za-z0-9] ){2,}[A-Za-z0-9])(?=\s|$)/g, function (m, a, b) { return a + b.replace(/ /g, ''); }).trim().slice(0, G_TEXT); }
   function gPdf(file, f, label) {
+    f.busy = 'Opening ' + label + '...'; f.progress = null; draw();
     return Promise.all([pdfjs().catch(function (e) { f.noReader = true; throw e; }), file.arrayBuffer()]).then(function (r) {
       return r[0].getDocument({ data: new Uint8Array(r[1]), isEvalSupported: false, standardFontDataUrl: PDFJS + 'standard_fonts/', cMapUrl: PDFJS + 'cmaps/', cMapPacked: true }).promise;
     }).then(function (doc) {
       var room = G_MAXP - f.pages.length, n = Math.min(doc.numPages, room), i = 0, words = [];
+      f.progress = { completed: 0, total: n };
       if (doc.numPages > room) f.cut = true;
       function next() {
         if (i >= n) { doc.destroy(); f.text = gTidy(f.text + ' ' + words.join(' ')); return; }
@@ -7945,7 +7958,7 @@
           var v1 = pg.getViewport({ scale: 1 }), vp = pg.getViewport({ scale: G_LONG / Math.max(v1.width, v1.height) }), cv = gCanvas(vp.width, vp.height);
           return pg.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise.then(function () { return pg.getTextContent(); }).then(function (tc) {
             words.push(tc.items.map(function (x) { return x.str; }).join(' '));
-            f.pages.push(gEncode(cv)); pg.cleanup();
+            f.pages.push(gEncode(cv)); pg.cleanup(); f.progress.completed++;
           });
         }).then(next);
       }
@@ -7953,13 +7966,13 @@
     });
   }
   function gPhoto(file, f, label) {
-    f.busy = 'Reading ' + label + '...'; draw();
+    f.busy = 'Reading ' + label + '...'; f.progress = { completed: 0, total: 1 }; draw();
     return new Promise(function (res, rej) {
       var u = URL.createObjectURL(file), im = new Image();
       im.onload = function () {
         var sc = Math.min(1, G_LONG / Math.max(im.naturalWidth, im.naturalHeight)), cv = gCanvas(im.naturalWidth * sc, im.naturalHeight * sc);
         cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height);
-        URL.revokeObjectURL(u); f.pages.push(gEncode(cv)); res();
+        URL.revokeObjectURL(u); f.pages.push(gEncode(cv)); f.progress.completed++; res();
       };
       im.onerror = function () { URL.revokeObjectURL(u); rej(new Error('photo')); };
       im.src = u;
@@ -7971,6 +7984,7 @@
     var f = S.gf, list = Array.prototype.slice.call(files || []);
     if (!f || !list.length || f.busy || f.saving) return;
     f.pages = f.pages || []; f.msg = ''; f.cut = false; f.noReader = false;
+    f.busy = 'Reading files...'; f.progress = null; draw();
     var bad = [], chain = Promise.resolve();
     list.forEach(function (file) {
       chain = chain.then(function () {
@@ -7982,7 +7996,7 @@
       });
     });
     chain.then(function () {
-      f.busy = '';
+      f.busy = ''; f.progress = null;
       var m = [];
       if (f.noReader) m.push('Could not load the PDF reader. Check the connection and choose the file again.');
       else if (bad.length) m.push('Could not read ' + bad.map(function (b) { return '"' + b + '"'; }).join(', ') + '. Use a PDF, or photos as JPEG or PNG.');
@@ -8017,13 +8031,18 @@
       '<div class="field"><span class="label">File</span><label class="btn g-filebtn' + (f.busy || f.saving ? ' is-off' : '') + '">' + (pages && pages.length ? 'Add more pages' : old && old.pages ? 'Choose a new file' : 'Choose a PDF or photos') +
         '<input type="file" id="g-file" class="visually-hidden" data-k="g-file" accept="application/pdf,image/*" multiple' + (f.busy || f.saving ? ' disabled' : '') + '></label>' +
         '<span class="hint">Each PDF page or photo becomes a picture staff can open big. Up to ' + G_MAXP + ' pages.</span>' +
-        (f.busy ? '<p class="g-busy" role="status">' + esc(f.busy) + '</p>' : '<p class="g-now" role="status">' + esc(pagesMsg) + '</p>') + strip + '</div>' +
+        (f.busy ? gProgressHTML(f) : '<p class="g-now" role="status">' + esc(pagesMsg) + '</p>') + strip + '</div>' +
       '<div class="field"><label class="label" for="g-steps">Steps (optional, one per line)</label><textarea id="g-steps" class="p-bulk" data-k="g-steps" rows="5" maxlength="3000" placeholder="For example: Press the menu button, bottom right.">' + esc(f.steps) + '</textarea></div>' +
       '<div class="field"><label class="label" for="g-kw">Search words (optional)</label><input id="g-kw" class="search" data-k="g-kw" maxlength="200" autocomplete="off" placeholder="For example: iCombi, oven, programme" value="' + esc(f.kw) + '"><span class="hint">Separate them with commas. A recipe card that mentions one of these words shows a link to this guide.</span></div>' +
       '<p class="g-links" id="g-links">' + esc(gLinksText(f)) + '</p>' +
       (f.msg ? '<p class="p-err" role="alert">' + esc(f.msg) + '</p>' : '') +
-      '<div class="btn-row"><button type="button" class="btn dark" data-p="g-save"' + (f.busy || f.saving || gfSame() ? ' disabled' : '') + '>' + (f.saving ? 'Saving...' : f.id ? 'Save changes' : 'Save guide') + '</button>' +
+      '<div class="btn-row"><button type="button" class="btn dark ink-busy-button" data-p="g-save" aria-busy="' + !!f.saving + '"' + (f.busy || f.saving || gfSame() ? ' disabled' : '') + '>' + (f.saving ? inkLabel('Saving...', 'guides') : f.id ? 'Save changes' : 'Save guide') + '</button>' +
       '<button type="button" class="btn" data-p="g-cancel">' + (armed('g-cancel') ? 'Tap again to discard' : f.id ? 'Cancel' : 'Close') + '</button></div></section>';
+  }
+  function gProgressHTML(f) {
+    var motion = window.LK_MOTION, opt = { icon: 'guides', state: f.saving ? inkState() : 'busy' };
+    if (!motion) return '<p class="g-busy" role="status">' + esc(f.busy) + '</p>';
+    return f.progress && f.progress.total > 0 ? motion.progress(f.progress.completed, f.progress.total, f.busy, opt) : motion.status(f.busy, opt);
   }
   /* while writing: which recipe cards the guide will show on (the same rule as gIndex) */
   function gLinksText(f) {
@@ -8067,12 +8086,15 @@
     if (!(pages ? pages.length : old && old.pages) && !gClean(f.steps, 3000)) return stop('Add a PDF, photos or written steps.');
     if (pages && pages.some(function (p) { return p.img.length > G_IMG; })) return stop('A page is too big to save. Remove it, or use a smaller photo.');
     var id = f.id || f.nid || (f.nid = fb.fs.doc(colRef('guides')).id), v = old ? (old.v || 1) + (pages ? 1 : 0) : 1, oldN = old ? old.pages || 0 : 0;
-    f.saving = true; f.msg = ''; draw();
+    // Count acknowledged pages, an optional old-page cleanup, and the final guide record.
+    // No progress is credited when a write merely enters Firestore's local queue.
+    f.progress = { completed: 0, total: (pages ? pages.length : 0) + (pages && oldN > pages.length ? 1 : 0) + 1 };
+    f.saving = true; f.busy = 'Saving the guide...'; f.msg = ''; draw();
     var chain = Promise.resolve();
     if (pages) pages.forEach(function (p, n) {
-      chain = chain.then(function () { f.busy = 'Saving page ' + (n + 1) + ' of ' + pages.length + '...'; draw(); return W([['set', gPageRef(id, n), { img: p.img, w: p.w, h: p.h, v: v, n: n }]]); });
+      chain = chain.then(function () { f.busy = 'Saving page ' + (n + 1) + ' of ' + pages.length + '...'; draw(); return W([['set', gPageRef(id, n), { img: p.img, w: p.w, h: p.h, v: v, n: n }]]).then(function () { f.progress.completed++; }); });
     });
-    if (pages && oldN > pages.length) chain = chain.then(function () { var ops = [], n; for (n = pages.length; n < oldN; n++) ops.push(['del', gPageRef(id, n)]); return W(ops); });
+    if (pages && oldN > pages.length) chain = chain.then(function () { var ops = [], n; f.busy = 'Removing old guide pages...'; draw(); for (n = pages.length; n < oldN; n++) ops.push(['del', gPageRef(id, n)]); return W(ops).then(function () { f.progress.completed++; }); });
     chain.then(function () {
       var data = { title: title, cat: f.cat, who: f.who === 'chefs' || f.who === 'fn' ? f.who : 'all', sum: gClean(f.sum, 200).replace(/\s+/g, ' '), steps: gClean(f.steps, 3000), kw: gClean(f.kw, 200).replace(/\s+/g, ' '), v: v, removed: false, upd: now() };
       if (pages || !old) {
@@ -8082,7 +8104,7 @@
       }
       if (!old) data.at = now();
       f.busy = 'Saving the guide...'; draw();
-      return sset(gRef(id), data, !!old).then(function () { return data; });
+      return sset(gRef(id), data, !!old).then(function () { f.progress.completed++; return data; });
     }).then(function (data) {
       var mine = Object.assign({}, old || {}, data, { id: id });
       S.guides = (S.guides || []).filter(function (g) { return g.id !== id; }).concat([mine]); gKeep();
@@ -8090,7 +8112,7 @@
       S.gf = null; S.gfSnap = ''; S.gMsg = 'Saved "' + title + '". ' + (data.who === 'all' ? 'Staff see' : gWhoName(data.who) + ' see') + ' it under Guides.';
       lvReveal('guides'); S.gRetry = 0; draw(); loadGuides(true);
     }, function (e) {
-      f.saving = false; f.busy = '';
+      f.saving = false; f.busy = ''; f.progress = null;
       f.msg = e && e.code === 'permission-denied' ? 'Not saved: the security rules refused it. Sign in again with the head chef\'s Google account.' : 'Not saved. Check the connection and try again. Nothing typed or chosen is lost.';
       draw();
     });
@@ -9950,6 +9972,7 @@
     // the recipes were opened: look for the head chef's recipe changes when the last look is 30 minutes old
     rxCheck: function () { sdk().then(function () { rxSync(); }).catch(function () {}); },
     rxSync: rxSync,
+    rxState: function () { return rxState; },
     guidesFor: function (rid) { try { return guidesFor(rid); } catch (e) { return []; } },
     guideSearch: function (q) { try { return guideSearch(q); } catch (e) { return []; } },
     featOn: featOn,
