@@ -194,6 +194,7 @@
       if (trigger && trigger.isConnected) { trigger.setAttribute('aria-expanded', 'false'); trigger.focus({ preventScroll: true }); }
       if (save && config.onChange) config.onChange(selected);
       if (!save && config.onDismiss) config.onDismiss();
+      scheduleChoices();
     }
     close.addEventListener('click', function () { finish(false); });
     dialog.addEventListener('cancel', function (e) { e.preventDefault(); finish(false); });
@@ -226,7 +227,7 @@
     if (!config.managedOverlay && window.LK_PREP && window.LK_PREP.pickerOverlay) closeHistory = window.LK_PREP.pickerOverlay(function () { fromHistory = true; finish(false); });
     if (trigger) { trigger.setAttribute('aria-expanded', 'true'); trigger.setAttribute('aria-controls', dialog.id); }
     (search || list.querySelector('[data-index="' + cursor + '"]') || list.querySelector('button:not([disabled])') || close).focus();
-    activePicker = { close: function () { finish(false); } }; return activePicker;
+    activePicker = { trigger: trigger, close: function () { finish(false); } }; return activePicker;
   }
 
   function triggerFor(source, label) {
@@ -284,6 +285,78 @@
   };
   function choiceAction(b) { var found; Object.keys(choiceActions).some(function (attr) { var v = b.getAttribute(attr); if (v && choiceActions[attr].split(' ').indexOf(v) >= 0) { found = attr + ':' + v; return true; } return false; }); return found; }
   function choiceLabel(button) { var name = button.querySelector('.vo-name'); return name ? name.firstChild.textContent.trim() : button.textContent.trim() || button.getAttribute('aria-label') || 'Choice'; }
+  var pairedActions = ['data-p:tr-dir', 'data-p:heat', 'data-p:hrm', 'data-p:n-mode', 'data-act:amode', 'data-act:setpractice', 'data-fe:mode'];
+  var unitActions = ['data-p:tr-unit', 'data-p:wunit'];
+  var pairs = new Set(), choiceHosts = new Map(), choiceFrame = null;
+  var choiceResize = window.ResizeObserver ? new ResizeObserver(scheduleChoices) : null;
+  function choiceSelector(button) { return 'button' + slice(button.attributes).filter(function (a) { return /^data-/.test(a.name); }).map(function (a) { return '[' + a.name + '="' + CSS.escape(a.value) + '"]'; }).join(''); }
+  function selectedChoice(button) { return button.getAttribute('aria-checked') === 'true' || button.getAttribute('aria-pressed') === 'true' || button.classList.contains('on'); }
+  function visibleChoice(button) {
+    var source = button._uxSource || button.closest('.ux-choice-source');
+    if (source && source._uxTrigger && source.parentElement.classList.contains('ux-two-way')) {
+      if (getComputedStyle(source).display === 'none') return source._uxTrigger;
+      if (button === source._uxTrigger) return slice(source.querySelectorAll('button')).filter(function (b) { return !b.disabled && selectedChoice(b); })[0] || source.querySelector('button:not(:disabled)');
+    }
+    return button;
+  }
+  function inlineKeys(group, buttons) {
+    buttons.forEach(function (button) { button._uxInlineChoice = true; button._uxSelector = choiceSelector(button); });
+    group.addEventListener('click', function (event) { var b = event.target.closest('button'); if (buttons.indexOf(b) >= 0) lastTrigger = b; }, true);
+    group.addEventListener('keydown', function (event) {
+      var b = event.target.closest('button');
+      if (buttons.indexOf(b) < 0 || !/^(ArrowLeft|ArrowRight|ArrowUp|ArrowDown|Home|End)$/.test(event.key)) return;
+      var enabled = buttons.filter(function (x) { return !x.disabled && x.getClientRects().length; });
+      if (!enabled.length) return;
+      event.preventDefault();
+      var at = enabled.indexOf(b), next = event.key === 'Home' ? 0 : event.key === 'End' ? enabled.length - 1 : (at + (/^(ArrowLeft|ArrowUp)$/.test(event.key) ? -1 : 1) + enabled.length) % enabled.length;
+      lastTrigger = enabled[next]; enabled[next].focus({ preventScroll: true }); enabled[next].click();
+    });
+    return function () {
+      var enabled = buttons.filter(function (b) { return !b.disabled; }), current = enabled.filter(selectedChoice)[0] || enabled[0];
+      buttons.forEach(function (b) { if (b.getAttribute('role') === 'radio') b.tabIndex = b === current ? 0 : -1; });
+    };
+  }
+  function pruneChoices() {
+    pairs.forEach(function (pair) {
+      if (pair.group.isConnected) return;
+      pairs.delete(pair);
+      if (!choiceResize) return;
+      choiceResize.unobserve(pair.measure);
+      var count = choiceHosts.get(pair.host) - 1;
+      if (count) choiceHosts.set(pair.host, count);
+      else { choiceHosts.delete(pair.host); choiceResize.unobserve(pair.host); }
+    });
+  }
+  function scheduleChoices() {
+    pruneChoices();
+    if (choiceFrame || !pairs.size) return;
+    choiceFrame = requestAnimationFrame(function () { choiceFrame = null; pairs.forEach(function (pair) { pair.update(); }); });
+  }
+  function pairedChoice(group, source, trigger, buttons, radio) {
+    group.classList.add('ux-two-way');
+    var measure = node('span', 'ux-choice-measure'); measure.setAttribute('aria-hidden', 'true'); measure.inert = true;
+    buttons.forEach(function (button) { var copy = node('button', button.className, button.textContent); copy.type = 'button'; copy.tabIndex = -1; measure.appendChild(copy); });
+    group.appendChild(measure);
+    var tabs = inlineKeys(source, buttons), host = group.parentElement, update = source._uxUpdate;
+    source._uxUpdate = function () { update(); if (group.classList.contains('ux-inline-pair')) tabs(); };
+    var pair = { group: group, host: host, measure: measure, update: function () {
+      if (!group.isConnected || activePicker && activePicker.trigger === trigger) return;
+      // The host's remaining line width is independent of the current trigger's intrinsic width.
+      // Measure inert copies in this same context, with the final font and full unwrapped labels.
+      var style = getComputedStyle(host), edge = host.getBoundingClientRect().right - parseFloat(style.paddingRight || 0) - parseFloat(style.borderRightWidth || 0);
+      var available = edge - group.getBoundingClientRect().left - parseFloat(getComputedStyle(group).marginRight || 0);
+      var required = 2 * Math.max.apply(Math, slice(measure.children).map(function (b) { return b.getBoundingClientRect().width; })) + 3;
+      var inline = required > 3 && available >= required, focused = document.activeElement;
+      group.style.setProperty('--ux-pair-width', required + 'px');
+      group.classList.toggle('ux-inline-pair', inline);
+      if (radio) group.setAttribute('role', inline ? 'radiogroup' : 'group');
+      if (inline) tabs();
+      if ((source.contains(focused) || focused === trigger) && visibleChoice(focused)) visibleChoice(focused).focus({ preventScroll: true });
+    } };
+    pairs.add(pair);
+    if (choiceResize) { choiceResize.observe(measure); if (!choiceHosts.has(host)) choiceResize.observe(host); choiceHosts.set(host, (choiceHosts.get(host) || 0) + 1); }
+    pair.update();
+  }
   function groupPicker(group) {
     if (group.dataset.adaptive || group.closest('.ux-choice-source, .ux-picker')) return;
     var buttons = slice(group.children).filter(function (n) { return n.tagName === 'BUTTON' && choiceAction(n); });
@@ -293,10 +366,15 @@
       actions.forEach(function (action) { var subset = node('span'), matching = buttons.filter(function (b) { return choiceAction(b) === action; }); subset.setAttribute('aria-label', labelFor(group)); group.insertBefore(subset, matching[0]); matching.forEach(function (b) { subset.appendChild(b); }); groupPicker(subset); }); return;
     }
     var action = choiceAction(buttons[0]), multi = /:(free|n-dow|cut-day)$/.test(action);
+    if (unitActions.indexOf(action) >= 0) {
+      group.dataset.adaptive = 'true'; group.classList.add('ux-unit-choices');
+      var tabs = inlineKeys(group, buttons); buttons.forEach(function (button) { button._uxUpdate = tabs; }); tabs(); return;
+    }
     var label = labelFor(group), source = node('span');
     group.insertBefore(source, buttons[0]); buttons.forEach(function (button) { source.appendChild(button); });
     var b = triggerFor(source, label);
-    if (group.getAttribute('role') === 'radiogroup') group.setAttribute('role', 'group');
+    var radio = group.getAttribute('role') === 'radiogroup';
+    if (radio) group.setAttribute('role', 'group');
     b._uxSelector = 'button' + slice(buttons[0].attributes).filter(function (a) { return /^data-/.test(a.name); }).map(function (a) { return '[' + a.name + '="' + CSS.escape(a.value) + '"]'; }).join('');
     b._uxGroup = true;
     function isOn(x) { return x.getAttribute('aria-pressed') === 'true' || x.getAttribute('aria-checked') === 'true' || x.classList.contains('on'); }
@@ -316,6 +394,7 @@
         }
       });
     });
+    if (!multi && buttons.length === 2 && pairedActions.indexOf(action) >= 0) pairedChoice(group, source, b, buttons, radio);
   }
   // Typed comparisons are shared by paginated lists and static report tables.
   function compare(a, b) {
@@ -431,7 +510,8 @@
       scheduled = false; enhance(document);
       if (lastTrigger && !lastTrigger.isConnected && document.activeElement === document.body) {
         var source = document.querySelector(lastTrigger._uxSelector), group = source && (lastTrigger._uxGroup ? source.closest('.ux-choice-source') : source);
-        if (group && group._uxTrigger) group._uxTrigger.focus({ preventScroll: true });
+        var target = group && visibleChoice(group._uxTrigger || group);
+        if (target) target.focus({ preventScroll: true });
         else lastTrigger = null;
       }
     });
@@ -439,14 +519,18 @@
   new MutationObserver(function (records) {
     var added = false;
     records.forEach(function (r) {
-      if (r.type === 'childList' && slice(r.addedNodes).some(function (n) { return n.nodeType === 1 && !n.classList.contains('ux-picker-trigger') && !n.closest('.ux-picker'); })) added = true;
+      if (r.type === 'childList' && slice(r.addedNodes).some(function (n) { return n.nodeType === 1 && !n.classList.contains('ux-picker-trigger') && !n.closest('.ux-picker, .ux-choice-measure'); })) added = true;
       if (r.type === 'attributes') {
         var source = r.target._uxUpdate ? r.target : r.target.closest('.ux-choice-source'); if (source && source._uxUpdate) source._uxUpdate();
+        if (r.attributeName === 'data-text') scheduleChoices();
       }
     });
+    pruneChoices();
     if (added) schedule();
-  }).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled', 'aria-pressed', 'aria-checked'] });
-  document.addEventListener('focusin', function (event) { if (!event.target.closest('.ux-picker, .ux-picker-trigger')) lastTrigger = null; });
+  }).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled', 'aria-pressed', 'aria-checked', 'data-text'] });
+  document.addEventListener('focusin', function (event) { if (event.target._uxInlineChoice) lastTrigger = event.target; else if (!event.target.closest('.ux-picker, .ux-picker-trigger')) lastTrigger = null; });
+  window.addEventListener('resize', scheduleChoices);
+  if (document.fonts) { document.fonts.ready.then(scheduleChoices); document.fonts.addEventListener('loadingdone', scheduleChoices); }
   window.addEventListener('hashchange', function () { if (activePicker) activePicker.close(); lastTrigger = null; searchMemory.forEach(function (s) { clearTimeout(s.timer); }); searchMemory.clear(); });
   window.LK_UX = { close: function () { if (activePicker) activePicker.close(); }, enhance: enhance, compare: compare, cellValue: cellValue, AdaptivePicker: AdaptivePicker, SmartSearchBar: SmartSearchBar, restoreFocus: restoreFocus, resetSearch: function (input) { var s = searches.get(input); if (s) s.reset(); } };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', schedule); else schedule();
