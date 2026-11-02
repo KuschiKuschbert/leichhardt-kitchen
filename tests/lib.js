@@ -414,14 +414,21 @@ async function lineAct(page, sel) {
 /* Select an existing choice through its adaptive trigger. Keeping the source selector here makes
    older journey tests describe the same intent while exercising the new visible control. */
 async function choose(page, selector, options) {
-  const source = await page.locator(selector).first().evaluate(el => {
+  const target = page.locator(selector).first();
+  const trigger = target.locator('xpath=ancestor::*[contains(concat(" ", normalize-space(@class), " "), " ux-choice-source ")][1]/following-sibling::*[1][contains(concat(" ", normalize-space(@class), " "), " ux-picker-trigger ")]');
+  const visible = page.locator(':visible');
+  // Enhancement can hide the source during a redraw. Resolve its visible control at the actual click.
+  await target.and(visible).or(trigger.and(visible)).first().click(options);
+  if (!await page.locator('.ux-picker').count()) return;
+  const source = await target.evaluateAll(nodes => {
+    const el = nodes[0];
+    if (!el) return null;
     const group = el.closest('.ux-choice-source');
-    if (!group || getComputedStyle(group).display !== 'none') return null;
+    if (!group || !group.nextElementSibling || getComputedStyle(group).display !== 'none') return null;
     const buttons = [...group.querySelectorAll('button')];
     return { trigger: group.nextElementSibling.classList.contains('ux-picker-trigger'), index: el.matches('[data-mg="tag"]') ? (el.classList.contains('is-has') ? 2 : el.classList.contains('is-may') ? 0 : 1) : el.matches('[data-p="mn-attc"]') ? ({ present: 1, apology: 2, absent: 0 }[el.dataset.st] || 0) : buttons.indexOf(el), multiple: /:(free|n-dow|cut-day)$/.test([...el.attributes].filter(a => /^data-(act|p)$/.test(a.name)).map(a => ':' + a.value).join('')) };
   }).catch(() => null);
-  if (!source || !source.trigger || source.index < 0) return page.click(selector, options);
-  await page.locator(selector).first().evaluate(el => el.closest('.ux-choice-source').nextElementSibling.click());
+  if (!source || !source.trigger || source.index < 0) return;
   await page.locator('.ux-picker [data-index="' + source.index + '"]').click();
   if (source.multiple) await page.locator('.ux-picker-footer .dark').click();
   await settle(page, 250); // Let the overlay's Back entry and scroll restoration finish.

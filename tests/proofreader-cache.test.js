@@ -23,11 +23,7 @@ const cases = [
           const s = LK_PREP.state;
           return !!document.querySelector('.pr-workspace') && s.stats && !s.stats.loading && s.ordStats && !s.ordStats.loading;
         });
-        await p.locator('[data-pr="review"]').evaluateAll((nodes, value) => {
-          const button = nodes.find(el => el.getAttribute('data-value') === value);
-          if (!button) throw Error('Missing correction ' + value);
-          button.click();
-        }, c.source + '/' + yesterday + '/' + c.id);
+        await p.locator('[data-pr="review"][data-value="' + c.source + '/' + yesterday + '/' + c.id + '"]').click();
         await p.click('[data-pr="edit"]'); await p.fill('#pr-text', c.after);
         await L.adminTab(p, c.report);
         await p.evaluate(({ collection, id }) => {
