@@ -125,7 +125,7 @@ jobs:
           printf '%s' "$FIREBASE_SA" > "$RUNNER_TEMP/sa.json"
           export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
           cd "$RUNNER_TEMP/rules"
-          "$GITHUB_WORKSPACE/tests/rules/node_modules/.bin/firebase" deploy --only firestore:rules --project leichhardt-kitchen --non-interactive
+          node "$GITHUB_WORKSPACE/scripts/publish-rules.cjs"
           rm -f "$RUNNER_TEMP/sa.json" "$RUNNER_TEMP/rules/firestore.rules"
           echo "Published. Changes can take up to a minute to reach the phones."
       - name: Verify canonical access after publication

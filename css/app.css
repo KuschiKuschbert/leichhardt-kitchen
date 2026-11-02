@@ -1436,6 +1436,28 @@ details.nb-start-l[open] > summary::after { content: '\2212'; }
   .nb-go { padding: 0 0.3rem; }
   .nb-x { margin-left: 0.2rem; padding: 0 0.35rem; }
 }
+/* Approved narrow Prep option A (2 Nov 2026): keep Tick beside the words, with the same actions below.
+   Limit the exception to Prep at the measured narrow widths. */
+@media (max-width: 359px) {
+  #prep-root.is-book .nb-left .nb-row { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 0.2rem 0.35rem; align-items: start; padding-top: 0.5rem; padding-bottom: 0.5rem; }
+  #prep-root.is-book .nb-left .nb-box { grid-column: 1; grid-row: 1; align-self: start; margin: 0; }
+  #prep-root.is-book .nb-left .nb-t { grid-column: 2; grid-row: 1; }
+  #prep-root.is-book .nb-left .nb-q { display: block; margin: 0.2rem 0 0; white-space: normal; }
+  #prep-root.is-book .nb-left .nb-marks { margin: 0.2rem 0 0; vertical-align: baseline; }
+  #prep-root.is-book .nb-left .nb-by { display: none; }
+  #prep-root.is-book .nb-left .nb-acts { grid-column: 2; grid-row: 2; justify-content: flex-start; flex-wrap: wrap; gap: 0; }
+  #prep-root.is-book .nb-left .nb-acts .nb-star + * { margin-left: 0; }
+}
+@media (max-width: 479px) {
+  html[data-text="xlarge"] #prep-root.is-book .nb-left .nb-row { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 0.2rem 0.35rem; align-items: start; padding-top: 0.5rem; padding-bottom: 0.5rem; }
+  html[data-text="xlarge"] #prep-root.is-book .nb-left .nb-box { grid-column: 1; grid-row: 1; align-self: start; margin: 0; }
+  html[data-text="xlarge"] #prep-root.is-book .nb-left .nb-t { grid-column: 2; grid-row: 1; }
+  html[data-text="xlarge"] #prep-root.is-book .nb-left .nb-q { display: block; margin: 0.2rem 0 0; white-space: normal; }
+  html[data-text="xlarge"] #prep-root.is-book .nb-left .nb-marks { margin: 0.2rem 0 0; vertical-align: baseline; }
+  html[data-text="xlarge"] #prep-root.is-book .nb-left .nb-by { display: none; }
+  html[data-text="xlarge"] #prep-root.is-book .nb-left .nb-acts { grid-column: 2; grid-row: 2; justify-content: flex-start; flex-wrap: wrap; gap: 0; }
+  html[data-text="xlarge"] #prep-root.is-book .nb-left .nb-acts .nb-star + * { margin-left: 0; }
+}
 
 /* Recipe book, finding and reading (October 2026) */
 /* the search bar stays at the top while the list scrolls */
