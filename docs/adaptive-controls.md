@@ -218,6 +218,24 @@ A checked entry marks an audited rendering site. Route navigation, canvas object
 - The unchanged offline-write regression passes all 270 assertions. A 9 px order-row shift was reproduced on unchanged main: completing an order removed its phone menu and widened its text. Keeping an invisible action-column slot holds the row at the same height before and after ticking. No assertion was relaxed.
 - The dedicated checks exercise draft/committed queries, blur restoration, explicit reset, compact and extended layouts, real multi-select filter updates across redraws, cancellation, keyboard focus, native Back, swipe dismissal, native form validation, windowing above 100 options, categorical filters, empty-state reset, sorting before pagination, numeric ordering and dates across a year boundary.
 - Picker test drivers wait for asynchronous overlay history and scroll restoration before measuring the underlying form. Largest-text phone fields remain clear of fixed save actions.
+
+## Narrow Prep rows, selected option A
+
+Selected by the owner on 2 November 2026 after comparing the current row with three isolated alternatives. Keep Tick beside the task words and put the existing priority, recipe and More actions below them when space is constrained. Do not rebuild the Prep page or change shared-screen attribution.
+
+The exception applies below 360 CSS px at every app text size, and below 480 px with Extra large text. Amounts wrap inside the text column. The existing row markup, action handlers, roles, quantities, marks, recorder identity and Undo remain authoritative. Order rows do not use the exception. Normal 390 px, tablet and desktop rows retain their previous arrangement.
+
+The comparison's 600 px Extra large breakpoint was provisional. Production measurements showed that applying it at 568 px landscape grew an already readable row from 51 to 164 px with the actual app fonts. The final 480 px boundary avoids that cost. The dedicated regression checks both 479/480 and 359/360 boundaries.
+
+On the real production row at 320 px and Extra large text, the `Make gravy` text column grows from 13.94 to 187 px with fallback fonts, and from 32.20 to 187 px with the app fonts. The corresponding row heights change from 370 to 167.5 px and 271 to 164 px. These are synthetic layout measurements, not task-time or real-device research. Both font states retain the previous geometry at normal 390 px and at 768/1280 px; 568 px landscape also retains the previous row.
+
+Local verification: `prep-reflow.test.js` fails 23 of its final 131 assertions against the old stylesheet and passes all 131 with the selected reflow. It checks the production rows across normal, large and Extra large text; long names and amounts; 44 px row targets; keyboard Tick, direct personal name taps, shared attribution, recipe return, More/focus/Remove/Undo, role-dependent controls, Not sent, retained typing and the existing pending/update guards. The ordinary personal tick remains optimistic and keeps its Not sent state; the layout does not change its acknowledgement contract. Reflow itself adds no reads.
+
+Separate real-font captures load and check all five existing app font faces before measuring. The browser harness's normal font interception is still a fallback-font check. The full required gate and publication evidence belong in the release PR; local geometry checks do not establish a live release or screen-reader conformance.
+
+The existing Prep-first, Prep-speed, attribution, Undo, keyboard/screen-reader basics, targets, wide-font and sticky-bar files pass all 201 assertions. A separate rendered Orders check at 320 px and Extra large text has identical row, text, tick and More geometry against the old and new styles, with no overflow or browser errors.
+
+Rollback is a normal client revert PR. This unit changes no rules, schema, dependency, stored data, script ordering or module API. Keep the current private access and attribution contracts.
 - CI follow-up (2 November 2026): late recipe/menu updates now refresh picker counts together with shelves. Contextual Back checks the committed query, and the drawing test centres and verifies its real rotation handle before dragging. The four affected test files pass together locally.
 - All application JavaScript, library JavaScript and the service worker pass `node --check`. `git diff --check` passes. Read-budget checks pass.
 - Phone and desktop previews use synthetic staff and the real application styles. GitHub CI and deployment status are recorded on PR #433.
