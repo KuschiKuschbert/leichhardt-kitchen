@@ -15,6 +15,11 @@ const { spawn } = require('child_process');
 const fs = require('fs'), os = require('os'), path = require('path');
 const pick = process.argv.slice(2);
 const files = fs.readdirSync(__dirname).filter(f => /\.test\.js$/.test(f) && (!pick.length || pick.some(w => f.indexOf(w) >= 0))).sort();
+if (pick.length && !files.length) {
+  console.error('No test files matched these filters: ' + pick.map(w => JSON.stringify(w)).join(', ') + '.');
+  console.error('Use npm test to run all files, or choose a filename substring.');
+  process.exit(1);
+}
 const jobs = Math.max(1, +process.env.JOBS || Math.min(6, os.cpus().length + 2));
 function runFile(f) {
   return new Promise(res => {
