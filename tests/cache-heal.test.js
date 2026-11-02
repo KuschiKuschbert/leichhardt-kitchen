@@ -176,6 +176,20 @@ const waitReload = p => L.waitFor(p, () => window.__mark !== 1, null, 8000).catc
     await boom(p); await L.settle(p, 500);
     ok(await p.evaluate(() => window.__mark === 1 && !localStorage.getItem('lk.fsheal')) && /could not be repaired/.test(await p.locator('.p-toast').innerText()), 'failed database cleanup cannot spend the daily attempt or claim a completed repair');
   });
+
+  await step('shared-state cleanup failure', async () => {
+    p = await L.open(b, '#/prep', { who: 'ann', init: noUnload, wait: 1200 });
+    await p.fill('#p-text', 'Acknowledged before storage failure'); await p.press('#p-text', 'Enter');
+    await L.waitFor(p, () => !LK_PREP.unsent() && !LK_PREP.state.text && Object.values(__fake.dump()).some(v => v && v.text === 'Acknowledged before storage failure'));
+    await blur(p); await markCache(p);
+    await p.evaluate(key => {
+      const remove = Storage.prototype.removeItem, drop = indexedDB.deleteDatabase.bind(indexedDB); window.__healDeletes = 0;
+      Storage.prototype.removeItem = function (name) { if (name === key) throw new DOMException('Synthetic shared-state denial', 'SecurityError'); return remove.call(this, name); };
+      indexedDB.deleteDatabase = function (name) { window.__healDeletes++; return drop(name); };
+    }, TARGET_CACHE);
+    await boom(p); await L.settle(p, 500);
+    ok(await p.evaluate(key => window.__mark === 1 && localStorage.getItem(key) === 'keep' && !localStorage.getItem('lk.fsheal') && window.__healDeletes === 0 && /could not be repaired/.test(LK_PREP.state.toast), TARGET_CACHE), 'a real shared-state removal error stops before database deletion, daily marker and reload, with truthful feedback');
+  });
   await b.close();
   L.report(R);
 })();

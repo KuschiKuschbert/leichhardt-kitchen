@@ -169,7 +169,7 @@
       check(); return fb ? fb.fs.terminate(fb.db) : null;
     }).then(function () {
       check();
-      try { Object.keys(LS || {}).forEach(function (k) { if (healSharedKey(k, run.prefix)) LS.removeItem(k); }); } catch (e) {}
+      Object.keys(LS || {}).forEach(function (k) { if (healSharedKey(k, run.prefix)) LS.removeItem(k); });
       check();
       // SDK IndexedDbPersistence/clearIndexedDbPersistence append main to that prefix. Never enumerate other apps'
       // databases: GitHub Pages projects share an origin. This exact name also works without indexedDB.databases().
