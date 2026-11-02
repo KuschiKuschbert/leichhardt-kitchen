@@ -87,11 +87,7 @@ async function navFacts(p) {
     const automaticBefore = await p.evaluate(() => KB_CELEBRATION_TICKER.status().automaticCycleCount);
     await p.clock.runFor(18000);
     ok(await p.evaluate(before => KB_CELEBRATION_TICKER.status().automaticCycleCount > before, automaticBefore), 'languages advance automatically without a picker');
-    await p.click('.kb-ticker-toggle');
-    const paused = await p.evaluate(() => KB_CELEBRATION_TICKER.status().locale);
-    await p.clock.runFor(20000);
-    ok(await p.evaluate(value => KB_CELEBRATION_TICKER.status().locale === value && KB_CELEBRATION_TICKER.status().state === 'paused', paused), 'Pause languages holds the current sentence');
-    await p.click('.kb-ticker-toggle');
+    ok(await p.locator('.kb-celebration-ticker button,.kb-ticker-controls').count() === 0, 'the automatic explanation has no pause button or empty controls row');
     await p.keyboard.press('Escape');
     ok(await p.locator('#kb-occasion-panel').count() === 0 && await p.locator('.kb-occasion-title').evaluate(node => document.activeElement === node), 'Escape closes explanation and restores focus to the title');
     ok(await p.evaluate(() => KB_CELEBRATION_TICKER.status().timerCount === 0), 'closing explanation releases its timer');
