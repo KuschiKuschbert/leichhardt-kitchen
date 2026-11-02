@@ -22,7 +22,18 @@ const controlled = p => L.waitFor(p, () => !!navigator.serviceWorker.controller,
 const go = async (p, hash) => { await p.evaluate(h => { location.hash = h; }, hash); await L.settle(p, 300); };
 // the saved copy: the addresses it holds (path and query), and whether its copy of a file holds this text
 const savedList = p => p.evaluate(() => caches.keys().then(ks => Promise.all(ks.map(k => caches.open(k).then(c => c.keys())))).then(a => [].concat(...a).map(q => { const u = new URL(q.url); return u.pathname + u.search; })));
-const savedHas = (p, f, t) => p.evaluate(({ f, t }) => caches.keys().then(ks => caches.open(ks[0])).then(c => c.match(f)).then(r => r ? r.text() : '').then(x => x.indexOf(t) >= 0), { f, t });
+// Read the authoritative active generation for shell assertions, and the retained shared cache for lazy modules.
+const savedEntry = (p, f, header) => p.evaluate(({ f, header }) => new Promise(resolve => {
+  const q = indexedDB.open('lk-shell-v1-' + encodeURIComponent(new URL('.', location.href).pathname), 1);
+  q.onsuccess = () => {
+    const db = q.result;
+    if (!db.objectStoreNames.contains('meta')) { db.close(); resolve('lk-book-v8'); return; }
+    const tx = db.transaction('meta'), state = tx.objectStore('meta').get('state');
+    state.onsuccess = () => { const name = state.result && state.result.active; db.close(); resolve(name || 'lk-book-v8'); };
+  };
+  q.onerror = () => resolve('lk-book-v8');
+}).then(name => caches.open(name).then(cache => cache.match(f))).then(r => r || caches.open('lk-book-v8').then(cache => cache.match(f))).then(r => r ? header ? r.headers.get(header) : r.text() : ''), { f, header });
+const savedHas = async (p, f, t) => (await savedEntry(p, f)).indexOf(t) >= 0;
 // opens a page with the worker in charge (the first visit installs it, the reload puts it in charge)
 async function swOpen(b, hash, o) {
   const p = await L.open(b, hash, Object.assign({ sw: true, wait: 1500 }, o));
@@ -52,7 +63,7 @@ async function swOpen(b, hash, o) {
 
   // nothing changed on the server: opening again writes nothing to the saved copy (22 Oct 2026; it used to write all
   // the files, about 2.4 MB, on every opening). The saved file keeps the X-Served stamp it was first saved with.
-  const savedAt = () => p.evaluate(() => caches.keys().then(ks => caches.open(ks[0])).then(c => c.match('js/app.js')).then(r => r ? r.headers.get('x-served') : ''));
+  const savedAt = () => savedEntry(p, 'js/app.js', 'x-served');
   const d1 = await savedAt();
   await L.sleep(1200);
   await p.reload({ waitUntil: 'load' }); await L.sleep(6000);   // the worker's background round (the page cannot see it)
@@ -297,7 +308,7 @@ async function swOpen(b, hash, o) {
   // fine and never reloaded, so the browser did not look for the new worker either. Now no word in 2 seconds means the
   // old worker: the book fetches the files itself, as it did then, and reloads into the new version.
   {
-    const OLD_SW = SW.replace(/self\.addEventListener\('message'[\s\S]*?\n\}\);\n/, '');
+    const OLD_SW = file('tests/fake/sw-legacy.js').replace(/self\.addEventListener\('message'[\s\S]*?\n\}\);\n/, '');
     ok(OLD_SW !== SW && !/'message'/.test(OLD_SW), 'the stand-in for the old worker has no message handler');
     over['/sw.js'] = { lastModified: 'Mon, 26 Oct 2026 00:00:00 GMT', body: OLD_SW };
     q = await swOpen(b, '#/recipes', { base, wait: 800, touch: true });
@@ -347,6 +358,7 @@ async function swOpen(b, hash, o) {
     over['/js/manage.js'] = { lastModified: OLD, body: MANAGE + '\nwindow.__smart = "old";\n' };
     await w.goto(base + 'sw-start.html', { waitUntil: 'load' });
     await w.evaluate(() => navigator.serviceWorker.ready);
+    await w.reload();
     await until(w, () => !!navigator.serviceWorker.controller, 8000);
     // js/smart.js the way mgScript() asks for it, js/manage.js?v=4 the way its script tag does
     const get = (f, asked) => w.evaluate(({ f, asked }) => fetch(f, asked ? { headers: { 'X-LK-Fresh': '1' } } : {}).then(r => r.text()).then(t => (t.match(/window\.__smart = "(\w+)"/) || [])[1] || '?'), { f, asked });
