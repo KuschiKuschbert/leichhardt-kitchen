@@ -2,6 +2,7 @@
 const path = require('node:path');
 const PROJECT = 'leichhardt-kitchen', RELEASE = 'cloud.firestore', VERSION = '13.29.1';
 const RELEASE_NAME = `projects/${PROJECT}/releases/${RELEASE}`;
+const DEFAULT_ALIAS = RELEASE + '/(default)';
 const object = v => v !== null && typeof v === 'object' && !Array.isArray(v);
 const intendedName = name => typeof name === 'string' && /^projects\/leichhardt-kitchen\/rulesets\/[A-Za-z0-9_-]{1,160}$/.exec(name)?.[0] === name;
 // firebase-tools adds status=500 even to transport errors. Only its actual HTTP response proves a 404.
@@ -22,12 +23,21 @@ function validateInvocation(args, env) {
 }
 
 async function safeRelease({ projectId, rulesetName, releaseName, patch, create, get, evidence = () => {} }) {
-  if (projectId !== PROJECT || releaseName !== RELEASE || !intendedName(rulesetName)) throw Error('Unexpected rules release target.');
-  const report = { patchStatus: 0, patchFailed: false, createAttempted: false, createStatus: 0,
+  // The pinned Firestore consumer supplies /(default), even for a plain config with no database field.
+  const canonicalRelease = releaseName === RELEASE || releaseName === DEFAULT_ALIAS ? RELEASE : null;
+  const report = { projectAccepted: projectId === PROJECT, defaultReleaseAccepted: canonicalRelease !== null,
+    rulesetAccepted: intendedName(rulesetName), defaultDatabaseAlias: releaseName === DEFAULT_ALIAS,
+    patchStatus: 0, patchFailed: false, createAttempted: false, createStatus: 0,
     pointerChecked: false, pointerMatches: false, pointerStable: false, ambiguousActivationConfirmed: false };
+  if (!report.projectAccepted || !report.defaultReleaseAccepted || !report.rulesetAccepted) {
+    evidence(report);
+    const error = Error('Rules publisher refused the release target before activation.');
+    error.releaseTargetRefused = true;
+    throw error;
+  }
   let patchError;
   try {
-    const name = await patch(projectId, rulesetName, releaseName);
+    const name = await patch(projectId, rulesetName, canonicalRelease);
     report.patchStatus = 200;
     if (name !== RELEASE_NAME) throw Error('Rules update acknowledgment was invalid.');
     evidence(report); return name;
@@ -40,7 +50,7 @@ async function safeRelease({ projectId, rulesetName, releaseName, patch, create,
   if (responseStatus(patchError) === 404) {
     report.createAttempted = true;
     try {
-      const name = await create(projectId, rulesetName, releaseName);
+      const name = await create(projectId, rulesetName, canonicalRelease);
       report.createStatus = 200;
       if (name !== RELEASE_NAME) throw Error('Rules create acknowledgment was invalid.');
       evidence(report); return name;
@@ -81,6 +91,11 @@ function install(cliRoot, evidence, environment = process.env) {
       if (r.status !== 200) throw Error('Rules activation read did not succeed.');
       return r.body;
     } }); } catch (error) {
+      if (error.releaseTargetRefused) {
+        const refused = new FirebaseError(error.message, { children: [{ name: 'Release target guard', message: 'Refused before PATCH.' }], exit: 2 });
+        refused.cause = error;
+        throw refused;
+      }
       if (!error.patchError) throw error; // Definite PATCH refusals retain the exact original FirebaseError.
       const summary = (name, cause) => ({ name, message: responseStatus(cause) ? 'HTTP ' + responseStatus(cause) : 'No verified HTTP response.' });
       const children = [summary('Original PATCH', error.patchError)];

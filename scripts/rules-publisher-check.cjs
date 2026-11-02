@@ -1,6 +1,7 @@
 // Synthetic adapters only: never obtain credentials or issue a network request.
 const assert = require('node:assert/strict');
 const path = require('node:path');
+const fs = require('node:fs'), os = require('node:os');
 const { safeRelease, responseStatus, install, validateInvocation } = require('./publish-rules.cjs');
 const PROJECT = 'leichhardt-kitchen', RELEASE = 'cloud.firestore', name = `projects/${PROJECT}/releases/${RELEASE}`;
 const intended = `projects/${PROJECT}/rulesets/synthetic-intended`, old = `projects/${PROJECT}/rulesets/synthetic-old`;
@@ -55,6 +56,13 @@ async function scenario(change = {}) {
   for (const input of [{ projectId: 'other' }, { releaseName: RELEASE + '/other' }, { rulesetName: intended + '\n' }, { rulesetName: 'https://evil.test/id' }]) {
     r = await scenario({ input }); assert(r.error); assert.equal(r.calls.length, 0);
   }
+  r = await scenario({ input: { releaseName: RELEASE + '/(default)' } }); assert.equal(r.result, name);
+  assert.equal(r.calls[0][3], RELEASE); assert(r.reports[0].defaultDatabaseAlias);
+  r = await scenario({ patchError: notFound, input: { releaseName: RELEASE + '/(default)' } }); assert.equal(r.result, name);
+  assert.equal(r.calls[1][3], RELEASE); assert(r.reports[0].defaultDatabaseAlias);
+  for (const releaseName of [RELEASE + '/named', RELEASE + '/(default)/extra', RELEASE + '/(default)\n', 'firebase.storage']) {
+    r = await scenario({ input: { releaseName } }); assert(r.error); assert.equal(r.calls.length, 0); assert(!r.reports[0].defaultReleaseAccepted);
+  }
   // Prove the integration really replaces the export consumed by the installed pinned RulesDeploy.
   const cliRoot = path.dirname(require.resolve('../tests/rules/node_modules/firebase-tools/package.json'));
   const rules = require(cliRoot + '/lib/gcp/rules.js'), { RulesDeploy } = require(cliRoot + '/lib/rulesDeploy.js');
@@ -100,6 +108,56 @@ async function scenario(change = {}) {
   }); assert.deepEqual(combinedCalls, ['PATCH', 'GET']);
   const pkg = require(cliRoot + '/package.json'), originalVersion = pkg.version;
   pkg.version = '13.29.2'; assert.throws(() => install(cliRoot, () => {}, {}), /Unexpected Firebase CLI version/); pkg.version = originalVersion;
+  // Exercise the real workflow consumer, including config normalization, compilation and ruleset selection/upload.
+  const prepareFirestore = require(cliRoot + '/lib/deploy/firestore/prepare.js').default;
+  const deployFirestore = require(cliRoot + '/lib/deploy/firestore/deploy.js').default;
+  const releaseFirestore = require(cliRoot + '/lib/deploy/firestore/release.js').default;
+  const { FirebaseError } = require(cliRoot + '/lib/error.js');
+  const folder = fs.mkdtempSync(path.join(os.tmpdir(), 'rules-publisher-consumer-'));
+  const source = 'rules_version = "2"; service cloud.firestore { match /databases/{database}/documents { match /{document=**} { allow read, write: if false; } } }';
+  fs.writeFileSync(path.join(folder, 'firestore.rules'), source);
+  let consumers = 0;
+  try {
+    for (const fixture of [{}, { explicitDefault: true, upload: true }, { ambiguous: true }, { named: true }]) {
+      const transport = [], evidence = [];
+      Client.prototype.post = async (url, body) => {
+        assert.equal(body.source.files[0].content, source);
+        if (url === `/projects/${PROJECT}:test`) { transport.push('COMPILE'); return { status: 200, body: { issues: [] } }; }
+        assert(fixture.upload); assert.equal(url, `/projects/${PROJECT}/rulesets`); transport.push('UPLOAD'); return { status: 200, body: { name: intended } };
+      };
+      Client.prototype.get = async (url, opts) => {
+        if (url === `/projects/${PROJECT}/releases`) { transport.push('LIST'); return { status: 200, body: { releases: [{ name, rulesetName: old, createTime: '2026-01-01T00:00:00Z' }] } }; }
+        if (url === '/' + old) { transport.push('SOURCE'); return { status: 200, body: { source: { files: [{ name: 'firestore.rules', content: fixture.upload ? 'other synthetic rules' : source }] } } }; }
+        assert.equal(url, '/' + name); assert.equal(opts.redirect, 'error'); assert(opts.signal instanceof AbortSignal);
+        transport.push('VERIFY'); return { status: 200, body: { name, rulesetName: fixture.upload ? intended : old } };
+      };
+      Client.prototype.patch = async (url, body) => {
+        assert.equal(url, '/' + name); assert.equal(body.release.name, name); assert.equal(body.release.rulesetName, fixture.upload ? intended : old);
+        transport.push('PATCH'); if (fixture.ambiguous) throw http(503); return { status: 200, body: { name } };
+      };
+      install(cliRoot, report => evidence.push(report), {});
+      const config = { rules: 'firestore.rules' };
+      if (fixture.explicitDefault) config.database = '(default)';
+      if (fixture.named) config.database = 'synthetic-named';
+      const context = { projectId: PROJECT }, options = { project: PROJECT, only: 'firestore:rules', config: { src: { firestore: config }, path: file => path.join(folder, file) } };
+      await prepareFirestore(context, options); assert.equal(context.firestore.rules[0].databaseId, fixture.named ? 'synthetic-named' : '(default)');
+      await deployFirestore(context, options);
+      if (fixture.named) {
+        await assert.rejects(releaseFirestore(context, options), error => {
+          assert(error instanceof FirebaseError); const logged = safeCompositeLog(error);
+          assert(logged.includes('Release target guard') && logged.includes('Refused before PATCH.'));
+          assert(!logged.includes('synthetic-named') && !logged.includes(name) && !logged.includes(old)); return true;
+        }); assert(!transport.includes('PATCH')); assert(!evidence[0].defaultReleaseAccepted);
+      } else {
+        await releaseFirestore(context, options); assert.equal(transport.filter(x => x === 'PATCH').length, 1);
+        assert(evidence[0].defaultDatabaseAlias && evidence[0].defaultReleaseAccepted);
+        assert.equal(transport.filter(x => x === 'UPLOAD').length, fixture.upload ? 1 : 0);
+        assert.equal(transport.filter(x => x === 'VERIFY').length, fixture.ambiguous ? 2 : 0);
+      }
+      assert.equal(evidence.length, 1); assert(Object.values(evidence[0]).every(v => typeof v === 'boolean' || Number.isInteger(v)));
+      consumers++;
+    }
+  } finally { fs.rmSync(folder, { recursive: true, force: true }); }
   rules.updateOrCreateRelease = originalCombined; Client.prototype.patch = originalPatch; Client.prototype.post = originalPost; Client.prototype.get = originalGet; Client.prototype.request = originalRequest;
-  console.log('PASS rules publisher: ' + groups + ' synthetic policy groups; installed13.29.1 fail-before/pass-after integration, no network.');
+  console.log('PASS rules publisher: ' + groups + ' synthetic policy groups, ' + consumers + ' actual prepare/deploy/release consumers; installed13.29.1 fail-before/pass-after integration, no network.');
 })().catch(e => { console.error(e.stack); process.exitCode = 1; });
