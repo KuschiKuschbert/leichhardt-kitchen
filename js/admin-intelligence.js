@@ -207,7 +207,7 @@
     });
     var sort = columns.filter(function (c) { return c[0] === t.column; })[0];
     if (sort && t.direction) shown = shown.slice().sort(function (a, b) { return window.LK_UX.compare(sort[2](a), sort[2](b)) * t.direction; });
-    var tools = '<div class="ux-record-tools" data-record="' + key + '"><label class="label" for="record-q-' + key + '">Search records</label><input id="record-q-' + key + '" type="search" class="search" data-record-q="' + key + '" value="' + esc(t.q) + '">';
+    var tools = '<div class="ux-record-tools" data-record="' + key + '"><label class="label" for="record-q-' + key + '">Search records</label><input id="record-q-' + key + '" data-k="record-q-' + key + '" type="search" class="search" data-record-q="' + key + '" value="' + esc(t.q) + '">';
     tools += '<details class="ux-record-advanced"><summary>Sort and filter</summary>';
     (categories || []).forEach(function (c) {
       var values = Array.from(new Set(rows.map(c[2]))).filter(Boolean).sort();

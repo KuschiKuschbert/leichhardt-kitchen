@@ -29,7 +29,7 @@ const { R, ok } = L.results();
     await p.locator('#council-many-picker').click();
     const selected = p.locator('.ux-picker-option[data-v="149"]');
     ok(await selected.count() === 1 && await selected.isVisible(), width + ': a selected option beyond the first virtual window is rendered on opening');
-    ok(await selected.evaluate(el => { const row = el.getBoundingClientRect(), list = el.closest('.ux-picker-options').getBoundingClientRect(); return row.top >= list.top - 1 && row.bottom <= list.bottom + 1; }), width + ': the selected long option fits fully inside the opening list viewport');
+    ok(await p.evaluate(() => { const el = document.querySelector('.ux-picker-option[data-v="149"]'), container = el && el.closest('.ux-picker-options'); if (!container) return false; const row = el.getBoundingClientRect(), list = container.getBoundingClientRect(); return row.top >= list.top - 1 && row.bottom <= list.bottom + 1; }), width + ': the selected long option fits fully inside the opening list viewport');
     const readable = await p.locator('.ux-picker-option').evaluateAll(nodes => nodes.every(el => el.scrollHeight <= el.clientHeight + 1 && el.scrollWidth <= el.clientWidth + 1));
     ok(readable, width + ': long virtualised labels remain fully readable at the largest text size');
     await p.keyboard.press('ArrowDown');
@@ -39,6 +39,32 @@ const { R, ok } = L.results();
     await p.keyboard.press('Enter'); await L.settle(p, 200);
     ok(await p.locator('#council-many').inputValue() === '159', width + ': a long virtual option commits through the original field');
     if (width === 390) {
+      await p.evaluate(() => {
+        const host = document.createElement('div'); host.id = 'council-redraw'; document.querySelector('#main').append(host);
+        function redraw(value, restoring) {
+          const previous = host.querySelector('input'), active = previous && previous === document.activeElement;
+          const start = active ? previous.selectionStart : null, end = active ? previous.selectionEnd : null;
+          if (previous) previous.blur();
+          host.replaceChildren(); const input = document.createElement('input'); input.id = 'council-redraw-query'; input.type = 'search'; input.value = value; host.append(input);
+          LK_UX.SmartSearchBar(input, { onQuery: redraw });
+          if (active) { if (restoring && LK_UX.restoreFocus) LK_UX.restoreFocus(input); else input.focus(); input.setSelectionRange(start, end); }
+        }
+        host._redraw = redraw;
+        redraw('');
+      });
+      const redrawn = p.locator('#council-redraw-query');
+      await redrawn.fill('Milk'); await L.settle(p, 230);
+      ok(await redrawn.evaluate(el => document.activeElement === el && el.value === 'Milk'), 'phone: a synchronous search redraw retains typing focus and the visible draft');
+      await redrawn.evaluate(el => { el.value = 'Milk'; el.setSelectionRange(1, 3); document.querySelector('#council-redraw')._redraw('Milk', true); });
+      ok(await redrawn.evaluate(el => document.activeElement === el && el.value === 'Milk' && el.selectionStart === 1 && el.selectionEnd === 3), 'phone: an unrelated redraw restores the focused query and cursor');
+      await redrawn.blur(); await redrawn.focus();
+      ok(await redrawn.inputValue() === '' && await redrawn.getAttribute('data-committed-query') === 'Milk', 'phone: real refocus after a redraw still clears only the draft');
+      await redrawn.fill('Milk'); await L.settle(p, 230); await p.keyboard.press('Enter');
+      ok(await redrawn.getAttribute('data-committed-query') === 'Milk' && await redrawn.inputValue() === 'Milk', 'phone: Enter after a deferred redraw retains the committed query');
+      await redrawn.evaluate(el => { el.value = 'Chicken'; el.dispatchEvent(new Event('input', { bubbles: true })); document.querySelector('#council-redraw')._redraw(el.dataset.committedQuery, true); });
+      await L.settle(p, 230);
+      ok(await redrawn.evaluate(el => document.activeElement === el && el.value === 'Chicken' && el.dataset.committedQuery === 'Chicken'), 'phone: a pending draft still commits after an unrelated redraw');
+      await p.locator('#council-redraw').evaluate(el => el.remove());
       await p.evaluate(() => LK_UX.AdaptivePicker({ managedOverlay: true, label: 'Focus review', value: ['0'], items: Array.from({ length: 160 }, (_, i) => ({ value: String(i), label: 'Choice ' + i })) }));
       await p.keyboard.press('ArrowDown');
       await p.locator('.ux-picker-options').evaluate(el => { el.scrollTop = 10000; }); await L.settle(p, 220);

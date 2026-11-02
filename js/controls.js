@@ -18,14 +18,19 @@
     return el.tagName.toLowerCase() + attrs.map(function (a) { return '[' + a.name + '="' + CSS.escape(a.value) + '"]'; }).join('');
   }
   function emit(el, type) { syncing = true; try { el.dispatchEvent(new Event(type, { bubbles: true })); } finally { syncing = false; } }
+  function restoreFocus(input) {
+    var s = searches.get(input), restoring = s && s.restoringFocus;
+    if (s) s.restoringFocus = true;
+    try { input.focus({ preventScroll: true }); } finally { if (s) s.restoringFocus = restoring; }
+  }
 
   // Search keeps the visible draft separate from the query delivered to the page's existing filter.
   function SmartSearchBar(input, options) {
     if (searches.has(input)) return searches.get(input);
     options = options || {};
     var key = location.hash + '|' + identity(input), old = searchMemory.get(key);
-    var s = old && old.query === input.value ? old : { query: input.value.trim(), raw: input.value, blurred: false, replacing: false, timer: null };
-    if (old) clearTimeout(old.timer);
+    var s = old && old.query === input.value ? old : { query: input.value.trim(), raw: input.value, blurred: false, replacing: false, timer: null, pending: null };
+    if (old) { clearTimeout(old.timer); old.timer = null; }
     searches.set(input, s); searchMemory.set(key, s);
     if (searchMemory.size > 150) searchMemory.delete(searchMemory.keys().next().value);
     var placeholder = input.placeholder || 'Search', wrap = node('span', 'ux-search'), clear = node('button', 'ux-search-clear', '×'), status = node('span', 'ux-search-status');
@@ -42,20 +47,29 @@
       var explanation = s.query ? "Filtering by '" + s.query + "'." + (s.replacing || s.raw.trim() !== s.query ? ' Type 2 or more characters to replace it. Clear search to show all.' : '') : '';
       status.hidden = !explanation; if (status.textContent !== explanation) status.textContent = explanation;
     }
+    function cancelPending() { clearTimeout(s.timer); s.timer = null; s.pending = null; }
+    function defer(value, delay) {
+      s.pending = { value: value, due: performance.now() + delay };
+      s.timer = setTimeout(function () { s.timer = null; if (input.isConnected) commit(value); }, delay);
+    }
     function commit(value) {
-      clearTimeout(s.timer); s.query = value.trim(); s.replacing = false; searchMemory.set(key, s);
-      var raw = s.raw; input.value = s.query;
-      if (options.onQuery) options.onQuery(s.query);
-      else {
-        emit(input, 'input');
-        // The review desk's searches submit local forms rather than filtering on input.
-        if (input.isConnected && input.form && input.form.matches('[data-ai-search], [data-ai-reference-search]')) input.form.requestSubmit();
+      cancelPending(); s.query = value.trim(); s.replacing = false; searchMemory.set(key, s);
+      var raw = s.raw, restoring = s.restoringFocus; input.value = s.query;
+      s.restoringFocus = restoring || document.activeElement === input;
+      try {
+        if (options.onQuery) options.onQuery(s.query);
+        else {
+          emit(input, 'input');
+          // The review desk's searches submit local forms rather than filtering on input.
+          if (input.isConnected && input.form && input.form.matches('[data-ai-search], [data-ai-reference-search]')) input.form.requestSubmit();
+        }
+      } finally {
+        s.restoringFocus = restoring; s.raw = raw; if (input.isConnected) paint();
       }
-      s.raw = raw; if (input.isConnected) paint();
     }
     s.reset = function () { s.raw = ''; s.blurred = false; s.replacing = false; commit(''); paint(); };
     input.addEventListener('focus', function () {
-      if (s.blurred && s.query.length >= 2) { clearTimeout(s.timer); s.raw = ''; s.replacing = true; }
+      if (!s.restoringFocus && s.blurred && s.query.length >= 2) { cancelPending(); s.raw = ''; s.replacing = true; }
       s.blurred = false; paint();
     });
     input.addEventListener('blur', function () {
@@ -69,11 +83,13 @@
     clear.addEventListener('pointerdown', function (e) { e.preventDefault(); });
     clear.addEventListener('click', function () { s.reset(); input.focus(); });
     s.receive = function (e) {
-      s.raw = input.value; clearTimeout(s.timer); paint();
+      s.raw = input.value; cancelPending(); paint();
       if (e.isComposing) return;
-      if (s.raw.trim().length >= 2) { var requested = s.raw; s.timer = setTimeout(function () { if (input.isConnected) commit(requested); }, options.delay == null ? 150 : options.delay); }
+      if (s.raw.trim().length >= 2) defer(s.raw, options.delay == null ? 150 : options.delay);
       // Empty or one-character drafts leave the old results on screen. X explicitly clears them.
     };
+    // A redraw moves only a real pending query to the new input, keeping its original debounce deadline.
+    if (s.pending) defer(s.pending.value, Math.max(0, s.pending.due - performance.now()));
     paint(); return s;
   }
   document.addEventListener('input', function (e) {
@@ -430,6 +446,6 @@
   }).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled', 'aria-pressed', 'aria-checked'] });
   document.addEventListener('focusin', function (event) { if (!event.target.closest('.ux-picker, .ux-picker-trigger')) lastTrigger = null; });
   window.addEventListener('hashchange', function () { if (activePicker) activePicker.close(); lastTrigger = null; searchMemory.forEach(function (s) { clearTimeout(s.timer); }); searchMemory.clear(); });
-  window.LK_UX = { close: function () { if (activePicker) activePicker.close(); }, enhance: enhance, compare: compare, cellValue: cellValue, AdaptivePicker: AdaptivePicker, SmartSearchBar: SmartSearchBar, resetSearch: function (input) { var s = searches.get(input); if (s) s.reset(); } };
+  window.LK_UX = { close: function () { if (activePicker) activePicker.close(); }, enhance: enhance, compare: compare, cellValue: cellValue, AdaptivePicker: AdaptivePicker, SmartSearchBar: SmartSearchBar, restoreFocus: restoreFocus, resetSearch: function (input) { var s = searches.get(input); if (s) s.reset(); } };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', schedule); else schedule();
 })();

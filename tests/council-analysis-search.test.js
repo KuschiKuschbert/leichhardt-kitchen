@@ -18,7 +18,9 @@ for (const range of [7, 30, 90]) extra[path('range-' + range)] = {
   dates: [{ day, counts: daily.counts }], totalItems: aggregate.items.length
 };
 async function search(p, selector, value) {
-  await p.fill(selector, value); await p.press(selector, 'Enter'); await L.settle(p, 100);
+  await p.fill(selector, value); await p.press(selector, 'Enter');
+  await L.waitFor(p, ({ selector, value }) => document.querySelector(selector)?.dataset.committedQuery === value.trim(), { selector, value });
+  await L.settle(p, 100);
 }
 (async () => {
   const b = await L.start();
@@ -27,6 +29,12 @@ async function search(p, selector, value) {
     await L.adminTab(p, 'analysis');
     await L.waitFor(p, () => document.querySelectorAll('[data-ai="item"]').length === 3);
     ok(await p.locator('.ai-queue .ux-search').count() === 1, width + ': recorded items offer one search box');
+    await p.fill('#record-q-analysis-items', 'Milk');
+    await L.waitFor(p, () => document.querySelector('#record-q-analysis-items')?.dataset.committedQuery === 'Milk');
+    ok(await p.evaluate(() => document.activeElement.id === 'record-q-analysis-items' && document.activeElement.value === 'Milk'), width + ': deferred filtering retains typing focus and the entered query');
+    await p.keyboard.press('Enter');
+    ok(await p.locator('#record-q-analysis-items').getAttribute('data-committed-query') === 'Milk' && await p.locator('[data-ai="item"]').count() === 1, width + ': Enter after deferred filtering keeps the committed results');
+    await p.locator('#record-q-analysis-items').locator('..').locator('.ux-search-clear').click();
     const reads = await p.evaluate(() => __fake.bill.reduce((n, x) => n + x.n, 0));
     // On the old screen these two inputs could contradict each other.
     if (await p.locator('#ai-search').count()) await search(p, '#ai-search', 'Chicken');
@@ -36,6 +44,7 @@ async function search(p, selector, value) {
     ok(await p.locator('[data-ai="item"]').count() === 3, width + ': Reset All Filters recovers the whole item list');
     if (await p.locator('#ai-search').count()) await search(p, '#ai-search', '');
     await search(p, '#record-q-analysis-items', 'Milk');
+    await L.waitFor(p, () => document.querySelectorAll('[data-ai="item"]').length === 1 && document.querySelector('.ai-row-title')?.textContent === 'Milk');
     ok(await p.locator('[data-ai="item"]').count() === 1 && await p.locator('.ai-row-title').first().textContent() === 'Milk', width + ': one search narrows the item queue');
     ok(await p.evaluate(() => __fake.bill.reduce((n, x) => n + x.n, 0)) === reads, width + ': local search and reset add no document reads');
     await p.locator('[data-ai="item"]').click(); await p.click('.wtop [data-act="back"]');

@@ -4725,7 +4725,7 @@
     document.documentElement.classList.toggle('sheet-open', !!S.root.querySelector('.sheet') || !!ptPop);
     if (scrolls.length) Array.prototype.forEach.call(S.root.querySelectorAll('.nb-body'), function (b, i) { if (scrolls[i] != null) b.scrollTop = scrolls[i]; });
     if (window.LK_UX) window.LK_UX.enhance(S.root);
-    if (key) { var el = S.root.querySelector('[data-k="' + key + '"]'); if (el && el._uxTrigger) el = el._uxTrigger; if (el) { el.focus({ preventScroll: true }); if (start != null && el.setSelectionRange) { try { el.setSelectionRange(start, end); } catch (e) {} } } }
+    if (key) { var el = S.root.querySelector('[data-k="' + key + '"]'); if (el && el._uxTrigger) el = el._uxTrigger; if (el) { if (window.LK_UX && window.LK_UX.restoreFocus) window.LK_UX.restoreFocus(el); else el.focus({ preventScroll: true }); if (start != null && el.setSelectionRange) { try { el.setSelectionRange(start, end); } catch (e) {} } } }
     else if (btnSel) {
       var back = S.root.querySelector(btnSel);
       if (!back && tickAt >= 0) { var ticks2 = S.root.querySelectorAll('.nb-box[data-p="tick"]:not([disabled])'); back = ticks2[Math.min(tickAt, ticks2.length - 1)]; }
