@@ -17,6 +17,8 @@ A sous chef may still add people, update the staff list and request changes to r
 | Confirm or undo a transfer return | Tick, plus existing return/recorder/time rules |
 | Record delivery temperatures | Every valid personal login, including View only and Functions |
 
+These controls govern the task actions above. Existing service and personal actions keep their separate contracts: every personal login may mark a function round Sent, and permitted sign-offs, drinks, kitchen mail and activity still work. View only is not a prohibition on every database write.
+
 Each changed field is checked. A completion cannot carry an unrelated edit or removal. Original prep/order recorder fields stay fixed. An Add-only person may take back their own recent, unfinished addition using its existing Undo; that is a removal-only change checked against the stored recorder and the server's two-minute window. It does not grant general removal rights.
 
 Automatic consolidation of already duplicated prep lines requires both Add and Delete because it removes other lines. Leads, chefs and other people with those capabilities retain the merger and its Undo. Ordinary Add still recognises an existing compatible line, fills its missing amount or section, and offers **Add anyway**. A client merge marker grants no extra authority.
