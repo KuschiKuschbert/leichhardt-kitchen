@@ -10,6 +10,64 @@
 // the strip is up every row keeps the mark's room, so a tick with no signal moves no row either (second review).
 // The stand-in keeps its data in localStorage, so a lost write cannot be shown here: 'hold' stands in for a waiting write.
 const L = require('./lib');
+// DIAGNOSTIC ONLY: this branch must never merge or deploy.
+const __traceEnabled = process.env.LK_OFFLINE_TRACE === '1' || (process.env.LK_OFFLINE_TRACE === undefined && process.env.GITHUB_REF_NAME === 'ci/offline-writes-trace');
+const __traceStart = process.hrtime.bigint();
+const __trace = (event, detail = {}) => { if (__traceEnabled) process.stdout.write(JSON.stringify({ trace: true, at: new Date().toISOString(), elapsedMs: Number(process.hrtime.bigint() - __traceStart) / 1e6, event, ...detail }) + '\n'); };
+__trace('metadata', { ...{"kind":"controlled diagnostic instrumentation","originalHead":"2f013076245f4008e90da82e968129a6f559823d","sourceSha256":"0e5548fe8414aa64ef8d3dc3696b6b13e35a8d5945250da107b1d3e5ae1dff25","assertionRouteTimeoutChanges":false}, node: process.version, chrome: process.env.CHROME || 'default channel', base: process.env.BASE || 'http://127.0.0.1:8777/', diagnosticHead: process.env.GITHUB_SHA || null });
+if (__traceEnabled) {
+process.on('beforeExit', code => __trace('process-beforeExit', { code, activeHandleTypes: process._getActiveHandles().map(h => h.constructor.name) }));
+process.on('exit', code => __trace('process-exit', { code }));
+const __originalResults = L.results;
+L.results = () => { const r = __originalResults(); const old = r.ok; return { ...r, ok: (passed, label) => { const result = old(passed, label); __trace('assertion', { passed: !!passed, label }); return result; } }; };
+function __traceMethod(object, method, label, detail, describe = () => ({})) {
+  const original = object[method].bind(object);
+  object[method] = async (...args) => {
+    __trace(label + '-begin', { ...detail, ...describe(args) });
+    try { const result = await original(...args); __trace(label + '-done', detail); return result; }
+    catch (error) { __trace(label + '-error', { ...detail, message: String(error.message || error).split('\n')[0] }); throw error; }
+  };
+}
+const __originalStart = L.start;
+L.start = async () => {
+  __trace('browser-start-begin');
+  const browser = await __originalStart();
+  __trace('browser-start-done');
+  __traceMethod(browser, 'close', 'browser-close', {});
+  const originalNewContext = browser.newContext.bind(browser);
+  let contextNumber = 0;
+  browser.newContext = async (...args) => {
+    const ctx = await originalNewContext(...args), context = ++contextNumber;
+    __trace('context-created', { context });
+    __traceMethod(ctx.clock, 'install', 'clock-install', { context });
+    __traceMethod(ctx, 'unrouteAll', 'context-unroute', { context });
+    __traceMethod(ctx, 'close', 'context-close', { context });
+    const originalNewPage = ctx.newPage.bind(ctx);
+    let pageNumber = 0;
+    ctx.newPage = async (...pageArgs) => {
+      const page = await originalNewPage(...pageArgs), pageId = ++pageNumber;
+      __trace('page-created', { context, pageId });
+      __traceMethod(page, 'unrouteAll', 'page-unroute', { context, pageId });
+      for (const method of ['fastForward', 'runFor', 'pauseAt', 'resume', 'setFixedTime', 'setSystemTime']) {
+        if (typeof page.clock[method] === 'function') __traceMethod(page.clock, method, 'clock-' + method, { context, pageId }, args => ({ arguments: args }));
+      }
+      __traceMethod(page, 'goto', 'page-goto', { context, pageId }, args => ({ url: args[0] }));
+      __traceMethod(page, 'reload', 'page-reload', { context, pageId });
+      page.on('framenavigated', frame => { if (frame === page.mainFrame()) __trace('main-frame-navigated', { context, pageId, url: frame.url() }); });
+      page.on('domcontentloaded', () => __trace('domcontentloaded', { context, pageId, url: page.url() }));
+      page.on('load', () => __trace('load', { context, pageId, url: page.url() }));
+      page.on('crash', () => __trace('page-crashed', { context, pageId }));
+      page.on('pageerror', error => __trace('page-error', { context, pageId, message: String(error.message || error).split('\n')[0] }));
+      page.on('close', () => __trace('page-closed', { context, pageId }));
+      return page;
+    };
+    ctx.on('close', () => __trace('context-closed-event', { context }));
+    return ctx;
+  };
+  return browser;
+};
+}
+
 const { R, ok } = L.results(), { txt } = L;
 const today = L.ymd(new Date(L.NOW));
 const mark = p => p.evaluate(() => { window.__mark = 1; });
@@ -62,9 +120,12 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
   let p = null;
   // each step on its own: one that fails (say the page reloaded) is a FAIL, and the next steps still run
   async function step(n, fn) {
+    __trace('step-begin', { step: n });
     try { await fn(); } catch (e) { ok(false, 'step ' + n + ' stopped: ' + String(e && e.message || e).split('\n')[0]); }
+    __trace('step-body-done', { step: n });
     if (p) await p.context().close().catch(() => {});
     p = null;
+    __trace('step-done', { step: n });
   }
 
   // 1. prep at 390 (staff): the strip's words, the browser asking before leaving, and Not sent only once the strip is up
@@ -1248,6 +1309,8 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     });
   }
 
+  __trace('all-step-bodies-and-contexts-done');
   await b.close();
+  __trace('report-begin');
   L.report(R);
 })().catch(e => { console.error(e); console.log(R.join('\n')); process.exit(1); });

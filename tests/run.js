@@ -19,8 +19,10 @@ const jobs = Math.max(1, +process.env.JOBS || Math.min(6, os.cpus().length + 2))
 function runFile(f) {
   return new Promise(res => {
     const t0 = Date.now(), out = [];
+    // Never-merge diagnostic branch: stream only this child, under the same explicit/diagnostic-ref trace guard.
+    const trace = f === 'offline-writes.test.js' && (process.env.LK_OFFLINE_TRACE === '1' || (process.env.LK_OFFLINE_TRACE === undefined && process.env.GITHUB_REF_NAME === 'ci/offline-writes-trace'));
     const c = spawn(process.execPath, [path.join(__dirname, f)], { env: process.env });
-    c.stdout.on('data', d => out.push(d)); c.stderr.on('data', d => out.push(d));
+    c.stdout.on('data', d => trace ? process.stdout.write(d) : out.push(d)); c.stderr.on('data', d => trace ? process.stderr.write(d) : out.push(d));
     c.on('exit', code => {
       const s = (Date.now() - t0) / 1000;
       process.stdout.write('\n=== ' + f + ' (' + s.toFixed(0) + ' s)\n' + Buffer.concat(out).toString());
