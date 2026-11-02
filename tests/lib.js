@@ -146,10 +146,13 @@ function chromeOpts() {
   // put the tablet layout in a 753 px window and count as sideways scroll
   return process.env.CHROME ? { executablePath: process.env.CHROME, headless: true, args: ['--hide-scrollbars'] } : { channel: 'chrome', headless: true, args: ['--hide-scrollbars'] };
 }
-// Routed requests may still be returning after a test finishes. Dispose their handlers only during teardown.
-// Active network failures continue to fail the test; each shared-browser connection owns its own contexts.
+// Isolate a finished context before removing its stand-ins: a pending update may still navigate.
+// Ignore already active route callbacks only during teardown, then close pages before context disposal.
 async function unrouteForClose(ctx) {
-  await Promise.all([ctx.unrouteAll({ behavior: 'ignoreErrors' }), ...ctx.pages().filter(p => !p.isClosed()).map(p => p.unrouteAll({ behavior: 'ignoreErrors' }))]);
+  await ctx.setOffline(true);
+  const pages = ctx.pages().filter(p => !p.isClosed());
+  await Promise.all([ctx.unrouteAll({ behavior: 'ignoreErrors' }), ...pages.map(p => p.unrouteAll({ behavior: 'ignoreErrors' }))]);
+  await Promise.all(pages.filter(p => !p.isClosed()).map(p => p.close({ runBeforeUnload: false })));
 }
 async function start() {
   const b = await (process.env.LK_WS ? chromium.connect(process.env.LK_WS) : chromium.launch(chromeOpts()));
