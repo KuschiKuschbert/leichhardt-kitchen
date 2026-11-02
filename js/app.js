@@ -944,7 +944,7 @@
     });
   }
   function loadManage() {
-    if (!mgLoad) mgLoad = mgScript('js/manage.js?v=7').catch(function (e) { mgLoad = null; throw e; });
+    if (!mgLoad) mgLoad = mgScript('js/manage.js?v=8').catch(function (e) { mgLoad = null; throw e; });
     return mgLoad;
   }
   function mgNote(title, text, link, waitingIcon) {
@@ -1118,6 +1118,7 @@
       }).join('') + '</div></section>' +
       installHTML() +
       deviceHTML +
+      '<div id="kb-seasonal-settings"></div>' +
       '<section class="set-block" aria-label="Opens with"><span class="label">Opens with</span><span class="hint">Tap one. This is how the recipes look when you arrive, on a computer and on a phone.</span>' + viewOptions('setview') + '</section>' +
       '<section class="set-block set-qr" aria-label="Open on a phone"><span class="label">Open on a phone</span><div class="qr-row"><img class="qr-img" src="qr.svg" width="180" height="180" alt="QR code that opens the Kitchen Book">' +
       '<div><p class="hint">Scan with a phone camera to open the Kitchen Book on that phone, then add it to the home screen so it is one tap away.</p><p class="qr-url">kuschikuschbert.github.io/leichhardt-kitchen</p>' +

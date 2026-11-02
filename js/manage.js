@@ -869,6 +869,8 @@
     if (drawn.indexOf('draw:') === 0) drawn = '';
     var fresh = M.root !== root;
     M.root = root;
+    // A received recipe can be ready when its missing form returns on a new page root.
+    if (M.ed && !M.ed.d && M.ed.missing !== undefined && M.ed.sub === key && sub[0] === 'r' && M.ed.missing === sub[1] && startFor(sub[1])) M.ed = null;
     if (key !== drawn || !M.ed !== !sub.length) {
       drawn = key;
       if (!sub.length) M.ed = null;
@@ -1083,9 +1085,17 @@
     // new recipe changes came in from another device: the list shows them; an open form keeps what is typed. A form
     // nobody has typed in yet opens again from the new copy (the book often arrives just after the form opened)
     changed: function () {
-      if (!M.root || (window.LK_DRAW && window.LK_DRAW.open())) return;
+      if (!M.root || !document.body.contains(M.root) || M.suspended || workLock() || !P.bookEdit() || identity() !== M.identity || (window.LK_DRAW && window.LK_DRAW.open())) return;
       var e = M.ed;
       if (!e) { draw(); return; }
+      // A new card can arrive after this lazy editor. Recover only its still-open missing route.
+      // This uses the copy already received, with no extra read, and offers any kept draft normally.
+      if (e.missing !== undefined) {
+        if (M.sub[0] !== 'r' || M.sub[1] !== e.missing || !startFor(e.missing)) return;
+        var missingKey = e.sub;
+        openEditor(M.sub); if (M.ed) M.ed.sub = missingKey; draw();
+        return;
+      }
       if (!e.d || e.isNew || e.kept || snapOf(e) !== e.snap || stampOf(e.id) === e.stamp) return;
       var key = e.sub; openEditor(['r', e.id]); if (M.ed) M.ed.sub = key; draw();
     }

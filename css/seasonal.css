@@ -1,0 +1,15 @@
+@font-face{font-family:'Kitchenbook Devanagari';font-style:normal;font-weight:400;font-display:swap;src:url('../fonts/NotoSansDevanagari-Regular.ttf') format('truetype')}
+@font-face{font-family:'Kitchenbook Devanagari';font-style:normal;font-weight:700;font-display:swap;src:url('../fonts/NotoSansDevanagari-Bold.ttf') format('truetype')}
+.kb-seasonal-settings h3{margin:0 0 8px;font:700 1.5rem/1.2 var(--display)}
+.kb-seasonal-settings .hint{display:block;margin:8px 0 12px}
+.kb-seasonal-field{margin:16px 0}
+.kb-seasonal-chooser{margin:16px 0;max-width:640px}
+.kb-seasonal-chooser[hidden]{display:none}
+.kb-seasonal-chooser label{display:block;font-weight:700;margin-bottom:6px}
+.kb-seasonal-chooser input,.kb-seasonal-chooser select{box-sizing:border-box;width:100%;max-width:100%;margin:4px 0 8px;padding:10px 12px;min-height:44px;font:inherit;color:var(--ink);background:var(--paper);border:1px solid var(--edge);border-radius:var(--r-act,8px)}
+.kb-seasonal-results{display:flex;flex-wrap:wrap;gap:8px}
+.kb-seasonal-results .chip{white-space:normal;text-align:left;max-width:100%}
+.kb-occasion-panel{margin:0 auto;z-index:10002!important;max-height:calc(100dvh - var(--kb-about-top,80px) - 16px);overflow-y:auto}
+.kb-occasion-panel::backdrop{background:rgb(28 29 31 / .28)}
+@media(prefers-reduced-motion:reduce){.kb-occasion-panel{animation:none!important;transition:none!important}}
+@media print{#kb-seasonal-settings,.kb-occasion-panel{display:none!important}}

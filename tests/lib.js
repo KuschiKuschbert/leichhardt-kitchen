@@ -189,6 +189,7 @@ async function start() {
    o.dailyLocked      omit the daily PIN session while retaining profile/Google as appropriate
    o.legacyPrimaryGoogle  old default-app Google identity for the one-time anonymous-device migration
    o.settings         saved recipe book settings, for example { view: 'tiles' }
+   o.seasonal         seasonal preferences; other journeys default Off for date-independent navigation
    o.extra            more seed documents (see seed)
    o.base             the book's address for this page (BASE by default)
    o.sw               let the service worker run (it is blocked otherwise, so each page loads the files fresh)
@@ -208,6 +209,7 @@ async function start() {
                       __fake.warm() in the page brings the signal back
    o.init             a function run in the page before the book starts, on every load (after the seed), to stand in
                       for what the test browser lacks (the notification permission, a running service worker)
+   o.fakeSDK          replacement source by Firebase stand-in basename, for controlled SDK response ordering
    o.block            a regex source: the book's own files whose address matches fail to load (say js/cutoffs.js)
    o.board            let the start of shift sheet come up (23 Oct 2026). Without it the phone has had today's start
                       already (lk.board.<who>), the way everyone has a usual drink, so the sheet stays off the other tests */
@@ -229,7 +231,7 @@ async function open(browser, hash, o) {
   });
   await ctx.route('https://www.gstatic.com/firebasejs/**', r => {
     const f = path.join(FAKE, path.basename(new URL(r.request().url()).pathname));
-    if (fs.existsSync(f)) return r.fulfill({ status: 200, contentType: 'text/javascript', body: fs.readFileSync(f, 'utf8') });
+    if (fs.existsSync(f)) return r.fulfill({ status: 200, contentType: 'text/javascript', body: o.fakeSDK && typeof o.fakeSDK[path.basename(f)] === 'string' ? o.fakeSDK[path.basename(f)] : fs.readFileSync(f, 'utf8') });
     return r.fulfill({ status: 200, contentType: 'text/javascript', body: 'export {}' });
   });
   await ctx.route(/fonts\.(googleapis|gstatic)\.com/, r => r.fulfill({ status: 200, body: '' }));
@@ -284,7 +286,8 @@ async function open(browser, hash, o) {
     'lk.prep.tok': who && o.oldTok ? who + ':' + sha('lk:' + who + ':' + pins[who]) : '',
     'lk.prep.sess': sess ? JSON.stringify({ v: 2, by: who, exp, uid, pinAt, issuedAt, mode }) : '',
     'lk.prep.seen': String(clock),   // on the phone's clock, like the idle check
-    'lk.settings.v1': JSON.stringify(Object.assign({ installNo: true }, o.settings || {}))
+    'lk.settings.v1': JSON.stringify(Object.assign({ installNo: true }, o.settings || {})),
+    'lk.seasonal.v1': JSON.stringify(o.seasonal || { selection: 'off' })
   };
   if (!(o.deviceUnclassified || o.deviceMode === 'unclassified' || o.profile === null)) ls['lk.device.v2'] = JSON.stringify(o.profile || { v: 2, mode, ownerId: mode === 'personal' ? who || '' : '' });
   if (!o.board) ['sam', 'ann', 'bo', 'fay', 'finn'].concat((config.people || []).map(p => p.id), who ? [who] : []).forEach(id => { ls['lk.board.' + id] = ymd(new Date(serverClock)); });
