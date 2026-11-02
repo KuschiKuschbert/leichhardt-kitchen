@@ -171,7 +171,7 @@ async function open(b, options = {}) {
       const old = __fake.dump()[k]; __fake.write(k, { ...old, ...(kind === 'deleted' ? { deleted: true } : kind === 'quantity changed' ? { qty: '9 tubs' } : { done: true, doneBy: 'Sam', doneById: 'sam', doneAt: at }) });
     }, { k: itemKey('i1'), kind, at: L.NOW + 1 });
     if (kind === 'worker removed' || kind === 'recorder revoked') await p.evaluate(({ k, kind }) => {
-      const c = __fake.dump()[k]; __fake.write(k, { ...c, people: c.people.map(x => x.id === (kind === 'worker removed' ? 'bo' : 'ann') ? { ...x, ...(kind === 'worker removed' ? { active: false } : { tick: false }) } : x) });
+      const c = __fake.dump()[k]; __fake.write(k, { ...c, ...(kind === 'recorder revoked' ? { tickIds: c.tickIds.filter(id => id !== 'ann') } : {}), people: c.people.map(x => x.id === (kind === 'worker removed' ? 'bo' : 'ann') ? { ...x, ...(kind === 'worker removed' ? { active: false } : { tick: false }) } : x) });
     }, { k: key('config', 'main'), kind });
     if (kind === 'sign out') await p.evaluate(() => LK_PREP.signOut(true, true));
     if (kind === 'route') await p.goto(L.BASE + '#/orders');

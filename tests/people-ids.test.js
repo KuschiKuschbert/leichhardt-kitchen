@@ -12,7 +12,9 @@ const people = x => [
   { id: 'ann', name: 'Ann', role: 'staff', add: true, tick: true, del: false, ping: false, active: true },
   Object.assign({ id: 'bo', name: 'Bo', role: 'staff', add: true, tick: true, del: false, ping: false, active: true }, x || {})
 ];
-const cfg = (bo, lists) => { const e = {}; e[CFG] = Object.assign({ people: people(bo), sousIds: ['sam'], pingIds: ['sam'], showBadges: true }, lists || {}); return e; };
+// Bo's edited row is a pending request; the owner-approved capabilities still describe the original Staff row.
+const cfg = (bo, lists) => { const e = {}; e[CFG] = Object.assign({ people: people(bo), sousIds: ['sam'], pingIds: ['sam'],
+  addIds: ['sam', 'ann', 'bo'], tickIds: ['sam', 'ann', 'bo'], delIds: ['sam'], showBadges: true }, lists || {}); return e; };
 const same = (a, b) => (a || []).slice().sort().join(',') === b.slice().sort().join(',');
 
 (async () => {
@@ -25,6 +27,7 @@ const same = (a, b) => (a || []).slice().sort().join(',') === b.slice().sort().j
   ok(/Bo/.test(await txt(p, '.a-ids-list')) && /now marked Sous chef/.test(await txt(p, '.a-ids-list')), 'admin: the card says Bo is now marked Sous chef');
   ok(same(s[CFG].sousIds, ['sam', 'head']) && same(s[CFG].pingIds, ['sam', 'head']), 'admin: sousIds and pingIds were not published quietly');
   ok(same(s[CFG].staffIds, ['sam', 'ann', 'bo', 'head']), 'admin: staffIds was added by itself');
+  ok(s[CFG].people.find(x => x.id === 'bo').del === true && !s[CFG].delIds.includes('bo'), 'admin: the requested Delete tick has not changed the owner-approved Staff permission');
   await L.adminTab(p, 'people');
   await L.settle(p, 300);
   ok(await p.$('.a-ids') !== null, 'admin: the card is on every tab');
@@ -52,7 +55,7 @@ const same = (a, b) => (a || []).slice().sort().join(',') === b.slice().sort().j
   await L.tap(p, '[data-p="a-save"]');
   await L.settle(p, 500);
   s = await store(p);
-  ok(s[CFG].people.some(x => x.name === 'Zed') && same(s[CFG].sousIds, ['sam', 'bo', 'head']) && s[CFG].people.filter(x => x.id === 'bo')[0].role === 'sous', 'admin: Save keeps Bo as Sous chef and adds Zed');
+  ok(s[CFG].people.some(x => x.name === 'Zed') && same(s[CFG].sousIds, ['sam', 'bo', 'head']) && s[CFG].people.filter(x => x.id === 'bo')[0].role === 'sous' && s[CFG].delIds.includes('bo'), 'admin: Keep approves Bo as Sous chef with Delete and Save adds Zed');
   ok(p.errors.length === 0, 'admin keep with a draft: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -73,8 +76,13 @@ const same = (a, b) => (a || []).slice().sort().join(',') === b.slice().sort().j
   p = await L.open(b, '#/admin', { admin: true, extra: cfg(), wait: 1800 });
   await L.adminTab(p, 'people');
   await L.settle(p, 300);
+  // Finish the returning owner's canonical setup save before editing this fixture's original Staff row.
+  await L.waitFor(p, () => { const c = LK_PREP.state.config; return ['addIds', 'tickIds', 'delIds'].every(k => c[k].includes(c.headId)) && !LK_PREP.unsent(); });
+  // Match the SDK: unrelated writes do not re-emit identical config. Real data/auth/metadata changes still arrive.
+  await p.evaluate(() => { __fake.quiet = true; });
   await L.pick(p, '#a-r2', 'sous');
-  await L.settle(p, 200);
+  await L.waitFor(p, () => LK_PREP.state.draft.people.find(x => x.id === 'bo').role === 'sous' && !document.querySelector('[data-p="a-save"]').disabled);
+  await p.evaluate(() => { __fake.quiet = false; });
   await p.click('[data-p="a-save"]');
   await L.settle(p, 400);
   s = await store(p);

@@ -10,6 +10,13 @@ name: Publish rules
 
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: Preview preparation counts, verify existing foundation, or prepare and publish rules
+        required: true
+        default: publish
+        type: choice
+        options: [preview, verify, publish]
   workflow_run:
     workflows: ["pages-build-deployment"]
     types: [completed]
@@ -62,30 +69,41 @@ jobs:
         working-directory: scripts
         run: npm ci --no-audit --no-fund
       - name: Carry existing transfers into the outstanding list
+        if: github.event_name != 'workflow_dispatch' || inputs.mode == 'publish'
         working-directory: scripts
         env:
           FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
           KITCHEN_PIN: ${{ secrets.KITCHEN_PIN }}
         run: node transfer-index.mjs
-      - name: Prepare login roster and public recipes
+      - name: Preview, verify or prepare canonical access
         working-directory: scripts
         env:
           FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
           KITCHEN_PIN: ${{ secrets.KITCHEN_PIN }}
-        run: node access-bootstrap.mjs
+          ACCESS_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'publish' }}
+        run: |
+          case "$ACCESS_MODE" in
+            preview) node access-bootstrap.mjs --dry-run ;;
+            verify) node access-bootstrap.mjs --verify ;;
+            publish) node access-bootstrap.mjs ;;
+            *) echo "Unknown access workflow mode."; exit 1 ;;
+          esac
       - name: Check the wastage history range query
+        if: github.event_name != 'workflow_dispatch' || inputs.mode == 'publish'
         working-directory: scripts
         env:
           FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
           KITCHEN_PIN: ${{ secrets.KITCHEN_PIN }}
         run: node waste-range-check.mjs
       - name: Prepare the private ping recipient index
+        if: github.event_name != 'workflow_dispatch' || inputs.mode == 'publish'
         working-directory: scripts
         env:
           FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
           KITCHEN_PIN: ${{ secrets.KITCHEN_PIN }}
         run: node ping-index.mjs
       - name: Fill in the template
+        if: github.event_name != 'workflow_dispatch' || inputs.mode == 'publish'
         env:
           KITCHEN_PIN: ${{ secrets.KITCHEN_PIN }}
           OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}
@@ -98,6 +116,7 @@ jobs:
           if grep -q 'KITCHEN_PIN\|OWNER_EMAIL' "$RUNNER_TEMP/rules/firestore.rules"; then echo "A placeholder was left in. Nothing published."; exit 1; fi
           printf '{ "firestore": { "rules": "firestore.rules" } }\n' > "$RUNNER_TEMP/rules/firebase.json"
       - name: Publish
+        if: github.event_name != 'workflow_dispatch' || inputs.mode == 'publish'
         env:
           FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
         run: |
@@ -109,9 +128,17 @@ jobs:
           "$GITHUB_WORKSPACE/tests/rules/node_modules/.bin/firebase" deploy --only firestore:rules --project leichhardt-kitchen --non-interactive
           rm -f "$RUNNER_TEMP/sa.json" "$RUNNER_TEMP/rules/firestore.rules"
           echo "Published. Changes can take up to a minute to reach the phones."
+      - name: Verify canonical access after publication
+        if: github.event_name != 'workflow_dispatch' || inputs.mode == 'publish'
+        working-directory: scripts
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+          KITCHEN_PIN: ${{ secrets.KITCHEN_PIN }}
+        run: sleep 60 && node access-bootstrap.mjs --verify
       # Proves the lock on the live book straight after publishing: the reads and writes the rules must refuse, from a
       # client that holds only the kitchen PIN, plus the one read they must allow. Fails the run if any is wrong.
       - name: Prove the lock on the live book
+        if: github.event_name != 'workflow_dispatch' || inputs.mode == 'publish'
         working-directory: tests/rules
         env:
           KITCHEN_PIN: ${{ secrets.KITCHEN_PIN }}

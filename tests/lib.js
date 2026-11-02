@@ -53,7 +53,11 @@ function seed(extra) {
   // Deployed kitchens keep canonical active membership through access-bootstrap and staff saves.
   if (!Array.isArray(cfg.staffIds)) cfg.staffIds = (cfg.people || []).filter(p => p.active !== false).map(p => p.id);
   cfg.fnOnlyIds = cfg.fnOnlyIds || (cfg.people || []).filter(p => p.active !== false && p.role === 'fnc').map(p => p.id);
+  // Synthetic deployed configuration includes the owner-approved capability foundation. Explicit missing lists are tested separately.
+  ['add', 'tick', 'del'].forEach(cap => { if (cfg[cap + 'Ids'] === undefined) cfg[cap + 'Ids'] = (cfg.people || []).filter(p => p.active !== false && cfg.staffIds.includes(p.id) && !cfg.fnOnlyIds.includes(p.id) && (p.id === cfg.headId || p[cap] === true)).map(p => p.id); });
   s[K.concat(['login', 'roster']).join('/')] = Object.fromEntries(['people', 'staffIds', 'sousIds', 'headId', 'fnIds', 'fnOnlyIds'].filter(k => cfg[k] !== undefined).map(k => [k, cfg[k]]));
+  // Synthetic deployed bookings receive the same additive preparation as production before capability rules.
+  Object.entries(s).forEach(([path, f]) => { if (/^kitchens\/[^/]+\/functions\/[^/]+$/.test(path) && f) { if (!f.effects) f.effects = require('../js/functions').effects(f, path.split('/').pop()); } });
   return s;
 }
 
@@ -146,10 +150,13 @@ function chromeOpts() {
   // put the tablet layout in a 753 px window and count as sideways scroll
   return process.env.CHROME ? { executablePath: process.env.CHROME, headless: true, args: ['--hide-scrollbars'] } : { channel: 'chrome', headless: true, args: ['--hide-scrollbars'] };
 }
-// Routed requests may still be returning after a test finishes. Dispose their handlers only during teardown.
-// Active network failures continue to fail the test; each shared-browser connection owns its own contexts.
+// Isolate a finished context before removing its stand-ins: a pending update may still navigate.
+// Ignore already active route callbacks only during teardown, then close pages before context disposal.
 async function unrouteForClose(ctx) {
-  await Promise.all([ctx.unrouteAll({ behavior: 'ignoreErrors' }), ...ctx.pages().filter(p => !p.isClosed()).map(p => p.unrouteAll({ behavior: 'ignoreErrors' }))]);
+  await ctx.setOffline(true);
+  const pages = ctx.pages().filter(p => !p.isClosed());
+  await Promise.all([ctx.unrouteAll({ behavior: 'ignoreErrors' }), ...pages.map(p => p.unrouteAll({ behavior: 'ignoreErrors' }))]);
+  await Promise.all(pages.filter(p => !p.isClosed()).map(p => p.close({ runBeforeUnload: false })));
 }
 async function start() {
   const b = await (process.env.LK_WS ? chromium.connect(process.env.LK_WS) : chromium.launch(chromeOpts()));
