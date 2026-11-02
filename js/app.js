@@ -728,6 +728,22 @@
       return '<button type="button" class="chip' + (g.key === 'sp' ? ' sq sp' : g.title === 'Functions' ? ' sq' : '') + '" data-act="kind" data-val="' + g.key + '" data-k="kind:' + g.key + '" aria-pressed="' + (ui.kind === g.key) + '">' + esc(g.title) + ' (' + g.list.length + ')</button>';
     }).join('') + '</div>';
   }
+  // Reflect the existing bounded recipe check without redrawing results, resetting search or adding reads.
+  var recipeStatusTimer = null, recipeStatusAt = 0, recipeStatusState = '';
+  function recipeStatusHTML() { return '<div id="recipe-sync-status" role="status" aria-live="polite" aria-atomic="true" hidden></div>'; }
+  function paintRecipeStatus() {
+    clearTimeout(recipeStatusTimer); recipeStatusTimer = null;
+    var P = window.LK_PREP, state = P && P.rxState ? P.rxState() : 'idle', slot = document.getElementById('recipe-sync-status');
+    if (state !== recipeStatusState) { recipeStatusState = state; recipeStatusAt = Date.now(); }
+    if (!slot) return;
+    if (state === 'loading' && Date.now() - recipeStatusAt < 180) {
+      recipeStatusTimer = setTimeout(paintRecipeStatus, 180 - (Date.now() - recipeStatusAt)); return;
+    }
+    var text = state === 'loading' ? 'Checking for recipe updates...' : state === 'offline' ? 'No signal. Showing the loaded book.' : state === 'error' ? 'Could not check for recipe updates. Showing the loaded book.' : '';
+    slot.hidden = !text;
+    slot.innerHTML = text && window.LK_MOTION ? window.LK_MOTION.label(text, 'recipes', state === 'loading' && navigator.onLine !== false ? 'busy' : 'still') : esc(text);
+  }
+  window.addEventListener('lk-rx-status', paintRecipeStatus);
   function viewTiles(route) {
     if (route.stack.length) {
       var r = byId[route.stack[route.stack.length - 1]];
@@ -735,7 +751,7 @@
     }
     return '<div class="page">' + '<main id="main" style="display: flex; flex-direction: column; gap: 1.1rem">' +
       searchField('Dish, ingredient or allergen', countText()) +
-      kindChips() + freeChips(true) +
+      kindChips() + freeChips(true) + recipeStatusHTML() +
       '<div id="results">' + tilesHTML() + '</div><div class="hint">Allergen tags with a ? may be in it: check the supplier label.</div></main>' + footer() + '</div>';
   }
 
@@ -788,7 +804,7 @@
     var stack = route.stack;
     if (!stack.length) {
       return '<div class="page">' + '<main id="main" style="display: flex; flex-direction: column; gap: 1.1rem">' +
-        searchField('Dish, ingredient or allergen', passCount()) + kindChips() + allergenRow() + '<div id="shelves" class="shelves">' + shelvesHTML() + '</div></main>' + footer() + '</div>';
+        searchField('Dish, ingredient or allergen', passCount()) + kindChips() + allergenRow() + recipeStatusHTML() + '<div id="shelves" class="shelves">' + shelvesHTML() + '</div></main>' + footer() + '</div>';
     }
     var r = byId[stack[stack.length - 1]], dish = isDish(r);
     var trail = '<nav class="trail crumbs" aria-label="Breadcrumb"><a href="#/recipes">The pass</a>' + stack.map(function (id, i) {
@@ -902,7 +918,7 @@
     function note(t, x, link) { root.innerHTML = mgNote(t, x, link || '<div class="btn-row"><a class="btn" href="#/fn">See the functions</a></div>'); }
     // the kitchen's settings started again with no signal (28 Oct 2026): what a draft holds stays on the device
     if (st === 'offline') { root.innerHTML = mgNote('Manage functions', offline()); return; }
-    if (st === 'wait') { note('Functions', 'Checking who is signed in on this device...', ' '); return; }
+    if (st === 'wait') { root.innerHTML = mgNote('Functions', 'Checking who is signed in on this device...', ' ', 'chef'); return; }
     if (st === 'nopin') { note('Functions', 'This device has no kitchen PIN yet. Open the Prep list and enter it, then sign in with your own PIN.', '<div class="btn-row"><a class="btn dark" href="#/prep">Open the Prep list</a></div>'); return; }
     if (st !== 'yes') {
       var keep = window.LK_FE && window.LK_FE.hasDraft();
@@ -913,8 +929,8 @@
       return;
     }
     if (window.LK_FE) { if (window.LK_FE.api === FE_API && window.LK_FN && typeof window.LK_FN.M.effects === 'function') window.LK_FE.mount(root, route); else root.innerHTML = mgNote('Reload the book', 'The functions page on this device is a different version from the book. Reload the page to update it. Changes not saved yet are kept on this device.', '<div class="btn-row"><button type="button" class="btn dark" data-act="reload">Reload</button></div>'); return; }
-    root.innerHTML = mgNote('Functions', 'Opening functions...', ' ');
-    if (!feLoad) feLoad = mgScript('js/fnedit.js?v=6').catch(function (e) { feLoad = null; throw e; });
+    root.innerHTML = mgNote('Functions', 'Opening functions...', ' ', 'chef');
+    if (!feLoad) feLoad = mgScript('js/fnedit.js?v=7').catch(function (e) { feLoad = null; throw e; });
     feLoad.then(function () { if (parseRoute().name === 'functions') mountFunctions(parseRoute()); }, function () {
       var el = document.getElementById('fe-root');
       if (el) el.innerHTML = mgNote('Could not open functions', 'It needs the signal the first time it opens on a device. Check the signal and try again.', '<div class="btn-row"><button type="button" class="btn dark" data-act="feretry">Try again</button></div>');
@@ -928,18 +944,19 @@
     });
   }
   function loadManage() {
-    if (!mgLoad) mgLoad = mgScript('js/manage.js?v=6').catch(function (e) { mgLoad = null; throw e; });
+    if (!mgLoad) mgLoad = mgScript('js/manage.js?v=7').catch(function (e) { mgLoad = null; throw e; });
     return mgLoad;
   }
-  function mgNote(title, text, link) {
-    return '<section class="set-block mg-note"><h2 id="rtitle" tabindex="-1">' + esc(title) + '</h2><p>' + esc(text) + '</p>' + (link || '<div class="btn-row"><a class="btn" href="#/recipes">Back to the recipes</a></div>') + '</section>';
+  function mgNote(title, text, link, waitingIcon) {
+    var message = waitingIcon && window.LK_MOTION ? window.LK_MOTION.status(text, { icon: waitingIcon, state: navigator.onLine === false ? 'still' : 'busy', rows: 3 }) : '<p>' + esc(text) + '</p>';
+    return '<section class="set-block mg-note"><h2 id="rtitle" tabindex="-1">' + esc(title) + '</h2>' + message + (link || '<div class="btn-row"><a class="btn" href="#/recipes">Back to the recipes</a></div>') + '</section>';
   }
   function mountManage(route) {
     var root = document.getElementById('mg-root');
     if (!root) return;
     var st = window.LK_PREP && window.LK_PREP.bookState ? window.LK_PREP.bookState() : 'no';
     if (st === 'offline') { root.innerHTML = mgNote('Manage Recipes & Drawings', offline()); return; }
-    if (st === 'wait') { root.innerHTML = mgNote('Manage Recipes & Drawings', 'Checking who is signed in on this device...', ' '); return; }
+    if (st === 'wait') { root.innerHTML = mgNote('Manage Recipes & Drawings', 'Checking who is signed in on this device...', ' ', 'chef'); return; }
     if (st === 'nopin') { root.innerHTML = mgNote('Manage Recipes & Drawings', 'This device has no kitchen PIN yet. Open the Prep list and enter it, then sign in as the head chef.', '<div class="btn-row"><a class="btn dark" href="#/prep">Open the Prep list</a></div>'); return; }
     if (st !== 'yes') {
       if (window.LK_MG) window.LK_MG.unmount();
@@ -948,7 +965,7 @@
       return;
     }
     if (window.LK_MG) { if (window.LK_MG.api === MG_API) window.LK_MG.mount(root, route); else root.innerHTML = mgNote('Reload the book', 'The recipe editor on this device is a different version from the book. Reload the page to update it.', '<div class="btn-row"><button type="button" class="btn dark" data-act="reload">Reload</button></div>'); return; }
-    root.innerHTML = mgNote('Manage Recipes & Drawings', 'Opening the recipe editor...', ' ');
+    root.innerHTML = mgNote('Manage Recipes & Drawings', 'Opening the recipe editor...', ' ', 'recipes');
     loadManage().then(function () {
       if (parseRoute().name === 'manage') mountManage(parseRoute());
     }, function () {
@@ -968,8 +985,8 @@
       else root.innerHTML = mgNote('Reload the book', 'Delivery records need the current book.', '<button type="button" class="btn dark" data-act="reload">Reload</button>');
       return;
     }
-    root.innerHTML = mgNote('Delivery received', 'Opening delivery records...', ' ');
-    if (!deliveryLoad) deliveryLoad = mgScript('js/deliveries.js?v=3').catch(function (e) { deliveryLoad = null; throw e; });
+    root.innerHTML = mgNote('Delivery received', 'Opening delivery records...', ' ', 'orders');
+    if (!deliveryLoad) deliveryLoad = mgScript('js/deliveries.js?v=4').catch(function (e) { deliveryLoad = null; throw e; });
     deliveryLoad.then(function () { if (parseRoute().name === 'deliveries') mountDeliveries(); }, function () {
       if (parseRoute().name === 'deliveries' && root.isConnected) root.innerHTML = mgNote('Could not open delivery records', 'Check the connection and try again.', '<button type="button" class="btn dark" data-delivery-retry>Try again</button>');
     });
@@ -983,7 +1000,7 @@
     var st = B ? B.state() : 'no';
     // module memory (a draft) is kept; the sheet comes back once the settings are in again
     if (st === 'offline') { root.innerHTML = mgNote('Supplier order', offline()); return; }
-    if (st === 'wait') { root.innerHTML = mgNote('Supplier order', 'Checking your kitchen sign-in...', ' '); if (P && P.warm) P.warm(); return; }
+    if (st === 'wait') { root.innerHTML = mgNote('Supplier order', 'Checking your kitchen sign-in...', ' ', 'chef'); if (P && P.warm) P.warm(); return; }
     if (st !== 'yes' || (route.mode === 'manage' && !B.edit())) {
       if (window.LK_SUP) window.LK_SUP.reset();
       root.innerHTML = mgNote(st === 'nopin' ? 'Sign in to the kitchen' : 'Chef access needed', st === 'nopin' ? 'Open the Prep list, enter the kitchen PIN and sign in.' : route.mode === 'manage' ? 'Only the head chef or admin can change suppliers and pars.' : 'The head chef and sous chefs can open supplier orders with their own PIN.', '<div class="btn-row"><a class="btn dark" href="#/prep">Open the Prep list</a></div>'); return;
@@ -993,8 +1010,8 @@
       else root.innerHTML = mgNote('Reload the book', 'The supplier tools on this device need the current book.', '<button type="button" class="btn dark" data-act="reload">Reload</button>');
       return;
     }
-    root.innerHTML = mgNote('Supplier order', 'Opening supplier tools...', ' ');
-    if (!supLoad) supLoad = mgScript('js/suppliers.js?v=9').catch(function (e) { supLoad = null; throw e; });
+    root.innerHTML = mgNote('Supplier order', 'Opening supplier tools...', ' ', 'orders');
+    if (!supLoad) supLoad = mgScript('js/suppliers.js?v=10').catch(function (e) { supLoad = null; throw e; });
     supLoad.then(function () { if (parseRoute().name === 'suppliers') mountSuppliers(parseRoute()); }, function () {
       if (parseRoute().name === 'suppliers') root.innerHTML = mgNote('Could not open supplier tools', 'Check the connection and try again. The other kitchen pages still work.', '<div class="btn-row"><button type="button" class="btn dark" data-sup-retry>Try again</button><a class="btn" href="#/orders">Order list</a></div>');
     });
@@ -1254,7 +1271,7 @@
   window.addEventListener('lk-nav', backSync);
   window.addEventListener('lk-back', backSync);
   var warmed = false;
-  var lastHash = null, lastRoute = '', homeY = 0;
+  var lastHash = null, lastRoute = '', homeY = 0, docketArrived = false;
   window.addEventListener('scroll', function () { if (lastRoute === 'home') homeY = window.scrollY; }, { passive: true });
   // The shelves and tile groups off screen are not drawn until they scroll near (content-visibility in app.css), so
   // their height is a guess and an old scroll position can land on the wrong shelf. Coming back, the recipe that was
@@ -1303,6 +1320,11 @@
       html = topBar() + fnBand() + html + tabBar();
     }
     app.innerHTML = html;
+    if (route.name === 'landing' && !docketArrived) {
+      docketArrived = true;
+      var dockets = app.querySelector('.dockets'); if (dockets) dockets.classList.add('ink-docket-arrive');
+    }
+    paintRecipeStatus();
     if (!changed) Array.prototype.forEach.call(app.querySelectorAll('.chips.scroll'), function (el, i) { if (rowsAt[i]) el.scrollLeft = rowsAt[i]; });
     fitPins();
     if (!locked && route.name === 'manage') mountManage(route); else if (window.LK_MG) window.LK_MG.unmount();

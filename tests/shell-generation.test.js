@@ -52,6 +52,7 @@ self.addEventListener('message', function (e) {
   if (e.data.audit === 'pin-fail') auditPinFailure = true;
   if (e.data.audit === 'legacy-hold') self.__legacyHold = true;
   if (e.data.audit === 'pin-count') { p.postMessage(auditPinFailures); return; }
+  if (e.data.audit === 'complete' && typeof completeShell === 'function') { completeShell(e.data.name).then(function (copy) { p.postMessage(!!copy); }); return; }
   if (e.data.audit === 'forget' && typeof shellPins !== 'undefined') shellPins = {};
   if (e.data.audit === 'forget-state') { shellPins = {}; shellState = null; }
   if (e.data.audit === 'block' || e.data.audit === 'unblock') {
@@ -181,6 +182,92 @@ async function loaded(p, base) {
     ok((await loaded(p, base)).join('/') === '6/6', 'metadata recovery publishes the next complete generation');
     await c.close();
     if (!process.env.SHELL_BEFORE) {
+      // An older immutable worker can refresh from a new deployment before its replacement activates.
+      // Its index then needs motion.js, which its historical SHELL did not know to save. Keep the valid previous
+      // generation through activation, and validate each generation against its own recorded requirements.
+      const savedOverrides = Object.assign({}, over);
+      const historicalFiles = (source.match(/var PRE_MANIFEST_FILES = (\[.*?\]);/)[1].match(/'([^']+)'/g) || []).map(x => x.slice(1, -1));
+      const oldHTML = '<!doctype html><meta charset="utf-8"><title>Previous immutable shell</title><link rel="stylesheet" href="css/app.css">' + historicalFiles.filter(file => /\.js$/.test(file)).map(file => '<script src="' + file + '"></script>').join('');
+      const newHTML = oldHTML + '<script src="js/motion.js"></script>';
+      historicalFiles.filter(file => !['./index.html', 'js/app.js', 'js/prep.js'].includes(file)).forEach(file => { over['/' + file.replace(/^\.\//, '')] = { body: '', lastModified: 'Sun, 18 Oct 2026 00:00:00 GMT' }; });
+      over['/index.html'] = { body: oldHTML, etag: '"old-index"', lastModified: 'Sun, 18 Oct 2026 00:00:00 GMT' };
+      over['/seed.html'] = { body: '<!doctype html><title>Previous shell seed</title>', lastModified: 'Sun, 18 Oct 2026 00:00:00 GMT' };
+      revision(1); const generationProfile = newProfile(); await browser(false, generationProfile);
+      await p.goto(base + 'seed.html');
+      const previousNames = await p.evaluate(async ({ files, mixedHTML }) => {
+        const prefix = 'lk-shell-v1-' + encodeURIComponent(new URL('.', location.href).pathname), stamp = Date.now().toString(36);
+        const good = prefix + '-' + stamp + '-previous', mixed = prefix + '-' + stamp + '-mixed';
+        const goodCache = await caches.open(good); await goodCache.addAll(files);
+        const mixedCache = await caches.open(mixed); await mixedCache.addAll(files);
+        await mixedCache.put('./index.html', new Response(mixedHTML, { headers: { 'Content-Type': 'text/html' } }));
+        await new Promise((resolve, reject) => {
+          const q = indexedDB.open(prefix, 1);
+          q.onupgradeneeded = () => q.result.createObjectStore('meta');
+          q.onerror = () => reject(q.error);
+          q.onsuccess = () => {
+            const db = q.result, tx = db.transaction('meta', 'readwrite');
+            tx.objectStore('meta').put({ active: mixed, previous: good, ticket: 1 }, 'state');
+            tx.oncomplete = () => { db.close(); resolve(); }; tx.onerror = () => reject(tx.error);
+          };
+        });
+        return { good, mixed };
+      }, { files: historicalFiles, mixedHTML: newHTML });
+      revision(2);
+      over['/index.html'] = { body: newHTML, etag: '"new-index"', lastModified: 'Mon, 19 Oct 2026 00:00:00 GMT' };
+      over['/js/motion.js'] = { body: 'window.__motion = 2;', etag: '"motion-2"', lastModified: 'Mon, 19 Oct 2026 00:00:00 GMT' };
+      await p.goto(base + 'shell-start.html'); await p.evaluate(() => navigator.serviceWorker.ready);
+      ok((await loaded(p, base)).join('/') === '2/2' && await p.evaluate(() => window.__motion === 2), 'a new startup dependency is installed with its matching index and scripts');
+      await message(p, { lk: 'fresh' });
+      const installed = await p.evaluate(async () => {
+        const dbName = 'lk-shell-v1-' + encodeURIComponent(new URL('.', location.href).pathname);
+        const state = await new Promise((resolve, reject) => {
+          const q = indexedDB.open(dbName, 1); q.onerror = () => reject(q.error);
+          q.onsuccess = () => { const db = q.result, tx = db.transaction('meta'), r = tx.objectStore('meta').get('state'); r.onsuccess = () => { resolve(r.result); db.close(); }; };
+        });
+        const cache = await caches.open(state.active), response = await cache.match('__lk-shell-manifest');
+        return { state, manifest: response ? await response.json() : null };
+      });
+      ok(installed.state.previous === previousNames.good, 'activation retains the validated previous generation when the old active index needs an unsaved new file');
+      ok(installed.manifest && installed.manifest.v === 1 && installed.manifest.files.includes('js/motion.js'), 'the new generation records its complete startup requirements before publication');
+      // A parallel release can add real startup files while it still runs the pre-manifest worker.
+      // Exercise the actual validator with native caches, without depending on that release's application code.
+      const extendedName = await p.evaluate(async ({ good, html }) => {
+        const name = good.replace(/-previous$/, '-extended'), old = await caches.open(good), cache = await caches.open(name);
+        for (const key of await old.keys()) await cache.put(key, await old.match(key));
+        await cache.put('./index.html', new Response(html + '<script src="js/extra-startup.js"></script><link rel="stylesheet" href="css/extra-startup.css">', { headers: { 'Content-Type': 'text/html' } }));
+        await cache.put('js/extra-startup.js', new Response('window.__extra = 1;'));
+        await cache.put('css/extra-startup.css', new Response('body { color: #123; }'));
+        return name;
+      }, { good: previousNames.good, html: oldHTML });
+      ok(await message(p, { audit: 'complete', name: extendedName }) === true, 'a coherent pre-manifest release may include extra startup scripts and stylesheets');
+      await p.evaluate(name => caches.open(name).then(cache => cache.delete('js/extra-startup.js')), extendedName);
+      ok(await message(p, { audit: 'complete', name: extendedName }) === false, 'a pre-manifest index cannot require an extra startup script missing from its cache');
+      await p.evaluate(async name => { const cache = await caches.open(name); await cache.put('js/extra-startup.js', new Response('window.__extra = 1;')); await cache.delete('css/extra-startup.css'); }, extendedName);
+      ok(await message(p, { audit: 'complete', name: extendedName }) === false, 'a pre-manifest index cannot require an extra stylesheet missing from its cache');
+      await p.evaluate(async ({ name, html }) => {
+        const cache = await caches.open(name);
+        await cache.put('./index.html', new Response(html + '<script src="js/extra-startup.js"></script>', { headers: { 'Content-Type': 'text/html' } }));
+        await cache.put('js/extra-startup.js', new Response('window.__extra = 2;'));
+      }, { name: installed.state.active, html: newHTML });
+      ok(await message(p, { audit: 'complete', name: installed.state.active }) === false, 'a marked generation still rejects an index dependency absent from its manifest even when cached');
+      await p.evaluate(({ name, html }) => caches.open(name).then(cache => cache.put('./index.html', new Response(html, { headers: { 'Content-Type': 'text/html' } }))), { name: installed.state.active, html: newHTML });
+      serverOffline = true; await c.setOffline(true);
+      await p.evaluate(name => caches.open(name).then(cache => cache.delete('js/motion.js')), installed.state.active);
+      ok((await loaded(p, base)).join('/') === '1/1' && await p.evaluate(() => window.__motion === undefined), 'missing new motion.js falls back to the coherent pre-Ink shell offline');
+      await c.close(); await browser(true, generationProfile);
+      ok((await loaded(p, base)).join('/') === '1/1', 'the pre-Ink fallback survives a browser and worker restart offline');
+      await p.evaluate(async name => {
+        const cache = await caches.open(name);
+        await cache.put('js/motion.js', new Response('window.__motion = 2;'));
+        await cache.delete('__lk-shell-manifest');
+      }, installed.state.active);
+      ok((await loaded(p, base)).join('/') === '1/1', 'a new marked generation cannot lose its manifest and pretend to be an older complete shell');
+      await p.evaluate(name => caches.open(name).then(cache => cache.delete('js/prep.js')), previousNames.good);
+      const incomplete = await p.goto(base, { waitUntil: 'load' });
+      ok(incomplete.status() === 503, 'missing required files in the old fallback still refuse launch rather than mixing releases');
+      await c.close(); serverOffline = false;
+      Object.keys(over).forEach(key => { delete over[key]; }); Object.assign(over, savedOverrides);
+
       // A first uncontrolled document can still be reading network files when the installation activates.
       // Seed a complete older public cache, then load one new script before registering and the other afterwards.
       revision(1); await browser(false, newProfile());
