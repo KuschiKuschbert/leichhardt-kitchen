@@ -112,18 +112,87 @@
   /* Firestore keeps a copy of what it read (in the tab's memory since 26 Oct 2026, #387, memoryLocalCache; before that in
      the browser's IndexedDB, which this still clears on phones that have one). Now and then that copy breaks ("INTERNAL
      ASSERTION FAILED", canonifyTarget) and the prep pages hang on Loading with no names. The data on the server is fine,
-     so the phone throws its copy away and reloads, at most once a day (lk.fsheal) so it can never loop. */
+     so the phone repairs its read copy once the book is reachable and there is no unfinished work. Never terminate
+     Firestore over its memory-only write queue. lk.fsheal records only a repair that is ready to reload, once a day. */
+  var healWanted = false, healRun = null, healTimer = null, healAgain = false, healMessage = '';
+  var HEAL_WAIT = {};
+  var HEAL_SIGNAL_NOTE = 'The book could not be reached. Keep this tab open. The saved-copy repair will wait.';
+  function healPrefix() {
+    var app = fb && fb.app, project = app && app.options && app.options.projectId || FB && FB.projectId;
+    var name = app ? app.name : '[DEFAULT]';
+    if (typeof project !== 'string' || !project || typeof name !== 'string' || !name) return '';
+    // Verified SDK 10.14.1 indexedDbStoragePrefix: default database, exact configured project and primary app name.
+    // All historical persistent clients used this same default app/database. kitchen-owner has only used memory.
+    return 'firestore/' + name + '/' + project + '/';
+  }
+  function healSharedKey(key, prefix) {
+    // SDK WebStorage shared-state families, including their full app/project/database prefix and suffix separator.
+    return ['firestore_sequence_number_', 'firestore_online_state_', 'firestore_bundle_loaded_v2_'].some(function (family) { return key === family + prefix; })
+      || ['firestore_clients_', 'firestore_mutations_', 'firestore_targets_', 'firestore_zombie_'].some(function (family) { return key.indexOf(family + prefix + '_') === 0; });
+  }
+  function healNote(msg) { if (healMessage !== msg) { healMessage = msg; toast(msg, null, 9000); } }
+  function healWork() {
+    // The shared guard includes lazy editor/supplier drafts, privacy-locked work and uncertain write tickets.
+    try { return !window.LK_PREP || window.LK_PREP.unsaved() || typeof lkEditing === 'function' && lkEditing(); }
+    catch (e) { return true; }
+  }
+  function healPause() {
+    healNote(sendingNow() ? 'Keep this tab open. Repair waits until your changes are sent.' : 'Keep this tab open. Repair waits until your unfinished work is clear.');
+  }
+  function healSoon() {
+    if (!healWanted) return;
+    if (healRun) { healAgain = true; return; }
+    clearTimeout(healTimer);
+    // Write acknowledgements finish their forms in promise callbacks. Recheck after those callbacks and blur settle.
+    healTimer = setTimeout(healTry, 100);
+  }
+  function healTry() {
+    if (!healWanted || healRun) return;
+    if (lsGet('lk.fsheal') === dayNow()) { healWanted = false; return; }
+    if (healWork()) { healPause(); return; }
+    if (typeof lkServerUp !== 'function') { healNote('The saved copy could not be checked. Keep this tab open.'); return; }
+    var prefix = healPrefix();
+    if (!prefix) { healNote('The saved copy could not be checked. Keep this tab open.'); return; }
+    var run = healRun = { writer: writerKey(), epoch: accessEpoch, prefix: prefix, edits: typeof lkEdits === 'number' ? lkEdits : 0 };
+    healAgain = false;
+    function safe() {
+      return healWanted && healRun === run && navigator.onLine !== false && !healWork() && healPrefix() === run.prefix && writerKey() === run.writer && accessEpoch === run.epoch &&
+        (typeof lkEdits === 'number' ? lkEdits : 0) === run.edits;
+    }
+    function check() { if (!safe()) throw HEAL_WAIT; }
+    // One existing public HEAD per safe recovery attempt, no Firestore read or polling. Actual work/online events retry.
+    Promise.resolve().then(function () { return lkServerUp(); }).then(function (up) {
+      check();
+      if (!up) { healNote(HEAL_SIGNAL_NOTE); throw HEAL_WAIT; }
+      // Check before terminating, not only before reload: terminate already destroys the SDK's ability to send work.
+      check(); return fb ? fb.fs.terminate(fb.db) : null;
+    }).then(function () {
+      check();
+      Object.keys(LS || {}).forEach(function (k) { if (healSharedKey(k, run.prefix)) LS.removeItem(k); });
+      check();
+      // SDK IndexedDbPersistence/clearIndexedDbPersistence append main to that prefix. Never enumerate other apps'
+      // databases: GitHub Pages projects share an origin. This exact name also works without indexedDB.databases().
+      return new Promise(function (ok, no) {
+        var q = indexedDB.deleteDatabase(run.prefix + 'main');
+        q.onsuccess = function () { ok(); };
+        q.onerror = q.onblocked = function () { no(new Error('Saved read copy could not be cleared.')); };
+      });
+    }).then(function () {
+      check(); lsSet('lk.fsheal', dayNow()); healWanted = false; location.reload();
+    }).catch(function (e) {
+      if (e === HEAL_WAIT) { if (healWork()) healPause(); else if (navigator.onLine === false) healNote(HEAL_SIGNAL_NOTE); }
+      else healNote('The saved copy could not be repaired. Keep this tab open. Your work has not been discarded.');
+    }).then(function () {
+      healRun = null;
+      if (healAgain && healWanted && !healWork()) healSoon();
+    });
+  }
   function healCache() {
     if (lsGet('lk.fsheal') === dayNow()) return;
-    lsSet('lk.fsheal', dayNow());
-    try { Object.keys(LS || {}).forEach(function (k) { if (/^firestore_/.test(k)) LS.removeItem(k); }); } catch (e) {}
-    var stop = fb ? fb.fs.terminate(fb.db).catch(function () {}) : Promise.resolve();
-    stop.then(function () { return indexedDB.databases ? indexedDB.databases() : [{ name: 'firestore/[DEFAULT]/' + FB.projectId + '/main' }]; }).then(function (dbs) {
-      return Promise.all(dbs.filter(function (d) { return /^firestore\//.test(d.name); }).map(function (d) {
-        return new Promise(function (ok) { var q = indexedDB.deleteDatabase(d.name); q.onsuccess = q.onerror = q.onblocked = function () { ok(); }; });
-      }));
-    }).catch(function () {}).then(function () { location.reload(); });
+    healWanted = true; healSoon();
   }
+  ['lk-sent', 'online'].forEach(function (name) { window.addEventListener(name, healSoon); });
+  ['input', 'change', 'click', 'focusout'].forEach(function (name) { document.addEventListener(name, healSoon, true); });
   function brokenCache(x) { var s = x ? String(x.stack || x.message || x) : ''; return /FIRESTORE[^\n]*INTERNAL ASSERTION FAILED|canonifyTarget|IndexedDbTargetCache/.test(s); }
   window.addEventListener('error', function (e) { if (brokenCache(e.error || e.message)) healCache(); });
   window.addEventListener('unhandledrejection', function (e) { if (brokenCache(e.reason)) healCache(); });
