@@ -19,7 +19,7 @@ IDBDatabase.prototype.transaction = function () {
   if (auditBlocked && this.name.indexOf('lk-shell-v1-') === 0) throw new DOMException('Synthetic metadata failure', 'SecurityError');
   return auditTransaction.apply(this, arguments);
 };
-var auditPut = Cache.prototype.put, auditFetch = self.fetch.bind(self), auditHold = false, auditRelease = null, auditFail = false, auditLate = false;
+var auditPut = Cache.prototype.put, auditFetch = self.fetch.bind(self), auditHold = false, auditRelease = null, auditFail = false;
 Cache.prototype.put = function (request, response) {
   var url = new URL(typeof request === 'string' ? request : request.url, self.location);
   if (auditFail && /\\/js\\/prep\\.js$/.test(url.pathname) && response.headers.get('etag') === '"shell-2"') {
@@ -34,19 +34,23 @@ self.fetch = function (request, options) {
     // Deliberately ignore cancellation, so a late response still tests ownership after timeout.
     return auditFetch(request, { cache: 'no-cache' }).then(function (r) { return r.arrayBuffer().then(function (body) {
       var copy = new Response(body, { status: r.status, headers: r.headers });
+      if (self.auditHeldPort) self.auditHeldPort.postMessage('held');
       return new Promise(function (resolve) { auditRelease = function () { resolve(copy); }; });
     }); });
   }
   return auditFetch(request, options);
 };
-var auditTimer = self.setTimeout.bind(self);
-self.setTimeout = function (fn, ms) { return auditTimer(fn, auditLate && (ms === 30000 || ms === 8000) ? 500 : ms); };
+var auditTimer = self.setTimeout.bind(self), auditDeadline = null, auditDeadlineAssigned = false;
+self.setTimeout = function (fn, ms) {
+  if (auditHold && !auditDeadlineAssigned && (ms === 30000 || ms === 8000)) { auditDeadline = fn; auditDeadlineAssigned = true; }
+  return auditTimer(fn, ms);
+};
 self.addEventListener('message', function (e) {
   if (!e.data || !e.data.audit || !e.ports[0]) return;
   var p = e.ports[0];
   if (e.data.audit === 'fail') auditFail = true;
   if (e.data.audit === 'pin-fail') auditPinFailure = true;
-  if (e.data.audit === 'legacy-hold') { self.__legacyHold = true; auditLate = true; }
+  if (e.data.audit === 'legacy-hold') self.__legacyHold = true;
   if (e.data.audit === 'pin-count') { p.postMessage(auditPinFailures); return; }
   if (e.data.audit === 'forget' && typeof shellPins !== 'undefined') shellPins = {};
   if (e.data.audit === 'forget-state') { shellPins = {}; shellState = null; }
@@ -54,8 +58,9 @@ self.addEventListener('message', function (e) {
     auditBlocked = e.data.audit === 'block';
     auditOptions.then(function (cache) { return cache.put('options', new Response(auditBlocked ? 'blocked' : '')); }).then(function () { p.postMessage(true); }); return;
   }
-  if (e.data.audit === 'hold') { auditHold = true; auditLate = true; self.auditRoundPort = p; return; }
-  if (e.data.audit === 'release') { if (auditRelease) auditRelease(); auditLate = false; }
+  if (e.data.audit === 'hold') { auditHold = true; auditDeadlineAssigned = false; self.auditHeldPort = p; self.auditRoundPort = p; return; }
+  if (e.data.audit === 'expire' && auditDeadline) { auditDeadline(); auditDeadline = null; }
+  if (e.data.audit === 'release') { if (auditRelease) auditRelease(); }
   p.postMessage(true);
 });
 `;
@@ -96,10 +101,11 @@ async function loaded(p, base) {
 (async () => {
   revision(1);
   const server = require('./serve').make(over), serve = server.listeners('request')[0];
-  let releaseLegacy = null, legacyRequestSeen = null; const trace = [];
+  let releaseLegacy = null, legacyRequestSeen = null, serverOffline = false; const trace = [];
   server.removeAllListeners('request');
   server.on('request', (request, response) => {
     trace.push(request.url + ':' + (request.headers['x-lk-legacy-hold'] || 'new'));
+    if (serverOffline) { response.writeHead(503); response.end('Synthetic unavailable server'); return; }
     if (request.headers['x-lk-legacy-hold'] === '1') {
       const saved = Object.assign({}, over['/js/prep.js']);
       releaseLegacy = () => {
@@ -133,11 +139,12 @@ async function loaded(p, base) {
     const read = await p.evaluate(() => Promise.all(['app', 'prep'].map(part => fetch('js/' + part + '.js').then(r => r.text()))));
     ok(read.every(x => / = 1;/.test(x)), 'a failed cache write leaves both public scripts on the previous complete generation');
     // Stop/restart the real worker and reopen offline: durable metadata must retain the last good generation.
+    serverOffline = true;
     await c.close(); await browser(true);
     await c.setOffline(true);
     const reopened = await loaded(p, base);
     ok(reopened.join('/') === '1/1', 'after browser restart, a failed publication reopens the complete old shell offline (' + reopened.join('/') + ')');
-    await c.setOffline(false); await message(p, { lk: 'fresh' });
+    serverOffline = false; await c.setOffline(false); await message(p, { lk: 'fresh' });
     ok((await loaded(p, base)).join('/') === '2/2', 'retry publishes both new scripts and a new navigation takes them together');
     await message(p, { lk: 'fresh' });
     revision(3); await message(p, { lk: 'fresh' });
@@ -147,11 +154,14 @@ async function loaded(p, base) {
     await message(p, { lk: 'fresh' });
     revision(4);
     await p.evaluate(() => {
-      window.__lateSettled = false;
-      const ch = new MessageChannel(); ch.port1.onmessage = () => { window.__lateSettled = true; ch.port1.close(); };
+      window.__lateSettled = false; window.__lateHeld = false;
+      const ch = new MessageChannel(); ch.port1.onmessage = e => { if (e.data === 'held') { window.__lateHeld = true; return; } window.__lateSettled = true; ch.port1.close(); };
       navigator.serviceWorker.controller.postMessage({ audit: 'hold' }, [ch.port2]);
     });
-    const timedOut = await message(p, { lk: 'fresh' });
+    const pendingRound = message(p, { lk: 'fresh' });
+    await L.waitFor(p, () => window.__lateHeld, null, 10000);
+    await message(p, { audit: 'expire' });
+    const timedOut = await pendingRound;
     ok(timedOut.ok === false, 'a stalled update has an unsuccessful timeout');
     revision(5); const latest = await message(p, { lk: 'fresh' });
     ok(latest.ok === true, 'a subsequent update can complete while the older response is delayed');
