@@ -73,6 +73,8 @@
       s.blurred = false; paint();
     });
     input.addEventListener('blur', function () {
+      // The host is replacing this focused field and will restore its draft and cursor on the new input.
+      if (input._uxRedrawing) return;
       if (s.replacing && s.raw.trim().length < 2) s.raw = s.query;
       s.replacing = false; s.blurred = true; paint();
     });

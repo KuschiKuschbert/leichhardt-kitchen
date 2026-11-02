@@ -4719,7 +4719,9 @@
     if (key && ae.selectionStart != null) { try { start = ae.selectionStart; end = ae.selectionEnd; } catch (e) {} }
     var bodyEl = S.root.querySelector('.nb-body'), keepScroll = bodyEl ? S.root.querySelectorAll('.nb-body') : null, scrolls = [];
     if (keepScroll) Array.prototype.forEach.call(keepScroll, function (b) { scrolls.push(b.scrollTop); });
-    S.root.innerHTML = syncHTML() + practiceHTML() + bodyHTML() + toastHTML();
+    if (key) ae._uxRedrawing = true;
+    try { S.root.innerHTML = syncHTML() + practiceHTML() + bodyHTML() + toastHTML(); }
+    finally { if (key) delete ae._uxRedrawing; }
     if (S.toast) plainAway();
     S.root.classList.toggle('is-book', S.name === 'prep' && !!S.root.querySelector('.nb'));
     document.documentElement.classList.toggle('sheet-open', !!S.root.querySelector('.sheet') || !!ptPop);

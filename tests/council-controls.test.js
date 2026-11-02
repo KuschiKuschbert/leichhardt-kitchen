@@ -44,8 +44,9 @@ const { R, ok } = L.results();
         function redraw(value, restoring) {
           const previous = host.querySelector('input'), active = previous && previous === document.activeElement;
           const start = active ? previous.selectionStart : null, end = active ? previous.selectionEnd : null;
-          if (previous) previous.blur();
-          host.replaceChildren(); const input = document.createElement('input'); input.id = 'council-redraw-query'; input.type = 'search'; input.value = value; host.append(input);
+          if (active && restoring) previous._uxRedrawing = true;
+          try { if (previous) previous.blur(); host.replaceChildren(); } finally { if (previous) previous._uxRedrawing = false; }
+          const input = document.createElement('input'); input.id = 'council-redraw-query'; input.type = 'search'; input.value = value; host.append(input);
           LK_UX.SmartSearchBar(input, { onQuery: redraw });
           if (active) { if (restoring && LK_UX.restoreFocus) LK_UX.restoreFocus(input); else input.focus(); input.setSelectionRange(start, end); }
         }
@@ -59,6 +60,12 @@ const { R, ok } = L.results();
       ok(await redrawn.evaluate(el => document.activeElement === el && el.value === 'Milk' && el.selectionStart === 1 && el.selectionEnd === 3), 'phone: an unrelated redraw restores the focused query and cursor');
       await redrawn.blur(); await redrawn.focus();
       ok(await redrawn.inputValue() === '' && await redrawn.getAttribute('data-committed-query') === 'Milk', 'phone: real refocus after a redraw still clears only the draft');
+      await redrawn.fill('C');
+      await redrawn.evaluate(el => document.querySelector('#council-redraw')._redraw(el.dataset.committedQuery, true));
+      ok(await redrawn.evaluate(el => document.activeElement === el && el.value === 'C' && el.dataset.committedQuery === 'Milk' && el.selectionStart === 1), 'phone: an unrelated redraw preserves a one-character replacement draft and cursor');
+      await redrawn.blur();
+      ok(await redrawn.inputValue() === 'Milk', 'phone: real blur still restores the committed query after a short draft');
+      await redrawn.focus();
       await redrawn.fill('Milk'); await L.settle(p, 230); await p.keyboard.press('Enter');
       ok(await redrawn.getAttribute('data-committed-query') === 'Milk' && await redrawn.inputValue() === 'Milk', 'phone: Enter after a deferred redraw retains the committed query');
       await redrawn.evaluate(el => { el.value = 'Chicken'; el.dispatchEvent(new Event('input', { bubbles: true })); document.querySelector('#council-redraw')._redraw(el.dataset.committedQuery, true); });

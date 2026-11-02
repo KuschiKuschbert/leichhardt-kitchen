@@ -34,6 +34,12 @@ async function search(p, selector, value) {
     ok(await p.evaluate(() => document.activeElement.id === 'record-q-analysis-items' && document.activeElement.value === 'Milk'), width + ': deferred filtering retains typing focus and the entered query');
     await p.keyboard.press('Enter');
     ok(await p.locator('#record-q-analysis-items').getAttribute('data-committed-query') === 'Milk' && await p.locator('[data-ai="item"]').count() === 1, width + ': Enter after deferred filtering keeps the committed results');
+    await p.locator('#record-q-analysis-items').blur();
+    await p.fill('#record-q-analysis-items', 'C');
+    await p.evaluate(() => LK_PREP.mount('admin', LK_PREP.state.root));
+    ok(await p.evaluate(() => document.activeElement.id === 'record-q-analysis-items' && document.activeElement.value === 'C' && document.activeElement.dataset.committedQuery === 'Milk'), width + ': an unrelated redraw retains a one-character replacement draft');
+    await p.locator('#record-q-analysis-items').blur();
+    ok(await p.locator('#record-q-analysis-items').inputValue() === 'Milk', width + ': an intentional blur still restores the committed query');
     await p.locator('#record-q-analysis-items').locator('..').locator('.ux-search-clear').click();
     const reads = await p.evaluate(() => __fake.bill.reduce((n, x) => n + x.n, 0));
     // On the old screen these two inputs could contradict each other.
