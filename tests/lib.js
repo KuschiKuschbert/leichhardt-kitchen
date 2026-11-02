@@ -189,6 +189,7 @@ async function start() {
    o.dailyLocked      omit the daily PIN session while retaining profile/Google as appropriate
    o.legacyPrimaryGoogle  old default-app Google identity for the one-time anonymous-device migration
    o.settings         saved recipe book settings, for example { view: 'tiles' }
+   o.seasonal         seasonal preferences; other journeys default Off for date-independent navigation
    o.extra            more seed documents (see seed)
    o.base             the book's address for this page (BASE by default)
    o.sw               let the service worker run (it is blocked otherwise, so each page loads the files fresh)
@@ -284,7 +285,8 @@ async function open(browser, hash, o) {
     'lk.prep.tok': who && o.oldTok ? who + ':' + sha('lk:' + who + ':' + pins[who]) : '',
     'lk.prep.sess': sess ? JSON.stringify({ v: 2, by: who, exp, uid, pinAt, issuedAt, mode }) : '',
     'lk.prep.seen': String(clock),   // on the phone's clock, like the idle check
-    'lk.settings.v1': JSON.stringify(Object.assign({ installNo: true }, o.settings || {}))
+    'lk.settings.v1': JSON.stringify(Object.assign({ installNo: true }, o.settings || {})),
+    'lk.seasonal.v1': JSON.stringify(o.seasonal || { selection: 'off' })
   };
   if (!(o.deviceUnclassified || o.deviceMode === 'unclassified' || o.profile === null)) ls['lk.device.v2'] = JSON.stringify(o.profile || { v: 2, mode, ownerId: mode === 'personal' ? who || '' : '' });
   if (!o.board) ['sam', 'ann', 'bo', 'fay', 'finn'].concat((config.people || []).map(p => p.id), who ? [who] : []).forEach(id => { ls['lk.board.' + id] = ymd(new Date(serverClock)); });
