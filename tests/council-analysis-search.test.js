@@ -41,6 +41,15 @@ async function search(p, selector, value) {
     await p.locator('#record-q-analysis-items').blur();
     ok(await p.locator('#record-q-analysis-items').inputValue() === 'Milk', width + ': an intentional blur still restores the committed query');
     await p.locator('#record-q-analysis-items').locator('..').locator('.ux-search-clear').click();
+    await p.locator('[data-record="analysis-items"] summary').click();
+    await p.locator('[data-record-sort="analysis-items"][data-column="name"]').click();
+    await p.evaluate(() => {
+      const input = document.querySelector('#record-q-analysis-items');
+      input.value = 'Milk'; input.dispatchEvent(new Event('input', { bubbles: true }));
+      document.querySelector('[data-record-reset="analysis-items"][data-part="all"]').click();
+    });
+    await L.settle(p, 300);
+    ok(await p.locator('#record-q-analysis-items').getAttribute('data-committed-query') === '' && await p.locator('[data-ai="item"]').count() === 3, width + ': Reset All cancels a pending search as well as the active sort');
     const reads = await p.evaluate(() => __fake.bill.reduce((n, x) => n + x.n, 0));
     // On the old screen these two inputs could contradict each other.
     if (await p.locator('#ai-search').count()) await search(p, '#ai-search', 'Chicken');

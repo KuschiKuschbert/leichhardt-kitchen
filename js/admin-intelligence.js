@@ -233,7 +233,13 @@
     var el = e.target.closest('[data-record-sort],[data-record-reset]'); if (!validContext() || !el) return;
     var key = el.dataset.recordSort || el.dataset.recordReset, t = state.tables && state.tables[key]; if (!t) return;
     if (el.dataset.recordSort) { var c = el.dataset.column; t.direction = t.column === c ? t.direction === 1 ? -1 : t.direction === -1 ? 0 : 1 : 1; t.column = c; }
-    else { var part = el.dataset.part; if (part === 'all') { t.q = ''; t.filters = {}; t.direction = 0; } else if (part === 'q') t.q = ''; else if (part === 'sort') t.direction = 0; else delete t.filters[part]; }
+    else {
+      var part = el.dataset.part;
+      if (part === 'all' || part === 'q') {
+        var search = document.getElementById('record-q-' + key); if (search) window.LK_UX.resetSearch(search);
+      }
+      if (part === 'all') { t.q = ''; t.filters = {}; t.direction = 0; } else if (part === 'q') t.q = ''; else if (part === 'sort') t.direction = 0; else delete t.filters[part];
+    }
     redraw();
   });
 

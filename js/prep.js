@@ -3408,7 +3408,11 @@
     lvRefresh(key);
   }
   /* a row that was just added must be on screen: clear the search and filter and open every row */
-  function lvReveal(key) { var s = LV[key], c = LVR[key]; if (!s) return; s.q = ''; s.facets = {}; if (c && c.filters && c.filters.length) s.f = c.filters[0][0]; s.shown = LV_BIG; }
+  function lvReveal(key) {
+    var s = LV[key], c = LVR[key]; if (!s) return;
+    var search = S.root && S.root.querySelector('[data-k="lv-q:' + key + '"]'); if (search) window.LK_UX.resetSearch(search);
+    s.q = ''; s.facets = {}; if (c && c.filters && c.filters.length) s.f = c.filters[0][0]; s.shown = LV_BIG;
+  }
   /* Every day at a glance: a calendar, darker means more. Tap a day to open it in the prep book. */
   function calHTML(n) {
     var a = AF(), m = S.calM || 'done', today = dayNow(), agg = aggregate(n, 0), first = shift(today, -(n - 1)), start = first, i;
@@ -8896,7 +8900,10 @@
     if (a === 'mn-pub') { saveMinutes(true); return; }
     if (a === 'mn-remove') { removeMinutes(id); return; }
     if (a === 'g-cat') { S.gcat = el.getAttribute('data-v') || 'all'; draw(); return; }
-    if (a === 'g-clear') { S.gq = ''; draw(); focusK('g-q'); return; }
+    if (a === 'g-clear') {
+      var gq = S.root.querySelector('#g-q'); if (gq) window.LK_UX.resetSearch(gq);
+      S.gq = ''; draw(); focusK('g-q'); return;
+    }
     if (a === 'g-zoom') { var gzg = gById(S.gSel); if (gzg) gzOpen(gzg.id, i); return; }
     if (a === 'g-retry') { var grg = gById(S.gSel); if (grg) { delete gPg[grg.id + ':' + (grg.v || 1)]; draw(); } return; }
     if (a === 'g-admin') { S.atab = 'guides'; lsSet('lk.prep.atab', 'guides'); location.hash = '#/admin'; return; }
@@ -8988,7 +8995,12 @@
     if (a === 'wreview') { saveReview(el.getAttribute('data-v')); return; }
     if (a === 'wh-view') { if (!whCanChange()) return; var wv = el.getAttribute('data-v'); if (['history', 'summary', 'reviews'].indexOf(wv) >= 0) whState().view = wv; draw(); return; }
     if (a === 'wh-review-cancel') { if (whReviewDirty() && !arm('wh-review-cancel')) return; S.wrA = S.wrC = null; draw(); return; }
-    if (a === 'wh-clear') { var wc = whState(); wc.q = wc.who = wc.unit = ''; wc.removed = false; AF().sec = AF().reason = AF().dow = ''; afSave(); draw(); return; }
+    if (a === 'wh-clear') {
+      var wq = S.root.querySelector('#wh-search'), ww = S.root.querySelector('[data-k="wh-who"]');
+      if (wq) window.LK_UX.resetSearch(wq); if (ww) window.LK_UX.resetSearch(ww);
+      var wc = whState(); wc.q = wc.who = wc.unit = ''; wc.removed = false;
+      AF().sec = AF().reason = AF().dow = ''; afSave(); draw(); return;
+    }
     if (a === 'wh-apply') {
       if (!whCanChange()) return;
       var wa = whState(), wf0 = wa.from, wt0 = wa.to; wa.from = wa.draftFrom || ''; wa.to = wa.draftTo || '';

@@ -112,6 +112,24 @@ async function matches(p, column, descending, filtered) {
   ok((await metrics(p)).parse === count, 'fresh-key derivation still parses each source record only once');
   const billedAfter = await p.evaluate(() => window.__fake.bill.reduce((n, x) => n + x.n, 0));
   ok(billedAfter === billedBefore, 'sort, filter, pagination and resets add zero Firestore reads');
+  await L.adminTab(p, 'people');
+  const personIndex = await p.evaluate(() => {
+    const s = LK_PREP.state;
+    for (let i = s.draft.people.length; i < 10; i++) s.draft.people.push({ id: 'council-' + i, name: 'Council person ' + i, role: 'staff', active: true, isNew: true });
+    LK_PREP.mount('admin', s.root);
+    return s.draft.people.length;
+  });
+  await L.waitFor(p, () => !!document.querySelector('[data-k="lv-q:people"]'));
+  const peopleReads = await p.evaluate(() => __fake.bill.reduce((n, x) => n + x.n, 0));
+  await p.evaluate(() => {
+    const input = document.querySelector('[data-k="lv-q:people"]');
+    input.value = 'Sam'; input.dispatchEvent(new Event('input', { bubbles: true }));
+    document.querySelector('[data-p="a-add-person"]').click();
+  });
+  await L.settle(p, 300);
+  ok(await p.locator('[data-k="lv-q:people"]').getAttribute('data-committed-query') === '', 'revealing a newly added row cancels a pending list search');
+  ok(await p.evaluate(i => { const el = document.querySelector('[data-k="a-n' + i + '"]'); return !!el && !!el.getClientRects().length && el === document.activeElement; }, personIndex), 'the newly added person remains visible and focused after the debounce');
+  ok(await p.evaluate(() => __fake.bill.reduce((n, x) => n + x.n, 0)) === peopleReads, 'revealing a draft person adds no Firestore reads');
   ok(p.errors.length === 0, 'admin table journeys have no browser errors ' + p.errors.join(' | '));
   await p.context().close();
   await b.close();

@@ -4,6 +4,8 @@ Status: implementation and local verification complete. Baseline: `1427fcc`; int
 
 The [2 November council audit](ux-council-audit.md) records the follow-up interaction fixes, measured header-sort work and honest route coverage.
 
+A host that deliberately clears a search calls `LK_UX.resetSearch(input)` before clearing its model or redrawing. This also cancels a pending debounce. Ordinary redraws preserve raw text and the original pending deadline. The shared focus-restoration helper and the old field's scoped `_uxRedrawing` marker keep programmatic restoration separate from a real blur and refocus.
+
 The app stays dependency-free. Existing hidden form controls remain the value and validation source. Shared DOM components enhance new and redrawn controls. Existing save handlers, permissions and reads remain authoritative.
 
 ## Phase 1 inventory
