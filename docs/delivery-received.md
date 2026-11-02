@@ -29,6 +29,7 @@ Publish the additive delivery rules and verify their workflow before releasing t
 - All six personal roles and the verified admin can save, reopen and read the expected records.
 - Signed-out, expired, removed and reset-PIN sessions cannot read or write receipts. Functions accounts retain their other restrictions.
 - Blank readings, malformed dates/times, future receipt times and invalid numbers are rejected; decimal, negative and zero readings persist.
+- Invalid keyboard saves focus and scroll to the first correction field. The alert is associated through `aria-describedby` and the field has `aria-invalid`; a missing either/or temperature identifies both fields. Editing an affected field clears its stale error without losing focus or other values. Unrelated edits retain the error. These form checks make no receipt writes and do not alter exact-id retry.
 - Failed saves retain the form. Repeating a save after a lost acknowledgement creates no duplicate.
 - Phone, tablet and desktop use the existing fonts, colours and controls without horizontal overflow. Text from other people is escaped.
 - Real database rules: all existing emulator suites passed, including 124 delivery access and validation checks. The daily-lock release adds same-person draft and exact-attempt recovery checks without changing the receipt schema.
