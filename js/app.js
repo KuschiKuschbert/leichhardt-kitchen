@@ -944,7 +944,7 @@
     });
   }
   function loadManage() {
-    if (!mgLoad) mgLoad = mgScript('js/manage.js?v=7').catch(function (e) { mgLoad = null; throw e; });
+    if (!mgLoad) mgLoad = mgScript('js/manage.js?v=8').catch(function (e) { mgLoad = null; throw e; });
     return mgLoad;
   }
   function mgNote(title, text, link, waitingIcon) {

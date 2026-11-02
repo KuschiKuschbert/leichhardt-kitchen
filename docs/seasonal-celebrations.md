@@ -34,6 +34,8 @@ Annual dates are deliberately finite. Before a new year, check the calendar's `f
 
 ## Verification and rollback
 
+Combined validation reproduced a recipe startup race on the previous live app as well as the themed build. An editor opened before its recipe response could stay on Recipe not found after the data arrived. The editor now recovers that exact missing recipe through the existing sync event or a fresh mount with an accepted cached copy, using its current edit and privacy-lock guards. Real drafts and kept changes retain their normal recovery flow. Stale SDK replies across a privacy lock remain discarded; the existing retry and wake path can fetch a fresh copy after valid unlock. The view recovery adds no reads or writes. The compatible editor keeps API 5 and loads at `manage.js?v=8`. The recipe jump tests wait for their existing target-position criteria so they do not inspect an unfinished native smooth scroll.
+
 `tests/seasonal.test.js` exercises the real app with fake Firebase: main and variant header effects, mobile ornaments, Home/work handoff, all six languages, no picker, focus and typing, Settings, Still, Off and reduced motion. `tests/seasonal-calendar.test.js` checks dates, overlaps, boundaries and finite annual coverage. `tests/seasonal-shell.test.js` checks atomic asset membership and nested script syntax. Existing saved-copy and shell-generation browser checks cover the expanded shell. The full click suite and required PR gate precede release; the live click suite follows Pages publication.
 
 Revert this feature through a new PR to remove celebrations. Keep the current saved-shell generation protocol and access/session contract. The unused device preference is harmless and no kitchen records need reverting.

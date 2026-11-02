@@ -3,6 +3,24 @@ const L = require('./lib');
 const { R, ok } = L.results();
 const names = p => p.evaluate(() => [...document.querySelectorAll('#shelves a.dish:not(.faded), #results a.tile')].map(a => a.getAttribute('aria-label') || a.querySelector('.t-name').textContent));
 async function find(p, v) { await p.fill('#find', v); await L.settle(p, 250); }
+// Native smooth scrolling can still be moving after the page's other work settles.
+async function waitForJump(p, id, allowEnd) {
+  try {
+    await L.waitFor(p, ({ id, allowEnd }) => {
+      const target = document.getElementById(id);
+      if (!target) return false;
+      const top = target.getBoundingClientRect().top;
+      const atEnd = Math.abs(scrollY + innerHeight - document.documentElement.scrollHeight) < 4;
+      return top >= -2 && (top < 60 || allowEnd && atEnd && top < innerHeight);
+    }, { id, allowEnd }, 4000);
+  } catch (_) {
+    console.error('Recipe jump did not reach its target: ' + JSON.stringify(await p.evaluate(id => ({
+      id, top: document.getElementById(id)?.getBoundingClientRect().top,
+      scrollY, height: document.documentElement.scrollHeight, viewport: innerHeight,
+      atEnd: Math.abs(scrollY + innerHeight - document.documentElement.scrollHeight) < 4
+    }), id)));
+  }
+}
 (async () => {
   const b = await L.start();
   let p = await L.open(b, '#/recipes', { wait: 1200 });
@@ -55,12 +73,12 @@ async function find(p, v) { await p.fill('#find', v); await L.settle(p, 250); }
   for (const view of ['pass', 'tiles']) {
     p = await L.open(b, '#/r/barra', { wait: 1200, settings: { view } });
     ok(await p.$('.jumps') !== null, view + ' card: jump row on a phone');
-    await p.click('[data-act="jump"][data-val="r-steps"]'); await L.settle(p, 900);
+    await p.click('[data-act="jump"][data-val="r-steps"]'); await waitForJump(p, 'r-steps', false);
     const st = await p.evaluate(() => document.getElementById('r-steps').getBoundingClientRect().top);
     ok(st >= -2 && st < 60, view + ' card: Method jumps to the method (' + Math.round(st) + ')');
     await p.click('[data-act="jump"][data-val="r-allergens"]', { timeout: 2000 }).catch(() => {});
     await p.evaluate(() => window.scrollTo(0, 0));
-    await p.click('[data-act="jump"][data-val="r-ing"]'); await L.settle(p, 900);
+    await p.click('[data-act="jump"][data-val="r-ing"]'); await waitForJump(p, 'r-ing', true);
     const innerHeight = 844; const it = await p.evaluate(() => document.getElementById('r-ing').getBoundingClientRect().top);
     const atEnd = await p.evaluate(() => Math.abs(window.scrollY + innerHeight - document.documentElement.scrollHeight) < 4);
     ok((it >= -2 && it < 60) || (atEnd && it < innerHeight), view + ' card: Ingredients jumps to the ingredients (' + Math.round(it) + ')');

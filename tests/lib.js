@@ -209,6 +209,7 @@ async function start() {
                       __fake.warm() in the page brings the signal back
    o.init             a function run in the page before the book starts, on every load (after the seed), to stand in
                       for what the test browser lacks (the notification permission, a running service worker)
+   o.fakeSDK          replacement source by Firebase stand-in basename, for controlled SDK response ordering
    o.block            a regex source: the book's own files whose address matches fail to load (say js/cutoffs.js)
    o.board            let the start of shift sheet come up (23 Oct 2026). Without it the phone has had today's start
                       already (lk.board.<who>), the way everyone has a usual drink, so the sheet stays off the other tests */
@@ -230,7 +231,7 @@ async function open(browser, hash, o) {
   });
   await ctx.route('https://www.gstatic.com/firebasejs/**', r => {
     const f = path.join(FAKE, path.basename(new URL(r.request().url()).pathname));
-    if (fs.existsSync(f)) return r.fulfill({ status: 200, contentType: 'text/javascript', body: fs.readFileSync(f, 'utf8') });
+    if (fs.existsSync(f)) return r.fulfill({ status: 200, contentType: 'text/javascript', body: o.fakeSDK && typeof o.fakeSDK[path.basename(f)] === 'string' ? o.fakeSDK[path.basename(f)] : fs.readFileSync(f, 'utf8') });
     return r.fulfill({ status: 200, contentType: 'text/javascript', body: 'export {}' });
   });
   await ctx.route(/fonts\.(googleapis|gstatic)\.com/, r => r.fulfill({ status: 200, body: '' }));

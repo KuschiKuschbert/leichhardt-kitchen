@@ -34,7 +34,7 @@ const pendingBack = async (p, mod, save, field, name) => {
   const b = await L.start();
   let p = await L.open(b, '#/manage/r/burger', { who: 'ann', extra, wait: 1500 });
   await editor(p);
-  ok(p.urls.some(url => /\/js\/manage\.js\?v=7$/.test(url)), 'recipe form requests the revised editor address');
+  ok(p.urls.some(url => /\/js\/manage\.js\?v=8$/.test(url)), 'recipe form requests the revised editor address');
   ok(await p.getAttribute(back, 'aria-label') === 'Back to all recipes', 'recipe form: one header arrow names the parent list');
   ok(await p.locator('#mg-root a[href="#/manage"], [data-mg-back]').count() === 0, 'recipe form: no repeated return rows or breadcrumbs');
   // Input and Back in the same turn deliberately beat the 400 ms draft timer.
@@ -135,7 +135,7 @@ const pendingBack = async (p, mod, save, field, name) => {
 
   // A revised address can still receive an older offline response. Reject its API before mounting a partial form.
   for (const c of [
-    { name: 'recipe', file: 'manage', global: 'LK_MG', route: '#/manage/r/burger', root: '#mg-root', field: '#mg-name', v: '7' },
+    { name: 'recipe', file: 'manage', global: 'LK_MG', route: '#/manage/r/burger', root: '#mg-root', field: '#mg-name', v: '8' },
     { name: 'function', file: 'fnedit', global: 'LK_FE', route: '#/functions/test', root: '#fe-root', field: '#fe-name', v: '7' },
     { name: 'drawing', file: 'draw', global: 'LK_DRAW', route: '#/manage/draw/new/burger/plate', root: '#mg-root', field: '.dw-svg', v: '7' }
   ]) {
