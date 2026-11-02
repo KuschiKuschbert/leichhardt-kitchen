@@ -829,7 +829,7 @@
   }
   function bump(patch) {
     // adds to a person's tally in the background; never blocks the page
-    var p = who(); if (!p || !fb) return;
+    var p = who(); if (!p || !fb || functionOnly()) return;
     var f = fb.fs, data = { name: p.name };
     Object.keys(patch).forEach(function (k) { data[k] = (k === 'lastSeen' || k === 'lastAdded') ? patch[k] : f.increment(patch[k]); });
     sset(docRef('activity', p.id), data, true).catch(function () {});

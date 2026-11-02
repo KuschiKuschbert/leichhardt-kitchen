@@ -319,9 +319,7 @@ row('js/smart.js loadLearned(): the head chef\'s picks (book/matches)', { ok: AL
 
 /* ---------- writes ---------- */
 const MINE = r => 'z-' + r;   // each sign-in writes its own record, so one cell never changes the next
-const EXP = { pr: 'a later fix (client, not rules)' };
-row('js/prep.js resume() and bump(): activity/<me> merge (visits, lastSeen)', { ok: KITCHEN, asks: KPINS,
-  known: Object.assign({ roles: ['fay'], why: 'bump() after a PIN sign-in sends it for a functions-only person too; the rules refuse it and the page drops the error. resume() already skips it' }, EXP),
+row('js/prep.js resume() and bump(): activity/<me> merge (visits, lastSeen)', { ok: KITCHEN, asks: KITCHEN,
   run: (db, w, r) => W(r, [['set', 'activity/' + ownId(r, w), { name: NAME[r], visits: increment(1), lastSeen: Date.now() }, true]]) });
 // (functions only never sends them: the prep pages stop at the Functions account card before flushViews())
 row('js/prep.js flushViews() and flushMisses(): views/<id> and misses/<q> merges', { ok: KITCHEN, asks: KPINS,
