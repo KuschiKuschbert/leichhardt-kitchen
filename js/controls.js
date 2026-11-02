@@ -287,6 +287,10 @@
   function choiceLabel(button) { var name = button.querySelector('.vo-name'); return name ? name.firstChild.textContent.trim() : button.textContent.trim() || button.getAttribute('aria-label') || 'Choice'; }
   var pairedActions = ['data-p:tr-dir', 'data-p:heat', 'data-p:hrm', 'data-p:n-mode', 'data-act:amode', 'data-act:setpractice', 'data-fe:mode'];
   var unitActions = ['data-p:tr-unit', 'data-p:wunit'];
+  function fixedThreeChoices(action, buttons) {
+    var values = action === 'data-p:ml-pri' ? ['today', 'week', 'any'] : action === 'data-p:dk-pick' && buttons.every(function (b) { return b.getAttribute('data-f') === 'size'; }) ? ['small', 'reg', 'large'] : null;
+    return !!values && buttons.length === 3 && buttons.every(function (b, i) { return b.getAttribute('data-v') === values[i]; });
+  }
   var pairs = new Set(), choiceHosts = new Map(), choiceFrame = null;
   var choiceResize = window.ResizeObserver ? new ResizeObserver(scheduleChoices) : null;
   function choiceSelector(button) { return 'button' + slice(button.attributes).filter(function (a) { return /^data-/.test(a.name); }).map(function (a) { return '[' + a.name + '="' + CSS.escape(a.value) + '"]'; }).join(''); }
@@ -334,6 +338,7 @@
   }
   function pairedChoice(group, source, trigger, buttons, radio) {
     group.classList.add('ux-two-way');
+    if (buttons.length === 3) group.style.setProperty('--ux-choice-count', '3');
     var measure = node('span', 'ux-choice-measure'); measure.setAttribute('aria-hidden', 'true'); measure.inert = true;
     buttons.forEach(function (button) { var copy = node('button', button.className, button.textContent); copy.type = 'button'; copy.tabIndex = -1; measure.appendChild(copy); });
     group.appendChild(measure);
@@ -345,7 +350,9 @@
       // Measure inert copies in this same context, with the final font and full unwrapped labels.
       var style = getComputedStyle(host), edge = host.getBoundingClientRect().right - parseFloat(style.paddingRight || 0) - parseFloat(style.borderRightWidth || 0);
       var available = edge - group.getBoundingClientRect().left - parseFloat(getComputedStyle(group).marginRight || 0);
-      var required = 2 * Math.max.apply(Math, slice(measure.children).map(function (b) { return b.getBoundingClientRect().width; })) + 3;
+      // These existing three-choice rows keep their own max-width as well as the host's available width.
+      if (buttons.length === 3) available = Math.min(available, group.getBoundingClientRect().width);
+      var required = buttons.length * Math.max.apply(Math, slice(measure.children).map(function (b) { return b.getBoundingClientRect().width; })) + 3;
       var inline = required > 3 && available >= required, focused = document.activeElement;
       group.style.setProperty('--ux-pair-width', required + 'px');
       group.classList.toggle('ux-inline-pair', inline);
@@ -394,7 +401,7 @@
         }
       });
     });
-    if (!multi && buttons.length === 2 && pairedActions.indexOf(action) >= 0) pairedChoice(group, source, b, buttons, radio);
+    if (!multi && (buttons.length === 2 && pairedActions.indexOf(action) >= 0 || fixedThreeChoices(action, buttons))) pairedChoice(group, source, b, buttons, radio);
   }
   // Typed comparisons are shared by paginated lists and static report tables.
   function compare(a, b) {
