@@ -35,7 +35,7 @@ function shellMeta(mode, round, work) {
   }); });
 }
 function readShellState() {
-  return shellMeta('readonly', null, function (store, done) { var q = store.get('state'); q.onsuccess = function () { done(q.result || { active: CACHE, previous: '', ticket: 0 }); }; }).then(function (state) { shellState = state; return state; });
+  return shellMeta('readonly', null, function (store, done) { var q = store.get('state'); q.onsuccess = function () { done(q.result || { active: CACHE, previous: '', ticket: 0 }); }; }).then(function (state) { if (state.active && state.active.indexOf(SHELL_PREFIX) === 0) shellState = state; return state; });
 }
 function mirrorShell(state) {
   // A best-effort public pointer mirror allows a coherent last-good launch if metadata storage later becomes blocked.
@@ -57,32 +57,35 @@ function completeShell(name) {
   }); });
 }
 function chooseShell() {
-  return readShellState().catch(fallbackShellState).then(function (state) {
-    var names = [state.active, state.previous, CACHE];
+  return readShellState().then(function (state) { return state.active && state.active.indexOf(SHELL_PREFIX) === 0 ? state : fallbackShellState(); }).catch(fallbackShellState).then(function (state) {
+    var names = [state.active, state.previous].filter(function (name) { return typeof name === 'string' && name.indexOf(SHELL_PREFIX) === 0; });
     function next(i) { return i >= names.length ? null : completeShell(names[i]).then(function (copy) { return copy || next(i + 1); }); }
     return next(0);
   });
+}
+function mirrorShellPin(id, pin) {
+  return caches.open(CACHE).then(function (cache) { return cache.put(pinKey(id), new Response(JSON.stringify(pin), { headers: { 'Content-Type': 'application/json' } })); }).catch(function () {});
 }
 function keepShellPin(id, name) {
   if (!id) return Promise.resolve();
   var pin = { cache: name, at: Date.now() }; shellPins[id] = pin;
   // Opaque browser client id and public cache name only. Never save a URL, hash route, person or booking id.
-  return shellMeta('readwrite', null, function (store) { store.put(pin, 'client:' + id); }).catch(function () {}).then(function () {
-    // The same public binding survives a metadata outage during a worker restart. It never owns publication.
-    return caches.open(CACHE).then(function (cache) { return cache.put(pinKey(id), new Response(JSON.stringify(pin), { headers: { 'Content-Type': 'application/json' } })); }).catch(function () {});
-  });
+  return shellMeta('readwrite', null, function (store) { store.put(pin, 'client:' + id); }).catch(function () {}).then(function () { return mirrorShellPin(id, pin); });
 }
+function shellPinValid(pin) { return pin && typeof pin.cache === 'string' && pin.cache.indexOf(SHELL_PREFIX) === 0; }
+function readShellPinMirror(id) { return caches.open(CACHE).then(function (cache) { return cache.match(pinKey(id)); }).then(function (response) { return response ? response.json() : null; }).catch(function () { return null; }); }
 function shellForClient(id) {
+  // A system request (for example a notification icon) has no loaded document whose generation could be mixed.
+  if (!id) return chooseShell().then(function (copy) { return copy ? copy.cache : null; });
   if (shellPins[id]) return caches.open(shellPins[id].cache);
-  return shellMeta('readonly', null, function (store, done) { var q = store.get('client:' + id); q.onsuccess = function () { done(q.result); }; }).then(function (pin) {
-    if (pin) { shellPins[id] = pin; return caches.open(pin.cache); }
-    // A controlled page that did not navigate through us (for example the first install) gets one complete copy.
-    return chooseShell().then(function (copy) { if (!copy) return null; return keepShellPin(id, copy.name).then(function () { return copy.cache; }); });
-  }).catch(function () {
-    return caches.open(CACHE).then(function (cache) { return cache.match(pinKey(id)); }).then(function (response) { return response ? response.json() : null; }).then(function (pin) {
-      if (!pin || typeof pin.cache !== 'string' || pin.cache !== CACHE && pin.cache.indexOf(SHELL_PREFIX) !== 0) return null;
-      shellPins[id] = pin; return caches.open(pin.cache);
-    }).catch(function () { return null; });
+  return shellMeta('readonly', null, function (store, done) { var q = store.get('client:' + id); q.onsuccess = function () { done(q.result); }; }).catch(function () { return null; }).then(function (pin) {
+    if (shellPinValid(pin)) return pin;
+    // A transient primary-write failure can leave a mirror even when a later primary read succeeds but is empty.
+    // An unknown existing document must never be attached to whichever generation happens to be active now.
+    return readShellPinMirror(id);
+  }).then(function (pin) {
+    if (!shellPinValid(pin)) return null;
+    shellPins[id] = pin; return caches.open(pin.cache);
   });
 }
 function warnShell(e) {
@@ -203,7 +206,7 @@ function freshRound(round, install) {
         if (install) { store.put({ name: round.name }, 'install'); done(true); return; }
         var q = store.get('state'); q.onsuccess = function () {
           var state = q.result; if (!round.alive || !state || state.ticket !== round.ticket) { done(false); return; }
-          var next = { active: round.name, previous: old ? old.name : '', ticket: state.ticket };
+          var next = { active: round.name, previous: old && old.name !== CACHE ? old.name : '', ticket: state.ticket };
           store.put(next, 'state'); done(next);
         };
       }).then(function (state) {
@@ -228,24 +231,44 @@ self.addEventListener('install', function (e) {
   e.waitUntil(round.promise.then(function (ok) { if (!ok) throw new Error('Complete shell not saved'); return self.skipWaiting(); }));
 });
 self.addEventListener('activate', function (e) {
-  e.waitUntil(Promise.all([chooseShell(), self.clients.matchAll({ type: 'window', includeUncontrolled: true })]).then(function (values) {
-    var old = values[0], clients = values[1];
-    return shellMeta('readwrite', null, function (store, done) {
-      var install = store.get('install'); install.onsuccess = function () {
-        if (!install.result) throw new Error('No prepared shell');
-        var q = store.get('state'); q.onsuccess = function () {
-          var state = q.result || { ticket: 0 }, name = install.result.name;
-          clients.filter(function (client) { return client.url.indexOf(self.registration.scope) === 0; }).forEach(function (client) {
-            var pin = store.get('client:' + client.id); pin.onsuccess = function () {
-              if (!pin.result) store.put({ cache: old ? old.name : name, at: Date.now() }, 'client:' + client.id);
+  var activationPins = [], legacyClients = [];
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (all) {
+    var clients = all.filter(function (client) { return client.url.indexOf(self.registration.scope) === 0; });
+    return Promise.all(clients.map(function (client) { return readShellPinMirror(client.id); })).then(function (mirrors) {
+      return caches.open(CACHE).then(function (cache) { return cache.match('./index.html'); }).then(function (legacyIndex) {
+        return shellMeta('readwrite', null, function (store, done) {
+          var install = store.get('install'); install.onsuccess = function () {
+            if (!install.result) throw new Error('No prepared shell');
+            var q = store.get('state'); q.onsuccess = function () {
+              var state = q.result || { ticket: 0 }, name = install.result.name;
+              clients.forEach(function (client, i) {
+                var pin = store.get('client:' + client.id); pin.onsuccess = function () {
+                  var binding = shellPinValid(pin.result) ? pin.result : shellPinValid(mirrors[i]) ? mirrors[i] : null;
+                  if (binding) {
+                    store.put(binding, 'client:' + client.id); activationPins.push({ id: client.id, pin: binding });
+                  } else {
+                    // The previous deployed worker may still write lk-book-v8. Its existing documents cannot be
+                    // assigned an immutable generation retrospectively. Offer the normal guarded update instead.
+                    store.delete('client:' + client.id); if (legacyIndex) legacyClients.push(client);
+                  }
+                };
+              });
+              var next = { active: name, previous: state.active && state.active !== CACHE ? state.active : '', ticket: (state.ticket || 0) + 1 };
+              store.put(next, 'state'); store.delete('install'); done(next);
             };
-          });
-          var next = { active: name, previous: old ? old.name : '', ticket: (state.ticket || 0) + 1 };
-          store.put(next, 'state'); store.delete('install'); done(next);
-        };
-      };
+          };
+        });
+      });
     });
-  }).then(function (state) { shellState = state; return mirrorShell(state); }).then(shellCleanup));
+  }).then(function (state) {
+    shellState = state;
+    return Promise.all([mirrorShell(state)].concat(activationPins.map(function (binding) { return mirrorShellPin(binding.id, binding.pin); })));
+  }).then(function () {
+    // This is a successfully installed new version. Old clients understand lk-new and retain their existing
+    // typing/pending-write safeguards. Missing-binding warnings on their own never request a reload.
+    legacyClients.forEach(function (client) { client.postMessage('lk-new'); });
+    return shellCleanup();
+  }));
   // Do not claim an uncontrolled document midway through network HTML and deferred scripts. Existing controlled
   // tabs adopt the activated worker normally; a first visit uses this complete shell on its next navigation.
 });
