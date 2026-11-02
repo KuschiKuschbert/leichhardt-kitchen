@@ -132,6 +132,27 @@ const button = (kind = 'fn', action = 'cancel') => '[data-' + kind + '="status"]
     ok(s[notice].deleted && Object.values(s).some(v => v.fn === 'alpha' && /^Function restored/.test(v.text || '') && !v.deleted), 'past order: Undo removes the stale cancel notice and adds a restoration notice');
     await p.close();
 
+    // A chef without ordinary Add/Delete cancels on the order day, then takes it back just after midnight.
+    const future = M.addDays(day, 2), midnight = M.kat(day, 23 * 60 + 59.5), boundary = fixture(day, future);
+    boundary[key(['config', 'main'])] = structuredClone(cfg);
+    const limited = boundary[key(['config', 'main'])];
+    limited.people.find(x => x.id === 'sam').add = false; limited.people.find(x => x.id === 'sam').del = false;
+    limited.addIds = ['ann', 'bo']; limited.tickIds = ['sam', 'ann', 'bo']; limited.delIds = ['bo'];
+    p = await L.open(b, '#/fn', { who: 'sam', extra: boundary, clock: midnight, server: midnight });
+    await L.waitFor(p, () => !!document.querySelector('[data-fn="status"][data-id="alpha"]'));
+    await p.click(button()); await waitStatus(p, 'cancelled');
+    await p.evaluate(() => {
+      const wall = Date.now(), kitchen = LK_TIME.now(), start = performance.now();
+      Date.now = () => Math.round(wall + 60000 + performance.now() - start);
+      LK_TIME.now = () => Math.round(kitchen + 60000 + performance.now() - start);
+    });
+    await p.click(button('fn', 'undo')); await waitStatus(p, 'confirmed'); s = await dump(p);
+    const next = M.addDays(day, 1), oldNotice = key(['orders', day, 'lines', 'fn-alpha-x' + day.replace(/-/g, '')]), restoredNotice = key(['orders', next, 'lines', 'fn-alpha-r' + next.replace(/-/g, '')]);
+    ok(s[oldNotice] && s[oldNotice].deleted && s[restoredNotice] && !s[restoredNotice].deleted, 'midnight Undo: the original cancellation day and current restoration notice are both canonical');
+    ok(s[key(['orders', day, 'lines', 'fn-alpha'])].ordered && s[key(['orders', day, 'lines', 'fn-alpha'])].deleted && s[key(['days', future, 'items', 'fn-alpha-pizza-platter'])].done, 'midnight Undo: prior order history and completed prep stay intact');
+    ok(!s[key(['config', 'main'])].addIds.includes('sam') && !s[key(['config', 'main'])].delIds.includes('sam') && p.errors.length === 0, 'midnight Undo needs no ordinary Add/Delete grant and causes no page errors');
+    await p.close();
+
     // The existing access tick is explicit, searchable and independent of the kitchen role.
     p = await L.open(b, '#/admin', { who: '', admin: true, extra: fixture(), width: 1280 });
     await L.adminTab(p, 'people');

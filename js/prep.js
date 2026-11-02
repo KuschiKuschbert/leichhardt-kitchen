@@ -35,9 +35,8 @@
     kitchens/<PIN>/drinks/<personId>           each person's usual coffee or drink, for the drinks run (written only by that person)
     kitchens/<PIN>/todos/<id>                  the chef to-do list (read and written only by the head chef and the sous chefs)
 
-  Who is allowed to add, tick or remove is set in the admin panel. Those permissions guide the page. The security
-  rules in the Firebase console are what really lock the data: the kitchen PIN to read, a person's own PIN to write,
-  the admin's Google account for settings.
+  Add, Tick and Delete use the owner-approved canonical capability lists in config/main. The page and server
+  rules use the same lists. A live personal device session is still required for every operational write.
 */
 (function () {
   'use strict';
@@ -113,18 +112,87 @@
   /* Firestore keeps a copy of what it read (in the tab's memory since 26 Oct 2026, #387, memoryLocalCache; before that in
      the browser's IndexedDB, which this still clears on phones that have one). Now and then that copy breaks ("INTERNAL
      ASSERTION FAILED", canonifyTarget) and the prep pages hang on Loading with no names. The data on the server is fine,
-     so the phone throws its copy away and reloads, at most once a day (lk.fsheal) so it can never loop. */
+     so the phone repairs its read copy once the book is reachable and there is no unfinished work. Never terminate
+     Firestore over its memory-only write queue. lk.fsheal records only a repair that is ready to reload, once a day. */
+  var healWanted = false, healRun = null, healTimer = null, healAgain = false, healMessage = '';
+  var HEAL_WAIT = {};
+  var HEAL_SIGNAL_NOTE = 'The book could not be reached. Keep this tab open. The saved-copy repair will wait.';
+  function healPrefix() {
+    var app = fb && fb.app, project = app && app.options && app.options.projectId || FB && FB.projectId;
+    var name = app ? app.name : '[DEFAULT]';
+    if (typeof project !== 'string' || !project || typeof name !== 'string' || !name) return '';
+    // Verified SDK 10.14.1 indexedDbStoragePrefix: default database, exact configured project and primary app name.
+    // All historical persistent clients used this same default app/database. kitchen-owner has only used memory.
+    return 'firestore/' + name + '/' + project + '/';
+  }
+  function healSharedKey(key, prefix) {
+    // SDK WebStorage shared-state families, including their full app/project/database prefix and suffix separator.
+    return ['firestore_sequence_number_', 'firestore_online_state_', 'firestore_bundle_loaded_v2_'].some(function (family) { return key === family + prefix; })
+      || ['firestore_clients_', 'firestore_mutations_', 'firestore_targets_', 'firestore_zombie_'].some(function (family) { return key.indexOf(family + prefix + '_') === 0; });
+  }
+  function healNote(msg) { if (healMessage !== msg) { healMessage = msg; toast(msg, null, 9000); } }
+  function healWork() {
+    // The shared guard includes lazy editor/supplier drafts, privacy-locked work and uncertain write tickets.
+    try { return !window.LK_PREP || window.LK_PREP.unsaved() || typeof lkEditing === 'function' && lkEditing(); }
+    catch (e) { return true; }
+  }
+  function healPause() {
+    healNote(sendingNow() ? 'Keep this tab open. Repair waits until your changes are sent.' : 'Keep this tab open. Repair waits until your unfinished work is clear.');
+  }
+  function healSoon() {
+    if (!healWanted) return;
+    if (healRun) { healAgain = true; return; }
+    clearTimeout(healTimer);
+    // Write acknowledgements finish their forms in promise callbacks. Recheck after those callbacks and blur settle.
+    healTimer = setTimeout(healTry, 100);
+  }
+  function healTry() {
+    if (!healWanted || healRun) return;
+    if (lsGet('lk.fsheal') === dayNow()) { healWanted = false; return; }
+    if (healWork()) { healPause(); return; }
+    if (typeof lkServerUp !== 'function') { healNote('The saved copy could not be checked. Keep this tab open.'); return; }
+    var prefix = healPrefix();
+    if (!prefix) { healNote('The saved copy could not be checked. Keep this tab open.'); return; }
+    var run = healRun = { writer: writerKey(), epoch: accessEpoch, prefix: prefix, edits: typeof lkEdits === 'number' ? lkEdits : 0 };
+    healAgain = false;
+    function safe() {
+      return healWanted && healRun === run && navigator.onLine !== false && !healWork() && healPrefix() === run.prefix && writerKey() === run.writer && accessEpoch === run.epoch &&
+        (typeof lkEdits === 'number' ? lkEdits : 0) === run.edits;
+    }
+    function check() { if (!safe()) throw HEAL_WAIT; }
+    // One existing public HEAD per safe recovery attempt, no Firestore read or polling. Actual work/online events retry.
+    Promise.resolve().then(function () { return lkServerUp(); }).then(function (up) {
+      check();
+      if (!up) { healNote(HEAL_SIGNAL_NOTE); throw HEAL_WAIT; }
+      // Check before terminating, not only before reload: terminate already destroys the SDK's ability to send work.
+      check(); return fb ? fb.fs.terminate(fb.db) : null;
+    }).then(function () {
+      check();
+      Object.keys(LS || {}).forEach(function (k) { if (healSharedKey(k, run.prefix)) LS.removeItem(k); });
+      check();
+      // SDK IndexedDbPersistence/clearIndexedDbPersistence append main to that prefix. Never enumerate other apps'
+      // databases: GitHub Pages projects share an origin. This exact name also works without indexedDB.databases().
+      return new Promise(function (ok, no) {
+        var q = indexedDB.deleteDatabase(run.prefix + 'main');
+        q.onsuccess = function () { ok(); };
+        q.onerror = q.onblocked = function () { no(new Error('Saved read copy could not be cleared.')); };
+      });
+    }).then(function () {
+      check(); lsSet('lk.fsheal', dayNow()); healWanted = false; location.reload();
+    }).catch(function (e) {
+      if (e === HEAL_WAIT) { if (healWork()) healPause(); else if (navigator.onLine === false) healNote(HEAL_SIGNAL_NOTE); }
+      else healNote('The saved copy could not be repaired. Keep this tab open. Your work has not been discarded.');
+    }).then(function () {
+      healRun = null;
+      if (healAgain && healWanted && !healWork()) healSoon();
+    });
+  }
   function healCache() {
     if (lsGet('lk.fsheal') === dayNow()) return;
-    lsSet('lk.fsheal', dayNow());
-    try { Object.keys(LS || {}).forEach(function (k) { if (/^firestore_/.test(k)) LS.removeItem(k); }); } catch (e) {}
-    var stop = fb ? fb.fs.terminate(fb.db).catch(function () {}) : Promise.resolve();
-    stop.then(function () { return indexedDB.databases ? indexedDB.databases() : [{ name: 'firestore/[DEFAULT]/' + FB.projectId + '/main' }]; }).then(function (dbs) {
-      return Promise.all(dbs.filter(function (d) { return /^firestore\//.test(d.name); }).map(function (d) {
-        return new Promise(function (ok) { var q = indexedDB.deleteDatabase(d.name); q.onsuccess = q.onerror = q.onblocked = function () { ok(); }; });
-      }));
-    }).catch(function () {}).then(function () { location.reload(); });
+    healWanted = true; healSoon();
   }
+  ['lk-sent', 'online'].forEach(function (name) { window.addEventListener(name, healSoon); });
+  ['input', 'change', 'click', 'focusout'].forEach(function (name) { document.addEventListener(name, healSoon, true); });
   function brokenCache(x) { var s = x ? String(x.stack || x.message || x) : ''; return /FIRESTORE[^\n]*INTERNAL ASSERTION FAILED|canonifyTarget|IndexedDbTargetCache/.test(s); }
   window.addEventListener('error', function (e) { if (brokenCache(e.error || e.message)) healCache(); });
   window.addEventListener('unhandledrejection', function (e) { if (brokenCache(e.reason)) healCache(); });
@@ -502,7 +570,7 @@
   }
   function ownerRef(col, id) { return fb.ownerFs.doc(fb.ownerDb, 'kitchens', S.pin, col, id); }
   function canBrowse() { return (S.level === 'owner' && ownerHere()) || isSous(); }
-  function can(what) { if (S.user && S.level === 'owner' && ownerHere()) return true; if (guest()) return what === 'add' || what === 'tick'; var p = me(); return !!(p && p[what]); }
+  function can(what) { if (S.user && S.level === 'owner' && ownerHere()) return true; if (guest()) return what === 'add' || what === 'tick'; var p = me(), c = S.config || {}, ids = c[what + 'Ids']; return !!(p && !functionOnly() && (p.id === c.headId || Array.isArray(ids) && ids.indexOf(p.id) >= 0)); }
   /* ---------- new pages the head chef can hold back from staff ----------
      Guides, Shift pings and Meeting minutes always show for the head chef, sous chefs and leads. Staff and View only see each one unless the head chef unticks it under New pages in the People
      tab (config/main staffSee, missing means shown). It only hides the links and skips the reads: it is not a lock.
@@ -830,7 +898,7 @@
   }
   function bump(patch) {
     // adds to a person's tally in the background; never blocks the page
-    var p = who(); if (!p || !fb) return;
+    var p = who(); if (!p || !fb || functionOnly()) return;
     var f = fb.fs, data = { name: p.name };
     Object.keys(patch).forEach(function (k) { data[k] = (k === 'lastSeen' || k === 'lastAdded') ? patch[k] : f.increment(patch[k]); });
     sset(docRef('activity', p.id), data, true).catch(function () {});
@@ -1992,11 +2060,11 @@
   function dupSig(g) { return g.map(function (x) { return x.id; }).sort().join(','); }
   function dupTodo(items) { return obviousDups(items).filter(function (g) { return !dupTried[dupSig(g)]; }); }
   function mergeDups() {
-    if (dupTimer || !S.authed || !fb || !fb.fs.getDocsFromServer || !can('add') || S.date !== dayNow() || S.itemsState !== 'ok' || !dupTodo(S.items).length) return;
+    if (dupTimer || !S.authed || !fb || !fb.fs.getDocsFromServer || !can('add') || !can('del') || S.date !== dayNow() || S.itemsState !== 'ok' || !dupTodo(S.items).length) return;
     dupTimer = setTimeout(function () {
       dupTimer = null;
       var dte = S.date, ids = [];
-      if (dte !== dayNow() || !can('add')) return;
+      if (dte !== dayNow() || !can('add') || !can('del')) return;
       dupTodo(S.items).forEach(function (g) { dupTried[dupSig(g)] = 1; g.forEach(function (x) { ids.push(x.id); }); });
       if (!ids.length) return;
       // read the lines as the server has them now: one query per 30 lines (an "in" query takes up to 30 ids), on the
@@ -2020,7 +2088,7 @@
         return Wall(ops).then(function () {
           var msg = gs.length === 1 ? last.keep.text + ' was on the list ' + (gs[0].length === 2 ? 'twice' : gs[0].length + ' times') + '. Now it is on once' + (last.sec ? ', under ' + last.sec : '') + '.'
             : gs.length + ' double ups merged: ' + gs.map(function (g) { return g[0].text; }).join(', ') + '.';
-          toast(msg, { label: 'Undo', fn: function () { Wall(undo).catch(failed); } });
+          toast(msg, { label: 'Undo', fn: function () { if (can('add') && can('del')) Wall(undo).catch(failed); } });
         });
       }).catch(function () {});
     }, 600 + Math.random() * 1800);
@@ -2518,6 +2586,9 @@
       sousIds: hold ? (hold.sousIds || []) : idsFor(cfg.people, isSousP), pingIds: hold ? (hold.pingIds || []) : idsFor(cfg.people, canPingP),
       fnIds: hold ? (hold.fnIds || []) : idsFor(cfg.people, fnP),
       fnOnlyIds: hold ? (hold.fnOnlyIds || (S.config && S.config.fnOnlyIds) || []) : idsFor(cfg.people, function (p) { return p.role === 'fnc'; }),
+      addIds: hold && hold.addIds || idsFor(cfg.people, function (p) { return p.role !== 'fnc' && (p.role === 'head' || p.add === true); }),
+      tickIds: hold && hold.tickIds || idsFor(cfg.people, function (p) { return p.role !== 'fnc' && (p.role === 'head' || p.tick === true); }),
+      delIds: hold && hold.delIds || idsFor(cfg.people, function (p) { return p.role !== 'fnc' && (p.role === 'head' || p.del === true); }),
       staffIds: idsFor(cfg.people, anyP), headId: headIdOf(cfg.people), pinOpen: pinOpenFor(idsFor(cfg.people, anyP)),
       updated: now(), updatedBy: S.user ? 'Head chef' : (who() ? who().name : '')   // never the Google email: anyone with the kitchen PIN can read this record
     };
@@ -2640,6 +2711,7 @@
       var staff = idsFor(list, anyP), sous = (c.sousIds || []).filter(function (x) { return staff.indexOf(x) >= 0; }); if (sous.indexOf(id) < 0) sous.push(id);
       var pinOpen = Object.assign({}, c.pinOpen || {}); pinOpen[id] = now() + 30 * 60000;
       var data = { people: list, staffIds: staff, sousIds: sous, pingIds: Array.from(new Set((c.pingIds || []).concat([id]))), headId: id, fnIds: c.fnIds || [], fnOnlyIds: (c.fnOnlyIds || []).filter(function (x) { return x !== id; }), pinOpen: pinOpen, updated: now(), updatedBy: 'Head chef' };
+      ['add', 'tick', 'del'].forEach(function (cap) { data[cap + 'Ids'] = Array.from(new Set((c[cap + 'Ids'] || []).concat([id]))); });
       var roster = {}; ['people', 'staffIds', 'sousIds', 'headId', 'fnIds', 'fnOnlyIds'].forEach(function (k) { roster[k] = data[k]; });
       var b = fb.ownerFs.writeBatch(fb.ownerDb); b.set(ownerRef('config', 'main'), data, { merge: true }); b.set(ownerRef('login', 'roster'), roster);
       return track(b.commit()).then(function () { S.bootstrapConfig = null; S.config = roster; S.level = 'pin'; S.saveMsg = ''; S.adminsFor = ''; pickName(id); });
@@ -2712,6 +2784,9 @@
         if (isSousP(p) !== sous) out.push({ p: p, sous: isSousP(p), what: isSousP(p) ? 'is now marked Sous chef' : 'is no longer marked Sous chef' });
       }
       if (Array.isArray(c.fnOnlyIds) && (p.role === 'fnc') !== (c.fnOnlyIds.indexOf(p.id) >= 0)) out.push({ p: p, fnOnly: p.role === 'fnc', what: p.role === 'fnc' ? 'is now marked functions only' : 'is no longer marked functions only' });
+      ['add', 'tick', 'del'].forEach(function (cap) {
+        if (p.id !== c.headId && Array.isArray(c[cap + 'Ids']) && !!p[cap] !== (c[cap + 'Ids'].indexOf(p.id) >= 0)) out.push({ p: p, cap: cap, enabled: !!p[cap], what: (p[cap] ? 'is now ticked' : 'is no longer ticked') + ' for ' + ({ add: 'Add', tick: 'Tick', del: 'Delete' })[cap] });
+      });
       // Manage functions is given only by the head chef's Google account: a tick changed anywhere else is asked about
       var fn = (c.fnIds || []).indexOf(p.id) >= 0;
       if (fnP(p) !== fn) out.push({ p: p, fn: fnP(p), what: fnP(p) ? 'is now ticked for Functions' : 'is no longer ticked for Functions' });
@@ -2722,10 +2797,10 @@
     if (!S.configFull) return;
     var c = S.config; if (!c || !c.people) return;
     seedPinOpen();
-    if (sameIds(c, c.sousIds, isSousP) && sameIds(c, c.pingIds, canPingP) && sameIds(c, c.staffIds, anyP) && sameIds(c, c.fnIds, fnP)) return;
+    if (sameIds(c, c.sousIds, isSousP) && sameIds(c, c.pingIds, canPingP) && sameIds(c, c.staffIds, anyP) && sameIds(c, c.fnIds, fnP) && ['add', 'tick', 'del'].every(function (cap) { return sameIds(c, c[cap + 'Ids'], function (p) { return p.role !== 'fnc' && (p.id === c.headId || !!p[cap]); }); })) return;
     var asking = idChanges(c).length > 0;
     if (asking && sameIds(c, c.staffIds, anyP)) return;
-    saveConfig({ people: c.people, showBadges: c.showBadges, staffSee: c.staffSee }, asking ? { sousIds: c.sousIds || [], pingIds: c.pingIds || [], fnIds: c.fnIds || [], fnOnlyIds: c.fnOnlyIds || [] } : null).catch(function () {});
+    saveConfig({ people: c.people, showBadges: c.showBadges, staffSee: c.staffSee }, asking ? { sousIds: c.sousIds || [], pingIds: c.pingIds || [], fnIds: c.fnIds || [], fnOnlyIds: c.fnOnlyIds || [], addIds: c.addIds, tickIds: c.tickIds, delIds: c.delIds } : null).catch(function () {});
   }
   function idCardHTML() {
     var c = S.config, ch = idChanges(c);
@@ -2741,9 +2816,17 @@
     var people = JSON.parse(JSON.stringify(c.people));
     if (!keep) ch.forEach(function (x) {
       var p = people.filter(function (q) { return q.id === x.p.id; })[0]; if (!p) return;
+      if (x.cap) { p[x.cap] = !x.enabled; return; }
       if ('fnOnly' in x) { p.role = x.fnOnly ? 'staff' : 'fnc'; return; }
       if ('fn' in x) { p.fn = !x.fn; return; }
       p.role = x.sous ? 'staff' : 'sous'; var r = ROLES[p.role]; p.add = r.add; p.tick = r.tick; p.del = r.del; p.ping = r.ping;
+    });
+    // Restoring a role must preserve every owner-approved personal exception to that role's defaults.
+    if (!keep) people.forEach(function (p) {
+      if (!ch.some(function (x) { return x.p.id === p.id; })) return;
+      ['add', 'tick', 'del'].forEach(function (cap) {
+        if (Array.isArray(c[cap + 'Ids'])) p[cap] = p.id === c.headId || c[cap + 'Ids'].indexOf(p.id) >= 0;
+      });
     });
     S.idBusy = true; S.idMsg = 'Saving...'; draw();
     // a People draft with changes stays (28 Oct 2026: it was thrown away); its save carries only what it changed onto
