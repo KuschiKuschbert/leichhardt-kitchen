@@ -53,7 +53,11 @@ function seed(extra) {
   // Deployed kitchens keep canonical active membership through access-bootstrap and staff saves.
   if (!Array.isArray(cfg.staffIds)) cfg.staffIds = (cfg.people || []).filter(p => p.active !== false).map(p => p.id);
   cfg.fnOnlyIds = cfg.fnOnlyIds || (cfg.people || []).filter(p => p.active !== false && p.role === 'fnc').map(p => p.id);
+  // Synthetic deployed configuration includes the owner-approved capability foundation. Explicit missing lists are tested separately.
+  ['add', 'tick', 'del'].forEach(cap => { if (cfg[cap + 'Ids'] === undefined) cfg[cap + 'Ids'] = (cfg.people || []).filter(p => p.active !== false && cfg.staffIds.includes(p.id) && !cfg.fnOnlyIds.includes(p.id) && (p.id === cfg.headId || p[cap] === true)).map(p => p.id); });
   s[K.concat(['login', 'roster']).join('/')] = Object.fromEntries(['people', 'staffIds', 'sousIds', 'headId', 'fnIds', 'fnOnlyIds'].filter(k => cfg[k] !== undefined).map(k => [k, cfg[k]]));
+  // Synthetic deployed bookings receive the same additive preparation as production before capability rules.
+  Object.entries(s).forEach(([path, f]) => { if (/^kitchens\/[^/]+\/functions\/[^/]+$/.test(path) && f) { if (!f.effects) f.effects = require('../js/functions').effects(f, path.split('/').pop()); } });
   return s;
 }
 

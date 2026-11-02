@@ -16,6 +16,7 @@ The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the
 | --- | --- |
 | Whole-app audit, consistency, redundancy, security and performance review | `docs/whole-app-audit.md` (brief), `docs/ux-council-audit.md` (evidence), `docs/whole-app-inventory.md` (route coverage) |
 | Login, who can read or write what, recipes, function writes | `docs/private-kitchen-access.md` (wins over older wording below) |
+| Staff Add/Tick/Delete, canonical capability lists and staged publication | `docs/staff-capabilities.md` |
 | Device choice, Google persistence, daily PIN unlock, Update confirmation | `docs/device-sessions.md` (2 Nov 2026, replaces earlier session wording) |
 | Multiplying recipe amounts | `docs/recipe-multiplier.md` |
 | Shared-screen Prep attribution, modal picker, recorder identity and completion credit | `docs/shared-prep-attribution.md` |

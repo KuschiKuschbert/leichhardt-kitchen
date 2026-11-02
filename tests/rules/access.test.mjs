@@ -2,6 +2,8 @@ import { initializeTestEnvironment, assertFails, assertSucceeds } from '@firebas
 import { doc, getDoc, getDocs, collection, setDoc, writeBatch } from 'firebase/firestore';
 import { anonContext, dailySession, adminGrant, seedOwnerDevice, nextFour } from './device-auth-fixtures.mjs';
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+const functionModel = createRequire(import.meta.url)('../../js/functions.js');
 const pin = '000000', K = `kitchens/${pin}/`, ownerEmail = 'owner@test.local';
 const rules = readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8').replaceAll('KITCHEN_PIN', pin).replaceAll('OWNER_EMAIL', ownerEmail);
 const env = await initializeTestEnvironment({ projectId: 'demo-access', firestore: { rules } });
@@ -45,6 +47,7 @@ await assertFails(setDoc(doc(env.authenticatedContext('anonymous').firestore(),K
 // A functions-only coordinator can save generated reminders without seeing or editing the kitchen list.
 const t = Date.parse(today+'T08:00:00Z');
 const f = {v:1,status:'confirmed',name:'Private event',date:today,start:t,loc:'Room',guests:20,mode:'all',lines:[{rid:'pizza',name:'Pizza',unit:'platter',spec:'',fp:'',qty:1,u:[0]}],rounds:[{at:t,note:''}],notes:'',kc:'',kcBy:'',kcAt:0,first:t,last:t,from:t-18*3600000,until:t+7200000,kq:t+7200000,was:{},chg:[],cBy:'fn',cAt:now,confBy:'fn',confAt:now,by:'fn',upd:now};
+f.effects = functionModel.effects(f, 'private-event');
 const generated = {text:'Pizza: Private event',qty:'1 platter',station:'Functions',recipe:'pizza',fn:'private-event',dupOk:true,deleted:false,addedBy:'Functions',addedById:'fn',addedAt:now,by:'fn'};
 let batch=writeBatch(fn);batch.set(doc(fn,K+'functions/private-event'),f);batch.set(doc(fn,K+`days/${today}/items/fn-private-event-pizza`),generated);
 await assertSucceeds(batch.commit());checks++;
