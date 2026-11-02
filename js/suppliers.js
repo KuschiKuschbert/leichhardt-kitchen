@@ -228,6 +228,8 @@
     M.err = e.message || 'Check each order quantity and unit.';
     var all = items(), index = all.findIndex(function (i) { return i.id === e.field; });
     if ((e.code === 'quantity' || e.code === 'stock') && index >= 0) {
+      var search = M.root.querySelector('[data-sf="q"]');
+      if (search && window.LK_UX && window.LK_UX.resetSearch) window.LK_UX.resetSearch(search);
       M.validation = { id: e.field, field: e.code === 'stock' ? 'stock' : 'qty' };
       M.q = ''; M.group = ''; M.page = Math.floor(index / 20);
       if (e.code === 'stock') M.openItems[e.field] = true;

@@ -1527,6 +1527,7 @@
     if (act === 'done' || act === 'back') { e.preventDefault(); goBack(); return; }
     if (act === 'amode') { ui.amode = val; if (val === 'free') ui.lens = null; else ui.free = []; render(); return; }
     if (act === 'clearfind' || act === 'clearall') {
+      var resetFind = document.getElementById('find'); if (resetFind && window.LK_UX) window.LK_UX.resetSearch(resetFind);
       ui.query = ''; if (act === 'clearall') { ui.free = []; ui.kind = 'all'; ui.lens = null; }
       render(); var fi = document.getElementById('find'); if (fi) fi.focus(); return;
     }

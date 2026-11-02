@@ -124,5 +124,34 @@ function pagedFixture() {
   ok(p.errors.length === 0, 'hidden-field validation journey: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // Review can be tapped before the search debounce runs. Validation must cancel that pending search.
+  for (const kind of ['qty', 'stock']) {
+    p = await open(b, pagedFixture(), 390);
+    await p.fill(qty('t-stock'), '2'); await action(p, 'next'); await ready(p, 'page-26');
+    await p.fill(qty('page-25'), '5 kg'); await p.fill(qty('page-26'), kind === 'qty' ? 'some' : '3 bags');
+    if (kind === 'stock') {
+      await p.click('[data-item="page-26"] .su-item > summary'); await p.fill(stock('page-26'), 'not counted');
+      await p.click('[data-item="page-26"] .su-item > summary');
+    }
+    await action(p, 'previous'); await ready(p);
+    const immediate = await p.evaluate(kind => {
+      const q = document.querySelector('[data-sf="q"]'); q.focus(); q.value = 'TEST STOCK'; q.dispatchEvent(new Event('input', { bubbles: true })); document.querySelector('[data-su="review"]').click();
+      const invalid = document.querySelector('[data-sf="' + kind + '"][data-i="page-26"]');
+      return { invalid: invalid && invalid.getAttribute('aria-invalid') === 'true', focused: invalid === document.activeElement, other: document.querySelector('[data-sf="qty"][data-i="page-25"]')?.value, quantity: document.querySelector('[data-sf="qty"][data-i="page-26"]')?.value, details: document.querySelector('[data-item="page-26"] .su-item')?.open };
+    }, kind);
+    ok(immediate.invalid && immediate.focused, 'rapid ' + kind + ': review reveals and focuses the hidden invalid field');
+    ok(immediate.other === '5 kg' && immediate.quantity === (kind === 'qty' ? 'some' : '3 bags'), 'rapid ' + kind + ': review preserves the quantities on the hidden page');
+    if (kind === 'stock') ok(immediate.details, 'rapid stock: review opens Details for the invalid stock field');
+    await L.settle(p, 450);
+    const delayed = await p.evaluate(kind => {
+      const q = document.querySelector('[data-sf="q"]'), invalid = document.querySelector('[data-sf="' + kind + '"][data-i="page-26"]');
+      return { focused: invalid === document.activeElement, invalid: invalid && invalid.getAttribute('aria-invalid') === 'true', query: q?.dataset.committedQuery, draft: q?.value };
+    }, kind);
+    ok(delayed.invalid && delayed.focused && delayed.query === '' && delayed.draft === '', 'rapid ' + kind + ': validation stays visible and focused after the pending-search deadline');
+    ok(!(await p.$('[data-su="record"]')) && newOrders(await dump(p)).length === 0, 'rapid ' + kind + ': invalid review never records an order');
+    ok(!(await L.overflow(p)) && p.errors.length === 0, 'rapid ' + kind + ': validation fits the phone without browser errors');
+    await p.context().close();
+  }
+
   await b.close(); L.report(R);
 })();

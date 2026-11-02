@@ -18,43 +18,63 @@
     return el.tagName.toLowerCase() + attrs.map(function (a) { return '[' + a.name + '="' + CSS.escape(a.value) + '"]'; }).join('');
   }
   function emit(el, type) { syncing = true; try { el.dispatchEvent(new Event(type, { bubbles: true })); } finally { syncing = false; } }
+  function restoreFocus(input) {
+    var s = searches.get(input), restoring = s && s.restoringFocus;
+    if (s) s.restoringFocus = true;
+    try { input.focus({ preventScroll: true }); } finally { if (s) s.restoringFocus = restoring; }
+  }
 
   // Search keeps the visible draft separate from the query delivered to the page's existing filter.
   function SmartSearchBar(input, options) {
     if (searches.has(input)) return searches.get(input);
     options = options || {};
     var key = location.hash + '|' + identity(input), old = searchMemory.get(key);
-    var s = old && old.query === input.value ? old : { query: input.value.trim(), raw: input.value, blurred: false, replacing: false, timer: null };
-    if (old) clearTimeout(old.timer);
+    var s = old && old.query === input.value ? old : { query: input.value.trim(), raw: input.value, blurred: false, replacing: false, timer: null, pending: null };
+    if (old) { clearTimeout(old.timer); old.timer = null; }
     searches.set(input, s); searchMemory.set(key, s);
     if (searchMemory.size > 150) searchMemory.delete(searchMemory.keys().next().value);
-    var placeholder = input.placeholder || 'Search', wrap = node('span', 'ux-search'), clear = node('button', 'ux-search-clear', '×');
-    input.parentNode.insertBefore(wrap, input); wrap.appendChild(input); wrap.appendChild(clear);
+    var placeholder = input.placeholder || 'Search', wrap = node('span', 'ux-search'), clear = node('button', 'ux-search-clear', '×'), status = node('span', 'ux-search-status');
+    input.parentNode.insertBefore(wrap, input); wrap.appendChild(input); wrap.appendChild(clear); wrap.appendChild(status);
     clear.type = 'button'; clear.setAttribute('aria-label', 'Clear search'); input.dataset.smartSearch = 'true';
+    status.id = 'ux-search-status-' + (++serial); status.setAttribute('role', 'status'); status.setAttribute('aria-atomic', 'true');
+    input.setAttribute('aria-describedby', [input.getAttribute('aria-describedby'), status.id].filter(Boolean).join(' '));
     // Old route-specific X controls have the same job; show only the shared reset.
     slice(wrap.parentNode.querySelectorAll(':scope > .find-x, :scope > .g-qx')).forEach(function (x) { x.remove(); });
     function paint() {
       input.value = s.raw;
-      input.placeholder = s.replacing ? "Filtering by '" + s.query + "' — type 2+ chars for new search" : placeholder;
+      input.placeholder = s.replacing ? "Filtering by '" + s.query + "'. Type 2+ chars for new search" : placeholder;
       clear.hidden = !(s.query || s.raw); input.dataset.committedQuery = s.query;
+      var explanation = s.query ? "Filtering by '" + s.query + "'." + (s.replacing || s.raw.trim() !== s.query ? ' Type 2 or more characters to replace it. Clear search to show all.' : '') : '';
+      status.hidden = !explanation; if (status.textContent !== explanation) status.textContent = explanation;
+    }
+    function cancelPending() { clearTimeout(s.timer); s.timer = null; s.pending = null; }
+    function defer(value, delay) {
+      s.pending = { value: value, due: performance.now() + delay };
+      s.timer = setTimeout(function () { s.timer = null; if (input.isConnected) commit(value); }, delay);
     }
     function commit(value) {
-      clearTimeout(s.timer); s.query = value.trim(); s.replacing = false; searchMemory.set(key, s);
-      var raw = s.raw; input.value = s.query;
-      if (options.onQuery) options.onQuery(s.query);
-      else {
-        emit(input, 'input');
-        // The review desk's searches submit local forms rather than filtering on input.
-        if (input.isConnected && input.form && input.form.matches('[data-ai-search], [data-ai-reference-search]')) input.form.requestSubmit();
+      cancelPending(); s.query = value.trim(); s.replacing = false; searchMemory.set(key, s);
+      var raw = s.raw, restoring = s.restoringFocus; input.value = s.query;
+      s.restoringFocus = restoring || document.activeElement === input;
+      try {
+        if (options.onQuery) options.onQuery(s.query);
+        else {
+          emit(input, 'input');
+          // The review desk's searches submit local forms rather than filtering on input.
+          if (input.isConnected && input.form && input.form.matches('[data-ai-search], [data-ai-reference-search]')) input.form.requestSubmit();
+        }
+      } finally {
+        s.restoringFocus = restoring; s.raw = raw; if (input.isConnected) paint();
       }
-      s.raw = raw; if (input.isConnected) paint();
     }
     s.reset = function () { s.raw = ''; s.blurred = false; s.replacing = false; commit(''); paint(); };
     input.addEventListener('focus', function () {
-      if (s.blurred && s.query.length >= 2) { clearTimeout(s.timer); s.raw = ''; s.replacing = true; }
+      if (!s.restoringFocus && s.blurred && s.query.length >= 2) { cancelPending(); s.raw = ''; s.replacing = true; }
       s.blurred = false; paint();
     });
     input.addEventListener('blur', function () {
+      // The host is replacing this focused field and will restore its draft and cursor on the new input.
+      if (input._uxRedrawing) return;
       if (s.replacing && s.raw.trim().length < 2) s.raw = s.query;
       s.replacing = false; s.blurred = true; paint();
     });
@@ -65,11 +85,13 @@
     clear.addEventListener('pointerdown', function (e) { e.preventDefault(); });
     clear.addEventListener('click', function () { s.reset(); input.focus(); });
     s.receive = function (e) {
-      s.raw = input.value; clearTimeout(s.timer); paint();
+      s.raw = input.value; cancelPending(); paint();
       if (e.isComposing) return;
-      if (s.raw.trim().length >= 2) { var requested = s.raw; s.timer = setTimeout(function () { if (input.isConnected) commit(requested); }, options.delay == null ? 150 : options.delay); }
+      if (s.raw.trim().length >= 2) defer(s.raw, options.delay == null ? 150 : options.delay);
       // Empty or one-character drafts leave the old results on screen. X explicitly clears them.
     };
+    // A redraw moves only a real pending query to the new input, keeping its original debounce deadline.
+    if (s.pending) defer(s.pending.value, Math.max(0, s.pending.due - performance.now()));
     paint(); return s;
   }
   document.addEventListener('input', function (e) {
@@ -84,17 +106,25 @@
     var dialog = node('dialog', 'ux-picker' + (config.className ? ' ' + config.className : '')), heading = node('h2', '', config.label || 'Choose');
     var header = node('header', 'ux-picker-head'), close = node('button', 'ux-picker-close', '×'), grip = node('div', 'ux-picker-grip');
     var list = node('div', 'ux-picker-options'), footer = node('footer', 'ux-picker-footer');
-    var selected = (config.value || []).slice(), items = config.items || [], query = '', cursor = -1, startY;
-    var compact = items.length <= (config.threshold == null ? 12 : config.threshold), rowHeight = 56;
+    var selected = (config.value || []).slice(), items = config.items || [], matching = items, cursor = -1, startY;
+    var compact = items.length <= (config.threshold == null ? 12 : config.threshold), rowHeights = new Map(), measuredWidth, measuredScale, resizeObserver, scrollFrame;
     dialog.id = 'ux-picker-' + (++serial); heading.id = dialog.id + '-title'; dialog.setAttribute('aria-labelledby', heading.id);
     dialog.setAttribute('aria-modal', 'true'); grip.setAttribute('aria-hidden', 'true'); close.type = 'button'; close.setAttribute('aria-label', 'Close picker');
     header.appendChild(grip); header.appendChild(heading); header.appendChild(close); dialog.appendChild(header);
-    list.classList.add(compact ? 'ux-picker-chips' : 'ux-picker-list'); list.setAttribute('role', 'listbox'); list.setAttribute('aria-label', config.label || 'Choices');
+    list.classList.add(compact ? 'ux-picker-chips' : 'ux-picker-list'); list.setAttribute('role', 'listbox'); list.setAttribute('aria-label', config.label || 'Choices'); list.tabIndex = -1;
     if (config.multiple) list.setAttribute('aria-multiselectable', 'true');
     var search, apply;
     cursor = items.findIndex(function (item) { return selected.indexOf(item.value) >= 0 && !item.disabled; });
     if (cursor < 0) cursor = items.findIndex(function (item) { return !item.disabled; });
-    function visible() { return items.filter(function (it) { return !query || String(it.label).toLocaleLowerCase().indexOf(query.toLocaleLowerCase()) >= 0; }); }
+    function visible() { return matching; }
+    function offsetsFor(rows) {
+      var offsets = [0]; rows.forEach(function (item, i) { offsets.push(offsets[i] + (rowHeights.get(item) || 56)); }); return offsets;
+    }
+    function indexAt(offsets, scroll) {
+      var low = 0, high = offsets.length - 2;
+      while (low < high) { var middle = Math.ceil((low + high) / 2); if (offsets[middle] <= scroll) low = middle; else high = middle - 1; }
+      return low;
+    }
     function choose(it) {
       if (it.disabled) return;
       if (config.multiple) {
@@ -102,28 +132,46 @@
         render();
       } else { selected = [it.value]; finish(true); }
     }
-    function render() {
+    function render(targetIndex) {
+      var width = list.clientWidth, scale = getComputedStyle(document.documentElement).fontSize;
+      if (width !== measuredWidth || scale !== measuredScale) { rowHeights.clear(); measuredWidth = width; measuredScale = scale; }
       var focusIndex = document.activeElement && document.activeElement.closest('.ux-picker-options') === list ? document.activeElement.dataset.index : null;
       var rows = visible(), virtual = rows.length > 100, scroll = list.scrollTop;
-      var from = virtual ? Math.max(0, Math.floor(scroll / rowHeight) - 4) : 0, to = virtual ? Math.min(rows.length, from + 24) : rows.length;
+      var offsets = offsetsFor(rows), targeting = typeof targetIndex === 'number' && targetIndex >= 0;
+      var anchor = targeting ? Math.max(0, targetIndex - 3) : indexAt(offsets, scroll), within = targeting ? 0 : scroll - offsets[anchor];
+      var from = virtual ? Math.max(0, anchor - 4) : 0, to = virtual ? Math.min(rows.length, from + 24) : rows.length;
       list.replaceChildren();
-      function spacer(height) { var sp = node('div'); sp.style.height = height + 'px'; sp.setAttribute('aria-hidden', 'true'); list.appendChild(sp); }
-      if (virtual) spacer(from * rowHeight);
+      function spacer(height) { var sp = node('div'); sp.style.height = height + 'px'; sp.setAttribute('aria-hidden', 'true'); list.appendChild(sp); return sp; }
+      var before = virtual ? spacer(offsets[from]) : null, rendered = [];
       rows.slice(from, to).forEach(function (it, offset) {
         var index = from + offset, on = selected.indexOf(it.value) >= 0, b = node('button', 'ux-picker-option' + (config.optionClass && it.value ? ' ' + config.optionClass : ''), it.label);
         b.type = 'button'; b.disabled = !!it.disabled; b.dataset.index = index; b.dataset.v = it.value; b.setAttribute('role', 'option'); b.setAttribute('aria-selected', String(on));
         b.setAttribute('aria-posinset', index + 1); b.setAttribute('aria-setsize', rows.length); b.tabIndex = index === cursor || (cursor < 0 && index === 0) ? 0 : -1;
-        b.addEventListener('click', function () { cursor = index; choose(it); }); list.appendChild(b);
+        b.addEventListener('click', function () { cursor = index; choose(it); }); list.appendChild(b); rendered.push({ item: it, button: b });
       });
-      if (virtual) spacer((rows.length - to) * rowHeight);
+      var after = virtual ? spacer(offsets[rows.length] - offsets[to]) : null;
       if (!rows.length) list.appendChild(node('p', 'hint', 'Nothing matches this search. Clear it to see all choices.'));
-      list.scrollTop = scroll;
-      if (focusIndex != null) { var focusOption = list.querySelector('[data-index="' + focusIndex + '"]'); if (focusOption) focusOption.focus({ preventScroll: true }); }
+      if (virtual) {
+        // Only the visible window is measured. Item identity keeps heights valid when a query changes row indices.
+        rendered.forEach(function (row) { var height = row.button.getBoundingClientRect().height; if (height) rowHeights.set(row.item, height); });
+        offsets = offsetsFor(rows); before.style.height = offsets[from] + 'px'; after.style.height = (offsets[rows.length] - offsets[to]) + 'px';
+        list.scrollTop = offsets[anchor] + within;
+      } else list.scrollTop = scroll;
+      if (targeting) {
+        var target = list.querySelector('[data-index="' + targetIndex + '"]');
+        if (target) {
+          var targetBox = target.getBoundingClientRect(), listBox = list.getBoundingClientRect();
+          if (targetBox.top < listBox.top || targetBox.height > listBox.height) list.scrollTop += targetBox.top - listBox.top;
+          else if (targetBox.bottom > listBox.bottom) list.scrollTop += targetBox.bottom - listBox.bottom;
+        }
+      }
+      // Pointer scrolling may evict the focused row. Keep the logical cursor and keyboard focus in this list.
+      if (focusIndex != null) (list.querySelector('[data-index="' + focusIndex + '"]') || list).focus({ preventScroll: true });
       if (apply) apply.textContent = 'Apply (' + selected.length + ')';
     }
     if (!compact) {
       search = node('input', 'search'); search.type = 'search'; search.placeholder = 'Find a choice'; search.setAttribute('aria-label', 'Find a choice'); header.appendChild(search);
-      SmartSearchBar(search, { onQuery: function (q) { query = q; cursor = -1; list.scrollTop = 0; render(); } });
+      SmartSearchBar(search, { onQuery: function (q) { matching = items.filter(function (it) { return !q || String(it.label).toLocaleLowerCase().indexOf(q.toLocaleLowerCase()) >= 0; }); cursor = -1; list.scrollTop = 0; render(); } });
     }
     dialog.appendChild(list);
     if (config.multiple) {
@@ -139,6 +187,7 @@
     var closeHistory = null, fromHistory = false;
     function finish(save) {
       if (!dialog.isConnected) return;
+      if (resizeObserver) resizeObserver.disconnect(); if (scrollFrame) cancelAnimationFrame(scrollFrame);
       dialog.close(); dialog.remove(); activePicker = null;
       if (closeHistory) closeHistory(fromHistory || location.hash !== openedHash);
       if (parentDialog) parentDialog.inert = wasInert;
@@ -151,7 +200,7 @@
     dialog.addEventListener('click', function (e) { if (e.target === dialog) { var r = dialog.getBoundingClientRect(); if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) finish(false); } });
     grip.addEventListener('pointerdown', function (e) { startY = e.clientY; grip.setPointerCapture(e.pointerId); });
     grip.addEventListener('pointerup', function (e) { if (startY != null && e.clientY - startY > 65 && innerWidth < 768) finish(false); startY = null; });
-    list.addEventListener('scroll', function () { if (visible().length > 100) render(); });
+    list.addEventListener('scroll', function () { if (visible().length > 100 && !scrollFrame) scrollFrame = requestAnimationFrame(function () { scrollFrame = null; if (dialog.isConnected) render(); }); });
     dialog.addEventListener('keydown', function (e) {
       e.stopPropagation();
       if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); finish(false); return; }
@@ -162,18 +211,21 @@
       }
       if (!/^(ArrowDown|ArrowUp|Home|End)$/.test(e.key) || (e.target.tagName === 'INPUT' && !/^Arrow/.test(e.key))) return;
       e.preventDefault(); var rows = visible(); if (!rows.length) return;
-      var direction = e.key === 'ArrowUp' ? -1 : 1;
-      cursor = e.key === 'Home' ? 0 : e.key === 'End' ? rows.length - 1 : Math.max(0, Math.min(rows.length - 1, cursor + direction));
-      while (rows[cursor] && rows[cursor].disabled) { cursor += direction; if (cursor < 0 || cursor >= rows.length) return; }
-      if (rows.length > 100) list.scrollTop = Math.max(0, (cursor - 3) * rowHeight);
-      render(); var current = list.querySelector('[data-index="' + cursor + '"]'); if (current) current.focus({ preventScroll: false });
+      var direction = e.key === 'ArrowUp' || e.key === 'End' ? -1 : 1;
+      var next = e.key === 'Home' ? 0 : e.key === 'End' ? rows.length - 1 : Math.max(0, Math.min(rows.length - 1, cursor + direction));
+      while (rows[next] && rows[next].disabled) { next += direction; if (next < 0 || next >= rows.length) return; }
+      cursor = next; render(cursor); var current = list.querySelector('[data-index="' + cursor + '"]'); if (current) current.focus({ preventScroll: false });
     });
     if (parentDialog) parentDialog.inert = true;
     var openedHash = location.hash;
-    document.body.appendChild(dialog); render(); dialog.showModal();
+    document.body.appendChild(dialog); dialog.showModal(); render(cursor);
+    if (window.ResizeObserver) {
+      resizeObserver = new ResizeObserver(function () { if (list.clientWidth !== measuredWidth || getComputedStyle(document.documentElement).fontSize !== measuredScale) render(); });
+      resizeObserver.observe(list); resizeObserver.observe(document.documentElement);
+    }
     if (!config.managedOverlay && window.LK_PREP && window.LK_PREP.pickerOverlay) closeHistory = window.LK_PREP.pickerOverlay(function () { fromHistory = true; finish(false); });
     if (trigger) { trigger.setAttribute('aria-expanded', 'true'); trigger.setAttribute('aria-controls', dialog.id); }
-    (search || list.querySelector('button:not([disabled])') || close).focus();
+    (search || list.querySelector('[data-index="' + cursor + '"]') || list.querySelector('button:not([disabled])') || close).focus();
     activePicker = { close: function () { finish(false); } }; return activePicker;
   }
 
@@ -186,10 +238,13 @@
     source.parentNode.insertBefore(b, source.nextSibling); source.classList.add('ux-choice-source'); source.dataset.adaptive = 'true';
     return b;
   }
+  function triggerValue(button, label, value) {
+    button.textContent = value + ' ▾'; button.setAttribute('aria-label', label + ': ' + value);
+  }
   function selectPicker(select) {
     if (select.dataset.adaptive) return;
     var label = labelFor(select), b = triggerFor(select, label);
-    function update() { b.textContent = (slice(select.selectedOptions).map(function (o) { return o.textContent; }).join(', ') || 'Choose') + ' ▾'; b.disabled = select.disabled; }
+    function update() { triggerValue(b, label, slice(select.selectedOptions).map(function (o) { return o.textContent; }).join(', ') || 'Choose'); b.disabled = select.disabled; }
     if (select.labels) slice(select.labels).forEach(function (labelNode) { labelNode.addEventListener('click', function (e) { if (e.target === labelNode || e.target.tagName === 'SPAN') { e.preventDefault(); if (!b.disabled) b.click(); } }); });
     update(); select.addEventListener('change', update); select.addEventListener('invalid', function (e) {
       e.preventDefault(); b.focus(); b.setAttribute('aria-invalid', 'true');
@@ -211,7 +266,7 @@
     input.removeAttribute('list');
     if (input.hasAttribute('data-fl')) input.type = 'text'; // Direct link entry; option search lives in the picker.
     input.classList.remove('ux-choice-source'); // Free-entry fields keep typing; suggestions open in the shared picker.
-    function update() { b.textContent = 'Choose ' + label + ' ▾'; b.disabled = input.disabled || input.readOnly; }
+    function update() { b.textContent = 'Choose ' + label + ' ▾'; b.setAttribute('aria-label', 'Choose ' + label + (input.value ? ': ' + input.value : '')); b.disabled = input.disabled || input.readOnly; }
     update(); input.addEventListener('input', update); input.addEventListener('change', update); input._uxUpdate = update;
     b.addEventListener('click', function () {
       var dl = document.getElementById(listId), items = dl ? slice(dl.options).map(function (o) { return { value: o.value, label: o.label || o.value }; }) : [];
@@ -245,7 +300,7 @@
     b._uxSelector = 'button' + slice(buttons[0].attributes).filter(function (a) { return /^data-/.test(a.name); }).map(function (a) { return '[' + a.name + '="' + CSS.escape(a.value) + '"]'; }).join('');
     b._uxGroup = true;
     function isOn(x) { return x.getAttribute('aria-pressed') === 'true' || x.getAttribute('aria-checked') === 'true' || x.classList.contains('on'); }
-    function update() { b.textContent = (buttons.filter(isOn).map(function (x) { return choiceLabel(x); }).join(', ') || 'Choose') + ' ▾'; b.disabled = buttons.every(function (x) { return x.disabled; }); }
+    function update() { triggerValue(b, label, buttons.filter(isOn).map(function (x) { return choiceLabel(x); }).join(', ') || 'Choose'); b.disabled = buttons.every(function (x) { return x.disabled; }); }
     update(); source._uxUpdate = update;
     b.addEventListener('click', function () {
       var values = buttons.filter(isOn).map(function (x) { return buttons.indexOf(x); });
@@ -294,10 +349,25 @@
     if (!rows.length || !heads.length) return;
     var wrap = table.parentNode, tools = node('div', 'ux-table-tools'), bar = node('div', 'ux-active-filters'), q = node('input', 'search');
     q.type = 'search'; q.placeholder = 'Search this table'; q.setAttribute('aria-label', 'Search this table'); tools.appendChild(q);
+    var count = node('p', 'ux-table-status'), empty = node('div', 'ux-table-empty'), recover = node('button', 'btn', 'Clear search and filters');
+    count.setAttribute('role', 'status'); count.setAttribute('aria-atomic', 'true'); recover.type = 'button';
+    empty.appendChild(node('p', '', 'No rows match this search or these filters.')); empty.appendChild(recover); empty.hidden = true;
     var state = { query: '', col: -1, direction: 0, filters: {} }, buttons = [], filters = [];
     function cell(row, i) { var c = row.cells[i]; return c ? c.dataset.sortValue != null ? typed(c.dataset.sortValue) : cellValue(c.innerHTML) : ''; }
+    function searchText(row) {
+      var copy = row.cloneNode(true), fields = slice(row.querySelectorAll('input,select,textarea'));
+      slice(copy.querySelectorAll('input,select,textarea')).forEach(function (field, i) {
+        var original = fields[i], value = original.tagName === 'SELECT' ? slice(original.selectedOptions).map(function (o) { return o.textContent; }).join(' ') : original.type === 'checkbox' ? original.checked ? 'Yes' : 'No' : original.value;
+        field.replaceWith(document.createTextNode(value));
+      });
+      return copy.textContent.toLocaleLowerCase();
+    }
+    function reset() {
+      state.direction = 0; state.filters = {}; filters.forEach(function (f) { f.select.value = ''; if (f.select._uxUpdate) f.select._uxUpdate(); }); searches.get(q).reset();
+    }
+    recover.addEventListener('click', function () { reset(); q.focus(); });
     function refresh() {
-      var shown = rows.filter(function (r) { return (!state.query || r.textContent.toLocaleLowerCase().indexOf(state.query.toLocaleLowerCase()) >= 0) && Object.keys(state.filters).every(function (i) { return !state.filters[i] || String(cell(r, +i)) === state.filters[i]; }); });
+      var shown = rows.filter(function (r) { return (!state.query || searchText(r).indexOf(state.query.toLocaleLowerCase()) >= 0) && Object.keys(state.filters).every(function (i) { return !state.filters[i] || String(cell(r, +i)) === state.filters[i]; }); });
       if (state.direction) shown.sort(function (a, b) { return compare(cell(a, state.col), cell(b, state.col)) * state.direction; });
       rows.forEach(function (r) { r.hidden = true; }); shown.forEach(function (r) { r.hidden = false; table.tBodies[0].appendChild(r); });
       buttons.forEach(function (b, i) { if (!b) return; b.textContent = heads[i].dataset.label + (state.col === i && state.direction ? state.direction === 1 ? ' ↑' : ' ↓' : ' ↕'); heads[i].setAttribute('aria-sort', state.col === i && state.direction ? state.direction === 1 ? 'ascending' : 'descending' : 'none'); });
@@ -306,7 +376,8 @@
       if (state.query) badge('Search: ' + state.query, function () { searches.get(q).reset(); });
       filters.forEach(function (f) { if (state.filters[f.index]) badge(f.label + ': ' + state.filters[f.index], function () { f.select.value = ''; state.filters[f.index] = ''; if (f.select._uxUpdate) f.select._uxUpdate(); refresh(); }); });
       if (state.direction) badge('Sort: ' + heads[state.col].dataset.label, function () { state.direction = 0; refresh(); });
-      if (bar.children.length) badge('Reset All Filters', function () { state.direction = 0; state.filters = {}; filters.forEach(function (f) { f.select.value = ''; if (f.select._uxUpdate) f.select._uxUpdate(); }); searches.get(q).reset(); refresh(); });
+      if (bar.children.length) badge('Reset All Filters', reset);
+      count.textContent = shown.length + ' of ' + rows.length + ' rows'; empty.hidden = shown.length !== 0;
     }
     // Calendar and hour-grid columns are coordinates, not sortable record attributes.
     var matrix = table.matches('.cal,.hr') || heads.every(function (h) { return /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)$/i.test(h.textContent.trim()); });
@@ -323,7 +394,7 @@
         }
       }
     });
-    wrap.parentNode.insertBefore(tools, wrap); tools.appendChild(bar); SmartSearchBar(q, { onQuery: function (query) { state.query = query; refresh(); } });
+    wrap.parentNode.insertBefore(tools, wrap); tools.appendChild(bar); tools.appendChild(count); wrap.after(empty); SmartSearchBar(q, { onQuery: function (query) { state.query = query; refresh(); } }); refresh();
   }
 
   function cyclePicker(original) {
@@ -335,7 +406,7 @@
     var source = node('span'); original.parentNode.insertBefore(source, original); source.appendChild(original); original.dataset.adaptive = 'true';
     var trigger = triggerFor(source, label); trigger.disabled = original.disabled;
     function current() { var o = document.querySelector(selector); return !o ? '' : attendance ? o.dataset.st : o.classList.contains('is-may') ? 'may' : o.classList.contains('is-has') ? 'has' : ''; }
-    trigger.textContent = label + ': ' + (names[states.indexOf(current())] || 'Not set') + ' ▾';
+    triggerValue(trigger, label, names[states.indexOf(current())] || 'Not set'); trigger.textContent = label + ': ' + trigger.textContent;
     trigger.addEventListener('click', function () {
       AdaptivePicker({ label: label, trigger: trigger, value: [current()], items: states.map(function (v, i) { return { value: v, label: names[i] }; }), onChange: function (v) {
         for (var n = 0; n < 3 && current() !== v[0]; n++) { var button = document.querySelector(selector); if (button) button.click(); }
@@ -377,6 +448,6 @@
   }).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled', 'aria-pressed', 'aria-checked'] });
   document.addEventListener('focusin', function (event) { if (!event.target.closest('.ux-picker, .ux-picker-trigger')) lastTrigger = null; });
   window.addEventListener('hashchange', function () { if (activePicker) activePicker.close(); lastTrigger = null; searchMemory.forEach(function (s) { clearTimeout(s.timer); }); searchMemory.clear(); });
-  window.LK_UX = { close: function () { if (activePicker) activePicker.close(); }, enhance: enhance, compare: compare, cellValue: cellValue, AdaptivePicker: AdaptivePicker, SmartSearchBar: SmartSearchBar, resetSearch: function (input) { var s = searches.get(input); if (s) s.reset(); } };
+  window.LK_UX = { close: function () { if (activePicker) activePicker.close(); }, enhance: enhance, compare: compare, cellValue: cellValue, AdaptivePicker: AdaptivePicker, SmartSearchBar: SmartSearchBar, restoreFocus: restoreFocus, resetSearch: function (input) { var s = searches.get(input); if (s) s.reset(); } };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', schedule); else schedule();
 })();

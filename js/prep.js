@@ -3290,7 +3290,7 @@
      row turns into a small card, so nothing needs swiping sideways. A short list gets no tools and stays plain.
      cfg: { key, items, step (rows per page, 15), tools (show the tools from this many rows, 8), noun: [one, many],
             ph (search hint), find(item) (text to search), filters: [[id, label, test(item)]] (first is the default),
-            sorts: [[id, label, compare(a, b)]] (first is the default), cols: [{ h, th, cls, wide, html(item) }]
+            sorts: [[id, label, compare(a, b)]] (first is the default), cols: [{ h, th, cls, wide, html(item), value(item) }]
             or card(item) (a list item for rows that are cards, not table rows), rowCls(item), empty, table (extra class) }
      The page remembers search, filter, sort and how many rows are open per list key until the tab is closed. */
   var LV = {}, LVR = {}, LV_BIG = 100000;
@@ -3309,7 +3309,10 @@
     so = (c.sorts || []).filter(function (x) { return x[0] === s.sort; })[0];
     if (s.col != null && c.cols && c.cols[s.col]) {
       var column = c.cols[s.col];
-      return l.slice().sort(function (a, b) { return window.LK_UX.compare(column.value ? column.value(a) : window.LK_UX.cellValue(column.html(a)), column.value ? column.value(b) : window.LK_UX.cellValue(column.html(b))) * (s.desc ? -1 : 1); });
+      // Derive each filtered row's key once per sort. Keeping keys here makes edits visible on the next redraw.
+      return l.map(function (item, index) { return { item: item, index: index, value: column.value ? column.value(item) : window.LK_UX.cellValue(column.html(item)) }; })
+        .sort(function (a, b) { return window.LK_UX.compare(a.value, b.value) * (s.desc ? -1 : 1) || a.index - b.index; })
+        .map(function (row) { return row.item; });
     }
     return so ? l.slice().sort(so[2]) : l;
   }
@@ -3405,7 +3408,11 @@
     lvRefresh(key);
   }
   /* a row that was just added must be on screen: clear the search and filter and open every row */
-  function lvReveal(key) { var s = LV[key], c = LVR[key]; if (!s) return; s.q = ''; s.facets = {}; if (c && c.filters && c.filters.length) s.f = c.filters[0][0]; s.shown = LV_BIG; }
+  function lvReveal(key) {
+    var s = LV[key], c = LVR[key]; if (!s) return;
+    var search = S.root && S.root.querySelector('[data-k="lv-q:' + key + '"]'); if (search) window.LK_UX.resetSearch(search);
+    s.q = ''; s.facets = {}; if (c && c.filters && c.filters.length) s.f = c.filters[0][0]; s.shown = LV_BIG;
+  }
   /* Every day at a glance: a calendar, darker means more. Tap a day to open it in the prep book. */
   function calHTML(n) {
     var a = AF(), m = S.calM || 'done', today = dayNow(), agg = aggregate(n, 0), first = shift(today, -(n - 1)), start = first, i;
@@ -4716,13 +4723,15 @@
     if (key && ae.selectionStart != null) { try { start = ae.selectionStart; end = ae.selectionEnd; } catch (e) {} }
     var bodyEl = S.root.querySelector('.nb-body'), keepScroll = bodyEl ? S.root.querySelectorAll('.nb-body') : null, scrolls = [];
     if (keepScroll) Array.prototype.forEach.call(keepScroll, function (b) { scrolls.push(b.scrollTop); });
-    S.root.innerHTML = syncHTML() + practiceHTML() + bodyHTML() + toastHTML();
+    if (key) ae._uxRedrawing = true;
+    try { S.root.innerHTML = syncHTML() + practiceHTML() + bodyHTML() + toastHTML(); }
+    finally { if (key) delete ae._uxRedrawing; }
     if (S.toast) plainAway();
     S.root.classList.toggle('is-book', S.name === 'prep' && !!S.root.querySelector('.nb'));
     document.documentElement.classList.toggle('sheet-open', !!S.root.querySelector('.sheet') || !!ptPop);
     if (scrolls.length) Array.prototype.forEach.call(S.root.querySelectorAll('.nb-body'), function (b, i) { if (scrolls[i] != null) b.scrollTop = scrolls[i]; });
     if (window.LK_UX) window.LK_UX.enhance(S.root);
-    if (key) { var el = S.root.querySelector('[data-k="' + key + '"]'); if (el && el._uxTrigger) el = el._uxTrigger; if (el) { el.focus({ preventScroll: true }); if (start != null && el.setSelectionRange) { try { el.setSelectionRange(start, end); } catch (e) {} } } }
+    if (key) { var el = S.root.querySelector('[data-k="' + key + '"]'); if (el && el._uxTrigger) el = el._uxTrigger; if (el) { if (window.LK_UX && window.LK_UX.restoreFocus) window.LK_UX.restoreFocus(el); else el.focus({ preventScroll: true }); if (start != null && el.setSelectionRange) { try { el.setSelectionRange(start, end); } catch (e) {} } } }
     else if (btnSel) {
       var back = S.root.querySelector(btnSel);
       if (!back && tickAt >= 0) { var ticks2 = S.root.querySelectorAll('.nb-box[data-p="tick"]:not([disabled])'); back = ticks2[Math.min(tickAt, ticks2.length - 1)]; }
@@ -8891,7 +8900,10 @@
     if (a === 'mn-pub') { saveMinutes(true); return; }
     if (a === 'mn-remove') { removeMinutes(id); return; }
     if (a === 'g-cat') { S.gcat = el.getAttribute('data-v') || 'all'; draw(); return; }
-    if (a === 'g-clear') { S.gq = ''; draw(); focusK('g-q'); return; }
+    if (a === 'g-clear') {
+      var gq = S.root.querySelector('#g-q'); if (gq) window.LK_UX.resetSearch(gq);
+      S.gq = ''; draw(); focusK('g-q'); return;
+    }
     if (a === 'g-zoom') { var gzg = gById(S.gSel); if (gzg) gzOpen(gzg.id, i); return; }
     if (a === 'g-retry') { var grg = gById(S.gSel); if (grg) { delete gPg[grg.id + ':' + (grg.v || 1)]; draw(); } return; }
     if (a === 'g-admin') { S.atab = 'guides'; lsSet('lk.prep.atab', 'guides'); location.hash = '#/admin'; return; }
@@ -8983,7 +8995,12 @@
     if (a === 'wreview') { saveReview(el.getAttribute('data-v')); return; }
     if (a === 'wh-view') { if (!whCanChange()) return; var wv = el.getAttribute('data-v'); if (['history', 'summary', 'reviews'].indexOf(wv) >= 0) whState().view = wv; draw(); return; }
     if (a === 'wh-review-cancel') { if (whReviewDirty() && !arm('wh-review-cancel')) return; S.wrA = S.wrC = null; draw(); return; }
-    if (a === 'wh-clear') { var wc = whState(); wc.q = wc.who = wc.unit = ''; wc.removed = false; AF().sec = AF().reason = AF().dow = ''; afSave(); draw(); return; }
+    if (a === 'wh-clear') {
+      var wq = S.root.querySelector('#wh-search'), ww = S.root.querySelector('[data-k="wh-who"]');
+      if (wq) window.LK_UX.resetSearch(wq); if (ww) window.LK_UX.resetSearch(ww);
+      var wc = whState(); wc.q = wc.who = wc.unit = ''; wc.removed = false;
+      AF().sec = AF().reason = AF().dow = ''; afSave(); draw(); return;
+    }
     if (a === 'wh-apply') {
       if (!whCanChange()) return;
       var wa = whState(), wf0 = wa.from, wt0 = wa.to; wa.from = wa.draftFrom || ''; wa.to = wa.draftTo || '';

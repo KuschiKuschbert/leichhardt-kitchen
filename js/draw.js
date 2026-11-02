@@ -358,7 +358,9 @@
     return '';
   }
   function swapTo(id) {
-    var old = W.swap, it = LIB.get(id); W.swap = null; W.pendingIng = ''; W.q = ''; W.panel = '';
+    var old = W.swap, it = LIB.get(id), search = document.getElementById('dw-q');
+    if (search && window.LK_UX && window.LK_UX.resetSearch) window.LK_UX.resetSearch(search);
+    W.swap = null; W.pendingIng = ''; W.q = ''; W.panel = '';
     var k = W.d.els.indexOf(old);
     if (k < 0 || !it) { W.sel = []; return; }
     var b = bbox(old), s = Math.max(0.3, Math.min(3, ((b[2] - b[0]) || it.w) / it.w));
@@ -770,7 +772,12 @@
         if (W.pendingIng && window.LK_SMART && window.LK_SMART.teach) window.LK_SMART.teach(W.pendingIng, v);
         before();
         if (W.swap) { swapTo(v); changed(); return; }
-        picked(addItem(v, { ing: W.pendingIng || '' })); if (W.pendingIng) { W.pendingIng = ''; W.q = ''; }
+        picked(addItem(v, { ing: W.pendingIng || '' }));
+        if (W.pendingIng) {
+          var search = document.getElementById('dw-q');
+          if (search && window.LK_UX && window.LK_UX.resetSearch) window.LK_UX.resetSearch(search);
+          W.pendingIng = ''; W.q = '';
+        }
         changed(); say(LIB.get(v).name + ' added'); return;
       case 'swap': {
         // Swap: the library opens on the part's ingredient, and the piece tapped there takes the part's place

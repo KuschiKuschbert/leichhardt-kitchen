@@ -2,7 +2,7 @@
 
 Prepared 2 November 2026 for `KuschiKuschbert/leichhardt-kitchen`.
 
-This is an execution brief, not a completed audit or a claim that fixes are live. The stack snapshot was checked against main commit `555636632c44ab79afc7750710056e6be1ea78fb`. Recheck the current branch, deployed version and open work before executing it. Use the following brief as the task for the engineering agent.
+This is an execution brief, not a completed audit or a claim that fixes are live. The stack snapshot was checked against main commit `555636632c44ab79afc7750710056e6be1ea78fb`. The guidance was subsequently reconciled with `b712b0ab5aa1aa8e6552761a55873fd3752d0ee6`, which merged the existing controls/council work. Recheck the current branch, deployed version and open work before executing it. Use the following brief as the task for the engineering agent.
 
 ## 1. Mission and limits
 
@@ -27,7 +27,7 @@ Read these existing contracts in particular:
 - The notes for supplier orders, wastage history, transfers and returns, function cancellation/printing, delivery records, shared prep attribution, admin intelligence and proofreader repairs before changing those features.
 - `README.md` sections for owner decisions, open items and older code awaiting consolidation. Reproduce listed issues before assuming they remain unfixed.
 
-Inspect open PRs and active branches first. At preparation, PR #440 (`ux/council-usability`) was in flight and included `docs/ux-council-audit.md`, a bounded council audit of 25 route/flow families. Establish whether it has merged, reuse its evidence where still valid, and explicitly close its untested areas. Do not duplicate or overwrite that work. Historical preview drafts are not shipping branches.
+Inspect open PRs and active branches first. PR #440 (`ux/council-usability`) merged during preparation and added `docs/ux-council-audit.md`, a bounded council audit of 25 route/flow families. Reconcile that work and any later changes, reuse its evidence where still valid, and explicitly close its untested areas. Do not duplicate or overwrite that work. Historical preview drafts are not shipping branches.
 
 Use an isolated worktree on a fresh topic branch from current `main`, as `CLAUDE.md` requires. Preserve other sessions' changes and worktrees. Record the starting commit, branch, deployed version, open related PRs and any environmental limitations. Never edit, commit or push directly to `main`.
 
