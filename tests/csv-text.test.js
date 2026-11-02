@@ -8,7 +8,7 @@ const ordinary = 'Crème, "large"\rFresh\nNotes';
 const extra = L.seed();
 extra[key('config', 'main')].people.find(p => p.id === 'ann').name = '@CSV person';
 text.concat([ordinary]).forEach((value, i) => {
-  extra[key('days', today, 'items', 'csv-' + i)] = { text: value, station: 'Larder', qty: '1 batch', recipe: '', addedBy: 'Sam', addedById: 'sam', addedAt: L.NOW - 60000 - i, done: false, deleted: false };
+  extra[key('days', today, 'items', 'csv-' + i)] = { text: value, station: 'Larder', qty: '1 batch', recipe: '', addedBy: i ? 'Sam' : ['=CSV array recorder'], addedById: 'sam', addedAt: L.NOW - 60000 - i, done: false, deleted: false };
   extra[key('waste', today, 'lines', 'csv-' + i)] = { text: value, amount: i, unit: 'kg', reason: 'excess', station: 'Larder', action: value, addedBy: 'Sam', addedById: 'sam', addedAt: L.NOW - 60000 - i, deleted: false };
 });
 // Legacy data may contain a signed number. Exporting it must not change its type or meaning.
@@ -58,6 +58,7 @@ function column(data, name) { const i = data[0].indexOf(name); if (i < 0) throw 
   let values = column(data, 'Line');
   text.forEach(value => ok(values.includes("'" + value), 'prep text stays literal: ' + JSON.stringify(value)));
   ok(values.includes(ordinary), 'ordinary Unicode, quotes and multiline text round-trip exactly');
+  ok(column(data, 'Written by').includes("'=CSV array recorder"), 'legacy non-string metadata is converted to literal text before export');
 
   await L.adminTab(p, 'team');
   data = await download(p, '[data-p="csv"][data-v="team"]');

@@ -3515,8 +3515,9 @@
   }
   // Report text stays literal in spreadsheets. Keep actual numbers numeric and leave the saved words unchanged.
   function csvCell(v) {
-    if (typeof v === 'string' && (/^[\s\u0000-\u001f\u007f]*[=+@-]/.test(v) || /^[\t\r\n]/.test(v))) v = "'" + v;
+    var numeric = typeof v === 'number';
     v = v == null ? '' : String(v);
+    if (!numeric && (/^[\s\u0000-\u001f\u007f]*[=+@-]/.test(v) || /^[\t\r\n]/.test(v))) v = "'" + v;
     return /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
   }
   function downloadCSV(name, rows) {
