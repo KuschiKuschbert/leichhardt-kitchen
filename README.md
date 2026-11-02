@@ -808,6 +808,10 @@ Done on 22 Oct 2026 by the head chef: the Browser key works only from `kuschikus
 
 Remove each item here once it is done.
 
+### Complete saved shells (2 November 2026)
+
+The public saved book now publishes one complete generation at a time. A failed cache write keeps the previous copy, and an expired response cannot overwrite a newer successful update. Open documents keep their original shell until navigation, including through worker restarts. Lazy modules, fonts and Firebase assets remain saved. [Storage, compatibility, checks and recovery](docs/saved-shell-generations.md).
+
 ### Bringing the code in line (22 Oct 2026)
 
 The coding rules in `CLAUDE.md` came from a check of the whole book on 21 Oct 2026. This is the older code that does not meet them yet, in the order to fix it. Each item is its own branch and pull request, with its tests. Remove an item once it is merged.
@@ -827,7 +831,7 @@ Still to do:
 
 - the admin panel's past days under the memory-only cache (28 Oct 2026, review of the no-signal fixes): `pastRead()` asks `getDocsFromCache` for a past day it read today (`lk.st.got`), which since #387 finds nothing after a reload, so opening the admin panel again the same day reads every past day with lines from the server again (about 200 reads in the read budget's seed, measured on the emulator). Keep the past days on the phone per day, like `lk.past`, and make the stand-in in `tests/fake/` drop its copy on a reload in the same branch, so the admin-again row of `tests/read-budget.test.js` (31 now) counts it.
 - `healCache()` in `js/prep.js` (older than the no-signal fixes): on a Firestore internal error it reloads at once, without `lkServerUp()` and over changes waiting to send. Hold it while `LK_PREP.unsent()`, and until the server is there.
-- three nits from the review of the no-signal fixes (28 Oct 2026), each needing more than a line: the cut-off bar keeps its no-signal words after its listener is refused (`cutWatch()`'s error callback leaves `cutState` at `'offline'`; the stand-in needs to refuse a listener started with no signal once the signal is back to check it); `loadAdmins()`, `pickName()` and `loadMine()` say No signal for every failure that is not a refusal, the daily read limit too (say it only for `unavailable` or `deadline-exceeded`); and Update now during a worker's round that stalls joins that round, which gives up only after 30 seconds, so a second tap 12 seconds later still says No signal (a round the book asks for should not join one older than 8 seconds, with a round number so an old round never saves over a newer one).
+- two nits from the review of the no-signal fixes (28 Oct 2026), each needing more than a line: the cut-off bar keeps its no-signal words after its listener is refused (`cutWatch()`'s error callback leaves `cutState` at `'offline'`; the stand-in needs to refuse a listener started with no signal once the signal is back to check it); `loadAdmins()`, `pickName()` and `loadMine()` say No signal for every failure that is not a refusal, the daily read limit too (say it only for `unavailable` or `deadline-exceeded`).
 
 Code that breaks a coding rule from now on is fixed in the same branch, or added here.
 
