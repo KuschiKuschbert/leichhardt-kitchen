@@ -76,8 +76,13 @@ const same = (a, b) => (a || []).slice().sort().join(',') === b.slice().sort().j
   p = await L.open(b, '#/admin', { admin: true, extra: cfg(), wait: 1800 });
   await L.adminTab(p, 'people');
   await L.settle(p, 300);
+  // Finish the returning owner's canonical setup save before editing this fixture's original Staff row.
+  await L.waitFor(p, () => { const c = LK_PREP.state.config; return ['addIds', 'tickIds', 'delIds'].every(k => c[k].includes(c.headId)) && !LK_PREP.unsent(); });
+  // Match the SDK: unrelated writes do not re-emit identical config. Real data/auth/metadata changes still arrive.
+  await p.evaluate(() => { __fake.quiet = true; });
   await L.pick(p, '#a-r2', 'sous');
-  await L.settle(p, 200);
+  await L.waitFor(p, () => LK_PREP.state.draft.people.find(x => x.id === 'bo').role === 'sous' && !document.querySelector('[data-p="a-save"]').disabled);
+  await p.evaluate(() => { __fake.quiet = false; });
   await p.click('[data-p="a-save"]');
   await L.settle(p, 400);
   s = await store(p);
