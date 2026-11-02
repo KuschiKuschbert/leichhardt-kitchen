@@ -25,6 +25,7 @@ The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the
 | Shared controls, deferred search, table interactions and council audit | `docs/adaptive-controls.md`, `docs/ux-council-audit.md` |
 | Suppliers, order history, cut-off sheets | `docs/supplier-workspace.md` |
 | Wastage history, ranges, CSV | `docs/wastage-history.md` |
+| CSV text, quoting and numeric values across reports | `docs/report-exports.md` |
 | Transfer storage and returns | `docs/transfer-returns.md` |
 | Function cancel, Undo, delete | `docs/function-cancellation.md` |
 | Function print copy | `docs/function-printing.md` |
