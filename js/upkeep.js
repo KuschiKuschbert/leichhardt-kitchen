@@ -141,7 +141,7 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
 // otherwise when nobody has touched it for 2 minutes and nothing is being typed. A bar offers "Update now" meanwhile.
 // The same answer carries the server's time, which keeps the book's clock right (LK_TIME, at the top).
 (function () {
-  var base = null, found = false, hiddenAt = 0, lastCheck = 0, bar = null;
+  var base = null, found = false, hiddenAt = 0, lastCheck = 0, bar = null, shellUnavailable = false;
   // a version's stamp, from the server's answer or from the saved copy of index.html (a zipped answer marks its ETag weak, W/)
   function stampOf(r) { return (r.headers.get('last-modified') || '') + '|' + (r.headers.get('etag') || '').replace(/^W\//, ''); }
   function stamp() {
@@ -154,7 +154,28 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
      answer as the version running, and missed the update until 04:00. A round that saved the new version first still
      says so with lk-new. Gives '' when there is no saved copy (no worker, or the first visit). */
   var savedAt = Promise.resolve('');
-  try { if (navigator.serviceWorker && navigator.serviceWorker.controller && window.caches) savedAt = caches.match('./index.html').then(function (r) { return r ? stampOf(r) : ''; }, function () { return ''; }); } catch (e) {}
+  try {
+    if (navigator.serviceWorker && navigator.serviceWorker.controller && window.caches) savedAt = new Promise(function (resolve) {
+      var done = false, old = null, wait = null, channel = null;
+      function finish(value) {
+        if (done) return; done = true; clearTimeout(old); clearTimeout(wait);
+        if (channel) channel.port1.close(); resolve(value);
+      }
+      function legacy() { caches.match('./index.html').then(function (r) { finish(r ? stampOf(r) : ''); }, function () { finish(''); }); }
+      // The worker pins this document to its complete generation. A global caches.match can find an older generation.
+      // Older workers have no opened message, so retain their existing saved-index fallback.
+      if (!window.MessageChannel) { legacy(); return; }
+      channel = new MessageChannel();
+      old = setTimeout(legacy, 500); wait = setTimeout(function () { finish(''); }, 8000);
+      channel.port1.onmessage = function (e) {
+        var data = e.data || {};
+        if (data.started) { clearTimeout(old); return; }
+        finish((data.modified || '') + '|' + (data.etag || '').replace(/^W\//, ''));
+      };
+      try { navigator.serviceWorker.controller.postMessage({ lk: 'opened' }, [channel.port2]); }
+      catch (e) { legacy(); }
+    });
+  } catch (e) {}
   // Update now's words while a change waits to send (head chef, 28 Oct 2026). On a phone they take two lines: the
   // no-break spaces keep the second sentence whole, so the line breaks after "Not sent yet."
   var UNSENT_NOTE = 'Not sent yet. It\u00a0updates\u00a0once\u00a0sent.';
@@ -254,7 +275,7 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
     clearTimeout(calm);
     calm = setTimeout(reset, 4000);
   }
-  function reset() { barText.textContent = 'New version available.'; barBtn.textContent = 'Update now'; }
+  function reset() { barText.textContent = shellUnavailable ? 'Saved book unavailable. Keep this tab open.' : 'New version available.'; barBtn.textContent = shellUnavailable ? 'Retry update' : 'Update now'; }
   // a note while the check and the reload run (each 8 seconds at most): the strip as it was after 12 seconds, in case
   // the reload was turned down
   function busy(msg) {
@@ -269,6 +290,7 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
     var t = barText = document.createElement('span'); t.textContent = 'New version available.';
     var b = barBtn = document.createElement('button'); b.type = 'button'; b.textContent = 'Update now';
     b.onclick = updateNow;
+    reset();
     bar.appendChild(t); bar.appendChild(b); document.body.insertBefore(bar, document.getElementById('app') || document.body.firstChild);
     // the strip keeps its usual height, taller only when its words need more room (Extra large text in a wide font):
     // the bars that stick under it follow its real height (--upd-h, 48 px in css/app.css until this has measured it)
@@ -397,7 +419,12 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
   // it is the same as a new version found by the check above.
   var opened = Date.now();
   if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', function (e) {
+    if (e.data === 'lk-shell-unavailable') {
+      // A missing binding/member cannot be repaired by mixing files or an automatic reload over private work.
+      shellUnavailable = true; showBar(); reset(); return;
+    }
     if (e.data !== 'lk-new') return;
+    if (shellUnavailable) { shellUnavailable = false; if (barText) reset(); }
     found = true;
     if (Date.now() - opened < 8000 && lkTouch <= opened && !lkTyping() && navigator.onLine !== false) {
       try { var last = +localStorage.getItem('lk.upd.last') || 0; if (Date.now() - last < 600000) { showBar(); return; } localStorage.setItem('lk.upd.last', String(Date.now())); } catch (err) {}

@@ -1,0 +1,42 @@
+# Staff Add, Tick and Delete permissions
+
+Approved 2 November 2026 as part of the whole-app improvement plan. Source implementation and local verification are recorded in the release PR. Do not infer live publication from this note.
+
+The page and Firestore use the owner's saved `addIds`, `tickIds` and `delIds` in private `config/main`. These are canonical capability lists, alongside `staffIds`, `sousIds`, `headId`, `fnIds` and `fnOnlyIds`. They add no client reads or listeners. Missing lists grant no ordinary capability. The canonical head profile and a matching verified admin device retain their full permissions; a sous chef's individual unticked capabilities remain unticked.
+
+A sous chef may still add people, update the staff list and request changes to roles and capability ticks. Only the owner's save or existing **Keep these changes** action updates the canonical capabilities. **Undo them** restores the requested ticks to the owner's saved values. A new staff member can set their PIN and read their allowed pages while waiting for the owner to keep their operational capabilities. The minimal sign-in roster gains no private settings or operational data.
+
+| Action | Required authority |
+| --- | --- |
+| Add prep/order lines, rollover, quantities, section, spelling or urgent changes | Add |
+| Prep completion, reported-worker attribution and permitted untick | Tick, plus existing recorder/time rules |
+| Remove or restore prep | Delete |
+| Mark an order ordered or unordered | Existing head/sous authority |
+| Remove or restore an order line | Head/sous authority and Delete |
+| Log wastage or a transfer | Add |
+| Confirm or undo a transfer return | Tick, plus existing return/recorder/time rules |
+| Record delivery temperatures | Every valid personal login, including View only and Functions |
+
+These controls govern the task actions above. Existing service and personal actions keep their separate contracts: every personal login may mark a function round Sent, and permitted sign-offs, drinks, kitchen mail and activity still work. View only is not a prohibition on every database write.
+
+Each changed field is checked. A completion cannot carry an unrelated edit or removal. Original prep/order recorder fields stay fixed. An Add-only person may take back their own recent, unfinished addition using its existing Undo; that is a removal-only change checked against the stored recorder and the server's two-minute window. It does not grant general removal rights.
+
+Automatic consolidation of already duplicated prep lines requires both Add and Delete because it removes other lines. Leads, chefs and other people with those capabilities retain the merger and its Undo. Ordinary Add still recognises an existing compatible line, fills its missing amount or section, and offers **Add anyway**. A client merge marker grants no extra authority.
+
+Function managers retain their separate permission to create/edit bookings and their paired generated prep/order changes. Head/sous cancellation retains its paired effects without requiring ordinary Add or a separate Functions editing grant. Each booking carries `effects`: the exact generated prep bodies and normal, cancellation and restoration order bodies, published by its function editor. Chef status changes reuse those bodies under the matching booking revision, exact generated identities, relevant dates and status. Completed ticks, histories, past orders and correction notices stay intact, without new client reads or listeners. The server checks the matching booking before/after state within the atomic batch. Delivery, contact privacy, sign-offs, drinks and kitchen mail keep their existing contracts.
+
+## Preparation and release
+
+1. Verify the browser consumers, capability rules, existing rules matrix and required final CI. Keep a known-good client revision. Review the owner's existing personal capability settings.
+2. Before production preparation, run the reviewed Nightly backup on the actual GitHub runner and confirm authenticated decrypt plus byte-for-byte comparison succeeded before artifact upload. Retain the encrypted artifact and its metadata. The separate guarded synthetic recovery rehearsal must cover the included schema, canonical fields, histories and contacts. This does not claim that production records were restored. Check backup coverage for the affected `config/main`, all bookings with histories and contacts, and current recipe assets; the intentionally omitted login roster is regenerated from config by the existing bootstrap. Transactions protect concurrent legitimate saves; release checks must not assume that all phones stop editing during deployment. A backup is a recovery snapshot, not a lock on current records.
+3. In the existing authorised deployment environment, dispatch **Publish rules** with mode **preview** on the exact reviewed ref (equivalent to `node scripts/access-bootstrap.mjs --dry-run`). It changes nothing and logs counts only. Review its counts against the backup and approved settings. Each booking query page is at most 80 documents; a run refuses more than 4,000 bookings. Unexpected counts, invalid canonical data, an incomplete backup or failed recovery rehearsal block publication for investigation.
+4. Manually dispatch the reviewed branch's **Publish rules** workflow with mode **publish** before merging the client. Preparation transactionally seeds only missing capability lists and materialises or refreshes derived booking effects, preserving versions, contacts, histories and existing approvals. Each booking query page and its writes share a transaction, so concurrent saves retry rather than being overwritten. The workflow publishes strict rules, verifies the foundation read-only, and runs the live Lock probe. A later automatic workflow is not a substitute for the backup, reviewed preview and explicit first publication.
+5. After rule propagation, dispatch **Publish rules** with mode **verify** on the same reviewed ref (equivalent to `node scripts/access-bootstrap.mjs --verify`) before merging the compatible client. Incomplete foundation data blocks the release. If an old save removed metadata before strict rules reached it, rerun a reviewed preview and additive preparation under strict rules, then verify again. Concurrent changes are preserved or refused atomically, and missing metadata grants no fallback authority. No record is deleted or renamed.
+6. Confirm preparation and the actual publish job succeeded, then merge the compatible client. Old full People/settings or booking saves that omit canonical fields, and old editor attempts to create unprepared bookings, are refused atomically. Retain the draft and refresh before retrying. Functions editor API 10 (`fnedit.js?v=6`) shows **Reload the book** for mixed app/editor/model versions before a save, retaining the local draft. An older offline editor must reconnect and refresh before saving under strict rules.
+7. Verify the exact Pages revision, live browser results, actual rule-publication job and live Lock probe separately. Confirm the saved capability settings through the authorised owner view. The signed-out probe is not a live role-matrix test.
+
+The client carries canonical lists through owner saves, initial head setup and kitchen-PIN copies. Booking effects are fields in the complete booking, so full-document backups, histories and PIN copies retain them. Preview, preparation and verification each cost one config read plus one bounded scan of at most 4,000 bookings, plus one overflow sentinel when checking the ceiling. Preparation writes only missing or stale derived effect sets, with no per-booking rereads. Public recipe mirroring keeps its existing costs during apply and is skipped by preview/verification. The client uses its existing configuration and booking listeners.
+
+## Rollback
+
+Keep the canonical lists, booking effects and stricter capability rules. Correct a client defect through a compatible branch/PR, or use a reviewed previous client patched to retain the lists and consult them. Do not restore a client-only permission fallback. Reverting code does not restore data. A production data restore needs a separate reviewed scope, verified authenticated backup, a controlled write window and post-restore comparison; preserve later legitimate records and histories. Preserve the delivery exception and function-pair authority while repairing a regression.

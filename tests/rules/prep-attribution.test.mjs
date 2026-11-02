@@ -17,14 +17,14 @@ const people = [role('hd', 'Hedy', 'head'), role('sam', 'Sam', 'sous'), role('an
   role('vic', 'Vic', 'view', { add: false, tick: false }), role('fay', 'Fay', 'fnc', { add: false, tick: false, fn: true }), role('past', 'Past worker', 'staff', { active: false })];
 const ids = people.filter(p => p.active).map(p => p.id);
 const cfg = { people, staffIds: ids, sousIds: ['hd', 'sam'], headId: 'hd', fnIds: ['fay'], fnOnlyIds: ['fay'] };
+Object.assign(cfg, Object.fromEntries(['add', 'tick', 'del'].map(cap => [cap + 'Ids', people.filter(p => p.active && !cfg.fnOnlyIds.includes(p.id) && (p.id === cfg.headId || p[cap] === true)).map(p => p.id)])));
 const roles = [
   { id: 'signedout', who: '', auth: false, allowed: false },
   { id: 'anonymous', who: '', auth: true, allowed: false },
   { id: 'expired', who: 'ann', auth: true, expired: true, allowed: false },
   { id: 'ann', who: 'ann', auth: true, allowed: true },
   { id: 'lou', who: 'lou', auth: true, allowed: true },
-  // Per-person add/tick flags remain page-enforced, as in the current rules/client-shapes contract.
-  { id: 'vic', who: 'vic', auth: true, allowed: true },
+  { id: 'vic', who: 'vic', auth: true, allowed: false },
   { id: 'fay', who: 'fay', auth: true, allowed: false },
   { id: 'sam', who: 'sam', auth: true, allowed: true },
   { id: 'headpin', who: 'hd', auth: true, allowed: true },

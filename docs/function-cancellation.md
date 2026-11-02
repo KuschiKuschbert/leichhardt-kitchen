@@ -23,3 +23,7 @@ Delete and Restore each read the latest function once, only on the action. They 
 Visual checks with made-up bookings and people: [Functions on a phone](images/function-cancel-phone.png) and [the access checkbox on desktop](images/function-access-desktop.png). Browser journeys cover 390, 768 and 1280 px layouts.
 
 Before release: run the browser journeys and Firestore emulator checks, publish the new rules from the feature branch with the existing Publish rules workflow, verify its lock probe, then merge the app. Rollback is a revert on a fresh branch; publish the preceding rules too if cancellation access must be removed.
+
+## Saved staff capabilities
+
+The approved [staff capability contract](staff-capabilities.md) adds booking-owned canonical generated bodies for cancellation and Undo by chefs without ordinary Add/Delete. Function editors publish them on each save; preparation adds them to existing bookings without changing versions or history. Status changes retain the matching bodies, identities, dates, completed ticks and correction notices. Functions editor API 10 requires a compatible app and model; an older cached editor keeps its draft and asks for a refresh before saving. Follow the preparation and publication order in that contract.
