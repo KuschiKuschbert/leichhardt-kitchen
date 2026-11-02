@@ -14,7 +14,7 @@ The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the
 
 | Changing | Read |
 | --- | --- |
-| Whole-app audit, consistency, redundancy, security and performance review | `docs/whole-app-audit.md` (execution brief, not completed audit evidence) |
+| Whole-app audit, consistency, redundancy, security and performance review | `docs/whole-app-audit.md` (brief), `docs/ux-council-audit.md` (evidence), `docs/whole-app-inventory.md` (route coverage) |
 | Login, who can read or write what, recipes, function writes | `docs/private-kitchen-access.md` (wins over older wording below) |
 | Device choice, Google persistence, daily PIN unlock, Update confirmation | `docs/device-sessions.md` (2 Nov 2026, replaces earlier session wording) |
 | Multiplying recipe amounts | `docs/recipe-multiplier.md` |
@@ -25,6 +25,7 @@ The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the
 | Shared controls, deferred search, table interactions and council audit | `docs/adaptive-controls.md`, `docs/ux-council-audit.md` |
 | Suppliers, order history, cut-off sheets | `docs/supplier-workspace.md` |
 | Wastage history, ranges, CSV | `docs/wastage-history.md` |
+| CSV text, quoting and numeric values across reports | `docs/report-exports.md` |
 | Transfer storage and returns | `docs/transfer-returns.md` |
 | Function cancel, Undo, delete | `docs/function-cancellation.md` |
 | Function print copy | `docs/function-printing.md` |
