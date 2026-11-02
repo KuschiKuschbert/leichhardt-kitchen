@@ -1,4 +1,11 @@
 /* Runs in <head> before anything draws (moved out of index.html for the security header, 20 Oct 2026). */
+// A known lost connection stops decorative waiting motion immediately. This never tests or retries the network.
+(function () {
+  function motionConnection() { document.documentElement.classList.toggle('ink-offline', navigator.onLine === false); }
+  motionConnection();
+  window.addEventListener('online', motionConnection);
+  window.addEventListener('offline', motionConnection);
+})();
 // Catch the browser's install offer the moment it arrives, before the app scripts load.
 // Chrome only lets the page open its install box after preventDefault() has been called on the event.
 window.lkInstall = null;

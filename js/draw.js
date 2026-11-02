@@ -28,6 +28,8 @@
   var API = 5;
   var D = window.LK_DATA, X = window.LK_RX, A = window.LK_APP, P = window.LK_PREP, LIB = window.LK_LIB;
   var esc = A.esc;
+  // Optional in lazy files: an older saved shell keeps its existing text feedback.
+  function inkLabel(text, icon, state) { return window.LK_MOTION ? window.LK_MOTION.label(text, icon || 'save', state || (navigator.onLine === false ? 'still' : 'busy')) : esc(text); }
   function B() { return P.book(); }
   function clone(x) { return JSON.parse(JSON.stringify(x)); }
   function n1(x) { return Math.round(x * 10) / 10; }
@@ -530,11 +532,11 @@
   /* ---------- the page ---------- */
   function say(m) { try { B().say(m); } catch (e) {} }
   var toastEl = null, toastT = null;
-  function toast(m) {
+  function toast(m, confirmed) {
     if (W.suspended || workLock()) return;
     say(m);
     if (!toastEl) { toastEl = document.createElement('div'); toastEl.className = 'p-toasts mg-toasts'; document.body.appendChild(toastEl); }
-    toastEl.innerHTML = '<div class="p-toast p-toast-plain" role="presentation">' + esc(m) + '</div>';
+    toastEl.innerHTML = '<div class="p-toast p-toast-plain" role="presentation">' + (confirmed ? inkLabel(m, 'save', 'done') : esc(m)) + '</div>';
     clearTimeout(toastT); toastT = setTimeout(function () { if (toastEl) toastEl.innerHTML = ''; }, 4000);
   }
   function viewBox() {
@@ -565,7 +567,7 @@
       '<g class="dw-ovl">' + selOverlay() + '</g></svg>' +
       '<div class="dw-zoom" role="group" aria-label="Zoom"><button type="button" class="p-x" data-dw="zout" aria-label="Zoom out">-</button><button type="button" class="p-x" data-dw="fit">Fit</button><button type="button" class="p-x" data-dw="zin" aria-label="Zoom in">+</button></div></div>';
   }
-  function btn(a, label, o) { o = o || {}; return '<button type="button" class="' + (o.cls || 'p-x') + '" data-dw="' + a + '"' + (o.v != null ? ' data-v="' + esc(o.v) + '"' : '') + (o.on != null ? ' aria-pressed="' + !!o.on + '"' : '') + (o.dis ? ' disabled' : '') + (o.aria ? ' aria-label="' + esc(o.aria) + '"' : '') + '>' + esc(label) + '</button>'; }
+  function btn(a, label, o) { o = o || {}; return '<button type="button" class="' + (o.cls || 'p-x') + (o.busy != null ? ' ink-busy-button' : '') + '" data-dw="' + a + '"' + (o.v != null ? ' data-v="' + esc(o.v) + '"' : '') + (o.on != null ? ' aria-pressed="' + !!o.on + '"' : '') + (o.dis ? ' disabled' : '') + (o.busy ? ' aria-busy="true"' : '') + (o.aria ? ' aria-label="' + esc(o.aria) + '"' : '') + '>' + (o.busy ? inkLabel('Saving...') : esc(label)) + '</button>'; }
   function toolsHTML() {
     var side = W.d.slot === 'side' || W.d.slot === 'build';
     return '<div class="dw-tools" role="toolbar" aria-label="Drawing tools">' +
@@ -640,7 +642,7 @@
         return '<label class="field"><span class="label">' + nm + '</span><select class="search" data-dwf="surf.' + k + '">' + opts[k].map(function (v) { return '<option value="' + esc(v) + '"' + (String(s[k]) === String(v) ? ' selected' : '') + '>' + esc(v) + '</option>'; }).join('') + '</select></label>';
       }).join('') + '</div>' : '') +
       '<label class="mg-check"><input type="checkbox" data-dwf="fitfood"' + (W.fitFood !== false ? ' checked' : '') + '> Fit the food to a new size</label>' +
-      (W.wsave ? '<div class="dw-wsave"><label class="field"><span class="label">Name for this servingware</span><input class="search" data-dwf="wname" maxlength="60" value="' + esc(W.wname || '') + '" placeholder="For example: Pub oval, wide rim"></label><div class="btn-row">' + btn('ware-save-go', 'Save it', { cls: 'btn dark', dis: !!W.busy }) + btn('ware-save-no', 'Cancel', { cls: 'btn' }) + '</div></div>'
+      (W.wsave ? '<div class="dw-wsave"><label class="field"><span class="label">Name for this servingware</span><input class="search" data-dwf="wname" maxlength="60" value="' + esc(W.wname || '') + '" placeholder="For example: Pub oval, wide rim"></label><div class="btn-row">' + btn('ware-save-go', 'Save it', { cls: 'btn dark', dis: !!W.busy, busy: !!W.busy }) + btn('ware-save-no', 'Cancel', { cls: 'btn' }) + '</div></div>'
         : '<div class="btn-row">' + btn('ware-save', 'Save this servingware', { cls: 'btn' }) + '</div>') + '</section>';
   }
   function colourHTML() {
@@ -704,7 +706,7 @@
     return '<div class="dw"><div class="mg-head"><h2 id="rtitle" tabindex="-1">' + esc((r ? r.name : d.rid) + ': ' + SLOT_NAME[d.slot].toLowerCase()) + '</h2></div>' + kept + conflict + newer +
       '<div class="dw-main"><div class="dw-left">' + canvasHTML() + toolsHTML() + selHTML() + '</div><div class="dw-right">' + smart('panel') + startHTML() + missingHTML() + checkHTML() + panelHTML() + '</div></div>' +
       '<div class="mg-bar dw-bar"><span class="mg-state" role="status">' + esc(state) + '</span>' + (W.msg ? '<span class="p-err" role="alert">' + esc(W.msg) + '</span>' : '') +
-      '<div class="btn-row"><button type="button" class="btn dark" data-dw="save"' + (W.saving || empty || unchanged(d) ? ' disabled' : '') + '>' + (W.saving ? 'Saving...' : 'Save') + '</button></div></div></div>';
+      '<div class="btn-row"><button type="button" class="btn dark ink-busy-button" data-dw="save"' + (W.saving ? ' disabled aria-busy="true"' : empty || unchanged(d) ? ' disabled' : '') + '>' + (W.saving ? inkLabel('Saving...') : 'Save') + '</button></div></div></div>';
   }
   // drawing the page takes a typed box away, and its change event can ask for another draw while this one runs: that
   // one is left out (the page drawn now already has the change)
@@ -1283,7 +1285,7 @@
       '<label class="field"><span class="label">Name</span><input class="search" data-dwf="pc.name" maxlength="60" value="' + esc(pc.name) + '" placeholder="For example: Leichhardt slaw, house side"></label>' +
       '<label class="field"><span class="label">Category</span><select class="search" data-dwf="pc.cat">' + LIB.cats.map(function (c) { return '<option value="' + c.id + '"' + (pc.cat === c.id ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select></label>' +
       '<label class="field"><span class="label">Other words to find it by</span><input class="search" data-dwf="pc.kw" maxlength="300" value="' + esc(pc.kw) + '"></label>' +
-      '<div class="btn-row">' + btn('pc-save', 'Save to the library', { cls: 'btn dark', dis: !!W.busy }) + btn('pc-cancel', 'Cancel', { cls: 'btn' }) + '</div></section>';
+      '<div class="btn-row">' + btn('pc-save', 'Save to the library', { cls: 'btn dark', dis: !!W.busy, busy: !!W.busy }) + btn('pc-cancel', 'Cancel', { cls: 'btn' }) + '</div></section>';
   }
   function savePiece() {
     var pc = W.piece, api = B(), d = W.d, owner = W.identity, context = api.writeContext ? api.writeContext() : null;
@@ -1301,7 +1303,7 @@
       W.busy = false; out.id = id; MINE.lib.push(out); mineToLib();
       if (pc.from === 'svg' && W.d) { before(); addItem('my-' + id, {}); changed(); }
       W.piece = null; W.panel = 'lib'; W.q = name; W.cat = ''; W.sub = '';
-      toast('Saved to the library: ' + name + '.'); draw();
+      toast('Saved to the library: ' + name + '.', true); draw();
     }, function (err) { if (!owns(d, owner)) return; W.busy = false; W.msg = refused(err, 'library pieces'); draw(); });
   }
 
@@ -1315,7 +1317,7 @@
     api.ready().then(function () { return writeOps(api, [['set', api.docRef('drawlib', id), out]], context, owner); }).then(function () {
       if (!owns(d, owner)) return;
       W.busy = false; out.id = id; MINE.lib.push(out); mineToLib(); W.wsave = false; W.wname = ''; W.wareFam = 'saved';
-      toast('Servingware saved: ' + name + '.'); draw();
+      toast('Servingware saved: ' + name + '.', true); draw();
     }, function (err) { if (!owns(d, owner)) return; W.busy = false; W.msg = refused(err, 'servingware'); draw(); });
   }
 
@@ -1323,7 +1325,7 @@
   function tplHTML() {
     return '<section class="dw-panel" aria-labelledby="dw-h-tpl"><h3 class="h3" id="dw-h-tpl">Save as a template</h3><p class="hint">New drawings can start from a copy of it. The ingredient labels are left off, so it fits any recipe. This drawing stays as it is.</p>' +
       '<label class="field"><span class="label">Template name</span><input class="search" data-dwf="tplname" maxlength="80" value="' + esc(W.tplName == null ? W.d.name : W.tplName) + '"></label>' +
-      '<div class="btn-row">' + btn('tpl-save', 'Save the template', { cls: 'btn dark', dis: !!W.busy }) + '</div></section>';
+      '<div class="btn-row">' + btn('tpl-save', 'Save the template', { cls: 'btn dark', dis: !!W.busy, busy: !!W.busy }) + '</div></section>';
   }
   function saveTemplate() {
     var d = W.d, api = B(), owner = W.identity, context = api.writeContext ? api.writeContext() : null, name = String(W.tplName == null ? d.name : W.tplName).replace(/\s+/g, ' ').trim().slice(0, 80);
@@ -1339,7 +1341,7 @@
     api.ready().then(function () { return writeOps(api, [['set', api.docRef('drawtpl', id), out]], context, owner); }).then(function () {
       if (!owns(d, owner)) return;
       W.busy = false; MINE.tpl.push(tplRec(id, out)); W.panel = ''; W.tplName = null;
-      toast('Saved as a template: ' + name + '. New drawings can start from it.'); draw();
+      toast('Saved as a template: ' + name + '. New drawings can start from it.', true); draw();
     }, function (err) { if (!owns(d, owner)) return; W.busy = false; W.msg = refused(err, 'templates'); draw(); });
   }
 
@@ -1432,7 +1434,7 @@
       if (done.conflict) { W.saving = ''; W.conflict = done.conflict; draw(); return; }
       W.saving = ''; W.conflict = null; var wasNew = d.isNew, oldKey = draftKey(); d.isNew = false; d.saved = submitted; d.followed = false;
       lsSet(oldKey, ''); lsSet(draftKey(), '');
-      toast('Saved. Version ' + done.v + '.' + (done.rp ? ' The recipe shows it.' : ''));
+      toast('Saved. Version ' + done.v + '.' + (done.rp ? ' The recipe shows it.' : ''), true);
       if (wasNew) {
         if (W.root && !W.suspended && !workLock()) { W.key = 'draw/' + d.id; history.replaceState(history.state, '', '#/manage/draw/' + encodeURIComponent(d.id)); if (A.noteRoute) A.noteRoute(true); }
         else d.savedRoute = ['draw', d.id];
@@ -1495,7 +1497,7 @@
     var t = W.root.querySelector('#rtitle'); if (t) t.focus({ preventScroll: true });
     window.scrollTo(0, 0);
   }
-  function note(title, text) { return '<div class="mg-wrap"><h2 id="rtitle" tabindex="-1">' + esc(title) + '</h2><p>' + esc(text) + '</p></div>'; }
+  function note(title, text, waiting) { return '<div class="mg-wrap"><h2 id="rtitle" tabindex="-1">' + esc(title) + '</h2>' + (waiting && window.LK_MOTION ? window.LK_MOTION.status(text, { icon: 'recipes', state: navigator.onLine === false ? 'still' : 'busy', rows: 3 }) : '<p>' + esc(text) + '</p>') + '</div>'; }
   function mount(root, sub) {
     var key = sub.join('/');
     var owner = identity();
@@ -1509,7 +1511,7 @@
     if (W.d && W.key !== key && dirty()) keepNow();
     W.root = root;
     if (W.key === key && W.d) { draw(); return; }
-    if (W.key === key && W.load) { root.innerHTML = note('Opening the drawing', 'Reading it from the book...'); return; }
+    if (W.key === key && W.load) { root.innerHTML = note('Opening the drawing', 'Reading it from the book...', true); return; }
     W.key = key; W.d = null; W.sel = []; W.undo = []; W.redo = []; W.view = { z: 1, x: 0, y: 0 }; W.panel = ''; W.msg = ''; W.saving = ''; W.check = null; W.conflict = null; W.q = ''; W.cat = ''; W.sub = ''; W.more = 0; W.pendingIng = ''; W.swap = null; W.wareFam = '';
     W.started = false; W.startOpen = false; W.piece = null; W.fromSel = ''; W.tplName = null; W.reuse = ''; W.wsave = false; W.wname = ''; W.busy = false;
     // read again each time a drawing opens, so a template hidden on the manage page is not offered
@@ -1523,7 +1525,7 @@
       return;
     }
     var id = sub[1] || '', api = B(), load = W.load = {};
-    root.innerHTML = note('Opening the drawing', 'Reading it from the book...');
+    root.innerHTML = note('Opening the drawing', 'Reading it from the book...', true);
     api.ready().then(function () { return api.fs().getDoc(api.docRef('drawings', id)); }).then(function (sn) {
       if (W.key !== key || W.load !== load || W.identity !== owner || identity() !== owner) return;
       W.load = null;

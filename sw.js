@@ -3,10 +3,13 @@
    cannot publish an all-or-nothing update, and an expired round must never select files after a newer round.
    lk-book-v8 retains already saved lazy modules, Firebase files and fonts. Neither store holds kitchen records. */
 var CACHE = 'lk-book-v8';
-var SHELL = ['./', './index.html', 'css/app.css', 'js/data.js', 'js/art.js', 'js/overlay.js', 'js/controls.js', 'js/device.js', 'js/app.js', 'js/amounts.js', 'js/learn.js', 'js/cutoffs.js', 'js/prep.js', 'js/functions.js', 'js/firebase-config.js', 'js/boot.js', 'js/upkeep.js', 'icon.svg', 'manifest.webmanifest', 'icons/icon-192.png'];
+var SHELL = ['./', './index.html', 'css/app.css', 'js/data.js', 'js/art.js', 'js/overlay.js', 'js/controls.js', 'js/motion.js', 'js/device.js', 'js/app.js', 'js/amounts.js', 'js/learn.js', 'js/cutoffs.js', 'js/prep.js', 'js/functions.js', 'js/firebase-config.js', 'js/boot.js', 'js/upkeep.js', 'icon.svg', 'manifest.webmanifest', 'icons/icon-192.png'];
 var SHELL_DB = 'lk-shell-v1-' + encodeURIComponent(new URL(self.registration.scope).pathname);
 var SHELL_PREFIX = SHELL_DB + '-', shellDBPromise = null, shellState = null, shellPins = {};
 var shellFiles = SHELL.filter(function (f) { return f !== './'; });
+// The first immutable-generation worker had no manifest. Keep its exact required list for compatible recovery.
+var PRE_MANIFEST_FILES = ['./index.html', 'css/app.css', 'js/data.js', 'js/art.js', 'js/overlay.js', 'js/controls.js', 'js/device.js', 'js/app.js', 'js/amounts.js', 'js/learn.js', 'js/cutoffs.js', 'js/prep.js', 'js/functions.js', 'js/firebase-config.js', 'js/boot.js', 'js/upkeep.js', 'icon.svg', 'manifest.webmanifest', 'icons/icon-192.png'];
+var manifestKey = new URL('__lk-shell-manifest', self.registration.scope).href;
 var stateKey = new URL('__lk-shell-state', self.registration.scope).href;
 var pinPrefix = new URL('__lk-shell-client/', self.registration.scope).href;
 function pinKey(id) { return pinPrefix + encodeURIComponent(id); }
@@ -47,14 +50,42 @@ function fallbackShellState() {
   return caches.open(CACHE).then(function (cache) { return cache.match(stateKey); }).then(function (r) { return r ? r.json() : null; }).catch(function () { return null; }).then(function (s) { return s || { active: CACHE, previous: '' }; });
 }
 function stamp(res) { return res ? (res.headers.get('etag') || '') + '|' + (res.headers.get('last-modified') || '') : ''; }
+function shellManifestFiles(manifest) {
+  if (!manifest || manifest.v !== 1 || !Array.isArray(manifest.files) || !manifest.files.length || manifest.files.length > 128) return null;
+  var urls = [], scope = new URL(self.registration.scope);
+  var valid = manifest.files.every(function (file) {
+    if (typeof file !== 'string' || !file) return false;
+    var url; try { url = new URL(file, scope); } catch (e) { return false; }
+    if (url.origin !== scope.origin || url.pathname.indexOf(scope.pathname) !== 0 || url.search || url.hash || urls.indexOf(url.href) >= 0) return false;
+    urls.push(url.href); return true;
+  });
+  return valid && urls.indexOf(new URL('./index.html', scope).href) >= 0 ? urls : null;
+}
+function shellIndexFits(text, expected) {
+  // Only startup scripts and stylesheets belong here. Touch icons and external fonts have other cache contracts.
+  function attr(tag, name) { var m = tag.match(new RegExp('\\b' + name + '\\s*=\\s*(?:"([^"]*)"|\'([^\']*)\'|([^\\s>]+))', 'i')); return m ? m[1] == null ? m[2] == null ? m[3] : m[2] : m[1] : ''; }
+  return (text.match(/<(?:script|link)\b[^>]*>/gi) || []).every(function (tag) {
+    var file = /^<script\b/i.test(tag) ? attr(tag, 'src') : /(^|\s)stylesheet(\s|$)/i.test(attr(tag, 'rel')) ? attr(tag, 'href') : '';
+    if (!file) return true;
+    var url; try { url = new URL(file, self.registration.scope); } catch (e) { return false; }
+    return url.origin !== self.location.origin || expected.indexOf(url.href) >= 0;
+  });
+}
 function completeShell(name) {
   if (!name) return Promise.resolve(null);
+  var suffix = name.slice(SHELL_PREFIX.length), marked = /^[a-z0-9]+-m1-[a-z0-9]+$/.test(suffix);
+  if (!marked && !/^[a-z0-9]+-[a-z0-9]+$/.test(suffix)) return Promise.resolve(null);
   return caches.has(name).then(function (has) { if (!has) return null; return caches.open(name).then(function (cache) {
-    return cache.keys().then(function (keys) {
-      var urls = keys.map(function (key) { return key.url; });
-      return shellFiles.every(function (file) { return urls.indexOf(new URL(file, self.registration.scope).href) >= 0; }) ? { name: name, cache: cache } : null;
+    return Promise.all([cache.keys(), cache.match(manifestKey), cache.match('./index.html')]).then(function (parts) {
+      if (!parts[2] || marked && !parts[1]) return null;
+      return Promise.all([parts[1] ? parts[1].json() : { v: 1, files: PRE_MANIFEST_FILES }, parts[2].text()]).then(function (values) {
+        var expected = shellManifestFiles(values[0]), urls = parts[0].map(function (key) { return key.url; });
+        // Other pre-manifest releases may have added startup scripts or styles. Their index names those extras;
+        // they must actually be cached, while a recorded manifest remains authoritative for marked generations.
+        return expected && expected.every(function (url) { return urls.indexOf(url) >= 0; }) && shellIndexFits(values[1], parts[1] ? expected : urls) ? { name: name, cache: cache } : null;
+      });
     });
-  }); });
+  }); }).catch(function () { return null; });
 }
 function chooseShell() {
   return readShellState().then(function (state) { return state.active && state.active.indexOf(SHELL_PREFIX) === 0 ? state : fallbackShellState(); }).catch(fallbackShellState).then(function (state) {
@@ -156,7 +187,7 @@ function expireShell(round) {
   caches.delete(round.name).catch(function () {});
 }
 function shellRound(install) {
-  var round = { name: SHELL_PREFIX + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2), alive: true, committed: false, started: Date.now(), controller: new AbortController(), tx: null };
+  var round = { name: SHELL_PREFIX + Date.now().toString(36) + '-m1-' + Math.random().toString(36).slice(2), alive: true, committed: false, started: Date.now(), controller: new AbortController(), tx: null };
   var timer;
   var timeout = new Promise(function (resolve) { timer = setTimeout(function () { expireShell(round); resolve(false); }, 30000); });
   round.promise = Promise.race([freshRound(round, install), timeout]).then(function (ok) {
@@ -202,6 +233,11 @@ function freshRound(round, install) {
       return Promise.all(files.map(function (file) { return stage.put(file.file, file.response); }));
     }).then(function () {
       alive();
+      return stage.put(manifestKey, new Response(JSON.stringify({ v: 1, files: shellFiles }), { headers: { 'Content-Type': 'application/json' } }));
+    }).then(function () {
+      alive(); return completeShell(round.name);
+    }).then(function (complete) {
+      alive(); if (!complete) throw new Error('Complete shell not saved');
       return shellMeta('readwrite', round, function (store, done) {
         if (install) { store.put({ name: round.name }, 'install'); done(true); return; }
         var q = store.get('state'); q.onsuccess = function () {
@@ -231,8 +267,9 @@ self.addEventListener('install', function (e) {
   e.waitUntil(round.promise.then(function (ok) { if (!ok) throw new Error('Complete shell not saved'); return self.skipWaiting(); }));
 });
 self.addEventListener('activate', function (e) {
-  var activationPins = [], legacyClients = [];
-  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (all) {
+  var activationPins = [], legacyClients = [], lastGood;
+  // An older worker may have fetched a new index without newly added shell files. Retain the last validated copy.
+  e.waitUntil(chooseShell().then(function (copy) { lastGood = copy; return self.clients.matchAll({ type: 'window', includeUncontrolled: true }); }).then(function (all) {
     var clients = all.filter(function (client) { return client.url.indexOf(self.registration.scope) === 0; });
     return Promise.all(clients.map(function (client) { return readShellPinMirror(client.id); })).then(function (mirrors) {
       return caches.open(CACHE).then(function (cache) { return cache.match('./index.html'); }).then(function (legacyIndex) {
@@ -253,7 +290,7 @@ self.addEventListener('activate', function (e) {
                   }
                 };
               });
-              var next = { active: name, previous: state.active && state.active !== CACHE ? state.active : '', ticket: (state.ticket || 0) + 1 };
+              var next = { active: name, previous: lastGood && lastGood.name !== name ? lastGood.name : '', ticket: (state.ticket || 0) + 1 };
               store.put(next, 'state'); store.delete('install'); done(next);
             };
           };

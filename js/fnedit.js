@@ -19,6 +19,9 @@
 
   var API = 10;
   var FN = window.LK_FN, M = FN.M, P = window.LK_PREP, esc = FN.esc, T = window.LK_TIME;
+  // Optional in lazy files: an older saved shell keeps its existing text feedback.
+  function inkLabel(text, icon, state) { return window.LK_MOTION ? window.LK_MOTION.label(text, icon || 'save', state || (navigator.onLine === false ? 'still' : 'busy')) : esc(text); }
+  function loading(text, icon, rows) { return window.LK_MOTION ? window.LK_MOTION.status(text, { icon: icon, state: navigator.onLine === false ? 'still' : 'busy', rows: rows || 0 }) : '<p class="hint" role="status">' + esc(text) + '</p>'; }
   function B() { return P.book(); }
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function lsSet(k, v) { try { if (v == null || v === '') localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
@@ -37,11 +40,11 @@
   }
   function armed(k) { return E.armed === k; }
   var toastEl = null, toastTimer = null;
-  function toast(msg) {
+  function toast(msg, confirmed) {
     if (!active()) return;
     B().say(msg);
     if (!toastEl) { toastEl = document.createElement('div'); toastEl.className = 'p-toasts fe-toasts'; document.body.appendChild(toastEl); }
-    toastEl.innerHTML = '<div class="p-toast p-toast-plain" role="presentation">' + esc(msg) + '</div>';
+    toastEl.innerHTML = '<div class="p-toast p-toast-plain" role="presentation">' + (confirmed ? inkLabel(msg, 'save', 'done') : esc(msg)) + '</div>';
     clearTimeout(toastTimer); toastTimer = setTimeout(function () { if (toastEl) toastEl.innerHTML = ''; }, 4000);
   }
   function newId(name) {
@@ -168,7 +171,7 @@
   }
   function listHTML() {
     var head = '<div class="fe-head"><h2 id="rtitle" tabindex="-1">Functions</h2><div class="btn-row"><a class="btn dark" href="#/functions/new">New function</a><a class="btn" href="#/fn">Kitchen view</a></div></div>';
-    if (E.list === 'loading' || (!E.list && !E.listErr)) return head + '<p role="status">Loading functions...</p>';
+    if (E.list === 'loading' || (!E.list && !E.listErr)) return head + loading('Loading functions...', 'chef', 3);
     if (!E.list) return head + '<p class="p-err" role="alert">Could not load the functions. Check the signal.</p><div class="btn-row"><button type="button" class="btn" data-fe="reload">Try again</button></div>';
     var drafts = Object.keys(localStorage || {}).filter(function (k) { return k.indexOf('lk.fe.draft.') === 0; });
     var ov = M.overlaps(E.list), q = E.q.trim().toLowerCase();
@@ -199,7 +202,7 @@
     var busy = E.removing[f.id] || FN.statusBusy(f.id), restore = !!f.removed, confirm = armed('remove:' + f.id);
     return '<button type="button" class="linkish" data-fe="' + (restore ? 'restore-row' : form ? 'remove' : 'remove-row') + '" data-id="' + esc(f.id) + '"' +
       (busy ? ' disabled' : '') + ' aria-label="' + esc((restore ? 'Restore ' : confirm ? 'Tap again to delete ' : 'Delete ') + f.name) + '">' +
-      (busy ? 'Saving...' : restore ? (form ? 'Restore function' : 'Restore') : confirm ? 'Tap again to delete function' : form ? 'Delete function' : 'Delete') + '</button>';
+      (busy ? inkLabel('Saving...') : restore ? (form ? 'Restore function' : 'Restore') : confirm ? 'Tap again to delete function' : form ? 'Delete function' : 'Delete') + '</button>';
   }
   function rowActions(f) {
     var actions = (f.removed ? '' : FN.statusHTML(f, 'fe', true)) + removeHTML(f);
@@ -375,11 +378,11 @@
     f.id = e.id; f.kcBy = B().who(); f.kcAt = now(); f.by = B().who(); f.upd = now(); f.chg = [];
     return '<section class="set-block fe-review" aria-labelledby="fe-rv-h"><h3 id="fe-rv-h" tabindex="-1">Check before confirming</h3><p class="hint">This is what the kitchen will see. Confirming puts it in the band under the top bar from 00:00 on ' + esc(M.dayName(f.date)) + '.</p>' +
       FN.sheetHTML(f, false).replace(/<div class="btn-row">[\s\S]*?<\/div>$/, '') +
-      '<div class="btn-row"><button type="button" class="btn dark" data-fe="confirm"' + (e.saving ? ' disabled' : '') + '>' + (e.status === 'cancelled' ? 'Put it back on' : 'Confirm function') + '</button><button type="button" class="btn" data-fe="print">Print function</button></div></section>';
+      '<div class="btn-row"><button type="button" class="btn dark ink-busy-button" data-fe="confirm"' + (e.saving ? ' disabled aria-busy="true"' : '') + '>' + (e.saving ? inkLabel('Saving...') : e.status === 'cancelled' ? 'Put it back on' : 'Confirm function') + '</button><button type="button" class="btn" data-fe="print">Print function</button></div></section>';
   }
   function editHTML() {
     var e = E.ed;
-    if (e.loading) return '<p role="status">Opening the function...</p>';
+    if (e.loading) return loading('Opening the function...', 'chef', 3);
     if (e.missing) return '<section class="set-block"><h2 id="rtitle" tabindex="-1">Function not found</h2><p>It may have a different link.</p></section>';
     if (e.failed) return '<section class="set-block"><h2 id="rtitle" tabindex="-1">Could not open the function</h2><p>Check the signal and try again.</p><div class="btn-row"><button type="button" class="btn dark" data-fe="reopen">Try again</button></div></section>';
     var d = e.d, s = e.saved, st = e.status;
@@ -424,9 +427,9 @@
   function buttonsHTML(e) {
     var st = e.status, dis = e.saving || E.removing[e.id] || FN.statusBusy(e.id) ? ' disabled' : '', b = [];
     // Save draft and Save changes are off with nothing to save (saveSync() keeps them in step while typing)
-    var sdis = dis || (!canSave() ? ' disabled' : '');
-    if (st === 'draft') { b.push('<button type="button" class="btn dark" data-fe="review"' + dis + '>Check and confirm</button>'); b.push('<button type="button" class="btn" data-fe="save"' + sdis + '>Save draft</button>'); }
-    else if (st === 'confirmed') b.push('<button type="button" class="btn dark" data-fe="save"' + sdis + '>Save changes</button>');
+    var sdis = e.saving ? ' disabled aria-busy="true"' : dis || (!canSave() ? ' disabled' : '');
+    if (st === 'draft') { b.push('<button type="button" class="btn dark" data-fe="review"' + dis + '>Check and confirm</button>'); b.push('<button type="button" class="btn ink-busy-button" data-fe="save"' + sdis + '>' + (e.saving ? inkLabel('Saving...') : 'Save draft') + '</button>'); }
+    else if (st === 'confirmed') b.push('<button type="button" class="btn dark ink-busy-button" data-fe="save"' + sdis + '>' + (e.saving ? inkLabel('Saving...') : 'Save changes') + '</button>');
     else b.push('<button type="button" class="btn dark" data-fe="review"' + dis + '>Put it back on</button>');
     var more = [];
     if (!e.isNew) more.push('<button type="button" class="btn" data-fe="dup">Duplicate</button>');
@@ -437,7 +440,7 @@
   function histHTML(e) {
     var h = e.hist;
     if (!h) return '<section class="set-block"><span class="label">History</span><div class="btn-row"><button type="button" class="btn" data-fe="hist">Show every change</button></div></section>';
-    if (h === 'loading') return '<section class="set-block"><span class="label">History</span><p role="status">Loading...</p></section>';
+    if (h === 'loading') return '<section class="set-block"><span class="label">History</span>' + loading('Loading...', 'chef', 2) + '</section>';
     if (h === 'error') return '<section class="set-block"><span class="label">History</span><p class="p-err">Could not load the history.</p></section>';
     var rows = [{ v: e.saved.v, by: e.saved.by, at: e.saved.upd, what: ((e.saved.chg || [])[0] || {}).what || '' }].concat(h);
     return '<section class="set-block"><span class="label">History</span><ul class="fn-chg">' + rows.map(function (x) { return '<li><span>Version ' + x.v + ', ' + esc(stamp(x.at)) + ', ' + esc(FN.nameOf(x.by)) + '</span> ' + esc(x.what || (x.v === 1 ? 'Started' : '')) + '</li>'; }).join('') + '</ul></section>';
@@ -526,7 +529,7 @@
       e.isNew = false; e.v = f.v; e.status = f.status; e.saved = f; e.savedC = { cname: submitted.cname.trim(), phone: submitted.phone.trim(), email: submitted.email.trim() }; if (!changed) e.d = fromDoc(f, e.savedC);
       e.saving = ''; e.conflict = null; e.review = false; e.restored = false; e.hist = null;
       if (Array.isArray(E.list)) { E.list = E.list.filter(function (x) { return x.id !== id; }).concat([f]); }
-      toast(kind === 'confirm' ? 'Confirmed. The kitchen sees it on the day.' : kind === 'cancel' ? 'Cancelled. The kitchen is told.' : f.status === 'confirmed' ? 'Saved. The kitchen sees the change now.' : 'Draft saved. The kitchen does not see it yet.');
+      toast(kind === 'confirm' ? 'Confirmed. The kitchen sees it on the day.' : kind === 'cancel' ? 'Cancelled. The kitchen is told.' : f.status === 'confirmed' ? 'Saved. The kitchen sees the change now.' : 'Draft saved. The kitchen does not see it yet.', true);
       if (wasNew) e.canonical = true;
       if (changed) keep();
       if (active()) { canonical(); draw(); var h = E.root.querySelector('#rtitle'); if (h) h.focus({ preventScroll: true }); window.scrollTo(0, 0); }

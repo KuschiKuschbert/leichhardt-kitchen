@@ -28,6 +28,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Admin autocorrect repairs, shared protected words and private correction history | `docs/proofreader-admin.md` |
 | Admin visual design, selected A: The Chef's Desk | `docs/admin-design-options/brief.md` |
 | Shared controls, deferred search, table interactions and council audit | `docs/adaptive-controls.md`, `docs/ux-council-audit.md` |
+| Loading, saving, measured progress and reduced motion | `docs/loading-motion.md` |
 | Nightly backup format, protected decryption and isolated recovery checks | `docs/backup-recovery.md` |
 | Suppliers, order history, cut-off sheets | `docs/supplier-workspace.md` |
 | Wastage history, ranges, CSV | `docs/wastage-history.md` |
@@ -75,6 +76,7 @@ After approval, implement small reversible units under the existing shipping rul
 | `js/functions.js` | Functions: the schedule maths (also run by node), the kitchen band under the top bar, the function sheet, `#/fn`, the landing card. In `SHELL` |
 | `js/fnedit.js` | Manage functions (`#/functions`): the function managers' list and form, loaded by `js/app.js` only for someone ticked for Functions, not in `SHELL` |
 | `js/controls.js` | Shared adaptive pickers, deferred search and report-table controls. Loaded in the atomic shell. `docs/adaptive-controls.md` |
+| `js/motion.js` | Ink in motion presentation helpers. Callers own wait, offline and acknowledgement states. `docs/loading-motion.md` |
 | `js/app.js` | Routing, top bar, recipe views (Pass, Tiles), recipe cards, settings, install, QR |
 | `js/prep.js` | Prep list, orders, wastage, guides, admin panel, staff lock, insights, learning, suggestions |
 | `js/firebase-config.js` | Public Firebase web config |
@@ -252,7 +254,7 @@ Read `docs/function-printing.md` before changing the print copy. Layout 2 is app
 
 ## One-click function cancellation (25 Oct 2026)
 
-Read `docs/function-cancellation.md` before changing function status writes. Sous chefs, headId, function managers and the verified admin may cancel. Other editing and contact permissions still use fnIds. Cancel and the same person's two-minute Undo read the server, use version guards, keep matching immutable history and batch prep/order effects. Keep the shared helpers in `js/functions.js`; the form uses them too. Rules must pass the largest 12-line, 8-round batch and be published before this UI. The editor and app use API 10, loaded as `fnedit.js?v=6` for canonical staff capabilities. List/form deletion uses `setRemoved()` in `js/fnedit.js`, only for drafts/cancelled bookings. Deleted has explicit recovery that leaves the booking cancelled. The People checkbox grants create/edit access without changing a kitchen role; do not hardcode real staff names or grant a named person access as part of code authoring.
+Read `docs/function-cancellation.md` before changing function status writes. Sous chefs, headId, function managers and the verified admin may cancel. Other editing and contact permissions still use fnIds. Cancel and the same person's two-minute Undo read the server, use version guards, keep matching immutable history and batch prep/order effects. Keep the shared helpers in `js/functions.js`; the form uses them too. Rules must pass the largest 12-line, 8-round batch and be published before this UI. The editor and app use API 10, loaded as `fnedit.js?v=7` with the compatible Ink in motion presentation. List/form deletion uses `setRemoved()` in `js/fnedit.js`, only for drafts/cancelled bookings. Deleted has explicit recovery that leaves the booking cancelled. The People checkbox grants create/edit access without changing a kitchen role; do not hardcode real staff names or grant a named person access as part of code authoring.
 
 
 ## Delivery received (26 Oct 2026)

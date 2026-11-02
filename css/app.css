@@ -2887,3 +2887,58 @@ span.ux-inline-pair { width: var(--ux-pair-width); }
 
 /* A completed phone order keeps its action column so the next tick target stays in place. */
 .nb-more-held { visibility: hidden; pointer-events: none; }
+
+/* Ink in motion: presentation follows the real operation. No polling or time-based progress. */
+.ink-icon { display: inline-grid; place-items: center; width: var(--ink-icon-size, 30px); height: var(--ink-icon-size, 30px); flex: 0 0 auto; vertical-align: middle; pointer-events: none; }
+.ink-icon > svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.ink-icon .ink-stroke { stroke: var(--ink-stroke, var(--accent)); }
+.ink-icon .ink-stroke > * { stroke-dasharray: 100; stroke-dashoffset: 100; opacity: 0; animation: ink-trace 1.8s ease-in-out .18s infinite; }
+.ink-icon[data-state="done"] { color: var(--done-ink); }
+.ink-icon .ink-check { stroke-dasharray: 100; stroke-dashoffset: 0; animation: ink-confirm .24s ease-out both; }
+.ink-label { display: inline-flex; align-items: center; gap: .5rem; min-width: 0; max-width: 100%; vertical-align: middle; }
+.ink-label .ink-icon { --ink-icon-size: 22px; }
+.ink-label-text, .ink-copy { min-width: 0; overflow-wrap: anywhere; }
+.ink-status { display: flex; align-items: center; gap: .7rem; min-width: 0; padding: .75rem 0; color: var(--ink); font: 600 .9375rem/1.4 var(--body); }
+.ink-status .ink-copy { display: block; }
+.ink-status .ink-detail { display: block; margin-top: .2rem; color: var(--muted); font: 400 .8125rem/1.4 var(--body); }
+.ink-status[data-state="done"] .ink-message { color: var(--done-ink); }
+.ink-skeleton { margin: 0 0 .75rem; pointer-events: none; user-select: none; }
+.ink-skeleton-row { display: flex; align-items: center; gap: .7rem; min-height: 52px; border-bottom: 1px solid var(--rule, var(--line)); }
+.ink-skeleton-box { flex: 0 0 30px; width: 30px; height: 30px; border: 2px solid #BEB5A3; border-radius: 5px; opacity: .55; rotate: -1deg; }
+.ink-skeleton-line { display: block; height: 18px; max-width: calc(100% - 42px); color: #C7BDA9; opacity: .65; }
+.ink-skeleton-line path { fill: none; stroke: currentColor; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+.ink-line-0 { width: 66%; } .ink-line-1 { width: 45%; } .ink-line-2 { width: 77%; } .ink-line-3 { width: 57%; } .ink-line-4 { width: 69%; }
+.ink-progress { max-width: 100%; min-width: 0; margin-block: .5rem; }
+.ink-progress > .ink-status { padding-bottom: .45rem; }
+.ink-progress > progress { display: block; width: 100%; height: 6px; appearance: none; border: 0; border-radius: 0; background: var(--line); color: var(--accent); }
+.ink-progress > progress::-webkit-progress-bar { background: var(--line); }
+.ink-progress > progress::-webkit-progress-value { background: var(--accent); transition: width .18s ease-out; }
+.ink-progress > progress::-moz-progress-bar { background: var(--accent); }
+/* Keep this class on the idle button too, so its reserved space does not change on a press. */
+.ink-busy-button { min-width: 8rem; min-height: 44px; }
+.ink-busy-button > .ink-label { justify-content: center; }
+.ink-busy-button:disabled[aria-busy="true"] { background: var(--accent-ink); border-color: var(--accent-ink); color: #fff; opacity: 1; cursor: wait; }
+.ink-busy-button:disabled[aria-busy="true"] .ink-icon { --ink-stroke: #FFF1E6; color: inherit; }
+.ink-busy-button .ink-icon[data-state="done"] { color: inherit; }
+.ink-startup { max-width: 38rem; margin: 2rem auto; padding: 0 1.25rem; }
+.ink-startup-name { margin: 0 0 .5rem; font: 700 2.4rem/1.05 var(--display); }
+.ink-docket-arrive > .docket { animation: ink-docket-in .34s cubic-bezier(.2, .8, .2, 1) both; transform-origin: 50% 6px; }
+.ink-docket-arrive > .docket:nth-child(2) { animation-delay: .035s; }
+.ink-docket-arrive > .docket:nth-child(3) { animation-delay: .07s; }
+.ink-docket-arrive > .docket:nth-child(4) { animation-delay: .105s; }
+.ink-docket-arrive > .docket:nth-child(5) { animation-delay: .14s; }
+.ink-docket-arrive > .docket:nth-child(6) { animation-delay: .175s; }
+.ink-reveal { animation: ink-reveal .12s ease-out both; }
+@keyframes ink-trace { 0%, 8% { stroke-dashoffset: 100; opacity: 0; } 12% { opacity: 1; } 42%, 63% { stroke-dashoffset: 0; opacity: 1; } 78%, 100% { stroke-dashoffset: 0; opacity: 0; } }
+@keyframes ink-confirm { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
+@keyframes ink-docket-in { from { opacity: .5; translate: 0 5px; rotate: -.6deg; } to { opacity: 1; translate: 0 0; rotate: 0deg; } }
+@keyframes ink-reveal { from { opacity: .55; } to { opacity: 1; } }
+.ink-offline .ink-icon[data-state="busy"] .ink-stroke { display: none; }
+.ink-offline .ink-icon[data-state="busy"] .ink-stroke > * { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .ink-icon .ink-stroke { display: none; }
+  .ink-icon .ink-stroke > *, .ink-icon .ink-check, .ink-docket-arrive > .docket, .ink-reveal { animation: none; }
+  .ink-docket-arrive > .docket { translate: none; rotate: none; }
+  .ink-progress > progress::-webkit-progress-value { transition: none; }
+  .ink-skeleton-box { rotate: none; }
+}

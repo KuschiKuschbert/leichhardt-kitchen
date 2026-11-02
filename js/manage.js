@@ -19,6 +19,9 @@
   var API = 5;
   var D = window.LK_DATA, X = window.LK_RX, A = window.LK_APP, P = window.LK_PREP;
   var esc = A.esc, KIND = A.KIND, ALLERGENS = D.allergens;
+  // Optional in lazy files: an older saved shell keeps its existing text feedback.
+  function inkLabel(text, icon, state) { return window.LK_MOTION ? window.LK_MOTION.label(text, icon || 'save', state || (navigator.onLine === false ? 'still' : 'busy')) : esc(text); }
+  function loading(text, icon, rows) { return window.LK_MOTION ? window.LK_MOTION.status(text, { icon: icon, state: navigator.onLine === false ? 'still' : 'busy', rows: rows || 0 }) : '<p class="hint" role="status">' + esc(text) + '</p>'; }
   var LS = (function () { try { localStorage.getItem('x'); return localStorage; } catch (e) { return null; } })();
   function lsGet(k) { try { return LS ? LS.getItem(k) : null; } catch (e) { return null; } }
   function lsSet(k, v) { try { if (LS) { if (v == null || v === '') LS.removeItem(k); else LS.setItem(k, v); } } catch (e) {} }
@@ -45,11 +48,11 @@
   // (29 Oct 2026), so it goes
   function unarm() { M.armed = ''; clearTimeout(M.armTimer); }
   var toastEl = null, toastTimer = null;
-  function toast(msg) {
+  function toast(msg, confirmed) {
     if (M.suspended || workLock()) return;
     B().say(msg);
     if (!toastEl) { toastEl = document.createElement('div'); toastEl.className = 'p-toasts mg-toasts'; document.body.appendChild(toastEl); }
-    toastEl.innerHTML = '<div class="p-toast p-toast-plain" role="presentation">' + esc(msg) + '</div>';
+    toastEl.innerHTML = '<div class="p-toast p-toast-plain" role="presentation">' + (confirmed ? inkLabel(msg, 'save', 'done') : esc(msg)) + '</div>';
     clearTimeout(toastTimer); toastTimer = setTimeout(function () { if (toastEl) toastEl.innerHTML = ''; }, 4000);
   }
   // every recipe the book knows: those on the cards now, the hidden ones and the ones js/data.js has
@@ -120,7 +123,7 @@
     loadMine();
     var list = kind === 'templates' ? MINE.tpl : MINE.lib;
     var off = MINE.off ? '<p class="p-err" role="status">No signal. ' + (kind === 'templates' ? 'Your templates show' : 'What you made in the book shows') + ' when the phone is back online.</p>' : '';
-    if (!list) return off || '<p class="hint">Reading them from the book...</p>';
+    if (!list) return off || loading('Reading them from the book...', 'recipes', 3);
     list = list.filter(function (x) { return !words.length || words.every(function (w) { return (x.name + ' ' + (x.kw || '') + ' ' + (x.slot || '') + ' ' + (x.cat || '')).toLowerCase().indexOf(w) >= 0; }); });
     var pic = function (x) {
       if (kind === 'templates') return '<svg class="mg-thumb" viewBox="' + esc(/^-?[\d.]+ -?[\d.]+ [\d.]+ [\d.]+$/.test(x.vb || '') ? x.vb : '-110 -110 220 220') + '" aria-hidden="true" focusable="false"><g data-surf="1">' + X.clean(x.svgS) + '</g>' + X.clean(x.svgF) + '</svg>';
@@ -524,7 +527,7 @@
   function histHTML(e) {
     if (e.isNew) return '';
     var h = e.hist;
-    var list = h === 'loading' ? '<p class="hint" role="status">Reading earlier versions...</p>' : h === 'error' ? '<p class="p-err" role="alert">Could not read the earlier versions. Check the signal.</p>' :
+    var list = h === 'loading' ? loading('Reading earlier versions...', 'recipes', 2) : h === 'error' ? '<p class="p-err" role="alert">Could not read the earlier versions. Check the signal.</p>' :
       h ? (h.length ? '<ol class="mg-hist">' + h.map(function (x, k) {
         return '<li><span><b>Version ' + esc(x.v) + '</b> · ' + esc(x.when) + (x.who ? ' · ' + esc(x.who) : '') + (x.name ? ' · ' + esc(x.name) : '') + '</span><button type="button" class="p-x" data-mg="hist-use" data-i="' + k + '">' + (armed('hist-use:' + k) ? 'Not saved. Tap again' : 'Open this version') + '</button></li>';
       }).join('') + '</ol><p class="hint">Opening a version puts it in the form. Save to make it the card again.</p>' : '<p class="hint">No earlier versions yet.</p>') : '';
@@ -568,7 +571,7 @@
     return '<div class="mg-wrap mg-ed">' + linkList() + head + kept + fileNote + conflict + errs + warns +
       swHTML(e) + basicsHTML(e) + ingHTML(e) + methodHTML(e) + allergenHTML(e) + drawingHTML(e) + menuHTML(e) + boxesHTML(e) + histHTML(e) + moreHTML(e) +
       '<div class="mg-bar"><span class="mg-state" role="status">' + esc(stateText()) + '</span>' + (e.msg ? '<span class="p-err" role="alert">' + esc(e.msg) + '</span>' : '') +
-      '<div class="btn-row"><button type="button" class="btn dark" data-mg="save"' + (e.saving || unchanged(e) ? ' disabled' : '') + '>' + (e.saving ? 'Saving...' : 'Save') + '</button>' +
+      '<div class="btn-row"><button type="button" class="btn dark ink-busy-button" data-mg="save"' + (e.saving ? ' disabled aria-busy="true"' : unchanged(e) ? ' disabled' : '') + '>' + (e.saving ? inkLabel('Saving...') : 'Save') + '</button>' +
       (dirty() ? '<button type="button" class="btn" data-mg="undo-all">' + (armed('undo-all') ? 'Tap again to undo all' : 'Undo all changes') + '</button>' : '') + '</div></div></div>';
   }
 
@@ -699,7 +702,7 @@
       if (wasNew) { e.isNew = false; e.key = e.id = e.d.id = id; e.meta.src = 'new'; }
       if (!newer) { e.menu = menuOf(id); e.d.pins = clean.pins; e.ing0 = ingMap(e.d); e.snap = snapOf(e); }
       else { e.snap = submitted; keepNow(); }
-      toast(savedMeta.removed ? 'Hidden from the book. Version ' + done.v + '.' : savedMeta.off ? 'Back to the book file\'s copy. Version ' + done.v + '.' : 'Saved. Version ' + done.v + '.');
+      toast(savedMeta.removed ? 'Hidden from the book. Version ' + done.v + '.' : savedMeta.off ? 'Back to the book file\'s copy. Version ' + done.v + '.' : 'Saved. Version ' + done.v + '.', true);
       if (wasNew) {
         if (M.root && !M.suspended && !workLock()) { history.replaceState(history.state, '', '#/manage/r/' + encodeURIComponent(id)); if (A.noteRoute) A.noteRoute(true); M.sub = ['r', id]; }
         else e.savedRoute = ['r', id];
@@ -821,7 +824,7 @@
     if (!drawLoad) {
       drawLoad = A.load('js/library.js').then(function () {
         // a category file that fails to load leaves its drawings out; the editor still opens
-        return Promise.all(window.LK_LIB.files.map(function (f) { return A.load(f).catch(function () {}); }).concat([A.load('js/draw.js?v=6')]));
+        return Promise.all(window.LK_LIB.files.map(function (f) { return A.load(f).catch(function () {}); }).concat([A.load('js/draw.js?v=7')]));
       }).then(function () {
         // without the smart creator the editor still works by hand; the recipe reader (js/compose.js) needs it first
         return A.load('js/smart.js').then(function () { return A.load('js/compose.js'); }).catch(function () {});
@@ -837,7 +840,7 @@
       else root.innerHTML = '<div class="mg-wrap"><h2 id="rtitle" tabindex="-1">Reload the book</h2><p>The drawing editor on this device needs the current book. Your saved drawings stay.</p><div class="btn-row"><button type="button" class="btn dark" data-act="reload">Reload</button></div></div>';
       return;
     }
-    root.innerHTML = '<div class="mg-wrap"><h2 id="rtitle" tabindex="-1">Opening the drawing editor</h2><p>Loading the library...</p></div>';
+    root.innerHTML = '<div class="mg-wrap"><h2 id="rtitle" tabindex="-1">Opening the drawing editor</h2>' + loading('Loading the library...', 'recipes') + '</div>';
     loadDraw().then(function () {
       if (M.root === root && drawn === 'draw:' + key) mountDraw(root, sub);
     }, function () {
