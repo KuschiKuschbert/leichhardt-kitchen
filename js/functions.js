@@ -247,12 +247,27 @@
     return h.toString(36);
   }
 
+  // Canonical bodies are published by a function editor. Status-only chefs may reuse these exact bodies.
+  function prepBody(f, l, id) {
+    var a = counts(l, (f.rounds || []).length), i = a.findIndex(function (x) { return x > 0; }), r = i >= 0 ? f.rounds[i] : (f.rounds || [])[0];
+    var at = r && r.at ? (f.mode === 'stag' ? 'from ' : 'at ') + when(r.at, f.date) : 'times TBC';
+    return { text: (l.name + ': ' + (f.name || 'function') + ', ' + at).slice(0, 160), qty: (l.qty + ' ' + unitOf(l, l.qty)).slice(0, 40), station: 'Functions', recipe: l.rid, fn: id, dupOk: true };
+  }
+  function orderBody(f, id, pre) {
+    var txt = (pre || 'Function stock') + ': ' + (f.name || 'function') + ', ' + dayName(f.date) + ': ' + (f.lines || []).map(function (l) { return l.qty + ' ' + short(l.name); }).join(', ');
+    return { text: txt.slice(0, 120), qty: (totalQty(f) + ' platters').slice(0, 40), recipes: (f.lines || []).map(function (l) { return l.rid; }), fn: id, dupOk: true };
+  }
+  function effects(f, id) {
+    var prep = {};
+    (f.lines || []).forEach(function (l) { prep[('fn-' + id + '-' + l.rid).slice(0, 120)] = prepBody(f, l, id); });
+    return { prep: prep, order: orderBody(f, id), cancel: orderBody(f, id, 'Function cancelled, check the order'), restore: orderBody(f, id, 'Function restored, check the order') };
+  }
   var M = {
     MIN: MIN, HOUR: HOUR, DAY: DAY, MAX_LINES: MAX_LINES, MAX_ROUNDS: MAX_ROUNDS, MAX_QTY: MAX_QTY, MAX_PER: MAX_PER,
     kday: kday, kat: kat, kclock: kclock, dayStart: dayStart, addDays: addDays, isYmd: isYmd, hmMin: hmMin, dayName: dayName, when: when,
     even: even, toU: toU, fromU: fromU, sum: sum, roundTimes: roundTimes, windowOf: windowOf, derive: derive, counts: counts,
     short: short, unitOf: unitOf, totalQty: totalQty, guestsText: guestsText, problems: problems, changes: changes, dayTotals: dayTotals,
-    overlaps: overlaps, showing: showing, service: service, soon: soon, orderDay: orderDay, orderOn: orderOn, nextRound: nextRound, nextOpen: nextOpen, fingerprint: fingerprint
+    overlaps: overlaps, showing: showing, service: service, soon: soon, orderDay: orderDay, orderOn: orderOn, nextRound: nextRound, nextOpen: nextOpen, fingerprint: fingerprint, prepBody: prepBody, orderBody: orderBody, effects: effects
   };
   if (typeof module === 'object' && module.exports) { module.exports = M; return; }
 
@@ -580,15 +595,10 @@
      changed is written, so a line the kitchen removed stays removed until the booking changes. A cancelled function, a
      platter taken off, or a function moved to another day removes its old lines. Ticks are never touched (done is never
      sent), lines never roll over and never merge with the kitchen's own lines (fn, dupOk). */
-  function prepText(f, l) {
-    var n = (f.rounds || []).length, a = M.counts(l, n), i = a.findIndex(function (x) { return x > 0; }), r = i >= 0 ? f.rounds[i] : f.rounds[0];
-    var at = r && r.at ? (f.mode === 'stag' ? 'from ' : 'at ') + M.when(r.at, f.date) : 'times TBC';
-    return (l.name + ': ' + (f.name || 'function') + ', ' + at).slice(0, 160);
-  }
   function prepOps(api, prev, f, id, t) {
     var fs = api.fs(), ops = [], who = P().whoName() || 'Head chef';
     function ref(day, rid) { return fs.doc(api.db(), 'kitchens', api.pin(), 'days', day, 'items', ('fn-' + id + '-' + rid).slice(0, 120)); }
-    function line(g, l) { return { text: prepText(g, l), qty: (l.qty + ' ' + M.unitOf(l, l.qty)).slice(0, 40), station: 'Functions', recipe: l.rid, fn: id, dupOk: true }; }
+    function line(g, l) { return M.prepBody(g, l, id); }
     var had = {}, want = {};
     if (prev && prev.status === 'confirmed' && M.isYmd(prev.date)) (prev.lines || []).forEach(function (l) { had[prev.date + '|' + l.rid] = line(prev, l); });
     if (f.status === 'confirmed' && M.isYmd(f.date)) f.lines.forEach(function (l) { want[f.date + '|' + l.rid] = line(f, l); });
@@ -612,10 +622,7 @@
   function orderOps(api, prev, f, id, t, undo) {
     var fs = api.fs(), ops = [], who = P().whoName() || 'Head chef', day = kday(now());
     function ref(d, suffix) { return fs.doc(api.db(), 'kitchens', api.pin(), 'orders', d, 'lines', ('fn-' + id + (suffix || '')).slice(0, 120)); }
-    function line(g, pre) {
-      var txt = (pre || 'Function stock') + ': ' + (g.name || 'function') + ', ' + M.dayName(g.date) + ': ' + (g.lines || []).map(function (l) { return l.qty + ' ' + M.short(l.name); }).join(', ');
-      return { text: txt.slice(0, 120), qty: (M.totalQty(g) + ' platters').slice(0, 40), recipes: (g.lines || []).map(function (l) { return l.rid; }), fn: id, dupOk: true };
-    }
+    function line(g, pre) { return M.orderBody(g, id, pre); }
     if (undo && f.od && f.od < day) {
       // A past order was never removed by Cancel. Correct its cancellation notice instead of rewriting that history.
       var cancelledDay = kday(prev.canAt);

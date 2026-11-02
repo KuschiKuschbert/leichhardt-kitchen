@@ -142,7 +142,7 @@ This audit does not claim real-device user research, screen-reader speech testin
 
 ## Whole-app audit first delivery
 
-2 November 2026, Queensland time. Status: discovery and design review. Application behaviour, styles, rules, jobs and dependencies are unchanged.
+2 November 2026, Queensland time. The first delivery recorded discovery and design review before implementation. The owner subsequently approved the recommended repair plan and selected narrow Prep option A on 2 November 2026. Preserve the baseline below as audit evidence; each repair needs its own final checks and release state.
 
 ### Source and release baseline
 
@@ -275,7 +275,7 @@ These are component geometry measurements. They do not measure task completion t
 
 
 
-The owner has not selected an option. Recommend A because it preserves the tick location and every direct action. The row component was checked in 35 geometry/font/state captures, including 320/390/768/1280 and actual/fallback fonts. No browser errors or component overflow occurred in those checks. Local demo toggles do not prove real saves, permissions or shared-screen attribution.
+The owner selected A on 2 November 2026 because it preserves the tick location and every direct action. The row component was checked in 35 geometry/font/state captures, including 320/390/768/1280 and actual/fallback fonts. No browser errors or component overflow occurred in those checks. Local demo toggles do not prove real saves, permissions or shared-screen attribution.
 
 Current and alternative actual-font component captures: [current](images/whole-app-prep-current-320.png), [A](images/whole-app-prep-a-320.png), [B](images/whole-app-prep-b-320.png), [C](images/whole-app-prep-c-320.png).
 
@@ -324,4 +324,4 @@ Release stop triggers: unexpected access, missing/duplicated writes, lost drafts
 - [Firestore rules testing](https://firebase.google.com/docs/firestore/security/test-rules-emulator) and [conditions](https://firebase.google.com/docs/firestore/security/rules-conditions): real rule tests, query shape and Admin SDK boundary.
 - [App Check](https://firebase.google.com/docs/app-check): attestation complements authentication and authorisation.
 
-Next action: review the evidence and choose the narrow-row alternative, then approve the implementation plan. This pause follows the owner's execution brief, sections 1, 7 and 15. No new routine merge-approval gate is introduced.
+Next action: implement the approved small units and selected narrow-row A, preserving each capability and recording final checks, staged publication and release evidence. Plan and design approval have been given. No new routine merge-approval gate is introduced.

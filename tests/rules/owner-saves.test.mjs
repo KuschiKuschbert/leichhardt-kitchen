@@ -19,6 +19,7 @@ await env.clearFirestore();
 const NOW = Date.now(), TODAY = new Date(NOW + 10 * 3600000).toISOString().slice(0, 10), T0 = Date.parse(TODAY + 'T08:00:00Z');
 // Hedy is the head chef (headId), Sam a sous chef, Ann staff, Fay a function manager
 const CFG = { people: [{ id: 'hd', role: 'head' }, { id: 'sam', role: 'sous' }, { id: 'ann', role: 'staff' }, { id: 'fay', role: 'fnc' }],
+  addIds: ['hd', 'sam', 'ann'], tickIds: ['hd', 'sam', 'ann'], delIds: ['hd', 'sam'],
   headId: 'hd', sousIds: ['hd', 'sam'], pingIds: ['hd', 'sam'], staffIds: ['hd', 'sam', 'ann', 'fay'], fnIds: ['fay'], fnOnlyIds: ['fay'] };
 const rulesOff = fn => env.withSecurityRulesDisabled(async c => fn(c.firestore()));
 await rulesOff(async db => {

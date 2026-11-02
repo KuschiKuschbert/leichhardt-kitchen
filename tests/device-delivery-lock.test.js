@@ -38,7 +38,9 @@ async function dailyLock(p) {
     await dailyLock(p);
     ok(!await p.$('#dl-form,.dl-receipt') && await p.evaluate(() => LK_DELIVERY.dirty() && LK_PREP.dirtyForUpdate()), mode + ': 04:00 hides the delivery but keeps its actual unsaved draft');
     ok(await p.evaluate(id => LK_PREP.workLock().identity === id && LK_PREP.blockedRecorder() === 'ann', identity), mode + ': the retained draft stays bound to its original device and person');
-    await p.locator('#pf1').fill('3333'); await L.settle(p, 300);
+    await p.locator('#pf1').fill('3333');
+    // WebCrypto completion uses real time, so wait for the refusal before advancing the virtual retry clock.
+    await L.waitFor(p, () => LK_PREP.state.pinMsg === 'That PIN is not right.' && LK_PREP.state.pf1 === '' && !LK_PREP.unsent());
     ok(!await p.$('#dl-form') && !await p.evaluate(() => LK_PREP.privateAccess()) && !(await receiptList(p)).length, mode + ': another person\'s PIN cannot reveal or save the retained receiving form');
     await p.clock.runFor(21000); await unlock(p, 'ann', '2222');
     ok(JSON.stringify(await values(p)) === JSON.stringify(before), mode + ': the original PIN restores every receiving field, including zero and a negative decimal');
