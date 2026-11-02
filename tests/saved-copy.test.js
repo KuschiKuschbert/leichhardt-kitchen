@@ -346,7 +346,10 @@ async function swOpen(b, hash, o) {
   // new ones. The tests' routes turn the browser's cache off, so this one runs with none, on a bare page that only
   // starts the worker (the book itself, and so Firebase, never loads here).
   over.maxAge = 600;
-  over['/sw-start.html'] = { lastModified: NEW, body: '<!doctype html><meta charset="utf-8"><title>Worker</title><script>navigator.serviceWorker.register("sw.js");</script>' };
+  const BARE = '<!doctype html><meta charset="utf-8"><title>Worker</title><script>window.__lkBareWorkerFixture=true;navigator.serviceWorker.register("sw.js");</script>';
+  over['/sw-start.html'] = { lastModified: NEW, body: BARE };
+  // Controlled navigations receive the saved index, so it must use the same bare document.
+  over['/index.html'] = { lastModified: NEW, body: BARE };
   {
     const c = await b.newContext({ serviceWorkers: 'allow' });
     const w = await c.newPage();
@@ -360,6 +363,7 @@ async function swOpen(b, hash, o) {
     await w.evaluate(() => navigator.serviceWorker.ready);
     await w.reload();
     await until(w, () => !!navigator.serviceWorker.controller, 8000);
+    ok(await w.evaluate(() => window.__lkBareWorkerFixture === true && !window.LK_PREP && !window.LK_FN), 'the native HTTP-cache fixture stays a bare worker document after controlled navigation');
     // js/smart.js the way mgScript() asks for it, js/manage.js?v=4 the way its script tag does
     const get = (f, asked) => w.evaluate(({ f, asked }) => fetch(f, asked ? { headers: { 'X-LK-Fresh': '1' } } : {}).then(r => r.text()).then(t => (t.match(/window\.__smart = "(\w+)"/) || [])[1] || '?'), { f, asked });
     const before = [await get('js/smart.js', true), await get('js/manage.js?v=4', false)];
@@ -379,7 +383,7 @@ async function swOpen(b, hash, o) {
     ok(got, 'a new worker saves the newest files, not the browser\'s 10-minute copy');
     await c.close();
   }
-  delete over.maxAge; delete over['/sw-start.html']; delete over['/sw.js'];
+  delete over.maxAge; delete over['/sw-start.html']; delete over['/index.html']; delete over['/sw.js'];
   await b.close();
   srv.close();
   L.report(R);
