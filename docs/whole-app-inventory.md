@@ -3,7 +3,7 @@
 2 November 2026. Source-reviewed application revision `b712b0ab`, reconciled with documentation-only `95525c6`. This is the inventory appendix to [the council audit](ux-council-audit.md), not a separate finding register or feature policy. Existing feature notes remain authoritative.
 
 
-Every row has source-reviewed status. Browser/emulator/real-service/real-device status is **not exercised by this reviewer**; the lead must attach current baseline results. Existing test names are traceability, not claimed execution. Empty/error/offline requirements below describe the source contract and must be retained during any approved implementation.
+The source inventory below records preservation requirements. The dated baseline coverage matrix follows; later repair/release results are linked separately and do not change its original failures or manual limits. Existing test names in the source inventory are traceability; execution evidence is stated in the coverage matrix. Empty/error/offline requirements below describe the source contract and must be retained during any approved implementation.
 
 | Family and entry | Roles and important controls/outcomes | Reads, writes, persistence and connected jobs | Draft, Undo, return and failure requirements | Existing verification sources |
 | --- | --- | --- | --- | --- |
@@ -104,3 +104,7 @@ Test names omit `.test.js`. Emulator names omit `tests/rules/` and `.test.mjs`; 
 | 30 | Settings/install/update/device/setup/recovery | Reviewed | Completed clean log: `device-choice`, `device-sessions`, `device-head-recovery`, `update-confirmation`, `daily-refresh`, `saved-copy`, `offline-open`; **Initial failure:** `offline-writes`; unchanged serial rerun passed 273 checks | E: device-auth, core, access, probe; daily issuance/grants/recovery. Pure local settings N/A | R only; family authenticated persistence not run | D0 |
 
 
+
+## Repair release coverage, 2 November 2026
+
+[The council repair and release record](ux-council-audit.md#repair-and-release-record-2-november-2026) records exact repair refs, final checks and publication states. This inventory still covers 30 families. Its original 177-file baseline and the two initial failures remain historical evidence. Mocked browser journeys, source-rule emulator checks, sampled public Pages bytes, signed-out Lock probes and authenticated production journeys are separate evidence. Physical-device, OS-keyboard and screen-reader checks and family-level authenticated production persistence remain with the owners named in the council audit unless a dated result explicitly closes them.
