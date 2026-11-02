@@ -41,7 +41,7 @@ jobs:
         working-directory: tests
         run: npm ci --no-audit --no-fund
       - name: Check the JavaScript parses
-        run: for f in js/*.js js/lib/*.js sw.js; do node --check "$f"; done
+        run: for f in js/*.js js/lib/*.js sw.js; do node --check "$f" || exit 1; done
       - name: Click through this copy of the book
         working-directory: tests
         env:
