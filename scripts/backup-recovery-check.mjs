@@ -38,6 +38,10 @@ const DATED = { days: ['days', 'items'], orders: ['orders', 'lines'], waste: ['w
 const EXPECTED_FIELDS = ['exportedAt', 'by', 'config', 'pins', 'wasteReviews', ...ARRAY_COLLECTIONS, ...Object.keys(HISTORIES), ...Object.keys(DATED)].sort();
 const identities = Object.fromEntries(ARRAY_COLLECTIONS.map(name => [name, name + '-sample']));
 Object.assign(identities, { activity: 'cook-a', drinks: 'cook-a', book: 'index', references: 'ref-a', training: 'training-a', notes: 'note-a', directnotes: 'direct-a', minutes: 'meeting-a', recipes: 'recipe-a', drawings: 'drawing-a', suppliers: 'supplier-a', functions: 'function-a' });
+const capabilityIds = { addIds: ['cook-a'], tickIds: ['cook-a', 'worker-a'], delIds: ['cook-a'] };
+const orderEffect = text => ({ text, qty: '2 platters', recipes: ['recipe-a'], fn: 'function-a', dupOk: true });
+const effects = { prep: { 'fn-function-a-recipe-a': { text: 'Synthetic platter: Synthetic function', qty: '2 platters', station: 'Functions', recipe: 'recipe-a', fn: 'function-a', dupOk: true } },
+  order: orderEffect('Function stock: Synthetic function'), cancel: orderEffect('Function cancelled, check the order: Synthetic function'), restore: orderEffect('Function restored, check the order: Synthetic function') };
 let ownSource = false, ownRestored = false, recordCount = 0;
 const document = (root, path) => db.doc(root.path + '/' + (Array.isArray(path) ? path.join('/') : path));
 const put = (root, path, data) => document(root, path).set(data);
@@ -80,13 +84,13 @@ try {
   assert.equal((await restored.get()).exists, false); assert.equal((await restored.listCollections()).length, 0);
   await restored.create({ rehearsal: true }); ownRestored = true;
   const people = [{ id: 'cook-a', name: 'Synthetic recorder', role: 'head', active: true }, { id: 'worker-a', name: 'Synthetic preparer', role: 'staff', active: true }];
-  await put(source, 'config/main', { people, staffIds: people.map(x => x.id), headId: 'cook-a', sousIds: ['cook-a'], proofWords: ['burrata'], proofV: 2 });
+  await put(source, 'config/main', { people, staffIds: people.map(x => x.id), headId: 'cook-a', sousIds: ['cook-a'], ...capabilityIds, proofWords: ['burrata'], proofV: 2 });
   for (const name of ARRAY_COLLECTIONS) {
     const data = { text: 'Synthetic ' + name, v: 2, by: 'cook-a', at: Timestamp.fromMillis(at), nested: { zero: 0, missing: null, labels: ['°C', 'quotes " and commas,'] } };
     if (name === 'deliveries') Object.assign(data, { supplier: 'Synthetic supplier', day: day(0), chilled: 0, frozen: -18.5, receivedById: 'cook-a', receivedAt: at - 60000, recordedAt: at });
     if (name === 'guides') Object.assign(data, { title: 'Synthetic guide', pages: 1, thumb: 'synthetic-small-picture', words: 'Included words' });
     if (name === 'transferOpen') Object.assign(data, { date: day(4), line: 'old-loan', amount: 3, unit: 'kg', returned: false });
-    if (name === 'functions') Object.assign(data, { status: 'cancelled', date: day(0), rounds: [{ at: at + 3600000 }], lines: [{ rid: 'recipe-a', qty: 2, u: [0, 0] }], removed: false });
+    if (name === 'functions') Object.assign(data, { name: 'Synthetic function', status: 'cancelled', date: day(0), rounds: [{ at: at + 3600000 }], lines: [{ rid: 'recipe-a', name: 'Synthetic platter', unit: 'platter', qty: 2, u: [0, 0] }], effects, removed: false });
     if (name === 'recipes') Object.assign(data, { r: { id: 'recipe-a', kind: 'main', name: 'Synthetic recipe', yield: 'Per plate', ingredients: [], pins: [], sections: [], art: '@drawing-a' }, src: 'new', base: '', removed: false, upd: at });
     if (name === 'drawings') Object.assign(data, { rid: 'recipe-a', slot: 'plate', name: 'Synthetic plate', vb: '-110 -110 220 220', k: 1, surf: { fam: 'plate', size: 30 }, els: [], defs: '{}', svgS: '<circle cx="0" cy="0" r="100" fill="#FFFFFF"/>', svgF: '', alt: 'Synthetic drawing', layout: { auto: 1 }, removed: false, upd: at });
     if (name === 'training') Object.assign(data, { person: 'worker-a', source: 'recipe-a', scope: 'synthetic-only' });
@@ -94,7 +98,8 @@ try {
   }
   await put(source, 'deliveries/delivery-null', { day: day(1), chilled: null, frozen: 0, receivedById: 'worker-a', by: 'cook-a', receivedAt: at - 86400000, recordedAt: at });
   await put(source, 'deliveries/outside-window', { day: day(4), chilled: 1, frozen: -19, receivedById: 'cook-a', by: 'cook-a' });
-  for (const [field, [collection, sub]] of Object.entries(HISTORIES)) await put(source, [collection, identities[collection], sub, 'version-1'].join('/'), { v: 1, event: field, by: 'cook-a', at: Timestamp.fromMillis(at - 1000), original: 'Original synthetic wording' });
+  for (const [field, [collection, sub]] of Object.entries(HISTORIES)) await put(source, [collection, identities[collection], sub, 'version-1'].join('/'), { v: 1, event: field, by: 'cook-a', at: Timestamp.fromMillis(at - 1000), original: 'Original synthetic wording',
+    ...(field === 'functionsHist' ? { was: { v: 1, status: 'confirmed', effects } } : {}) });
   for (const [field, [collection, sub]] of Object.entries(DATED)) {
     const line = { text: 'Synthetic ' + field, qty: '2 tubs', amount: 1.25, unit: 'kg', addedById: 'cook-a', by: 'cook-a', at: Timestamp.fromMillis(at), v: 2 };
     if (field === 'days') Object.assign(line, { done: true, doneById: 'cook-a', doneBy: 'Synthetic recorder', doneAt: at, preparedById: 'worker-a', preparedBy: 'Synthetic preparer', preparedAt: at, orig: 'Original synthetic prep', proofV: 2 });
@@ -112,6 +117,9 @@ try {
 
   const originalFile = join(folder, 'source.json'), encryptedFile = join(folder, 'protected.json.enc'), recoveredFile = join(folder, 'verified.json');
   const original = exportFile(sourcePin, originalFile);
+  for (const [field, ids] of Object.entries(capabilityIds)) assert.deepEqual(original.config[field], ids, 'Canonical action ids must be included exactly.');
+  assert.deepEqual(original.functions.find(x => x.id === identities.functions).effects, effects);
+  assert.deepEqual(original.functionsHist[identities.functions][0].was.effects, effects);
   assert.equal(original.deliveries.length, 2); assert(!original.deliveries.some(x => x.id === 'outside-window'));
   assert.equal(original.days[day(4)], undefined); assert.equal(original.transfers[day(4)], undefined);
   assert(original.transferOpen.some(x => x.date === day(4)), 'The included older outstanding index survives independently of the bounded dated window.');
@@ -127,6 +135,9 @@ try {
   for (const [path, data] of rows) batch.set(document(restored, path), data);
   await batch.commit();
   for (const [path, data] of rows) assert.deepEqual((await document(restored, path).get()).data(), data, 'Included document identity and fields must survive.');
+  for (const [field, ids] of Object.entries(capabilityIds)) assert.deepEqual((await restored.collection('config').doc('main').get()).data()[field], ids);
+  assert.deepEqual((await restored.collection('functions').doc(identities.functions).get()).data().effects, effects);
+  assert.deepEqual((await restored.collection('functions').doc(identities.functions).collection('hist').doc('version-1').get()).data().was.effects, effects);
   const roundTrip = exportFile(restoredPin, join(folder, 'roundtrip.json'));
   delete original.exportedAt; delete roundTrip.exportedAt;
   assert.deepEqual(roundTrip, original, 'Re-export of the recovered included data must equal the original export.');
