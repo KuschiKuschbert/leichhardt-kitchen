@@ -2,6 +2,8 @@
 
 Status: implementation and local verification complete. Baseline: `1427fcc`; integrated current main `a2a24b2` on 1 November 2026.
 
+The [2 November council audit](ux-council-audit.md) records the follow-up interaction fixes, measured header-sort work and honest route coverage.
+
 The app stays dependency-free. Existing hidden form controls remain the value and validation source. Shared DOM components enhance new and redrawn controls. Existing save handlers, permissions and reads remain authoritative.
 
 ## Phase 1 inventory

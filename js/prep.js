@@ -3290,7 +3290,7 @@
      row turns into a small card, so nothing needs swiping sideways. A short list gets no tools and stays plain.
      cfg: { key, items, step (rows per page, 15), tools (show the tools from this many rows, 8), noun: [one, many],
             ph (search hint), find(item) (text to search), filters: [[id, label, test(item)]] (first is the default),
-            sorts: [[id, label, compare(a, b)]] (first is the default), cols: [{ h, th, cls, wide, html(item) }]
+            sorts: [[id, label, compare(a, b)]] (first is the default), cols: [{ h, th, cls, wide, html(item), value(item) }]
             or card(item) (a list item for rows that are cards, not table rows), rowCls(item), empty, table (extra class) }
      The page remembers search, filter, sort and how many rows are open per list key until the tab is closed. */
   var LV = {}, LVR = {}, LV_BIG = 100000;
@@ -3309,7 +3309,10 @@
     so = (c.sorts || []).filter(function (x) { return x[0] === s.sort; })[0];
     if (s.col != null && c.cols && c.cols[s.col]) {
       var column = c.cols[s.col];
-      return l.slice().sort(function (a, b) { return window.LK_UX.compare(column.value ? column.value(a) : window.LK_UX.cellValue(column.html(a)), column.value ? column.value(b) : window.LK_UX.cellValue(column.html(b))) * (s.desc ? -1 : 1); });
+      // Derive each filtered row's key once per sort. Keeping keys here makes edits visible on the next redraw.
+      return l.map(function (item, index) { return { item: item, index: index, value: column.value ? column.value(item) : window.LK_UX.cellValue(column.html(item)) }; })
+        .sort(function (a, b) { return window.LK_UX.compare(a.value, b.value) * (s.desc ? -1 : 1) || a.index - b.index; })
+        .map(function (row) { return row.item; });
     }
     return so ? l.slice().sort(so[2]) : l;
   }

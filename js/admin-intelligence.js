@@ -3,7 +3,7 @@
   'use strict';
   var api, context = '', state;
   var labels = { prep: 'Prep lines', orders: 'Staff order lines', waste: 'Waste entries', transfers: 'Transfer entries', supplierOrders: 'Supplier order lines', deliveries: 'Delivery receipts', functions: 'Confirmed functions' };
-  function reset() { context = ''; state = { cache: {}, loading: {}, errors: {}, request: 0, range: 30, query: '', referenceQuery: '', referenceSearchDraft: '', referenceLimit: 20, confirmedLimit: 20, item: '', evidence: null, draft: null, message: '', busy: false, page: '', draftOpen: false, draftPage: '', origin: null, disclosures: {}, selectedRef: '', selectedTraining: '', trainingLimit: 12, savedTrainingLimit: 20, reviewedTraining: [] }; }
+  function reset() { context = ''; state = { cache: {}, loading: {}, errors: {}, request: 0, range: 30, referenceQuery: '', referenceSearchDraft: '', referenceLimit: 20, confirmedLimit: 20, item: '', evidence: null, draft: null, message: '', busy: false, page: '', draftOpen: false, draftPage: '', origin: null, disclosures: {}, selectedRef: '', selectedTraining: '', trainingLimit: 12, savedTrainingLimit: 20, reviewedTraining: [] }; }
   reset();
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
   function button(action, text, value, disabled) { return '<button type="button" class="btn" data-ai="' + action + '" data-value="' + esc(value || '') + '"' + (disabled ? ' disabled' : '') + '>' + esc(text) + '</button>'; }
@@ -149,11 +149,9 @@
       s = Object.assign({}, s, filtered, { items: filtered.items.slice(0, 200), totalItems: filtered.items.length, truncated: filtered.items.length > 200 });
     }
     state.analysisData = s;
-    var list = s.items.filter(function (x) { return window.LK_ANALYSIS.key(x.text).indexOf(window.LK_ANALYSIS.key(state.query)) >= 0; });
-    var view = recordView('analysis-items', list, [['name', 'Name', function (r) { return r.text; }], ['days', 'Days', function (r) { return r.sample; }]], []); list = view.rows;
+    var view = recordView('analysis-items', s.items, [['name', 'Name', function (r) { return r.text; }], ['days', 'Days', function (r) { return r.sample; }]], []), list = view.rows;
     var queue = view.tools + queueHeading('Recorded items', list.length + ' matches', 'Source evidence') + filters() + '<p class="hint">' + esc(s.from) + ' to ' + esc(s.to) + '. Today is excluded.</p>' +
       '<label class="label" for="ai-section-filter">Section</label><select class="search" id="ai-section-filter" data-k="ai-analysis-section" data-ai-section>' + options(sectionOptions, state.section, 'All sections') + '</select>' +
-      '<form class="ai-queue-search" data-ai-search><label class="label" for="ai-search">Find an item</label><div class="btn-row"><input class="search" id="ai-search" data-k="ai-analysis-search" name="q" value="' + esc(state.query) + '"><button class="btn" type="submit">Search</button></div></form>' +
       '<ul class="ai-list">' + list.slice(0, 40).map(function (x) { return '<li><button type="button" class="ai-review-row" data-ai="item" data-value="' + esc(x.id) + '"' + (state.item === x.id ? ' aria-current="true"' : '') + '><span class="eyebrow ai-row-kind">Recorded evidence</span><strong class="ai-row-title">' + esc(x.text) + '</strong><span class="hint ai-row-meta">' + x.sample + (x.sample === 1 ? ' day. ' : ' days. ') + (x.ref ? 'Source link available' : 'Needs a reference') + '</span></button></li>'; }).join('') + '</ul>' +
       '<p class="hint">' + (list.length ? 'Showing ' + Math.min(list.length, 40) + ' of ' + list.length + ' matches.' : 'No matching recorded items.') + '</p>' +
       help('Coverage and daily records', '<p class="hint">Most active ' + s.items.length + ' of ' + s.totalItems + ' item groups. Original daily evidence remains available. Section filters include only explicitly tagged records.</p>' + metrics(s.coverage) + metrics(s.quality) + '<div class="btn-row">' + (s.dates || []).map(function (d) { return button('day-evidence', d.day, d.day); }).join('') + '</div>');
@@ -202,8 +200,9 @@
   function recordView(key, rows, columns, categories) {
     state.tables = state.tables || {};
     var t = state.tables[key] || (state.tables[key] = { q: '', column: '', direction: 0, filters: {} });
+    var searchKey = key === 'analysis-items' ? window.LK_ANALYSIS.key : function (text) { return text.toLocaleLowerCase(); }, query = searchKey(t.q);
     var shown = rows.filter(function (row) {
-      return (!t.q || columns.map(function (c) { return c[2](row); }).join(' ').toLocaleLowerCase().indexOf(t.q.toLocaleLowerCase()) >= 0) &&
+      return (!query || searchKey(columns.map(function (c) { return c[2](row); }).join(' ')).indexOf(query) >= 0) &&
         (categories || []).every(function (c) { return !t.filters[c[0]] || String(c[2](row)) === t.filters[c[0]]; });
     });
     var sort = columns.filter(function (c) { return c[0] === t.column; })[0];
@@ -463,10 +462,9 @@
   });
   document.addEventListener('submit', function (e) {
     if (!validContext()) return;
-    if (e.target.matches('[data-ai-reference-search], [data-ai-search]')) e.preventDefault();
+    if (e.target.matches('[data-ai-reference-search]')) e.preventDefault();
     if (state.busy) return;
     if (e.target.matches('[data-ai-reference-search]')) { e.preventDefault(); state.referenceQuery = state.referenceSearchDraft = e.target.querySelector('[name="q"]').value.trim(); state.referenceLimit = state.confirmedLimit = 20; redraw(); return; }
-    if (e.target.matches('[data-ai-search]')) { e.preventDefault(); state.query = e.target.querySelector('[name="q"]').value; state.item = ''; state.evidence = null; redraw(); }
   });
   document.addEventListener('click', function (e) {
     var el = e.target.closest('[data-ai]'); if (!el || !validContext()) return;
