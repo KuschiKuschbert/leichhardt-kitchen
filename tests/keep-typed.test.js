@@ -35,7 +35,7 @@ const fits = async (p, label) => { const o = await L.overflow(p); ok(!o, label +
 // a button left on by an older page: the save itself must refuse too
 const force = (p, sel) => p.evaluate(s => { const e = document.querySelector(s); if (!e) return false; e.disabled = false; e.click(); return true; }, sel);
 const writesTo = (p, re) => p.evaluate(r => window.__fake.writes.filter(ops => ops.some(o => new RegExp(r).test(o.path))).length, re);
-async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label + ' threw ' + String(e).split('\n')[0]); } }
+async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label + ' threw ' + String(e)); } }
 
 const DRAFTS = [
   ['minutes', 'minutes', async p => { await p.click('[data-p="mn-new"]'); await L.settle(p, 200); await p.fill('[data-k="mn-decisions"]', 'Fryer roster'); }, s => s.mf === 'Fryer roster'],
@@ -46,6 +46,13 @@ const DRAFTS = [
   ['Add several names', 'people', async p => { await p.fill('[data-k="a-bulk"]', 'Zed\nYan'); }, s => s.bulk === 'Zed\nYan']
 ];
 const READY = { minutes: '[data-p="mn-new"]', notes: '[data-p="n-new"]', guides: '[data-p="g-new"]', cutoffs: '[data-p="cut-day"]', people: '[data-k="a-bulk"]' };
+// A cut-off choice is ready through its enhanced visible trigger, not source-node presence alone.
+const cutReady = (p, selector) => L.waitFor(p, s => {
+  const source = document.querySelector(s), group = source && source.closest('.ux-choice-source'), trigger = group && group.nextElementSibling;
+  if (!source || !source.isConnected || !group || getComputedStyle(group).display !== 'none' || !trigger || !trigger.isConnected || !trigger.classList.contains('ux-picker-trigger') || trigger.disabled) return false;
+  const rect = trigger.getBoundingClientRect();
+  return getComputedStyle(trigger).visibility === 'visible' && rect.width > 0 && rect.height > 0;
+}, selector, 8000);
 
 (async () => {
   const b = await L.start();
@@ -59,7 +66,8 @@ const READY = { minutes: '[data-p="mn-new"]', notes: '[data-p="n-new"]', guides:
       await safe(lb, async () => {
         p = await owner(b, '#/admin', w);
         await L.adminTab(p, tab);
-        await L.waitFor(p, s => !!document.querySelector(s), READY[tab], 8000);
+        if (tab === 'cutoffs') await cutReady(p, '[data-p="cut-day"][data-i="0"][data-v="' + ((next + 2) % 7) + '"]');
+        else await L.waitFor(p, s => !!document.querySelector(s), READY[tab], 8000);
         await make(p); await L.settle(p, 200);
         ok(await asks(p), lb + ': a reload or closing the tab asks first');
         await p.click('.p-bar [data-p="signout"]'); await L.settle(p, 300);
@@ -155,7 +163,7 @@ const READY = { minutes: '[data-p="mn-new"]', notes: '[data-p="n-new"]', guides:
     // the cut-offs' Undo throws every change away, so it asks again; left alone it goes back
     await safe(w + ' cut-offs', async () => {
       p = await owner(b, '#/admin', w);
-      await L.adminTab(p, 'cutoffs'); await L.waitFor(p, () => !!document.querySelector('[data-p="cut-day"]'), null, 8000);
+      await L.adminTab(p, 'cutoffs'); await cutReady(p, '[data-p="cut-day"][data-i="0"][data-v="' + ((next + 2) % 7) + '"]');
       await L.choose(p, '[data-p="cut-day"][data-i="0"][data-v="' + ((next + 2) % 7) + '"]'); await L.settle(p, 150);
       await L.choose(p, '[data-p="cut-day"][data-i="1"][data-v="' + ((next + 3) % 7) + '"]'); await L.settle(p, 150);
       await p.click('[data-p="cut-undo"]'); await L.settle(p, 200);
