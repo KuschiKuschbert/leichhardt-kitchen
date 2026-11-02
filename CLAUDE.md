@@ -16,6 +16,7 @@ The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the
 | --- | --- |
 | Whole-app audit, consistency, redundancy, security and performance review | `docs/whole-app-audit.md` (brief), `docs/ux-council-audit.md` (evidence), `docs/whole-app-inventory.md` (route coverage) |
 | Login, who can read or write what, recipes, function writes | `docs/private-kitchen-access.md` (wins over older wording below) |
+| Staff Add/Tick/Delete, canonical capability lists and staged publication | `docs/staff-capabilities.md` |
 | Device choice, Google persistence, daily PIN unlock, Update confirmation | `docs/device-sessions.md` (2 Nov 2026, replaces earlier session wording) |
 | Multiplying recipe amounts | `docs/recipe-multiplier.md` |
 | Shared-screen Prep attribution, modal picker, recorder identity and completion credit | `docs/shared-prep-attribution.md` |
@@ -247,7 +248,7 @@ Read `docs/function-printing.md` before changing the print copy. Layout 2 is app
 
 ## One-click function cancellation (25 Oct 2026)
 
-Read `docs/function-cancellation.md` before changing function status writes. Sous chefs, headId, function managers and the verified admin may cancel. Other editing and contact permissions still use fnIds. Cancel and the same person's two-minute Undo read the server, use version guards, keep matching immutable history and batch prep/order effects. Keep the shared helpers in `js/functions.js`; the form uses them too. Rules must pass the largest 12-line, 8-round batch and be published before this UI. The editor and app use API 8. List/form deletion uses `setRemoved()` in `js/fnedit.js`, only for drafts/cancelled bookings. Deleted has explicit recovery that leaves the booking cancelled. The People checkbox grants create/edit access without changing a kitchen role; do not hardcode real staff names or grant a named person access as part of code authoring.
+Read `docs/function-cancellation.md` before changing function status writes. Sous chefs, headId, function managers and the verified admin may cancel. Other editing and contact permissions still use fnIds. Cancel and the same person's two-minute Undo read the server, use version guards, keep matching immutable history and batch prep/order effects. Keep the shared helpers in `js/functions.js`; the form uses them too. Rules must pass the largest 12-line, 8-round batch and be published before this UI. The editor and app use API 10, loaded as `fnedit.js?v=6` for canonical staff capabilities. List/form deletion uses `setRemoved()` in `js/fnedit.js`, only for drafts/cancelled bookings. Deleted has explicit recovery that leaves the booking cancelled. The People checkbox grants create/edit access without changing a kitchen role; do not hardcode real staff names or grant a named person access as part of code authoring.
 
 
 ## Delivery received (26 Oct 2026)

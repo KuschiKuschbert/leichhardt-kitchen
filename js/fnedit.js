@@ -17,7 +17,7 @@
 (function () {
   'use strict';
 
-  var API = 9;
+  var API = 10;
   var FN = window.LK_FN, M = FN.M, P = window.LK_PREP, esc = FN.esc, T = window.LK_TIME;
   function B() { return P.book(); }
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -224,6 +224,7 @@
       // Keep canAt unchanged: restoration must never enable cancellation Undo or reactivate service.
       f.chg = [{ at: t, by: me, what: what }].concat((before.chg || []).slice(0, 7));
       M.derive(f);
+      f.effects = M.effects(f, id);
       var ops = [['set', api.docRef('functions', id), f], ['set', api.fs().doc(api.db(), 'kitchens', api.pin(), 'functions', id, 'hist', String(before.v)), { was: before, at: t, what: what }]];
       return api.W(ops, context).then(function () { return Object.assign({ id: id }, f); });
     }).then(function (f) {
@@ -500,6 +501,7 @@
       // came in (no od) and not moved gets none, so nothing old is ordered twice.
       if (f.status === 'confirmed' && M.isYmd(f.date)) f.od = prev && prev.status === 'confirmed' && prev.date === f.date ? (prev.od || '') : M.orderOn(f.date, today());
       else f.od = '';
+      f.effects = M.effects(f, id);
       var what = M.changes(prev && prev.status ? prev : null, f).join('; ').slice(0, 300);
       f.chg = (prev && prev.chg || []).slice(0, 7);
       if (what && (f.status !== 'draft' || (prev && prev.status !== 'draft'))) f.chg.unshift({ at: t, by: me, what: what });
