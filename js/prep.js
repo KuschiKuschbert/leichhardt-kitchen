@@ -117,6 +117,20 @@
      Firestore over its memory-only write queue. lk.fsheal records only a repair that is ready to reload, once a day. */
   var healWanted = false, healRun = null, healTimer = null, healAgain = false, healMessage = '';
   var HEAL_WAIT = {};
+  var HEAL_SIGNAL_NOTE = 'The book could not be reached. Keep this tab open. The saved-copy repair will wait.';
+  function healPrefix() {
+    var app = fb && fb.app, project = app && app.options && app.options.projectId || FB && FB.projectId;
+    var name = app ? app.name : '[DEFAULT]';
+    if (typeof project !== 'string' || !project || typeof name !== 'string' || !name) return '';
+    // Verified SDK 10.14.1 indexedDbStoragePrefix: default database, exact configured project and primary app name.
+    // All historical persistent clients used this same default app/database. kitchen-owner has only used memory.
+    return 'firestore/' + name + '/' + project + '/';
+  }
+  function healSharedKey(key, prefix) {
+    // SDK WebStorage shared-state families, including their full app/project/database prefix and suffix separator.
+    return ['firestore_sequence_number_', 'firestore_online_state_', 'firestore_bundle_loaded_v2_'].some(function (family) { return key === family + prefix; })
+      || ['firestore_clients_', 'firestore_mutations_', 'firestore_targets_', 'firestore_zombie_'].some(function (family) { return key.indexOf(family + prefix + '_') === 0; });
+  }
   function healNote(msg) { if (healMessage !== msg) { healMessage = msg; toast(msg, null, 9000); } }
   function healWork() {
     // The shared guard includes lazy editor/supplier drafts, privacy-locked work and uncertain write tickets.
@@ -138,40 +152,36 @@
     if (lsGet('lk.fsheal') === dayNow()) { healWanted = false; return; }
     if (healWork()) { healPause(); return; }
     if (typeof lkServerUp !== 'function') { healNote('The saved copy could not be checked. Keep this tab open.'); return; }
-    var run = healRun = { writer: writerKey(), epoch: accessEpoch, edits: typeof lkEdits === 'number' ? lkEdits : 0 };
+    var prefix = healPrefix();
+    if (!prefix) { healNote('The saved copy could not be checked. Keep this tab open.'); return; }
+    var run = healRun = { writer: writerKey(), epoch: accessEpoch, prefix: prefix, edits: typeof lkEdits === 'number' ? lkEdits : 0 };
     healAgain = false;
     function safe() {
-      return healWanted && healRun === run && !healWork() && writerKey() === run.writer && accessEpoch === run.epoch &&
+      return healWanted && healRun === run && navigator.onLine !== false && !healWork() && healPrefix() === run.prefix && writerKey() === run.writer && accessEpoch === run.epoch &&
         (typeof lkEdits === 'number' ? lkEdits : 0) === run.edits;
     }
     function check() { if (!safe()) throw HEAL_WAIT; }
     // One existing public HEAD per safe recovery attempt, no Firestore read or polling. Actual work/online events retry.
     Promise.resolve().then(function () { return lkServerUp(); }).then(function (up) {
       check();
-      if (!up) { healNote('The book could not be reached. Keep this tab open. The saved-copy repair will wait.'); throw HEAL_WAIT; }
+      if (!up) { healNote(HEAL_SIGNAL_NOTE); throw HEAL_WAIT; }
       // Check before terminating, not only before reload: terminate already destroys the SDK's ability to send work.
       check(); return fb ? fb.fs.terminate(fb.db) : null;
     }).then(function () {
       check();
-      try { Object.keys(LS || {}).forEach(function (k) { if (/^firestore_/.test(k)) LS.removeItem(k); }); } catch (e) {}
-      return indexedDB.databases ? indexedDB.databases() : [{ name: 'firestore/[DEFAULT]/' + FB.projectId + '/main' }];
-    }).then(function (dbs) {
+      try { Object.keys(LS || {}).forEach(function (k) { if (healSharedKey(k, run.prefix)) LS.removeItem(k); }); } catch (e) {}
       check();
-      // Old persistent read copies only. Keep every private draft and operation under its existing recorder contract.
-      return dbs.filter(function (d) { return /^firestore\//.test(d.name); }).reduce(function (p, d) {
-        return p.then(function () {
-          check();
-          return new Promise(function (ok, no) {
-            var q = indexedDB.deleteDatabase(d.name);
-            q.onsuccess = function () { ok(); };
-            q.onerror = q.onblocked = function () { no(new Error('Saved read copy could not be cleared.')); };
-          });
-        });
-      }, Promise.resolve());
+      // SDK IndexedDbPersistence/clearIndexedDbPersistence append main to that prefix. Never enumerate other apps'
+      // databases: GitHub Pages projects share an origin. This exact name also works without indexedDB.databases().
+      return new Promise(function (ok, no) {
+        var q = indexedDB.deleteDatabase(run.prefix + 'main');
+        q.onsuccess = function () { ok(); };
+        q.onerror = q.onblocked = function () { no(new Error('Saved read copy could not be cleared.')); };
+      });
     }).then(function () {
       check(); lsSet('lk.fsheal', dayNow()); healWanted = false; location.reload();
     }).catch(function (e) {
-      if (e === HEAL_WAIT) { if (healWork()) healPause(); }
+      if (e === HEAL_WAIT) { if (healWork()) healPause(); else if (navigator.onLine === false) healNote(HEAL_SIGNAL_NOTE); }
       else healNote('The saved copy could not be repaired. Keep this tab open. Your work has not been discarded.');
     }).then(function () {
       healRun = null;
