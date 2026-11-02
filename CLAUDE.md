@@ -23,6 +23,7 @@ The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the
 | Admin autocorrect repairs, shared protected words and private correction history | `docs/proofreader-admin.md` |
 | Admin visual design, selected A: The Chef's Desk | `docs/admin-design-options/brief.md` |
 | Shared controls, deferred search, table interactions and council audit | `docs/adaptive-controls.md`, `docs/ux-council-audit.md` |
+| Nightly backup format, protected decryption and isolated recovery checks | `docs/backup-recovery.md` |
 | Suppliers, order history, cut-off sheets | `docs/supplier-workspace.md` |
 | Wastage history, ranges, CSV | `docs/wastage-history.md` |
 | CSV text, quoting and numeric values across reports | `docs/report-exports.md` |
@@ -89,7 +90,7 @@ After approval, implement small reversible units under the existing shipping rul
 | `scripts/fold-recipes.mjs` | Folds the head chef's recipe changes from a Backup file into `js/data.js`: run it without `--write` first. Never commit the Backup file (the repository is public). `tests/fold-recipes.test.js` |
 | `scripts/session-check.mjs`, `.github/workflows/session-check.yml` | Session check (by hand, Actions tab): reads who was seen, who still saves with the older PIN proof and who has a PIN session, and prints it by staff list place and role only (the log is public). Run it before phase 2 of PIN sessions |
 | `scripts/cutoff-push.mjs`, `.github/workflows/cutoff-push.yml` | Phone pushes for order cut-offs, every 10 minutes: Firebase Cloud Messaging to the chefs' phones that turned them on (`push`), once each (`pushsent`), none once the supplier is ticked off (`cutdone`). Secrets `FIREBASE_SA` and `KITCHEN_PIN` |
-| `scripts/nightly-backup.mjs`, `.github/workflows/nightly-backup.yml` | Nightly backup (03:30 kitchen time): reads the book like the admin Backup button, encrypts it with the `BACKUP_KEY` secret (openssl, AES-256) and keeps it as a GitHub artifact for 90 days. Reads only |
+| `scripts/nightly-backup.mjs`, `scripts/backup-crypto.mjs`, `.github/workflows/nightly-backup.yml` | Nightly backup (03:30 kitchen time): reads the included-data export, encrypts it with authenticated AES-256-GCM and the existing `BACKUP_KEY`, and keeps the encrypted artifact for 90 days. `docs/backup-recovery.md` covers protected decryption, trusted older archives and the demo-only recovery rehearsal. Reads only |
 
 ## Routes
 Supplier tools: `#/suppliers`, `#/suppliers/<id>`, `#/suppliers/manage`, `#/suppliers/<id>/manage`, `#/suppliers/cutoff/<cut-off id>/<date>`. Read `docs/supplier-workspace.md` before changing its data contract. The three supplier scripts load only for an authorised chef. Goods are private Firestore data, never static assets.
