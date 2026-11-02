@@ -28,6 +28,7 @@ await env.clearFirestore();
 await env.withSecurityRulesDisabled(async ctx => {
   const db = ctx.firestore();
   await setDoc(doc(db, K + 'config/main'), {
+    addIds: ['sam', 'ann', 'bo', 'cal', 'hd'], tickIds: ['sam', 'ann', 'bo', 'cal', 'hd'], delIds: ['sam', 'hd'],
     people: PEOPLE,
     sousIds: ['sam', 'hd'], pingIds: ['sam', 'bo', 'hd'], staffIds: ['sam', 'ann', 'bo', 'cal', 'hd'], headId: 'hd', showBadges: true
   });
@@ -117,7 +118,7 @@ await ok(W([['config/main', { pinOpen: { dee: Date.now() + 86400000 } }, true]],
 await ok(W([['config/main', { sousIds: ['sam', 'ann'], updated: 1, updatedBy: 'Sam' }, true]], { id: 'sam' }), false, 'config: a sous chef cannot change sousIds');
 await ok(W([['config/main', { pingIds: ['sam', 'ann'], updated: 1, updatedBy: 'Sam' }, true]], { id: 'sam' }), false, 'config: a sous chef cannot change pingIds');
 await ok(W([['config/main', { people: [{ id: 'ann', name: 'Ann', role: 'staff', active: true }], updated: 1, updatedBy: 'Ann' }, true]], { id: 'ann' }), false, 'config: staff cannot change the people list');
-await ok(setDoc(doc(owner, K + 'config/main'), { people: PEOPLE, headId:'hd', sousIds: ['sam'], pingIds: ['sam', 'bo'], staffIds: ['sam', 'ann', 'bo', 'cal','hd'], showBadges: false }), true, 'config: the head chef writes everything');
+await ok(setDoc(doc(owner, K + 'config/main'), { people: PEOPLE, addIds:['sam','ann','bo','cal','hd'],tickIds:['sam','ann','bo','cal','hd'],delIds:['sam','hd'],headId:'hd', sousIds: ['sam'], pingIds: ['sam', 'bo'], staffIds: ['sam', 'ann', 'bo', 'cal','hd'], showBadges: false }), true, 'config: the head chef writes everything');
 
 // activity: a person's own tally, or the head chef or a sous chef for anyone
 await ok(W([['activity/ann', { name: 'Ann', visits: increment(1) }, true]], { id: 'ann' }), true, 'activity: own tally (an older field on the record does not get in the way)');
@@ -387,11 +388,11 @@ const fpins = { fay: '5151', finn: '5252', fox: '5353', gone: '5454' };
 Object.assign(pins, fpins);
 await env.withSecurityRulesDisabled(async ctx => {
   const db = ctx.firestore();
-  await setDoc(doc(db, K + 'config/main'), { fnIds: ['fay', 'finn'], staffIds: ['sam', 'ann', 'bo', 'cal', 'hd', 'fay', 'finn', 'fox'] }, { merge: true });
+  await setDoc(doc(db, K + 'config/main'), { addIds: ['sam', 'ann', 'bo', 'cal', 'hd', 'fay', 'finn', 'fox'], tickIds: ['sam', 'ann', 'bo', 'cal', 'hd', 'fay', 'finn', 'fox'], fnIds: ['fay', 'finn'], staffIds: ['sam', 'ann', 'bo', 'cal', 'hd', 'fay', 'finn', 'fox'] }, { merge: true });
   for (const id of Object.keys(fpins)) { await setDoc(doc(db, K + 'staffpins/' + id), { hash: hash(id, fpins[id]) }); await setDoc(doc(db, K + 'pinset/' + id), { at: 1 }); }
 });
 const T0 = Date.UTC(2026, 9, 24, 8, 0);   // 18:00 in Brisbane
-const fnc = x => Object.assign({ v: 1, status: 'draft', name: 'Smith 50th', date: '2026-10-24', start: T0, loc: 'Beer garden', guests: 60, mode: 'stag',
+const fnc = x => Object.assign({ v: 1, effects: { prep: {}, order: {}, cancel: {}, restore: {} }, status: 'draft', name: 'Smith 50th', date: '2026-10-24', start: T0, loc: 'Beer garden', guests: 60, mode: 'stag',
   lines: [{ rid: 'antipasto-platter', name: 'Antipasto Platter', unit: 'platter', spec: 'Per platter.', fp: '', qty: 3, u: [0, 0, 0] },
     { rid: 'aussie-platter', name: 'Aussie Platter', unit: 'platter', spec: 'Per platter.', fp: '', qty: 4, u: [0, 0, 1, 1] },
     { rid: 'pizza-platter', name: 'Pizza Platter', unit: 'platter', spec: 'Per platter.', fp: '', qty: 5, u: [1, 1, 2, 2, 2] }],

@@ -430,7 +430,7 @@ function controlWrite(ops) {
   const cfg = ops.find(o => key(o.ref.path) === root + '/config/main'), roster = ops.find(o => key(o.ref.path) === root + '/login/roster');
   // Inspect the exact after-image applyOp will commit, including merge:true's nested map leaves.
   const cfgBase = cfg && cfg.kind === 'set' && !cfg.merge ? {} : config;
-  const next = cfg && resolveVal(cfg.data, cfgBase), allowed = ['people', 'staffIds', 'sousIds', 'headId', 'pingIds', 'fnIds', 'fnOnlyIds', 'pinOpen', 'updated', 'updatedBy', 'by'];
+  const next = cfg && resolveVal(cfg.data, cfgBase), allowed = ['people', 'staffIds', 'sousIds', 'headId', 'pingIds', 'fnIds', 'fnOnlyIds', 'addIds', 'tickIds', 'delIds', 'pinOpen', 'updated', 'updatedBy', 'by'];
   const user = authUser(first), authTime = user && user.authTime * 1000;
   const freshOwner = Number.isFinite(authTime) && authTime <= requestNow() + 60000 && authTime >= requestNow() - 300000;
   const afterConfig = next || config, configMissing = store[root + '/config/main'] === undefined;
@@ -529,6 +529,60 @@ function commitOps(ops) {
   // the rules see a record as it will be after the write (request.resource.data): a merge or an update keeps the fields
   // already stored, by among them (27 Oct 2026: a merge with no by kept a sous chef's id and the rules refused the head chef)
   const after = o => Object.assign({}, o.kind === 'set' && !o.merge ? {} : (store[key(o.ref.path)] || {}), o.data || {});
+  // Match the canonical capability rule boundary. Fixture flags and UI visibility never grant a write.
+  const equalField = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  const fieldsChanged = (a, b) => [...new Set(Object.keys(a || {}).concat(Object.keys(b || {})))].filter(k => !equalField((a || {})[k], (b || {})[k]));
+  const hasCap = (c, cap) => !!actor && !(c.fnOnlyIds || []).includes(actor) && (actor === c.headId || Array.isArray(c[cap + 'Ids']) && c[cap + 'Ids'].includes(actor));
+  const chef = c => !!actor && !(c.fnOnlyIds || []).includes(actor) && (actor === c.headId || (c.sousIds || []).includes(actor));
+  const ownUndo = (old, next, changes, c) => hasCap(c, 'add') && old.addedById === actor && Number.isFinite(old.addedAt) && old.addedAt <= requestNow() && requestNow() - old.addedAt < 120000 &&
+    old.done !== true && old.ordered !== true && old.deleted !== true && next.deleted === true && changes.every(k => ['deleted', 'deletedBy', 'deletedAt', 'by'].includes(k));
+  const fnLine = (op, old, next, changes, c) => {
+    if (!actor || !((c.fnIds || []).includes(actor) || chef(c)) || !next.fn || !op.ref.path.at(-1).startsWith('fn-' + next.fn) || old && old.fn !== next.fn) return false;
+    const path = rootOf(op) + '/functions/' + next.fn, fn = ops.find(x => key(x.ref.path) === path);
+    const booking = fn && after(fn), previous = store[path];
+    if (!booking || booking.by !== actor || booking.v !== (previous ? previous.v + 1 : 1)) return false;
+    if ((c.fnIds || []).includes(actor)) return changes.every(k => ['text', 'qty', 'station', 'recipe', 'recipes', 'fn', 'dupOk', 'deleted', 'deletedBy', 'deletedAt', 'addedBy', 'addedById', 'addedAt', 'by'].includes(k));
+    if (!previous || previous.status === booking.status || !previous.effects) return false;
+    const parts = op.ref.path, day = parts[3], id = parts.at(-1), prep = parts[2] === 'days', effects = previous.effects;
+    const bodySame = body => body && Object.keys(body).every(k => equalField(next[k], body[k]));
+    const cancelled = booking.status === 'cancelled', today = new Date(requestNow() + 36000000).toISOString().slice(0, 10), suffix = day.replace(/-/g, '');
+    const od = cancelled ? previous.od : booking.od, base = 'fn-' + next.fn;
+    const cancelledDay = new Date((previous.canAt || 0) + 36000000).toISOString().slice(0, 10);
+    const validBody = prep ? day === previous.date && bodySame(effects.prep[id]) && next.deleted === cancelled : !!od && (
+      day === od && id === base && day >= today && next.deleted === cancelled && bodySame(effects.order) ||
+      previous.date >= day && (
+        id === base + '-x' + suffix && (cancelled ? od < day && day === today && next.deleted === false && bodySame(effects.cancel) : od <= day && od < today && day === cancelledDay && next.deleted === true && bodySame(effects.restore)) ||
+        !cancelled && od < day && day === today && id === base + '-r' + suffix && next.deleted === false && bodySame(effects.restore)));
+    const bodyFields = prep ? ['text', 'qty', 'station', 'recipe', 'fn', 'dupOk'] : ['text', 'qty', 'recipes', 'fn', 'dupOk'];
+    return validBody && (next.deleted === true ? next.deletedAt === booking.upd && changes.every(k => [...bodyFields, 'deleted', 'deletedBy', 'deletedAt', 'by'].includes(k)) :
+      next.addedById === actor && next.addedAt === booking.upd && changes.every(k => [...bodyFields, 'deleted', 'addedBy', 'addedById', 'addedAt', 'by'].includes(k)));
+  };
+  const capabilityRefused = ops.some(o => {
+    const path = key(o.ref.path), old = store[path], next = o.kind === 'delete' ? null : after(o), c = cfgOf(o.ref), changes = fieldsChanged(old, next);
+    if (/\/config\/main$/.test(path) && next) {
+      const names = ['addIds', 'tickIds', 'delIds'];
+      if (admin) return names.some(k => next[k] !== undefined && (!Array.isArray(next[k]) || next[k].length > 80)) || names.some(k => old && old[k] !== undefined) && names.some(k => next[k] === undefined);
+      return names.some(k => changes.includes(k));
+    }
+    if (admin) return false;
+    const line = path.match(/^kitchens\/[^/]+\/(days|orders)\/[^/]+\/(items|lines)\/[^/]+$/);
+    if (line) {
+      if (!next) return true;
+      if (fnLine(o, old, next, changes, c)) return false;
+      if (!old) return !hasCap(c, 'add') || next.done === true || next.ordered === true || next.deleted === true || !Number.isFinite(next.addedAt || 0) || (next.addedAt || 0) > requestNow() + 60000;
+      if (changes.some(k => ['addedById', 'addedBy', 'addedAt'].includes(k))) return true;
+      const prep = line[1] === 'days', ticks = prep ? ['done', 'doneAt', 'doneBy', 'doneById', 'preparedBy', 'preparedById', 'preparedAt'] : ['ordered', 'orderedAt', 'orderedBy'];
+      const removals = prep ? ['deleted', 'deletedBy', 'deletedAt', 'mergedInto'] : ['deleted', 'deletedBy', 'deletedAt'];
+      return changes.some(k => ticks.includes(k)) && !(prep ? hasCap(c, 'tick') : chef(c)) ||
+        changes.some(k => removals.includes(k)) && !(hasCap(c, 'del') && (prep || chef(c))) && !ownUndo(old, next, changes, c) ||
+        changes.some(k => !['by', ...ticks, ...removals].includes(k)) && !hasCap(c, 'add');
+    }
+    if (/\/waste\/[^/]+\/lines\/[^/]+$/.test(path) && !old) return !hasCap(c, 'add');
+    if (/\/transfers\/[^/]+\/lines\/[^/]+$/.test(path)) return !old ? !hasCap(c, 'add') : changes.some(k => ['returned', 'returnedBy', 'returnedById', 'returnedAt'].includes(k)) && !hasCap(c, 'tick');
+    return false;
+  });
+  if (capabilityRefused) return Promise.reject({ code: 'permission-denied' });
+
   // Shared prep attributes reported work separately from the PIN-session recorder. Match the prep-only rules;
   // preparedAt ties the report to this tick so an old client's retained fields never credit its later re-tick.
   const preparedValue = (d, field) => d && d[field] !== undefined ? d[field] : field === 'preparedAt' ? 0 : '';
@@ -635,6 +689,8 @@ function commitOps(ops) {
       if (!/\/functions\/[^/]+$/.test(k)) return false;
       const old = store[k], d = o.data;
       if (d.v !== (old ? old.v + 1 : 1)) return true;
+      if (!old && !d.effects) return true;
+      if (old && old.effects !== undefined && d.effects === undefined || d.effects !== undefined && (!d.effects || !d.effects.prep || Object.keys(d.effects.prep).length > 12 || !d.effects.order || !d.effects.cancel || !d.effects.restore || Object.keys(d.effects).some(k => !['prep', 'order', 'cancel', 'restore'].includes(k)))) return true;
       if (d.status === 'confirmed') return (d.lines || []).some(l => (l.u || []).length !== l.qty || l.u.some(r => !(r >= 0 && r < d.rounds.length)));
       return false;
     });

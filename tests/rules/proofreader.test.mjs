@@ -12,7 +12,7 @@ const roles = { owner: '', ownkit: 'kit', kit: 'kit', sam: 'sam', ann: 'ann', lo
 const dbs = Object.fromEntries(Object.keys(roles).map(r => [r, (r === 'unverified' ? env.authenticatedContext(r, { email, email_verified: false })
   : r === 'other' ? env.authenticatedContext(r, { email: 'other@test.local', email_verified: true }) : anonContext(env, r)).firestore()]));
 dbs.signedout = env.unauthenticatedContext().firestore();
-const config = { staffIds: ['kit', 'sam', 'ann', 'lou', 'vic', 'fay', 'bo'], sousIds: ['kit', 'sam'], headId: 'kit', fnIds: ['fay'], fnOnlyIds: ['fay'], people: [], by: 'sam' };
+const config = { addIds: ['kit', 'sam', 'ann', 'lou', 'bo'], tickIds: ['kit', 'sam', 'ann', 'lou', 'bo'], delIds: ['kit', 'sam', 'lou'], staffIds: ['kit', 'sam', 'ann', 'lou', 'vic', 'fay', 'bo'], sousIds: ['kit', 'sam'], headId: 'kit', fnIds: ['fay'], fnOnlyIds: ['fay'], people: [], by: 'sam' };
 const line = { text: 'Cut brine', orig: 'cut brie', qty: '2', station: 'Larder', recipe: 'wrong', done: false, deleted: false, addedBy: 'Ann', addedById: 'ann', addedAt: at - 3600000, by: 'ann' };
 const p = `days/${today}/items/line`, o = `orders/${today}/lines/line`;
 let checks = 0, failed = 0;
@@ -95,7 +95,7 @@ await expect('stale repair cannot overwrite first version', false, () => repair(
 for (const r of ['owner', 'ownkit', 'kit', 'sam', 'ann', 'lou', 'vic', 'tab']) {
   await expect(r + ' stale Undo after admin repair', false, () => updateDoc(doc(dbs[r], K + p), { text: line.text, orig: '', by: by(r) }));
   await expect(r + ' cannot strip repair version', false, () => setDoc(doc(dbs[r], K + p), { ...line, by: by(r) }));
-  await expect(r + ' still changes quantity', true, () => updateDoc(doc(dbs[r], K + p), { qty: r, by: by(r) }));
+  await expect(r + ' quantity changes follow Add', r !== 'vic', () => updateDoc(doc(dbs[r], K + p), { qty: r, by: by(r) }));
 }
 await expect('staff still ticks manually repaired prep', true, () => updateDoc(doc(dbs.ann, K + p), { done: true, doneById: 'ann', doneAt: at, by: 'ann' }));
 await expect('second edit with version two and new audit', true, () => {

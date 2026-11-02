@@ -894,7 +894,7 @@
      for up to 10 minutes, and it never shuts a page (29 Oct 2026). */
   function viewFn(route) { return '<div class="page fn-pg"><main id="main" class="fn-main">' + (window.LK_FN ? window.LK_FN.page(route.fid) : '') + '</main>' + footer() + '</div>'; }
   function viewFunctions() { return '<div class="page fe-page"><main id="main" class="fe"><div id="fe-root"></div></main></div>'; }
-  var FE_API = 9, feLoad = null;
+  var FE_API = 10, feLoad = null;
   function mountFunctions(route) {
     var root = document.getElementById('fe-root');
     if (!root) return;
@@ -912,9 +912,9 @@
         (signed ? ' You are signed in as ' + signed + ', who is not ticked for Functions.' : '') + (keep ? ' Changes not saved yet are kept on this device.' : ''));
       return;
     }
-    if (window.LK_FE) { if (window.LK_FE.api === FE_API) window.LK_FE.mount(root, route); else root.innerHTML = mgNote('Reload the book', 'The functions page on this device is a different version from the book. Reload the page to update it.', '<div class="btn-row"><button type="button" class="btn dark" data-act="reload">Reload</button></div>'); return; }
+    if (window.LK_FE) { if (window.LK_FE.api === FE_API && window.LK_FN && typeof window.LK_FN.M.effects === 'function') window.LK_FE.mount(root, route); else root.innerHTML = mgNote('Reload the book', 'The functions page on this device is a different version from the book. Reload the page to update it. Changes not saved yet are kept on this device.', '<div class="btn-row"><button type="button" class="btn dark" data-act="reload">Reload</button></div>'); return; }
     root.innerHTML = mgNote('Functions', 'Opening functions...', ' ');
-    if (!feLoad) feLoad = mgScript('js/fnedit.js?v=5').catch(function (e) { feLoad = null; throw e; });
+    if (!feLoad) feLoad = mgScript('js/fnedit.js?v=6').catch(function (e) { feLoad = null; throw e; });
     feLoad.then(function () { if (parseRoute().name === 'functions') mountFunctions(parseRoute()); }, function () {
       var el = document.getElementById('fe-root');
       if (el) el.innerHTML = mgNote('Could not open functions', 'It needs the signal the first time it opens on a device. Check the signal and try again.', '<div class="btn-row"><button type="button" class="btn dark" data-act="feretry">Try again</button></div>');
