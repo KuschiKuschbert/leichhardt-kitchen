@@ -4,6 +4,8 @@
 
 The Leichhardt Hotel kitchen's app: the recipe book, the prep list, the order list, the wastage log, the transfer list (stock shared with the other venues) and the team's how-to guides, plus the head chef's admin panel. It works on any phone, tablet or computer with a web browser and can be installed as an app. Working rules for changing it are in `CLAUDE.md`.
 
+The [whole-app engineering audit brief](docs/whole-app-audit.md) sets out the verified starting stack, critical usability/design council, design-before-code workflow, consistency and security checks, feature-preservation requirements, tests and rollback plan. It is an execution prompt. Its presence does not mean the audit has run or application changes have shipped.
+
 ## Smoker batch cards (30 October 2026)
 
 Carolina Gold BBQ Sauce, House BBQ Sauce, Alabama White Sauce and Cornbread have batch cards and matching pan drawings. Cornbread and Alabama White link from the ingredients and drawing pins on both smoked boards. The supplied cards have no methods. The head chef instructed us to omit the pecan and unnamed ingredient entries. The drawings reuse existing sauce pans and the library's exact cornbread piece. House BBQ is not substituted for double-smoked BBQ without confirmation. See [smoker batch cards](docs/smoker-batches.md) for the source questions, saved-book overlay limitation and controlled-clock release verification.
