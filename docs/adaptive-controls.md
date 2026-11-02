@@ -32,6 +32,28 @@ The same synthetic Transfers form at 390 px, Normal text and the app's loaded fo
 
 `tests/inline-choices.test.js` checks both real forms at 320 and 390 px with Normal and Extra large text, direct selection, draft retention, writes and history, plus the wide direction control's keyboard behaviour and narrow picker fallback. It also checks disabled options, an unlisted two-item group's picker and autocomplete trigger focus after redraw. Related recipe, function, practice, Insights, transfer and wastage journeys remain in the required full Click tests gate. Layout measurements do not establish screen-reader conformance or production device testing.
 
+## Picker follow-up council (3 November 2026)
+
+The owner requested more uses of the selected direct-choice rules, with fewer clicks and less clutter. The quick audit reviewed the remaining fixed choices, report sorts, drawing options, folded drink lists and three-state controls. Priorities are based on the tasks and source, not usage telemetry.
+
+| Council view | Recommendation |
+| --- | --- |
+| Product | Build Drinks Size and Kitchen mail priority first. Each removes the picker-opening tap within an existing staff form. Drinks Size is part of editing the saved usual, not a selection on every drinks run. |
+| Usability | Show three equal choices only when their full labels fit one row with 44 px targets. Preserve the picker at narrow widths or larger text. Keep the existing text sizes and form layout. |
+| Engineering | Reuse the measured button adapter and original handlers. Explicitly match the two fixed sets. Avoid a separate native-select adapter or changes to test helpers for this unit. |
+
+Decision: build only Drinks **Small / Regular / Large** and the mail composer's **Today / This week / Whenever**. One direct selection replaces opening the picker and then choosing. Send and Save remain separate. These controls retain their existing pressed-button semantics, keyboard focus, drafts and validation. Fit is recalculated on font loading, text size and width changes, including the existing row's maximum width. Unit wrapping and the seven two-way groups keep their previous rules.
+
+The opt-in matches the exact values and, for Drinks, the `size` field. Other drink fields can toggle back to an empty value or advance between folded sections, so they stay in their current controls. Saved-message priority selectors are also unchanged. The unit adds no reads, writes, stored fields, permissions, dependencies or module API changes.
+
+Defer the native bowl Depth selector and report-sort pairs. A native adapter needs more validation and focus handling for a less frequent task. Wide report tables already offer one-tap sortable headers; narrow reports share a compact toolbar with Search. Showing every sort pair would add competition and could squeeze Search. Keep changing lists, cycle pickers, privacy choices and guarded edits in their existing interactions. Revert this follow-up to restore these two pickers without changing saved data.
+
+The candidate was checked in 32 synthetic form contexts: both forms at 320, 390, 768 and 1280 px, Normal and Extra large text, with actual and fallback fonts. Twenty-one contexts fit the direct row and eleven retained the picker. All direct rows kept equal cells, full labels and targets at least 44 px in both dimensions, without overflow or overlap. The mail priority field below keeps the same position and height. `tests/compact-pickers.test.js` covers actual selection, keyboard focus, drafts, the original Save/Send payloads and excluded three-option groups. These checks do not establish physical-device or screen-reader conformance.
+
+| Existing picker | Direct priority choices |
+| --- | --- |
+| ![Synthetic mail form with the priority picker](images/fewer-pickers-before-768.png) | ![The same synthetic form with three direct priority choices](images/fewer-pickers-after-768.png) |
+
 ## Phase 1 inventory
 
 A checked entry marks an audited rendering site. Route navigation, canvas object selection and command toggles (tick, urgent, expand and remove) retain their direct actions. Independent permission checkboxes retain their binary form semantics. Free-entry autocomplete fields keep an editable text field and open their suggestions in the shared picker. Each entry is a rendering site; helpers can render many controls. Static design comparisons under docs are examples, not application routes.
