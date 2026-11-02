@@ -1,6 +1,6 @@
 # Working on the Leichhardt Kitchen Book
 
-Current access contract: read `docs/private-kitchen-access.md` before changing login, permissions, recipes or function writes. It supersedes the guest-reading and head-chef-only recipe rules described historically below.
+Current access and session contracts: read `docs/private-kitchen-access.md` and `docs/device-sessions.md` before changing login, permissions, recipes or function writes. They supersede historical guest-reading, head-chef-only recipe and device-session wording below.
 
 The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the prep list, the order list, the wastage log, the transfer list (stock shared with the other venues), the team's how-to guides and the head chef's admin panel. Plain HTML, CSS and JavaScript on GitHub Pages, no build step. Live at https://kuschikuschbert.github.io/leichhardt-kitchen/.
 
@@ -14,6 +14,7 @@ The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the
 
 | Changing | Read |
 | --- | --- |
+| Whole-app audit, consistency, redundancy, security and performance review | `docs/whole-app-audit.md` (execution brief, not completed audit evidence) |
 | Login, who can read or write what, recipes, function writes | `docs/private-kitchen-access.md` (wins over older wording below) |
 | Device choice, Google persistence, daily PIN unlock, Update confirmation | `docs/device-sessions.md` (2 Nov 2026, replaces earlier session wording) |
 | Multiplying recipe amounts | `docs/recipe-multiplier.md` |
@@ -30,6 +31,12 @@ The Kitchen Book is the Leichhardt Hotel kitchen's web app: the recipe book, the
 | Delivery temperatures | `docs/delivery-received.md` |
 | Shift ping recipients | `docs/ping-recipients.md` |
 | Back arrow and page trail | `docs/navigation.md` |
+
+## Whole-app audits
+
+Read `docs/whole-app-audit.md` for the stack-specific audit, independent council, feature-preservation matrix, design comparisons, verification and rollback workflow.
+Reconcile current PRs and approved designs first. Complete discovery and concrete design proposals before application changes; obtain the owner's choice before new layouts, navigation or capability removals.
+After approval, implement small reversible units under the existing shipping rules. Distinguish source review, mocked browser checks, emulator checks and verified live behaviour; keep detailed findings in the linked records and private security evidence out of this public repo.
 
 ## Writing style (everything the team sees, and the code comments)
 - No em dashes anywhere. Australian English, metric units, 24-hour time, Celsius, Australian kitchen terms.
@@ -117,7 +124,7 @@ These hold for every session, every message and every change, however small. A h
 - **Undo a bad merge** with `git revert <merge commit>` on a new branch and its own pull request, never a force push to `main`. Pages redeploys in about a minute and every phone picks the old code up through the update check (README, Good to know). Saved data is not rolled back by a revert: if the change wrote new fields, say in the pull request whether old code ignores them.
 - **Rules roll back** by publishing the previous `firestore.rules` from `main` with the **Publish rules** workflow, then running the **Lock probe**.
 - **Big look changes** keep a baseline first: a git tag on `main` (like `usability-baseline-2026-10-20`) and `tests/shots-baseline*/` (ignored by git), so the old look can be compared and restored.
-- **Dependencies:** the book itself has none to install. Only `tests/` and `tests/rules/` have a `package.json`; change a version there in its own pull request with the full test run. A new outside script, font or service also needs the security header in `index.html` and is a head chef decision.
+- **Dependencies:** the book itself has none to install. `tests/`, `tests/rules/` and `scripts/` have package manifests and lockfiles for browser checks, rules checks and server jobs; change a version in its own pull request with the relevant checks and full required test gate. A new outside script, font or service also needs the security header in `index.html` and is a head chef decision.
 - **Secrets** (`FIREBASE_SA`, `KITCHEN_PIN`, `OWNER_EMAIL`, `BACKUP_KEY`) live only in GitHub Actions secrets and the Firebase console. Never print them in a workflow log, a test, a screenshot or a pull request.
 - **Audit notes with security findings** stay out of this public repo: keep them untracked in their worktree or in a private artifact, and put only the fixes in pull requests.
 
