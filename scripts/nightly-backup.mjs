@@ -95,6 +95,6 @@ for (let k = 0; k < DAYS; k++) {
   if (review.exists) out.wasteReviews[d] = plain(review.data());
   if (trans.size) out.transfers[d] = grab(trans);
 }
-writeFileSync(OUT, JSON.stringify(out, null, 1));
+writeFileSync(OUT, JSON.stringify(out, null, 1), { mode: 0o600, flag: 'wx' });
 console.log('Backed up ' + lines + ' prep lines from ' + dayN + ' of the last ' + DAYS + ' days, ' + (out.notes.length + out.directnotes.length) + ' shift pings, minutes from ' + out.minutes.length + ' meetings, ' + out.learned.length + ' learned items, ' + out.guides.length + ' guides and ' + out.recipes.length + ' recipes changed in the book (' + reads + ' reads).');
 process.exit(0);
