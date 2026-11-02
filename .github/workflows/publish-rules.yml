@@ -14,7 +14,7 @@ on:
       mode:
         description: Preview preparation counts, verify existing foundation, or prepare and publish rules
         required: true
-        default: publish
+        default: preview
         type: choice
         options: [preview, verify, publish]
   workflow_run:
@@ -50,7 +50,8 @@ jobs:
           fi
   publish:
     needs: changes
-    if: needs.changes.outputs.publish == 'true'
+    # This diagnostic ref is preview-only. It must never prepare data, deploy rules or run write probes.
+    if: needs.changes.outputs.publish == 'true' && github.event_name == 'workflow_dispatch' && inputs.mode == 'preview'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -68,6 +69,14 @@ jobs:
       - name: Install transfer index dependencies
         working-directory: scripts
         run: npm ci --no-audit --no-fund
+      - name: Inspect active rules against the frozen approved template
+        if: github.event_name == 'workflow_dispatch' && inputs.mode == 'preview'
+        working-directory: scripts
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+          KITCHEN_PIN: ${{ secrets.KITCHEN_PIN }}
+          OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}
+        run: node inspect-rules-activation.mjs
       - name: Carry existing transfers into the outstanding list
         if: github.event_name != 'workflow_dispatch' || inputs.mode == 'publish'
         working-directory: scripts
@@ -76,6 +85,7 @@ jobs:
           KITCHEN_PIN: ${{ secrets.KITCHEN_PIN }}
         run: node transfer-index.mjs
       - name: Preview, verify or prepare canonical access
+        if: inputs.mode != 'preview'
         working-directory: scripts
         env:
           FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
