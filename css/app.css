@@ -2815,6 +2815,20 @@ input:is([type="date"], [type="time"]):disabled, input:is([type="date"], [type="
 
 /* Adaptive choices and committed-query searches share the Kitchen Book's existing tokens. */
 .ux-choice-source { display: none !important; }
+.ux-two-way { display: block; min-width: 0; max-width: 100%; border: 0; border-radius: 0; overflow: visible; background: transparent; }
+.ux-inline-pair > .ux-choice-source { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; border: 1.5px solid var(--ink); border-radius: 999px; overflow: hidden; background: var(--paper); }
+span.ux-inline-pair { width: var(--ux-pair-width); }
+.ux-inline-pair > .ux-picker-trigger { display: none !important; }
+.ux-two-way > .ux-choice-source > button, .ux-two-way > .ux-choice-measure > button { flex: none; min-width: 44px; min-height: 44px; margin: 0; padding: .65rem .8rem; border: 0; border-radius: 0; background: transparent; color: var(--ink); font: 600 1rem/1.3 var(--body); white-space: nowrap; }
+.ux-two-way > .ux-choice-source > button + button { box-shadow: inset 1.5px 0 var(--ink); }
+.ux-two-way > .ux-choice-source > button[aria-checked="true"], .ux-two-way > .ux-choice-source > button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.ux-choice-measure { position: fixed; left: 0; top: 0; display: flex; width: max-content; max-width: none; visibility: hidden; pointer-events: none; }
+.ux-unit-choices { display: flex; flex-wrap: wrap; gap: .4rem; min-width: 0; border: 0; border-radius: 0; overflow: visible; background: transparent; }
+.ux-unit-choices > button { flex: 0 0 auto; min-width: 44px; min-height: 44px; max-width: 100%; margin: 0; padding: .6rem .85rem; border: 1.5px solid var(--ink); border-radius: 22px; background: var(--paper); color: var(--ink); font: 600 1rem/1.3 var(--body); white-space: normal; overflow-wrap: anywhere; }
+.ux-unit-choices > button:first-child { border-left: 1.5px solid var(--ink); }
+.ux-unit-choices > button[aria-checked="true"] { background: var(--ink); color: var(--paper); }
+.ux-unit-choices > button:disabled, .ux-two-way > .ux-choice-source > button:disabled { opacity: .45; cursor: default; }
+.ux-unit-choices > button:focus-visible, .ux-inline-pair > .ux-choice-source > button:focus-visible { outline: 3px solid var(--accent); outline-offset: -4px; }
 .ux-picker-trigger { display: inline-flex; align-items: center; justify-content: space-between; gap: .75rem; min-height: 44px; min-width: 0; max-width: 100%; padding: .65rem .8rem; border: 1px solid var(--ink); border-radius: var(--r-pick); background: var(--paper); color: var(--ink); font: 600 1rem/1.3 var(--body); text-align: left; white-space: normal; overflow-wrap: anywhere; }
 .field > .ux-picker-trigger, .a-f > .ux-picker-trigger { width: 100%; }
 .ux-picker-trigger:disabled { opacity: .55; cursor: default; }

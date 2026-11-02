@@ -6,7 +6,31 @@ The [2 November council audit](ux-council-audit.md) records the follow-up intera
 
 A host that deliberately clears a search calls `LK_UX.resetSearch(input)` before clearing its model or redrawing. This also cancels a pending debounce. Ordinary redraws preserve raw text and the original pending deadline. The shared focus-restoration helper and the old field's scoped `_uxRedrawing` marker keep programmatic restoration separate from a real blur and refocus.
 
-The app stays dependency-free. Existing hidden form controls remain the value and validation source. Shared DOM components enhance new and redrawn controls. Existing save handlers, permissions and reads remain authoritative.
+The app stays dependency-free. Existing form controls remain the value and validation source. Shared DOM components enhance new and redrawn controls. Existing save handlers, permissions and reads remain authoritative.
+
+## Direct unit chips and two-way choices (3 November 2026)
+
+The owner selected the existing transfer picker's left/right pattern for two-way choices where space permits, and asked to restore the unit chips to remove the tap needed to open their picker. This is a narrow reuse of the selected controls. It does not change the surrounding page layouts.
+
+Transfers shows its existing six units: g, kg, L, pieces, packs and boxes. Wastage shows its existing five: g, kg, L, portions and pieces. Each unit is a visible chip with a target at least 44 px in both dimensions. Chips wrap onto another row instead of squeezing their labels or touch targets into one line. Their existing radio selection, validation and save handlers remain authoritative.
+
+The fixed two-way groups are transfer direction, Insights Lines written/Rolled over, staff history Ticked/Written, note One day/Several days, recipe Show where/Free from, practice Off/On and function All at once/Staggered. Both choices appear in equal left and right parts when their full labels fit at the current text size. If they cannot fit, the group uses its existing labelled picker. Resizing, changing text size and loading fonts must recalculate the fit. Inline choices select directly, preserve keyboard focus through redraws and add no picker entry to Back history.
+
+This is an explicit list of fixed choices. A changing list does not become a two-way control merely because it happens to contain two entries. Settings view previews, device privacy choices, guarded allergen edits, independent permission switches, multiselects and command buttons retain their existing interactions. The change adds no Firestore reads, writes, saved fields, permissions or dependencies. Reverting it restores the pickers without changing saved data.
+
+### Quick space audit
+
+The main avoidable step was hiding short, fixed choices behind a picker. The direct units and fitting two-way groups above address that without reducing type or touch targets. The implementation was measured at 320, 390, 568, 768 and 1280 px with Normal, Large and Extra large text, using both the book's fonts and fallback fonts. All six transfer units need two or three rows at 320 px, two rows at 390 px and one row from 568 px. Wastage needs two rows at 320 px, one or two at 390 px and one row from 568 px. All 60 form contexts retained 44 px targets without document overflow. These checks use synthetic kitchen fixtures, not production device observations.
+
+Simply exposing the old six-part segment would undersize some targets on small screens. Long two-way labels also need the picker fallback at small widths or larger text. Useful explanations in Settings and the device setup are retained; removing them would require a separate design decision. Existing supplier workspace choices already use visible chips and do not need another picker.
+
+The same synthetic Transfers form at 390 px, Normal text and the app's loaded fonts:
+
+| Before | Direct choices |
+| --- | --- |
+| ![Transfer direction and units hidden behind pickers](images/direct-choices-before-390.png) | ![Both directions and all six unit chips visible](images/direct-choices-after-390.png) |
+
+`tests/inline-choices.test.js` checks both real forms at 320 and 390 px with Normal and Extra large text, direct selection, draft retention, writes and history, plus the wide direction control's keyboard behaviour and narrow picker fallback. It also checks disabled options, an unlisted two-item group's picker and autocomplete trigger focus after redraw. Related recipe, function, practice, Insights, transfer and wastage journeys remain in the required full Click tests gate. Layout measurements do not establish screen-reader conformance or production device testing.
 
 ## Phase 1 inventory
 
