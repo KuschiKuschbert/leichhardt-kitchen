@@ -350,6 +350,8 @@ async function loaded(p, base) {
       await message(p, { audit: 'pin-fail' });
       ok((await loaded(p, base)).join('/') === '2/2', 'a one-shot primary client-binding write failure keeps the navigation coherent through its public mirror');
       ok(await message(p, { audit: 'pin-count' }) === 1, 'the one-shot native client-binding write refusal was exercised');
+      // Finish this navigation's background refresh before changing the server revision.
+      await message(p, { lk: 'fresh' });
       revision(3); await message(p, { lk: 'fresh' });
       await message(p, { audit: 'forget' });
       const missingRecord = await p.evaluate(() => fetch('js/app.js').then(r => r.text()));
