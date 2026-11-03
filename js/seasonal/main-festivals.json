@@ -1,0 +1,384 @@
+{
+  "status": "Approved main festival preset, live release 3 November 2026",
+  "fullRecordCount": 204,
+  "defaultFamilyCount": 36,
+  "recommendation": "Show Main festivals by default. Keep All204 designs as an optional manually browsable collection. Use family variants for shared occasions so repeated country records do not compete as separate defaults.",
+  "defaultIds": [
+    "au-christmas-day",
+    "au-easter-sunday",
+    "au-new-years-day",
+    "fun-valentines-day",
+    "au-mothers-day",
+    "au-fathers-day",
+    "au-melbourne-cup",
+    "fun-halloween",
+    "fun-star-wars-day",
+    "fun-coffee-day",
+    "fun-chefs-day",
+    "fun-st-patricks-day",
+    "fun-world-food-day",
+    "in-diwali",
+    "in-holi",
+    "in-pongal",
+    "in-onam",
+    "in-ganesh-chaturthi",
+    "in-navaratri",
+    "in-durga-puja",
+    "in-dussehra",
+    "np-dashain",
+    "np-tihar",
+    "np-nepali-new-year",
+    "np-buddha-jayanti",
+    "bali-nyepi",
+    "bali-galungan",
+    "bali-kuningan",
+    "ph-lunar-new-year",
+    "ph-eid-al-fitr",
+    "ph-eid-al-adha",
+    "ph-sinulog",
+    "ph-pahiyas",
+    "ph-panagbenga",
+    "ph-kadayawan",
+    "ph-independence-day"
+  ],
+  "groups": [
+    {
+      "label": "Australian and shared occasions",
+      "items": [
+        {
+          "id": "au-christmas-day",
+          "label": "Christmas Day",
+          "region": "Australia"
+        },
+        {
+          "id": "au-easter-sunday",
+          "label": "Easter Sunday",
+          "region": "Australia"
+        },
+        {
+          "id": "au-new-years-day",
+          "label": "New Year’s Day",
+          "region": "Australia"
+        },
+        {
+          "id": "fun-valentines-day",
+          "label": "Valentine’s Day",
+          "region": "Fun and food"
+        },
+        {
+          "id": "au-mothers-day",
+          "label": "Mother’s Day, Australia",
+          "region": "Australia"
+        },
+        {
+          "id": "au-fathers-day",
+          "label": "Father’s Day, Australia",
+          "region": "Australia"
+        },
+        {
+          "id": "au-melbourne-cup",
+          "label": "Melbourne Cup Day",
+          "region": "Australia"
+        },
+        {
+          "id": "fun-halloween",
+          "label": "Halloween",
+          "region": "Fun and food"
+        },
+        {
+          "id": "fun-star-wars-day",
+          "label": "Star Wars Day",
+          "region": "Fun and food"
+        },
+        {
+          "id": "fun-coffee-day",
+          "label": "International Coffee Day",
+          "region": "Fun and food"
+        },
+        {
+          "id": "fun-chefs-day",
+          "label": "International Chefs Day",
+          "region": "Fun and food"
+        },
+        {
+          "id": "fun-st-patricks-day",
+          "label": "St Patrick’s Day",
+          "region": "Fun and food"
+        },
+        {
+          "id": "fun-world-food-day",
+          "label": "World Food Day",
+          "region": "Fun and food"
+        }
+      ]
+    },
+    {
+      "label": "India",
+      "items": [
+        {
+          "id": "in-diwali",
+          "label": "Diwali / Deepavali",
+          "region": "India"
+        },
+        {
+          "id": "in-holi",
+          "label": "Holi",
+          "region": "India"
+        },
+        {
+          "id": "in-pongal",
+          "label": "Pongal",
+          "region": "India"
+        },
+        {
+          "id": "in-onam",
+          "label": "Onam",
+          "region": "India"
+        },
+        {
+          "id": "in-ganesh-chaturthi",
+          "label": "Ganesh Chaturthi",
+          "region": "India"
+        },
+        {
+          "id": "in-navaratri",
+          "label": "Navaratri",
+          "region": "India"
+        },
+        {
+          "id": "in-durga-puja",
+          "label": "Durga Puja",
+          "region": "India"
+        },
+        {
+          "id": "in-dussehra",
+          "label": "Dussehra",
+          "region": "India"
+        }
+      ]
+    },
+    {
+      "label": "Nepal",
+      "items": [
+        {
+          "id": "np-dashain",
+          "label": "Dashain",
+          "region": "Nepal"
+        },
+        {
+          "id": "np-tihar",
+          "label": "Tihar",
+          "region": "Nepal"
+        },
+        {
+          "id": "np-nepali-new-year",
+          "label": "Nepali New Year",
+          "region": "Nepal"
+        },
+        {
+          "id": "np-buddha-jayanti",
+          "label": "Buddha Jayanti",
+          "region": "Nepal"
+        }
+      ]
+    },
+    {
+      "label": "Bali",
+      "items": [
+        {
+          "id": "bali-nyepi",
+          "label": "Nyepi",
+          "region": "Bali / Indonesia"
+        },
+        {
+          "id": "bali-galungan",
+          "label": "Galungan",
+          "region": "Bali / Indonesia"
+        },
+        {
+          "id": "bali-kuningan",
+          "label": "Kuningan",
+          "region": "Bali / Indonesia"
+        }
+      ]
+    },
+    {
+      "label": "Philippines",
+      "items": [
+        {
+          "id": "ph-lunar-new-year",
+          "label": "Lunar New Year, Philippines",
+          "region": "Philippines"
+        },
+        {
+          "id": "ph-eid-al-fitr",
+          "label": "Eid al-Fitr, Philippines",
+          "region": "Philippines"
+        },
+        {
+          "id": "ph-eid-al-adha",
+          "label": "Eid al-Adha, Philippines",
+          "region": "Philippines"
+        },
+        {
+          "id": "ph-sinulog",
+          "label": "Sinulog, Cebu",
+          "region": "Philippines"
+        },
+        {
+          "id": "ph-pahiyas",
+          "label": "Pahiyas, Lucban",
+          "region": "Philippines"
+        },
+        {
+          "id": "ph-panagbenga",
+          "label": "Panagbenga, Baguio",
+          "region": "Philippines"
+        },
+        {
+          "id": "ph-kadayawan",
+          "label": "Kadayawan, Davao",
+          "region": "Philippines"
+        },
+        {
+          "id": "ph-independence-day",
+          "label": "Independence Day, Philippines",
+          "region": "Philippines"
+        }
+      ]
+    }
+  ],
+  "sharedFamilies": [
+    {
+      "familyId": "christmas",
+      "displayLabel": "Christmas / Pasko",
+      "primaryId": "au-christmas-day",
+      "featuredRegionalVariantId": "ph-christmas-day",
+      "variantIds": [
+        "ph-christmas-day",
+        "in-christmas",
+        "np-christmas",
+        "bali-christmas"
+      ],
+      "note": "One Christmas family card can expose the Santa-chef and Filipino parol styles. Do not show five country Christmas entries as independent default calendar events."
+    },
+    {
+      "familyId": "easter",
+      "displayLabel": "Easter / Salubong",
+      "primaryId": "au-easter-sunday",
+      "featuredRegionalVariantId": "ph-salubong",
+      "variantIds": [
+        "ph-easter",
+        "ph-salubong",
+        "in-easter",
+        "bali-easter"
+      ],
+      "note": "Keep the secular rabbit/egg and Filipino Salubong artwork selectable as styles. Salubong has a distinct tradition; do not silently substitute its icon for every Easter user."
+    },
+    {
+      "familyId": "holi",
+      "displayLabel": "Holi / Fagu Purnima",
+      "primaryId": "in-holi",
+      "featuredRegionalVariantId": "np-holi",
+      "variantIds": [
+        "np-holi"
+      ],
+      "note": "Use one top-level colour-festival card with regional variants. India Holi and Nepal Fagu dates must retain separate annual records; Nepal regional dates can differ."
+    },
+    {
+      "familyId": "newyear",
+      "displayLabel": "New Year",
+      "primaryId": "au-new-years-day",
+      "variantIds": [
+        "au-new-years-eve",
+        "ph-new-years-day",
+        "ph-new-years-eve",
+        "bali-new-year"
+      ],
+      "note": "One review family avoids duplicate country entries. December31 and January1 can use different greetings and artwork while sharing the family. Nepali New Year and Nyepi remain independent default festivals."
+    },
+    {
+      "familyId": "eid-fitr",
+      "displayLabel": "Eid al-Fitr",
+      "primaryId": "ph-eid-al-fitr",
+      "variantIds": [
+        "in-eid-al-fitr",
+        "np-eid-al-fitr",
+        "bali-eid-fitr"
+      ],
+      "note": "One default occasion with optional regional drawings, not four overlapping effects. Verify annual local dates separately; do not infer a staff member’s religion."
+    },
+    {
+      "familyId": "eid-adha",
+      "displayLabel": "Eid al-Adha",
+      "primaryId": "ph-eid-al-adha",
+      "variantIds": [
+        "in-eid-al-adha",
+        "np-eid-al-adha",
+        "bali-eid-adha"
+      ],
+      "note": "Separate from Eid al-Fitr. Regional dates/artwork are options behind one family, not independent competing defaults."
+    },
+    {
+      "familyId": "lunar-new-year",
+      "displayLabel": "Lunar New Year",
+      "primaryId": "ph-lunar-new-year",
+      "variantIds": [
+        "bali-lunar-new-year"
+      ],
+      "note": "Philippine and Indonesian Imlek variants remain optional local records. This does not merge Nepal’s three Lhosars into a generic Lunar New Year."
+    },
+    {
+      "familyId": "buddha-jayanti",
+      "displayLabel": "Buddha Jayanti",
+      "primaryId": "np-buddha-jayanti",
+      "variantIds": [
+        "in-buddha-purnima",
+        "bali-waisak"
+      ],
+      "note": "Related regional observances retain separate names and annually verified dates. Reuse drawing craft, not one assumed global schedule."
+    }
+  ],
+  "regionalFeaturedVariants": [
+    {
+      "id": "ph-christmas-day",
+      "label": "Pasko / Christmas Day",
+      "showInside": "Christmas / Pasko family"
+    },
+    {
+      "id": "ph-salubong",
+      "label": "Salubong",
+      "showInside": "Easter / Salubong family"
+    },
+    {
+      "id": "np-holi",
+      "label": "Fagu Purnima / Holi",
+      "showInside": "Holi / Fagu Purnima family"
+    }
+  ],
+  "optionalExamples": [
+    "Tihar day-specific Kukur Tihar and Bhai Tika",
+    "Three distinct Lhosars",
+    "Local Balinese observances and temple anniversaries",
+    "Other Philippine fiestas",
+    "Other regional Indian new years and harvest festivals",
+    "National civic/remembrance days",
+    "Custom birthdays and venue anniversaries"
+  ],
+  "scopeNote": "The preset is a practical starting point for this kitchen’s visual review. Regional or community membership is not inferred, and all other accumulated suggestions retain their completed styling and animation for manual selection.",
+  "automaticUse": "The production calendar in calendar.js contains sourced stable rules and finite annual records. See docs/seasonal-calendar.md for verified years and pending local announcements.",
+  "overlapPolicy": [
+    "Show one active theme at a time; never stack country variants or multiple effect layers.",
+    "Manual choice wins until the user switches back to Automatic.",
+    "Within an enabled calendar, a preferred exact-day occasion can outrank a longer season; a stable tie-break is still required.",
+    "Navaratri, Durga Puja and Dussehra remain separate named designs but should be treated as a linked seasonal group for overlap controls.",
+    "Dashain and Dussehra remain distinct Nepalese/Indian events; do not merge their date ranges.",
+    "Explicit Still/Off and reduced-motion remain available even though every occasion now has an animated preview treatment."
+  ],
+  "implementationSuggestion": "A main-family selector can show Christmas/Pasko, Easter/Salubong and Holi/Fagu once, then expose their regional artwork in a small style/variant selector. If only a flat selector is used, retain the canonical36 IDs and make the three featured regional variants prominent quick picks rather than re-enabling every duplicate country event.",
+  "calendarCompanions": [
+    "au-christmas-eve",
+    "au-boxing-day",
+    "au-new-years-eve"
+  ]
+}

@@ -1,0 +1,41 @@
+/* Seasonal extensions draw from the app's existing approved design tokens. */
+:root{
+  --kb-festive-ink:var(--ink,#1C1D1F);
+  --kb-festive-outline:var(--ink,#1C1D1F);
+  --kb-festive-paper:#FFFEFA;
+  --kb-festive-accent:var(--accent,#E2602A);
+  --kb-festive-accent-ink:var(--accent-ink,#C2451A);
+  --kb-festive-beige:var(--beige,#F2EFE8);
+  --kb-festive-edge:var(--edge,#D9D4C8);
+  --kb-festive-steel:var(--steel,#CFD3D8);
+  --kb-festive-steel-dark:var(--steel-dark,#A9AFB6);
+  --kb-festive-stone:var(--stone,#A39A88);
+  --kb-festive-clover:var(--done,#2E8B57);
+  --kb-festive-bar:var(--bar,#2B2A27);
+  --kb-festive-chalk:var(--bar-text,#FBF8F1);
+  --kb-festive-radius:var(--r-act,8px);
+  --kb-festive-pill:var(--r-pick,999px);
+  --kb-festive-ease:cubic-bezier(.25,.7,.3,1);
+}
+.kb-brand-art{color:var(--kb-festive-ink);shape-rendering:geometricPrecision}
+/* St Patrick's green complements the existing orange while keeping the outlined drawing style. */
+.kb-brand-art[data-kb-semantic-accent="clover-green"] .kb-clover-leaf{fill:var(--kb-festive-clover)}
+.kb-brand-art[data-kb-semantic-accent="clover-green"] .kb-clover-stem{stroke:var(--kb-festive-clover)}
+.kb-season-note{background:var(--kb-festive-paper);border-color:var(--kb-festive-edge);border-radius:var(--kb-festive-radius);box-shadow:0 3px 0 rgb(28 29 31 / .12)}
+.kb-season-note::before{background:var(--kb-festive-accent-ink);box-shadow:0 2px 0 rgb(28 29 31 / .18)}
+.kb-season-note-art{background-image:radial-gradient(ellipse at 18% 25%,rgb(163 154 136 / .13) .55px,transparent .8px),radial-gradient(ellipse at 67% 61%,rgb(163 154 136 / .09) .5px,transparent .8px);background-size:11px 13px,17px 19px}
+.wtop-who .kb-brand-art{--kb-festive-outline:var(--kb-festive-chalk);--kb-festive-ink:var(--kb-festive-chalk);--kb-festive-paper:var(--kb-festive-bar);--kb-festive-beige:var(--kb-festive-steel-dark)}
+#app.motion-gentle .kb-motion-target{animation-timing-function:var(--kb-festive-ease)}
+#app.motion-gentle .kb-motion-target[data-kb-motion="glow"]{will-change:opacity;filter:none}
+@keyframes kb-preview-glow{0%,100%{opacity:var(--kb-breathe)}50%{opacity:1}}
+#kb-festive-effects .complete-particle{color:var(--kb-festive-accent-ink)}
+#kb-festive-effects .complete-particle[data-ambient-motif="powder"]>.kb-brand-art,#kb-festive-effects.effect-powder .complete-particle>.kb-brand-art{color:inherit}
+#kb-festive-effects.effect-snow .complete-particle,#kb-festive-effects .kb-ambient-particle[data-ambient-motif="snow"]{background:var(--kb-festive-paper);border:1px solid color-mix(in srgb,var(--kb-festive-steel-dark) 50%,transparent);box-shadow:none;border-radius:var(--kb-festive-pill)}
+.kb-ambient-horizon{background:linear-gradient(90deg,color-mix(in srgb,var(--kb-festive-steel-dark) 17%,transparent),transparent 18%,transparent 82%,color-mix(in srgb,var(--kb-festive-steel-dark) 17%,transparent)),linear-gradient(0deg,color-mix(in srgb,var(--kb-festive-steel) 18%,transparent),transparent 30%)}
+.kb-ambient-horizon.is-dawn{background:linear-gradient(90deg,color-mix(in srgb,var(--kb-festive-accent) 12%,transparent),transparent 18%,transparent 82%,color-mix(in srgb,var(--kb-festive-accent) 12%,transparent)),linear-gradient(0deg,color-mix(in srgb,var(--kb-festive-beige) 24%,transparent),transparent 34%)}
+#app.motion-gentle .kb-saber-blade,#kb-festive-effects .kb-saber-blade{filter:none}
+.kb-brand-art .kb-saber-blade>:first-child[fill]{fill:var(--kb-festive-accent)}
+.kb-brand-art .kb-saber-blade>:first-child[stroke]{stroke:var(--kb-festive-accent)}
+#app.motion-gentle .kb-horse-leg,#app.motion-gentle .kb-horse-tail,#app.motion-gentle .kb-clover-leaf,#kb-festive-effects .kb-ambient-detail{animation-timing-function:var(--kb-festive-ease)}
+#kb-festive-effects .kb-ambient-particle[data-ambient-motion="saber"],#kb-festive-effects .kb-ambient-particle[data-ambient-motion="twinkle"],#kb-festive-effects .kb-ambient-particle[data-ambient-motion="sway"],#kb-festive-effects .kb-ambient-particle[data-ambient-motion="breathe"],#kb-festive-effects .kb-ambient-particle[data-ambient-motion="quiet"]{animation-timing-function:var(--kb-festive-ease)}
+@media print{.kb-season-note-art{background-image:none}}

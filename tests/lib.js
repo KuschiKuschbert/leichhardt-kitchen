@@ -189,6 +189,7 @@ async function start() {
    o.dailyLocked      omit the daily PIN session while retaining profile/Google as appropriate
    o.legacyPrimaryGoogle  old default-app Google identity for the one-time anonymous-device migration
    o.settings         saved recipe book settings, for example { view: 'tiles' }
+   o.seasonal         seasonal preferences; other journeys default Off for date-independent navigation
    o.extra            more seed documents (see seed)
    o.base             the book's address for this page (BASE by default)
    o.sw               let the service worker run (it is blocked otherwise, so each page loads the files fresh)
@@ -208,6 +209,7 @@ async function start() {
                       __fake.warm() in the page brings the signal back
    o.init             a function run in the page before the book starts, on every load (after the seed), to stand in
                       for what the test browser lacks (the notification permission, a running service worker)
+   o.fakeSDK          replacement source by Firebase stand-in basename, for controlled SDK response ordering
    o.block            a regex source: the book's own files whose address matches fail to load (say js/cutoffs.js)
    o.board            let the start of shift sheet come up (23 Oct 2026). Without it the phone has had today's start
                       already (lk.board.<who>), the way everyone has a usual drink, so the sheet stays off the other tests */
@@ -229,7 +231,7 @@ async function open(browser, hash, o) {
   });
   await ctx.route('https://www.gstatic.com/firebasejs/**', r => {
     const f = path.join(FAKE, path.basename(new URL(r.request().url()).pathname));
-    if (fs.existsSync(f)) return r.fulfill({ status: 200, contentType: 'text/javascript', body: fs.readFileSync(f, 'utf8') });
+    if (fs.existsSync(f)) return r.fulfill({ status: 200, contentType: 'text/javascript', body: o.fakeSDK && typeof o.fakeSDK[path.basename(f)] === 'string' ? o.fakeSDK[path.basename(f)] : fs.readFileSync(f, 'utf8') });
     return r.fulfill({ status: 200, contentType: 'text/javascript', body: 'export {}' });
   });
   await ctx.route(/fonts\.(googleapis|gstatic)\.com/, r => r.fulfill({ status: 200, body: '' }));
@@ -284,7 +286,8 @@ async function open(browser, hash, o) {
     'lk.prep.tok': who && o.oldTok ? who + ':' + sha('lk:' + who + ':' + pins[who]) : '',
     'lk.prep.sess': sess ? JSON.stringify({ v: 2, by: who, exp, uid, pinAt, issuedAt, mode }) : '',
     'lk.prep.seen': String(clock),   // on the phone's clock, like the idle check
-    'lk.settings.v1': JSON.stringify(Object.assign({ installNo: true }, o.settings || {}))
+    'lk.settings.v1': JSON.stringify(Object.assign({ installNo: true }, o.settings || {})),
+    'lk.seasonal.v1': JSON.stringify(o.seasonal || { selection: 'off' })
   };
   if (!(o.deviceUnclassified || o.deviceMode === 'unclassified' || o.profile === null)) ls['lk.device.v2'] = JSON.stringify(o.profile || { v: 2, mode, ownerId: mode === 'personal' ? who || '' : '' });
   if (!o.board) ['sam', 'ann', 'bo', 'fay', 'finn'].concat((config.people || []).map(p => p.id), who ? [who] : []).forEach(id => { ls['lk.board.' + id] = ymd(new Date(serverClock)); });
@@ -411,14 +414,21 @@ async function lineAct(page, sel) {
 /* Select an existing choice through its adaptive trigger. Keeping the source selector here makes
    older journey tests describe the same intent while exercising the new visible control. */
 async function choose(page, selector, options) {
-  const source = await page.locator(selector).first().evaluate(el => {
+  const target = page.locator(selector).first();
+  const trigger = target.locator('xpath=ancestor::*[contains(concat(" ", normalize-space(@class), " "), " ux-choice-source ")][1]/following-sibling::*[1][contains(concat(" ", normalize-space(@class), " "), " ux-picker-trigger ")]');
+  const visible = page.locator(':visible');
+  // Enhancement can hide the source during a redraw. Resolve its visible control at the actual click.
+  await target.and(visible).or(trigger.and(visible)).first().click(options);
+  if (!await page.locator('.ux-picker').count()) return;
+  const source = await target.evaluateAll(nodes => {
+    const el = nodes[0];
+    if (!el) return null;
     const group = el.closest('.ux-choice-source');
-    if (!group || getComputedStyle(group).display !== 'none') return null;
+    if (!group || !group.nextElementSibling || getComputedStyle(group).display !== 'none') return null;
     const buttons = [...group.querySelectorAll('button')];
     return { trigger: group.nextElementSibling.classList.contains('ux-picker-trigger'), index: el.matches('[data-mg="tag"]') ? (el.classList.contains('is-has') ? 2 : el.classList.contains('is-may') ? 0 : 1) : el.matches('[data-p="mn-attc"]') ? ({ present: 1, apology: 2, absent: 0 }[el.dataset.st] || 0) : buttons.indexOf(el), multiple: /:(free|n-dow|cut-day)$/.test([...el.attributes].filter(a => /^data-(act|p)$/.test(a.name)).map(a => ':' + a.value).join('')) };
   }).catch(() => null);
-  if (!source || !source.trigger || source.index < 0) return page.click(selector, options);
-  await page.locator(selector).first().evaluate(el => el.closest('.ux-choice-source').nextElementSibling.click());
+  if (!source || !source.trigger || source.index < 0) return;
   await page.locator('.ux-picker [data-index="' + source.index + '"]').click();
   if (source.multiple) await page.locator('.ux-picker-footer .dark').click();
   await settle(page, 250); // Let the overlay's Back entry and scroll restoration finish.

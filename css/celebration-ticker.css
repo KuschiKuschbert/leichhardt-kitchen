@@ -1,0 +1,49 @@
+/* A single compact chalkboard keeps the full explanation readable. */
+.kb-season-note.kb-season-with-ticker,.kb-season-work.kb-season-with-ticker{display:block;max-width:760px;box-sizing:border-box;padding:10px;color:var(--bar-text);background:var(--bar);border:1px solid var(--stone);border-radius:var(--r-act,8px);box-shadow:0 2px 0 rgb(28 29 31 / .12)}
+.kb-season-note.kb-season-with-ticker{margin:8px 0 12px;transform:none;--kb-festive-outline:var(--bar-text);--kb-festive-ink:var(--bar-text);--kb-festive-paper:var(--bar);--kb-festive-beige:var(--steel-dark)}
+.kb-season-note.kb-season-with-ticker::before{display:none}
+.kb-season-work.kb-season-with-ticker{margin:8px 0 12px;font-size:1rem}
+.kb-season-heading{display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:8px;margin:0 0 6px;min-width:0}
+.kb-season-heading .kb-season-note-art,.kb-season-heading .kb-season-work-art{display:block;width:44px;flex:0 0 44px;background:none}
+.kb-season-heading .kb-season-note-art>svg,.kb-season-heading .kb-season-work-art>svg{display:block;width:44px;height:44px}
+.kb-season-with-ticker .kb-season-heading h3{font:700 1.25rem/1.1 var(--display);text-transform:uppercase;color:var(--bar-text);margin:0;overflow-wrap:anywhere}
+.kb-season-language-slot{display:block;min-width:0;min-block-size:1.3125rem}
+.kb-season-heading>.kb-season-language-slot{inline-size:4.8rem;text-align:right}
+.kb-ticker-language{display:block;color:var(--bar-text);font:600 1.05rem/1.2 'Caveat',var(--body);white-space:nowrap}
+.kb-ticker-language:lang(hi),.kb-ticker-language:lang(ne){font-family:'Kitchenbook Devanagari',sans-serif;font-size:.875rem;line-height:1.4}
+.kb-celebration-ticker{--kb-ticker-transition:520ms;position:relative;min-width:0;padding:0;color:var(--bar-text);isolation:isolate}
+.kb-ticker-meta{margin:0 0 4px}
+.kb-ticker-texts{display:grid;align-items:start;min-width:0;contain:layout style}
+.kb-season-with-ticker .kb-ticker-line,.kb-season-with-ticker .kb-ticker-sizer{grid-area:1 / 1;margin:0;min-width:0;white-space:normal;overflow-wrap:anywhere;font:400 1rem/1.5 var(--body);color:var(--bar-text);letter-spacing:normal;text-transform:none}
+.kb-season-with-ticker .kb-ticker-line:lang(hi),.kb-season-with-ticker .kb-ticker-line:lang(ne),.kb-season-with-ticker .kb-ticker-sizer:lang(hi),.kb-season-with-ticker .kb-ticker-sizer:lang(ne){font-family:'Kitchenbook Devanagari',sans-serif;line-height:1.6}
+.kb-ticker-sizer{visibility:hidden;pointer-events:none;user-select:none}
+.kb-ticker-line{opacity:0;visibility:hidden;translate:0 .1rem;transition:opacity var(--kb-ticker-transition) var(--kb-festive-ease,cubic-bezier(.25,.7,.3,1)),translate var(--kb-ticker-transition) var(--kb-festive-ease,cubic-bezier(.25,.7,.3,1));pointer-events:none}
+.kb-ticker-line.is-current{opacity:1;visibility:visible;translate:0 0;pointer-events:auto}
+.kb-ticker-line.is-leaving{opacity:0;visibility:visible;translate:0 -.08rem}
+.kb-celebration-ticker.is-static .kb-ticker-line{transition:none;translate:none}
+@media(prefers-reduced-motion:reduce){.kb-celebration-ticker .kb-ticker-line{transition:none!important;translate:none!important}}
+@media print{.kb-ticker-line,.kb-ticker-language{color:#1c1d1f!important;transition:none!important}}
+/* Away from Home the celebration's chalk name replaces the brand writing and opens its story. */
+#app[data-kb-celebration-surface="work"] .wtop-start:has(.kb-occasion-title){flex:1 1 24rem;max-width:36%;min-width:0}
+.wtop .kb-occasion-title{box-sizing:border-box;position:relative;display:flex;align-items:center;gap:10px;flex:1 1 auto;min-width:0;min-height:52px;margin:0;padding:5px 2px;border:0;border-radius:var(--r-act,8px);background:transparent;color:var(--bar-text);text-align:left;cursor:pointer}
+.kb-occasion-title .kb-occasion-title-art{display:block;flex:0 0 38px;width:38px;height:38px;transform-origin:50% 50%;color:var(--bar-text)}
+.kb-occasion-title-art>svg{display:block;width:100%;height:100%;--kb-festive-outline:var(--bar-text);--kb-festive-ink:var(--bar-text);--kb-festive-paper:var(--bar);--kb-festive-beige:var(--kb-festive-steel-dark)}
+.kb-occasion-title-copy{min-width:0;white-space:normal;overflow-wrap:anywhere;font:700 2.3rem/1.02 'Caveat',var(--body);color:var(--bar-text);text-shadow:.2px 0 currentColor,-.15px .2px currentColor;text-decoration:underline;text-decoration-color:rgb(251 248 241 / .25);text-decoration-thickness:1px;text-underline-offset:5px}
+.kb-occasion-title[aria-expanded="true"] .kb-occasion-title-copy{text-decoration-color:var(--bar-accent)}
+.kb-occasion-title:hover .kb-occasion-title-copy{text-decoration-color:var(--bar-text)}
+#app.motion-gentle .kb-occasion-trigger.is-arriving .kb-occasion-glyph{animation:kb-occasion-tuck-in 240ms var(--kb-festive-ease,cubic-bezier(.25,.7,.3,1)) both}
+#app.motion-paused .kb-occasion-trigger.is-arriving .kb-occasion-glyph{animation-play-state:paused!important}
+@keyframes kb-occasion-tuck-in{from{opacity:0;transform:translateY(12px) scale(.68)}to{opacity:1;transform:translateY(0) scale(1)}}
+.kb-occasion-panel{box-sizing:border-box;position:fixed;z-index:9100;top:var(--kb-about-top,80px);right:12px;width:min(460px,calc(100% - 24px));max-height:calc(100dvh - var(--kb-about-top,80px) - 12px);overflow:auto;overscroll-behavior:contain;padding:10px;color:var(--bar-text);background:var(--bar);border:1px solid var(--stone);border-radius:var(--r-act,8px);box-shadow:0 6px 18px rgb(28 29 31 / .18)}
+.kb-occasion-panel-heading{display:flex;align-items:center;gap:6px;min-width:0;margin:0 0 6px}.kb-occasion-panel-copy{flex:1;min-width:0}.kb-occasion-panel-copy .kb-season-language-slot{margin-top:2px}
+.kb-occasion-panel-heading h2{font:700 1.125rem/1.1 var(--display);margin:0;text-transform:uppercase;overflow-wrap:anywhere;color:var(--bar-text)}
+.kb-occasion-close{display:inline-grid;place-items:center;flex:0 0 44px;width:44px;height:44px;min-width:44px;min-height:44px;padding:0;border:1px solid var(--stone);border-radius:var(--r-act,8px);background:transparent;color:var(--bar-text);font:400 1.6rem/1 var(--body);cursor:pointer}
+.kb-occasion-trigger:focus-visible,.kb-occasion-close:focus-visible,.kb-occasion-home:focus-visible{outline:2px solid var(--bar-text);outline-offset:3px}
+#kb-occasion-panel .kb-celebration-ticker{padding:0}
+#kb-occasion-panel *{animation:none!important}
+#kb-occasion-panel .kb-ticker-line{translate:none}
+.kb-occasion-home{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;flex:none;min-width:44px;min-height:44px;margin:0;padding:6px;color:var(--bar-text);font:600 .875rem/1.3 var(--body);text-underline-offset:3px}
+@media(min-width:720px) and (max-width:1099px){#app[data-kb-celebration-surface="work"] .wtop-start:has(.kb-occasion-title){max-width:36%}.kb-occasion-title-copy{font-size:1.9rem}.kb-occasion-title .kb-occasion-title-art{width:34px;height:34px;flex-basis:34px}}
+@media(max-width:719px){#app[data-kb-celebration-surface="work"] .wtop-start:has(.kb-occasion-title){max-width:none;flex:1 1 auto}#app[data-kb-celebration-surface="work"] .wtop-icons{gap:6px;flex:none}.wtop .kb-occasion-title{gap:7px;min-height:48px}.kb-occasion-title-copy{font-size:1.65rem;line-height:1.05}.kb-occasion-title .kb-occasion-title-art{width:32px;height:32px;flex-basis:32px}.kb-occasion-panel{right:12px}}
+@media(prefers-reduced-motion:reduce){.kb-occasion-trigger.is-arriving .kb-occasion-glyph{animation:none!important}}
+@media print{.kb-occasion-trigger,.kb-occasion-panel{display:none!important}}
