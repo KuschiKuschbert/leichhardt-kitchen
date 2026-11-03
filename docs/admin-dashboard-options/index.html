@@ -1,0 +1,816 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Admin Dashboard Options</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&family=Caveat:wght@700&display=swap">
+<style>
+/* Layout concept: a design study page that frames two dashboards inside the Kitchen Book's own admin shell.
+   One deliberate look: the book is a light, warm-paper app, so this page keeps that single look in every viewer theme. */
+:root {
+  color-scheme: light;
+  --bg: #FBFAF7;        /* warm page */
+  --paper: #FFFFFF;
+  --beige: #F2EFE8;     /* context panels */
+  --ink: #1C1D1F;
+  --muted: #55585E;
+  --faint: #6B7077;
+  --line: #E0DBCF;
+  --edge: #D9D4C8;
+  --accent: #E2602A;    /* Leichhardt orange */
+  --accent-ink: #C2451A;
+  --small-ink: #B83F15;
+  --bar: #2B2A27;       /* charcoal shell */
+  --bar-text: #FBF8F1;
+  --bar-accent: #F08A4B;
+  --done: #2E8B57; --done-ink: #237347; --done-tint: #EAF5EE;
+  --warn: #B7791F; --warn-tint: #FBF1DE;
+  --bad: #9B2716;  --bad-tint: #FBE9E5;
+  --s-written: #2A78D6;  /* the book's existing chart colours: written */
+  --s-ticked: #EB6834;   /* ticked off */
+  --s-quiet: #C9C2B3;
+  --seq-1: #FCEBDF; --seq-2: #F7C8A8; --seq-3: #EE9A66; --seq-4: #D9612C; --seq-5: #9E3D17;
+  --display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --body: 'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --hand: 'Caveat', 'Segoe Print', cursive;
+  --r-act: 8px; --r-pick: 999px;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 var(--body); }
+h1, h2, h3, h4 { font-family: var(--display); line-height: 1.05; margin: 0; text-wrap: balance; }
+p { margin: 0; }
+button { font: inherit; color: inherit; cursor: pointer; }
+a { color: inherit; }
+button:focus-visible, a:focus-visible, [tabindex]:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.num { font-variant-numeric: tabular-nums; }
+.eyebrow { font: 700 .78rem/1.2 var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--small-ink); }
+.hint { color: var(--muted); font-size: .9rem; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* ---------- study page around the mockups ---------- */
+.study-note { background: var(--beige); color: var(--muted); text-align: center; font-size: .8rem; padding-block: 6px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1240px; margin: 0 auto; padding-block: 32px 24px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.intro { display: grid; gap: 14px; max-width: 760px; }
+.intro h1 { font-size: clamp(2.4rem, 6vw, 3.6rem); letter-spacing: -.02em; }
+.intro p { font-size: 1.08rem; color: var(--muted); max-width: 64ch; }
+.ideas { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 0 28px; margin-top: 28px; border-top: 2px solid var(--ink); }
+.idea { padding: 16px 0 18px; border-bottom: 1px solid var(--line); display: grid; gap: 6px; align-content: start; }
+.idea h3 { font-size: 1.35rem; }
+.idea p { color: var(--muted); font-size: .95rem; }
+.controls { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30; background: var(--bg); border-bottom: 1px solid var(--line); }
+.controls-in { max-width: 1240px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; padding-block: 10px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.seg > span { font-size: .8rem; font-weight: 600; color: var(--muted); margin-right: 4px; }
+.pill { min-height: 40px; padding: 7px 15px; border: 1px solid var(--edge); border-radius: var(--r-pick); background: transparent; font-weight: 600; font-size: .9rem; }
+.pill[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.pill:hover:not([aria-pressed="true"]) { background: var(--beige); }
+.stage { max-width: 1440px; margin: 0 auto; padding-block: 22px 40px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.stage-cap { max-width: 1240px; margin: 0 auto 14px; display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: baseline; }
+.stage-cap h2 { font-size: 2rem; }
+.stage-cap p { color: var(--muted); max-width: 70ch; }
+.device { container-type: inline-size; container-name: dev; margin: 0 auto; background: var(--bg); border: 1px solid var(--edge); border-radius: 14px; overflow: hidden; box-shadow: 0 10px 30px rgba(28,29,31,.08); }
+.device.phone { max-width: 390px; border: 8px solid var(--bar); border-radius: 30px; }
+.after { max-width: 1240px; margin: 0 auto; padding-block: 8px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 30px; }
+.after > section { min-width: 0; }
+.after h2 { font-size: 2rem; }
+.tablewrap { overflow-x: auto; border-top: 2px solid var(--ink); }
+.cmp { border-collapse: collapse; width: 100%; min-width: 640px; }
+.cmp th, .cmp td { text-align: left; vertical-align: top; padding: 11px 12px 11px 0; border-bottom: 1px solid var(--line); font-size: .95rem; }
+.cmp thead th { font: 700 1.15rem var(--display); }
+.cmp tbody th { font-weight: 600; color: var(--muted); width: 18%; }
+.keep { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px 28px; }
+.keep p { padding-left: 14px; border-left: 3px solid var(--done); color: var(--muted); font-size: .95rem; }
+.keep b { color: var(--ink); }
+.reco { background: var(--beige); border-radius: 10px; padding: 20px 22px; display: grid; gap: 8px; }
+.reco p { max-width: 75ch; }
+.steps { margin: 0; padding-left: 1.3em; display: grid; gap: 6px; color: var(--muted); }
+.steps b { color: var(--ink); }
+
+/* ---------- the Kitchen Book shell (inside .device) ---------- */
+.top { background: var(--bar); color: var(--bar-text); display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 26px; min-height: 76px; }
+.brand small { display: block; color: var(--bar-accent); font: 700 .64rem/1.2 var(--display); letter-spacing: .16em; text-transform: uppercase; }
+.brand strong { display: block; font: 700 1.9rem/1 var(--display); }
+.topnav { display: flex; gap: 8px; }
+.topnav span { border: 1.5px solid var(--bar-text); border-radius: var(--r-pick); padding: 7px 15px; font-weight: 600; font-size: .92rem; }
+.topright { display: flex; gap: 10px; }
+.topright span { border: 1.5px solid #c9c3b8; border-radius: var(--r-pick); padding: 7px 14px; font-size: .92rem; }
+.topright .hat { background: var(--bar-text); color: var(--bar); border-color: var(--bar-text); font-weight: 700; position: relative; }
+.topright .hat i { position: absolute; top: -6px; right: -6px; background: var(--accent); color: var(--ink); font: 700 .7rem/1 var(--body); font-style: normal; padding: 3px 6px; border-radius: 999px; }
+.shell { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 34px; padding: 26px 28px 44px; }
+.rail { border-right: 1px solid var(--line); padding-right: 18px; align-self: start; display: grid; gap: 4px; }
+.rail .label { font: 700 .72rem var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); padding: 0 10px 10px; }
+.rail span { display: flex; gap: 12px; align-items: baseline; padding: 11px 10px; border-left: 3px solid transparent; font-weight: 600; }
+.rail span b { font: 500 .75rem var(--body); color: var(--muted); }
+.rail span.on { background: var(--beige); border-left-color: var(--accent); }
+.rail span.on b { color: var(--small-ink); }
+.picker { display: none; border: 1.5px solid var(--ink); border-radius: var(--r-act); padding: 10px 14px; font-weight: 600; justify-content: space-between; margin-bottom: 18px; background: var(--paper); }
+.main { min-width: 0; }
+.tabbar { display: none; position: sticky; bottom: 0; z-index: 5; background: var(--bar); color: var(--bar-text); grid-template-columns: repeat(6, 1fr); border-top: 1px solid #ffffff24; }
+.tabbar span { text-align: center; padding: 14px 2px 16px; font: 600 .68rem/1.1 var(--display); letter-spacing: .04em; text-transform: uppercase; }
+.tabbar span.on { color: var(--bar-accent); }
+.pagehead { display: grid; gap: 8px; padding-bottom: 16px; border-bottom: 2px solid var(--ink); margin-bottom: 22px; }
+.pagehead h1 { font-size: 3.4rem; letter-spacing: -.02em; }
+.headrow { display: flex; flex-wrap: wrap; gap: 10px 20px; align-items: flex-end; justify-content: space-between; }
+.fresh { display: inline-flex; gap: 8px; align-items: center; font-size: .86rem; color: var(--muted); }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--done); flex: 0 0 auto; }
+
+/* shared chart bits */
+.panel { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 18px 18px 16px; min-width: 0; display: grid; gap: 10px; align-content: start; position: relative; }
+.panel h3 { font-size: 1.4rem; }
+.panel-head { display: flex; flex-wrap: wrap; gap: 4px 14px; justify-content: space-between; align-items: baseline; }
+.more { font-size: .86rem; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; color: var(--ink); background: none; border: 0; padding: 4px 0; min-height: 32px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: .85rem; color: var(--muted); }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.chart { position: relative; min-width: 0; }
+.chart svg { display: block; width: 100%; overflow: visible; }
+.chart text { font: 500 11px var(--body); fill: var(--faint); }
+.chart .endlab { font: 700 12px var(--body); fill: var(--ink); }
+.tip { position: absolute; z-index: 8; pointer-events: none; background: var(--bar); color: var(--bar-text); border-radius: 6px; padding: 7px 10px; font-size: .8rem; line-height: 1.35; white-space: nowrap; box-shadow: 0 4px 14px rgba(0,0,0,.18); }
+.tip b { font-weight: 700; }
+.tip i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 6px; }
+.delta { display: inline-flex; gap: 4px; align-items: center; font-size: .8rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.delta.good { color: var(--done-ink); background: var(--done-tint); }
+.delta.bad { color: var(--bad); background: var(--bad-tint); }
+.delta.flat { color: var(--muted); background: var(--beige); }
+.hbars { display: grid; gap: 9px; }
+.hbar { display: grid; grid-template-columns: minmax(96px, 34%) minmax(0, 1fr) 3.2em; gap: 10px; align-items: center; font-size: .9rem; }
+.hbar .track { height: 14px; position: relative; }
+.hbar .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 0 4px 4px 0; background: var(--s-ticked); }
+.hbar .was { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink); }
+.hbar .v { text-align: right; font-weight: 700; }
+
+/* ================= A: The Pass board ================= */
+.a-kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+.kpi { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 14px 14px 10px; display: grid; gap: 4px; text-align: left; min-width: 0; position: relative; }
+button.kpi:hover { border-color: var(--ink); }
+.kpi .k-lab { font-size: .84rem; color: var(--muted); font-weight: 600; }
+.kpi .k-num { font: 700 2.3rem/1 var(--display); letter-spacing: -.01em; }
+.kpi .k-num small { font-size: 1.1rem; margin-left: 2px; }
+.kpi .spark { height: 34px; margin-top: 4px; }
+.kpi .k-sub { font-size: .78rem; color: var(--faint); }
+.a-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 14px; margin-bottom: 14px; }
+.a-grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.needs { background: var(--beige); border-color: transparent; }
+.need { display: grid; grid-template-columns: 4px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+.need:first-of-type { border-top: 0; }
+.need .stripe { align-self: stretch; border-radius: 2px; }
+.need.due .stripe { background: var(--accent); }
+.need.wait .stripe { background: var(--warn); }
+.need.ok .stripe { background: var(--done); }
+.need b { font-family: var(--display); font-size: 1.15rem; }
+.need small { display: block; color: var(--muted); font-size: .84rem; }
+.need .tag { display: block; font: 700 .66rem var(--display); letter-spacing: .12em; text-transform: uppercase; }
+.need.due .tag { color: var(--small-ink); } .need.wait .tag { color: var(--warn); } .need.ok .tag { color: var(--done-ink); }
+.go { border: 1.5px solid var(--ink); border-radius: var(--r-act); background: var(--paper); padding: 6px 12px; font-weight: 600; font-size: .85rem; min-height: 38px; }
+.week { display: grid; gap: 0; }
+.wday { display: grid; grid-template-columns: 52px minmax(0, 1fr) 64px; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); font-size: .9rem; }
+.wday:first-of-type { border-top: 0; }
+.wday .d { font: 700 1.05rem/1 var(--display); }
+.wday .d small { display: block; font: 500 .74rem var(--body); color: var(--muted); }
+.wday .ev { display: flex; flex-wrap: wrap; gap: 4px 6px; }
+.chip { font-size: .76rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--edge); background: var(--paper); white-space: nowrap; }
+.chip.fn { border-color: var(--ink); }
+.chip.cut { color: var(--small-ink); border-color: #EFC2A9; }
+.load { height: 8px; background: var(--beige); border-radius: 4px; position: relative; }
+.load i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--seq-3); border-radius: 4px; }
+.heat { display: grid; grid-template-columns: 70px repeat(7, minmax(0, 1fr)); gap: 2px; font-size: .8rem; }
+.heat .hd { text-align: center; color: var(--muted); font-weight: 600; padding-bottom: 2px; }
+.heat .rl { color: var(--muted); font-weight: 600; align-self: center; }
+.heat .c { height: 30px; display: grid; place-items: center; border-radius: 3px; font-weight: 600; position: relative; }
+.stack { display: flex; gap: 2px; height: 16px; }
+.stack i { display: block; height: 100%; }
+.stack i:first-child { border-radius: 4px 0 0 4px; } .stack i:last-child { border-radius: 0 4px 4px 0; }
+.trow { display: grid; grid-template-columns: 70px minmax(0, 1fr) 4.5em; gap: 10px; align-items: center; font-size: .85rem; padding: 4px 0; }
+.items { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.items th, .items td { padding: 7px 4px; border-bottom: 1px solid var(--line); text-align: left; }
+.items th { font-size: .78rem; color: var(--muted); font-weight: 600; }
+.items td.r, .items th.r { text-align: right; }
+
+/* ================= B: The Morning brief ================= */
+.b-shell { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 36px; }
+.b-hello { display: grid; gap: 4px; padding-bottom: 18px; border-bottom: 2px solid var(--ink); margin-bottom: 22px; }
+.b-hello .hand { font: 700 2.6rem/1 var(--hand); color: var(--small-ink); }
+.b-hello h1 { font-size: 3rem; letter-spacing: -.02em; }
+.b-sec { display: grid; gap: 12px; margin-bottom: 30px; }
+.b-sec > h2 { font-size: 1.7rem; display: flex; flex-wrap: wrap; gap: 2px 12px; align-items: baseline; }
+.b-sec > h2 small { font: 500 .9rem var(--body); color: var(--muted); }
+.dockets { display: flex; gap: 12px; overflow-x: auto; padding: 4px 2px 10px; scroll-snap-type: x mandatory; -webkit-mask-image: linear-gradient(90deg, #000 88%, transparent); mask-image: linear-gradient(90deg, #000 88%, transparent); }
+.docket { flex: 0 0 230px; scroll-snap-align: start; background: var(--paper); border: 1.5px solid var(--ink); border-radius: 6px; padding: 14px 14px 12px; display: grid; gap: 8px; align-content: start; box-shadow: 0 4px 0 rgba(28,29,31,.1); position: relative; }
+.docket::before { content: ""; position: absolute; top: -1px; left: 14px; right: 14px; height: 6px; background: repeating-linear-gradient(90deg, var(--bg) 0 6px, transparent 6px 12px); }
+.docket .n { font: 700 2.4rem/1 var(--display); }
+.docket b { font: 700 1.2rem/1.1 var(--display); }
+.docket small { color: var(--muted); font-size: .85rem; }
+.story { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 300px); gap: 14px 26px; padding: 18px 0; border-top: 1px solid var(--line); align-items: start; }
+.story:first-of-type { border-top: 0; padding-top: 4px; }
+.story h3 { font-size: 1.55rem; }
+.story p { color: var(--muted); margin-top: 6px; max-width: 58ch; }
+.story .tagline { font: 700 .7rem var(--display); letter-spacing: .14em; text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.story .tagline.good { color: var(--done-ink); } .story .tagline.bad { color: var(--bad); } .story .tagline.flat { color: var(--muted); }
+.vbars { display: flex; align-items: flex-end; gap: 6px; height: 96px; }
+.vbars div { flex: 1 1 0; display: grid; align-content: end; gap: 4px; text-align: center; font-size: .7rem; color: var(--faint); min-width: 0; }
+.vbars div i { display: block; background: var(--s-quiet); border-radius: 4px 4px 0 0; }
+.vbars div.hi i { background: var(--s-ticked); }
+.vbars div.hi { color: var(--ink); font-weight: 700; }
+.dots { display: grid; gap: 8px; }
+.dotrow { display: grid; grid-template-columns: 64px minmax(0, 1fr) 4.4em; gap: 8px; align-items: center; font-size: .84rem; }
+.dotrow .ln { height: 2px; background: var(--line); position: relative; }
+.dotrow .ln i { position: absolute; top: -5px; width: 12px; height: 12px; border-radius: 50%; background: var(--s-quiet); border: 2px solid var(--paper); margin-left: -6px; }
+.dotrow.hi .ln i { background: var(--s-ticked); }
+.dotrow.hi { font-weight: 700; }
+.timeline { display: grid; }
+.tl { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 14px; padding: 10px 0; border-top: 1px solid var(--line); }
+.tl:first-child { border-top: 0; }
+.tl .d { font: 700 1.2rem/1 var(--display); }
+.tl .d small { display: block; font: 500 .78rem var(--body); color: var(--muted); margin-top: 3px; }
+.tl ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: .92rem; }
+.tl li .tg { font: 700 .66rem var(--display); letter-spacing: .12em; text-transform: uppercase; margin-right: 6px; color: var(--muted); }
+.tl li .tg.fn { color: var(--ink); } .tl li .tg.cut { color: var(--small-ink); }
+.watch { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.wcard { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: grid; gap: 4px; }
+.wcard b { font: 700 1.15rem var(--display); }
+.wcard small { color: var(--muted); }
+.wcard .spark { height: 30px; }
+.pinhint { font: 700 1.3rem/1.1 var(--hand); color: var(--muted); }
+.aside { align-self: start; position: sticky; top: 10px; display: grid; gap: 10px; }
+.aside h2 { font-size: 1.4rem; }
+.glance { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.glance th, .glance td { padding: 8px 0; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+.glance td { text-align: right; font-weight: 700; white-space: nowrap; padding-left: 10px; }
+.glance td small { display: block; font-weight: 500; color: var(--muted); }
+.rule-note { font-size: .82rem; color: var(--muted); border-left: 3px solid var(--line); padding-left: 10px; }
+
+/* ---------- container widths: the same mockup reflows like the real book ---------- */
+@container dev (max-width: 1180px) {
+  .a-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .a-grid3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .a-grid3 > :last-child { grid-column: 1 / -1; }
+  .topnav { display: none; }
+  .b-shell { grid-template-columns: minmax(0, 1fr); }
+  .aside { position: static; }
+}
+@container dev (max-width: 900px) {
+  .shell { grid-template-columns: minmax(0, 1fr); padding: 18px 16px 30px; gap: 0; }
+  .rail { display: none; }
+  .picker { display: flex; }
+  .a-grid, .a-grid3 { grid-template-columns: minmax(0, 1fr); }
+  .story { grid-template-columns: minmax(0, 1fr); }
+}
+@container dev (max-width: 560px) {
+  .top { padding: 10px 16px; min-height: 64px; }
+  .brand small { display: none; }
+  .brand strong { font-size: 1.6rem; }
+  .topright span:first-child { display: none; }
+  .tabbar { display: grid; }
+  .pagehead h1 { font-size: 2.7rem; }
+  .b-hello h1 { font-size: 2.3rem; }
+  .b-hello .hand { font-size: 2.1rem; }
+  .a-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .kpi .k-num { font-size: 2rem; }
+  .panel { padding: 14px 14px 12px; }
+  .heat { grid-template-columns: 54px repeat(7, minmax(0, 1fr)); }
+  .heat .c { font-size: .72rem; }
+  .wday { grid-template-columns: 46px minmax(0, 1fr); }
+  .wday .load { grid-column: 2; }
+  .docket { flex-basis: 200px; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="study-note">Design study for the Leichhardt Kitchen Book. Every figure, item and name is an example. Nothing here reads or writes the kitchen book.</div>
+
+<div class="wrap">
+  <header class="intro">
+    <span class="eyebrow">Admin panel / Dashboard proposals / 3 November 2026</span>
+    <h1>Two ways to see the kitchen at a glance</h1>
+    <p>The admin panel already holds a lot: 60 days of prep, wastage, transfers, training, mail and the nightly analysis. Today you dig through Reports one page at a time to find it. These ideas put the important numbers on one page, say whether they are getting better, and take you straight to the detail.</p>
+  </header>
+
+  <div class="ideas">
+    <div class="idea"><span class="eyebrow">Idea 1</span><h3>A dashboard opens first</h3><p>A new first chapter, Dashboard, before Review desk. The existing reports stay as the detail behind every number.</p></div>
+    <div class="idea"><span class="eyebrow">Idea 2</span><h3>Needs you</h3><p>One list of everything waiting on you: open mail, minutes not signed, item links, training gaps, loans not back and any nightly job that failed. Each row opens the exact place.</p></div>
+    <div class="idea"><span class="eyebrow">Idea 3</span><h3>Compared with what?</h3><p>Every number shows the period before it, in words as well as colour. More lines ticked is better. More waste is worse.</p></div>
+    <div class="idea"><span class="eyebrow">Idea 4</span><h3>Tap a number, see where it came from</h3><p>Every tile, bar and cell opens the existing report with the same dates and section already set.</p></div>
+    <div class="idea"><span class="eyebrow">Idea 5</span><h3>The week ahead on one screen</h3><p>Functions and guest numbers, supplier cut-offs and the days that are usually busiest, side by side for rostering and ordering.</p></div>
+    <div class="idea"><span class="eyebrow">Idea 6</span><h3>A watch list</h3><p>Pin an item, a section or a person from any report. It stays on the dashboard with its trend until you unpin it.</p></div>
+    <div class="idea"><span class="eyebrow">Idea 7</span><h3>Written headlines</h3><p>Plain sentences written by fixed rules from the numbers: "Waste is up on last week, mostly Overproduction in Larder." No AI service, the same rules every night.</p></div>
+    <div class="idea"><span class="eyebrow">Idea 8</span><h3>Opens fast and cheap</h3><p>The nightly job already reads 90 days. It would also write one small dashboard record, so the page opens with a handful of reads instead of reading 60 days of lines on the tablet.</p></div>
+  </div>
+</div>
+
+<div class="controls" role="region" aria-label="Choose what to preview">
+  <div class="controls-in">
+    <div class="seg" role="group" aria-label="Design"><span>Design</span>
+      <button type="button" class="pill" id="pick-a" data-design="a" aria-pressed="true">A. The Pass board</button>
+      <button type="button" class="pill" id="pick-b" data-design="b" aria-pressed="false">B. The Morning brief</button>
+    </div>
+    <div class="seg" role="group" aria-label="Screen"><span>Screen</span>
+      <button type="button" class="pill" id="view-wide" data-view="wide" aria-pressed="true">Tablet or desktop</button>
+      <button type="button" class="pill" id="view-phone" data-view="phone" aria-pressed="false">Phone</button>
+    </div>
+  </div>
+</div>
+
+<div class="stage">
+  <div class="stage-cap" id="cap-a">
+    <h2>A. The Pass board</h2>
+    <p>Everything at once, like the board on the pass. Six numbers with their trend, what needs you, the week ahead, then the charts. Change the period once and the whole page follows.</p>
+  </div>
+  <div class="stage-cap" id="cap-b" hidden>
+    <h2>B. The Morning brief</h2>
+    <p>A short written brief, read top to bottom in two minutes before service. What to do first, what changed and why, and what is coming. The full numbers sit at the side, or at the end on a phone.</p>
+  </div>
+
+  <div class="device" id="device">
+    <div class="top">
+      <div class="brand"><small>Leichhardt Hotel Kitchen</small><strong>Kitchen Book</strong></div>
+      <div class="topnav" aria-hidden="true"><span>Recipes</span><span>Prep</span><span>Orders</span><span>Wastage</span><span>Transfers</span></div>
+      <div class="topright" aria-hidden="true"><span>Pings</span><span class="hat">Chef<i>4</i></span></div>
+    </div>
+    <div class="shell">
+      <nav class="rail" aria-label="Admin chapters (example)">
+        <div class="label">Admin panel</div>
+        <span class="on"><b>00</b>Dashboard</span>
+        <span><b>01</b>Review desk</span>
+        <span><b>02</b>Reports</span>
+        <span><b>03</b>Saved records</span>
+        <span><b>04</b>Operations</span>
+        <span><b>05</b>Settings</span>
+      </nav>
+      <div class="main">
+        <div class="picker" aria-hidden="true"><span>Dashboard</span><span>Change</span></div>
+
+        <!-- ================= A ================= -->
+        <section id="design-a" aria-label="Design A, The Pass board">
+          <div class="pagehead">
+            <span class="eyebrow">Kitchen administration / 00</span>
+            <div class="headrow">
+              <h1>Dashboard</h1>
+              <div class="seg" role="group" aria-label="Period">
+                <button type="button" class="pill" data-period="7" aria-pressed="false">7 days</button>
+                <button type="button" class="pill" data-period="30" aria-pressed="true">30 days</button>
+                <button type="button" class="pill" data-period="90" aria-pressed="false">90 days</button>
+              </div>
+            </div>
+            <div class="headrow">
+              <span class="hint" id="a-range"></span>
+              <span class="fresh"><span class="dot"></span>Nightly run 03:00 today. All sources came in.</span>
+            </div>
+          </div>
+
+          <div class="a-kpis" id="a-kpis"></div>
+
+          <div class="a-grid">
+            <div class="panel needs">
+              <div class="panel-head"><h3>Needs you</h3><span class="hint">5 waiting</span></div>
+              <div id="a-needs"></div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h3>The week ahead</h3><button type="button" class="more">Functions</button></div>
+              <div class="legend"><span><i style="background:var(--paper);border:1px solid var(--ink)"></i>Function</span><span><i style="background:var(--paper);border:1px solid #EFC2A9"></i>Order cut-off</span><span><i style="background:var(--seq-3)"></i>Usual prep load</span></div>
+              <div class="week" id="a-week"></div>
+            </div>
+          </div>
+
+          <div class="a-grid">
+            <div class="panel">
+              <div class="panel-head"><h3>Prep list each day</h3><button type="button" class="more">Open Insights</button></div>
+              <div class="legend"><span><i style="background:var(--s-written)"></i>Written</span><span><i style="background:var(--s-ticked)"></i>Ticked off</span></div>
+              <div class="chart" id="a-line"></div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h3>Wastage by reason</h3><button type="button" class="more">Open Wastage</button></div>
+              <span class="hint">Lines logged. The black mark is the period before.</span>
+              <div class="hbars chart" id="a-reasons"></div>
+            </div>
+          </div>
+
+          <div class="a-grid3">
+            <div class="panel">
+              <div class="panel-head"><h3>Load by weekday</h3></div>
+              <span class="hint">Average prep lines per day. Darker is busier.</span>
+              <div class="chart" id="a-heat"></div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h3>Most wasted</h3><button type="button" class="more">All items</button></div>
+              <table class="items" id="a-items"></table>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h3>Training by section</h3><button type="button" class="more">Assessments</button></div>
+              <div class="legend"><span><i style="background:var(--done)"></i>Confirmed</span><span><i style="background:#E9B567"></i>In training</span><span><i style="background:var(--edge)"></i>Not assessed</span></div>
+              <div id="a-train"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= B ================= -->
+        <section id="design-b" aria-label="Design B, The Morning brief" hidden>
+          <div class="b-shell">
+            <div>
+              <div class="b-hello">
+                <span class="hand">Morning, Chef.</span>
+                <h1>Tuesday 3 November</h1>
+                <span class="hint">Yesterday, Monday 2 November, and the week ahead. Written at 03:00 from the nightly run.</span>
+              </div>
+
+              <section class="b-sec">
+                <h2>Do first <small>4 things</small></h2>
+                <div class="dockets" tabindex="0" aria-label="Things to do first, scrolls sideways">
+                  <div class="docket"><span class="eyebrow">Kitchen mail</span><span class="n num">4</span><b>Open messages</b><small>Oldest from Sunday 1 November.</small><button type="button" class="go">Open mail</button></div>
+                  <div class="docket"><span class="eyebrow">Minutes</span><span class="n num">2</span><b>Still to sign</b><small>Meeting of 28 October. Late from today.</small><button type="button" class="go">Open minutes</button></div>
+                  <div class="docket"><span class="eyebrow">Review desk</span><span class="n num">3</span><b>Item links</b><small>New names written on the prep list.</small><button type="button" class="go">Review</button></div>
+                  <div class="docket"><span class="eyebrow">Transfers</span><span class="n num">2</span><b>Loans not back</b><small>Out to Venue B for 9 and 12 days.</small><button type="button" class="go">Open loans</button></div>
+                </div>
+              </section>
+
+              <section class="b-sec">
+                <h2>What changed <small>last 7 days against the 7 before</small></h2>
+                <div id="b-stories"></div>
+              </section>
+
+              <section class="b-sec">
+                <h2>Coming up <small>the next 7 days</small></h2>
+                <div class="timeline" id="b-week"></div>
+              </section>
+
+              <section class="b-sec">
+                <h2>Watch list <small>pinned by you</small></h2>
+                <div class="watch" id="b-watch"></div>
+                <span class="pinhint">Pin anything from a report with the pin mark. It stays here until you unpin it.</span>
+              </section>
+            </div>
+
+            <aside class="aside" aria-label="At a glance">
+              <h2>At a glance</h2>
+              <table class="glance" id="b-glance"></table>
+              <p class="rule-note">Headlines are written by fixed rules from these numbers. A number that did not load says so and its headline is left out.</p>
+              <button type="button" class="more">Open the full reports</button>
+            </aside>
+          </div>
+        </section>
+      </div>
+    </div>
+    <div class="tabbar" aria-hidden="true"><span>Home</span><span>Recipes</span><span>Prep</span><span>Orders</span><span>Waste</span><span>Transfers</span></div>
+  </div>
+</div>
+
+<div class="after">
+  <section>
+    <h2>How the two compare</h2>
+    <div class="tablewrap" tabindex="0" role="region" aria-label="Comparison table, scrolls sideways">
+      <table class="cmp">
+        <thead><tr><th scope="col"><span class="sr">Question</span></th><th scope="col">A. The Pass board</th><th scope="col">B. The Morning brief</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Shape</th><td>Tiles and charts, all on one page, with one period switch.</td><td>A short written brief, top to bottom, with one small chart per headline.</td></tr>
+          <tr><th scope="row">First thing you see</th><td>Six numbers with their trend against the period before.</td><td>The few things to do first, as dockets.</td></tr>
+          <tr><th scope="row">Best for</th><td>The office or the tablet. A weekly look at patterns, rosters and waste.</td><td>The phone before service. Two minutes, then back on the line.</td></tr>
+          <tr><th scope="row">On a phone</th><td>Works, but long: two tiles a row, then each chart in turn.</td><td>Made for it. The side numbers move to the end.</td></tr>
+          <tr><th scope="row">Tradeoff</th><td>More to take in at once. Some charts need a second look.</td><td>Fewer numbers on screen. A pattern outside the headlines needs the reports.</td></tr>
+          <tr><th scope="row">Reads to open</th><td colspan="2">The same for both: one nightly dashboard record plus the counts the admin panel already reads (mail, minutes, review queue). About 5 reads.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="reco">
+    <span class="eyebrow">Recommendation</span>
+    <h2>Build A, and put B's three headlines at its top</h2>
+    <p>A fits the Chef's Desk you chose on 1 November and keeps the most information one tap away. B's written headlines answer "what changed?" faster than any chart, so they would sit as one strip above the tiles. If you mostly check on your phone before service, choose B on its own instead.</p>
+  </section>
+
+  <section>
+    <h2>What stays the same</h2>
+    <div class="keep">
+      <p><b>Who sees it.</b> Only the verified head chef admin, like the reports now. A cut-down version for sous chefs would be a separate decision.</p>
+      <p><b>No prices.</b> No costs, GP or supplier codes from AVC Live. Waste is counted in lines and amounts, never dollars.</p>
+      <p><b>No made-up limits.</b> Delivery temperatures show what was recorded. The dashboard does not mark a reading as passed or failed.</p>
+      <p><b>No guessing.</b> A number that did not load says so. It never shows 0 or "nobody" in its place.</p>
+      <p><b>The reports stay.</b> Insights, Wastage, Transfers, Team and Item evidence keep their pages. The dashboard links into them.</p>
+      <p><b>The look.</b> Barlow and Barlow Condensed, warm paper, the charcoal bar and Leichhardt orange, as on the Chef's Desk.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>If you choose one</h2>
+    <ol class="steps">
+      <li><b>Nightly dashboard record.</b> The nightly analysis job writes one small private record with the numbers for 7, 30 and 90 days. Admin only in the rules.</li>
+      <li><b>Dashboard page.</b> The new first chapter, the tiles or the brief, linked into the existing reports.</li>
+      <li><b>Needs you.</b> Counts from what the admin panel already reads, each opening its exact page.</li>
+      <li><b>Week ahead and watch list.</b> Functions and cut-offs already loaded, then pins saved with the admin's records.</li>
+    </ol>
+    <p class="hint" style="margin-top:10px">Each step is its own pull request with click tests at 390, 768 and 1280 px and a read budget check.</p>
+  </section>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  /* ---------- example data, seeded so every visit shows the same figures ---------- */
+  function rng(seed) { return function () { seed = seed + 0x6D2B79F5 | 0; var t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  var R = rng(20261103);
+  var DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var BASE = [40, 36, 33, 36, 43, 52, 56];       // written lines by weekday
+  var WBASE = [2.4, 1.8, 1.5, 1.7, 2.1, 2.9, 3.2]; // waste lines by weekday
+  var LAST = Date.UTC(2026, 10, 2);              // yesterday, Monday 2 November 2026
+  var N = 180, days = [];
+  for (var i = N - 1; i >= 0; i--) {
+    var t = LAST - i * 864e5, d = new Date(t), dow = d.getUTCDay(), trend = (N - 1 - i) / N;
+    var written = Math.round(BASE[dow] * (0.88 + 0.24 * R()));
+    var rate = 0.82 + 0.05 * trend + 0.05 * R();
+    if (dow === 1) rate = Math.min(rate, 0.905);
+    if (i === 0) rate = 0.93;
+    var ticked = Math.round(written * rate);
+    var waste = Math.round(WBASE[dow] * (0.55 + 0.9 * R()) * (i < 7 ? 1.45 : 1));
+    days.push({ t: t, dow: dow, label: d.getUTCDate() + ' ' + MON[d.getUTCMonth()], written: written, ticked: ticked,
+      rolled: Math.round((written - ticked) * 0.72), mins: Math.round(160 - 30 * trend + 24 * (R() - .5)), waste: waste });
+  }
+  function slice(n, back) { return days.slice(N - n - back, N - back); }
+  function sum(a, k) { return a.reduce(function (s, x) { return s + x[k]; }, 0); }
+  function median(a) { var v = a.slice().sort(function (x, y) { return x - y; }); return v[Math.floor(v.length / 2)]; }
+  function dur(m) { var h = Math.floor(m / 60), r = m % 60; return h ? h + ' h' + (r ? ' ' + r + ' min' : '') : r + ' min'; }
+  function rangeText(a) { return a[0].label + ' to ' + a[a.length - 1].label + ' 2026'; }
+  function fmtDate(t) { var d = new Date(t); return DOW[d.getUTCDay()] + ' ' + d.getUTCDate() + ' ' + MON[d.getUTCMonth()]; }
+
+  var SECTIONS = ['Larder', 'Grill', 'Fryer', 'Pastry', 'Garnish'];
+  var SHARE = [0.27, 0.22, 0.17, 0.14, 0.20];
+  var SEC_DOW = [[1, 1, 1, 1, 1.1, 1.25, 1.2], [.9, .85, .9, 1, 1.15, 1.35, 1.4], [.9, .9, .9, .95, 1.1, 1.3, 1.35], [1.2, .8, .8, .9, 1, 1.1, 1.3], [1, .95, .95, 1, 1.1, 1.2, 1.25]];
+  var REASONS = [['Overproduction', .41], ['Out of date', .22], ['Spoiled', .16], ['Dropped or burnt', .13], ['Returned by guest', .08]];
+  var TICK_TIME = [['Garnish', 220], ['Pastry', 190], ['Larder', 150], ['Grill', 112], ['Fryer', 96]];
+
+  function split(total, shares, rnd) {
+    var out = shares.map(function (s) { return Math.round(total * s * (rnd ? 0.85 + 0.3 * rnd() : 1)); });
+    return out;
+  }
+
+  /* ---------- small drawing helpers ---------- */
+  var SVGNS = 'http://www.w3.org/2000/svg';
+  function el(tag, attrs, parent) { var e = document.createElementNS(SVGNS, tag); for (var k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+  function niceMax(v) { if (v <= 0) return 1; var p = Math.pow(10, Math.floor(Math.log10(v))); var m = [1, 2, 2.5, 5, 10]; for (var i = 0; i < m.length; i++) if (m[i] * p >= v) return m[i] * p; return 10 * p; }
+  function tipFor(box) {
+    var t = document.createElement('div'); t.className = 'tip'; t.hidden = true; box.appendChild(t);
+    return {
+      show: function (html, x, y) {
+        t.innerHTML = html; t.hidden = false;
+        var bw = box.clientWidth, tw = t.offsetWidth, th = t.offsetHeight;
+        var left = x + 12; if (left + tw > bw) left = x - tw - 12; left = Math.max(0, Math.min(left, bw - tw));
+        t.style.left = left + 'px'; t.style.top = Math.max(-th, y - th - 10) + 'px';
+      },
+      hide: function () { t.hidden = true; }
+    };
+  }
+  var mounts = [];
+  function mount(box, fn) { mounts.push([box, fn]); fn(box); }
+  var ro = 'ResizeObserver' in window ? new ResizeObserver(function () { redrawAll(); }) : null;
+  var rTimer = 0;
+  function redrawAll() { clearTimeout(rTimer); rTimer = setTimeout(function () { mounts.forEach(function (m) { if (m[0].offsetParent !== null) m[1](m[0]); }); }, 60); }
+
+  function sparkline(box, vals, color) {
+    box.innerHTML = '';
+    var w = Math.max(60, box.clientWidth), h = box.clientHeight || 34, pad = 4;
+    var max = Math.max.apply(null, vals), min = Math.min.apply(null, vals); if (max === min) max = min + 1;
+    var svg = el('svg', { width: w, height: h, viewBox: '0 0 ' + w + ' ' + h, 'aria-hidden': 'true' }, box);
+    var pts = vals.map(function (v, i) { return [pad + i * (w - 2 * pad) / (vals.length - 1), h - pad - (v - min) / (max - min) * (h - 2 * pad)]; });
+    var d = pts.map(function (p, i) { return (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' ');
+    el('path', { d: d + ' L' + pts[pts.length - 1][0].toFixed(1) + ' ' + h + ' L' + pts[0][0].toFixed(1) + ' ' + h + ' Z', fill: color, 'fill-opacity': '0.10', stroke: 'none' }, svg);
+    el('path', { d: d, fill: 'none', stroke: color, 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, svg);
+    var e = pts[pts.length - 1];
+    el('circle', { cx: e[0], cy: e[1], r: 3.5, fill: color, stroke: '#FFFFFF', 'stroke-width': 2 }, svg);
+  }
+
+  function lineChart(box, labels, series) {
+    box.innerHTML = '';
+    var w = Math.max(260, box.clientWidth), h = 220, L = 34, Rr = 36, T = 10, B = 26;
+    var max = niceMax(Math.max.apply(null, series.map(function (s) { return Math.max.apply(null, s.vals); })));
+    var n = labels.length, X = function (i) { return L + (n === 1 ? 0 : i * (w - L - Rr) / (n - 1)); }, Y = function (v) { return T + (1 - v / max) * (h - T - B); };
+    var svg = el('svg', { width: w, height: h, viewBox: '0 0 ' + w + ' ' + h, role: 'img', 'aria-label': 'Prep lines written and ticked off each day' }, box);
+    [0, max / 2, max].forEach(function (v) {
+      el('line', { x1: L, x2: w - Rr, y1: Y(v), y2: Y(v), stroke: '#E0DBCF', 'stroke-width': 1 }, svg);
+      el('text', { x: L - 8, y: Y(v) + 4, 'text-anchor': 'end' }, svg).textContent = v;
+    });
+    var step = Math.max(1, Math.ceil(n / 5));
+    for (var i = 0; i < n; i += step) el('text', { x: X(i), y: h - 6, 'text-anchor': i === 0 ? 'start' : 'middle' }, svg).textContent = labels[i];
+    var ends = [];
+    series.forEach(function (s) {
+      el('path', { d: s.vals.map(function (v, i) { return (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1); }).join(' '), fill: 'none', stroke: s.color, 'stroke-width': 2, 'stroke-linejoin': 'round' }, svg);
+      var lv = s.vals[n - 1];
+      el('circle', { cx: X(n - 1), cy: Y(lv), r: 4, fill: s.color, stroke: '#FFFFFF', 'stroke-width': 2 }, svg);
+      ends.push({ y: Y(lv), v: lv });
+    });
+    if (ends.length === 2 && Math.abs(ends[0].y - ends[1].y) < 13) { var mid = (ends[0].y + ends[1].y) / 2, up = ends[0].y <= ends[1].y ? 0 : 1; ends[up].y = mid - 7; ends[1 - up].y = mid + 7; }
+    ends.forEach(function (e) { el('text', { x: w - Rr + 8, y: e.y + 4, 'class': 'endlab' }, svg).textContent = e.v; });
+    var cross = el('line', { x1: 0, x2: 0, y1: T, y2: h - B, stroke: '#1C1D1F', 'stroke-width': 1, 'stroke-dasharray': '3 3', visibility: 'hidden' }, svg);
+    var dots = series.map(function (s) { return el('circle', { r: 5, fill: s.color, stroke: '#FFFFFF', 'stroke-width': 2, visibility: 'hidden' }, svg); });
+    var hit = el('rect', { x: L, y: 0, width: w - L - Rr, height: h - B, fill: 'transparent' }, svg);
+    var tip = tipFor(box);
+    function at(ev) {
+      var r = svg.getBoundingClientRect(), x = ev.clientX - r.left;
+      var i = Math.max(0, Math.min(n - 1, Math.round((x - L) / ((w - L - Rr) / Math.max(1, n - 1)))));
+      cross.setAttribute('x1', X(i)); cross.setAttribute('x2', X(i)); cross.setAttribute('visibility', 'visible');
+      series.forEach(function (s, k) { dots[k].setAttribute('cx', X(i)); dots[k].setAttribute('cy', Y(s.vals[i])); dots[k].setAttribute('visibility', 'visible'); });
+      tip.show('<b>' + labels[i] + '</b><br>' + series.map(function (s) { return '<i style="background:' + s.color + '"></i>' + s.name + ' ' + s.vals[i]; }).join('<br>'), X(i), Y(series[0].vals[i]));
+    }
+    function off() { cross.setAttribute('visibility', 'hidden'); dots.forEach(function (d) { d.setAttribute('visibility', 'hidden'); }); tip.hide(); }
+    hit.addEventListener('pointermove', at); hit.addEventListener('pointerdown', at); hit.addEventListener('pointerleave', off);
+  }
+
+  function deltaChip(now, before, goodWhenUp, unit, fmt) {
+    var diff = now - before, show = fmt ? fmt(Math.abs(diff)) : Math.abs(Math.round(diff));
+    if (!diff || Math.abs(diff) < 0.5) return '<span class="delta flat">About the same</span>';
+    var better = goodWhenUp ? diff > 0 : diff < 0;
+    return '<span class="delta ' + (better ? 'good' : 'bad') + '">' + (diff > 0 ? '&#9650; ' : '&#9660; ') + show + (unit || '') + ', ' + (better ? 'better' : 'worse') + '</span>';
+  }
+
+  /* ================= A ================= */
+  var period = 30;
+  function weekly(a, k) { var out = [], lab = []; for (var i = a.length % 7; i < a.length; i += 7) { out.push(sum(a.slice(i, i + 7), k)); lab.push('wk of ' + a[i].label); } return { v: out, l: lab }; }
+  function drawA() {
+    var cur = slice(period, 0), prev = slice(period, period);
+    document.getElementById('a-range').textContent = rangeText(cur) + ', compared with the ' + period + ' days before. Today is not counted until tonight.';
+    var pc = Math.round(100 * sum(cur, 'ticked') / sum(cur, 'written')), pp = Math.round(100 * sum(prev, 'ticked') / sum(prev, 'written'));
+    var tm = median(cur.map(function (d) { return d.mins; })), tp = median(prev.map(function (d) { return d.mins; }));
+    var wk = function (k) { return period === 90 ? weekly(cur, k).v : cur.map(function (d) { return d[k]; }); };
+    var rateSeries = period === 90 ? weekly(cur, 'ticked').v.map(function (v, i) { return v / weekly(cur, 'written').v[i]; }) : cur.map(function (d) { return d.ticked / d.written; });
+    var f = period / 30;
+    var tiles = [
+      { lab: 'Prep list ticked off', num: pc + '<small>%</small>', d: deltaChip(pc, pp, true, ' pts'), s: rateSeries, c: 'var(--s-ticked)', sub: sum(cur, 'ticked') + ' of ' + sum(cur, 'written') + ' lines' },
+      { lab: 'Lines rolled over', num: sum(cur, 'rolled'), d: deltaChip(sum(cur, 'rolled'), sum(prev, 'rolled'), false), s: wk('rolled'), c: '#55585E', sub: 'Not finished, moved to the next day' },
+      { lab: 'Typical time to tick', num: dur(tm).replace(' min', '<small>m</small>').replace(' h', '<small>h</small>'), d: deltaChip(tm, tp, false, ' min'), s: cur.map(function (d) { return d.mins; }), c: '#55585E', sub: 'From written to ticked' },
+      { lab: 'Wastage lines', num: sum(cur, 'waste'), d: deltaChip(sum(cur, 'waste'), sum(prev, 'waste'), false), s: wk('waste'), c: '#9B2716', sub: 'Counted in lines, not dollars' },
+      { lab: 'Transfers out / in', num: Math.round(18 * f) + ' / ' + Math.round(11 * f), d: '<span class="delta flat">2 loans not back</span>', s: [3, 5, 2, 6, 4, 5, 3, 7, 4, 6], c: '#55585E', sub: 'With Venue B and Venue C' },
+      { lab: 'Functions, next 7 days', num: '3', d: '<span class="delta flat">210 guests</span>', s: [1, 0, 2, 1, 0, 3, 1, 2, 0, 3], c: '#55585E', sub: 'Biggest: Saturday, 120' }
+    ];
+    var k = document.getElementById('a-kpis'); k.innerHTML = '';
+    tiles.forEach(function (x, i) {
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'kpi'; b.id = 'kpi-' + i;
+      b.setAttribute('aria-label', x.lab + '. Opens the report behind it.');
+      b.innerHTML = '<span class="k-lab">' + x.lab + '</span><span class="k-num num">' + x.num + '</span><span>' + x.d + '</span><div class="spark"></div><span class="k-sub">' + x.sub + '</span>';
+      k.appendChild(b);
+      mount(b.querySelector('.spark'), function (box) { sparkline(box, x.s, x.c.indexOf('var') === 0 ? '#EB6834' : x.c); });
+    });
+
+    var lc = document.getElementById('a-line');
+    if (period === 90) { var ww = weekly(cur, 'written'), wt = weekly(cur, 'ticked'); mount(lc, function (box) { lineChart(box, ww.l.map(function (s) { return s.replace('wk of ', ''); }), [{ name: 'Written', color: '#2A78D6', vals: ww.v }, { name: 'Ticked off', color: '#EB6834', vals: wt.v }]); }); }
+    else mount(lc, function (box) { lineChart(box, cur.map(function (d) { return d.label; }), [{ name: 'Written', color: '#2A78D6', vals: cur.map(function (d) { return d.written; }) }, { name: 'Ticked off', color: '#EB6834', vals: cur.map(function (d) { return d.ticked; }) }]); });
+
+    var rc = document.getElementById('a-reasons'), wNow = split(sum(cur, 'waste'), REASONS.map(function (r) { return r[1]; })), wPrev = split(sum(prev, 'waste'), REASONS.map(function (r) { return r[1]; }), rng(period));
+    var rmax = niceMax(Math.max.apply(null, wNow.concat(wPrev)));
+    rc.innerHTML = REASONS.map(function (r, i) {
+      return '<div class="hbar" tabindex="0" data-tip="<b>' + r[0] + '</b><br>' + wNow[i] + ' lines, ' + wPrev[i] + ' the period before"><span>' + r[0] + '</span><span class="track"><span class="fill" style="width:' + (100 * wNow[i] / rmax) + '%"></span><span class="was" style="left:' + (100 * wPrev[i] / rmax) + '%"></span></span><span class="v num">' + wNow[i] + '</span></div>';
+    }).join('');
+    hoverTips(rc, '.hbar');
+
+    var hc = document.getElementById('a-heat'), base = sum(cur, 'written') / cur.length, avg = [0, 0, 0, 0, 0, 0, 0], cnt = [0, 0, 0, 0, 0, 0, 0];
+    cur.forEach(function (d) { avg[d.dow] += d.written; cnt[d.dow]++; });
+    var order = [1, 2, 3, 4, 5, 6, 0], cells = [], vmax = 0;
+    SECTIONS.forEach(function (s, si) { order.forEach(function (dw) { var v = cnt[dw] ? avg[dw] / cnt[dw] * SHARE[si] * SEC_DOW[si][dw] / 1.1 : 0; cells.push(v); vmax = Math.max(vmax, v); }); });
+    var steps = ['--seq-1', '--seq-2', '--seq-3', '--seq-4', '--seq-5'];
+    var html = '<div class="heat"><span></span>' + order.map(function (dw) { return '<span class="hd">' + DOW[dw].charAt(0) + '<span class="sr">' + DOW[dw] + '</span></span>'; }).join('');
+    SECTIONS.forEach(function (s, si) {
+      html += '<span class="rl">' + s + '</span>';
+      order.forEach(function (dw, j) { var v = cells[si * 7 + j], st = Math.min(4, Math.floor(v / vmax * 4.999)); html += '<span class="c num" tabindex="0" data-tip="<b>' + s + ', ' + DOW[dw] + '</b><br>' + v.toFixed(1) + ' lines a day on average" style="background:var(' + steps[st] + ');color:' + (st >= 3 ? '#FFFFFF' : 'var(--ink)') + '">' + Math.round(v) + '</span>'; });
+    });
+    hc.innerHTML = html + '</div>';
+    hoverTips(hc, '.c');
+
+    var items = [['Brisket', 'kg', 6.4, 4.1], ['Chips', 'kg', 5.2, 5.6], ['Caesar dressing', 'L', 2.8, 1.2], ['Bread rolls', 'each', 34, 30], ['Coleslaw', 'kg', 2.1, 2.4]];
+    document.getElementById('a-items').innerHTML = '<thead><tr><th scope="col">Item</th><th scope="col" class="r">Amount</th><th scope="col" class="r">Before</th></tr></thead><tbody>' + items.map(function (x) {
+      var a = Math.round(x[2] * f * 10) / 10, b = Math.round(x[3] * f * 10) / 10, up = a > b;
+      if (x[1] === 'each') { a = Math.round(a); b = Math.round(b); }
+      return '<tr><td>' + x[0] + '</td><td class="r num"><b>' + a + ' ' + x[1] + '</b></td><td class="r num"><span class="delta ' + (up ? 'bad' : 'good') + '">' + (up ? '&#9650; ' : '&#9660; ') + b + '</span></td></tr>';
+    }).join('') + '</tbody>';
+
+    var train = [['Larder', 4, 2, 1], ['Grill', 3, 1, 2], ['Fryer', 5, 1, 0], ['Pastry', 1, 1, 3], ['Garnish', 2, 2, 2]];
+    var tr = document.getElementById('a-train');
+    tr.innerHTML = train.map(function (x) { var tot = x[1] + x[2] + x[3];
+      return '<div class="trow"><span>' + x[0] + '</span><span class="stack" tabindex="0" data-tip="<b>' + x[0] + '</b><br>' + x[1] + ' confirmed, ' + x[2] + ' in training, ' + x[3] + ' not assessed">' +
+        (x[1] ? '<i style="flex:' + x[1] + ';background:var(--done)"></i>' : '') + (x[2] ? '<i style="flex:' + x[2] + ';background:#E9B567"></i>' : '') + (x[3] ? '<i style="flex:' + x[3] + ';background:var(--edge)"></i>' : '') +
+        '</span><span class="num hint">' + x[1] + ' of ' + tot + '</span></div>'; }).join('');
+    hoverTips(tr, '.stack');
+  }
+
+  function hoverTips(box, sel) {
+    var tip = tipFor(box);
+    box.querySelectorAll(sel).forEach(function (n) {
+      function show() { var r = box.getBoundingClientRect(), q = n.getBoundingClientRect(); tip.show(n.getAttribute('data-tip'), q.left - r.left + q.width / 2, q.top - r.top); }
+      n.addEventListener('pointerenter', show); n.addEventListener('focus', show);
+      n.addEventListener('pointerleave', tip.hide); n.addEventListener('blur', tip.hide);
+    });
+  }
+
+  var NEEDS = [
+    ['due', 'Due', '4 kitchen mails open', 'Oldest from Sunday 1 November', 'Open mail'],
+    ['due', 'Late', 'Minutes of 28 October', '2 people still to sign', 'Open minutes'],
+    ['wait', 'To review', '3 item links', 'New names written on the prep list', 'Review'],
+    ['wait', 'Not back', '2 loans to Venue B', 'Out for 9 and 12 days', 'Open loans'],
+    ['wait', 'Training', '5 people not assessed', 'In the section they usually work', 'Training'],
+    ['ok', 'All good', 'Nightly jobs', 'Learning 03:00, backup 03:30, analysis 03:40', 'Health']
+  ];
+  document.getElementById('a-needs').innerHTML = NEEDS.map(function (x) {
+    return '<div class="need ' + x[0] + '"><span class="stripe"></span><div><span class="tag">' + x[1] + '</span><b>' + x[2] + '</b><small>' + x[3] + '</small></div><button type="button" class="go">' + x[4] + '</button></div>';
+  }).join('');
+
+  var WEEK = [
+    [0, [['fn', 'Trivia night, 40'], ['cut', 'Meat 14:00']]],
+    [1, [['cut', 'Fruit and veg 15:00']]],
+    [2, [['fn', 'Wake, 50'], ['cut', 'Dry goods 12:00']]],
+    [3, [['cut', 'Meat 14:00'], ['cut', 'Fruit and veg 15:00']]],
+    [4, [['fn', 'Wedding, 120']]],
+    [5, []],
+    [6, [['cut', 'Seafood 11:00']]]
+  ];
+  var WLOAD = [33, 36, 43, 52, 56, 40, 36];
+  document.getElementById('a-week').innerHTML = WEEK.map(function (x) {
+    var t = LAST + (x[0] + 1) * 864e5, d = new Date(t);
+    return '<div class="wday"><span class="d">' + DOW[d.getUTCDay()] + '<small>' + d.getUTCDate() + ' ' + MON[d.getUTCMonth()] + '</small></span><span class="ev">' +
+      (x[1].length ? x[1].map(function (e) { return '<span class="chip ' + e[0] + '">' + e[1] + '</span>'; }).join('') : '<span class="hint">Nothing booked</span>') +
+      '</span><span class="load" title="Usual prep load ' + WLOAD[x[0]] + ' lines"><i style="width:' + Math.round(100 * WLOAD[x[0]] / 56) + '%"></i></span></div>';
+  }).join('');
+
+  /* ================= B ================= */
+  function drawB() {
+    var cur = slice(7, 0), prev = slice(7, 7), y = days[N - 1];
+    var mondays = days.filter(function (d) { return d.dow === 1; }).slice(-8);
+    var best = mondays.every(function (m) { return m === y || m.ticked / m.written <= y.ticked / y.written; });
+    var yp = Math.round(100 * y.ticked / y.written);
+    var wNow = sum(cur, 'waste'), wPrev = sum(prev, 'waste');
+    var rNow = split(wNow, REASONS.map(function (r) { return r[1]; })), rPrev = split(wPrev, REASONS.map(function (r) { return r[1]; }), rng(7));
+    var rmax = niceMax(Math.max.apply(null, rNow.concat(rPrev)));
+    var stories = [
+      { tone: best ? 'good' : 'flat', tag: best ? 'Better' : 'Steady', h: yp + '% of yesterday\'s prep list was ticked off' + (best ? '. Your best Monday in 8 weeks.' : '.'),
+        p: y.ticked + ' of ' + y.written + ' lines. ' + y.rolled + ' rolled over to today.',
+        chart: '<span class="hint">Share ticked off, the last 8 Mondays</span><div class="vbars" role="img" aria-label="Share ticked off on the last 8 Mondays">' + mondays.map(function (m) { var v = Math.round(100 * m.ticked / m.written); return '<div class="' + (m === y ? 'hi' : '') + '"><span class="num">' + v + '</span><i style="height:' + Math.round((v - 60) * 1.9) + 'px"></i><span>' + m.label.split(' ')[0] + '</span></div>'; }).join('') + '</div>' },
+      { tone: wNow > wPrev ? 'bad' : 'good', tag: wNow > wPrev ? 'Worse' : 'Better', h: 'Waste is ' + (wNow > wPrev ? 'up' : 'down') + ': ' + wNow + ' lines this week, ' + wPrev + ' the week before.',
+        p: 'Most of it is Overproduction, and most of that is Brisket in Larder (3 of ' + rNow[0] + ' lines).',
+        chart: '<div class="hbars">' + REASONS.slice(0, 4).map(function (r, i) { return '<div class="hbar"><span>' + r[0] + '</span><span class="track"><span class="fill" style="width:' + (100 * rNow[i] / rmax) + '%"></span><span class="was" style="left:' + (100 * rPrev[i] / rmax) + '%"></span></span><span class="v num">' + rNow[i] + '</span></div>'; }).join('') + '</div><span class="hint">Black mark: the week before.</span>' },
+      { tone: 'flat', tag: 'Same as usual', h: 'Garnish is still the slowest section to tick.', p: 'Typical 3 h 40 min from written to ticked. Fryer is quickest at 1 h 36 min.',
+        chart: '<div class="dots" role="img" aria-label="Typical time to tick by section">' + TICK_TIME.map(function (s, i) { return '<div class="dotrow' + (i === 0 ? ' hi' : '') + '"><span>' + s[0] + '</span><span class="ln"><i style="left:' + (100 * s[1] / 240) + '%"></i></span><span class="num">' + dur(s[1]).replace(' min', 'm').replace(' h', 'h') + '</span></div>'; }).join('') + '</div>' }
+    ];
+    document.getElementById('b-stories').innerHTML = stories.map(function (s) {
+      return '<article class="story"><div><div class="tagline ' + s.tone + '">' + (s.tone === 'good' ? '&#9650;' : s.tone === 'bad' ? '&#9650;' : '&#9679;') + ' ' + s.tag + '</div><h3>' + s.h + '</h3><p>' + s.p + '</p><button type="button" class="more">Look into it</button></div><div>' + s.chart + '</div></article>';
+    }).join('');
+
+    document.getElementById('b-week').innerHTML = WEEK.map(function (x) {
+      var t = LAST + (x[0] + 1) * 864e5, d = new Date(t), busy = WLOAD[x[0]] >= 52;
+      var lis = x[1].map(function (e) { return '<li><span class="tg ' + e[0] + '">' + (e[0] === 'fn' ? 'Function' : 'Cut-off') + '</span>' + e[1] + (e[0] === 'fn' ? ' guests' : '') + '</li>'; });
+      if (busy) lis.push('<li><span class="tg">Usually busy</span>About ' + WLOAD[x[0]] + ' prep lines</li>');
+      if (!lis.length) lis.push('<li class="hint">Nothing booked</li>');
+      return '<div class="tl"><span class="d">' + (x[0] === 0 ? 'Today' : DOW[d.getUTCDay()]) + '<small>' + DOW[d.getUTCDay()] + ' ' + d.getUTCDate() + ' ' + MON[d.getUTCMonth()] + '</small></span><ul>' + lis.join('') + '</ul></div>';
+    }).join('');
+
+    var watch = [['Brisket waste', '6.4 kg in 30 days. Was 4.1 kg.', [0.4, 0.2, 0.6, 0.3, 0.8, 0.5, 0.9, 1.1, 0.7, 1.2], '#9B2716'],
+      ['Garnish time to tick', 'Typical 3 h 40 min. Was 3 h 55 min.', [240, 236, 230, 238, 228, 225, 226, 220, 222, 220], '#55585E'],
+      ['Sam in Grill', 'In training for 12 days. 41 Grill lines ticked.', [2, 3, 4, 3, 5, 6, 4, 6, 7, 6], '#EB6834']];
+    var wb = document.getElementById('b-watch');
+    wb.innerHTML = watch.map(function (x) { return '<div class="wcard"><b>' + x[0] + '</b><div class="spark"></div><small>' + x[1] + '</small></div>'; }).join('');
+    wb.querySelectorAll('.spark').forEach(function (s, i) { mount(s, function (box) { sparkline(box, watch[i][2], watch[i][3]); }); });
+
+    var pc = Math.round(100 * sum(cur, 'ticked') / sum(cur, 'written')), pp = Math.round(100 * sum(prev, 'ticked') / sum(prev, 'written'));
+    var rows = [['Prep ticked off', pc + '%', 'was ' + pp + '%'], ['Lines rolled over', sum(cur, 'rolled'), 'was ' + sum(prev, 'rolled')],
+      ['Typical time to tick', dur(median(cur.map(function (d) { return d.mins; }))), 'was ' + dur(median(prev.map(function (d) { return d.mins; })))],
+      ['Wastage lines', wNow, 'was ' + wPrev], ['Transfers out / in', '5 / 3', '2 loans not back'], ['Functions next 7 days', '3', '210 guests'], ['Training confirmed', '15 of 31', 'people and sections']];
+    document.getElementById('b-glance').innerHTML = '<tbody>' + rows.map(function (r) { return '<tr><th scope="row">' + r[0] + '</th><td class="num">' + r[1] + '<small>' + r[2] + '</small></td></tr>'; }).join('') + '</tbody>';
+  }
+
+  /* ---------- controls ---------- */
+  var dev = document.getElementById('device');
+  function setDesign(d) {
+    document.querySelectorAll('[data-design]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-design') === d)); });
+    document.getElementById('design-a').hidden = d !== 'a'; document.getElementById('design-b').hidden = d !== 'b';
+    document.getElementById('cap-a').hidden = d !== 'a'; document.getElementById('cap-b').hidden = d !== 'b';
+    try { localStorage.setItem('dash.design', d); } catch (e) {}
+    redrawAll();
+  }
+  function setView(v) {
+    document.querySelectorAll('[data-view]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-view') === v)); });
+    dev.classList.toggle('phone', v === 'phone');
+    try { localStorage.setItem('dash.view', v); } catch (e) {}
+    redrawAll();
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('button'); if (!b) return;
+    if (b.hasAttribute('data-design')) setDesign(b.getAttribute('data-design'));
+    else if (b.hasAttribute('data-view')) setView(b.getAttribute('data-view'));
+    else if (b.hasAttribute('data-period')) {
+      period = +b.getAttribute('data-period');
+      document.querySelectorAll('[data-period]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+      mounts = mounts.filter(function (m) { return !document.getElementById('design-a').contains(m[0]); });
+      drawA();
+    }
+  });
+  drawA(); drawB();
+  if (ro) ro.observe(dev);
+  var sd = 'a', sv = 'wide';
+  try { sd = localStorage.getItem('dash.design') || 'a'; sv = localStorage.getItem('dash.view') || 'wide'; } catch (e) {}
+  var q = /[?&]design=(a|b)/.exec(location.search); if (q) sd = q[1];
+  var qv = /[?&]view=(wide|phone)/.exec(location.search); if (qv) sv = qv[1];
+  setDesign(sd === 'b' ? 'b' : 'a'); setView(sv === 'phone' ? 'phone' : 'wide');
+})();
+</script>
+</body>
+</html>
