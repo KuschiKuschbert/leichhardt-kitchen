@@ -13,7 +13,8 @@ const P = (id, name, role) => ({ id, name, role, add: true, tick: true, del: rol
 // Ann is the head chef here (headId) and ticked for Functions, Sam a sous chef, Bo staff
 const headCfg = () => ({ [fsKey(['config', 'main'])]: { people: [P('sam', 'Sam', 'sous'), P('ann', 'Ann', 'head'), P('bo', 'Bo', 'staff')], headId: 'ann', sousIds: ['sam', 'ann'], pingIds: ['sam', 'ann'], fnIds: ['ann'], showBadges: true } });
 // the open menu: each row's height, the second lines with words in them, Sign out's live line and the whole menu
-const menuBox = p => p.evaluate(() => {
+const menuBox = p => p.evaluate(async () => {
+  await Promise.all(document.querySelector('.wm').getAnimations().map(a => a.finished.catch(() => {})));   // measured after the slide up
   const m = document.querySelector('.wm'), r = m.getBoundingClientRect(), o = document.querySelector('.wm-out'), a = document.activeElement;
   const tiles = [...m.querySelectorAll('.wm-tile')];
   return { tiles: tiles.map(e => { const q = e.getBoundingClientRect(); return [Math.round(q.width), Math.round(q.height)]; }), out: o ? Math.round(o.getBoundingClientRect().height) : 0,
@@ -53,7 +54,8 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
     const heads = await p.evaluate(() => [...document.querySelectorAll('.nb-side .nb-sh')].map(e => e.textContent.trim()));
     ok(heads.indexOf('Tools') < 0 && !(await p.$('.nb-tools')), who + ' ' + w + ' px: no Tools in Handy (' + heads.join(', ') + ')');
     await p.click('.wtop-who'); await L.settle(p, 150);
-    const box = await p.evaluate(() => { const r = document.querySelector('.wm').getBoundingClientRect(); return { l: r.left, r: r.right, b: r.bottom, w: innerWidth, h: innerHeight }; });
+    // the sheet slides up 32 px as it opens: measure it once that is done (a busy runner can be mid-slide after 150 ms)
+    const box = await p.evaluate(async () => { const m = document.querySelector('.wm'); await Promise.all(m.getAnimations().map(a => a.finished.catch(() => {}))); const r = m.getBoundingClientRect(); return { l: r.left, r: r.right, b: r.bottom, w: innerWidth, h: innerHeight }; });
     ok(box.l >= 0 && box.r <= box.w && box.b <= box.h, who + ' ' + w + ' px: the chef menu fits on the screen (' + JSON.stringify(box) + ')');
     ok(!(await L.overflow(p)), who + ' ' + w + ' px: no sideways scroll with the menu open (' + await L.overflow(p) + ')');
     await p.keyboard.press('Escape');
