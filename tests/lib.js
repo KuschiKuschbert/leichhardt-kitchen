@@ -279,6 +279,8 @@ async function open(browser, hash, o) {
   const ls = {
     // Existing journeys use a returning admin whose last page was Insights. Set adminPage: '' to test a first visit.
     'lk.prep.atab': o.adminPage === undefined ? 'insights' : o.adminPage,
+    // The Dashboard has opened once on this device, so the last page is kept. Set dashIntro: true for a first update.
+    'lk.dash.intro': o.dashIntro ? '' : '1',
     'fake.fs': JSON.stringify(store),
     'fake.anon': o.noAnon || o.legacyPrimaryGoogle ? '' : uid,
     'lk.prep.pin': o.noPin ? '' : PIN,
