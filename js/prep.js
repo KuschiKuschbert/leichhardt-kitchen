@@ -668,18 +668,23 @@
     return o.act.label === 'Undo' ? 'Undo ' + (/^[A-Z][a-z]/.test(o.msg) ? o.msg.charAt(0).toLowerCase() + o.msg.slice(1) : o.msg) : o.act.label + ': ' + o.msg;
   }
   function toastHTML() {
-    if (!S.toast) return '';
     var o = S.toastOld;
-    // the new toast comes first (screen readers and the tests meet it first); the stack shows the chip above it
-    return '<div class="p-toasts"><div class="p-toast' + (S.toastAct ? '' : ' p-toast-plain') + '" data-toast="new" data-p="toast-hide"><span class="p-toast-msg">' + esc(S.toast) + '</span>' +
-      (S.toastAct ? '<button type="button" class="p-toast-btn" data-p="toast-act">' + esc(S.toastAct.label) + '</button>' : '') + '</div>' +
+    if (!S.toast && !o) return '';
+    // the new toast comes first (screen readers and the tests meet it first); the stack shows the chip above it. The
+    // older Undo keeps its own 6 seconds when a short toast after it goes first (4 Nov 2026, LF-02).
+    return '<div class="p-toasts">' + (S.toast ? '<div class="p-toast' + (S.toastAct ? '' : ' p-toast-plain') + '" data-toast="new" data-p="toast-hide"><span class="p-toast-msg">' + esc(S.toast) + '</span>' +
+      (S.toastAct ? '<button type="button" class="p-toast-btn" data-p="toast-act">' + esc(S.toastAct.label) + '</button>' : '') + '</div>' : '') +
       (o ? '<div class="p-toast p-toast-old" data-toast="old"><button type="button" class="p-toast-btn p-toast-chip" data-p="toast-old">' + esc(toastChip(o)) + '</button></div>' : '') + '</div>';
   }
+  // which: 'old' the chip, 'new' only the newest toast (a scroll), 'all' both (a tap on the words or a swipe)
   function toastAway(which) {
-    clearTimeout(toastOldTimer); S.toastOld = null;
+    if (which !== 'new') { clearTimeout(toastOldTimer); S.toastOld = null; }
     if (which !== 'old') { clearTimeout(toastTimer); S.toast = ''; S.toastAct = null; }
     draw();
   }
+  /* A save that failed takes its own Undo with it (4 Nov 2026, LF-01): the change it would undo did not happen, so the
+     failure message never pushes it up into the older-Undo chip. */
+  function dropUndo() { if (S.toastAct && S.toastAct.label === 'Undo') S.toastAct = null; }
   function toastDown(e) {
     var t = e.target.closest && e.target.closest('[data-toast]');
     toastSwipe = t && S.root && S.root.contains(t) ? { el: t, id: e.pointerId, y: e.clientY } : null;
@@ -693,7 +698,7 @@
   function toastUp(e) {
     var w = toastSwipe; toastSwipe = null;
     if (!w || w.id !== e.pointerId) return;
-    if (e.type === 'pointerup' && e.clientY - w.y > 30) { toastSwiped = Date.now(); toastAway(w.el.getAttribute('data-toast')); return; }
+    if (e.type === 'pointerup' && e.clientY - w.y > 30) { toastSwiped = Date.now(); toastAway(w.el.getAttribute('data-toast') === 'old' ? 'old' : 'all'); return; }
     w.el.style.transform = ''; w.el.style.opacity = '';
   }
   function toastScrolled(e) {
@@ -713,6 +718,7 @@
   function failed(e, restore) {
     if (typeof restore === 'function') restore();
     if (e && e.terminalWork) return;
+    dropUndo();
     if (e && e.code === 'permission-denied' && S.authed && S.who && S.name !== 'admin') {
       var p = who(), kept = typeof restore === 'function' ? ' Your text is still in the box.' : '';
       toast('Not saved. Checking your PIN...', null, 12000);
@@ -1729,7 +1735,7 @@
       return;
     }
     d.finished = true;d.busy = false;d.uncertain = false;ptRestore(d, d.value);markPast('p', d.date);bump({ ticked: 1 });
-    ptClose();batch(function () { toast('Ticked', { label: 'Undo', fn: function () { tick(d.date, d.id); } });draw(); });setTimeout(draw, LINGER + 100);
+    ptClose();batch(function () { toast('Ticked', { label: 'Undo', fn: function () { tick(d.date, d.id, false); } });draw(); });setTimeout(draw, LINGER + 100);
   }
   function ptCheck() {
     var d = pt;if (!d || d.busy || !ptContext(d)) return;
@@ -1790,16 +1796,19 @@
   function canUntick(x) {
     return canBrowse() || (!!x.doneById && x.doneById === S.who && now() - (x.doneAt || 0) < 110000);
   }
-  function tick(date, id) { var item = ptItem(id);if (pt && pt.busy) return;if (item && !item.done && shared() && S.name === 'prep') { ptOpen(date, id);return; }batch(function () { tickNow(date, id); }); }
-  function tickNow(date, id) {
+  // want: true or false from an Undo, which only ever sets the line back and does nothing if it is already that way
+  // (4 Nov 2026, LF-01: a toggle ticked a line again when the tick had failed or was undone on another phone)
+  function tick(date, id, want) { var item = ptItem(id);if (pt && pt.busy) return;if (typeof want === 'boolean' && item && !!item.done === want) return;if (item && !item.done && shared() && S.name === 'prep') { ptOpen(date, id);return; }batch(function () { tickNow(date, id, want); }); }
+  function tickNow(date, id, want) {
     var it = S.items.filter(function (x) { return x.id === id; })[0], p = me();
     if (!it || !can('tick')) return;
+    if (typeof want === 'boolean' && !!it.done === want) return;
     if (!p) { toast('Choose your name before ticking prep.');return; }
     var done = !it.done;
     if (!done && !canUntick(it)) { toast('Ticked lines stay ticked. Ask the head chef or sous chef to undo it.'); return; }
     var at = done ? now() : 0;
     supd(itemRef(date, id), { done: done, doneBy: done ? p.name : '', doneById: done ? p.id : '', doneAt: at, preparedBy: done ? p.name : '', preparedById: done ? p.id : '', preparedAt: at }).then(function () { markPast('p', date); }, failed);
-    if (done) { bump({ ticked: 1 }); toast('Ticked', { label: 'Undo', fn: function () { tick(date, id); } }); setTimeout(draw, LINGER + 100); }
+    if (done) { bump({ ticked: 1 }); toast('Ticked', { label: 'Undo', fn: function () { tick(date, id, false); } }); setTimeout(draw, LINGER + 100); }
     else if (it.doneById && fb) sset(docRef('activity', it.doneById), { name: it.doneBy || '', ticked: fb.fs.increment(-1) }, true).catch(function () {});
   }
   function removeItem(date, id, restore) {
@@ -9168,7 +9177,7 @@
     if (a === 'removed') { S.showRemoved = !S.showRemoved; draw(); return; }
     if (a === 'urgent') { toggleUrgent(id); return; }
     if ((a === 'toast-old' || a === 'toast-act' || a === 'toast-hide') && Date.now() - toastSwiped < 500) return;
-    if (a === 'toast-hide') { toastAway('new'); return; }
+    if (a === 'toast-hide') { toastAway('all'); return; }
     if (a === 'toast-old') { var to = S.toastOld; S.toastOld = null; clearTimeout(toastOldTimer); if (to && to.act && to.act.fn) to.act.fn(); draw(); return; }
     if (a === 'toast-act') { var ta = S.toastAct; S.toast = ''; S.toastAct = null; if (ta && ta.fn) ta.fn(); draw(); return; }
     if (a === 'export') { exportAll(); return; }
