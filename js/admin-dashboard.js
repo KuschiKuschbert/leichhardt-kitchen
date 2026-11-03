@@ -9,7 +9,7 @@
   var DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   var HEAT = 5;
-  function reset() { context = ''; charts = {}; state = { period: 30, data: undefined, health: null, error: false, loading: false, req: 0 }; }
+  function reset() { context = ''; charts = {}; state = { period: 30, data: undefined, health: null, error: false, loading: false, req: 0, loans: undefined }; }
   reset();
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function valid() { return !!(api && api.allowed() && api.context() === context); }
@@ -44,7 +44,9 @@
     // A failed read waits for Refresh: never an automatic retry loop.
     if (!valid() || state.loading || (!force && (state.data !== undefined || state.error))) return;
     var req = ++state.req;
-    state.loading = true; state.error = false;
+    state.loading = true; state.error = false; state.loans = undefined;
+    // Needs you: transfers not returned, one query of the open loans (one read each, at least 1) with the records above.
+    if (api.loans) api.loans().then(function (list) { if (valid() && req === state.req) { state.loans = Array.isArray(list) ? list : 'error'; redraw(); } }, function () { if (valid() && req === state.req) { state.loans = 'error'; redraw(); } });
     // On open, then only on Refresh: one read of each record, never a timer.
     Promise.all([api.get('analysis/dashboard'), api.get('analysis/health').catch(function () { return null; })]).then(function (res) {
       if (!valid() || req !== state.req) return;
@@ -233,6 +235,45 @@
     return '<div class="dsh-panel"><div class="dsh-panel-head"><h3 class="a-ch-h">Most wasted</h3><button type="button" class="dsh-more" data-dsh="open" data-t="waste">All items</button></div><p class="hint">By lines logged. Amounts as typed, by unit.</p>' + body + '</div>';
   }
 
+  /* ---------- Needs you: what is waiting, each row opening its page ---------- */
+  function daysSince(day, today) { return Math.max(0, Math.round((Date.parse(today + 'T12:00:00Z') - Date.parse(day + 'T12:00:00Z')) / 86400000)); }
+  function needRow(kind, tag, title, detail, open, label) {
+    return '<li class="dsh-need dsh-need-' + kind + '"><span class="dsh-need-mark" aria-hidden="true"></span><div><p class="dsh-tag dsh-tag-' + (kind === 'due' ? 'bad' : kind === 'ok' ? 'good' : 'flat') + '">' + esc(tag) + '</p><p class="dsh-need-title">' + esc(title) + '</p>' +
+      (detail ? '<p class="dsh-need-detail">' + esc(detail) + '</p>' : '') + '</div>' + (open ? '<button type="button" class="btn" data-dsh="open" data-t="' + open + '">' + esc(label) + '</button>' : '') + '</li>';
+  }
+  function needsHTML() {
+    var nd = api.needs ? api.needs() : {}, rows = [], clear = [], today = api.today();
+    // Kitchen mail: the open messages the panel already read when the book opened.
+    if (nd.mail === undefined) {} else if (nd.mail === 'error') rows.push(needRow('wait', 'Not checked', 'Kitchen mail', 'Could not load the mail. The book tries again by itself.', 'mail', 'Open mail'));
+    else if (nd.mail === 'loading') rows.push(needRow('wait', 'Checking', 'Kitchen mail', 'Still loading.', '', ''));
+    else if (nd.mail.n) rows.push(needRow('due', nd.mail.fresh ? 'New' : 'Open', nd.mail.n + ' kitchen mail' + (nd.mail.n === 1 ? '' : 's') + ' open', nd.mail.fresh ? nd.mail.fresh + ' not read yet.' : 'All read, not done yet.', 'mail', 'Open mail'));
+    else clear.push('kitchen mail');
+    // Meeting minutes: who still has to sign the latest, and actions past their date.
+    if (nd.minutes === 'error') rows.push(needRow('wait', 'Not checked', 'Meeting minutes', 'Could not load the sign-offs.', 'minutes', 'Open minutes'));
+    else if (nd.minutes === 'loading') rows.push(needRow('wait', 'Checking', 'Meeting minutes', 'Still loading the sign-offs.', '', ''));
+    else if (nd.minutes) {
+      if (nd.minutes.chase) rows.push(needRow(nd.minutes.late ? 'due' : 'wait', nd.minutes.late ? 'Late' : 'To sign', 'Minutes of ' + nd.minutes.label + ': ' + nd.minutes.chase + ' still to sign', nd.minutes.signed + ' of ' + (nd.minutes.signed + nd.minutes.chase) + ' signed.', 'minutes', 'Open minutes'));
+      else clear.push('minutes');
+      if (nd.minutes.overdue) rows.push(needRow('due', 'Overdue', nd.minutes.overdue + ' meeting action' + (nd.minutes.overdue === 1 ? '' : 's') + ' past the date', 'From the minutes of ' + nd.minutes.label + '.', 'minutes', 'Open minutes'));
+    }
+    // Transfers not returned: lent or borrowed before today and still open.
+    if (state.loans === undefined) rows.push(needRow('wait', 'Checking', 'Transfers', 'Still loading.', '', ''));
+    else if (state.loans === 'error') rows.push(needRow('wait', 'Not checked', 'Transfers', 'Could not load the open transfers.', 'transfers', 'Open Transfers'));
+    else {
+      var open = state.loans.filter(function (x) { return x && /^\d{4}-\d{2}-\d{2}$/.test(x.date) && x.date < today && !x.deleted && !x.returned; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+      if (open.length) {
+        var o = open[0], who = str(o.venue, 40);
+        rows.push(needRow('wait', 'Not back', open.length + ' transfer' + (open.length === 1 ? '' : 's') + ' not returned', 'Oldest: ' + (str(o.text) || 'an item') + (who ? (o.dir === 'in' ? ' from ' : ' to ') + who : '') + ', ' + daysSince(o.date, today) + ' days.', 'transfers', 'Open Transfers'));
+      } else clear.push('transfers');
+    }
+    // The nightly run: a failed run, or numbers more than a day and a half old.
+    var h = state.health, failed = h && h.status === 'failed' && n(h.at) > state.data.at, stale = api.now() - state.data.at > 36 * 3600000;
+    if (failed || stale) rows.push(needRow('due', 'Nightly run', failed ? 'The last nightly run did not finish' : 'The nightly numbers are more than a day old', 'The numbers here are from ' + api.clock(state.data.at) + '. The Nightly learning run in GitHub needs a look.', '', ''));
+    var ok = clear.length || !(failed || stale) ? '<p class="dsh-clear"><span class="dsh-dot" aria-hidden="true"></span>' + (clear.length ? 'Nothing waiting for ' + esc(clear.join(', ').replace(/, ([^,]*)$/, ' or $1')) + '. ' : '') + (failed || stale ? '' : 'The nightly run finished.') + '</p>' : '';
+    return '<section class="dsh-panel dsh-needs" aria-label="Needs you"><div class="dsh-panel-head"><h3 class="a-ch-h">Needs you</h3><span class="hint">' + (rows.length ? rows.length + ' to look at' : 'All clear') + '</span></div>' +
+      (rows.length ? '<ul class="dsh-need-list">' + rows.join('') + '</ul>' : '') + ok + '</section>';
+  }
+
   /* ---------- the page ---------- */
   function freshHTML() {
     var h = state.health, d = state.data, failed = h && h.status === 'failed' && n(h.at) > d.at;
@@ -258,7 +299,7 @@
     charts = {};
     return head + freshHTML() + '<p class="hint dsh-range">' + esc(dayLabel(cur[0].day) + ' to ' + dayLabel(cur[cur.length - 1].day)) +
       (have < len ? '. Only ' + have + ' finished days so far.' : prev ? ', compared with the ' + len + ' days before.' : '. The nightly run keeps 90 days, so there is no earlier period to compare.') + ' Today is counted tonight.</p>' +
-      headlinesHTML() + tilesHTML(cur, have >= len ? prev : null, len) +
+      headlinesHTML() + tilesHTML(cur, have >= len ? prev : null, len) + needsHTML() +
       '<div class="dsh-grid">' + lineHTML(cur, len) + reasonsHTML(cur, have >= len ? prev : null) + heatHTML(cur) + itemsHTML(cur, have >= len ? prev : null) + '</div></section>';
   }
 
@@ -310,7 +351,7 @@
     var a = el.getAttribute('data-dsh');
     if (a === 'period') { var v = +el.getAttribute('data-v'); if ([7, 30, 90].indexOf(v) >= 0) { state.period = v; redraw(); } return; }
     if (a === 'refresh') { if (!state.loading) { state.data = undefined; load(true); redraw(); } return; }
-    if (a === 'open') { var t = el.getAttribute('data-t'); if (['insights', 'waste', 'transfers'].indexOf(t) >= 0) api.open(t, state.period); }
+    if (a === 'open') { var t = el.getAttribute('data-t'); if (['insights', 'waste', 'transfers', 'mail', 'minutes'].indexOf(t) >= 0) api.open(t, state.period); }
   }
   window.LK_DASH = { API: API, render: render, click: click, reset: reset };
 })();
