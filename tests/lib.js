@@ -462,12 +462,13 @@ async function clear(page, selector) {
 // These open the sheet when it is not open already, and wait for its first box.
 async function wLog(page) {
   if (await page.$('.w-sheet #w-text')) return;
-  await page.click('[data-p="w-log"]');
+  // a click in the page, like fill(), so a sheet that came up by itself (the pings) does not stop the test
+  await page.evaluate(() => document.querySelector('[data-p="w-log"]').click());
   await waitFor(page, () => !!document.querySelector('.w-sheet #w-text'), null, 4000);
 }
 async function wReview(page) {
   if (await page.$('.w-sheet #w-ra')) return;
-  await page.click('[data-p="w-rv"]');
+  await page.evaluate(() => document.querySelector('[data-p="w-rv"]').click());
   await waitFor(page, () => !!document.querySelector('.w-sheet #w-ra'), null, 4000);
 }
 module.exports = { wLog, wReview, clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };

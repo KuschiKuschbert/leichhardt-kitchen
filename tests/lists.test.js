@@ -118,12 +118,11 @@ function past(n) { const d = new Date(); d.setDate(d.getDate() - n); return L.ym
   await p.fill('#w-amt', '2');
   await p.click('.w-add .nb-addbtn');
   await L.settle(p, 150);
-  ok(/w-rbtn/.test(await active(p)), 'waste: no reason, focus goes to the reason button');
-  await p.click('.w-rbtn');
-  await L.settle(p, 150);
-  for (let k = 0; k < 9; k++) await p.keyboard.press('Tab');
-  ok(await p.evaluate(() => !!document.activeElement.closest('.ux-picker')), 'waste: Tab stays inside the reason sheet');
-  await p.click('.ux-picker [data-v="excess"]');
+  // 3 Nov 2026: the reasons are chips in the Log waste sheet
+  ok(/w-rchip/.test(await active(p)), 'waste: no reason, focus goes to the first reason chip');
+  for (let k = 0; k < 30; k++) await p.keyboard.press('Tab');
+  ok(await p.evaluate(() => !!document.activeElement.closest('.w-sheet')), 'waste: Tab stays inside the Log waste sheet');
+  await p.click('[data-p="wreason"][data-v="excess"]');
   await L.settle(p, 150);
   await p.click('.w-add .nb-addbtn');
   await L.settle(p, 300);

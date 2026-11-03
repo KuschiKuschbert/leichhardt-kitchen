@@ -100,6 +100,9 @@ const rvBo = { [fsKey(['waste', today])]: { avoidable: 'Over-portioned chips', c
         await p.click(sel); await L.settle(p, 700);
         const rv = (await store(p))[fsKey(['waste', today])] || {};
         ok(rv.change === 'Drop chips to order after 21:00' && rv.reviewBy === 'Sam' && /Review saved/.test(await txt(p, '.p-toast') || ''), w + ' review: a changed review saves (' + JSON.stringify(rv) + ')');
+        // 3 Nov 2026: Save closes the review sheet; opened again, Save is off
+        ok(!(await p.$('.w-sheet')) && /Saved by Sam/.test(await txt(p, '.w-rvbtn') || ''), w + ' review: once saved, the sheet closes and the button says who saved it');
+        await L.wReview(p);
         ok(await off(p, sel) === true, w + ' review: once saved, Save is off again');
       }
       ok(p.errors.length === 0, w + ' review: no page errors ' + p.errors.join(' | '));

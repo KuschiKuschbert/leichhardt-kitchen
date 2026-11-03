@@ -19,7 +19,7 @@ const prepLines = async (p, text) => Object.entries(await store(p)).filter(([k, 
   let p = await L.open(b, '#/waste', { who: 'sam', extra, wait: 1600 });
   const order = await p.evaluate(() => ['.w-today', '.w-logbtn', '.w-rvbtn', '.nb-rows'].map(s => { const e = document.querySelector(s); return e ? Math.round(e.getBoundingClientRect().top) : -1; }));
   ok(order.every((y, i) => y >= 0 && (!i || y >= order[i - 1])), 'page: the total, Log waste, the review, then the entries (' + order.join(', ') + ')');
-  ok(/4\.5 kg, 1 L/.test(await txt(p, '.w-tot') || '') && /logged today/.test(await txt(p, '.w-tot') || ''), 'page: today\'s total (' + await txt(p, '.w-tot') + ')');
+  ok(/3\.5 kg, 1 L/.test(await txt(p, '.w-tot') || '') && /logged today/.test(await txt(p, '.w-tot') || ''), 'page: today\'s total (' + await txt(p, '.w-tot') + ')');
   const legend = await p.$$eval('.w-legend li', l => l.map(e => e.textContent.trim()));
   ok(legend.join(' | ') === 'Expired stock 1 | Cooking fault 1 | Excess production 1' && (await p.$$('.w-bar .w-seg')).length === 3, 'page: one bar part and one key line per reason (' + legend.join(' | ') + ')');
   ok(!(await p.$('#w-text')) && !(await p.$('.w-rule')), 'page: no form and no rule line until Log waste');
@@ -45,6 +45,8 @@ const prepLines = async (p, text) => Object.entries(await store(p)).filter(([k, 
   const br = Object.entries(await store(p)).filter(([k, v]) => k.indexOf(fsKey(['waste', today, 'lines'])) === 0 && v.text === 'Bread rolls');
   ok(br.length === 1 && br[0][1].amount === 8 && br[0][1].unit === 'pieces' && br[0][1].reason === 'fault', 'Log it saves the entry (' + JSON.stringify(br.map(x => [x[1].amount, x[1].unit, x[1].reason])) + ')');
   ok(!!(await p.$('.w-sheet')) && await p.inputValue('#w-text') === '' && await p.evaluate(() => document.activeElement && document.activeElement.id === 'w-text') && /Logged/.test(await txt(p, '.p-toast') || ''), 'Log it: the sheet stays for the next entry, the cursor back in What was wasted?, a toast with Undo');
+  // the toast sits at the top, above the sheet, so its Undo can be tapped (it was under the sheet)
+  ok(await p.evaluate(() => { const t = document.querySelector('.p-toast-btn'), r = t.getBoundingClientRect(), s = document.querySelector('.w-sheet').getBoundingClientRect(); return document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2) === t && r.bottom <= s.top; }), 'Log it: the toast is above the sheet, where Undo can be tapped');
   await p.click('.w-sheet [data-p="w-log-close"]'); await L.settle(p, 200);
   ok(!(await p.$('.w-sheet')), 'Close closes it');
   ok(/Cooking fault 2/.test(await txt(p, '.w-legend') || ''), 'the key counts the new entry (' + await txt(p, '.w-legend') + ')');
@@ -77,8 +79,8 @@ const prepLines = async (p, text) => Object.entries(await store(p)).filter(([k, 
   ok(p.errors.length === 0, 'staff: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // nothing logged yet: no total, the empty note, Log waste
-  p = await L.open(b, '#/waste', { who: 'ann', wait: 1600 });
+  // nothing logged yet (the test day's Chips taken off): no total, the empty note, Log waste
+  p = await L.open(b, '#/waste', { who: 'ann', wait: 1600, extra: { [fsKey(['waste', today, 'lines', 'w1'])]: { text: 'Chips', amount: 2, unit: 'kg', reason: 'excess', action: '', station: 'Fryer', addedBy: 'Bo', addedById: 'bo', addedAt: L.NOW - 60000, deleted: true } } });
   ok(!(await p.$('.w-today')) && /Nothing logged/.test(await txt(p, '.nb-body') || '') && !!(await p.$('.w-logbtn')), 'empty: no total, the empty note and Log waste');
   await p.context().close();
 

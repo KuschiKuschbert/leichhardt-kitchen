@@ -3091,3 +3091,6 @@ i.dsh-c-w { background: var(--dsh-w); } i.dsh-c-t { background: var(--dsh-t); }
 .nb-t .w-again { display: flex; align-items: center; width: max-content; min-height: 36px; height: auto; margin-top: 6px; padding: 0 12px; font: 600 0.8125rem var(--body); }
 .nb-t .w-again.is-on { display: block; min-height: 0; padding: 2px 0; border: 0; font-size: 0.8125rem; font-weight: 600; color: var(--muted); }
 @media (min-width: 720px) { .w-sheet { width: min(40rem, calc(100vw - 32px)); max-height: 86vh; max-height: 86dvh; } }
+/* A toast while a wastage sheet is open (3 Nov 2026): at the top of the screen, above the sheet, so its Undo can be
+   tapped and the form under it stays clear */
+html:has(.w-sheet) .p-toasts { top: calc(12px + env(safe-area-inset-top, 0px)); bottom: auto; z-index: 62; flex-direction: column; }
