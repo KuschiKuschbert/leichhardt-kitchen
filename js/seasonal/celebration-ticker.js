@@ -52,7 +52,8 @@
     clearTimeout(dwellTimer); dwellTimer = 0; deadline = 0;
   }
   function disposeHost(host) {
-    // The explanation owns no picker or modal; clearing it leaves application dialogs alone.
+    // The badge can share the application's heading, but it still belongs to this ticker.
+    if (current?.host === host) current.refs?.language.remove();
     host?.replaceChildren();
   }
   function finishTransition() {
@@ -72,12 +73,6 @@
     const refs = current.refs, reason = state(), chosen = locale();
     text(refs.language, chosen.nativeName);
     refs.language.lang = chosen.code;
-    const hint = reason === 'running' ? 'Cycling · ' + (current.index + 1) + ' of ' + current.locales.length
-      : reason === 'still' ? 'Language rotation stopped by Still'
-      : reason === 'reduced-motion' ? 'Language rotation stopped by reduced motion'
-      : reason === 'hidden' ? 'Paused while the book is hidden'
-      : 'Preparing the six-language sequence';
-    text(refs.hint, hint);
     current.host.dataset.tickerState = reason;
     current.host.dataset.tickerLocale = chosen.code;
     current.host.dataset.tickerSurface = current.surface;
@@ -134,10 +129,11 @@
     disposeHost(host);
     host.classList.add('kb-celebration-ticker'); host.dataset.kbTicker = current.id;
     host.setAttribute('role', 'group'); host.setAttribute('aria-label', 'Celebration context in six languages');
-    const meta = element('div', 'kb-ticker-meta');
-    const accent = element('span', 'kb-ticker-chalk', 'The occasion');
     const language = element('span', 'kb-ticker-language');
-    meta.append(accent, language);
+    if (current.languageHost) current.languageHost.replaceChildren(language);
+    else {
+      const meta = element('div', 'kb-ticker-meta'); meta.append(language); host.append(meta);
+    }
     const stage = element('div', 'kb-ticker-texts'); stage.setAttribute('aria-live', 'off');
     current.locales.forEach(item => {
       const sizer = element('p', 'kb-ticker-sizer', current.entry[item.code]);
@@ -151,9 +147,8 @@
       if (!index) { line.textContent = sentence(); line.lang = locale().code; line.dataset.locale = locale().code; }
       stage.append(line);
     });
-    const hint = element('span', 'kb-ticker-hint'); hint.setAttribute('aria-live', 'off');
-    host.append(meta, stage, hint);
-    current.refs = { stage, lines, language, hint };
+    host.append(stage);
+    current.refs = { stage, lines, language };
     const model = current;
     current.fontsReady = !document.fonts;
     if (document.fonts) {
@@ -169,20 +164,21 @@
     if (!host || !theme || !entry) { clear(); return; }
     const available = localesFor(entry);
     if (!available.length) { clear(); return; }
+    const languageHost = options.languageHost?.isConnected ? options.languageHost : null;
     const newEvent = !current || current.id !== theme.id;
     if (newEvent) {
       clearDwell(false); finishTransition();
       if (current) disposeHost(current.host);
       const index = Math.max(0, available.findIndex(item => item.code === readingLocale));
-      current = { id: theme.id, host, entry, locales: available, index, activeLine: 0, mode: options.mode === 'gentle' ? 'gentle' : 'still', surface: options.surface === 'work' ? 'work' : 'home', fontsReady: false, transitioning: false, refs: null };
+      current = { id: theme.id, host, languageHost, entry, locales: available, index, activeLine: 0, mode: options.mode === 'gentle' ? 'gentle' : 'still', surface: options.surface === 'work' ? 'work' : 'home', fontsReady: false, transitioning: false, refs: null };
       remaining = dwellFor(); revision += 1;
       build(host);
     } else {
       current.mode = options.mode === 'gentle' ? 'gentle' : 'still';
       current.surface = options.surface === 'work' ? 'work' : 'home';
-      if (current.host !== host || !host.querySelector('.kb-ticker-texts')) {
-        if (current.host !== host) disposeHost(current.host);
-        current.host = host; build(host);
+      if (current.host !== host || current.languageHost !== languageHost || !host.querySelector('.kb-ticker-texts')) {
+        disposeHost(current.host);
+        current.host = host; current.languageHost = languageHost; build(host);
       }
     }
     reconcile();
