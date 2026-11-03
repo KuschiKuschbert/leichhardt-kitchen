@@ -14,7 +14,6 @@
   let current = null, dwellTimer = 0, transitionTimer = 0, transitionFrame = 0;
   let deadline = 0, remaining = 0, revision = 0, cycleCount = 0, automaticCycleCount = 0;
   let externalPause = false, lastState = 'off', readingLocale = 'en';
-  const preference = { userPaused: false };
   const settings = { dwellMs: null, transitionMs: 520 };
   const text = (node, value) => { if (node.textContent !== value) node.textContent = value; };
   const element = (tag, className, value) => {
@@ -42,7 +41,6 @@
     if (current.mode !== 'gentle') return 'still';
     if (reduced.matches) return 'reduced-motion';
     if (externalPause || document.hidden || ambientPaused()) return 'hidden';
-    if (preference.userPaused) return 'paused';
     if (!current.fontsReady) return 'waiting-fonts';
     return 'running';
   }
@@ -72,16 +70,9 @@
   function controlState() {
     if (!current?.refs) return;
     const refs = current.refs, reason = state(), chosen = locale();
-    const blocked = current.mode !== 'gentle' || reduced.matches;
-    const label = preference.userPaused ? 'Resume languages' : 'Pause languages';
-    text(refs.toggle, label);
-    refs.toggle.disabled = blocked;
-    refs.toggle.setAttribute('aria-pressed', String(preference.userPaused));
-    refs.toggle.title = blocked ? 'Automatic language rotation follows the Effects and device motion settings.' : label;
     text(refs.language, chosen.nativeName);
     refs.language.lang = chosen.code;
     const hint = reason === 'running' ? 'Cycling · ' + (current.index + 1) + ' of ' + current.locales.length
-      : reason === 'paused' ? 'Language rotation paused'
       : reason === 'still' ? 'Language rotation stopped by Still'
       : reason === 'reduced-motion' ? 'Language rotation stopped by reduced motion'
       : reason === 'hidden' ? 'Paused while the book is hidden'
@@ -160,18 +151,9 @@
       if (!index) { line.textContent = sentence(); line.lang = locale().code; line.dataset.locale = locale().code; }
       stage.append(line);
     });
-    const controls = element('div', 'kb-ticker-controls');
-    const toggle = element('button', 'kb-ticker-toggle', 'Pause languages'); toggle.type = 'button';
     const hint = element('span', 'kb-ticker-hint'); hint.setAttribute('aria-live', 'off');
-    controls.append(toggle);
-    host.append(meta, stage, controls, hint);
-    current.refs = { stage, lines, language, toggle, hint };
-    toggle.addEventListener('click', () => {
-      if (!current || current.host !== host) return;
-      preference.userPaused = !preference.userPaused;
-      if (preference.userPaused) finishTransition();
-      reconcile(); announce();
-    });
+    host.append(meta, stage, hint);
+    current.refs = { stage, lines, language, hint };
     const model = current;
     current.fontsReady = !document.fonts;
     if (document.fonts) {
@@ -220,7 +202,7 @@
       activeInstances: current ? 1 : 0, transitioning: Boolean(current?.transitioning), fontsReady: Boolean(current?.fontsReady),
       reservedHeight: current?.refs?.stage.getBoundingClientRect().height || 0,
       availableLocales: current ? current.locales.map(item => item.code) : [],
-      pinnedLocale: null, userPaused: preference.userPaused,
+      pinnedLocale: null,
       configDwellMs: settings.dwellMs, transitionMs: settings.transitionMs
     };
   }
