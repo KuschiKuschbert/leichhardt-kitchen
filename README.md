@@ -821,6 +821,8 @@ Done on 22 Oct 2026 by the head chef: the Browser key works only from `kuschikus
 
 2. **Two recipes are hidden in the book but still in `js/data.js`** (29 Oct 2026): `chicken-adobo` (also first in Specials) and `pork-knuckle`. This is a dated static-source cleanup note. Recheck current public mirrors and hidden-recipe behaviour before acting. The owner still decides whether to remove the static entries or show the recipes again; no decision is made by this documentation update.
 
+3. **Choose a redesign for Supplier order and Delivery received** (3 Nov 2026). Two options with working phone mockups are in `docs/receiving-design-options/` (`brief.md`, `index.html`). A, The Order Sheet, is recommended: no saved data or rules change. B, The Supplier Docket, adds an order check on arrival and needs the head chef's temperature limits. One reading, chilled or frozen, already saves today; both options show one box at a time. Nothing in the app changes until the head chef chooses.
+
 Remove each item here once it is done.
 
 ### Complete saved shells (2 November 2026)
