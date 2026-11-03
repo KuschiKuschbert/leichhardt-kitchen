@@ -500,6 +500,13 @@ row('js/prep.js resetPin(): Reset PIN (staffpins and pinset deleted, pinOpen mer
 row('js/prep.js toggleUrgent(): mark a prep line urgent', { ok: ADDS, asks: ADDS,
   prep: r => put({ [`days/${TODAY}/items/${MINE(r)}`]: line() }),
   run: (db, w, r) => W(r, [['upd', `days/${TODAY}/items/${MINE(r)}`, { urgent: true, urgentBy: NAME[r], urgentById: w, urgentAt: Date.now() }]]) });
+// Fix a line (3 Nov 2026, work pages redesign S5): the ⋯ menu's Change amount and Move to section, for anyone with Add
+row('js/prep.js lmFixSave(): change a prep line\'s amount and section', { ok: ADDS, asks: ADDS,
+  prep: r => put({ [`days/${TODAY}/items/${MINE(r)}`]: line() }),
+  run: (db, w, r) => W(r, [['upd', `days/${TODAY}/items/${MINE(r)}`, { qty: '3 tubs', qn: 3, qu: 'tub', station: 'Sauce' }]]) });
+row('js/prep.js lmFixSave(): change an order line\'s amount', { ok: ADDS, asks: ADDS,
+  prep: r => put({ [`orders/${TODAY}/lines/${MINE(r)}`]: { text: 'Cream', qty: '4 L', recipes: [], addedBy: 'Ann', addedById: 'ann', addedAt: NOW - 3600000, ordered: false, deleted: false, by: 'ann' } }),
+  run: (db, w, r) => W(r, [['upd', `orders/${TODAY}/lines/${MINE(r)}`, { qty: '6 L', qn: 6, qu: 'L' }]]) });
 row('js/prep.js mergeDups(): a double up merged into the line it repeats', { ok: DELS, asks: DELS.filter(r => r !== 'owner'),
   prep: r => put({ [`days/${TODAY}/items/${MINE(r)}`]: line(), [`days/${TODAY}/items/${MINE(r)}-2`]: line({ qty: '1 kg', qn: 1 }) }),
   run: (db, w, r) => W(r, [['upd', `days/${TODAY}/items/${MINE(r)}`, { qty: '3 kg', qn: 3, qu: 'kg' }],

@@ -3056,3 +3056,11 @@ i.dsh-c-w { background: var(--dsh-w); } i.dsh-c-t { background: var(--dsh-t); }
 .dsh-items thead th { font-size: .78rem; font-weight: 600; color: var(--muted); }
 .dsh-items td { font-variant-numeric: tabular-nums; }
 .dsh-items .dsh-delta { margin-top: .2rem; }
+/* Fix a line (3 Nov 2026, work pages redesign S5): the ⋯ also shows on a laptop when it holds Change amount (and Move to
+   section on the prep list); its sheet shows the current value under each action and turns into a small form */
+.nb-more.nb-more-fix { display: inline-flex; align-items: center; justify-content: center; }
+.lm-sheet .lm-fix { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.lm-sheet .lm-fix small { font-weight: 400; color: var(--muted); }
+.lm-form { display: grid; gap: 0.6rem; }
+.lm-form .nb-in { width: 100%; min-height: 44px; font-size: 1.0625rem; }
+.lm-form .btn-row { margin-top: 0.25rem; }
