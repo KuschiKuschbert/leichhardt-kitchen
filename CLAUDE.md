@@ -28,7 +28,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Admin autocorrect repairs, shared protected words and private correction history | `docs/proofreader-admin.md` |
 | Admin visual design, selected A: The Chef's Desk | `docs/admin-design-options/brief.md` |
 | Admin dashboard, selected A with B's headlines (3 Nov 2026) | `docs/admin-dashboard-options/brief.md` |
-| Settings page for each role, proposals A, B and C (3 Nov 2026, not chosen yet) | `docs/settings-options/brief.md`, `docs/device-sessions.md` |
+| Settings page for each role, selected A: One sorted page (3 Nov 2026) | `docs/settings-options/brief.md`, `docs/device-sessions.md` |
 | Shared controls, deferred search, table interactions and council audit | `docs/adaptive-controls.md`, `docs/ux-council-audit.md` |
 | Loading, saving, measured progress and reduced motion | `docs/loading-motion.md` |
 | Nightly backup format, protected decryption and isolated recovery checks | `docs/backup-recovery.md` |

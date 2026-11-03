@@ -1,6 +1,6 @@
 # Settings proposals
 
-Requested 3 November 2026: "Considering how big our app has grown we might have to rethink and upgrade the settings page too for staff and admin/Headchef/sous chef". **Not chosen yet.** Nothing in the book changes until the head chef picks a design. The build then follows "Build steps", each step in its own pull request.
+Requested 3 November 2026: "Considering how big our app has grown we might have to rethink and upgrade the settings page too for staff and admin/Headchef/sous chef". **Selected 3 November 2026: A, One sorted page, as the mockup shows it.** The four kitchen switches stay in the admin panel and The kitchen links to them. The new rows (What you can do, Play the ping sound, Check for an update, Find a setting) are built as shown; any of them can be left out later. The build follows "Build steps (A)", each step in its own pull request.
 
 `index.html` in this folder is the mockup: switch between the three designs, who is signed in (nobody, staff, sous chef, head chef) and phone or computer. Every name, count and value in it is an example.
 
