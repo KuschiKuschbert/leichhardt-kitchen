@@ -37,3 +37,7 @@ Publish the additive delivery rules and verify their workflow before releasing t
 - Manual backup and PIN move checks passed with receipt fields preserved. The nightly backup emulator fixture passed the date window, zero, negative readings, notes and original receiver.
 - All 132 local browser files passed across the full run and the focused rerun for the new menu entry. The final receiving, head-chef menu and backup/PIN-move checks passed (139 checks). Existing read budgets pass without an increase.
 - The prerequisite database release is [PR #391](https://github.com/KuschiKuschbert/leichhardt-kitchen/pull/391). The form release records its full CI, Pages and live-check results in its pull request. No test receipts are written to the live kitchen.
+
+## Working rules (moved from CLAUDE.md, 3 Nov 2026)
+
+`#/deliveries` loads `js/deliveries.js` only when opened. Every personal login may record and read today's temperatures, including Functions and View only; this grants no other kitchen access. The verified admin can select historical dates. `deliveries/<id>` records are immutable, including their receiver. A retry checks the same id before writing. Preserve null versus zero, negative readings, the Queensland clock and in-memory draft clearing on handover. Keep receipts in manual/nightly backups and PIN moves. `tests/deliveries.test.js`, the real rules suite and `scripts/delivery-backup-check.mjs` cover the flows. Do not invent food acceptance limits from the technical numeric input range.
