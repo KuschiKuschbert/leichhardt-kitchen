@@ -30,8 +30,34 @@ const box = p => p.inputValue('#p-section');
   await add(p, 'Pick mint again');
   await add(p, 'Make aioli');
   ok(await box(p) === '', 'cleared: with the box emptied the book fills it in again and clears it after');
+
+  // one section control (3 Nov 2026, work pages redesign S2): the sections as chips under the box, no Choose Section picker
+  const chips = () => p.evaluate(() => [...document.querySelectorAll('#prep-root .sec-chips [data-p="sec-pick"]')].map(c => c.textContent + (c.getAttribute('aria-pressed') === 'true' ? '*' : '')));
+  ok(!(await p.$('#p-section + .ux-picker-trigger')) && !(await p.$('#p-section[list]')), 'chips: no Choose Section picker next to the box');
+  const first = await chips();
+  ok(first.length >= 2 && !first.some(c => c.endsWith('*')), 'chips: the kitchen sections show, none lit while the box is empty (' + first.join(', ') + ')');
+  await p.click('#prep-root [data-p="sec-pick"][data-v="Grill"]'); await L.settle(p, 200);
+  ok(await box(p) === 'Grill' && (await chips()).includes('Grill*'), 'chips: a tap puts Grill in the box and lights its chip');
+  await add(p, 'Sear steaks');
+  ok(await stationOf(p, 'Sear steaks') === 'Grill' && await box(p) === 'Grill', 'chips: the line goes under Grill and Grill stays for the next line, like a typed section');
+  await p.click('#prep-root [data-p="sec-pick"][data-v="Grill"]'); await L.settle(p, 200);
+  ok(await box(p) === '' && !(await chips()).some(c => c.endsWith('*')), 'chips: a tap on the lit chip clears it');
+  await add(p, 'Wash leeks');
+  ok(await stationOf(p, 'Wash leeks') !== 'Grill', 'chips: cleared, the next line no longer goes under Grill (' + await stationOf(p, 'Wash leeks') + ')');
+  for (const w of [390, 768, 1280]) {
+    await p.setViewportSize({ width: w, height: w > 400 ? 900 : 844 }); await L.settle(p, 200);
+    ok(!(await L.overflow(p)) && await p.evaluate(() => [...document.querySelectorAll('#prep-root .sec-chips .chip')].every(c => c.getBoundingClientRect().height >= 44)), w + ' px: the chips are 44 px tall and nothing scrolls sideways');
+  }
   ok(p.errors.length === 0, 'no page errors ' + p.errors.join(' | '));
   await p.context().close();
+
+  // wastage: the same chips under its section box
+  const q = await L.open(b, '#/waste', { wait: 1500, extra });
+  ok(!(await q.$('#w-sec + .ux-picker-trigger')) && (await q.$$('.sec-chips [data-p="sec-pick"][data-sk="w-sec"]')).length >= 2, 'wastage: section chips, no Choose Section picker');
+  await q.click('.sec-chips [data-p="sec-pick"][data-sk="w-sec"][data-v="Larder"]'); await L.settle(q, 200);
+  ok(await q.inputValue('#w-sec') === 'Larder', 'wastage: a tap puts Larder in the section box');
+  ok(q.errors.length === 0, 'wastage: no page errors ' + q.errors.join(' | '));
+  await q.context().close();
   await b.close();
   L.report(R);
 })();
