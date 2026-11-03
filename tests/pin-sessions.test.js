@@ -70,7 +70,7 @@ async function signOut(p) {
   st = await state(p);
   ok(!st.authed && /One try every 20 seconds/.test(st.msg), 'a second try within 20 seconds waits (' + st.msg + ')');
   await p.clock.runFor(25000); await L.settle(p, 300);
-  await p.fill('#pf1', '1111'); await L.settle(p, 900);
+  await p.fill('#pf1', '1111'); await hasSess(p); await L.settle(p, 900);
   st = await state(p); s = await sessOf(p);
   ok(st.authed && s && s.by === 'sam' && s.pinAt === 99, 'then the PIN opens a new session with the new PIN time (' + JSON.stringify(s) + ')');
   await tickSelf(p, 'i3');
