@@ -6,8 +6,8 @@
   var generation = 0, stop = null, watchKey = '', context = '', recorder = '', timer = null;
   var M = blank();
   // Optional in lazy files: an older saved shell keeps its existing text feedback.
-  function inkLabel(text, icon, state) { return window.LK_MOTION ? window.LK_MOTION.label(text, icon || 'save', state || (navigator.onLine === false ? 'still' : 'busy')) : esc(text); }
-  function loading(text, icon, rows) { return window.LK_MOTION ? window.LK_MOTION.status(text, { icon: icon, state: navigator.onLine === false ? 'still' : 'busy', rows: rows || 0 }) : '<p class="hint" role="status">' + esc(text) + '</p>'; }
+  function inkLabel(text, icon, state) { return window.LK_MOTION ? window.LK_MOTION.label(text, icon || 'save', state || 'busy') : esc(text); }
+  function loading(text, icon, rows) { return window.LK_MOTION ? window.LK_MOTION.status(text, { icon: icon, state: 'busy', rows: rows || 0 }) : '<p class="hint" role="status">' + esc(text) + '</p>'; }
   function form() { var day = T.day(), time = T.clock(); return { day: day, time: time, initial: day + '|' + time, supplier: '', chilled: '', frozen: '', note: '' }; }
   function blank() { return { root: null, form: form(), day: T.day(), followToday: true, rows: [], state: 'idle', error: '', invalid: [], message: '', busy: false, attempt: null, suspended: false, cache: Object.create(null) }; }
   function allowed() { return P.privateAccess(); }
