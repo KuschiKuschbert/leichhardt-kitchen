@@ -826,6 +826,8 @@ Done on 22 Oct 2026 by the head chef: the Browser key works only from `kuschikus
 
 2. **Two recipes are hidden in the book but still in `js/data.js`** (29 Oct 2026): `chicken-adobo` (also first in Specials) and `pork-knuckle`. This is a dated static-source cleanup note. Recheck current public mirrors and hidden-recipe behaviour before acting. The owner still decides whether to remove the static entries or show the recipes again; no decision is made by this documentation update.
 
+3. **Settings for each role** (3 Nov 2026): the head chef picks design A, B or C, whether four kitchen switches move out of the admin panel, and which new rows to keep. The mockup and the build steps are in `docs/settings-options/brief.md`. Nothing in the book changes until then.
+
 Remove each item here once it is done.
 
 ### Complete saved shells (2 November 2026)
