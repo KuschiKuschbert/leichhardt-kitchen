@@ -25,3 +25,7 @@ The existing nightly learning job also repairs the index. This covers stock logg
 ## Rollback
 
 Revert the app commit on its own branch and PR. Original transfer logging and dated history remain compatible: the old app ignores return fields and the index. Keep the additive rules while any new app remains open, so its pending writes can finish. After phones have refreshed to the old code, publish the previous rules and run the lock probe. Do not delete saved return data. Reapplying this change and rerunning the index script preserves it.
+
+## Working rules (moved from CLAUDE.md, 3 Nov 2026)
+
+Dated lines now allow return updates through `xWrite()`, which atomically maintains `transferOpen`. Staff read older outstanding loans through one open-only listener, never the private dated history. Return fields must stay in backups, PIN moves and CSV exports. Run the Publish rules workflow on the feature branch before merging this app change; it indexes all existing loans before deploying rules. `scripts/transfer-index-check.mjs` verifies the migration on the emulator.
