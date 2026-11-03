@@ -1254,6 +1254,27 @@
   // the head chef on their own Google device: the chef hat's chef items open the matching admin tab
   function adminTabs() { return admDev() && whoHead(); }
   // Meeting minutes shows for staff only once there is something published to read (chefs always, for the register)
+  /* Settings, You (3 Nov 2026, docs/settings-options/brief.md): the role's name, and what the person signed in may do in
+     plain words for the read-only What you can do row. The same checks the pages and the rules go by (can(), canPing(),
+     todoOK(), bookEdit(), fnOK(), adminTabs()), so it never says more than the person may do. Nothing read or saved. */
+  function whoRole() { var p = me(); return p && ROLES[p.role] ? ROLES[p.role].name : ''; }
+  function myCan() {
+    var out = [];
+    if (!me() || !privateAccess()) return out;
+    if (can('add')) out.push('Add prep and order lines', 'Log wastage and transfers');
+    if (can('tick')) out.push('Tick prep');
+    if (can('del')) out.push('Remove prep lines');
+    if (canPing()) out.push('Shift pings');
+    if (todoOK()) out.push('Chef to-do');
+    if (bookEdit()) out.push('Recipes and drawings');
+    if (fnOK()) out.push('Function bookings');
+    if (isSous() && !adminTabs()) out.push('Manage staff');
+    if (adminTabs()) out.push('Admin panel on this device');
+    out.push('Delivery temperatures');
+    return out;
+  }
+  // the person's section, the pushes on this phone or who they are changed: Settings draws again if what it shows did
+  function meChanged() { try { window.dispatchEvent(new Event('lk-me')); } catch (e) {} }
   function chefMenu() { return { minutes: featOn('minutes') && (isSous() || mnPub().length > 0), toSign: featOn('minutes') ? mnUnsigned().length : 0, chef: isSous(), head: whoHead(), tab: adminTabs(), sec: ksPicks(me()) ? (mySec() || 'Pick one for today') : '', book: bookEdit(), fn: fnOK(), todo: todoOK() }; }
   /* Functions (21 Oct 2026): who may enter and change function bookings. The person signed in with their own PIN and
      ticked for Functions (config/main fnIds, which only the head chef's Google account saves), or the head chef's Google
@@ -8669,28 +8690,30 @@
     nosw: 'The book is still setting up on this phone. Close it, open it again and try once more.',
     fail: 'Could not turn it on. Check the connection and try again.'
   };
+  // the order list and Settings both show the pushes on this phone
+  function pushDraw() { draw(); meChanged(); }
   function pushOn() {
     var who = pushWhoId();
     if (!who || S.pushBusy) return;
-    if (pushState() === 'ios' || pushState() === 'no') { S.pushMsg = PUSH_SAY[pushState()]; draw(); return; }
-    S.pushBusy = true; S.pushMsg = 'Turning on...'; draw();
+    if (pushState() === 'ios' || pushState() === 'no') { S.pushMsg = PUSH_SAY[pushState()]; pushDraw(); return; }
+    S.pushBusy = true; S.pushMsg = 'Turning on...'; pushDraw();
     Notification.requestPermission().then(function (p) { if (p !== 'granted') throw { code: 'denied' }; return pushToken(); }).then(function (tok) { return pushSave(tok, who); }).then(function () {
-      S.pushBusy = false; S.pushMsg = 'On. This phone gets a push when a cut-off reminder starts and an hour before.'; draw();
+      S.pushBusy = false; S.pushMsg = 'On. This phone gets a push when a cut-off reminder starts and an hour before.'; pushDraw();
     }, function (e) {
-      S.pushBusy = false; S.pushMsg = PUSH_SAY[e && e.code] || PUSH_SAY.fail; draw();
+      S.pushBusy = false; S.pushMsg = PUSH_SAY[e && e.code] || PUSH_SAY.fail; pushDraw();
       try { console.warn('push', e && (e.code || e.message)); } catch (x) {}
     });
   }
   function pushOff() {
     var k = pushKept();
     if (!k || S.pushBusy) return;
-    S.pushBusy = true; S.pushMsg = 'Turning off...'; draw();
+    S.pushBusy = true; S.pushMsg = 'Turning off...'; pushDraw();
     var ref = docRef('push', k.h);
     (k.by === 'owner' ? track(fb.fs.deleteDoc(ref)) : W([['del', ref]])).then(function () {
       lsSet('lk.push', '');
       import(SDK + 'firebase-messaging.js').then(function (fm) { return fm.deleteToken(fm.getMessaging(fb.app)); }).catch(function () {});
-      S.pushBusy = false; S.pushMsg = 'Off. This phone gets no more pushes.'; draw();
-    }, function () { S.pushBusy = false; S.pushMsg = 'Could not turn it off. Check the connection and try again.'; draw(); });
+      S.pushBusy = false; S.pushMsg = 'Off. This phone gets no more pushes.'; pushDraw();
+    }, function () { S.pushBusy = false; S.pushMsg = 'Could not turn it off. Check the connection and try again.'; pushDraw(); });
   }
   /* once a kitchen day, and straight away when the kitchen PIN changed, a phone that is turned on gets its address again
      and writes it (no read; one try per day, kitchen PIN and PIN session on each page load, so a write refused before the
@@ -8849,7 +8872,7 @@
     sheetNext();
   }
   /* Skip (or Escape, or a tap outside, on the first ask): no section today, and no asking again today on this phone */
-  function ksSkip() { var p = me(); if (p && !ksGet(p.id)) ksPut(p.id, '', ''); ksClose(); draw(); }
+  function ksSkip() { var p = me(); if (p && !ksGet(p.id)) ksPut(p.id, '', ''); ksClose(); draw(); meChanged(); }
   function ksPick(sid) {
     var p = me(), s = kitSecs().filter(function (x) { return x.id === sid; })[0];
     if (!p || !s) return;
@@ -8857,7 +8880,7 @@
     ksPut(p.id, s.id, s.name);
     // kept on the phone first, so a lost signal never loses the default section
     sset(docRef('shifts', day + '_' + p.id), { day: day, sec: s.id, name: s.name, auto: false, at: now() }).catch(function () {});
-    ksClose(); draw();
+    ksClose(); draw(); meChanged();
     toast('You are on ' + s.name + ' today.');
   }
   document.addEventListener('click', function (e) {
@@ -10045,6 +10068,11 @@
     supplier: supplierApi,
     chefMenu: chefMenu,
     chefOpen: chefOpen,
+    // Settings (3 Nov 2026, docs/settings-options/brief.md): the person's role and permissions, the kitchen's ping sound,
+    // and the cut-off pushes on this phone (the same pushOn() and pushOff() as the order list)
+    whoRole: whoRole, myCan: myCan, pingSound: pingSound,
+    push: function () { var w = pushWhoId(), st = w ? pushState() : ''; return { show: !!w, on: st === 'on', busy: !!S.pushBusy, msg: S.pushMsg || (st === 'ios' || st === 'denied' ? PUSH_SAY[st] : '') }; },
+    pushSet: function (on) { if (on) pushOn(); else pushOff(); },
     secOpen: function () { ksOpen(true); },
     // Manual Sign out never overrides unsent work. Automatic locks retain it behind the original person's PIN.
     signOut: function (force, quiet) { if (sendFirst()) { toast(SEND_FIRST); return false; } return signOutPerson(force, quiet); },

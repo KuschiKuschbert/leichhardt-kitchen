@@ -86,6 +86,8 @@ Measured in the mockup at 390 px, all rows folded: A is 903 px of content signed
 
 ## Build steps (A)
 
+Done 3 Nov 2026: steps 1 and 2 together, in the same pull request as this brief (#471): the sorted page, your card, You and Notifications. Step 3 follows on its own. On a 390 px phone with every row folded, the page is 1,243 px signed out, 1,613 px for staff, 1,670 px for a sous chef and 1,784 px for the head chef (was 1,801, 1,888, 1,888 and 2,264 px), top bar and footer included.
+
 Small pull requests, each with click tests at 390, 768 and 1280 px and each role walked through (`tests/roles.test.js`):
 
 1. **Sorted page.** Groups with scope lines, rows with values that open in place, your card, Seasonal celebrations and the QR code folded, the Version row. `viewSettings()` in `js/app.js`, `css/app.css`; the `#kb-seasonal-settings` slot stays. Tests: `pages`, `phone-first`, `seasonal`, `device-choice`, `practice`, `install-card`, `who-mark`, a new `settings.test.js`.

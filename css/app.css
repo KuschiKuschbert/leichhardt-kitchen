@@ -247,6 +247,55 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .settings { display: flex; flex-direction: column; gap: 1.5rem; }
 .set-block { display: flex; flex-direction: column; gap: 0.6rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--line); }
 .set-block:last-child { border-bottom: 0; }
+/* Settings, sorted by who a setting is for (3 Nov 2026, docs/settings-options/brief.md): your card, then groups of rows.
+   A row's button says what it is set to and opens the row in place; on a computer the group's name sits in a left column. */
+.settings.st { width: 100%; max-width: 62rem; margin: 0 auto; gap: 1.6rem; }
+.st-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.st-you { display: grid; gap: 0.8rem; padding: 1rem 1.1rem 1.1rem; background: var(--paper); border: 1.5px solid var(--ink); border-radius: var(--radius); min-width: 0; }
+.st-you.is-out { background: var(--beige); border-color: var(--edge); }
+.st-you-top { display: flex; align-items: center; gap: 0.8rem; min-width: 0; }
+.st-you-top > div { min-width: 0; }
+.st-ring { flex: 0 0 auto; display: grid; place-items: center; width: 52px; height: 52px; border: 3px solid var(--accent); border-radius: 50%; background: var(--hit); font: 700 1.5rem/1 var(--display); }
+.st-name { margin: 0; font: 700 1.9rem/1.05 var(--display); overflow-wrap: anywhere; }
+.st-role { margin: 0.2rem 0 0; color: var(--muted); font-size: 0.95rem; }
+.st-role:empty { display: none; }
+.st-dev { margin: 0; padding-top: 0.7rem; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.9rem; }
+.st-dev b { color: var(--ink); }
+.st-out { flex-direction: column; gap: 0; }
+.st-out small { color: var(--small-ink); font-size: 0.8rem; font-weight: 600; }
+.st-out small:empty { display: none; }
+.st-grp { display: grid; gap: 0.35rem; min-width: 0; }
+.st-gh { display: grid; gap: 0.2rem; padding-bottom: 0.35rem; }
+.st-gh .label { margin: 0; }
+.st-gh .hint { margin: 0; font-size: 0.875rem; }
+.st-rows { min-width: 0; border-top: 1.5px solid var(--ink); }
+.st-row { border-bottom: 1px solid var(--line); }
+.st-btn { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 0.8rem; width: 100%; min-height: 56px; padding: 0.55rem 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; text-decoration: none; cursor: pointer; }
+.st-l { min-width: 0; font-weight: 600; }
+.st-v { display: flex; align-items: center; gap: 0.4rem; min-width: 0; max-width: 16ch; color: var(--muted); font-size: 0.9rem; }
+.st-v > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.st-v::after { content: '\203A'; color: var(--faint); font-size: 1.35rem; line-height: 1; transition: transform 0.15s; }
+.st-btn[aria-expanded="true"] .st-v::after { transform: rotate(90deg); }
+@media (hover: hover) and (pointer: fine) { .st-btn:hover .st-l { text-decoration: underline; } }
+@media (prefers-reduced-motion: reduce) { .st-v::after { transition: none; } }
+.st-body.set-block { padding: 0.1rem 0 1.1rem; border-bottom: 0; min-width: 0; }
+.st-body[hidden] { display: none; }
+.st-body .hint, .st-body .saved { margin: 0; }
+.st-body .kb-seasonal-settings { padding: 0; border: 0; }
+.st-body .kb-seasonal-settings > h3 { display: none; }
+.st-caps { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0; padding: 0; list-style: none; }
+.st-caps li { padding: 0.3rem 0.6rem; border: 1px solid var(--edge); border-radius: 6px; background: var(--paper); font-size: 0.875rem; font-weight: 600; }
+.st-kv { display: grid; margin: 0; }
+.st-kv div { display: flex; justify-content: space-between; gap: 1rem; padding: 0.45rem 0; border-bottom: 1px dashed var(--line); font-size: 0.92rem; }
+.st-kv dt { color: var(--muted); }
+.st-kv dd { margin: 0; font-weight: 600; text-align: right; }
+@media (min-width: 900px) {
+  .st-you { grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto; align-items: center; gap: 1.4rem; }
+  .st-dev { padding: 0 0 0 1.4rem; border-top: 0; border-left: 1px solid var(--line); }
+  .st-grp { grid-template-columns: 15rem minmax(0, 1fr); gap: 0 2.5rem; }
+  .st-gh { align-content: start; padding-top: 0.9rem; }
+  .st-v { max-width: 30ch; }
+}
 .a-ids { padding: 0.8rem 1rem; border: 1.5px solid var(--accent); border-left-width: 6px; border-radius: 10px; background: var(--paper); margin-bottom: 1rem; }
 .a-ids-list { margin: 0; padding-left: 1.2rem; }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; min-height: 48px; padding: 0 1.2rem; border-radius: var(--r-act); border: 1.5px solid var(--ink); background: var(--paper); font-weight: 700; cursor: pointer; text-decoration: none; }
@@ -874,8 +923,8 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 }
 
 /* Settings: the QR code to open the book on a phone. Shown on computers and wide tablets only, not on phones. */
-.set-qr { display: none; }
-@media (min-width: 900px) { .set-qr { display: flex; } }
+.st-row.st-qr { display: none; }
+@media (min-width: 900px) { .st-row.st-qr { display: block; } }
 .qr-row { display: flex; align-items: center; gap: 1.5rem; }
 .qr-img { flex: 0 0 auto; width: 180px; height: 180px; padding: 8px; border: 2px solid var(--ink); border-radius: var(--radius); background: #fff; }
 .qr-url { margin: 0.4rem 0 0.2rem; font-weight: 700; }
