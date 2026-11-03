@@ -14,6 +14,9 @@ const people = [
   { id: 'bo', name: 'Bo', role: 'staff', add: true, tick: true, del: false, active: true }
 ];
 const withSecs = x => Object.assign({ [CFG]: { people, sousIds: ['sam'], pingIds: ['sam'], staffIds: ['sam', 'ann', 'bo'], showBadges: true, kitSecs: SECS } }, x || {});
+// today's section is My section in the chef hat menu (3 Nov 2026: the tag next to Writing as went with that row): its
+// second line, or null when the menu has no My section
+const mySecLine = async p => { await p.click('.wtop-who'); await L.settle(p, 150); const v = await p.evaluate(() => { const e = document.querySelector('.wm [data-v="section"] small'); return e ? e.textContent.trim() : null; }); await p.keyboard.press('Escape'); await L.settle(p, 100); return v; };
 const lineOf = (s, text) => { const k = Object.keys(s).filter(k => k.indexOf('/days/' + today + '/items/') > 0 && s[k].text === text && !s[k].deleted)[0]; return k ? s[k] : null; };
 const addLine = async (p, text, sec) => {
   await p.fill('[data-k="p-text"]', text);
@@ -38,7 +41,7 @@ const addLine = async (p, text, sec) => {
   const rec = s[fsKey(['shifts', today + '_ann'])];
   ok(!!rec && rec.sec === 'grill' && rec.name === 'Grill' && rec.by === 'ann' && rec.day === today && rec.auto === false, 'staff: the pick is saved under Ann\'s id for today');
   ok(!(await p.$('.ks-wrap')), 'staff: the picker closes');
-  ok(/Grill/.test(await txt(p, '.ks-tag') || ''), 'staff: Grill shows next to Writing as');
+  ok(await mySecLine(p) === 'Grill', 'staff: Grill shows under My section in the chef hat menu');
   ok(await p.$eval('[data-k="p-section"]', e => e.value) === 'Grill', 'prep: the section box starts on Grill');
   await addLine(p, 'Dice carrots');
   s = await store(p);
@@ -48,9 +51,10 @@ const addLine = async (p, text, sec) => {
   s = await store(p);
   ok((lineOf(s, 'Pick mint') || {}).station === 'Larder', 'prep: a section typed by hand wins');
 
-  // changing it later: the tag opens the picker with Close
+  // changing it later: My section in the chef hat menu opens the picker with Close
   await L.clear(p, '[data-k="p-section"]');
-  await tap(p, '.ks-tag'); await L.settle(p, 300);
+  await p.click('.wtop-who'); await L.settle(p, 150);
+  await p.click('.wm [data-v="section"]'); await L.settle(p, 300);
   ok(!!(await p.$('.ux-picker-close')) && await p.$eval('.ks-b[data-v="grill"]', e => e.getAttribute('aria-selected')) === 'true', 'change: the picker opens with Grill marked');
   await p.click('.ks-b[data-v="pass"]'); await L.settle(p, 500);
   s = await store(p);
@@ -106,7 +110,7 @@ const addLine = async (p, text, sec) => {
   await p.keyboard.type('3333'); await L.settle(p, 1200);
   ok(!!(await p.$('.ks-wrap')), 'PIN: asked straight after the PIN');
   await p.click('.ux-picker [data-v=""]'); await L.settle(p, 300);
-  ok(!(await p.$('.ks-wrap')) && /Pick a section/.test(await txt(p, '.ks-tag') || ''), 'skip: closed, and the tag offers to pick one');
+  ok(!(await p.$('.ks-wrap')) && await mySecLine(p) === 'Pick one for today', 'skip: closed, and My section in the menu offers to pick one');
   ok(await p.$eval('[data-k="p-section"]', e => e.value) === '', 'skip: the section box stays empty');
   await p.reload(); await L.settle(p, 1500);
   ok(!(await p.$('.ks-wrap')), 'skip: not asked again today');
@@ -135,7 +139,7 @@ const addLine = async (p, text, sec) => {
   const sr = s[fsKey(['shifts', today + '_sam'])];
   ok(!!sr && sr.sec === 'sous' && sr.name === 'Sous chef' && sr.auto === true, 'sous chef: given Sous chef for the day');
   ok(await p.$eval('[data-k="p-section"]', e => e.value) === '', 'sous chef: the section box is left empty');
-  ok(!(await p.$('.ks-tag')), 'sous chef: no section tag');
+  ok(await mySecLine(p) === null, 'sous chef: no My section in the menu');
   await p.context().close();
 
   // no sections set up yet: nobody is asked
