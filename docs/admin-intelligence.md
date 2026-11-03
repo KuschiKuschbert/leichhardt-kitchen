@@ -87,3 +87,7 @@ The user subsequently reported that the screens do not flow well. The [flow spec
 ## The Chef's Desk visual design
 
 The user selected A on 1 November 2026. [The design brief](admin-design-options/brief.md) records the selected layout and PR #429 tracks release evidence. The frame has one-level chapters, page choices beside a large condensed chapter title, ruled review lists and a narrower context/editor surface. Focused phone tasks hide chapter navigation and keep Save above the existing bottom navigation. The same spacing, typography and rules apply to legacy reports, Operations and Settings. Existing API 3, data paths, adapters, roles, read budgets, version guards and private draft lifecycle are unchanged.
+
+## Dashboard proposals
+
+On 3 November 2026 the head chef asked for a dashboard that makes the admin information easier to see. [The proposals](admin-dashboard-options/brief.md) describe eight ideas and two designs, A The Pass board and B The Morning brief, with example data only. No app change until one is chosen.
