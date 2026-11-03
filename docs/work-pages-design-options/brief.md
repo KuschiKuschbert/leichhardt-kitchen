@@ -43,8 +43,8 @@ Recorded in README, Head chef decisions (3 Nov 2026). Each step ships under the 
 
 | Step | What | Pull request | State |
 | --- | --- | --- | --- |
-| 1 | Chef hat bottom sheet, the Writing as row goes (S1) | | Next |
-| 2 | One section control, one amount control, one line layout (S2 to S4) | | |
+| 1 | Chef hat bottom sheet, the Writing as row goes (S1) | #464, with this record | Built, merging |
+| 2 | One section control, one amount control, one line layout (S2 to S4) | | Next |
 | 3 | Change amount and Move section (S5), one meaning for usual chips (S6) | | |
 | 4 | Wastage A, with Make it again | | |
 | 5 | Transfers A, with the pick-up basket and the age tag | | |
