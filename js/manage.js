@@ -512,8 +512,18 @@
   function bookArts(slot) { return X.arts().filter(function (x) { return x.slot === slot && !x.removed; }).sort(function (a, b) { return (a.rid === M.ed.id ? 0 : 1) - (b.rid === M.ed.id ? 0 : 1) || a.name.localeCompare(b.name); }); }
   function drawBtns(e, slot, cur) {
     var mine = cur && cur.charAt(0) === '@';
-    return '<div class="btn-row mg-mini">' + (mine ? '<button type="button" class="p-x" data-mg="draw" data-v="' + esc(cur.slice(1)) + '">Change this drawing</button>' : '') +
-      '<button type="button" class="p-x" data-mg="draw" data-v="new:' + slot + '">Draw ' + (slot === 'plate' ? 'the plate' : slot === 'pan' ? 'the pan' : slot === 'side' ? 'the side view' : 'a build drawing') + ' in the book</button></div>';
+    return '<div class="btn-row mg-mini">' + (mine ? '<button type="button" class="btn" data-mg="draw" data-v="' + esc(cur.slice(1)) + '">Change it in the studio</button>' : '') +
+      '<button type="button" class="' + (mine ? 'p-x' : 'btn') + '" data-mg="draw" data-v="new:' + slot + '" aria-label="' + (mine ? 'Start a new ' : 'Draw the ') + (slot === 'plate' ? 'plate' : slot === 'pan' ? 'pan' : slot === 'side' ? 'side view' : 'build drawing') + ' in the studio">' + (mine ? 'Start a new one' : 'Draw it in the studio') + '</button></div>';
+  }
+  /* Drawings (3 Nov 2026, recipe editor): one card per drawing with its picture, and the choice of drawing by name (the
+     book's file names stay out of sight). The pictures come from LK_ART: the book's own, or drawings made in the book,
+     which js/overlay.js has already cleaned. */
+  function slotPic(k, slot) {
+    var ART = window.LK_ART || {}, v = slot === 'side' ? (ART.sides || {})[k] : (ART.diagrams || {})[k];
+    return v && /^-?[\d.]+ -?[\d.]+ [\d.]+ [\d.]+$/.test(v.viewBox || '') ? '<svg class="mg-dpic-svg" viewBox="' + esc(v.viewBox) + '" aria-hidden="true" focusable="false">' + v.body + '</svg>' : '';
+  }
+  function drawCard(title, pic, what, inner) {
+    return '<div class="mg-dcard"><div class="mg-dpic">' + (pic || '<span class="hint">No drawing yet</span>') + '</div><div class="mg-dbody"><h4 class="mg-dh">' + esc(title) + '</h4><p class="hint">' + esc(what) + '</p>' + inner + '</div></div>';
   }
   function drawingHTML(e) {
     var d = e.d, dish = !!DISH[d.kind], keys = A.artKeys(), list = dish ? keys.plates : keys.pans, preview = cleanRecipe(e), slot = dish ? 'plate' : 'pan';
@@ -522,15 +532,29 @@
     var dopts = '<option value=""' + (!d.diagram ? ' selected' : '') + '>None</option>' + mineOpts('build', d.diagram) + '<optgroup label="The book\'s own">' + keys.diagrams.map(function (k) { return '<option value="' + esc(k) + '"' + (d.diagram === k ? ' selected' : '') + '>' + esc(artName(k)) + '</option>'; }).join('') + '</optgroup>';
     var bookSide = !!(window.LK_ART && window.LK_ART.sides && window.LK_ART.sides[e.id]);
     var sopts = '<option value=""' + (!d.side ? ' selected' : '') + '>' + (bookSide ? 'The book\'s own side view' : 'None') + '</option>' + mineOpts('side', d.side);
-    var first = e.isNew ? '<p class="hint">Save the recipe first, then draw it in the book.</p>' : '';
+    var first = e.isNew ? '<p class="hint">Save the recipe first, then draw it in the studio.</p>' : '';
+    var whatOf = function (cur, none) { if (!cur) return none; var mine = cur.charAt(0) === '@' && X.arts().filter(function (x) { return x.id === cur.slice(1); })[0]; return mine ? 'Drawn in the book: ' + (mine.name || mine.id) : 'The book\'s drawing of ' + artName(cur); };
+    var sideKey = d.side || (bookSide ? e.id : ''), plateBox = dish ? pinsHTML(e, preview) : '<div class="mg-art-one">' + A.art(preview, 'mg-art') + '</div>';
     return '<section class="set-block mg-sec" aria-labelledby="mg-h-draw"><h3 class="h3" id="mg-h-draw">Drawings</h3>' + first +
-      '<div class="field"><label class="label" for="mg-art">' + (dish ? 'On the plate' : 'In the pan') + '</label><select id="mg-art" class="search" data-f="art" data-redraw="1">' + opts + '</select><span class="hint">A drawing from the book, or one drawn here.</span></div>' +
-      (e.isNew ? '' : drawBtns(e, slot, d.art)) +
-      (dish ? pinsHTML(e, preview) : '<div class="mg-art-one">' + A.art(preview, 'mg-art') + '</div>') +
-      '<div class="field"><label class="label" for="mg-side">From the side</label><select id="mg-side" class="search" data-f="side">' + sopts + '</select></div>' + (e.isNew ? '' : drawBtns(e, 'side', d.side)) +
-      '<div class="field"><label class="label" for="mg-diag">Build or technique drawing</label><select id="mg-diag" class="search" data-f="diagram">' + dopts + '</select></div>' + (e.isNew ? '' : drawBtns(e, 'build', d.diagram)) + '</section>';
+      '<div class="mg-dplate"><h4 class="mg-dh">' + (dish ? 'On the plate' : 'In the pan') + '</h4><p class="hint">' + esc(whatOf(d.art, 'No drawing yet: a blank ' + (dish ? 'plate' : 'pan') + '.')) + '</p>' +
+      (e.isNew ? '' : drawBtns(e, slot, d.art)) + plateBox +
+      '<div class="field"><label class="label" for="mg-art">Use another drawing</label><select id="mg-art" class="search" data-f="art" data-redraw="1">' + opts + '</select></div></div>' +
+      '<div class="mg-dcards">' +
+      drawCard('From the side', slotPic(sideKey, 'side'), whatOf(d.side, bookSide ? 'The book\'s own side view.' : 'None yet.'), (e.isNew ? '' : drawBtns(e, 'side', d.side)) +
+        '<div class="field"><label class="label" for="mg-side">Use another drawing</label><select id="mg-side" class="search" data-f="side">' + sopts + '</select></div>') +
+      drawCard('Build or technique', slotPic(d.diagram, 'build'), whatOf(d.diagram, 'None yet.'), (e.isNew ? '' : drawBtns(e, 'build', d.diagram)) +
+        '<div class="field"><label class="label" for="mg-diag">Use another drawing</label><select id="mg-diag" class="search" data-f="diagram">' + dopts + '</select></div>') +
+      '</div></section>';
   }
-  function artName(k) { var r = A.byId(k); return r ? r.name + ' (' + k + ')' : k; }
+  // a recipe's name for its drawing, without the book's file name (the file name only when two recipes share a name)
+  function artName(k) {
+    var r = A.byId(k), part = '';
+    // a build or technique drawing is named after its recipe: burger-build is Chicken Burger, build
+    if (!r) { var m = /^(.+?)-(build|diagram|side|technique)$/.exec(k || ''); r = m && A.byId(m[1]); part = m ? ', ' + m[2] : ''; }
+    if (!r) return String(k || '').replace(/-/g, ' ').replace(/^./, function (c) { return c.toUpperCase(); });
+    var same = D.recipes.filter(function (x) { return x.name === r.name; }).length > 1;
+    return r.name + part + (same ? ' (' + k + ')' : '');
+  }
   /* Plate labels on the Pass: drag a pin on the drawing, or type its place. */
   function pinsHTML(e, preview) {
     var pins = e.d.pins || [];

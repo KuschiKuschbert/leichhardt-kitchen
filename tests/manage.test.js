@@ -62,6 +62,13 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   await p.click('#mg-results a[href="#/manage/r/burger"]');
   await editor(p);
   ok(await p.inputValue('#mg-name') === 'Chicken Burger', 'the form opens with the burger as the book has it');
+  // Drawings (3 Nov 2026): a picture for each drawing, and the choices by name, not by the book's file names
+  await L.chapter(p, 'draw');
+  const dnames = await p.evaluate(() => [...document.querySelectorAll('#mg-art option, #mg-side option, #mg-diag option')].map(o => o.textContent));
+  ok(dnames.includes('Chicken Burger') && dnames.includes('Chicken Burger, build') && !dnames.some(t => /\(burger\)|-build\b/.test(t)), 'drawings: chosen by name, no file names (' + dnames.slice(0, 4).join(', ') + ')');
+  ok(await p.$('.mg-dcard .mg-dpic svg') !== null && /Chicken Burger, build/.test(await txt(p, '.mg-dcards') || ''), 'drawings: the build drawing shows as a picture with its name');
+  ok(!await L.overflow(p), 'drawings: no sideways scroll at 390');
+  await L.chapter(p, 'ing');
   await L.reveal(p, '#mg-name'); await p.fill('#mg-name', 'Chicken Burger Deluxe');
   await L.reveal(p, '[data-mg="ing-add"]'); await p.click('[data-mg="ing-add"]'); await L.settle(p, 150);
   const n = await p.evaluate(() => document.querySelectorAll('.mg-ing').length);

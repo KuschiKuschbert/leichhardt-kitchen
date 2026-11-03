@@ -2032,6 +2032,17 @@ html.has-upd .mg-chs { top: calc(var(--fn-stick, 0px) + var(--upd-h)); }
 .mg-hand-a { font-weight: 700; }
 .mg-alg-now { display: flex; flex-direction: column; gap: 0.35rem; }
 .mg-change { margin: 0; padding: 0.6rem 0.8rem; border-left: 4px solid var(--accent); background: var(--hit); }
+/* Drawings (3 Nov 2026): the plate with its labels, then one card per other drawing with its picture */
+.mg-dh { margin: 0; font: 700 1.25rem/1.1 var(--display); }
+.mg-dplate { display: flex; flex-direction: column; gap: 0.6rem; }
+.mg-dcards { display: grid; gap: 0.8rem; }
+@media (min-width: 720px) { .mg-dcards { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.mg-dcard { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: 0.7rem; align-items: start; padding: 0.8rem; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); }
+.mg-dpic { display: flex; align-items: center; justify-content: center; width: 5.5rem; height: 5.5rem; overflow: hidden; border-radius: 8px; background: #F4F1EA; text-align: center; }
+.mg-dpic .hint { padding: 0.3rem; font-size: 0.75rem; }
+.mg-dpic-svg { width: 100%; height: 100%; }
+.mg-dbody { display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }
+.mg-dbody .hint { margin: 0; }
 .mg-art-one .mg-art { display: block; width: 100%; max-width: 22rem; height: auto; margin: 0 auto; }
 .mg-stage { position: relative; width: 100%; max-width: 26rem; margin: 0 auto; }
 .mg-stage .mg-art { display: block; width: 100%; height: auto; }
