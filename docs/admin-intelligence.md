@@ -26,6 +26,7 @@ All paths are under `kitchens/<pin>`:
 | `training/<id>` | personId, section, recipeId, guideId, status, assessorId, day, v, at, by |
 | `references/<id>/hist/<v>`, `training/<id>/hist/<v>` | Exact previous records; immutable. A version update must preserve its previous value atomically. |
 | `analysisDaily/<generation>_<day>` | v, day, source counts, exclusions, quality and eligible evidence entries. Derived from current sources. |
+| `analysis/dashboard` | v, generation, at, from, to and one row per finished day (`days`): prep counts and minutes to tick per section, waste lines, reasons, sections and items, transfers out and in. Published with the ranges for the admin Dashboard. See `admin-dashboard-options/brief.md`. |
 | `analysis/current`, `range-7`, `range-30`, `range-90`, `health` | Published generation, range, freshness, inventory, source counts, coverage, quality, item patterns and staff activity. |
 
 Only the verified Google admin reads these collections. Staff, sous chefs, function-only sessions, signed-out clients, other Google accounts and unverified email accounts cannot read or write them. No private report goes into the staff-readable `summary` collection. Browser writes to derived data are restricted to creation or identical copies for kitchen PIN migration. Normal publications are server-written. All editable browser records use the existing `W()` writer and pending-write tracking. Conflicting revisions fail and preserve the form. A failed save never displays success.
@@ -87,3 +88,7 @@ The user subsequently reported that the screens do not flow well. The [flow spec
 ## The Chef's Desk visual design
 
 The user selected A on 1 November 2026. [The design brief](admin-design-options/brief.md) records the selected layout and PR #429 tracks release evidence. The frame has one-level chapters, page choices beside a large condensed chapter title, ruled review lists and a narrower context/editor surface. Focused phone tasks hide chapter navigation and keep Save above the existing bottom navigation. The same spacing, typography and rules apply to legacy reports, Operations and Settings. Existing API 3, data paths, adapters, roles, read budgets, version guards and private draft lifecycle are unchanged.
+
+## Dashboard proposals
+
+On 3 November 2026 the head chef asked for a dashboard that makes the admin information easier to see. [The proposals](admin-dashboard-options/brief.md) describe eight ideas and two designs, A The Pass board and B The Morning brief, with example data only. The head chef selected A with B's three headlines on 3 November 2026.
