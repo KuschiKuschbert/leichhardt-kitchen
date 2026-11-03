@@ -1011,7 +1011,7 @@
       return;
     }
     root.innerHTML = mgNote('Delivery received', 'Opening delivery records...', ' ', 'orders');
-    if (!deliveryLoad) deliveryLoad = mgScript('js/deliveries.js?v=4').catch(function (e) { deliveryLoad = null; throw e; });
+    if (!deliveryLoad) deliveryLoad = mgScript('js/deliveries.js?v=6').catch(function (e) { deliveryLoad = null; throw e; });
     deliveryLoad.then(function () { if (parseRoute().name === 'deliveries') mountDeliveries(); }, function () {
       if (parseRoute().name === 'deliveries' && root.isConnected) root.innerHTML = mgNote('Could not open delivery records', 'Check the connection and try again.', '<button type="button" class="btn dark" data-delivery-retry>Try again</button>');
     });
@@ -1036,7 +1036,7 @@
       return;
     }
     root.innerHTML = mgNote('Supplier order', 'Opening supplier tools...', ' ', 'orders');
-    if (!supLoad) supLoad = mgScript('js/suppliers.js?v=10').catch(function (e) { supLoad = null; throw e; });
+    if (!supLoad) supLoad = mgScript('js/suppliers.js?v=11').catch(function (e) { supLoad = null; throw e; });
     supLoad.then(function () { if (parseRoute().name === 'suppliers') mountSuppliers(parseRoute()); }, function () {
       if (parseRoute().name === 'suppliers') root.innerHTML = mgNote('Could not open supplier tools', 'Check the connection and try again. The other kitchen pages still work.', '<div class="btn-row"><button type="button" class="btn dark" data-sup-retry>Try again</button><a class="btn" href="#/orders">Order list</a></div>');
     });

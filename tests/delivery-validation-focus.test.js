@@ -26,19 +26,24 @@ async function invalid(p, id) {
     await p.fill('#dl-supplier', 'Sample supplier');
     ok(await p.evaluate(() => document.activeElement.id === 'dl-supplier' && !document.querySelector('[aria-invalid=true]') && document.getElementById('dl-save-note').textContent === ''), width + ': correcting the supplier clears its stale error without moving focus');
 
+    // What came in? starts on Chilled (3 Nov 2026): an empty reading names the box that is showing
     await submit(p); state = await invalid(p, 'dl-chilled');
-    ok(state.focused && state.marked && state.described && state.visible && /or both/.test(state.message), width + ': missing readings focus the first available temperature');
-    ok(state.help.includes('dl-temp-help') && await p.getAttribute('#dl-frozen', 'aria-invalid') === 'true', width + ': either-reading error keeps the temperature instructions and identifies both alternatives');
+    ok(state.focused && state.marked && state.described && state.visible && /Enter the chilled reading/.test(state.message), width + ': a missing reading focuses the chilled box that is showing');
+    ok(state.help.includes('dl-temp-help') && !(await p.isVisible('#dl-frozen')), width + ': the reading error keeps the temperature help, and the frozen box stays out of the way');
+    await p.click('[data-dl="mode"][data-mode="both"]');
+    ok(await p.evaluate(() => !document.querySelector('[aria-invalid=true]') && document.getElementById('dl-save-note').textContent === ''), width + ': picking Both clears the reading error');
     await p.fill('#dl-frozen', '-18');
-    ok(await p.evaluate(() => !document.querySelector('[aria-invalid=true]') && document.getElementById('dl-save-note').textContent === '' && document.activeElement.id === 'dl-frozen'), width + ': entering either temperature clears the group error and retains focus');
+    await submit(p); state = await invalid(p, 'dl-chilled');
+    ok(state.focused && state.marked && /Enter both readings/.test(state.message) && await p.getAttribute('#dl-frozen', 'aria-invalid') !== 'true', width + ': Both with one reading asks for the other and marks only the empty box');
     await p.fill('#dl-chilled', 'bad');
+    ok(await p.evaluate(() => !document.querySelector('[aria-invalid=true]') && document.activeElement.id === 'dl-chilled'), width + ': typing in the marked box clears its error and keeps focus');
     await submit(p); state = await invalid(p, 'dl-chilled');
     ok(state.focused && state.marked && state.described && /Negative and decimal/.test(state.message), width + ': malformed chiller reading is marked and focused');
     ok(await p.inputValue('#dl-frozen') === '-18' && await p.inputValue('#dl-supplier') === 'Sample supplier' && (await saved(p)).length === 0, width + ': invalid reading preserves the other reading and supplier without writing');
     await p.fill('#dl-chilled', '0'); await p.fill('#dl-frozen', 'bad');
     await submit(p); state = await invalid(p, 'dl-frozen');
     ok(state.focused && state.marked && state.described && state.visible && await p.inputValue('#dl-chilled') === '0', width + ': invalid freezer reading focuses that field and retains zero chiller');
-    await p.fill('#dl-note', 'Keep these details');
+    await p.click('[data-dl="note"]'); await p.fill('#dl-note', 'Keep these details');
     ok(await p.getAttribute('#dl-frozen', 'aria-invalid') === 'true', width + ': editing an unrelated field does not hide the invalid reading');
     await p.fill('#dl-frozen', '-18.5'); await submit(p);
     await L.waitFor(p, () => /Delivery saved/.test(document.getElementById('dl-save-note')?.textContent || ''));
