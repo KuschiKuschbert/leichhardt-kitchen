@@ -71,6 +71,23 @@ async function open(b, width) {
   ok(!p.errors.length, 'desktop journey: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // Step 3: today's cut-off beside the supplier, and Share opens the phone's own share sheet (a stand-in here).
+  p = await L.open(b, '#/suppliers/northside', { who: 'bo', extra: F.fixture(), wait: 1800, width: 1280,
+    init: () => { navigator.share = data => { window.__shared = data; return Promise.resolve(); }; } });
+  await L.waitFor(p, () => !!document.querySelector('input[data-sf="qty"]'), null, 15000);
+  ok(/by 15:00/.test(await txt(p, '[data-su="pick"][data-sid="northside"]')) && !/by /.test(await txt(p, '[data-su="pick"][data-sid="west-bay"]')), 'the supplier list shows today\'s cut-off time, and nothing for a supplier without one');
+  await p.fill(qty('t-stock'), '2'); await p.click('[data-su="review"]'); await L.waitFor(p, () => !!document.querySelector('[data-su="share-review"]'));
+  ok(/1\. Send it your usual way/.test(await txt(p, '.su-review')) && /2\. Then record it here/.test(await txt(p, '.su-review')), 'Review spells out send first, then record');
+  await p.click('[data-su="share-review"]'); await L.settle(p, 200);
+  const shared = await p.evaluate(() => window.__shared);
+  ok(shared && shared.title === 'Northside Test Foods' && /2 kg \| TEST STOCK 1KG BAG/.test(shared.text), 'Share hands the order text to the phone');
+  ok(/Order text shared/.test(await txt(p, '.su-status')) && !(await p.evaluate(prefix => Object.keys(window.__fake.dump()).some(k => k.startsWith(prefix) && !/\/(previous|older)$/.test(k)), F.key(['suppliers', 'northside', 'orders']) + '/')), 'sharing records nothing; Record order placed stays the only save');
+  await p.context().close();
+  p = await open(b, 1280);
+  await p.fill(qty('t-stock'), '2'); await p.click('[data-su="review"]'); await L.waitFor(p, () => !!document.querySelector('[data-su="copy-review"]'));
+  ok(await p.evaluate(() => !!navigator.share) === !!(await p.$('[data-su="share-review"]')), 'Share shows only where the phone offers a share sheet; Copy is always there');
+  await p.context().close();
+
   // Phone: the Review bar stays above the tabs while the list scrolls; no sideways scroll at any width.
   for (const width of [390, 768, 1280]) {
     p = await open(b, width);

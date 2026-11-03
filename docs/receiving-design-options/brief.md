@@ -115,7 +115,7 @@ Step 2, Supplier order rows (`js/suppliers.js`, `css/app.css`). Built 3 November
 - Measure the one-list render on the largest catalogue before removing the 20-item pages; keep pages if it is slower.
 - Bump the supplier UI revision (`SUP_API`) only if an older copy cannot run with the new one. Tests: the supplier files listed in `docs/supplier-workspace.md`, `keep-typed-editors`, `device-supplier-lock`.
 
-Step 3, strip, share and history: the supplier chip strip reads cut-off times from `LK_CUT`. Share uses `navigator.share` with the existing Copy as the fallback, so no security header change. The admin delivery range is one `day` range query on tap (admin only, existing rules), with CSV through the shared helpers in `docs/report-exports.md`. Check `tests/read-budget.test.js`.
+Step 3, strip, share and history. Built 3 November 2026; see `docs/supplier-workspace.md`, Sending, and `docs/delivery-received.md`, Admin history. The admin range is up to 92 days: the supplier chip strip reads cut-off times from `LK_CUT`. Share uses `navigator.share` with the existing Copy as the fallback, so no security header change. The admin delivery range is one `day` range query on tap (admin only, existing rules), with CSV through the shared helpers in `docs/report-exports.md`. Check `tests/read-budget.test.js`.
 
 ## Notes if B is chosen later
 

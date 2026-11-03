@@ -97,3 +97,9 @@ The head chef chose design A (`docs/receiving-design-options/brief.md`). Only th
 
 No schema, rules, reads on open or saved data change. `tests/supplier-rows.test.js` (31 checks) covers On hand on the row, the Use chip, the filters, − and +, the one-query requests strip, Review and the bar above the tabs at 390 px. The existing supplier files pass with three updated checks (the stock field is on the row, the On hand label, the lazy URL).
 
+### Sending, design A step 3, 3 November 2026
+
+- **Today's cut-off on the supplier list.** The sidebar chip and the phone's supplier picker show "by 15:00" for an open cut-off today and "ordered" once its tick is on, from the cut-off occurrences already on the phone (no read). Nothing shows after the cut-off passed or for a supplier with no cut-off today.
+- **Send, then record.** Review shows **1. Send it your usual way** with **Share order text** (only where `navigator.share` exists; it opens the phone's own share sheet with the same text as Copy) and **Copy order text**, then **2. Then record it here** with Record order placed. A cancelled share says nothing; a failed one falls back to Copy. Sharing writes nothing; Record order placed stays the only save. No new outside service or security header change: the share sheet belongs to the phone.
+- `js/suppliers.js?v=11` carries steps 2 and 3; `LK_SUP.api` stays 9. `tests/supplier-rows.test.js` (36 checks) covers the cut-off label, the Share order text and the button showing only with a share sheet.
+

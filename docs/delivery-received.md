@@ -24,7 +24,9 @@ The head chef chose design A (`docs/receiving-design-options/brief.md`). Only th
 - **Time on one line.** "Name · 14:00 today" with Change time, which opens the date and time boxes. A day or time error opens them by itself. **Add items or notes** opens the notes box; a typed note keeps it open.
 - The module is loaded as `js/deliveries.js?v=5`. `LK_DELIVERY.api` stays 2: the mount, unmount, reset and dirty contract is the same, and an older `js/prep.js` without `cuts` just shows no chips.
 
-Tests: `tests/deliveries.test.js` (100 checks: the three choices, the hidden reading not saved, the − key and sign note, arrow keys, the clock tick, due-today chips for staff and a sous chef with no read on a tap, Not received yet, Functions-only with no chips), plus the updated `delivery-validation-focus`, `device-delivery-lock` and `functions-activity` journeys.
+- **Admin history (step 3).** The verified admin picks From and To, up to 92 days; the other end follows so From is never after To. A single day reads as before (today's listener or one past day); a range is one `day >= From` and `day <= To` query from the server (`tests/rules/client-shapes.test.mjs` has the row, admin only). Complete past ranges are reused in this sign-in's memory, a range reaching today is read again, and Refresh always reads. A supplier filter narrows what is loaded without a read. **Download CSV** goes through the shared `downloadCSV()` (`LK_PREP.book().csv`, `docs/report-exports.md`): Date, Time, Supplier, Chilled (°C), Frozen (°C), Items / notes, Received by, oldest first, numbers kept as numbers and an empty cell for a reading not taken. The module is loaded as `js/deliveries.js?v=6`.
+
+Tests: `tests/deliveries.test.js` (108 checks: the three choices, the hidden reading not saved, the − key and sign note, arrow keys, the clock tick, due-today chips for staff and a sous chef with no read on a tap, Not received yet, Functions-only with no chips, the admin range in one query, the supplier filter and the CSV), plus the updated `delivery-validation-focus`, `device-delivery-lock` and `functions-activity` journeys.
 
 ## Reads and recovery
 

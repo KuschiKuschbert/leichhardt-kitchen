@@ -12,7 +12,7 @@
   // lives in this form's memory only. A box that is not showing saves null, exactly like an empty box before.
   var MODES = [['chilled', 'Chilled'], ['frozen', 'Frozen'], ['both', 'Both']];
   function form() { var day = T.day(), time = T.clock(); return { day: day, time: time, initial: day + '|' + time, supplier: '', chilled: '', frozen: '', note: '', mode: 'chilled' }; }
-  function blank() { return { root: null, form: form(), day: T.day(), followToday: true, rows: [], state: 'idle', error: '', invalid: [], message: '', busy: false, attempt: null, suspended: false, showTime: false, showNote: false, cache: Object.create(null) }; }
+  function blank() { return { root: null, form: form(), day: T.day(), to: T.day(), sup: '', followToday: true, rows: [], state: 'idle', error: '', invalid: [], message: '', busy: false, attempt: null, suspended: false, showTime: false, showNote: false, cache: Object.create(null) }; }
   function shows(name) { return M.form.mode === 'both' || M.form.mode === name; }
   function modeName(m) { return (MODES.filter(function (x) { return x[0] === m; })[0] || MODES[0])[1]; }
   function allowed() { return P.privateAccess(); }
@@ -28,6 +28,20 @@
   function unwatch() { if (stop) stop(); stop = null; watchKey = ''; }
   function reset() { var root = M.root; generation++; unwatch(); clearTimeout(timer); context = recorder = ''; M = blank(); M.root = root; }
   function clearReads() { generation++; unwatch(); clearTimeout(timer); M.rows = []; M.cache = Object.create(null); M.state = 'idle'; }
+  /* Admin history (design A, step 3, 3 Nov 2026): From and To, up to 92 days, one query on a change or Refresh.
+     Staff and ordinary roles always view today only. */
+  var MAX_DAYS = 92;
+  function shiftDay(day, n) { return T.day(T.at(day) + n * 86400000 + 43200000); }
+  function span() { return Math.round((T.at(M.to) - T.at(M.day)) / 86400000) + 1; }
+  function single() { return M.day === M.to; }
+  function inView(day) { return day >= M.day && day <= M.to; }
+  function shownRows() { return M.sup ? M.rows.filter(function (r) { return same(r.supplier, M.sup); }) : M.rows; }
+  function suppliersIn(list) { var seen = Object.create(null); return list.map(function (r) { return String(r.supplier || '').trim(); }).filter(function (n) { var k = n.toLowerCase(); if (!n || seen[k]) return false; seen[k] = 1; return true; }).sort(function (a, b) { return a.localeCompare(b); }); }
+  function csvRows() {
+    return [['Date', 'Time', 'Supplier', 'Chilled (°C)', 'Frozen (°C)', 'Items / notes', 'Received by']].concat(shownRows().slice().reverse().map(function (r) {
+      return [r.day, T.clock(r.receivedAt), r.supplier, typeof r.chilled === 'number' ? r.chilled : '', typeof r.frozen === 'number' ? r.frozen : '', r.note || '', r.receivedBy || ''];
+    }));
+  }
   function access() {
     if (!allowed()) {
       if (retainedLock()) { if (!M.suspended) clearReads(); M.suspended = true; context = ''; }
@@ -114,7 +128,7 @@
     // the button's own choice too (a supplier chip, a What came in? choice, a − key), so focus returns to the same one
     var btnKey = btn && (old.getAttribute('data-name') || old.getAttribute('data-mode') || old.getAttribute('data-for') || '');
     var pos = focus && typeof old.selectionStart === 'number' ? [old.selectionStart, old.selectionEnd] : null;
-    var off = M.busy || M.attempt, dueNow = due(d.day), today = M.day === T.day();
+    var off = M.busy || M.attempt, dueNow = due(d.day), today = single() && M.day === T.day();
     var dueTodayNames = today ? due(T.day()) : [];
     var waiting = today && M.state === 'ok' ? dueTodayNames.filter(function (n) { return !M.rows.some(function (r) { return same(r.supplier, n); }); }) : [];
     var timeOpen = M.showTime || M.invalid.indexOf('day') >= 0 || M.invalid.indexOf('time') >= 0, noteOpen = M.showNote || !!d.note.trim() || M.invalid.indexOf('note') >= 0;
@@ -140,12 +154,15 @@
       (!M.attempt ? '<button class="btn" type="button" data-dl="clear"' + (M.busy ? ' disabled' : '') + '>' + (armed('dl-clear') ? 'Tap again to clear' : 'Clear form') + '</button>' : '') + '</div>' +
       '<p class="hint">Saved readings are kept as recorded.</p></form>' +
       '<section class="dl-history" aria-labelledby="dl-records"><div class="dl-history-head"><h2 id="dl-records">' + (today ? 'Today\'s deliveries' : 'Delivery records') + '</h2><button class="btn" type="button" data-dl="refresh">Refresh</button></div>' +
-      (admin() ? '<label class="dl-field dl-filter" for="dl-view-day"><span class="label">View date</span><input type="date" id="dl-view-day" value="' + esc(M.day) + '" max="' + T.day() + '"></label>' : '') +
-      '<p class="hint">' + esc(M.day) + '</p>' + (M.state === 'error' ? '<p class="dl-error" role="alert">Could not read delivery records. Check the connection and tap Refresh.</p>' :
+      (admin() ? '<div class="dl-range"><label class="dl-field dl-filter" for="dl-view-day"><span class="label">From</span><input type="date" id="dl-view-day" value="' + esc(M.day) + '" max="' + T.day() + '"></label>' +
+        '<label class="dl-field dl-filter" for="dl-view-to"><span class="label">To</span><input type="date" id="dl-view-to" value="' + esc(M.to) + '" min="' + esc(M.day) + '" max="' + T.day() + '"></label></div>' +
+        (M.state === 'ok' && suppliersIn(M.rows).length > 1 ? '<label class="dl-field dl-filter" for="dl-sup-filter"><span class="label">Supplier</span><select id="dl-sup-filter"><option value="">All suppliers</option>' + suppliersIn(M.rows).map(function (n) { return '<option value="' + esc(n) + '"' + (same(n, M.sup) ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select></label>' : '') : '') +
+      '<p class="hint">' + esc(single() ? M.day : M.day + ' to ' + M.to + ' (' + span() + ' days)') + (M.state === 'ok' && admin() ? ' · ' + shownRows().length + (shownRows().length === 1 ? ' delivery' : ' deliveries') : '') + '</p>' +
+      (admin() && B.csv && M.state === 'ok' && shownRows().length ? '<div class="btn-row"><button class="btn" type="button" data-dl="csv">Download CSV</button></div>' : '') + (M.state === 'error' ? '<p class="dl-error" role="alert">Could not read delivery records. Check the connection and tap Refresh.</p>' :
         // no signal, not loaded yet: the note, then only this phone's receipts still waiting to send
         M.state === 'offline' ? '<p class="dl-error" role="status">No signal. Today\'s deliveries show when the phone is back online.</p>' + (M.rows.length ? '<ol class="dl-receipts">' + M.rows.map(row).join('') + '</ol>' : '') :
         M.state !== 'ok' ? loading('Loading deliveries...', 'orders', 3) :
-        (M.rows.length ? '<ol class="dl-receipts">' + M.rows.map(row).join('') + '</ol>' : '<p class="hint">No deliveries recorded for this date.</p>') +
+        (shownRows().length ? '<ol class="dl-receipts">' + shownRows().map(row).join('') + '</ol>' : '<p class="hint">' + (M.sup ? 'No deliveries from this supplier in these dates.' : single() ? 'No deliveries recorded for this date.' : 'No deliveries recorded in these dates.') + '</p>') +
         // only once the server answered for today: a supplier due by the cut-offs with no receipt of that exact name yet
         (waiting.length ? '<p class="dl-waiting"><b>Not received yet today:</b> ' + waiting.map(esc).join(', ') + '</p>' : '')) + '</section></div>';
     if (focus) { var el = M.root.querySelector('[data-dl-field="' + focus + '"]'); if (el) { el.focus({ preventScroll: true }); if (pos) el.setSelectionRange(pos[0], pos[1]); } }
@@ -160,28 +177,30 @@
   }
   function load(force) {
     if (!M.root || !allowed()) return;
-    if (!admin()) M.day = T.day();
-    var wk = key() + '|' + M.day;
+    if (!admin()) { M.day = M.to = T.day(); M.sup = ''; }
+    var wk = key() + '|' + M.day + '|' + M.to;
     if (!force && watchKey === wk && M.state !== 'error') return;
     unwatch(); watchKey = wk;
-    var g = ++generation, date = M.day;
+    var g = ++generation, date = M.day, to = M.to, ck = date + '|' + to, live = date === T.day() && to === date;
     M.rows = []; M.state = 'loading'; draw();
-    // Past records are immutable. Reuse a complete successful query in this sign-in only, unless Refresh is tapped.
-    if (date !== T.day() && !force && M.cache[date]) { M.rows = M.cache[date]; M.state = 'ok'; draw(); return; }
+    // Past records are immutable. Reuse a complete successful query of past days in this sign-in only, unless Refresh
+    // is tapped. A range that reaches today is read again, since today can still change.
+    if (to < T.day() && !force && M.cache[ck]) { M.rows = M.cache[ck]; M.state = 'ok'; draw(); return; }
     B.ready().then(function () {
       if (g !== generation || !allowed() || !M.root) return;
-      var f = B.fs(), q = f.query(B.colRef('deliveries'), f.where('day', '==', date)), last = {};
+      // One query: today's listener, one past day, or the admin's From to To range (up to 92 days)
+      var f = B.fs(), q = date === to ? f.query(B.colRef('deliveries'), f.where('day', '==', date)) : f.query(B.colRef('deliveries'), f.where('day', '>=', date), f.where('day', '<=', to)), last = {};
       // No signal (27 Oct 2026): Today's first answer can come from the copy in memory, which holds at most this
       // phone's unsent receipts. That is not loaded yet, never "no deliveries": 'offline' until the server answers
       // (LK_PREP.book().listSnap sets last.st; an older js/prep.js without it keeps the old behaviour). Every
       // snapshot is drawn, so "Waiting for connection" goes once a receipt is sent.
       var done = function (sn) {
         if (g !== generation || !allowed() || !M.root) return;
-        if (date === T.day() && B.listSnap) B.listSnap(sn, M.state, last);
-        M.rows = rows(sn); M.state = last.st === 'offline' ? 'offline' : 'ok'; if (date !== T.day()) M.cache[date] = M.rows; draw();
+        if (live && B.listSnap) B.listSnap(sn, M.state, last);
+        M.rows = rows(sn); M.state = last.st === 'offline' ? 'offline' : 'ok'; if (to < T.day()) M.cache[ck] = M.rows; draw();
       };
       var failed = function () { if (g !== generation) return; M.rows = []; M.state = 'error'; draw(); };
-      if (date === T.day()) stop = f.onSnapshot(q, { includeMetadataChanges: true }, done, failed);
+      if (live) stop = f.onSnapshot(q, { includeMetadataChanges: true }, done, failed);
       else return f.getDocsFromServer(q).then(done, failed);
     }).catch(function () { if (g === generation) { M.state = 'error'; draw(); } });
   }
@@ -192,8 +211,9 @@
     attempt.acknowledged = true;
     if (!allowed()) return;
     M.attempt = null; M.busy = false; M.form = form(); M.showTime = M.showNote = false; M.error = ''; M.invalid = []; M.message = 'Delivery saved.';
-    delete M.cache[attempt.data.day];
-    if (M.day === attempt.data.day && M.day !== T.day()) { M.rows = [Object.assign({ id: attempt.id, pending: false }, attempt.data)].concat(M.rows.filter(function (r) { return r.id !== attempt.id; })).sort(function (a, b) { return b.receivedAt - a.receivedAt || b.recordedAt - a.recordedAt; }); M.cache[M.day] = M.rows; M.state = 'ok'; }
+    Object.keys(M.cache).forEach(function (k) { var p = k.split('|'); if (attempt.data.day >= p[0] && attempt.data.day <= p[1]) delete M.cache[k]; });
+    // shown at once in a past view that covers its day; today's live list gets it from the listener
+    if (inView(attempt.data.day) && !(single() && M.day === T.day())) { M.rows = [Object.assign({ id: attempt.id, pending: false }, attempt.data)].concat(M.rows.filter(function (r) { return r.id !== attempt.id; })).sort(function (a, b) { return b.receivedAt - a.receivedAt || b.recordedAt - a.recordedAt; }); if (M.to < T.day()) M.cache[M.day + '|' + M.to] = M.rows; M.state = 'ok'; }
     draw(); B.say('Delivery saved.');
     var first = M.root && M.root.querySelector('#dl-supplier'); if (first) first.focus({ preventScroll: true });
   }
@@ -243,7 +263,7 @@
     if (!M.root) return;
     if (!allowed()) { access(); draw(); return; }
     var current = T.day();
-    if (M.followToday && M.day !== current) { M.day = current; load(); }
+    if (M.followToday && M.day !== current) { M.day = M.to = current; load(); }
     // an untouched form follows the clock; the What came in? choice stays as picked
     if (!dirty() && (M.form.day !== current || M.form.time !== T.clock())) { var mode = M.form.mode; M.form = form(); M.form.mode = mode; draw(); }
     timer = setTimeout(tick, 30000);
@@ -274,6 +294,8 @@
     if (!M.root || !M.root.contains(e.target) || !allowed()) return;
     var el = e.target.closest('[data-dl]'); if (!el) return;
     if (el.getAttribute('data-dl') === 'refresh') load(true);
+    // the book's shared CSV boundary (docs/report-exports.md): numbers stay numbers, text is marked safe; no read
+    if (el.getAttribute('data-dl') === 'csv' && admin() && B.csv && M.state === 'ok') { B.csv('leichhardt-deliveries-' + M.day + (single() ? '' : '-to-' + M.to) + (M.sup ? '-' + M.sup.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') : '') + '.csv', csvRows()); return; }
     // a typed supplier, reading or note asks first (the book's two-tap helper); an untouched form clears in one tap
     if (el.getAttribute('data-dl') === 'clear' && !M.busy && !M.attempt) { if (dirty() && !arm('dl-clear')) return; M.form = form(); M.showTime = M.showNote = false; M.error = ''; M.invalid = []; M.message = ''; draw(); }
     if (M.busy || M.attempt) return;
@@ -309,7 +331,17 @@
     var next = all[e.key === 'Home' ? 0 : e.key === 'End' ? all.length - 1 : (at + (/^(ArrowLeft|ArrowUp)$/.test(e.key) ? -1 : 1) + all.length) % all.length];
     next.focus({ preventScroll: true }); next.click();
   });
-  document.addEventListener('change', function (e) { if (M.root && M.root.contains(e.target) && e.target.id === 'dl-view-day' && admin()) { var date = e.target.value; if (!validDay(date) || date > T.day()) { draw(); return; } M.followToday = date === T.day(); M.day = date; load(); } });
+  document.addEventListener('change', function (e) {
+    if (!M.root || !M.root.contains(e.target) || !admin()) return;
+    var id = e.target.id, date = e.target.value;
+    if (id === 'dl-sup-filter') { M.sup = date; draw(); return; }
+    if (id !== 'dl-view-day' && id !== 'dl-view-to') return;
+    if (!validDay(date) || date > T.day()) { draw(); return; }
+    // the other end follows so From is never after To, and the range stays within 92 days
+    if (id === 'dl-view-day') { M.day = date; if (M.to < date) M.to = date; if (span() > MAX_DAYS) M.to = shiftDay(date, MAX_DAYS - 1) > T.day() ? T.day() : shiftDay(date, MAX_DAYS - 1); }
+    else { M.to = date; if (M.day > date) M.day = date; if (span() > MAX_DAYS) M.day = shiftDay(date, -(MAX_DAYS - 1)); }
+    M.followToday = M.day === T.day() && M.to === T.day(); M.sup = ''; load();
+  });
   ['lk-access', 'lk-who', 'lk-admin', 'lk-cfg'].forEach(function (name) { window.addEventListener(name, function () { var open = access(); if (open && M.attempt && M.attempt.acknowledged) confirmed(M.attempt); draw(); if (open && M.root && document.body.contains(M.root)) { load(); tick(); } }); });
   window.addEventListener('lk-clock', tick);
   // Update now's second tap already said the readings may go (LK_UPDATE.letGo() in js/upkeep.js): no second question

@@ -141,6 +141,29 @@ const save = async p => { await p.click('#dl-form button[type="submit"]'); await
   ok(!await p.$('[data-dl="sup"]') && !await p.$('.dl-waiting') && await p.isVisible('#dl-supplier'), 'functions-only: no cut-off chips, the supplier box still works');
   await p.context().close();
 
+  // Admin history (design A, step 3, 3 Nov 2026): From and To in one query, a supplier filter and the shared CSV.
+  const older = L.ymd(new Date(L.NOW - 3 * 86400000));
+  const histExtra = { ...extra, [key('deliveries', 'three')]: { ...receipt(older, 'Other test supplier'), receivedAt: L.NOW - 3 * 86400000, chilled: null, frozen: -21, note: '=SUM(A1)' } };
+  p = await open(b, { who: 'head', admin: true, extra: histExtra });
+  ok(await p.isVisible('#dl-view-day') && await p.isVisible('#dl-view-to') && !(await p.$('#dl-sup-filter')), 'admin: From and To are offered; no supplier filter for a single supplier');
+  let reads = await p.evaluate(() => (window.__fake.reads || []).filter(k => /\/deliveries$/.test(k)).length);
+  await p.fill('#dl-view-day', older); await p.dispatchEvent('#dl-view-day', 'change');
+  await L.waitFor(p, () => /Other test supplier/.test((document.querySelector('.dl-receipts') || {}).textContent || ''), null, 5000);
+  const listed = await p.locator('.dl-history').innerText();
+  ok(/Other test supplier/.test(listed) && /Earlier supplier/.test(listed) && /\(4 days\)/.test(listed) && /2 deliveries/.test(listed), 'admin: From 3 days ago to today lists every receipt in the range');
+  ok(await p.evaluate(n => (window.__fake.reads || []).filter(k => /\/deliveries$/.test(k)).length - n, reads) === 1, 'admin: the range is one query');
+  await p.selectOption('#dl-sup-filter', 'Earlier supplier', { force: true }); // the shared picker sets the hidden select (js/controls.js) await L.settle(p, 200);
+  ok(!/Other test supplier/.test(await p.locator('.dl-receipts').innerText()) && /1 delivery/.test(await p.locator('.dl-history').innerText()), 'admin: the supplier filter narrows the list without a read');
+  await p.selectOption('#dl-sup-filter', '', { force: true }); await L.settle(p, 200);
+  const pending = p.waitForEvent('download'); await p.click('[data-dl="csv"]'); const file = await pending, chunks = [];
+  for await (const chunk of await file.createReadStream()) chunks.push(chunk);
+  const csv = Buffer.concat(chunks).toString('utf8');
+  ok(file.suggestedFilename() === 'leichhardt-deliveries-' + older + '-to-' + today + '.csv' && csv.charCodeAt(0) === 0xFEFF, 'admin: CSV downloads with the range in its name and the shared BOM');
+  ok(csv.includes('Date,Time,Supplier,Chilled (°C),Frozen (°C),Items / notes,Received by') && csv.includes(older + ',') && csv.includes(',-21,') && csv.includes("'=SUM(A1)"), 'admin: CSV keeps numbers as numbers, an empty chilled cell and marks formula-like notes as text');
+  await p.fill('#dl-view-to', L.ymd(new Date(L.NOW - 4 * 86400000))); await p.dispatchEvent('#dl-view-to', 'change'); await L.settle(p, 300);
+  ok(await p.inputValue('#dl-view-day') === L.ymd(new Date(L.NOW - 4 * 86400000)), 'admin: a To before From moves From with it');
+  ok(!p.errors.length, 'admin history: no page errors ' + p.errors.join(' | ')); await p.context().close();
+
   // Layout and screenshots use synthetic people and delivery data only.
   fs.mkdirSync('shots', { recursive: true });
   for (const width of [390, 768, 1280]) {

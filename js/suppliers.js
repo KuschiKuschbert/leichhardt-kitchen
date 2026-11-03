@@ -178,7 +178,14 @@
     options = options || {}; var iid = 'su-' + name;
     return '<label class="field" for="' + iid + '"><span class="label">' + label + '</span><input class="search" id="' + iid + '" data-sf="' + name + '" value="' + esc(value == null ? '' : value) + '"' + (options.readonly ? ' readonly' : '') + (options.type ? ' type="' + options.type + '"' : '') + (options.placeholder ? ' placeholder="' + esc(options.placeholder) + '"' : '') + (options.max ? ' maxlength="' + options.max + '"' : '') + (options.decimal ? ' inputmode="decimal"' : '') + '></label>';
   }
-  function supplierSelect() { return '<label class="field su-mobile-pick"><span class="label">Supplier</span><select class="search" data-sf="supplier">' + (M.suppliers || []).map(function (s) { return '<option value="' + esc(s.id) + '"' + (s.id === M.sid ? ' selected' : '') + '>' + esc(s.name) + '</option>'; }).join('') + '</select></label>'; }
+  /* Today's cut-off beside each supplier (design A, step 3, 3 Nov 2026), from the cut-off occurrences already on the
+     phone: no read. "by 15:00" while open, "ordered" once ticked, nothing after it passed or with no cut-off today. */
+  function todayCut(s) {
+    if (!s || !s.cutoffId) return '';
+    var o = occurrences().filter(function (x) { return x.cutoffId === s.cutoffId && x.day === day(); })[0];
+    return !o ? '' : o.done ? 'ordered' : o.past ? '' : 'by ' + T.clock(o.at);
+  }
+  function supplierSelect() { return '<label class="field su-mobile-pick"><span class="label">Supplier</span><select class="search" data-sf="supplier">' + (M.suppliers || []).map(function (s) { return '<option value="' + esc(s.id) + '"' + (s.id === M.sid ? ' selected' : '') + '>' + esc(s.name + (todayCut(s) ? ' · ' + todayCut(s) : '')) + '</option>'; }).join('') + '</select></label>'; }
   function statusHTML() {
     var task = activeTask(), note = M.armedLeave && (task === 'editor' || task === 'supplier' || task === 'import'), msg = M.armedLeave && !note ? '' : M.msg;
     var pending = M.review && task !== 'review' && (M.saving || M.review.uncertain) ? '<p id="su-recording-status" class="su-status" role="status">Recording for ' + esc(M.review.supplierName) + (M.saving ? ' is still in progress. ' : ' needs confirmation. ') + '<a href="#/suppliers/' + encodeURIComponent(M.review.sid) + '" data-su-recovery>Return to review</a>' + (M.saving ? ' to check its outcome.' : ' to retry safely.') + '</p>' : '';
@@ -189,7 +196,7 @@
       (canEdit() ? '<nav class="chips su-tools" aria-label="Supplier tools"><button type="button" class="chip" data-su="order-mode" aria-pressed="' + (M.mode === 'order') + '">Supplier order</button><button type="button" class="chip" data-su="manage" aria-pressed="' + (M.mode === 'manage') + '">Manage catalogue</button></nav>' : '');
   }
   function sidebarHTML() {
-    return '<aside class="su-side"><span class="label">Suppliers</span><nav aria-label="Suppliers">' + (M.suppliers || []).map(function (s) { return '<button type="button" class="chip su-pick" data-su="pick" data-sid="' + esc(s.id) + '" aria-pressed="' + (s.id === M.sid) + '"><span>' + esc(s.name) + '</span><small>' + s.items.filter(function (i) { return !i.archived; }).length + '</small></button>'; }).join('') + '</nav>' + (canEdit() ? '<div class="su-side-bottom">' + smallButton('add-supplier', 'Add supplier') + '</div>' : '') + '</aside>';
+    return '<aside class="su-side"><span class="label">Suppliers</span><nav aria-label="Suppliers">' + (M.suppliers || []).map(function (s) { return '<button type="button" class="chip su-pick" data-su="pick" data-sid="' + esc(s.id) + '" aria-pressed="' + (s.id === M.sid) + '"><span>' + esc(s.name) + (todayCut(s) ? '<em class="su-pick-cut' + (todayCut(s) === 'ordered' ? ' done' : '') + '">' + esc(todayCut(s)) + '</em>' : '') + '</span><small>' + s.items.filter(function (i) { return !i.archived; }).length + '</small></button>'; }).join('') + '</nav>' + (canEdit() ? '<div class="su-side-bottom">' + smallButton('add-supplier', 'Add supplier') + '</div>' : '') + '</aside>';
   }
   function emptyHTML() { return '<div class="empty"><h3 class="h3">No supplier catalogue yet</h3><p>Supplier goods and pars are private. The head chef can import the checked catalogue or add a supplier here.</p>' + (canEdit() ? '<div class="btn-row">' + button('import', 'Import catalogue', '', true) + button('add-supplier', 'Add supplier') + '</div>' : '<p class="hint">Ask the head chef to import the supplier sheets.</p>') + '</div>'; }
   function currentPar(i) { return i.par === '' ? 'Not set' : i.par; }
@@ -307,7 +314,8 @@
   function linesHTML(lines) { return '<div class="su-lines">' + lines.map(function (l) { return '<div><span><b>' + esc(l.name) + '</b><small class="hint">Pack: ' + esc(l.pack || 'Not set') + '</small></span><strong>' + esc(quantityText(l)) + '</strong></div>'; }).join('') + '</div>'; }
   function reviewHTML() {
     var r = M.review;
-    return '<section class="su-review"><h2 id="rtitle" tabindex="-1">Review order</h2>' + statusHTML() + '<p>' + esc(r.supplierName) + ' · ' + r.lines.length + ' items</p>' + linesHTML(r.lines) + '<p>Record this only after you have placed the supplier order. This page sends nothing to the supplier.</p>' + (r.occurrence ? '<p class="hint">' + (r.additional ? 'Additional order for ' : 'Completes only ') + esc(r.occurrence.label || r.occurrence.day) + '.</p>' : '<p class="hint">No reminder linked. This records the supplier history only.</p>') + '<div class="btn-row">' + button('record', M.saving ? inkLabel('Recording...') : r.checking ? inkLabel('Checking cut-off...', 'orders') : r.uncertain ? 'Confirm recording again' : 'Record order placed', M.saving || r.checking ? ' disabled aria-busy="true"' : r.recorded ? ' disabled' : '', true) + (r.recorded ? button('new-draft', 'Start new draft', M.saving ? ' disabled' : '') : '') + button('copy-review', 'Copy order text', M.saving ? ' disabled' : '') + '</div></section>';
+    return '<section class="su-review"><h2 id="rtitle" tabindex="-1">Review order</h2>' + statusHTML() + '<p>' + esc(r.supplierName) + ' · ' + r.lines.length + ' items</p>' + linesHTML(r.lines) + '<p>Record this only after you have placed the supplier order. This page sends nothing to the supplier.</p>' + (r.occurrence ? '<p class="hint">' + (r.additional ? 'Additional order for ' : 'Completes only ') + esc(r.occurrence.label || r.occurrence.day) + '.</p>' : '<p class="hint">No reminder linked. This records the supplier history only.</p>') + '<div class="su-send"><b>1. Send it your usual way</b><div class="btn-row">' + (navigator.share ? button('share-review', 'Share order text', M.saving ? ' disabled' : '') : '') + button('copy-review', 'Copy order text', M.saving ? ' disabled' : '') + '</div><span class="hint">' + (navigator.share ? 'Share opens your phone\'s text, email or chat apps. ' : '') + 'The book sends nothing itself.</span></div>' +
+      '<b class="su-then">2. Then record it here</b><div class="btn-row">' + button('record', M.saving ? inkLabel('Recording...') : r.checking ? inkLabel('Checking cut-off...', 'orders') : r.uncertain ? 'Confirm recording again' : 'Record order placed', M.saving || r.checking ? ' disabled aria-busy="true"' : r.recorded ? ' disabled' : '', true) + (r.recorded ? button('new-draft', 'Start new draft', M.saving ? ' disabled' : '') : '') + '</div></section>';
   }
   function historyHTML() {
     var h = hist(), rows = h.rows || [], selected = rows.filter(function (o) { return o.id === M.historyId; })[0] || rows[0];
@@ -532,8 +540,15 @@
     var d = draft(); d.qty = Object.create(null); d.stock = Object.create(null); d.units = { qty: Object.create(null), stock: Object.create(null) }; d.suggestions = Object.create(null);
     order.lines.forEach(function (l) { var i = item(l.itemId); if (i && !i.archived) { d.qty[i.id] = l.qty; d.units.qty[i.id] = l.unit; } }); M.reuse = ''; M.msg = 'Previous quantities copied into this draft. Review them before ordering.'; draw();
   }
+  function orderText(lines, name) { return name + '\n' + lines.map(function (l) { return quantityText(l) + ' | ' + l.name; }).join('\n'); }
+  // The phone's own share sheet; the person picks the app and sends. A cancelled share says nothing; a failed one copies.
+  function shareOrder(lines, name) {
+    var text = orderText(lines, name);
+    if (!navigator.share) { copyOrder(lines, name); return; }
+    navigator.share({ title: name, text: text }).then(function () { message('Order text shared. Record it here once the order is placed.'); }, function (e) { if (!e || e.name !== 'AbortError') copyOrder(lines, name); });
+  }
   function copyOrder(lines, name) {
-    var text = name + '\n' + lines.map(function (l) { return quantityText(l) + ' | ' + l.name; }).join('\n');
+    var text = orderText(lines, name);
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function () { message('Order text copied. Nothing was sent.'); }, function () { copyFallback(text); }); else copyFallback(text);
   }
   function copyFallback(text) { M.msg = 'Copy is unavailable here. Select the order text below.'; draw(); var area = document.createElement('textarea'); area.className = 'search su-copy'; area.readOnly = true; area.value = text; area.setAttribute('aria-label', 'Order text to copy'); if (M.root) { M.root.appendChild(area); area.focus(); area.select(); } }
@@ -658,6 +673,7 @@
     if (cmd === 'cutoff-settings') { if (B().openCutoffs) B().openCutoffs(); else location.hash = '#/admin'; }
     if (cmd === 'review') beginReview(); if (cmd === 'record') record(); if (cmd === 'review-close') closeReview();
     if (cmd === 'copy-review' && M.review) copyOrder(M.review.lines, M.review.supplierName);
+    if (cmd === 'share-review' && M.review) shareOrder(M.review.lines, M.review.supplierName);
     if (cmd === 'history') { M.historyOpen = !M.historyOpen; draw(); if (M.historyOpen) loadHistory(true, false); }
     if (cmd === 'history-close') closeHistory();
     if (cmd === 'history-retry') { hist().rows = null; loadHistory(M.historyOpen, false); }

@@ -19,6 +19,8 @@
 .dl-history h2 { margin: 0; font: 700 1.6rem/1.1 var(--display); }
 .dl-history-head, .dl-receipt-head { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
 .dl-filter { max-width: 230px; margin-top: .8rem; }
+.dl-range { display: flex; flex-wrap: wrap; gap: 0 .75rem; }
+.dl-range .dl-filter { flex: 1 1 10rem; }
 .dl-receipts { list-style: none; padding: 0; margin: 0; }
 .dl-receipt { padding: 1rem 0; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
 .dl-receipt-head b { font-size: 1.1rem; }
@@ -2538,6 +2540,12 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
 .su-asked ul { margin: 0 0 0.3rem; padding-left: 1.1rem; }
 .su-asked li { overflow-wrap: anywhere; }
 .su-asked-ask { margin: 0.4rem 0; }
+.su-pick-cut { display: block; font-style: normal; font-size: 0.75rem; font-weight: 600; color: var(--small-ink); }
+.su-pick[aria-pressed="true"] .su-pick-cut { color: inherit; opacity: 0.85; }
+.su-pick-cut.done { color: var(--done-ink); }
+.su-send { display: grid; gap: 0.5rem; margin: 1rem 0; padding: 0.8rem 0.9rem; border-radius: var(--r-act); background: var(--beige); }
+.su-send .hint { margin: 0; }
+.su-then { display: block; margin: 0.4rem 0 0.5rem; }
 .su-asked-ask .p-x { padding-left: 0; }
 .su-request { display: inline-block; color: var(--small-ink); font-size: 0.8125rem; margin-top: 0.35rem; }
 .su-order-actions, .su-pager { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem 1rem; margin: 1rem 0; }
