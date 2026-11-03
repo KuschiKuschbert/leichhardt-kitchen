@@ -1,6 +1,6 @@
 # Work pages design options: Prep, Orders, Wastage, Transfers and the chef hat
 
-Requested 3 November 2026. The head chef asked for two designs and improvement ideas for each work page and the chef hat menu, with fewer repeats and easier use, then a recommendation, before choosing what to build. **Waiting for the head chef's choice.** No application code changes until then.
+Requested 3 November 2026. The head chef asked for two designs and improvement ideas for each work page and the chef hat menu, with fewer repeats and easier use, then a recommendation, before choosing what to build. **Chosen on 3 November 2026: the recommendation below** (the head chef's words: "go with your recommendation"). Shared fixes, then A on every page with four pieces of B. The pre-change baseline is main at `87b378d`.
 
 `options.html` in this folder is the working comparison: today's phone screen next to Option A and Option B for each page, what each removes and adds, its cost, and the recommendation. Open it in a browser. All names and amounts are the click tests' synthetic data. Nothing in it saves.
 
@@ -37,6 +37,16 @@ Shared fixes first, then A on every page, with four pieces of B: counts on the c
 
 Proposed build order, one pull request each: chef hat sheet with S1; S2 to S4; S5 and S6; Wastage A; Transfers A; Prep A; Orders A. Every step keeps permissions, rules, the read budget, Undo, Not sent marks, shared-screen attribution, today-only staff pages, the notebook look and the six-tab bar, and is checked at 390, 768 and 1280 px.
 
-## When the head chef chooses
+## Build record
 
-Record the choice and its date here and in README, Head chef decisions. Then build in the order above under the normal shipping rules in `CLAUDE.md`.
+Recorded in README, Head chef decisions (3 Nov 2026). Each step ships under the normal rules in `CLAUDE.md` and is listed here with its pull request when it is live.
+
+| Step | What | Pull request | State |
+| --- | --- | --- | --- |
+| 1 | Chef hat bottom sheet, the Writing as row goes (S1) | | Next |
+| 2 | One section control, one amount control, one line layout (S2 to S4) | | |
+| 3 | Change amount and Move section (S5), one meaning for usual chips (S6) | | |
+| 4 | Wastage A, with Make it again | | |
+| 5 | Transfers A, with the pick-up basket and the age tag | | |
+| 6 | Prep A | | |
+| 7 | Orders A, with Delivery arrived for chefs | | |

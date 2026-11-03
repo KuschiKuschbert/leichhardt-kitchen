@@ -3,6 +3,7 @@ import { createRequire } from 'node:module';
 import { randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
+import { dashDay } from './dashboard.mjs';
 const core = createRequire(import.meta.url)('../js/analysis-core.js');
 const shift = (day, n) => new Date(Date.parse(day + 'T12:00:00Z') + n * 86400000).toISOString().slice(0, 10);
 const bytes = x => Buffer.byteLength(JSON.stringify(x));
@@ -36,7 +37,7 @@ export async function analyse(K, options = {}) {
   }
   const deliveries = await read(K.collection('deliveries').where('day', '>=', from).where('day', '<=', to));
   const functions = await read(K.collection('functions').where('date', '>=', from).where('date', '<=', to));
-  const days = [];
+  const days = [], dash = [];
   // Read the whole rolling window to pick up late corrections. Never trust an earlier learnlog claim as freshness.
   for (let i = window; i >= 1; i--) {
     const day = shift(today, -i), input = {};
@@ -50,6 +51,7 @@ export async function analyse(K, options = {}) {
     // Fail visibly rather than quietly dropping large days or claiming incomplete coverage.
     if (bytes(contribution) > 700000) throw new Error('analysis-day-too-large');
     days.push(contribution);
+    dash.push(dashDay(day, input));
   }
   const publications = [];
   for (const n of [7, 30, 90]) {
@@ -61,6 +63,9 @@ export async function analyse(K, options = {}) {
     if (bytes(data) > 700000) throw new Error('analysis-summary-too-large');
     publications.push([String(n), data]);
   }
+  // The admin Dashboard reads this one record (one read) instead of 60 days of lines. Admin only, like every analysis record.
+  const board = { v: 1, generation, at, from, to, days: dash };
+  if (bytes(board) > 700000) throw new Error('analysis-dashboard-too-large');
   for (let i = 0; i < days.length; i += 8) {
     const batch = K.firestore.batch();
     for (const day of days.slice(i, i + 8)) batch.set(K.collection('analysisDaily').doc(generation + '_' + day.day), day);
@@ -68,6 +73,7 @@ export async function analyse(K, options = {}) {
   }
   const batch = K.firestore.batch();
   for (const [n, data] of publications) batch.set(K.collection('analysis').doc('range-' + n), data);
+  batch.set(K.collection('analysis').doc('dashboard'), board);
   batch.set(K.collection('analysis').doc('current'), { v: 1, generation, at, from, to, days: window, reads, references: refs.length, suppliers: suppliers.length, inventory, comparisonOnly: true, previous: old.exists ? old.data().generation : '' });
   batch.set(K.collection('analysis').doc('health'), { at, status: 'ok', generation, reads });
   await batch.commit();
