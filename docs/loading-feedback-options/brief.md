@@ -104,3 +104,9 @@ Checked: no sideways scroll at 390 and 1280 px, no script errors after playing e
 | Opening | Pages | Toasts | Signal |
 | --- | --- | --- | --- |
 | ![Opening the book](previews/options-opening.png) | ![Opening a kitchen page](previews/options-page.png) | ![Toasts and Undo](previews/options-toasts.png) | ![Signal and updates](previews/options-signal.png) |
+
+Built (steps 1 and 2), 390 px with synthetic data:
+
+| Two Undos | A save that failed |
+| --- | --- |
+| ![The slip with the older Undo as a tab](previews/after-slip-undo.png) | ![The error slip, no stale Undo](previews/after-slip-error.png) |
