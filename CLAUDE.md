@@ -34,6 +34,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Loading, saving, measured progress and reduced motion | `docs/loading-motion.md` |
 | Nightly backup format, protected decryption and isolated recovery checks | `docs/backup-recovery.md` |
 | Suppliers, order history, cut-off sheets | `docs/supplier-workspace.md` |
+| Supplier order and Delivery received redesign, selected A: The Order Sheet (3 Nov 2026) | `docs/receiving-design-options/brief.md` |
 | Wastage history, ranges, CSV | `docs/wastage-history.md` |
 | CSV text, quoting and numeric values across reports | `docs/report-exports.md` |
 | Transfer storage and returns | `docs/transfer-returns.md` (publish rules from the feature branch first: it indexes loans) |

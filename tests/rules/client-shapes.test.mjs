@@ -311,6 +311,8 @@ row('js/fnedit.js loadHist(): every earlier version (functions/<id>/hist)', { ok
 // deliveries
 row('js/deliveries.js load(): today\'s receipts listener (deliveries, day == today)', { ok: ALL, asks: ALL, run: db => listen(query(C(db, 'deliveries'), where('day', '==', TODAY))) });
 row('js/deliveries.js load(): a past day from the server (admin)', { ok: GOOGLE, asks: GOOGLE, run: db => getDocsFromServer(query(C(db, 'deliveries'), where('day', '==', PAST))) });
+row('js/deliveries.js load(): the admin From to To range, up to 92 days (3 Nov 2026)', { ok: GOOGLE, asks: GOOGLE,
+  run: db => getDocsFromServer(query(C(db, 'deliveries'), where('day', '>=', kday(NOW - 91 * DAY)), where('day', '<=', TODAY))) });
 row('js/deliveries.js save(): the retry check of a new receipt id', { ok: ALL, asks: ALL, run: (db, w, r) => getDocFromServer(D(db, 'deliveries/new-' + r)) });
 
 // Manage Recipes & Drawings

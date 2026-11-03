@@ -114,7 +114,7 @@ function pagedFixture() {
   await L.waitFor(p, selector => { const el = document.querySelector(selector); return el && el.getAttribute('aria-invalid') === 'true' && el === document.activeElement; }, stock('page-26'), 5000);
   state = await fieldState(p, stock('page-26'));
   ok(state.invalid && state.focused && /TEST PAGE ITEM 26/.test(state.message) && /stock/i.test(state.message), 'review focuses and describes the hidden stock error on the right item');
-  ok(await p.$eval('[data-item="page-26"] .su-item', el => el.open), 'stock error opens the item details so its field is visible');
+  ok(await p.isVisible(stock('page-26')) && await p.$eval(stock('page-26'), el => !el.closest('details')), 'the stock field with the error sits on the row, visible without opening Details');
   ok(await p.$eval(qty('page-26'), el => el.value) === '3 bags', 'a stock error retains the corrected order quantity');
   await p.fill(stock('page-26'), '4');
   ok(!(await fieldState(p, stock('page-26'))).invalid, 'correcting stock clears its accessible field error');
@@ -137,11 +137,11 @@ function pagedFixture() {
     const immediate = await p.evaluate(kind => {
       const q = document.querySelector('[data-sf="q"]'); q.focus(); q.value = 'TEST STOCK'; q.dispatchEvent(new Event('input', { bubbles: true })); document.querySelector('[data-su="review"]').click();
       const invalid = document.querySelector('[data-sf="' + kind + '"][data-i="page-26"]');
-      return { invalid: invalid && invalid.getAttribute('aria-invalid') === 'true', focused: invalid === document.activeElement, other: document.querySelector('[data-sf="qty"][data-i="page-25"]')?.value, quantity: document.querySelector('[data-sf="qty"][data-i="page-26"]')?.value, details: document.querySelector('[data-item="page-26"] .su-item')?.open };
+      return { invalid: invalid && invalid.getAttribute('aria-invalid') === 'true', focused: invalid === document.activeElement, other: document.querySelector('[data-sf="qty"][data-i="page-25"]')?.value, quantity: document.querySelector('[data-sf="qty"][data-i="page-26"]')?.value, onRow: !!invalid && !invalid.closest('details') };
     }, kind);
     ok(immediate.invalid && immediate.focused, 'rapid ' + kind + ': review reveals and focuses the hidden invalid field');
     ok(immediate.other === '5 kg' && immediate.quantity === (kind === 'qty' ? 'some' : '3 bags'), 'rapid ' + kind + ': review preserves the quantities on the hidden page');
-    if (kind === 'stock') ok(immediate.details, 'rapid stock: review opens Details for the invalid stock field');
+    if (kind === 'stock') ok(immediate.onRow, 'rapid stock: the invalid stock field is on the row, not hidden in Details');
     await L.settle(p, 450);
     const delayed = await p.evaluate(kind => {
       const q = document.querySelector('[data-sf="q"]'), invalid = document.querySelector('[data-sf="' + kind + '"][data-i="page-26"]');
