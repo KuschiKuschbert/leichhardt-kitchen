@@ -300,7 +300,7 @@ const rvBo = { [fsKey(['waste', today])]: { avoidable: 'Over-portioned chips', c
   for (const [label, hash, who, sel, words] of PAGES) {
     await safe(label, async () => {
       p = await L.open(b, hash, { who, wait: 1500 });
-      if (sel === '#w-text') await L.wLog(p); else if (sel === '#w-ra') await L.wReview(p);
+      if (sel === '#w-text') await L.wLog(p); else if (sel === '#w-ra') await L.wReview(p); else if (sel === '#tr-text') await L.xLog(p);
       await L.waitFor(p, s => !!document.querySelector(s), sel, 8000);
       ok(!(await asks(p)), label + ': nothing typed, a reload does not ask');
       await p.fill(sel, words); await L.settle(p, 150);
@@ -314,6 +314,7 @@ const rvBo = { [fsKey(['waste', today])]: { avoidable: 'Over-portioned chips', c
   // a transfer logged: the venue and person stay for the next item of the same pick-up, and do not count
   await safe('transfer logged', async () => {
     p = await L.open(b, '#/transfers', { who: 'ann', wait: 1500 });
+    await L.xLog(p);
     await L.waitFor(p, () => !!document.querySelector('#tr-venue'), null, 8000);
     await p.fill('#tr-venue', 'Riviera'); await p.fill('#tr-person', 'Jess');
     ok(!(await asks(p)), 'transfer: a venue and a person alone do not ask');

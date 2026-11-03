@@ -247,6 +247,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
   // 4. transfers at 390, no signal, then a return: the phone's own mark is never saved in the open loan's record
   await step('4', async () => {
     p = await L.open(b, '#/transfers', { wait: 1500 });
+    await L.xLog(p);
     await p.context().setOffline(true);
     await hold(p);
     await p.fill('#tr-venue', 'Riviera');
@@ -313,6 +314,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
       await L.settle(p, 100); await p.click('.w-add .nb-addbtn'); return 'Bread';
     },
     '#/transfers': async p => {
+      await L.xLog(p);
       await p.fill('#tr-venue', 'Riviera'); await p.fill('#tr-person', 'Tom'); await p.fill('#tr-text', 'Limes'); await p.fill('#tr-amt', '3');
       await L.choose(p, '[data-p="tr-unit"][data-v="kg"]'); await L.choose(p, '.tr-add .nb-addbtn'); return 'Limes';
     }

@@ -471,4 +471,10 @@ async function wReview(page) {
   await page.evaluate(() => document.querySelector('[data-p="w-rv"]').click());
   await waitFor(page, () => !!document.querySelector('.w-sheet #w-ra'), null, 4000);
 }
-module.exports = { wLog, wReview, clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
+// Transfers (3 Nov 2026, work pages redesign A): the form is in the Log a transfer sheet
+async function xLog(page) {
+  if (await page.$('.tr-sheet #tr-text')) return;
+  await page.evaluate(() => document.querySelector('[data-p="tr-log"]').click());
+  await waitFor(page, () => !!document.querySelector('.tr-sheet #tr-text'), null, 4000);
+}
+module.exports = { wLog, wReview, xLog, clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };

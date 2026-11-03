@@ -32,7 +32,7 @@ async function safe(label, fn) {
       await safe(label, async () => {
         const p = await L.open(b, form.route, { who: 'ann', width, settings: { text }, wait: 1000 });
         try {
-          if (form.route === '#/waste') await L.wLog(p);
+          if (form.route === '#/waste') await L.wLog(p); else if (form.route === '#/transfers') await L.xLog(p);
           const selector = '[data-p="' + form.action + '"]';
           await L.waitFor(p, s => {
             const el = document.querySelector(s);
@@ -77,6 +77,7 @@ async function safe(label, fn) {
     await safe('Wide two-way choice', async () => {
       const p = await L.open(b, '#/transfers', { who: 'ann', width: 1280, wait: 1000 });
       try {
+        await L.xLog(p);
         const incoming = button('tr-dir', 'in');
         await L.waitFor(p, () => !!document.querySelector('.tr-dirs .ux-inline-pair'));
         const g = await geometry(p, '[data-p="tr-dir"]');
