@@ -101,7 +101,7 @@
     items: [], itemsState: 'idle', showRemoved: false,
     section: '', text: '', qty: '', recipeSearch: '', recipeOpen: false, recipeAll: false, tab: '',
     authed: false, tok: '', pinStep: '', pinOff: false, pinData: null, pf1: '', pf2: '', pinMsg: '',
-    sections: [], activity: [], hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false, exporting: '', moving: false, moveMsg: '', newPin: '', atab: lsGet('lk.prep.atab') || 'overview', ordDate: dayNow(), ordLines: [], ordState: 'idle', ordView: 'day', otext: '', oqty: '', ordAll: [], ordAllAt: 0, ordBusy: false, osugg: [],
+    sections: [], activity: [], hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false, exporting: '', moving: false, moveMsg: '', newPin: '', atab: (lsGet('lk.dash.intro') && lsGet('lk.prep.atab')) || 'dashboard', ordDate: dayNow(), ordLines: [], ordState: 'idle', ordView: 'day', otext: '', oqty: '', ordAll: [], ordAllAt: 0, ordBusy: false, osugg: [],
     retryAt: {}, wDate: dayNow(), wLines: [], wState: 'idle', rvDate: '', wReview: null, wReviewFor: '', wrA: null, wrC: null, wpA: null, wpC: null, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wSum: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, xDate: dayNow(), xLines: [], xState: 'idle', xf: xBlank(), xSum: null, xsugg: [], xStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nMsg: '', nSaving: false,
     mins: null, minsFor: '', minsAt: 0, minsBusy: false, mmine: {}, msigns: {}, mSel: '', mf: null, mMsg: '', mSaving: false, mSigning: false, minOpen: false, mErr: '',
     guides: null, guidesFor: '', guidesAt: 0, gBusy: false, gRetry: 0, gq: '', gcat: 'all', gSel: '', gf: null, gfSnap: '', gMsg: '',
@@ -4466,6 +4466,34 @@
   document.addEventListener('click', function (e) { var el = e.target.closest('[data-pr]'), p = proofModule(); if (el && S.root && S.root.contains(el) && intelligenceAllowed() && p) { e.preventDefault(); p.click(el); } });
   document.addEventListener('input', function (e) { var p = proofModule(); if (e.target.matches('[data-pr-field]') && S.root && S.root.contains(e.target) && intelligenceAllowed() && p) p.input(e.target); });
 
+  /* The admin Dashboard (3 Nov 2026, docs/admin-dashboard-options/brief.md): js/admin-dashboard.js, loaded only when the
+     page opens. It reads analysis/dashboard and analysis/health once (2 reads), kept in memory until Refresh. */
+  var dashLoading = null, dashError = false;
+  function dashModule() { return window.LK_DASH && window.LK_DASH.API === 1 ? window.LK_DASH : null; }
+  function dashHTML() {
+    if (!intelligenceAllowed()) return '';
+    var m = dashModule();
+    if (m) return m.render({
+      allowed: intelligenceAllowed, context: intelligenceContext, draw: draw, reasonName: reasonName,
+      wait: function (text) { return inkWait(text, 'chef', 3); },
+      clock: function (at) { return dayShort(T.day(at)) + ' at ' + hhmm(T.mins(at)); },
+      // lk.dash.intro: the Dashboard has opened once on this device. Never out of date.
+      seen: function () { if (!lsGet('lk.dash.intro')) lsSet('lk.dash.intro', '1'); },
+      get: function (path) {
+        if (!intelligenceAllowed() || ['analysis/dashboard', 'analysis/health'].indexOf(path) < 0) return Promise.reject({ code: 'permission' });
+        return fb.fs.getDocFromServer(docRef.apply(null, path.split('/'))).then(function (sn) { return sn.exists() ? sn.data() : null; });
+      },
+      open: function (tab, days) {
+        if (['insights', 'waste', 'transfers'].indexOf(tab) < 0) return;
+        if (tab !== 'transfers') S.statsRange = days === 7 ? 7 : 30;
+        S.atab = tab; S.agLast = S.agLast || {}; S.agLast.reports = tab; lsSet('lk.prep.atab', tab); draw(); adminToTop();
+      }
+    });
+    if (!dashLoading && !dashError) dashLoading = window.LK_APP.load('js/admin-dashboard.js?v=1').then(function () { if (!dashModule()) throw { code: 'workspace-version' }; dashLoading = null; if (intelligenceAllowed()) draw(); }).catch(function () { dashLoading = null; dashError = true; if (intelligenceAllowed()) draw(); });
+    return '<section class="set-block"><h3 class="label">Dashboard</h3><p class="hint" role="status">' + (dashError ? 'Could not load the dashboard. Check the connection and reload this page.' : inkLabel('Loading...', 'chef')) + '</p></section>';
+  }
+  document.addEventListener('click', function (e) { var el = e.target.closest('[data-dsh]'), m = dashModule(); if (el && S.root && S.root.contains(el) && intelligenceAllowed() && m) { e.preventDefault(); m.click(el); } });
+
   var intelligenceLoading = null, intelligenceError = false;
   function intelligenceAllowed() { return !!fb && S.level === 'owner' && ownerHere() && !!S.user; }
   function intelligenceContext() { return S.pin + '|' + (S.user ? S.user.uid : '') + '|' + S.who + '|' + accessEpoch; }
@@ -4519,7 +4547,7 @@
   }
   document.addEventListener('change', function (e) {
     if (!e.target.matches('[data-k="ai-section"]') || !intelligenceAllowed()) return;
-    if (intelligenceBusy()) { e.target.value = adminGroupOf(S.atab || 'overview')[0]; return; }
+    if (intelligenceBusy()) { e.target.value = adminGroupOf(S.atab || 'dashboard')[0]; return; }
     var group = A_GROUPS.filter(function (g) { return g[0] === e.target.value; })[0];
     if (group) { S.atab = (S.agLast || {})[group[0]] || group[2][0]; lsSet('lk.prep.atab', S.atab); draw(); adminToTop(); }
   });
@@ -4551,7 +4579,7 @@
     var bar = '<div class="p-bar"><span>Google account: <strong>' + esc(S.user.email) + '</strong></span><span class="p-links"><button type="button" class="p-link" data-p="signout">' + (armed('signout:sent') ? 'Not sent yet.' : armed('signout') ? notSaved() + '. Tap again' : 'Sign out of Google') + '</button></span></div>';
     var bulk = '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line">' + esc(S.bulk || '') + '</textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div>';
     var saveBlock = saveBarHTML();
-    var at = S.atab || 'overview';
+    var at = S.atab || 'dashboard';
     // a sous chef on the head chef's device has no Kitchen mail page until the head chef switches it on (23 Oct 2026)
     if (at === 'mail' && !mlOwner()) at = S.atab = 'notes';
     // Review desk groups the two queues; saved records and reports remain separate. Existing page ids still work.
@@ -4566,7 +4594,7 @@
     if (at === 'notes') loadNotes();
     if (at === 'minutes') loadMinutes();
     if (at === 'guides') loadGuides();
-    var pane = INTELLIGENCE_PAGES.indexOf(at) >= 0 ? intelligenceHTML(at) : at === 'proofreader' ? proofHTML() : at === 'suppliers' ? supplierAdminHTML() : at === 'cutoffs' ? cutAdminHTML() : at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'transfers' ? xferStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() + pingSoundHTML() : at === 'people' ? (
+    var pane = at === 'dashboard' ? dashHTML() : INTELLIGENCE_PAGES.indexOf(at) >= 0 ? intelligenceHTML(at) : at === 'proofreader' ? proofHTML() : at === 'suppliers' ? supplierAdminHTML() : at === 'cutoffs' ? cutAdminHTML() : at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'transfers' ? xferStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() + pingSoundHTML() : at === 'people' ? (
       '<section class="set-block"><span class="label">People</span><details class="a-how"><summary>How roles and ticks work</summary><p class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Shift pings are written by you and the sous chefs. Create/edit functions lets that person enter and change function bookings (Functions coordinator ticks it for you); only your save here gives it or takes it away, and nothing else comes with it. Reset PIN lets that person choose a new one: do it with them there, as whoever signs in with that name next sets the PIN. Removing someone from the list keeps their name on old lines, and their PIN stops working for anything. Head chef is for your own name: it gets the kitchen and sous chef pages, and a sous chef cannot change or remove it. Function editing still has its own tick.</p></details>' +
       (headIdOf(d.people) ? '' : '<p class="hint a-nohead" role="note">No one is marked Head chef yet. Set your own name to Head chef and save, so your PIN has full rights on the kitchen devices.</p>') +
       '<p class="hint">Tick Create/edit functions beside a person, then save. Their kitchen role stays the same.</p>' + peopleListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' + ksAdminHTML(d) +
@@ -4638,10 +4666,10 @@
     return '<section class="set-block"><h2 class="p-h">Suppliers &amp; pars</h2><p>Current pars, manual items and the original supplier records are kept in the catalogue.</p>' +
       (supplierEdit() ? '<div class="btn-row"><a class="btn dark" href="#/suppliers/manage">Manage catalogue</a><a class="btn" href="#/suppliers">Supplier order</a></div>' : '<p class="hint">Only the head chef changes suppliers and pars. Sous chefs can use <a href="#/suppliers">Supplier order</a>.</p>') + '</section>';
   }
-  var A_TAB_NAMES = { overview: 'Review desk', analysis: 'Item evidence', references: 'Item links', training: 'Training', proofreader: 'Proofreader', 'reference-records': 'Confirmed links', 'training-records': 'Assessments', mail: 'Kitchen mail', notes: 'Shift pings', insights: 'Insights', team: 'Team', waste: 'Wastage', transfers: 'Transfers', learning: 'Learning', people: 'People', minutes: 'Minutes', guides: 'Guides', tools: 'Backup and PIN', cutoffs: 'Order cut-offs', suppliers: 'Suppliers & pars' };
-  var A_GROUPS = [['review', 'Review desk', ['overview', 'references', 'training', 'proofreader']], ['reports', 'Reports', ['analysis', 'insights', 'waste', 'transfers', 'learning', 'team']], ['records', 'Saved records', ['reference-records', 'training-records', 'guides']], ['today', 'Operations', ['mail', 'notes', 'minutes', 'suppliers', 'cutoffs']], ['settings', 'Settings', ['people', 'tools']]];
-  var A_GROUP_NOTES = { review: 'One item or assessment at a time. Your unfinished work stays here.', reports: 'Read the recorded activity and follow it back to its source.', records: 'Find confirmed links, assessments and the kitchen guides.', today: 'Keep the kitchen informed and ready for the next shift.', settings: 'Look after the team, kitchen access and the book\'s backup.' };
-  function adminGroupOf(t) { return A_GROUPS.filter(function (g) { return g[2].indexOf(t) >= 0; })[0] || A_GROUPS[1]; }
+  var A_TAB_NAMES = { dashboard: 'Dashboard', overview: 'Review desk', analysis: 'Item evidence', references: 'Item links', training: 'Training', proofreader: 'Proofreader', 'reference-records': 'Confirmed links', 'training-records': 'Assessments', mail: 'Kitchen mail', notes: 'Shift pings', insights: 'Insights', team: 'Team', waste: 'Wastage', transfers: 'Transfers', learning: 'Learning', people: 'People', minutes: 'Minutes', guides: 'Guides', tools: 'Backup and PIN', cutoffs: 'Order cut-offs', suppliers: 'Suppliers & pars' };
+  var A_GROUPS = [['dashboard', 'Dashboard', ['dashboard']], ['review', 'Review desk', ['overview', 'references', 'training', 'proofreader']], ['reports', 'Reports', ['analysis', 'insights', 'waste', 'transfers', 'learning', 'team']], ['records', 'Saved records', ['reference-records', 'training-records', 'guides']], ['today', 'Operations', ['mail', 'notes', 'minutes', 'suppliers', 'cutoffs']], ['settings', 'Settings', ['people', 'tools']]];
+  var A_GROUP_NOTES = { dashboard: 'How the kitchen is going, and where to look next.', review: 'One item or assessment at a time. Your unfinished work stays here.', reports: 'Read the recorded activity and follow it back to its source.', records: 'Find confirmed links, assessments and the kitchen guides.', today: 'Keep the kitchen informed and ready for the next shift.', settings: 'Look after the team, kitchen access and the book\'s backup.' };
+  function adminGroupOf(t) { return A_GROUPS.filter(function (g) { return g[2].indexOf(t) >= 0; })[0] || A_GROUPS[2]; }
   /* "On this page": one chip per heading of the open page (the numbered Insights sections, otherwise each block's label
      and the chart headings in it), so a long page is one tap from any part. Built from the page after each draw, so a
      new block on any admin page gets its chip by itself. Hidden when a page has fewer than two parts. */
