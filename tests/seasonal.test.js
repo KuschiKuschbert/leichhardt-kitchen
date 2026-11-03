@@ -90,6 +90,12 @@ async function cpuPerSecond(p, ms = 2000) {
     await ready(p);
     await L.waitFor(p, () => document.querySelector('#app')?.dataset.kbTheme === 'au-melbourne-cup');
     ok(await p.locator('[data-kb-season="au-melbourne-cup"]').count() === 1, 'Automatic activates Melbourne Cup on the kitchen date');
+    // Coming up: the next celebrations in 7 days, from the offline calendar, above the dockets.
+    await L.waitFor(p, () => Boolean(document.querySelector('[data-kb-coming]')));
+    ok(await p.evaluate(() => {
+      const line = document.querySelector('[data-kb-coming]');
+      return /Tihar, Saturday/.test(line.textContent) && /Diwali \/ Deepavali, Sunday/.test(line.textContent) && line.querySelectorAll('.kb-stamp').length === 2 && line.nextElementSibling === document.querySelector('.wall-main .dockets');
+    }), 'Home says what is coming up: Tihar on Saturday and Diwali on Sunday, with their stamps');
     ok(await p.evaluate(() => KB_EFFECTS.status().scope === 'page' && KB_EFFECTS.status().ambientCount > 0), 'Home has the active festival ambience');
     ok(await p.evaluate(() => KB_EFFECTS.status().ambientPreset === 'horses'), 'Melbourne Cup uses horses rather than generic confetti');
     ok(!(await L.overflow(p)), 'festive Home fits on a phone');
@@ -107,6 +113,10 @@ async function cpuPerSecond(p, ms = 2000) {
       }
     }
     await p.setViewportSize({ width: 390, height: 844 });
+    // Quiet days: reflective and civic designs show their drawing and stamp, with no motifs.
+    await theme(p, 'bali-nyepi'); await p.clock.runFor(5000);
+    ok(await p.evaluate(() => KB_EFFECTS.status().quiet && !document.querySelector('#kb-festive-effects .complete-particle,.kb-hang-item')) && await movingPieces(p) === 0, 'Nyepi stays quiet on Home: drawing only, nothing moving');
+    ok(await p.locator('[data-kb-coming]').count() === 0, 'a celebration chosen by hand does not show Coming up');
     // Arrive, then settle: Replay plays the full arrival, then Home rests with at most 4 slow pieces.
     await theme(p, 'au-christmas-day');
     await p.evaluate(() => KB_EFFECTS.replay());
@@ -192,8 +202,8 @@ async function cpuPerSecond(p, ms = 2000) {
     for (const id of coverage) {
       await theme(p, id);
       facts = await navFacts(p);
-      // Nyepi is a day of silence: its top bar has the stamp and no edge.
-      const quiet = id === 'bali-nyepi';
+      // Reflective and civic days (Nyepi, Buddha Jayanti, Independence Day) have the stamp and no edge.
+      const quiet = facts.state.quiet;
       ok((quiet ? facts.edges === 0 : facts.edges === 1 && facts.inside && Boolean(facts.state.edgePreset)) && facts.moving === 0 && facts.stamps === 1 && facts.brand === 1 && facts.viewportParticles === 0, id + ': Kitchen Book, a stamp and ' + (quiet ? 'no edge' : 'a still edge') + ', with no body particles');
     }
 
@@ -248,11 +258,11 @@ async function cpuPerSecond(p, ms = 2000) {
 
     for (const width of [390, 768, 1280]) {
       await p.setViewportSize({ width, height: 844 });
-      await theme(p, 'ph-independence-day');
+      await theme(p, 'ph-lunar-new-year');
       const bar = await p.evaluate(() => document.querySelector('.wtop').getBoundingClientRect().height);
       await theme(p, 'off');
       const plain = await p.evaluate(() => document.querySelector('.wtop').getBoundingClientRect().height);
-      await theme(p, 'ph-independence-day');
+      await theme(p, 'ph-lunar-new-year');
       ok(!(await L.overflow(p)), width + ': the stamp fits without sideways scroll');
       facts = await navFacts(p);
       ok(facts.inside && facts.edges === 1 && Math.abs(bar - plain) < 1, width + ': the top bar keeps its height (' + Math.round(bar) + ' px) with a celebration on');
@@ -263,19 +273,15 @@ async function cpuPerSecond(p, ms = 2000) {
     await p.click('[data-seasonal-selection="auto"]');
     await L.waitFor(p, () => document.querySelector('#app').dataset.kbTheme === 'au-melbourne-cup');
     ok(await p.locator('[data-seasonal-selection="auto"]').getAttribute('aria-pressed') === 'true', 'Settings switches back to the automatic kitchen calendar');
-    await p.click('[data-seasonal-selection="manual"]');
-    ok(await p.locator('[data-seasonal-search]').evaluate(node => document.activeElement === node), 'Choose a celebration focuses its searchable collection');
-    await p.fill('[data-seasonal-search]', 'Diwali');
-    await L.waitFor(p, () => document.querySelectorAll('.kb-seasonal-results .chip').length > 0);
-    ok(await p.evaluate(() => { const chips = [...document.querySelectorAll('.kb-seasonal-results .chip')]; return chips.length > 0 && chips.every(c => c.querySelector('.kb-seasonal-mark svg')); }), 'Choose a celebration shows each result with its stamp or drawing');
-    await p.click('[data-seasonal-theme="in-diwali"]');
-    await L.waitFor(p, () => document.querySelector('#app').dataset.kbTheme === 'in-diwali');
-    ok(await p.locator('[data-seasonal-theme="in-diwali"]').getAttribute('aria-pressed') === 'true', 'a festival found in Settings applies immediately');
-    await L.pick(p, '[data-seasonal-scope]', 'all');
-    await p.fill('[data-seasonal-search]', 'fun-pi-day');
-    await p.click('[data-seasonal-theme="fun-pi-day"]');
-    await L.waitFor(p, () => document.querySelector('#app').dataset.kbTheme === 'fun-pi-day');
-    ok(await p.locator('[data-seasonal-theme="fun-pi-day"]').getAttribute('aria-pressed') === 'true', 'All 204 designs keeps the additional suggested days selectable');
+    // Nobody picks a celebration: the kitchen calendar gives everyone the same one (head chef, 4 Nov 2026).
+    ok(await p.evaluate(() => {
+      const box = document.querySelector('#kb-seasonal-settings'), chips = [...box.querySelectorAll('[data-seasonal-selection]')].map(node => node.textContent);
+      return chips.join('|') === 'On|Off' && !box.querySelector('input,select,[data-seasonal-theme],[data-seasonal-keep]') && !/Choose a celebration|204 designs/.test(box.textContent);
+    }), 'Settings has On and Off only, with no way to pick a celebration');
+    ok(await p.evaluate(() => {
+      const rows = [...document.querySelectorAll('[data-seasonal-coming] li')].map(li => li.textContent);
+      return rows.length === 5 && /Sat 7 Nov\s*Tihar/.test(rows[0]) && /Sun 8 Nov\s*Diwali/.test(rows[1]) && document.querySelectorAll('[data-seasonal-coming] .kb-seasonal-mark svg').length === 5;
+    }), 'Settings lists the next five celebrations with their dates and stamps');
     await p.click('[data-seasonal-motion="still"]');
     ok(await p.locator('[data-seasonal-replay]').isDisabled(), 'Settings Still disables Replay');
     await p.click('[data-seasonal-motion="gentle"]');
@@ -288,6 +294,8 @@ async function cpuPerSecond(p, ms = 2000) {
     await p.click('[data-seasonal-selection="off"]');
     await L.waitFor(p, () => document.querySelector('#app').dataset.kbTheme === 'off');
     ok(await p.locator('.wtop-brand').count() === 1, 'Settings Off restores the Kitchen Book heading');
+    await theme(p, 'in-diwali');
+    ok(await p.evaluate(() => !/in-diwali/.test(localStorage.getItem('lk.seasonal.v1') || '')), 'a design shown for a check is never saved on the device');
 
     await theme(p, 'au-christmas-day', 'still');
     ok(await p.evaluate(() => KB_EFFECTS.status().state === 'still' && !document.getAnimations().some(a => a.playState === 'running' && a.effect?.target?.closest?.('.kb-nav-edge,.kb-occasion-stamp,.kb-hang,#kb-festive-effects'))), 'Still stops every seasonal header animation');
@@ -302,6 +310,20 @@ async function cpuPerSecond(p, ms = 2000) {
     await p.reload(); await ready(p);
     ok(await p.evaluate(() => document.querySelector('#app').dataset.kbTheme === 'off'), 'Off is saved on this device across reloads');
     ok(p.errors.length === 0, 'seasonal journeys have no browser errors ' + p.errors.join(' | '));
+    await p.context().close(); p = null;
+
+    // A celebration chosen by hand on an older book is not kept: that device goes back to the calendar.
+    p = await L.open(b, '#/', { clock: CUP_CLOCK, wait: 1400, seasonal: { selection: 'in-diwali', motion: 'gentle', density: 'festive', keep: true } });
+    await ready(p);
+    await L.waitFor(p, () => document.querySelector('#app').dataset.kbTheme === 'au-melbourne-cup').catch(() => {});
+    ok(await p.evaluate(() => document.querySelector('#app').dataset.kbTheme === 'au-melbourne-cup' && KB_SEASONAL.status().preferences.selection === 'auto'), 'a celebration chosen by hand on an older book goes back to the kitchen calendar');
+    await p.context().close(); p = null;
+
+    const tiharDay = Date.parse('2026-11-09T04:00:00Z');
+    p = await L.open(b, '#/', { clock: tiharDay, server: tiharDay, seasonal: { selection: 'auto' }, wait: 1400 });
+    await ready(p);
+    await L.waitFor(p, () => document.querySelector('#app').dataset.kbTheme === 'np-tihar');
+    ok(await p.evaluate(() => /Tihar · day 3 of 5/.test(document.querySelector('.kb-season-note h3').textContent)), 'a festival window counts its days: Tihar, day 3 of 5');
     await p.context().close(); p = null;
 
     const midnight = Date.parse('2026-12-31T13:59:40Z');

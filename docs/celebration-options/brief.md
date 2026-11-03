@@ -1,6 +1,6 @@
 # Seasonal celebration redesign proposals
 
-Requested 3 November 2026, the day celebrations went live. **Selected 3 November 2026: the recommended set below.** Who may change celebrations on the shared tablet stays as it is (anyone). The build follows "Build steps", one pull request each. The head chef asked for an audit of the holiday feature and two redesigns each for the icons, effects, animation and behaviour, with a recommendation. The interactive page with mockups is `index.html` in this folder; the screens in `previews/` come from the real book with the Firebase stand-in.
+Requested 3 November 2026, the day celebrations went live. **Selected 3 November 2026: the recommended set below.** **Changed 4 November 2026: nobody picks a celebration**; the kitchen calendar gives every device the same one, so calls 4 and 5 and step 7 no longer apply. The build follows "Build steps", one pull request each. The head chef asked for an audit of the holiday feature and two redesigns each for the icons, effects, animation and behaviour, with a recommendation. The interactive page with mockups is `index.html` in this folder; the screens in `previews/` come from the real book with the Firebase stand-in.
 
 Read `docs/seasonal-celebrations.md` and `docs/seasonal-calendar.md` first. Several picks below change decisions approved on 3 November 2026; they are marked under "Head chef's calls".
 
@@ -66,5 +66,17 @@ One pull request each, with click tests at 390, 768 and 1280 px:
 5. Work top bar: Kitchen Book back, the stamp beside it, the festive edge.
 6. Coming up, day counts, quiet days, the 04:00 preview and Settings with stamps.
 7. Keep the main set in the saved copy and load the other 168 designs only when Choose a celebration opens (a lazy module, per `docs/saved-shell-generations.md`).
+
+## Build record
+
+| Step | Pull request |
+| --- | --- |
+| 1. The glow fix | #484 |
+| 2 and 3. Home behind the words, the chef hat, arrive then settle | #488 |
+| 4 and 5. Stamps, the three redraws, the work top bar | #490 |
+| 6. Coming up, day counts, quiet days, Settings dates, and no picker (4 Nov 2026) instead of the 04:00 preview | The pull request after #492 |
+| 7. The other designs only when Choose a celebration opens | Not needed: nobody picks a celebration (4 Nov 2026), so the designs outside the calendar are never shown. They stay in the catalogue for the click tests; dropping them from the start would save about 12 ms per start on a normal phone |
+
+Still to do: the cultural-symbol review of the Nyepi, Galungan, Kuningan, Sinulog, Ganesh Chaturthi and Durga Puja stamps asked for below. They shipped in #490 without it.
 
 The stamp glyphs in `index.html` are first drafts for choosing a direction, not final artwork. The cultural-symbol council should review the Nyepi, Galungan, Kuningan, Sinulog, Ganesh Chaturthi and Durga Puja stamps before they ship.

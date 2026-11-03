@@ -12,6 +12,8 @@ Done on 22 Oct 2026 by the head chef: the Browser key works only from `kuschikus
 
 2. **Two recipes are hidden in the book but still in `js/data.js`** (29 Oct 2026): `chicken-adobo` (also first in Specials) and `pork-knuckle`. This is a dated static-source cleanup note. Recheck current public mirrors and hidden-recipe behaviour before acting. The owner still decides whether to remove the static entries or show the recipes again; no decision is made by this documentation update.
 
+3. **Celebrations: the stamp review** (4 Nov 2026, [build record](celebration-options/brief.md)). The cultural-symbol review of the Nyepi, Galungan, Kuningan, Sinulog, Ganesh Chaturthi and Durga Puja stamps, which shipped in #490 without it. The head chef asked for it on 4 Nov 2026.
+
 Remove each item here once it is done.
 
 ### Bringing the code in line (22 Oct 2026)

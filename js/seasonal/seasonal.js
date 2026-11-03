@@ -3,38 +3,59 @@
   'use strict';
   const KEY = 'lk.seasonal.v1', root = document.getElementById('app');
   const catalogue = window.KB_COMPLETE_ART || [], byId = new Map(catalogue.map(item => [item.id, item]));
-  const main = window.KB_MAIN_FESTIVALS || {};
-  const mainIds = new Set([...(main.defaultIds || []), ...(main.sharedFamilies || []).flatMap(family => family.variantIds || []), ...(main.calendarCompanions || [])]);
-  let prefs = read(), mounted = null, settingsManual = false, activeId = '', signature = '', settingsFrame = 0;
+  // One celebration for everyone, from the kitchen calendar: nobody picks one (head chef, 4 Nov 2026).
+  let prefs = read(), mounted = null, design = '', activeId = '', signature = '', settingsFrame = 0;
   function clean(value) {
     value = value && typeof value === 'object' ? value : {};
-    return {
-      selection: ['auto', 'off'].includes(value.selection) || byId.has(value.selection) ? value.selection : 'auto',
-      motion: value.motion === 'still' ? 'still' : 'gentle',
-      density: value.density === 'light' ? 'light' : 'festive'
-    };
+    // A celebration chosen by hand on an older book is not kept: that device goes back to the calendar.
+    return { selection: value.selection === 'off' ? 'off' : 'auto', motion: value.motion === 'still' ? 'still' : 'gentle', density: value.density === 'light' ? 'light' : 'festive' };
   }
   function read() {
-    // Lasts until changed or the browser's site data is cleared. No person or kitchen data.
+    // This device's On or Off and how much moves. Lasts until changed or the browser's site data is cleared.
+    // No person or kitchen data.
     try { return clean(JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (_) { return clean({}); }
   }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(prefs)); } catch (_) {} }
   function configure(value) {
-    if (['auto', 'off'].includes(value?.selection)) settingsManual = false;
-    prefs = clean({ ...prefs, ...value });
-    try { localStorage.setItem(KEY, JSON.stringify(prefs)); } catch (_) {}
-    refresh(); return status();
+    // A design named here shows in this tab only, for the click tests and design checks. It is never saved, nothing in
+    // the book offers it, and the next load goes back to the calendar.
+    if (value && 'selection' in value) design = byId.has(value.selection) ? value.selection : '';
+    prefs = clean({ ...prefs, ...value, selection: design ? prefs.selection : value?.selection ?? prefs.selection });
+    save(); refresh(); return status();
+  }
+  // Calendar lookahead from the kitchen date: plain date arithmetic on YYYY-MM-DD, never the phone's own clock.
+  const DAY = 86400000, WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'], MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const utc = day => { const [y, m, d] = day.split('-').map(Number); return Date.UTC(y, m - 1, d); };
+  const addDays = (day, n) => new Date(utc(day) + n * DAY).toISOString().slice(0, 10);
+  const short = day => { const t = new Date(utc(day)); return WEEKDAYS[t.getUTCDay()].slice(0, 3) + ' ' + t.getUTCDate() + ' ' + MONTHS[t.getUTCMonth()]; };
+  function upcoming(day, limit, span) {
+    const C = window.KB_SEASONAL_CALENDAR, out = [], seen = new Set([C?.resolve(day)?.id]);
+    if (!C || !day) return out;
+    for (let i = 1; i <= span && out.length < limit; i++) {
+      const next = addDays(day, i), hit = C.resolve(next);
+      if (!hit || seen.has(hit.id) || !byId.has(hit.id)) continue;
+      seen.add(hit.id);
+      out.push({ id: hit.id, label: byId.get(hit.id).label, day: next, away: i, when: i === 1 ? 'tomorrow' : i < 7 ? WEEKDAYS[new Date(utc(next)).getUTCDay()] : short(next), date: short(next) });
+    }
+    return out;
+  }
+  function dayCount(record, day) {
+    if (!record || record.start === record.end) return null;
+    return { n: Math.round((utc(day) - utc(record.start)) / DAY) + 1, of: Math.round((utc(record.end) - utc(record.start)) / DAY) + 1 };
   }
   function refresh() {
-    const day = window.LK_TIME?.day() || '';
-    const scheduled = prefs.selection === 'auto' && window.LK_TIME?.ready() ? window.KB_SEASONAL_CALENDAR?.resolve(day) : null;
-    const theme = byId.get(prefs.selection === 'auto' ? scheduled?.id : prefs.selection) || null;
-    const next = (theme?.id || 'off') + '|' + prefs.motion + '|' + prefs.density;
+    const ready = Boolean(window.LK_TIME?.ready()), day = window.LK_TIME?.day() || '';
+    const automatic = !design && prefs.selection === 'auto' && ready;
+    const scheduled = automatic ? window.KB_SEASONAL_CALENDAR?.resolve(day) : null;
+    const theme = byId.get(design || scheduled?.id) || null;
+    const soon = automatic ? upcoming(day, 2, 7) : [], count = automatic && theme ? dayCount(scheduled, day) : null;
+    const next = (theme?.id || 'off') + '|' + prefs.motion + '|' + prefs.density + '|' + soon.map(item => item.id + item.when).join(',') + '|' + (count ? count.n + '/' + count.of : '');
     activeId = theme?.id || '';
-    if (next !== signature) { signature = next; window.KB_THEME_BRIDGE.configure({ theme, mode: prefs.motion, density: prefs.density }); }
+    if (next !== signature) { signature = next; window.KB_THEME_BRIDGE.configure({ theme, mode: prefs.motion, density: prefs.density, upcoming: soon, dayCount: count }); }
     paintSettings();
   }
   function status() {
-    return { preferences: { ...prefs }, themeId: activeId || null, day: window.LK_TIME?.day(), celebration: window.KB_THEME_BRIDGE.status(), motion: window.KB_EFFECTS.status(), ticker: window.KB_CELEBRATION_TICKER.status() };
+    return { upcoming: window.LK_TIME?.ready() ? upcoming(window.LK_TIME.day(), 5, 180) : [], preferences: { ...prefs }, themeId: activeId || null, day: window.LK_TIME?.day(), celebration: window.KB_THEME_BRIDGE.status(), motion: window.KB_EFFECTS.status(), ticker: window.KB_CELEBRATION_TICKER.status() };
   }
   function button(label, attribute, value) {
     const node = document.createElement('button'); node.type = 'button'; node.className = 'chip'; node.textContent = label; node.setAttribute(attribute, value); return node;
@@ -53,58 +74,45 @@
     mounted = slot;
     const section = document.createElement('section'); section.className = 'set-block kb-seasonal-settings'; section.setAttribute('aria-label', 'Seasonal celebrations');
     const title = document.createElement('h3'); title.textContent = 'Seasonal celebrations';
-    const hint = document.createElement('p'); hint.className = 'hint'; hint.textContent = 'Automatic follows the main festival calendar in Queensland time. Home has the full ambience. Work pages keep movement in the top bar. Saved on this device.';
+    const hint = document.createElement('p'); hint.className = 'hint'; hint.textContent = 'The kitchen calendar picks the celebration, in Queensland time, the same on every device. Home has the ambience. Work pages keep Kitchen Book, with the celebration stamp beside it and a still edge on the top bar. On, Off and movement are saved on this device.';
     const today = document.createElement('p'); today.className = 'hint'; today.dataset.seasonalCurrent = '';
-    section.append(title, hint, group('Celebrations', [['auto', 'Automatic'], ['manual', 'Choose a celebration'], ['off', 'Off']], 'data-seasonal-selection'), today);
-    const chooser = document.createElement('div'); chooser.className = 'kb-seasonal-chooser'; chooser.hidden = true;
-    const label = document.createElement('label'); label.textContent = 'Find a celebration'; label.htmlFor = 'kb-seasonal-search';
-    const input = document.createElement('input'); input.id = 'kb-seasonal-search'; input.type = 'search'; input.dataset.seasonalSearch = ''; input.placeholder = 'Name, country or festival'; input.autocomplete = 'off';
-    const scope = document.createElement('select'); scope.dataset.seasonalScope = ''; scope.setAttribute('aria-label', 'Celebration collection');
-    [['main', 'Main festivals'], ['all', 'All 204 designs']].forEach(([value, name]) => { const option = document.createElement('option'); option.value = value; option.textContent = name; scope.append(option); });
-    const list = document.createElement('div'); list.className = 'kb-seasonal-results'; list.dataset.seasonalResults = '';
-    const count = document.createElement('p'); count.className = 'hint'; count.dataset.seasonalCount = ''; count.setAttribute('aria-live', 'polite');
-    chooser.append(label, input, scope, list, count); section.append(chooser);
+    section.append(title, hint, group('Celebrations', [['auto', 'On'], ['off', 'Off']], 'data-seasonal-selection'), today);
     section.append(group('Movement', [['gentle', 'Animated'], ['still', 'Still']], 'data-seasonal-motion'));
     section.append(group('Ambience', [['light', 'Subtle'], ['festive', 'Full']], 'data-seasonal-density'));
     const replay = button('Replay celebration', 'data-seasonal-replay', ''); replay.className = 'btn'; section.append(replay);
-    const schedule = document.createElement('p'); schedule.className = 'hint'; schedule.textContent = 'Changing local dates use confirmed annual records. Dates awaiting announcement stay available in Choose a celebration. The six explanation languages cycle automatically.'; section.append(schedule); slot.append(section);
-    input.addEventListener('input', paintResults); scope.addEventListener('change', paintResults);
+    const comingTitle = document.createElement('span'); comingTitle.className = 'label'; comingTitle.textContent = 'Coming up';
+    const coming = document.createElement('ul'); coming.className = 'kb-seasonal-coming'; coming.dataset.seasonalComing = '';
+    const comingField = document.createElement('div'); comingField.className = 'kb-seasonal-field'; comingField.append(comingTitle, coming); section.append(comingField);
+    const schedule = document.createElement('p'); schedule.className = 'hint'; schedule.textContent = 'Dates that change each year come from confirmed annual records. The six explanation languages cycle automatically.'; section.append(schedule); slot.append(section);
     section.addEventListener('click', event => {
       const target = event.target.closest('button'); if (!target) return;
-      if (target.hasAttribute('data-seasonal-selection')) {
-        const selection = target.dataset.seasonalSelection; settingsManual = selection === 'manual';
-        if (settingsManual) { paintSettings(); input.focus(); } else configure({ selection });
-      } else if (target.hasAttribute('data-seasonal-theme')) configure({ selection: target.dataset.seasonalTheme });
+      if (target.hasAttribute('data-seasonal-selection')) configure({ selection: target.dataset.seasonalSelection });
       else if (target.hasAttribute('data-seasonal-motion')) configure({ motion: target.dataset.seasonalMotion });
       else if (target.hasAttribute('data-seasonal-density')) configure({ density: target.dataset.seasonalDensity });
       else if (target.hasAttribute('data-seasonal-replay')) window.KB_THEME_BRIDGE.replay();
-    }); paintSettings(); paintResults();
+    }); paintSettings();
   }
   function paintSettings() {
     if (!mounted?.isConnected) return;
-    mounted.querySelectorAll('[data-seasonal-selection]').forEach(node => node.setAttribute('aria-pressed', String(node.dataset.seasonalSelection === (byId.has(prefs.selection) || settingsManual ? 'manual' : prefs.selection))));
+    mounted.querySelectorAll('[data-seasonal-selection]').forEach(node => node.setAttribute('aria-pressed', String(node.dataset.seasonalSelection === prefs.selection)));
     for (const key of ['motion', 'density']) mounted.querySelectorAll('[data-seasonal-' + key + ']').forEach(node => node.setAttribute('aria-pressed', String(node.dataset['seasonal' + key[0].toUpperCase() + key.slice(1)] === prefs[key])));
     const current = mounted.querySelector('[data-seasonal-current]'), label = byId.get(activeId)?.label;
     const text = label ? 'Showing: ' + label : prefs.selection === 'off' ? 'Celebrations are off.' : prefs.selection === 'auto' && !window.LK_TIME?.ready() ? 'Checking the kitchen date...' : 'No scheduled celebration today.';
     if (current.textContent !== text) current.textContent = text;
-    mounted.querySelector('.kb-seasonal-chooser').hidden = !settingsManual && !byId.has(prefs.selection);
     mounted.querySelector('[data-seasonal-replay]').disabled = !activeId || prefs.motion === 'still';
-    mounted.querySelectorAll('[data-seasonal-theme]').forEach(node => node.setAttribute('aria-pressed', String(node.dataset.seasonalTheme === prefs.selection)));
-  }
-  function paintResults() {
-    if (!mounted?.isConnected) return;
-    const query = mounted.querySelector('[data-seasonal-search]').value.trim().toLocaleLowerCase();
-    const all = mounted.querySelector('[data-seasonal-scope]').value === 'all';
-    const matches = catalogue.filter(item => (all || mainIds.has(item.id)) && [item.label, item.region, item.country, item.id, ...(item.aliases || [])].join(' ').toLocaleLowerCase().includes(query));
-    const list = mounted.querySelector('[data-seasonal-results]'); list.replaceChildren();
-    matches.slice(0, 8).forEach(item => {
-      const node = button(item.label, 'data-seasonal-theme', item.id); node.setAttribute('aria-pressed', String(prefs.selection === item.id));
-      // Bundled public artwork only: the stamp where there is one, otherwise the drawing.
-      const mark = document.createElement('span'); mark.className = 'kb-seasonal-mark'; mark.setAttribute('aria-hidden', 'true');
-      mark.innerHTML = window.KB_STAMPS?.svg(item.id) || (window.KB_THEME_BRAND ? KB_THEME_BRAND.style(item.icon, { themeId: item.id }) : '');
-      node.prepend(mark); list.append(node);
-    });
-    mounted.querySelector('[data-seasonal-count]').textContent = !matches.length ? 'No celebrations match.' : matches.length > 8 ? 'Showing 8 of ' + matches.length + '. Type a name to narrow the list.' : matches.length + (matches.length === 1 ? ' celebration' : ' celebrations');
+    const coming = mounted.querySelector('[data-seasonal-coming]'), day = window.LK_TIME?.ready() ? window.LK_TIME.day() : '';
+    const list = day ? upcoming(day, 5, 180) : [], comingKey = day + '|' + list.map(item => item.id).join(',');
+    if (coming.dataset.key !== comingKey) {
+      coming.dataset.key = comingKey; coming.replaceChildren();
+      list.forEach(item => {
+        // Bundled public artwork and labels only.
+        const row = document.createElement('li'), mark = document.createElement('span'), date = document.createElement('span'), name = document.createElement('span');
+        mark.className = 'kb-seasonal-mark'; mark.setAttribute('aria-hidden', 'true'); mark.innerHTML = window.KB_STAMPS?.svg(item.id) || '';
+        date.className = 'kb-seasonal-date'; date.textContent = item.date; name.textContent = item.label;
+        row.append(mark, date, name); coming.append(row);
+      });
+      if (!list.length) { const row = document.createElement('li'); row.textContent = day ? 'No celebrations in the next six months.' : 'Checking the kitchen date...'; coming.append(row); }
+    }
   }
   new MutationObserver(() => { if (settingsFrame || root.querySelector('#kb-seasonal-settings') === mounted) return; settingsFrame = requestAnimationFrame(mountSettings); }).observe(root, { childList: true, subtree: true });
   window.addEventListener('lk-clock', refresh);
