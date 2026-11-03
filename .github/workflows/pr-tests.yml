@@ -1,9 +1,18 @@
 # The click tests on every pull request to main, before it can merge.
-# The job is called "Click tests": branch protection on main requires it, so nothing merges with a failing test.
-# Since 22 Oct 2026 the same job also checks firestore.rules on the Firestore emulator (tests/rules) and the nightly
+# The check called "Click tests" is the one branch protection on main requires, so nothing merges with a failing test.
+# Since 22 Oct 2026 it also covers firestore.rules on the Firestore emulator (tests/rules) and the nightly
 # learning counts (scripts/emulator-check.mjs), so a rules change cannot merge without its checks.
 # The runner serves the pull request's own copy of the book (tests/run.js, 127.0.0.1:8777) and clicks through it
 # in the runner's Google Chrome. Firebase is the stand-in from tests/fake, so no real PIN or data is needed.
+#
+# Shape (3 Nov 2026, CLAUDE.md, Keeping usage down). One runner took 20 to 25 minutes for the 200 browser files,
+# close to the 30 minute limit. Now:
+#   scope       lists the changed files and checks the JavaScript parses (seconds)
+#   browser     the browser files in four shares on four runners at once (SHARD=k/4), each failed file retried
+#               once on its own (RETRY=1, reported as a warning), passing files on one line each (QUIET=1)
+#   rules       the rules on the emulator and the nightly job checks, beside the browser shares
+#   Click tests passes only when scope, every browser share and rules passed, or when the pull request is docs only
+# The failures are in the run summary and as annotations, so a session reads a few lines, not the whole log.
 name: PR click tests
 
 on:
@@ -19,18 +28,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
-    name: Click tests
+  scope:
+    name: Scope and parse
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 5
+    outputs:
+      docs: ${{ steps.scope.outputs.docs }}
     steps:
       - uses: actions/checkout@v4
         with:
           # Two commits: the pull request's merge commit and main under it, so the changed files can be listed.
           fetch-depth: 2
-      # Docs only (3 Nov 2026, CLAUDE.md, Keeping usage down): when a pull request changes only Markdown files or
-      # files under docs/, nothing the book loads or the tests read has changed, so the 20 minute run is skipped and
-      # this check still passes for branch protection. Anything else, and every run by hand, runs it all.
+      # Docs only: when a pull request changes only Markdown files or files under docs/, nothing the book loads or
+      # the tests read has changed, so the browser and rules jobs are skipped and Click tests still passes for
+      # branch protection. Anything else, and every run by hand, runs it all.
       - name: Is this pull request docs only?
         id: scope
         run: |
@@ -49,45 +60,90 @@ jobs:
           fi
           echo "docs=$docs" >> "$GITHUB_OUTPUT"
           echo "Docs only: $docs"
+      - name: Check the JavaScript parses
+        run: for f in js/*.js js/lib/*.js sw.js tests/run.js; do node --check "$f" || exit 1; done
+
+  browser:
+    name: Browser ${{ matrix.shard }} of 4
+    needs: scope
+    if: needs.scope.outputs.docs != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        if: steps.scope.outputs.docs != 'true'
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: |
-            tests/package-lock.json
-            tests/rules/package-lock.json
-            scripts/package-lock.json
-      - uses: actions/setup-java@v4
-        if: steps.scope.outputs.docs != 'true'
-        with:
-          distribution: temurin
-          java-version: 21
+          cache-dependency-path: tests/package-lock.json
       - name: Install
-        if: steps.scope.outputs.docs != 'true'
         working-directory: tests
         run: npm ci --no-audit --no-fund
-      - name: Check the JavaScript parses
-        run: for f in js/*.js js/lib/*.js sw.js; do node --check "$f" || exit 1; done
       - name: Click through this copy of the book
-        if: steps.scope.outputs.docs != 'true'
         working-directory: tests
         env:
           CHROME: /usr/bin/google-chrome
           JOBS: 4
+          SHARD: ${{ matrix.shard }}/4
+          QUIET: '1'
+          RETRY: '1'
         run: npm test
-      - name: Check the rules on the Firestore emulator
-        if: steps.scope.outputs.docs != 'true'
-        working-directory: tests/rules
-        run: npm ci --no-audit --no-fund && npm test
-      - name: Check the nightly learning counts on the emulator
-        if: steps.scope.outputs.docs != 'true'
-        working-directory: scripts
-        run: npm ci --no-audit --no-fund && ../tests/rules/node_modules/.bin/firebase emulators:exec --only firestore --project demo-test "node emulator-check.mjs && node transfer-index-check.mjs && node waste-range-check.mjs && node delivery-backup-check.mjs && node analysis-check.mjs && node capabilities-bootstrap-check.mjs && node backup-crypto-check.mjs && node backup-recovery-check.mjs && node rules-publisher-check.cjs"
       - name: Keep the screenshots of a failed run
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: shots
+          name: shots-${{ matrix.shard }}
           path: tests/shots
           if-no-files-found: ignore
+
+  rules:
+    name: Rules and nightly checks
+    needs: scope
+    if: needs.scope.outputs.docs != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            tests/rules/package-lock.json
+            scripts/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Check the rules on the Firestore emulator
+        working-directory: tests/rules
+        run: npm ci --no-audit --no-fund && npm test
+      - name: Check the nightly learning counts on the emulator
+        working-directory: scripts
+        run: npm ci --no-audit --no-fund && ../tests/rules/node_modules/.bin/firebase emulators:exec --only firestore --project demo-test "node emulator-check.mjs && node transfer-index-check.mjs && node waste-range-check.mjs && node delivery-backup-check.mjs && node analysis-check.mjs && node capabilities-bootstrap-check.mjs && node backup-crypto-check.mjs && node backup-recovery-check.mjs && node rules-publisher-check.cjs"
+
+  test:
+    # This name is the required check. It always reports, so a skipped or failed part never leaves it waiting.
+    name: Click tests
+    needs: [scope, browser, rules]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Every part passed, or the pull request is docs only
+        env:
+          SCOPE: ${{ needs.scope.result }}
+          DOCS: ${{ needs.scope.outputs.docs }}
+          BROWSER: ${{ needs.browser.result }}
+          RULES: ${{ needs.rules.result }}
+        run: |
+          echo "scope=$SCOPE docs=$DOCS browser=$BROWSER rules=$RULES"
+          [ "$SCOPE" = "success" ] || { echo "::error::Scope and parse did not pass"; exit 1; }
+          if [ "$DOCS" = "true" ]; then echo "Docs only: browser and rules skipped."; exit 0; fi
+          [ "$BROWSER" = "success" ] || { echo "::error::A browser share did not pass: see its summary and annotations"; exit 1; }
+          [ "$RULES" = "success" ] || { echo "::error::The rules or nightly checks did not pass"; exit 1; }
+          echo "All parts passed."
