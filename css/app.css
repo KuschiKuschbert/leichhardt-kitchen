@@ -567,7 +567,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
   .a-list .a-person { margin: 0; }
 }
 @media (max-width: 599px) { .a-pane .set-block { padding: 1.2rem 0 1.4rem; } }
-.a-pane .set-block.a-savebar:not(:has(.a-unsaved)):not(:has(.saved:not(:empty))) { display: none; }
+.a-pane .set-block.a-savebar:not(:has(.a-unsaved, .sv-line:not(:empty), .sv-btn[data-sv])) { display: none; }
 .a-pane .set-block:has([data-p="a-save"]) { position: sticky; bottom: 0; z-index: 11; padding: 0.8rem 1rem; border: 1.5px solid var(--edge); border-radius: var(--radius); background: var(--paper); box-shadow: 0 -6px 12px rgba(0, 0, 0, 0.08); }
 @media (max-width: 719px) { .nb-badges { order: 5; } }
 
@@ -3188,6 +3188,17 @@ span.ux-inline-pair { width: var(--ux-pair-width); }
 .ink-busy-button:disabled[aria-busy="true"] { background: var(--accent-ink); border-color: var(--accent-ink); color: #fff; opacity: 1; cursor: wait; }
 .ink-busy-button:disabled[aria-busy="true"] .ink-icon { --ink-stroke: #FFF1E6; color: inherit; }
 .ink-busy-button .ink-icon[data-state="done"] { color: inherit; }
+/* Save states (4 Nov 2026, Saving A): the button's words sit over hidden copies of its idle and busy words, so Save,
+   Saving..., Saved and Try again keep one width. The copies are not read out. Saved is green while it shows. */
+.sv-btn { display: inline-grid; place-items: center; }
+.sv-btn > .sv-now, .sv-btn::before, .sv-btn::after { grid-area: 1 / 1; }
+.sv-btn > .sv-now { display: inline-flex; align-items: center; justify-content: center; min-width: 0; max-width: 100%; }
+.sv-btn::before, .sv-btn::after { visibility: hidden; white-space: nowrap; pointer-events: none; }
+.sv-btn::before { content: attr(data-idle); content: attr(data-idle) / ""; }
+.sv-btn::after { content: attr(data-wide); content: attr(data-wide) / ""; padding-inline-start: calc(22px + .5rem); }
+.sv-btn[data-sv="done"]:disabled { background: var(--done-ink); border-color: var(--done-ink); color: #fff; opacity: 1; cursor: default; }
+.sv-line.p-err, .sv-slow { display: block; margin: 0; }
+.sv-slow { font-size: .875rem; font-weight: 600; color: var(--ink); }
 .ink-startup { max-width: 38rem; margin: 2rem auto; padding: 0 1.25rem; }
 .ink-startup-name { margin: 0 0 .5rem; font: 700 2.4rem/1.05 var(--display); }
 .ink-docket-arrive > .docket { animation: ink-docket-in .34s cubic-bezier(.2, .8, .2, 1) both; transform-origin: 50% 6px; }
