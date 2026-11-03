@@ -49,6 +49,16 @@ async function heavyMotion(p) {
   }).map(a => a.animationName || 'animation'));
 }
 
+async function hangClear(p) {
+  // Anchored ornaments must not sit on the Home heading or the date (they used to float over both).
+  return p.evaluate(() => {
+    const items = [...document.querySelectorAll('#app .wall-main > .kb-hang .kb-hang-item')];
+    const text = [...document.querySelectorAll('#app .wall-h,#app .wall-date')].map(n => { const r = document.createRange(); r.selectNodeContents(n); return r.getBoundingClientRect(); });
+    const hit = items.some(i => { const a = i.getBoundingClientRect(); return text.some(b => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top); });
+    return { count: items.length, hit };
+  });
+}
+
 (async () => {
   const b = await L.start();
   let p;
@@ -60,6 +70,20 @@ async function heavyMotion(p) {
     ok(await p.evaluate(() => KB_EFFECTS.status().scope === 'page' && KB_EFFECTS.status().ambientCount > 0), 'Home has the active festival ambience');
     ok(await p.evaluate(() => KB_EFFECTS.status().ambientPreset === 'horses'), 'Melbourne Cup uses horses rather than generic confetti');
     ok(!(await L.overflow(p)), 'festive Home fits on a phone');
+    ok(await p.evaluate(() => Boolean(document.querySelector('.wtop-who svg')) && !document.querySelector('.wtop-who .kb-brand-art')), 'the chef hat stays the chef hat during a celebration');
+    ok(await p.evaluate(() => {
+      const fx = getComputedStyle(document.querySelector('#kb-festive-effects')), main = getComputedStyle(document.querySelector('#app .wall-main'));
+      return fx.zIndex === '0' && main.position === 'relative' && main.zIndex === '1';
+    }), 'Home motifs sit behind the board and the dockets');
+    for (const width of [390, 1280]) {
+      await p.setViewportSize({ width, height: 844 });
+      for (const id of ['in-diwali', 'np-tihar', 'ph-lunar-new-year', 'bali-galungan']) {
+        await theme(p, id);
+        const hang = await hangClear(p);
+        ok(hang.count > 0 && !hang.hit, width + ' ' + id + ': its ornaments hang beside the heading, clear of the words');
+      }
+    }
+    await p.setViewportSize({ width: 390, height: 844 });
 
     await theme(p, 'au-christmas-day');
     ok(await p.locator('.kb-season-note').count() === 1 && await p.locator('.wtop-brand').count() === 1, 'Christmas Home keeps Kitchen Book branding and one explanation board');
@@ -70,6 +94,7 @@ async function heavyMotion(p) {
     ok(facts.clip && facts.viewportParticles === 0 && facts.state.scope === 'navbar', 'work snow is clipped to the header');
     ok(facts.count === 8 && facts.activeAnimations > 0, 'phone header keeps eight moving snow particles');
     ok(await p.locator('.kb-season-note,#kb-occasion-panel').count() === 0, 'work content starts without the explanation in its way');
+    ok(await p.evaluate(() => Boolean(document.querySelector('.wtop-who svg')) && !document.querySelector('.wtop-who .kb-brand-art')), 'the chef hat stays the chef hat on work pages');
     ok(await p.evaluate(() => KB_CELEBRATION_TICKER.status().timerCount === 0), 'closed work explanation has no language timer');
 
     await p.click('.kb-occasion-title');
