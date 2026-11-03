@@ -442,6 +442,9 @@ row('js/prep.js pushSave(): this phone\'s push address (push/<hash>; the Google 
     return GOOGLE.includes(r) ? setDoc(D(db, p), Object.assign({ by: 'owner' }, data)) : W(r, [['set', p, data]]); } });
 row('js/prep.js cutSave(), mlSousSet(), seedPinOpen(): admin settings merged into config/main (setDoc, no by)', { ok: GOOGLE, asks: GOOGLE,
   run: (db, w, r) => setDoc(D(db, 'config/main'), { cutoffs: [Object.assign({}, CFG.cutoffs[0], { at: 900 + ALL.indexOf(r) })], sousMail: false, pinOpen: { finn: NOW + DAY + ALL.indexOf(r) } }, { merge: true }) });
+// the ping sound every phone plays (Shift pings tab, 3 Nov 2026): only the head chef's Google device with their PIN
+row('js/prep.js pingSoundSet() (admin): the ping sound merged into config/main', { ok: GOOGLE, asks: GOOGLE,
+  run: (db, w, r) => W(r, [['set', 'config/main', { pingSound: ['bell', 'order', 'chime', 'marimba', 'timer', 'off'][ALL.indexOf(r) % 6] }, true]]) });
 row('js/prep.js mlSend(): a mail to the head chef with its status (mail and mailstat)', { ok: KITCHEN, asks: MAIL,
   run: (db, w, r) => W(r, [['set', 'mail/' + MINE(r), { from: w, cat: 'stock', pri: 'week', text: 'Need gloves', at: Date.now(), done: false, seen: false }], ['set', 'mailstat/' + MINE(r), { seen: false, done: false }]]) });
 row('js/prep.js mlTick(): tick a mail done (mail and mailstat updates)', { ok: GOOGLE, asks: GOOGLE,
