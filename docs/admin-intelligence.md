@@ -90,4 +90,4 @@ The user selected A on 1 November 2026. [The design brief](admin-design-options/
 
 ## Dashboard proposals
 
-On 3 November 2026 the head chef asked for a dashboard that makes the admin information easier to see. [The proposals](admin-dashboard-options/brief.md) describe eight ideas and two designs, A The Pass board and B The Morning brief, with example data only. No app change until one is chosen.
+On 3 November 2026 the head chef asked for a dashboard that makes the admin information easier to see. [The proposals](admin-dashboard-options/brief.md) describe eight ideas and two designs, A The Pass board and B The Morning brief, with example data only. The head chef selected A with B's three headlines on 3 November 2026.

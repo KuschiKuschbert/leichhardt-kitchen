@@ -1,6 +1,6 @@
 # Admin dashboard proposals
 
-Requested 3 November 2026. Waiting for the head chef's choice. Nothing in the app changes until a direction is chosen.
+Requested 3 November 2026. **Selected 3 November 2026: A, The Pass board, with B's three written headlines as one strip above the tiles.** The build follows the steps under "If one is chosen", each in its own pull request.
 
 The head chef asked for a proper dashboard in the admin panel, so the information already pulled is easier to see. Today the numbers sit across Reports, Review desk, Operations and Saved records, one page at a time. These proposals add one page that shows the important numbers, says whether they are getting better, and links into the existing reports for the detail.
 
@@ -34,7 +34,7 @@ Recommendation: build A, with B's three written headlines as one strip above the
 - A number that did not load says so. It never shows 0 or "nobody".
 - Insights, Wastage, Transfers, Team and Item evidence keep their pages.
 
-## If one is chosen
+## Build steps (A with B's headlines)
 
 Small pull requests in this order, each with click tests at 390, 768 and 1280 px and the read budget check:
 
