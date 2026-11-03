@@ -640,13 +640,14 @@
   /* Off the prep pages there is no prep root for a toast, so it sits on the body. Its optional button handles its
      own tap there. It is not kept for the prep page, so the same words never come up again later. */
   var plainEl = null, plainTimer = null, plainAct = null;
-  function plainToast(msg, ms, act) {
+  function plainToast(msg, ms, act, kind) {
     plainAct = act || null;
+    var bad = kind === 'bad', life = ms || (act ? 9000 : 3500);
     if (!plainEl || !document.body.contains(plainEl)) { plainEl = document.createElement('div'); plainEl.className = 'p-toasts'; document.body.appendChild(plainEl); }
-    plainEl.innerHTML = '<div class="p-toast' + (act ? '' : ' p-toast-plain') + '" role="presentation"><span class="p-toast-msg">' + esc(msg) + '</span>' +
+    plainEl.innerHTML = '<div class="' + toastClass(act, bad, true) + '" role="presentation"' + toastClock(act, bad, life, 0) + '><span class="p-toast-msg">' + esc(msg) + '</span>' +
       (act ? '<button type="button" class="p-toast-btn">' + esc(act.label) + '</button>' : '') + '</div>';
     if (act) plainEl.querySelector('button').addEventListener('click', function () { plainAway(); act.fn(); });
-    clearTimeout(plainTimer); plainTimer = setTimeout(plainAway, ms || (act ? 9000 : 3500));
+    clearTimeout(plainTimer); if (!bad) plainTimer = setTimeout(plainAway, life);
   }
   // the prep page's own toast takes the same spot, so a plain one still up goes first (it would cover the Undo)
   function plainAway() {
@@ -654,12 +655,22 @@
     if (plainEl && plainEl.parentNode) plainEl.parentNode.removeChild(plainEl);
     plainEl = null; plainAct = null;
   }
-  function toast(msg, act, ms) {
+  /* The docket slip (4 Nov 2026, docs/loading-feedback-options/brief.md): one solid slip on the tab bar. kind 'bad' is
+     an error: a red edge, and it stays until OK, a tap, a swipe or the next toast, never on a timer (before, a refused
+     save went after 12 seconds and some errors after 3.5). A toast with a button shows its time left as a line. */
+  function toast(msg, act, ms, kind) {
     liveSay(msg + (act && act.label ? '. ' + act.label + ' is on screen.' : ''));
-    if (!S.root || !document.body.contains(S.root)) { plainToast(msg, ms, act); return; }
-    if (S.toast && S.toastAct && S.toastAct !== act) { S.toastOld = { msg: S.toast, act: S.toastAct }; clearTimeout(toastOldTimer); toastOldTimer = setTimeout(function () { S.toastOld = null; draw(); }, 6000); }
+    if (!S.root || !document.body.contains(S.root)) { plainToast(msg, ms, act, kind); return; }
+    if (S.toast && S.toastAct && !S.toastBad && S.toastAct !== act) { S.toastOld = { msg: S.toast, act: S.toastAct }; clearTimeout(toastOldTimer); toastOldTimer = setTimeout(function () { S.toastOld = null; draw(); }, 6000); }
     toastAt = Date.now(); toastScroll = document.scrollingElement ? { el: document.scrollingElement, y: document.scrollingElement.scrollTop } : null;
-    S.toast = msg; S.toastAct = act || null; draw(); clearTimeout(toastTimer); toastTimer = setTimeout(function () { S.toast = ''; S.toastAct = null; draw(); }, ms || (act ? 9000 : 3500));
+    S.toastBad = kind === 'bad'; S.toastLife = ms || (act ? 9000 : 3500);
+    S.toast = msg; S.toastAct = act || null; draw(); clearTimeout(toastTimer);
+    if (!S.toastBad) toastTimer = setTimeout(function () { S.toast = ''; S.toastAct = null; draw(); }, S.toastLife);
+  }
+  function toastClass(act, bad, fresh) { return 'p-toast' + (act ? '' : ' p-toast-plain') + (bad ? ' p-toast-bad' : '') + (fresh ? ' p-toast-in' : ''); }
+  // the time line runs from where it is now, so a redraw of the page does not start it again
+  function toastClock(act, bad, life, since) {
+    return act && !bad ? ' style="--toast-life:' + Math.round(life) + 'ms;--toast-since:-' + Math.max(0, Math.round(since)) + 'ms"' : '';
   }
   /* Small toasts (21 Oct 2026): the older Undo is a chip above the new toast ("Undo removed Pick coriander"). A swipe
      down or a tap on the words puts a toast away early, and a toast without a button goes once the page is scrolled. */
@@ -672,14 +683,14 @@
     if (!S.toast && !o) return '';
     // the new toast comes first (screen readers and the tests meet it first); the stack shows the chip above it. The
     // older Undo keeps its own 6 seconds when a short toast after it goes first (4 Nov 2026, LF-02).
-    return '<div class="p-toasts">' + (S.toast ? '<div class="p-toast' + (S.toastAct ? '' : ' p-toast-plain') + '" data-toast="new" data-p="toast-hide"><span class="p-toast-msg">' + esc(S.toast) + '</span>' +
+    return '<div class="p-toasts">' + (S.toast ? '<div class="' + toastClass(S.toastAct, S.toastBad, Date.now() - toastAt < 250) + '" data-toast="new" data-p="toast-hide"' + toastClock(S.toastAct, S.toastBad, S.toastLife, Date.now() - toastAt) + '><span class="p-toast-msg">' + esc(S.toast) + '</span>' +
       (S.toastAct ? '<button type="button" class="p-toast-btn" data-p="toast-act">' + esc(S.toastAct.label) + '</button>' : '') + '</div>' : '') +
       (o ? '<div class="p-toast p-toast-old" data-toast="old"><button type="button" class="p-toast-btn p-toast-chip" data-p="toast-old">' + esc(toastChip(o)) + '</button></div>' : '') + '</div>';
   }
   // which: 'old' the chip, 'new' only the newest toast (a scroll), 'all' both (a tap on the words or a swipe)
   function toastAway(which) {
     if (which !== 'new') { clearTimeout(toastOldTimer); S.toastOld = null; }
-    if (which !== 'old') { clearTimeout(toastTimer); S.toast = ''; S.toastAct = null; }
+    if (which !== 'old') { clearTimeout(toastTimer); S.toast = ''; S.toastAct = null; S.toastBad = false; }
     draw();
   }
   /* A save that failed takes its own Undo with it (4 Nov 2026, LF-01): the change it would undo did not happen, so the
@@ -724,14 +735,14 @@
       toast('Not saved. Checking your PIN...', null, 12000);
       if (functionOnly()) return;
     sset(docRef('activity', S.who), { name: p ? p.name : '', lastSeen: now() }, true).then(function () {
-        toast('Not saved. Ask the head chef.' + kept, { label: 'OK', fn: function () {} }, 12000);
+        toast('Not saved. Ask the head chef.' + kept, { label: 'OK', fn: function () {} }, 0, 'bad');
       }, function () {
         pickName(S.who);
-        toast('Not saved: sign in again with your PIN.' + kept, { label: 'OK', fn: function () {} }, 12000);
+        toast('Not saved: sign in again with your PIN.' + kept, { label: 'OK', fn: function () {} }, 0, 'bad');
       });
       return;
     }
-    toast('Not saved. Check the connection and try again.', { label: 'OK', fn: function () {} }, 12000);
+    toast('Not saved. Check the connection and try again.', { label: 'OK', fn: function () {} }, 0, 'bad');
   }
   /* Writes still waiting for the server. With no signal Firestore queues them and sends them later, so the page looks
      saved when nobody else can see the change yet. Since 26 Oct 2026 (#387, memoryLocalCache) that queue lives only in
@@ -1327,7 +1338,7 @@
     if (sendingNow()) { if (force) privacyLock('handover'); toast('Not sent yet. Sign in as the same person to finish sending.'); return false; }
     if (!force && window.LK_PREP.unsaved()) return false;
     forgetMine(S.who);
-    S.picking = true; S.pending = null; leave(); dropGoogle().then(accessChanged).catch(function () { toast('Sign-out could not finish. Close this tab before handing over the device.'); }); if (!quiet) toast('Signed out. Hand the phone over.');
+    S.picking = true; S.pending = null; leave(); dropGoogle().then(accessChanged).catch(function () { toast('Sign-out could not finish. Close this tab before handing over the device.', { label: 'OK', fn: function () {} }, 0, 'bad'); }); if (!quiet) toast('Signed out. Hand the phone over.');
     return true;
   }
   /* "Not you?" next to "Writing as" (and Change person on the admin card) hands the phone over the way Sign out does
@@ -2328,7 +2339,7 @@
         setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
         var nn = out.notes.length + (out.directnotes || []).length, mn = out.minutes.length, dn = Object.keys(out.days).length;
         S.exporting = ''; toast('Backup saved: ' + n + (n === 1 ? ' line' : ' lines') + ' from ' + dn + (dn === 1 ? ' day, ' : ' days, ') + nn + (nn === 1 ? ' shift ping' : ' shift pings') + ' and minutes from ' + mn + (mn === 1 ? ' meeting.' : ' meetings.') + (left.length ? ' Left out, the rules do not allow it yet: ' + left.join(', ') + '.' : ''), null, left.length ? 10000 : undefined);
-      }).catch(function () { S.exporting = ''; toast('Could not read everything' + (part ? ' (stopped at ' + part + ')' : '') + '. Check the connection and try again.', null, 8000); });
+      }).catch(function () { S.exporting = ''; toast('Could not read everything' + (part ? ' (stopped at ' + part + ')' : '') + '. Check the connection and try again.', { label: 'OK', fn: function () {} }, 0, 'bad'); });
   }
   /* Owner only: copy everything under the current kitchen PIN to a new one, then switch this device over.
      The security rules must already allow the new PIN (see firestore.rules) or the copy is refused. */
@@ -2631,7 +2642,7 @@
     var rb = fb.fs.writeBatch(fb.db); rb.delete(docRef('staffpins', id)); rb.delete(docRef('pinset', id));
     var po = {}; po[id] = now() + PIN_RESET_MIN * 60000; rb.set(cfgDoc(), { pinOpen: po }, { merge: true });   // they may set a new one for 30 minutes
     var who2 = (people().filter(function (x) { return x.id === id; })[0] || {}).name || 'Their';
-    track(rb.commit()).then(function () { toast(who2 + (who2 === 'Their' ? ' PIN is reset.' : '\'s PIN is reset.') + ' They set a new one next time they sign in.'); }, function (e) { toast(e && e.code === 'permission-denied' ? 'Could not reset. Sign in as the admin.' : 'Could not reset. Check the connection and try again.', { label: 'OK', fn: function () {} }, 12000); });
+    track(rb.commit()).then(function () { toast(who2 + (who2 === 'Their' ? ' PIN is reset.' : '\'s PIN is reset.') + ' They set a new one next time they sign in.'); }, function (e) { toast(e && e.code === 'permission-denied' ? 'Could not reset. Sign in as the admin.' : 'Could not reset. Check the connection and try again.', { label: 'OK', fn: function () {} }, 0, 'bad'); });
   }
   function hideSection(id, hidden) {
     sset(docRef('sections', id), { hidden: hidden }, true).catch(failed);
@@ -6555,7 +6566,7 @@
     Promise.all(['notes', 'directnotes'].map(function (col) { return noteQuery(fb.fs.query(colRef(col), fb.fs.where('until', '<', dayNow()), fb.fs.orderBy('until', 'desc'), fb.fs.limit(S.nPastN))); })).then(function (snaps) {
       if (epoch !== accessEpoch) return;
       S.nPast = noteRows(snaps[0], false).concat(noteRows(snaps[1], true)).filter(function (x) { return !x.removed; }).sort(function (a, b) { return String(b.until).localeCompare(String(a.until)) || (b.at || 0) - (a.at || 0); }).slice(0, S.nPastN); draw();
-    }, function () { if (epoch !== accessEpoch) return; S.nPast = keep || 'error'; if (keep) toast('Could not load more. Check the connection.'); draw(); });
+    }, function () { if (epoch !== accessEpoch) return; S.nPast = keep || 'error'; if (keep) toast('Could not load more. Check the connection.', { label: 'OK', fn: function () {} }, 0, 'bad'); draw(); });
   }
   /* put the cursor in the note and bring the editor up under the sticky tabs, so the phone keyboard never hides it */
   function focusNoteText(tx) {
@@ -9163,7 +9174,7 @@
       // the PIN screens' Not me: nobody is signed in yet (picking a name signs Google out first), so it goes in one tap.
       // The head chef's Google account handing over (the lone Not you?, the admin card's Sign in) takes what it left on
       // the device, like Sign out (29 Oct 2026: function, recipe and drawing drafts stayed for the next person)
-      if (!S.authed) { if (S.user || workLock()) forgetMine(S.lockRecorder || S.who); S.picking = true; S.pending = null; leave(); dropGoogle().then(accessChanged).catch(function () { toast('Sign-out could not finish. Close this tab before handing over the device.'); }); return; }
+      if (!S.authed) { if (S.user || workLock()) forgetMine(S.lockRecorder || S.who); S.picking = true; S.pending = null; leave(); dropGoogle().then(accessChanged).catch(function () { toast('Sign-out could not finish. Close this tab before handing over the device.', { label: 'OK', fn: function () {} }, 0, 'bad'); }); return; }
       signOutPerson(true, true); return;
     }
     if (a === 'guest-who') { guestAsk(null); return; }
